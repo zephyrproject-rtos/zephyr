@@ -1,0 +1,28 @@
+# Copyright 2022 Andriy Gelman
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  XMC4xxx DMA Controller
+
+compatible: "infineon,xmc4xxx-dma"
+
+include: dma-controller.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  dma-channels:
+    type: int
+    description: Number of DMA channels supported by the controller
+
+  "#dma-cells":
+    const: 3
+
+dma-cells:
+  - channel
+  - priority
+  - config

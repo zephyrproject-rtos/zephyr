@@ -176,7 +176,7 @@ def train_net(
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(allow_abbrev=False)
     parser.add_argument("--model", "-m")
     parser.add_argument("--person", "-p")
     args = parser.parse_args()

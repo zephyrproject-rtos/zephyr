@@ -13,8 +13,9 @@
 #include "mgmt/mcumgr/transport/smp_reassembly.h"
 #include "mgmt/mcumgr/transport/smp_internal.h"
 
+#define TRANSPORT_NETBUF_SIZE CONFIG_MCUMGR_TRANSPORT_NETBUF_SIZE
 static struct smp_transport smpt;
-static uint8_t buff[CONFIG_MCUMGR_BUF_SIZE];
+static uint8_t buff[TRANSPORT_NETBUF_SIZE];
 #define TEST_FRAME_SIZE 256
 
 static struct net_buf *backup;
@@ -39,14 +40,14 @@ ZTEST(smp_reassembly, test_first)
 
 	/** First fragment errors **/
 	/* Len longer than netbuf error */
-	zassert_equal(-ENOSR, smp_reassembly_collect(&smpt, buff, CONFIG_MCUMGR_BUF_SIZE + 1),
+	zassert_equal(-ENOSR, smp_reassembly_collect(&smpt, buff, TRANSPORT_NETBUF_SIZE + 1),
 		      "Expected -ENOSR error");
 	/* Len not enough to read expected size from header */
 	zassert_equal(-ENODATA,
 		      smp_reassembly_collect(&smpt, buff, sizeof(struct smp_hdr) - 1),
 		      "Expected -ENODATA error");
 	/* Length extracted from header, plus size of header, is bigger than buffer */
-	mh->nh_len = sys_cpu_to_be16(CONFIG_MCUMGR_BUF_SIZE - sizeof(struct smp_hdr) + 1);
+	mh->nh_len = sys_cpu_to_be16(TRANSPORT_NETBUF_SIZE - sizeof(struct smp_hdr) + 1);
 	zassert_equal(-ENOSR,
 		      smp_reassembly_collect(&smpt, buff, sizeof(struct smp_hdr) + 1),
 		      "Expected -ENOSR error");
@@ -69,7 +70,7 @@ ZTEST(smp_reassembly, test_first)
 	 */
 	ret = smp_reassembly_collect(&smpt, buff, frag_used);
 	zassert_equal(-ENOMEM, ret,
-		      "Expected is %d should be %d\n", ret, expected);
+		      "Expected -ENOMEM, got %d\n", ret);
 
 	/* This will normally be done by packet processing and should not be done by hand:
 	 * release the buffer to the pool
@@ -136,7 +137,7 @@ ZTEST(smp_reassembly, test_collection)
 	/* Last fragment */
 	ret = smp_reassembly_collect(&smpt, &buff[pkt_used], expected);
 	zassert_equal(0, ret,
-		      "Expected is %d should be %d\n", ret, 0);
+		      "Expected 0, got %d\n", ret);
 
 	/* And overflow */
 	ret = smp_reassembly_collect(&smpt, buff, 1);

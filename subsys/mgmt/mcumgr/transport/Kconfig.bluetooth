@@ -1,34 +1,39 @@
 # Copyright Runtime.io 2018. All rights reserved.
-# Copyright Nordic Semiconductor ASA 2020. All rights reserved.
+# Copyright Nordic Semiconductor ASA 2020-2022. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 
-menuconfig MCUMGR_SMP_BT
+# The Kconfig file is dedicated to Bluetooth transport of MCUmgr
+# subsystem and provides Kconfig options to control aspects of
+# the transport.
+#
+# Options defined in this file should be prefixed:
+#  MCUMGR_TRANSPORT_BT_
+
+menuconfig MCUMGR_TRANSPORT_BT
 	bool "Bluetooth mcumgr SMP transport"
-	select BT
-	select BT_PERIPHERAL
+	depends on BT_PERIPHERAL
 	select BT_GATT_DYNAMIC_DB
 	help
 	  Enables handling of SMP commands received over Bluetooth.
 
-if MCUMGR_SMP_BT
+if MCUMGR_TRANSPORT_BT
 
-config MCUMGR_SMP_REASSEMBLY_BT
+config MCUMGR_TRANSPORT_BT_REASSEMBLY
 	bool "Reassemble packets in Bluetooth SMP transport"
-	select MCUMGR_SMP_REASSEMBLY
+	select MCUMGR_TRANSPORT_REASSEMBLY
 	help
 	  When enabled, the SMP BT transport will buffer and reassemble received
 	  packet fragments before passing it for further processing.
 
-
-config MCUMGR_SMP_BT_AUTHEN
+config MCUMGR_TRANSPORT_BT_AUTHEN
 	bool "Authenticated requirement for Bluetooth mcumgr SMP transport"
-	select BT_SMP
+	depends on BT_SMP
 	default y
 	help
 	  Enables encrypted and authenticated connection requirement to
 	  Bluetooth SMP transport.
 
-config MCUMGR_SMP_BT_CONN_PARAM_CONTROL
+config MCUMGR_TRANSPORT_BT_CONN_PARAM_CONTROL
 	bool "Request specific connection parameters for SMP packet exchange"
 	depends on SYSTEM_WORKQUEUE_PRIORITY < 0
 	depends on BT_GAP_PERIPHERAL_PREF_PARAMS
@@ -38,37 +43,37 @@ config MCUMGR_SMP_BT_CONN_PARAM_CONTROL
 	  exchange process.
 	  Its recommended to enable this if SMP is used for DFU.
 
-if MCUMGR_SMP_BT_CONN_PARAM_CONTROL
+if MCUMGR_TRANSPORT_BT_CONN_PARAM_CONTROL
 
-config MCUMGR_SMP_BT_CONN_PARAM_CONTROL_MIN_INT
+config MCUMGR_TRANSPORT_BT_CONN_PARAM_CONTROL_MIN_INT
 	int "Minimum connection interval for SMP packet exchange"
 	default 6
 	range 6 3200
 	help
 	  Minimum connection interval in 1.25ms units used during the exchange of SMP packets.
 
-config MCUMGR_SMP_BT_CONN_PARAM_CONTROL_MAX_INT
+config MCUMGR_TRANSPORT_BT_CONN_PARAM_CONTROL_MAX_INT
 	int "Maximum connection interval for SMP packet exchange"
 	default 9
-	range MCUMGR_SMP_BT_CONN_PARAM_CONTROL_MIN_INT 3200
+	range MCUMGR_TRANSPORT_BT_CONN_PARAM_CONTROL_MIN_INT 3200
 	help
 	  Maximum connection interval in 1.25ms units used during the exchange of SMP packets.
 
-config MCUMGR_SMP_BT_CONN_PARAM_CONTROL_LATENCY
+config MCUMGR_TRANSPORT_BT_CONN_PARAM_CONTROL_LATENCY
 	int "Peripheral latency for SMP packet exchange"
 	default 0
 	range 0 499
 	help
 	  Peripheral latency in Connection Intervals used during the exchange of SMP packets.
 
-config MCUMGR_SMP_BT_CONN_PARAM_CONTROL_TIMEOUT
+config MCUMGR_TRANSPORT_BT_CONN_PARAM_CONTROL_TIMEOUT
 	int "Supervision timeout for SMP packet exchange"
 	default 42
 	range 10 3200
 	help
 	  Supervision timeout in 10ms used during the exchange of SMP packets.
 
-config MCUMGR_SMP_BT_CONN_PARAM_CONTROL_RESTORE_TIME
+config MCUMGR_TRANSPORT_BT_CONN_PARAM_CONTROL_RESTORE_TIME
 	int "Connection parameters restore time in milliseconds"
 	default 5000
 	range 1000 65535
@@ -77,7 +82,7 @@ config MCUMGR_SMP_BT_CONN_PARAM_CONTROL_RESTORE_TIME
 	  connection parameters are restored to peripheral preferred values
 	  (BT_GAP_PERIPHERAL_PREF_PARAMS).
 
-config MCUMGR_SMP_BT_CONN_PARAM_CONTROL_RETRY_TIME
+config MCUMGR_TRANSPORT_BT_CONN_PARAM_CONTROL_RETRY_TIME
 	int "Connection parameters update retry time in milliseconds"
 	default 1000
 	range 1 5000
@@ -85,6 +90,6 @@ config MCUMGR_SMP_BT_CONN_PARAM_CONTROL_RETRY_TIME
 	  In case connection parameters update fails due to an error, this
 	  option specifies the time of the next update attempt.
 
-endif # MCUMGR_SMP_BT_CONN_PARAM_CONTROL
+endif # MCUMGR_TRASNPORT_BT_CONN_PARAM_CONTROL
 
-endif # MCUMGR_SMP_BT
+endif # MCUMGR_TRANSPORT_BT

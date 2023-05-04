@@ -1,11 +1,12 @@
 /* ipm_stm32wb.c - HCI driver for stm32wb shared ram */
 
 /*
- * Copyright (c) 2019 Linaro Ltd.
+ * Copyright (c) 2019-2022 Linaro Ltd.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT st_stm32wb_rf
 
 #include <zephyr/init.h>
 #include <zephyr/sys/util.h>
@@ -19,6 +20,8 @@
 #include "stm32_wpan_common.h"
 #include "shci.h"
 #include "shci_tl.h"
+
+static const struct stm32_pclken clk_cfg[] = STM32_DT_CLOCKS(DT_NODELABEL(ble_rf));
 
 #define POOL_SIZE (CFG_TLBLE_EVT_QUEUE_LENGTH * 4 * \
 		DIVC((sizeof(TL_PacketHeader_t) + TL_BLE_EVENT_FRAME_SIZE), 4))
@@ -77,12 +80,12 @@ static bt_addr_t bd_addr_udn;
 
 /* Rx thread definitions */
 K_FIFO_DEFINE(ipm_rx_events_fifo);
-static K_KERNEL_STACK_DEFINE(ipm_rx_stack, CONFIG_BT_STM32_IPM_RX_STACK_SIZE);
+static K_KERNEL_STACK_DEFINE(ipm_rx_stack, CONFIG_BT_DRV_RX_STACK_SIZE);
 static struct k_thread ipm_rx_thread_data;
 
 static bool c2_started_flag;
 
-static void stm32wb_start_ble(void)
+static void stm32wb_start_ble(uint32_t rf_clock)
 {
 	SHCI_C2_Ble_Init_Cmd_Packet_t ble_init_cmd_packet = {
 	  { { 0, 0, 0 } },                     /**< Header unused */
@@ -98,7 +101,7 @@ static void stm32wb_start_ble(void)
 	    CFG_BLE_MAX_ATT_MTU,
 	    CFG_BLE_SLAVE_SCA,
 	    CFG_BLE_MASTER_SCA,
-	    CFG_BLE_LSE_SOURCE,
+	    (rf_clock == STM32_SRC_LSE) ? CFG_BLE_LS_SOURCE : 0,
 	    CFG_BLE_MAX_CONN_EVENT_LENGTH,
 	    CFG_BLE_HSE_STARTUP_TIME,
 	    CFG_BLE_VITERBI_MODE,
@@ -272,9 +275,6 @@ void shci_cmd_resp_wait(uint32_t timeout)
 
 void ipcc_reset(void)
 {
-	/* Reset IPCC */
-	LL_AHB3_GRP1_EnableClock(LL_AHB3_GRP1_PERIPH_IPCC);
-
 	LL_C1_IPCC_ClearFlag_CHx(
 		IPCC,
 		LL_IPCC_CHANNEL_1 | LL_IPCC_CHANNEL_2 | LL_IPCC_CHANNEL_3 |
@@ -385,48 +385,6 @@ static int bt_ipm_send(struct net_buf *buf)
 	return 0;
 }
 
-static void start_ble_rf(void)
-{
-	if ((LL_RCC_IsActiveFlag_PINRST()) && (!LL_RCC_IsActiveFlag_SFTRST())) {
-		/* Simulate power off reset */
-		LL_PWR_EnableBkUpAccess();
-		LL_PWR_EnableBkUpAccess();
-		LL_RCC_ForceBackupDomainReset();
-		LL_RCC_ReleaseBackupDomainReset();
-	}
-
-#if STM32_LSE_ENABLED
-	/* Configure driving capability */
-	LL_RCC_LSE_SetDriveCapability(STM32_LSE_DRIVING << RCC_BDCR_LSEDRV_Pos);
-	/* Select LSE clock */
-	LL_RCC_LSE_Enable();
-	while (!LL_RCC_LSE_IsReady()) {
-	}
-
-	/* Select wakeup source of BLE RF */
-	LL_RCC_SetRFWKPClockSource(LL_RCC_RFWKP_CLKSOURCE_LSE);
-	LL_RCC_SetRTCClockSource(LL_RCC_RTC_CLKSOURCE_LSE);
-
-	/* Switch OFF LSI */
-	LL_RCC_LSI2_Disable();
-#else
-	LL_RCC_LSI2_Enable();
-	while (!LL_RCC_LSI2_IsReady()) {
-	}
-
-	/* Select wakeup source of BLE RF */
-	LL_RCC_SetRFWKPClockSource(LL_RCC_RFWKP_CLKSOURCE_LSI);
-	LL_RCC_SetRTCClockSource(LL_RCC_RTC_CLKSOURCE_LSI);
-#endif
-
-	/* Set RNG on HSI48 */
-	LL_RCC_HSI48_Enable();
-	while (!LL_RCC_HSI48_IsReady()) {
-	}
-
-	LL_RCC_SetCLK48ClockSource(LL_RCC_CLK48_CLKSOURCE_HSI48);
-}
-
 #ifdef CONFIG_BT_HCI_HOST
 bt_addr_t *bt_get_ble_addr(void)
 {
@@ -527,7 +485,37 @@ static int bt_ipm_ble_init(void)
 
 static int c2_reset(void)
 {
-	start_ble_rf();
+	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
+	int err;
+
+	if (!device_is_ready(clk)) {
+		LOG_ERR("clock control device not ready");
+		return -ENODEV;
+	}
+
+	err = clock_control_configure(clk, (clock_control_subsys_t) &clk_cfg[1],
+					NULL);
+	if (err < 0) {
+		LOG_ERR("Could not configure RF Wake up clock");
+		return err;
+	}
+
+	/* HSI48 clock and CLK48 clock source are enabled using the device tree */
+#if !STM32_HSI48_ENABLED
+	/* Deprecated: enable HSI48 using device tree */
+#warning Bluetooth IPM requires HSI48 clock to be enabled using device tree
+	/* Keeping this sequence for legacy: */
+	LL_RCC_HSI48_Enable();
+	while (!LL_RCC_HSI48_IsReady()) {
+	}
+
+#endif /* !STM32_HSI48_ENABLED */
+
+	err = clock_control_on(clk, (clock_control_subsys_t) &clk_cfg[0]);
+	if (err < 0) {
+		LOG_ERR("Could not enable IPCC clock");
+		return err;
+	}
 
 	/* Take BLE out of reset */
 	ipcc_reset();
@@ -540,7 +528,7 @@ static int c2_reset(void)
 	}
 	LOG_DBG("C2 unlocked");
 
-	stm32wb_start_ble();
+	stm32wb_start_ble(clk_cfg[1].bus);
 
 	c2_started_flag = true;
 
@@ -619,11 +607,10 @@ static const struct bt_hci_driver drv = {
 	.send           = bt_ipm_send,
 };
 
-static int _bt_ipm_init(const struct device *unused)
+static int _bt_ipm_init(void)
 {
 	int err;
 
-	ARG_UNUSED(unused);
 
 	bt_hci_driver_register(&drv);
 

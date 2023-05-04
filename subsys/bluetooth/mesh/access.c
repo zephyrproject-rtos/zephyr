@@ -16,6 +16,8 @@
 
 #include "common/bt_str.h"
 
+#include "host/testing.h"
+
 #include "mesh.h"
 #include "adv.h"
 #include "net.h"
@@ -23,19 +25,12 @@
 #include "transport.h"
 #include "access.h"
 #include "foundation.h"
+#include "op_agg.h"
 #include "settings.h"
 
 #define LOG_LEVEL CONFIG_BT_MESH_ACCESS_LOG_LEVEL
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(bt_mesh_access);
-
-/* bt_mesh_model.flags */
-enum {
-	BT_MESH_MOD_BIND_PENDING = BIT(0),
-	BT_MESH_MOD_SUB_PENDING = BIT(1),
-	BT_MESH_MOD_PUB_PENDING = BIT(2),
-	BT_MESH_MOD_EXTENDED = BIT(3),
-};
 
 /* Model publication information for persistent storage. */
 struct mod_pub_val {
@@ -48,9 +43,62 @@ struct mod_pub_val {
 		 cred:1;
 };
 
+struct comp_foreach_model_arg {
+	struct net_buf_simple *buf;
+	size_t *offset;
+};
+
 static const struct bt_mesh_comp *dev_comp;
 static uint16_t dev_primary_addr;
 static void (*msg_cb)(uint32_t opcode, struct bt_mesh_msg_ctx *ctx, struct net_buf_simple *buf);
+
+/* Structure containing information about model extension */
+struct mod_relation {
+	/** Element that composition data base model belongs to. */
+	uint8_t elem_base;
+	/** Index of composition data base model in its element. */
+	uint8_t idx_base;
+	/** Element that composition data extension model belongs to. */
+	uint8_t elem_ext;
+	/** Index of composition data extension model in its element. */
+	uint8_t idx_ext;
+	/** Type of relation; value in range 0x00-0xFE marks correspondence
+	 * and equals to Correspondence ID; value 0xFF marks extension
+	 */
+	uint8_t type;
+};
+
+#ifdef CONFIG_BT_MESH_MODEL_EXTENSION_LIST_SIZE
+#define MOD_REL_LIST_SIZE CONFIG_BT_MESH_MODEL_EXTENSION_LIST_SIZE
+#else
+#define MOD_REL_LIST_SIZE 0
+#endif
+
+/* List of all existing extension relations between models */
+static struct mod_relation mod_rel_list[MOD_REL_LIST_SIZE];
+
+#define MOD_REL_LIST_FOR_EACH(idx) \
+	for ((idx) = 0; \
+		(idx) < ARRAY_SIZE(mod_rel_list) && \
+		!(mod_rel_list[(idx)].elem_base == 0 && \
+		  mod_rel_list[(idx)].idx_base == 0 && \
+		  mod_rel_list[(idx)].elem_ext == 0 && \
+		  mod_rel_list[(idx)].idx_ext == 0); \
+		 (idx)++)
+
+#define IS_MOD_BASE(mod, idx) \
+	(mod_rel_list[(idx)].elem_base == (mod)->elem_idx && \
+	 mod_rel_list[(idx)].idx_base == (mod)->mod_idx &&   \
+	 !(mod_rel_list[(idx)].elem_ext != (mod)->elem_idx && \
+	   mod_rel_list[(idx)].idx_ext != (mod)->mod_idx))
+
+#define IS_MOD_EXTENSION(mod, idx) \
+	 (mod_rel_list[(idx)].elem_ext == (mod)->elem_idx && \
+	  mod_rel_list[(idx)].idx_ext == (mod)->mod_idx &&   \
+	  !(mod_rel_list[(idx)].elem_base != (mod)->elem_idx && \
+	    mod_rel_list[(idx)].idx_base != (mod)->mod_idx))
+
+#define RELATION_TYPE_EXT 0xFF
 
 void bt_mesh_model_foreach(void (*func)(struct bt_mesh_model *mod,
 					struct bt_mesh_elem *elem,
@@ -75,6 +123,469 @@ void bt_mesh_model_foreach(void (*func)(struct bt_mesh_model *mod,
 			func(model, elem, true, i == 0, user_data);
 		}
 	}
+}
+
+static size_t bt_mesh_comp_elem_size(const struct bt_mesh_elem *elem)
+{
+	return (4 + (elem->model_count * 2U) + (elem->vnd_model_count * 4U));
+}
+
+static uint8_t *data_buf_add_u8_offset(struct net_buf_simple *buf,
+				       uint8_t val, size_t *offset)
+{
+	if (*offset >= 1) {
+		*offset -= 1;
+		return NULL;
+	}
+
+	return net_buf_simple_add_u8(buf, val);
+}
+
+static void data_buf_add_le16_offset(struct net_buf_simple *buf,
+				     uint16_t val, size_t *offset)
+{
+	if (*offset >= 2) {
+		*offset -= 2;
+		return;
+	} else if (*offset == 1) {
+		*offset -= 1;
+		net_buf_simple_add_u8(buf, (val >> 8));
+	} else {
+		net_buf_simple_add_le16(buf, val);
+	}
+}
+
+static void comp_add_model(struct bt_mesh_model *mod, struct bt_mesh_elem *elem,
+			   bool vnd, void *user_data)
+{
+	struct comp_foreach_model_arg *arg = user_data;
+
+	if (vnd) {
+		data_buf_add_le16_offset(arg->buf, mod->vnd.company, arg->offset);
+		data_buf_add_le16_offset(arg->buf, mod->vnd.id, arg->offset);
+	} else {
+		data_buf_add_le16_offset(arg->buf, mod->id, arg->offset);
+	}
+}
+
+#if defined(CONFIG_BT_MESH_LARGE_COMP_DATA_SRV)
+static void data_buf_add_mem_offset(struct net_buf_simple *buf,
+				    const void *mem, size_t len,
+				    size_t *offset)
+{
+	if (*offset >= len) {
+		*offset -= len;
+		return;
+	} else if (*offset > 0) {
+		net_buf_simple_add_mem(buf, ((uint8_t *)mem), (len - *offset));
+
+	} else {
+		net_buf_simple_add_mem(buf, mem, len);
+	}
+}
+
+static size_t metadata_model_size(struct bt_mesh_model *mod,
+				  struct bt_mesh_elem *elem, bool vnd)
+{
+	const struct bt_mesh_models_metadata_entry *entry;
+	size_t size = 0;
+
+	if (!mod->metadata) {
+		return size;
+	}
+
+	if (vnd) {
+		size += sizeof(mod->vnd.company);
+		size += sizeof(mod->vnd.id);
+	} else {
+		size += sizeof(mod->id);
+	}
+
+	size += sizeof(uint8_t);
+
+	for (entry = *mod->metadata; entry && entry->len; ++entry) {
+		size += sizeof(entry->len) + sizeof(entry->id) + entry->len;
+	}
+
+	return size;
+}
+
+size_t bt_mesh_metadata_page_0_size(void)
+{
+	const struct bt_mesh_comp *comp;
+	size_t size = 0;
+	int i, j;
+
+	comp = bt_mesh_comp_get();
+
+	for (i = 0; i < dev_comp->elem_count; i++) {
+		struct bt_mesh_elem *elem = &dev_comp->elem[i];
+
+		size += sizeof(elem->model_count) +
+			sizeof(elem->vnd_model_count);
+
+		for (j = 0; j < elem->model_count; j++) {
+			struct bt_mesh_model *model = &elem->models[j];
+
+			size += metadata_model_size(model, elem, false);
+		}
+
+		for (j = 0; j < elem->vnd_model_count; j++) {
+			struct bt_mesh_model *model = &elem->vnd_models[j];
+
+			size += metadata_model_size(model, elem, true);
+		}
+	}
+
+	return size;
+}
+
+static int metadata_add_model(struct bt_mesh_model *mod,
+			      struct bt_mesh_elem *elem, bool vnd,
+			      void *user_data)
+{
+	const struct bt_mesh_models_metadata_entry *entry;
+	struct comp_foreach_model_arg *arg = user_data;
+	struct net_buf_simple *buf = arg->buf;
+	size_t *offset = arg->offset;
+	size_t model_size;
+	uint8_t count = 0;
+	uint8_t *count_ptr;
+
+	model_size = metadata_model_size(mod, elem, vnd);
+
+	if (*offset >= model_size) {
+		*offset -= model_size;
+		return 0;
+	}
+
+	if (net_buf_simple_tailroom(buf) < (model_size + BT_MESH_MIC_SHORT)) {
+		LOG_DBG("Model metadata didn't fit in the buffer");
+		return -E2BIG;
+	}
+
+	comp_add_model(mod, elem, vnd, user_data);
+
+	count_ptr = data_buf_add_u8_offset(buf, 0, offset);
+
+	if (mod->metadata) {
+		for (entry = *mod->metadata; entry && entry->data != NULL; ++entry) {
+			data_buf_add_le16_offset(buf, entry->len, offset);
+			data_buf_add_le16_offset(buf, entry->id, offset);
+			data_buf_add_mem_offset(buf, entry->data, entry->len, offset);
+			count++;
+		}
+	}
+
+	if (count_ptr) {
+		*count_ptr = count;
+	}
+
+	return 0;
+}
+
+int bt_mesh_metadata_get_page_0(struct net_buf_simple *buf, size_t offset)
+{
+	const struct bt_mesh_comp *comp;
+	struct comp_foreach_model_arg arg = {
+		.buf = buf,
+		.offset = &offset,
+	};
+	uint8_t *mod_count_ptr;
+	uint8_t *vnd_count_ptr;
+	int i, j, err;
+
+	comp = bt_mesh_comp_get();
+
+	for (i = 0; i < comp->elem_count; i++) {
+		struct bt_mesh_elem *elem = &dev_comp->elem[i];
+
+		/* Check that the buffer has available tailroom for metadata item counts */
+		if (net_buf_simple_tailroom(buf) < (((offset == 0) ? 2 : (offset == 1) ? 1 : 0)
+				+ BT_MESH_MIC_SHORT)) {
+			LOG_DBG("Model metadata didn't fit in the buffer");
+			return -E2BIG;
+		}
+		mod_count_ptr = data_buf_add_u8_offset(buf, 0, &offset);
+		vnd_count_ptr = data_buf_add_u8_offset(buf, 0, &offset);
+
+		for (j = 0; j < elem->model_count; j++) {
+			struct bt_mesh_model *model = &elem->models[j];
+
+			if (!model->metadata) {
+				continue;
+			}
+
+			err = metadata_add_model(model, elem, false, &arg);
+			if (err) {
+				return err;
+			}
+
+			if (mod_count_ptr) {
+				(*mod_count_ptr) += 1;
+			}
+		}
+
+		for (j = 0; j < elem->vnd_model_count; j++) {
+			struct bt_mesh_model *model = &elem->vnd_models[j];
+
+			if (!model->metadata) {
+				continue;
+			}
+
+			err = metadata_add_model(model, elem, true, &arg);
+			if (err) {
+				return err;
+			}
+
+			if (vnd_count_ptr) {
+				(*vnd_count_ptr) += 1;
+			}
+		}
+	}
+
+	return 0;
+}
+#endif
+
+size_t bt_mesh_comp_page_0_size(void)
+{
+	const struct bt_mesh_comp *comp;
+	const struct bt_mesh_elem *elem;
+	size_t size = 10;
+	int i;
+
+	comp = bt_mesh_comp_get();
+
+	for (i = 0; i < comp->elem_count; i++) {
+		elem = &comp->elem[i];
+		size += bt_mesh_comp_elem_size(elem);
+	}
+
+	return size;
+}
+
+static int comp_add_elem(struct net_buf_simple *buf, struct bt_mesh_elem *elem,
+			 size_t *offset)
+{
+	struct comp_foreach_model_arg arg = {
+		.buf = buf,
+		.offset = offset,
+	};
+	const size_t elem_size = bt_mesh_comp_elem_size(elem);
+	int i;
+
+	if (*offset >= elem_size) {
+		*offset -= elem_size;
+		return 0;
+	}
+
+	if (net_buf_simple_tailroom(buf) < (elem_size + BT_MESH_MIC_SHORT)) {
+		if (IS_ENABLED(CONFIG_BT_MESH_LARGE_COMP_DATA_SRV)) {
+			/* Mesh Profile 1.1 Section 4.4.1.2.2:
+			 * If the complete list of models does not fit in the Data field,
+			 * the element shall not be reported.
+			 */
+			LOG_DBG("Element 0x%04x didn't fit in the Data field",
+				elem->addr);
+			return 0;
+		}
+
+		LOG_ERR("Too large device composition");
+		return -E2BIG;
+	}
+
+	data_buf_add_le16_offset(buf, elem->loc, offset);
+
+	data_buf_add_u8_offset(buf, elem->model_count, offset);
+	data_buf_add_u8_offset(buf, elem->vnd_model_count, offset);
+
+	for (i = 0; i < elem->model_count; i++) {
+		struct bt_mesh_model *model = &elem->models[i];
+
+		comp_add_model(model, elem, false, &arg);
+	}
+
+	for (i = 0; i < elem->vnd_model_count; i++) {
+		struct bt_mesh_model *model = &elem->vnd_models[i];
+
+		comp_add_model(model, elem, true, &arg);
+	}
+
+	return 0;
+}
+
+int bt_mesh_comp_data_get_page_0(struct net_buf_simple *buf, size_t offset)
+{
+	uint16_t feat = 0U;
+	const struct bt_mesh_comp *comp;
+	int i;
+
+	comp = bt_mesh_comp_get();
+
+	if (IS_ENABLED(CONFIG_BT_MESH_RELAY)) {
+		feat |= BT_MESH_FEAT_RELAY;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_MESH_GATT_PROXY)) {
+		feat |= BT_MESH_FEAT_PROXY;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_MESH_FRIEND)) {
+		feat |= BT_MESH_FEAT_FRIEND;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_MESH_LOW_POWER)) {
+		feat |= BT_MESH_FEAT_LOW_POWER;
+	}
+
+	data_buf_add_le16_offset(buf, comp->cid, &offset);
+	data_buf_add_le16_offset(buf, comp->pid, &offset);
+	data_buf_add_le16_offset(buf, comp->vid, &offset);
+	data_buf_add_le16_offset(buf, CONFIG_BT_MESH_CRPL, &offset);
+	data_buf_add_le16_offset(buf, feat, &offset);
+
+	for (i = 0; i < comp->elem_count; i++) {
+		int err;
+
+		err = comp_add_elem(buf, &comp->elem[i], &offset);
+		if (err) {
+			return err;
+		}
+	}
+
+	return 0;
+}
+
+static uint8_t count_mod_ext(struct bt_mesh_model *mod, uint8_t *max_offset)
+{
+	int i;
+	uint8_t extensions = 0;
+	int8_t offset, offset_record = 0;
+
+	MOD_REL_LIST_FOR_EACH(i) {
+		if (IS_MOD_EXTENSION(mod, i) &&
+		    mod_rel_list[i].type == RELATION_TYPE_EXT) {
+			extensions++;
+			offset = mod_rel_list[i].elem_ext -
+				mod_rel_list[i].elem_base;
+			if (abs(offset) > abs(offset_record)) {
+				offset_record = offset;
+			}
+		}
+	}
+	memcpy(max_offset, &offset_record, sizeof(uint8_t));
+	return extensions;
+}
+
+static bool is_cor_present(struct bt_mesh_model *mod, uint8_t *cor_id)
+{
+	int i;
+
+	MOD_REL_LIST_FOR_EACH(i) {
+		if ((IS_MOD_BASE(mod, i) ||
+		     IS_MOD_EXTENSION(mod, i)) &&
+		     mod_rel_list[i].type < RELATION_TYPE_EXT) {
+			memcpy(cor_id, &mod_rel_list[i].type, sizeof(uint8_t));
+			return true;
+		}
+	}
+	return false;
+}
+
+static void prep_model_item_header(struct bt_mesh_model *mod, uint8_t *cor_id,
+			    uint8_t *mod_cnt, struct net_buf_simple *buf)
+{
+	uint8_t ext_mod_cnt;
+	bool cor_present;
+	uint8_t mod_elem_info = 0;
+	int8_t max_offset;
+
+	ext_mod_cnt = count_mod_ext(mod, &max_offset);
+	cor_present = is_cor_present(mod, cor_id);
+
+	mod_elem_info = ext_mod_cnt << 2;
+	if (ext_mod_cnt > 31 ||
+		max_offset > 3 ||
+		max_offset < -4) {
+		mod_elem_info |= BIT(1);
+	}
+	if (cor_present) {
+		mod_elem_info |= BIT(0);
+	}
+	net_buf_simple_add_u8(buf, mod_elem_info);
+
+	if (cor_present) {
+		net_buf_simple_add_u8(buf, *cor_id);
+	}
+	memset(mod_cnt, ext_mod_cnt, sizeof(uint8_t));
+}
+
+static void add_items_to_page(struct net_buf_simple *buf, struct bt_mesh_model *mod,
+		       uint8_t ext_mod_cnt)
+{
+	int i, offset;
+	uint8_t mod_idx;
+
+	MOD_REL_LIST_FOR_EACH(i) {
+		if (IS_MOD_EXTENSION(mod, i)) {
+			offset = mod->elem_idx - mod_rel_list[i].elem_base;
+			mod_idx = mod_rel_list[i].idx_base;
+			if (ext_mod_cnt < 32 &&
+				offset < 4 &&
+				offset > -5) {
+				/* short format */
+				if (offset < 0) {
+					offset += 8;
+				}
+
+				offset |= mod_idx << 3;
+				net_buf_simple_add_u8(buf, offset);
+			} else {
+				/* long format */
+				if (offset < 0) {
+					offset += 256;
+				}
+				net_buf_simple_add_u8(buf, offset);
+				net_buf_simple_add_u8(buf, mod_idx);
+			}
+		}
+	}
+}
+
+int bt_mesh_comp_data_get_page_1(struct net_buf_simple *buf)
+{
+	const struct bt_mesh_comp *comp;
+	uint8_t cor_id = 0;
+	uint8_t ext_mod_cnt = 0;
+	int i, j;
+
+	comp = bt_mesh_comp_get();
+
+	for (i = 0; i < comp->elem_count; i++) {
+		net_buf_simple_add_u8(buf, comp->elem[i].model_count);
+		net_buf_simple_add_u8(buf, comp->elem[i].vnd_model_count);
+		for (j = 0; j < comp->elem[i].model_count; j++) {
+			prep_model_item_header(&comp->elem[i].models[j],
+					       &cor_id, &ext_mod_cnt, buf);
+			if (ext_mod_cnt != 0) {
+				add_items_to_page(buf,
+						  &comp->elem[i].models[j],
+						  ext_mod_cnt);
+			}
+		}
+
+		for (j = 0; j < comp->elem[i].vnd_model_count; j++) {
+			prep_model_item_header(&comp->elem[i].vnd_models[j],
+					       &cor_id, &ext_mod_cnt, buf);
+			if (ext_mod_cnt != 0) {
+				add_items_to_page(buf,
+						  &comp->elem[i].vnd_models[j],
+						  ext_mod_cnt);
+			}
+		}
+	}
+	return 0;
 }
 
 int32_t bt_mesh_model_pub_period_get(struct bt_mesh_model *mod)
@@ -107,7 +618,11 @@ int32_t bt_mesh_model_pub_period_get(struct bt_mesh_model *mod)
 	}
 
 	if (mod->pub->fast_period) {
-		return period >> mod->pub->period_div;
+		if (!period) {
+			return 0;
+		}
+
+		return MAX(period >> mod->pub->period_div, 100);
 	} else {
 		return period;
 	}
@@ -188,11 +703,7 @@ static int publish_transmit(struct bt_mesh_model *mod)
 {
 	NET_BUF_SIMPLE_DEFINE(sdu, BT_MESH_TX_SDU_MAX);
 	struct bt_mesh_model_pub *pub = mod->pub;
-	struct bt_mesh_msg_ctx ctx = {
-		.addr = pub->addr,
-		.send_ttl = pub->ttl,
-		.app_idx = pub->key,
-	};
+	struct bt_mesh_msg_ctx ctx = BT_MESH_MSG_CTX_INIT_PUB(pub);
 	struct bt_mesh_net_tx tx = {
 		.ctx = &ctx,
 		.src = bt_mesh_model_elem(mod)->addr,
@@ -381,7 +892,32 @@ int bt_mesh_comp_register(const struct bt_mesh_comp *comp)
 	dev_comp = comp;
 
 	err = 0;
+
+	if (IS_ENABLED(CONFIG_BT_MESH_COMP_PAGE_1)) {
+		memset(mod_rel_list, 0, sizeof(mod_rel_list));
+	}
+
 	bt_mesh_model_foreach(mod_init, &err);
+
+	if (IS_ENABLED(CONFIG_BT_MESH_COMP_PAGE_1)) {
+		int i;
+
+		MOD_REL_LIST_FOR_EACH(i) {
+			LOG_DBG("registered %s",
+				mod_rel_list[i].type < RELATION_TYPE_EXT ?
+				"correspondence" : "extension");
+			LOG_DBG("\tbase: elem %u idx %u",
+				mod_rel_list[i].elem_base,
+				mod_rel_list[i].idx_base);
+			LOG_DBG("\text: elem %u idx %u",
+				mod_rel_list[i].elem_ext,
+				mod_rel_list[i].idx_ext);
+		}
+		if (i < MOD_REL_LIST_SIZE) {
+			LOG_WRN("Unused space in relation list: %d",
+				MOD_REL_LIST_SIZE - i);
+		}
+	}
 
 	return err;
 }
@@ -681,67 +1217,105 @@ static int get_opcode(struct net_buf_simple *buf, uint32_t *opcode)
 	CODE_UNREACHABLE;
 }
 
-void bt_mesh_model_recv(struct bt_mesh_net_rx *rx, struct net_buf_simple *buf)
+static int element_model_recv(struct bt_mesh_msg_ctx *ctx,
+			      struct net_buf_simple *buf, uint16_t addr,
+			      struct bt_mesh_elem *elem, uint32_t opcode)
 {
-	struct bt_mesh_model *model;
 	const struct bt_mesh_model_op *op;
-	uint32_t opcode;
-	int i;
+	struct bt_mesh_model *model;
+	struct net_buf_simple_state state;
+	int err;
 
-	LOG_DBG("app_idx 0x%04x src 0x%04x dst 0x%04x", rx->ctx.app_idx, rx->ctx.addr,
-		rx->ctx.recv_dst);
+	op = find_op(elem, opcode, &model);
+	if (!op) {
+		LOG_ERR("No OpCode 0x%08x for elem 0x%02x", opcode, elem->addr);
+		return ACCESS_STATUS_WRONG_OPCODE;
+	}
+
+	if (!bt_mesh_model_has_key(model, ctx->app_idx)) {
+		LOG_ERR("Wrong key");
+		return ACCESS_STATUS_WRONG_KEY;
+	}
+
+	if (!model_has_dst(model, addr)) {
+		LOG_ERR("Invalid address 0x%02x", addr);
+		return ACCESS_STATUS_INVALID_ADDRESS;
+	}
+
+	if ((op->len >= 0) && (buf->len < (size_t)op->len)) {
+		LOG_ERR("Too short message for OpCode 0x%08x", opcode);
+		return ACCESS_STATUS_MESSAGE_NOT_UNDERSTOOD;
+	} else if ((op->len < 0) && (buf->len != (size_t)(-op->len))) {
+		LOG_ERR("Invalid message size for OpCode 0x%08x", opcode);
+		return ACCESS_STATUS_MESSAGE_NOT_UNDERSTOOD;
+	}
+
+	net_buf_simple_save(buf, &state);
+	err = op->func(model, ctx, buf);
+	net_buf_simple_restore(buf, &state);
+
+	if (err) {
+		return ACCESS_STATUS_MESSAGE_NOT_UNDERSTOOD;
+	}
+	return ACCESS_STATUS_SUCCESS;
+}
+
+int bt_mesh_model_recv(struct bt_mesh_msg_ctx *ctx, struct net_buf_simple *buf)
+{
+	int err = ACCESS_STATUS_SUCCESS;
+	uint32_t opcode;
+	uint16_t index;
+
+	LOG_DBG("app_idx 0x%04x src 0x%04x dst 0x%04x", ctx->app_idx, ctx->addr,
+		ctx->recv_dst);
 	LOG_DBG("len %u: %s", buf->len, bt_hex(buf->data, buf->len));
+
+	if (IS_ENABLED(CONFIG_BT_TESTING)) {
+		bt_test_mesh_model_recv(ctx->addr, ctx->recv_dst, buf->data,
+					buf->len);
+	}
 
 	if (get_opcode(buf, &opcode) < 0) {
 		LOG_WRN("Unable to decode OpCode");
-		return;
+		return ACCESS_STATUS_WRONG_OPCODE;
 	}
 
 	LOG_DBG("OpCode 0x%08x", opcode);
 
-	for (i = 0; i < dev_comp->elem_count; i++) {
-		struct net_buf_simple_state state;
+	if (BT_MESH_ADDR_IS_UNICAST(ctx->recv_dst)) {
+		index = ctx->recv_dst - dev_comp->elem[0].addr;
 
-		op = find_op(&dev_comp->elem[i], opcode, &model);
-		if (!op) {
-			LOG_DBG("No OpCode 0x%08x for elem %d", opcode, i);
-			continue;
+		if (index >= dev_comp->elem_count) {
+			LOG_ERR("Invalid address 0x%02x", ctx->recv_dst);
+			err = ACCESS_STATUS_INVALID_ADDRESS;
+		} else {
+			struct bt_mesh_elem *elem = &dev_comp->elem[index];
+
+			err = element_model_recv(ctx, buf, ctx->recv_dst, elem, opcode);
 		}
+	} else {
+		for (index = 0; index < dev_comp->elem_count; index++) {
+			struct bt_mesh_elem *elem = &dev_comp->elem[index];
 
-		if (!bt_mesh_model_has_key(model, rx->ctx.app_idx)) {
-			continue;
+			(void)element_model_recv(ctx, buf, ctx->recv_dst, elem, opcode);
 		}
-
-		if (!model_has_dst(model, rx->ctx.recv_dst)) {
-			continue;
-		}
-
-		if ((op->len >= 0) && (buf->len < (size_t)op->len)) {
-			LOG_ERR("Too short message for OpCode 0x%08x", opcode);
-			continue;
-		} else if ((op->len < 0) && (buf->len != (size_t)(-op->len))) {
-			LOG_ERR("Invalid message size for OpCode 0x%08x", opcode);
-			continue;
-		}
-
-		/* The callback will likely parse the buffer, so
-		 * store the parsing state in case multiple models
-		 * receive the message.
-		 */
-		net_buf_simple_save(buf, &state);
-		(void)op->func(model, &rx->ctx, buf);
-		net_buf_simple_restore(buf, &state);
 	}
 
 	if (IS_ENABLED(CONFIG_BT_MESH_ACCESS_LAYER_MSG) && msg_cb) {
-		msg_cb(opcode, &rx->ctx, buf);
+		msg_cb(opcode, ctx, buf);
 	}
+
+	return err;
 }
 
 int bt_mesh_model_send(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 		       struct net_buf_simple *msg,
 		       const struct bt_mesh_send_cb *cb, void *cb_data)
 {
+	if (IS_ENABLED(CONFIG_BT_MESH_OP_AGG) && bt_mesh_op_agg_accept(ctx)) {
+		return bt_mesh_op_agg_send(model, ctx, msg, cb);
+	}
+
 	if (!bt_mesh_model_has_key(model, ctx->app_idx)) {
 		LOG_ERR("Model not bound to AppKey 0x%04x", ctx->app_idx);
 		return -EINVAL;
@@ -849,6 +1423,34 @@ void bt_mesh_model_extensions_walk(struct bt_mesh_model *model,
 }
 
 #ifdef CONFIG_BT_MESH_MODEL_EXTENSIONS
+static int mod_rel_register(struct bt_mesh_model *base,
+				 struct bt_mesh_model *ext,
+				 uint8_t type)
+{
+	LOG_DBG("");
+	struct mod_relation extension = {
+		base->elem_idx,
+		base->mod_idx,
+		ext->elem_idx,
+		ext->mod_idx,
+		type,
+	};
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(mod_rel_list); i++) {
+		if (mod_rel_list[i].elem_base == 0 &&
+			mod_rel_list[i].idx_base == 0 &&
+			mod_rel_list[i].elem_ext == 0 &&
+			mod_rel_list[i].idx_ext == 0) {
+			memcpy(&mod_rel_list[i], &extension,
+			       sizeof(extension));
+			return 0;
+		}
+	}
+	LOG_ERR("Failed to extend");
+	return -ENOMEM;
+}
+
 int bt_mesh_model_extend(struct bt_mesh_model *extending_mod, struct bt_mesh_model *base_mod)
 {
 	struct bt_mesh_model *a = extending_mod;
@@ -883,9 +1485,45 @@ int bt_mesh_model_extend(struct bt_mesh_model *extending_mod, struct bt_mesh_mod
 		a->next = b;
 	}
 
+
+	if (IS_ENABLED(CONFIG_BT_MESH_COMP_PAGE_1)) {
+		return mod_rel_register(base_mod, extending_mod, RELATION_TYPE_EXT);
+	}
+
 	return 0;
 }
-#endif
+
+int bt_mesh_model_correspond(struct bt_mesh_model *corresponding_mod,
+			     struct bt_mesh_model *base_mod)
+{
+	int i, err;
+	uint8_t cor_id = 0;
+
+	if (!IS_ENABLED(CONFIG_BT_MESH_COMP_PAGE_1)) {
+		return -ENOTSUP;
+	}
+
+	MOD_REL_LIST_FOR_EACH(i) {
+		if (mod_rel_list[i].type < RELATION_TYPE_EXT &&
+		    mod_rel_list[i].type > cor_id) {
+			cor_id = mod_rel_list[i].type;
+		}
+
+		if ((IS_MOD_BASE(base_mod, i) ||
+		     IS_MOD_EXTENSION(base_mod, i) ||
+		     IS_MOD_BASE(corresponding_mod, i) ||
+		     IS_MOD_EXTENSION(corresponding_mod, i)) &&
+		    mod_rel_list[i].type < RELATION_TYPE_EXT) {
+			return mod_rel_register(base_mod, corresponding_mod, mod_rel_list[i].type);
+		}
+	}
+	err = mod_rel_register(base_mod, corresponding_mod, cor_id);
+	if (err) {
+		return err;
+	}
+	return 0;
+}
+#endif /* CONFIG_BT_MESH_MODEL_EXTENSIONS */
 
 bool bt_mesh_model_is_extended(struct bt_mesh_model *model)
 {
@@ -1079,6 +1717,20 @@ static int vnd_mod_set(const char *name, size_t len_rd,
 
 BT_MESH_SETTINGS_DEFINE(vnd_mod, "v", vnd_mod_set);
 
+static int comp_set(const char *name, size_t len_rd, settings_read_cb read_cb,
+		    void *cb_arg)
+{
+	/* Only need to know that the entry exists. Will load the contents on
+	 * demand.
+	 */
+	if (len_rd > 0) {
+		atomic_set_bit(bt_mesh.flags, BT_MESH_COMP_DIRTY);
+	}
+
+	return 0;
+}
+BT_MESH_SETTINGS_DEFINE(comp, "cmp", comp_set);
+
 static void encode_mod_path(struct bt_mesh_model *mod, bool vnd,
 			    const char *key, char *path, size_t path_len)
 {
@@ -1149,7 +1801,7 @@ static void store_pending_mod_sub(struct bt_mesh_model *mod, bool vnd)
 
 static void store_pending_mod_pub(struct bt_mesh_model *mod, bool vnd)
 {
-	struct mod_pub_val pub;
+	struct mod_pub_val pub = {0};
 	char path[20];
 	int err;
 
@@ -1223,6 +1875,89 @@ void bt_mesh_model_pub_store(struct bt_mesh_model *mod)
 	bt_mesh_settings_store_schedule(BT_MESH_SETTINGS_MOD_PENDING);
 }
 
+int bt_mesh_comp_store(void)
+{
+	NET_BUF_SIMPLE_DEFINE(buf, BT_MESH_TX_SDU_MAX);
+	int err;
+
+	err = bt_mesh_comp_data_get_page_0(&buf, 0);
+	if (err) {
+		LOG_ERR("Failed to read composition data: %d", err);
+		return err;
+	}
+
+	err = settings_save_one("bt/mesh/cmp", buf.data, buf.len);
+	if (err) {
+		LOG_ERR("Failed to store composition data: %d", err);
+	} else {
+		LOG_DBG("Stored composition data");
+	}
+
+	return err;
+}
+
+int bt_mesh_comp_change_prepare(void)
+{
+	if (!IS_ENABLED(CONFIG_BT_SETTINGS)) {
+		return -ENOTSUP;
+	}
+
+	return bt_mesh_comp_store();
+}
+
+static void comp_data_clear(void)
+{
+	int err;
+
+	err = settings_delete("bt/mesh/cmp");
+	if (err) {
+		LOG_ERR("Failed to clear composition data: %d", err);
+	} else {
+		LOG_DBG("Cleared composition data page 128");
+	}
+
+	atomic_clear_bit(bt_mesh.flags, BT_MESH_COMP_DIRTY);
+}
+
+static int read_comp_cb(const char *key, size_t len, settings_read_cb read_cb,
+			void *cb_arg, void *param)
+{
+	struct net_buf_simple *buf = param;
+
+	if (len > net_buf_simple_tailroom(buf)) {
+		return -ENOBUFS;
+	}
+
+	len = read_cb(cb_arg, net_buf_simple_tail(buf), len);
+	if (len > 0) {
+		net_buf_simple_add(buf, len);
+	}
+
+	return -EALREADY;
+}
+
+int bt_mesh_comp_read(struct net_buf_simple *buf)
+{
+	size_t original_len = buf->len;
+	int err;
+
+	if (!IS_ENABLED(CONFIG_BT_SETTINGS)) {
+		return -ENOTSUP;
+	}
+
+	err = settings_load_subtree_direct("bt/mesh/cmp", read_comp_cb, buf);
+	if (err) {
+		LOG_ERR("Failed reading composition data: %d", err);
+		return err;
+	}
+
+	if (buf->len == original_len) {
+		return -ENOENT;
+	}
+
+	return 0;
+}
+
 int bt_mesh_model_data_store(struct bt_mesh_model *mod, bool vnd,
 			     const char *name, const void *data,
 			     size_t data_len)
@@ -1248,6 +1983,127 @@ int bt_mesh_model_data_store(struct bt_mesh_model *mod, bool vnd,
 		LOG_DBG("Stored %s value", path);
 	}
 	return err;
+}
+
+#if defined(CONFIG_BT_MESH_LARGE_COMP_DATA_SRV)
+static int metadata_set(const char *name, size_t len_rd, settings_read_cb read_cb, void *cb_arg)
+{
+	/* Only need to know that the entry exists. Will load the contents on
+	 * demand.
+	 */
+	if (len_rd > 0) {
+		atomic_set_bit(bt_mesh.flags, BT_MESH_METADATA_DIRTY);
+	}
+
+	return 0;
+}
+BT_MESH_SETTINGS_DEFINE(metadata, "metadata", metadata_set);
+
+int bt_mesh_models_metadata_store(void)
+{
+	NET_BUF_SIMPLE_DEFINE(buf, CONFIG_BT_MESH_MODELS_METADATA_PAGE_LEN);
+	size_t total_size;
+	int err;
+
+	total_size = bt_mesh_metadata_page_0_size();
+	LOG_DBG("bt/mesh/metadata total %d", total_size);
+
+	net_buf_simple_init(&buf, 0);
+	net_buf_simple_add_le16(&buf, total_size);
+
+	err = bt_mesh_metadata_get_page_0(&buf, 0);
+	if (err == -E2BIG) {
+		LOG_ERR("Metadata too large");
+		return err;
+	}
+	if (err) {
+		LOG_ERR("Failed to read models metadata: %d", err);
+		return err;
+	}
+
+	LOG_DBG("bt/mesh/metadata len %d", buf.len);
+
+	err = settings_save_one("bt/mesh/metadata", buf.data, buf.len);
+	if (err) {
+		LOG_ERR("Failed to store models metadata: %d", err);
+	} else {
+		LOG_DBG("Stored models metadata");
+	}
+
+	return err;
+}
+
+int bt_mesh_models_metadata_read(struct net_buf_simple *buf, size_t offset)
+{
+	NET_BUF_SIMPLE_DEFINE(stored_buf, CONFIG_BT_MESH_MODELS_METADATA_PAGE_LEN);
+	size_t original_len = buf->len;
+	int err;
+
+	if (!IS_ENABLED(CONFIG_BT_SETTINGS)) {
+		return -ENOTSUP;
+	}
+
+	net_buf_simple_init(&stored_buf, 0);
+
+	err = settings_load_subtree_direct("bt/mesh/metadata", read_comp_cb, &stored_buf);
+	if (err) {
+		LOG_ERR("Failed reading models metadata: %d", err);
+		return err;
+	}
+
+	/* First two bytes are total length */
+	offset += 2;
+
+	net_buf_simple_add_mem(buf, &stored_buf.data, MIN(net_buf_simple_tailroom(buf), 2));
+
+	if (offset >= stored_buf.len) {
+		return 0;
+	}
+
+	net_buf_simple_add_mem(buf, &stored_buf.data[offset],
+			       MIN(net_buf_simple_tailroom(buf), stored_buf.len - offset));
+
+	LOG_DBG("metadata read %d", buf->len);
+
+	if (buf->len == original_len) {
+		return -ENOENT;
+	}
+
+	return 0;
+}
+#endif
+
+static void models_metadata_clear(void)
+{
+	int err;
+
+	err = settings_delete("bt/mesh/metadata");
+	if (err) {
+		LOG_ERR("Failed to clear models metadata: %d", err);
+	} else {
+		LOG_DBG("Cleared models metadata");
+	}
+
+	atomic_clear_bit(bt_mesh.flags, BT_MESH_METADATA_DIRTY);
+}
+
+void bt_mesh_comp_data_pending_clear(void)
+{
+	comp_data_clear();
+	models_metadata_clear();
+}
+
+void bt_mesh_comp_data_clear(void)
+{
+	bt_mesh_settings_store_schedule(BT_MESH_SETTINGS_COMP_PENDING);
+}
+
+int bt_mesh_models_metadata_change_prepare(void)
+{
+#if !IS_ENABLED(CONFIG_BT_MESH_LARGE_COMP_DATA_SRV)
+	return -ENOTSUP;
+#endif
+	return bt_mesh_models_metadata_store();
 }
 
 static void commit_mod(struct bt_mesh_model *mod, struct bt_mesh_elem *elem,

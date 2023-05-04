@@ -10,7 +10,7 @@
 #include <zephyr/kernel.h>
 
 
-static int soc_init(const struct device *dev)
+static int soc_init(void)
 {
 	__IO uint32_t *girc_enable_set;
 

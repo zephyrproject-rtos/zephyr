@@ -38,9 +38,6 @@ ZTEST(os_mgmt_echo, test_echo)
 {
 	struct net_buf *nb;
 
-	/* Register os_mgmt mcumgr group */
-	os_mgmt_register_group();
-
 	/* Enable dummy SMP backend and ready for usage */
 	smp_dummy_enable();
 	smp_dummy_clear_state();

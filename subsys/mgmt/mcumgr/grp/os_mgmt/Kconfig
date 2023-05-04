@@ -2,15 +2,25 @@
 # Copyright Nordic Semiconductor ASA 2020-2022. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 
-menuconfig MCUMGR_CMD_OS_MGMT
+# The Kconfig file is dedicated to OS management group of
+# of MCUmgr subsystem and provides Kconfig options to configure
+# group commands behaviour and other aspects.
+#
+# Options defined in this file should be prefixed:
+#  MCUMGR_GRP_OS_ -- general group options;
+#
+# When adding Kconfig options, that control the same feature,
+# try to group them together by the same stem after prefix.
+
+menuconfig MCUMGR_GRP_OS
 	bool "Mcumgr handlers for OS management"
 	select REBOOT
 	help
 	  Enables mcumgr handlers for OS management
 
-if MCUMGR_CMD_OS_MGMT
+if MCUMGR_GRP_OS
 
-config OS_MGMT_RESET_MS
+config MCUMGR_GRP_OS_RESET_MS
 	int "Delay before executing reset command (ms)"
 	default 250
 	depends on REBOOT
@@ -19,7 +29,7 @@ config OS_MGMT_RESET_MS
 	  before performing the reset.  This delay allows time for the mcumgr
 	  response to be delivered.
 
-config MCUMGR_GRP_OS_OS_RESET_HOOK
+config MCUMGR_GRP_OS_RESET_HOOK
 	bool "Reset hook"
 	depends on REBOOT
 	depends on MCUMGR_MGMT_NOTIFICATION_HOOKS
@@ -32,13 +42,13 @@ config MCUMGR_GRP_OS_OS_RESET_HOOK
 	  and will allow the application to perform any required operations
 	  before accepting or declining the reset request.
 
-config OS_MGMT_TASKSTAT
+config MCUMGR_GRP_OS_TASKSTAT
 	bool "Support for taskstat command"
 	depends on THREAD_MONITOR
 
-if OS_MGMT_TASKSTAT
+if MCUMGR_GRP_OS_TASKSTAT
 
-config OS_MGMT_TASKSTAT_ONLY_SUPPORTED_STATS
+config MCUMGR_GRP_OS_TASKSTAT_ONLY_SUPPORTED_STATS
 	bool "Send only data gathered by Zephyr"
 	default y
 	help
@@ -48,27 +58,27 @@ config OS_MGMT_TASKSTAT_ONLY_SUPPORTED_STATS
 	  map entries for each listed task.
 	  Enabling this option will slightly reduce code size.
 
-choice OS_MGMT_TASKSTAT_THREAD_NAME_CHOICE
+choice MCUMGR_GRP_OS_TASKSTAT_THREAD_NAME_CHOICE
 	prompt "Characteristic used as thread name in taskstat"
-	default OS_MGMT_TASKSTAT_USE_THREAD_NAME_FOR_NAME if THREAD_NAME
-	default OS_MGMT_TASKSTAT_USE_THREAD_PRIO_FOR_NAME
+	default MCUMGR_GRP_OS_TASKSTAT_USE_THREAD_NAME_FOR_NAME if THREAD_NAME
+	default MCUMGR_GRP_OS_TASKSTAT_USE_THREAD_PRIO_FOR_NAME
 	help
 	  Select what will serve as thread name in "taskstat" response.
 	  By default taskstat responses use thread priority, when THREAD_NAME is disabled,
 
-	config OS_MGMT_TASKSTAT_USE_THREAD_NAME_FOR_NAME
+	config MCUMGR_GRP_OS_TASKSTAT_USE_THREAD_NAME_FOR_NAME
 		bool "Thread name"
 		depends on THREAD_NAME
 
-	config OS_MGMT_TASKSTAT_USE_THREAD_IDX_FOR_NAME
+	config MCUMGR_GRP_OS_TASKSTAT_USE_THREAD_IDX_FOR_NAME
 		bool "Thread index"
 
-	config OS_MGMT_TASKSTAT_USE_THREAD_PRIO_FOR_NAME
+	config MCUMGR_GRP_OS_TASKSTAT_USE_THREAD_PRIO_FOR_NAME
 		bool "Thread priority"
 
 endchoice
 
-config OS_MGMT_TASKSTAT_MAX_NUM_THREADS
+config MCUMGR_GRP_OS_TASKSTAT_MAX_NUM_THREADS
 	int "Predicted maximum number of threads to return on taskstat list"
 	default 50
 	help
@@ -76,7 +86,7 @@ config OS_MGMT_TASKSTAT_MAX_NUM_THREADS
 	  The value does not affect memory allocation, it is used by zcbor
 	  to figure out how to encode map depending on its predicted size.
 
-config OS_MGMT_TASKSTAT_THREAD_NAME_LEN
+config MCUMGR_GRP_OS_TASKSTAT_THREAD_NAME_LEN
 	int "Length of thread name to return in response"
 	default THREAD_MAX_NAME_LEN if THREAD_NAME
 	default 5 if !THREAD_NAME
@@ -91,7 +101,7 @@ config OS_MGMT_TASKSTAT_THREAD_NAME_LEN
 	  in such case this value should also take into account possible '-'
 	  sign.
 
-config OS_MGMT_TASKSTAT_SIGNED_PRIORITY
+config MCUMGR_GRP_OS_TASKSTAT_SIGNED_PRIORITY
 	bool "Signed priorities"
 	default y
 	help
@@ -101,7 +111,7 @@ config OS_MGMT_TASKSTAT_SIGNED_PRIORITY
 	  Disable this option if your client software is unable to properly decode and
 	  accept signed integers as priorities.
 
-config OS_MGMT_TASKSTAT_STACK_INFO
+config MCUMGR_GRP_OS_TASKSTAT_STACK_INFO
 	bool "Include stack info in taskstat responses"
 	depends on THREAD_STACK_INFO
 	help
@@ -115,12 +125,51 @@ config OS_MGMT_TASKSTAT_STACK_INFO
 
 endif
 
-config OS_MGMT_ECHO
+config MCUMGR_GRP_OS_ECHO
 	bool "Support for echo command"
 	default y
-	select MGMT_MIN_DECODING_LEVEL_2
+	select MCUMGR_SMP_CBOR_MIN_DECODING_LEVEL_2
 
-config OS_MGMT_MCUMGR_PARAMS
+config MCUMGR_GRP_OS_MCUMGR_PARAMS
 	bool "MCUMGR Parameters retrieval command"
+
+config MCUMGR_GRP_OS_INFO
+	bool "Support for info command"
+	help
+	  Can be used similarly to the unix/linux uname command for retrieving system information
+	  including kernel version, processor architecture and board name.
+
+if MCUMGR_GRP_OS_INFO
+
+config MCUMGR_GRP_OS_INFO_MAX_RESPONSE_SIZE
+	int "Maximum response size for info command"
+	default 256
+	range 32 512
+	help
+	  The maximum size of the response to the info command, will use a stack buffer of this
+	  size to store the data in. If the output response is too big then the output will not be
+	  present in the response, which will just contain the result code (rc) of memory error.
+
+config MCUMGR_GRP_OS_INFO_CUSTOM_HOOKS
+	bool "Custom info hooks"
+	depends on MCUMGR_MGMT_NOTIFICATION_HOOKS
+	help
+	  Supports adding custom command/character processing to the info command by using
+	  registered callbacks. Data can be appended to the struct provided in the callback.
+
+config MCUMGR_GRP_OS_INFO_BUILD_DATE_TIME
+	bool "Show build date and time"
+	help
+	  Will allow returning the build date and time of the firmware by using the info with
+	  format option 'b' (will also be returned with all responses by using 'a').
+
+	  Note: This will invalidate reproducible builds of the firmware as it will embed the
+	  build date/time in the output firmware image.
+
+endif
+
+module = MCUMGR_GRP_OS
+module-str = mcumgr_grp_os
+source "subsys/logging/Kconfig.template.log_config"
 
 endif

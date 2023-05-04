@@ -18,8 +18,6 @@ target_sources(app PRIVATE
 	       src/mesh/transition.c
 	       )
 
-target_sources_ifdef(CONFIG_MCUMGR app PRIVATE src/smp_svr.c)
-
 zephyr_include_directories(
 	src/
 	src/mesh

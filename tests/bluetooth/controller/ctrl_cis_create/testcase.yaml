@@ -1,5 +1,5 @@
 common:
-    tags: test_framework bluetooth bt_cis_create bt_ull_llcp
+  tags: bluetooth bt_cis_create bt_ull_llcp
 tests:
   bluetooth.controller.ctrl_cis_create.test:
-     type: unit
+    type: unit

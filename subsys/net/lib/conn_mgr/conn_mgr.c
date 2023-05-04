@@ -14,9 +14,10 @@ LOG_MODULE_REGISTER(conn_mgr, CONFIG_NET_CONNECTION_MANAGER_LOG_LEVEL);
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/net_mgmt.h>
 
+#include <zephyr/net/conn_mgr_connectivity.h>
 #include <conn_mgr.h>
 
-#if IS_ENABLED(CONFIG_NET_TC_THREAD_COOPERATIVE)
+#if defined(CONFIG_NET_TC_THREAD_COOPERATIVE)
 #define THREAD_PRIORITY K_PRIO_COOP(CONFIG_NUM_COOP_PRIORITIES - 1)
 #else
 #define THREAD_PRIORITY K_PRIO_PREEMPT(7)
@@ -174,6 +175,8 @@ static void conn_mgr_init_cb(struct net_if *iface, void *user_data)
 
 static void conn_mgr_handler(void)
 {
+	conn_mgr_conn_init();
+
 	conn_mgr_init_events_handler();
 
 	net_if_foreach(conn_mgr_init_cb, NULL);
@@ -200,11 +203,10 @@ void net_conn_mgr_resend_status(void)
 	}
 }
 
-static int conn_mgr_init(const struct device *dev)
+static int conn_mgr_init(void)
 {
 	int i;
 
-	ARG_UNUSED(dev);
 
 	for (i = 0; i < ARRAY_SIZE(iface_states); i++) {
 		iface_states[i] = 0;

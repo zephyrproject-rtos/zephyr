@@ -35,6 +35,10 @@
 			gpios = <&gpioe 1 GPIO_ACTIVE_HIGH>;
 			label = "User LD2";
 		};
+		red_led: led_2 {
+			gpios = <&gpiob 14 GPIO_ACTIVE_HIGH>;
+			label = "User LD3";
+		};
 	};
 
 	pwmleds {
@@ -57,12 +61,17 @@
 	aliases {
 		led0 = &green_led;
 		led1 = &yellow_led;
+		led2 = &red_led;
 		pwm-led0 = &red_pwm_led;
 		sw0 = &user_button;
 	};
 };
 
 &clk_lsi {
+	status = "okay";
+};
+
+&clk_hsi48 {
 	status = "okay";
 };
 
@@ -158,6 +167,12 @@
 		     &eth_txd0_pg13
 		     &eth_txd1_pb13>;
 	pinctrl-names = "default";
+};
+
+zephyr_udc0: &usbotg_hs {
+	pinctrl-0 = <&usb_otg_hs_dm_pa11 &usb_otg_hs_dp_pa12>;
+	pinctrl-names = "default";
+	status = "okay";
 };
 
 &rng {

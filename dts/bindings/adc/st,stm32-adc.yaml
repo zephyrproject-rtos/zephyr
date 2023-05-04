@@ -9,40 +9,54 @@ compatible: "st,stm32-adc"
 include: [adc-controller.yaml, pinctrl-device.yaml]
 
 properties:
-    reg:
-      required: true
+  reg:
+    required: true
 
-    clocks:
-      required: true
+  clocks:
+    required: true
 
-    interrupts:
-      required: true
+  interrupts:
+    required: true
 
-    "#io-channel-cells":
-      const: 1
+  "#io-channel-cells":
+    const: 1
 
-    pinctrl-0:
-      required: true
+  pinctrl-0:
+    required: true
 
-    pinctrl-names:
-      required: true
+  pinctrl-names:
+    required: true
 
-    vref-mv:
-      type: int
-      default: 3300
-      description: Indicates the reference voltage of the ADC in mV (on the target board).
+  vref-mv:
+    type: int
+    default: 3300
+    description: Indicates the reference voltage of the ADC in mV (on the target board).
 
-    has-temp-channel:
-      type: boolean
-      description: Indicates if the ADC has a dedicated internal temperature sensor channel.
+  temp-channel:
+    type: int
+    description: Indicates the ADC channel of the internal temperature sensor.
 
-    has-vref-channel:
-      type: boolean
-      description: Indicates if the ADC has a dedicated internal voltage reference channel.
+  vref-channel:
+    type: int
+    description: Indicates the ADC channel of the internal voltage reference.
 
-    has-vbat-channel:
-      type: boolean
-      description: Indicates if the ADC has a dedicated internal vbat monitoring channel.
+  vbat-channel:
+    type: int
+    description: Indicates the ADC channel of the internal vbat monitoring.
+
+  resolutions:
+    type: array
+    required: true
+    description: |
+      List of the resolutions supported by the ADC instance. They should be
+      values created with STM32_ADC_RES macro or similar. Their order is not
+      important. For example for STM32F4:
+        <STM32_ADC_RES(12, 0x00) STM32_ADC_RES(10, 0x01)
+         STM32_ADC_RES(8, 0x02)  STM32_ADC_RES(6, 0x03)>
+      The two parameters are the resolution (for example 10 bits) and the
+      corresponding register value (0x01 for a 10-bit resolution).
+      By design, these macros also contains all register information (address,
+      field offset and field mask) necessary to properly set the resolution.
 
 io-channel-cells:
-    - input
+  - input

@@ -27,8 +27,15 @@
 	chosen {
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
-		zephyr,sram = &sram2_3;
-		zephyr,flash = &sram1;
+
+		/*
+		 * These SRAM and flash settings give the entire available
+		 * code and data memories to this secure firmware image.
+		 * This may conflict with mps2_an521_remote firmware. Use
+		 * caution when using both targets simultaneously.
+		 */
+		zephyr,sram = &ssram2_3;
+		zephyr,flash = &ssram1;
 	};
 
 	leds {
@@ -77,22 +84,26 @@
 	/*
 	 * The memory regions defined below are according to AN521:
 	 * https://documentation-service.arm.com/static/5fa12fe9b1a7c5445f29017f
-	 * Please see tables from 3-1 to 3-4.
+	 *
+	 * Please see tables mentioned in individual comments below for details.
 	 */
 
-	sram1: memory@10000000 {
+	ssram1: memory@10000000 {
+		/* Table 3-2, row 6. */
 		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x10000000 DT_SIZE_M(4)>;
-		zephyr,memory-region = "SRAM1";
+		zephyr,memory-region = "SSRAM1";
 	};
 
-	sram2_3: memory@38000000 {
+	ssram2_3: memory@38000000 {
+		/* Table 3-4, rows 16 and 17. */
 		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x38000000 DT_SIZE_M(4)>;
-		zephyr,memory-region = "SRAM2_3";
+		zephyr,memory-region = "SSRAM2_3";
 	};
 
 	psram: memory@80000000 {
+		/* Table 3-6, row 1. */
 		device_type = "memory";
 		reg = <0x80000000 DT_SIZE_M(16)>;
 	};

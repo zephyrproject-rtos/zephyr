@@ -12,7 +12,7 @@
 
 #include <zephyr/logging/log.h>
 
-LOG_MODULE_REGISTER(bt_cap_acceptor, LOG_LEVEL_DBG);
+LOG_MODULE_REGISTER(bt_cap_acceptor, CONFIG_BT_CAP_ACCEPTOR_LOG_LEVEL);
 
 #if defined(CONFIG_BT_CAP_ACCEPTOR_SET_MEMBER)
 

@@ -26,6 +26,8 @@
 
 #include "ticker/ticker.h"
 
+#include "pdu_df.h"
+#include "pdu_vendor.h"
 #include "pdu.h"
 
 #include "lll.h"
@@ -87,9 +89,10 @@ static inline bool isr_rx_ci_adva_check(uint8_t tx_addr, uint8_t *addr,
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 #define PAYLOAD_BASED_FRAG_COUNT \
-	ceiling_fraction(CONFIG_BT_CTLR_ADV_DATA_LEN_MAX, \
-			 PDU_AC_PAYLOAD_SIZE_MAX)
-#define PAYLOAD_FRAG_COUNT MAX(PAYLOAD_BASED_FRAG_COUNT, BT_CTLR_DF_PER_ADV_CTE_NUM_MAX)
+		DIV_ROUND_UP(CONFIG_BT_CTLR_ADV_DATA_LEN_MAX, \
+			     PDU_AC_PAYLOAD_SIZE_MAX)
+#define PAYLOAD_FRAG_COUNT \
+		MAX(PAYLOAD_BASED_FRAG_COUNT, BT_CTLR_DF_PER_ADV_CTE_NUM_MAX)
 #define BT_CTLR_ADV_AUX_SET  CONFIG_BT_CTLR_ADV_AUX_SET
 #if defined(CONFIG_BT_CTLR_ADV_PERIODIC)
 #define BT_CTLR_ADV_SYNC_SET CONFIG_BT_CTLR_ADV_SYNC_SET
@@ -97,7 +100,8 @@ static inline bool isr_rx_ci_adva_check(uint8_t tx_addr, uint8_t *addr,
 #define BT_CTLR_ADV_SYNC_SET 0
 #endif /* !CONFIG_BT_CTLR_ADV_PERIODIC */
 #else
-#define PAYLOAD_FRAG_COUNT   1
+#define PAYLOAD_BASED_FRAG_COUNT 1
+#define PAYLOAD_FRAG_COUNT       (PAYLOAD_BASED_FRAG_COUNT)
 #define BT_CTLR_ADV_AUX_SET  0
 #define BT_CTLR_ADV_SYNC_SET 0
 #endif
@@ -111,9 +115,10 @@ static inline bool isr_rx_ci_adva_check(uint8_t tx_addr, uint8_t *addr,
  * extra for double buffers for these is kept as configurable, by increasing
  * CONFIG_BT_CTLR_ADV_DATA_BUF_MAX.
  */
-#define PDU_MEM_COUNT_MIN  ((BT_CTLR_ADV_SET * 3) + \
-			    ((BT_CTLR_ADV_AUX_SET + \
-			      BT_CTLR_ADV_SYNC_SET) * \
+#define PDU_MEM_COUNT_MIN  (((BT_CTLR_ADV_SET) * 3) + \
+			    ((BT_CTLR_ADV_AUX_SET) * \
+			     PAYLOAD_BASED_FRAG_COUNT) + \
+			    ((BT_CTLR_ADV_SYNC_SET) * \
 			     PAYLOAD_FRAG_COUNT))
 
 /* Maximum advertising PDU buffers to allocate, which is the sum of minimum
@@ -129,9 +134,11 @@ static inline bool isr_rx_ci_adva_check(uint8_t tx_addr, uint8_t *addr,
  *       PDU data is updated more frequently compare to the advertising
  *       interval with random delay included.
  */
-#define PDU_MEM_COUNT_MAX (PDU_MEM_COUNT_MIN + \
-			   ((1 + CONFIG_BT_CTLR_ADV_DATA_BUF_MAX) * \
-			    PAYLOAD_FRAG_COUNT))
+#define PDU_MEM_COUNT_MAX ((PDU_MEM_COUNT_MIN) + \
+			   ((BT_CTLR_ADV_SYNC_SET) * \
+			    PAYLOAD_FRAG_COUNT) + \
+			   (CONFIG_BT_CTLR_ADV_DATA_BUF_MAX * \
+			    PAYLOAD_BASED_FRAG_COUNT))
 #else /* !CONFIG_BT_CTLR_ADV_PERIODIC */
 /* NOTE: When Extended Advertising is supported but no Periodic Advertising
  *       then additional CONFIG_BT_CTLR_ADV_DATA_BUF_MAX amount of buffers is
@@ -142,7 +149,7 @@ static inline bool isr_rx_ci_adva_check(uint8_t tx_addr, uint8_t *addr,
  */
 #define PDU_MEM_COUNT_MAX (PDU_MEM_COUNT_MIN + \
 			   (CONFIG_BT_CTLR_ADV_DATA_BUF_MAX * \
-			    PAYLOAD_FRAG_COUNT))
+			    PAYLOAD_BASED_FRAG_COUNT))
 #endif /* !CONFIG_BT_CTLR_ADV_PERIODIC */
 #else /* !CONFIG_BT_CTLR_ADV_EXT */
 /* NOTE: When Extended Advertising is not supported then
@@ -156,8 +163,10 @@ static inline bool isr_rx_ci_adva_check(uint8_t tx_addr, uint8_t *addr,
  * each for Extended Advertising and Periodic Advertising times the number of
  * chained fragments that would get returned.
  */
-#define PDU_MEM_FIFO_COUNT (BT_CTLR_ADV_SET + 1 +\
-			    ((BT_CTLR_ADV_AUX_SET + BT_CTLR_ADV_SYNC_SET) * \
+#define PDU_MEM_FIFO_COUNT ((BT_CTLR_ADV_SET) + 1 + \
+			    ((BT_CTLR_ADV_AUX_SET) * \
+			     PAYLOAD_BASED_FRAG_COUNT) + \
+			    ((BT_CTLR_ADV_SYNC_SET) * \
 			     PAYLOAD_FRAG_COUNT))
 
 #define PDU_POOL_SIZE      (PDU_MEM_SIZE * PDU_MEM_COUNT_MAX)
@@ -723,8 +732,7 @@ int lll_adv_scan_req_report(struct lll_adv *lll, struct pdu_adv *pdu_adv_rx,
 	node_rx->hdr.rx_ftr.rl_idx = rl_idx;
 #endif
 
-	ull_rx_put(node_rx->hdr.link, node_rx);
-	ull_rx_sched();
+	ull_rx_put_sched(node_rx->hdr.link, node_rx);
 
 	return 0;
 }
@@ -1037,6 +1045,20 @@ static int prepare_cb(struct lll_prepare_param *p)
 #endif /* CONFIG_BT_CTLR_XTAL_ADVANCED */
 	{
 		uint32_t ret;
+
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+		if (lll->aux) {
+			/* fill in aux ptr in pdu */
+			ull_adv_aux_lll_auxptr_fill(pdu, lll);
+
+			/* NOTE: as first primary channel PDU does not use remainder, the packet
+			 * timer is started one tick in advance to start the radio with
+			 * microsecond precision, hence compensate for the higher start_us value
+			 * captured at radio start of the first primary channel PDU.
+			 */
+			lll->aux->ticks_pri_pdu_offset += 1U;
+		}
+#endif
 
 		ret = lll_prepare_done(lll);
 		LL_ASSERT(!ret);
@@ -1368,16 +1390,15 @@ static void isr_done(void *param)
 		/* TODO: add other info by defining a payload struct */
 		node_rx->type = NODE_RX_TYPE_ADV_INDICATION;
 
-		ull_rx_put(node_rx->link, node_rx);
-		ull_rx_sched();
+		ull_rx_put_sched(node_rx->link, node_rx);
 	}
 #endif /* CONFIG_BT_CTLR_ADV_INDICATION */
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT) || defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
-#if defined(CONFIG_BT_CTLR_ADV_EXT)
+#if defined(CONFIG_BT_CTLR_ADV_EXT) && !defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
 	/* If no auxiliary PDUs scheduled, generate primary radio event done */
 	if (!lll->aux)
-#endif /* CONFIG_BT_CTLR_ADV_EXT */
+#endif /* CONFIG_BT_CTLR_ADV_EXT && !CONFIG_BT_CTLR_JIT_SCHEDULING */
 
 	{
 		struct event_done_extra *extra;
@@ -1629,8 +1650,7 @@ static inline int isr_rx_pdu(struct lll_adv *lll,
 			ftr->extra = ull_pdu_rx_alloc();
 		}
 
-		ull_rx_put(rx->hdr.link, rx);
-		ull_rx_sched();
+		ull_rx_put_sched(rx->hdr.link, rx);
 
 		return 0;
 #endif /* CONFIG_BT_PERIPHERAL */

@@ -1,0 +1,8 @@
+# Xtensa board configuration
+
+# Copyright (c) 2022 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config  BOARD_INTEL_ADSP_ACE20_LNL
+	bool "Intel ADSP ACE 2.0 Lunar Lake PCH"
+	depends on SOC_SERIES_INTEL_ACE

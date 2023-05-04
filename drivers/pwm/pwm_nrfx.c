@@ -24,9 +24,7 @@ struct pwm_nrfx_config {
 	nrfx_pwm_t pwm;
 	nrfx_pwm_config_t initial_config;
 	nrf_pwm_sequence_t seq;
-#ifdef CONFIG_PINCTRL
 	const struct pinctrl_dev_config *pcfg;
-#endif
 };
 
 struct pwm_nrfx_data {
@@ -35,7 +33,6 @@ struct pwm_nrfx_data {
 	/* Bit mask indicating channels that need the PWM generation. */
 	uint8_t  pwm_needed;
 	uint8_t  prescaler;
-	uint8_t  initially_inverted;
 	bool     stop_requested;
 };
 /* Ensure the pwm_needed bit mask can accommodate all available channels. */
@@ -237,15 +234,14 @@ static int pwm_nrfx_init(const struct device *dev)
 {
 	const struct pwm_nrfx_config *config = dev->config;
 	struct pwm_nrfx_data *data = dev->data;
+	uint8_t initially_inverted = 0;
 
-#ifdef CONFIG_PINCTRL
 	int ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 
 	if (ret < 0) {
 		return ret;
 	}
 
-	data->initially_inverted = 0;
 	for (size_t i = 0; i < ARRAY_SIZE(data->seq_values); i++) {
 		uint32_t psel;
 
@@ -254,14 +250,13 @@ static int pwm_nrfx_init(const struct device *dev)
 			 * state of their outputs has been set by pinctrl (high
 			 * idle state means that the channel is inverted).
 			 */
-			data->initially_inverted |=
-				nrf_gpio_pin_out_read(psel) ? BIT(i) : 0;
+			initially_inverted |= nrf_gpio_pin_out_read(psel) ?
+					      BIT(i) : 0;
 		}
 	}
-#endif
 
 	for (size_t i = 0; i < ARRAY_SIZE(data->seq_values); i++) {
-		bool inverted = data->initially_inverted & BIT(i);
+		bool inverted = initially_inverted & BIT(i);
 
 		data->seq_values[i] = PWM_NRFX_CH_VALUE(0, inverted);
 	}
@@ -291,31 +286,25 @@ static void pwm_nrfx_uninit(const struct device *dev)
 static int pwm_nrfx_pm_action(const struct device *dev,
 			      enum pm_device_action action)
 {
-#ifdef CONFIG_PINCTRL
 	const struct pwm_nrfx_config *config = dev->config;
-#endif
 	int ret = 0;
 
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
-#ifdef CONFIG_PINCTRL
 		ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 		if (ret < 0) {
 			return ret;
 		}
-#endif
 		ret = pwm_nrfx_init(dev);
 		break;
 
 	case PM_DEVICE_ACTION_SUSPEND:
 		pwm_nrfx_uninit(dev);
 
-#ifdef CONFIG_PINCTRL
 		ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_SLEEP);
 		if (ret < 0) {
 			return ret;
 		}
-#endif
 		break;
 
 	default:
@@ -333,40 +322,15 @@ static int pwm_nrfx_pm_action(const struct device *dev,
 #define PWM(dev_idx) DT_NODELABEL(pwm##dev_idx)
 #define PWM_PROP(dev_idx, prop) DT_PROP(PWM(dev_idx), prop)
 
-#define PWM_CH_INVERTED(dev_idx, ch_idx) \
-	PWM_PROP(dev_idx, ch##ch_idx##_inverted)
-
-#define PWM_OUTPUT_PIN(dev_idx, ch_idx)					\
-	COND_CODE_1(DT_NODE_HAS_PROP(PWM(dev_idx), ch##ch_idx##_pin),	\
-		(PWM_PROP(dev_idx, ch##ch_idx##_pin) |			\
-			(PWM_CH_INVERTED(dev_idx, ch_idx)		\
-			 ? NRFX_PWM_PIN_INVERTED : 0)),			\
-		(NRFX_PWM_PIN_NOT_USED))
-
 #define PWM_NRFX_DEVICE(idx)						      \
-	NRF_DT_CHECK_PIN_ASSIGNMENTS(PWM(idx), 1,			      \
-				     ch0_pin, ch1_pin, ch2_pin, ch3_pin);     \
-	static struct pwm_nrfx_data pwm_nrfx_##idx##_data = {		      \
-		COND_CODE_1(CONFIG_PINCTRL, (),				      \
-			(.initially_inverted =				      \
-				(PWM_CH_INVERTED(idx, 0) ? BIT(0) : 0) |      \
-				(PWM_CH_INVERTED(idx, 1) ? BIT(1) : 0) |      \
-				(PWM_CH_INVERTED(idx, 2) ? BIT(2) : 0) |      \
-				(PWM_CH_INVERTED(idx, 3) ? BIT(3) : 0),))     \
-	};								      \
-	IF_ENABLED(CONFIG_PINCTRL, (PINCTRL_DT_DEFINE(PWM(idx))));	      \
+	NRF_DT_CHECK_NODE_HAS_PINCTRL_SLEEP(PWM(idx));			      \
+	static struct pwm_nrfx_data pwm_nrfx_##idx##_data;		      \
+	PINCTRL_DT_DEFINE(PWM(idx));					      \
 	static const struct pwm_nrfx_config pwm_nrfx_##idx##_config = {	      \
 		.pwm = NRFX_PWM_INSTANCE(idx),				      \
 		.initial_config = {					      \
-			COND_CODE_1(CONFIG_PINCTRL,			      \
-				(.skip_gpio_cfg = true,			      \
-				 .skip_psel_cfg = true,),		      \
-				(.output_pins = {			      \
-					PWM_OUTPUT_PIN(idx, 0),		      \
-					PWM_OUTPUT_PIN(idx, 1),		      \
-					PWM_OUTPUT_PIN(idx, 2),		      \
-					PWM_OUTPUT_PIN(idx, 3),		      \
-				 },))					      \
+			.skip_gpio_cfg = true,				      \
+			.skip_psel_cfg = true,				      \
 			.base_clock = NRF_PWM_CLK_1MHz,			      \
 			.count_mode = (PWM_PROP(idx, center_aligned)	      \
 				       ? NRF_PWM_MODE_UP_AND_DOWN	      \
@@ -377,8 +341,7 @@ static int pwm_nrfx_pm_action(const struct device *dev,
 		},							      \
 		.seq.values.p_raw = pwm_nrfx_##idx##_data.seq_values,	      \
 		.seq.length = NRF_PWM_CHANNEL_COUNT,			      \
-		IF_ENABLED(CONFIG_PINCTRL,				      \
-			(.pcfg = PINCTRL_DT_DEV_CONFIG_GET(PWM(idx)),))	      \
+		.pcfg = PINCTRL_DT_DEV_CONFIG_GET(PWM(idx)),		      \
 	};								      \
 	PM_DEVICE_DT_DEFINE(PWM(idx), pwm_nrfx_pm_action);		      \
 	DEVICE_DT_DEFINE(PWM(idx),					      \

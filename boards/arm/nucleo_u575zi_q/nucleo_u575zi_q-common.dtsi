@@ -32,6 +32,25 @@
 			gpios = <&gpioc 13 GPIO_ACTIVE_HIGH>;
 		};
 	};
+
+	pwmleds: pwmleds {
+		compatible = "pwm-leds";
+		status = "disabled";
+
+		pwm_led_1: green_led_1 {
+			pwms = <&pwm3 2 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+			label = "green led";
+		};
+
+		pwm_led_2: blue_led_1 {
+			pwms = <&pwm4 2 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+			label = "blue led";
+		};
+	};
+};
+
+&clk_hsi48 {
+	status = "okay";
 };
 
 &clk_lse {
@@ -108,6 +127,34 @@
 	pinctrl-0 = <&adc1_in1_pc0>;
 	pinctrl-names = "default";
 	status = "okay";
+};
+
+&adc4 {
+	pinctrl-0 = <&adc4_in18_pb0>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&timers3 {
+	st,prescaler = <10000>;
+	status = "okay";
+
+	pwm3: pwm {
+	pinctrl-0 = <&tim3_ch2_pc7>;
+		pinctrl-names = "default";
+		status = "okay";
+	};
+};
+
+&timers4 {
+	st,prescaler = <10000>;
+	status = "okay";
+
+	pwm4: pwm {
+		pinctrl-0 = <&tim4_ch2_pb7>;
+		pinctrl-names = "default";
+		status = "okay";
+	};
 };
 
 &iwdg {

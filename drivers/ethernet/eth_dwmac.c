@@ -161,7 +161,7 @@ static int dwmac_send(const struct device *dev, struct net_pkt *pkt)
 			k_sem_give(&p->free_tx_descs);
 			goto abort;
 		}
-		sys_cache_data_range(pinned->data, pinned->len, K_CACHE_WB);
+		sys_cache_data_flush_range(pinned->data, pinned->len);
 		p->tx_frags[d_idx] = pinned;
 		LOG_DBG("d[%d]: frag %p pinned %p len %d", d_idx,
 			frag->data, pinned->data, pinned->len);
@@ -367,7 +367,7 @@ static void dwmac_rx_refill_thread(void *arg1, void *unused1, void *unused2)
 			}
 			LOG_DBG("new frag[%d] at %p", d_idx, frag->data);
 			__ASSERT(frag->size == RX_FRAG_SIZE, "");
-			sys_cache_data_range(frag->data, frag->size, K_CACHE_INVD);
+			sys_cache_data_invd_range(frag->data, frag->size);
 			p->rx_frags[d_idx] = frag;
 		} else {
 			LOG_DBG("reusing frag[%d] at %p", d_idx, frag->data);

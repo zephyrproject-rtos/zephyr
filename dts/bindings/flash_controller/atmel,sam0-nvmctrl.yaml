@@ -5,7 +5,7 @@ compatible: "atmel,sam0-nvmctrl"
 include: flash-controller.yaml
 
 properties:
-    lock-regions:
-      type: int
-      required: true
-      description: Number of lock regions
+  lock-regions:
+    type: int
+    required: true
+    description: Number of lock regions

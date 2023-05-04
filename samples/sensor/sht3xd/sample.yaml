@@ -6,15 +6,14 @@
 
 sample:
   name: SHT3XD Sensor Sample
+common:
+  platform_allow: efr32mg_sltb004a frdm_k64f nrf51_ble400
+    nrf52840dk_nrf52840 nucleo_l476rg
+  integration_platforms:
+    - nrf52840dk_nrf52840
+  tags: sensors
+  build_only: true
 tests:
-  sample.sensor.sht3xd:
-    build_only: true
-    platform_allow: efr32mg_sltb004a frdm_k64f nrf51_ble400
-      nrf52840dk_nrf52840 nucleo_l476rg
-    tags: sensors
+  sample.sensor.sht3xd: {}
   sample.sensor.sht3xd.trigger:
-    build_only: true
     extra_args: CONF_FILE="trigger.conf"
-    platform_allow: efr32mg_sltb004a frdm_k64f nrf51_ble400
-      nrf52840dk_nrf52840 nucleo_l476rg
-    tags: sensors

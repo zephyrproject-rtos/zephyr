@@ -10,6 +10,7 @@ This sample is provided as an example to test the :ref:`npm6001_ek`. The sample
 provides a shell interface that allows to test multiple functionalities offered
 by the nPM6001 PMIC, including:
 
+- Regulators (BUCK0/1/2/3 and LDO0/1)
 - GPIO
 - Watchdog
 
@@ -40,6 +41,74 @@ building for the nRF52840 DK, the following command can be used:
 Note that this sample automatically sets ``SHIELD`` to ``npm6001_ek``. Once
 flashed, you should boot into the shell interface. The ``npm6001`` command is
 provided to test the PMIC. Below you can find details for each subcommand.
+
+Regulators
+==========
+
+The ``npm6001`` shell interface provides the ``regulator`` subcommand to test
+the regulators embedded in the PMIC (BUCK0/1/2/3 and LDO0/1). Below you can
+find some command examples.
+
+.. code-block:: bash
+
+   # list all the available regulators
+   npm6001 regulator list
+   BUCK0
+   BUCK1
+   BUCK2
+   BUCK3
+   LDO0
+   LDO1
+
+.. code-block:: bash
+
+   # list all the supported voltages by BUCK2
+   npm6001 regulator voltages BUCK2
+   1200 mV
+   1250 mV
+   1300 mV
+   1350 mV
+   1400 mV
+
+.. code-block:: bash
+
+   # enable BUCK3
+   npm6001 regulator enable BUCK3
+   # disable BUCK3
+   npm6001 regulator disable BUCK3
+
+.. code-block:: bash
+
+   # set BUCK3 voltage to exactly 3000 mV
+   npm6001 regulator set BUCK3 3000
+   # obtain the actual BUCK3 configured voltage
+   npm6001 regulator get BUCK3
+   3000 mV
+   # set BUCK0 voltage to a value between 2350 mV and 2450 mV
+   npm6001 regulator set BUCK0 2350 2450
+   # obtain the actual BUCK0 configured voltage
+   npm6001 regulator get BUCK3
+   2400 mV
+
+.. code-block:: bash
+
+   # set BUCK0 to hysteretic mode
+   npm6001 regulator modeset BUCK0 hys
+   # set BUCK0 to PWM mode
+   npm6001 regulator modeset BUCK0 pwm
+
+.. code-block:: bash
+
+   # get BUCK0 mode
+   npm6001 regulator modeget BUCK0
+   Hysteretic
+
+.. code-block:: bash
+
+   # get active errors on BUCK0
+   npm6001 regulator errors BUCK0
+   Overcurrent:    [ ]
+   Overtemp.:      [ ]
 
 GPIO
 ====

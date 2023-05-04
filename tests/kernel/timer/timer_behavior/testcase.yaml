@@ -6,4 +6,5 @@ tests:
       - mcu
     # Really want to exclude renode not the physical boards, but no good
     # way of doing so at the moment.
-    platform_exclude: hifive1 tflite-micro it8xxx2_evb m2gl025_miv mpfs_icicle hifive_unleashed mps2_an385 mps2_an521_ns
+    platform_exclude: hifive1 tflite-micro it8xxx2_evb m2gl025_miv mpfs_icicle hifive_unleashed
+      mps2_an385 mps2_an521_ns

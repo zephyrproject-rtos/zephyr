@@ -7,9 +7,8 @@
 #include <zephyr/devicetree.h>
 #include <fsl_device_registers.h>
 
-static int mimxrt685_evk_init(const struct device *dev)
+static int mimxrt685_evk_init(void)
 {
-	ARG_UNUSED(dev);
 
 /* flexcomm1 and flexcomm3 are configured to loopback the TX signal to RX */
 #if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm1), nxp_lpc_i2s, okay)) && \
@@ -43,6 +42,19 @@ static int mimxrt685_evk_init(const struct device *dev)
 #endif
 
 #endif
+
+#ifdef CONFIG_REBOOT
+	/*
+	 * The sys_reboot API calls NVIC_SystemReset. On the RT685, the warm
+	 * reset will not complete correctly unless the ROM toggles the
+	 * flash reset pin. We can control this behavior using the OTP shadow
+	 * register for OPT word BOOT_CFG1
+	 *
+	 * Set FLEXSPI_RESET_PIN_ENABLE=1, FLEXSPI_RESET_PIN= PIO2_12
+	 */
+	 OCOTP->OTP_SHADOW[97] = 0x314000;
+#endif /* CONFIG_REBOOT */
+
 	return 0;
 }
 

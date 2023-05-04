@@ -8,6 +8,20 @@
 
 / {
 	soc {
+		clocks {
+			clk_hsi48: clk-hsi48 {
+				#clock-cells = <0>;
+				compatible = "fixed-clock";
+				clock-frequency = <DT_FREQ_M(48)>;
+				status = "disabled";
+			};
+		};
+
+		rng: rng@50060800 {
+			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00040000>,
+				 <&rcc STM32_SRC_HSI48 CLK48_SEL(0)>;
+		};
+
 		i2c4: i2c@40008400 {
 			compatible = "st,stm32-i2c-v2";
 			clock-frequency = <I2C_BITRATE_STANDARD>;
@@ -32,13 +46,34 @@
 			};
 		};
 
-		adc3: adc@50040200 {
-			compatible = "st,stm32-adc";
-			reg = <0x50040200 0x100>;
-			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00002000>;
-			interrupts = <47 0>;
+		can2: can@40006800 {
+			compatible = "st,stm32-can";
+			reg = <0x40006800 0x400>;
+			interrupts = <86 0>, <87 0>, <88 0>, <89 0>;
+			interrupt-names = "TX", "RX0", "RX1", "SCE";
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x04000000>; //RCC_APB1ENR1_CAN2EN
 			status = "disabled";
-			#io-channel-cells = <1>;
+			sjw = <1>;
+			sample-point = <875>;
+		};
+
+		aes: aes@50060000 {
+			compatible = "st,stm32-aes";
+			reg = <0x50060000 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00010000>;
+			interrupts = <79 0>;
+			interrupt-names = "aes";
+			status = "disabled";
+		};
+
+		usbotg_fs: otgfs@50000000 {
+			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00001000>,
+				 <&rcc STM32_SRC_HSI48 CLK48_SEL(0)>;
+		};
+
+		sdmmc1: sdmmc@40012800 {
+			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00000400>,
+				 <&rcc STM32_SRC_HSI48 CLK48_SEL(0)>;
 		};
 	};
 

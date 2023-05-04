@@ -57,9 +57,8 @@ BT_GATT_SERVICE_DEFINE(bas,
 		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE),
 );
 
-static int bas_init(const struct device *dev)
+static int bas_init(void)
 {
-	ARG_UNUSED(dev);
 
 	return 0;
 }

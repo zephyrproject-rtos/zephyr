@@ -81,14 +81,9 @@ struct emul {
 		struct espi_emul *espi;
 		struct spi_emul *spi;
 	} bus;
+	/** Address of the API structure exposed by the emulator instance */
+	const void *backend_api;
 };
-
-/**
- * Emulators are aggregated into an array at link time, from which emulating
- * devices can find the emulators that they are to use.
- */
-extern const struct emul __emul_list_start[];
-extern const struct emul __emul_list_end[];
 
 /**
  * @brief Use the devicetree node identifier as a unique name.
@@ -120,14 +115,15 @@ extern const struct emul __emul_list_end[];
  * @param data_ptr emulator-specific data
  * @param cfg_ptr emulator-specific configuration data
  * @param bus_api emulator-specific bus api
+ * @param _backend_api emulator-specific backend api
  */
-#define EMUL_DT_DEFINE(node_id, init_fn, data_ptr, cfg_ptr, bus_api)                               \
+#define EMUL_DT_DEFINE(node_id, init_fn, data_ptr, cfg_ptr, bus_api, _backend_api)                 \
 	static struct Z_EMUL_BUS(node_id, i2c_emul, espi_emul, spi_emul)                           \
 		Z_EMUL_REG_BUS_IDENTIFIER(node_id) = {                                             \
 			.api = bus_api,                                                            \
 			.Z_EMUL_BUS(node_id, addr, chipsel, chipsel) = DT_REG_ADDR(node_id),       \
 	};                                                                                         \
-	const struct emul EMUL_DT_NAME_GET(node_id) __attribute__((__section__(".emulators")))     \
+	const STRUCT_SECTION_ITERABLE(emul, EMUL_DT_NAME_GET(node_id))                             \
 	__used = {                                                                                 \
 		.init = (init_fn),                                                                 \
 		.dev = DEVICE_DT_GET(node_id),                                                     \
@@ -137,11 +133,8 @@ extern const struct emul __emul_list_end[];
 				       EMUL_BUS_TYPE_SPI),                                         \
 		.bus = {.Z_EMUL_BUS(node_id, i2c, espi, spi) =                                     \
 				&(Z_EMUL_REG_BUS_IDENTIFIER(node_id))},                            \
+		.backend_api = (_backend_api),                                                     \
 	};
-
-#define Z_MAYBE_EMUL_DECLARE_INTERNAL(node_id) extern const struct emul EMUL_DT_NAME_GET(node_id);
-
-DT_FOREACH_STATUS_OKAY_NODE(Z_MAYBE_EMUL_DECLARE_INTERNAL);
 
 /**
  * @brief Like EMUL_DT_DEFINE(), but uses an instance of a DT_DRV_COMPAT compatible instead of a
@@ -170,7 +163,7 @@ DT_FOREACH_STATUS_OKAY_NODE(Z_MAYBE_EMUL_DECLARE_INTERNAL);
 #define EMUL_DT_GET(node_id) (&EMUL_DT_NAME_GET(node_id))
 
 /**
- * Set up a list of emulators
+ * @brief Set up a list of emulators
  *
  * @param dev Device the emulators are attached to (e.g. an I2C controller)
  * @return 0 if OK
@@ -192,12 +185,18 @@ int emul_init_for_bus(const struct device *dev);
  */
 const struct emul *emul_get_binding(const char *name);
 
-#ifdef __cplusplus
-}
-#endif /* __cplusplus */
-
 /**
  * @}
  */
+
+#if defined(CONFIG_HAS_DTS) || defined(__DOXYGEN__)
+#define Z_MAYBE_EMUL_DECLARE_INTERNAL(node_id) extern const struct emul EMUL_DT_NAME_GET(node_id);
+
+DT_FOREACH_STATUS_OKAY_NODE(Z_MAYBE_EMUL_DECLARE_INTERNAL);
+#endif /* CONFIG_HAS_DTS || __DOXYGEN__ */
+
+#ifdef __cplusplus
+}
+#endif /* __cplusplus */
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_EMUL_H_ */

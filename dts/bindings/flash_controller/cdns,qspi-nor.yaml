@@ -8,7 +8,7 @@ compatible: "cdns,qspi-nor"
 include: flash-controller.yaml
 
 properties:
-    clock-frequency:
-      type: int
-      required: true
-      description: clock frequency information for Cadence QSPI NOR Flash
+  clock-frequency:
+    type: int
+    required: true
+    description: clock frequency information for Cadence QSPI NOR Flash

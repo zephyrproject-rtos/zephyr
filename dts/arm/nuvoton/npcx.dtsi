@@ -7,6 +7,7 @@
 #include <arm/armv7-m.dtsi>
 
 /* Macros for device tree declarations of npcx soc family */
+#include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/clock/npcx_clock.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
@@ -352,6 +353,16 @@
 			#size-cells = <0>;
 			#vw-cells = <3>;
 			status = "disabled";
+		};
+
+		shi0: shi@4000f000 {
+			compatible = "nuvoton,npcx-shi";
+			reg = <0x4000f000 0x120>;
+			interrupts = <18 1>;
+			clocks = <&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL5 1>;
+			status = "disabled";
+			buffer-rx-size = <128>;
+			buffer-tx-size = <128>;
 		};
 
 		host_sub: lpc@400c1000 {

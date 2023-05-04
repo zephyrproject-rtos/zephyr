@@ -20,6 +20,27 @@
 
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
+#ifdef CONFIG_ARM64_SAFE_EXCEPTION_STACK
+K_KERNEL_PINNED_STACK_ARRAY_DEFINE(z_arm64_safe_exception_stacks,
+				   CONFIG_MP_MAX_NUM_CPUS,
+				   CONFIG_ARM64_SAFE_EXCEPTION_STACK_SIZE);
+
+void z_arm64_safe_exception_stack_init(void)
+{
+	int cpu_id;
+	char *safe_exc_sp;
+
+	cpu_id = arch_curr_cpu()->id;
+	safe_exc_sp = Z_KERNEL_STACK_BUFFER(z_arm64_safe_exception_stacks[cpu_id]) +
+		      CONFIG_ARM64_SAFE_EXCEPTION_STACK_SIZE;
+	arch_curr_cpu()->arch.safe_exception_stack = (uint64_t)safe_exc_sp;
+	write_sp_el0((uint64_t)safe_exc_sp);
+
+	arch_curr_cpu()->arch.current_stack_limit = 0UL;
+	arch_curr_cpu()->arch.corrupted_sp = 0UL;
+}
+#endif
+
 #ifdef CONFIG_USERSPACE
 Z_EXC_DECLARE(z_arm64_user_string_nlen);
 

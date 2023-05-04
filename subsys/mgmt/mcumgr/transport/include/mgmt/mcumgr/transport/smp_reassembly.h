@@ -42,8 +42,9 @@ void smp_reassembly_init(struct smp_transport *smpt);
  *
  * @return	number of expected bytes left to complete the packet, 0 means buffer is complete
  *		and no more fragments are expected;
- *		-ENOSR if a packet length, read from header, is bigger than CONFIG_MCUMGR_BUF_SIZE,
- *		which means there is no way to fit it in the configured buffer;
+ *		-ENOSR if a packet length, read from header, is bigger than
+ *              CONFIG_MCUMGR_TRANSPORT_NETBUF_SIZE, which means there is no way to fit it in
+ *              the configured buffer;
  *		-EOVERFLOW if attempting to add a fragment that would make complete packet larger
  *		than expected;
  *		-ENOMEM if failed to allocate a new buffer for packet assembly;
@@ -110,7 +111,7 @@ int smp_reassembly_drop(struct smp_transport *smpt);
  * Note: for efficiency there is no NULL check on @p smpt pointer and it is caller's responsibility
  * to validate the pointer before passing it to this function.
  *
- * @return	pointer to "user data" of CONFIG_MCUMGR_BUF_USER_DATA_SIZE size;
+ * @return	pointer to "user data" of CONFIG_MCUMGR_TRANSPORT_NETBUF_USER_DATA_SIZE size;
  *		NULL if no re-assembly in progress.
  */
 void *smp_reassembly_get_ud(const struct smp_transport *smpt);

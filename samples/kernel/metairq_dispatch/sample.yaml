@@ -3,11 +3,11 @@ sample:
     MetaIRQ thread
   name: MetaIRQ Dispatch
 common:
-    harness: console
-    harness_config:
-      type: one_line
-      regex:
-        - "MetaIRQ Test Complete"
+  harness: console
+  harness_config:
+    type: one_line
+    regex:
+      - "MetaIRQ Test Complete"
 
 # Note that native_posix architectures are filtered, they require
 # instrumentation (e.g. a k_busy_wait()) inside the worker threads

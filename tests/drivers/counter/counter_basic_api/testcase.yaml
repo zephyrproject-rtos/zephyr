@@ -10,5 +10,7 @@ tests:
     depends_on: counter
     platform_allow: nrf52840dk_nrf52840
     timeout: 400
-    extra_args: >
-      OVERLAY_CONFIG="zli.conf;boards/nrf52840dk_nrf52840_zli.conf"
+    extra_configs:
+      - CONFIG_ZERO_LATENCY_IRQS=y
+    extra_args:
+      DTC_OVERLAY_FILE="boards/nrf52840dk_nrf52840.overlay;boards/nrf52840dk_nrf52840_zli.overlay"

@@ -11,7 +11,7 @@ tests:
       - CONFIG_NET_SOCKETS_CAN_RECEIVERS=1
     harness_config:
       type: multi_line
-      ordered: True
+      ordered: true
       regex:
         - "(.*)\\[0\\] CAN frame: IDE 0x0 RTR 0x0 ID 0x1 DLC 0x8"
         - "(.*)f0 f1 f2 f3 f4 f5 f6 f7"
@@ -20,7 +20,7 @@ tests:
       - CONFIG_NET_SOCKETS_CAN_RECEIVERS=2
     harness_config:
       type: multi_line
-      ordered: True
+      ordered: true
       regex:
         - "(.*)\\[0\\] CAN frame: IDE 0x0 RTR 0x0 ID 0x1 DLC 0x8"
         - "(.*)f0 f1 f2 f3 f4 f5 f6 f7"

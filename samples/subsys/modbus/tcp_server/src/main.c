@@ -217,7 +217,7 @@ static int modbus_tcp_connection(int client)
 	return modbus_tcp_reply(client, &tmp_adu);
 }
 
-void main(void)
+int main(void)
 {
 	int serv;
 	struct sockaddr_in bind_addr;
@@ -225,19 +225,19 @@ void main(void)
 
 	if (init_modbus_server()) {
 		LOG_ERR("Modbus TCP server initialization failed");
-		return;
+		return 0;
 	}
 
 	if (init_leds()) {
 		LOG_ERR("Modbus TCP server initialization failed");
-		return;
+		return 0;
 	}
 
 	serv = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 
 	if (serv < 0) {
 		LOG_ERR("error: socket: %d", errno);
-		return;
+		return 0;
 	}
 
 	bind_addr.sin_family = AF_INET;
@@ -246,12 +246,12 @@ void main(void)
 
 	if (bind(serv, (struct sockaddr *)&bind_addr, sizeof(bind_addr)) < 0) {
 		LOG_ERR("error: bind: %d", errno);
-		return;
+		return 0;
 	}
 
 	if (listen(serv, 5) < 0) {
 		LOG_ERR("error: listen: %d", errno);
-		return;
+		return 0;
 	}
 
 	LOG_INF("Started MODBUS TCP server example on port %d", MODBUS_TCP_PORT);
@@ -284,4 +284,5 @@ void main(void)
 		LOG_INF("Connection from %s closed, errno %d",
 			addr_str, rc);
 	}
+	return 0;
 }

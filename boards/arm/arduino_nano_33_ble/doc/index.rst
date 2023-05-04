@@ -103,6 +103,13 @@ For example
 
     west flash --bossac=$HOME/.arduino15/packages/arduino/tools/bossac/1.9.1-arduino2/bossac
 
+On Windows you need to use the :file:`bossac.exe` from the `Arduino IDE`_
+You will also need to specify the COM port using the --bossac-port argument:
+
+.. code-block:: bash
+
+    west flash --bossac=%USERPROFILE%\AppData\Local\Arduino15\packages\arduino\tools\bossac\1.9.1-arduino2\bossac.exe --bossac-port="COMx"
+
 Flashing
 ========
 
@@ -145,6 +152,57 @@ Type the following command will start debugging.
    :maybe-skip-config:
    :goals: debug
 
+Debugging with TRACE32 (GDB Front-End)
+======================================
+
+Lauterbach provides `GDB Debug version TRACE32 for Arduino Nano 33 BLE`_.
+That license ties to Arduino Nano 33 BLE hardware serial number,
+it also works with the ZephyrRTOS.
+
+Follow the instruction of the tutorial for Arduino
+`Lauterbach TRACE32 GDB Front-End Debugger for Nano 33 BLE`
+to install the TRACE32.
+
+After installing the TRACE32, You should set the environmental variable ``T32_DIR``.
+If you installed TRACE32 into the home directory, run the following command.
+(It is a good idea to put in the login script.)
+
+.. code-block:: bash
+
+    export T32_DIR="~/T32Arduino"
+
+
+The TRACE32 is `TRACE32 as GDB Front-End`_ version.
+Required to run the GDB server before launching TRACE32 with the following command.
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/basic/blinky
+   :board: arduino_nano_33_ble
+   :goals: debugserver
+   :compact:
+
+Execute the following command after launching the GDB server to run the TRACE32
+and connect the GDB server.
+
+.. code-block:: bash
+
+    west debug --runner=trace32 -- gdbRemote=:3333
+
+The TRACE32 script handles arguments after the ``--`` sign.
+You can set the following options.
+
+========== ========== ==================================================================
+      Name Required?  Description
+---------- ---------- ------------------------------------------------------------------
+ gdbRemote  Required  | Set the GDB server address or device file of the serial port.
+                      | It can take <hostname>:<port> or <devicename>.
+                      | e.g.) ``gdbRemote=localhost:3333``, ``gdbRemote=/dev/ttyACM0``
+  terminal  Optional  | Set the device file of the serial port connected to the target console.
+                      | e.g.) ``terminal=/dev/ttyACM1``
+userScript  Optional  | Set user script that runs after system script execute done.
+                      | e.g.) ``userScript="./user.cmm"``
+========== ========== ==================================================================
+
 References
 **********
 
@@ -161,3 +219,15 @@ References
 
 .. _schematic:
     https://content.arduino.cc/assets/NANO33BLE_V2.0_sch.pdf
+
+.. _GDB Debug version TRACE32 for Arduino Nano 33 BLE:
+    https://www.lauterbach.com/frames.html?register_arduino.php
+
+.. _Lauterbach TRACE32 GDB Front-End Debugger for Nano 33 BLE:
+    https://docs.arduino.cc/tutorials/nano-33-ble-sense/trace-32
+
+.. _TRACE32 as GDB Front-End:
+    https://www2.lauterbach.com/pdf/frontend_gdb.pdf
+
+.. _Arduino IDE:
+	https://www.arduino.cc/en/Main/Software

@@ -12,7 +12,9 @@
 #include <zephyr/kernel_structs.h>
 #include <zephyr/mgmt/mcumgr/mgmt/mgmt.h>
 #include <zephyr/mgmt/mcumgr/smp/smp.h>
+#include <zephyr/mgmt/mcumgr/mgmt/handlers.h>
 #include <zephyr/mgmt/mcumgr/grp/os_mgmt/os_mgmt.h>
+#include <zephyr/logging/log.h>
 #include <assert.h>
 #include <string.h>
 #include <stdio.h>
@@ -27,6 +29,20 @@
 #ifdef CONFIG_MCUMGR_MGMT_NOTIFICATION_HOOKS
 #include <zephyr/mgmt/mcumgr/mgmt/callbacks.h>
 #endif
+
+#ifdef CONFIG_MCUMGR_GRP_OS_INFO
+#include <stdio.h>
+#include <version.h>
+#include <os_mgmt_processor.h>
+#include <mgmt/mcumgr/util/zcbor_bulk.h>
+#if defined(CONFIG_NET_HOSTNAME_ENABLE)
+#include <zephyr/net/hostname.h>
+#elif defined(CONFIG_BT)
+#include <zephyr/bluetooth/bluetooth.h>
+#endif
+#endif
+
+LOG_MODULE_REGISTER(mcumgr_os_grp, CONFIG_MCUMGR_GRP_OS_LOG_LEVEL);
 
 #ifdef CONFIG_REBOOT
 static void os_mgmt_reset_work_handler(struct k_work *work);
@@ -45,7 +61,7 @@ static K_TIMER_DEFINE(os_mgmt_reset_timer, os_mgmt_reset_cb, NULL);
  */
 #define TASKSTAT_COLUMNS_MAX	20
 
-#ifdef CONFIG_OS_MGMT_TASKSTAT
+#ifdef CONFIG_MCUMGR_GRP_OS_TASKSTAT
 /* Thread iterator information passing structure */
 struct thread_iterator_info {
 	zcbor_state_t *zse;
@@ -54,10 +70,23 @@ struct thread_iterator_info {
 };
 #endif
 
+/* Specifies what the "all" ('a') of info parameter shows */
+#define OS_MGMT_INFO_FORMAT_ALL                                                               \
+	OS_MGMT_INFO_FORMAT_KERNEL_NAME | OS_MGMT_INFO_FORMAT_NODE_NAME |                     \
+		OS_MGMT_INFO_FORMAT_KERNEL_RELEASE | OS_MGMT_INFO_FORMAT_KERNEL_VERSION |     \
+		(IS_ENABLED(CONFIG_MCUMGR_GRP_OS_INFO_BUILD_DATE_TIME) ?                      \
+			OS_MGMT_INFO_FORMAT_BUILD_DATE_TIME : 0) |                            \
+		OS_MGMT_INFO_FORMAT_MACHINE | OS_MGMT_INFO_FORMAT_PROCESSOR |                 \
+		OS_MGMT_INFO_FORMAT_HARDWARE_PLATFORM | OS_MGMT_INFO_FORMAT_OPERATING_SYSTEM
+
+#ifdef CONFIG_MCUMGR_GRP_OS_INFO_BUILD_DATE_TIME
+extern uint8_t *MCUMGR_GRP_OS_INFO_BUILD_DATE_TIME;
+#endif
+
 /**
  * Command handler: os echo
  */
-#ifdef CONFIG_OS_MGMT_ECHO
+#ifdef CONFIG_MCUMGR_GRP_OS_ECHO
 static int os_mgmt_echo(struct smp_streamer *ctxt)
 {
 	struct zcbor_string value = { 0 };
@@ -94,9 +123,9 @@ static int os_mgmt_echo(struct smp_streamer *ctxt)
 }
 #endif
 
-#ifdef CONFIG_OS_MGMT_TASKSTAT
+#ifdef CONFIG_MCUMGR_GRP_OS_TASKSTAT
 
-#ifdef CONFIG_OS_MGMT_TASKSTAT_USE_THREAD_NAME_FOR_NAME
+#ifdef CONFIG_MCUMGR_GRP_OS_TASKSTAT_USE_THREAD_NAME_FOR_NAME
 static inline bool
 os_mgmt_taskstat_encode_thread_name(zcbor_state_t *zse, int idx,
 				    const struct k_thread *thread)
@@ -105,8 +134,8 @@ os_mgmt_taskstat_encode_thread_name(zcbor_state_t *zse, int idx,
 
 	ARG_UNUSED(idx);
 
-	if (name_len > CONFIG_OS_MGMT_TASKSTAT_THREAD_NAME_LEN) {
-		name_len = CONFIG_OS_MGMT_TASKSTAT_THREAD_NAME_LEN;
+	if (name_len > CONFIG_MCUMGR_GRP_OS_TASKSTAT_THREAD_NAME_LEN) {
+		name_len = CONFIG_MCUMGR_GRP_OS_TASKSTAT_THREAD_NAME_LEN;
 	}
 
 	return zcbor_tstr_encode_ptr(zse, thread->name, name_len);
@@ -117,11 +146,11 @@ static inline bool
 os_mgmt_taskstat_encode_thread_name(zcbor_state_t *zse, int idx,
 				    const struct k_thread *thread)
 {
-	char thread_name[CONFIG_OS_MGMT_TASKSTAT_THREAD_NAME_LEN + 1];
+	char thread_name[CONFIG_MCUMGR_GRP_OS_TASKSTAT_THREAD_NAME_LEN + 1];
 
-#if defined(CONFIG_OS_MGMT_TASKSTAT_USE_THREAD_PRIO_FOR_NAME)
+#if defined(CONFIG_MCUMGR_GRP_OS_TASKSTAT_USE_THREAD_PRIO_FOR_NAME)
 	idx = (int)thread->base.prio;
-#elif defined(CONFIG_OS_MGMT_TASKSTAT_USE_THREAD_IDX_FOR_NAME)
+#elif defined(CONFIG_MCUMGR_GRP_OS_TASKSTAT_USE_THREAD_IDX_FOR_NAME)
 	ARG_UNUSED(thread);
 #else
 #error Unsupported option for taskstat thread name
@@ -139,7 +168,7 @@ static inline bool
 os_mgmt_taskstat_encode_stack_info(zcbor_state_t *zse,
 				   const struct k_thread *thread)
 {
-#ifdef CONFIG_OS_MGMT_TASKSTAT_STACK_INFO
+#ifdef CONFIG_MCUMGR_GRP_OS_TASKSTAT_STACK_INFO
 	size_t stack_size = 0;
 	size_t stack_used = 0;
 	bool ok = true;
@@ -163,7 +192,7 @@ os_mgmt_taskstat_encode_stack_info(zcbor_state_t *zse,
 	return ok;
 #else
 	return true;
-#endif /* CONFIG_OS_MGMT_TASKSTAT_STACK_INFO */
+#endif /* CONFIG_MCUMGR_GRP_OS_TASKSTAT_STACK_INFO */
 }
 
 static inline bool
@@ -179,7 +208,7 @@ os_mgmt_taskstat_encode_runtime_info(zcbor_state_t *zse,
 
 	ok = zcbor_tstr_put_lit(zse, "runtime") &&
 	zcbor_uint64_put(zse, thread_stats.execution_cycles);
-#elif !defined(CONFIG_OS_MGMT_TASKSTAT_ONLY_SUPPORTED_STATS)
+#elif !defined(CONFIG_MCUMGR_GRP_OS_TASKSTAT_ONLY_SUPPORTED_STATS)
 	ok = zcbor_tstr_put_lit(zse, "runtime") &&
 	zcbor_uint32_put(zse, 0);
 #endif
@@ -191,7 +220,7 @@ static inline bool os_mgmt_taskstat_encode_unsupported(zcbor_state_t *zse)
 {
 	bool ok = true;
 
-	if (!IS_ENABLED(CONFIG_OS_MGMT_TASKSTAT_ONLY_SUPPORTED_STATS)) {
+	if (!IS_ENABLED(CONFIG_MCUMGR_GRP_OS_TASKSTAT_ONLY_SUPPORTED_STATS)) {
 		ok = zcbor_tstr_put_lit(zse, "cswcnt")		&&
 		     zcbor_uint32_put(zse, 0)			&&
 		     zcbor_tstr_put_lit(zse, "last_checkin")	&&
@@ -209,7 +238,7 @@ static inline bool
 os_mgmt_taskstat_encode_priority(zcbor_state_t *zse, const struct k_thread *thread)
 {
 	return (zcbor_tstr_put_lit(zse, "prio")					&&
-		IS_ENABLED(CONFIG_OS_MGMT_TASKSTAT_SIGNED_PRIORITY) ?
+		IS_ENABLED(CONFIG_MCUMGR_GRP_OS_TASKSTAT_SIGNED_PRIORITY) ?
 		zcbor_int32_put(zse, (int)thread->base.prio) :
 		zcbor_uint32_put(zse, (unsigned int)thread->base.prio) & 0xff);
 }
@@ -257,19 +286,23 @@ static int os_mgmt_taskstat_read(struct smp_streamer *ctxt)
 	};
 
 	zcbor_tstr_put_lit(zse, "tasks");
-	zcbor_map_start_encode(zse, CONFIG_OS_MGMT_TASKSTAT_MAX_NUM_THREADS);
+	zcbor_map_start_encode(zse, CONFIG_MCUMGR_GRP_OS_TASKSTAT_MAX_NUM_THREADS);
 
 	/* Iterate the list of tasks, encoding each. */
 	k_thread_foreach(os_mgmt_taskstat_encode_one, (void *)&iterator_ctx);
 
+	if (!iterator_ctx.ok) {
+		LOG_ERR("Task iterator status is not OK");
+	}
+
 	if (!iterator_ctx.ok ||
-	    !zcbor_map_end_encode(zse, CONFIG_OS_MGMT_TASKSTAT_MAX_NUM_THREADS)) {
+	    !zcbor_map_end_encode(zse, CONFIG_MCUMGR_GRP_OS_TASKSTAT_MAX_NUM_THREADS)) {
 		return MGMT_ERR_EMSGSIZE;
 	}
 
 	return 0;
 }
-#endif /* CONFIG_OS_MGMT_TASKSTAT */
+#endif /* CONFIG_MCUMGR_GRP_OS_TASKSTAT */
 
 #ifdef CONFIG_REBOOT
 /**
@@ -288,7 +321,7 @@ static void os_mgmt_reset_cb(struct k_timer *timer)
 
 static int os_mgmt_reset(struct smp_streamer *ctxt)
 {
-#if defined(CONFIG_MCUMGR_GRP_OS_OS_RESET_HOOK)
+#if defined(CONFIG_MCUMGR_GRP_OS_RESET_HOOK)
 	int rc = mgmt_callback_notify(MGMT_EVT_OP_OS_MGMT_RESET, NULL, 0);
 
 	if (rc != MGMT_ERR_EOK) {
@@ -296,13 +329,13 @@ static int os_mgmt_reset(struct smp_streamer *ctxt)
 	}
 #endif
 
-	k_timer_start(&os_mgmt_reset_timer, K_MSEC(CONFIG_OS_MGMT_RESET_MS),
+	k_timer_start(&os_mgmt_reset_timer, K_MSEC(CONFIG_MCUMGR_GRP_OS_RESET_MS),
 		      K_NO_WAIT);
 	return 0;
 }
 #endif
 
-#ifdef CONFIG_OS_MGMT_MCUMGR_PARAMS
+#ifdef CONFIG_MCUMGR_GRP_OS_MCUMGR_PARAMS
 static int
 os_mgmt_mcumgr_params(struct smp_streamer *ctxt)
 {
@@ -310,21 +343,317 @@ os_mgmt_mcumgr_params(struct smp_streamer *ctxt)
 	bool ok;
 
 	ok = zcbor_tstr_put_lit(zse, "buf_size")		&&
-	     zcbor_uint32_put(zse, CONFIG_MCUMGR_BUF_SIZE)	&&
+	     zcbor_uint32_put(zse, CONFIG_MCUMGR_TRANSPORT_NETBUF_SIZE)	&&
 	     zcbor_tstr_put_lit(zse, "buf_count")		&&
-	     zcbor_uint32_put(zse, CONFIG_MCUMGR_BUF_COUNT);
+	     zcbor_uint32_put(zse, CONFIG_MCUMGR_TRANSPORT_NETBUF_COUNT);
 
 	return ok ? MGMT_ERR_EOK : MGMT_ERR_EMSGSIZE;
 }
 #endif
 
+#ifdef CONFIG_MCUMGR_GRP_OS_INFO
+/**
+ * Command handler: os info
+ */
+static int os_mgmt_info(struct smp_streamer *ctxt)
+{
+	struct zcbor_string format = { 0 };
+	uint8_t output[CONFIG_MCUMGR_GRP_OS_INFO_MAX_RESPONSE_SIZE] = { 0 };
+	zcbor_state_t *zse = ctxt->writer->zs;
+	zcbor_state_t *zsd = ctxt->reader->zs;
+	uint32_t format_bitmask = 0;
+	bool prior_output = false;
+	size_t i = 0;
+	size_t decoded;
+	bool custom_os_name = false;
+	int rc;
+	uint16_t output_length = 0;
+	uint16_t valid_formats = 0;
+
+	struct zcbor_map_decode_key_val fs_info_decode[] = {
+		ZCBOR_MAP_DECODE_KEY_DECODER("format", zcbor_tstr_decode, &format),
+	};
+
+#ifdef CONFIG_MCUMGR_GRP_OS_INFO_CUSTOM_HOOKS
+	struct os_mgmt_info_check check_data = {
+		.format = &format,
+		.format_bitmask = &format_bitmask,
+		.valid_formats = &valid_formats,
+		.custom_os_name = &custom_os_name,
+	};
+
+	struct os_mgmt_info_append append_data = {
+		.format_bitmask = &format_bitmask,
+		.all_format_specified = false,
+		.output = output,
+		.output_length = &output_length,
+		.buffer_size = sizeof(output),
+		.prior_output = &prior_output,
+	};
+#endif
+
+	if (zcbor_map_decode_bulk(zsd, fs_info_decode, ARRAY_SIZE(fs_info_decode), &decoded)) {
+		return MGMT_ERR_EINVAL;
+	}
+
+	/* Process all input characters in format value */
+	while (i < format.len) {
+		switch (format.value[i]) {
+		case 'a': {
+#ifdef CONFIG_MCUMGR_GRP_OS_INFO_CUSTOM_HOOKS
+			append_data.all_format_specified = true;
+#endif
+
+			format_bitmask = OS_MGMT_INFO_FORMAT_ALL;
+			++valid_formats;
+			break;
+		}
+		case 's': {
+			format_bitmask |= OS_MGMT_INFO_FORMAT_KERNEL_NAME;
+			++valid_formats;
+			break;
+		}
+		case 'n': {
+			format_bitmask |= OS_MGMT_INFO_FORMAT_NODE_NAME;
+			++valid_formats;
+			break;
+		}
+		case 'r': {
+			format_bitmask |= OS_MGMT_INFO_FORMAT_KERNEL_RELEASE;
+			++valid_formats;
+			break;
+		}
+		case 'v': {
+			format_bitmask |= OS_MGMT_INFO_FORMAT_KERNEL_VERSION;
+			++valid_formats;
+			break;
+		}
+#ifdef CONFIG_MCUMGR_GRP_OS_INFO_BUILD_DATE_TIME
+		case 'b': {
+			format_bitmask |= OS_MGMT_INFO_FORMAT_BUILD_DATE_TIME;
+			++valid_formats;
+			break;
+		}
+#endif
+		case 'm': {
+			format_bitmask |= OS_MGMT_INFO_FORMAT_MACHINE;
+			++valid_formats;
+			break;
+		}
+		case 'p': {
+			format_bitmask |= OS_MGMT_INFO_FORMAT_PROCESSOR;
+			++valid_formats;
+			break;
+		}
+		case 'i': {
+			format_bitmask |= OS_MGMT_INFO_FORMAT_HARDWARE_PLATFORM;
+			++valid_formats;
+			break;
+		}
+		case 'o': {
+			format_bitmask |= OS_MGMT_INFO_FORMAT_OPERATING_SYSTEM;
+			++valid_formats;
+			break;
+		}
+		default: {
+			break;
+		}
+		}
+
+		++i;
+	}
+
+#ifdef CONFIG_MCUMGR_GRP_OS_INFO_CUSTOM_HOOKS
+	/* Run callbacks to see if any additional handlers will add options */
+	(void)mgmt_callback_notify(MGMT_EVT_OP_OS_MGMT_INFO_CHECK, &check_data,
+				   sizeof(check_data));
+#endif
+
+	if (valid_formats != format.len) {
+		/* A provided format specifier is not valid */
+		return MGMT_ERR_EINVAL;
+	} else if (format_bitmask == 0) {
+		/* If no value is provided, use default of kernel name */
+		format_bitmask = OS_MGMT_INFO_FORMAT_KERNEL_NAME;
+	}
+
+	/* Process all options in order and append to output string */
+	if (format_bitmask & OS_MGMT_INFO_FORMAT_KERNEL_NAME) {
+		rc = snprintf(output, (sizeof(output) - output_length), "Zephyr");
+
+		if (rc < 0 || rc >= (sizeof(output) - output_length)) {
+			goto fail;
+		} else {
+			output_length += (uint16_t)rc;
+		}
+
+		prior_output = true;
+	}
+
+	if (format_bitmask & OS_MGMT_INFO_FORMAT_NODE_NAME) {
+		/* Get hostname, if enabled */
+#if defined(CONFIG_NET_HOSTNAME_ENABLE)
+		/* From network */
+		rc = snprintf(&output[output_length], (sizeof(output) - output_length),
+			      (prior_output == true ? " %s" : "%s"), net_hostname_get());
+#elif defined(CONFIG_BT)
+		/* From Bluetooth */
+		rc = snprintf(&output[output_length], (sizeof(output) - output_length),
+			      (prior_output == true ? " %s" : "%s"), bt_get_name());
+#else
+		/* Not available */
+		rc = snprintf(&output[output_length], (sizeof(output) - output_length),
+			      "%sunknown", (prior_output == true ? " " : ""));
+#endif
+
+		if (rc < 0 || rc >= (sizeof(output) - output_length)) {
+			goto fail;
+		} else {
+			output_length += (uint16_t)rc;
+		}
+
+		prior_output = true;
+		format_bitmask &= ~OS_MGMT_INFO_FORMAT_NODE_NAME;
+	}
+
+	if (format_bitmask & OS_MGMT_INFO_FORMAT_KERNEL_RELEASE) {
+#ifdef BUILD_VERSION
+		rc = snprintf(&output[output_length], (sizeof(output) - output_length),
+			      (prior_output == true ? " %s" : "%s"), STRINGIFY(BUILD_VERSION));
+#else
+		rc = snprintf(&output[output_length], (sizeof(output) - output_length),
+			      "%sunknown", (prior_output == true ? " " : ""));
+#endif
+
+		if (rc < 0 || rc >= (sizeof(output) - output_length)) {
+			goto fail;
+		} else {
+			output_length += (uint16_t)rc;
+		}
+
+		prior_output = true;
+		format_bitmask &= ~OS_MGMT_INFO_FORMAT_KERNEL_RELEASE;
+	}
+
+	if (format_bitmask & OS_MGMT_INFO_FORMAT_KERNEL_VERSION) {
+		rc = snprintf(&output[output_length], (sizeof(output) - output_length),
+			      (prior_output == true ? " %s" : "%s"), KERNEL_VERSION_STRING);
+
+		if (rc < 0 || rc >= (sizeof(output) - output_length)) {
+			goto fail;
+		} else {
+			output_length += (uint16_t)rc;
+		}
+
+		prior_output = true;
+		format_bitmask &= ~OS_MGMT_INFO_FORMAT_KERNEL_VERSION;
+	}
+
+#ifdef CONFIG_MCUMGR_GRP_OS_INFO_BUILD_DATE_TIME
+	if (format_bitmask & OS_MGMT_INFO_FORMAT_BUILD_DATE_TIME) {
+		rc = snprintf(&output[output_length], (sizeof(output) - output_length),
+			      (prior_output == true ? " %s" : "%s"),
+			      MCUMGR_GRP_OS_INFO_BUILD_DATE_TIME);
+
+		if (rc < 0 || rc >= (sizeof(output) - output_length)) {
+			goto fail;
+		} else {
+			output_length += (uint16_t)rc;
+		}
+
+		prior_output = true;
+		format_bitmask &= ~OS_MGMT_INFO_FORMAT_BUILD_DATE_TIME;
+	}
+#endif
+
+	if (format_bitmask & OS_MGMT_INFO_FORMAT_MACHINE) {
+		rc = snprintf(&output[output_length], (sizeof(output) - output_length),
+			      (prior_output == true ? " %s" : "%s"), CONFIG_ARCH);
+
+		if (rc < 0 || rc >= (sizeof(output) - output_length)) {
+			goto fail;
+		} else {
+			output_length += (uint16_t)rc;
+		}
+
+		prior_output = true;
+		format_bitmask &= ~OS_MGMT_INFO_FORMAT_MACHINE;
+	}
+
+	if (format_bitmask & OS_MGMT_INFO_FORMAT_PROCESSOR) {
+		rc = snprintf(&output[output_length], (sizeof(output) - output_length),
+			      (prior_output == true ? " %s" : "%s"), PROCESSOR_NAME);
+
+		if (rc < 0 || rc >= (sizeof(output) - output_length)) {
+			goto fail;
+		} else {
+			output_length += (uint16_t)rc;
+		}
+
+		prior_output = true;
+		format_bitmask &= ~OS_MGMT_INFO_FORMAT_PROCESSOR;
+	}
+
+	if (format_bitmask & OS_MGMT_INFO_FORMAT_HARDWARE_PLATFORM) {
+		rc = snprintf(&output[output_length], (sizeof(output) - output_length),
+			      (prior_output == true ? " %s%s%s" : "%s%s%s"), CONFIG_BOARD,
+			      (sizeof(CONFIG_BOARD_REVISION) > 1 ? "@" : ""),
+			      CONFIG_BOARD_REVISION);
+
+		if (rc < 0 || rc >= (sizeof(output) - output_length)) {
+			goto fail;
+		} else {
+			output_length += (uint16_t)rc;
+		}
+
+		prior_output = true;
+		format_bitmask &= ~OS_MGMT_INFO_FORMAT_HARDWARE_PLATFORM;
+	}
+
+	/* If custom_os_name is not set (by extension code) then return the default OS name of
+	 * Zephyr
+	 */
+	if (format_bitmask & OS_MGMT_INFO_FORMAT_OPERATING_SYSTEM && custom_os_name == false) {
+		rc = snprintf(&output[output_length], (sizeof(output) - output_length),
+			      "%sZephyr", (prior_output == true ? " " : ""));
+
+		if (rc < 0 || rc >= (sizeof(output) - output_length)) {
+			goto fail;
+		} else {
+			output_length += (uint16_t)rc;
+		}
+
+		prior_output = true;
+		format_bitmask &= ~OS_MGMT_INFO_FORMAT_OPERATING_SYSTEM;
+	}
+
+#ifdef CONFIG_MCUMGR_GRP_OS_INFO_CUSTOM_HOOKS
+	/* Call custom handler command for additional output/processing */
+	rc = mgmt_callback_notify(MGMT_EVT_OP_OS_MGMT_INFO_APPEND, &append_data,
+				  sizeof(append_data));
+
+	if (rc != MGMT_ERR_EOK) {
+		return rc;
+	}
+#endif
+
+	if (zcbor_tstr_put_lit(zse, "output") &&
+	    zcbor_tstr_encode_ptr(zse, output, output_length)) {
+		return MGMT_ERR_EOK;
+	}
+
+fail:
+	return MGMT_ERR_EMSGSIZE;
+}
+#endif
+
 static const struct mgmt_handler os_mgmt_group_handlers[] = {
-#ifdef CONFIG_OS_MGMT_ECHO
+#ifdef CONFIG_MCUMGR_GRP_OS_ECHO
 	[OS_MGMT_ID_ECHO] = {
 		os_mgmt_echo, os_mgmt_echo
 	},
 #endif
-#ifdef CONFIG_OS_MGMT_TASKSTAT
+#ifdef CONFIG_MCUMGR_GRP_OS_TASKSTAT
 	[OS_MGMT_ID_TASKSTAT] = {
 		os_mgmt_taskstat_read, NULL
 	},
@@ -334,9 +663,14 @@ static const struct mgmt_handler os_mgmt_group_handlers[] = {
 		NULL, os_mgmt_reset
 	},
 #endif
-#ifdef CONFIG_OS_MGMT_MCUMGR_PARAMS
+#ifdef CONFIG_MCUMGR_GRP_OS_MCUMGR_PARAMS
 	[OS_MGMT_ID_MCUMGR_PARAMS] = {
 		os_mgmt_mcumgr_params, NULL
+	},
+#endif
+#ifdef CONFIG_MCUMGR_GRP_OS_INFO
+	[OS_MGMT_ID_INFO] = {
+		os_mgmt_info, NULL
 	},
 #endif
 };
@@ -349,12 +683,9 @@ static struct mgmt_group os_mgmt_group = {
 	.mg_group_id = MGMT_GROUP_ID_OS,
 };
 
-void os_mgmt_register_group(void)
+static void os_mgmt_register_group(void)
 {
 	mgmt_register_group(&os_mgmt_group);
 }
 
-void os_mgmt_module_init(void)
-{
-	os_mgmt_register_group();
-}
+MCUMGR_HANDLER_DEFINE(os_mgmt, os_mgmt_register_group);

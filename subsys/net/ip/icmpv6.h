@@ -89,6 +89,14 @@ struct net_icmpv6_nd_opt_route_info {
 	 */
 } __packed;
 
+struct net_icmpv6_nd_opt_rdnss {
+	uint16_t reserved;
+	uint32_t lifetime;
+	/* Variable-length DNS server address follows,
+	 * depending on the option length.
+	 */
+} __packed;
+
 struct net_icmpv6_echo_req {
 	uint16_t identifier;
 	uint16_t sequence;

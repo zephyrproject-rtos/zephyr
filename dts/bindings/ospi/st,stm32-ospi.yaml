@@ -25,47 +25,52 @@ include: [base.yaml, pinctrl-device.yaml]
 bus: ospi
 
 properties:
-    reg:
-      required: true
+  reg:
+    required: true
 
-    interrupts:
-      required: true
+  interrupts:
+    required: true
 
-    pinctrl-0:
-      required: true
+  pinctrl-0:
+    required: true
 
-    pinctrl-names:
-      required: true
+  pinctrl-names:
+    required: true
 
-    clock-names:
-      required: true
+  clock-names:
+    required: true
 
-    dmas:
-      description: |
-        Optional DMA channel specifier, required for DMA transactions.
-        For example dmas for TX/RX on OSPI
-           dmas = <&dma1 5 41 0x10000>;
+  dmas:
+    description: |
+      Optional DMA channel specifier, required for DMA transactions.
+      For example dmas for TX/RX on OSPI
+         dmas = <&dma1 5 41 0x10000>;
 
-        With, in each cell of the dmas specifier:
-        - &dma1: dma controller phandle
-        - 5: channel number (0 to Max-Channel minus 1). From 0 to 15 on stm32u5x.
-        - 41: slot number (request which could be given by the DMAMUX)
-        - 0x10000: channel configuration (only for srce/dest data size, priority)
+      With, in each cell of the dmas specifier:
+      - &dma1: dma controller phandle
+      - 5: channel number (0 to Max-Channel minus 1). From 0 to 15 on stm32u5x.
+      - 41: slot number (request which could be given by the DMAMUX)
+      - 0x10000: channel configuration (only for srce/dest data size, priority)
 
-        Notes:
-          - On series supporting DMAMUX, the DMA phandle should be provided
-            but DMAMUX node should also be enabled in the DTS.
-          - For channel configuration, only the config bits priority and
-            periph/mem datasize are used. The periph/mem datasize must be equal,
-            0 is a correct value.
-           - There is no Fifo used by this DMA peripheral.
+      Notes:
+        - On series supporting DMAMUX, the DMA phandle should be provided
+          but DMAMUX node should also be enabled in the DTS.
+        - For channel configuration, only the config bits priority and
+          periph/mem datasize are used. The periph/mem datasize must be equal,
+          0 is a correct value.
+         - There is no Fifo used by this DMA peripheral.
 
-        For example dmas for TX/RX on OSPI
-           dmas = <&dma1 5 41 0x10000>;
+      For example dmas for TX/RX on OSPI
+         dmas = <&dma1 5 41 0x10000>;
 
-    dma-names:
-      description: |
-        DMA channel name. If DMA should be used, expected value is "tx_rx".
+  dma-names:
+    description: |
+      DMA channel name. If DMA should be used, expected value is "tx_rx".
 
-        For example
-           dma-names = "tx_rx";
+      For example
+         dma-names = "tx_rx";
+
+  dlyb-bypass:
+    type: boolean
+    description: |
+      Enables Delay Block (DLYB) Bypass.

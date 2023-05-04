@@ -77,7 +77,7 @@ The following code waits on the condition variable.
     K_MUTEX_DEFINE(mutex);
     K_CONDVAR_DEFINE(condvar)
 
-    void main(void)
+    int main(void)
     {
         k_mutex_lock(&mutex, K_FOREVER);
 

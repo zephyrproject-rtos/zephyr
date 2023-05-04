@@ -1,23 +1,28 @@
 common:
   tags: drivers w1 userspace
   harness: ztest
+  platform_allow: nucleo_g0b1re nrf52840dk_nrf52840
+  integration_platforms:
+    - nrf52840dk_nrf52840
 
 tests:
   drivers.w1.w1-serial:
     depends_on: arduino_serial
     extra_args: DTC_OVERLAY_FILE=w1_serial.overlay
-    platform_allow: nucleo_g0b1re nrf52840dk_nrf52840
     harness_config:
       fixture: w1_serial_idle
+  drivers.w1.ds2482-800:
+    depends_on: arduino_i2c
+    extra_args: DTC_OVERLAY_FILE=ds2482-800.overlay
+    harness_config:
+      fixture: w1_ds2482_800_idle
   drivers.w1.ds2484:
     depends_on: arduino_i2c
     extra_args: DTC_OVERLAY_FILE=ds2484.overlay
-    platform_allow: nucleo_g0b1re nrf52840dk_nrf52840
     harness_config:
       fixture: w1_ds2484_idle
   drivers.w1.ds2485:
     depends_on: arduino_i2c
     extra_args: DTC_OVERLAY_FILE=ds2485.overlay
-    platform_allow: nucleo_g0b1re nrf52840dk_nrf52840
     harness_config:
       fixture: w1_ds2485_idle

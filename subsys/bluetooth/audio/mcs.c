@@ -25,6 +25,7 @@
 
 #include "audio_internal.h"
 #include "media_proxy_internal.h"
+#include "mcs_internal.h"
 
 #include <zephyr/logging/log.h>
 
@@ -39,7 +40,25 @@ LOG_MODULE_REGISTER(bt_mcs, CONFIG_BT_MCS_LOG_LEVEL);
  */
 BUILD_ASSERT(CONFIG_BT_L2CAP_TX_BUF_COUNT >= 10, "Too few L2CAP buffers");
 
+static void notify(const struct bt_uuid *uuid, const void *data, uint16_t len);
+
 static struct media_proxy_sctrl_cbs cbs;
+
+static struct client_state {
+	bool player_name_changed;
+	bool icon_url_changed;
+	bool track_title_changed;
+} clients[CONFIG_BT_MAX_CONN];
+
+static void disconnected(struct bt_conn *conn, uint8_t reason)
+{
+	/* Clear data on disconnect */
+	memset(&clients[bt_conn_index(conn)], 0, sizeof(struct client_state));
+}
+
+BT_CONN_CB_DEFINE(conn_callbacks) = {
+	.disconnected = disconnected,
+};
 
 /* Functions for reading and writing attributes, and for keeping track
  * of attribute configuration changes.
@@ -49,9 +68,16 @@ static ssize_t read_player_name(struct bt_conn *conn,
 				const struct bt_gatt_attr *attr, void *buf,
 				uint16_t len, uint16_t offset)
 {
+	struct client_state *client = &clients[bt_conn_index(conn)];
 	const char *name = media_proxy_sctrl_get_player_name();
 
-	LOG_DBG("Player name read: %s", name);
+	LOG_DBG("Player name read: %s (offset %u)", name, offset);
+
+	if (offset == 0) {
+		client->player_name_changed = false;
+	} else if (client->player_name_changed) {
+		return BT_GATT_ERR(BT_MCS_ERR_LONG_VAL_CHANGED);
+	}
 
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, name,
 				 strlen(name));
@@ -80,9 +106,16 @@ static ssize_t read_icon_url(struct bt_conn *conn,
 			     const struct bt_gatt_attr *attr, void *buf,
 			     uint16_t len, uint16_t offset)
 {
+	struct client_state *client = &clients[bt_conn_index(conn)];
 	const char *url = media_proxy_sctrl_get_icon_url();
 
 	LOG_DBG("Icon URL read, offset: %d, len:%d, URL: %s", offset, len, url);
+
+	if (offset == 0) {
+		client->icon_url_changed = false;
+	} else if (client->icon_url_changed) {
+		return BT_GATT_ERR(BT_MCS_ERR_LONG_VAL_CHANGED);
+	}
 
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, url,
 				 strlen(url));
@@ -97,9 +130,16 @@ static ssize_t read_track_title(struct bt_conn *conn,
 				const struct bt_gatt_attr *attr,
 				void *buf, uint16_t len, uint16_t offset)
 {
+	struct client_state *client = &clients[bt_conn_index(conn)];
 	const char *title = media_proxy_sctrl_get_track_title();
 
 	LOG_DBG("Track title read, offset: %d, len:%d, title: %s", offset, len, title);
+
+	if (offset == 0) {
+		client->track_title_changed = false;
+	} else if (client->track_title_changed) {
+		return BT_GATT_ERR(BT_MCS_ERR_LONG_VAL_CHANGED);
+	}
 
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, title,
 				 strlen(title));
@@ -500,6 +540,21 @@ static ssize_t write_control_point(struct bt_conn *conn,
 	LOG_DBG("Opcode: %d", command.opcode);
 	command.use_param = false;
 
+	if (!BT_MCS_VALID_OP(command.opcode)) {
+		/* MCS does not specify what to return in case of an error - Only what to notify*/
+
+		const struct mpl_cmd_ntf cmd_ntf = {
+			.requested_opcode = command.opcode,
+			.result_code = BT_MCS_OPC_NTF_NOT_SUPPORTED,
+		};
+
+		LOG_DBG("Opcode 0x%02X is invalid", command.opcode);
+
+		notify(BT_UUID_MCS_MEDIA_CONTROL_POINT, &cmd_ntf, sizeof(cmd_ntf));
+
+		return BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
+	}
+
 	if (len == sizeof(command.opcode) + sizeof(command.param)) {
 		memcpy(&command.param,
 		       (char *)buf + sizeof(command.opcode),
@@ -775,35 +830,92 @@ static void notify(const struct bt_uuid *uuid, const void *data, uint16_t len)
 	}
 }
 
+struct string_ntf {
+	const struct bt_uuid *uuid;
+	const char *str;
+};
+
+static void notify_string_conn_cb(struct bt_conn *conn, void *data)
+{
+	struct client_state *client = &clients[bt_conn_index(conn)];
+	const struct string_ntf *ntf = (struct string_ntf *)data;
+	const uint8_t att_header_size = 3; /* opcode + handle */
+	struct bt_conn_info info;
+	uint16_t att_mtu;
+	uint16_t maxlen;
+	int err;
+
+	err = bt_conn_get_info(conn, &info);
+	if (err != 0) {
+		LOG_ERR("Failed to get conn info: %d", err);
+		return;
+	}
+
+	if (info.state != BT_CONN_STATE_CONNECTED) {
+		/* Not connected */
+		return;
+	}
+
+	att_mtu = bt_gatt_get_mtu(conn);
+	__ASSERT(att_mtu > att_header_size, "Could not get valid ATT MTU");
+	maxlen = att_mtu - att_header_size; /* Subtract opcode and handle */
+
+	/* Send notifcation potentially truncated to the MTU */
+	err = bt_gatt_notify_uuid(conn, ntf->uuid, mcs.attrs, (void *)ntf->str,
+				  MIN(strlen(ntf->str), maxlen));
+	if (err != 0) {
+		LOG_ERR("Notification error: %d", err);
+	}
+
+	if (bt_uuid_cmp(ntf->uuid, BT_UUID_MCS_TRACK_TITLE) == 0) {
+		client->track_title_changed = true;
+	} else if (bt_uuid_cmp(ntf->uuid, BT_UUID_MCS_PLAYER_NAME) == 0) {
+		client->player_name_changed = true;
+	} /* icon URL is handled separately as that cannot be notified */
+}
+
 /* Helper function to notify UTF8 string values
  * Will truncate string to fit within notification if required.
  * The string must be null-terminated.
  */
 static void notify_string(const struct bt_uuid *uuid, const char *str)
 {
-	/* TODO:
-	 * This function will need to get the ATT_MTU to know what length to
-	 * truncate the string to.  But the ATT_MTU is per connection, and MCS
-	 * is not connection-aware yet.
-	 * For now: Truncate according to the default ATT_MTU, so that
-	 * notifications will go through
-	 */
+	struct string_ntf ntf = { .uuid = uuid, .str = str };
 
-	/* TODO: Use bt_gatt_get_mtu() to find the ATT_MTU */
-	const uint16_t att_mtu = 23;
-	const uint16_t maxlen = att_mtu - 1 - 2; /* Subtract opcode and handle */
-	const uint16_t len = strlen(str);
+	bt_conn_foreach(BT_CONN_TYPE_LE, notify_string_conn_cb, &ntf);
+}
 
-	if (len > maxlen) {
-		/* Truncation requires, and gives, a null-terminated string. */
-		char trunc_str[maxlen + 1];
+void media_proxy_sctrl_player_name_cb(const char *name)
+{
+	LOG_DBG("Notifying player name: %s", name);
 
-		utf8_lcpy(trunc_str, str, sizeof(trunc_str));
-		/* Null-termination is not sent on air */
-		notify(uuid, (void *)trunc_str, strlen(trunc_str));
-	} else {
-		notify(uuid, (void *)str, len);
+	notify_string(BT_UUID_MCS_PLAYER_NAME, name);
+}
+
+static void mark_icon_url_changed_cb(struct bt_conn *conn, void *data)
+{
+	struct client_state *client = &clients[bt_conn_index(conn)];
+	struct bt_conn_info info;
+	int err;
+
+	err = bt_conn_get_info(conn, &info);
+	if (err != 0) {
+		LOG_ERR("Failed to get conn info: %d", err);
+		return;
 	}
+
+	if (info.state != BT_CONN_STATE_CONNECTED) {
+		/* Not connected */
+		return;
+	}
+
+	client->icon_url_changed = true;
+}
+
+void media_proxy_sctrl_icon_url_cb(const char *name)
+{
+
+	bt_conn_foreach(BT_CONN_TYPE_LE, mark_icon_url_changed_cb, NULL);
 }
 
 void media_proxy_sctrl_track_changed_cb(void)
@@ -967,6 +1079,8 @@ int bt_mcs_init(struct bt_ots_cb *ots_cbs)
 	}
 
 	/* Set up the callback structure */
+	cbs.player_name          = media_proxy_sctrl_player_name_cb;
+	cbs.icon_url             = media_proxy_sctrl_icon_url_cb;
 	cbs.track_changed        = media_proxy_sctrl_track_changed_cb;
 	cbs.track_title          = media_proxy_sctrl_track_title_cb;
 	cbs.track_duration       = media_proxy_sctrl_track_duration_cb;

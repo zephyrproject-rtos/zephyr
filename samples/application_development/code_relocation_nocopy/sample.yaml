@@ -4,9 +4,11 @@ sample:
 tests:
   sample.application_development.code_relocation_nocopy:
     platform_allow: qemu_cortex_m3 nrf5340dk_nrf5340_cpuapp
+    integration_platforms:
+      - qemu_cortex_m3
     tags: linker
     harness: console
     harness_config:
       type: one_line
       regex:
-      - "Hello World! (.*)"
+        - "Hello World! (.*)"

@@ -15,6 +15,8 @@ LOG_MODULE_REGISTER(LOG_DOMAIN);
 #include <zephyr/kernel.h>
 #include <zephyr/spinlock.h>
 #include <zephyr/devicetree.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/device_runtime.h>
 
 #include <zephyr/drivers/dai.h>
 #include <zephyr/irq.h>
@@ -154,44 +156,69 @@ static inline void dai_dmic_release_ownership(const struct dai_intel_dmic *dmic)
 
 #endif /* CONFIG_DAI_DMIC_HAS_OWNERSHIP */
 
+static inline uint32_t dai_dmic_base(const struct dai_intel_dmic *dmic)
+{
+#ifdef CONFIG_SOC_INTEL_ACE20_LNL
+	return dmic->hdamldmic_base;
+#else
+	return dmic->shim_base;
+#endif
+}
+
 #if CONFIG_DAI_DMIC_HAS_MULTIPLE_LINE_SYNC
 static inline void dai_dmic_set_sync_period(uint32_t period, const struct dai_intel_dmic *dmic)
 {
 	uint32_t val = CONFIG_DAI_DMIC_HW_IOCLK / period - 1;
-
+	uint32_t base = dai_dmic_base(dmic);
 	/* DMIC Change sync period */
-	sys_write32(sys_read32(dmic->shim_base + DMICSYNC_OFFSET) | DMICSYNC_SYNCPRD(val),
-			dmic->shim_base + DMICSYNC_OFFSET);
-	sys_write32(sys_read32(dmic->shim_base + DMICSYNC_OFFSET) | DMICSYNC_CMDSYNC,
-			dmic->shim_base + DMICSYNC_OFFSET);
+#ifdef CONFIG_SOC_INTEL_ACE20_LNL
+	sys_write32(sys_read32(base + DMICSYNC_OFFSET) | DMICSYNC_SYNCPRD(val),
+		    base + DMICSYNC_OFFSET);
+	sys_write32(sys_read32(base + DMICSYNC_OFFSET) | DMICSYNC_SYNCPU,
+		    base + DMICSYNC_OFFSET);
+	while (sys_read32(base + DMICSYNC_OFFSET) & DMICSYNC_SYNCPU) {
+		k_sleep(K_USEC(100));
+	}
+	sys_write32(sys_read32(base + DMICSYNC_OFFSET) | DMICSYNC_CMDSYNC,
+		    base + DMICSYNC_OFFSET);
+#else /* All other CAVS and ACE platforms */
+	sys_write32(sys_read32(base + DMICSYNC_OFFSET) | DMICSYNC_SYNCPRD(val),
+		    base + DMICSYNC_OFFSET);
+	sys_write32(sys_read32(base + DMICSYNC_OFFSET) | DMICSYNC_CMDSYNC,
+		    base + DMICSYNC_OFFSET);
+#endif
 }
 
 static inline void dai_dmic_clear_sync_period(const struct dai_intel_dmic *dmic)
 {
+	uint32_t base = dai_dmic_base(dmic);
 	/* DMIC Clean sync period */
-	sys_write32(sys_read32(dmic->shim_base + DMICSYNC_OFFSET) & ~DMICSYNC_SYNCPRD(0x0000),
-			dmic->shim_base + DMICSYNC_OFFSET);
-	sys_write32(sys_read32(dmic->shim_base + DMICSYNC_OFFSET) & ~DMICSYNC_CMDSYNC,
-			dmic->shim_base + DMICSYNC_OFFSET);
-
+	sys_write32(sys_read32(base + DMICSYNC_OFFSET) & ~DMICSYNC_SYNCPRD(0x0000),
+			base + DMICSYNC_OFFSET);
+	sys_write32(sys_read32(base + DMICSYNC_OFFSET) & ~DMICSYNC_CMDSYNC,
+			base + DMICSYNC_OFFSET);
 }
 
 /* Preparing for command synchronization on multiple link segments */
 static inline void dai_dmic_sync_prepare(const struct dai_intel_dmic *dmic)
 {
-	sys_write32(sys_read32(dmic->shim_base + DMICSYNC_OFFSET) | DMICSYNC_CMDSYNC,
-			dmic->shim_base + DMICSYNC_OFFSET);
+	uint32_t base = dai_dmic_base(dmic);
+
+	sys_write32(sys_read32(base + DMICSYNC_OFFSET) | DMICSYNC_CMDSYNC,
+		    base + DMICSYNC_OFFSET);
 }
 
 /* Trigering synchronization of command execution */
 static void dmic_sync_trigger(const struct dai_intel_dmic *dmic)
 {
-	__ASSERT_NO_MSG((sys_read32(dmic->shim_base + DMICSYNC_OFFSET) & DMICSYNC_CMDSYNC) != 0);
+	uint32_t base = dai_dmic_base(dmic);
 
-	sys_write32(sys_read32(dmic->shim_base + DMICSYNC_OFFSET) |
-		    DMICSYNC_SYNCGO, dmic->shim_base + DMICSYNC_OFFSET);
+	__ASSERT_NO_MSG((sys_read32(base + DMICSYNC_OFFSET) & DMICSYNC_CMDSYNC) != 0);
+
+	sys_write32(sys_read32(base + DMICSYNC_OFFSET) |
+		    DMICSYNC_SYNCGO, base + DMICSYNC_OFFSET);
 	/* waiting for CMDSYNC bit clearing */
-	while (sys_read32(dmic->shim_base + DMICSYNC_OFFSET) & DMICSYNC_CMDSYNC) {
+	while (sys_read32(base + DMICSYNC_OFFSET) & DMICSYNC_CMDSYNC) {
 		k_sleep(K_USEC(100));
 	}
 }
@@ -252,53 +279,65 @@ static void dai_dmic_irq_handler(const void *data)
 
 static inline void dai_dmic_dis_clk_gating(const struct dai_intel_dmic *dmic)
 {
-#ifdef CONFIG_SOC_SERIES_INTEL_CAVS_V15
-	uint32_t shim_reg;
-
-	shim_reg = sys_read32(SHIM_CLKCTL) | SHIM_CLKCTL_DMICFDCGB;
-
-	sys_write32(shim_reg, SHIM_CLKCTL);
-
-	LOG_INF("dis-dmic-clk-gating CLKCTL %08x", shim_reg);
-#else
 	/* Disable DMIC clock gating */
+#ifdef CONFIG_SOC_INTEL_ACE20_LNL /* Ace 2.0 */
+	sys_write32((sys_read32(dmic->vshim_base + DMICLCTL_OFFSET) | DMIC_DCGD),
+		    dmic->vshim_base + DMICLCTL_OFFSET);
+#else
 	sys_write32((sys_read32(dmic->shim_base + DMICLCTL_OFFSET) | DMIC_DCGD),
-			dmic->shim_base + DMICLCTL_OFFSET);
+		    dmic->shim_base + DMICLCTL_OFFSET);
 #endif
 }
 
 static inline void dai_dmic_en_clk_gating(const struct dai_intel_dmic *dmic)
 {
-#ifdef CONFIG_SOC_SERIES_INTEL_CAVS_V15
-	uint32_t shim_reg;
-
-	shim_reg = sys_read32(SHIM_CLKCTL) & ~SHIM_CLKCTL_DMICFDCGB;
-
-	sys_write32(shim_reg, SHIM_CLKCTL);
-
-	LOG_INF("en-dmic-clk-gating CLKCTL %08x", shim_reg);
-#else
 	/* Enable DMIC clock gating */
+#ifdef CONFIG_SOC_INTEL_ACE20_LNL /* Ace 2.0 */
+	sys_write32((sys_read32(dmic->vshim_base + DMICLCTL_OFFSET) & ~DMIC_DCGD),
+		    dmic->vshim_base + DMICLCTL_OFFSET);
+#else
 	sys_write32((sys_read32(dmic->shim_base + DMICLCTL_OFFSET) & ~DMIC_DCGD),
-			dmic->shim_base + DMICLCTL_OFFSET);
+		    dmic->shim_base + DMICLCTL_OFFSET);
 #endif
+
+}
+
+static inline void dai_dmic_program_channel_map(const struct dai_intel_dmic *dmic,
+						const struct dai_config *cfg,
+						uint32_t index)
+{
+#ifdef CONFIG_SOC_INTEL_ACE20_LNL
+	uint16_t pcmsycm = cfg->link_config;
+	uint32_t reg_add = dmic->shim_base + DMICXPCMSyCM_OFFSET + 0x0004*index;
+
+	sys_write16(pcmsycm, reg_add);
+#else
+	ARG_UNUSED(dmic);
+	ARG_UNUSED(cfg);
+	ARG_UNUSED(index);
+#endif /* defined(CONFIG_SOC_INTEL_ACE20_LNL) */
 }
 
 static inline void dai_dmic_en_power(const struct dai_intel_dmic *dmic)
 {
-#ifndef CONFIG_SOC_SERIES_INTEL_CAVS_V15
+	uint32_t base = dai_dmic_base(dmic);
 	/* Enable DMIC power */
-	sys_write32((sys_read32(dmic->shim_base + DMICLCTL_OFFSET) | DMICLCTL_SPA),
-			dmic->shim_base + DMICLCTL_OFFSET);
+	sys_write32((sys_read32(base + DMICLCTL_OFFSET) | DMICLCTL_SPA),
+			base + DMICLCTL_OFFSET);
+
+#ifdef CONFIG_SOC_INTEL_ACE20_LNL /* Ace 2.0 */
+	while (!(sys_read32(base + DMICLCTL_OFFSET) & DMICLCTL_CPA)) {
+		k_sleep(K_USEC(100));
+	}
 #endif
 }
+
 static inline void dai_dmic_dis_power(const struct dai_intel_dmic *dmic)
 {
-#ifndef CONFIG_SOC_SERIES_INTEL_CAVS_V15
+	uint32_t base = dai_dmic_base(dmic);
 	/* Disable DMIC power */
-	sys_write32((sys_read32(dmic->shim_base + DMICLCTL_OFFSET) & (~DMICLCTL_SPA)),
-			dmic->shim_base + DMICLCTL_OFFSET);
-#endif
+	sys_write32((sys_read32(base + DMICLCTL_OFFSET) & (~DMICLCTL_SPA)),
+		     base + DMICLCTL_OFFSET);
 }
 
 static int dai_dmic_probe(struct dai_intel_dmic *dmic)
@@ -473,11 +512,9 @@ static void dai_dmic_gain_ramp(struct dai_intel_dmic *dmic)
 		if (!dmic->enable[i])
 			continue;
 
-#ifndef CONFIG_SOC_SERIES_INTEL_ACE
 		if (dmic->startcount == DMIC_UNMUTE_CIC)
 			dai_dmic_update_bits(dmic, base[i] + CIC_CONTROL,
 					     CIC_CONTROL_MIC_MUTE_BIT, 0);
-#endif
 
 		if (dmic->startcount == DMIC_UNMUTE_FIR) {
 			switch (dmic->dai_config_params.dai_index) {
@@ -553,6 +590,14 @@ static void dai_dmic_start(struct dai_intel_dmic *dmic)
 	}
 
 	for (i = 0; i < CONFIG_DAI_DMIC_HW_CONTROLLERS; i++) {
+#ifdef CONFIG_SOC_SERIES_INTEL_ACE
+		dai_dmic_update_bits(dmic, base[i] + CIC_CONTROL,
+				     CIC_CONTROL_SOFT_RESET_BIT, 0);
+
+		LOG_INF("dmic_start(), cic 0x%08x",
+			dai_dmic_read(dmic, base[i] + CIC_CONTROL));
+#endif
+
 		mic_a = dmic->enable[i] & 1;
 		mic_b = (dmic->enable[i] & 2) >> 1;
 		fir_a = (dmic->enable[i] > 0) ? 1 : 0;
@@ -737,12 +782,21 @@ static int dai_dmic_trigger(const struct device *dev, enum dai_dir dir,
 	return 0;
 }
 
-static const struct dai_config *dai_dmic_get_config(const struct device *dev, enum dai_dir dir)
+static int dai_dmic_get_config(const struct device *dev, struct dai_config *cfg, enum dai_dir dir)
 {
 	struct dai_intel_dmic *dmic = (struct dai_intel_dmic *)dev->data;
 
-	__ASSERT_NO_MSG(dir == DAI_DIR_RX);
-	return &dmic->dai_config_params;
+	if (dir != DAI_DIR_RX) {
+		return -EINVAL;
+	}
+
+	if (!cfg) {
+		return -EINVAL;
+	}
+
+	*cfg = dmic->dai_config_params;
+
+	return 0;
 }
 
 static int dai_dmic_set_config(const struct device *dev,
@@ -765,6 +819,8 @@ static int dai_dmic_set_config(const struct device *dev,
 		LOG_ERR("dmic_set_config(): NULL config");
 		return -EINVAL;
 	}
+
+	dai_dmic_program_channel_map(dmic, cfg, di);
 
 	key = k_spin_lock(&dmic->lock);
 
@@ -791,7 +847,6 @@ out:
 	k_spin_unlock(&dmic->lock, key);
 	return ret;
 }
-
 
 static int dai_dmic_probe_wrapper(const struct device *dev)
 {
@@ -831,9 +886,29 @@ static int dai_dmic_remove_wrapper(const struct device *dev)
 	return ret;
 }
 
+static int dmic_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	switch (action) {
+	case PM_DEVICE_ACTION_SUSPEND:
+		dai_dmic_remove_wrapper(dev);
+		break;
+	case PM_DEVICE_ACTION_RESUME:
+		dai_dmic_probe_wrapper(dev);
+		break;
+	case PM_DEVICE_ACTION_TURN_OFF:
+	case PM_DEVICE_ACTION_TURN_ON:
+		/* All device pm is handled during resume and suspend */
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+
 const struct dai_driver_api dai_dmic_ops = {
-	.probe			= dai_dmic_probe_wrapper,
-	.remove			= dai_dmic_remove_wrapper,
+	.probe			= pm_device_runtime_get,
+	.remove			= pm_device_runtime_put,
 	.config_set		= dai_dmic_set_config,
 	.config_get		= dai_dmic_get_config,
 	.get_properties		= dai_dmic_get_properties,
@@ -852,7 +927,13 @@ static int dai_dmic_initialize_device(const struct device *dev)
 		dai_dmic_irq_handler,
 		DEVICE_DT_INST_GET(0),
 		0);
-	return 0;
+	if (pm_device_on_power_domain(dev)) {
+		pm_device_init_off(dev);
+	} else {
+		pm_device_init_suspended(dev);
+	}
+
+	return pm_device_runtime_enable(dev);
 };
 
 
@@ -867,6 +948,10 @@ static int dai_dmic_initialize_device(const struct device *dev)
 		},							\
 		.reg_base = DT_INST_REG_ADDR_BY_IDX(n, 0),		\
 		.shim_base = DT_INST_PROP(n, shim),			\
+		IF_ENABLED(DT_NODE_EXISTS(DT_NODELABEL(hdamlddmic)),	\
+			(.hdamldmic_base = DT_REG_ADDR(DT_NODELABEL(hdamlddmic)),))	\
+		IF_ENABLED(DT_NODE_EXISTS(DT_NODELABEL(dmicvss)),	\
+			(.vshim_base = DT_REG_ADDR(DT_NODELABEL(dmicvss)),))	\
 		.irq = DT_INST_IRQN(n),					\
 		.fifo =							\
 		{							\
@@ -876,9 +961,11 @@ static int dai_dmic_initialize_device(const struct device *dev)
 		},							\
 	};								\
 									\
+	PM_DEVICE_DT_INST_DEFINE(n, dmic_pm_action);			\
+									\
 	DEVICE_DT_INST_DEFINE(n,					\
 		dai_dmic_initialize_device,				\
-		NULL,							\
+		PM_DEVICE_DT_INST_GET(n),				\
 		&dai_intel_dmic_data_##n,				\
 		&dai_intel_dmic_properties_##n,				\
 		POST_KERNEL,						\

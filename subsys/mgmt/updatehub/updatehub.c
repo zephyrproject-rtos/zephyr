@@ -1,13 +1,11 @@
 /*
- * Copyright (c) 2018-2020 O.S.Systems
+ * Copyright (c) 2018-2023 O.S.Systems
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(updatehub, CONFIG_UPDATEHUB_LOG_LEVEL);
-
-#include <zephyr/kernel.h>
 
 #include <zephyr/logging/log_ctrl.h>
 #include <zephyr/net/socket.h>
@@ -16,17 +14,16 @@ LOG_MODULE_REGISTER(updatehub, CONFIG_UPDATEHUB_LOG_LEVEL);
 #include <zephyr/net/udp.h>
 #include <zephyr/net/coap.h>
 #include <zephyr/net/dns_resolve.h>
-#include <zephyr/drivers/flash.h>
 #include <zephyr/sys/reboot.h>
-#include <tinycrypt/sha256.h>
 #include <zephyr/data/json.h>
-#include <zephyr/storage/flash_map.h>
+#include <zephyr/mgmt/updatehub.h>
 
-#include "include/updatehub.h"
 #include "updatehub_priv.h"
 #include "updatehub_firmware.h"
 #include "updatehub_device.h"
 #include "updatehub_timer.h"
+#include "updatehub_integrity.h"
+#include "updatehub_storage.h"
 
 #if defined(CONFIG_UPDATEHUB_DTLS)
 #define CA_CERTIFICATE_TAG 1
@@ -44,8 +41,6 @@ LOG_MODULE_REGISTER(updatehub, CONFIG_UPDATEHUB_LOG_LEVEL);
  */
 #define MAX_DOWNLOAD_DATA (MAX_PAYLOAD_SIZE + 32)
 #define MAX_IP_SIZE 30
-
-#define SHA256_HEX_DIGEST_SIZE	((TC_SHA256_DIGEST_SIZE * 2) + 1)
 
 #if defined(CONFIG_UPDATEHUB_CE)
 #define UPDATEHUB_SERVER CONFIG_UPDATEHUB_SERVER
@@ -65,10 +60,10 @@ LOG_MODULE_REGISTER(updatehub, CONFIG_UPDATEHUB_LOG_LEVEL);
 static struct updatehub_context {
 	struct coap_block_context block;
 	struct k_sem semaphore;
-	struct flash_img_context flash_ctx;
-	struct tc_sha256_state_struct sha256sum;
+	struct updatehub_storage_context storage_ctx;
+	struct updatehub_crypto_context crypto_ctx;
 	enum updatehub_response code_status;
-	uint8_t hash[TC_SHA256_DIGEST_SIZE];
+	uint8_t hash[SHA256_BIN_DIGEST_SIZE];
 	uint8_t uri_path[MAX_PATH_SIZE];
 	uint8_t payload[MAX_PAYLOAD_SIZE];
 	int downloaded_size;
@@ -118,21 +113,21 @@ static void prepare_fds(void)
 
 static int metadata_hash_get(char *metadata)
 {
-	struct tc_sha256_state_struct sha256sum;
+	struct updatehub_crypto_context local_crypto_ctx;
 
-	if (tc_sha256_init(&sha256sum) == 0) {
+	if (updatehub_integrity_init(&local_crypto_ctx)) {
 		return -1;
 	}
 
-	if (tc_sha256_update(&sha256sum, metadata, strlen(metadata)) == 0) {
+	if (updatehub_integrity_update(&local_crypto_ctx, metadata, strlen(metadata))) {
 		return -1;
 	}
 
-	if (tc_sha256_final(ctx.hash, &sha256sum) == 0) {
+	if (updatehub_integrity_finish(&local_crypto_ctx, ctx.hash, sizeof(ctx.hash))) {
 		return -1;
 	}
 
-	if (bin2hex_str(ctx.hash, TC_SHA256_DIGEST_SIZE,
+	if (bin2hex_str(ctx.hash, SHA256_BIN_DIGEST_SIZE,
 		update_info.package_uid, SHA256_HEX_DIGEST_SIZE)) {
 		return -1;
 	}
@@ -367,12 +362,12 @@ static bool install_update_cb_sha256(void)
 {
 	char sha256[SHA256_HEX_DIGEST_SIZE];
 
-	if (tc_sha256_final(ctx.hash, &ctx.sha256sum) < 1) {
+	if (updatehub_integrity_finish(&ctx.crypto_ctx, ctx.hash, sizeof(ctx.hash))) {
 		LOG_ERR("Could not finish sha256sum");
 		return false;
 	}
 
-	if (bin2hex_str(ctx.hash, TC_SHA256_DIGEST_SIZE,
+	if (bin2hex_str(ctx.hash, SHA256_BIN_DIGEST_SIZE,
 		sha256, SHA256_HEX_DIGEST_SIZE)) {
 		LOG_ERR("Could not create sha256sum hex representation");
 		return false;
@@ -417,9 +412,6 @@ static int install_update_cb_check_blk_num(const struct coap_packet *resp)
 static void install_update_cb(void)
 {
 	struct coap_packet response_packet;
-#ifdef _STORAGE_SHA256_VERIFICATION
-	struct flash_img_check fic;
-#endif
 	uint8_t *data = k_malloc(MAX_DOWNLOAD_DATA);
 	const uint8_t *payload_start;
 	uint16_t payload_len;
@@ -461,23 +453,17 @@ static void install_update_cb(void)
 	ctx.downloaded_size = ctx.downloaded_size + payload_len;
 
 #ifdef _DOWNLOAD_SHA256_VERIFICATION
-	if (tc_sha256_update(&ctx.sha256sum,
+	if (updatehub_integrity_update(&ctx.crypto_ctx,
 			     payload_start,
-			     payload_len) < 1) {
+			     payload_len)) {
 		LOG_ERR("Could not update sha256sum");
 		ctx.code_status = UPDATEHUB_DOWNLOAD_ERROR;
 		goto cleanup;
 	}
 #endif
 
-	LOG_DBG("Flash: Address: 0x%08x, Size: %d, Flush: %s",
-		ctx.flash_ctx.stream.bytes_written, payload_len,
-		(ctx.downloaded_size == ctx.block.total_size ?
-			"True" : "False"));
-
-	if (flash_img_buffered_write(&ctx.flash_ctx,
-				     payload_start, payload_len,
-				     ctx.downloaded_size == ctx.block.total_size) < 0) {
+	if (updatehub_storage_write(&ctx.storage_ctx, payload_start, payload_len,
+				    ctx.downloaded_size == ctx.block.total_size)) {
 		LOG_ERR("Error to write on the flash");
 		ctx.code_status = UPDATEHUB_INSTALL_ERROR;
 		goto cleanup;
@@ -506,7 +492,7 @@ static void install_update_cb(void)
 #else
 		if (hex2bin(update_info.sha256sum_image,
 			    SHA256_HEX_DIGEST_SIZE - 1, ctx.hash,
-			    TC_SHA256_DIGEST_SIZE) != TC_SHA256_DIGEST_SIZE) {
+			    SHA256_BIN_DIGEST_SIZE) != SHA256_BIN_DIGEST_SIZE) {
 			LOG_ERR("Firmware - metadata validation has failed");
 			ctx.code_status = UPDATEHUB_DOWNLOAD_ERROR;
 			goto cleanup;
@@ -514,11 +500,9 @@ static void install_update_cb(void)
 #endif
 
 #ifdef _STORAGE_SHA256_VERIFICATION
-		fic.match = ctx.hash;
-		fic.clen = ctx.downloaded_size;
-
-		if (flash_img_check(&ctx.flash_ctx, &fic,
-				    FIXED_PARTITION_ID(slot1_partition))) {
+		if (updatehub_storage_check(&ctx.storage_ctx,
+					    UPDATEHUB_SLOT_PARTITION_1,
+					    ctx.hash, ctx.downloaded_size)) {
 			LOG_ERR("Firmware - flash validation has failed");
 			ctx.code_status = UPDATEHUB_INSTALL_ERROR;
 			goto cleanup;
@@ -534,14 +518,8 @@ cleanup:
 
 static enum updatehub_response install_update(void)
 {
-	if (boot_erase_img_bank(FIXED_PARTITION_ID(slot1_partition)) != 0) {
-		LOG_ERR("Failed to init flash and erase second slot");
-		ctx.code_status = UPDATEHUB_FLASH_INIT_ERROR;
-		goto error;
-	}
-
 #ifdef _DOWNLOAD_SHA256_VERIFICATION
-	if (tc_sha256_init(&ctx.sha256sum) < 1) {
+	if (updatehub_integrity_init(&ctx.crypto_ctx)) {
 		LOG_ERR("Could not start sha256sum");
 		ctx.code_status = UPDATEHUB_DOWNLOAD_ERROR;
 		goto error;
@@ -561,7 +539,8 @@ static enum updatehub_response install_update(void)
 		goto cleanup;
 	}
 
-	if (flash_img_init(&ctx.flash_ctx)) {
+	if (updatehub_storage_init(&ctx.storage_ctx,
+				   UPDATEHUB_SLOT_PARTITION_1)) {
 		LOG_ERR("Unable init flash");
 		ctx.code_status = UPDATEHUB_FLASH_INIT_ERROR;
 		goto cleanup;
@@ -622,7 +601,7 @@ static int report(enum updatehub_state state)
 	int ret = -1;
 	const char *exec = state_name(state);
 	char *device_id = k_malloc(DEVICE_ID_HEX_MAX_SIZE);
-	char *firmware_version = k_malloc(BOOT_IMG_VER_STRLEN_MAX);
+	char *firmware_version = k_malloc(FIRMWARE_IMG_VER_STRLEN_MAX);
 
 	if (device_id == NULL || firmware_version == NULL) {
 		LOG_ERR("Could not alloc device_id or firmware_version memory");
@@ -633,7 +612,9 @@ static int report(enum updatehub_state state)
 		goto error;
 	}
 
-	if (!updatehub_get_firmware_version(firmware_version, BOOT_IMG_VER_STRLEN_MAX)) {
+	if (!updatehub_get_firmware_version(UPDATEHUB_SLOT_PARTITION_0,
+					    firmware_version,
+					    FIRMWARE_IMG_VER_STRLEN_MAX)) {
 		goto error;
 	}
 
@@ -762,7 +743,19 @@ static void probe_cb(char *metadata, size_t metadata_size)
 	LOG_INF("Probe metadata received");
 }
 
-enum updatehub_response updatehub_probe(void)
+int z_impl_updatehub_confirm(void)
+{
+	return updatehub_storage_mark_partition_as_confirmed(UPDATEHUB_SLOT_PARTITION_0);
+}
+
+int z_impl_updatehub_reboot(void)
+{
+	sys_reboot(SYS_REBOOT_WARM);
+
+	return 0;
+}
+
+enum updatehub_response z_impl_updatehub_probe(void)
 {
 	struct probe request;
 	struct resp_probe_some_boards metadata_some_boards = { 0 };
@@ -771,7 +764,7 @@ enum updatehub_response updatehub_probe(void)
 	char *metadata = k_malloc(MAX_DOWNLOAD_DATA);
 	char *metadata_copy = k_malloc(MAX_DOWNLOAD_DATA);
 	char *device_id = k_malloc(DEVICE_ID_HEX_MAX_SIZE);
-	char *firmware_version = k_malloc(BOOT_IMG_VER_STRLEN_MAX);
+	char *firmware_version = k_malloc(FIRMWARE_IMG_VER_STRLEN_MAX);
 
 	size_t sha256size;
 
@@ -782,13 +775,15 @@ enum updatehub_response updatehub_probe(void)
 		goto error;
 	}
 
-	if (!boot_is_img_confirmed()) {
+	if (!updatehub_storage_is_partition_good(&ctx.storage_ctx)) {
 		LOG_ERR("The current image is not confirmed");
 		ctx.code_status = UPDATEHUB_UNCONFIRMED_IMAGE;
 		goto error;
 	}
 
-	if (!updatehub_get_firmware_version(firmware_version, BOOT_IMG_VER_STRLEN_MAX)) {
+	if (!updatehub_get_firmware_version(UPDATEHUB_SLOT_PARTITION_0,
+					    firmware_version,
+					    FIRMWARE_IMG_VER_STRLEN_MAX)) {
 		ctx.code_status = UPDATEHUB_METADATA_ERROR;
 		goto error;
 	}
@@ -924,7 +919,7 @@ error:
 	return ctx.code_status;
 }
 
-enum updatehub_response updatehub_update(void)
+enum updatehub_response z_impl_updatehub_update(void)
 {
 	if (report(UPDATEHUB_STATE_DOWNLOADING) < 0) {
 		LOG_ERR("Could not reporting downloading state");
@@ -945,7 +940,8 @@ enum updatehub_response updatehub_update(void)
 		goto error;
 	}
 
-	if (boot_request_upgrade(BOOT_UPGRADE_TEST)) {
+	if (updatehub_storage_mark_partition_to_upgrade(&ctx.storage_ctx,
+							UPDATEHUB_SLOT_PARTITION_1)) {
 		LOG_ERR("Could not reporting downloaded state");
 		ctx.code_status = UPDATEHUB_INSTALL_ERROR;
 		goto error;
@@ -983,14 +979,14 @@ static void autohandler(struct k_work *work)
 			"confirmed image.");
 
 		LOG_PANIC();
-		sys_reboot(SYS_REBOOT_WARM);
+		updatehub_reboot();
 		break;
 
 	case UPDATEHUB_HAS_UPDATE:
 		switch (updatehub_update()) {
 		case UPDATEHUB_OK:
 			LOG_PANIC();
-			sys_reboot(SYS_REBOOT_WARM);
+			updatehub_reboot();
 			break;
 
 		default:
@@ -1009,7 +1005,7 @@ static void autohandler(struct k_work *work)
 	k_work_reschedule(&updatehub_work_handle, UPDATEHUB_POLL_INTERVAL);
 }
 
-void updatehub_autohandler(void)
+void z_impl_updatehub_autohandler(void)
 {
 #if defined(CONFIG_UPDATEHUB_DOWNLOAD_SHA256_VERIFICATION)
 	LOG_INF("SHA-256 verification on download only");

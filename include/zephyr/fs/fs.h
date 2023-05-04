@@ -452,8 +452,9 @@ int fs_sync(struct fs_file_t *zfp);
  * @param path Path to the directory to create
  *
  * @retval 0 on success;
- * @retval -EROFS if file is read-only, or when file system has been mounted
- *	   with the FS_MOUNT_FLAG_READ_ONLY flag;
+ * @retval -EEXIST if entry of given name exists;
+ * @retval -EROFS if @p path is within read-only directory, or when
+ *         file system has been mounted with the FS_MOUNT_FLAG_READ_ONLY flag;
  * @retval -ENOTSUP when not implemented by underlying file system driver;
  * @retval <0 an other negative errno code on error
  */
@@ -604,6 +605,19 @@ int fs_stat(const char *path, struct fs_dirent *entry);
  * @retval <0 an other negative errno code on error.
  */
 int fs_statvfs(const char *path, struct fs_statvfs *stat);
+
+/**
+ * @brief Create fresh file system
+ *
+ * @param fs_type Type of file system to create.
+ * @param dev_id Id of storage device.
+ * @param cfg Backend dependent init object. If NULL then default configuration is used.
+ * @param flags Additional flags for file system implementation.
+ *
+ * @retval 0 on success;
+ * @retval <0 negative errno code on error.
+ */
+int fs_mkfs(int fs_type, uintptr_t dev_id, void *cfg, int flags);
 
 /**
  * @brief Register a file system

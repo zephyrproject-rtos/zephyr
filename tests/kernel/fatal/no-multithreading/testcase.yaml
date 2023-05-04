@@ -1,8 +1,11 @@
 common:
   platform_allow: qemu_cortex_m3 qemu_arc_em qemu_arc_hs qemu_arc_hs6x nsim_em nsim_em7d_v22
     nsim_hs nsim_hs_mpuv6 nsim_hs5x nsim_hs6x
+  integration_platforms:
+    - qemu_cortex_m3
+    - nsim_em
   tags: kernel scheduler
-  ignore_faults: True
+  ignore_faults: true
 tests:
   kernel.no-mt.cpu_exception:
     extra_args: EXTRA_CPPFLAGS=-DVIA_TWISTER=0

@@ -21,7 +21,7 @@
 		zephyr,dtcm = &dtcm;
 		zephyr,flash-controller = &n25q128a1;
 		zephyr,display = &ltdc;
-		zephyr,keyboard-scan = &touch_controller;
+		zephyr,keyboard-scan = &kscan_input;
 	};
 
 	leds {
@@ -45,12 +45,13 @@
 		device_type = "memory";
 		reg = <0xc0000000 DT_SIZE_M(16)>;
 		zephyr,memory-region = "SDRAM1";
+		zephyr,memory-region-mpu = "RAM";
 	};
 
 	aliases {
 		led0 = &green_led_1;
 		sw0 = &user_button;
-		kscan0 = &touch_controller;
+		kscan0 = &kscan_input;
 		spi-flash0 = &n25q128a1;
 	};
 };
@@ -94,10 +95,14 @@
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 
-	touch_controller: ft5336@38 {
+	ft5336@38 {
 		compatible = "focaltech,ft5336";
 		reg = <0x38>;
 		int-gpios = <&gpioi 13 0>;
+
+		kscan_input: kscan-input {
+			compatible = "zephyr,kscan-input";
+		};
 	};
 };
 
@@ -143,6 +148,10 @@ zephyr_udc0: &usbotg_fs {
 	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x10000000>,
 		 <&rcc STM32_SRC_LSI RTC_SEL(2)>;
 	status = "okay";
+
+	backup_regs {
+		status = "okay";
+	};
 };
 
 &sdmmc1 {

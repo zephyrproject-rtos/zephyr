@@ -30,8 +30,8 @@ static int fs_mgmt_hash_checksum_sha256(struct fs_file_t *file, uint8_t *output,
 {
 	int rc = 0;
 	ssize_t bytes_read = 0;
-	size_t read_size = CONFIG_FS_MGMT_CHECKSUM_HASH_CHUNK_SIZE;
-	uint8_t buffer[CONFIG_FS_MGMT_CHECKSUM_HASH_CHUNK_SIZE];
+	size_t read_size = CONFIG_MCUMGR_GRP_FS_CHECKSUM_HASH_CHUNK_SIZE;
+	uint8_t buffer[CONFIG_MCUMGR_GRP_FS_CHECKSUM_HASH_CHUNK_SIZE];
 	struct tc_sha256_state_struct sha;
 
 	/* Clear variables prior to calculation */
@@ -77,8 +77,8 @@ static int fs_mgmt_hash_checksum_sha256(struct fs_file_t *file, uint8_t *output,
 {
 	int rc = 0;
 	ssize_t bytes_read = 0;
-	size_t read_size = CONFIG_FS_MGMT_CHECKSUM_HASH_CHUNK_SIZE;
-	uint8_t buffer[CONFIG_FS_MGMT_CHECKSUM_HASH_CHUNK_SIZE];
+	size_t read_size = CONFIG_MCUMGR_GRP_FS_CHECKSUM_HASH_CHUNK_SIZE;
+	uint8_t buffer[CONFIG_MCUMGR_GRP_FS_CHECKSUM_HASH_CHUNK_SIZE];
 	mbedtls_md_context_t mbed_hash_ctx;
 	const mbedtls_md_info_t *mbed_hash_info;
 

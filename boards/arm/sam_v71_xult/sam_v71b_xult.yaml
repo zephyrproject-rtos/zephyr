@@ -12,6 +12,7 @@ supported:
   - arduino_gpio
   - arduino_i2c
   - arduino_spi
+  - dac
   - gpio
   - spi
   - watchdog
@@ -22,5 +23,4 @@ supported:
   - xpro_serial
   - xpro_spi
   - can
-  - canfd
   - hwinfo

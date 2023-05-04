@@ -29,9 +29,9 @@
 MEMORY
 {
   iram0_0_seg(RX): org = 0x40080000 + 0x08000, len = 0x18000
-  dram0_shm0_seg(RW): org = 0x3FFE5230, len = 2K /* shared RAM reserved for IPM */
-  dram0_sem0_seg(RW): org = 0x3FFE5A30, len = 8 /*shared data reserved for IPM data header */
-  dram0_1_seg(RW): org = 0x3FFE5A38 + CONFIG_ESP32_BT_RESERVE_DRAM, len = 0x1BCB0 - 0xEE0 - CONFIG_ESP32_BT_RESERVE_DRAM
+  dram0_shm0_seg(RW): org = 0x3FFE5230, len = 16K /* shared RAM reserved for IPM */
+  dram0_sem0_seg(RW): org = 0x3FFED238, len = 8 /*shared data reserved for IPM data header */
+  dram0_1_seg(RW): org = 0x3FFE9238 + CONFIG_ESP32_BT_RESERVE_DRAM, len = 0x17CB0 - 0xEE0 - CONFIG_ESP32_BT_RESERVE_DRAM
 #ifdef CONFIG_GEN_ISR_TABLES
   IDT_LIST(RW): org = 0x3ebfe010, len = 0x2000
 #endif
@@ -145,7 +145,7 @@ SECTIONS
   } GROUP_DATA_LINK_IN(IRAM_REGION, ROMABLE_REGION)
 
   _image_drom_start = LOADADDR(_RODATA_SECTION_NAME);
-  _image_drom_size = LOADADDR(_RODATA_SECTION_NAME) + SIZEOF(_RODATA_SECTION_NAME) - _image_drom_start;
+  _image_drom_size = LOADADDR(_RODATA_SECTION_END) + SIZEOF(_RODATA_SECTION_END)  - _image_drom_start;
   _image_drom_vaddr = ADDR(_RODATA_SECTION_NAME);
 
   SECTION_PROLOGUE(_RODATA_SECTION_NAME,,)
@@ -213,6 +213,14 @@ SECTIONS
   #include <zephyr/linker/common-rom/common-rom-debug.ld>
   #include <zephyr/linker/common-rom/common-rom-misc.ld>
   #pragma pop_macro("GROUP_ROM_LINK_IN")
+
+  /* Create an explicit section at the end of all the data that shall be mapped into drom.
+   * This is used to calculate the size of the _image_drom_size variable */
+  SECTION_PROLOGUE(_RODATA_SECTION_END,,)
+  {
+    . = ALIGN(4);
+    _image_rodata_end = ABSOLUTE(.);
+  } GROUP_DATA_LINK_IN(RODATA_REGION, ROMABLE_REGION)
 
   _image_dram_start = LOADADDR(.dram0.data);
   _image_dram_size = LOADADDR(.dram0.end) + SIZEOF(.dram0.end) - _image_dram_start;

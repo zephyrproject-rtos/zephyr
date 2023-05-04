@@ -76,10 +76,12 @@ void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *pEsf)
 		} else {
 			printk("Wrong fault reason, expecting %d\n",
 			       expected_reason);
+			printk("PROJECT EXECUTION FAILED\n");
 			k_fatal_halt(reason);
 		}
 	} else {
 		printk("Unexpected fault during test\n");
+		printk("PROJECT EXECUTION FAILED\n");
 		k_fatal_halt(reason);
 	}
 }
@@ -878,7 +880,7 @@ ZTEST(userspace, test_object_recycle)
 		     "object wasn't marked as initialized");
 
 	for (int i = 0; i < CONFIG_MAX_THREAD_BYTES; i++) {
-		perms_count += popcount(ko->perms[i]);
+		perms_count += POPCOUNT(ko->perms[i]);
 	}
 
 	zassert_true(perms_count == 1, "invalid number of thread permissions");

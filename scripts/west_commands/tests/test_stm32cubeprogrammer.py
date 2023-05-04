@@ -384,7 +384,7 @@ def test_stm32cubeprogrammer_create(
     if tc["frequency"]:
         args.extend(["--frequency", tc["frequency"]])
     if tc["reset_mode"]:
-        args.extend(["--reset", tc["reset_mode"]])
+        args.extend(["--reset-mode", tc["reset_mode"]])
     if tc["conn_modifiers"]:
         args.extend(["--conn-modifiers", tc["conn_modifiers"]])
     if tc["cli"]:
@@ -396,7 +396,7 @@ def test_stm32cubeprogrammer_create(
     if tc["tool_opt"]:
         args.extend(["--tool-opt", " " + tc["tool_opt"][0]])
 
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(allow_abbrev=False)
     STM32CubeProgrammerBinaryRunner.add_parser(parser)
     arg_namespace = parser.parse_args(args)
 

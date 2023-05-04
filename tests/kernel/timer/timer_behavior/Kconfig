@@ -3,6 +3,9 @@
 
 mainmenu "Timer Behavior Test"
 
+config SYS_CLOCK_TICKS_PER_SEC
+	default 8192 if NRF_RTC_TIMER && TICKLESS_KERNEL
+
 source "Kconfig.zephyr"
 
 config TIMER_TEST_SAMPLES

@@ -25,6 +25,8 @@
 #include <zephyr/dt-bindings/spi/spi.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/kernel.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/rtio/rtio.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -195,8 +197,9 @@ struct spi_cs_control {
  * @param spi_dev a SPI device node identifier
  * @return #gpio_dt_spec struct corresponding with spi_dev's chip select
  */
-#define SPI_CS_GPIOS_DT_SPEC_GET(spi_dev) \
-	GPIO_DT_SPEC_GET_BY_IDX(DT_BUS(spi_dev), cs_gpios, DT_REG_ADDR(spi_dev))
+#define SPI_CS_GPIOS_DT_SPEC_GET(spi_dev)			\
+	GPIO_DT_SPEC_GET_BY_IDX_OR(DT_BUS(spi_dev), cs_gpios,	\
+				   DT_REG_ADDR(spi_dev), {})
 
 /**
  * @brief Get a <tt>struct gpio_dt_spec</tt> for a SPI device's chip select pin
@@ -210,7 +213,6 @@ struct spi_cs_control {
 #define SPI_CS_GPIOS_DT_SPEC_INST_GET(inst) \
 	SPI_CS_GPIOS_DT_SPEC_GET(DT_DRV_INST(inst))
 
-#ifndef __cplusplus
 /**
  * @brief Initialize and get a pointer to a @p spi_cs_control from a
  *        devicetree node identifier
@@ -227,39 +229,27 @@ struct spi_cs_control {
  *             spidev: spi-device@0 { ... };
  *     };
  *
- * Assume that @p gpio0 follows the standard convention for specifying
- * GPIOs, i.e. it has the following in its binding:
- *
- *     gpio-cells:
- *     - pin
- *     - flags
- *
  * Example usage:
  *
- *     struct spi_cs_control *ctrl =
- *             SPI_CS_CONTROL_PTR_DT(DT_NODELABEL(spidev), 2);
+ *     struct spi_cs_control ctrl =
+ *             SPI_CS_CONTROL_INIT(DT_NODELABEL(spidev), 2);
  *
  * This example is equivalent to:
  *
- *     struct spi_cs_control *ctrl =
- *             &(struct spi_cs_control) {
- *                     .gpio_dev = DEVICE_DT_GET(DT_NODELABEL(gpio0)),
- *                     .delay = 2,
- *                     .gpio_pin = 1,
- *                     .gpio_dt_flags = GPIO_ACTIVE_LOW
- *             };
- *
- * This macro is not available in C++.
+ *     struct spi_cs_control ctrl = {
+ *             .gpio = SPI_CS_GPIOS_DT_SPEC_GET(DT_NODELABEL(spidev)),
+ *             .delay = 2,
+ *     };
  *
  * @param node_id Devicetree node identifier for a device on a SPI bus
  * @param delay_ The @p delay field to set in the @p spi_cs_control
  * @return a pointer to the @p spi_cs_control structure
  */
-#define SPI_CS_CONTROL_PTR_DT(node_id, delay_)			  \
-	(&(struct spi_cs_control) {				  \
+#define SPI_CS_CONTROL_INIT(node_id, delay_)			  \
+	{							  \
 		.gpio = SPI_CS_GPIOS_DT_SPEC_GET(node_id),	  \
 		.delay = (delay_),				  \
-	})
+	}
 
 /**
  * @brief Get a pointer to a @p spi_cs_control from a devicetree node
@@ -270,15 +260,12 @@ struct spi_cs_control {
  * Therefore, @p DT_DRV_COMPAT must already be defined before using
  * this macro.
  *
- * This macro is not available in C++.
- *
  * @param inst Devicetree node instance number
  * @param delay_ The @p delay field to set in the @p spi_cs_control
  * @return a pointer to the @p spi_cs_control structure
  */
 #define SPI_CS_CONTROL_PTR_DT_INST(inst, delay_)		\
 	SPI_CS_CONTROL_PTR_DT(DT_DRV_INST(inst), delay_)
-#endif
 
 /**
  * @brief SPI controller configuration structure
@@ -317,10 +304,9 @@ struct spi_config {
 	uint16_t		slave;
 #endif /* CONFIG_SPI_EXTENDED_MODES */
 
-	const struct spi_cs_control *cs;
+	struct spi_cs_control cs;
 };
 
-#ifndef __cplusplus
 /**
  * @brief Structure initializer for spi_config from devicetree
  *
@@ -331,8 +317,6 @@ struct spi_config {
  * Important: the @p cs field is initialized using
  * SPI_CS_CONTROL_PTR_DT(). The @p gpio_dev value pointed to by this
  * structure must be checked using device_is_ready() before use.
- *
- * This macro is not available in C++.
  *
  * @param node_id Devicetree node identifier for the SPI device whose
  *                struct spi_config to create an initializer for
@@ -347,10 +331,7 @@ struct spi_config {
 			DT_PROP(node_id, duplex) |			\
 			DT_PROP(node_id, frame_format),			\
 		.slave = DT_REG_ADDR(node_id),				\
-		.cs = COND_CODE_1(					\
-			DT_SPI_DEV_HAS_CS_GPIOS(node_id),		\
-			(SPI_CS_CONTROL_PTR_DT(node_id, delay_)),	\
-			(NULL)),					\
+		.cs = SPI_CS_CONTROL_INIT(node_id, delay_),		\
 	}
 
 /**
@@ -359,8 +340,6 @@ struct spi_config {
  * This is equivalent to
  * <tt>SPI_CONFIG_DT(DT_DRV_INST(inst), operation_, delay_)</tt>.
  *
- * This macro is not available in C++.
- *
  * @param inst Devicetree instance number
  * @param operation_ the desired @p operation field in the struct spi_config
  * @param delay_ the desired @p delay field in the struct spi_config's
@@ -368,7 +347,6 @@ struct spi_config {
  */
 #define SPI_CONFIG_DT_INST(inst, operation_, delay_)	\
 	SPI_CONFIG_DT(DT_DRV_INST(inst), operation_, delay_)
-#endif
 
 /**
  * @brief Complete SPI DT information
@@ -381,7 +359,6 @@ struct spi_dt_spec {
 	struct spi_config config;
 };
 
-#ifndef __cplusplus
 /**
  * @brief Structure initializer for spi_dt_spec from devicetree
  *
@@ -392,8 +369,7 @@ struct spi_dt_spec {
  * Important: multiple fields are automatically constructed by this macro
  * which must be checked before use. @ref spi_is_ready performs the required
  * @ref device_is_ready checks.
- *
- * This macro is not available in C++.
+ * @deprecated Use @ref spi_is_ready_dt instead.
  *
  * @param node_id Devicetree node identifier for the SPI device whose
  *                struct spi_dt_spec to create an initializer for
@@ -413,8 +389,6 @@ struct spi_dt_spec {
  * This is equivalent to
  * <tt>SPI_DT_SPEC_GET(DT_DRV_INST(inst), operation_, delay_)</tt>.
  *
- * This macro is not available in C++.
- *
  * @param inst Devicetree instance number
  * @param operation_ the desired @p operation field in the struct spi_config
  * @param delay_ the desired @p delay field in the struct spi_config's
@@ -422,7 +396,6 @@ struct spi_dt_spec {
  */
 #define SPI_DT_SPEC_INST_GET(inst, operation_, delay_) \
 	SPI_DT_SPEC_GET(DT_DRV_INST(inst), operation_, delay_)
-#endif
 
 /**
  * @brief SPI buffer structure
@@ -479,6 +452,16 @@ typedef int (*spi_api_io_async)(const struct device *dev,
 				spi_callback_t cb,
 				void *userdata);
 
+#if defined(CONFIG_SPI_RTIO) || defined(DOXYGEN)
+
+/**
+ * @typedef spi_api_iodev_submit
+ * @brief Callback API for submitting work to a SPI device with RTIO
+ */
+typedef void (*spi_api_iodev_submit)(const struct device *dev,
+				     struct rtio_iodev_sqe *iodev_sqe);
+#endif /* CONFIG_SPI_RTIO */
+
 /**
  * @typedef spi_api_release
  * @brief Callback API for unlocking SPI device.
@@ -497,8 +480,35 @@ __subsystem struct spi_driver_api {
 #ifdef CONFIG_SPI_ASYNC
 	spi_api_io_async transceive_async;
 #endif /* CONFIG_SPI_ASYNC */
+#ifdef CONFIG_SPI_RTIO
+	spi_api_iodev_submit iodev_submit;
+#endif /* CONFIG_SPI_RTIO */
 	spi_api_release release;
 };
+
+/**
+ * @brief Check if SPI CS is controlled using a GPIO.
+ *
+ * @param config SPI configuration.
+ * @return true If CS is controlled using a GPIO.
+ * @return false If CS is controlled by hardware or any other means.
+ */
+static inline bool spi_cs_is_gpio(const struct spi_config *config)
+{
+	return config->cs.gpio.port != NULL;
+}
+
+/**
+ * @brief Check if SPI CS in @ref spi_dt_spec is controlled using a GPIO.
+ *
+ * @param spec SPI specification from devicetree.
+ * @return true If CS is controlled using a GPIO.
+ * @return false If CS is controlled by hardware or any other means.
+ */
+static inline bool spi_cs_is_gpio_dt(const struct spi_dt_spec *spec)
+{
+	return spi_cs_is_gpio(&spec->config);
+}
 
 /**
  * @brief Validate that SPI bus is ready.
@@ -508,6 +518,7 @@ __subsystem struct spi_driver_api {
  * @retval true if the SPI bus is ready for use.
  * @retval false if the SPI bus is not ready for use.
  */
+__deprecated
 static inline bool spi_is_ready(const struct spi_dt_spec *spec)
 {
 	/* Validate bus is ready */
@@ -515,8 +526,30 @@ static inline bool spi_is_ready(const struct spi_dt_spec *spec)
 		return false;
 	}
 	/* Validate CS gpio port is ready, if it is used */
-	if (spec->config.cs &&
-	    !device_is_ready(spec->config.cs->gpio.port)) {
+	if (spi_cs_is_gpio_dt(spec) &&
+	    !device_is_ready(spec->config.cs.gpio.port)) {
+		return false;
+	}
+	return true;
+}
+
+/**
+ * @brief Validate that SPI bus (and CS gpio if defined) is ready.
+ *
+ * @param spec SPI specification from devicetree
+ *
+ * @retval true if the SPI bus is ready for use.
+ * @retval false if the SPI bus (or the CS gpio defined) is not ready for use.
+ */
+static inline bool spi_is_ready_dt(const struct spi_dt_spec *spec)
+{
+	/* Validate bus is ready */
+	if (!device_is_ready(spec->bus)) {
+		return false;
+	}
+	/* Validate CS gpio port is ready, if it is used */
+	if (spi_cs_is_gpio_dt(spec) &&
+	    !device_is_ready(spec->config.cs.gpio.port)) {
 		return false;
 	}
 	return true;
@@ -854,6 +887,209 @@ __deprecated static inline int spi_write_async(const struct device *dev,
 #endif /* CONFIG_POLL */
 
 #endif /* CONFIG_SPI_ASYNC */
+
+
+#if defined(CONFIG_SPI_RTIO) || defined(DOXYGEN)
+
+/**
+ * @brief Submit a SPI device with a request
+ *
+ * @param dev SPI device
+ * @param iodev_sqe Prepared submissions queue entry connected to an iodev
+ *                  defined by SPI_IODEV_DEFINE.
+ *                  Must live as long as the request is in flight.
+ *
+ * @retval 0 If successful.
+ * @retval -errno Negative errno code on failure.
+ */
+static inline void spi_iodev_submit(struct rtio_iodev_sqe *iodev_sqe)
+{
+	const struct spi_dt_spec *dt_spec = iodev_sqe->sqe->iodev->data;
+	const struct device *dev = dt_spec->bus;
+	const struct spi_driver_api *api = (const struct spi_driver_api *)dev->api;
+
+	api->iodev_submit(dt_spec->bus, iodev_sqe);
+}
+
+extern const struct rtio_iodev_api spi_iodev_api;
+
+/**
+ * @brief Define an iodev for a given dt node on the bus
+ *
+ * These do not need to be shared globally but doing so
+ * will save a small amount of memory.
+ *
+ * @param node DT_NODE
+ */
+#define SPI_DT_IODEV_DEFINE(name, node_id, operation_, delay_)			\
+	const struct spi_dt_spec _spi_dt_spec_##name =				\
+		SPI_DT_SPEC_GET(node_id, operation_, delay_);			\
+	RTIO_IODEV_DEFINE(name, &spi_iodev_api, (void *)&_spi_dt_spec_##name)
+
+/**
+ * @brief Validate that SPI bus (and CS gpio if defined) is ready.
+ *
+ * @param spi_iodev SPI iodev defined with SPI_DT_IODEV_DEFINE
+ *
+ * @retval true if the SPI bus is ready for use.
+ * @retval false if the SPI bus (or the CS gpio defined) is not ready for use.
+ */
+static inline bool spi_is_ready_iodev(const struct rtio_iodev *spi_iodev)
+{
+	struct spi_dt_spec *spec = spi_iodev->data;
+
+	return spi_is_ready_dt(spec);
+}
+
+/**
+ * @brief Copy the tx_bufs and rx_bufs into a set of RTIO requests
+ *
+ * @param r RTIO context
+ * @param tx_bufs Transmit buffer set
+ * @param rx_bufs Receive buffer set
+ *
+ * @retval sqe Last submission in the queue added
+ * @retval NULL Not enough memory in the context to copy the requests
+ */
+static inline struct rtio_sqe *spi_rtio_copy(struct rtio *r,
+					     struct rtio_iodev *iodev,
+					     const struct spi_buf_set *tx_bufs,
+					     const struct spi_buf_set *rx_bufs)
+{
+	struct rtio_sqe *sqe = NULL;
+	size_t tx_count = tx_bufs ? tx_bufs->count : 0;
+	size_t rx_count = rx_bufs ? rx_bufs->count : 0;
+
+	uint32_t tx = 0, tx_len = 0;
+	uint32_t rx = 0, rx_len = 0;
+	uint8_t *tx_buf, *rx_buf;
+
+	if (tx < tx_count) {
+		tx_buf = tx_bufs->buffers[tx].buf;
+		tx_len = tx_bufs->buffers[tx].len;
+	} else {
+		tx_buf = NULL;
+		tx_len = rx_bufs->buffers[rx].len;
+	}
+
+	if (rx < rx_count) {
+		rx_buf = rx_bufs->buffers[rx].buf;
+		rx_len = rx_bufs->buffers[rx].len;
+	} else {
+		rx_buf = NULL;
+		rx_len = tx_bufs->buffers[tx].len;
+	}
+
+
+	while ((tx < tx_count || rx < rx_count) && (tx_len > 0 || rx_len > 0)) {
+		sqe = rtio_sqe_acquire(r);
+
+		if (sqe == NULL) {
+			rtio_spsc_drop_all(r->sq);
+			return NULL;
+		}
+
+		/* If tx/rx len are same, we can do a simple transceive */
+		if (tx_len == rx_len) {
+			if (tx_buf == NULL) {
+				rtio_sqe_prep_read(sqe, iodev, RTIO_PRIO_NORM,
+						   rx_buf, rx_len, NULL);
+			} else if (rx_buf == NULL) {
+				rtio_sqe_prep_write(sqe, iodev, RTIO_PRIO_NORM,
+						    tx_buf, tx_len, NULL);
+			} else {
+				rtio_sqe_prep_transceive(sqe, iodev, RTIO_PRIO_NORM,
+							 tx_buf, rx_buf, rx_len, NULL);
+			}
+			tx++;
+			rx++;
+			if (rx < rx_count) {
+				rx_buf = rx_bufs->buffers[rx].buf;
+				rx_len = rx_bufs->buffers[rx].len;
+			} else {
+				rx_buf = NULL;
+				rx_len = 0;
+			}
+			if (tx < tx_count) {
+				tx_buf = tx_bufs->buffers[tx].buf;
+				tx_len = tx_bufs->buffers[tx].len;
+			} else {
+				tx_buf = NULL;
+				tx_len = 0;
+			}
+		} else if (tx_len == 0) {
+			rtio_sqe_prep_read(sqe, iodev, RTIO_PRIO_NORM,
+					   (uint8_t *)rx_buf,
+					   (uint32_t)rx_len,
+					   NULL);
+			rx++;
+			if (rx < rx_count) {
+				rx_buf = rx_bufs->buffers[rx].buf;
+				rx_len = rx_bufs->buffers[rx].len;
+			} else {
+				rx_buf = NULL;
+				rx_len = 0;
+			}
+		} else if (rx_len == 0) {
+			rtio_sqe_prep_write(sqe, iodev, RTIO_PRIO_NORM,
+					    (uint8_t *)tx_buf,
+					    (uint32_t)tx_len,
+					    NULL);
+			tx++;
+			if (tx < tx_count) {
+				tx_buf = rx_bufs->buffers[rx].buf;
+				tx_len = rx_bufs->buffers[rx].len;
+			} else {
+				tx_buf = NULL;
+				tx_len = 0;
+			}
+		} else if (tx_len > rx_len) {
+			rtio_sqe_prep_transceive(sqe, iodev, RTIO_PRIO_NORM,
+						 (uint8_t *)tx_buf,
+						 (uint8_t *)rx_buf,
+						 (uint32_t)rx_len,
+						 NULL);
+			tx_len -= rx_len;
+			tx_buf += rx_len;
+			rx++;
+			if (rx < rx_count) {
+				rx_buf = rx_bufs->buffers[rx].buf;
+				rx_len = rx_bufs->buffers[rx].len;
+			} else {
+				rx_buf = NULL;
+				rx_len = tx_len;
+			}
+		} else if (rx_len > tx_len) {
+			rtio_sqe_prep_transceive(sqe, iodev, RTIO_PRIO_NORM,
+						 (uint8_t *)tx_buf,
+						 (uint8_t *)rx_buf,
+						 (uint32_t)tx_len,
+						 NULL);
+			rx_len -= tx_len;
+			rx_buf += tx_len;
+			tx++;
+			if (tx < tx_count) {
+				tx_buf = tx_bufs->buffers[tx].buf;
+				tx_len = tx_bufs->buffers[tx].len;
+			} else {
+				tx_buf = NULL;
+				tx_len = rx_len;
+			}
+		} else {
+			__ASSERT_NO_MSG("Invalid spi_rtio_copy state");
+		}
+
+		sqe->flags = RTIO_SQE_TRANSACTION;
+	}
+
+	if (sqe != NULL) {
+		sqe->flags = 0;
+	}
+
+	return sqe;
+}
+
+#endif /* CONFIG_SPI_RTIO */
 
 /**
  * @brief Release the SPI device locked on and/or the CS by the current config

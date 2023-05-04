@@ -24,5 +24,7 @@
 		rx-enable-gpios = <&gpioa 5 GPIO_ACTIVE_LOW>;
 		dio3-tcxo-voltage = <SX126X_DIO3_TCXO_1V7>;
 		tcxo-power-startup-delay-ms = <5>;
+		power-amplifier-output = "rfo-hp";
+		rfo-hp-max-power = <22>;
 	};
 };

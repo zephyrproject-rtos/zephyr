@@ -5,6 +5,8 @@
 
 import os
 import logging
+import pathlib
+import shutil
 import subprocess
 import glob
 import re
@@ -125,7 +127,7 @@ class Lcov(CoverageTool):
     def _generate(self, outdir, coveragelog):
         coveragefile = os.path.join(outdir, "coverage.info")
         ztestfile = os.path.join(outdir, "ztest.info")
-        cmd = ["lcov", "--gcov-tool", self.gcov_tool,
+        cmd = ["lcov", "--gcov-tool", str(self.gcov_tool),
                          "--capture", "--directory", outdir,
                          "--rc", "lcov_branch_coverage=1",
                          "--output-file", coveragefile]
@@ -195,8 +197,10 @@ class Gcovr(CoverageTool):
 
         # We want to remove tests/* and tests/ztest/test/* but save tests/ztest
         cmd = ["gcovr", "-r", self.base_dir, "--gcov-executable",
-               self.gcov_tool, "-e", "tests/*"] + excludes + ["--json", "-o",
-               coveragefile, outdir]
+               str(self.gcov_tool), "-e", "tests/*"] + excludes + ["--json",
+                                                                   "-o",
+                                                                   coveragefile,
+                                                                   outdir]
         cmd_str = " ".join(cmd)
         logger.debug(f"Running {cmd_str}...")
         subprocess.call(cmd, stdout=coveragelog)
@@ -233,19 +237,32 @@ class Gcovr(CoverageTool):
 
 
 def run_coverage(testplan, options):
+    use_system_gcov = False
+
+    for plat in options.coverage_platform:
+        _plat = testplan.get_platform(plat)
+        if _plat and (_plat.type in {"native", "unit"}):
+            use_system_gcov = True
     if not options.gcov_tool:
-        use_system_gcov = False
-
-        for plat in options.coverage_platform:
-            ts_plat = testplan.get_platform(plat)
-            if ts_plat and (ts_plat.type in {"native", "unit"}):
-                use_system_gcov = True
-
-        if use_system_gcov or "ZEPHYR_SDK_INSTALL_DIR" not in os.environ:
+        zephyr_sdk_gcov_tool = os.path.join(
+            os.environ.get("ZEPHYR_SDK_INSTALL_DIR", default=""),
+            "x86_64-zephyr-elf/bin/x86_64-zephyr-elf-gcov")
+        if os.environ.get("ZEPHYR_TOOLCHAIN_VARIANT") == "llvm":
+            llvm_path = os.environ.get("LLVM_TOOLCHAIN_PATH")
+            if llvm_path is not None:
+                llvm_path = os.path.join(llvm_path, "bin")
+            llvm_cov = shutil.which("llvm-cov", path=llvm_path)
+            llvm_cov_ext = pathlib.Path(llvm_cov).suffix
+            gcov_lnk = os.path.join(options.outdir, f"gcov{llvm_cov_ext}")
+            try:
+                os.symlink(llvm_cov, gcov_lnk)
+            except OSError:
+                shutil.copy(llvm_cov, gcov_lnk)
+            options.gcov_tool = gcov_lnk
+        elif use_system_gcov:
             options.gcov_tool = "gcov"
-        else:
-            options.gcov_tool = os.path.join(os.environ["ZEPHYR_SDK_INSTALL_DIR"],
-                                                "x86_64-zephyr-elf/bin/x86_64-zephyr-elf-gcov")
+        elif os.path.exists(zephyr_sdk_gcov_tool):
+            options.gcov_tool = zephyr_sdk_gcov_tool
 
     logger.info("Generating coverage files...")
     coverage_tool = CoverageTool.factory(options.coverage_tool)

@@ -23,7 +23,7 @@
 };
 
 / {
-	storage_disk {
+	test_disk: storage_disk {
 		compatible = "zephyr,flash-disk";
 		partition = <&flashdisk_partition>;
 		disk-name = "NAND";

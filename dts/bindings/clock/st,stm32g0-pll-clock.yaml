@@ -24,41 +24,41 @@ compatible: "st,stm32g0-pll-clock"
 include: [clock-controller.yaml, base.yaml]
 
 properties:
-    "#clock-cells":
-      const: 0
+  "#clock-cells":
+    const: 0
 
-    clocks:
-      required: true
+  clocks:
+    required: true
 
-    div-m:
-      type: int
-      required: true
-      description: |
-          Division factor for PLL input clock
-          Valid range: 1 - 8
+  div-m:
+    type: int
+    required: true
+    description: |
+        Division factor for PLL input clock
+        Valid range: 1 - 8
 
-    mul-n:
-      type: int
-      required: true
-      description: |
-          Main PLL multiplication factor for VCO
-          Valid range: 8 - 86
+  mul-n:
+    type: int
+    required: true
+    description: |
+        Main PLL multiplication factor for VCO
+        Valid range: 8 - 86
 
-    div-p:
-      type: int
-      description: |
-          PLL division factor for PLL P output
-          Valid range: 2 - 32
+  div-p:
+    type: int
+    description: |
+        PLL division factor for PLL P output
+        Valid range: 2 - 32
 
-    div-q:
-      type: int
-      description: |
-          PLL division factor for PLL Q output
-          Valid range: 2 - 8
+  div-q:
+    type: int
+    description: |
+        PLL division factor for PLL Q output
+        Valid range: 2 - 8
 
-    div-r:
-      type: int
-      required: true
-      description: |
-          PLL division factor for PLLCLK (system clock)
-          Valid range: 2 - 8
+  div-r:
+    type: int
+    required: true
+    description: |
+        PLL division factor for PLLCLK (system clock)
+        Valid range: 2 - 8

@@ -215,7 +215,7 @@ config UART_MCUMGR_RX_BUF_COUNT
 	  buffers hold received mcumgr fragments prior to reassembly.  This
 	  setting's value must satisfy the following relation:
 	  UART_MCUMGR_RX_BUF_COUNT * UART_MCUMGR_RX_BUF_SIZE >=
-	  MCUMGR_SMP_UART_MTU
+	  MCUMGR_TRANSPORT_UART_MTU
 
 endif # UART_MCUMGR
 
@@ -226,6 +226,20 @@ config XTENSA_SIM_CONSOLE
 	default y
 	help
 	  Use simulator console to print messages.
+
+config BSIM_CONSOLE
+	bool "Use the BabbleSim tracing system for console output"
+	depends on ARCH_POSIX
+	select CONSOLE_HAS_DRIVER
+	help
+	  Use the BabbleSim tracing system for the Zephyr console.
+
+config BSIM_CONSOLE_INIT_PRIORITY
+	int "Init priority"
+	default 99
+	depends on BSIM_CONSOLE
+	help
+	  Device driver initialization priority.
 
 config NATIVE_POSIX_CONSOLE
 	bool "Use the host terminal for console"

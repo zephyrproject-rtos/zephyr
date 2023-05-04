@@ -13,6 +13,8 @@
 
 #include <mgmt/mcumgr/transport/smp_internal.h>
 
+#define MCUMGR_TRANSPORT_NETBUF_SIZE CONFIG_MCUMGR_TRANSPORT_NETBUF_SIZE
+
 void smp_reassembly_init(struct smp_transport *smpt)
 {
 	smpt->__reassembly.current = NULL;
@@ -46,7 +48,8 @@ int smp_reassembly_collect(struct smp_transport *smpt, const void *buf, uint16_t
 			expected += sizeof(struct smp_hdr);
 
 			/* Joining net_bufs not supported yet */
-			if (len > CONFIG_MCUMGR_BUF_SIZE || expected > CONFIG_MCUMGR_BUF_SIZE) {
+			if (len > MCUMGR_TRANSPORT_NETBUF_SIZE ||
+			    expected > MCUMGR_TRANSPORT_NETBUF_SIZE) {
 				return -ENOSR;
 			}
 

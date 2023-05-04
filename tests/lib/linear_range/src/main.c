@@ -50,9 +50,9 @@ ZTEST(linear_range, test_linear_range_values_count)
 	zassert_equal(linear_range_values_count(&r[0]), 2U);
 	zassert_equal(linear_range_values_count(&r[1]), 2U);
 	zassert_equal(linear_range_values_count(&r[2]), 7U);
-	zassert_equal(linear_range_values_count(&r[3]), 1U);
+	zassert_equal(linear_range_values_count(&r[3]), 2U);
 
-	zassert_equal(linear_range_group_values_count(r, r_cnt), 12U);
+	zassert_equal(linear_range_group_values_count(r, r_cnt), 13U);
 }
 
 ZTEST(linear_range, test_linear_range_get_max_value)
@@ -192,10 +192,12 @@ ZTEST(linear_range, test_linear_range_get_index)
 
 	/* out of range (< min, > max) */
 	ret = linear_range_get_index(&r[1], -1, &idx);
-	zassert_equal(ret, -EINVAL);
+	zassert_equal(ret, -ERANGE);
+	zassert_equal(idx, 2U);
 
 	ret = linear_range_get_index(&r[1], 2, &idx);
-	zassert_equal(ret, -EINVAL);
+	zassert_equal(ret, -ERANGE);
+	zassert_equal(idx, 3U);
 
 	/* range limits */
 	ret = linear_range_get_index(&r[2], 100, &idx);
@@ -211,17 +213,15 @@ ZTEST(linear_range, test_linear_range_get_index)
 	zassert_equal(ret, 0);
 	zassert_equal(idx, 5U);
 
-	/* always maximum index in constant ranges */
+	/* always minimum index in constant ranges */
 	ret = linear_range_get_index(&r[3], 400, &idx);
 	zassert_equal(ret, 0);
-	zassert_equal(idx, 12U);
+	zassert_equal(idx, 11U);
 
 	/* group */
 	ret = linear_range_group_get_index(r, r_cnt, -20, &idx);
-	zassert_equal(ret, -EINVAL);
-
-	ret = linear_range_group_get_index(r, r_cnt, 50, &idx);
-	zassert_equal(ret, -EINVAL);
+	zassert_equal(ret, -ERANGE);
+	zassert_equal(idx, 0U);
 
 	ret = linear_range_group_get_index(r, r_cnt, -6, &idx);
 	zassert_equal(ret, 0);
@@ -231,13 +231,17 @@ ZTEST(linear_range, test_linear_range_get_index)
 	zassert_equal(ret, 0);
 	zassert_equal(idx, 2U);
 
+	ret = linear_range_group_get_index(r, r_cnt, 50, &idx);
+	zassert_equal(ret, -ERANGE);
+	zassert_equal(idx, 4U);
+
 	ret = linear_range_group_get_index(r, r_cnt, 200, &idx);
 	zassert_equal(ret, 0);
 	zassert_equal(idx, 8U);
 
 	ret = linear_range_group_get_index(r, r_cnt, 400, &idx);
 	zassert_equal(ret, 0);
-	zassert_equal(idx, 12U);
+	zassert_equal(idx, 11U);
 }
 
 ZTEST(linear_range, test_linear_range_get_win_index)
@@ -254,12 +258,21 @@ ZTEST(linear_range, test_linear_range_get_win_index)
 	zassert_equal(ret, 0);
 	zassert_equal(idx, 1U);
 
-	/* out of range (< min, > max) */
-	ret = linear_range_get_win_index(&r[1], -1, 0, &idx);
+	/* no intersection */
+	ret = linear_range_get_win_index(&r[0], -20, -15, &idx);
 	zassert_equal(ret, -EINVAL);
 
-	ret = linear_range_get_win_index(&r[1], 2, 3, &idx);
+	ret = linear_range_get_win_index(&r[0], -4, -3, &idx);
 	zassert_equal(ret, -EINVAL);
+
+	/* out of range, partial intersection (< min, > max) */
+	ret = linear_range_get_win_index(&r[1], -1, 0, &idx);
+	zassert_equal(ret, -ERANGE);
+	zassert_equal(idx, 2U);
+
+	ret = linear_range_get_win_index(&r[1], 1, 2, &idx);
+	zassert_equal(ret, -ERANGE);
+	zassert_equal(idx, 3U);
 
 	/* min/max equal */
 	ret = linear_range_get_win_index(&r[2], 100, 100, &idx);
@@ -283,10 +296,10 @@ ZTEST(linear_range, test_linear_range_get_win_index)
 	ret = linear_range_group_get_win_index(r, r_cnt, 120, 125, &idx);
 	zassert_equal(ret, -EINVAL);
 
-	/* always maximum index in constant ranges */
+	/* always minimum index in constant ranges */
 	ret = linear_range_get_win_index(&r[3], 400, 400, &idx);
 	zassert_equal(ret, 0);
-	zassert_equal(idx, 12U);
+	zassert_equal(idx, 11U);
 
 	/* group */
 	ret = linear_range_group_get_win_index(r, r_cnt, -10, -8, &idx);
@@ -297,13 +310,24 @@ ZTEST(linear_range, test_linear_range_get_win_index)
 	zassert_equal(ret, 0);
 	zassert_equal(idx, 2U);
 
+	ret = linear_range_group_get_win_index(r, r_cnt, 1, 120, &idx);
+	zassert_equal(ret, -ERANGE);
+	zassert_equal(idx, 3U);
+
 	ret = linear_range_group_get_win_index(r, r_cnt, 120, 140, &idx);
 	zassert_equal(ret, 0);
 	zassert_equal(idx, 5U);
 
+	ret = linear_range_group_get_win_index(r, r_cnt, 140, 400, &idx);
+	zassert_equal(ret, -ERANGE);
+	zassert_equal(idx, 10U);
+
 	ret = linear_range_group_get_win_index(r, r_cnt, 400, 400, &idx);
 	zassert_equal(ret, 0);
-	zassert_equal(idx, 12U);
+	zassert_equal(idx, 11U);
+
+	ret = linear_range_group_get_win_index(r, r_cnt, 300, 310, &idx);
+	zassert_equal(ret, -EINVAL);
 }
 
 ZTEST_SUITE(linear_range, NULL, NULL, NULL, NULL, NULL);

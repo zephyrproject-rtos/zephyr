@@ -16,7 +16,7 @@
 	aliases {
 		led0 = &green_led;
 		sw0 = &user_button;
-		kscan0 = &touch_controller;
+		kscan0 = &kscan_input;
 		watchdog0 = &wdog0;
 		magn0 = &fxos8700;
 		accel0 = &fxos8700;
@@ -33,7 +33,7 @@
 		zephyr,flash = &s26ks512s0;
 		zephyr,code-partition = &slot0_partition;
 		zephyr,display = &lcdif;
-		zephyr,keyboard-scan = &touch_controller;
+		zephyr,keyboard-scan = &kscan_input;
 	};
 
 	sdram0: memory@80000000 {
@@ -209,10 +209,14 @@ arduino_serial: &lpuart3 {
 		int2-gpios = <&gpio1 11 GPIO_ACTIVE_LOW>;
 	};
 
-	touch_controller: ft5336@38 {
+	ft5336@38 {
 		compatible = "focaltech,ft5336";
 		reg = <0x38>;
 		int-gpios = <&gpio1 11 GPIO_ACTIVE_LOW>;
+
+		kscan_input: kscan-input {
+			compatible = "zephyr,kscan-input";
+		};
 	};
 };
 
@@ -282,9 +286,14 @@ zephyr_udc0: &usb1 {
 	status = "okay";
 };
 
-/* Enable GPT for use as a hardware timer. This disables Cortex Systick.
- * to use systick, change this node from "gpt_hw_timer" to "systick"
+/* GPT and Systick are enabled. If power management is enabled, the GPT
+ * timer will be used instead of systick, as allows the core clock to
+ * be gated.
  */
 &gpt_hw_timer {
+	status = "okay";
+};
+
+&systick {
 	status = "okay";
 };

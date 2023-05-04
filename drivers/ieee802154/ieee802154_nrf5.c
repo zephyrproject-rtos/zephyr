@@ -153,7 +153,9 @@ static void nrf5_rx_thread(void *arg1, void *arg2, void *arg3)
 			pkt_len = rx_frame->psdu[0] -  NRF5_FCS_LENGTH;
 		}
 
+#if defined(CONFIG_NET_BUF_DATA_SIZE)
 		__ASSERT_NO_MSG(pkt_len <= CONFIG_NET_BUF_DATA_SIZE);
+#endif
 
 		LOG_DBG("Frame received");
 
@@ -475,7 +477,7 @@ static bool nrf5_tx_csma_ca(struct net_pkt *pkt, uint8_t *payload)
 }
 #endif
 
-#if IS_ENABLED(CONFIG_NET_PKT_TXTIME)
+#if defined(CONFIG_NET_PKT_TXTIME)
 /**
  * @brief Convert 32-bit target time to absolute 64-bit target time.
  */
@@ -560,15 +562,8 @@ static bool nrf5_tx_at(struct net_pkt *pkt, uint8_t *payload, bool cca)
 		},
 	};
 	uint64_t tx_at = target_time_convert_to_64_bits(net_pkt_txtime(pkt) / NSEC_PER_USEC);
-	bool ret;
 
-	ret = nrf_802154_transmit_raw_at(payload,
-					 tx_at,
-					 &metadata);
-	if (nrf5_data.event_handler) {
-		LOG_WRN("TX_STARTED event will be triggered without delay");
-	}
-	return ret;
+	return nrf_802154_transmit_raw_at(payload, tx_at, &metadata);
 }
 #endif /* CONFIG_NET_PKT_TXTIME */
 
@@ -601,7 +596,7 @@ static int nrf5_tx(const struct device *dev,
 		ret = nrf5_tx_csma_ca(pkt, nrf5_radio->tx_psdu);
 		break;
 #endif
-#if IS_ENABLED(CONFIG_NET_PKT_TXTIME)
+#if defined(CONFIG_NET_PKT_TXTIME)
 	case IEEE802154_TX_MODE_TXTIME:
 	case IEEE802154_TX_MODE_TXTIME_CCA:
 		__ASSERT_NO_MSG(pkt);
@@ -722,8 +717,25 @@ static int nrf5_stop(const struct device *dev)
 	return 0;
 }
 
+#if defined(CONFIG_NRF_802154_CARRIER_FUNCTIONS)
+static int nrf5_continuous_carrier(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	if (!nrf_802154_continuous_carrier()) {
+		LOG_ERR("Failed to enter continuous carrier state");
+		return -EIO;
+	}
+
+	LOG_DBG("Continuous carrier wave transmission started (channel: %d)",
+		nrf_802154_channel_get());
+
+	return 0;
+}
+#endif
+
 #if !IS_ENABLED(CONFIG_IEEE802154_NRF5_EXT_IRQ_MGMT)
-static void nrf5_radio_irq(void *arg)
+static void nrf5_radio_irq(const void *arg)
 {
 	ARG_UNUSED(arg);
 
@@ -820,47 +832,6 @@ static void nrf5_config_mac_keys(struct ieee802154_key *mac_keys)
 }
 #endif /* CONFIG_IEEE802154_2015 */
 
-#if defined(CONFIG_IEEE802154_CSL_ENDPOINT)
-static void nrf5_receive_at(uint32_t start, uint32_t duration, uint8_t channel, uint32_t id)
-{
-	/*
-	 * Workaround until OpenThread (the only CSL user in Zephyr so far) is able to schedule
-	 * RX windows using 64-bit time.
-	 */
-	uint64_t rx_time = target_time_convert_to_64_bits(start);
-
-	nrf_802154_receive_at(rx_time, duration, channel, id);
-}
-
-static void nrf5_config_csl_period(uint16_t period)
-{
-	nrf_802154_csl_writer_period_set(period);
-
-	/* Update the CSL anchor time to match the nearest requested CSL window, so that
-	 * the proper CSL Phase in the transmitted CSL Information Elements can be injected.
-	 */
-	if (period > 0) {
-		nrf_802154_csl_writer_anchor_time_set(nrf5_data.csl_rx_time);
-	}
-}
-
-static void nrf5_schedule_rx(uint8_t channel, uint32_t start, uint32_t duration)
-{
-	nrf5_receive_at(start, duration, channel, DRX_SLOT_RX);
-
-	/* Update the CSL anchor time to match the nearest requested CSL window, so that
-	 * the proper CSL Phase in the transmitted CSL Information Elements can be injected.
-	 *
-	 * Note that even if the nrf5_schedule_rx function is not called in time (for example
-	 * due to the call being blocked by higher priority threads) and the delayed reception
-	 * window is not scheduled, the CSL phase will still be calculated as if the following
-	 * reception windows were at times anchor_time + n * csl_period. The previously set
-	 * anchor_time will be used for calculations.
-	 */
-	nrf_802154_csl_writer_anchor_time_set(nrf5_data.csl_rx_time);
-}
-#endif /* CONFIG_IEEE802154_CSL_ENDPOINT */
-
 static int nrf5_configure(const struct device *dev,
 			  enum ieee802154_config_type type,
 			  const struct ieee802154_config *config)
@@ -933,6 +904,10 @@ static int nrf5_configure(const struct device *dev,
 	case IEEE802154_CONFIG_FRAME_COUNTER:
 		nrf_802154_security_global_frame_counter_set(config->frame_counter);
 		break;
+
+	case IEEE802154_CONFIG_FRAME_COUNTER_IF_LARGER:
+		nrf_802154_security_global_frame_counter_set_if_larger(config->frame_counter);
+		break;
 #endif /* CONFIG_IEEE802154_2015 */
 
 	case IEEE802154_CONFIG_ENH_ACK_HEADER_IE: {
@@ -965,16 +940,35 @@ static int nrf5_configure(const struct device *dev,
 
 #if defined(CONFIG_IEEE802154_CSL_ENDPOINT)
 	case IEEE802154_CONFIG_CSL_RX_TIME:
-		nrf5_data.csl_rx_time = config->csl_rx_time;
+		/*
+		 * `target_time_convert_to_64_bits()` is a workaround until OpenThread (the only
+		 * CSL user in Zephyr so far) is able to schedule RX windows using 64-bit time.
+		 */
+		uint64_t csl_rx_time = target_time_convert_to_64_bits(config->csl_rx_time);
+
+		nrf_802154_csl_writer_anchor_time_set(csl_rx_time);
 		break;
 
 	case IEEE802154_CONFIG_RX_SLOT:
-		nrf5_schedule_rx(config->rx_slot.channel, config->rx_slot.start,
-				 config->rx_slot.duration);
+		/* Note that even if the nrf_802154_receive_at function is not called in time
+		 * (for example due to the call being blocked by higher priority threads) and
+		 * the delayed reception window is not scheduled, the CSL phase will still be
+		 * calculated as if the following reception windows were at times
+		 * anchor_time + n * csl_period. The previously set
+		 * anchor_time will be used for calculations.
+		 *
+		 * `target_time_convert_to_64_bits()` is a workaround until OpenThread
+		 * (the only CSL user in Zephyr so far) is able to schedule RX windows
+		 * using 64-bit time.
+		 */
+		uint64_t start = target_time_convert_to_64_bits(config->rx_slot.start);
+
+		nrf_802154_receive_at(start, config->rx_slot.duration, config->rx_slot.channel,
+				      DRX_SLOT_RX);
 		break;
 
 	case IEEE802154_CONFIG_CSL_PERIOD:
-		nrf5_config_csl_period(config->csl_period);
+		nrf_802154_csl_writer_period_set(config->csl_period);
 		break;
 #endif /* CONFIG_IEEE802154_CSL_ENDPOINT */
 
@@ -998,7 +992,7 @@ void nrf_802154_received_timestamp_raw(uint8_t *data, int8_t power, uint8_t lqi,
 		nrf5_data.rx_frames[i].rssi = power;
 		nrf5_data.rx_frames[i].lqi = lqi;
 
-#if IS_ENABLED(CONFIG_NET_PKT_TIMESTAMP)
+#if defined(CONFIG_NET_PKT_TIMESTAMP)
 		nrf5_data.rx_frames[i].time = nrf_802154_mhr_timestamp_get(time, data[0]);
 #endif
 
@@ -1085,7 +1079,7 @@ void nrf_802154_transmitted_raw(uint8_t *frame,
 		nrf5_data.ack_frame.rssi = metadata->data.transmitted.power;
 		nrf5_data.ack_frame.lqi = metadata->data.transmitted.lqi;
 
-#if IS_ENABLED(CONFIG_NET_PKT_TIMESTAMP)
+#if defined(CONFIG_NET_PKT_TIMESTAMP)
 		nrf5_data.ack_frame.time =
 			nrf_802154_mhr_timestamp_get(
 				metadata->data.transmitted.time, nrf5_data.ack_frame.psdu[0]);
@@ -1167,6 +1161,9 @@ static struct ieee802154_radio_api nrf5_radio_api = {
 	.set_txpower = nrf5_set_txpower,
 	.start = nrf5_start,
 	.stop = nrf5_stop,
+#if defined(CONFIG_NRF_802154_CARRIER_FUNCTIONS)
+	.continuous_carrier = nrf5_continuous_carrier,
+#endif
 	.tx = nrf5_tx,
 	.ed_scan = nrf5_energy_scan_start,
 	.get_time = nrf5_get_time,

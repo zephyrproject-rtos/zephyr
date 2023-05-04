@@ -5,10 +5,15 @@
  */
 
 #include "tdk_robokit1-pinctrl.dtsi"
+#include "tdk_robokit1-thermistor.dtsi"
 
 / {
 	aliases {
 		led0 = &led_0;
+		magn0 = &akm09918c;
+		accel0 = &icm42688;
+		die-temp0 = &icm42688;
+		ambient-temp0 = &temp_sensor;
 	};
 
 	chosen {
@@ -38,6 +43,17 @@
 			label = "User LED";
 		};
 	};
+
+	temp_sensor: ambient_temp_sensor {
+		compatible = "zephyr,ntc-thermistor";
+		io-channels = <&spi_adc 0>;
+		zephyr,rt-table = <&thermistor_R25_10000_B_3974>;
+		r25-ohm = <10000>;
+		pullup-uv = <3300000>;
+		pullup-ohm = <0>;
+		pulldown-ohm = <10000>;
+		connection-type = "NTC_CONNECTED_POSITIVE";
+	};
 };
 
 &cpu0 {
@@ -46,12 +62,6 @@
 
 &afec0 {
 	pinctrl-0 = <&afec0_default>;
-	pinctrl-names = "default";
-	status = "okay";
-};
-
-&afec1 {
-	pinctrl-0 = <&afec1_default>;
 	pinctrl-names = "default";
 	status = "okay";
 };
@@ -76,6 +86,10 @@
 	pinctrl-0 = <&twihs2_default>;
 	pinctrl-names = "default";
 	status = "okay";
+	akm09918c: akm09918c@c {
+		compatible = "asahi-kasei,akm09918c";
+		reg = <0xc>;
+	};
 };
 
 &spi0 {
@@ -83,7 +97,36 @@
 	pinctrl-names = "default";
 	dmas = <&xdmac 0 DMA_PERID_SPI0_TX>, <&xdmac 1 DMA_PERID_SPI0_RX>;
 	dma-names = "tx", "rx";
+	cs-gpios =<&pioa 31 GPIO_ACTIVE_LOW>,
+				<&pioc 31 GPIO_ACTIVE_LOW>;
 	status = "okay";
+
+	icm42688: icm42688p@0 {
+		compatible = "invensense,icm42688";
+		reg = <0>;
+		int-gpios = <&pioc 5 GPIO_ACTIVE_HIGH>;
+		spi-max-frequency = <24000000>;
+		accel-hz = <32000>;
+		accel-fs = <16>;
+		gyro-hz = <32000>;
+		gyro-fs = <2000>;
+	};
+	spi_adc: adc@1 {
+		compatible = "ti,ads7052";
+		reg = <1>;
+		#io-channel-cells = <1>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		spi-max-frequency = <24000000>;
+		channel@0 {
+			reg = <0>;
+			zephyr,gain = "ADC_GAIN_1";
+			zephyr,reference = "ADC_REF_VDD_1";
+			zephyr,vref-mv = <3300>;
+			zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+			zephyr,resolution = <14>;
+		};
+	};
 };
 
 &spi1 {
@@ -182,3 +225,6 @@ zephyr_udc0: &usbhs {
 	};
 };
 
+&thermistor_R25_10000_B_3974 {
+	status = "okay";
+};

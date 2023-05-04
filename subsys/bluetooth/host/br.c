@@ -403,7 +403,9 @@ static void report_discovery_results(void)
 
 	atomic_clear_bit(bt_dev.flags, BT_DEV_INQUIRY);
 
-	discovery_cb(discovery_results, discovery_results_count);
+	if (discovery_cb) {
+		discovery_cb(discovery_results, discovery_results_count);
+	}
 	bt_br_discovery_reset();
 }
 
@@ -608,7 +610,9 @@ check_names:
 	/* all names resolved, report discovery results */
 	atomic_clear_bit(bt_dev.flags, BT_DEV_INQUIRY);
 
-	discovery_cb(discovery_results, discovery_results_count);
+	if (discovery_cb) {
+		discovery_cb(discovery_results, discovery_results_count);
+	}
 
 }
 

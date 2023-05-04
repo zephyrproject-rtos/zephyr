@@ -46,7 +46,7 @@ static int lpd880x_update(const struct device *dev, void *data, size_t size)
 	 * a zero byte propagates through at most 32 LED driver ICs.
 	 * The LPD8803 is the worst case, at 3 output channels per IC.
 	 */
-	uint8_t reset_size = ceiling_fraction(ceiling_fraction(size, 3), 32);
+	uint8_t reset_size = DIV_ROUND_UP(DIV_ROUND_UP(size, 3), 32);
 	uint8_t reset_buf[reset_size];
 	uint8_t last = 0x00;
 	const struct spi_buf bufs[3] = {
@@ -129,7 +129,7 @@ static int lpd880x_strip_init(const struct device *dev)
 {
 	const struct lpd880x_config *config = dev->config;
 
-	if (!spi_is_ready(&config->bus)) {
+	if (!spi_is_ready_dt(&config->bus)) {
 		LOG_ERR("SPI device %s not ready", config->bus.bus->name);
 		return -ENODEV;
 	}

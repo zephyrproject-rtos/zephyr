@@ -92,11 +92,6 @@ Sample Criteria
     * Building & Running instructions
     * Sample output, if applicable.
 
-6. A sample should be a reference, not a tutorial.
-++++++++++++++++++++++++++++++++++++++++++++++++++
-  * Should have minimal comments, when applicable.
-  * Should concisely demonstrate HOW to solve a problem, not WHY.
-
 
 As a starting point, this sample is a good example to refer to
 :zephyr_file:`samples/kernel/condition_variables/condvar`.

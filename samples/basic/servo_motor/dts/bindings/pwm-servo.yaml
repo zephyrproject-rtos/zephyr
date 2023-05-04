@@ -8,17 +8,17 @@ compatible: "pwm-servo"
 include: base.yaml
 
 properties:
-    pwms:
-      required: true
-      type: phandle-array
-      description: PWM specifier driving the servo motor.
+  pwms:
+    required: true
+    type: phandle-array
+    description: PWM specifier driving the servo motor.
 
-    min-pulse:
-      required: true
-      type: int
-      description: Minimum pulse width (nanoseconds).
+  min-pulse:
+    required: true
+    type: int
+    description: Minimum pulse width (nanoseconds).
 
-    max-pulse:
-      required: true
-      type: int
-      description: Maximum pulse width (nanoseconds).
+  max-pulse:
+    required: true
+    type: int
+    description: Maximum pulse width (nanoseconds).

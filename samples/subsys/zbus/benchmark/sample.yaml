@@ -12,14 +12,16 @@ tests:
       regex:
         - "I: Benchmark 1 to 8: Dynamic memory, ASYNC transmission and message size 256"
         - "I: Bytes sent = 262144, received = 262144"
-        - "I: Average data rate: (.*)B/s"
-        - "I: Duration: (.*)ms"
+        - "I: Average data rate: (\\d+).(\\d+)MB/s"
+        - "I: Duration: (\\d+).(\\d+)s"
         - "@(.*)"
     extra_configs:
       - CONFIG_BM_ONE_TO=8
       - CONFIG_BM_MESSAGE_SIZE=256
       - CONFIG_BM_ASYNC=y
-    platform_exclude: qemu_x86 qemu_x86_64 qemu_riscv32_smp native_posix native_posix_64 qemu_riscv32_smp qemu_cortex_a53_smp qemu_riscv64_smp qemu_leon3 qemu_xtensa qemu_cortex_a53 qemu_riscv32 qemu_malta qemu_malta_be qemu_arc_hs6x qemu_riscv64 m2gl025_miv hifive_unleashed
+      - arch:nios2:CONFIG_SYS_CLOCK_TICKS_PER_SEC=1000
+      - CONFIG_IDLE_STACK_SIZE=1024
+    platform_exclude: nrf52_bsim
   sample.zbus.benchmark_sync:
     tags: zbus
     min_ram: 16
@@ -31,11 +33,13 @@ tests:
       regex:
         - "I: Benchmark 1 to 8: Dynamic memory, SYNC transmission and message size 256"
         - "I: Bytes sent = 262144, received = 262144"
-        - "I: Average data rate: (.*)B/s"
-        - "I: Duration: (.*)ms"
+        - "I: Average data rate: (\\d+).(\\d+)MB/s"
+        - "I: Duration: (\\d+).(\\d+)s"
         - "@(.*)"
     extra_configs:
       - CONFIG_BM_ONE_TO=8
       - CONFIG_BM_MESSAGE_SIZE=256
       - CONFIG_BM_ASYNC=n
-    platform_exclude: qemu_x86 qemu_x86_64 qemu_riscv32_smp native_posix native_posix_64 qemu_riscv32_smp qemu_cortex_a53_smp qemu_riscv64_smp qemu_leon3 qemu_xtensa qemu_cortex_a53 qemu_riscv32 m2gl025_miv m2gl025_miv
+      - arch:nios2:CONFIG_SYS_CLOCK_TICKS_PER_SEC=1000
+      - CONFIG_IDLE_STACK_SIZE=1024
+    platform_exclude: nrf52_bsim

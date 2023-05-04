@@ -1,0 +1,57 @@
+#
+# Copyright (c) 2022 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+tests:
+  os.mgmt.info:
+    # FIXME: Exclude architectures that lack a reboot handler function
+    # FIXME: Exclude systems whereby the processor type is not known and emits a warning
+    arch_exclude: arm64 nios2 sparc arc xtensa mips posix
+    tags: os_mgmt_info
+  os.mgmt.info_no_hooks:
+    # FIXME: Exclude architectures that lack a reboot handler function
+    # FIXME: Exclude systems whereby the processor type is not known and emits a warning
+    arch_exclude: arm64 nios2 sparc arc xtensa mips posix
+    tags: os_mgmt_info
+    extra_configs:
+      - CONFIG_MCUMGR_GRP_OS_INFO_CUSTOM_HOOKS=n
+      - CONFIG_MCUMGR_MGMT_NOTIFICATION_HOOKS=n
+  os.mgmt.info_bt:
+    depends_on: ble
+    # FIXME: Exclude architectures that lack a reboot handler function
+    # FIXME: Exclude systems whereby the processor type is not known and emits a warning
+    arch_exclude: arm64 nios2 sparc arc xtensa mips posix
+    tags: os_mgmt_info
+    extra_configs:
+      - CONFIG_BT=y
+      - CONFIG_BT_DEVICE_NAME="a_bt_name"
+  os.mgmt.info_net:
+    depends_on: netif
+    # FIXME: Exclude architectures that lack a reboot handler function
+    # FIXME: Exclude systems whereby the processor type is not known and emits a warning
+    arch_exclude: arm64 nios2 sparc arc xtensa mips posix
+    platform_exclude: qemu_cortex_a9 qemu_x86 qemu_riscv64_smp qemu_riscv64 qemu_riscv32e
+        qemu_riscv32 qemu_riscv32_smp qemu_cortex_m3 mps2_an385
+    tags: os_mgmt_info
+    extra_configs:
+      - CONFIG_NETWORKING=y
+      - CONFIG_NET_HOSTNAME_ENABLE=y
+      - CONFIG_NET_HOSTNAME="test_net_name"
+      - CONFIG_TEST_RANDOM_GENERATOR=y
+  os.mgmt.info_build_date:
+    # FIXME: Exclude architectures that lack a reboot handler function
+    # FIXME: Exclude systems whereby the processor type is not known and emits a warning
+    arch_exclude: arm64 nios2 sparc arc xtensa mips posix
+    tags: os_mgmt_info
+    extra_configs:
+      - CONFIG_BUILD_DATE_TIME_TEST=y
+  os.mgmt.info_limited_size:
+    # FIXME: Exclude architectures that lack a reboot handler function
+    # FIXME: Exclude systems whereby the processor type is not known and emits a warning
+    arch_exclude: arm64 nios2 sparc arc xtensa mips posix
+    tags: os_mgmt_info
+    extra_configs:
+      - CONFIG_LIMITED_TEST=y
+      - CONFIG_MCUMGR_TRANSPORT_DUMMY_RX_BUF_SIZE=64
+      - CONFIG_MCUMGR_GRP_OS_INFO_MAX_RESPONSE_SIZE=32

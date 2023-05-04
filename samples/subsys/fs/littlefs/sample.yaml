@@ -5,5 +5,19 @@ tests:
     build_only: true
     platform_allow: nrf52840dk_nrf52840 particle_xenon disco_l475_iot1
       mimxrt685_evk_cm33 mimxrt1060_evk mimxrt1064_evk qemu_x86 native_posix
-      mimxrt1160_evk_cm7
+      mimxrt1160_evk_cm7 lpcxpresso55s69_cpu0
     tags: filesystem
+    integration_platforms:
+      - nrf52840dk_nrf52840
+  sample.filesystem.littlefs.nrf52840dk_spi:
+    build_only: true
+    platform_allow: nrf52840dk_nrf52840
+    extra_args:
+      OVERLAY_CONFIG=boards/nrf52840dk_nrf52840_spi.conf
+      DTC_OVERLAY_FILE=boards/nrf52840dk_nrf52840_spi.overlay
+  sample.filesystem.littlefs.nrf52840dk_qspi:
+    build_only: true
+    platform_allow: nrf52840dk_nrf52840
+    extra_args:
+      OVERLAY_CONFIG=boards/nrf52840dk_nrf52840_qspi.conf
+      DTC_OVERLAY_FILE=boards/nrf52840dk_nrf52840_qspi.overlay

@@ -116,7 +116,7 @@ struct smp_transport {
 	smp_transport_ud_free_fn ud_free;
 	smp_transport_query_valid_check_fn query_valid_check;
 
-#ifdef CONFIG_MCUMGR_SMP_REASSEMBLY
+#ifdef CONFIG_MCUMGR_TRANSPORT_REASSEMBLY
 	/* Packet reassembly internal data, API access only */
 	struct {
 		struct net_buf *current;	/* net_buf used for reassembly */
@@ -138,7 +138,7 @@ struct zephyr_smp_transport {
 	smp_transport_ud_copy_fn zst_ud_copy;
 	smp_transport_ud_free_fn zst_ud_free;
 
-#ifdef CONFIG_MCUMGR_SMP_REASSEMBLY
+#ifdef CONFIG_MCUMGR_TRANSPORT_REASSEMBLY
 	/* Packet reassembly internal data, API access only */
 	struct {
 		struct net_buf *current;	/* net_buf used for reassembly */

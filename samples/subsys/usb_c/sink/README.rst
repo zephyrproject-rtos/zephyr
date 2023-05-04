@@ -6,8 +6,9 @@ Basic USB-C SINK
 Overview
 ********
 
-This example demonstrates how to create a USB-C Power Delivery application
-using the USB-C subsystem. The application implements a USB-C Sink device.
+This example demonstrates how to create a USB-C Power Delivery application and
+how to generate USB VIF policies in XML format using the USB-C subsystem. The
+application implements a USB-C Sink device.
 
 After the USB-C Sink device is plugged into a Power Delivery charger, it
 negotiates with the charger to provide 5V@100mA and displays all

@@ -39,6 +39,11 @@
 
 #define K_EVENT_WAIT_RESET    0x02   /* Reset events prior to waiting */
 
+struct event_walk_data {
+	struct k_thread  *head;
+	uint32_t events;
+};
+
 void z_impl_k_event_init(struct k_event *event)
 {
 	event->events = 0;
@@ -84,14 +89,44 @@ static bool are_wait_conditions_met(uint32_t desired, uint32_t current,
 	return match != 0;
 }
 
+static int event_walk_op(struct k_thread *thread, void *data)
+{
+	unsigned int      wait_condition;
+	struct event_walk_data *event_data = data;
+
+	wait_condition = thread->event_options & K_EVENT_WAIT_MASK;
+
+	if (are_wait_conditions_met(thread->events, event_data->events,
+				    wait_condition)) {
+
+		/*
+		 * Events create a list of threads to wake up. We do
+		 * not want z_thread_timeout to wake these threads; they
+		 * will be woken up by k_event_post_internal once they
+		 * have been processed.
+		 */
+		thread->no_wake_on_timeout = true;
+
+		/*
+		 * The wait conditions have been satisfied. Add this
+		 * thread to the list of threads to unpend.
+		 */
+		thread->next_event_link = event_data->head;
+		event_data->head = thread;
+		z_abort_timeout(&thread->base.timeout);
+	}
+
+	return 0;
+}
+
 static void k_event_post_internal(struct k_event *event, uint32_t events,
 				  uint32_t events_mask)
 {
 	k_spinlock_key_t  key;
 	struct k_thread  *thread;
-	unsigned int      wait_condition;
-	struct k_thread  *head = NULL;
+	struct event_walk_data data;
 
+	data.head = NULL;
 	key = k_spin_lock(&event->lock);
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_event, post, event, events,
@@ -100,43 +135,28 @@ static void k_event_post_internal(struct k_event *event, uint32_t events,
 	events = (event->events & ~events_mask) |
 		 (events & events_mask);
 	event->events = events;
-
+	data.events = events;
 	/*
 	 * Posting an event has the potential to wake multiple pended threads.
-	 * It is desirable to unpend all affected threads simultaneously. To
-	 * do so, this must be done in three steps as it is unsafe to unpend
-	 * threads from within the _WAIT_Q_FOR_EACH() loop.
+	 * It is desirable to unpend all affected threads simultaneously. This
+	 * is done in three steps:
 	 *
-	 * 1. Create a linked list of threads to unpend.
+	 * 1. Walk the waitq and create a linked list of threads to unpend.
 	 * 2. Unpend each of the threads in the linked list
 	 * 3. Ready each of the threads in the linked list
 	 */
 
-	_WAIT_Q_FOR_EACH(&event->wait_q, thread) {
-		wait_condition = thread->event_options & K_EVENT_WAIT_MASK;
+	z_sched_waitq_walk(&event->wait_q, event_walk_op, &data);
 
-		if (are_wait_conditions_met(thread->events, events,
-					    wait_condition)) {
-			/*
-			 * The wait conditions have been satisfied. Add this
-			 * thread to the list of threads to unpend.
-			 */
-
-			thread->next_event_link = head;
-			head = thread;
-		}
-
-
-	}
-
-	if (head != NULL) {
-		thread = head;
+	if (data.head != NULL) {
+		thread = data.head;
+		struct k_thread *next;
 		do {
-			z_unpend_thread(thread);
 			arch_thread_return_value_set(thread, 0);
 			thread->events = events;
-			z_ready_thread(thread);
-			thread = thread->next_event_link;
+			next = thread->next_event_link;
+			z_sched_wake_thread(thread, false);
+			thread = next;
 		} while (thread != NULL);
 	}
 
@@ -188,6 +208,20 @@ void z_vrfy_k_event_set_masked(struct k_event *event, uint32_t events,
 	z_impl_k_event_set_masked(event, events, events_mask);
 }
 #include <syscalls/k_event_set_masked_mrsh.c>
+#endif
+
+void z_impl_k_event_clear(struct k_event *event, uint32_t events)
+{
+	k_event_post_internal(event, 0, events);
+}
+
+#ifdef CONFIG_USERSPACE
+void z_vrfy_k_event_clear(struct k_event *event, uint32_t events)
+{
+	Z_OOPS(Z_SYSCALL_OBJ(event, K_OBJ_EVENT));
+	z_impl_k_event_clear(event, events);
+}
+#include <syscalls/k_event_clear_mrsh.c>
 #endif
 
 static uint32_t k_event_wait_internal(struct k_event *event, uint32_t events,

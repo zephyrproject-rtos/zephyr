@@ -425,7 +425,7 @@ static int kscan_npcx_init(const struct device *dev)
 	}
 
 	/* Turn on KBSCAN controller device clock */
-	ret = clock_control_on(clk_dev, (clock_control_subsys_t *)&config->clk_cfg);
+	ret = clock_control_on(clk_dev, (clock_control_subsys_t)&config->clk_cfg);
 	if (ret < 0) {
 		LOG_ERR("Turn on KBSCAN clock fail %d", ret);
 	}

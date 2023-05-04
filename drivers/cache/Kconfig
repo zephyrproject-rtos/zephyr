@@ -2,19 +2,22 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig CACHE
-	bool "External cache controllers drivers"
+	bool "External cache controller drivers"
+	default y if CACHE_MANAGEMENT
 	help
 	  Enable support for external cache controllers drivers
 
 if CACHE
 
+config CACHE_HAS_DRIVER
+	bool
+
 module = CACHE
 module-str = cache
 source "subsys/logging/Kconfig.template.log_config"
 
-config CACHE_HAS_DRIVER
-	bool
-
-endif # CACHE
+comment "Device Drivers"
 
 source "drivers/cache/Kconfig.aspeed"
+
+endif # CACHE

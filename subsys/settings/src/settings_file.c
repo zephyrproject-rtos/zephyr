@@ -21,16 +21,13 @@ LOG_MODULE_DECLARE(settings, CONFIG_SETTINGS_LOG_LEVEL);
 
 #ifdef CONFIG_SETTINGS_FS
 #define SETTINGS_FILE_MAX_LINES		CONFIG_SETTINGS_FS_MAX_LINES
-#define SETTINGS_FILE_DIR		CONFIG_SETTINGS_FS_DIR
 #define SETTINGS_FILE_PATH		CONFIG_SETTINGS_FS_FILE
 #else
 #define SETTINGS_FILE_MAX_LINES		CONFIG_SETTINGS_FILE_MAX_LINES
-#define SETTINGS_FILE_DIR		CONFIG_SETTINGS_FILE_DIR
 #define SETTINGS_FILE_PATH		CONFIG_SETTINGS_FILE_PATH
 #endif
 
 int settings_backend_init(void);
-void settings_mount_file_backend(struct settings_file *cf);
 
 static int settings_file_load(struct settings_store *cs,
 			      const struct settings_load_arg *arg);
@@ -137,8 +134,12 @@ static int settings_file_load_priv(struct settings_store *cs, line_load_cb cb,
 
 	fs_file_t_init(&file);
 
-	rc = fs_open(&file, cf->cf_name, FS_O_CREATE | FS_O_RDWR);
+	rc = fs_open(&file, cf->cf_name, FS_O_READ);
 	if (rc != 0) {
+		if (rc == -ENOENT) {
+			return -ENOENT;
+		}
+
 		return -EINVAL;
 	}
 
@@ -444,7 +445,7 @@ static int settings_file_save(struct settings_store *cs, const char *name,
 	if (cdca.is_dup == 1) {
 		return 0;
 	}
-	return settings_file_save_priv(cs, name, (char *)value, val_len);
+	return settings_file_save_priv(cs, name, value, val_len);
 }
 
 static int read_handler(void *ctx, off_t off, char *buf, size_t *len)
@@ -515,24 +516,62 @@ void settings_mount_file_backend(struct settings_file *cf)
 	settings_line_io_init(read_handler, write_handler, get_len_cb, 1);
 }
 
+static int mkdir_if_not_exists(const char *path)
+{
+	struct fs_dirent entry;
+	int err;
+
+	err = fs_stat(path, &entry);
+	if (err == -ENOENT) {
+		return fs_mkdir(path);
+	} else if (err) {
+		return err;
+	}
+
+	if (entry.type != FS_DIR_ENTRY_DIR) {
+		return -EEXIST;
+	}
+
+	return 0;
+}
+
+static int mkdir_for_file(const char *file_path)
+{
+	char dir_path[SETTINGS_FILE_NAME_MAX];
+	int err;
+
+	for (size_t i = 0; file_path[i] != '\0'; i++) {
+		if (i > 0 && file_path[i] == '/') {
+			dir_path[i] = '\0';
+
+			err = mkdir_if_not_exists(dir_path);
+			if (err) {
+				return err;
+			}
+		}
+
+		dir_path[i] = file_path[i];
+	}
+
+	return 0;
+}
+
 int settings_backend_init(void)
 {
 	static struct settings_file config_init_settings_file = {
 		.cf_name = SETTINGS_FILE_PATH,
 		.cf_maxlines = SETTINGS_FILE_MAX_LINES
 	};
-	struct fs_dirent entry;
 	int rc;
-
 
 	rc = settings_file_src(&config_init_settings_file);
 	if (rc) {
-		k_panic();
+		return rc;
 	}
 
 	rc = settings_file_dst(&config_init_settings_file);
 	if (rc) {
-		k_panic();
+		return rc;
 	}
 
 	settings_mount_file_backend(&config_init_settings_file);
@@ -540,12 +579,7 @@ int settings_backend_init(void)
 	/*
 	 * Must be called after root FS has been initialized.
 	 */
-	rc = fs_stat(SETTINGS_FILE_DIR, &entry);
-	/* If directory doesn't exist, create it */
-	if (rc == -ENOENT) {
-		rc = fs_mkdir(SETTINGS_FILE_DIR);
-	}
-	return rc;
+	return mkdir_for_file(config_init_settings_file.cf_name);
 }
 
 static void *settings_file_storage_get(struct settings_store *cs)

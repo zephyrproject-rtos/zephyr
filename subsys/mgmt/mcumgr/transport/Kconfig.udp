@@ -1,20 +1,26 @@
 # Copyright Runtime.io 2018. All rights reserved.
-# Copyright Nordic Semiconductor ASA 2020. All rights reserved.
+# Copyright Nordic Semiconductor ASA 2020-2022. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 
-menuconfig MCUMGR_SMP_UDP
+# The Kconfig file is dedicated to UDP transport of MCUmgr
+# subsystem and provides Kconfig options to control aspects of
+# the transport.
+#
+# Options defined in this file should be prefixed:
+#  MCUMGR_TRANSPORT_UDP_
+
+menuconfig MCUMGR_TRANSPORT_UDP
 	bool "UDP mcumgr SMP transport"
-	select NETWORKING
-	select NET_UDP
-	select NET_SOCKETS
+	depends on NET_UDP
+	depends on NET_SOCKETS
 	select NET_SOCKETS_POSIX_NAMES if !POSIX_API
 	help
 	  Enables handling of SMP commands received over UDP.
 	  Will start a thread for listening on the configured UDP port.
 
-if MCUMGR_SMP_UDP
+if MCUMGR_TRANSPORT_UDP
 
-config MCUMGR_SMP_UDP_IPV4
+config MCUMGR_TRANSPORT_UDP_IPV4
 	bool "UDP SMP using IPv4"
 	depends on NET_IPV4
 	default y
@@ -22,38 +28,47 @@ config MCUMGR_SMP_UDP_IPV4
 	  Enable SMP UDP using IPv4 addressing.
 	  Can be enabled alongside IPv6 addressing.
 
-config MCUMGR_SMP_UDP_IPV6
+config MCUMGR_TRANSPORT_UDP_IPV6
 	bool "UDP SMP using IPv6"
 	depends on NET_IPV6
 	help
 	  Enable SMP UDP using IPv6 addressing.
 	  Can be enabled alongside IPv4 addressing.
 
-config MCUMGR_SMP_UDP_PORT
+config MCUMGR_TRANSPORT_UDP_PORT
 	int "UDP SMP port"
 	default 1337
 	help
 	  UDP port that SMP server will listen for SMP commands on.
 
-config MCUMGR_SMP_UDP_STACK_SIZE
+config MCUMGR_TRANSPORT_UDP_STACK_SIZE
 	int "UDP SMP stack size"
 	default 512
 	help
 	  Stack size of the SMP UDP listening thread
 
-config MCUMGR_SMP_UDP_THREAD_PRIO
+config MCUMGR_TRANSPORT_UDP_THREAD_PRIO
 	int "UDP SMP thread priority"
 	default 0
 	help
 	  Scheduling priority of the SMP UDP listening thread.
 
-config MCUMGR_SMP_UDP_MTU
+config MCUMGR_TRANSPORT_UDP_MTU
 	int "UDP SMP MTU"
 	default 1500
 	help
 	  Maximum size of SMP frames sent and received over UDP, in bytes.
 	  This value must satisfy the following relation:
-	  MCUMGR_SMP_UDP_MTU <= MCUMGR_BUF_SIZE + SMP msg overhead - address size
+	  MCUMGR_TRANSPORT_UDP_MTU <= MCUMGR_TRANSPORT_NETBUF_SIZE + SMP msg overhead - address size
 	  where address size is determined by IPv4/IPv6 selection.
 
-endif # MCUMGR_SMP_UDP
+config MCUMGR_TRANSPORT_UDP_AUTOMATIC_INIT
+	bool "UDP SMP autostart/setup"
+	default y
+	help
+	  Enable setting up the UDP SMP transport at boot time without needing
+	  any code in the application to do this. Will automatically start the
+	  UDP SMP service when the network interface is up and disable it when
+	  it goes down (at layer 4).
+
+endif # MCUMGR_TRANSPORT_UDP

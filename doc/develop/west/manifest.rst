@@ -160,7 +160,8 @@ The ``projects`` subsection contains a sequence describing the project
 repositories in the west workspace. Every project has a unique name. You can
 specify what Git remote URLs to use when cloning and fetching the projects,
 what revisions to track, and where the project should be stored on the local
-file system.
+file system. Note that west projects :ref:`are different from modules
+<modules-vs-projects>`.
 
 Here is an example. We'll assume the ``remotes`` given above.
 
@@ -2113,6 +2114,17 @@ or fails with an error:
    west manifest --validate
 
 The error message can help diagnose errors.
+
+Here, "invalid" means that the syntax of the manifest file doesn't follow the
+rules documented on this page.
+
+If your manifest is valid but it's not working the way you want it to, turning
+up the verbosity with ``-v`` is a good way to get detailed information about
+what decisions west made about your manifest, and why:
+
+.. code-block:: none
+
+   west -v manifest --validate
 
 .. _west-manifest-path:
 

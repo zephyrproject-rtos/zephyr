@@ -7,6 +7,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/sys/check.h>
 #include <zephyr/arch/cpu.h>
+#include <zephyr/pm/pm.h>
 
 #include <soc.h>
 #include <adsp_boot.h>
@@ -15,6 +16,7 @@
 #include <adsp_memory.h>
 #include <adsp_interrupt.h>
 #include <zephyr/irq.h>
+#include <zephyr/cache.h>
 
 #define CORE_POWER_CHECK_NUM 32
 #define ACE_INTC_IRQ DT_IRQN(DT_NODELABEL(ace_intc))
@@ -47,7 +49,7 @@ static void ipc_isr(void *arg)
 
 unsigned int soc_num_cpus;
 
-static __imr int soc_num_cpus_init(const struct device *dev)
+static __imr int soc_num_cpus_init(void)
 {
 	/* Need to set soc_num_cpus early to arch_num_cpus() works properly */
 	soc_num_cpus = ((sys_read32(DFIDCCP) >> CAP_INST_SHIFT) & CAP_INST_MASK) + 1;
@@ -84,8 +86,24 @@ void soc_start_core(int cpu_num)
 	if (cpu_num > 0) {
 		/* Initialize the ROM jump address */
 		uint32_t *rom_jump_vector = (uint32_t *) ROM_JUMP_ADDR;
+#if CONFIG_PM
+		extern void dsp_restore_vector(void);
+
+		/* We need to find out what type of booting is taking place here. Secondary cores
+		 * can be disabled and enabled multiple times during runtime. During kernel
+		 * initialization, the next pm state is set to ACTIVE. This way we can determine
+		 * whether the core is being turned on again or for the first time.
+		 */
+		if (pm_state_next_get(cpu_num)->state == PM_STATE_ACTIVE) {
+			*rom_jump_vector = (uint32_t) z_soc_mp_asm_entry;
+		} else {
+			*rom_jump_vector = (uint32_t) dsp_restore_vector;
+		}
+#else
 		*rom_jump_vector = (uint32_t) z_soc_mp_asm_entry;
-		z_xtensa_cache_flush(rom_jump_vector, sizeof(*rom_jump_vector));
+#endif
+
+		sys_cache_data_flush_range(rom_jump_vector, sizeof(*rom_jump_vector));
 		ACE_PWRCTL->wpdsphpxpg |= BIT(cpu_num);
 
 		while ((ACE_PWRSTS->dsphpxpgs & BIT(cpu_num)) == 0) {
@@ -93,13 +111,24 @@ void soc_start_core(int cpu_num)
 		}
 
 		/* Tell the ACE ROM that it should use secondary core flow */
-		DFDSPBRCP.bootctl[cpu_num].battr |= DFDSPBRCP_BATTR_LPSCTL_BATTR_SLAVE_CORE;
+		DSPCS.bootctl[cpu_num].battr |= DSPBR_BATTR_LPSCTL_BATTR_SLAVE_CORE;
 	}
 
-	DFDSPBRCP.capctl[cpu_num].ctl |= DFDSPBRCP_CTL_SPA;
+	/* Setting the Power Active bit to the off state before powering up the core. This step is
+	 * required by the HW if we are starting core for a second time. Without this sequence, the
+	 * core will not power on properly when doing transition D0->D3->D0.
+	 */
+	DSPCS.capctl[cpu_num].ctl &= ~DSPCS_CTL_SPA;
+
+	/* Checking current power status of the core. */
+	while (((DSPCS.capctl[cpu_num].ctl & DSPCS_CTL_CPA) == DSPCS_CTL_CPA)) {
+		k_busy_wait(HW_STATE_CHECK_DELAY);
+	}
+
+	DSPCS.capctl[cpu_num].ctl |= DSPCS_CTL_SPA;
 
 	/* Waiting for power up */
-	while (((DFDSPBRCP.capctl[cpu_num].ctl & DFDSPBRCP_CTL_CPA) != DFDSPBRCP_CTL_CPA) &&
+	while (((DSPCS.capctl[cpu_num].ctl & DSPCS_CTL_CPA) != DSPCS_CTL_CPA) &&
 	       (retry > 0)) {
 		k_busy_wait(HW_STATE_CHECK_DELAY);
 		retry--;
@@ -116,13 +145,8 @@ void soc_mp_startup(uint32_t cpu)
 	z_xtensa_irq_enable(ACE_INTC_IRQ);
 
 	/* Prevent idle from powering us off */
-	DFDSPBRCP.bootctl[cpu].bctl |=
-		DFDSPBRCP_BCTL_WAITIPCG | DFDSPBRCP_BCTL_WAITIPPG;
-	/* checking if WDT was stopped during D3 transition */
-	if (DFDSPBRCP.bootctl[cpu].wdtcs & DFDSPBRCP_WDT_RESUME) {
-		DFDSPBRCP.bootctl[cpu].wdtcs = DFDSPBRCP_WDT_RESUME;
-		/* TODO: delete this IF when FW starts using imr restore vector */
-	}
+	DSPCS.bootctl[cpu].bctl |=
+		DSPBR_BCTL_WAITIPCG | DSPBR_BCTL_WAITIPPG;
 }
 
 void arch_sched_ipi(void)
@@ -152,14 +176,14 @@ int soc_adsp_halt_cpu(int id)
 		return -EINVAL;
 	}
 
-	CHECKIF(!soc_cpus_active[id]) {
+	CHECKIF(soc_cpus_active[id]) {
 		return -EINVAL;
 	}
 
-	DFDSPBRCP.capctl[id].ctl &= ~DFDSPBRCP_CTL_SPA;
+	DSPCS.capctl[id].ctl &= ~DSPCS_CTL_SPA;
 
 	/* Waiting for power off */
-	while (((DFDSPBRCP.capctl[id].ctl & DFDSPBRCP_CTL_CPA) == DFDSPBRCP_CTL_CPA) &&
+	while (((DSPCS.capctl[id].ctl & DSPCS_CTL_CPA) == DSPCS_CTL_CPA) &&
 	       (retry > 0)) {
 		k_busy_wait(HW_STATE_CHECK_DELAY);
 		retry--;
@@ -170,9 +194,7 @@ int soc_adsp_halt_cpu(int id)
 		return -EINVAL;
 	}
 
-	/* Stop sending IPIs to this core */
-	soc_cpus_active[id] = false;
-
+	ACE_PWRCTL->wpdsphpxpg &= ~BIT(id);
 	return 0;
 }
 #endif

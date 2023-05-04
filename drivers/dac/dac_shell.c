@@ -27,7 +27,7 @@ static const struct args_index args_indx = {
 	.resolution = 3,
 };
 
-static int cmd_setup(const struct shell *shell, size_t argc, char **argv)
+static int cmd_setup(const struct shell *sh, size_t argc, char **argv)
 {
 	struct dac_channel_cfg cfg;
 	const struct device *dac;
@@ -35,7 +35,7 @@ static int cmd_setup(const struct shell *shell, size_t argc, char **argv)
 
 	dac = device_get_binding(argv[args_indx.device]);
 	if (!dac) {
-		shell_error(shell, "DAC device not found");
+		shell_error(sh, "DAC device not found");
 		return -EINVAL;
 	}
 
@@ -44,14 +44,14 @@ static int cmd_setup(const struct shell *shell, size_t argc, char **argv)
 
 	err = dac_channel_setup(dac, &cfg);
 	if (err) {
-		shell_error(shell, "Failed to setup DAC channel (err %d)", err);
+		shell_error(sh, "Failed to setup DAC channel (err %d)", err);
 		return err;
 	}
 
 	return 0;
 }
 
-static int cmd_write_value(const struct shell *shell, size_t argc, char **argv)
+static int cmd_write_value(const struct shell *sh, size_t argc, char **argv)
 {
 	const struct device *dac;
 	uint8_t channel;
@@ -60,7 +60,7 @@ static int cmd_write_value(const struct shell *shell, size_t argc, char **argv)
 
 	dac = device_get_binding(argv[args_indx.device]);
 	if (!dac) {
-		shell_error(shell, "DAC device not found");
+		shell_error(sh, "DAC device not found");
 		return -EINVAL;
 	}
 
@@ -69,7 +69,7 @@ static int cmd_write_value(const struct shell *shell, size_t argc, char **argv)
 
 	err = dac_write_value(dac, channel, value);
 	if (err) {
-		shell_error(shell, "Failed to write DAC value (err %d)", err);
+		shell_error(sh, "Failed to write DAC value (err %d)", err);
 		return err;
 	}
 

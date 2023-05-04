@@ -4,22 +4,33 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config CAN_MCUX_FLEXCAN
-	bool "MCUX FlexCAN driver"
+	bool "NXP FlexCAN driver"
 	default y
-	depends on DT_HAS_NXP_KINETIS_FLEXCAN_ENABLED
+	depends on DT_HAS_NXP_FLEXCAN_ENABLED
 	depends on CLOCK_CONTROL
-	select CAN_HAS_RX_TIMESTAMP
+	select PINCTRL
 	help
-	  Enable support for mcux flexcan driver.
+	  Enable support for the NXP FlexCAN driver.
+
+if CAN_MCUX_FLEXCAN
+
+config CAN_MCUX_FLEXCAN_FD
+	bool # hidden
+	default y
+	depends on DT_HAS_NXP_FLEXCAN_FD_ENABLED && CAN_FD_MODE
+	help
+	  Enable support for CAN-FD capable NXP FlexCAN devices.
 
 config CAN_MAX_FILTER
 	int "Maximum number of concurrent active RX filters"
-	depends on CAN_MCUX_FLEXCAN
 	default 5
 	range 1 15 if SOC_SERIES_KINETIS_KE1XF || SOC_SERIES_KINETIS_K6X
+	range 1 13 if SOC_SERIES_IMX_RT && CAN_MCUX_FLEXCAN_FD
 	range 1 63 if SOC_SERIES_IMX_RT
 	help
 	  Defines maximum number of concurrent active RX filters
+
+endif # CAN_MCUX_FLEXCAN
 
 config CAN_MCUX_MCAN
 	bool "MCUX MCAN driver"
@@ -27,5 +38,6 @@ config CAN_MCUX_MCAN
 	depends on DT_HAS_NXP_LPC_MCAN_ENABLED
 	depends on CLOCK_CONTROL
 	select CAN_MCAN
+	select PINCTRL
 	help
 	  Enable support for mcux mcan driver.

@@ -69,7 +69,7 @@ struct spi_flash_at45_config {
 #if ANY_INST_HAS_WP_GPIOS
 	const struct gpio_dt_spec *wp;
 #endif
-#if IS_ENABLED(CONFIG_FLASH_PAGE_LAYOUT)
+#if defined(CONFIG_FLASH_PAGE_LAYOUT)
 	struct flash_pages_layout pages_layout;
 #endif
 	uint32_t chip_size;
@@ -500,7 +500,7 @@ static int spi_flash_at45_erase(const struct device *dev, off_t offset,
 	return err;
 }
 
-#if IS_ENABLED(CONFIG_FLASH_PAGE_LAYOUT)
+#if defined(CONFIG_FLASH_PAGE_LAYOUT)
 static void spi_flash_at45_pages_layout(const struct device *dev,
 					const struct flash_pages_layout **layout,
 					size_t *layout_size)
@@ -542,7 +542,7 @@ static int spi_flash_at45_init(const struct device *dev)
 	const struct spi_flash_at45_config *dev_config = dev->config;
 	int err;
 
-	if (!spi_is_ready(&dev_config->bus)) {
+	if (!spi_is_ready_dt(&dev_config->bus)) {
 		LOG_ERR("SPI bus %s not ready", dev_config->bus.bus->name);
 		return -ENODEV;
 	}
@@ -594,7 +594,7 @@ static int spi_flash_at45_init(const struct device *dev)
 	return err;
 }
 
-#if IS_ENABLED(CONFIG_PM_DEVICE)
+#if defined(CONFIG_PM_DEVICE)
 static int spi_flash_at45_pm_action(const struct device *dev,
 				    enum pm_device_action action)
 {
@@ -636,7 +636,7 @@ static const struct flash_driver_api spi_flash_at45_api = {
 	.write = spi_flash_at45_write,
 	.erase = spi_flash_at45_erase,
 	.get_parameters = flash_at45_get_parameters,
-#if IS_ENABLED(CONFIG_FLASH_PAGE_LAYOUT)
+#if defined(CONFIG_FLASH_PAGE_LAYOUT)
 	.page_layout = spi_flash_at45_pages_layout,
 #endif
 };
@@ -685,10 +685,10 @@ static const struct flash_driver_api spi_flash_at45_api = {
 		.sector_size = DT_INST_PROP(idx, sector_size),		     \
 		.block_size  = DT_INST_PROP(idx, block_size),		     \
 		.page_size   = DT_INST_PROP(idx, page_size),		     \
-		.t_enter_dpd = ceiling_fraction(			     \
+		.t_enter_dpd = DIV_ROUND_UP(			     \
 					DT_INST_PROP(idx, enter_dpd_delay),  \
 					NSEC_PER_USEC),			     \
-		.t_exit_dpd  = ceiling_fraction(			     \
+		.t_exit_dpd  = DIV_ROUND_UP(			     \
 					DT_INST_PROP(idx, exit_dpd_delay),   \
 					NSEC_PER_USEC),			     \
 		.use_udpd    = DT_INST_PROP(idx, use_udpd),		     \

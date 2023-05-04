@@ -174,6 +174,15 @@ extern uint16_t net_calc_chksum_ipv4(struct net_pkt *pkt);
 #endif /* CONFIG_NET_IPV4 */
 
 #if defined(CONFIG_NET_IPV4_IGMP)
+/**
+ * @brief Initialise the IGMP module for a given interface
+ *
+ * @param iface		Interface to init IGMP
+ */
+void net_ipv4_igmp_init(struct net_if *iface);
+#endif /* CONFIG_NET_IPV4_IGMP */
+
+#if defined(CONFIG_NET_IPV4_IGMP)
 uint16_t net_calc_chksum_igmp(uint8_t *data, size_t len);
 enum net_verdict net_ipv4_igmp_input(struct net_pkt *pkt,
 				     struct net_ipv4_hdr *ip_hdr);

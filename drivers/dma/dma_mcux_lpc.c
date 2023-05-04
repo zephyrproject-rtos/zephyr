@@ -157,6 +157,15 @@ static int dma_mcux_lpc_configure(const struct device *dev, uint32_t channel,
 		return -EINVAL;
 	}
 
+	/* Check if user does not want to increment address */
+	if (block_config->source_addr_adj == DMA_ADDR_ADJ_NO_CHANGE) {
+		src_inc = 0;
+	}
+
+	if (block_config->dest_addr_adj == DMA_ADDR_ADJ_NO_CHANGE) {
+		dst_inc = 0;
+	}
+
 	/* If needed, allocate a slot to store dma channel data */
 	if (dma_data->channel_index[channel] == -1) {
 		dma_data->channel_index[channel] = dma_data->num_channels_used;
@@ -183,16 +192,6 @@ static int dma_mcux_lpc_configure(const struct device *dev, uint32_t channel,
 		LOG_DBG("link dma out 0 to channel %d", config->linked_channel);
 		/* Link DMA_OTRIG 0 to channel */
 		INPUTMUX_AttachSignal(INPUTMUX, 0, config->linked_channel);
-	}
-
-	/* In case of SPI Transmit where no data is transmitted, we queue
-	 * dummy data to the buffer that does not require the source or
-	 * destination address to change
-	 */
-	if ((block_config->source_addr_adj == DMA_ADDR_ADJ_NO_CHANGE) &&
-		(block_config->dest_addr_adj == DMA_ADDR_ADJ_NO_CHANGE)) {
-		src_inc = 0;
-		dst_inc = 0;
 	}
 
 	data->descriptor_used = 0;

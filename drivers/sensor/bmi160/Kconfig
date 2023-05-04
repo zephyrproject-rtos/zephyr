@@ -211,4 +211,19 @@ config BMI160_GYRO_ODR_3200
 	bool "3200 Hz"
 endchoice
 
+
+config EMUL_BMI160
+	bool "Emulate a Bosch BMI160 accelerometer"
+	default y
+	depends on EMUL
+	depends on BMI160
+	help
+	  This is an emulator for the Bosch BMI160 accelerometer.
+
+	  It provides readings which follow a simple sequence, thus allowing
+	  test code to check that things are working as expected.
+
+	  It supports both I2C and SPI which is why it is not in one of the
+	  i2c/ or spi/ directories.
+
 endif # BMI160

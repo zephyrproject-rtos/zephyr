@@ -6,12 +6,27 @@ tests:
     depends_on: usb_device
     platform_exclude: native_posix native_posix_64
     extra_configs:
-        - CONFIG_LOG_DEFAULT_LEVEL=3
+      - CONFIG_LOG_DEFAULT_LEVEL=3
     tags: msd usb
     harness: console
     harness_config:
       type: multi_line
-      ordered: True
+      ordered: true
+      regex:
+        - "No file system selected"
+        - "The device is put in USB mass storage mode."
+  sample.usb_device_next.mass_ram_none:
+    min_ram: 64
+    depends_on: usb_device
+    platform_allow: nrf52840dk_nrf52840 frdm_k64f
+    extra_args: CONF_FILE="usbd_next_prj.conf"
+    extra_configs:
+      - CONFIG_LOG_DEFAULT_LEVEL=3
+    tags: msd usb
+    harness: console
+    harness_config:
+      type: multi_line
+      ordered: true
       regex:
         - "No file system selected"
         - "The device is put in USB mass storage mode."
@@ -20,13 +35,13 @@ tests:
     depends_on: usb_device
     platform_exclude: native_posix native_posix_64
     extra_configs:
-        - CONFIG_LOG_DEFAULT_LEVEL=3
-        - CONFIG_APP_MSC_STORAGE_RAM=y
+      - CONFIG_LOG_DEFAULT_LEVEL=3
+      - CONFIG_APP_MSC_STORAGE_RAM=y
     tags: msd usb
     harness: console
     harness_config:
       type: multi_line
-      ordered: True
+      ordered: true
       regex:
         - "End of files"
         - "The device is put in USB mass storage mode."
@@ -37,14 +52,37 @@ tests:
     depends_on: usb_device
     filter: dt_compat_enabled("nordic,qspi-nor")
     platform_allow: nrf52840dk_nrf52840 nrf5340dk_nrf5340_cpuapp adafruit_feather_nrf52840
+    integration_platforms:
+      - nrf52840dk_nrf52840
     extra_configs:
-        - CONFIG_LOG_DEFAULT_LEVEL=3
-        - CONFIG_APP_MSC_STORAGE_FLASH_FATFS=y
+      - CONFIG_LOG_DEFAULT_LEVEL=3
+      - CONFIG_APP_MSC_STORAGE_FLASH_FATFS=y
     tags: msd usb
     harness: console
     harness_config:
       type: multi_line
-      ordered: True
+      ordered: true
+      regex:
+        - "End of files"
+        - "The device is put in USB mass storage mode."
+  sample.usb_device_next.mass_flash_fatfs:
+    min_ram: 32
+    modules:
+      - fatfs
+    depends_on: usb_device
+    filter: dt_compat_enabled("nordic,qspi-nor")
+    platform_allow: nrf52840dk_nrf52840 nrf5340dk_nrf5340_cpuapp adafruit_feather_nrf52840
+    integration_platforms:
+      - nrf52840dk_nrf52840
+    extra_args: CONF_FILE="usbd_next_prj.conf"
+    extra_configs:
+      - CONFIG_LOG_DEFAULT_LEVEL=3
+      - CONFIG_APP_MSC_STORAGE_FLASH_FATFS=y
+    tags: msd usb
+    harness: console
+    harness_config:
+      type: multi_line
+      ordered: true
       regex:
         - "End of files"
         - "The device is put in USB mass storage mode."
@@ -54,14 +92,14 @@ tests:
       - fatfs
     depends_on: usb_device sdhc
     extra_configs:
-        - CONFIG_LOG_DEFAULT_LEVEL=3
-        - CONFIG_APP_MSC_STORAGE_SDCARD=y
+      - CONFIG_LOG_DEFAULT_LEVEL=3
+      - CONFIG_APP_MSC_STORAGE_SDCARD=y
     tags: msd usb
     harness: console
     harness_config:
       fixture: fixture_sdcard
       type: multi_line
-      ordered: True
+      ordered: true
       regex:
         - "End of files"
         - "The device is put in USB mass storage mode."
@@ -72,14 +110,16 @@ tests:
     depends_on: usb_device
     filter: dt_compat_enabled("nordic,qspi-nor")
     platform_allow: nrf52840dk_nrf52840 nrf5340dk_nrf5340_cpuapp adafruit_feather_nrf52840
+    integration_platforms:
+      - nrf52840dk_nrf52840
     extra_configs:
-        - CONFIG_LOG_DEFAULT_LEVEL=3
-        - CONFIG_APP_MSC_STORAGE_FLASH_LITTLEFS=y
+      - CONFIG_LOG_DEFAULT_LEVEL=3
+      - CONFIG_APP_MSC_STORAGE_FLASH_LITTLEFS=y
     tags: msd usb
     harness: console
     harness_config:
       type: multi_line
-      ordered: True
+      ordered: true
       regex:
         - "End of files"
         - "The device is put in USB mass storage mode."

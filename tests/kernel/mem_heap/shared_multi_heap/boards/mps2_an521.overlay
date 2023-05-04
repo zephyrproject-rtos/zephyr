@@ -7,10 +7,10 @@
 / {
 	/delete-node/ memory@38000000;
 
-	sram2_3: memory@38000000 {
+	ssram2_3: memory@38000000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x38000000 0x100000>;
-		zephyr,memory-region = "SRAM2_3";
+		zephyr,memory-region = "SSRAM2_3";
 	};
 
 	res0: memory@38100000 {

@@ -1,0 +1,43 @@
+# Copyright (c) 2022 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig USB_HOST_STACK
+	bool "USB host stack [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	select UHC_DRIVER
+	help
+	  New experimental USB host stack.
+
+if USB_HOST_STACK
+
+module = USBH
+module-str = usbh
+source "subsys/logging/Kconfig.template.log_config"
+
+config USBH_SHELL
+	bool "USB host shell"
+	default y
+	depends on SHELL
+	help
+	  Shell commands for USB host support.
+
+config USBH_INIT_PRIO
+	int
+	default 90
+	help
+	  USB host thread initialization priority level.
+
+config USBH_STACK_SIZE
+	int "USB host stack thread stack size"
+	default 1024
+	help
+	  USB host stack thread stack size in bytes.
+
+config USBH_MAX_UHC_MSG
+	int "Maximum number of UHC events"
+	default 10
+	help
+	  Maximum number of USB host controller events that can be queued.
+
+endif # USB_HOST_STACK

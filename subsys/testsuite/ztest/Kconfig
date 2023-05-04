@@ -4,7 +4,6 @@
 config ZTEST
 	bool "Zephyr testing framework"
 	select TEST
-	select OUTPUT_SYMBOLS
 	help
 	  Enable the Zephyr testing framework. You should enable this only
 	  if you're writing automated tests.
@@ -145,6 +144,12 @@ config ZTEST_SHUFFLE_TEST_REPEAT_COUNT
 	  likely be different per iteration.
 
 endif #ZTEST_SHUFFLE
+
+config ZTEST_SUMMARY
+	bool "Display test summary"
+	default y
+	help
+	  This option controls output of a test summary.
 
 config ZTEST_VERBOSE_OUTPUT
 	bool "Verbose test output"

@@ -1,7 +1,7 @@
 .. _fuel_gauge_api:
 
-Fuel Gauges (Experimental API Stub Doc)
-#######################################
+Fuel Gauge
+##########
 
 The fuel gauge subsystem exposes an API to uniformly access battery fuel gauge devices. Currently,
 only reading data is supported.

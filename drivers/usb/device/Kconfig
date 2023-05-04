@@ -40,6 +40,9 @@ config USB_DC_RPI_PICO
 	help
 	  Enable USB support on the RP2 family of processors.
 
+DT_STM32_USBHS := $(dt_nodelabel_path,usbotg_hs)
+DT_STM32_USBHS_SPEED := $(dt_node_str_prop_equals,$(DT_STM32_USBHS),maximum-speed,high-speed)
+
 config USB_DC_STM32
 	bool "USB device controller driver for STM32 devices"
 	default y
@@ -49,9 +52,19 @@ config USB_DC_STM32
 	select USE_STM32_LL_USB
 	select USE_STM32_HAL_PCD
 	select USE_STM32_HAL_PCD_EX
+	select USB_DC_HAS_HS_SUPPORT if "$(DT_STM32_USBHS_SPEED)"
+	imply USB_DEVICE_REMOTE_WAKEUP
 	help
-	  Enable USB support on the STM32 F0, F1, F2, F3, F4, F7, L0, L4, G4, U5 family of
-	  processors.
+	  Enable STM32 family USB device controller shim driver.
+
+config USB_DC_STM32_CLOCK_CHECK
+	bool "Runtime USB 48MHz clock check"
+	depends on USB_DC_STM32
+	default y if !(SOC_SERIES_STM32F1X || SOC_SERIES_STM32F3X)
+	help
+	  Enable USB clock 48MHz configuration runtime check.
+	  In specific cases, this check might provide wrong verdict and should
+	  be disabled.
 
 config USB_DC_SAM0
 	bool "SAM0 series USB Device Controller driver"
@@ -139,11 +152,13 @@ choice USB_MCUX_CONTROLLER_TYPE
 config USB_DC_NXP_EHCI
 	bool "MXRT EHCI USB Device Controller"
 	select NOCACHE_MEMORY if HAS_MCUX_CACHE
+	select USB_DC_HAS_HS_SUPPORT
 	help
 	  Kinetis and RT EHCI USB Device Controller Driver.
 
 config USB_DC_NXP_LPCIP3511
 	bool "LPC USB Device Controller"
+	select USB_DC_HAS_HS_SUPPORT
 	help
 	  LPC USB Device Controller Driver.
 

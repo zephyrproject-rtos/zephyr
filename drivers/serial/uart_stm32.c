@@ -19,8 +19,10 @@
 #include <zephyr/sys/__assert.h>
 #include <soc.h>
 #include <zephyr/init.h>
+#include <zephyr/drivers/interrupt_controller/exti_stm32.h>
 #include <zephyr/drivers/uart.h>
 #include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/reset.h>
 #include <zephyr/pm/policy.h>
 #include <zephyr/pm/device.h>
 
@@ -615,6 +617,10 @@ static int uart_stm32_err_check(const struct device *dev)
 		err |= UART_ERROR_FRAMING;
 	}
 
+	if (LL_USART_IsActiveFlag_NE(config->usart)) {
+		err |= UART_ERROR_NOISE;
+	}
+
 #if !defined(CONFIG_SOC_SERIES_STM32F0X) || defined(USART_LIN_SUPPORT)
 	if (LL_USART_IsActiveFlag_LBD(config->usart)) {
 		err |= UART_BREAK;
@@ -640,10 +646,10 @@ static int uart_stm32_err_check(const struct device *dev)
 	if (err & UART_ERROR_FRAMING) {
 		LL_USART_ClearFlag_FE(config->usart);
 	}
-	/* Clear noise error as well,
-	 * it is not represented by the errors enum
-	 */
-	LL_USART_ClearFlag_NE(config->usart);
+
+	if (err & UART_ERROR_NOISE) {
+		LL_USART_ClearFlag_NE(config->usart);
+	}
 
 	return err;
 }
@@ -1082,9 +1088,19 @@ static inline void uart_stm32_dma_tx_enable(const struct device *dev)
 
 static inline void uart_stm32_dma_tx_disable(const struct device *dev)
 {
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32u5_dma)
+	ARG_UNUSED(dev);
+
+	/*
+	 * Errata Sheet ES0499 : STM32U575xx and STM32U585xx device errata
+	 * USART does not generate DMA requests after setting/clearing DMAT bit
+	 * (also seen on stm32H5 serie)
+	 */
+#else
 	const struct uart_stm32_config *config = dev->config;
 
 	LL_USART_DisableDMAReq_TX(config->usart);
+#endif /* ! st_stm32u5_dma */
 }
 
 static inline void uart_stm32_dma_rx_enable(const struct device *dev)
@@ -1620,6 +1636,14 @@ static int uart_stm32_init(const struct device *dev)
 
 	LL_USART_Disable(config->usart);
 
+	if (!device_is_ready(data->reset.dev)) {
+		LOG_ERR("reset controller not ready");
+		return -ENODEV;
+	}
+
+	/* Reset UART to default state using RCC */
+	reset_line_toggle_dt(&data->reset);
+
 	/* TX/RX direction */
 	LL_USART_SetTransferDirection(config->usart,
 				      LL_USART_DIRECTION_TX_RX);
@@ -1778,10 +1802,14 @@ static int uart_stm32_pm_action(const struct device *dev,
 
 		/* Move pins to sleep state */
 		err = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_SLEEP);
-		if (err == -ENOENT) {
-			/* Warn but don't block PM suspend */
-			LOG_WRN("(LP)UART pinctrl sleep state not available ");
-		} else if (err < 0) {
+		if ((err < 0) && (err != -ENOENT)) {
+			/*
+			 * If returning -ENOENT, no pins where defined for sleep mode :
+			 * Do not output on console (might sleep already) when going to sleep,
+			 * "(LP)UART pinctrl sleep state not available"
+			 * and don't block PM suspend.
+			 * Else return the error.
+			 */
 			return err;
 		}
 		break;
@@ -1896,6 +1924,7 @@ static const struct uart_stm32_config uart_stm32_cfg_##index = {	\
 									\
 static struct uart_stm32_data uart_stm32_data_##index = {		\
 	.baud_rate = DT_INST_PROP(index, current_speed),		\
+	.reset = RESET_DT_SPEC_GET(DT_DRV_INST(index)),			\
 	UART_DMA_CHANNEL(index, rx, RX, PERIPHERAL, MEMORY)		\
 	UART_DMA_CHANNEL(index, tx, TX, MEMORY, PERIPHERAL)		\
 };									\

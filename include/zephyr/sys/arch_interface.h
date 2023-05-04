@@ -52,16 +52,32 @@ typedef void (*k_thread_entry_t)(void *p1, void *p2, void *p3);
  */
 
 /**
- * Obtain the current cycle count, in units that are hardware-specific
+ * Obtain the current cycle count, in units specified by
+ * CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC.  While this is historically
+ * specified as part of the architecture API, in practice virtually
+ * all platforms forward it to the sys_clock_cycle_get_32() API
+ * provided by the timer driver.
  *
  * @see k_cycle_get_32()
+ *
+ * @return The current cycle time.  This should count up monotonically
+ * through the full 32 bit space, wrapping at 0xffffffff.  Hardware
+ * with fewer bits of precision in the timer is expected to synthesize
+ * a 32 bit count.
  */
 static inline uint32_t arch_k_cycle_get_32(void);
 
 /**
- * Obtain the current cycle count, in units that are hardware-specific
+ * As for arch_k_cycle_get_32(), but with a 64 bit return value.  Not
+ * all timer hardware has a 64 bit timer, this needs to be implemented
+ * only if CONFIG_TIMER_HAS_64BIT_CYCLE_COUNTER is set.
  *
- * @see k_cycle_get_64()
+ * @see arch_k_cycle_get_32()
+ *
+ * @return The current cycle time.  This should count up monotonically
+ * through the full 64 bit space, wrapping at 2^64-1.  Hardware with
+ * fewer bits of precision in the timer is generally not expected to
+ * implement this API.
  */
 static inline uint64_t arch_k_cycle_get_64(void);
 
@@ -1012,112 +1028,6 @@ int arch_gdb_remove_breakpoint(struct gdb_ctx *ctx, uint8_t type,
 			       uintptr_t addr, uint32_t kind);
 
 #endif
-/** @} */
-
-/**
- * @defgroup arch_cache Architecture-specific cache functions
- * @ingroup arch-interface
- * @{
- */
-
-#if defined(CONFIG_CACHE_MANAGEMENT) && defined(CONFIG_HAS_ARCH_CACHE)
-
-#if defined(CONFIG_DCACHE)
-
-/**
- *
- * @brief Enable d-cache
- *
- * @see arch_dcache_enable
- */
-void arch_dcache_enable(void);
-
-/**
- *
- * @brief Disable d-cache
- *
- * @see arch_dcache_disable
- */
-void arch_dcache_disable(void);
-
-/**
- *
- * @brief Write-back / Invalidate / Write-back + Invalidate all d-cache
- *
- * @see arch_dcache_all
- */
-int arch_dcache_all(int op);
-
-/**
- *
- * @brief Write-back / Invalidate / Write-back + Invalidate d-cache lines
- *
- * @see arch_dcache_range
- */
-int arch_dcache_range(void *addr, size_t size, int op);
-
-#if defined(CONFIG_DCACHE_LINE_SIZE_DETECT)
-/**
- *
- * @brief Get d-cache line size
- *
- * @see sys_cache_data_line_size_get
- */
-size_t arch_dcache_line_size_get(void);
-#endif /* CONFIG_DCACHE_LINE_SIZE_DETECT */
-
-#endif /* CONFIG_DCACHE */
-
-#if defined(CONFIG_ICACHE)
-
-/**
- *
- * @brief Enable i-cache
- *
- * @see arch_icache_enable
- */
-void arch_icache_enable(void);
-
-/**
- *
- * @brief Enable i-cache
- *
- * @see arch_icache_disable
- */
-void arch_icache_disable(void);
-
-
-/**
- *
- * @brief Write-back / Invalidate / Write-back + Invalidate all i-cache
- *
- * @see arch_icache_all
- */
-int arch_icache_all(int op);
-
-/**
- *
- * @brief Write-back / Invalidate / Write-back + Invalidate i-cache lines
- *
- * @see arch_icache_range
- */
-int arch_icache_range(void *addr, size_t size, int op);
-
-
-#if defined(CONFIG_ICACHE_LINE_SIZE_DETECT)
-/**
- *
- * @brief Get i-cache line size
- *
- * @see sys_cache_instr_line_size_get
- */
-size_t arch_icache_line_size_get(void);
-#endif /* CONFIG_ICACHE_LINE_SIZE_DETECT */
-
-#endif /* CONFIG_ICACHE */
-
-#endif /* CONFIG_CACHE_MANAGEMENT && CONFIG_HAS_ARCH_CACHE */
-
 /** @} */
 
 #ifdef CONFIG_TIMING_FUNCTIONS

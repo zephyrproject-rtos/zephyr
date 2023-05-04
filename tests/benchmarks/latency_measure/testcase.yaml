@@ -1,6 +1,5 @@
 tests:
   benchmark.kernel.latency:
-    arch_allow: x86 arm riscv32 riscv64
     # FIXME: no DWT and no RTC_TIMER for qemu_cortex_m0
     platform_exclude: qemu_cortex_m0 m2gl025_miv
     filter: CONFIG_PRINTK and not CONFIG_SOC_FAMILY_STM32
@@ -14,13 +13,12 @@ tests:
         - "PROJECT EXECUTION SUCCESSFUL"
 
 
-# Cortex-M has 24bit systick, so default 1 TICK per seconds
-# is achievable only if frequency is below 0x00FFFFFF (around 16MHz)
-# 20 Ticks per secondes allows a frequency up to 335544300Hz (335MHz)
+  # Cortex-M has 24bit systick, so default 1 TICK per seconds
+  # is achievable only if frequency is below 0x00FFFFFF (around 16MHz)
+  # 20 Ticks per secondes allows a frequency up to 335544300Hz (335MHz)
   benchmark.kernel.latency.stm32:
+    arch_allow: arm
     filter: CONFIG_PRINTK and CONFIG_SOC_FAMILY_STM32
-    # FIXME: no DWT and no RTC_TIMER
-    platform_exclude: qemu_cortex_m0
     tags: benchmark
     extra_configs:
       - CONFIG_SYS_CLOCK_TICKS_PER_SEC=20

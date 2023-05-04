@@ -24,11 +24,12 @@ zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF52810            NRF52810_XXAA)
 zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF52811            NRF52811_XXAA)
 zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF52820            NRF52820_XXAA)
 zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF52832            NRF52832_XXAA)
-zephyr_compile_definitions_ifdef(CONFIG_SOC_COMPATIBLE_NRF52832 NRF52832_XXAA)
 zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF52833            NRF52833_XXAA)
+zephyr_compile_definitions_ifdef(CONFIG_SOC_COMPATIBLE_NRF52833 NRF52833_XXAA)
 zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF52840            NRF52840_XXAA)
 zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF5340_CPUAPP      NRF5340_XXAA_APPLICATION)
 zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF5340_CPUNET      NRF5340_XXAA_NETWORK)
+zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF9120             NRF9120_XXAA)
 zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF9160             NRF9160_XXAA)
 
 zephyr_compile_definitions_ifdef(CONFIG_NRF_APPROTECT_LOCK
@@ -44,7 +45,7 @@ zephyr_library_compile_definitions_ifdef(CONFIG_NRF_TRACE_PORT
 
 zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF5340_CPUAPP
                                  NRF_SKIP_FICR_NS_COPY_TO_RAM)
-zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF9160
+zephyr_compile_definitions_ifdef(CONFIG_SOC_SERIES_NRF91X
                                  NRF_SKIP_FICR_NS_COPY_TO_RAM)
 
 # Connect Kconfig compilation option for Non-Secure software with option required by MDK/nrfx
@@ -61,7 +62,7 @@ zephyr_library_sources_ifdef(CONFIG_SOC_NRF52833       ${MDK_DIR}/system_nrf5283
 zephyr_library_sources_ifdef(CONFIG_SOC_NRF52840       ${MDK_DIR}/system_nrf52840.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_NRF5340_CPUAPP ${MDK_DIR}/system_nrf5340_application.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_NRF5340_CPUNET ${MDK_DIR}/system_nrf5340_network.c)
-zephyr_library_sources_ifdef(CONFIG_SOC_NRF9160        ${MDK_DIR}/system_nrf9160.c)
+zephyr_library_sources_ifdef(CONFIG_SOC_SERIES_NRF91X  ${MDK_DIR}/system_nrf91.c)
 
 zephyr_library_sources(nrfx_glue.c)
 zephyr_library_sources(${HELPERS_DIR}/nrfx_flag32_allocator.c)

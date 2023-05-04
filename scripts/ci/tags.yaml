@@ -41,25 +41,26 @@
 # 2. Keep tag entries sorted alphabetically
 
 bluetooth:
-    files:
-        - drivers/bluetooth/
-        - subsys/bluetooth/
-        - subsys/net/l2/bluetooth/
+  files:
+    - drivers/bluetooth/
+    - subsys/bluetooth/
+    - subsys/net/l2/bluetooth/
 
 cmsis_dsp:
-    files:
-        - modules/Kconfig.cmsis_dsp
-# we have no means of telling file changes in a module, so for assume any
-# change to west.yml is updating something we need to re-test for.
-        - west.yml
+  files:
+    - modules/Kconfig.cmsis_dsp
+    # we have no means of telling file changes in a module, so for assume any
+    # change to west.yml is updating something we need to re-test for.
+    - west.yml
 
 kernel:
-    files:
-        - kernel/
+  files:
+    - kernel/
+    - arch/
 
 posix:
-    files:
-        - lib/posix
+  files:
+    - lib/posix/
 
 # cbprintf:
 #    files:

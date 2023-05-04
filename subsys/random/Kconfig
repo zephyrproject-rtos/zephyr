@@ -6,18 +6,32 @@
 menu "Random Number Generators"
 
 config TEST_RANDOM_GENERATOR
-	bool "Non-random number generator"
-	depends on !ENTROPY_HAS_DRIVER
+	bool "Allow non-random number generator"
 	help
-	  This option signifies that the kernel's random number APIs are
-	  permitted to return values that are not truly random.
-	  This capability is provided for testing purposes, when a truly random
+	  This option signifies that a non-random number generator is allowed to
+	  be used and the kernel's random number APIs are permitted to return
+	  values that are not truly random.
+
+	  This capability is provided for testing purposes when a truly random
 	  number generator is not available. The non-random number generator
 	  should not be used in a production environment.
 
+	  This option is intended to be selected only by application-level
+	  configurations (e.g. in tests and samples) to indicate that the
+	  application is allowed to run with a random number generator that is not
+	  truly random. Board-level configurations must not select this option
+	  unless the sole purpose of the board is testing (e.g. QEMU emulation
+	  boards).
+
+	  Note that this option does not imply that a non-random number generator
+	  is selected -- that is indicated by RNG_GENERATOR_CHOICE. An entropy
+	  device-backed random number generator, if available, will be selected by
+	  default even when CONFIG_TEST_RANDOM_GENERATOR=y.
+
 choice RNG_GENERATOR_CHOICE
 	prompt "Random generator"
-	default ENTROPY_DEVICE_RANDOM_GENERATOR
+	default ENTROPY_DEVICE_RANDOM_GENERATOR if ENTROPY_HAS_DRIVER
+	default TIMER_RANDOM_GENERATOR if TEST_RANDOM_GENERATOR
 	depends on ENTROPY_HAS_DRIVER || TEST_RANDOM_GENERATOR
 	help
 	  Platform dependent non-cryptographically secure random number support.

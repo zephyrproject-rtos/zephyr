@@ -1,0 +1,15 @@
+/*
+ * Copyright (c) 2022 SEAL AG
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <nuvoton/numicro/M48x-pinctrl.h>
+
+&pinctrl {
+	uart0_default: uart0_default {
+		group0 {
+			pinmux = <UART0_RXD_PB12>, <UART0_TXD_PB13>;
+		};
+	};
+};

@@ -220,7 +220,7 @@ int ipc_service_open_instance(const struct device *instance);
 
 /** @brief Close an instance
  *
- *  Function to be used to close an instance. All endpoints must be
+ *  Function to be used to close an instance. All bounded endpoints must be
  *  deregistered using ipc_service_deregister_endpoint before this
  *  is called.
  *
@@ -433,7 +433,7 @@ int ipc_service_send_nocopy(struct ipc_ept *ept, const void *data, size_t len);
  *  using the @ref ipc_service_release_rx_buffer function.
  *
  *  @param[in] ept Registered endpoint by @ref ipc_service_register_endpoint.
- *  @param[in] data Pointer to the RX buffer to release.
+ *  @param[in] data Pointer to the RX buffer to hold.
  *
  *  @retval -EIO when no backend is registered or release hook is missing from
  *		 backend.

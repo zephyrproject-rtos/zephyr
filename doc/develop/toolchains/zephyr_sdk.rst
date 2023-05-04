@@ -65,10 +65,10 @@ Install Zephyr SDK on Linux
 
    .. code-block:: bash
 
-      wget https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v0.15.2/zephyr-sdk-0.15.2_linux-x86_64.tar.gz
-      wget -O - https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v0.15.2/sha256.sum | shasum --check --ignore-missing
+      wget https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v0.16.0/zephyr-sdk-0.16.0_linux-x86_64.tar.xz
+      wget -O - https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v0.16.0/sha256.sum | shasum --check --ignore-missing
 
-   You can change ``0.15.2`` to another version if needed; the `Zephyr SDK
+   You can change ``0.16.0`` to another version if needed; the `Zephyr SDK
    Releases`_ page contains all available SDK releases.
 
    If your host architecture is 64-bit ARM (for example, Raspberry Pi), replace
@@ -79,13 +79,13 @@ Install Zephyr SDK on Linux
    .. code-block:: bash
 
       cd <sdk download directory>
-      tar xvf zephyr-sdk-0.15.2_linux-x86_64.tar.gz
+      tar xvf zephyr-sdk-0.16.0_linux-x86_64.tar.xz
 
 #. Run the Zephyr SDK bundle setup script:
 
    .. code-block:: bash
 
-      cd zephyr-sdk-0.15.2
+      cd zephyr-sdk-0.16.0
       ./setup.sh
 
    If this fails, make sure Zephyr's dependencies were installed as described
@@ -105,9 +105,9 @@ If you relocate the SDK directory, you need to re-run the setup script.
    * ``/opt``
    * ``/usr/local``
 
-   The Zephyr SDK bundle archive contains the ``zephyr-sdk-0.15.2`` directory and, when
+   The Zephyr SDK bundle archive contains the ``zephyr-sdk-0.16.0`` directory and, when
    extracted under ``$HOME``, the resulting installation path will be
-   ``$HOME/zephyr-sdk-0.15.2``.
+   ``$HOME/zephyr-sdk-0.16.0``.
 
 .. _toolchain_zephyr_sdk_install_macos:
 
@@ -119,8 +119,8 @@ Install Zephyr SDK on macOS
    .. code-block:: bash
 
       cd ~
-      wget https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v0.15.2/zephyr-sdk-0.15.2_macos-x86_64.tar.gz
-      wget -O - https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v0.15.2/sha256.sum | shasum --check --ignore-missing
+      wget https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v0.16.0/zephyr-sdk-0.16.0_macos-x86_64.tar.xz
+      wget -O - https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v0.16.0/sha256.sum | shasum --check --ignore-missing
 
    If your host architecture is 64-bit ARM (Apple Silicon, also known as M1), replace
    ``x86_64`` with ``aarch64`` in order to download the 64-bit ARM macOS SDK.
@@ -129,7 +129,7 @@ Install Zephyr SDK on macOS
 
    .. code-block:: bash
 
-      tar xvf zephyr-sdk-0.15.2_macos-x86_64.tar.gz
+      tar xvf zephyr-sdk-0.16.0_macos-x86_64.tar.xz
 
    .. note::
       It is recommended to extract the Zephyr SDK bundle at one of the following
@@ -142,15 +142,15 @@ Install Zephyr SDK on macOS
       * ``/opt``
       * ``/usr/local``
 
-      The Zephyr SDK bundle archive contains the ``zephyr-sdk-0.15.2`` directory and, when
+      The Zephyr SDK bundle archive contains the ``zephyr-sdk-0.16.0`` directory and, when
       extracted under ``$HOME``, the resulting installation path will be
-      ``$HOME/zephyr-sdk-0.15.2``.
+      ``$HOME/zephyr-sdk-0.16.0``.
 
 #. Run the Zephyr SDK bundle setup script:
 
    .. code-block:: bash
 
-      cd zephyr-sdk-0.15.2
+      cd zephyr-sdk-0.16.0
       ./setup.sh
 
    .. note::
@@ -171,13 +171,13 @@ Install Zephyr SDK on Windows
    .. code-block:: console
 
       cd %HOMEPATH%
-      wget https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v0.15.2/zephyr-sdk-0.15.2_windows-x86_64.zip
+      wget https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v0.16.0/zephyr-sdk-0.16.0_windows-x86_64.7z
 
 #. Extract the Zephyr SDK bundle archive:
 
    .. code-block:: console
 
-      unzip zephyr-sdk-0.15.2_windows-x86_64.zip
+      7z x zephyr-sdk-0.16.0_windows-x86_64.7z
 
    .. note::
       It is recommended to extract the Zephyr SDK bundle at one of the following
@@ -186,15 +186,15 @@ Install Zephyr SDK on Windows
       * ``%HOMEPATH%``
       * ``%PROGRAMFILES%``
 
-      The Zephyr SDK bundle archive contains the ``zephyr-sdk-0.15.2`` directory and, when
+      The Zephyr SDK bundle archive contains the ``zephyr-sdk-0.16.0`` directory and, when
       extracted under ``%HOMEPATH%``, the resulting installation path will be
-      ``%HOMEPATH%\zephyr-sdk-0.15.2``.
+      ``%HOMEPATH%\zephyr-sdk-0.16.0``.
 
 #. Run the Zephyr SDK bundle setup script:
 
    .. code-block:: console
 
-      cd zephyr-sdk-0.15.2
+      cd zephyr-sdk-0.16.0
       setup.cmd
 
    .. note::

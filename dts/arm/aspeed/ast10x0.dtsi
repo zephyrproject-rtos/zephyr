@@ -32,6 +32,11 @@
 				compatible = "aspeed,ast10x0-clock";
 				#clock-cells = <1>;
 			};
+
+			sysrst: sysrst {
+				compatible = "aspeed,ast10x0-reset";
+				#reset-cells = <1>;
+			};
 		};
 
 		uart5: serial@7e784000 {

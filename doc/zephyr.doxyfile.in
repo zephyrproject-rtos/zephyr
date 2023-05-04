@@ -1,4 +1,4 @@
-# Doxyfile 1.9.4
+# Doxyfile 1.9.6
 
 # This file describes the settings to be used by the documentation system
 # doxygen (www.doxygen.org) for a project.
@@ -19,7 +19,8 @@
 # configuration file:
 # doxygen -x [configFile]
 # Use doxygen to compare the used configuration file with the template
-# configuration file without replacing the environment variables:
+# configuration file without replacing the environment variables or CMake type
+# replacement variables:
 # doxygen -x_noenv [configFile]
 
 #---------------------------------------------------------------------------
@@ -85,7 +86,7 @@ CREATE_SUBDIRS         = NO
 # level increment doubles the number of directories, resulting in 4096
 # directories at level 8 which is the default and also the maximum value. The
 # sub-directories are organized in 2 levels, the first level always has a fixed
-# numer of 16 directories.
+# number of 16 directories.
 # Minimum value: 0, maximum value: 8, default value: 8.
 # This tag requires that the tag CREATE_SUBDIRS is set to YES.
 
@@ -570,7 +571,8 @@ HIDE_UNDOC_MEMBERS     = NO
 # If the HIDE_UNDOC_CLASSES tag is set to YES, doxygen will hide all
 # undocumented classes that are normally visible in the class hierarchy. If set
 # to NO, these classes will be included in the various overviews. This option
-# has no effect if EXTRACT_ALL is enabled.
+# will also hide undocumented C++ concepts if enabled. This option has no effect
+# if EXTRACT_ALL is enabled.
 # The default value is: NO.
 
 HIDE_UNDOC_CLASSES     = NO
@@ -608,7 +610,8 @@ INTERNAL_DOCS          = NO
 # Windows (including Cygwin) and MacOS, users should typically set this option
 # to NO, whereas on Linux or other Unix flavors it should typically be set to
 # YES.
-# The default value is: system dependent.
+# Possible values are: SYSTEM, NO and YES.
+# The default value is: SYSTEM.
 
 CASE_SENSE_NAMES       = YES
 
@@ -860,6 +863,14 @@ WARN_IF_INCOMPLETE_DOC = YES
 
 WARN_NO_PARAMDOC       = NO
 
+# If WARN_IF_UNDOC_ENUM_VAL option is set to YES, doxygen will warn about
+# undocumented enumeration values. If set to NO, doxygen will accept
+# undocumented enumeration values. If EXTRACT_ALL is set to YES then this flag
+# will automatically be disabled.
+# The default value is: NO.
+
+WARN_IF_UNDOC_ENUM_VAL = NO
+
 # If the WARN_AS_ERROR tag is set to YES then doxygen will immediately stop when
 # a warning is encountered. If the WARN_AS_ERROR tag is set to FAIL_ON_WARNINGS
 # then doxygen will continue running as if WARN_AS_ERROR tag is set to NO, but
@@ -914,17 +925,28 @@ INPUT                  = @ZEPHYR_BASE@/doc/_doxygen/mainpage.md \
                          @ZEPHYR_BASE@/kernel/include/kernel_arch_interface.h \
                          @ZEPHYR_BASE@/include/ \
                          @ZEPHYR_BASE@/lib/libc/minimal/include/ \
-                         @ZEPHYR_BASE@/subsys/testsuite/ztest/include/ \
-                         @ZEPHYR_BASE@/tests/kernel/
+                         @ZEPHYR_BASE@/subsys/testsuite/include/ \
+                         @ZEPHYR_BASE@/subsys/testsuite/ztest/include/
 
 # This tag can be used to specify the character encoding of the source files
 # that doxygen parses. Internally doxygen uses the UTF-8 encoding. Doxygen uses
 # libiconv (or the iconv built into libc) for the transcoding. See the libiconv
 # documentation (see:
 # https://www.gnu.org/software/libiconv/) for the list of possible encodings.
+# See also: INPUT_FILE_ENCODING
 # The default value is: UTF-8.
 
 INPUT_ENCODING         = UTF-8
+
+# This tag can be used to specify the character encoding of the source files
+# that doxygen parses The INPUT_FILE_ENCODING tag can be used to specify
+# character encoding on a per file pattern basis. Doxygen will compare the file
+# name with each pattern and apply the encoding instead of the default
+# INPUT_ENCODING) if there is a match. The character encodings are a list of the
+# form: pattern=encoding (like *.php=ISO-8859-1). See cfg_input_encoding
+# "INPUT_ENCODING" for further information on supported encodings.
+
+INPUT_FILE_ENCODING    =
 
 # If the value of the INPUT tag contains directories, you can use the
 # FILE_PATTERNS tag to specify one or more wildcard patterns (like *.cpp and
@@ -1036,6 +1058,11 @@ IMAGE_PATH             =
 # code is scanned, but not when the output code is generated. If lines are added
 # or removed, the anchors will not be placed correctly.
 #
+# Note that doxygen will use the data processed and written to standard output
+# for further processing, therefore nothing else, like debug statements or used
+# commands (so in case of a Windows batch file always use @echo OFF), should be
+# written to standard output.
+#
 # Note that for custom extensions or not directly supported extensions you also
 # need to set EXTENSION_MAPPING for the extension otherwise the files are not
 # properly processed by doxygen.
@@ -1076,6 +1103,15 @@ FILTER_SOURCE_PATTERNS =
 # and want to reuse the introduction page also for the doxygen output.
 
 USE_MDFILE_AS_MAINPAGE = mainpage.md
+
+# The Fortran standard specifies that for fixed formatted Fortran code all
+# characters from position 72 are to be considered as comment. A common
+# extension is to allow longer lines before the automatic comment starts. The
+# setting FORTRAN_COMMENT_AFTER will also make it possible that longer lines can
+# be processed before the automatic comment starts.
+# Minimum value: 7, maximum value: 10000, default value: 72.
+
+FORTRAN_COMMENT_AFTER  = 72
 
 #---------------------------------------------------------------------------
 # Configuration options related to source browsing
@@ -1214,10 +1250,11 @@ CLANG_DATABASE_PATH    =
 
 ALPHABETICAL_INDEX     = YES
 
-# In case all classes in a project start with a common prefix, all classes will
-# be put under the same header in the alphabetical index. The IGNORE_PREFIX tag
-# can be used to specify a prefix (or a list of prefixes) that should be ignored
-# while generating the index headers.
+# The IGNORE_PREFIX tag can be used to specify a prefix (or a list of prefixes)
+# that should be ignored while generating the index headers. The IGNORE_PREFIX
+# tag works for classes, function and member names. The entity will be placed in
+# the alphabetical list under the first letter of the entity name that remains
+# after removing the prefix.
 # This tag requires that the tag ALPHABETICAL_INDEX is set to YES.
 
 IGNORE_PREFIX          =
@@ -1296,7 +1333,12 @@ HTML_STYLESHEET        =
 # Doxygen will copy the style sheet files to the output directory.
 # Note: The order of the extra style sheet files is of importance (e.g. the last
 # style sheet in the list overrules the setting of the previous ones in the
-# list). For an example see the documentation.
+# list).
+# Note: Since the styling of scrollbars can currently not be overruled in
+# Webkit/Chromium, the styling will be left out of the default doxygen.css if
+# one or more extra stylesheets have been specified. So if scrollbar
+# customization is desired it has to be added explicitly. For an example see the
+# documentation.
 # This tag requires that the tag GENERATE_HTML is set to YES.
 
 HTML_EXTRA_STYLESHEET  = @ZEPHYR_BASE@/doc/_doxygen/doxygen-awesome.css \
@@ -1314,6 +1356,19 @@ HTML_EXTRA_STYLESHEET  = @ZEPHYR_BASE@/doc/_doxygen/doxygen-awesome.css \
 
 HTML_EXTRA_FILES       = @ZEPHYR_BASE@/doc/_doxygen/doxygen-awesome-darkmode-toggle.js \
                          @ZEPHYR_BASE@/doc/_doxygen/doxygen-awesome-zephyr.js
+
+# The HTML_COLORSTYLE tag can be used to specify if the generated HTML output
+# should be rendered with a dark or light theme.
+# Possible values are: LIGHT always generate light mode output, DARK always
+# generate dark mode output, AUTO_LIGHT automatically set the mode according to
+# the user preference, use light mode if no preference is set (the default),
+# AUTO_DARK automatically set the mode according to the user preference, use
+# dark mode if no preference is set and TOGGLE allow to user to switch between
+# light and dark mode via a button.
+# The default value is: AUTO_LIGHT.
+# This tag requires that the tag GENERATE_HTML is set to YES.
+
+HTML_COLORSTYLE        = AUTO_LIGHT
 
 # The HTML_COLORSTYLE_HUE tag controls the color of the HTML output. Doxygen
 # will adjust the colors in the style sheet and background images according to
@@ -1677,17 +1732,6 @@ HTML_FORMULA_FORMAT    = png
 # This tag requires that the tag GENERATE_HTML is set to YES.
 
 FORMULA_FONTSIZE       = 10
-
-# Use the FORMULA_TRANSPARENT tag to determine whether or not the images
-# generated for formulas are transparent PNGs. Transparent PNGs are not
-# supported properly for IE 6.0, but are supported on all modern browsers.
-#
-# Note that when changing this option you need to delete any form_*.png files in
-# the HTML output directory before the changes have effect.
-# The default value is: YES.
-# This tag requires that the tag GENERATE_HTML is set to YES.
-
-FORMULA_TRANSPARENT    = YES
 
 # The FORMULA_MACROFILE can contain LaTeX \newcommand and \renewcommand commands
 # to create new LaTeX commands to be used in formulas as building blocks. See
@@ -2316,6 +2360,7 @@ PREDEFINED             = __DOXYGEN__ \
                          CONFIG_ERRNO \
                          CONFIG_FLASH_JESD216_API \
                          CONFIG_FLASH_PAGE_LAYOUT \
+                         CONFIG_FP16 \
                          CONFIG_FPU \
                          CONFIG_FPU_SHARING \
                          CONFIG_GDBSTUB \
@@ -2352,6 +2397,7 @@ PREDEFINED             = __DOXYGEN__ \
                          "__printf_like(x, y)=" \
                          __attribute__(x)= \
                          __syscall= \
+                         __syscall_always_inline= \
                          __must_check= \
                          "ATOMIC_DEFINE(x, y)=atomic_t x[ATOMIC_BITMAP_SIZE(y)]"
 
@@ -2456,26 +2502,38 @@ HAVE_DOT               = NO
 
 DOT_NUM_THREADS        = 0
 
-# When you want a differently looking font in the dot files that doxygen
-# generates you can specify the font name using DOT_FONTNAME. You need to make
-# sure dot is able to find the font, which can be done by putting it in a
-# standard location or by setting the DOTFONTPATH environment variable or by
-# setting DOT_FONTPATH to the directory containing the font.
-# The default value is: Helvetica.
+# DOT_COMMON_ATTR is common attributes for nodes, edges and labels of
+# subgraphs. When you want a differently looking font in the dot files that
+# doxygen generates you can specify fontname, fontcolor and fontsize attributes.
+# For details please see <a href=https://graphviz.org/doc/info/attrs.html>Node,
+# Edge and Graph Attributes specification</a> You need to make sure dot is able
+# to find the font, which can be done by putting it in a standard location or by
+# setting the DOTFONTPATH environment variable or by setting DOT_FONTPATH to the
+# directory containing the font. Default graphviz fontsize is 14.
+# The default value is: fontname=Helvetica,fontsize=10.
 # This tag requires that the tag HAVE_DOT is set to YES.
 
-DOT_FONTNAME           = Helvetica
+DOT_COMMON_ATTR        = "fontname=Helvetica,fontsize=10"
 
-# The DOT_FONTSIZE tag can be used to set the size (in points) of the font of
-# dot graphs.
-# Minimum value: 4, maximum value: 24, default value: 10.
+# DOT_EDGE_ATTR is concatenated with DOT_COMMON_ATTR. For elegant style you can
+# add 'arrowhead=open, arrowtail=open, arrowsize=0.5'. <a
+# href=https://graphviz.org/doc/info/arrows.html>Complete documentation about
+# arrows shapes.</a>
+# The default value is: labelfontname=Helvetica,labelfontsize=10.
 # This tag requires that the tag HAVE_DOT is set to YES.
 
-DOT_FONTSIZE           = 10
+DOT_EDGE_ATTR          = "labelfontname=Helvetica,labelfontsize=10"
 
-# By default doxygen will tell dot to use the default font as specified with
-# DOT_FONTNAME. If you specify a different font using DOT_FONTNAME you can set
-# the path where dot can find it using this tag.
+# DOT_NODE_ATTR is concatenated with DOT_COMMON_ATTR. For view without boxes
+# around nodes set 'shape=plain' or 'shape=plaintext' <a
+# href=https://www.graphviz.org/doc/info/shapes.html>Shapes specification</a>
+# The default value is: shape=box,height=0.2,width=0.4.
+# This tag requires that the tag HAVE_DOT is set to YES.
+
+DOT_NODE_ATTR          = "shape=box,height=0.2,width=0.4"
+
+# You can set the path where dot can find font specified with fontname in
+# DOT_COMMON_ATTR and others dot attributes.
 # This tag requires that the tag HAVE_DOT is set to YES.
 
 DOT_FONTPATH           =
@@ -2717,18 +2775,6 @@ DOT_GRAPH_MAX_NODES    = 50
 # This tag requires that the tag HAVE_DOT is set to YES.
 
 MAX_DOT_GRAPH_DEPTH    = 0
-
-# Set the DOT_TRANSPARENT tag to YES to generate images with a transparent
-# background. This is disabled by default, because dot on Windows does not seem
-# to support this out of the box.
-#
-# Warning: Depending on the platform used, enabling this option may lead to
-# badly anti-aliased labels on the edges of a graph (i.e. they become hard to
-# read).
-# The default value is: NO.
-# This tag requires that the tag HAVE_DOT is set to YES.
-
-DOT_TRANSPARENT        = NO
 
 # Set the DOT_MULTI_TARGETS tag to YES to allow dot to generate multiple output
 # files in one run (i.e. multiple -o and -T options on the command line). This

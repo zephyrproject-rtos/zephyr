@@ -20,6 +20,8 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/logging/log_output.h>
 
+#define TEST_MESSAGE "test msg"
+
 #define LOG_MODULE_NAME log_test
 LOG_MODULE_REGISTER(LOG_MODULE_NAME, LOG_LEVEL_INF);
 static K_SEM_DEFINE(log_sem, 0, 1);
@@ -29,7 +31,6 @@ ZTEST_BMEM uint32_t source_id;
 /* used when log_msg create in user space */
 ZTEST_BMEM uint8_t domain, level;
 ZTEST_DMEM uint32_t msg_data = 0x1234;
-ZTEST_DMEM char *test_msg_usr = "test msg";
 
 static uint8_t buf;
 static int char_out(uint8_t *data, size_t length, void *ctx)
@@ -65,6 +66,11 @@ static void process(const struct log_backend *const backend,
 {
 	uint32_t flags;
 	struct backend_cb *cb = (struct backend_cb *)backend->cb->ctx;
+
+	/* If printk message skip it. */
+	if (log_msg_get_level(&(msg->log)) == LOG_LEVEL_INTERNAL_RAW_STRING) {
+		return;
+	}
 
 	if (IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE)) {
 		cb->sync++;
@@ -327,7 +333,9 @@ ZTEST(test_log_core_additional, test_log_timestamping)
 	log_init();
 	/* deactivate all other backend */
 	STRUCT_SECTION_FOREACH(log_backend, backend) {
-		log_backend_deactivate(backend);
+		if ((backend == &backend1) || (backend == &backend2)) {
+			log_backend_deactivate(backend);
+		}
 	}
 
 	TC_PRINT("Register timestamp function\n");
@@ -476,13 +484,13 @@ ZTEST(test_log_core_additional, test_log_msg_create)
 					  level, &msg_data, 0,
 					  sizeof(msg_data), NULL);
 		/* try z_log_msg_static_create() */
-		Z_LOG_MSG2_STACK_CREATE(0, domain, __log_current_const_data,
+		Z_LOG_MSG_STACK_CREATE(0, domain, __log_current_const_data,
 					level, &msg_data,
 					sizeof(msg_data), NULL);
 
-		Z_LOG_MSG2_CREATE(!IS_ENABLED(CONFIG_USERSPACE), mode,
+		Z_LOG_MSG_CREATE(!IS_ENABLED(CONFIG_USERSPACE), mode,
 			  Z_LOG_LOCAL_DOMAIN_ID, NULL,
-			  LOG_LEVEL_INTERNAL_RAW_STRING, NULL, 0, test_msg_usr);
+			  LOG_LEVEL_INTERNAL_RAW_STRING, NULL, 0, TEST_MESSAGE);
 
 		while (log_test_process()) {
 		}
@@ -500,15 +508,15 @@ ZTEST_USER(test_log_core_additional, test_log_msg_create_user)
 
 	z_log_msg_runtime_create(domain, NULL,
 				  level, &msg_data, 0,
-				  sizeof(msg_data), test_msg_usr);
+				  sizeof(msg_data), TEST_MESSAGE);
 	/* try z_log_msg_static_create() */
-	Z_LOG_MSG2_STACK_CREATE(0, domain, NULL,
+	Z_LOG_MSG_STACK_CREATE(0, domain, NULL,
 				level, &msg_data,
-				sizeof(msg_data), test_msg_usr);
+				sizeof(msg_data), TEST_MESSAGE);
 
-	Z_LOG_MSG2_CREATE(!IS_ENABLED(CONFIG_USERSPACE), mode,
+	Z_LOG_MSG_CREATE(!IS_ENABLED(CONFIG_USERSPACE), mode,
 			  Z_LOG_LOCAL_DOMAIN_ID, NULL,
-		  LOG_LEVEL_INTERNAL_RAW_STRING, NULL, 0, test_msg_usr);
+		  LOG_LEVEL_INTERNAL_RAW_STRING, NULL, 0, TEST_MESSAGE);
 
 	while (log_test_process()) {
 	}

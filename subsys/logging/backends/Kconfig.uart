@@ -17,12 +17,24 @@ config LOG_BACKEND_UART_ASYNC
 	depends on !LOG_BACKEND_UART_OUTPUT_DICTIONARY_HEX
 
 config LOG_BACKEND_UART_BUFFER_SIZE
-	int "Number of bytes to buffer in RAM before flushing"
+	int "Maximum number of bytes to buffer in RAM before flushing"
 	default 32 if LOG_BACKEND_UART_ASYNC
 	default 1
 	help
-	  Sets the number of bytes which can be buffered in RAM before log_output_flush
-	  is automatically called on the backend.
+	  In deferred logging mode, sets the maximum number of bytes which can be buffered in
+	  RAM before log_output_flush is automatically called on the UART backend.  The buffer
+	  will also be flushed after each log message.
+
+	  In immediate logging mode, processed log messages are not buffered and are always
+	  output one byte at a time.
+
+config LOG_BACKEND_UART_AUTOSTART
+	bool "Automatically start UART backend"
+	default y
+	help
+	  When enabled automatically start the UART logging backend on
+	  application start. When disabled, the application needs to start
+	  the backend manually using log_backend_enable().
 
 backend = UART
 backend-str = uart

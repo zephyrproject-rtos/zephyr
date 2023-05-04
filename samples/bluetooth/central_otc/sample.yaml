@@ -5,3 +5,5 @@ tests:
     harness: bluetooth
     platform_allow: nrf21540dk_nrf52840 nrf52840dk_nrf52840 nrf52833dk_nrf52833
     tags: bluetooth
+    integration_platforms:
+      - nrf21540dk_nrf52840

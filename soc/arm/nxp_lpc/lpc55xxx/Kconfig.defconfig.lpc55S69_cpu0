@@ -8,10 +8,6 @@ if SOC_LPC55S69_CPU0
 config SOC
 	default "lpc55S69_cpu0"
 
-config PINMUX_MCUX_LPC
-	default y
-	depends on PINMUX
-
 config SOC_FLASH_MCUX
 	default y
 	depends on FLASH

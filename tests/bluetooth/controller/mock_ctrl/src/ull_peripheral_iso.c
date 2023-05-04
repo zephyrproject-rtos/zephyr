@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/ztest.h>
+
 #include <zephyr/kernel.h>
 #include <zephyr/bluetooth/buf.h>
 #include <zephyr/sys/byteorder.h>
@@ -18,11 +20,13 @@
 
 #include "ticker/ticker.h"
 
+#include "pdu_df.h"
+#include "lll/pdu_vendor.h"
 #include "pdu.h"
 
 #include "lll.h"
 #include "lll/lll_vendor.h"
-#include "lll_df_types.h"
+#include "lll/lll_df_types.h"
 #include "lll_conn.h"
 #include "lll_conn_iso.h"
 

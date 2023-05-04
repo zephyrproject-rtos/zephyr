@@ -8,7 +8,7 @@
 /*
  * Default Flash planning for bl5340_dvk CPUAPP (Application MCU).
  *
- * Zephyr build for BL5340 with ARM TrustZone-M support,
+ * Zephyr build for BL5340 with ARM TrustZone-M support
  * implies building Secure and Non-Secure Zephyr images.
  *
  * Secure image will be placed, by default, in flash0

@@ -1,0 +1,8 @@
+tests:
+  drivers.gpio.hogs:
+    tags: drivers gpio
+    depends_on: gpio
+    platform_allow: native_posix native_posix_64 frdm_k64f nrf52840dk_nrf52840 nucleo_g474re
+    integration_platforms:
+      - native_posix
+      - native_posix_64

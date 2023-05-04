@@ -136,6 +136,18 @@
 			label = "TEST_GPIO_1";
 			interrupts = <4 3>;
 			status = "okay";
+
+			test_gpio_hog_1 {
+				gpio-hog;
+				gpios = <0x0 0x00>, <0x1 0x10>;
+				output-high;
+			};
+
+			test_gpio_hog_2 {
+				gpio-hog;
+				gpios = <0x3 0x20>;
+				output-low;
+			};
 		};
 
 		test_gpio_2: gpio@abcd1234 {
@@ -149,6 +161,13 @@
 			interrupts = <5 2>;
 			label = "TEST_GPIO_2";
 			status = "okay";
+
+			test_gpio_hog_3 {
+				gpio-hog;
+				gpios = <0x4 0x30>;
+				input;
+				line-name = "TEST_GPIO_HOG_3";
+			};
 		};
 
 		test_gpio_3: gpio@1234 {
@@ -518,6 +537,25 @@
 			};
 		};
 
+		device-with-props-0 {
+			compatible = "vnd,device-with-props";
+			status = "okay";
+			foo = <1>;
+			bar = <2>;
+		};
+
+		device-with-props-1 {
+			compatible = "vnd,device-with-props";
+			status = "okay";
+			foo = <2>;
+		};
+
+		device-with-props-2 {
+			compatible = "vnd,device-with-props";
+			status = "disabled";
+			baz = <1>;
+		};
+
 		test_string_token_0: string-token-0 {
 			compatible = "vnd,string-token";
 			val = "token_zero";
@@ -546,6 +584,36 @@
 			      "token_second_idx_one",
 			      "token_second_idx_two",
 			      "token_second_idx_three";
+		};
+
+		test_str_unquoted_f0: string-unquoted-f0 {
+			compatible = "vnd,string-unquoted";
+			val = "0.1234";
+		};
+
+		test_str_unquoted_f1: string-unquoted-f1 {
+			compatible = "vnd,string-unquoted";
+			val = "0.9e-3";
+		};
+
+		test_str_unquoted_t: string-unquoted-t {
+			compatible = "vnd,string-unquoted";
+			val = "XA XPLUS XB";
+		};
+
+		test_stra_unquoted_f0: string-array-unquoted-f0 {
+			compatible = "vnd,string-array-unquoted";
+			val = "1.0e2", "2.0e2", "3.0e2", "4.0e2";
+		};
+
+		test_stra_unquoted_f1: string-array-unquoted-f1 {
+			compatible = "vnd,string-array-unquoted";
+			val = "0.01", "0.1", "1.0", "10.0";
+		};
+
+		test_stra_unquoted_t: string-array-unquoted-t {
+			compatible = "vnd,string-array-unquoted";
+			val = "XA XPLUS XB", "XC XPLUS XD", "XA XMINUS XB", "XC XMINUS XD";
 		};
 	};
 };

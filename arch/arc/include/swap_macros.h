@@ -15,6 +15,8 @@
 #include <zephyr/arch/cpu.h>
 #include <zephyr/arch/arc/tool-compat.h>
 #include <zephyr/arch/arc/asm-compat/assembler.h>
+#include <zephyr/kernel.h>
+#include "../core/dsp/swap_dsp_macros.h"
 
 #ifdef _ASMLANGUAGE
 
@@ -69,8 +71,7 @@
 
 #ifdef CONFIG_FPU_SHARING
 	ld_s r13, [r2, ___thread_base_t_user_options_OFFSET]
-	/* K_FP_REGS is bit 1 */
-	bbit0 r13, 1, 1f
+	bbit0 r13, K_FP_IDX, fpu_skip_save
 	lr r13, [_ARC_V2_FPU_STATUS]
 	st_s r13, [sp, ___callee_saved_stack_t_fpu_status_OFFSET]
 	lr r13, [_ARC_V2_FPU_CTRL]
@@ -86,9 +87,9 @@
 	lr r13, [_ARC_V2_FPU_DPFP2H]
 	st_s r13, [sp, ___callee_saved_stack_t_dpfp2h_OFFSET]
 #endif
-1 :
 #endif
-
+fpu_skip_save :
+	_save_dsp_regs
 	/* save stack pointer in struct k_thread */
 	STR sp, r2, _thread_offset_to_sp
 .endm
@@ -107,8 +108,7 @@
 
 #ifdef CONFIG_FPU_SHARING
 	ld_s r13, [r2, ___thread_base_t_user_options_OFFSET]
-	/* K_FP_REGS is bit 1 */
-	bbit0 r13, 1, 2f
+	bbit0 r13, K_FP_IDX, fpu_skip_load
 
 	ld_s r13, [sp, ___callee_saved_stack_t_fpu_status_OFFSET]
 	sr r13, [_ARC_V2_FPU_STATUS]
@@ -125,9 +125,9 @@
 	ld_s r13, [sp, ___callee_saved_stack_t_dpfp2h_OFFSET]
 	sr r13, [_ARC_V2_FPU_DPFP2H]
 #endif
-2 :
 #endif
-
+fpu_skip_load :
+	_load_dsp_regs
 #ifdef CONFIG_USERSPACE
 #ifdef CONFIG_ARC_HAS_SECURE
 #ifdef CONFIG_ARC_SECURE_FIRMWARE
@@ -543,16 +543,30 @@
 #endif
 .endm
 
+
+#define __arc_u9_max		(255)
+#define __arc_u9_min		(-256)
+#define __arc_ldst32_as_shift	2
+
 /*
  * When we accessing bloated struct member we can exceed u9 operand in store
  * instruction. So we can use _st32_huge_offset macro instead
  */
-.macro _st32_huge_offset, d, s, off, temp
-	.if MACRO_ARG(off) > 255 || MACRO_ARG(off) < -256
-		ADDR MACRO_ARG(temp), MACRO_ARG(s), MACRO_ARG(off)
-		st MACRO_ARG(d), [MACRO_ARG(temp)]
+.macro _st32_huge_offset, d, s, offset, temp
+	off = MACRO_ARG(offset)
+	u9_max_shifted = __arc_u9_max << __arc_ldst32_as_shift
+
+	.if off <= __arc_u9_max && off >= __arc_u9_min
+		st MACRO_ARG(d), [MACRO_ARG(s), off]
+	/* Technically we can optimize with .as both big positive and negative offsets here, but
+	 * as we use only positive offsets in hand-written assembly code we keep only
+	 * positive offset case here for simplicity.
+	 */
+	.elseif !(off % (1 << __arc_ldst32_as_shift)) && off <= u9_max_shifted && off >= 0
+		st.as MACRO_ARG(d), [MACRO_ARG(s), off >> __arc_ldst32_as_shift]
 	.else
-		st MACRO_ARG(d), [MACRO_ARG(s), MACRO_ARG(off)]
+		ADDR MACRO_ARG(temp), MACRO_ARG(s), off
+		st MACRO_ARG(d), [MACRO_ARG(temp)]
 	.endif
 .endm
 

@@ -1,0 +1,21 @@
+# Copyright (c) 2022 TOKITA Hiroshi <tokita.hiroshi@fujitsu.com>
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_SPARKFUN_RED_V_THINGS_PLUS
+
+config BOARD
+	default "sparkfun_red_v_things_plus"
+
+config HAS_FLASH_LOAD_OFFSET
+	default y
+
+config FLASH_BASE_ADDRESS
+	default $(dt_node_reg_addr_hex,/soc/spi@10014000,1)
+
+config FLASH_LOAD_OFFSET
+	default 0x0
+
+config SYS_CLOCK_TICKS_PER_SEC
+	default 128
+
+endif

@@ -211,18 +211,6 @@ arduino_spi: &spi3 {
 	pinctrl-names = "default", "sleep";
 };
 
-&timer0 {
-	status = "okay";
-};
-
-&timer1 {
-	status = "okay";
-};
-
-&timer2 {
-	status = "okay";
-};
-
 &flash0 {
 
 	partitions {
@@ -246,13 +234,10 @@ arduino_spi: &spi3 {
 		slot1_ns_partition: partition@c0000 {
 			label = "image-1-nonsecure";
 		};
-		scratch_partition: partition@f0000 {
-			label = "image-scratch";
-			reg = <0x000f0000 0xa000>;
-		};
-		storage_partition: partition@fa000 {
+		/* 0xf0000 to 0xf7fff reserved for TF-M partitions */
+		storage_partition: partition@f8000 {
 			label = "storage";
-			reg = <0x000fa000 0x00006000>;
+			reg = <0x000f8000 0x00008000>;
 		};
 	};
 };

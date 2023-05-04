@@ -8,21 +8,21 @@ compatible: "nuvoton,npcx-i2c-port"
 include: [i2c-controller.yaml, pinctrl-device.yaml]
 
 properties:
-    port:
-        type: int
-        required: true
-        description: index of i2c port
+  port:
+    type: int
+    required: true
+    description: index of i2c port
 
-    controller:
-        type: phandle
-        required: true
-        description: i2c controller to handle signals from port pads
+  controller:
+    type: phandle
+    required: true
+    description: i2c controller to handle signals from port pads
 
-    pinctrl-0:
-        required: true
+  pinctrl-0:
+    required: true
 
-    pinctrl-names:
-        required: true
+  pinctrl-names:
+    required: true
 
-    clock-frequency:
-        required: true
+  clock-frequency:
+    required: true

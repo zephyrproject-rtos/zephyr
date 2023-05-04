@@ -5,59 +5,59 @@
 include: spi-device.yaml
 
 properties:
-    reset-gpios:
-      type: phandle-array
-      required: true
-      description: |
-        GPIO connected to the modem's RESET/NRESET signal.
+  reset-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      GPIO connected to the modem's RESET/NRESET signal.
 
-        This signal is open-drain, active-high (SX1272/3) or
-        active-low (SX1276/7/8/9) as interpreted by the modem.
+      This signal is open-drain, active-high (SX1272/3) or
+      active-low (SX1276/7/8/9) as interpreted by the modem.
 
-    dio-gpios:
-      type: phandle-array
-      required: true
-      description: |
-        Up to six pins that produce service interrupts from the modem.
+  dio-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      Up to six pins that produce service interrupts from the modem.
 
-        These signals are normally active-high.
+      These signals are normally active-high.
 
-    power-amplifier-output:
-      type: string
-      description: |
-        Selects power amplifier output pin. This is required when neither
-        'rfo-enable-gpios' nor 'pa-boost-enable-gpios' is specified. In other
-        case this property is simply ignored.
-      enum:
-         - "rfo"
-         - "pa-boost"
+  power-amplifier-output:
+    type: string
+    description: |
+      Selects power amplifier output pin. This is required when neither
+      'rfo-enable-gpios' nor 'pa-boost-enable-gpios' is specified. In other
+      case this property is simply ignored.
+    enum:
+      - "rfo"
+      - "pa-boost"
 
-    antenna-enable-gpios:
-      type: phandle-array
-      description: |
-        Antenna power enable pin.
+  antenna-enable-gpios:
+    type: phandle-array
+    description: |
+      Antenna power enable pin.
 
-    rfi-enable-gpios:
-      type: phandle-array
-      description: |
-        RFI antenna input enable pin.
+  rfi-enable-gpios:
+    type: phandle-array
+    description: |
+      RFI antenna input enable pin.
 
-    rfo-enable-gpios:
-      type: phandle-array
-      description: |
-        RFO antenna output enable pin.
+  rfo-enable-gpios:
+    type: phandle-array
+    description: |
+      RFO antenna output enable pin.
 
-    pa-boost-enable-gpios:
-      type: phandle-array
-      description: |
-        PA_BOOST antenna output enable pin.
+  pa-boost-enable-gpios:
+    type: phandle-array
+    description: |
+      PA_BOOST antenna output enable pin.
 
-    tcxo-power-gpios:
-      type: phandle-array
-      description: |
-        TCXO power enable pin.
+  tcxo-power-gpios:
+    type: phandle-array
+    description: |
+      TCXO power enable pin.
 
-    tcxo-power-startup-delay-ms:
-      type: int
-      description: |
-        Delay which has to be applied after enabling TCXO power.
+  tcxo-power-startup-delay-ms:
+    type: int
+    description: |
+      Delay which has to be applied after enabling TCXO power.

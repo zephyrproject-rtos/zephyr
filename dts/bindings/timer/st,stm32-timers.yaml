@@ -5,40 +5,44 @@ description: STM32 timers
 
 compatible: "st,stm32-timers"
 
-include: base.yaml
+include: [base.yaml, reset-device.yaml]
 
 properties:
-    reg:
-      required: true
+  reg:
+    required: true
 
-    clocks:
-      required: true
+  clocks:
+    required: true
 
-    st,prescaler:
-      type: int
-      required: true
-      description: |
-        Clock prescaler at the input of the timer
-        Could be in range [0 .. 0xFFFF] for STM32 General Purpose Timers (CLK/(prescaler+1) )
+  resets:
+    required: true
 
-    st,countermode:
-        type: int
-        default: 0 # STM32_TIM_COUNTERMODE_UP - reset state
-        description: |
-          Sets timer counter mode.
+  st,prescaler:
+    type: int
+    required: true
+    description: |
+      Clock prescaler at the input of the timer
+      Could be in range [0 .. 0xFFFF] for STM32 General Purpose Timers (CLK/(prescaler+1) )
 
-          Use constants defined in dt-bindings/timer/stm32-timer.h.
+  st,countermode:
+    type: int
+    default: 0 # STM32_TIM_COUNTERMODE_UP - reset state
+    description: |
+      Sets timer counter mode.
 
-          * STM32_TIM_COUNTERMODE_UP             - used as upcounter.
-          * STM32_TIM_COUNTERMODE_DOWN           - used as downcounter.
-          * STM32_TIM_COUNTERMODE_CENTER_DOWN    - counts up and down alternatively.
-                                                   Output compare interrupt flags of output channels
-                                                   are set only when the counter is counting down.
-          * STM32_TIM_COUNTERMODE_CENTER_UP      - counts up and down alternatively.
-                                                   Output compare interrupt flags of output channels
-                                                   are set only when the counter is counting up.
-          * STM32_TIM_COUNTERMODE_CENTER_UP_DOWN - counts up and down alternatively.
-                                                   Output compare interrupt flags of output channels
-                                                   are set only when the counter is counting up or down.
+      Use constants defined in dt-bindings/timer/stm32-timer.h.
 
-          If absent, then STM32_TIM_COUNTERMODE_UP is used (reset state).
+      * STM32_TIM_COUNTERMODE_UP             - used as upcounter.
+      * STM32_TIM_COUNTERMODE_DOWN           - used as downcounter.
+      * STM32_TIM_COUNTERMODE_CENTER_DOWN    - counts up and down alternatively.
+                                               Output compare interrupt flags of output channels
+                                               are set only when the counter is counting down.
+      * STM32_TIM_COUNTERMODE_CENTER_UP      - counts up and down alternatively.
+                                               Output compare interrupt flags of output channels
+                                               are set only when the counter is counting up.
+      * STM32_TIM_COUNTERMODE_CENTER_UP_DOWN - counts up and down alternatively.
+                                               Output compare interrupt flags of output channels
+                                               are set only when the counter is counting up or
+                                               down.
+
+      If absent, then STM32_TIM_COUNTERMODE_UP is used (reset state).

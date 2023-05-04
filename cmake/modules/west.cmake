@@ -62,7 +62,7 @@ else()
   # We can import west from PYTHON_EXECUTABLE and have its version.
 
   # Make sure its version matches the minimum required one.
-  set(MIN_WEST_VERSION 0.7.1)
+  set_ifndef(MIN_WEST_VERSION 0.7.1)
   if(${west_version} VERSION_LESS ${MIN_WEST_VERSION})
     message(FATAL_ERROR "The detected west version, ${west_version}, is unsupported.\n\
   The minimum supported version is ${MIN_WEST_VERSION}.\n\

@@ -231,6 +231,9 @@
 #endif
 #ifdef CONFIG_NRFX_SPIM3
 #define NRFX_SPIM3_ENABLED 1
+#ifdef CONFIG_NRF52_ANOMALY_198_WORKAROUND
+#define NRFX_SPIM3_NRF52840_ANOMALY_198_WORKAROUND_ENABLED 1
+#endif
 #endif
 #ifdef CONFIG_NRFX_SPIM4
 #define NRFX_SPIM4_ENABLED 1
@@ -404,8 +407,8 @@
     #include <nrfx_config_nrf5340_application.h>
 #elif defined(NRF5340_XXAA_NETWORK)
     #include <nrfx_config_nrf5340_network.h>
-#elif defined(NRF9160_XXAA)
-    #include <nrfx_config_nrf9160.h>
+#elif defined(NRF9120_XXAA) || defined(NRF9160_XXAA)
+    #include <nrfx_config_nrf91.h>
 #else
     #error "Unknown device."
 #endif

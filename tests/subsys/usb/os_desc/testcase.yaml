@@ -2,3 +2,5 @@ tests:
   usb.osdesc:
     platform_allow: native_posix native_posix_64 frdm_k64f
     tags: usb osdesc
+    integration_platforms:
+      - native_posix

@@ -66,6 +66,10 @@ ZTEST(stm32h7_devices_clocks, test_spi_clk_config)
 			zassert_equal(spi1_actual_domain_clk, RCC_SPI123CLKSOURCE_PLL,
 					"Expected SPI src: PLL1 Q (0x%x). Actual: 0x%x",
 					RCC_SPI123CLKSOURCE_PLL, spi1_actual_domain_clk);
+		} else if (pclken[1].bus == STM32_SRC_PLL2_P) {
+			zassert_equal(spi1_actual_domain_clk, RCC_SPI123CLKSOURCE_PLL2,
+					"Expected SPI src: PLL2 P (0x%x). Actual: 0x%x",
+					RCC_SPI123CLKSOURCE_PLL2, spi1_actual_domain_clk);
 		} else if (pclken[1].bus == STM32_SRC_PLL3_P) {
 			zassert_equal(spi1_actual_domain_clk, RCC_SPI123CLKSOURCE_PLL3,
 					"Expected SPI src: PLL3 P (0x%x). Actual: 0x%x",

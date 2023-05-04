@@ -8,10 +8,6 @@ if SOC_MIMXRT685S_CM33
 config SOC
 	default "mimxrt685s_cm33"
 
-config PINMUX_MCUX_LPC
-	default y
-	depends on PINMUX
-
 config I2S_MCUX_FLEXCOMM
 	select INIT_AUDIO_PLL
 

@@ -89,10 +89,10 @@ static struct net_if *get_iface(struct e1000_dev *ctx, uint16_t vlan_tag)
 static enum ethernet_hw_caps e1000_caps(const struct device *dev)
 {
 	return
-#if IS_ENABLED(CONFIG_NET_VLAN)
+#if defined(CONFIG_NET_VLAN)
 		ETHERNET_HW_VLAN |
 #endif
-#if IS_ENABLED(CONFIG_ETH_E1000_PTP_CLOCK)
+#if defined(CONFIG_ETH_E1000_PTP_CLOCK)
 		ETHERNET_PTP |
 #endif
 		ETHERNET_LINK_10BASE_T | ETHERNET_LINK_100BASE_T |

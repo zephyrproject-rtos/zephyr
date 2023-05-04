@@ -6,7 +6,7 @@ NXP MIMXRT1010-EVK
 Overview
 ********
 
-The i.MX RT1010 offers a new entry-point into the i.MX RT crossover processor
+The i.MX RT1010 offer a new entry-point into the i.MX RT crossover processor
 series by providing the lowest-cost LQFP package option, combined with the
 high performance and ease-of-use known throughout the entire i.MX RT series.
 This device is fully supported by NXP’s MCUXpresso Software and Tools.
@@ -127,8 +127,13 @@ The MIMXRT1010 SoC has five pairs of pinmux/gpio controllers.
 System Clock
 ============
 
-The MIMXRT1010 SoC is configured to use the 32 KHz low frequency oscillator on
-the board as a source for the GPT timer to generate a system clock.
+The MIMXRT1010 SoC is configured to use SysTick as the system clock source,
+running at 500MHz.
+
+When power management is enabled, the 32 KHz low frequency
+oscillator on the board will be used as a source for the GPT timer to
+generate a system clock. This clock enables lower power states, at the
+cost of reduced resolution
 
 Serial Port
 ===========

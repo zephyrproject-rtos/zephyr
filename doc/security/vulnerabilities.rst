@@ -1242,3 +1242,40 @@ This has been fixed in main for v3.2.0
 
 - `PR 47959 fix for v2.7.0
   <https://github.com/zephyrproject-rtos/zephyr/pull/47959>`_
+
+CVE-2022-2993
+--------------
+
+bt: host: Wrong key validation check
+
+This has been fixed in main for v3.2.0
+
+- `Zephyr project bug tracker GHSA-3286-jgjx-8cvr
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-3286-jgjx-8cvr>`_
+
+- `PR 48733 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/48733>`_
+
+CVE-2022-3806
+-------------
+
+DoS: Invalid Initialization in le_read_buffer_size_complete()
+
+- `Zephyr project bug tracker GHSA-w525-fm68-ppq3
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-w525-fm68-ppq3>`_
+
+CVE-2023-0396
+-------------
+
+Buffer Overreads in Bluetooth HCI
+
+- `Zephyr project bug tracker GHSA-8rpp-6vxq-pqg3
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-8rpp-6vxq-pqg3>`_
+
+CVE-2023-0397
+-------------
+
+DoS: Invalid Initialization in le_read_buffer_size_complete()
+
+- `Zephyr project bug tracker GHSA-wc2h-h868-q7hj
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-wc2h-h868-q7hj>`_

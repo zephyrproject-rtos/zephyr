@@ -35,7 +35,7 @@ def merge_hex_files(output, input_hex_files, overlap):
 def parse_args():
     parser = argparse.ArgumentParser(
         description="Merge hex files.",
-        formatter_class=argparse.RawDescriptionHelpFormatter)
+        formatter_class=argparse.RawDescriptionHelpFormatter, allow_abbrev=False)
     parser.add_argument("-o", "--output", required=False, default="merged.hex",
                         type=argparse.FileType('w', encoding='UTF-8'),
                         help="Output file name.")

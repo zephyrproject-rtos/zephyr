@@ -27,6 +27,10 @@ LOG_MODULE_REGISTER(net_shell, LOG_LEVEL_DBG);
 #include <zephyr/net/ppp.h>
 #include <zephyr/net/net_stats.h>
 #include <zephyr/sys/printk.h>
+#if defined(CONFIG_NET_L2_ETHERNET) && defined(CONFIG_NET_L2_ETHERNET_MGMT)
+#include <zephyr/net/ethernet.h>
+#include <zephyr/net/ethernet_mgmt.h>
+#endif /* CONFIG_NET_L2_ETHERNET */
 
 #include "route.h"
 #include "icmpv6.h"
@@ -83,24 +87,24 @@ LOG_MODULE_REGISTER(net_shell, LOG_LEVEL_DBG);
 #include "websocket/websocket_internal.h"
 
 #define PR(fmt, ...)						\
-	shell_fprintf(shell, SHELL_NORMAL, fmt, ##__VA_ARGS__)
+	shell_fprintf(sh, SHELL_NORMAL, fmt, ##__VA_ARGS__)
 
-#define PR_SHELL(shell, fmt, ...)				\
-	shell_fprintf(shell, SHELL_NORMAL, fmt, ##__VA_ARGS__)
+#define PR_SHELL(sh, fmt, ...)				\
+	shell_fprintf(sh, SHELL_NORMAL, fmt, ##__VA_ARGS__)
 
 #define PR_ERROR(fmt, ...)					\
-	shell_fprintf(shell, SHELL_ERROR, fmt, ##__VA_ARGS__)
+	shell_fprintf(sh, SHELL_ERROR, fmt, ##__VA_ARGS__)
 
 #define PR_INFO(fmt, ...)					\
-	shell_fprintf(shell, SHELL_INFO, fmt, ##__VA_ARGS__)
+	shell_fprintf(sh, SHELL_INFO, fmt, ##__VA_ARGS__)
 
 #define PR_WARNING(fmt, ...)					\
-	shell_fprintf(shell, SHELL_WARNING, fmt, ##__VA_ARGS__)
+	shell_fprintf(sh, SHELL_WARNING, fmt, ##__VA_ARGS__)
 
 #include "net_private.h"
 
 struct net_shell_user_data {
-	const struct shell *shell;
+	const struct shell *sh;
 	void *user_data;
 };
 
@@ -268,7 +272,7 @@ static struct ethernet_capabilities eth_hw_caps[] = {
 };
 
 static void print_supported_ethernet_capabilities(
-	const struct shell *shell, struct net_if *iface)
+	const struct shell *sh, struct net_if *iface)
 {
 	enum ethernet_hw_caps caps = net_eth_get_hw_capabilities(iface);
 	int i;
@@ -287,7 +291,7 @@ static const char *iface_flags2str(struct net_if *iface)
 	static char str[sizeof("POINTOPOINT") + sizeof("PROMISC") +
 			sizeof("NO_AUTO_START") + sizeof("SUSPENDED") +
 			sizeof("MCAST_FORWARD") + sizeof("IPv4") +
-			sizeof("IPv6")];
+			sizeof("IPv6") + sizeof("NO_ND") + sizeof("NO_MLD")];
 	int pos = 0;
 
 	if (net_if_flag_is_set(iface, NET_IF_POINTOPOINT)) {
@@ -323,6 +327,16 @@ static const char *iface_flags2str(struct net_if *iface)
 				"IPv6,");
 	}
 
+	if (net_if_flag_is_set(iface, NET_IF_IPV6_NO_ND)) {
+		pos += snprintk(str + pos, sizeof(str) - pos,
+				"NO_ND,");
+	}
+
+	if (net_if_flag_is_set(iface, NET_IF_IPV6_NO_MLD)) {
+		pos += snprintk(str + pos, sizeof(str) - pos,
+				"NO_MLD,");
+	}
+
 	/* get rid of last ',' character */
 	str[pos - 1] = '\0';
 
@@ -334,7 +348,7 @@ static void iface_cb(struct net_if *iface, void *user_data)
 {
 #if defined(CONFIG_NET_NATIVE)
 	struct net_shell_user_data *data = user_data;
-	const struct shell *shell = data->shell;
+	const struct shell *sh = data->sh;
 
 #if defined(CONFIG_NET_IPV6)
 	struct net_if_ipv6_prefix *prefix;
@@ -499,7 +513,7 @@ static void iface_cb(struct net_if *iface, void *user_data)
 #ifdef CONFIG_NET_L2_ETHERNET
 	if (net_if_l2(iface) == &NET_L2_GET_NAME(ETHERNET)) {
 		PR("Ethernet capabilities supported:\n");
-		print_supported_ethernet_capabilities(shell, iface);
+		print_supported_ethernet_capabilities(sh, iface);
 	}
 #endif /* CONFIG_NET_L2_ETHERNET */
 
@@ -700,7 +714,7 @@ skip_ipv4:
 static void route_cb(struct net_route_entry *entry, void *user_data)
 {
 	struct net_shell_user_data *data = user_data;
-	const struct shell *shell = data->shell;
+	const struct shell *sh = data->sh;
 	struct net_if *iface = data->user_data;
 	struct net_route_nexthop *nexthop_route;
 	int count;
@@ -757,7 +771,7 @@ static void route_cb(struct net_route_entry *entry, void *user_data)
 static void iface_per_route_cb(struct net_if *iface, void *user_data)
 {
 	struct net_shell_user_data *data = user_data;
-	const struct shell *shell = data->shell;
+	const struct shell *sh = data->sh;
 	const char *extra;
 
 	PR("\nIPv6 routes for interface %d (%p) (%s)\n",
@@ -776,7 +790,7 @@ static void route_mcast_cb(struct net_route_entry_mcast *entry,
 			   void *user_data)
 {
 	struct net_shell_user_data *data = user_data;
-	const struct shell *shell = data->shell;
+	const struct shell *sh = data->sh;
 	struct net_if *iface = data->user_data;
 	const char *extra;
 
@@ -835,7 +849,7 @@ static const char *priority2str(enum net_priority priority)
 #if defined(CONFIG_NET_STATISTICS_ETHERNET) && \
 					defined(CONFIG_NET_STATISTICS_USER_API)
 static void print_eth_stats(struct net_if *iface, struct net_stats_eth *data,
-			    const struct shell *shell)
+			    const struct shell *sh)
 {
 	PR("Statistics for Ethernet interface %p [%d]\n", iface,
 	       net_if_get_by_iface(iface));
@@ -848,6 +862,14 @@ static void print_eth_stats(struct net_if *iface, struct net_stats_eth *data,
 	PR("Bcast sent       : %u\n", data->broadcast.tx);
 	PR("Mcast received   : %u\n", data->multicast.rx);
 	PR("Mcast sent       : %u\n", data->multicast.tx);
+
+	PR("Send errors      : %u\n", data->errors.tx);
+	PR("Receive errors   : %u\n", data->errors.rx);
+	PR("Collisions       : %u\n", data->collisions);
+	PR("Send Drops       : %u\n", data->tx_dropped);
+	PR("Send timeouts    : %u\n", data->tx_timeout_count);
+	PR("Send restarts    : %u\n", data->tx_restart_queue);
+	PR("Unknown protocol : %u\n", data->unknown_protocol);
 
 #if defined(CONFIG_NET_STATISTICS_ETHERNET_VENDOR)
 	if (data->vendor) {
@@ -869,7 +891,7 @@ static void print_eth_stats(struct net_if *iface, struct net_stats_eth *data,
 #if defined(CONFIG_NET_STATISTICS_PPP) && \
 					defined(CONFIG_NET_STATISTICS_USER_API)
 static void print_ppp_stats(struct net_if *iface, struct net_stats_ppp *data,
-			    const struct shell *shell)
+			    const struct shell *sh)
 {
 	PR("Frames recv    %u\n", data->pkts.rx);
 	PR("Frames sent    %u\n", data->pkts.tx);
@@ -1044,7 +1066,7 @@ static char *get_net_pkt_stats_detail(struct net_if *iface, bool is_tx)
 #endif /* CONFIG_NET_PKT_TXTIME_STATS_DETAIL ||
 	  CONFIG_NET_PKT_RXTIME_STATS_DETAIL */
 
-static void print_tc_tx_stats(const struct shell *shell, struct net_if *iface)
+static void print_tc_tx_stats(const struct shell *sh, struct net_if *iface)
 {
 #if NET_TC_TX_COUNT > 1
 	int i;
@@ -1087,7 +1109,7 @@ static void print_tc_tx_stats(const struct shell *shell, struct net_if *iface)
 	}
 #endif /* CONFIG_NET_PKT_TXTIME_STATS */
 #else
-	ARG_UNUSED(shell);
+	ARG_UNUSED(sh);
 
 #if defined(CONFIG_NET_PKT_TXTIME_STATS)
 	net_stats_t count = GET_STAT(iface, tx_time.count);
@@ -1103,7 +1125,7 @@ static void print_tc_tx_stats(const struct shell *shell, struct net_if *iface)
 #endif /* NET_TC_TX_COUNT > 1 */
 }
 
-static void print_tc_rx_stats(const struct shell *shell, struct net_if *iface)
+static void print_tc_rx_stats(const struct shell *sh, struct net_if *iface)
 {
 #if NET_TC_RX_COUNT > 1
 	int i;
@@ -1146,7 +1168,7 @@ static void print_tc_rx_stats(const struct shell *shell, struct net_if *iface)
 	}
 #endif /* CONFIG_NET_PKT_RXTIME_STATS */
 #else
-	ARG_UNUSED(shell);
+	ARG_UNUSED(sh);
 
 #if defined(CONFIG_NET_PKT_RXTIME_STATS)
 	net_stats_t count = GET_STAT(iface, rx_time.count);
@@ -1163,7 +1185,7 @@ static void print_tc_rx_stats(const struct shell *shell, struct net_if *iface)
 #endif /* NET_TC_RX_COUNT > 1 */
 }
 
-static void print_net_pm_stats(const struct shell *shell, struct net_if *iface)
+static void print_net_pm_stats(const struct shell *sh, struct net_if *iface)
 {
 #if defined(CONFIG_NET_STATISTICS_POWER_MANAGEMENT)
 	PR("PM suspend stats:\n");
@@ -1177,7 +1199,7 @@ static void print_net_pm_stats(const struct shell *shell, struct net_if *iface)
 	PR("\tHow many times: %u\n",
 	   GET_STAT(iface, pm.suspend_count));
 #else
-	ARG_UNUSED(shell);
+	ARG_UNUSED(sh);
 	ARG_UNUSED(iface);
 #endif
 }
@@ -1185,7 +1207,7 @@ static void print_net_pm_stats(const struct shell *shell, struct net_if *iface)
 static void net_shell_print_statistics(struct net_if *iface, void *user_data)
 {
 	struct net_shell_user_data *data = user_data;
-	const struct shell *shell = data->shell;
+	const struct shell *sh = data->sh;
 
 	if (iface) {
 		const char *extra;
@@ -1285,8 +1307,8 @@ static void net_shell_print_statistics(struct net_if *iface, void *user_data)
 	PR("Bytes sent     %u\n", GET_STAT(iface, bytes.sent));
 	PR("Processing err %d\n", GET_STAT(iface, processing_error));
 
-	print_tc_tx_stats(shell, iface);
-	print_tc_rx_stats(shell, iface);
+	print_tc_tx_stats(sh, iface);
+	print_tc_rx_stats(sh, iface);
 
 #if defined(CONFIG_NET_STATISTICS_ETHERNET) && \
 					defined(CONFIG_NET_STATISTICS_USER_API)
@@ -1297,7 +1319,7 @@ static void net_shell_print_statistics(struct net_if *iface, void *user_data)
 		ret = net_mgmt(NET_REQUEST_STATS_GET_ETHERNET, iface,
 			       &eth_data, sizeof(eth_data));
 		if (!ret) {
-			print_eth_stats(iface, &eth_data, shell);
+			print_eth_stats(iface, &eth_data, sh);
 		}
 	}
 #endif /* CONFIG_NET_STATISTICS_ETHERNET && CONFIG_NET_STATISTICS_USER_API */
@@ -1311,12 +1333,12 @@ static void net_shell_print_statistics(struct net_if *iface, void *user_data)
 		ret = net_mgmt(NET_REQUEST_STATS_GET_PPP, iface,
 			       &ppp_data, sizeof(ppp_data));
 		if (!ret) {
-			print_ppp_stats(iface, &ppp_data, shell);
+			print_ppp_stats(iface, &ppp_data, sh);
 		}
 	}
 #endif /* CONFIG_NET_STATISTICS_PPP && CONFIG_NET_STATISTICS_USER_API */
 
-	print_net_pm_stats(shell, iface);
+	print_net_pm_stats(sh, iface);
 }
 #endif /* CONFIG_NET_STATISTICS */
 
@@ -1371,7 +1393,7 @@ static void context_cb(struct net_context *context, void *user_data)
 #define ADDR_LEN NET_IPV6_ADDR_LEN
 #endif
 	struct net_shell_user_data *data = user_data;
-	const struct shell *shell = data->shell;
+	const struct shell *sh = data->sh;
 	int *count = data->user_data;
 	/* +7 for []:port */
 	char addr_local[ADDR_LEN + 7];
@@ -1407,7 +1429,7 @@ static void conn_handler_cb(struct net_conn *conn, void *user_data)
 #define ADDR_LEN NET_IPV6_ADDR_LEN
 #endif
 	struct net_shell_user_data *data = user_data;
-	const struct shell *shell = data->shell;
+	const struct shell *sh = data->sh;
 	int *count = data->user_data;
 	/* +7 for []:port */
 	char addr_local[ADDR_LEN + 7];
@@ -1466,7 +1488,7 @@ struct tcp_detail_info {
 static void tcp_cb(struct tcp *conn, void *user_data)
 {
 	struct net_shell_user_data *data = user_data;
-	const struct shell *shell = data->shell;
+	const struct shell *sh = data->sh;
 	int *count = data->user_data;
 	uint16_t recv_mss = net_tcp_get_supported_mss(conn);
 
@@ -1484,7 +1506,7 @@ static void tcp_cb(struct tcp *conn, void *user_data)
 static void tcp_sent_list_cb(struct tcp *conn, void *user_data)
 {
 	struct net_shell_user_data *data = user_data;
-	const struct shell *shell = data->shell;
+	const struct shell *sh = data->sh;
 	struct tcp_detail_info *details = data->user_data;
 	struct net_pkt *pkt;
 	sys_snode_t *node;
@@ -1561,7 +1583,7 @@ static void ipv6_frag_cb(struct net_ipv6_reassembly *reass,
 			 void *user_data)
 {
 	struct net_shell_user_data *data = user_data;
-	const struct shell *shell = data->shell;
+	const struct shell *sh = data->sh;
 	int *count = data->user_data;
 	char src[ADDR_LEN];
 	int i;
@@ -1611,7 +1633,7 @@ static void allocs_cb(struct net_pkt *pkt,
 		      void *user_data)
 {
 	struct net_shell_user_data *data = user_data;
-	const struct shell *shell = data->shell;
+	const struct shell *sh = data->sh;
 	const char *str;
 
 	if (in_use) {
@@ -1664,7 +1686,7 @@ buf:
 
 /* Put the actual shell commands after this */
 
-static int cmd_net_allocs(const struct shell *shell, size_t argc, char *argv[])
+static int cmd_net_allocs(const struct shell *sh, size_t argc, char *argv[])
 {
 #if defined(CONFIG_NET_DEBUG_NET_PKT_ALLOC)
 	struct net_shell_user_data user_data;
@@ -1674,7 +1696,7 @@ static int cmd_net_allocs(const struct shell *shell, size_t argc, char *argv[])
 	ARG_UNUSED(argv);
 
 #if defined(CONFIG_NET_DEBUG_NET_PKT_ALLOC)
-	user_data.shell = shell;
+	user_data.sh = sh;
 
 	PR("Network memory allocations\n\n");
 	PR("memory\t\tStatus\tPool\tFunction alloc -> freed\n");
@@ -1691,7 +1713,7 @@ static int cmd_net_allocs(const struct shell *shell, size_t argc, char *argv[])
 static void arp_cb(struct arp_entry *entry, void *user_data)
 {
 	struct net_shell_user_data *data = user_data;
-	const struct shell *shell = data->shell;
+	const struct shell *sh = data->sh;
 	int *count = data->user_data;
 
 	if (*count == 0) {
@@ -1708,7 +1730,7 @@ static void arp_cb(struct arp_entry *entry, void *user_data)
 #endif /* CONFIG_NET_ARP */
 
 #if !defined(CONFIG_NET_ARP)
-static void print_arp_error(const struct shell *shell)
+static void print_arp_error(const struct shell *sh)
 {
 	PR_INFO("Set %s to enable %s support.\n",
 		"CONFIG_NET_NATIVE, CONFIG_NET_ARP, CONFIG_NET_IPV4 and"
@@ -1716,7 +1738,7 @@ static void print_arp_error(const struct shell *shell)
 }
 #endif
 
-static int cmd_net_arp(const struct shell *shell, size_t argc, char *argv[])
+static int cmd_net_arp(const struct shell *sh, size_t argc, char *argv[])
 {
 #if defined(CONFIG_NET_ARP)
 	struct net_shell_user_data user_data;
@@ -1730,7 +1752,7 @@ static int cmd_net_arp(const struct shell *shell, size_t argc, char *argv[])
 		/* ARP cache content */
 		int count = 0;
 
-		user_data.shell = shell;
+		user_data.sh = sh;
 		user_data.user_data = &count;
 
 		if (net_arp_foreach(arp_cb, &user_data) == 0) {
@@ -1738,13 +1760,13 @@ static int cmd_net_arp(const struct shell *shell, size_t argc, char *argv[])
 		}
 	}
 #else
-	print_arp_error(shell);
+	print_arp_error(sh);
 #endif
 
 	return 0;
 }
 
-static int cmd_net_arp_flush(const struct shell *shell, size_t argc,
+static int cmd_net_arp_flush(const struct shell *sh, size_t argc,
 			     char *argv[])
 {
 	ARG_UNUSED(argc);
@@ -1754,7 +1776,7 @@ static int cmd_net_arp_flush(const struct shell *shell, size_t argc,
 	PR("Flushing ARP cache.\n");
 	net_arp_clear_cache(NULL);
 #else
-	print_arp_error(shell);
+	print_arp_error(sh);
 #endif
 
 	return 0;
@@ -1792,7 +1814,7 @@ static void get_address_str(const struct sockaddr *addr,
 static void capture_cb(struct net_capture_info *info, void *user_data)
 {
 	struct net_shell_user_data *data = user_data;
-	const struct shell *shell = data->shell;
+	const struct shell *sh = data->sh;
 	int *count = data->user_data;
 	char addr_local[ADDR_LEN + 7];
 	char addr_peer[ADDR_LEN + 7];
@@ -1815,7 +1837,7 @@ static void capture_cb(struct net_capture_info *info, void *user_data)
 }
 #endif
 
-static int cmd_net_capture(const struct shell *shell, size_t argc,
+static int cmd_net_capture(const struct shell *sh, size_t argc,
 			   char *argv[])
 {
 #if defined(CONFIG_NET_CAPTURE)
@@ -1831,7 +1853,7 @@ static int cmd_net_capture(const struct shell *shell, size_t argc,
 		PR_INFO("Network packet capture %s\n",
 			ret ? "enabled" : "disabled");
 
-		user_data.shell = shell;
+		user_data.sh = sh;
 		user_data.user_data = &count;
 
 		net_capture_foreach(capture_cb, &user_data);
@@ -1846,7 +1868,7 @@ static int cmd_net_capture(const struct shell *shell, size_t argc,
 	return 0;
 }
 
-static int cmd_net_capture_setup(const struct shell *shell, size_t argc,
+static int cmd_net_capture_setup(const struct shell *sh, size_t argc,
 				 char *argv[])
 {
 #if defined(CONFIG_NET_CAPTURE)
@@ -1896,7 +1918,7 @@ static int cmd_net_capture_setup(const struct shell *shell, size_t argc,
 	return 0;
 }
 
-static int cmd_net_capture_cleanup(const struct shell *shell, size_t argc,
+static int cmd_net_capture_cleanup(const struct shell *sh, size_t argc,
 				   char *argv[])
 {
 	ARG_UNUSED(argc);
@@ -1924,7 +1946,7 @@ static int cmd_net_capture_cleanup(const struct shell *shell, size_t argc,
 	return 0;
 }
 
-static int cmd_net_capture_enable(const struct shell *shell, size_t argc,
+static int cmd_net_capture_enable(const struct shell *sh, size_t argc,
 				  char *argv[])
 {
 	ARG_UNUSED(argc);
@@ -1969,7 +1991,7 @@ static int cmd_net_capture_enable(const struct shell *shell, size_t argc,
 	return 0;
 }
 
-static int cmd_net_capture_disable(const struct shell *shell, size_t argc,
+static int cmd_net_capture_disable(const struct shell *sh, size_t argc,
 				   char *argv[])
 {
 	ARG_UNUSED(argc);
@@ -1995,7 +2017,7 @@ static int cmd_net_capture_disable(const struct shell *shell, size_t argc,
 	return 0;
 }
 
-static int cmd_net_conn(const struct shell *shell, size_t argc, char *argv[])
+static int cmd_net_conn(const struct shell *sh, size_t argc, char *argv[])
 {
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
@@ -2006,7 +2028,7 @@ static int cmd_net_conn(const struct shell *shell, size_t argc, char *argv[])
 
 	PR("     Context   \tIface  Flags            Local             Remote\n");
 
-	user_data.shell = shell;
+	user_data.sh = sh;
 	user_data.user_data = &count;
 
 	net_context_foreach(context_cb, &user_data);
@@ -2089,7 +2111,7 @@ static void dns_result_cb(enum dns_resolve_status status,
 			  struct dns_addrinfo *info,
 			  void *user_data)
 {
-	const struct shell *shell = user_data;
+	const struct shell *sh = user_data;
 
 	if (status == DNS_EAI_CANCELED) {
 		PR_WARNING("dns: Timeout while resolving name.\n");
@@ -2131,7 +2153,7 @@ static void dns_result_cb(enum dns_resolve_status status,
 	PR_WARNING("dns: Unhandled status %d received\n", status);
 }
 
-static void print_dns_info(const struct shell *shell,
+static void print_dns_info(const struct shell *sh,
 			   struct dns_resolve_context *ctx)
 {
 	int i;
@@ -2184,7 +2206,7 @@ static void print_dns_info(const struct shell *shell,
 }
 #endif
 
-static int cmd_net_dns_cancel(const struct shell *shell, size_t argc,
+static int cmd_net_dns_cancel(const struct shell *sh, size_t argc,
 			      char *argv[])
 {
 #if defined(CONFIG_DNS_RESOLVER)
@@ -2225,7 +2247,7 @@ static int cmd_net_dns_cancel(const struct shell *shell, size_t argc,
 	return 0;
 }
 
-static int cmd_net_dns_query(const struct shell *shell, size_t argc,
+static int cmd_net_dns_query(const struct shell *sh, size_t argc,
 			     char *argv[])
 {
 
@@ -2260,7 +2282,7 @@ static int cmd_net_dns_query(const struct shell *shell, size_t argc,
 	}
 
 	ret = dns_get_addr_info(host, qtype, NULL, dns_result_cb,
-				(void *)shell, DNS_TIMEOUT);
+				(void *)sh, DNS_TIMEOUT);
 	if (ret < 0) {
 		PR_WARNING("Cannot resolve '%s' (%d)\n", host, ret);
 	} else {
@@ -2274,7 +2296,7 @@ static int cmd_net_dns_query(const struct shell *shell, size_t argc,
 	return 0;
 }
 
-static int cmd_net_dns(const struct shell *shell, size_t argc, char *argv[])
+static int cmd_net_dns(const struct shell *sh, size_t argc, char *argv[])
 {
 #if defined(CONFIG_DNS_RESOLVER)
 	struct dns_resolve_context *ctx;
@@ -2283,7 +2305,7 @@ static int cmd_net_dns(const struct shell *shell, size_t argc, char *argv[])
 #if defined(CONFIG_DNS_RESOLVER)
 	if (argv[1]) {
 		/* So this is a query then */
-		cmd_net_dns_query(shell, argc, argv);
+		cmd_net_dns_query(sh, argc, argv);
 		return 0;
 	}
 
@@ -2294,7 +2316,7 @@ static int cmd_net_dns(const struct shell *shell, size_t argc, char *argv[])
 		return -ENOEXEC;
 	}
 
-	print_dns_info(shell, ctx);
+	print_dns_info(sh, ctx);
 #else
 	PR_INFO("DNS resolver not supported. Set CONFIG_DNS_RESOLVER to "
 		"enable it.\n");
@@ -2547,7 +2569,7 @@ static const char *get_l4_desc(uint32_t event)
 /* We use a separate thread in order not to do any shell printing from
  * event handler callback (to avoid stack size issues).
  */
-static void event_mon_handler(const struct shell *shell)
+static void event_mon_handler(const struct shell *sh)
 {
 	char extra_info[NET_IPV6_ADDR_LEN];
 	struct event_msg msg;
@@ -2614,7 +2636,7 @@ static void event_mon_handler(const struct shell *shell)
 }
 #endif
 
-static int cmd_net_events_on(const struct shell *shell, size_t argc,
+static int cmd_net_events_on(const struct shell *sh, size_t argc,
 			     char *argv[])
 {
 #if defined(CONFIG_NET_MGMT_EVENT_MONITOR)
@@ -2629,7 +2651,7 @@ static int cmd_net_events_on(const struct shell *shell, size_t argc,
 	tid = k_thread_create(&event_mon, event_mon_stack,
 			      K_THREAD_STACK_SIZEOF(event_mon_stack),
 			      (k_thread_entry_t)event_mon_handler,
-			      (void *)shell, NULL, NULL, THREAD_PRIORITY, 0,
+			      (void *)sh, NULL, NULL, THREAD_PRIORITY, 0,
 			      K_FOREVER);
 	if (!tid) {
 		PR_ERROR("Cannot create network event monitor thread!");
@@ -2652,7 +2674,7 @@ static int cmd_net_events_on(const struct shell *shell, size_t argc,
 	return 0;
 }
 
-static int cmd_net_events_off(const struct shell *shell, size_t argc,
+static int cmd_net_events_off(const struct shell *sh, size_t argc,
 			      char *argv[])
 {
 #if defined(CONFIG_NET_MGMT_EVENT_MONITOR)
@@ -2680,7 +2702,7 @@ static int cmd_net_events_off(const struct shell *shell, size_t argc,
 	return 0;
 }
 
-static int cmd_net_events(const struct shell *shell, size_t argc, char *argv[])
+static int cmd_net_events(const struct shell *sh, size_t argc, char *argv[])
 {
 #if defined(CONFIG_NET_MGMT_EVENT_MONITOR)
 	PR("Network event monitoring is %s.\n",
@@ -2704,7 +2726,7 @@ static const char *selected_role_str(int port);
 static void gptp_port_cb(int port, struct net_if *iface, void *user_data)
 {
 	struct net_shell_user_data *data = user_data;
-	const struct shell *shell = data->shell;
+	const struct shell *sh = data->sh;
 	int *count = data->user_data;
 
 	if (*count == 0) {
@@ -2945,7 +2967,7 @@ static const char *selected_role_str(int port)
 	return "<unknown>";
 }
 
-static void gptp_print_port_info(const struct shell *shell, int port)
+static void gptp_print_port_info(const struct shell *sh, int port)
 {
 	struct gptp_port_bmca_data *port_bmca_data;
 	struct gptp_port_param_ds *port_param_ds;
@@ -3224,7 +3246,7 @@ static void gptp_print_port_info(const struct shell *shell, int port)
 }
 #endif /* CONFIG_NET_GPTP */
 
-static int cmd_net_gptp_port(const struct shell *shell, size_t argc,
+static int cmd_net_gptp_port(const struct shell *sh, size_t argc,
 			     char *argv[])
 {
 #if defined(CONFIG_NET_GPTP)
@@ -3242,7 +3264,7 @@ static int cmd_net_gptp_port(const struct shell *shell, size_t argc,
 	port = strtol(argv[arg], &endptr, 10);
 
 	if (*endptr == '\0') {
-		gptp_print_port_info(shell, port);
+		gptp_print_port_info(sh, port);
 	} else {
 		PR_WARNING("Not a valid gPTP port number: %s\n", argv[arg]);
 	}
@@ -3256,7 +3278,7 @@ static int cmd_net_gptp_port(const struct shell *shell, size_t argc,
 	return 0;
 }
 
-static int cmd_net_gptp(const struct shell *shell, size_t argc, char *argv[])
+static int cmd_net_gptp(const struct shell *sh, size_t argc, char *argv[])
 {
 #if defined(CONFIG_NET_GPTP)
 	/* gPTP status */
@@ -3267,11 +3289,11 @@ static int cmd_net_gptp(const struct shell *shell, size_t argc, char *argv[])
 
 #if defined(CONFIG_NET_GPTP)
 	if (argv[arg]) {
-		cmd_net_gptp_port(shell, argc, argv);
+		cmd_net_gptp_port(sh, argc, argv);
 	} else {
 		struct net_shell_user_data user_data;
 
-		user_data.shell = shell;
+		user_data.sh = sh;
 		user_data.user_data = &count;
 
 		gptp_foreach_port(gptp_port_cb, &user_data);
@@ -3317,7 +3339,7 @@ static int cmd_net_gptp(const struct shell *shell, size_t argc, char *argv[])
 	return 0;
 }
 
-static int get_iface_idx(const struct shell *shell, char *index_str)
+static int get_iface_idx(const struct shell *sh, char *index_str)
 {
 	char *endptr;
 	int idx;
@@ -3341,13 +3363,13 @@ static int get_iface_idx(const struct shell *shell, char *index_str)
 	return idx;
 }
 
-static int cmd_net_iface_up(const struct shell *shell, size_t argc,
+static int cmd_net_iface_up(const struct shell *sh, size_t argc,
 			    char *argv[])
 {
 	struct net_if *iface;
 	int idx, ret;
 
-	idx = get_iface_idx(shell, argv[1]);
+	idx = get_iface_idx(sh, argv[1]);
 	if (idx < 0) {
 		return -ENOEXEC;
 	}
@@ -3374,13 +3396,13 @@ static int cmd_net_iface_up(const struct shell *shell, size_t argc,
 	return 0;
 }
 
-static int cmd_net_iface_down(const struct shell *shell, size_t argc,
+static int cmd_net_iface_down(const struct shell *sh, size_t argc,
 			      char *argv[])
 {
 	struct net_if *iface;
 	int idx, ret;
 
-	idx = get_iface_idx(shell, argv[1]);
+	idx = get_iface_idx(sh, argv[1]);
 	if (idx < 0) {
 		return -ENOEXEC;
 	}
@@ -3407,7 +3429,7 @@ static int cmd_net_iface_down(const struct shell *shell, size_t argc,
 static void address_lifetime_cb(struct net_if *iface, void *user_data)
 {
 	struct net_shell_user_data *data = user_data;
-	const struct shell *shell = data->shell;
+	const struct shell *sh = data->sh;
 	struct net_if_ipv6 *ipv6 = iface->config.ip.ipv6;
 	const char *extra;
 	int i;
@@ -3466,7 +3488,7 @@ static void address_lifetime_cb(struct net_if *iface, void *user_data)
 }
 #endif /* CONFIG_NET_NATIVE_IPV6 */
 
-static int cmd_net_ipv6(const struct shell *shell, size_t argc, char *argv[])
+static int cmd_net_ipv6(const struct shell *sh, size_t argc, char *argv[])
 {
 #if defined(CONFIG_NET_NATIVE_IPV6)
 	struct net_shell_user_data user_data;
@@ -3522,7 +3544,7 @@ static int cmd_net_ipv6(const struct shell *shell, size_t argc, char *argv[])
 	   "interface            : %d\n",
 	   CONFIG_NET_IF_IPV6_PREFIX_COUNT);
 
-	user_data.shell = shell;
+	user_data.sh = sh;
 	user_data.user_data = NULL;
 
 	/* Print information about address lifetime */
@@ -3532,14 +3554,342 @@ static int cmd_net_ipv6(const struct shell *shell, size_t argc, char *argv[])
 	return 0;
 }
 
-static int cmd_net_iface(const struct shell *shell, size_t argc, char *argv[])
+static int cmd_net_ip6_add(const struct shell *sh, size_t argc, char *argv[])
+{
+#if defined(CONFIG_NET_NATIVE_IPV6)
+	struct net_if *iface = NULL;
+	int idx;
+	struct in6_addr addr;
+
+	if (argc != 3) {
+		PR_ERROR("Correct usage: net ipv6 add <index> <address>\n");
+		return -EINVAL;
+	}
+
+	idx = get_iface_idx(sh, argv[1]);
+	if (idx < 0) {
+		return -ENOEXEC;
+	}
+
+	iface = net_if_get_by_index(idx);
+	if (!iface) {
+		PR_WARNING("No such interface in index %d\n", idx);
+		return -ENOENT;
+	}
+
+	if (net_addr_pton(AF_INET6, argv[2], &addr)) {
+		PR_ERROR("Invalid address: %s\n", argv[2]);
+		return -EINVAL;
+	}
+
+	if (!net_if_ipv6_addr_add(iface, &addr, NET_ADDR_MANUAL, 0)) {
+		PR_ERROR("Failed to add %s address to interface %p\n", argv[2], iface);
+	}
+
+#else /* CONFIG_NET_NATIVE_IPV6 */
+	PR_INFO("Set %s and %s to enable native %s support.\n",
+			"CONFIG_NET_NATIVE", "CONFIG_NET_IPV6", "IPv6");
+#endif /* CONFIG_NET_NATIVE_IPV6 */
+	return 0;
+}
+
+static int cmd_net_ip6_del(const struct shell *sh, size_t argc, char *argv[])
+{
+#if defined(CONFIG_NET_NATIVE_IPV6)
+	struct net_if *iface = NULL;
+	int idx;
+	struct in6_addr addr;
+
+	if (argc != 3) {
+		PR_ERROR("Correct usage: net ipv6 del <index> <address>\n");
+		return -EINVAL;
+	}
+
+	idx = get_iface_idx(sh, argv[1]);
+	if (idx < 0) {
+		return -ENOEXEC;
+	}
+
+	iface = net_if_get_by_index(idx);
+	if (!iface) {
+		PR_WARNING("No such interface in index %d\n", idx);
+		return -ENOEXEC;
+	}
+
+	if (net_addr_pton(AF_INET6, argv[2], &addr)) {
+		PR_ERROR("Invalid address: %s\n", argv[2]);
+		return -EINVAL;
+	}
+
+	if (!net_if_ipv6_addr_rm(iface, &addr)) {
+		PR_ERROR("Failed to delete %s\n", argv[2]);
+		return -1;
+	}
+
+#else /* CONFIG_NET_NATIVE_IPV6 */
+	PR_INFO("Set %s and %s to enable native %s support.\n",
+			"CONFIG_NET_NATIVE", "CONFIG_NET_IPV6", "IPv6");
+#endif /* CONFIG_NET_NATIVE_IPV6 */
+	return 0;
+}
+
+static int cmd_net_ip6_route_add(const struct shell *sh, size_t argc, char *argv[])
+{
+#if defined(CONFIG_NET_NATIVE_IPV6) && (CONFIG_NET_ROUTE)
+	struct net_if *iface = NULL;
+	int idx;
+	struct net_route_entry *route;
+	struct in6_addr gw = {0};
+	struct in6_addr prefix = {0};
+
+	if (argc != 4) {
+		PR_ERROR("Correct usage: net route add <index> "
+				 "<destination> <gateway>\n");
+		return -EINVAL;
+	}
+
+	idx = get_iface_idx(sh, argv[1]);
+	if (idx < 0) {
+		return -ENOEXEC;
+	}
+
+	iface = net_if_get_by_index(idx);
+	if (!iface) {
+		PR_WARNING("No such interface in index %d\n", idx);
+		return -ENOEXEC;
+	}
+
+	if (net_addr_pton(AF_INET6, argv[2], &prefix)) {
+		PR_ERROR("Invalid address: %s\n", argv[2]);
+		return -EINVAL;
+	}
+
+	if (net_addr_pton(AF_INET6, argv[3], &gw)) {
+		PR_ERROR("Invalid gateway: %s\n", argv[3]);
+		return -EINVAL;
+	}
+
+	route = net_route_add(iface, &prefix, NET_IPV6_DEFAULT_PREFIX_LEN,
+				&gw, NET_IPV6_ND_INFINITE_LIFETIME,
+				NET_ROUTE_PREFERENCE_MEDIUM);
+	if (route == NULL) {
+		PR_ERROR("Failed to add route\n");
+		return -ENOEXEC;
+	}
+
+#else /* CONFIG_NET_NATIVE_IPV6 && CONFIG_NET_ROUTE */
+	PR_INFO("Set %s and %s to enable native %s support."
+			" And enable CONFIG_NET_ROUTE.\n",
+			"CONFIG_NET_NATIVE", "CONFIG_NET_IPV6", "IPv6");
+#endif /* CONFIG_NET_NATIVE_IPV6 && CONFIG_NET_ROUTE */
+	return 0;
+}
+
+static int cmd_net_ip6_route_del(const struct shell *sh, size_t argc, char *argv[])
+{
+#if defined(CONFIG_NET_NATIVE_IPV6) && (CONFIG_NET_ROUTE)
+	struct net_if *iface = NULL;
+	int idx;
+	struct net_route_entry *route;
+	struct in6_addr prefix = { 0 };
+
+	if (argc != 3) {
+		PR_ERROR("Correct usage: net route del <index> <destination>\n");
+		return -EINVAL;
+	}
+	idx = get_iface_idx(sh, argv[1]);
+	if (idx < 0) {
+		return -ENOEXEC;
+	}
+
+	iface = net_if_get_by_index(idx);
+	if (!iface) {
+		PR_WARNING("No such interface in index %d\n", idx);
+		return -ENOEXEC;
+	}
+
+	if (net_addr_pton(AF_INET6, argv[2], &prefix)) {
+		PR_ERROR("Invalid address: %s\n", argv[2]);
+		return -EINVAL;
+	}
+
+	route = net_route_lookup(iface, &prefix);
+	if (route) {
+		net_route_del(route);
+	}
+#else /* CONFIG_NET_NATIVE_IPV6 && CONFIG_NET_ROUTE */
+	PR_INFO("Set %s and %s to enable native %s support."
+			" And enable CONFIG_NET_ROUTE\n",
+			"CONFIG_NET_NATIVE", "CONFIG_NET_IPV6", "IPv6");
+#endif /* CONFIG_NET_NATIVE_IPV6 && CONFIG_NET_ROUTE */
+	return 0;
+}
+
+#if defined(CONFIG_NET_NATIVE_IPV4)
+static void ip_address_lifetime_cb(struct net_if *iface, void *user_data)
+{
+	struct net_shell_user_data *data = user_data;
+	const struct shell *sh = data->sh;
+	struct net_if_ipv4 *ipv4 = iface->config.ip.ipv4;
+	const char *extra;
+	int i;
+
+	ARG_UNUSED(user_data);
+
+	PR("\nIPv4 addresses for interface %d (%p) (%s)\n",
+	   net_if_get_by_iface(iface), iface, iface2str(iface, &extra));
+	PR("============================================%s\n", extra);
+
+	if (!ipv4) {
+		PR("No IPv4 config found for this interface.\n");
+		return;
+	}
+
+	PR("Type      \tState    \tLifetime (sec)\tAddress\n");
+
+	for (i = 0; i < NET_IF_MAX_IPV4_ADDR; i++) {
+		if (!ipv4->unicast[i].is_used ||
+		    ipv4->unicast[i].address.family != AF_INET) {
+			continue;
+		}
+
+		PR("%s  \t%s    \t%12s/%12s\n",
+		       addrtype2str(ipv4->unicast[i].addr_type),
+		       addrstate2str(ipv4->unicast[i].addr_state),
+		       net_sprint_ipv4_addr(
+			       &ipv4->unicast[i].address.in_addr),
+		       net_sprint_ipv4_addr(
+			       &ipv4->netmask));
+	}
+}
+#endif /* CONFIG_NET_NATIVE_IPV4 */
+
+static int cmd_net_ipv4(const struct shell *sh, size_t argc, char *argv[])
+{
+	PR("IPv4 support                              : %s\n",
+	   IS_ENABLED(CONFIG_NET_IPV4) ?
+	   "enabled" : "disabled");
+	if (!IS_ENABLED(CONFIG_NET_IPV4)) {
+		return -ENOEXEC;
+	}
+
+#if defined(CONFIG_NET_NATIVE_IPV4)
+	struct net_shell_user_data user_data;
+
+	PR("IPv4 fragmentation support                : %s\n",
+	   IS_ENABLED(CONFIG_NET_IPV4_FRAGMENT) ? "enabled" :
+	   "disabled");
+	PR("Max number of IPv4 network interfaces "
+	   "in the system          : %d\n",
+	   CONFIG_NET_IF_MAX_IPV4_COUNT);
+	PR("Max number of unicast IPv4 addresses "
+	   "per network interface   : %d\n",
+	   CONFIG_NET_IF_UNICAST_IPV4_ADDR_COUNT);
+	PR("Max number of multicast IPv4 addresses "
+	   "per network interface : %d\n",
+	   CONFIG_NET_IF_MCAST_IPV4_ADDR_COUNT);
+
+	user_data.sh = sh;
+	user_data.user_data = NULL;
+
+	/* Print information about address lifetime */
+	net_if_foreach(ip_address_lifetime_cb, &user_data);
+#endif
+
+	return 0;
+}
+
+static int cmd_net_ip_add(const struct shell *sh, size_t argc, char *argv[])
+{
+#if defined(CONFIG_NET_NATIVE_IPV4)
+	struct net_if *iface = NULL;
+	int idx;
+	struct in_addr addr;
+
+	if (argc != 4) {
+		PR_ERROR("Correct usage: net ipv4 add <index> <address> <netmask>\n");
+		return -EINVAL;
+	}
+
+	idx = get_iface_idx(sh, argv[1]);
+	if (idx < 0) {
+		return -ENOEXEC;
+	}
+
+	iface = net_if_get_by_index(idx);
+	if (!iface) {
+		PR_WARNING("No such interface in index %d\n", idx);
+		return -ENOEXEC;
+	}
+
+	if (net_addr_pton(AF_INET, argv[2], &addr)) {
+		PR_ERROR("Invalid address: %s\n", argv[2]);
+		return -EINVAL;
+	}
+
+	net_if_ipv4_addr_add(iface, &addr, NET_ADDR_MANUAL, 0);
+
+	if (net_addr_pton(AF_INET, argv[3], &addr)) {
+		PR_ERROR("Invalid netmask: %s", argv[3]);
+		return -EINVAL;
+	}
+
+	net_if_ipv4_set_netmask(iface, &addr);
+
+#else /* CONFIG_NET_NATIVE_IPV4 */
+	PR_INFO("Set %s and %s to enable native %s support.\n",
+			"CONFIG_NET_NATIVE", "CONFIG_NET_IPV4", "IPv4");
+#endif /* CONFIG_NET_NATIVE_IPV4 */
+	return 0;
+}
+
+static int cmd_net_ip_del(const struct shell *sh, size_t argc, char *argv[])
+{
+#if defined(CONFIG_NET_NATIVE_IPV4)
+	struct net_if *iface = NULL;
+	int idx;
+	struct in_addr addr;
+
+	if (argc != 3) {
+		PR_ERROR("Correct usage: net ipv4 del <index> <address>");
+		return -EINVAL;
+	}
+
+	idx = get_iface_idx(sh, argv[1]);
+	if (idx < 0) {
+		return -ENOEXEC;
+	}
+
+	iface = net_if_get_by_index(idx);
+	if (!iface) {
+		PR_WARNING("No such interface in index %d\n", idx);
+		return -ENOEXEC;
+	}
+
+	if (net_addr_pton(AF_INET, argv[2], &addr)) {
+		PR_ERROR("Invalid address: %s\n", argv[2]);
+		return -EINVAL;
+	}
+
+	if (!net_if_ipv4_addr_rm(iface, &addr)) {
+		PR_ERROR("Failed to delete %s\n", argv[2]);
+		return -ENOEXEC;
+	}
+#else /* CONFIG_NET_NATIVE_IPV4 */
+	PR_INFO("Set %s and %s to enable native %s support.\n",
+			"CONFIG_NET_NATIVE", "CONFIG_NET_IPV4", "IPv4");
+#endif /* CONFIG_NET_NATIVE_IPV4 */
+	return 0;
+}
+
+static int cmd_net_iface(const struct shell *sh, size_t argc, char *argv[])
 {
 	struct net_if *iface = NULL;
 	struct net_shell_user_data user_data;
 	int idx;
 
 	if (argv[1]) {
-		idx = get_iface_idx(shell, argv[1]);
+		idx = get_iface_idx(sh, argv[1]);
 		if (idx < 0) {
 			return -ENOEXEC;
 		}
@@ -3555,12 +3905,72 @@ static int cmd_net_iface(const struct shell *shell, size_t argc, char *argv[])
 	PR("Hostname: %s\n\n", net_hostname_get());
 #endif
 
-	user_data.shell = shell;
+	user_data.sh = sh;
 	user_data.user_data = iface;
 
 	net_if_foreach(iface_cb, &user_data);
 
 	return 0;
+}
+
+static int cmd_net_set_mac(const struct shell *sh, size_t argc, char *argv[])
+{
+#if !defined(CONFIG_NET_L2_ETHERNET) || !defined(CONFIG_NET_L2_ETHERNET_MGMT)
+	PR_WARNING("Unsupported command, please enable CONFIG_NET_L2_ETHERNET "
+		"and CONFIG_NET_L2_ETHERNET_MGMT\n");
+	return -ENOEXEC;
+#else
+	struct net_if *iface;
+	struct ethernet_req_params params;
+	char *mac_addr = params.mac_address.addr;
+	int idx;
+	int ret;
+
+	if (argc < 3) {
+		PR_WARNING("Missing interface index and/or MAC address\n");
+		goto err;
+	}
+
+	idx = get_iface_idx(sh, argv[1]);
+	if (idx < 0) {
+		goto err;
+	}
+
+	iface = net_if_get_by_index(idx);
+	if (!iface) {
+		PR_WARNING("No such interface in index %d\n", idx);
+		goto err;
+	}
+
+	if (net_if_l2(iface) != &NET_L2_GET_NAME(ETHERNET)) {
+		PR_WARNING("MAC address can be set only for Ethernet\n");
+		goto err;
+	}
+
+	if ((net_bytes_from_str(mac_addr, sizeof(params.mac_address), argv[2]) < 0) ||
+	    !net_eth_is_addr_valid(&params.mac_address)) {
+		PR_WARNING("Invalid MAC address: %s\n", argv[2]);
+		goto err;
+	}
+
+	ret = net_mgmt(NET_REQUEST_ETHERNET_SET_MAC_ADDRESS, iface, &params, sizeof(params));
+	if (ret < 0) {
+		if (ret == -EACCES) {
+			PR_WARNING("MAC address cannot be set when interface is operational\n");
+			goto err;
+		}
+		PR_WARNING("Failed to set MAC address (%d)\n", ret);
+		goto err;
+	}
+
+	PR_INFO("MAC address set to %s\n",
+		net_sprint_ll_addr(net_if_get_link_addr(iface)->addr,
+		net_if_get_link_addr(iface)->len));
+
+	return 0;
+err:
+	return -ENOEXEC;
+#endif /* CONFIG_NET_L2_ETHERNET */
 }
 
 struct ctx_info {
@@ -3598,7 +4008,7 @@ static void context_info(struct net_context *context, void *user_data)
 {
 #if defined(CONFIG_NET_CONTEXT_NET_PKT_POOL)
 	struct net_shell_user_data *data = user_data;
-	const struct shell *shell = data->shell;
+	const struct shell *sh = data->sh;
 	struct ctx_info *info = data->user_data;
 	struct k_mem_slab *slab;
 	struct net_buf_pool *pool;
@@ -3646,7 +4056,7 @@ static void context_info(struct net_context *context, void *user_data)
 }
 #endif /* CONFIG_NET_OFFLOAD || CONFIG_NET_NATIVE */
 
-static int cmd_net_mem(const struct shell *shell, size_t argc, char *argv[])
+static int cmd_net_mem(const struct shell *sh, size_t argc, char *argv[])
 {
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
@@ -3696,7 +4106,7 @@ static int cmd_net_mem(const struct shell *shell, size_t argc, char *argv[])
 
 		(void)memset(&info, 0, sizeof(info));
 
-		user_data.shell = shell;
+		user_data.sh = sh;
 		user_data.user_data = &info;
 
 		net_context_foreach(context_info, &user_data);
@@ -3713,7 +4123,7 @@ static int cmd_net_mem(const struct shell *shell, size_t argc, char *argv[])
 	return 0;
 }
 
-static int cmd_net_nbr_rm(const struct shell *shell, size_t argc,
+static int cmd_net_nbr_rm(const struct shell *sh, size_t argc,
 			  char *argv[])
 {
 #if defined(CONFIG_NET_IPV6)
@@ -3754,7 +4164,7 @@ static int cmd_net_nbr_rm(const struct shell *shell, size_t argc,
 static void nbr_cb(struct net_nbr *nbr, void *user_data)
 {
 	struct net_shell_user_data *data = user_data;
-	const struct shell *shell = data->shell;
+	const struct shell *sh = data->sh;
 	int *count = data->user_data;
 	char *padding = "";
 	char *state_pad = "";
@@ -3813,7 +4223,7 @@ static void nbr_cb(struct net_nbr *nbr, void *user_data)
 }
 #endif
 
-static int cmd_net_nbr(const struct shell *shell, size_t argc, char *argv[])
+static int cmd_net_nbr(const struct shell *sh, size_t argc, char *argv[])
 {
 #if defined(CONFIG_NET_IPV6)
 	int count = 0;
@@ -3824,7 +4234,7 @@ static int cmd_net_nbr(const struct shell *shell, size_t argc, char *argv[])
 	ARG_UNUSED(argv);
 
 #if defined(CONFIG_NET_IPV6)
-	user_data.shell = shell;
+	user_data.sh = sh;
 	user_data.user_data = &count;
 
 	net_ipv6_nbr_foreach(nbr_cb, &user_data);
@@ -3841,8 +4251,21 @@ static int cmd_net_nbr(const struct shell *shell, size_t argc, char *argv[])
 
 #if defined(CONFIG_NET_IP)
 
-K_SEM_DEFINE(ping_timeout, 0, 1);
-static const struct shell *shell_for_ping;
+static struct ping_context {
+	struct k_work_delayable work;
+	struct net_addr addr;
+	struct net_if *iface;
+	const struct shell *sh;
+
+	/* Ping parameters */
+	uint32_t count;
+	uint32_t interval;
+	uint32_t sequence;
+	uint16_t payload_size;
+	uint8_t tos;
+} ping_ctx;
+
+static void ping_done(struct ping_context *ctx);
 
 #if defined(CONFIG_NET_NATIVE_IPV6)
 
@@ -3889,7 +4312,7 @@ static enum net_verdict handle_ipv6_echo_reply(struct net_pkt *pkt,
 		snprintf(time_buf, sizeof(time_buf),
 #ifdef CONFIG_FPU
 			 "time=%.2f ms",
-			 ((uint32_t)k_cyc_to_ns_floor64(cycles) / 1000000.f)
+			 (double)((uint32_t)k_cyc_to_ns_floor64(cycles) / 1000000.f)
 #else
 			 "time=%d ms",
 			 ((uint32_t)k_cyc_to_ns_floor64(cycles) / 1000000)
@@ -3897,7 +4320,7 @@ static enum net_verdict handle_ipv6_echo_reply(struct net_pkt *pkt,
 			);
 	}
 
-	PR_SHELL(shell_for_ping, "%d bytes from %s to %s: icmp_seq=%d ttl=%d "
+	PR_SHELL(ping_ctx.sh, "%d bytes from %s to %s: icmp_seq=%d ttl=%d "
 #ifdef CONFIG_IEEE802154
 		 "rssi=%d "
 #endif
@@ -3913,77 +4336,14 @@ static enum net_verdict handle_ipv6_echo_reply(struct net_pkt *pkt,
 #endif
 		 time_buf);
 
-	k_sem_give(&ping_timeout);
+	if (ntohs(icmp_echo->sequence) == ping_ctx.count) {
+		ping_done(&ping_ctx);
+	}
 
 	net_pkt_unref(pkt);
 	return NET_OK;
 }
-
-static int ping_ipv6(const struct shell *shell,
-		     char *host,
-		     unsigned int count,
-		     unsigned int interval,
-		     uint8_t tos,
-		     int payload_size,
-		     int iface_idx)
-{
-	struct net_if *iface = net_if_get_by_index(iface_idx);
-	int ret = 0;
-	struct in6_addr ipv6_target;
-	struct net_nbr *nbr;
-
-#if defined(CONFIG_NET_ROUTE)
-	struct net_route_entry *route;
-#endif
-
-	if (net_addr_pton(AF_INET6, host, &ipv6_target) < 0) {
-		return -EINVAL;
-	}
-
-	net_icmpv6_register_handler(&ping6_handler);
-
-	if (!iface) {
-		iface = net_if_ipv6_select_src_iface(&ipv6_target);
-		if (!iface) {
-			nbr = net_ipv6_nbr_lookup(NULL, &ipv6_target);
-			if (nbr) {
-				iface = nbr->iface;
-			} else {
-				iface = net_if_get_default();
-			}
-		}
-	}
-
-#if defined(CONFIG_NET_ROUTE)
-	route = net_route_lookup(NULL, &ipv6_target);
-	if (route) {
-		iface = route->iface;
-	}
-#endif
-
-	PR("PING %s\n", host);
-
-	for (int i = 0; i < count; ++i) {
-		ret = net_icmpv6_send_echo_request(iface,
-						   &ipv6_target,
-						   sys_rand32_get(),
-						   i,
-						   tos,
-						   NULL,
-						   payload_size);
-		if (ret) {
-			break;
-		}
-
-		k_msleep(interval);
-	}
-
-	remove_ipv6_ping_handler();
-
-	return ret;
-}
 #else
-#define ping_ipv6(...) -ENOTSUP
 #define remove_ipv6_ping_handler()
 #endif /* CONFIG_NET_IPV6 */
 
@@ -4032,7 +4392,7 @@ static enum net_verdict handle_ipv4_echo_reply(struct net_pkt *pkt,
 		snprintf(time_buf, sizeof(time_buf),
 #ifdef CONFIG_FPU
 			 "time=%.2f ms",
-			 ((uint32_t)k_cyc_to_ns_floor64(cycles) / 1000000.f)
+			 (double)((uint32_t)k_cyc_to_ns_floor64(cycles) / 1000000.f)
 #else
 			 "time=%d ms",
 			 ((uint32_t)k_cyc_to_ns_floor64(cycles) / 1000000)
@@ -4040,7 +4400,7 @@ static enum net_verdict handle_ipv4_echo_reply(struct net_pkt *pkt,
 			);
 	}
 
-	PR_SHELL(shell_for_ping, "%d bytes from %s to %s: icmp_seq=%d ttl=%d "
+	PR_SHELL(ping_ctx.sh, "%d bytes from %s to %s: icmp_seq=%d ttl=%d "
 		 "%s\n",
 		 ntohs(ip_hdr->len) - net_pkt_ipv6_ext_len(pkt) -
 								NET_ICMPH_LEN,
@@ -4050,57 +4410,15 @@ static enum net_verdict handle_ipv4_echo_reply(struct net_pkt *pkt,
 		 ip_hdr->ttl,
 		 time_buf);
 
-	k_sem_give(&ping_timeout);
+	if (ntohs(icmp_echo->sequence) == ping_ctx.count) {
+		ping_done(&ping_ctx);
+	}
 
 	net_pkt_unref(pkt);
 	return NET_OK;
 }
 
-static int ping_ipv4(const struct shell *shell,
-		     char *host,
-		     unsigned int count,
-		     unsigned int interval,
-		     uint8_t tos,
-		     int payload_size,
-		     int iface_idx)
-{
-	struct in_addr ipv4_target;
-	struct net_if *iface = net_if_get_by_index(iface_idx);
-	int ret = 0;
-
-	if (net_addr_pton(AF_INET, host, &ipv4_target) < 0) {
-		return -EINVAL;
-	}
-
-	if (!iface) {
-		iface = net_if_ipv4_select_src_iface(&ipv4_target);
-	}
-
-	net_icmpv4_register_handler(&ping4_handler);
-
-	PR("PING %s\n", host);
-
-	for (int i = 0; i < count; ++i) {
-		ret = net_icmpv4_send_echo_request(iface,
-						   &ipv4_target,
-						   sys_rand32_get(),
-						   i,
-						   tos,
-						   NULL,
-						   payload_size);
-		if (ret) {
-			break;
-		}
-
-		k_msleep(interval);
-	}
-
-	remove_ipv4_ping_handler();
-
-	return ret;
-}
 #else
-#define ping_ipv4(...) -ENOTSUP
 #define remove_ipv4_ping_handler()
 #endif /* CONFIG_NET_IPV4 */
 
@@ -4132,19 +4450,146 @@ static int parse_arg(size_t *i, size_t argc, char *argv[])
 
 	return res;
 }
+
+static void ping_cleanup(struct ping_context *ctx)
+{
+	remove_ipv6_ping_handler();
+	remove_ipv4_ping_handler();
+	shell_set_bypass(ctx->sh, NULL);
+}
+
+static void ping_done(struct ping_context *ctx)
+{
+	k_work_cancel_delayable(&ctx->work);
+	ping_cleanup(ctx);
+	/* Dummy write to refresh the prompt. */
+	shell_fprintf(ctx->sh, SHELL_NORMAL, "");
+}
+
+static void ping_work(struct k_work *work)
+{
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	struct ping_context *ctx =
+			CONTAINER_OF(dwork, struct ping_context, work);
+	const struct shell *sh = ctx->sh;
+	int ret;
+
+	ctx->sequence++;
+
+	if (ctx->sequence > ctx->count) {
+		PR_INFO("Ping timeout\n");
+		ping_done(ctx);
+		return;
+	}
+
+	if (ctx->addr.family == AF_INET6) {
+		ret = net_icmpv6_send_echo_request(ctx->iface,
+						   &ctx->addr.in6_addr,
+						   sys_rand32_get(),
+						   ctx->sequence,
+						   ctx->tos,
+						   NULL,
+						   ctx->payload_size);
+	} else {
+		ret = net_icmpv4_send_echo_request(ctx->iface,
+						   &ctx->addr.in_addr,
+						   sys_rand32_get(),
+						   ctx->sequence,
+						   ctx->tos,
+						   NULL,
+						   ctx->payload_size);
+	}
+
+	if (ret != 0) {
+		PR_WARNING("Failed to send ping, err: %d", ret);
+		ping_done(ctx);
+		return;
+	}
+
+	if (ctx->sequence < ctx->count) {
+		k_work_reschedule(&ctx->work, K_MSEC(ctx->interval));
+	} else {
+		k_work_reschedule(&ctx->work, K_SECONDS(2));
+	}
+}
+
+#define ASCII_CTRL_C 0x03
+
+static void ping_bypass(const struct shell *sh, uint8_t *data, size_t len)
+{
+	ARG_UNUSED(sh);
+
+	for (size_t i = 0; i < len; i++) {
+		if (data[i] == ASCII_CTRL_C) {
+			k_work_cancel_delayable(&ping_ctx.work);
+			ping_cleanup(&ping_ctx);
+			break;
+		}
+	}
+}
+
+static struct net_if *ping_select_iface(int id, struct net_addr *target)
+{
+	struct net_if *iface = net_if_get_by_index(id);
+
+	if (iface != NULL) {
+		goto out;
+	}
+
+	if (IS_ENABLED(CONFIG_NET_IPV4) && target->family == AF_INET) {
+		iface = net_if_ipv4_select_src_iface(&target->in_addr);
+		if (iface != NULL) {
+			goto out;
+		}
+
+		iface = net_if_get_default();
+		goto out;
+	}
+
+	if (IS_ENABLED(CONFIG_NET_IPV6) && target->family == AF_INET6) {
+		struct net_nbr *nbr;
+#if defined(CONFIG_NET_ROUTE)
+		struct net_route_entry *route;
+#endif
+
+		iface = net_if_ipv6_select_src_iface(&target->in6_addr);
+		if (iface != NULL) {
+			goto out;
+		}
+
+		nbr = net_ipv6_nbr_lookup(NULL, &target->in6_addr);
+		if (nbr) {
+			iface = nbr->iface;
+			goto out;
+		}
+
+#if defined(CONFIG_NET_ROUTE)
+		route = net_route_lookup(NULL, &target->in6_addr);
+		if (route) {
+			iface = route->iface;
+			goto out;
+		}
+#endif
+
+		iface = net_if_get_default();
+	}
+
+out:
+	return iface;
+}
+
 #endif /* CONFIG_NET_IP */
 
-static int cmd_net_ping(const struct shell *shell, size_t argc, char *argv[])
+static int cmd_net_ping(const struct shell *sh, size_t argc, char *argv[])
 {
 #if !defined(CONFIG_NET_IPV4) && !defined(CONFIG_NET_IPV6)
-	ARG_UNUSED(shell);
+	ARG_UNUSED(sh);
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
 	return -EOPNOTSUPP;
 #else
 	char *host = NULL;
-	int ret;
 
 	int count = 3;
 	int interval = 1000;
@@ -4215,47 +4660,106 @@ static int cmd_net_ping(const struct shell *shell, size_t argc, char *argv[])
 		return -ENOEXEC;
 	}
 
-	shell_for_ping = shell;
+	memset(&ping_ctx, 0, sizeof(ping_ctx));
 
-	if (IS_ENABLED(CONFIG_NET_IPV6)) {
-		ret = ping_ipv6(shell, host, count, interval, tos, payload_size,
-				iface_idx);
-		if (!ret) {
-			goto wait_reply;
-		} else if (ret == -EIO) {
-			PR_WARNING("Cannot send IPv6 ping\n");
-			return -ENOEXEC;
-		}
+	k_work_init_delayable(&ping_ctx.work, ping_work);
+
+	ping_ctx.sh = sh;
+	ping_ctx.count = count;
+	ping_ctx.interval = interval;
+	ping_ctx.tos = tos;
+	ping_ctx.payload_size = payload_size;
+
+	if (IS_ENABLED(CONFIG_NET_IPV6) &&
+	    net_addr_pton(AF_INET6, host, &ping_ctx.addr.in6_addr) == 0) {
+		ping_ctx.addr.family = AF_INET6;
+		net_icmpv6_register_handler(&ping6_handler);
+	} else if (IS_ENABLED(CONFIG_NET_IPV4) &&
+		   net_addr_pton(AF_INET, host, &ping_ctx.addr.in_addr) == 0) {
+		ping_ctx.addr.family = AF_INET;
+		net_icmpv4_register_handler(&ping4_handler);
+	} else {
+		PR_WARNING("Invalid IP address\n");
+		return 0;
 	}
 
-	if (IS_ENABLED(CONFIG_NET_IPV4)) {
-		ret = ping_ipv4(shell, host, count, interval, tos, payload_size,
-				iface_idx);
-		if (ret) {
-			if (ret == -EIO || ret == -ENETUNREACH) {
-				PR_WARNING("Cannot send IPv4 ping\n");
-			} else if (ret == -EINVAL) {
-				PR_WARNING("Invalid IP address\n");
-			} else if (ret == -ENOTSUP) {
-				PR_WARNING("Feature is not supported\n");
-			}
+	ping_ctx.iface = ping_select_iface(iface_idx, &ping_ctx.addr);
 
-			return -ENOEXEC;
-		}
-	}
+	PR("PING %s\n", host);
 
-wait_reply:
-	ret = k_sem_take(&ping_timeout, K_SECONDS(2));
-	if (ret == -EAGAIN) {
-		PR_INFO("Ping timeout\n");
-		remove_ipv6_ping_handler();
-		remove_ipv4_ping_handler();
-
-		return -ETIMEDOUT;
-	}
+	shell_set_bypass(sh, ping_bypass);
+	k_work_reschedule(&ping_ctx.work, K_NO_WAIT);
 
 	return 0;
 #endif
+}
+
+static bool is_pkt_part_of_slab(const struct k_mem_slab *slab, const char *ptr)
+{
+	size_t last_offset = (slab->num_blocks - 1) * slab->block_size;
+	size_t ptr_offset;
+
+	/* Check if pointer fits into slab buffer area. */
+	if ((ptr < slab->buffer) || (ptr > slab->buffer + last_offset)) {
+		return false;
+	}
+
+	/* Check if pointer offset is correct. */
+	ptr_offset = ptr - slab->buffer;
+	if (ptr_offset % slab->block_size != 0) {
+		return false;
+	}
+
+	return true;
+}
+
+struct ctx_pkt_slab_info {
+	const void *ptr;
+	bool pkt_source_found;
+};
+
+static void check_context_pool(struct net_context *context, void *user_data)
+{
+#if defined(CONFIG_NET_CONTEXT_NET_PKT_POOL)
+	if (!net_context_is_used(context)) {
+		return;
+	}
+
+	if (context->tx_slab) {
+		struct ctx_pkt_slab_info *info = user_data;
+		struct k_mem_slab *slab = context->tx_slab();
+
+		if (is_pkt_part_of_slab(slab, info->ptr)) {
+			info->pkt_source_found = true;
+		}
+	}
+#endif /* CONFIG_NET_CONTEXT_NET_PKT_POOL */
+}
+
+static bool is_pkt_ptr_valid(const void *ptr)
+{
+	struct k_mem_slab *rx, *tx;
+
+	net_pkt_get_info(&rx, &tx, NULL, NULL);
+
+	if (is_pkt_part_of_slab(rx, ptr) || is_pkt_part_of_slab(tx, ptr)) {
+		return true;
+	}
+
+	if (IS_ENABLED(CONFIG_NET_CONTEXT_NET_PKT_POOL)) {
+		struct ctx_pkt_slab_info info;
+
+		info.ptr = ptr;
+		info.pkt_source_found = false;
+
+		net_context_foreach(check_context_pool, &info);
+
+		if (info.pkt_source_found) {
+			return true;
+		}
+	}
+
+	return false;
 }
 
 static struct net_pkt *get_net_pkt(const char *ptr_str)
@@ -4281,7 +4785,7 @@ static struct net_pkt *get_net_pkt(const char *ptr_str)
 	return (struct net_pkt *)ptr;
 }
 
-static void net_pkt_buffer_info(const struct shell *shell, struct net_pkt *pkt)
+static void net_pkt_buffer_info(const struct shell *sh, struct net_pkt *pkt)
 {
 	struct net_buf *buf = pkt->buffer;
 
@@ -4305,7 +4809,7 @@ static void net_pkt_buffer_info(const struct shell *shell, struct net_pkt *pkt)
 	PR("\n");
 }
 
-static void net_pkt_buffer_hexdump(const struct shell *shell,
+static void net_pkt_buffer_hexdump(const struct shell *sh,
 				   struct net_pkt *pkt)
 {
 	struct net_buf *buf = pkt->buffer;
@@ -4319,12 +4823,12 @@ static void net_pkt_buffer_hexdump(const struct shell *shell,
 
 	while (buf) {
 		PR("net_buf[%d] %p\n", i++, buf);
-		shell_hexdump(shell, buf->data, buf->len);
+		shell_hexdump(sh, buf->data, buf->len);
 		buf = buf->frags;
 	}
 }
 
-static int cmd_net_pkt(const struct shell *shell, size_t argc, char *argv[])
+static int cmd_net_pkt(const struct shell *sh, size_t argc, char *argv[])
 {
 	if (argv[1]) {
 		struct net_pkt *pkt;
@@ -4333,12 +4837,20 @@ static int cmd_net_pkt(const struct shell *shell, size_t argc, char *argv[])
 		if (!pkt) {
 			PR_ERROR("Invalid ptr value (%s). "
 				 "Example: 0x01020304\n", argv[1]);
+
 			return -ENOEXEC;
 		}
 
-		net_pkt_buffer_info(shell, pkt);
+		if (!is_pkt_ptr_valid(pkt)) {
+			PR_ERROR("Pointer is not recognized as net_pkt (%s).\n",
+				 argv[1]);
+
+			return -ENOEXEC;
+		}
+
+		net_pkt_buffer_info(sh, pkt);
 		PR("\n");
-		net_pkt_buffer_hexdump(shell, pkt);
+		net_pkt_buffer_hexdump(sh, pkt);
 	} else {
 		PR_INFO("Pointer value must be given.\n");
 		return -ENOEXEC;
@@ -4347,12 +4859,12 @@ static int cmd_net_pkt(const struct shell *shell, size_t argc, char *argv[])
 	return 0;
 }
 
-static int cmd_net_ppp_ping(const struct shell *shell, size_t argc,
+static int cmd_net_ppp_ping(const struct shell *sh, size_t argc,
 			    char *argv[])
 {
 #if defined(CONFIG_NET_PPP)
 	if (argv[1]) {
-		int ret, idx = get_iface_idx(shell, argv[1]);
+		int ret, idx = get_iface_idx(sh, argv[1]);
 
 		if (idx < 0) {
 			return -ENOEXEC;
@@ -4387,7 +4899,7 @@ static int cmd_net_ppp_ping(const struct shell *shell, size_t argc,
 	return 0;
 }
 
-static int cmd_net_ppp_status(const struct shell *shell, size_t argc,
+static int cmd_net_ppp_status(const struct shell *sh, size_t argc,
 			      char *argv[])
 {
 #if defined(CONFIG_NET_PPP)
@@ -4395,7 +4907,7 @@ static int cmd_net_ppp_status(const struct shell *shell, size_t argc,
 	struct ppp_context *ctx;
 
 	if (argv[1]) {
-		idx = get_iface_idx(shell, argv[1]);
+		idx = get_iface_idx(sh, argv[1]);
 		if (idx < 0) {
 			return -ENOEXEC;
 		}
@@ -4458,7 +4970,7 @@ static int cmd_net_ppp_status(const struct shell *shell, size_t argc,
 	return 0;
 }
 
-static int cmd_net_route(const struct shell *shell, size_t argc, char *argv[])
+static int cmd_net_route(const struct shell *sh, size_t argc, char *argv[])
 {
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
@@ -4469,7 +4981,7 @@ static int cmd_net_route(const struct shell *shell, size_t argc, char *argv[])
 #endif
 
 #if defined(CONFIG_NET_ROUTE) || defined(CONFIG_NET_ROUTE_MCAST)
-	user_data.shell = shell;
+	user_data.sh = sh;
 #endif
 
 #if defined(CONFIG_NET_ROUTE)
@@ -4486,7 +4998,7 @@ static int cmd_net_route(const struct shell *shell, size_t argc, char *argv[])
 	return 0;
 }
 
-static int cmd_net_stacks(const struct shell *shell, size_t argc,
+static int cmd_net_stacks(const struct shell *sh, size_t argc,
 			  char *argv[])
 {
 #if !defined(CONFIG_KERNEL_SHELL)
@@ -4504,7 +5016,7 @@ static void net_shell_print_statistics_all(struct net_shell_user_data *data)
 }
 #endif
 
-static int cmd_net_stats_all(const struct shell *shell, size_t argc,
+static int cmd_net_stats_all(const struct shell *sh, size_t argc,
 			     char *argv[])
 {
 #if defined(CONFIG_NET_STATISTICS)
@@ -4512,7 +5024,7 @@ static int cmd_net_stats_all(const struct shell *shell, size_t argc,
 #endif
 
 #if defined(CONFIG_NET_STATISTICS)
-	user_data.shell = shell;
+	user_data.sh = sh;
 
 	/* Print global network statistics */
 	net_shell_print_statistics_all(&user_data);
@@ -4527,7 +5039,7 @@ static int cmd_net_stats_all(const struct shell *shell, size_t argc,
 	return 0;
 }
 
-static int cmd_net_stats_iface(const struct shell *shell, size_t argc,
+static int cmd_net_stats_iface(const struct shell *sh, size_t argc,
 			       char *argv[])
 {
 #if defined(CONFIG_NET_STATISTICS)
@@ -4558,7 +5070,7 @@ static int cmd_net_stats_iface(const struct shell *shell, size_t argc,
 		return -ENOEXEC;
 	}
 
-	data.shell = shell;
+	data.sh = sh;
 
 	net_shell_print_statistics(iface, &data);
 #else
@@ -4576,18 +5088,18 @@ static int cmd_net_stats_iface(const struct shell *shell, size_t argc,
 	return 0;
 }
 
-static int cmd_net_stats(const struct shell *shell, size_t argc, char *argv[])
+static int cmd_net_stats(const struct shell *sh, size_t argc, char *argv[])
 {
 #if defined(CONFIG_NET_STATISTICS)
 	if (!argv[1]) {
-		cmd_net_stats_all(shell, argc, argv);
+		cmd_net_stats_all(sh, argc, argv);
 		return 0;
 	}
 
 	if (strcmp(argv[1], "reset") == 0) {
 		net_stats_reset(NULL);
 	} else {
-		cmd_net_stats_iface(shell, argc, argv);
+		cmd_net_stats_iface(sh, argc, argv);
 	}
 #else
 	ARG_UNUSED(argc);
@@ -4650,7 +5162,7 @@ static void get_my_ipv4_addr(struct net_if *iface,
 #endif
 }
 
-static void print_connect_info(const struct shell *shell,
+static void print_connect_info(const struct shell *sh,
 			       int family,
 			       struct sockaddr *myaddr,
 			       struct sockaddr *addr)
@@ -4690,7 +5202,7 @@ static void print_connect_info(const struct shell *shell,
 	}
 }
 
-static void tcp_connect(const struct shell *shell, char *host, uint16_t port,
+static void tcp_connect(const struct shell *sh, char *host, uint16_t port,
 			struct net_context **ctx)
 {
 	struct net_if *iface = net_if_get_default();
@@ -4769,7 +5281,7 @@ static void tcp_connect(const struct shell *shell, char *host, uint16_t port,
 		return;
 	}
 
-	print_connect_info(shell, family, &myaddr, &addr);
+	print_connect_info(sh, family, &myaddr, &addr);
 
 	ret = net_context_get(family, SOCK_STREAM, IPPROTO_TCP, ctx);
 	if (ret < 0) {
@@ -4787,7 +5299,7 @@ static void tcp_connect(const struct shell *shell, char *host, uint16_t port,
 	 * because the tcp_connected() will be called much later and
 	 * all local stack variables are lost at that point.
 	 */
-	tcp_shell = shell;
+	tcp_shell = sh;
 
 #if defined(CONFIG_NET_SOCKETS_CONNECT_TIMEOUT)
 #define CONNECT_TIMEOUT K_MSEC(CONFIG_NET_SOCKETS_CONNECT_TIMEOUT)
@@ -4840,7 +5352,7 @@ static void tcp_recv_cb(struct net_context *context, struct net_pkt *pkt,
 }
 #endif
 
-static int cmd_net_tcp_connect(const struct shell *shell, size_t argc,
+static int cmd_net_tcp_connect(const struct shell *sh, size_t argc,
 			       char *argv[])
 {
 #if defined(CONFIG_NET_TCP) && defined(CONFIG_NET_NATIVE_TCP)
@@ -4875,7 +5387,7 @@ static int cmd_net_tcp_connect(const struct shell *shell, size_t argc,
 		return -ENOEXEC;
 	}
 
-	tcp_connect(shell, ip, port, &tcp_ctx);
+	tcp_connect(sh, ip, port, &tcp_ctx);
 #else
 	PR_INFO("Set %s to enable %s support.\n",
 		"CONFIG_NET_TCP and CONFIG_NET_NATIVE", "TCP");
@@ -4884,7 +5396,7 @@ static int cmd_net_tcp_connect(const struct shell *shell, size_t argc,
 	return 0;
 }
 
-static int cmd_net_tcp_send(const struct shell *shell, size_t argc,
+static int cmd_net_tcp_send(const struct shell *sh, size_t argc,
 			    char *argv[])
 {
 #if defined(CONFIG_NET_TCP) && defined(CONFIG_NET_NATIVE_TCP)
@@ -4903,7 +5415,7 @@ static int cmd_net_tcp_send(const struct shell *shell, size_t argc,
 		return -ENOEXEC;
 	}
 
-	user_data.shell = shell;
+	user_data.sh = sh;
 
 	ret = net_context_send(tcp_ctx, (uint8_t *)argv[arg],
 			       strlen(argv[arg]), tcp_sent_cb,
@@ -4921,7 +5433,7 @@ static int cmd_net_tcp_send(const struct shell *shell, size_t argc,
 	return 0;
 }
 
-static int cmd_net_tcp_recv(const struct shell *shell, size_t argc,
+static int cmd_net_tcp_recv(const struct shell *sh, size_t argc,
 			    char *argv[])
 {
 #if defined(CONFIG_NET_TCP) && defined(CONFIG_NET_NATIVE_TCP)
@@ -4934,7 +5446,7 @@ static int cmd_net_tcp_recv(const struct shell *shell, size_t argc,
 		return -ENOEXEC;
 	}
 
-	user_data.shell = shell;
+	user_data.sh = sh;
 
 	ret = net_context_recv(tcp_ctx, tcp_recv_cb, K_NO_WAIT, &user_data);
 	if (ret < 0) {
@@ -4950,7 +5462,7 @@ static int cmd_net_tcp_recv(const struct shell *shell, size_t argc,
 	return 0;
 }
 
-static int cmd_net_tcp_close(const struct shell *shell, size_t argc,
+static int cmd_net_tcp_close(const struct shell *sh, size_t argc,
 			     char *argv[])
 {
 #if defined(CONFIG_NET_TCP) && defined(CONFIG_NET_NATIVE_TCP)
@@ -4978,7 +5490,7 @@ static int cmd_net_tcp_close(const struct shell *shell, size_t argc,
 	return 0;
 }
 
-static int cmd_net_tcp(const struct shell *shell, size_t argc, char *argv[])
+static int cmd_net_tcp(const struct shell *sh, size_t argc, char *argv[])
 {
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
@@ -5022,11 +5534,11 @@ static void udp_sent(struct net_context *context, int status, void *user_data)
 }
 #endif
 
-static int cmd_net_udp_bind(const struct shell *shell, size_t argc,
+static int cmd_net_udp_bind(const struct shell *sh, size_t argc,
 			    char *argv[])
 {
 #if !defined(CONFIG_NET_UDP) || !defined(CONFIG_NET_NATIVE_UDP)
-	ARG_UNUSED(shell);
+	ARG_UNUSED(sh);
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
@@ -5074,7 +5586,7 @@ static int cmd_net_udp_bind(const struct shell *shell, size_t argc,
 		return ret;
 	}
 
-	udp_shell = shell;
+	udp_shell = sh;
 
 	if (IS_ENABLED(CONFIG_NET_IPV6) && addr.sa_family == AF_INET6) {
 		net_sin6(&addr)->sin6_port = htons(port);
@@ -5124,11 +5636,11 @@ release_ctx:
 #endif
 }
 
-static int cmd_net_udp_close(const struct shell *shell, size_t argc,
+static int cmd_net_udp_close(const struct shell *sh, size_t argc,
 			     char *argv[])
 {
 #if !defined(CONFIG_NET_UDP) || !defined(CONFIG_NET_NATIVE_UDP)
-	ARG_UNUSED(shell);
+	ARG_UNUSED(sh);
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
@@ -5150,11 +5662,11 @@ static int cmd_net_udp_close(const struct shell *shell, size_t argc,
 #endif
 }
 
-static int cmd_net_udp_send(const struct shell *shell, size_t argc,
+static int cmd_net_udp_send(const struct shell *sh, size_t argc,
 			    char *argv[])
 {
 #if !defined(CONFIG_NET_UDP) || !defined(CONFIG_NET_NATIVE_UDP)
-	ARG_UNUSED(shell);
+	ARG_UNUSED(sh);
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
@@ -5203,7 +5715,7 @@ static int cmd_net_udp_send(const struct shell *shell, size_t argc,
 		return ret;
 	}
 
-	udp_shell = shell;
+	udp_shell = sh;
 
 	if (IS_ENABLED(CONFIG_NET_IPV6) && addr.sa_family == AF_INET6) {
 		net_sin6(&addr)->sin6_port = htons(port);
@@ -5257,9 +5769,9 @@ release_ctx:
 #endif
 }
 
-static int cmd_net_udp(const struct shell *shell, size_t argc, char *argv[])
+static int cmd_net_udp(const struct shell *sh, size_t argc, char *argv[])
 {
-	ARG_UNUSED(shell);
+	ARG_UNUSED(sh);
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
@@ -5270,7 +5782,7 @@ static int cmd_net_udp(const struct shell *shell, size_t argc, char *argv[])
 static void virtual_iface_cb(struct net_if *iface, void *user_data)
 {
 	struct net_shell_user_data *data = user_data;
-	const struct shell *shell = data->shell;
+	const struct shell *sh = data->sh;
 	int *count = data->user_data;
 	char *name, buf[CONFIG_NET_L2_VIRTUAL_MAX_NAME_LEN];
 	struct net_if *orig_iface;
@@ -5299,7 +5811,7 @@ static void virtual_iface_cb(struct net_if *iface, void *user_data)
 static void attached_iface_cb(struct net_if *iface, void *user_data)
 {
 	struct net_shell_user_data *data = user_data;
-	const struct shell *shell = data->shell;
+	const struct shell *sh = data->sh;
 	int *count = data->user_data;
 	char buf[CONFIG_NET_L2_VIRTUAL_MAX_NAME_LEN];
 	const char *name;
@@ -5336,7 +5848,7 @@ static void attached_iface_cb(struct net_if *iface, void *user_data)
 }
 #endif /* CONFIG_NET_L2_VIRTUAL */
 
-static int cmd_net_virtual(const struct shell *shell, size_t argc,
+static int cmd_net_virtual(const struct shell *sh, size_t argc,
 			   char *argv[])
 {
 	ARG_UNUSED(argc);
@@ -5346,7 +5858,7 @@ static int cmd_net_virtual(const struct shell *shell, size_t argc,
 	struct net_shell_user_data user_data;
 	int count = 0;
 
-	user_data.shell = shell;
+	user_data.sh = sh;
 	user_data.user_data = &count;
 
 	net_if_foreach(virtual_iface_cb, &user_data);
@@ -5366,7 +5878,7 @@ static int cmd_net_virtual(const struct shell *shell, size_t argc,
 static void iface_vlan_del_cb(struct net_if *iface, void *user_data)
 {
 	struct net_shell_user_data *data = user_data;
-	const struct shell *shell = data->shell;
+	const struct shell *sh = data->sh;
 	uint16_t vlan_tag = POINTER_TO_UINT(data->user_data);
 	int ret;
 
@@ -5391,7 +5903,7 @@ static void iface_vlan_cb(struct net_if *iface, void *user_data)
 {
 	struct ethernet_context *ctx = net_if_l2_data(iface);
 	struct net_shell_user_data *data = user_data;
-	const struct shell *shell = data->shell;
+	const struct shell *sh = data->sh;
 	int *count = data->user_data;
 	int i;
 
@@ -5427,7 +5939,7 @@ static void iface_vlan_cb(struct net_if *iface, void *user_data)
 }
 #endif /* CONFIG_NET_VLAN */
 
-static int cmd_net_vlan(const struct shell *shell, size_t argc, char *argv[])
+static int cmd_net_vlan(const struct shell *sh, size_t argc, char *argv[])
 {
 #if defined(CONFIG_NET_VLAN)
 	struct net_shell_user_data user_data;
@@ -5437,7 +5949,7 @@ static int cmd_net_vlan(const struct shell *shell, size_t argc, char *argv[])
 #if defined(CONFIG_NET_VLAN)
 	count = 0;
 
-	user_data.shell = shell;
+	user_data.sh = sh;
 	user_data.user_data = &count;
 
 	net_if_foreach(iface_vlan_cb, &user_data);
@@ -5448,7 +5960,7 @@ static int cmd_net_vlan(const struct shell *shell, size_t argc, char *argv[])
 	return 0;
 }
 
-static int cmd_net_vlan_add(const struct shell *shell, size_t argc,
+static int cmd_net_vlan_add(const struct shell *sh, size_t argc,
 			    char *argv[])
 {
 #if defined(CONFIG_NET_VLAN)
@@ -5523,7 +6035,7 @@ usage:
 	return 0;
 }
 
-static int cmd_net_vlan_del(const struct shell *shell, size_t argc,
+static int cmd_net_vlan_del(const struct shell *sh, size_t argc,
 			    char *argv[])
 {
 #if defined(CONFIG_NET_VLAN)
@@ -5546,7 +6058,7 @@ static int cmd_net_vlan_del(const struct shell *shell, size_t argc,
 		return -ENOEXEC;
 	}
 
-	user_data.shell = shell;
+	user_data.sh = sh;
 	user_data.user_data = UINT_TO_POINTER((uint32_t)tag);
 
 	net_if_foreach(iface_vlan_del_cb, &user_data);
@@ -5563,7 +6075,7 @@ usage:
 	return 0;
 }
 
-static int cmd_net_suspend(const struct shell *shell, size_t argc,
+static int cmd_net_suspend(const struct shell *sh, size_t argc,
 			   char *argv[])
 {
 #if defined(CONFIG_NET_POWER_MANAGEMENT)
@@ -5573,7 +6085,7 @@ static int cmd_net_suspend(const struct shell *shell, size_t argc,
 		int idx;
 		int ret;
 
-		idx = get_iface_idx(shell, argv[1]);
+		idx = get_iface_idx(sh, argv[1]);
 		if (idx < 0) {
 			return -ENOEXEC;
 		}
@@ -5607,7 +6119,7 @@ static int cmd_net_suspend(const struct shell *shell, size_t argc,
 	return 0;
 }
 
-static int cmd_net_resume(const struct shell *shell, size_t argc,
+static int cmd_net_resume(const struct shell *sh, size_t argc,
 			  char *argv[])
 {
 #if defined(CONFIG_NET_POWER_MANAGEMENT)
@@ -5617,7 +6129,7 @@ static int cmd_net_resume(const struct shell *shell, size_t argc,
 		int idx;
 		int ret;
 
-		idx = get_iface_idx(shell, argv[1]);
+		idx = get_iface_idx(sh, argv[1]);
 		if (idx < 0) {
 			return -ENOEXEC;
 		}
@@ -5658,7 +6170,7 @@ static void websocket_context_cb(struct websocket_context *context,
 #define ADDR_LEN NET_IPV6_ADDR_LEN
 #endif
 	struct net_shell_user_data *data = user_data;
-	const struct shell *shell = data->shell;
+	const struct shell *sh = data->sh;
 	struct net_context *net_ctx;
 	int *count = data->user_data;
 	/* +7 for []:port */
@@ -5683,7 +6195,7 @@ static void websocket_context_cb(struct websocket_context *context,
 }
 #endif /* CONFIG_WEBSOCKET_CLIENT */
 
-static int cmd_net_websocket(const struct shell *shell, size_t argc,
+static int cmd_net_websocket(const struct shell *sh, size_t argc,
 			     char *argv[])
 {
 #if defined(CONFIG_WEBSOCKET_CLIENT)
@@ -5696,7 +6208,7 @@ static int cmd_net_websocket(const struct shell *shell, size_t argc,
 	PR("     websocket/net_ctx\tIface         "
 	   "Local              \tRemote\n");
 
-	user_data.shell = shell;
+	user_data.sh = sh;
 	user_data.user_data = &count;
 
 	websocket_context_foreach(websocket_context_cb, &user_data);
@@ -5889,6 +6401,41 @@ SHELL_STATIC_SUBCMD_SET_CREATE(net_cmd_iface,
 		  "'net iface <index>' shows network interface "
 		  "information.",
 		  cmd_net_iface),
+	SHELL_CMD(set_mac, IFACE_DYN_CMD,
+		  "'net iface set_mac <index> <MAC>' sets MAC address for the network interface.",
+		  cmd_net_set_mac),
+	SHELL_SUBCMD_SET_END
+);
+
+SHELL_STATIC_SUBCMD_SET_CREATE(net_cmd_ip,
+	SHELL_CMD(add, NULL,
+		  "'net ipv4 add <index> <address>' adds the address to the interface.",
+		  cmd_net_ip_add),
+	SHELL_CMD(del, NULL,
+		  "'net ipv4 del <index> <address>' deletes the address from the interface.",
+		  cmd_net_ip_del),
+	SHELL_SUBCMD_SET_END
+);
+
+SHELL_STATIC_SUBCMD_SET_CREATE(net_cmd_ip6,
+	SHELL_CMD(add, NULL,
+		  "'net ipv6 add <index> <address>' adds the address to the interface.",
+		  cmd_net_ip6_add),
+	SHELL_CMD(del, NULL,
+		  "'net ipv6 del <index> <address>' deletes the address from the interface.",
+		  cmd_net_ip6_del),
+	SHELL_SUBCMD_SET_END
+);
+
+SHELL_STATIC_SUBCMD_SET_CREATE(net_cmd_route,
+	SHELL_CMD(add, NULL,
+		  "'net route add <index> <destination> <gateway>'"
+		  " adds the route to the destination.",
+		  cmd_net_ip6_route_add),
+	SHELL_CMD(del, NULL,
+		  "'net route del <index> <destination>'"
+		  " deletes the route to the destination.",
+		  cmd_net_ip6_route_del),
 	SHELL_SUBCMD_SET_END
 );
 
@@ -6067,10 +6614,14 @@ SHELL_STATIC_SUBCMD_SET_CREATE(net_commands,
 	SHELL_CMD(iface, &net_cmd_iface,
 		  "Print information about network interfaces.",
 		  cmd_net_iface),
-	SHELL_CMD(ipv6, NULL,
+	SHELL_CMD(ipv6, &net_cmd_ip6,
 		  "Print information about IPv6 specific information and "
 		  "configuration.",
 		  cmd_net_ipv6),
+	SHELL_CMD(ipv4, &net_cmd_ip,
+		  "Print information about IPv4 specific information and "
+		  "configuration.",
+		  cmd_net_ipv4),
 	SHELL_CMD(mem, NULL, "Print information about network memory usage.",
 		  cmd_net_mem),
 	SHELL_CMD(nbr, &net_cmd_nbr, "Print neighbor information.",
@@ -6079,7 +6630,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(net_commands,
 	SHELL_CMD(pkt, &net_cmd_pkt, "net_pkt information.", cmd_net_pkt),
 	SHELL_CMD(ppp, &net_cmd_ppp, "PPP information.", cmd_net_ppp_status),
 	SHELL_CMD(resume, NULL, "Resume a network interface", cmd_net_resume),
-	SHELL_CMD(route, NULL, "Show network route.", cmd_net_route),
+	SHELL_CMD(route, &net_cmd_route, "Show network route.", cmd_net_route),
 	SHELL_CMD(stacks, NULL, "Show network stacks information.",
 		  cmd_net_stacks),
 	SHELL_CMD(stats, &net_cmd_stats, "Show network statistics.",

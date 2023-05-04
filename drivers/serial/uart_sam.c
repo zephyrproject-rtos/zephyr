@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2017 Piotr Mienkowski
  * Copyright (c) 2018 Justin Watson
+ * Copyright (c) 2023 Gerson Fernando Budke
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -8,10 +9,6 @@
 
 /** @file
  * @brief UART driver for Atmel SAM MCU family.
- *
- * Note:
- * - Error handling is not implemented.
- * - The driver works only in polling mode, interrupt mode is not implemented.
  */
 
 #include <errno.h>
@@ -21,12 +18,13 @@
 #include <soc.h>
 #include <zephyr/drivers/uart.h>
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/drivers/clock_control/atmel_sam_pmc.h>
 #include <zephyr/irq.h>
 
 /* Device constant configuration parameters */
 struct uart_sam_dev_cfg {
 	Uart *regs;
-	uint32_t periph_id;
+	const struct atmel_sam_pmc_config clock_cfg;
 	const struct pinctrl_dev_config *pcfg;
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
@@ -40,7 +38,7 @@ struct uart_sam_dev_data {
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	uart_irq_callback_user_data_t irq_cb;	/* Interrupt Callback */
-	void *irq_cb_data;	/* Interrupt Callback Arg */
+	void *irq_cb_data;			/* Interrupt Callback Arg */
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 };
 
@@ -391,7 +389,8 @@ static int uart_sam_init(const struct device *dev)
 	Uart * const uart = cfg->regs;
 
 	/* Enable UART clock in PMC */
-	soc_pmc_peripheral_enable(cfg->periph_id);
+	(void)clock_control_on(SAM_DT_PMC_CONTROLLER,
+			       (clock_control_subsys_t)&cfg->clock_cfg);
 
 	/* Connect pins to the peripheral */
 	retval = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
@@ -445,7 +444,7 @@ static const struct uart_driver_api uart_sam_driver_api = {
 #define UART_SAM_DECLARE_CFG(n, IRQ_FUNC_INIT)				\
 	static const struct uart_sam_dev_cfg uart##n##_sam_config = {	\
 		.regs = (Uart *)DT_INST_REG_ADDR(n),			\
-		.periph_id = DT_INST_PROP(n, peripheral_id),		\
+		.clock_cfg = SAM_DT_INST_CLOCK_PMC_CFG(n),		\
 									\
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),		\
 									\

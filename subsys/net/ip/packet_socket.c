@@ -25,7 +25,7 @@ enum net_verdict net_packet_socket_input(struct net_pkt *pkt, uint8_t proto)
 	sa_family_t orig_family;
 	enum net_verdict net_verdict;
 
-#if IS_ENABLED(CONFIG_NET_DSA)
+#if defined(CONFIG_NET_DSA)
 	/*
 	 * For DSA the master port is not supporting raw packets. Only the
 	 * lan1..3 are working with them.

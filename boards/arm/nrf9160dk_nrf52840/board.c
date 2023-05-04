@@ -39,7 +39,7 @@ struct switch_cfg {
 	gpio_pin_t pin;
 	gpio_dt_flags_t flags;
 	bool on;
-#if IS_ENABLED(CONFIG_LOG)
+#if defined(CONFIG_LOG)
 	uint8_t port;
 	bool info;
 	const char *name;
@@ -159,7 +159,7 @@ static int reset_pin_configure(void)
 }
 #endif /* USE_RESET_GPIO */
 
-static int init(const struct device *dev)
+static int init(void)
 {
 	int rc;
 
@@ -175,7 +175,7 @@ static int init(const struct device *dev)
 		flags |= (cfg->on ? GPIO_OUTPUT_ACTIVE
 				  : GPIO_OUTPUT_INACTIVE);
 		rc = gpio_pin_configure(cfg->gpio, cfg->pin, flags);
-#if IS_ENABLED(CONFIG_LOG)
+#if defined(CONFIG_LOG)
 		LOG_DBG("Configuring P%d.%02d with flags: 0x%08x",
 			cfg->port, cfg->pin, flags);
 		if (rc) {
@@ -214,7 +214,7 @@ SYS_INIT(init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
 #define EXT_MEM_CTRL DT_NODELABEL(external_flash_pins_routing)
 #if DT_NODE_EXISTS(EXT_MEM_CTRL)
 
-static int early_init(const struct device *dev)
+static int early_init(void)
 {
 	/* As soon as possible after the system starts up, enable the analog
 	 * switch that routes signals to the external flash. Otherwise, the

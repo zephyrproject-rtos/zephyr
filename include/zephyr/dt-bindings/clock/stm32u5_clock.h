@@ -25,7 +25,7 @@
 #define STM32_SRC_LSE		0x00B
 #define STM32_SRC_LSI		0x00C
 #define STM32_SRC_HSI16		0x00D
-/* #define STM32_SRC_HSI48	0x00E */
+#define STM32_SRC_HSI48		0x00E
 #define STM32_SRC_MSIS		0x00F
 #define STM32_SRC_MSIK		0x010
 /** Core clock */

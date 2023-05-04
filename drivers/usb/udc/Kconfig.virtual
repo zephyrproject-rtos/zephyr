@@ -1,0 +1,24 @@
+# Copyright (c) 2022 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config UDC_VIRTUAL
+	bool "Virtual USB device controller driver"
+	select UVB
+	default y
+	depends on DT_HAS_ZEPHYR_UDC_VIRTUAL_ENABLED
+	help
+	  Virtual USB device controller driver.
+
+config UDC_VIRTUAL_STACK_SIZE
+	int "Virtual controller driver internal thread stack size"
+	depends on UDC_VIRTUAL
+	default 512
+	help
+	  Virtual device controller driver internal thread stack size.
+
+config UDC_VIRTUAL_THREAD_PRIORITY
+	int "Virtual controller driver thread priority"
+	depends on UDC_VIRTUAL
+	default 8
+	help
+	  Virtual device controller driver thread priority.

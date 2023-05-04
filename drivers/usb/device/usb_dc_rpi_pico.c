@@ -9,6 +9,7 @@
 #include <hardware/regs/usb.h>
 #include <hardware/structs/usb.h>
 #include <hardware/resets.h>
+#include <pico/platform.h>
 
 #include <zephyr/kernel.h>
 #include <zephyr/usb/usb_device.h>
@@ -54,9 +55,12 @@ struct udc_rpi_state {
 	usb_dc_status_callback status_cb;
 	struct udc_rpi_ep_state out_ep_state[USB_NUM_BIDIR_ENDPOINTS];
 	struct udc_rpi_ep_state in_ep_state[USB_NUM_BIDIR_ENDPOINTS];
+	bool abort_control_writes;
 	bool setup_available;
 	bool should_set_address;
+	uint16_t control_out_ep_rcvd;
 	uint8_t addr;
+	bool rwu_pending;
 };
 
 static struct udc_rpi_state state;
@@ -91,6 +95,10 @@ static int udc_rpi_start_xfer(uint8_t ep, const void *data, size_t len)
 	struct udc_rpi_ep_state *ep_state = udc_rpi_get_ep_state(ep);
 	uint32_t val = len | USB_BUF_CTRL_AVAIL;
 
+	if (*ep_state->buf_ctl & USB_BUF_CTRL_AVAIL) {
+		LOG_WRN("ep 0x%02x was already armed", ep);
+	}
+
 	if (USB_EP_DIR_IS_IN(ep)) {
 		if (len > DATA_BUFFER_SIZE) {
 			return -ENOMEM;
@@ -102,10 +110,6 @@ static int udc_rpi_start_xfer(uint8_t ep, const void *data, size_t len)
 		}
 	} else {
 		ep_state->read_offset = 0;
-
-		if (USB_EP_GET_IDX(ep) == 0) {
-			ep_state->next_pid = 1;
-		}
 	}
 
 	LOG_DBG("xfer ep %d len %d pid: %d", ep, len, ep_state->next_pid);
@@ -117,14 +121,82 @@ static int udc_rpi_start_xfer(uint8_t ep, const void *data, size_t len)
 	return 0;
 }
 
+/*
+ * This function converts a zephyr endpoint address into a
+ * bit mask that can be used with registers:
+ *  - BUFF_STATUS
+ *  - BUFF_CPU_SHOULD_HANDLE
+ *  - EP_ABOR
+ *  - EP_ABORT_DONE
+ *  - EP_STATUS_STALL_NAK
+ */
+static inline uint32_t udc_rpi_endpoint_mask(const uint8_t ep)
+{
+	const int bit_index = (USB_EP_GET_IDX(ep) << 1) | !!USB_EP_DIR_IS_OUT(ep);
+
+	return BIT(bit_index);
+}
+
+static void udc_rpi_cancel_endpoint(const uint8_t ep)
+{
+	struct udc_rpi_ep_state *const ep_state = udc_rpi_get_ep_state(ep);
+
+	if (*ep_state->buf_ctl & USB_BUF_CTRL_AVAIL) {
+		const uint32_t mask = udc_rpi_endpoint_mask(ep);
+		bool abort_handshake_supported = rp2040_chip_version() >= 2;
+
+		if (abort_handshake_supported) {
+			hw_set_alias(usb_hw)->abort = mask;
+			while ((usb_hw->abort_done & mask) != mask) {
+			}
+		}
+
+		*ep_state->buf_ctl &= ~USB_BUF_CTRL_AVAIL;
+
+		if (abort_handshake_supported) {
+			hw_clear_alias(usb_hw)->abort = mask;
+		}
+
+		if (USB_EP_DIR_IS_IN(ep)) {
+			k_sem_give(&ep_state->write_sem);
+		}
+	}
+}
+
 static void udc_rpi_handle_setup(void)
 {
+	const struct udc_rpi_ep_state *const ep_state = udc_rpi_get_ep_state(USB_CONTROL_EP_OUT);
 	struct cb_msg msg;
 
-	state.setup_available = true;
+	/* Normally all control transfers should complete before a new setup
+	 * transaction is sent, however in some rare cases from the perspective
+	 * of the device, a new setup transaction could arrive prematurely, in
+	 * which case the previous control transfer should be aborted, and for
+	 * this reason we're canceling both control IN and control OUT
+	 * endpoints. See section 5.5.5 of the Universal Serial Bus
+	 * Specification, version 2.0.
+	 */
+
+	udc_rpi_cancel_endpoint(USB_CONTROL_EP_IN);
+
+	if (*ep_state->buf_ctl & USB_BUF_CTRL_AVAIL) {
+		udc_rpi_cancel_endpoint(USB_CONTROL_EP_OUT);
+
+		/* This warning could be triggered by the rare event described
+		 * above, but it could also be a sign of a software bug, that
+		 * can expose us to race conditions when the system is slowed
+		 * down, because it becomes impossible to determine in what
+		 * order did setup/data transactions arrive.
+		 */
+
+		LOG_WRN("EP0_OUT was armed while setup stage arrived.");
+	}
+
+	state.abort_control_writes = true;
 
 	/* Set DATA1 PID for the next (data or status) stage */
 	udc_rpi_get_ep_state(USB_CONTROL_EP_IN)->next_pid = 1;
+	udc_rpi_get_ep_state(USB_CONTROL_EP_OUT)->next_pid = 1;
 
 	msg.ep = USB_CONTROL_EP_OUT;
 	msg.type = USB_DC_EP_SETUP;
@@ -176,21 +248,65 @@ static void udc_rpi_handle_buff_status(void)
 	}
 }
 
+static void udc_rpi_handle_resume(void)
+{
+	struct cb_msg msg = {
+		.ep = 0U,
+		.type = USB_DC_RESUME,
+		.ep_event = false,
+	};
+
+	LOG_DBG("Resume");
+	k_msgq_put(&usb_dc_msgq, &msg, K_NO_WAIT);
+	state.rwu_pending = false;
+}
+
+static void udc_rpi_handle_suspended(void)
+{
+	struct cb_msg msg = {
+		.ep = 0U,
+		.type = USB_DC_SUSPEND,
+		.ep_event = false,
+	};
+
+	LOG_DBG("Suspended");
+	k_msgq_put(&usb_dc_msgq, &msg, K_NO_WAIT);
+}
+
 static void udc_rpi_isr(const void *arg)
 {
 	uint32_t status = usb_hw->ints;
 	uint32_t handled = 0;
 	struct cb_msg msg;
 
+	if ((status & (USB_INTS_BUFF_STATUS_BITS | USB_INTS_SETUP_REQ_BITS)) &&
+	    state.rwu_pending) {
+		/* The rpi pico USB device does not appear to be sending
+		 * USB_INTR_DEV_RESUME_FROM_HOST interrupts when the resume is
+		 * a result of a remote wakeup request sent by us.
+		 * This will simulate a resume event if bus activity is observed
+		 */
+
+		udc_rpi_handle_resume();
+	}
+
+	if (status & USB_INTS_BUFF_STATUS_BITS) {
+		/* Note: we should check buffer interrupts before setup interrupts.
+		 * this may seem a little counter-intuitive, because setup irqs
+		 * sound more urgent, however in case we see an EP0_OUT buffer irq
+		 * at the same time as a setup irq, then we know the buffer irq
+		 * belongs to the previous control transfer, so we want to handle
+		 * that first.
+		 */
+
+		handled |= USB_INTS_BUFF_STATUS_BITS;
+		udc_rpi_handle_buff_status();
+	}
+
 	if (status & USB_INTS_SETUP_REQ_BITS) {
 		handled |= USB_INTS_SETUP_REQ_BITS;
 		hw_clear_alias(usb_hw)->sie_status = USB_SIE_STATUS_SETUP_REC_BITS;
 		udc_rpi_handle_setup();
-	}
-
-	if (status & USB_INTS_BUFF_STATUS_BITS) {
-		handled |= USB_INTS_BUFF_STATUS_BITS;
-		udc_rpi_handle_buff_status();
 	}
 
 	if (status & USB_INTS_DEV_CONN_DIS_BITS) {
@@ -229,10 +345,46 @@ static void udc_rpi_isr(const void *arg)
 		k_msgq_put(&usb_dc_msgq, &msg, K_NO_WAIT);
 	}
 
+	if (status & USB_INTS_DEV_SUSPEND_BITS) {
+		handled |= USB_INTS_DEV_SUSPEND_BITS;
+		hw_clear_alias(usb_hw)->sie_status = USB_SIE_STATUS_SUSPENDED_BITS;
+		udc_rpi_handle_suspended();
+	}
+
+	if (status & USB_INTR_DEV_RESUME_FROM_HOST_BITS) {
+		handled |= USB_INTR_DEV_RESUME_FROM_HOST_BITS;
+		hw_clear_alias(usb_hw)->sie_status = USB_SIE_STATUS_RESUME_BITS;
+		udc_rpi_handle_resume();
+	}
+
 	if (status & USB_INTS_ERROR_DATA_SEQ_BITS) {
 		LOG_WRN("data seq");
 		hw_clear_alias(usb_hw)->sie_status = USB_SIE_STATUS_DATA_SEQ_ERROR_BITS;
 		handled |= USB_INTS_ERROR_DATA_SEQ_BITS;
+	}
+
+	if (status & USB_INTS_ERROR_RX_TIMEOUT_BITS) {
+		LOG_WRN("rx timeout");
+		hw_clear_alias(usb_hw)->sie_status = USB_SIE_STATUS_RX_TIMEOUT_BITS;
+		handled |= USB_INTS_ERROR_RX_TIMEOUT_BITS;
+	}
+
+	if (status & USB_INTS_ERROR_RX_OVERFLOW_BITS) {
+		LOG_WRN("rx overflow");
+		hw_clear_alias(usb_hw)->sie_status = USB_SIE_STATUS_RX_OVERFLOW_BITS;
+		handled |= USB_INTS_ERROR_RX_OVERFLOW_BITS;
+	}
+
+	if (status & USB_INTS_ERROR_BIT_STUFF_BITS) {
+		LOG_WRN("bit stuff error");
+		hw_clear_alias(usb_hw)->sie_status = USB_SIE_STATUS_BIT_STUFF_ERROR_BITS;
+		handled |= USB_INTS_ERROR_BIT_STUFF_BITS;
+	}
+
+	if (status & USB_INTS_ERROR_CRC_BITS) {
+		LOG_ERR("crc error");
+		hw_clear_alias(usb_hw)->sie_status = USB_SIE_STATUS_CRC_ERROR_BITS;
+		handled |= USB_INTS_ERROR_CRC_BITS;
 	}
 
 	if (status ^ handled) {
@@ -290,7 +442,8 @@ static int udc_rpi_init(void)
 		       USB_INTS_SETUP_REQ_BITS | /*USB_INTS_EP_STALL_NAK_BITS |*/
 		       USB_INTS_ERROR_BIT_STUFF_BITS | USB_INTS_ERROR_CRC_BITS |
 		       USB_INTS_ERROR_DATA_SEQ_BITS | USB_INTS_ERROR_RX_OVERFLOW_BITS |
-		       USB_INTS_ERROR_RX_TIMEOUT_BITS;
+		       USB_INTS_ERROR_RX_TIMEOUT_BITS | USB_INTS_DEV_SUSPEND_BITS |
+		       USB_INTR_DEV_RESUME_FROM_HOST_BITS;
 
 	/* Set up endpoints (endpoint control registers)
 	 * described by device configuration
@@ -349,8 +502,7 @@ int usb_dc_ep_start_read(uint8_t ep, size_t len)
 
 	LOG_DBG("ep 0x%02x len %d", ep, len);
 
-	/* we flush USB_CONTROL_EP_IN by doing a 0 length receive on it */
-	if (!USB_EP_DIR_IS_OUT(ep) && (ep != USB_CONTROL_EP_IN || len)) {
+	if (!USB_EP_DIR_IS_OUT(ep)) {
 		LOG_ERR("invalid ep 0x%02x", ep);
 		return -EINVAL;
 	}
@@ -419,6 +571,10 @@ int usb_dc_ep_set_stall(const uint8_t ep)
 	}
 
 	*ep_state->buf_ctl = USB_BUF_CTRL_STALL;
+	if (ep == USB_CONTROL_EP_IN) {
+		/* Un-arm EP0_OUT endpoint, to make sure next setup packet starts clean */
+		udc_rpi_cancel_endpoint(USB_CONTROL_EP_OUT);
+	}
 
 	ep_state->halted = 1U;
 
@@ -538,6 +694,20 @@ int usb_dc_ep_write(const uint8_t ep, const uint8_t *const data,
 		return -EINVAL;
 	}
 
+	if (ep == USB_CONTROL_EP_IN && state.abort_control_writes) {
+		/* If abort_control_writes is high, it means the setup packet has not
+		 * yet been consumed by the thread, which means that this write
+		 * is part of a previous control transfer, which now must be
+		 * aborted.
+		 */
+
+		if (ret_bytes != NULL) {
+			*ret_bytes = len;
+		}
+
+		return 0;
+	}
+
 	if (ep == USB_CONTROL_EP_IN && len > USB_MAX_CTRL_MPS) {
 		len = USB_MAX_CTRL_MPS;
 	} else if (len > ep_state->mps) {
@@ -595,8 +765,12 @@ int usb_dc_ep_read_wait(uint8_t ep, uint8_t *data,
 		return -EINVAL;
 	}
 
-	if (state.setup_available) {
+	if (ep == USB_CONTROL_EP_OUT && state.setup_available) {
 		read_count = sizeof(struct usb_setup_packet);
+		if (read_count != max_data_len) {
+			LOG_WRN("Attempting to read setup packet with the wrong length"
+				" (expected: %d, read: %d)", read_count, max_data_len);
+		}
 	} else {
 		read_count = udc_rpi_get_ep_buffer_len(ep) - ep_state->read_offset;
 	}
@@ -607,7 +781,7 @@ int usb_dc_ep_read_wait(uint8_t ep, uint8_t *data,
 	if (data) {
 		read_count = MIN(read_count, max_data_len);
 
-		if (state.setup_available) {
+		if (ep == USB_CONTROL_EP_OUT && state.setup_available) {
 			memcpy(data, (const void *)&usb_dpram->setup_packet, read_count);
 		} else {
 			memcpy(data, ep_state->buf + ep_state->read_offset, read_count);
@@ -625,26 +799,79 @@ int usb_dc_ep_read_wait(uint8_t ep, uint8_t *data,
 	return 0;
 }
 
-int usb_dc_ep_read_continue(uint8_t ep)
+static int usb_dc_control_ep_read_continue(const struct udc_rpi_ep_state *const ep_state,
+					   bool *const arm_out_endpoint)
 {
-	struct udc_rpi_ep_state *ep_state = udc_rpi_get_ep_state(ep);
-	size_t bytes_received;
+	const struct usb_setup_packet *const setup = (const void *)&usb_dpram->setup_packet;
+
+	if (state.setup_available) {
+		LOG_DBG("EP0 setup (wLength=%d, is_to_device=%d)",
+			setup->wLength, usb_reqtype_is_to_device(setup));
+		if (setup->wLength != 0U) {
+			/* In the case of a control transfer, we want to prime the OUT endpoint
+			 * exactly once, to either:
+			 * 1) in the to_device case, to receive the data (only if wLength is not 0)
+			 * 2) in the to_host case, to receive a 0-length status stage transfer
+			 *    (only valid if wLength is not 0)
+			 * Note that when wLength = 0, the status stage transfer is always an IN
+			 * type so we don't need to consider that case.
+			 */
+			*arm_out_endpoint = true;
+			state.control_out_ep_rcvd = 0;
+		}
+
+		state.setup_available = false;
+	} else {
+		const size_t len = udc_rpi_get_ep_buffer_len(USB_CONTROL_EP_OUT);
+
+		LOG_DBG("Control OUT received %u offset: %u",
+			len, ep_state->read_offset);
+		if (usb_reqtype_is_to_device(setup)) {
+			if (state.control_out_ep_rcvd + ep_state->read_offset < setup->wLength) {
+				/* If no more data in the buffer, but we're still waiting
+				 * for more, start a new read transaction.
+				 */
+				if (len == ep_state->read_offset) {
+					state.control_out_ep_rcvd += ep_state->read_offset;
+					*arm_out_endpoint = true;
+				}
+			}
+		}
+	}
+	return 0;
+}
+
+int usb_dc_ep_read_continue(const uint8_t ep)
+{
+	const struct udc_rpi_ep_state *const ep_state = udc_rpi_get_ep_state(ep);
+	bool arm_out_endpoint = false;
 
 	if (!ep_state || !USB_EP_DIR_IS_OUT(ep)) {
 		LOG_ERR("Not valid endpoint: %02x", ep);
 		return -EINVAL;
 	}
+	if (ep == USB_CONTROL_EP_OUT) {
+		int ret = usb_dc_control_ep_read_continue(ep_state, &arm_out_endpoint);
 
-	bytes_received = state.setup_available ?
-			 sizeof(struct usb_setup_packet) :
-			 udc_rpi_get_ep_buffer_len(ep);
+		if (ret != 0) {
+			return ret;
+		}
+	} else {
+		const size_t len = udc_rpi_get_ep_buffer_len(ep);
 
-	state.setup_available = false;
+		LOG_DBG("Endpoint 0x%02x received %u offset: %u",
+			ep, len, ep_state->read_offset);
+		/* If no more data in the buffer, start a new read transaction. */
+		if (len == ep_state->read_offset) {
+			arm_out_endpoint = true;
+		}
+	}
 
-	/* If no more data in the buffer, start a new read transaction. */
-	LOG_DBG("received %d offset: %d", bytes_received, ep_state->read_offset);
-	if (bytes_received == ep_state->read_offset) {
+	if (arm_out_endpoint) {
+		LOG_DBG("Arming endpoint 0x%02x", ep);
 		return usb_dc_ep_start_read(ep, DATA_BUFFER_SIZE);
+	} else {
+		LOG_DBG("Not arming endpoint 0x%02x", ep);
 	}
 
 	return 0;
@@ -711,6 +938,15 @@ int usb_dc_reset(void)
 	return 0;
 }
 
+int usb_dc_wakeup_request(void)
+{
+	LOG_DBG("Remote Wakeup");
+	state.rwu_pending = true;
+	hw_set_alias(usb_hw)->sie_ctrl = USB_SIE_CTRL_RESUME_BITS;
+
+	return 0;
+}
+
 /*
  * This thread is only used to not run the USB device stack and endpoint
  * callbacks in the ISR context, which happens when an callback function
@@ -730,6 +966,11 @@ static void udc_rpi_thread_main(void *arg1, void *unused1, void *unused2)
 		if (msg.ep_event) {
 			struct udc_rpi_ep_state *ep_state = udc_rpi_get_ep_state(msg.ep);
 
+			if (msg.type == USB_DC_EP_SETUP) {
+				state.abort_control_writes = false;
+				state.setup_available = true;
+			}
+
 			if (ep_state->cb) {
 				ep_state->cb(msg.ep, msg.type);
 			}
@@ -741,9 +982,8 @@ static void udc_rpi_thread_main(void *arg1, void *unused1, void *unused2)
 	}
 }
 
-static int usb_rpi_init(const struct device *dev)
+static int usb_rpi_init(void)
 {
-	ARG_UNUSED(dev);
 
 	k_thread_create(&thread, thread_stack,
 			USBD_THREAD_STACK_SIZE,

@@ -9,7 +9,6 @@
 
 /* Grotesque hack for pinmux boards */
 #if defined(CONFIG_BOARD_RV32M1_VEGA)
-#include <zephyr/drivers/pinmux.h>
 #include <fsl_port.h>
 #elif defined(CONFIG_BOARD_UDOO_NEO_FULL_M4)
 #include "device_imx.h"

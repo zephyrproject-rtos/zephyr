@@ -1,6 +1,6 @@
 sample:
-  description: TBD
-  name: TBD
+  name: Bluetooth HCI UART
+  description: Allows Zephyr to provide Bluetooth connectivity via UART
 tests:
   sample.bluetooth.hci_uart.arm:
     harness: bluetooth
@@ -47,5 +47,6 @@ tests:
     platform_allow: nrf52833dk_nrf52833
     integration_platforms:
       - nrf52833dk_nrf52833
-    extra_args: OVERLAY_CONFIG=overlay-all-bt_ll_sw_split.conf DTC_OVERLAY_FILE=./boards/nrf52833dk_nrf52833_df.overlay
+    extra_args: OVERLAY_CONFIG=overlay-all-bt_ll_sw_split.conf
+      DTC_OVERLAY_FILE=./boards/nrf52833dk_nrf52833_df.overlay
     tags: uart bluetooth

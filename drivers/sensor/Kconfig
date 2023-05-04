@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig SENSOR
-	bool "Sensor Drivers"
+	bool "Sensor drivers"
 	help
 	  Include sensor drivers in system config
 
@@ -41,6 +41,8 @@ config SENSOR_INFO
 
 comment "Device Drivers"
 
+source "drivers/sensor/adt7310/Kconfig"
+
 source "drivers/sensor/adt7420/Kconfig"
 
 source "drivers/sensor/adxl345/Kconfig"
@@ -51,11 +53,17 @@ source "drivers/sensor/adxl372/Kconfig"
 
 source "drivers/sensor/ak8975/Kconfig"
 
+source "drivers/sensor/akm09918c/Kconfig"
+
 source "drivers/sensor/amg88xx/Kconfig"
+
+source "drivers/sensor/ams_as5600/Kconfig"
 
 source "drivers/sensor/ams_iAQcore/Kconfig"
 
 source "drivers/sensor/apds9960/Kconfig"
+
+source "drivers/sensor/bh1750/Kconfig"
 
 source "drivers/sensor/bma280/Kconfig"
 
@@ -95,6 +103,8 @@ source "drivers/sensor/fxos8700/Kconfig"
 
 source "drivers/sensor/grove/Kconfig"
 
+source "drivers/sensor/grow_r502a/Kconfig"
+
 source "drivers/sensor/ti_hdc/Kconfig"
 
 source "drivers/sensor/ti_hdc20xx/Kconfig"
@@ -111,6 +121,10 @@ source "drivers/sensor/icm42605/Kconfig"
 
 source "drivers/sensor/icm42670/Kconfig"
 
+source "drivers/sensor/icm42688/Kconfig"
+
+source "drivers/sensor/icp10125/Kconfig"
+
 source "drivers/sensor/iis2dh/Kconfig"
 
 source "drivers/sensor/iis2dlpc/Kconfig"
@@ -122,6 +136,8 @@ source "drivers/sensor/iis2mdc/Kconfig"
 source "drivers/sensor/iis3dhhc/Kconfig"
 
 source "drivers/sensor/ina23x/Kconfig"
+
+source "drivers/sensor/ina3221/Kconfig"
 
 source "drivers/sensor/isl29035/Kconfig"
 
@@ -167,6 +183,10 @@ source "drivers/sensor/max17262/Kconfig"
 
 source "drivers/sensor/max30101/Kconfig"
 
+source "drivers/sensor/max31855/Kconfig"
+
+source "drivers/sensor/max31865/Kconfig"
+
 source "drivers/sensor/max31875/Kconfig"
 
 source "drivers/sensor/max44009/Kconfig"
@@ -174,6 +194,8 @@ source "drivers/sensor/max44009/Kconfig"
 source "drivers/sensor/max6675/Kconfig"
 
 source "drivers/sensor/mchp_tach_xec/Kconfig"
+
+source "drivers/sensor/mcp970x/Kconfig"
 
 source "drivers/sensor/mcp9808/Kconfig"
 
@@ -189,11 +211,15 @@ source "drivers/sensor/ms5837/Kconfig"
 
 source "drivers/sensor/ms5607/Kconfig"
 
+source "drivers/sensor/npm1300_charger/Kconfig"
+
 source "drivers/sensor/nrf5/Kconfig"
 
 source "drivers/sensor/opt3001/Kconfig"
 
 source "drivers/sensor/pms7003/Kconfig"
+
+source "drivers/sensor/qdec_mcux/Kconfig"
 
 source "drivers/sensor/qdec_nrfx/Kconfig"
 
@@ -241,13 +267,23 @@ source "drivers/sensor/tmp116/Kconfig"
 
 source "drivers/sensor/vcnl4040/Kconfig"
 
+source "drivers/sensor/veml7700/Kconfig"
+
 source "drivers/sensor/vl53l0x/Kconfig"
+
+source "drivers/sensor/vl53l1x/Kconfig"
 
 source "drivers/sensor/nxp_kinetis_temp/Kconfig"
 
 source "drivers/sensor/wsen_hids/Kconfig"
 
 source "drivers/sensor/wsen_itds/Kconfig"
+
+source "drivers/sensor/wsen_pads/Kconfig"
+
+source "drivers/sensor/wsen_pdus/Kconfig"
+
+source "drivers/sensor/wsen_tids/Kconfig"
 
 source "drivers/sensor/mcux_acmp/Kconfig"
 
@@ -260,5 +296,17 @@ source "drivers/sensor/ite_tach_it8xxx2/Kconfig"
 source "drivers/sensor/ite_vcmp_it8xxx2/Kconfig"
 
 source "drivers/sensor/pcnt_esp32/Kconfig"
+
+source "drivers/sensor/esp32_temp/Kconfig"
+
+source "drivers/sensor/rpi_pico_temp/Kconfig"
+
+source "drivers/sensor/xmc4xxx_temp/Kconfig"
+
+source "drivers/sensor/tmd2620/Kconfig"
+
+source "drivers/sensor/zephyr_thermistor/Kconfig"
+
+source "drivers/sensor/s11059/Kconfig"
 
 endif # SENSOR

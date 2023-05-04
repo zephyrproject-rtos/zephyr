@@ -9,4 +9,7 @@ config SOC_GECKO_EMU
 	select SOC_GECKO_CORE
 	depends on PM
 
+config CORTEX_M_SYSTICK
+	default n if GECKO_BURTC_TIMER
+
 endif

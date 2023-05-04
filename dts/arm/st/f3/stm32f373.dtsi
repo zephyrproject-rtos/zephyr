@@ -5,6 +5,7 @@
  */
 
 #include <st/f3/stm32f3.dtsi>
+#include <zephyr/dt-bindings/adc/stm32f1_adc.h>
 
 / {
 	soc {
@@ -24,7 +25,11 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40005800 0x400>;
-			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00400000>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00400000>,
+				 /* I2C clock source should always be defined,
+				  * even for the default value
+				  */
+				 <&rcc STM32_SRC_SYSCLK I2C2_SEL(1)>;
 			interrupts = <33 0>, <34 0>;
 			interrupt-names = "event", "error";
 			status = "disabled";
@@ -54,6 +59,7 @@
 			compatible = "st,stm32-timers";
 			reg = <0x40000800 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000004>;
+			resets = <&rctl STM32_RESET(APB1, 2U)>;
 			interrupts = <30 0>;
 			interrupt-names = "global";
 			st,prescaler = <0>;
@@ -70,6 +76,7 @@
 			compatible = "st,stm32-timers";
 			reg = <0x40000c00 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000008>;
+			resets = <&rctl STM32_RESET(APB1, 3U)>;
 			interrupts = <50 0>;
 			interrupt-names = "global";
 			st,prescaler = <0>;
@@ -86,6 +93,7 @@
 			compatible = "st,stm32-timers";
 			reg = <0x40001800 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000040>;
+			resets = <&rctl STM32_RESET(APB1, 6U)>;
 			interrupts = <43 0>;
 			interrupt-names = "global";
 			st,prescaler = <0>;
@@ -102,6 +110,7 @@
 			compatible = "st,stm32-timers";
 			reg = <0x40001c00 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000080>;
+			resets = <&rctl STM32_RESET(APB1, 7U)>;
 			interrupts = <44 0>;
 			interrupt-names = "global";
 			st,prescaler = <0>;
@@ -118,6 +127,7 @@
 			compatible = "st,stm32-timers";
 			reg = <0x40002000 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000100>;
+			resets = <&rctl STM32_RESET(APB1, 8U)>;
 			interrupts = <45 0>;
 			interrupt-names = "global";
 			st,prescaler = <0>;
@@ -134,6 +144,7 @@
 			compatible = "st,stm32-timers";
 			reg = <0x40009c00 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000200>;
+			resets = <&rctl STM32_RESET(APB1, 9U)>;
 			interrupts = <27 0>;
 			interrupt-names = "global";
 			st,prescaler = <0>;
@@ -150,6 +161,7 @@
 			compatible = "st,stm32-timers";
 			reg = <0x40015c00 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00080000>;
+			resets = <&rctl STM32_RESET(APB2, 19U)>;
 			interrupts = <78 0>;
 			interrupt-names = "global";
 			st,prescaler = <0>;
@@ -169,7 +181,15 @@
 			interrupts = <18 0>;
 			status = "disabled";
 			#io-channel-cells = <1>;
+			resolutions = <STM32F1_ADC_RES(12)>;
 		};
 
+		rtc@40002800 {
+			bbram: backup_regs {
+				compatible = "st,stm32-bbram";
+				st,backup-regs = <32>;
+				status = "disabled";
+			};
+		};
 	};
 };

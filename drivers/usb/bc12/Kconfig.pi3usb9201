@@ -1,0 +1,24 @@
+# Copyright (c) 2022 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+config USB_BC12_PI3USB9201
+	bool "Diodes PI3USB9201"
+	default y
+	depends on DT_HAS_DIODES_PI3USB9201_ENABLED
+	help
+	  This is a Dual-Role USB Charging-Type Detector. It can operate in
+	  host or client mode. It supports Battery Charging Specification, rev
+	  1.2 (BC1.2) with Standard/Charging/Dedicated downstream port
+	  (SDP/CDP/DCP) advertisement when in host mode. In portable device or
+	  client mode it starts BC1.2 detection to detect the attached host
+	  type. It provides an I2C interface to report detection results.
+
+config EMUL_BC12_PI3USB9201
+	bool "Emulate a Pericom PI3USB9201 USB charging detector"
+	default y
+	depends on ZTEST && DT_HAS_DIODES_PI3USB9201_ENABLED
+	help
+	  This is an emulator for the Pericom PI3USB9201 USB charging detector.
+
+	  The backend API allows test code to force the type of the partner
+	  charginging device.

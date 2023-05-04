@@ -100,6 +100,15 @@ already supported, which can also be re-used on this mimxrt595_evk board:
 +-----------+------------+-------------------------------------+
 | RTC       | on-chip    | counter                             |
 +-----------+------------+-------------------------------------+
+| PM        | on-chip    | power management; uses SoC sleep,   |
+|           |            | deep sleep and deep-powerdown modes |
++-----------+------------+-------------------------------------+
+| SDHC      | on-chip    | disk access (works with eMMC & SD)  |
++-----------+------------+-------------------------------------+
+| DISPLAY   | on-chip    | LCDIF; MIPI-DSI. Tested with RM68200|
+|           |            | based MIPI display                  |
+|           |            | (`RK055HDMIPI4M`_)                  |
++-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
 
@@ -143,6 +152,10 @@ functionality of a pin.
 | PIO1_3  | SPI             | SPI SCK                    |
 +---------+-----------------+----------------------------+
 | PIO1_6  | SPI             | SPI SSEL                   |
++---------+-----------------+----------------------------+
+| PIO0_5  | SCT0            | SCT0 GPI0                  |
++---------+-----------------+----------------------------+
+| PIO0_6  | SCT0            | SCT0 GPI1                  |
 +---------+-----------------+----------------------------+
 
 System Clock
@@ -288,3 +301,6 @@ steps:
 
 .. _i.MX RT595 Reference Manual:
    https://www.nxp.com/webapp/Download?colCode=IMXRT500RM
+
+.. _RK055HDMIPI4M:
+   https://www.nxp.com/design/development-boards/i-mx-evaluation-and-development-boards/5-5-lcd-panel:RK055HDMIPI4M

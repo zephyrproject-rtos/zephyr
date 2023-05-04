@@ -67,7 +67,7 @@ static bool match_region(sys_bitarray_t *bitarray, size_t offset,
 			 struct bundle_data *bd,
 			 size_t *mismatch)
 {
-	int idx;
+	size_t idx;
 	uint32_t bundle;
 	uint32_t mismatch_bundle;
 	size_t mismatch_bundle_idx;
@@ -173,7 +173,7 @@ static void set_region(sys_bitarray_t *bitarray, size_t offset,
 		       size_t num_bits, bool to_set,
 		       struct bundle_data *bd)
 {
-	int idx;
+	size_t idx;
 	struct bundle_data bdata;
 
 	if (bd == NULL) {
@@ -414,16 +414,16 @@ int sys_bitarray_alloc(sys_bitarray_t *bitarray, size_t num_bits,
 	 * On RISC-V 64-bit, it complains about undefined reference to `ffs`.
 	 * So don't use this on RISCV64.
 	 */
-	for (ret = 0; ret < bitarray->num_bundles; ret++) {
-		if (~bitarray->bundles[ret] == 0U) {
+	for (size_t idx = 0; idx < bitarray->num_bundles; idx++) {
+		if (~bitarray->bundles[idx] == 0U) {
 			/* bundle is all 1s => all allocated, skip */
 			bit_idx += bundle_bitness(bitarray);
 			continue;
 		}
 
-		if (bitarray->bundles[ret] != 0U) {
+		if (bitarray->bundles[idx] != 0U) {
 			/* Find the first free bit in bundle if not all free */
-			off_start = find_lsb_set(~bitarray->bundles[ret]) - 1;
+			off_start = find_lsb_set(~bitarray->bundles[idx]) - 1;
 			bit_idx += off_start;
 		}
 

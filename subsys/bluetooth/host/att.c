@@ -64,7 +64,7 @@ struct bt_attr_data {
 };
 
 /* Pool for incoming ATT packets */
-NET_BUF_POOL_DEFINE(prep_pool, CONFIG_BT_ATT_PREPARE_COUNT, BT_ATT_MTU,
+NET_BUF_POOL_DEFINE(prep_pool, CONFIG_BT_ATT_PREPARE_COUNT, BT_ATT_BUF_SIZE,
 		    sizeof(struct bt_attr_data), NULL);
 #endif /* CONFIG_BT_ATT_PREPARE_COUNT */
 
@@ -94,6 +94,26 @@ struct bt_att_chan {
 	struct k_work_delayable	timeout_work;
 	sys_snode_t		node;
 };
+
+static bool bt_att_is_enhanced(struct bt_att_chan *chan)
+{
+	/* Optimization. */
+	if (!IS_ENABLED(CONFIG_BT_EATT)) {
+		return false;
+	}
+
+	return atomic_test_bit(chan->flags, ATT_ENHANCED);
+}
+
+static uint16_t bt_att_mtu(struct bt_att_chan *chan)
+{
+	/* Core v5.3 Vol 3 Part F 3.4.2:
+	 *
+	 *         The server and client shall set ATT_MTU to the minimum of the
+	 *         Client Rx MTU and the Server Rx MTU.
+	 */
+	return MIN(chan->chan.rx.mtu, chan->chan.tx.mtu);
+}
 
 /* ATT connection specific data */
 struct bt_att {
@@ -158,6 +178,14 @@ K_FIFO_DEFINE(free_att_tx_meta_data);
 
 static struct bt_att_tx_meta_data *tx_meta_data_alloc(k_timeout_t timeout)
 {
+	/* The meta data always get freed in the system workqueue,
+	 * so if we're in the same workqueue but there are no immediate
+	 * contexts available, there's no chance we'll get one by waiting.
+	 */
+	if (k_current_get() == &k_sys_work_q.thread) {
+		return k_fifo_get(&free_att_tx_meta_data, K_NO_WAIT);
+	}
+
 	return k_fifo_get(&free_att_tx_meta_data, timeout);
 }
 
@@ -202,12 +230,14 @@ static int chan_send(struct bt_att_chan *chan, struct net_buf *buf)
 	struct net_buf_simple_state state;
 	int err;
 	struct bt_att_tx_meta_data *data = bt_att_tx_meta_data(buf);
+	struct bt_att_chan *prev_chan = data->att_chan;
 
 	hdr = (void *)buf->data;
 
 	LOG_DBG("code 0x%02x", hdr->code);
 
 	if (!atomic_test_bit(chan->flags, ATT_CONNECTED)) {
+		LOG_ERR("ATT channel not connected");
 		return -EINVAL;
 	}
 
@@ -219,12 +249,11 @@ static int chan_send(struct bt_att_chan *chan, struct net_buf *buf)
 		return -ENOTSUP;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_EATT) &&
-	    atomic_test_bit(chan->flags, ATT_ENHANCED)) {
+	if (IS_ENABLED(CONFIG_BT_EATT) && bt_att_is_enhanced(chan)) {
 		/* Check if sent is pending already, if it does it cannot be
 		 * modified so the operation will need to be queued.
 		 */
-		if (atomic_test_and_set_bit(chan->flags, ATT_PENDING_SENT)) {
+		if (atomic_test_bit(chan->flags, ATT_PENDING_SENT)) {
 			return -EAGAIN;
 		}
 
@@ -239,6 +268,7 @@ static int chan_send(struct bt_att_chan *chan, struct net_buf *buf)
 			return -EAGAIN;
 		}
 
+		atomic_set_bit(chan->flags, ATT_PENDING_SENT);
 		data->att_chan = chan;
 
 		/* bt_l2cap_chan_send does actually return the number of bytes
@@ -246,6 +276,8 @@ static int chan_send(struct bt_att_chan *chan, struct net_buf *buf)
 		 */
 		err = bt_l2cap_chan_send_cb(&chan->chan.chan, buf, chan_cb(buf), data);
 		if (err < 0) {
+			data->att_chan = prev_chan;
+			atomic_clear_bit(chan->flags, ATT_PENDING_SENT);
 			return err;
 		}
 
@@ -271,8 +303,12 @@ static int chan_send(struct bt_att_chan *chan, struct net_buf *buf)
 	err = bt_l2cap_send_cb(chan->att->conn, BT_L2CAP_CID_ATT,
 			       buf, att_cb(buf), data);
 	if (err) {
+		if (err == -ENOBUFS) {
+			LOG_ERR("Ran out of TX buffers or contexts.");
+		}
 		/* In case of an error has occurred restore the buffer state */
 		net_buf_simple_restore(&buf->b, &state);
+		data->att_chan = prev_chan;
 	}
 
 	return err;
@@ -286,7 +322,7 @@ static bool att_chan_matches_chan_opt(struct bt_att_chan *chan, enum bt_att_chan
 		return true;
 	}
 
-	if (atomic_test_bit(chan->flags, ATT_ENHANCED)) {
+	if (bt_att_is_enhanced(chan)) {
 		return (chan_opt & BT_ATT_CHAN_OPT_ENHANCED_ONLY);
 	} else {
 		return (chan_opt & BT_ATT_CHAN_OPT_UNENHANCED_ONLY);
@@ -383,7 +419,7 @@ static int chan_req_send(struct bt_att_chan *chan, struct bt_att_req *req)
 	struct net_buf *buf;
 	int err;
 
-	if (chan->chan.tx.mtu < net_buf_frags_len(req->buf)) {
+	if (bt_att_mtu(chan) < net_buf_frags_len(req->buf)) {
 		return -EMSGSIZE;
 	}
 
@@ -610,8 +646,8 @@ struct net_buf *bt_att_chan_create_pdu(struct bt_att_chan *chan, uint8_t op,
 	struct bt_att_tx_meta_data *data;
 	k_timeout_t timeout;
 
-	if (len + sizeof(op) > chan->chan.tx.mtu) {
-		LOG_WRN("ATT MTU exceeded, max %u, wanted %zu", chan->chan.tx.mtu,
+	if (len + sizeof(op) > bt_att_mtu(chan)) {
+		LOG_WRN("ATT MTU exceeded, max %u, wanted %zu", bt_att_mtu(chan),
 			len + sizeof(op));
 		return NULL;
 	}
@@ -667,8 +703,7 @@ static void att_send_process(struct bt_att *att)
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&att->chans, chan, tmp, node) {
 		if (err == -ENOENT && prev &&
-		    (atomic_test_bit(chan->flags, ATT_ENHANCED) ==
-		     atomic_test_bit(prev->flags, ATT_ENHANCED))) {
+		    (bt_att_is_enhanced(chan) == bt_att_is_enhanced(prev))) {
 			/* If there was nothing to send for the previous channel and the current
 			 * channel has the same "enhancedness", there will be nothing to send for
 			 * this channel either.
@@ -732,7 +767,7 @@ static uint8_t att_mtu_req(struct bt_att_chan *chan, struct net_buf *buf)
 	/* Exchange MTU sub-procedure shall only be supported on the
 	 * LE Fixed Channel Unenhanced ATT bearer.
 	 */
-	if (atomic_test_bit(chan->flags, ATT_ENHANCED)) {
+	if (bt_att_is_enhanced(chan)) {
 		return BT_ATT_ERR_NOT_SUPPORTED;
 	}
 
@@ -752,7 +787,7 @@ static uint8_t att_mtu_req(struct bt_att_chan *chan, struct net_buf *buf)
 		return BT_ATT_ERR_UNLIKELY;
 	}
 
-	mtu_server = BT_ATT_MTU;
+	mtu_server = BT_LOCAL_ATT_MTU_UATT;
 
 	LOG_DBG("Server MTU %u", mtu_server);
 
@@ -761,15 +796,13 @@ static uint8_t att_mtu_req(struct bt_att_chan *chan, struct net_buf *buf)
 
 	bt_att_chan_send_rsp(chan, pdu);
 
-	/* BLUETOOTH SPECIFICATION Version 4.2 [Vol 3, Part F] page 484:
-	 *
-	 * A device's Exchange MTU Request shall contain the same MTU as the
-	 * device's Exchange MTU Response (i.e. the MTU shall be symmetric).
+	/* The ATT_EXCHANGE_MTU_REQ/RSP is just an alternative way of
+	 * communicating the L2CAP MTU.
 	 */
-	chan->chan.rx.mtu = MIN(mtu_client, mtu_server);
-	chan->chan.tx.mtu = chan->chan.rx.mtu;
+	chan->chan.rx.mtu = mtu_server;
+	chan->chan.tx.mtu = mtu_client;
 
-	LOG_DBG("Negotiated MTU %u", chan->chan.rx.mtu);
+	LOG_DBG("Negotiated MTU %u", bt_att_mtu(chan));
 
 #if defined(CONFIG_BT_GATT_CLIENT)
 	/* Mark the MTU Exchange as complete.
@@ -810,9 +843,7 @@ static void att_req_send_process(struct bt_att *att)
 			continue;
 		}
 
-		if (!req && prev &&
-		    (atomic_test_bit(chan->flags, ATT_ENHANCED) ==
-		     atomic_test_bit(prev->flags, ATT_ENHANCED))) {
+		if (!req && prev && (bt_att_is_enhanced(chan) == bt_att_is_enhanced(prev))) {
 			/* If there was nothing to send for the previous channel and the current
 			 * channel has the same "enhancedness", there will be nothing to send for
 			 * this channel either.
@@ -895,16 +926,17 @@ static uint8_t att_mtu_rsp(struct bt_att_chan *chan, struct net_buf *buf)
 		return att_handle_rsp(chan, NULL, 0, BT_ATT_ERR_INVALID_PDU);
 	}
 
-	chan->chan.rx.mtu = MIN(mtu, BT_ATT_MTU);
-
-	/* BLUETOOTH SPECIFICATION Version 4.2 [Vol 3, Part F] page 484:
-	 *
-	 * A device's Exchange MTU Request shall contain the same MTU as the
-	 * device's Exchange MTU Response (i.e. the MTU shall be symmetric).
+	/* The following must equal the value we sent in the req. We assume this
+	 * is a rsp to `gatt_exchange_mtu_encode`.
 	 */
-	chan->chan.tx.mtu = chan->chan.rx.mtu;
+	chan->chan.rx.mtu = BT_LOCAL_ATT_MTU_UATT;
+	/* The ATT_EXCHANGE_MTU_REQ/RSP is just an alternative way of
+	 * communicating the L2CAP MTU.
+	 */
 
-	LOG_DBG("Negotiated MTU %u", chan->chan.rx.mtu);
+	chan->chan.tx.mtu = mtu;
+
+	LOG_DBG("Negotiated MTU %u", bt_att_mtu(chan));
 
 	att_chan_mtu_updated(chan);
 
@@ -969,7 +1001,7 @@ static uint8_t find_info_cb(const struct bt_gatt_attr *attr, uint16_t handle,
 		data->info16->handle = sys_cpu_to_le16(handle);
 		data->info16->uuid = sys_cpu_to_le16(BT_UUID_16(attr->uuid)->val);
 
-		if (chan->chan.tx.mtu - data->buf->len >
+		if (bt_att_mtu(chan) - data->buf->len >
 		    sizeof(*data->info16)) {
 			return BT_GATT_ITER_CONTINUE;
 		}
@@ -986,7 +1018,7 @@ static uint8_t find_info_cb(const struct bt_gatt_attr *attr, uint16_t handle,
 		memcpy(data->info128->uuid, BT_UUID_128(attr->uuid)->val,
 		       sizeof(data->info128->uuid));
 
-		if (chan->chan.tx.mtu - data->buf->len >
+		if (bt_att_mtu(chan) - data->buf->len >
 		    sizeof(*data->info128)) {
 			return BT_GATT_ITER_CONTINUE;
 		}
@@ -1083,14 +1115,14 @@ static uint8_t find_type_cb(const struct bt_gatt_attr *attr, uint16_t handle,
 	LOG_DBG("handle 0x%04x", handle);
 
 	/* stop if there is no space left */
-	if (chan->chan.tx.mtu - net_buf_frags_len(data->buf) <
+	if (bt_att_mtu(chan) - net_buf_frags_len(data->buf) <
 	    sizeof(*data->group)) {
 		return BT_GATT_ITER_STOP;
 	}
 
 	frag = net_buf_frag_last(data->buf);
 
-	len = MIN(chan->chan.tx.mtu - net_buf_frags_len(data->buf),
+	len = MIN(bt_att_mtu(chan) - net_buf_frags_len(data->buf),
 		  net_buf_tailroom(frag));
 	if (!len) {
 		frag = net_buf_alloc(net_buf_pool_get(data->buf->pool_id),
@@ -1276,7 +1308,7 @@ static ssize_t att_chan_read(struct bt_att_chan *chan,
 	struct net_buf *frag;
 	size_t len, total = 0;
 
-	if (chan->chan.tx.mtu <= net_buf_frags_len(buf)) {
+	if (bt_att_mtu(chan) <= net_buf_frags_len(buf)) {
 		return 0;
 	}
 
@@ -1286,7 +1318,7 @@ static ssize_t att_chan_read(struct bt_att_chan *chan,
 	 * hold.
 	 */
 	do {
-		len = MIN(chan->chan.tx.mtu - net_buf_frags_len(buf),
+		len = MIN(bt_att_mtu(chan) - net_buf_frags_len(buf),
 			  net_buf_tailroom(frag));
 		if (!len) {
 			frag = net_buf_alloc(net_buf_pool_get(buf->pool_id),
@@ -1298,7 +1330,7 @@ static ssize_t att_chan_read(struct bt_att_chan *chan,
 
 			net_buf_frag_add(buf, frag);
 
-			len = MIN(chan->chan.tx.mtu - net_buf_frags_len(buf),
+			len = MIN(bt_att_mtu(chan) - net_buf_frags_len(buf),
 				  net_buf_tailroom(frag));
 		}
 
@@ -1319,7 +1351,7 @@ static ssize_t att_chan_read(struct bt_att_chan *chan,
 		net_buf_add(frag, read);
 		total += read;
 		offset += read;
-	} while (chan->chan.tx.mtu > net_buf_frags_len(buf) && read == len);
+	} while (bt_att_mtu(chan) > net_buf_frags_len(buf) && read == len);
 
 	return total;
 }
@@ -1379,7 +1411,7 @@ static uint8_t read_type_cb(const struct bt_gatt_attr *attr, uint16_t handle,
 	}
 
 	/* continue only if there are still space for more items */
-	return chan->chan.tx.mtu - net_buf_frags_len(data->buf) >
+	return bt_att_mtu(chan) - net_buf_frags_len(data->buf) >
 	       data->rsp->len ? BT_GATT_ITER_CONTINUE : BT_GATT_ITER_STOP;
 }
 
@@ -1658,7 +1690,7 @@ static uint8_t read_vl_cb(const struct bt_gatt_attr *attr, uint16_t handle,
 	/* The Length Value Tuple List may be truncated within the first two
 	 * octets of a tuple due to the size limits of the current ATT_MTU.
 	 */
-	if (chan->chan.tx.mtu - data->buf->len < 2) {
+	if (bt_att_mtu(chan) - data->buf->len < 2) {
 		return BT_GATT_ITER_STOP;
 	}
 
@@ -1780,7 +1812,7 @@ static uint8_t read_group_cb(const struct bt_gatt_attr *attr, uint16_t handle,
 
 	/* Stop if there is no space left */
 	if (data->rsp->len &&
-	    chan->chan.tx.mtu - data->buf->len < data->rsp->len) {
+	    bt_att_mtu(chan) - data->buf->len < data->rsp->len) {
 		return BT_GATT_ITER_STOP;
 	}
 
@@ -2214,7 +2246,7 @@ static uint8_t att_exec_write_rsp(struct bt_att_chan *chan, uint8_t flags)
 
 		NET_BUF_SIMPLE_DEFINE_STATIC(reassembled_data,
 					     MIN(BT_ATT_MAX_ATTRIBUTE_LEN,
-						 CONFIG_BT_ATT_PREPARE_COUNT * BT_ATT_MTU));
+						 CONFIG_BT_ATT_PREPARE_COUNT * BT_ATT_BUF_SIZE));
 
 		buf = net_buf_slist_get(&chan->att->prep_queue);
 		data = net_buf_user_data(buf);
@@ -2304,7 +2336,7 @@ static uint8_t att_signed_write_cmd(struct bt_att_chan *chan, struct net_buf *bu
 	/* The Signed Write Without Response sub-procedure shall only be supported
 	 * on the LE Fixed Channel Unenhanced ATT bearer.
 	 */
-	if (atomic_test_bit(chan->flags, ATT_ENHANCED)) {
+	if (bt_att_is_enhanced(chan)) {
 		/* No response for this command */
 		return 0;
 	}
@@ -2855,8 +2887,10 @@ static struct bt_att *att_get(struct bt_conn *conn)
 	}
 
 	att_chan = ATT_CHAN(chan);
-	__ASSERT(atomic_test_bit(att_chan->flags, ATT_CONNECTED),
-		 "ATT channel not connected");
+	if (!atomic_test_bit(att_chan->flags, ATT_CONNECTED)) {
+		LOG_ERR("ATT channel not connected");
+		return NULL;
+	}
 
 	return att_chan->att;
 }
@@ -2872,7 +2906,7 @@ struct net_buf *bt_att_create_pdu(struct bt_conn *conn, uint8_t op, size_t len)
 	}
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&att->chans, chan, tmp, node) {
-		if (len + sizeof(op) > chan->chan.tx.mtu) {
+		if (len + sizeof(op) > bt_att_mtu(chan)) {
 			continue;
 		}
 
@@ -2949,6 +2983,7 @@ static void att_chan_detach(struct bt_att_chan *chan)
 	}
 
 	chan->att = NULL;
+	atomic_clear_bit(chan->flags, ATT_CONNECTED);
 }
 
 static void att_timeout(struct k_work *work)
@@ -2995,20 +3030,6 @@ static void att_chan_attach(struct bt_att *att, struct bt_att_chan *chan)
 	sys_slist_prepend(&att->chans, &chan->node);
 }
 
-#if defined(CONFIG_BT_EATT)
-static void cap_eatt_mtu(struct bt_l2cap_le_chan *le_chan)
-{
-	if (le_chan->tx.mtu > le_chan->rx.mtu) {
-		LOG_DBG("chan %p (0x%04x): saturating TX MTU to ATT buffer size (%d)", le_chan,
-			le_chan->tx.cid, CONFIG_BT_L2CAP_TX_MTU);
-	}
-
-	le_chan->tx.mps = MIN(le_chan->tx.mps,
-			      BT_L2CAP_BUF_SIZE(CONFIG_BT_L2CAP_TX_MTU));
-	le_chan->tx.mtu = MIN(le_chan->tx.mtu, CONFIG_BT_L2CAP_TX_MTU);
-}
-#endif
-
 static void bt_att_connected(struct bt_l2cap_chan *chan)
 {
 	struct bt_att_chan *att_chan = ATT_CHAN(chan);
@@ -3017,16 +3038,6 @@ static void bt_att_connected(struct bt_l2cap_chan *chan)
 	LOG_DBG("chan %p cid 0x%04x", le_chan, le_chan->tx.cid);
 
 	atomic_set_bit(att_chan->flags, ATT_CONNECTED);
-
-	if (0) {
-#if defined(CONFIG_BT_EATT)
-	} else if (atomic_test_bit(att_chan->flags, ATT_ENHANCED)) {
-		cap_eatt_mtu(le_chan);
-#endif
-	} else {
-		le_chan->tx.mtu = BT_ATT_DEFAULT_LE_MTU;
-		le_chan->rx.mtu = BT_ATT_DEFAULT_LE_MTU;
-	}
 
 	att_chan_mtu_updated(att_chan);
 
@@ -3193,8 +3204,6 @@ static void bt_att_reconfigured(struct bt_l2cap_chan *l2cap_chan)
 
 	LOG_DBG("chan %p", att_chan);
 
-	cap_eatt_mtu(BT_L2CAP_LE_CHAN(l2cap_chan));
-
 	att_chan_mtu_updated(att_chan);
 }
 #endif /* CONFIG_BT_EATT */
@@ -3241,6 +3250,20 @@ static struct bt_att_chan *att_chan_new(struct bt_att *att, atomic_val_t flags)
 	chan->att = att;
 	att_chan_attach(att, chan);
 
+	if (bt_att_is_enhanced(chan)) {
+		/* EATT: The MTU will be sent in the ECRED conn req/rsp PDU. The
+		 * TX MTU is received on L2CAP-level.
+		 */
+		chan->chan.rx.mtu = BT_LOCAL_ATT_MTU_EATT;
+	} else {
+		/* UATT: L2CAP Basic is not able to communicate the L2CAP MTU
+		 * without help. ATT has to manage the MTU. The initial MTU is
+		 * defined by spec.
+		 */
+		chan->chan.tx.mtu = BT_ATT_DEFAULT_LE_MTU;
+		chan->chan.rx.mtu = BT_ATT_DEFAULT_LE_MTU;
+	}
+
 	return chan;
 }
 
@@ -3261,7 +3284,7 @@ size_t bt_eatt_count(struct bt_conn *conn)
 	}
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&att->chans, chan, node) {
-		if (atomic_test_bit(chan->flags, ATT_ENHANCED)) {
+		if (bt_att_is_enhanced(chan)) {
 			eatt_count++;
 		}
 	}
@@ -3350,10 +3373,16 @@ static k_timeout_t credit_based_connection_delay(struct bt_conn *conn)
 		}
 
 		const uint8_t rand_delay = random & 0x7; /* Small random delay for IOP */
-		const uint32_t calculated_delay =
-			2 * (conn->le.latency + 1) * BT_CONN_INTERVAL_TO_MS(conn->le.interval);
+		/* The maximum value of (latency + 1) * 2 multipled with the
+		 * maximum connection interval has a maximum value of
+		 * 4000000000 which can be stored in 32-bits, so this won't
+		 * result in an overflow
+		 */
+		const uint32_t calculated_delay_us =
+			2 * (conn->le.latency + 1) * BT_CONN_INTERVAL_TO_US(conn->le.interval);
+		const uint32_t calculated_delay_ms = calculated_delay_us / USEC_PER_MSEC;
 
-		return K_MSEC(MAX(100, calculated_delay + rand_delay));
+		return K_MSEC(MAX(100, calculated_delay_ms + rand_delay));
 	}
 
 	/* Must be either central or peripheral */
@@ -3537,7 +3566,7 @@ int bt_eatt_disconnect(struct bt_conn *conn)
 	att = chan->att;
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&att->chans, chan, node) {
-		if (atomic_test_bit(chan->flags, ATT_ENHANCED)) {
+		if (bt_att_is_enhanced(chan)) {
 			err = bt_l2cap_chan_disconnect(&chan->chan.chan);
 		}
 	}
@@ -3557,7 +3586,7 @@ int bt_eatt_disconnect_one(struct bt_conn *conn)
 	}
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&att->chans, chan, node) {
-		if (atomic_test_bit(chan->flags, ATT_ENHANCED)) {
+		if (bt_att_is_enhanced(chan)) {
 			err = bt_l2cap_chan_disconnect(&chan->chan.chan);
 			return err;
 		}
@@ -3576,7 +3605,7 @@ int bt_eatt_reconfigure(struct bt_conn *conn, uint16_t mtu)
 	int err;
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&att->chans, att_chan, node) {
-		if (atomic_test_bit(att_chan->flags, ATT_ENHANCED)) {
+		if (bt_att_is_enhanced(att_chan)) {
 			chans[i] = &att_chan->chan.chan;
 			i++;
 		}
@@ -3672,8 +3701,8 @@ uint16_t bt_att_get_mtu(struct bt_conn *conn)
 	}
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&att->chans, chan, tmp, node) {
-		if (chan->chan.tx.mtu > mtu) {
-			mtu = chan->chan.tx.mtu;
+		if (bt_att_mtu(chan) > mtu) {
+			mtu = bt_att_mtu(chan);
 		}
 	}
 

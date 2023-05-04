@@ -27,12 +27,12 @@ tests:
     tags: libc
     testcases:
     - EOF
-  libraries.picolibc.sprintf:
+  libraries.libc.picolibc.sprintf:
     extra_args: CONF_FILE=prj_picolibc.conf
     tags: libc picolibc
     ignore_faults: true
     filter: CONFIG_PICOLIBC_SUPPORTED
-  libraries.picolibc.sprintf_new:
+  libraries.libc.picolibc.sprintf_new:
     extra_args: CONF_FILE=prj_picolibc_new.conf
     tags: libc picolibc
     filter: CONFIG_PICOLIBC_SUPPORTED

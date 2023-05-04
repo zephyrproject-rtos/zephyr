@@ -573,6 +573,11 @@ DMA_STM32_EXPORT_API int dma_stm32_start(const struct device *dev, uint32_t id)
 		return -EINVAL;
 	}
 
+	/* Repeated start : return now if channel is already started */
+	if (stm32_dma_is_enabled_stream(dma, id)) {
+		return 0;
+	}
+
 	/* When starting the dma, the stream is busy before enabling */
 	stream = &config->streams[id];
 	stream->busy = true;
@@ -594,6 +599,11 @@ DMA_STM32_EXPORT_API int dma_stm32_stop(const struct device *dev, uint32_t id)
 
 	if (id >= config->max_streams) {
 		return -EINVAL;
+	}
+
+	/* Repeated stop : return now if channel is already stopped */
+	if (!stm32_dma_is_enabled_stream(dma, id)) {
+		return 0;
 	}
 
 #if !defined(CONFIG_DMAMUX_STM32) \
@@ -625,7 +635,7 @@ static int dma_stm32_init(const struct device *dev)
 	}
 
 	if (clock_control_on(clk,
-		(clock_control_subsys_t *) &config->pclken) != 0) {
+		(clock_control_subsys_t) &config->pclken) != 0) {
 		LOG_ERR("clock op failed\n");
 		return -EIO;
 	}

@@ -84,6 +84,8 @@ extern "C" {
 #define Z_LOG_EVAL1(_eval_level, _iftrue, _iffalse) \
 	__COND_CODE(_LOG_ZZZZ##_eval_level, _iftrue, _iffalse)
 
+#define _LOG_ZZZZ0  _LOG_YYYY,
+#define _LOG_ZZZZ0U _LOG_YYYY,
 #define _LOG_ZZZZ1  _LOG_YYYY,
 #define _LOG_ZZZZ1U _LOG_YYYY,
 #define _LOG_ZZZZ2  _LOG_YYYY,
@@ -220,7 +222,7 @@ static inline char z_log_minimal_level_to_char(int level)
 		break; \
 	} \
 	/* For instance logging check instance specific static level */ \
-	if (_inst & !IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING)) { \
+	if (_inst != 0 && !IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING)) { \
 		if (_level > ((struct log_source_const_data *)_source)->level) { \
 			break; \
 		} \
@@ -236,7 +238,7 @@ static inline char z_log_minimal_level_to_char(int level)
 	int _mode; \
 	void *_src = IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING) ? \
 		(void *)_dsource : (void *)_source; \
-	Z_LOG_MSG2_CREATE(UTIL_NOT(IS_ENABLED(CONFIG_USERSPACE)), _mode, \
+	Z_LOG_MSG_CREATE(UTIL_NOT(IS_ENABLED(CONFIG_USERSPACE)), _mode, \
 				  Z_LOG_LOCAL_DOMAIN_ID, _src, _level, NULL,\
 			  0, __VA_ARGS__); \
 	(void)_mode; \
@@ -312,7 +314,7 @@ static inline char z_log_minimal_level_to_char(int level)
 	int mode; \
 	void *_src = IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING) ? \
 		(void *)_dsource : (void *)_source; \
-	Z_LOG_MSG2_CREATE(UTIL_NOT(IS_ENABLED(CONFIG_USERSPACE)), mode, \
+	Z_LOG_MSG_CREATE(UTIL_NOT(IS_ENABLED(CONFIG_USERSPACE)), mode, \
 				  Z_LOG_LOCAL_DOMAIN_ID, _src, _level, \
 			  _data, _len, \
 			COND_CODE_0(NUM_VA_ARGS_LESS_1(_, ##__VA_ARGS__), \
@@ -387,8 +389,8 @@ static inline char z_log_minimal_level_to_char(int level)
  */
 #define LOG_LEVEL_INTERNAL_RAW_STRING LOG_LEVEL_NONE
 
-extern struct log_source_const_data __log_const_start[];
-extern struct log_source_const_data __log_const_end[];
+TYPE_SECTION_START_EXTERN(struct log_source_const_data, log_const);
+TYPE_SECTION_END_EXTERN(struct log_source_const_data, log_const);
 
 /** @brief Create message for logging printk-like string or a raw string.
  *
@@ -401,6 +403,9 @@ extern struct log_source_const_data __log_const_end[];
  * @param ...		Format string with arguments.
  */
 #define Z_LOG_PRINTK(_is_raw, ...) do { \
+	if (!IS_ENABLED(CONFIG_LOG)) { \
+		break; \
+	} \
 	if (IS_ENABLED(CONFIG_LOG_MODE_MINIMAL)) { \
 		z_log_minimal_printk(__VA_ARGS__); \
 		break; \
@@ -409,7 +414,7 @@ extern struct log_source_const_data __log_const_end[];
 	if (0) {\
 		z_log_printf_arg_checker(__VA_ARGS__); \
 	} \
-	Z_LOG_MSG2_CREATE(!IS_ENABLED(CONFIG_USERSPACE), _mode, \
+	Z_LOG_MSG_CREATE(!IS_ENABLED(CONFIG_USERSPACE), _mode, \
 			  Z_LOG_LOCAL_DOMAIN_ID, (uintptr_t)_is_raw, \
 			  LOG_LEVEL_INTERNAL_RAW_STRING, NULL, 0, __VA_ARGS__);\
 } while (0)
@@ -424,12 +429,12 @@ extern struct log_source_const_data __log_const_end[];
 static inline uint32_t log_const_source_id(
 				const struct log_source_const_data *data)
 {
-	return ((const uint8_t *)data - (uint8_t *)__log_const_start)/
+	return ((const uint8_t *)data - (uint8_t *)TYPE_SECTION_START(log_const))/
 			sizeof(struct log_source_const_data);
 }
 
-extern struct log_source_dynamic_data __log_dynamic_start[];
-extern struct log_source_dynamic_data __log_dynamic_end[];
+TYPE_SECTION_START_EXTERN(struct log_source_dynamic_data, log_dynamic);
+TYPE_SECTION_END_EXTERN(struct log_source_dynamic_data, log_dynamic);
 
 /** @brief Creates name of variable and section for runtime log data.
  *
@@ -449,7 +454,7 @@ extern struct log_source_dynamic_data __log_dynamic_end[];
  */
 static inline uint32_t log_dynamic_source_id(struct log_source_dynamic_data *data)
 {
-	return ((uint8_t *)data - (uint8_t *)__log_dynamic_start)/
+	return ((uint8_t *)data - (uint8_t *)TYPE_SECTION_START(log_dynamic))/
 			sizeof(struct log_source_dynamic_data);
 }
 

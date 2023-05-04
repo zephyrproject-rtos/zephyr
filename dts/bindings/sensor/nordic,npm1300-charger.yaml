@@ -1,0 +1,68 @@
+#
+# Copyright (c) 2023 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: NPM1300 PMIC Charger
+
+compatible: "nordic,npm1300-charger"
+
+include: [sensor-device.yaml]
+
+properties:
+  term-microvolt:
+    type: int
+    required: true
+    description: |
+      Charge termination voltage in uV.
+      Available range is 3.5 V to 3.65 V and 4.0 V to 4.45 V in 50 mV steps.
+
+  term-warm-microvolt:
+    type: int
+    description: |
+      Charge termination voltage when warm in uV.
+      Available range is 3.5 V to 3.65 V and 4.0 V to 4.45 V in 50 mV steps.
+      If omitted, the term-microvolt value will be used.
+
+  current-microamp:
+    type: int
+    required: true
+    description: |
+      Charge current in uA.
+      Available range is 32 mA to 800 mA in 2mA steps.
+      The value specified will be rounded down to the closest implemented value.
+
+  dischg-limit-microamp:
+    type: int
+    required: true
+    description: |
+      Discharge current limit in uA.
+      Available range is 270 mA to 1340 mA in 3.23 mA steps.
+      The value specified will be rounded down to the closest implemented value.
+
+  vbus-limit-microamp:
+    type: int
+    description: |
+      Vbus current limit in uA.
+      Available values are 100 mA, or between 500 mA and 1500 mA in 100 mA steps.
+      If omitted, the default value of 100 mA will be used.
+
+  thermistor-ohms:
+    type: int
+    required: true
+    enum:
+      - 10000
+      - 47000
+      - 100000
+    description: Thermistor nominal resistance type in ohms.
+
+  thermistor-beta:
+    type: int
+    required: true
+    description: Beta value of selected thermistor.
+
+  charging-enable:
+    type: boolean
+    description: |
+      Enable charging.

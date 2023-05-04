@@ -1,0 +1,282 @@
+# Bluetooth Audio - Basic Audio Profile configuration options
+#
+# Copyright (c) 2020 Intel Corporation
+# Copyright (c) 2022-2023 Nordic Semiconductor ASA
+
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config BT_BAP_UNICAST
+	bool
+	depends on BT_CONN
+	select BT_SMP
+	select BT_ISO_UNICAST
+
+config BT_BAP_UNICAST_SERVER
+	bool "Bluetooth Unicast Audio Server Support [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	select BT_PERIPHERAL
+	select BT_BAP_UNICAST
+	select BT_ISO_PERIPHERAL
+	select BT_GATT_DYNAMIC_DB
+	select BT_GATT_CACHING
+	select BT_ASCS
+	help
+	  This option enables support for Bluetooth Unicast Audio Server
+	  using Isochronous channels.
+
+config BT_BAP_UNICAST_CLIENT
+	bool "Bluetooth Unicast Audio Client Support [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	select BT_BAP_UNICAST
+	select BT_ISO_CENTRAL
+	select BT_CENTRAL
+	select BT_GATT_CLIENT
+	select BT_GATT_AUTO_DISCOVER_CCC
+	select BT_GATT_AUTO_UPDATE_MTU
+	help
+	  This option enables support for Bluetooth Unicast Audio Client
+	  using Isochronous channels.
+
+config BT_CODEC_MAX_DATA_COUNT
+	int "Codec Capabilities Data Count"
+	default 5
+	range 1 128
+	help
+	  This option defines the maximum number of LTV entries a codec can
+	  store.
+
+config BT_CODEC_MAX_DATA_LEN
+	int "Codec Capabilities Data Length"
+	default 4
+	range 1 128
+	help
+	  This option defines the maximum value length of an LTV entry a codec
+	  can store.
+
+config BT_CODEC_MAX_METADATA_COUNT
+	int "Codec Metadata Count"
+	default 2
+	range 1 128
+	help
+	  This option defines the maximum number of LTV entries a metadata can
+	  store.
+
+config BT_CODEC_MAX_METADATA_LEN
+	int "Codec Metadata Length"
+	default 4
+	range 1 128
+	help
+	  This option defines the maximum value length of an LTV entry a
+	  metadata can store.
+
+if BT_BAP_UNICAST_CLIENT
+config BT_BAP_UNICAST_CLIENT_GROUP_COUNT
+	int "Basic Audio Unicast Group count"
+	depends on BT_BAP_UNICAST
+	default BT_ISO_MAX_CIG
+	range 1 BT_ISO_MAX_CIG
+	help
+	  This option sets the number of connected audio groups to support as
+	  the unicast client.
+
+config BT_BAP_UNICAST_CLIENT_GROUP_STREAM_COUNT
+	int "Basic Audio Profile Unicast Group Connected Isochronous Stream (CIS) count"
+	depends on BT_BAP_UNICAST_CLIENT_GROUP_COUNT > 0
+	default 1
+	range 1 BT_ISO_MAX_CHAN if BT_ISO_MAX_CHAN < 31
+	range 1 31
+	help
+	  This option sets the maximum number of CIS per unicast group to support.
+	  Since BAP streams are unidirectional, two BAP streams may use a single CIS, the number of
+	  BAP audio streams per group may be up to twice of this value.
+
+config BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT
+	int "Basic Audio Profile ASE Sink count"
+	default 2
+	range 0 255
+	help
+	  This option enables caching a number of Audio Stream Endpoint Sink
+	  instances for Basic Audio Profile on a per connection basis.
+
+config BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT
+	int "Basic Audio Profile ASE Source count"
+	default 1
+	range 0 255
+	help
+	  This option enables caching a number of Audio Stream Endpoint Source
+	  instances for Basic Audio Profile on a per connection basis.
+
+config BT_BAP_UNICAST_CLIENT_ASE_SNK
+	def_bool BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0
+	select BT_AUDIO_TX
+
+config BT_BAP_UNICAST_CLIENT_ASE_SRC
+	def_bool BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 0
+	select BT_AUDIO_RX
+
+endif # BT_BAP_UNICAST_CLIENT
+
+config BT_BAP_BROADCAST_SOURCE
+	bool "Bluetooth Broadcast Source Audio Support [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	select BT_ISO_BROADCASTER
+	select BT_AUDIO_TX
+	help
+	  This option enables support for Bluetooth Broadcast Source Audio using
+	  Isochronous channels.
+if BT_BAP_BROADCAST_SOURCE
+
+config BT_BAP_BROADCAST_SRC_SUBGROUP_COUNT
+	int "Basic Audio Broadcast Source subgroup count"
+	default 1
+	range 1 BT_ISO_MAX_CHAN if BT_ISO_MAX_CHAN < 31
+	range 1 31
+	help
+	  This option sets the maximum number of subgroups per broadcast source
+	  to support.
+
+config BT_BAP_BROADCAST_SRC_COUNT
+	int "Basic Audio Broadcaster source count"
+	default 1
+	range 1 BT_ISO_MAX_BIG
+	help
+	  This option sets the number of broadcast sources to support.
+	  One broadcast source can send multiple streams
+	  (up to BT_BAP_BROADCAST_SRC_STREAM_COUNT per broadcast source).
+
+
+config BT_BAP_BROADCAST_SRC_STREAM_COUNT
+	int "Basic Audio Broadcast Source Stream count"
+	default 1
+	range 1 BT_ISO_MAX_CHAN if BT_ISO_MAX_CHAN < 31
+	range 1 31
+	help
+	  This option sets the maximum number of streams per broadcast source
+	  to support.
+
+endif # BT_BAP_BROADCAST_SOURCE
+
+config BT_BAP_BROADCAST_SINK
+	bool "Bluetooth Broadcast Sink Audio Support [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	select BT_ISO_SYNC_RECEIVER
+	select BT_AUDIO_RX
+	depends on BT_PERIPHERAL
+	depends on BT_PAC_SNK
+	depends on BT_BAP_SCAN_DELEGATOR
+	help
+	  This option enables support for Bluetooth Broadcast Sink Audio using
+	  Isochronous channels.
+
+if BT_BAP_BROADCAST_SINK
+
+config BT_BAP_BROADCAST_SNK_SUBGROUP_COUNT
+	int "Basic Audio Profile Broadcast Sink subgroup count"
+	default 1
+	range 1 BT_ISO_MAX_CHAN if BT_ISO_MAX_CHAN < 31
+	range 1 31
+	help
+	  This option sets the maximum number of subgroups per broadcast sink
+	  to support.
+
+config BT_BAP_BROADCAST_SNK_COUNT
+	int "Basic Audio Broadcaster Sink count"
+	default 1
+	range 0 BT_ISO_MAX_BIG
+	help
+	  This option sets the number of broadcast sinks to support.
+	  One broadcast sink can receive multiple streams
+	  (up to BT_BAP_BROADCAST_SNK_STREAM_COUNT per broadcast sink).
+
+config BT_BAP_BROADCAST_SNK_STREAM_COUNT
+	int "Basic Audio Broadcast Sink Stream count"
+	depends on BT_BAP_BROADCAST_SNK_COUNT > 0
+	default 1
+	range 1 BT_ISO_MAX_CHAN
+	help
+	  This option sets the maximum number of streams per broadcast sink
+	  to support.
+
+endif # BT_BAP_BROADCAST_SINK
+
+config BT_BAP_SCAN_DELEGATOR
+	bool "Basic Audio Profile Scan Delegator role support [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	select BT_OBSERVER
+	select BT_EXT_ADV
+	select BT_PER_ADV_SYNC
+	select BT_ISO_SYNC_RECEIVER
+	help
+	  This option enables support for the Scan Delegator role and the
+	  Broadcast Audio Scan Service (BASS).
+
+if BT_BAP_SCAN_DELEGATOR
+
+config BT_BAP_SCAN_DELEGATOR_RECV_STATE_COUNT
+	int "Scan Delegator Receive State Count"
+	default 1
+	range 1 3
+	help
+	  Sets the number of receive state characteristics present on the
+	  server. Each characteristic may hold information to sync to a
+	  periodic advertise or a broadcast isochronous stream.
+
+config BT_BAP_SCAN_DELEGATOR_MAX_METADATA_LEN
+	int "Scan Delegator Maximum Metadata Length"
+	default 32
+	range 0 255
+	help
+	  The maximum metadata length support by the BASS server.
+
+config BT_BAP_SCAN_DELEGATOR_MAX_SUBGROUPS
+	int "Scan Delegator Maximum Number of Subgroups support"
+	default 1
+	range 0 31
+	help
+	  The maximum number of BIS subgroups supported.
+
+endif # BT_BAP_SCAN_DELEGATOR
+
+config BT_BAP_BROADCAST_ASSISTANT
+	bool "Basic Audio Profile Broadcast Assistant role support [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	select BT_OBSERVER
+	select BT_EXT_ADV
+	select BT_PER_ADV_SYNC
+	select BT_ISO_SYNC_RECEIVER
+	select BT_GATT_CLIENT
+	select BT_GATT_AUTO_DISCOVER_CCC
+	select BT_GATT_AUTO_UPDATE_MTU
+	help
+	  This option enables support for the Broadcast Assistant role.
+
+if BT_BAP_BROADCAST_ASSISTANT
+
+config BT_BAP_BROADCAST_ASSISTANT_RECV_STATE_COUNT
+	int "Broadcast Assistant Max Receive State Count"
+	default 1
+	range 1 255
+	help
+	  Sets the number of maximum receive stat characteristics that will be
+	  discovered and ready to use. Each characteristic may hold information
+	  to sync to a periodic advertise or a broadcast isochronous stream.
+
+endif # BT_BAP_BROADCAST_ASSISTANT
+
+config BT_BAP_DEBUG_STREAM_DATA
+	bool "Bluetooth Audio Stream data debug"
+	depends on BT_BAP_STREAM_LOG_LEVEL_DBG
+	help
+	  Use this option to enable Bluetooth Audio Stream data debug logs for
+	  the Bluetooth Audio functionality. This will enable debug logs for all
+	  audio data received and sent.
+
+config BT_BAP_STREAM
+	# Virtual/hidden option
+	bool
+	default y if BT_ASCS || BT_BAP_UNICAST_CLIENT || \
+			BT_BAP_BROADCAST_SOURCE || BT_BAP_BROADCAST_SINK
+
+rsource "Kconfig.pacs"
+rsource "Kconfig.ascs"

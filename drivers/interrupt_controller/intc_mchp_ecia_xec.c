@@ -47,7 +47,8 @@
 
 #define ECIA_XEC_PCR_INFO						\
 	MCHP_XEC_PCR_SCR_ENCODE(DT_INST_CLOCKS_CELL(0, regidx),		\
-				DT_INST_CLOCKS_CELL(0, bitpos))
+				DT_INST_CLOCKS_CELL(0, bitpos),		\
+				DT_INST_CLOCKS_CELL(0, domain))
 
 struct xec_girq_config {
 	uintptr_t base;
@@ -521,7 +522,7 @@ static int xec_ecia_init(const struct device *dev)
 	}
 
 	ret = clock_control_on(clk_dev,
-			       (clock_control_subsys_t *)&cfg->clk_ctrl);
+			       (clock_control_subsys_t)&cfg->clk_ctrl);
 	if (ret < 0) {
 		return ret;
 	}
@@ -573,7 +574,7 @@ static int xec_ecia_init(const struct device *dev)
 									\
 	DEVICE_DT_DEFINE(n, xec_girq_init_##n,				\
 		 NULL, &xec_data_girq_##n, &xec_config_girq_##n,	\
-		 PRE_KERNEL_1, CONFIG_INTC_INIT_PRIORITY,		\
+		 PRE_KERNEL_1, CONFIG_XEC_GIRQ_INIT_PRIORITY,		\
 		 NULL);							\
 									\
 	static int xec_girq_init_##n(const struct device *dev)		\

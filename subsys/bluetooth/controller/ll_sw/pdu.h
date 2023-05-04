@@ -472,18 +472,6 @@ enum pdu_adv_aux_phy {
 	EXT_ADV_AUX_PHY_LE_CODED = 0x02,
 };
 
-struct pdu_cte_info {
-#ifdef CONFIG_LITTLE_ENDIAN
-	uint8_t  time:5;
-	uint8_t  rfu:1;
-	uint8_t  type:2;
-#else
-	uint8_t  type:2;
-	uint8_t  rfu:1;
-	uint8_t  time:5;
-#endif /* CONFIG_LITTLE_ENDIAN */
-} __packed;
-
 struct pdu_adv_sync_info {
 #ifdef CONFIG_LITTLE_ENDIAN
 	uint16_t offs:13;
@@ -710,6 +698,26 @@ struct pdu_data_llctrl_conn_param_rsp {
 	uint16_t offset5;
 } __packed;
 
+/*
+ * According to Spec Core v5.3, section 2.4.2.17
+ * LL_CONNECTION_PARAM_RSP and LL_CONNECTION_PARAM_REQ are identical
+ * This is utilized in pdu encode/decode, and for this is needed a common struct
+ */
+struct pdu_data_llctrl_conn_param_req_rsp_common {
+	uint16_t interval_min;
+	uint16_t interval_max;
+	uint16_t latency;
+	uint16_t timeout;
+	uint8_t  preferred_periodicity;
+	uint16_t reference_conn_event_count;
+	uint16_t offset0;
+	uint16_t offset1;
+	uint16_t offset2;
+	uint16_t offset3;
+	uint16_t offset4;
+	uint16_t offset5;
+} __packed;
+
 struct pdu_data_llctrl_reject_ext_ind {
 	uint8_t reject_opcode;
 	uint8_t error_code;
@@ -731,6 +739,18 @@ struct pdu_data_llctrl_length_req {
 } __packed;
 
 struct pdu_data_llctrl_length_rsp {
+	uint16_t max_rx_octets;
+	uint16_t max_rx_time;
+	uint16_t max_tx_octets;
+	uint16_t max_tx_time;
+} __packed;
+
+/*
+ * According to Spec Core v5.3, section 2.4.2.21
+ * LL_LENGTH_REQ and LL_LENGTH_RSP are identical
+ * This is utilized in pdu encode/decode, and for this is needed a common struct
+ */
+struct pdu_data_llctrl_length_req_rsp_common {
 	uint16_t max_rx_octets;
 	uint16_t max_rx_time;
 	uint16_t max_tx_octets;
@@ -926,14 +946,7 @@ struct pdu_data {
 
 	uint8_t len;
 
-#if !defined(CONFIG_SOC_OPENISA_RV32M1_RISCV32)
-#if !defined(CONFIG_BT_CTLR_DATA_LENGTH_CLEAR)
-	union {
-		uint8_t resv; /* TODO: remove nRF specific code */
-		struct pdu_cte_info cte_info; /* BT 5.1 Core spec. CTEInfo storage */
-	};
-#endif /* !CONFIG_BT_CTLR_DATA_LENGTH_CLEAR */
-#endif /* !CONFIG_SOC_OPENISA_RV32M1_RISCV32 */
+	struct pdu_data_vnd_octet3 octet3;
 
 	union {
 		struct pdu_data_llctrl llctrl;
@@ -960,7 +973,11 @@ struct pdu_iso {
 	uint8_t hdr_other:6;
 	uint8_t ll_id:2;
 #endif /* CONFIG_LITTLE_ENDIAN */
-	uint8_t length;
+
+	uint8_t len;
+
+	struct pdu_iso_vnd_octet3 octet3;
+
 	uint8_t payload[0];
 } __packed;
 
@@ -974,17 +991,17 @@ struct pdu_iso_sdu_sh {
 	uint8_t cmplt:1;
 	uint8_t rfu:6;
 
-	uint8_t length;
+	uint8_t len;
 	/* Note, timeoffset only available in first segment of sdu */
 	uint32_t timeoffset:24;
 	uint32_t payload:8;
-
 #else
 	uint8_t rfu:6;
 	uint8_t cmplt:1;
 	uint8_t sc:1;
 
-	uint8_t length;
+	uint8_t len;
+
 	/* Note, timeoffset only available in first segment of sdu */
 	uint32_t payload:8;
 	uint32_t timeoffset:24;
@@ -1018,7 +1035,11 @@ struct pdu_cis {
 	uint8_t nesn:1;
 	uint8_t ll_id:2;
 #endif /* CONFIG_LITTLE_ENDIAN */
-	uint8_t length;
+
+	uint8_t len;
+
+	struct pdu_cis_vnd_octet3 octet3;
+
 	uint8_t payload[0];
 } __packed;
 
@@ -1070,7 +1091,11 @@ struct pdu_bis {
 	uint8_t cssn:3;
 	uint8_t ll_id:2;
 #endif /* CONFIG_LITTLE_ENDIAN */
+
 	uint8_t len;
+
+	struct pdu_bis_vnd_octet3 octet3;
+
 	union {
 		uint8_t payload[0];
 		struct pdu_big_ctrl ctrl;
@@ -1155,13 +1180,11 @@ struct pdu_dtm {
 	uint8_t rfu0:1;
 	uint8_t type:4;
 #endif /* CONFIG_LITTLE_ENDIAN */
-	uint8_t length;
-#if defined(CONFIG_BT_CTLR_DF_CTE_TX)
-	union {
-		uint8_t resv; /* TODO: remove nRF specific code */
-		struct pdu_cte_info cte_info; /* BT 5.1 Core spec. CTEInfo storage */
-	};
-#endif
+
+	uint8_t len;
+
+	struct pdu_data_vnd_octet3 octet3;
+
 	uint8_t payload[0];
 } __packed;
 

@@ -23,19 +23,19 @@ compatible: "st,stm32g0-hsi-clock"
 include: [fixed-clock.yaml]
 
 properties:
-    hsi-div:
-      type: int
-      required: true
-      description: |
-        HSI clock divider. Configures the output HSI clock frequency (HSISYS),
-        It does not apply to HSI clk selected as peripheral source clock
-        (eg: RNG clk driven by HSI)
-      enum:
-        - 1
-        - 2
-        - 4
-        - 8
-        - 16
-        - 32
-        - 64
-        - 128
+  hsi-div:
+    type: int
+    required: true
+    description: |
+      HSI clock divider. Configures the output HSI clock frequency (HSISYS),
+      It does not apply to HSI clk selected as peripheral source clock
+      (eg: RNG clk driven by HSI)
+    enum:
+      - 1
+      - 2
+      - 4
+      - 8
+      - 16
+      - 32
+      - 64
+      - 128

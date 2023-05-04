@@ -243,11 +243,10 @@ static inline void pause_for_debug(void)
 static inline void pause_for_debug(void) {}
 #endif
 
-static int atmel_saml_init(const struct device *arg)
+static int atmel_saml_init(void)
 {
 	uint32_t key;
 
-	ARG_UNUSED(arg);
 
 	key = irq_lock();
 

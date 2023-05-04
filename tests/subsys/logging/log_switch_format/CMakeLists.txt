@@ -7,7 +7,7 @@ project(log_switch_format)
 FILE(GLOB app_sources src/*.c)
 target_sources(app PRIVATE ${app_sources})
 
-if(CONFIG_CPLUSPLUS)
+if(CONFIG_CPP)
   # When building for C++, force C++ compilation
   set_source_files_properties(src/*.c PROPERTIES LANGUAGE CXX)
 endif()

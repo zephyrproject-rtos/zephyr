@@ -60,7 +60,7 @@ static void pm_info(enum pm_device_action action, int status)
 
 #define DEVICE_NODE DT_COMPAT_GET_ANY_STATUS_OKAY(ti_fdc2x1x)
 
-void main(void)
+int main(void)
 {
 	struct sensor_value ch_buf[] = {
 		DT_FOREACH_CHILD(DEVICE_NODE, CH_BUF_INIT)
@@ -74,7 +74,7 @@ void main(void)
 
 	if (!device_is_ready(dev)) {
 		printk("Device %s is not ready\n", dev->name);
-		return;
+		return 0;
 	}
 
 #ifdef CONFIG_FDC2X1X_TRIGGER
@@ -85,7 +85,7 @@ void main(void)
 
 	if (sensor_trigger_set(dev, &trig, trigger_handler)) {
 		printk("Could not set trigger\n");
-		return;
+		return 0;
 	}
 #endif
 
@@ -113,7 +113,7 @@ void main(void)
 #else
 		if (sensor_sample_fetch(dev) < 0) {
 			printk("Sample fetch failed\n");
-			return;
+			return 0;
 		}
 #endif
 		base = SENSOR_CHAN_FDC2X1X_FREQ_CH0;

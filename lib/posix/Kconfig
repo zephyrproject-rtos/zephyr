@@ -79,6 +79,14 @@ config MAX_TIMER_COUNT
 	help
 	  Mention maximum number of timers in POSIX compliant application.
 
+config TIMER_CREATE_WAIT
+	int "Time to wait for timer availability (in msec) in POSIX application"
+	default 100
+	range 0 1000
+	help
+	  This controls how long to wait for resources to come available to create
+	  a new timer in POSIX compliant application
+
 config POSIX_MQUEUE
 	bool "POSIX message queue"
 	default y if POSIX_API
@@ -135,6 +143,7 @@ config APP_LINK_WITH_POSIX_SUBSYS
 config EVENTFD
 	bool "Support for eventfd"
 	depends on !ARCH_POSIX
+	default y if POSIX_API
 	help
 	  Enable support for event file descriptors, eventfd. An eventfd can
 	  be used as an event wait/notify mechanism together with POSIX calls
@@ -147,3 +156,10 @@ config EVENTFD_MAX
 	range 1 4096
 	help
 	  The maximum number of supported event file descriptors.
+
+config FNMATCH
+	bool "Support for fnmatch"
+	default y if POSIX_API
+	help
+	  Match filenames using the the fnmatch function. For example, the pattern
+	  "*.c" matches the filename "hello.c".

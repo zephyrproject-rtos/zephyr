@@ -18,6 +18,8 @@
 #include "util/memq.h"
 #include "util/dbuf.h"
 
+#include "pdu_df.h"
+#include "pdu_vendor.h"
 #include "pdu.h"
 
 #include "lll.h"
@@ -981,8 +983,7 @@ static void isr_rx_adv_sync_estab(void *param)
 			ftr->param = lll;
 			ftr->sync_status = SYNC_STAT_TERM;
 
-			ull_rx_put(node_rx->hdr.link, node_rx);
-			ull_rx_sched();
+			ull_rx_put_sched(node_rx->hdr.link, node_rx);
 		}
 	}
 
@@ -1231,8 +1232,7 @@ static void isr_done(void *param)
 		node_rx->hdr.rx_ftr.param = lll;
 		node_rx->hdr.rx_ftr.aux_failed = 1U;
 
-		ull_rx_put(node_rx->hdr.link, node_rx);
-		ull_rx_sched();
+		ull_rx_put_sched(node_rx->hdr.link, node_rx);
 	}
 
 	isr_rx_done_cleanup(param, ((trx_cnt) ? 1U : 0U), false);

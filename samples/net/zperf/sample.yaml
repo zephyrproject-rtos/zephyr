@@ -10,6 +10,10 @@ sample:
 tests:
   sample.net.zperf:
     platform_allow: qemu_x86
+  sample.net.zperf_no_shell:
+    extra_configs:
+      - CONFIG_NET_SHELL=n
+    platform_allow: qemu_x86
   sample.net.zperf.netusb_ecm:
     extra_args: OVERLAY_CONFIG="overlay-netusb.conf"
     tags: usb net zperf

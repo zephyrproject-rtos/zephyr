@@ -206,26 +206,6 @@ const struct log_backend *log_backend_get_by_name(const char *backend_name);
 const struct log_backend *log_format_set_all_active_backends(size_t log_type);
 
 /**
- * @brief Get current number of allocated buffers for string duplicates.
- */
-uint32_t log_get_strdup_pool_current_utilization(void);
-
-/**
- * @brief Get maximal number of simultaneously allocated buffers for string
- *	  duplicates.
- *
- * Value can be used to determine pool size.
- */
-uint32_t log_get_strdup_pool_utilization(void);
-
-/**
- * @brief Get length of the longest string duplicated.
- *
- * Value can be used to determine buffer size in the string duplicates pool.
- */
-uint32_t log_get_strdup_longest_string(void);
-
-/**
  * @brief Check if there is pending data to be processed by the logging subsystem.
  *
  * Function can be used to determine if all logs have been flushed. Function

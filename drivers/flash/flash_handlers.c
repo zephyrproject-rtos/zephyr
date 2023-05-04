@@ -98,3 +98,22 @@ static inline int z_vrfy_flash_read_jedec_id(const struct device *dev,
 #include <syscalls/flash_sfdp_jedec_id.c>
 
 #endif /* CONFIG_FLASH_JESD216_API */
+
+#ifdef CONFIG_FLASH_EX_OP_ENABLED
+
+static inline int z_vrfy_flash_ex_op(const struct device *dev, uint16_t code,
+				     const uintptr_t in, void *out)
+{
+	Z_OOPS(Z_SYSCALL_DRIVER_FLASH(dev, ex_op));
+
+	/*
+	 * If the code is a vendor code, then ex_op function have to perform
+	 * verification. Zephyr codes should be verified here, but currently
+	 * there are no Zephyr extended codes yet.
+	 */
+
+	return z_impl_flash_ex_op(dev, code, in, out);
+}
+#include <syscalls/flash_ex_op_mrsh.c>
+
+#endif /* CONFIG_FLASH_EX_OP_ENABLED */

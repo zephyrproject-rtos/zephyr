@@ -93,6 +93,7 @@ typedef int (*w1_write_block_t)(const struct device *dev, const uint8_t *buffer,
 typedef size_t (*w1_get_slave_count_t)(const struct device *dev);
 typedef int (*w1_configure_t)(const struct device *dev,
 			      enum w1_settings_type type, uint32_t value);
+typedef int (*w1_change_bus_lock_t)(const struct device *dev, bool lock);
 
 __subsystem struct w1_driver_api {
 	w1_reset_bus_t reset_bus;
@@ -103,6 +104,7 @@ __subsystem struct w1_driver_api {
 	w1_read_block_t read_block;
 	w1_write_block_t write_block;
 	w1_configure_t configure;
+	w1_change_bus_lock_t change_bus_lock;
 };
 /** @endcond */
 
@@ -112,6 +114,11 @@ __syscall int w1_change_bus_lock(const struct device *dev, bool lock);
 static inline int z_impl_w1_change_bus_lock(const struct device *dev, bool lock)
 {
 	struct w1_master_data *ctrl_data = (struct w1_master_data *)dev->data;
+	const struct w1_driver_api *api = (const struct w1_driver_api *)dev->api;
+
+	if (api->change_bus_lock) {
+		return api->change_bus_lock(dev, lock);
+	}
 
 	if (lock) {
 		return k_mutex_lock(&ctrl_data->bus_lock, K_FOREVER);

@@ -83,7 +83,9 @@ extern "C" {
 /* CFG_LO */
 #define DW_CFGL_RELOAD_DST	BIT(31)
 #define DW_CFGL_RELOAD_SRC	BIT(30)
-#define DW_CFGL_DRAIN		BIT(10)
+#define DW_CFGL_DRAIN		BIT(10) /* For Intel GPDMA variant only */
+#define DW_CFGL_SRC_SW_HS       BIT(10) /* For Synopsys variant only */
+#define DW_CFGL_DST_SW_HS       BIT(11) /* For Synopsys variant only */
 #define DW_CFGL_FIFO_EMPTY	BIT(9)
 #define DW_CFGL_SUSPEND		BIT(8)
 #define DW_CFGL_CTL_HI_UPD_EN	BIT(5)
@@ -151,6 +153,10 @@ extern "C" {
 
 /* min number of elems for config with irq disabled */
 #define DW_DMA_CFG_NO_IRQ_MIN_ELEMS	3
+
+#define DW_DMA_CHANNEL_REGISTER_OFFSET_END	0x50
+#define DW_DMA_IP_REGISTER_OFFSET_END		0x418
+#define DW_DMA_IP_REGISTER_OFFSET_START	0x2C0
 
 /* linked list item address */
 #define DW_DMA_LLI_ADDRESS(lli, dir) \

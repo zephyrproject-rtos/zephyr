@@ -208,10 +208,15 @@ build``, pass them after a ``--`` at the end of the command line.
 .. important::
 
    Passing additional CMake arguments like this forces ``west build`` to re-run
-   CMake, even if a build system has already been generated.
+   the CMake build configuration step, even if a build system has already been
+   generated.  This will make incremental builds slower (but still much faster
+   than building from scratch).
 
    After using ``--`` once to generate the build directory, use ``west build -d
    <build-dir>`` on subsequent runs to do incremental builds.
+
+   Alternatively, make your CMake arguments permanent as described in the next
+   section; it will not slow down incremental builds.
 
 For example, to use the Unix Makefiles CMake generator instead of Ninja (which
 ``west build`` uses by default), run::
@@ -349,6 +354,11 @@ The ``--domain`` argument can be combined with the ``--target`` argument to
 build the specific target for the target, for example::
 
   west build --sysbuild --domain hello_world --target help
+
+Use a snippet
+-------------
+
+See :ref:`using-snippets`.
 
 .. _west-building-config:
 

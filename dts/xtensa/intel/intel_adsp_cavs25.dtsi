@@ -16,6 +16,7 @@
 			device_type = "cpu";
 			compatible = "cdns,tensilica-xtensa-lx6";
 			reg = <0>;
+			cpu-power-states = <&d3>;
 			i-cache-line-size = <64>;
 			d-cache-line-size = <64>;
 		};
@@ -24,18 +25,33 @@
 			device_type = "cpu";
 			compatible = "cdns,tensilica-xtensa-lx6";
 			reg = <1>;
+			cpu-power-states = <&d3>;
 		};
 
 		cpu2: cpu@2 {
 			device_type = "cpu";
 			compatible = "cdns,tensilica-xtensa-lx6";
 			reg = <2>;
+			cpu-power-states = <&d3>;
 		};
 
 		cpu3: cpu@3 {
 			device_type = "cpu";
 			compatible = "cdns,tensilica-xtensa-lx6";
 			reg = <3>;
+			cpu-power-states = <&d3>;
+		};
+	};
+
+	power-states {
+		/* PM_STATE_SOFT_OFF can be entered only by calling pm_state_force.
+		 * The procedure is triggered by IPC from the HOST (SET_DX).
+		 */
+		d3: off {
+			compatible = "zephyr,power-state";
+			power-state-name = "soft-off";
+			min-residency-us = <2147483647>;
+			exit-latency-us = <0>;
 		};
 	};
 
@@ -292,14 +308,96 @@
 		alh0: alh0@71000 {
 			compatible = "intel,alh-dai";
 			reg = <0x00071000 0x00071200>;
-
 			status = "okay";
 		};
 
 		alh1: alh1@71000 {
 			compatible = "intel,alh-dai";
 			reg = <0x00071000 0x00071200>;
+			status = "okay";
+		};
 
+		alh2: alh2@71000 {
+			compatible = "intel,alh-dai";
+			reg = <0x00071000 0x00071200>;
+			status = "okay";
+		};
+
+		alh3: alh3@71000 {
+			compatible = "intel,alh-dai";
+			reg = <0x00071000 0x00071200>;
+			status = "okay";
+		};
+
+		alh4: alh4@71000 {
+			compatible = "intel,alh-dai";
+			reg = <0x00071000 0x00071200>;
+			status = "okay";
+		};
+
+		alh5: alh5@71000 {
+			compatible = "intel,alh-dai";
+			reg = <0x00071000 0x00071200>;
+			status = "okay";
+		};
+
+		alh6: alh6@71000 {
+			compatible = "intel,alh-dai";
+			reg = <0x00071000 0x00071200>;
+			status = "okay";
+		};
+
+		alh7: alh7@71000 {
+			compatible = "intel,alh-dai";
+			reg = <0x00071000 0x00071200>;
+			status = "okay";
+		};
+
+		alh8: alh8@71000 {
+			compatible = "intel,alh-dai";
+			reg = <0x00071000 0x00071200>;
+			status = "okay";
+		};
+
+		alh9: alh9@71000 {
+			compatible = "intel,alh-dai";
+			reg = <0x00071000 0x00071200>;
+			status = "okay";
+		};
+
+		alh10: alh10@71000 {
+			compatible = "intel,alh-dai";
+			reg = <0x00071000 0x00071200>;
+			status = "okay";
+		};
+
+		alh11: alh11@71000 {
+			compatible = "intel,alh-dai";
+			reg = <0x00071000 0x00071200>;
+			status = "okay";
+		};
+
+		alh12: alh12@71000 {
+			compatible = "intel,alh-dai";
+			reg = <0x00071000 0x00071200>;
+			status = "okay";
+		};
+
+		alh13: alh13@71000 {
+			compatible = "intel,alh-dai";
+			reg = <0x00071000 0x00071200>;
+			status = "okay";
+		};
+
+		alh14: alh14@71000 {
+			compatible = "intel,alh-dai";
+			reg = <0x00071000 0x00071200>;
+			status = "okay";
+		};
+
+		alh15: alh15@71000 {
+			compatible = "intel,alh-dai";
+			reg = <0x00071000 0x00071200>;
 			status = "okay";
 		};
 
@@ -319,6 +417,92 @@
 			fifo = <0x0108>;
 			interrupts = <0x09 0 0>;
 			interrupt-parent = <&cavs_intc3>;
+		};
+	};
+
+	hdas {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		hda0: hda@0 {
+			compatible = "intel,hda-dai";
+			status = "okay";
+			reg = <0>;
+		};
+		hda1: hda@1 {
+			compatible = "intel,hda-dai";
+			status = "okay";
+			reg = <1>;
+		};
+		hda2: hda@2 {
+			compatible = "intel,hda-dai";
+			status = "okay";
+			reg = <2>;
+		};
+		hda3: hda@3 {
+			compatible = "intel,hda-dai";
+			status = "okay";
+			reg = <3>;
+		};
+		hda4: hda@4 {
+			compatible = "intel,hda-dai";
+			status = "okay";
+			reg = <4>;
+		};
+		hda5: hda@5 {
+			compatible = "intel,hda-dai";
+			status = "okay";
+			reg = <5>;
+		};
+		hda6: hda@6 {
+			compatible = "intel,hda-dai";
+			status = "okay";
+			reg = <6>;
+		};
+		hda7: hda@7 {
+			compatible = "intel,hda-dai";
+			status = "okay";
+			reg = <7>;
+		};
+		hda8: hda@8 {
+			compatible = "intel,hda-dai";
+			status = "okay";
+			reg = <8>;
+		};
+		hda9: hda@9 {
+			compatible = "intel,hda-dai";
+			status = "okay";
+			reg = <9>;
+		};
+		hda10: hda@a {
+			compatible = "intel,hda-dai";
+			status = "okay";
+			reg = <0x0a>;
+		};
+		hda11: hda@b {
+			compatible = "intel,hda-dai";
+			status = "okay";
+			reg = <0x0b>;
+		};
+		hda12: hda@c {
+			compatible = "intel,hda-dai";
+			status = "okay";
+			reg = <0x0c>;
+		};
+		hda13: hda@d {
+			compatible = "intel,hda-dai";
+			status = "okay";
+			reg = <0x0d>;
+		};
+		hda14: hda@e {
+			compatible = "intel,hda-dai";
+			status = "okay";
+			reg = <0x0e>;
+		};
+		hda15: hda@f {
+			compatible = "intel,hda-dai";
+			status = "okay";
+			reg = <0x0f>;
 		};
 	};
 };

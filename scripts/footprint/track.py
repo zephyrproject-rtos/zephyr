@@ -12,7 +12,8 @@ import argparse
 
 def parse_args():
     parser = argparse.ArgumentParser(
-                description="Generate footprint data based on a predefined plan.")
+                description="Generate footprint data based on a predefined plan.",
+                allow_abbrev=False)
     parser.add_argument("-p", "--plan", help="Path of test plan", required=True)
 
     return parser.parse_args()

@@ -25,6 +25,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_IPV6_LOG_LEVEL);
 #include <zephyr/net/ethernet.h>
 #include <zephyr/net/dummy.h>
 #include <zephyr/net/udp.h>
+#include <zephyr/net/dns_resolve.h>
 
 #include "icmpv6.h"
 #include "ipv6.h"
@@ -85,19 +86,19 @@ static const unsigned char icmpv6_ns_no_sllao[] = {
 /* */
 static const unsigned char icmpv6_ra[] = {
 /* IPv6 header starts here */
-	0x60, 0x00, 0x00, 0x00, 0x00, 0x58, 0x3a, 0xff,
+	0x60, 0x00, 0x00, 0x00, 0x00, 0x70, 0x3a, 0xff,
 	0xfe, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 	0x02, 0x60, 0x97, 0xff, 0xfe, 0x07, 0x69, 0xea,
 	0xff, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
 /* ICMPv6 RA header starts here */
-	0x86, 0x00, 0x05, 0xd7, 0x40, 0x00, 0x07, 0x08,
+	0x86, 0x00, 0xbf, 0x01, 0x40, 0x00, 0x07, 0x08,
 	0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x01,
 /* SLLAO */
 	0x01, 0x01, 0x00, 0x60, 0x97, 0x07, 0x69, 0xea,
 /* MTU */
 	0x05, 0x01, 0x00, 0x00, 0x00, 0x00, 0x05, 0xdc,
-/* Prefix info*/
+/* Prefix info */
 	0x03, 0x04, 0x40, 0xc0, 0xFF, 0xFF, 0xFF, 0xFF,
 	0xFF, 0xFF, 0xFF, 0xFF, 0x00, 0x00, 0x00, 0x00,
 	0x3f, 0xfe, 0x05, 0x07, 0x00, 0x00, 0x00, 0x01,
@@ -106,6 +107,10 @@ static const unsigned char icmpv6_ra[] = {
 	0x18, 0x03, 0x30, 0x08, 0xff, 0xff, 0xff, 0xff,
 	0x20, 0x01, 0x0d, 0xb0, 0x0f, 0xff, 0x00, 0x00,
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+/* Recursive DNS Server */
+	0x19, 0x03, 0x00, 0x00, 0xff, 0xff, 0xff, 0xff,
+	0x20, 0x01, 0x0d, 0xb8, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
 };
 
 /* IPv6 hop-by-hop option in the message */
@@ -697,7 +702,15 @@ static void ra_message(void)
 	struct in6_addr prefix = { { { 0x3f, 0xfe, 0x05, 0x07, 0, 0, 0, 1,
 				       0, 0, 0, 0, 0, 0, 0, 0 } } };
 	struct in6_addr route_prefix = { { { 0x20, 0x01, 0x0d, 0xb0, 0x0f, 0xff } } };
+	struct sockaddr_in6 dns_addr = {
+		.sin6_family = AF_INET6,
+		.sin6_port = htons(53),
+		.sin6_addr = { { {  0x20, 0x01, 0x0d, 0xb8, 0x00, 0x00, 0x00, 0x00,
+				    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01 } } },
+	};
 	struct net_route_entry *route;
+	struct dns_resolve_context *ctx;
+	struct sockaddr_in6 *dns_server;
 
 	/* We received RA message earlier, make sure that the information
 	 * in that message is placed to proper prefix and lookup info.
@@ -722,6 +735,16 @@ static void ra_message(void)
 	zassert_true(route->is_infinite, "Wrong lifetime set");
 	zassert_equal(route->preference, NET_ROUTE_PREFERENCE_HIGH,
 		      "Wrong preference set");
+
+	/* Check if RDNSS was added correctly. */
+	ctx = dns_resolve_get_default();
+	zassert_equal(ctx->state, DNS_RESOLVE_CONTEXT_ACTIVE);
+	dns_server = (struct sockaddr_in6 *)&ctx->servers[0].dns_server;
+	zassert_equal(dns_server->sin6_family, dns_addr.sin6_family);
+	zassert_equal(dns_server->sin6_port, dns_addr.sin6_port);
+	zassert_mem_equal(&dns_server->sin6_addr, &dns_addr.sin6_addr,
+			  sizeof(dns_addr.sin6_addr), "Wrong DNS address set");
+	zassert_equal(dns_server->sin6_scope_id, dns_addr.sin6_scope_id);
 }
 
 ZTEST(net_ipv6, test_rs_ra_message)
@@ -1606,6 +1629,34 @@ ZTEST(net_ipv6, test_dst_is_other_iface_mcast_recv)
 			     &mcast_iface2);
 
 	net_context_put(ctx);
+}
+
+ZTEST(net_ipv6, test_no_nd_flag)
+{
+	bool ret;
+	struct in6_addr addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
+				     0, 0, 0, 0, 0, 0, 0x99, 0x1 } } };
+	struct net_if *iface = TEST_NET_IF;
+	struct net_if_addr *ifaddr;
+
+	dad_time[0] = 0;
+
+	net_if_flag_set(iface, NET_IF_IPV6_NO_ND);
+
+	ifaddr = net_if_ipv6_addr_add(iface, &addr, NET_ADDR_AUTOCONF, 0xffff);
+	zassert_not_null(ifaddr, "Address cannot be added");
+
+	/* Let the network stack to proceed */
+	k_sleep(K_MSEC(10));
+
+	zassert_equal(dad_time[0], 0, "Received ND message when not expected");
+	zassert_equal(ifaddr->addr_state, NET_ADDR_PREFERRED,
+		      "Address should've been set to preferred");
+
+	ret = net_if_ipv6_addr_rm(iface, &addr);
+	zassert_true(ret, "Failed to remove address");
+
+	net_if_flag_clear(iface, NET_IF_IPV6_NO_ND);
 }
 
 ZTEST_SUITE(net_ipv6, NULL, ipv6_setup, NULL, NULL, ipv6_teardown);

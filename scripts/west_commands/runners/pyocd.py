@@ -4,12 +4,10 @@
 
 '''Runner for pyOCD .'''
 
-from functools import partial
 import os
 from os import path
 
-from runners.core import ZephyrBinaryRunner, RunnerCaps, \
-    BuildConfiguration, depr_action
+from runners.core import ZephyrBinaryRunner, RunnerCaps, BuildConfiguration
 
 DEFAULT_PYOCD_GDB_PORT = 3333
 DEFAULT_PYOCD_TELNET_PORT = 4444
@@ -110,9 +108,7 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
         parser.add_argument('--tui', default=False, action='store_true',
                             help='if given, GDB uses -tui')
         parser.add_argument('--board-id', dest='dev_id',
-                            action=partial(depr_action,
-                                           replacement='-i/--dev-id'),
-                            help='Deprecated: use -i/--dev-id instead')
+                            help='obsolete synonym for -i/--dev-id')
 
     @classmethod
     def tool_opt_help(cls) -> str:

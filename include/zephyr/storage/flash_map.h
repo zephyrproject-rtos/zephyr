@@ -56,8 +56,6 @@ extern "C" {
 struct flash_area {
 	/** ID number */
 	uint8_t fa_id;
-	/** Provided for compatibility with MCUboot */
-	uint8_t fa_device_id;
 	uint16_t pad16;
 	/** Start offset from the beginning of the flash device */
 	off_t fa_off;
@@ -158,7 +156,7 @@ int flash_area_read(const struct flash_area *fa, off_t off, void *dst,
  * as wrapped flash driver.
  *
  * @param[in]  fa  Flash area
- * @param[in]  off Offset relative from beginning of flash area to read
+ * @param[in]  off Offset relative from beginning of flash area to write
  * @param[out] src Buffer with data to be written
  * @param[in]  len Number of bytes to write
  *

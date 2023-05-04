@@ -8,16 +8,25 @@ compatible: "pci-host-ecam-generic"
 include: pcie-controller.yaml
 
 properties:
-    reg:
-      required: true
+  reg:
+    required: true
 
-    msi-parent:
-      type: phandle
+  msi-parent:
+    type: phandle
 
-    ranges:
-      type: array
-      required: true
-      description: |
-        As described in IEEE Std 1275-1994, but must provide at least a
-        definition of non-prefetchable memory. One or both of prefetchable Memory
-        and IO Space may also be provided.
+  ranges:
+    type: array
+    required: true
+    description: |
+      As described in IEEE Std 1275-1994, but must provide at least a
+      definition of non-prefetchable memory. One or both of prefetchable Memory
+      and IO Space may also be provided.
+
+  interrupt-map-mask:
+    type: array
+
+  interrupt-map:
+    type: compound
+
+  bus-range:
+    type: array

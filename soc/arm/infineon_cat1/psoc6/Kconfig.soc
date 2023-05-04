@@ -1,0 +1,117 @@
+# Copyright (c) 2021 Cypress Semiconductor Corporation (an Infineon company) or
+# an affiliate of Cypress Semiconductor Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+# Infineon PSoC6 die
+config SOC_DIE_PSOC6
+	bool
+	select ARM
+	select CPU_CORTEX_M4
+	select CPU_HAS_ARM_MPU
+	select SOC_FAMILY_INFINEON_CAT1A
+	select DYNAMIC_INTERRUPTS
+	select CPU_HAS_FPU
+
+# Infineon PSoC6_01 die
+config SOC_DIE_PSOC6_01
+	bool
+	select SOC_DIE_PSOC6
+
+# Infineon PSoC6_02 die
+config SOC_DIE_PSOC6_02
+	bool
+	select SOC_DIE_PSOC6
+
+# Infineon PSoC6_03 die
+config SOC_DIE_PSOC6_03
+	bool
+	select SOC_DIE_PSOC6
+
+# Infineon PSoC6_04 die
+config SOC_DIE_PSOC6_04
+	bool
+	select SOC_DIE_PSOC6
+
+# Infineon soc packages
+config SOC_PACKAGE_PSOC6_01_124_BGA
+	bool
+
+config SOC_PACKAGE_PSOC6_01_116_BGA_BLE
+	bool
+
+config SOC_PACKAGE_PSOC6_01_104_M_CSP_BLE
+	bool
+
+config SOC_PACKAGE_PSOC6_01_80_WLCSP
+	bool
+
+config SOC_PACKAGE_PSOC6_01_116_BGA_USB
+	bool
+
+config SOC_PACKAGE_PSOC6_01_124_BGA_SIP
+	bool
+
+config SOC_PACKAGE_PSOC6_01_43_SMT
+	bool
+
+config SOC_PACKAGE_PSOC6_01_104_M_CSP_BLE_USB
+	bool
+
+config SOC_PACKAGE_PSOC6_01_68_QFN_BLE
+	bool
+
+config SOC_PACKAGE_PSOC6_02_124_BGA
+	bool
+
+config SOC_PACKAGE_PSOC6_02_128_TQFP
+	bool
+
+config SOC_PACKAGE_PSOC6_02_100_WLCSP
+	bool
+
+config SOC_PACKAGE_PSOC6_02_68_QFN
+	bool
+
+config SOC_PACKAGE_PSOC6_03_100_TQFP
+	bool
+
+config SOC_PACKAGE_PSOC6_03_68_QFN
+	bool
+
+config SOC_PACKAGE_PSOC6_03_49_WLCSP
+	bool
+
+config SOC_PACKAGE_PSOC6_04_64_TQFP
+	bool
+
+config SOC_PACKAGE_PSOC6_04_68_QFN
+	bool
+
+config SOC_PACKAGE_PSOC6_04_80_TQFP
+	bool
+
+## Infineon MCUs
+choice
+	prompt "MPN"
+	osource "soc/arm/infineon_cat1/psoc6/Kconfig.soc.psoc6_*"
+endchoice
+
+if SOC_FAMILY_INFINEON_CAT1A
+## PSoC™ 6 Cortex M0+ prebuilt images
+choice
+	prompt "PSoC™ 6 Cortex M0+ prebuilt images"
+	help
+	  Choose the prebuilt application image to be executed on the Cortex-M0+ core of the PSoC™ 6
+	  dual-core MCU. The image is responsible for booting the Cortex-M4 on the device.
+
+config SOC_PSOC6_CM0P_IMAGE_SLEEP
+	bool "DeepSleep"
+	help
+	  DeepSleep prebuilt application image is executed on the Cortex-M0+ core of the PSoC™ 6 BLE
+	  dual-core MCU.The image is provided as C array ready to be compiled as part of the Cortex-M4
+	  application. The Cortex-M0+ application code is placed to internal flash by the Cortex-M4
+	  linker script.
+
+endchoice
+
+endif # SOC_FAMILY_INFINEON_CAT1A

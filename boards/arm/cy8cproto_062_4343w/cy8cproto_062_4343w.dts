@@ -1,0 +1,100 @@
+/*
+ * Copyright (c) 2021 Cypress Semiconductor Corporation.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <infineon/psoc6/mpns/CY8C624ABZI_S2D44.dtsi>
+#include <infineon/psoc6/system_clocks.dtsi>
+#include "cy8cproto_062_4343w-common.dtsi"
+#include "cy8cproto_062_4343w-pinctrl.dtsi"
+
+/ {
+	model = "cy8cproto_062_4343w with an Cypress PSoC™ 6 SoC";
+	compatible = "cy8cproto_062_4343w", "PSoC6";
+
+	aliases {
+		uart-5 = &uart5;
+		i2c-0 = &i2c3;
+	};
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,console = &uart5;
+		zephyr,shell-uart = &uart5;
+		zephyr,bt_uart = &uart2;
+	};
+};
+
+&uart5 {
+	status = "okay";
+	current-speed = <115200>;
+
+	pinctrl-0 = <&p5_1_scb5_uart_tx &p5_0_scb5_uart_rx>;
+	pinctrl-names = "default";
+};
+
+&uart2 {
+	status = "okay";
+	/* The UART bus speed (current_speed) for zephyr_bt_uart should be the same
+	 * as the default baudrate defined in CYW43xx firmware (default 115200).
+	 */
+
+	current-speed = <115200>;
+
+	/* HCI-UART pins*/
+	pinctrl-0 = <&p3_1_scb2_uart_tx &p3_0_scb2_uart_rx &p3_2_scb2_uart_rts &p3_3_scb2_uart_cts>;
+	pinctrl-names = "default";
+
+	bt-hci {
+		status = "okay";
+		compatible = "infineon,cyw43xxx-bt-hci";
+		bt-reg-on-gpios = <&gpio_prt3 4 (GPIO_ACTIVE_HIGH)>;
+
+		/* Configuration UART speeds for firmware download (fw-download-speed) and
+		 * HCI operation (hci-operation-speed).
+		 * If hci-operation-speed or fw-download-speed are not defined in bt-hci{...}
+		 * node, cyw43xx driver will use bus/current-speed as default speed.
+		 */
+		fw-download-speed = <3000000>;
+	};
+};
+
+/* System clock configuration */
+&fll0 {
+	status = "okay";
+	clock-frequency = <100000000>;
+};
+
+&clk_hf0 {
+	clock-div = <1>;
+	clocks = <&fll0>;
+};
+
+/* CM4 core clock = 100MHz
+ * &fll clock-frequency / &clk_hf0 clock-div / &clk_fast clock-div = 100MHz / 1 / 1 = 100MHz
+ */
+&clk_fast {
+	clock-div = <1>;
+};
+
+/* CM0+ core clock = 50MHz
+ * &fll clock-frequency / &clk_hf0 clock-div / &clk_slow clock-div = 100MHz / 1 / 2 = 50MHz
+ */
+&clk_slow {
+	clock-div = <2>;
+};
+
+/* PERI core clock = 100MHz
+ * &fll clock-frequency / &clk_hf0 clock-div / &clk_peri clock-div = 100MHz / 1 / 1 = 100MHz
+ */
+&clk_peri {
+	clock-div = <1>;
+};
+
+&i2c3 {
+	/* I2C pins */
+	pinctrl-0 = <&p6_0_scb3_i2c_scl &p6_1_scb3_i2c_sda>;
+	pinctrl-names = "default";
+};

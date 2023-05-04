@@ -29,6 +29,8 @@ tests:
     min_ram: 16
   kernel.fpu_sharing.generic.riscv64:
     extra_args: PI_NUM_ITERATIONS=500
+    extra_configs:
+      - CONFIG_MAIN_STACK_SIZE=2048
     filter: CONFIG_CPU_HAS_FPU
     arch_allow: riscv64
     tags: fpu kernel
@@ -44,15 +46,34 @@ tests:
     extra_args: CONF_FILE=prj_x86.conf
     extra_configs:
       - CONFIG_X86_SSE_FP_MATH=n
+      - CONFIG_X86_SSE=n
     platform_allow: qemu_x86 qemu_x86_lakemont
+    integration_platforms:
+      - qemu_x86
     slow: true
     tags: fpu kernel
     timeout: 600
+  kernel.fpu_sharing.generic.x86.fpu.sse:
+    extra_args: CONF_FILE=prj_x86.conf
+    extra_configs:
+      - CONFIG_X86_SSE_FP_MATH=n
+    platform_allow: qemu_x86 qemu_x86_lakemont
+    integration_platforms:
+      - qemu_x86
+    slow: true
+    tags: fpu kernel
+    timeout: 600
+    toolchain_exclude: llvm oneApi
   kernel.fpu_sharing.generic.x86.sse:
     extra_args: CONF_FILE=prj_x86.conf
     extra_configs:
       - CONFIG_X86_SSE_FP_MATH=y
     platform_allow: qemu_x86 qemu_x86_lakemont
     slow: true
+    tags: fpu kernel
+    timeout: 600
+  kernel.fpu_sharing.generic.xtensa:
+    filter: CONFIG_CPU_HAS_FPU
+    arch_allow: xtensa
     tags: fpu kernel
     timeout: 600

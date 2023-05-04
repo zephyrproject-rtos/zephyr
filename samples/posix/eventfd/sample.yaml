@@ -4,7 +4,7 @@ sample:
 common:
   filter: TOOLCHAIN_HAS_NEWLIB == 1
   tags: posix
-  platform_exclude: m2gl025_miv intel_adsp_cavs15
+  platform_exclude: m2gl025_miv
   integration_platforms:
     - mps2_an385
 tests:
@@ -16,11 +16,11 @@ tests:
       type: multi_line
       ordered: true
       regex:
-        -  "Writing 1 to efd"
-        -  "Writing 2 to efd"
-        -  "Writing 3 to efd"
-        -  "Writing 4 to efd"
-        -  "Completed write loop"
-        -  "About to read"
-        -  "Read 10 \\(0xa\\) from efd"
-        -  "Finished"
+        - "Writing 1 to efd"
+        - "Writing 2 to efd"
+        - "Writing 3 to efd"
+        - "Writing 4 to efd"
+        - "Completed write loop"
+        - "About to read"
+        - "Read 10 \\(0xa\\) from efd"
+        - "Finished"

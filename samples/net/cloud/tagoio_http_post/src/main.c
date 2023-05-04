@@ -72,7 +72,7 @@ static void next_turn(void)
 	}
 }
 
-void main(void)
+int main(void)
 {
 	LOG_INF("TagoIO IoT - HTTP Client - Temperature demo");
 
@@ -83,4 +83,5 @@ void main(void)
 
 		k_sleep(K_SECONDS(CONFIG_TAGOIO_HTTP_PUSH_INTERVAL));
 	}
+	return 0;
 }

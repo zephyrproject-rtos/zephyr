@@ -6,6 +6,10 @@
  * Application overlay for i2c devices
  */
 
+/****************************************
+ * PLEASE KEEP REG ADDRESSES SEQUENTIAL *
+ ***************************************/
+
 test_i2c_adt7420: adt7420@0 {
 	compatible = "adi,adt7420";
 	reg = <0x0>;
@@ -41,90 +45,90 @@ test_i2c_iaqcore: iaqcore@5 {
 	reg = <0x5>;
 };
 
-test_i2c_bme280: bme280@7 {
+test_i2c_bme280: bme280@6 {
 	compatible = "bosch,bme280";
-	reg = <0x7>;
+	reg = <0x6>;
 };
 
-test_i2c_apds9960: apds9960@9 {
+test_i2c_apds9960: apds9960@7 {
 	compatible = "avago,apds9960";
-	reg = <0x9>;
+	reg = <0x7>;
 	int-gpios = <&test_gpio 0 0>;
 };
 
-test_i2c_bma280: bma280@a {
+test_i2c_bma280: bma280@8 {
 	compatible = "bosch,bma280";
-	reg = <0xa>;
+	reg = <0x8>;
 	int1-gpios = <&test_gpio 0 0>;
 	/* is-bmc150; */
 };
 
-test_i2c_bmc150_magn: bmc150_magn@b {
+test_i2c_bmc150_magn: bmc150_magn@9 {
 	compatible = "bosch,bmc150_magn";
-	reg = <0xb>;
+	reg = <0x9>;
 	drdy-gpios = <&test_gpio 0 0>;
 };
 
-test_i2c_ak8975: ak8975@c {
+test_i2c_ak8975: ak8975@a {
 	compatible = "asahi-kasei,ak8975";
-	reg = <0xc>;
+	reg = <0xa>;
 };
 
-test_i2c_bme680: bme680@d {
+test_i2c_bme680: bme680@b {
 	compatible = "bosch,bme680";
+	reg = <0xb>;
+};
+
+test_i2c_bmg160: bmg160@c {
+	compatible = "bosch,bmg160";
+	reg = <0xc>;
+	int-gpios = <&test_gpio 0 0>;
+};
+
+test_i2c_bmm150: bmm150@d {
+	compatible = "bosch,bmm150";
 	reg = <0xd>;
 };
 
-test_i2c_bmg160: bmg160@e {
-	compatible = "bosch,bmg160";
+test_i2c_ft5336: ft5336@e {
+	compatible = "focaltech,ft5336";
 	reg = <0xe>;
 	int-gpios = <&test_gpio 0 0>;
 };
 
-test_i2c_bmm150: bmm150@f {
-	compatible = "bosch,bmm150";
-	reg = <0xf>;
-};
-
-test_i2c_ft5336: ft5336@10 {
-	compatible = "focaltech,ft5336";
-	reg = <0x10>;
-	int-gpios = <&test_gpio 0 0>;
-};
-
-test_i2c_ht16k33: ht16k33@11 {
+test_i2c_ht16k33: ht16k33@f {
 	compatible = "holtek,ht16k33";
-	reg = <0x11>;
+	reg = <0xf>;
 	#address-cells = <1>;
 	#size-cells = <0>;
 	irq-gpios = <&test_gpio 0 0>;
 };
 
-test_i2c_hmc5883l: hmc5883l@12 {
+test_i2c_hmc5883l: hmc5883l@10 {
 	compatible = "honeywell,hmc5883l";
-	reg = <0x12>;
+	reg = <0x10>;
 	int-gpios = <&test_gpio 0 0>;
 };
 
-test_i2c_hp206c: hp206c@13 {
+test_i2c_hp206c: hp206c@11 {
 	compatible = "hoperf,hp206c";
-	reg = <0x13>;
+	reg = <0x11>;
 };
 
-test_i2c_th02: th02@14 {
+test_i2c_th02: th02@12 {
 	compatible = "hoperf,th02";
-	reg = <0x14>;
+	reg = <0x12>;
 };
 
-test_i2c_mpu6050: mpu6050@15 {
+test_i2c_mpu6050: mpu6050@13 {
 	compatible = "invensense,mpu6050";
-	reg = <0x15>;
+	reg = <0x13>;
 	int-gpios = <&test_gpio 0 0>;
 };
 
-test_i2c_mpu9250: mpu9250@1e {
+test_i2c_mpu9250: mpu9250@14 {
 	compatible = "invensense,mpu9250";
-	reg = <0x1e>;
+	reg = <0x14>;
 	irq-gpios = <&test_gpio 0 0>;
 	gyro-sr-div = <10>;
 	gyro-dlpf = <5>;
@@ -133,9 +137,9 @@ test_i2c_mpu9250: mpu9250@1e {
 	accel-dlpf="5.05";
 };
 
-test_i2c_ina219: ina219@40 {
+test_i2c_ina219: ina219@15 {
 	compatible = "ti,ina219";
-	reg = <0x40>;
+	reg = <0x15>;
 	brng = <0>;
 	pg = <0>;
 	sadc = <13>;
@@ -144,26 +148,26 @@ test_i2c_ina219: ina219@40 {
 	lsb-microamp = <10>;
 };
 
-test_i2c_isl29035: isl29035@17 {
+test_i2c_isl29035: isl29035@16 {
 	compatible = "isil,isl29035";
-	reg = <0x17>;
+	reg = <0x16>;
 	int-gpios = <&test_gpio 0 0>;
 };
 
-test_i2c_max30101: max30101@18 {
+test_i2c_max30101: max30101@17 {
 	compatible = "maxim,max30101";
-	reg = <0x18>;
+	reg = <0x17>;
 };
 
-test_i2c_max44009: max44009@19 {
+test_i2c_max44009: max44009@18 {
 	compatible = "maxim,max44009";
-	reg = <0x19>;
+	reg = <0x18>;
 	int-gpios = <&test_gpio 0 0>;
 };
 
-test_i2c_ms5607: ms5607@76 {
+test_i2c_ms5607: ms5607@19 {
 	compatible = "meas,ms5607";
-	reg = <0x76>;
+	reg = <0x19>;
 };
 
 test_i2c_ms5837: ms5837@1a {
@@ -192,284 +196,284 @@ test_i2c_fxos8700: fxos8700@1d {
 	int2-gpios = <&test_gpio 0 0>;
 };
 
-test_i2c_pca9633: pca9633@1f {
+test_i2c_pca9633: pca9633@1e {
 	compatible = "nxp,pca9633";
-	reg = <0x1f>;
+	reg = <0x1e>;
 };
 
-test_i2c_amg88xx: amg88xx@20 {
+test_i2c_amg88xx: amg88xx@1f {
 	compatible = "panasonic,amg88xx";
+	reg = <0x1f>;
+	int-gpios = <&test_gpio 0 0>;
+};
+
+test_i2c_sx9500: sx9500@20 {
+	compatible = "semtech,sx9500";
 	reg = <0x20>;
 	int-gpios = <&test_gpio 0 0>;
 };
 
-test_i2c_sx9500: sx9500@22 {
-	compatible = "semtech,sx9500";
-	reg = <0x22>;
-	int-gpios = <&test_gpio 0 0>;
-};
-
-test_i2c_sgp40: sgp40@59 {
+test_i2c_sgp40: sgp40@21 {
 	compatible = "sensirion,sgp40";
-	reg = <0x59>;
+	reg = <0x21>;
 	enable-selftest;
 };
 
-test_i2c_sht3xd: sht3xd@23 {
+test_i2c_sht3xd: sht3xd@22 {
 	compatible = "sensirion,sht3xd";
-	reg = <0x23>;
+	reg = <0x22>;
 	alert-gpios = <&test_gpio 0 0>;
 };
 
-test_i2c_sht4xd: sht4x@44 {
+test_i2c_sht4xd: sht4x@23 {
 	compatible = "sensirion,sht4x";
-	reg = <0x44>;
+	reg = <0x23>;
 	repeatability = <2>;
 };
 
-test_i2c_shtc3: SHTC3@70 {
+test_i2c_shtc3: SHTC3@24 {
 	compatible = "sensirion,shtcx";
-	reg = <0x70>;
+	reg = <0x24>;
 	chip = "shtc3";
 	measure-mode = "normal";
 	clock-stretching;
 };
 
-test_i2c_si7006: si7006@24 {
+test_i2c_si7006: si7006@25 {
 	compatible = "silabs,si7006";
-	reg = <0x24>;
-};
-
-test_i2c_si7055: si7055@40 {
-	compatible = "silabs,si7055";
-	reg = <0x40>;
-};
-
-test_i2c_si7060: si7060@25 {
-	compatible = "silabs,si7060";
 	reg = <0x25>;
 };
 
-test_i2c_si7210: si7010@30 {
-	compatible = "silabs,si7210";
-	reg = <0x30>;
+test_i2c_si7055: si7055@26 {
+	compatible = "silabs,si7055";
+	reg = <0x26>;
 };
 
-test_i2c_hts221: hts221@27 {
-	compatible = "st,hts221";
+test_i2c_si7060: si7060@27 {
+	compatible = "silabs,si7060";
 	reg = <0x27>;
-	drdy-gpios = <&test_gpio 0 0>;
 };
 
-test_i2c_iis2dlpc: iis2dlpc@28 {
-	compatible = "st,iis2dlpc";
+test_i2c_si7210: si7010@28 {
+	compatible = "silabs,si7210";
 	reg = <0x28>;
-	drdy-gpios = <&test_gpio 0 0>;
 };
 
-test_i2c_iis2mdc: iis2mdc@29 {
-	compatible = "st,iis2mdc";
+test_i2c_hts221: hts221@29 {
+	compatible = "st,hts221";
 	reg = <0x29>;
 	drdy-gpios = <&test_gpio 0 0>;
 };
 
-test_i2c_ism330dhcx: ism330dhcx@2a {
-	compatible = "st,ism330dhcx";
+test_i2c_iis2dlpc: iis2dlpc@2a {
+	compatible = "st,iis2dlpc";
 	reg = <0x2a>;
 	drdy-gpios = <&test_gpio 0 0>;
 };
 
-test_i2c_lis2dh: lis2dh@2b {
-	compatible = "st,lis2dh";
+test_i2c_iis2mdc: iis2mdc@2b {
+	compatible = "st,iis2mdc";
 	reg = <0x2b>;
+	drdy-gpios = <&test_gpio 0 0>;
+};
+
+test_i2c_ism330dhcx: ism330dhcx@2c {
+	compatible = "st,ism330dhcx";
+	reg = <0x2c>;
+	drdy-gpios = <&test_gpio 0 0>;
+};
+
+test_i2c_lis2dh: lis2dh@2d {
+	compatible = "st,lis2dh";
+	reg = <0x2d>;
 	irq-gpios = <&test_gpio 0 0>;
 	/* disconnect-sdo-sa0-pull-up; */
 };
 
-test_i2c_lis2dh12: lis2dh12@2c {
+test_i2c_lis2dh12: lis2dh12@2e {
 	compatible = "st,lis2dh12";
-	reg = <0x2c>;
-	irq-gpios = <&test_gpio 0 0>;
-};
-
-test_i2c_lis2ds12: lis2ds12@2d {
-	compatible = "st,lis2ds12";
-	reg = <0x2d>;
-	irq-gpios = <&test_gpio 0 0>;
-};
-
-test_i2c_lis2dw12: lis2dw12@2e {
-	compatible = "st,lis2dw12";
 	reg = <0x2e>;
 	irq-gpios = <&test_gpio 0 0>;
 };
 
-test_i2c_lis2mdl: lis2mdl@2f {
-	compatible = "st,lis2mdl";
+test_i2c_lis2ds12: lis2ds12@2f {
+	compatible = "st,lis2ds12";
 	reg = <0x2f>;
 	irq-gpios = <&test_gpio 0 0>;
 };
 
-test_i2c_lis3dh: lis3dh@30 {
-	compatible = "st,lis3dh";
+test_i2c_lis2dw12: lis2dw12@30 {
+	compatible = "st,lis2dw12";
 	reg = <0x30>;
 	irq-gpios = <&test_gpio 0 0>;
 };
 
-test_i2c_lis3mdl_magn: lis3mdl-magn@31 {
-	compatible = "st,lis3mdl-magn";
+test_i2c_lis2mdl: lis2mdl@31 {
+	compatible = "st,lis2mdl";
 	reg = <0x31>;
 	irq-gpios = <&test_gpio 0 0>;
 };
 
-test_i2c_lps22hb_press: lps22hb-press@32 {
-	compatible = "st,lps22hb-press";
+test_i2c_lis3dh: lis3dh@32 {
+	compatible = "st,lis3dh";
 	reg = <0x32>;
+	irq-gpios = <&test_gpio 0 0>;
 };
 
-test_i2c_lps22hh: lps22hh@33 {
-	compatible = "st,lps22hh";
+test_i2c_lis3mdl_magn: lis3mdl-magn@33 {
+	compatible = "st,lis3mdl-magn";
 	reg = <0x33>;
-	drdy-gpios = <&test_gpio 0 0>;
+	irq-gpios = <&test_gpio 0 0>;
 };
 
-test_i2c_lps25hb_press: lps25hb-press@34 {
-	compatible = "st,lps25hb-press";
+test_i2c_lps22hb_press: lps22hb-press@34 {
+	compatible = "st,lps22hb-press";
 	reg = <0x34>;
 };
 
-test_i2c_lsm303agr_accel: lsm303agr-accel@35 {
-	compatible = "st,lsm303agr-accel";
+test_i2c_lps22hh: lps22hh@35 {
+	compatible = "st,lps22hh";
 	reg = <0x35>;
-	irq-gpios = <&test_gpio 0 0>;
-	/* disconnect-sdo-sa0-pull-up; */
+	drdy-gpios = <&test_gpio 0 0>;
 };
 
-test_i2c_lsm303dlhc_accel: lsm303dlhc-accel@36 {
-	compatible = "st,lsm303dlhc-accel";
+test_i2c_lps25hb_press: lps25hb-press@36 {
+	compatible = "st,lps25hb-press";
 	reg = <0x36>;
+};
+
+test_i2c_lsm303agr_accel: lsm303agr-accel@37 {
+	compatible = "st,lsm303agr-accel";
+	reg = <0x37>;
 	irq-gpios = <&test_gpio 0 0>;
 	/* disconnect-sdo-sa0-pull-up; */
 };
 
-test_i2c_lsm303dlhc_magn: lsm303dlhc-magn@37 {
-	compatible = "st,lsm303dlhc-magn";
-	reg = <0x37>;
-};
-
-test_i2c_lsm6ds0: lsm6ds0@38 {
-	compatible = "st,lsm6ds0";
+test_i2c_lsm303dlhc_accel: lsm303dlhc-accel@38 {
+	compatible = "st,lsm303dlhc-accel";
 	reg = <0x38>;
+	irq-gpios = <&test_gpio 0 0>;
+	/* disconnect-sdo-sa0-pull-up; */
 };
 
-test_i2c_lsm6dsl: lsm6dsl@39 {
-	compatible = "st,lsm6dsl";
+test_i2c_lsm303dlhc_magn: lsm303dlhc-magn@39 {
+	compatible = "st,lsm303dlhc-magn";
 	reg = <0x39>;
-	irq-gpios = <&test_gpio 0 0>;
 };
 
-test_i2c_lsm6dso: lsm6dso@3a {
-	compatible = "st,lsm6dso";
+test_i2c_lsm6ds0: lsm6ds0@3a {
+	compatible = "st,lsm6ds0";
 	reg = <0x3a>;
-	irq-gpios = <&test_gpio 0 0>;
 };
 
-test_i2c_lsm9ds0_gyro: lsm9ds0-gyro@3b {
-	compatible = "st,lsm9ds0-gyro";
+test_i2c_lsm6dsl: lsm6dsl@3b {
+	compatible = "st,lsm6dsl";
 	reg = <0x3b>;
 	irq-gpios = <&test_gpio 0 0>;
 };
 
-test_i2c_lsm9ds0_mfd: lsm9ds0-mfd@3c {
-	compatible = "st,lsm9ds0-mfd";
+test_i2c_lsm6dso: lsm6dso@3c {
+	compatible = "st,lsm6dso";
 	reg = <0x3c>;
 	irq-gpios = <&test_gpio 0 0>;
 };
 
-test_i2c_stts751: stts751@3d {
-	compatible = "st,stts751";
+test_i2c_lsm9ds0_gyro: lsm9ds0-gyro@3d {
+	compatible = "st,lsm9ds0-gyro";
 	reg = <0x3d>;
-	drdy-gpios = <&test_gpio 0 0>;
+	irq-gpios = <&test_gpio 0 0>;
 };
 
-test_i2c_vl53l0x: vl53l0x@3e {
-	compatible = "st,vl53l0x";
+test_i2c_lsm9ds0_mfd: lsm9ds0-mfd@3e {
+	compatible = "st,lsm9ds0-mfd";
 	reg = <0x3e>;
-	xshut-gpios = <&test_gpio 0 0>;
+	irq-gpios = <&test_gpio 0 0>;
 };
 
-test_i2c_hdc: hdc@3f {
-	compatible = "ti,hdc";
+test_i2c_stts751: stts751@3f {
+	compatible = "st,stts751";
 	reg = <0x3f>;
 	drdy-gpios = <&test_gpio 0 0>;
 };
 
-test_i2c_hdc2010: hdc2010@40 {
-	compatible = "ti,hdc2010";
+test_i2c_vl53l0x: vl53l0x@40 {
+	compatible = "st,vl53l0x";
 	reg = <0x40>;
+	xshut-gpios = <&test_gpio 0 0>;
 };
 
-test_i2c_hdc2021: hdc2021@40 {
-	compatible = "ti,hdc2021";
-	reg = <0x40>;
-};
-
-test_i2c_hdc2022: hdc2022@40 {
-	compatible = "ti,hdc2022";
-	reg = <0x40>;
-};
-
-test_i2c_hdc2080: hdc2080@40 {
-	compatible = "ti,hdc2080";
-	reg = <0x40>;
-};
-
-test_i2c_lp3943: lp3943@40 {
-	compatible = "ti,lp3943";
-	reg = <0x40>;
-};
-
-test_i2c_lp5562: lp5562@41 {
-	compatible = "ti,lp5562";
+test_i2c_hdc: hdc@41 {
+	compatible = "ti,hdc";
 	reg = <0x41>;
+	drdy-gpios = <&test_gpio 0 0>;
 };
 
-test_i2c_opt3001: opt3001@42 {
-	compatible = "ti,opt3001";
+test_i2c_hdc2010: hdc2010@42 {
+	compatible = "ti,hdc2010";
 	reg = <0x42>;
 };
 
-test_i2c_tlv320dac: tlv320dac@43 {
-	compatible = "ti,tlv320dac";
+test_i2c_hdc2021: hdc2021@43 {
+	compatible = "ti,hdc2021";
 	reg = <0x43>;
-	reset-gpios = <&test_gpio 0 0>;
 };
 
-test_i2c_tmp007: tmp007@44 {
-	compatible = "ti,tmp007";
+test_i2c_hdc2022: hdc2022@44 {
+	compatible = "ti,hdc2022";
 	reg = <0x44>;
-	int-gpios = <&test_gpio 0 0>;
 };
 
-test_i2c_tmp108: tmp108@48 {
-	compatible = "ti,tmp108";
-	reg = <0x48>;
-	alert-gpios = <&test_gpio 0 0>;
-};
-
-test_i2c_tmp112: tmp112@45 {
-	compatible = "ti,tmp112";
+test_i2c_hdc2080: hdc2080@45 {
+	compatible = "ti,hdc2080";
 	reg = <0x45>;
 };
 
-test_i2c_tmp116: tmp116@46 {
-	compatible = "ti,tmp116";
+test_i2c_lp3943: lp3943@46 {
+	compatible = "ti,lp3943";
 	reg = <0x46>;
 };
 
-test_i2c_bq274xx: bq27xx@47 {
-	compatible = "ti,bq274xx";
+test_i2c_lp5562: lp5562@47 {
+	compatible = "ti,lp5562";
 	reg = <0x47>;
+};
+
+test_i2c_opt3001: opt3001@48 {
+	compatible = "ti,opt3001";
+	reg = <0x48>;
+};
+
+test_i2c_tlv320dac: tlv320dac@49 {
+	compatible = "ti,tlv320dac";
+	reg = <0x49>;
+	reset-gpios = <&test_gpio 0 0>;
+};
+
+test_i2c_tmp007: tmp007@4a {
+	compatible = "ti,tmp007";
+	reg = <0x4a>;
+	int-gpios = <&test_gpio 0 0>;
+};
+
+test_i2c_tmp108: tmp108@4b {
+	compatible = "ti,tmp108";
+	reg = <0x4b>;
+	alert-gpios = <&test_gpio 0 0>;
+};
+
+test_i2c_tmp112: tmp112@4c {
+	compatible = "ti,tmp112";
+	reg = <0x4c>;
+};
+
+test_i2c_tmp116: tmp116@4d {
+	compatible = "ti,tmp116";
+	reg = <0x4d>;
+};
+
+test_i2c_bq274xx: bq27xx@4e {
+	compatible = "ti,bq274xx";
+	reg = <0x4e>;
 	design-voltage = <3700>;
 	design-capacity = <1800>;
 	taper-current = <45>;
@@ -477,47 +481,47 @@ test_i2c_bq274xx: bq27xx@47 {
 	int-gpios = <&test_gpio 0 0>;
 };
 
-test_i2c_mpr: mpr@18 {
+test_i2c_mpr: mpr@4f {
 	compatible = "honeywell,mpr";
-	reg = <0x18>;
+	reg = <0x4f>;
 };
 
-test_i2c_dps310: dps310@48 {
+test_i2c_dps310: dps310@50 {
 		compatible = "infineon,dps310";
-		reg = <0x48>;
+		reg = <0x50>;
 };
 
-test_i2c_iis2dh: iis2dh@18 {
+test_i2c_iis2dh: iis2dh@51 {
 	compatible = "st,iis2dh";
-	reg = <0x18>;
+	reg = <0x51>;
 	drdy-gpios = <&test_gpio 0 0>;
 };
 
-test_i2c_iis2iclx: iis2iclx@6a {
+test_i2c_iis2iclx: iis2iclx@52 {
 	compatible = "st,iis2iclx";
-	reg = <0x6a>;
+	reg = <0x52>;
 	drdy-gpios = <&test_gpio 0 0>;
 	int-pin = <1>;
 };
 
-test_i2c_wsen_hids: wsen_hids@5f {
+test_i2c_wsen_hids: wsen_hids@53 {
 	compatible = "we,wsen-hids";
-	reg = <0x5f>;
+	reg = <0x53>;
 	drdy-gpios = <&test_gpio 0 0>;
 	odr = "1";
 };
 
-test_i2c_itds: itds@18 {
+test_i2c_itds: itds@54 {
 	compatible = "we,wsen-itds";
-	reg = <0x18>;
+	reg = <0x54>;
 	int-gpios = <&test_gpio 0 0>;
 	odr = "800";
 	op-mode = "high-perf";
 };
 
-test_i2c_max17055: max17055@49 {
+test_i2c_max17055: max17055@55 {
 	compatible = "maxim,max17055";
-	reg = <0x49>;
+	reg = <0x55>;
 	design-capacity = <1500>;
 	design-voltage = <3860>;
 	desired-charging-current = <2000>;
@@ -527,9 +531,9 @@ test_i2c_max17055: max17055@49 {
 	v-empty = <3300>;
 };
 
-test_i2c_max17262: max17262@36 {
+test_i2c_max17262: max17262@56 {
 	compatible = "maxim,max17262";
-	reg = <0x36>;
+	reg = <0x56>;
 	design-voltage = <3600>;
 	desired-voltage = <3600>;
 	desired-charging-current = <2000>;
@@ -539,25 +543,26 @@ test_i2c_max17262: max17262@36 {
 	charge-voltage = <3600>;
 };
 
-test_i2c_vcnl4040: vcnl4040@60 {
+test_i2c_vcnl4040: vcnl4040@57 {
 	compatible = "vishay,vcnl4040";
-	reg = <0x60>;
+	reg = <0x57>;
 	int-gpios = <&test_gpio 0 0>;
 };
 
-test_i2c_bmi160: bmi160@4a {
+test_i2c_bmi160: bmi160@58 {
 	compatible = "bosch,bmi160";
-	reg = <0x4a>;
+	reg = <0x58>;
+	int-gpios = <&test_gpio 0 0>;
 };
 
-test_i2c_bmi270: bmi270@4a {
+test_i2c_bmi270: bmi270@59 {
 	compatible = "bosch,bmi270";
-	reg = <0x4a>;
+	reg = <0x59>;
 };
 
-test_i2c_fdc2x1x: fdc2x1x@2a {
+test_i2c_fdc2x1x: fdc2x1x@5a {
 	compatible = "ti,fdc2x1x";
-	reg = <0x2a>;
+	reg = <0x5a>;
 	intb-gpios = <&test_gpio 0 0>;
 	deglitch = <5>;
 	fref = <43360>;
@@ -571,25 +576,25 @@ test_i2c_fdc2x1x: fdc2x1x@2a {
 	};
 };
 
-test_i2c_bmp388: bmp388@4c {
+test_i2c_bmp388: bmp388@5b {
 	compatible = "bosch,bmp388";
-	reg = <0x4c>;
+	reg = <0x5b>;
 	int-gpios = <&test_gpio 0 0>;
 };
 
-test_i2c_sbc_gauge: sbsgauge@4d {
+test_i2c_sbc_gauge: sbsgauge@5c {
 	compatible = "sbs,sbs-gauge";
-	reg = <0x4d>;
+	reg = <0x5c>;
 };
 
-test_i2c_lm75: lm75@4e {
+test_i2c_lm75: lm75@5d {
 	compatible = "lm75";
-	reg = <0x4e>;
+	reg = <0x5d>;
 };
 
-test_i2c_ina230: ina230@4f {
+test_i2c_ina230: ina230@5e {
 	compatible = "ti,ina230";
-	reg = <0x4f>;
+	reg = <0x5e>;
 	config = <0>;
 	current-lsb-microamps = <1000>;
 	rshunt-milliohms = <0>;
@@ -598,15 +603,15 @@ test_i2c_ina230: ina230@4f {
 	alert-gpios = <&test_gpio 0 0>;
 };
 
-test_i2c_lm77: lm77@50 {
+test_i2c_lm77: lm77@5f {
 	compatible = "lm77";
-	reg = <0x50>;
+	reg = <0x5f>;
 	int-gpios = <&test_gpio 0 0>;
 };
 
-test_i2c_ina231: ina231@51 {
+test_i2c_ina231: ina231@60 {
 	compatible = "ti,ina230";
-	reg = <0x51>;
+	reg = <0x60>;
 	config = <0>;
 	current-lsb-microamps = <1000>;
 	rshunt-milliohms = <0>;
@@ -615,9 +620,9 @@ test_i2c_ina231: ina231@51 {
 	alert-gpios = <&test_gpio 0 0>;
 };
 
-test_i2c_ina237: ina237@52 {
+test_i2c_ina237: ina237@61 {
 	compatible = "ti,ina237";
-	reg = <0x52>;
+	reg = <0x61>;
 	config = <0>;
 	current-lsb-microamps = <1000>;
 	adc-config = <0>;
@@ -626,7 +631,94 @@ test_i2c_ina237: ina237@52 {
 	alert-gpios = <&test_gpio 0 0>;
 };
 
-test_i2c_max31875: max31875@53 {
+test_i2c_max31875: max31875@62 {
 	compatible = "maxim,max31875";
-	reg = <0x53>;
+	reg = <0x62>;
+};
+
+test_i2c_icp10125: icp10125@63 {
+	compatible = "invensense,icp10125";
+	reg = <0x63>;
+	temperature-measurement-mode = "normal";
+	pressure-measurement-mode = "normal";
+};
+
+test_i2c_as5600: as5600@64 {
+	compatible = "ams,as5600";
+	reg = <0x64>;
+};
+
+test_i2c_bh1750: bh1750@65 {
+	compatible = "rohm,bh1750";
+	reg = <0x65>;
+};
+
+test_i2c_akm09918c: akm09918c@66 {
+	compatible = "asahi-kasei,akm09918c";
+	reg = <0x66>;
+};
+
+test_i2c_wsen_tids: wsen_tids@67 {
+	compatible = "we,wsen-tids";
+	reg = <0x67>;
+	int-gpios = <&test_gpio 0 0>;
+	odr = <25>;
+	temp-high-threshold = <0>;
+	temp-low-threshold = <0>;
+};
+
+test_i2c_vl53l1x: vl53l1x@68 {
+	compatible = "st,vl53l1x";
+	reg = <0x68>;
+	int-gpios = <&test_gpio 0 0>;
+	xshut-gpios = <&test_gpio 0 0>;
+};
+
+test_i2c_tmd2620: tmd2620@69 {
+	compatible = "ams,tmd2620";
+	reg = <0x69>;
+	int-gpios = <&test_gpio 0 0>;
+	proximity-gain = <4>;
+	proximity-pulse-length = <16>;
+	proximity-pulse-count = <15>;
+	proximity-high-threshold = <255>;
+	proximity-low-threshold = <0>;
+	proximity-led-drive-strength = <4>;
+	proximity-interrupt-filter = <0>;
+	wait-time-factor = <0>;
+};
+
+test_i2c_wsen_pads: wsen_pads@6A {
+	compatible = "we,wsen-pads";
+	reg = <0x6A>;
+	drdy-gpios = <&test_gpio 0 0>;
+	odr = <1>;
+};
+
+test_i2c_s11059: s11059@6b {
+	compatible = "hamamatsu,s11059";
+	reg = <0x6b>;
+	integration-time = <546000>;
+};
+
+test_i2c_wsen_pdus: wsen_pdus@6C {
+	compatible = "we,wsen-pdus";
+	reg = <0x6C>;
+	sensor-type = <3>;
+};
+
+test_i2c_veml7700: veml7700@6d {
+	compatible = "vishay,veml7700";
+	reg = <0x6d>;
+	psm-mode = <0x03>;
+};
+
+test_i2c_ina3221: ina3221@6e {
+	compatible = "ti,ina3221";
+	reg = <0x6e>;
+	shunt-resistors = <1000 1000 1000>;
+	enable-channel = <1 0 0>;
+	conv-time-bus = <7>;
+	conv-time-shunt = <7>;
+	avg-mode = <2>;
 };

@@ -8,7 +8,7 @@ compatible: "zephyr,native-posix-linux-can"
 include: can-controller.yaml
 
 properties:
-    host-interface:
-      type: string
-      required: true
-      description: Linux host interface name (e.g. zcan0, vcan0, can0, ...)
+  host-interface:
+    type: string
+    required: true
+    description: Linux host interface name (e.g. zcan0, vcan0, can0, ...)

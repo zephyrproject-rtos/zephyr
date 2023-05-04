@@ -5,6 +5,7 @@
  */
 
 #include "subnet.h"
+#include <zephyr/bluetooth/mesh/sar_cfg.h>
 
 #define BT_MESH_IV_UPDATE(flags)   ((flags >> 1) & 0x01)
 #define BT_MESH_KEY_REFRESH(flags) (flags & 0x01)
@@ -29,6 +30,7 @@
 #define BT_MESH_NET_MAX_PDU_LEN (BT_MESH_NET_HDR_LEN + 16 + 4)
 
 struct bt_mesh_net_cred;
+enum bt_mesh_nonce_type;
 
 struct bt_mesh_node {
 	uint16_t addr;
@@ -149,6 +151,9 @@ struct bt_mesh_lpn {
 	/* Duration reported for last advertising packet */
 	uint16_t adv_duration;
 
+	/* Advertising start time. */
+	uint32_t adv_start_time;
+
 	/* Next LPN related action timer */
 	struct k_work_delayable timer;
 
@@ -174,12 +179,18 @@ enum {
 	BT_MESH_IVU_INITIATOR,   /* IV Update initiated by us */
 	BT_MESH_IVU_TEST,        /* IV Update test mode */
 	BT_MESH_IVU_PENDING,     /* Update blocked by SDU in progress */
+	BT_MESH_COMP_DIRTY,      /* Composition data is dirty */
+	BT_MESH_DEVKEY_CAND,     /* Has device key candidate */
+	BT_MESH_METADATA_DIRTY,  /* Models metadata is dirty */
 
 	/* Feature flags */
 	BT_MESH_RELAY,
 	BT_MESH_BEACON,
 	BT_MESH_GATT_PROXY,
 	BT_MESH_FRIEND,
+	BT_MESH_PRIV_BEACON,
+	BT_MESH_PRIV_GATT_PROXY,
+	BT_MESH_OD_PRIV_PROXY,
 
 	/* Don't touch - intentionally last */
 	BT_MESH_FLAG_COUNT,
@@ -211,10 +222,23 @@ struct bt_mesh_net {
 	uint8_t relay_xmit;
 	uint8_t default_ttl;
 
+#if defined(CONFIG_BT_MESH_PRIV_BEACONS)
+	uint8_t priv_beacon_int;
+#endif
+
 	/* Timer to track duration in current IV Update state */
 	struct k_work_delayable ivu_timer;
 
 	uint8_t dev_key[16];
+
+#if defined(CONFIG_BT_MESH_RPR_SRV)
+	uint8_t dev_key_cand[16];
+#endif
+#if defined(CONFIG_BT_MESH_OD_PRIV_PROXY_SRV)
+	uint8_t on_demand_state;
+#endif
+	struct bt_mesh_sar_tx sar_tx; /* Transport SAR Transmitter configuration */
+	struct bt_mesh_sar_rx sar_rx; /* Transport SAR Receiver configuration */
 };
 
 /* Network interface */
@@ -265,7 +289,7 @@ int bt_mesh_net_create(uint16_t idx, uint8_t flags, const uint8_t key[16],
 bool bt_mesh_net_iv_update(uint32_t iv_index, bool iv_update);
 
 int bt_mesh_net_encode(struct bt_mesh_net_tx *tx, struct net_buf_simple *buf,
-		       bool proxy);
+		       enum bt_mesh_nonce_type type);
 
 int bt_mesh_net_send(struct bt_mesh_net_tx *tx, struct net_buf *buf,
 		     const struct bt_mesh_send_cb *cb, void *cb_data);
@@ -279,6 +303,7 @@ void bt_mesh_net_recv(struct net_buf_simple *data, int8_t rssi,
 void bt_mesh_net_loopback_clear(uint16_t net_idx);
 
 uint32_t bt_mesh_next_seq(void);
+void bt_mesh_net_seq_store(bool force);
 
 void bt_mesh_net_init(void);
 void bt_mesh_net_header_parse(struct net_buf_simple *buf,
@@ -286,6 +311,11 @@ void bt_mesh_net_header_parse(struct net_buf_simple *buf,
 void bt_mesh_net_pending_net_store(void);
 void bt_mesh_net_pending_iv_store(void);
 void bt_mesh_net_pending_seq_store(void);
+
+void bt_mesh_net_pending_dev_key_cand_store(void);
+void bt_mesh_net_dev_key_cand_store(void);
+
+void bt_mesh_net_store(void);
 void bt_mesh_net_clear(void);
 void bt_mesh_net_settings_commit(void);
 

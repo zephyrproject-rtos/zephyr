@@ -50,7 +50,7 @@ static int dai_alh_set_config_blob(struct dai_intel_alh *dp, const struct dai_co
 
 		if (IPC4_ALH_DAI_INDEX(alh_id) == dp->index) {
 			alh->params.stream_id = alh_id;
-			alh->params.channels = popcount(alh_cfg->mapping[i].channel_mask);
+			alh->params.channels = POPCOUNT(alh_cfg->mapping[i].channel_mask);
 			break;
 		}
 	}
@@ -89,17 +89,24 @@ static void alh_release_ownership(void)
 }
 
 
-static const struct dai_config *dai_alh_config_get(const struct device *dev, enum dai_dir dir)
+static int dai_alh_config_get(const struct device *dev, struct dai_config *cfg,
+			      enum dai_dir dir)
 {
 	struct dai_config *params = (struct dai_config *)dev->config;
 	struct dai_intel_alh *dp = (struct dai_intel_alh *)dev->data;
 	struct dai_intel_alh_pdata *alh = dai_get_drvdata(dp);
 
+	if (!cfg) {
+		return -EINVAL;
+	}
+
 	params->rate = alh->params.rate;
 	params->channels = alh->params.channels;
 	params->word_size = ALH_WORD_SIZE_DEFAULT;
 
-	return params;
+	*cfg = *params;
+
+	return 0;
 }
 
 static int dai_alh_config_set(const struct device *dev, const struct dai_config *cfg,
@@ -175,11 +182,6 @@ static int dai_alh_remove(const struct device *dev)
 	return 0;
 }
 
-static int alh_init(const struct device *dev)
-{
-	return 0;
-}
-
 static const struct dai_driver_api dai_intel_alh_api_funcs = {
 	.probe			= dai_alh_probe,
 	.remove			= dai_alh_remove,
@@ -206,7 +208,7 @@ static const struct dai_driver_api dai_intel_alh_api_funcs = {
 	};								\
 									\
 	DEVICE_DT_INST_DEFINE(n,					\
-			alh_init, NULL,					\
+			NULL, NULL,					\
 			&dai_intel_alh_data_##n,			\
 			&dai_intel_alh_config_##n,			\
 			POST_KERNEL, 32,				\

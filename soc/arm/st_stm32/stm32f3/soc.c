@@ -11,6 +11,7 @@
 
 #include <zephyr/device.h>
 #include <zephyr/init.h>
+#include <stm32_ll_system.h>
 #include <zephyr/arch/cpu.h>
 #include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
 #include <zephyr/arch/arm/aarch32/nmi.h>
@@ -24,11 +25,10 @@
  *
  * @return 0
  */
-static int stm32f3_init(const struct device *arg)
+static int stm32f3_init(void)
 {
 	uint32_t key;
 
-	ARG_UNUSED(arg);
 
 	key = irq_lock();
 
@@ -42,6 +42,9 @@ static int stm32f3_init(const struct device *arg)
 	/* Update CMSIS SystemCoreClock variable (HCLK) */
 	/* At reset, system core clock is set to 8 MHz from HSI */
 	SystemCoreClock = 8000000;
+
+	/* Allow reflashing the board */
+	LL_DBGMCU_EnableDBGSleepMode();
 
 	return 0;
 }

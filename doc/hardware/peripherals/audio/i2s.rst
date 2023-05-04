@@ -1,8 +1,7 @@
 .. _i2s_api:
 
-
-I2S
-####
+Inter-IC Sound (I2S) Bus
+########################
 
 Overview
 ********

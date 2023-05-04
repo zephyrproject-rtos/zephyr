@@ -40,7 +40,10 @@
 #include "hal/radio.h"
 #endif /* CONFIG_SOC_FAMILY_NRF */
 
+#include "ll_sw/pdu_df.h"
+#include "lll/pdu_vendor.h"
 #include "ll_sw/pdu.h"
+
 #include "ll_sw/lll.h"
 #include "lll/lll_df_types.h"
 #include "ll_sw/lll_sync_iso.h"
@@ -177,7 +180,7 @@ isoal_status_t sink_sdu_emit_hci(const struct isoal_sink             *sink_ctx,
 			slen_packed = bt_iso_pkt_len_pack(total_len, packet_status_flag);
 
 			data_hdr->ts = sys_cpu_to_le32((uint32_t) sdu_frag->sdu.timestamp);
-			data_hdr->data.sn   = sys_cpu_to_le16((uint16_t) sdu_frag->sdu.seqn);
+			data_hdr->data.sn   = sys_cpu_to_le16((uint16_t) sdu_frag->sdu.sn);
 			data_hdr->data.slen = sys_cpu_to_le16(slen_packed);
 
 			len += BT_HCI_ISO_TS_DATA_HDR_SIZE;
@@ -389,52 +392,62 @@ static inline struct net_buf *encode_node(struct node_rx_pdu *node_rx,
 #endif
 #if defined(CONFIG_BT_CTLR_SYNC_ISO) || defined(CONFIG_BT_CTLR_CONN_ISO)
 	case HCI_CLASS_ISO_DATA: {
+		if (false) {
+
 #if defined(CONFIG_BT_CTLR_CONN_ISO)
-		uint8_t handle = node_rx->hdr.handle;
-		struct ll_iso_stream_hdr *hdr = NULL;
+		} else if (IS_CIS_HANDLE(node_rx->hdr.handle)) {
+			struct ll_conn_iso_stream *cis;
 
-		if (IS_CIS_HANDLE(handle)) {
-			struct ll_conn_iso_stream *cis =
-				ll_conn_iso_stream_get(handle);
-			hdr = &cis->hdr;
-		}
+			cis = ll_conn_iso_stream_get(node_rx->hdr.handle);
+			if (cis && !cis->teardown) {
+				struct ll_iso_stream_hdr *hdr;
+				struct ll_iso_datapath *dp;
 
-		struct ll_iso_datapath *dp = hdr->datapath_out;
+				hdr = &cis->hdr;
+				dp = hdr->datapath_out;
+				if (dp && dp->path_id == BT_HCI_DATAPATH_ID_HCI) {
+					/* If HCI datapath pass to ISO AL here */
+					struct isoal_pdu_rx pckt_meta = {
+						.meta = &node_rx->hdr.rx_iso_meta,
+						.pdu  = (void *)&node_rx->pdu[0],
+					};
 
-		if (dp && dp->path_id == BT_HCI_DATAPATH_ID_HCI) {
-			/* If HCI datapath pass to ISO AL here */
-			struct isoal_pdu_rx pckt_meta = {
-				.meta = &node_rx->hdr.rx_iso_meta,
-				.pdu  = (struct pdu_iso *) &node_rx->pdu[0]
-			};
+					/* Pass the ISO PDU through ISO-AL */
+					isoal_status_t err =
+						isoal_rx_pdu_recombine(dp->sink_hdl, &pckt_meta);
 
-			/* Pass the ISO PDU through ISO-AL */
-			isoal_status_t err =
-				isoal_rx_pdu_recombine(dp->sink_hdl, &pckt_meta);
-
-			LL_ASSERT(err == ISOAL_STATUS_OK); /* TODO handle err */
-		}
+					/* TODO handle err */
+					LL_ASSERT(err == ISOAL_STATUS_OK);
+				}
+			}
 #endif /* CONFIG_BT_CTLR_CONN_ISO */
 
 #if defined(CONFIG_BT_CTLR_SYNC_ISO)
-		const struct lll_sync_iso_stream *stream;
-		struct isoal_pdu_rx isoal_rx;
-		isoal_status_t err;
+		} else if (IS_SYNC_ISO_HANDLE(node_rx->hdr.handle)) {
+			const struct lll_sync_iso_stream *stream;
+			struct isoal_pdu_rx isoal_rx;
+			uint16_t stream_handle;
+			isoal_status_t err;
 
-		stream = ull_sync_iso_stream_get(node_rx->hdr.handle);
+			stream_handle = LL_BIS_SYNC_IDX_FROM_HANDLE(node_rx->hdr.handle);
+			stream = ull_sync_iso_stream_get(stream_handle);
 
-		/* Check validity of the data path sink. FIXME: A channel disconnect race
-		 * may cause ISO data pending without valid data path.
-		 */
-		if (stream && stream->dp) {
-			isoal_rx.meta = &node_rx->hdr.rx_iso_meta;
-			isoal_rx.pdu = (void *)node_rx->pdu;
-			err = isoal_rx_pdu_recombine(stream->dp->sink_hdl, &isoal_rx);
+			/* Check validity of the data path sink. FIXME: A channel disconnect race
+			 * may cause ISO data pending without valid data path.
+			 */
+			if (stream && stream->dp) {
+				isoal_rx.meta = &node_rx->hdr.rx_iso_meta;
+				isoal_rx.pdu = (void *)node_rx->pdu;
+				err = isoal_rx_pdu_recombine(stream->dp->sink_hdl, &isoal_rx);
 
-			LL_ASSERT(err == ISOAL_STATUS_OK ||
-				  err == ISOAL_STATUS_ERR_SDU_ALLOC);
-		}
+				LL_ASSERT(err == ISOAL_STATUS_OK ||
+					  err == ISOAL_STATUS_ERR_SDU_ALLOC);
+			}
 #endif /* CONFIG_BT_CTLR_SYNC_ISO */
+
+		} else {
+			LL_ASSERT(0);
+		}
 
 		node_rx->hdr.next = NULL;
 		ll_iso_rx_mem_release((void **)&node_rx);
@@ -813,9 +826,8 @@ static const struct bt_hci_driver drv = {
 	.send	= hci_driver_send,
 };
 
-static int hci_driver_init(const struct device *unused)
+static int hci_driver_init(void)
 {
-	ARG_UNUSED(unused);
 
 	bt_hci_driver_register(&drv);
 

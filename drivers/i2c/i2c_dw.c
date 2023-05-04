@@ -461,17 +461,22 @@ static int i2c_dw_transfer(const struct device *dev,
 		return 0;
 	}
 
+	ret = k_mutex_lock(&dw->bus_mutex, K_FOREVER);
+	if (ret != 0) {
+		return ret;
+	}
+
 	/* First step, check if there is current activity */
 	if (test_bit_status_activity(reg_base) || (dw->state & I2C_DW_BUSY)) {
-		return -EIO;
+		ret = -EBUSY;
+		goto error;
 	}
 
 	dw->state |= I2C_DW_BUSY;
 
 	ret = i2c_dw_setup(dev, slave_address);
 	if (ret) {
-		dw->state = I2C_DW_STATE_READY;
-		return ret;
+		goto error;
 	}
 
 	/* Enable controller */
@@ -551,7 +556,9 @@ static int i2c_dw_transfer(const struct device *dev,
 
 	pm_device_busy_clear(dev);
 
+error:
 	dw->state = I2C_DW_STATE_READY;
+	k_mutex_unlock(&dw->bus_mutex);
 
 	return ret;
 }
@@ -867,7 +874,10 @@ static int i2c_dw_initialize(const struct device *dev)
 	}
 
 	k_sem_init(&dw->device_sync_sem, 0, K_SEM_MAX_LIMIT);
+	k_mutex_init(&dw->bus_mutex);
+
 	uint32_t reg_base = get_regs(dev);
+	clear_bit_enable_en(reg_base);
 
 	/* verify that we have a valid DesignWare register first */
 	if (read_comp_type(reg_base) != I2C_DW_MAGIC_KEY) {

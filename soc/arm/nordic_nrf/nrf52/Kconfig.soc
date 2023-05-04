@@ -3,44 +3,38 @@
 # Copyright (c) 2016-2019 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
+if SOC_SERIES_NRF52X
+
 config SOC_NRF52805
-	depends on SOC_SERIES_NRF52X
 	bool
 
 config SOC_NRF52810
-	depends on SOC_SERIES_NRF52X
 	bool
 
 config SOC_NRF52811
-	depends on SOC_SERIES_NRF52X
 	bool
 
 config SOC_NRF52820
-	depends on SOC_SERIES_NRF52X
 	bool
 
 config SOC_NRF52832
-	depends on SOC_SERIES_NRF52X
 	bool
-	select SOC_COMPATIBLE_NRF52832
 	select CPU_CORTEX_M_HAS_DWT
 	select CPU_HAS_FPU
 
 config SOC_NRF52833
-	depends on SOC_SERIES_NRF52X
 	bool
+	select SOC_COMPATIBLE_NRF52833
 	select CPU_CORTEX_M_HAS_DWT
 	select CPU_HAS_FPU
 
 config SOC_NRF52840
-	depends on SOC_SERIES_NRF52X
 	bool
 	select CPU_CORTEX_M_HAS_DWT
 	select CPU_HAS_FPU
 
 choice
 	prompt "nRF52x MCU Selection"
-	depends on SOC_SERIES_NRF52X
 
 config SOC_NRF52805_CAAA
 	bool "NRF52805_CAAA"
@@ -93,7 +87,6 @@ config SOC_DCDC_NRF52X_HV
 
 config GPIO_AS_PINRESET
 	bool "GPIO as pin reset (reset button)"
-	depends on SOC_SERIES_NRF52X
 	default y
 
 config NRF_ENABLE_ICACHE
@@ -118,3 +111,14 @@ config NRF52_ANOMALY_132_DELAY_US
 	  depending on application, workaround may also need to be applied.
 	  Additional drivers initialization increases initialization time and delay
 	  may be shortened. Workaround is disabled by setting delay to 0.
+
+config NRF52_ANOMALY_198_WORKAROUND
+	bool "Anomaly 198 workaround"
+	default y
+	depends on SOC_NRF52840
+	depends on NRFX_SPIM3
+	help
+	  This anomaly applies to IC revisions "Engineering B" up to "3", the most
+	  recent one.
+
+endif # SOC_SERIES_NRF52X

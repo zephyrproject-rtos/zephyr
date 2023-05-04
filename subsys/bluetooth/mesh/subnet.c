@@ -34,7 +34,6 @@
 #include "beacon.h"
 #include "rpl.h"
 #include "settings.h"
-#include "host/ecc.h"
 #include "prov.h"
 
 #define LOG_LEVEL CONFIG_BT_MESH_KEYS_LOG_LEVEL
@@ -328,6 +327,16 @@ static int net_keys_create(struct bt_mesh_subnet_keys *keys,
 
 	LOG_DBG("BeaconKey %s", bt_hex(keys->beacon, 16));
 
+#if defined(CONFIG_BT_MESH_PRIV_BEACONS)
+	err = bt_mesh_private_beacon_key(key, keys->priv_beacon);
+	if (err) {
+		LOG_ERR("Unable to generate private beacon key");
+		return err;
+	}
+
+	LOG_DBG("PrivateBeaconKey %s", bt_hex(keys->priv_beacon, 16));
+#endif
+
 	keys->valid = 1U;
 
 	return 0;
@@ -533,7 +542,7 @@ uint8_t bt_mesh_subnet_node_id_set(uint16_t net_idx,
 	}
 
 	if (node_id) {
-		bt_mesh_proxy_identity_start(sub);
+		bt_mesh_proxy_identity_start(sub, false);
 	} else {
 		bt_mesh_proxy_identity_stop(sub);
 	}
@@ -555,6 +564,61 @@ uint8_t bt_mesh_subnet_node_id_get(uint16_t net_idx,
 	}
 
 	*node_id = sub->node_id;
+
+	return STATUS_SUCCESS;
+}
+
+
+uint8_t bt_mesh_subnet_priv_node_id_set(uint16_t net_idx,
+					enum bt_mesh_feat_state priv_node_id)
+{
+	struct bt_mesh_subnet *sub;
+
+	if (priv_node_id == BT_MESH_FEATURE_NOT_SUPPORTED) {
+		return STATUS_CANNOT_SET;
+	}
+
+	sub = bt_mesh_subnet_get(net_idx);
+	if (!sub) {
+		return STATUS_INVALID_NETKEY;
+	}
+
+	if (!IS_ENABLED(CONFIG_BT_MESH_GATT_PROXY) ||
+	    !IS_ENABLED(CONFIG_BT_MESH_PRIV_BEACONS)) {
+		return STATUS_FEAT_NOT_SUPP;
+	}
+
+	if (priv_node_id) {
+		bt_mesh_proxy_identity_start(sub, true);
+	} else {
+		bt_mesh_proxy_identity_stop(sub);
+	}
+
+	bt_mesh_adv_gatt_update();
+
+	return STATUS_SUCCESS;
+}
+
+uint8_t bt_mesh_subnet_priv_node_id_get(uint16_t net_idx,
+					enum bt_mesh_feat_state *priv_node_id)
+{
+	struct bt_mesh_subnet *sub;
+
+	sub = bt_mesh_subnet_get(net_idx);
+	if (!sub) {
+		*priv_node_id = 0x00;
+		return STATUS_INVALID_NETKEY;
+	}
+
+#if CONFIG_BT_MESH_GATT_PROXY && CONFIG_BT_MESH_PRIV_BEACONS
+	if (sub->node_id == BT_MESH_FEATURE_ENABLED && sub->priv_beacon_ctx.node_id) {
+		*priv_node_id = sub->node_id;
+	} else {
+		*priv_node_id = BT_MESH_FEATURE_DISABLED;
+	}
+#else
+	*priv_node_id = BT_MESH_FEATURE_NOT_SUPPORTED;
+#endif
 
 	return STATUS_SUCCESS;
 }
@@ -831,12 +895,12 @@ void bt_mesh_subnet_pending_store(void)
 			continue;
 		}
 
+		update->valid = 0U;
+
 		if (update->clear) {
 			clear_net_key(update->key_idx);
 		} else {
 			store_subnet(update->key_idx);
 		}
-
-		update->valid = 0U;
 	}
 }

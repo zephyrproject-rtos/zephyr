@@ -6,7 +6,7 @@
        };
 };
 
-&lpuart3 {
+dut: &lpuart3 {
 	status = "okay";
 	current-speed = <115200>;
 	nxp,loopback;

@@ -7,7 +7,7 @@
 # DAC options
 #
 menuconfig DAC
-	bool "DAC drivers"
+	bool "Digital-to-Analog Converter (DAC) drivers"
 	help
 	  Enable DAC (Digital to Analog Converter) driver configuration.
 
@@ -42,10 +42,14 @@ source "drivers/dac/Kconfig.dacx0508"
 
 source "drivers/dac/Kconfig.dacx3608"
 
+source "drivers/dac/Kconfig.ltc166x"
+
 source "drivers/dac/Kconfig.mcp4725"
 
 source "drivers/dac/Kconfig.mcp4728"
 
 source "drivers/dac/Kconfig.gd32"
+
+source "drivers/dac/Kconfig.esp32"
 
 endif # DAC

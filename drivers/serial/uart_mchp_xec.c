@@ -30,9 +30,15 @@
 #endif
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/uart.h>
+#include <zephyr/drivers/gpio.h>
 #include <zephyr/sys/sys_io.h>
 #include <zephyr/spinlock.h>
 #include <zephyr/irq.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/policy.h>
+
+#include <zephyr/logging/log.h>
+LOG_MODULE_REGISTER(uart_xec, CONFIG_UART_LOG_LEVEL);
 
 /* Clock source is 1.8432 MHz derived from PLL 48 MHz */
 #define XEC_UART_CLK_SRC_1P8M		0
@@ -166,6 +172,12 @@
 
 #define IIRC(dev) (((struct uart_xec_dev_data *)(dev)->data)->iir_cache)
 
+enum uart_xec_pm_policy_state_flag {
+	UART_XEC_PM_POLICY_STATE_TX_FLAG,
+	UART_XEC_PM_POLICY_STATE_RX_FLAG,
+	UART_XEC_PM_POLICY_STATE_FLAG_COUNT,
+};
+
 /* device config */
 struct uart_xec_device_config {
 	struct uart_regs *regs;
@@ -177,6 +189,10 @@ struct uart_xec_device_config {
 	const struct pinctrl_dev_config *pcfg;
 #if defined(CONFIG_UART_INTERRUPT_DRIVEN) || defined(CONFIG_UART_ASYNC_API)
 	uart_irq_config_func_t	irq_config_func;
+#endif
+#ifdef CONFIG_PM_DEVICE
+	struct gpio_dt_spec wakerx_gpio;
+	bool wakeup_source;
 #endif
 };
 
@@ -193,7 +209,31 @@ struct uart_xec_dev_data {
 #endif
 };
 
+#ifdef CONFIG_PM_DEVICE
+	ATOMIC_DEFINE(pm_policy_state_flag, UART_XEC_PM_POLICY_STATE_FLAG_COUNT);
+#endif
+
+#if defined(CONFIG_PM_DEVICE) && defined(CONFIG_UART_CONSOLE_INPUT_EXPIRED)
+	struct k_work_delayable rx_refresh_timeout_work;
+#endif
+
 static const struct uart_driver_api uart_xec_driver_api;
+
+#ifdef CONFIG_PM_DEVICE
+static void uart_xec_pm_policy_state_lock_get(enum uart_xec_pm_policy_state_flag flag)
+{
+	if (atomic_test_and_set_bit(pm_policy_state_flag, flag) == 0) {
+		pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+	}
+}
+
+static void uart_xec_pm_policy_state_lock_put(enum uart_xec_pm_policy_state_flag flag)
+{
+	if (atomic_test_and_clear_bit(pm_policy_state_flag, flag) == 1) {
+		pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+	}
+}
+#endif
 
 #ifdef CONFIG_SOC_SERIES_MEC172X
 
@@ -398,6 +438,63 @@ static int uart_xec_config_get(const struct device *dev,
 }
 #endif /* CONFIG_UART_USE_RUNTIME_CONFIGURE */
 
+#ifdef CONFIG_PM_DEVICE
+
+static void uart_xec_wake_handler(const struct device *gpio, struct gpio_callback *cb,
+		   uint32_t pins)
+{
+	/* Disable interrupts on UART RX pin to avoid repeated interrupts. */
+	(void)gpio_pin_interrupt_configure(gpio, (find_msb_set(pins) - 1),
+					   GPIO_INT_DISABLE);
+	/* Refresh console expired time */
+#ifdef CONFIG_UART_CONSOLE_INPUT_EXPIRED
+	k_timeout_t delay = K_MSEC(CONFIG_UART_CONSOLE_INPUT_EXPIRED_TIMEOUT);
+
+	uart_xec_pm_policy_state_lock_get(UART_XEC_PM_POLICY_STATE_RX_FLAG);
+	k_work_reschedule(&rx_refresh_timeout_work, delay);
+#endif
+}
+
+static int uart_xec_pm_action(const struct device *dev,
+					 enum pm_device_action action)
+{
+	const struct uart_xec_device_config * const dev_cfg = dev->config;
+	struct uart_regs *regs = dev_cfg->regs;
+	int ret = 0;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		regs->ACTV = MCHP_UART_LD_ACTIVATE;
+		break;
+	case PM_DEVICE_ACTION_SUSPEND:
+		/* Enable UART wake interrupt */
+		regs->ACTV = 0;
+		if ((dev_cfg->wakeup_source) && (dev_cfg->wakerx_gpio.port != NULL)) {
+			ret = gpio_pin_interrupt_configure_dt(&dev_cfg->wakerx_gpio,
+						  GPIO_INT_MODE_EDGE | GPIO_INT_TRIG_LOW);
+			if (ret < 0) {
+				LOG_ERR("Failed to configure UART wake interrupt (ret %d)", ret);
+				return ret;
+			}
+		}
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+
+#ifdef CONFIG_UART_CONSOLE_INPUT_EXPIRED
+static void uart_xec_rx_refresh_timeout(struct k_work *work)
+{
+	ARG_UNUSED(work);
+
+	uart_xec_pm_policy_state_lock_put(UART_XEC_PM_POLICY_STATE_RX_FLAG);
+}
+#endif
+#endif /* CONFIG_PM_DEVICE */
+
 /**
  * @brief Initialize individual UART port
  *
@@ -427,6 +524,24 @@ static int uart_xec_init(const struct device *dev)
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	dev_cfg->irq_config_func(dev);
+#endif
+
+#ifdef CONFIG_PM_DEVICE
+#ifdef CONFIG_UART_CONSOLE_INPUT_EXPIRED
+		k_work_init_delayable(&rx_refresh_timeout_work, uart_xec_rx_refresh_timeout);
+#endif
+	if ((dev_cfg->wakeup_source) && (dev_cfg->wakerx_gpio.port != NULL)) {
+		static struct gpio_callback uart_xec_wake_cb;
+
+		gpio_init_callback(&uart_xec_wake_cb, uart_xec_wake_handler,
+				   BIT(dev_cfg->wakerx_gpio.pin));
+
+		ret = gpio_add_callback(dev_cfg->wakerx_gpio.port, &uart_xec_wake_cb);
+		if (ret < 0) {
+			LOG_ERR("Failed to add UART wake callback (err %d)", ret);
+			return ret;
+		}
+	}
 #endif
 
 	return 0;
@@ -529,6 +644,9 @@ static int uart_xec_fifo_fill(const struct device *dev, const uint8_t *tx_data,
 	k_spinlock_key_t key = k_spin_lock(&dev_data->lock);
 
 	for (i = 0; (i < size) && (regs->LSR & LSR_THRE) != 0; i++) {
+#ifdef CONFIG_PM_DEVICE
+		uart_xec_pm_policy_state_lock_get(UART_XEC_PM_POLICY_STATE_TX_FLAG);
+#endif
 		regs->RTXB = tx_data[i];
 	}
 
@@ -797,10 +915,29 @@ static void uart_xec_irq_callback_set(const struct device *dev,
 static void uart_xec_isr(const struct device *dev)
 {
 	struct uart_xec_dev_data * const dev_data = dev->data;
+#if defined(CONFIG_PM_DEVICE) && defined(CONFIG_UART_CONSOLE_INPUT_EXPIRED)
+	const struct uart_xec_device_config * const dev_cfg = dev->config;
+	struct uart_regs *regs = dev_cfg->regs;
+	int rx_ready = 0;
+
+	rx_ready = ((regs->LSR & LSR_RXRDY) == LSR_RXRDY) ? 1 : 0;
+	if (rx_ready) {
+		k_timeout_t delay = K_MSEC(CONFIG_UART_CONSOLE_INPUT_EXPIRED_TIMEOUT);
+
+		uart_xec_pm_policy_state_lock_get(UART_XEC_PM_POLICY_STATE_RX_FLAG);
+		k_work_reschedule(&rx_refresh_timeout_work, delay);
+	}
+#endif
 
 	if (dev_data->cb) {
 		dev_data->cb(dev, dev_data->cb_data);
 	}
+
+#ifdef CONFIG_PM_DEVICE
+	if (uart_xec_irq_tx_complete(dev)) {
+		uart_xec_pm_policy_state_lock_put(UART_XEC_PM_POLICY_STATE_TX_FLAG);
+	}
+#endif /* CONFIG_PM */
 
 	/* clear ECIA GIRQ R/W1C status bit after UART status cleared */
 	uart_xec_girq_clr(dev);
@@ -920,6 +1057,21 @@ static const struct uart_driver_api uart_xec_driver_api = {
 #define DEV_DATA_FLOW_CTRL(n)						\
 	DT_INST_PROP_OR(n, hw_flow_control, UART_CFG_FLOW_CTRL_NONE)
 
+/* To enable wakeup on the UART, the DTS needs to have two entries defined
+ * in the corresponding UART node in the DTS specifying it as a wake source
+ * and specifying the UART_RX GPIO; example as below
+ *
+ *	wakerx-gpios = <&gpio_140_176 25 GPIO_ACTIVE_HIGH>;
+ *	wakeup-source;
+ */
+#ifdef CONFIG_PM_DEVICE
+#define XEC_UART_PM_WAKEUP(n)						\
+		.wakeup_source = (uint8_t)DT_INST_PROP_OR(n, wakeup_source, 0),	\
+		.wakerx_gpio = GPIO_DT_SPEC_INST_GET_OR(n, wakerx_gpios, {0}),
+#else
+#define XEC_UART_PM_WAKEUP(index) /* Not used */
+#endif
+
 #define UART_XEC_DEVICE_INIT(n)						\
 									\
 	PINCTRL_DT_INST_DEFINE(n);					\
@@ -934,6 +1086,7 @@ static const struct uart_driver_api uart_xec_driver_api = {
 		.pcr_idx = DT_INST_PROP_BY_IDX(n, pcrs, 0),		\
 		.pcr_bitpos = DT_INST_PROP_BY_IDX(n, pcrs, 1),		\
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),		\
+		XEC_UART_PM_WAKEUP(n)	\
 		DEV_CONFIG_IRQ_FUNC_INIT(n)				\
 	};								\
 	static struct uart_xec_dev_data uart_xec_dev_data_##n = {	\
@@ -943,7 +1096,9 @@ static const struct uart_driver_api uart_xec_driver_api = {
 		.uart_config.data_bits = UART_CFG_DATA_BITS_8,		\
 		.uart_config.flow_ctrl = DEV_DATA_FLOW_CTRL(n),		\
 	};								\
-	DEVICE_DT_INST_DEFINE(n, &uart_xec_init, NULL,			\
+	PM_DEVICE_DT_INST_DEFINE(n, uart_xec_pm_action);		\
+	DEVICE_DT_INST_DEFINE(n, &uart_xec_init,			\
+			      PM_DEVICE_DT_INST_GET(n),			\
 			      &uart_xec_dev_data_##n,			\
 			      &uart_xec_dev_cfg_##n,			\
 			      PRE_KERNEL_1,				\

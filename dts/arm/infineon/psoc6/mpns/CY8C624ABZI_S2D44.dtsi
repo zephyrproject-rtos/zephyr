@@ -1,0 +1,56 @@
+/*
+ * Copyright (c) 2022 Cypress Semiconductor Corporation (an Infineon company) or
+ * an affiliate of Cypress Semiconductor Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/armv7-m.dtsi>
+#include "../psoc6_02/psoc6_02.124-bga.dtsi"
+
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m0+";
+			reg = <0>;
+		};
+		cpu@1 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m4f";
+			reg = <1>;
+		};
+	};
+
+	flash-controller@40240000 {
+		compatible = "infineon,cat1-flash-controller";
+		reg = < 0x40240000 0x10000 >;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		flash0: flash@10000000 {
+			compatible = "soc-nv-flash";
+			reg = <0x10000000 0x200000>;
+			write-block-size = <4>;
+		};
+		flash1: flash@14000000 {
+			compatible = "soc-nv-flash";
+			reg = <0x14000000 0x8000>;
+			write-block-size = <4>;
+		};
+	};
+
+	sram0: memory@8000000 {
+		compatible = "mmio-sram";
+		reg = <0x8000000 0x100000>;
+	};
+
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <3>;
+};

@@ -99,7 +99,7 @@
 	lis3dh: lis3dh@19 {
 		compatible = "st,lis3dh", "st,lis2dh";
 		reg = <0x19>;
-		irq-gpios = <&gpio0 15 0>;
+		irq-gpios = <&gpio0 16 0>;
 	};
 
 	/* ST Microelectronics LPS22HB pressure sensor */

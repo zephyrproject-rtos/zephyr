@@ -138,16 +138,9 @@ static const struct can_driver_api fake_can_driver_api = {
 #endif /* CONFIG_CAN_FD_MODE */
 };
 
-static int fake_can_init(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-
-	return 0;
-}
-
 #define FAKE_CAN_INIT(inst)						\
-	DEVICE_DT_INST_DEFINE(inst, &fake_can_init, NULL, NULL, NULL,	\
-			      POST_KERNEL, CONFIG_CAN_INIT_PRIORITY,	\
+	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, NULL, NULL, POST_KERNEL,\
+			      CONFIG_CAN_INIT_PRIORITY,			\
 			      &fake_can_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(FAKE_CAN_INIT)

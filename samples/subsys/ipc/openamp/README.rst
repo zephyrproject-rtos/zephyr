@@ -43,6 +43,14 @@ Building the application for v2m_musca_b1
    :board: v2m_musca_b1
    :goals: debug
 
+Building the application for mimxrt1170_evk_cm7
+***********************************************
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/subsys/ipc/openamp
+   :board: mimxrt1170_evk_cm7
+   :goals: debug
+
 Open a serial terminal (minicom, putty, etc.) and connect the board with the
 following settings:
 

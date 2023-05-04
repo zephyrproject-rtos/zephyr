@@ -196,7 +196,7 @@ static int gpio_dw_pin_interrupt_configure(const struct device *port,
 		}
 
 		/* Interrupt to be enabled but pin is not set to input */
-		dir_reg = dw_read(port_base_addr, dir_port) & BIT(pin);
+		dir_reg = dw_read(base_addr, dir_port) & BIT(pin);
 		if (dir_reg != 0U) {
 			return -EINVAL;
 		}
@@ -244,6 +244,9 @@ static inline void dw_pin_config(const struct device *port,
 
 	/* Set init value then direction */
 	pin_is_output = (flags & GPIO_OUTPUT) != 0U;
+
+	dw_set_bit(base_addr, dir_port, pin, pin_is_output);
+
 	if (pin_is_output) {
 		if ((flags & GPIO_OUTPUT_INIT_HIGH) != 0U) {
 			gpio_dw_port_set_bits_raw(port, BIT(pin));
@@ -251,8 +254,6 @@ static inline void dw_pin_config(const struct device *port,
 			gpio_dw_port_clear_bits_raw(port, BIT(pin));
 		}
 	}
-
-	dw_set_bit(port_base_addr, dir_port, pin, pin_is_output);
 
 	/* Use built-in debounce.
 	 * Note debounce circuit is only available if also supporting

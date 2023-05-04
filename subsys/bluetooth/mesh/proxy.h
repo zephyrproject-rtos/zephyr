@@ -18,8 +18,10 @@
 	.interval_min = BT_GAP_ADV_FAST_INT_MIN_2,                             \
 	.interval_max = BT_GAP_ADV_FAST_INT_MAX_2
 
-#define BT_MESH_ID_TYPE_NET  0x00
-#define BT_MESH_ID_TYPE_NODE 0x01
+#define BT_MESH_ID_TYPE_NET	  0x00
+#define BT_MESH_ID_TYPE_NODE	  0x01
+#define BT_MESH_ID_TYPE_PRIV_NET  0x02
+#define BT_MESH_ID_TYPE_PRIV_NODE 0x03
 
 int bt_mesh_proxy_gatt_enable(void);
 int bt_mesh_proxy_gatt_disable(void);
@@ -29,7 +31,7 @@ void bt_mesh_proxy_beacon_send(struct bt_mesh_subnet *sub);
 
 int bt_mesh_proxy_adv_start(void);
 
-void bt_mesh_proxy_identity_start(struct bt_mesh_subnet *sub);
+void bt_mesh_proxy_identity_start(struct bt_mesh_subnet *sub, bool private);
 void bt_mesh_proxy_identity_stop(struct bt_mesh_subnet *sub);
 
 bool bt_mesh_proxy_relay(struct net_buf *buf, uint16_t dst);

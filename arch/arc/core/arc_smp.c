@@ -15,6 +15,7 @@
 #include <ksched.h>
 #include <zephyr/init.h>
 #include <zephyr/irq.h>
+#include <arc_irq_offload.h>
 
 volatile struct {
 	arch_cpustart_t fn;
@@ -106,6 +107,8 @@ void z_arc_slave_start(int cpu_num)
 
 	arc_core_private_intc_init();
 
+	arc_irq_offload_init_smp();
+
 	z_arc_connect_ici_clear();
 	z_irq_priority_set(DT_IRQN(DT_NODELABEL(ici)),
 			   DT_IRQ(DT_NODELABEL(ici), priority), 0);
@@ -142,9 +145,8 @@ void arch_sched_ipi(void)
 	}
 }
 
-static int arc_smp_init(const struct device *dev)
+static int arc_smp_init(void)
 {
-	ARG_UNUSED(dev);
 	struct arc_connect_bcr bcr;
 
 	/* necessary master core init */

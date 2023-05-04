@@ -111,119 +111,119 @@ compatible: "nordic,nrf-radio"
 include: [base.yaml]
 
 properties:
-    reg:
-      required: true
+  reg:
+    required: true
 
-    interrupts:
-      required: true
+  interrupts:
+    required: true
 
-    fem:
-      type: phandle
-      description: |
-        Phandle linking the RADIO node to its external front-end module.
+  fem:
+    type: phandle
+    description: |
+      Phandle linking the RADIO node to its external front-end module.
 
-    coex:
-      type: phandle
-      description: |
-        Phandle linking the RADIO node to the external radio coexistence arbitrator.
+  coex:
+    type: phandle
+    description: |
+      Phandle linking the RADIO node to the external radio coexistence arbitrator.
 
-    dfe-supported:
-      type: boolean
-      description: |
-        If set, the radio hardware supports the Direction Finding Extension.
-        This property should be treated as read-only and should not be overridden;
-        the correct value is provided for your target's SoC already.
+  dfe-supported:
+    type: boolean
+    description: |
+      If set, the radio hardware supports the Direction Finding Extension.
+      This property should be treated as read-only and should not be overridden;
+      the correct value is provided for your target's SoC already.
 
-    dfe-antenna-num:
-      type: int
-      description: |
-        Number of available antennas for the Direction Finding Extension.
+  dfe-antenna-num:
+    type: int
+    description: |
+      Number of available antennas for the Direction Finding Extension.
 
-        This should only be set if dfe-supported is true. If you set this
-        property, the value must be at least two.
+      This should only be set if dfe-supported is true. If you set this
+      property, the value must be at least two.
 
-    dfe-pdu-antenna:
-      type: int
-      description: |
-        Antenna switch pattern to be used for transmission of PDU before start
-        of transmission of Constant Tone Extension.
+  dfe-pdu-antenna:
+    type: int
+    description: |
+      Antenna switch pattern to be used for transmission of PDU before start
+      of transmission of Constant Tone Extension.
 
-        This should only be set if dfe-supported is true.
+      This should only be set if dfe-supported is true.
 
-        This pattern is stored in SWITCHPATTERN[0] before actual antenna
-        switching patterns. This pattern will also be used to drive GPIOs
-        when the radio releases control of GPIOs used to switch antennas.
+      This pattern is stored in SWITCHPATTERN[0] before actual antenna
+      switching patterns. This pattern will also be used to drive GPIOs
+      when the radio releases control of GPIOs used to switch antennas.
 
-    dfegpio0-gpios:
-      type: phandle-array
-      description: |
-        Pin select for DFE pin 0. This should only be set if dfe-supported
-        is true.
+  dfegpio0-gpios:
+    type: phandle-array
+    description: |
+      Pin select for DFE pin 0. This should only be set if dfe-supported
+      is true.
 
-        For example, to use P0.2 on an nRF5x SoC:
+      For example, to use P0.2 on an nRF5x SoC:
 
-          dfegpio1-gpios = <&gpio0 2 0>;
+        dfegpio1-gpios = <&gpio0 2 0>;
 
-        To use P1.4:
+      To use P1.4:
 
-          dfegpio1-gpios = <&gpio1 4 0>;
+        dfegpio1-gpios = <&gpio1 4 0>;
 
-        Note the last 'flags' cell in the property is not used,
-        and should be set to 0 as shown.
+      Note the last 'flags' cell in the property is not used,
+      and should be set to 0 as shown.
 
-    dfegpio1-gpios:
-      type: phandle-array
-      description: |
-        Pin select for DFE pin 1. See description for dfegpio0-gpios.
+  dfegpio1-gpios:
+    type: phandle-array
+    description: |
+      Pin select for DFE pin 1. See description for dfegpio0-gpios.
 
-    dfegpio2-gpios:
-      type: phandle-array
-      description: |
-        Pin select for DFE pin 2. See description for dfegpio0-gpios.
+  dfegpio2-gpios:
+    type: phandle-array
+    description: |
+      Pin select for DFE pin 2. See description for dfegpio0-gpios.
 
-    dfegpio3-gpios:
-      type: phandle-array
-      description: |
-        Pin select for DFE pin 3. See description for dfegpio0-gpios.
+  dfegpio3-gpios:
+    type: phandle-array
+    description: |
+      Pin select for DFE pin 3. See description for dfegpio0-gpios.
 
-    dfegpio4-gpios:
-      type: phandle-array
-      description: |
-        Pin select for DFE pin 4. See description for dfegpio0-gpios.
+  dfegpio4-gpios:
+    type: phandle-array
+    description: |
+      Pin select for DFE pin 4. See description for dfegpio0-gpios.
 
-    dfegpio5-gpios:
-      type: phandle-array
-      description: |
-        Pin select for DFE pin 5. See description for dfegpio0-gpios.
+  dfegpio5-gpios:
+    type: phandle-array
+    description: |
+      Pin select for DFE pin 5. See description for dfegpio0-gpios.
 
-    dfegpio6-gpios:
-      type: phandle-array
-      description: |
-        Pin select for DFE pin 6. See description for dfegpio0-gpios.
+  dfegpio6-gpios:
+    type: phandle-array
+    description: |
+      Pin select for DFE pin 6. See description for dfegpio0-gpios.
 
-    dfegpio7-gpios:
-      type: phandle-array
-      description: |
-        Pin select for DFE pin 7. See description for dfegpio0-gpios.
+  dfegpio7-gpios:
+    type: phandle-array
+    description: |
+      Pin select for DFE pin 7. See description for dfegpio0-gpios.
 
-    ieee802154-supported:
-      type: boolean
-      description: |
-        If set, indicates that the radio hardware supports the IEEE 802.15.4
-        mode.
+  ieee802154-supported:
+    type: boolean
+    description: |
+      If set, indicates that the radio hardware supports the IEEE 802.15.4
+      mode.
 
-    ble-2mbps-supported:
-      type: boolean
-      description: |
-        If set, indicates that the radio hardware supports the 2 Mbps BLE mode.
+  ble-2mbps-supported:
+    type: boolean
+    description: |
+      If set, indicates that the radio hardware supports the 2 Mbps BLE mode.
 
-    ble-coded-phy-supported:
-      type: boolean
-      description: |
-        If set, indicates that the radio hardware supports coded BLE PHY.
+  ble-coded-phy-supported:
+    type: boolean
+    description: |
+      If set, indicates that the radio hardware supports coded BLE PHY.
 
-    tx-high-power-supported:
-      type: boolean
-      description: |
-        If set, indicates that the radio hardware supports high TX power
-        settings.
+  tx-high-power-supported:
+    type: boolean
+    description: |
+      If set, indicates that the radio hardware supports high TX power
+      settings.

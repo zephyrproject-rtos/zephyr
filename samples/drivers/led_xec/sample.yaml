@@ -1,0 +1,8 @@
+sample:
+  description: Demonstration of the Microchip XEC LED driver
+  name: XEC LED sample
+tests:
+  sample.drivers.led.led_xec:
+    build_only: true
+    tags: LED
+    platform_allow: mec172xevb_assy6906 mec15xxevb_assy6853

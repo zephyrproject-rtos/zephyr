@@ -156,6 +156,11 @@ struct bt_le_ext_adv {
 #endif /* defined(CONFIG_BT_EXT_ADV) */
 
 	struct k_work_delayable	lim_adv_timeout_work;
+
+	/** The options used to set the parameters for this advertising set
+	 * @ref bt_le_adv_param
+	 */
+	uint32_t options;
 };
 
 enum {
@@ -227,6 +232,20 @@ struct bt_le_per_adv_sync {
 
 	/** Flags */
 	ATOMIC_DEFINE(flags, BT_PER_ADV_SYNC_NUM_FLAGS);
+
+#if defined(CONFIG_BT_PER_ADV_SYNC_RSP)
+	/** Number of subevents */
+	uint8_t num_subevents;
+
+	/** Subevent interval (N * 1.25ms) */
+	uint8_t subevent_interval;
+
+	/** Response slot delay (N * 1.25ms) */
+	uint8_t response_slot_delay;
+
+	/** Response slot spacing (N * 1.25ms) */
+	uint8_t response_slot_spacing;
+#endif /* CONFIG_BT_PER_ADV_SYNC_RSP */
 };
 
 struct bt_dev_le {
@@ -415,6 +434,8 @@ int bt_le_scan_update(bool fast_scan);
 
 int bt_le_create_conn(const struct bt_conn *conn);
 int bt_le_create_conn_cancel(void);
+int bt_le_create_conn_synced(const struct bt_conn *conn, const struct bt_le_ext_adv *adv,
+			     uint8_t subevent);
 
 bool bt_addr_le_is_bonded(uint8_t id, const bt_addr_le_t *addr);
 const bt_addr_le_t *bt_lookup_id_addr(uint8_t id, const bt_addr_le_t *addr);
@@ -459,12 +480,15 @@ void bt_hci_le_adv_report(struct net_buf *buf);
 void bt_hci_le_scan_timeout(struct net_buf *buf);
 void bt_hci_le_adv_ext_report(struct net_buf *buf);
 void bt_hci_le_per_adv_sync_established(struct net_buf *buf);
+void bt_hci_le_per_adv_sync_established_v2(struct net_buf *buf);
 void bt_hci_le_per_adv_report(struct net_buf *buf);
+void bt_hci_le_per_adv_report_v2(struct net_buf *buf);
 void bt_hci_le_per_adv_sync_lost(struct net_buf *buf);
 void bt_hci_le_biginfo_adv_report(struct net_buf *buf);
 void bt_hci_le_df_connectionless_iq_report(struct net_buf *buf);
 void bt_hci_le_vs_df_connectionless_iq_report(struct net_buf *buf);
 void bt_hci_le_past_received(struct net_buf *buf);
+void bt_hci_le_past_received_v2(struct net_buf *buf);
 
 /* Adv HCI event handlers */
 void bt_hci_le_adv_set_terminated(struct net_buf *buf);
@@ -488,3 +512,6 @@ void bt_hci_synchronous_conn_complete(struct net_buf *buf);
 void bt_hci_le_df_connection_iq_report(struct net_buf *buf);
 void bt_hci_le_vs_df_connection_iq_report(struct net_buf *buf);
 void bt_hci_le_df_cte_req_failed(struct net_buf *buf);
+
+void bt_hci_le_per_adv_subevent_data_request(struct net_buf *buf);
+void bt_hci_le_per_adv_response_report(struct net_buf *buf);

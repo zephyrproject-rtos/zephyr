@@ -1,0 +1,37 @@
+/*
+ * Copyright 2023 Google LLC
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/h7/stm32h747Xi_m4.dtsi>
+#include <st/h7/stm32h747xihx-pinctrl.dtsi>
+#include "arduino_giga_r1.dtsi"
+
+/ {
+	model = "Arduino GIGA R1 WiFi Board (M4)";
+	compatible = "arduino,giga-r1";
+
+	chosen {
+		zephyr,console = &usart2;
+		zephyr,shell-uart = &usart2;
+		zephyr,sram = &sram1;
+		zephyr,flash = &flash1;
+	};
+
+	aliases {
+		led0 = &blue_led;
+	};
+};
+
+&rcc {
+	clock-frequency = <DT_FREQ_M(240)>;
+};
+
+&usart2 {
+	status = "okay";
+	pinctrl-0 = <&usart2_tx_pd5 &usart2_rx_pd6>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+};

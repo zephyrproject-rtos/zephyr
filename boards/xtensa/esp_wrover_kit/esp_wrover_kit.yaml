@@ -5,13 +5,17 @@ arch: xtensa
 toolchain:
   - zephyr
 supported:
+  - adc
+  - dac
   - gpio
   - i2c
-  - spi
   - watchdog
   - uart
   - nvs
   - pwm
+  - spi
+  - counter
+  - entropy
 testing:
   ignore_tags:
     - net

@@ -6,17 +6,20 @@ description: Nuvoton NPCX eSPI Virtual Wire (VW) mapping child node
 compatible: "nuvoton,npcx-espi-vw-conf"
 
 child-binding:
-    description: Child node to to present the mapping between VW signal, its core register and input source of MIWU
-    properties:
-       vw-reg:
-          type: array
-          required: true
-          description: vw signal's register index and vw bitmask.
+  description: |
+    Child node to to present the mapping between VW signal, its core register and input source of
+    MIWU
 
-       vw-wui:
-        type: phandle
-        description: |
-            Mapping table between Wake-Up Input (WUI) and vw input signal.
+  properties:
+    vw-reg:
+      type: array
+      required: true
+      description: vw signal's register index and vw bitmask.
 
-            For example the WUI mapping on NPCX7 for VW_SLP5 would be
-               vw-wui = <&wui_vw_slp_s5>;
+    vw-wui:
+      type: phandle
+      description: |
+         Mapping table between Wake-Up Input (WUI) and vw input signal.
+
+         For example the WUI mapping on NPCX7 for VW_SLP5 would be
+            vw-wui = <&wui_vw_slp_s5>;

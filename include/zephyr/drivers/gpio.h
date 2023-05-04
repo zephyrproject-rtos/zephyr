@@ -86,6 +86,11 @@ extern "C" {
  * flag. If a pin was configured as Active Low, physical level low will be
  * considered as logical level 1 (an active state), physical level high will
  * be considered as logical level 0 (an inactive state).
+ * The GPIO controller should reset the interrupt status, such as clearing the
+ * pending bit, etc, when configuring the interrupt triggering properties.
+ * Applications should use the `GPIO_INT_MODE_ENABLE_ONLY` and
+ * `GPIO_INT_MODE_DISABLE_ONLY` flags to enable and disable interrupts on the
+ * pin without changing any GPIO settings.
  * @{
  */
 
@@ -128,6 +133,16 @@ extern "C" {
  * `GPIO_INT_*` flags to produce a meaningful configuration.
  */
 #define GPIO_INT_HIGH_1                (1U << 26)
+
+#ifdef CONFIG_GPIO_ENABLE_DISABLE_INTERRUPT
+/* Disable/Enable interrupt functionality without changing other interrupt
+ * related register, such as clearing the pending register.
+ *
+ * This is a component flag that should be combined with `GPIO_INT_ENABLE` or
+ * `GPIO_INT_DISABLE` flags to produce a meaningful configuration.
+ */
+#define GPIO_INT_ENABLE_DISABLE_ONLY   (1u << 27)
+#endif /* CONFIG_GPIO_ENABLE_DISABLE_INTERRUPT */
 
 #define GPIO_INT_MASK                  (GPIO_INT_DISABLE | \
 					GPIO_INT_ENABLE | \
@@ -388,8 +403,10 @@ struct gpio_dt_spec {
  * @return static initializer for a struct gpio_dt_spec for the property
  * @see GPIO_DT_SPEC_GET_BY_IDX()
  */
-#define GPIO_DT_SPEC_INST_GET_BY_IDX_OR(inst, prop, idx, default_value)	\
-	GPIO_DT_SPEC_GET_BY_IDX_OR(DT_DRV_INST(inst), prop, idx, default_value)
+#define GPIO_DT_SPEC_INST_GET_BY_IDX_OR(inst, prop, idx, default_value)		\
+	COND_CODE_1(DT_PROP_HAS_IDX(DT_DRV_INST(inst), prop, idx),		\
+		    (GPIO_DT_SPEC_GET_BY_IDX(DT_DRV_INST(inst), prop, idx)),	\
+		    (default_value))
 
 /**
  * @brief Equivalent to GPIO_DT_SPEC_INST_GET_BY_IDX(inst, prop, 0).
@@ -507,11 +524,16 @@ enum gpio_int_mode {
 	GPIO_INT_MODE_DISABLED = GPIO_INT_DISABLE,
 	GPIO_INT_MODE_LEVEL = GPIO_INT_ENABLE,
 	GPIO_INT_MODE_EDGE = GPIO_INT_ENABLE | GPIO_INT_EDGE,
+#ifdef CONFIG_GPIO_ENABLE_DISABLE_INTERRUPT
+	GPIO_INT_MODE_DISABLE_ONLY = GPIO_INT_DISABLE | GPIO_INT_ENABLE_DISABLE_ONLY,
+	GPIO_INT_MODE_ENABLE_ONLY = GPIO_INT_ENABLE | GPIO_INT_ENABLE_DISABLE_ONLY,
+#endif /* CONFIG_GPIO_ENABLE_DISABLE_INTERRUPT */
 };
 
 enum gpio_int_trig {
 	/* Trigger detection when input state is (or transitions to)
-	 * physical low. (Edge Failing or Active Low) */
+	 * physical low. (Edge Falling or Active Low)
+	 */
 	GPIO_INT_TRIG_LOW = GPIO_INT_LOW_0,
 	/* Trigger detection when input state is (or transitions to)
 	 * physical high. (Edge Rising or Active High) */
@@ -554,6 +576,20 @@ __subsystem struct gpio_driver_api {
 /**
  * @endcond
  */
+
+/**
+ * @brief Validate that GPIO port is ready.
+ *
+ * @param spec GPIO specification from devicetree
+ *
+ * @retval true if the GPIO spec is ready for use.
+ * @retval false if the GPIO spec is not ready for use.
+ */
+static inline bool gpio_is_ready_dt(const struct gpio_dt_spec *spec)
+{
+	/* Validate port is ready */
+	return device_is_ready(spec->port);
+}
 
 /**
  * @brief Configure pin interrupt.
@@ -607,7 +643,12 @@ static inline int z_impl_gpio_pin_interrupt_configure(const struct device *port,
 		 "enabled for a level interrupt.");
 
 	__ASSERT(((flags & GPIO_INT_ENABLE) == 0) ||
-		 ((flags & (GPIO_INT_LOW_0 | GPIO_INT_HIGH_1)) != 0),
+#ifdef CONFIG_GPIO_ENABLE_DISABLE_INTERRUPT
+			 ((flags & (GPIO_INT_LOW_0 | GPIO_INT_HIGH_1)) != 0) ||
+			 (flags & GPIO_INT_ENABLE_DISABLE_ONLY) != 0,
+#else
+			 ((flags & (GPIO_INT_LOW_0 | GPIO_INT_HIGH_1)) != 0),
+#endif /* CONFIG_GPIO_ENABLE_DISABLE_INTERRUPT */
 		 "At least one of GPIO_INT_LOW_0, GPIO_INT_HIGH_1 has to be "
 		 "enabled.");
 
@@ -621,7 +662,12 @@ static inline int z_impl_gpio_pin_interrupt_configure(const struct device *port,
 	}
 
 	trig = (enum gpio_int_trig)(flags & (GPIO_INT_LOW_0 | GPIO_INT_HIGH_1));
+#ifdef CONFIG_GPIO_ENABLE_DISABLE_INTERRUPT
+	mode = (enum gpio_int_mode)(flags & (GPIO_INT_EDGE | GPIO_INT_DISABLE | GPIO_INT_ENABLE |
+					     GPIO_INT_ENABLE_DISABLE_ONLY));
+#else
 	mode = (enum gpio_int_mode)(flags & (GPIO_INT_EDGE | GPIO_INT_DISABLE | GPIO_INT_ENABLE));
+#endif /* CONFIG_GPIO_ENABLE_DISABLE_INTERRUPT */
 
 	return api->pin_interrupt_configure(port, pin, mode, trig);
 }
@@ -682,9 +728,8 @@ static inline int z_impl_gpio_pin_configure(const struct device *port,
 		 (GPIO_PULL_UP | GPIO_PULL_DOWN),
 		 "Pull Up and Pull Down should not be enabled simultaneously");
 
-	__ASSERT((flags & GPIO_OUTPUT) != 0 || (flags & GPIO_SINGLE_ENDED) == 0,
-		 "Output needs to be enabled for 'Open Drain', 'Open Source' "
-		 "mode to be supported");
+	__ASSERT(!((flags & GPIO_INPUT) && !(flags & GPIO_OUTPUT) && (flags & GPIO_SINGLE_ENDED)),
+		 "Input cannot be enabled for 'Open Drain', 'Open Source' modes without Output");
 
 	__ASSERT_NO_MSG((flags & GPIO_SINGLE_ENDED) != 0 ||
 			(flags & GPIO_LINE_OPEN_DRAIN) == 0);
@@ -802,6 +847,22 @@ static inline int gpio_pin_is_input(const struct device *port, gpio_pin_t pin)
 }
 
 /**
+ * @brief Check if a single pin from @p gpio_dt_spec is configured for input
+ *
+ * This is equivalent to:
+ *
+ *     gpio_pin_is_input(spec->port, spec->pin);
+ *
+ * @param spec GPIO specification from devicetree.
+ *
+ * @return A value from gpio_pin_is_input().
+ */
+static inline int gpio_pin_is_input_dt(const struct gpio_dt_spec *spec)
+{
+	return gpio_pin_is_input(spec->port, spec->pin);
+}
+
+/**
  * @brief Check if @p pin is configured for output
  *
  * @param port Pointer to device structure for the driver instance.
@@ -828,6 +889,22 @@ static inline int gpio_pin_is_output(const struct device *port, gpio_pin_t pin)
 	}
 
 	return (int)!!((gpio_port_pins_t)BIT(pin) & pins);
+}
+
+/**
+ * @brief Check if a single pin from @p gpio_dt_spec is configured for output
+ *
+ * This is equivalent to:
+ *
+ *     gpio_pin_is_output(spec->port, spec->pin);
+ *
+ * @param spec GPIO specification from devicetree.
+ *
+ * @return A value from gpio_pin_is_output().
+ */
+static inline int gpio_pin_is_output_dt(const struct gpio_dt_spec *spec)
+{
+	return gpio_pin_is_output(spec->port, spec->pin);
 }
 
 /**
@@ -1397,6 +1474,23 @@ static inline int gpio_add_callback(const struct device *port,
 }
 
 /**
+ * @brief Add an application callback.
+ *
+ * This is equivalent to:
+ *
+ *     gpio_add_callback(spec->port, callback);
+ *
+ * @param spec GPIO specification from devicetree.
+ * @param callback A valid application's callback structure pointer.
+ * @return a value from gpio_add_callback().
+ */
+static inline int gpio_add_callback_dt(const struct gpio_dt_spec *spec,
+				       struct gpio_callback *callback)
+{
+	return gpio_add_callback(spec->port, callback);
+}
+
+/**
  * @brief Remove an application callback.
  * @param port Pointer to the device structure for the driver instance.
  * @param callback A valid application's callback structure pointer.
@@ -1423,6 +1517,23 @@ static inline int gpio_remove_callback(const struct device *port,
 	}
 
 	return api->manage_callback(port, callback, false);
+}
+
+/**
+ * @brief Remove an application callback.
+ *
+ * This is equivalent to:
+ *
+ *     gpio_remove_callback(spec->port, callback);
+ *
+ * @param spec GPIO specification from devicetree.
+ * @param callback A valid application's callback structure pointer.
+ * @return a value from gpio_remove_callback().
+ */
+static inline int gpio_remove_callback_dt(const struct gpio_dt_spec *spec,
+					  struct gpio_callback *callback)
+{
+	return gpio_remove_callback(spec->port, callback);
 }
 
 /**

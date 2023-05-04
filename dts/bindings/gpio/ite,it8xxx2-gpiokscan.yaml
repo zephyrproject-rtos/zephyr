@@ -1,0 +1,16 @@
+# Copyright (c) 2022 ITE Corporation. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+description: This binding gives a base representation of the ITE kscan pins as gpio
+
+compatible: "ite,it8xxx2-gpiokscan"
+
+include: [base.yaml, gpio-controller.yaml]
+
+properties:
+  reg:
+    required: true
+
+gpio-cells:
+  - pin
+  - flags

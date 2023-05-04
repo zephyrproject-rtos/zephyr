@@ -168,6 +168,18 @@ suspended, the init function should call
         }
     }
 
+Device runtime power management can also be automatically enabled on a device
+instance by adding the ``zephyr,pm-device-runtime-auto`` flag onto the corresponding
+devicetree node. If enabled, :c:func:`pm_device_runtime_enable` is called immediately
+after the ``init`` function of the device runs and returns successfully.
+
+.. code-block:: dts
+
+    foo {
+        /* ... */
+        zephyr,pm-device-runtime-auto;
+    };
+
 Assuming an example device driver that implements an ``operation`` API call, the
 *get* and *put* operations could be carried out as follows:
 

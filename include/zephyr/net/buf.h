@@ -885,15 +885,6 @@ static inline void net_buf_simple_restore(struct net_buf_simple *buf,
 }
 
 /**
- * Flag indicating that the buffer has associated fragments. Only used
- * internally by the buffer handling code while the buffer is inside a
- * FIFO, meaning this never needs to be explicitly set or unset by the
- * net_buf API user. As long as the buffer is outside of a FIFO, i.e.
- * in practice always for the user for this API, the buf->frags pointer
- * should be used instead.
- */
-#define NET_BUF_FRAGS        BIT(0)
-/**
  * Flag indicating that the buffer's associated data pointer, points to
  * externally allocated memory. Therefore once ref goes down to zero, the
  * pointed data will not need to be deallocated. This never needs to be
@@ -902,7 +893,7 @@ static inline void net_buf_simple_restore(struct net_buf_simple *buf,
  * Reference count mechanism however will behave the same way, and ref
  * count going to 0 will free the net_buf but no the data pointer in it.
  */
-#define NET_BUF_EXTERNAL_DATA  BIT(1)
+#define NET_BUF_EXTERNAL_DATA  BIT(0)
 
 /**
  * @brief Network buffer representation.
@@ -912,13 +903,11 @@ static inline void net_buf_simple_restore(struct net_buf_simple *buf,
  * using the net_buf_alloc() API.
  */
 struct net_buf {
-	union {
-		/** Allow placing the buffer into sys_slist_t */
-		sys_snode_t node;
+	/** Allow placing the buffer into sys_slist_t */
+	sys_snode_t node;
 
-		/** Fragments associated with this buffer. */
-		struct net_buf *frags;
-	};
+	/** Fragments associated with this buffer. */
+	struct net_buf *frags;
 
 	/** Reference count. */
 	uint8_t ref;

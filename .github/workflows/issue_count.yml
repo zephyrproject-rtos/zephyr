@@ -2,7 +2,7 @@ name: Issue Tracker
 
 on:
   schedule:
-    - cron:  '*/10 * * * *'
+  - cron: '*/10 * * * *'
 
 env:
   OUTPUT_FILE_NAME: IssuesReport.md
@@ -14,7 +14,7 @@ env:
 jobs:
   track-issues:
     name: "Collect Issue Stats"
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     if: github.repository == 'zephyrproject-rtos/zephyr'
 
     steps:
@@ -36,13 +36,13 @@ jobs:
 
     - name: upload-stats
       uses: actions/upload-artifact@v3
-      continue-on-error: True
+      continue-on-error: true
       with:
         name: ${{ env.OUTPUT_FILE_NAME }}
         path: ${{ env.OUTPUT_FILE_NAME }}
 
     - name: Configure AWS Credentials
-      uses: aws-actions/configure-aws-credentials@v1
+      uses: aws-actions/configure-aws-credentials@v2
       with:
         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID_TESTING }}
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY_TESTING }}

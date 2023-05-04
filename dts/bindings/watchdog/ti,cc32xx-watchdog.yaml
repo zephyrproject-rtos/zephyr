@@ -8,5 +8,5 @@ compatible: "ti,cc32xx-watchdog"
 include: base.yaml
 
 properties:
-    reg:
-      required: true
+  reg:
+    required: true

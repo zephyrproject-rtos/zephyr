@@ -10,7 +10,9 @@
 #ifndef ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_TBS_H_
 #define ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_TBS_H_
 
-#include <zephyr/types.h>
+#include <stdint.h>
+#include <stdbool.h>
+
 #include <zephyr/bluetooth/conn.h>
 
 /* Call States */
@@ -326,10 +328,8 @@ int bt_tbs_set_uri_scheme_list(uint8_t bearer_index, const char **uri_list,
  */
 void bt_tbs_register_cb(struct bt_tbs_cb *cbs);
 
-#if defined(CONFIG_BT_TBS_LOG_LEVEL_DBG)
 /** @brief Prints all calls of all services to the debug log */
 void bt_tbs_dbg_print_calls(void);
-#endif /* defined(CONFIG_BT_TBS_LOG_LEVEL_DBG) */
 
 struct bt_tbs_client_call_state {
 	uint8_t index;

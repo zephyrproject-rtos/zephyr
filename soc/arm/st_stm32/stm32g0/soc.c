@@ -81,11 +81,10 @@ static void stm32g0_disable_dead_battery(void)
  *
  * @return 0
  */
-static int stm32g0_init(const struct device *arg)
+static int stm32g0_init(void)
 {
 	uint32_t key;
 
-	ARG_UNUSED(arg);
 
 	key = irq_lock();
 

@@ -4,7 +4,7 @@ tests:
     tags: drivers i2s
     filter: not CONFIG_I2S_TEST_USE_GPIO_LOOPBACK
   drivers.i2s.speed.gpio_loopback:
-    depends_on: i2s
+    depends_on: i2s gpio
     tags: drivers i2s
     filter: CONFIG_I2S_TEST_USE_GPIO_LOOPBACK
     harness: ztest

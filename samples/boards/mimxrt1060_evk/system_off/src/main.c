@@ -31,13 +31,13 @@
 static const struct gpio_dt_spec button = GPIO_DT_SPEC_GET_OR(SW0_NODE, gpios, { 0 });
 static const struct device *const snvs_rtc_dev = DEVICE_DT_GET(SNVS_RTC_NODE);
 
-void main(void)
+int main(void)
 {
 	printk("\n%s system off demo\n", CONFIG_BOARD);
 
 	if (!device_is_ready(button.port)) {
 		printk("Error: button device %s is not ready\n", button.port->name);
-		return;
+		return 0;
 	}
 
 	/* Configure to generate PORT event (wakeup) on button press. */
@@ -47,14 +47,14 @@ void main(void)
 	if (ret != 0) {
 		printk("Error %d: failed to configure %s pin %d\n", ret, button.port->name,
 		       button.pin);
-		return;
+		return 0;
 	}
 
 	ret = gpio_pin_interrupt_configure_dt(&button, GPIO_INT_LEVEL_LOW);
 	if (ret != 0) {
 		printk("Error %d: failed to configure interrupt on %s pin %d\n", ret,
 		       button.port->name, button.pin);
-		return;
+		return 0;
 	}
 
 	printk("Busy-wait %u s\n", BUSY_WAIT_S);
@@ -78,7 +78,7 @@ void main(void)
 	ret = counter_set_channel_alarm(snvs_rtc_dev, SNVS_LP_RTC_ALARM_ID, &alarm_cfg);
 	if (ret != 0) {
 		printk("Could not rtc alarm.\n");
-		return;
+		return 0;
 	}
 	printk("RTC Alarm set for %llu seconds to wake from soft-off.\n",
 	       counter_ticks_to_us(snvs_rtc_dev, alarm_cfg.ticks) / (1000ULL * 1000ULL));
@@ -96,4 +96,5 @@ void main(void)
 	while (true) {
 		/* spin to avoid fall-off behavior */
 	}
+	return 0;
 }

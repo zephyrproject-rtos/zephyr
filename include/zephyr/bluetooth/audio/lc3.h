@@ -18,7 +18,6 @@
  * @{
  */
 
-#include <zephyr/types.h>
 #include <zephyr/sys/util_macro.h>
 
 #ifdef __cplusplus
@@ -297,11 +296,11 @@ enum bt_codec_config_type {
  *
  *  _frame_blocks_per_sdu value is optional and will be included only if != 1
  */
-/* COND_CODE_1 is used to omit an LTV entry in case the _frames_per_sdu is 1.
+/* COND_CODE_1 is used to omit an LTV entry in case the _frame_blocks_per_sdu is 1.
  * COND_CODE_1 will evaluate to second argument if the flag parameter(first argument) is 1
- * - removing one layer of paranteses.
- * If the flags argument is != 1 it will evaluare to the third argument which inserts a LTV
- * entry for the frames_per_sdu value.
+ * - removing one layer of parentheses.
+ * If the flags argument is != 1 it will evaluate to the third argument which inserts a LTV
+ * entry for the _frame_blocks_per_sdu value.
  */
 #define BT_CODEC_LC3_CONFIG_DATA(_freq, _duration, _loc, _len, _frame_blocks_per_sdu) \
 { \
@@ -317,7 +316,7 @@ enum bt_codec_config_type {
 		      (((_len) >> 8) & 0xFFU)) \
 	COND_CODE_1(_frame_blocks_per_sdu, (), \
 		    (, BT_CODEC_DATA(BT_CODEC_CONFIG_LC3_FRAME_BLKS_PER_SDU, \
-				     _frames_per_sdu))) \
+				     _frame_blocks_per_sdu))) \
 }
 
 /**

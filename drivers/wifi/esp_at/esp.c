@@ -203,10 +203,9 @@ static void esp_rx(struct esp_data *data)
 {
 	while (true) {
 		/* wait for incoming data */
-		k_sem_take(&data->iface_data.rx_sem, K_FOREVER);
+		modem_iface_uart_rx_wait(&data->mctx.iface, K_FOREVER);
 
-		data->mctx.cmd_handler.process(&data->mctx.cmd_handler,
-					       &data->mctx.iface);
+		modem_cmd_handler_process(&data->mctx.cmd_handler, &data->mctx.iface);
 
 		/* give up time if we have a solid stream of data */
 		k_yield();
@@ -285,6 +284,45 @@ MODEM_CMD_DEFINE(on_cmd_cwlap)
 	if (dev->scan_cb) {
 		dev->scan_cb(dev->net_iface, 0, &res);
 	}
+
+	return 0;
+}
+
+/* +CWJAP:(ssid,bssid,channel,rssi) */
+MODEM_CMD_DEFINE(on_cmd_cwjap)
+{
+	struct esp_data *dev = CONTAINER_OF(data, struct esp_data,
+					    cmd_handler_data);
+	struct wifi_iface_status *status = dev->wifi_status;
+	const char *ssid = str_unquote(argv[0]);
+	const char *bssid = str_unquote(argv[1]);
+	const char *channel = argv[2];
+	const char *rssi = argv[3];
+	uint8_t flags = dev->flags;
+	int err;
+
+	status->band = WIFI_FREQ_BAND_2_4_GHZ;
+	status->iface_mode = WIFI_MODE_INFRA;
+
+	if (flags & EDF_STA_CONNECTED) {
+		status->state = WIFI_STATE_COMPLETED;
+	} else if (flags & EDF_STA_CONNECTING) {
+		status->state = WIFI_STATE_SCANNING;
+	} else {
+		status->state = WIFI_STATE_DISCONNECTED;
+	}
+
+	strncpy(status->ssid, ssid, sizeof(status->ssid));
+	status->ssid_len = strlen(status->ssid);
+
+	err = net_bytes_from_str(status->bssid, sizeof(status->bssid), bssid);
+	if (err) {
+		LOG_WRN("Invalid MAC address");
+		memset(status->bssid, 0x0, sizeof(status->bssid));
+	}
+
+	status->channel = strtol(channel, NULL, 10);
+	status->rssi = strtol(rssi, NULL, 10);
 
 	return 0;
 }
@@ -721,6 +759,38 @@ MODEM_CMD_DEFINE(on_cmd_ready)
 	return 0;
 }
 
+#if defined(CONFIG_WIFI_ESP_AT_FETCH_VERSION)
+
+static int cmd_version_log(struct modem_cmd_handler_data *data,
+			   const char *type, const char *version)
+{
+	LOG_INF("%s: %s", type, version);
+
+	return 0;
+}
+
+MODEM_CMD_DEFINE(on_cmd_at_version)
+{
+	return cmd_version_log(data, "AT version", argv[0]);
+}
+
+MODEM_CMD_DEFINE(on_cmd_sdk_version)
+{
+	return cmd_version_log(data, "SDK version", argv[0]);
+}
+
+MODEM_CMD_DEFINE(on_cmd_compile_time)
+{
+	return cmd_version_log(data, "compile time", argv[0]);
+}
+
+MODEM_CMD_DEFINE(on_cmd_bin_version)
+{
+	return cmd_version_log(data, "Bin version", argv[0]);
+}
+
+#endif /* CONFIG_WIFI_ESP_AT_FETCH_VERSION */
+
 static const struct modem_cmd unsol_cmds[] = {
 	MODEM_CMD("WIFI CONNECTED", on_cmd_wifi_connected, 0U, ""),
 	MODEM_CMD("WIFI DISCONNECT", on_cmd_wifi_disconnected, 0U, ""),
@@ -738,8 +808,62 @@ static const struct modem_cmd unsol_cmds[] = {
 	MODEM_CMD("busy s...", on_cmd_busy_sending, 0U, ""),
 	MODEM_CMD("busy p...", on_cmd_busy_processing, 0U, ""),
 	MODEM_CMD("ready", on_cmd_ready, 0U, ""),
+#if defined(CONFIG_WIFI_ESP_AT_FETCH_VERSION)
+	MODEM_CMD("AT version:", on_cmd_at_version, 1U, ""),
+	MODEM_CMD("SDK version:", on_cmd_sdk_version, 1U, ""),
+	MODEM_CMD("Compile time", on_cmd_compile_time, 1U, ""),
+	MODEM_CMD("Bin version:", on_cmd_bin_version, 1U, ""),
+#endif
 	MODEM_CMD_DIRECT("+IPD", on_cmd_ipd),
 };
+
+static void esp_mgmt_iface_status_work(struct k_work *work)
+{
+	struct esp_data *data = CONTAINER_OF(work, struct esp_data, iface_status_work);
+	struct wifi_iface_status *status = data->wifi_status;
+	int ret;
+	static const struct modem_cmd cmds[] = {
+		MODEM_CMD("+CWJAP:", on_cmd_cwjap, 4U, ","),
+	};
+
+	ret = esp_cmd_send(data, cmds, ARRAY_SIZE(cmds), "AT+CWJAP?",
+			   ESP_IFACE_STATUS_TIMEOUT);
+	if (ret < 0) {
+		LOG_WRN("Failed to request STA status: ret %d", ret);
+		status->state = WIFI_STATE_UNKNOWN;
+	}
+
+	k_sem_give(&data->wifi_status_sem);
+}
+
+static int esp_mgmt_iface_status(const struct device *dev,
+				 struct wifi_iface_status *status)
+{
+	struct esp_data *data = dev->data;
+
+	memset(status, 0x0, sizeof(*status));
+
+	status->state = WIFI_STATE_UNKNOWN;
+	status->band = WIFI_FREQ_BAND_UNKNOWN;
+	status->iface_mode = WIFI_MODE_UNKNOWN;
+	status->link_mode = WIFI_LINK_MODE_UNKNOWN;
+	status->security = WIFI_SECURITY_TYPE_UNKNOWN;
+	status->mfp = WIFI_MFP_UNKNOWN;
+
+	if (!net_if_is_carrier_ok(data->net_iface)) {
+		status->state = WIFI_STATE_INTERFACE_DISABLED;
+		return 0;
+	}
+
+	data->wifi_status = status;
+	k_sem_init(&data->wifi_status_sem, 0, 1);
+
+	k_work_submit_to_queue(&data->workq, &data->iface_status_work);
+
+	k_sem_take(&data->wifi_status_sem, K_FOREVER);
+
+	return 0;
+}
 
 static void esp_mgmt_scan_work(struct k_work *work)
 {
@@ -948,6 +1072,9 @@ static void esp_init_work(struct k_work *work)
 	static const struct setup_cmd setup_cmds_target_baudrate[] = {
 		SETUP_CMD_NOHANDLE("AT"),
 #endif
+#if defined(CONFIG_WIFI_ESP_AT_FETCH_VERSION)
+		SETUP_CMD_NOHANDLE("AT+GMR"),
+#endif
 #if defined(CONFIG_WIFI_ESP_AT_VERSION_1_7)
 		SETUP_CMD_NOHANDLE(ESP_CMD_CWMODE(STA)),
 #endif
@@ -1089,12 +1216,13 @@ static void esp_iface_init(struct net_if *iface)
 }
 
 static const struct net_wifi_mgmt_offload esp_api = {
-	.wifi_iface.init = esp_iface_init,
-	.scan		= esp_mgmt_scan,
-	.connect	= esp_mgmt_connect,
-	.disconnect	= esp_mgmt_disconnect,
-	.ap_enable	= esp_mgmt_ap_enable,
-	.ap_disable	= esp_mgmt_ap_disable,
+	.wifi_iface.iface_api.init = esp_iface_init,
+	.scan			   = esp_mgmt_scan,
+	.connect		   = esp_mgmt_connect,
+	.disconnect		   = esp_mgmt_disconnect,
+	.ap_enable		   = esp_mgmt_ap_enable,
+	.ap_disable		   = esp_mgmt_ap_disable,
+	.iface_status		   = esp_mgmt_iface_status,
 };
 
 static int esp_init(const struct device *dev);
@@ -1125,6 +1253,7 @@ static int esp_init(const struct device *dev)
 	k_work_init(&data->scan_work, esp_mgmt_scan_work);
 	k_work_init(&data->connect_work, esp_mgmt_connect_work);
 	k_work_init(&data->disconnect_work, esp_mgmt_disconnect_work);
+	k_work_init(&data->iface_status_work, esp_mgmt_iface_status_work);
 	k_work_init(&data->mode_switch_work, esp_mode_switch_work);
 	if (IS_ENABLED(CONFIG_WIFI_ESP_AT_DNS_USE)) {
 		k_work_init(&data->dns_work, esp_dns_work);
@@ -1140,27 +1269,34 @@ static int esp_init(const struct device *dev)
 	k_thread_name_set(&data->workq.thread, "esp_workq");
 
 	/* cmd handler */
-	data->cmd_handler_data.cmds[CMD_RESP] = response_cmds;
-	data->cmd_handler_data.cmds_len[CMD_RESP] = ARRAY_SIZE(response_cmds);
-	data->cmd_handler_data.cmds[CMD_UNSOL] = unsol_cmds;
-	data->cmd_handler_data.cmds_len[CMD_UNSOL] = ARRAY_SIZE(unsol_cmds);
-	data->cmd_handler_data.match_buf = &data->cmd_match_buf[0];
-	data->cmd_handler_data.match_buf_len = sizeof(data->cmd_match_buf);
-	data->cmd_handler_data.buf_pool = &mdm_recv_pool;
-	data->cmd_handler_data.alloc_timeout = K_NO_WAIT;
-	data->cmd_handler_data.eol = "\r\n";
-	ret = modem_cmd_handler_init(&data->mctx.cmd_handler,
-				       &data->cmd_handler_data);
+	const struct modem_cmd_handler_config cmd_handler_config = {
+		.match_buf = &data->cmd_match_buf[0],
+		.match_buf_len = sizeof(data->cmd_match_buf),
+		.buf_pool = &mdm_recv_pool,
+		.alloc_timeout = K_NO_WAIT,
+		.eol = "\r\n",
+		.user_data = NULL,
+		.response_cmds = response_cmds,
+		.response_cmds_len = ARRAY_SIZE(response_cmds),
+		.unsol_cmds = unsol_cmds,
+		.unsol_cmds_len = ARRAY_SIZE(unsol_cmds),
+	};
+
+	ret = modem_cmd_handler_init(&data->mctx.cmd_handler, &data->cmd_handler_data,
+				     &cmd_handler_config);
 	if (ret < 0) {
 		goto error;
 	}
 
 	/* modem interface */
-	data->iface_data.hw_flow_control = DT_PROP(ESP_BUS, hw_flow_control);
-	data->iface_data.rx_rb_buf = &data->iface_rb_buf[0];
-	data->iface_data.rx_rb_buf_len = sizeof(data->iface_rb_buf);
-	ret = modem_iface_uart_init(&data->mctx.iface, &data->iface_data,
-				    DEVICE_DT_GET(DT_INST_BUS(0)));
+	const struct modem_iface_uart_config uart_config = {
+		.rx_rb_buf = &data->iface_rb_buf[0],
+		.rx_rb_buf_len = sizeof(data->iface_rb_buf),
+		.dev = DEVICE_DT_GET(DT_INST_BUS(0)),
+		.hw_flow_control = DT_PROP(ESP_BUS, hw_flow_control),
+	};
+
+	ret = modem_iface_uart_init(&data->mctx.iface, &data->iface_data, &uart_config);
 	if (ret < 0) {
 		goto error;
 	}

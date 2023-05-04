@@ -1,0 +1,56 @@
+# Copyright 2023 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+
+menuconfig DISPLAY_MCUX_DCNANO_LCDIF
+	bool "MCUX DCNano LCDIF driver"
+	default y
+	depends on DT_HAS_NXP_DCNANO_LCDIF_ENABLED
+	help
+	  Enable support for mcux DCNano LCDIF driver.
+
+
+if DISPLAY_MCUX_DCNANO_LCDIF
+
+config MCUX_DCNANO_LCDIF_DOUBLE_FRAMEBUFFER
+	bool "Double framebuffer"
+	help
+	  Enable dual framebuffer for LCDIF peripheral. Two framebuffers
+	  will be allocated, and switched between for each frame.
+	  Note that for partial display updates, the prior framebuffer must
+	  be copied into the next one. This can have significant performance
+	  impact.
+
+config MCUX_DCNANO_LCDIF_MAINTAIN_CACHE
+	bool "Maintain cache coherency"
+	default y
+	help
+	  Maintain cache coherency for LCDIF framebuffer. This is generally
+	  required, unless an external framebuffer is utilized with custom
+	  caching settings, or caching is disabled.
+
+config MCUX_DCNANO_LCDIF_EXTERNAL_FB_MEM
+	bool "Use external memory for framebuffer"
+	imply MEMC
+	help
+	  Use external memory for framebuffer. Configures the LCDIF to write
+	  framebuffer data to a memory mapped external device.
+
+	  Note that no specific linker section is used for this framebuffer, so
+	  if the application uses the external memory for other purposes, care
+	  should be taken to ensure that the memory allocated for the LCDIF
+	  does not overlap with other data. Each allocated LCDIF buffer will
+	  utilize (lcd_width * lcd_height * bytes_per_pixel) bytes of data,
+	  and buffers will be allocated contiguously.
+
+if MCUX_DCNANO_LCDIF_EXTERNAL_FB_MEM
+
+config MCUX_DCNANO_LCDIF_EXTERNAL_FB_ADDR
+	hex "LCDIF framebuffer address"
+	help
+	  Address of memory mapped external framebuffer.
+	  Must be 128 byte aligned
+
+endif # MCUX_DCNANO_LCDIF_EXTERNAL_FB_MEM
+
+endif # DISPLAY_MCUX_ELCDIF

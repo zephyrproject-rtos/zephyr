@@ -28,8 +28,6 @@
 #include "../host/hci_core.h"
 #include "../host/keys.h"
 
-#define BT_CSIP_SIH_PRAND_SIZE          3
-#define BT_CSIP_SIH_HASH_SIZE           3
 #define CSIP_SET_LOCK_TIMER_VALUE       K_SECONDS(60)
 
 #include "common/bt_str.h"
@@ -48,7 +46,7 @@ struct bt_csip_set_member_svc_inst {
 	bt_addr_le_t lock_client_addr;
 	struct bt_gatt_service *service_p;
 	struct csip_pending_notifications pend_notify[CONFIG_BT_MAX_PAIRED];
-#if IS_ENABLED(CONFIG_BT_KEYS_OVERWRITE_OLDEST)
+#if defined(CONFIG_BT_KEYS_OVERWRITE_OLDEST)
 	uint32_t age_counter;
 #endif /* CONFIG_BT_KEYS_OVERWRITE_OLDEST */
 };
@@ -173,27 +171,29 @@ static int sirk_encrypt(struct bt_conn *conn,
 	return 0;
 }
 
-static int generate_prand(uint32_t *dest)
+static int generate_prand(uint8_t dest[BT_CSIP_CRYPTO_PRAND_SIZE])
 {
 	bool valid = false;
 
 	do {
 		int res;
+		uint32_t prand;
 
 		*dest = 0;
-		res = bt_rand(dest, BT_CSIP_SIH_PRAND_SIZE);
+		res = bt_rand(dest, BT_CSIP_CRYPTO_PRAND_SIZE);
 		if (res != 0) {
 			return res;
 		}
 
 		/* Validate Prand: Must contain both a 1 and a 0 */
-		if (*dest != 0 && *dest != 0x3FFFFF) {
+		prand = sys_get_le24(dest);
+		if (prand != 0 && prand != 0x3FFFFF) {
 			valid = true;
 		}
 	} while (!valid);
 
-	*dest &= 0x3FFFFF;
-	*dest |= BIT(22); /* bit 23 shall be 0, and bit 22 shall be 1 */
+	dest[BT_CSIP_CRYPTO_PRAND_SIZE - 1] &= 0x3F;
+	dest[BT_CSIP_CRYPTO_PRAND_SIZE - 1] |= BIT(6);
 
 	return 0;
 }
@@ -202,14 +202,14 @@ int bt_csip_set_member_generate_rsi(const struct bt_csip_set_member_svc_inst *sv
 				    uint8_t rsi[BT_CSIP_RSI_SIZE])
 {
 	int res = 0;
-	uint32_t prand;
-	uint32_t hash;
+	uint8_t prand[BT_CSIP_CRYPTO_PRAND_SIZE];
+	uint8_t hash[BT_CSIP_CRYPTO_HASH_SIZE];
 
 	if (IS_ENABLED(CONFIG_BT_CSIP_SET_MEMBER_TEST_SAMPLE_DATA)) {
 		/* prand is from the sample data from A.2 in the CSIS spec */
-		prand = 0x69f563;
+		sys_put_le24(0x69f563, prand);
 	} else {
-		res = generate_prand(&prand);
+		res = generate_prand(prand);
 
 		if (res != 0) {
 			LOG_WRN("Could not generate new prand");
@@ -217,14 +217,14 @@ int bt_csip_set_member_generate_rsi(const struct bt_csip_set_member_svc_inst *sv
 		}
 	}
 
-	res = bt_csip_sih(svc_inst->set_sirk.value, prand, &hash);
+	res = bt_csip_sih(svc_inst->set_sirk.value, prand, hash);
 	if (res != 0) {
 		LOG_WRN("Could not generate new RSI");
 		return res;
 	}
 
-	(void)memcpy(rsi, &hash, BT_CSIP_SIH_HASH_SIZE);
-	(void)memcpy(rsi + BT_CSIP_SIH_HASH_SIZE, &prand, BT_CSIP_SIH_PRAND_SIZE);
+	(void)memcpy(rsi, hash, BT_CSIP_CRYPTO_HASH_SIZE);
+	(void)memcpy(rsi + BT_CSIP_CRYPTO_HASH_SIZE, prand, BT_CSIP_CRYPTO_PRAND_SIZE);
 
 	return res;
 }
@@ -538,7 +538,7 @@ static void handle_csip_auth_complete(struct bt_csip_set_member_svc_inst *svc_in
 
 		if (pend_notify->active &&
 		    bt_addr_le_eq(bt_conn_get_dst(conn), &pend_notify->addr)) {
-#if IS_ENABLED(CONFIG_BT_KEYS_OVERWRITE_OLDEST)
+#if defined(CONFIG_BT_KEYS_OVERWRITE_OLDEST)
 			pend_notify->age = svc_inst->age_counter++;
 #endif /* CONFIG_BT_KEYS_OVERWRITE_OLDEST */
 			return;
@@ -555,14 +555,14 @@ static void handle_csip_auth_complete(struct bt_csip_set_member_svc_inst *svc_in
 			bt_addr_le_copy(&pend_notify->addr,
 					bt_conn_get_dst(conn));
 			pend_notify->active = true;
-#if IS_ENABLED(CONFIG_BT_KEYS_OVERWRITE_OLDEST)
+#if defined(CONFIG_BT_KEYS_OVERWRITE_OLDEST)
 			pend_notify->age = svc_inst->age_counter++;
 #endif /* CONFIG_BT_KEYS_OVERWRITE_OLDEST */
 			return;
 		}
 	}
 
-#if IS_ENABLED(CONFIG_BT_KEYS_OVERWRITE_OLDEST)
+#if defined(CONFIG_BT_KEYS_OVERWRITE_OLDEST)
 	struct csip_pending_notifications *oldest;
 
 	oldest = &svc_inst->pend_notify[0];

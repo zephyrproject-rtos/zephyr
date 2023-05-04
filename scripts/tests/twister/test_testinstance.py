@@ -15,6 +15,8 @@ ZEPHYR_BASE = os.getenv("ZEPHYR_BASE")
 sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/pylib/twister"))
 from twisterlib.testinstance import TestInstance
 from twisterlib.error import BuildError
+from twisterlib.runner import TwisterRunner
+from expr_parser import reserved
 
 
 TESTDATA_1 = [
@@ -33,7 +35,7 @@ def test_check_build_or_run(class_testplan, monkeypatch, all_testsuites_dict, pl
     Scenario 2: Test if build_only is enabled when the OS is Windows"""
 
     class_testplan.testsuites = all_testsuites_dict
-    testsuite = class_testplan.testsuites.get('zephyr/scripts/tests/twister/test_data/testsuites/tests/test_a/test_a.check_1')
+    testsuite = class_testplan.testsuites.get('scripts/tests/twister/test_data/testsuites/tests/test_a/test_a.check_1')
     print(testsuite)
 
     class_testplan.platforms = platforms_list
@@ -69,7 +71,7 @@ def test_create_overlay(class_testplan, all_testsuites_dict, platforms_list, ena
     """Test correct content is written to testcase_extra.conf based on if conditions
     TO DO: Add extra_configs to the input list"""
     class_testplan.testsuites = all_testsuites_dict
-    testcase = class_testplan.testsuites.get('zephyr/scripts/tests/twister/test_data/testsuites/samples/test_app/sample_test.app')
+    testcase = class_testplan.testsuites.get('scripts/tests/twister/test_data/testsuites/samples/test_app/sample_test.app')
     class_testplan.platforms = platforms_list
     platform = class_testplan.get_platform("demo_board_2")
 
@@ -80,10 +82,23 @@ def test_create_overlay(class_testplan, all_testsuites_dict, platforms_list, ena
 def test_calculate_sizes(class_testplan, all_testsuites_dict, platforms_list):
     """ Test Calculate sizes method for zephyr elf"""
     class_testplan.testsuites = all_testsuites_dict
-    testcase = class_testplan.testsuites.get('zephyr/scripts/tests/twister/test_data/testsuites/samples/test_app/sample_test.app')
+    testcase = class_testplan.testsuites.get('scripts/tests/twister/test_data/testsuites/samples/test_app/sample_test.app')
     class_testplan.platforms = platforms_list
     platform = class_testplan.get_platform("demo_board_2")
     testinstance = TestInstance(testcase, platform, class_testplan.env.outdir)
 
     with pytest.raises(BuildError):
         assert testinstance.calculate_sizes() == "Missing/multiple output ELF binary"
+
+TESTDATA_3 = [
+    ('CONFIG_ARCH_HAS_THREAD_LOCAL_STORAGE and CONFIG_TOOLCHAIN_SUPPORTS_THREAD_LOCAL_STORAGE and not (CONFIG_TOOLCHAIN_ARCMWDT_SUPPORTS_THREAD_LOCAL_STORAGE and CONFIG_USERSPACE)', ['kconfig']),
+    ('(dt_compat_enabled("st,stm32-flash-controller") or dt_compat_enabled("st,stm32h7-flash-controller")) and dt_label_with_parent_compat_enabled("storage_partition", "fixed-partitions")', ['dts']),
+    ('((CONFIG_FLASH_HAS_DRIVER_ENABLED and not CONFIG_TRUSTED_EXECUTION_NONSECURE) and dt_label_with_parent_compat_enabled("storage_partition", "fixed-partitions")) or (CONFIG_FLASH_HAS_DRIVER_ENABLED and CONFIG_TRUSTED_EXECUTION_NONSECURE and dt_label_with_parent_compat_enabled("slot1_ns_partition", "fixed-partitions"))', ['dts', 'kconfig']),
+    ('((CONFIG_CPU_AARCH32_CORTEX_R or CONFIG_CPU_CORTEX_M) and CONFIG_CPU_HAS_FPU and TOOLCHAIN_HAS_NEWLIB == 1) or CONFIG_ARCH_POSIX', ['full'])
+]
+
+@pytest.mark.parametrize("filter_expr, expected_stages", TESTDATA_3)
+def test_which_filter_stages(filter_expr, expected_stages):
+    logic_keys = reserved.keys()
+    stages = TwisterRunner.get_cmake_filter_stages(filter_expr, logic_keys)
+    assert sorted(stages) == sorted(expected_stages)

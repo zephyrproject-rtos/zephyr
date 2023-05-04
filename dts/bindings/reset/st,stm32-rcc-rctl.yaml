@@ -1,0 +1,37 @@
+# Copyright (c) 2022, Google Inc
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  STM32 Reset and Clock Control (RCC) node.
+  This node is in charge of reset control for AHB (Advanced High Performance)
+  and APB (Advanced Peripheral) bus domains.
+
+  To specify the reset line in a peripheral, the standard resets property needs
+  to be used, e.g.:
+
+    usart1: serial@xxx {
+        ...
+        /* Cell contains information about RCU register offset and bit */
+        resets = <&rctl STM32_RESET(ABP2, 4U)>;
+        ...
+    };
+
+  RCC reset cells are available in
+  include/zephyr/dts-bindings/reset/stm32{soc_family}_reset.h header files.
+
+compatible: "st,stm32-rcc-rctl"
+
+include: [reset-controller.yaml, base.yaml]
+
+properties:
+  "#reset-cells":
+    const: 1
+
+  set-bit-to-deassert:
+    type: boolean
+    description: |
+      Indicates if the driver should set bit in clear register to
+      deassert reset.
+
+reset-cells:
+  - id

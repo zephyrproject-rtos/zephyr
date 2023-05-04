@@ -22,6 +22,8 @@
 
 #include "ticker/ticker.h"
 
+#include "pdu_df.h"
+#include "lll/pdu_vendor.h"
 #include "pdu.h"
 
 #include "lll.h"
@@ -37,9 +39,7 @@
 #include "lll_filter.h"
 #include "lll_conn_iso.h"
 
-#if !defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
-#include "ull_tx_queue.h"
-#endif
+#include "ll_sw/ull_tx_queue.h"
 
 #include "ull_adv_types.h"
 #include "ull_conn_types.h"
@@ -48,17 +48,15 @@
 #include "ull_internal.h"
 #include "ull_adv_internal.h"
 #include "ull_conn_internal.h"
-#include "ull_periph_internal.h"
+#include "ull_peripheral_internal.h"
 
 #include "ll.h"
 
-#if (!defined(CONFIG_BT_LL_SW_LLCP_LEGACY))
-#include "isoal.h"
-#include "ull_iso_types.h"
-#include "ull_conn_iso_types.h"
+#include "ll_sw/isoal.h"
+#include "ll_sw/ull_iso_types.h"
+#include "ll_sw/ull_conn_iso_types.h"
 
-#include "ull_llcp.h"
-#endif
+#include "ll_sw/ull_llcp.h"
 
 #include "hal/debug.h"
 
@@ -91,7 +89,6 @@ void ull_periph_setup(struct node_rx_hdr *rx, struct node_rx_ftr *ftr,
 	uint16_t max_rx_time;
 	uint16_t win_offset;
 	memq_link_t *link;
-	uint16_t timeout;
 	uint8_t chan_sel;
 	void *node;
 
@@ -187,15 +184,13 @@ void ull_periph_setup(struct node_rx_hdr *rx, struct node_rx_ftr *ftr,
 		win_delay_us = WIN_DELAY_LEGACY;
 	}
 
-#if (!defined(CONFIG_BT_LL_SW_LLCP_LEGACY))
 	/* Set LLCP as connection-wise connected */
 	ull_cp_state_set(conn, ULL_CP_CONNECTED);
-#endif /* CONFIG_BT_LL_SW_LLCP_LEGACY */
 
 	/* calculate the window widening */
 	conn->periph.sca = pdu_adv->connect_ind.sca;
 	lll->periph.window_widening_periodic_us =
-		ceiling_fraction(((lll_clock_ppm_local_get() +
+		DIV_ROUND_UP(((lll_clock_ppm_local_get() +
 				   lll_clock_ppm_get(conn->periph.sca)) *
 				  conn_interval_us), USEC_PER_SEC);
 	lll->periph.window_widening_max_us = (conn_interval_us >> 1) -
@@ -204,19 +199,11 @@ void ull_periph_setup(struct node_rx_hdr *rx, struct node_rx_ftr *ftr,
 		CONN_INT_UNIT_US;
 
 	/* procedure timeouts */
-	timeout = sys_le16_to_cpu(pdu_adv->connect_ind.timeout);
-	conn->supervision_reload =
-		RADIO_CONN_EVENTS((timeout * 10U * 1000U), conn_interval_us);
+	conn->supervision_timeout = sys_le16_to_cpu(pdu_adv->connect_ind.timeout);
 
-#if defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
-	conn->procedure_reload =
-		RADIO_CONN_EVENTS((40 * 1000 * 1000), conn_interval_us);
-#else
 	/* Setup the PRT reload */
 	ull_cp_prt_reload_set(conn, conn_interval_us);
-#endif /* CONFIG_BT_LL_SW_LLCP_LEGACY */
 
-#if !defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
 #if defined(CONFIG_BT_CTLR_CONN_ISO)
 	uint16_t conn_accept_timeout;
 
@@ -225,7 +212,6 @@ void ull_periph_setup(struct node_rx_hdr *rx, struct node_rx_ftr *ftr,
 #else
 	conn->connect_accept_to = DEFAULT_CONNECTION_ACCEPT_TIMEOUT_US;
 #endif /* CONFIG_BT_CTLR_CONN_ISO */
-#endif /* !CONFIG_BT_LL_SW_LLCP_LEGACY */
 
 #if defined(CONFIG_BT_CTLR_LE_PING)
 	/* APTO in no. of connection events */
@@ -286,7 +272,7 @@ void ull_periph_setup(struct node_rx_hdr *rx, struct node_rx_ftr *ftr,
 
 	cc->interval = lll->interval;
 	cc->latency = lll->latency;
-	cc->timeout = timeout;
+	cc->timeout = conn->supervision_timeout;
 	cc->sca = conn->periph.sca;
 
 	lll->handle = ll_conn_handle_get(conn);
@@ -352,18 +338,12 @@ void ull_periph_setup(struct node_rx_hdr *rx, struct node_rx_ftr *ftr,
 	}
 #endif
 
-	ll_rx_put(link, rx);
-	ll_rx_sched();
+	ll_rx_put_sched(link, rx);
 
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 #if defined(CONFIG_BT_CTLR_PHY)
-#if defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
-	max_tx_time = lll->max_tx_time;
-	max_rx_time = lll->max_rx_time;
-#else
 	max_tx_time = lll->dle.eff.max_tx_time;
 	max_rx_time = lll->dle.eff.max_rx_time;
-#endif
 #else /* !CONFIG_BT_CTLR_PHY */
 	max_tx_time = PDU_DC_MAX_US(PDU_DC_PAYLOAD_SIZE_MIN, PHY_1M);
 	max_rx_time = PDU_DC_MAX_US(PDU_DC_PAYLOAD_SIZE_MIN, PHY_1M);
@@ -393,6 +373,7 @@ void ull_periph_setup(struct node_rx_hdr *rx, struct node_rx_ftr *ftr,
 		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_PREEMPT_MIN_US);
 	conn->ull.ticks_slot =
 		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US +
+				       EVENT_OVERHEAD_END_US +
 				       ready_delay_us +
 				       max_rx_time +
 				       EVENT_IFS_US +
@@ -597,45 +578,11 @@ uint8_t ll_start_enc_req_send(uint16_t handle, uint8_t error_code,
 		return BT_HCI_ERR_UNKNOWN_CONN_ID;
 	}
 
-#if defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
-	if (error_code) {
-		if (conn->llcp_enc.refresh == 0U) {
-			if ((conn->llcp_req == conn->llcp_ack) ||
-			     (conn->llcp_type != LLCP_ENCRYPTION)) {
-				return BT_HCI_ERR_CMD_DISALLOWED;
-			}
-
-			conn->llcp.encryption.error_code = error_code;
-			conn->llcp.encryption.state = LLCP_ENC_STATE_INPROG;
-		} else {
-			if (conn->llcp_terminate.ack !=
-			    conn->llcp_terminate.req) {
-				return BT_HCI_ERR_CMD_DISALLOWED;
-			}
-
-			conn->llcp_terminate.reason_own = error_code;
-
-			conn->llcp_terminate.req++;
-		}
-	} else {
-		if ((conn->llcp_req == conn->llcp_ack) ||
-		     (conn->llcp_type != LLCP_ENCRYPTION)) {
-			return BT_HCI_ERR_CMD_DISALLOWED;
-		}
-
-		memcpy(&conn->llcp_enc.ltk[0], ltk,
-		       sizeof(conn->llcp_enc.ltk));
-
-		conn->llcp.encryption.error_code = 0U;
-		conn->llcp.encryption.state = LLCP_ENC_STATE_INPROG;
-	}
-#else /* CONFIG_BT_LL_SW_LLCP_LEGACY */
 	if (error_code) {
 		return ull_cp_ltk_req_neq_reply(conn);
 	} else {
 		return ull_cp_ltk_req_reply(conn, ltk);
 	}
-#endif /* CONFIG_BT_LL_SW_LLCP_LEGACY */
 
 	return 0;
 }
@@ -674,8 +621,7 @@ static void invalid_release(struct ull_hdr *hdr, struct lll_conn *lll,
 	}
 
 	/* Enqueue connection or CSA event to be release */
-	ll_rx_put(link, rx);
-	ll_rx_sched();
+	ll_rx_put_sched(link, rx);
 }
 
 static void ticker_op_stop_adv_cb(uint32_t status, void *param)
@@ -701,7 +647,6 @@ static void ticker_update_latency_cancel_op_cb(uint32_t ticker_status,
 	conn->periph.latency_cancel = 0U;
 }
 
-#if !defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
 #if defined(CONFIG_BT_CTLR_MIN_USED_CHAN)
 uint8_t ll_set_min_used_chans(uint16_t handle, uint8_t const phys,
 			      uint8_t const min_used_chans)
@@ -720,4 +665,3 @@ uint8_t ll_set_min_used_chans(uint16_t handle, uint8_t const phys,
 	return ull_cp_min_used_chans(conn, phys, min_used_chans);
 }
 #endif /* CONFIG_BT_CTLR_MIN_USED_CHAN */
-#endif /* !CONFIG_BT_LL_SW_LLCP_LEGACY */

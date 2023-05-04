@@ -15,3 +15,4 @@ toolchain:
   - xtools
 supported:
   - gpio
+  - can

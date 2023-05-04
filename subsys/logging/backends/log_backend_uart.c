@@ -12,7 +12,10 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/uart.h>
+#include <zephyr/sys/util_macro.h>
 #include <zephyr/sys/__assert.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/device_runtime.h>
 LOG_MODULE_REGISTER(log_uart);
 
 /* Fixed size to avoid auto-added trailing '\0'.
@@ -63,17 +66,25 @@ static int char_out(uint8_t *data, size_t length, void *ctx)
 	ARG_UNUSED(ctx);
 	int err;
 
+	if (pm_device_runtime_is_enabled(uart_dev) && !k_is_in_isr()) {
+		if (pm_device_runtime_get(uart_dev) < 0) {
+			/* Enabling the UART instance has failed but this
+			 * function MUST return the number of bytes consumed.
+			 */
+			return length;
+		}
+	}
+
 	if (IS_ENABLED(CONFIG_LOG_BACKEND_UART_OUTPUT_DICTIONARY_HEX)) {
 		dict_char_out_hex(data, length);
-		return length;
+		goto cleanup;
 	}
 
 	if (!IS_ENABLED(CONFIG_LOG_BACKEND_UART_ASYNC) || in_panic || !use_async) {
 		for (size_t i = 0; i < length; i++) {
 			uart_poll_out(uart_dev, data[i]);
 		}
-
-		return length;
+		goto cleanup;
 	}
 
 	err = uart_tx(uart_dev, data, length, SYS_FOREVER_US);
@@ -83,6 +94,11 @@ static int char_out(uint8_t *data, size_t length, void *ctx)
 	__ASSERT_NO_MSG(err == 0);
 
 	(void)err;
+cleanup:
+	if (pm_device_runtime_is_enabled(uart_dev) && !k_is_in_isr()) {
+		/* As errors cannot be returned, ignore the return value */
+		(void)pm_device_runtime_put(uart_dev);
+	}
 
 	return length;
 }
@@ -138,6 +154,26 @@ static void log_backend_uart_init(struct log_backend const *const backend)
 
 static void panic(struct log_backend const *const backend)
 {
+	/* Ensure that the UART device is in active mode */
+#if defined(CONFIG_PM_DEVICE_RUNTIME)
+	if (pm_device_runtime_is_enabled(uart_dev)) {
+		if (k_is_in_isr()) {
+			/* pm_device_runtime_get cannot be used from ISRs */
+			pm_device_action_run(uart_dev, PM_DEVICE_ACTION_RESUME);
+		} else {
+			pm_device_runtime_get(uart_dev);
+		}
+	}
+#elif defined(CONFIG_PM_DEVICE)
+	enum pm_device_state pm_state;
+	int rc;
+
+	rc = pm_device_state_get(uart_dev, &pm_state);
+	if ((rc == 0) && (pm_state == PM_DEVICE_STATE_SUSPENDED)) {
+		pm_device_action_run(uart_dev, PM_DEVICE_ACTION_RESUME);
+	}
+#endif /* CONFIG_PM_DEVICE */
+
 	in_panic = true;
 	log_backend_std_panic(&log_output_uart);
 }
@@ -161,4 +197,5 @@ const struct log_backend_api log_backend_uart_api = {
 	.format_set = format_set,
 };
 
-LOG_BACKEND_DEFINE(log_backend_uart, log_backend_uart_api, true);
+LOG_BACKEND_DEFINE(log_backend_uart, log_backend_uart_api,
+		IS_ENABLED(CONFIG_LOG_BACKEND_UART_AUTOSTART));

@@ -76,12 +76,12 @@ compatible: "atmel,sam-pinctrl"
 include: base.yaml
 
 properties:
-    "#address-cells":
-      required: true
-      const: 1
-    "#size-cells":
-      required: true
-      const: 1
+  "#address-cells":
+    required: true
+    const: 1
+  "#size-cells":
+    required: true
+    const: 1
 
 child-binding:
   description: |

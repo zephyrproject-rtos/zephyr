@@ -1,0 +1,8 @@
+# SECO SBC-D23 board configuration
+
+# Copyright (c) 2022, SECO Spa
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_STM32F3_SECO_D23
+	bool "SECO JUNO SBC-D23 (STM32F302VC) Board"
+	depends on SOC_STM32F302XC

@@ -45,6 +45,7 @@ int lis2mdl_trigger_set(const struct device *dev,
 
 	if (trig->chan == SENSOR_CHAN_MAGN_XYZ) {
 		lis2mdl->handler_drdy = handler;
+		lis2mdl->trig_drdy = trig;
 		if (handler) {
 			/* fetch raw data sample: re-trigger lost interrupt */
 			lis2mdl_magnetic_raw_get(ctx, raw);
@@ -63,12 +64,9 @@ static void lis2mdl_handle_interrupt(const struct device *dev)
 {
 	struct lis2mdl_data *lis2mdl = dev->data;
 	const struct lis2mdl_config *const cfg = dev->config;
-	struct sensor_trigger drdy_trigger = {
-		.type = SENSOR_TRIG_DATA_READY,
-	};
 
 	if (lis2mdl->handler_drdy != NULL) {
-		lis2mdl->handler_drdy(dev, &drdy_trigger);
+		lis2mdl->handler_drdy(dev, lis2mdl->trig_drdy);
 	}
 
 	if (cfg->single_mode) {

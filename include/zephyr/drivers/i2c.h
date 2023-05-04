@@ -65,9 +65,6 @@ extern "C" {
 /** Peripheral to act as Controller. */
 #define I2C_MODE_CONTROLLER		BIT(4)
 
-/** @deprecated Use I2C_MODE_CONTROLLER instead. */
-#define I2C_MODE_MASTER	__DEPRECATED_MACRO BIT(4)
-
 /**
  * @brief Complete I2C DT information
  *
@@ -396,6 +393,69 @@ struct i2c_target_config {
 	const struct i2c_target_callbacks *callbacks;
 };
 
+/**
+ * @brief Validate that I2C bus is ready.
+ *
+ * @param spec I2C specification from devicetree
+ *
+ * @retval true if the I2C bus is ready for use.
+ * @retval false if the I2C bus is not ready for use.
+ */
+static inline bool i2c_is_ready_dt(const struct i2c_dt_spec *spec)
+{
+	/* Validate bus is ready */
+	return device_is_ready(spec->bus);
+}
+
+/**
+ * @brief Dump out an I2C message
+ *
+ * Dumps out a list of I2C messages. For any that are writes (W), the data is
+ * displayed in hex. Setting dump_read will dump the data for read messages too,
+ * which only makes sense when called after the messages have been processed.
+ *
+ * It looks something like this (with name "testing"):
+ *
+ * @code
+ * D: I2C msg: testing, addr=56
+ * D:    W len=01: 06
+ * D:    W len=0e:
+ * D: contents:
+ * D: 00 01 02 03 04 05 06 07 |........
+ * D: 08 09 0a 0b 0c 0d       |......
+ * D:    W len=01: 0f
+ * D:    R len=01: 6c
+ * @endcode
+ *
+ * @param name Name of this dump, displayed at the top.
+ * @param msgs Array of messages to dump.
+ * @param num_msgs Number of messages to dump.
+ * @param addr Address of the I2C target device.
+ * @param dump_read Dump data from I2C reads, otherwise only writes have data dumped.
+ */
+void i2c_dump_msgs_rw(const char *name, const struct i2c_msg *msgs,
+		      uint8_t num_msgs, uint16_t addr, bool dump_read);
+
+/**
+ * @brief Dump out an I2C message, before it is executed.
+ *
+ * This is equivalent to:
+ *
+ *     i2c_dump_msgs_rw(name, msgs, num_msgs, addr, false);
+ *
+ * The read messages' data isn't dumped.
+ *
+ * @param name Name of this dump, displayed at the top.
+ * @param msgs Array of messages to dump.
+ * @param num_msgs Number of messages to dump.
+ * @param addr Address of the I2C target device.
+ */
+static inline void i2c_dump_msgs(const char *name, const struct i2c_msg *msgs,
+				 uint8_t num_msgs, uint16_t addr)
+{
+	i2c_dump_msgs_rw(name, msgs, num_msgs, addr, false);
+}
+
 #if defined(CONFIG_I2C_STATS) || defined(__DOXYGEN__)
 
 #include <zephyr/stats/stats.h>
@@ -479,7 +539,11 @@ static inline void i2c_xfer_stats(const struct device *dev, struct i2c_msg *msgs
 		stats_init(&state->stats.s_hdr, STATS_SIZE_32, 4,	\
 			   STATS_NAME_INIT_PARMS(i2c));			\
 		stats_register(dev->name, &(state->stats.s_hdr));	\
-		return init_fn(dev);					\
+		if (init_fn != NULL) {					\
+			return init_fn(dev);				\
+		}							\
+									\
+		return 0;						\
 	}
 
 /** @endcond */
@@ -493,7 +557,7 @@ static inline void i2c_xfer_stats(const struct device *dev, struct i2c_msg *msgs
  *
  * @param node_id The devicetree node identifier.
  *
- * @param init_fn Name of the init function of the driver.
+ * @param init_fn Name of the init function of the driver. Can be `NULL`.
  *
  * @param pm PM device resources reference (NULL if device does not use PM).
  *
@@ -534,7 +598,7 @@ static inline void i2c_xfer_stats(const struct device *dev, struct i2c_msg *msgs
 
 #define I2C_DEVICE_DT_DEFINE(node_id, init_fn, pm, data, config, level,	\
 			     prio, api, ...)				\
-	DEVICE_DT_DEFINE(node_id, &init_fn, pm, data, config, level,	\
+	DEVICE_DT_DEFINE(node_id, init_fn, pm, data, config, level,	\
 			 prio, api, __VA_ARGS__)
 
 #endif /* CONFIG_I2C_STATS */
@@ -646,6 +710,10 @@ static inline int z_impl_i2c_transfer(const struct device *dev,
 	int res =  api->transfer(dev, msgs, num_msgs, addr);
 
 	i2c_xfer_stats(dev, msgs, num_msgs);
+
+	if (IS_ENABLED(CONFIG_I2C_DUMP_MESSAGES)) {
+		i2c_dump_msgs_rw(dev->name, msgs, num_msgs, addr, true);
+	}
 
 	return res;
 }
@@ -1410,33 +1478,6 @@ static inline int i2c_reg_update_byte_dt(const struct i2c_dt_spec *spec,
 	return i2c_reg_update_byte(spec->bus, spec->addr,
 				   reg_addr, mask, value);
 }
-
-/**
- * @brief Dump out an I2C message
- *
- * Dumps out a list of I2C messages. For any that are writes (W), the data is
- * displayed in hex.
- *
- * It looks something like this (with name "testing"):
- *
- * @code
- * D: I2C msg: testing, addr=56
- * D:    W len=01:
- * D: contents:
- * D: 06                      |.
- * D:    W len=0e:
- * D: contents:
- * D: 00 01 02 03 04 05 06 07 |........
- * D: 08 09 0a 0b 0c 0d       |......
- * @endcode
- *
- * @param name Name of this dump, displayed at the top.
- * @param msgs Array of messages to dump.
- * @param num_msgs Number of messages to dump.
- * @param addr Address of the I2C target device.
- */
-void i2c_dump_msgs(const char *name, const struct i2c_msg *msgs,
-		   uint8_t num_msgs, uint16_t addr);
 
 #ifdef __cplusplus
 }

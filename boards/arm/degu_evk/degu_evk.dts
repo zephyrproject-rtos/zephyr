@@ -58,14 +58,14 @@
 	};
 
 	en-3v3-switch {
-		compatible = "regulator-fixed-sync", "regulator-fixed";
+		compatible = "regulator-fixed";
 		regulator-name = "en_3v3_switch";
 		enable-gpios = <&gpio0 26 GPIO_ACTIVE_HIGH>;
 		regulator-boot-on;
 	};
 
 	en-vin1-moni {
-		compatible = "regulator-fixed-sync", "regulator-fixed";
+		compatible = "regulator-fixed";
 		regulator-name = "en_vin1_moni";
 		enable-gpios = <&gpio1 6 GPIO_ACTIVE_HIGH>;
 		regulator-boot-on;

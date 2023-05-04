@@ -88,7 +88,7 @@ int ipc_rpmsg_init(struct ipc_rpmsg_instance *instance,
 	}
 
 	if (role == RPMSG_HOST) {
-		struct rpmsg_virtio_config config;
+		struct rpmsg_virtio_config config = { 0 };
 
 		config.h2r_buf_size = (uint32_t) buffer_size;
 		config.r2h_buf_size = (uint32_t) buffer_size;

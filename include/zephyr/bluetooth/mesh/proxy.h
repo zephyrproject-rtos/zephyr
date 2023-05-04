@@ -10,6 +10,10 @@
 #ifndef ZEPHYR_INCLUDE_BLUETOOTH_MESH_PROXY_H_
 #define ZEPHYR_INCLUDE_BLUETOOTH_MESH_PROXY_H_
 
+#include <stdint.h>
+
+#include <zephyr/kernel.h>
+
 /**
  * @brief Proxy
  * @defgroup bt_mesh_proxy Proxy
@@ -62,6 +66,16 @@ struct bt_mesh_proxy_cb {
  */
 int bt_mesh_proxy_identity_enable(void);
 
+/** @brief Enable advertising with Private Node Identity.
+ *
+ *  This API requires that GATT Proxy support has been enabled. Once called
+ *  each subnet will start advertising using Private Node Identity for the next
+ *  60 seconds.
+ *
+ *  @return 0 on success, or (negative) error code on failure.
+ */
+int bt_mesh_proxy_private_identity_enable(void);
+
 /** @brief Allow Proxy Client to auto connect to a network.
  *
  *  This API allows a proxy client to auto-connect a given network.
@@ -81,6 +95,21 @@ int bt_mesh_proxy_connect(uint16_t net_idx);
  *  @return 0 on success, or (negative) error code on failure.
  */
 int bt_mesh_proxy_disconnect(uint16_t net_idx);
+
+/** @brief Schedule advertising of Solicitation PDUs on Proxy Client .
+ *
+ *  Once called Proxy Client will schedule advertising Solicitation PDUs for the amount of time
+ *  defined by @c adv_int * (@c CONFIG_BT_MESH_SOL_ADV_XMIT + 1), where @c adv_int is 20ms
+ *  for Bluetooth v5.0 or higher, or 100ms otherwise.
+ *
+ *  If the number of advertised Solicitation PDUs reached 0xFFFFFF, the advertisements will
+ *  no longer be started until the node is reprovisioned.
+ *
+ *  @param net_idx  Network Key Index
+ *
+ *  @return 0 on success, or (negative) error code on failure.
+ */
+int bt_mesh_proxy_solicit(uint16_t net_idx);
 
 #ifdef __cplusplus
 }

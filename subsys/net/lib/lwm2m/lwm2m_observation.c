@@ -21,6 +21,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include "lwm2m_engine.h"
 #include "lwm2m_object.h"
 #include "lwm2m_util.h"
+#include "lwm2m_rd_client.h"
 
 #include <ctype.h>
 #include <errno.h>
@@ -37,11 +38,6 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <zephyr/sys/printk.h>
 #include <zephyr/types.h>
 
-#include <fcntl.h>
-
-#ifdef CONFIG_LWM2M_RD_CLIENT_SUPPORT
-#include "lwm2m_rd_client.h"
-#endif
 #if defined(CONFIG_LWM2M_RW_SENML_JSON_SUPPORT)
 #include "lwm2m_rw_senml_json.h"
 #endif
@@ -53,9 +49,6 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #endif
 #ifdef CONFIG_LWM2M_RW_SENML_CBOR_SUPPORT
 #include "lwm2m_rw_senml_cbor.h"
-#endif
-#ifdef CONFIG_LWM2M_RD_CLIENT_SUPPORT
-#include "lwm2m_rd_client.h"
 #endif
 
 #define OBSERVE_COUNTER_START 0U
@@ -148,7 +141,8 @@ void clear_attrs(void *ref)
 	}
 }
 
-static bool lwm2m_observer_path_compare(struct lwm2m_obj_path *o_p, struct lwm2m_obj_path *p)
+static bool lwm2m_observer_path_compare(const struct lwm2m_obj_path *o_p,
+					const struct lwm2m_obj_path *p)
 {
 	/* check obj id matched or not */
 	if (p->obj_id != o_p->obj_id) {
@@ -178,7 +172,7 @@ static bool lwm2m_observer_path_compare(struct lwm2m_obj_path *o_p, struct lwm2m
 	return true;
 }
 
-static bool lwm2m_notify_observer_list(sys_slist_t *path_list, struct lwm2m_obj_path *path)
+static bool lwm2m_notify_observer_list(sys_slist_t *path_list, const struct lwm2m_obj_path *path)
 {
 	struct lwm2m_obj_path_list *o_p;
 
@@ -203,7 +197,7 @@ int lwm2m_notify_observer(uint16_t obj_id, uint16_t obj_inst_id, uint16_t res_id
 	return lwm2m_notify_observer_path(&path);
 }
 
-static int engine_observe_get_attributes(struct lwm2m_obj_path *path,
+static int engine_observe_get_attributes(const struct lwm2m_obj_path *path,
 					 struct notification_attrs *attrs, uint16_t srv_obj_inst)
 {
 	struct lwm2m_engine_obj *obj;
@@ -339,7 +333,7 @@ int engine_observe_attribute_list_get(sys_slist_t *path_list, struct notificatio
 	return 0;
 }
 
-int lwm2m_notify_observer_path(struct lwm2m_obj_path *path)
+int lwm2m_notify_observer_path(const struct lwm2m_obj_path *path)
 {
 	struct observe_node *obs;
 	struct notification_attrs nattrs = {0};
@@ -464,7 +458,7 @@ static void engine_observe_node_init(struct observe_node *obs, const uint8_t *to
 static void remove_observer_path_from_list(struct lwm2m_ctx *ctx, struct observe_node *obs,
 					   struct lwm2m_obj_path_list *o_p, sys_snode_t *prev_node)
 {
-	char buf[LWM2M_MAX_PATH_STR_LEN];
+	char buf[LWM2M_MAX_PATH_STR_SIZE];
 
 	LOG_DBG("Removing observer %p for path %s", obs, lwm2m_path_log_buf(buf, &o_p->path));
 	if (ctx->observe_cb) {
@@ -804,7 +798,7 @@ char *lwm2m_path_log_buf(char *buf, struct lwm2m_obj_path *path)
 #if defined(CONFIG_LWM2M_CANCEL_OBSERVE_BY_PATH)
 static int engine_remove_observer_by_path(struct lwm2m_ctx *ctx, struct lwm2m_obj_path *path)
 {
-	char buf[LWM2M_MAX_PATH_STR_LEN];
+	char buf[LWM2M_MAX_PATH_STR_SIZE];
 	struct observe_node *obs;
 	struct lwm2m_obj_path_list obs_path_list_buf;
 	sys_slist_t lwm2m_path_list;
@@ -909,7 +903,7 @@ const char *lwm2m_engine_get_attr_name(const struct lwm2m_attr *attr)
 }
 
 static int lwm2m_engine_observer_timestamp_update(sys_slist_t *observer,
-						  struct lwm2m_obj_path *path,
+						  const struct lwm2m_obj_path *path,
 						  uint16_t srv_obj_inst)
 {
 	struct observe_node *obs;
@@ -951,7 +945,7 @@ static int lwm2m_engine_observer_timestamp_update(sys_slist_t *observer,
 
 /* input / output selection */
 
-int lwm2m_get_path_reference_ptr(struct lwm2m_engine_obj *obj, struct lwm2m_obj_path *path,
+int lwm2m_get_path_reference_ptr(struct lwm2m_engine_obj *obj, const struct lwm2m_obj_path *path,
 				 void **ref)
 {
 	struct lwm2m_engine_obj_inst *obj_inst;
@@ -1001,22 +995,16 @@ int lwm2m_get_path_reference_ptr(struct lwm2m_engine_obj *obj, struct lwm2m_obj_
 	return 0;
 }
 
-int lwm2m_engine_update_observer_min_period(struct lwm2m_ctx *client_ctx, const char *pathstr,
-					    uint32_t period_s)
+int lwm2m_update_observer_min_period(struct lwm2m_ctx *client_ctx,
+				     const struct lwm2m_obj_path *path, uint32_t period_s)
 {
 	int ret;
-	struct lwm2m_obj_path path;
 	struct notification_attrs nattrs = {0};
 	struct notification_attrs attrs = {0};
 	void *ref;
 
-	ret = lwm2m_string_to_path(pathstr, &path, '/');
-	if (ret < 0) {
-		return ret;
-	}
-
 	/* Read Reference pointer to attribute */
-	ret = lwm2m_get_path_reference_ptr(NULL, &path, &ref);
+	ret = lwm2m_get_path_reference_ptr(NULL, path, &ref);
 	if (ret < 0) {
 		return ret;
 	}
@@ -1032,7 +1020,7 @@ int lwm2m_engine_update_observer_min_period(struct lwm2m_ctx *client_ctx, const 
 	}
 
 	/* Read Pmin & Pmax values for path */
-	ret = engine_observe_get_attributes(&path, &attrs, client_ctx->srv_obj_inst);
+	ret = engine_observe_get_attributes(path, &attrs, client_ctx->srv_obj_inst);
 	if (ret < 0) {
 		return ret;
 	}
@@ -1045,22 +1033,30 @@ int lwm2m_engine_update_observer_min_period(struct lwm2m_ctx *client_ctx, const 
 	return lwm2m_update_or_allocate_attribute(ref, LWM2M_ATTR_PMIN, &period_s);
 }
 
-int lwm2m_engine_update_observer_max_period(struct lwm2m_ctx *client_ctx, const char *pathstr,
+int lwm2m_engine_update_observer_min_period(struct lwm2m_ctx *client_ctx, const char *pathstr,
 					    uint32_t period_s)
 {
 	int ret;
 	struct lwm2m_obj_path path;
-	void *ref;
-	struct notification_attrs nattrs = {0};
-	struct notification_attrs attrs = {0};
 
 	ret = lwm2m_string_to_path(pathstr, &path, '/');
 	if (ret < 0) {
 		return ret;
 	}
 
+	return lwm2m_update_observer_min_period(client_ctx, &path, period_s);
+}
+
+int lwm2m_update_observer_max_period(struct lwm2m_ctx *client_ctx,
+				     const struct lwm2m_obj_path *path, uint32_t period_s)
+{
+	int ret;
+	void *ref;
+	struct notification_attrs nattrs = {0};
+	struct notification_attrs attrs = {0};
+
 	/* Read Reference pointer to attribute */
-	ret = lwm2m_get_path_reference_ptr(NULL, &path, &ref);
+	ret = lwm2m_get_path_reference_ptr(NULL, path, &ref);
 	if (ret < 0) {
 		return ret;
 	}
@@ -1076,7 +1072,7 @@ int lwm2m_engine_update_observer_max_period(struct lwm2m_ctx *client_ctx, const 
 	}
 
 	/* Read Pmin & Pmax values for path */
-	ret = engine_observe_get_attributes(&path, &attrs, client_ctx->srv_obj_inst);
+	ret = engine_observe_get_attributes(path, &attrs, client_ctx->srv_obj_inst);
 	if (ret < 0) {
 		return ret;
 	}
@@ -1093,8 +1089,22 @@ int lwm2m_engine_update_observer_max_period(struct lwm2m_ctx *client_ctx, const 
 	}
 
 	/* Update Observer timestamp */
-	return lwm2m_engine_observer_timestamp_update(&client_ctx->observer, &path,
+	return lwm2m_engine_observer_timestamp_update(&client_ctx->observer, path,
 						      client_ctx->srv_obj_inst);
+}
+
+int lwm2m_engine_update_observer_max_period(struct lwm2m_ctx *client_ctx, const char *pathstr,
+					    uint32_t period_s)
+{
+	int ret;
+	struct lwm2m_obj_path path;
+
+	ret = lwm2m_string_to_path(pathstr, &path, '/');
+	if (ret < 0) {
+		return ret;
+	}
+
+	return lwm2m_update_observer_max_period(client_ctx, &path, period_s);
 }
 
 struct lwm2m_attr *lwm2m_engine_get_next_attr(const void *ref, struct lwm2m_attr *prev)
@@ -1352,28 +1362,34 @@ int lwm2m_write_attr_handler(struct lwm2m_engine_obj *obj, struct lwm2m_message 
 	return 0;
 }
 
+bool lwm2m_path_is_observed(const struct lwm2m_obj_path *path)
+{
+	int i;
+	struct observe_node *obs;
+	struct lwm2m_ctx **sock_ctx = lwm2m_sock_ctx();
+
+	for (i = 0; i < lwm2m_sock_nfds(); ++i) {
+		SYS_SLIST_FOR_EACH_CONTAINER(&sock_ctx[i]->observer, obs, node) {
+
+			if (lwm2m_notify_observer_list(&obs->path_list, path)) {
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
 bool lwm2m_engine_path_is_observed(const char *pathstr)
 {
-	struct observe_node *obs;
-	struct lwm2m_obj_path path;
 	int ret;
-	int i;
-	struct lwm2m_ctx **sock_ctx = lwm2m_sock_ctx();
+	struct lwm2m_obj_path path;
 
 	ret = lwm2m_string_to_path(pathstr, &path, '/');
 	if (ret < 0) {
 		return false;
 	}
 
-	for (i = 0; i < lwm2m_sock_nfds(); ++i) {
-		SYS_SLIST_FOR_EACH_CONTAINER(&sock_ctx[i]->observer, obs, node) {
-
-			if (lwm2m_notify_observer_list(&obs->path_list, &path)) {
-				return true;
-			}
-		}
-	}
-	return false;
+	return lwm2m_path_is_observed(&path);
 }
 
 int lwm2m_engine_observation_handler(struct lwm2m_message *msg, int observe, uint16_t accept,
@@ -1468,18 +1484,6 @@ void lwm2m_engine_free_list(sys_slist_t *path_list, sys_slist_t *free_list)
 	}
 }
 
-static bool lwm2m_path_object_compare(struct lwm2m_obj_path *path,
-				      struct lwm2m_obj_path *compare_path)
-{
-	if (path->level != compare_path->level || path->obj_id != compare_path->obj_id ||
-	    path->obj_inst_id != compare_path->obj_inst_id ||
-	    path->res_id != compare_path->res_id ||
-	    path->res_inst_id != compare_path->res_inst_id) {
-		return false;
-	}
-	return true;
-}
-
 void lwm2m_engine_path_list_init(sys_slist_t *lwm2m_path_list, sys_slist_t *lwm2m_free_list,
 				 struct lwm2m_obj_path_list path_object_buf[],
 				 uint8_t path_object_size)
@@ -1495,7 +1499,7 @@ void lwm2m_engine_path_list_init(sys_slist_t *lwm2m_path_list, sys_slist_t *lwm2
 }
 
 int lwm2m_engine_add_path_to_list(sys_slist_t *lwm2m_path_list, sys_slist_t *lwm2m_free_list,
-				  struct lwm2m_obj_path *path)
+				  const struct lwm2m_obj_path *path)
 {
 	struct lwm2m_obj_path_list *prev = NULL;
 	struct lwm2m_obj_path_list *entry;
@@ -1516,48 +1520,74 @@ int lwm2m_engine_add_path_to_list(sys_slist_t *lwm2m_path_list, sys_slist_t *lwm
 	new_entry->path = *path;
 	if (!sys_slist_is_empty(lwm2m_path_list)) {
 
-		/* Keep list Ordered by Object ID/ Object instance/ resource ID */
+		/* Keep list Ordered by Object ID / Object instance / resource ID /
+		 * Resource Instance ID
+		 */
 		SYS_SLIST_FOR_EACH_CONTAINER(lwm2m_path_list, entry, node) {
 			if (entry->path.level == LWM2M_PATH_LEVEL_NONE ||
-			    lwm2m_path_object_compare(&entry->path, &new_entry->path)) {
+			    lwm2m_obj_path_equal(&entry->path, &new_entry->path)) {
 				/* Already Root request at list or current path is at list */
 				sys_slist_append(lwm2m_free_list, &new_entry->node);
 				return 0;
 			}
 
-			if (entry->path.obj_id > path->obj_id) {
-				/* New entry have smaller Object ID */
-				add_before_current = true;
-			} else if (entry->path.obj_id == path->obj_id &&
-				   entry->path.level > path->level) {
-				add_before_current = true;
-			} else if (entry->path.obj_id == path->obj_id &&
-				   entry->path.level == path->level) {
-				if (path->level >= LWM2M_PATH_LEVEL_OBJECT_INST &&
-				    entry->path.obj_inst_id > path->obj_inst_id) {
-					/*
-					 * New have same Object ID
-					 * but smaller Object Instance ID
-					 */
-					add_before_current = true;
-				} else if (path->level >= LWM2M_PATH_LEVEL_RESOURCE &&
-					   entry->path.obj_inst_id == path->obj_inst_id &&
-					   entry->path.res_id > path->res_id) {
-					/*
-					 * Object ID and Object Instance id same
-					 * but Resource ID is smaller
-					 */
-					add_before_current = true;
-				} else if (path->level >= LWM2M_PATH_LEVEL_RESOURCE_INST &&
-					   entry->path.obj_inst_id == path->obj_inst_id &&
-					   entry->path.res_id == path->res_id &&
-					   entry->path.res_inst_id > path->res_inst_id) {
-					/*
-					 * Object ID, Object Instance id & Resource ID same
-					 * but Resource instance ID is smaller
-					 */
-					add_before_current = true;
-				}
+			/*
+			 * algorithm assumes that list is already properly sorted and that
+			 * there are no duplicates. general idea:
+			 * - if at any level up to new entry's path level, IDs below the level
+			 *   match and the ID of the new entry at that level is smaller,
+			 *   insert before.
+			 * - if all IDs of the new entry match the existing entry, insert before.
+			 *   Because of sorting and no duplicates, the existing entry must have
+			 *   higher path level and come after the new entry.
+			 */
+			switch (new_entry->path.level) {
+			case LWM2M_PATH_LEVEL_OBJECT:
+				add_before_current = new_entry->path.obj_id <= entry->path.obj_id;
+				break;
+
+			case LWM2M_PATH_LEVEL_OBJECT_INST:
+				add_before_current =
+					(new_entry->path.obj_id < entry->path.obj_id) ||
+
+					(entry->path.level >= LWM2M_PATH_LEVEL_OBJECT_INST &&
+					 entry->path.obj_id == new_entry->path.obj_id &&
+					 new_entry->path.obj_inst_id <= entry->path.obj_inst_id);
+				break;
+
+			case LWM2M_PATH_LEVEL_RESOURCE:
+				add_before_current =
+					(new_entry->path.obj_id < entry->path.obj_id) ||
+
+					(entry->path.level >= LWM2M_PATH_LEVEL_OBJECT_INST &&
+					 entry->path.obj_id == new_entry->path.obj_id &&
+					 new_entry->path.obj_inst_id < entry->path.obj_inst_id) ||
+
+					(entry->path.level >= LWM2M_PATH_LEVEL_RESOURCE &&
+					 entry->path.obj_id == new_entry->path.obj_id &&
+					 entry->path.obj_inst_id == new_entry->path.obj_inst_id &&
+					 new_entry->path.res_id <= entry->path.res_id);
+				break;
+
+			case LWM2M_PATH_LEVEL_RESOURCE_INST:
+				add_before_current =
+					(new_entry->path.obj_id < entry->path.obj_id) ||
+
+					(entry->path.level >= LWM2M_PATH_LEVEL_OBJECT_INST &&
+					 entry->path.obj_id == new_entry->path.obj_id &&
+					 new_entry->path.obj_inst_id < entry->path.obj_inst_id) ||
+
+					(entry->path.level >= LWM2M_PATH_LEVEL_RESOURCE &&
+					 entry->path.obj_id == new_entry->path.obj_id &&
+					 entry->path.obj_inst_id == new_entry->path.obj_inst_id &&
+					 new_entry->path.res_id < entry->path.res_id) ||
+
+					(entry->path.level >= LWM2M_PATH_LEVEL_RESOURCE_INST &&
+					 entry->path.obj_id == new_entry->path.obj_id &&
+					 entry->path.obj_inst_id == new_entry->path.obj_inst_id &&
+					 entry->path.res_id == new_entry->path.res_id &&
+					 new_entry->path.res_inst_id <= entry->path.res_inst_id);
+				break;
 			}
 
 			if (add_before_current) {

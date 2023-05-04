@@ -8,7 +8,10 @@
 #define ZEPHYR_DRIVERS_VIRTUALIZATION_VIRT_IVSHMEM_H_
 
 #include <zephyr/drivers/pcie/pcie.h>
+
+#ifdef CONFIG_IVSHMEM_DOORBELL
 #include <zephyr/drivers/pcie/msi.h>
+#endif
 
 #define IVSHMEM_PCIE_REG_BAR_IDX	0
 #define IVSHMEM_PCIE_SHMEM_BAR_IDX	2

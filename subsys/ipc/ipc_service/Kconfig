@@ -12,6 +12,7 @@ menuconfig IPC_SERVICE
 if IPC_SERVICE
 
 rsource "backends/Kconfig"
+rsource "lib/Kconfig"
 
 module = IPC_SERVICE
 module-str = IPC service and backend

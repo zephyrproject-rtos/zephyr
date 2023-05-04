@@ -8,7 +8,8 @@
 
 extern uint32_t peripheral_gatt_write(uint32_t count);
 
-void main(void)
+int main(void)
 {
 	(void)peripheral_gatt_write(0U);
+	return 0;
 }

@@ -8,26 +8,26 @@ compatible: "microchip,xec-tach"
 include: [tach.yaml, pinctrl-device.yaml]
 
 properties:
-    "#address-cells":
-      required: true
-      const: 1
-    "#size-cells":
-      type: int
-      const: 0
-    reg:
-      required: true
+  "#address-cells":
+    required: true
+    const: 1
+  "#size-cells":
+    type: int
+    const: 0
+  reg:
+    required: true
 
-    interrupts:
-      required: true
+  interrupts:
+    required: true
 
-    girqs:
-      type: array
-      required: true
-      description: |
-        Array of GIRQ and bit position pairs for each interrupt
-        signal the block generates.
+  girqs:
+    type: array
+    required: true
+    description: |
+      Array of GIRQ and bit position pairs for each interrupt
+      signal the block generates.
 
-    pcrs:
-      type: array
-      required: true
-      description: PCR sleep register index and bit position
+  pcrs:
+    type: array
+    required: true
+    description: PCR sleep register index and bit position

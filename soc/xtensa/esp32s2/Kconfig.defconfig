@@ -46,4 +46,10 @@ config MP_MAX_NUM_CPUS
 config MINIMAL_LIBC_OPTIMIZE_STRING_FOR_SIZE
 	default n
 
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency)
+
+config XTENSA_CCOUNT_HZ
+	default SYS_CLOCK_HW_CYCLES_PER_SEC
+
 endif

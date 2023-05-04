@@ -735,7 +735,9 @@ DEVICE_DT_DEFINE(DT_NODELABEL(clock), clk_init, NULL,
 		 PRE_KERNEL_1, CONFIG_CLOCK_CONTROL_INIT_PRIORITY,
 		 &clock_control_api);
 
-static int cmd_status(const struct shell *shell, size_t argc, char **argv)
+#if defined(CONFIG_SHELL)
+
+static int cmd_status(const struct shell *sh, size_t argc, char **argv)
 {
 	nrf_clock_hfclk_t hfclk_src;
 	bool hf_status;
@@ -757,15 +759,15 @@ static int cmd_status(const struct shell *shell, size_t argc, char **argv)
 	abs_stop = hf_stop_tstamp;
 	irq_unlock(key);
 
-	shell_print(shell, "HF clock:");
-	shell_print(shell, "\t- %srunning (users: %u)",
+	shell_print(sh, "HF clock:");
+	shell_print(sh, "\t- %srunning (users: %u)",
 			hf_status ? "" : "not ", hf_mgr->refs);
-	shell_print(shell, "\t- last start: %u ms (%u ms ago)",
+	shell_print(sh, "\t- last start: %u ms (%u ms ago)",
 			(uint32_t)abs_start, (uint32_t)(now - abs_start));
-	shell_print(shell, "\t- last stop: %u ms (%u ms ago)",
+	shell_print(sh, "\t- last stop: %u ms (%u ms ago)",
 			(uint32_t)abs_stop, (uint32_t)(now - abs_stop));
-	shell_print(shell, "LF clock:");
-	shell_print(shell, "\t- %srunning (users: %u)",
+	shell_print(sh, "LF clock:");
+	shell_print(sh, "\t- %srunning (users: %u)",
 			lf_status ? "" : "not ", lf_mgr->refs);
 
 	return 0;
@@ -780,3 +782,5 @@ SHELL_COND_CMD_REGISTER(CONFIG_CLOCK_CONTROL_NRF_SHELL,
 			nrf_clock_control, &subcmds,
 			"Clock control commands",
 			cmd_status);
+
+#endif /* defined(CONFIG_SHELL) */

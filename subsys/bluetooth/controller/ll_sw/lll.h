@@ -496,18 +496,31 @@ struct event_done_extra {
 #endif /* CONFIG_BT_CTLR_JIT_SCHEDULING */
 	union {
 		struct {
-			uint16_t trx_cnt;
-			uint8_t  crc_valid:1;
+			union {
+#if defined(CONFIG_BT_CTLR_CONN_ISO)
+				uint32_t trx_performed_bitmask;
+#endif /* CONFIG_BT_CTLR_CONN_ISO */
+
+				struct {
+					uint16_t trx_cnt;
+					uint8_t  crc_valid:1;
 #if defined(CONFIG_BT_CTLR_SYNC_PERIODIC_CTE_TYPE_FILTERING) && \
 	defined(CONFIG_BT_CTLR_CTEINLINE_SUPPORT)
-			/* Used to inform ULL that periodic advertising sync scan should be
-			 * terminated.
-			 */
-			uint8_t  sync_term:1;
-#endif /* CONFIG_BT_CTLR_SYNC_PERIODIC_CTE_TYPE_FILTERING && CONFIG_BT_CTLR_CTEINLINE_SUPPORT */
+					/* Used to inform ULL that periodic
+					 * advertising sync scan should be
+					 * terminated.
+					 */
+					uint8_t  sync_term:1;
+#endif /* CONFIG_BT_CTLR_SYNC_PERIODIC_CTE_TYPE_FILTERING && \
+	* CONFIG_BT_CTLR_CTEINLINE_SUPPORT
+	*/
+				};
+			};
+
 #if defined(CONFIG_BT_CTLR_LE_ENC)
 			uint8_t  mic_state;
 #endif /* CONFIG_BT_CTLR_LE_ENC */
+
 #if defined(CONFIG_BT_PERIPHERAL) || defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
 			union {
 				struct event_done_extra_drift drift;
@@ -583,6 +596,7 @@ void ull_rx_put(memq_link_t *link, void *rx);
 void ull_rx_put_done(memq_link_t *link, void *done);
 void ull_rx_sched(void);
 void ull_rx_sched_done(void);
+void ull_rx_put_sched(memq_link_t *link, void *rx);
 void ull_iso_rx_put(memq_link_t *link, void *rx);
 void ull_iso_rx_sched(void);
 void *ull_iso_tx_ack_dequeue(void);

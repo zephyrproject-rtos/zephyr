@@ -38,15 +38,13 @@ struct clock_control_gd32_config {
 	uint32_t base;
 };
 
-#if DT_COMPAT_GET_ANY_STATUS_OKAY(gd_gd32_timer)
+#if DT_HAS_COMPAT_STATUS_OKAY(gd_gd32_timer)
 /* timer identifiers */
 #define TIMER_ID_OR_NONE(nodelabel)                                            \
 	COND_CODE_1(DT_NODE_HAS_STATUS(DT_NODELABEL(nodelabel), okay),         \
-		    (GD32_CLOCK_ID_BIT(                                        \
-			     DT_CLOCKS_CELL(DT_NODELABEL(nodelabel), id)),),   \
-		    ())
+		    (DT_CLOCKS_CELL(DT_NODELABEL(nodelabel), id),), ())
 
-static const uint8_t timer_ids[] = {
+static const uint16_t timer_ids[] = {
 	TIMER_ID_OR_NONE(timer0)  /* */
 	TIMER_ID_OR_NONE(timer1)  /* */
 	TIMER_ID_OR_NONE(timer2)  /* */
@@ -65,7 +63,7 @@ static const uint8_t timer_ids[] = {
 	TIMER_ID_OR_NONE(timer15) /* */
 	TIMER_ID_OR_NONE(timer16) /* */
 };
-#endif /* DT_COMPAT_GET_ANY_STATUS_OKAY(gd_gd32_timer) */
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(gd_gd32_timer) */
 
 static int clock_control_gd32_on(const struct device *dev,
 				 clock_control_subsys_t sys)
@@ -114,7 +112,9 @@ static int clock_control_gd32_get_rate(const struct device *dev,
 		*rate = CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC >> ahb_exp[psc];
 		break;
 	case RCU_APB1EN_OFFSET:
-#if !defined(CONFIG_SOC_SERIES_GD32VF103)
+#if !defined(CONFIG_SOC_SERIES_GD32VF103) && \
+	!defined(CONFIG_SOC_SERIES_GD32A50X) && \
+	!defined(CONFIG_SOC_SERIES_GD32L23X)
 	case RCU_ADDAPB1EN_OFFSET:
 #endif
 		psc = (cfg & RCU_CFG0_APB1PSC_MSK) >> RCU_CFG0_APB1PSC_POS;
@@ -128,10 +128,10 @@ static int clock_control_gd32_get_rate(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-#if DT_COMPAT_GET_ANY_STATUS_OKAY(gd_gd32_timer)
+#if DT_HAS_COMPAT_STATUS_OKAY(gd_gd32_timer)
 	/* handle timer clocks */
 	for (size_t i = 0U; i < ARRAY_SIZE(timer_ids); i++) {
-		if (GD32_CLOCK_ID_BIT(id) != timer_ids[i]) {
+		if (id != timer_ids[i]) {
 			continue;
 		}
 
@@ -176,7 +176,7 @@ static int clock_control_gd32_get_rate(const struct device *dev,
 		}
 #endif /* CONFIG_SOC_SERIES_GD32F4XX */
 	}
-#endif /* DT_COMPAT_GET_ANY_STATUS_OKAY(gd_gd32_timer) */
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(gd_gd32_timer) */
 
 	return 0;
 }
@@ -203,17 +203,10 @@ static struct clock_control_driver_api clock_control_gd32_api = {
 	.get_status = clock_control_gd32_get_status,
 };
 
-static int clock_control_gd32_init(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-
-	return 0;
-}
-
 static const struct clock_control_gd32_config config = {
 	.base = DT_REG_ADDR(DT_INST_PARENT(0)),
 };
 
-DEVICE_DT_INST_DEFINE(0, clock_control_gd32_init, NULL, NULL, &config,
-		      PRE_KERNEL_1, CONFIG_CLOCK_CONTROL_INIT_PRIORITY,
+DEVICE_DT_INST_DEFINE(0, NULL, NULL, NULL, &config, PRE_KERNEL_1,
+		      CONFIG_CLOCK_CONTROL_INIT_PRIORITY,
 		      &clock_control_gd32_api);

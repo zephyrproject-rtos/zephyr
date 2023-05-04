@@ -21,8 +21,10 @@ struct counter_alarm_cfg alarm_cfg;
 #define TIMER DT_NODELABEL(tc0)
 #elif defined(CONFIG_COUNTER_MICROCHIP_MCP7940N)
 #define TIMER DT_NODELABEL(extrtc0)
-#elif defined(CONFIG_COUNTER_RTC0)
+#elif defined(CONFIG_COUNTER_NRF_RTC)
 #define TIMER DT_NODELABEL(rtc0)
+#elif defined(CONFIG_COUNTER_TIMER_STM32)
+#define TIMER DT_INST(0, st_stm32_counter)
 #elif defined(CONFIG_COUNTER_RTC_STM32)
 #define TIMER DT_INST(0, st_stm32_rtc)
 #elif defined(CONFIG_COUNTER_NATIVE_POSIX)
@@ -33,6 +35,14 @@ struct counter_alarm_cfg alarm_cfg;
 #define TIMER DT_NODELABEL(timer0)
 #elif defined(CONFIG_COUNTER_MCUX_CTIMER)
 #define TIMER DT_NODELABEL(ctimer0)
+#elif defined(CONFIG_COUNTER_NXP_S32_SYS_TIMER)
+#define TIMER DT_NODELABEL(stm0)
+#elif defined(CONFIG_COUNTER_TIMER_GD32)
+#define TIMER DT_NODELABEL(timer0)
+#elif defined(CONFIG_COUNTER_GECKO_RTCC)
+#define TIMER DT_NODELABEL(rtcc0)
+#elif defined(CONFIG_COUNTER_GECKO_STIMER)
+#define TIMER DT_NODELABEL(stimer0)
 #endif
 
 static void test_counter_interrupt_fn(const struct device *counter_dev,
@@ -72,7 +82,7 @@ static void test_counter_interrupt_fn(const struct device *counter_dev,
 	}
 }
 
-void main(void)
+int main(void)
 {
 	const struct device *const counter_dev = DEVICE_DT_GET(TIMER);
 	int err;
@@ -81,7 +91,7 @@ void main(void)
 
 	if (!device_is_ready(counter_dev)) {
 		printk("device not ready.\n");
-		return;
+		return 0;
 	}
 
 	counter_start(counter_dev);
@@ -109,4 +119,5 @@ void main(void)
 	while (1) {
 		k_sleep(K_FOREVER);
 	}
+	return 0;
 }

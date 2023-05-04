@@ -8,5 +8,5 @@ compatible: "st,stm32-watchdog"
 include: base.yaml
 
 properties:
-    reg:
-      required: true
+  reg:
+    required: true

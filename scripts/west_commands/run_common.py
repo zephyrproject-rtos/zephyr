@@ -20,6 +20,7 @@ from build_helpers import find_build_dir, is_zephyr_build, load_domains, \
     FIND_BUILD_DIR_DESCRIPTION
 from west.commands import CommandError
 from west.configuration import config
+from runners.core import FileType
 import yaml
 
 from zephyr_ext_common import ZEPHYR_SCRIPTS
@@ -132,11 +133,6 @@ def add_parser_common(command, parser_adder=None, parser=None):
     # Options used to override RunnerConfig values in runners.yaml.
     # TODO: is this actually useful?
     group.add_argument('--board-dir', metavar='DIR', help='board directory')
-    # FIXME: we should just have a single --file argument. The variation
-    # between runners is confusing people.
-    group.add_argument('--elf-file', metavar='FILE', help='path to zephyr.elf')
-    group.add_argument('--hex-file', metavar='FILE', help='path to zephyr.hex')
-    group.add_argument('--bin-file', metavar='FILE', help='path to zephyr.bin')
     # FIXME: these are runner-specific and should be moved to where --context
     # can find them instead.
     group.add_argument('--gdb', help='path to GDB')
@@ -228,7 +224,7 @@ def do_run_common_image(command, user_args, user_runner_args, build_dir=None):
     #   arguments
     # - create a RunnerConfig using 'user_args' and the result
     #   of parsing 'final_argv'
-    parser = argparse.ArgumentParser(prog=runner_name)
+    parser = argparse.ArgumentParser(prog=runner_name, allow_abbrev=False)
     add_parser_common(command, parser=parser)
     runner_cls.add_parser(parser)
     args, unknown = parser.parse_known_args(args=final_argv)
@@ -385,11 +381,41 @@ def get_runner_config(build_dir, yaml_path, runners_yaml, args=None):
     def config(attr, default=None):
         return getattr(args, attr, None) or yaml_config.get(attr, default)
 
+    def filetype(attr):
+        ftype = str(getattr(args, attr, None)).lower()
+        if ftype == "hex":
+            return FileType.HEX
+        elif ftype == "bin":
+            return FileType.BIN
+        elif ftype == "elf":
+            return FileType.ELF
+        elif getattr(args, attr, None) is not None:
+            err = 'unknown --file-type ({}). Please use hex, bin or elf'
+            raise ValueError(err.format(ftype))
+
+        # file-type not provided, try to get from filename
+        file = getattr(args, "file", None)
+        if file is not None:
+            ext = Path(file).suffix
+            if ext == ".hex":
+                return FileType.HEX
+            if ext == ".bin":
+                return FileType.BIN
+            if ext == ".elf":
+                return FileType.ELF
+
+        # we couldn't get the file-type, set to
+        # OTHER and let the runner deal with it
+        return FileType.OTHER
+
     return RunnerConfig(build_dir,
                         yaml_config['board_dir'],
                         output_file('elf'),
                         output_file('hex'),
                         output_file('bin'),
+                        output_file('uf2'),
+                        config('file'),
+                        filetype('file_type'),
                         config('gdb'),
                         config('openocd'),
                         config('openocd_search', []))
@@ -479,7 +505,7 @@ def dump_runner_option_help(cls, indent=''):
     # Print help text for class-specific command line options for the
     # given runner class.
 
-    dummy_parser = argparse.ArgumentParser(prog='', add_help=False)
+    dummy_parser = argparse.ArgumentParser(prog='', add_help=False, allow_abbrev=False)
     cls.add_parser(dummy_parser)
     formatter = dummy_parser._get_formatter()
     for group in dummy_parser._action_groups:

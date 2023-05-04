@@ -70,10 +70,6 @@ static void modbus_rx_handler(struct k_work *item)
 	struct modbus_context *ctx;
 
 	ctx = CONTAINER_OF(item, struct modbus_context, server_work);
-	if (ctx == NULL) {
-		LOG_ERR("Failed to obtain context pointer?");
-		return;
-	}
 
 	switch (ctx->mode) {
 	case MODBUS_MODE_RTU:

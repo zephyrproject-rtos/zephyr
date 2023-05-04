@@ -15,7 +15,11 @@
 #include <zephyr/net/net_ip.h>
 #include <zephyr/net/socket.h>
 
+#ifdef CONFIG_ARCH_POSIX
 #include <fcntl.h>
+#else
+#include <zephyr/posix/fcntl.h>
+#endif
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(net_mqtt_sn, CONFIG_MQTT_SN_LOG_LEVEL);
@@ -44,7 +48,7 @@ static int tp_udp_init(struct mqtt_sn_transport *transport)
 	struct mqtt_sn_transport_udp *udp = UDP_TRANSPORT(transport);
 	int err;
 
-	udp->sock = zsock_socket(PF_INET, SOCK_DGRAM, 0);
+	udp->sock = zsock_socket(udp->gwaddr.sa_family, SOCK_DGRAM, 0);
 	if (udp->sock < 0) {
 		return errno;
 	}

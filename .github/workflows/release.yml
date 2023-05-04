@@ -8,7 +8,7 @@ on:
 
 jobs:
   release:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v3
         with:
@@ -27,7 +27,7 @@ jobs:
 
       - name: upload-results
         uses: actions/upload-artifact@v3
-        continue-on-error: True
+        continue-on-error: true
         with:
           name: zephyr-${{ steps.get_version.outputs.VERSION }}.spdx
           path: zephyr-${{ steps.get_version.outputs.VERSION }}.spdx

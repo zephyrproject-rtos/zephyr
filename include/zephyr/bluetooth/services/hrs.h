@@ -17,6 +17,8 @@
  * as a part of ongoing development.
  */
 
+#include <stdint.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif

@@ -1,14 +1,16 @@
 /*
- * Copyright 2022, NXP
+ * Copyright 2022-2023, NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <mem.h>
 #include <arm/armv8-m.dtsi>
+#include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/clock/mcux_lpc_syscon_clock.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/mipi_dsi/mipi_dsi.h>
 
 / {
 	chosen {
@@ -47,6 +49,7 @@
 		compatible =  "zephyr,memory-region", "mmio-sram";
 		reg = <0x40140000 DT_SIZE_K(16)>;
 		zephyr,memory-region = "SRAM1";
+		zephyr,memory-region-mpu = "RAM";
 	};
 };
 
@@ -96,7 +99,7 @@
 	gpio0: gpio@0 {
 		compatible = "nxp,lpc-gpio";
 		reg = <0x100000 0x1000>;
-		interrupts = <4 2>,<5 2>,<6 2>,<7 2>;
+		int-source = "pint";
 		gpio-controller;
 		#gpio-cells = <2>;
 		port = <0>;
@@ -105,7 +108,7 @@
 	gpio1: gpio@1 {
 		compatible = "nxp,lpc-gpio";
 		reg = <0x100000 0x1000>;
-		interrupts = <35 2>,<36 2>,<37 2>,<38 2>;
+		int-source = "pint";
 		gpio-controller;
 		#gpio-cells = <2>;
 		port = <1>;
@@ -149,6 +152,18 @@
 		gpio-controller;
 		#gpio-cells = <2>;
 		port = <6>;
+	};
+
+	pint: pint@25000 {
+		compatible = "nxp,pint";
+		reg = <0x25000 0x1000>;
+		interrupt-controller;
+		#interrupt-cells = <1>;
+		#address-cells = <0>;
+		interrupts = <4 2>, <5 2>, <6 2>, <7 2>,
+			<35 2>, <36 2>, <37 2>, <38 2>;
+		num-lines = <8>;
+		num-inputs = <64>;
 	};
 
 	flexcomm0: flexcomm@106000 {
@@ -271,6 +286,13 @@
 		status = "disabled";
 	};
 
+	lcdif: lcdif@210000 {
+		compatible = "nxp,dcnano-lcdif";
+		reg = <0x210000 0x1000>;
+		interrupts = <69 0>;
+		status = "disabled";
+	};
+
 	usbhs: usbhs@144000 {
 		compatible = "nxp,mcux-usbd";
 		reg = <0x144000 0x1000>;
@@ -362,7 +384,7 @@
 		clk-divider = <1>;
 	};
 
-	usdhc1: usdhc@136000 {
+	usdhc0: usdhc@136000 {
 		compatible = "nxp,imx-usdhc";
 		reg = <0x136000 0x1000>;
 		status = "disabled";
@@ -374,7 +396,7 @@
 		min-bus-freq = <400000>;
 	};
 
-	usdhc2: usdhc@137000 {
+	usdhc1: usdhc@137000 {
 		compatible = "nxp,imx-usdhc";
 		reg = <0x137000 0x1000>;
 		status = "disabled";
@@ -393,9 +415,9 @@
 		status = "disabled";
 		clk-divider = <1>;
 		clk-source = <0>;
-		voltage-ref= <2>;
+		voltage-ref= <1>;
 		calibration-average = <128>;
-		power-level = <1>;
+		power-level = <0>;
 		offset-value-a = <10>;
 		offset-value-b = <10>;
 		#io-channel-cells = <1>;
@@ -460,6 +482,19 @@
 		input = <0>;
 		prescale = <0>;
 	};
+
+	mipi_dsi: mipi_dsi@31000 {
+		compatible = "nxp,mipi-dsi-2l";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <0x31000 0x1000>;
+		interrupts = <87 0>;
+		clocks = <&clkctl1 MCUX_MIPI_DSI_DPHY_CLK>,
+			<&clkctl1 MCUX_MIPI_DSI_ESC_CLK>,
+			<&clkctl1 MCUX_LCDIF_PIXEL_CLK>;
+		clock-names = "dphy", "esc", "pixel";
+		status = "disabled";
+	};
 };
 
 &flexspi {
@@ -473,6 +508,7 @@
 &flexspi2 {
 	compatible = "nxp,imx-flexspi";
 	status = "disabled";
+	interrupts = <42 0>;
 	#address-cells = <1>;
 	#size-cells = <0>;
 };

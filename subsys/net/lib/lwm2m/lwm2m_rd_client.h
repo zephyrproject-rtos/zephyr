@@ -38,6 +38,7 @@
 #ifndef LWM2M_RD_CLIENT_H
 #define LWM2M_RD_CLIENT_H
 
+int lwm2m_rd_client_init(void);
 void engine_trigger_update(bool update_objects);
 int engine_trigger_bootstrap(void);
 int lwm2m_rd_client_pause(void);
@@ -45,6 +46,7 @@ int lwm2m_rd_client_resume(void);
 
 int lwm2m_rd_client_timeout(struct lwm2m_ctx *client_ctx);
 bool lwm2m_rd_client_is_registred(struct lwm2m_ctx *client_ctx);
+bool lwm2m_rd_client_is_suspended(struct lwm2m_ctx *client_ctx);
 #if defined(CONFIG_LWM2M_RD_CLIENT_SUPPORT_BOOTSTRAP)
 void engine_bootstrap_finish(void);
 #endif

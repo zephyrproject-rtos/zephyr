@@ -8,17 +8,17 @@ compatible: "fixed-factor-clock"
 include: clock-controller.yaml
 
 properties:
-    clock-div:
-      type: int
-      description: fixed clock divider
+  clock-div:
+    type: int
+    description: fixed clock divider
 
-    clock-mult:
-      type: int
-      description: fixed clock multiplier
+  clock-mult:
+    type: int
+    description: fixed clock multiplier
 
-    clocks:
-      type: phandle-array
-      description: input clock source
+  clocks:
+    type: phandle-array
+    description: input clock source
 
-    "#clock-cells":
-      const: 0
+  "#clock-cells":
+    const: 0

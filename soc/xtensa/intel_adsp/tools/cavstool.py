@@ -392,7 +392,7 @@ def load_firmware(fw_file):
     while (sd.CTL & 1) == 0: pass
     sd.CTL = 0
     while (sd.CTL & 1) == 1: pass
-    sd.CTL = (1 << 20) # Set stream ID to anything non-zero
+    sd.CTL = 1 << 20 # Set stream ID to anything non-zero
     sd.BDPU = (buf_list_addr >> 32) & 0xffffffff
     sd.BDPL = buf_list_addr & 0xffffffff
     sd.CBL = len(fw_bytes)
@@ -683,7 +683,7 @@ async def main():
                 ipc_command(dsp.HIPCTDR & ~0x80000000, dsp.HIPCTDD)
 
 
-ap = argparse.ArgumentParser(description="DSP loader/logger tool")
+ap = argparse.ArgumentParser(description="DSP loader/logger tool", allow_abbrev=False)
 ap.add_argument("-q", "--quiet", action="store_true",
                 help="No loader output, just DSP logging")
 ap.add_argument("-v", "--verbose", action="store_true",
@@ -703,6 +703,6 @@ elif args.verbose:
 
 if __name__ == "__main__":
     try:
-        asyncio.get_event_loop().run_until_complete(main())
+        asyncio.run(main())
     except KeyboardInterrupt:
         start_output = False

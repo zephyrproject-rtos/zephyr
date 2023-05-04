@@ -1,0 +1,103 @@
+/*
+ * Copyright 2022 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <freq.h>
+#include <arm64/armv8-a.dtsi>
+#include <zephyr/dt-bindings/clock/imx_ccm.h>
+#include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
+
+/ {
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	chosen {
+		zephyr,console = &uart2;
+		zephyr,shell-uart = &uart2;
+		zephyr,sram = &sram0;
+	};
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a55";
+			reg = <0>;
+		};
+
+		cpu@100 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a55";
+			reg = <0x100>;
+		};
+
+	};
+
+	arch_timer: timer {
+		compatible = "arm,armv8-timer";
+		interrupts = <GIC_PPI 13 IRQ_TYPE_LEVEL
+			      IRQ_DEFAULT_PRIORITY>,
+			     <GIC_PPI 14 IRQ_TYPE_LEVEL
+			      IRQ_DEFAULT_PRIORITY>,
+			     <GIC_PPI 11 IRQ_TYPE_LEVEL
+			      IRQ_DEFAULT_PRIORITY>,
+			     <GIC_PPI 10 IRQ_TYPE_LEVEL
+			      IRQ_DEFAULT_PRIORITY>;
+		interrupt-parent = <&gic>;
+	};
+
+	gic: interrupt-controller@48000000 {
+		compatible = "arm,gic";
+		reg = <0x48000000 0x10000>, /* GIC Dist */
+		      <0x48040000 0xc0000>; /* GICR (RD_base + SGI_base) */
+		interrupt-controller;
+		#interrupt-cells = <4>;
+		status = "okay";
+	};
+
+	iomuxc: iomuxc@443c0000 {
+		compatible = "nxp,imx-iomuxc";
+		reg = <0x443c0000 DT_SIZE_K(64)>;
+		status = "okay";
+		pinctrl: pinctrl {
+			status = "okay";
+			compatible = "nxp,imx93-pinctrl";
+		};
+	};
+
+	ana_pll: ana_pll@44480000 {
+		compatible = "nxp,imx-ana";
+		reg = <0x44480000 DT_SIZE_K(64)>;
+	};
+
+	ccm: ccm@44450000 {
+		compatible = "nxp,imx-ccm";
+		reg = <0x44450000 DT_SIZE_K(64)>;
+		#clock-cells = <3>;
+	};
+
+	lpuart1: serial@44380000 {
+		compatible = "nxp,imx-lpuart", "nxp,kinetis-lpuart";
+		reg = <0x44380000 DT_SIZE_K(64)>;
+		interrupts = <GIC_SPI 19 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-names = "irq_0";
+		interrupt-parent = <&gic>;
+		clocks = <&ccm IMX_CCM_LPUART_CLK 0x6c 24>;
+		status = "disabled";
+	};
+
+	lpuart2: serial@44390000 {
+		compatible = "nxp,imx-lpuart", "nxp,kinetis-lpuart";
+		reg = <0x44390000 DT_SIZE_K(64)>;
+		interrupts = <GIC_SPI 20 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-names = "irq_0";
+		interrupt-parent = <&gic>;
+		clocks = <&ccm IMX_CCM_LPUART_CLK 0x6c 24>;
+		status = "disabled";
+	};
+};

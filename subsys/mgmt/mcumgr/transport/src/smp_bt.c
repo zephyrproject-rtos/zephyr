@@ -9,7 +9,6 @@
  * @brief Bluetooth transport for the mcumgr SMP protocol.
  */
 
-
 #include <zephyr/kernel.h>
 #include <zephyr/init.h>
 #include <zephyr/bluetooth/bluetooth.h>
@@ -19,46 +18,47 @@
 #include <zephyr/mgmt/mcumgr/smp/smp.h>
 #include <zephyr/mgmt/mcumgr/transport/smp.h>
 #include <zephyr/mgmt/mcumgr/transport/smp_bt.h>
+#include <zephyr/mgmt/mcumgr/mgmt/handlers.h>
 #include <errno.h>
 
 #include <mgmt/mcumgr/transport/smp_internal.h>
 #include <mgmt/mcumgr/transport/smp_reassembly.h>
 
 #include <zephyr/logging/log.h>
-LOG_MODULE_DECLARE(mcumgr_smp, CONFIG_MCUMGR_SMP_LOG_LEVEL);
+LOG_MODULE_DECLARE(mcumgr_smp, CONFIG_MCUMGR_TRANSPORT_LOG_LEVEL);
 
-#define RESTORE_TIME	COND_CODE_1(CONFIG_MCUMGR_SMP_BT_CONN_PARAM_CONTROL, \
-				(CONFIG_MCUMGR_SMP_BT_CONN_PARAM_CONTROL_RESTORE_TIME), \
-				(0))
-#define RETRY_TIME	COND_CODE_1(CONFIG_MCUMGR_SMP_BT_CONN_PARAM_CONTROL, \
-				(CONFIG_MCUMGR_SMP_BT_CONN_PARAM_CONTROL_RETRY_TIME), \
-				(0))
+#define RESTORE_TIME COND_CODE_1(CONFIG_MCUMGR_TRANSPORT_BT_CONN_PARAM_CONTROL, \
+				 (CONFIG_MCUMGR_TRANSPORT_BT_CONN_PARAM_CONTROL_RESTORE_TIME), \
+				 (0))
+#define RETRY_TIME COND_CODE_1(CONFIG_MCUMGR_TRANSPORT_BT_CONN_PARAM_CONTROL, \
+			       (CONFIG_MCUMGR_TRANSPORT_BT_CONN_PARAM_CONTROL_RETRY_TIME), \
+			       (0))
 
-#define CONN_PARAM_SMP	COND_CODE_1(CONFIG_MCUMGR_SMP_BT_CONN_PARAM_CONTROL,		  \
-				BT_LE_CONN_PARAM(					  \
-					CONFIG_MCUMGR_SMP_BT_CONN_PARAM_CONTROL_MIN_INT,  \
-					CONFIG_MCUMGR_SMP_BT_CONN_PARAM_CONTROL_MAX_INT,  \
-					CONFIG_MCUMGR_SMP_BT_CONN_PARAM_CONTROL_LATENCY,  \
-					CONFIG_MCUMGR_SMP_BT_CONN_PARAM_CONTROL_TIMEOUT), \
+#define CONN_PARAM_SMP COND_CODE_1(CONFIG_MCUMGR_TRANSPORT_BT_CONN_PARAM_CONTROL,		\
+				   BT_LE_CONN_PARAM(						\
+					CONFIG_MCUMGR_TRANSPORT_BT_CONN_PARAM_CONTROL_MIN_INT,  \
+					CONFIG_MCUMGR_TRANSPORT_BT_CONN_PARAM_CONTROL_MAX_INT,  \
+					CONFIG_MCUMGR_TRANSPORT_BT_CONN_PARAM_CONTROL_LATENCY,  \
+					CONFIG_MCUMGR_TRANSPORT_BT_CONN_PARAM_CONTROL_TIMEOUT), \
 					(NULL))
-#define CONN_PARAM_PREF	COND_CODE_1(CONFIG_MCUMGR_SMP_BT_CONN_PARAM_CONTROL, \
-				BT_LE_CONN_PARAM(			     \
-					CONFIG_BT_PERIPHERAL_PREF_MIN_INT,   \
-					CONFIG_BT_PERIPHERAL_PREF_MAX_INT,   \
-					CONFIG_BT_PERIPHERAL_PREF_LATENCY,   \
-					CONFIG_BT_PERIPHERAL_PREF_TIMEOUT),  \
-				(NULL))
+#define CONN_PARAM_PREF	COND_CODE_1(CONFIG_MCUMGR_TRANSPORT_BT_CONN_PARAM_CONTROL,	\
+				    BT_LE_CONN_PARAM(					\
+					CONFIG_BT_PERIPHERAL_PREF_MIN_INT,		\
+					CONFIG_BT_PERIPHERAL_PREF_MAX_INT,		\
+					CONFIG_BT_PERIPHERAL_PREF_LATENCY,		\
+					CONFIG_BT_PERIPHERAL_PREF_TIMEOUT),		\
+				    (NULL))
 
 /* Minimum number of bytes that must be able to be sent with a notification to a target device
  * before giving up
  */
 #define SMP_BT_MINIMUM_MTU_SEND_FAILURE 20
 
-#ifdef CONFIG_MCUMGR_SMP_BT_CONN_PARAM_CONTROL
+#ifdef CONFIG_MCUMGR_TRANSPORT_BT_CONN_PARAM_CONTROL
 /* Verification of SMP Connection Parameters configuration that is not possible in the Kconfig. */
-BUILD_ASSERT((CONFIG_MCUMGR_SMP_BT_CONN_PARAM_CONTROL_TIMEOUT * 4U) >
-	     ((1U + CONFIG_MCUMGR_SMP_BT_CONN_PARAM_CONTROL_LATENCY) *
-	      CONFIG_MCUMGR_SMP_BT_CONN_PARAM_CONTROL_MAX_INT));
+BUILD_ASSERT((CONFIG_MCUMGR_TRANSPORT_BT_CONN_PARAM_CONTROL_TIMEOUT * 4U) >
+	     ((1U + CONFIG_MCUMGR_TRANSPORT_BT_CONN_PARAM_CONTROL_LATENCY) *
+	      CONFIG_MCUMGR_TRANSPORT_BT_CONN_PARAM_CONTROL_MAX_INT));
 #endif
 
 struct smp_bt_user_data {
@@ -67,8 +67,9 @@ struct smp_bt_user_data {
 };
 
 /* Verification of user data being able to fit */
-BUILD_ASSERT(sizeof(struct smp_bt_user_data) <= CONFIG_MCUMGR_BUF_USER_DATA_SIZE,
-	     "CONFIG_MCUMGR_BUF_USER_DATA_SIZE not large enough to fit Bluetooth user data");
+BUILD_ASSERT(sizeof(struct smp_bt_user_data) <= CONFIG_MCUMGR_TRANSPORT_NETBUF_USER_DATA_SIZE,
+	     "CONFIG_MCUMGR_TRANSPORT_NETBUF_USER_DATA_SIZE not large enough to fit Bluetooth"
+	     " user data");
 
 enum {
 	CONN_PARAM_SMP_REQUESTED = BIT(0),
@@ -98,6 +99,15 @@ static struct bt_uuid_128 smp_bt_svc_uuid = BT_UUID_INIT_128(
  */
 static struct bt_uuid_128 smp_bt_chr_uuid = BT_UUID_INIT_128(
 	BT_UUID_128_ENCODE(0xda2e7828, 0xfbce, 0x4e01, 0xae9e, 0x261174997c48));
+
+static void connected(struct bt_conn *conn, uint8_t err);
+static void disconnected(struct bt_conn *conn, uint8_t reason);
+
+/* Bluetooth connection callback handlers */
+BT_CONN_CB_DEFINE(mcumgr_bt_callbacks) = {
+	.connected = connected,
+	.disconnected = disconnected,
+};
 
 /* Helper function that allocates conn_param_data for a conn. */
 static struct conn_param_data *conn_param_data_alloc(struct bt_conn *conn)
@@ -223,7 +233,7 @@ static ssize_t smp_bt_chr_write(struct bt_conn *conn,
 				uint8_t flags)
 {
 	struct conn_param_data *cpd = conn_param_data_get(conn);
-#ifdef CONFIG_MCUMGR_SMP_REASSEMBLY_BT
+#ifdef CONFIG_MCUMGR_TRANSPORT_BT_REASSEMBLY
 	int ret;
 	bool started;
 
@@ -270,7 +280,7 @@ static ssize_t smp_bt_chr_write(struct bt_conn *conn,
 		 */
 		struct smp_bt_user_data *ud = smp_reassembly_get_ud(&smp_bt_transport);
 
-		if (IS_ENABLED(CONFIG_MCUMGR_SMP_BT_CONN_PARAM_CONTROL)) {
+		if (IS_ENABLED(CONFIG_MCUMGR_TRANSPORT_BT_CONN_PARAM_CONTROL)) {
 			conn_param_smp_enable(conn);
 		}
 
@@ -313,7 +323,7 @@ static ssize_t smp_bt_chr_write(struct bt_conn *conn,
 	ud->conn = conn;
 	ud->id = cpd->id;
 
-	if (IS_ENABLED(CONFIG_MCUMGR_SMP_BT_CONN_PARAM_CONTROL)) {
+	if (IS_ENABLED(CONFIG_MCUMGR_TRANSPORT_BT_CONN_PARAM_CONTROL)) {
 		conn_param_smp_enable(conn);
 	}
 
@@ -325,7 +335,7 @@ static ssize_t smp_bt_chr_write(struct bt_conn *conn,
 
 static void smp_bt_ccc_changed(const struct bt_gatt_attr *attr, uint16_t value)
 {
-#ifdef CONFIG_MCUMGR_SMP_REASSEMBLY_BT
+#ifdef CONFIG_MCUMGR_TRANSPORT_BT_REASSEMBLY
 	if (smp_reassembly_expected(&smp_bt_transport) >= 0 && value == 0) {
 		struct smp_bt_user_data *ud = smp_reassembly_get_ud(&smp_bt_transport);
 
@@ -344,14 +354,14 @@ static struct bt_gatt_attr smp_bt_attrs[] = {
 	BT_GATT_CHARACTERISTIC(&smp_bt_chr_uuid.uuid,
 			       BT_GATT_CHRC_WRITE_WITHOUT_RESP |
 			       BT_GATT_CHRC_NOTIFY,
-#ifdef CONFIG_MCUMGR_SMP_BT_AUTHEN
+#ifdef CONFIG_MCUMGR_TRANSPORT_BT_AUTHEN
 			       BT_GATT_PERM_WRITE_AUTHEN,
 #else
 			       BT_GATT_PERM_WRITE,
 #endif
 			       NULL, smp_bt_chr_write, NULL),
 	BT_GATT_CCC(smp_bt_ccc_changed,
-#ifdef CONFIG_MCUMGR_SMP_BT_AUTHEN
+#ifdef CONFIG_MCUMGR_TRANSPORT_BT_AUTHEN
 			       BT_GATT_PERM_READ_AUTHEN |
 			       BT_GATT_PERM_WRITE_AUTHEN),
 #else
@@ -585,7 +595,7 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 		cpd->id = 0;
 		cpd->conn = NULL;
 
-		if (IS_ENABLED(CONFIG_MCUMGR_SMP_BT_CONN_PARAM_CONTROL)) {
+		if (IS_ENABLED(CONFIG_MCUMGR_TRANSPORT_BT_CONN_PARAM_CONTROL)) {
 			/* Cancel work if ongoing. */
 			(void)k_work_cancel_delayable(&cpd->dwork);
 			(void)k_work_cancel_delayable(&cpd->ework);
@@ -627,21 +637,14 @@ static bool smp_bt_query_valid_check(struct net_buf *nb, void *arg)
 	return true;
 }
 
-static int smp_bt_init(const struct device *dev)
+static void smp_bt_setup(void)
 {
+	int rc;
 	uint8_t i = 0;
-	ARG_UNUSED(dev);
 
 	next_id = 1;
 
-	/* Register BT callbacks */
-	static struct bt_conn_cb conn_callbacks = {
-		.connected = connected,
-		.disconnected = disconnected,
-	};
-	bt_conn_cb_register(&conn_callbacks);
-
-	if (IS_ENABLED(CONFIG_MCUMGR_SMP_BT_CONN_PARAM_CONTROL)) {
+	if (IS_ENABLED(CONFIG_MCUMGR_TRANSPORT_BT_CONN_PARAM_CONTROL)) {
 		conn_param_control_init();
 	}
 
@@ -653,7 +656,12 @@ static int smp_bt_init(const struct device *dev)
 	smp_transport_init(&smp_bt_transport, smp_bt_tx_pkt,
 			   smp_bt_get_mtu, smp_bt_ud_copy,
 			   smp_bt_ud_free, smp_bt_query_valid_check);
-	return 0;
+
+	rc = smp_bt_register();
+
+	if (rc != 0) {
+		LOG_ERR("Bluetooth SMP transport register failed (err %d)", rc);
+	}
 }
 
-SYS_INIT(smp_bt_init, APPLICATION, CONFIG_APPLICATION_INIT_PRIORITY);
+MCUMGR_HANDLER_DEFINE(smp_bt, smp_bt_setup);

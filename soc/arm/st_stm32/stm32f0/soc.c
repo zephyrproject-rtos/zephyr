@@ -67,11 +67,10 @@ void relocate_vector_table(void)
  *
  * @return 0
  */
-static int stm32f0_init(const struct device *arg)
+static int stm32f0_init(void)
 {
 	uint32_t key;
 
-	ARG_UNUSED(arg);
 
 	key = irq_lock();
 

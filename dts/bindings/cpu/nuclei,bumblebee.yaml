@@ -11,4 +11,4 @@ properties:
   mcause-exception-mask:
     type: int
     required: true
-    description:  Specify the bits to use for exception code in mcause register.
+    description: Specify the bits to use for exception code in mcause register.

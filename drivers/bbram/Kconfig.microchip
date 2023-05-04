@@ -1,0 +1,10 @@
+# Copyright (c) 2023 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config BBRAM_MICROCHIP_MCP7940N
+	bool "Microchip MCP7940N SRAM BBRAM driver"
+	default y
+	depends on DT_HAS_MICROCHIP_MCP7940N_ENABLED
+	select I2C
+	help
+	  Enable driver for Microchip MCP7940N SRAM based battery-backed RAM.

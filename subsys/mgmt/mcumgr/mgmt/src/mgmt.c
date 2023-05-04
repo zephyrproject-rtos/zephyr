@@ -7,7 +7,9 @@
 
 #include <zephyr/sys/slist.h>
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/device.h>
 #include <zephyr/mgmt/mcumgr/mgmt/mgmt.h>
+#include <zephyr/mgmt/mcumgr/mgmt/handlers.h>
 #include <string.h>
 
 #ifdef CONFIG_MCUMGR_MGMT_NOTIFICATION_HOOKS
@@ -104,9 +106,11 @@ int32_t mgmt_callback_notify(uint32_t event, void *data, size_t data_size)
 		struct mgmt_callback *loop_group =
 			CONTAINER_OF(snp, struct mgmt_callback, node);
 
-		if (loop_group->event_id == event || loop_group->event_id == MGMT_EVT_OP_ALL ||
+		if (loop_group->event_id == MGMT_EVT_OP_ALL ||
 		    (MGMT_EVT_GET_GROUP(loop_group->event_id) == group &&
-		     MGMT_EVT_GET_ID(loop_group->event_id) == MGMT_EVT_OP_ID_ALL)) {
+		     (MGMT_EVT_GET_ID(event) & MGMT_EVT_GET_ID(loop_group->event_id)) ==
+		     MGMT_EVT_GET_ID(event))) {
+
 			rc = loop_group->callback(event, return_rc, &abort_more, data, data_size);
 
 			if (rc != MGMT_ERR_EOK && failed == false) {
@@ -123,3 +127,18 @@ int32_t mgmt_callback_notify(uint32_t event, void *data, size_t data_size)
 	return return_rc;
 }
 #endif
+
+/* Processes all registered MCUmgr handlers at start up and registers them */
+static int mcumgr_handlers_init(void)
+{
+
+	STRUCT_SECTION_FOREACH(mcumgr_handler, handler) {
+		if (handler->init) {
+			handler->init();
+		}
+	}
+
+	return 0;
+}
+
+SYS_INIT(mcumgr_handlers_init, APPLICATION, CONFIG_APPLICATION_INIT_PRIORITY);

@@ -11,11 +11,11 @@
 #include <zephyr/sys/slist.h>
 #include <zephyr/mgmt/mcumgr/mgmt/mgmt.h>
 
-#ifdef CONFIG_MCUMGR_CMD_FS_MGMT
+#ifdef CONFIG_MCUMGR_GRP_FS
 #include <zephyr/mgmt/mcumgr/grp/fs_mgmt/fs_mgmt_callbacks.h>
 #endif
 
-#ifdef CONFIG_MCUMGR_CMD_IMG_MGMT
+#ifdef CONFIG_MCUMGR_GRP_IMG
 #include <zephyr/mgmt/mcumgr/grp/img_mgmt/img_mgmt_callbacks.h>
 #endif
 
@@ -146,6 +146,12 @@ enum os_mgmt_group_events {
 	/** Callback when a reset command has been received. */
 	MGMT_EVT_OP_OS_MGMT_RESET		= MGMT_DEF_EVT_OP_ID(MGMT_EVT_GRP_OS, 0),
 
+	/** Callback when an info command is processed, data is os_mgmt_info_check. */
+	MGMT_EVT_OP_OS_MGMT_INFO_CHECK		= MGMT_DEF_EVT_OP_ID(MGMT_EVT_GRP_OS, 1),
+
+	/** Callback when an info command needs to output data, data is os_mgmt_info_append. */
+	MGMT_EVT_OP_OS_MGMT_INFO_APPEND		= MGMT_DEF_EVT_OP_ID(MGMT_EVT_GRP_OS, 2),
+
 	/** Used to enable all os_mgmt_group events. */
 	MGMT_EVT_OP_OS_MGMT_ALL			= MGMT_DEF_EVT_OP_ALL(MGMT_EVT_GRP_OS),
 };
@@ -160,7 +166,15 @@ struct mgmt_callback {
 	/** Callback that will be called. */
 	mgmt_cb callback;
 
-	/** MGMT_EVT_[...] Event ID for handler to be called on. */
+	/**
+	 * MGMT_EVT_[...] Event ID for handler to be called on. This has special meaning if
+	 * #MGMT_EVT_OP_ALL is used (which will cover all events for all groups), or
+	 * MGMT_EVT_OP_*_MGMT_ALL (which will cover all events for a single group). For events
+	 * that are part of a single group, they can be or'd together for this to have one
+	 * registration trigger on multiple events, please note that this will only work for
+	 * a single group, to register for events in different groups, they must be registered
+	 * separately.
+	 */
 	uint32_t event_id;
 };
 

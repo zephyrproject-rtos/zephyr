@@ -7,6 +7,7 @@
 
 #include <zephyr/drivers/can.h>
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/drivers/clock_control/atmel_sam_pmc.h>
 #include <soc.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
@@ -20,8 +21,8 @@ LOG_MODULE_REGISTER(can_sam, CONFIG_CAN_LOG_LEVEL);
 
 struct can_sam_config {
 	void (*config_irq)(void);
+	const struct atmel_sam_pmc_config clock_cfg;
 	const struct pinctrl_dev_config *pcfg;
-	uint8_t pmc_id;
 	int divider;
 };
 
@@ -44,7 +45,9 @@ static void can_sam_clock_enable(const struct can_sam_config *sam_cfg)
 	REG_PMC_PCK5 = PMC_PCK_CSS_UPLL_CLK | PMC_PCK_PRES(sam_cfg->divider - 1);
 	PMC->PMC_SCER |= PMC_SCER_PCK5;
 
-	soc_pmc_peripheral_enable(sam_cfg->pmc_id);
+	/* Enable CAN clock in PMC */
+	(void)clock_control_on(SAM_DT_PMC_CONTROLLER,
+			       (clock_control_subsys_t)&sam_cfg->clock_cfg);
 }
 
 static int can_sam_init(const struct device *dev)
@@ -136,7 +139,7 @@ static void config_can_##inst##_irq(void)                                       
 
 #define CAN_SAM_CFG_INST(inst)						\
 	static const struct can_sam_config can_sam_cfg_##inst = {	\
-		.pmc_id = DT_INST_PROP(inst, peripheral_id),		\
+		.clock_cfg = SAM_DT_INST_CLOCK_PMC_CFG(inst),		\
 		.divider = DT_INST_PROP(inst, divider),			\
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),		\
 		.config_irq = config_can_##inst##_irq,			\

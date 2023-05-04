@@ -5,6 +5,7 @@
  */
 #include <mem.h>
 #include <xtensa/xtensa.dtsi>
+#include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/clock/esp32_clock.h>
@@ -68,9 +69,14 @@
 			reg = <0x3FFB0000 0x2c200>;
 		};
 
-		shm0: memory@3ffe5230 {
+		ipmmem0: memory@3ffe5230 {
 			compatible = "mmio-sram";
-			reg = <0x3FFE5230 0x800>;
+			reg = <0x3FFE5230 0x400>;
+		};
+
+		shm0: memory@3ffe5630 {
+			compatible = "mmio-sram";
+			reg = <0x3FFE5630 0x3C00>;
 		};
 
 		intc: interrupt-controller@3ff00104 {
@@ -113,12 +119,12 @@
 			};
 		};
 
-		ipm0: ipm@3ffe5a30 {
+		ipm0: ipm@3ffed238 {
 			compatible = "espressif,esp32-ipm";
-			reg = <0x3FFE5A30 0x8>;
+			reg = <0x3FFED238 0x8>;
 			status = "disabled";
-			shared-memory = <&shm0>;
-			shared-memory-size = <2048>;
+			shared-memory = <&ipmmem0>;
+			shared-memory-size = <0x400>;
 			interrupts = <FROM_CPU_INTR0_SOURCE FROM_CPU_INTR1_SOURCE>;
 			interrupt-parent = <&intc>;
 		};
@@ -354,6 +360,34 @@
 			interrupt-parent = <&intc>;
 			status = "disabled";
 		};
-	};
 
+		dac: dac@3ff48800 {
+			compatible = "espressif,esp32-dac";
+			reg = <0x3ff48800 0x100>;
+			interrupts = <RTC_CORE_INTR_SOURCE>;
+			interrupt-parent = <&intc>;
+			clocks = <&rtc ESP32_SARADC_MODULE>;
+			#io-channel-cells = <1>;
+			status = "disabled";
+		};
+
+		adc0: adc@3ff48800 {
+			compatible = "espressif,esp32-adc";
+			reg = <0x3ff48800 10>;
+			unit = <1>;
+			channel-count = <8>;
+			#io-channel-cells = <1>;
+			status = "disabled";
+		};
+
+		adc1: adc@3ff48890 {
+			compatible = "espressif,esp32-adc";
+			reg = <0x3ff48890 10>;
+			unit = <2>;
+			channel-count = <10>;
+			#io-channel-cells = <1>;
+			status = "disabled";
+		};
+
+	};
 };

@@ -34,7 +34,12 @@
 #include <kswap.h>
 #include <zephyr/timing/timing.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/pm/device_runtime.h>
 LOG_MODULE_REGISTER(os, CONFIG_KERNEL_LOG_LEVEL);
+
+
+BUILD_ASSERT(CONFIG_MP_NUM_CPUS == CONFIG_MP_MAX_NUM_CPUS,
+	     "CONFIG_MP_NUM_CPUS and CONFIG_MP_MAX_NUM_CPUS need to be set the same");
 
 /* the only struct z_kernel instance */
 struct z_kernel _kernel;
@@ -245,22 +250,34 @@ static void z_sys_init_run_level(enum init_level level)
 
 	for (entry = levels[level]; entry < levels[level+1]; entry++) {
 		const struct device *dev = entry->dev;
-		int rc = entry->init(dev);
 
 		if (dev != NULL) {
-			/* Mark device initialized.  If initialization
-			 * failed, record the error condition.
-			 */
-			if (rc != 0) {
-				if (rc < 0) {
-					rc = -rc;
+			int rc = 0;
+
+			if (entry->init_fn.dev != NULL) {
+				rc = entry->init_fn.dev(dev);
+				/* Mark device initialized. If initialization
+				 * failed, record the error condition.
+				 */
+				if (rc != 0) {
+					if (rc < 0) {
+						rc = -rc;
+					}
+					if (rc > UINT8_MAX) {
+						rc = UINT8_MAX;
+					}
+					dev->state->init_res = rc;
 				}
-				if (rc > UINT8_MAX) {
-					rc = UINT8_MAX;
-				}
-				dev->state->init_res = rc;
 			}
+
 			dev->state->initialized = true;
+
+			if (rc == 0) {
+				/* Run automatic device runtime enablement */
+				(void)pm_device_runtime_auto_enable(dev);
+			}
+		} else {
+			(void)entry->init_fn.sys();
 		}
 	}
 }
@@ -296,7 +313,7 @@ static void bg_thread_main(void *unused1, void *unused2, void *unused3)
 #endif
 	boot_banner();
 
-#if defined(CONFIG_CPLUSPLUS)
+#if defined(CONFIG_CPP)
 	void z_cpp_init_static(void);
 	z_cpp_init_static();
 #endif
@@ -321,11 +338,7 @@ static void bg_thread_main(void *unused1, void *unused2, void *unused3)
 	z_mem_manage_boot_finish();
 #endif /* CONFIG_MMU */
 
-#ifdef CONFIG_CPP_MAIN
 	extern int main(void);
-#else
-	extern void main(void);
-#endif
 
 	(void)main();
 
@@ -498,6 +511,7 @@ sys_rand_fallback:
  * @return Does not return
  */
 __boot_func
+FUNC_NO_STACK_PROTECTOR
 FUNC_NORETURN void z_cstart(void)
 {
 	/* gcov hook needed to get the coverage report.*/

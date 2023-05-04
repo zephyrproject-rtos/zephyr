@@ -14,7 +14,7 @@ j = """
 ]
 """
 
-parser = argparse.ArgumentParser(description='Read zbus events via serial.')
+parser = argparse.ArgumentParser(description='Read zbus events via serial.', allow_abbrev=False)
 parser.add_argument("port", type=str, help='The tty or COM port to be used')
 
 args = parser.parse_args()

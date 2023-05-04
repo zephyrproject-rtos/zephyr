@@ -62,6 +62,30 @@
 #define GET_LINE_CODING			0x21
 #define SET_CONTROL_LINE_STATE		0x22
 
+/**
+ * @brief PSTN Subclass Class-Specific Notification Codes
+ * @note PSTN120.pdf, 6.5, Table 30
+ */
+#define USB_CDC_NETWORK_CONNECTION	0x00
+#define USB_CDC_RESPONSE_AVAILABLE	0x01
+#define USB_CDC_AUX_JACK_HOOK_STATE	0x08
+#define USB_CDC_RING_DETECT		0x09
+#define USB_CDC_SERIAL_STATE		0x20
+#define USB_CDC_CALL_STATE_CHANGE	0x28
+#define USB_CDC_LINE_STATE_CHANGE	0x23
+
+/**
+ * @brief PSTN UART State Bitmap Values
+ * @note PSTN120.pdf, 6.5.4, Table 31
+ */
+#define USB_CDC_SERIAL_STATE_OVERRUN	BIT(6)
+#define USB_CDC_SERIAL_STATE_PARITY	BIT(5)
+#define USB_CDC_SERIAL_STATE_FRAMING	BIT(4)
+#define USB_CDC_SERIAL_STATE_RINGSIGNAL	BIT(3)
+#define USB_CDC_SERIAL_STATE_BREAK	BIT(2)
+#define USB_CDC_SERIAL_STATE_TXCARRIER	BIT(1)
+#define USB_CDC_SERIAL_STATE_RXCARRIER	BIT(0)
+
 /** Control Signal Bitmap Values for SetControlLineState */
 #define SET_CONTROL_LINE_STATE_RTS	0x02
 #define SET_CONTROL_LINE_STATE_DTR	0x01

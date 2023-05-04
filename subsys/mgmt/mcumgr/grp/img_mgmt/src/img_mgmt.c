@@ -10,6 +10,7 @@
 #include <assert.h>
 #include <string.h>
 #include <zephyr/toolchain.h>
+#include <zephyr/logging/log.h>
 
 #include <zcbor_common.h>
 #include <zcbor_decode.h>
@@ -17,6 +18,7 @@
 
 #include <zephyr/mgmt/mcumgr/mgmt/mgmt.h>
 #include <zephyr/mgmt/mcumgr/smp/smp.h>
+#include <zephyr/mgmt/mcumgr/mgmt/handlers.h>
 #include <zephyr/mgmt/mcumgr/grp/img_mgmt/img_mgmt.h>
 #include <zephyr/mgmt/mcumgr/grp/img_mgmt/image.h>
 
@@ -33,9 +35,11 @@
 #include <zephyr/mgmt/mcumgr/mgmt/callbacks.h>
 #endif
 
+LOG_MODULE_REGISTER(mcumgr_img_grp, CONFIG_MCUMGR_GRP_IMG_LOG_LEVEL);
+
 struct img_mgmt_state g_img_mgmt_state;
 
-#ifdef CONFIG_IMG_MGMT_VERBOSE_ERR
+#ifdef CONFIG_MCUMGR_GRP_IMG_VERBOSE_ERR
 const char *img_mgmt_err_str_app_reject = "app reject";
 const char *img_mgmt_err_str_hdr_malformed = "header malformed";
 const char *img_mgmt_err_str_magic_mismatch = "magic mismatch";
@@ -81,30 +85,6 @@ int
 img_mgmt_read_info(int image_slot, struct image_version *ver, uint8_t *hash,
 				   uint32_t *flags)
 {
-
-#ifdef CONFIG_IMG_MGMT_DUMMY_HDR
-	uint8_t dummy_hash[] = {0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x00, 0x11, 0x22,
-				0x33, 0x44, 0x55, 0x66, 0x77};
-
-	if (!hash && !ver && !flags) {
-		return 0;
-	}
-
-	if (hash) {
-		memcpy(hash, dummy_hash, IMG_MGMT_HASH_LEN);
-	}
-
-	if (ver) {
-		memset(ver, 0xff, sizeof(*ver));
-	}
-
-	if (flags) {
-		*flags = 0;
-	}
-
-	return 0;
-#endif
-
 	struct image_header hdr;
 	struct image_tlv tlv;
 	size_t data_off;
@@ -213,7 +193,7 @@ img_mgmt_find_by_ver(struct image_version *find, uint8_t *hash)
 	int i;
 	struct image_version ver;
 
-	for (i = 0; i < 2 * CONFIG_IMG_MGMT_UPDATABLE_IMAGE_NUMBER; i++) {
+	for (i = 0; i < 2 * CONFIG_MCUMGR_GRP_IMG_UPDATABLE_IMAGE_NUMBER; i++) {
 		if (img_mgmt_read_info(i, &ver, hash, NULL) != 0) {
 			continue;
 		}
@@ -234,7 +214,7 @@ img_mgmt_find_by_hash(uint8_t *find, struct image_version *ver)
 	int i;
 	uint8_t hash[IMAGE_HASH_LEN];
 
-	for (i = 0; i < 2 * CONFIG_IMG_MGMT_UPDATABLE_IMAGE_NUMBER; i++) {
+	for (i = 0; i < 2 * CONFIG_MCUMGR_GRP_IMG_UPDATABLE_IMAGE_NUMBER; i++) {
 		if (img_mgmt_read_info(i, ver, hash, NULL) != 0) {
 			continue;
 		}
@@ -263,13 +243,12 @@ img_mgmt_erase(struct smp_streamer *ctxt)
 	struct image_version ver;
 	int rc;
 	zcbor_state_t *zsd = ctxt->reader->zs;
-	zcbor_state_t *zse = ctxt->writer->zs;
 	bool ok;
 	uint32_t slot = 1;
 	size_t decoded = 0;
 
 	struct zcbor_map_decode_key_val image_erase_decode[] = {
-		ZCBOR_MAP_DECODE_KEY_VAL(slot, zcbor_uint32_decode, &slot),
+		ZCBOR_MAP_DECODE_KEY_DECODER("slot", zcbor_uint32_decode, &slot),
 	};
 
 	ok = zcbor_map_decode_bulk(zsd, image_erase_decode,
@@ -303,23 +282,30 @@ img_mgmt_erase(struct smp_streamer *ctxt)
 		return rc;
 	}
 
-	if (zcbor_tstr_put_lit(zse, "rc") && zcbor_int32_put(zse, 0)) {
-		return MGMT_ERR_EOK;
+	if (IS_ENABLED(CONFIG_MCUMGR_SMP_LEGACY_RC_BEHAVIOUR)) {
+		zcbor_state_t *zse = ctxt->writer->zs;
+
+		if (!zcbor_tstr_put_lit(zse, "rc") || !zcbor_int32_put(zse, 0)) {
+			return MGMT_ERR_EMSGSIZE;
+		}
 	}
 
-	return MGMT_ERR_EMSGSIZE;
+	return MGMT_ERR_EOK;
 }
 
 static int
 img_mgmt_upload_good_rsp(struct smp_streamer *ctxt)
 {
 	zcbor_state_t *zse = ctxt->writer->zs;
-	bool ok;
+	bool ok = true;
 
-	ok = zcbor_tstr_put_lit(zse, "rc")			&&
-	     zcbor_int32_put(zse, MGMT_ERR_EOK)			&&
-	     zcbor_tstr_put_lit(zse, "off")			&&
-	     zcbor_size_put(zse, g_img_mgmt_state.off);
+	if (IS_ENABLED(CONFIG_MCUMGR_SMP_LEGACY_RC_BEHAVIOUR)) {
+		ok = zcbor_tstr_put_lit(zse, "rc")		&&
+		     zcbor_int32_put(zse, MGMT_ERR_EOK);
+	}
+
+	ok = ok && zcbor_tstr_put_lit(zse, "off")		&&
+		   zcbor_size_put(zse, g_img_mgmt_state.off);
 
 	return ok ? MGMT_ERR_EOK : MGMT_ERR_EMSGSIZE;
 }
@@ -375,13 +361,18 @@ img_mgmt_upload(struct smp_streamer *ctxt)
 	bool last = false;
 	bool reset = false;
 
+#ifdef CONFIG_IMG_ENABLE_IMAGE_CHECK
+	zcbor_state_t *zse = ctxt->writer->zs;
+	bool data_match = false;
+#endif
+
 	struct zcbor_map_decode_key_val image_upload_decode[] = {
-		ZCBOR_MAP_DECODE_KEY_VAL(image, zcbor_uint32_decode, &req.image),
-		ZCBOR_MAP_DECODE_KEY_VAL(data, zcbor_bstr_decode, &req.img_data),
-		ZCBOR_MAP_DECODE_KEY_VAL(len, zcbor_size_decode, &req.size),
-		ZCBOR_MAP_DECODE_KEY_VAL(off, zcbor_size_decode, &req.off),
-		ZCBOR_MAP_DECODE_KEY_VAL(sha, zcbor_bstr_decode, &req.data_sha),
-		ZCBOR_MAP_DECODE_KEY_VAL(upgrade, zcbor_bool_decode, &req.upgrade)
+		ZCBOR_MAP_DECODE_KEY_DECODER("image", zcbor_uint32_decode, &req.image),
+		ZCBOR_MAP_DECODE_KEY_DECODER("data", zcbor_bstr_decode, &req.img_data),
+		ZCBOR_MAP_DECODE_KEY_DECODER("len", zcbor_size_decode, &req.size),
+		ZCBOR_MAP_DECODE_KEY_DECODER("off", zcbor_size_decode, &req.off),
+		ZCBOR_MAP_DECODE_KEY_DECODER("sha", zcbor_bstr_decode, &req.data_sha),
+		ZCBOR_MAP_DECODE_KEY_DECODER("upgrade", zcbor_bool_decode, &req.upgrade)
 	};
 
 #if defined(CONFIG_MCUMGR_SMP_COMMAND_STATUS_HOOKS)
@@ -415,6 +406,7 @@ img_mgmt_upload(struct smp_streamer *ctxt)
 #endif
 
 		MGMT_CTXT_SET_RC_RSN(ctxt, IMG_MGMT_UPLOAD_ACTION_RC_RSN(&action));
+		LOG_ERR("Image upload inspect failed: %d", rc);
 		return rc;
 	}
 
@@ -481,8 +473,9 @@ img_mgmt_upload(struct smp_streamer *ctxt)
 			 * to image size so client knows upload has finished.
 			 */
 			g_img_mgmt_state.off = g_img_mgmt_state.size;
-			img_mgmt_dfu_pending();
 			reset = true;
+			last = true;
+			data_match = true;
 
 #if defined(CONFIG_MCUMGR_SMP_COMMAND_STATUS_HOOKS)
 			cmd_status_arg.status = IMG_MGMT_ID_UPLOAD_STATUS_COMPLETE;
@@ -532,19 +525,36 @@ img_mgmt_upload(struct smp_streamer *ctxt)
 			IMG_MGMT_UPLOAD_ACTION_SET_RC_RSN(&action,
 				img_mgmt_err_str_flash_write_failed);
 
+			LOG_ERR("Irrecoverable error: flash write failed: %d", rc);
+
 			goto end;
 		}
 
 		if (g_img_mgmt_state.off == g_img_mgmt_state.size) {
 			/* Done */
-#if defined(CONFIG_MCUMGR_GRP_IMG_STATUS_HOOKS)
-			(void)mgmt_callback_notify(MGMT_EVT_OP_IMG_MGMT_DFU_PENDING, NULL, 0);
-#endif
-
 			reset = true;
 
-#if defined(CONFIG_MCUMGR_SMP_COMMAND_STATUS_HOOKS)
-			cmd_status_arg.status = IMG_MGMT_ID_UPLOAD_STATUS_COMPLETE;
+#ifdef CONFIG_IMG_ENABLE_IMAGE_CHECK
+			static struct flash_img_context ctx;
+
+			if (flash_img_init_id(&ctx, g_img_mgmt_state.area_id) == 0) {
+				struct flash_img_check fic = {
+					.match = g_img_mgmt_state.data_sha,
+					.clen = g_img_mgmt_state.size,
+				};
+
+				if (flash_img_check(&ctx, &fic, g_img_mgmt_state.area_id) == 0) {
+					data_match = true;
+				} else {
+					LOG_ERR("Uploaded image sha256 hash verification failed");
+				}
+			} else {
+				LOG_ERR("Uploaded image sha256 could not be checked");
+			}
+#endif
+
+#if defined(CONFIG_MCUMGR_GRP_IMG_STATUS_HOOKS)
+			(void)mgmt_callback_notify(MGMT_EVT_OP_IMG_MGMT_DFU_PENDING, NULL, 0);
 #endif
 		}
 	}
@@ -562,10 +572,20 @@ end:
 		(void)mgmt_callback_notify(MGMT_EVT_OP_IMG_MGMT_DFU_STOPPED, NULL, 0);
 #endif
 
+		img_mgmt_reset_upload();
+
 		return rc;
 	}
 
 	rc = img_mgmt_upload_good_rsp(ctxt);
+
+#ifdef CONFIG_IMG_ENABLE_IMAGE_CHECK
+	if (last && rc == MGMT_ERR_EOK) {
+		/* Append status to last packet */
+		ok = zcbor_tstr_put_lit(zse, "match")	&&
+		     zcbor_bool_put(zse, data_match);
+	}
+#endif
 
 	if (reset) {
 		/* Reset the upload state struct back to default */
@@ -606,15 +626,9 @@ static struct mgmt_group img_mgmt_group = {
 	.mg_group_id = MGMT_GROUP_ID_IMAGE,
 };
 
-
-void
-img_mgmt_register_group(void)
+static void img_mgmt_register_group(void)
 {
 	mgmt_register_group(&img_mgmt_group);
 }
 
-void
-img_mgmt_unregister_group(void)
-{
-	mgmt_unregister_group(&img_mgmt_group);
-}
+MCUMGR_HANDLER_DEFINE(img_mgmt, img_mgmt_register_group);

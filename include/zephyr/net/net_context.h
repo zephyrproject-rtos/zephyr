@@ -199,10 +199,11 @@ struct net_conn_handle;
  * anyway. This saves 12 bytes / context in IPv6.
  */
 __net_socket struct net_context {
-	/** User data.
-	 *
-	 *  First member of the structure to let users either have user data
-	 *  associated with a context, or put contexts into a FIFO.
+	/** First member of the structure to allow to put contexts into a FIFO.
+	 */
+	void *fifo_reserved;
+
+	/** User data associated with a context.
 	 */
 	void *user_data;
 

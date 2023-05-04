@@ -4,9 +4,19 @@
 #ifndef __INTEL_ADSP_CPU_INIT_H
 #define __INTEL_ADSP_CPU_INIT_H
 
-#include <zephyr/arch/xtensa/cache.h>
+#include <zephyr/arch/arch_inlines.h>
+#include <zephyr/arch/xtensa/arch.h>
 #include <xtensa/config/core-isa.h>
+#include <xtensa/corebits.h>
 #include <adsp_memory.h>
+
+#define MEMCTL_VALUE    (MEMCTL_INV_EN | MEMCTL_ICWU_MASK | MEMCTL_DCWA_MASK | \
+			 MEMCTL_DCWU_MASK | MEMCTL_L0IBUF_EN)
+
+#define ATOMCTL_BY_RCW	BIT(0) /* RCW Transaction for Bypass Memory */
+#define ATOMCTL_WT_RCW	BIT(2) /* RCW Transaction for Writethrough Cacheable Memory */
+#define ATOMCTL_WB_RCW	BIT(4) /* RCW Transaction for Writeback Cacheable Memory */
+#define ATOMCTL_VALUE (ATOMCTL_BY_RCW | ATOMCTL_WT_RCW | ATOMCTL_WB_RCW)
 
 /* Low-level CPU initialization.  Call this immediately after entering
  * C code to initialize the cache, protection and synchronization
@@ -43,8 +53,9 @@ static ALWAYS_INLINE void cpu_early_init(void)
 	 * fetch buffer.
 	 */
 #if XCHAL_USE_MEMCTL
-	reg = 0xffffff01;
-	__asm__ volatile("wsr %0, MEMCTL; rsync" :: "r"(reg));
+	reg = MEMCTL_VALUE;
+	XTENSA_WSR("MEMCTL", reg);
+	__asm__ volatile("rsync");
 #endif
 
 	/* Likewise enable prefetching.  Sadly these values are not
@@ -54,7 +65,8 @@ static ALWAYS_INLINE void cpu_early_init(void)
 	 * we're supposed to ask Cadence I guess.
 	 */
 	reg = ADSP_L1_CACHE_PREFCTL_VALUE;
-	__asm__ volatile("wsr %0, PREFCTL; rsync" :: "r"(reg));
+	XTENSA_WSR("PREFCTL", reg);
+	__asm__ volatile("rsync");
 
 	/* Finally we need to enable the cache in the Region
 	 * Protection Option "TLB" entries.  The hardware defaults
@@ -67,12 +79,12 @@ static ALWAYS_INLINE void cpu_early_init(void)
 	 * local CPU!  We need external transactions on the shared
 	 * bus.
 	 */
-	reg = 0x15;
-	__asm__ volatile("wsr %0, ATOMCTL" :: "r"(reg));
+	reg = ATOMCTL_VALUE;
+	XTENSA_WSR("ATOMCTL", reg);
 
 	/* Initialize interrupts to "disabled" */
 	reg = 0;
-	__asm__ volatile("wsr %0, INTENABLE" :: "r"(reg));
+	XTENSA_WSR("INTENABLE", reg);
 
 	/* Finally VECBASE.  Note that on core 0 startup, we're still
 	 * running in IMR and the vectors at this address won't be
@@ -81,7 +93,7 @@ static ALWAYS_INLINE void cpu_early_init(void)
 	 * consistently until Zephyr switches into the main thread.
 	 */
 	reg = VECBASE_RESET_PADDR_SRAM;
-	__asm__ volatile("wsr %0, VECBASE" :: "r"(reg));
+	XTENSA_WSR("VECBASE", reg);
 }
 
 #endif /* __INTEL_ADSP_CPU_INIT_H */

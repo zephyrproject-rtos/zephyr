@@ -6,6 +6,7 @@
 config SOC_FAMILY_INTEL_ADSP
 	select WINSTREAM
 	select ARCH_SUPPORTS_COREDUMP
+	select CPU_HAS_DCACHE
 	bool
 
 if SOC_FAMILY_INTEL_ADSP
@@ -96,5 +97,13 @@ config ADSP_INIT_HPSRAM
 
 config ADSP_DISABLE_L2CACHE_AT_BOOT
 	bool
+
+config ADSP_IMR_CONTEXT_SAVE
+	bool "Saves FW context into IMR before core is shut down"
+	default n
+	help
+	  When true, FW will store its entire context into IMR before
+	  entering D3 state. Later this context can be used to FW restore
+	  when Host power up DSP again.
 
 endif # SOC_FAMILY_INTEL_ADSP

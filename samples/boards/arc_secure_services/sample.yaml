@@ -7,14 +7,16 @@ tests:
     # Requires multiple kernels in an AMP config. See README.rst
     build_only: true
     platform_allow: nsim_sem em_starterkit_em7d
+    integration_platforms:
+      - nsim_sem
     tags: secure
     harness: console
     harness_config:
       type: multi_line
       ordered: true
       regex:
-        -  "I am the main thread in secure world: 0"
-        -  "Go to normal application"
-        -  "I am the main thread in secure world: 1"
-        -  "I am the main thread in secure world: 2"
-        -  "I am the main thread in secure world: 3"
+        - "I am the main thread in secure world: 0"
+        - "Go to normal application"
+        - "I am the main thread in secure world: 1"
+        - "I am the main thread in secure world: 2"
+        - "I am the main thread in secure world: 3"

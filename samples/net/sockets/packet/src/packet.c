@@ -16,7 +16,7 @@ LOG_MODULE_REGISTER(net_pkt_sock_sample, LOG_LEVEL_DBG);
 #include <zephyr/net/net_mgmt.h>
 
 #define STACK_SIZE 1024
-#if IS_ENABLED(CONFIG_NET_TC_THREAD_COOPERATIVE)
+#if defined(CONFIG_NET_TC_THREAD_COOPERATIVE)
 #define THREAD_PRIORITY K_PRIO_COOP(CONFIG_NUM_COOP_PRIORITIES - 1)
 #else
 #define THREAD_PRIORITY K_PRIO_PREEMPT(8)
@@ -277,7 +277,7 @@ static void wait_for_interface(void)
 	net_mgmt_del_event_callback(&iface_up_cb);
 }
 
-void main(void)
+int main(void)
 {
 	k_sem_init(&quit_lock, 0, K_SEM_MAX_LIMIT);
 
@@ -304,4 +304,5 @@ void main(void)
 	if (packet.send_sock >= 0) {
 		(void)close(packet.send_sock);
 	}
+	return 0;
 }

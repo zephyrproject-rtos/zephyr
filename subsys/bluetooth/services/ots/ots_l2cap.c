@@ -22,7 +22,7 @@
 /* This l2cap is the only OTS-file in use for OTC.
  * If only OTC is used, the OTS log module must be registered here.
  */
-#if IS_ENABLED(CONFIG_BT_OTS)
+#if defined(CONFIG_BT_OTS)
 LOG_MODULE_DECLARE(bt_ots, CONFIG_BT_OTS_LOG_LEVEL);
 #elif IS_ENABLED(CONFIG_BT_OTS_CLIENT)
 LOG_MODULE_REGISTER(bt_ots, CONFIG_BT_OTS_LOG_LEVEL);
@@ -208,7 +208,7 @@ static struct bt_l2cap_server l2cap_server = {
 	.accept	= l2cap_accept,
 };
 
-static int bt_gatt_ots_l2cap_init(const struct device *arg)
+static int bt_gatt_ots_l2cap_init(void)
 {
 	int err;
 

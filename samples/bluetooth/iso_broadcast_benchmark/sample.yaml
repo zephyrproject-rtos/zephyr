@@ -4,5 +4,7 @@ sample:
 tests:
   sample.bluetooth.iso_broadcast_benchmark:
     build_only: true
-    platform_allow: nrf52840dk_nrf52840 nrf5340dk_nrf5340_cpuapp
+    platform_allow: nrf52840dk_nrf52840 nrf5340dk_nrf5340_cpuapp nrf5340_audio_dk_nrf5340_cpuapp
+    integration_platforms:
+      - nrf52840dk_nrf52840
     tags: bluetooth

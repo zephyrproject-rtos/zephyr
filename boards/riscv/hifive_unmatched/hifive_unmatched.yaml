@@ -11,3 +11,4 @@ testing:
     - bluetooth
 supported:
   - spi
+  - memc

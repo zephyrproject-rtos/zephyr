@@ -20,6 +20,9 @@ STRUCT_SECTION_ITERABLE(test_ram, ram1) = {0x01};
 
 #define RAM_EXPECT 0x01020304
 
+/* iterable section items can also be static */
+static const STRUCT_SECTION_ITERABLE_ALTERNATE(test_ram2, test_ram, ram5) = {RAM_EXPECT};
+
 /**
  *
  * @brief Test iterable in read write section.
@@ -44,6 +47,13 @@ ZTEST(iterable_sections, test_ram)
 		      "ram3.i check bit incorrect (got: 0x%x)", ram3.i);
 	zassert_equal(ram4.i & CHECK_BIT, CHECK_BIT,
 		      "ram4.i check bit incorrect (got: 0x%x)", ram4.i);
+
+	out = 0;
+	STRUCT_SECTION_FOREACH_ALTERNATE(test_ram2, test_ram, t) {
+		out = (out << 8) | t->i;
+	}
+
+	zassert_equal(out, RAM_EXPECT, "Check value incorrect (got: 0x%08x)", out);
 }
 
 struct test_rom {
@@ -58,6 +68,9 @@ const STRUCT_SECTION_ITERABLE(test_rom, rom2) = {0x20};
 
 #define ROM_EXPECT 0x10203040
 
+/* iterable section items can also be static */
+static const STRUCT_SECTION_ITERABLE_ALTERNATE(test_rom2, test_rom, rom5) = {ROM_EXPECT};
+
 /**
  *
  * @brief Test iterable in read only section.
@@ -68,6 +81,13 @@ ZTEST(iterable_sections, test_rom)
 	int out = 0;
 
 	STRUCT_SECTION_FOREACH(test_rom, t) {
+		out = (out << 8) | t->i;
+	}
+
+	zassert_equal(out, ROM_EXPECT, "Check value incorrect (got: 0x%x)", out);
+
+	out = 0;
+	STRUCT_SECTION_FOREACH_ALTERNATE(test_rom2, test_rom, t) {
 		out = (out << 8) | t->i;
 	}
 

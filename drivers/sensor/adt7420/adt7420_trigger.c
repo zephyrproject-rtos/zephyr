@@ -53,7 +53,7 @@ static void process_int(const struct device *dev)
 	}
 
 	if (drv_data->th_handler != NULL) {
-		drv_data->th_handler(dev, &drv_data->th_trigger);
+		drv_data->th_handler(dev, drv_data->th_trigger);
 	}
 
 	setup_int(dev, true);
@@ -114,7 +114,7 @@ int adt7420_trigger_set(const struct device *dev,
 	drv_data->th_handler = handler;
 
 	if (handler != NULL) {
-		drv_data->th_trigger = *trig;
+		drv_data->th_trigger = trig;
 
 		setup_int(dev, true);
 

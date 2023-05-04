@@ -10,8 +10,21 @@
 #define BT_ATT_DEFAULT_LE_MTU	23
 #define BT_ATT_TIMEOUT		K_SECONDS(30)
 
-/* ATT MTU must be equal for RX and TX, so select the smallest value */
-#define BT_ATT_MTU (MIN(BT_L2CAP_RX_MTU, BT_L2CAP_TX_MTU))
+/* Local ATT Rx MTU
+ *
+ * This is the local 'Client Rx MTU'/'Server Rx MTU'. Core v5.3 Vol 3 Part F
+ * 3.4.2.2 requires that they are equal.
+ *
+ * The local ATT Server Rx MTU is limited to BT_L2CAP_TX_MTU because the GATT
+ * long attribute read protocol (Core v5.3 Vol 3 Part G 4.8.3) treats the ATT
+ * MTU as a promise about the read size. This requires the server to negotiate
+ * the ATT_MTU down to what it is actually able to send. This will unfortunately
+ * also limit how much the client is allowed to send.
+ */
+#define BT_LOCAL_ATT_MTU_EATT MIN(BT_L2CAP_SDU_RX_MTU, BT_L2CAP_SDU_TX_MTU)
+#define BT_LOCAL_ATT_MTU_UATT MIN(BT_L2CAP_RX_MTU, BT_L2CAP_TX_MTU)
+
+#define BT_ATT_BUF_SIZE MAX(BT_LOCAL_ATT_MTU_UATT, BT_LOCAL_ATT_MTU_EATT)
 
 struct bt_att_hdr {
 	uint8_t  code;

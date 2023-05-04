@@ -1,0 +1,5 @@
+common:
+  tags: bluetooth host
+tests:
+  bluetooth.host.bt_encrypt_le.default:
+    type: unit

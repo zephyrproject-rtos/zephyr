@@ -1,6 +1,6 @@
 # Copyright (c) 2014-2015 Wind River Systems, Inc.
 # Copyright (c) 2016 Cadence Design Systems, Inc.
-# Copyright (c) 2019 Intel Corp.
+# Copyright (c) 2019-2023 Intel Corp.
 # SPDX-License-Identifier: Apache-2.0
 
 config RISCV_MACHINE_TIMER
@@ -10,7 +10,9 @@ config RISCV_MACHINE_TIMER
 		   DT_HAS_NEORV32_MACHINE_TIMER_ENABLED || \
 		   DT_HAS_NUCLEI_SYSTIMER_ENABLED || \
 		   DT_HAS_SIFIVE_CLINT0_ENABLED || \
-		   DT_HAS_TELINK_MACHINE_TIMER_ENABLED
+		   DT_HAS_TELINK_MACHINE_TIMER_ENABLED || \
+		   DT_HAS_LOWRISC_MACHINE_TIMER_ENABLED || \
+		   DT_HAS_NIOSV_MACHINE_TIMER_ENABLED
 	select TICKLESS_CAPABLE
 	select TIMER_HAS_64BIT_CYCLE_COUNTER
 	help

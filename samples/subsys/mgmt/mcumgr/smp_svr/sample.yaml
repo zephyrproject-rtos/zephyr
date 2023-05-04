@@ -2,8 +2,8 @@ sample:
   description: Simple Management Protocol sample
   name: smp svr
 common:
-    harness: bluetooth
-    tags: bluetooth
+  harness: bluetooth
+  tags: bluetooth
 tests:
   sample.mcumgr.smp_svr.bt:
     extra_args: OVERLAY_CONFIG="overlay-bt.conf"
@@ -15,11 +15,12 @@ tests:
     extra_args: OVERLAY_CONFIG="overlay-udp.conf"
     platform_allow: frdm_k64f
     integration_platforms:
-        - frdm_k64f
+      - frdm_k64f
   sample.mcumgr.smp_svr.cdc:
     extra_args: OVERLAY_CONFIG="overlay-cdc.conf"
                 DTC_OVERLAY_FILE="usb.overlay"
-    platform_allow: nrf52833dk_nrf52820 nrf52833dk_nrf52833 nrf52840dk_nrf52840 nrf5340dk_nrf5340_cpuapp pinnacle_100_dvk
+    platform_allow: nrf52833dk_nrf52820 nrf52833dk_nrf52833 nrf52840dk_nrf52840
+      nrf5340dk_nrf5340_cpuapp pinnacle_100_dvk
     integration_platforms:
       - nrf52833dk_nrf52820
       - nrf52833dk_nrf52833
@@ -30,7 +31,7 @@ tests:
     platform_allow: nrf52840dk_nrf52840 pinnacle_100_dvk mg100
     integration_platforms:
       - nrf52840dk_nrf52840
-  sample.mcumgr.smp_svr.serial:
+  sample.mcumgr.smp_svr.serial-console:
     extra_args: OVERLAY_CONFIG="overlay-serial-console.conf"
     platform_allow: nrf52840dk_nrf52840 pinnacle_100_dvk mg100
     integration_platforms:

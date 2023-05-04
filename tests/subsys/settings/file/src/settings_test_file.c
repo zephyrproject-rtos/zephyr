@@ -19,8 +19,6 @@ int test_set_called;
 int test_commit_called;
 int test_export_block;
 
-int c2_var_count = 1;
-
 int c1_handle_get(const char *name, char *val, int val_len_max);
 int c1_handle_set(const char *name, size_t len, settings_read_cb read_cb,
 		  void *cb_arg);

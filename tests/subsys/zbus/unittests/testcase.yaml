@@ -1,5 +1,4 @@
 tests:
-  unittests.hard_and_readonly_channels:
-    build_only: false
+  message_bus.zbus.hard_and_readonly_channels:
     platform_exclude: fvp_base_revc_2xaemv8a_smp_ns
     tags: zbus

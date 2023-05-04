@@ -1,0 +1,46 @@
+# Copyright (c) 2022 Nordic Semiconductor (ASA)
+# SPDX-License-Identifier: Apache-2.0
+
+config IPC_SERVICE_RPMSG
+	bool "RPMsg support library"
+	help
+	  "RPMsg library"
+
+config IPC_SERVICE_STATIC_VRINGS
+	bool "Static VRINGs support library"
+	help
+	  "Static VRINGs library"
+
+config IPC_SERVICE_STATIC_VRINGS_ALIGNMENT
+	int "VRINGs alignment"
+	depends on IPC_SERVICE_STATIC_VRINGS
+	default 4
+	help
+	  Static VRINGs alignment
+
+menuconfig IPC_SERVICE_ICMSG
+	bool "icmsg IPC library"
+	select SPSC_PBUF
+	select SPSC_PBUF_USE_CACHE
+	help
+	  Icmsg library
+
+if IPC_SERVICE_ICMSG
+	rsource "Kconfig.icmsg"
+endif
+
+config IPC_SERVICE_ICMSG_ME
+	bool "icmsg IPC library with multi-endpoint functionality"
+	select IPC_SERVICE_ICMSG
+	select EVENTS
+	help
+	  Multi-endpoint functionality for the icmsg library
+
+config IPC_SERVICE_ICMSG_ME_NOCOPY_RX
+	bool
+	depends on IPC_SERVICE_ICMSG_ME
+	select IPC_SERVICE_ICMSG_NOCOPY_RX
+	help
+	  Enable nocopy feature for receiving path of the multi-endpoint
+	  feature of the icmsg library. This features might be used by backends
+	  based on multi-endpoint icmsg.

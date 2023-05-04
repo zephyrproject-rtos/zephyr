@@ -481,6 +481,13 @@ enum net_verdict net_if_send_data(struct net_if *iface, struct net_pkt *pkt)
 	}
 #endif
 
+	/* Bypass the IP stack with SOCK_RAW/IPPROTO_RAW sockets */
+	if (IS_ENABLED(CONFIG_NET_SOCKETS_PACKET) &&
+	    context && net_context_get_type(context) == SOCK_RAW &&
+	    net_context_get_proto(context) == IPPROTO_RAW) {
+		goto done;
+	}
+
 	/* If the ll dst address is not set check if it is present in the nbr
 	 * cache.
 	 */
@@ -1400,6 +1407,10 @@ void net_if_start_rs(struct net_if *iface)
 
 	k_mutex_lock(&lock, K_FOREVER);
 
+	if (net_if_flag_is_set(iface, NET_IF_IPV6_NO_ND)) {
+		goto out;
+	}
+
 	ipv6 = iface->config.ip.ipv6;
 	if (!ipv6) {
 		goto out;
@@ -1718,7 +1729,8 @@ struct net_if_addr *net_if_ipv6_addr_add(struct net_if *iface,
 			net_addr_type2str(addr_type));
 
 		if (!(l2_flags_get(iface) & NET_L2_POINT_TO_POINT) &&
-		    !net_ipv6_is_addr_loopback(addr)) {
+		    !net_ipv6_is_addr_loopback(addr) &&
+		    !net_if_flag_is_set(iface, NET_IF_IPV6_NO_ND)) {
 			/* RFC 4862 5.4.2
 			 * Before sending a Neighbor Solicitation, an interface
 			 * MUST join the all-nodes multicast address and the
@@ -2785,7 +2797,8 @@ uint32_t net_if_ipv6_calc_reachable_time(struct net_if_ipv6 *ipv6)
 
 static void iface_ipv6_start(struct net_if *iface)
 {
-	if (!net_if_flag_is_set(iface, NET_IF_IPV6)) {
+	if (!net_if_flag_is_set(iface, NET_IF_IPV6) ||
+	    net_if_flag_is_set(iface, NET_IF_IPV6_NO_ND)) {
 		return;
 	}
 
@@ -3265,6 +3278,14 @@ const struct in_addr *net_if_ipv4_select_src_addr(struct net_if *dst_iface,
 	if (!src) {
 		src = net_if_ipv4_get_global_addr(dst_iface,
 						  NET_ADDR_PREFERRED);
+
+		if (IS_ENABLED(CONFIG_NET_IPV4_AUTO) && !src) {
+			/* Try to use LL address if there's really no other
+			 * address available.
+			 */
+			src = net_if_ipv4_get_ll(dst_iface, NET_ADDR_PREFERRED);
+		}
+
 		if (!src) {
 			src = net_ipv4_unspecified_address();
 		}
@@ -4035,6 +4056,21 @@ static inline bool is_iface_offloaded(struct net_if *iface)
 
 static void notify_iface_up(struct net_if *iface)
 {
+	/* In many places it's assumed that link address was set with
+	 * net_if_set_link_addr(). Better check that now.
+	 */
+#if defined(CONFIG_NET_L2_CANBUS_RAW)
+	if (IS_ENABLED(CONFIG_NET_SOCKETS_CAN) &&
+	    (net_if_l2(iface) == &NET_L2_GET_NAME(CANBUS_RAW)))	{
+		/* CAN does not require link address. */
+	} else
+#endif	/* CONFIG_NET_L2_CANBUS_RAW */
+	{
+		if (!is_iface_offloaded(iface)) {
+			NET_ASSERT(net_if_get_link_addr(iface)->addr != NULL);
+		}
+	}
+
 	net_if_flag_set(iface, NET_IF_RUNNING);
 	net_mgmt_event_notify(NET_EVENT_IF_UP, iface);
 	net_virtual_enable(iface);
@@ -4144,6 +4180,21 @@ exit:
 	}
 }
 
+static void init_igmp(struct net_if *iface)
+{
+#if defined(CONFIG_NET_IPV4_IGMP)
+	/* Ensure IPv4 is enabled for this interface. */
+	if (net_if_config_ipv4_get(iface, NULL)) {
+		return;
+	}
+
+	net_ipv4_igmp_init(iface);
+#else
+	ARG_UNUSED(iface);
+	return;
+#endif
+}
+
 int net_if_up(struct net_if *iface)
 {
 	int status = 0;
@@ -4157,10 +4208,6 @@ int net_if_up(struct net_if *iface)
 		goto out;
 	}
 
-	if (is_iface_offloaded(iface)) {
-		goto done;
-	}
-
 	/* If the L2 does not support enable just set the flag */
 	if (!net_if_l2(iface) || !net_if_l2(iface)->enable) {
 		goto done;
@@ -4172,18 +4219,7 @@ int net_if_up(struct net_if *iface)
 		goto out;
 	}
 
-	/* In many places it's assumed that link address was set with
-	 * net_if_set_link_addr(). Better check that now.
-	 */
-#if defined(CONFIG_NET_L2_CANBUS_RAW)
-	if (IS_ENABLED(CONFIG_NET_SOCKETS_CAN) &&
-	    (net_if_l2(iface) == &NET_L2_GET_NAME(CANBUS_RAW)))	{
-		/* CAN does not require link address. */
-	} else
-#endif	/* CONFIG_NET_L2_CANBUS_RAW */
-	{
-		NET_ASSERT(net_if_get_link_addr(iface)->addr != NULL);
-	}
+	init_igmp(iface);
 
 done:
 	net_if_flag_set(iface, NET_IF_UP);
@@ -4211,10 +4247,6 @@ int net_if_down(struct net_if *iface)
 
 	leave_mcast_all(iface);
 	leave_ipv4_mcast_all(iface);
-
-	if (is_iface_offloaded(iface)) {
-		goto done;
-	}
 
 	/* If the L2 does not support enable just clear the flag */
 	if (!net_if_l2(iface) || !net_if_l2(iface)->enable) {
@@ -4290,6 +4322,7 @@ void net_if_dormant_off(struct net_if *iface)
 	k_mutex_unlock(&lock);
 }
 
+#if defined(CONFIG_NET_PROMISCUOUS_MODE)
 static int promisc_mode_set(struct net_if *iface, bool enable)
 {
 	enum net_l2_flags l2_flags = 0;
@@ -4364,6 +4397,7 @@ bool net_if_is_promisc(struct net_if *iface)
 
 	return net_if_flag_is_set(iface, NET_IF_PROMISC);
 }
+#endif /* CONFIG_NET_PROMISCUOUS_MODE */
 
 #ifdef CONFIG_NET_POWER_MANAGEMENT
 

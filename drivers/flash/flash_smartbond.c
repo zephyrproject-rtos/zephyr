@@ -270,13 +270,6 @@ void flash_smartbond_page_layout(const struct device *dev,
 }
 #endif /* CONFIG_FLASH_PAGE_LAYOUT */
 
-static int flash_smartbond_init(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-
-	return 0;
-}
-
 static const struct flash_driver_api flash_smartbond_driver_api = {
 	.read = flash_smartbond_read,
 	.write = flash_smartbond_write,
@@ -291,5 +284,5 @@ static const struct flash_smartbond_config flash_smartbond_0_config = {
 	.qspif_base_address = DT_REG_ADDR(QSPIF_NODE),
 };
 
-DEVICE_DT_INST_DEFINE(0, flash_smartbond_init, NULL, NULL, &flash_smartbond_0_config,
+DEVICE_DT_INST_DEFINE(0, NULL, NULL, NULL, &flash_smartbond_0_config,
 		      POST_KERNEL, CONFIG_FLASH_INIT_PRIORITY, &flash_smartbond_driver_api);

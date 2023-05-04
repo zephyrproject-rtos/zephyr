@@ -8,15 +8,15 @@ compatible: "nxp,kinetis-ftm-pwm"
 include: [pwm-controller.yaml, "nxp,kinetis-ftm.yaml", "pinctrl-device.yaml"]
 
 properties:
-    "#pwm-cells":
-      const: 3
+  "#pwm-cells":
+    const: 3
 
-    pinctrl-0:
-      type: phandles
-      required: true
+  pinctrl-0:
+    type: phandles
+    required: true
 
 pwm-cells:
   - channel
-# period in terms of nanoseconds
+  # period in terms of nanoseconds
   - period
   - flags

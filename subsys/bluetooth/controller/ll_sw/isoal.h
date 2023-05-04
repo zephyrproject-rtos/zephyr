@@ -118,7 +118,7 @@ struct isoal_sdu_produced {
 	/** Regardless of status, we always have timing */
 	isoal_time_t            timestamp;
 	/** Sequence number of SDU */
-	isoal_sdu_cnt_t         seqn;
+	isoal_sdu_cnt_t         sn;
 	/** Contents and length can only be trusted if status is valid */
 	struct isoal_sdu_buffer contents;
 	/** Optional context to be carried from PDU at alloc-time */
@@ -258,10 +258,11 @@ struct isoal_sink_session {
 	isoal_sink_sdu_emit_cb   sdu_emit;
 	isoal_sink_sdu_write_cb  sdu_write;
 	struct isoal_sink_config param;
-	isoal_sdu_cnt_t          seqn;
+	isoal_sdu_cnt_t          sn;
 	uint16_t                 handle;
 	uint8_t                  pdus_per_sdu;
 	uint8_t                  framed;
+	uint8_t                  burst_number;
 	uint32_t                 sdu_interval;
 	uint32_t                 latency_unframed;
 	uint32_t                 latency_framed;
@@ -374,9 +375,12 @@ struct isoal_source_session {
 	isoal_source_pdu_release_cb pdu_release;
 
 	struct isoal_source_config param;
-	isoal_sdu_cnt_t            seqn;
+	isoal_sdu_cnt_t            sn;
+	uint16_t                   last_input_sn;
+	uint32_t                   last_input_time_stamp;
 	uint32_t                   tx_time_stamp;
 	uint32_t                   tx_time_offset;
+	uint32_t                   sdu_interval;
 	uint16_t                   handle;
 	uint16_t                   iso_interval;
 	uint8_t                    framed;
@@ -417,6 +421,8 @@ struct isoal_source {
 	uint64_t timeout_trigger:1;
 	uint64_t context_active:1;
 };
+
+uint32_t isoal_get_wrapped_time_us(uint32_t time_now_us, int32_t time_diff_us);
 
 isoal_status_t isoal_init(void);
 
@@ -480,12 +486,14 @@ void isoal_source_enable(isoal_source_handle_t hdl);
 
 void isoal_source_disable(isoal_source_handle_t hdl);
 
-struct isoal_source *isoal_source_get(isoal_source_handle_t hdl);
-
 void isoal_source_destroy(isoal_source_handle_t hdl);
 
 isoal_status_t isoal_tx_sdu_fragment(isoal_source_handle_t source_hdl,
 				     struct isoal_sdu_tx *tx_sdu);
+
+uint16_t isoal_tx_unframed_get_next_payload_number(isoal_source_handle_t source_hdl,
+						   const struct isoal_sdu_tx *tx_sdu,
+						   uint64_t *payload_number);
 
 void isoal_tx_pdu_release(isoal_source_handle_t source_hdl,
 			  struct node_tx_iso *node_tx);

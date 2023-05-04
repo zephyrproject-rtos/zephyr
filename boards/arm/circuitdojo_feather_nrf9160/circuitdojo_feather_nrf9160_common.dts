@@ -82,7 +82,7 @@
 	};
 
 	nrf-ps-en {
-		compatible = "regulator-fixed-sync", "regulator-fixed";
+		compatible = "regulator-fixed";
 		regulator-name = "nrf_ps_en";
 		enable-gpios = <&gpio0 31 GPIO_ACTIVE_HIGH>;
 		regulator-boot-on;
@@ -169,18 +169,6 @@
 		t-exit-dpd = < 30000 >;
 		jedec-id = [ ef 40 16  ];
 	};
-};
-
-&timer0 {
-	status = "okay";
-};
-
-&timer1 {
-	status = "okay";
-};
-
-&timer2 {
-	status = "okay";
 };
 
 &flash0 {

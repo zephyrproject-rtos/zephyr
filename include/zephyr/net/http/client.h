@@ -199,9 +199,6 @@ struct http_response {
 /** HTTP client internal data that the application should not touch
  */
 struct http_client_internal_data {
-	/** Work for handling timeout */
-	struct k_work_delayable work;
-
 	/** HTTP parser context */
 	struct http_parser parser;
 
@@ -218,9 +215,6 @@ struct http_client_internal_data {
 
 	/** HTTP socket */
 	int sock;
-
-	/** Request timeout */
-	k_timeout_t timeout;
 };
 
 /**

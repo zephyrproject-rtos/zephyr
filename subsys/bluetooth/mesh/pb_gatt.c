@@ -9,7 +9,6 @@
 #include "net.h"
 #include "proxy.h"
 #include "adv.h"
-#include "host/ecc.h"
 #include "prov.h"
 #include "pb_gatt.h"
 #include "proxy_msg.h"
@@ -162,7 +161,7 @@ int bt_mesh_pb_gatt_cli_open(struct bt_conn *conn)
 	return 0;
 }
 
-static int prov_link_open(const uint8_t uuid[16], k_timeout_t timeout,
+static int prov_link_open(const uint8_t uuid[16], uint8_t timeout,
 			  const struct prov_bearer_cb *cb, void *cb_data)
 {
 	LOG_DBG("uuid %s", bt_hex(uuid, 16));
@@ -170,7 +169,7 @@ static int prov_link_open(const uint8_t uuid[16], k_timeout_t timeout,
 	link.cb = cb;
 	link.cb_data = cb_data;
 
-	k_work_reschedule(&link.prot_timer, timeout);
+	k_work_reschedule(&link.prot_timer, K_SECONDS(timeout));
 
 	return bt_mesh_pb_gatt_cli_setup(uuid);
 }

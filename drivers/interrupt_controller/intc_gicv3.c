@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/kernel.h>
 #include <zephyr/arch/cpu.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sw_isr_table.h>
@@ -564,9 +565,8 @@ static void __arm_gic_init(void)
 	gicv3_cpuif_init();
 }
 
-int arm_gic_init(const struct device *unused)
+int arm_gic_init(void)
 {
-	ARG_UNUSED(unused);
 
 	gicv3_dist_init();
 

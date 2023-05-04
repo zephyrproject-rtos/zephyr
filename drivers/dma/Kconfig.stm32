@@ -2,6 +2,7 @@
 
 # Copyright (c) 2016 Intel Corporation
 # Copyright (c) 2019 Song Qiang <songqiang1304521@gmail.com>
+# Copyright (c) 2023 Jeroen van Dooren, Nobleo Technology
 # SPDX-License-Identifier: Apache-2.0
 
 config DMA_STM32
@@ -10,9 +11,10 @@ config DMA_STM32
 	default y
 	depends on DT_HAS_ST_STM32_DMA_V1_ENABLED \
 		|| DT_HAS_ST_STM32_DMA_V2_ENABLED \
-		|| DT_HAS_ST_STM32_DMA_V2BIS_ENABLED
+		|| DT_HAS_ST_STM32_DMA_V2BIS_ENABLED \
+		|| DT_HAS_ST_STM32_BDMA_ENABLED
 	help
-	  Driver for STM32 DMA V1, V2 and V2bis types.
+	  Driver for STM32 DMA V1, V2, V2bis and BDMA types.
 
 config DMA_STM32U5
 	bool "STM32U5 serie DMA driver"
@@ -55,5 +57,13 @@ config DMA_STM32_SHARED_IRQS
 	depends on SOC_SERIES_STM32F0X || SOC_SERIES_STM32G0X || SOC_SERIES_STM32L0X
 	help
 	  Enable shared IRQ support on devices where channels share 1 IRQ.
+
+config DMA_STM32_BDMA
+	bool "STM32 BDMA driver"
+	default y
+	select USE_STM32_LL_BDMA
+	depends on DT_HAS_ST_STM32_BDMA_ENABLED
+	help
+	  BDMA driver for STM32H7 series SoCs.
 
 endif # DMA_STM32

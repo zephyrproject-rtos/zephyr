@@ -19,6 +19,7 @@
 		uart-0 = &uart0;
 		uart-1 = &uart1;
 		uart-2 = &uart2;
+		spi-flash0 = &w25q128bv;
 	};
 
 	chosen {
@@ -35,6 +36,16 @@
 	dccm0: dccm@80000000 {
 		compatible = "arc,dccm";
 		reg = <0x80000000 DT_SIZE_K(64)>;
+	};
+
+	xccm@c0000000 {
+		compatible = "arc,xccm";
+		reg = <0xc0000000 DT_SIZE_K(8)>;
+	};
+
+	yccm@e0000000 {
+		compatible = "arc,yccm";
+		reg = <0xe0000000 DT_SIZE_K(8)>;
 	};
 };
 

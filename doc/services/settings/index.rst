@@ -263,7 +263,7 @@ up from where it was before restart.
         .h_set = foo_settings_set
     };
 
-    void main(void)
+    int main(void)
     {
         settings_subsys_init();
         settings_register(&my_conf);
@@ -286,7 +286,8 @@ handler (:kconfig:option:`CONFIG_SETTINGS_CUSTOM`).
 
 .. code-block:: c
 
-    static int settings_custom_load(struct settings_store *cs)
+    static int settings_custom_load(struct settings_store *cs,
+                                    const struct settings_load_arg *arg)
     {
         //...
     }
@@ -306,7 +307,7 @@ handler (:kconfig:option:`CONFIG_SETTINGS_CUSTOM`).
     /* custom backend node */
     static struct settings_store settings_custom_store = {
         .cs_itf = &settings_custom_itf
-    }
+    };
 
     int settings_backend_init(void)
     {

@@ -158,7 +158,9 @@ config LWM2M_ENGINE_DEFAULT_LIFETIME
 	default 30
 	range 15 4294967295
 	help
-	  Set the default lifetime (in seconds) for the LWM2M library engine
+	  Set the default lifetime (in seconds) for the LWM2M library engine.
+	  This is also a minimum lifetime that client accepts. If server sets lifetime
+	  less than this value, client automatically raises it.
 
 config LWM2M_SECONDS_TO_UPDATE_EARLY
 	int "LWM2M Registration Update transmission time before timeout"
@@ -192,16 +194,14 @@ config LWM2M_TLS_SESSION_CACHING
 
 config LWM2M_RD_CLIENT_SUSPEND_SOCKET_AT_IDLE
 	bool "Socket close is skipped at RX_ON_IDLE state"
-	depends on LWM2M_RD_CLIENT_SUPPORT
 	help
 	  This config suspend socket handler which skip socket polling process.
 
 config LWM2M_RD_CLIENT_SUPPORT
 	bool "support for LWM2M client bootstrap/registration state machine"
-	default y
+	select DEPRECATED
 	help
-	  Client will use registration state machine to locate and connect to
-	  LWM2M servers (including bootstrap server support)
+	  Deprecated flag. RD state machine is always part of engine. It cannot be disabled.
 
 config LWM2M_RD_CLIENT_SUPPORT_BOOTSTRAP
 	bool "Bootstrap support"
@@ -210,7 +210,6 @@ config LWM2M_RD_CLIENT_SUPPORT_BOOTSTRAP
 
 config LWM2M_RD_CLIENT_ENDPOINT_NAME_MAX_LENGTH
 	int "Maximum length of client endpoint name"
-	depends on LWM2M_RD_CLIENT_SUPPORT
 	default 33
 	help
 	  Default: room for 32 hexadecimal digits (UUID) + NULL
@@ -245,7 +244,6 @@ config LWM2M_SERVER_DEFAULT_SSID
 
 config LWM2M_PEER_PORT
 	int "LWM2M server port"
-	depends on LWM2M_RD_CLIENT_SUPPORT
 	default 5683
 	help
 	  This is the default server port to connect to for LWM2M communication.
@@ -552,6 +550,11 @@ config LWM2M_EVENT_LOG_OBJ_SUPPORT
 	bool "LwM2M Event Log Object (20)"
 	help
 	  Include support for LWM2M Event Log Object (ID 20)
+
+config LWM2M_BINARYAPPDATA_OBJ_SUPPORT
+	bool "LwM2M BinaryAppDataContainer Object (19)"
+	help
+	  Include support for LWM2M BinaryAppDataContainer Object (ID 19)
 
 if LWM2M_GATEWAY_OBJ_SUPPORT
 

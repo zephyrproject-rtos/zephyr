@@ -19,13 +19,25 @@ menuconfig BT_AUDIO
 
 if BT_AUDIO
 
+config BT_AUDIO_RX
+	bool
+	help
+	  This hidden option is enabled when any of the profiles/services
+	  enables support for receiving of audio data.
+
+config BT_AUDIO_TX
+	bool
+	help
+	  This hidden option is enabled when any of the profiles/services
+	  enables support for transmitting of audio data.
+
 config BT_CCID
 	bool
 	help
 	  This hidden option is enabled when any of the content control
 	  features are enabled.
 
-rsource "Kconfig.baps"
+rsource "Kconfig.bap"
 rsource "Kconfig.vocs"
 rsource "Kconfig.aics"
 rsource "Kconfig.vcp"

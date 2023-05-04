@@ -6,11 +6,11 @@ config BOARD_NRF52_BSIM
 	select SOC_SERIES_BSIM_NRF52X
 	select SOC_COMPATIBLE_NRF
 	select SOC_COMPATIBLE_NRF52X
-	select SOC_COMPATIBLE_NRF52832
-	select CONSOLE_HAS_DRIVER
+	select SOC_COMPATIBLE_NRF52833
 	select NRF_RTC_TIMER
 	select CLOCK_CONTROL
 	select HAS_NRFX
+	select HAS_NORDIC_DRIVERS
 	help
 	  Will produce a console Linux process which can be executed natively.
 	  It needs the BabbleSim simulator both in compile time and to execute

@@ -8,5 +8,5 @@ compatible: "nxp,kinetis-ptp"
 include: ["base.yaml", "pinctrl-device.yaml"]
 
 properties:
-    interrupts:
-      required: true
+  interrupts:
+    required: true

@@ -192,6 +192,11 @@ uint8_t ull_cp_cis_create(struct ll_conn *conn, struct ll_conn_iso_stream *cis);
 bool ull_cp_cc_awaiting_reply(struct ll_conn *conn);
 
 /**
+ * @brief Is ongoing create cis procedure expecting an established event?
+ */
+bool ull_cp_cc_awaiting_established(struct ll_conn *conn);
+
+/**
  * @brief Get handle of ongoing create cis procedure.
  * @return 0xFFFF if none
  */
@@ -200,10 +205,10 @@ uint16_t ull_cp_cc_ongoing_handle(struct ll_conn *conn);
 /**
  * @brief Accept the remote device’s request to create cis.
  */
-void ull_cp_cc_accept(struct ll_conn *conn);
+void ull_cp_cc_accept(struct ll_conn *conn, uint32_t cis_offset_min);
 
 /**
- * @brief Rejset the remote device’s request to create cis.
+ * @brief Reject the remote device’s request to create cis.
  */
 void ull_cp_cc_reject(struct ll_conn *conn, uint8_t error_code);
 

@@ -8,5 +8,6 @@ config SPI_RV32M1_LPSPI
 	default y
 	depends on DT_HAS_OPENISA_RV32M1_LPSPI_ENABLED
 	depends on CLOCK_CONTROL
+	select PINCTRL
 	help
 	  Enable the RV32M1 LPSPI driver.

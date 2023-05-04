@@ -15,7 +15,7 @@ static void user_entry(void *p1, void *p2, void *p3)
 	hello_world_print(dev);
 }
 
-void main(void)
+int main(void)
 {
 	printk("Hello World from the app!\n");
 
@@ -27,4 +27,5 @@ void main(void)
 
 	k_object_access_grant(dev, k_current_get());
 	k_thread_user_mode_enter(user_entry, NULL, NULL, NULL);
+	return 0;
 }

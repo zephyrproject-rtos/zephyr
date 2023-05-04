@@ -185,7 +185,7 @@ def node_z_path_id(node):
 def parse_args():
     # Returns parsed command-line arguments
 
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(allow_abbrev=False)
     parser.add_argument("--dts", required=True, help="DTS file")
     parser.add_argument("--dtc-flags",
                         help="'dtc' devicetree compiler flags, some of which "
@@ -358,6 +358,7 @@ def write_special_props(node):
     # we can't capture with the current bindings language.
     write_pinctrls(node)
     write_fixed_partitions(node)
+    write_gpio_hogs(node)
 
 def write_ranges(node):
     # ranges property: edtlib knows the right #address-cells and
@@ -608,6 +609,21 @@ def write_fixed_partitions(node):
     flash_area_num += 1
 
 
+def write_gpio_hogs(node):
+    # Write special macros for gpio-hog node properties.
+
+    macro = f"{node.z_path_id}_GPIO_HOGS"
+    macro2val = {}
+    for i, entry in enumerate(node.gpio_hogs):
+        macro2val.update(controller_and_data_macros(entry, i, macro))
+
+    if macro2val:
+        out_comment("GPIO hog properties:")
+        out_dt_define(f"{macro}_EXISTS", 1)
+        out_dt_define(f"{macro}_NUM", len(node.gpio_hogs))
+        for macro, val in macro2val.items():
+            out_dt_define(macro, val)
+
 def write_vanilla_props(node):
     # Writes macros for any and all properties defined in the
     # "properties" section of the binding for the node.
@@ -629,6 +645,7 @@ def write_vanilla_props(node):
             macro2val[macro] = val
 
         if prop.spec.type == 'string':
+            macro2val[macro + "_STRING_UNQUOTED"] = prop.val
             macro2val[macro + "_STRING_TOKEN"] = prop.val_as_token
             macro2val[macro + "_STRING_UPPER_TOKEN"] = prop.val_as_token.upper()
 
@@ -656,6 +673,7 @@ def write_vanilla_props(node):
                 if isinstance(subval, str):
                     macro2val[macro + f"_IDX_{i}"] = quote_str(subval)
                     subval_as_token = edtlib.str_as_token(subval)
+                    macro2val[macro + f"_IDX_{i}_STRING_UNQUOTED"] = subval
                     macro2val[macro + f"_IDX_{i}_STRING_TOKEN"] = subval_as_token
                     macro2val[macro + f"_IDX_{i}_STRING_UPPER_TOKEN"] = subval_as_token.upper()
                 else:

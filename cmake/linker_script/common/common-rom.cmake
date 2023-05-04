@@ -31,7 +31,7 @@ zephyr_linker_section_configure(SECTION initlevel_error INPUT ".z_init_[_A-Z0-9]
 # ASSERT(SIZEOF(initlevel_error) == 0, "Undefined initialization levels used.")
 
 
-if(CONFIG_CPLUSPLUS)
+if(CONFIG_CPP)
   zephyr_linker_section(NAME ctors KVMA RAM_REGION GROUP RODATA_REGION NOINPUT)
   #
   # The compiler fills the constructor pointers table below,
@@ -146,11 +146,14 @@ if(CONFIG_SENSOR_INFO)
   zephyr_iterable_section(NAME sensor_info KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN 4)
 endif()
 
+if(CONFIG_MCUMGR)
+  zephyr_iterable_section(NAME mcumgr_handler KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN 4)
+endif()
+
 zephyr_iterable_section(NAME k_p4wq_initparam KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN 4)
 
 if(CONFIG_EMUL)
-  zephyr_linker_section(NAME emulators_section GROUP RODATA_REGION ${XIP_ALIGN_WITH_INPUT})
-  zephyr_linker_section_configure(SECTION emulators_section INPUT ".emulators" KEEP SORT NAME)
+  zephyr_iterable_section(NAME emul KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN 4)
 endif()
 
 if(CONFIG_DNS_SD)
@@ -158,26 +161,22 @@ if(CONFIG_DNS_SD)
 endif()
 
 if(CONFIG_PCIE)
-  zephyr_linker_section(NAME irq_alloc GROUP RODATA_REGION NOINPUT ${XIP_ALIGN_WITH_INPUT})
-  zephyr_linker_section_configure(SECTION irq_alloc INPUT ".irq_alloc*" KEEP SORT NAME)
+  zephyr_iterable_section(NAME irq_alloc KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN 4)
 endif()
 
-zephyr_linker_section(NAME log_strings KVMA RAM_REGION GROUP RODATA_REGION NOINPUT ${XIP_ALIGN_WITH_INPUT})
-zephyr_linker_section_configure(SECTION log_strings INPUT ".log_strings*" KEEP SORT NAME)
+zephyr_iterable_section(NAME log_strings KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN 4)
 
-zephyr_linker_section(NAME log_const KVMA RAM_REGION GROUP RODATA_REGION NOINPUT ${XIP_ALIGN_WITH_INPUT})
-zephyr_linker_section_configure(SECTION log_const INPUT ".log_const_*" KEEP SORT NAME)
-
-zephyr_linker_section(NAME log_backends KVMA RAM_REGION GROUP RODATA_REGION NOINPUT ${XIP_ALIGN_WITH_INPUT})
-zephyr_linker_section_configure(SECTION log_backends INPUT ".log_backends.*" KEEP)
+zephyr_iterable_section(NAME log_const KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN 4)
 
 zephyr_iterable_section(NAME shell KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN 4)
 
-zephyr_linker_section(NAME shell_root_cmds KVMA RAM_REGION GROUP RODATA_REGION NOINPUT ${XIP_ALIGN_WITH_INPUT})
-zephyr_linker_section_configure(SECTION shell_root_cmds INPUT ".shell_root_cmd_*" KEEP SORT NAME)
+zephyr_iterable_section(NAME shell_root_cmds KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN 4)
 
-zephyr_linker_section(NAME font_entry KVMA RAM_REGION GROUP RODATA_REGION NOINPUT ${XIP_ALIGN_WITH_INPUT})
-zephyr_linker_section_configure(SECTION font_entry INPUT "._cfb_font.*" KEEP SORT NAME)
+zephyr_iterable_section(NAME shell_subcmds KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN 4)
+
+zephyr_iterable_section(NAME shell_dynamic_subcmds KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN 4)
+
+zephyr_iterable_section(NAME cfb_font KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN 4)
 
 zephyr_iterable_section(NAME tracing_backend KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN 4)
 
@@ -187,3 +186,26 @@ zephyr_linker_section_configure(SECTION zephyr_dbg_info INPUT ".zephyr_dbg_info"
 zephyr_linker_section(NAME device_handles KVMA RAM_REGION GROUP RODATA_REGION NOINPUT ${XIP_ALIGN_WITH_INPUT} ENDALIGN 16)
 zephyr_linker_section_configure(SECTION device_handles INPUT .__device_handles_pass1* KEEP SORT NAME PASS LINKER_DEVICE_HANDLES_PASS1)
 zephyr_linker_section_configure(SECTION device_handles INPUT .__device_handles_pass2* KEEP SORT NAME PASS NOT LINKER_DEVICE_HANDLES_PASS1)
+
+zephyr_iterable_section(NAME _static_thread_data KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN 4)
+
+if (CONFIG_BT_IAS)
+  zephyr_iterable_section(NAME bt_ias_cb KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN 4)
+endif()
+
+if (CONFIG_LOG)
+  zephyr_iterable_section(NAME log_link KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN 4)
+  zephyr_iterable_section(NAME log_backend KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN 4)
+endif()
+
+if (CONFIG_HTTP_SERVER)
+  zephyr_iterable_section(NAME http_service_desc KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN 4)
+endif()
+
+if(CONFIG_INPUT)
+  zephyr_iterable_section(NAME input_listener KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN 4)
+endif()
+
+if(CONFIG_USBD_MSC_CLASS)
+  zephyr_iterable_section(NAME usbd_msc_lun KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN 4)
+endif()

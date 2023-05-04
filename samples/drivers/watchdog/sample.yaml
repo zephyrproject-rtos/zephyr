@@ -15,12 +15,16 @@ common:
 tests:
   sample.drivers.watchdog:
     filter: not (CONFIG_SOC_FAMILY_STM32 or CONFIG_SOC_FAMILY_GD32 or SOC_SERIES_GD32VF103)
+    platform_exclude: s32z270dc2_rtu0_r52 s32z270dc2_rtu1_r52
   sample.drivers.watchdog.stm32_wwdg:
     extra_args: DTC_OVERLAY_FILE=boards/stm32_wwdg.overlay
     filter: dt_compat_enabled("st,stm32-window-watchdog")
     platform_allow: b_u585i_iot02a nucleo_f091rc nucleo_f103rb nucleo_f207zg nucleo_f429zi
         nucleo_f746zg nucleo_g071rb nucleo_g474re nucleo_l073rz nucleo_l152re
         nucleo_wb55rg nucleo_wl55jc stm32f3_disco stm32l562e_dk disco_l475_iot1
+        stm32h573i_dk
+    integration_platforms:
+      - nucleo_f103rb
   sample.drivers.watchdog.stm32h7_wwdg:
     extra_args: DTC_OVERLAY_FILE=boards/stm32h7_wwdg.overlay
     filter: dt_compat_enabled("st,stm32-window-watchdog")
@@ -31,15 +35,25 @@ tests:
     platform_allow: b_u585i_iot02a nucleo_f091rc nucleo_f103rb nucleo_f207zg nucleo_f429zi
         nucleo_f746zg nucleo_g071rb nucleo_g474re nucleo_h743zi nucleo_l073rz nucleo_l152re
         nucleo_wb55rg nucleo_wl55jc stm32f3_disco stm32l562e_dk disco_l475_iot1
+        stm32h573i_dk
+    integration_platforms:
+      - nucleo_f103rb
   sample.drivers.watchdog.gd32_fwdgt:
     filter: dt_has_compat("gd,gd32-fwdgt")
     extra_args: DTC_OVERLAY_FILE=boards/gd32_fwdgt.overlay
     platform_allow: gd32e103v_eval gd32e507v_start gd32f350r_eval gd32f403z_eval
         gd32f450i_eval gd32f450z_eval gd32f470i_eval gd32vf103c_starter gd32vf103v_eval
         longan_nano
+    integration_platforms:
+      - gd32e103v_eval
   sample.drivers.watchdog.gd32_wwdgt:
     filter: dt_has_compat("gd,gd32-wwdgt")
     extra_args: DTC_OVERLAY_FILE=boards/gd32_wwdgt.overlay
     platform_allow: gd32e103v_eval gd32e507v_start gd32f350r_eval gd32f403z_eval
         gd32f450i_eval gd32f450z_eval gd32f470i_eval gd32vf103c_starter gd32vf103v_eval
         longan_nano
+    integration_platforms:
+      - gd32e103v_eval
+  sample.drivers.watchdog.s32z270dc2_r52:
+    build_only: true
+    platform_allow: s32z270dc2_rtu0_r52 s32z270dc2_rtu1_r52

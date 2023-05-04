@@ -68,6 +68,9 @@ typedef struct {
 	(DT_ENUM_IDX_OR(nid, drive_strength, MCHP_XEC_ODRVSTR_NO_CHG) << \
 		MCHP_XEC_ODRVSTR_POS)
 
+#define MCHP_XEC_FUNC_INVERT_VAL(nid)	\
+	(MCHP_XEC_FUNC_INVERT * DT_PROP(nid, microchip_output_func_invert))
+
 /* initialize pincfg field in structure pinctrl_pin_t */
 #define Z_PINCTRL_MCHP_XEC_PINCFG_INIT(node_id)				\
 	((MCHP_XEC_BIAS_DIS_VAL(node_id) << MCHP_XEC_PUPDR_POS) |	\
@@ -78,6 +81,7 @@ typedef struct {
 	 (MCHP_XEC_OVAL_DRV_LO(node_id) << MCHP_XEC_OVAL_POS) |		\
 	 (MCHP_XEC_OVAL_DRV_HI(node_id) << MCHP_XEC_OVAL_POS) |		\
 	 (MCHP_XEC_LOW_POWER_EN(node_id) << MCHP_XEC_PIN_LOW_POWER_POS)	| \
+	 (MCHP_XEC_FUNC_INVERT_VAL(node_id) << MCHP_XEC_FUNC_INV_POS)	| \
 	 MCHP_XEC_SLEW_VAL(node_id) |					\
 	 MCHP_XEC_DRVSTR_VAL(node_id))
 

@@ -7,142 +7,142 @@
 include: base.yaml
 
 properties:
-    "#io-channel-cells":
-      type: int
-      required: true
+  "#io-channel-cells":
+    type: int
+    required: true
 
-    "#address-cells":
-      const: 1
+  "#address-cells":
+    const: 1
 
-    "#size-cells":
-      const: 0
+  "#size-cells":
+    const: 0
 
 child-binding:
-    description: |
-      Channel configuration.
+  description: |
+    Channel configuration.
 
-      All nodes using this binding must be named "channel", otherwise their
-      data will not be accessible for the ADC API macros.
+    All nodes using this binding must be named "channel", otherwise their
+    data will not be accessible for the ADC API macros.
 
-      This is based on Linux, documentation:
-        https://www.kernel.org/doc/Documentation/devicetree/bindings/iio/adc/adc.yaml
+    This is based on Linux, documentation:
+      https://www.kernel.org/doc/Documentation/devicetree/bindings/iio/adc/adc.yaml
 
-    properties:
-      reg:
-        type: array
-        required: true
-        description: Channel identifier.
+  properties:
+    reg:
+      type: array
+      required: true
+      description: Channel identifier.
 
-      zephyr,gain:
-        type: string
-        required: true
-        description: |
-          Gain selection:
-          - ADC_GAIN_1_6: x 1/6
-          - ADC_GAIN_1_5: x 1/5
-          - ADC_GAIN_1_4: x 1/4
-          - ADC_GAIN_1_3: x 1/3
-          - ADC_GAIN_2_5: x 2/5
-          - ADC_GAIN_1_2: x 1/2
-          - ADC_GAIN_2_3: x 2/3
-          - ADC_GAIN_4_5: x 4/5
-          - ADC_GAIN_1:   x 1
-          - ADC_GAIN_2:   x 2
-          - ADC_GAIN_3:   x 3
-          - ADC_GAIN_4:   x 4
-          - ADC_GAIN_6:   x 6
-          - ADC_GAIN_8:   x 8
-          - ADC_GAIN_12:  x 12
-          - ADC_GAIN_16:  x 16
-          - ADC_GAIN_24:  x 24
-          - ADC_GAIN_32:  x 32
-          - ADC_GAIN_64:  x 64
-          - ADC_GAIN_128: x 128
-        enum:
-          - "ADC_GAIN_1_6"
-          - "ADC_GAIN_1_5"
-          - "ADC_GAIN_1_4"
-          - "ADC_GAIN_1_3"
-          - "ADC_GAIN_2_5"
-          - "ADC_GAIN_1_2"
-          - "ADC_GAIN_2_3"
-          - "ADC_GAIN_4_5"
-          - "ADC_GAIN_1"
-          - "ADC_GAIN_2"
-          - "ADC_GAIN_3"
-          - "ADC_GAIN_4"
-          - "ADC_GAIN_6"
-          - "ADC_GAIN_8"
-          - "ADC_GAIN_12"
-          - "ADC_GAIN_16"
-          - "ADC_GAIN_24"
-          - "ADC_GAIN_32"
-          - "ADC_GAIN_64"
-          - "ADC_GAIN_128"
+    zephyr,gain:
+      type: string
+      required: true
+      description: |
+        Gain selection:
+        - ADC_GAIN_1_6: x 1/6
+        - ADC_GAIN_1_5: x 1/5
+        - ADC_GAIN_1_4: x 1/4
+        - ADC_GAIN_1_3: x 1/3
+        - ADC_GAIN_2_5: x 2/5
+        - ADC_GAIN_1_2: x 1/2
+        - ADC_GAIN_2_3: x 2/3
+        - ADC_GAIN_4_5: x 4/5
+        - ADC_GAIN_1:   x 1
+        - ADC_GAIN_2:   x 2
+        - ADC_GAIN_3:   x 3
+        - ADC_GAIN_4:   x 4
+        - ADC_GAIN_6:   x 6
+        - ADC_GAIN_8:   x 8
+        - ADC_GAIN_12:  x 12
+        - ADC_GAIN_16:  x 16
+        - ADC_GAIN_24:  x 24
+        - ADC_GAIN_32:  x 32
+        - ADC_GAIN_64:  x 64
+        - ADC_GAIN_128: x 128
+      enum:
+        - "ADC_GAIN_1_6"
+        - "ADC_GAIN_1_5"
+        - "ADC_GAIN_1_4"
+        - "ADC_GAIN_1_3"
+        - "ADC_GAIN_2_5"
+        - "ADC_GAIN_1_2"
+        - "ADC_GAIN_2_3"
+        - "ADC_GAIN_4_5"
+        - "ADC_GAIN_1"
+        - "ADC_GAIN_2"
+        - "ADC_GAIN_3"
+        - "ADC_GAIN_4"
+        - "ADC_GAIN_6"
+        - "ADC_GAIN_8"
+        - "ADC_GAIN_12"
+        - "ADC_GAIN_16"
+        - "ADC_GAIN_24"
+        - "ADC_GAIN_32"
+        - "ADC_GAIN_64"
+        - "ADC_GAIN_128"
 
-      zephyr,reference:
-        type: string
-        required: true
-        description: |
-          Reference selection:
-          - ADC_REF_VDD_1:     VDD
-          - ADC_REF_VDD_1_2:   VDD/2
-          - ADC_REF_VDD_1_3:   VDD/3
-          - ADC_REF_VDD_1_4:   VDD/4
-          - ADC_REF_INTERNAL:  Internal
-          - ADC_REF_EXTERNAL0: External, input 0
-          - ADC_REF_EXTERNAL1: External, input 1
-        enum:
-          - "ADC_REF_VDD_1"
-          - "ADC_REF_VDD_1_2"
-          - "ADC_REF_VDD_1_3"
-          - "ADC_REF_VDD_1_4"
-          - "ADC_REF_INTERNAL"
-          - "ADC_REF_EXTERNAL0"
-          - "ADC_REF_EXTERNAL1"
+    zephyr,reference:
+      type: string
+      required: true
+      description: |
+        Reference selection:
+        - ADC_REF_VDD_1:     VDD
+        - ADC_REF_VDD_1_2:   VDD/2
+        - ADC_REF_VDD_1_3:   VDD/3
+        - ADC_REF_VDD_1_4:   VDD/4
+        - ADC_REF_INTERNAL:  Internal
+        - ADC_REF_EXTERNAL0: External, input 0
+        - ADC_REF_EXTERNAL1: External, input 1
+      enum:
+        - "ADC_REF_VDD_1"
+        - "ADC_REF_VDD_1_2"
+        - "ADC_REF_VDD_1_3"
+        - "ADC_REF_VDD_1_4"
+        - "ADC_REF_INTERNAL"
+        - "ADC_REF_EXTERNAL0"
+        - "ADC_REF_EXTERNAL1"
 
-      zephyr,vref-mv:
-        type: int
-        description: |
-          This property can be used to specify the voltage (in millivolts)
-          of the reference selected for this channel, so that applications
-          can get that value if needed for some calculations.
-          For the internal reference, the voltage can be usually obtained with
-          a dedicated ADC API call, so there is no need to use this property
-          in that case, but for other references this property can be useful.
+    zephyr,vref-mv:
+      type: int
+      description: |
+        This property can be used to specify the voltage (in millivolts)
+        of the reference selected for this channel, so that applications
+        can get that value if needed for some calculations.
+        For the internal reference, the voltage can be usually obtained with
+        a dedicated ADC API call, so there is no need to use this property
+        in that case, but for other references this property can be useful.
 
-      zephyr,acquisition-time:
-        type: int
-        required: true
-        description: |
-          Acquisition time.
-          Use the ADC_ACQ_TIME macro to compose the value for this property
-          or pass ADC_ACQ_TIME_DEFAULT to use the default setting for a given
-          hardware (e.g. when the hardware does not allow to configure the
-          acquisition time).
+    zephyr,acquisition-time:
+      type: int
+      required: true
+      description: |
+        Acquisition time.
+        Use the ADC_ACQ_TIME macro to compose the value for this property
+        or pass ADC_ACQ_TIME_DEFAULT to use the default setting for a given
+        hardware (e.g. when the hardware does not allow to configure the
+        acquisition time).
 
-      zephyr,input-positive:
-        type: int
-        description: |
-          Positive ADC input. Used only for drivers that select
-          the ADC_CONFIGURABLE_INPUTS Kconfig option.
+    zephyr,input-positive:
+      type: int
+      description: |
+        Positive ADC input. Used only for drivers that select
+        the ADC_CONFIGURABLE_INPUTS Kconfig option.
 
-      zephyr,input-negative:
-        type: int
-        description: |
-          Negative ADC input. Used only for drivers that select
-          the ADC_CONFIGURABLE_INPUTS Kconfig option.
-          When specified, the channel is to be used in differential input mode,
-          otherwise, single-ended mode is used.
+    zephyr,input-negative:
+      type: int
+      description: |
+        Negative ADC input. Used only for drivers that select
+        the ADC_CONFIGURABLE_INPUTS Kconfig option.
+        When specified, the channel is to be used in differential input mode,
+        otherwise, single-ended mode is used.
 
-      zephyr,resolution:
-        type: int
-        description: |
-          ADC resolution to be used for the channel.
+    zephyr,resolution:
+      type: int
+      description: |
+        ADC resolution to be used for the channel.
 
-      zephyr,oversampling:
-        type: int
-        description: |
-          Oversampling setting to be used for the channel.
-          When specified, each sample is averaged from 2^N conversion results
-          (where N is the provided value).
+    zephyr,oversampling:
+      type: int
+      description: |
+        Oversampling setting to be used for the channel.
+        When specified, each sample is averaged from 2^N conversion results
+        (where N is the provided value).

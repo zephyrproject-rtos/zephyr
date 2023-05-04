@@ -57,6 +57,7 @@ config SHELL_BACKEND_SERIAL_TX_RING_BUFFER_SIZE
 
 config SHELL_BACKEND_SERIAL_RX_RING_BUFFER_SIZE
 	int "Set RX ring buffer size"
+	default 256 if MCUMGR_TRANSPORT_SHELL
 	default 64
 	help
 	  RX ring buffer size impacts accepted latency of handling incoming
@@ -74,6 +75,7 @@ config SHELL_BACKEND_SERIAL_RX_POLL_PERIOD
 
 config SHELL_BACKEND_SERIAL_CHECK_DTR
 	bool "Check DTR signal before TX"
+	depends on SHELL_BACKEND_SERIAL_INTERRUPT_DRIVEN
 	depends on UART_LINE_CTRL
 	help
 	  Check DTR signal before TX.
@@ -137,6 +139,14 @@ config SHELL_PROMPT_RTT
 	  Displayed prompt name for RTT backend. If prompt is set, the shell will
 	  send two newlines during initialization.
 
+config SHELL_BACKEND_RTT_BUFFER
+	int "Buffer number used for shell input and output."
+	range 0 SEGGER_RTT_MAX_NUM_UP_BUFFERS
+	default 0
+	help
+	  Select index of up-buffer used for shell output, by default it uses
+	  terminal up-buffer and its settings.
+
 config SHELL_RTT_RX_POLL_PERIOD
 	int "RX polling period (in milliseconds)"
 	default 10
@@ -147,7 +157,7 @@ module = SHELL_BACKEND_RTT
 default-timeout = 100
 source "subsys/shell/Kconfig.template.shell_log_queue_timeout"
 
-default-size = 10
+default-size = 512
 source "subsys/shell/Kconfig.template.shell_log_queue_size"
 
 choice
@@ -243,7 +253,7 @@ module = SHELL_BACKEND_MQTT
 default-timeout = 100
 source "subsys/shell/Kconfig.template.shell_log_queue_timeout"
 
-default-size = 10
+default-size = 512
 source "subsys/shell/Kconfig.template.shell_log_queue_size"
 
 choice
@@ -339,7 +349,7 @@ module = SHELL_TELNET
 default-timeout = 100
 source "subsys/shell/Kconfig.template.shell_log_queue_timeout"
 
-default-size = 10
+default-size = 512
 source "subsys/shell/Kconfig.template.shell_log_queue_size"
 
 choice
@@ -398,10 +408,44 @@ config SHELL_PROMPT_DUMMY
 
 config SHELL_BACKEND_DUMMY_BUF_SIZE
 	int "Size of dummy buffer size"
+	default 400 if LOG_PRINTK
 	default 300
 	help
 	  This is size of output buffer that will be used by dummy backend, this limits number of
 	  characters that will be captured from command output.
+
+choice
+	prompt "Initial log level limit"
+	default SHELL_DUMMY_INIT_LOG_LEVEL_INF
+
+config SHELL_DUMMY_INIT_LOG_LEVEL_DEFAULT
+	bool "System limit (LOG_MAX_LEVEL)"
+
+config SHELL_DUMMY_INIT_LOG_LEVEL_DBG
+	bool "Debug"
+
+config SHELL_DUMMY_INIT_LOG_LEVEL_INF
+	bool "Info"
+
+config SHELL_DUMMY_INIT_LOG_LEVEL_WRN
+	bool "Warning"
+
+config SHELL_DUMMY_INIT_LOG_LEVEL_ERR
+	bool "Error"
+
+config SHELL_DUMMY_INIT_LOG_LEVEL_NONE
+	bool "None"
+
+endchoice
+
+config SHELL_DUMMY_INIT_LOG_LEVEL
+	int
+	default 0 if SHELL_DUMMY_INIT_LOG_LEVEL_NONE
+	default 1 if SHELL_DUMMY_INIT_LOG_LEVEL_ERR
+	default 2 if SHELL_DUMMY_INIT_LOG_LEVEL_WRN
+	default 3 if SHELL_DUMMY_INIT_LOG_LEVEL_INF
+	default 4 if SHELL_DUMMY_INIT_LOG_LEVEL_DBG
+	default 5 if SHELL_DUMMY_INIT_LOG_LEVEL_DEFAULT
 
 endif # SHELL_BACKEND_DUMMY
 

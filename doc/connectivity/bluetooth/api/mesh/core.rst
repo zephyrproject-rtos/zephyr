@@ -6,6 +6,8 @@ Core
 The core provides functionality for managing the general Bluetooth mesh
 state.
 
+.. _bluetooth_mesh_lpn:
+
 Low Power Node
 **************
 
@@ -20,6 +22,12 @@ the LPN API allows the application to trigger the polling at any time through
 :c:func:`bt_mesh_lpn_poll`. The LPN operation parameters, including poll
 interval, poll event timing and Friend requirements is controlled through the
 :kconfig:option:`CONFIG_BT_MESH_LOW_POWER` option and related configuration options.
+
+When using the LPN feature with logging, it is strongly recommended to only use
+the :kconfig:option:`CONFIG_LOG_MODE_DEFERRED` option. Log modes other than the
+deferred may cause unintended delays during processing of log messages. This in
+turns will affect scheduling of the receive delay and receive window. The same
+limitation applies for the :kconfig:option:`CONFIG_BT_MESH_FRIEND` option.
 
 Replay Protection List
 **********************

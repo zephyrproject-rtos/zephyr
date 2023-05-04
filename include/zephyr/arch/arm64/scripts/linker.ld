@@ -127,7 +127,7 @@ SECTIONS
     __text_region_end = .;
     __text_region_size = __text_region_end - __text_region_start;
 
-#if defined (CONFIG_CPLUSPLUS)
+#if defined (CONFIG_CPP)
     SECTION_PROLOGUE(.ARM.extab,,)
     {
         /*

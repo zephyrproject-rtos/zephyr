@@ -19,18 +19,18 @@ include:
       - mul
 
 properties:
-    mul:
-      type: int
-      required: true
-      description: |
-          PLL multiplication factor for output clock
-      enum:
-        - 8
-        - 9
-        - 10
-        - 11
-        - 12
-        - 13
-        - 14
-        - 16
-        - 20
+  mul:
+    type: int
+    required: true
+    description: |
+        PLL multiplication factor for output clock
+    enum:
+      - 8
+      - 9
+      - 10
+      - 11
+      - 12
+      - 13
+      - 14
+      - 16
+      - 20

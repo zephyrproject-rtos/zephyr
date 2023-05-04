@@ -9,7 +9,9 @@
 #include <zephyr/ztest.h>
 
 #include <zephyr/bluetooth/bluetooth.h>
-
+#include <pdu_df.h>
+#include <lll/pdu_vendor.h>
+#include <pdu.h>
 #include "bt_common.h"
 
 void *ut_bt_setup(void)

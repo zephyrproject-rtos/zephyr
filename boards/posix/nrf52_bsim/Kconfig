@@ -8,14 +8,6 @@ if BOARD_NRF52_BSIM
 # must be read also from here.
 source "soc/arm/nordic_nrf/Kconfig.peripherals"
 
-comment "NRF52_BSIM options"
-
-config PRINTK_HOOK_INIT_PRIORITY
-	int
-	default 50
-	help
-	  Just the driver init priority
-
 endif # BOARD_NRF52_BSIM
 
 

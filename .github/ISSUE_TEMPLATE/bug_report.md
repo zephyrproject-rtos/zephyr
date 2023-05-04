@@ -7,6 +7,16 @@ assignees: ''
 
 ---
 
+**Notes (delete this)**
+Github Discussions (https://github.com/zephyrproject-rtos/zephyr/discussions)
+are available to first verify that the issue is a genuine Zephyr bug and not a
+consequence of Zephyr services misuse.
+
+This issue list is only for bugs in the main Zephyr code base
+(https://github.com/zephyrproject-rtos/zephyr/). If the bug is for a project
+fork (such as NCS) specific feature, please open an issue in the fork project
+instead.
+
 **Describe the bug**
 A clear and concise description of what the bug is.
 

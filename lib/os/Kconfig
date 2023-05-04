@@ -32,6 +32,15 @@ config CRC
 	help
 	  Enable use of CRC.
 
+if CRC
+config CRC_SHELL
+	bool "CRC Shell"
+	depends on SHELL
+	select GETOPT
+	help
+	  Enable CRC checking for memory regions from the shell.
+endif # CRC
+
 config PRINTK_SYNC
 	bool "Serialize printk() calls"
 	default y if SMP && MP_NUM_CPUS > 1 && !(EFI_CONSOLE && LOG)

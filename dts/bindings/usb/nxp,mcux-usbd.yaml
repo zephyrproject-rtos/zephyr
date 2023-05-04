@@ -9,29 +9,29 @@ compatible: "nxp,mcux-usbd"
 include: usb-ep.yaml
 
 properties:
-    reg:
-      required: true
+  reg:
+    required: true
 
-    interrupts:
-      required: true
+  interrupts:
+    required: true
 
-    usb-controller-index:
-      required: true
-      type: string
-      description: |
-        This is taken from the usb_controller_index_t enum that is included inside the NXP SDK
-      enum:
-        - "Khci0"
-        - "Khci1"
-        - "Ehci0"
-        - "Ehci1"
-        - "LpcIp3511Fs0"
-        - "LpcIp3511Fs1"
-        - "LpcIp3511Hs0"
-        - "LpcIp3511Hs1"
-        - "Ohci0"
-        - "Ohci1"
-        - "Ip3516Hs0"
-        - "Ip3516Hs1"
-        - "Dwc30"
-        - "Dwc31"
+  usb-controller-index:
+    required: true
+    type: string
+    description: |
+      This is taken from the usb_controller_index_t enum that is included inside the NXP SDK
+    enum:
+      - "Khci0"
+      - "Khci1"
+      - "Ehci0"
+      - "Ehci1"
+      - "LpcIp3511Fs0"
+      - "LpcIp3511Fs1"
+      - "LpcIp3511Hs0"
+      - "LpcIp3511Hs1"
+      - "Ohci0"
+      - "Ohci1"
+      - "Ip3516Hs0"
+      - "Ip3516Hs1"
+      - "Dwc30"
+      - "Dwc31"

@@ -5,17 +5,15 @@ description: Atmel SAM Timer Counter (TC) QDEC node
 compatible: "atmel,sam-tc-qdec"
 
 include:
-    - name: sensor-device.yaml
-    - name: pinctrl-device.yaml
+  - name: sensor-device.yaml
+  - name: pinctrl-device.yaml
 
 properties:
-    reg:
-      required: true
+  reg:
+    required: true
 
-    interrupts:
-      required: true
+  interrupts:
+    required: true
 
-    peripheral-id:
-      type: array
-      description: peripheral ID
-      required: true
+  clocks:
+    required: true

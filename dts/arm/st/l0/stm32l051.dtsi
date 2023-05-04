@@ -34,6 +34,7 @@
 			compatible = "st,stm32-usart", "st,stm32-uart";
 			reg = <0x40013800 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00004000>;
+			resets = <&rctl STM32_RESET(APB2, 14U)>;
 			interrupts = <27 0>;
 			status = "disabled";
 		};
@@ -42,6 +43,7 @@
 			compatible = "st,stm32-timers";
 			reg = <0x40011400 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00000020>;
+			resets = <&rctl STM32_RESET(APB2, 5U)>;
 			interrupts = <22 0>;
 			interrupt-names = "global";
 			st,prescaler = <0>;
@@ -58,6 +60,7 @@
 			compatible = "st,stm32-timers";
 			reg = <0x40001000 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000010>;
+			resets = <&rctl STM32_RESET(APB1, 4U)>;
 			interrupts = <17 0>;
 			interrupt-names = "global";
 			st,prescaler = <0>;
@@ -66,6 +69,10 @@
 
 		eeprom: eeprom@8080000{
 			reg = <0x08080000 DT_SIZE_K(2)>;
+		};
+
+		adc1: adc@40012400 {
+			temp-channel = <18>;
 		};
 	};
 };

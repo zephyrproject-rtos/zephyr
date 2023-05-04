@@ -1,0 +1,11 @@
+# Intel ADSP Watchdog configuration options
+
+# Copyright (c) 2023 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config WDT_INTEL_ADSP
+	bool "Intel ADSP Watchdog driver"
+	default y
+	depends on DT_HAS_INTEL_ADSP_WATCHDOG_ENABLED
+	help
+	  Intel ADSP Watchdog driver.

@@ -10,17 +10,26 @@
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/drivers/adc.h>
 #include <zephyr/logging/log.h>
+#if defined(CONFIG_SOC_SERIES_STM32H5X)
+#include <stm32_ll_icache.h>
+#endif /* CONFIG_SOC_SERIES_STM32H5X */
 
 LOG_MODULE_REGISTER(stm32_temp, CONFIG_SENSOR_LOG_LEVEL);
 #define CAL_RES 12
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_temp)
 #define DT_DRV_COMPAT st_stm32_temp
-#define HAS_CALIBRATION 0
 #elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_temp_cal)
 #define DT_DRV_COMPAT st_stm32_temp_cal
-#define HAS_CALIBRATION 1
+#define HAS_DUAL_CALIBRATION 1
+#elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32c0_temp_cal)
+#define DT_DRV_COMPAT st_stm32c0_temp_cal
+#define HAS_SINGLE_CALIBRATION 1
 #else
 #error "No compatible devicetree node found"
+#endif
+
+#if defined(HAS_SINGLE_CALIBRATION) || defined(HAS_DUAL_CALIBRATION)
+#define HAS_CALIBRATION 1
 #endif
 
 struct stm32_temp_data {
@@ -35,16 +44,20 @@ struct stm32_temp_data {
 struct stm32_temp_config {
 #if HAS_CALIBRATION
 	uint16_t *cal1_addr;
-	uint16_t *cal2_addr;
 	int cal1_temp;
+#if HAS_DUAL_CALIBRATION
+	uint16_t *cal2_addr;
 	int cal2_temp;
+#else
+	int avgslope;
+#endif
 	int cal_vrefanalog;
 	int ts_cal_shift;
 #else
 	int avgslope;
 	int v25_mv;
-	bool is_ntc;
 #endif
+	bool is_ntc;
 };
 
 static int stm32_temp_sample_fetch(const struct device *dev, enum sensor_channel chan)
@@ -88,11 +101,28 @@ static int stm32_temp_channel_get(const struct device *dev, enum sensor_channel 
 	}
 
 #if HAS_CALIBRATION
+
+#if defined(CONFIG_SOC_SERIES_STM32H5X)
+	LL_ICACHE_Disable();
+#endif /* CONFIG_SOC_SERIES_STM32H5X */
+
 	temp = ((float)data->raw * adc_ref_internal(data->adc)) / cfg->cal_vrefanalog;
 	temp -= (*cfg->cal1_addr >> cfg->ts_cal_shift);
+#if HAS_SINGLE_CALIBRATION
+	if (cfg->is_ntc) {
+		temp = -temp;
+	}
+	temp /= (cfg->avgslope * 4096) / (cfg->cal_vrefanalog * 1000);
+#else
 	temp *= (cfg->cal2_temp - cfg->cal1_temp);
 	temp /= ((*cfg->cal2_addr - *cfg->cal1_addr) >> cfg->ts_cal_shift);
+#endif
 	temp += cfg->cal1_temp;
+
+#if defined(CONFIG_SOC_SERIES_STM32H5X)
+	LL_ICACHE_Enable();
+#endif /* CONFIG_SOC_SERIES_STM32H5X */
+
 #else
 	/* Sensor value in millivolts */
 	int32_t mv = data->raw * adc_ref_internal(data->adc) / 0x0FFF;
@@ -136,35 +166,37 @@ static int stm32_temp_init(const struct device *dev)
 	return 0;
 }
 
+static struct stm32_temp_data stm32_temp_dev_data = {
+	.adc = DEVICE_DT_GET(DT_INST_IO_CHANNELS_CTLR(0)),
+	.adc_cfg = {
+		.gain = ADC_GAIN_1,
+		.reference = ADC_REF_INTERNAL,
+		.acquisition_time = ADC_ACQ_TIME_MAX,
+		.channel_id = DT_INST_IO_CHANNELS_INPUT(0),
+		.differential = 0
+	},
+};
 
-#define STM32_TEMP_DEFINE(inst)									\
-	static struct stm32_temp_data stm32_temp_dev_data_##inst = {				\
-		.adc = DEVICE_DT_GET(DT_INST_IO_CHANNELS_CTLR(inst)),				\
-		.adc_cfg = {									\
-			.gain = ADC_GAIN_1,							\
-			.reference = ADC_REF_INTERNAL,						\
-			.acquisition_time = ADC_ACQ_TIME_MAX,					\
-			.channel_id = DT_INST_IO_CHANNELS_INPUT(inst),				\
-			.differential = 0							\
-		},										\
-	};											\
-												\
-	static const struct stm32_temp_config stm32_temp_dev_config_##inst = {			\
-		COND_CODE_1(HAS_CALIBRATION,							\
-			    (.cal1_addr = (uint16_t *)DT_INST_PROP(inst, ts_cal1_addr),		\
-			     .cal2_addr = (uint16_t *)DT_INST_PROP(inst, ts_cal2_addr),		\
-			     .cal1_temp = DT_INST_PROP(inst, ts_cal1_temp),			\
-			     .cal2_temp = DT_INST_PROP(inst, ts_cal2_temp),			\
-			     .ts_cal_shift = (DT_INST_PROP(inst, ts_cal_resolution) - CAL_RES),	\
-			     .cal_vrefanalog = DT_INST_PROP(inst, ts_cal_vrefanalog),),		\
-			    (.avgslope = DT_INST_PROP(inst, avgslope),				\
-			     .v25_mv = DT_INST_PROP(inst, v25),					\
-			     .is_ntc = DT_INST_PROP(inst, ntc)))				\
-	};											\
-												\
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, stm32_temp_init, NULL,				\
-			      &stm32_temp_dev_data_##inst, &stm32_temp_dev_config_##inst,	\
-			      POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,				\
-			      &stm32_temp_driver_api);						\
+static const struct stm32_temp_config stm32_temp_dev_config = {
+#if HAS_CALIBRATION
+	.cal1_addr = (uint16_t *)DT_INST_PROP(0, ts_cal1_addr),
+	.cal1_temp = DT_INST_PROP(0, ts_cal1_temp),
+#if HAS_DUAL_CALIBRATION
+	.cal2_addr = (uint16_t *)DT_INST_PROP(0, ts_cal2_addr),
+	.cal2_temp = DT_INST_PROP(0, ts_cal2_temp),
+#else
+	.avgslope = DT_INST_PROP(0, avgslope),
+#endif
+	.ts_cal_shift = (DT_INST_PROP(0, ts_cal_resolution) - CAL_RES),
+	.cal_vrefanalog = DT_INST_PROP(0, ts_cal_vrefanalog),
+#else
+	.avgslope = DT_INST_PROP(0, avgslope),
+	.v25_mv = DT_INST_PROP(0, v25),
+#endif
+	.is_ntc = DT_INST_PROP_OR(0, ntc, false)
+};
 
-DT_INST_FOREACH_STATUS_OKAY(STM32_TEMP_DEFINE)
+SENSOR_DEVICE_DT_INST_DEFINE(0, stm32_temp_init, NULL,
+			     &stm32_temp_dev_data, &stm32_temp_dev_config,
+			     POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,
+			     &stm32_temp_driver_api);

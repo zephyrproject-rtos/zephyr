@@ -534,7 +534,7 @@ static void status_cb(enum usb_dc_status_code status, const uint8_t *param)
 
 #define DEVICE_AND_COMMA(node_id) DEVICE_DT_GET(node_id),
 
-void main(void)
+int main(void)
 {
 	const struct device *cdc_dev[] = {
 		DT_FOREACH_STATUS_OKAY(zephyr_cdc_acm_uart, DEVICE_AND_COMMA)
@@ -550,46 +550,46 @@ void main(void)
 	hid0_dev = device_get_binding("HID_0");
 	if (hid0_dev == NULL) {
 		LOG_ERR("Cannot get USB HID 0 Device");
-		return;
+		return 0;
 	}
 
 	hid1_dev = device_get_binding("HID_1");
 	if (hid1_dev == NULL) {
 		LOG_ERR("Cannot get USB HID 1 Device");
-		return;
+		return 0;
 	}
 
 	for (int idx = 0; idx < ARRAY_SIZE(cdc_dev); idx++) {
 		if (!device_is_ready(cdc_dev[idx])) {
 			LOG_ERR("CDC ACM device %s is not ready",
 				cdc_dev[idx]->name);
-			return;
+			return 0;
 		}
 	}
 
 	if (callbacks_configure(&sw0_gpio, &btn0, &callback[0])) {
 		LOG_ERR("Failed configuring button 0 callback.");
-		return;
+		return 0;
 	}
 
 #if DT_NODE_HAS_STATUS(SW1_NODE, okay)
 	if (callbacks_configure(&sw1_gpio, &btn1, &callback[1])) {
 		LOG_ERR("Failed configuring button 1 callback.");
-		return;
+		return 0;
 	}
 #endif
 
 #if DT_NODE_HAS_STATUS(SW2_NODE, okay)
 	if (callbacks_configure(&sw2_gpio, &btn2, &callback[2])) {
 		LOG_ERR("Failed configuring button 2 callback.");
-		return;
+		return 0;
 	}
 #endif
 
 #if DT_NODE_HAS_STATUS(SW3_NODE, okay)
 	if (callbacks_configure(&sw3_gpio, &btn3, &callback[3])) {
 		LOG_ERR("Failed configuring button 3 callback.");
-		return;
+		return 0;
 	}
 #endif
 
@@ -607,7 +607,7 @@ void main(void)
 	ret = usb_enable(status_cb);
 	if (ret != 0) {
 		LOG_ERR("Failed to enable USB");
-		return;
+		return 0;
 	}
 
 	/* Initialize CDC ACM */

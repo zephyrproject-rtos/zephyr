@@ -4,15 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(mcumgr_img_mgmt, CONFIG_MCUMGR_IMG_MGMT_LOG_LEVEL);
-
 #include <zephyr/kernel.h>
 #include <zephyr/init.h>
 #include <zephyr/drivers/flash.h>
 #include <zephyr/storage/flash_map.h>
 #include <zephyr/dfu/mcuboot.h>
 #include <zephyr/dfu/flash_img.h>
+#include <zephyr/logging/log.h>
 #include <bootutil/bootutil_public.h>
 #include <assert.h>
 
@@ -23,16 +21,37 @@ LOG_MODULE_REGISTER(mcumgr_img_mgmt, CONFIG_MCUMGR_IMG_MGMT_LOG_LEVEL);
 #include <mgmt/mcumgr/grp/img_mgmt/img_mgmt_impl.h>
 #include <mgmt/mcumgr/grp/img_mgmt/img_mgmt_priv.h>
 
+LOG_MODULE_DECLARE(mcumgr_img_grp, CONFIG_MCUMGR_GRP_IMG_LOG_LEVEL);
+
 #define SLOT0_PARTITION		slot0_partition
 #define SLOT1_PARTITION		slot1_partition
 #define SLOT2_PARTITION		slot2_partition
 #define SLOT3_PARTITION		slot3_partition
 
-BUILD_ASSERT(CONFIG_IMG_MGMT_UPDATABLE_IMAGE_NUMBER == 1 ||
-	     (CONFIG_IMG_MGMT_UPDATABLE_IMAGE_NUMBER == 2 &&
+BUILD_ASSERT(CONFIG_MCUMGR_GRP_IMG_UPDATABLE_IMAGE_NUMBER == 1 ||
+	     (CONFIG_MCUMGR_GRP_IMG_UPDATABLE_IMAGE_NUMBER == 2 &&
 	      FIXED_PARTITION_EXISTS(SLOT2_PARTITION) &&
 	      FIXED_PARTITION_EXISTS(SLOT3_PARTITION)),
 	     "Missing partitions?");
+
+#if defined(CONFIG_MCUMGR_GRP_IMG_DIRECT_UPLOAD) &&		\
+	!(CONFIG_MCUMGR_GRP_IMG_UPDATABLE_IMAGE_NUMBER > 1)
+/* In case when direct upload is enabled, slot2 and slot3 are optional
+ * as long as there is support for one application image only.
+ */
+#define ADD_SLOT_2_CONDITION FIXED_PARTITION_EXISTS(SLOT2_PARTITION)
+#define ADD_SLOT_3_CONDITION FIXED_PARTITION_EXISTS(SLOT3_PARTITION)
+#elif (CONFIG_MCUMGR_GRP_IMG_UPDATABLE_IMAGE_NUMBER > 1)
+/* For more than one application image slot2 and slot3 are required. */
+#define ADD_SLOT_2_CONDITION 1
+#define ADD_SLOT_3_CONDITION 1
+#else
+/* If neither in direct upload mode nor more than one application image
+ * is supported, then slot2 and slot3 support is useless.
+ */
+#define ADD_SLOT_2_CONDITION 0
+#define ADD_SLOT_3_CONDITION 0
+#endif
 
 static int
 img_mgmt_slot_to_image(int slot)
@@ -41,8 +60,11 @@ img_mgmt_slot_to_image(int slot)
 	case 0:
 	case 1:
 		return 0;
-#if FIXED_PARTITION_EXISTS(SLOT2_PARTITION) && FIXED_PARTITION_EXISTS(SLOT2_PARTITION)
+#if ADD_SLOT_2_CONDITION
 	case 2:
+		return 1;
+#endif
+#if ADD_SLOT_3_CONDITION
 	case 3:
 		return 1;
 #endif
@@ -85,6 +107,7 @@ static int img_mgmt_flash_check_empty_inner(const struct flash_area *fa)
 
 		rc = flash_area_read(fa, addr, data, bytes_to_read);
 		if (rc < 0) {
+			LOG_ERR("Failed to read data from flash area: %d", rc);
 			return rc;
 		}
 
@@ -115,6 +138,8 @@ static int img_mgmt_flash_check_empty(uint8_t fa_id)
 		rc = img_mgmt_flash_check_empty_inner(fa);
 
 		flash_area_close(fa);
+	} else {
+		LOG_ERR("Failed to open flash area ID %u: %d", fa_id, rc);
 	}
 
 	return rc;
@@ -141,13 +166,13 @@ img_mgmt_flash_area_id(int slot)
 		fa_id = FIXED_PARTITION_ID(SLOT1_PARTITION);
 		break;
 
-#if FIXED_PARTITION_EXISTS(SLOT2_PARTITION)
+#if ADD_SLOT_2_CONDITION
 	case 2:
 		fa_id = FIXED_PARTITION_ID(SLOT2_PARTITION);
 		break;
 #endif
 
-#if FIXED_PARTITION_EXISTS(SLOT3_PARTITION)
+#if ADD_SLOT_3_CONDITION
 	case 3:
 		fa_id = FIXED_PARTITION_ID(SLOT3_PARTITION);
 		break;
@@ -161,12 +186,12 @@ img_mgmt_flash_area_id(int slot)
 	return fa_id;
 }
 
-#if CONFIG_IMG_MGMT_UPDATABLE_IMAGE_NUMBER == 1
+#if CONFIG_MCUMGR_GRP_IMG_UPDATABLE_IMAGE_NUMBER == 1
 /**
  * In normal operation this function will select between first two slot
  * (in reality it just checks whether second slot can be used), ignoring the
  * slot parameter.
- * When CONFIG_IMG_MGMT_DIRECT_IMAGE_UPLOAD is defined it will check if given
+ * When CONFIG_MCUMGR_GRP_IMG_DIRECT_UPLOAD is defined it will check if given
  * slot is available, and allowed, for DFU; providing 0 as a parameter means
  * find any unused and non-active available (auto-select); any other positive
  * value is direct (slot + 1) to be used; if checks are positive, then area
@@ -176,7 +201,7 @@ img_mgmt_flash_area_id(int slot)
 static int
 img_mgmt_get_unused_slot_area_id(int slot)
 {
-#if defined(CONFIG_IMG_MGMT_DIRECT_IMAGE_UPLOAD)
+#if defined(CONFIG_MCUMGR_GRP_IMG_DIRECT_UPLOAD)
 	slot--;
 	if (slot < -1) {
 		return -1;
@@ -197,7 +222,7 @@ img_mgmt_get_unused_slot_area_id(int slot)
 			}
 		}
 		return -1;
-#if defined(CONFIG_IMG_MGMT_DIRECT_IMAGE_UPLOAD)
+#if defined(CONFIG_MCUMGR_GRP_IMG_DIRECT_UPLOAD)
 	}
 	/*
 	 * Direct selection; the first two slots are checked for being available
@@ -212,7 +237,7 @@ img_mgmt_get_unused_slot_area_id(int slot)
 #endif
 }
 
-#elif CONFIG_IMG_MGMT_UPDATABLE_IMAGE_NUMBER == 2
+#elif CONFIG_MCUMGR_GRP_IMG_UPDATABLE_IMAGE_NUMBER == 2
 static int
 img_mgmt_get_unused_slot_area_id(int image)
 {
@@ -272,6 +297,7 @@ img_mgmt_erase_slot(int slot)
 	rc = flash_area_open(area_id, &fa);
 
 	if (rc < 0) {
+		LOG_ERR("Failed to open flash area ID %u: %d", area_id, rc);
 		return MGMT_ERR_EUNKNOWN;
 	}
 
@@ -279,6 +305,10 @@ img_mgmt_erase_slot(int slot)
 
 	if (rc == 0) {
 		rc = flash_area_erase(fa, 0, fa->fa_size);
+
+		if (rc != 0) {
+			LOG_ERR("Failed to erase flash area: %d", rc);
+		}
 	}
 
 	flash_area_close(fa);
@@ -291,12 +321,13 @@ img_mgmt_write_pending(int slot, bool permanent)
 {
 	int rc;
 
-	if (slot != 1 && !(CONFIG_IMG_MGMT_UPDATABLE_IMAGE_NUMBER == 2 && slot == 3)) {
+	if (slot != 1 && !(CONFIG_MCUMGR_GRP_IMG_UPDATABLE_IMAGE_NUMBER == 2 && slot == 3)) {
 		return MGMT_ERR_EINVAL;
 	}
 
 	rc = boot_request_upgrade_multi(img_mgmt_slot_to_image(slot), permanent);
 	if (rc != 0) {
+		LOG_ERR("Failed to write pending flag for slot %d: %d", slot, rc);
 		return MGMT_ERR_EUNKNOWN;
 	}
 
@@ -310,6 +341,7 @@ img_mgmt_write_confirmed(void)
 
 	rc = boot_write_img_confirmed();
 	if (rc != 0) {
+		LOG_ERR("Failed to write confirmed flag: %d", rc);
 		return MGMT_ERR_EUNKNOWN;
 	}
 
@@ -329,6 +361,7 @@ img_mgmt_read(int slot, unsigned int offset, void *dst, unsigned int num_bytes)
 
 	rc = flash_area_open(area_id, &fa);
 	if (rc != 0) {
+		LOG_ERR("Failed to open flash area ID %u: %d", area_id, rc);
 		return MGMT_ERR_EUNKNOWN;
 	}
 
@@ -336,13 +369,14 @@ img_mgmt_read(int slot, unsigned int offset, void *dst, unsigned int num_bytes)
 	flash_area_close(fa);
 
 	if (rc != 0) {
+		LOG_ERR("Failed to read data from flash: %d", rc);
 		return MGMT_ERR_EUNKNOWN;
 	}
 
 	return 0;
 }
 
-#if defined(CONFIG_IMG_MGMT_USE_HEAP_FOR_FLASH_IMG_CONTEXT)
+#if defined(CONFIG_MCUMGR_GRP_IMG_USE_HEAP_FOR_FLASH_IMG_CONTEXT)
 int
 img_mgmt_write_image_data(unsigned int offset, const void *data, unsigned int num_bytes, bool last)
 {
@@ -466,7 +500,7 @@ img_mgmt_erase_image_data(unsigned int off, unsigned int num_bytes)
 	 */
 
 	/* erase the image trailer area if it was not erased */
-	off = BOOT_TRAILER_IMG_STATUS_OFFS(fa);
+	off = boot_get_trailer_status_offset(fa->fa_size);
 	if (off >= erase_size) {
 		rc = flash_get_page_info_by_offs(dev, fa->fa_off + off, &page);
 
@@ -586,12 +620,16 @@ img_mgmt_upload_inspect(const struct img_mgmt_upload_req *req,
 			return MGMT_ERR_ENOENT;
 		}
 
-#if defined(CONFIG_IMG_MGMT_REJECT_DIRECT_XIP_MISMATCHED_SLOT)
+#if defined(CONFIG_MCUMGR_GRP_IMG_REJECT_DIRECT_XIP_MISMATCHED_SLOT)
 		if (hdr->ih_flags & IMAGE_F_ROM_FIXED_ADDR) {
+			const struct flash_area *fa;
+
 			rc = flash_area_open(action->area_id, &fa);
 			if (rc) {
 				IMG_MGMT_UPLOAD_ACTION_SET_RC_RSN(action,
 					img_mgmt_err_str_flash_open_failed);
+				LOG_ERR("Failed to open flash area ID %u: %d", action->area_id,
+					rc);
 				return MGMT_ERR_EUNKNOWN;
 			}
 
@@ -616,7 +654,7 @@ img_mgmt_upload_inspect(const struct img_mgmt_upload_req *req,
 				return MGMT_ERR_EUNKNOWN;
 			}
 
-			if (img_mgmt_vercmp(&cur_ver, &hdr->ih_ver) >= 0) {
+			if (img_mgmt_vercmp(&cur_ver, &hdr->ih_ver) > 0) {
 				IMG_MGMT_UPLOAD_ACTION_SET_RC_RSN(action,
 					img_mgmt_err_str_downgrade);
 				return MGMT_ERR_EBADSTATE;
@@ -665,6 +703,7 @@ img_mgmt_erased_val(int slot, uint8_t *erased_val)
 
 	rc = flash_area_open(area_id, &fa);
 	if (rc != 0) {
+		LOG_ERR("Failed to open flash area ID %u: %d", area_id, rc);
 		return MGMT_ERR_EUNKNOWN;
 	}
 

@@ -8,7 +8,6 @@
 
 #include <nxp/nxp_rt6xx.dtsi>
 #include <zephyr/dt-bindings/pwm/pwm.h>
-#include <zephyr/dt-bindings/regulator/pca9420_i2c.h>
 
 #include "mimxrt685_evk_cm33-pinctrl.dtsi"
 
@@ -229,93 +228,23 @@ i2s1: &flexcomm3 {
 	pinctrl-names = "default";
 
 	pca9420: pca9420@61 {
-		reg = <0x61>;
 		compatible = "nxp,pca9420";
-		/*
-		 * This mode-reg setting will permit mode control by
-		 * pins, a feature of the PCA9240. If mode control via
-		 * I2C is desired, the following settings
-		 * should be used:
-		 * regulator-initial-mode = <PCA9420_MODECFG0_I2C>;
-		 * regulator-allowed-modes = <PCA9420_MODECFG0_I2C>,
-		 *			<PCA9420_MODECFG1_I2C>,
-		 *			<PCA9420_MODECFG2_I2C>,
-		 *			<PCA9420_MODECFG3_I2C>;
-		 * modesel-reg = <PCA9420_TOP_CNTL3>;
-		 * modesel-mask = <PCA9420_TOP_CNTL3_MODE_I2C_MASK>;
-		 */
-		regulator-allowed-modes = <PCA9420_MODECFG0_PIN>,
-					<PCA9420_MODECFG1_PIN>,
-					<PCA9420_MODECFG2_PIN>,
-					<PCA9420_MODECFG3_PIN>;
-		regulator-initial-mode = <PCA9420_MODECFG0_PIN>;
-		modesel-reg = <PCA9420_MODECFG_0_0>;
-		modesel-mask = <PCA9420_MODECFG_0_MODE_CTRL_SEL_MASK>;
-		pca9420_sw1: sw1_buck {
-			voltage-range = <PCA9420_SW1_VOLTAGE_RANGE>;
-			current-levels = <PCA9420_CURRENT_LIMIT_LEVELS>;
-			num-voltages = <42>;
-			ilim-reg = <PCA9420_TOP_CNTL0>;
-			ilim-mask = <PCA9420_TOP_CNTL0_VIN_ILIM_SEL_MASK>;
-			num-current-levels = <7>;
-			vsel-reg = <PCA9420_MODECFG_0_0>;
-			vsel-mask = <PCA9420_MODECFG_0_SW1_OUT_MASK>;
-			enable-reg = <PCA9420_MODECFG_0_2>;
-			enable-mask = <PCA9420_MODECFG_2_SW1_EN_MASK>;
-			enable-val = <PCA9420_MODECFG_2_SW1_EN_VAL>;
-			min-uV = <500000>;
-			max-uV = <1800000>;
+		reg = <0x61>;
+		nxp,enable-modesel-pins;
+
+		buck1: BUCK1 {
 			regulator-boot-on;
 		};
 
-		pca9420_sw2: sw2_buck {
-			voltage-range = <PCA9420_SW2_VOLTAGE_RANGE>;
-			num-voltages = <50>;
-			current-levels = <PCA9420_CURRENT_LIMIT_LEVELS>;
-			ilim-reg = <PCA9420_TOP_CNTL0>;
-			ilim-mask = <PCA9420_TOP_CNTL0_VIN_ILIM_SEL_MASK>;
-			num-current-levels = <7>;
-			vsel-reg = <PCA9420_MODECFG_0_1>;
-			vsel-mask = <PCA9420_MODECFG_1_SW2_OUT_MASK>;
-			enable-reg = <PCA9420_MODECFG_0_2>;
-			enable-mask = <PCA9420_MODECFG_2_SW2_EN_MASK>;
-			enable-val = <PCA9420_MODECFG_2_SW2_EN_VAL>;
-			min-uV = <1500000>;
-			max-uV = <3300000>;
+		buck2: BUCK2 {
 			regulator-boot-on;
 		};
 
-		pca9420_ldo1: ldo1_reg {
-			voltage-range = <PCA9420_LDO1_VOLTAGE_RANGE>;
-			num-voltages = <9>;
-			current-levels = <PCA9420_CURRENT_LIMIT_LEVELS>;
-			ilim-reg = <PCA9420_TOP_CNTL0>;
-			ilim-mask = <PCA9420_TOP_CNTL0_VIN_ILIM_SEL_MASK>;
-			num-current-levels = <7>;
-			vsel-reg = <PCA9420_MODECFG_0_2>;
-			vsel-mask = <PCA9420_MODECFG_2_LDO1_OUT_MASK>;
-			enable-reg = <PCA9420_MODECFG_0_2>;
-			enable-mask = <PCA9420_MODECFG_2_LDO1_EN_MASK>;
-			enable-val = <PCA9420_MODECFG_2_LDO1_EN_VAL>;
-			min-uV = <1700000>;
-			max-uV = <1900000>;
+		ldo1: LDO1 {
 			regulator-boot-on;
 		};
 
-		pca9420_ldo2: ldo2_reg {
-			voltage-range = <PCA9420_LDO2_VOLTAGE_RANGE>;
-			num-voltages = <51>;
-			current-levels = <PCA9420_CURRENT_LIMIT_LEVELS>;
-			ilim-reg = <PCA9420_TOP_CNTL0>;
-			ilim-mask = <PCA9420_TOP_CNTL0_VIN_ILIM_SEL_MASK>;
-			num-current-levels = <7>;
-			vsel-reg = <PCA9420_MODECFG_0_3>;
-			vsel-mask = <PCA9420_MODECFG_3_LDO2_OUT_MASK>;
-			enable-reg = <PCA9420_MODECFG_0_2>;
-			enable-mask = <PCA9420_MODECFG_2_LDO2_EN_MASK>;
-			enable-val = <PCA9420_MODECFG_2_LDO2_EN_VAL>;
-			min-uV = <1500000>;
-			max-uV = <3300000>;
+		ldo2: LDO2 {
 			regulator-boot-on;
 		};
 
@@ -336,13 +265,7 @@ i2s1: &flexcomm3 {
 		status = "okay";
 		jedec-id = [c2 81 3a];
 		erase-block-size = <4096>;
-		/*
-		 * Note- ECC will be disabled with a
-		 * write block size of 1 byte. To enable ECC, ensure
-		 * writes are in multiples of 16 bytes. This reduced
-		 * block size is required for MCUBoot support.
-		 */
-		write-block-size = <1>;
+		write-block-size = <16>;
 
 		partitions {
 			compatible = "fixed-partitions";
@@ -351,23 +274,19 @@ i2s1: &flexcomm3 {
 
 			boot_partition: partition@0 {
 				label = "mcuboot";
-				reg = <0x00000000 DT_SIZE_K(64)>;
+				reg = <0x00000000 DT_SIZE_K(128)>;
 			};
-			slot0_partition: partition@10000 {
+			slot0_partition: partition@20000 {
 				label = "image-0";
-				reg = <0x00010000 DT_SIZE_M(24)>;
+				reg = <0x00020000 DT_SIZE_K(3076)>;
 			};
-			slot1_partition: partition@1810000 {
+			slot1_partition: partition@321000 {
 				label = "image-1";
-				reg = <0x01810000 DT_SIZE_M(24)>;
+				reg = <0x00321000 DT_SIZE_K(3072)>;
 			};
-			scratch_partition: partition@3010000 {
-				label = "image-scratch";
-				reg = <0x03010000 DT_SIZE_K(8128)>;
-			};
-			storage_partition: partition@3f00000 {
+			storage_partition: partition@621000 {
 				label = "storage";
-				reg = <0x03f00000 DT_SIZE_M(1)>;
+				reg = <0x00621000 DT_SIZE_M(57)>;
 			};
 		};
 	};

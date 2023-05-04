@@ -41,8 +41,8 @@ static int cmd_gpio_conf(const struct shell *sh, size_t argc, char **argv)
 	int type = GPIO_OUTPUT;
 	const struct device *dev;
 
-	if (isdigit((unsigned char)argv[args_indx.index][0]) &&
-	    isalpha((unsigned char)argv[args_indx.mode][0])) {
+	if (isdigit((unsigned char)argv[args_indx.index][0]) != 0 &&
+	    isalpha((unsigned char)argv[args_indx.mode][0]) != 0) {
 		index = (uint8_t)atoi(argv[args_indx.index]);
 		if (!strcmp(argv[args_indx.mode], "in")) {
 			type = GPIO_INPUT;
@@ -79,7 +79,7 @@ static int cmd_gpio_get(const struct shell *sh,
 	uint8_t index = 0U;
 	int rc;
 
-	if (isdigit((unsigned char)argv[args_indx.index][0])) {
+	if (isdigit((unsigned char)argv[args_indx.index][0]) != 0) {
 		index = (uint8_t)atoi(argv[args_indx.index]);
 	} else {
 		shell_error(sh, "Wrong parameters for get");
@@ -111,8 +111,8 @@ static int cmd_gpio_set(const struct shell *sh,
 	uint8_t index = 0U;
 	uint8_t value = 0U;
 
-	if (isdigit((unsigned char)argv[args_indx.index][0]) &&
-	    isdigit((unsigned char)argv[args_indx.value][0])) {
+	if (isdigit((unsigned char)argv[args_indx.index][0]) != 0 &&
+	    isdigit((unsigned char)argv[args_indx.value][0]) != 0) {
 		index = (uint8_t)atoi(argv[args_indx.index]);
 		value = (uint8_t)atoi(argv[args_indx.value]);
 	} else {
@@ -144,7 +144,7 @@ static int cmd_gpio_blink(const struct shell *sh,
 	size_t count = 0;
 	char data;
 
-	if (isdigit((unsigned char)argv[args_indx.index][0])) {
+	if (isdigit((unsigned char)argv[args_indx.index][0]) != 0) {
 		index = (uint8_t)atoi(argv[args_indx.index]);
 	} else {
 		shell_error(sh, "Wrong parameters for blink");

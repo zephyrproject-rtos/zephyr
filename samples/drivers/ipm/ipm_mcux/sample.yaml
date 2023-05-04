@@ -1,16 +1,18 @@
 sample:
-    description: Sample app that sends messages between the two cores on
-        the lpcxpresso54114 using a mailbox.
-    name: IPM MCUX Mailbox Sample
+  description: Sample app that sends messages between the two cores on
+    the lpcxpresso54114 using a mailbox.
+  name: IPM MCUX Mailbox Sample
 tests:
-    sample.ipm.ipm_mcux:
-        platform_allow: lpcxpresso54114_m4 lpcxpresso55s69_cpu0
-        tags: ipm
-        harness: console
-        sysbuild: True
-        harness_config:
-          type: multi_line
-          regex:
-            - "Hello World from MASTER! (.*)"
-            - "Received: 1"
-            - "Received: 20"
+  sample.ipm.ipm_mcux:
+    platform_allow: lpcxpresso54114_m4 lpcxpresso55s69_cpu0
+    integration_platforms:
+      - lpcxpresso54114_m4
+    tags: ipm
+    harness: console
+    sysbuild: true
+    harness_config:
+      type: multi_line
+      regex:
+        - "Hello World from MASTER! (.*)"
+        - "Received: 1"
+        - "Received: 20"

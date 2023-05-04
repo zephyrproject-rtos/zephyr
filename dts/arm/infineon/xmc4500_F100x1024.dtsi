@@ -8,16 +8,22 @@
 #include <mem.h>
 #include <infineon/xmc4xxx.dtsi>
 
-&psram1 {
-	reg = <0x10000000 DT_SIZE_K(64)>;
-};
+/ {
+	/* TODO: Add psram1 & dsram2 to MEMORY layout of linker */
+	psram1: memory@10000000 {
+		compatible = "mmio-sram";
+		reg = <0x10000000 DT_SIZE_K(64)>;
+	};
 
-&dsram1 {
-	reg = <0x20000000 DT_SIZE_K(64)>;
-};
+	dsram1: memory@20000000 {
+		compatible = "mmio-sram";
+		reg = <0x20000000 DT_SIZE_K(64)>;
+	};
 
-&dsram2 {
-	reg = <0x30000000 DT_SIZE_K(32)>;
+	dsram2: memory@30000000 {
+		compatible = "mmio-sram";
+		reg = <0x30000000 DT_SIZE_K(32)>;
+	};
 };
 
 &flash0 {
@@ -50,9 +56,17 @@
 	ngpios = <13>;
 };
 
-&pinctrl {
-	reg = <0x48028000 0x600>;
+&gpio14 {
+	ngpios = <16>;
+	gpio-reserved-ranges = <10 2>;
+};
 
+&gpio15 {
+	ngpios = <16>;
+	gpio-reserved-ranges = <0 2>, <10 2>;
+};
+
+&pinctrl {
 	gpio3: gpio@48028300 {
 		compatible = "infineon,xmc4xxx-gpio";
 		gpio-controller;

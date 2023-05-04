@@ -23,27 +23,6 @@
 		zephyr,code-partition = &slot0_partition;
 	};
 
-	power-states {
-		stop0: state0 {
-			compatible = "zephyr,power-state";
-			power-state-name = "suspend-to-idle";
-			substate-id = <1>;
-			min-residency-us = <100>;
-		};
-		stop1: state1 {
-			compatible = "zephyr,power-state";
-			power-state-name = "suspend-to-idle";
-			substate-id = <2>;
-			min-residency-us = <500>;
-		};
-		stop2: state2 {
-			compatible = "zephyr,power-state";
-			power-state-name = "suspend-to-idle";
-			substate-id = <3>;
-			min-residency-us = <900>;
-		};
-	};
-
 	leds {
 		compatible = "gpio-leds";
 		blue_led_1: led_0 {
@@ -82,6 +61,7 @@
 		sw1 = &user_button_2;
 		sw2 = &user_button_3;
 		watchdog0 = &iwdg;
+		die-temp0 = &die_temp;
 	};
 };
 
@@ -99,6 +79,16 @@
 
 &clk_lse {
 	status = "okay";
+};
+
+&clk_hsi48 {
+	status = "okay";
+};
+
+&clk48 {
+	/* Node is disabled by default as default source is HSI48 */
+	/* To select another clock, enable the node */
+	clocks = <&rcc STM32_SRC_HSI48 CLK48_SEL(0)>;
 };
 
 &rcc {
@@ -140,6 +130,10 @@
 	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000400>,
 		 <&rcc STM32_SRC_LSI RTC_SEL(2)>;
 	status = "okay";
+
+	backup_regs {
+		status = "okay";
+	};
 };
 
 &spi1 {

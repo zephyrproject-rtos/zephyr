@@ -105,7 +105,7 @@ static void mcux_qtmr_isr(const struct device *timers[])
 	static const struct device *const timers_##n[4] = {				\
 		DT_FOREACH_CHILD_STATUS_OKAY(DT_DRV_INST(n), INIT_TIMER)		\
 	};										\
-	static int init_irq_##n(const struct device *dev)				\
+	static int init_irq_##n(void)							\
 	{										\
 		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), mcux_qtmr_isr,	\
 				timers_##n, 0);						\

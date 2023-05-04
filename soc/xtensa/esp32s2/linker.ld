@@ -120,7 +120,7 @@ SECTIONS
 
 #include <zephyr/linker/rel-sections.ld>
   _image_drom_start = LOADADDR(_RODATA_SECTION_NAME);
-  _image_drom_size = LOADADDR(_RODATA_SECTION_NAME) + SIZEOF(_RODATA_SECTION_NAME) - _image_drom_start;
+  _image_drom_size = LOADADDR(_RODATA_SECTION_END) + SIZEOF(_RODATA_SECTION_END)  - _image_drom_start;
   _image_drom_vaddr = ADDR(_RODATA_SECTION_NAME);
 
   /* NOTE: .rodata section should be the first section in the linker script and no
@@ -195,6 +195,15 @@ SECTIONS
   #include <zephyr/linker/common-rom/common-rom-debug.ld>
   #include <zephyr/linker/common-rom/common-rom-misc.ld>
   #pragma pop_macro("GROUP_ROM_LINK_IN")
+
+  /* Create an explicit section at the end of all the data that shall be mapped into drom.
+   * This is used to calculate the size of the _image_drom_size variable */
+  SECTION_PROLOGUE(_RODATA_SECTION_END,,)
+  {
+    . = ALIGN(4);
+    _image_rodata_end = ABSOLUTE(.);
+  } GROUP_DATA_LINK_IN(RODATA_REGION, ROMABLE_REGION)
+
 
   /* Send .iram0 code to iram */
   .iram0.vectors : ALIGN(4)
@@ -477,6 +486,22 @@ SECTIONS
     *rtc_wake_stub*.o(COMMON)
     _rtc_bss_end = ABSOLUTE(.);
   } GROUP_LINK_IN(rtc_slow_seg)
+
+  /* This section located in RTC SLOW Memory area.
+     It holds data marked with RTC_SLOW_ATTR attribute.
+     See the file "esp_attr.h" for more information.
+  */
+  .rtc.force_slow :
+  {
+    . = ALIGN(4);
+    _rtc_force_slow_start = ABSOLUTE(.);
+    *(.rtc.force_slow .rtc.force_slow.*)
+    . = ALIGN(4) ;
+    _rtc_force_slow_end = ABSOLUTE(.);
+  } > rtc_slow_seg
+
+  /* Get size of rtc slow data */
+  _rtc_slow_length = (_rtc_force_slow_end - _rtc_data_start);
 
 #ifdef CONFIG_GEN_ISR_TABLES
 #include <zephyr/linker/intlist.ld>

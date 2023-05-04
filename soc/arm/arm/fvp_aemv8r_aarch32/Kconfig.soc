@@ -12,5 +12,6 @@ config SOC_FVP_AEMV8R_AARCH32
 	select CPU_HAS_MPU
 	select GIC_V3
 	select GIC_SINGLE_SECURITY_STATE
+	select PLATFORM_SPECIFIC_INIT
 
 endchoice

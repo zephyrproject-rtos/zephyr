@@ -7,7 +7,8 @@
 #include <zephyr/kernel.h>
 #include <errno.h>
 
-void main(void)
+int main(void)
 {
 
+	return 0;
 }

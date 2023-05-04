@@ -4,8 +4,15 @@ common:
   platform_allow: native_posix
 tests:
   cmake.overlays.var_expansions.CONF_FILE:
-    extra_args: CONF_FILE=${ZEPHYR_MY_MODULE_NAME_MODULE_DIR}/zephyr/my_module-overlay.conf;${ZEPHYR_MY_EXTRA_MODULE_NAME_MODULE_DIR}/zephyr/my_extra_module-overlay.conf;prj.conf
+    extra_conf_files:
+      - ${ZEPHYR_MY_MODULE_NAME_MODULE_DIR}/zephyr/my_module-overlay.conf
+      - ${ZEPHYR_MY_EXTRA_MODULE_NAME_MODULE_DIR}/zephyr/my_extra_module-overlay.conf
+      - prj.conf
   cmake.overlays.var_expansions.OVERLAY_CONFIG:
-    extra_args: OVERLAY_CONFIG=${ZEPHYR_MY_MODULE_NAME_MODULE_DIR}/zephyr/my_module-overlay.conf;${ZEPHYR_MY_EXTRA_MODULE_NAME_MODULE_DIR}/zephyr/my_extra_module-overlay.conf
+    extra_overlay_confs:
+      - ${ZEPHYR_MY_MODULE_NAME_MODULE_DIR}/zephyr/my_module-overlay.conf
+      - ${ZEPHYR_MY_EXTRA_MODULE_NAME_MODULE_DIR}/zephyr/my_extra_module-overlay.conf
   cmake.overlays.var_expansions.DTC_OVERLAY_FILE:
-    extra_args: DTC_OVERLAY_FILE=${ZEPHYR_MY_MODULE_NAME_MODULE_DIR}/zephyr/my_module-board.overlay;${ZEPHYR_MY_EXTRA_MODULE_NAME_MODULE_DIR}/zephyr/my_extra_module-board.overlay
+    extra_dtc_overlay_files:
+      - ${ZEPHYR_MY_MODULE_NAME_MODULE_DIR}/zephyr/my_module-board.overlay
+      - ${ZEPHYR_MY_EXTRA_MODULE_NAME_MODULE_DIR}/zephyr/my_extra_module-board.overlay

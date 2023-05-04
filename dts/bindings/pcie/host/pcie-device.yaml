@@ -4,9 +4,9 @@
 # Common fields for PCIe devices
 
 properties:
-    vendor-id:
-      type: int
-      description: Vendor ID of the device
-    device-id:
-      type: int
-      description: Device ID of the device
+  vendor-id:
+    type: int
+    description: Vendor ID of the device
+  device-id:
+    type: int
+    description: Device ID of the device

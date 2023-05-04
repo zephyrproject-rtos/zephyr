@@ -2,10 +2,10 @@ sample:
   description: Test wpan_serial sample
   name: wpan_serial
 common:
-    depends_on: usb_device
-    harness: net
-    tags: usb ieee802154
-    platform_exclude: pinnacle_100_dvk
+  depends_on: usb_device
+  harness: net
+  tags: usb ieee802154
+  platform_exclude: pinnacle_100_dvk
 tests:
   sample.net.wpan.serial:
     filter: dt_chosen_enabled("zephyr,ieee802154")

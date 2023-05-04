@@ -117,17 +117,12 @@ handle_irq:
 
 static inline int _xtensa_handle_one_int5(unsigned int mask)
 {
-	int irq;
-
-	if (mask & BIT(8)) {
-		mask = BIT(8);
-		irq = 8;
-		goto handle_irq;
-	}
+	/* It is a Non-maskable interrupt handler.
+	 * The non-maskable interrupt have no corresponding bit in INTERRUPT and INTENABLE registers
+	 * so mask parameter is always 0.
+	 */
+	_sw_isr_table[8].isr(_sw_isr_table[8].arg);
 	return 0;
-handle_irq:
-	_sw_isr_table[irq].isr(_sw_isr_table[irq].arg);
-	return mask;
 }
 
 static inline int _xtensa_handle_one_int0(unsigned int mask)

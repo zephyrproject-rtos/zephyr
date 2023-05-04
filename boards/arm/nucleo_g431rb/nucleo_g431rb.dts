@@ -8,6 +8,7 @@
 #include <st/g4/stm32g431Xb.dtsi>
 #include <st/g4/stm32g431r(6-8-b)tx-pinctrl.dtsi>
 #include "arduino_r3_connector.dtsi"
+#include "st_morpho_connector.dtsi"
 
 / {
 	model = "STMicroelectronics STM32G431RB-NUCLEO board";
@@ -53,6 +54,10 @@
 };
 
 &clk_lsi {
+	status = "okay";
+};
+
+&clk_lse {
 	status = "okay";
 };
 
@@ -129,6 +134,12 @@
 		pinctrl-0 = <&tim2_ch1_pa5>;
 		pinctrl-names = "default";
 	};
+};
+
+&lptim1 {
+	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x80000000>,
+		 <&rcc STM32_SRC_LSE LPTIM1_SEL(3)>;
+	status = "okay";
 };
 
 &rtc {

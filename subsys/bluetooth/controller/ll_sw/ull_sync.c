@@ -22,6 +22,8 @@
 
 #include "ticker/ticker.h"
 
+#include "pdu_df.h"
+#include "lll/pdu_vendor.h"
 #include "pdu.h"
 
 #include "lll.h"
@@ -615,6 +617,9 @@ void ull_sync_setup_addr_check(struct ll_scan_set *scan, uint8_t addr_type,
 			 */
 			scan->periodic.adv_addr_type = addr_type;
 
+			/* Mark it as identity address from RPA (0x02, 0x03) */
+			scan->periodic.adv_addr_type += 2U;
+
 			/* Address matched */
 			scan->periodic.state = LL_SYNC_STATE_ADDR_MATCH;
 		}
@@ -631,6 +636,9 @@ void ull_sync_setup_addr_check(struct ll_scan_set *scan, uint8_t addr_type,
 		ll_rl_id_addr_get(rl_idx, &addr_type, addr);
 		if ((addr_type == scan->periodic.adv_addr_type) &&
 		    !memcmp(addr, scan->periodic.adv_addr, BDADDR_SIZE)) {
+			/* Mark it as identity address from RPA (0x02, 0x03) */
+			scan->periodic.adv_addr_type += 2U;
+
 			/* Identity address matched */
 			scan->periodic.state = LL_SYNC_STATE_ADDR_MATCH;
 		}
@@ -696,7 +704,7 @@ void ull_sync_setup(struct ll_scan_set *scan, struct ll_scan_aux_set *aux,
 	/* Remember the peer address.
 	 * NOTE: Peer identity address is copied here when privacy is enable.
 	 */
-	sync->peer_id_addr_type = scan->periodic.adv_addr_type;
+	sync->peer_id_addr_type = scan->periodic.adv_addr_type & 0x01;
 	(void)memcpy(sync->peer_id_addr, scan->periodic.adv_addr,
 		     sizeof(sync->peer_id_addr));
 #endif /* CONFIG_BT_CTLR_CHECK_SAME_PEER_SYNC ||
@@ -750,7 +758,7 @@ void ull_sync_setup(struct ll_scan_set *scan, struct ll_scan_aux_set *aux,
 #endif /* CONFIG_BT_CTLR_SYNC_ISO */
 
 	lll->window_widening_periodic_us =
-		ceiling_fraction(((lll_clock_ppm_local_get() +
+		DIV_ROUND_UP(((lll_clock_ppm_local_get() +
 				   lll_clock_ppm_get(sca)) *
 				  interval_us), USEC_PER_SEC);
 	lll->window_widening_max_us = (interval_us >> 1) - EVENT_IFS_US;
@@ -951,8 +959,7 @@ void ull_sync_established_report(memq_link_t *link, struct node_rx_hdr *rx)
 		 * setup.
 		 */
 
-		ll_rx_put(rx_establ->hdr.link, rx_establ);
-		ll_rx_sched();
+		ll_rx_put_sched(rx_establ->hdr.link, rx_establ);
 	}
 
 #if defined(CONFIG_BT_CTLR_SYNC_PERIODIC_CTE_TYPE_FILTERING)
@@ -976,8 +983,7 @@ void ull_sync_established_report(memq_link_t *link, struct node_rx_hdr *rx)
 		ull_scan_aux_setup(link, rx);
 	} else {
 		rx->type = NODE_RX_TYPE_RELEASE;
-		ll_rx_put(link, rx);
-		ll_rx_sched();
+		ll_rx_put_sched(link, rx);
 	}
 }
 
@@ -1367,8 +1373,7 @@ static void sync_expire(void *param)
 	/* NOTE: footer param has already been populated during sync setup */
 
 	/* Enqueue the sync failed to established towards ULL context */
-	ll_rx_put(rx->hdr.link, rx);
-	ll_rx_sched();
+	ll_rx_put_sched(rx->hdr.link, rx);
 }
 
 static void ticker_stop_sync_lost_op_cb(uint32_t status, void *param)
@@ -1413,8 +1418,7 @@ static void sync_lost(void *param)
 	rx->hdr.rx_ftr.param = sync;
 
 	/* Enqueue the sync lost towards ULL context */
-	ll_rx_put(rx->hdr.link, rx);
-	ll_rx_sched();
+	ll_rx_put_sched(rx->hdr.link, rx);
 }
 
 #if defined(CONFIG_BT_CTLR_CHECK_SAME_PEER_SYNC)

@@ -127,7 +127,15 @@ static int send_igmp_report(struct net_if *iface,
 	}
 
 	for (i = 0; i < NET_IF_MAX_IPV4_MADDR; i++) {
-		if (!ipv4->mcast[i].is_used || !ipv4->mcast[i].is_joined) {
+		/* We don't need to send an IGMP membership report to the IGMP
+		 * all systems multicast address of 224.0.0.1 so skip over it.
+		 * Since the IGMP all systems multicast address is marked as
+		 * used and joined during init time, we have to check this
+		 * address separately to skip over it.
+		 */
+		if (!ipv4->mcast[i].is_used || !ipv4->mcast[i].is_joined ||
+			net_ipv4_addr_cmp_raw((uint8_t *)&ipv4->mcast[i].address.in_addr,
+					(uint8_t *)&all_systems)) {
 			continue;
 		}
 
@@ -139,7 +147,15 @@ static int send_igmp_report(struct net_if *iface,
 	}
 
 	for (i = 0; i < NET_IF_MAX_IPV4_MADDR; i++) {
-		if (!ipv4->mcast[i].is_used || !ipv4->mcast[i].is_joined) {
+		/* We don't need to send an IGMP membership report to the IGMP
+		 * all systems multicast address of 224.0.0.1 so skip over it.
+		 * Since the IGMP all systems multicast address is marked as
+		 * used and joined during init time, we have to check this
+		 * address separately to skip over it.
+		 */
+		if (!ipv4->mcast[i].is_used || !ipv4->mcast[i].is_joined ||
+			net_ipv4_addr_cmp_raw((uint8_t *)&ipv4->mcast[i].address.in_addr,
+					(uint8_t *)&all_systems)) {
 			continue;
 		}
 
@@ -325,4 +341,40 @@ int net_ipv4_igmp_leave(struct net_if *iface, const struct in_addr *addr)
 					&maddr->address.in_addr,
 					sizeof(struct in_addr));
 	return ret;
+}
+
+void net_ipv4_igmp_init(struct net_if *iface)
+{
+	struct net_if_mcast_addr *maddr;
+
+	/* Ensure multicast addresses are available */
+	if (CONFIG_NET_IF_MCAST_IPV4_ADDR_COUNT < 1) {
+		return;
+	}
+
+	/* This code adds the IGMP all systems 224.0.0.1 multicast address
+	 * to the list of multicast addresses of the given interface.
+	 * The address is marked as joined. However, an IGMP membership
+	 * report is not generated for this address. Populating this
+	 * address in the list of multicast addresses of the interface
+	 * and marking it as joined is helpful for multicast hash filter
+	 * implementations that need a list of multicast addresses it needs
+	 * to add to the multicast hash filter after a multicast address
+	 * has been removed from the membership list.
+	 */
+	maddr = net_if_ipv4_maddr_lookup(&all_systems, &iface);
+	if (maddr && net_if_ipv4_maddr_is_joined(maddr)) {
+		return;
+	}
+
+	if (!maddr) {
+		maddr = net_if_ipv4_maddr_add(iface, &all_systems);
+		if (!maddr) {
+			return;
+		}
+	}
+
+	net_if_ipv4_maddr_join(maddr);
+
+	net_if_mcast_monitor(iface, &maddr->address, true);
 }

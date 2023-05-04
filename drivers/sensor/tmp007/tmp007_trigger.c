@@ -93,12 +93,12 @@ static void tmp007_thread_cb(const struct device *dev)
 
 	if (status & TMP007_DATA_READY_INT_BIT &&
 	    drv_data->drdy_handler != NULL) {
-		drv_data->drdy_handler(dev, &drv_data->drdy_trigger);
+		drv_data->drdy_handler(dev, drv_data->drdy_trigger);
 	}
 
 	if (status & TMP007_TOBJ_TH_INT_BITS &&
 	    drv_data->th_handler != NULL) {
-		drv_data->th_handler(dev, &drv_data->th_trigger);
+		drv_data->th_handler(dev, drv_data->th_trigger);
 	}
 
 	setup_int(dev, true);
@@ -139,10 +139,10 @@ int tmp007_trigger_set(const struct device *dev,
 
 	if (trig->type == SENSOR_TRIG_DATA_READY) {
 		drv_data->drdy_handler = handler;
-		drv_data->drdy_trigger = *trig;
+		drv_data->drdy_trigger = trig;
 	} else if (trig->type == SENSOR_TRIG_THRESHOLD) {
 		drv_data->th_handler = handler;
-		drv_data->th_trigger = *trig;
+		drv_data->th_trigger = trig;
 	}
 
 	setup_int(dev, true);

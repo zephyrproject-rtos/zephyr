@@ -33,6 +33,9 @@ extern "C" {
  * @{
  */
 
+/** HID Specification release v1.11 */
+#define USB_HID_VERSION			0x0111
+
 /** USB HID Class HID descriptor type */
 #define USB_DESC_HID			0x21
 /** USB HID Class Report descriptor type */

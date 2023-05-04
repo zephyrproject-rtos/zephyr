@@ -4,12 +4,8 @@ common:
 tests:
   kernel.memory_protection:
     filter: CONFIG_ARCH_HAS_USERSPACE
-    # FIXME: This test fails on qemu_arc_{em|hs} consistently, due to bug in quem_arc,
-    # details: https://github.com/foss-for-synopsys-dwc-arc-processors/qemu/issues/14.
-    # To get clean results we need to disable this test until the bug is fixed and fix
-    # gets propagated to new Zephyr-SDK.
-    platform_exclude: twr_ke18f qemu_arc_hs qemu_arc_em
-    extra_args: CONFIG_TEST_HW_STACK_PROTECTION=n
+    platform_exclude: twr_ke18f
+    extra_args: CONFIG_TEST_HW_STACK_PROTECTION=n CONFIG_MINIMAL_LIBC=y
   kernel.memory_protection.gap_filling.arc:
     filter: CONFIG_ARCH_HAS_USERSPACE and CONFIG_MPU_REQUIRES_NON_OVERLAPPING_REGIONS
     arch_allow: arc
@@ -18,4 +14,6 @@ tests:
     filter: CONFIG_ARCH_HAS_USERSPACE and CONFIG_MPU_REQUIRES_NON_OVERLAPPING_REGIONS
     arch_allow: arm
     platform_allow: efr32_radio_brd4180a mps2_an521 nrf9160dk_nrf9160
+    integration_platforms:
+      - mps2_an521
     extra_args: CONFIG_MPU_GAP_FILLING=y

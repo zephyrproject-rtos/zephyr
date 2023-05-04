@@ -9,18 +9,4 @@ description: |
 
 compatible: "microchip,mcp230xx"
 
-include: [gpio-controller.yaml, i2c-device.yaml]
-
-properties:
-    ngpios:
-      type: int
-      enum:
-        - 8
-        - 16
-      required: true
-      description: |
-        Number of gpios supported by the chip.
-
-gpio-cells:
-  - pin
-  - flags
+include: ["microchip,mcp23xxx.yaml", i2c-device.yaml]

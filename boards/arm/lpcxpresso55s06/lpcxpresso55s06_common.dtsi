@@ -17,6 +17,7 @@
 		zephyr,entropy = &rng;
 		zephyr,flash-controller = &iap;
 		zephyr,code-partition = &slot0_partition;
+		zephyr,canbus = &can0;
 	};
 
 	aliases {
@@ -139,4 +140,16 @@
 	current-speed = <115200>;
 	pinctrl-0 = <&pinmux_flexcomm0_usart>;
 	pinctrl-names = "default";
+};
+
+&can0 {
+	status = "okay";
+	bus-speed = <125000>;
+	bus-speed-data = <1000000>;
+	pinctrl-0 = <&pinmux_can0>;
+	pinctrl-names = "default";
+
+	can-transceiver {
+		max-bitrate = <5000000>;
+	};
 };

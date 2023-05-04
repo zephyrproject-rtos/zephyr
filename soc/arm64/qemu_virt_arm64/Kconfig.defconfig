@@ -9,7 +9,9 @@ config SOC
 config NUM_IRQS
 	# must be >= the highest interrupt number used
 	# - include the UART interrupts
-	default 220
+	# - LPIs (starting at 8192) if GIC_V3_ITS is used
+	default 16384 if GIC_V3_ITS
+	default 220 if !GIC_V3_ITS
 
 # Dummy value, read at runtime
 config SYS_CLOCK_HW_CYCLES_PER_SEC

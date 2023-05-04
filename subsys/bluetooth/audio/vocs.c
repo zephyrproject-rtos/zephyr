@@ -19,12 +19,15 @@
 
 #include "audio_internal.h"
 #include "vocs_internal.h"
+#include "zephyr/bluetooth/audio/audio.h"
 
 #define LOG_LEVEL CONFIG_BT_VOCS_LOG_LEVEL
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(bt_vocs);
 
 #define VALID_VOCS_OPCODE(opcode)	((opcode) == BT_VOCS_OPCODE_SET_OFFSET)
+
+#define BT_AUDIO_LOCATION_RFU (~BT_AUDIO_LOCATION_ANY)
 
 #if defined(CONFIG_BT_VOCS)
 static void offset_state_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
@@ -53,7 +56,7 @@ static ssize_t write_location(struct bt_conn *conn, const struct bt_gatt_attr *a
 			      const void *buf, uint16_t len, uint16_t offset, uint8_t flags)
 {
 	struct bt_vocs *inst = BT_AUDIO_CHRC_USER_DATA(attr);
-	uint32_t old_location = inst->srv.location;
+	enum bt_audio_location new_location;
 
 	if (offset) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
@@ -63,10 +66,16 @@ static ssize_t write_location(struct bt_conn *conn, const struct bt_gatt_attr *a
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
 	}
 
-	memcpy(&inst->srv.location, buf, len);
-	LOG_DBG("%02x", inst->srv.location);
+	new_location = sys_get_le32(buf);
+	if (new_location == BT_AUDIO_LOCATION_PROHIBITED ||
+	    (new_location & BT_AUDIO_LOCATION_RFU) > 0) {
+		LOG_DBG("Invalid location %u", new_location);
 
-	if (old_location != inst->srv.location) {
+		return BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
+	}
+
+	if (new_location != inst->srv.location) {
+		inst->srv.location = new_location;
 		(void)bt_gatt_notify_uuid(NULL, BT_UUID_VOCS_LOCATION,
 					  inst->srv.service_p->attrs,
 					  &inst->srv.location,

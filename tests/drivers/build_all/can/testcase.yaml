@@ -1,0 +1,8 @@
+common:
+  build_only: true
+  tags: drivers can
+tests:
+  drivers.build_all.can.mcp2515:
+    depends_on: arduino_spi arduino_gpio
+    extra_args: SHIELD=dfrobot_can_bus_v2_0
+    platform_allow: frdm_k64f

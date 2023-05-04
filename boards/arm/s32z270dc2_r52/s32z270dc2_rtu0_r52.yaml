@@ -11,3 +11,6 @@ toolchain:
 supported:
   - uart
   - gpio
+  - watchdog
+  - netif:eth
+  - can

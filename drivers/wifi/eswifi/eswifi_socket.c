@@ -95,6 +95,16 @@ int __eswifi_bind(struct eswifi_dev *eswifi, struct eswifi_off_socket *socket,
 		return -EIO;
 	}
 
+	if (socket->type == ESWIFI_TRANSPORT_UDP) {
+		/* No listen or accept, so start UDP server now */
+		snprintk(eswifi->buf, sizeof(eswifi->buf), "P5=1\r");
+		err = eswifi_at_cmd(eswifi, eswifi->buf);
+		if (err < 0) {
+			LOG_ERR("Unable to start UDP server");
+			return -EIO;
+		}
+	}
+
 	return 0;
 }
 
@@ -194,6 +204,22 @@ int __eswifi_off_start_client(struct eswifi_dev *eswifi,
 		return -EIO;
 	}
 
+	/* Stop any running server */
+	snprintk(eswifi->buf, sizeof(eswifi->buf), "P5=0\r");
+	err = eswifi_at_cmd(eswifi, eswifi->buf);
+	if (err < 0) {
+		LOG_ERR("Unable to stop running client");
+		return -EIO;
+	}
+
+	/* Clear local port */
+	snprintk(eswifi->buf, sizeof(eswifi->buf), "P2=0\r");
+	err = eswifi_at_cmd(eswifi, eswifi->buf);
+	if (err < 0) {
+		LOG_ERR("Unable to stop running client");
+		return -EIO;
+	}
+
 	/* Set Remote IP */
 	snprintk(eswifi->buf, sizeof(eswifi->buf), "P3=%u.%u.%u.%u\r",
 		 sin_addr->s4_addr[0], sin_addr->s4_addr[1],
@@ -221,6 +247,10 @@ int __eswifi_off_start_client(struct eswifi_dev *eswifi,
 		LOG_ERR("Unable to start TCP/UDP client");
 		return -EIO;
 	}
+
+#if !defined(CONFIG_NET_SOCKETS_OFFLOAD)
+	net_context_set_state(socket->context, NET_CONTEXT_CONNECTED);
+#endif
 
 	return 0;
 }

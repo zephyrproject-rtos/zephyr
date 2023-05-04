@@ -7,12 +7,12 @@ config EEPROM_INIT_PRIORITY
 	default 60
 	depends on EEPROM
 
+config BUILD_OUTPUT_BIN
+	default n
+
 endif # BOARD_QEMU_X86 || BOARD_QEMU_X86_64 || BOARD_QEMU_X86_LAKEMONT || BOARD_QEMU_X86_TINY
 
 if BOARD_QEMU_X86
-
-config BUILD_OUTPUT_BIN
-	default n
 
 config BOARD
 	default "qemu_x86"
@@ -53,9 +53,6 @@ endif # BOARD_QEMU_X86_64
 
 if BOARD_QEMU_X86_LAKEMONT
 
-config BUILD_OUTPUT_BIN
-	default n
-
 config BOARD
 	default "qemu_x86_lakemont"
 
@@ -82,9 +79,6 @@ config UART_NS16550_ACCESS_IOPORT
 endif # BOARD_QEMU_X86_LAKEMONT
 
 if BOARD_QEMU_X86_TINY
-
-config BUILD_OUTPUT_BIN
-	default n
 
 config BOARD
 	default "qemu_x86_tiny"
@@ -118,6 +112,6 @@ config X86_EXTRA_PAGE_TABLE_PAGES
 
 config DEMAND_PAGING_PAGE_FRAMES_RESERVE
 	# Need to accommodate the heap for newlib in libc-hook.c
-	default 6 if NEWLIB_LIBC || PICOLIBC
+	default 6 if NEWLIB_LIBC || (PICOLIBC && PICOLIBC_HEAP_SIZE > 0)
 
 endif # BOARD_QEMU_X86_TINY

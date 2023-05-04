@@ -43,7 +43,7 @@ static int led_on_off_cb(uint16_t obj_inst_id, uint16_t res_id, uint16_t res_ins
 
 		led_state = led_val;
 		/* TODO: Move to be set by an internal post write function */
-		lwm2m_engine_set_s32("3311/0/5852", 0);
+		lwm2m_set_s32(&LWM2M_OBJ(3311, 0, 5852), 0);
 	}
 
 	return ret;
@@ -62,10 +62,10 @@ int init_led_device(void)
 		return ret;
 	}
 
-	lwm2m_engine_create_obj_inst("3311/0");
-	lwm2m_engine_register_post_write_callback("3311/0/5850", led_on_off_cb);
-	lwm2m_engine_set_res_buf("3311/0/5750", LIGHT_NAME, sizeof(LIGHT_NAME), sizeof(LIGHT_NAME),
-				 LWM2M_RES_DATA_FLAG_RO);
+	lwm2m_create_object_inst(&LWM2M_OBJ(3311, 0));
+	lwm2m_register_post_write_callback(&LWM2M_OBJ(3311, 0, 5850), led_on_off_cb);
+	lwm2m_set_res_buf(&LWM2M_OBJ(3311, 0, 5750), LIGHT_NAME, sizeof(LIGHT_NAME),
+			  sizeof(LIGHT_NAME), LWM2M_RES_DATA_FLAG_RO);
 
 	return 0;
 }

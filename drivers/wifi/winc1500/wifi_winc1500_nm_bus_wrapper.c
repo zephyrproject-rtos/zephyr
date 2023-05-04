@@ -109,7 +109,7 @@ int8_t nm_bus_init(void *pvinit)
 	/* Not implemented */
 #elif defined CONF_WINC_USE_SPI
 	/* setup SPI device */
-	if (!spi_is_ready(&winc1500_config.spi)) {
+	if (!spi_is_ready_dt(&winc1500_config.spi)) {
 		LOG_ERR("spi device binding");
 		return -ENODEV;
 	}

@@ -5,8 +5,8 @@ description: |
 
   Espressif's LEDC controller Node
 
-  The LEDC controller is primarily designed to control the intensity of LEDs, although it can be used to generate
-  PWM signals for other purposes as well.
+  The LEDC controller is primarily designed to control the intensity of LEDs, although it can be
+  used to generate PWM signals for other purposes as well.
 
   The mapping between the channel and GPIO is done through pinctrl
 
@@ -26,13 +26,15 @@ description: |
             };
     };
 
-  If another GPIO mapping is desired, check if <board>-pinctrl.dtsi already have it defined, otherwise, define the
-  required mapping at your own application folder into a custom <board>.overlay file.
-  The 'pinmux' property uses a macro defined in https://github.com/zephyrproject-rtos/hal_espressif/tree/zephyr/include/dt-bindings/pinctrl
+  If another GPIO mapping is desired, check if <board>-pinctrl.dtsi already have it defined,
+  otherwise, define the required mapping at your own application folder into a custom
+  <board>.overlay file.
+  The 'pinmux' property uses a macro defined in
+  https://github.com/zephyrproject-rtos/hal_espressif/tree/zephyr/include/dt-bindings/pinctrl
   Before including a new node, check if the desired mapping is available according to the SoC.
 
-  As an example, the 'ledc0_custom' state below illustrates an alternate mapping using another set of channels and
-  pins in a custom overlay file.
+  As an example, the 'ledc0_custom' state below illustrates an alternate mapping using another set
+  of channels and pins in a custom overlay file.
 
     &pinctrl {
 
@@ -69,7 +71,8 @@ description: |
       };
     };
 
-    Note: The channel's 'reg' property defines the ID of the channel. It must match the channel used in the 'pinmux'.
+    Note: The channel's 'reg' property defines the ID of the channel. It must match the channel used
+      in the 'pinmux'.
 
 
 compatible: "espressif,esp32-ledc"
@@ -106,11 +109,13 @@ child-binding:
       - 15
 
       description: |
-        The esp32 has 8 low speed channel and 8 high speed channels.
-        The low speed channel are mapped from channel 0 to 7, and the high speed are mapped from channel 8 to 15.
+        The ESP32 has 8 low speed channel and 8 high speed channels.
+        The low speed channel are mapped from channel 0 to 7, and the high speed are mapped from
+        channel 8 to 15.
 
-        High speed channels are only available in the esp32 SoC. Esp32s2 has only 8 available channels, and esp32c3
-        has 6. In these SoCs there is no differentiation between low or high speed.
+        High speed channels are only available in the ESP32 SoC. ESP32S2 and ESP32S3 have 8
+        available channels, and ESP32C3 has 6. In these SoCs there is no differentiation between
+        low or high speed.
 
     timer:
       type: int
@@ -122,9 +127,10 @@ child-binding:
       - 3
       description: |
         Timer selection.
-        For maximum flexibility, the high-speed as well as the low-speed channels can be driven from one of four high-speed/low-speed timers.
+        For maximum flexibility, the high-speed as well as the low-speed channels can be driven from
+        one of four high-speed/low-speed timers.
 
 pwm-cells:
-  - channel
-  - period
-  - flags
+- channel
+- period
+- flags

@@ -7,12 +7,11 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/init.h>
 
-static int board_swan_init(const struct device *dev)
+static int board_swan_init(void)
 {
 	const struct gpio_dt_spec dischrg =
 		GPIO_DT_SPEC_GET(DT_PATH(zephyr_user), dischrg_gpios);
 
-	ARG_UNUSED(dev);
 
 	if (!device_is_ready(dischrg.port)) {
 		return -ENODEV;

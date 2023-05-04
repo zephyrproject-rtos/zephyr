@@ -7,7 +7,6 @@
 #include <zephyr/types.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/ztest.h>
-#include "kconfig.h"
 
 #define ULL_LLCP_UNITTEST
 
@@ -22,12 +21,14 @@
 #include "util/memq.h"
 #include "util/dbuf.h"
 
+#include "pdu_df.h"
+#include "lll/pdu_vendor.h"
 #include "pdu.h"
 #include "ll.h"
 #include "ll_settings.h"
 
 #include "lll.h"
-#include "lll_df_types.h"
+#include "lll/lll_df_types.h"
 #include "lll_conn.h"
 #include "lll_conn_iso.h"
 
@@ -48,9 +49,9 @@
 #include "helper_util.h"
 #include "helper_features.h"
 
-struct ll_conn *conn_from_pool;
+static struct ll_conn *conn_from_pool;
 
-static void setup(void)
+static void hci_setup(void *data)
 {
 	ull_conn_init();
 
@@ -80,7 +81,7 @@ static void setup(void)
  *    |<---------------------------|                   |
  *    |                            |                   |
  */
-void test_hci_feature_exchange(void)
+ZTEST(hci_fex, test_hci_feature_exchange)
 {
 	uint64_t err;
 	uint64_t set_feature = DEFAULT_FEATURE;
@@ -124,7 +125,7 @@ void test_hci_feature_exchange(void)
 	ll_conn_release(conn_from_pool);
 }
 
-void test_hci_feature_exchange_wrong_handle(void)
+ZTEST(hci_fex, test_hci_feature_exchange_wrong_handle)
 {
 	uint16_t conn_handle;
 	uint64_t err;
@@ -148,7 +149,7 @@ void test_hci_feature_exchange_wrong_handle(void)
 	zassert_equal(err, BT_HCI_ERR_CMD_DISALLOWED, "Wrong reply for no-resource condition\n");
 }
 
-void test_hci_version_ind(void)
+ZTEST(hci_version, test_hci_version_ind)
 {
 	uint64_t err;
 	uint16_t conn_handle;
@@ -190,7 +191,7 @@ void test_hci_version_ind(void)
 	ll_conn_release(conn_from_pool);
 }
 
-void test_hci_version_ind_wrong_handle(void)
+ZTEST(hci_version, test_hci_version_ind_wrong_handle)
 {
 	uint16_t conn_handle;
 	uint64_t err;
@@ -213,7 +214,7 @@ void test_hci_version_ind_wrong_handle(void)
 	zassert_equal(err, BT_HCI_ERR_CMD_DISALLOWED, "Wrong reply for no-resource condition\n");
 }
 
-void test_hci_apto(void)
+ZTEST(hci_apto, test_hci_apto)
 {
 	uint16_t conn_handle;
 	uint64_t err;
@@ -244,7 +245,7 @@ void test_hci_apto(void)
 	zassert_equal(err, BT_HCI_ERR_UNKNOWN_CONN_ID);
 }
 
-void test_hci_phy(void)
+ZTEST(hci_phy, test_hci_phy)
 {
 	uint16_t conn_handle;
 	uint64_t err;
@@ -291,7 +292,7 @@ void test_hci_phy(void)
 	zassert_equal(phy_rx, 0x03);
 }
 
-void test_hci_dle(void)
+ZTEST(hci_dle, test_hci_dle)
 {
 	uint16_t conn_handle;
 	uint64_t err;
@@ -338,7 +339,7 @@ void test_hci_dle(void)
 	zassert_equal(max_tx_time, 0x3FF);
 }
 
-void test_hci_terminate(void)
+ZTEST(hci_terminate, test_hci_terminate)
 {
 	uint16_t conn_handle;
 	uint64_t err;
@@ -362,7 +363,7 @@ void test_hci_terminate(void)
 
 }
 
-void test_hci_conn_update(void)
+ZTEST(hci_conn_update, test_hci_conn_update)
 {
 	uint16_t conn_handle;
 	uint8_t err;
@@ -426,7 +427,7 @@ void test_hci_conn_update(void)
 /* 'Define' out Central API tests because ull_central.c is mock'ed, so API is not supported */
 #define ULL_CENTRAL_MOCKED
 
-void test_hci_chmap(void)
+ZTEST(hci_channelmap, test_hci_chmap)
 {
 #ifndef ULL_CENTRAL_MOCKED
 	uint16_t conn_handle;
@@ -467,7 +468,7 @@ void test_hci_chmap(void)
 #endif /* !defined(ULL_CENTRAL_MOCKED) */
 }
 
-void test_hci_rssi(void)
+ZTEST(hci_rssi, test_hci_rssi)
 {
 	uint16_t conn_handle;
 	uint64_t err;
@@ -490,7 +491,7 @@ void test_hci_rssi(void)
 	zassert_equal(rssi, 0xcd, "RSSI %d", err);
 }
 
-void test_hci_enc(void)
+ZTEST(hci_encryption, test_hci_enc)
 {
 #ifndef ULL_CENTRAL_MOCKED
 	uint16_t conn_handle;
@@ -522,26 +523,13 @@ void test_hci_enc(void)
 #endif /* !defined(ULL_CENTRAL_MOCKED) */
 }
 
-void test_main(void)
-{
-	ztest_test_suite(
-		hci_interface,
-		ztest_unit_test_setup_teardown(test_hci_feature_exchange, setup, unit_test_noop),
-		ztest_unit_test_setup_teardown(test_hci_feature_exchange_wrong_handle, setup,
-					       unit_test_noop),
-		ztest_unit_test_setup_teardown(test_hci_version_ind, setup, unit_test_noop),
-		ztest_unit_test_setup_teardown(test_hci_version_ind_wrong_handle, setup,
-					       unit_test_noop),
-		ztest_unit_test_setup_teardown(test_hci_apto, setup, unit_test_noop),
-		ztest_unit_test_setup_teardown(test_hci_phy, setup, unit_test_noop),
-		ztest_unit_test_setup_teardown(test_hci_dle, setup, unit_test_noop),
-		ztest_unit_test_setup_teardown(test_hci_terminate, setup, unit_test_noop),
-		ztest_unit_test_setup_teardown(test_hci_conn_update, setup, unit_test_noop),
-		ztest_unit_test_setup_teardown(test_hci_chmap, setup, unit_test_noop),
-		ztest_unit_test_setup_teardown(test_hci_enc, setup, unit_test_noop),
-		ztest_unit_test_setup_teardown(test_hci_rssi, setup, unit_test_noop)
-
-	);
-
-	ztest_run_test_suite(hci_interface);
-}
+ZTEST_SUITE(hci_fex, NULL, NULL, hci_setup, NULL, NULL);
+ZTEST_SUITE(hci_version, NULL, NULL, hci_setup, NULL, NULL);
+ZTEST_SUITE(hci_apto, NULL, NULL, hci_setup, NULL, NULL);
+ZTEST_SUITE(hci_phy, NULL, NULL, hci_setup, NULL, NULL);
+ZTEST_SUITE(hci_dle, NULL, NULL, hci_setup, NULL, NULL);
+ZTEST_SUITE(hci_terminate, NULL, NULL, hci_setup, NULL, NULL);
+ZTEST_SUITE(hci_conn_update, NULL, NULL, hci_setup, NULL, NULL);
+ZTEST_SUITE(hci_channelmap, NULL, NULL, hci_setup, NULL, NULL);
+ZTEST_SUITE(hci_rssi, NULL, NULL, hci_setup, NULL, NULL);
+ZTEST_SUITE(hci_encryption, NULL, NULL, hci_setup, NULL, NULL);

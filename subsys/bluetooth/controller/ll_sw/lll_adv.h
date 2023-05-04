@@ -7,6 +7,7 @@
 struct lll_adv_iso_stream {
 	/* Associated BIG Handle */
 	uint8_t big_handle;
+	struct ll_iso_datapath *dp;
 
 	/* Transmission queue */
 	MEMQ_DECLARE(tx);
@@ -27,12 +28,14 @@ struct lll_adv_iso {
 	uint16_t latency_event;
 	uint16_t data_chan_prn_s;
 	uint16_t data_chan_remap_idx;
+	uint8_t  next_chan_use;
 
 	uint64_t payload_count:39;
 	uint64_t enc:1;
 	uint64_t framing:1;
 	uint64_t handle:8;
 	uint64_t cssn:3;
+	uint32_t iso_interval:12;
 
 	uint8_t data_chan_map[PDU_CHANNEL_MAP_SIZE];
 	uint8_t data_chan_count:6;
@@ -75,6 +78,14 @@ struct lll_adv_iso {
 	uint8_t  ctrl_expire;
 	uint16_t ctrl_instant;
 
+	/* Encryption */
+	uint8_t giv[8];
+	struct ccm ccm_tx;
+
+	/* contains the offset in ticks from the adv_sync pointing to this ISO */
+	uint32_t ticks_sync_pdu_offset;
+	uint16_t iso_lazy;
+
 	uint16_t stream_handle[BT_CTLR_ADV_ISO_STREAM_MAX];
 };
 
@@ -103,6 +114,10 @@ struct lll_adv_sync {
 #if defined(CONFIG_BT_CTLR_ADV_PDU_LINK)
 	struct pdu_adv *last_pdu;
 #endif /* CONFIG_BT_CTLR_ADV_PDU_LINK */
+
+	/* contains the offset in us from adv_aux pointing to this sync */
+	uint32_t us_adv_sync_pdu_offset;
+	uint16_t sync_lazy;
 
 #if defined(CONFIG_BT_CTLR_ADV_ISO)
 	struct lll_adv_iso *iso;

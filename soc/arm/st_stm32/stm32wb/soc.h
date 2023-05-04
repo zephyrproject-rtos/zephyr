@@ -21,9 +21,6 @@
 
 #include <stm32wbxx.h>
 
-/* Add generated devicetree information and STM32 helper macros */
-#include <st_stm32_dt.h>
-
 #endif /* !_ASMLANGUAGE */
 
 #endif /* _STM32WBX_SOC_H_ */

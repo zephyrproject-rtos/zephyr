@@ -6,7 +6,7 @@
  */
 
 #include "zephyr/types.h"
-#include "ztest.h"
+#include "zephyr/ztest.h"
 #include <stdlib.h>
 
 #include <zephyr/bluetooth/hci.h>
@@ -20,13 +20,15 @@
 #include "util/memq.h"
 #include "util/dbuf.h"
 
+#include "pdu_df.h"
+#include "lll/pdu_vendor.h"
 #include "pdu.h"
 #include "ll.h"
 #include "ll_settings.h"
 #include "ll_feat.h"
 
 #include "lll.h"
-#include "lll_df_types.h"
+#include "lll/lll_df_types.h"
 #include "lll_conn.h"
 #include "lll_conn_iso.h"
 
@@ -55,7 +57,7 @@ static uint32_t no_of_ctx_buffers_at_test_setup;
 #define PDU_DC_LL_HEADER_SIZE (offsetof(struct pdu_data, lldata))
 #define NODE_RX_HEADER_SIZE (offsetof(struct node_rx_pdu, pdu))
 #define NODE_RX_STRUCT_OVERHEAD (NODE_RX_HEADER_SIZE)
-#define PDU_DATA_SIZE (PDU_DC_LL_HEADER_SIZE + LL_LENGTH_OCTETS_RX_MAX)
+#define PDU_DATA_SIZE sizeof(struct pdu_data)
 #define PDU_RX_NODE_SIZE WB_UP(NODE_RX_STRUCT_OVERHEAD + PDU_DATA_SIZE)
 
 helper_pdu_encode_func_t *const helper_pdu_encode[] = {
@@ -269,12 +271,14 @@ void test_setup(struct ll_conn *conn)
 
 	ll_reset();
 	conn->lll.event_counter = 0;
+	conn->lll.interval = 6;
+	conn->supervision_timeout = 600;
 	event_active[0] = 0;
 
 	memset(emul_conn_pool, 0x00, sizeof(emul_conn_pool));
 	emul_conn_pool[0] = conn;
 
-	no_of_ctx_buffers_at_test_setup = ctx_buffers_free();
+	no_of_ctx_buffers_at_test_setup = llcp_ctx_buffers_free();
 
 }
 

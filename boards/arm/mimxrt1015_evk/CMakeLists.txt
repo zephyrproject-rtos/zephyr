@@ -24,3 +24,9 @@ if(CONFIG_NXP_IMX_RT_BOOT_HEADER)
     zephyr_library_include_directories(${RT1015_BOARD_DIR}/xip)
   endif()
 endif()
+
+if(CONFIG_MCUX_GPT_TIMER)
+  message(WARNING "You appear to be using the GPT hardware timer. "
+    "This timer will enable lower power modes, but at the cost of reduced "
+    "hardware timer resolution")
+endif()

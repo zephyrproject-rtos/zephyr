@@ -214,7 +214,7 @@ void smp_timer_init(void)
 }
 
 /* Runs on core 0 only */
-static int sys_clock_driver_init(const struct device *dev)
+static int sys_clock_driver_init(void)
 {
 	uint64_t curr = count();
 

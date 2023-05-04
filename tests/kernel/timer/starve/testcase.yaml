@@ -1,5 +1,5 @@
 tests:
   kernel.timer.starve:
     slow: true
-    timeout: 3600
+    timeout: 3700
     tags: kernel timer

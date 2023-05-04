@@ -1,12 +1,15 @@
 common:
-  ignore_faults: True
+  ignore_faults: true
 tests:
   kernel.demand_paging:
     tags: kernel mmu demand_paging
     filter: CONFIG_DEMAND_PAGING
+    extra_configs:
+      - CONFIG_PICOLIBC_HEAP_SIZE=0
   kernel.demand_paging.timing_funcs:
     tags: kernel mmu demand_paging
     platform_allow: qemu_x86_tiny
     filter: CONFIG_DEMAND_PAGING
     extra_configs:
       - CONFIG_DEMAND_PAGING_STATS_USING_TIMING_FUNCTIONS=y
+      - CONFIG_PICOLIBC_HEAP_SIZE=0

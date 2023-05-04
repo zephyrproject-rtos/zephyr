@@ -153,18 +153,6 @@ arduino_spi: &spi0 {
 	pinctrl-names = "default", "sleep";
 };
 
-&timer0 {
-	status = "okay";
-};
-
-&timer1 {
-	status = "okay";
-};
-
-&timer2 {
-	status = "okay";
-};
-
 &flash1 {
 
 	partitions {
@@ -178,15 +166,11 @@ arduino_spi: &spi0 {
 		};
 		slot0_partition: partition@c000 {
 			label = "image-0";
-			reg = <0x0000C000 0x12000>;
+			reg = <0x0000C000 0x17000>;
 		};
-		slot1_partition: partition@1e000 {
+		slot1_partition: partition@23000 {
 			label = "image-1";
-			reg = <0x0001E000 0x12000>;
-		};
-		scratch_partition: partition@30000 {
-			label = "image-scratch";
-			reg = <0x00030000 0xa000>;
+			reg = <0x00023000 0x17000>;
 		};
 		storage_partition: partition@3a000 {
 			label = "storage";

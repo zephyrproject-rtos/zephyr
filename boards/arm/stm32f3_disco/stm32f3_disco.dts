@@ -71,6 +71,7 @@
 		magn0 = &lsm303dlhc_magn;
 		watchdog0 = &iwdg;
 		accel0 = &lsm303dlhc_accel;
+		die-temp0 = &die_temp;
 	};
 };
 
@@ -170,6 +171,10 @@ zephyr_udc0: &usb {
 	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x10000000>,
 		 <&rcc STM32_SRC_LSI RTC_SEL(2)>;
 	status = "okay";
+
+	backup_regs {
+		status = "okay";
+	};
 };
 
 &can1 {

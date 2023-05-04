@@ -1,6 +1,5 @@
 .. _video_api:
 
-
 Video
 #####
 

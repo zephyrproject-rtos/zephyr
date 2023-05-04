@@ -2,6 +2,8 @@
 
 # Copyright (c) 2016 RnDity Sp. z o.o.
 # Copyright (c) 2017 BayLibre, SAS
+# Copyright (c) 2022 Linaro Limited
+# Copyright (c) 2023 Google Inc
 # SPDX-License-Identifier: Apache-2.0
 
 config SOC_FLASH_STM32
@@ -10,42 +12,62 @@ config SOC_FLASH_STM32
 		   DT_HAS_ST_STM32H7_FLASH_CONTROLLER_ENABLED
 	select FLASH_HAS_DRIVER_ENABLED
 	default y
-	select SOC_FLASH_STM32_V1 if SOC_SERIES_STM32F0X
-	select SOC_FLASH_STM32_V1 if SOC_SERIES_STM32F1X
-	select SOC_FLASH_STM32_V1 if SOC_SERIES_STM32F3X
-	select SOC_FLASH_STM32_V1 if SOC_SERIES_STM32L0X
-	select SOC_FLASH_STM32_V1 if SOC_SERIES_STM32L1X
-	select FLASH_PAGE_LAYOUT if SOC_SERIES_STM32G0X
-	select FLASH_PAGE_LAYOUT if SOC_SERIES_STM32F2X
-	select FLASH_PAGE_LAYOUT if SOC_SERIES_STM32F4X
-	select FLASH_PAGE_LAYOUT if SOC_SERIES_STM32F7X
-	select FLASH_PAGE_LAYOUT if SOC_SERIES_STM32L4X
-	select FLASH_PAGE_LAYOUT if SOC_SERIES_STM32L5X
-	select FLASH_PAGE_LAYOUT if SOC_SERIES_STM32U5X
-	select FLASH_PAGE_LAYOUT if SOC_SERIES_STM32WBX
-	select FLASH_PAGE_LAYOUT if SOC_SERIES_STM32WLX
-	select FLASH_PAGE_LAYOUT if SOC_SERIES_STM32G4X
-	select FLASH_PAGE_LAYOUT if SOC_SERIES_STM32H7X
-	select FLASH_HAS_PAGE_LAYOUT if SOC_SERIES_STM32G0X
-	select FLASH_HAS_PAGE_LAYOUT if SOC_SERIES_STM32F2X
-	select FLASH_HAS_PAGE_LAYOUT if SOC_SERIES_STM32F4X
-	select FLASH_HAS_PAGE_LAYOUT if SOC_SERIES_STM32F7X
-	select FLASH_HAS_PAGE_LAYOUT if SOC_SERIES_STM32L4X
-	select FLASH_HAS_PAGE_LAYOUT if SOC_SERIES_STM32L5X
-	select FLASH_HAS_PAGE_LAYOUT if SOC_SERIES_STM32U5X
-	select FLASH_HAS_PAGE_LAYOUT if SOC_SERIES_STM32WBX
-	select FLASH_HAS_PAGE_LAYOUT if SOC_SERIES_STM32WLX
-	select FLASH_HAS_PAGE_LAYOUT if SOC_SERIES_STM32G4X
-	select FLASH_HAS_PAGE_LAYOUT if SOC_SERIES_STM32H7X
-	select MPU_ALLOW_FLASH_WRITE if ARM_MPU
-	help
-	  Enable STM32F0x, STM32F1x, STM32F2x, STM32F3x, STM32F4x, STM32F7x,
-	  STM32L0x, STM32L1x, STM32L4x, STM32L5x, STM32U5x, STM32WBx, STM32WLx, STM32G0x,
-	  STM32G4x or STM3H7x series flash driver.
-
-config SOC_FLASH_STM32_V1
-	bool
 	select FLASH_PAGE_LAYOUT
 	select FLASH_HAS_PAGE_LAYOUT
+	select FLASH_HAS_EX_OP if SOC_SERIES_STM32F4X
+	select MPU_ALLOW_FLASH_WRITE if ARM_MPU
 	help
-	  Enable the generic backend for the STM32 flash driver.
+	  Enable flash driver for STM32 series
+
+if SOC_FLASH_STM32
+
+config FLASH_STM32_WRITE_PROTECT
+	bool "Extended operation for flash write protection control"
+	depends on SOC_SERIES_STM32F4X
+	default n
+	help
+	  Enables flash extended operation for enabling/disabling flash write
+	  protection.
+
+config FLASH_STM32_WRITE_PROTECT_DISABLE_PREVENTION
+	bool "Prevent from disabling flash write protection"
+	depends on FLASH_STM32_WRITE_PROTECT
+	default n
+	help
+	  If enabled, all requests to disable flash write protection will be
+	  blocked.
+
+config FLASH_STM32_READOUT_PROTECTION
+	bool "Extended operation for flash readout protection control"
+	depends on SOC_SERIES_STM32F4X
+	default n
+	help
+	  Enables flash extended operation for enabling/disabling flash readout
+	  protection.
+
+config FLASH_STM32_READOUT_PROTECTION_DISABLE_ALLOW
+	bool "Allow disabling readout protection"
+	depends on FLASH_STM32_READOUT_PROTECTION
+	default n
+	help
+	  With this option enabled it will be possible to disable readout
+	  protection. On STM32 devices it will trigger flash mass erase!
+
+config FLASH_STM32_READOUT_PROTECTION_PERMANENT_ALLOW
+	bool "Allow enabling readout protection permanently"
+	depends on FLASH_STM32_READOUT_PROTECTION
+	default n
+	help
+	  With this option enabled it will be possible to enable readout
+	  protection permanently.
+
+config FLASH_STM32_BLOCK_REGISTERS
+	bool "Extended operation for blocking option and control registers"
+	default n
+	help
+	  Enables flash extended operations that can be used to disable access
+	  to option and control registers until reset. Disabling access to these
+	  registers improves system security, because flash content (or
+	  protection settings) can't be changed even when exploit was found.
+
+endif # SOC_FLASH_STM32

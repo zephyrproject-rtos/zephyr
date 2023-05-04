@@ -96,6 +96,10 @@ static int gt911_process(const struct device *dev)
 		return 0;
 	}
 
+	if (!(status & TOUCH_STATUS_MSK)) {
+		/* Status bit not set, ignore this event */
+		return 0;
+	}
 	/* need to clear the status */
 	uint8_t clear_buffer[3] = {(uint8_t)REG_STATUS, (uint8_t)(REG_STATUS >> 8), 0};
 
@@ -115,8 +119,8 @@ static int gt911_process(const struct device *dev)
 	}
 
 	pressed = (points == 1);
-	row = ((pointRegs.highX) << 8U) | pointRegs.lowX;
-	col = ((pointRegs.highY) << 8U) | pointRegs.lowY;
+	row = ((pointRegs.highY) << 8U) | pointRegs.lowY;
+	col = ((pointRegs.highX) << 8U) | pointRegs.lowX;
 
 	LOG_DBG("pressed: %d, row: %d, col: %d", pressed, row, col);
 
@@ -242,7 +246,8 @@ static int gt911_init(const struct device *dev)
 		LOG_ERR("Could not configure int GPIO pin");
 		return r;
 	}
-
+	/* Delay at least 10 ms after power on before we configure gt911 */
+	k_sleep(K_MSEC(20));
 	/* reset the device and confgiure the addr mode0 */
 	gpio_pin_set_dt(&config->rst_gpio, 0);
 	/* hold down at least 1us, 1ms here */
@@ -253,8 +258,6 @@ static int gt911_init(const struct device *dev)
 	gpio_pin_set_dt(&config->int_gpio, 0);
 	/* hold down 50ms to make sure the address available */
 	k_sleep(K_MSEC(50));
-
-#ifdef CONFIG_KSCAN_GT911_INTERRUPT
 	if (!device_is_ready(config->int_gpio.port)) {
 		LOG_ERR("Interrupt GPIO controller device not ready");
 		return -ENODEV;
@@ -266,6 +269,7 @@ static int gt911_init(const struct device *dev)
 		return r;
 	}
 
+#ifdef CONFIG_KSCAN_GT911_INTERRUPT
 	r = gpio_pin_interrupt_configure_dt(&config->int_gpio,
 					    GPIO_INT_EDGE_TO_ACTIVE);
 	if (r < 0) {

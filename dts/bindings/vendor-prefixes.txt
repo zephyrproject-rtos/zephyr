@@ -154,6 +154,7 @@ dh	DH electronics GmbH
 difrnce	Shenzhen Yagu Electronic Technology Co., Ltd.
 digi	Digi International Inc.
 digilent	Diglent, Inc.
+diodes	Diodes Incorporated
 dioo	Dioo Microcircuit Co., Ltd
 dlc	DLC Display Co., Ltd.
 dlg	Dialog Semiconductor
@@ -239,6 +240,7 @@ greeled	GreeLed Electronic Ltd.
 grinn	Grinn
 grmn	Garmin Limited
 gumstix	Gumstix, Inc.
+hamamatsu	Hamamatsu Photonics K.K.
 hannstar	HannStar Display Corporation
 haoyu	Haoyu Microelectronic Co. Ltd.
 hardkernel	Hardkernel Co., Ltd
@@ -262,6 +264,7 @@ hycon	Hycon Technology Corp.
 hydis	Hydis Technologies
 hynitron	Hynitron
 hyundai	Hyundai Technology
+hzgrow	Hangzhou Grow Technology Co., Ltd.
 i2se	I2SE GmbH
 ibm	International Business Machines (IBM)
 icplus	IC Plus Corp.
@@ -341,6 +344,7 @@ logictechno	Logic Technologies Limited
 longcheer	Longcheer Technology (Shanghai) Co., Ltd.
 lontium	Lontium Semiconductor Corporation
 loongson	Loongson Technology Corporation Limited
+lowrisc	lowRISC Community Interest Company
 lsi	LSI Corp. (LSI Logic)
 lwn	Liebherr-Werk Nenzing GmbH
 lxa	Linux Automation GmbH
@@ -678,6 +682,7 @@ xinpeng	Shenzhen Xinpeng Technology Co., Ltd
 xiphera	Xiphera Ltd.
 xlnx	Xilinx
 xnano	Xnano
+xptek	Shenzhen Xptek Technology Co., Ltd
 xunlong	Shenzhen Xunlong Software CO.,Limited
 xylon	Xylon
 yamaha	Yamaha Corporation

@@ -234,15 +234,16 @@ static inline bool validate_beacon(struct ieee802154_mpdu *mpdu, uint8_t *buf, u
 }
 
 static inline bool validate_mac_command_cfi_to_mhr(struct ieee802154_mhr *mhr, uint8_t ar,
-						   uint8_t comp, uint8_t src,
-						   bool src_pan_brdcst_chk, uint8_t dst,
+						   uint8_t comp, uint8_t src_bf,
+						   bool src_pan_brdcst_chk, uint8_t dst_bf,
 						   bool dst_brdcst_chk)
 {
 	if (mhr->fs->fc.ar != ar || mhr->fs->fc.pan_id_comp != comp) {
 		return false;
 	}
 
-	if ((mhr->fs->fc.src_addr_mode != src) || (mhr->fs->fc.dst_addr_mode != dst)) {
+	if (!(BIT(mhr->fs->fc.src_addr_mode) & src_bf) ||
+	    !(BIT(mhr->fs->fc.dst_addr_mode) & dst_bf)) {
 		return false;
 	}
 
@@ -272,7 +273,7 @@ static inline bool validate_mac_command(struct ieee802154_mpdu *mpdu, uint8_t *b
 	bool dst_brdcst_chk = false;
 	uint8_t comp = 0U;
 	uint8_t ar = 0U;
-	uint8_t src, dst;
+	uint8_t src_bf, dst_bf;
 
 	if (*length < len) {
 		return false;
@@ -282,10 +283,11 @@ static inline bool validate_mac_command(struct ieee802154_mpdu *mpdu, uint8_t *b
 	case IEEE802154_CFI_UNKNOWN:
 		return false;
 	case IEEE802154_CFI_ASSOCIATION_REQUEST:
+		ar = 1U;
 		len += IEEE802154_CMD_ASSOC_REQ_LENGTH;
-		src = IEEE802154_EXT_ADDR_LENGTH;
+		src_bf = BIT(IEEE802154_ADDR_MODE_EXTENDED);
 		src_pan_brdcst_chk = true;
-		dst = IEEE802154_ADDR_MODE_SHORT | IEEE802154_ADDR_MODE_EXTENDED;
+		dst_bf = BIT(IEEE802154_ADDR_MODE_SHORT) | BIT(IEEE802154_ADDR_MODE_EXTENDED);
 
 		break;
 	case IEEE802154_CFI_ASSOCIATION_RESPONSE:
@@ -299,51 +301,52 @@ static inline bool validate_mac_command(struct ieee802154_mpdu *mpdu, uint8_t *b
 	case IEEE802154_CFI_PAN_ID_CONLICT_NOTIFICATION:
 		ar = 1U;
 		comp = 1U;
-		src = IEEE802154_EXT_ADDR_LENGTH;
-		dst = IEEE802154_EXT_ADDR_LENGTH;
+		src_bf = BIT(IEEE802154_ADDR_MODE_EXTENDED);
+		dst_bf = BIT(IEEE802154_ADDR_MODE_EXTENDED);
 
 		break;
 	case IEEE802154_CFI_DATA_REQUEST:
 		ar = 1U;
-		src = IEEE802154_ADDR_MODE_SHORT | IEEE802154_ADDR_MODE_EXTENDED;
+		src_bf = BIT(IEEE802154_ADDR_MODE_SHORT) | BIT(IEEE802154_ADDR_MODE_EXTENDED);
 
 		if (mpdu->mhr.fs->fc.dst_addr_mode == IEEE802154_ADDR_MODE_NONE) {
-			dst = IEEE802154_ADDR_MODE_NONE;
+			dst_bf = BIT(IEEE802154_ADDR_MODE_NONE);
 		} else {
 			comp = 1U;
-			dst = IEEE802154_ADDR_MODE_SHORT | IEEE802154_ADDR_MODE_EXTENDED;
+			dst_bf = BIT(IEEE802154_ADDR_MODE_SHORT) |
+				 BIT(IEEE802154_ADDR_MODE_EXTENDED);
 		}
 
 		break;
 	case IEEE802154_CFI_ORPHAN_NOTIFICATION:
 		comp = 1U;
-		src = IEEE802154_EXT_ADDR_LENGTH;
-		dst = IEEE802154_ADDR_MODE_SHORT;
+		src_bf = BIT(IEEE802154_ADDR_MODE_EXTENDED);
+		dst_bf = BIT(IEEE802154_ADDR_MODE_SHORT);
 
 		break;
 	case IEEE802154_CFI_BEACON_REQUEST:
-		src = IEEE802154_ADDR_MODE_NONE;
-		dst = IEEE802154_ADDR_MODE_SHORT;
+		src_bf = BIT(IEEE802154_ADDR_MODE_NONE);
+		dst_bf = BIT(IEEE802154_ADDR_MODE_SHORT);
 		dst_brdcst_chk = true;
 
 		break;
 	case IEEE802154_CFI_COORDINATOR_REALIGNEMENT:
 		len += IEEE802154_CMD_COORD_REALIGN_LENGTH;
-		src = IEEE802154_EXT_ADDR_LENGTH;
+		src_bf = BIT(IEEE802154_ADDR_MODE_EXTENDED);
 
 		if (mpdu->mhr.fs->fc.dst_addr_mode == IEEE802154_ADDR_MODE_SHORT) {
-			dst = IEEE802154_ADDR_MODE_SHORT;
+			dst_bf = BIT(IEEE802154_ADDR_MODE_SHORT);
 			dst_brdcst_chk = true;
 		} else {
-			dst = IEEE802154_ADDR_MODE_EXTENDED;
+			dst_bf = BIT(IEEE802154_ADDR_MODE_EXTENDED);
 		}
 
 		break;
 	case IEEE802154_CFI_GTS_REQUEST:
 		len += IEEE802154_GTS_REQUEST_LENGTH;
 		ar = 1U;
-		src = IEEE802154_ADDR_MODE_SHORT;
-		dst = IEEE802154_ADDR_MODE_NONE;
+		src_bf = BIT(IEEE802154_ADDR_MODE_SHORT);
+		dst_bf = BIT(IEEE802154_ADDR_MODE_NONE);
 
 		break;
 	default:
@@ -354,7 +357,8 @@ static inline bool validate_mac_command(struct ieee802154_mpdu *mpdu, uint8_t *b
 		return false;
 	}
 
-	if (!validate_mac_command_cfi_to_mhr(&mpdu->mhr, ar, comp, src, src_pan_brdcst_chk, dst,
+	if (!validate_mac_command_cfi_to_mhr(&mpdu->mhr, ar, comp, src_bf,
+					     src_pan_brdcst_chk, dst_bf,
 					     dst_brdcst_chk)) {
 		return false;
 	}
@@ -749,8 +753,8 @@ bool ieee802154_create_data_frame(struct ieee802154_context *ctx, struct net_lin
 	}
 
 	/* Let's encrypt/auth only in the end, if needed */
-	if (!ieee802154_encrypt_auth(broadcast ? NULL : &ctx->sec_ctx, buf_start, hdr_len,
-				    payload_len, tag_size, ctx->ext_addr)) {
+	if (!ieee802154_encrypt_auth(&ctx->sec_ctx, buf_start, hdr_len,
+				     payload_len, tag_size, ctx->ext_addr)) {
 		goto out;
 	};
 

@@ -33,6 +33,28 @@ config USBC_STATE_MACHINE_CYCLE_TIME
 	  The USB-C state machine is run in a loop and the cycle time is the
 	  delay before running the loop again.
 
+config BUILD_OUTPUT_VIF
+	bool "Generate VIF policies of USB-C in XML format"
+	depends on DT_HAS_USB_C_CONNECTOR_ENABLED
+	help
+	  Generate XML file containing VIF policies during project build.
+
+choice USBC_CSM_TYPE
+	prompt "USB-C Connection State Machine"
+	default USBC_CSM_SINK_ONLY
+
+config USBC_CSM_SINK_ONLY
+	bool "Sink USB-C Connection State Machine"
+	help
+	  Allows the USB-C state machine to function as a Sink
+
+config USBC_CSM_SOURCE_ONLY
+	bool "Source USBC Connection State Machine"
+	help
+	  Allow the USB-C state machine to function as a Source
+
+endchoice
+
 module = USBC_STACK
 module-str = usbc stack
 source "subsys/logging/Kconfig.template.log_config"

@@ -5,6 +5,7 @@
  */
 
 #include <st/f3/stm32f3.dtsi>
+#include <zephyr/dt-bindings/adc/stm32l4_adc.h>
 
 / {
 	soc {
@@ -19,7 +20,11 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40005800 0x400>;
-			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00400000>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00400000>,
+				 /* I2C clock source should always be defined,
+				  * even for the default value
+				  */
+				 <&rcc STM32_SRC_SYSCLK I2C2_SEL(1)>;
 			interrupts = <33 0>, <34 0>;
 			interrupt-names = "event", "error";
 			status = "disabled";
@@ -49,6 +54,7 @@
 			compatible = "st,stm32-uart";
 			reg = <0x40005000 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00100000>;
+			resets = <&rctl STM32_RESET(APB1, 20U)>;
 			interrupts = <53 0>;
 			status = "disabled";
 		};
@@ -68,6 +74,7 @@
 			compatible = "st,stm32-timers";
 			reg = <0x40012c00 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00000800>;
+			resets = <&rctl STM32_RESET(APB2, 11U)>;
 			interrupts = <24 0>, <25 0>, <26 0>, <27 0>;
 			interrupt-names = "brk", "up", "trgcom", "cc";
 			st,prescaler = <0>;
@@ -84,6 +91,7 @@
 			compatible = "st,stm32-timers";
 			reg = <0x40000800 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000004>;
+			resets = <&rctl STM32_RESET(APB1, 2U)>;
 			interrupts = <30 0>;
 			interrupt-names = "global";
 			st,prescaler = <0>;
@@ -100,6 +108,7 @@
 			compatible = "st,stm32-timers";
 			reg = <0x40013400 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00002000>;
+			resets = <&rctl STM32_RESET(APB2, 13U)>;
 			interrupts = <43 0>, <44 0>, <45 0>, <46 0>;
 			interrupt-names = "brk", "up", "trgcom", "cc";
 			st,prescaler = <0>;
@@ -116,6 +125,7 @@
 			compatible = "st,stm32-timers";
 			reg = <0x40015000 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00100000>;
+			resets = <&rctl STM32_RESET(APB2, 20U)>;
 			interrupts = <77 0>, <78 0>, <79 0>, <80 0>;
 			interrupt-names = "brk", "up", "trgcom", "cc";
 			st,prescaler = <0>;
@@ -136,8 +146,12 @@
 			status = "disabled";
 			vref-mv = <3000>;
 			#io-channel-cells = <1>;
-			has-temp-channel;
-			has-vref-channel;
+			temp-channel = <16>;
+			vref-channel = <18>;
+			resolutions = <STM32_ADC_RES(12, 0x00)
+				       STM32_ADC_RES(10, 0x01)
+				       STM32_ADC_RES(8, 0x02)
+				       STM32_ADC_RES(6, 0x03)>;
 		};
 	};
 };

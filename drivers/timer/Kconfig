@@ -5,7 +5,9 @@
 # Copyright (c) 2019 Intel Corp.
 # SPDX-License-Identifier: Apache-2.0
 
-menu "Timer Drivers"
+if SYS_CLOCK_EXISTS
+
+menu "Timer drivers"
 
 config TIMER_HAS_64BIT_CYCLE_COUNTER
 	bool
@@ -69,6 +71,7 @@ source "drivers/timer/Kconfig.cavs"
 source "drivers/timer/Kconfig.cc13x2_cc26x2_rtc"
 source "drivers/timer/Kconfig.cortex_m_systick"
 source "drivers/timer/Kconfig.esp32c3_sys"
+source "drivers/timer/Kconfig.gecko"
 source "drivers/timer/Kconfig.hpet"
 source "drivers/timer/Kconfig.ite_it8xxx2"
 source "drivers/timer/Kconfig.leon_gptimer"
@@ -90,3 +93,5 @@ source "drivers/timer/Kconfig.xlnx_psttc"
 source "drivers/timer/Kconfig.xtensa"
 
 endmenu
+
+endif # SYS_CLOCK_EXISTS

@@ -505,7 +505,7 @@ static bool pcie_dev_cb(pcie_bdf_t bdf, pcie_id_t id, void *cb_data)
 	return (data->found != data->max_dev);
 }
 
-static int pcie_init(const struct device *dev)
+static int pcie_init(void)
 {
 	struct scan_data data;
 	struct pcie_scan_opt opt = {
@@ -514,7 +514,6 @@ static int pcie_init(const struct device *dev)
 		.flags = PCIE_SCAN_RECURSIVE,
 	};
 
-	ARG_UNUSED(dev);
 
 	STRUCT_SECTION_COUNT(pcie_dev, &data.max_dev);
 	/* Don't bother calling pcie_scan() if there are no devices to look for */
@@ -529,4 +528,15 @@ static int pcie_init(const struct device *dev)
 	return 0;
 }
 
-SYS_INIT(pcie_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+
+/*
+ * If a pcie controller is employed, pcie_scan() depends on it for working.
+ * Thus, pcie must be bumped to the next level
+ */
+#ifdef CONFIG_PCIE_CONTROLLER
+#define PCIE_SYS_INIT_LEVEL	PRE_KERNEL_2
+#else
+#define PCIE_SYS_INIT_LEVEL	PRE_KERNEL_1
+#endif
+
+SYS_INIT(pcie_init, PCIE_SYS_INIT_LEVEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);

@@ -1,7 +1,9 @@
 # Copyright (c) 2021 Casper Meijn <casper@meijn.net>
 # SPDX-License-Identifier: Apache-2.0
 
-description: Key out definition for PineTime. This pin needs to be high before the button (key_in) becomes available.
+description: |
+  Key out definition for PineTime. This pin needs to be high before the button (key_in) becomes
+  available.
 
 compatible: "pine64,pinetime-key-out"
 

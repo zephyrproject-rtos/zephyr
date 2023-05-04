@@ -203,7 +203,7 @@ config SRAM_BASE_ADDRESS
 	  /chosen/zephyr,sram in devicetree. The user should generally avoid
 	  changing it via menuconfig or in configuration files.
 
-if ARC || ARM || ARM64 || NIOS2 || X86
+if ARC || ARM || ARM64 || NIOS2 || X86 || RISCV
 
 # Workaround for not being able to have commas in macro arguments
 DT_CHOSEN_Z_FLASH := zephyr,flash
@@ -224,7 +224,7 @@ config FLASH_BASE_ADDRESS
 	  normally set by the board's defconfig file and the user should generally
 	  avoid modifying it via the menu configuration.
 
-endif # ARM || ARM64 || ARC || NIOS2 || X86
+endif # ARM || ARM64 || ARC || NIOS2 || X86 || RISCV
 
 if ARCH_HAS_TRUSTED_EXECUTION
 
@@ -274,6 +274,7 @@ config USERSPACE
 	depends on RUNTIME_ERROR_CHECKS
 	depends on SRAM_REGION_PERMISSIONS
 	select THREAD_STACK_INFO
+	select LINKER_USE_NO_RELAX
 	help
 	  When enabled, threads may be created or dropped down to user mode,
 	  which has significantly restricted permissions and must interact
@@ -288,6 +289,7 @@ config USERSPACE
 
 config PRIVILEGED_STACK_SIZE
 	int "Size of privileged stack"
+	default 2048 if EMUL
 	default 1024
 	depends on ARCH_HAS_USERSPACE
 	help
@@ -499,6 +501,18 @@ config EXTRA_EXCEPTION_INFO
 	  This option enables the collection of extra information, such as
 	  register state, when a fault occurs. This information can be useful
 	  to collect for post-mortem analysis and debug of issues.
+
+config SIMPLIFIED_EXCEPTION_CODES
+	bool "Convert arch specific exception codes to K_ERR_CPU_EXCEPTION"
+	default y if ZTEST
+	help
+	  The same piece of faulty code (NULL dereference, etc) can result in
+	  a multitude of potential exception codes at the CPU level, depending
+	  upon whether addresses exist, an MPU is configured, the particular
+	  implementation of the CPU or any number of other reasons. Enabling
+	  this option collapses all the architecture specific exception codes
+	  down to the generic K_ERR_CPU_EXCEPTION, which makes testing code
+	  much more portable.
 
 endmenu # Interrupt configuration
 
@@ -841,8 +855,8 @@ config CACHE_MANAGEMENT
 	bool "Cache management features"
 	depends on DCACHE || ICACHE
 	help
-	  This links in the cache management functions (for d-cache and i-cache
-	  where possible).
+	  This option enables the cache management functions backed by arch or
+	  driver code.
 
 config DCACHE_LINE_SIZE_DETECT
 	bool "Detect d-cache line size at runtime"
@@ -892,17 +906,17 @@ config ICACHE_LINE_SIZE
 choice CACHE_TYPE
 	prompt "Cache type"
 	depends on CACHE_MANAGEMENT
-	default HAS_ARCH_CACHE
+	default ARCH_CACHE
 
-config HAS_ARCH_CACHE
+config ARCH_CACHE
 	bool "Integrated cache controller"
 	help
-	  "Integrated on-core cache controller"
+	  Integrated on-core cache controller
 
-config HAS_EXTERNAL_CACHE
+config EXTERNAL_CACHE
 	bool "External cache controller"
 	help
-	  "External cache controller or cache management system"
+	  External cache controller
 
 endchoice
 

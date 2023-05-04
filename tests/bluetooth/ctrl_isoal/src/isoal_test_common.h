@@ -51,6 +51,10 @@
 #define COLLATED_RX_SDU_INFO(_non_buf, _buf) (_non_buf)
 #endif /* ISOAL_CONFIG_BUFFER_RX_SDUS_ENABLE */
 
+/* Maximum PDU payload for given number of PDUs */
+#define MAX_FRAMED_PDU_PAYLOAD(_pdus)                                                              \
+	(TEST_TX_PDU_PAYLOAD_MAX * _pdus) -                                                        \
+		((PDU_ISO_SEG_HDR_SIZE * _pdus) + PDU_ISO_SEG_TIMEOFFSET_SIZE)
 
 struct rx_pdu_meta_buffer {
 	struct isoal_pdu_rx pdu_meta;

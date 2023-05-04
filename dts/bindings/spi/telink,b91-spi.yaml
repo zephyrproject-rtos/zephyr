@@ -8,47 +8,47 @@ include: spi-controller.yaml
 compatible: "telink,b91-spi"
 
 properties:
-    reg:
-        required: true
+  reg:
+    required: true
 
-    peripheral-id:
-      type: string
-      required: true
-      enum:
-        - "PSPI_MODULE"
-        - "HSPI_MODULE"
+  peripheral-id:
+    type: string
+    required: true
+    enum:
+      - "PSPI_MODULE"
+      - "HSPI_MODULE"
 
-    pinctrl-0:
-      type: phandles
-      required: true
+  pinctrl-0:
+    type: phandles
+    required: true
 
-    cs0-pin:
-      type: string
-      required: true
-      enum:
-        - "0"
-        - "PSPI_CSN_PC4"
-        - "PSPI_CSN_PC0"
-        - "PSPI_CSN_PD0"
-        - "HSPI_CSN_PA1"
-        - "HSPI_CSN_PB6"
+  cs0-pin:
+    type: string
+    required: true
+    enum:
+      - "0"
+      - "PSPI_CSN_PC4"
+      - "PSPI_CSN_PC0"
+      - "PSPI_CSN_PD0"
+      - "HSPI_CSN_PA1"
+      - "HSPI_CSN_PB6"
 
-    cs1-pin:
-      type: string
-      enum:
-        - "0"
-        - "PSPI_CSN_PC4"
-        - "PSPI_CSN_PC0"
-        - "PSPI_CSN_PD0"
-        - "HSPI_CSN_PA1"
-        - "HSPI_CSN_PB6"
+  cs1-pin:
+    type: string
+    enum:
+      - "0"
+      - "PSPI_CSN_PC4"
+      - "PSPI_CSN_PC0"
+      - "PSPI_CSN_PD0"
+      - "HSPI_CSN_PA1"
+      - "HSPI_CSN_PB6"
 
-    cs2-pin:
-      type: string
-      enum:
-        - "0"
-        - "PSPI_CSN_PC4"
-        - "PSPI_CSN_PC0"
-        - "PSPI_CSN_PD0"
-        - "HSPI_CSN_PA1"
-        - "HSPI_CSN_PB6"
+  cs2-pin:
+    type: string
+    enum:
+      - "0"
+      - "PSPI_CSN_PC4"
+      - "PSPI_CSN_PC0"
+      - "PSPI_CSN_PD0"
+      - "HSPI_CSN_PA1"
+      - "HSPI_CSN_PB6"

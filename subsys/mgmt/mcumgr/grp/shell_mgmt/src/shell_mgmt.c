@@ -5,8 +5,10 @@
  */
 
 #include <zephyr/sys/util.h>
+#include <zephyr/logging/log.h>
 #include <zephyr/shell/shell_dummy.h>
 #include <zephyr/mgmt/mcumgr/mgmt/mgmt.h>
+#include <zephyr/mgmt/mcumgr/mgmt/handlers.h>
 #include <zephyr/mgmt/mcumgr/smp/smp.h>
 #include <zephyr/mgmt/mcumgr/grp/shell_mgmt/shell_mgmt.h>
 #include <string.h>
@@ -16,15 +18,15 @@
 #include <zcbor_encode.h>
 #include <zcbor_decode.h>
 
-#include <mgmt/mcumgr/grp/shell_mgmt/shell_mgmt_config.h>
+LOG_MODULE_REGISTER(mcumgr_shell_grp, CONFIG_MCUMGR_GRP_SHELL_LOG_LEVEL);
 
 static int
 shell_exec(const char *line)
 {
-	const struct shell *shell = shell_backend_dummy_get_ptr();
+	const struct shell *sh = shell_backend_dummy_get_ptr();
 
-	shell_backend_dummy_clear_output(shell);
-	return shell_execute_cmd(shell, line);
+	shell_backend_dummy_clear_output(sh);
+	return shell_execute_cmd(sh, line);
 }
 
 const char *
@@ -44,7 +46,7 @@ shell_mgmt_exec(struct smp_streamer *ctxt)
 {
 	int rc;
 	bool ok;
-	char line[SHELL_MGMT_MAX_LINE_LEN + 1];
+	char line[CONFIG_SHELL_CMD_BUFF_SIZE + 1];
 	size_t len = 0;
 	struct zcbor_string cmd_out;
 	zcbor_state_t *zsd = ctxt->reader->zs;
@@ -102,6 +104,7 @@ shell_mgmt_exec(struct smp_streamer *ctxt)
 	/* Failed to compose command line? */
 	if (len == 0) {
 		/* We do not bother to close decoder */
+		LOG_ERR("Failed to compose command line");
 		return MGMT_ERR_EINVAL;
 	}
 
@@ -112,7 +115,7 @@ shell_mgmt_exec(struct smp_streamer *ctxt)
 	/* Key="ret"; value=<status>, or rc if legacy option enabled */
 	ok = zcbor_tstr_put_lit(zse, "o")		&&
 	     zcbor_tstr_encode(zse, &cmd_out)		&&
-#ifdef CONFIG_MCUMGR_CMD_SHELL_MGMT_LEGACY_RC_RETURN_CODE
+#ifdef CONFIG_MCUMGR_GRP_SHELL_LEGACY_RC_RETURN_CODE
 	     zcbor_tstr_put_lit(zse, "rc")		&&
 #else
 	     zcbor_tstr_put_lit(zse, "ret")		&&
@@ -136,9 +139,9 @@ static struct mgmt_group shell_mgmt_group = {
 	.mg_group_id = MGMT_GROUP_ID_SHELL,
 };
 
-
-void
-shell_mgmt_register_group(void)
+static void shell_mgmt_register_group(void)
 {
 	mgmt_register_group(&shell_mgmt_group);
 }
+
+MCUMGR_HANDLER_DEFINE(shell_mgmt, shell_mgmt_register_group);

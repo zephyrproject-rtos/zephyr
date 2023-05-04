@@ -8,6 +8,8 @@
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/usb/usb_device.h>
+#include <zephyr/usb/usbd.h>
+#include <zephyr/usb/class/usbd_msc.h>
 #include <zephyr/fs/fs.h>
 #include <stdio.h>
 
@@ -30,6 +32,90 @@ FS_LITTLEFS_DECLARE_DEFAULT_CONFIG(storage);
 #define STORAGE_PARTITION_ID		FIXED_PARTITION_ID(STORAGE_PARTITION)
 
 static struct fs_mount_t fs_mnt;
+
+#if defined(CONFIG_USB_DEVICE_STACK_NEXT)
+USBD_CONFIGURATION_DEFINE(config_1,
+			  USB_SCD_SELF_POWERED,
+			  200);
+
+USBD_DESC_LANG_DEFINE(sample_lang);
+USBD_DESC_STRING_DEFINE(sample_mfr, "ZEPHYR", 1);
+USBD_DESC_STRING_DEFINE(sample_product, "Zephyr USBD MSC", 2);
+USBD_DESC_STRING_DEFINE(sample_sn, "0123456789ABCDEF", 3);
+
+USBD_DEVICE_DEFINE(sample_usbd,
+		   DEVICE_DT_GET(DT_NODELABEL(zephyr_udc0)),
+		   0x2fe3, 0x0008);
+
+#if CONFIG_DISK_DRIVER_RAM
+USBD_DEFINE_MSC_LUN(RAM, "Zephyr", "RAMDisk", "0.00");
+#endif
+
+#if CONFIG_DISK_DRIVER_FLASH
+USBD_DEFINE_MSC_LUN(NAND, "Zephyr", "FlashDisk", "0.00");
+#endif
+
+#if CONFIG_DISK_DRIVER_SDMMC
+USBD_DEFINE_MSC_LUN(SD, "Zephyr", "SD", "0.00");
+#endif
+
+static int enable_usb_device_next(void)
+{
+	int err;
+
+	err = usbd_add_descriptor(&sample_usbd, &sample_lang);
+	if (err) {
+		LOG_ERR("Failed to initialize language descriptor (%d)", err);
+		return err;
+	}
+
+	err = usbd_add_descriptor(&sample_usbd, &sample_mfr);
+	if (err) {
+		LOG_ERR("Failed to initialize manufacturer descriptor (%d)", err);
+		return err;
+	}
+
+	err = usbd_add_descriptor(&sample_usbd, &sample_product);
+	if (err) {
+		LOG_ERR("Failed to initialize product descriptor (%d)", err);
+		return err;
+	}
+
+	err = usbd_add_descriptor(&sample_usbd, &sample_sn);
+	if (err) {
+		LOG_ERR("Failed to initialize SN descriptor (%d)", err);
+		return err;
+	}
+
+	err = usbd_add_configuration(&sample_usbd, &config_1);
+	if (err) {
+		LOG_ERR("Failed to add configuration (%d)", err);
+		return err;
+	}
+
+	err = usbd_register_class(&sample_usbd, "msc_0", 1);
+	if (err) {
+		LOG_ERR("Failed to register MSC class (%d)", err);
+		return err;
+	}
+
+	err = usbd_init(&sample_usbd);
+	if (err) {
+		LOG_ERR("Failed to initialize device support");
+		return err;
+	}
+
+	err = usbd_enable(&sample_usbd);
+	if (err) {
+		LOG_ERR("Failed to enable device support");
+		return err;
+	}
+
+	LOG_DBG("USB device support enabled");
+
+	return 0;
+}
+#endif /* IS_ENABLED(CONFIG_USB_DEVICE_STACK_NEXT) */
 
 static int setup_flash(struct fs_mount_t *mnt)
 {
@@ -162,17 +248,22 @@ static void setup_disk(void)
 	return;
 }
 
-void main(void)
+int main(void)
 {
 	int ret;
 
 	setup_disk();
 
+#if defined(CONFIG_USB_DEVICE_STACK_NEXT)
+	ret = enable_usb_device_next();
+#else
 	ret = usb_enable(NULL);
+#endif
 	if (ret != 0) {
 		LOG_ERR("Failed to enable USB");
-		return;
+		return 0;
 	}
 
 	LOG_INF("The device is put in USB mass storage mode.\n");
+	return 0;
 }

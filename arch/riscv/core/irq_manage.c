@@ -7,6 +7,8 @@
 #include <zephyr/kernel.h>
 #include <kernel_internal.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/arch/riscv/csr.h>
+
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
 FUNC_NORETURN void z_irq_spurious(const void *unused)
@@ -15,7 +17,7 @@ FUNC_NORETURN void z_irq_spurious(const void *unused)
 
 	ARG_UNUSED(unused);
 
-	__asm__ volatile("csrr %0, mcause" : "=r" (mcause));
+	mcause = csr_read(mcause);
 
 	mcause &= SOC_MCAUSE_EXP_MASK;
 

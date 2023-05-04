@@ -675,7 +675,7 @@ int dsa_hw_init(struct ksz8xxx_data *pdev)
 #endif
 
 #if defined(CONFIG_DSA_SPI)
-	if (!spi_is_ready(&pdev->spi)) {
+	if (!spi_is_ready_dt(&pdev->spi)) {
 		LOG_ERR("SPI bus %s is not ready",
 			pdev->spi.bus->name);
 		return -ENODEV;

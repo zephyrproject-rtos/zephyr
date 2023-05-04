@@ -508,7 +508,7 @@ static void l4_event_handler(struct net_mgmt_event_callback *cb,
 }
 #endif
 
-void main(void)
+int main(void)
 {
 	int rc;
 
@@ -516,7 +516,7 @@ void main(void)
 
 	rc = tls_init();
 	if (rc) {
-		return;
+		return 0;
 	}
 
 	k_work_init_delayable(&pub_message, publish_timeout);
@@ -530,4 +530,5 @@ void main(void)
 #endif
 
 	connect_to_cloud_and_publish();
+	return 0;
 }

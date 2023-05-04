@@ -209,13 +209,13 @@ struct proc_ctx {
 			uint8_t error;
 			uint8_t rejected_opcode;
 			uint8_t params_changed;
-			uint16_t instant;
 			uint8_t win_size;
-			uint16_t win_offset_us;
+			uint16_t instant;
 			uint16_t interval_min;
 			uint16_t interval_max;
 			uint16_t latency;
 			uint16_t timeout;
+			uint32_t win_offset_us;
 #if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
 			uint8_t  preferred_periodicity;
 			uint16_t reference_conn_event_count;
@@ -258,6 +258,7 @@ struct proc_ctx {
 			uint8_t  cig_id;
 			uint8_t  cis_id;
 			uint16_t conn_event_count;
+			uint16_t iso_interval;
 			uint32_t cis_offset_min;
 			uint32_t cis_offset_max;
 #if defined(CONFIG_BT_PERIPHERAL)
@@ -281,7 +282,6 @@ struct proc_ctx {
 			uint8_t  c_bn;
 			uint8_t  c_ft;
 			uint8_t  p_ft;
-			uint16_t iso_interval;
 			uint8_t  aa[4];
 #endif /* defined(CONFIG_BT_CENTRAL) */
 		} cis_create;
@@ -458,6 +458,7 @@ void llcp_lp_pu_init_proc(struct proc_ctx *ctx);
 void llcp_lp_pu_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param);
 void llcp_lp_pu_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, void *param);
 void llcp_lp_pu_tx_ntf(struct ll_conn *conn, struct proc_ctx *ctx);
+bool llcp_lp_pu_awaiting_instant(struct proc_ctx *ctx);
 #endif /* CONFIG_BT_CTLR_PHY */
 
 /*
@@ -466,6 +467,7 @@ void llcp_lp_pu_tx_ntf(struct ll_conn *conn, struct proc_ctx *ctx);
 void llcp_lp_cu_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx);
 void llcp_lp_cu_init_proc(struct proc_ctx *ctx);
 void llcp_lp_cu_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param);
+bool llcp_lp_cu_awaiting_instant(struct proc_ctx *ctx);
 
 /*
  * LLCP Local Channel Map Update
@@ -473,6 +475,7 @@ void llcp_lp_cu_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param);
 void llcp_lp_chmu_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx);
 void llcp_lp_chmu_init_proc(struct proc_ctx *ctx);
 void llcp_lp_chmu_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param);
+bool llcp_lp_chmu_awaiting_instant(struct proc_ctx *ctx);
 
 #if defined(CONFIG_BT_CTLR_PHY)
 /*
@@ -483,6 +486,7 @@ void llcp_rp_pu_init_proc(struct proc_ctx *ctx);
 void llcp_rp_pu_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param);
 void llcp_rp_pu_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, void *param);
 void llcp_rp_pu_tx_ntf(struct ll_conn *conn, struct proc_ctx *ctx);
+bool llcp_rp_pu_awaiting_instant(struct proc_ctx *ctx);
 #endif /* CONFIG_BT_CTLR_PHY */
 
 /*
@@ -495,12 +499,12 @@ void llcp_rp_conn_param_req_reply(struct ll_conn *conn, struct proc_ctx *ctx);
 void llcp_rp_conn_param_req_neg_reply(struct ll_conn *conn, struct proc_ctx *ctx);
 bool llcp_rp_conn_param_req_apm_awaiting_reply(struct proc_ctx *ctx);
 void llcp_rp_conn_param_req_apm_reply(struct ll_conn *conn, struct proc_ctx *ctx);
+bool llcp_rp_cu_awaiting_instant(struct proc_ctx *ctx);
 
 /*
  * Terminate Helper
  */
 void llcp_pdu_encode_terminate_ind(struct proc_ctx *ctx, struct pdu_data *pdu);
-void llcp_ntf_encode_terminate_ind(struct proc_ctx *ctx, struct pdu_data *pdu);
 void llcp_pdu_decode_terminate_ind(struct proc_ctx *ctx, struct pdu_data *pdu);
 
 /*
@@ -520,6 +524,7 @@ void llcp_lr_complete(struct ll_conn *conn);
 void llcp_lr_connect(struct ll_conn *conn);
 void llcp_lr_disconnect(struct ll_conn *conn);
 void llcp_lr_abort(struct ll_conn *conn);
+void llcp_lr_check_done(struct ll_conn *conn, struct proc_ctx *ctx);
 
 /*
  * LLCP Remote Request
@@ -542,6 +547,7 @@ void llcp_rr_complete(struct ll_conn *conn);
 void llcp_rr_connect(struct ll_conn *conn);
 void llcp_rr_disconnect(struct ll_conn *conn);
 void llcp_rr_new(struct ll_conn *conn, struct node_rx_pdu *rx, bool valid_pdu);
+void llcp_rr_check_done(struct ll_conn *conn, struct proc_ctx *ctx);
 
 #if defined(CONFIG_BT_CTLR_LE_PING)
 /*
@@ -660,6 +666,7 @@ void llcp_pdu_decode_chan_map_update_ind(struct proc_ctx *ctx, struct pdu_data *
 void llcp_rp_chmu_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx);
 void llcp_rp_chmu_init_proc(struct proc_ctx *ctx);
 void llcp_rp_chmu_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param);
+bool llcp_rp_chmu_awaiting_instant(struct proc_ctx *ctx);
 
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 /*
@@ -706,16 +713,22 @@ void llcp_lp_cc_init_proc(struct proc_ctx *ctx);
 void llcp_lp_cc_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx);
 void llcp_lp_cc_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param);
 bool llcp_lp_cc_is_active(struct proc_ctx *ctx);
+bool llcp_lp_cc_awaiting_established(struct proc_ctx *ctx);
+void llcp_lp_cc_established(struct ll_conn *conn, struct proc_ctx *ctx);
 
 void llcp_rp_cc_init_proc(struct proc_ctx *ctx);
 void llcp_rp_cc_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx);
 void llcp_rp_cc_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param);
 bool llcp_rp_cc_awaiting_reply(struct proc_ctx *ctx);
+bool llcp_rp_cc_awaiting_established(struct proc_ctx *ctx);
 void llcp_rp_cc_accept(struct ll_conn *conn, struct proc_ctx *ctx);
 void llcp_rp_cc_reject(struct ll_conn *conn, struct proc_ctx *ctx);
+bool llcp_rp_cc_awaiting_instant(struct proc_ctx *ctx);
+void llcp_rp_cc_established(struct ll_conn *conn, struct proc_ctx *ctx);
 
 void llcp_pdu_decode_cis_req(struct proc_ctx *ctx, struct pdu_data *pdu);
 void llcp_pdu_encode_cis_rsp(struct proc_ctx *ctx, struct pdu_data *pdu);
+void llcp_pdu_decode_cis_ind(struct proc_ctx *ctx, struct pdu_data *pdu);
 void llcp_pdu_encode_cis_terminate_ind(struct proc_ctx *ctx, struct pdu_data *pdu);
 void llcp_pdu_decode_cis_terminate_ind(struct proc_ctx *ctx, struct pdu_data *pdu);
 void llcp_pdu_encode_cis_req(struct proc_ctx *ctx, struct pdu_data *pdu);
@@ -723,10 +736,19 @@ void llcp_pdu_encode_cis_ind(struct proc_ctx *ctx, struct pdu_data *pdu);
 void llcp_pdu_decode_cis_rsp(struct proc_ctx *ctx, struct pdu_data *pdu);
 
 #ifdef ZTEST_UNITTEST
-bool lr_is_disconnected(struct ll_conn *conn);
-bool lr_is_idle(struct ll_conn *conn);
-bool rr_is_disconnected(struct ll_conn *conn);
-bool rr_is_idle(struct ll_conn *conn);
-uint16_t ctx_buffers_free(void);
-uint8_t common_tx_buffer_alloc_count(void);
+bool llcp_lr_is_disconnected(struct ll_conn *conn);
+bool llcp_lr_is_idle(struct ll_conn *conn);
+struct proc_ctx *llcp_lr_dequeue(struct ll_conn *conn);
+
+bool llcp_rr_is_disconnected(struct ll_conn *conn);
+bool llcp_rr_is_idle(struct ll_conn *conn);
+struct proc_ctx *llcp_rr_dequeue(struct ll_conn *conn);
+void llcp_rr_enqueue(struct ll_conn *conn, struct proc_ctx *ctx);
+
+uint16_t llcp_local_ctx_buffers_free(void);
+uint16_t llcp_remote_ctx_buffers_free(void);
+uint16_t llcp_ctx_buffers_free(void);
+uint8_t llcp_common_tx_buffer_alloc_count(void);
+struct proc_ctx *llcp_proc_ctx_acquire(void);
+struct proc_ctx *llcp_create_procedure(enum llcp_proc proc);
 #endif

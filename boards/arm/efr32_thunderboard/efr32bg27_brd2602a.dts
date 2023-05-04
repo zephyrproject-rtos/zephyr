@@ -1,0 +1,83 @@
+/*
+ * Copyright (c) 2023 Antmicro <www.antmicro.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <silabs/efr32bg27.dtsi>
+#include <silabs/efr32bg2x-pinctrl.dtsi>
+#include "thunderboard.dtsi"
+
+/ {
+	model = "Silicon Labs EFR32BG27C140F768IM40 Thunderboard-style board";
+	compatible = "silabs,efr32bg27c140f768im40", "silabs,efr32bg27_brd2602a",
+		"silabs,efr32bg27";
+
+	/* These aliases are provided for compatibility with samples */
+	aliases {
+		led0 = &led0;
+		sw0 = &button0;
+		spi-flash0 = &mx25r80;
+		spi0 = &usart0;
+		watchdog0 = &wdog0;
+		/* If enabled, MCUboot uses this for recovery mode entrance */
+		mcuboot-led0 = &led0;
+		mcuboot-button0 = &button0;
+	};
+
+	chosen {
+		zephyr,code-partition = &slot0_partition;
+	};
+};
+
+&flash0 {
+	partitions {
+		/* Reserve 48 KiB for the bootloader */
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 0x0000c000>;
+			read-only;
+		};
+
+		/* Reserve 328 KiB for the application in slot 0 */
+		slot0_partition: partition@c000 {
+			label = "image-0";
+			reg = <0x0000c000 0x00052000>;
+		};
+
+		/* Reserve 328 KiB for the application in slot 1 */
+		slot1_partition: partition@5e000 {
+			label = "image-1";
+			reg = <0x0005e000 0x00052000>;
+		};
+
+		/* Set 64 KiB of storage at the end of the 768 KiB of flash */
+		storage_partition: partition@b0000 {
+			label = "storage";
+			reg = <0x000b0000 0x00010000>;
+		};
+	};
+};
+
+&led0 {
+	gpios = <&gpioa GECKO_PIN(4) GPIO_ACTIVE_HIGH>;
+};
+
+&sw_sensor_enable {
+	enable-gpios = <&gpioc GECKO_PIN(6) GPIO_ACTIVE_HIGH>;
+};
+
+
+&sw_mic_enable {
+	enable-gpios = <&gpioc GECKO_PIN(7) GPIO_ACTIVE_HIGH>;
+};
+
+
+&sw_imu_enable {
+	enable-gpios = <&gpiob GECKO_PIN(4) GPIO_ACTIVE_HIGH>;
+};
+
+&button0 {
+	gpios = <&gpiob GECKO_PIN(3) GPIO_ACTIVE_LOW>;
+};

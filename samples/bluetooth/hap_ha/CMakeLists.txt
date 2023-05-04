@@ -11,7 +11,7 @@ target_sources(app PRIVATE
   src/vcp_vol_renderer.c
 )
 
-target_sources_ifdef(CONFIG_BT_HAS_HEARING_AID_BINAURAL app PRIVATE
+target_sources_ifdef(CONFIG_HAP_HA_HEARING_AID_BINAURAL app PRIVATE
   src/csip_set_member.c
 )
 

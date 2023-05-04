@@ -167,13 +167,6 @@ config CMAKE_LINKER_GENERATOR
 
 endchoice
 
-config LLVM_USE_LD
-	bool "LLVM use ld linker"
-	depends on "${ZEPHYR_TOOLCHAIN_VARIANT}" = "llvm"
-	default y
-	help
-	  Use binutils ld linker instead of LLVM built-in lld linker.
-
 config HAVE_CUSTOM_LINKER_SCRIPT
 	bool "Custom linker script provided"
 	help
@@ -292,6 +285,23 @@ config LINKER_LAST_SECTION_ID_PATTERN
 	  be used.
 	  The size of the pattern must not exceed 4 bytes.
 
+config LINKER_USE_NO_RELAX
+	bool
+	help
+	  Hidden symbol to allow features to force the use of no relax.
+
+config LINKER_USE_RELAX
+	bool "Linker optimization of call addressing"
+	depends on !LINKER_USE_NO_RELAX
+	default y
+	help
+	  This option performs global optimizations that become possible when the linker resolves
+	  addressing in the program, such as relaxing address modes and synthesizing new
+	  instructions in the output object file. For ld and lld, this enables `--relax`.
+	  On platforms where this is not supported, `--relax' is accepted, but ignored.
+	  Disabling it can reduce performance, as the linker is no longer able to substiture long /
+	  in-effective jump calls to shorter / more effective instructions.
+
 endmenu # "Linker Sections"
 
 endmenu
@@ -306,9 +316,20 @@ config CODING_GUIDELINE_CHECK
 
 config NATIVE_APPLICATION
 	bool "Build as a native host application"
+	select FULL_LIBC_SUPPORTED
+	select FULL_LIBCPP_SUPPORTED if CPP
 	help
 	  Build as a native application that can run on the host and using
 	  resources and libraries provided by the host.
+
+config COMPILER_FREESTANDING
+	bool "Build in a freestanding compiler mode"
+	help
+	  Configure the compiler to operate in freestanding mode according to
+	  the C and C++ language specifications. Freestanding mode reduces the
+	  requirements of the compiler and language environment, which can
+	  negatively impact the ability for the compiler to detect errors and
+	  perform optimizations.
 
 choice COMPILER_OPTIMIZATIONS
 	prompt "Optimization level"
@@ -344,7 +365,20 @@ config NO_OPTIMIZATIONS
 	  Compiler optimizations will be set to -O0 independently of other
 	  options.
 
+	  Selecting this option will likely require manual tuning of the
+	  default stack sizes in order to avoid stack overflows.
 endchoice
+
+config COMPILER_WARNINGS_AS_ERRORS
+	bool "Treat warnings as errors"
+	help
+	  Turn on "warning as error" toolchain flags
+
+config COMPILER_SAVE_TEMPS
+	bool "Save temporary object files"
+	help
+	  Instruct the compiler to save the temporary intermediate files
+	  permanently. These can be useful for troubleshooting build issues.
 
 config COMPILER_COLOR_DIAGNOSTICS
 	bool "Colored diagnostics"
@@ -554,7 +588,7 @@ config BUILD_OUTPUT_UF2_FAMILY_ID
 	default "0x04240bdf" if SOC_SERIES_STM32L5X
 	default "0x70d16653" if SOC_SERIES_STM32WBX
 	default "0x5ee21072" if SOC_STM32F103XE
-	default "0x57755a57" if SOC_STM32F401XC || SOC_STM32F401XE
+	default "0x57755a57" if SOC_SERIES_STM32F4X && (!SOC_STM32F407XE) && (!SOC_STM32F407XG)
 	default "0x6d0922fa" if SOC_STM32F407XE
 	default "0x8fb060fe" if SOC_STM32F407XG
 	help
@@ -660,6 +694,20 @@ config BUILD_OUTPUT_META_STATE_PROPAGATE
 	  - off:   the SHA of one or more west projects are not what the manifest
 	           defined when `west update` was run the last time (`manifest-rev`).
 	           The off state is only present if a west workspace is found.
+
+config BUILD_OUTPUT_STRIP_PATHS
+	bool "Strip absolute paths from binaries"
+	default y
+	help
+	  If the compiler supports it, strip the ${ZEPHYR_BASE} prefix from the
+	  __FILE__ macro used in __ASSERT*, in the
+	  .noinit."/home/joe/zephyr/fu/bar.c" section names and in any
+	  application code.
+	  This saves some memory, stops leaking user locations in binaries, makes
+	  failure logs more deterministic and most importantly makes builds more
+	  deterministic.
+	  Debuggers usually have a path mapping feature to ensure the files are
+	  still found.
 
 endmenu
 
@@ -767,6 +815,18 @@ config BOOTLOADER_MCUBOOT
 
 if BOOTLOADER_MCUBOOT
 
+config MCUBOOT_CMAKE_WEST_SIGN_PARAMS
+	string "Extra parameters to west sign"
+	default "--quiet"
+	help
+	  Parameters that are passed by cmake to west sign, just after
+	  the command, before all other parameters needed for image
+	  signing.
+	  By default this is set to "--quiet" to prevent extra, non-error,
+	  diagnostic messages from west sign. This does not affect signing
+	  tool for which extra parameters are passed with
+	  MCUBOOT_EXTRA_IMGTOOL_ARGS.
+
 config MCUBOOT_SIGNATURE_KEY_FILE
 	string "Path to the mcuboot signing key file"
 	default ""
@@ -822,12 +882,12 @@ config MCUBOOT_ENCRYPTION_KEY_FILE
 	  If left empty, you must encrypt the Zephyr binaries manually.
 
 config MCUBOOT_EXTRA_IMGTOOL_ARGS
-	string "Extra arguments to pass to imgtool"
+	string "Extra arguments to pass to imgtool when signing"
 	default ""
 	help
-	  If CONFIG_MCUBOOT_SIGNATURE_KEY_FILE is a non-empty string,
-	  you can use this option to pass extra options to imgtool.
-	  For example, you could set this to "--version 1.2".
+	  When signing (CONFIG_MCUBOOT_SIGNATURE_KEY_FILE is a non-empty
+	  string) you can use this option to pass extra options to
+	  imgtool.  For example, you could set this to "--version 1.2".
 
 config MCUBOOT_GENERATE_UNSIGNED_IMAGE
 	bool "Generate unsigned binary image bootable with MCUboot"
@@ -851,7 +911,7 @@ endif # BOOTLOADER_MCUBOOT
 
 config BOOTLOADER_ESP_IDF
 	bool "ESP-IDF bootloader support"
-	depends on (SOC_ESP32 || SOC_ESP32S2 || SOC_ESP32C3) && !BOOTLOADER_MCUBOOT
+	depends on (SOC_ESP32 || SOC_ESP32S2 || SOC_ESP32C3 || SOC_ESP32S3) && !BOOTLOADER_MCUBOOT
 	default y
 	help
 	  This option will trigger the compilation of the ESP-IDF bootloader
@@ -911,14 +971,3 @@ config COMPAT_INCLUDES
 	  deprecated header files.
 
 endmenu
-
-config LEGACY_INCLUDE_PATH
-	bool "Allow for the legacy include paths (without the zephyr/ prefix) (DEPRECATED)"
-	select DEPRECATED
-	help
-	  DEPRECATED: Allow applications and libraries to use the Zephyr legacy
-	  include path which does not use the zephyr/ prefix. For example, the
-	  preferred way to include a Zephyr header is to use <zephyr/kernel.h>,
-	  but enabling CONFIG_LEGACY_INCLUDE_PATH will allow developers to use
-	  <kernel.h> instead. This (without the zephyr/ prefix) is deprecated
-	  and should be avoided. Eventually, it will not be supported.

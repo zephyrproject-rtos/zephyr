@@ -7,6 +7,8 @@ zephyr_library()
 set(GEN_DIR ${ZEPHYR_BINARY_DIR}/include/generated)
 set(STRERROR_TABLE_H ${GEN_DIR}/libc/minimal/strerror_table.h)
 
+zephyr_library_cc_option(-fno-builtin)
+
 zephyr_library_sources(
   source/stdlib/abort.c
   source/stdlib/atoi.c
@@ -14,7 +16,6 @@ zephyr_library_sources(
   source/stdlib/strtoul.c
   source/stdlib/strtoll.c
   source/stdlib/strtoull.c
-  source/stdlib/malloc.c
   source/stdlib/bsearch.c
   source/stdlib/exit.c
   source/stdlib/qsort.c
@@ -33,7 +34,6 @@ zephyr_library_sources(
 
 if(CONFIG_MINIMAL_LIBC_TIME)
   zephyr_library_sources(source/time/gmtime.c)
-  zephyr_library_sources_ifdef(CONFIG_POSIX_CLOCK source/time/time.c)
 endif()
 
 zephyr_library_sources_ifdef(CONFIG_MINIMAL_LIBC_RAND source/stdlib/rand.c)

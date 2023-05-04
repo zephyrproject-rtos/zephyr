@@ -10,3 +10,5 @@ tests:
   sample.net.cloud.google_iot_mqtt:
     depends_on: netif
     platform_allow: frdm_k64f qemu_x86
+    integration_platforms:
+      - qemu_x86

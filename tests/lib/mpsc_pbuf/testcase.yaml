@@ -1,7 +1,21 @@
 tests:
-  lib.mpsc_pbuf:
+  libraries.mpsc_pbuf:
     tags: mpsc_pbuf
     platform_allow: >
       qemu_arc_em qemu_arc_hs qemu_cortex_a53 qemu_cortex_m0 qemu_cortex_m3
       qemu_cortex_r5 qemu_leon3 qemu_nios2 qemu_riscv32 qemu_riscv64 qemu_x86
-      qemu_x86_64 qemu_xtensa
+      qemu_x86_64 qemu_xtensa native_posix
+    integration_platforms:
+      - native_posix
+
+  libraries.mpsc_pbuf_concurrent:
+    tags: mpsc_pbuf
+    timeout: 90
+    platform_allow: >
+      qemu_cortex_m3 qemu_x86 qemu_x86_64
+    extra_configs:
+      - CONFIG_SYS_CLOCK_TICKS_PER_SEC=100000
+    timeout: 120
+    integration_platforms:
+      - qemu_x86
+      - qemu_x86_64

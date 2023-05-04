@@ -30,9 +30,8 @@ FPGAIO_INIT(2);
  *
  * @return 0
  */
-static int arm_mps3_init(const struct device *arg)
+static int arm_mps3_init(void)
 {
-	ARG_UNUSED(arg);
 
 	/*
 	 * Install default handler that simply resets the CPU

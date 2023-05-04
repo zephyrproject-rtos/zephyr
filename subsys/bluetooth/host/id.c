@@ -1724,6 +1724,8 @@ int bt_id_set_scan_own_addr(bool active_scan, uint8_t *own_addr_type)
 			if (err) {
 				return err;
 			}
+		} else {
+			LOG_DBG("Not changing the address");
 		}
 	}
 

@@ -9,5 +9,5 @@ Testing
    ztest
    twister
    coverage
-   sparse
+   BabbleSim<bsim>
    ztest_deprecated

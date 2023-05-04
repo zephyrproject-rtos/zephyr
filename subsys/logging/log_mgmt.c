@@ -129,6 +129,7 @@ uint32_t *z_log_link_get_dynamic_filter(uint8_t domain_id, uint32_t source_id)
 	return &link->ctrl_blk->filters[source_offset + source_id];
 }
 
+#ifdef CONFIG_LOG_MULTIDOMAIN
 static int link_filters_init(const struct log_link *link)
 {
 	uint32_t total_cnt = get_source_offset(link, link->ctrl_blk->domain_cnt);
@@ -137,6 +138,7 @@ static int link_filters_init(const struct log_link *link)
 	if (link->ctrl_blk->filters == NULL) {
 		LOG_ERR("Failed to allocate buffer for runtime filtering.");
 		__ASSERT(0, "Failed to allocate buffer.");
+		return -ENOMEM;
 	}
 
 	memset(link->ctrl_blk->filters, 0, sizeof(uint32_t) * total_cnt);
@@ -145,6 +147,7 @@ static int link_filters_init(const struct log_link *link)
 
 	return 0;
 }
+#endif
 
 static void cache_init(void)
 {
@@ -193,7 +196,7 @@ static uint16_t link_source_count(uint8_t domain_id)
 uint32_t log_src_cnt_get(uint32_t domain_id)
 {
 	if (z_log_is_local_domain(domain_id)) {
-		return log_const_source_id(__log_const_end);
+		return z_log_sources_count();
 	}
 
 	return link_source_count(domain_id);
@@ -239,7 +242,7 @@ const char *log_source_name_get(uint32_t domain_id, uint32_t source_id)
 {
 	if (z_log_is_local_domain(domain_id)) {
 		if (source_id < log_src_cnt_get(domain_id)) {
-			return __log_const_start[source_id].name;
+			return TYPE_SECTION_START(log_const)[source_id].name;
 		} else {
 			return NULL;
 		}
@@ -305,7 +308,7 @@ uint8_t log_compiled_level_get(uint8_t domain_id, uint32_t source_id)
 {
 	if (z_log_is_local_domain(domain_id)) {
 		if (source_id < log_src_cnt_get(domain_id)) {
-			return __log_const_start[source_id].level;
+			return TYPE_SECTION_START(log_const)[source_id].level;
 		} else {
 			return LOG_LEVEL_NONE;
 		}
@@ -327,7 +330,7 @@ int z_log_link_set_runtime_level(uint8_t domain_id, uint16_t source_id, uint8_t 
 static uint32_t *get_dynamic_filter(uint8_t domain_id, uint32_t source_id)
 {
 	if (z_log_is_local_domain(domain_id)) {
-		return &__log_dynamic_start[source_id].filters;
+		return &TYPE_SECTION_START(log_dynamic)[source_id].filters;
 	}
 
 	return z_log_link_get_dynamic_filter(domain_id, source_id);
@@ -358,8 +361,9 @@ void z_log_runtime_filters_init(void)
 int log_source_id_get(const char *name)
 {
 	for (int i = 0; i < log_src_cnt_get(Z_LOG_LOCAL_DOMAIN_ID); i++) {
-		if (strcmp(log_source_name_get(Z_LOG_LOCAL_DOMAIN_ID, i),
-			   name) == 0) {
+		const char *sname = log_source_name_get(Z_LOG_LOCAL_DOMAIN_ID, i);
+
+		if ((sname != NULL) && (strcmp(sname, name) == 0)) {
 			return i;
 		}
 	}
@@ -556,15 +560,18 @@ void z_log_links_initiate(void)
 	cache_init();
 
 	STRUCT_SECTION_FOREACH(log_link, link) {
+#ifdef CONFIG_MPSC_PBUF
 		if (link->mpsc_pbuf) {
 			mpsc_pbuf_init(link->mpsc_pbuf, link->mpsc_pbuf_config);
 		}
+#endif
 
 		err = log_link_initiate(link, NULL);
 		__ASSERT(err == 0, "Failed to initialize link");
 	}
 }
 
+#ifdef CONFIG_LOG_MULTIDOMAIN
 static void backends_link_init(const struct log_link *link)
 {
 	for (int i = 0; i < log_backend_count_get(); i++) {
@@ -614,3 +621,4 @@ uint32_t z_log_links_activate(uint32_t active_mask, uint8_t *offset)
 
 	return out_mask;
 }
+#endif

@@ -4,7 +4,7 @@
 
 /*
  * Copyright (c) 2019 Bose Corporation
- * Copyright (c) 2021-2022 Nordic Semiconductor ASA
+ * Copyright (c) 2021-2023 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */

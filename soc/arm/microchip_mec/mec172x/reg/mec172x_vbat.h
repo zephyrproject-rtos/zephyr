@@ -55,17 +55,23 @@
 #define MCHP_VBATR_CS_XTAL_CNTR_RG	0x1000u
 #define MCHP_VBATR_CS_XTAL_CNTR_MG	0x1800u
 /* Select source of peripheral 32KHz clock */
-#define MCHP_VBATR_CS_PCS_MSK		0x30000u
+#define MCHP_VBATR_CS_PCS_POS			16
+#define MCHP_VBATR_CS_PCS_MSK			0x30000u
+#define MCHP_VBATR_CS_PCR_VTR_VBAT_SO_VAL	0
+#define MCHP_VBATR_CS_PCS_VTR_VBAT_XTAL_VAL	1
+#define MCHP_VBATR_CS_PCS_VTR_PIN_SO_VAL	2
+#define MCHP_VBATR_CS_PCS_VTR_PIN_XTAL_VAL	3
 /* 32K silicon OSC when chip powered by VBAT or VTR */
-#define MCHP_VBATR_CS_PCS_VTR_VBAT_SO	0u
+#define MCHP_VBATR_CS_PCS_VTR_VBAT_SO		0u
 /* 32K external crystal when chip powered by VBAT or VTR */
-#define MCHP_VBATR_CS_PCS_VTR_VBAT_XTAL 0x10000u
+#define MCHP_VBATR_CS_PCS_VTR_VBAT_XTAL		0x10000u
 /* 32K input pin on VTR. Switch to Silicon OSC on VBAT */
-#define MCHP_VBATR_CS_PCS_VTR_PIN_SO	0x20000u
+#define MCHP_VBATR_CS_PCS_VTR_PIN_SO		0x20000u
 /* 32K input pin on VTR. Switch to crystal on VBAT */
-#define MCHP_VBATR_CS_PCS_VTR_PIN_XTAL	0x30000u
+#define MCHP_VBATR_CS_PCS_VTR_PIN_XTAL		0x30000u
 /* Disable internal 32K VBAT clock source when VTR is off */
-#define MCHP_VBATR_CS_DI32_VTR_OFF	BIT(18)
+#define MCHP_VBATR_CS_DI32_VTR_OFF_POS		18
+#define MCHP_VBATR_CS_DI32_VTR_OFF		BIT(18)
 
 /*
  * Monotonic Counter least significant word (32-bit), read-only.

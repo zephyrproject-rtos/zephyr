@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig MM_DRV
-	bool "Memory Management Drivers [EXPERIMENTAL]"
+	bool "Memory Management drivers [EXPERIMENTAL]"
 	select EXPERIMENTAL
 	select KERNEL_VM_SUPPORT
 	help
@@ -16,6 +16,16 @@ config MM_DRV_PAGE_SIZE
 	default 0x1000
 	help
 	  Size of memory pages.
+
+config MM_DRV_INTEL_ADSP_TLB_REMAP_UNUSED_RAM
+	bool "Power off unused RAM"
+	help
+	  Allows TLB driver to remap unused RAM - unused
+	  being defined as memory ranging from linker script
+	  defined "unused_l2_sram_start_marke" to end of RAM.
+	  Note that unused memory will be powered off by
+	  default. Disable this option if dynamically
+	  managing memory, such as by usinga heap allocator.
 
 config MM_DRV_INTEL_ADSP_MTL_TLB
 	bool "Intel Audio DSP TLB Driver for Meteor Lake"

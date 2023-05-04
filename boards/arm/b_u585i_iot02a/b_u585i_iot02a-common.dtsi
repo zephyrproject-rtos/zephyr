@@ -29,31 +29,16 @@
 		};
 	};
 
-	power-states {
-		stop0: state0 {
-			compatible = "zephyr,power-state";
-			power-state-name = "suspend-to-idle";
-			substate-id = <1>;
-			min-residency-us = <100>;
-		};
-		stop1: state1 {
-			compatible = "zephyr,power-state";
-			power-state-name = "suspend-to-idle";
-			substate-id = <2>;
-			min-residency-us = <500>;
-		};
-		stop2: state2 {
-			compatible = "zephyr,power-state";
-			power-state-name = "suspend-to-idle";
-			substate-id = <3>;
-			min-residency-us = <900>;
-		};
-	};
 
 	aliases {
 		watchdog0 = &iwdg;
 		spi-flash0 = &mx25lm51245;
+		die-temp0 = &die_temp;
 	};
+};
+
+&clk_hsi48 {
+	status = "okay";
 };
 
 &clk_lse {
@@ -162,8 +147,7 @@
 			   #size-cells = <1>;
 
 			   partition@0 {
-			       label = "nor";
-			       reg = <0x00000000 DT_SIZE_M(4)>;
+			       reg = <0x00000000 DT_SIZE_M(64)>;
 			   };
 		};
 	};
@@ -186,6 +170,10 @@
 		compatible = "st,hts221";
 		reg = <0x5f>;
 	};
+};
+
+&aes {
+	status = "okay";
 };
 
 &rng {

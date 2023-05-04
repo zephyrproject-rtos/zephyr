@@ -1,0 +1,83 @@
+# Copyright (c) 2022 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig NVME
+	bool "NVMe disk"
+	depends on PCIE
+	select PCIE_MSI_X
+	select PCIE_MSI_MULTI_VECTOR
+	help
+	  NVMe disk(s) might be present on the system through PCIe, enable this
+	  driver to support these. It will enable MSI-X and MSI multi-vector
+	  support
+
+if NVME
+
+config NVME_ADMIN_ENTRIES
+	int "Number of admin queue entries"
+	range 2 4096
+	default 256
+	help
+	  This sets the amount of allocated admin queue entries.
+	  Do not touch this unless you know what you are doing.
+
+config NVME_IO_QUEUES
+	int "Number of IO queues"
+	range 1 65536
+	default 1
+	help
+	  This sets the amount of allocated I/O queues.
+	  Do not touch this unless you know what you are doing.
+
+config NVME_IO_ENTRIES
+	int "Number of IO queue entries"
+	range 2 65536
+	default 256
+	help
+	  This sets the amount of allocated IO queue entries.
+	  Do not touch this unless you know what you are doing.
+
+config NVME_RETRY_COUNT
+	int "Retry count"
+	default 2
+	help
+	  This sets the amount of possible retries per-request.
+	  Do not touch this unless you know what you are doing.
+
+config NVME_REQUEST_TIMEOUT
+	int "Timeout period for NVMe request"
+	range 5 120
+	default 5
+	help
+	  This sets the waiting time for a request to succeed.
+	  Do not touch this unless you know what you are doing.
+
+config NVME_PRP_LIST_AMOUNT
+	int "Number of allocated PRP list"
+	default 2
+	help
+	  This sets the amount of pre-allocated PRP list. Each list
+	  can be used in a NVMe command to address memory where to
+	  read or write data. Each PRP list is of page size be careful
+	  on this number as it may take a sensible amount of memory.
+
+config NVME_MAX_NAMESPACES
+	int "Maximum namespace to allocate"
+	range 1 16
+	default 1
+	help
+	  This sets the maximum namespace to allocate. Note that there may
+	  be much less to be actually instantiated at runtime.
+	  This option can be used to reduce the memory usage a bit then.
+
+config NVME_INT_PRIORITY
+	int "Interrupt priority"
+	default 2
+	help
+	  Interrupt priority used for the MSI-X generated interrupts.
+
+module = NVME
+module-str = nvme
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # NVME

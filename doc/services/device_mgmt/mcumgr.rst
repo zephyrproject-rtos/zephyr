@@ -43,6 +43,15 @@ Command-line Tool
 MCUmgr provides a command-line tool, :file:`mcumgr`, for managing remote devices.
 The tool is written in the Go programming language.
 
+.. note::
+    This tool is provided for evaluation use only and is not recommended for
+    use in a production environment. It has known issues and will not respect
+    the MCUmgr protocol properly e.g. when an error is received, instead of
+    aborting will, in some circumstances, sit in an endless loop of sending the
+    same command over and over again. A universal replacement for this tool is
+    currently in development and once released, support for the go tool will be
+    dropped entirely.
+
 To install the tool:
 
 .. tabs::
@@ -118,7 +127,8 @@ transport expects a different set of key/value options:
          :widths: 10 60
 
          * - ``addr``
-           - can be a DNS name (if it can be resolved to the device IP), IPv4 addr (app must be built with :kconfig:option:`CONFIG_MCUMGR_SMP_UDP_IPV4`), or IPv6 addr (app must be built with :kconfig:option:`CONFIG_MCUMGR_SMP_UDP_IPV6`)
+           - can be a DNS name (if it can be resolved to the device IP), IPv4 addr (app must be
+             built with :kconfig:option:`CONFIG_MCUMGR_TRANSPORT_UDP_IPV4`), or IPv6 addr (app must be built with :kconfig:option:`CONFIG_MCUMGR_TRANSPORT_UDP_IPV6`)
          * - ``port``
            - any valid UDP port.
 
@@ -181,28 +191,28 @@ on Zephyr. The ones that are supported are described in the following table:
    * - ``echo``
      - Send data to a device and display the echoed back data. This command is
        part of the ``OS`` group, which must be enabled by setting
-       :kconfig:option:`CONFIG_MCUMGR_CMD_OS_MGMT`. The ``echo`` command itself can be
-       enabled by setting :kconfig:option:`CONFIG_OS_MGMT_ECHO`.
+       :kconfig:option:`CONFIG_MCUMGR_GRP_OS`. The ``echo`` command itself can be
+       enabled by setting :kconfig:option:`CONFIG_MCUMGR_GRP_OS_ECHO`.
    * - ``fs``
      - Access files on a device. More info in :ref:`fs_mgmt`.
    * - ``image``
      - Manage images on a device. More info in :ref:`image_mgmt`.
    * - ``reset``
      - Perform a soft reset of a device. This command is part of the ``OS``
-       group, which must be enabled by setting :kconfig:option:`CONFIG_MCUMGR_CMD_OS_MGMT`.
+       group, which must be enabled by setting :kconfig:option:`CONFIG_MCUMGR_GRP_OS`.
        The ``reset`` command itself is always enabled and the time taken for a
-       reset to happen can be set with :kconfig:option:`CONFIG_OS_MGMT_RESET_MS` (in ms).
+       reset to happen can be set with :kconfig:option:`CONFIG_MCUMGR_GRP_OS_RESET_MS` (in ms).
    * - ``shell``
      - Execute a command in the remote shell. This option is disabled by default
-       and can be enabled with :kconfig:option:`CONFIG_MCUMGR_CMD_SHELL_MGMT` = ``y``.
+       and can be enabled with :kconfig:option:`CONFIG_MCUMGR_GRP_SHELL` = ``y``.
        To know more about the shell in Zephyr check :ref:`shell_api`.
    * - ``stat``
      - Read statistics from a device. More info in :ref:`stats_mgmt`.
    * - ``taskstat``
      - Read task statistics from a device. This command is part of the ``OS``
-       group, which must be enabled by setting :kconfig:option:`CONFIG_MCUMGR_CMD_OS_MGMT`.
+       group, which must be enabled by setting :kconfig:option:`CONFIG_MCUMGR_GRP_OS`.
        The ``taskstat`` command itself can be enabled by setting
-       :kconfig:option:`CONFIG_OS_MGMT_TASKSTAT`. :kconfig:option:`CONFIG_THREAD_MONITOR` also
+       :kconfig:option:`CONFIG_MCUMGR_GRP_OS_TASKSTAT`. :kconfig:option:`CONFIG_THREAD_MONITOR` also
        needs to be enabled otherwise a ``-8`` (``MGMT_ERR_ENOTSUP``) will be
        returned.
 
@@ -211,7 +221,7 @@ on Zephyr. The ones that are supported are described in the following table:
     ``taskstat`` has a few options that might require tweaking. The
     :kconfig:option:`CONFIG_THREAD_NAME` must be set to display the task names, otherwise
     the priority is displayed. Since the ``taskstat`` packets are large, they
-    might need increasing the :kconfig:option:`CONFIG_MCUMGR_BUF_SIZE` option.
+    might need increasing the :kconfig:option:`CONFIG_MCUMGR_TRANSPORT_NETBUF_SIZE` option.
 
 .. warning::
 
@@ -229,9 +239,10 @@ J-Link Virtual MSD Interaction Note
 On boards where a J-Link OB is present which has both CDC and MSC (virtual Mass
 Storage Device, also known as drag-and-drop) support, the MSD functionality can
 prevent mcumgr commands over the CDC UART port from working due to how USB
-endpoints are configured in the J-Link firmware (for example on the Nordic
-``nrf52840dk``) because of limiting the maximum packet size (most likely to occur
-when using image management commands for updating firmware). This issue can be
+endpoints are configured in the J-Link firmware (for example on the
+:ref:`Nordic nrf52840dk_nrf52840 board <nrf52840dk_nrf52840>`) because of
+limiting the maximum packet size (most likely to occur when using image
+management commands for updating firmware). This issue can be
 resolved by disabling MSD functionality on the J-Link device, follow the
 instructions on :ref:`nordic_segger_msd` to disable MSD support.
 
@@ -386,14 +397,16 @@ After a reset the output with change to::
 The ``confirmed`` flag in the secondary slot tells that after the next reset a
 revert upgrade will be performed to switch back to the original layout.
 
-The command used to confirm that an image is OK and no revert should happen
-(no ``hash`` required) is::
+The ``confirm`` command used to confirm that an image is OK and no revert
+should happen (empty ``hash`` required) is::
 
-  mcumgr <connection-options> image confirm [hash]
+  mcumgr <connection-options> image confirm ""
 
 The ``confirm`` command can also be run passing in a ``hash`` so that instead of
 doing a ``test``/``revert`` procedure, the image in the secondary partition is
-directly upgraded to.
+directly upgraded to, eg::
+
+  mcumgr <connection-options> image confirm <hash>
 
 .. tip::
 
@@ -404,7 +417,7 @@ directly upgraded to.
 
 .. tip::
 
-    Building with :kconfig:option:`CONFIG_IMG_MGMT_VERBOSE_ERR` enables better error
+    Building with :kconfig:option:`CONFIG_MCUMGR_GRP_IMG_VERBOSE_ERR` enables better error
     messages when failures happen (but increases the application size).
 
 .. _stats_mgmt:
@@ -422,8 +435,8 @@ available sub-commands are::
 
 Statistics are organized in sections (also called groups), and each section can
 be individually queried. Defining new statistics sections is done by using macros
-available under ``<stats/stats.h>``. Each section consists of multiple variables
-(or counters), all with the same size (16, 32 or 64 bits).
+available under :file:`zephyr/stats/stats.h`. Each section consists of multiple
+variables (or counters), all with the same size (16, 32 or 64 bits).
 
 To create a new section ``my_stats``::
 
@@ -435,8 +448,9 @@ To create a new section ``my_stats``::
 
   STATS_SECT_DECL(my_stats) my_stats;
 
-Each entry can be declared with ``STATS_SECT_ENTRY`` (or the equivalent
-``STATS_SECT_ENTRY32``), ``STATS_SECT_ENTRY16`` or ``STATS_SECT_ENTRY64``.
+Each entry can be declared with :c:macro:`STATS_SECT_ENTRY` (or the equivalent
+:c:macro:`STATS_SECT_ENTRY32`), :c:macro:`STATS_SECT_ENTRY16` or
+:c:macro:`STATS_SECT_ENTRY64`.
 All statistics in a section must be declared with the same size.
 
 The statistics counters can either have names or not, depending on the setting
@@ -457,7 +471,7 @@ declaration step::
 
 .. tip::
 
-   :kconfig:option:`CONFIG_STAT_MGMT_MAX_NAME_LEN` sets the maximum length of a section
+   :kconfig:option:`CONFIG_MCUMGR_GRP_STAT_MAX_NAME_LEN` sets the maximum length of a section
    name that can can be accepted as parameter for showing the section data, and
    might require tweaking for long section names.
 
@@ -467,7 +481,8 @@ The final steps to use a statistics section is to initialize and register it::
   assert (rc == 0);
 
 In the running code a statistics counter can be incremented by 1 using
-``STATS_INC``, by N using ``STATS_INCN`` or reset with ``STATS_CLEAR``.
+:c:macro:`STATS_INC`, by N using :c:macro:`STATS_INCN` or reset with
+:c:macro:`STATS_CLEAR`.
 
 Let's suppose we want to increment those counters by ``1``, ``2`` and ``3``
 every second. To get a list of stats::
@@ -505,7 +520,7 @@ Filesystem Management
 
 The filesystem module is disabled by default due to security concerns:
 because of a lack of access control every file in the FS will be accessible,
-including secrets, etc. To enable it :kconfig:option:`CONFIG_MCUMGR_CMD_FS_MGMT` must
+including secrets, etc. To enable it :kconfig:option:`CONFIG_MCUMGR_GRP_FS` must
 be set (``y``). Once enabled the following sub-commands can be used::
 
   mcumgr <connection-options> fs download <remote-file> <local-file>
@@ -552,12 +567,12 @@ Where ``0`` is the return code, and ``9`` is the size of the file.
    required for correct behavior.
 
 The size of the stack allocated buffer used to store the blocks, while transferring
-a file can be adjusted with :kconfig:option:`CONFIG_FS_MGMT_DL_CHUNK_SIZE`; this allows
+a file can be adjusted with :kconfig:option:`CONFIG_MCUMGR_GRP_FS_DL_CHUNK_SIZE`; this allows
 saving RAM resources.
 
 .. tip::
 
-   :kconfig:option:`CONFIG_FS_MGMT_PATH_SIZE` sets the maximum PATH accepted for a file
+   :kconfig:option:`CONFIG_MCUMGR_GRP_FS_PATH_LEN` sets the maximum PATH accepted for a file
    name. It might require tweaking for longer file names.
 
 Bootloader Integration
@@ -579,3 +594,8 @@ Discord channel
 Developers welcome!
 
 * Discord mcumgr channel: https://discord.com/invite/Ck7jw53nU2
+
+API Reference
+*************
+
+.. doxygengroup:: mcumgr_mgmt_api

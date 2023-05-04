@@ -44,3 +44,8 @@ tests:
     extra_configs:
       - CONFIG_LORAMAC_REGION_EU868=y
       - CONFIG_LORAMAC_REGION_US915=y
+  sample.lorawan.class_a.clock_sync:
+    extra_args: OVERLAY_CONFIG="overlay-clock-sync.conf"
+    filter: CONFIG_ENTROPY_HAS_DRIVER
+    integration_platforms:
+      - nucleo_wl55jc

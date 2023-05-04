@@ -25,4 +25,80 @@ config LWM2M_UCIFI_BATTERY_INSTANCE_COUNT
 
 endif # LWM2M_UCIFI_BATTERY
 
+menuconfig LWM2M_UCIFI_LPWAN
+	bool "uCIFI LPWAN (3412) Support"
+	help
+	  The uCIFI LPWAN object provides attributes to monitor and maintain
+	  Low-Power Wide Area Networks.
+
+if LWM2M_UCIFI_LPWAN
+
+config LWM2M_UCIFI_LPWAN_INSTANCE_COUNT
+	int "Maximum # of uCIFI LPWAN object instances"
+	default 1
+	range 1 4
+	help
+	  This value sets the maximum allowable number of LPWAN instances.
+
+config LWM2M_UCIFI_LPWAN_IPV4_ADDRESS_MAX
+	int "Maximum # of IPv4 addresses"
+	default 0
+	range 0 20
+	help
+	  This value sets the maximum number of IPv4 addresses assigned to a
+	  device that can be stored in this object.
+
+config LWM2M_UCIFI_LPWAN_IPV6_ADDRESS_MAX
+	int "Maximum # of IPv6 addresses"
+	default 0
+	range 0 20
+	help
+	  This value sets the maximum number of IPv6 addresses assigned to a
+	  device that can be stored in this object.
+
+config LWM2M_UCIFI_LPWAN_NETWORK_ADDRESS_MAX
+	int "Maximum # of network addresses"
+	default 0
+	range 0 20
+	help
+	  This value sets the maximum number of LPWAN network addresses assigned
+	  to a device that can be stored in this object.
+
+config LWM2M_UCIFI_LPWAN_SECONDARY_NETWORK_ADDRESS_MAX
+	int "Maximum # of secondary network addresses"
+	default 0
+	range 0 20
+	help
+	  This value sets the maximum number of secondary addresses used to
+	  communicate with the device on the LPWAN network assigned that can be
+	  stored in this object.
+
+config LWM2M_UCIFI_LPWAN_PEER_ADDRESS_MAX
+	int "Maximum # of peer node addresses"
+	default 0
+	range 0 64
+	help
+	  This value sets the maximum number of LPWAN addresses of peer nodes
+	  that can be stored in this object.
+
+config LWM2M_UCIFI_LPWAN_MULTICAST_GRP_ADDRESS_MAX
+	int "Maximum # of multicast group addresses"
+	default 0
+	range 0 20
+	help
+	  This value sets the maximum number of multicast group addresses (from
+	  which the device should accept incoming messages and/or commands)
+	  that can be stored in this object.
+
+config LWM2M_UCIFI_LPWAN_MULTICAST_GRP_KEY_MAX
+	int "Maximum # of multicast group keys"
+	default 0
+	range 0 20
+	help
+	  This value sets the maximum number of security key (e.g. AES128) to
+	  be shared with other members to be part of a multicast group that can
+	  be stored in this object.
+
+endif # LWM2M_UCIFI_LPWAN
+
 endif # LWM2M_UCIFI_SUPPORT

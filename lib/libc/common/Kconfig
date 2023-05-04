@@ -1,0 +1,39 @@
+# Copyright (c) 2023 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config COMMON_LIBC_TIME
+	bool
+	help
+	  common implementation of time().
+
+config COMMON_LIBC_MALLOC
+	bool "Common C library malloc implementation"
+	help
+	  Common implementation of malloc family that uses the kernel heap
+	  API.
+
+config COMMON_LIBC_MALLOC_ARENA_SIZE
+	int "Size of the common C library malloc arena"
+	depends on COMMON_LIBC_MALLOC
+	default 0
+	help
+	  Indicate the size in bytes of the memory arena used for
+	  common C library malloc() implementation.
+
+config COMMON_LIBC_CALLOC
+	bool "Common C library calloc"
+	depends on COMMON_LIBC_MALLOC
+	default n if MINIMAL_LIBC && !MINIMAL_LIBC_CALLOC
+	default y
+	help
+	  Enable the common C library trivial implementation of calloc,
+	  which forwards to malloc and memset.
+
+config COMMON_LIBC_REALLOCARRAY
+	bool "Common C library reallocarray"
+	depends on COMMON_LIBC_MALLOC
+	default n if MINIMAL_LIBC && !MINIMAL_LIBC_REALLOCARRAY
+	default y
+	help
+	  Enable the common C library trivial implementation of
+	  reallocarray, which forwards to realloc.

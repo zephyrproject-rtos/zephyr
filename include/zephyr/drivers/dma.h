@@ -71,6 +71,7 @@ enum dma_attribute_type {
 	DMA_ATTR_BUFFER_ADDRESS_ALIGNMENT,
 	DMA_ATTR_BUFFER_SIZE_ALIGNMENT,
 	DMA_ATTR_COPY_ALIGNMENT,
+	DMA_ATTR_MAX_BLOCK_COUNT,
 };
 
 /**
@@ -374,6 +375,9 @@ static inline int dma_reload(const struct device *dev, uint32_t channel,
  * Implementations must check the validity of the channel ID passed in and
  * return -EINVAL if it is invalid.
  *
+ * Start is allowed on channels that have already been started and must report
+ * success.
+ *
  * @param dev     Pointer to the device structure for the driver instance.
  * @param channel Numeric identification of the channel where the transfer will
  *                be processed
@@ -396,6 +400,9 @@ static inline int z_impl_dma_start(const struct device *dev, uint32_t channel)
  *
  * Implementations must check the validity of the channel ID passed in and
  * return -EINVAL if it is invalid.
+ *
+ * Stop is allowed on channels that have already been stopped and must report
+ * success.
  *
  * @param dev     Pointer to the device structure for the driver instance.
  * @param channel Numeric identification of the channel where the transfer was

@@ -12,92 +12,6 @@
 #include <zephyr/arch/cpu.h>
 #include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
 
-/* MEC devices IDs with special PLL handling */
-#define MCHP_GCFG_DID_DEV_ID_MEC150x    0x0020U
-#define MCHP_TRIM_ENABLE_INT_OSCILLATOR 0x06U
-
-#define TEST_CLK_OUT_PIN_COUNT		1
-
-/*
- * Make sure PCR sleep enables are clear except for crypto
- * which do not have internal clock gating.
- */
-static int soc_pcr_init(void)
-{
-	PCR_REGS->SLP_EN0 = 0;
-	PCR_REGS->SLP_EN1 = 0;
-	PCR_REGS->SLP_EN2 = 0;
-	PCR_REGS->SLP_EN4 = 0;
-	PCR_REGS->SLP_EN3 = MCHP_PCR3_CRYPTO_MASK;
-
-	return 0;
-}
-
-/*
- * Select 32KHz clock source used for PLL reference.
- * Options are:
- * Internal 32KHz silicon oscillator.
- * External parallel resonant crystal between XTAL1 and XTAL2 pins.
- * External single ended crystal connected to XTAL2 pin.
- * External 32KHz square wave from Host chipset/board on 32KHZ_IN pin.
- * NOTES:
- *   FW Program new value to VBAT CLK32 Enable register.
- *   HW if new value != current value
- *   HW endif
- *   FW spin until PCR PLL lock is set.
- *   32K stable and PLL locked.
- *   PLL POR or clock source change can take up to 3ms to lock.
- *   32KHZ_IN pin must be configured for 32KHZ_IN function.
- *   Crystals vary and may take longer time to stabilize this will
- *   affect PLL lock time.
- *   Crystal do not like to be power cycled. If using a crystal
- *   the board should supply a battery backed (VBAT) power rail.
- *   The VBAT clock control register selecting 32KHz source is
- *   connected to the VBAT power rail. If using a battery one can
- *   check the VBAT Power Fail and Reset Status register for a VBAT POR.
- */
-static void clk32_change(uint8_t new_clk32)
-{
-	/* Program new value. */
-	VBATR_REGS->CLK32_EN = new_clk32 & MCHP_VBATR_CLKEN_MASK;
-
-	/* Wait for PLL lock. HW state machine is configuring PLL. */
-	while ((PCR_REGS->OSC_ID & MCHP_PCR_OSC_ID_PLL_LOCK) == 0)
-		;
-}
-
-static int soc_clk32_init(void)
-{
-	uint8_t new_clk32;
-
-#ifdef CONFIG_SOC_MEC1501_EXT_32K
-  #ifdef CONFIG_SOC_MEC1501_EXT_32K_CRYSTAL
-    #ifdef CONFIG_SOC_MEC1501_EXT_32K_PARALLEL_CRYSTAL
-	new_clk32 = MCHP_VBATR_USE_PAR_CRYSTAL;
-    #else
-	new_clk32 = MCHP_VBATR_USE_SE_CRYSTAL;
-    #endif
-  #else
-	/* Use 32KHZ_PIN as 32KHz source */
-	new_clk32 = MCHP_VBATR_USE_32KIN_PIN;
-  #endif
-#else
-	/* Use internal 32KHz +/-2% silicon oscillator
-	 * if required performed OTP value override
-	 */
-	if (MCHP_DEVICE_ID() == MCHP_GCFG_DID_DEV_ID_MEC150x) {
-		if (MCHP_REVISION_ID() == MCHP_GCFG_REV_B0) {
-			VBATR_REGS->CKK32_TRIM = MCHP_TRIM_ENABLE_INT_OSCILLATOR;
-		}
-	}
-
-	new_clk32 = MCHP_VBATR_USE_SIL_OSC;
-#endif
-	clk32_change(new_clk32);
-
-	return 0;
-}
-
 /*
  * Initialize MEC1501 EC Interrupt Aggregator (ECIA) and external NVIC
  * inputs.
@@ -157,30 +71,13 @@ static void configure_debug_interface(void)
 #endif /* CONFIG_SOC_MEC1501_DEBUG_WITHOUT_TRACING */
 }
 
-static int soc_init(const struct device *dev)
+static int soc_init(void)
 {
 	uint32_t isave;
-#ifdef CONFIG_SOC_MEC1501_TEST_CLK_OUT
-	const pinctrl_soc_pin_t test_clk_out_pin = {MCHP_XEC_PINMUX(060, MCHP_AF2), 0};
-#endif
 
-	ARG_UNUSED(dev);
 
 	isave = __get_PRIMASK();
 	__disable_irq();
-
-	soc_pcr_init();
-
-	soc_clk32_init();
-
-	/*
-	 * On HW reset PCR Processor Clock Divider = 4 for 48/4 = 12 MHz.
-	 * Set clock divider = 1 for maximum speed.
-	 * NOTE1: This clock divider affects all Cortex-M4 core clocks.
-	 * If you change it you must reprogram SYSTICK to maintain the
-	 * same absolute time interval.
-	 */
-	PCR_REGS->PROC_CLK_CTRL = CONFIG_SOC_MEC1501_PROC_CLK_DIV;
 
 	soc_ecia_init();
 
@@ -193,15 +90,6 @@ static int soc_init(const struct device *dev)
 #endif
 
 	configure_debug_interface();
-
-#ifdef CONFIG_SOC_MEC1501_TEST_CLK_OUT
-	/*
-	 * Deep sleep testing: Enable TEST_CLK_OUT on GPIO_060 function 2.
-	 * TEST_CLK_OUT is the PLL 48MHz conditioned output.
-	 */
-
-	pinctrl_configure_pins(&test_clk_out_pin, TEST_CLK_OUT_PIN_COUNT, 0);
-#endif
 
 	if (!isave) {
 		__enable_irq();

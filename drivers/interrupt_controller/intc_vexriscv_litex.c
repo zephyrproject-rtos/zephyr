@@ -120,9 +120,8 @@ int arch_irq_is_enabled(unsigned int irq)
 	return vexriscv_litex_irq_getmask() & (1 << irq);
 }
 
-static int vexriscv_litex_irq_init(const struct device *dev)
+static int vexriscv_litex_irq_init(void)
 {
-	ARG_UNUSED(dev);
 	__asm__ volatile ("csrrs x0, mie, %0"
 			:: "r"(1 << RISCV_MACHINE_EXT_IRQ));
 	vexriscv_litex_irq_setie(1);

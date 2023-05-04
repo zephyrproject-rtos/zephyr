@@ -207,26 +207,6 @@ You can build and flash the examples to make sure Zephyr is running correctly on
 your board. The button and LED definitions can be found in
 :zephyr_file:`boards/arm/pinnacle_100_dvk/pinnacle_100_dvk.dts`.
 
-Selecting the pins
-==================
-To select the pin numbers for tx-pin and rx-pin:
-
-.. code-block:: console
-
-   tx-pin = <pin_no>
-
-Open the `nRF52840 Product Specification`_, chapter 7 'Hardware and Layout'.
-In the table 7.1.1 'aQFN73 ball assignments' select the pins marked
-'General purpose I/O'.  Note that pins marked as 'low frequency I/O only' can only be used
-in under-10KHz applications. They are not suitable for 115200 speed of UART.
-
-Translate the 'Pin' into number for devicetree by using the following formula::
-
-   pin_no = b\*32 + a
-
-where ``a`` and ``b`` are from the Pin value in the table (Pb.a).
-For example, for P0.1, ``pin_no = 1`` and for P1.0, ``pin_no = 32``.
-
 References
 **********
 

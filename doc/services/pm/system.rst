@@ -25,6 +25,7 @@ Some handful examples using different power management features:
 
 * :zephyr_file:`samples/boards/stm32/power_mgmt/blinky/`
 * :zephyr_file:`samples/boards/nrf/system_off/`
+* :zephyr_file:`samples/boards/esp32/deep_sleep/`
 * :zephyr_file:`samples/subsys/pm/device_pm/`
 * :zephyr_file:`tests/subsys/pm/power_mgmt/`
 * :zephyr_file:`tests/subsys/pm/power_mgmt_soc/`

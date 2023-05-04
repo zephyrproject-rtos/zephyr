@@ -1,7 +1,7 @@
 .. _peci_api:
 
-PECI
-####
+Platform Environment Control Interface (PECI)
+#############################################
 
 Overview
 ********

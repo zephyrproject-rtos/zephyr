@@ -1,0 +1,8 @@
+# Copyright (c) 2022 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+
+rsource "Kconfig.loopback"
+rsource "Kconfig.cdc_acm"
+rsource "Kconfig.bt"
+rsource "Kconfig.msc"

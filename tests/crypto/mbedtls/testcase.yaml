@@ -5,11 +5,7 @@ common:
   timeout: 400
 tests:
   crypto.mbedtls:
-    arch_exclude: riscv64
     platform_exclude: m2gl025_miv
     extra_configs:
       - CONFIG_PICOLIBC_HEAP_SIZE=0
-  crypto.mbedtls.riscv64:
-    arch_allow: riscv64
-    extra_configs:
-      - CONFIG_ZTEST_STACK_SIZE=8192
+      - arch:riscv64:CONFIG_ZTEST_STACK_SIZE=8192

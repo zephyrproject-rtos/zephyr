@@ -5,12 +5,20 @@ common:
 tests:
   logging.log_backend_fs.automounted:
     platform_allow: native_posix native_posix_64 nrf52840dk_nrf52840
+    integration_platforms:
+      - native_posix
   logging.log_backend_fs.manualmounted.native_posix:
     platform_allow: native_posix
     extra_args: DTC_OVERLAY_FILE="./boards/native_posix.overlay;./boards/automount.overlay"
+    integration_platforms:
+      - native_posix
   logging.log_backend_fs.manualmounted.native_posix_64:
     platform_allow: native_posix_64
     extra_args: DTC_OVERLAY_FILE="./boards/native_posix_64.overlay;./boards/automount.overlay"
+    integration_platforms:
+      - native_posix_64
   logging.log_backend_fs.manualmounted.nrf5840dk:
     platform_allow: nrf52840dk_nrf52840
     extra_args: DTC_OVERLAY_FILE="./boards/nrf52840dk_nrf52840.overlay;./boards/automount.overlay"
+    integration_platforms:
+      - nrf52840dk_nrf52840

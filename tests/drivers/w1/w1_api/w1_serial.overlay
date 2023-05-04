@@ -5,6 +5,8 @@
  */
 
 &arduino_serial {
+	status = "okay";
+
 	w1_0: w1 {
 		compatible = "zephyr,w1-serial";
 	};

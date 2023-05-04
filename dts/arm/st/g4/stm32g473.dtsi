@@ -12,6 +12,7 @@
 			compatible = "st,stm32-timers";
 			reg = <0x40000c00 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000008>;
+			resets = <&rctl STM32_RESET(APB1L, 3U)>;
 			interrupts = <50 0>;
 			interrupt-names = "global";
 			st,prescaler = <0>;
@@ -40,7 +41,7 @@
 			interrupts = <62 0>;
 			status = "disabled";
 			#io-channel-cells = <1>;
-			has-temp-channel;
+			temp-channel = <4>;
 		};
 
 		spi4: spi@40013c00 {

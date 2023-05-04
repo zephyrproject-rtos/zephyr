@@ -1,0 +1,11 @@
+#Copyright 2022 Meta Platforms, Inc.and its affiliates.
+#SPDX-License-Identifier: Apache-2.0
+
+config UART_CDNS
+	bool "Serial driver for Cadence UART IP6528"
+	default y
+	depends on DT_HAS_CDNS_UART_ENABLED
+	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
+	help
+	This option enables the serial driver for Cadence UART IP6528.

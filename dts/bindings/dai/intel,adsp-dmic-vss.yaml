@@ -1,0 +1,13 @@
+# Copyright (c) 2022 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: Intel DMIC Vendor SHIM controller
+
+compatible: "intel,adsp-dmic-vss"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true

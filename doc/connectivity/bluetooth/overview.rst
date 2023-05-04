@@ -20,7 +20,7 @@ Supported Features
 Zephyr comes integrated with a feature-rich and highly configurable
 Bluetooth stack.
 
-* Bluetooth 5.0 compliant (ESR10)
+* Bluetooth v5.3 compliant
 
   * Highly configurable
 
@@ -31,8 +31,8 @@ Bluetooth stack.
 
   * Support for all combinations of Host and Controller builds:
 
-    * Controller-only (HCI) over UART, SPI, and USB physical transports
-    * Host-only over UART, SPI, and IPM (shared memory)
+    * Controller-only (HCI) over UART, SPI, USB and IPC physical transports
+    * Host-only over UART, SPI, and IPC (shared memory)
     * Combined (Host + Controller)
 
 * Bluetooth-SIG qualified
@@ -43,6 +43,7 @@ Bluetooth stack.
 * Bluetooth Low Energy Controller support (LE Link Layer)
 
   * Unlimited role and connection count, all roles supported
+  * All v5.3 specification features supported (except a few minor items)
   * Concurrent multi-protocol support ready
   * Intelligent scheduling of roles to minimize overlap
   * Portable design to any open BLE radio, currently supports Nordic
@@ -58,11 +59,17 @@ Bluetooth stack.
 
     * Peripheral & Central
     * Observer & Broadcaster
+    * Multiple PHY support (2Mbit/s, Coded)
+    * Extended Advertising
+    * Periodic Advertising (including Sync Transfer)
 
   * GATT (Generic Attribute Profile)
 
     * Server (to be a sensor)
     * Client (to connect to sensors)
+    * Enhanced ATT (EATT)
+    * GATT Database Hash
+    * GATT Multiple Notifications
 
   * Pairing support, including the Secure Connections feature from Bluetooth 4.2
 
@@ -72,7 +79,8 @@ Bluetooth stack.
   * Bluetooth mesh support
 
     * Relay, Friend Node, Low-Power Node (LPN) and GATT Proxy features
-    * Both Provisioning bearers supported (PB-ADV & PB-GATT)
+    * Both Provisioning roles and bearers supported (PB-ADV & PB-GATT)
+    * Foundation Models included
     * Highly configurable, fits as small as 16k RAM devices
 
   * IPSP/6LoWPAN for IPv6 connectivity over Bluetooth LE
@@ -93,3 +101,27 @@ Bluetooth stack.
     * Local controller support as a virtual HCI driver
 
   * Verified with multiple popular controllers
+
+* LE Audio in Host and Controller
+
+  * Isochronous channels
+
+    * Full Host support
+    * Initial Controller support
+
+  * Generic Audio Framework
+
+    * Basic Audio Profile
+
+      * Unicast server and client
+      * Broadcast source and sink
+      * Broadcast assistant
+      * Scan delegator
+
+    * Common Audio Profile
+
+      * Acceptor
+
+    * Volume Control Profile, Microphone Control Profile
+    * Call Control Profile, Media Control Profile
+    * Coordinated Set Identification Profile

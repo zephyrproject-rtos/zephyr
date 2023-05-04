@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Nordic Semiconductor ASA
+ * Copyright (c) 2022-2023 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -21,7 +21,33 @@ struct zcbor_map_decode_key_val {
 	bool found;
 };
 
+/** @brief Define single key-decoder mapping
+ *
+ * The macro creates a single zcbor_map_decode_key_val type object.
+ *
+ * @param k	key is "" enclosed string representing key;
+ * @param dec	decoder function; this should be zcbor_decoder_t
+ *		type function from zcbor or a user provided implementation
+ *		compatible with the type.
+ * @param vp	non-NULL pointer for result of decoding; should correspond
+ *		to type served by decoder function for the mapping.
+ */
+#define ZCBOR_MAP_DECODE_KEY_DECODER(k, dec, vp)		\
+	{							\
+		{						\
+			.value = k,				\
+			.len = sizeof(k) - 1,			\
+		},						\
+		.decoder = (zcbor_decoder_t *)dec,		\
+		.value_ptr = vp,				\
+		.found = false,					\
+	}
+
 /** @brief Define single key-value decode mapping
+ *
+ * ZCBOR_MAP_DECODE_KEY_DECODER should be used instead of this macro as,
+ * this macro does not allow keys with whitespaces embeeded, which CBOR
+ * does allow.
  *
  * The macro creates a single zcbor_map_decode_key_val type object.
  *
@@ -34,28 +60,19 @@ struct zcbor_map_decode_key_val {
  *		to type served by decoder function for the mapping.
  */
 #define ZCBOR_MAP_DECODE_KEY_VAL(k, dec, vp)			\
-	{							\
-		{						\
-			.value = STRINGIFY(k),			\
-			.len = sizeof(STRINGIFY(k)) - 1,	\
-		},						\
-		.decoder = (zcbor_decoder_t *)dec,		\
-		.value_ptr = vp,				\
-	}
-
+	ZCBOR_MAP_DECODE_KEY_DECODER(STRINGIFY(k), dec, vp)
 
 /** @brief Decodes single level map according to a provided key-decode map.
  *
  * The function takes @p map of key to decoder array defined as:
  *
  *	struct zcbor_map_decode_key_val map[] = {
- *		ZCBOR_MAP_DECODE_KEY_VAL(key0, decode_fun0, val_ptr0),
- *		ZCBOR_MAP_DECODE_KEY_VAL(key1, decode_fun1, val_ptr1),
+ *		ZCBOR_MAP_DECODE_KEY_DECODER("key0", decode_fun0, val_ptr0),
+ *		ZCBOR_MAP_DECODE_KEY_DECODER("key1", decode_fun1, val_ptr1),
  *		...
  *	};
  *
- * where key? is string representing key without "", for example when key
- * is "abcd" , then the abcd should be provided; the decode_fun? is
+ * where "key?" is string representing key; the decode_fun? is
  * zcbor_decoder_t compatible function, either from zcbor or defined by
  * user; val_ptr? are pointers to variables where decoder function for
  * a given key will place a decoded value - they have to agree in type
@@ -84,6 +101,31 @@ struct zcbor_map_decode_key_val {
  */
 int zcbor_map_decode_bulk(zcbor_state_t *zsd, struct zcbor_map_decode_key_val *map,
 	size_t map_size, size_t *matched);
+
+/** @brief Check whether key has been found by zcbor_map_decode_bulk
+ *
+ * @param map		key-decoder mapping list;
+ * @param map_size	size of maps, both maps have to have the same size;
+ * @param key		string representing key to check with map.
+ *
+ * @return		true if key has been found during decoding, false otherwise.
+ *
+ */
+bool zcbor_map_decode_bulk_key_found(struct zcbor_map_decode_key_val *map,
+	size_t map_size, const char *key);
+
+/** @brief Reset decoding state of key-value
+ *
+ * The function takes @p map and resets internal fields that mark decoding state
+ * of the map. Function needs to be used on @p map after the map has been already
+ * used for decoding other buffer, otherwise decoding may fail.
+ *
+ * @param map		key-decoder mapping list;
+ * @param map_size	size of maps, both maps have to have the same size.
+ *
+ * @return Nothing.
+ */
+void zcbor_map_decode_bulk_reset(struct zcbor_map_decode_key_val *map, size_t map_size);
 
 /** @endcond */
 

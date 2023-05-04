@@ -1,0 +1,553 @@
+/*
+ * Copyright (c) 2022 Intel Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <xtensa/xtensa.dtsi>
+#include <mem.h>
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			device_type = "cpu";
+			compatible = "cdns,tensilica-xtensa-lx7";
+			reg = <0>;
+			cpu-power-states = <&d0i3 &d3>;
+		};
+
+		cpu1: cpu@1 {
+			device_type = "cpu";
+			compatible = "cdns,tensilica-xtensa-lx7";
+			reg = <1>;
+			cpu-power-states = <&d0i3 &d3>;
+		};
+
+		cpu2: cpu@2 {
+			device_type = "cpu";
+			compatible = "cdns,tensilica-xtensa-lx7";
+			reg = <2>;
+			cpu-power-states = <&d0i3 &d3>;
+		};
+
+		cpu3: cpu@3 {
+			device_type = "cpu";
+			compatible = "cdns,tensilica-xtensa-lx7";
+			reg = <3>;
+			cpu-power-states = <&d0i3 &d3>;
+		};
+
+	};
+
+	power-states {
+		d0i3: idle {
+			compatible = "zephyr,power-state";
+			power-state-name = "runtime-idle";
+			min-residency-us = <200>;
+			exit-latency-us = <100>;
+		};
+		/* PM_STATE_SOFT_OFF can be entered only by calling pm_state_force.
+		 * The procedure is triggered by IPC from the HOST (SET_DX).
+		 */
+		d3: off {
+			compatible = "zephyr,power-state";
+			power-state-name = "soft-off";
+			min-residency-us = <2147483647>;
+			exit-latency-us = <0>;
+		};
+	};
+
+	sram0: memory@a0020000 {
+		device_type = "memory";
+		compatible = "mmio-sram";
+		reg = <0xa0020000 DT_SIZE_K(2816)>;
+	};
+
+	sram0virtual: virtualmemory@a0020000 {
+		device_type = "memory";
+		compatible = "mmio-sram";
+		reg = <0xa0020000 DT_SIZE_K(8192)>;
+	};
+
+	sram1: memory@a0000000 {
+		device_type = "memory";
+		compatible = "mmio-sram";
+		reg = <0xa0000000 DT_SIZE_K(64)>;
+	};
+
+	sysclk: system-clock {
+		compatible = "fixed-clock";
+		clock-frequency = <38400000>;
+		#clock-cells = <0>;
+	};
+
+	clkctl: clkctl {
+		compatible = "intel,adsp-shim-clkctl";
+		adsp-clkctl-clk-wovcro = <0>;
+		adsp-clkctl-clk-lpro = <1>;
+		adsp-clkctl-clk-hpro = <2>;
+		adsp-clkctl-freq-enc = <0xc 0x0 0x4>;
+		adsp-clkctl-freq-mask = <0x0 0x0 0x0>;
+		adsp-clkctl-freq-default = <2>;
+		adsp-clkctl-freq-lowest = <0>;
+		wovcro-supported;
+	};
+
+	audioclk: audio-clock {
+		compatible = "fixed-clock";
+		clock-frequency = <24576000>;
+		#clock-cells = <0>;
+	};
+
+	pllclk: pll-clock {
+		compatible = "fixed-clock";
+		clock-frequency = <96000000>;
+		#clock-cells = <0>;
+	};
+
+	IMR1: memory@A1000000 {
+		compatible = "intel,adsp-imr";
+		reg = <0xA1000000 DT_SIZE_M(16)>;
+		block-size = <0x1000>;
+		zephyr,memory-region = "IMR1";
+	};
+
+	shim: shim@71f00 {
+		compatible = "intel,adsp-shim";
+		reg = <0x71f00 0x100>;
+	};
+
+	soc {
+		core_intc: core_intc@0 {
+			compatible = "cdns,xtensa-core-intc";
+			reg = <0x00 0x400>;
+			interrupt-controller;
+			#interrupt-cells = <3>;
+		};
+
+		hdamlddmic: hdamlddmic@cc0 {
+			compatible = "intel,adsp-hda-dmic-cap";
+			reg = <0xcc0 0x40>;
+			status = "okay";
+		};
+
+		dmic0: dai-dmic0@10100 {
+			compatible = "intel,dai-dmic";
+			reg = <0x10100 0x8000>;
+			shim = <0x10000>;
+			fifo = <0x0008>;
+			interrupts = <0x08 0 0>;
+			interrupt-parent = <&ace_intc>;
+		};
+
+		dmic1: dai-dmic1@10100 {
+			compatible = "intel,dai-dmic";
+			reg = <0x10100 0x8000>;
+			shim = <0x10000>;
+			fifo = <0x0108>;
+			interrupts = <0x08 0 0>;
+			interrupt-parent = <&ace_intc>;
+		};
+
+		dmicvss: dmicvss@16000 {
+			compatible = "intel,adsp-dmic-vss";
+			reg = <0x16000 0x2000>;
+			status = "okay";
+		};
+
+		sspbase: ssp_base@28000 {
+			compatible = "intel,ssp-sspbase";
+			reg = <0x28000 0x1000>;
+		};
+
+		hdamlssp: hdamlssp@d00 {
+			compatible = "intel,adsp-hda-ssp-cap";
+			reg = <0xD00 0x40>;
+			status = "okay";
+		};
+
+		ssp0: ssp@28100 {
+			compatible = "intel,ssp-dai";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x00028100 0x1000
+				   0x00079C00 0x200>;
+			i2svss = <0x00028C00 0x1000>;
+			interrupts = <0x00 0 0>;
+			interrupt-parent = <&ace_intc>;
+			dmas = <&hda_link_out 1
+				&hda_link_in 1>;
+			dma-names = "tx", "rx";
+			power-domain = <&io0_domain>;
+			status = "okay";
+		};
+
+		ssp1: ssp@29100 {
+			compatible = "intel,ssp-dai";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x00029100 0x1000
+				   0x00079C00 0x200>;
+			i2svss = <0x00029C00 0x1000>;
+			interrupts = <0x01 0 0>;
+			interrupt-parent = <&ace_intc>;
+			dmas = <&hda_link_out 2
+				&hda_link_in 2>;
+			dma-names = "tx", "rx";
+			power-domain = <&io0_domain>;
+			status = "okay";
+		};
+
+		ssp2: ssp@2a100 {
+			compatible = "intel,ssp-dai";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x0002a100 0x1000
+				   0x00079C00 0x200>;
+			i2svss = <0x0002AC00 0x1000>;
+			interrupts = <0x02 0 0>;
+			interrupt-parent = <&ace_intc>;
+			dmas = <&hda_link_out 3
+				&hda_link_in 3>;
+			dma-names = "tx", "rx";
+			power-domain = <&io0_domain>;
+			status = "okay";
+		};
+
+		ssp3: ssp@2b100 {
+			compatible = "intel,ssp-dai";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x0002b100 0x1000
+				   0x00079C00 0x200>;
+			i2svss = <0x0002BC00 0x1000>;
+			interrupts = <0x03 0 0>;
+			interrupt-parent = <&ace_intc>;
+			dmas = <&hda_link_out 4
+				&hda_link_in 4>;
+			dma-names = "tx", "rx";
+			power-domain = <&io0_domain>;
+			status = "okay";
+		};
+
+		ssp4: ssp@2c100 {
+			compatible = "intel,ssp-dai";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x0002c100 0x1000
+				   0x00079C00 0x200>;
+			i2svss = <0x0002CC00 0x1000>;
+			interrupts = <0x04 0 0>;
+			interrupt-parent = <&ace_intc>;
+			dmas = <&hda_link_out 5
+				&hda_link_in 5>;
+			dma-names = "tx", "rx";
+			power-domain = <&io0_domain>;
+			status = "okay";
+		};
+
+		ssp5: ssp@2d100 {
+			compatible = "intel,ssp-dai";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x0002d100 0x1000
+				   0x00079C00 0x200>;
+			i2svss = <0x0002DC00 0x1000>;
+			interrupts = <0x04 0 0>;
+			interrupt-parent = <&ace_intc>;
+			dmas = <&hda_link_out 6
+				&hda_link_in 6>;
+			dma-names = "tx", "rx";
+			power-domain = <&io0_domain>;
+			status = "okay";
+		};
+
+		mem_window0: mem_window@70200 {
+			compatible = "intel,adsp-mem-window";
+			reg = <0x70200 0x8>;
+			offset = <0x4000>;
+			memory = <&sram0>;
+			initialize;
+			read-only;
+		};
+
+		mem_window1: mem_window@70208 {
+			compatible = "intel,adsp-mem-window";
+			reg = <0x70208 0x8>;
+			memory = <&sram0>;
+		};
+
+		mem_window2: mem_window@70210 {
+			compatible = "intel,adsp-mem-window";
+			reg = <0x70210 0x8>;
+			memory = <&sram0>;
+		};
+
+		mem_window3: mem_window@70218 {
+			compatible = "intel,adsp-mem-window";
+			reg = <0x70218 0x8>;
+			memory = <&sram0>;
+			read-only;
+		};
+
+		adsp_idc: ace_idc@70400 {
+			compatible = "intel,adsp-idc";
+			reg = <0x70400 0x0400>;
+			interrupts = <24 0 0>;
+			interrupt-parent = <&ace_intc>;
+		};
+
+		dfpmcch: dfpmcch@71ac0 {
+			compatible = "intel,adsp-dfpmcch";
+			reg = <0x00071ac0 0x40>;
+		};
+
+		dfpmccu: dfpmccu@71b00 {
+			compatible = "intel,adsp-dfpmccu";
+			reg = <0x71b00 0x100>;
+
+			hub_ulp_domain: hub_ulp_domain {
+				compatible = "intel,adsp-power-domain";
+				bit-position = <15>;
+			};
+			hub_hp_domain: hub_hpp_domain {
+				compatible = "intel,adsp-power-domain";
+				bit-position = <6>;
+			};
+			io0_domain: io0_domain {
+				compatible = "intel,adsp-power-domain";
+				bit-position = <8>;
+			};
+			io1_domain: io1_domain {
+				compatible = "intel,adsp-power-domain";
+				bit-position = <9>;
+			};
+			io2_domain: io2_domain {
+				compatible = "intel,adsp-power-domain";
+				bit-position = <10>;
+			};
+			io3_domain: io3_domain {
+				compatible = "intel,adsp-power-domain";
+				bit-position = <11>;
+			};
+			hst_domain: hst_domain {
+				compatible = "intel,adsp-power-domain";
+				bit-position = <4>;
+			};
+			ml0_domain: ml0_domain {
+				compatible = "intel,adsp-power-domain";
+				bit-position = <12>;
+			};
+			ml1_domain: ml1_domain {
+				compatible = "intel,adsp-power-domain";
+				bit-position = <13>;
+			};
+		};
+
+		tts: tts@72000 {
+			compatible = "intel,adsp-tts";
+			reg = <0x72000 0x70>;
+			status = "okay";
+		};
+
+		ace_rtc_counter: ace_rtc_counter@72008 {
+			compatible = "intel,ace-rtc-counter";
+			reg = <0x72008 0x0064>;
+		};
+
+
+		ace_timestamp: ace_timestamp@72040 {
+			compatible = "intel,ace-timestamp";
+			reg = <0x72040 0x0032>;
+		};
+
+		ace_art_counter: ace_art_counter@72058 {
+			compatible = "intel,ace-art-counter";
+			reg = <0x72058 0x0064>;
+		};
+
+		hda_host_out: dma@72800 {
+			compatible = "intel,adsp-hda-host-out";
+			#dma-cells = <1>;
+			reg = <0x00072800 0x40>;
+			dma-channels = <9>;
+			dma-buf-addr-alignment = <128>;
+			dma-buf-size-alignment = <32>;
+			dma-copy-alignment = <32>;
+			status = "okay";
+		};
+
+		hda_host_in: dma@72c00 {
+			compatible = "intel,adsp-hda-host-in";
+			#dma-cells = <1>;
+			reg = <0x00072c00 0x40>;
+			dma-channels = <11>;
+			dma-buf-addr-alignment = <128>;
+			dma-buf-size-alignment = <32>;
+			dma-copy-alignment = <32>;
+			status = "okay";
+		};
+
+		adsp_host_ipc: ace_host_ipc@73000 {
+			compatible = "intel,adsp-host-ipc";
+			status = "okay";
+			reg = <0x73000 0x30>;
+			interrupts = <0 0 0>;
+			interrupt-parent = <&ace_intc>;
+		};
+
+		hda_link_out: dma@79400 {
+			compatible = "intel,adsp-hda-link-out";
+			#dma-cells = <1>;
+			reg = <0x00079400 0x40>;
+			dma-channels = <9>;
+			dma-buf-addr-alignment = <128>;
+			dma-buf-size-alignment = <32>;
+			dma-copy-alignment = <32>;
+			status = "okay";
+		};
+
+		hda_link_in: dma@79800 {
+			compatible = "intel,adsp-hda-link-in";
+			#dma-cells = <1>;
+			reg = <0x00079800 0x40>;
+			dma-channels = <11>;
+			dma-buf-addr-alignment = <128>;
+			dma-buf-size-alignment = <32>;
+			dma-copy-alignment = <32>;
+			status = "okay";
+		};
+
+		/* This is actually an array of per-core designware
+		 * controllers, but the special setup and extra
+		 * masking layer makes it easier for LNL to handle
+		 * this internally.
+		 */
+		ace_intc: ace_intc@7ac00  {
+			compatible = "intel,ace-intc";
+			reg = <0x7ac00 0xc00>;
+			interrupt-controller;
+			#interrupt-cells = <3>;
+			interrupts = <4 0 0>;
+			num-irqs = <28>;
+			interrupt-parent = <&core_intc>;
+		};
+
+		tlb: tlb@17e000 {
+			compatible = "intel,adsp-mtl-tlb";
+			reg = <0x17e000 0x1000>;
+			paddr-size = <12>;
+			exec-bit-idx = <14>;
+			write-bit-idx= <15>;
+		};
+
+		timer: timer {
+			compatible = "intel,adsp-timer";
+			syscon = <&tts>;
+		};
+	};
+
+	hdas {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		hda0: hda@0 {
+			compatible = "intel,hda-dai";
+			status = "okay";
+			reg = <0>;
+		};
+		hda1: hda@1 {
+			compatible = "intel,hda-dai";
+			status = "okay";
+			reg = <1>;
+		};
+		hda2: hda@2 {
+			compatible = "intel,hda-dai";
+			status = "okay";
+			reg = <2>;
+		};
+		hda3: hda@3 {
+			compatible = "intel,hda-dai";
+			status = "okay";
+			reg = <3>;
+		};
+		hda4: hda@4 {
+			compatible = "intel,hda-dai";
+			status = "okay";
+			reg = <4>;
+		};
+		hda5: hda@5 {
+			compatible = "intel,hda-dai";
+			status = "okay";
+			reg = <5>;
+		};
+		hda6: hda@6 {
+			compatible = "intel,hda-dai";
+			status = "okay";
+			reg = <6>;
+		};
+		hda7: hda@7 {
+			compatible = "intel,hda-dai";
+			status = "okay";
+			reg = <7>;
+		};
+		hda8: hda@8 {
+			compatible = "intel,hda-dai";
+			status = "okay";
+			reg = <8>;
+		};
+		hda9: hda@9 {
+			compatible = "intel,hda-dai";
+			status = "okay";
+			reg = <9>;
+		};
+		hda10: hda@a {
+			compatible = "intel,hda-dai";
+			status = "okay";
+			reg = <0x0a>;
+		};
+		hda11: hda@b {
+			compatible = "intel,hda-dai";
+			status = "okay";
+			reg = <0x0b>;
+		};
+		hda12: hda@c {
+			compatible = "intel,hda-dai";
+			status = "okay";
+			reg = <0x0c>;
+		};
+		hda13: hda@d {
+			compatible = "intel,hda-dai";
+			status = "okay";
+			reg = <0x0d>;
+		};
+		hda14: hda@e {
+			compatible = "intel,hda-dai";
+			status = "okay";
+			reg = <0x0e>;
+		};
+		hda15: hda@f {
+			compatible = "intel,hda-dai";
+			status = "okay";
+			reg = <0x0f>;
+		};
+		hda16: hda@10 {
+			compatible = "intel,hda-dai";
+			status = "okay";
+			reg = <0x10>;
+		};
+		hda17: hda@11 {
+			compatible = "intel,hda-dai";
+			status = "okay";
+			reg = <0x11>;
+		};
+		hda18: hda@12 {
+			compatible = "intel,hda-dai";
+			status = "okay";
+			reg = <0x12>;
+		};
+	};
+};

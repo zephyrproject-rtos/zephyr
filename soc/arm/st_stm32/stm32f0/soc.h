@@ -26,9 +26,6 @@
 #undef CAN_MODE_NORMAL
 #undef CAN_MODE_LOOPBACK
 
-/* Add generated devicetree information and STM32 helper macros */
-#include <st_stm32_dt.h>
-
 #endif /* !_ASMLANGUAGE */
 
 #endif /* _STM32F0_SOC_H_ */

@@ -1848,38 +1848,58 @@ void paused_state_command_handler(const struct mpl_cmd *command,
 	case MEDIA_PROXY_OP_PREV_SEGMENT:
 		/* Switch to previous segment if we are less than 5 seconds */
 		/* into the segment, otherwise go to start of segment */
-		if (pl.track_pos - PREV_MARGIN <
-		    pl.group->track->segment->pos) {
-			do_prev_segment(&pl);
+		if (pl.group->track->segment != NULL) {
+			if (pl.track_pos - PREV_MARGIN < pl.group->track->segment->pos) {
+				do_prev_segment(&pl);
+			}
+
+			pl.track_pos = pl.group->track->segment->pos;
+			media_proxy_pl_track_position_cb(pl.track_pos);
+			ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
+		} else {
+			ntf->result_code = MEDIA_PROXY_CMD_CANNOT_BE_COMPLETED;
 		}
-		pl.track_pos = pl.group->track->segment->pos;
-		media_proxy_pl_track_position_cb(pl.track_pos);
-		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
+
 		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_NEXT_SEGMENT:
-		do_next_segment(&pl);
-		pl.track_pos = pl.group->track->segment->pos;
-		media_proxy_pl_track_position_cb(pl.track_pos);
-		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
+		if (pl.group->track->segment != NULL) {
+			do_next_segment(&pl);
+			pl.track_pos = pl.group->track->segment->pos;
+			media_proxy_pl_track_position_cb(pl.track_pos);
+			ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
+		} else {
+			ntf->result_code = MEDIA_PROXY_CMD_CANNOT_BE_COMPLETED;
+		}
+
 		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_FIRST_SEGMENT:
-		do_first_segment(&pl);
-		pl.track_pos = pl.group->track->segment->pos;
-		media_proxy_pl_track_position_cb(pl.track_pos);
-		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
+		if (pl.group->track->segment != NULL) {
+			do_first_segment(&pl);
+			pl.track_pos = pl.group->track->segment->pos;
+			media_proxy_pl_track_position_cb(pl.track_pos);
+			ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
+		} else {
+			ntf->result_code = MEDIA_PROXY_CMD_CANNOT_BE_COMPLETED;
+		}
+
 		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_LAST_SEGMENT:
-		do_last_segment(&pl);
-		pl.track_pos = pl.group->track->segment->pos;
-		media_proxy_pl_track_position_cb(pl.track_pos);
-		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
+		if (pl.group->track->segment != NULL) {
+			do_last_segment(&pl);
+			pl.track_pos = pl.group->track->segment->pos;
+			media_proxy_pl_track_position_cb(pl.track_pos);
+			ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
+		} else {
+			ntf->result_code = MEDIA_PROXY_CMD_CANNOT_BE_COMPLETED;
+		}
+
 		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_GOTO_SEGMENT:
-		if (command->use_param) {
+		if (command->use_param && pl.group->track->segment != NULL) {
 			if (command->param != 0) {
 				do_goto_segment(&pl, command->param);
 				pl.track_pos = pl.group->track->segment->pos;
@@ -2459,7 +2479,6 @@ void set_current_track_id(uint64_t id)
 	LOG_DBG_OBJ_ID("Track ID to set: ", id);
 
 	if (find_track_by_id(&pl, id, &group, &track)) {
-
 		if (pl.group != group) {
 			pl.group = group;
 			do_group_change_notifications(&pl);
@@ -2886,6 +2905,16 @@ void mpl_test_media_state_set(uint8_t state)
 {
 	pl.state = state;
 	media_proxy_pl_media_state_cb(pl.state);
+}
+
+void mpl_test_player_name_changed_cb(void)
+{
+	media_proxy_pl_name_cb(pl.name);
+}
+
+void mpl_test_player_icon_url_changed_cb(void)
+{
+	media_proxy_pl_icon_url_cb(pl.icon_url);
 }
 
 void mpl_test_track_changed_cb(void)

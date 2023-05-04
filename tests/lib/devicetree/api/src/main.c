@@ -57,6 +57,10 @@
 #define TEST_GPIO_1 DT_NODELABEL(test_gpio_1)
 #define TEST_GPIO_2 DT_NODELABEL(test_gpio_2)
 
+#define TEST_GPIO_HOG_1 DT_PATH(test, gpio_deadbeef, test_gpio_hog_1)
+#define TEST_GPIO_HOG_2 DT_PATH(test, gpio_deadbeef, test_gpio_hog_2)
+#define TEST_GPIO_HOG_3 DT_PATH(test, gpio_abcd1234, test_gpio_hog_3)
+
 #define TEST_SPI DT_NODELABEL(test_spi)
 
 #define TEST_SPI_DEV_0 DT_PATH(test, spi_33334444, test_spi_dev_0)
@@ -176,6 +180,16 @@ ZTEST(devicetree_api, test_inst_props)
 			      strlen(label_startswith)), "");
 }
 
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT vnd_device_with_props
+ZTEST(devicetree_api, test_any_inst_prop)
+{
+	zassert_equal(DT_ANY_INST_HAS_PROP_STATUS_OKAY(foo), 1, "");
+	zassert_equal(DT_ANY_INST_HAS_PROP_STATUS_OKAY(bar), 1, "");
+	zassert_equal(DT_ANY_INST_HAS_PROP_STATUS_OKAY(baz), 0, "");
+	zassert_equal(DT_ANY_INST_HAS_PROP_STATUS_OKAY(does_not_exist), 0, "");
+}
+
 ZTEST(devicetree_api, test_default_prop_access)
 {
 	/*
@@ -209,6 +223,11 @@ ZTEST(devicetree_api, test_default_prop_access)
 #define DT_DRV_COMPAT vnd_reg_holder
 	zassert_equal(DT_INST_PROP_OR(0, misc_prop, X), 1234, "");
 	zassert_equal(DT_INST_PROP_OR(0, not_a_property, -1), -1, "");
+
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT vnd_array_holder
+	zassert_equal(DT_INST_PROP_LEN_OR(0, a, X), 3, "");
+	zassert_equal(DT_INST_PROP_LEN_OR(0, not_a_property, -1), -1, "");
 
 #undef DT_DRV_COMPAT
 #define DT_DRV_COMPAT vnd_adc_temp_sensor
@@ -957,6 +976,23 @@ ZTEST(devicetree_api, test_gpio)
 
 	/* DT_GPIO_FLAGS */
 	zassert_equal(DT_GPIO_FLAGS(TEST_PH, gpios), 20, "");
+
+	/* DT_NUM_GPIO_HOGS */
+	zassert_equal(DT_NUM_GPIO_HOGS(TEST_GPIO_HOG_1), 2, "");
+	zassert_equal(DT_NUM_GPIO_HOGS(TEST_GPIO_HOG_2), 1, "");
+	zassert_equal(DT_NUM_GPIO_HOGS(TEST_GPIO_HOG_3), 1, "");
+
+	/* DT_GPIO_HOG_PIN_BY_IDX */
+	zassert_equal(DT_GPIO_HOG_PIN_BY_IDX(TEST_GPIO_HOG_1, 0), 0, "");
+	zassert_equal(DT_GPIO_HOG_PIN_BY_IDX(TEST_GPIO_HOG_1, 1), 1, "");
+	zassert_equal(DT_GPIO_HOG_PIN_BY_IDX(TEST_GPIO_HOG_2, 0), 3, "");
+	zassert_equal(DT_GPIO_HOG_PIN_BY_IDX(TEST_GPIO_HOG_3, 0), 4, "");
+
+	/* DT_GPIO_HOG_FLAGS_BY_IDX */
+	zassert_equal(DT_GPIO_HOG_FLAGS_BY_IDX(TEST_GPIO_HOG_1, 0), 0x00, "");
+	zassert_equal(DT_GPIO_HOG_FLAGS_BY_IDX(TEST_GPIO_HOG_1, 1), 0x10, "");
+	zassert_equal(DT_GPIO_HOG_FLAGS_BY_IDX(TEST_GPIO_HOG_2, 0), 0x20, "");
+	zassert_equal(DT_GPIO_HOG_FLAGS_BY_IDX(TEST_GPIO_HOG_3, 0), 0x30, "");
 
 	/* DT_INST */
 	zassert_equal(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT), 1, "");
@@ -2441,17 +2477,10 @@ ZTEST(devicetree_api, test_pinctrl)
 	zassert_equal(DT_INST_PINCTRL_HAS_NAME(0, f_o_o2), 0, "");
 }
 
-static int test_mbox_init(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-
-	return 0;
-}
-
-DEVICE_DT_DEFINE(DT_NODELABEL(test_mbox), test_mbox_init, NULL,
-		 NULL, NULL, POST_KERNEL, 90, NULL);
-DEVICE_DT_DEFINE(DT_NODELABEL(test_mbox_zero_cell), test_mbox_init, NULL,
-		 NULL, NULL, POST_KERNEL, 90, NULL);
+DEVICE_DT_DEFINE(DT_NODELABEL(test_mbox), NULL, NULL, NULL, NULL, POST_KERNEL,
+		 90, NULL);
+DEVICE_DT_DEFINE(DT_NODELABEL(test_mbox_zero_cell), NULL, NULL, NULL, NULL,
+		 POST_KERNEL, 90, NULL);
 
 ZTEST(devicetree_api, test_mbox)
 {
@@ -2686,6 +2715,160 @@ ZTEST(devicetree_api, test_string_idx_token)
 			TOKEN_SECOND_IDX_ONE, "");
 	zassert_equal(STRING_UPPER_TOKEN_BY_IDX_VAR(DT_NODELABEL(test_str_array_token_1))[2],
 			TOKEN_SECOND_IDX_TWO, "");
+}
+
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT vnd_string_unquoted
+ZTEST(devicetree_api, test_string_unquoted)
+{
+#define XA 12.0
+#define XB 34.0
+#define XPLUS +
+	const double f0_expected = 0.1234;
+	const double f1_expected = 0.9e-3;
+	const double delta = 0.1e-4;
+
+	/* Test DT_STRING_UNQUOTED */
+	zassert_within(DT_STRING_UNQUOTED(DT_NODELABEL(test_str_unquoted_f0), val),
+		       f0_expected, delta, "");
+	zassert_within(DT_STRING_UNQUOTED(DT_NODELABEL(test_str_unquoted_f1), val),
+		       f1_expected, delta, "");
+	zassert_within(DT_STRING_UNQUOTED(DT_NODELABEL(test_str_unquoted_t), val),
+		       XA XPLUS XB, delta, "");
+	/* Test DT_STRING_UNQUOTED_OR */
+	zassert_within(DT_STRING_UNQUOTED_OR(DT_NODELABEL(test_str_unquoted_f0), val, (0.0)),
+		       f0_expected, delta, "");
+	zassert_within(DT_STRING_UNQUOTED_OR(DT_NODELABEL(test_str_unquoted_f1), val, (0.0)),
+		       f1_expected, delta, "");
+	zassert_within(DT_STRING_UNQUOTED_OR(DT_NODELABEL(test_str_unquoted_t), val, (0.0)),
+		       XA XPLUS XB, delta, "");
+	zassert_within(DT_STRING_UNQUOTED_OR(DT_NODELABEL(test_str_unquoted_f0), nak, (0.0)),
+		       0.0, delta, "");
+	zassert_within(DT_STRING_UNQUOTED_OR(DT_NODELABEL(test_str_unquoted_f1), nak, (0.0)),
+		       0.0, delta, "");
+	zassert_within(DT_STRING_UNQUOTED_OR(DT_NODELABEL(test_str_unquoted_t), nak, (0.0)),
+		       0.0, delta, "");
+	/* Test DT_INST_STRING_UNQUOTED */
+#define STRING_UNQUOTED_VAR(node_id) _CONCAT(var_, node_id)
+#define STRING_UNQUOTED_TEST_INST_EXPANSION(inst) \
+	double STRING_UNQUOTED_VAR(DT_DRV_INST(inst)) = DT_INST_STRING_UNQUOTED(inst, val);
+	DT_INST_FOREACH_STATUS_OKAY(STRING_UNQUOTED_TEST_INST_EXPANSION);
+
+	zassert_within(STRING_UNQUOTED_VAR(DT_NODELABEL(test_str_unquoted_f0)),
+		       f0_expected, delta, "");
+	zassert_within(STRING_UNQUOTED_VAR(DT_NODELABEL(test_str_unquoted_f1)),
+		       f1_expected, delta, "");
+	zassert_within(STRING_UNQUOTED_VAR(DT_NODELABEL(test_str_unquoted_t)), XA XPLUS XB,
+		       delta, "");
+
+	/* Test DT_INST_STRING_UNQUOTED_OR */
+#define STRING_UNQUOTED_OR_VAR(node_id) _CONCAT(var_or_, node_id)
+#define STRING_UNQUOTED_OR_TEST_INST_EXPANSION(inst)       \
+	double STRING_UNQUOTED_OR_VAR(DT_DRV_INST(inst))[2] = { \
+		DT_INST_STRING_UNQUOTED_OR(inst, val, (1.0e10)),   \
+		DT_INST_STRING_UNQUOTED_OR(inst, dummy, (1.0e10))  \
+	};
+	DT_INST_FOREACH_STATUS_OKAY(STRING_UNQUOTED_OR_TEST_INST_EXPANSION);
+
+	zassert_within(STRING_UNQUOTED_OR_VAR(DT_NODELABEL(test_str_unquoted_f0))[0],
+		       f0_expected, delta, "");
+	zassert_within(STRING_UNQUOTED_OR_VAR(DT_NODELABEL(test_str_unquoted_f1))[0],
+		       f1_expected, delta, "");
+	zassert_within(STRING_UNQUOTED_OR_VAR(DT_NODELABEL(test_str_unquoted_t))[0],
+		       XA XPLUS XB, delta, "");
+	zassert_within(STRING_UNQUOTED_OR_VAR(DT_NODELABEL(test_str_unquoted_f0))[1],
+		       1.0e10, delta, "");
+	zassert_within(STRING_UNQUOTED_OR_VAR(DT_NODELABEL(test_str_unquoted_f1))[1],
+		       1.0e10, delta, "");
+	zassert_within(STRING_UNQUOTED_OR_VAR(DT_NODELABEL(test_str_unquoted_t))[1],
+		       1.0e10, delta, "");
+#undef XA
+#undef XB
+#undef XPLUS
+}
+
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT vnd_string_array_unquoted
+ZTEST(devicetree_api, test_string_idx_unquoted)
+{
+#define XA 12.0
+#define XB 34.0
+#define XC 56.0
+#define XD 78.0
+#define XPLUS +
+#define XMINUS -
+	const double delta = 0.1e-4;
+
+	/* DT_STRING_UNQUOTED_BY_IDX */
+	zassert_within(DT_STRING_UNQUOTED_BY_IDX(DT_NODELABEL(test_stra_unquoted_f0), val, 0),
+		       1.0e2, delta, "");
+	zassert_within(DT_STRING_UNQUOTED_BY_IDX(DT_NODELABEL(test_stra_unquoted_f0), val, 1),
+		       2.0e2, delta, "");
+	zassert_within(DT_STRING_UNQUOTED_BY_IDX(DT_NODELABEL(test_stra_unquoted_f0), val, 2),
+		       3.0e2, delta, "");
+	zassert_within(DT_STRING_UNQUOTED_BY_IDX(DT_NODELABEL(test_stra_unquoted_f0), val, 3),
+		       4.0e2, delta, "");
+
+	zassert_within(DT_STRING_UNQUOTED_BY_IDX(DT_NODELABEL(test_stra_unquoted_f1), val, 0),
+		       0.01, delta, "");
+	zassert_within(DT_STRING_UNQUOTED_BY_IDX(DT_NODELABEL(test_stra_unquoted_f1), val, 1),
+		       0.1,  delta, "");
+	zassert_within(DT_STRING_UNQUOTED_BY_IDX(DT_NODELABEL(test_stra_unquoted_f1), val, 2),
+		       1.0,  delta, "");
+	zassert_within(DT_STRING_UNQUOTED_BY_IDX(DT_NODELABEL(test_stra_unquoted_f1), val, 3),
+		       10.0, delta, "");
+
+	zassert_within(DT_STRING_UNQUOTED_BY_IDX(DT_NODELABEL(test_stra_unquoted_t), val, 0),
+		       XA XPLUS XB, delta, "");
+	zassert_within(DT_STRING_UNQUOTED_BY_IDX(DT_NODELABEL(test_stra_unquoted_t), val, 1),
+		       XC XPLUS XD,  delta, "");
+	zassert_within(DT_STRING_UNQUOTED_BY_IDX(DT_NODELABEL(test_stra_unquoted_t), val, 2),
+		       XA XMINUS XB,  delta, "");
+	zassert_within(DT_STRING_UNQUOTED_BY_IDX(DT_NODELABEL(test_stra_unquoted_t), val, 3),
+		       XC XMINUS XD, delta, "");
+
+#define STRING_UNQUOTED_BY_IDX_VAR(node_id) _CONCAT(var_, node_id)
+#define STRING_UNQUOTED_BY_IDX_TEST_INST_EXPANSION(inst)       \
+	double STRING_UNQUOTED_BY_IDX_VAR(DT_DRV_INST(inst))[] = { \
+		DT_INST_STRING_UNQUOTED_BY_IDX(inst, val, 0),          \
+		DT_INST_STRING_UNQUOTED_BY_IDX(inst, val, 1),          \
+		DT_INST_STRING_UNQUOTED_BY_IDX(inst, val, 2),          \
+		DT_INST_STRING_UNQUOTED_BY_IDX(inst, val, 3),          \
+	};
+	DT_INST_FOREACH_STATUS_OKAY(STRING_UNQUOTED_BY_IDX_TEST_INST_EXPANSION);
+
+	zassert_within(STRING_UNQUOTED_BY_IDX_VAR(DT_NODELABEL(test_stra_unquoted_f0))[0],
+		       1.0e2, delta, "");
+	zassert_within(STRING_UNQUOTED_BY_IDX_VAR(DT_NODELABEL(test_stra_unquoted_f0))[1],
+		       2.0e2, delta, "");
+	zassert_within(STRING_UNQUOTED_BY_IDX_VAR(DT_NODELABEL(test_stra_unquoted_f0))[2],
+		       3.0e2, delta, "");
+	zassert_within(STRING_UNQUOTED_BY_IDX_VAR(DT_NODELABEL(test_stra_unquoted_f0))[3],
+		       4.0e2, delta, "");
+
+	zassert_within(STRING_UNQUOTED_BY_IDX_VAR(DT_NODELABEL(test_stra_unquoted_f1))[0],
+		       0.01, delta, "");
+	zassert_within(STRING_UNQUOTED_BY_IDX_VAR(DT_NODELABEL(test_stra_unquoted_f1))[1],
+		       0.1,  delta, "");
+	zassert_within(STRING_UNQUOTED_BY_IDX_VAR(DT_NODELABEL(test_stra_unquoted_f1))[2],
+		       1.0,  delta, "");
+	zassert_within(STRING_UNQUOTED_BY_IDX_VAR(DT_NODELABEL(test_stra_unquoted_f1))[3],
+		       10.0, delta, "");
+
+	zassert_within(STRING_UNQUOTED_BY_IDX_VAR(DT_NODELABEL(test_stra_unquoted_t))[0],
+		       XA XPLUS XB, delta, "");
+	zassert_within(STRING_UNQUOTED_BY_IDX_VAR(DT_NODELABEL(test_stra_unquoted_t))[1],
+		       XC XPLUS XD,  delta, "");
+	zassert_within(STRING_UNQUOTED_BY_IDX_VAR(DT_NODELABEL(test_stra_unquoted_t))[2],
+		       XA XMINUS XB,  delta, "");
+	zassert_within(STRING_UNQUOTED_BY_IDX_VAR(DT_NODELABEL(test_stra_unquoted_t))[3],
+		       XC XMINUS XD, delta, "");
+#undef XA
+#undef XB
+#undef XC
+#undef XD
+#undef XPLUS
+#undef XMINUS
 }
 
 #undef DT_DRV_COMPAT

@@ -9,7 +9,8 @@ tests:
     min_flash: 128
     min_ram: 64
   benchmark.cmsis_dsp.basicmath.fpu:
-    filter: (CONFIG_CPU_AARCH32_CORTEX_R or CONFIG_CPU_CORTEX_M) and CONFIG_CPU_HAS_FPU and TOOLCHAIN_HAS_NEWLIB == 1
+    filter: (CONFIG_CPU_AARCH32_CORTEX_R or CONFIG_CPU_CORTEX_M) and CONFIG_CPU_HAS_FPU and
+      TOOLCHAIN_HAS_NEWLIB == 1
     integration_platforms:
       - mps2_an521_remote
       - mps3_an547

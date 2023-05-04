@@ -550,4 +550,35 @@ ZTEST(net_mld_test_suite, test_verify_join_leave)
 	test_verify_send_report();
 }
 
+ZTEST(net_mld_test_suite, test_no_mld_flag)
+{
+	int ret;
+
+	is_join_msg_ok = false;
+	is_leave_msg_ok = false;
+
+	net_if_flag_set(iface, NET_IF_IPV6_NO_MLD);
+
+	/* Using adhoc multicast group outside standard range */
+	net_ipv6_addr_create(&mcast_addr, 0xff10, 0, 0, 0, 0, 0, 0, 0x0001);
+
+	ret = net_ipv6_mld_join(iface, &mcast_addr);
+	zassert_equal(ret, 0, "Cannot add multicast address");
+
+	/* Let the network stack to proceed */
+	k_msleep(THREAD_SLEEP);
+
+	zassert_false(is_join_msg_ok, "Received join message when not expected");
+
+	ret = net_ipv6_mld_leave(iface, &mcast_addr);
+	zassert_equal(ret, 0, "Cannot remove multicast address");
+
+	/* Let the network stack to proceed */
+	k_msleep(THREAD_SLEEP);
+
+	zassert_false(is_leave_msg_ok, "Received leave message when not expected");
+
+	net_if_flag_clear(iface, NET_IF_IPV6_NO_MLD);
+}
+
 ZTEST_SUITE(net_mld_test_suite, NULL, test_mld_setup, NULL, NULL, NULL);

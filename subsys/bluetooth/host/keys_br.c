@@ -28,7 +28,7 @@ LOG_MODULE_REGISTER(bt_keys_br);
 
 static struct bt_keys_link_key key_pool[CONFIG_BT_MAX_PAIRED];
 
-#if IS_ENABLED(CONFIG_BT_KEYS_OVERWRITE_OLDEST)
+#if defined(CONFIG_BT_KEYS_OVERWRITE_OLDEST)
 static uint32_t aging_counter_val;
 static struct bt_keys_link_key *last_keys_updated;
 #endif /* CONFIG_BT_KEYS_OVERWRITE_OLDEST */
@@ -61,7 +61,7 @@ struct bt_keys_link_key *bt_keys_get_link_key(const bt_addr_t *addr)
 	}
 
 	key = bt_keys_find_link_key(BT_ADDR_ANY);
-#if IS_ENABLED(CONFIG_BT_KEYS_OVERWRITE_OLDEST)
+#if defined(CONFIG_BT_KEYS_OVERWRITE_OLDEST)
 	if (!key) {
 		int i;
 
@@ -82,7 +82,7 @@ struct bt_keys_link_key *bt_keys_get_link_key(const bt_addr_t *addr)
 
 	if (key) {
 		bt_addr_copy(&key->addr, addr);
-#if IS_ENABLED(CONFIG_BT_KEYS_OVERWRITE_OLDEST)
+#if defined(CONFIG_BT_KEYS_OVERWRITE_OLDEST)
 		key->aging_counter = ++aging_counter_val;
 		last_keys_updated = key;
 #endif
@@ -195,7 +195,7 @@ static int link_key_set(const char *name, size_t len_rd,
 
 	memcpy(link_key->storage_start, val, len);
 	LOG_DBG("Successfully restored link key for %s", bt_addr_le_str(&le_addr));
-#if IS_ENABLED(CONFIG_BT_KEYS_OVERWRITE_OLDEST)
+#if defined(CONFIG_BT_KEYS_OVERWRITE_OLDEST)
 	if (aging_counter_val < link_key->aging_counter) {
 		aging_counter_val = link_key->aging_counter;
 	}
@@ -207,7 +207,7 @@ static int link_key_set(const char *name, size_t len_rd,
 SETTINGS_STATIC_HANDLER_DEFINE(bt_link_key, "bt/link_key", NULL, link_key_set,
 			       NULL, NULL);
 
-#if IS_ENABLED(CONFIG_BT_KEYS_OVERWRITE_OLDEST)
+#if defined(CONFIG_BT_KEYS_OVERWRITE_OLDEST)
 void bt_keys_link_key_update_usage(const bt_addr_t *addr)
 {
 	struct bt_keys_link_key *link_key = bt_keys_find_link_key(addr);

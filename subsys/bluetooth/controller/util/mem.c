@@ -135,6 +135,24 @@ uint8_t mem_nz(uint8_t *src, uint16_t len)
 }
 
 /**
+ * @brief XOR bytes
+ */
+inline void mem_xor_n(uint8_t *dst, uint8_t *src1, uint8_t *src2, uint16_t len)
+{
+	while (len--) {
+		*dst++ = *src1++ ^ *src2++;
+	}
+}
+
+/**
+ * @brief XOR 32-bits
+ */
+void mem_xor_32(uint8_t *dst, uint8_t *src1, uint8_t *src2)
+{
+	mem_xor_n(dst, src1, src2, 4U);
+}
+
+/**
  * @brief Unit test
  */
 uint32_t mem_ut(void)

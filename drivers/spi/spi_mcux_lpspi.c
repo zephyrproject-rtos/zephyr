@@ -15,9 +15,7 @@
 #ifdef CONFIG_SPI_MCUX_LPSPI_DMA
 #include <zephyr/drivers/dma.h>
 #endif
-#ifdef CONFIG_PINCTRL
 #include <zephyr/drivers/pinctrl.h>
-#endif /* CONFIG_PINCTRL */
 
 LOG_MODULE_REGISTER(spi_mcux_lpspi, CONFIG_SPI_LOG_LEVEL);
 
@@ -34,9 +32,7 @@ struct spi_mcux_config {
 	uint32_t pcs_sck_delay;
 	uint32_t sck_pcs_delay;
 	uint32_t transfer_delay;
-#ifdef CONFIG_PINCTRL
 	const struct pinctrl_dev_config *pincfg;
-#endif /* CONFIG_PINCTRL */
 };
 
 #ifdef CONFIG_SPI_MCUX_LPSPI_DMA
@@ -224,6 +220,15 @@ static int spi_mcux_configure(const struct device *dev,
 	if (clock_control_get_rate(config->clock_dev, config->clock_subsys,
 				   &clock_freq)) {
 		return -EINVAL;
+	}
+
+	/* Setting the baud rate in LPSPI_MasterInit requires module to be disabled */
+	LPSPI_Enable(base, false);
+	while ((base->CR & LPSPI_CR_MEN_MASK) != 0U) {
+		/* Wait until LPSPI is disabled. Datasheet:
+		 * After writing 0, MEN (Module Enable) remains set until the LPSPI has completed
+		 * the current transfer and is idle.
+		 */
 	}
 
 	LPSPI_MasterInit(base, &master_config, clock_freq);
@@ -559,12 +564,10 @@ static int spi_mcux_init(const struct device *dev)
 	}
 #endif /* CONFIG_SPI_MCUX_LPSPI_DMA */
 
-#ifdef CONFIG_PINCTRL
 	err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
 	if (err) {
 		return err;
 	}
-#endif /* CONFIG_PINCTRL */
 
 	spi_context_unlock_unconditionally(&data->ctx);
 
@@ -611,17 +614,8 @@ static const struct spi_driver_api spi_mcux_driver_api = {
 #define SPI_DMA_CHANNELS(n)
 #endif /* CONFIG_SPI_MCUX_LPSPI_DMA */
 
-#ifdef CONFIG_PINCTRL
-#define SPI_MCUX_LPSPI_PINCTRL_DEFINE(n) PINCTRL_DT_INST_DEFINE(n);
-#define SPI_MCUX_LPSPI_PINCTRL_INIT(n) .pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),
-#else
-#define SPI_MCUX_LPSPI_PINCTRL_DEFINE(n)
-#define SPI_MCUX_LPSPI_PINCTRL_INIT(n)
-#endif /* CONFIG_PINCTRL */
-
-
 #define SPI_MCUX_LPSPI_INIT(n)						\
-	SPI_MCUX_LPSPI_PINCTRL_DEFINE(n)				\
+	PINCTRL_DT_INST_DEFINE(n);					\
 									\
 	static void spi_mcux_config_func_##n(const struct device *dev);	\
 									\
@@ -640,7 +634,7 @@ static const struct spi_driver_api spi_mcux_driver_api = {
 		.transfer_delay = UTIL_AND(				\
 			DT_INST_NODE_HAS_PROP(n, transfer_delay),	\
 			DT_INST_PROP(n, transfer_delay)),		\
-		SPI_MCUX_LPSPI_PINCTRL_INIT(n)				\
+		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),		\
 	};								\
 									\
 	static struct spi_mcux_data spi_mcux_data_##n = {		\

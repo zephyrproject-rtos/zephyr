@@ -36,7 +36,7 @@ static void button_isr_callback(const struct device *port,
 }
 #endif
 
-void main(void)
+int main(void)
 {
 	int err;
 	char count_str[11] = {0};
@@ -47,7 +47,7 @@ void main(void)
 	display_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_display));
 	if (!device_is_ready(display_dev)) {
 		LOG_ERR("Device not ready, aborting test");
-		return;
+		return 0;
 	}
 
 #ifdef CONFIG_GPIO
@@ -55,7 +55,7 @@ void main(void)
 		err = gpio_pin_configure_dt(&button_gpio, GPIO_INPUT);
 		if (err) {
 			LOG_ERR("failed to configure button gpio: %d", err);
-			return;
+			return 0;
 		}
 
 		gpio_init_callback(&button_callback, button_isr_callback,
@@ -64,14 +64,14 @@ void main(void)
 		err = gpio_add_callback(button_gpio.port, &button_callback);
 		if (err) {
 			LOG_ERR("failed to add button callback: %d", err);
-			return;
+			return 0;
 		}
 
 		err = gpio_pin_interrupt_configure_dt(&button_gpio,
 						      GPIO_INT_EDGE_TO_ACTIVE);
 		if (err) {
 			LOG_ERR("failed to enable button callback: %d", err);
-			return;
+			return 0;
 		}
 	}
 #endif

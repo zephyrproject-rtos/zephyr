@@ -49,6 +49,16 @@
 				reset-gpios = <&test_gpio 0 0>;
 			};
 
+			test_i2c_pcal6416a: pcal6416a@2 {
+				compatible = "nxp,pcal6416a";
+				reg = <0x1>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <16>;
+				int-gpios = <&test_gpio 0 0>;
+				reset-gpios = <&test_gpio 0 0>;
+			};
+
 			test_i2c_pca95xx: pca95xx@20 {
 				compatible = "nxp,pca95xx";
 				reg = <0x20>;
@@ -173,7 +183,7 @@
 			clock-frequency = <2000000>;
 
 			/* one entry for every devices at spi.dtsi */
-			cs-gpios = <&test_gpio 0 0 &test_gpio 0 0>;
+			cs-gpios = <&test_gpio 0 0 &test_gpio 0 0 &test_gpio 0 0>;
 
 			test_spi_mcp23s17: mcp23s17@0 {
 				compatible = "microchip,mcp23s17";
@@ -191,6 +201,16 @@
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <16>;
+			};
+
+			test_spi_bd8lb600fs: bd8lb600fs@0 {
+				compatible = "rohm,bd8lb600fs";
+				spi-max-frequency = <0>;
+				reg = <0x0>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <8>;
+				reset-gpios = <&test_gpio 0 0>;
 			};
 		};
 	};

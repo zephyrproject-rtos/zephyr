@@ -11,6 +11,7 @@
 #include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/mchp_xec_clock_control.h>
+#include <zephyr/drivers/pinctrl.h>
 #include <zephyr/dt-bindings/clock/mchp_xec_pcr.h>
 #include <zephyr/irq.h>
 #include <zephyr/logging/log.h>
@@ -21,6 +22,7 @@ LOG_MODULE_REGISTER(clock_control_xec, LOG_LEVEL_ERR);
 #define CLK32K_PIN_WAIT			4096
 #define CLK32K_XTAL_WAIT		(16 * 1024)
 #define CLK32K_XTAL_MON_WAIT		(64 * 1024)
+#define XEC_CC_DFLT_PLL_LOCK_WAIT_MS	30
 
 /*
  * Counter checks:
@@ -35,7 +37,7 @@ LOG_MODULE_REGISTER(clock_control_xec, LOG_LEVEL_ERR);
  */
 #define CNT32K_TMIN			1435
 #define CNT32K_TMAX			1495
-#define CNT32K_DUTY_MAX			74
+#define CNT32K_DUTY_MAX			132
 #define CNT32K_VAL_MIN			4
 
 #define DEST_PLL			0
@@ -46,56 +48,313 @@ LOG_MODULE_REGISTER(clock_control_xec, LOG_LEVEL_ERR);
 
 #define PCR_PERIPH_RESET_SPIN		8u
 
+#define XEC_CC_XTAL_EN_DELAY_MS_DFLT	300u
+#define HIBTIMER_MS_TO_CNT(x)		((uint32_t)(x) * 33U)
+
 #define HIBTIMER_10_MS			328u
 #define HIBTIMER_300_MS			9830u
 
-#define PCR_XEC_REG_BASE						\
-	((struct pcr_regs *)(DT_REG_ADDR(DT_NODELABEL(pcr))))
+enum pll_clk32k_src {
+	PLL_CLK32K_SRC_SO = MCHP_XEC_PLL_CLK32K_SRC_SIL_OSC,
+	PLL_CLK32K_SRC_XTAL = MCHP_XEC_PLL_CLK32K_SRC_XTAL,
+	PLL_CLK32K_SRC_PIN = MCHP_XEC_PLL_CLK32K_SRC_PIN,
+	PLL_CLK32K_SRC_MAX,
+};
 
-#define HIBTIMER_0_XEC_REG_BASE						\
-	((struct htmr_regs *)(DT_REG_ADDR(DT_NODELABEL(hibtimer0))))
-
-#define GIRQ23_XEC_REG_BASE						\
-	((struct girq_regs *)(DT_REG_ADDR(DT_NODELABEL(girq23))))
-
-enum clk32k_src {
-	CLK32K_SRC_SIL_OSC = 0,
-	CLK32K_SRC_CRYSTAL,
-	CLK32K_SRC_MAX
+enum periph_clk32k_src {
+	PERIPH_CLK32K_SRC_SO_SO = MCHP_XEC_PERIPH_CLK32K_SRC_SO_SO,
+	PERIPH_CLK32K_SRC_XTAL_XTAL = MCHP_XEC_PERIPH_CLK32K_SRC_XTAL_XTAL,
+	PERIPH_CLK32K_SRC_PIN_SO = MCHP_XEC_PERIPH_CLK32K_SRC_PIN_SO,
+	PERIPH_CLK32K_SRC_PIN_XTAL = MCHP_XEC_PERIPH_CLK32K_SRC_PIN_XTAL,
+	PERIPH_CLK32K_SRC_MAX
 };
 
 enum clk32k_dest { CLK32K_DEST_PLL = 0, CLK32K_DEST_PERIPH, CLK32K_DEST_MAX };
 
+/* PCR hardware registers for MEC15xx and MEC172x */
+#define XEC_CC_PCR_MAX_SCR 5
+
+struct pcr_hw_regs {
+	volatile uint32_t SYS_SLP_CTRL;
+	volatile uint32_t PROC_CLK_CTRL;
+	volatile uint32_t SLOW_CLK_CTRL;
+	volatile uint32_t OSC_ID;
+	volatile uint32_t PWR_RST_STS;
+	volatile uint32_t PWR_RST_CTRL;
+	volatile uint32_t SYS_RST;
+	volatile uint32_t TURBO_CLK; /* MEC172x only */
+	volatile uint32_t TEST20;
+	uint32_t RSVD1[3];
+	volatile uint32_t SLP_EN[XEC_CC_PCR_MAX_SCR];
+	uint32_t RSVD2[3];
+	volatile uint32_t CLK_REQ[XEC_CC_PCR_MAX_SCR];
+	uint32_t RSVD3[3];
+	volatile uint32_t RST_EN[5];
+	volatile uint32_t RST_EN_LOCK;
+	/* all registers below are MEC172x only */
+	volatile uint32_t VBAT_SRST;
+	volatile uint32_t CLK32K_SRC_VTR;
+	volatile uint32_t TEST90;
+	uint32_t RSVD4[(0x00c0 - 0x0094) / 4];
+	volatile uint32_t CNT32K_PER;
+	volatile uint32_t CNT32K_PULSE_HI;
+	volatile uint32_t CNT32K_PER_MIN;
+	volatile uint32_t CNT32K_PER_MAX;
+	volatile uint32_t CNT32K_DV;
+	volatile uint32_t CNT32K_DV_MAX;
+	volatile uint32_t CNT32K_VALID;
+	volatile uint32_t CNT32K_VALID_MIN;
+	volatile uint32_t CNT32K_CTRL;
+	volatile uint32_t CLK32K_MON_ISTS;
+	volatile uint32_t CLK32K_MON_IEN;
+};
+
+#define XEC_CC_PCR_OSC_ID_PLL_LOCK	BIT(8)
+#define XEC_CC_PCR_TURBO_CLK_96M	BIT(2)
+
+#define XEC_CC_PCR_CLK32K_SRC_MSK	0x3u
+#define XEC_CC_PCR_CLK32K_SRC_SIL	0u
+#define XEC_CC_PCR_CLK32K_SRC_XTAL	1
+#define XEC_CC_PCR_CLK32K_SRC_PIN	2
+#define XEC_CC_PCR_CLK32K_SRC_OFF	3
+
+#ifdef CONFIG_SOC_SERIES_MEC1501X
+#define XEC_CC_PCR3_CRYPTO_MASK		(BIT(26) | BIT(27) | BIT(28))
+#else
+#define XEC_CC_PCR3_CRYPTO_MASK		BIT(26)
+#endif
+
+/* VBAT powered hardware registers related to clock configuration */
+struct vbatr_hw_regs {
+	volatile uint32_t PFRS;
+	uint32_t RSVD1[1];
+	volatile uint32_t CLK32_SRC;
+	uint32_t RSVD2[2];
+	volatile uint32_t CLK32_TRIM;
+	uint32_t RSVD3[1];
+	volatile uint32_t CLK32_TRIM_CTRL;
+};
+
+/* MEC152x VBAT CLK32_SRC register defines */
+#define XEC_CC15_VBATR_USE_SIL_OSC		0u
+#define XEC_CC15_VBATR_USE_32KIN_PIN		BIT(1)
+#define XEC_CC15_VBATR_USE_PAR_CRYSTAL		BIT(2)
+#define XEC_CC15_VBATR_USE_SE_CRYSTAL		(BIT(2) | BIT(3))
+
+/* MEC150x special requirements */
+#define XEC_CC15_GCFG_DID_DEV_ID_MEC150x	0x0020U
+#define XEC_CC15_TRIM_ENABLE_INT_OSCILLATOR	0x06U
+
+
+/* MEC172x VBAT CLK32_SRC register defines */
+#define XEC_CC_VBATR_CS_SO_EN			BIT(0) /* enable and start silicon OSC */
+#define XEC_CC_VBATR_CS_XTAL_EN			BIT(8) /* enable & start external crystal */
+#define XEC_CC_VBATR_CS_XTAL_SE			BIT(9) /* crystal XTAL2 used as 32KHz input */
+#define XEC_CC_VBATR_CS_XTAL_DHC		BIT(10) /* disable high XTAL startup current */
+#define XEC_CC_VBATR_CS_XTAL_CNTR_MSK		0x1800u /* XTAL amplifier gain control */
+#define XEC_CC_VBATR_CS_XTAL_CNTR_DG		0x0800u
+#define XEC_CC_VBATR_CS_XTAL_CNTR_RG		0x1000u
+#define XEC_CC_VBATR_CS_XTAL_CNTR_MG		0x1800u
+/* MEC172x Select source of peripheral 32KHz clock */
+#define XEC_CC_VBATR_CS_PCS_POS			16
+#define XEC_CC_VBATR_CS_PCS_MSK0		0x3u
+#define XEC_CC_VBATR_CS_PCS_MSK			0x30000u
+#define XEC_CC_VBATR_CS_PCS_VTR_VBAT_SO		0u /* VTR & VBAT use silicon OSC */
+#define XEC_CC_VBATR_CS_PCS_VTR_VBAT_XTAL	0x10000u /* VTR & VBAT use crystal */
+#define XEC_CC_VBATR_CS_PCS_VTR_PIN_SO		0x20000u /* VTR 32KHZ_IN, VBAT silicon OSC */
+#define XEC_CC_VBATR_CS_PCS_VTR_PIN_XTAL	0x30000u /* VTR 32KHZ_IN, VBAT XTAL */
+#define XEC_CC_VBATR_CS_DI32_VTR_OFF		BIT(18) /* disable silicon OSC when VTR off */
+
+enum vbr_clk32k_src {
+	VBR_CLK32K_SRC_SO_SO = 0,
+	VBR_CLK32K_SRC_XTAL_XTAL,
+	VBR_CLK32K_SRC_PIN_SO,
+	VBR_CLK32K_SRC_PIN_XTAL,
+	VBR_CLK32K_SRC_MAX,
+};
+
+/* GIRQ23 hardware registers */
+#define XEC_CC_HTMR_0_GIRQ23_POS		16
 
 /* Driver config */
 struct xec_pcr_config {
-	uintptr_t pcr_base; /* pcr base address */
-	uintptr_t vbr_base; /* vbat registers base address */
+	uintptr_t pcr_base;
+	uintptr_t vbr_base;
+	const struct pinctrl_dev_config *pcfg;
+	uint16_t xtal_enable_delay_ms;
+	uint16_t pll_lock_timeout_ms;
+	uint16_t period_min; /* mix and max 32KHz period range */
+	uint16_t period_max; /* monitor values in units of 48MHz (20.8 ns) */
+	uint8_t core_clk_div; /* Cortex-M4 clock divider (CPU and NVIC) */
+	uint8_t xtal_se; /* External 32KHz square wave on XTAL2 pin */
+	uint8_t max_dc_va; /* 32KHz monitor maximum duty cycle variation */
+	uint8_t min_valid; /* minimum number of valid consecutive 32KHz pulses */
+	enum pll_clk32k_src pll_src;
+	enum periph_clk32k_src periph_src;
+	uint8_t clkmon_bypass;
+	uint8_t dis_internal_osc;
 };
 
-/* Driver convenience defines */
-
-#define PCR_NODE_LBL	DT_NODELABEL(pcr)
-
-#define XEC_CORE_CLK_DIV \
-	DT_PROP_OR(PCR_NODE_LBL, core_clk_div, CONFIG_SOC_MEC172X_PROC_CLK_DIV)
-
-#define DRV_CONFIG(dev) \
-	((const struct xec_pcr_config *)(dev)->config)
-
-#define XEC_PCR_REGS_BASE(dev) \
-	(struct pcr_regs *)(DRV_CONFIG(dev)->pcr_base)
-
-#define XEC_VBATR_REGS_BASE(dev) \
-	(struct vbatr_regs *)(DRV_CONFIG(dev)->vbr_base)
-
 /*
- * In early Zephyr initialization we don't have timer services. Also, the SoC
+ * Make sure PCR sleep enables are clear except for crypto
+ * which do not have internal clock gating.
+ */
+static void pcr_slp_init(struct pcr_hw_regs *pcr)
+{
+	pcr->SYS_SLP_CTRL = 0U;
+	SCB->SCR &= ~BIT(2);
+
+	for (int i = 0; i < XEC_CC_PCR_MAX_SCR; i++) {
+		pcr->SLP_EN[i] = 0U;
+	}
+
+	pcr->SLP_EN[3] = XEC_CC_PCR3_CRYPTO_MASK;
+}
+
+/* MEC172x:
+ * Check if PLL is locked with timeout provided by a peripheral clock domain
+ * timer. We assume peripheral domain is still using internal silicon OSC as
+ * its reference clock. Available peripheral timers using 32KHz are:
+ * RTOS timer, hibernation timers, RTC, and week timer. We will use hibernation
+ * timer 0 in 30.5 us tick mode. Maximum internal is 2 seconds.
+ * A timer count value of 0 is interpreted as no timeout.
+ * We use the hibernation timer GIRQ interrupt status bit instead of reading
+ * the timer's count register due to race condition of HW taking at least
+ * one 32KHz cycle to move pre-load into count register.
+ * MEC15xx:
+ * Hibernation timer is using the chosen 32KHz source. If the external 32KHz source
+ * has a ramp up time, we make not get an accurate delay. This may only occur for
+ * the parallel crystal.
+ */
+static int pll_wait_lock_periph(struct pcr_hw_regs *const pcr, uint16_t ms)
+{
+	struct htmr_regs *htmr0 = (struct htmr_regs *)DT_REG_ADDR(DT_NODELABEL(hibtimer0));
+	struct girq_regs *girq23 = (struct girq_regs *)DT_REG_ADDR(DT_NODELABEL(girq23));
+	uint32_t hcount = HIBTIMER_MS_TO_CNT(ms);
+	int rc = 0;
+
+	htmr0->PRLD = 0; /* disable */
+	htmr0->CTRL = 0; /* 30.5 us units */
+	girq23->SRC = BIT(XEC_CC_HTMR_0_GIRQ23_POS);
+	htmr0->PRLD = hcount;
+	while (!(pcr->OSC_ID & MCHP_PCR_OSC_ID_PLL_LOCK)) {
+		if (hcount) {
+			if (girq23->SRC & BIT(XEC_CC_HTMR_0_GIRQ23_POS)) {
+				rc = -ETIMEDOUT;
+			}
+		}
+	}
+
+	return rc;
+}
+
+static int periph_clk_src_using_pin(enum periph_clk32k_src src)
+{
+	switch (src) {
+	case PERIPH_CLK32K_SRC_PIN_SO:
+	case PERIPH_CLK32K_SRC_PIN_XTAL:
+		return 1;
+	default:
+		return 0;
+	}
+}
+
+#ifdef CONFIG_SOC_SERIES_MEC1501X
+/* MEC15xx uses the same 32KHz source for both PLL and Peripheral 32K clock domains.
+ * We ignore the peripheral clock source.
+ * If XTAL is selected (parallel) or single-ended the external 32KHz MUST stay on
+ * even when when VTR goes off.
+ * If PIN(32KHZ_IN pin) as the external source, hardware can auto-switch to internal
+ * silicon OSC if the signal on the 32KHZ_PIN goes away.
+ * We ignore th
+ */
+static int soc_clk32_init(const struct device *dev,
+			  enum pll_clk32k_src pll_clk_src,
+			  enum periph_clk32k_src periph_clk_src,
+			  uint32_t flags)
+{
+	const struct xec_pcr_config * const devcfg = dev->config;
+	struct pcr_hw_regs *const pcr = (struct pcr_hw_regs *)devcfg->pcr_base;
+	struct vbatr_hw_regs *const vbr = (struct vbatr_hw_regs *)devcfg->vbr_base;
+	uint32_t cken = 0U;
+	int rc = 0;
+
+	if (MCHP_DEVICE_ID() == XEC_CC15_GCFG_DID_DEV_ID_MEC150x) {
+		if (MCHP_REVISION_ID() == MCHP_GCFG_REV_B0) {
+			vbr->CLK32_TRIM_CTRL = XEC_CC15_TRIM_ENABLE_INT_OSCILLATOR;
+		}
+	}
+
+	switch (pll_clk_src) {
+	case PLL_CLK32K_SRC_SO:
+		cken = XEC_CC15_VBATR_USE_SIL_OSC;
+		break;
+	case PLL_CLK32K_SRC_XTAL:
+		if (flags & CLK32K_FLAG_CRYSTAL_SE) {
+			cken = XEC_CC15_VBATR_USE_SE_CRYSTAL;
+		} else {
+			cken = XEC_CC15_VBATR_USE_PAR_CRYSTAL;
+		}
+		break;
+	case PLL_CLK32K_SRC_PIN: /* 32KHZ_IN pin falls back to Silicon OSC */
+		cken = XEC_CC15_VBATR_USE_32KIN_PIN;
+		break;
+	default: /* do not touch HW */
+		return -EINVAL;
+	}
+
+	if ((vbr->CLK32_SRC & 0xffU) != cken) {
+		vbr->CLK32_SRC = cken;
+	}
+
+	rc = pll_wait_lock_periph(pcr, devcfg->xtal_enable_delay_ms);
+
+	return rc;
+}
+#else
+
+static int periph_clk_src_using_si(enum periph_clk32k_src src)
+{
+	switch (src) {
+	case PERIPH_CLK32K_SRC_SO_SO:
+	case PERIPH_CLK32K_SRC_PIN_SO:
+		return 1;
+	default:
+		return 0;
+	}
+}
+
+static int periph_clk_src_using_xtal(enum periph_clk32k_src src)
+{
+	switch (src) {
+	case PERIPH_CLK32K_SRC_XTAL_XTAL:
+	case PERIPH_CLK32K_SRC_PIN_XTAL:
+		return 1;
+	default:
+		return 0;
+	}
+}
+
+static bool is_sil_osc_enabled(struct vbatr_hw_regs *vbr)
+{
+	if (vbr->CLK32_SRC & XEC_CC_VBATR_CS_SO_EN) {
+		return true;
+	}
+
+	return false;
+}
+
+static void enable_sil_osc(struct vbatr_hw_regs *vbr)
+{
+	vbr->CLK32_SRC |= XEC_CC_VBATR_CS_SO_EN;
+}
+
+/* In early Zephyr initialization we don't have timer services. Also, the SoC
  * may be running on its ring oscillator (+/- 50% accuracy). Configuring the
  * SoC's clock subsystem requires wait/delays. We implement a simple delay
  * by writing to a read-only hardware register in the PCR block.
  */
-static uint32_t spin_delay(struct pcr_regs *pcr, uint32_t cnt)
+static uint32_t spin_delay(struct pcr_hw_regs *pcr, uint32_t cnt)
 {
 	uint32_t n;
 
@@ -107,55 +366,74 @@ static uint32_t spin_delay(struct pcr_regs *pcr, uint32_t cnt)
 }
 
 /*
- * Make sure PCR sleep enables are clear except for crypto
- * which do not have internal clock gating.
+ * This routine checks if the PLL is locked to its input source. Minimum lock
+ * time is 3.3 ms. Lock time can be larger when the source is an external
+ * crystal. Crystal cold start times may vary greatly based on many factors.
+ * Crystals do not like being power cycled.
  */
-static void pcr_slp_init(struct pcr_regs *pcr)
+static int pll_wait_lock(struct pcr_hw_regs *const pcr, uint32_t wait_cnt)
 {
-	pcr->SYS_SLP_CTRL = 0U;
-	SCB->SCR &= ~BIT(2);
-
-	for (int i = 0; i < MCHP_MAX_PCR_SCR_REGS; i++) {
-		pcr->SLP_EN[i] = 0U;
+	while (!(pcr->OSC_ID & MCHP_PCR_OSC_ID_PLL_LOCK)) {
+		if (wait_cnt == 0) {
+			return -ETIMEDOUT;
+		}
+		--wait_cnt;
 	}
 
-	pcr->SLP_EN[3] = MCHP_PCR3_CRYPTO_MASK;
-}
-
-static bool is_sil_osc_enabled(struct vbatr_regs *vbr)
-{
-	if (vbr->CLK32_SRC & MCHP_VBATR_CS_SO_EN) {
-		return true;
-	}
-
-	return false;
-}
-
-static void enable_sil_osc(struct vbatr_regs *vbr)
-{
-	vbr->CLK32_SRC |= MCHP_VBATR_CS_SO_EN;
+	return 0;
 }
 
 /* caller has enabled internal silicon 32 KHz oscillator */
-static void hib_timer_delay(uint16_t hib_timer_count)
+static void hib_timer_delay(uint32_t hib_timer_count)
 {
-	struct htmr_regs *htmr0 = HIBTIMER_0_XEC_REG_BASE;
-	struct girq_regs *girq23 = GIRQ23_XEC_REG_BASE;
+	struct htmr_regs *htmr0 = (struct htmr_regs *)DT_REG_ADDR(DT_NODELABEL(hibtimer0));
+	struct girq_regs *girq23 = (struct girq_regs *)DT_REG_ADDR(DT_NODELABEL(girq23));
+	uint32_t hcnt;
 
-	htmr0->PRLD = 0; /* disable */
-	htmr0->CTRL = 0; /* 32k time base */
-	girq23->SRC = BIT(16); /* clear hibernation timer 0 status */
-	htmr0->PRLD = hib_timer_count;
-	if (hib_timer_count == 0) {
-		return;
+	while (hib_timer_count) {
+
+		hcnt = hib_timer_count;
+		if (hcnt > UINT16_MAX) {
+			hcnt -= UINT16_MAX;
+		}
+
+		htmr0->PRLD = 0; /* disable */
+		while (htmr0->PRLD != 0) {
+			;
+		}
+		htmr0->CTRL = 0; /* 32k time base */
+		/* clear hibernation timer 0 status */
+		girq23->SRC = BIT(XEC_CC_HTMR_0_GIRQ23_POS);
+		htmr0->PRLD = hib_timer_count;
+		if (hib_timer_count == 0) {
+			return;
+		}
+
+		while ((girq23->SRC & BIT(XEC_CC_HTMR_0_GIRQ23_POS)) == 0) {
+			;
+		}
+
+		htmr0->PRLD = 0; /* disable */
+		while (htmr0->PRLD != 0) {
+			;
+		}
+		girq23->SRC = BIT(XEC_CC_HTMR_0_GIRQ23_POS);
+
+		hib_timer_count -= hcnt;
 	}
+}
 
-	while ((girq23->SRC & BIT(16)) == 0) {
-		;
-	}
+/* Turn off crystal when we are not using it */
+static int disable_32k_crystal(const struct device *dev)
+{
+	const struct xec_pcr_config * const devcfg = dev->config;
+	struct vbatr_hw_regs *const vbr = (struct vbatr_hw_regs *)devcfg->vbr_base;
+	uint32_t vbcs = vbr->CLK32_SRC;
 
-	girq23->SRC = BIT(16);
-	htmr0->PRLD = 0; /* disable */
+	vbcs &= ~(XEC_CC_VBATR_CS_XTAL_EN | XEC_CC_VBATR_CS_XTAL_SE | XEC_CC_VBATR_CS_XTAL_DHC);
+	vbr->CLK32_SRC = vbcs;
+
+	return 0;
 }
 
 /*
@@ -166,7 +444,8 @@ static void hib_timer_delay(uint16_t hib_timer_count)
  */
 static int enable_32k_crystal(const struct device *dev, uint32_t flags)
 {
-	struct vbatr_regs *const vbr = XEC_VBATR_REGS_BASE(dev);
+	const struct xec_pcr_config * const devcfg = dev->config;
+	struct vbatr_hw_regs *const vbr = (struct vbatr_hw_regs *)devcfg->vbr_base;
 	uint32_t vbcs = vbr->CLK32_SRC;
 	uint32_t cfg = MCHP_VBATR_CS_XTAL_EN;
 
@@ -191,7 +470,7 @@ static int enable_32k_crystal(const struct device *dev, uint32_t flags)
 	/* enable crystal */
 	vbr->CLK32_SRC |= MCHP_VBATR_CS_XTAL_EN;
 	/* wait for crystal stabilization */
-	hib_timer_delay(HIBTIMER_300_MS);
+	hib_timer_delay(HIBTIMER_MS_TO_CNT(devcfg->xtal_enable_delay_ms));
 	/* turn off crystal high startup current */
 	vbr->CLK32_SRC |= MCHP_VBATR_CS_XTAL_DHC;
 
@@ -206,24 +485,25 @@ static int enable_32k_crystal(const struct device *dev, uint32_t flags)
  */
 static int check_32k_crystal(const struct device *dev)
 {
-	struct pcr_regs *const pcr = XEC_PCR_REGS_BASE(dev);
-	struct htmr_regs *htmr0 = HIBTIMER_0_XEC_REG_BASE;
-	struct girq_regs *girq23 = GIRQ23_XEC_REG_BASE;
+	const struct xec_pcr_config * const devcfg = dev->config;
+	struct pcr_hw_regs *const pcr = (struct pcr_hw_regs *)devcfg->pcr_base;
+	struct htmr_regs *htmr0 = (struct htmr_regs *)DT_REG_ADDR(DT_NODELABEL(hibtimer0));
+	struct girq_regs *girq23 = (struct girq_regs *)DT_REG_ADDR(DT_NODELABEL(girq23));
 	uint32_t status = 0;
 	int rc = 0;
 
 	htmr0->PRLD = 0;
 	htmr0->CTRL = 0;
-	girq23->SRC = BIT(16);
+	girq23->SRC = BIT(XEC_CC_HTMR_0_GIRQ23_POS);
 
 	pcr->CNT32K_CTRL = 0U;
 	pcr->CLK32K_MON_IEN = 0U;
 	pcr->CLK32K_MON_ISTS = MCHP_PCR_CLK32M_ISTS_MASK;
 
-	pcr->CNT32K_PER_MIN = CNT32K_TMIN;
-	pcr->CNT32K_PER_MAX = CNT32K_TMAX;
-	pcr->CNT32K_DV_MAX = CNT32K_DUTY_MAX;
-	pcr->CNT32K_VALID_MIN = CNT32K_VAL_MIN;
+	pcr->CNT32K_PER_MIN = devcfg->period_min;
+	pcr->CNT32K_PER_MAX = devcfg->period_max;
+	pcr->CNT32K_DV_MAX = devcfg->max_dc_va;
+	pcr->CNT32K_VALID_MIN = devcfg->min_valid;
 
 	pcr->CNT32K_CTRL =
 		MCHP_PCR_CLK32M_CTRL_PER_EN | MCHP_PCR_CLK32M_CTRL_DC_EN |
@@ -233,7 +513,7 @@ static int check_32k_crystal(const struct device *dev)
 	htmr0->PRLD = HIBTIMER_10_MS;
 	status = pcr->CLK32K_MON_ISTS;
 
-	while ((girq23->SRC & BIT(16)) == 0) {
+	while ((girq23->SRC & BIT(XEC_CC_HTMR_0_GIRQ23_POS)) == 0) {
 		if (status == (MCHP_PCR_CLK32M_ISTS_PULSE_RDY |
 			       MCHP_PCR_CLK32M_ISTS_PASS_PER |
 			       MCHP_PCR_CLK32M_ISTS_PASS_DC |
@@ -253,7 +533,7 @@ static int check_32k_crystal(const struct device *dev)
 
 	pcr->CNT32K_CTRL = 0u;
 	htmr0->PRLD = 0;
-	girq23->SRC = BIT(16);
+	girq23->SRC = BIT(XEC_CC_HTMR_0_GIRQ23_POS);
 
 	return rc;
 }
@@ -261,59 +541,109 @@ static int check_32k_crystal(const struct device *dev)
 /*
  * Set the clock source for either PLL or Peripheral-32K clock domain.
  * The source must be a stable 32 KHz input: internal silicon oscillator,
- * external crystal (parallel or single ended connection), or a 50% duty cycle
- * waveform on the 32KHZ_PIN. The driver does not implement 32KHZ_PIN support
- * at this time.
+ * external crystal dual-ended crystal, 50% duty cycle waveform on XTAL2 only,
+ * or a 50% duty cycles waveform on the 32KHZ_PIN.
+ * NOTE: 32KHZ_PIN is an alternate function of a chip specific GPIO.
+ * Signal on 32KHZ_PIN may go off when VTR rail go down. MEC172x can automatically
+ * switch to silicon OSC or XTAL. At this time we do not support fall back to XTAL
+ * when using 32KHZ_PIN.
+ * !!! IMPORTANT !!! Fall back from 32KHZ_PIN to SO/XTAL is only for the Peripheral
+ * Clock domain. If the PLL is configured to use 32KHZ_PIN as its source then the
+ * PLL will shutdown and the PLL clock domain should switch to the ring oscillator.
+ * This means the PLL clock domain clock will not longer be accurate and may cause
+ * FW malfunction(s).
  */
-static void connect_32k_source(const struct device *dev, enum clk32k_src src,
-			       enum clk32k_dest dest, uint32_t flags)
+
+static void connect_pll_32k(const struct device *dev, enum pll_clk32k_src src, uint32_t flags)
 {
-	struct pcr_regs *const pcr = XEC_PCR_REGS_BASE(dev);
-	struct vbatr_regs *const vbr = XEC_VBATR_REGS_BASE(dev);
+	const struct xec_pcr_config * const devcfg = dev->config;
+	struct pcr_hw_regs *const pcr = (struct pcr_hw_regs *)devcfg->pcr_base;
+	uint32_t pcr_clk_sel;
 
-	if (dest == CLK32K_DEST_PLL) {
-		switch (src) {
-		case CLK32K_SRC_SIL_OSC:
-			pcr->CLK32K_SRC_VTR = MCHP_PCR_VTR_32K_SRC_SILOSC;
-			break;
-		case CLK32K_SRC_CRYSTAL:
-			pcr->CLK32K_SRC_VTR = MCHP_PCR_VTR_32K_SRC_XTAL;
-			break;
-		default: /* do not touch HW */
-			break;
-		}
-	} else if (dest == CLK32K_DEST_PERIPH) {
-		uint32_t vbcs = vbr->CLK32_SRC & ~(MCHP_VBATR_CS_PCS_MSK);
-
-		switch (src) {
-		case CLK32K_SRC_SIL_OSC:
-			vbr->CLK32_SRC = vbcs | MCHP_VBATR_CS_PCS_VTR_VBAT_SO;
-			break;
-		case CLK32K_SRC_CRYSTAL:
-			vbr->CLK32_SRC = vbcs | MCHP_VBATR_CS_PCS_VTR_VBAT_XTAL;
-			break;
-		default: /* do not touch HW */
-			break;
-		}
+	switch (src) {
+	case PLL_CLK32K_SRC_XTAL:
+		pcr_clk_sel = MCHP_PCR_VTR_32K_SRC_XTAL;
+		break;
+	case PLL_CLK32K_SRC_PIN:
+		pcr_clk_sel = MCHP_PCR_VTR_32K_SRC_PIN;
+		break;
+	default: /* default to silicon OSC */
+		pcr_clk_sel = MCHP_PCR_VTR_32K_SRC_SILOSC;
+		break;
 	}
+
+	pcr->CLK32K_SRC_VTR = pcr_clk_sel;
 }
 
-/*
- * This routine checks if the PLL is locked to its input source. Minimum lock
- * time is 3.3 ms. Lock time can be larger when the source is an external
- * crystal. Crystal cold start times may vary greatly based on many factors.
- * Crystals do not like being power cycled.
- */
-static int pll_wait_lock(struct pcr_regs *const pcr, uint32_t wait_cnt)
+static void connect_periph_32k(const struct device *dev, enum periph_clk32k_src src, uint32_t flags)
 {
-	while (!(pcr->OSC_ID & MCHP_PCR_OSC_ID_PLL_LOCK)) {
-		if (wait_cnt == 0) {
-			return -ETIMEDOUT;
-		}
-		--wait_cnt;
+	const struct xec_pcr_config * const devcfg = dev->config;
+	struct vbatr_hw_regs *const vbr = (struct vbatr_hw_regs *)devcfg->vbr_base;
+	uint32_t vbr_clk_sel = vbr->CLK32_SRC & ~(MCHP_VBATR_CS_PCS_MSK);
+
+	switch (src) {
+	case PERIPH_CLK32K_SRC_XTAL_XTAL:
+		vbr_clk_sel |= MCHP_VBATR_CS_PCS_VTR_VBAT_XTAL;
+		break;
+	case PERIPH_CLK32K_SRC_PIN_SO:
+		vbr_clk_sel |= MCHP_VBATR_CS_PCS_VTR_PIN_SO;
+		break;
+	case PERIPH_CLK32K_SRC_PIN_XTAL:
+		vbr_clk_sel |= MCHP_VBATR_CS_PCS_VTR_PIN_XTAL;
+		break;
+	default: /* default to silicon OSC for VTR/VBAT */
+		vbr_clk_sel |= MCHP_VBATR_CS_PCS_VTR_VBAT_SO;
+		break;
 	}
 
-	return 0;
+	vbr->CLK32_SRC = vbr_clk_sel;
+}
+
+/* two bit field in PCR VTR 32KHz source register */
+enum pll_clk32k_src get_pll_32k_source(const struct device *dev)
+{
+	const struct xec_pcr_config * const devcfg = dev->config;
+	struct pcr_hw_regs *const pcr = (struct pcr_hw_regs *)devcfg->pcr_base;
+	enum pll_clk32k_src src = PLL_CLK32K_SRC_MAX;
+
+	switch (pcr->CLK32K_SRC_VTR & XEC_CC_PCR_CLK32K_SRC_MSK) {
+	case XEC_CC_PCR_CLK32K_SRC_SIL:
+		src = PLL_CLK32K_SRC_SO;
+		break;
+	case XEC_CC_PCR_CLK32K_SRC_XTAL:
+		src = PLL_CLK32K_SRC_XTAL;
+		break;
+	case XEC_CC_PCR_CLK32K_SRC_PIN:
+		src = PLL_CLK32K_SRC_PIN;
+		break;
+	default:
+		src = PLL_CLK32K_SRC_MAX;
+		break;
+	}
+
+	return src;
+}
+
+/* two bit field in VBAT source 32KHz register */
+enum periph_clk32k_src get_periph_32k_source(const struct device *dev)
+{
+	const struct xec_pcr_config * const devcfg = dev->config;
+	struct vbatr_hw_regs *const vbr = (struct vbatr_hw_regs *)devcfg->vbr_base;
+	enum periph_clk32k_src src = PERIPH_CLK32K_SRC_MAX;
+	uint32_t temp;
+
+	temp = (vbr->CLK32_SRC & XEC_CC_VBATR_CS_PCS_MSK) >> XEC_CC_VBATR_CS_PCS_POS;
+	if (temp == VBR_CLK32K_SRC_SO_SO) {
+		src = PERIPH_CLK32K_SRC_SO_SO;
+	} else if (temp == VBR_CLK32K_SRC_XTAL_XTAL) {
+		src = PERIPH_CLK32K_SRC_XTAL_XTAL;
+	} else if (temp == VBR_CLK32K_SRC_PIN_SO) {
+		src = PERIPH_CLK32K_SRC_PIN_SO;
+	} else {
+		src = PERIPH_CLK32K_SRC_PIN_XTAL;
+	}
+
+	return src;
 }
 
 /*
@@ -331,12 +661,13 @@ static int pll_wait_lock(struct pcr_regs *const pcr, uint32_t wait_cnt)
  * If no VBAT reset occurs the VBAT 32 KHz source register maintains its state.
  */
 static int soc_clk32_init(const struct device *dev,
-			  enum clk32k_src pll_clk_src,
-			  enum clk32k_src periph_clk_src,
+			  enum pll_clk32k_src pll_src,
+			  enum periph_clk32k_src periph_src,
 			  uint32_t flags)
 {
-	struct pcr_regs *const pcr = XEC_PCR_REGS_BASE(dev);
-	struct vbatr_regs *const vbr = XEC_VBATR_REGS_BASE(dev);
+	const struct xec_pcr_config * const devcfg = dev->config;
+	struct pcr_hw_regs *const pcr = (struct pcr_hw_regs *)devcfg->pcr_base;
+	struct vbatr_hw_regs *const vbr = (struct vbatr_hw_regs *)devcfg->vbr_base;
 	int rc = 0;
 
 	/* disable PCR 32K monitor and clear counters */
@@ -350,37 +681,62 @@ static int soc_clk32_init(const struct device *dev,
 	}
 
 	/* Default to 32KHz Silicon OSC for PLL and peripherals */
-	connect_32k_source(dev, CLK32K_SRC_SIL_OSC,  CLK32K_DEST_PLL, 0);
-	connect_32k_source(dev, CLK32K_SRC_SIL_OSC, CLK32K_DEST_PERIPH, 0);
+	connect_pll_32k(dev, PLL_CLK32K_SRC_SO, 0);
+	connect_periph_32k(dev, PERIPH_CLK32K_SRC_SO_SO, 0);
 
 	rc = pll_wait_lock(pcr, CLK32K_PLL_LOCK_WAIT);
 	if (rc) {
+		LOG_ERR("XEC clock control: MEC172x lock timeout for internal 32K OSC");
 		return rc;
 	}
 
-	/* We only allow Silicon OSC or Crystal as a source. */
-	if ((pll_clk_src == CLK32K_SRC_CRYSTAL) ||
-	    (periph_clk_src == CLK32K_SRC_CRYSTAL)) {
+	/* If crystal input required, enable and check. Single-ended 32KHz square wave
+	 * on XTAL pin is also handled here.
+	 */
+	if ((pll_src == PLL_CLK32K_SRC_XTAL) || periph_clk_src_using_xtal(periph_src)) {
 		enable_32k_crystal(dev, flags);
-		rc = check_32k_crystal(dev);
-		if (rc) {
-			/* disable crystal */
-			vbr->CLK32_SRC &= ~(MCHP_VBATR_CS_XTAL_EN);
-			return rc;
+		if (!devcfg->clkmon_bypass) {
+			rc = check_32k_crystal(dev);
+			if (rc) {
+				/* disable crystal */
+				vbr->CLK32_SRC &= ~(MCHP_VBATR_CS_XTAL_EN);
+				LOG_ERR("XEC clock control: MEC172x XTAL check failed: %d", rc);
+				return rc;
+			}
 		}
-		if (pll_clk_src == CLK32K_SRC_CRYSTAL) {
-			connect_32k_source(dev, CLK32K_SRC_CRYSTAL,
-					   CLK32K_DEST_PLL, flags);
+	} else {
+		disable_32k_crystal(dev);
+	}
+
+	/* Do PLL first so we can use a peripheral timer still on silicon OSC */
+	if (pll_src != PLL_CLK32K_SRC_SO) {
+		connect_pll_32k(dev, pll_src, flags);
+		rc = pll_wait_lock_periph(pcr, devcfg->pll_lock_timeout_ms);
+	}
+
+	if (periph_src != PERIPH_CLK32K_SRC_SO_SO) {
+		connect_periph_32k(dev, periph_src, flags);
+	}
+
+	/* Configuration requests disabling internal silicon OSC. */
+	if (devcfg->dis_internal_osc) {
+		if ((get_pll_32k_source(dev) != PLL_CLK32K_SRC_SO)
+		    && !periph_clk_src_using_si(get_periph_32k_source(dev))) {
+			vbr->CLK32_SRC &= ~(XEC_CC_VBATR_CS_SO_EN);
 		}
-		if (periph_clk_src == CLK32K_SRC_CRYSTAL) {
-			connect_32k_source(dev, CLK32K_SRC_CRYSTAL,
-					   CLK32K_DEST_PERIPH, flags);
+	}
+
+	/* Configuration requests disabling internal silicon OSC. */
+	if (devcfg->dis_internal_osc) {
+		if ((get_pll_32k_source(dev) != PLL_CLK32K_SRC_SO)
+		    && !periph_clk_src_using_si(get_periph_32k_source(dev))) {
+			vbr->CLK32_SRC &= ~(XEC_CC_VBATR_CS_SO_EN);
 		}
-		rc = pll_wait_lock(pcr, CLK32K_PLL_LOCK_WAIT);
 	}
 
 	return rc;
 }
+#endif
 
 /*
  * MEC172x Errata document DS80000913C
@@ -395,8 +751,7 @@ static int soc_clk32_init(const struct device *dev,
  */
 static void xec_clock_control_core_clock_divider_set(uint8_t clkdiv)
 {
-	struct pcr_regs *const pcr =
-		(struct pcr_regs *)(DT_REG_ADDR(DT_NODELABEL(pcr)));
+	struct pcr_hw_regs *const pcr = (struct pcr_hw_regs *)DT_INST_REG_ADDR_BY_IDX(0, 0);
 
 	arch_nop();
 	arch_nop();
@@ -421,16 +776,16 @@ static void xec_clock_control_core_clock_divider_set(uint8_t clkdiv)
 int z_mchp_xec_pcr_periph_sleep(uint8_t slp_idx, uint8_t slp_pos,
 				uint8_t slp_en)
 {
-	struct pcr_regs *regs = PCR_XEC_REG_BASE;
+	struct pcr_hw_regs *const pcr = (struct pcr_hw_regs *)DT_INST_REG_ADDR_BY_IDX(0, 0);
 
 	if ((slp_idx >= MCHP_MAX_PCR_SCR_REGS) || (slp_pos >= 32)) {
 		return -EINVAL;
 	}
 
 	if (slp_en) {
-		regs->SLP_EN[slp_idx] |= BIT(slp_pos);
+		pcr->SLP_EN[slp_idx] |= BIT(slp_pos);
 	} else {
-		regs->SLP_EN[slp_idx] &= ~BIT(slp_pos);
+		pcr->SLP_EN[slp_idx] &= ~BIT(slp_pos);
 	}
 
 	return 0;
@@ -442,9 +797,8 @@ static int xec_cc_on(const struct device *dev,
 		     clock_control_subsys_t sub_system,
 		     bool turn_on)
 {
-	struct pcr_regs *const pcr = XEC_PCR_REGS_BASE(dev);
-	struct mchp_xec_pcr_clk_ctrl *cc =
-		(struct mchp_xec_pcr_clk_ctrl *)sub_system;
+	struct pcr_hw_regs *const pcr = (struct pcr_hw_regs *)DT_INST_REG_ADDR_BY_IDX(0, 0);
+	struct mchp_xec_pcr_clk_ctrl *cc = (struct mchp_xec_pcr_clk_ctrl *)sub_system;
 	uint16_t pcr_idx = 0;
 	uint16_t bitpos = 0;
 
@@ -528,6 +882,28 @@ static inline int xec_clock_control_off(const struct device *dev,
 	return xec_cc_on(dev, sub_system, false);
 }
 
+/* MEC172x and future SoC's implement a turbo clock mode where
+ * ARM Core, QMSPI, and PK use turbo clock.  All other peripherals
+ * use AHB clock or the slow clock.
+ */
+static uint32_t get_turbo_clock(const struct device *dev)
+{
+#ifdef CONFIG_SOC_SERIES_MEC1501X
+	ARG_UNUSED(dev);
+
+	return MHZ(48);
+#else
+	const struct xec_pcr_config * const devcfg = dev->config;
+	struct pcr_hw_regs *const pcr = (struct pcr_hw_regs *)devcfg->pcr_base;
+
+	if (pcr->TURBO_CLK & XEC_CC_PCR_TURBO_CLK_96M) {
+		return MHZ(96);
+	}
+
+	return MHZ(48);
+#endif
+}
+
 /*
  * MEC172x clock subsystem:
  * Two main clock domains: PLL and Peripheral-32K. Each domain's 32 KHz source
@@ -552,35 +928,30 @@ static int xec_clock_control_get_subsys_rate(const struct device *dev,
 					     clock_control_subsys_t sub_system,
 					     uint32_t *rate)
 {
-	struct pcr_regs *const pcr = XEC_PCR_REGS_BASE(dev);
+	const struct xec_pcr_config * const devcfg = dev->config;
+	struct pcr_hw_regs *const pcr = (struct pcr_hw_regs *)devcfg->pcr_base;
 	uint32_t bus = (uint32_t)sub_system;
 	uint32_t temp = 0;
+	uint32_t ahb_clock = MHZ(48);
+	uint32_t turbo_clock = get_turbo_clock(dev);
 
 	switch (bus) {
 	case MCHP_XEC_PCR_CLK_CORE:
 	case MCHP_XEC_PCR_CLK_PERIPH_FAST:
-		if (pcr->TURBO_CLK & MCHP_PCR_TURBO_CLK_96M) {
-			*rate = MHZ(96);
-		} else {
-			*rate = MHZ(48);
-		}
+		*rate = turbo_clock;
 		break;
 	case MCHP_XEC_PCR_CLK_CPU:
 		/* if PCR PROC_CLK_CTRL is 0 the chip is not running */
-		if (pcr->TURBO_CLK & MCHP_PCR_TURBO_CLK_96M) {
-			*rate = MHZ(96) / pcr->PROC_CLK_CTRL;
-		} else {
-			*rate = MHZ(48) / pcr->PROC_CLK_CTRL;
-		}
+		*rate = turbo_clock / pcr->PROC_CLK_CTRL;
 		break;
 	case MCHP_XEC_PCR_CLK_BUS:
 	case MCHP_XEC_PCR_CLK_PERIPH:
-		*rate = MHZ(48);
+		*rate = ahb_clock;
 		break;
 	case MCHP_XEC_PCR_CLK_PERIPH_SLOW:
 		temp = pcr->SLOW_CLK_CTRL;
-		if (pcr->SLOW_CLK_CTRL) {
-			*rate = MHZ(48) / temp;
+		if (temp) {
+			*rate = ahb_clock / temp;
 		} else {
 			*rate = 0; /* slow clock off */
 		}
@@ -596,8 +967,7 @@ static int xec_clock_control_get_subsys_rate(const struct device *dev,
 #if defined(CONFIG_PM)
 void mchp_xec_clk_ctrl_sys_sleep_enable(bool is_deep)
 {
-	struct pcr_regs *const pcr =
-		(struct pcr_regs *)(DT_REG_ADDR(DT_NODELABEL(pcr)));
+	struct pcr_hw_regs *const pcr = (struct pcr_hw_regs *)DT_INST_REG_ADDR_BY_IDX(0, 0);
 	uint32_t sys_sleep_mode = MCHP_PCR_SYS_SLP_CTRL_SLP_ALL;
 
 	if (is_deep) {
@@ -610,9 +980,7 @@ void mchp_xec_clk_ctrl_sys_sleep_enable(bool is_deep)
 
 void mchp_xec_clk_ctrl_sys_sleep_disable(void)
 {
-	struct pcr_regs *const pcr =
-		(struct pcr_regs *)(DT_REG_ADDR(DT_NODELABEL(pcr)));
-
+	struct pcr_hw_regs *const pcr = (struct pcr_hw_regs *)DT_INST_REG_ADDR_BY_IDX(0, 0);
 	pcr->SYS_SLP_CTRL = 0;
 	SCB->SCR &= ~BIT(2);
 }
@@ -627,33 +995,77 @@ static struct clock_control_driver_api xec_clock_control_api = {
 
 static int xec_clock_control_init(const struct device *dev)
 {
+	const struct xec_pcr_config * const devcfg = dev->config;
+	struct pcr_hw_regs *const pcr = (struct pcr_hw_regs *)devcfg->pcr_base;
+	enum pll_clk32k_src pll_clk_src = devcfg->pll_src;
+	enum periph_clk32k_src periph_clk_src = devcfg->periph_src;
+	uint32_t clk_flags = 0U;
 	int rc = 0;
-	uint32_t clk32_flags = 0;
-	struct pcr_regs *const pcr = XEC_PCR_REGS_BASE(dev);
-	enum clk32k_src clk_src_pll =
-		DT_PROP_OR(PCR_NODE_LBL, pll_32k_src, CLK32K_SRC_SIL_OSC);
-	enum clk32k_src clk_src_periph =
-		DT_PROP_OR(PCR_NODE_LBL, periph_32k_src, CLK32K_SRC_SIL_OSC);
+
+	if (devcfg->xtal_se) {
+		clk_flags |= CLK32K_FLAG_CRYSTAL_SE;
+	}
 
 	pcr_slp_init(pcr);
 
-	rc = soc_clk32_init(dev, clk_src_pll, clk_src_periph, clk32_flags);
-	__ASSERT(rc == 0, "XEC: PLL and 32 KHz clock initialization failed");
+	rc = pinctrl_apply_state(devcfg->pcfg, PINCTRL_STATE_DEFAULT);
+	if ((pll_clk_src == PLL_CLK32K_SRC_PIN) || periph_clk_src_using_pin(periph_clk_src)) {
+		if (rc) {
+			LOG_ERR("XEC clock control: PINCTRL apply error %d", rc);
+			pll_clk_src = PLL_CLK32K_SRC_SO;
+			periph_clk_src = PERIPH_CLK32K_SRC_SO_SO;
+			clk_flags = 0U;
+		}
+	}
 
-	xec_clock_control_core_clock_divider_set(XEC_CORE_CLK_DIV);
+	/* sleep used as debug */
+	rc = pinctrl_apply_state(devcfg->pcfg, PINCTRL_STATE_SLEEP);
+	if ((rc != 0) && (rc != -ENOENT)) {
+		LOG_ERR("XEC clock control: PINCTRL debug apply error %d", rc);
+	}
+
+	rc = soc_clk32_init(dev, pll_clk_src, periph_clk_src, clk_flags);
+	if (rc) {
+		LOG_ERR("XEC clock control: init error %d", rc);
+	}
+
+	xec_clock_control_core_clock_divider_set(devcfg->core_clk_div);
 
 	return rc;
 }
 
-const struct xec_pcr_config xec_config = {
+#define XEC_PLL_32K_SRC(i)	\
+	(enum pll_clk32k_src)DT_INST_PROP_OR(i, pll_32k_src, PLL_CLK32K_SRC_SO)
+
+#define XEC_PERIPH_32K_SRC(i)	\
+	(enum periph_clk32k_src)DT_INST_PROP_OR(0, periph_32k_src, PERIPH_CLK32K_SRC_SO_SO)
+
+PINCTRL_DT_INST_DEFINE(0);
+
+const struct xec_pcr_config pcr_xec_config = {
 	.pcr_base = DT_INST_REG_ADDR_BY_IDX(0, 0),
 	.vbr_base = DT_INST_REG_ADDR_BY_IDX(0, 1),
+	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
+	.xtal_enable_delay_ms =
+		(uint16_t)DT_INST_PROP_OR(0, xtal_enable_delay_ms, XEC_CC_XTAL_EN_DELAY_MS_DFLT),
+	.pll_lock_timeout_ms =
+		(uint16_t)DT_INST_PROP_OR(0, pll_lock_timeout_ms, XEC_CC_DFLT_PLL_LOCK_WAIT_MS),
+	.period_min = (uint16_t)DT_INST_PROP_OR(0, clk32kmon_period_min, CNT32K_TMIN),
+	.period_max = (uint16_t)DT_INST_PROP_OR(0, clk32kmon_period_max, CNT32K_TMAX),
+	.core_clk_div = (uint8_t)DT_INST_PROP_OR(0, core_clk_div, CONFIG_SOC_MEC172X_PROC_CLK_DIV),
+	.xtal_se = (uint8_t)DT_INST_PROP_OR(0, xtal_single_ended, 0),
+	.max_dc_va = (uint8_t)DT_INST_PROP_OR(0, clk32kmon_duty_cycle_var_max, CNT32K_DUTY_MAX),
+	.min_valid = (uint8_t)DT_INST_PROP_OR(0, clk32kmon_valid_min, CNT32K_VAL_MIN),
+	.pll_src = XEC_PLL_32K_SRC(0),
+	.periph_src = XEC_PERIPH_32K_SRC(0),
+	.clkmon_bypass = (uint8_t)DT_INST_PROP_OR(0, clkmon_bypass, 0),
+	.dis_internal_osc = (uint8_t)DT_INST_PROP_OR(0, internal_osc_disable, 0),
 };
 
 DEVICE_DT_INST_DEFINE(0,
 		    &xec_clock_control_init,
 		    NULL,
-		    NULL, &xec_config,
+		    NULL, &pcr_xec_config,
 		    PRE_KERNEL_1,
 		    CONFIG_CLOCK_CONTROL_INIT_PRIORITY,
 		    &xec_clock_control_api);

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # vim: set syntax=python ts=4 :
 #
-# Copyright (c) 20180-2022 Intel Corporation
+# Copyright (c) 2018-2022 Intel Corporation
 # Copyright 2022 NXP
 # SPDX-License-Identifier: Apache-2.0
 
@@ -19,6 +19,7 @@ import select
 import re
 import psutil
 from twisterlib.environment import ZEPHYR_BASE
+from twisterlib.error import TwisterException
 sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/pylib/build_helpers"))
 from domains import Domains
 
@@ -166,6 +167,7 @@ class BinaryHandler(Handler):
 
         self.call_west_flash = False
         self.seed = None
+        self.extra_test_args = None
         self.line = b""
 
     def try_kill_process_by_pid(self):
@@ -246,7 +248,9 @@ class BinaryHandler(Handler):
 
         # Only valid for native_posix
         if self.seed is not None:
-            command = command + ["--seed="+str(self.seed)]
+            command.append(f"--seed={self.seed}")
+        if self.extra_test_args is not None:
+            command.extend(self.extra_test_args)
 
         logger.debug("Spawning process: " +
                      " ".join(shlex.quote(word) for word in command) + os.linesep +
@@ -350,7 +354,8 @@ class DeviceHandler(Handler):
             # from the test.
             harness.capture_coverage = True
 
-        ser.flush()
+        # Clear serial leftover.
+        ser.reset_input_buffer()
 
         while ser.isOpen():
             if halt_event.is_set():
@@ -370,6 +375,12 @@ class DeviceHandler(Handler):
             except OSError:
                 time.sleep(0.001)
                 continue
+            except TypeError:
+                # This exception happens if the serial port was closed and
+                # its file descriptor cleared in between of ser.isOpen()
+                # and ser.in_waiting checks.
+                logger.debug("Serial port is already closed, stop reading.")
+                break
 
             serial_line = None
             try:
@@ -401,11 +412,14 @@ class DeviceHandler(Handler):
     def device_is_available(self, instance):
         device = instance.platform.name
         fixture = instance.testsuite.harness_config.get("fixture")
+        dut_found = False
+
         for d in self.duts:
             if fixture and fixture not in d.fixtures:
                 continue
             if d.platform != device or (d.serial is None and d.serial_pty is None):
                 continue
+            dut_found = True
             d.lock.acquire()
             avail = False
             if d.available:
@@ -415,6 +429,9 @@ class DeviceHandler(Handler):
             d.lock.release()
             if avail:
                 return d
+
+        if not dut_found:
+            raise TwisterException(f"No device to serve as {device} platform.")
 
         return None
 
@@ -440,11 +457,16 @@ class DeviceHandler(Handler):
     def handle(self):
         runner = None
 
-        hardware = self.device_is_available(self.instance)
-        while not hardware:
-            logger.debug("Waiting for device {} to become available".format(self.instance.platform.name))
-            time.sleep(1)
+        try:
             hardware = self.device_is_available(self.instance)
+            while not hardware:
+                time.sleep(1)
+                hardware = self.device_is_available(self.instance)
+        except TwisterException as error:
+            self.instance.status = "failed"
+            self.instance.reason = str(error)
+            logger.error(self.instance.reason)
+            return
 
         runner = hardware.runner or self.options.west_runner
         serial_pty = hardware.serial_pty
@@ -485,10 +507,7 @@ class DeviceHandler(Handler):
                 board_id = hardware.probe_id or hardware.id
                 product = hardware.product
                 if board_id is not None:
-                    if runner == "pyocd":
-                        command_extra_args.append("--board-id")
-                        command_extra_args.append(board_id)
-                    elif runner == "nrfjprog":
+                    if runner in ("pyocd", "nrfjprog"):
                         command_extra_args.append("--dev-id")
                         command_extra_args.append(board_id)
                     elif runner == "openocd" and product == "STM32 STLink":
@@ -523,6 +542,10 @@ class DeviceHandler(Handler):
         if pre_script:
             self.run_custom_script(pre_script, 30)
 
+        flash_timeout = hardware.flash_timeout
+        if hardware.flash_with_test:
+            flash_timeout += self.timeout
+
         try:
             ser = serial.Serial(
                 serial_device,
@@ -530,7 +553,7 @@ class DeviceHandler(Handler):
                 parity=serial.PARITY_NONE,
                 stopbits=serial.STOPBITS_ONE,
                 bytesize=serial.EIGHTBITS,
-                timeout=self.timeout
+                timeout=max(flash_timeout, self.timeout)  # the worst case of no serial input
             )
         except serial.SerialException as e:
             self.instance.status = "failed"
@@ -549,21 +572,6 @@ class DeviceHandler(Handler):
                 self.make_device_available(serial_device)
             return
 
-        ser.flush()
-
-        # turns out the ser.flush() is not enough to clear serial leftover from last case
-        # explicitly readline() can do it reliably
-        old_timeout = ser.timeout
-        # wait for 1s if no serial output
-        ser.timeout = 1
-        # or read 1000 lines at most
-        # if the leftovers are more than 1000 lines, user should realize that once
-        # saw the caught ones and fix it.
-        leftover_lines = ser.readlines(1000)
-        for line in leftover_lines:
-            logger.debug(f"leftover log of previous test: {line}")
-        ser.timeout = old_timeout
-
         harness_name = self.instance.testsuite.harness.capitalize()
         harness_import = HarnessImporter(harness_name)
         harness = harness_import.instance
@@ -572,8 +580,8 @@ class DeviceHandler(Handler):
 
         t = threading.Thread(target=self.monitor_serial, daemon=True,
                              args=(ser, halt_monitor_evt, harness))
-        t.start()
         start_time = time.time()
+        t.start()
 
         d_log = "{}/device.log".format(self.instance.build_dir)
         logger.debug('Flash command: %s', command)
@@ -582,7 +590,7 @@ class DeviceHandler(Handler):
             stdout = stderr = None
             with subprocess.Popen(command, stderr=subprocess.PIPE, stdout=subprocess.PIPE) as proc:
                 try:
-                    (stdout, stderr) = proc.communicate(timeout=60)
+                    (stdout, stderr) = proc.communicate(timeout=flash_timeout)
                     # ignore unencodable unicode chars
                     logger.debug(stdout.decode(errors = "ignore"))
 
@@ -614,6 +622,7 @@ class DeviceHandler(Handler):
             self.run_custom_script(post_flash_script, 30)
 
         if not flash_error:
+            # Always wait at most the test timeout here after flashing.
             t.join(self.timeout)
         else:
             # When the flash error is due exceptions,
@@ -645,10 +654,10 @@ class DeviceHandler(Handler):
             if harness.state == "failed":
                 self.instance.reason = "Failed"
         elif not flash_error:
-            self.instance.status = "error"
-            self.instance.reason = "No Console Output(Timeout)"
+            self.instance.status = "failed"
+            self.instance.reason = "Timeout"
 
-        if self.instance.status == "error":
+        if self.instance.status in ["error", "failed"]:
             self.instance.add_missing_case_status("blocked", self.instance.reason)
 
         if not flash_error:

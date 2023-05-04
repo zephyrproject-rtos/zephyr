@@ -32,6 +32,8 @@ enum pm_device_flag {
 	PM_DEVICE_FLAG_BUSY,
 	/** Indicate if the device failed to power up. */
 	PM_DEVICE_FLAG_TURN_ON_FAILED,
+	/** Indicate if the device has claimed a power domain */
+	PM_DEVICE_FLAG_PD_CLAIMED,
 	/**
 	 * Indicates whether or not the device is capable of waking the system
 	 * up.
@@ -43,8 +45,10 @@ enum pm_device_flag {
 	PM_DEVICE_FLAG_RUNTIME_ENABLED,
 	/** Indicates if the device pm is locked.  */
 	PM_DEVICE_FLAG_STATE_LOCKED,
-	/** Indicateds if the device is used as a power domain */
+	/** Indicates if the device is used as a power domain */
 	PM_DEVICE_FLAG_PD,
+	/** Indicates if device runtime PM should be automatically enabled */
+	PM_DEVICE_FLAG_RUNTIME_AUTO,
 };
 
 /** @endcond */
@@ -123,13 +127,13 @@ struct pm_device {
 	/** Pointer to the device */
 	const struct device *dev;
 	/** Lock to synchronize the get/put operations */
-	struct k_mutex lock;
+	struct k_sem lock;
+	/** Event var to listen to the sync request events */
+	struct k_event event;
 	/** Device usage count */
 	uint32_t usage;
 	/** Work object for asynchronous calls */
 	struct k_work_delayable work;
-	/** Event conditional var to listen to the sync request events */
-	struct k_condvar condvar;
 #endif /* CONFIG_PM_DEVICE_RUNTIME */
 #ifdef CONFIG_PM_DEVICE_POWER_DOMAIN
 	/** Power Domain it belongs */
@@ -147,8 +151,8 @@ struct pm_device {
 
 #ifdef CONFIG_PM_DEVICE_RUNTIME
 #define Z_PM_DEVICE_RUNTIME_INIT(obj)			\
-	.lock = Z_MUTEX_INITIALIZER(obj.lock),		\
-	.condvar = Z_CONDVAR_INITIALIZER(obj.condvar),
+	.lock = Z_SEM_INITIALIZER(obj.lock, 1, 1),	\
+	.event = Z_EVENT_INITIALIZER(obj.event),
 #else
 #define Z_PM_DEVICE_RUNTIME_INIT(obj)
 #endif /* CONFIG_PM_DEVICE_RUNTIME */
@@ -162,6 +166,22 @@ struct pm_device {
 #endif /* CONFIG_PM_DEVICE_POWER_DOMAIN */
 
 /**
+ * @brief Utility macro to initialize #pm_device flags
+ *
+ * @param node_id Devicetree node for the initialized device (can be invalid).
+ */
+#define Z_PM_DEVICE_FLAGS(node_id)					 \
+	(COND_CODE_1(							 \
+		 DT_NODE_EXISTS(node_id),				 \
+		 ((DT_PROP_OR(node_id, wakeup_source, 0)		 \
+			 << PM_DEVICE_FLAG_WS_CAPABLE) |		 \
+		  (DT_PROP_OR(node_id, zephyr_pm_device_runtime_auto, 0) \
+			 << PM_DEVICE_FLAG_RUNTIME_AUTO) |		 \
+		  (DT_NODE_HAS_COMPAT(node_id, power_domain) <<		 \
+			 PM_DEVICE_FLAG_PD)),				 \
+		 (0)))
+
+/**
  * @brief Utility macro to initialize #pm_device.
  *
  * @note #DT_PROP_OR is used to retrieve the wakeup_source property because
@@ -171,18 +191,13 @@ struct pm_device {
  * @param node_id Devicetree node for the initialized device (can be invalid).
  * @param pm_action_cb Device PM control callback function.
  */
-#define Z_PM_DEVICE_INIT(obj, node_id, pm_action_cb)			\
-	{								\
-		Z_PM_DEVICE_RUNTIME_INIT(obj)				\
-		.action_cb = pm_action_cb,				\
-		.state = PM_DEVICE_STATE_ACTIVE,			\
-		.flags = ATOMIC_INIT(COND_CODE_1(			\
-				DT_NODE_EXISTS(node_id),		\
-				((DT_PROP_OR(node_id, wakeup_source, 0) \
-				  << PM_DEVICE_FLAG_WS_CAPABLE) |	\
-				 (DT_NODE_HAS_COMPAT(node_id, power_domain) << \
-				  PM_DEVICE_FLAG_PD)), (0))),		\
-		Z_PM_DEVICE_POWER_DOMAIN_INIT(node_id)			\
+#define Z_PM_DEVICE_INIT(obj, node_id, pm_action_cb)		  \
+	{							  \
+		Z_PM_DEVICE_RUNTIME_INIT(obj)			  \
+		.action_cb = pm_action_cb,			  \
+		.state = PM_DEVICE_STATE_ACTIVE,		  \
+		.flags = ATOMIC_INIT(Z_PM_DEVICE_FLAGS(node_id)), \
+		Z_PM_DEVICE_POWER_DOMAIN_INIT(node_id)		  \
 	}
 
 /**
@@ -195,7 +210,7 @@ struct pm_device {
 /**
  * @brief Define device PM slot.
  *
- * This macro defines a pointer to a device in the z_pm_device_slots region.
+ * This macro defines a pointer to a device in the pm_device_slots region.
  * When invoked for each device with PM, it will effectively result in a device
  * pointer array with the same size of the actual devices with PM enabled. This
  * is used internally by the PM subsystem to keep track of suspended devices
@@ -204,9 +219,8 @@ struct pm_device {
  * @param dev_id Device id.
  */
 #define Z_PM_DEVICE_DEFINE_SLOT(dev_id)					\
-	static const Z_DECL_ALIGN(struct device *)			\
-	_CONCAT(__pm_slot_, dev_id) __used				\
-	__attribute__((__section__(".z_pm_device_slots")))
+	static const STRUCT_SECTION_ITERABLE_ALTERNATE(pm_device_slots, device, \
+			_CONCAT(__pm_slot_, dev_id))
 
 #ifdef CONFIG_PM_DEVICE
 /**

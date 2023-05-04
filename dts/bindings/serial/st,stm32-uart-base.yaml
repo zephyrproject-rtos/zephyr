@@ -4,54 +4,57 @@
 # Common fields for STM32 UART peripherals.
 description: STM32 UART-BASE
 
-include: [uart-controller.yaml, pinctrl-device.yaml]
+include: [uart-controller.yaml, pinctrl-device.yaml, reset-device.yaml]
 
 properties:
-    reg:
-      required: true
+  reg:
+    required: true
 
-    clocks:
-      required: true
+  clocks:
+    required: true
 
-    interrupts:
-      required: true
+  resets:
+    required: true
 
-    single-wire:
-      type: boolean
-      description: |
-        Enable the single wire half-duplex communication.
-        Using this mode, TX and RX lines are internally connected and
-        only TX pin is used afterwards and should be configured.
-        RX/TX conflicts must be handled on user side.
+  interrupts:
+    required: true
 
-    tx-rx-swap:
-      type: boolean
-      description:
-        Swap the TX and RX pins. Used in case of a cross wired connection.
+  single-wire:
+    type: boolean
+    description: |
+      Enable the single wire half-duplex communication.
+      Using this mode, TX and RX lines are internally connected and
+      only TX pin is used afterwards and should be configured.
+      RX/TX conflicts must be handled on user side.
 
-    tx-invert:
-      type: boolean
-      description: |
-        Invert the binary logic of tx pin. When enabled, physical logic levels are inverted and
-        we use 1=Low, 0=High instead of 1=High, 0=Low.
+  tx-rx-swap:
+    type: boolean
+    description:
+      Swap the TX and RX pins. Used in case of a cross wired connection.
 
-    rx-invert:
-      type: boolean
-      description: |
-        Invert the binary logic of rx pin. When enabled, physical logic levels are inverted and
-        we use 1=Low, 0=High instead of 1=High, 0=Low.
+  tx-invert:
+    type: boolean
+    description: |
+      Invert the binary logic of tx pin. When enabled, physical logic levels are inverted and
+      we use 1=Low, 0=High instead of 1=High, 0=Low.
 
-    pinctrl-0:
-      required: true
+  rx-invert:
+    type: boolean
+    description: |
+      Invert the binary logic of rx pin. When enabled, physical logic levels are inverted and
+      we use 1=Low, 0=High instead of 1=High, 0=Low.
 
-    pinctrl-names:
-      required: true
+  pinctrl-0:
+    required: true
 
-    wakeup-line:
-      type: int
-      description: |
-        EXTI line number matching the device wakeup interrupt mask register.
-        This property is required on stm32 devices where the wakeup interrupt signal could be
-        configured masked at boot (sm32wl55 for instance), preventing the device to wakeup
-        the core from stop mode(s).
-        Valid range: 0 - 31
+  pinctrl-names:
+    required: true
+
+  wakeup-line:
+    type: int
+    description: |
+      EXTI line number matching the device wakeup interrupt mask register.
+      This property is required on stm32 devices where the wakeup interrupt signal could be
+      configured masked at boot (sm32wl55 for instance), preventing the device to wakeup
+      the core from stop mode(s).
+      Valid range: 0 - 31

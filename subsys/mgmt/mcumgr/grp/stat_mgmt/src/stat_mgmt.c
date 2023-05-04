@@ -6,6 +6,7 @@
 
 #include <zephyr/sys/util.h>
 #include <zephyr/stats/stats.h>
+#include <zephyr/logging/log.h>
 #include <string.h>
 #include <stdio.h>
 
@@ -14,10 +15,11 @@
 #include <zcbor_encode.h>
 
 #include <zephyr/mgmt/mcumgr/mgmt/mgmt.h>
+#include <zephyr/mgmt/mcumgr/mgmt/handlers.h>
 #include <zephyr/mgmt/mcumgr/smp/smp.h>
 #include <zephyr/mgmt/mcumgr/grp/stat_mgmt/stat_mgmt.h>
 
-#include <mgmt/mcumgr/grp/stat_mgmt/stat_mgmt_config.h>
+LOG_MODULE_REGISTER(mcumgr_stat_grp, CONFIG_MCUMGR_GRP_STAT_LOG_LEVEL);
 
 static struct mgmt_handler stat_mgmt_handlers[];
 
@@ -120,7 +122,7 @@ stat_mgmt_show(struct smp_streamer *ctxt)
 	struct zcbor_string value = { 0 };
 	zcbor_state_t *zse = ctxt->writer->zs;
 	zcbor_state_t *zsd = ctxt->reader->zs;
-	char stat_name[STAT_MGMT_MAX_NAME_LEN];
+	char stat_name[CONFIG_MCUMGR_GRP_STAT_MAX_NAME_LEN];
 	bool ok;
 	size_t counter = 0;
 
@@ -154,15 +156,21 @@ stat_mgmt_show(struct smp_streamer *ctxt)
 	stat_name[value.len] = '\0';
 
 	if (stat_mgmt_count(stat_name, &counter) != 0) {
+		LOG_ERR("Invalid stat name: %s", stat_name);
 		return MGMT_ERR_EUNKNOWN;
 	}
 
-	ok = zcbor_tstr_put_lit(zse, "rc")		&&
-	     zcbor_int32_put(zse, MGMT_ERR_EOK)		&&
-	     zcbor_tstr_put_lit(zse, "name")		&&
-	     zcbor_tstr_encode(zse, &value)		&&
-	     zcbor_tstr_put_lit(zse, "fields")		&&
-	     zcbor_map_start_encode(zse, counter);
+	if (IS_ENABLED(CONFIG_MCUMGR_SMP_LEGACY_RC_BEHAVIOUR)) {
+		ok = zcbor_tstr_put_lit(zse, "rc")		&&
+		     zcbor_int32_put(zse, MGMT_ERR_EOK);
+	}
+
+	if (ok) {
+		ok = zcbor_tstr_put_lit(zse, "name")		&&
+		     zcbor_tstr_encode(zse, &value)		&&
+		     zcbor_tstr_put_lit(zse, "fields")		&&
+		     zcbor_map_start_encode(zse, counter);
+	}
 
 	if (ok) {
 		int rc = stat_mgmt_foreach_entry(zse, stat_name,
@@ -234,8 +242,9 @@ static struct mgmt_group stat_mgmt_group = {
 	.mg_group_id = MGMT_GROUP_ID_STAT,
 };
 
-void
-stat_mgmt_register_group(void)
+static void stat_mgmt_register_group(void)
 {
 	mgmt_register_group(&stat_mgmt_group);
 }
+
+MCUMGR_HANDLER_DEFINE(stat_mgmt, stat_mgmt_register_group);

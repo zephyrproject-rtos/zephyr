@@ -1,0 +1,18 @@
+# Texas Instruments SimpleLink CC13x2 / CC26x2
+
+# Copyright (c) 2022 Vaishnav Achath
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_CC13X2X7_CC26X2X7
+	bool "TI SimpleLink Family CC13x2x7/ CC26x2x7"
+	select ARM
+	select CPU_CORTEX_M4
+	select CPU_HAS_ARM_MPU
+	select DYNAMIC_INTERRUPTS
+	select CPU_CORTEX_M_HAS_DWT
+	select CPU_HAS_FPU
+	select SOC_FAMILY_TISIMPLELINK
+	select HAS_CC13X2X7_CC26X2X7_SDK
+	select HAS_TI_CCFG if !BOOTLOADER_MCUBOOT
+	help
+	  Enable support for TI SimpleLink CC13x2x7 / CC26x2x7 SoCs

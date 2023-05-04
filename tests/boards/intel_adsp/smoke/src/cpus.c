@@ -4,6 +4,8 @@
 #include <stdlib.h>
 #include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
+#include <zephyr/cache.h>
+
 #include <intel_adsp_ipc.h>
 #include "tests.h"
 
@@ -100,7 +102,7 @@ static void core_smoke(void *arg)
 	*utag = 42;
 	zassert_true(*ctag == 99, "uncached assignment unexpectedly affected cache");
 	zassert_true(*utag == 42, "uncached memory affected unexpectedly");
-	z_xtensa_cache_flush((void *)ctag, sizeof(*ctag));
+	sys_cache_data_flush_range((void *)ctag, sizeof(*ctag));
 	zassert_true(*utag == 99, "cache flush didn't work");
 
 	/* Calibrate clocks */
@@ -208,10 +210,6 @@ void halt_and_restart_thread(void *p1, void *p2, void *p3)
 ZTEST(intel_adsp_boot, test_2nd_cpu_halt)
 {
 	int ret;
-
-	if (IS_ENABLED(CONFIG_SOC_INTEL_CAVS_V15)) {
-		ztest_test_skip();
-	}
 
 	/* Obviously this only works on CPU0. So, we create a thread pinned
 	 * to CPU0 to effectively run the test.

@@ -1,21 +1,21 @@
 common:
-    harness: console
-    harness_config:
-      type: multi_line
-      regex:
-        - "TEST:([0-9]){6,7}"
-        - "Timeout flush working if shown"
+  harness: console
+  platform_allow: intel_adsp_cavs25
+  integration_platforms:
+    - intel_adsp_cavs25
+  harness_config:
+    type: multi_line
+    regex:
+      - "TEST:([0-9]){6,7}"
+      - "Timeout flush working if shown"
 tests:
   boards.intel_adsp.hda_log:
-    platform_allow: intel_adsp_cavs15 intel_adsp_cavs18 intel_adsp_cavs20 intel_adsp_cavs25
     timeout: 120
   boards.intel_adsp.hda_log.printk:
-    platform_allow: intel_adsp_cavs15 intel_adsp_cavs18 intel_adsp_cavs20 intel_adsp_cavs25
     timeout: 120
     extra_configs:
       - CONFIG_LOG_PRINTK=y
   boards.intel_adsp.hda_log.1cpu:
-    platform_allow: intel_adsp_cavs15 intel_adsp_cavs18 intel_adsp_cavs20 intel_adsp_cavs25
     timeout: 120
     extra_configs:
       - CONFIG_MP_MAX_NUM_CPUS=1

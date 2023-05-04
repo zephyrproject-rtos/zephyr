@@ -16,7 +16,6 @@ from twisterlib.error import BuildError
 from twisterlib.size_calc import SizeCalculator
 from twisterlib.handlers import Handler, SimulationHandler, BinaryHandler, QEMUHandler, DeviceHandler, SUPPORTED_SIMS
 
-
 logger = logging.getLogger('twister')
 logger.setLevel(logging.DEBUG)
 
@@ -46,6 +45,8 @@ class TestInstance:
         self.run_id = self._get_run_id()
         self.build_dir = os.path.join(outdir, platform.name, testsuite.name)
 
+        self.domains = None
+
         self.run = False
         self.testcases = []
         self.init_cases()
@@ -74,7 +75,9 @@ class TestInstance:
 
     def add_missing_case_status(self, status, reason=None):
         for case in self.testcases:
-            if not case.status:
+            if case.status == 'started':
+                case.status = "failed"
+            elif not case.status:
                 case.status = status
                 if reason:
                     case.reason = reason
@@ -130,7 +133,7 @@ class TestInstance:
             # command-line, then we need to run the test, not just build it.
             fixture = testsuite.harness_config.get('fixture')
             if fixture:
-                can_run = (fixture in fixtures)
+                can_run = fixture in fixtures
 
         return can_run
 
@@ -140,7 +143,11 @@ class TestInstance:
 
         options = env.options
         handler = Handler(self, "")
-        if self.platform.simulation != "na":
+        if options.device_testing:
+            handler = DeviceHandler(self, "device")
+            handler.call_make_run = False
+            handler.ready = True
+        elif self.platform.simulation != "na":
             if self.platform.simulation == "qemu":
                 handler = QEMUHandler(self, "qemu")
                 handler.args.append(f"QEMU_PIPE={handler.get_fifo()}")
@@ -155,10 +162,6 @@ class TestInstance:
             handler.binary = os.path.join(self.build_dir, "testbinary")
             if options.enable_coverage:
                 handler.args.append("COVERAGE=1")
-            handler.call_make_run = False
-            handler.ready = True
-        elif options.device_testing:
-            handler = DeviceHandler(self, "device")
             handler.call_make_run = False
             handler.ready = True
 
@@ -213,7 +216,22 @@ class TestInstance:
         content = ""
 
         if self.testsuite.extra_configs:
-            content = "\n".join(self.testsuite.extra_configs)
+            new_config_list = []
+            # some configs might be conditional on arch or platform, see if we
+            # have a namespace defined and apply only if the namespace matches.
+            # we currently support both arch: and platform:
+            for config in self.testsuite.extra_configs:
+                cond_config = config.split(":")
+                if cond_config[0] == "arch" and len(cond_config) == 3:
+                    if self.platform.arch == cond_config[1]:
+                        new_config_list.append(cond_config[2])
+                elif cond_config[0] == "plaform" and len(cond_config) == 3:
+                    if self.platform.name == cond_config[1]:
+                        new_config_list.append(cond_config[2])
+                else:
+                    new_config_list.append(config)
+
+            content = "\n".join(new_config_list)
 
         if enable_coverage:
             if platform.name in coverage_platform:
@@ -236,7 +254,7 @@ class TestInstance:
 
         return content
 
-    def calculate_sizes(self):
+    def calculate_sizes(self, from_buildlog: bool = False, generate_warning: bool = True) -> SizeCalculator:
         """Get the RAM/ROM sizes of a test case.
 
         This can only be run after the instance has been executed by
@@ -244,13 +262,42 @@ class TestInstance:
 
         @return A SizeCalculator object
         """
-        fns = glob.glob(os.path.join(self.build_dir, "zephyr", "*.elf"))
-        fns.extend(glob.glob(os.path.join(self.build_dir, "zephyr", "*.exe")))
-        fns = [x for x in fns if '_pre' not in x]
-        if len(fns) != 1:
-            raise BuildError("Missing/multiple output ELF binary")
+        elf_filepath = self.get_elf_file()
+        buildlog_filepath = self.get_buildlog_file() if from_buildlog else ''
+        return SizeCalculator(elf_filename=elf_filepath,
+                            extra_sections=self.testsuite.extra_sections,
+                            buildlog_filepath=buildlog_filepath,
+                            generate_warning=generate_warning)
 
-        return SizeCalculator(fns[0], self.testsuite.extra_sections)
+    def get_elf_file(self) -> str:
+
+        if self.testsuite.sysbuild:
+            build_dir = self.domains.get_default_domain().build_dir
+        else:
+            build_dir = self.build_dir
+
+        fns = glob.glob(os.path.join(build_dir, "zephyr", "*.elf"))
+        fns.extend(glob.glob(os.path.join(build_dir, "zephyr", "*.exe")))
+        fns.extend(glob.glob(os.path.join(build_dir, "testbinary")))
+        blocklist = [
+                'remapped', # used for xtensa plaforms
+                'zefi', # EFI for Zephyr
+                '_pre' ]
+        fns = [x for x in fns if not any(bad in os.path.basename(x) for bad in blocklist)]
+        if len(fns) != 1 and self.platform.type != 'native':
+            raise BuildError("Missing/multiple output ELF binary")
+        return fns[0]
+
+    def get_buildlog_file(self) -> str:
+        """Get path to build.log file.
+
+        @raises BuildError: Incorrect amount (!=1) of build logs.
+        @return: Path to build.log (str).
+        """
+        buildlog_paths = glob.glob(os.path.join(self.build_dir, "build.log"))
+        if len(buildlog_paths) != 1:
+            raise BuildError("Missing/multiple build.log file.")
+        return buildlog_paths[0]
 
     def __repr__(self):
         return "<TestSuite %s on %s>" % (self.testsuite.name, self.platform.name)

@@ -52,6 +52,7 @@ static uint32_t get_wlen(const union mpsc_pbuf_generic *item)
 }
 
 static uint32_t drop_cnt;
+static uint32_t exp_drop_cnt;
 static uintptr_t exp_dropped_data[10];
 static uint32_t exp_dropped_len[10];
 
@@ -59,11 +60,17 @@ static void drop(const struct mpsc_pbuf_buffer *buffer, const union mpsc_pbuf_ge
 {
 	struct test_data_var *packet = (struct test_data_var *)item;
 
-	zassert_equal(packet->hdr.data, exp_dropped_data[drop_cnt]);
-	zassert_equal(packet->hdr.len, exp_dropped_len[drop_cnt]);
+	zassert_true(drop_cnt < exp_drop_cnt);
+	zassert_equal(packet->hdr.len, exp_dropped_len[drop_cnt],
+			"(%d) Got:%08x, Expected: %08x",
+			drop_cnt, packet->hdr.len, exp_dropped_len[drop_cnt]);
+	zassert_equal(packet->hdr.data, exp_dropped_data[drop_cnt],
+			"(%d) Got:%08x, Expected: %08x",
+			drop_cnt, packet->hdr.data, exp_dropped_data[drop_cnt]);
 	for (int i = 0; i < exp_dropped_len[drop_cnt] - 1; i++) {
 		int err = memcmp(packet->data, &exp_dropped_data[drop_cnt],
 				 sizeof(uint32_t));
+
 
 		zassert_equal(err, 0);
 	}
@@ -80,11 +87,12 @@ static struct mpsc_pbuf_buffer_config cfg = {
 	.get_wlen = get_wlen
 };
 
-static void init(struct mpsc_pbuf_buffer *buffer, bool overwrite, bool pow2)
+static void init(struct mpsc_pbuf_buffer *buffer, uint32_t wlen, bool overwrite)
 {
 	drop_cnt = 0;
+	exp_drop_cnt = 0;
 	cfg.flags = overwrite ? MPSC_PBUF_MODE_OVERWRITE : 0;
-	cfg.size = ARRAY_SIZE(buf32) - (pow2 ? 0 : 1);
+	cfg.size = wlen;
 	mpsc_pbuf_init(buffer, &cfg);
 
 #if CONFIG_SOC_SERIES_NRF52X
@@ -107,7 +115,7 @@ void item_put_no_overwrite(bool pow2)
 {
 	struct mpsc_pbuf_buffer buffer;
 
-	init(&buffer, false, pow2);
+	init(&buffer, 4 - !pow2, false);
 
 	int repeat = buffer.size*2;
 	union test_item test_1word = {.data = {.valid = 1, .len = 1 }};
@@ -138,19 +146,20 @@ void item_put_overwrite(bool pow2)
 {
 	struct mpsc_pbuf_buffer buffer;
 
-	init(&buffer, true, pow2);
+	init(&buffer, 4 - !pow2, true);
 
 	union test_item test_1word = {.data = {.valid = 1, .len = 1 }};
 
 	exp_dropped_data[0] = 0;
 	exp_dropped_len[0] = 1;
+	exp_drop_cnt = 1;
 
-	for (int i = 0; i < buffer.size; i++) {
+	for (int i = 0; i < buffer.size + 1; i++) {
 		test_1word.data.data = i;
 		mpsc_pbuf_put_word(&buffer, test_1word.item);
 	}
 
-	zassert_equal(drop_cnt, 1,
+	zassert_equal(drop_cnt, exp_drop_cnt,
 			"Unexpected number of dropped messages: %d", drop_cnt);
 }
 
@@ -164,7 +173,7 @@ void item_put_saturate(bool pow2)
 {
 	struct mpsc_pbuf_buffer buffer;
 
-	init(&buffer, false, pow2);
+	init(&buffer, 4 - !pow2, false);
 
 	int repeat = buffer.size;
 	union test_item test_1word = {.data = {.valid = 1, .len = 1 }};
@@ -172,7 +181,7 @@ void item_put_saturate(bool pow2)
 
 	zassert_false(mpsc_pbuf_is_pending(&buffer));
 
-	for (int i = 0; i < repeat/2; i++) {
+	for (int i = 0; i < repeat / 2; i++) {
 		test_1word.data.data = i;
 		mpsc_pbuf_put_word(&buffer, test_1word.item);
 
@@ -184,12 +193,12 @@ void item_put_saturate(bool pow2)
 		mpsc_pbuf_free(&buffer, &t->item);
 	}
 
-	for (int i = 0; i < repeat; i++) {
+	for (int i = 0; i < repeat + 1; i++) {
 		test_1word.data.data = i;
 		mpsc_pbuf_put_word(&buffer, test_1word.item);
 	}
 
-	for (int i = 0; i < (repeat-1); i++) {
+	for (int i = 0; i < repeat; i++) {
 		t = (union test_item *)mpsc_pbuf_claim(&buffer);
 		zassert_true(t);
 		zassert_equal(t->data.data, i);
@@ -209,7 +218,7 @@ void benchmark_item_put(bool pow2)
 {
 	struct mpsc_pbuf_buffer buffer;
 
-	init(&buffer, true, pow2);
+	init(&buffer, ARRAY_SIZE(buf32) - !pow2, true);
 
 	int repeat = buffer.size - 1;
 	union test_item test_1word = {.data = {.valid = 1, .len = 1 }};
@@ -250,7 +259,7 @@ void item_put_ext_no_overwrite(bool pow2)
 {
 	struct mpsc_pbuf_buffer buffer;
 
-	init(&buffer, false, pow2);
+	init(&buffer, 8 - !pow2, false);
 
 	int repeat = buffer.size * 2;
 	union test_item test_ext_item = {
@@ -288,10 +297,10 @@ void item_put_word_ext_overwrite(bool pow2)
 {
 	struct mpsc_pbuf_buffer buffer;
 
-	init(&buffer, true, pow2);
+	init(&buffer, 8 - !pow2, true);
 
 	size_t w = (sizeof(uint32_t) + sizeof(void *)) / sizeof(uint32_t);
-	int repeat = 1 + (buffer.size - 1) / w;
+	int repeat = 1 + buffer.size / w;
 	union test_item test_ext_item = {
 		.data = {
 			.valid = 1,
@@ -301,19 +310,16 @@ void item_put_word_ext_overwrite(bool pow2)
 
 	exp_dropped_data[0] = 0;
 	exp_dropped_len[0] = w;
-	exp_dropped_data[1] = 1;
-	exp_dropped_len[1] = w;
+	exp_drop_cnt = 1;
 
 	for (uintptr_t i = 0; i < repeat; i++) {
 		test_ext_item.data.data = i;
 		mpsc_pbuf_put_word_ext(&buffer, test_ext_item.item, (void *)i);
 	}
 
-	uint32_t exp_drop_cnt = (sizeof(void *) == sizeof(uint32_t)) ?
-				(pow2 ? 1 : 2) : 2;
-
 	zassert_equal(drop_cnt, exp_drop_cnt,
-			"Unexpected number of dropped messages: %d", drop_cnt);
+			"Unexpected number of dropped messages: %d (exp: %d)",
+			drop_cnt, exp_drop_cnt);
 }
 
 ZTEST(log_buffer, test_item_put_word_ext_overwrite)
@@ -326,7 +332,7 @@ void item_put_ext_saturate(bool pow2)
 {
 	struct mpsc_pbuf_buffer buffer;
 
-	init(&buffer, false, pow2);
+	init(&buffer, 8 - !pow2, false);
 
 	int repeat = buffer.size / PUT_EXT_LEN;
 	union test_item test_ext_item = {
@@ -355,7 +361,7 @@ void item_put_ext_saturate(bool pow2)
 		mpsc_pbuf_put_word_ext(&buffer, test_ext_item.item, data);
 	}
 
-	for (uintptr_t i = 0; i < (repeat-1); i++) {
+	for (uintptr_t i = 0; i < repeat; i++) {
 		t = (union test_item *)mpsc_pbuf_claim(&buffer);
 		zassert_true(t);
 		zassert_equal(t->data_ext.data, (void *)i);
@@ -376,7 +382,7 @@ void benchmark_item_put_ext(bool pow2)
 {
 	struct mpsc_pbuf_buffer buffer;
 
-	init(&buffer, false, pow2);
+	init(&buffer, ARRAY_SIZE(buf32) - !pow2, false);
 
 	int repeat = (buffer.size - 1) / PUT_EXT_LEN;
 	union test_item test_ext_item = {
@@ -423,7 +429,7 @@ void benchmark_item_put_data(bool pow2)
 {
 	struct mpsc_pbuf_buffer buffer;
 
-	init(&buffer, false, pow2);
+	init(&buffer, ARRAY_SIZE(buf32) - !pow2, false);
 
 	int repeat = (buffer.size - 1) / PUT_EXT_LEN;
 	union test_item test_ext_item = {
@@ -474,10 +480,10 @@ void item_put_data_overwrite(bool pow2)
 {
 	struct mpsc_pbuf_buffer buffer;
 
-	init(&buffer, true, pow2);
+	init(&buffer, 8 - !pow2, true);
 
 	size_t w = (sizeof(uint32_t) + sizeof(void *)) / sizeof(uint32_t);
-	int repeat = 1 + (buffer.size - 1) / w;
+	int repeat = 1 + buffer.size / w;
 	static const int len = sizeof(struct test_data_ext) / sizeof(uint32_t);
 	struct test_data_ext item = {
 		.hdr = {
@@ -488,8 +494,7 @@ void item_put_data_overwrite(bool pow2)
 
 	exp_dropped_data[0] = 0;
 	exp_dropped_len[0] = w;
-	exp_dropped_data[1] = 1;
-	exp_dropped_len[1] = w;
+	exp_drop_cnt = 1;
 
 	for (uintptr_t i = 0; i < repeat; i++) {
 		void *vitem;
@@ -499,9 +504,6 @@ void item_put_data_overwrite(bool pow2)
 		zassert_true(IS_PTR_ALIGNED(vitem, uint32_t), "unaligned ptr");
 		mpsc_pbuf_put_data(&buffer, (uint32_t *)vitem, len);
 	}
-
-	uint32_t exp_drop_cnt = (sizeof(void *) == sizeof(uint32_t)) ?
-				(pow2 ? 1 : 2) : 2;
 
 	zassert_equal(drop_cnt, exp_drop_cnt,
 			"Unexpected number of dropped messages: %d", drop_cnt);
@@ -517,7 +519,7 @@ void item_alloc_commit(bool pow2)
 {
 	struct mpsc_pbuf_buffer buffer;
 
-	init(&buffer, false, pow2);
+	init(&buffer, 16 - !pow2, false);
 
 	struct test_data_var *packet;
 	uint32_t len = 5;
@@ -556,15 +558,15 @@ void item_max_alloc(bool overwrite)
 	struct mpsc_pbuf_buffer buffer;
 	struct test_data_var *packet;
 
-	init(&buffer, overwrite, true);
+	init(&buffer, 8, overwrite);
 
 	/* First try to allocate the biggest possible packet. */
 	for (int i = 0; i < 2; i++) {
 		packet = (struct test_data_var *)mpsc_pbuf_alloc(&buffer,
-								 buffer.size - 1,
+								 buffer.size,
 								 K_NO_WAIT);
 		zassert_true(packet != NULL);
-		packet->hdr.len = buffer.size - 1;
+		packet->hdr.len = buffer.size;
 		mpsc_pbuf_commit(&buffer, (union mpsc_pbuf_generic *)packet);
 
 		packet = (struct test_data_var *)mpsc_pbuf_claim(&buffer);
@@ -573,7 +575,7 @@ void item_max_alloc(bool overwrite)
 
 	/* Too big packet cannot be allocated. */
 	packet = (struct test_data_var *)mpsc_pbuf_alloc(&buffer,
-							 buffer.size,
+							 buffer.size + 1,
 							 K_NO_WAIT);
 	zassert_true(packet == NULL);
 }
@@ -588,10 +590,10 @@ static uint32_t saturate_buffer_uneven(struct mpsc_pbuf_buffer *buffer,
 					uint32_t len)
 {
 	struct test_data_var *packet;
-	uint32_t uneven = 5;
+	uint32_t uneven = 3;
 	uint32_t cnt = 0;
 	int repeat =
-		uneven - 1 + ((buffer->size - (uneven * len)) / len);
+		uneven + ((buffer->size - (uneven * len)) / len);
 
 	/* Put some data to include wrapping */
 	for (int i = 0; i < uneven; i++) {
@@ -626,7 +628,7 @@ void item_alloc_commit_saturate(bool pow2)
 {
 	struct mpsc_pbuf_buffer buffer;
 
-	init(&buffer, false, pow2);
+	init(&buffer, 32 - !pow2, false);
 
 	saturate_buffer_uneven(&buffer, 5);
 
@@ -658,7 +660,7 @@ void item_alloc_preemption(bool pow2)
 {
 	struct mpsc_pbuf_buffer buffer;
 
-	init(&buffer, false, pow2);
+	init(&buffer, ARRAY_SIZE(buf32) - !pow2, false);
 
 	struct test_data_var *p0;
 	struct test_data_var *p1;
@@ -717,17 +719,24 @@ void overwrite(bool pow2)
 	uint32_t len0, len1;
 	struct mpsc_pbuf_buffer buffer;
 
-	init(&buffer, true, pow2);
+	init(&buffer, 32 - !pow2, true);
 	uint32_t packet_cnt = saturate_buffer_uneven(&buffer, fill_len);
+
+	zassert_equal(drop_cnt, exp_drop_cnt, NULL);
 
 	exp_dropped_data[0] = 0;
 	exp_dropped_len[0] = fill_len;
+	exp_drop_cnt++;
+	exp_dropped_data[1] = 1;
+	exp_dropped_len[1] = fill_len;
+	exp_drop_cnt++;
+
 	len0 = 6;
 	p = (struct test_data_var *)mpsc_pbuf_alloc(&buffer, len0, K_NO_WAIT);
 
 	p->hdr.len = len0;
 	mpsc_pbuf_commit(&buffer, (union mpsc_pbuf_generic *)p);
-	zassert_equal(drop_cnt, 1);
+	zassert_equal(drop_cnt, exp_drop_cnt);
 
 	/* Request allocation which will require dropping 2 packets. */
 	len1 = 9;
@@ -735,12 +744,13 @@ void overwrite(bool pow2)
 	exp_dropped_len[1] = fill_len;
 	exp_dropped_data[2] = 2;
 	exp_dropped_len[2] = fill_len;
+	exp_drop_cnt = 3;
 
 	p = (struct test_data_var *)mpsc_pbuf_alloc(&buffer, len1, K_NO_WAIT);
 
 	p->hdr.len = len1;
 	mpsc_pbuf_commit(&buffer, (union mpsc_pbuf_generic *)p);
-	zassert_equal(drop_cnt, 3);
+	zassert_equal(drop_cnt, exp_drop_cnt);
 
 	for (int i = 0; i < (packet_cnt - drop_cnt); i++) {
 		p = (struct test_data_var *)mpsc_pbuf_claim(&buffer);
@@ -780,7 +790,7 @@ void overwrite_while_claimed(bool pow2)
 	struct test_data_var *p1;
 	struct mpsc_pbuf_buffer buffer;
 
-	init(&buffer, true, pow2);
+	init(&buffer, 32 - !pow2, true);
 
 	uint32_t fill_len = 5;
 	uint32_t len = 6;
@@ -797,9 +807,9 @@ void overwrite_while_claimed(bool pow2)
 	exp_dropped_len[0] = fill_len;
 	exp_dropped_data[1] = p0->hdr.data + 2; /* next packet is dropped */
 	exp_dropped_len[1] = fill_len;
+	exp_drop_cnt = 2;
 	p1 = (struct test_data_var *)mpsc_pbuf_alloc(&buffer, 6, K_NO_WAIT);
-
-	zassert_equal(drop_cnt, 2);
+	zassert_equal(drop_cnt, exp_drop_cnt);
 	p1->hdr.len = len;
 	mpsc_pbuf_commit(&buffer, (union mpsc_pbuf_generic *)p1);
 
@@ -833,7 +843,7 @@ void overwrite_while_claimed2(bool pow2)
 	struct test_data_var *p1;
 	struct mpsc_pbuf_buffer buffer;
 
-	init(&buffer, true, pow2);
+	init(&buffer, 32 - !pow2, true);
 
 	uint32_t fill_len = 1;
 	uint32_t len = 3;
@@ -852,11 +862,10 @@ void overwrite_while_claimed2(bool pow2)
 	exp_dropped_len[1] = fill_len;
 	exp_dropped_data[2] = p0->hdr.data + 3; /* next packet is dropped */
 	exp_dropped_len[2] = fill_len;
-	exp_dropped_data[3] = p0->hdr.data + 4; /* next packet is dropped */
-	exp_dropped_len[3] = fill_len;
+	exp_drop_cnt = 3;
 	p1 = (struct test_data_var *)mpsc_pbuf_alloc(&buffer, len, K_NO_WAIT);
 
-	zassert_equal(drop_cnt, 4);
+	zassert_equal(drop_cnt, exp_drop_cnt);
 	p1->hdr.len = len;
 	mpsc_pbuf_commit(&buffer, (union mpsc_pbuf_generic *)p1);
 
@@ -880,8 +889,8 @@ void overwrite_while_claimed2(bool pow2)
 
 ZTEST(log_buffer, test_overwrite_while_claimed2)
 {
-		overwrite_while_claimed2(true);
-		overwrite_while_claimed2(false);
+	overwrite_while_claimed2(true);
+	overwrite_while_claimed2(false);
 }
 
 static uintptr_t current_rd_idx;
@@ -934,7 +943,7 @@ ZTEST(log_buffer, test_overwrite_consistency)
 			}
 		}
 
-		uint32_t wr_cnt = rand_get(1, 200);
+		uint32_t wr_cnt = rand_get(1, 15);
 
 		for (int i = 0; i < wr_cnt; i++) {
 			uint32_t wlen = rand_get(1, 15);
@@ -1021,7 +1030,7 @@ void start_threads(struct mpsc_pbuf_buffer *buffer)
 		k_ticks_t exp_wait = k_ms_to_ticks_ceil32(wait_ms);
 
 		/* Threads shall be blocked, waiting for available space. */
-		zassert_within(t, exp_wait, k_ms_to_ticks_ceil32(2));
+		zassert_within(t, exp_wait, k_ms_to_ticks_ceil32(20));
 	}
 }
 
@@ -1037,7 +1046,7 @@ ZTEST(log_buffer, test_pending_alloc)
 
 	k_thread_priority_set(k_current_get(), 3);
 
-	init(&buffer, true, false);
+	init(&buffer, ARRAY_SIZE(buf32) - 1, true);
 
 	uint32_t fill_len = 1;
 	uint32_t packet_cnt = saturate_buffer_uneven(&buffer, fill_len);
@@ -1066,6 +1075,100 @@ ZTEST(log_buffer, test_pending_alloc)
 
 	zassert_equal(mpsc_pbuf_claim(&buffer), NULL, "No more packets.");
 	k_thread_priority_set(k_current_get(), prio);
+}
+
+static void check_packet(struct mpsc_pbuf_buffer *buffer, char exp_c)
+{
+	union test_item claimed_item;
+	const union mpsc_pbuf_generic *claimed;
+
+	claimed = mpsc_pbuf_claim(buffer);
+	zassert_true(claimed, NULL);
+	claimed_item.item = *claimed;
+	zassert_equal(claimed_item.data.data, exp_c, NULL);
+
+	mpsc_pbuf_free(buffer, claimed);
+}
+
+ZTEST(log_buffer, test_put_while_claim)
+{
+	struct mpsc_pbuf_buffer buffer;
+	uint32_t buffer_storage[4];
+	const union mpsc_pbuf_generic *claimed;
+	struct mpsc_pbuf_buffer_config buffer_config = {
+		.buf = buffer_storage,
+		.size = 4,
+		.notify_drop = drop,
+		.get_wlen = get_wlen,
+		.flags = MPSC_PBUF_SIZE_POW2 | MPSC_PBUF_MODE_OVERWRITE
+	};
+	union test_item claimed_item;
+	union test_item item = {
+		.data = {
+			.valid = 1,
+			.busy = 0,
+			.len = 1,
+			.data = (uint32_t)'a'
+		}
+	};
+
+	exp_drop_cnt = 0;
+	drop_cnt = 0;
+	mpsc_pbuf_init(&buffer, &buffer_config);
+	/* Expect buffer = {} */
+
+	for (int i = 0; i < buffer.size; ++i) {
+		mpsc_pbuf_put_word(&buffer, item.item);
+		item.data.data++;
+	}
+
+	/* Expect buffer = {a, b, c, d}. Adding new word will drop 'a'. */
+	exp_dropped_data[exp_drop_cnt] = (uint32_t)'a';
+	exp_dropped_len[exp_drop_cnt] = 1;
+	exp_drop_cnt++;
+
+	item.data.data = 'e';
+	mpsc_pbuf_put_word(&buffer, item.item);
+	zassert_equal(drop_cnt, exp_drop_cnt, NULL);
+	/* Expect buffer = {e, b, c, d} */
+
+	claimed = mpsc_pbuf_claim(&buffer);
+	zassert_true(claimed, NULL);
+	claimed_item.item = *claimed;
+	zassert_equal(claimed_item.data.data, (uint32_t)'b', NULL);
+
+	/* Expect buffer = {e, B, c, d}. Adding new will drop 'c'. */
+	exp_dropped_data[exp_drop_cnt] = (int)'c';
+	exp_dropped_len[exp_drop_cnt] = 1;
+	exp_drop_cnt++;
+
+	item.data.data = 'f';
+	mpsc_pbuf_put_word(&buffer, item.item);
+	zassert_equal(drop_cnt, exp_drop_cnt, NULL);
+	/* Expect buffer = {e, B, f, d}, Adding new will drop 'd'. */
+
+	exp_dropped_data[exp_drop_cnt] = (int)'d';
+	exp_dropped_len[exp_drop_cnt] = 1;
+	exp_drop_cnt++;
+	item.data.data = 'g';
+	mpsc_pbuf_put_word(&buffer, item.item);
+	zassert_equal(drop_cnt, exp_drop_cnt, NULL);
+	/* Expect buffer = {e, B, f, g} */
+
+	mpsc_pbuf_free(&buffer, claimed);
+	/* Expect buffer = {e -, f, g} */
+
+	check_packet(&buffer, 'e');
+	/* Expect buffer = {-, -, f, g} */
+
+	check_packet(&buffer, 'f');
+	/* Expect buffer = {-, -, -, g} */
+
+	check_packet(&buffer, 'g');
+	/* Expect buffer = {-, -, -, -} */
+
+	claimed = mpsc_pbuf_claim(&buffer);
+	zassert_equal(claimed, NULL, NULL);
 }
 
 static void check_usage(struct mpsc_pbuf_buffer *buffer,

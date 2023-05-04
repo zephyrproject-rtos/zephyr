@@ -36,10 +36,12 @@ void serial_cb(const struct device *dev, void *user_data)
 		return;
 	}
 
-	while (uart_irq_rx_ready(uart_dev)) {
+	if (!uart_irq_rx_ready(uart_dev)) {
+		return;
+	}
 
-		uart_fifo_read(uart_dev, &c, 1);
-
+	/* read until FIFO empty */
+	while (uart_fifo_read(uart_dev, &c, 1) == 1) {
 		if ((c == '\n' || c == '\r') && rx_buf_pos > 0) {
 			/* terminate string */
 			rx_buf[rx_buf_pos] = '\0';
@@ -68,17 +70,28 @@ void print_uart(char *buf)
 	}
 }
 
-void main(void)
+int main(void)
 {
 	char tx_buf[MSG_SIZE];
 
 	if (!device_is_ready(uart_dev)) {
 		printk("UART device not found!");
-		return;
+		return 0;
 	}
 
 	/* configure interrupt and callback to receive data */
-	uart_irq_callback_user_data_set(uart_dev, serial_cb, NULL);
+	int ret = uart_irq_callback_user_data_set(uart_dev, serial_cb, NULL);
+
+	if (ret < 0) {
+		if (ret == -ENOTSUP) {
+			printk("Interrupt-driven UART API support not enabled\n");
+		} else if (ret == -ENOSYS) {
+			printk("UART device does not support interrupt-driven API\n");
+		} else {
+			printk("Error setting UART callback: %d\n", ret);
+		}
+		return 0;
+	}
 	uart_irq_rx_enable(uart_dev);
 
 	print_uart("Hello! I'm your echo bot.\r\n");
@@ -90,4 +103,5 @@ void main(void)
 		print_uart(tx_buf);
 		print_uart("\r\n");
 	}
+	return 0;
 }

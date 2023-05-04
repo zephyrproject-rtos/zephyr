@@ -25,11 +25,30 @@ struct pd_gpio_data {
 	k_timeout_t next_boot;
 };
 
+struct pd_visitor_context {
+	const struct device *domain;
+	enum pm_device_action action;
+};
+
+static int pd_on_domain_visitor(const struct device *dev, void *context)
+{
+	struct pd_visitor_context *visitor_context = context;
+
+	/* Only run action if the device is on the specified domain */
+	if (!dev->pm || (dev->pm->domain != visitor_context->domain)) {
+		return 0;
+	}
+
+	(void)pm_device_action_run(dev, visitor_context->action);
+	return 0;
+}
+
 static int pd_gpio_pm_action(const struct device *dev,
 			     enum pm_device_action action)
 {
 	const struct pd_gpio_config *cfg = dev->config;
 	struct pd_gpio_data *data = dev->data;
+	struct pd_visitor_context context = {.domain = dev};
 	int64_t next_boot_ticks;
 	int rc = 0;
 
@@ -48,12 +67,14 @@ static int pd_gpio_pm_action(const struct device *dev,
 		LOG_INF("%s is now ON", dev->name);
 		/* Wait for domain to come up */
 		k_sleep(K_USEC(cfg->startup_delay_us));
-		/* Notify supported devices they are now powered */
-		pm_device_children_action_run(dev, PM_DEVICE_ACTION_TURN_ON, NULL);
+		/* Notify devices on the domain they are now powered */
+		context.action = PM_DEVICE_ACTION_TURN_ON;
+		(void)device_supported_foreach(dev, pd_on_domain_visitor, &context);
 		break;
 	case PM_DEVICE_ACTION_SUSPEND:
-		/* Notify supported devices power is going down */
-		pm_device_children_action_run(dev, PM_DEVICE_ACTION_TURN_OFF, NULL);
+		/* Notify devices on the domain that power is going down */
+		context.action = PM_DEVICE_ACTION_TURN_OFF;
+		(void)device_supported_foreach(dev, pd_on_domain_visitor, &context);
 		/* Switch power off */
 		gpio_pin_set_dt(&cfg->enable, 0);
 		LOG_INF("%s is now OFF", dev->name);

@@ -144,7 +144,6 @@
 };
 
 arduino_serial: &uart1 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart1_default>;
 	pinctrl-1 = <&uart1_sleep>;
@@ -217,15 +216,11 @@ arduino_spi: &spi3 {
 		};
 		slot0_partition: partition@c000 {
 			label = "image-0";
-			reg = <0x0000C000 0x32000>;
+			reg = <0x0000C000 0x37000>;
 		};
-		slot1_partition: partition@3e000 {
+		slot1_partition: partition@43000 {
 			label = "image-1";
-			reg = <0x0003E000 0x32000>;
-		};
-		scratch_partition: partition@70000 {
-			label = "image-scratch";
-			reg = <0x00070000 0xA000>;
+			reg = <0x00043000 0x37000>;
 		};
 		storage_partition: partition@7a000 {
 			label = "storage";

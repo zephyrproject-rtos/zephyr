@@ -91,7 +91,7 @@ be run via ``qemu-system-arm``. The binary can be executed as follows:
 
    .. code-block:: bash
 
-      qemu-system-arm -M mps2-an521 -device loader,file=tfm_merged.hex -serial stdio
+      qemu-system-arm -M mps2-an521 -device loader,file=build/zephyr/tfm_merged.hex -serial stdio
 
 You can also run the binary as part of the ``west`` build process by appending
 the ``-t run`` flag to the end of your build command, or in the case of
@@ -160,7 +160,7 @@ J-Link as follows:
       JLinkExe -device lpc55s69 -if swd -speed 2000 -autoconnect 1
       J-Link>r
       J-Link>erase
-      J-Link>loadfile build/tfm_merged.bin
+      J-Link>loadfile build/zephyr/tfm_merged.bin
 
 Resetting the board and erasing it will unlock the board, this is useful in case
 it's in an unknown state and can't be flashed.
@@ -220,7 +220,7 @@ Flash the concatenated TF-M + Zephyr binary.
 
    .. code-block:: bash
 
-      west flash --hex-file tfm_merged.hex
+      west flash --hex-file zephyr/tfm_merged.hex
 
 Sample Output
 =============

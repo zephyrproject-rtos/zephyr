@@ -69,7 +69,7 @@ def test_dediprog_create(cc, req, tc, runner_config):
     args = ['--spi-image', spi_image, '--retries', '0']
     if vcc:
         args.extend(['--vcc', vcc])
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(allow_abbrev=False)
     DediProgBinaryRunner.add_parser(parser)
     arg_namespace = parser.parse_args(args)
     runner = DediProgBinaryRunner.create(runner_config, arg_namespace)

@@ -12,6 +12,7 @@ toolchain:
   - xtools
 supported:
   - adc
+  - dma
   - gpio
   - i2c
   - pwm

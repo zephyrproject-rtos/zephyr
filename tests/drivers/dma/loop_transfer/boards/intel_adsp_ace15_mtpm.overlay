@@ -1,0 +1,8 @@
+/* SPDX-License-Identifier: BSD-3-Clause */
+/*
+ * Copyright (c) 2023 Intel Corporation
+ *
+ * Author: Tomasz Leman <tomasz.m.leman@intel.com>
+ */
+
+test_dma0: &lpgpdma0 { };

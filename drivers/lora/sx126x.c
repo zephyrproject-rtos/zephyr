@@ -359,7 +359,7 @@ void SX126xReset(void)
 void SX126xSetRfTxPower(int8_t power)
 {
 	LOG_DBG("power: %" PRIi8, power);
-	SX126xSetTxParams(power, RADIO_RAMP_40_US);
+	sx126x_set_tx_params(power, RADIO_RAMP_40_US);
 }
 
 void SX126xWaitOnBusy(void)
@@ -449,7 +449,7 @@ static int sx126x_lora_init(const struct device *dev)
 		return ret;
 	}
 
-	if (!spi_is_ready(&config->bus)) {
+	if (!spi_is_ready_dt(&config->bus)) {
 		LOG_ERR("SPI device not ready");
 		return -ENODEV;
 	}

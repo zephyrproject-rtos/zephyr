@@ -21,6 +21,8 @@
 
 #include "ticker/ticker.h"
 
+#include "pdu_df.h"
+#include "lll/pdu_vendor.h"
 #include "pdu.h"
 
 #include "lll.h"
@@ -50,18 +52,22 @@ static int init_reset(void);
 #if (CONFIG_BT_CTLR_ADV_AUX_SET > 0)
 static inline struct ll_adv_aux_set *aux_acquire(void);
 static inline void aux_release(struct ll_adv_aux_set *aux);
-static uint32_t aux_time_get(struct ll_adv_aux_set *aux, struct pdu_adv *pdu,
-			     struct pdu_adv *pdu_scan);
+static uint32_t aux_time_get(const struct ll_adv_aux_set *aux,
+			     const struct pdu_adv *pdu,
+			     uint8_t pdu_len, uint8_t pdu_scan_len);
+static uint32_t aux_time_min_get(const struct ll_adv_aux_set *aux);
 static uint8_t aux_time_update(struct ll_adv_aux_set *aux, struct pdu_adv *pdu,
 			       struct pdu_adv *pdu_scan);
-static void mfy_aux_offset_get(void *param);
 static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 		      uint32_t remainder, uint16_t lazy, uint8_t force,
 		      void *param);
-static void ticker_op_cb(uint32_t status, void *param);
 
 static struct ll_adv_aux_set ll_adv_aux_pool[CONFIG_BT_CTLR_ADV_AUX_SET];
 static void *adv_aux_free;
+
+#if defined(CONFIG_BT_CTLR_ADV_PERIODIC)
+static struct ticker_ext ll_adv_aux_ticker_ext[CONFIG_BT_CTLR_ADV_AUX_SET];
+#endif /* CONFIG_BT_CTLR_ADV_PERIODIC */
 #endif /* (CONFIG_BT_CTLR_ADV_AUX_SET > 0) */
 
 static uint16_t did_unique[PDU_ADV_SID_COUNT];
@@ -586,7 +592,7 @@ uint8_t ll_adv_aux_ad_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref,
 			 * BIG radio events.
 			 */
 			aux->interval =
-				ceiling_fraction(((uint64_t)adv->interval *
+				DIV_ROUND_UP(((uint64_t)adv->interval *
 						  ADV_INT_UNIT_US) +
 						 HAL_TICKER_TICKS_TO_US(
 							ULL_ADV_RANDOM_DELAY),
@@ -1393,6 +1399,14 @@ uint8_t ull_adv_aux_chm_update(void)
 		aux->chm[chm_last].data_chan_count =
 			ull_chan_map_get(aux->chm[chm_last].data_chan_map);
 		aux->chm_last = chm_last;
+
+		if (!aux->is_started) {
+			/* Ticker not started yet, apply new channel map now
+			 * Note that it should be safe to modify chm_first here
+			 * since advertising is not active
+			 */
+			aux->chm_first = aux->chm_last;
+		}
 	}
 
 	/* TODO: Should failure due to Channel Map Update being already in
@@ -1490,6 +1504,7 @@ uint8_t ull_adv_aux_hdr_set_clear(struct ll_adv_set *adv,
 		}
 
 		lll_aux = &aux->lll;
+		ull_adv_aux_created(adv);
 
 		is_aux_new = 1U;
 	} else {
@@ -2422,19 +2437,9 @@ uint32_t ull_adv_aux_evt_init(struct ll_adv_aux_set *aux,
 			      uint32_t *ticks_anchor)
 {
 	uint32_t ticks_slot_overhead;
-	struct lll_adv_aux *lll_aux;
-	struct pdu_adv *pdu_scan;
-	struct pdu_adv *pdu;
-	struct lll_adv *lll;
 	uint32_t time_us;
 
-	lll_aux = &aux->lll;
-	lll = lll_aux->adv;
-	pdu = lll_adv_aux_data_peek(lll_aux);
-	pdu_scan = lll_adv_scan_rsp_peek(lll);
-
-	/* Calculate the PDU Tx Time and hence the radio event length */
-	time_us = aux_time_get(aux, pdu, pdu_scan);
+	time_us = aux_time_min_get(aux);
 
 	/* TODO: active_to_start feature port */
 	aux->ull.ticks_active_to_start = 0;
@@ -2481,6 +2486,42 @@ uint32_t ull_adv_aux_evt_init(struct ll_adv_aux_set *aux,
 	return ticks_slot_overhead;
 }
 
+#if defined(CONFIG_BT_CTLR_ADV_PERIODIC)
+static void ticker_update_op_cb(uint32_t status, void *param)
+{
+	LL_ASSERT(status == TICKER_STATUS_SUCCESS ||
+		  param == ull_disable_mark_get());
+}
+
+void ull_adv_sync_started_stopped(struct ll_adv_aux_set *aux)
+{
+	if (aux->is_started) {
+		struct lll_adv_sync *lll_sync = aux->lll.adv->sync;
+		struct ll_adv_sync_set *sync;
+		uint8_t aux_handle;
+
+		LL_ASSERT(lll_sync);
+
+		sync = HDR_LLL2ULL(lll_sync);
+		aux_handle = ull_adv_aux_handle_get(aux);
+
+		if (sync->is_started) {
+			uint8_t sync_handle = ull_adv_sync_handle_get(sync);
+
+			ticker_update_ext(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_THREAD,
+			   (TICKER_ID_ADV_AUX_BASE + aux_handle), 0, 0, 0, 0, 0, 0,
+			   ticker_update_op_cb, aux, 0,
+			   TICKER_ID_ADV_SYNC_BASE + sync_handle);
+		} else {
+			ticker_update_ext(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_THREAD,
+			   (TICKER_ID_ADV_AUX_BASE + aux_handle), 0, 0, 0, 0, 0, 0,
+			   ticker_update_op_cb, aux, 0,
+			   TICKER_NULL);
+		}
+	}
+}
+#endif /* CONFIG_BT_CTLR_ADV_PERIODIC */
+
 uint32_t ull_adv_aux_start(struct ll_adv_aux_set *aux, uint32_t ticks_anchor,
 			   uint32_t ticks_slot_overhead)
 {
@@ -2493,15 +2534,40 @@ uint32_t ull_adv_aux_start(struct ll_adv_aux_set *aux, uint32_t ticks_anchor,
 	aux_handle = ull_adv_aux_handle_get(aux);
 	interval_us = aux->interval * PERIODIC_INT_UNIT_US;
 
+#if defined(CONFIG_BT_CTLR_ADV_PERIODIC)
+	ll_adv_aux_ticker_ext[aux_handle].ext_timeout_func = ticker_cb;
+	if (aux->lll.adv->sync) {
+		struct ll_adv_sync_set *sync = HDR_LLL2ULL(aux->lll.adv->sync);
+		uint8_t sync_handle = ull_adv_sync_handle_get(sync);
+
+		ll_adv_aux_ticker_ext[aux_handle].expire_info_id = TICKER_ID_ADV_SYNC_BASE +
+								  sync_handle;
+	} else {
+		ll_adv_aux_ticker_ext[aux_handle].expire_info_id = TICKER_NULL;
+	}
+#endif /* CONFIG_BT_CTLR_ADV_PERIODIC */
+
 	ret_cb = TICKER_STATUS_BUSY;
-	ret = ticker_start(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_THREAD,
+	ret = ticker_start_ext(
+			   TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_THREAD,
 			   (TICKER_ID_ADV_AUX_BASE + aux_handle),
 			   ticks_anchor, 0U,
 			   HAL_TICKER_US_TO_TICKS(interval_us),
 			   HAL_TICKER_REMAINDER(interval_us), TICKER_NULL_LAZY,
 			   (aux->ull.ticks_slot + ticks_slot_overhead),
-			   ticker_cb, aux,
-			   ull_ticker_status_give, (void *)&ret_cb);
+#if defined(CONFIG_BT_CTLR_ADV_PERIODIC)
+			   NULL,
+#else
+			   ticker_cb,
+#endif /* CONFIG_BT_CTLR_ADV_PERIODIC */
+			   aux,
+			   ull_ticker_status_give, (void *)&ret_cb,
+#if defined(CONFIG_BT_CTLR_ADV_PERIODIC)
+			   &ll_adv_aux_ticker_ext[aux_handle]);
+#else
+			   NULL);
+#endif /* CONFIG_BT_CTLR_ADV_PERIODIC */
+
 	ret = ull_ticker_status_take(ret, &ret_cb);
 
 	return ret;
@@ -2586,68 +2652,11 @@ struct ll_adv_aux_set *ull_adv_aux_get(uint8_t handle)
 uint32_t ull_adv_aux_time_get(const struct ll_adv_aux_set *aux, uint8_t pdu_len,
 			      uint8_t pdu_scan_len)
 {
-	const struct lll_adv_aux *lll_aux;
-	const struct lll_adv *lll;
 	const struct pdu_adv *pdu;
-	uint32_t time_us;
 
-	lll_aux = &aux->lll;
-	lll = lll_aux->adv;
+	pdu = lll_adv_aux_data_peek(&aux->lll);
 
-	if (IS_ENABLED(CONFIG_BT_CTLR_ADV_RESERVE_MAX) &&
-	    (lll->phy_s == PHY_CODED)) {
-		pdu_len = PDU_AC_EXT_PAYLOAD_OVERHEAD;
-		pdu_scan_len = PDU_AC_EXT_PAYLOAD_OVERHEAD;
-	}
-
-	/* NOTE: 16-bit values are sufficient for minimum radio event time
-	 *       reservation, 32-bit are used here so that reservations for
-	 *       whole back-to-back chaining of PDUs can be accomodated where
-	 *       the required microseconds could overflow 16-bits, example,
-	 *       back-to-back chained Coded PHY PDUs.
-	 */
-	time_us = PDU_AC_US(pdu_len, lll->phy_s, lll->phy_flags) +
-		  EVENT_OVERHEAD_START_US + EVENT_OVERHEAD_END_US;
-
-	pdu = lll_adv_aux_data_peek(lll_aux);
-	if ((pdu->adv_ext_ind.adv_mode & BT_HCI_LE_ADV_PROP_CONN) ==
-	    BT_HCI_LE_ADV_PROP_CONN) {
-		const uint16_t conn_req_us =
-			PDU_AC_MAX_US((INITA_SIZE + ADVA_SIZE + LLDATA_SIZE),
-				      lll->phy_s);
-		const uint16_t conn_rsp_us =
-			PDU_AC_US((PDU_AC_EXT_HEADER_SIZE_MIN + ADVA_SIZE +
-				   TARGETA_SIZE), lll->phy_s, lll->phy_flags);
-
-		time_us += EVENT_IFS_MAX_US * 2 + conn_req_us + conn_rsp_us;
-	} else if ((pdu->adv_ext_ind.adv_mode & BT_HCI_LE_ADV_PROP_SCAN) ==
-		   BT_HCI_LE_ADV_PROP_SCAN) {
-		const uint16_t scan_req_us  =
-			PDU_AC_MAX_US((SCANA_SIZE + ADVA_SIZE), lll->phy_s);
-		const uint16_t scan_rsp_us =
-			PDU_AC_US(pdu_scan_len, lll->phy_s, lll->phy_flags);
-
-		time_us += EVENT_IFS_MAX_US * 2 + scan_req_us + scan_rsp_us;
-	}
-
-	return time_us;
-}
-
-void ull_adv_aux_offset_get(struct ll_adv_set *adv)
-{
-	static memq_link_t link;
-	static struct mayfly mfy = {0, 0, &link, NULL, mfy_aux_offset_get};
-	uint32_t ret;
-
-	/* NOTE: Single mayfly instance is sufficient as primary channel PDUs
-	 *       use time reservation, and this mayfly shall complete within
-	 *       the radio event. Multiple advertising sets do not need
-	 *       independent mayfly allocations.
-	 */
-	mfy.param = adv;
-	ret = mayfly_enqueue(TICKER_USER_ID_ULL_HIGH, TICKER_USER_ID_ULL_LOW, 1,
-			     &mfy);
-	LL_ASSERT(!ret);
+	return aux_time_get(aux, pdu, pdu_len, pdu_scan_len);
 }
 
 struct pdu_adv_aux_ptr *ull_adv_aux_lll_offset_fill(struct pdu_adv *pdu,
@@ -2875,12 +2884,22 @@ static inline void aux_release(struct ll_adv_aux_set *aux)
 	mem_release(aux, &adv_aux_free);
 }
 
-static uint32_t aux_time_get(struct ll_adv_aux_set *aux, struct pdu_adv *pdu,
-			     struct pdu_adv *pdu_scan)
+static uint32_t aux_time_get(const struct ll_adv_aux_set *aux,
+			     const struct pdu_adv *pdu,
+			     uint8_t pdu_len, uint8_t pdu_scan_len)
 {
-	struct lll_adv_aux *lll_aux;
-	struct lll_adv *lll;
+	const struct lll_adv_aux *lll_aux;
+	const struct lll_adv *lll;
 	uint32_t time_us;
+
+	lll_aux = &aux->lll;
+	lll = lll_aux->adv;
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_ADV_RESERVE_MAX) &&
+	    (lll->phy_s == PHY_CODED)) {
+		pdu_len = PDU_AC_EXT_PAYLOAD_OVERHEAD;
+		pdu_scan_len = PDU_AC_EXT_PAYLOAD_OVERHEAD;
+	}
 
 	/* NOTE: 16-bit values are sufficient for minimum radio event time
 	 *       reservation, 32-bit are used here so that reservations for
@@ -2888,9 +2907,7 @@ static uint32_t aux_time_get(struct ll_adv_aux_set *aux, struct pdu_adv *pdu,
 	 *       the required microseconds could overflow 16-bits, example,
 	 *       back-to-back chained Coded PHY PDUs.
 	 */
-	lll_aux = &aux->lll;
-	lll = lll_aux->adv;
-	time_us = PDU_AC_US(pdu->len, lll->phy_s, lll->phy_flags) +
+	time_us = PDU_AC_US(pdu_len, lll->phy_s, lll->phy_flags) +
 		  EVENT_OVERHEAD_START_US + EVENT_OVERHEAD_END_US;
 
 	if ((pdu->adv_ext_ind.adv_mode & BT_HCI_LE_ADV_PROP_CONN) ==
@@ -2908,12 +2925,50 @@ static uint32_t aux_time_get(struct ll_adv_aux_set *aux, struct pdu_adv *pdu,
 		const uint16_t scan_req_us  =
 			PDU_AC_MAX_US((SCANA_SIZE + ADVA_SIZE), lll->phy_s);
 		const uint16_t scan_rsp_us =
-			PDU_AC_US(pdu_scan->len, lll->phy_s, lll->phy_flags);
+			PDU_AC_US(pdu_scan_len, lll->phy_s, lll->phy_flags);
 
 		time_us += EVENT_IFS_MAX_US * 2 + scan_req_us + scan_rsp_us;
+
+		/* FIXME: Calculate additional time reservations for scan
+		 *        response chain PDUs, if any.
+		 */
+	} else {
+		/* Non-connectable Non-Scannable */
+
+		/* FIXME: Calculate additional time reservations for chain PDUs,
+		 *        if any.
+		 */
 	}
 
 	return time_us;
+}
+
+static uint32_t aux_time_min_get(const struct ll_adv_aux_set *aux)
+{
+	const struct lll_adv_aux *lll_aux;
+	const struct pdu_adv *pdu_scan;
+	const struct lll_adv *lll;
+	const struct pdu_adv *pdu;
+	uint8_t pdu_scan_len;
+	uint8_t pdu_len;
+
+	lll_aux = &aux->lll;
+	lll = lll_aux->adv;
+	pdu = lll_adv_aux_data_peek(lll_aux);
+	pdu_scan = lll_adv_scan_rsp_peek(lll);
+
+	/* Calculate the PDU Tx Time and hence the radio event length,
+	 * Always use maximum length for common extended header format so that
+	 * ACAD could be update when periodic advertising is active and the
+	 * time reservation need not be updated everytime avoiding overlapping
+	 * with other active states/roles.
+	 */
+	pdu_len = pdu->len - pdu->adv_ext_ind.ext_hdr_len -
+		  PDU_AC_EXT_HEADER_SIZE_MIN + PDU_AC_EXT_HEADER_SIZE_MAX;
+	pdu_scan_len = pdu_scan->len - pdu_scan->adv_ext_ind.ext_hdr_len -
+		       PDU_AC_EXT_HEADER_SIZE_MIN + PDU_AC_EXT_HEADER_SIZE_MAX;
+
+	return aux_time_get(aux, pdu, pdu_len, pdu_scan_len);
 }
 
 static uint8_t aux_time_update(struct ll_adv_aux_set *aux, struct pdu_adv *pdu,
@@ -2926,7 +2981,7 @@ static uint8_t aux_time_update(struct ll_adv_aux_set *aux, struct pdu_adv *pdu,
 	uint32_t time_us;
 	uint32_t ret;
 
-	time_us = aux_time_get(aux, pdu, pdu_scan);
+	time_us = aux_time_min_get(aux);
 	time_ticks = HAL_TICKER_US_TO_TICKS(time_us);
 	if (aux->ull.ticks_slot > time_ticks) {
 		ticks_minus = aux->ull.ticks_slot - time_ticks;
@@ -2955,97 +3010,50 @@ static uint8_t aux_time_update(struct ll_adv_aux_set *aux, struct pdu_adv *pdu,
 	return BT_HCI_ERR_SUCCESS;
 }
 
-static void mfy_aux_offset_get(void *param)
+void ull_adv_aux_lll_auxptr_fill(struct pdu_adv *pdu, struct lll_adv *adv)
 {
+	struct lll_adv_aux *lll_aux = adv->aux;
 	struct pdu_adv_aux_ptr *aux_ptr;
-	struct lll_adv_aux *lll_aux;
 	struct ll_adv_aux_set *aux;
-	uint32_t ticks_to_expire;
 	uint8_t data_chan_count;
 	uint8_t *data_chan_map;
-	uint32_t ticks_current;
-	struct ll_adv_set *adv;
-	struct pdu_adv *pdu;
-	uint32_t remainder;
-	uint8_t ticker_id;
-	uint8_t retry;
-	uint8_t id;
+	uint16_t chan_counter;
+	uint32_t offset_us;
+	uint16_t pdu_us;
 
-	adv = param;
-	lll_aux = adv->lll.aux;
 	aux = HDR_LLL2ULL(lll_aux);
-	ticker_id = TICKER_ID_ADV_AUX_BASE + ull_adv_aux_handle_get(aux);
 
-	id = TICKER_NULL;
-	ticks_to_expire = 0U;
-	ticks_current = 0U;
-	retry = 4U;
-	do {
-		uint32_t volatile ret_cb;
-		uint32_t ticks_previous;
-		uint32_t ret;
-		bool success;
+	chan_counter = lll_aux->data_chan_counter;
 
-		ticks_previous = ticks_current;
-
-		ret_cb = TICKER_STATUS_BUSY;
-		ret = ticker_next_slot_get_ext(TICKER_INSTANCE_ID_CTLR,
-					       TICKER_USER_ID_ULL_LOW,
-					       &id, &ticks_current,
-					       &ticks_to_expire, &remainder,
-					       NULL, NULL, NULL,
-					       ticker_op_cb, (void *)&ret_cb);
-		if (ret == TICKER_STATUS_BUSY) {
-			while (ret_cb == TICKER_STATUS_BUSY) {
-				ticker_job_sched(TICKER_INSTANCE_ID_CTLR,
-						 TICKER_USER_ID_ULL_LOW);
-			}
-		}
-
-		success = (ret_cb == TICKER_STATUS_SUCCESS);
-		LL_ASSERT(success);
-
-		LL_ASSERT((ticks_current == ticks_previous) || retry--);
-
-		LL_ASSERT(id != TICKER_NULL);
-	} while (id != ticker_id);
-
-	/* Adjust ticks to expire based on remainder value */
-	hal_ticker_remove_jitter(&ticks_to_expire, &remainder);
-
-	/* Store the ticks offset for population in other advertising primary
-	 * channel PDUs.
+	/* The offset has to be at least T_MAFS microseconds from the end of packet
+	 * In addition, the offset recorded in the aux ptr has the same requirement and this
+	 * offset is in steps of 30 microseconds; So use the quantized value in check
 	 */
-	lll_aux->ticks_pri_pdu_offset = ticks_to_expire;
+	pdu_us = PDU_AC_US(pdu->len, adv->phy_p, adv->phy_flags);
+	offset_us = HAL_TICKER_TICKS_TO_US(lll_aux->ticks_pri_pdu_offset) +
+		    lll_aux->us_pri_pdu_offset;
+	if ((offset_us/OFFS_UNIT_30_US)*OFFS_UNIT_30_US < EVENT_MAFS_US + pdu_us) {
+		struct ll_adv_aux_set *aux = HDR_LLL2ULL(lll_aux);
+		uint32_t interval_us;
 
-	/* NOTE: as first primary channel PDU does not use remainder, the packet
-	 * timer is started one tick in advance to start the radio with
-	 * microsecond precision, hence compensate for the higher start_us value
-	 * captured at radio start of the first primary channel PDU.
-	 */
-	lll_aux->ticks_pri_pdu_offset += 1U;
-
-	/* Store the microsecond remainder offset for population in other
-	 * advertising primary channel PDUs.
-	 */
-	lll_aux->us_pri_pdu_offset = remainder;
-
-	/* Fill the aux offset in the first Primary channel PDU */
-	/* FIXME: we are in ULL_LOW context, fill offset in LLL context? */
-	pdu = lll_adv_data_latest_peek(&adv->lll);
-	aux_ptr = ull_adv_aux_lll_offset_fill(pdu, ticks_to_expire, remainder,
-					      0U);
-
-	/* Process channel map update, if any */
-	if (aux->chm_first != aux->chm_last) {
-		/* Use channelMapNew */
-		aux->chm_first = aux->chm_last;
+		/* Offset too small, point to next aux packet instead */
+		interval_us = aux->interval * PERIODIC_INT_UNIT_US;
+		offset_us = offset_us + interval_us;
+		lll_aux->ticks_pri_pdu_offset = HAL_TICKER_US_TO_TICKS(offset_us);
+		lll_aux->us_pri_pdu_offset = offset_us -
+					     HAL_TICKER_TICKS_TO_US(lll_aux->ticks_pri_pdu_offset);
+		chan_counter++;
 	}
 
-	/* Calculate the radio channel to use */
+	/* Fill the aux offset */
+	aux_ptr = ull_adv_aux_lll_offset_fill(pdu, lll_aux->ticks_pri_pdu_offset,
+					      lll_aux->us_pri_pdu_offset, 0U);
+
+
+	/* Calculate and fill the radio channel to use */
 	data_chan_map = aux->chm[aux->chm_first].data_chan_map;
 	data_chan_count = aux->chm[aux->chm_first].data_chan_count;
-	aux_ptr->chan_idx = lll_chan_sel_2(lll_aux->data_chan_counter,
+	aux_ptr->chan_idx = lll_chan_sel_2(chan_counter,
 					   aux->data_chan_id,
 					   data_chan_map, data_chan_count);
 }
@@ -3057,7 +3065,12 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 	static memq_link_t link;
 	static struct mayfly mfy = {0, 0, &link, NULL, lll_adv_aux_prepare};
 	static struct lll_prepare_param p;
+#if defined(CONFIG_BT_CTLR_ADV_PERIODIC)
+	struct ticker_ext_context *context = param;
+	struct ll_adv_aux_set *aux = context->context;
+#else
 	struct ll_adv_aux_set *aux = param;
+#endif /* CONFIG_BT_CTLR_ADV_PERIODIC */
 	struct lll_adv_aux *lll;
 	uint32_t ret;
 	uint8_t ref;
@@ -3078,33 +3091,57 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 	p.param = lll;
 	mfy.param = &p;
 
-	/* Kick LLL prepare */
-	ret = mayfly_enqueue(TICKER_USER_ID_ULL_HIGH,
-			     TICKER_USER_ID_LLL, 0, &mfy);
-	LL_ASSERT(!ret);
-
 #if defined(CONFIG_BT_CTLR_ADV_PERIODIC)
 	struct ll_adv_set *adv;
 
 	adv = HDR_LLL2ULL(lll->adv);
 	if (adv->lll.sync) {
+		struct lll_adv_sync *lll_sync = adv->lll.sync;
 		struct ll_adv_sync_set *sync;
 
-		sync  = HDR_LLL2ULL(adv->lll.sync);
+		sync = HDR_LLL2ULL(adv->lll.sync);
 		if (sync->is_started) {
-			sync->aux_remainder = remainder;
-			ull_adv_sync_offset_get(adv);
+			uint32_t ticks_to_expire;
+			uint32_t sync_remainder_us;
+
+			LL_ASSERT(context->other_expire_info);
+
+			/* Reduce a tick for negative remainder and return positive remainder
+			 * value.
+			 */
+			ticks_to_expire = context->other_expire_info->ticks_to_expire;
+			sync_remainder_us = context->other_expire_info->remainder;
+			hal_ticker_remove_jitter(&ticks_to_expire, &sync_remainder_us);
+
+			/* Add a tick for negative remainder and return positive remainder
+			 * value.
+			 */
+			hal_ticker_add_jitter(&ticks_to_expire, &remainder);
+
+			/* Store the offset in us */
+			lll_sync->us_adv_sync_pdu_offset = HAL_TICKER_TICKS_TO_US(ticks_to_expire) +
+						  sync_remainder_us - remainder;
+
+			/* store the lazy value */
+			lll_sync->sync_lazy = context->other_expire_info->lazy;
 		}
 	}
 #endif /* CONFIG_BT_CTLR_ADV_PERIODIC */
 
+	/* Process channel map update, if any */
+	if (aux->chm_first != aux->chm_last) {
+		/* Use channelMapNew */
+		aux->chm_first = aux->chm_last;
+	}
+
+	/* Kick LLL prepare */
+	ret = mayfly_enqueue(TICKER_USER_ID_ULL_HIGH,
+			     TICKER_USER_ID_LLL, 0, &mfy);
+	LL_ASSERT(!ret);
+
 	DEBUG_RADIO_PREPARE_A(1);
 }
 
-static void ticker_op_cb(uint32_t status, void *param)
-{
-	*((uint32_t volatile *)param) = status;
-}
 #else /* !(CONFIG_BT_CTLR_ADV_AUX_SET > 0) */
 
 static int init_reset(void)

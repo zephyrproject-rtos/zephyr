@@ -2,7 +2,7 @@ sample:
   name: DMIC sample
 tests:
   sample.drivers.audio.dmic:
-    tags: DMIC
+    tags: dmic
     filter: dt_nodelabel_enabled("dmic_dev")
     integration_platforms:
       - nrf52840dk_nrf52840

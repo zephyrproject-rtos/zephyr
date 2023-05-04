@@ -27,88 +27,127 @@ LOG_MODULE_DECLARE(soc, CONFIG_SOC_LOG_LEVEL);
 #define RCC_STOP_WAKEUPCLOCK_SELECTED LL_RCC_STOP_WAKEUPCLOCK_HSI
 #endif
 
-/* Invoke Low Power/System Off specific Tasks */
-__weak void pm_state_set(enum pm_state state, uint8_t substate_id)
+void enter_ultra_low_power_mode(void)
 {
-	if (state != PM_STATE_SUSPEND_TO_IDLE) {
-		LOG_DBG("Unsupported power state %u", state);
-		return;
+	/* Configure CPU core */
+	/* Enable CPU deep sleep mode */
+	LL_LPM_EnableDeepSleep();
+	LL_DBGMCU_DisableDBGStandbyMode();
+	/* Enter ultra_low-power mode */
+
+	for (;;) {
+		k_cpu_idle();
 	}
+}
+
+void set_mode_stop(uint8_t substate_id)
+{
+	/* ensure the proper wake-up system clock */
+	LL_RCC_SetClkAfterWakeFromStop(RCC_STOP_WAKEUPCLOCK_SELECTED);
 
 	switch (substate_id) {
 	case 1: /* this corresponds to the STOP0 mode: */
-		/* ensure the proper wake-up system clock */
-		LL_RCC_SetClkAfterWakeFromStop(RCC_STOP_WAKEUPCLOCK_SELECTED);
 		/* enter STOP0 mode */
 		LL_PWR_SetPowerMode(LL_PWR_MODE_STOP0);
-		LL_LPM_EnableDeepSleep();
-		/* enter SLEEP mode : WFE or WFI */
-		k_cpu_idle();
 		break;
 	case 2: /* this corresponds to the STOP1 mode: */
-		/* ensure the proper wake-up system clock */
-		LL_RCC_SetClkAfterWakeFromStop(RCC_STOP_WAKEUPCLOCK_SELECTED);
 		/* enter STOP1 mode */
 		LL_PWR_SetPowerMode(LL_PWR_MODE_STOP1);
-		LL_LPM_EnableDeepSleep();
-		/* enter SLEEP mode : WFE or WFI */
-		k_cpu_idle();
 		break;
 	case 3: /* this corresponds to the STOP2 mode: */
-		/* ensure the proper wake-up system clock */
-		LL_RCC_SetClkAfterWakeFromStop(RCC_STOP_WAKEUPCLOCK_SELECTED);
 #ifdef PWR_CR1_RRSTP
 		LL_PWR_DisableSRAM3Retention();
 #endif /* PWR_CR1_RRSTP */
 		/* enter STOP2 mode */
 		LL_PWR_SetPowerMode(LL_PWR_MODE_STOP2);
-		LL_LPM_EnableDeepSleep();
-		/* enter SLEEP mode : WFE or WFI */
-		k_cpu_idle();
 		break;
 	default:
-		LOG_DBG("Unsupported power state substate-id %u",
-			substate_id);
+		LOG_DBG("Unsupported power state substate-id %u", substate_id);
 		break;
 	}
+}
+
+void set_mode_standby(void)
+{
+	/* Select standby mode */
+	LL_PWR_SetPowerMode(LL_PWR_MODE_STANDBY);
+	enter_ultra_low_power_mode();
+}
+
+void set_mode_shutdown(void)
+{
+	/* Select shutdown mode */
+	LL_PWR_SetPowerMode(LL_PWR_MODE_SHUTDOWN);
+	enter_ultra_low_power_mode();
+}
+
+/* Invoke Low Power/System Off specific Tasks */
+__weak void pm_state_set(enum pm_state state, uint8_t substate_id)
+{
+	switch (state) {
+	case PM_STATE_SUSPEND_TO_IDLE:
+		set_mode_stop(substate_id);
+		/* Set SLEEPDEEP bit of Cortex System Control Register */
+		LL_LPM_EnableDeepSleep();
+		/* Select mode entry : WFE or WFI and enter the CPU selected mode */
+		k_cpu_idle();
+		break;
+	case PM_STATE_STANDBY:
+		set_mode_standby();
+		break;
+	case PM_STATE_SOFT_OFF:
+		set_mode_shutdown();
+		break;
+	default:
+		LOG_DBG("Unsupported power state %u", state);
+		return;
+	}
+
 }
 
 /* Handle SOC specific activity after Low Power Mode Exit */
 __weak void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 {
-	if (state != PM_STATE_SUSPEND_TO_IDLE) {
-		LOG_DBG("Unsupported power substate-id %u", state);
-	} else {
-		switch (substate_id) {
-		case 1:	/* STOP0 */
-			__fallthrough;
-		case 2:	/* STOP1 */
-			__fallthrough;
-		case 3:	/* STOP2 */
+	switch (state) {
+	case PM_STATE_SUSPEND_TO_IDLE:
+		if (substate_id <= 3) {
 			LL_LPM_DisableSleepOnExit();
 			LL_LPM_EnableSleep();
-			break;
-		default:
+		} else {
 			LOG_DBG("Unsupported power substate-id %u",
-				substate_id);
-			break;
+							substate_id);
 		}
 		/* need to restore the clock */
 		stm32_clock_control_init(NULL);
+
+		/*
+		 * System is now in active mode.
+		 * Reenable interrupts which were disabled
+		 * when OS started idling code.
+		 */
+		irq_unlock(0);
+		break;
+	case PM_STATE_STANDBY:
+		__fallthrough;
+	case PM_STATE_SOFT_OFF:
+		/* We should not get there */
+		__fallthrough;
+	case PM_STATE_ACTIVE:
+		__fallthrough;
+	case PM_STATE_SUSPEND_TO_RAM:
+		__fallthrough;
+	case PM_STATE_SUSPEND_TO_DISK:
+		__fallthrough;
+	default:
+		LOG_DBG("Unsupported power state %u", state);
+		break;
 	}
 
-	/*
-	 * System is now in active mode.
-	 * Reenable interrupts which were disabled
-	 * when OS started idling code.
-	 */
-	irq_unlock(0);
 }
 
 /* Initialize STM32 Power */
-static int stm32_power_init(const struct device *dev)
+static int stm32_power_init(void)
 {
-	ARG_UNUSED(dev);
 
 	/* enable Power clock */
 	LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_PWR);

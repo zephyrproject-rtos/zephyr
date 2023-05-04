@@ -31,11 +31,10 @@ LOG_MODULE_REGISTER(soc);
  *
  * @return 0
  */
-static int stm32u5_init(const struct device *arg)
+static int stm32u5_init(void)
 {
 	uint32_t key;
 
-	ARG_UNUSED(arg);
 
 	key = irq_lock();
 
@@ -59,6 +58,15 @@ static int stm32u5_init(const struct device *arg)
 
 	/* Disable USB Type-C dead battery pull-down behavior */
 	LL_PWR_DisableUCPDDeadBattery();
+
+	/* Power Configuration */
+#if defined(CONFIG_POWER_SUPPLY_DIRECT_SMPS)
+	LL_PWR_SetRegulatorSupply(LL_PWR_SMPS_SUPPLY);
+#elif defined(CONFIG_POWER_SUPPLY_LDO)
+	LL_PWR_SetRegulatorSupply(LL_PWR_LDO_SUPPLY);
+#else
+#error "Unsupported power configuration"
+#endif
 
 	return 0;
 }

@@ -69,7 +69,7 @@ static uint32_t iso_send_count;
 static struct bt_iso_cig *cig;
 
 NET_BUF_POOL_FIXED_DEFINE(tx_pool, 1, BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU),
-			   8, NULL);
+			  CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
 static uint8_t iso_data[CONFIG_BT_ISO_TX_MTU];
 
 static K_SEM_DEFINE(sem_adv, 0, 1);
@@ -1080,7 +1080,7 @@ static int run_peripheral(void)
 	return 0;
 }
 
-void main(void)
+int main(void)
 {
 	int err;
 
@@ -1089,7 +1089,7 @@ void main(void)
 	err = bt_enable(NULL);
 	if (err != 0) {
 		LOG_ERR("Bluetooth init failed: %d", err);
-		return;
+		return 0;
 	}
 
 	bt_conn_cb_register(&conn_callbacks);
@@ -1098,7 +1098,7 @@ void main(void)
 	err = console_init();
 	if (err != 0) {
 		LOG_ERR("Console init failed: %d", err);
-		return;
+		return 0;
 	}
 
 	LOG_INF("Bluetooth initialized");
@@ -1147,4 +1147,5 @@ void main(void)
 	}
 
 	LOG_INF("Exiting");
+	return 0;
 }

@@ -212,7 +212,7 @@ int lwm2m_security_index_to_inst_id(int index)
 	return inst[index].obj_inst_id;
 }
 
-static int lwm2m_security_init(const struct device *dev)
+static int lwm2m_security_init(void)
 {
 	struct lwm2m_engine_obj_inst *obj_inst = NULL;
 	int ret = 0;

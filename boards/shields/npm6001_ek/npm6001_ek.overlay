@@ -18,5 +18,41 @@
 		npm6001_ek_wdt: watchdog {
 			compatible = "nordic,npm6001-wdt";
 		};
+
+		regulators {
+			compatible = "nordic,npm6001-regulator";
+
+			/* limits are set to min/max allowed values */
+
+			npm6001_ek_buck0: BUCK0 {
+				regulator-min-microvolt = <1800000>;
+				regulator-max-microvolt = <3300000>;
+			};
+
+			npm6001_ek_buck1: BUCK1 {
+				regulator-min-microvolt = <700000>;
+				regulator-max-microvolt = <1400000>;
+			};
+
+			npm6001_ek_buck2: BUCK2 {
+				regulator-min-microvolt = <1200000>;
+				regulator-max-microvolt = <1400000>;
+			};
+
+			npm6001_ek_buck3: BUCK3 {
+				regulator-min-microvolt = <500000>;
+				regulator-max-microvolt = <3300000>;
+			};
+
+			npm6001_ek_ldo0: LDO0 {
+				regulator-min-microvolt = <1800000>;
+				regulator-max-microvolt = <3300000>;
+			};
+
+			npm6001_ek_ldo1: LDO1 {
+				regulator-min-microvolt = <1800000>;
+				regulator-max-microvolt = <1800000>;
+			};
+		};
 	};
 };

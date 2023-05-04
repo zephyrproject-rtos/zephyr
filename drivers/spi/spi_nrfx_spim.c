@@ -27,9 +27,6 @@ LOG_MODULE_REGISTER(spi_nrfx_spim, CONFIG_SPI_LOG_LEVEL);
 #define SPI_BUFFER_IN_RAM 1
 #endif
 
-/* Maximum chunk length (depends on the EasyDMA bits, equal for all instances) */
-#define MAX_CHUNK_LEN BIT_MASK(SPIM0_EASYDMA_MAXCNT_SIZE)
-
 struct spi_nrfx_data {
 	struct spi_context ctx;
 	const struct device *dev;
@@ -51,9 +48,8 @@ struct spi_nrfx_config {
 	uint32_t	   max_freq;
 	nrfx_spim_config_t def_config;
 	void (*irq_connect)(void);
-#ifdef CONFIG_PINCTRL
+	uint16_t max_chunk_len;
 	const struct pinctrl_dev_config *pcfg;
-#endif
 #ifdef CONFIG_SOC_NRF52832_ALLOW_SPIM_DESPITE_PAN_58
 	bool anomaly_58_workaround;
 #endif
@@ -285,6 +281,19 @@ static int anomaly_58_workaround_init(const struct device *dev)
 }
 #endif
 
+static void finish_transaction(const struct device *dev, int error)
+{
+	struct spi_nrfx_data *dev_data = dev->data;
+	struct spi_context *ctx = &dev_data->ctx;
+
+	spi_context_cs_control(ctx, false);
+
+	LOG_DBG("Transaction finished with status %d", error);
+
+	spi_context_complete(ctx, dev, error);
+	dev_data->busy = false;
+}
+
 static void transfer_next_chunk(const struct device *dev)
 {
 	struct spi_nrfx_data *dev_data = dev->data;
@@ -308,8 +317,8 @@ static void transfer_next_chunk(const struct device *dev)
 			tx_buf = dev_data->buffer;
 		}
 #endif
-		if (chunk_len > MAX_CHUNK_LEN) {
-			chunk_len = MAX_CHUNK_LEN;
+		if (chunk_len > dev_config->max_chunk_len) {
+			chunk_len = dev_config->max_chunk_len;
 		}
 
 		dev_data->chunk_len = chunk_len;
@@ -342,12 +351,7 @@ static void transfer_next_chunk(const struct device *dev)
 		}
 	}
 
-	spi_context_cs_control(ctx, false);
-
-	LOG_DBG("Transaction finished with status %d", error);
-
-	spi_context_complete(ctx, dev, error);
-	dev_data->busy = false;
+	finish_transaction(dev, error);
 }
 
 static void event_handler(const nrfx_spim_evt_t *p_event, void *p_context)
@@ -355,6 +359,14 @@ static void event_handler(const nrfx_spim_evt_t *p_event, void *p_context)
 	struct spi_nrfx_data *dev_data = p_context;
 
 	if (p_event->type == NRFX_SPIM_EVENT_DONE) {
+		/* Chunk length is set to 0 when a transaction is aborted
+		 * due to a timeout.
+		 */
+		if (dev_data->chunk_len == 0) {
+			finish_transaction(dev_data->dev, -ETIMEDOUT);
+			return;
+		}
+
 #ifdef CONFIG_SOC_NRF52832_ALLOW_SPIM_DESPITE_PAN_58
 		anomaly_58_workaround_clear(dev_data);
 #endif
@@ -374,6 +386,7 @@ static int transceive(const struct device *dev,
 		      void *userdata)
 {
 	struct spi_nrfx_data *dev_data = dev->data;
+	const struct spi_nrfx_config *dev_config = dev->config;
 	int error;
 
 	spi_context_lock(&dev_data->ctx, asynchronous, cb, userdata, spi_cfg);
@@ -388,6 +401,30 @@ static int transceive(const struct device *dev,
 		transfer_next_chunk(dev);
 
 		error = spi_context_wait_for_completion(&dev_data->ctx);
+		if (error == -ETIMEDOUT) {
+			/* Set the chunk length to 0 so that event_handler()
+			 * knows that the transaction timed out and is to be
+			 * aborted.
+			 */
+			dev_data->chunk_len = 0;
+			/* Abort the current transfer by deinitializing
+			 * the nrfx driver.
+			 */
+			nrfx_spim_uninit(&dev_config->spim);
+			dev_data->initialized = false;
+
+			/* Make sure the transaction is finished (it may be
+			 * already finished if it actually did complete before
+			 * the nrfx driver was deinitialized).
+			 */
+			finish_transaction(dev, -ETIMEDOUT);
+
+			/* Clean up the driver state. */
+			k_sem_reset(&dev_data->ctx.sync);
+#ifdef CONFIG_SOC_NRF52832_ALLOW_SPIM_DESPITE_PAN_58
+			anomaly_58_workaround_clear(dev_data);
+#endif
+		}
 	}
 
 	spi_context_release(&dev_data->ctx, error);
@@ -451,13 +488,11 @@ static int spim_nrfx_pm_action(const struct device *dev,
 
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
-#ifdef CONFIG_PINCTRL
 		ret = pinctrl_apply_state(dev_config->pcfg,
 					  PINCTRL_STATE_DEFAULT);
 		if (ret < 0) {
 			return ret;
 		}
-#endif
 		/* nrfx_spim_init() will be called at configuration before
 		 * the next transfer.
 		 */
@@ -469,13 +504,11 @@ static int spim_nrfx_pm_action(const struct device *dev,
 			dev_data->initialized = false;
 		}
 
-#ifdef CONFIG_PINCTRL
 		ret = pinctrl_apply_state(dev_config->pcfg,
 					  PINCTRL_STATE_SLEEP);
 		if (ret < 0) {
 			return ret;
 		}
-#endif
 		break;
 
 	default:
@@ -493,12 +526,10 @@ static int spi_nrfx_init(const struct device *dev)
 	struct spi_nrfx_data *dev_data = dev->data;
 	int err;
 
-#ifdef CONFIG_PINCTRL
 	err = pinctrl_apply_state(dev_config->pcfg, PINCTRL_STATE_DEFAULT);
 	if (err < 0) {
 		return err;
 	}
-#endif
 
 	dev_config->irq_connect();
 
@@ -525,15 +556,6 @@ static int spi_nrfx_init(const struct device *dev)
 #define SPIM_PROP(idx, prop)		DT_PROP(SPIM(idx), prop)
 #define SPIM_HAS_PROP(idx, prop)	DT_NODE_HAS_PROP(SPIM(idx), prop)
 
-#define SPIM_NRFX_MISO_PULL(idx)			\
-	(SPIM_PROP(idx, miso_pull_up)			\
-		? SPIM_PROP(idx, miso_pull_down)	\
-			? -1 /* invalid configuration */\
-			: NRF_GPIO_PIN_PULLUP		\
-		: SPIM_PROP(idx, miso_pull_down)	\
-			? NRF_GPIO_PIN_PULLDOWN		\
-			: NRF_GPIO_PIN_NOPULL)
-
 #define SPI_NRFX_SPIM_EXTENDED_CONFIG(idx)				\
 	IF_ENABLED(NRFX_SPIM_EXTENDED_ENABLED,				\
 		(.dcx_pin = NRFX_SPIM_PIN_NOT_USED,			\
@@ -542,25 +564,8 @@ static int spi_nrfx_init(const struct device *dev)
 			     ())					\
 		))
 
-#define SPI_NRFX_SPIM_PIN_CFG(idx)					\
-	COND_CODE_1(CONFIG_PINCTRL,					\
-		(.skip_gpio_cfg = true,					\
-		 .skip_psel_cfg = true,),				\
-		(.sck_pin   = SPIM_PROP(idx, sck_pin),			\
-		 .mosi_pin  = DT_PROP_OR(SPIM(idx), mosi_pin,		\
-					 NRFX_SPIM_PIN_NOT_USED),	\
-		 .miso_pin  = DT_PROP_OR(SPIM(idx), miso_pin,		\
-					 NRFX_SPIM_PIN_NOT_USED),	\
-		 .miso_pull = SPIM_NRFX_MISO_PULL(idx),))
-
 #define SPI_NRFX_SPIM_DEFINE(idx)					       \
-	NRF_DT_CHECK_PIN_ASSIGNMENTS(SPIM(idx), 1,			       \
-				     sck_pin, mosi_pin, miso_pin);	       \
-	BUILD_ASSERT(IS_ENABLED(CONFIG_PINCTRL) ||			       \
-		     !(SPIM_PROP(idx, miso_pull_up) &&			       \
-		       SPIM_PROP(idx, miso_pull_down)),			       \
-		"SPIM"#idx						       \
-		": cannot enable both pull-up and pull-down on MISO line");    \
+	NRF_DT_CHECK_NODE_HAS_PINCTRL_SLEEP(SPIM(idx));			       \
 	static void irq_connect##idx(void)				       \
 	{								       \
 		IRQ_CONNECT(DT_IRQN(SPIM(idx)), DT_IRQ(SPIM(idx), priority),   \
@@ -579,7 +584,7 @@ static int spi_nrfx_init(const struct device *dev)
 		.dev  = DEVICE_DT_GET(SPIM(idx)),			       \
 		.busy = false,						       \
 	};								       \
-	IF_ENABLED(CONFIG_PINCTRL, (PINCTRL_DT_DEFINE(SPIM(idx))));	       \
+	PINCTRL_DT_DEFINE(SPIM(idx));					       \
 	static const struct spi_nrfx_config spi_##idx##z_config = {	       \
 		.spim = {						       \
 			.p_reg = (NRF_SPIM_Type *)DT_REG_ADDR(SPIM(idx)),      \
@@ -587,18 +592,19 @@ static int spi_nrfx_init(const struct device *dev)
 		},							       \
 		.max_freq = SPIM_PROP(idx, max_frequency),		       \
 		.def_config = {						       \
-			SPI_NRFX_SPIM_PIN_CFG(idx)			       \
+			.skip_gpio_cfg = true,				       \
+			.skip_psel_cfg = true,				       \
 			.ss_pin = NRFX_SPIM_PIN_NOT_USED,		       \
 			.orc    = SPIM_PROP(idx, overrun_character),	       \
 			SPI_NRFX_SPIM_EXTENDED_CONFIG(idx)		       \
 		},							       \
 		.irq_connect = irq_connect##idx,			       \
+		.pcfg = PINCTRL_DT_DEV_CONFIG_GET(SPIM(idx)),		       \
+		.max_chunk_len = BIT_MASK(SPIM_PROP(idx, easydma_maxcnt_bits)),\
 		COND_CODE_1(CONFIG_SOC_NRF52832_ALLOW_SPIM_DESPITE_PAN_58,     \
 			(.anomaly_58_workaround =			       \
 				SPIM_PROP(idx, anomaly_58_workaround),),       \
 			())						       \
-		IF_ENABLED(CONFIG_PINCTRL,				       \
-			(.pcfg = PINCTRL_DT_DEV_CONFIG_GET(SPIM(idx)),))       \
 	};								       \
 	PM_DEVICE_DT_DEFINE(SPIM(idx), spim_nrfx_pm_action);		       \
 	DEVICE_DT_DEFINE(SPIM(idx),					       \

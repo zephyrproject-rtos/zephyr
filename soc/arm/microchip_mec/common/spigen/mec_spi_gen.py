@@ -237,7 +237,7 @@ def build_header(chip, spi_config, hdr_spi_loc, pld_spi_loc, pld_entry_addr, pld
     return bytes(hdr)
 
 def parse_args():
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(allow_abbrev=False)
     # Use a lambda to handle base 10 or base 16 (hex) input
     parser.add_argument("-c",
                         type=str,

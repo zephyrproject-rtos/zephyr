@@ -135,7 +135,7 @@ static int disk_sdmmc_init(const struct device *dev)
 			&sdmmc_data_##n,					\
 			&sdmmc_config_##n,					\
 			POST_KERNEL,						\
-			CONFIG_SDMMC_INIT_PRIORITY,				\
+			CONFIG_SD_INIT_PRIORITY,				\
 			NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(DISK_ACCESS_SDMMC_INIT)

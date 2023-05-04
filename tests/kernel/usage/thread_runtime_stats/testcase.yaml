@@ -1,12 +1,12 @@
 tests:
   kernel.usage:
     tags: kernel
-# The following architectures are excluded as they have boards that
-# exhibit precision timing anomalies related to emulation.
-#     posix, riscv32, sparc
-# The following architectures are exluded as the necessary
-# thread runtime statistic hooks do not yet exist.
-#     mips
+    # The following architectures are excluded as they have boards that
+    # exhibit precision timing anomalies related to emulation.
+    #     posix, riscv32, sparc
+    # The following architectures are exluded as the necessary
+    # thread runtime statistic hooks do not yet exist.
+    #     mips
     arch_exclude: posix sparc mips
-# SMP is excluded as the test was only written for UP
+    # SMP is excluded as the test was only written for UP
     filter: not CONFIG_SMP

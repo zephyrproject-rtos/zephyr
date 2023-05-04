@@ -7,6 +7,7 @@
 /dts-v1/;
 
 #include <synopsys/emsdp.dtsi>
+#include <mem.h>
 #include "board.dtsi"
 
 / {
@@ -15,6 +16,7 @@
 
 	aliases {
 		uart-0 = &uart0;
+		spi-flash0 = &s25fl256s;
 	};
 
 	chosen {
@@ -40,5 +42,12 @@
 			interrupts = <85 1>;
 		};
 
+		spi@f0008000 {
+			interrupts = <83 1>;
+		};
+
+		spi@f1000000 {
+			interrupts = <84 1>;
+		};
 	};
 };

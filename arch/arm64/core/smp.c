@@ -92,9 +92,8 @@ void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 	/* store mpid last as this is our synchronization point */
 	arm64_cpu_boot_params.mpid = cpu_mpid;
 
-	arch_dcache_range((void *)&arm64_cpu_boot_params,
-			  sizeof(arm64_cpu_boot_params),
-			  K_CACHE_WB_INVD);
+	sys_cache_data_invd_range((void *)&arm64_cpu_boot_params,
+				  sizeof(arm64_cpu_boot_params));
 
 	if (pm_cpu_on(cpu_mpid, (uint64_t)&__start)) {
 		printk("Failed to boot secondary CPU core %d (MPID:%#llx)\n",
@@ -120,6 +119,9 @@ void z_arm64_secondary_start(void)
 
 	/* Initialize tpidrro_el0 with our struct _cpu instance address */
 	write_tpidrro_el0((uintptr_t)&_kernel.cpus[cpu_num]);
+#ifdef CONFIG_ARM64_SAFE_EXCEPTION_STACK
+	z_arm64_safe_exception_stack_init();
+#endif
 
 	z_arm64_mm_init(false);
 
@@ -224,9 +226,8 @@ void z_arm64_flush_fpu_ipi(unsigned int cpu)
 }
 #endif
 
-static int arm64_smp_init(const struct device *dev)
+static int arm64_smp_init(void)
 {
-	ARG_UNUSED(dev);
 
 	/*
 	 * SGI0 is use for sched ipi, this might be changed to use Kconfig

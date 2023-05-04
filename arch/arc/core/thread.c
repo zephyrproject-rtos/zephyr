@@ -20,6 +20,10 @@
 #include <zephyr/arch/arc/v2/mpu/arc_core_mpu.h>
 #endif
 
+#if defined(CONFIG_ARC_DSP) && defined(CONFIG_ARC_DSP_SHARING)
+#include <zephyr/arch/arc/v2/dsp/arc_dsp.h>
+static struct k_spinlock lock;
+#endif
 /*  initial stack frame */
 struct init_stack_frame {
 	uintptr_t pc;
@@ -121,7 +125,8 @@ static inline void arch_setup_callee_saved_regs(struct k_thread *thread,
 
 	ARG_UNUSED(regs);
 
-#ifdef CONFIG_THREAD_LOCAL_STORAGE
+/* GCC uses tls pointer cached in register, MWDT just call for _mwget_tls */
+#if defined(CONFIG_THREAD_LOCAL_STORAGE) && !defined(__CCAC__)
 #ifdef CONFIG_ISA_ARCV2
 #if __ARC_TLS_REGNO__ <= 0
 #error Compiler not configured for thread local storage
@@ -292,3 +297,27 @@ FUNC_NORETURN void z_arc_switch_to_main_no_multithreading(k_thread_entry_t main_
 	CODE_UNREACHABLE; /* LCOV_EXCL_LINE */
 }
 #endif /* !CONFIG_MULTITHREADING */
+
+#if defined(CONFIG_ARC_DSP) && defined(CONFIG_ARC_DSP_SHARING)
+void arc_dsp_disable(struct k_thread *thread, unsigned int options)
+{
+	/* Ensure a preemptive context switch does not occur */
+	k_spinlock_key_t key = k_spin_lock(&lock);
+
+	/* Disable DSP or AGU capabilities for the thread */
+	thread->base.user_options &= ~(uint8_t)options;
+
+	k_spin_unlock(&lock, key);
+}
+
+void arc_dsp_enable(struct k_thread *thread, unsigned int options)
+{
+	/* Ensure a preemptive context switch does not occur */
+	k_spinlock_key_t key = k_spin_lock(&lock);
+
+	/* Enable dsp or agu capabilities for the thread */
+	thread->base.user_options |= (uint8_t)options;
+
+	k_spin_unlock(&lock, key);
+}
+#endif /* CONFIG_ARC_DSP && CONFIG_ARC_DSP_SHARING */

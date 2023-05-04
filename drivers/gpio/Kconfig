@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig GPIO
-	bool "GPIO Drivers"
+	bool "General-Purpose Input/Output (GPIO) drivers"
 	help
 	  Include GPIO drivers in system config
 
@@ -43,6 +43,31 @@ config GPIO_GET_CONFIG
 	help
 	  This option enables the support for getting the current configurations
 	  of GPIOs. The driver must implement it to work.
+
+config GPIO_HOGS
+	bool "Support for GPIO hogs"
+	default $(dt_gpio_hogs_enabled)
+	help
+	  Enable support for GPIO hogs. GPIO hogging is a mechanism for providing
+	  automatic GPIO configuration via devicetree.
+
+config GPIO_HOGS_INIT_PRIORITY
+	int "GPIO hogs init priority"
+	default 41
+	depends on GPIO_HOGS
+	help
+	  GPIO hogs initialization priority. GPIO hogs must be initialized after the
+	  GPIO controller drivers.
+
+config GPIO_ENABLE_DISABLE_INTERRUPT
+	bool "Support for enable/disable interrupt without re-config [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  This option enables the support for enabling/disabling interrupt with
+	  previous configuration, and enabling/disabling the interrupt only turns
+	  on/off the interrupt signal without changing other registers, such as
+	  pending register, etc. The driver must implement it to work.
+
 
 source "drivers/gpio/Kconfig.b91"
 
@@ -88,6 +113,8 @@ source "drivers/gpio/Kconfig.imx"
 
 source "drivers/gpio/Kconfig.it8xxx2"
 
+source "drivers/gpio/Kconfig.ifx_cat1"
+
 source "drivers/gpio/Kconfig.intel"
 
 source "drivers/gpio/Kconfig.xec"
@@ -114,7 +141,7 @@ source "drivers/gpio/Kconfig.emul_sdl"
 
 source "drivers/gpio/Kconfig.psoc6"
 
-source "drivers/gpio/Kconfig.pcal6408a"
+source "drivers/gpio/Kconfig.pcal64xxa"
 
 source "drivers/gpio/Kconfig.eos_s3"
 
@@ -152,12 +179,20 @@ source "drivers/gpio/Kconfig.xmc4xxx"
 
 source "drivers/gpio/Kconfig.smartbond"
 
-source "drivers/gpio/Kconfig.s32"
+source "drivers/gpio/Kconfig.nxp_s32"
 
 source "drivers/gpio/Kconfig.tca6424a"
+
+source "drivers/gpio/Kconfig.npm1300"
 
 source "drivers/gpio/Kconfig.npm6001"
 
 source "drivers/gpio/Kconfig.rt1718s"
+
+source "drivers/gpio/Kconfig.numicro"
+
+source "drivers/gpio/Kconfig.bd8lb600fs"
+
+source "drivers/gpio/Kconfig.sc18im704"
 
 endif # GPIO

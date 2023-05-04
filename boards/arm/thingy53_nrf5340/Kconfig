@@ -29,6 +29,10 @@ config BOARD_ENABLE_DCDC_HV
 	select SOC_DCDC_NRF53X_HV
 	default y
 
+config BOARD_SERIAL_BACKEND_CDC_ACM
+	bool "USB CDC"
+	default y
+
 config BOARD_ENABLE_CPUNET
 	bool "NRF53 Network MCU"
 	select SOC_NRF_GPIO_FORWARDER_FOR_NRF5340 if \

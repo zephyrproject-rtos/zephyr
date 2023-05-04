@@ -6,6 +6,8 @@ tests:
     depends_on: adc
     tags: sensors
     platform_allow: nucleo_g071rb nucleo_wb55rg
+    integration_platforms:
+      - nucleo_g071rb
     timeout: 10
     harness: console
     harness_config:

@@ -7,7 +7,7 @@
 # DAI Drivers
 #
 menuconfig DAI
-	bool "DAI drivers"
+	bool "Digital Audio Interface (DAI) drivers"
 	help
 		Enable support for the DAI interface drivers.
 
@@ -28,5 +28,6 @@ comment "Device Drivers"
 source "drivers/dai/intel/ssp/Kconfig.ssp"
 source "drivers/dai/intel/alh/Kconfig.alh"
 source "drivers/dai/intel/dmic/Kconfig.dmic"
+source "drivers/dai/intel/hda/Kconfig.hda"
 
 endif # DAI

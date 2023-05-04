@@ -87,8 +87,9 @@ int tp_poll(struct mqtt_sn_client *client)
 static ZTEST_BMEM struct mqtt_sn_client clients[3];
 static ZTEST_BMEM struct mqtt_sn_client *client;
 
-static void setup(void)
+static void setup(void *f)
 {
+	ARG_UNUSED(f);
 	static ZTEST_BMEM size_t i;
 
 	client = &clients[i++];
@@ -135,13 +136,13 @@ static void mqtt_sn_connect_no_will(struct mqtt_sn_client *client)
 	k_sleep(K_MSEC(10));
 }
 
-static void test_mqtt_sn_connect_no_will(void)
+static ZTEST(mqtt_sn_client, test_mqtt_sn_connect_no_will)
 {
 
 	mqtt_sn_connect_no_will(client);
 }
 
-static void test_mqtt_sn_connect_will(void)
+static ZTEST(mqtt_sn_client, test_mqtt_sn_connect_will)
 {
 	static uint8_t willtopicreq[] = {2, 0x06};
 	static uint8_t willmsgreq[] = {2, 0x08};
@@ -180,7 +181,7 @@ static void test_mqtt_sn_connect_will(void)
 	k_sleep(K_MSEC(10));
 }
 
-static void test_mqtt_sn_publish_qos0(void)
+static ZTEST(mqtt_sn_client, test_mqtt_sn_publish_qos0)
 {
 	struct mqtt_sn_data data = MQTT_SN_DATA_STRING_LITERAL("Hello, World!");
 	struct mqtt_sn_data topic = MQTT_SN_DATA_STRING_LITERAL("zephyr");
@@ -206,12 +207,4 @@ static void test_mqtt_sn_publish_qos0(void)
 	zassert_false(sys_slist_is_empty(&client->topic), "Topic empty");
 }
 
-void test_main(void)
-{
-	ztest_test_suite(
-		test_mqtt_sn_client_fn,
-		ztest_unit_test_setup_teardown(test_mqtt_sn_connect_no_will, setup, unit_test_noop),
-		ztest_unit_test_setup_teardown(test_mqtt_sn_connect_will, setup, unit_test_noop),
-		ztest_unit_test_setup_teardown(test_mqtt_sn_publish_qos0, setup, unit_test_noop));
-	ztest_run_test_suite(test_mqtt_sn_client_fn);
-}
+ZTEST_SUITE(mqtt_sn_client, NULL, NULL, setup, NULL, NULL);

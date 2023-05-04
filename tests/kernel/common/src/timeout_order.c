@@ -66,9 +66,7 @@ ZTEST(common_1cpu, test_timeout_order)
 
 	/* sync on tick */
 	while (uptime == k_uptime_get_32()) {
-#if defined(CONFIG_ARCH_POSIX)
-		k_busy_wait(50);
-#endif
+		Z_SPIN_DELAY(50);
 	}
 
 	for (ii = 0; ii < NUM_TIMEOUTS; ii++) {

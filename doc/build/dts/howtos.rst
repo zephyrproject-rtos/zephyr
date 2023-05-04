@@ -229,7 +229,7 @@ when setting the DTC_OVERLAY_FILE variable.
 
 You can set :makevar:`DTC_OVERLAY_FILE` to contain exactly the files you want
 to use. Here is an :ref:`example <west-building-dtc-overlay-file>` using
-``using west build``.
+``west build``.
 
 If you don't set :makevar:`DTC_OVERLAY_FILE`, the build system will follow
 these steps, looking for files in your application configuration directory to

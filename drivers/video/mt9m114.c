@@ -144,7 +144,7 @@ static int mt9m114_write_reg(const struct device *dev, uint16_t reg_addr,
 		*(uint16_t *)value = sys_cpu_to_be16(*(uint16_t *)value);
 		break;
 	case 4:
-		*(uint16_t *)value = sys_cpu_to_be32(*(uint16_t *)value);
+		*(uint32_t *)value = sys_cpu_to_be32(*(uint32_t *)value);
 		break;
 	case 1:
 		break;

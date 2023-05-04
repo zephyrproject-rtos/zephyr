@@ -128,5 +128,3 @@ const struct log_backend_api mock_log_backend_api = {
 	.format_set = format_set,
 	.panic = panic
 };
-
-LOG_BACKEND_DEFINE(log_backend_mock, mock_log_backend_api, true);

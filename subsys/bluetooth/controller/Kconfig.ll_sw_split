@@ -31,6 +31,8 @@ config BT_LLL_VENDOR_NORDIC
 	select BT_CTLR_SYNC_PERIODIC_SUPPORT
 	select BT_CTLR_ADV_ISO_SUPPORT
 	select BT_CTLR_SYNC_ISO_SUPPORT
+	select BT_CTLR_CENTRAL_ISO_SUPPORT
+	select BT_CTLR_PERIPHERAL_ISO_SUPPORT
 	select BT_CTLR_DF_SUPPORT if HAS_HW_NRF_RADIO_DFE
 	select BT_CTLR_CTEINLINE_SUPPORT if HAS_HW_NRF_RADIO_DFE
 	select BT_CTLR_CHAN_SEL_2_SUPPORT
@@ -51,8 +53,11 @@ config BT_LLL_VENDOR_NORDIC
 					  BT_CTLR_ADV_PERIODIC
 	select BT_TICKER_REMAINDER_GET if BT_BROADCASTER && BT_CTLR_ADV_EXT
 	select BT_TICKER_LAZY_GET if BT_CTLR_ADV_PERIODIC
+	select BT_TICKER_NEXT_SLOT_GET_MATCH if BT_TICKER_REMAINDER_GET
 
 	default y
+	depends on !$(dt_nodelabel_enabled,timer0)
+	depends on !$(dt_nodelabel_enabled,rtc0)
 	help
 	  Use Nordic Lower Link Layer implementation.
 
@@ -82,27 +87,6 @@ config BT_CTLR_TIFS_HW_SUPPORT
 
 config BT_CTLR_ULL_LLL_PRIO_SUPPORT
 	bool
-
-choice BT_LL_SW_LLCP_IMPL
-	prompt "Bluetooth Low Energy Software Link Layer Control Procedure Implementation"
-	default BT_LL_SW_LLCP
-	help
-	  Select the Bluetooth Low Energy Software Link Layer Control Procedure implementation.
-
-config BT_LL_SW_LLCP_LEGACY
-	bool "Legacy implementation (DEPRECATED)"
-	depends on !BT_CTLR_DF_CONN_CTE_RX && !BT_CTLR_DF_CONN_CTE_TX
-	select DEPRECATED
-	help
-	  Use the Bluetooth Low Energy Software Link Layer Legacy Control Procedure implementation.
-
-config BT_LL_SW_LLCP
-	bool "State-machine based implementation, replacing the legacy one"
-	help
-	  Use the new Bluetooth Low Energy Software Link Layer Control Procedure implementation.
-
-endchoice
-
 
 config BT_CTLR_RX_PRIO_STACK_SIZE
 	# Controller's Co-Operative high priority Rx thread stack size.
@@ -279,6 +263,21 @@ config BT_CTLR_ADV_RESERVE_MAX
 	  If maximum time reservation is disabled then time reservation
 	  corresponding to the Advertising Data present at the time of the
 	  start/enable of Advertising is used.
+
+config BT_CTLR_ADV_AUX_SYNC_OFFSET
+	int "Pre-defined offset between AUX_ADV_IND and AUX_SYNC_IND"
+	depends on BT_CTLR_ADV_PERIODIC
+	default 0
+	help
+	  Define an offset between AUX_ADV_IND and AUX_SYNC_IND when using
+	  Advertising Interval for the Extended Advertising and Periodic
+	  Advertising that are same or multiple of each other, respectively.
+	  Note, to get advertising intervals that are same or multiple,
+	  the Periodic Advertising Interval shall be 10 millisecond more than
+	  the Extended Advertising Interval; this is because the AUX_ADV_IND
+	  PDUs are scheduled as periodic events of Extended Advertising
+	  Interval plus 10 milliseconds (Advertising Random Delay) as the
+	  periodic interval.
 
 config BT_CTLR_ADV_DATA_BUF_MAX
 	int "Advertising Data Maximum Buffers"
@@ -459,6 +458,28 @@ config BT_CTLR_CENTRAL_SPACING
 	  (active clock jitter) + 17040 (PDU rx) = (radio event overheads +
 	  34234) microseconds.
 
+config BT_CTLR_CENTRAL_RESERVE_MAX
+	bool "Use maximum data PDU size time reservation for Central"
+	depends on BT_CENTRAL
+	default y
+	help
+	  Use the maximum data PDU size time reservation considering the Data
+	  length could be updated from default 27 bytes to maximum support size.
+	  If maximum time reservation is disabled then time reservation
+	  corresponding to the default data length at the time of the
+	  start/enable of Central role is used.
+
+	  Note, currently this value is only used to space multiple central
+	  connections and not for actual ticker time reservations.
+
+config BT_CTLR_SLOT_RESERVATION_UPDATE
+	bool "Update event length reservation after PHY or DLE update"
+	depends on (BT_CTLR_DATA_LENGTH || BT_CTLR_PHY)
+	default y
+	help
+	  Updates the event length reservation after a completed Data Length Update
+	  and/or PHY Update procedure to avoid overlap of radio events
+
 config BT_CTLR_LLL_PRIO
 	int "Lower Link Layer (Radio) IRQ priority" if (BT_CTLR_ULL_LLL_PRIO_SUPPORT && !BT_CTLR_ZLI)
 	range 0 3 if SOC_SERIES_NRF51X
@@ -583,7 +604,6 @@ config BT_CTLR_LLCP_CONN
 	  more than this number of connections simultaneously may cause
 	  instabilities.
 
-if !BT_LL_SW_LLCP_LEGACY
 config BT_CTLR_LLCP_TX_PER_CONN_TX_CTRL_BUF_NUM_MAX
 	int
 	default 4
@@ -635,22 +655,11 @@ config BT_CTLR_LLCP_REMOTE_PROC_CTX_BUF_NUM
 	  for handling remote initiated control procedures.
 	  This pool is shared across all connections, with allocation through a queue.
 
-endif #!BT_LL_SW_LLCP_LEGACY
-
-
 config BT_CTLR_LLID_DATA_START_EMPTY
 	bool "Handle zero length L2CAP start frame"
 	default y if BT_HCI_RAW
 	help
 	  Handle zero length L2CAP start frame.
-
-config BT_CTLR_RX_ENQUEUE_HOLD
-	bool "Procedure Complete after on-air instant"
-	depends on BT_LL_SW_LLCP_LEGACY
-	default y if BT_HCI_RAW
-	help
-	  Hold enqueue of Procedure Complete events with instant until after the
-	  on-air instant is reached.
 
 config BT_CTLR_TX_RETRY_DISABLE
 	bool "Disable Tx Retry"
@@ -825,7 +834,6 @@ config BT_TICKER_NEXT_SLOT_GET_MATCH
 
 config BT_TICKER_EXT
 	bool "Ticker extensions"
-	depends on !BT_TICKER_LOW_LAT && !BT_TICKER_SLOT_AGNOSTIC
 	default y if BT_BROADCASTER
 	help
 	  This option enables ticker extensions such as re-scheduling of
@@ -871,6 +879,13 @@ config BT_CTLR_JIT_SCHEDULING
 	  feature, which eliminates priorities and collision resolving in the
 	  ticker, and instead relies on just-in-time ("lazy") resolution in
 	  the link layer.
+
+config BT_CTLR_PERIPHERAL_ISO_EARLY_CIG_START
+	bool "Early start of peripheral CIG event"
+	depends on BT_CTLR_PERIPHERAL_ISO
+	help
+	  Start scheduling the Peripheral ISO CIG events one event in advance
+	  and hence adjust CIG offset and reference point ahead one interval.
 
 config BT_CTLR_USER_EXT
 	prompt "Proprietary extensions in Controller"
@@ -922,6 +937,8 @@ config BT_CTLR_USER_CPR_ANCHOR_POINT_MOVE
 	  Only applicable for peripheral.
 
 endmenu
+
+source "subsys/bluetooth/controller/coex/Kconfig"
 
 comment "BLE Controller debug configuration"
 

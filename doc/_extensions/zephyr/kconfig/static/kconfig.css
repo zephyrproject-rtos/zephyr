@@ -15,13 +15,13 @@
 }
 
 #__kconfig-search .input-container input {
+    border-radius: 5px 0px 0px 5px;
     font-size: 18px;
     width: 90%;
     height: 100%;
     padding: 0.75rem;
     border: none;
     box-shadow: none !important;
-    background-color: white;
 }
 
 #__kconfig-search .input-container input:focus,
@@ -31,17 +31,19 @@
 
 #__kconfig-search .input-container button {
     font-size: 22px;
+    border-radius: 0px 5px 5px 0px;
     float: right;
     width: 10%;
     height: 100%;
     border: none;
-    background-color: white;
+    background-color: lightgrey;
 }
 
 #__kconfig-search select {
     border-radius: 5px;
     border: 1px solid rgba(149, 157, 165, 0.2);
     box-shadow: unset;
+    color: black;
 }
 
 #__kconfig-search .search-tools {

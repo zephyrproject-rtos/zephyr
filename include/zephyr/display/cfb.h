@@ -87,7 +87,21 @@ struct cfb_font {
  *
  * @return 0 on success, negative value otherwise
  */
-int cfb_print(const struct device *dev, char *str, uint16_t x, uint16_t y);
+int cfb_print(const struct device *dev, const char *const str, uint16_t x, uint16_t y);
+
+/**
+ * @brief Print a string into the framebuffer.
+ * For compare to cfb_print, cfb_draw_text accept non tile-aligned coords
+ * and not line wrapping.
+ *
+ * @param dev Pointer to device structure for driver instance
+ * @param str String to print
+ * @param x Position in X direction of the beginning of the string
+ * @param y Position in Y direction of the beginning of the string
+ *
+ * @return 0 on success, negative value otherwise
+ */
+int cfb_draw_text(const struct device *dev, const char *const str, int16_t x, int16_t y);
 
 /**
  * @brief Clear framebuffer.
@@ -152,6 +166,16 @@ int cfb_get_display_parameter(const struct device *dev,
  * @return 0 on success, negative value otherwise
  */
 int cfb_framebuffer_set_font(const struct device *dev, uint8_t idx);
+
+/**
+ * @brief Set font kerning (spacing between individual letters).
+ *
+ * @param dev Pointer to device structure for driver instance
+ * @param kerning Font kerning
+ *
+ * @return 0 on success, negative value otherwise
+ */
+int cfb_set_kerning(const struct device *dev, int8_t kerning);
 
 /**
  * @brief Get font size.

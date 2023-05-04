@@ -1,0 +1,5 @@
+common:
+  tags: bluetooth host
+tests:
+  bluetooth.host.bt_keys_find_addr.default:
+    type: unit

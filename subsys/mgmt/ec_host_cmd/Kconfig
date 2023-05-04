@@ -9,19 +9,41 @@ config EC_HOST_CMD
 	bool "Support Embedded Controller host command handler subsystem"
 	help
 	  Enable host command processing for embedded controllers on notebook
-	  computers. Enabling this option requires specifying a chosen
-	  zephyr,ec-host-interface device as the ec host command peripheral that
-	  receive incoming host command requests to process.
+	  computers.
 
 if EC_HOST_CMD
+
+module = EC_HC
+module-str = ec-host-commands
+source "subsys/logging/Kconfig.template.log_config"
 
 config EC_HOST_CMD_HANDLER_STACK_SIZE
 	int "Stack size for the EC host command handler thread"
 	default 800
 
-config EC_HOST_CMD_HANDLER_TX_BUFFER
+config EC_HOST_CMD_HANDLER_TX_BUFFER_SIZE
 	int "Buffer size in bytes for TX buffer shared by all EC host commands"
+	default 0 if EC_HOST_CMD_BACKEND_ESPI
+	default 0 if EC_HOST_CMD_BACKEND_SHI
+	default 256 if EC_HOST_CMD_BACKEND_UART
 	default 256
+	help
+	  Buffer size in bytes for TX buffer defined by the host command handler.
+	  Some backend layers can define their own buffer, so the size can be zero to
+	  avoid duplicating buffers. If multiple backends are used, the size has to be
+	  set by user to the largest one.
+
+config EC_HOST_CMD_HANDLER_RX_BUFFER_SIZE
+	int "Buffer size in bytes for RX buffer shared by all EC host commands"
+	default 256 if EC_HOST_CMD_BACKEND_ESPI
+	default 0 if EC_HOST_CMD_BACKEND_SHI
+	default 544 if EC_HOST_CMD_BACKEND_UART
+	default 256
+	help
+	  Buffer size in bytes for TX buffer defined by the host command handler.
+	  Some backend layers can define their own buffer, so the size can be zero to
+	  avoid duplicating buffers. If multiple backends are used, the size has to be
+	  set by user to the largest one.
 
 config EC_HOST_CMD_HANDLER_PRIO
 	int "Priority of host command task"
@@ -32,6 +54,28 @@ config EC_HOST_CMD_HANDLER_PRIO
 	  process the command on time and the AP will abort the waiting for response and be unable
 	  to boot the system properly.
 
+config EC_HOST_CMD_INIT_PRIORITY
+	int "Initialization priority"
+	default 60
+	range 0 99
+	help
+	  Initialization priority for Host Command. It must be higher than the initialization
+	  priority of the used backend device.
+
+config EC_HOST_CMD_HANDLER_TX_BUFFER_DEF
+	bool
+	default y if EC_HOST_CMD_HANDLER_TX_BUFFER_SIZE > 0
+	help
+	  The handler defines common tx buffer
+
+config EC_HOST_CMD_HANDLER_RX_BUFFER_DEF
+	bool
+	default y if EC_HOST_CMD_HANDLER_RX_BUFFER_SIZE > 0
+	help
+	  The handler defines common rx buffer
+
 endif # EC_HOST_CMD
+
+source "subsys/mgmt/ec_host_cmd/backends/Kconfig"
 
 endmenu

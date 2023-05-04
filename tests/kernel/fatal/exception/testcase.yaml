@@ -1,5 +1,5 @@
 common:
-  ignore_faults: True
+  ignore_faults: true
 tests:
   kernel.common.stack_protection:
     extra_args: CONF_FILE=prj.conf

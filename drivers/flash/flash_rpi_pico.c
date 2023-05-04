@@ -13,6 +13,7 @@
 #include <zephyr/drivers/flash.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
+#include <zephyr/toolchain.h>
 
 #include <hardware/flash.h>
 #include <hardware/regs/io_qspi.h>
@@ -27,10 +28,11 @@ LOG_MODULE_REGISTER(flash_rpi_pico, CONFIG_FLASH_LOG_LEVEL);
 #define DT_DRV_COMPAT raspberrypi_pico_flash_controller
 
 #define PAGE_SIZE 256
-#define SECTOR_SIZE DT_PROP(DT_CHILD(DT_NODELABEL(flash_controller), flash_0), erase_block_size)
+#define SECTOR_SIZE DT_PROP(DT_CHOSEN(zephyr_flash), erase_block_size)
 #define ERASE_VALUE 0xff
 #define FLASH_SIZE KB(CONFIG_FLASH_SIZE)
-#define FLASH_BASE DT_REG_ADDR(DT_NODELABEL(flash_controller))
+#define FLASH_BASE CONFIG_FLASH_BASE_ADDRESS
+#define SSI_BASE_ADDRESS DT_REG_ADDR(DT_CHOSEN(zephyr_flash_controller))
 
 static const struct flash_parameters flash_rpi_parameters = {
 	.write_block_size = 1,
@@ -56,7 +58,7 @@ enum outover {
 	OUTOVER_HIGH
 };
 
-static ssi_hw_t *const ssi = (ssi_hw_t *)XIP_SSI_BASE;
+static ssi_hw_t *const ssi = (ssi_hw_t *)SSI_BASE_ADDRESS;
 static uint32_t boot2_copyout[BOOT2_SIZE_WORDS];
 static bool boot2_copyout_valid;
 
@@ -135,7 +137,7 @@ void __no_inline_not_in_flash_func(flash_put_get_wrapper)(uint8_t cmd, const uin
 	flash_put_get(tx, rx, count, 1);
 }
 
-static inline void flash_put_cmd_addr(uint8_t cmd, uint32_t addr)
+static ALWAYS_INLINE void flash_put_cmd_addr(uint8_t cmd, uint32_t addr)
 {
 	flash_cs_force(OUTOVER_LOW);
 	addr |= cmd << 24;
@@ -296,13 +298,6 @@ void flash_rpi_page_layout(const struct device *dev, const struct flash_pages_la
 
 #endif /* CONFIG_FLASH_PAGE_LAYOUT */
 
-static int flash_rpi_init(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-
-	return 0;
-}
-
 static const struct flash_driver_api flash_rpi_driver_api = {
 	.read = flash_rpi_read,
 	.write = flash_rpi_write,
@@ -313,6 +308,5 @@ static const struct flash_driver_api flash_rpi_driver_api = {
 #endif /* CONFIG_FLASH_PAGE_LAYOUT */
 };
 
-DEVICE_DT_INST_DEFINE(0, flash_rpi_init, NULL,
-		      NULL, NULL, POST_KERNEL,
+DEVICE_DT_INST_DEFINE(0, NULL, NULL, NULL, NULL, POST_KERNEL,
 		      CONFIG_FLASH_INIT_PRIORITY, &flash_rpi_driver_api);

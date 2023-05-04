@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 NXP
+ * Copyright 2022-2023 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,5 +16,20 @@
 		zephyr,sram = &sram1;
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
+		zephyr,canbus = &can0;
 	};
+
+	aliases {
+		watchdog0 = &swt0;
+	};
+};
+
+&mru4 {
+	rx-channels = <1>;
+	status = "okay";
+};
+
+&enetc_psi0 {
+	mboxes = <&mru4 0>;
+	mbox-names = "rx";
 };

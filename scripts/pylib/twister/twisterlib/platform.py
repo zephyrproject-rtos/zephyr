@@ -58,6 +58,7 @@ class Platform:
         self.ignore_tags = testing.get("ignore_tags", [])
         self.only_tags = testing.get("only_tags", [])
         self.default = testing.get("default", False)
+        self.binaries = testing.get("binaries", [])
         # if no flash size is specified by the board, take a default of 512K
         self.flash = data.get("flash", 512)
         self.supported = set()
@@ -70,6 +71,9 @@ class Platform:
         self.simulation = data.get('simulation', "na")
         self.simulation_exec = data.get('simulation_exec')
         self.supported_toolchains = data.get("toolchain", [])
+        if self.arch == 'arm':
+            if 'armclang' not in self.supported_toolchains:
+                self.supported_toolchains.append('armclang')
         self.env = data.get("env", [])
         self.env_satisfied = True
         for env in self.env:

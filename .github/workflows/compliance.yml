@@ -4,7 +4,7 @@ on: pull_request
 
 jobs:
   check_compliance:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     name: Run compliance checks on patch series (PR)
     steps:
     - name: Update PATH for west
@@ -27,7 +27,7 @@ jobs:
       run: |
         pip3 install setuptools
         pip3 install wheel
-        pip3 install python-magic lxml junitparser gitlint pylint pykwalify
+        pip3 install python-magic lxml junitparser gitlint pylint pykwalify yamllint
         pip3 install west
 
     - name: west setup
@@ -37,6 +37,9 @@ jobs:
         git config --global user.email "you@example.com"
         git config --global user.name "Your Name"
         git remote -v
+        # Ensure there's no merge commits in the PR
+        [[ "$(git rev-list --merges --count origin/${BASE_REF}..)" == "0" ]] || \
+        (echo "::error ::Merge commits not allowed, rebase instead";false)
         git rebase origin/${BASE_REF}
         # debug
         git log  --pretty=oneline | head -n 10
@@ -58,7 +61,7 @@ jobs:
 
     - name: upload-results
       uses: actions/upload-artifact@v3
-      continue-on-error: True
+      continue-on-error: true
       with:
         name: compliance.xml
         path: compliance.xml

@@ -28,6 +28,7 @@
 #include "pb_gatt_srv.h"
 #include "settings.h"
 #include "cfg.h"
+#include "solicitation.h"
 
 #define LOG_LEVEL CONFIG_BT_MESH_SETTINGS_LOG_LEVEL
 #include <zephyr/logging/log.h>
@@ -113,7 +114,10 @@ SETTINGS_STATIC_HANDLER_DEFINE(bt_mesh, "bt/mesh", NULL, NULL, mesh_commit,
 			      BIT(BT_MESH_SETTINGS_HB_PUB_PENDING)   |      \
 			      BIT(BT_MESH_SETTINGS_CFG_PENDING)      |      \
 			      BIT(BT_MESH_SETTINGS_MOD_PENDING)      |      \
-			      BIT(BT_MESH_SETTINGS_VA_PENDING))
+			      BIT(BT_MESH_SETTINGS_VA_PENDING)       |      \
+			      BIT(BT_MESH_SETTINGS_SSEQ_PENDING)     |      \
+			      BIT(BT_MESH_SETTINGS_COMP_PENDING)     |      \
+			      BIT(BT_MESH_SETTINGS_DEV_KEY_CAND_PENDING))
 
 void bt_mesh_settings_store_schedule(enum bt_mesh_settings_flag flag)
 {
@@ -124,7 +128,8 @@ void bt_mesh_settings_store_schedule(enum bt_mesh_settings_flag flag)
 	if (atomic_get(pending_flags) & NO_WAIT_PENDING_BITS) {
 		timeout_ms = 0;
 	} else if (IS_ENABLED(CONFIG_BT_MESH_RPL_STORAGE_MODE_SETTINGS) && RPL_STORE_TIMEOUT >= 0 &&
-		   atomic_test_bit(pending_flags, BT_MESH_SETTINGS_RPL_PENDING) &&
+		   (atomic_test_bit(pending_flags, BT_MESH_SETTINGS_RPL_PENDING) ||
+		     atomic_test_bit(pending_flags, BT_MESH_SETTINGS_SRPL_PENDING)) &&
 		   !(atomic_get(pending_flags) & GENERIC_PENDING_BITS)) {
 		timeout_ms = RPL_STORE_TIMEOUT * MSEC_PER_SEC;
 	} else {
@@ -185,6 +190,11 @@ static void store_pending(struct k_work *work)
 	}
 
 	if (atomic_test_and_clear_bit(pending_flags,
+				      BT_MESH_SETTINGS_DEV_KEY_CAND_PENDING)) {
+		bt_mesh_net_pending_dev_key_cand_store();
+	}
+
+	if (atomic_test_and_clear_bit(pending_flags,
 				      BT_MESH_SETTINGS_HB_PUB_PENDING)) {
 		bt_mesh_hb_pub_pending_store();
 	}
@@ -192,6 +202,11 @@ static void store_pending(struct k_work *work)
 	if (atomic_test_and_clear_bit(pending_flags,
 				      BT_MESH_SETTINGS_CFG_PENDING)) {
 		bt_mesh_cfg_pending_store();
+	}
+
+	if (atomic_test_and_clear_bit(pending_flags,
+				      BT_MESH_SETTINGS_COMP_PENDING)) {
+		bt_mesh_comp_data_pending_clear();
 	}
 
 	if (atomic_test_and_clear_bit(pending_flags,
@@ -208,6 +223,18 @@ static void store_pending(struct k_work *work)
 	    atomic_test_and_clear_bit(pending_flags,
 				      BT_MESH_SETTINGS_CDB_PENDING)) {
 		bt_mesh_cdb_pending_store();
+	}
+
+	if (IS_ENABLED(CONFIG_BT_MESH_OD_PRIV_PROXY_SRV) &&
+		atomic_test_and_clear_bit(pending_flags,
+					  BT_MESH_SETTINGS_SRPL_PENDING)) {
+		bt_mesh_srpl_pending_store();
+	}
+
+	if (IS_ENABLED(CONFIG_BT_MESH_PROXY_SOLICITATION) &&
+		atomic_test_and_clear_bit(pending_flags,
+					  BT_MESH_SETTINGS_SSEQ_PENDING)) {
+		bt_mesh_sseq_pending_store();
 	}
 }
 

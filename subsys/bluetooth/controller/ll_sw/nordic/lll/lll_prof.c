@@ -15,6 +15,8 @@
 
 #include "util/memq.h"
 
+#include "pdu_df.h"
+#include "pdu_vendor.h"
 #include "pdu.h"
 
 #include "lll.h"
@@ -146,8 +148,7 @@ void lll_prof_reserve_send(struct node_rx_pdu *rx)
 		if (err) {
 			rx->hdr.type = NODE_RX_TYPE_PROFILE;
 
-			ull_rx_put(rx->hdr.link, rx);
-			ull_rx_sched();
+			ull_rx_put_sched(rx->hdr.link, rx);
 		}
 	}
 }
@@ -236,8 +237,7 @@ static int send(struct node_rx_pdu *rx)
 	p->ull_high = cputime_ull_high;
 	p->ull_low = cputime_ull_low;
 
-	ull_rx_put(rx->hdr.link, rx);
-	ull_rx_sched();
+	ull_rx_put_sched(rx->hdr.link, rx);
 
 	return 0;
 }

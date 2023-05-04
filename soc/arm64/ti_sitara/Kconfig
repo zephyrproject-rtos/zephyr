@@ -1,0 +1,15 @@
+# Copyright (c) 2023 Enphase Energy
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_FAMILY_SITARA
+	bool
+
+if SOC_FAMILY_SITARA
+
+config SOC_FAMILY
+	string
+	default "ti_sitara"
+
+source "soc/arm64/ti_sitara/*/Kconfig.soc"
+
+endif # SOC_FAMILY_SITARA

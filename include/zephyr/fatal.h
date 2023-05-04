@@ -13,6 +13,7 @@
 
 #include <zephyr/arch/cpu.h>
 #include <zephyr/toolchain.h>
+#include <zephyr/fatal_types.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -23,27 +24,6 @@ extern "C" {
  * @ingroup kernel_apis
  * @{
  */
-
-enum k_fatal_error_reason {
-	/** Generic CPU exception, not covered by other codes */
-	K_ERR_CPU_EXCEPTION,
-
-	/** Unhandled hardware interrupt */
-	K_ERR_SPURIOUS_IRQ,
-
-	/** Faulting context overflowed its stack buffer */
-	K_ERR_STACK_CHK_FAIL,
-
-	/** Moderate severity software error */
-	K_ERR_KERNEL_OOPS,
-
-	/** High severity software error */
-	K_ERR_KERNEL_PANIC
-
-	/* TODO: add more codes for exception types that are common across
-	 * architectures
-	 */
-};
 
 /**
  * @brief Halt the system on a fatal error

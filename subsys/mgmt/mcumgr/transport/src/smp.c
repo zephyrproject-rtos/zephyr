@@ -15,7 +15,7 @@
 #include <mgmt/mcumgr/transport/smp_reassembly.h>
 
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(mcumgr_smp, CONFIG_MCUMGR_SMP_LOG_LEVEL);
+LOG_MODULE_REGISTER(mcumgr_smp, CONFIG_MCUMGR_TRANSPORT_LOG_LEVEL);
 
 /* To be able to unit test some callers some functions need to be
  * demoted to allow overriding them.
@@ -26,7 +26,7 @@ LOG_MODULE_REGISTER(mcumgr_smp, CONFIG_MCUMGR_SMP_LOG_LEVEL);
 #define WEAK
 #endif
 
-K_THREAD_STACK_DEFINE(smp_work_queue_stack, CONFIG_MCUMGR_SMP_WORKQUEUE_STACK_SIZE);
+K_THREAD_STACK_DEFINE(smp_work_queue_stack, CONFIG_MCUMGR_TRANSPORT_WORKQUEUE_STACK_SIZE);
 
 static struct k_work_q smp_work_queue;
 
@@ -34,8 +34,9 @@ static const struct k_work_queue_config smp_work_queue_config = {
 	.name = "mcumgr smp"
 };
 
-NET_BUF_POOL_DEFINE(pkt_pool, CONFIG_MCUMGR_BUF_COUNT, CONFIG_MCUMGR_BUF_SIZE,
-		    CONFIG_MCUMGR_BUF_USER_DATA_SIZE, NULL);
+NET_BUF_POOL_DEFINE(pkt_pool, CONFIG_MCUMGR_TRANSPORT_NETBUF_COUNT,
+		    CONFIG_MCUMGR_TRANSPORT_NETBUF_SIZE,
+		    CONFIG_MCUMGR_TRANSPORT_NETBUF_USER_DATA_SIZE, NULL);
 
 struct net_buf *smp_packet_alloc(void)
 {
@@ -150,7 +151,7 @@ smp_transport_init(struct smp_transport *smpt,
 		.query_valid_check = query_valid_check_func,
 	};
 
-#ifdef CONFIG_MCUMGR_SMP_REASSEMBLY
+#ifdef CONFIG_MCUMGR_TRANSPORT_REASSEMBLY
 	smp_reassembly_init(smpt);
 #endif
 
@@ -228,13 +229,13 @@ void smp_rx_clear(struct smp_transport *zst)
 	}
 }
 
-static int smp_init(const struct device *dev)
+static int smp_init(void)
 {
 	k_work_queue_init(&smp_work_queue);
 
 	k_work_queue_start(&smp_work_queue, smp_work_queue_stack,
 			   K_THREAD_STACK_SIZEOF(smp_work_queue_stack),
-			   CONFIG_MCUMGR_SMP_WORKQUEUE_THREAD_PRIO, &smp_work_queue_config);
+			   CONFIG_MCUMGR_TRANSPORT_WORKQUEUE_THREAD_PRIO, &smp_work_queue_config);
 
 	return 0;
 }

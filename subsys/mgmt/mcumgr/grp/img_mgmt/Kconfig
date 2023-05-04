@@ -2,23 +2,33 @@
 # Copyright Nordic Semiconductor ASA 2020-2022. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 
-menuconfig MCUMGR_CMD_IMG_MGMT
+# The Kconfig file is dedicated to Application Image management group of
+# of MCUmgr subsystem and provides Kconfig options to configure
+# group commands behaviour and other aspects.
+#
+# Options defined in this file should be prefixed:
+#  MCUMGR_GRP_IMG_ -- general group options;
+#
+# When adding Kconfig options, that control the same feature,
+# try to group them together by the same stem after prefix.
+
+menuconfig MCUMGR_GRP_IMG
 	bool "Mcumgr handlers for image management"
-	select FLASH
+	depends on FLASH
+	depends on IMG_MANAGER
 	select MPU_ALLOW_FLASH_WRITE if ARM_MPU
-	select IMG_MANAGER
-	select MGMT_MIN_DECODING_LEVEL_2
+	select MCUMGR_SMP_CBOR_MIN_DECODING_LEVEL_2
 	help
 	  Enables mcumgr handlers for image management
 
-if MCUMGR_CMD_IMG_MGMT
+if MCUMGR_GRP_IMG
 
 if HEAP_MEM_POOL_SIZE > 0
-config IMG_MGMT_USE_HEAP_FOR_FLASH_IMG_CONTEXT
+config MCUMGR_GRP_IMG_USE_HEAP_FOR_FLASH_IMG_CONTEXT
 	bool "Use heap mem pool for flash image DFU context"
 	help
 	  Use heap to allocate flash image upload context, otherwise a static variable will
-	  be used. The context object is used by IMG_MANAGER to buffer image writes
+	  be used. The context object is used by MCUMGR_GRP_IMG_MANAGER to buffer image writes
 	  and has significant size, mainly affected by image write buffer of
 	  the CONFIG_IMG_BLOCK_BUF_SIZE size and additional fields that hold the state information
 	  (struct flash_img_context).
@@ -29,32 +39,26 @@ config IMG_MGMT_USE_HEAP_FOR_FLASH_IMG_CONTEXT
 	  operation, an issue that should also be addressed within application.
 endif
 
-config IMG_MGMT_UPDATABLE_IMAGE_NUMBER
+config MCUMGR_GRP_IMG_UPDATABLE_IMAGE_NUMBER
 	int "Number of supported images"
 	default UPDATEABLE_IMAGE_NUMBER
 	range 1 2
 	help
 	  Sets how many application images are supported (pairs of secondary and primary slots).
-	  Setting this to 2 requires MCUMGR_BUF_SIZE to be at least 512b.
+	  Setting this to 2 requires MCUMGR_TRANSPORT_NETBUF_SIZE to be at least 512b.
 	  NOTE: The UPDATEABLE_IMAGE_NUMBER of MCUBOOT configuration, even for Zephyr build,
 	  needs to be set to the same value; this is due to the fact that the mcumgr uses
 	  boot_util and the UPDATEABLE_IMAGE_NUMBER controls number of images supported
 	  by that library.
 
-config IMG_MGMT_VERBOSE_ERR
+config MCUMGR_GRP_IMG_VERBOSE_ERR
 	bool "Verbose error responses when uploading application image"
-	select MGMT_VERBOSE_ERR_RESPONSE
+	select MCUMGR_SMP_VERBOSE_ERR_RESPONSE
 	help
 	  Add additional "rsn" key to SMP responses, where provided, explaining
 	  non-0 "rc" codes.
 
-config IMG_MGMT_DUMMY_HDR
-	bool "Return dummy image header data for imgr functions"
-	help
-	  Returns dummy image header data for imgr functions,
-	  useful when there are no images present, Eg: unit tests.
-
-config IMG_MGMT_DIRECT_IMAGE_UPLOAD
+config MCUMGR_GRP_IMG_DIRECT_UPLOAD
 	bool "Allow direct image upload"
 	help
 	  Enables directly uploading image to selected image partition.
@@ -66,7 +70,7 @@ config IMG_MGMT_DIRECT_IMAGE_UPLOAD
 	  behaviour is, when image is not selected, to upload to image that represents secondary
 	  slot in normal operation.
 
-config IMG_MGMT_REJECT_DIRECT_XIP_MISMATCHED_SLOT
+config MCUMGR_GRP_IMG_REJECT_DIRECT_XIP_MISMATCHED_SLOT
 	bool "Reject Direct-XIP applications with mismatched address"
 	help
 	  When enabled, the mcumgr will compare base address of application,
@@ -76,7 +80,7 @@ config IMG_MGMT_REJECT_DIRECT_XIP_MISMATCHED_SLOT
 	  The base address can be set, to an image binary header, with imgtool,
 	  using the --rom-fixed command line option.
 
-config IMG_MGMT_FRUGAL_LIST
+config MCUMGR_GRP_IMG_FRUGAL_LIST
 	bool "Omit zero, empty or false values from status list"
 	help
 	  The status list send back from the device will only be filled with data that is non-zero,
@@ -100,8 +104,8 @@ config MCUMGR_GRP_IMG_STATUS_HOOKS
 	  uploads. Note that these are status checking only, to allow inspecting of a file upload
 	  or prevent it, CONFIG_MCUMGR_GRP_IMG_UPLOAD_CHECK_HOOK must be used.
 
-module = MCUMGR_IMG_MGMT
-module-str = mcumgr_img_mgmt
+module = MCUMGR_GRP_IMG
+module-str = mcumgr_grp_img
 source "subsys/logging/Kconfig.template.log_config"
 
 endif

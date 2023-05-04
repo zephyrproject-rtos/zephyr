@@ -18,7 +18,11 @@
 #include <zephyr/irq.h>
 LOG_MODULE_REGISTER(i2c_nrfx_twim, CONFIG_I2C_LOG_LEVEL);
 
-#define I2C_TRANSFER_TIMEOUT_MSEC		K_MSEC(500)
+#if CONFIG_I2C_NRFX_TRANSFER_TIMEOUT
+#define I2C_TRANSFER_TIMEOUT_MSEC K_MSEC(CONFIG_I2C_NRFX_TRANSFER_TIMEOUT)
+#else
+#define I2C_TRANSFER_TIMEOUT_MSEC K_FOREVER
+#endif
 
 struct i2c_nrfx_twim_data {
 	struct k_sem transfer_sync;
@@ -33,9 +37,7 @@ struct i2c_nrfx_twim_config {
 	uint16_t concat_buf_size;
 	uint16_t flash_buf_max_size;
 	void (*irq_connect)(void);
-#ifdef CONFIG_PINCTRL
 	const struct pinctrl_dev_config *pcfg;
-#endif
 };
 
 static int i2c_nrfx_twim_recover_bus(const struct device *dev);
@@ -272,13 +274,8 @@ static int i2c_nrfx_twim_recover_bus(const struct device *dev)
 	uint32_t sda_pin;
 	nrfx_err_t err;
 
-#ifdef CONFIG_PINCTRL
 	scl_pin = nrf_twim_scl_pin_get(dev_config->twim.p_twim);
 	sda_pin = nrf_twim_sda_pin_get(dev_config->twim.p_twim);
-#else
-	scl_pin = dev_config->twim_config.scl;
-	sda_pin = dev_config->twim_config.sda;
-#endif
 
 	/* disable peripheral if active (required to release SCL/SDA lines) */
 	(void)pm_device_state_get(dev, &state);
@@ -290,10 +287,8 @@ static int i2c_nrfx_twim_recover_bus(const struct device *dev)
 
 	/* restore peripheral if it was active before */
 	if (state == PM_DEVICE_STATE_ACTIVE) {
-#ifdef CONFIG_PINCTRL
 		(void)pinctrl_apply_state(dev_config->pcfg,
 					  PINCTRL_STATE_DEFAULT);
-#endif
 		nrfx_twim_enable(&dev_config->twim);
 	}
 
@@ -315,26 +310,22 @@ static int twim_nrfx_pm_action(const struct device *dev,
 
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
-#ifdef CONFIG_PINCTRL
 		ret = pinctrl_apply_state(dev_config->pcfg,
 					  PINCTRL_STATE_DEFAULT);
 		if (ret < 0) {
 			return ret;
 		}
-#endif
 		nrfx_twim_enable(&dev_config->twim);
 		break;
 
 	case PM_DEVICE_ACTION_SUSPEND:
 		nrfx_twim_disable(&dev_config->twim);
 
-#ifdef CONFIG_PINCTRL
 		ret = pinctrl_apply_state(dev_config->pcfg,
 					  PINCTRL_STATE_SLEEP);
 		if (ret < 0) {
 			return ret;
 		}
-#endif
 		break;
 
 	default:
@@ -352,7 +343,6 @@ static int i2c_nrfx_twim_init(const struct device *dev)
 
 	dev_config->irq_connect();
 
-#ifdef CONFIG_PINCTRL
 	int err = pinctrl_apply_state(dev_config->pcfg,
 				      COND_CODE_1(CONFIG_PM_DEVICE_RUNTIME,
 						  (PINCTRL_STATE_SLEEP),
@@ -360,7 +350,6 @@ static int i2c_nrfx_twim_init(const struct device *dev)
 	if (err < 0) {
 		return err;
 	}
-#endif
 
 	if (nrfx_twim_init(&dev_config->twim, &dev_config->twim_config,
 			   event_handler, dev_data) != NRFX_SUCCESS) {
@@ -404,15 +393,8 @@ static int i2c_nrfx_twim_init(const struct device *dev)
 		(1))
 #define MSG_BUF_SIZE(idx)  MAX(CONCAT_BUF_SIZE(idx), FLASH_BUF_MAX_SIZE(idx))
 
-#define I2C_NRFX_TWIM_PIN_CFG(idx)			\
-	COND_CODE_1(CONFIG_PINCTRL,			\
-		(.skip_gpio_cfg = true,			\
-		 .skip_psel_cfg = true,),		\
-		(.scl = DT_PROP(I2C(idx), scl_pin),	\
-		 .sda = DT_PROP(I2C(idx), sda_pin),))
-
 #define I2C_NRFX_TWIM_DEVICE(idx)					       \
-	NRF_DT_CHECK_PIN_ASSIGNMENTS(I2C(idx), 1, scl_pin, sda_pin);	       \
+	NRF_DT_CHECK_NODE_HAS_PINCTRL_SLEEP(I2C(idx));			       \
 	BUILD_ASSERT(I2C_FREQUENCY(idx) !=				       \
 		     I2C_NRFX_TWIM_INVALID_FREQUENCY,			       \
 		     "Wrong I2C " #idx " frequency setting in dts");	       \
@@ -431,18 +413,18 @@ static int i2c_nrfx_twim_init(const struct device *dev)
 		IF_ENABLED(USES_MSG_BUF(idx),				       \
 			(.msg_buf = twim_##idx##_msg_buf,))		       \
 	};								       \
-	IF_ENABLED(CONFIG_PINCTRL, (PINCTRL_DT_DEFINE(I2C(idx))));	       \
+	PINCTRL_DT_DEFINE(I2C(idx));					       \
 	static const struct i2c_nrfx_twim_config twim_##idx##z_config = {      \
 		.twim = NRFX_TWIM_INSTANCE(idx),			       \
 		.twim_config = {					       \
-			I2C_NRFX_TWIM_PIN_CFG(idx)			       \
+			.skip_gpio_cfg = true,				       \
+			.skip_psel_cfg = true,				       \
 			.frequency = I2C_FREQUENCY(idx),		       \
 		},							       \
 		.concat_buf_size = CONCAT_BUF_SIZE(idx),		       \
 		.flash_buf_max_size = FLASH_BUF_MAX_SIZE(idx),		       \
 		.irq_connect = irq_connect##idx,			       \
-		IF_ENABLED(CONFIG_PINCTRL,				       \
-			(.pcfg = PINCTRL_DT_DEV_CONFIG_GET(I2C(idx)),))	       \
+		.pcfg = PINCTRL_DT_DEV_CONFIG_GET(I2C(idx)),		       \
 	};								       \
 	PM_DEVICE_DT_DEFINE(I2C(idx), twim_nrfx_pm_action);		       \
 	I2C_DEVICE_DT_DEFINE(I2C(idx),					       \

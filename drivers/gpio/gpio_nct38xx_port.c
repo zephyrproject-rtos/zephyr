@@ -6,11 +6,10 @@
 
 #define DT_DRV_COMPAT nuvoton_nct38xx_gpio_port
 
-#include <zephyr/drivers/gpio.h>
-
 #include "gpio_nct38xx.h"
 #include <zephyr/drivers/gpio/gpio_utils.h>
 
+#include <zephyr/drivers/gpio.h>
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(gpio_ntc38xx, CONFIG_GPIO_LOG_LEVEL);
 
@@ -70,7 +69,7 @@ static int gpio_nct38xx_pin_config(const struct device *dev, gpio_pin_t pin, gpi
 		}
 
 		new_reg = reg | mask;
-		/* NCT3807 bit3 should be set to 0 */
+		/* NCT3807 bit3 must be set to 0 */
 		new_reg &= config->pinmux_mask;
 
 		ret = nct38xx_reg_update(config->nct38xx_dev, NCT38XX_REG_MUX_CONTROL, reg,
@@ -113,8 +112,9 @@ static int gpio_nct38xx_pin_config(const struct device *dev, gpio_pin_t pin, gpi
 	}
 
 	/* Set level 0:low 1:high */
-	nct38xx_reg_read_byte(config->nct38xx_dev, NCT38XX_REG_GPIO_DATA_OUT(config->gpio_port),
-			      &reg);
+	ret = nct38xx_reg_read_byte(config->nct38xx_dev,
+				    NCT38XX_REG_GPIO_DATA_OUT(config->gpio_port),
+				    &reg);
 	if (ret < 0) {
 		goto done;
 	}
@@ -131,8 +131,8 @@ static int gpio_nct38xx_pin_config(const struct device *dev, gpio_pin_t pin, gpi
 
 	/* Configure pin as output, if requested 0:input 1:output */
 	if (flags & GPIO_OUTPUT) {
-		nct38xx_reg_read_byte(config->nct38xx_dev, NCT38XX_REG_GPIO_DIR(config->gpio_port),
-				      &reg);
+		ret = nct38xx_reg_read_byte(config->nct38xx_dev,
+					    NCT38XX_REG_GPIO_DIR(config->gpio_port), &reg);
 		if (ret < 0) {
 			goto done;
 		}
@@ -145,6 +145,78 @@ done:
 	k_sem_give(&data->lock);
 	return ret;
 }
+
+#ifdef CONFIG_GPIO_GET_CONFIG
+int gpio_nct38xx_pin_get_config(const struct device *dev, gpio_pin_t pin, gpio_flags_t *flags)
+{
+	const struct gpio_nct38xx_port_config *const config = dev->config;
+	struct gpio_nct38xx_port_data *const data = dev->data;
+	uint32_t mask = BIT(pin);
+	uint8_t reg;
+	int ret;
+
+	k_sem_take(&data->lock, K_FOREVER);
+
+	if (config->gpio_port == 0) {
+		if (mask & (~config->common.port_pin_mask)) {
+			ret = -ENOTSUP;
+			goto done;
+		}
+
+		ret = nct38xx_reg_read_byte(config->nct38xx_dev, NCT38XX_REG_MUX_CONTROL, &reg);
+		if (ret < 0) {
+			goto done;
+		}
+
+		if ((mask & config->pinmux_mask) && (mask & (~reg))) {
+			*flags = GPIO_DISCONNECTED;
+			goto done;
+		}
+	}
+
+	ret = nct38xx_reg_read_byte(config->nct38xx_dev, NCT38XX_REG_GPIO_DIR(config->gpio_port),
+				    &reg);
+	if (ret < 0) {
+		goto done;
+	}
+
+	if (reg & mask) {
+		/* Output */
+		*flags = GPIO_OUTPUT;
+
+		/* 0 - push-pull, 1 - open-drain */
+		ret = nct38xx_reg_read_byte(config->nct38xx_dev,
+					    NCT38XX_REG_GPIO_OD_SEL(config->gpio_port), &reg);
+		if (ret < 0) {
+			goto done;
+		}
+
+		if (mask & reg) {
+			*flags |= GPIO_OPEN_DRAIN;
+		}
+
+		/* Output value */
+		ret = nct38xx_reg_read_byte(config->nct38xx_dev,
+					    NCT38XX_REG_GPIO_DATA_OUT(config->gpio_port), &reg);
+		if (ret < 0) {
+			goto done;
+		}
+
+		if (mask & reg) {
+			*flags |= GPIO_OUTPUT_HIGH;
+		} else {
+			*flags |= GPIO_OUTPUT_LOW;
+		}
+	} else {
+		/* Input */
+		*flags = GPIO_INPUT;
+	}
+
+done:
+	k_sem_give(&data->lock);
+	return ret;
+}
+#endif /* CONFIG_GPIO_GET_CONFIG */
 
 static int gpio_nct38xx_port_get_raw(const struct device *dev, gpio_port_value_t *value)
 {
@@ -381,6 +453,50 @@ static int gpio_nct38xx_manage_callback(const struct device *dev, struct gpio_ca
 	return gpio_manage_callback(&data->cb_list_gpio, callback, set);
 }
 
+#ifdef CONFIG_GPIO_GET_DIRECTION
+static int gpio_nct38xx_port_get_direction(const struct device *dev, gpio_port_pins_t mask,
+					   gpio_port_pins_t *inputs, gpio_port_pins_t *outputs)
+{
+	const struct gpio_nct38xx_port_config *const config = dev->config;
+	struct gpio_nct38xx_port_data *const data = dev->data;
+	uint8_t dir_reg;
+	int ret;
+
+	k_sem_take(&data->lock, K_FOREVER);
+
+	if (config->gpio_port == 0) {
+		uint8_t enabled_gpios;
+		/* Remove the disabled GPIOs from the mask */
+		ret = nct38xx_reg_read_byte(config->nct38xx_dev, NCT38XX_REG_MUX_CONTROL,
+					    &enabled_gpios);
+		mask &= (enabled_gpios & config->common.port_pin_mask);
+
+		if (ret < 0) {
+			goto done;
+		}
+	}
+
+	/* Read direction register, 0 - input, 1 - output */
+	ret = nct38xx_reg_read_byte(config->nct38xx_dev, NCT38XX_REG_GPIO_DIR(config->gpio_port),
+				    &dir_reg);
+	if (ret < 0) {
+		goto done;
+	}
+
+	if (inputs) {
+		*inputs = mask & (~dir_reg);
+	}
+
+	if (outputs) {
+		*outputs = mask & dir_reg;
+	}
+
+done:
+	k_sem_give(&data->lock);
+	return ret;
+}
+#endif /* CONFIG_GPIO_GET_DIRECTION */
+
 int gpio_nct38xx_dispatch_port_isr(const struct device *dev)
 {
 	const struct gpio_nct38xx_port_config *const config = dev->config;
@@ -430,6 +546,9 @@ int gpio_nct38xx_dispatch_port_isr(const struct device *dev)
 
 static const struct gpio_driver_api gpio_nct38xx_driver = {
 	.pin_configure = gpio_nct38xx_pin_config,
+#ifdef CONFIG_GPIO_GET_CONFIG
+	.pin_get_config = gpio_nct38xx_pin_get_config,
+#endif /* CONFIG_GPIO_GET_CONFIG */
 	.port_get_raw = gpio_nct38xx_port_get_raw,
 	.port_set_masked_raw = gpio_nct38xx_port_set_masked_raw,
 	.port_set_bits_raw = gpio_nct38xx_port_set_bits_raw,
@@ -437,6 +556,9 @@ static const struct gpio_driver_api gpio_nct38xx_driver = {
 	.port_toggle_bits = gpio_nct38xx_port_toggle_bits,
 	.pin_interrupt_configure = gpio_nct38xx_pin_interrupt_configure,
 	.manage_callback = gpio_nct38xx_manage_callback,
+#ifdef CONFIG_GPIO_GET_DIRECTION
+	.port_get_direction = gpio_nct38xx_port_get_direction,
+#endif /* CONFIG_GPIO_GET_DIRECTION */
 };
 
 static int gpio_nct38xx_port_init(const struct device *dev)
@@ -459,16 +581,16 @@ BUILD_ASSERT(CONFIG_GPIO_NCT38XX_PORT_INIT_PRIORITY > CONFIG_GPIO_NCT38XX_INIT_P
 
 #define GPIO_NCT38XX_PORT_DEVICE_INSTANCE(inst)                                                    \
 	static const struct gpio_nct38xx_port_config gpio_nct38xx_port_cfg_##inst = {              \
-		.common = { .port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(inst) &               \
-					     DT_INST_PROP(inst, pin_mask) },                       \
+		.common = {.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(inst) &                \
+					    DT_INST_PROP(inst, pin_mask)},                         \
 		.nct38xx_dev = DEVICE_DT_GET(DT_INST_PARENT(inst)),                                \
 		.gpio_port = DT_INST_REG_ADDR(inst),                                               \
 		.pinmux_mask = COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, pinmux_mask),               \
 					   (DT_INST_PROP(inst, pinmux_mask)), (0)),                \
 	};                                                                                         \
-	BUILD_ASSERT(!(DT_INST_REG_ADDR(inst) == 0 &&                                              \
-		       !(DT_INST_NODE_HAS_PROP(inst, pinmux_mask))),                               \
-		     "Port 0 should assign pinmux_mask property.");                                \
+	BUILD_ASSERT(                                                                              \
+		!(DT_INST_REG_ADDR(inst) == 0 && !(DT_INST_NODE_HAS_PROP(inst, pinmux_mask))),     \
+		"Port 0 should assign pinmux_mask property.");                                     \
 	static struct gpio_nct38xx_port_data gpio_nct38xx_port_data_##inst;                        \
 	DEVICE_DT_INST_DEFINE(inst, gpio_nct38xx_port_init, NULL, &gpio_nct38xx_port_data_##inst,  \
 			      &gpio_nct38xx_port_cfg_##inst, POST_KERNEL,                          \

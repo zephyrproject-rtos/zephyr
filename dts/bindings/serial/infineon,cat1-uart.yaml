@@ -1,0 +1,41 @@
+# Copyright (c) 2018, Cypress
+# Copyright (c) 2020, ATL Electronics
+# Copyright (c) 2022 Cypress Semiconductor Corporation (an Infineon company) or
+# an affiliate of Cypress Semiconductor Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: Infineon CAT1 UART
+
+compatible: "infineon,cat1-uart"
+
+include: [uart-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  pinctrl-0:
+    description: |
+      PORT pin configuration for TX, RX, RTS, CTS signals.
+      We expect that the phandles will reference pinctrl nodes. These
+      nodes will have a nodelabel that matches the Infineon SoC Pinctrl
+      defines and be of the form p<port>_<pin><peripheral inst>_<signal>.
+
+      Examples
+         use TX, RX
+         pinctrl-0 = <&p5_1_scb5_uart_tx &p5_0_scb5_uart_rx>;
+
+         use RX only
+         pinctrl-0 = <&p5_0_scb5_uart_rx>;
+
+         use TX, RX, RTS, CTS
+         pinctrl-0 = <&p3_1_scb2_uart_tx &p3_0_scb2_uart_rx
+                      &p3_2_scb2_uart_rts &p3_3_scb2_uart_cts>;
+    required: true
+
+  pinctrl-names:
+    required: true

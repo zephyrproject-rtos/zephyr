@@ -113,19 +113,19 @@ static void *lexer_string(struct json_lexer *lex)
 			case 't':
 				continue;
 			case 'u':
-				if (!isxdigit(next(lex))) {
+				if (isxdigit(next(lex)) == 0) {
 					goto error;
 				}
 
-				if (!isxdigit(next(lex))) {
+				if (isxdigit(next(lex)) == 0) {
 					goto error;
 				}
 
-				if (!isxdigit(next(lex))) {
+				if (isxdigit(next(lex)) == 0) {
 					goto error;
 				}
 
-				if (!isxdigit(next(lex))) {
+				if (isxdigit(next(lex)) == 0) {
 					goto error;
 				}
 
@@ -201,7 +201,7 @@ static void *lexer_number(struct json_lexer *lex)
 	while (true) {
 		int chr = next(lex);
 
-		if (isdigit(chr) || chr == '.') {
+		if (isdigit(chr) != 0 || chr == '.') {
 			continue;
 		}
 
@@ -237,18 +237,18 @@ static void *lexer_json(struct json_lexer *lex)
 		case 'f':
 			return lexer_boolean;
 		case '-':
-			if (isdigit(peek(lex))) {
+			if (isdigit(peek(lex)) != 0) {
 				return lexer_number;
 			}
 
 			__fallthrough;
 		default:
-			if (isspace(chr)) {
+			if (isspace(chr) != 0) {
 				ignore(lex);
 				continue;
 			}
 
-			if (isdigit(chr)) {
+			if (isdigit(chr) != 0) {
 				return lexer_number;
 			}
 
@@ -438,18 +438,18 @@ static bool equivalent_types(enum json_tokens type1, enum json_tokens type2)
 	return type1 == type2;
 }
 
-static int obj_parse(struct json_obj *obj,
-		     const struct json_obj_descr *descr, size_t descr_len,
-		     void *val);
+static int64_t obj_parse(struct json_obj *obj,
+			 const struct json_obj_descr *descr, size_t descr_len,
+			 void *val);
 static int arr_parse(struct json_obj *obj,
 		     const struct json_obj_descr *elem_descr,
 		     size_t max_elements, void *field, void *val);
 
 static int arr_data_parse(struct json_obj *obj, struct json_obj_token *val);
 
-static int decode_value(struct json_obj *obj,
-			const struct json_obj_descr *descr,
-			struct json_token *value, void *field, void *val)
+static int64_t decode_value(struct json_obj *obj,
+			    const struct json_obj_descr *descr,
+			    struct json_token *value, void *field, void *val)
 {
 
 	if (!equivalent_types(value->type, descr->type)) {
@@ -620,11 +620,11 @@ static int arr_data_parse(struct json_obj *obj, struct json_obj_token *val)
 	return -EINVAL;
 }
 
-static int obj_parse(struct json_obj *obj, const struct json_obj_descr *descr,
-		     size_t descr_len, void *val)
+static int64_t obj_parse(struct json_obj *obj, const struct json_obj_descr *descr,
+			 size_t descr_len, void *val)
 {
 	struct json_obj_key_value kv;
-	int32_t decoded_fields = 0;
+	int64_t decoded_fields = 0;
 	size_t i;
 	int ret;
 
@@ -637,7 +637,7 @@ static int obj_parse(struct json_obj *obj, const struct json_obj_descr *descr,
 			void *decode_field = (char *)val + descr[i].offset;
 
 			/* Field has been decoded already, skip */
-			if (decoded_fields & (1 << i)) {
+			if (decoded_fields & ((int64_t)1 << i)) {
 				continue;
 			}
 
@@ -658,7 +658,7 @@ static int obj_parse(struct json_obj *obj, const struct json_obj_descr *descr,
 				return ret;
 			}
 
-			decoded_fields |= 1<<i;
+			decoded_fields |= (int64_t)1<<i;
 			break;
 		}
 	}
@@ -666,12 +666,12 @@ static int obj_parse(struct json_obj *obj, const struct json_obj_descr *descr,
 	return -EINVAL;
 }
 
-int json_obj_parse(char *payload, size_t len,
-		   const struct json_obj_descr *descr, size_t descr_len,
-		   void *val)
+int64_t json_obj_parse(char *payload, size_t len,
+		       const struct json_obj_descr *descr, size_t descr_len,
+		       void *val)
 {
 	struct json_obj obj;
-	int ret;
+	int64_t ret;
 
 	__ASSERT_NO_MSG(descr_len < (sizeof(ret) * CHAR_BIT - 1));
 

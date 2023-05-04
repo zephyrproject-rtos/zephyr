@@ -40,6 +40,7 @@
 		led0 = &green_led_2;
 		sw0 = &user_button;
 		watchdog0 = &iwdg;
+		die-temp0 = &die_temp;
 	};
 };
 
@@ -105,5 +106,15 @@
 };
 
 &iwdg {
+	status = "okay";
+};
+
+&adc1 {
+	pinctrl-0 = <&adc_in0_pa0>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&die_temp {
 	status = "okay";
 };

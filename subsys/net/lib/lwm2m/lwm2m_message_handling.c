@@ -34,7 +34,6 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <zephyr/sys/printk.h>
 #include <zephyr/types.h>
 
-#include <fcntl.h>
 #if defined(CONFIG_LWM2M_DTLS_SUPPORT)
 #include <zephyr/net/tls_credentials.h>
 #endif
@@ -49,6 +48,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include "lwm2m_rw_oma_tlv.h"
 #include "lwm2m_rw_plain_text.h"
 #include "lwm2m_util.h"
+#include "lwm2m_rd_client.h"
 #if defined(CONFIG_LWM2M_RW_SENML_JSON_SUPPORT)
 #include "lwm2m_rw_senml_json.h"
 #endif
@@ -61,9 +61,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #ifdef CONFIG_LWM2M_RW_SENML_CBOR_SUPPORT
 #include "lwm2m_rw_senml_cbor.h"
 #endif
-#ifdef CONFIG_LWM2M_RD_CLIENT_SUPPORT
-#include "lwm2m_rd_client.h"
-#endif
+
 /* TODO: figure out what's correct value */
 #define TIMEOUT_BLOCKWISE_TRANSFER_MS (MSEC_PER_SEC * 30)
 
@@ -72,13 +70,13 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 /* Shared set of in-flight LwM2M messages */
 static struct lwm2m_message messages[CONFIG_LWM2M_ENGINE_MAX_MESSAGES];
+static struct lwm2m_block_context block1_contexts[NUM_BLOCK1_CONTEXT];
 
 /* External resources */
 sys_slist_t *lwm2m_engine_obj_list(void);
 
 sys_slist_t *lwm2m_engine_obj_inst_list(void);
 
-struct lwm2m_block_context *lwm2m_block1_context(void);
 /* block-wise transfer functions */
 
 enum coap_block_size lwm2m_default_block_size(void)
@@ -102,22 +100,33 @@ enum coap_block_size lwm2m_default_block_size(void)
 
 	return COAP_BLOCK_256;
 }
-static int init_block_ctx(const uint8_t *token, uint8_t tkl, struct lwm2m_block_context **ctx)
+
+void lwm2m_clear_block_contexts(void)
+{
+	(void)memset(block1_contexts, 0, sizeof(block1_contexts));
+}
+
+static int init_block_ctx(const struct lwm2m_obj_path *path, struct lwm2m_block_context **ctx)
 {
 	int i;
 	int64_t timestamp;
 
+	if (!path) {
+		LOG_ERR("Null block ctx path");
+		return -EFAULT;
+	}
+
 	*ctx = NULL;
 	timestamp = k_uptime_get();
 	for (i = 0; i < NUM_BLOCK1_CONTEXT; i++) {
-		if (lwm2m_block1_context()[i].tkl == 0U) {
-			*ctx = &lwm2m_block1_context()[i];
+		if (block1_contexts[i].path.level == 0U) {
+			*ctx = &block1_contexts[i];
 			break;
 		}
 
-		if (timestamp - lwm2m_block1_context()[i].timestamp >
+		if (timestamp - block1_contexts[i].timestamp >
 		    TIMEOUT_BLOCKWISE_TRANSFER_MS) {
-			*ctx = &lwm2m_block1_context()[i];
+			*ctx = &block1_contexts[i];
 			/* TODO: notify application for block
 			 * transfer timeout
 			 */
@@ -130,8 +139,7 @@ static int init_block_ctx(const uint8_t *token, uint8_t tkl, struct lwm2m_block_
 		return -ENOMEM;
 	}
 
-	(*ctx)->tkl = tkl;
-	memcpy((*ctx)->token, token, tkl);
+	memcpy(&(*ctx)->path, path, sizeof(struct lwm2m_obj_path));
 	coap_block_transfer_init(&(*ctx)->ctx, lwm2m_default_block_size(), 0);
 	(*ctx)->timestamp = timestamp;
 	(*ctx)->expected = 0;
@@ -141,16 +149,21 @@ static int init_block_ctx(const uint8_t *token, uint8_t tkl, struct lwm2m_block_
 	return 0;
 }
 
-static int get_block_ctx(const uint8_t *token, uint8_t tkl, struct lwm2m_block_context **ctx)
+static int get_block_ctx(const struct lwm2m_obj_path *path, struct lwm2m_block_context **ctx)
 {
 	int i;
+
+	if (!path) {
+		LOG_ERR("Null block ctx path");
+		return -EFAULT;
+	}
 
 	*ctx = NULL;
 
 	for (i = 0; i < NUM_BLOCK1_CONTEXT; i++) {
-		if (lwm2m_block1_context()[i].tkl == tkl &&
-		    memcmp(token, lwm2m_block1_context()[i].token, tkl) == 0) {
-			*ctx = &lwm2m_block1_context()[i];
+		if (memcmp(path, &block1_contexts[i].path,
+			  sizeof(struct lwm2m_obj_path)) == 0) {
+			*ctx = &block1_contexts[i];
 			/* refresh timestamp */
 			(*ctx)->timestamp = k_uptime_get();
 			break;
@@ -170,7 +183,7 @@ static void free_block_ctx(struct lwm2m_block_context *ctx)
 		return;
 	}
 
-	ctx->tkl = 0U;
+	memset(&ctx->path, 0, sizeof(struct lwm2m_obj_path));
 }
 
 void lwm2m_engine_context_close(struct lwm2m_ctx *client_ctx)
@@ -398,7 +411,7 @@ cleanup:
 
 int lwm2m_send_message_async(struct lwm2m_message *msg)
 {
-#if defined(CONFIG_LWM2M_QUEUE_MODE_ENABLED) && defined(CONFIG_LWM2M_RD_CLIENT_SUPPORT)
+#if defined(CONFIG_LWM2M_QUEUE_MODE_ENABLED)
 	int ret;
 
 	ret = lwm2m_rd_client_connection_resume(msg->ctx);
@@ -409,8 +422,7 @@ int lwm2m_send_message_async(struct lwm2m_message *msg)
 #endif
 	sys_slist_append(&msg->ctx->pending_sends, &msg->node);
 
-	if (IS_ENABLED(CONFIG_LWM2M_RD_CLIENT_SUPPORT) &&
-	    IS_ENABLED(CONFIG_LWM2M_QUEUE_MODE_ENABLED)) {
+	if (IS_ENABLED(CONFIG_LWM2M_QUEUE_MODE_ENABLED)) {
 		engine_update_tx_time();
 	}
 	return 0;
@@ -418,7 +430,7 @@ int lwm2m_send_message_async(struct lwm2m_message *msg)
 
 int lwm2m_information_interface_send(struct lwm2m_message *msg)
 {
-#if defined(CONFIG_LWM2M_QUEUE_MODE_ENABLED) && defined(CONFIG_LWM2M_RD_CLIENT_SUPPORT)
+#if defined(CONFIG_LWM2M_QUEUE_MODE_ENABLED)
 	int ret;
 
 	ret = lwm2m_rd_client_connection_resume(msg->ctx);
@@ -432,45 +444,10 @@ int lwm2m_information_interface_send(struct lwm2m_message *msg)
 		return 0;
 	}
 #endif
-	sys_slist_append(&msg->ctx->pending_sends, &msg->node);
 
-	if (IS_ENABLED(CONFIG_LWM2M_RD_CLIENT_SUPPORT) &&
-	    IS_ENABLED(CONFIG_LWM2M_QUEUE_MODE_ENABLED)) {
-		engine_update_tx_time();
-	}
-	return 0;
+	return lwm2m_send_message_async(msg);
 }
 
-int lwm2m_send_message(struct lwm2m_message *msg)
-{
-	int rc;
-
-	if (!msg || !msg->ctx) {
-		LOG_ERR("LwM2M message is invalid.");
-		return -EINVAL;
-	}
-
-	if (msg->type == COAP_TYPE_CON) {
-		coap_pending_cycle(msg->pending);
-	}
-
-	rc = zsock_send(msg->ctx->sock_fd, msg->cpkt.data, msg->cpkt.offset, 0);
-
-	if (rc < 0) {
-		LOG_ERR("Failed to send packet, err %d", errno);
-		if (msg->type != COAP_TYPE_CON) {
-			lwm2m_reset_message(msg, true);
-		}
-
-		return -errno;
-	}
-
-	if (msg->type != COAP_TYPE_CON) {
-		lwm2m_reset_message(msg, true);
-	}
-
-	return 0;
-}
 int lwm2m_send_empty_ack(struct lwm2m_ctx *client_ctx, uint16_t mid)
 {
 	struct lwm2m_message *msg;
@@ -840,7 +817,7 @@ int lwm2m_write_handler(struct lwm2m_engine_obj_inst *obj_inst, struct lwm2m_eng
 				*(uint32_t *)write_buf = (uint32_t)temp_time;
 				len = sizeof(uint32_t);
 			} else {
-				LOG_ERR("Time resource buf len not supported %d", write_buf_len);
+				LOG_ERR("Time resource buf len not supported %zu", write_buf_len);
 				ret = -EINVAL;
 			}
 
@@ -1025,7 +1002,7 @@ static int lwm2m_read_resource_data(struct lwm2m_message *msg, void *data_ptr, s
 			ret = engine_put_time(&msg->out, &msg->path,
 					      (time_t) *((uint32_t *)data_ptr));
 		} else {
-			LOG_ERR("Resource time length not supported %d", data_len);
+			LOG_ERR("Resource time length not supported %zu", data_len);
 			ret = -EINVAL;
 		}
 
@@ -1295,11 +1272,9 @@ static int lwm2m_delete_handler(struct lwm2m_message *msg)
 		return ret;
 	}
 
-#if defined(CONFIG_LWM2M_RD_CLIENT_SUPPORT)
 	if (!msg->ctx->bootstrap_mode) {
 		engine_trigger_update(true);
 	}
-#endif
 
 	return 0;
 }
@@ -2042,9 +2017,9 @@ int handle_request(struct coap_packet *request, struct lwm2m_message *msg)
 		/* Try to retrieve existing block context. If one not exists,
 		 * and we've received first block, allocate new context.
 		 */
-		r = get_block_ctx(token, tkl, &block_ctx);
+		r = get_block_ctx(&msg->path, &block_ctx);
 		if (r < 0 && block_num == 0) {
-			r = init_block_ctx(token, tkl, &block_ctx);
+			r = init_block_ctx(&msg->path, &block_ctx);
 		}
 
 		if (r < 0) {
@@ -2331,7 +2306,6 @@ void lwm2m_udp_receive(struct lwm2m_ctx *client_ctx, uint8_t *buf, uint16_t buf_
 		}
 	}
 
-	LOG_DBG("checking for reply from [%s]", lwm2m_sprint_ip_addr(from_addr));
 	reply = coap_response_received(&response, from_addr, client_ctx->replies,
 				       ARRAY_SIZE(client_ctx->replies));
 	if (reply) {
@@ -2919,6 +2893,7 @@ static int do_send_reply_cb(const struct coap_packet *response, struct coap_repl
 			    const struct sockaddr *from)
 {
 	uint8_t code;
+	struct lwm2m_message *msg = (struct lwm2m_message *)reply->user_data;
 
 	code = coap_header_get_code(response);
 	LOG_DBG("Send callback (code:%u.%u)", COAP_RESPONSE_CODE_CLASS(code),
@@ -2926,17 +2901,27 @@ static int do_send_reply_cb(const struct coap_packet *response, struct coap_repl
 
 	if (code == COAP_RESPONSE_CODE_CHANGED) {
 		LOG_INF("Send done!");
+		if (msg && msg->send_status_cb) {
+			msg->send_status_cb(LWM2M_SEND_STATUS_SUCCESS);
+		}
 		return 0;
 	}
 
 	LOG_ERR("Failed with code %u.%u. Not Retrying.", COAP_RESPONSE_CODE_CLASS(code),
 		COAP_RESPONSE_CODE_DETAIL(code));
 
+	if (msg && msg->send_status_cb) {
+		msg->send_status_cb(LWM2M_SEND_STATUS_FAILURE);
+	}
+
 	return 0;
 }
 
 static void do_send_timeout_cb(struct lwm2m_message *msg)
 {
+	if (msg->send_status_cb) {
+		msg->send_status_cb(LWM2M_SEND_STATUS_TIMEOUT);
+	}
 	LOG_WRN("Send Timeout");
 	lwm2m_rd_client_timeout(msg->ctx);
 }
@@ -2947,9 +2932,7 @@ static bool init_next_pending_timeseries_data(struct lwm2m_cache_read_info *cach
 					  sys_slist_t *lwm2m_path_list,
 					  sys_slist_t *lwm2m_path_free_list)
 {
-	struct lwm2m_obj_path temp;
 	uint32_t bytes_available = 0;
-	int ret;
 
 	/* Check do we have still pending data to send */
 	for (int i = 0; i < cache_temp->entry_size; i++) {
@@ -2958,12 +2941,9 @@ static bool init_next_pending_timeseries_data(struct lwm2m_cache_read_info *cach
 			continue;
 		}
 
-		ret = lwm2m_string_to_path(cache_temp->read_info[i].cache_data->path, &temp, '/');
-		if (ret < 0) {
-			return false;
-		}
 		/* Add to linked list */
-		if (lwm2m_engine_add_path_to_list(lwm2m_path_list, lwm2m_path_free_list, &temp)) {
+		if (lwm2m_engine_add_path_to_list(lwm2m_path_list, lwm2m_path_free_list,
+						  &cache_temp->read_info[i].cache_data->path)) {
 			return false;
 		}
 
@@ -2981,8 +2961,8 @@ static bool init_next_pending_timeseries_data(struct lwm2m_cache_read_info *cach
 }
 #endif
 
-int lwm2m_engine_send(struct lwm2m_ctx *ctx, char const *path_list[], uint8_t path_list_size,
-		      bool confirmation_request)
+int lwm2m_send_cb(struct lwm2m_ctx *ctx, const struct lwm2m_obj_path path_list[],
+			 uint8_t path_list_size, lwm2m_send_cb_t reply_cb)
 {
 #if defined(CONFIG_LWM2M_SERVER_OBJECT_VERSION_1_1)
 	struct lwm2m_message *msg;
@@ -2990,7 +2970,6 @@ int lwm2m_engine_send(struct lwm2m_ctx *ctx, char const *path_list[], uint8_t pa
 	uint16_t content_format;
 
 	/* Path list buffer */
-	struct lwm2m_obj_path temp;
 	struct lwm2m_obj_path_list lwm2m_path_list_buf[CONFIG_LWM2M_COMPOSITE_PATH_LIST_SIZE];
 	sys_slist_t lwm2m_path_list;
 	sys_slist_t lwm2m_path_free_list;
@@ -3030,12 +3009,9 @@ int lwm2m_engine_send(struct lwm2m_ctx *ctx, char const *path_list[], uint8_t pa
 
 	/* Parse Path to internal used object path format */
 	for (int i = 0; i < path_list_size; i++) {
-		ret = lwm2m_string_to_path(path_list[i], &temp, '/');
-		if (ret < 0) {
-			return ret;
-		}
 		/* Add to linked list */
-		if (lwm2m_engine_add_path_to_list(&lwm2m_path_list, &lwm2m_path_free_list, &temp)) {
+		if (lwm2m_engine_add_path_to_list(&lwm2m_path_list, &lwm2m_path_free_list,
+						  &path_list[i])) {
 			return -1;
 		}
 	}
@@ -3055,15 +3031,9 @@ msg_alloc:
 
 msg_init:
 
-	if (confirmation_request) {
-		msg->type = COAP_TYPE_CON;
-		msg->reply_cb = do_send_reply_cb;
-		msg->message_timeout_cb = do_send_timeout_cb;
-	} else {
-		msg->type = COAP_TYPE_NON_CON;
-		msg->reply_cb = NULL;
-		msg->message_timeout_cb = NULL;
-	}
+	msg->type = COAP_TYPE_CON;
+	msg->reply_cb = do_send_reply_cb;
+	msg->message_timeout_cb = do_send_timeout_cb;
 	msg->code = COAP_METHOD_POST;
 	msg->mid = coap_next_id();
 	msg->tkl = LWM2M_MSG_TOKEN_GENERATE_NEW;
@@ -3076,6 +3046,12 @@ msg_init:
 #if defined(CONFIG_LWM2M_RESOURCE_DATA_CACHE_SUPPORT)
 	msg->cache_info = &cache_temp_info;
 #endif
+
+	/* Register user callback if defined for confirmation */
+	if (reply_cb) {
+		msg->reply->user_data = msg;
+		msg->send_status_cb = reply_cb;
+	}
 
 	ret = select_writer(&msg->out, content_format);
 	if (ret) {
@@ -3130,4 +3106,35 @@ cleanup:
 	LOG_WRN("LwM2M send is only supported for CONFIG_LWM2M_SERVER_OBJECT_VERSION_1_1");
 	return -ENOTSUP;
 #endif
+}
+
+int lwm2m_send(struct lwm2m_ctx *ctx, const struct lwm2m_obj_path path_list[],
+			 uint8_t path_list_size, bool confirmation_request)
+{
+	if (!confirmation_request) {
+		return -EINVAL;
+	}
+
+	return lwm2m_send_cb(ctx, path_list, path_list_size, NULL);
+}
+
+int lwm2m_engine_send(struct lwm2m_ctx *ctx, char const *path_list[], uint8_t path_list_size,
+		      bool confirmation_request)
+{
+	int ret;
+	struct lwm2m_obj_path lwm2m_path_list[CONFIG_LWM2M_COMPOSITE_PATH_LIST_SIZE];
+
+	if (path_list_size > CONFIG_LWM2M_COMPOSITE_PATH_LIST_SIZE) {
+		return -E2BIG;
+	}
+
+	for (int i = 0; i < path_list_size; i++) {
+		/* translate path -> path_obj */
+		ret = lwm2m_string_to_path(path_list[i], &lwm2m_path_list[i], '/');
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
+	return lwm2m_send_cb(ctx, lwm2m_path_list, path_list_size, NULL);
 }

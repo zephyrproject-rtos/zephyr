@@ -1,7 +1,7 @@
 .. _mec2016evb_assy6797:
 
-MEC2016EVB ASSY6797
-###################
+Microchip MEC2016EVB ASSY6797
+#############################
 
 Overview
 ********

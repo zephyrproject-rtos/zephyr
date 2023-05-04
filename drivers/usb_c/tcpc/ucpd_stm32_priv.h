@@ -7,6 +7,7 @@
 #ifndef ZEPHYR_DRIVERS_USBC_DEVICE_UCPD_STM32_PRIV_H_
 #define ZEPHYR_DRIVERS_USBC_DEVICE_UCPD_STM32_PRIV_H_
 
+#include <zephyr/kernel.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/drivers/usb_c/usbc_tcpc.h>
 #include <zephyr/drivers/pinctrl.h>
@@ -82,6 +83,12 @@
 			       UCPD_ICR_TXMSGABTCF |  \
 			       UCPD_ICR_TXMSGSENTCF | \
 			       UCPD_ICR_TXMSGDISCCF)
+
+/**
+ * @brief For STM32G0X devices, this macro enables
+ *	  Dead Battery functionality
+ */
+#define UCPD_CR_DBATTEN BIT(15)
 
 /**
  * @brief Map UCPD ANASUB value to TCPC RP value
@@ -258,6 +265,8 @@ struct tcpc_config {
 	UCPD_TypeDef *ucpd_port;
 	/* STM32 UCPD parameters */
 	LL_UCPD_InitTypeDef ucpd_params;
+	/* STM32 UCPD dead battery support */
+	bool ucpd_dead_battery;
 };
 
 /**
@@ -266,6 +275,8 @@ struct tcpc_config {
 struct tcpc_data {
 	/* VCONN callback function */
 	tcpc_vconn_control_cb_t vconn_cb;
+	/* VCONN Discharge callback function */
+	tcpc_vconn_discharge_cb_t vconn_discharge_cb;
 	/* Alert information */
 	struct alert_info alert_info;
 
@@ -308,6 +319,14 @@ struct tcpc_data {
 	struct msg_header_info msg_header;
 	/* Track VCONN on/off state */
 	bool ucpd_vconn_enable;
+	/* Track CC line that VCONN was active on */
+	enum tc_cc_polarity ucpd_vconn_cc;
+
+	/* Dead Battery active */
+	bool dead_battery_active;
+
+	/* Timer for amount of time to wait for receiving a GoodCRC */
+	struct k_timer goodcrc_rx_timer;
 };
 
 #endif /* ZEPHYR_DRIVERS_USBC_DEVICE_UCPD_STM32_PRIV_H_ */

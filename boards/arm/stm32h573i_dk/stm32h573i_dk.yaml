@@ -1,0 +1,22 @@
+identifier: stm32h573i_dk
+name: ST STM32H573I Discovery Kit
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+ram: 640
+flash: 2048
+supported:
+  - arduino_gpio
+  - gpio
+  - uart
+  - watchdog
+  - entropy
+  - dma
+  - adc
+  - dac
+  - pwm
+  - counter
+  - spi
+  - octospi
+  - can

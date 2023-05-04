@@ -4,7 +4,7 @@
 
 /*
  * Copyright (c) 2020 Intel Corporation
- * Copyright (c) 2022 Nordic Semiconductor ASA
+ * Copyright (c) 2022-2023 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -31,7 +31,7 @@ LOG_MODULE_REGISTER(bt_pacs, CONFIG_BT_PACS_LOG_LEVEL);
 
 #include "audio_internal.h"
 #include "pacs_internal.h"
-#include "unicast_server.h"
+#include "bap_unicast_server.h"
 
 #define PAC_NOTIFY_TIMEOUT	K_MSEC(10)
 
@@ -57,18 +57,18 @@ struct pacs {
 
 #if defined(CONFIG_BT_PAC_SNK)
 static uint16_t snk_available_contexts;
-static const uint16_t snk_supported_contexts = CONFIG_BT_PACS_SNK_CONTEXT;
+static uint16_t snk_supported_contexts = BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED;
 #else
-static const uint16_t snk_available_contexts = BT_AUDIO_CONTEXT_TYPE_PROHIBITED;
-static const uint16_t snk_supported_contexts = BT_AUDIO_CONTEXT_TYPE_PROHIBITED;
+static uint16_t snk_available_contexts = BT_AUDIO_CONTEXT_TYPE_PROHIBITED;
+static uint16_t snk_supported_contexts = BT_AUDIO_CONTEXT_TYPE_PROHIBITED;
 #endif /* CONFIG_BT_PAC_SNK */
 
 #if defined(CONFIG_BT_PAC_SRC)
 static uint16_t src_available_contexts;
-static const uint16_t src_supported_contexts = CONFIG_BT_PACS_SRC_CONTEXT;
+static uint16_t src_supported_contexts = BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED;
 #else
-static const uint16_t src_available_contexts = BT_AUDIO_CONTEXT_TYPE_PROHIBITED;
-static const uint16_t src_supported_contexts = BT_AUDIO_CONTEXT_TYPE_PROHIBITED;
+static uint16_t src_available_contexts = BT_AUDIO_CONTEXT_TYPE_PROHIBITED;
+static uint16_t src_supported_contexts = BT_AUDIO_CONTEXT_TYPE_PROHIBITED;
 #endif /* CONFIG_BT_PAC_SRC */
 
 NET_BUF_SIMPLE_DEFINE_STATIC(read_buf, CONFIG_BT_L2CAP_TX_MTU);
@@ -231,10 +231,12 @@ static ssize_t supported_context_read(struct bt_conn *conn,
 }
 
 static void available_contexts_notify(struct k_work *work);
+static void supported_contexts_notify(struct k_work *work);
 static K_WORK_DELAYABLE_DEFINE(available_contexts_work, available_contexts_notify);
+static K_WORK_DELAYABLE_DEFINE(supported_contexts_work, supported_contexts_notify);
 
 static int set_available_contexts(uint16_t contexts, uint16_t *available,
-				  const uint16_t supported)
+				  uint16_t supported)
 {
 	int err;
 
@@ -246,11 +248,43 @@ static int set_available_contexts(uint16_t contexts, uint16_t *available,
 		return 0;
 	}
 
-	*available = contexts;
-
 	err = k_work_reschedule(&available_contexts_work, PAC_NOTIFY_TIMEOUT);
 	if (err < 0) {
 		return err;
+	}
+
+	*available = contexts;
+
+	return 0;
+}
+
+static int set_supported_contexts(uint16_t contexts, uint16_t *supported,
+				  uint16_t *available)
+{
+	int err;
+
+	/* Ensure unspecified is always supported */
+	contexts |= BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED;
+
+	if (*supported == contexts) {
+		return 0;
+	}
+
+	err = k_work_reschedule(&supported_contexts_work, PAC_NOTIFY_TIMEOUT);
+	if (err < 0) {
+		return err;
+	}
+
+	*supported = contexts;
+
+	/* Update available contexts if needed*/
+	if ((contexts & *available) != *available) {
+		*available = *available & contexts;
+		err = k_work_reschedule(&available_contexts_work,
+					PAC_NOTIFY_TIMEOUT);
+		if (err < 0) {
+			LOG_WRN("Update available contexts notify failed: %d", err);
+		}
 	}
 
 	return 0;
@@ -281,8 +315,19 @@ static inline int set_snk_available_contexts(uint16_t contexts)
 	return set_available_contexts(contexts, &snk_available_contexts,
 				      snk_supported_contexts);
 }
+
+static inline int set_snk_supported_contexts(uint16_t contexts)
+{
+	return set_supported_contexts(contexts, &snk_supported_contexts,
+				      &snk_available_contexts);
+}
 #else
 static inline int set_snk_available_contexts(uint16_t contexts)
+{
+	return -ENOTSUP;
+}
+
+static inline int set_snk_supported_contexts(uint16_t contexts)
 {
 	return -ENOTSUP;
 }
@@ -385,8 +430,19 @@ static inline int set_src_available_contexts(uint16_t contexts)
 	return set_available_contexts(contexts, &src_available_contexts,
 				      src_supported_contexts);
 }
+
+static inline int set_src_supported_contexts(uint16_t contexts)
+{
+	return set_supported_contexts(contexts, &src_supported_contexts,
+				      &src_available_contexts);
+}
 #else
 static inline int set_src_available_contexts(uint16_t contexts)
+{
+	return -ENOTSUP;
+}
+
+static inline int set_src_supported_contexts(uint16_t contexts)
 {
 	return -ENOTSUP;
 }
@@ -602,6 +658,21 @@ static void available_contexts_notify(struct k_work *work)
 	}
 }
 
+static void supported_contexts_notify(struct k_work *work)
+{
+	struct bt_pacs_context context = {
+		.snk = sys_cpu_to_le16(snk_supported_contexts),
+		.src = sys_cpu_to_le16(src_supported_contexts),
+	};
+	int err;
+
+	err = bt_gatt_notify_uuid(NULL, BT_UUID_PACS_SUPPORTED_CONTEXT, pacs_svc.attrs,
+				  &context, sizeof(context));
+	if (err != 0 && err != -ENOTCONN) {
+		LOG_WRN("Supported Audio Contexts notify failed: %d", err);
+	}
+}
+
 bool bt_pacs_context_available(enum bt_audio_dir dir, uint16_t context)
 {
 	if (dir == BT_AUDIO_DIR_SOURCE) {
@@ -662,8 +733,8 @@ int bt_pacs_cap_register(enum bt_audio_dir dir, struct bt_pacs_cap *cap)
 		return -EINVAL;
 	}
 
-	LOG_DBG("cap %p dir 0x%02x codec 0x%02x codec cid 0x%04x "
-	       "codec vid 0x%04x", cap, dir, cap->codec->id,
+	LOG_DBG("cap %p dir %s codec 0x%02x codec cid 0x%04x "
+	       "codec vid 0x%04x", cap, bt_audio_dir_str(dir), cap->codec->id,
 	       cap->codec->cid, cap->codec->vid);
 
 	sys_slist_append(&pac->list, &cap->_node);
@@ -687,7 +758,7 @@ int bt_pacs_cap_unregister(enum bt_audio_dir dir, struct bt_pacs_cap *cap)
 		return -EINVAL;
 	}
 
-	LOG_DBG("cap %p dir 0x%02x", cap, dir);
+	LOG_DBG("cap %p dir %s", cap, bt_audio_dir_str(dir));
 
 	if (!sys_slist_find_and_remove(&pac->list, &cap->_node)) {
 		return -ENOENT;
@@ -717,6 +788,18 @@ int bt_pacs_set_available_contexts(enum bt_audio_dir dir, enum bt_audio_context 
 		return set_snk_available_contexts(contexts);
 	case BT_AUDIO_DIR_SOURCE:
 		return set_src_available_contexts(contexts);
+	}
+
+	return -EINVAL;
+}
+
+int bt_pacs_set_supported_contexts(enum bt_audio_dir dir, enum bt_audio_context contexts)
+{
+	switch (dir) {
+	case BT_AUDIO_DIR_SINK:
+		return set_snk_supported_contexts(contexts);
+	case BT_AUDIO_DIR_SOURCE:
+		return set_src_supported_contexts(contexts);
 	}
 
 	return -EINVAL;

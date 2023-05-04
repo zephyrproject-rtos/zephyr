@@ -100,7 +100,7 @@ static ALWAYS_INLINE void clock_init(void)
 
 	CLOCK_SetSimConfig(&simConfig);
 
-#if CONFIG_USB_KINETIS
+#if CONFIG_USB_KINETIS || CONFIG_UDC_KINETIS
 	CLOCK_EnableUsbfs0Clock(kCLOCK_UsbSrcPll0,
 				CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC);
 #endif
@@ -116,9 +116,8 @@ static ALWAYS_INLINE void clock_init(void)
  * @return 0
  */
 
-static int fsl_frdm_k22f_init(const struct device *arg)
+static int fsl_frdm_k22f_init(void)
 {
-	ARG_UNUSED(arg);
 
 	unsigned int oldLevel; /* old interrupt lock level */
 
@@ -141,5 +140,14 @@ static int fsl_frdm_k22f_init(const struct device *arg)
 	irq_unlock(oldLevel);
 	return 0;
 }
+
+#ifdef CONFIG_PLATFORM_SPECIFIC_INIT
+
+void z_arm_platform_init(void)
+{
+	SystemInit();
+}
+
+#endif /* CONFIG_PLATFORM_SPECIFIC_INIT */
 
 SYS_INIT(fsl_frdm_k22f_init, PRE_KERNEL_1, 0);

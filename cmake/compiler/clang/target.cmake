@@ -49,9 +49,9 @@ if(NOT "${ARCH}" STREQUAL "posix")
 
   if(CONFIG_X86)
     if(CONFIG_64BIT)
-      string(APPEND TOOLCHAIN_C_FLAGS "-m64")
+      list(APPEND TOOLCHAIN_C_FLAGS "-m64")
     else()
-      string(APPEND TOOLCHAIN_C_FLAGS "-m32")
+      list(APPEND TOOLCHAIN_C_FLAGS "-m32")
     endif()
   endif()
 

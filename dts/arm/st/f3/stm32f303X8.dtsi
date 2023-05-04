@@ -32,6 +32,14 @@
 			status = "disabled";
 			#io-channel-cells = <1>;
 		};
+
+		rtc@40002800 {
+			bbram: backup_regs {
+				compatible = "st,stm32-bbram";
+				st,backup-regs = <5>;
+				status = "disabled";
+			};
+		};
 	};
 };
 

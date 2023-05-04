@@ -1,10 +1,13 @@
 # Copyright © 2021 Amazon.com, Inc. or its affiliates.
 # SPDX-License-Identifier: Apache-2.0
 
+if PICOLIBC
+
 config PICOLIBC_USE_MODULE
-	bool "Use picolibc module"
+	bool "Picolibc as module"
 	default y
-	select PICOLIBC_MODULE
+	depends on ZEPHYR_PICOLIBC_MODULE
+	depends on !GLIBCXX_LIBCPP
 	help
 	  Use picolibc module instead of picolibc included with toolchain
 
@@ -29,20 +32,17 @@ config PICOLIBC_HEAP_SIZE
 
 config PICOLIBC_IO_LONG_LONG
 	bool "support for long long in integer-only printf/scanf"
-	default n
 	help
 	  Includes support for long long in integer-only printf/scanf. long long
 	  types are always supported in the floating-point versions.
 
 config PICOLIBC_IO_FLOAT
 	bool "support for floating point values in printf/scanf"
-	default n
 	help
 	  Include floating point support in printf/scanf functions.
 
 if PICOLIBC_USE_MODULE
 
-if PICOLIBC
 choice PICOLIBC_OPTIMIZATIONS
 	prompt "Optimization level"
 	default PICOLIBC_SIZE_OPTIMIZATIONS if SIZE_OPTIMIZATIONS
@@ -106,7 +106,6 @@ config PICOLIBC_IO_POS_ARGS
 config PICOLIBC_IO_FLOAT_EXACT
 	bool "support for exact float/string conversion"
 	default y
-	depends on PICOLIBC_USE_MODULE
 	help
 	  Uses Ryu algorithm for exact binary/decimal float conversions.
 	  This ensures that printf values with enough digits can be
@@ -114,29 +113,22 @@ config PICOLIBC_IO_FLOAT_EXACT
 
 config PICOLIBC_LOCALE_INFO
 	bool "support locales in libc functions"
-	default n
-	depends on PICOLIBC_USE_MODULE
 	help
 	  Includes code for basic locale support
 
 config PICOLIBC_LOCALE_EXTENDED_INFO
 	bool "support extended locales in libc functions"
-	default n
-	depends on PICOLIBC_USE_MODULE
 	help
 	  Includes code for extended locale support
 
 config PICOLIBC_MULTIBYTE
 	bool "support multibyte functions in libc"
-	default n
-	depends on PICOLIBC_USE_MODULE
 	help
 	  Includes code for multi-byte characters
 
 config PICOLIBC_PICOEXIT
 	bool "use smaller atexit/onexit implementation"
 	default y
-	depends on PICOLIBC_USE_MODULE
 	help
 	  Provides a simpler atexit/onexit implementation that doesn't use
 	  malloc, but only supports a small number (32) of exit handlers.
@@ -144,14 +136,12 @@ config PICOLIBC_PICOEXIT
 config PICOLIBC_MULTITHREAD
 	bool "support multiple threads using retargetable locking API"
 	default y
-	depends on PICOLIBC_USE_MODULE
 	help
 	  Protects shared data structures in libc with mutexes that use
 	  an API which can be retargeted to OS provided routines.
 
 config PICOLIBC_GLOBAL_ERRNO
 	bool "use a single global variable for errno"
-	depends on PICOLIBC_USE_MODULE
 	help
 	  Picolibc usually uses a TLS variable for errno, ensuring that
 	  multiple threads have a reliable mechanism for detecting libc
@@ -159,6 +149,6 @@ config PICOLIBC_GLOBAL_ERRNO
 	  which can be used to avoid TLS variable usage by the library if
 	  necessary.
 
-endif
+endif # PICOLIBC_USE_MODULE
 
-endif
+endif # PICOLIBC

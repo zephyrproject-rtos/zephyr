@@ -23,7 +23,7 @@ static void on_latency_changed(int32_t latency)
 	}
 }
 
-void main(void)
+int main(void)
 {
 	struct pm_policy_latency_subscription subs;
 	struct pm_policy_latency_request req;
@@ -32,7 +32,7 @@ void main(void)
 	dev = device_get_binding("dev_test");
 	if (!device_is_ready(dev)) {
 		LOG_ERR("Device not ready");
-		return;
+		return 0;
 	}
 
 	pm_policy_latency_changed_subscribe(&subs, on_latency_changed);
@@ -104,4 +104,5 @@ void main(void)
 	pm_policy_latency_changed_unsubscribe(&subs);
 
 	LOG_INF("Finished, we should now enter STANDBY");
+	return 0;
 }

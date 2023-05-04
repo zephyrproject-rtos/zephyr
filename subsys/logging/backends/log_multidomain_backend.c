@@ -33,7 +33,7 @@ static void process(const struct log_backend *const backend,
 	}
 
 	/* Need to ensure that package is aligned to a pointer size. */
-	uint32_t msg_len = Z_LOG_MSG2_LEN(fsc_plen, dlen);
+	uint32_t msg_len = Z_LOG_MSG_LEN(fsc_plen, dlen);
 	uint8_t buf[msg_len + sizeof(void *)] __aligned(sizeof(void *));
 	size_t msg_offset = offsetof(struct log_multidomain_msg, data);
 	struct log_multidomain_msg *out_msg =

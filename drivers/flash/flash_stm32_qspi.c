@@ -719,34 +719,21 @@ static int setup_pages_layout(const struct device *dev)
 
 static int qspi_program_addr_4b(const struct device *dev)
 {
-	uint8_t reg;
-	int ret;
-
 	/* Program the flash memory to use 4 bytes addressing */
 	QSPI_CommandTypeDef cmd = {
 		.Instruction = SPI_NOR_CMD_4BA,
 		.InstructionMode = QSPI_INSTRUCTION_1_LINE,
 	};
 
-	ret = qspi_send_cmd(dev, &cmd);
-	if (ret) {
-		return ret;
-	}
-
 	/*
-	 * Read control register to verify if 4byte addressing mode
-	 * is enabled.
+	 * No need to Read control register afterwards to verify if 4byte addressing mode
+	 * is enabled as the effect of the command is immediate
+	 * and the SPI_NOR_CMD_RDCR is vendor-specific :
+	 * SPI_NOR_4BYTE_BIT is BIT 5 for Macronix and 0 for Micron or Windbond
+	 * Moreover bit value meaning is also vendor-specific
 	 */
-	cmd.Instruction = SPI_NOR_CMD_RDCR;
-	cmd.InstructionMode = QSPI_INSTRUCTION_1_LINE;
-	cmd.DataMode = QSPI_DATA_1_LINE;
 
-	ret = qspi_read_access(dev, &cmd, &reg, sizeof(reg));
-	if (!ret && !(reg & SPI_NOR_4BYTE_BIT)) {
-		return -EINVAL;
-	}
-
-	return ret;
+	return qspi_send_cmd(dev, &cmd);
 }
 
 static int qspi_read_status_register(const struct device *dev, uint8_t reg_num, uint8_t *reg)
@@ -982,6 +969,10 @@ static int spi_nor_process_bfp(const struct device *dev,
 			}
 		}
 	}
+	if (addr_mode == JESD216_SFDP_BFP_DW1_ADDRBYTES_VAL_4B) {
+		data->flag_access_32bit = true;
+		LOG_INF("Flash - address mode: 4B");
+	}
 
 	/*
 	 * Only check if the 1-4-4 (i.e. 4READ) or 1-1-4 (QREAD)
@@ -1149,10 +1140,9 @@ static int flash_stm32_qspi_init(const struct device *dev)
 #else
 	hdma.Init.Request = dma_cfg.dma_slot;
 #ifdef CONFIG_DMAMUX_STM32
-	/* HAL expects a valid DMA channel (not DAMMUX) */
-	/* TODO: Get DMA instance from DT */
-	hdma.Instance = __LL_DMA_GET_CHANNEL_INSTANCE(DMA1,
-						      dev_data->dma.channel+1);
+	/* HAL expects a valid DMA channel (not a DMAMUX channel) */
+	hdma.Instance = __LL_DMA_GET_CHANNEL_INSTANCE(dev_data->dma.reg,
+						      dev_data->dma.channel);
 #else
 	hdma.Instance = __LL_DMA_GET_CHANNEL_INSTANCE(dev_data->dma.reg,
 						      dev_data->dma.channel-1);
@@ -1189,7 +1179,8 @@ static int flash_stm32_qspi_init(const struct device *dev)
 	__ASSERT_NO_MSG(prescaler <= STM32_QSPI_CLOCK_PRESCALER_MAX);
 	/* Initialize QSPI HAL */
 	dev_data->hqspi.Init.ClockPrescaler = prescaler;
-	dev_data->hqspi.Init.FlashSize = find_lsb_set(dev_cfg->flash_size);
+	/* Give a bit position from 0 to 31 to the HAL init minus 1 for the DCR1 reg */
+	dev_data->hqspi.Init.FlashSize = find_lsb_set(dev_cfg->flash_size) - 2;
 
 	HAL_QSPI_Init(&dev_data->hqspi);
 

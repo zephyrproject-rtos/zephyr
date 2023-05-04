@@ -123,7 +123,7 @@ static void dropped(const struct log_backend *const backend, uint32_t cnt)
 	atomic_add(&log_backend->control_block->dropped_cnt, cnt);
 }
 
-static void copy_to_pbuffer(struct mpsc_pbuf_buffer *mpsc_buffer,
+static bool copy_to_pbuffer(struct mpsc_pbuf_buffer *mpsc_buffer,
 			    union log_msg_generic *msg, uint32_t timeout)
 {
 	size_t wlen;
@@ -133,7 +133,7 @@ static void copy_to_pbuffer(struct mpsc_pbuf_buffer *mpsc_buffer,
 	dst = mpsc_pbuf_alloc(mpsc_buffer, wlen, K_MSEC(timeout));
 	if (!dst) {
 		/* No space to store the log */
-		return;
+		return false;
 	}
 
 	/* First word contains internal mpsc packet flags and when copying
@@ -141,13 +141,15 @@ static void copy_to_pbuffer(struct mpsc_pbuf_buffer *mpsc_buffer,
 	 */
 	uint8_t *dst_data = (uint8_t *)dst + sizeof(struct mpsc_pbuf_hdr);
 	uint8_t *src_data = (uint8_t *)msg + sizeof(struct mpsc_pbuf_hdr);
-	size_t hdr_wlen = ceiling_fraction(sizeof(struct mpsc_pbuf_hdr),
+	size_t hdr_wlen = DIV_ROUND_UP(sizeof(struct mpsc_pbuf_hdr),
 					   sizeof(uint32_t));
 
 	dst->hdr.data = msg->buf.hdr.data;
 	memcpy(dst_data, src_data, (wlen - hdr_wlen) * sizeof(uint32_t));
 
 	mpsc_pbuf_commit(mpsc_buffer, dst);
+
+	return true;
 }
 
 static void process_log_msg(const struct shell *sh,
@@ -233,13 +235,13 @@ static void process(const struct log_backend *const backend,
 		if (IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE)) {
 			process_log_msg(sh, log_output, msg, true, colors);
 		} else {
-			copy_to_pbuffer(mpsc_buffer, msg,
-					log_backend->timeout);
-
-			if (IS_ENABLED(CONFIG_MULTITHREADING)) {
-				signal =
-				    &sh->ctx->signals[SHELL_SIGNAL_LOG_MSG];
-				k_poll_signal_raise(signal, 0);
+			if (copy_to_pbuffer(mpsc_buffer, msg, log_backend->timeout)) {
+				if (IS_ENABLED(CONFIG_MULTITHREADING)) {
+					signal = &sh->ctx->signals[SHELL_SIGNAL_LOG_MSG];
+					k_poll_signal_raise(signal, 0);
+				}
+			} else {
+				dropped(backend, 1);
 			}
 		}
 

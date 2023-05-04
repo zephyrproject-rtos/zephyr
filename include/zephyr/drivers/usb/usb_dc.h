@@ -20,36 +20,6 @@
 #include <zephyr/device.h>
 
 /**
- * USB endpoint direction and number.
- */
-#define USB_EP_DIR_MASK		0x80U
-#define USB_EP_DIR_IN		0x80U
-#define USB_EP_DIR_OUT		0x00U
-
-/** Get endpoint index (number) from endpoint address */
-#define USB_EP_GET_IDX(ep) ((ep) & ~USB_EP_DIR_MASK)
-/** Get direction from endpoint address */
-#define USB_EP_GET_DIR(ep) ((ep) & USB_EP_DIR_MASK)
-/** Get endpoint address from endpoint index and direction */
-#define USB_EP_GET_ADDR(idx, dir) ((idx) | ((dir) & USB_EP_DIR_MASK))
-/** True if the endpoint is an IN endpoint */
-#define USB_EP_DIR_IS_IN(ep) (USB_EP_GET_DIR(ep) == USB_EP_DIR_IN)
-/** True if the endpoint is an OUT endpoint */
-#define USB_EP_DIR_IS_OUT(ep) (USB_EP_GET_DIR(ep) == USB_EP_DIR_OUT)
-
-/**
- * USB endpoint Transfer Type mask.
- */
-#define USB_EP_TRANSFER_TYPE_MASK 0x3U
-
-/**
- * USB endpoint Synchronization Type mask.
- *
- * @note Valid only for Isochronous Endpoints
- */
-#define USB_EP_SYNCHRONIZATION_TYPE_MASK (0x3 << 2U)
-
-/**
  * @brief USB Device Controller API
  * @defgroup _usb_device_controller_api USB Device Controller API
  * @{

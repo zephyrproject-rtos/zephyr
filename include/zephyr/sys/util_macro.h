@@ -73,6 +73,26 @@ extern "C" {
  */
 #define BIT64_MASK(n) (BIT64(n) - 1ULL)
 
+/** @brief Check if a @p x is a power of two */
+#define IS_POWER_OF_TWO(x) (((x) != 0U) && (((x) & ((x) - 1U)) == 0U))
+
+/**
+ * @brief Check if bits are set continuously from the specified bit
+ *
+ * The macro is not dependent on the bit-width.
+ *
+ * @param m Check whether the bits are set continuously or not.
+ * @param s Specify the lowest bit for that is continuously set bits.
+ */
+#define IS_SHIFTED_BIT_MASK(m, s) (!(((m) >> (s)) & (((m) >> (s)) + 1U)))
+
+/**
+ * @brief Check if bits are set continuously from the LSB.
+ *
+ * @param m Check whether the bits are set continuously from LSB.
+ */
+#define IS_BIT_MASK(m) IS_SHIFTED_BIT_MASK(m, 0)
+
 /**
  * @brief Check for macro definition in compiler-visible expressions
  *
@@ -93,6 +113,9 @@ extern "C" {
  *
  * This is cleaner since the compiler can generate errors and warnings
  * for @p do_something_with_foo even when @p CONFIG_FOO is undefined.
+ *
+ * Note: Use of IS_ENABLED in a <tt>\#if</tt> statement is discouraged
+ *       as it doesn't provide any benefit vs plain <tt>\#if defined()</tt>
  *
  * @param config_macro Macro to check
  * @return 1 if @p config_macro is defined to 1, 0 otherwise (including

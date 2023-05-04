@@ -15,6 +15,9 @@ config NET_L2_ETHERNET
 
 endif # NETWORKING
 
+config INPUT
+	default y if KSCAN
+
 if DISPLAY
 
 config KSCAN
@@ -27,12 +30,12 @@ config MEMC
 
 endif # DISPLAY
 
-if KSCAN
+if INPUT
 
-config KSCAN_FT5336_INTERRUPT
+config INPUT_FT5336_INTERRUPT
 	default y
 
-endif # KSCAN
+endif # INPUT
 
 config DISK_DRIVER_SDMMC
 	default y if DISK_DRIVERS

@@ -63,7 +63,7 @@ int lsm6dsl_trigger_set(const struct device *dev,
 		return 0;
 	}
 
-	drv_data->data_ready_trigger = *trig;
+	drv_data->data_ready_trigger = trig;
 
 	setup_irq(dev, true);
 	if (gpio_pin_get_dt(&config->int_gpio) > 0) {
@@ -90,7 +90,7 @@ static void lsm6dsl_thread_cb(const struct device *dev)
 
 	if (drv_data->data_ready_handler != NULL) {
 		drv_data->data_ready_handler(dev,
-					     &drv_data->data_ready_trigger);
+					     drv_data->data_ready_trigger);
 	}
 
 	setup_irq(dev, true);

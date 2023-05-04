@@ -12,6 +12,11 @@ config LOG
 
 if LOG
 
+config LOG_CORE_INIT_PRIORITY
+	int "Log Core Initialization Priority"
+	range 0 99
+	default 0
+
 rsource "Kconfig.mode"
 
 rsource "Kconfig.filtering"

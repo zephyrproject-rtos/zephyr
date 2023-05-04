@@ -92,7 +92,7 @@ struct gtbs_service_inst {
 	const struct bt_gatt_service_static *service_p;
 };
 
-#if IS_ENABLED(CONFIG_BT_GTBS)
+#if defined(CONFIG_BT_GTBS)
 #define READ_BUF_SIZE   (CONFIG_BT_TBS_MAX_CALLS * \
 			 sizeof(struct bt_tbs_current_call_item) * \
 			 CONFIG_BT_TBS_BEARER_COUNT)
@@ -1085,6 +1085,9 @@ static int originate_call(struct tbs_service_inst *inst,
 	BT_TBS_CALL_FLAG_SET_OUTGOING(call->flags);
 
 	hold_other_calls(inst, 1, &call->index);
+
+	notify_calls(inst);
+	call->state = BT_TBS_CALL_STATE_ALERTING;
 	notify_calls(inst);
 
 	LOG_DBG("New call with call index %u", call->index);

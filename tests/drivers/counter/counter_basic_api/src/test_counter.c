@@ -28,29 +28,11 @@ struct counter_alarm_cfg alarm_cfg2;
 	DT_FOREACH_STATUS_OKAY(compat, DEVICE_DT_GET_AND_COMMA)
 
 static const struct device *const devices[] = {
-#ifdef CONFIG_COUNTER_TIMER0
-	/* Nordic TIMER0 may be reserved for Bluetooth */
-	DEVICE_DT_GET(DT_NODELABEL(timer0)),
+#ifdef CONFIG_COUNTER_NRF_TIMER
+	DEVS_FOR_DT_COMPAT(nordic_nrf_timer)
 #endif
-#ifdef CONFIG_COUNTER_TIMER1
-	DEVICE_DT_GET(DT_NODELABEL(timer1)),
-#endif
-#ifdef CONFIG_COUNTER_TIMER2
-	DEVICE_DT_GET(DT_NODELABEL(timer2)),
-#endif
-#ifdef CONFIG_COUNTER_TIMER3
-	DEVICE_DT_GET(DT_NODELABEL(timer3)),
-#endif
-#ifdef CONFIG_COUNTER_TIMER4
-	DEVICE_DT_GET(DT_NODELABEL(timer4)),
-#endif
-#ifdef CONFIG_COUNTER_RTC0
-	/* Nordic RTC0 may be reserved for Bluetooth */
-	DEVICE_DT_GET(DT_NODELABEL(rtc0)),
-#endif
-	/* Nordic RTC1 is used for the system clock */
-#ifdef CONFIG_COUNTER_RTC2
-	DEVICE_DT_GET(DT_NODELABEL(rtc2)),
+#ifdef CONFIG_COUNTER_NRF_RTC
+	DEVS_FOR_DT_COMPAT(nordic_nrf_rtc)
 #endif
 #ifdef CONFIG_COUNTER_TIMER_STM32
 #define STM32_COUNTER_DEV(idx) \
@@ -83,8 +65,15 @@ static const struct device *const devices[] = {
 #ifdef CONFIG_COUNTER_MCUX_LPC_RTC
 	DEVS_FOR_DT_COMPAT(nxp_lpc_rtc)
 #endif
+#ifdef CONFIG_COUNTER_GECKO_RTCC
 	DEVS_FOR_DT_COMPAT(silabs_gecko_rtcc)
+#endif
+#ifdef CONFIG_COUNTER_RTC_STM32
 	DEVS_FOR_DT_COMPAT(st_stm32_rtc)
+#endif
+#ifdef CONFIG_COUNTER_GECKO_STIMER
+	DEVS_FOR_DT_COMPAT(silabs_gecko_stimer)
+#endif
 #ifdef CONFIG_COUNTER_MCUX_PIT
 	DEVS_FOR_DT_COMPAT(nxp_kinetis_pit)
 #endif
@@ -93,6 +82,12 @@ static const struct device *const devices[] = {
 #endif
 #ifdef CONFIG_COUNTER_TMR_ESP32
 	DEVS_FOR_DT_COMPAT(espressif_esp32_timer)
+#endif
+#ifdef CONFIG_COUNTER_NXP_S32_SYS_TIMER
+	DEVS_FOR_DT_COMPAT(nxp_s32_sys_timer)
+#endif
+#ifdef CONFIG_COUNTER_TIMER_GD32
+	DEVS_FOR_DT_COMPAT(gd_gd32_timer)
 #endif
 };
 
@@ -782,6 +777,10 @@ static void test_short_relative_alarm_instance(const struct device *dev)
 	err = counter_start(dev);
 	zassert_equal(0, err, "%s: Unexpected error", dev->name);
 
+	if (IS_ENABLED(CONFIG_COUNTER_NRF_RTC)) {
+		k_busy_wait(1000);
+	}
+
 	alarm_cfg.ticks = 1;
 
 	for (int i = 0; i < 100; ++i) {
@@ -925,55 +924,26 @@ static bool reliable_cancel_capable(const struct device *dev)
 {
 	/* Test performed only for NRF_RTC instances. Other probably will fail.
 	 */
-#ifdef CONFIG_COUNTER_RTC0
-	/* Nordic RTC0 may be reserved for Bluetooth */
-	if (dev == DEVICE_DT_GET(DT_NODELABEL(rtc0))) {
-		return true;
-	}
-#endif
-
-#ifdef CONFIG_COUNTER_RTC2
-	if (dev == DEVICE_DT_GET(DT_NODELABEL(rtc2))) {
-		return true;
-	}
-#endif
-
-#ifdef CONFIG_COUNTER_TIMER0
-	if (dev == DEVICE_DT_GET(DT_NODELABEL(timer0))) {
-		return true;
-	}
-#endif
-
-#ifdef CONFIG_COUNTER_TIMER1
-	if (dev == DEVICE_DT_GET(DT_NODELABEL(timer1))) {
-		return true;
-	}
-#endif
-
-#ifdef CONFIG_COUNTER_TIMER2
-	if (dev == DEVICE_DT_GET(DT_NODELABEL(timer2))) {
-		return true;
-	}
-#endif
-
-#ifdef CONFIG_COUNTER_TIMER3
-	if (dev == DEVICE_DT_GET(DT_NODELABEL(timer3))) {
-		return true;
-	}
-#endif
-
-#ifdef CONFIG_COUNTER_TIMER4
-	if (dev == DEVICE_DT_GET(DT_NODELABEL(timer4))) {
-		return true;
-	}
+#if defined(CONFIG_COUNTER_NRF_RTC) || defined(CONFIG_COUNTER_NRF_TIMER)
+	return true;
 #endif
 #ifdef CONFIG_COUNTER_TIMER_STM32
 	if (single_channel_alarm_capable(dev)) {
 		return true;
 	}
 #endif
+#ifdef CONFIG_COUNTER_TIMER_GD32
+	if (single_channel_alarm_capable(dev)) {
+		return true;
+	}
+#endif
 #ifdef CONFIG_COUNTER_NATIVE_POSIX
 	if (dev == DEVICE_DT_GET(DT_NODELABEL(counter0))) {
+		return true;
+	}
+#endif
+#ifdef CONFIG_COUNTER_NXP_S32_SYS_TIMER
+	if (single_channel_alarm_capable(dev)) {
 		return true;
 	}
 #endif

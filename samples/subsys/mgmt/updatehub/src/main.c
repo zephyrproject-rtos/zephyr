@@ -1,16 +1,15 @@
 /*
- * Copyright (c) 2018-2020 O.S.Systems
+ * Copyright (c) 2018-2023 O.S.Systems
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <zephyr/kernel.h>
-#include <updatehub.h>
+#include <zephyr/mgmt/updatehub.h>
 #include <zephyr/net/net_mgmt.h>
 #include <zephyr/net/net_event.h>
 #include <zephyr/net/net_conn_mgr.h>
 #include <zephyr/net/wifi_mgmt.h>
-#include <zephyr/dfu/mcuboot.h>
 
 #if defined(CONFIG_UPDATEHUB_DTLS)
 #include <zephyr/net/tls_credentials.h>
@@ -45,7 +44,7 @@ void start_updatehub(void)
 		switch (updatehub_update()) {
 		case UPDATEHUB_OK:
 			ret = 0;
-			sys_reboot(SYS_REBOOT_WARM);
+			updatehub_reboot();
 			break;
 
 		default:
@@ -84,7 +83,7 @@ static void event_handler(struct net_mgmt_event_callback *cb,
 	}
 }
 
-void main(void)
+int main(void)
 {
 	int ret;
 
@@ -96,7 +95,7 @@ void main(void)
 			       server_certificate,
 			       sizeof(server_certificate)) < 0) {
 		LOG_ERR("Failed to register server certificate");
-		return;
+		return 0;
 	}
 
 	if (tls_credential_add(CA_CERTIFICATE_TAG,
@@ -104,13 +103,13 @@ void main(void)
 			       private_key,
 			       sizeof(private_key)) < 0) {
 		LOG_ERR("Failed to register private key");
-		return;
+		return 0;
 	}
 #endif
 
 	/* The image of application needed be confirmed */
 	LOG_INF("Confirming the boot image");
-	ret = boot_write_img_confirmed();
+	ret = updatehub_confirm();
 	if (ret < 0) {
 		LOG_ERR("Error to confirm the image");
 	}
@@ -152,4 +151,5 @@ void main(void)
 	net_mgmt_init_event_callback(&mgmt_cb, event_handler, EVENT_MASK);
 	net_mgmt_add_event_callback(&mgmt_cb);
 	net_conn_mgr_resend_status();
+	return 0;
 }

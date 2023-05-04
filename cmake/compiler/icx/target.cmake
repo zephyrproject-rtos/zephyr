@@ -40,9 +40,9 @@ foreach(isystem_include_dir ${NOSTDINC})
 endforeach()
 
 if(CONFIG_64BIT)
-  string(APPEND TOOLCHAIN_C_FLAGS "-m64")
+  list(APPEND TOOLCHAIN_C_FLAGS "-m64")
 else()
-  string(APPEND TOOLCHAIN_C_FLAGS "-m32")
+  list(APPEND TOOLCHAIN_C_FLAGS "-m32")
 endif()
 
 
@@ -67,3 +67,7 @@ string(REPLACE ";" " " CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS}")
 macro(toolchain_cc_nostdinc)
     zephyr_compile_options( -nostdinc)
 endmacro()
+
+if(CONFIG_CPP)
+  list(APPEND TOOLCHAIN_C_FLAGS "-no-intel-lib=libirc")
+endif()

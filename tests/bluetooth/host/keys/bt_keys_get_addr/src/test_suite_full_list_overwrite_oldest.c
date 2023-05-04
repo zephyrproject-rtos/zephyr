@@ -230,7 +230,7 @@ ZTEST(bt_keys_get_addr_full_list_overwrite_oldest, test_full_list_key_0_in_use_k
 	bt_addr_le_t *addr = BT_ADDR_LE_5;
 	uint32_t expected_oldest_params_ref_idx;
 
-#if IS_ENABLED(CONFIG_BT_KEYS_OVERWRITE_OLDEST)
+#if defined(CONFIG_BT_KEYS_OVERWRITE_OLDEST)
 	/* Normally first items inserted in the list are the oldest.
 	 * For this particular test, we need to override that by setting
 	 * the 'aging_counter'

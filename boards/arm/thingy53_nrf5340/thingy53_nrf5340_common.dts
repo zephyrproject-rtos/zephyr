@@ -7,11 +7,11 @@
 
 / {
 	chosen {
-		zephyr,console = &uart0;
-		zephyr,shell-uart = &uart0;
-		zephyr,uart-mcumgr = &uart0;
-		zephyr,bt-mon-uart = &uart0;
-		zephyr,bt-c2h-uart = &uart0;
+		zephyr,console = &cdc_acm_uart;
+		zephyr,shell-uart = &cdc_acm_uart;
+		zephyr,uart-mcumgr = &cdc_acm_uart;
+		zephyr,bt-mon-uart = &cdc_acm_uart;
+		zephyr,bt-c2h-uart = &cdc_acm_uart;
 		zephyr,bt-hci-rpmsg-ipc = &ipc0;
 		nordic,802154-spinel-ipc = &ipc0;
 		zephyr,ieee802154 = &ieee802154;
@@ -64,7 +64,7 @@
 	};
 
 	npm1100_force_pwm_mode: npm1100_force_pwm_mode {
-		compatible = "regulator-fixed-sync", "regulator-fixed";
+		compatible = "regulator-fixed";
 		regulator-name = "npm1100_force_pwm_mode";
 		enable-gpios = <&gpio0 8 GPIO_ACTIVE_HIGH>;
 		status = "disabled";
@@ -80,14 +80,14 @@
 	};
 
 	regulator_3v3: regulator-3v3-ctrl {
-		compatible = "regulator-fixed-sync", "regulator-fixed";
+		compatible = "regulator-fixed";
 		regulator-name = "ncp114";
 		enable-gpios = <&gpio0 15 GPIO_ACTIVE_LOW>;
 		regulator-boot-on;
 	};
 
 	sensor_pwr_ctrl: sensor-pwr-ctrl {
-		compatible = "regulator-fixed-sync", "regulator-fixed";
+		compatible = "regulator-fixed";
 		regulator-name = "tck106ag";
 		enable-gpios = <&gpio0 31 GPIO_ACTIVE_HIGH>;
 		regulator-boot-on;
@@ -166,13 +166,13 @@
 		reg = <0x10>;
 	};
 
-	bh1749@38 {
+	bh1749: bh1749@38 {
 		compatible = "rohm,bh1749";
 		reg = <0x38>;
 		int-gpios = <&gpio1 5 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 	};
 
-	bme688@76 {
+	bme688: bme688@76 {
 		compatible = "bosch,bme680";
 		reg = <0x76>;
 	};
@@ -212,8 +212,9 @@
 
 /* UART0 GPIOs can be configured for other use-cases */
 &uart0 {
+	/* Disabled by default */
 	current-speed = <115200>;
-	status = "okay";
+	status = "disabled";
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-1 = <&uart0_sleep>;
 	pinctrl-names = "default", "sleep";
@@ -246,18 +247,6 @@
 		t-enter-dpd = <10000>;
 		t-exit-dpd = <35000>;
 	};
-};
-
-&timer0 {
-	status = "okay";
-};
-
-&timer1 {
-	status = "okay";
-};
-
-&timer2 {
-	status = "okay";
 };
 
 &flash0 {
@@ -300,6 +289,10 @@
 zephyr_udc0: &usbd {
 	compatible = "nordic,nrf-usbd";
 	status = "okay";
+
+	cdc_acm_uart: cdc_acm_uart {
+		compatible = "zephyr,cdc-acm-uart";
+	};
 };
 
 / {

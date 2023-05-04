@@ -4,3 +4,5 @@ tests:
     depends_on: dma
     tags: drivers dma
     platform_allow: frdm_k64f mimxrt1060_evk mimxrt1064_evk mimxrt1160_evk_cm7 mimxrt1170_evk_cm7
+    integration_platforms:
+      - frdm_k64f

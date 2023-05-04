@@ -27,6 +27,7 @@ zephyr_sources_ifdef(CONFIG_CRC
   crc8_sw.c
   crc7_sw.c
   )
+zephyr_sources_ifdef(CONFIG_CRC_SHELL crc_shell.c)
 
 zephyr_sources_ifdef(CONFIG_CBPRINTF_COMPLETE cbprintf_complete.c)
 zephyr_sources_ifdef(CONFIG_CBPRINTF_NANO cbprintf_nano.c)

@@ -81,6 +81,9 @@ hardware features:
    * - Flash
      - :kconfig:option:`CONFIG_FLASH`
      - :dtcompatible:`raspberrypi,pico-flash`
+   * - UART (PIO)
+     - :kconfig:option:`CONFIG_SERIAL`
+     - :dtcompatible:`raspberrypi,pico-uart-pio`
 
 Pin Mapping
 ===========
@@ -108,6 +111,17 @@ Default Zephyr Peripheral Mapping:
 - ADC_CH1 : P27
 - ADC_CH2 : P28
 - ADC_CH3 : P29
+
+Programmable I/O (PIO)
+**********************
+The RP2040 SoC comes with two PIO periherals. These are two simple
+co-processors that are designed for I/O operations. The PIOs run
+a custom instruction set, generated from a custom assembly language.
+PIO programs are assembled using `pioasm`, a tool provided by Raspberry Pi.
+
+Zephyr does not (currently) assemble PIO programs. Rather, they should be
+manually assembled and embedded in source code. An example of how this is done
+can be found at `drivers/serial/uart_rpi_pico_pio.c`.
 
 Programming and Debugging
 *************************

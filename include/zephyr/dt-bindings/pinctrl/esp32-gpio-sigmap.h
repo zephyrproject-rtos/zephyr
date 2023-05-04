@@ -419,4 +419,26 @@
 #define ESP_SIG_IN_FUNC228		228
 #define ESP_SIG_GPIO_OUT		256
 
+/* RTC-IO MUX */
+#define ESP_ADC1_CH0		0
+#define ESP_ADC1_CH1		1
+#define ESP_ADC1_CH2		2
+#define ESP_ADC1_CH3		3
+#define ESP_ADC1_CH6		4
+#define ESP_ADC1_CH7		5
+#define ESP_ADC2_CH8		6
+#define ESP_ADC2_CH9		7
+#define ESP_DAC1_OUT		6
+#define ESP_DAC2_OUT		7
+#define ESP_ADC1_CH5		8
+#define ESP_ADC1_CH4		9
+#define ESP_ADC2_CH0		10
+#define ESP_ADC2_CH1		11
+#define ESP_ADC2_CH2		12
+#define ESP_ADC2_CH3		13
+#define ESP_ADC2_CH4		14
+#define ESP_ADC2_CH5		15
+#define ESP_ADC2_CH6		16
+#define ESP_ADC2_CH7		17
+
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_ESP32_GPIO_SIGMAP_H_ */

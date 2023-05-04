@@ -45,15 +45,26 @@
 		};
 	};
 
+	cpus {
+		cpu@0 {
+			cpu-power-states = <&stop0 &stop1>;
+		};
+	};
+
 	aliases {
 		led0 = &green_led;
 		pwm-led0 = &green_pwm_led;
 		sw0 = &user_button;
 		watchdog0 = &iwdg;
+		die-temp0 = &die_temp;
 	};
 };
 
 &clk_lsi {
+	status = "okay";
+};
+
+&clk_hsi48 {
 	status = "okay";
 };
 
@@ -89,7 +100,8 @@
 
 &lpuart1 {
 	pinctrl-0 = <&lpuart1_tx_pa2 &lpuart1_rx_pa3>;
-	pinctrl-names = "default";
+	pinctrl-1 = <&analog_pa2 &analog_pa3>;
+	pinctrl-names = "default", "sleep";
 	current-speed = <115200>;
 	status = "okay";
 };
@@ -140,6 +152,12 @@
 		pinctrl-0 = <&tim3_ch1_pb4>;
 		pinctrl-names = "default";
 	};
+};
+
+&lptim1 {
+	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x80000000>,
+		<&rcc STM32_SRC_LSI LPTIM1_SEL(1)>;
+	status = "okay";
 };
 
 &rtc {

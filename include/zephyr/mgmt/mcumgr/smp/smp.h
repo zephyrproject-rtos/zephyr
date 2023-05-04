@@ -27,7 +27,6 @@
 
 #include <zephyr/net/buf.h>
 #include <zephyr/mgmt/mcumgr/transport/smp.h>
-#include <zephyr/mgmt/mcumgr/mgmt/mgmt.h>
 
 #include <zcbor_common.h>
 
@@ -38,10 +37,10 @@ extern "C" {
 
 struct cbor_nb_reader {
 	struct net_buf *nb;
-	/* CONFIG_MGMT_MAX_DECODING_LEVELS + 2 translates to minimal
+	/* CONFIG_MCUMGR_SMP_CBOR_MAX_DECODING_LEVELS + 2 translates to minimal
 	 * zcbor backup states.
 	 */
-	zcbor_state_t zs[CONFIG_MGMT_MAX_DECODING_LEVELS + 2];
+	zcbor_state_t zs[CONFIG_MCUMGR_SMP_CBOR_MAX_DECODING_LEVELS + 2];
 };
 
 struct cbor_nb_writer {
@@ -72,7 +71,7 @@ struct smp_streamer {
 	struct cbor_nb_reader *reader;
 	struct cbor_nb_writer *writer;
 
-#ifdef CONFIG_MGMT_VERBOSE_ERR_RESPONSE
+#ifdef CONFIG_MCUMGR_SMP_VERBOSE_ERR_RESPONSE
 	const char *rc_rsn;
 #endif
 };

@@ -685,9 +685,8 @@ int lorawan_start(void)
 	return 0;
 }
 
-static int lorawan_init(const struct device *dev)
+static int lorawan_init(void)
 {
-	ARG_UNUSED(dev);
 
 	sys_slist_init(&dl_callbacks);
 

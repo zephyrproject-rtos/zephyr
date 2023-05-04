@@ -1,3 +1,5 @@
 tests:
   boards.intel_adsp.smoke:
-    platform_allow: intel_adsp_cavs15 intel_adsp_cavs18 intel_adsp_cavs20 intel_adsp_cavs25
+    platform_allow: intel_adsp_cavs25
+    integration_platforms:
+      - intel_adsp_cavs25

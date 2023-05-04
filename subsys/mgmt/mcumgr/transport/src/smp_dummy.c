@@ -10,7 +10,8 @@
  */
 
 /* Define required for uart_mcumgr.h functionality reuse */
-#define CONFIG_UART_MCUMGR_RX_BUF_SIZE CONFIG_MCUMGR_SMP_DUMMY_RX_BUF_SIZE
+#define CONFIG_UART_MCUMGR_RX_BUF_SIZE CONFIG_MCUMGR_TRANSPORT_DUMMY_RX_BUF_SIZE
+#define MCUMGR_DUMMY_MAX_FRAME CONFIG_MCUMGR_TRANSPORT_DUMMY_RX_BUF_SIZE
 
 #include <zephyr/kernel.h>
 #include <zephyr/init.h>
@@ -28,8 +29,8 @@
 
 #include <mgmt/mcumgr/transport/smp_internal.h>
 
-BUILD_ASSERT(CONFIG_MCUMGR_SMP_DUMMY_RX_BUF_SIZE != 0,
-	     "CONFIG_MCUMGR_SMP_DUMMY_RX_BUF_SIZE must be > 0");
+BUILD_ASSERT(CONFIG_MCUMGR_TRANSPORT_DUMMY_RX_BUF_SIZE != 0,
+	     "CONFIG_MCUMGR_TRANSPORT_DUMMY_RX_BUF_SIZE must be > 0");
 
 struct device;
 static struct mcumgr_serial_rx_ctxt smp_dummy_rx_ctxt;
@@ -37,9 +38,9 @@ static struct mcumgr_serial_rx_ctxt smp_dummy_tx_ctxt;
 static struct smp_transport smp_dummy_transport;
 static bool enable_dummy_smp;
 static struct k_sem smp_data_ready_sem;
-static uint8_t smp_send_buffer[CONFIG_MCUMGR_SMP_DUMMY_RX_BUF_SIZE];
+static uint8_t smp_send_buffer[CONFIG_MCUMGR_TRANSPORT_DUMMY_RX_BUF_SIZE];
 static uint16_t smp_send_pos;
-static uint8_t smp_receive_buffer[CONFIG_MCUMGR_SMP_DUMMY_RX_BUF_SIZE];
+static uint8_t smp_receive_buffer[CONFIG_MCUMGR_TRANSPORT_DUMMY_RX_BUF_SIZE];
 static uint16_t smp_receive_pos;
 
 /** Callback to execute when a valid fragment has been received. */
@@ -151,7 +152,7 @@ static void smp_dummy_rx_frag(struct uart_mcumgr_rx_buf *rx_buf)
 
 static uint16_t smp_dummy_get_mtu(const struct net_buf *nb)
 {
-	return CONFIG_MCUMGR_SMP_DUMMY_RX_BUF_SIZE;
+	return CONFIG_MCUMGR_TRANSPORT_DUMMY_RX_BUF_SIZE;
 }
 
 int dummy_mcumgr_send_raw(const void *data, int len)
@@ -184,9 +185,8 @@ static int smp_dummy_tx_pkt_int(struct net_buf *nb)
 	return rc;
 }
 
-static int smp_dummy_init(const struct device *dev)
+static int smp_dummy_init(void)
 {
-	ARG_UNUSED(dev);
 
 	k_sem_init(&smp_data_ready_sem, 0, 1);
 
@@ -581,7 +581,7 @@ int mcumgr_dummy_tx_frame(const uint8_t *data, bool first, int len,
 	}
 
 	while (1) {
-		if (dst_off >= MCUMGR_SERIAL_MAX_FRAME - 4) {
+		if (dst_off >= MCUMGR_DUMMY_MAX_FRAME - 4) {
 			/* Can't fit any more data in this frame. */
 			break;
 		}

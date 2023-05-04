@@ -70,8 +70,8 @@
 #define FPGA_ICE40_SPI_HZ_MIN 1000000
 #define FPGA_ICE40_SPI_HZ_MAX 25000000
 
-#define FPGA_ICE40_CRESET_DELAY_NS_MIN 200
-#define FPGA_ICE40_CONFIG_DELAY_US_MIN 300
+#define FPGA_ICE40_CRESET_DELAY_US_MIN 1 /* 200ns absolute minimum */
+#define FPGA_ICE40_CONFIG_DELAY_US_MIN 1200
 #define FPGA_ICE40_LEADING_CLOCKS_MIN  8
 #define FPGA_ICE40_TRAILING_CLOCKS_MIN 49
 
@@ -95,7 +95,7 @@ struct fpga_ice40_config {
 	volatile gpio_port_pins_t *set;
 	volatile gpio_port_pins_t *clear;
 	uint16_t mhz_delay_count;
-	uint8_t creset_delay_ns;
+	uint16_t creset_delay_us;
 	uint16_t config_delay_us;
 	uint8_t leading_clocks;
 	uint8_t trailing_clocks;
@@ -132,6 +132,7 @@ static void fpga_ice40_crc_to_str(uint32_t crc, char *s)
 static inline void fpga_ice40_delay(size_t n)
 {
 	for (; n > 0; --n) {
+		__asm__ __volatile__("");
 	}
 }
 
@@ -210,7 +211,6 @@ static int fpga_ice40_load_gpio(const struct device *dev, uint32_t *image_ptr, u
 {
 	int ret;
 	uint32_t crc;
-	uint32_t delay_us;
 	gpio_port_pins_t cs;
 	gpio_port_pins_t clk;
 	k_spinlock_key_t key;
@@ -220,7 +220,7 @@ static int fpga_ice40_load_gpio(const struct device *dev, uint32_t *image_ptr, u
 	const struct fpga_ice40_config *config = dev->config;
 
 	/* prepare masks */
-	cs = BIT(config->bus.config.cs->gpio.pin);
+	cs = BIT(config->bus.config.cs.gpio.pin);
 	clk = BIT(config->clk.pin);
 	pico = BIT(config->pico.pin);
 	creset = BIT(config->creset.pin);
@@ -230,9 +230,6 @@ static int fpga_ice40_load_gpio(const struct device *dev, uint32_t *image_ptr, u
 	if (data->loaded && crc == data->crc) {
 		LOG_WRN("already loaded with image CRC32c: 0x%08x", data->crc);
 	}
-
-	/* precompute delay values */
-	delay_us = ceiling_fraction(config->creset_delay_ns, NSEC_PER_USEC);
 
 	key = k_spin_lock(&data->lock);
 
@@ -244,7 +241,7 @@ static int fpga_ice40_load_gpio(const struct device *dev, uint32_t *image_ptr, u
 	LOG_DBG("Initializing GPIO");
 	ret = gpio_pin_configure_dt(&config->cdone, GPIO_INPUT) ||
 	      gpio_pin_configure_dt(&config->creset, GPIO_OUTPUT_HIGH) ||
-	      gpio_pin_configure_dt(&config->bus.config.cs->gpio, GPIO_OUTPUT_HIGH) ||
+	      gpio_pin_configure_dt(&config->bus.config.cs.gpio, GPIO_OUTPUT_HIGH) ||
 	      gpio_pin_configure_dt(&config->clk, GPIO_OUTPUT_HIGH) ||
 	      gpio_pin_configure_dt(&config->pico, GPIO_OUTPUT_HIGH);
 	__ASSERT(ret == 0, "Failed to initialize GPIO: %d", ret);
@@ -254,8 +251,8 @@ static int fpga_ice40_load_gpio(const struct device *dev, uint32_t *image_ptr, u
 	*config->clear |= (creset | cs);
 
 	/* Wait a minimum of 200ns */
-	LOG_DBG("Delay %u ns (%u us)", config->creset_delay_ns, delay_us);
-	fpga_ice40_delay(2 * config->mhz_delay_count * delay_us);
+	LOG_DBG("Delay %u us", config->creset_delay_us);
+	fpga_ice40_delay(2 * config->mhz_delay_count * config->creset_delay_us);
 
 	__ASSERT(gpio_pin_get_dt(&config->cdone) == 0, "CDONE was not high");
 
@@ -300,7 +297,7 @@ static int fpga_ice40_load_gpio(const struct device *dev, uint32_t *image_ptr, u
 
 unlock:
 	(void)gpio_pin_configure_dt(&config->creset, GPIO_OUTPUT_HIGH);
-	(void)gpio_pin_configure_dt(&config->bus.config.cs->gpio, GPIO_OUTPUT_HIGH);
+	(void)gpio_pin_configure_dt(&config->bus.config.cs.gpio, GPIO_OUTPUT_HIGH);
 	(void)gpio_pin_configure_dt(&config->clk, GPIO_DISCONNECTED);
 	(void)gpio_pin_configure_dt(&config->pico, GPIO_DISCONNECTED);
 #ifdef CONFIG_PINCTRL
@@ -316,7 +313,6 @@ static int fpga_ice40_load_spi(const struct device *dev, uint32_t *image_ptr, ui
 {
 	int ret;
 	uint32_t crc;
-	uint32_t delay_us;
 	k_spinlock_key_t key;
 	struct spi_buf tx_buf;
 	const struct spi_buf_set tx_bufs = {
@@ -333,9 +329,6 @@ static int fpga_ice40_load_spi(const struct device *dev, uint32_t *image_ptr, ui
 		LOG_WRN("already loaded with image CRC32c: 0x%08x", data->crc);
 	}
 
-	/* precompute delay values */
-	delay_us = ceiling_fraction(config->creset_delay_ns, NSEC_PER_USEC);
-
 	key = k_spin_lock(&data->lock);
 
 	/* clear crc */
@@ -346,7 +339,7 @@ static int fpga_ice40_load_spi(const struct device *dev, uint32_t *image_ptr, ui
 	LOG_DBG("Initializing GPIO");
 	ret = gpio_pin_configure_dt(&config->cdone, GPIO_INPUT) ||
 	      gpio_pin_configure_dt(&config->creset, GPIO_OUTPUT_HIGH) ||
-	      gpio_pin_configure_dt(&config->bus.config.cs->gpio, GPIO_OUTPUT_HIGH);
+	      gpio_pin_configure_dt(&config->bus.config.cs.gpio, GPIO_OUTPUT_HIGH);
 	__ASSERT(ret == 0, "Failed to initialize GPIO: %d", ret);
 
 	LOG_DBG("Set CRESET low");
@@ -357,15 +350,15 @@ static int fpga_ice40_load_spi(const struct device *dev, uint32_t *image_ptr, ui
 	}
 
 	LOG_DBG("Set SPI_CS low");
-	ret = gpio_pin_configure_dt(&config->bus.config.cs->gpio, GPIO_OUTPUT_LOW);
+	ret = gpio_pin_configure_dt(&config->bus.config.cs.gpio, GPIO_OUTPUT_LOW);
 	if (ret < 0) {
 		LOG_ERR("failed to set SPI_CS low: %d", ret);
 		goto unlock;
 	}
 
 	/* Wait a minimum of 200ns */
-	LOG_DBG("Delay %u ns (%u us)", config->creset_delay_ns, delay_us);
-	fpga_ice40_delay(2 * config->mhz_delay_count * delay_us);
+	LOG_DBG("Delay %u us", config->creset_delay_us);
+	k_usleep(config->creset_delay_us);
 
 	__ASSERT(gpio_pin_get_dt(&config->cdone) == 0, "CDONE was not high");
 
@@ -380,7 +373,7 @@ static int fpga_ice40_load_spi(const struct device *dev, uint32_t *image_ptr, ui
 	k_busy_wait(config->config_delay_us);
 
 	LOG_DBG("Set SPI_CS high");
-	ret = gpio_pin_configure_dt(&config->bus.config.cs->gpio, GPIO_OUTPUT_HIGH);
+	ret = gpio_pin_configure_dt(&config->bus.config.cs.gpio, GPIO_OUTPUT_HIGH);
 	if (ret < 0) {
 		LOG_ERR("failed to set SPI_CS high: %d", ret);
 		goto unlock;
@@ -388,7 +381,7 @@ static int fpga_ice40_load_spi(const struct device *dev, uint32_t *image_ptr, ui
 
 	LOG_DBG("Send %u clocks", config->leading_clocks);
 	tx_buf.buf = clock_buf;
-	tx_buf.len = ceiling_fraction(config->leading_clocks, BITS_PER_BYTE);
+	tx_buf.len = DIV_ROUND_UP(config->leading_clocks, BITS_PER_BYTE);
 	ret = spi_write_dt(&config->bus, &tx_bufs);
 	if (ret < 0) {
 		LOG_ERR("Failed to send leading %u clocks: %d", config->leading_clocks, ret);
@@ -396,7 +389,7 @@ static int fpga_ice40_load_spi(const struct device *dev, uint32_t *image_ptr, ui
 	}
 
 	LOG_DBG("Set SPI_CS low");
-	ret = gpio_pin_configure_dt(&config->bus.config.cs->gpio, GPIO_OUTPUT_LOW);
+	ret = gpio_pin_configure_dt(&config->bus.config.cs.gpio, GPIO_OUTPUT_LOW);
 	if (ret < 0) {
 		LOG_ERR("failed to set SPI_CS low: %d", ret);
 		goto unlock;
@@ -412,7 +405,7 @@ static int fpga_ice40_load_spi(const struct device *dev, uint32_t *image_ptr, ui
 	}
 
 	LOG_DBG("Set SPI_CS high");
-	ret = gpio_pin_configure_dt(&config->bus.config.cs->gpio, GPIO_OUTPUT_HIGH);
+	ret = gpio_pin_configure_dt(&config->bus.config.cs.gpio, GPIO_OUTPUT_HIGH);
 	if (ret < 0) {
 		LOG_ERR("failed to set SPI_CS high: %d", ret);
 		goto unlock;
@@ -420,7 +413,7 @@ static int fpga_ice40_load_spi(const struct device *dev, uint32_t *image_ptr, ui
 
 	LOG_DBG("Send %u clocks", config->trailing_clocks);
 	tx_buf.buf = clock_buf;
-	tx_buf.len = ceiling_fraction(config->trailing_clocks, BITS_PER_BYTE);
+	tx_buf.len = DIV_ROUND_UP(config->trailing_clocks, BITS_PER_BYTE);
 	ret = spi_write_dt(&config->bus, &tx_bufs);
 	if (ret < 0) {
 		LOG_ERR("Failed to send trailing %u clocks: %d", config->trailing_clocks, ret);
@@ -445,7 +438,7 @@ static int fpga_ice40_load_spi(const struct device *dev, uint32_t *image_ptr, ui
 
 unlock:
 	(void)gpio_pin_configure_dt(&config->creset, GPIO_OUTPUT_HIGH);
-	(void)gpio_pin_configure_dt(&config->bus.config.cs->gpio, GPIO_OUTPUT_HIGH);
+	(void)gpio_pin_configure_dt(&config->bus.config.cs.gpio, GPIO_OUTPUT_HIGH);
 #ifdef CONFIG_PINCTRL
 	(void)pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
 #endif
@@ -541,8 +534,8 @@ static int fpga_ice40_init(const struct device *dev)
 #define FPGA_ICE40_CONFIG_DELAY_US(inst)                                                           \
 	DT_INST_PROP_OR(inst, config_delay_us, FPGA_ICE40_CONFIG_DELAY_US_MIN)
 
-#define FPGA_ICE40_CRESET_DELAY_NS(inst)                                                           \
-	DT_INST_PROP_OR(inst, creset_delay_ns, FPGA_ICE40_CRESET_DELAY_NS_MIN)
+#define FPGA_ICE40_CRESET_DELAY_US(inst)                                                           \
+	DT_INST_PROP_OR(inst, creset_delay_us, FPGA_ICE40_CRESET_DELAY_US_MIN)
 
 #define FPGA_ICE40_LEADING_CLOCKS(inst)                                                            \
 	DT_INST_PROP_OR(inst, leading_clocks, FPGA_ICE40_LEADING_CLOCKS_MIN)
@@ -576,8 +569,8 @@ static int fpga_ice40_init(const struct device *dev)
 	BUILD_ASSERT(FPGA_ICE40_BUS_FREQ(inst) <= FPGA_ICE40_SPI_HZ_MAX);                          \
 	BUILD_ASSERT(FPGA_ICE40_CONFIG_DELAY_US(inst) >= FPGA_ICE40_CONFIG_DELAY_US_MIN);          \
 	BUILD_ASSERT(FPGA_ICE40_CONFIG_DELAY_US(inst) <= UINT16_MAX);                              \
-	BUILD_ASSERT(FPGA_ICE40_CRESET_DELAY_NS(inst) >= FPGA_ICE40_CRESET_DELAY_NS_MIN);          \
-	BUILD_ASSERT(FPGA_ICE40_CRESET_DELAY_NS(inst) <= UINT8_MAX);                               \
+	BUILD_ASSERT(FPGA_ICE40_CRESET_DELAY_US(inst) >= FPGA_ICE40_CRESET_DELAY_US_MIN);          \
+	BUILD_ASSERT(FPGA_ICE40_CRESET_DELAY_US(inst) <= UINT16_MAX);                              \
 	BUILD_ASSERT(FPGA_ICE40_LEADING_CLOCKS(inst) >= FPGA_ICE40_LEADING_CLOCKS_MIN);            \
 	BUILD_ASSERT(FPGA_ICE40_LEADING_CLOCKS(inst) <= UINT8_MAX);                                \
 	BUILD_ASSERT(FPGA_ICE40_TRAILING_CLOCKS(inst) >= FPGA_ICE40_TRAILING_CLOCKS_MIN);          \
@@ -597,7 +590,7 @@ static int fpga_ice40_init(const struct device *dev)
 		.clear = FPGA_ICE40_GPIO_PINS(inst, gpios_clear_reg),                              \
 		.mhz_delay_count = FPGA_ICE40_MHZ_DELAY_COUNT(inst),                               \
 		.config_delay_us = FPGA_ICE40_CONFIG_DELAY_US(inst),                               \
-		.creset_delay_ns = FPGA_ICE40_CRESET_DELAY_NS(inst),                               \
+		.creset_delay_us = FPGA_ICE40_CRESET_DELAY_US(inst),                               \
 		.leading_clocks = FPGA_ICE40_LEADING_CLOCKS(inst),                                 \
 		.trailing_clocks = FPGA_ICE40_TRAILING_CLOCKS(inst),                               \
 		.load = FPGA_ICE40_LOAD_FUNC(inst),                                                \

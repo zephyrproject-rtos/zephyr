@@ -49,13 +49,6 @@ struct ipip_context {
 	bool init_done;
 };
 
-static int ipip_init(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-
-	return 0;
-}
-
 static void iface_init(struct net_if *iface)
 {
 	struct ipip_context *ctx = net_if_get_device(iface)->data;
@@ -559,7 +552,7 @@ static const struct virtual_interface_api ipip_iface_api = {
 	}
 
 #define NET_IPIP_INTERFACE_INIT(x, _)					\
-	NET_VIRTUAL_INTERFACE_INIT(ipip##x, "IP_TUNNEL" #x, ipip_init,	\
+	NET_VIRTUAL_INTERFACE_INIT(ipip##x, "IP_TUNNEL" #x, NULL,	\
 				   NULL, &ipip_context_data_##x, NULL,	\
 				   CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,	\
 				   &ipip_iface_api, IPIPV4_MTU)

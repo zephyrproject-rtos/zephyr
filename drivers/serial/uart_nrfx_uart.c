@@ -8,17 +8,12 @@
  * @brief Driver for Nordic Semiconductor nRF5X UART
  */
 
+#include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/uart.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/irq.h>
 #include <soc.h>
 #include <hal/nrf_uart.h>
-
-#ifdef CONFIG_PINCTRL
-#include <zephyr/drivers/pinctrl.h>
-#else
-#include <hal/nrf_gpio.h>
-#endif /* CONFIG_PINCTRL */
 
 /*
  * Extract information from devicetree.
@@ -33,11 +28,7 @@
 
 #define BAUDRATE	PROP(current_speed)
 
-#ifdef CONFIG_PINCTRL
 #define DISABLE_RX	PROP(disable_rx)
-#else
-#define DISABLE_RX	!HAS_PROP(rx_pin)
-#endif /* CONFIG_PINCTRL */
 #define HW_FLOW_CONTROL_AVAILABLE	PROP(hw_flow_control)
 
 #define IRQN		DT_INST_IRQN(0)
@@ -46,16 +37,7 @@
 static NRF_UART_Type *const uart0_addr = (NRF_UART_Type *)DT_INST_REG_ADDR(0);
 
 struct uart_nrfx_config {
-#ifdef CONFIG_PINCTRL
 	const struct pinctrl_dev_config *pcfg;
-#else
-	uint32_t tx_pin;
-	uint32_t rx_pin;
-	uint32_t rts_pin;
-	uint32_t cts_pin;
-	bool rx_pull_up;
-	bool cts_pull_up;
-#endif /* CONFIG_PINCTRL */
 };
 
 /* Device data structure */
@@ -104,58 +86,6 @@ static volatile uint8_t uart_sw_event_txdrdy;
 static volatile bool disable_tx_irq;
 
 #endif /* CONFIG_UART_0_INTERRUPT_DRIVEN */
-
-#ifndef CONFIG_PINCTRL
-static void uart_nrfx_pins_configure(const struct device *dev, bool sleep)
-{
-	const struct uart_nrfx_config *cfg = dev->config;
-
-	if (!sleep) {
-		if (cfg->tx_pin != NRF_UART_PSEL_DISCONNECTED) {
-			nrf_gpio_pin_write(cfg->tx_pin, 1);
-			nrf_gpio_cfg_output(cfg->tx_pin);
-		}
-
-		if (cfg->rx_pin != NRF_UART_PSEL_DISCONNECTED) {
-			nrf_gpio_cfg_input(cfg->rx_pin,
-					   (cfg->rx_pull_up ?
-					    NRF_GPIO_PIN_PULLUP :
-					    NRF_GPIO_PIN_NOPULL));
-		}
-
-		if (cfg->rts_pin != NRF_UART_PSEL_DISCONNECTED) {
-			nrf_gpio_pin_write(cfg->rts_pin, 1);
-			nrf_gpio_cfg_output(cfg->rts_pin);
-		}
-
-		if (cfg->cts_pin != NRF_UART_PSEL_DISCONNECTED) {
-			nrf_gpio_cfg_input(cfg->cts_pin,
-					   (cfg->cts_pull_up ?
-					    NRF_GPIO_PIN_PULLUP :
-					    NRF_GPIO_PIN_NOPULL));
-		}
-	} else {
-		if (cfg->tx_pin != NRF_UART_PSEL_DISCONNECTED) {
-			nrf_gpio_cfg_default(cfg->tx_pin);
-		}
-
-		if (cfg->rx_pin != NRF_UART_PSEL_DISCONNECTED) {
-			nrf_gpio_cfg_default(cfg->rx_pin);
-		}
-
-		if (cfg->rts_pin != NRF_UART_PSEL_DISCONNECTED) {
-			nrf_gpio_cfg_default(cfg->rts_pin);
-		}
-
-		if (cfg->cts_pin != NRF_UART_PSEL_DISCONNECTED) {
-			nrf_gpio_cfg_default(cfg->cts_pin);
-		}
-	}
-
-	nrf_uart_txrx_pins_set(uart0_addr, cfg->tx_pin, cfg->rx_pin);
-	nrf_uart_hwfc_pins_set(uart0_addr, cfg->rts_pin, cfg->cts_pin);
-}
-#endif /* !CONFIG_PINCTRL */
 
 static bool event_txdrdy_check(void)
 {
@@ -221,15 +151,19 @@ static int baudrate_set(const struct device *dev, uint32_t baudrate)
 	case 28800:
 		nrf_baudrate = NRF_UART_BAUDRATE_28800;
 		break;
+#if defined(UART_BAUDRATE_BAUDRATE_Baud31250)
 	case 31250:
 		nrf_baudrate = NRF_UART_BAUDRATE_31250;
 		break;
+#endif
 	case 38400:
 		nrf_baudrate = NRF_UART_BAUDRATE_38400;
 		break;
+#if defined(UART_BAUDRATE_BAUDRATE_Baud56000)
 	case 56000:
 		nrf_baudrate = NRF_UART_BAUDRATE_56000;
 		break;
+#endif
 	case 57600:
 		nrf_baudrate = NRF_UART_BAUDRATE_57600;
 		break;
@@ -1040,22 +974,16 @@ static void uart_nrfx_isr(const struct device *dev)
  */
 static int uart_nrfx_init(const struct device *dev)
 {
+	const struct uart_nrfx_config *config = dev->config;
 	struct uart_nrfx_data *data = dev->data;
 	int err;
-#ifdef CONFIG_PINCTRL
-	const struct uart_nrfx_config *config = dev->config;
-#endif /* CONFIG_PINCTRL */
 
 	nrf_uart_disable(uart0_addr);
 
-#ifdef CONFIG_PINCTRL
 	err = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 	if (err < 0) {
 		return err;
 	}
-#else
-	uart_nrfx_pins_configure(dev, false);
-#endif /* CONFIG_PINCTRL */
 
 	/* Set initial configuration */
 	err = uart_nrfx_configure(dev, &data->uart_config);
@@ -1142,23 +1070,17 @@ static const struct uart_driver_api uart_nrfx_uart_driver_api = {
 static int uart_nrfx_pm_action(const struct device *dev,
 			       enum pm_device_action action)
 {
-#ifdef CONFIG_PINCTRL
 	const struct uart_nrfx_config *config = dev->config;
 	int ret;
-#endif
 
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
 		if (IS_ENABLED(CONFIG_UART_0_GPIO_MANAGEMENT)) {
-#ifdef CONFIG_PINCTRL
 			ret = pinctrl_apply_state(config->pcfg,
 						  PINCTRL_STATE_DEFAULT);
 			if (ret < 0) {
 				return ret;
 			}
-#else
-			uart_nrfx_pins_configure(dev, false);
-#endif /* CONFIG_PINCTRL */
 		}
 
 		nrf_uart_enable(uart0_addr);
@@ -1171,15 +1093,11 @@ static int uart_nrfx_pm_action(const struct device *dev,
 		nrf_uart_disable(uart0_addr);
 
 		if (IS_ENABLED(CONFIG_UART_0_GPIO_MANAGEMENT)) {
-#ifdef CONFIG_PINCTRL
 			ret = pinctrl_apply_state(config->pcfg,
 						  PINCTRL_STATE_SLEEP);
 			if (ret < 0) {
 				return ret;
 			}
-#else
-			uart_nrfx_pins_configure(dev, true);
-#endif /* CONFIG_PINCTRL */
 		}
 		break;
 	default:
@@ -1190,24 +1108,12 @@ static int uart_nrfx_pm_action(const struct device *dev,
 }
 #endif /* CONFIG_PM_DEVICE */
 
-#ifdef CONFIG_PINCTRL
 PINCTRL_DT_INST_DEFINE(0);
-#endif /* CONFIG_PINCTRL */
 
-NRF_DT_CHECK_PIN_ASSIGNMENTS(DT_DRV_INST(0), 1,
-			     tx_pin, rx_pin, rts_pin, cts_pin);
+NRF_DT_CHECK_NODE_HAS_PINCTRL_SLEEP(DT_DRV_INST(0));
 
 static const struct uart_nrfx_config uart_nrfx_uart0_config = {
-#ifdef CONFIG_PINCTRL
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
-#else
-	.tx_pin = DT_INST_PROP_OR(0, tx_pin, NRF_UART_PSEL_DISCONNECTED),
-	.rx_pin = DT_INST_PROP_OR(0, rx_pin, NRF_UART_PSEL_DISCONNECTED),
-	.rts_pin = DT_INST_PROP_OR(0, rts_pin, NRF_UART_PSEL_DISCONNECTED),
-	.cts_pin = DT_INST_PROP_OR(0, cts_pin, NRF_UART_PSEL_DISCONNECTED),
-	.rx_pull_up = DT_INST_PROP(0, rx_pull_up),
-	.cts_pull_up = DT_INST_PROP(0, cts_pull_up)
-#endif /* CONFIG_PINCTRL */
 };
 
 static struct uart_nrfx_data uart_nrfx_uart0_data = {

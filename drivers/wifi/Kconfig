@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig WIFI
-	bool "Wi-Fi Drivers"
+	bool "Wi-Fi drivers"
 
 if WIFI
 

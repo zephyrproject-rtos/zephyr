@@ -537,6 +537,21 @@ uint16_t bt_mesh_app_key_find(bool dev_key, uint8_t aid,
 			if (!err) {
 				return BT_MESH_KEY_DEV_LOCAL;
 			}
+
+#if defined(CONFIG_BT_MESH_RPR_SRV)
+			if (atomic_test_bit(bt_mesh.flags, BT_MESH_DEVKEY_CAND)) {
+				err = cb(rx, bt_mesh.dev_key_cand, cb_data);
+				if (!err) {
+					/* Bluetooth Mesh Specification v1.1.0, section 3.6.4.2:
+					 * If a message is successfully decrypted using the device
+					 * key candidate, the device key candidate should
+					 * permanently replace the original devkey.
+					 */
+					bt_mesh_dev_key_cand_activate();
+					return BT_MESH_KEY_DEV_LOCAL;
+				}
+			}
+#endif
 		}
 
 		return BT_MESH_KEY_UNUSED;
@@ -665,12 +680,12 @@ void bt_mesh_app_key_pending_store(void)
 			continue;
 		}
 
+		update->valid = 0U;
+
 		if (update->clear) {
 			clear_app_key(update->key_idx);
 		} else {
 			store_app_key(update->key_idx);
 		}
-
-		update->valid = 0U;
 	}
 }

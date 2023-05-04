@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include <nxp/nxp_rt1170_cm7.dtsi>
+#include <nxp/nxp_rt11xx_cm7.dtsi>
 #include "mimxrt1170_evk.dtsi"
 
 / {
@@ -16,6 +16,7 @@
 	aliases {
 		mipi-dsi = &mipi_dsi;
 		watchdog0 = &wdog1;
+		kscan0 = &touch_controller;
 	};
 
 	chosen {
@@ -30,6 +31,8 @@
 		zephyr,code-partition = &slot0_partition;
 		zephyr,display = &lcdif;
 		zephyr,keyboard-scan = &touch_controller;
+		zephyr,cpu1-region = &ocram;
+		zephyr,ipc = &mailbox_a;
 	};
 
 	sdram0: memory@80000000 {
@@ -39,7 +42,7 @@
 	};
 
 	en_mipi_display: enable-mipi-display {
-		compatible = "regulator-fixed-sync", "regulator-fixed";
+		compatible = "regulator-fixed";
 		regulator-name = "en_mipi_display";
 		enable-gpios = <&gpio11 16 GPIO_ACTIVE_HIGH>;
 		regulator-boot-on;
@@ -115,54 +118,6 @@
 	};
 };
 
-&flexspi {
-	status = "okay";
-	ahb-prefetch;
-	ahb-read-addr-opt;
-	rx-clock-source = <1>;
-	reg = <0x400cc000 0x4000>, <0x30000000 DT_SIZE_M(16)>;
-	is25wp128: is25wp128@0 {
-		compatible = "nxp,imx-flexspi-nor";
-		size = <134217728>;
-		reg = <0>;
-		spi-max-frequency = <133000000>;
-		status = "okay";
-		jedec-id = [9d 70 17];
-		erase-block-size = <4096>;
-		write-block-size = <1>;
-
-		partitions {
-			compatible = "fixed-partitions";
-			#address-cells = <1>;
-			#size-cells = <1>;
-
-			boot_partition: partition@0 {
-				label = "mcuboot";
-				reg = <0x00000000 DT_SIZE_K(128)>;
-			};
-			/* Note slot 0 has one additional sector,
-			 * this is intended for use with the swap move algorithm
-			 */
-			slot0_partition: partition@20000 {
-				label = "image-0";
-				reg = <0x00020000 0x301000>;
-			};
-			slot1_partition: partition@321000 {
-				label = "image-1";
-				reg = <0x00321000 0x300000>;
-			};
-			scratch_partition: partition@621000 {
-				label = "image-scratch";
-				reg = <0x00621000 DT_SIZE_K(128)>;
-			};
-			storage_partition: partition@641000 {
-				label = "storage";
-				reg = <0x00641000 DT_SIZE_K(1856)>;
-			};
-		};
-	};
-};
-
 &lpadc0 {
 	status = "okay";
 };
@@ -181,10 +136,15 @@
 	status = "okay";
 };
 
-/* Enable GPT for use as a hardware timer. This disables Cortex Systick.
- * to use systick, change this node from "gpt_hw_timer" to "systick"
+/* GPT and Systick are enabled. If power management is enabled, the GPT
+ * timer will be used instead of systick, as allows the core clock to
+ * be gated.
  */
 &gpt_hw_timer {
+	status = "okay";
+};
+
+&systick {
 	status = "okay";
 };
 
@@ -206,5 +166,9 @@
 };
 
 zephyr_udc0: &usb1 {
+	status = "okay";
+};
+
+&mailbox_a {
 	status = "okay";
 };

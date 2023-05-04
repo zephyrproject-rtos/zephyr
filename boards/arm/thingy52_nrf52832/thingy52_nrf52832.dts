@@ -80,7 +80,7 @@
 	};
 
 	spk_pwr: spk-pwr-ctrl {
-		compatible = "regulator-fixed-sync", "regulator-fixed";
+		compatible = "regulator-fixed";
 		regulator-name = "spk-pwr-ctrl";
 		enable-gpios = <&gpio0 29 GPIO_ACTIVE_HIGH>;
 	};

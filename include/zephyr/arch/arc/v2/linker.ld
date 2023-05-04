@@ -63,6 +63,12 @@ MEMORY {
 #ifdef DCCM_START
 	DCCM  (rw)  : ORIGIN = DCCM_START,  LENGTH = DCCM_SIZE
 #endif
+#ifdef XCCM_START
+	XCCM  (rw)  : ORIGIN = XCCM_START,  LENGTH = XCCM_SIZE
+#endif
+#ifdef YCCM_START
+	YCCM  (rw)  : ORIGIN = YCCM_START,  LENGTH = YCCM_SIZE
+#endif
 	/* Used by and documented in include/linker/intlist.ld */
 	IDT_LIST  (wx)      : ORIGIN = 0xFFFFF7FF, LENGTH = 2K
 }
@@ -92,10 +98,24 @@ SECTIONS {
 	__rodata_region_start = .;
 
 #include <zephyr/linker/common-rom.ld>
-#include <zephyr/linker/thread-local-storage.ld>
 #ifdef __MWDT_LINKER_CMD__
+	SECTION_DATA_PROLOGUE(tdata,,)
+	{
+		*(.tls .tls.*);
+	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+
+	#ifdef CONFIG_XIP
+		/* The "primary copy" of tls should be only in flash on XIP systems */
+		PROVIDE(_arcmwdt_tls_start = LOADADDR(tdata));
+	#else
+		PROVIDE(_arcmwdt_tls_start = ADDR(tdata));
+	#endif
+
+	PROVIDE(_arcmwdt_tls_size = SIZEOF(tdata));
+
 /* TODO: add mwdt specific ROM C++ sections */
 #else
+#include <zephyr/linker/thread-local-storage.ld>
 #include <zephyr/linker/cplusplus-rom.ld>
 #endif /* __MWDT_LINKER_CMD__ */
 
@@ -110,12 +130,12 @@ SECTIONS {
 #include <snippets-rodata.ld>
 #include <zephyr/linker/kobject-rom.ld>
 
-#if defined(CONFIG_CPLUSPLUS) && !defined(CONFIG_CPP_STATIC_INIT_GNU) && defined(__MWDT_LINKER_CMD__)
+#if defined(CONFIG_CPP) && !defined(CONFIG_CPP_STATIC_INIT_GNU) && defined(__MWDT_LINKER_CMD__)
 		. = ALIGN(4);
 		_fctors = .;
 		KEEP(*(.ctors*))
 		_ectors = .;
-#endif /* CONFIG_CPLUSPLUS && !CONFIG_CPP_STATIC_INIT_GNU && __MWDT_LINKER_CMD__ */
+#endif /* CONFIG_CPP && !CONFIG_CPP_STATIC_INIT_GNU && __MWDT_LINKER_CMD__ */
 
 		MPU_ALIGN(ABSOLUTE(.) - __rom_region_start);
 	} GROUP_LINK_IN(ROMABLE_REGION)
@@ -232,6 +252,22 @@ SECTIONS {
 	_estack = .;
 #endif /* __MWDT_LINKER_CMD__ */
 
+#ifdef CONFIG_ARC_XY_ENABLE
+	SECTION_PROLOGUE(xdata,,)
+	{
+		__xdata_start = .;
+		*(.Xdata*)
+		__xdata_end = .;
+	} GROUP_DATA_LINK_IN(XCCM, RAMABLE_REGION)
+
+	SECTION_PROLOGUE(ydata,,)
+	{
+		__ydata_start = .;
+		*(.Ydata*)
+		__ydata_end = .;
+	} GROUP_DATA_LINK_IN(YCCM, RAMABLE_REGION)
+#endif
+
 	GROUP_END(RAMABLE_REGION)
 
 /* Located in generated directory. This file is populated by the
@@ -257,11 +293,11 @@ SECTIONS {
 #endif
 
 	/DISCARD/ : {
-#if defined(CONFIG_CPLUSPLUS) && !defined(CONFIG_CPP_STATIC_INIT_GNU) && defined(__MWDT_LINKER_CMD__)
+#if defined(CONFIG_CPP) && !defined(CONFIG_CPP_STATIC_INIT_GNU) && defined(__MWDT_LINKER_CMD__)
 		*(.dtors*)
 		*(.fini*)
 		*(.eh_frame*)
-#endif /* CONFIG_CPLUSPLUS && !CONFIG_CPP_STATIC_INIT_GNU && __MWDT_LINKER_CMD__ */
+#endif /* CONFIG_CPP && !CONFIG_CPP_STATIC_INIT_GNU && __MWDT_LINKER_CMD__ */
 		*(.note.GNU-stack)
 		*(.got.plt)
 		*(.igot.plt)

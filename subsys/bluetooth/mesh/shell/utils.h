@@ -28,7 +28,7 @@
 	} \
 	\
 	SHELL_STATIC_SUBCMD_SET_CREATE(cmd_set_name, \
-			       SHELL_CMD_ARG(set, NULL, "<elem_idx>", cmd_##cmd_set_name##_set, 2,\
+			       SHELL_CMD_ARG(set, NULL, "<ElemIdx>", cmd_##cmd_set_name##_set, 2,\
 					     0), \
 			       SHELL_CMD_ARG(get-all, NULL, NULL, cmd_##cmd_set_name##_get_all, 1,\
 					     0), \
@@ -36,9 +36,9 @@
 
 bool bt_mesh_shell_mdl_first_get(uint16_t id, struct bt_mesh_model **mod);
 
-int bt_mesh_shell_mdl_instance_set(const struct shell *shell, struct bt_mesh_model **mod,
+int bt_mesh_shell_mdl_instance_set(const struct shell *sh, struct bt_mesh_model **mod,
 			      uint16_t mod_id, uint8_t elem_idx);
 
-int bt_mesh_shell_mdl_print_all(const struct shell *shell, uint16_t mod_id);
+int bt_mesh_shell_mdl_print_all(const struct shell *sh, uint16_t mod_id);
 
-int bt_mesh_shell_mdl_cmds_help(const struct shell *shell, size_t argc, char **argv);
+int bt_mesh_shell_mdl_cmds_help(const struct shell *sh, size_t argc, char **argv);

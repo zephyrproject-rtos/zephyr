@@ -12,6 +12,7 @@ zephyr_library_sources_ifdef(CONFIG_ENTROPY_MCUX_CAAM          entropy_mcux_caam
 zephyr_library_sources_ifdef(CONFIG_ENTROPY_MCUX_CSS           entropy_mcux_css.c)
 zephyr_library_sources_ifdef(CONFIG_ENTROPY_NRF5_RNG           entropy_nrf5.c)
 zephyr_library_sources_ifdef(CONFIG_ENTROPY_SAM_RNG            entropy_sam.c)
+zephyr_library_sources_ifdef(CONFIG_ENTROPY_SMARTBOND_TRNG     entropy_smartbond.c)
 zephyr_library_sources_ifdef(CONFIG_ENTROPY_STM32_RNG          entropy_stm32.c)
 zephyr_library_sources_ifdef(CONFIG_ENTROPY_LITEX_RNG          entropy_litex.c)
 zephyr_library_sources_ifdef(CONFIG_FAKE_ENTROPY_NATIVE_POSIX  fake_entropy_native_posix.c)

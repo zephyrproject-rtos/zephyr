@@ -1,0 +1,5 @@
+common:
+  tags: bluetooth host
+tests:
+  bluetooth.host.bt_data_parse:
+    type: unit

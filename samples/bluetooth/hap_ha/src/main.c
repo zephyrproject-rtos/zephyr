@@ -11,6 +11,7 @@
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/audio/audio.h>
+#include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/bluetooth/audio/pacs.h>
 #include <zephyr/bluetooth/audio/csip.h>
 #include <zephyr/bluetooth/services/ias.h>
@@ -147,14 +148,14 @@ BT_IAS_CB_DEFINE(ias_callbacks) = {
 };
 #endif /* CONFIG_BT_IAS */
 
-void main(void)
+int main(void)
 {
 	int err;
 
 	err = bt_enable(NULL);
 	if (err != 0) {
 		printk("Bluetooth init failed (err %d)\n", err);
-		return;
+		return 0;
 	}
 
 	printk("Bluetooth initialized\n");
@@ -162,40 +163,40 @@ void main(void)
 	err = has_server_init();
 	if (err != 0) {
 		printk("HAS Server init failed (err %d)\n", err);
-		return;
+		return 0;
 	}
 
 	err = bap_unicast_sr_init();
 	if (err != 0) {
 		printk("BAP Unicast Server init failed (err %d)\n", err);
-		return;
+		return 0;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_HAS_HEARING_AID_BINAURAL)) {
+	if (IS_ENABLED(CONFIG_HAP_HA_HEARING_AID_BINAURAL)) {
 		err = csip_set_member_init();
 		if (err != 0) {
 			printk("CSIP Set Member init failed (err %d)\n", err);
-			return;
+			return 0;
 		}
 
 		err = csip_generate_rsi(csis_rsi_addata);
 		if (err != 0) {
 			printk("Failed to generate RSI (err %d)\n", err);
-			return;
+			return 0;
 		}
 	}
 
 	err = vcp_vol_renderer_init();
 	if (err != 0) {
 		printk("VCP Volume Renderer init failed (err %d)\n", err);
-		return;
+		return 0;
 	}
 
 	if (IS_ENABLED(CONFIG_BT_ASCS_ASE_SRC)) {
 		err = micp_mic_dev_init();
 		if (err != 0) {
 			printk("MICP Microphone Device init failed (err %d)\n", err);
-			return;
+			return 0;
 		}
 	}
 
@@ -203,11 +204,11 @@ void main(void)
 		err = ccp_call_ctrl_init();
 		if (err != 0) {
 			printk("MICP Microphone Device init failed (err %d)\n", err);
-			return;
+			return 0;
 		}
 	}
 
-	if (IS_ENABLED(CONFIG_BT_HAS_HEARING_AID_BANDED)) {
+	if (IS_ENABLED(CONFIG_HAP_HA_HEARING_AID_BANDED)) {
 		/* HAP_d1.0r00; 3.7 BAP Unicast Server role requirements
 		 * A Banded Hearing Aid in the HA role shall set the
 		 * Front Left and the Front Right bits to a value of 0b1
@@ -233,4 +234,5 @@ void main(void)
 
 	k_work_init_delayable(&adv_work, adv_work_handler);
 	k_work_schedule(&adv_work, K_NO_WAIT);
+	return 0;
 }

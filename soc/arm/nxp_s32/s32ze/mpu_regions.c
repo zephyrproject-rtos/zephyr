@@ -24,11 +24,7 @@ static const struct arm_mpu_region mpu_regions[] = {
 			 REGION_RAM_RO_ATTR((uintptr_t)__rodata_region_end)),
 
 	MPU_REGION_ENTRY("SRAM_DATA",
-#ifdef CONFIG_USERSPACE
-			 (uintptr_t)_app_smem_start,
-#else
-			 (uintptr_t)__kernel_ram_start,
-#endif
+			 (uintptr_t)__rom_region_end,
 			 REGION_RAM_ATTR((uintptr_t)__kernel_ram_end)),
 
 	MPU_REGION_ENTRY("DEVICE",

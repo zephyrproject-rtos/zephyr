@@ -51,16 +51,16 @@ const struct led_rgb *color_at(size_t time, size_t i)
 	}
 }
 
-void main(void)
+int main(void)
 {
 	size_t i, time;
 
 	if (!strip) {
 		LOG_ERR("LED strip device not found");
-		return;
+		return 0;
 	} else if (!device_is_ready(strip)) {
 		LOG_INF("LED strip device %s is not ready", strip->name);
-		return;
+		return 0;
 	}
 	LOG_INF("Found LED strip device %s", strip->name);
 
@@ -80,4 +80,5 @@ void main(void)
 		k_sleep(DELAY_TIME);
 		time++;
 	}
+	return 0;
 }

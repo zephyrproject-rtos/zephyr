@@ -6,10 +6,6 @@
 
 
 #include "test_fat.h"
-#include <ff.h>
-
-/* FatFs work area */
-static FATFS fat_fs;
 
 /* mounting info */
 static struct fs_mount_t fatfs_mnt = {
@@ -24,7 +20,7 @@ static void test_prepare(void)
 
 	fs_file_t_init(&fs);
 	zassert_equal(fs_mount(&fatfs_mnt), 0);
-	zassert_equal(fs_open(&fs, "/NAND:/testfile.txt", FS_O_CREATE),
+	zassert_equal(fs_open(&fs, FATFS_MNTP"/testfile.txt", FS_O_CREATE),
 		      0, NULL);
 	zassert_equal(fs_close(&fs), 0);
 	zassert_equal(fs_unmount(&fatfs_mnt), 0);
@@ -48,17 +44,17 @@ static void test_ops_on_rd(void)
 	zassert_equal(ret, 0, "Expected success", ret);
 
 	/* Attempt creating new file */
-	ret = fs_open(&fs, "/NAND:/nosome", FS_O_CREATE);
+	ret = fs_open(&fs, FATFS_MNTP"/nosome", FS_O_CREATE);
 	zassert_equal(ret, -EROFS, "Expected EROFS", ret);
-	ret = fs_mkdir("/NAND:/another");
+	ret = fs_mkdir(FATFS_MNTP"/another");
 	zassert_equal(ret, -EROFS, "Expected EROFS", ret);
-	ret = fs_rename("/NAND:/testfile.txt", "/NAND:/bestfile.txt");
+	ret = fs_rename(FATFS_MNTP"/testfile.txt", FATFS_MNTP"/bestfile.txt");
 	zassert_equal(ret, -EROFS, "Expected EROFS", ret);
-	ret = fs_unlink("/NAND:/testfile.txt");
+	ret = fs_unlink(FATFS_MNTP"/testfile.txt");
 	zassert_equal(ret, -EROFS, "Expected EROFS", ret);
-	ret = fs_open(&fs, "/NAND:/testfile.txt", FS_O_RDWR);
+	ret = fs_open(&fs, FATFS_MNTP"/testfile.txt", FS_O_RDWR);
 	zassert_equal(ret, -EROFS, "Expected EROFS", ret);
-	ret = fs_open(&fs, "/NAND:/testfile.txt", FS_O_READ);
+	ret = fs_open(&fs, FATFS_MNTP"/testfile.txt", FS_O_READ);
 	zassert_equal(ret, 0, "Expected success", ret);
 	fs_close(&fs);
 }

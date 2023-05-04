@@ -15,4 +15,6 @@ tests:
     filter: CONFIG_ARCH_HAS_USERSPACE and CONFIG_MPU_REQUIRES_NON_OVERLAPPING_REGIONS
     arch_allow: arm
     platform_allow: efr32_radio_brd4180a mps2_an521 nrf9160dk_nrf9160
+    integration_platforms:
+      - mps2_an521
     extra_args: CONFIG_MPU_GAP_FILLING=y

@@ -41,4 +41,5 @@
 #endif
 
 
+#include <zephyr/arch/arc/v2/xy_mem.ld>
 #include <zephyr/arch/arc/v2/linker.ld>

@@ -6,6 +6,7 @@
 
 #include <stdlib.h>
 #include <zephyr/kernel.h>
+#include <zephyr/sys/check.h>
 
 #include <zephyr/device.h>
 
@@ -70,7 +71,7 @@ static ssize_t read_features(struct bt_conn *conn, const struct bt_gatt_attr *at
 }
 
 /* Hearing Access Service GATT Attributes */
-BT_GATT_SERVICE_DEFINE(has_svc,
+static struct bt_gatt_attr has_attrs[] = {
 	BT_GATT_PRIMARY_SERVICE(BT_UUID_HAS),
 	BT_AUDIO_CHRC(BT_UUID_HAS_HEARING_AID_FEATURES,
 		      BT_GATT_CHRC_READ,
@@ -92,11 +93,13 @@ BT_GATT_SERVICE_DEFINE(has_svc,
 		      read_active_preset_index, NULL, NULL),
 	BT_AUDIO_CCC(ccc_cfg_changed),
 #endif /* CONFIG_BT_HAS_PRESET_SUPPORT */
-);
+};
+
+static struct bt_gatt_service has_svc;
 
 #if defined(CONFIG_BT_HAS_PRESET_SUPPORT)
-#define PRESET_CONTROL_POINT_ATTR &has_svc.attrs[4]
-#define ACTIVE_PRESET_INDEX_ATTR &has_svc.attrs[7]
+#define PRESET_CONTROL_POINT_ATTR &has_attrs[4]
+#define ACTIVE_PRESET_INDEX_ATTR &has_attrs[7]
 
 static struct has_client {
 	struct bt_conn *conn;
@@ -108,12 +111,12 @@ static struct has_client {
 	} params;
 
 	struct  {
-		bool is_pending;
+		bool active_index;
+		bool control_point;
 		uint8_t preset_changed_index_next;
-	} ntf_bonded;
+	} pending_ntf;
 	struct bt_has_cp_read_presets_req read_presets_req;
 	struct k_work control_point_work;
-	struct k_work_sync control_point_work_sync;
 } has_client_list[BT_HAS_MAX_CONN];
 
 /* HAS internal preset representation */
@@ -132,7 +135,8 @@ static struct has_preset {
 static uint8_t has_preset_num;
 
 /* Active preset notification work */
-static struct k_work active_preset_work;
+static void active_preset_work_process(struct k_work *work);
+static K_WORK_DEFINE(active_preset_work, active_preset_work_process);
 
 static void process_control_point_work(struct k_work *work);
 
@@ -160,7 +164,7 @@ static struct has_client *client_get_or_new(struct bt_conn *conn)
 	return client;
 }
 
-static bool read_presets_req_is_pending(struct has_client *client)
+static bool read_presets_req_pending_cp(struct has_client *client)
 {
 	return client->read_presets_req.num_presets > 0;
 }
@@ -176,7 +180,8 @@ static void client_free(struct has_client *client)
 
 	read_presets_req_free(client);
 
-	client->ntf_bonded.is_pending = false;
+	client->pending_ntf.control_point = false;
+	client->pending_ntf.active_index = false;
 
 	bt_conn_unref(client->conn);
 
@@ -210,11 +215,17 @@ static void security_changed(struct bt_conn *conn, bt_security_t level, enum bt_
 		return;
 	}
 
+	if (!bt_addr_le_is_bonded(conn->id, &conn->le.dst)) {
+		return;
+	}
+
 	/* Notify after reconnection */
-	if (client->ntf_bonded.is_pending) {
+	if (client->pending_ntf.active_index) {
 		/* Emit active preset notification */
 		k_work_submit(&active_preset_work);
+	}
 
+	if (client->pending_ntf.control_point) {
 		/* Emit preset changed notifications */
 		k_work_submit(&client->control_point_work);
 	}
@@ -235,10 +246,6 @@ static void connected(struct bt_conn *conn, uint8_t err)
 		LOG_ERR("Failed to allocate client");
 		return;
 	}
-
-	/* Mark preset changed operation as pending */
-	client->ntf_bonded.is_pending = true;
-	client->ntf_bonded.preset_changed_index_next = BT_HAS_PRESET_INDEX_FIRST;
 }
 
 static void disconnected(struct bt_conn *conn, uint8_t reason)
@@ -347,11 +354,12 @@ static void control_point_ntf_complete(struct bt_conn *conn, void *user_data)
 {
 	struct has_client *client = client_get(conn);
 
-	LOG_DBG("conn %p\n", (void *)conn);
+	LOG_DBG("conn %p", (void *)conn);
 
 	/* Resubmit if needed */
 	if (client != NULL &&
-	    (read_presets_req_is_pending(client) || client->ntf_bonded.is_pending)) {
+	    (read_presets_req_pending_cp(client) ||
+	     client->pending_ntf.control_point)) {
 		k_work_submit(&client->control_point_work);
 	}
 }
@@ -362,7 +370,7 @@ static void control_point_ind_complete(struct bt_conn *conn,
 {
 	if (err) {
 		/* TODO: Handle error somehow */
-		LOG_ERR("conn %p err 0x%02x\n", (void *)conn, err);
+		LOG_ERR("conn %p err 0x%02x", (void *)conn, err);
 	}
 
 	control_point_ntf_complete(conn, NULL);
@@ -404,6 +412,13 @@ static int control_point_send_all(struct net_buf_simple *buf)
 		int err;
 
 		if (!client->conn) {
+			/* Mark preset changed operation as pending */
+			client->pending_ntf.control_point = true;
+			/* For simplicity we simply start with the first index,
+			 * rather than keeping detailed logs of which clients
+			 * have knowledge of which presets
+			 */
+			client->pending_ntf.preset_changed_index_next = BT_HAS_PRESET_INDEX_FIRST;
 			continue;
 		}
 
@@ -505,7 +520,7 @@ static void process_control_point_work(struct k_work *work)
 		return;
 	}
 
-	if (read_presets_req_is_pending(client)) {
+	if (read_presets_req_pending_cp(client)) {
 		const struct has_preset *preset = NULL;
 		bool is_last = true;
 
@@ -539,12 +554,12 @@ static void process_control_point_work(struct k_work *work)
 			client->read_presets_req.start_index = preset->index + 1;
 			client->read_presets_req.num_presets--;
 		}
-	} else if (client->ntf_bonded.is_pending) {
+	} else if (client->pending_ntf.control_point) {
 		const struct has_preset *preset = NULL;
 		const struct has_preset *next = NULL;
 		bool is_last = true;
 
-		preset_foreach(client->ntf_bonded.preset_changed_index_next,
+		preset_foreach(client->pending_ntf.preset_changed_index_next,
 			       BT_HAS_PRESET_INDEX_LAST, preset_found, &preset);
 
 		if (preset == NULL) {
@@ -562,9 +577,9 @@ static void process_control_point_work(struct k_work *work)
 		}
 
 		if (err || is_last) {
-			client->ntf_bonded.is_pending = false;
+			client->pending_ntf.control_point = false;
 		} else {
-			client->ntf_bonded.preset_changed_index_next = preset->index + 1;
+			client->pending_ntf.preset_changed_index_next = preset->index + 1;
 		}
 	}
 }
@@ -604,7 +619,7 @@ static uint8_t handle_read_preset_req(struct bt_conn *conn, struct net_buf_simpl
 	}
 
 	/* Reject if already in progress */
-	if (read_presets_req_is_pending(client)) {
+	if (read_presets_req_pending_cp(client)) {
 		return BT_HAS_ERR_OPERATION_NOT_POSSIBLE;
 	}
 
@@ -700,7 +715,23 @@ static void active_preset_work_process(struct k_work *work)
 {
 	const uint8_t active_index = bt_has_preset_active_get();
 
-	bt_gatt_notify(NULL, ACTIVE_PRESET_INDEX_ATTR, &active_index, sizeof(active_index));
+	for (size_t i = 0U; i < ARRAY_SIZE(has_client_list); i++) {
+		struct has_client *client = &has_client_list[i];
+		int err;
+
+		if (client->conn == NULL) {
+			/* mark to notify on reconnect */
+			client->pending_ntf.active_index = true;
+			continue;
+		}
+
+		err = bt_gatt_notify(client->conn, ACTIVE_PRESET_INDEX_ATTR,
+				     &active_index, sizeof(active_index));
+		if (err != 0) {
+			LOG_DBG("failed to notify for %p: %d",
+				client->conn, err);
+		}
+	}
 }
 
 static void preset_active_set(uint8_t index)
@@ -864,19 +895,19 @@ static uint8_t handle_control_point_op(struct bt_conn *conn, struct net_buf_simp
 	case BT_HAS_OP_SET_PREV_PRESET:
 		return handle_set_prev_preset(false);
 	case BT_HAS_OP_SET_ACTIVE_PRESET_SYNC:
-		if (IS_ENABLED(CONFIG_BT_HAS_PRESET_SYNC_SUPPORT)) {
+		if ((has.features & BT_HAS_FEAT_PRESET_SYNC_SUPP) != 0) {
 			return handle_set_active_preset(buf, true);
 		} else {
 			return BT_HAS_ERR_PRESET_SYNC_NOT_SUPP;
 		}
 	case BT_HAS_OP_SET_NEXT_PRESET_SYNC:
-		if (IS_ENABLED(CONFIG_BT_HAS_PRESET_SYNC_SUPPORT)) {
+		if ((has.features & BT_HAS_FEAT_PRESET_SYNC_SUPP) != 0) {
 			return handle_set_next_preset(true);
 		} else {
 			return BT_HAS_ERR_PRESET_SYNC_NOT_SUPP;
 		}
 	case BT_HAS_OP_SET_PREV_PRESET_SYNC:
-		if (IS_ENABLED(CONFIG_BT_HAS_PRESET_SYNC_SUPPORT)) {
+		if ((has.features & BT_HAS_FEAT_PRESET_SYNC_SUPP) != 0) {
 			return handle_set_prev_preset(true);
 		} else {
 			return BT_HAS_ERR_PRESET_SYNC_NOT_SUPP;
@@ -1122,23 +1153,45 @@ int bt_has_preset_name_change(uint8_t index, const char *name)
 }
 #endif /* CONFIG_BT_HAS_PRESET_SUPPORT */
 
-static int has_init(const struct device *dev)
+int bt_has_register(const struct bt_has_register_param *param)
 {
-	ARG_UNUSED(dev);
+	static bool registered;
+	int err;
+
+	LOG_DBG("param %p", param);
+
+	CHECKIF(!param) {
+		LOG_DBG("NULL params pointer");
+		return -EINVAL;
+	}
+
+	if (registered) {
+		return -EALREADY;
+	}
 
 	/* Initialize the supported features characteristic value */
-	has.features = CONFIG_BT_HAS_HEARING_AID_TYPE & BT_HAS_FEAT_HEARING_AID_TYPE_MASK;
+	has.features = param->type;
 
 	if (IS_ENABLED(CONFIG_BT_HAS_PRESET_SUPPORT)) {
 		has.features |= BT_HAS_FEAT_DYNAMIC_PRESETS;
-	}
 
-	if (IS_ENABLED(CONFIG_BT_HAS_HEARING_AID_BINAURAL)) {
-		if (IS_ENABLED(CONFIG_BT_HAS_PRESET_SYNC_SUPPORT)) {
+		if (param->preset_sync_support) {
+			if (param->type != BT_HAS_HEARING_AID_TYPE_BINAURAL) {
+				LOG_DBG("Preset sync support only available "
+					"for binaural hearing aid type");
+				return -EINVAL;
+			}
+
 			has.features |= BT_HAS_FEAT_PRESET_SYNC_SUPP;
 		}
 
-		if (!IS_ENABLED(CONFIG_BT_HAS_IDENTICAL_PRESET_RECORDS)) {
+		if (param->independent_presets) {
+			if (param->type != BT_HAS_HEARING_AID_TYPE_BINAURAL) {
+				LOG_DBG("Independent presets only available "
+					"for binaural hearing aid type");
+				return -EINVAL;
+			}
+
 			has.features |= BT_HAS_FEAT_INDEPENDENT_PRESETS;
 		}
 	}
@@ -1147,30 +1200,14 @@ static int has_init(const struct device *dev)
 		has.features |= BT_HAS_FEAT_WRITABLE_PRESETS_SUPP;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_PAC_SNK_LOC)) {
-		if (IS_ENABLED(CONFIG_BT_HAS_HEARING_AID_BANDED)) {
-			/* HAP_d1.0r00; 3.7 BAP Unicast Server role requirements
-			 * A Banded Hearing Aid in the HA role shall set the
-			 * Front Left and the Front Right bits to a value of 0b1
-			 * in the Sink Audio Locations characteristic value.
-			 */
-			bt_pacs_set_location(BT_AUDIO_DIR_SINK,
-					     (BT_AUDIO_LOCATION_FRONT_LEFT |
-					      BT_AUDIO_LOCATION_FRONT_RIGHT));
-		} else if (IS_ENABLED(CONFIG_BT_HAS_HEARING_AID_LEFT)) {
-			bt_pacs_set_location(BT_AUDIO_DIR_SINK,
-					     BT_AUDIO_LOCATION_FRONT_LEFT);
-		} else {
-			bt_pacs_set_location(BT_AUDIO_DIR_SINK,
-					     BT_AUDIO_LOCATION_FRONT_RIGHT);
-		}
+	has_svc = (struct bt_gatt_service)BT_GATT_SERVICE(has_attrs);
+	err = bt_gatt_service_register(&has_svc);
+	if (err != 0) {
+		LOG_DBG("HAS service register failed: %d", err);
+		return err;
 	}
 
-#if defined(CONFIG_BT_HAS_PRESET_SUPPORT)
-	k_work_init(&active_preset_work, active_preset_work_process);
-#endif /* CONFIG_BT_HAS_PRESET_SUPPORT */
+	registered = true;
 
 	return 0;
 }
-
-SYS_INIT(has_init, APPLICATION, CONFIG_APPLICATION_INIT_PRIORITY);

@@ -11,8 +11,24 @@ config BOARD
 
 choice CODE_LOCATION
 	default CODE_FLEXSPI if BOARD_MIMXRT1170_EVK_CM7
+	default CODE_OCRAM if BOARD_MIMXRT1170_EVK_CM4 && SECOND_CORE_MCUX
 	default CODE_SRAM0 if BOARD_MIMXRT1170_EVK_CM4
 endchoice
+
+if SECOND_CORE_MCUX && BOARD_MIMXRT1170_EVK_CM4
+
+config BUILD_OUTPUT_INFO_HEADER
+	default y
+
+DT_CHOSEN_IMAGE_M4 = nxp,m4-partition
+
+# Adjust the offset of the output image if building for RT11xx SOC
+config BUILD_OUTPUT_ADJUST_LMA
+	default "($(dt_chosen_reg_addr_hex,$(DT_CHOSEN_IMAGE_M4)) + \
+	$(dt_node_reg_addr_hex,/soc/spi@400cc000,1)) - \
+	$(dt_node_reg_addr_hex,/soc/ocram@20200000)"
+
+endif
 
 if DISK_DRIVERS
 
@@ -29,6 +45,9 @@ choice FLASH_MCUX_FLEXSPI_XIP_MEM_TARGET
 endchoice
 
 endif #FLASH
+
+config KSCAN
+	default y if LVGL
 
 if KSCAN
 
@@ -56,5 +75,22 @@ config REGULATOR
 	default y
 
 endif # DISPLAY
+
+if LVGL
+
+config LV_Z_POINTER_KSCAN
+	default y
+
+config LV_Z_VDB_SIZE
+	default 16
+
+config LV_Z_DPI
+	default 128
+
+choice LV_COLOR_DEPTH
+	default LV_COLOR_DEPTH_16
+endchoice
+
+endif # LVGL
 
 endif # BOARD_MIMXRT1170_EVK_CM7 || BOARD_MIMXRT1170_EVK_CM4

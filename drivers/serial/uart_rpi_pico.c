@@ -402,8 +402,8 @@ static const struct uart_driver_api uart_rpi_driver_api = {
 	}									\
 										\
 	static const struct uart_rpi_config uart##idx##_rpi_config = {		\
-		.uart_dev = uart##idx,						\
-		.uart_regs = (uart_hw_t *)uart##idx,				\
+		.uart_dev = (uart_inst_t *const)DT_INST_REG_ADDR(idx),		\
+		.uart_regs = (uart_hw_t *const)DT_INST_REG_ADDR(idx),		\
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(idx),			\
 		.reset = RESET_DT_SPEC_INST_GET(idx),				\
 		RPI_UART_IRQ_CONFIG_INIT(idx),					\

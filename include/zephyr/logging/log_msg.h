@@ -26,8 +26,8 @@
 extern "C" {
 #endif
 
-#define LOG_MSG2_DEBUG 0
-#define LOG_MSG2_DBG(...) IF_ENABLED(LOG_MSG2_DEBUG, (printk(__VA_ARGS__)))
+#define LOG_MSG_DEBUG 0
+#define LOG_MSG_DBG(...) IF_ENABLED(LOG_MSG_DEBUG, (printk(__VA_ARGS__)))
 
 #ifdef CONFIG_LOG_TIMESTAMP_64BIT
 typedef uint64_t log_timestamp_t;
@@ -42,19 +42,22 @@ typedef uint32_t log_timestamp_t;
  * @{
  */
 
-#define Z_LOG_MSG2_LOG 0
+#define Z_LOG_MSG_LOG 0
 
-#define LOG_MSG2_GENERIC_HDR \
+#define Z_LOG_MSG_PACKAGE_BITS 11
+
+#define Z_LOG_MSG_MAX_PACKAGE BIT_MASK(Z_LOG_MSG_PACKAGE_BITS)
+
+#define LOG_MSG_GENERIC_HDR \
 	MPSC_PBUF_HDR;\
 	uint32_t type:1
 
 struct log_msg_desc {
-	LOG_MSG2_GENERIC_HDR;
+	LOG_MSG_GENERIC_HDR;
 	uint32_t domain:3;
 	uint32_t level:3;
-	uint32_t package_len:10;
+	uint32_t package_len:Z_LOG_MSG_PACKAGE_BITS;
 	uint32_t data_len:12;
-	uint32_t reserved:1;
 };
 
 union log_msg_source {
@@ -78,11 +81,11 @@ struct log_msg_hdr {
 };
 
 /* Messages are aligned to alignment required by cbprintf package. */
-#define Z_LOG_MSG2_ALIGNMENT CBPRINTF_PACKAGE_ALIGNMENT
+#define Z_LOG_MSG_ALIGNMENT CBPRINTF_PACKAGE_ALIGNMENT
 
-#define Z_LOG_MSG2_PADDING \
-	((sizeof(struct log_msg_hdr) % Z_LOG_MSG2_ALIGNMENT) > 0 ? \
-	(Z_LOG_MSG2_ALIGNMENT - (sizeof(struct log_msg_hdr) % Z_LOG_MSG2_ALIGNMENT)) : \
+#define Z_LOG_MSG_PADDING \
+	((sizeof(struct log_msg_hdr) % Z_LOG_MSG_ALIGNMENT) > 0 ? \
+	(Z_LOG_MSG_ALIGNMENT - (sizeof(struct log_msg_hdr) % Z_LOG_MSG_ALIGNMENT)) : \
 		0)
 
 struct log_msg {
@@ -90,14 +93,14 @@ struct log_msg {
 	/* Adding padding to ensure that cbprintf package that follows is
 	 * properly aligned.
 	 */
-	uint8_t padding[Z_LOG_MSG2_PADDING];
+	uint8_t padding[Z_LOG_MSG_PADDING];
 	uint8_t data[];
 };
 
 /**
  * @cond INTERNAL_HIDDEN
  */
-BUILD_ASSERT(sizeof(struct log_msg) % Z_LOG_MSG2_ALIGNMENT == 0,
+BUILD_ASSERT(sizeof(struct log_msg) % Z_LOG_MSG_ALIGNMENT == 0,
 	     "Log msg size must aligned");
 /**
  * @endcond
@@ -105,7 +108,7 @@ BUILD_ASSERT(sizeof(struct log_msg) % Z_LOG_MSG2_ALIGNMENT == 0,
 
 
 struct log_msg_generic_hdr {
-	LOG_MSG2_GENERIC_HDR;
+	LOG_MSG_GENERIC_HDR;
 };
 
 union log_msg_generic {
@@ -122,54 +125,53 @@ enum z_log_msg_mode {
 	/* Runtime mode is least efficient but supports all cases thus it is
 	 * treated as a fallback method when others cannot be used.
 	 */
-	Z_LOG_MSG2_MODE_RUNTIME,
+	Z_LOG_MSG_MODE_RUNTIME,
 	/* Mode creates statically a string package on stack and calls a
 	 * function for creating a message. It takes code size than
-	 * Z_LOG_MSG2_MODE_ZERO_COPY but is a bit slower.
+	 * Z_LOG_MSG_MODE_ZERO_COPY but is a bit slower.
 	 */
-	Z_LOG_MSG2_MODE_FROM_STACK,
+	Z_LOG_MSG_MODE_FROM_STACK,
 
 	/* Mode calculates size of the message and allocates it and writes
 	 * directly to the message space. It is the fastest method but requires
 	 * more code size.
 	 */
-	Z_LOG_MSG2_MODE_ZERO_COPY,
+	Z_LOG_MSG_MODE_ZERO_COPY,
 };
 
 #define Z_LOG_MSG_DESC_INITIALIZER(_domain_id, _level, _plen, _dlen) \
 { \
 	.valid = 0, \
 	.busy = 0, \
-	.type = Z_LOG_MSG2_LOG, \
+	.type = Z_LOG_MSG_LOG, \
 	.domain = _domain_id, \
 	.level = _level, \
 	.package_len = _plen, \
 	.data_len = _dlen, \
-	.reserved = 0, \
 }
 
-#define Z_LOG_MSG2_CBPRINTF_FLAGS(_cstr_cnt) \
+#define Z_LOG_MSG_CBPRINTF_FLAGS(_cstr_cnt) \
 	(CBPRINTF_PACKAGE_FIRST_RO_STR_CNT(_cstr_cnt) | \
 	(IS_ENABLED(CONFIG_LOG_MSG_APPEND_RO_STRING_LOC) ? \
 	 CBPRINTF_PACKAGE_ADD_STRING_IDXS : 0))
 
 #ifdef CONFIG_LOG_USE_VLA
-#define Z_LOG_MSG2_ON_STACK_ALLOC(ptr, len) \
-	long long _ll_buf[ceiling_fraction(len, sizeof(long long))]; \
-	long double _ld_buf[ceiling_fraction(len, sizeof(long double))]; \
-	ptr = (sizeof(long double) == Z_LOG_MSG2_ALIGNMENT) ? \
+#define Z_LOG_MSG_ON_STACK_ALLOC(ptr, len) \
+	long long _ll_buf[DIV_ROUND_UP(len, sizeof(long long))]; \
+	long double _ld_buf[DIV_ROUND_UP(len, sizeof(long double))]; \
+	ptr = (sizeof(long double) == Z_LOG_MSG_ALIGNMENT) ? \
 			(struct log_msg *)_ld_buf : (struct log_msg *)_ll_buf; \
 	if (IS_ENABLED(CONFIG_LOG_TEST_CLEAR_MESSAGE_SPACE)) { \
 		/* During test fill with 0's to simplify message comparison */ \
 		memset(ptr, 0, len); \
 	}
-#else /* Z_LOG_MSG2_USE_VLA */
+#else /* Z_LOG_MSG_USE_VLA */
 /* When VLA cannot be used we need to trick compiler a bit and create multiple
  * fixed size arrays and take the smallest one that will fit the message.
  * Compiler will remove unused arrays and stack usage will be kept similar
  * to vla case, rounded to the size of the used buffer.
  */
-#define Z_LOG_MSG2_ON_STACK_ALLOC(ptr, len) \
+#define Z_LOG_MSG_ON_STACK_ALLOC(ptr, len) \
 	long long _ll_buf32[32 / sizeof(long long)]; \
 	long long _ll_buf48[48 / sizeof(long long)]; \
 	long long _ll_buf64[64 / sizeof(long long)]; \
@@ -180,7 +182,7 @@ enum z_log_msg_mode {
 	long double _ld_buf64[64 / sizeof(long double)]; \
 	long double _ld_buf128[128 / sizeof(long double)]; \
 	long double _ld_buf256[256 / sizeof(long double)]; \
-	if (sizeof(long double) == Z_LOG_MSG2_ALIGNMENT) { \
+	if (sizeof(long double) == Z_LOG_MSG_ALIGNMENT) { \
 		ptr = (len > 128) ? (struct log_msg *)_ld_buf256 : \
 			((len > 64) ? (struct log_msg *)_ld_buf128 : \
 			((len > 48) ? (struct log_msg *)_ld_buf64 : \
@@ -197,17 +199,17 @@ enum z_log_msg_mode {
 		/* During test fill with 0's to simplify message comparison */ \
 		memset(ptr, 0, len); \
 	}
-#endif /* Z_LOG_MSG2_USE_VLA */
+#endif /* Z_LOG_MSG_USE_VLA */
 
-#define Z_LOG_MSG2_ALIGN_OFFSET \
+#define Z_LOG_MSG_ALIGN_OFFSET \
 	offsetof(struct log_msg, data)
 
-#define Z_LOG_MSG2_LEN(pkg_len, data_len) \
+#define Z_LOG_MSG_LEN(pkg_len, data_len) \
 	(offsetof(struct log_msg, data) + pkg_len + (data_len))
 
-#define Z_LOG_MSG2_ALIGNED_WLEN(pkg_len, data_len) \
-	ceiling_fraction(ROUND_UP(Z_LOG_MSG2_LEN(pkg_len, data_len), \
-				  Z_LOG_MSG2_ALIGNMENT), \
+#define Z_LOG_MSG_ALIGNED_WLEN(pkg_len, data_len) \
+	DIV_ROUND_UP(ROUND_UP(Z_LOG_MSG_LEN(pkg_len, data_len), \
+				  Z_LOG_MSG_ALIGNMENT), \
 			 sizeof(uint32_t))
 
 /*
@@ -221,49 +223,49 @@ enum z_log_msg_mode {
 
 #define Z_LOG_ARM64_VLA_PROTECT() compiler_barrier()
 
-#define Z_LOG_MSG2_STACK_CREATE(_cstr_cnt, _domain_id, _source, _level, _data, _dlen, ...) \
+#define Z_LOG_MSG_STACK_CREATE(_cstr_cnt, _domain_id, _source, _level, _data, _dlen, ...) \
 do { \
 	int _plen; \
-	uint32_t flags = Z_LOG_MSG2_CBPRINTF_FLAGS(_cstr_cnt) | \
-			 CBPRINTF_PACKAGE_ADD_RW_STR_POS; \
+	uint32_t _options = Z_LOG_MSG_CBPRINTF_FLAGS(_cstr_cnt) | \
+			  CBPRINTF_PACKAGE_ADD_RW_STR_POS; \
 	if (GET_ARG_N(1, __VA_ARGS__) == NULL) { \
 		_plen = 0; \
 	} else { \
-		CBPRINTF_STATIC_PACKAGE(NULL, 0, _plen, Z_LOG_MSG2_ALIGN_OFFSET, flags, \
+		CBPRINTF_STATIC_PACKAGE(NULL, 0, _plen, Z_LOG_MSG_ALIGN_OFFSET, _options, \
 					__VA_ARGS__); \
 	} \
 	struct log_msg *_msg; \
-	Z_LOG_MSG2_ON_STACK_ALLOC(_msg, Z_LOG_MSG2_LEN(_plen, 0)); \
+	Z_LOG_MSG_ON_STACK_ALLOC(_msg, Z_LOG_MSG_LEN(_plen, 0)); \
 	Z_LOG_ARM64_VLA_PROTECT(); \
 	if (_plen != 0) { \
 		CBPRINTF_STATIC_PACKAGE(_msg->data, _plen, \
-					_plen, Z_LOG_MSG2_ALIGN_OFFSET, flags, \
+					_plen, Z_LOG_MSG_ALIGN_OFFSET, _options, \
 					__VA_ARGS__);\
 	} \
 	struct log_msg_desc _desc = \
 		Z_LOG_MSG_DESC_INITIALIZER(_domain_id, _level, \
 					   (uint32_t)_plen, _dlen); \
-	LOG_MSG2_DBG("creating message on stack: package len: %d, data len: %d\n", \
+	LOG_MSG_DBG("creating message on stack: package len: %d, data len: %d\n", \
 			_plen, (int)(_dlen)); \
 	z_log_msg_static_create((void *)_source, _desc, _msg->data, _data); \
 } while (false)
 
 #ifdef CONFIG_LOG_SPEED
-#define Z_LOG_MSG2_SIMPLE_CREATE(_cstr_cnt, _domain_id, _source, _level, ...) do { \
+#define Z_LOG_MSG_SIMPLE_CREATE(_cstr_cnt, _domain_id, _source, _level, ...) do { \
 	int _plen; \
-	CBPRINTF_STATIC_PACKAGE(NULL, 0, _plen, Z_LOG_MSG2_ALIGN_OFFSET, \
-				Z_LOG_MSG2_CBPRINTF_FLAGS(_cstr_cnt), \
+	CBPRINTF_STATIC_PACKAGE(NULL, 0, _plen, Z_LOG_MSG_ALIGN_OFFSET, \
+				Z_LOG_MSG_CBPRINTF_FLAGS(_cstr_cnt), \
 				__VA_ARGS__); \
-	size_t _msg_wlen = Z_LOG_MSG2_ALIGNED_WLEN(_plen, 0); \
+	size_t _msg_wlen = Z_LOG_MSG_ALIGNED_WLEN(_plen, 0); \
 	struct log_msg *_msg = z_log_msg_alloc(_msg_wlen); \
 	struct log_msg_desc _desc = \
 		Z_LOG_MSG_DESC_INITIALIZER(_domain_id, _level, (uint32_t)_plen, 0); \
-	LOG_MSG2_DBG("creating message zero copy: package len: %d, msg: %p\n", \
+	LOG_MSG_DBG("creating message zero copy: package len: %d, msg: %p\n", \
 			_plen, _msg); \
 	if (_msg) { \
 		CBPRINTF_STATIC_PACKAGE(_msg->data, _plen, _plen, \
-					Z_LOG_MSG2_ALIGN_OFFSET, \
-					Z_LOG_MSG2_CBPRINTF_FLAGS(_cstr_cnt), \
+					Z_LOG_MSG_ALIGN_OFFSET, \
+					Z_LOG_MSG_CBPRINTF_FLAGS(_cstr_cnt), \
 					__VA_ARGS__); \
 	} \
 	z_log_msg_finalize(_msg, (void *)_source, _desc, NULL); \
@@ -272,7 +274,7 @@ do { \
 /* Alternative empty macro created to speed up compilation when LOG_SPEED is
  * disabled (default).
  */
-#define Z_LOG_MSG2_SIMPLE_CREATE(...)
+#define Z_LOG_MSG_SIMPLE_CREATE(...)
 #endif
 
 /* Macro handles case when local variable with log message string is created. It
@@ -336,11 +338,10 @@ do { \
 /* Macro handles case when there is no string provided, in that case variable
  * is not created.
  */
-#define Z_LOG_MSG2_STR_VAR_IN_SECTION(_name, ...) \
+#define Z_LOG_MSG_STR_VAR_IN_SECTION(_name, ...) \
 	COND_CODE_0(NUM_VA_ARGS_LESS_1(_, ##__VA_ARGS__), \
 		    (/* No args provided, no variable */), \
-		    (static const char _name[] \
-			__attribute__((__section__(".log_strings"))) = \
+		    (static const TYPE_SECTION_ITERABLE(char *, _name, log_strings, _name) = \
 			GET_ARG_N(1, __VA_ARGS__);))
 
 /** @brief Create variable in the dedicated memory section (if enabled).
@@ -350,9 +351,9 @@ do { \
  * @param _name Variable name.
  * @param ... Optional log message with arguments (may be empty).
  */
-#define Z_LOG_MSG2_STR_VAR(_name, ...) \
+#define Z_LOG_MSG_STR_VAR(_name, ...) \
 	IF_ENABLED(CONFIG_LOG_FMT_SECTION, \
-		   (Z_LOG_MSG2_STR_VAR_IN_SECTION(_name, ##__VA_ARGS__)))
+		   (Z_LOG_MSG_STR_VAR_IN_SECTION(_name, ##__VA_ARGS__)))
 
 /** @brief Create log message and write it into the logger buffer.
  *
@@ -396,36 +397,36 @@ do { \
 #if defined(CONFIG_LOG_ALWAYS_RUNTIME) || \
 	(!defined(CONFIG_LOG) && \
 		(!TOOLCHAIN_HAS_PRAGMA_DIAG || !TOOLCHAIN_HAS_C_AUTO_TYPE))
-#define Z_LOG_MSG2_CREATE2(_try_0cpy, _mode,  _cstr_cnt, _domain_id, _source,\
+#define Z_LOG_MSG_CREATE2(_try_0cpy, _mode,  _cstr_cnt, _domain_id, _source,\
 			  _level, _data, _dlen, ...) \
 do {\
-	Z_LOG_MSG2_STR_VAR(_fmt, ##__VA_ARGS__) \
+	Z_LOG_MSG_STR_VAR(_fmt, ##__VA_ARGS__) \
 	z_log_msg_runtime_create(_domain_id, (void *)_source, \
 				  _level, (uint8_t *)_data, _dlen,\
-				  Z_LOG_MSG2_CBPRINTF_FLAGS(_cstr_cnt) | \
+				  Z_LOG_MSG_CBPRINTF_FLAGS(_cstr_cnt) | \
 				  (IS_ENABLED(CONFIG_LOG_USE_TAGGED_ARGUMENTS) ? \
 				   CBPRINTF_PACKAGE_ARGS_ARE_TAGGED : 0), \
 				  Z_LOG_FMT_RUNTIME_ARGS(_fmt, ##__VA_ARGS__));\
-	_mode = Z_LOG_MSG2_MODE_RUNTIME; \
+	_mode = Z_LOG_MSG_MODE_RUNTIME; \
 } while (false)
 #else /* CONFIG_LOG_ALWAYS_RUNTIME */
-#define Z_LOG_MSG2_CREATE3(_try_0cpy, _mode,  _cstr_cnt, _domain_id, _source,\
+#define Z_LOG_MSG_CREATE3(_try_0cpy, _mode,  _cstr_cnt, _domain_id, _source,\
 			  _level, _data, _dlen, ...) \
 do { \
-	Z_LOG_MSG2_STR_VAR(_fmt, ##__VA_ARGS__); \
+	Z_LOG_MSG_STR_VAR(_fmt, ##__VA_ARGS__); \
 	bool has_rw_str = CBPRINTF_MUST_RUNTIME_PACKAGE( \
-					Z_LOG_MSG2_CBPRINTF_FLAGS(_cstr_cnt), \
+					Z_LOG_MSG_CBPRINTF_FLAGS(_cstr_cnt), \
 					__VA_ARGS__); \
 	if (IS_ENABLED(CONFIG_LOG_SPEED) && _try_0cpy && ((_dlen) == 0) && !has_rw_str) {\
-		LOG_MSG2_DBG("create zero-copy message\n");\
-		Z_LOG_MSG2_SIMPLE_CREATE(_cstr_cnt, _domain_id, _source, \
+		LOG_MSG_DBG("create zero-copy message\n");\
+		Z_LOG_MSG_SIMPLE_CREATE(_cstr_cnt, _domain_id, _source, \
 					_level, Z_LOG_FMT_ARGS(_fmt, ##__VA_ARGS__)); \
-		_mode = Z_LOG_MSG2_MODE_ZERO_COPY; \
+		_mode = Z_LOG_MSG_MODE_ZERO_COPY; \
 	} else { \
-		LOG_MSG2_DBG("create on stack message\n");\
-		Z_LOG_MSG2_STACK_CREATE(_cstr_cnt, _domain_id, _source, _level, _data, \
+		LOG_MSG_DBG("create on stack message\n");\
+		Z_LOG_MSG_STACK_CREATE(_cstr_cnt, _domain_id, _source, _level, _data, \
 					_dlen, Z_LOG_FMT_ARGS(_fmt, ##__VA_ARGS__)); \
-		_mode = Z_LOG_MSG2_MODE_FROM_STACK; \
+		_mode = Z_LOG_MSG_MODE_FROM_STACK; \
 	} \
 	(void)_mode; \
 } while (false)
@@ -449,14 +450,14 @@ do { \
  * This is done to prevent multiple evaluations of input arguments (in case argument
  * evaluation has side effects, e.g. it is a non-pure function call).
  */
-#define Z_LOG_MSG2_CREATE2(_try_0cpy, _mode, _cstr_cnt,  _domain_id, _source, \
+#define Z_LOG_MSG_CREATE2(_try_0cpy, _mode, _cstr_cnt,  _domain_id, _source, \
 			   _level, _data, _dlen, ...) \
 do { \
 	_Pragma("GCC diagnostic push") \
 	_Pragma("GCC diagnostic ignored \"-Wpointer-arith\"") \
 	FOR_EACH_IDX(Z_LOG_LOCAL_ARG_CREATE, (;), __VA_ARGS__); \
 	_Pragma("GCC diagnostic pop") \
-	Z_LOG_MSG2_CREATE3(_try_0cpy, _mode,  _cstr_cnt, _domain_id, _source,\
+	Z_LOG_MSG_CREATE3(_try_0cpy, _mode,  _cstr_cnt, _domain_id, _source,\
 			   _level, _data, _dlen, \
 			   FOR_EACH_IDX(Z_LOG_LOCAL_ARG_NAME, (,), __VA_ARGS__)); \
 } while (false)
@@ -465,9 +466,9 @@ do { \
 	*/
 
 
-#define Z_LOG_MSG2_CREATE(_try_0cpy, _mode,  _domain_id, _source,\
+#define Z_LOG_MSG_CREATE(_try_0cpy, _mode,  _domain_id, _source,\
 			  _level, _data, _dlen, ...) \
-	Z_LOG_MSG2_CREATE2(_try_0cpy, _mode, UTIL_CAT(Z_LOG_FUNC_PREFIX_, _level), \
+	Z_LOG_MSG_CREATE2(_try_0cpy, _mode, UTIL_CAT(Z_LOG_FUNC_PREFIX_, _level), \
 			   _domain_id, _source, _level, _data, _dlen, \
 			   Z_LOG_STR(_level, __VA_ARGS__))
 
@@ -573,7 +574,7 @@ static inline void z_log_msg_runtime_create(uint8_t domain_id,
 
 static inline bool z_log_item_is_msg(const union log_msg_generic *msg)
 {
-	return msg->generic.type == Z_LOG_MSG2_LOG;
+	return msg->generic.type == Z_LOG_MSG_LOG;
 }
 
 /** @brief Get total length (in 32 bit words) of a log message.
@@ -584,7 +585,7 @@ static inline bool z_log_item_is_msg(const union log_msg_generic *msg)
  */
 static inline uint32_t log_msg_get_total_wlen(const struct log_msg_desc desc)
 {
-	return Z_LOG_MSG2_ALIGNED_WLEN(desc.package_len, desc.data_len);
+	return Z_LOG_MSG_ALIGNED_WLEN(desc.package_len, desc.data_len);
 }
 
 /** @brief Get length of the log item.

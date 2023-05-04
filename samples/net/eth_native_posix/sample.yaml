@@ -7,3 +7,5 @@ sample:
 tests:
   sample.net.eth_native_posix:
     platform_allow: native_posix native_posix_64
+    integration_platforms:
+      - native_posix

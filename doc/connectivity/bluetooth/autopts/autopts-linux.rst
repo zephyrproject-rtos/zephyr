@@ -42,7 +42,7 @@ After you extract archive, you will see 2 .deb files, e.g.:
 
 - nRF-Command-Line-Tools_10_12_1_Linux-amd64.deb
 
-and README.md. To install the tools, double click on each .deb file or fallow
+and README.md. To install the tools, double click on each .deb file or follow
 instructions from README.md.
 
 Setup Windows 10 virtual machine

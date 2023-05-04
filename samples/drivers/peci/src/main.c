@@ -174,7 +174,7 @@ static void monitor_temperature_func(void *dummy1, void *dummy2, void *dummy3)
 	}
 }
 
-void main(void)
+int main(void)
 {
 	int ret;
 
@@ -186,13 +186,13 @@ void main(void)
 
 	if (!device_is_ready(peci_dev)) {
 		printk("Err: PECI device is not ready\n");
-		return;
+		return 0;
 	}
 
 	ret = peci_config(peci_dev, 1000u);
 	if (ret) {
 		printk("Err: Fail to configure bitrate\n");
-		return;
+		return 0;
 	}
 
 	peci_enable(peci_dev);
@@ -204,4 +204,5 @@ void main(void)
 	k_thread_start(&temp_id);
 
 	peci_initialized = true;
+	return 0;
 }

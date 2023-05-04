@@ -8,118 +8,127 @@ compatible: "sitronix,st7735r"
 include: [spi-device.yaml, display-controller.yaml]
 
 properties:
-    reset-gpios:
-      type: phandle-array
-      required: true
-      description: RESET pin.
+  reset-gpios:
+    type: phandle-array
+    required: true
+    description: RESET pin.
 
-        The RESET pin of ST7735R is active low.
-        If connected directly the MCU pin should be configured
-        as active low.
+      The RESET pin of ST7735R is active low.
+      If connected directly the MCU pin should be configured
+      as active low.
 
-    cmd-data-gpios:
-      type: phandle-array
-      required: true
-      description: D/CX pin.
+  cmd-data-gpios:
+    type: phandle-array
+    required: true
+    description: D/CX pin.
 
-        The D/CX pin of ST7735R is active low (transmission command byte).
-        If connected directly the MCU pin should be configured
-        as active low.
+      The D/CX pin of ST7735R is active low (transmission command byte).
+      If connected directly the MCU pin should be configured
+      as active low.
 
-    x-offset:
-      type: int
-      required: true
-      description: The column offset in pixels of the LCD to the controller memory
+  x-offset:
+    type: int
+    required: true
+    description: The column offset in pixels of the LCD to the controller memory
 
-    y-offset:
-      type: int
-      required: true
-      description: The row offset in pixels of the LCD to the controller memory
+  y-offset:
+    type: int
+    required: true
+    description: The row offset in pixels of the LCD to the controller memory
 
-    madctl:
-      type: int
-      default: 0x00
-      description: Memory Data Access Control
+  madctl:
+    type: int
+    default: 0x00
+    description: Memory Data Access Control
 
-    colmod:
-      type: int
-      default: 0x06
-      description: Interface Pixel Format
+  colmod:
+    type: int
+    default: 0x06
+    description: Interface Pixel Format
 
-    pwctr1:
-      type: uint8-array
-      default: [0xb4, 0x14, 0x04]
-      description: Power Control 1 Parameter
+  pwctr1:
+    type: uint8-array
+    default: [0xb4, 0x14, 0x04]
+    description: Power Control 1 Parameter
 
-    pwctr2:
-      type: uint8-array
-      default: [0xc0]
-      description: Power Control 2 Parameter
+  pwctr2:
+    type: uint8-array
+    default: [0xc0]
+    description: Power Control 2 Parameter
 
-    pwctr3:
-      type: uint8-array
-      default: [0x0a, 0x00]
-      description: Power Control 3 Parameter
+  pwctr3:
+    type: uint8-array
+    default: [0x0a, 0x00]
+    description: Power Control 3 Parameter
 
-    pwctr4:
-      type: uint8-array
-      default: [0x8a, 0x26]
-      description: Power Control 4 Parameter
+  pwctr4:
+    type: uint8-array
+    default: [0x8a, 0x26]
+    description: Power Control 4 Parameter
 
-    pwctr5:
-      type: uint8-array
-      default: [0x8a, 0xee]
-      description: Power Control 5 Parameter
+  pwctr5:
+    type: uint8-array
+    default: [0x8a, 0xee]
+    description: Power Control 5 Parameter
 
-    gamctrp1:
-      type: uint8-array
-      required: true
-      description: Positive Voltage Gamma Control Parameter
+  gamctrp1:
+    type: uint8-array
+    required: true
+    description: Positive Voltage Gamma Control Parameter
 
-    gamctrn1:
-      type: uint8-array
-      required: true
-      description: Negative Voltage Gamma Control Parameter
+  gamctrn1:
+    type: uint8-array
+    required: true
+    description: Negative Voltage Gamma Control Parameter
 
-    frmctr1:
-      type: uint8-array
-      default: [0x05, 0x3a, 0x3a]
-      description: Frame rate control (normal mode / full colors)
+  frmctr1:
+    type: uint8-array
+    default: [0x05, 0x3a, 0x3a]
+    description: Frame rate control (normal mode / full colors)
 
-    frmctr2:
-      type: uint8-array
-      default: [0x05, 0x3a, 0x3a]
-      description: Frame rate control (idle mode / 8 colors)
+  frmctr2:
+    type: uint8-array
+    default: [0x05, 0x3a, 0x3a]
+    description: Frame rate control (idle mode / 8 colors)
 
-    frmctr3:
-      type: uint8-array
-      default: [0x05, 0x3a, 0x3a, 0x05, 0x3a, 0x3a]
-      description: Frame rate control (partial mode / full colors)
+  frmctr3:
+    type: uint8-array
+    default: [0x05, 0x3a, 0x3a, 0x05, 0x3a, 0x3a]
+    description: Frame rate control (partial mode / full colors)
 
-    caset:
-      type: uint8-array
-      default: [0x00, 0x00, 0x00, 0x7f]
-      description: Column Address Set
+  caset:
+    type: uint8-array
+    default: [0x00, 0x00, 0x00, 0x7f]
+    description: Column Address Set
 
-    raset:
-      type: uint8-array
-      default: [0x00, 0x00, 0x00, 0x9f]
-      description: Row Address Set
+  raset:
+    type: uint8-array
+    default: [0x00, 0x00, 0x00, 0x9f]
+    description: Row Address Set
 
-    vmctr1:
-      type: int
-      default: 0x0a
-      description: VCOM Control 1
+  vmctr1:
+    type: int
+    default: 0x0a
+    description: VCOM Control 1
 
-    invctr:
-      type: int
-      default: 0x07
-      description: |
-        Display Inversion Control
-        Set dot inversion or line inversion for each normal/idle/partial mode.
+  invctr:
+    type: int
+    default: 0x07
+    description: |
+      Display Inversion Control
+      Set dot inversion or line inversion for each normal/idle/partial mode.
 
-    inversion-on:
-      type: boolean
-      description: |
-        Enable Display Inversion
-        Make a drawing with the inverted color of the frame memory.
+  inversion-on:
+    type: boolean
+    description: |
+      Enable Display Inversion
+      Make a drawing with the inverted color of the frame memory.
+
+  rgb-is-inverted:
+    type: boolean
+    description: |
+      Inverting color format order (RGB->BGR or BGR->RGB)
+      In the case of enabling this option, API reports pixel-format in capabilities
+      as the inverted value of the RGB pixel-format specified in MADCTL.
+      This option is convenient for supporting displays with bugs
+      where the actual color is different from the pixel format of MADCTL.

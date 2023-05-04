@@ -26,11 +26,11 @@ on:
 
 env:
   # NOTE: west docstrings will be extracted from the version listed here
-  WEST_VERSION: 0.14.0
+  WEST_VERSION: 1.0.0
   # The latest CMake available directly with apt is 3.18, but we need >=3.20
   # so we fetch that through pip.
   CMAKE_VERSION: 3.20.5
-  DOXYGEN_VERSION: 1.9.4
+  DOXYGEN_VERSION: 1.9.6
 
 jobs:
   doc-build-html:
@@ -49,7 +49,7 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get install -y ninja-build graphviz
-        wget --no-verbose https://downloads.sourceforge.net/project/doxygen/rel-${DOXYGEN_VERSION}/doxygen-${DOXYGEN_VERSION}.linux.bin.tar.gz
+        wget --no-verbose "https://github.com/doxygen/doxygen/releases/download/Release_${DOXYGEN_VERSION//./_}/doxygen-${DOXYGEN_VERSION}.linux.bin.tar.gz"
         tar xf doxygen-${DOXYGEN_VERSION}.linux.bin.tar.gz
         echo "${PWD}/doxygen-${DOXYGEN_VERSION}/bin" >> $GITHUB_PATH
 
@@ -69,6 +69,7 @@ jobs:
     - name: west setup
       run: |
         west init -l .
+        west update bsim
 
     - name: build-docs
       run: |
@@ -115,9 +116,10 @@ jobs:
 
   doc-build-pdf:
     name: "Documentation Build (PDF)"
-    runs-on: ubuntu-20.04
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-22.04
     container: texlive/texlive:latest
-    timeout-minutes: 45
+    timeout-minutes: 60
     concurrency:
       group: doc-build-pdf-${{ github.ref }}
       cancel-in-progress: true
@@ -129,13 +131,19 @@ jobs:
     - name: install-pkgs
       run: |
         apt-get update
-        apt-get install -y python3-pip ninja-build doxygen graphviz librsvg2-bin
+        apt-get install -y python3-pip python3-venv ninja-build doxygen graphviz librsvg2-bin
 
     - name: cache-pip
       uses: actions/cache@v3
       with:
         path: ~/.cache/pip
         key: pip-${{ hashFiles('scripts/requirements-doc.txt') }}
+
+    - name: setup-venv
+      run: |
+        python3 -m venv .venv
+        . .venv/bin/activate
+        echo PATH=$PATH >> $GITHUB_ENV
 
     - name: install-pip
       run: |
@@ -147,6 +155,7 @@ jobs:
     - name: west setup
       run: |
         west init -l .
+        west update bsim
 
     - name: build-docs
       run: |

@@ -43,7 +43,6 @@ BUILD_ASSERT((ILM_BLOCK_SIZE & (ILM_BLOCK_SIZE - 1)) == 0, "ILM_BLOCK_SIZE must 
 
 #define FLASH_BASE CONFIG_FLASH_BASE_ADDRESS
 #define RAM_BASE   CONFIG_SRAM_BASE_ADDRESS
-#define RAM_SIZE   CONFIG_SRAM_SIZE
 
 #define ILM_NODE DT_NODELABEL(ilm)
 
@@ -64,9 +63,7 @@ struct scar_reg {
 };
 
 struct ilm_config {
-	/* Points to the contiguous set of RVILMCRn registers */
-	volatile uint8_t *ilm_control_regs;
-	volatile struct scar_reg *scar_regs[15];
+	volatile struct scar_reg *scar_regs[CONFIG_ILM_MAX_SIZE / 4];
 };
 
 bool it8xxx2_is_ilm_configured(void)
@@ -102,20 +99,14 @@ static int it8xxx2_configure_ilm_block(const struct ilm_config *const config, vo
 
 	LOG_DBG("Enabling ILM%d %p -> %p, copy %d", dirmap_index, flash_addr, ram_addr, copy_sz);
 
-	volatile uint8_t *const rvilmcr = &config->ilm_control_regs[dirmap_index / 8];
 	volatile struct scar_reg *const scar = config->scar_regs[dirmap_index];
-	const int cr_mask = BIT(dirmap_index % 8);
 
 	int irq_key = irq_lock();
 
-	/* Invalidate any possibly-existing mapping */
-	*rvilmcr &= ~cr_mask;
 	/* Ensure scratch RAM for block data access is enabled */
 	scar->h = SCARH_ENABLE;
 	/* Copy block contents from flash into RAM */
 	memcpy(ram_addr, flash_addr, copy_sz);
-	/* Enable ILM block */
-	*rvilmcr |= cr_mask;
 	/* Program SCAR */
 	scar->l = (uintptr_t)flash_addr & GENMASK(7, 0);
 	scar->m = ((uintptr_t)flash_addr & GENMASK(15, 8)) >> 8;
@@ -167,8 +158,9 @@ static int it8xxx2_ilm_init(const struct device *dev)
 #define SCAR_REG(n) (volatile struct scar_reg *)DT_REG_ADDR_BY_IDX(ILM_NODE, n)
 
 static const struct ilm_config ilm_config = {
-	.ilm_control_regs = (volatile uint8_t *)DT_REG_ADDR_BY_IDX(ILM_NODE, 0),
 	.scar_regs = {
+		/* SCAR0 SRAM 4KB */
+		SCAR_REG(0),
 		SCAR_REG(1),
 		SCAR_REG(2),
 		SCAR_REG(3),
@@ -183,11 +175,37 @@ static const struct ilm_config ilm_config = {
 		SCAR_REG(12),
 		SCAR_REG(13),
 		SCAR_REG(14),
+		/*
+		 * Except for CONFIG_SOC_IT81202_CX and CONFIG_SOC_IT81302_CX
+		 * maximum ILM size are 60KB, the ILM size of other varients
+		 * are equal to the SRAM size.
+		 */
+#if (CONFIG_ILM_MAX_SIZE == 256)
+		/* SCAR15 SRAM 4KB */
 		SCAR_REG(15),
+		/* SCAR16 SRAM 16KB */
+		SCAR_REG(16), SCAR_REG(16), SCAR_REG(16), SCAR_REG(16),
+		/* SCAR17 SRAM 16KB */
+		SCAR_REG(17), SCAR_REG(17), SCAR_REG(17), SCAR_REG(17),
+		/* SCAR18 SRAM 16KB */
+		SCAR_REG(18), SCAR_REG(18), SCAR_REG(18), SCAR_REG(18),
+		/* SCAR19 SRAM 16KB */
+		SCAR_REG(19), SCAR_REG(19), SCAR_REG(19), SCAR_REG(19),
+		/* SCAR20 SRAM 32KB */
+		SCAR_REG(20), SCAR_REG(20), SCAR_REG(20), SCAR_REG(20),
+		SCAR_REG(20), SCAR_REG(20), SCAR_REG(20), SCAR_REG(20),
+		/* SCAR21 SRAM 32KB */
+		SCAR_REG(21), SCAR_REG(21), SCAR_REG(21), SCAR_REG(21),
+		SCAR_REG(21), SCAR_REG(21), SCAR_REG(21), SCAR_REG(21),
+		/* SCAR22 SRAM 32KB */
+		SCAR_REG(22), SCAR_REG(22), SCAR_REG(22), SCAR_REG(22),
+		SCAR_REG(22), SCAR_REG(22), SCAR_REG(22), SCAR_REG(22),
+		/* SCAR23 SRAM 32KB */
+		SCAR_REG(23), SCAR_REG(23), SCAR_REG(23), SCAR_REG(23),
+		SCAR_REG(23), SCAR_REG(23), SCAR_REG(23), SCAR_REG(23)
+#endif
 	}};
-BUILD_ASSERT(ARRAY_SIZE(ilm_config.scar_regs) * ILM_BLOCK_SIZE == KB(RAM_SIZE),
+BUILD_ASSERT(ARRAY_SIZE(ilm_config.scar_regs) * ILM_BLOCK_SIZE == KB(CONFIG_ILM_MAX_SIZE),
 	     "Wrong number of SCAR registers defined for RAM size");
-BUILD_ASSERT(ARRAY_SIZE(ilm_config.scar_regs) <= DT_REG_SIZE_BY_IDX(ILM_NODE, 0) * 8,
-	     "Size of ILM control register block is too small for number of SCARs");
 
 DEVICE_DT_DEFINE(ILM_NODE, &it8xxx2_ilm_init, NULL, NULL, &ilm_config, PRE_KERNEL_1, 0, NULL);
