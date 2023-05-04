@@ -685,7 +685,10 @@ static inline void mcux_i3c_request_emit_stop(I3C_Type *base, bool wait_stop)
 		     I3C_MCTRL_REQUEST_MASK | I3C_MCTRL_DIR_MASK | I3C_MCTRL_RDTERM_MASK,
 		     I3C_MCTRL_REQUEST_EMIT_STOP);
 
-	mcux_i3c_status_wait_clear(base, I3C_MSTATUS_MCTRLDONE_MASK);
+	/*
+	 * EMIT_STOP request doesn't result in MCTRLDONE being cleared
+	 * so don't wait for it.
+	 */
 
 	if (wait_stop) {
 		/*
@@ -814,27 +817,6 @@ struct i3c_device_desc *mcux_i3c_device_find(const struct device *dev,
 	const struct mcux_i3c_config *config = dev->config;
 
 	return i3c_dev_list_find(&config->common.dev_list, id);
-}
-
-/**
- * Find a registered I2C target device.
- *
- * Controller only API.
- *
- * This returns the I2C device descriptor of the I2C device
- * matching the device address @p addr.
- *
- * @param dev Pointer to controller device driver instance.
- * @param id I2C target device address.
- *
- * @return @see i3c_i2c_device_find.
- */
-static struct i3c_i2c_device_desc *
-mcux_i3c_i2c_device_find(const struct device *dev, uint16_t addr)
-{
-	struct mcux_i3c_data *data = dev->data;
-
-	return i3c_dev_list_i2c_addr_find(&data->common.attached_dev, addr);
 }
 
 /**
@@ -1035,7 +1017,7 @@ static int mcux_i3c_do_one_xfer(I3C_Type *base, struct mcux_i3c_data *data,
 		}
 	}
 
-	if (buf == NULL) {
+	if ((buf == NULL) || (buf_sz == 0)) {
 		goto out_one_xfer;
 	}
 
@@ -1050,6 +1032,8 @@ static int mcux_i3c_do_one_xfer(I3C_Type *base, struct mcux_i3c_data *data,
 		ret = mcux_i3c_status_wait_clear_timeout(base, I3C_MSTATUS_COMPLETE_MASK,
 							 0, 10, 1000);
 		if (ret != 0) {
+			LOG_DBG("%s: timed out addr 0x%02x, buf_sz %u",
+				__func__, addr, buf_sz);
 			emit_stop = true;
 
 			goto out_one_xfer;
@@ -1162,97 +1146,6 @@ out_xfer_i3c_unlock:
 	k_sem_give(&dev_data->lock);
 
 out_xfer_i3c:
-	return ret;
-}
-
-/**
- * @brief Transfer messages in I2C mode.
- *
- * @see i3c_i2c_transfer
- *
- * @param dev Pointer to device driver instance.
- * @param target Pointer to target device descriptor.
- * @param msgs Pointer to I2C messages.
- * @param num_msgs Number of messages to transfers.
- *
- * @return @see i3c_i2c_transfer
- */
-static int mcux_i3c_i2c_transfer(const struct device *dev,
-				 struct i3c_i2c_device_desc *i2c_dev,
-				 struct i2c_msg *msgs,
-				 uint8_t num_msgs)
-{
-	const struct mcux_i3c_config *config = dev->config;
-	struct mcux_i3c_data *dev_data = dev->data;
-	I3C_Type *base = config->base;
-	uint32_t intmask;
-	int ret;
-
-	k_sem_take(&dev_data->lock, K_FOREVER);
-
-	intmask = mcux_i3c_interrupt_disable(base);
-
-	ret = mcux_i3c_state_wait_timeout(base, I3C_MSTATUS_STATE_IDLE, 0, 100, 100000);
-	if (ret == -ETIMEDOUT) {
-		goto out_xfer_i2c_unlock;
-	}
-
-	mcux_i3c_xfer_reset(base);
-
-	/* Iterate over all the messages */
-	for (int i = 0; i < num_msgs; i++) {
-		bool is_read = (msgs[i].flags & I2C_MSG_RW_MASK) == I2C_MSG_READ;
-		bool no_ending = false;
-
-		/*
-		 * Emit start if this is the first message or that
-		 * the RESTART flag is set in message.
-		 */
-		bool emit_start = (i == 0) ||
-				  ((msgs[i].flags & I2C_MSG_RESTART) == I2C_MSG_RESTART);
-
-		bool emit_stop = (msgs[i].flags & I2C_MSG_STOP) == I2C_MSG_STOP;
-
-		/*
-		 * The controller requires special treatment of last byte of
-		 * a write message. Since the API permits having a bunch of
-		 * write messages without RESTART in between, this is just some
-		 * logic to determine whether to treat the last byte of this
-		 * message to be the last byte of a series of write mssages.
-		 * If not, tell the write function not to treat it that way.
-		 */
-		if (!is_read && !emit_stop && ((i + 1) != num_msgs)) {
-			bool next_is_write =
-				(msgs[i + 1].flags & I2C_MSG_RW_MASK) == I2C_MSG_WRITE;
-			bool next_is_restart =
-				((msgs[i + 1].flags & I2C_MSG_RESTART) == I2C_MSG_RESTART);
-
-			if (next_is_write && !next_is_restart) {
-				no_ending = true;
-			}
-		}
-
-		ret = mcux_i3c_do_one_xfer(base, dev_data, i2c_dev->addr, true,
-					   msgs[i].buf, msgs[i].len,
-					   is_read, emit_start, emit_stop, no_ending);
-		if (ret < 0) {
-			goto out_xfer_i2c_stop_unlock;
-		}
-	}
-
-	ret = 0;
-
-out_xfer_i2c_stop_unlock:
-	mcux_i3c_request_emit_stop(base, true);
-
-out_xfer_i2c_unlock:
-	mcux_i3c_errwarn_clear_all_nowait(base);
-	mcux_i3c_status_clear_all(base);
-
-	mcux_i3c_interrupt_enable(base, intmask);
-
-	k_sem_give(&dev_data->lock);
-
 	return ret;
 }
 
@@ -1415,6 +1308,15 @@ static int mcux_i3c_do_ccc(const struct device *dev,
 
 	if (payload == NULL) {
 		return -EINVAL;
+	}
+
+	if (config->common.dev_list.num_i3c == 0) {
+		/*
+		 * No i3c devices in dev tree. Just return so
+		 * we don't get errors doing cmds when there
+		 * are no devices listening/responding.
+		 */
+		return 0;
 	}
 
 	k_sem_take(&data->lock, K_FOREVER);
@@ -2078,15 +1980,76 @@ static int mcux_i3c_i2c_api_transfer(const struct device *dev,
 				     uint8_t num_msgs,
 				     uint16_t addr)
 {
-	struct i3c_i2c_device_desc *i2c_dev =
-		mcux_i3c_i2c_device_find(dev, addr);
+	const struct mcux_i3c_config *config = dev->config;
+	struct mcux_i3c_data *dev_data = dev->data;
+	I3C_Type *base = config->base;
+	uint32_t intmask;
 	int ret;
 
-	if (i2c_dev == NULL) {
-		ret = -ENODEV;
-	} else {
-		ret = mcux_i3c_i2c_transfer(dev, i2c_dev, msgs, num_msgs);
+	k_sem_take(&dev_data->lock, K_FOREVER);
+
+	intmask = mcux_i3c_interrupt_disable(base);
+
+	ret = mcux_i3c_state_wait_timeout(base, I3C_MSTATUS_STATE_IDLE, 0, 100, 100000);
+	if (ret == -ETIMEDOUT) {
+		goto out_xfer_i2c_unlock;
 	}
+
+	mcux_i3c_xfer_reset(base);
+
+	/* Iterate over all the messages */
+	for (int i = 0; i < num_msgs; i++) {
+		bool is_read = (msgs[i].flags & I2C_MSG_RW_MASK) == I2C_MSG_READ;
+		bool no_ending = false;
+
+		/*
+		 * Emit start if this is the first message or that
+		 * the RESTART flag is set in message.
+		 */
+		bool emit_start = (i == 0) ||
+				  ((msgs[i].flags & I2C_MSG_RESTART) == I2C_MSG_RESTART);
+
+		bool emit_stop = (msgs[i].flags & I2C_MSG_STOP) == I2C_MSG_STOP;
+
+		/*
+		 * The controller requires special treatment of last byte of
+		 * a write message. Since the API permits having a bunch of
+		 * write messages without RESTART in between, this is just some
+		 * logic to determine whether to treat the last byte of this
+		 * message to be the last byte of a series of write mssages.
+		 * If not, tell the write function not to treat it that way.
+		 */
+		if (!is_read && !emit_stop && ((i + 1) != num_msgs)) {
+			bool next_is_write =
+				(msgs[i + 1].flags & I2C_MSG_RW_MASK) == I2C_MSG_WRITE;
+			bool next_is_restart =
+				((msgs[i + 1].flags & I2C_MSG_RESTART) == I2C_MSG_RESTART);
+
+			if (next_is_write && !next_is_restart) {
+				no_ending = true;
+			}
+		}
+
+		ret = mcux_i3c_do_one_xfer(base, dev_data, addr, true,
+					   msgs[i].buf, msgs[i].len,
+					   is_read, emit_start, emit_stop, no_ending);
+		if (ret < 0) {
+			goto out_xfer_i2c_stop_unlock;
+		}
+	}
+
+	ret = 0;
+
+out_xfer_i2c_stop_unlock:
+	mcux_i3c_request_emit_stop(base, true);
+
+out_xfer_i2c_unlock:
+	mcux_i3c_errwarn_clear_all_nowait(base);
+	mcux_i3c_status_clear_all(base);
+
+	mcux_i3c_interrupt_enable(base, intmask);
+
+	k_sem_give(&dev_data->lock);
 
 	return ret;
 }
