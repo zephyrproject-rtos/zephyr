@@ -587,7 +587,8 @@ static int uarte_nrfx_rx_counting_init(const struct device *dev)
 	int ret;
 
 	if (HW_RX_COUNTING_ENABLED(data)) {
-		nrfx_timer_config_t tmr_config = NRFX_TIMER_DEFAULT_CONFIG;
+		nrfx_timer_config_t tmr_config = NRFX_TIMER_DEFAULT_CONFIG(
+						NRF_TIMER_BASE_FREQUENCY_GET(cfg->timer.p_reg));
 
 		tmr_config.mode = NRF_TIMER_MODE_COUNTER;
 		tmr_config.bit_width = NRF_TIMER_BIT_WIDTH_32;
