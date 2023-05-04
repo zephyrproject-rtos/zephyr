@@ -158,11 +158,13 @@
 
 &i2c00_scl_gpio004 {
 	drive-open-drain;
+	output-enable;
 	output-high;
 };
 
 &i2c00_sda_gpio003 {
 	drive-open-drain;
+	output-enable;
 	output-high;
 };
 
@@ -175,11 +177,13 @@
 
 &i2c01_scl_gpio131 {
 	drive-open-drain;
+	output-enable;
 	output-high;
 };
 
 &i2c01_sda_gpio130 {
 	drive-open-drain;
+	output-enable;
 	output-high;
 };
 
@@ -192,11 +196,13 @@
 
 &i2c07_scl_gpio013 {
 	drive-open-drain;
+	output-enable;
 	output-high;
 };
 
 &i2c07_sda_gpio012 {
 	drive-open-drain;
+	output-enable;
 	output-high;
 };
 
