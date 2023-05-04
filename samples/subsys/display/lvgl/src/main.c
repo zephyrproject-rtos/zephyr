@@ -38,7 +38,6 @@ static void button_isr_callback(const struct device *port,
 
 int main(void)
 {
-	int err;
 	char count_str[11] = {0};
 	const struct device *display_dev;
 	lv_obj_t *hello_world_label;
@@ -52,6 +51,8 @@ int main(void)
 
 #ifdef CONFIG_GPIO
 	if (device_is_ready(button_gpio.port)) {
+		int err;
+
 		err = gpio_pin_configure_dt(&button_gpio, GPIO_INPUT);
 		if (err) {
 			LOG_ERR("failed to configure button gpio: %d", err);
