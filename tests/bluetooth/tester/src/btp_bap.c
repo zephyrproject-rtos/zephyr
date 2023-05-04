@@ -91,7 +91,7 @@ static void print_codec(const struct bt_codec *codec)
 	if (codec->id == BT_CODEC_LC3_ID) {
 		/* LC3 uses the generic LTV format - other codecs might do as well */
 
-		uint32_t chan_allocation;
+		enum bt_audio_location chan_allocation;
 
 		LOG_DBG("  Frequency: %d Hz", bt_codec_cfg_get_freq(codec));
 		LOG_DBG("  Frame Duration: %d us", bt_codec_cfg_get_frame_duration_us(codec));
