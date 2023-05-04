@@ -131,6 +131,14 @@ extern "C" {
 #define RTIO_SQE_CANCELED BIT(3)
 
 /**
+ * @brief The SQE should continue producing CQEs until canceled
+ *
+ * This flag must exist along :c:macro:`RTIO_SQE_MEMPOOL_BUFFER` and signals that when a read is
+ * complete. It should be placed back in queue until canceled.
+ */
+#define RTIO_SQE_MULTISHOT BIT(4)
+
+/**
  * @}
  */
 
@@ -268,22 +276,6 @@ struct rtio_cqe {
 	void *userdata; /**< Associated userdata with operation */
 	uint32_t flags; /**< Flags associated with the operation */
 };
-
-/**
- * Internal state of the mempool sqe map entry.
- */
-enum rtio_mempool_entry_state {
-	/** The SQE has no mempool buffer allocated */
-	RTIO_MEMPOOL_ENTRY_STATE_FREE = 0,
-	/** The SQE has an active mempool buffer allocated */
-	RTIO_MEMPOOL_ENTRY_STATE_ALLOCATED,
-	/** The SQE has a mempool buffer allocated that is currently owned by a CQE */
-	RTIO_MEMPOOL_ENTRY_STATE_ZOMBIE,
-	RTIO_MEMPOOL_ENTRY_STATE_COUNT,
-};
-
-/* Check that we can always fit the state in 2 bits */
-BUILD_ASSERT(RTIO_MEMPOOL_ENTRY_STATE_COUNT < 4);
 
 struct rtio_sqe_pool {
 	struct rtio_mpsc free_q;
@@ -491,6 +483,14 @@ static inline void rtio_sqe_prep_read_with_pool(struct rtio_sqe *sqe,
 {
 	rtio_sqe_prep_read(sqe, iodev, prio, NULL, 0, userdata);
 	sqe->flags = RTIO_SQE_MEMPOOL_BUFFER;
+}
+
+static inline void rtio_sqe_prep_read_multishot(struct rtio_sqe *sqe,
+						const struct rtio_iodev *iodev, int8_t prio,
+						void *userdata)
+{
+	rtio_sqe_prep_read_with_pool(sqe, iodev, prio, userdata);
+	sqe->flags |= RTIO_SQE_MULTISHOT;
 }
 
 /**
