@@ -260,7 +260,7 @@ class Build(Forceable):
 
     def _parse_test_item(self, test_item):
         found_test_metadata = False
-        for yp in ['sample.yaml', 'testcase.yaml']:
+        for yp in ['sample.yaml', 'testcase.yaml', 'twister.yaml']:
             yf = os.path.join(self.args.source_dir, yp)
             if not os.path.exists(yf):
                 continue

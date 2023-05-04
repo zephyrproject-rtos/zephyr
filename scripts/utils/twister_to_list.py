@@ -51,7 +51,7 @@ def twister_to_list(project, dry_run):
     yaml.preserve_quotes = True
 
     for p in project.glob("**/*"):
-        if p.name not in ("testcase.yaml", "sample.yaml"):
+        if p.name not in ("testcase.yaml", "sample.yaml", "twister.yaml"):
             continue
 
         conf = yaml.load(p)

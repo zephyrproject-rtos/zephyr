@@ -80,6 +80,7 @@ class TestPlan:
 
     SAMPLE_FILENAME = 'sample.yaml'
     TESTSUITE_FILENAME = 'testcase.yaml'
+    TWISTER_FILENAME = 'twister.yaml'
 
     def __init__(self, env=None):
 
@@ -497,6 +498,8 @@ class TestPlan:
                     filename = self.SAMPLE_FILENAME
                 elif self.TESTSUITE_FILENAME in filenames:
                     filename = self.TESTSUITE_FILENAME
+                elif self.TWISTER_FILENAME in filenames:
+                    filename = self.TWISTER_FILENAME
                 else:
                     continue
 
