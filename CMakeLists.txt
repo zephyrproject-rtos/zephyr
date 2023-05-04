@@ -84,6 +84,7 @@ set(ZEPHYR_FINAL_EXECUTABLE zephyr_final)
 
 # Set some phony targets to collect dependencies
 set(OFFSETS_H_TARGET           offsets_h)
+set(VERSION_H_TARGET           version_h)
 set(SYSCALL_LIST_H_TARGET      syscall_list_h_target)
 set(DRIVER_VALIDATION_H_TARGET driver_validation_h_target)
 set(KOBJ_TYPES_H_TARGET        kobj_types_h_target)
@@ -534,15 +535,17 @@ if(ZEPHYR_GIT_INDEX)
   set(git_dependency ${ZEPHYR_GIT_INDEX})
 endif()
 
+set(VERSION_H_PATH ${PROJECT_BINARY_DIR}/include/generated/version.h)
+
 add_custom_command(
-  OUTPUT ${PROJECT_BINARY_DIR}/include/generated/version.h
+  OUTPUT ${VERSION_H_PATH}
   COMMAND ${CMAKE_COMMAND} -DZEPHYR_BASE=${ZEPHYR_BASE}
-    -DOUT_FILE=${PROJECT_BINARY_DIR}/include/generated/version.h
+    -DOUT_FILE=${VERSION_H_PATH}
     ${build_version_argument}
     -P ${ZEPHYR_BASE}/cmake/gen_version_h.cmake
   DEPENDS ${ZEPHYR_BASE}/VERSION ${git_dependency}
 )
-add_custom_target(version_h DEPENDS ${PROJECT_BINARY_DIR}/include/generated/version.h)
+add_custom_target(${VERSION_H_TARGET} DEPENDS ${VERSION_H_PATH})
 
 # Unfortunately, the order in which CMakeLists.txt code is processed
 # matters so we need to be careful about how we order the processing
@@ -775,14 +778,6 @@ add_custom_target(${DRIVER_VALIDATION_H_TARGET} DEPENDS ${DRV_VALIDATION})
 include(${ZEPHYR_BASE}/cmake/kobj.cmake)
 gen_kobj(KOBJ_INCLUDE_PATH)
 
-# Add a pseudo-target that is up-to-date when all generated headers
-# are up-to-date.
-
-add_custom_target(zephyr_generated_headers)
-add_dependencies(zephyr_generated_headers
-  offsets_h version_h
-  )
-
 # Generate offsets.c.obj from offsets.c
 # Generate offsets.h     from offsets.c.obj
 
@@ -796,11 +791,28 @@ target_include_directories(${OFFSETS_LIB} PRIVATE
   kernel/include
   ${ARCH_DIR}/${ARCH}/include
   )
-target_link_libraries(${OFFSETS_LIB} zephyr_interface)
+
+# OFFSETS_LIB creates header files needed by zephyr_interface headers.
+# We cannot link against zephyr_interface, because that would create a cyclic
+# dependency.
+target_compile_options(${OFFSETS_LIB} PRIVATE $<TARGET_PROPERTY:zephyr_interface,INTERFACE_COMPILE_OPTIONS>)
+target_compile_definitions(${OFFSETS_LIB} PRIVATE $<TARGET_PROPERTY:zephyr_interface,INTERFACE_COMPILE_DEFINITIONS>)
+target_include_directories(${OFFSETS_LIB} PRIVATE $<TARGET_PROPERTY:zephyr_interface,INTERFACE_INCLUDE_DIRECTORIES>)
+target_include_directories(${OFFSETS_LIB} PRIVATE $<TARGET_PROPERTY:zephyr_interface,INTERFACE_SYSTEM_INCLUDE_DIRECTORIES>)
+
+add_dependencies(${OFFSETS_LIB}
+  ${SYSCALL_LIST_H_TARGET}
+  ${DRIVER_VALIDATION_H_TARGET}
+  ${KOBJ_TYPES_H_TARGET}
+  )
+
+# Zephyr Interface needs to depend on all generated headers.
 add_dependencies(zephyr_interface
   ${SYSCALL_LIST_H_TARGET}
   ${DRIVER_VALIDATION_H_TARGET}
   ${KOBJ_TYPES_H_TARGET}
+  ${OFFSETS_H_TARGET}
+  ${VERSION_H_TARGET}
   )
 
 add_custom_command(
@@ -845,9 +857,6 @@ foreach(zephyr_lib ${ZEPHYR_LIBS_PROPERTY})
       continue()
     endif()
   endif()
-
-  # TODO: Could this become an INTERFACE property of zephyr_interface?
-  add_dependencies(${zephyr_lib} zephyr_generated_headers)
 endforeach()
 
 get_property(OUTPUT_FORMAT        GLOBAL PROPERTY PROPERTY_OUTPUT_FORMAT)
@@ -1132,7 +1141,7 @@ if(CONFIG_USERSPACE OR CONFIG_HAS_DTS)
     ${APP_SMEM_UNALIGNED_DEP}
     ${APP_SMEM_UNALIGNED_LD}
     ${APP_SMEM_PINNED_UNALIGNED_LD}
-    zephyr_generated_headers
+    zephyr_interface
     )
 
   add_custom_target(
@@ -1344,7 +1353,7 @@ configure_linker_script(
   ${APP_SMEM_ALIGNED_DEP}
   ${KOBJECT_LINKER_DEP}
   ${CODE_RELOCATION_DEP}
-  zephyr_generated_headers
+  zephyr_interface
   )
 
 add_custom_target(
@@ -1400,7 +1409,7 @@ else()
     "LINKER_ZEPHYR_FINAL"
     ${CODE_RELOCATION_DEP}
     ${ZEPHYR_LINK_STAGE_EXECUTABLE}
-    zephyr_generated_headers
+    zephyr_interface
     )
 
   add_custom_target(

@@ -110,6 +110,4 @@ target_link_libraries(kernel zephyr_interface)
 
 endif()
 
-add_dependencies(kernel zephyr_generated_headers)
-
 unset(libkernel)

@@ -64,7 +64,6 @@ if (CONFIG_GEN_ISR_TABLES)
     isr_tables.c
   )
 
-  add_dependencies(isr_tables zephyr_generated_headers)
   target_link_libraries(isr_tables zephyr_interface)
   zephyr_library_link_libraries(isr_tables)
 endif()
