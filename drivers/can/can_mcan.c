@@ -14,7 +14,6 @@
 #include <zephyr/sys/util.h>
 
 #include "can_mcan.h"
-#include "can_mcan_priv.h"
 
 LOG_MODULE_REGISTER(can_mcan, CONFIG_CAN_LOG_LEVEL);
 
@@ -47,7 +46,7 @@ static void memset32_volatile(volatile void *dst_, uint32_t val, size_t len)
 	}
 }
 
-static inline int can_mcan_read_reg(const struct device *dev, uint16_t reg, uint32_t *val)
+int can_mcan_read_reg(const struct device *dev, uint16_t reg, uint32_t *val)
 {
 	const struct can_mcan_config *config = dev->config;
 	int err;
@@ -62,7 +61,7 @@ static inline int can_mcan_read_reg(const struct device *dev, uint16_t reg, uint
 	return err;
 }
 
-static inline int can_mcan_write_reg(const struct device *dev, uint16_t reg, uint32_t val)
+int can_mcan_write_reg(const struct device *dev, uint16_t reg, uint32_t val)
 {
 	const struct can_mcan_config *config = dev->config;
 	int err;
