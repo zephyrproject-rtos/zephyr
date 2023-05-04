@@ -169,6 +169,10 @@ void z_float_enable(struct k_thread *thread, unsigned int options)
 	unsigned int imask;
 	struct k_thread *fp_owner;
 
+	if (!thread) {
+		return;
+	}
+
 	/* Ensure a preemptive context switch does not occur */
 
 	imask = irq_lock();
@@ -176,7 +180,6 @@ void z_float_enable(struct k_thread *thread, unsigned int options)
 	/* Indicate thread requires floating point context saving */
 
 	thread->base.user_options |= (uint8_t)options;
-
 	/*
 	 * The current thread might not allow FP instructions, so clear CR0[TS]
 	 * so we can use them. (CR0[TS] gets restored later on, if necessary.)
