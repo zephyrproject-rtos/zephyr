@@ -115,7 +115,9 @@ class TwisterConfigParser:
             else:
                 return vs
 
-        elif typestr.startswith("set"):
+        elif typestr.startswith("set") and isinstance(value, list):
+            return set(value)
+        elif typestr.startswith("set") and isinstance(value, str):
             vs = v.split()
             if len(typestr) > 3 and typestr[3] == ":":
                 return {self._cast_value(vsi, typestr[4:]) for vsi in vs}
