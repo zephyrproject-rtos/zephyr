@@ -528,3 +528,10 @@ zephyr_udc0: &usbhs {
 	pinctrl-names = "default";
 	status = "okay";
 };
+
+&i3c0 {
+	pinctrl-0 = <&pinmux_i3c>;
+	pinctrl-names = "default";
+
+	status = "okay";
+};
