@@ -34,3 +34,10 @@ config ADC_ADS114S0X_GPIO
 
 	  The GPIO functionality is handled by the ADS114S0x GPIO
 	  driver.
+
+config ADC_ADS114S0X_WAIT_FOR_COMPLETION_TIMEOUT_MS
+	int "Timeout for wait for completion of a read in ms"
+	default 1000
+	depends on ADC_ADS114S0X
+	help
+	  This is the wait time in ms until a read is completed.
