@@ -18,6 +18,7 @@ LOG_MODULE_REGISTER(can_mcux_mcan, CONFIG_CAN_LOG_LEVEL);
 #define DT_DRV_COMPAT nxp_lpc_mcan
 
 struct mcux_mcan_config {
+	mm_reg_t base;
 	const struct device *clock_dev;
 	clock_control_subsys_t clock_subsys;
 	void (*irq_config_func)(const struct device *dev);
@@ -27,6 +28,22 @@ struct mcux_mcan_config {
 struct mcux_mcan_data {
 	struct can_mcan_msg_sram msg_ram __nocache;
 };
+
+static int mcux_mcan_read_reg(const struct device *dev, uint16_t reg, uint32_t *val)
+{
+	const struct can_mcan_config *mcan_config = dev->config;
+	const struct mcux_mcan_config *mcux_config = mcan_config->custom;
+
+	return can_mcan_sys_read_reg(mcux_config->base, reg, val);
+}
+
+static int mcux_mcan_write_reg(const struct device *dev, uint16_t reg, uint32_t val)
+{
+	const struct can_mcan_config *mcan_config = dev->config;
+	const struct mcux_mcan_config *mcux_config = mcan_config->custom;
+
+	return can_mcan_sys_write_reg(mcux_config->base, reg, val);
+}
 
 static int mcux_mcan_get_core_clock(const struct device *dev, uint32_t *rate)
 {
@@ -142,6 +159,7 @@ static const struct can_driver_api mcux_mcan_driver_api = {
 	static void mcux_mcan_irq_config_##n(const struct device *dev); \
 									\
 	static const struct mcux_mcan_config mcux_mcan_config_##n = {	\
+		.base = (mm_reg_t)DT_INST_REG_ADDR(n),			\
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),	\
 		.clock_subsys = (clock_control_subsys_t)		\
 			DT_INST_CLOCKS_CELL(n, name),			\
@@ -150,7 +168,9 @@ static const struct can_driver_api mcux_mcan_driver_api = {
 	};								\
 									\
 	static const struct can_mcan_config can_mcan_config_##n =	\
-		CAN_MCAN_DT_CONFIG_INST_GET(n, &mcux_mcan_config_##n);	\
+		CAN_MCAN_DT_CONFIG_INST_GET(n, &mcux_mcan_config_##n,	\
+					    mcux_mcan_read_reg,		\
+					    mcux_mcan_write_reg);	\
 									\
 	static struct mcux_mcan_data mcux_mcan_data_##n;		\
 									\
