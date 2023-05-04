@@ -487,7 +487,7 @@ static void handle_client_test(sa_family_t af, struct tcphdr *th)
 		break;
 	case T_FIN:
 		test_verify_flags(th, FIN | ACK);
-		ack = ntohs(th->th_seq) + 1U;
+		ack = ack + 1U;
 		t_state = T_FIN_ACK;
 		reply = prepare_fin_ack_packet(af, htons(MY_PORT),
 					       th->th_sport);
@@ -1024,7 +1024,7 @@ send_next:
 		break;
 	case T_FIN:
 		test_verify_flags(th, FIN | ACK);
-		ack = ntohs(th->th_seq) + 1U;
+		ack = ack + 1U;
 		t_state = T_FIN_2;
 		reply = prepare_ack_packet(af, htons(MY_PORT), th->th_sport);
 		break;
@@ -1148,9 +1148,9 @@ static void handle_client_closing_test(sa_family_t af, struct tcphdr *th)
 		break;
 	case T_FIN:
 		test_verify_flags(th, FIN | ACK);
-		ack = ntohs(th->th_seq) + 1U;
+		ack = ack + 1U;
 		t_state = T_CLOSING;
-		reply = prepare_fin_packet(af, htons(MY_PORT), th->th_sport);
+		reply = prepare_fin_ack_packet(af, htons(MY_PORT), th->th_sport);
 		break;
 	case T_CLOSING:
 		test_verify_flags(th, ACK);
