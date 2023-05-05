@@ -5,7 +5,7 @@ menuconfig I2S_NRFX
 	bool "nRF I2S nrfx driver"
 	default y
 	depends on DT_HAS_NORDIC_NRF_I2S_ENABLED
-	select NRFX_I2S
+	select NRFX_I2S0 if HAS_HW_NRF_I2S0
 	help
 	  Enable support for nrfx I2S driver for nRF MCU series.
 
