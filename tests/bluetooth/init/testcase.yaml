@@ -122,6 +122,16 @@ tests:
     integration_platforms:
       - nrf52840dk_nrf52840
       - nrf52dk_nrf52832
+  bluetooth.init.test_ctlr_5_x_dbg:
+    extra_args:
+      - CONF_FILE=prj_ctlr_5_x_dbg.conf
+      - DTC_OVERLAY_FILE=pa_lna.overlay
+    platform_allow:
+      - nrf52840dk_nrf52840
+      - nrf52dk_nrf52832
+    integration_platforms:
+      - nrf52840dk_nrf52840
+      - nrf52dk_nrf52832
   bluetooth.init.test_ctlr_sw_switch_single_timer:
     extra_args:
       - CONF_FILE=prj_ctlr.conf
