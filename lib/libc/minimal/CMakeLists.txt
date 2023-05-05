@@ -10,7 +10,6 @@ set(STRERROR_TABLE_H ${GEN_DIR}/libc/minimal/strerror_table.h)
 zephyr_library_cc_option(-fno-builtin)
 
 zephyr_library_sources(
-  source/stdlib/abort.c
   source/stdlib/atoi.c
   source/stdlib/strtol.c
   source/stdlib/strtoul.c

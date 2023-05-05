@@ -450,17 +450,6 @@ __weak FUNC_NORETURN void __chk_fail(void)
 	CODE_UNREACHABLE;
 }
 
-#include <stdlib.h>
-#include <zephyr/kernel.h>
-
-/* Replace picolibc abort with native Zephyr one */
-void abort(void)
-{
-	printk("%s\n", __func__);
-	k_panic();
-	CODE_UNREACHABLE;
-}
-
 #ifndef CONFIG_LIBC_ERRNO
 
 /*
