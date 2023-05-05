@@ -204,6 +204,7 @@ void ascs_ep_set_state(struct bt_bap_ep *ep, uint8_t state)
 
 		switch (state) {
 		case BT_BAP_EP_STATE_IDLE:
+			ep->receiver_ready = false;
 			bt_bap_stream_reset(stream);
 
 			if (ops->released != NULL) {
@@ -227,6 +228,8 @@ void ascs_ep_set_state(struct bt_bap_ep *ep, uint8_t state)
 					      bt_bap_ep_state_str(ep->status.state));
 				return;
 			}
+
+			ep->receiver_ready = false;
 
 			if (ops->configured != NULL) {
 				ops->configured(stream, &ep->qos_pref);
@@ -263,6 +266,8 @@ void ascs_ep_set_state(struct bt_bap_ep *ep, uint8_t state)
 					return;
 				}
 			}
+
+			ep->receiver_ready = false;
 
 			if (ops->qos_set != NULL) {
 				ops->qos_set(stream);
@@ -322,7 +327,6 @@ void ascs_ep_set_state(struct bt_bap_ep *ep, uint8_t state)
 				switch (old_state) {
 				case BT_BAP_EP_STATE_ENABLING:
 				case BT_BAP_EP_STATE_STREAMING:
-					ep->receiver_ready = false;
 					break;
 				default:
 					BT_ASSERT_MSG(false, "Invalid state transition: %s -> %s",
@@ -338,6 +342,8 @@ void ascs_ep_set_state(struct bt_bap_ep *ep, uint8_t state)
 				return;
 			}
 
+			ep->receiver_ready = false;
+
 			if (ops->disabled != NULL) {
 				ops->disabled(stream);
 			}
@@ -349,7 +355,6 @@ void ascs_ep_set_state(struct bt_bap_ep *ep, uint8_t state)
 			case BT_BAP_EP_STATE_QOS_CONFIGURED:
 			case BT_BAP_EP_STATE_ENABLING:
 			case BT_BAP_EP_STATE_STREAMING:
-				ep->receiver_ready = false;
 				break;
 			case BT_BAP_EP_STATE_DISABLING:
 				if (ep->dir == BT_AUDIO_DIR_SOURCE) {
@@ -363,6 +368,8 @@ void ascs_ep_set_state(struct bt_bap_ep *ep, uint8_t state)
 					      bt_bap_ep_state_str(ep->status.state));
 				return;
 			}
+
+			ep->receiver_ready = false;
 
 			if (ep->iso == NULL ||
 			    ep->iso->chan.state == BT_ISO_STATE_DISCONNECTED) {
