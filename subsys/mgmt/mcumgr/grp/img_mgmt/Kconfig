@@ -88,6 +88,13 @@ config MCUMGR_GRP_IMG_FRUGAL_LIST
 	  a device but requires support in client software, which has to default omitted values.
 	  Works correctly with mcumgr-cli.
 
+config MCUMGR_GRP_IMG_VERSION_CMP_USE_BUILD_NUMBER
+	bool "Use build number while comparing image version"
+	help
+	  By default, the image version comparison relies only on version major,
+	  minor and revision. Enable this option to take into account the build
+	  number as well.
+
 config MCUMGR_GRP_IMG_UPLOAD_CHECK_HOOK
 	bool "Upload check hook"
 	depends on MCUMGR_MGMT_NOTIFICATION_HOOKS

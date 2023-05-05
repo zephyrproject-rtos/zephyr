@@ -278,7 +278,13 @@ img_mgmt_vercmp(const struct image_version *a, const struct image_version *b)
 		return 1;
 	}
 
-	/* Note: For semver compatibility, don't compare the 32-bit build num. */
+#if defined(CONFIG_MCUMGR_GRP_IMG_VERSION_CMP_USE_BUILD_NUMBER)
+	if (a->iv_build_num < b->iv_build_num) {
+		return -1;
+	} else if (a->iv_build_num > b->iv_build_num) {
+		return 1;
+	}
+#endif
 
 	return 0;
 }
