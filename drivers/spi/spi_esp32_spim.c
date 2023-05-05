@@ -338,6 +338,13 @@ static int IRAM_ATTR spi_esp32_configure(const struct device *dev,
 		hal_dev->mode |= BIT(1);
 	}
 
+	/* Chip select setup and hold times */
+	/* GPIO CS have their own delay parameter*/
+	if (!spi_cs_is_gpio(spi_cfg)) {
+		hal_dev->cs_hold = cfg->cs_hold;
+		hal_dev->cs_setup = cfg->cs_setup;
+	}
+
 	spi_hal_setup_device(hal, hal_dev);
 
 	/*
@@ -496,6 +503,8 @@ static const struct spi_driver_api spi_api = {
 		.dma_enabled = DT_INST_PROP(idx, dma_enabled),	\
 		.dma_clk_src = DT_INST_PROP(idx, dma_clk),	\
 		.dma_host = DT_INST_PROP(idx, dma_host),	\
+		.cs_setup = DT_INST_PROP_OR(idx, cs_setup_time, 0), \
+		.cs_hold = DT_INST_PROP_OR(idx, cs_hold_time, 0), \
 	};	\
 		\
 	DEVICE_DT_INST_DEFINE(idx, &spi_esp32_init,	\
