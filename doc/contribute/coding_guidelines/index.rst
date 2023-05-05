@@ -1297,6 +1297,134 @@ macros. Given that Zephyr uses a fork of the corresponding upstream for each
 module, it is always possible to patch the macro implementation in each module
 to avoid collisions.
 
+Rule A.4: C Standard Library Usage Restrictions in Zephyr Kernel
+================================================================
+
+Severity
+--------
+
+Required
+
+Description
+-----------
+
+The use of the C standard library functions and macros in the Zephyr kernel
+shall be limited to the following functions and macros from the ISO/IEC
+9899:2011 standard, also known as C11, and their extensions:
+
+.. csv-table:: List of allowed libc functions and macros in the Zephyr kernel
+   :header: Function,Source
+   :widths: auto
+
+   abort(),ISO/IEC 9899:2011
+   abs(),ISO/IEC 9899:2011
+   aligned_alloc(),ISO/IEC 9899:2011
+   assert(),ISO/IEC 9899:2011
+   atoi(),ISO/IEC 9899:2011
+   bsearch(),ISO/IEC 9899:2011
+   calloc(),ISO/IEC 9899:2011
+   exit(),ISO/IEC 9899:2011
+   fprintf(),ISO/IEC 9899:2011
+   fputc(),ISO/IEC 9899:2011
+   fputs(),ISO/IEC 9899:2011
+   free(),ISO/IEC 9899:2011
+   fwrite(),ISO/IEC 9899:2011
+   gmtime(),ISO/IEC 9899:2011
+   isalnum(),ISO/IEC 9899:2011
+   isalpha(),ISO/IEC 9899:2011
+   iscntrl(),ISO/IEC 9899:2011
+   isdigit(),ISO/IEC 9899:2011
+   isgraph(),ISO/IEC 9899:2011
+   isprint(),ISO/IEC 9899:2011
+   isspace(),ISO/IEC 9899:2011
+   isupper(),ISO/IEC 9899:2011
+   isxdigit(),ISO/IEC 9899:2011
+   labs(),ISO/IEC 9899:2011
+   llabs(),ISO/IEC 9899:2011
+   malloc(),ISO/IEC 9899:2011
+   memchr(),ISO/IEC 9899:2011
+   memcmp(),ISO/IEC 9899:2011
+   memcpy(),ISO/IEC 9899:2011
+   memmove(),ISO/IEC 9899:2011
+   memset(),ISO/IEC 9899:2011
+   perror(),ISO/IEC 9899:2011
+   printf(),ISO/IEC 9899:2011
+   putc(),ISO/IEC 9899:2011
+   putchar(),ISO/IEC 9899:2011
+   puts(),ISO/IEC 9899:2011
+   qsort(),ISO/IEC 9899:2011
+   rand(),ISO/IEC 9899:2011
+   realloc(),ISO/IEC 9899:2011
+   snprintf(),ISO/IEC 9899:2011
+   sprintf(),ISO/IEC 9899:2011
+   sqrt(),ISO/IEC 9899:2011
+   sqrtf(),ISO/IEC 9899:2011
+   srand(),ISO/IEC 9899:2011
+   strcat(),ISO/IEC 9899:2011
+   strchr(),ISO/IEC 9899:2011
+   strcmp(),ISO/IEC 9899:2011
+   strcpy(),ISO/IEC 9899:2011
+   strcspn(),ISO/IEC 9899:2011
+   strerror(),ISO/IEC 9899:2011
+   strlen(),ISO/IEC 9899:2011
+   strncat(),ISO/IEC 9899:2011
+   strncmp(),ISO/IEC 9899:2011
+   strncpy(),ISO/IEC 9899:2011
+   `strnlen()`_,POSIX.1-2008
+   strrchr(),ISO/IEC 9899:2011
+   strspn(),ISO/IEC 9899:2011
+   strstr(),ISO/IEC 9899:2011
+   strtol(),ISO/IEC 9899:2011
+   strtoll(),ISO/IEC 9899:2011
+   strtoul(),ISO/IEC 9899:2011
+   strtoull(),ISO/IEC 9899:2011
+   time(),ISO/IEC 9899:2011
+   tolower(),ISO/IEC 9899:2011
+   toupper(),ISO/IEC 9899:2011
+   vfprintf(),ISO/IEC 9899:2011
+   vprintf(),ISO/IEC 9899:2011
+   vsnprintf(),ISO/IEC 9899:2011
+   vsprintf(),ISO/IEC 9899:2011
+
+All of the functions listed above must be implemented by the
+:ref:`minimal libc <c_library_minimal>` to ensure that the Zephyr kernel can
+build with the minimal libc.
+
+In addition, any functions from the above list that are not part of the
+ISO/IEC 9899:2011 standard must be implemented by the
+:ref:`common libc <c_library_common>` to ensure their availability across
+multiple C standard libraries.
+
+Introducing new C standard library functions to the Zephyr kernel is allowed
+with justification given that the above requirements are satisfied.
+
+Note that the use of the functions listed above are subject to secure and safe
+coding practices and it should not be assumed that their use in the Zephyr
+kernel is unconditionally permitted by being listed in this rule.
+
+The "Zephyr kernel" in this context consists of the following components:
+
+* Kernel (:file:`kernel`)
+* OS Library (:file:`lib/os`)
+* Architecture Port (:file:`arch`)
+* Logging Subsystem (:file:`subsys/logging`)
+
+.. _strnlen(): https://pubs.opengroup.org/onlinepubs/9699919799/functions/strlen.html
+
+Rationale
+---------
+
+Zephyr kernel must be able to build with the
+:ref:`minimal libc <c_library_minimal>`, a limited C standard library
+implementation that is part of the Zephyr RTOS and maintained by the Zephyr
+Project, to allow self-contained testing and verification of the kernel and
+core OS services.
+
+In order to ensure that the Zephyr kernel can build with the minimal libc, it
+is necessary to restrict the use of the C standard library functions and macros
+in the Zephyr kernel to the functions and macros that are available as part of
+the minimal libc.
+
 Parasoft Codescan Tool
 **********************
 
