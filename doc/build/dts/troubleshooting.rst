@@ -289,6 +289,21 @@ them. For example, to use ``clang-format`` to reformat the file in place:
 You can then open the file in your favorite editor to view the final C results
 after preprocessing.
 
+Do not track macro expansion
+****************************
+
+The compiler error message chain can quickly grow when making a mistake and
+using devicetree macros. In some situations, the number of compiler error
+messages can be overwhelming, specially because many not relevant internals are
+exposed. This happens because of long macro expansion chains. You may disable
+the :kconfig:option:`CONFIG_COMPILER_TRACK_MACRO_EXPANSION` option to skip macro
+expansion, typically reducing the error messages to one line. For example, to
+build :ref:`hello_world` with west and this option set, use:
+
+.. code-block:: sh
+
+   west build -b BOARD samples/hello_world -- -DCONFIG_COMPILER_TRACK_MACRO_EXPANSION=n
+
 Validate properties
 *******************
 
