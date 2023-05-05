@@ -85,7 +85,7 @@ int ppp_config_info_req(struct ppp_fsm *fsm,
 			void *user_data);
 
 #define PPP_PROTO_GET_NAME(proto_name)		\
-	(ppp_protocol_handler_##proto_name)
+	_CONCAT(ppp_protocol_handler_, proto_name)
 
 #define PPP_PROTOCOL_REGISTER(name, proto, init_func, proto_handler,	\
 			      proto_lower_up, proto_lower_down,		\
