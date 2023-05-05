@@ -15,7 +15,7 @@ LOG_MODULE_REGISTER(modem_ublox_sara_r4, CONFIG_MODEM_LOG_LEVEL);
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/device.h>
 #include <zephyr/init.h>
-#include <fcntl.h>
+#include <zephyr/posix/fcntl.h>
 
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/net_offload.h>
@@ -2034,7 +2034,7 @@ static void offload_freeaddrinfo(struct zsock_addrinfo *res)
 	res = NULL;
 }
 
-const struct socket_dns_offload offload_dns_ops = {
+static const struct socket_dns_offload offload_dns_ops = {
 	.getaddrinfo = offload_getaddrinfo,
 	.freeaddrinfo = offload_freeaddrinfo,
 };

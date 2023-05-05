@@ -1,0 +1,8 @@
+# Copyright (c) 2023 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: EPCOS B57861S0103A039 thermistor
+
+compatible: "epcos,b57861s0103a039"
+
+include: ntc-thermistor.yaml

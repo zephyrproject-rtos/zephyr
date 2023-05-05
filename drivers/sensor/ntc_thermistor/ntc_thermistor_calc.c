@@ -6,7 +6,7 @@
 
 #include <stdlib.h>
 #include <zephyr/devicetree.h>
-#include "zephyr_ntc_thermistor.h"
+#include "ntc_thermistor.h"
 
 /**
  * fixp_linear_interpolate() - interpolates a value from two known points
@@ -55,10 +55,10 @@ int ntc_compensation_compare_ohm(const struct ntc_type *type, const void *key, c
 	} else if (ntc_key->ohm == element_val->ohm) {
 		sgn = 0;
 	} else if (ntc_key->ohm < element_val->ohm) {
-		if (element_idx == type->n_comp - 1) {
+		if (element_idx == (type->n_comp / 2) - 1) {
 			sgn = 0;
 		} else {
-			if (element_idx != type->n_comp - 1 &&
+			if (element_idx != (type->n_comp / 2) - 1 &&
 			    ntc_key->ohm > type->comp[element_idx + 1].ohm) {
 				sgn = 0;
 			} else {
@@ -104,7 +104,7 @@ uint32_t ntc_get_ohm_of_thermistor(const struct ntc_config *cfg, uint32_t max_ad
 {
 	uint32_t ohm;
 
-	if (cfg->connection_type == NTC_CONNECTED_POSITIVE) {
+	if (cfg->connected_positive) {
 		ohm = cfg->pulldown_ohm * max_adc / (raw_adc - 1);
 	} else {
 		ohm = cfg->pullup_ohm * (raw_adc - 1) / max_adc;
@@ -129,23 +129,3 @@ int32_t ntc_get_temp_mc(const struct ntc_type *type, unsigned int ohm)
 					   ohm);
 	return temp;
 }
-
-#define THERMISTOR_DATA_NAME(node_id) DT_CAT(node_id, _thermistor_data)
-
-#define DEFINE_THERMISTOR_TYPE(node_id)                                                            \
-	static int node_id##_compare_ohm(const void *key, const void *element);                    \
-	BUILD_ASSERT(DT_PROP_LEN(node_id, tr_table) % 2 == 0, "T/R Table needs to be even size");  \
-	static const uint32_t node_id##_tr_table[] = DT_PROP(node_id, tr_table);                   \
-                                                                                                   \
-	const struct ntc_type NTC_TYPE_NAME(node_id) = {                                           \
-		.comp = (struct ntc_compensation *)node_id##_tr_table,                             \
-		.n_comp = (ARRAY_SIZE(node_id##_tr_table) / 2),                                    \
-		.ohm_cmp = node_id##_compare_ohm,                                                  \
-	};                                                                                         \
-                                                                                                   \
-	static int node_id##_compare_ohm(const void *key, const void *element)                     \
-	{                                                                                          \
-		return ntc_compensation_compare_ohm(&NTC_TYPE_NAME(node_id), key, element);        \
-	}
-
-DT_FOREACH_STATUS_OKAY(zephyr_ntc_thermistor_rt_table, DEFINE_THERMISTOR_TYPE)

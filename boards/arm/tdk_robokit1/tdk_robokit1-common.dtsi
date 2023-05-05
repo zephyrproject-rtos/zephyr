@@ -5,7 +5,6 @@
  */
 
 #include "tdk_robokit1-pinctrl.dtsi"
-#include "tdk_robokit1-thermistor.dtsi"
 
 / {
 	aliases {
@@ -45,14 +44,13 @@
 	};
 
 	temp_sensor: ambient_temp_sensor {
-		compatible = "zephyr,ntc-thermistor";
+		compatible = "epcos,b57861s0103a039";
 		io-channels = <&spi_adc 0>;
-		zephyr,rt-table = <&thermistor_R25_10000_B_3974>;
 		r25-ohm = <10000>;
 		pullup-uv = <3300000>;
 		pullup-ohm = <0>;
 		pulldown-ohm = <10000>;
-		connection-type = "NTC_CONNECTED_POSITIVE";
+		connected-positive;
 	};
 };
 
@@ -223,8 +221,4 @@ zephyr_udc0: &usbhs {
 			reg = <0x001e0000 0x00020000>;
 		};
 	};
-};
-
-&thermistor_R25_10000_B_3974 {
-	status = "okay";
 };

@@ -375,7 +375,6 @@ microbit	Micro:bit Educational Foundation
 microchip	Microchip Technology Inc.
 microcrystal	Micro Crystal AG
 micron	Micron Technology Inc.
-microsemi	Microchip Technology Inc. (formerly Microsemi Corporation)
 microsoft	Microsoft Corporation
 microsys	MicroSys Electronics GmbH
 mikroe	MikroElektronika d.o.o.
@@ -392,7 +391,6 @@ mpl	MPL AG
 mps	Monolithic Power Systems Inc.
 mqmaker	mqmaker Inc.
 mrvl	Marvell Technology Group Ltd.
-mscc	Microsemi Corporation
 msi	Micro-Star International Co. Ltd.
 mstar	MStar Semiconductor, Inc. (acquired by MediaTek Inc.)
 mti	Imagination Technologies Ltd. (formerly MIPS Technologies Inc.)
