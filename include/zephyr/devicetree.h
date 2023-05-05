@@ -622,6 +622,10 @@
  * - for type phandles, this expands to the number of phandles
  * - for type phandle-array, this expands to the number of
  *   phandle and specifier blocks in the property
+ * - for type phandle, this expands to 1 (so that a phandle
+ *   can be treated as a degenerate case of phandles with length 1)
+ * - for type string, this expands to 1 (so that a string can be
+ *   treated as a degenerate case of string-array with length 1)
  *
  * These properties are handled as special cases:
  *
