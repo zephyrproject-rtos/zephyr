@@ -559,7 +559,8 @@ and adding a file :file:`tc_util_user_override.h` with your overrides.
 Add the line ``zephyr_include_directories(my_folder)`` to
 your project's :file:`CMakeLists.txt` to let Zephyr find your header file during builds.
 
-See the file :zephyr_file:`subsys/testsuite/include/tc_util.h` to see which macros and/or defines can be overridden.
+See the file :zephyr_file:`subsys/testsuite/include/zephyr/tc_util.h` to see
+which macros and/or defines can be overridden.
 These will be surrounded by blocks such as:
 
 .. code-block:: C
