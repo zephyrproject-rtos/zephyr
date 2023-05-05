@@ -1040,29 +1040,7 @@ static int cmd_config(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	uni_stream = CONTAINER_OF(default_stream, struct unicast_stream, stream);
-	memcpy(&uni_stream->qos, &named_preset->preset.qos, sizeof(uni_stream->qos));
-	memcpy(&uni_stream->codec, &named_preset->preset.codec, sizeof(uni_stream->codec));
-	/* Need to update the `bt_data.data` pointer to the new value after copying the codec */
-	/* Need to copy from the data pointer, as the preset->value is empty, as they are defined as
-	 * compound literals
-	 */
-	for (size_t i = 0U; i < ARRAY_SIZE(uni_stream->codec.data); i++) {
-		const struct bt_codec_data *preset_data = &named_preset->preset.codec.data[i];
-		struct bt_codec_data *data = &uni_stream->codec.data[i];
-
-		data->data.data = data->value;
-		data->data.data_len = preset_data->data.data_len;
-		memcpy(data->value, preset_data->data.data, preset_data->data.data_len);
-	}
-
-	for (size_t i = 0U; i < ARRAY_SIZE(uni_stream->codec.meta); i++) {
-		const struct bt_codec_data *preset_meta = &named_preset->preset.codec.meta[i];
-		struct bt_codec_data *meta = &uni_stream->codec.meta[i];
-
-		meta->data.data = meta->value;
-		meta->data.data_len = preset_meta->data.data_len;
-		memcpy(meta->value, preset_meta->data.data, preset_meta->data.data_len);
-	}
+	copy_unicast_stream_preset(uni_stream, named_preset);
 
 	/* If location has been modifed, we update the location in the codec configuration */
 	if (location != BT_AUDIO_LOCATION_PROHIBITED) {
@@ -1930,8 +1908,7 @@ static int cmd_create_broadcast(const struct shell *sh, size_t argc,
 		}
 	}
 
-	memcpy(&default_source.codec, &named_preset->preset.codec, sizeof(default_source.codec));
-	memcpy(&default_source.qos, &named_preset->preset.qos, sizeof(default_source.qos));
+	copy_broadcast_source_preset(&default_source, named_preset);
 
 	(void)memset(stream_params, 0, sizeof(stream_params));
 	for (size_t i = 0; i < ARRAY_SIZE(stream_params); i++) {
