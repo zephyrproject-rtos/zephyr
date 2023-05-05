@@ -10,6 +10,7 @@
 #include <zephyr/drivers/entropy.h>
 #include <zephyr/random/rand32.h>
 #include <zephyr/init.h>
+#include <zephyr/kernel.h>
 
 #include "fsl_caam.h"
 
@@ -21,6 +22,10 @@ static caam_job_ring_interface_t jrif0 __attribute__((__section__(".nocache")));
 static uint8_t rng_buff_pool[CONFIG_ENTRY_MCUX_CAAM_POOL_SIZE]
 					__attribute__((__section__(".nocache")));
 
+
+/* This semaphore is needed to prevent race condition to static variables in the HAL driver */
+K_SEM_DEFINE(mcux_caam_sem, 1, 1)
+
 static int entropy_mcux_caam_get_entropy(const struct device *dev,
 					 uint8_t *buffer,
 					 uint16_t length)
@@ -30,6 +35,8 @@ static int entropy_mcux_caam_get_entropy(const struct device *dev,
 	caam_handle_t handle;
 	uint16_t read_length = 0;
 	uint16_t insert_idx = 0;
+	int ret = 0;
+	k_timeout_t sem_timeout = K_MSEC(10);
 
 	handle.jobRing = kCAAM_JobRing0;
 
@@ -41,9 +48,16 @@ static int entropy_mcux_caam_get_entropy(const struct device *dev,
 	while (insert_idx < length) {
 		read_length = MIN(sizeof(rng_buff_pool), (length - insert_idx));
 
+		ret = k_sem_take(&mcux_caam_sem, sem_timeout);
+		if (ret) {
+			return ret;
+		}
+
 		status = CAAM_RNG_GetRandomData(
 				config->base, &handle, kCAAM_RngStateHandle0,
 				&rng_buff_pool[0], read_length, kCAAM_RngDataAny, NULL);
+
+		k_sem_give(&mcux_caam_sem);
 
 		memcpy(&buffer[insert_idx], &rng_buff_pool[0], read_length);
 		insert_idx += read_length;
