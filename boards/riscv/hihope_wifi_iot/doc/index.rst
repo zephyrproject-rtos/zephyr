@@ -58,6 +58,25 @@ Supported Features
 
 Other hardware features are not currently supported by Zephyr.
 
+Programming and Debugging
+*************************
+
+Building & Flashing
+===================
+
+Here is an example for building the :ref:`blinky-sample` application.
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/basic/blinky
+   :board: hihope_wifi_iot
+   :goals: build
+
+To flash the application, you need to specify the serial port of the board.
+
+.. code-block:: console
+
+   west flash --port <path/to/port>
+
 References
 **********
 
