@@ -145,6 +145,7 @@ ZTEST(devicetree_api, test_nodelabel_props)
 	zassert_equal(DT_PROP_LEN(TEST_NODELABEL, compatible), 1, "");
 	zassert_true(!strcmp(DT_PROP_BY_IDX(TEST_NODELABEL, compatible, 0),
 			     "vnd,gpio-device"), "");
+	zassert_equal(DT_PROP_LEN(TEST_ENUM_0, val), 1, "");
 }
 
 #undef DT_DRV_COMPAT
@@ -740,6 +741,7 @@ ZTEST(devicetree_api, test_phandles)
 	zassert_true(DT_NODE_HAS_PROP(TEST_PH, ph), "");
 	zassert_true(DT_SAME_NODE(DT_PROP(TEST_PH, ph),
 				  DT_NODELABEL(test_gpio_1)), "");
+	zassert_equal(DT_PROP_LEN(TEST_PH, ph), 1, "");
 	zassert_true(DT_SAME_NODE(DT_PROP_BY_IDX(TEST_PH, ph, 0),
 				  DT_NODELABEL(test_gpio_1)), "");
 	/* DT_PROP_BY_PHANDLE */
