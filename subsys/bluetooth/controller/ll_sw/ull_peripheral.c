@@ -89,6 +89,7 @@ void ull_periph_setup(struct node_rx_hdr *rx, struct node_rx_ftr *ftr,
 	uint16_t max_rx_time;
 	uint16_t win_offset;
 	memq_link_t *link;
+	uint32_t slot_us;
 	uint8_t chan_sel;
 	void *node;
 
@@ -360,10 +361,19 @@ void ull_periph_setup(struct node_rx_hdr *rx, struct node_rx_ftr *ftr,
 #endif /* !CONFIG_BT_CTLR_DATA_LENGTH */
 
 #if defined(CONFIG_BT_CTLR_PHY)
-	ready_delay_us = lll_radio_rx_ready_delay_get(lll->phy_rx, 1);
-#else
-	ready_delay_us = lll_radio_rx_ready_delay_get(0, 0);
-#endif
+	ready_delay_us = lll_radio_rx_ready_delay_get(lll->phy_rx, PHY_FLAGS_S8);
+#else /* CONFIG_BT_CTLR_PHY */
+	ready_delay_us = lll_radio_rx_ready_delay_get(0U, 0U);
+#endif /* CONFIG_BT_CTLR_PHY */
+
+	/* Calculate event time reservation */
+	slot_us = max_rx_time + max_tx_time;
+	slot_us += EVENT_IFS_US + (EVENT_CLOCK_JITTER_US << 1);
+	slot_us += ready_delay_us;
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_EVENT_OVERHEAD_RESERVE_MAX)) {
+		slot_us += EVENT_OVERHEAD_START_US + EVENT_OVERHEAD_END_US;
+	}
 
 	/* TODO: active_to_start feature port */
 	conn->ull.ticks_active_to_start = 0U;
@@ -371,10 +381,7 @@ void ull_periph_setup(struct node_rx_hdr *rx, struct node_rx_ftr *ftr,
 		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US);
 	conn->ull.ticks_preempt_to_start =
 		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_PREEMPT_MIN_US);
-	conn->ull.ticks_slot = HAL_TICKER_US_TO_TICKS_CEIL(
-		EVENT_OVERHEAD_START_US + EVENT_OVERHEAD_END_US +
-		ready_delay_us + max_rx_time + EVENT_IFS_US + max_tx_time +
-		(EVENT_CLOCK_JITTER_US << 1));
+	conn->ull.ticks_slot = HAL_TICKER_US_TO_TICKS_CEIL(slot_us);
 
 	ticks_slot_offset = MAX(conn->ull.ticks_active_to_start,
 				conn->ull.ticks_prepare_to_start);
