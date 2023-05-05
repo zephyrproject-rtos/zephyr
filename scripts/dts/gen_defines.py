@@ -645,8 +645,11 @@ def write_vanilla_props(node):
             macro2val[macro] = val
 
         if prop.spec.type == 'string':
+            # DT_N_<node-id>_P_<prop-id>_IDX_<i>_STRING_UNQUOTED
             macro2val[macro + "_STRING_UNQUOTED"] = prop.val
+            # DT_N_<node-id>_P_<prop-id>_IDX_<i>_STRING_TOKEN
             macro2val[macro + "_STRING_TOKEN"] = prop.val_as_token
+            # DT_N_<node-id>_P_<prop-id>_IDX_<i>_STRING_UPPER_TOKEN
             macro2val[macro + "_STRING_UPPER_TOKEN"] = prop.val_as_token.upper()
 
         if prop.enum_index is not None:
@@ -667,14 +670,18 @@ def write_vanilla_props(node):
         if "phandle" in prop.type:
             macro2val.update(phandle_macros(prop, macro))
         elif "array" in prop.type:
-            # DT_N_<node-id>_P_<prop-id>_IDX_<i>
-            # DT_N_<node-id>_P_<prop-id>_IDX_<i>_EXISTS
             for i, subval in enumerate(prop.val):
+                # DT_N_<node-id>_P_<prop-id>_IDX_<i>
+                # DT_N_<node-id>_P_<prop-id>_IDX_<i>_EXISTS
+
                 if isinstance(subval, str):
                     macro2val[macro + f"_IDX_{i}"] = quote_str(subval)
                     subval_as_token = edtlib.str_as_token(subval)
+                    # DT_N_<node-id>_P_<prop-id>_IDX_<i>_STRING_UNQUOTED
                     macro2val[macro + f"_IDX_{i}_STRING_UNQUOTED"] = subval
+                    # DT_N_<node-id>_P_<prop-id>_IDX_<i>_STRING_TOKEN
                     macro2val[macro + f"_IDX_{i}_STRING_TOKEN"] = subval_as_token
+                    # DT_N_<node-id>_P_<prop-id>_IDX_<i>_STRING_UPPER_TOKEN
                     macro2val[macro + f"_IDX_{i}_STRING_UPPER_TOKEN"] = subval_as_token.upper()
                 else:
                     macro2val[macro + f"_IDX_{i}"] = subval
@@ -687,16 +694,19 @@ def write_vanilla_props(node):
                     f'fn(DT_{node.z_path_id}, {prop_id}, {i})'
                     for i in range(len(prop.val)))
 
+            # DT_N_<node-id>_P_<prop-id>_FOREACH_PROP_ELEM_SEP
             macro2val[f"{macro}_FOREACH_PROP_ELEM_SEP(fn, sep)"] = \
                 ' DT_DEBRACKET_INTERNAL sep \\\n\t'.join(
                     f'fn(DT_{node.z_path_id}, {prop_id}, {i})'
                     for i in range(len(prop.val)))
 
+            # DT_N_<node-id>_P_<prop-id>_FOREACH_PROP_ELEM_VARGS
             macro2val[f"{macro}_FOREACH_PROP_ELEM_VARGS(fn, ...)"] = \
                 ' \\\n\t'.join(
                     f'fn(DT_{node.z_path_id}, {prop_id}, {i}, __VA_ARGS__)'
                     for i in range(len(prop.val)))
 
+            # DT_N_<node-id>_P_<prop-id>_FOREACH_PROP_ELEM_SEP_VARGS
             macro2val[f"{macro}_FOREACH_PROP_ELEM_SEP_VARGS(fn, sep, ...)"] = \
                 ' DT_DEBRACKET_INTERNAL sep \\\n\t'.join(
                     f'fn(DT_{node.z_path_id}, {prop_id}, {i}, __VA_ARGS__)'
@@ -707,6 +717,7 @@ def write_vanilla_props(node):
             # DT_N_<node-id>_P_<prop-id>_LEN
             macro2val[macro + "_LEN"] = plen
 
+        # DT_N_<node-id>_P_<prop-id>_EXISTS
         macro2val[f"{macro}_EXISTS"] = 1
 
     if macro2val:
