@@ -115,6 +115,22 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	thread->switch_handle = thread;
 }
 
+#ifdef CONFIG_MULTITHREADING
+void *z_arch_get_next_switch_handle(struct k_thread **old_thread)
+{
+	ARG_UNUSED(old_thread);
+
+	return z_get_next_switch_handle(NULL);
+}
+#else
+void *z_arch_get_next_switch_handle(struct k_thread **old_thread)
+{
+	ARG_UNUSED(old_thread);
+
+	return NULL;
+}
+#endif /* CONFIG_MULTITHREADING */
+
 #ifdef CONFIG_USERSPACE
 
 /*
