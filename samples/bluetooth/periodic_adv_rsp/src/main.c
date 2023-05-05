@@ -35,7 +35,7 @@ static const struct bt_le_per_adv_param per_adv_params = {
 
 static struct bt_le_per_adv_subevent_data_params subevent_data_params[NUM_SUBEVENTS];
 static struct net_buf_simple bufs[NUM_SUBEVENTS];
-static uint8_t backing_store[PACKET_SIZE][NUM_SUBEVENTS];
+static uint8_t backing_store[NUM_SUBEVENTS][PACKET_SIZE];
 
 BUILD_ASSERT(ARRAY_SIZE(bufs) == ARRAY_SIZE(subevent_data_params));
 BUILD_ASSERT(ARRAY_SIZE(backing_store) == ARRAY_SIZE(subevent_data_params));
