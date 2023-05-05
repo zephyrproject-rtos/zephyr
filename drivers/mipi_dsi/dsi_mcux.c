@@ -198,10 +198,20 @@ static int dsi_mcux_attach(const struct device *dev,
 
 	mipi_dsi_dphy_bit_clk_hz = DSI_InitDphy((MIPI_DSI_Type *)&config->base,
 						&dphy_config, mipi_dsi_dphy_ref_clk_hz);
+
 	LOG_DBG("DPHY clock set to %u", mipi_dsi_dphy_bit_clk_hz);
-	/* Init DPI interface. */
-	DSI_SetDpiConfig((MIPI_DSI_Type *)&config->base, &config->dpi_config, mdev->data_lanes,
-					mipi_dsi_dpi_clk_hz, mipi_dsi_dphy_bit_clk_hz);
+	/*
+	 * If nxp,lcdif node is present, then the MIPI DSI driver will
+	 * accept input on the DPI port from the LCDIF, and convert the output
+	 * to DSI data. This is useful for video mode, where the LCDIF can
+	 * constantly refresh the MIPI panel.
+	 */
+	if (mdev->mode_flags & MIPI_DSI_MODE_VIDEO) {
+		/* Init DPI interface. */
+		DSI_SetDpiConfig((MIPI_DSI_Type *)&config->base,
+				&config->dpi_config, mdev->data_lanes,
+				mipi_dsi_dpi_clk_hz, mipi_dsi_dphy_bit_clk_hz);
+	}
 
 	imxrt_post_init_display_interface();
 
@@ -288,6 +298,33 @@ static int display_mcux_mipi_dsi_init(const struct device *dev)
 	return 0;
 }
 
+#define MCUX_DSI_DPI_CONFIG(id)									\
+	IF_ENABLED(DT_NODE_HAS_PROP(DT_DRV_INST(id), nxp_lcdif),				\
+	(.dpi_config = {									\
+		.dpiColorCoding = DT_INST_ENUM_IDX(id, dpi_color_coding),			\
+		.pixelPacket = DT_INST_ENUM_IDX(id, dpi_pixel_packet),				\
+		.videoMode = DT_INST_ENUM_IDX(id, dpi_video_mode),				\
+		.bllpMode = DT_INST_ENUM_IDX(id, dpi_bllp_mode),				\
+		.pixelPayloadSize = DT_INST_PROP_BY_PHANDLE(id, nxp_lcdif, width),		\
+		.panelHeight = DT_INST_PROP_BY_PHANDLE(id, nxp_lcdif, height),			\
+		.polarityFlags = (DT_PROP(DT_CHILD(DT_INST_PHANDLE(id, nxp_lcdif),		\
+				display_timings), hsync_active) ?				\
+				kDSI_DpiHsyncActiveHigh : kDSI_DpiHsyncActiveLow) |		\
+				(DT_PROP(DT_CHILD(DT_INST_PHANDLE(id, nxp_lcdif),		\
+				display_timings), vsync_active) ?				\
+				kDSI_DpiVsyncActiveHigh : kDSI_DpiVsyncActiveLow),		\
+		.hfp = DT_PROP(DT_CHILD(DT_INST_PHANDLE(id, nxp_lcdif),				\
+					display_timings), hfront_porch),			\
+		.hbp = DT_PROP(DT_CHILD(DT_INST_PHANDLE(id, nxp_lcdif),				\
+						display_timings), hback_porch),			\
+		.hsw = DT_PROP(DT_CHILD(DT_INST_PHANDLE(id, nxp_lcdif),				\
+						display_timings), hsync_len),			\
+		.vfp = DT_PROP(DT_CHILD(DT_INST_PHANDLE(id, nxp_lcdif),				\
+					display_timings), vfront_porch),			\
+		.vbp = DT_PROP(DT_CHILD(DT_INST_PHANDLE(id, nxp_lcdif),				\
+						display_timings), vback_porch),			\
+	},))
+
 #define MCUX_MIPI_DSI_DEVICE(id)								\
 	static const struct display_mcux_mipi_dsi_config display_mcux_mipi_dsi_config_##id = {	\
 		.base = {									\
@@ -297,30 +334,7 @@ static int display_mcux_mipi_dsi_init(const struct device *dev)
 			.dphy = (DSI_HOST_NXP_FDSOI28_DPHY_INTFC_Type *)			\
 				DT_INST_REG_ADDR_BY_IDX(id, 3),					\
 		},										\
-		.dpi_config = {									\
-			.dpiColorCoding = DT_INST_ENUM_IDX(id, dpi_color_coding),		\
-			.pixelPacket = DT_INST_ENUM_IDX(id, dpi_pixel_packet),			\
-			.videoMode = DT_INST_ENUM_IDX(id, dpi_video_mode),			\
-			.bllpMode = DT_INST_ENUM_IDX(id, dpi_bllp_mode),			\
-			.pixelPayloadSize = DT_INST_PROP_BY_PHANDLE(id, nxp_lcdif, width),	\
-			.panelHeight = DT_INST_PROP_BY_PHANDLE(id, nxp_lcdif, height),		\
-			.polarityFlags = (DT_PROP(DT_CHILD(DT_INST_PHANDLE(id, nxp_lcdif),	\
-					display_timings), hsync_active) ?			\
-					kDSI_DpiHsyncActiveHigh : kDSI_DpiHsyncActiveLow) |	\
-					(DT_PROP(DT_CHILD(DT_INST_PHANDLE(id, nxp_lcdif),	\
-					display_timings), vsync_active) ?			\
-					kDSI_DpiVsyncActiveHigh : kDSI_DpiVsyncActiveLow),	\
-			.hfp = DT_PROP(DT_CHILD(DT_INST_PHANDLE(id, nxp_lcdif),			\
-						display_timings), hfront_porch),		\
-			.hbp = DT_PROP(DT_CHILD(DT_INST_PHANDLE(id, nxp_lcdif),			\
-							display_timings), hback_porch),		\
-			.hsw = DT_PROP(DT_CHILD(DT_INST_PHANDLE(id, nxp_lcdif),			\
-							display_timings), hsync_len),		\
-			.vfp = DT_PROP(DT_CHILD(DT_INST_PHANDLE(id, nxp_lcdif),			\
-						display_timings), vfront_porch),		\
-			.vbp = DT_PROP(DT_CHILD(DT_INST_PHANDLE(id, nxp_lcdif),			\
-							display_timings), vback_porch),		\
-		},										\
+		MCUX_DSI_DPI_CONFIG(id)								\
 		.auto_insert_eotp = DT_INST_PROP(id, autoinsert_eotp),				\
 		.phy_clock = DT_INST_PROP(id, phy_clock),					\
 	};											\
