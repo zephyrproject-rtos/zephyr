@@ -67,13 +67,13 @@
  */
 
 /* Control registers for packers */
-#define OUTCONTROL0		0x0000
+#define OUTCONTROL		0x0000
 
 /* Status Register for FIFO interface */
-#define OUTSTAT0		0x0004
+#define OUTSTAT			0x0004
 
 /* Data read/Write port for FIFO */
-#define OUTDATA0		0x0008
+#define OUTDATA			0x0008
 
 /* (crossed out)	000Ch		LOCAL_OFFS		Offset Counter
  * (crossed out)	0010h		LOCAL_TSC0		64-bit Wall Clock timestamp
@@ -81,23 +81,9 @@
  *			001Ch - 00FFh				Reserved space for extensions
  */
 
+/* Offset to PDM Secondary Channel */
+#define PDM_CHANNEL_REGS_SIZE	0x100
 
-/* PDM Secondary Channel */
-
-/* Control registers for packers */
-#define OUTCONTROL1		0x0100
-
-/* Status Register for FIFO interface */
-#define OUTSTAT1		0x0104
-
-/* Data read/Write port for FIFO */
-#define OUTDATA1		0x0108
-
-/* (crossed out)	010Ch		LOCAL_OFFS		Offset Counter
- * (crossed out)	0110h		LOCAL_TSC0		64-bit Wall Clock timestamp
- * (crossed out)	0118h		LOCAL_SAMPLE0		64-bit Sample Count
- *			011Ch - 0FFFh				Reserved space for extensions
- */
 
 #define GLOBAL_CAPABILITIES	0x200
 
