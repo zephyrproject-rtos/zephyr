@@ -111,6 +111,9 @@
 #ifdef CONFIG_NRFX_I2S
 #define NRFX_I2S_ENABLED 1
 #endif
+#ifdef CONFIG_NRFX_I2S0
+#define NRFX_I2S0_ENABLED 1
+#endif
 
 #ifdef CONFIG_NRFX_IPC
 #define NRFX_IPC_ENABLED 1
