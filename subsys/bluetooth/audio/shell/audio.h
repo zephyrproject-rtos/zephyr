@@ -34,6 +34,7 @@ size_t cap_acceptor_ad_data_add(struct bt_data data[], size_t data_size, bool di
  * CONFIG_BT_AUDIO
  */
 #include <zephyr/bluetooth/audio/audio.h>
+#include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/bluetooth/audio/bap_lc3_preset.h>
 #include <zephyr/bluetooth/audio/cap.h>
 
@@ -55,6 +56,20 @@ struct named_lc3_preset {
 
 struct unicast_stream {
 	struct bt_cap_stream stream;
+	struct bt_codec codec;
+	struct bt_codec_qos qos;
+};
+
+struct broadcast_stream {
+	struct bt_cap_stream stream;
+	struct bt_codec_data data;
+};
+
+struct broadcast_source {
+	union {
+		struct bt_bap_broadcast_source *bap_source;
+		struct bt_cap_broadcast_source *cap_source;
+	};
 	struct bt_codec codec;
 	struct bt_codec_qos qos;
 };
@@ -109,6 +124,11 @@ static inline void print_codec(const struct shell *sh, const struct bt_codec *co
 	}
 #endif /* CONFIG_BT_CODEC_MAX_METADATA_COUNT > 0 */
 }
+
+#if defined(CONFIG_BT_BAP_BROADCAST_SOURCE)
+extern struct broadcast_stream broadcast_source_streams[CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT];
+extern struct broadcast_source default_source;
+#endif /* CONFIG_BT_BAP_BROADCAST_SOURCE */
 
 #if BROADCAST_SNK_SUBGROUP_CNT > 0
 static inline void print_base(const struct shell *sh, const struct bt_bap_base *base)
@@ -165,7 +185,6 @@ static inline void print_base(const struct shell *sh, const struct bt_bap_base *
 	shell_print(sh, "Possible indexes: %s", bis_indexes_str);
 }
 #endif /* BROADCAST_SNK_SUBGROUP_CNT > 0 */
-
 #endif /* CONFIG_BT_AUDIO */
 
 #endif /* __AUDIO_H */
