@@ -128,27 +128,6 @@ static void populate_connected_conns(struct bt_conn *conn, void *data)
 	}
 }
 
-static void cap_copy_preset(struct unicast_stream *uni_stream,
-			    const struct named_lc3_preset *name_preset)
-{
-	memcpy(&uni_stream->qos, &name_preset->preset.qos, sizeof(uni_stream->qos));
-	memcpy(&uni_stream->codec, &name_preset->preset.codec,
-	       sizeof(uni_stream->codec));
-
-	/* Need to update the `bt_data.data` pointer to the new value after copying the codec */
-	for (size_t i = 0U; i < ARRAY_SIZE(uni_stream->codec.data); i++) {
-		struct bt_codec_data *data = &uni_stream->codec.data[i];
-
-		data->data.data = data->value;
-	}
-
-	for (size_t i = 0U; i < ARRAY_SIZE(uni_stream->codec.meta); i++) {
-		struct bt_codec_data *data = &uni_stream->codec.meta[i];
-
-		data->data.data = data->value;
-	}
-}
-
 static int cmd_cap_initiator_unicast_start(const struct shell *sh, size_t argc,
 					   char *argv[])
 {
@@ -264,7 +243,7 @@ static int cmd_cap_initiator_unicast_start(const struct shell *sh, size_t argc,
 			stream_param[start_param.count].member.member = conn;
 			stream_param[start_param.count].stream = stream;
 			stream_param[start_param.count].ep = snk_ep;
-			cap_copy_preset(uni_stream, default_sink_preset);
+			copy_unicast_stream_preset(uni_stream, default_sink_preset);
 			stream_param[start_param.count].codec = &uni_stream->codec;
 			stream_param[start_param.count].qos = &uni_stream->qos;
 
@@ -298,7 +277,7 @@ static int cmd_cap_initiator_unicast_start(const struct shell *sh, size_t argc,
 			stream_param[start_param.count].member.member = conn;
 			stream_param[start_param.count].stream = stream;
 			stream_param[start_param.count].ep = src_ep;
-			cap_copy_preset(uni_stream, default_source_preset);
+			copy_unicast_stream_preset(uni_stream, default_source_preset);
 			stream_param[start_param.count].codec = &uni_stream->codec;
 			stream_param[start_param.count].qos = &uni_stream->qos;
 
@@ -399,9 +378,9 @@ static int cmd_cap_initiator_unicast_update(const struct shell *sh, size_t argc,
 
 
 			if (ep_info.dir == BT_AUDIO_DIR_SINK) {
-				cap_copy_preset(uni_stream, default_sink_preset);
+				copy_unicast_stream_preset(uni_stream, default_sink_preset);
 			} else {
-				cap_copy_preset(uni_stream, default_source_preset);
+				copy_unicast_stream_preset(uni_stream, default_source_preset);
 			}
 
 			params[count].meta = uni_stream->codec.meta;
@@ -441,9 +420,9 @@ static int cmd_cap_initiator_unicast_update(const struct shell *sh, size_t argc,
 			params[count].stream = stream;
 
 			if (ep_info.dir == BT_AUDIO_DIR_SINK) {
-				cap_copy_preset(uni_stream, default_sink_preset);
+				copy_unicast_stream_preset(uni_stream, default_sink_preset);
 			} else {
-				cap_copy_preset(uni_stream, default_source_preset);
+				copy_unicast_stream_preset(uni_stream, default_source_preset);
 			}
 
 			params[count].meta = uni_stream->codec.meta;

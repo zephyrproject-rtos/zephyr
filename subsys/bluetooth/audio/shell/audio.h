@@ -17,9 +17,12 @@
 
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/bap.h>
+#include <zephyr/bluetooth/audio/cap.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/shell/shell.h>
 #include <zephyr/sys/printk.h>
+
+#include "shell/bt.h"
 
 extern struct bt_csip_set_member_svc_inst *svc_inst;
 
@@ -185,6 +188,71 @@ static inline void print_base(const struct shell *sh, const struct bt_bap_base *
 	shell_print(sh, "Possible indexes: %s", bis_indexes_str);
 }
 #endif /* BROADCAST_SNK_SUBGROUP_CNT > 0 */
+
+static inline void copy_unicast_stream_preset(struct unicast_stream *stream,
+					      const struct named_lc3_preset *named_preset)
+{
+	memcpy(&stream->qos, &named_preset->preset.qos, sizeof(stream->qos));
+	memcpy(&stream->codec, &named_preset->preset.codec, sizeof(stream->codec));
+
+#if CONFIG_BT_CODEC_MAX_DATA_COUNT > 0 && CONFIG_BT_CODEC_MAX_DATA_LEN > 0
+	/* Need to update the `bt_data.data` pointer to the new value after copying the codec */
+	for (size_t i = 0U; i < ARRAY_SIZE(stream->codec.data); i++) {
+		const struct bt_codec_data *preset_data = &named_preset->preset.codec.data[i];
+		struct bt_codec_data *data = &stream->codec.data[i];
+		const uint8_t data_len = preset_data->data.data_len;
+
+		data->data.data = data->value;
+		data->data.data_len = data_len;
+		memcpy(data->value, preset_data->data.data, data_len);
+	}
+#endif /* CONFIG_BT_CODEC_MAX_METADATA_COUNT > 0 && CONFIG_BT_CODEC_MAX_DATA_LEN > 0 */
+
+#if CONFIG_BT_CODEC_MAX_METADATA_COUNT > 0 && CONFIG_BT_CODEC_MAX_DATA_LEN > 0
+	for (size_t i = 0U; i < ARRAY_SIZE(stream->codec.meta); i++) {
+		const struct bt_codec_data *preset_data = &named_preset->preset.codec.meta[i];
+		struct bt_codec_data *data = &stream->codec.meta[i];
+		const uint8_t data_len = preset_data->data.data_len;
+
+		data->data.data = data->value;
+		data->data.data_len = data_len;
+		memcpy(data->value, preset_data->data.data, data_len);
+	}
+#endif /* CONFIG_BT_CODEC_MAX_METADATA_COUNT > 0 && CONFIG_BT_CODEC_MAX_DATA_LEN > 0 */
+}
+
+static inline void copy_broadcast_source_preset(struct broadcast_source *source,
+						const struct named_lc3_preset *named_preset)
+{
+	memcpy(&source->qos, &named_preset->preset.qos, sizeof(source->qos));
+	memcpy(&source->codec, &named_preset->preset.codec, sizeof(source->codec));
+
+#if CONFIG_BT_CODEC_MAX_DATA_COUNT > 0 && CONFIG_BT_CODEC_MAX_DATA_LEN > 0
+	/* Need to update the `bt_data.data` pointer to the new value after copying the codec */
+	for (size_t i = 0U; i < ARRAY_SIZE(source->codec.data); i++) {
+		const struct bt_codec_data *preset_data = &named_preset->preset.codec.data[i];
+		struct bt_codec_data *data = &source->codec.data[i];
+		const uint8_t data_len = preset_data->data.data_len;
+
+		data->data.data = data->value;
+		data->data.data_len = data_len;
+		memcpy(data->value, preset_data->data.data, data_len);
+	}
+#endif /* CONFIG_BT_CODEC_MAX_METADATA_COUNT > 0 && CONFIG_BT_CODEC_MAX_DATA_LEN > 0 */
+
+#if CONFIG_BT_CODEC_MAX_METADATA_COUNT > 0 && CONFIG_BT_CODEC_MAX_DATA_LEN > 0
+	for (size_t i = 0U; i < ARRAY_SIZE(source->codec.meta); i++) {
+		const struct bt_codec_data *preset_data = &named_preset->preset.codec.meta[i];
+		struct bt_codec_data *data = &source->codec.meta[i];
+		const uint8_t data_len = preset_data->data.data_len;
+
+		data->data.data = data->value;
+		data->data.data_len = data_len;
+		memcpy(data->value, preset_data->data.data, data_len);
+	}
+#endif /* CONFIG_BT_CODEC_MAX_METADATA_COUNT > 0 && CONFIG_BT_CODEC_MAX_DATA_LEN > 0 */
+}
+
 #endif /* CONFIG_BT_AUDIO */
 
 #endif /* __AUDIO_H */
