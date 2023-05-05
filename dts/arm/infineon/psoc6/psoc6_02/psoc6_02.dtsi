@@ -310,5 +310,12 @@
 			status = "disabled";
 			#io-channel-cells = <1>;
 		};
+
+		watchdog0: watchdog@40260180 {
+			compatible = "infineon,cat1-watchdog";
+			reg = <0x40260180 0xc>;
+			interrupts = <22 6>;
+			status = "disabled";
+		};
 	};
 };
