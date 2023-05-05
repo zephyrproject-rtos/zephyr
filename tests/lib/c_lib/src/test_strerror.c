@@ -56,8 +56,7 @@ ZTEST(test_c_lib, test_strerror_r)
 			 '2', 'g', 'u', 'm', '3', 'n', '7', 0x00, 0x42};
 	static const size_t n = sizeof(actual);
 
-	if (IS_ENABLED(CONFIG_NEWLIB_LIBC) || IS_ENABLED(CONFIG_ARCMWDT_LIBC)) {
-		/* FIXME: Please see Issue #46846 */
+	if (IS_ENABLED(CONFIG_ARCMWDT_LIBC)) {
 		ztest_test_skip();
 	}
 
