@@ -59,7 +59,7 @@ GTEXT(__soc_restore_context)
 #endif /* CONFIG_RISCV_SOC_CONTEXT_SAVE */
 
 GTEXT(z_riscv_fatal_error)
-GTEXT(z_get_next_switch_handle)
+GTEXT(z_arch_get_next_switch_handle)
 GTEXT(z_riscv_switch)
 GTEXT(z_riscv_thread_start)
 
@@ -562,16 +562,14 @@ check_reschedule:
 	lr a1, ___cpu_t_current_OFFSET(s0)
 
 	/*
-	 * Get next thread to schedule with z_get_next_switch_handle().
+	 * Get next thread to schedule with z_arch_get_next_switch_handle().
 	 * We pass it a NULL as we didn't save the whole thread context yet.
 	 * If no scheduling is necessary then NULL will be returned.
 	 */
 	addi sp, sp, -16
 	sr a1, 0(sp)
 	mv a0, zero
-#ifdef CONFIG_MULTITHREADING
-	call z_get_next_switch_handle
-#endif
+	call z_arch_get_next_switch_handle
 	lr a1, 0(sp)
 	addi sp, sp, 16
 	beqz a0, no_reschedule
