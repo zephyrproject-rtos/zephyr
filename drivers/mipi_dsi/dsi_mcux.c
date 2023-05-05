@@ -242,11 +242,15 @@ static ssize_t dsi_mcux_transfer(const struct device *dev, uint8_t channel,
 		dsi_xfer.txDataType = kDSI_TxDataDcsShortWrNoParam;
 		break;
 	case MIPI_DSI_DCS_SHORT_WRITE_PARAM:
-		__fallthrough;
-	case MIPI_DSI_DCS_LONG_WRITE:
 		dsi_xfer.sendDscCmd = true;
 		dsi_xfer.dscCmd = msg->cmd;
 		dsi_xfer.txDataType = kDSI_TxDataDcsShortWrOneParam;
+		break;
+	case MIPI_DSI_DCS_LONG_WRITE:
+		dsi_xfer.sendDscCmd = true;
+		dsi_xfer.dscCmd = msg->cmd;
+		dsi_xfer.flags = kDSI_TransferUseHighSpeed;
+		dsi_xfer.txDataType = kDSI_TxDataDcsLongWr;
 		break;
 	case MIPI_DSI_GENERIC_SHORT_WRITE_0_PARAM:
 		dsi_xfer.txDataType = kDSI_TxDataGenShortWrNoParam;
