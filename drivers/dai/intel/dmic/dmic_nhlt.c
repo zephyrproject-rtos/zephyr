@@ -275,6 +275,180 @@ static inline int dai_dmic_set_clock(const struct dai_intel_dmic *dmic, const ui
 }
 #endif
 
+static int print_outcontrol(uint32_t val)
+{
+	int bf1, bf2, bf3, bf4, bf5, bf6, bf7, bf8;
+#ifdef CONFIG_SOC_SERIES_INTEL_ACE
+	int bf9, bf10, bf11, bf12, bf13;
+#endif
+	uint32_t ref;
+
+	bf1 = FIELD_GET(OUTCONTROL_TIE, val);
+	bf2 = FIELD_GET(OUTCONTROL_SIP, val);
+	bf3 = FIELD_GET(OUTCONTROL_FINIT, val);
+	bf4 = FIELD_GET(OUTCONTROL_FCI, val);
+	bf5 = FIELD_GET(OUTCONTROL_BFTH, val);
+	bf6 = FIELD_GET(OUTCONTROL_OF, val);
+	bf7 = FIELD_GET(OUTCONTROL_IPM, val);
+	bf8 = FIELD_GET(OUTCONTROL_TH, val);
+	LOG_INF("OUTCONTROL = %08x", val);
+	LOG_INF("  tie=%d, sip=%d, finit=%d, fci=%d", bf1, bf2, bf3, bf4);
+	LOG_INF("  bfth=%d, of=%d, ipm=%d, th=%d", bf5, bf6, bf7, bf8);
+	if (bf5 > OUTCONTROL_BFTH_MAX) {
+		LOG_WRN("illegal BFTH value %d", bf5);
+		return -EINVAL;
+	}
+
+#ifdef CONFIG_SOC_SERIES_INTEL_ACE
+	bf9 = FIELD_GET(OUTCONTROL_IPM_SOURCE_1, val);
+	bf10 = FIELD_GET(OUTCONTROL_IPM_SOURCE_2, val);
+	bf11 = FIELD_GET(OUTCONTROL_IPM_SOURCE_3, val);
+	bf12 = FIELD_GET(OUTCONTROL_IPM_SOURCE_4, val);
+	bf13 = FIELD_GET(OUTCONTROL_IPM_SOURCE_MODE, val);
+	LOG_INF("  ipms1=%d, ipms2=%d, ipms3=%d, ipms4=%d", bf9, bf10, bf11, bf12);
+	LOG_INF("  ipms_mode=%d", bf13);
+	ref = FIELD_PREP(OUTCONTROL_TIE, bf1) | FIELD_PREP(OUTCONTROL_SIP, bf2) |
+		FIELD_PREP(OUTCONTROL_FINIT, bf3) | FIELD_PREP(OUTCONTROL_FCI, bf4) |
+		FIELD_PREP(OUTCONTROL_BFTH, bf5) | FIELD_PREP(OUTCONTROL_OF, bf6) |
+		FIELD_PREP(OUTCONTROL_IPM, bf7) | FIELD_PREP(OUTCONTROL_IPM_SOURCE_1, bf9) |
+		FIELD_PREP(OUTCONTROL_IPM_SOURCE_2, bf10) |
+		FIELD_PREP(OUTCONTROL_IPM_SOURCE_3, bf11) |
+		FIELD_PREP(OUTCONTROL_IPM_SOURCE_4, bf12) | FIELD_PREP(OUTCONTROL_TH, bf8) |
+		FIELD_PREP(OUTCONTROL_IPM_SOURCE_MODE, bf13);
+#else
+	ref = FIELD_PREP(OUTCONTROL_TIE, bf1) | FIELD_PREP(OUTCONTROL_SIP, bf2) |
+		FIELD_PREP(OUTCONTROL_FINIT, bf3) | FIELD_PREP(OUTCONTROL_FCI, bf4) |
+		FIELD_PREP(OUTCONTROL_BFTH, bf5) | FIELD_PREP(OUTCONTROL_OF, bf6) |
+		FIELD_PREP(OUTCONTROL_IPM, bf7) | FIELD_PREP(OUTCONTROL_TH, bf8);
+#endif
+	if (ref != val) {
+		LOG_WRN("Some reserved bits are set in OUTCONTROL = 0x%08x", val);
+	}
+
+	return 0;
+}
+
+static void print_cic_control(uint32_t val)
+{
+	int bf1, bf2, bf3, bf4, bf5, bf6, bf7;
+	uint32_t ref;
+
+	bf1 = FIELD_GET(CIC_CONTROL_SOFT_RESET, val);
+	bf2 = FIELD_GET(CIC_CONTROL_CIC_START_B, val);
+	bf3 = FIELD_GET(CIC_CONTROL_CIC_START_A, val);
+	bf4 = FIELD_GET(CIC_CONTROL_MIC_B_POLARITY, val);
+	bf5 = FIELD_GET(CIC_CONTROL_MIC_A_POLARITY, val);
+	bf6 = FIELD_GET(CIC_CONTROL_MIC_MUTE, val);
+#ifndef CONFIG_SOC_SERIES_INTEL_ACE
+	bf7 = FIELD_GET(CIC_CONTROL_STEREO_MODE, val);
+#else
+	bf7 = -1;
+#endif
+	LOG_DBG("CIC_CONTROL = %08x", val);
+	LOG_DBG("  soft_reset=%d, cic_start_b=%d, cic_start_a=%d",
+		bf1, bf2, bf3);
+	LOG_DBG("  mic_b_polarity=%d, mic_a_polarity=%d, mic_mute=%d",
+		bf4, bf5, bf6);
+	ref = FIELD_PREP(CIC_CONTROL_SOFT_RESET, bf1) |
+		FIELD_PREP(CIC_CONTROL_CIC_START_B, bf2) |
+		FIELD_PREP(CIC_CONTROL_CIC_START_A, bf3) |
+		FIELD_PREP(CIC_CONTROL_MIC_B_POLARITY, bf4) |
+		FIELD_PREP(CIC_CONTROL_MIC_A_POLARITY, bf5) |
+		FIELD_PREP(CIC_CONTROL_MIC_MUTE, bf6)
+#ifndef CONFIG_SOC_SERIES_INTEL_ACE
+		| FIELD_PREP(CIC_CONTROL_STEREO_MODE, bf7)
+#endif
+		;
+	LOG_DBG("  stereo_mode=%d", bf7);
+	if (ref != val) {
+		LOG_WRN("Some reserved bits are set in CIC_CONTROL = 0x%08x", val);
+	}
+}
+
+static void print_fir_control(uint32_t val)
+{
+	int bf1, bf2, bf3, bf4, bf5, bf6;
+	uint32_t ref;
+
+	bf1 = FIELD_GET(FIR_CONTROL_START, val);
+	bf2 = FIELD_GET(FIR_CONTROL_ARRAY_START_EN, val);
+#ifdef CONFIG_SOC_SERIES_INTEL_ACE
+	bf3 = FIELD_GET(FIR_CONTROL_PERIODIC_START_EN, val);
+#else
+	bf3 = -1;
+#endif
+	bf4 = FIELD_GET(FIR_CONTROL_DCCOMP, val);
+	bf5 = FIELD_GET(FIR_CONTROL_MUTE, val);
+	bf6 = FIELD_GET(FIR_CONTROL_STEREO, val);
+	LOG_DBG("FIR_CONTROL = %08x", val);
+	LOG_DBG("  start=%d, array_start_en=%d, periodic_start_en=%d",
+		bf1, bf2, bf3);
+	LOG_DBG("  dccomp=%d, mute=%d, stereo=%d", bf4, bf5, bf6);
+	ref = FIELD_PREP(FIR_CONTROL_START, bf1) |
+		FIELD_PREP(FIR_CONTROL_ARRAY_START_EN, bf2) |
+#ifdef CONFIG_SOC_SERIES_INTEL_ACE
+		FIELD_PREP(FIR_CONTROL_PERIODIC_START_EN, bf3) |
+#endif
+		FIELD_PREP(FIR_CONTROL_DCCOMP, bf4) |
+		FIELD_PREP(FIR_CONTROL_MUTE, bf5) |
+		FIELD_PREP(FIR_CONTROL_STEREO, bf6);
+
+	if (ref != val) {
+		LOG_WRN("Some reserved bits are set in FIR_CONTROL = 0x%08x", val);
+	}
+}
+
+static void print_pdm_ctrl(const struct nhlt_pdm_ctrl_cfg *pdm_cfg)
+{
+	int bf1, bf2, bf3, bf4, bf5;
+	uint32_t val;
+
+	LOG_DBG("CIC_CONTROL = %08x", pdm_cfg->cic_control);
+
+	val = pdm_cfg->cic_config;
+	bf1 = FIELD_GET(CIC_CONFIG_CIC_SHIFT, val);
+	bf2 = FIELD_GET(CIC_CONFIG_COMB_COUNT, val);
+	LOG_DBG("CIC_CONFIG = %08x", val);
+	LOG_DBG("  cic_shift=%d, comb_count=%d", bf1, bf2);
+
+	val = pdm_cfg->mic_control;
+
+#ifndef CONFIG_SOC_SERIES_INTEL_ACE
+	bf1 = FIELD_GET(MIC_CONTROL_PDM_SKEW, val);
+#else
+	bf1 = -1;
+#endif
+	bf2 = FIELD_GET(MIC_CONTROL_CLK_EDGE, val);
+	bf3 = FIELD_GET(MIC_CONTROL_PDM_EN_B, val);
+	bf4 = FIELD_GET(MIC_CONTROL_PDM_EN_A, val);
+	bf5 = FIELD_GET(MIC_CONTROL_PDM_CLKDIV, val);
+	LOG_DBG("MIC_CONTROL = %08x", val);
+	LOG_DBG("  clkdiv=%d, skew=%d, clk_edge=%d", bf5, bf1, bf2);
+	LOG_DBG("  en_b=%d, en_a=%d", bf3, bf4);
+}
+
+static void print_fir_config(const struct nhlt_pdm_ctrl_fir_cfg *fir_cfg)
+{
+	uint32_t val;
+	int fir_decimation, fir_shift, fir_length;
+
+	val = fir_cfg->fir_config;
+	fir_length = FIELD_GET(FIR_CONFIG_FIR_LENGTH, val);
+	fir_decimation = FIELD_GET(FIR_CONFIG_FIR_DECIMATION, val);
+	fir_shift = FIELD_GET(FIR_CONFIG_FIR_SHIFT, val);
+	LOG_DBG("FIR_CONFIG = %08x", val);
+	LOG_DBG("  fir_decimation=%d, fir_shift=%d, fir_length=%d",
+		fir_decimation, fir_shift, fir_length);
+
+	print_fir_control(fir_cfg->fir_control);
+
+	/* Use DC_OFFSET and GAIN as such */
+	LOG_DBG("DC_OFFSET_LEFT = %08x", fir_cfg->dc_offset_left);
+	LOG_DBG("DC_OFFSET_RIGHT = %08x", fir_cfg->dc_offset_right);
+	LOG_DBG("OUT_GAIN_LEFT = %08x", fir_cfg->out_gain_left);
+	LOG_DBG("OUT_GAIN_RIGHT = %08x", fir_cfg->out_gain_right);
+}
+
 int dai_dmic_set_config_nhlt(struct dai_intel_dmic *dmic, const void *bespoke_cfg)
 {
 	struct nhlt_pdm_ctrl_cfg *pdm_cfg[DMIC_HW_CONTROLLERS_MAX];
@@ -288,7 +462,6 @@ int dai_dmic_set_config_nhlt(struct dai_intel_dmic *dmic, const void *bespoke_cf
 	uint32_t channel_ctrl_mask;
 	uint32_t fir_control;
 	uint32_t pdm_ctrl_mask;
-	uint32_t ref = 0;
 	uint32_t val;
 	const uint8_t *p = bespoke_cfg;
 	int num_fifos;
@@ -300,11 +473,7 @@ int dai_dmic_set_config_nhlt(struct dai_intel_dmic *dmic, const void *bespoke_cf
 	int rate_div;
 	int clk_div;
 	int comb_count;
-	int fir_decimation, fir_shift, fir_length;
-	int bf1, bf2, bf3, bf4, bf5, bf6, bf7, bf8;
-#ifdef CONFIG_SOC_SERIES_INTEL_ACE
-	int bf9, bf10, bf11, bf12, bf13;
-#endif
+	int fir_decimation, fir_length;
 	int bfth;
 	int ret;
 	int p_mcic = 0;
@@ -347,48 +516,10 @@ int dai_dmic_set_config_nhlt(struct dai_intel_dmic *dmic, const void *bespoke_cf
 
 		val = *(uint32_t *)p;
 		out_control[n] = val;
-		bf1 = FIELD_GET(OUTCONTROL_TIE, val);
-		bf2 = FIELD_GET(OUTCONTROL_SIP, val);
-		bf3 = FIELD_GET(OUTCONTROL_FINIT, val);
-		bf4 = FIELD_GET(OUTCONTROL_FCI, val);
-		bf5 = FIELD_GET(OUTCONTROL_BFTH, val);
-		bf6 = FIELD_GET(OUTCONTROL_OF, val);
-		bf7 = FIELD_GET(OUTCONTROL_IPM, val);
-		bf8 = FIELD_GET(OUTCONTROL_TH, val);
-		LOG_INF("dmic_set_config_nhlt(): OUTCONTROL%d = %08x", n, out_control[n]);
-		LOG_INF("  tie=%d, sip=%d, finit=%d, fci=%d", bf1, bf2, bf3, bf4);
-		LOG_INF("  bfth=%d, of=%d, ipm=%d, th=%d", bf5, bf6, bf7, bf8);
-		if (bf5 > OUTCONTROL_BFTH_MAX) {
-			LOG_ERR("dmic_set_config_nhlt(): illegal BFTH value");
-			return -EINVAL;
-		}
 
-#ifdef CONFIG_SOC_SERIES_INTEL_ACE
-		bf9 = FIELD_GET(OUTCONTROL_IPM_SOURCE_1, val);
-		bf10 = FIELD_GET(OUTCONTROL_IPM_SOURCE_2, val);
-		bf11 = FIELD_GET(OUTCONTROL_IPM_SOURCE_3, val);
-		bf12 = FIELD_GET(OUTCONTROL_IPM_SOURCE_4, val);
-		bf13 = FIELD_GET(OUTCONTROL_IPM_SOURCE_MODE, val);
-		LOG_INF("  ipms1=%d, ipms2=%d, ipms3=%d, ipms4=%d", bf9, bf10, bf11, bf12);
-		LOG_INF("  ipms_mode=%d", bf13);
-		ref =	FIELD_PREP(OUTCONTROL_TIE, bf1) | FIELD_PREP(OUTCONTROL_SIP, bf2) |
-			FIELD_PREP(OUTCONTROL_FINIT, bf3) | FIELD_PREP(OUTCONTROL_FCI, bf4) |
-			FIELD_PREP(OUTCONTROL_BFTH, bf5) | FIELD_PREP(OUTCONTROL_OF, bf6) |
-			FIELD_PREP(OUTCONTROL_IPM, bf7) | FIELD_PREP(OUTCONTROL_IPM_SOURCE_1, bf9) |
-			FIELD_PREP(OUTCONTROL_IPM_SOURCE_2, bf10) |
-			FIELD_PREP(OUTCONTROL_IPM_SOURCE_3, bf11) |
-			FIELD_PREP(OUTCONTROL_IPM_SOURCE_4, bf12) | FIELD_PREP(OUTCONTROL_TH, bf8) |
-			FIELD_PREP(OUTCONTROL_IPM_SOURCE_MODE, bf13);
-#else
-		ref = FIELD_PREP(OUTCONTROL_TIE, bf1) | FIELD_PREP(OUTCONTROL_SIP, bf2) |
-			FIELD_PREP(OUTCONTROL_FINIT, bf3) | FIELD_PREP(OUTCONTROL_FCI, bf4) |
-			FIELD_PREP(OUTCONTROL_BFTH, bf5) | FIELD_PREP(OUTCONTROL_OF, bf6) |
-			FIELD_PREP(OUTCONTROL_IPM, bf7) | FIELD_PREP(OUTCONTROL_TH, bf8);
-#endif
-		if (ref != val) {
-			LOG_ERR("dmic_set_config_nhlt(): illegal OUTCONTROL%d = 0x%08x",
-				n, val);
-			return -EINVAL;
+		ret = print_outcontrol(val);
+		if (ret) {
+			return ret;
 		}
 
 		p += sizeof(uint32_t);
@@ -446,67 +577,22 @@ int dai_dmic_set_config_nhlt(struct dai_intel_dmic *dmic, const void *bespoke_cf
 		clk_div = FIELD_GET(MIC_CONTROL_PDM_CLKDIV, pdm_cfg[n]->mic_control);
 		p_clkdiv = clk_div + 2;
 		if (dai_dmic_global.active_fifos_mask == 0) {
+			print_pdm_ctrl(pdm_cfg[n]);
+
 			val = pdm_cfg[n]->cic_control;
-			bf1 = FIELD_GET(CIC_CONTROL_SOFT_RESET, val);
-			bf2 = FIELD_GET(CIC_CONTROL_CIC_START_B, val);
-			bf3 = FIELD_GET(CIC_CONTROL_CIC_START_A, val);
-			bf4 = FIELD_GET(CIC_CONTROL_MIC_B_POLARITY, val);
-			bf5 = FIELD_GET(CIC_CONTROL_MIC_A_POLARITY, val);
-			bf6 = FIELD_GET(CIC_CONTROL_MIC_MUTE, val);
-#ifndef CONFIG_SOC_SERIES_INTEL_ACE
-			bf7 = FIELD_GET(CIC_CONTROL_STEREO_MODE, val);
-#else
-			bf7 = -1;
-#endif
-			LOG_DBG("dmic_set_config_nhlt(): CIC_CONTROL = %08x", val);
-			LOG_DBG("  soft_reset=%d, cic_start_b=%d, cic_start_a=%d",
-				bf1, bf2, bf3);
-			LOG_DBG("  mic_b_polarity=%d, mic_a_polarity=%d, mic_mute=%d",
-				bf4, bf5, bf6);
-			ref = FIELD_PREP(CIC_CONTROL_SOFT_RESET, bf1) |
-				FIELD_PREP(CIC_CONTROL_CIC_START_B, bf2) |
-				FIELD_PREP(CIC_CONTROL_CIC_START_A, bf3) |
-				FIELD_PREP(CIC_CONTROL_MIC_B_POLARITY, bf4) |
-				FIELD_PREP(CIC_CONTROL_MIC_A_POLARITY, bf5) |
-				FIELD_PREP(CIC_CONTROL_MIC_MUTE, bf6)
-#ifndef CONFIG_SOC_SERIES_INTEL_ACE
-				| FIELD_PREP(CIC_CONTROL_STEREO_MODE, bf7)
-#endif
-				;
-			LOG_DBG("  stereo_mode=%d", bf7);
-			if (ref != val) {
-				LOG_WRN("dmic_set_config_nhlt(): illegal CIC_CONTROL = 0x%08x",
-					val);
-			}
+			print_cic_control(val);
 
 			/* Clear CIC_START_A and CIC_START_B */
 			val = (val & ~(CIC_CONTROL_CIC_START_A | CIC_CONTROL_CIC_START_B));
 			dai_dmic_write(dmic, base[n] + CIC_CONTROL, val);
 			LOG_DBG("dmic_set_config_nhlt(): CIC_CONTROL = %08x", val);
 
-			val = pdm_cfg[n]->cic_config;
-			bf1 = FIELD_GET(CIC_CONFIG_CIC_SHIFT, val);
-			LOG_DBG("dmic_set_config_nhlt(): CIC_CONFIG = %08x", val);
-			LOG_DBG("  cic_shift=%d, comb_count=%d", bf1, comb_count);
-
 			/* Use CIC_CONFIG as such */
+			val = pdm_cfg[n]->cic_config;
 			dai_dmic_write(dmic, base[n] + CIC_CONFIG, val);
-			LOG_DBG("dmic_set_config_nhlt(): CIC_CONFIG = %08x", val);
-
-			val = pdm_cfg[n]->mic_control;
-#ifndef CONFIG_SOC_SERIES_INTEL_ACE
-			bf1 = FIELD_GET(MIC_CONTROL_PDM_SKEW, val);
-#else
-			bf1 = -1;
-#endif
-			bf2 = FIELD_GET(MIC_CONTROL_CLK_EDGE, val);
-			bf3 = FIELD_GET(MIC_CONTROL_PDM_EN_B, val);
-			bf4 = FIELD_GET(MIC_CONTROL_PDM_EN_A, val);
-			LOG_DBG("dmic_set_config_nhlt(): MIC_CONTROL = %08x", val);
-			LOG_DBG("  clkdiv=%d, skew=%d, clk_edge=%d", clk_div, bf1, bf2);
-			LOG_DBG("  en_b=%d, en_a=%d", bf3, bf4);
 
 			/* Clear PDM_EN_A and PDM_EN_B */
+			val = pdm_cfg[n]->mic_control;
 			val &= ~(MIC_CONTROL_PDM_EN_A | MIC_CONTROL_PDM_EN_B);
 			dai_dmic_write(dmic, base[n] + MIC_CONTROL, val);
 			LOG_DBG("dmic_set_config_nhlt(): MIC_CONTROL = %08x", val);
@@ -520,44 +606,12 @@ int dai_dmic_set_config_nhlt(struct dai_intel_dmic *dmic, const void *bespoke_cf
 		fir_decimation = FIELD_GET(FIR_CONFIG_FIR_DECIMATION, val);
 		p_mfira = fir_decimation + 1;
 		if (dmic->dai_config_params.dai_index == 0) {
-			fir_shift = FIELD_GET(FIR_CONFIG_FIR_SHIFT, val);
-			LOG_DBG("dmic_set_config_nhlt(): FIR_CONFIG_A = %08x", val);
-			LOG_DBG("  fir_decimation=%d, fir_shift=%d, fir_length=%d",
-				fir_decimation, fir_shift, fir_length);
+			print_fir_config(fir_cfg_a[n]);
 
 			/* Use FIR_CONFIG_A as such */
 			dai_dmic_write(dmic, base[n] + FIR_CONFIG_A, val);
-			LOG_DBG("configure_registers(), FIR_CONFIG_A = %08x", val);
 
 			val = fir_cfg_a[n]->fir_control;
-			bf1 = FIELD_GET(FIR_CONTROL_START, val);
-			bf2 = FIELD_GET(FIR_CONTROL_ARRAY_START_EN, val);
-#ifdef CONFIG_SOC_SERIES_INTEL_ACE
-			bf3 = FIELD_GET(FIR_CONTROL_PERIODIC_START_EN, val);
-#else
-			bf3 = -1;
-#endif
-			bf4 = FIELD_GET(FIR_CONTROL_DCCOMP, val);
-			bf5 = FIELD_GET(FIR_CONTROL_MUTE, val);
-			bf6 = FIELD_GET(FIR_CONTROL_STEREO, val);
-			LOG_DBG("dmic_set_config_nhlt(): FIR_CONTROL_A = %08x", val);
-			LOG_DBG("  start=%d, array_start_en=%d, periodic_start_en=%d",
-				bf1, bf2, bf3);
-			LOG_DBG("  dccomp=%d, mute=%d, stereo=%d", bf4, bf5, bf6);
-			ref = FIELD_PREP(FIR_CONTROL_START, bf1) |
-				FIELD_PREP(FIR_CONTROL_ARRAY_START_EN, bf2) |
-#ifdef CONFIG_SOC_SERIES_INTEL_ACE
-				FIELD_PREP(FIR_CONTROL_PERIODIC_START_EN, bf3) |
-#endif
-				FIELD_PREP(FIR_CONTROL_DCCOMP, bf4) |
-				FIELD_PREP(FIR_CONTROL_MUTE, bf5) |
-				FIELD_PREP(FIR_CONTROL_STEREO, bf6);
-
-			if (ref != val) {
-				LOG_ERR("dmic_set_config_nhlt(): illegal FIR_CONTROL = 0x%08x",
-					val);
-				return -EINVAL;
-			}
 
 			/* Clear START, set MUTE */
 			fir_control = (val & ~FIR_CONTROL_START) | FIR_CONTROL_MUTE;
@@ -567,19 +621,15 @@ int dai_dmic_set_config_nhlt(struct dai_intel_dmic *dmic, const void *bespoke_cf
 			/* Use DC_OFFSET and GAIN as such */
 			val = fir_cfg_a[n]->dc_offset_left;
 			dai_dmic_write(dmic, base[n] + DC_OFFSET_LEFT_A, val);
-			LOG_DBG("dmic_set_config_nhlt(): DC_OFFSET_LEFT_A = %08x", val);
 
 			val = fir_cfg_a[n]->dc_offset_right;
 			dai_dmic_write(dmic, base[n] + DC_OFFSET_RIGHT_A, val);
-			LOG_DBG("dmic_set_config_nhlt(): DC_OFFSET_RIGHT_A = %08x", val);
 
 			val = fir_cfg_a[n]->out_gain_left;
 			dai_dmic_write(dmic, base[n] + OUT_GAIN_LEFT_A, val);
-			LOG_DBG("dmic_set_config_nhlt(): OUT_GAIN_LEFT_A = %08x", val);
 
 			val = fir_cfg_a[n]->out_gain_right;
 			dai_dmic_write(dmic, base[n] + OUT_GAIN_RIGHT_A, val);
-			LOG_DBG("dmic_set_config_nhlt(): OUT_GAIN_RIGHT_A = %08x", val);
 		}
 
 		/* FIR B */
@@ -590,30 +640,12 @@ int dai_dmic_set_config_nhlt(struct dai_intel_dmic *dmic, const void *bespoke_cf
 		fir_decimation = FIELD_GET(FIR_CONFIG_FIR_DECIMATION, val);
 		p_mfirb = fir_decimation + 1;
 		if (dmic->dai_config_params.dai_index == 1) {
-			fir_shift = FIELD_GET(FIR_CONFIG_FIR_SHIFT, val);
-			LOG_DBG("dmic_set_config_nhlt(): FIR_CONFIG_B = %08x", val);
-			LOG_DBG("  fir_decimation=%d, fir_shift=%d, fir_length=%d",
-				fir_decimation, fir_shift, fir_length);
+			print_fir_config(fir_cfg_b[n]);
 
 			/* Use FIR_CONFIG_B as such */
 			dai_dmic_write(dmic, base[n] + FIR_CONFIG_B, val);
-			LOG_DBG("configure_registers(), FIR_CONFIG_B = %08x", val);
 
 			val = fir_cfg_b[n]->fir_control;
-			bf1 = FIELD_GET(FIR_CONTROL_START, val);
-			bf2 = FIELD_GET(FIR_CONTROL_ARRAY_START_EN, val);
-#ifdef CONFIG_SOC_SERIES_INTEL_ACE
-			bf3 = FIELD_GET(FIR_CONTROL_PERIODIC_START_EN, val);
-#else
-			bf3 = -1;
-#endif
-			bf4 = FIELD_GET(FIR_CONTROL_DCCOMP, val);
-			bf5 = FIELD_GET(FIR_CONTROL_MUTE, val);
-			bf6 = FIELD_GET(FIR_CONTROL_STEREO, val);
-			LOG_DBG("dmic_set_config_nhlt(): FIR_CONTROL_B = %08x", val);
-			LOG_DBG("  start=%d, array_start_en=%d, periodic_start_en=%d",
-				bf1, bf2, bf3);
-			LOG_DBG("  dccomp=%d, mute=%d, stereo=%d", bf4, bf5, bf6);
 
 			/* Clear START, set MUTE */
 			fir_control = (val & ~FIR_CONTROL_START) | FIR_CONTROL_MUTE;
@@ -623,19 +655,15 @@ int dai_dmic_set_config_nhlt(struct dai_intel_dmic *dmic, const void *bespoke_cf
 			/* Use DC_OFFSET and GAIN as such */
 			val = fir_cfg_b[n]->dc_offset_left;
 			dai_dmic_write(dmic, base[n] + DC_OFFSET_LEFT_B, val);
-			LOG_DBG("dmic_set_config_nhlt(): DC_OFFSET_LEFT_B = %08x", val);
 
 			val = fir_cfg_b[n]->dc_offset_right;
 			dai_dmic_write(dmic, base[n] + DC_OFFSET_RIGHT_B, val);
-			LOG_DBG("dmic_set_config_nhlt(): DC_OFFSET_RIGHT_B = %08x", val);
 
 			val = fir_cfg_b[n]->out_gain_left;
 			dai_dmic_write(dmic, base[n] + OUT_GAIN_LEFT_B, val);
-			LOG_DBG("dmic_set_config_nhlt(): OUT_GAIN_LEFT_B = %08x", val);
 
 			val = fir_cfg_b[n]->out_gain_right;
 			dai_dmic_write(dmic, base[n] + OUT_GAIN_RIGHT_B, val);
-			LOG_DBG("dmic_set_config_nhlt(): OUT_GAIN_RIGHT_B = %08x", val);
 		}
 
 		/* Set up FIR coefficients RAM */
