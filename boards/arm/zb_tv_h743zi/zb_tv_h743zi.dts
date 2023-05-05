@@ -266,6 +266,11 @@ zephyr_udc0: &usbotg_hs {
     pinctrl-names = "default";
 	current-speed = <9600>;
 	status = "okay";
+	modbus0 {
+		compatible = "zephyr,modbus-serial";
+		label = "MODBUS0";
+		status = "okay";
+	};
 };
 
 &uart5 {

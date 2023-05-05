@@ -35,7 +35,10 @@ source zephyr-env.sh
 ./zedblox_scripts/new_id_acrux.sh -p 4L -b zb_tv_h743zi -t -i "ZBAX1122PQ55W"
 
 
-# NEW -- updated
+# NEW -- updated -- LATEST
+
+# ON zedblox PC
+cd ~/all_repositories/zephyr_new/zephyrproject
 
 ## For flashing from scratch -- new changes. not a fixed version
 export ZEPHYR_SDK_INSTALL_DIR=/home/sviraaj
@@ -47,15 +50,22 @@ west flash -d build-mcuboot
 ### BUILD AND FLASH APP
 #### For 15L
 export VERSION=D15_$(date +%d-%m-%y_%H-%M-%S)
-west build -b zb_tv_h743zi zephyr/zb_actipod_app -d build-zb_actipod_app -- -DCONFIG_ACTIPOD_15L=y -DCONFIG_APP_SYS_VERSION=\"$(echo $VERSION)\" -DCONFIG_MCUBOOT_SIGNATURE_KEY_FILE=\"bootloader/mcuboot/zb-ed25519.pem\"
+west build -p -c -b zb_tv_h743zi zephyr/zb_actipod_app -d build-zb_actipod_app -- -DCONFIG_ACTIPOD_15L=y -DCONFIG_APP_SYS_VERSION=\"$(echo $VERSION)\" -DCONFIG_MCUBOOT_SIGNATURE_KEY_FILE=\"bootloader/mcuboot/zb-ed25519.pem\"
 #### For 4L
 export VERSION=D4_$(date +%d-%m-%y_%H-%M-%S)
-west build -b zb_tv_h743zi zephyr/zb_actipod_app -d build-zb_actipod_app -- -DCONFIG_ACTIPOD_4L=y -DCONFIG_APP_SYS_VERSION=\"$(echo $VERSION)\" -DCONFIG_MCUBOOT_SIGNATURE_KEY_FILE=\"bootloader/mcuboot/zb-ed25519.pem\"
+west build -p -c -b zb_tv_h743zi zephyr/zb_actipod_app -d build-zb_actipod_app -- -DCONFIG_ACTIPOD_4L=y -DCONFIG_APP_SYS_VERSION=\"$(echo $VERSION)\" -DCONFIG_MCUBOOT_SIGNATURE_KEY_FILE=\"bootloader/mcuboot/zb-ed25519.pem\"
 
 west flash -d build-zb_actipod_app
 
 ### COPY BUILT IMAGE TO IMAGES VAULT
 cp -r build-zb_actipod_app zephyr/zedblox_scripts/images/zb_tv_h743zi/$VERSION
 
+### Rename geenric zephyr bin and hex files to version specific names
+mv zephyr/zedblox_scripts/images/zb_tv_h743zi/$VERSION/zephyr/zephyr.signed.hex zephyr/zedblox_scripts/images/zb_tv_h743zi/$VERSION/zephyr/zephyr_$VERSION.signed.hex
+mv zephyr/zedblox_scripts/images/zb_tv_h743zi/$VERSION/zephyr/zephyr.signed.bin zephyr/zedblox_scripts/images/zb_tv_h743zi/$VERSION/zephyr/zephyr_$VERSION.signed.bin
+
 ### FLASH PRE_BUILT APP
+west flash --skip-rebuild --build-dir /home/sviraaj/all_repositories/zephyr_new/zephyrproject/zephyr/zedblox_scripts/images/zb_tv_h743zi/<version> --hex-file /home/sviraaj/all_repositories/zephyr_new/zephyrproject/zephyr/zedblox_scripts/images/zb_tv_h743zi/<version>/zephyr/zephyr.signed.hex
+
+Eg:
 west flash --skip-rebuild --build-dir /home/sviraaj/all_repositories/zephyr_new/zephyrproject/zephyr/zedblox_scripts/images/zb_tv_h743zi/D4_zbtv_v1.0.3 --hex-file /home/sviraaj/all_repositories/zephyr_new/zephyrproject/zephyr/zedblox_scripts/images/zb_tv_h743zi/D4_zbtv_v1.0.3/zephyr/zephyr.signed.hex
