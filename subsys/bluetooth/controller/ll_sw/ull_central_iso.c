@@ -864,9 +864,15 @@ uint8_t ull_central_iso_setup(uint16_t cis_handle,
 	} else if (CONFIG_BT_CTLR_CENTRAL_SPACING > 0) {
 		uint32_t cis_offset;
 
-		cis_offset = MAX((HAL_TICKER_TICKS_TO_US(conn->ull.ticks_slot) +
-				  (EVENT_TICKER_RES_MARGIN_US << 1U) + cig->sync_delay -
-				  cis->sync_delay), *cis_offset_min);
+		cis_offset = HAL_TICKER_TICKS_TO_US(conn->ull.ticks_slot) +
+			     (EVENT_TICKER_RES_MARGIN_US << 1U);
+
+		cis_offset += cig->sync_delay - cis->sync_delay;
+
+		if (cis_offset < *cis_offset_min) {
+			cis_offset = *cis_offset_min;
+		}
+
 		cis->offset = cis_offset;
 #endif /* CONFIG_BT_CTLR_CENTRAL_SPACING */
 
@@ -942,8 +948,9 @@ int ull_central_iso_cis_offset_get(uint16_t cis_handle,
 #endif /* CONFIG_BT_CTLR_CENTRAL_SPACING  != 0 */
 
 	*cis_offset_min = HAL_TICKER_TICKS_TO_US(conn->ull.ticks_slot) +
-			  (EVENT_TICKER_RES_MARGIN_US << 1U) +
-			  cig->sync_delay - cis->sync_delay;
+			  (EVENT_TICKER_RES_MARGIN_US << 1U);
+
+	*cis_offset_min += cig->sync_delay - cis->sync_delay;
 
 	return 0;
 }
@@ -984,7 +991,6 @@ static void mfy_cig_offset_get(void *param)
 	offset_min_us += cig->sync_delay - cis->sync_delay;
 
 	conn = ll_conn_get(cis->lll.acl_handle);
-
 	conn_interval_us = (uint32_t)conn->lll.interval * CONN_INT_UNIT_US;
 	while (offset_min_us >= (conn_interval_us + PDU_CIS_OFFSET_MIN_US)) {
 		offset_min_us -= conn_interval_us;
