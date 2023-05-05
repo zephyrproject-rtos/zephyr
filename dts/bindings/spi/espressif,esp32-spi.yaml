@@ -64,3 +64,15 @@ properties:
 
       Refer to SoC's Technical Reference Manual to check which pins are
       allowed to use this routing path.
+
+  cs-setup-time:
+    type: int
+    description: |
+      Chip select setup time setting, see TRF for SOC for details of
+      timing applied.
+
+  cs-hold-time:
+    type: int
+    description: |
+      Chip select hold time setting, see TRF for SOC for details of
+      timing applied.
