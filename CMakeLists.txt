@@ -304,6 +304,11 @@ if(CONFIG_COMPILER_SAVE_TEMPS)
   zephyr_compile_options($<TARGET_PROPERTY:compiler,save_temps>)
 endif()
 
+if(NOT CONFIG_COMPILER_TRACK_MACRO_EXPANSION)
+  # @Intent: Set compiler specific flags to not track macro expansion
+  zephyr_compile_options($<TARGET_PROPERTY:compiler,no_track_macro_expansion>)
+endif()
+
 if(CONFIG_COMPILER_COLOR_DIAGNOSTICS)
 # @Intent: Set compiler specific flag for diagnostic messages
 zephyr_compile_options($<TARGET_PROPERTY:compiler,diagnostic>)
