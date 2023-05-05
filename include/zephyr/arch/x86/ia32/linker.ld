@@ -413,40 +413,6 @@ SECTIONS
 	_app_smem_num_words = _app_smem_size >> 2;
 #endif /* CONFIG_USERSPACE */
 
-	SECTION_PROLOGUE(_BSS_SECTION_NAME, (NOLOAD),)
-	{
-	MMU_PAGE_ALIGN_PERM
-#if !defined(CONFIG_USERSPACE)
-	_image_ram_start = .;
-#endif
-	/*
-	 * For performance, BSS section is forced to be both 4 byte aligned and
-	 * a multiple of 4 bytes.
-	 */
-	. = ALIGN(4);
-	__kernel_ram_start = .;
-	__bss_start = .;
-
-	*(.bss)
-	*(".bss.*")
-	*(COMMON)
-	*(".kernel_bss.*")
-
-	/*
-	 * As memory is cleared in words only, it is simpler to ensure the BSS
-	 * section ends on a 4 byte boundary. This wastes a maximum of 3 bytes.
-	 */
-	. = ALIGN(4);
-	__bss_end = .;
-	} GROUP_NOLOAD_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
-
-	__bss_num_words	= (__bss_end - __bss_start) >> 2;
-
-#include <zephyr/linker/common-noinit.ld>
-
-	MMU_PAGE_ALIGN_PERM
-
-
 	SECTION_DATA_PROLOGUE(_DATA_SECTION_NAME,,)
 	{
 
@@ -498,6 +464,39 @@ SECTIONS
 
 	MMU_PAGE_ALIGN
 	__data_region_end = .;
+
+	SECTION_PROLOGUE(_BSS_SECTION_NAME, (NOLOAD),)
+	{
+	MMU_PAGE_ALIGN_PERM
+#if !defined(CONFIG_USERSPACE)
+	_image_ram_start = .;
+#endif
+	/*
+	 * For performance, BSS section is forced to be both 4 byte aligned and
+	 * a multiple of 4 bytes.
+	 */
+	. = ALIGN(4);
+	__kernel_ram_start = .;
+	__bss_start = .;
+
+	*(.bss)
+	*(".bss.*")
+	*(COMMON)
+	*(".kernel_bss.*")
+
+	/*
+	 * As memory is cleared in words only, it is simpler to ensure the BSS
+	 * section ends on a 4 byte boundary. This wastes a maximum of 3 bytes.
+	 */
+	. = ALIGN(4);
+	__bss_end = .;
+	} GROUP_NOLOAD_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+
+	__bss_num_words	= (__bss_end - __bss_start) >> 2;
+
+#include <zephyr/linker/common-noinit.ld>
+
+	MMU_PAGE_ALIGN_PERM
 
 	/* All unused memory also owned by the kernel for heaps */
 	__kernel_ram_end = KERNEL_BASE_ADDR + KERNEL_RAM_SIZE;
