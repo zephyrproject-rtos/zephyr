@@ -532,10 +532,9 @@ int dai_dmic_set_config_nhlt(struct dai_intel_dmic *dmic, const void *bespoke_cf
 	val = (out_control[dmic->dai_config_params.dai_index] &
 		~(OUTCONTROL_TIE | OUTCONTROL_SIP | OUTCONTROL_FCI)) |
 		OUTCONTROL_FINIT;
-	if (dmic->dai_config_params.dai_index == 0)
-		dai_dmic_write(dmic, OUTCONTROL0, val);
-	else
-		dai_dmic_write(dmic, OUTCONTROL1, val);
+
+	dai_dmic_write(dmic, dmic->dai_config_params.dai_index * PDM_CHANNEL_REGS_SIZE +
+		       OUTCONTROL, val);
 
 	LOG_INF("dmic_set_config_nhlt(): OUTCONTROL%d = %08x",
 		 dmic->dai_config_params.dai_index, val);

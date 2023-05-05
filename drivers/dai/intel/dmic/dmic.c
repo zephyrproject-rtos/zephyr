@@ -237,18 +237,9 @@ static void dai_dmic_stop_fifo_packers(struct dai_intel_dmic *dmic,
 					int fifo_index)
 {
 	/* Stop FIFO packers and set FIFO initialize bits */
-	switch (fifo_index) {
-	case 0:
-		dai_dmic_update_bits(dmic, OUTCONTROL0,
-				OUTCONTROL_SIP | OUTCONTROL_FINIT,
-				OUTCONTROL_FINIT);
-		break;
-	case 1:
-		dai_dmic_update_bits(dmic, OUTCONTROL1,
-				OUTCONTROL_SIP | OUTCONTROL_FINIT,
-				OUTCONTROL_FINIT);
-		break;
-	}
+	dai_dmic_update_bits(dmic, fifo_index * PDM_CHANNEL_REGS_SIZE + OUTCONTROL,
+			     OUTCONTROL_SIP | OUTCONTROL_FINIT,
+			     OUTCONTROL_FINIT);
 }
 
 /* On DMIC IRQ event trace the status register that contains the status and
@@ -261,19 +252,19 @@ static void dai_dmic_irq_handler(const void *data)
 	uint32_t val1;
 
 	/* Trace OUTSTAT0 register */
-	val0 = dai_dmic_read(dmic, OUTSTAT0);
-	val1 = dai_dmic_read(dmic, OUTSTAT1);
+	val0 = dai_dmic_read(dmic, OUTSTAT);
+	val1 = dai_dmic_read(dmic, OUTSTAT + PDM_CHANNEL_REGS_SIZE);
 	LOG_DBG("dmic_irq_handler(), OUTSTAT0 = 0x%x, OUTSTAT1 = 0x%x", val0, val1);
 
 	if (val0 & OUTSTAT_ROR) {
 		LOG_ERR("dmic_irq_handler(): full fifo A or PDM overrun");
-		dai_dmic_write(dmic, OUTSTAT0, val0);
+		dai_dmic_write(dmic, OUTSTAT, val0);
 		dai_dmic_stop_fifo_packers(dmic, 0);
 	}
 
 	if (val1 & OUTSTAT_ROR) {
 		LOG_ERR("dmic_irq_handler(): full fifo B or PDM overrun");
-		dai_dmic_write(dmic, OUTSTAT1, val1);
+		dai_dmic_write(dmic, OUTSTAT + PDM_CHANNEL_REGS_SIZE, val1);
 		dai_dmic_stop_fifo_packers(dmic, 1);
 	}
 }
@@ -556,7 +547,7 @@ static void dai_dmic_start(struct dai_intel_dmic *dmic)
 
 	/* enable port */
 	key = k_spin_lock(&dmic->lock);
-	LOG_DBG("dmic_start()");
+	LOG_DBG("dmic_start(), dai_index = %d", dmic->dai_config_params.dai_index);
 	dmic->startcount = 0;
 
 	/* Compute unmute ramp gain update coefficient. */
@@ -567,27 +558,13 @@ static void dai_dmic_start(struct dai_intel_dmic *dmic)
 
 	dai_dmic_sync_prepare(dmic);
 
-	switch (dmic->dai_config_params.dai_index) {
-	case 0:
-		LOG_INF("dmic_start(), dmic->fifo_a");
-		/*  Clear FIFO A initialize, Enable interrupts to DSP,
-		 *  Start FIFO A packer.
-		 */
-		dai_dmic_update_bits(
-				dmic,
-				OUTCONTROL0,
-				OUTCONTROL_FINIT | OUTCONTROL_SIP,
-				OUTCONTROL_SIP);
-		break;
-	case 1:
-		LOG_INF("dmic_start(), dmic->fifo_b");
-		/*  Clear FIFO B initialize, Enable interrupts to DSP,
-		 *  Start FIFO B packer.
-		 */
-		dai_dmic_update_bits(dmic, OUTCONTROL1,
-				     OUTCONTROL_FINIT | OUTCONTROL_SIP,
-				     OUTCONTROL_SIP);
-	}
+	/* Clear FIFO initialize, Enable interrupts to DSP,
+	 * Start FIFO  packer.
+	 */
+	dai_dmic_update_bits(dmic,
+			     dmic->dai_config_params.dai_index * PDM_CHANNEL_REGS_SIZE + OUTCONTROL,
+			     OUTCONTROL_FINIT | OUTCONTROL_SIP,
+			     OUTCONTROL_SIP);
 
 	for (i = 0; i < CONFIG_DAI_DMIC_HW_CONTROLLERS; i++) {
 #ifdef CONFIG_SOC_SERIES_INTEL_ACE
