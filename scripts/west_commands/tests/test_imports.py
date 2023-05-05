@@ -23,6 +23,7 @@ def test_runner_imports():
                     'esp32',
                     'ezflashcli',
                     'gd32isp',
+                    'hiburn',
                     'hifive1',
                     'intel_adsp',
                     'intel_cyclonev',
