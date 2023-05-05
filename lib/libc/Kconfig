@@ -65,6 +65,7 @@ config MINIMAL_LIBC
 	depends on !REQUIRES_FULL_LIBC
 	depends on MINIMAL_LIBC_SUPPORTED
 	imply COMPILER_FREESTANDING
+	select COMMON_LIBC_STRNLEN
 	help
 	  Build with minimal C library.
 
