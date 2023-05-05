@@ -292,13 +292,16 @@ after preprocessing.
 Do not track macro expansion
 ****************************
 
-The compiler error message chain can quickly grow when making a mistake and
-using devicetree macros. In some situations, the number of compiler error
-messages can be overwhelming, specially because many not relevant internals are
-exposed. This happens because of long macro expansion chains. You may disable
-the :kconfig:option:`CONFIG_COMPILER_TRACK_MACRO_EXPANSION` option to skip macro
-expansion, typically reducing the error messages to one line. For example, to
-build :ref:`hello_world` with west and this option set, use:
+Compiler messages for devicetree errors can sometimes be very long. This
+typically happens when the compiler prints a message for every step of a
+complex macro expansion that has several intermediate expansion steps.
+
+To prevent the compiler from doing this, you can disable the
+:kconfig:option:`CONFIG_COMPILER_TRACK_MACRO_EXPANSION` option. This typically
+reduces the output to one message per error.
+
+For example, to build :ref:`hello_world` with west and this option disabled,
+use:
 
 .. code-block:: sh
 
