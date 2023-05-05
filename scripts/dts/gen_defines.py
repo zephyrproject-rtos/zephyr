@@ -799,7 +799,9 @@ def prop_len(prop):
     # with a build error. This forces users to switch to the right
     # macros.
 
-    if prop.type == "phandle":
+    if prop.type in ["phandle", "string"]:
+        # phandle is treated as a phandles of length 1.
+        # string is treated as a string-array of length 1.
         return 1
 
     if (prop.type in ["array", "uint8-array", "string-array",
