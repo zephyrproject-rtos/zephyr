@@ -16,6 +16,7 @@
 
 /* Conversion values */
 #define AKM09918C_MICRO_GAUSS_PER_BIT INT64_C(500)
+#define AKM09918C_RTIO_SHIFT (16)
 
 struct akm09918c_data {
 	int16_t x_sample;
