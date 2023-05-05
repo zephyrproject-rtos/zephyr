@@ -15,9 +15,9 @@ properties:
 
   nxp,lcdif:
     type: phandle
-    required: true
     description:
-      Instance of the LCDIF peripheral.
+      Instance of the LCDIF peripheral. Only required when using the MIPI
+      in video mode
   dpi-color-coding:
     type: string
     enum:
