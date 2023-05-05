@@ -685,10 +685,8 @@ class TestPlan:
                 b = set(filter(lambda item: item.name in ts.platform_allow, self.platforms))
                 c = a.intersection(b)
                 if not c:
-                    _platform_scope = list(filter(lambda item: item.name in ts.platform_allow, \
+                    platform_scope = list(filter(lambda item: item.name in ts.platform_allow, \
                                              self.platforms))
-                    if len(_platform_scope) > 0:
-                        platform_scope = _platform_scope[:1]
 
 
             # list of instances per testsuite, aka configurations.
