@@ -33,6 +33,23 @@
 #include <zephyr/mgmt/mcumgr/mgmt/callbacks.h>
 #endif
 
+#if USE_PARTITION_MANAGER
+#include <flash_map_pm.h>
+
+#ifdef PM_MCUBOOT_SECONDARY_PAD_SIZE
+BUILD_ASSERT(PM_MCUBOOT_PAD_SIZE == PM_MCUBOOT_SECONDARY_PAD_SIZE);
+#endif
+
+#if CONFIG_BUILD_WITH_TFM
+  #define PM_ADDRESS_OFFSET (PM_MCUBOOT_PAD_SIZE + PM_TFM_SIZE)
+#else
+  #define PM_ADDRESS_OFFSET (PM_MCUBOOT_PAD_SIZE)
+#endif
+
+#define FIXED_PARTITION_IS_RUNNING_APP_PARTITION(label)	\
+	(FIXED_PARTITION_OFFSET(label) == (PM_ADDRESS - PM_ADDRESS_OFFSET))
+
+#else /* ! USE_PARTITION_MANAGER */
 #ifndef CONFIG_FLASH_LOAD_OFFSET
 #error MCUmgr requires application to be built with CONFIG_FLASH_LOAD_OFFSET set \
 	to be able to figure out application running slot.
@@ -40,6 +57,7 @@
 
 #define FIXED_PARTITION_IS_RUNNING_APP_PARTITION(label)	\
 	 (FIXED_PARTITION_OFFSET(label) == CONFIG_FLASH_LOAD_OFFSET)
+#endif /* USE_PARTITION_MANAGER */
 
 BUILD_ASSERT(sizeof(struct image_header) == IMAGE_HEADER_SIZE,
 	     "struct image_header not required size");
