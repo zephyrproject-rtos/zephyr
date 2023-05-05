@@ -52,10 +52,8 @@ struct bt_bap_ep *srcs[CONFIG_BT_MAX_CONN][CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_
 #endif /* CONFIG_BT_BAP_UNICAST */
 
 #if defined(CONFIG_BT_BAP_BROADCAST_SOURCE)
-static struct bt_bap_stream broadcast_source_streams[CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT];
-static struct bt_bap_broadcast_source *default_source;
-static struct bt_codec broadcast_source_codec;
-static struct bt_codec_qos broadcast_source_qos;
+struct broadcast_stream broadcast_source_streams[CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT];
+struct broadcast_source default_source;
 #endif /* CONFIG_BT_BAP_BROADCAST_SOURCE */
 #if defined(CONFIG_BT_BAP_BROADCAST_SINK)
 static struct bt_bap_stream broadcast_sink_streams[BROADCAST_SNK_STREAM_CNT];
@@ -1862,7 +1860,7 @@ static int cmd_select_broadcast_source(const struct shell *sh, size_t argc,
 		return -ENOEXEC;
 	}
 
-	default_stream = &broadcast_source_streams[index];
+	default_stream = &broadcast_source_streams[index].stream.bap_stream;
 
 	return 0;
 }
@@ -1877,7 +1875,7 @@ static int cmd_create_broadcast(const struct shell *sh, size_t argc,
 	const struct named_lc3_preset *named_preset;
 	int err;
 
-	if (default_source != NULL) {
+	if (default_source.bap_source != NULL) {
 		shell_info(sh, "Broadcast source already created");
 		return -ENOEXEC;
 	}
@@ -1932,22 +1930,21 @@ static int cmd_create_broadcast(const struct shell *sh, size_t argc,
 		}
 	}
 
-	memcpy(&broadcast_source_codec, &named_preset->preset.codec,
-	       sizeof(broadcast_source_codec));
-	memcpy(&broadcast_source_qos, &named_preset->preset.qos, sizeof(broadcast_source_qos));
+	memcpy(&default_source.codec, &named_preset->preset.codec, sizeof(default_source.codec));
+	memcpy(&default_source.qos, &named_preset->preset.qos, sizeof(default_source.qos));
 
 	(void)memset(stream_params, 0, sizeof(stream_params));
 	for (size_t i = 0; i < ARRAY_SIZE(stream_params); i++) {
-		stream_params[i].stream = &broadcast_source_streams[i];
+		stream_params[i].stream = &broadcast_source_streams[i].stream.bap_stream;
 	}
 	subgroup_param.params_count = ARRAY_SIZE(stream_params);
 	subgroup_param.params = stream_params;
-	subgroup_param.codec = &broadcast_source_codec;
+	subgroup_param.codec = &default_source.codec;
 	create_param.params_count = 1U;
 	create_param.params = &subgroup_param;
-	create_param.qos = &broadcast_source_qos;
+	create_param.qos = &default_source.qos;
 
-	err = bt_bap_broadcast_source_create(&create_param, &default_source);
+	err = bt_bap_broadcast_source_create(&create_param, &default_source.bap_source);
 	if (err != 0) {
 		shell_error(sh, "Unable to create broadcast source: %d", err);
 		return err;
@@ -1957,7 +1954,7 @@ static int cmd_create_broadcast(const struct shell *sh, size_t argc,
 		    named_preset->name);
 
 	if (default_stream == NULL) {
-		default_stream = &broadcast_source_streams[0];
+		default_stream = &broadcast_source_streams[0].stream.bap_stream;
 	}
 
 	return 0;
@@ -1974,12 +1971,12 @@ static int cmd_start_broadcast(const struct shell *sh, size_t argc,
 		return -ENOEXEC;
 	}
 
-	if (default_source == NULL) {
+	if (default_source.bap_source == NULL) {
 		shell_info(sh, "Broadcast source not created");
 		return -ENOEXEC;
 	}
 
-	err = bt_bap_broadcast_source_start(default_source, adv_sets[selected_adv]);
+	err = bt_bap_broadcast_source_start(default_source.bap_source, adv_sets[selected_adv]);
 	if (err != 0) {
 		shell_error(sh, "Unable to start broadcast source: %d", err);
 		return err;
@@ -1992,12 +1989,12 @@ static int cmd_stop_broadcast(const struct shell *sh, size_t argc, char *argv[])
 {
 	int err;
 
-	if (default_source == NULL) {
+	if (default_source.bap_source == NULL) {
 		shell_info(sh, "Broadcast source not created");
 		return -ENOEXEC;
 	}
 
-	err = bt_bap_broadcast_source_stop(default_source);
+	err = bt_bap_broadcast_source_stop(default_source.bap_source);
 	if (err != 0) {
 		shell_error(sh, "Unable to stop broadcast source: %d", err);
 		return err;
@@ -2011,17 +2008,17 @@ static int cmd_delete_broadcast(const struct shell *sh, size_t argc,
 {
 	int err;
 
-	if (default_source == NULL) {
+	if (default_source.bap_source == NULL) {
 		shell_info(sh, "Broadcast source not created");
 		return -ENOEXEC;
 	}
 
-	err = bt_bap_broadcast_source_delete(default_source);
+	err = bt_bap_broadcast_source_delete(default_source.bap_source);
 	if (err != 0) {
 		shell_error(sh, "Unable to delete broadcast source: %d", err);
 		return err;
 	}
-	default_source = NULL;
+	default_source.bap_source = NULL;
 
 	return 0;
 }
@@ -2341,8 +2338,8 @@ static int cmd_init(const struct shell *sh, size_t argc, char *argv[])
 
 #if defined(CONFIG_BT_BAP_BROADCAST_SOURCE)
 	for (i = 0; i < ARRAY_SIZE(broadcast_source_streams); i++) {
-		bt_bap_stream_cb_register(&broadcast_source_streams[i],
-					    &stream_ops);
+		bt_bap_stream_cb_register(&broadcast_source_streams[i].stream.bap_stream,
+					  &stream_ops);
 	}
 #endif /* CONFIG_BT_BAP_BROADCAST_SOURCE */
 
@@ -2653,14 +2650,14 @@ static ssize_t nonconnectable_ad_data_add(struct bt_data *data_array,
 	}
 
 #if defined(CONFIG_BT_BAP_BROADCAST_SOURCE)
-	if (default_source) {
+	if (default_source.bap_source) {
 		static uint8_t ad_bap_broadcast_announcement[5] = {
 			BT_UUID_16_ENCODE(BT_UUID_BROADCAST_AUDIO_VAL),
 		};
 		uint32_t broadcast_id;
 		int err;
 
-		err = bt_bap_broadcast_source_get_id(default_source, &broadcast_id);
+		err = bt_bap_broadcast_source_get_id(default_source.bap_source, &broadcast_id);
 		if (err != 0) {
 			printk("Unable to get broadcast ID: %d\n", err);
 
@@ -2712,14 +2709,14 @@ ssize_t audio_pa_data_add(struct bt_data *data_array,
 	size_t ad_len = 0;
 
 #if defined(CONFIG_BT_BAP_BROADCAST_SOURCE)
-	if (default_source) {
+	if (default_source.bap_source) {
 		/* Required size of the buffer depends on what has been
 		 * configured. We just use the maximum size possible.
 		 */
 		NET_BUF_SIMPLE_DEFINE_STATIC(base_buf, UINT8_MAX);
 		int err;
 
-		err = bt_bap_broadcast_source_get_base(default_source, &base_buf);
+		err = bt_bap_broadcast_source_get_base(default_source.bap_source, &base_buf);
 		if (err != 0) {
 			printk("Unable to get BASE: %d\n", err);
 
