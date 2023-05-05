@@ -197,6 +197,17 @@ EL1_Reset_Handler:
 #endif /* CONFIG_DCLS */
 
     /*
+     * The SCTLR.TE bit's reset value is IMPLEMENTATION
+     * DEFINED, but Zephyr's exceptions should be taken
+     * in A32 state. At least one platform is known to
+     * initialise this to 1 (T32), the S32Z27X.
+     */
+    mrc p15, 0, r0, c1, c0, 0
+    bic r0, r0, #(1 << 30)
+    mcr p15, 0, r0, c1, c0, 0
+    isb
+
+    /*
      * Configure stack.
      */
 
