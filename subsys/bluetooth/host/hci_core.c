@@ -654,6 +654,8 @@ int bt_le_create_conn_synced(const struct bt_conn *conn, const struct bt_le_ext_
 	cp = net_buf_add(buf, sizeof(*cp));
 	(void)memset(cp, 0, sizeof(*cp));
 
+	cp->subevent = subevent;
+	cp->adv_handle = adv->handle;
 	bt_addr_le_copy(&cp->peer_addr, &conn->le.dst);
 	cp->filter_policy = BT_HCI_LE_CREATE_CONN_FP_NO_FILTER;
 	cp->own_addr_type = own_addr_type;
