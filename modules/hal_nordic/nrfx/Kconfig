@@ -73,8 +73,12 @@ config NRFX_GPIOTE_NUM_OF_EVT_HANDLERS
 	  by the user.
 
 config NRFX_I2S
-	bool "I2S driver"
-	depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_I2S))
+	bool
+
+config NRFX_I2S0
+	bool "I2S0 driver instance"
+	depends on $(dt_nodelabel_has_compat,i2s0,$(DT_COMPAT_NORDIC_NRF_I2S))
+	select NRFX_I2S
 
 config NRFX_IPC
 	bool "IPC driver"
