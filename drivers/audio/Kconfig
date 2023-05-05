@@ -25,6 +25,13 @@ config AUDIO_CODEC_INIT_PRIORITY
 	help
 	  Audio codec device driver initialization priority.
 
+config AUDIO_CODEC_SHELL
+	bool "Audio Codec shell"
+	default y
+	depends on SHELL
+	help
+	  Enable the Audio Codec shell with Audio Codec related commands.
+
 module = AUDIO_CODEC
 module-str = audio codec
 source "subsys/logging/Kconfig.template.log_config"
