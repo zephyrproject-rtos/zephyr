@@ -378,6 +378,14 @@ config COMPILER_SAVE_TEMPS
 	  Instruct the compiler to save the temporary intermediate files
 	  permanently. These can be useful for troubleshooting build issues.
 
+config COMPILER_TRACK_MACRO_EXPANSION
+	bool "Track macro expansion"
+	default y
+	help
+	  When enabled, locations of tokens across macro expansions will be
+	  tracked. Disabling this option may be useful to debug long macro
+	  expansion chains.
+
 config COMPILER_COLOR_DIAGNOSTICS
 	bool "Colored diagnostics"
 	default y
