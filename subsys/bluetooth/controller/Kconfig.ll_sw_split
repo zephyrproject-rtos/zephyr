@@ -632,6 +632,17 @@ config BT_CTLR_CENTRAL_RESERVE_MAX
 	  Note, currently this value is only used to space multiple central
 	  connections and not for actual ticker time reservations.
 
+config BT_CTLR_EVENT_OVERHEAD_RESERVE_MAX
+	bool "Reserve maximum event overhead in time reservations"
+	default y
+	help
+	  Use radio event scheduling CPU time overhead in calculations of event
+	  time reservations.
+
+	  If this option is disabled, then Peripheral ACL and Peripheral ISO
+	  role will not include CPU time overhead. Other role will continue to
+	  use CPU overheads in their event time reservations.
+
 config BT_CTLR_SLOT_RESERVATION_UPDATE
 	bool "Update event length reservation after PHY or DLE update"
 	depends on (BT_CTLR_DATA_LENGTH || BT_CTLR_PHY)

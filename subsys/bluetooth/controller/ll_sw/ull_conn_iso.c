@@ -972,7 +972,9 @@ void ull_conn_iso_start(struct ll_conn *conn, uint16_t cis_handle,
 		/* Below is time reservation for sequential packing */
 		slot_us = cis->lll.sub_interval * cis->lll.nse;
 
-		slot_us += EVENT_OVERHEAD_START_US + EVENT_OVERHEAD_END_US;
+		if (IS_ENABLED(CONFIG_BT_CTLR_EVENT_OVERHEAD_RESERVE_MAX)) {
+			slot_us += EVENT_OVERHEAD_START_US + EVENT_OVERHEAD_END_US;
+		}
 
 		/* FIXME: How to use ready_delay_us in the time reservation?
 		 *        i.e. when CISes use different PHYs? Is that even

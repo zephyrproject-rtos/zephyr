@@ -110,6 +110,10 @@ uint8_t ll_cis_accept(uint16_t handle)
 		} else {
 			cis_offset_min = HAL_TICKER_TICKS_TO_US(conn->ull.ticks_slot) +
 					 (EVENT_TICKER_RES_MARGIN_US << 1U);
+
+			if (!IS_ENABLED(CONFIG_BT_CTLR_EVENT_OVERHEAD_RESERVE_MAX)) {
+				cis_offset_min += EVENT_OVERHEAD_START_US + EVENT_OVERHEAD_END_US;
+			}
 		}
 
 		/* Accept request */

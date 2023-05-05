@@ -97,6 +97,7 @@ uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window,
 	uint16_t max_tx_time;
 	uint16_t max_rx_time;
 	memq_link_t *link;
+	uint32_t slot_us;
 	uint8_t hop;
 	int err;
 
@@ -360,10 +361,13 @@ conn_is_valid:
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 
-	conn->ull.ticks_slot = HAL_TICKER_US_TO_TICKS_CEIL(
-		EVENT_OVERHEAD_START_US + EVENT_OVERHEAD_END_US +
-		ready_delay_us + max_tx_time + EVENT_IFS_US + max_rx_time +
-		(EVENT_CLOCK_JITTER_US << 1));
+	/* Calculate event time reservation */
+	slot_us = max_tx_time + max_rx_time;
+	slot_us += EVENT_IFS_US + (EVENT_CLOCK_JITTER_US << 1);
+	slot_us += ready_delay_us;
+	slot_us += EVENT_OVERHEAD_START_US + EVENT_OVERHEAD_END_US;
+
+	conn->ull.ticks_slot = HAL_TICKER_US_TO_TICKS_CEIL(slot_us);
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 	ull_filter_scan_update(filter_policy);

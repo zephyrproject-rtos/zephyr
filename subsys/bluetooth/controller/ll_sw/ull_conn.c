@@ -1233,7 +1233,7 @@ void ull_conn_done(struct node_rx_event_done *done)
 #if defined(CONFIG_BT_CTLR_SLOT_RESERVATION_UPDATE)
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH) || defined(CONFIG_BT_CTLR_PHY)
 	if (lll->evt_len_upd) {
-		uint32_t ready_delay, rx_time, tx_time, ticks_slot;
+		uint32_t ready_delay, rx_time, tx_time, ticks_slot, slot_us;
 
 		lll->evt_len_upd = 0;
 #if defined(CONFIG_BT_CTLR_PHY)
@@ -1257,10 +1257,18 @@ void ull_conn_done(struct node_rx_event_done *done)
 		tx_time = PDU_DC_MAX_US(lll->dle.eff.max_tx_octets, 0);
 		rx_time = PDU_DC_MAX_US(lll->dle.eff.max_rx_octets, 0);
 #endif /* CONFIG_BT_CTLR_PHY */
-		ticks_slot = HAL_TICKER_US_TO_TICKS_CEIL(
-			EVENT_OVERHEAD_START_US + EVENT_OVERHEAD_END_US +
-			ready_delay + EVENT_IFS_US + rx_time + tx_time +
-			(EVENT_CLOCK_JITTER_US << 1));
+
+		/* Calculate event time reservation */
+		slot_us = tx_time + rx_time;
+		slot_us += EVENT_IFS_US + (EVENT_CLOCK_JITTER_US << 1);
+		slot_us += ready_delay;
+
+		if (IS_ENABLED(CONFIG_BT_CTLR_EVENT_OVERHEAD_RESERVE_MAX) ||
+		    !conn->lll.role) {
+			slot_us += EVENT_OVERHEAD_START_US + EVENT_OVERHEAD_END_US;
+		}
+
+		ticks_slot = HAL_TICKER_US_TO_TICKS_CEIL(slot_us);
 		if (ticks_slot > conn->ull.ticks_slot) {
 			ticks_slot_plus = ticks_slot - conn->ull.ticks_slot;
 		} else {
