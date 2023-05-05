@@ -104,9 +104,8 @@ static void eth_enc28j60_read_reg(const struct device *dev, uint16_t reg_addr,
 {
 	const struct eth_enc28j60_config *config = dev->config;
 	uint8_t buf[3];
-	const struct spi_buf tx_buf = {
+	struct spi_buf tx_buf = {
 		.buf = buf,
-		.len = 2
 	};
 	const struct spi_buf_set tx = {
 		.buffers = &tx_buf,
@@ -125,7 +124,7 @@ static void eth_enc28j60_read_reg(const struct device *dev, uint16_t reg_addr,
 		rx_size = 3U;
 	}
 
-	rx_buf.len = rx_size;
+	rx_buf.len = tx_buf.len = rx_size;
 
 	buf[0] = ENC28J60_SPI_RCR | (reg_addr & 0xFF);
 	buf[1] = 0x0;
