@@ -1297,6 +1297,8 @@ macros. Given that Zephyr uses a fork of the corresponding upstream for each
 module, it is always possible to patch the macro implementation in each module
 to avoid collisions.
 
+.. _coding_guideline_libc_usage_restrictions_in_zephyr_kernel:
+
 Rule A.4: C Standard Library Usage Restrictions in Zephyr Kernel
 ================================================================
 
@@ -1409,8 +1411,6 @@ The "Zephyr kernel" in this context consists of the following components:
 * Architecture Port (:file:`arch`)
 * Logging Subsystem (:file:`subsys/logging`)
 
-.. _strnlen(): https://pubs.opengroup.org/onlinepubs/9699919799/functions/strlen.html
-
 Rationale
 ---------
 
@@ -1424,6 +1424,63 @@ In order to ensure that the Zephyr kernel can build with the minimal libc, it
 is necessary to restrict the use of the C standard library functions and macros
 in the Zephyr kernel to the functions and macros that are available as part of
 the minimal libc.
+
+Rule A.5: C Standard Library Usage Restrictions in Zephyr Codebase
+==================================================================
+
+Severity
+--------
+
+Required
+
+Description
+-----------
+
+The use of the C standard library functions and macros in the Zephyr codebase
+shall be limited to the functions, excluding the Annex K "Bounds-checking
+interfaces", from the ISO/IEC 9899:2011 standard, also known as C11, unless
+exempted by this rule.
+
+The "Zephyr codebase" in this context refers to all source code files committed
+to the `main Zephyr repository`_, except the Zephyr kernel as defined by the
+:ref:`coding_guideline_libc_usage_restrictions_in_zephyr_kernel`.
+
+The following non-ISO 9899:2011, hereinafter referred to as non-standard,
+functions and macros are exempt from this rule and allowed to be used in the
+Zephyr codebase:
+
+.. csv-table:: List of allowed non-standard libc functions
+   :header: Function,Source
+   :widths: auto
+
+   `strnlen()`_,POSIX.1-2008
+   `strtok_r()`_,POSIX.1-2001
+
+All non-standard functions and macros listed above must be implemented by the
+:ref:`common libc <c_library_common>` in order to make sure that these
+functions can be made available when using a C standard library that does not
+implement these functions.
+
+Adding a new non-standard function from common C standard libraries to the
+above list is allowed with justification, given that the above requirement is
+satisfied. However, when there exists a standard function that is functionally
+equivalent, the standard function shall be used.
+
+Rationale
+---------
+
+Some C standard libraries, such as Newlib and Picolibc, include additional
+functions and macros that are defined by the standards and de-facto standards
+that extend the ISO C standard (e.g. POSIX, Linux).
+
+The ISO/IEC 9899:2011 standard does not require C compiler toolchains to
+include the support for these non-standard functions, and therefore using
+these functions can lead to compatibility issues with the third-party
+toolchains that come with their own C standard libraries.
+
+.. _main Zephyr repository: https://github.com/zephyrproject-rtos/zephyr
+.. _strnlen(): https://pubs.opengroup.org/onlinepubs/9699919799/functions/strlen.html
+.. _strtok_r(): https://pubs.opengroup.org/onlinepubs/9699919799/functions/strtok.html
 
 Parasoft Codescan Tool
 **********************
