@@ -16,6 +16,7 @@
 	aliases {
 		uart-5 = &uart5;
 		i2c-0 = &i2c3;
+		watchdog0 = &watchdog0;
 	};
 
 	chosen {
@@ -101,4 +102,8 @@ i2c3: &scb3 {
 	/* I2C pins */
 	pinctrl-0 = <&p6_0_scb3_i2c_scl &p6_1_scb3_i2c_sda>;
 	pinctrl-names = "default";
+};
+
+&watchdog0 {
+	status = "okay";
 };

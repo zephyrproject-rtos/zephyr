@@ -1,0 +1,14 @@
+# Copyright (c) 2023 Cypress Semiconductor Corporation (an Infineon company) or
+# an affiliate of Cypress Semiconductor Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: Infineon CAT1 Watchdog
+
+compatible: "infineon,cat1-watchdog"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true

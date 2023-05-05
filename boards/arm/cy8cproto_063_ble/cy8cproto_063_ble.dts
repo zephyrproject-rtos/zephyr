@@ -18,6 +18,7 @@
 		uart-5 = &uart5;
 		led0 = &user_led;
 		sw0 = &user_bt;
+		watchdog0 = &watchdog0;
 	};
 
 	chosen {
@@ -118,5 +119,9 @@ uart5: &scb5 {
 };
 
 &bluetooth {
+	status = "okay";
+};
+
+&watchdog0 {
 	status = "okay";
 };
