@@ -2508,7 +2508,9 @@ function(zephyr_get variable)
   endif()
 
   if(GET_VAR_MERGE)
-    # Clear variable before appending items in MERGE mode
+    # Clear variable before appending items in MERGE mode but keep a backup for
+    # local appending later
+    set(local_var_backup ${${variable}})
     set(${variable})
   endif()
 
@@ -2574,6 +2576,7 @@ function(zephyr_get variable)
   endif()
 
   if(GET_VAR_MERGE)
+    list(APPEND ${variable} ${local_var_backup})
     list(REMOVE_DUPLICATES ${variable})
     set(${variable} ${${variable}} PARENT_SCOPE)
   endif()
