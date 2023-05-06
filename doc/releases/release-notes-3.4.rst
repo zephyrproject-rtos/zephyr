@@ -140,6 +140,9 @@ Changes in this release
   using picolibc, only applications using picolibc will be affected by this
   change at this time.
 
+* The Bluetooth Mesh ``element`` and ``model`` declaration has been changed to add prefix ``const``,
+  The ``elem->addr`` has been removed. The new API :c:func:`bt_mesh_elem_addr_get` has been added instead.
+
 Removed APIs in this release
 ============================
 
