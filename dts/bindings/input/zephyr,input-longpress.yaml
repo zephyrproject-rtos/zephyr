@@ -31,10 +31,10 @@ description: |
 
   input event: dev=buttons          SYN type= 1 code= 11 value=1 # INPUT_KEY_0 press
   # hold for more than one second
-  input event: dev=longpress        SYN type= 1 code= 45 value=1 # INPUT_KEY_A press
+  input event: dev=longpress        SYN type= 1 code= 45 value=1 # INPUT_KEY_X press
   # wait for release
   input event: dev=buttons          SYN type= 1 code= 11 value=0 # INPUT_KEY_0 release
-  input event: dev=longpress        SYN type= 1 code= 45 value=0 # INPUT_KEY_A release
+  input event: dev=longpress        SYN type= 1 code= 45 value=0 # INPUT_KEY_X release
 
 compatible: "zephyr,input-longpress"
 
