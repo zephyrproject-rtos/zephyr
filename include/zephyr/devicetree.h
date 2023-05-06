@@ -725,16 +725,28 @@
  * It might help to read the argument order as being similar to
  * `node->property[index]`.
  *
- * When the property's binding has type array, string-array,
- * uint8-array, or phandles, this expands to the idx-th array element
- * as an integer, string literal, or node identifier respectively.
+ * The return value depends on the property's type:
+ *
+ * - for types array, string-array, uint8-array, and phandles,
+ *   this expands to the idx-th array element as an
+ *   integer, string literal, integer, and node identifier
+ *   respectively
+ *
+ * - for type phandle, idx must be 0 and the expansion is a node
+ *   identifier (this treats phandle like a phandles of length 1)
+ *
+ * - for type string, idx must be 0 and the expansion is the the
+ *   entire string (this treats string like string-array of length 1)
  *
  * These properties are handled as special cases:
  *
- * - `reg` property: use DT_REG_ADDR_BY_IDX() or DT_REG_SIZE_BY_IDX() instead
- * - `interrupts` property: use DT_IRQ_BY_IDX() instead
+ * - `reg`: use DT_REG_ADDR_BY_IDX() or DT_REG_SIZE_BY_IDX() instead
+ * - `interrupts`: use DT_IRQ_BY_IDX()
+ * - `ranges`: use DT_NUM_RANGES()
+ * - `dma-ranges`: it is an error to use this property with
+ *   DT_PROP_BY_IDX()
  *
- * For non-array properties, behavior is undefined.
+ * For properties of other types, behavior is undefined.
  *
  * @param node_id node identifier
  * @param prop lowercase-and-underscores property name
@@ -2653,6 +2665,9 @@
  * DT_FOREACH_PROP_ELEM(), and @p idx is the current index into the array.
  * The @p idx values are integer literals starting from 0.
  *
+ * The @p prop argument must refer to a property that can be passed to
+ * DT_PROP_LEN().
+ *
  * Example devicetree fragment:
  *
  * @code{.dts}
@@ -2687,13 +2702,10 @@
  * where `n` is the number of elements in @p prop, as it would be
  * returned by `DT_PROP_LEN(node_id, prop)`.
  *
- * The @p prop argument must refer to a property with type `string`,
- * `array`, `uint8-array`, `string-array`, `phandles`, or `phandle-array`. It
- * is an error to use this macro with properties of other types.
- *
  * @param node_id node identifier
  * @param prop lowercase-and-underscores property name
  * @param fn macro to invoke
+ * @see DT_PROP_LEN
  */
 #define DT_FOREACH_PROP_ELEM(node_id, prop, fn)		\
 	DT_CAT4(node_id, _P_, prop, _FOREACH_PROP_ELEM)(fn)
@@ -2730,9 +2742,8 @@
  *     };
  * @endcode
  *
- * The "prop" argument must refer to a property with type string,
- * array, uint8-array, string-array, phandles, or phandle-array. It is
- * an error to use this macro with properties of other types.
+ * The @p prop parameter has the same restrictions as the same parameter
+ * given to DT_FOREACH_PROP_ELEM().
  *
  * @param node_id node identifier
  * @param prop lowercase-and-underscores property name
@@ -2755,6 +2766,9 @@
  * the array. The @p idx values are integer literals starting from 0. The
  * remaining arguments are passed-in by the caller.
  *
+ * The @p prop parameter has the same restrictions as the same parameter
+ * given to DT_FOREACH_PROP_ELEM().
+ *
  * @param node_id node identifier
  * @param prop lowercase-and-underscores property name
  * @param fn macro to invoke
@@ -2768,6 +2782,9 @@
 /**
  * @brief Invokes @p fn for each element in the value of property @p prop with
  * multiple arguments and a separator.
+ *
+ * The @p prop parameter has the same restrictions as the same parameter
+ * given to DT_FOREACH_PROP_ELEM().
  *
  * @param node_id node identifier
  * @param prop lowercase-and-underscores property name
