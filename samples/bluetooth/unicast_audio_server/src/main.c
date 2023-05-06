@@ -30,7 +30,7 @@
 
 NET_BUF_POOL_FIXED_DEFINE(tx_pool, CONFIG_BT_ASCS_ASE_SRC_COUNT,
 			  BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU),
-			  8, NULL);
+			  CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
 
 static struct bt_codec lc3_codec =
 	BT_CODEC_LC3(BT_CODEC_LC3_FREQ_ANY, BT_CODEC_LC3_DURATION_10,
@@ -123,7 +123,7 @@ static void print_codec(const struct bt_codec *codec)
 	if (codec->id == BT_CODEC_LC3_ID) {
 		/* LC3 uses the generic LTV format - other codecs might do as well */
 
-		uint32_t chan_allocation;
+		enum bt_audio_location chan_allocation;
 
 		printk("  Frequency: %d Hz\n", bt_codec_cfg_get_freq(codec));
 		printk("  Frame Duration: %d us\n", bt_codec_cfg_get_frame_duration_us(codec));

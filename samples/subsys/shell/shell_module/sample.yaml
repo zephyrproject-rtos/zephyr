@@ -27,7 +27,7 @@ tests:
   sample.shell.shell_module.getopt:
     integration_platforms:
       - qemu_x86
-    platform_exclude: native_posix native_posix_64
+    arch_exclude: posix
     filter: CONFIG_SERIAL and dt_chosen_enabled("zephyr,shell-uart") and not CONFIG_NEWLIB_LIBC
     tags: shell
     harness: keyboard

@@ -1,5 +1,27 @@
 common:
   tags: bluetooth bluetooth_audio
 tests:
-  bluetooth.audio.ascs.test:
+  bluetooth.audio.ascs.test_default:
     type: unit
+  bluetooth.audio.ascs.test_snk_only:
+    type: unit
+    extra_configs:
+      - CONFIG_BT_ASCS_ASE_SRC_COUNT=0
+  bluetooth.audio.ascs.test_src_only:
+    type: unit
+    extra_configs:
+      - CONFIG_BT_ASCS_ASE_SNK_COUNT=0
+  bluetooth.audio.ascs.test_unicast_client_enabled:
+    type: unit
+    extra_configs:
+      - CONFIG_BT_BAP_UNICAST_CLIENT=y
+    testcases:
+      - server_sink_state_codec_configured
+      - server_sink_state_qos_configured
+      - server_sink_state_enabling
+      - server_sink_state_streaming
+      - server_source_state_codec_configured
+      - server_source_state_qos_configured
+      - server_source_state_enabling
+      - server_source_state_streaming
+      - server_source_state_disabling

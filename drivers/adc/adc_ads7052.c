@@ -288,7 +288,8 @@ static const struct adc_driver_api ads7052_api = {
 #endif
 };
 
-#define ADC_ADS7052_SPI_CFG SPI_OP_MODE_MASTER | SPI_MODE_CPHA | SPI_WORD_SET(8)
+#define ADC_ADS7052_SPI_CFG \
+	SPI_OP_MODE_MASTER | SPI_MODE_CPOL | SPI_MODE_CPHA | SPI_WORD_SET(8) | SPI_TRANSFER_MSB
 
 #define ADC_ADS7052_INIT(n)                                                                        \
                                                                                                    \

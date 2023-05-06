@@ -64,6 +64,13 @@ config REQUIRES_FULL_LIBCPP
 	  a subsystem or an application. This will also include a full C
 	  library implementation.
 
+config FULL_LIBCPP_SUPPORTED
+	bool
+	help
+	  Selected when the target has at least one C++ library that offers a
+	  complete implementation and which would be selected when
+	  REQUIRES_FULL_LIBCPP is set.
+
 choice LIBCPP_IMPLEMENTATION
 	prompt "C++ Standard Library Implementation"
 	default EXTERNAL_LIBCPP if REQUIRES_FULL_LIBCPP && NATIVE_APPLICATION
@@ -84,6 +91,7 @@ config GLIBCXX_LIBCPP
 	bool "GNU C++ Standard Library"
 	depends on !NATIVE_APPLICATION
 	depends on NEWLIB_LIBC || PICOLIBC
+	select FULL_LIBCPP_SUPPORTED
 	help
 	  Build with GNU C++ Standard Library (libstdc++) provided by the GNU
 	  Compiler Collection (GCC)-based toolchain.

@@ -398,7 +398,7 @@
 /drivers/serial/uart_altera_jtag.c        @nashif @gohshunjing
 /drivers/serial/uart_altera.c             @gohshunjing
 /drivers/serial/*ns16550*                 @dcpleung @nashif @aasthagr
-/drivers/serial/*nrfx*                    @Mierunski @anangl
+/drivers/serial/*nrfx*                    @anangl
 /drivers/serial/uart_liteuart.c           @mateusz-holenko @kgugala @pgielda
 /drivers/serial/Kconfig.mcux_iuart        @Mani-Sadhasivam
 /drivers/serial/uart_mcux_iuart.c         @Mani-Sadhasivam
@@ -519,7 +519,7 @@
 /dts/arm/silabs/efr32fg13*                @yonsch
 /dts/riscv/                               @kgugala @pgielda
 /dts/riscv/ite/                           @ite
-/dts/riscv/microsemi/microsemi-miv.dtsi   @galak
+/dts/riscv/microchip/microchip-miv.dtsi   @galak
 /dts/riscv/openisa/rv32m1*                @dleach02
 /dts/riscv/riscv32-litex-vexriscv.dtsi    @mateusz-holenko @kgugala @pgielda
 /dts/riscv/starfive/                      @rajnesh-kanwal
@@ -857,7 +857,7 @@ scripts/build/gen_image_info.py           @tejlmand
 /tests/drivers/hwinfo/                    @alexanderwachter
 /tests/drivers/smbus/                     @finikorg
 /tests/drivers/spi/                       @tbursztyka
-/tests/drivers/uart/uart_async_api/       @Mierunski
+/tests/drivers/uart/uart_async_api/       @anangl
 /tests/drivers/w1/                        @str4t0m
 /tests/kernel/                            @dcpleung @andyross @nashif
 /tests/lib/                               @nashif

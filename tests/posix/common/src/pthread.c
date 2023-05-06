@@ -584,17 +584,149 @@ ZTEST(posix_apis, test_posix_pthread_create_negative)
 
 ZTEST(posix_apis, test_pthread_descriptor_leak)
 {
-	void *unused;
 	pthread_t pthread1;
 	pthread_attr_t attr;
 
-	zassert_ok(pthread_attr_init(&attr));
-	zassert_ok(pthread_attr_setstack(&attr, &stack_e[0][0], STACKS));
-
 	/* If we are leaking descriptors, then this loop will never complete */
 	for (size_t i = 0; i < CONFIG_MAX_PTHREAD_COUNT * 2; ++i) {
+		zassert_ok(pthread_attr_init(&attr));
+		zassert_ok(pthread_attr_setstack(&attr, &stack_e[0][0], STACKS));
 		zassert_ok(pthread_create(&pthread1, &attr, create_thread1, NULL),
 			   "unable to create thread %zu", i);
-		zassert_ok(pthread_join(pthread1, &unused), "unable to join thread %zu", i);
+		zassert_ok(pthread_join(pthread1, NULL), "unable to join thread %zu", i);
+	}
+}
+
+ZTEST(posix_apis, test_sched_policy)
+{
+	/*
+	 * TODO:
+	 * 1. assert that _POSIX_PRIORITY_SCHEDULING is defined
+	 * 2. if _POSIX_SPORADIC_SERVER or _POSIX_THREAD_SPORADIC_SERVER are defined,
+	 *    also check SCHED_SPORADIC
+	 * 3. SCHED_OTHER is mandatory (but may be equivalent to SCHED_FIFO or SCHED_RR,
+	 *    and is implementation defined)
+	 */
+
+	int pmin;
+	int pmax;
+	pthread_t th;
+	pthread_attr_t attr;
+	struct sched_param param;
+	static const int policies[] = {
+		SCHED_FIFO,
+		SCHED_RR,
+		SCHED_OTHER,
+		SCHED_INVALID,
+	};
+	static const char *const policy_names[] = {
+		"SCHED_FIFO",
+		"SCHED_RR",
+		"SCHED_OTHER",
+		"SCHED_INVALID",
+	};
+	static const bool policy_enabled[] = {
+		IS_ENABLED(CONFIG_COOP_ENABLED),
+		IS_ENABLED(CONFIG_PREEMPT_ENABLED),
+		IS_ENABLED(CONFIG_PREEMPT_ENABLED),
+		false,
+	};
+	static int nprio[] = {
+		CONFIG_NUM_COOP_PRIORITIES,
+		CONFIG_NUM_PREEMPT_PRIORITIES,
+		CONFIG_NUM_PREEMPT_PRIORITIES,
+		42,
+	};
+	const char *const prios[] = {"pmin", "pmax"};
+
+	BUILD_ASSERT(!(SCHED_INVALID == SCHED_FIFO || SCHED_INVALID == SCHED_RR ||
+		       SCHED_INVALID == SCHED_OTHER),
+		     "SCHED_INVALID is itself invalid");
+
+	for (int policy = 0; policy < ARRAY_SIZE(policies); ++policy) {
+		if (!policy_enabled[policy]) {
+			/* test degenerate cases */
+			errno = 0;
+			zassert_equal(-1, sched_get_priority_min(policies[policy]),
+				      "expected sched_get_priority_min(%s) to fail",
+				      policy_names[policy]);
+			zassert_equal(EINVAL, errno, "sched_get_priority_min(%s) did not set errno",
+				      policy_names[policy]);
+
+			errno = 0;
+			zassert_equal(-1, sched_get_priority_max(policies[policy]),
+				      "expected sched_get_priority_max(%s) to fail",
+				      policy_names[policy]);
+			zassert_equal(EINVAL, errno, "sched_get_priority_max(%s) did not set errno",
+				      policy_names[policy]);
+			continue;
+		}
+
+		/* get pmin and pmax for policies[policy] */
+		for (int i = 0; i < 2; ++i) {
+			errno = 0;
+			if (i == 0) {
+				pmin = sched_get_priority_min(policies[policy]);
+				param.sched_priority = pmin;
+			} else {
+				pmax = sched_get_priority_max(policies[policy]);
+				param.sched_priority = pmax;
+			}
+
+			zassert_not_equal(-1, param.sched_priority,
+					  "sched_get_priority_%s(%s) failed: %d",
+					  i == 0 ? "min" : "max", policy_names[policy], errno);
+			zassert_ok(errno, "sched_get_priority_%s(%s) set errno to %s",
+				   i == 0 ? "min" : "max", policy_names[policy], errno);
+		}
+
+		/*
+		 * IEEE 1003.1-2008 Section 2.8.4
+		 * conforming implementations should provide a range of at least 32 priorities
+		 *
+		 * Note: we relax this requirement
+		 */
+		zassert_true(pmax > pmin, "pmax (%d) <= pmin (%d)", pmax, pmin,
+			     "%s min/max inconsistency: pmin: %d pmax: %d", policy_names[policy],
+			     pmin, pmax);
+
+		/*
+		 * Getting into the weeds a bit (i.e. whitebox testing), Zephyr
+		 * cooperative threads use [-CONFIG_NUM_COOP_PRIORITIES,-1] and
+		 * preemptive threads use [0, CONFIG_NUM_PREEMPT_PRIORITIES - 1],
+		 * where the more negative thread has the higher priority. Since we
+		 * cannot map those directly (a return value of -1 indicates error),
+		 * we simply map those to the positive space.
+		 */
+		zassert_equal(pmin, 0, "unexpected pmin for %s", policy_names[policy]);
+		zassert_equal(pmax, nprio[policy] - 1, "unexpected pmax for %s",
+			      policy_names[policy]); /* test happy paths */
+
+		for (int i = 0; i < 2; ++i) {
+			/* create threads with min and max priority levels */
+			zassert_ok(pthread_attr_init(&attr),
+				   "pthread_attr_init() failed for %s (%d) of %s", prios[i],
+				   param.sched_priority, policy_names[policy]);
+
+			zassert_ok(pthread_attr_setschedpolicy(&attr, policies[policy]),
+				   "pthread_attr_setschedpolicy() failed for %s (%d) of %s",
+				   prios[i], param.sched_priority, policy_names[policy]);
+
+			zassert_ok(pthread_attr_setschedparam(&attr, &param),
+				   "pthread_attr_setschedparam() failed for %s (%d) of %s",
+				   prios[i], param.sched_priority, policy_names[policy]);
+
+			zassert_ok(pthread_attr_setstack(&attr, &stack_e[0][0], STACKS),
+				   "pthread_attr_setstack() failed for %s (%d) of %s", prios[i],
+				   param.sched_priority, policy_names[policy]);
+
+			zassert_ok(pthread_create(&th, &attr, create_thread1, NULL),
+				   "pthread_create() failed for %s (%d) of %s", prios[i],
+				   param.sched_priority, policy_names[policy]);
+
+			zassert_ok(pthread_join(th, NULL),
+				   "pthread_join() failed for %s (%d) of %s", prios[i],
+				   param.sched_priority, policy_names[policy]);
+		}
 	}
 }

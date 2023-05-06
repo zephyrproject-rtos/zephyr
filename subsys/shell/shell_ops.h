@@ -185,6 +185,11 @@ static inline uint8_t z_flag_last_nl_get(const struct shell *sh)
 	return sh->ctx->ctx.flags.last_nl;
 }
 
+static inline int z_shell_get_return_value(const struct shell *sh)
+{
+	return sh->ctx->ret_val;
+}
+
 static inline void z_flag_last_nl_set(const struct shell *sh, uint8_t val)
 {
 	sh->ctx->ctx.flags.last_nl = val;

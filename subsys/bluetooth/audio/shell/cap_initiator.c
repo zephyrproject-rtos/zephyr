@@ -16,6 +16,7 @@
 #include <zephyr/bluetooth/audio/cap.h>
 
 #include "shell/bt.h"
+#include "audio.h"
 
 #if defined(CONFIG_BT_BAP_UNICAST_CLIENT)
 #define CAP_UNICAST_CLIENT_STREAM_COUNT ARRAY_SIZE(unicast_streams)

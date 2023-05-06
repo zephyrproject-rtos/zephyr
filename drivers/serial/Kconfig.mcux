@@ -10,7 +10,6 @@ config UART_MCUX
 	depends on CLOCK_CONTROL
 	select SERIAL_HAS_DRIVER
 	select SERIAL_SUPPORT_INTERRUPT
-	select SERIAL_SUPPORT_ASYNC
 	select PINCTRL
 	help
 	  Enable the MCUX uart driver.

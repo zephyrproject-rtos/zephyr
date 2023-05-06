@@ -323,6 +323,15 @@ Build system and infrastructure
   see :ref:`West extending signing <west-extending-signing>` for further
   details.
 
+* Fixed an issue whereby when using ``*_ROOT`` variables with Sysbuild, these
+  were lost for images.
+
+* Enhanced ``zephyr_get`` CMake helper function to optionally support merging
+  of scoped variables into a list.
+
+* Added a new CMake helper function for setting/updating sysbuild CMake cache
+  variables: ``sysbuild_cache_set``.
+
 Drivers and Sensors
 *******************
 
@@ -382,6 +391,9 @@ Drivers and Sensors
     with ``nrf_qspi_nor_xip_enable`` which apart from forcing the clock divider
     prevents the driver from deactivating the QSPI peripheral so that the XIP
     operation is actually possible.
+  * flash_simulator: A memory region can now be used as the storage area for the
+    flash simulator. Using the memory region allows the flash simulator to keep
+    its contents over a device reboot.
 
 * FPGA
 
@@ -540,6 +552,11 @@ MCUboot
 
 Storage
 *******
+
+* Added :kconfig:option:`CONFIG_FLASH_MAP_LABELS`, which will enable runtime access to the labels
+  property of fixed partitions. This option is implied if kconfig:option:`CONFIG_FLASH_MAP_SHELL`
+  is enabled. These labels will be displayed in a separate column when using the ``flash_map list``
+  shell command.
 
 Trusted Firmware-M
 ******************

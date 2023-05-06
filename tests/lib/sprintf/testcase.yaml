@@ -4,7 +4,7 @@ tests:
     filter: not CONFIG_SOC_MCIMX7_M4 and CONFIG_STDOUT_CONSOLE
     integration_platforms:
     - qemu_x86
-    platform_exclude: native_posix native_posix_64 nrf52_bsim
+    arch_exclude: posix
     tags: libc
     ignore_faults: true
     testcases:
@@ -23,7 +23,7 @@ tests:
     - snprintf
   libraries.libc.sprintf_new:
     extra_args: CONF_FILE=prj_new.conf
-    platform_exclude: native_posix native_posix_64 nrf52_bsim
+    arch_exclude: posix
     tags: libc
     testcases:
     - EOF

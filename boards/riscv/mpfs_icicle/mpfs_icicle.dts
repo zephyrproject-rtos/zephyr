@@ -5,7 +5,7 @@
  */
 
 /dts-v1/;
-#include <mpfs-icicle.dtsi>
+#include <microchip/mpfs-icicle.dtsi>
 #include <mem.h>
 
 / {

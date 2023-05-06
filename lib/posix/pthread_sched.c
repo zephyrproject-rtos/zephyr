@@ -4,17 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "pthread_sched.h"
+
 #include <zephyr/kernel.h>
 #include <zephyr/posix/sched.h>
-
-static bool valid_posix_policy(int policy)
-{
-	if (policy != SCHED_FIFO && policy != SCHED_RR) {
-		return false;
-	}
-
-	return true;
-}
 
 /**
  * @brief Get minimum priority value for a given policy
@@ -23,25 +16,12 @@ static bool valid_posix_policy(int policy)
  */
 int sched_get_priority_min(int policy)
 {
-	if (valid_posix_policy(policy) == false) {
+	if (!valid_posix_policy(policy)) {
 		errno = EINVAL;
 		return -1;
 	}
 
-	if (IS_ENABLED(CONFIG_COOP_ENABLED)) {
-		if (policy == SCHED_FIFO) {
-			return 0;
-		}
-	}
-
-	if (IS_ENABLED(CONFIG_PREEMPT_ENABLED)) {
-		if (policy == SCHED_RR) {
-			return 0;
-		}
-	}
-
-	errno = EINVAL;
-	return -1;
+	return 0;
 }
 
 /**
@@ -51,25 +31,11 @@ int sched_get_priority_min(int policy)
  */
 int sched_get_priority_max(int policy)
 {
-	if (valid_posix_policy(policy) == false) {
-		errno = EINVAL;
-		return -1;
-	}
-
-	if (IS_ENABLED(CONFIG_COOP_ENABLED)) {
-		if (policy == SCHED_FIFO) {
-			/* Posix COOP priority starts from 0
-			 * whereas zephyr starts from -1
-			 */
-			return (CONFIG_NUM_COOP_PRIORITIES - 1);
-		}
-
-	}
-
-	if (IS_ENABLED(CONFIG_PREEMPT_ENABLED)) {
-		if (policy == SCHED_RR) {
-			return CONFIG_NUM_PREEMPT_PRIORITIES;
-		}
+	if (IS_ENABLED(CONFIG_COOP_ENABLED) && policy == SCHED_FIFO) {
+		return CONFIG_NUM_COOP_PRIORITIES - 1;
+	} else if (IS_ENABLED(CONFIG_PREEMPT_ENABLED) &&
+		   (policy == SCHED_RR || policy == SCHED_OTHER)) {
+		return CONFIG_NUM_PREEMPT_PRIORITIES - 1;
 	}
 
 	errno = EINVAL;

@@ -3,4 +3,4 @@ tests:
     min_ram: 16
     depends_on: dma
     tags: drivers dma
-    filter: dt_nodelabel_enabled("test_dma")
+    filter: dt_nodelabel_enabled("test_dma0")

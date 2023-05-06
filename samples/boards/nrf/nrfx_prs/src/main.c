@@ -137,9 +137,9 @@ static bool switch_to_spim(void)
 	}
 
 	nrfx_spim_config_t spim_config = NRFX_SPIM_DEFAULT_CONFIG(
-		NRFX_SPIM_PIN_NOT_USED,
-		NRFX_SPIM_PIN_NOT_USED,
-		NRFX_SPIM_PIN_NOT_USED,
+		NRF_SPIM_PIN_NOT_CONNECTED,
+		NRF_SPIM_PIN_NOT_CONNECTED,
+		NRF_SPIM_PIN_NOT_CONNECTED,
 		NRF_DT_GPIOS_TO_PSEL(SPIM_NODE, cs_gpios));
 	spim_config.frequency = NRF_SPIM_FREQ_1M;
 	spim_config.skip_gpio_cfg = true;
@@ -191,7 +191,7 @@ static bool spim_transfer(const uint8_t *tx_data, size_t tx_data_len,
 static void uarte_handler(const nrfx_uarte_event_t *p_event, void *p_context)
 {
 	if (p_event->type == NRFX_UARTE_EVT_RX_DONE) {
-		received = p_event->data.rxtx.bytes;
+		received = p_event->data.rx.bytes;
 		k_sem_give(&transfer_finished);
 	} else if (p_event->type == NRFX_UARTE_EVT_ERROR) {
 		received = 0;
@@ -253,7 +253,7 @@ static bool uarte_transfer(const uint8_t *tx_data, size_t tx_data_len,
 		return false;
 	}
 
-	err = nrfx_uarte_tx(&uarte, tx_data, tx_data_len);
+	err = nrfx_uarte_tx(&uarte, tx_data, tx_data_len, 0);
 	if (err != NRFX_SUCCESS) {
 		printk("nrfx_uarte_tx() failed: 0x%08x\n", err);
 		return false;
@@ -266,7 +266,7 @@ static bool uarte_transfer(const uint8_t *tx_data, size_t tx_data_len,
 		 * fail. In such case, stop the reception and end the transfer
 		 * this way. Now taking the semaphore should be successful.
 		 */
-		nrfx_uarte_rx_abort(&uarte);
+		nrfx_uarte_rx_abort(&uarte, 0, 0);
 		if (k_sem_take(&transfer_finished, K_MSEC(10)) != 0) {
 			printk("UARTE transfer timeout\n");
 			return false;
