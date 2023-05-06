@@ -201,6 +201,15 @@
 			status = "disabled";
 		};
 
+		usb_serial: uart@60038000 {
+			compatible = "espressif,esp32-usb-serial";
+			reg = <0x60038000 DT_SIZE_K(4)>;
+			status = "disabled";
+			interrupts = <USB_SERIAL_JTAG_INTR_SOURCE>;
+			interrupt-parent = <&intc>;
+			clocks = <&rtc ESP32_USB_MODULE>;
+		};
+
 		timer0: counter@6001f000 {
 			compatible = "espressif,esp32-timer";
 			reg = <0x6001f000 DT_SIZE_K(4)>;
