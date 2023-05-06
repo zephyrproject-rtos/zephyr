@@ -61,6 +61,21 @@ static void iface_uart_async_callback(const struct device *dev,
 		/* Notify upper layer that new data has arrived */
 		k_sem_give(&data->rx_sem);
 		break;
+	case UART_RX_STOPPED:
+		break;
+	case UART_RX_DISABLED:
+		/* RX stopped (likely due to line error), re-enable it */
+		rc = k_mem_slab_alloc(&uart_modem_async_rx_slab, (void **)&buf, K_FOREVER);
+		if (rc < 0) {
+			LOG_ERR("RX disabled and buffer starvation");
+			break;
+		}
+		rc = uart_rx_enable(dev, buf, RX_BUFFER_SIZE,
+				    CONFIG_MODEM_IFACE_UART_ASYNC_RX_TIMEOUT_US);
+		if (rc < 0) {
+			LOG_ERR("Failed to re-enable UART");
+		}
+		break;
 	default:
 		break;
 	}
