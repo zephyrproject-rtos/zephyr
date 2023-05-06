@@ -400,8 +400,9 @@ static int IRAM_ATTR i2c_esp32_master_read(const struct device *dev, struct i2c_
 {
 	struct i2c_esp32_data *data = (struct i2c_esp32_data *const)(dev)->data;
 
+	uint32_t msg_len = msg->len;
+	uint8_t *msg_buf = msg->buf;
 	uint8_t rd_filled = 0;
-	uint8_t *read_pr = NULL;
 	int ret = 0;
 
 	data->status = I2C_STATUS_READ;
@@ -413,50 +414,35 @@ static int IRAM_ATTR i2c_esp32_master_read(const struct device *dev, struct i2c_
 		.op_code = I2C_LL_CMD_END,
 	};
 
-	while (msg->len) {
-		rd_filled = (msg->len > SOC_I2C_FIFO_LEN) ? SOC_I2C_FIFO_LEN : (msg->len - 1);
-
-		read_pr = msg->buf;
-		msg->len -= rd_filled;
-
-		if (rd_filled) {
-			cmd.ack_val = 0,
-			cmd.byte_num = rd_filled;
-
-			i2c_hal_write_cmd_reg(&data->hal, cmd, data->cmd_idx++);
-			i2c_hal_write_cmd_reg(&data->hal, cmd_end, data->cmd_idx++);
-			i2c_hal_enable_master_rx_it(&data->hal);
-			ret = i2c_esp32_transmit(dev);
-			if (ret < 0) {
-				return ret;
-			}
-			i2c_hal_read_rxfifo(&data->hal, read_pr, rd_filled);
-			msg->buf += rd_filled;
-		}
+	while (msg_len) {
+		rd_filled = (msg_len > SOC_I2C_FIFO_LEN) ? SOC_I2C_FIFO_LEN : (msg_len - 1);
 
 		/* I2C master won't acknowledge the last byte read from the
 		 * slave device. Divide the read command in two segments as
 		 * recommended by the ESP32 Technical Reference Manual.
 		 */
-		if (msg->len == 1) {
-			cmd.ack_val = 1,
-			cmd.byte_num = 1,
-			msg->len = 0;
-			read_pr = msg->buf;
-
-			i2c_hal_write_cmd_reg(&data->hal, cmd, data->cmd_idx++);
-			i2c_hal_write_cmd_reg(&data->hal, cmd_end, data->cmd_idx++);
-			i2c_hal_enable_master_rx_it(&data->hal);
-			ret = i2c_esp32_transmit(dev);
-			if (ret < 0) {
-				return ret;
-			}
-			i2c_hal_read_rxfifo(&data->hal, read_pr, 1);
-			msg->buf += 1;
+		if (msg_len == 1) {
+			rd_filled = 1;
+			cmd.ack_val = 1;
+		} else {
+			cmd.ack_val = 0;
 		}
-	}
-	return 0;
+		cmd.byte_num = rd_filled;
 
+		i2c_hal_write_cmd_reg(&data->hal, cmd, data->cmd_idx++);
+		i2c_hal_write_cmd_reg(&data->hal, cmd_end, data->cmd_idx++);
+		i2c_hal_enable_master_rx_it(&data->hal);
+		ret = i2c_esp32_transmit(dev);
+		if (ret < 0) {
+			return ret;
+		}
+
+		i2c_hal_read_rxfifo(&data->hal, msg_buf, rd_filled);
+		msg_buf += rd_filled;
+		msg_len -= rd_filled;
+	}
+
+	return 0;
 }
 
 static int IRAM_ATTR i2c_esp32_read_msg(const struct device *dev,
@@ -499,7 +485,8 @@ static int IRAM_ATTR i2c_esp32_master_write(const struct device *dev, struct i2c
 {
 	struct i2c_esp32_data *data = (struct i2c_esp32_data *const)(dev)->data;
 	uint8_t wr_filled = 0;
-	uint8_t *write_pr = NULL;
+	uint32_t msg_len = msg->len;
+	uint8_t *msg_buf = msg->buf;
 	int ret = 0;
 
 	data->status = I2C_STATUS_WRITE;
@@ -513,16 +500,12 @@ static int IRAM_ATTR i2c_esp32_master_write(const struct device *dev, struct i2c
 		.op_code = I2C_LL_CMD_END,
 	};
 
-	while (msg->len) {
-		wr_filled = (msg->len > SOC_I2C_FIFO_LEN) ? SOC_I2C_FIFO_LEN : msg->len;
-
-		write_pr = msg->buf;
-		msg->buf += wr_filled;
-		msg->len -= wr_filled;
+	while (msg_len) {
+		wr_filled = (msg_len > SOC_I2C_FIFO_LEN) ? SOC_I2C_FIFO_LEN : msg_len;
 		cmd.byte_num = wr_filled;
 
 		if (wr_filled > 0) {
-			i2c_hal_write_txfifo(&data->hal, write_pr, wr_filled);
+			i2c_hal_write_txfifo(&data->hal, msg_buf, wr_filled);
 			i2c_hal_write_cmd_reg(&data->hal, cmd, data->cmd_idx++);
 			i2c_hal_write_cmd_reg(&data->hal, cmd_end, data->cmd_idx++);
 			i2c_hal_enable_master_tx_it(&data->hal);
@@ -531,6 +514,9 @@ static int IRAM_ATTR i2c_esp32_master_write(const struct device *dev, struct i2c
 				return ret;
 			}
 		}
+
+		msg_buf += wr_filled;
+		msg_len -= wr_filled;
 	}
 
 	return 0;
