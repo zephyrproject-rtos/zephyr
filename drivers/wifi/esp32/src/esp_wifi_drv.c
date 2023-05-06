@@ -17,7 +17,6 @@ LOG_MODULE_REGISTER(esp32_wifi, CONFIG_WIFI_LOG_LEVEL);
 #include <zephyr/net/wifi_mgmt.h>
 #include <zephyr/device.h>
 #include <soc.h>
-#include <ethernet/eth_stats.h>
 #include "esp_networking_priv.h"
 #include "esp_private/wifi.h"
 #include "esp_event.h"
@@ -54,8 +53,8 @@ struct esp32_wifi_status {
 struct esp32_wifi_runtime {
 	uint8_t mac_addr[6];
 	uint8_t frame_buf[NET_ETH_MAX_FRAME_SIZE];
-#if defined(CONFIG_NET_STATISTICS_ETHERNET)
-	struct net_stats_eth stats;
+#if defined(CONFIG_NET_STATISTICS_WIFI)
+	struct net_stats_wifi stats;
 #endif
 	struct esp32_wifi_status status;
 	scan_result_cb_t scan_cb;
@@ -113,15 +112,30 @@ static int esp32_wifi_send(const struct device *dev, struct net_pkt *pkt)
 
 	/* Read the packet payload */
 	if (net_pkt_read(pkt, data->frame_buf, pkt_len) < 0) {
-		return -EIO;
+		goto out;
 	}
 
 	/* Enqueue packet for transmission */
-	esp_wifi_internal_tx(ESP_IF_WIFI_STA, (void *)data->frame_buf, pkt_len);
+	if (esp_wifi_internal_tx(ESP_IF_WIFI_STA, (void *)data->frame_buf,
+			pkt_len) != ESP_OK) {
+		goto out;
+	}
+
+#if defined(CONFIG_NET_STATISTICS_WIFI)
+	data->stats.bytes.sent += pkt_len;
+	data->stats.pkts.tx++;
+#endif
 
 	LOG_DBG("pkt sent %p len %d", pkt, pkt_len);
-
 	return 0;
+
+out:
+
+	LOG_ERR("Failed to send packet");
+#if defined(CONFIG_NET_STATISTICS_WIFI)
+	data->stats.errors.tx++;
+#endif
+	return -EIO;
 }
 
 static esp_err_t eth_esp32_rx(void *buffer, uint16_t len, void *eb)
@@ -149,11 +163,21 @@ static esp_err_t eth_esp32_rx(void *buffer, uint16_t len, void *eb)
 		goto pkt_unref;
 	}
 
+#if defined(CONFIG_NET_STATISTICS_WIFI)
+	esp32_data.stats.bytes.received += len;
+	esp32_data.stats.pkts.rx++;
+#endif
+
 	esp_wifi_internal_free_rx_buffer(eb);
 	return 0;
 
 pkt_unref:
 	net_pkt_unref(pkt);
+
+#if defined(CONFIG_NET_STATISTICS_WIFI)
+	esp32_data.stats.errors.rx++;
+#endif
+
 	return -EIO;
 }
 
@@ -451,27 +475,27 @@ static int esp32_wifi_status(const struct device *dev, struct wifi_iface_status 
 	wifi_ap_record_t ap_info;
 
 	switch (data->state) {
-		case ESP32_STA_STOPPED:
-		case ESP32_AP_STOPPED:
-			status->state = WIFI_STATE_INACTIVE;
-			break;
-		case ESP32_STA_STARTED:
-		case ESP32_AP_DISCONNECTED:
-			status->state = WIFI_STATE_DISCONNECTED;
-			break;
-		case ESP32_STA_CONNECTING:
-			status->state = WIFI_STATE_SCANNING;
-			break;
-		case ESP32_STA_CONNECTED:
-		case ESP32_AP_CONNECTED:
-			status->state = WIFI_STATE_COMPLETED;
-			break;
-		default:
-			break;
+	case ESP32_STA_STOPPED:
+	case ESP32_AP_STOPPED:
+		status->state = WIFI_STATE_INACTIVE;
+		break;
+	case ESP32_STA_STARTED:
+	case ESP32_AP_DISCONNECTED:
+		status->state = WIFI_STATE_DISCONNECTED;
+		break;
+	case ESP32_STA_CONNECTING:
+		status->state = WIFI_STATE_SCANNING;
+		break;
+	case ESP32_STA_CONNECTED:
+	case ESP32_AP_CONNECTED:
+		status->state = WIFI_STATE_COMPLETED;
+		break;
+	default:
+		break;
 	}
 
-	strcpy(status->ssid, data->status.ssid);
-	status->ssid_len = strlen(data->status.ssid);
+	strncpy(status->ssid, data->status.ssid, WIFI_SSID_MAX_LEN);
+	status->ssid_len = strnlen(data->status.ssid, WIFI_SSID_MAX_LEN);
 	status->band = WIFI_FREQ_BAND_2_4_GHZ;
 	status->link_mode = WIFI_LINK_MODE_UNKNOWN;
 	status->mfp = WIFI_MFP_DISABLE;
@@ -549,12 +573,25 @@ static void esp32_wifi_init(struct net_if *iface)
 	}
 }
 
-#if defined(CONFIG_NET_STATISTICS_ETHERNET)
-static struct net_stats_eth *esp32_wifi_stats(const struct device *dev)
+#if defined(CONFIG_NET_STATISTICS_WIFI)
+static int esp32_wifi_stats(const struct device *dev, struct net_stats_wifi *stats)
 {
 	struct esp32_wifi_runtime *data = dev->data;
 
-	return &(data->stats);
+	stats->bytes.received = data->stats.bytes.received;
+	stats->bytes.sent = data->stats.bytes.sent;
+	stats->pkts.rx = data->stats.pkts.rx;
+	stats->pkts.tx = data->stats.pkts.tx;
+	stats->errors.rx = data->stats.errors.rx;
+	stats->errors.tx = data->stats.errors.tx;
+	stats->broadcast.rx = data->stats.broadcast.rx;
+	stats->broadcast.tx = data->stats.broadcast.tx;
+	stats->multicast.rx = data->stats.multicast.rx;
+	stats->multicast.tx = data->stats.multicast.tx;
+	stats->sta_mgmt.beacons_rx = data->stats.sta_mgmt.beacons_rx;
+	stats->sta_mgmt.beacons_miss = data->stats.sta_mgmt.beacons_miss;
+
+	return 0;
 }
 #endif
 
@@ -581,19 +618,19 @@ static int esp32_wifi_dev_init(const struct device *dev)
 static const struct net_wifi_mgmt_offload esp32_api = {
 	.wifi_iface.iface_api.init = esp32_wifi_init,
 	.wifi_iface.send = esp32_wifi_send,
-#if defined(CONFIG_NET_STATISTICS_ETHERNET)
-	.wifi_iface.get_stats = esp32_wifi_stats,
+#if defined(CONFIG_NET_STATISTICS_WIFI)
+	.get_stats			 = esp32_wifi_stats,
  #endif
-	.scan				 = esp32_wifi_scan,
-	.connect			 = esp32_wifi_connect,
-	.disconnect			 = esp32_wifi_disconnect,
-	.ap_enable			 = esp32_wifi_ap_enable,
-	.ap_disable			 = esp32_wifi_ap_disable,
-	.iface_status		 = esp32_wifi_status,
+	.scan			   = esp32_wifi_scan,
+	.connect		   = esp32_wifi_connect,
+	.disconnect		   = esp32_wifi_disconnect,
+	.ap_enable		   = esp32_wifi_ap_enable,
+	.ap_disable		   = esp32_wifi_ap_disable,
+	.iface_status		   = esp32_wifi_status,
 };
 
 NET_DEVICE_DT_INST_DEFINE(0,
 		esp32_wifi_dev_init, NULL,
-		&esp32_data, NULL, CONFIG_ETH_INIT_PRIORITY,
+		&esp32_data, NULL, CONFIG_WIFI_INIT_PRIORITY,
 		&esp32_api, ETHERNET_L2,
 		NET_L2_GET_CTX_TYPE(ETHERNET_L2), NET_ETH_MTU);
