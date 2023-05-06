@@ -83,11 +83,13 @@ endif()
 set(ZEPHYR_FINAL_EXECUTABLE zephyr_final)
 
 # Set some phony targets to collect dependencies
-set(OFFSETS_H_TARGET           offsets_h)
-set(SYSCALL_LIST_H_TARGET      syscall_list_h_target)
-set(DRIVER_VALIDATION_H_TARGET driver_validation_h_target)
-set(KOBJ_TYPES_H_TARGET        kobj_types_h_target)
-set(PARSE_SYSCALLS_TARGET      parse_syscalls_target)
+set(OFFSETS_H_TARGET               offsets_h)
+set(SYSCALL_LIST_H_TARGET          syscall_list_h_target)
+set(DRIVER_VALIDATION_H_TARGET     driver_validation_h_target)
+set(KOBJ_TYPES_H_TARGET            kobj_types_h_target)
+set(PARSE_SYSCALLS_TARGET          parse_syscalls_target)
+set(KERNEL_DEVICE_SUBSYS_LD_TARGET kernel_device_subsys_ld_target)
+set(KERNEL_DEVICE_CLASS_H_TARGET   kernel_device_class_h_target)
 
 define_property(GLOBAL PROPERTY PROPERTY_OUTPUT_FORMAT BRIEF_DOCS " " FULL_DOCS " ")
 set_property(   GLOBAL PROPERTY PROPERTY_OUTPUT_FORMAT elf32-little${ARCH}) # BFD format
@@ -781,6 +783,54 @@ add_custom_target(${DRIVER_VALIDATION_H_TARGET} DEPENDS ${DRV_VALIDATION})
 include(${ZEPHYR_BASE}/cmake/kobj.cmake)
 gen_kobj(KOBJ_INCLUDE_PATH)
 
+# Generate sections for kernel device subsystems
+
+set(
+  KERNEL_DEVICE_SUBSYS_SECTIONS
+  ${CMAKE_CURRENT_BINARY_DIR}/include/generated/kernel-device-subsys-sections.ld
+  )
+
+add_custom_command(
+  OUTPUT ${KERNEL_DEVICE_SUBSYS_SECTIONS}
+  COMMAND ${PYTHON_EXECUTABLE}
+  ${ZEPHYR_BASE}/scripts/build/gen_iter_sections.py
+  -i ${struct_tags_json}
+  -t __subsystem
+  -o ${KERNEL_DEVICE_SUBSYS_SECTIONS}
+  DEPENDS
+  ${ZEPHYR_BASE}/scripts/build/gen_iter_sections.py
+  ${struct_tags_json}
+  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+  )
+
+# Generate macros for device classes
+
+add_custom_target(${KERNEL_DEVICE_SUBSYS_LD_TARGET} DEPENDS ${KERNEL_DEVICE_SUBSYS_SECTIONS})
+
+set(
+  KERNEL_DEVICE_CLASS_HEADER
+  ${CMAKE_CURRENT_BINARY_DIR}/include/generated/device_class_generated.h
+  )
+
+add_custom_command(
+  OUTPUT ${KERNEL_DEVICE_CLASS_HEADER}
+  COMMAND ${PYTHON_EXECUTABLE}
+  ${ZEPHYR_BASE}/scripts/build/gen_device_class.py
+  -k $<TARGET_FILE:${ZEPHYR_LINK_STAGE_EXECUTABLE}>
+  -o ${KERNEL_DEVICE_CLASS_HEADER}
+  -z ${ZEPHYR_BASE}
+  -s "$<TARGET_PROPERTY:linker,devices_start_symbol>"
+  VERBATIM
+  DEPENDS
+  ${ZEPHYR_BASE}/scripts/build/gen_device_class.py
+  ${ZEPHYR_LINK_STAGE_EXECUTABLE}
+  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+  )
+
+set_property(GLOBAL APPEND PROPERTY GENERATED_DEVICE_CLASS_HEADER ${KERNEL_DEVICE_CLASS_HEADER})
+
+add_custom_target(${KERNEL_DEVICE_CLASS_H_TARGET} DEPENDS ${KERNEL_DEVICE_CLASS_HEADER})
+
 # Add a pseudo-target that is up-to-date when all generated headers
 # are up-to-date.
 
@@ -807,6 +857,7 @@ add_dependencies(zephyr_interface
   ${SYSCALL_LIST_H_TARGET}
   ${DRIVER_VALIDATION_H_TARGET}
   ${KOBJ_TYPES_H_TARGET}
+  ${KERNEL_DEVICE_SUBSYS_LD_TARGET}
   )
 
 add_custom_command(
@@ -1366,12 +1417,13 @@ set_property(TARGET
   )
 
 # Read global variables into local variables
+get_property(GDCH GLOBAL PROPERTY GENERATED_DEVICE_CLASS_HEADER)
 get_property(GASF GLOBAL PROPERTY GENERATED_APP_SOURCE_FILES)
 get_property(GKOF GLOBAL PROPERTY GENERATED_KERNEL_OBJECT_FILES)
 get_property(GKSF GLOBAL PROPERTY GENERATED_KERNEL_SOURCE_FILES)
 
 # FIXME: Is there any way to get rid of empty_file.c?
-add_executable(       ${ZEPHYR_LINK_STAGE_EXECUTABLE} misc/empty_file.c ${GASF})
+add_executable(       ${ZEPHYR_LINK_STAGE_EXECUTABLE} misc/empty_file.c ${GASF} ${GDCH})
 toolchain_ld_link_elf(
   TARGET_ELF            ${ZEPHYR_LINK_STAGE_EXECUTABLE}
   OUTPUT_MAP            ${PROJECT_BINARY_DIR}/${ZEPHYR_LINK_STAGE_EXECUTABLE}.map

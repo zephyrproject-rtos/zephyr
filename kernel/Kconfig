@@ -959,6 +959,9 @@ config HAS_DYNAMIC_DEVICE_HANDLES
 	  Hidden option that makes possible to manipulate device handles at
 	  runtime.
 
+config DEVICE_VALIDATE_CLASS
+	bool "Validate class"
+
 endmenu
 
 rsource "Kconfig.vm"
