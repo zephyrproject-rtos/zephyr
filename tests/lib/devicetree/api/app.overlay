@@ -19,6 +19,11 @@
 		ztest,gpio = &test_nodelabel;
 	};
 
+	zephyr,user {
+		ph = <&test_gpio_1>;
+		string = "foo";
+	};
+
 	test {
 		#address-cells = < 0x1 >;
 		#size-cells = < 0x1 >;
