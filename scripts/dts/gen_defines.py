@@ -32,12 +32,6 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'python-devicetree',
 
 from devicetree import edtlib
 
-# The set of binding types whose values can be iterated over with
-# DT_FOREACH_PROP_ELEM(). If you change this, make sure to update the
-# doxygen string for that macro.
-FOREACH_PROP_ELEM_TYPES = set(['string', 'array', 'uint8-array', 'string-array',
-                               'phandles', 'phandle-array'])
-
 class LogFormatter(logging.Formatter):
     '''A log formatter that prints the level name in lower case,
     for compatibility with earlier versions of edtlib.'''
@@ -651,6 +645,12 @@ def write_vanilla_props(node):
             macro2val[macro + "_STRING_TOKEN"] = prop.val_as_token
             # DT_N_<node-id>_P_<prop-id>_IDX_<i>_STRING_UPPER_TOKEN
             macro2val[macro + "_STRING_UPPER_TOKEN"] = prop.val_as_token.upper()
+            # DT_N_<node-id>_P_<prop-id>_IDX_0:
+            # DT_N_<node-id>_P_<prop-id>_IDX_0_EXISTS:
+            # Allows treating the string like a degenerate case of a
+            # string-array of length 1.
+            macro2val[macro + "_IDX_0"] = quote_str(prop.val)
+            macro2val[macro + "_IDX_0_EXISTS"] = 1
 
         if prop.enum_index is not None:
             # DT_N_<node-id>_P_<prop-id>_ENUM_IDX
@@ -692,33 +692,32 @@ def write_vanilla_props(node):
                     macro2val[macro + f"_IDX_{i}"] = subval
                 macro2val[macro + f"_IDX_{i}_EXISTS"] = 1
 
-        if prop.type in FOREACH_PROP_ELEM_TYPES:
+        plen = prop_len(prop)
+        if plen is not None:
             # DT_N_<node-id>_P_<prop-id>_FOREACH_PROP_ELEM
             macro2val[f"{macro}_FOREACH_PROP_ELEM(fn)"] = \
                 ' \\\n\t'.join(
                     f'fn(DT_{node.z_path_id}, {prop_id}, {i})'
-                    for i in range(len(prop.val)))
+                    for i in range(plen))
 
             # DT_N_<node-id>_P_<prop-id>_FOREACH_PROP_ELEM_SEP
             macro2val[f"{macro}_FOREACH_PROP_ELEM_SEP(fn, sep)"] = \
                 ' DT_DEBRACKET_INTERNAL sep \\\n\t'.join(
                     f'fn(DT_{node.z_path_id}, {prop_id}, {i})'
-                    for i in range(len(prop.val)))
+                    for i in range(plen))
 
             # DT_N_<node-id>_P_<prop-id>_FOREACH_PROP_ELEM_VARGS
             macro2val[f"{macro}_FOREACH_PROP_ELEM_VARGS(fn, ...)"] = \
                 ' \\\n\t'.join(
                     f'fn(DT_{node.z_path_id}, {prop_id}, {i}, __VA_ARGS__)'
-                    for i in range(len(prop.val)))
+                    for i in range(plen))
 
             # DT_N_<node-id>_P_<prop-id>_FOREACH_PROP_ELEM_SEP_VARGS
             macro2val[f"{macro}_FOREACH_PROP_ELEM_SEP_VARGS(fn, sep, ...)"] = \
                 ' DT_DEBRACKET_INTERNAL sep \\\n\t'.join(
                     f'fn(DT_{node.z_path_id}, {prop_id}, {i}, __VA_ARGS__)'
-                    for i in range(len(prop.val)))
+                    for i in range(plen))
 
-        plen = prop_len(prop)
-        if plen is not None:
             # DT_N_<node-id>_P_<prop-id>_LEN
             macro2val[macro + "_LEN"] = plen
 
@@ -785,6 +784,11 @@ def prop2value(prop):
 def prop_len(prop):
     # Returns the property's length if and only if we should generate
     # a _LEN macro for the property. Otherwise, returns None.
+    #
+    # The set of types handled here coincides with the allowable types
+    # that can be used with DT_PROP_LEN(). If you change this set,
+    # make sure to update the doxygen string for that macro, and make
+    # sure that DT_FOREACH_PROP_ELEM() works for the new types too.
     #
     # This deliberately excludes ranges, dma-ranges, reg and interrupts.
     # While they have array type, their lengths as arrays are
