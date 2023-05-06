@@ -211,6 +211,8 @@ source "drivers/sensor/ms5837/Kconfig"
 
 source "drivers/sensor/ms5607/Kconfig"
 
+source "drivers/sensor/npm1300_charger/Kconfig"
+
 source "drivers/sensor/nrf5/Kconfig"
 
 source "drivers/sensor/opt3001/Kconfig"
@@ -303,7 +305,7 @@ source "drivers/sensor/xmc4xxx_temp/Kconfig"
 
 source "drivers/sensor/tmd2620/Kconfig"
 
-source "drivers/sensor/zephyr_thermistor/Kconfig"
+source "drivers/sensor/ntc_thermistor/Kconfig"
 
 source "drivers/sensor/s11059/Kconfig"
 

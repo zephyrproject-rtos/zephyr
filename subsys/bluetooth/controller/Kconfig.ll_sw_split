@@ -8,9 +8,13 @@ if BT_LL_SW_SPLIT
 config BT_LLL_VENDOR_NORDIC
 	bool "Use Nordic LLL"
 	depends on SOC_COMPATIBLE_NRF
-	select BT_HAS_HCI_VS
+	depends on !$(dt_nodelabel_enabled,timer0)
+	depends on !$(dt_nodelabel_enabled,rtc0)
+
 	select ENTROPY_NRF5_RNG
 	select ENTROPY_NRF5_BIAS_CORRECTION
+
+	select BT_HAS_HCI_VS
 	select BT_CTLR_LE_ENC_SUPPORT if !BT_CTLR_DATA_LENGTH_CLEAR && \
 					 !BT_CTLR_PHY_2M_NRF
 	select BT_CTLR_CONN_PARAM_REQ_SUPPORT
@@ -20,7 +24,6 @@ config BT_LLL_VENDOR_NORDIC
 						  BT_CTLR_DATA_LENGTH_CLEAR
 	select BT_CTLR_PRIVACY_SUPPORT if !SOC_SERIES_NRF51X
 	select BT_CTLR_EXT_SCAN_FP_SUPPORT
-
 	select BT_CTLR_PHY_2M_SUPPORT if HAS_HW_NRF_RADIO_BLE_2M || \
 					 BT_CTLR_PHY_2M_NRF
 	select BT_CTLR_PHY_CODED_SUPPORT if HAS_HW_NRF_RADIO_BLE_CODED
@@ -48,16 +51,11 @@ config BT_LLL_VENDOR_NORDIC
 
 	select BT_TICKER_UPDATE if BT_BROADCASTER || BT_CONN || \
 				   (BT_OBSERVER && BT_CTLR_ADV_EXT)
-	select BT_TICKER_NEXT_SLOT_GET if (BT_BROADCASTER && \
-					   BT_CTLR_ADV_EXT) || \
-					  BT_CTLR_ADV_PERIODIC
+	select BT_TICKER_REMAINDER if BT_CTLR_CENTRAL_ISO
 	select BT_TICKER_REMAINDER_GET if BT_BROADCASTER && BT_CTLR_ADV_EXT
 	select BT_TICKER_LAZY_GET if BT_CTLR_ADV_PERIODIC
-	select BT_TICKER_NEXT_SLOT_GET_MATCH if BT_TICKER_REMAINDER_GET
 
 	default y
-	depends on !$(dt_nodelabel_enabled,timer0)
-	depends on !$(dt_nodelabel_enabled,rtc0)
 	help
 	  Use Nordic Lower Link Layer implementation.
 
@@ -168,9 +166,7 @@ config BT_CTLR_PHY_2M_NRF
 config BT_CTLR_ADV_AUX_SET
 	int "LE Extended Advertising Auxiliary Sets"
 	depends on BT_BROADCASTER && BT_CTLR_ADV_EXT
-	range 1 BT_CTLR_ADV_SET if BT_CTLR_ADV_PERIODIC
 	range 0 BT_CTLR_ADV_SET
-	default 1 if BT_CTLR_ADV_PERIODIC
 	default BT_CTLR_ADV_SET
 	help
 	  Maximum supported advertising auxiliary channel sets.
@@ -422,8 +418,9 @@ config BT_CTLR_SCHED_ADVANCED
 	bool "Advanced scheduling"
 	depends on BT_CTLR_SCHED_ADVANCED_SUPPORT && \
 		   (BT_CONN || \
-		    (BT_CTLR_ADV_EXT && (BT_CTLR_ADV_AUX_SET > 1)) || \
+		    (BT_CTLR_ADV_EXT && (BT_CTLR_ADV_AUX_SET > 0)) || \
 		    BT_CTLR_ADV_ISO)
+	select BT_TICKER_NEXT_SLOT_GET
 	default y if BT_CENTRAL || (BT_BROADCASTER && BT_CTLR_ADV_EXT) || BT_CTLR_ADV_ISO
 	help
 	  Enable non-overlapping placement of observer, initiator and central
@@ -790,6 +787,12 @@ config BT_TICKER_UPDATE
 	help
 	  This option enables Ticker Update interface.
 
+config BT_TICKER_REMAINDER
+	bool "Ticker Remainder"
+	help
+	  This option enables Ticker Start interface remainder parameter for
+	  first expire timeout.
+
 config BT_TICKER_JOB_IDLE_GET
 	bool "Ticker Job Idle Get"
 	default y if BT_TICKER_LOW_LAT
@@ -801,14 +804,15 @@ config BT_TICKER_JOB_IDLE_GET
 
 config BT_TICKER_NEXT_SLOT_GET
 	bool "Ticker Next Slot Get"
-	default y if BT_CENTRAL
 	help
 	  This option enables ticker interface to iterate through active
 	  ticker nodes, returning tick to expire.
 
 config BT_TICKER_REMAINDER_GET
 	bool "Ticker Next Slot Get with Remainder"
-	depends on BT_TICKER_NEXT_SLOT_GET
+	select BT_TICKER_NEXT_SLOT_GET
+	select BT_TICKER_NEXT_SLOT_GET_MATCH
+	default y
 	help
 	  This option enables ticker interface to iterate through active
 	  ticker nodes, returning tick to expire and remainder from a reference
@@ -816,7 +820,8 @@ config BT_TICKER_REMAINDER_GET
 
 config BT_TICKER_LAZY_GET
 	bool "Ticker Next Slot Get with Lazy"
-	depends on BT_TICKER_NEXT_SLOT_GET
+	select BT_TICKER_NEXT_SLOT_GET
+	select BT_TICKER_NEXT_SLOT_GET_MATCH
 	help
 	  This option enables ticker interface to iterate through active
 	  ticker nodes, returning tick to expire and lazy count from a reference
@@ -834,6 +839,7 @@ config BT_TICKER_NEXT_SLOT_GET_MATCH
 
 config BT_TICKER_EXT
 	bool "Ticker extensions"
+	depends on !BT_TICKER_LOW_LAT
 	default y if BT_BROADCASTER
 	help
 	  This option enables ticker extensions such as re-scheduling of
@@ -848,6 +854,16 @@ config BT_TICKER_EXT_SLOT_WINDOW_YIELD
 	help
 	  This options forces tickers with slot window extensions to yield to
 	  normal tickers and be placed at the end of their slot window.
+
+config BT_TICKER_EXT_EXPIRE_INFO
+	bool "Ticker timeout with other ticker's expire information"
+	select BT_TICKER_EXT
+	help
+	  This option enables ticker to return expiration info. The extended
+	  ticker interface) is used to ask for expiration information for
+	  another ticker id to be returned in the ticker callback. This utilises
+	  the extended ticker interface and a callback function with a different
+	  context to keep the current ticker interface as unchanged as possible.
 
 config BT_TICKER_PRIORITY_SET
 	bool "Tickers with priority based collision resolution"

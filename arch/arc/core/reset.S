@@ -16,6 +16,9 @@
 #include <zephyr/arch/cpu.h>
 #include <swap_macros.h>
 #include <zephyr/arch/arc/asm-compat/assembler.h>
+#ifdef CONFIG_ARC_EARLY_SOC_INIT
+  #include <soc_ctrl.h>
+#endif
 
 GDATA(z_interrupt_stacks)
 GDATA(z_main_stack)
@@ -108,6 +111,12 @@ done_icache_invalidate:
 	sr r1, [_ARC_V2_DC_IVDC]
 
 done_dcache_invalidate:
+
+#ifdef CONFIG_ARC_EARLY_SOC_INIT
+	soc_early_asm_init_percpu
+#endif
+
+	_dsp_extension_probe
 
 /*
  * Init ARC internal architecture state

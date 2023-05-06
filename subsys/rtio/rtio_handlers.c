@@ -51,10 +51,10 @@ static inline bool rtio_vrfy_sqe(struct rtio_sqe *sqe)
 	return valid_sqe;
 }
 
-static inline void z_vrfy_rtio_release_buffer(struct rtio *r, void *buff)
+static inline void z_vrfy_rtio_release_buffer(struct rtio *r, void *buff, uint32_t buff_len)
 {
 	Z_OOPS(Z_SYSCALL_OBJ(r, K_OBJ_RTIO));
-	z_impl_rtio_release_buffer(r, buff);
+	z_impl_rtio_release_buffer(r, buff, buff_len);
 }
 #include <syscalls/rtio_release_buffer_mrsh.c>
 

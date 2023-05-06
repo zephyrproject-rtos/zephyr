@@ -111,6 +111,9 @@
 #ifdef CONFIG_NRFX_I2S
 #define NRFX_I2S_ENABLED 1
 #endif
+#ifdef CONFIG_NRFX_I2S0
+#define NRFX_I2S0_ENABLED 1
+#endif
 
 #ifdef CONFIG_NRFX_IPC
 #define NRFX_IPC_ENABLED 1
@@ -177,6 +180,12 @@
 
 #ifdef CONFIG_NRFX_QDEC
 #define NRFX_QDEC_ENABLED 1
+#endif
+#ifdef CONFIG_NRFX_QDEC0
+#define NRFX_QDEC0_ENABLED 1
+#endif
+#ifdef CONFIG_NRFX_QDEC1
+#define NRFX_QDEC1_ENABLED 1
 #endif
 
 #ifdef CONFIG_NRFX_QSPI
@@ -387,6 +396,7 @@
 #define NRF_PERIPH(P) P##_S
 #endif
 
+#include <nrfx_config_common.h>
 #if defined(NRF51)
     #include <nrfx_config_nrf51.h>
 #elif defined(NRF52805_XXAA)

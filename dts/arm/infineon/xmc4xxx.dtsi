@@ -21,19 +21,6 @@
 		};
 	};
 
-	/* TODO: Add psram1 & dsram2 to MEMORY layout of linker */
-	psram1: memory@10000000 {
-		compatible = "mmio-sram";
-	};
-
-	dsram1: memory@20000000 {
-		compatible = "mmio-sram";
-	};
-
-	dsram2: memory@30000000 {
-		compatible = "mmio-sram";
-	};
-
 	flash_controller: flash_controller@58001000 {
 		compatible = "infineon,xmc4xxx-flash-controller";
 		reg = <0x58001000 0x1400>;
@@ -64,6 +51,7 @@
 
 		pinctrl: pinctrl@48028000 {
 			compatible = "infineon,xmc4xxx-pinctrl";
+			reg = <0x48028000 0x1000>;
 			#address-cells = <1>;
 			#size-cells = <1>;
 
@@ -91,6 +79,21 @@
 				status = "disabled";
 			};
 
+			gpio14: gpio@48028e00 {
+				compatible = "infineon,xmc4xxx-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x48028e00 0x100>;
+				status = "disabled";
+			};
+
+			gpio15: gpio@48028f00 {
+				compatible = "infineon,xmc4xxx-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x48028f00 0x100>;
+				status = "disabled";
+			};
 		};
 
 		dma0: dma0@50014000{

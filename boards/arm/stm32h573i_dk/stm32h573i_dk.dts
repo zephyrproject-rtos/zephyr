@@ -55,6 +55,7 @@
 		sw0 = &user_button;
 		watchdog0 = &iwdg;
 		spi-flash0 = &mx25lm51245;
+		die-temp0 = &die_temp;
 	};
 };
 
@@ -235,4 +236,8 @@
 			   };
 		};
 	};
+};
+
+&die_temp {
+	status = "okay";
 };

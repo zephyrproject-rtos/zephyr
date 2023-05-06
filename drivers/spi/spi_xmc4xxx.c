@@ -292,7 +292,6 @@ static int spi_xmc4xxx_transceive(const struct device *dev, const struct spi_con
 #if defined(CONFIG_SPI_XMC4XXX_INTERRUPT)
 	XMC_SPI_CH_EnableEvent(config->spi, XMC_SPI_CH_EVENT_STANDARD_RECEIVE |
 					    XMC_SPI_CH_EVENT_ALTERNATIVE_RECEIVE);
-	irq_enable(config->irq_num_rx);
 	spi_xmc4xxx_shift_frames(dev);
 	ret = spi_context_wait_for_completion(ctx);
 	/* cs released in isr */
@@ -469,6 +468,7 @@ static int spi_xmc4xxx_transceive_dma(const struct device *dev, const struct spi
 		spi_context_cs_control(ctx, false);
 	}
 
+	irq_enable(config->irq_num_rx);
 	spi_context_release(ctx, ret);
 
 	return ret;
@@ -645,6 +645,8 @@ static const struct spi_driver_api spi_xmc4xxx_driver_api = {
 		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(index, rx, irq),                                   \
 			    DT_INST_IRQ_BY_NAME(index, rx, priority), spi_xmc4xxx_isr,             \
 			    DEVICE_DT_INST_GET(index), 0);                                         \
+												   \
+		irq_enable(irq_num);                                                               \
 	}
 
 #define XMC4XXX_IRQ_HANDLER_STRUCT_INIT(index) .irq_config_func = spi_xmc4xxx_irq_setup_##index,

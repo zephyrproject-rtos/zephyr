@@ -187,6 +187,11 @@ uint8_t ull_cp_cis_terminate(struct ll_conn *conn, struct ll_conn_iso_stream *ci
 uint8_t ull_cp_cis_create(struct ll_conn *conn, struct ll_conn_iso_stream *cis);
 
 /**
+ * @brief Resume CIS create after CIS offset calculation.
+ */
+void ull_cp_cc_offset_calc_reply(struct ll_conn *conn, uint32_t cis_offset_min);
+
+/**
  * @brief Is ongoing create cis procedure expecting a reply?
  */
 bool ull_cp_cc_awaiting_reply(struct ll_conn *conn);
@@ -221,6 +226,11 @@ void ull_cp_cc_established(struct ll_conn *conn, uint8_t error_code);
  * @brief CIS creation ongoing.
  */
 bool ull_lp_cc_is_active(struct ll_conn *conn);
+
+/**
+ * @brief CIS creation ongoing or enqueued.
+ */
+bool ull_lp_cc_is_enqueued(struct ll_conn *conn);
 
 /**
  * @brief Initiate a Channel Map Update Procedure.

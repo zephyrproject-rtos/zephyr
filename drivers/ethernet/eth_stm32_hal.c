@@ -1350,8 +1350,8 @@ static uint32_t reverse(uint32_t val)
 	int i;
 
 	for (i = 0; i < 32; i++) {
-		if (val & (1 << i)) {
-			res |= 1 << (31 - i);
+		if (val & BIT(i)) {
+			res |= BIT(31 - i);
 		}
 	}
 

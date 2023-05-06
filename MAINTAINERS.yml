@@ -577,6 +577,8 @@ Documentation:
     - doc/known-warnings.txt
     - doc/templates/sample.tmpl
     - doc/templates/board.tmpl
+  files-exclude:
+    - doc/releases/release-notes-*
   labels:
     - "area: Documentation"
 
@@ -601,6 +603,7 @@ Release Notes:
   status: maintained
   maintainers:
     - nashif
+    - jgl-meta
   files:
     - doc/releases/release-notes-*
   labels:
@@ -672,6 +675,7 @@ Release Notes:
     - samples/subsys/canbus/
     - subsys/canbus/
     - subsys/net/l2/canbus/
+    - tests/drivers/build_all/can/
     - tests/drivers/can/
     - tests/net/socket/can/
     - tests/subsys/canbus/

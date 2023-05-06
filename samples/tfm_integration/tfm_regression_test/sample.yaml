@@ -1,7 +1,7 @@
 common:
   tags: tfm
   platform_allow: nrf5340dk_nrf5340_cpuapp_ns nrf9160dk_nrf9160_ns
-                  v2m_musca_s1_ns
+                  nrf9161dk_nrf9161_ns v2m_musca_s1_ns
 
   integration_platforms:
     - nrf5340dk_nrf5340_cpuapp_ns

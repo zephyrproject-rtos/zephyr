@@ -86,6 +86,8 @@ source "drivers/adc/Kconfig.ads1119"
 
 source "drivers/adc/Kconfig.ads7052"
 
+source "drivers/adc/Kconfig.ads114s0x"
+
 source "drivers/adc/Kconfig.rpi_pico"
 
 source "drivers/adc/Kconfig.xmc4xxx"

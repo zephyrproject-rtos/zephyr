@@ -79,7 +79,6 @@ static uint16_t adv_time_get(struct pdu_adv *pdu, struct pdu_adv *pdu_scan,
 static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 		      uint32_t remainder, uint16_t lazy, uint8_t force,
 		      void *param);
-
 static void ticker_update_op_cb(uint32_t status, void *param);
 
 #if defined(CONFIG_BT_PERIPHERAL)
@@ -1278,17 +1277,21 @@ uint8_t ll_adv_enable(uint8_t enable)
 	lll->is_hdcd = !interval && (pdu_adv->type == PDU_ADV_TYPE_DIRECT_IND);
 	if (lll->is_hdcd) {
 		ret_cb = TICKER_STATUS_BUSY;
+
 #if defined(CONFIG_BT_TICKER_EXT)
 #if !defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
 		ll_adv_ticker_ext[handle].ticks_slot_window = 0;
 #endif /* CONFIG_BT_CTLR_JIT_SCHEDULING */
-		ll_adv_ticker_ext[handle].ext_timeout_func = ticker_cb;
+
+#if defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
 		ll_adv_ticker_ext[handle].expire_info_id = TICKER_NULL;
+		ll_adv_ticker_ext[handle].ext_timeout_func = ticker_cb;
+#endif /* CONFIG_BT_TICKER_EXT_EXPIRE_INFO */
 
 		ret = ticker_start_ext(
-#else
+#else /* !CONFIG_BT_TICKER_EXT */
 		ret = ticker_start(
-#endif
+#endif /* !CONFIG_BT_TICKER_EXT */
 				   TICKER_INSTANCE_ID_CTLR,
 				   TICKER_USER_ID_THREAD,
 				   (TICKER_ID_ADV_BASE + handle),
@@ -1296,12 +1299,7 @@ uint8_t ll_adv_enable(uint8_t enable)
 				   (adv->ull.ticks_slot + ticks_slot_overhead),
 				   TICKER_NULL_REMAINDER, TICKER_NULL_LAZY,
 				   (adv->ull.ticks_slot + ticks_slot_overhead),
-#if defined(CONFIG_BT_TICKER_EXT)
-				   NULL,
-#else
-				   ticker_cb,
-#endif /* CONFIG_BT_TICKER_EXT */
-				   adv,
+				   ticker_cb, adv,
 				   ull_ticker_status_give, (void *)&ret_cb
 #if defined(CONFIG_BT_TICKER_EXT)
 				   ,
@@ -1492,26 +1490,25 @@ uint8_t ll_adv_enable(uint8_t enable)
 #if !defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
 		ll_adv_ticker_ext[handle].ticks_slot_window =
 			ULL_ADV_RANDOM_DELAY + ticks_slot;
-#endif /* CONFIG_BT_CTLR_JIT_SCHEDULING */
+#endif /* !CONFIG_BT_CTLR_JIT_SCHEDULING */
 
-		ll_adv_ticker_ext[handle].ext_timeout_func = ticker_cb;
-
-#if defined(CONFIG_BT_CTLR_ADV_EXT)
+#if defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
 		if (lll->aux) {
 			uint8_t aux_handle = ull_adv_aux_handle_get(aux);
 
 			ll_adv_ticker_ext[handle].expire_info_id = TICKER_ID_ADV_AUX_BASE +
 								  aux_handle;
-		} else
-#endif /* CONFIG_BT_CTLR_ADV_EXT */
-		{
+			ll_adv_ticker_ext[handle].ext_timeout_func = ticker_cb;
+		} else {
 			ll_adv_ticker_ext[handle].expire_info_id = TICKER_NULL;
+			ll_adv_ticker_ext[handle].ext_timeout_func = ticker_cb;
 		}
+#endif /* CONFIG_BT_TICKER_EXT_EXPIRE_INFO */
 
 		ret = ticker_start_ext(
-#else
+#else /* !CONFIG_BT_TICKER_EXT */
 		ret = ticker_start(
-#endif /* CONFIG_BT_TICKER_EXT */
+#endif /* !CONFIG_BT_TICKER_EXT */
 				   TICKER_INSTANCE_ID_CTLR,
 				   TICKER_USER_ID_THREAD,
 				   (TICKER_ID_ADV_BASE + handle),
@@ -1527,14 +1524,8 @@ uint8_t ll_adv_enable(uint8_t enable)
 				   TICKER_NULL_LAZY,
 #endif /* !CONFIG_BT_TICKER_LOW_LAT && !CONFIG_BT_CTLR_LOW_LAT */
 				   ticks_slot,
-#if defined(CONFIG_BT_TICKER_EXT)
-				   NULL,
-#else
-				   ticker_cb,
-#endif /* CONFIG_BT_TICKER_EXT */
-				   adv,
-				   ull_ticker_status_give,
-				   (void *)&ret_cb
+				   ticker_cb, adv,
+				   ull_ticker_status_give, (void *)&ret_cb
 #if defined(CONFIG_BT_TICKER_EXT)
 				   ,
 				   &ll_adv_ticker_ext[handle]
@@ -1766,6 +1757,7 @@ struct ll_adv_set *ull_adv_is_created_get(uint8_t handle)
 	return adv;
 }
 
+#if defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
 void ull_adv_aux_created(struct ll_adv_set *adv)
 {
 	if (adv->lll.aux && adv->is_enabled) {
@@ -1778,6 +1770,7 @@ void ull_adv_aux_created(struct ll_adv_set *adv)
 			   TICKER_ID_ADV_AUX_BASE + aux_handle);
 	}
 }
+#endif /* CONFIG_BT_TICKER_EXT_EXPIRE_INFO */
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 
 uint8_t ull_adv_data_set(struct ll_adv_set *adv, uint8_t len,
@@ -2295,12 +2288,12 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 	static memq_link_t link;
 	static struct mayfly mfy = {0, 0, &link, NULL, lll_adv_prepare};
 	static struct lll_prepare_param p;
-#if defined(CONFIG_BT_TICKER_EXT)
+#if defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
 	struct ticker_ext_context *context = param;
 	struct ll_adv_set *adv = context->context;
-#else
+#else /* !CONFIG_BT_TICKER_EXT_EXPIRE_INFO */
 	struct ll_adv_set *adv = param;
-#endif /* CONFIG_BT_TICKER_EXT */
+#endif /* !CONFIG_BT_TICKER_EXT_EXPIRE_INFO */
 	uint32_t random_delay;
 	struct lll_adv *lll;
 	uint32_t ret;
@@ -2333,15 +2326,8 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 		ref = ull_ref_inc(&adv->ull);
 		LL_ASSERT(ref);
 
-		/* Append timing parameters */
-		p.ticks_at_expire = ticks_at_expire;
-		p.remainder = remainder;
-		p.lazy = lazy;
-		p.force = force;
-		p.param = lll;
-		mfy.param = &p;
-
-#if defined(CONFIG_BT_CTLR_ADV_EXT) && (CONFIG_BT_CTLR_ADV_AUX_SET > 0)
+#if defined(CONFIG_BT_CTLR_ADV_EXT) && (CONFIG_BT_CTLR_ADV_AUX_SET > 0) && \
+	defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
 		if (adv->lll.aux) {
 			uint32_t ticks_to_expire;
 			uint32_t other_remainder;
@@ -2357,12 +2343,31 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 			adv->lll.aux->ticks_pri_pdu_offset = ticks_to_expire;
 			adv->lll.aux->us_pri_pdu_offset = other_remainder;
 		}
-#endif /* CONFIG_BT_CTLR_ADV_EXT && (CONFIG_BT_CTLR_ADV_AUX_SET > 0) */
+#endif /* CONFIG_BT_CTLR_ADV_EXT && (CONFIG_BT_CTLR_ADV_AUX_SET > 0) &&
+	* CONFIG_BT_TICKER_EXT_EXPIRE_INFO
+	*/
+
+		/* Append timing parameters */
+		p.ticks_at_expire = ticks_at_expire;
+		p.remainder = remainder;
+		p.lazy = lazy;
+		p.force = force;
+		p.param = lll;
+		mfy.param = &p;
 
 		/* Kick LLL prepare */
 		ret = mayfly_enqueue(TICKER_USER_ID_ULL_HIGH,
 				     TICKER_USER_ID_LLL, 0, &mfy);
 		LL_ASSERT(!ret);
+
+#if defined(CONFIG_BT_CTLR_ADV_EXT) && (CONFIG_BT_CTLR_ADV_AUX_SET > 0) && \
+	!defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
+		if (adv->lll.aux) {
+			ull_adv_aux_offset_get(adv);
+		}
+#endif /* CONFIG_BT_CTLR_ADV_EXT && (CONFIG_BT_CTLR_ADV_AUX_SET > 0)
+	* !CONFIG_BT_TICKER_EXT_EXPIRE_INFO
+	*/
 
 #if defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
 		adv->ticks_at_expire = ticks_at_expire;

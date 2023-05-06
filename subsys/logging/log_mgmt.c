@@ -196,7 +196,7 @@ static uint16_t link_source_count(uint8_t domain_id)
 uint32_t log_src_cnt_get(uint32_t domain_id)
 {
 	if (z_log_is_local_domain(domain_id)) {
-		return log_const_source_id(__log_const_end);
+		return z_log_sources_count();
 	}
 
 	return link_source_count(domain_id);
@@ -242,7 +242,7 @@ const char *log_source_name_get(uint32_t domain_id, uint32_t source_id)
 {
 	if (z_log_is_local_domain(domain_id)) {
 		if (source_id < log_src_cnt_get(domain_id)) {
-			return __log_const_start[source_id].name;
+			return TYPE_SECTION_START(log_const)[source_id].name;
 		} else {
 			return NULL;
 		}
@@ -308,7 +308,7 @@ uint8_t log_compiled_level_get(uint8_t domain_id, uint32_t source_id)
 {
 	if (z_log_is_local_domain(domain_id)) {
 		if (source_id < log_src_cnt_get(domain_id)) {
-			return __log_const_start[source_id].level;
+			return TYPE_SECTION_START(log_const)[source_id].level;
 		} else {
 			return LOG_LEVEL_NONE;
 		}
@@ -330,7 +330,7 @@ int z_log_link_set_runtime_level(uint8_t domain_id, uint16_t source_id, uint8_t 
 static uint32_t *get_dynamic_filter(uint8_t domain_id, uint32_t source_id)
 {
 	if (z_log_is_local_domain(domain_id)) {
-		return &__log_dynamic_start[source_id].filters;
+		return &TYPE_SECTION_START(log_dynamic)[source_id].filters;
 	}
 
 	return z_log_link_get_dynamic_filter(domain_id, source_id);

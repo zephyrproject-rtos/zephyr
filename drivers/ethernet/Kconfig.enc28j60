@@ -12,6 +12,8 @@ menuconfig ETH_ENC28J60
 	  ENC28J60C Stand-Alone Ethernet Controller
 	  with SPI Interface
 
+if ETH_ENC28J60
+
 config ETH_ENC28J60_RX_THREAD_STACK_SIZE
 	int "Stack size for internal incoming packet handler"
 	depends on ETH_ENC28J60
@@ -37,18 +39,4 @@ config ETH_ENC28J60_TIMEOUT
 	  that the driver will wait from the IP stack to get
 	  a memory buffer before the Ethernet frame is dropped.
 
-config ETH_ENC28J60_0
-	bool "ENC28J60C Ethernet port 0"
-	depends on ETH_ENC28J60
-	help
-	  Include port 0 driver
-
-if ETH_ENC28J60 && ETH_ENC28J60_0
-config ETH_ENC28J60_0_FULL_DUPLEX
-	bool "ENC28J60 full duplex"
-	default y
-	help
-	  Enable Full Duplex. Device is configured half duplex
-	  when disabled.
-
-endif # ETH_ENC28J60 && ETH_ENC28J60_0
+endif # ETH_ENC28J60

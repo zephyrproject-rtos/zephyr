@@ -422,11 +422,12 @@ void ull_sync_iso_setup(struct ll_sync_iso_set *sync_iso,
 	lll->irc = bi->irc;
 	lll->sdu_interval = sys_le24_to_cpu(bi->sdu_interval);
 
+	/* Pick the 39-bit payload count, 1 MSb is framing bit */
 	lll->payload_count = (uint64_t)bi->payload_count_framing[0];
 	lll->payload_count |= (uint64_t)bi->payload_count_framing[1] << 8;
 	lll->payload_count |= (uint64_t)bi->payload_count_framing[2] << 16;
 	lll->payload_count |= (uint64_t)bi->payload_count_framing[3] << 24;
-	lll->payload_count |= (uint64_t)bi->payload_count_framing[4] << 32;
+	lll->payload_count |= (uint64_t)(bi->payload_count_framing[4] & 0x7f) << 32;
 
 	if (lll->enc && (bi_size == PDU_BIG_INFO_ENCRYPTED_SIZE)) {
 		const uint8_t BIG3[4]  = {0x33, 0x47, 0x49, 0x42};

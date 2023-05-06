@@ -27,7 +27,7 @@ tests:
     extra_configs:
       - CONFIG_USE_SEGGER_RTT=y
       - CONFIG_UART_RTT=y
-    platform_exclude: xmc45_relax_kit
+    platform_exclude: xmc45_relax_kit xmc47_relax_kit
     build_only: true
   drivers.uart.async_api.lpuart:
     filter: CONFIG_UART_CONSOLE and CONFIG_SERIAL_SUPPORT_ASYNC and CONFIG_UART_MCUX_LPUART

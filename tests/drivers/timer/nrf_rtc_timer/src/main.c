@@ -469,6 +469,7 @@ ZTEST(nrf_rtc_timer, test_next_cycle_timeouts)
 		if ((k_cycle_get_32() - start) > CYCLES_TO_WAIT) {
 			break;
 		}
+		Z_SPIN_DELAY(10);
 	}
 
 	zassert_equal(0, timeouts_left,
@@ -530,6 +531,7 @@ ZTEST(nrf_rtc_timer, test_tight_rescheduling)
 			while (!expired &&
 				(z_nrf_rtc_timer_read() - start) <
 					CYCLE_DIFF + 10) {
+				Z_SPIN_DELAY(10);
 			}
 			zassert_true(expired,
 				"Timeout expiration missed (d: %u us, i: %u)",

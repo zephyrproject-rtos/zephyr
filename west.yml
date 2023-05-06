@@ -80,7 +80,7 @@ manifest:
       groups:
         - hal
     - name: hal_infineon
-      revision: 15d8a4278611fb2dc6ca52108c36ec1f4caab14e
+      revision: 03d6f5563552022fb53f149640b127889fb3c01f
       path: modules/hal/infineon
       groups:
         - hal
@@ -90,7 +90,7 @@ manifest:
       groups:
         - hal
     - name: hal_nordic
-      revision: 140140ea047f441fe076d26f79eb54dc9a38bcb6
+      revision: a1c3e0fbaafda091139b8744becd4853ada2f747
       path: modules/hal/nordic
       groups:
         - hal
@@ -100,7 +100,7 @@ manifest:
       groups:
         - hal
     - name: hal_nxp
-      revision: f140206004294f55bacc9ce661d140af731c4cfc
+      revision: 69d57af9ae499c07dd2348e9d4cf4c9f781486c9
       path: modules/hal/nxp
       groups:
         - hal
@@ -136,7 +136,7 @@ manifest:
       groups:
         - hal
     - name: hal_stm32
-      revision: b8f135bac6347924c6719d645fd8082277616114
+      revision: c865374fc83d93416c0f380e6310368ff55d6ce2
       path: modules/hal/stm32
       groups:
         - hal
@@ -238,7 +238,7 @@ manifest:
       groups:
         - debug
     - name: trusted-firmware-m
-      revision: 0e25742e8023a0c823c825fbaf19ea265162cc56
+      revision: 8209cb2ed2bc9a768cc1d715c2059616192cc720
       path: modules/tee/tf-m/trusted-firmware-m
       groups:
         - tee

@@ -66,6 +66,7 @@ static struct gpio_callback	gpio_cb;
 
 static K_SEM_DEFINE(sem_initialised, 0, 1);
 static K_SEM_DEFINE(sem_request, 0, 1);
+static K_SEM_DEFINE(sem_done, 0, 1);
 static K_SEM_DEFINE(sem_busy, 1, 1);
 
 static K_KERNEL_STACK_DEFINE(spi_rx_stack, CONFIG_BT_DRV_RX_STACK_SIZE);
@@ -159,11 +160,27 @@ static inline uint16_t bt_spi_get_evt(uint8_t *rxmsg)
 	return (rxmsg[EVT_VENDOR_CODE_MSB] << 8) | rxmsg[EVT_VENDOR_CODE_LSB];
 }
 
-static void bt_spi_isr(const struct device *unused1,
+static void bt_to_inactive_isr(const struct device *unused1,
 		       struct gpio_callback *unused2,
 		       uint32_t unused3)
 {
 	LOG_DBG("");
+
+	/* Disable until RX thread re-enables */
+	gpio_pin_interrupt_configure_dt(&irq_gpio, GPIO_INT_DISABLE);
+
+	k_sem_give(&sem_done);
+}
+
+static void bt_to_active_isr(const struct device *unused1,
+		       struct gpio_callback *unused2,
+		       uint32_t unused3)
+{
+	LOG_DBG("");
+
+	/* Watch for the IRQ line to go inactive */
+	gpio_init_callback(&gpio_cb, bt_to_inactive_isr, BIT(irq_gpio.pin));
+	gpio_pin_interrupt_configure_dt(&irq_gpio, GPIO_INT_LEVEL_INACTIVE);
 
 	k_sem_give(&sem_request);
 }
@@ -287,10 +304,14 @@ static void bt_spi_rx_thread(void)
 	(void)memset(&txmsg, 0xFF, SPI_MAX_MSG_LEN);
 
 	while (true) {
-		k_sem_take(&sem_request, K_FOREVER);
-		/* Disable IRQ pin callback to avoid spurious IRQs */
+		/* Enable the interrupt line */
+		gpio_init_callback(&gpio_cb, bt_to_active_isr, BIT(irq_gpio.pin));
+		gpio_pin_interrupt_configure_dt(&irq_gpio, GPIO_INT_LEVEL_ACTIVE);
 
-		gpio_pin_interrupt_configure_dt(&irq_gpio, GPIO_INT_DISABLE);
+		/* Wait for interrupt pin to be active */
+		k_sem_take(&sem_request, K_FOREVER);
+
+		/* Wait for SPI bus to be available */
 		k_sem_take(&sem_busy, K_FOREVER);
 
 		LOG_DBG("");
@@ -314,8 +335,6 @@ static void bt_spi_rx_thread(void)
 			}
 
 			release_cs();
-			gpio_pin_interrupt_configure_dt(
-				&irq_gpio, GPIO_INT_EDGE_TO_ACTIVE);
 
 			k_sem_give(&sem_busy);
 
@@ -383,6 +402,9 @@ static void bt_spi_rx_thread(void)
 		/* On BlueNRG-MS, host is expected to read */
 		/* as long as IRQ pin is high */
 		} while (irq_pin_high());
+
+		/* Wait for IRQ to have de-asserted */
+		k_sem_take(&sem_done, K_FOREVER);
 	}
 }
 
@@ -482,13 +504,16 @@ static int bt_spi_open(void)
 	/* Configure IRQ pin and the IRQ call-back/handler */
 	gpio_pin_configure_dt(&irq_gpio, GPIO_INPUT);
 
-	gpio_init_callback(&gpio_cb, bt_spi_isr, BIT(irq_gpio.pin));
-
 	if (gpio_add_callback(irq_gpio.port, &gpio_cb)) {
 		return -EINVAL;
 	}
 
-	gpio_pin_interrupt_configure_dt(&irq_gpio, GPIO_INT_EDGE_TO_ACTIVE);
+	/* Take BLE out of reset */
+	k_sleep(K_MSEC(DT_INST_PROP_OR(0, reset_assert_duration_ms, 0)));
+	gpio_pin_set_dt(&rst_gpio, 0);
+
+	/* Give the controller some time to boot */
+	k_sleep(K_MSEC(1));
 
 	/* Start RX thread */
 	k_thread_create(&spi_rx_thread_data, spi_rx_stack,
@@ -496,10 +521,6 @@ static int bt_spi_open(void)
 			(k_thread_entry_t)bt_spi_rx_thread, NULL, NULL, NULL,
 			K_PRIO_COOP(CONFIG_BT_DRIVER_RX_HIGH_PRIO),
 			0, K_NO_WAIT);
-
-	/* Take BLE out of reset */
-	k_sleep(K_MSEC(DT_INST_PROP_OR(0, reset_assert_duration_ms, 0)));
-	gpio_pin_set_dt(&rst_gpio, 0);
 
 	/* Device will let us know when it's ready */
 	k_sem_take(&sem_initialised, K_FOREVER);

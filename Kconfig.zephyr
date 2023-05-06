@@ -317,6 +317,7 @@ config CODING_GUIDELINE_CHECK
 config NATIVE_APPLICATION
 	bool "Build as a native host application"
 	select FULL_LIBC_SUPPORTED
+	select FULL_LIBCPP_SUPPORTED if CPP
 	help
 	  Build as a native application that can run on the host and using
 	  resources and libraries provided by the host.
@@ -378,6 +379,14 @@ config COMPILER_SAVE_TEMPS
 	help
 	  Instruct the compiler to save the temporary intermediate files
 	  permanently. These can be useful for troubleshooting build issues.
+
+config COMPILER_TRACK_MACRO_EXPANSION
+	bool "Track macro expansion"
+	default y
+	help
+	  When enabled, locations of tokens across macro expansions will be
+	  tracked. Disabling this option may be useful to debug long macro
+	  expansion chains.
 
 config COMPILER_COLOR_DIAGNOSTICS
 	bool "Colored diagnostics"
