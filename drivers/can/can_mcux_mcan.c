@@ -58,6 +58,9 @@ static int mcux_mcan_init(const struct device *dev)
 {
 	const struct can_mcan_config *mcan_config = dev->config;
 	const struct mcux_mcan_config *mcux_config = mcan_config->custom;
+	struct can_mcan_data *mcan_data = dev->data;
+	struct mcux_mcan_data *mcux_data = mcan_data->custom;
+	const uintptr_t mrba = POINTER_TO_UINT(&mcux_data->msg_ram) & CAN_MCAN_MRBA_BA;
 	int err;
 
 	if (!device_is_ready(mcux_config->clock_dev)) {
@@ -74,6 +77,16 @@ static int mcux_mcan_init(const struct device *dev)
 	if (err) {
 		LOG_ERR("failed to enable clock (err %d)", err);
 		return -EINVAL;
+	}
+
+	err = can_mcan_write_reg(dev, CAN_MCAN_MRBA, (uint32_t)mrba);
+	if (err != 0) {
+		return -EIO;
+	}
+
+	err = can_mcan_configure_message_ram(dev, mrba);
+	if (err != 0) {
+		return -EIO;
 	}
 
 	err = can_mcan_init(dev);
