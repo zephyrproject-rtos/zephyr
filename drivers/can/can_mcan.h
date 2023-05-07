@@ -941,6 +941,31 @@ int can_mcan_read_reg(const struct device *dev, uint16_t reg, uint32_t *val);
  */
 int can_mcan_write_reg(const struct device *dev, uint16_t reg, uint32_t val);
 
+/**
+ * @brief Configure Bosch M_MCAN Message RAM start addresses.
+ *
+ * Bosch M_CAN driver front-end callback helper function for configuring the start addresses of the
+ * Bosch M_CAN Rx FIFO0 (RXFOC), Rx FIFO1 (RXF1C), Rx Buffer (RXBCC), Tx Buffer (TXBC), and Tx Event
+ * FIFO (TXEFC) in Message RAM.
+ *
+ * The start addresses (containing bits 15:2 since Bosch M_CAN message RAM is accessed as 32 bit
+ * words) are calculated relative to the provided Message RAM Base Address (mrba).
+ *
+ * Some Bosch M_CAN implementations use a fixed Message RAM configuration, other use a fixed memory
+ * area and relative addressing, others again have custom registers for configuring the Message
+ * RAM. It is the responsibility of the front-end driver to call this function during driver
+ * initialization as needed.
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ * @param mrba Message RAM Base Address.
+ *
+ * @retval 0 If successful.
+ * @retval -EIO General input/output error.
+ */
+#ifndef CONFIG_CAN_STM32FD
+int can_mcan_configure_message_ram(const struct device *dev, uintptr_t mrba);
+#endif /* !CONFIG_CAN_STM32FD */
+
 int can_mcan_get_capabilities(const struct device *dev, can_mode_t *cap);
 
 int can_mcan_start(const struct device *dev);

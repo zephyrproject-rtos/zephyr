@@ -1200,70 +1200,15 @@ unlock:
 	k_mutex_unlock(&data->lock);
 }
 
-int can_mcan_init(const struct device *dev)
+#ifndef CONFIG_CAN_STM32FD
+int can_mcan_configure_message_ram(const struct device *dev, uintptr_t mrba)
 {
-	const struct can_mcan_config *config = dev->config;
 	struct can_mcan_data *data = dev->data;
 	struct can_mcan_msg_sram *msg_ram = data->msg_ram;
-	struct can_timing timing;
-#ifdef CONFIG_CAN_FD_MODE
-	struct can_timing timing_data;
-#endif /* CONFIG_CAN_FD_MODE */
 	uint32_t reg;
 	int err;
 
-	k_mutex_init(&data->lock);
-	k_mutex_init(&data->tx_mtx);
-	k_sem_init(&data->tx_sem, NUM_TX_BUF_ELEMENTS, NUM_TX_BUF_ELEMENTS);
-
-	if (config->phy != NULL) {
-		if (!device_is_ready(config->phy)) {
-			LOG_ERR("CAN transceiver not ready");
-			return -ENODEV;
-		}
-	}
-
-	err = can_mcan_exit_sleep_mode(dev);
-	if (err != 0) {
-		LOG_ERR("Failed to exit sleep mode");
-		return -EIO;
-	}
-
-	err = can_mcan_enter_init_mode(dev, K_MSEC(CAN_INIT_TIMEOUT_MS));
-	if (err != 0) {
-		LOG_ERR("Failed to enter init mode");
-		return -EIO;
-	}
-
 	can_mcan_enable_configuration_change(dev);
-
-#if CONFIG_CAN_LOG_LEVEL >= LOG_LEVEL_DBG
-	err = can_mcan_read_reg(dev, CAN_MCAN_CREL, &reg);
-	if (err != 0) {
-		return -EIO;
-	}
-
-	LOG_DBG("IP rel: %lu.%lu.%lu %02lu.%lu.%lu", FIELD_GET(CAN_MCAN_CREL_REL, reg),
-		FIELD_GET(CAN_MCAN_CREL_STEP, reg), FIELD_GET(CAN_MCAN_CREL_SUBSTEP, reg),
-		FIELD_GET(CAN_MCAN_CREL_YEAR, reg), FIELD_GET(CAN_MCAN_CREL_MON, reg),
-		FIELD_GET(CAN_MCAN_CREL_DAY, reg));
-#endif /* CONFIG_CAN_LOG_LEVEL >= LOG_LEVEL_DBG */
-
-#ifndef CONFIG_CAN_STM32FD
-	uintptr_t mrba = 0U;
-
-#ifdef CONFIG_CAN_STM32H7
-	mrba = POINTER_TO_UINT(msg_ram);
-#endif /* CONFIG_CAN_STM32H7 */
-
-#ifdef CONFIG_CAN_MCUX_MCAN
-	mrba = POINTER_TO_UINT(msg_ram) & CAN_MCAN_MRBA_BA;
-
-	err = can_mcan_write_reg(dev, CAN_MCAN_MRBA, mrba);
-	if (err != 0) {
-		return -EIO;
-	}
-#endif /* CONFIG_CAN_MCUX_MCAN */
 
 	reg = ((POINTER_TO_UINT(msg_ram->std_filt) - mrba) & CAN_MCAN_SIDFC_FLSSA) |
 	      FIELD_PREP(CAN_MCAN_SIDFC_LSS, ARRAY_SIZE(msg_ram->std_filt));
@@ -1342,7 +1287,59 @@ int can_mcan_init(const struct device *dev)
 		return err;
 	}
 
+	return 0;
+}
 #endif /* !CONFIG_CAN_STM32FD */
+
+int can_mcan_init(const struct device *dev)
+{
+	const struct can_mcan_config *config = dev->config;
+	struct can_mcan_data *data = dev->data;
+	struct can_mcan_msg_sram *msg_ram = data->msg_ram;
+	struct can_timing timing;
+#ifdef CONFIG_CAN_FD_MODE
+	struct can_timing timing_data;
+#endif /* CONFIG_CAN_FD_MODE */
+	uint32_t reg;
+	int err;
+
+	k_mutex_init(&data->lock);
+	k_mutex_init(&data->tx_mtx);
+	k_sem_init(&data->tx_sem, NUM_TX_BUF_ELEMENTS, NUM_TX_BUF_ELEMENTS);
+
+	if (config->phy != NULL) {
+		if (!device_is_ready(config->phy)) {
+			LOG_ERR("CAN transceiver not ready");
+			return -ENODEV;
+		}
+	}
+
+	err = can_mcan_exit_sleep_mode(dev);
+	if (err != 0) {
+		LOG_ERR("Failed to exit sleep mode");
+		return -EIO;
+	}
+
+	err = can_mcan_enter_init_mode(dev, K_MSEC(CAN_INIT_TIMEOUT_MS));
+	if (err != 0) {
+		LOG_ERR("Failed to enter init mode");
+		return -EIO;
+	}
+
+	can_mcan_enable_configuration_change(dev);
+
+#if CONFIG_CAN_LOG_LEVEL >= LOG_LEVEL_DBG
+	err = can_mcan_read_reg(dev, CAN_MCAN_CREL, &reg);
+	if (err != 0) {
+		return -EIO;
+	}
+
+	LOG_DBG("IP rel: %lu.%lu.%lu %02lu.%lu.%lu", FIELD_GET(CAN_MCAN_CREL_REL, reg),
+		FIELD_GET(CAN_MCAN_CREL_STEP, reg), FIELD_GET(CAN_MCAN_CREL_SUBSTEP, reg),
+		FIELD_GET(CAN_MCAN_CREL_YEAR, reg), FIELD_GET(CAN_MCAN_CREL_MON, reg),
+		FIELD_GET(CAN_MCAN_CREL_DAY, reg));
+#endif /* CONFIG_CAN_LOG_LEVEL >= LOG_LEVEL_DBG */
+
 	err = can_mcan_read_reg(dev, CAN_MCAN_CCCR, &reg);
 	if (err != 0) {
 		return err;
@@ -1394,21 +1391,7 @@ int can_mcan_init(const struct device *dev)
 	}
 #endif /* defined(CONFIG_CAN_DELAY_COMP) && defined(CONFIG_CAN_FD_MODE) */
 
-#ifdef CONFIG_CAN_STM32FD
-	err = can_mcan_read_reg(dev, CAN_MCAN_RXGFC, &reg);
-	if (err != 0) {
-		return err;
-	}
-
-	reg |= FIELD_PREP(CAN_MCAN_RXGFC_LSS, CONFIG_CAN_MAX_STD_ID_FILTER) |
-	       FIELD_PREP(CAN_MCAN_RXGFC_LSE, CONFIG_CAN_MAX_EXT_ID_FILTER) |
-	       FIELD_PREP(CAN_MCAN_RXGFC_ANFS, 0x2) | FIELD_PREP(CAN_MCAN_RXGFC_ANFE, 0x2);
-
-	err = can_mcan_write_reg(dev, CAN_MCAN_RXGFC, reg);
-	if (err != 0) {
-		return err;
-	}
-#else  /* CONFIG_CAN_STM32FD*/
+#ifndef CONFIG_CAN_STM32FD
 	err = can_mcan_read_reg(dev, CAN_MCAN_GFC, &reg);
 	if (err != 0) {
 		return err;

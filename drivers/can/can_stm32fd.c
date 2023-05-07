@@ -112,6 +112,7 @@ static int can_stm32fd_init(const struct device *dev)
 {
 	const struct can_mcan_config *mcan_cfg = dev->config;
 	const struct can_stm32fd_config *stm32fd_cfg = mcan_cfg->custom;
+	uint32_t rxgfc;
 	int ret;
 
 	/* Configure dt provided device signals when available */
@@ -124,6 +125,23 @@ static int can_stm32fd_init(const struct device *dev)
 	ret = can_stm32fd_clock_enable(dev);
 	if (ret < 0) {
 		LOG_ERR("Could not turn on CAN clock (%d)", ret);
+		return ret;
+	}
+
+	can_mcan_enable_configuration_change(dev);
+
+	/* Setup STM32 FDCAN Global Filter Configuration Register */
+	ret = can_mcan_read_reg(dev, CAN_MCAN_RXGFC, &rxgfc);
+	if (ret != 0) {
+		return ret;
+	}
+
+	rxgfc |= FIELD_PREP(CAN_MCAN_RXGFC_LSS, CONFIG_CAN_MAX_STD_ID_FILTER) |
+		 FIELD_PREP(CAN_MCAN_RXGFC_LSE, CONFIG_CAN_MAX_EXT_ID_FILTER) |
+		 FIELD_PREP(CAN_MCAN_RXGFC_ANFS, 0x2) | FIELD_PREP(CAN_MCAN_RXGFC_ANFE, 0x2);
+
+	ret = can_mcan_write_reg(dev, CAN_MCAN_RXGFC, rxgfc);
+	if (ret != 0) {
 		return ret;
 	}
 

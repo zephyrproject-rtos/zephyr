@@ -80,6 +80,11 @@ static int can_sam_init(const struct device *dev)
 		return ret;
 	}
 
+	ret = can_mcan_configure_message_ram(dev, 0U);
+	if (ret != 0) {
+		return ret;
+	}
+
 	ret = can_mcan_init(dev);
 	if (ret != 0) {
 		return ret;
