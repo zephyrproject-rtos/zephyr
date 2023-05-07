@@ -1200,7 +1200,6 @@ unlock:
 	k_mutex_unlock(&data->lock);
 }
 
-#ifndef CONFIG_CAN_STM32FD
 int can_mcan_configure_message_ram(const struct device *dev, uintptr_t mrba)
 {
 	struct can_mcan_data *data = dev->data;
@@ -1289,7 +1288,6 @@ int can_mcan_configure_message_ram(const struct device *dev, uintptr_t mrba)
 
 	return 0;
 }
-#endif /* !CONFIG_CAN_STM32FD */
 
 int can_mcan_init(const struct device *dev)
 {
@@ -1391,7 +1389,6 @@ int can_mcan_init(const struct device *dev)
 	}
 #endif /* defined(CONFIG_CAN_DELAY_COMP) && defined(CONFIG_CAN_FD_MODE) */
 
-#ifndef CONFIG_CAN_STM32FD
 	err = can_mcan_read_reg(dev, CAN_MCAN_GFC, &reg);
 	if (err != 0) {
 		return err;
@@ -1403,7 +1400,6 @@ int can_mcan_init(const struct device *dev)
 	if (err != 0) {
 		return err;
 	}
-#endif /* !CONFIG_CAN_STM32FD */
 
 	if (config->sample_point) {
 		err = can_calc_timing(dev, &timing, config->bus_speed, config->sample_point);
@@ -1460,11 +1456,8 @@ int can_mcan_init(const struct device *dev)
 	if (err != 0) {
 		return err;
 	}
-#ifdef CONFIG_CAN_STM32FD
-	reg = CAN_MCAN_ILS_RXFIFO0 | CAN_MCAN_ILS_RXFIFO1;
-#else  /* CONFIG_CAN_STM32FD */
+
 	reg = CAN_MCAN_ILS_RF0NL | CAN_MCAN_ILS_RF1NL;
-#endif /* !CONFIG_CAN_STM32FD */
 	err = can_mcan_write_reg(dev, CAN_MCAN_ILS, reg);
 	if (err != 0) {
 		return err;
