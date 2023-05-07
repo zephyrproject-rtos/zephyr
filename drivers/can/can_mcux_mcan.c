@@ -17,6 +17,10 @@ LOG_MODULE_REGISTER(can_mcux_mcan, CONFIG_CAN_LOG_LEVEL);
 
 #define DT_DRV_COMPAT nxp_lpc_mcan
 
+/* Message RAM Base Address register */
+#define MCUX_MCAN_MRBA	 0x200
+#define MCUX_MCAN_MRBA_BA GENMASK(31, 16)
+
 struct mcux_mcan_config {
 	mm_reg_t base;
 	const struct device *clock_dev;
@@ -60,7 +64,7 @@ static int mcux_mcan_init(const struct device *dev)
 	const struct mcux_mcan_config *mcux_config = mcan_config->custom;
 	struct can_mcan_data *mcan_data = dev->data;
 	struct mcux_mcan_data *mcux_data = mcan_data->custom;
-	const uintptr_t mrba = POINTER_TO_UINT(&mcux_data->msg_ram) & CAN_MCAN_MRBA_BA;
+	const uintptr_t mrba = POINTER_TO_UINT(&mcux_data->msg_ram) & MCUX_MCAN_MRBA_BA;
 	int err;
 
 	if (!device_is_ready(mcux_config->clock_dev)) {
@@ -79,7 +83,7 @@ static int mcux_mcan_init(const struct device *dev)
 		return -EINVAL;
 	}
 
-	err = can_mcan_write_reg(dev, CAN_MCAN_MRBA, (uint32_t)mrba);
+	err = can_mcan_write_reg(dev, MCUX_MCAN_MRBA, (uint32_t)mrba);
 	if (err != 0) {
 		return -EIO;
 	}
