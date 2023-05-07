@@ -592,12 +592,6 @@
 #define CAN_MCAN_TXEFA_EFAI GENMASK(4, 0)
 #endif /* !CONFIG_CAN_STM32FD */
 
-/* Message RAM Base Address register */
-#ifdef CONFIG_CAN_MCUX_MCAN
-#define CAN_MCAN_MRBA	 0x200
-#define CAN_MCAN_MRBA_BA GENMASK(31, 16)
-#endif /* CONFIG_CAN_MCUX_MCAN */
-
 #ifdef CONFIG_CAN_MCUX_MCAN
 #define MCAN_DT_PATH DT_NODELABEL(can0)
 #else
