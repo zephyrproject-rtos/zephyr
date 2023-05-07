@@ -443,6 +443,21 @@ static void isr_rx(void *param)
 
 	/* No Rx */
 	if (!trx_done) {
+		/* FIXME: Consider Flush Timeout when resetting current burst number */
+		if (!has_tx) {
+			has_tx = 1U;
+
+			/* Adjust nesn when flushing Tx */
+			/* FIXME: When Flush Timeout is implemented */
+			if (bn_tx <= cis_lll->tx.bn) {
+				/* sn and nesn are 1-bit, only Least Significant bit is needed */
+				cis_lll->sn += cis_lll->tx.bn + 1U - bn_tx;
+			}
+
+			/* Start transmitting new burst */
+			bn_tx = 1U;
+		}
+
 		if (se_curr < cis_lll->nse) {
 			radio_isr_set(isr_prepare_subevent, param);
 		} else {
@@ -534,7 +549,7 @@ static void isr_rx(void *param)
 		    ull_iso_pdu_rx_alloc_peek(2U)) {
 			struct node_rx_iso_meta *iso_meta;
 
-			/* Increment next expected serial number */
+			/* Increment next expected sequence number */
 			cis_lll->nesn++;
 
 #if defined(CONFIG_BT_CTLR_LE_ENC)
@@ -618,19 +633,16 @@ static void isr_rx(void *param)
 	if (!has_tx) {
 		has_tx = 1U;
 
-		/* Adjust sn when flushing Tx. Stop at sn != nesn, hence
-		 * (bn < cis_lll->tx.bn).
-		 */
+		/* Adjust nesn when flushing Tx */
 		/* FIXME: When Flush Timeout is implemented */
-		if (bn_tx < cis_lll->tx.bn) {
+		if (bn_tx <= cis_lll->tx.bn) {
 			/* sn and nesn are 1-bit, only Least Significant bit is needed */
-			cis_lll->sn += cis_lll->tx.bn - bn_tx;
+			cis_lll->sn += cis_lll->tx.bn + 1U - bn_tx;
 		}
 
 		/* Start transmitting new burst */
 		bn_tx = 1U;
 	}
-
 
 	/* Close Isochronous Event */
 	cie = cie || ((bn_rx > cis_lll->rx.bn) &&

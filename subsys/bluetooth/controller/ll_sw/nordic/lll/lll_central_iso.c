@@ -760,7 +760,7 @@ static void isr_rx(void *param)
 		    ull_iso_pdu_rx_alloc_peek(2U)) {
 			struct node_rx_iso_meta *iso_meta;
 
-			/* Increment next expected serial number */
+			/* Increment next expected sequence number */
 			cis_lll->nesn++;
 
 #if defined(CONFIG_BT_CTLR_LE_ENC)
