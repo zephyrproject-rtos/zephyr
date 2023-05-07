@@ -93,6 +93,8 @@ static int can_stm32h7_init(const struct device *dev)
 {
 	const struct can_mcan_config *mcan_cfg = dev->config;
 	const struct can_stm32h7_config *stm32h7_cfg = mcan_cfg->custom;
+	struct can_mcan_data *mcan_data = dev->data;
+	const uintptr_t mrba = POINTER_TO_UINT(mcan_data->msg_ram);
 	int ret;
 
 	/* Configure dt provided device signals when available */
@@ -103,6 +105,11 @@ static int can_stm32h7_init(const struct device *dev)
 	}
 
 	ret = can_stm32h7_clock_enable(dev);
+	if (ret != 0) {
+		return ret;
+	}
+
+	ret = can_mcan_configure_message_ram(dev, mrba);
 	if (ret != 0) {
 		return ret;
 	}
