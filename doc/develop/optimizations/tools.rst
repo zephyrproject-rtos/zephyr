@@ -157,6 +157,17 @@ which will generate something similar to the output below::
     ...
 
 
+The depth of the report and the sort key (alphabetical or by size) can be
+configured. Arguments can also be passed to the report as shown below:
+
+.. zephyr-app-commands::
+    :tool: all
+    :app: samples/hello_world
+    :board: reel_board
+    :goals: rom_report
+    :gen-args: -Dreport_depth=4 -Dsort_key=size
+
+
 Data Structures
 ****************
 

@@ -670,7 +670,10 @@ def node_sort(items):
     """
     Node sorting used with RenderTree.
     """
-    return sorted(items, key=lambda item: item.name)
+    if args.sortkey == 'name':
+        return sorted(items, key=lambda item: item.name)
+    elif args.sortkey == 'size':
+        return sorted(items, key=lambda item: item.size, reverse=True)
 
 
 def print_any_tree(root, total_size, depth):
@@ -722,6 +725,9 @@ def parse_args():
                         type=int, default=None,
                         help="How deep should we go into the tree",
                         metavar="DEPTH")
+    parser.add_argument("-s", '--sortkey', choices=['name', 'size'],
+                        dest='sortkey', type=str, default="name",
+                        help="Key for display sorting")
     parser.add_argument("-v", "--verbose", action="store_true",
                         help="Print extra debugging information")
     parser.add_argument("--json", help="store results in a JSON file.")

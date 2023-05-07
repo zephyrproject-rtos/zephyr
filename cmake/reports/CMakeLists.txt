@@ -3,7 +3,11 @@
 set(flag_for_ram_report ram)
 set(flag_for_rom_report rom)
 set(flag_for_footprint all -q)
-set(report_depth 99)
+
+set(report_depth 99 CACHE STRING "Depth of tree to display")
+set(sort_key "name" CACHE STRING "Sort key for results display (name or size)")
+set_property(CACHE sort_key PROPERTY STRINGS "name" "size")
+
 
 if(DEFINED ZEPHYR_WORKSPACE)
   set(workspace_arg "--workspace=${ZEPHYR_WORKSPACE}")
@@ -40,6 +44,7 @@ if (CONFIG_BUILD_WITH_TFM)
       -o ${CMAKE_BINARY_DIR}
       ${workspace_arg}
       -d ${report_depth}
+      -s ${sort_key}
       ${flag_for_${report}}
       DEPENDS tfm
       USES_TERMINAL
