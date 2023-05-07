@@ -148,23 +148,50 @@ static void handle_wifi_disconnect_result(struct net_mgmt_event_callback *cb)
 	}
 }
 
+static void print_twt_params(uint8_t dialog_token, uint8_t flow_id,
+			     enum wifi_twt_negotiation_type negotiation_type,
+			     bool responder, bool implicit, bool announce,
+			     bool trigger, uint32_t twt_wake_interval,
+			     uint64_t twt_interval)
+{
+	shell_fprintf(context.sh, SHELL_NORMAL, "TWT Dialog token: %d\n",
+		      dialog_token);
+	shell_fprintf(context.sh, SHELL_NORMAL, "TWT flow ID: %d\n",
+		      flow_id);
+	shell_fprintf(context.sh, SHELL_NORMAL, "TWT negotiation type: %s\n",
+		      wifi_twt_negotiation_type2str[negotiation_type]);
+	shell_fprintf(context.sh, SHELL_NORMAL, "TWT responder: %s\n",
+		      responder ? "true" : "false");
+	shell_fprintf(context.sh, SHELL_NORMAL, "TWT implicit: %s\n",
+		      implicit ? "true" : "false");
+	shell_fprintf(context.sh, SHELL_NORMAL, "TWT announce: %s\n",
+		      announce ? "true" : "false");
+	shell_fprintf(context.sh, SHELL_NORMAL, "TWT trigger: %s\n",
+		      trigger ? "true" : "false");
+	shell_fprintf(context.sh, SHELL_NORMAL, "TWT wake interval: %d us\n",
+		      twt_wake_interval);
+	shell_fprintf(context.sh, SHELL_NORMAL, "TWT interval: %lld us\n",
+		      twt_interval);
+	shell_fprintf(context.sh, SHELL_NORMAL, "========================\n");
+}
+
 static void handle_wifi_twt_event(struct net_mgmt_event_callback *cb)
 {
 	const struct wifi_twt_params *resp =
 		(const struct wifi_twt_params *)cb->info;
 
 	if (resp->resp_status == WIFI_TWT_RESP_RECEIVED) {
-		print(context.sh, SHELL_NORMAL, "TWT response: %s for dialog: %d and flow: %d\n",
-		      wifi_twt_setup_cmd2str[resp->setup_cmd], resp->dialog_token, resp->flow_id);
-
-		/* If accepted, then no need to print TWT params */
-		if (resp->setup_cmd != WIFI_TWT_SETUP_CMD_ACCEPT) {
-			print(context.sh, SHELL_NORMAL,
-			      "TWT parameters: trigger: %s wake_interval: %d us, interval: %lld us\n",
-			      resp->setup.trigger ? "trigger" : "no_trigger",
-			      resp->setup.twt_wake_interval,
-			      resp->setup.twt_interval);
-		}
+		print(context.sh, SHELL_NORMAL, "TWT response: %s\n",
+		      wifi_twt_setup_cmd2str[resp->setup_cmd]);
+		print_twt_params(resp->dialog_token,
+				 resp->flow_id,
+				 resp->negotiation_type,
+				 resp->setup.responder,
+				 resp->setup.implicit,
+				 resp->setup.announce,
+				 resp->setup.trigger,
+				 resp->setup.twt_wake_interval,
+				 resp->setup.twt_interval);
 	} else {
 		print(context.sh, SHELL_NORMAL, "TWT response timed out\n");
 	}
@@ -465,26 +492,16 @@ static int cmd_wifi_ps(const struct shell *sh, size_t argc, char *argv[])
 			shell_fprintf(sh, SHELL_NORMAL, "No TWT flows\n");
 		} else {
 			for (int i = 0; i < config.num_twt_flows; i++) {
-				shell_fprintf(sh, SHELL_NORMAL, "TWT Dialog token: %d\n",
-					config.twt_flows[i].dialog_token);
-				shell_fprintf(sh, SHELL_NORMAL, "TWT flow ID: %d\n",
-					config.twt_flows[i].flow_id);
-				shell_fprintf(sh, SHELL_NORMAL, "TWT negotiation type: %s\n",
-					wifi_twt_negotiation_type2str[
-					config.twt_flows[i].negotiation_type]);
-				shell_fprintf(sh, SHELL_NORMAL, "TWT responder: %s\n",
-					config.twt_flows[i].responder ? "true" : "false");
-				shell_fprintf(sh, SHELL_NORMAL, "TWT implicit: %s\n",
-					config.twt_flows[i].implicit ? "true" : "false");
-				shell_fprintf(sh, SHELL_NORMAL, "TWT trigger: %s\n",
-					config.twt_flows[i].trigger ? "true" : "false");
-				shell_fprintf(sh, SHELL_NORMAL, "TWT announce: %s\n",
-					config.twt_flows[i].announce ? "true" : "false");
-				shell_fprintf(sh, SHELL_NORMAL, "TWT wake interval: %d us\n",
-					config.twt_flows[i].twt_wake_interval);
-				shell_fprintf(sh, SHELL_NORMAL, "TWT interval: %lld us\n",
+				print_twt_params(
+					config.twt_flows[i].dialog_token,
+					config.twt_flows[i].flow_id,
+					config.twt_flows[i].negotiation_type,
+					config.twt_flows[i].responder,
+					config.twt_flows[i].implicit,
+					config.twt_flows[i].announce,
+					config.twt_flows[i].trigger,
+					config.twt_flows[i].twt_wake_interval,
 					config.twt_flows[i].twt_interval);
-				shell_fprintf(sh, SHELL_NORMAL, "========================\n");
 			}
 		}
 		return 0;
