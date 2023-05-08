@@ -14,7 +14,9 @@ tests:
     depends_on: usb_device
     tags: usb
     extra_args: CONF_FILE="usbd_next_prj.conf"
-    platform_allow: nrf52840dk_nrf52840 frdm_k64f
+    platform_allow:
+      - nrf52840dk_nrf52840
+      - frdm_k64f
     harness: console
     harness_config:
       type: one_line

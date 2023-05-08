@@ -6,4 +6,6 @@ tests:
     harness: spi
     platform_allow: mec172xevb_assy6906
     tags: spi
-    depends_on: spi gpio
+    depends_on:
+      - spi
+      - gpio

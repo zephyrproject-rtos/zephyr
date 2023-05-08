@@ -4,4 +4,6 @@ common:
 
 tests:
   logging.log_custom_header:
-    tags: log_custom_header logging
+    tags:
+      - log_custom_header
+      - logging

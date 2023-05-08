@@ -1,4 +1,6 @@
 tests:
   kernel.cache.api:
-    tags: kernel cache
+    tags:
+      - kernel
+      - cache
     filter: CONFIG_CACHE_MANAGEMENT

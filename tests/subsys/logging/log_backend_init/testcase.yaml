@@ -2,5 +2,7 @@ tests:
   logging.log_backend_initialization:
     integration_platforms:
       - native_posix
-    tags: log_core logging
+    tags:
+      - log_core
+      - logging
     filter: not CONFIG_LOG_MODE_IMMEDIATE

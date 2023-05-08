@@ -1,7 +1,10 @@
 common:
   min_flash: 65
   min_ram: 36
-  tags: crypto mbedtls userspace
+  tags:
+    - crypto
+    - mbedtls
+    - userspace
   timeout: 400
 tests:
   crypto.mbedtls:

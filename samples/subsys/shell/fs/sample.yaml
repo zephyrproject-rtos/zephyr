@@ -3,14 +3,21 @@ sample:
   name: FS shell
 tests:
   sample.filesystem.shell:
-    tags: shell filesystem
+    tags:
+      - shell
+      - filesystem
     harness: keyboard
-    platform_allow: reel_board mimxrt1060_evk
+    platform_allow:
+      - reel_board
+      - mimxrt1060_evk
     integration_platforms:
       - reel_board
 
   sample.filesystem.shell.flash_load:
-    tags: shell filesystem flash_load
+    tags:
+      - shell
+      - filesystem
+      - flash_load
     harness: keyboard
     platform_allow: nrf52dk_nrf52832
     extra_args: CONF_FILE=prj_flash_load.conf

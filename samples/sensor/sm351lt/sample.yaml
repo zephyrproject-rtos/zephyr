@@ -3,5 +3,9 @@ sample:
 tests:
   sample.sensor.sm351lt:
     harness: sensor
-    tags: samples sensor
-    depends_on: gpio sm351lt
+    tags:
+      - samples
+      - sensor
+    depends_on:
+      - gpio
+      - sm351lt

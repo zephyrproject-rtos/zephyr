@@ -2,7 +2,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
 common:
-  tags: drivers bbram
+  tags:
+    - drivers
+    - bbram
   build_only: true
   harness: ztest
   platform_exclude: native_posix

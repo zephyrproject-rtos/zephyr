@@ -1,7 +1,9 @@
 tests:
   system.mutex:
     filter: CONFIG_ARCH_HAS_USERSPACE
-    tags: kernel userspace
+    tags:
+      - kernel
+      - userspace
     testcases:
       - mutex
       - user_access

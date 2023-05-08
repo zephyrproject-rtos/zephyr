@@ -1,6 +1,8 @@
 common:
   arch_exclude: posix
-  tags: posix eventfd
+  tags:
+    - posix
+    - eventfd
 tests:
   portability.posix.eventfd:
     min_ram: 32

@@ -1,6 +1,5 @@
 sample:
-  description: A simple application that demonstrate
-    use of logging feature.
+  description: A simple application that demonstrate use of logging feature.
   name: logger sample
 tests:
   sample.logger.basic:
@@ -31,7 +30,9 @@ tests:
   sample.logger.usermode:
     integration_platforms:
       - mps2_an385
-    tags: logging usermode
+    tags:
+      - logging
+      - usermode
     filter: CONFIG_ARCH_HAS_USERSPACE
     harness: keyboard
     extra_configs:

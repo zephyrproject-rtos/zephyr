@@ -1,5 +1,8 @@
 common:
-  tags: net socket userspace
+  tags:
+    - net
+    - socket
+    - userspace
   depends_on: netif
   min_ram: 21
 tests:

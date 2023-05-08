@@ -10,11 +10,14 @@ tests:
       - native_posix
   sample.shell.shell_module.usb:
     depends_on: usb_device
-    tags: shell usb
+    tags:
+      - shell
+      - usb
     harness: keyboard
     min_ram: 40
-    extra_args: OVERLAY_CONFIG="overlay-usb.conf"
-                DTC_OVERLAY_FILE="usb.overlay"
+    extra_args:
+      - OVERLAY_CONFIG="overlay-usb.conf"
+      - DTC_OVERLAY_FILE="usb.overlay"
     integration_platforms:
       - native_posix
   sample.shell.shell_module.minimal:

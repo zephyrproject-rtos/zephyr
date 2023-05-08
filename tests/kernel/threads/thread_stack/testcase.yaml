@@ -1,6 +1,9 @@
 tests:
   kernel.threads.thread_stack:
-    tags: kernel security userspace
+    tags:
+      - kernel
+      - security
+      - userspace
     ignore_faults: true
     min_ram: 16
   kernel.threads.armv8m_mpu_stack_guard:
@@ -8,5 +11,8 @@ tests:
     extra_args: CONF_FILE=prj_armv8m_mpu_stack_guard.conf
     filter: CONFIG_ARM_MPU and CONFIG_ARMV8_M_MAINLINE
     arch_allow: arm
-    tags: kernel security userspace
+    tags:
+      - kernel
+      - security
+      - userspace
     ignore_faults: true

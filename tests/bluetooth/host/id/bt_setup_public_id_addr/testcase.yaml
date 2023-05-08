@@ -1,5 +1,7 @@
 common:
-  tags: bluetooth host
+  tags:
+    - bluetooth
+    - host
 tests:
   bluetooth.host.bt_setup_public_id_addr.default:
     type: unit

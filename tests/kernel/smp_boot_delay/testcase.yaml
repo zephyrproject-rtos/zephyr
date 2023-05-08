@@ -1,6 +1,8 @@
 tests:
   kernel.multiprocessing.smp_boot_delay:
-    tags: kernel smp
+    tags:
+      - kernel
+      - smp
     platform_allow: intel_adsp_cavs25
     integration_platforms:
       - intel_adsp_cavs25

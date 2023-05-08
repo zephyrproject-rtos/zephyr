@@ -1,5 +1,7 @@
 common:
-  tags: bluetooth host
+  tags:
+    - bluetooth
+    - host
 tests:
   bluetooth.host.bt_id_scan_random_addr_check.default:
     type: unit

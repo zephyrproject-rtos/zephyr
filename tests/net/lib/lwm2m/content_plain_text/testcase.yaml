@@ -3,4 +3,6 @@ common:
 tests:
   net.lwm2m.content_plain_text:
     filter: TOOLCHAIN_HAS_NEWLIB == 1
-    tags: lwm2m net
+    tags:
+      - lwm2m
+      - net

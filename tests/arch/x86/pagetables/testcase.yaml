@@ -1,5 +1,7 @@
 tests:
   arch.x86.pagetables:
     arch_allow: x86
-    tags: userspace mmu
+    tags:
+      - userspace
+      - mmu
     filter: CONFIG_MMU

@@ -2,7 +2,9 @@ tests:
   sample.kernel.cond_var.simple:
     integration_platforms:
       - native_posix
-    tags: kernel condition_variables
+    tags:
+      - kernel
+      - condition_variables
     harness: console
     harness_config:
       type: one_line

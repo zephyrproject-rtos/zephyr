@@ -3,7 +3,10 @@ sample:
   name: wpanusb
 common:
   depends_on: usb_device
-  tags: net ieee802154 usb
+  tags:
+    - net
+    - ieee802154
+    - usb
   harness: net
   platform_exclude: pinnacle_100_dvk
 tests:

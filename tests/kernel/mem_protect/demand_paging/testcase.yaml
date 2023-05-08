@@ -2,12 +2,18 @@ common:
   ignore_faults: true
 tests:
   kernel.demand_paging:
-    tags: kernel mmu demand_paging
+    tags:
+      - kernel
+      - mmu
+      - demand_paging
     filter: CONFIG_DEMAND_PAGING
     extra_configs:
       - CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE=0
   kernel.demand_paging.timing_funcs:
-    tags: kernel mmu demand_paging
+    tags:
+      - kernel
+      - mmu
+      - demand_paging
     platform_allow: qemu_x86_tiny
     filter: CONFIG_DEMAND_PAGING
     extra_configs:

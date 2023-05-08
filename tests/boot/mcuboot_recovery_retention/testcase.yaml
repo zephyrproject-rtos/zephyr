@@ -23,10 +23,16 @@ common:
 tests:
   mcuboot.recovery.retention:
     platform_allow: nrf52840dk_nrf52840
-    tags: mcuboot sysbuild recovery
+    tags:
+      - mcuboot
+      - sysbuild
+      - recovery
   mcuboot.recovery.retention.mem:
     platform_allow: nrf52840dk_nrf52840
-    extra_args: |
-        'OVERLAY_CONFIG="nrf52840dk_nrf52840_mem.conf"'
-        'DTC_OVERLAY_FILE="boards/nrf52840dk_nrf52840_mem.overlay"'
-    tags: mcuboot sysbuild recovery
+    extra_args:
+      - "'OVERLAY_CONFIG=\"nrf52840dk_nrf52840_mem.conf\"'"
+      - "'DTC_OVERLAY_FILE=\"boards/nrf52840dk_nrf52840_mem.overlay\"'"
+    tags:
+      - mcuboot
+      - sysbuild
+      - recovery

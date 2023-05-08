@@ -1,8 +1,14 @@
 common:
-  tags: logging mipi-sys-t
+  tags:
+    - logging
+    - mipi-sys-t
   modules:
     - mipi-sys-t
-  arch_exclude: mips nios2 posix sparc
+  arch_exclude:
+    - mips
+    - nios2
+    - posix
+    - sparc
   filter: not CONFIG_64BIT
 tests:
   logging.log_switch_format.deferred:

@@ -14,7 +14,9 @@ tests:
   testing.ztest.base.verbose_0_userspace:
     filter: CONFIG_USERSPACE
     extra_args: CONF_FILE=prj_verbose_0.conf
-    tags: test_framework userspace
+    tags:
+      - test_framework
+      - userspace
     extra_configs:
       - CONFIG_TEST_USERSPACE=y
     integration_platforms:
