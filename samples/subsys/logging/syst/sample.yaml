@@ -1,10 +1,16 @@
 sample:
   name: syst sample
 common:
-  tags: logging mipi-sys-t
+  tags:
+    - logging
+    - mipi-sys-t
   modules:
     - mipi-sys-t
-  arch_exclude: mips nios2 posix sparc
+  arch_exclude:
+    - mips
+    - nios2
+    - posix
+    - sparc
 tests:
   sample.logger.syst.deferred:
     toolchain_exclude: xcc

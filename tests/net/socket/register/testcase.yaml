@@ -1,6 +1,9 @@
 common:
   depends_on: netif
-  tags: net socket socket.register
+  tags:
+    - net
+    - socket
+    - socket.register
 tests:
   net.socket.register:
     extra_configs:

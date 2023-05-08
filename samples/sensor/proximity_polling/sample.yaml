@@ -3,7 +3,9 @@ sample:
 tests:
   sample.sensor.proximity_polling:
     harness: sensor
-    tags: sensors proximity
+    tags:
+      - sensors
+      - proximity
     filter: dt_alias_exists("prox-sensor0")
     integration_platforms:
       - "reel_board_v2" # PHYTEC reel board v2

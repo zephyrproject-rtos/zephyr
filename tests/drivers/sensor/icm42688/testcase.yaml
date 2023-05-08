@@ -3,5 +3,8 @@
 
 tests:
   drivers.sensor.icm42688:
-    tags: drivers sensor subsys
+    tags:
+      - drivers
+      - sensor
+      - subsys
     platform_allow: native_posix

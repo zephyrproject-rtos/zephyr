@@ -1,6 +1,8 @@
 tests:
   kernel.multiprocessing.smp:
-    tags: kernel smp
+    tags:
+      - kernel
+      - smp
     ignore_faults: true
     filter: (CONFIG_MP_MAX_NUM_CPUS > 1)
   kernel.multiprocessing.smp.linker_generator:

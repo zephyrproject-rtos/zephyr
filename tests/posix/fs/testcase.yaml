@@ -1,6 +1,10 @@
 common:
-  arch_exclude: nios2 posix
-  tags: posix filesystem
+  arch_exclude:
+    - nios2
+    - posix
+  tags:
+    - posix
+    - filesystem
   min_ram: 128
   modules:
     - fatfs

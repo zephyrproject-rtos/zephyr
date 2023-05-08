@@ -1,6 +1,8 @@
 common:
-  tags: kernel workqueue
+  tags:
 
+    - kernel
+    - workqueue
 tests:
   kernel.workqueue.critical:
     platform_exclude: nsim_sem_mpu_stack_guard

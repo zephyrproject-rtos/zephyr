@@ -2,7 +2,9 @@ common:
   platform_type:
     - qemu
     - native
-  tags: log_api logging
+  tags:
+    - log_api
+    - logging
   integration_platforms:
     - native_posix
   filter: not CONFIG_LOG_ALWAYS_RUNTIME

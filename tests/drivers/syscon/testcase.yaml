@@ -3,6 +3,8 @@
 
 tests:
   drivers.syscon:
-    tags: drivers syscon
+    tags:
+      - drivers
+      - syscon
     harness: ztest
     platform_allow: qemu_cortex_a53

@@ -6,4 +6,7 @@
 tests:
   mgmt.mcumgr.smp.reassembly:
     platform_allow: native_posix
-    tags: smp_reassembly mgmt mcumgr
+    tags:
+      - smp_reassembly
+      - mgmt
+      - mcumgr

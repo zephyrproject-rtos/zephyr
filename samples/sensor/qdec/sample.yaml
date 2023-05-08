@@ -17,7 +17,9 @@ tests:
     harness_config:
       fixture: fixture_mech_encoder
   sample.sensor.nrf_qdec_sensor:
-    platform_allow: nrf52840dk_nrf52840 nrf5340dk_nrf5340_cpuapp
+    platform_allow:
+      - nrf52840dk_nrf52840
+      - nrf5340dk_nrf5340_cpuapp
     integration_platforms:
       - nrf52840dk_nrf52840
       - nrf5340dk_nrf5340_cpuapp

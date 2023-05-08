@@ -1,5 +1,8 @@
 common:
-  tags: kernel interrupt isr_table
+  tags:
+    - kernel
+    - interrupt
+    - isr_table
 tests:
   arch.interrupt.gen_isr_table.arm_baseline:
     platform_allow: qemu_cortex_m3
@@ -15,9 +18,18 @@ tests:
       - CONFIG_CMAKE_LINKER_GENERATOR=y
   arch.interrupt.gen_isr_table.arm_mainline:
     platform_allow: qemu_cortex_m3
-    platform_exclude: stmf103_mini nucleo_f103rb olimexino_stm32 stm32_min_dev_black
-        stm32_min_dev_blue usb_kw24d512 v2m_beetle cc1352r1_launchxl
-        cc26x2r1_launchxl olimex_stm32_h103 cc1352r_sensortag
+    platform_exclude:
+      - stmf103_mini
+      - nucleo_f103rb
+      - olimexino_stm32
+      - stm32_min_dev_black
+      - stm32_min_dev_blue
+      - usb_kw24d512
+      - v2m_beetle
+      - cc1352r1_launchxl
+      - cc26x2r1_launchxl
+      - olimex_stm32_h103
+      - cc1352r_sensortag
     filter: CONFIG_GEN_ISR_TABLES and CONFIG_ARMV7_M_ARMV8_M_MAINLINE
     extra_configs:
       - CONFIG_NULL_POINTER_EXCEPTION_DETECTION_NONE=y

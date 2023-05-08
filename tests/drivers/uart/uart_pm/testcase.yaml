@@ -1,5 +1,7 @@
 common:
-  tags: drivers uart
+  tags:
+    - drivers
+    - uart
   harness: ztest
   platform_allow: nrf52840dk_nrf52840
   harness_config:
