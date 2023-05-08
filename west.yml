@@ -210,11 +210,13 @@ manifest:
       path: modules/debug/TraceRecorder
       groups:
         - debug
-    - name: trusted-firmware-m
-      path: modules/tee/tfm
-      revision: c74be3890c9d975976fde1b1a3b2f5742bec34c0
-      groups:
-        - tee
+    # TF-M is not compatible with mbedTLS 2.28. For more context:
+    # https://github.com/zephyrproject-rtos/zephyr/pull/54084
+    #- name: trusted-firmware-m
+    #  path: modules/tee/tfm
+    #  revision: c74be3890c9d975976fde1b1a3b2f5742bec34c0
+    #  groups:
+    #    - tee
 
   self:
     path: zephyr
