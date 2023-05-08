@@ -185,6 +185,7 @@ config OPENTHREAD_MESSAGE_USE_HEAP
 
 config OPENTHREAD_MLE_LONG_ROUTES
 	bool "MLE long routes extension (experimental)"
+	select EXPERIMENTAL
 	help
 	  Enable MLE long routes extension (experimental, breaks Thread conformance)
 
