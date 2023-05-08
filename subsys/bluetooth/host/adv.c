@@ -2205,8 +2205,7 @@ void bt_hci_le_adv_set_terminated(struct net_buf *buf)
 			    !atomic_test_bit(adv->flags, BT_ADV_USE_IDENTITY)) {
 				/* Set Responder address unless already set */
 				conn->le.resp_addr.type = BT_ADDR_LE_RANDOM;
-				if (bt_addr_cmp(&conn->le.resp_addr.a,
-						BT_ADDR_ANY) == 0) {
+				if (bt_addr_eq(&conn->le.resp_addr.a, BT_ADDR_ANY)) {
 					bt_addr_copy(&conn->le.resp_addr.a,
 						     &adv->random_addr.a);
 				}

@@ -128,7 +128,7 @@ static int set_random_address(const bt_addr_t *addr)
 	LOG_DBG("%s", bt_addr_str(addr));
 
 	/* Do nothing if we already have the right address */
-	if (!bt_addr_cmp(addr, &bt_dev.random_addr.a)) {
+	if (bt_addr_eq(addr, &bt_dev.random_addr.a)) {
 		return 0;
 	}
 
@@ -1434,8 +1434,8 @@ uint8_t bt_id_read_public_addr(bt_addr_le_t *addr)
 
 	rp = (void *)rsp->data;
 
-	if (!bt_addr_cmp(&rp->bdaddr, BT_ADDR_ANY) ||
-	    !bt_addr_cmp(&rp->bdaddr, BT_ADDR_NONE)) {
+	if (bt_addr_eq(&rp->bdaddr, BT_ADDR_ANY) ||
+	    bt_addr_eq(&rp->bdaddr, BT_ADDR_NONE)) {
 		LOG_DBG("Controller has no public address");
 		net_buf_unref(rsp);
 		return 0U;
