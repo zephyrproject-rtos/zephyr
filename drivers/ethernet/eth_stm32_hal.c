@@ -1234,8 +1234,10 @@ static int eth_initialize(const struct device *dev)
 	ETH_MACConfigTypeDef mac_config;
 
 	HAL_ETH_GetMACConfig(heth, &mac_config);
-	mac_config.DuplexMode = ETH_FULLDUPLEX_MODE;
-	mac_config.Speed = ETH_SPEED_100M;
+	mac_config.DuplexMode = IS_ENABLED(CONFIG_ETH_STM32_MODE_HALFDUPLEX) ?
+				      ETH_HALFDUPLEX_MODE : ETH_FULLDUPLEX_MODE;
+	mac_config.Speed = IS_ENABLED(CONFIG_ETH_STM32_SPEED_10M) ?
+				 ETH_SPEED_10M : ETH_SPEED_100M;
 	hal_ret = HAL_ETH_SetMACConfig(heth, &mac_config);
 	if (hal_ret != HAL_OK) {
 		LOG_ERR("HAL_ETH_SetMACConfig: failed: %d", hal_ret);
