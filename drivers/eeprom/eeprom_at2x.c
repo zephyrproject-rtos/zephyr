@@ -680,13 +680,16 @@ static const struct eeprom_driver_api eeprom_at2x_api = {
 
 #define INST_DT_AT2X(inst, t) DT_INST(inst, atmel_at##t)
 
-#define EEPROM_AT24_BUS(n, t) \
-	{ .i2c = I2C_DT_SPEC_GET(INST_DT_AT2X(n, t)) }
+#define EEPROM_AT24_BUS(node_id)					\
+	IF_ENABLED(DT_ON_BUS(node_id, i2c),				\
+		   ({ .i2c = I2C_DT_SPEC_GET(node_id) },))		\
+	IF_ENABLED(DT_ON_BUS(node_id, smbus),				\
+		   ({ .smbus = SMBUS_DT_SPEC_GET(node_id) },))
 
-#define EEPROM_AT25_BUS(n, t)						 \
-	{ .spi = SPI_DT_SPEC_GET(INST_DT_AT2X(n, t),			 \
+#define EEPROM_AT25_BUS(node_id)					 \
+	{ .spi = SPI_DT_SPEC_GET(node_id,				 \
 				 SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | \
-				 SPI_WORD_SET(8), 0) }
+				 SPI_WORD_SET(8), 0) },
 
 #define EEPROM_AT2X_WP_GPIOS(id)					\
 	IF_ENABLED(DT_NODE_HAS_PROP(id, wp_gpios),			\
@@ -707,7 +710,7 @@ static const struct eeprom_driver_api eeprom_at2x_api = {
 	ASSERT_AT##t##_ADDR_W_VALID(DT_PROP(INST_DT_AT2X(n, t), \
 					    address_width)); \
 	static const struct eeprom_at2x_config eeprom_at##t##_config_##n = { \
-		.bus = EEPROM_AT##t##_BUS(n, t), \
+		.bus = EEPROM_AT##t##_BUS(INST_DT_AT2X(n, t)) \
 		EEPROM_AT2X_SET_BUS_TYPE(INST_DT_AT2X(n, t)) \
 		EEPROM_AT2X_WP_GPIOS(INST_DT_AT2X(n, t)) \
 		.size = DT_PROP(INST_DT_AT2X(n, t), size), \
