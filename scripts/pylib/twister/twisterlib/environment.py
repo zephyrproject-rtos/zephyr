@@ -113,10 +113,6 @@ Artificially long but functional example:
         and net.socket.fd_set belong to different directories.
         """)
 
-    case_select.add_argument("--list-test-duplicates", action="store_true",
-                             help="""List tests with duplicate identifiers.
-        """)
-
     case_select.add_argument("--test-tree", action="store_true",
                              help="""Output the test plan in a tree form""")
 
