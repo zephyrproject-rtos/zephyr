@@ -1510,8 +1510,12 @@ void bt_hci_le_enh_conn_complete_sync(struct bt_hci_evt_le_enh_conn_complete_v2 
 
 	bt_addr_le_copy(&conn->le.init_addr, &peer_addr);
 
-	/* There is no random addr to get, set responder addr to local identity addr. */
-	bt_addr_le_copy(&conn->le.resp_addr, &bt_dev.id_addr[conn->id]);
+	if (IS_ENABLED(CONFIG_BT_PRIVACY)) {
+		conn->le.resp_addr.type = BT_ADDR_LE_RANDOM;
+		bt_addr_copy(&conn->le.resp_addr.a, &evt->local_rpa);
+	} else {
+		bt_addr_le_copy(&conn->le.resp_addr, &bt_dev.id_addr[conn->id]);
+	}
 
 	bt_conn_set_state(conn, BT_CONN_CONNECTED);
 
