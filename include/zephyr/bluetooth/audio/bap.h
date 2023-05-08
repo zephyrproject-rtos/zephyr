@@ -1633,7 +1633,7 @@ struct bt_bap_broadcast_sink_cb {
  * *
  *  @param cb  Broadcast sink callback structure.
  */
-void bt_bap_broadcast_sink_register_cb(struct bt_bap_broadcast_sink_cb *cb);
+int bt_bap_broadcast_sink_register_cb(struct bt_bap_broadcast_sink_cb *cb);
 
 /** @brief Start scan for broadcast sources.
  *

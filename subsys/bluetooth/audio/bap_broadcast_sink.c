@@ -990,9 +990,16 @@ static void broadcast_scan_timeout(void)
 	}
 }
 
-void bt_bap_broadcast_sink_register_cb(struct bt_bap_broadcast_sink_cb *cb)
+int bt_bap_broadcast_sink_register_cb(struct bt_bap_broadcast_sink_cb *cb)
 {
+	CHECKIF(cb == NULL) {
+		LOG_DBG("cb is NULL");
+		return -EINVAL;
+	}
+
 	sys_slist_append(&sink_cbs, &cb->_node);
+
+	return 0;
 }
 
 int bt_bap_broadcast_sink_scan_start(const struct bt_le_scan_param *param)
