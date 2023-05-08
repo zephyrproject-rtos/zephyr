@@ -8,7 +8,6 @@
 #include <arm/armv7-m.dtsi>
 #include "../psoc6_02/psoc6_02.124-bga.dtsi"
 
-
 / {
 	cpus {
 		#address-cells = <1>;
