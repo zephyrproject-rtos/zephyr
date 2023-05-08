@@ -2223,6 +2223,8 @@ NXP Platforms:
     - EmilioCBen
     - decsny
     - manuargue
+    - dbaluta
+    - iuliana-prodan
   files:
     - boards/arm/mimx*/
     - boards/arm/frdm_k*/
