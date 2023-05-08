@@ -193,7 +193,8 @@ config BT_BAP_BROADCAST_SNK_STREAM_COUNT
 	int "Basic Audio Broadcast Sink Stream count"
 	depends on BT_BAP_BROADCAST_SNK_COUNT > 0
 	default 1
-	range 1 BT_ISO_MAX_CHAN
+	range 1 BT_ISO_MAX_CHAN if BT_ISO_MAX_CHAN < 31
+	range 1 31
 	help
 	  This option sets the maximum number of streams per broadcast sink
 	  to support.
