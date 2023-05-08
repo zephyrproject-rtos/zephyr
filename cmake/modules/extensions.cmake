@@ -2493,10 +2493,13 @@ function(zephyr_var_name variable scope out)
 endfunction()
 
 # Usage:
-#   zephyr_get(<variable> [MERGE] [SYSBUILD [LOCAL|GLOBAL]] [VAR <var1> ...])
+#   zephyr_get(<variable> [MERGE [REVERSE]] [SYSBUILD [LOCAL|GLOBAL]] [VAR <var1> ...])
 #
 # Return the value of <variable> as local scoped variable of same name. If MERGE
-# is supplied, will return a list of found items.
+# is supplied, will return a list of found items. If REVERSE is supplied
+# together with MERGE, the order of the list will be reversed before being
+# returned. Reverse will happen before the list is returned and hence it will
+# not change the order of precedence in which the list itself is constructed.
 #
 # VAR can be used either to store the result in a variable with a different
 # name, or to look for values from multiple variables.
@@ -2526,7 +2529,7 @@ endfunction()
 # using `-DZEPHYR_TOOLCHAIN_VARIANT=<val>`, then the value from the cache is
 # returned.
 function(zephyr_get variable)
-  cmake_parse_arguments(GET_VAR "MERGE" "SYSBUILD" "VAR" ${ARGN})
+  cmake_parse_arguments(GET_VAR "MERGE;REVERSE" "SYSBUILD" "VAR" ${ARGN})
 
   if(DEFINED GET_VAR_SYSBUILD)
     if(NOT ("${GET_VAR_SYSBUILD}" STREQUAL "GLOBAL" OR
@@ -2536,6 +2539,10 @@ function(zephyr_get variable)
     endif()
   else()
     set(GET_VAR_SYSBUILD "GLOBAL")
+  endif()
+
+  if(GET_VAR_REVERSE AND NOT GET_VAR_MERGE)
+    message(FATAL_ERROR "zephyr_get(... REVERSE) missing a required argument: MERGE")
   endif()
 
   if(NOT DEFINED GET_VAR_VAR)
@@ -2564,6 +2571,9 @@ function(zephyr_get variable)
   endforeach()
 
   set(scopes "sysbuild;CACHE;ENV;current")
+  if(GET_VAR_REVERSE)
+    list(REVERSE scopes)
+  endif()
   foreach(scope IN LISTS scopes)
     foreach(var ${GET_VAR_VAR})
       zephyr_var_name("${var}" "${scope}" expansion_var)
@@ -2601,7 +2611,13 @@ function(zephyr_get variable)
   endforeach()
 
   if(GET_VAR_MERGE)
-    list(REMOVE_DUPLICATES ${variable})
+    if(GET_VAR_REVERSE)
+      list(REVERSE ${variable})
+      list(REMOVE_DUPLICATES ${variable})
+      list(REVERSE ${variable})
+    else()
+      list(REMOVE_DUPLICATES ${variable})
+    endif()
     set(${variable} ${${variable}} PARENT_SCOPE)
   endif()
 endfunction(zephyr_get variable)
