@@ -24,6 +24,7 @@ config TFM_BOARD
 
 menuconfig BUILD_WITH_TFM
 	bool "Build with TF-M as the Secure Execution Environment"
+	depends on ZEPHYR_TRUSTED_FIRMWARE_M_MODULE
 	depends on TRUSTED_EXECUTION_NONSECURE
 	depends on TFM_BOARD != ""
 	depends on ARM_TRUSTZONE_M
