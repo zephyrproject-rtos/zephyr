@@ -191,7 +191,18 @@ static int init(void)
 		return err;
 	}
 
-	bt_bap_broadcast_sink_register_cb(&broadcast_sink_cbs);
+	/* Test invalid input */
+	err = bt_bap_broadcast_sink_register_cb(NULL);
+	if (err == 0) {
+		FAIL("bt_bap_broadcast_sink_register_cb did not fail with NULL cb\n");
+		return err;
+	}
+
+	err = bt_bap_broadcast_sink_register_cb(&broadcast_sink_cbs);
+	if (err != 0) {
+		FAIL("Sink callback register failed (err %d)\n", err);
+		return err;
+	}
 
 	UNSET_FLAG(broadcaster_found);
 	UNSET_FLAG(base_received);
@@ -205,15 +216,9 @@ static int init(void)
 	return 0;
 }
 
-static void test_common(void)
+static void test_scan_and_pa_sync(void)
 {
 	int err;
-
-	err = init();
-	if (err) {
-		FAIL("Init failed (err %d)\n", err);
-		return;
-	}
 
 	printk("Scanning for broadcast sources\n");
 	err = bt_bap_broadcast_sink_scan_start(BT_LE_SCAN_ACTIVE);
@@ -231,6 +236,22 @@ static void test_common(void)
 
 	printk("Waiting for BIG syncable\n");
 	WAIT_FOR_FLAG(flag_syncable);
+}
+
+static void test_scan_and_pa_sync_inval(void)
+{
+	int err;
+
+	err = bt_bap_broadcast_sink_scan_start(NULL);
+	if (err == 0) {
+		FAIL("bt_bap_broadcast_sink_scan_start did not fail with NULL param\n");
+		return;
+	}
+}
+
+static void test_broadcast_sync(void)
+{
+	int err;
 
 	printk("Syncing the sink\n");
 	err = bt_bap_broadcast_sink_sync(g_sink, bis_index_bitfield, streams, NULL);
@@ -251,7 +272,134 @@ static void test_common(void)
 	/* Ensure that we also see the metadata update */
 	printk("Waiting for metadata update\n");
 	WAIT_FOR_FLAG(flag_base_metadata_updated)
+}
 
+static void test_broadcast_sync_inval(void)
+{
+	struct bt_bap_stream *tmp_streams[ARRAY_SIZE(streams) + 1] = {0};
+	uint32_t bis_index;
+	int err;
+
+	err = bt_bap_broadcast_sink_sync(NULL, bis_index_bitfield, streams, NULL);
+	if (err == 0) {
+		FAIL("bt_bap_broadcast_sink_sync did not fail with NULL sink\n");
+		return;
+	}
+
+	bis_index = 0;
+	err = bt_bap_broadcast_sink_sync(g_sink, bis_index, streams, NULL);
+	if (err == 0) {
+		FAIL("bt_bap_broadcast_sink_sync did not fail with invalid BIS indexes: 0x%08X\n",
+		     bis_index);
+		return;
+	}
+
+	bis_index = BIT(0);
+	err = bt_bap_broadcast_sink_sync(g_sink, bis_index, streams, NULL);
+	if (err == 0) {
+		FAIL("bt_bap_broadcast_sink_sync did not fail with invalid BIS indexes: 0x%08X\n",
+		     bis_index);
+		return;
+	}
+
+	err = bt_bap_broadcast_sink_sync(g_sink, bis_index, NULL, NULL);
+	if (err == 0) {
+		FAIL("bt_bap_broadcast_sink_sync did not fail with NULL streams\n");
+		return;
+	}
+
+	memcpy(tmp_streams, streams, sizeof(streams));
+	bis_index = 0U;
+	for (size_t i = 0U; i < ARRAY_SIZE(tmp_streams); i++) {
+		bis_index |= BIT(i + BT_ISO_BIS_INDEX_MIN);
+	}
+
+	err = bt_bap_broadcast_sink_sync(g_sink, bis_index, tmp_streams, NULL);
+	if (err == 0) {
+		FAIL("bt_bap_broadcast_sink_sync did not fail with NULL streams[%zu]\n",
+		     ARRAY_SIZE(tmp_streams) - 1);
+		return;
+	}
+
+	bis_index = 0U;
+	for (size_t i = 0U; i < CONFIG_BT_BAP_BROADCAST_SNK_STREAM_COUNT + 1; i++) {
+		bis_index |= BIT(i + BT_ISO_BIS_INDEX_MIN);
+	}
+
+	err = bt_bap_broadcast_sink_sync(g_sink, bis_index, tmp_streams, NULL);
+	if (err == 0) {
+		FAIL("bt_bap_broadcast_sink_sync did not fail with invalid BIS indexes: 0x%08X\n",
+		     bis_index);
+		return;
+	}
+}
+
+static void test_broadcast_stop(void)
+{
+	int err;
+
+	err = bt_bap_broadcast_sink_stop(g_sink);
+	if (err != 0) {
+		FAIL("Unable to stop sink: %d", err);
+		return;
+	}
+
+	printk("Waiting for streams to be stopped\n");
+	for (size_t i = 0U; i < ARRAY_SIZE(streams); i++) {
+		k_sem_take(&sem_stopped, K_FOREVER);
+	}
+}
+
+static void test_broadcast_stop_inval(void)
+{
+	int err;
+
+	err = bt_bap_broadcast_sink_stop(NULL);
+	if (err == 0) {
+		FAIL("bt_bap_broadcast_sink_stop did not fail with NULL sink\n");
+		return;
+	}
+}
+
+static void test_broadcast_delete(void)
+{
+	int err;
+
+	err = bt_bap_broadcast_sink_delete(g_sink);
+	if (err != 0) {
+		FAIL("Unable to stop sink: %d", err);
+		return;
+	}
+
+	/* No "sync lost" event is generated when we initialized the disconnect */
+}
+
+static void test_broadcast_delete_inval(void)
+{
+	int err;
+
+	err = bt_bap_broadcast_sink_delete(NULL);
+	if (err == 0) {
+		FAIL("bt_bap_broadcast_sink_delete did not fail with NULL sink\n");
+		return;
+	}
+}
+
+static void test_common(void)
+{
+	int err;
+
+	err = init();
+	if (err) {
+		FAIL("Init failed (err %d)\n", err);
+		return;
+	}
+
+	test_scan_and_pa_sync_inval();
+	test_scan_and_pa_sync();
+
+	test_broadcast_sync_inval();
+	test_broadcast_sync();
 }
 
 static void test_main(void)
@@ -275,27 +423,13 @@ static void test_main(void)
 
 static void test_sink_disconnect(void)
 {
-	int err;
-
 	test_common();
 
-	err = bt_bap_broadcast_sink_stop(g_sink);
-	if (err != 0) {
-		FAIL("Unable to stop sink: %d", err);
-		return;
-	}
+	test_broadcast_stop_inval();
+	test_broadcast_stop();
 
-	printk("Waiting for streams to be stopped\n");
-	for (size_t i = 0U; i < ARRAY_SIZE(streams); i++) {
-		k_sem_take(&sem_stopped, K_FOREVER);
-	}
-
-	err = bt_bap_broadcast_sink_delete(g_sink);
-	if (err != 0) {
-		FAIL("Unable to delete sink: %d", err);
-		return;
-	}
-	/* No "sync lost" event is generated when we initialized the disconnect */
+	test_broadcast_delete_inval();
+	test_broadcast_delete();
 	g_sink = NULL;
 
 	PASS("Broadcast sink disconnect passed\n");
