@@ -31,8 +31,10 @@ LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 # if Z_MALLOC_PARTITION_EXISTS
 K_APPMEM_PARTITION_DEFINE(z_malloc_partition);
 #  define POOL_SECTION Z_GENERIC_SECTION(K_APP_DMEM_SECTION(z_malloc_partition))
+#  define MALLOC_SECTION Z_GENERIC_SECTION(K_APP_DMEM_SECTION(z_malloc_partition))
 # else
 #  define POOL_SECTION __noinit
+#  define MALLOC_SECTION
 # endif /* CONFIG_USERSPACE */
 
 # if defined(CONFIG_MMU) && CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE < 0
@@ -110,7 +112,7 @@ extern char _heap_sentry[];
 # endif /* else ALLOCATE_HEAP_AT_STARTUP */
 
 POOL_SECTION static struct sys_heap z_malloc_heap;
-POOL_SECTION struct sys_mutex z_malloc_heap_mutex;
+MALLOC_SECTION SYS_MUTEX_DEFINE(z_malloc_heap_mutex);
 
 void *malloc(size_t size)
 {
@@ -195,7 +197,6 @@ static int malloc_prepare(void)
 #endif
 
 	sys_heap_init(&z_malloc_heap, heap_base, heap_size);
-	sys_mutex_init(&z_malloc_heap_mutex);
 
 	return 0;
 }
