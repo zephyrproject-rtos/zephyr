@@ -137,7 +137,7 @@ static int flash_nrf_read(const struct device *dev, off_t addr,
 		return 0;
 	}
 
-	memcpy(data, (void *)addr, len);
+	nrf_nvmc_buffer_read(data, (uint32_t)addr, len);
 
 	return 0;
 }
