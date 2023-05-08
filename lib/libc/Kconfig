@@ -65,11 +65,14 @@ config MINIMAL_LIBC
 	depends on !REQUIRES_FULL_LIBC
 	depends on MINIMAL_LIBC_SUPPORTED
 	imply COMPILER_FREESTANDING
+	select COMMON_LIBC_ABORT
+	select COMMON_LIBC_STRNLEN
 	help
 	  Build with minimal C library.
 
 config PICOLIBC
 	bool "Picolibc library"
+	select COMMON_LIBC_ABORT
 	select THREAD_LOCAL_STORAGE if ARCH_HAS_THREAD_LOCAL_STORAGE && TOOLCHAIN_SUPPORTS_THREAD_LOCAL_STORAGE
 	select LIBC_ERRNO if THREAD_LOCAL_STORAGE
 	depends on !NATIVE_APPLICATION
@@ -81,6 +84,7 @@ config PICOLIBC
 
 config NEWLIB_LIBC
 	bool "Newlib C library"
+	select COMMON_LIBC_ABORT
 	depends on !NATIVE_APPLICATION
 	depends on NEWLIB_LIBC_SUPPORTED
 	help

@@ -136,17 +136,25 @@ struct dma_block_config {
 	uint16_t  reserved :          3;
 };
 
+#define DMA_STATUS_COMPLETE	0
+#define DMA_STATUS_BLOCK	1
+
 /**
  * @typedef dma_callback_t
  * @brief Callback function for DMA transfer completion
  *
- *  If enabled, callback function will be invoked at transfer completion
- *  or when error happens.
+ *  If enabled, callback function will be invoked at transfer or block completion,
+ *  or when an error happens.
+ *  In circular mode, @p status indicates that the DMA device has reached either
+ *  the end of the buffer (DMA_STATUS_COMPLETE) or a water mark (DMA_STATUS_BLOCK).
  *
- * @param dev Pointer to the DMA device calling the callback.
- * @param user_data A pointer to some user data or NULL
- * @param channel The channel number
- * @param status 0 on success, a negative errno otherwise
+ * @param dev           Pointer to the DMA device calling the callback.
+ * @param user_data     A pointer to some user data or NULL
+ * @param channel       The channel number
+ * @param status        - 0-DMA_STATUS_COMPLETE buffer fully consumed
+ *                      - 1-DMA_STATUS_BLOCK buffer consumption reached a configured block
+ *                        or water mark
+ *                      - a negative errno otherwise
  */
 typedef void (*dma_callback_t)(const struct device *dev, void *user_data,
 			       uint32_t channel, int status);

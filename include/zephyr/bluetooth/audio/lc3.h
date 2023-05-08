@@ -19,6 +19,7 @@
  */
 
 #include <zephyr/sys/util_macro.h>
+#include <zephyr/bluetooth/byteorder.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -254,18 +255,14 @@ enum bt_codec_config_type {
  * If the flags argument is != 1 it will evaluate to the third argument which inserts a LTV
  * entry for the max_frames_per_sdu value.
  */
- #define BT_CODEC_LC3_DATA(_freq, _duration, _chan_count, _len_min, _len_max, _max_frames_per_sdu) \
+#define BT_CODEC_LC3_DATA(_freq, _duration, _chan_count, _len_min, _len_max, _max_frames_per_sdu) \
 { \
-	BT_CODEC_DATA(BT_CODEC_LC3_FREQ, \
-		      ((_freq) & 0xFFU), \
-		      (((_freq) >> 8) & 0xFFU)), \
+	BT_CODEC_DATA(BT_CODEC_LC3_FREQ, BT_BYTES_LIST_LE16(_freq)), \
 	BT_CODEC_DATA(BT_CODEC_LC3_DURATION, _duration), \
 	BT_CODEC_DATA(BT_CODEC_LC3_CHAN_COUNT, _chan_count), \
 	BT_CODEC_DATA(BT_CODEC_LC3_FRAME_LEN, \
-		      ((_len_min) & 0xFFU), \
-		      (((_len_min) >> 8) & 0xFFU), \
-		      ((_len_max) & 0xFFU), \
-		      (((_len_max) >> 8) & 0xFFU)) \
+		      BT_BYTES_LIST_LE16(_len_min), \
+		      BT_BYTES_LIST_LE16(_len_max)) \
 	COND_CODE_1(_max_frames_per_sdu, (), \
 		    (, BT_CODEC_DATA(BT_CODEC_LC3_FRAME_COUNT, \
 				     _max_frames_per_sdu))) \
@@ -276,9 +273,7 @@ enum bt_codec_config_type {
  */
 #define BT_CODEC_LC3_META(_prefer_context) \
 { \
-	BT_CODEC_DATA(BT_AUDIO_METADATA_TYPE_PREF_CONTEXT, \
-		      ((_prefer_context) & 0xFFU), \
-		      (((_prefer_context) >> 8) & 0xFFU)) \
+	BT_CODEC_DATA(BT_AUDIO_METADATA_TYPE_PREF_CONTEXT, BT_BYTES_LIST_LE16(_prefer_context)) \
 }
 
 /**
@@ -306,14 +301,8 @@ enum bt_codec_config_type {
 { \
 	BT_CODEC_DATA(BT_CODEC_CONFIG_LC3_FREQ, _freq), \
 	BT_CODEC_DATA(BT_CODEC_CONFIG_LC3_DURATION, _duration), \
-	BT_CODEC_DATA(BT_CODEC_CONFIG_LC3_CHAN_ALLOC, \
-		      ((_loc) & 0xFFU), \
-		      (((_loc) >> 8) & 0xFFU), \
-		      (((_loc) >> 16) & 0xFFU), \
-		      (((_loc) >> 24) & 0xFFU)), \
-	BT_CODEC_DATA(BT_CODEC_CONFIG_LC3_FRAME_LEN, \
-		      ((_len) & 0xFFU), \
-		      (((_len) >> 8) & 0xFFU)) \
+	BT_CODEC_DATA(BT_CODEC_CONFIG_LC3_CHAN_ALLOC, BT_BYTES_LIST_LE32(_loc)), \
+	BT_CODEC_DATA(BT_CODEC_CONFIG_LC3_FRAME_LEN, BT_BYTES_LIST_LE16(_len)), \
 	COND_CODE_1(_frame_blocks_per_sdu, (), \
 		    (, BT_CODEC_DATA(BT_CODEC_CONFIG_LC3_FRAME_BLKS_PER_SDU, \
 				     _frame_blocks_per_sdu))) \
@@ -324,9 +313,7 @@ enum bt_codec_config_type {
  */
 #define BT_CODEC_LC3_CONFIG_META(_stream_context) \
 { \
-	BT_CODEC_DATA(BT_AUDIO_METADATA_TYPE_STREAM_CONTEXT, \
-		      ((_stream_context) & 0xFFU), \
-		      (((_stream_context) >> 8) & 0xFFU)) \
+	BT_CODEC_DATA(BT_AUDIO_METADATA_TYPE_STREAM_CONTEXT, BT_BYTES_LIST_LE16(_stream_context)) \
 }
 
 /**

@@ -125,18 +125,12 @@ const struct bt_mesh_model_op _dummy_vnd_mod_op[] = {
 	BT_MESH_MODEL_OP_END,
 };
 
-static struct bt_mesh_model dummy_vnd_model = {
-	.op = _dummy_vnd_mod_op,
-	.vnd.id = TEST_VND_MOD_ID,
-	.vnd.company = TEST_VND_COMPANY_ID,
-};
-
 static struct bt_mesh_elem elements[] = {BT_MESH_ELEM(
 	0,
 	MODEL_LIST(BT_MESH_MODEL_CFG_SRV, BT_MESH_MODEL_CFG_CLI(&cfg_cli), BT_MESH_MODEL_OP_AGG_SRV,
 		   BT_MESH_MODEL_OP_AGG_CLI),
 	MODEL_LIST(BT_MESH_MODEL_VND_CB(TEST_VND_COMPANY_ID, TEST_VND_MOD_ID, _dummy_vnd_mod_op,
-					NULL, &dummy_vnd_model, NULL)))};
+					NULL, NULL, NULL)))};
 
 static const struct bt_mesh_comp comp = {
 	.cid = TEST_VND_COMPANY_ID,
@@ -176,6 +170,7 @@ static void op_agg_test_prov_and_conf(uint16_t addr)
 
 static void test_cli_max_len_sequence_msg_send(void)
 {
+	struct bt_mesh_model *dummy_vnd_model = &elements[0].vnd_models[0];
 	uint8_t seq;
 
 	bt_mesh_test_cfg_set(NULL, WAIT_TIME);
@@ -187,7 +182,7 @@ static void test_cli_max_len_sequence_msg_send(void)
 
 	for (int i = 0; i < TEST_SEND_ITR; i++) {
 		seq = cli_sent_array[i] = i;
-		ASSERT_OK(dummy_vnd_mod_get(&dummy_vnd_model, &test_ctx, seq));
+		ASSERT_OK(dummy_vnd_mod_get(dummy_vnd_model, &test_ctx, seq));
 	}
 
 	ASSERT_OK(bt_mesh_op_agg_cli_seq_send());

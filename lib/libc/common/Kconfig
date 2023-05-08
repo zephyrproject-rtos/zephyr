@@ -1,6 +1,11 @@
 # Copyright (c) 2023 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
+config COMMON_LIBC_ABORT
+	bool
+	help
+	  common implementation of abort().
+
 config COMMON_LIBC_TIME
 	bool
 	help
@@ -37,3 +42,8 @@ config COMMON_LIBC_REALLOCARRAY
 	help
 	  Enable the common C library trivial implementation of
 	  reallocarray, which forwards to realloc.
+
+config COMMON_LIBC_STRNLEN
+	bool
+	help
+	  common implementation of strnlen().
