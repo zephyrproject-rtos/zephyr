@@ -838,13 +838,33 @@ static void lp_cc_st_wait_tx_cis_req(struct ll_conn *conn, struct proc_ctx *ctx,
 	}
 }
 
+static void lp_cc_complete(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
+{
+	if (!llcp_ntf_alloc_is_available()) {
+		ctx->state = LP_CC_STATE_WAIT_NTF;
+	} else {
+		cc_ntf_established(conn, ctx);
+		llcp_lr_complete(conn);
+		ctx->state = LP_CC_STATE_IDLE;
+	}
+}
+
 static void lp_cc_st_idle(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
 	switch (evt) {
 	case LP_CC_EVT_RUN:
 		switch (ctx->proc) {
 		case PROC_CIS_CREATE:
-			lp_cc_offset_calc_req(conn, ctx, evt, param);
+			/* In case feature exchange completed after CIS create was enqueued
+			 * peer CIS peripheral support should be confirmed
+			 */
+			if (feature_peer_iso_peripheral(conn)) {
+				lp_cc_offset_calc_req(conn, ctx, evt, param);
+			} else {
+				/* Peer doesn't support CIS Peripheral so report unsupported */
+				ctx->data.cis_create.error = BT_HCI_ERR_UNSUPP_REMOTE_FEATURE;
+				lp_cc_complete(conn, ctx, evt, param);
+			}
 			break;
 		default:
 			/* Unknown procedure */
@@ -884,17 +904,6 @@ static void lp_cc_send_cis_ind(struct ll_conn *conn, struct proc_ctx *ctx, uint8
 	} else {
 		cc_prepare_cis_ind(conn, ctx);
 		lp_cc_tx(conn, ctx, PDU_DATA_LLCTRL_TYPE_CIS_IND);
-	}
-}
-
-static void lp_cc_complete(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
-{
-	if (!llcp_ntf_alloc_is_available()) {
-		ctx->state = LP_CC_STATE_WAIT_NTF;
-	} else {
-		cc_ntf_established(conn, ctx);
-		llcp_lr_complete(conn);
-		ctx->state = LP_CC_STATE_IDLE;
 	}
 }
 
