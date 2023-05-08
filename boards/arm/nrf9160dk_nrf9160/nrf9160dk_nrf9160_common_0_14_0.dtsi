@@ -42,6 +42,7 @@
 		   <&gpio0 25 GPIO_ACTIVE_LOW>;
 	mx25r64: mx25r6435f@1 {
 		compatible = "jedec,spi-nor";
+		status = "disabled";
 		reg = <1>;
 		spi-max-frequency = <8000000>;
 		label = "MX25R64";
