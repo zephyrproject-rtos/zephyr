@@ -265,13 +265,6 @@ static void test_broadcast_sync(void)
 	for (size_t i = 0U; i < ARRAY_SIZE(streams); i++) {
 		k_sem_take(&sem_started, K_FOREVER);
 	}
-
-	printk("Waiting for data\n");
-	WAIT_FOR_FLAG(flag_received);
-
-	/* Ensure that we also see the metadata update */
-	printk("Waiting for metadata update\n");
-	WAIT_FOR_FLAG(flag_base_metadata_updated)
 }
 
 static void test_broadcast_sync_inval(void)
@@ -400,6 +393,13 @@ static void test_common(void)
 
 	test_broadcast_sync_inval();
 	test_broadcast_sync();
+
+	printk("Waiting for data\n");
+	WAIT_FOR_FLAG(flag_received);
+
+	/* Ensure that we also see the metadata update */
+	printk("Waiting for metadata update\n");
+	WAIT_FOR_FLAG(flag_base_metadata_updated)
 }
 
 static void test_main(void)
@@ -426,6 +426,10 @@ static void test_sink_disconnect(void)
 	test_common();
 
 	test_broadcast_stop_inval();
+	test_broadcast_stop();
+
+	/* Retry sync*/
+	test_broadcast_sync();
 	test_broadcast_stop();
 
 	test_broadcast_delete_inval();
