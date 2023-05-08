@@ -24,7 +24,6 @@
 #pragma GCC diagnostic ignored "-Walloc-size-larger-than="
 #endif
 
-#define _BSD_SOURCE
 #include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
 #include <stdlib.h>
