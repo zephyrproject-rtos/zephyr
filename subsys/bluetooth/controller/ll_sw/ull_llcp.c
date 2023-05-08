@@ -876,8 +876,11 @@ uint8_t ull_cp_cis_create(struct ll_conn *conn, struct ll_conn_iso_stream *cis)
 	struct ll_conn_iso_group *cig;
 	struct proc_ctx *ctx;
 
-	if (conn->lll.handle != cis->lll.acl_handle) {
-		return BT_HCI_ERR_CMD_DISALLOWED;
+	if (!conn->llcp.fex.valid) {
+		/* No feature exchange was performed so initiate before CIS Create */
+		if (ull_cp_feature_exchange(conn, 0U) != BT_HCI_ERR_SUCCESS) {
+			return BT_HCI_ERR_CMD_DISALLOWED;
+		}
 	}
 
 	ctx = llcp_create_local_procedure(PROC_CIS_CREATE);
