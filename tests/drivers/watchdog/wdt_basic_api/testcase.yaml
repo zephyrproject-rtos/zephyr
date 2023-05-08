@@ -1,6 +1,6 @@
 common:
-    depends_on: watchdog
-    tags: drivers watchdog
+  depends_on: watchdog
+  tags: drivers watchdog
 tests:
   drivers.watchdog:
     filter: >
@@ -8,14 +8,14 @@ tests:
        or dt_compat_enabled("st,stm32-watchdog") or CONFIG_SOC_FAMILY_LPC or
        CONFIG_SOC_SERIES_IMX_RT6XX or CONFIG_SOC_SERIES_IMX_RT5XX or
        CONFIG_SOC_FAMILY_GD32 or SOC_SERIES_GD32VF103)
-    platform_exclude: mec15xxevb_assy6853
+    platform_exclude: mec15xxevb_assy6853 s32z270dc2_rtu0_r52 s32z270dc2_rtu1_r52
   drivers.watchdog.stm32wwdg:
     filter: dt_compat_enabled("st,stm32-window-watchdog") or dt_compat_enabled("st,stm32-watchdog")
     extra_args: DTC_OVERLAY_FILE="boards/stm32_wwdg.overlay"
     platform_allow: nucleo_f091rc nucleo_f103rb nucleo_f207zg stm32f3_disco
         nucleo_f429zi nucleo_f746zg nucleo_g071rb nucleo_g474re nucleo_l073rz
         nucleo_l152re nucleo_l4r5zi stm32l562e_dk nucleo_wb55rg nucleo_wl55jc
-        b_u585i_iot02a nucleo_u575zi_q
+        b_u585i_iot02a nucleo_u575zi_q nucleo_c031c6 stm32h573i_dk
     integration_platforms:
       - nucleo_f091rc
   drivers.watchdog.stm32wwdg_h7:
@@ -28,7 +28,7 @@ tests:
     platform_allow: nucleo_f091rc nucleo_f103rb nucleo_f207zg stm32f3_disco
         nucleo_f429zi nucleo_f746zg nucleo_g071rb nucleo_g474re nucleo_l073rz
         nucleo_l152re nucleo_l4r5zi stm32l562e_dk nucleo_wb55rg nucleo_wl55jc
-        b_u585i_iot02a nucleo_u575zi_q nucleo_h753zi nucleo_h743zi
+        b_u585i_iot02a nucleo_u575zi_q nucleo_h753zi nucleo_h743zi nucleo_c031c6 nucleo_h753zi
     integration_platforms:
       - nucleo_f091rc
   drivers.watchdog.mec15xxevb_assy6853:
@@ -54,3 +54,10 @@ tests:
         gd32vf103v_eval longan_nano
     integration_platforms:
       - gd32e103v_eval
+  drivers.watchdog.s32z270dc2_r52:
+    build_only: true
+    platform_allow: s32z270dc2_rtu0_r52 s32z270dc2_rtu1_r52
+  drivers.watchdog.mimxrt1050_evk_ti_tps382x:
+    filter: dt_compat_enabled("ti,tps382x")
+    platform_allow: mimxrt1050_evk
+    extra_args: DTC_OVERLAY_FILE="boards/mimxrt1050_evk_ti_tps382x.overlay"

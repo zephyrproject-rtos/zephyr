@@ -178,24 +178,19 @@ done:
 int
 img_mgmt_state_confirm(void)
 {
-	int rc;
-
 	/* Confirm disallowed if a test is pending. */
-	if (img_mgmt_state_any_pending()) {
-		rc = MGMT_ERR_EBADSTATE;
-		goto err;
+	if (img_mgmt_state_any_pending() != 0) {
+		return MGMT_ERR_EBADSTATE;
 	}
 
-	rc = img_mgmt_write_confirmed();
-	if (rc != 0) {
-		rc = MGMT_ERR_EUNKNOWN;
+	if (img_mgmt_write_confirmed() != 0) {
+		return MGMT_ERR_EUNKNOWN;
 	}
 
 #if defined(CONFIG_MCUMGR_GRP_IMG_STATUS_HOOKS)
 	(void)mgmt_callback_notify(MGMT_EVT_OP_IMG_MGMT_DFU_CONFIRMED, NULL, 0);
 #endif
 
-err:
 	return 0;
 }
 

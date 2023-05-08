@@ -40,18 +40,24 @@ static int dai_hda_set_config_tplg(struct dai_intel_hda *dp, const void *spec_co
 	return 0;
 }
 
-static const struct dai_config *dai_hda_config_get(const struct device *dev, enum dai_dir dir)
+static int dai_hda_config_get(const struct device *dev, struct dai_config *cfg, enum dai_dir dir)
 {
 	struct dai_config *params = (struct dai_config *)dev->config;
 	struct dai_intel_hda *dp = (struct dai_intel_hda *)dev->data;
 	struct dai_intel_hda_pdata *hda = dai_get_drvdata(dp);
+
+	if (!cfg) {
+		return -EINVAL;
+	}
 
 	params->rate = hda->params.rate;
 	params->channels = hda->params.channels;
 
 	params->word_size = DAI_INTEL_HDA_DEFAULT_WORD_SIZE;
 
-	return params;
+	*cfg = *params;
+
+	return 0;
 }
 
 static int dai_hda_config_set(const struct device *dev, const struct dai_config *cfg,
@@ -93,11 +99,6 @@ static int dai_hda_remove(const struct device *dev)
 	return 0;
 }
 
-static int hda_init(const struct device *dev)
-{
-	return 0;
-}
-
 static const struct dai_driver_api dai_intel_hda_api_funcs = {
 	.probe			= dai_hda_probe,
 	.remove			= dai_hda_remove,
@@ -118,7 +119,7 @@ static const struct dai_driver_api dai_intel_hda_api_funcs = {
 	};							\
 								\
 	DEVICE_DT_INST_DEFINE(n,				\
-			hda_init, NULL,				\
+			NULL, NULL,				\
 			&dai_intel_hda_data_##n,		\
 			&dai_intel_hda_config_##n,		\
 			POST_KERNEL, 32,			\

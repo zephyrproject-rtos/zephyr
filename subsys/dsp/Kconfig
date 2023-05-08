@@ -13,9 +13,16 @@ if DSP
 config DSP_BACKEND_HAS_STATIC
 	bool
 
+config DSP_BACKEND_HAS_AGU
+	bool
+
+config DSP_BACKEND_HAS_XDATA_SECTION
+	bool
+
 choice DSP_BACKEND
 	prompt "DSP library backend selection"
 	default DSP_BACKEND_CMSIS if CMSIS_DSP
+	default DSP_BACKEND_ARCMWDT if ARC && "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "arcmwdt"
 	default DSP_BACKEND_CUSTOM
 
 config DSP_BACKEND_CMSIS
@@ -31,6 +38,17 @@ config DSP_BACKEND_CUSTOM
 	help
 	  Rely on the application to provide a custom DSP backend. The implementation should be
 	  added to the 'zdsp' build target by the application or one of its modules.
+
+config DSP_BACKEND_ARCMWDT
+	bool "Use the mwdt library as the math backend"
+	depends on ARCMWDT_LIBC
+	depends on CMSIS_DSP
+	select DSP_BACKEND_HAS_STATIC
+	select DSP_BACKEND_HAS_AGU
+	select DSP_BACKEND_HAS_XDATA_SECTION
+	help
+	  Implement the various zephyr DSP functions using the MWDT-DSP library. This feature
+	  requires the MetaWare toolchain and CMSIS module to be selected.
 
 endchoice
 

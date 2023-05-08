@@ -1,16 +1,23 @@
-# Copyright (c) 2020 NXP
+# Copyright (c) 2020-2022 NXP
 # Copyright (c) 2021 Basalte bv
 # SPDX-License-Identifier: Apache-2.0
 
 if DT_HAS_NXP_IMX_FLEXSPI_ENABLED
 
-config MEMC_MCUX_FLEXSPI_HYPERRAM
-	bool "MCUX FlexSPI HyperRAM driver"
+config MEMC_MCUX_FLEXSPI_S27KS0641
+	bool "MCUX FlexSPI Cypress S27KS0641 HyperRAM driver"
 	default y
-	depends on DT_HAS_NXP_IMX_FLEXSPI_HYPERRAM_ENABLED
+	depends on DT_HAS_NXP_IMX_FLEXSPI_S27KS0641_ENABLED
+	select MEMC_MCUX_FLEXSPI
+
+config MEMC_MCUX_FLEXSPI_APS6408L
+	bool "MCUX FlexSPI AP Memory APS6408L pSRAM driver"
+	default y
+	depends on DT_HAS_NXP_IMX_FLEXSPI_APS6408L_ENABLED
 	select MEMC_MCUX_FLEXSPI
 
 config MEMC_MCUX_FLEXSPI
 	bool
+	select PINCTRL
 
 endif

@@ -526,3 +526,92 @@ void run_ARRAY_INDEX_FLOOR(void)
 
 	zassert_equal(array[ARRAY_INDEX_FLOOR(array, &alias[1])], 0);
 }
+
+void run_BIT_MASK(void)
+{
+	uint32_t bitmask0 = BIT_MASK(0);
+	uint32_t bitmask1 = BIT_MASK(1);
+	uint32_t bitmask2 = BIT_MASK(2);
+	uint32_t bitmask31 = BIT_MASK(31);
+
+	zassert_equal(0x00000000UL, bitmask0);
+	zassert_equal(0x00000001UL, bitmask1);
+	zassert_equal(0x00000003UL, bitmask2);
+	zassert_equal(0x7ffffffFUL, bitmask31);
+}
+
+void run_BIT_MASK64(void)
+{
+	uint64_t bitmask0 = BIT64_MASK(0);
+	uint64_t bitmask1 = BIT64_MASK(1);
+	uint64_t bitmask2 = BIT64_MASK(2);
+	uint64_t bitmask63 = BIT64_MASK(63);
+
+	zassert_equal(0x0000000000000000ULL, bitmask0);
+	zassert_equal(0x0000000000000001ULL, bitmask1);
+	zassert_equal(0x0000000000000003ULL, bitmask2);
+	zassert_equal(0x7fffffffffffffffULL, bitmask63);
+}
+
+void run_IS_BIT_MASK(void)
+{
+	uint32_t zero32 = 0UL;
+	uint64_t zero64 = 0ULL;
+	uint32_t bitmask1 = 0x00000001UL;
+	uint32_t bitmask2 = 0x00000003UL;
+	uint32_t bitmask31 = 0x7fffffffUL;
+	uint32_t bitmask32 = 0xffffffffUL;
+	uint64_t bitmask63 = 0x7fffffffffffffffULL;
+	uint64_t bitmask64 = 0xffffffffffffffffULL;
+
+	uint32_t not_bitmask32 = 0xfffffffeUL;
+	uint64_t not_bitmask64 = 0xfffffffffffffffeULL;
+
+	zassert_true(IS_BIT_MASK(zero32));
+	zassert_true(IS_BIT_MASK(zero64));
+	zassert_true(IS_BIT_MASK(bitmask1));
+	zassert_true(IS_BIT_MASK(bitmask2));
+	zassert_true(IS_BIT_MASK(bitmask31));
+	zassert_true(IS_BIT_MASK(bitmask32));
+	zassert_true(IS_BIT_MASK(bitmask63));
+	zassert_true(IS_BIT_MASK(bitmask64));
+	zassert_false(IS_BIT_MASK(not_bitmask32));
+	zassert_false(IS_BIT_MASK(not_bitmask64));
+
+	zassert_true(IS_BIT_MASK(0));
+	zassert_true(IS_BIT_MASK(0x00000001UL));
+	zassert_true(IS_BIT_MASK(0x00000003UL));
+	zassert_true(IS_BIT_MASK(0x7fffffffUL));
+	zassert_true(IS_BIT_MASK(0xffffffffUL));
+	zassert_true(IS_BIT_MASK(0x7fffffffffffffffUL));
+	zassert_true(IS_BIT_MASK(0xffffffffffffffffUL));
+	zassert_false(IS_BIT_MASK(0xfffffffeUL));
+	zassert_false(IS_BIT_MASK(0xfffffffffffffffeULL));
+	zassert_false(IS_BIT_MASK(0x00000002UL));
+	zassert_false(IS_BIT_MASK(0x8000000000000000ULL));
+}
+
+void run_IS_SHIFTED_BIT_MASK(void)
+{
+	uint32_t bitmask32_shift1 = 0xfffffffeUL;
+	uint32_t bitmask32_shift31 = 0x80000000UL;
+	uint64_t bitmask64_shift1 =  0xfffffffffffffffeULL;
+	uint64_t bitmask64_shift63 = 0x8000000000000000ULL;
+
+	zassert_true(IS_SHIFTED_BIT_MASK(bitmask32_shift1, 1));
+	zassert_true(IS_SHIFTED_BIT_MASK(bitmask32_shift31, 31));
+	zassert_true(IS_SHIFTED_BIT_MASK(bitmask64_shift1, 1));
+	zassert_true(IS_SHIFTED_BIT_MASK(bitmask64_shift63, 63));
+
+	zassert_true(IS_SHIFTED_BIT_MASK(0xfffffffeUL, 1));
+	zassert_true(IS_SHIFTED_BIT_MASK(0xfffffffffffffffeULL, 1));
+	zassert_true(IS_SHIFTED_BIT_MASK(0x80000000UL, 31));
+	zassert_true(IS_SHIFTED_BIT_MASK(0x8000000000000000ULL, 63));
+}
+
+void run_DIV_ROUND_UP(void)
+{
+	zassert_equal(DIV_ROUND_UP(0, 1), 0);
+	zassert_equal(DIV_ROUND_UP(1, 2), 1);
+	zassert_equal(DIV_ROUND_UP(3, 2), 2);
+}

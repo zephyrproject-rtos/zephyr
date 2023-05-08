@@ -12,6 +12,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_WEBSOCKET_LOG_LEVEL);
 #include <zephyr/net/net_ip.h>
 #include <zephyr/net/socket.h>
 #include <zephyr/net/websocket.h>
+#include <zephyr/sys/fdtable.h>
 
 #include "websocket_internal.h"
 
@@ -52,23 +53,38 @@ static uint8_t temp_recv_buf[MAX_RECV_BUF_LEN + EXTRA_BUF_SPACE];
 static uint8_t feed_buf[MAX_RECV_BUF_LEN + EXTRA_BUF_SPACE];
 static size_t test_msg_len;
 
+static int test_fd_alloc(void *obj)
+{
+	int fd;
+
+	fd = z_reserve_fd();
+	zassert_not_equal(fd, -1, "Failed to allocate FD");
+	z_finalize_fd(fd, obj, NULL);
+
+	return fd;
+}
+
 static int test_recv_buf(uint8_t *feed_buf, size_t feed_len,
 			 struct websocket_context *ctx,
 			 uint32_t *msg_type, uint64_t *remaining,
 			 uint8_t *recv_buf, size_t recv_len)
 {
 	static struct test_data test_data;
-	int ctx_ptr;
+	int fd, ret;
 
 	test_data.ctx = ctx;
 	test_data.input_buf = feed_buf;
 	test_data.input_len = feed_len;
 	test_data.input_pos = 0;
 
-	ctx_ptr = POINTER_TO_INT(&test_data);
+	fd = test_fd_alloc(&test_data);
 
-	return websocket_recv_msg(ctx_ptr, recv_buf, recv_len,
-				  msg_type, remaining, 0);
+	ret = websocket_recv_msg(fd, recv_buf, recv_len,
+				 msg_type, remaining, 0);
+
+	z_free_fd(fd);
+
+	return ret;
 }
 
 /* Websocket frame, header is 6 bytes, FIN bit is set, opcode is text (1),
@@ -174,57 +190,57 @@ static void test_recv(int count)
 	zassert_equal(msg_type & WEBSOCKET_FLAG_TEXT, WEBSOCKET_FLAG_TEXT, "Msg is not text");
 }
 
-static void test_recv_1_byte(void)
+ZTEST(net_websocket, test_recv_1_byte)
 {
 	test_recv(1);
 }
 
-static void test_recv_2_byte(void)
+ZTEST(net_websocket, test_recv_2_byte)
 {
 	test_recv(2);
 }
 
-static void test_recv_3_byte(void)
+ZTEST(net_websocket, test_recv_3_byte)
 {
 	test_recv(3);
 }
 
-static void test_recv_6_byte(void)
+ZTEST(net_websocket, test_recv_6_byte)
 {
 	test_recv(6);
 }
 
-static void test_recv_7_byte(void)
+ZTEST(net_websocket, test_recv_7_byte)
 {
 	test_recv(7);
 }
 
-static void test_recv_8_byte(void)
+ZTEST(net_websocket, test_recv_8_byte)
 {
 	test_recv(8);
 }
 
-static void test_recv_9_byte(void)
+ZTEST(net_websocket, test_recv_9_byte)
 {
 	test_recv(9);
 }
 
-static void test_recv_10_byte(void)
+ZTEST(net_websocket, test_recv_10_byte)
 {
 	test_recv(10);
 }
 
-static void test_recv_12_byte(void)
+ZTEST(net_websocket, test_recv_12_byte)
 {
 	test_recv(12);
 }
 
-static void test_recv_whole_msg(void)
+ZTEST(net_websocket, test_recv_whole_msg)
 {
 	test_recv(sizeof(frame1));
 }
 
-static void test_recv_empty_ping(void)
+ZTEST(net_websocket, test_recv_empty_ping)
 {
 	struct websocket_context ctx;
 	int total_read = 0;
@@ -287,7 +303,7 @@ static void test_recv_2(int count)
 	zassert_equal(msg_type & WEBSOCKET_FLAG_TEXT, WEBSOCKET_FLAG_TEXT, "Msg is not text");
 }
 
-static void test_recv_two_msg(void)
+ZTEST(net_websocket, test_recv_two_msg)
 {
 	test_recv_2(sizeof(frame1) + FRAME1_HDR_SIZE / 2);
 }
@@ -359,10 +375,10 @@ int verify_sent_and_received_msg(struct msghdr *msg, bool split_msg)
 	return msg->msg_iov[0].iov_len + total_read;
 }
 
-static void test_send_and_recv_lorem_ipsum(void)
+ZTEST(net_websocket, test_send_and_recv_lorem_ipsum)
 {
 	static struct websocket_context ctx;
-	int ret;
+	int fd, ret;
 
 	memset(&ctx, 0, sizeof(ctx));
 
@@ -371,19 +387,21 @@ static void test_send_and_recv_lorem_ipsum(void)
 
 	test_msg_len = sizeof(lorem_ipsum) - 1;
 
-	ret = websocket_send_msg(POINTER_TO_INT(&ctx),
-				 lorem_ipsum, test_msg_len,
+	fd = test_fd_alloc(&ctx);
+	ret = websocket_send_msg(fd, lorem_ipsum, test_msg_len,
 				 WEBSOCKET_OPCODE_DATA_TEXT, true, true,
 				 SYS_FOREVER_MS);
 	zassert_equal(ret, test_msg_len,
 		      "Should have sent %zd bytes but sent %d instead",
 		      test_msg_len, ret);
+
+	z_free_fd(fd);
 }
 
-static void test_recv_two_large_split_msg(void)
+ZTEST(net_websocket, test_recv_two_large_split_msg)
 {
 	static struct websocket_context ctx;
-	int ret;
+	int fd, ret;
 
 	memset(&ctx, 0, sizeof(ctx));
 
@@ -392,18 +410,21 @@ static void test_recv_two_large_split_msg(void)
 
 	test_msg_len = sizeof(lorem_ipsum) - 1;
 
-	ret = websocket_send_msg(POINTER_TO_INT(&ctx), lorem_ipsum,
-				 test_msg_len, WEBSOCKET_OPCODE_DATA_TEXT,
-				 false, true, SYS_FOREVER_MS);
+	fd = test_fd_alloc(&ctx);
+	ret = websocket_send_msg(fd, lorem_ipsum, test_msg_len,
+				 WEBSOCKET_OPCODE_DATA_TEXT, false, true,
+				 SYS_FOREVER_MS);
 	zassert_equal(ret, test_msg_len,
 		      "1st should have sent %zd bytes but sent %d instead",
 		      test_msg_len, ret);
+
+	z_free_fd(fd);
 }
 
-static void test_send_and_recv_empty_pong(void)
+ZTEST(net_websocket, test_send_and_recv_empty_pong)
 {
 	static struct websocket_context ctx;
-	int ret;
+	int fd, ret;
 
 	memset(&ctx, 0, sizeof(ctx));
 
@@ -412,13 +433,16 @@ static void test_send_and_recv_empty_pong(void)
 
 	test_msg_len = 0;
 
-	ret = websocket_send_msg(POINTER_TO_INT(&ctx), NULL, test_msg_len, WEBSOCKET_OPCODE_PING,
+	fd = test_fd_alloc(&ctx);
+	ret = websocket_send_msg(fd, NULL, test_msg_len, WEBSOCKET_OPCODE_PING,
 				 true, true, SYS_FOREVER_MS);
 	zassert_equal(ret, test_msg_len, "Should have sent %zd bytes but sent %d instead",
 		      test_msg_len, ret);
+
+	z_free_fd(fd);
 }
 
-static void test_recv_in_small_buffer(void)
+ZTEST(net_websocket, test_recv_in_small_buffer)
 {
 	struct websocket_context ctx;
 	uint32_t msg_type = -1;
@@ -456,26 +480,10 @@ static void test_recv_in_small_buffer(void)
 			  "Invalid message, should be '%s' was '%s'", frame1_msg, recv_buf);
 }
 
-void test_main(void)
+static void *setup(void)
 {
 	k_thread_system_pool_assign(k_current_get());
-
-	ztest_test_suite(websocket, ztest_unit_test(test_recv_1_byte),
-			 ztest_unit_test(test_recv_2_byte),
-			 ztest_unit_test(test_recv_3_byte),
-			 ztest_unit_test(test_recv_6_byte),
-			 ztest_unit_test(test_recv_7_byte),
-			 ztest_unit_test(test_recv_8_byte),
-			 ztest_unit_test(test_recv_9_byte),
-			 ztest_unit_test(test_recv_10_byte),
-			 ztest_unit_test(test_recv_12_byte),
-			 ztest_unit_test(test_recv_whole_msg),
-			 ztest_unit_test(test_recv_empty_ping),
-			 ztest_unit_test(test_recv_two_msg),
-			 ztest_unit_test(test_send_and_recv_lorem_ipsum),
-			 ztest_unit_test(test_recv_two_large_split_msg),
-			 ztest_unit_test(test_send_and_recv_empty_pong),
-			 ztest_unit_test(test_recv_in_small_buffer));
-
-	ztest_run_test_suite(websocket);
+	return NULL;
 }
+
+ZTEST_SUITE(net_websocket, NULL, setup, NULL, NULL, NULL);

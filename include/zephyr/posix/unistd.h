@@ -7,7 +7,7 @@
 #define ZEPHYR_INCLUDE_POSIX_UNISTD_H_
 
 #include "posix_types.h"
-#include "sys/stat.h"
+#include <zephyr/posix/sys/stat.h>
 #ifdef CONFIG_NETWORKING
 /* For zsock_gethostname() */
 #include <zephyr/net/socket.h>
@@ -33,6 +33,8 @@ extern int rename(const char *old, const char *newp);
 extern int unlink(const char *path);
 extern int stat(const char *path, struct stat *buf);
 extern int mkdir(const char *path, mode_t mode);
+
+FUNC_NORETURN void _exit(int status);
 
 #ifdef CONFIG_NETWORKING
 static inline int gethostname(char *buf, size_t len)

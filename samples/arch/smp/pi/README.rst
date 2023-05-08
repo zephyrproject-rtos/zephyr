@@ -26,7 +26,7 @@ required for all the calculation to be done. It can be built and executed
 on Synopsys ARC HSDK board as follows:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/smp/pi
+   :zephyr-app: samples/arch/smp/pi
    :host-os: unix
    :board: qemu_x86_64
    :goals: run

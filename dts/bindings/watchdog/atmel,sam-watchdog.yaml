@@ -8,13 +8,11 @@ compatible: "atmel,sam-watchdog"
 include: base.yaml
 
 properties:
-    reg:
-      required: true
+  reg:
+    required: true
 
-    interrupts:
-      required: true
+  interrupts:
+    required: true
 
-    peripheral-id:
-      type: int
-      description: peripheral ID
-      required: true
+  clocks:
+    required: true

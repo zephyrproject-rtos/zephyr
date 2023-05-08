@@ -5,7 +5,7 @@
  */
 
 #include <string.h>
-#include <fnmatch.h>
+#include <zephyr/posix/fnmatch.h>
 #include "shell_wildcard.h"
 #include "shell_utils.h"
 #include "shell_ops.h"
@@ -66,7 +66,7 @@ static enum shell_wildcard_status command_add(char *buff, uint16_t *buff_len,
  *					     is too small.
  * @retval WILDCARD_CMD_NO_MATCH_FOUND No matching command found.
  */
-static enum shell_wildcard_status commands_expand(const struct shell *shell,
+static enum shell_wildcard_status commands_expand(const struct shell *sh,
 					const struct shell_static_entry *cmd,
 					const char *pattern)
 {
@@ -79,11 +79,11 @@ static enum shell_wildcard_status commands_expand(const struct shell *shell,
 	while ((entry = z_shell_cmd_get(cmd, cmd_idx++, &dloc)) != NULL) {
 
 		if (fnmatch(pattern, entry->syntax, 0) == 0) {
-			ret_val = command_add(shell->ctx->temp_buff,
-					      &shell->ctx->cmd_tmp_buff_len,
+			ret_val = command_add(sh->ctx->temp_buff,
+					      &sh->ctx->cmd_tmp_buff_len,
 					      entry->syntax, pattern);
 			if (ret_val == SHELL_WILDCARD_CMD_MISSING_SPACE) {
-				z_shell_fprintf(shell, SHELL_WARNING,
+				z_shell_fprintf(sh, SHELL_WARNING,
 					"Command buffer is too short to"
 					" expand all commands matching"
 					" wildcard pattern: %s\n", pattern);
@@ -96,8 +96,8 @@ static enum shell_wildcard_status commands_expand(const struct shell *shell,
 	}
 
 	if (cnt > 0) {
-		z_shell_pattern_remove(shell->ctx->temp_buff,
-				       &shell->ctx->cmd_tmp_buff_len, pattern);
+		z_shell_pattern_remove(sh->ctx->temp_buff,
+				       &sh->ctx->cmd_tmp_buff_len, pattern);
 	}
 
 	return ret_val;
@@ -116,7 +116,7 @@ bool z_shell_has_wildcard(const char *str)
 	return false;
 }
 
-void z_shell_wildcard_prepare(const struct shell *shell)
+void z_shell_wildcard_prepare(const struct shell *sh)
 {
 	/* Wildcard can be correctly handled under following conditions:
 	 * - wildcard command does not have a handler
@@ -140,23 +140,23 @@ void z_shell_wildcard_prepare(const struct shell *shell)
 	 *    including expanded commands, are passed as arguments.
 	 */
 
-	memset(shell->ctx->temp_buff, 0, sizeof(shell->ctx->temp_buff));
-	memcpy(shell->ctx->temp_buff,
-			shell->ctx->cmd_buff,
-			shell->ctx->cmd_buff_len);
+	memset(sh->ctx->temp_buff, 0, sizeof(sh->ctx->temp_buff));
+	memcpy(sh->ctx->temp_buff,
+			sh->ctx->cmd_buff,
+			sh->ctx->cmd_buff_len);
 
 	/* Function shell_spaces_trim must be used instead of shell_make_argv.
 	 * At this point it is important to keep temp_buff as one string.
 	 * It will allow to find wildcard commands easily with strstr function.
 	 */
-	z_shell_spaces_trim(shell->ctx->temp_buff);
+	z_shell_spaces_trim(sh->ctx->temp_buff);
 
 	/* +1 for EOS*/
-	shell->ctx->cmd_tmp_buff_len = z_shell_strlen(shell->ctx->temp_buff) + 1;
+	sh->ctx->cmd_tmp_buff_len = z_shell_strlen(sh->ctx->temp_buff) + 1;
 }
 
 
-enum shell_wildcard_status z_shell_wildcard_process(const struct shell *shell,
+enum shell_wildcard_status z_shell_wildcard_process(const struct shell *sh,
 					const struct shell_static_entry *cmd,
 					const char *pattern)
 {
@@ -177,15 +177,15 @@ enum shell_wildcard_status z_shell_wildcard_process(const struct shell *shell,
 	 * possible. Next it will continue to search for next wildcard pattern
 	 * and it will try to add matching commands.
 	 */
-	ret_val = commands_expand(shell, cmd, pattern);
+	ret_val = commands_expand(sh, cmd, pattern);
 
 	return ret_val;
 }
 
-void z_shell_wildcard_finalize(const struct shell *shell)
+void z_shell_wildcard_finalize(const struct shell *sh)
 {
-	memcpy(shell->ctx->cmd_buff,
-	       shell->ctx->temp_buff,
-	       shell->ctx->cmd_tmp_buff_len);
-	shell->ctx->cmd_buff_len = shell->ctx->cmd_tmp_buff_len;
+	memcpy(sh->ctx->cmd_buff,
+	       sh->ctx->temp_buff,
+	       sh->ctx->cmd_tmp_buff_len);
+	sh->ctx->cmd_buff_len = sh->ctx->cmd_tmp_buff_len;
 }

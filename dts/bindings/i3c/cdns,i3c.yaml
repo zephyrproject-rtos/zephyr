@@ -9,13 +9,13 @@ compatible: "cdns,i3c"
 include: [i3c-controller.yaml]
 
 properties:
-    reg:
-      required: true
+  reg:
+    required: true
 
-    interrupts:
-      required: true
+  interrupts:
+    required: true
 
-    input-clock-frequency:
-      type: int
-      required: true
-      description: The controller input clock frequency
+  input-clock-frequency:
+    type: int
+    required: true
+    description: The controller input clock frequency

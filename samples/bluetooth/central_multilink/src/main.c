@@ -10,7 +10,8 @@
 
 int init_central(uint8_t iterations);
 
-void main(void)
+int main(void)
 {
 	(void)init_central(CONFIG_SAMPLE_CONN_ITERATIONS);
+	return 0;
 }

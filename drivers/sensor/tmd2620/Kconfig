@@ -1,0 +1,33 @@
+# Copyright (c) 2023 PHYTEC Messtechnik GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig TMD2620
+	bool "OSRAM-AMS TMD2620 Proxmimity Sensor"
+	default y
+	depends on DT_HAS_AMS_TMD2620_ENABLED
+	select I2C
+	help
+	  Enable driver for TMD2620 Sensor
+
+if TMD2620
+
+choice
+	prompt "Trigger Mode"
+	default TMD2620_TRIGGER_NONE
+	help
+	  Specify the type of triggering to be used by the driver.
+
+config TMD2620_TRIGGER_NONE
+	bool "No Trigger"
+
+config TMD2620_TRIGGER_GLOBAL_THREAD
+	bool "Use global thread"
+	depends on GPIO
+	select TMD2620_TRIGGER
+
+endchoice # Trigger Mode
+
+config TMD2620_TRIGGER
+	bool
+
+endif # TMD2620

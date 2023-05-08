@@ -8,103 +8,121 @@ compatible: "st,stm32-ltdc"
 include: [display-controller.yaml, pinctrl-device.yaml]
 
 properties:
-    disp-on-gpios:
-      type: phandle-array
-      description: |
-        Display on/off GPIO pin.
-        Configure the GPIO polarity (active high/active low) according to LCD datasheet.
+  disp-on-gpios:
+    type: phandle-array
+    description: |
+      Display on/off GPIO pin.
+      Configure the GPIO polarity (active high/active low) according to LCD datasheet.
 
-    bl-ctrl-gpios:
-      type: phandle-array
-      description: |
-        Backlight on/off GPIO pin.
-        Configure the GPIO polarity (active high/active low) according to LCD datasheet.
+  bl-ctrl-gpios:
+    type: phandle-array
+    description: |
+      Backlight on/off GPIO pin.
+      Configure the GPIO polarity (active high/active low) according to LCD datasheet.
 
-    ext-sdram:
-      type: phandle
-      description: |
-        External SDRAM in which frame buffer will be stored.
-        If not defined, internal RAM will be used.
+  ext-sdram:
+    type: phandle
+    description: |
+      External SDRAM in which frame buffer will be stored.
+      If not defined, internal RAM will be used.
 
-    clocks:
-      required: true
+  clocks:
+    required: true
 
-    interrupts:
-      required: true
+  interrupts:
+    required: true
 
-    pinctrl-0:
-      required: true
+  pinctrl-0:
+    description: |
+      Provide a pin configuration for using parallel pixel output. In combination with DSI HOST
+      the pin configuration is not necessary due to dedicated (MIPI D-PHY) pins.
 
-    hsync-pol:
-      type: int
-      required: true
-      description: |
-        Horizontal synchronization pulse polarity.
-        If HSYNC is active low, use STM32_LTDC_HSPOL_ACTIVE_LOW,
-        otherwise use STM32_LTDC_HSPOL_ACTIVE_HIGH.
+  hsync-pol:
+    type: int
+    required: true
+    description: |
+      Horizontal synchronization pulse polarity.
+      If HSYNC is active low, use STM32_LTDC_HSPOL_ACTIVE_LOW,
+      otherwise use STM32_LTDC_HSPOL_ACTIVE_HIGH.
 
-    vsync-pol:
-      type: int
-      required: true
-      description: |
-        Vertical synchronization pulse polarity.
-        If VSYNC is active low, use STM32_LTDC_VSPOL_ACTIVE_LOW,
-        otherwise use STM32_LTDC_VSPOL_ACTIVE_HIGH.
+  vsync-pol:
+    type: int
+    required: true
+    description: |
+      Vertical synchronization pulse polarity.
+      If VSYNC is active low, use STM32_LTDC_VSPOL_ACTIVE_LOW,
+      otherwise use STM32_LTDC_VSPOL_ACTIVE_HIGH.
 
-    de-pol:
-      type: int
-      required: true
-      description: |
-        Data enable pulse polarity.
-        If DE is active low, use STM32_LTDC_DEPOL_ACTIVE_LOW,
-        otherwise use STM32_LTDC_DEPOL_ACTIVE_HIGH.
+  de-pol:
+    type: int
+    required: true
+    description: |
+      Data enable pulse polarity.
+      If DE is active low, use STM32_LTDC_DEPOL_ACTIVE_LOW,
+      otherwise use STM32_LTDC_DEPOL_ACTIVE_HIGH.
 
-    pclk-pol:
-      type: int
-      required: true
-      description: |
-        Pixel clock polarity.
-        If RGB data is sampled on falling edge of PCLK, use STM32_LTDC_PCPOL_ACTIVE_LOW,
-        otherwise use STM32_LTDC_PCPOL_ACTIVE_HIGH.
+  pclk-pol:
+    type: int
+    required: true
+    description: |
+      Pixel clock polarity.
+      If RGB data is sampled on falling edge of PCLK, use STM32_LTDC_PCPOL_ACTIVE_LOW,
+      otherwise use STM32_LTDC_PCPOL_ACTIVE_HIGH.
 
-    hsync-duration:
-      type: int
-      required: true
-      description: Horizontal synchronization pulse duration, in pixels
+  hsync-duration:
+    type: int
+    required: true
+    description: Horizontal synchronization pulse duration, in pixels
 
-    vsync-duration:
-      type: int
-      required: true
-      description: Vertical synchronization pulse duration, in lines
+  vsync-duration:
+    type: int
+    required: true
+    description: Vertical synchronization pulse duration, in lines
 
-    hbp-duration:
-      type: int
-      required: true
-      description: Horizontal back-porch duration, in pixels
+  hbp-duration:
+    type: int
+    required: true
+    description: Horizontal back-porch duration, in pixels
 
-    vbp-duration:
-      type: int
-      required: true
-      description: Vertical back-porch duration, in lines
+  vbp-duration:
+    type: int
+    required: true
+    description: Vertical back-porch duration, in lines
 
-    hfp-duration:
-      type: int
-      required: true
-      description: Horizontal front porch duration, in pixels
+  hfp-duration:
+    type: int
+    required: true
+    description: Horizontal front porch duration, in pixels
 
-    vfp-duration:
-      type: int
-      required: true
-      description: Vertical front porch duration, in lines
+  vfp-duration:
+    type: int
+    required: true
+    description: Vertical front porch duration, in lines
 
-    def-back-color-red:
-      type: int
-      description: Default display background color - red
+  def-back-color-red:
+    type: int
+    description: Default display background color - red
 
-    def-back-color-green:
-      type: int
-      description: Default display background color - green
+  def-back-color-green:
+    type: int
+    description: Default display background color - green
 
-    def-back-color-blue:
-      type: int
-      description: Default display background color - blue
+  def-back-color-blue:
+    type: int
+    description: Default display background color - blue
+
+  window0-x0:
+    type: int
+    description: First pixel in x direction on layer 0. Defaults to 0.
+
+  window0-x1:
+    type: int
+    description: Last pixel in x direction on layer 0. Defaults to width.
+
+  window0-y0:
+    type: int
+    description: First pixel in y direction on layer 0. Defaults to 0.
+
+  window0-y1:
+    type: int
+    description: Last pixel in y direction on layer 0. Defaults to height.

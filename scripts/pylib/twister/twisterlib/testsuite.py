@@ -12,7 +12,7 @@ import mmap
 import glob
 from typing import List
 from twisterlib.mixins import DisablePyTestCollectionMixin
-from twisterlib.environment import canonical_topdir
+from twisterlib.environment import canonical_zephyr_base
 from twisterlib.error import TwisterException, TwisterRuntimeError
 
 logger = logging.getLogger('twister')
@@ -407,17 +407,13 @@ class TestSuite(DisablePyTestCollectionMixin):
     def get_unique(testsuite_root, workdir, name):
 
         canonical_testsuite_root = os.path.realpath(testsuite_root)
-        relative_ts_root = os.path.relpath(canonical_testsuite_root,
-                                               start=canonical_topdir)
-        # Include path in name for name uniqueness.
-        # Replace all '..' with a single 'external' for external tests.
-        # FIXME: We should not depend on path of test for unique names.
-        is_external = Path(canonical_topdir) not in Path(canonical_testsuite_root).parents
-        if is_external:
-            relative_ts_parts = Path(relative_ts_root).parts
-            if ".." in relative_ts_parts:
-                relative_ts_parts = tuple(part for part in relative_ts_parts if part != "..")
-                relative_ts_root = os.path.join("external", *relative_ts_parts)
+        if Path(canonical_zephyr_base) in Path(canonical_testsuite_root).parents:
+            # This is in ZEPHYR_BASE, so include path in name for uniqueness
+            # FIXME: We should not depend on path of test for unique names.
+            relative_ts_root = os.path.relpath(canonical_testsuite_root,
+                                               start=canonical_zephyr_base)
+        else:
+            relative_ts_root = ""
 
         # workdir can be "."
         unique = os.path.normpath(os.path.join(relative_ts_root, workdir, name))

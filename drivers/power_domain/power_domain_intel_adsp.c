@@ -24,6 +24,11 @@ static int pd_intel_adsp_set_power_enable(struct pg_bits *bits, bool power_enabl
 	if (power_enable) {
 		sys_write16(sys_read16((mem_addr_t)&ACE_DfPMCCU.dfpwrctl) | SPA_bit_mask,
 			    (mem_addr_t)&ACE_DfPMCCU.dfpwrctl);
+
+		if (!WAIT_FOR(sys_read16((mem_addr_t)&ACE_DfPMCCU.dfpwrsts) & BIT(bits->CPA_bit),
+		    10000, k_busy_wait(1))) {
+			return -1;
+		}
 	} else {
 		sys_write16(sys_read16((mem_addr_t)&ACE_DfPMCCU.dfpwrctl) & ~(SPA_bit_mask),
 			    (mem_addr_t)&ACE_DfPMCCU.dfpwrctl);
@@ -35,15 +40,20 @@ static int pd_intel_adsp_set_power_enable(struct pg_bits *bits, bool power_enabl
 static int pd_intel_adsp_pm_action(const struct device *dev, enum pm_device_action action)
 {
 	struct pg_bits *reg_bits = (struct pg_bits *)dev->data;
+	int ret = 0;
 
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
-		pm_device_children_action_run(dev, PM_DEVICE_ACTION_TURN_ON, NULL);
-		pd_intel_adsp_set_power_enable(reg_bits, true);
+		ret = pd_intel_adsp_set_power_enable(reg_bits, true);
+
+		if (ret == 0) {
+			pm_device_children_action_run(dev, PM_DEVICE_ACTION_TURN_ON, NULL);
+		}
+
 		break;
 	case PM_DEVICE_ACTION_SUSPEND:
 		pm_device_children_action_run(dev, PM_DEVICE_ACTION_TURN_OFF, NULL);
-		pd_intel_adsp_set_power_enable(reg_bits, false);
+		ret = pd_intel_adsp_set_power_enable(reg_bits, false);
 		break;
 	case PM_DEVICE_ACTION_TURN_ON:
 		break;
@@ -53,7 +63,7 @@ static int pd_intel_adsp_pm_action(const struct device *dev, enum pm_device_acti
 		return -ENOTSUP;
 	}
 
-	return 0;
+	return ret;
 }
 static int pd_intel_adsp_init(const struct device *dev)
 {

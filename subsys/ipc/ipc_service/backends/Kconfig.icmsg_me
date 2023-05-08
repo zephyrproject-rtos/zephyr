@@ -28,18 +28,9 @@ config IPC_SERVICE_BACKEND_ICMSG_ME_EP_NAME_LEN
 	  Maximal length of a string used to discover endpoints between the
 	  initiator and the follower.
 
-config IPC_SERVICE_BACKEND_ICMSG_ME_SHMEM_RESET
-	bool "Clear shared memory before initialization"
-	help
-	  Clearint TX buffer before icmsg instance initialization is needed
-	  if the memory was not cleared by hardware or other software modules.
-	  The memory content remaining from the previous run, or garbage data
-	  is going to be incorrectly interpreted by spsc and icmsg instances.
-	  This option adds performance overhead in the initialization process.
-
 config IPC_SERVICE_BACKEND_ICMSG_ME_NOCOPY_RX
 	bool "Nocopy feature for receive path"
-	select IPC_SERVICE_ICMSG_NOCOPY_RX
+	select IPC_SERVICE_ICMSG_ME_NOCOPY_RX
 	help
 	  Enable nocopy feature for receive path of multiendpoint icmsg
 	  ipc_service backend. This features enables functions to hold and

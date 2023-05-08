@@ -75,18 +75,18 @@ static int enable_usb_device_next(void)
 }
 #endif /* IS_ENABLED(CONFIG_USB_DEVICE_STACK_NEXT) */
 
-void main(void)
+int main(void)
 {
 	const struct device *const dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_console));
 	uint32_t dtr = 0;
 
 #if defined(CONFIG_USB_DEVICE_STACK_NEXT)
 	if (enable_usb_device_next()) {
-		return;
+		return 0;
 	}
 #else
 	if (usb_enable(NULL)) {
-		return;
+		return 0;
 	}
 #endif
 

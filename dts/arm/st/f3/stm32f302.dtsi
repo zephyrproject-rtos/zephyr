@@ -5,6 +5,7 @@
  */
 
 #include <st/f3/stm32f3.dtsi>
+#include <zephyr/dt-bindings/adc/stm32l4_adc.h>
 
 / {
 	soc {
@@ -106,8 +107,12 @@
 			interrupts = <18 0>;
 			status = "disabled";
 			#io-channel-cells = <1>;
-			has-temp-channel;
-			has-vref-channel;
+			temp-channel = <16>;
+			vref-channel = <18>;
+			resolutions = <STM32_ADC_RES(12, 0x00)
+				       STM32_ADC_RES(10, 0x01)
+				       STM32_ADC_RES(8, 0x02)
+				       STM32_ADC_RES(6, 0x03)>;
 		};
 	};
 };

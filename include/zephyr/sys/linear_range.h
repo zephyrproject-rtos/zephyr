@@ -177,26 +177,37 @@ static inline int linear_range_group_get_value(const struct linear_range *r,
 /**
  * @brief Obtain index given a value.
  *
+ * If the value falls outside the range, the nearest index will be stored and
+ * -ERANGE returned. That is, if the value falls below or above the range, the
+ * index will take the minimum or maximum value, respectively. For constant
+ * ranges, the minimum index will be returned.
+ *
  * @param[in] r Linear range instance.
  * @param val Value.
  * @param[out] idx Where index will be stored.
  *
- * @retval 0 If a valid index is found within the linear range.
- * @retval -EINVAL If value is out of range.
+ * @retval 0 If value falls within the range.
+ * @retval -ERANGE If the value falls out of the range.
  */
 static inline int linear_range_get_index(const struct linear_range *r,
 					 int32_t val, uint16_t *idx)
 {
-	if ((val < r->min) || (val > linear_range_get_max_value(r))) {
-		return -EINVAL;
+	if (val < r->min) {
+		*idx = r->min_idx;
+		return -ERANGE;
+	}
+
+	if (val > linear_range_get_max_value(r)) {
+		*idx = r->max_idx;
+		return -ERANGE;
 	}
 
 	if (r->step == 0U) {
-		*idx = r->max_idx;
-		return 0;
+		*idx = r->min_idx;
+	} else {
+		*idx = r->min_idx + DIV_ROUND_UP((uint32_t)(val - r->min),
+						 r->step);
 	}
-
-	*idx = r->min_idx + ceiling_fraction((uint32_t)(val - r->min), r->step);
 
 	return 0;
 }
@@ -204,56 +215,78 @@ static inline int linear_range_get_index(const struct linear_range *r,
 /**
  * @brief Obtain index in a group given a value.
  *
+ * This function works the same way as linear_range_get_index(), but considering
+ * all ranges in the group.
+ *
  * @param[in] r Linear range instances.
  * @param r_cnt Number of linear range instances.
  * @param val Value.
  * @param[out] idx Where index will be stored.
  *
- * @retval 0 If a valid index is found.
- * @retval -EINVAL If value is out of range, or if the given window of values is
- * too narrow.
+ * @retval 0 If value falls within the range group.
+ * @retval -ERANGE If the value falls out of the range group.
+ * @retval -EINVAL If input is not valid (i.e. zero groups).
  */
 static inline int linear_range_group_get_index(const struct linear_range *r,
 					       size_t r_cnt, int32_t val,
 					       uint16_t *idx)
 {
-	int ret = -EINVAL;
+	for (size_t i = 0U; i < r_cnt; i++) {
+		if ((val > linear_range_get_max_value(&r[i])) &&
+		    (i < (r_cnt - 1U))) {
+			continue;
+		}
 
-	for (size_t i = 0U; (ret != 0) && (i < r_cnt); i++) {
-		ret = linear_range_get_index(&r[i], val, idx);
+		return linear_range_get_index(&r[i], val, idx);
 	}
 
-	return ret;
+	return -EINVAL;
 }
 
 /**
  * @brief Obtain index given a window of values.
+ *
+ * If the window of values does not intersect with the range, -EINVAL will be
+ * returned. If intersection is partial (any of the window egdes does not
+ * intersect), the nearest index will be stored and -ERANGE returned.
  *
  * @param[in] r Linear range instance.
  * @param val_min Minimum window value.
  * @param val_max Maximum window value.
  * @param[out] idx Where index will be stored.
  *
- * @retval 0 If a valid index is found within window.
- * @retval -EINVAL If value is out of range, or if the given window of values is
- * too narrow.
+ * @retval 0 If a valid index is found within linear range.
+ * @retval -ERANGE If the given window of values falls partially out of the
+ * linear range.
+ * @retval -EINVAL If the given window of values does not intersect with the
+ * linear range or if they are too narrow.
  */
 static inline int linear_range_get_win_index(const struct linear_range *r,
 					     int32_t val_min, int32_t val_max,
 					     uint16_t *idx)
 {
-	if ((val_min < r->min) || (val_max > linear_range_get_max_value(r))) {
+	int32_t r_max = linear_range_get_max_value(r);
+
+	if ((val_max < r->min) || (val_min > r_max)) {
 		return -EINVAL;
 	}
 
-	if (r->step == 0U) {
+	if (val_min < r->min) {
+		*idx = r->min_idx;
+		return -ERANGE;
+	}
+
+	if (val_max > r_max) {
 		*idx = r->max_idx;
+		return -ERANGE;
+	}
+
+	if (r->step == 0U) {
+		*idx = r->min_idx;
 		return 0;
 	}
 
-	*idx = r->min_idx + ceiling_fraction((uint32_t)(val_min - r->min),
-					     r->step);
-
+	*idx = r->min_idx + DIV_ROUND_UP((uint32_t)(val_min - r->min), r->step);
 	if ((r->min + r->step * (*idx - r->min_idx)) > val_max) {
 		return -EINVAL;
 	}
@@ -265,15 +298,21 @@ static inline int linear_range_get_win_index(const struct linear_range *r,
  * @brief Obtain index in a group given a value that must be within a window of
  * values.
  *
+ * This function works the same way as linear_range_get_win_index(), but
+ * considering all ranges in the group.
+ *
  * @param[in] r Linear range instances.
  * @param r_cnt Number of linear range instances.
  * @param val_min Minimum window value.
  * @param val_max Maximum window value.
  * @param[out] idx Where index will be stored.
  *
- * @retval 0 If a valid index is found within window.
- * @retval -EINVAL If value is out of range, or if the given window of values is
- * too narrow.
+ * @retval 0 If a valid index is found within linear range group.
+ * @retval -ERANGE If the given window of values falls partially out of the
+ * linear range group.
+ * @retval -EINVAL If the given window of values does not intersect with the
+ * linear range group, if they are too narrow, or if input is invalid (i.e.
+ * zero groups).
  */
 static inline int linear_range_group_get_win_index(const struct linear_range *r,
 						   size_t r_cnt,
@@ -281,17 +320,15 @@ static inline int linear_range_group_get_win_index(const struct linear_range *r,
 						   int32_t val_max,
 						   uint16_t *idx)
 {
-	int ret = -EINVAL;
+	for (size_t i = 0U; i < r_cnt; i++) {
+		if (val_min > linear_range_get_max_value(&r[i])) {
+			continue;
+		}
 
-	for (size_t i = 0U; (ret != 0) && (i < r_cnt); i++) {
-		int32_t r_val_max = linear_range_get_max_value(&r[i]);
-
-		ret = linear_range_get_win_index(
-			&r[i], val_min, MAX(val_min, MIN(r_val_max, val_max)),
-			idx);
+		return linear_range_get_win_index(&r[i], val_min, val_max, idx);
 	}
 
-	return ret;
+	return -EINVAL;
 }
 
 /** @} */

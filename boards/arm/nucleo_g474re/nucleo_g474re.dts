@@ -45,21 +45,6 @@
 		};
 	};
 
-	power-states {
-		stop0: state0 {
-				compatible = "zephyr,power-state";
-				power-state-name = "suspend-to-idle";
-				substate-id = <1>;
-				min-residency-us = <20>;
-			};
-		stop1: state1 {
-				compatible = "zephyr,power-state";
-				power-state-name = "suspend-to-idle";
-				substate-id = <2>;
-				min-residency-us = <100>;
-			};
-	};
-
 	cpus {
 		cpu@0 {
 			cpu-power-states = <&stop0 &stop1>;
@@ -71,6 +56,7 @@
 		pwm-led0 = &green_pwm_led;
 		sw0 = &user_button;
 		watchdog0 = &iwdg;
+		die-temp0 = &die_temp;
 	};
 };
 

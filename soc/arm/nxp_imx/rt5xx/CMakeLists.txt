@@ -13,6 +13,8 @@ zephyr_sources(
   flash_clock_setup.c
   )
 
+zephyr_sources_ifdef(CONFIG_PM power.c)
+
 zephyr_library_include_directories(
   ${ZEPHYR_BASE}/kernel/include
   ${ZEPHYR_BASE}/arch/${ARCH}/include
@@ -24,4 +26,4 @@ zephyr_linker_sources_ifdef(CONFIG_NXP_IMX_RT5XX_BOOT_HEADER
 zephyr_linker_sources_ifdef(CONFIG_USB_DEVICE_DRIVER
   SECTIONS usb.ld)
 
-zephyr_code_relocate(flash_clock_setup.c RAM)
+zephyr_code_relocate(FILES flash_clock_setup.c LOCATION RAM)

@@ -7,6 +7,9 @@ include(${ZEPHYR_BASE}/cmake/compiler/gcc/compiler_flags.cmake)
 set_compiler_property(PROPERTY security_fortify_compile_time)
 set_compiler_property(PROPERTY security_fortify_run_time)
 
+# No printf-return-value optimizations in clang
+set_compiler_property(PROPERTY no_printf_return_value)
+
 # No property flag, this is used by the native_posix, clang has problems
 # compiling the native_posix with -fno-freestanding.
 check_set_compiler_property(PROPERTY hosted)
@@ -16,6 +19,9 @@ set_property(TARGET compiler PROPERTY coverage --coverage -fno-inline)
 
 # clang flag for colourful diagnostic messages
 set_compiler_property(PROPERTY diagnostic -fcolor-diagnostics)
+
+# clang flag to save temporary object files
+set_compiler_property(PROPERTY save_temps -save-temps)
 
 #######################################################
 # This section covers flags related to warning levels #
@@ -27,7 +33,6 @@ check_set_compiler_property(PROPERTY warning_base
                             -Wformat
                             -Wformat-security
                             -Wno-format-zero-length
-                            -Wno-main
                             -Wno-unused-but-set-variable
                             -Wno-typedef-redefinition
                             -Wno-deprecated-non-prototype
@@ -108,3 +113,5 @@ set_compiler_property(PROPERTY warning_error_coding_guideline
                       -Wconversion
                       -Woverride-init
 )
+
+set_compiler_property(PROPERTY no_global_merge "-mno-global-merge")

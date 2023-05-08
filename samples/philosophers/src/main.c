@@ -249,7 +249,7 @@ static void display_demo_description(void)
 #endif
 }
 
-void main(void)
+int main(void)
 {
 	display_demo_description();
 #if CONFIG_TIMESLICING
@@ -265,4 +265,5 @@ void main(void)
 	 */
 	k_sleep(K_MSEC(5000));
 #endif
+	return 0;
 }

@@ -4,7 +4,7 @@ tests:
   sample.usb.cdc-acm:
     depends_on: usb_device
     tags: usb
-    platform_exclude: native_posix native_posix_64
+    arch_exclude: posix
     harness: console
     harness_config:
       type: one_line
@@ -23,7 +23,7 @@ tests:
   sample.usb.cdc-acm.comp:
     depends_on: usb_device
     tags: usb
-    platform_exclude: native_posix native_posix_64
+    arch_exclude: posix
     extra_args: OVERLAY_CONFIG=overlay-composite-cdc-msc.conf
     harness: console
     harness_config:
@@ -33,7 +33,7 @@ tests:
   sample.usb.cdc-acm.buildonly:
     depends_on: usb_device
     tags: usb
-    platform_allow: native_posix native_posix_64
+    arch_allow: posix
     build_only: true
     integration_platforms:
       - native_posix

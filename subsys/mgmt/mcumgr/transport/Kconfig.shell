@@ -11,9 +11,8 @@
 
 menuconfig MCUMGR_TRANSPORT_SHELL
 	bool "Shell mcumgr SMP transport"
-	select SHELL
-	select SHELL_BACKEND_SERIAL
-	select BASE64
+	depends on SHELL
+	depends on BASE64
 	help
 	  Enables handling of SMP commands received over shell.  This allows
 	  the shell to be use for both mcumgr commands and shell commands.
@@ -33,5 +32,22 @@ config MCUMGR_TRANSPORT_SHELL_RX_BUF_COUNT
 	default 2
 	help
 	  Number of buffers used for receiving SMP fragments over shell.
+
+config MCUMGR_TRANSPORT_SHELL_INPUT_TIMEOUT
+	bool "Shell input expiration"
+	help
+	  If enabled, will time out a partial or erroneous MCUmgr command
+	  received via the shell transport after a given time. This prevents
+	  the shell from becoming locked if it never receives the full packet
+	  that a header indicated it would receive.
+
+config MCUMGR_TRANSPORT_SHELL_INPUT_TIMEOUT_TIME
+	int "Shell input expiration timeout"
+	depends on MCUMGR_TRANSPORT_SHELL_INPUT_TIMEOUT
+	default 3000
+	help
+	  Time (in msec) after receiving a valid MCUmgr header on the serial
+	  transport before considering it as timed out and returning the shell
+	  to normal operation.
 
 endif # MCUMGR_TRANSPORT_SHELL

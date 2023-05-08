@@ -25,7 +25,7 @@ void apds9960_work_cb(struct k_work *work)
 	const struct device *dev = data->dev;
 
 	if (data->p_th_handler != NULL) {
-		data->p_th_handler(dev, &data->p_th_trigger);
+		data->p_th_handler(dev, data->p_th_trigger);
 	}
 
 	apds9960_setup_int(dev->config, true);
@@ -75,6 +75,7 @@ int apds9960_trigger_set(const struct device *dev,
 	case SENSOR_TRIG_THRESHOLD:
 		if (trig->chan == SENSOR_CHAN_PROX) {
 			data->p_th_handler = handler;
+			data->p_th_trigger = trig;
 			if (i2c_reg_update_byte_dt(&config->i2c,
 						   APDS9960_ENABLE_REG,
 						   APDS9960_ENABLE_PIEN,

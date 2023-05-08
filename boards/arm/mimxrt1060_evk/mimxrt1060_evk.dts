@@ -16,7 +16,7 @@
 	aliases {
 		led0 = &green_led;
 		sw0 = &user_button;
-		kscan0 = &touch_controller;
+		kscan0 = &kscan_input;
 		watchdog0 = &wdog0;
 		sdhc0 = &usdhc1;
 	};
@@ -30,9 +30,9 @@
 		zephyr,dtcm = &dtcm;
 		zephyr,console = &lpuart1;
 		zephyr,shell-uart = &lpuart1;
-		zephyr,canbus = &flexcan2;
+		zephyr,canbus = &flexcan3;
 		zephyr,display = &lcdif;
-		zephyr,keyboard-scan = &touch_controller;
+		zephyr,keyboard-scan = &kscan_input;
 	};
 
 	sdram0: memory@80000000 {
@@ -172,15 +172,19 @@ arduino_serial: &lpuart3 {
 	};
 };
 
-&lpi2c1 {
+arduino_i2c: &lpi2c1 {
 	status = "okay";
 	pinctrl-0 = <&pinmux_lpi2c1>;
 	pinctrl-names = "default";
 
-	touch_controller: ft5336@38 {
+	ft5336@38 {
 		compatible = "focaltech,ft5336";
 		reg = <0x38>;
 		int-gpios = <&gpio1 11 GPIO_ACTIVE_LOW>;
+
+		kscan_input: kscan-input {
+			compatible = "zephyr,kscan-input";
+		};
 	};
 };
 
@@ -236,10 +240,11 @@ zephyr_udc0: &usb1 {
 	status = "okay";
 };
 
-&flexcan2 {
+&flexcan3 {
 	status = "okay";
 	bus-speed = <125000>;
-	pinctrl-0 = <&pinmux_flexcan2>;
+	bus-speed-data = <1000000>;
+	pinctrl-0 = <&pinmux_flexcan3>;
 	pinctrl-names = "default";
 
 	can-transceiver {
@@ -251,7 +256,7 @@ zephyr_udc0: &usb1 {
 	status = "okay";
 };
 
-&lpspi1 {
+arduino_spi: &lpspi1 {
 	status = "okay";
 	/* DMA channels 0 and 1, muxed to LPSPI1 RX and TX */
 	dmas = <&edma0 0 13>, <&edma0 1 14>;

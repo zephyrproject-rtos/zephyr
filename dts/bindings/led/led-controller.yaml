@@ -4,29 +4,29 @@
 # Common fields for LED controllers and child LEDs
 
 child-binding:
-    description: LED child node
-    properties:
-        label:
-          type: string
-          description: Human readable string describing the LED
-        index:
-          type: int
-          description: |
-            Index of the LED on a controller. It can be used by drivers or
-            applications to map a logical LED to its real position on the
-            controller. For example, this allows to handle boards where the
-            LEDs in an array/strip are not wired following the LED order of
-            the controller.
-        color-mapping:
-          type: array
-          description: |
-            Channel to color mapping of a multicolor LED. If a LED supports
-            several colors, then the color-mapping property can be used to
-            describe how the hardware channels and the colors are mapped.
+  description: LED child node
+  properties:
+    label:
+      type: string
+      description: Human readable string describing the LED
+    index:
+      type: int
+      description: |
+        Index of the LED on a controller. It can be used by drivers or
+        applications to map a logical LED to its real position on the
+        controller. For example, this allows to handle boards where the
+        LEDs in an array/strip are not wired following the LED order of
+        the controller.
+    color-mapping:
+      type: array
+      description: |
+        Channel to color mapping of a multicolor LED. If a LED supports
+        several colors, then the color-mapping property can be used to
+        describe how the hardware channels and the colors are mapped.
 
-            For example the channel to color mapping of RGB LEDs would be
+        For example the channel to color mapping of RGB LEDs would be
 
-               color-mapping =
-                    <LED_COLOR_ID_RED>,
-                    <LED_COLOR_ID_GREEN>,
-                    <LED_COLOR_ID_BLUE>;
+           color-mapping =
+                <LED_COLOR_ID_RED>,
+                <LED_COLOR_ID_GREEN>,
+                <LED_COLOR_ID_BLUE>;

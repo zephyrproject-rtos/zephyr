@@ -450,7 +450,6 @@ ZTEST(tinycrypt, test_ecc_dh)
 {
 	unsigned int result = TC_PASS;
 
-	TC_START("Performing ECC-DH tests:");
 
 	/* Setup of the Cryptographically Secure PRNG. */
 	uECC_set_rng(&default_CSPRNG);

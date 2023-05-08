@@ -9,7 +9,7 @@ Overview
 Similar to the :ref:`Central <bluetooth_central>` sample, except that this
 application specifically looks for the OTS (Object Transfer) GATT Service.
 And this sample is to select object sequentially, to read metadata, to write data,
-to read data of selected ojects.
+to read data, and to calculate checksum of selected ojects.
 
 Requirements
 ************

@@ -9,9 +9,15 @@ tests:
   mgmt.mcumgr.fs.mgmt.hash.supported.crc32:
     extra_args: >
       OVERLAY_CONFIG="configuration/crc32.conf"
+    platform_exclude: nucleo_h745zi_q_m4 arduino_portenta_h7_m4
+      stm32h747i_disco_m4 arduino_giga_r1_m4 esp32_net
   mgmt.mcumgr.fs.mgmt.hash.supported.sha256:
     extra_args: >
       OVERLAY_CONFIG="configuration/sha256.conf"
+    platform_exclude: nucleo_h745zi_q_m4 arduino_portenta_h7_m4
+      stm32h747i_disco_m4 arduino_giga_r1_m4 esp32_net
   mgmt.mcumgr.fs.mgmt.hash.supported.all:
     extra_args: >
       OVERLAY_CONFIG="configuration/all.conf"
+    platform_exclude: nucleo_h745zi_q_m4 arduino_portenta_h7_m4
+      stm32h747i_disco_m4 arduino_giga_r1_m4 esp32_net

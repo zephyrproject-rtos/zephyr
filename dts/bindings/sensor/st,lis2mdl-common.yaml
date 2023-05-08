@@ -4,27 +4,27 @@
 include: sensor-device.yaml
 
 properties:
-    irq-gpios:
-      type: phandle-array
-      description: IRQ pin
+  irq-gpios:
+    type: phandle-array
+    description: IRQ pin
 
-        This pin defaults to active high when produced by the sensor.
-        The property value should ensure the flags properly describe
-        the signal that is presented to the driver.
+      This pin defaults to active high when produced by the sensor.
+      The property value should ensure the flags properly describe
+      the signal that is presented to the driver.
 
-    single-mode:
-      type: boolean
-      description: |
-        Set to config the sensor in single measurement mode. Leave
-        unset to configure the sensor in continious measurement mode.
+  single-mode:
+    type: boolean
+    description: |
+      Set to config the sensor in single measurement mode. Leave
+      unset to configure the sensor in continious measurement mode.
 
-    cancel-offset:
-      type: boolean
-      description: |
-        Set to enable the offset cancellation. Otherwise it would be
-        disabled as default.
+  cancel-offset:
+    type: boolean
+    description: |
+      Set to enable the offset cancellation. Otherwise it would be
+      disabled as default.
 
-    spi-full-duplex:
-      type: boolean
-      description: |
-        Enable SPI 4wires mode with separated MISO and MOSI lines
+  spi-full-duplex:
+    type: boolean
+    description: |
+      Enable SPI 4wires mode with separated MISO and MOSI lines

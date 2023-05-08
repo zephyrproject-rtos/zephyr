@@ -232,19 +232,19 @@ i2s1: &flexcomm3 {
 		reg = <0x61>;
 		nxp,enable-modesel-pins;
 
-		BUCK1 {
+		buck1: BUCK1 {
 			regulator-boot-on;
 		};
 
-		BUCK2 {
+		buck2: BUCK2 {
 			regulator-boot-on;
 		};
 
-		LDO1 {
+		ldo1: LDO1 {
 			regulator-boot-on;
 		};
 
-		LDO2 {
+		ldo2: LDO2 {
 			regulator-boot-on;
 		};
 
@@ -265,13 +265,7 @@ i2s1: &flexcomm3 {
 		status = "okay";
 		jedec-id = [c2 81 3a];
 		erase-block-size = <4096>;
-		/*
-		 * Note- ECC will be disabled with a
-		 * write block size of 1 byte. To enable ECC, ensure
-		 * writes are in multiples of 16 bytes. This reduced
-		 * block size is required for MCUBoot support.
-		 */
-		write-block-size = <1>;
+		write-block-size = <16>;
 
 		partitions {
 			compatible = "fixed-partitions";
@@ -280,23 +274,19 @@ i2s1: &flexcomm3 {
 
 			boot_partition: partition@0 {
 				label = "mcuboot";
-				reg = <0x00000000 DT_SIZE_K(64)>;
+				reg = <0x00000000 DT_SIZE_K(128)>;
 			};
-			slot0_partition: partition@10000 {
+			slot0_partition: partition@20000 {
 				label = "image-0";
-				reg = <0x00010000 DT_SIZE_M(24)>;
+				reg = <0x00020000 DT_SIZE_K(3076)>;
 			};
-			slot1_partition: partition@1810000 {
+			slot1_partition: partition@321000 {
 				label = "image-1";
-				reg = <0x01810000 DT_SIZE_M(24)>;
+				reg = <0x00321000 DT_SIZE_K(3072)>;
 			};
-			scratch_partition: partition@3010000 {
-				label = "image-scratch";
-				reg = <0x03010000 DT_SIZE_K(8128)>;
-			};
-			storage_partition: partition@3f00000 {
+			storage_partition: partition@621000 {
 				label = "storage";
-				reg = <0x03f00000 DT_SIZE_M(1)>;
+				reg = <0x00621000 DT_SIZE_M(57)>;
 			};
 		};
 	};

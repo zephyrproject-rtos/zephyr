@@ -13,7 +13,7 @@
 #include <zephyr/mgmt/mcumgr/mgmt/handlers.h>
 #include <zephyr/mgmt/mcumgr/grp/zephyr/zephyr_basic.h>
 
-LOG_MODULE_REGISTER(mcumgr_zephyr_grp);
+LOG_MODULE_REGISTER(mcumgr_zbasic_grp, CONFIG_MCUMGR_GRP_ZBASIC_LOG_LEVEL);
 
 #define ERASE_TARGET		storage_partition
 #define ERASE_TARGET_ID		FIXED_PARTITION_ID(ERASE_TARGET)

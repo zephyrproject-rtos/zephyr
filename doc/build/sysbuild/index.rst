@@ -74,6 +74,13 @@ The following are some key sysbuild features indicated in this figure:
   are packaged into a global view of how to flash and debug each build system
   in a :file:`domains.yaml` file generated and managed by sysbuild.
 
+- Build names are prefixed with the target name and an underscore, for example
+  the sysbuild target is prefixed with ``sysbuild_`` and if MCUboot is enabled
+  as part of sysbuild, it will be prefixed with ``mcuboot_``. This also allows
+  for running things like menuconfig with the prefix, for example (if using
+  ninja) ``ninja sysbuild_menuconfig`` to configure sysbuild or (if using make)
+  ``make mcuboot_menuconfig``.
+
 Building with sysbuild
 **********************
 
@@ -386,6 +393,70 @@ specify this file when building with sysbuild, as follows:
          :gen-args: -DAPP_DIR=samples/hello_world -DSB_CONF_FILE=sysbuild-mcuboot.conf
          :compact:
 
+Sysbuild targets
+****************
+
+Sysbuild creates build targets for each image (including sysbuild itself) for
+the following modes:
+
+ * menuconfig
+ * hardenconfig
+ * guiconfig
+
+For the main application (as is the same without using sysbuild) these can be
+ran normally without any prefix. For other images (including sysbuild), these
+are ran with a prefix of the image name and an underscore e.g. ``sysbuild_`` or
+``mcuboot_``, using ninja or make - for details on how to run image build
+targets that do not have mapped build targets in sysbuild, see the
+:ref:`sysbuild_dedicated_image_build_targets` section.
+
+.. _sysbuild_dedicated_image_build_targets:
+
+Dedicated image build targets
+*****************************
+
+Not all build targets for images are given equivalent prefixed build targets
+when sysbuild is used, for example build targets like ``ram_report``,
+``rom_report``, ``footprint``, ``puncover`` and ``pahole`` are not exposed.
+When using :ref:`Trusted Firmware <tfm_build_system>`, this includes build
+targets prefix with ``tfm_`` and ``bl2_``, for example: ``tfm_rom_report``
+and ``bl2_ram_report``. To run these build targets, the build directory of the
+image can be provided to west/ninja/make along with the name of the build
+target to execute and it will run.
+
+.. tabs::
+
+   .. group-tab:: ``west``
+
+      Assuming that a project has been configured and built using ``west``
+      using sysbuild with mcuboot enabled in the default ``build`` folder
+      location, the ``rom_report`` build target for ``mcuboot`` can be ran
+      with:
+
+      .. code-block:: bash
+
+         west build -d build/mcuboot -t rom_report
+
+   .. group-tab:: ``ninja``
+
+      Assuming that a project has been configured using ``cmake`` and built
+      using ``ninja`` using sysbuild with mcuboot enabled, the ``rom_report``
+      build target for ``mcuboot`` can be ran with:
+
+      .. code-block:: bash
+
+         ninja -C mcuboot rom_report
+
+   .. group-tab:: ``make``
+
+      Assuming that a project has been configured using ``cmake`` and built
+      using ``make`` using sysbuild with mcuboot enabled, the ``rom_report``
+      build target for ``mcuboot`` can be ran with:
+
+      .. code-block:: bash
+
+         make -C mcuboot rom_report
+
 .. _sysbuild_zephyr_application:
 
 Adding Zephyr applications to sysbuild
@@ -562,3 +633,18 @@ debug the application.
 
 .. _MCUboot with Zephyr: https://mcuboot.com/documentation/readme-zephyr/
 .. _ExternalProject: https://cmake.org/cmake/help/latest/module/ExternalProject.html
+
+Extending sysbuild
+******************
+
+Sysbuild can be extended by other modules to give it additional functionality
+or include other configuration or images, an example could be to add support
+for another bootloader or external signing method.
+
+Modules can be extended by adding custom CMake or Kconfig files as normal
+:ref:`modules <module-yml>` do, this will cause the files to be included in
+each image that is part of a project. Alternatively, there are
+:ref:`sysbuild-specific module extension <sysbuild_module_integration>` files
+which can be used to include CMake and Kconfig files for the overall sysbuild
+image itself, this is where e.g. a custom image for a particular board or SoC
+can be added.

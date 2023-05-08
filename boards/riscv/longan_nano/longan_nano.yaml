@@ -10,3 +10,4 @@ ram: 32
 supported:
   - watchdog
   - dma
+  - spi

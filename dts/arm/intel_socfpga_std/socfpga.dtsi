@@ -136,7 +136,7 @@
 			compatible = "snps,ethernet-cyclonev";
 			reg = <0xff700000 0x2000>;
 			interrupts = <0 115 4 IRQ_DEFAULT_PRIORITY>;
-			local-mac-address = [00 00 00 00 00 00];
+			emac-index = <0>;
 			status = "disabled";
 		};
 
@@ -144,8 +144,8 @@
 			compatible = "snps,ethernet-cyclonev";
 			reg = <0xff702000 0x2000>;
 			interrupts = <0 120 4 IRQ_DEFAULT_PRIORITY>;
-			local-mac-address = [e6 88 2d 82 1f d4];
-			status = "okay";
+			emac-index = <1>;
+			status = "disabled";
 		};
 
 		gpio0: gpio@ff708000 {

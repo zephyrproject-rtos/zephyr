@@ -6,8 +6,8 @@
 #include <stdint.h>
 
 #include <zephyr/devicetree.h>
-#include <soc.h>
-#include <zephyr/arch/xtensa/cache.h>
+#include <soc_util.h>
+#include <zephyr/cache.h>
 #include <adsp_shim.h>
 #include <adsp_memory.h>
 #include <cpu_init.h>
@@ -18,10 +18,7 @@
 #define LPSRAM_MASK(x)		0x00000003
 #define SRAM_BANK_SIZE		(64 * 1024)
 #define EBB_SEGMENT_SIZE	32
-#if !defined(CONFIG_SOC_INTEL_CAVS_V15)
 #define PLATFORM_INIT_HPSRAM
-#endif
-
 #define PLATFORM_INIT_LPSRAM
 
 #define PLATFORM_HPSRAM_EBB_COUNT (DT_REG_SIZE(DT_NODELABEL(sram0)) / SRAM_BANK_SIZE)
@@ -110,7 +107,7 @@ __imr void hp_sram_init(uint32_t memory_size)
 	 * Calculate total number of used SRAM banks (EBB)
 	 * to power up only necessary banks
 	 */
-	ebb_in_use = ceiling_fraction(memory_size, SRAM_BANK_SIZE);
+	ebb_in_use = DIV_ROUND_UP(memory_size, SRAM_BANK_SIZE);
 
 	hp_sram_pm_banks(ebb_in_use);
 
@@ -130,11 +127,7 @@ __imr void lp_sram_init(void)
 	z_idelay(DELAY_COUNT);
 
 	/* FIXME */
-#if !defined(CONFIG_SOC_INTEL_CAVS_V15)
 	CAVS_L2LM.lspgctl = CAVS_L2LM.lspgists & ~LPSRAM_MASK(0);
-#else
-	CAVS_SHIM.lspgctl = CAVS_SHIM.lspgists & ~LPSRAM_MASK(0);
-#endif
 
 	/* Add some delay before checking the status */
 	z_idelay(DELAY_COUNT);
@@ -145,15 +138,9 @@ __imr void lp_sram_init(void)
 	 * cycles are needed for it to be powered up
 	 */
 	/* FIXME */
-#if !defined(CONFIG_SOC_INTEL_CAVS_V15)
 	while (CAVS_L2LM.lspgists && timeout_counter--) {
 		z_idelay(DELAY_COUNT);
 	}
-#else
-	while (CAVS_SHIM.lspgists && timeout_counter--) {
-		z_idelay(DELAY_COUNT);
-	}
-#endif
 
 	CAVS_SHIM.ldoctl = SHIM_LDOCTL_LPSRAM_LDO_BYPASS;
 	bbzero((void *)LP_SRAM_BASE, LP_SRAM_SIZE);

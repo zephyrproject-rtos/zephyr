@@ -8,30 +8,30 @@ compatible: "nxp,mcux-edma"
 include: dma-controller.yaml
 
 properties:
-    reg:
-      required: true
+  reg:
+    required: true
 
-    interrupts:
-      required: true
+  interrupts:
+    required: true
 
-    dma-channels:
-      required: true
+  dma-channels:
+    required: true
 
-    dma-requests:
-      required: true
+  dma-requests:
+    required: true
 
-    nxp,mem2mem:
-      type: boolean
-      description: If the DMA controller supports memory to memory transfer
+  nxp,mem2mem:
+    type: boolean
+    description: If the DMA controller supports memory to memory transfer
 
-    nxp,a_on:
-      type: boolean
-      description: If the DMA controller supports always on
+  nxp,a_on:
+    type: boolean
+    description: If the DMA controller supports always on
 
-    "#dma-cells":
-      type: int
-      required: true
-      description: Number of items to expect in a DMAMUX specifier
+  "#dma-cells":
+    type: int
+    required: true
+    description: Number of items to expect in a DMAMUX specifier
 
 # Parameter syntax of NXP follows the dmamux client dts syntax
 # in the Linux kernel declared in

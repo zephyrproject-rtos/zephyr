@@ -6,17 +6,31 @@
 
 #include "teensy40.dts"
 
+/ {
+	model = "PJRC TEENSY 4.1 board";
+
+	chosen {
+		zephyr,flash-controller = &w25q64jvxgim;
+		zephyr,flash = &w25q64jvxgim;
+	};
+};
+
 /delete-node/ &w25q16jvuxim;
 &flexspi {
-	reg = < 0x402a8000 0x4000 >, < 0x60000000 0x800000 >;
+	status = "okay";
+
+	reg = <0x402a8000 0x4000>, <0x60000000 DT_SIZE_M(8)>;
 	/* WINBOND flash memory*/
 	w25q64jvxgim: w25q64jvxgim@0 {
-		compatible = "winbond,w25q64jvxgim", "jedec,spi-nor";
-		size = < 8388607 >;
-		reg = < 0 >;
-		spi-max-frequency = < 133000000 >;
+		compatible = "nxp,imx-flexspi-nor";
+		size = <DT_SIZE_M(8 * 8)>;
+		reg = <0>;
+		spi-max-frequency = <DT_FREQ_M(133)>;
 		status = "okay";
-		jedec-id = [ ef 70 17 ];
+		jedec-id = [ef 70 17];
+
+		erase-block-size = <4096>;
+		write-block-size = <1>;
 	};
 };
 

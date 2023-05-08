@@ -23,6 +23,7 @@ struct id_addr_type {
 struct bt_keys *bt_keys_get_key_pool(void);
 #if defined(CONFIG_BT_KEYS_OVERWRITE_OLDEST)
 uint32_t bt_keys_get_aging_counter_val(void);
+struct bt_keys *bt_keys_get_last_keys_updated(void);
 #endif
 
 /* keys_help_utils.c declarations */

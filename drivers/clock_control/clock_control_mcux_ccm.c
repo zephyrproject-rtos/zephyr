@@ -30,6 +30,13 @@ static const clock_root_control_t uart_clk_root[] = {
 	kCLOCK_RootUart3,
 	kCLOCK_RootUart4,
 };
+
+static const clock_ip_name_t uart_clocks[] = {
+	kCLOCK_Uart1,
+	kCLOCK_Uart2,
+	kCLOCK_Uart3,
+	kCLOCK_Uart4,
+};
 #endif
 #if defined(CONFIG_UART_MCUX_LPUART) && defined(CONFIG_SOC_MIMX93_A55)
 static const clock_root_t lpuart_clk_root[] = {
@@ -47,25 +54,50 @@ static const clock_root_t lpuart_clk_root[] = {
 static int mcux_ccm_on(const struct device *dev,
 			      clock_control_subsys_t sub_system)
 {
-	return 0;
+	uint32_t clock_name = (uintptr_t)sub_system;
+	uint32_t instance = clock_name & IMX_CCM_INSTANCE_MASK;
+
+	switch (clock_name) {
+#ifdef CONFIG_UART_MCUX_IUART
+	case IMX_CCM_UART1_CLK:
+	case IMX_CCM_UART2_CLK:
+	case IMX_CCM_UART3_CLK:
+	case IMX_CCM_UART4_CLK:
+		CLOCK_EnableClock(uart_clocks[instance]);
+		return 0;
+#endif
+	default:
+		(void)instance;
+		return 0;
+	}
 }
 
 static int mcux_ccm_off(const struct device *dev,
 			       clock_control_subsys_t sub_system)
 {
-	return 0;
+	uint32_t clock_name = (uintptr_t)sub_system;
+	uint32_t instance = clock_name & IMX_CCM_INSTANCE_MASK;
+
+	switch (clock_name) {
+#ifdef CONFIG_UART_MCUX_IUART
+	case IMX_CCM_UART1_CLK:
+	case IMX_CCM_UART2_CLK:
+	case IMX_CCM_UART3_CLK:
+	case IMX_CCM_UART4_CLK:
+		CLOCK_DisableClock(uart_clocks[instance]);
+		return 0;
+#endif
+	default:
+		(void)instance;
+		return 0;
+	}
 }
 
 static int mcux_ccm_get_subsys_rate(const struct device *dev,
 				    clock_control_subsys_t sub_system,
 				    uint32_t *rate)
 {
-#ifdef CONFIG_ARM64
-	uint32_t clock_name = (uint32_t)(uint64_t) sub_system;
-#else
-	uint32_t clock_name = (uint32_t) sub_system;
-#endif
-	uint32_t mux __unused;
+	uint32_t clock_name = (uintptr_t)sub_system;
 
 	switch (clock_name) {
 
@@ -231,20 +263,12 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 	return 0;
 }
 
-static int mcux_ccm_init(const struct device *dev)
-{
-	return 0;
-}
-
 static const struct clock_control_driver_api mcux_ccm_driver_api = {
 	.on = mcux_ccm_on,
 	.off = mcux_ccm_off,
 	.get_rate = mcux_ccm_get_subsys_rate,
 };
 
-DEVICE_DT_INST_DEFINE(0,
-		    &mcux_ccm_init,
-		    NULL,
-		    NULL, NULL,
-		    PRE_KERNEL_1, CONFIG_CLOCK_CONTROL_INIT_PRIORITY,
-		    &mcux_ccm_driver_api);
+DEVICE_DT_INST_DEFINE(0, NULL, NULL, NULL, NULL,
+		      PRE_KERNEL_1, CONFIG_CLOCK_CONTROL_INIT_PRIORITY,
+		      &mcux_ccm_driver_api);

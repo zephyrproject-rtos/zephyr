@@ -9,7 +9,7 @@
 
 #include <zephyr/drivers/pinctrl.h>
 #include <hal/spi_hal.h>
-#ifdef CONFIG_SOC_ESP32C3
+#ifdef SOC_GDMA_SUPPORTED
 #include <hal/gdma_hal.h>
 #endif
 
@@ -42,7 +42,7 @@ struct spi_esp32_data {
 	struct spi_context ctx;
 	spi_hal_context_t hal;
 	spi_hal_config_t hal_config;
-#ifdef CONFIG_SOC_ESP32C3
+#ifdef SOC_GDMA_SUPPORTED
 	gdma_hal_context_t hal_gdma;
 #endif
 	spi_hal_timing_conf_t timing_config;

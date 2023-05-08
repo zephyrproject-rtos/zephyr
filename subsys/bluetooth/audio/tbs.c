@@ -1085,6 +1085,9 @@ static int originate_call(struct tbs_service_inst *inst,
 	BT_TBS_CALL_FLAG_SET_OUTGOING(call->flags);
 
 	hold_other_calls(inst, 1, &call->index);
+
+	notify_calls(inst);
+	call->state = BT_TBS_CALL_STATE_ALERTING;
 	notify_calls(inst);
 
 	LOG_DBG("New call with call index %u", call->index);

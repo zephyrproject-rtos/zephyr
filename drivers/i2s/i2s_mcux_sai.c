@@ -17,9 +17,7 @@
 #include <zephyr/init.h>
 #include <zephyr/drivers/dma.h>
 #include <zephyr/drivers/i2s.h>
-#ifdef CONFIG_PINCTRL
 #include <zephyr/drivers/pinctrl.h>
-#endif
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/dt-bindings/clock/imx_ccm.h>
 #include <soc.h>
@@ -94,9 +92,7 @@ struct i2s_mcux_config {
 	uint32_t tx_channel;
 	clock_control_subsys_t clk_sub_sys;
 	const struct device *ccm_dev;
-#ifdef CONFIG_PINCTRL
 	const struct pinctrl_dev_config *pinctrl;
-#endif
 	void (*irq_connect)(const struct device *dev);
 	bool rx_sync_mode;
 	bool tx_sync_mode;
@@ -1157,9 +1153,7 @@ static int i2s_mcux_initialize(const struct device *dev)
 	I2S_Type *base = (I2S_Type *)dev_cfg->base;
 	struct i2s_dev_data *dev_data = dev->data;
 	uint32_t mclk;
-#ifdef CONFIG_PINCTRL
 	int err;
-#endif
 
 	if (!dev_data->dev_dma) {
 		LOG_ERR("DMA device not found");
@@ -1179,13 +1173,11 @@ static int i2s_mcux_initialize(const struct device *dev)
 	/* register ISR */
 	dev_cfg->irq_connect(dev);
 	/* pinctrl */
-#ifdef CONFIG_PINCTRL
 	err = pinctrl_apply_state(dev_cfg->pinctrl, PINCTRL_STATE_DEFAULT);
 	if (err) {
 		LOG_ERR("mclk pinctrl setup failed (%d)", err);
 		return err;
 	}
-#endif
 
 	/*clock configuration*/
 	audio_clock_settings(dev);
@@ -1235,18 +1227,10 @@ static const struct i2s_driver_api i2s_mcux_driver_api = {
 	.trigger = i2s_mcux_trigger,
 };
 
-#ifdef CONFIG_PINCTRL
-#define PINCTRL_DEFINE(i2s_id) PINCTRL_DT_INST_DEFINE(i2s_id);
-#define PINCTRL_INIT(i2s_id) .pinctrl = PINCTRL_DT_INST_DEV_CONFIG_GET(i2s_id),
-#else
-#define PINCTRL_DEFINE(i2s_id)
-#define PINCTRL_INIT(i2s_id)
-#endif
-
 #define I2S_MCUX_INIT(i2s_id)						\
 	static void i2s_irq_connect_##i2s_id(const struct device *dev); \
 									\
-	PINCTRL_DEFINE(i2s_id)						\
+	PINCTRL_DT_INST_DEFINE(i2s_id);					\
 									\
 	static const struct i2s_mcux_config i2s_##i2s_id##_config = {	\
 		.base = (I2S_Type *)DT_INST_REG_ADDR(i2s_id),		\
@@ -1280,7 +1264,7 @@ static const struct i2s_driver_api i2s_mcux_driver_api = {
 			DT_INST_CLOCKS_CELL_BY_IDX(i2s_id, 0, name),	\
 		.ccm_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(i2s_id)),	\
 		.irq_connect = i2s_irq_connect_##i2s_id,		\
-		PINCTRL_INIT(i2s_id)					\
+		.pinctrl = PINCTRL_DT_INST_DEV_CONFIG_GET(i2s_id),	\
 		.tx_sync_mode =						\
 			   DT_INST_PROP(i2s_id, nxp_tx_sync_mode),	\
 		.rx_sync_mode =						\

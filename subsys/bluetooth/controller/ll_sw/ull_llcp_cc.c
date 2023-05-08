@@ -19,7 +19,10 @@
 #include "util/memq.h"
 #include "util/dbuf.h"
 
+#include "pdu_df.h"
+#include "lll/pdu_vendor.h"
 #include "pdu.h"
+
 #include "ll.h"
 #include "ll_feat.h"
 #include "ll_settings.h"
@@ -89,22 +92,6 @@ static void cc_ntf_established(struct ll_conn *conn, struct proc_ctx *ctx)
 }
 
 #if defined(CONFIG_BT_PERIPHERAL)
-static uint16_t cc_event_counter(struct ll_conn *conn)
-{
-	struct lll_conn *lll;
-	uint16_t event_counter;
-
-	uint16_t lazy = conn->llcp.prep.lazy;
-
-	/**/
-	lll = &conn->lll;
-
-	/* Calculate current event counter */
-	event_counter = lll->event_counter + lll->latency_prepare + lazy;
-
-	return event_counter;
-}
-
 /* LLCP Remote Procedure FSM states */
 enum {
 	/* Establish Procedure */
@@ -143,9 +130,15 @@ enum {
 	/* Reject response received */
 	RP_CC_EVT_REJECT,
 
+	/* Established */
+	RP_CC_EVT_CIS_ESTABLISHED,
+
 	/* Unknown response received */
 	RP_CC_EVT_UNKNOWN,
 };
+
+static void rp_cc_check_instant(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
+				void *param);
 
 /*
  * LLCP Remote Procedure FSM
@@ -153,17 +146,48 @@ enum {
 
 static void llcp_rp_cc_tx_rsp(struct ll_conn *conn, struct proc_ctx *ctx)
 {
-	struct node_tx *tx;
+	uint16_t delay_conn_events;
+	uint16_t conn_event_count;
 	struct pdu_data *pdu;
+	struct node_tx *tx;
 
 	/* Allocate tx node */
 	tx = llcp_tx_alloc(conn, ctx);
 	LL_ASSERT(tx);
 
 	pdu = (struct pdu_data *)tx->pdu;
+	conn_event_count = ctx->data.cis_create.conn_event_count;
 
+	/* Postpone if instant is in this or next connection event. This would handle obsolete value
+	 * due to retransmission, as well as incorrect behavior by central.
+	 * We need at least 2 connection events to get ready. First for receiving the indication,
+	 * the second for setting up the CIS.
+	 */
 	ctx->data.cis_create.conn_event_count = MAX(ctx->data.cis_create.conn_event_count,
-						    cc_event_counter(conn) + 2);
+						    ull_conn_event_counter(conn) + 2U);
+
+	delay_conn_events = ctx->data.cis_create.conn_event_count - conn_event_count;
+
+	/* If instant is postponed, calculate the offset to add to CIS_Offset_Min and
+	 * CIS_Offset_Max.
+	 *
+	 * BT Core v5.3, Vol 6, Part B, section 5.1.15:
+	 * Two windows are equivalent if they have the same width and the difference between their
+	 * start times is an integer multiple of ISO_Interval for the CIS.
+	 *
+	 * The offset shall compensate for the relation between ISO- and connection interval. The
+	 * offset translates to what is additionally needed to move the window by an integer number
+	 * of ISO intervals. I.e.:
+	 *   offset = (delayed * CONN_interval) MOD ISO_interval
+	 */
+	if (delay_conn_events) {
+		uint32_t conn_interval_us  = conn->lll.interval * CONN_INT_UNIT_US;
+		uint32_t iso_interval_us   = ctx->data.cis_create.iso_interval * ISO_INT_UNIT_US;
+		uint32_t offset_us = (delay_conn_events * conn_interval_us) % iso_interval_us;
+
+		ctx->data.cis_create.cis_offset_min += offset_us;
+		ctx->data.cis_create.cis_offset_max += offset_us;
+	}
 
 	llcp_pdu_encode_cis_rsp(ctx, pdu);
 	ctx->tx_opcode = pdu->llctrl.opcode;
@@ -380,19 +404,14 @@ static void rp_cc_state_wait_rx_cis_ind(struct ll_conn *conn, struct proc_ctx *c
 	case RP_CC_EVT_CIS_IND:
 		llcp_pdu_decode_cis_ind(ctx, pdu);
 		if (!ull_peripheral_iso_setup(&pdu->llctrl.cis_ind, ctx->data.cis_create.cig_id,
-					 ctx->data.cis_create.cis_handle)) {
+					      ctx->data.cis_create.cis_handle,
+					      &ctx->data.cis_create.conn_event_count)) {
 
 			/* CIS has been setup, go wait for 'instant' before starting */
 			ctx->state = RP_CC_STATE_WAIT_INSTANT;
 
-			/* Fixme - Implement CIS Supervision timeout
-			 * Spec:
-			 * When establishing a CIS, the Peripheral shall start the CIS supervision
-			 * timer at the start of the next CIS event after receiving the LL_CIS_IND.
-			 * If the CIS supervision timer reaches 6 * ISO_Interval before the CIS is
-			 * established, the CIS shall be considered lost.
-			 */
-
+			/* Check if this connection event is where we need to start the CIS */
+			rp_cc_check_instant(conn, ctx, evt, param);
 			break;
 		}
 		/* If we get to here the CIG_ID referred in req/acquire has become void/invalid */
@@ -421,7 +440,6 @@ static void rp_cc_state_wait_ntf_cis_create(struct ll_conn *conn, struct proc_ct
 	}
 }
 
-
 static void rp_cc_state_wait_ntf(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
 				 void *param)
 {
@@ -439,25 +457,19 @@ static void rp_cc_check_instant(struct ll_conn *conn, struct proc_ctx *ctx, uint
 				void *param)
 {
 	uint16_t start_event_count;
-	struct ll_conn_iso_group *cig;
+	uint16_t event_counter;
 
-	cig = ll_conn_iso_group_get_by_id(ctx->data.cis_create.cig_id);
+	event_counter = ull_conn_event_counter(conn);
 	start_event_count = ctx->data.cis_create.conn_event_count;
-	LL_ASSERT(cig);
 
-	if (!cig->started) {
-		/* Start ISO peripheral one event before the requested instant
-		 * for first CIS. This is done to be able to accept small CIS
-		 * offsets.
-		 */
-		start_event_count--;
-	}
+	if (is_instant_reached_or_passed(start_event_count, event_counter)) {
+		uint16_t instant_latency = (event_counter - start_event_count) & 0xffff;
 
-	if (is_instant_reached_or_passed(start_event_count,
-					 cc_event_counter(conn))) {
 		/* Start CIS */
-		ull_conn_iso_start(conn, conn->llcp.prep.ticks_at_expire,
-				   ctx->data.cis_create.cis_handle);
+		ull_conn_iso_start(conn, ctx->data.cis_create.cis_handle,
+				   conn->llcp.prep.ticks_at_expire,
+				   conn->llcp.prep.remainder,
+				   instant_latency);
 
 		/* Now we can wait for CIS to become established */
 		ctx->state = RP_CC_STATE_WAIT_CIS_ESTABLISHED;
@@ -522,6 +534,10 @@ static void rp_cc_state_wait_cis_established(struct ll_conn *conn, struct proc_c
 			 */
 			rp_cc_complete(conn, ctx, evt, param);
 		}
+		break;
+	case RP_CC_EVT_CIS_ESTABLISHED:
+		/* CIS was established, so let's go ahead and complete procedure */
+		rp_cc_complete(conn, ctx, evt, param);
 		break;
 	default:
 		/* Ignore other evts */
@@ -611,6 +627,11 @@ bool llcp_rp_cc_awaiting_reply(struct proc_ctx *ctx)
 	return (ctx->state == RP_CC_STATE_WAIT_REPLY);
 }
 
+bool llcp_rp_cc_awaiting_established(struct proc_ctx *ctx)
+{
+	return (ctx->state == RP_CC_STATE_WAIT_CIS_ESTABLISHED);
+}
+
 void llcp_rp_cc_accept(struct ll_conn *conn, struct proc_ctx *ctx)
 {
 	rp_cc_execute_fsm(conn, ctx, RP_CC_EVT_CIS_REQ_ACCEPT, NULL);
@@ -625,6 +646,16 @@ void llcp_rp_cc_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param)
 {
 	rp_cc_execute_fsm(conn, ctx, RP_CC_EVT_RUN, param);
 }
+
+bool llcp_rp_cc_awaiting_instant(struct proc_ctx *ctx)
+{
+	return (ctx->state == RP_CC_STATE_WAIT_INSTANT);
+}
+
+void llcp_rp_cc_established(struct ll_conn *conn, struct proc_ctx *ctx)
+{
+	rp_cc_execute_fsm(conn, ctx, RP_CC_EVT_CIS_ESTABLISHED, NULL);
+}
 #endif /* CONFIG_BT_PERIPHERAL */
 
 #if defined(CONFIG_BT_CTLR_CENTRAL_ISO)
@@ -633,6 +664,8 @@ static void lp_cc_execute_fsm(struct ll_conn *conn, struct proc_ctx *ctx, uint8_
 /* LLCP Local Procedure FSM states */
 enum {
 	LP_CC_STATE_IDLE,
+	LP_CC_STATE_WAIT_OFFSET_CALC,
+	LP_CC_STATE_WAIT_OFFSET_CALC_TX_REQ,
 	LP_CC_STATE_WAIT_TX_CIS_REQ,
 	LP_CC_STATE_WAIT_RX_CIS_RSP,
 	LP_CC_STATE_WAIT_TX_CIS_IND,
@@ -646,11 +679,17 @@ enum {
 	/* Procedure run */
 	LP_CC_EVT_RUN,
 
+	/* Offset calculation reply received */
+	LP_CC_EVT_OFFSET_CALC_REPLY,
+
 	/* Response received */
 	LP_CC_EVT_CIS_RSP,
 
 	/* Reject response received */
 	LP_CC_EVT_REJECT,
+
+	/* CIS established */
+	LP_CC_EVT_ESTABLISHED,
 
 	/* Unknown response received */
 	LP_CC_EVT_UNKNOWN,
@@ -709,16 +748,76 @@ void llcp_lp_cc_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pd
 	}
 }
 
+void llcp_lp_cc_offset_calc_reply(struct ll_conn *conn, struct proc_ctx *ctx)
+{
+	lp_cc_execute_fsm(conn, ctx, LP_CC_EVT_OFFSET_CALC_REPLY, NULL);
+}
+
+static void lp_cc_offset_calc_req(struct ll_conn *conn, struct proc_ctx *ctx,
+				  uint8_t evt, void *param)
+{
+	if (llcp_lr_ispaused(conn) || !llcp_tx_alloc_peek(conn, ctx)) {
+		ctx->state = LP_CC_STATE_WAIT_OFFSET_CALC_TX_REQ;
+	} else {
+		int err;
+
+		/* Update conn_event_count */
+		err = ull_central_iso_cis_offset_get(ctx->data.cis_create.cis_handle,
+						     &ctx->data.cis_create.cis_offset_min,
+						     &ctx->data.cis_create.cis_offset_max,
+						     &ctx->data.cis_create.conn_event_count);
+		if (err) {
+			ctx->state = LP_CC_STATE_WAIT_OFFSET_CALC;
+
+			return;
+		}
+
+		lp_cc_tx(conn, ctx, PDU_DATA_LLCTRL_TYPE_CIS_REQ);
+
+		ctx->state = LP_CC_STATE_WAIT_RX_CIS_RSP;
+		ctx->rx_opcode = PDU_DATA_LLCTRL_TYPE_CIS_RSP;
+	}
+}
+
+static void lp_cc_st_wait_offset_calc_tx_req(struct ll_conn *conn,
+					     struct proc_ctx *ctx,
+					     uint8_t evt, void *param)
+{
+	switch (evt) {
+	case LP_CC_EVT_RUN:
+		lp_cc_offset_calc_req(conn, ctx, evt, param);
+		break;
+	default:
+		/* Ignore other evts */
+		break;
+	}
+}
+
+static void lp_cc_st_wait_offset_calc(struct ll_conn *conn,
+				      struct proc_ctx *ctx,
+				      uint8_t evt, void *param)
+{
+	switch (evt) {
+	case LP_CC_EVT_RUN:
+		/* TODO: May be have a timeout calculating the CIS offset?
+		 *       otherwise, ignore
+		 */
+		break;
+	case LP_CC_EVT_OFFSET_CALC_REPLY:
+		ctx->state = LP_CC_STATE_WAIT_TX_CIS_REQ;
+		break;
+	default:
+		/* Ignore other evts */
+		break;
+	}
+}
+
 static void lp_cc_send_cis_req(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
 			       void *param)
 {
 	if (llcp_lr_ispaused(conn) || !llcp_tx_alloc_peek(conn, ctx)) {
 		ctx->state = LP_CC_STATE_WAIT_TX_CIS_REQ;
 	} else {
-		/* Update conn_event_count */
-		ctx->data.cis_create.conn_event_count =
-			ull_central_iso_cis_offset_get(ctx->data.cis_create.cis_handle, NULL, NULL);
-
 		lp_cc_tx(conn, ctx, PDU_DATA_LLCTRL_TYPE_CIS_REQ);
 
 		ctx->state = LP_CC_STATE_WAIT_RX_CIS_RSP;
@@ -745,7 +844,7 @@ static void lp_cc_st_idle(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t ev
 	case LP_CC_EVT_RUN:
 		switch (ctx->proc) {
 		case PROC_CIS_CREATE:
-			lp_cc_send_cis_req(conn, ctx, evt, param);
+			lp_cc_offset_calc_req(conn, ctx, evt, param);
 			break;
 		default:
 			/* Unknown procedure */
@@ -846,12 +945,20 @@ static void lp_cc_st_wait_tx_cis_ind(struct ll_conn *conn, struct proc_ctx *ctx,
 static void lp_cc_check_instant(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
 				void *param)
 {
-	uint16_t event_counter = ull_conn_event_counter(conn);
+	uint16_t start_event_count;
+	uint16_t instant_latency;
+	uint16_t event_counter;
 
-	if (is_instant_reached_or_passed(ctx->data.cis_create.conn_event_count, event_counter)) {
+	event_counter = ull_conn_event_counter(conn);
+	start_event_count = ctx->data.cis_create.conn_event_count;
+
+	instant_latency = (event_counter - start_event_count) & 0xffff;
+	if (instant_latency <= 0x7fff) {
 		/* Start CIS */
-		ull_conn_iso_start(conn, conn->llcp.prep.ticks_at_expire,
-				   ctx->data.cis_create.cis_handle);
+		ull_conn_iso_start(conn, ctx->data.cis_create.cis_handle,
+				   conn->llcp.prep.ticks_at_expire,
+				   conn->llcp.prep.remainder,
+				   instant_latency);
 
 		/* Now we can wait for CIS to become established */
 		ctx->state = LP_CC_STATE_WAIT_ESTABLISHED;
@@ -881,6 +988,10 @@ static void lp_cc_st_wait_established(struct ll_conn *conn, struct proc_ctx *ctx
 			lp_cc_complete(conn, ctx, evt, param);
 		}
 		break;
+	case LP_CC_EVT_ESTABLISHED:
+		/* CIS was established, so let's go ahead and complete procedure */
+		lp_cc_complete(conn, ctx, evt, param);
+		break;
 	default:
 		/* Ignore other evts */
 		break;
@@ -904,6 +1015,12 @@ static void lp_cc_execute_fsm(struct ll_conn *conn, struct proc_ctx *ctx, uint8_
 	switch (ctx->state) {
 	case LP_CC_STATE_IDLE:
 		lp_cc_st_idle(conn, ctx, evt, param);
+		break;
+	case LP_CC_STATE_WAIT_OFFSET_CALC_TX_REQ:
+		lp_cc_st_wait_offset_calc_tx_req(conn, ctx, evt, param);
+		break;
+	case LP_CC_STATE_WAIT_OFFSET_CALC:
+		lp_cc_st_wait_offset_calc(conn, ctx, evt, param);
 		break;
 	case LP_CC_STATE_WAIT_TX_CIS_REQ:
 		lp_cc_st_wait_tx_cis_req(conn, ctx, evt, param);
@@ -938,5 +1055,15 @@ void llcp_lp_cc_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param)
 bool llcp_lp_cc_is_active(struct proc_ctx *ctx)
 {
 	return ctx->state != LP_CC_STATE_IDLE;
+}
+
+bool llcp_lp_cc_awaiting_established(struct proc_ctx *ctx)
+{
+	return (ctx->state == LP_CC_STATE_WAIT_ESTABLISHED);
+}
+
+void llcp_lp_cc_established(struct ll_conn *conn, struct proc_ctx *ctx)
+{
+	lp_cc_execute_fsm(conn, ctx, LP_CC_EVT_ESTABLISHED, NULL);
 }
 #endif /* CONFIG_BT_CTLR_CENTRAL_ISO */

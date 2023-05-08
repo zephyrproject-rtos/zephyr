@@ -108,9 +108,8 @@ int z_sparc_int_get_source(int irl)
 	return source;
 }
 
-static int irqmp_init(const struct device *dev)
+static int irqmp_init(void)
 {
-	ARG_UNUSED(dev);
 	volatile struct irqmp_regs *regs = get_irqmp_regs();
 
 	regs->ilevel = 0;

@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig AUDIO
-	bool "Support for Audio"
+	bool "Audio drivers"
 	help
 	  Enable support for Audio
 

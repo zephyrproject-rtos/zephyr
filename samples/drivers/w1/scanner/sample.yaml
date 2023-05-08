@@ -2,9 +2,18 @@ sample:
   name: 1-Wire scanner sample
 
 common:
-    harness: console
+  harness: console
 
 tests:
+  sample.drivers.w1.scanner.ds2482-800:
+    depends_on: arduino_i2c
+    extra_args: DTC_OVERLAY_FILE=ds2482-800.overlay
+    platform_allow: nrf52840dk_nrf52840
+    harness_config:
+      type: one_line
+      regex:
+        - "Number of devices found on bus: .*"
+      fixture: w1_scanner_ds2482_800
   sample.drivers.w1.scanner.ds2484:
     depends_on: arduino_i2c
     extra_args: DTC_OVERLAY_FILE=ds2484.overlay

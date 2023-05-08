@@ -114,6 +114,9 @@ be found on which architectures:
 The board has 3 (debounced and interrupting) buttons for use with GPIO, 4 dip
 switches, 9 LEDs, SDCard on SPI, and a 16MB SPI-Flash memory.
 
+The SPI-FLASH driver is supported with sample, which can be found in
+``samples/drivers/spi_flash``.
+
 The SPI-Flash also holds 3 (or 4) separate FPGA CPU bit files, selectable via
 dip switch.
 

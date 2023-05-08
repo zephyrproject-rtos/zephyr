@@ -10,9 +10,15 @@
 #ifndef ZEPHYR_DRIVERS_SENSOR_STMEMSC_STMEMSC_H_
 #define ZEPHYR_DRIVERS_SENSOR_STMEMSC_STMEMSC_H_
 
+#include <zephyr/kernel.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/i3c.h>
 #include <zephyr/drivers/spi.h>
+
+static inline void stmemsc_mdelay(uint32_t millisec)
+{
+	k_msleep(millisec);
+}
 
 #ifdef CONFIG_I2C
 int stmemsc_i2c_read(const struct i2c_dt_spec *stmemsc,

@@ -5,62 +5,62 @@ compatible: "espressif,esp32-spi"
 include: [spi-controller.yaml, pinctrl-device.yaml]
 
 properties:
-    reg:
-      required: true
+  reg:
+    required: true
 
-    pinctrl-0:
-      required: true
+  pinctrl-0:
+    required: true
 
-    pinctrl-names:
-      required: true
+  pinctrl-names:
+    required: true
 
-    half-duplex:
-      type: boolean
-      description: |
-        Enable half-duplex communication mode.
+  half-duplex:
+    type: boolean
+    description: |
+      Enable half-duplex communication mode.
 
-        Transmit data before receiving it, instead of simultaneously
+      Transmit data before receiving it, instead of simultaneously
 
-    dummy-comp:
-      type: boolean
-      description: Enable dummy SPI compensation cycles
+  dummy-comp:
+    type: boolean
+    description: Enable dummy SPI compensation cycles
 
-    sio:
-      type: boolean
-      description: |
-        Enable 3-wire mode
+  sio:
+    type: boolean
+    description: |
+      Enable 3-wire mode
 
-        Use MOSI for both sending and receiving data
+      Use MOSI for both sending and receiving data
 
-    dma-enabled:
-      type: boolean
-      description: Enable SPI DMA support
+  dma-enabled:
+    type: boolean
+    description: Enable SPI DMA support
 
-    dma-clk:
-      type: int
-      description: DMA clock source
+  dma-clk:
+    type: int
+    description: DMA clock source
 
-    dma-host:
-      type: int
-      description: DMA Host - 0 -> SPI2, 1 -> SPI3
+  dma-host:
+    type: int
+    description: DMA Host - 0 -> SPI2, 1 -> SPI3
 
-    clk-as-cs:
-      type: boolean
-      description: |
-        Support to toggle the CS while the clock toggles
+  clk-as-cs:
+    type: boolean
+    description: |
+      Support to toggle the CS while the clock toggles
 
-        Output clock on CS line if CS is active
+      Output clock on CS line if CS is active
 
-    positive-cs:
-      type: boolean
-      description: Make CS positive during a transaction instead of negative
+  positive-cs:
+    type: boolean
+    description: Make CS positive during a transaction instead of negative
 
-    use-iomux:
-      type: boolean
-      description: |
-        Some pins are allowed to bypass the GPIO Matrix and use the IO_MUX
-        routing mechanism instead, this avoids extra routing latency and makes
-        possible the use of operating frequencies higher than 20 MHz.
+  use-iomux:
+    type: boolean
+    description: |
+      Some pins are allowed to bypass the GPIO Matrix and use the IO_MUX
+      routing mechanism instead, this avoids extra routing latency and makes
+      possible the use of operating frequencies higher than 20 MHz.
 
-        Refer to SoC's Technical Reference Manual to check which pins are
-        allowed to use this routing path.
+      Refer to SoC's Technical Reference Manual to check which pins are
+      allowed to use this routing path.

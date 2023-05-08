@@ -6,34 +6,32 @@ description: Atmel SAM PWM
 compatible: "atmel,sam-pwm"
 
 include:
-    - name: base.yaml
-    - name: pwm-controller.yaml
-    - name: pinctrl-device.yaml
+  - name: base.yaml
+  - name: pwm-controller.yaml
+  - name: pinctrl-device.yaml
 
 properties:
-    reg:
-      required: true
+  reg:
+    required: true
 
-    interrupts:
-      required: true
+  interrupts:
+    required: true
 
-    peripheral-id:
-      type: int
-      description: peripheral ID
-      required: true
+  clocks:
+    required: true
 
-    prescaler:
-      type: int
-      required: true
-      description: Clock prescaler at the input of the PWM (0 to 10)
+  prescaler:
+    type: int
+    required: true
+    description: Clock prescaler at the input of the PWM (0 to 10)
 
-    divider:
-      type: int
-      required: true
-      description: Clock divider at the input of the PWM (1 to 255)
+  divider:
+    type: int
+    required: true
+    description: Clock divider at the input of the PWM (1 to 255)
 
-    "#pwm-cells":
-      const: 3
+  "#pwm-cells":
+    const: 3
 
 pwm-cells:
   - channel

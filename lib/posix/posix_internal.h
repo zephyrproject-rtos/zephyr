@@ -7,6 +7,8 @@
 #ifndef ZEPHYR_LIB_POSIX_POSIX_INTERNAL_H_
 #define ZEPHYR_LIB_POSIX_POSIX_INTERNAL_H_
 
+#include <zephyr/kernel.h>
+
 /*
  * Bit used to mark a pthread object as initialized. Initialization status is
  * verified (against internal status) in lock / unlock / destroy functions.
@@ -25,12 +27,12 @@ struct posix_cond {
 };
 
 enum pthread_state {
-	/* The thread structure is unallocated and available for reuse. */
-	PTHREAD_TERMINATED = 0,
-	/* The thread is running and joinable. */
-	PTHREAD_JOINABLE = PTHREAD_CREATE_JOINABLE,
 	/* The thread is running and detached. */
 	PTHREAD_DETACHED = PTHREAD_CREATE_DETACHED,
+	/* The thread is running and joinable. */
+	PTHREAD_JOINABLE = PTHREAD_CREATE_JOINABLE,
+	/* The thread structure is unallocated and available for reuse. */
+	PTHREAD_TERMINATED,
 	/* A joinable thread exited and its return code is available. */
 	PTHREAD_EXITED
 };

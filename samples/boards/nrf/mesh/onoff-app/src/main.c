@@ -573,7 +573,7 @@ static void bt_ready(int err)
 	printk("Mesh initialized\n");
 }
 
-void main(void)
+int main(void)
 {
 	int err, i;
 
@@ -595,7 +595,7 @@ void main(void)
 	for (i = 0; i < ARRAY_SIZE(sw_device); i++) {
 		if (!device_is_ready(sw_device[i].port)) {
 			printk("SW%d GPIO controller device is not ready\n", i);
-			return;
+			return 0;
 		}
 		gpio_pin_configure_dt(&sw_device[i], GPIO_INPUT);
 		gpio_pin_interrupt_configure_dt(&sw_device[i], GPIO_INT_EDGE_TO_ACTIVE);
@@ -607,7 +607,7 @@ void main(void)
 	for (i = 0; i < ARRAY_SIZE(onoff_state); i++) {
 		if (!device_is_ready(onoff_state[i].led_device.port)) {
 			printk("LED%d GPIO controller device is not ready\n", i);
-			return;
+			return 0;
 		}
 		gpio_pin_configure_dt(&onoff_state[i].led_device, GPIO_OUTPUT_INACTIVE);
 	}
@@ -617,4 +617,5 @@ void main(void)
 	if (err) {
 		printk("Bluetooth init failed (err %d)\n", err);
 	}
+	return 0;
 }

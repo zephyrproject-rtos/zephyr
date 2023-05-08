@@ -8,15 +8,11 @@
 #include <zephyr/kernel.h>
 #include <errno.h>
 #include <zephyr/net/socket.h>
+#include <zephyr/net/tftp.h>
 
 /* Defines for creating static arrays for TFTP communication. */
-#define TFTP_HEADER_SIZE         4
-#define TFTP_BLOCK_SIZE          512
 #define TFTP_MAX_MODE_SIZE       8
 #define TFTP_REQ_RETX            CONFIG_TFTPC_REQUEST_RETRANSMITS
-
-/* Maximum amount of data that can be received in a single go ! */
-#define TFTPC_MAX_BUF_SIZE       (TFTP_BLOCK_SIZE + TFTP_HEADER_SIZE)
 
 /* Maximum filename size allowed by the TFTP Client. This is used as
  * an upper bound in the "make_request" function to ensure that there

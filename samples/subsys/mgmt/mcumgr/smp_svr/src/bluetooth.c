@@ -58,9 +58,23 @@ BT_CONN_CB_DEFINE(conn_callbacks) = {
 	.disconnected = disconnected,
 };
 
+static void bt_ready(int err)
+{
+	if (err != 0) {
+		LOG_ERR("Bluetooth failed to initialise: %d", err);
+	} else {
+		k_work_submit(&advertise_work);
+	}
+}
+
 void start_smp_bluetooth_adverts(void)
 {
-	k_work_init(&advertise_work, advertise);
+	int rc;
 
-	k_work_submit(&advertise_work);
+	k_work_init(&advertise_work, advertise);
+	rc = bt_enable(bt_ready);
+
+	if (rc != 0) {
+		LOG_ERR("Bluetooth enable failed: %d", rc);
+	}
 }

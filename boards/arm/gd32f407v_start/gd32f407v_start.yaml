@@ -16,3 +16,4 @@ supported:
   - gpio
   - counter
   - dma
+  - spi

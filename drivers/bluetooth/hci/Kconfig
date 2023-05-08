@@ -56,6 +56,18 @@ config BT_STM32_IPM
 	help
 	  TODO
 
+config BT_SILABS_HCI
+	bool "Silicon Labs Bluetooth interface"
+	depends on SOC_SERIES_EFR32BG22
+	select ENTROPY_GENERATOR
+	select MBEDTLS
+	select MBEDTLS_PSA_CRYPTO_C
+	select MBEDTLS_ENTROPY_ENABLED
+	select MBEDTLS_ZEPHYR_ENTROPY
+	help
+	  Use Silicon Labs binary Bluetooth library to connect to the
+	  controller.
+
 config BT_USERCHAN
 	bool "HCI User Channel based driver"
 	depends on BOARD_NATIVE_POSIX
@@ -109,6 +121,19 @@ config BT_STM32_IPM_RX_STACK_SIZE
 	depends on BT_STM32_IPM
 	default 512
 
+menuconfig BT_CYW43XXX
+	bool "CYW43XXX BT connectivity"
+	default y
+	select BT_HCI_SETUP
+	depends on GPIO
+	depends on DT_HAS_INFINEON_CYW43XXX_BT_HCI_ENABLED
+	depends on BT_H4
+	help
+	  Infineon's AIROC™ Wi-Fi & combos portfolio integrates
+	  IEEE 802.11a/b/g/n/ac/ax Wi-Fi and Bluetooth® 5.2 in a single-chip
+	  solution to enable small-form-factor IoT designs.
+source "drivers/bluetooth/hci/Kconfig.infineon"
+
 config BT_DRIVER_QUIRK_NO_AUTO_DLE
 	bool "Host auto-initiated Data Length Update quirk"
 	depends on BT_AUTO_DATA_LEN_UPDATE
@@ -134,3 +159,26 @@ config BT_HCI_SETUP
 	  The user should generally avoid changing it via menuconfig or in
 	  configuration files. This option are enabled by the vendor-specific
 	  HCI extension, where the Setup function is implemented.
+
+config BT_DRV_TX_STACK_SIZE
+	int
+	default 256
+	help
+	  Stack size for the HCI driver's TX thread.
+
+config BT_DRV_RX_STACK_SIZE
+	int
+	default 512 if BT_SPI
+	default BT_RX_STACK_SIZE if (BT_H4 || BT_HCI_RAW_H4)
+	default BT_STM32_IPM_RX_STACK_SIZE if BT_STM32_IPM
+	default 256
+	help
+	  Stack size for the HCI driver's RX thread.
+
+config BT_SILABS_HCI_BUFFER_MEMORY
+	int "Silicon Labs Bluetooth Library memory buffer size"
+	depends on BT_SILABS_HCI
+	default 6144
+	help
+	  Select the size of allocated memory buffer for the Silicon Labs
+	  Bluetooth Library.

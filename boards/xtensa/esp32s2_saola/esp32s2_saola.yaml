@@ -1,5 +1,5 @@
 identifier: esp32s2_saola
-name: ESP32-S2
+name: ESP32-S2 Saola
 type: mcu
 arch: xtensa
 toolchain:
@@ -11,6 +11,11 @@ supported:
   - i2c
   - watchdog
   - uart
+  - nvs
+  - pwm
+  - spi
+  - counter
+  - entropy
 testing:
   ignore_tags:
     - net

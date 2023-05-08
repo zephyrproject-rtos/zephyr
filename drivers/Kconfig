@@ -5,150 +5,79 @@
 
 menu "Device Drivers"
 
-source "drivers/bluetooth/Kconfig"
-
-source "drivers/ieee802154/Kconfig"
-
-source "drivers/lora/Kconfig"
-
-source "drivers/console/Kconfig"
-
-source "drivers/debug/Kconfig"
-
-source "drivers/ec_host_cmd_periph/Kconfig"
-
-source "drivers/ethernet/Kconfig"
-
-source "drivers/mdio/Kconfig"
-
-source "drivers/net/Kconfig"
-
-source "drivers/serial/Kconfig"
-
-source "drivers/interrupt_controller/Kconfig"
-
-source "drivers/timer/Kconfig"
-
-source "drivers/entropy/Kconfig"
-
-source "drivers/pcie/Kconfig"
-
-source "drivers/gpio/Kconfig"
-
-source "drivers/interrupt_controller/Kconfig.shared_irq"
-
-source "drivers/spi/Kconfig"
-
-source "drivers/sdhc/Kconfig"
-
-source "drivers/i2c/Kconfig"
-
-source "drivers/i3c/Kconfig"
-
-source "drivers/i2s/Kconfig"
-
-source "drivers/dai/Kconfig"
-
-source "drivers/pwm/Kconfig"
-
-source "drivers/pinmux/Kconfig"
-
 source "drivers/adc/Kconfig"
-
-source "drivers/dac/Kconfig"
-
-source "drivers/watchdog/Kconfig"
-
-source "drivers/w1/Kconfig"
-
-source "drivers/clock_control/Kconfig"
-
-source "drivers/ptp_clock/Kconfig"
-
-source "drivers/ipm/Kconfig"
-
-source "drivers/flash/Kconfig"
-
-source "drivers/sensor/Kconfig"
-
-source "drivers/counter/Kconfig"
-
-source "drivers/dma/Kconfig"
-
-source "drivers/usb/Kconfig"
-
-source "drivers/crypto/Kconfig"
-
-source "drivers/display/Kconfig"
-
-source "drivers/led_strip/Kconfig"
-
-source "drivers/wifi/Kconfig"
-
-source "drivers/led/Kconfig"
-
-source "drivers/can/Kconfig"
-
-source "drivers/modem/Kconfig"
-
 source "drivers/audio/Kconfig"
-
-source "drivers/neural_net/Kconfig"
-
-source "drivers/hwinfo/Kconfig"
-
-source "drivers/espi/Kconfig"
-
-source "drivers/ps2/Kconfig"
-
-source "drivers/kscan/Kconfig"
-
-source "drivers/video/Kconfig"
-
-source "drivers/eeprom/Kconfig"
-
-source "drivers/peci/Kconfig"
-
-source "drivers/regulator/Kconfig"
-
-source "drivers/memc/Kconfig"
-
-source "drivers/virtualization/Kconfig"
-
-source "drivers/edac/Kconfig"
-
-source "drivers/pm_cpu_ops/Kconfig"
-
-source "drivers/misc/Kconfig"
-
-source "drivers/disk/Kconfig"
-
-source "drivers/cache/Kconfig"
-
-source "drivers/syscon/Kconfig"
-
 source "drivers/bbram/Kconfig"
-
-source "drivers/fpga/Kconfig"
-
-source "drivers/pinctrl/Kconfig"
-
-source "drivers/mbox/Kconfig"
-
-source "drivers/mm/Kconfig"
-
-source "drivers/power_domain/Kconfig"
-
-source "drivers/usb_c/Kconfig"
-
-source "drivers/reset/Kconfig"
-
-source "drivers/mipi_dsi/Kconfig"
-
+source "drivers/bluetooth/Kconfig"
+source "drivers/cache/Kconfig"
+source "drivers/can/Kconfig"
+source "drivers/clock_control/Kconfig"
+source "drivers/console/Kconfig"
 source "drivers/coredump/Kconfig"
-
-source "drivers/xen/Kconfig"
-
+source "drivers/counter/Kconfig"
+source "drivers/crypto/Kconfig"
+source "drivers/dac/Kconfig"
+source "drivers/dai/Kconfig"
+source "drivers/disk/Kconfig"
+source "drivers/display/Kconfig"
+source "drivers/dma/Kconfig"
+source "drivers/edac/Kconfig"
+source "drivers/eeprom/Kconfig"
+source "drivers/entropy/Kconfig"
+source "drivers/espi/Kconfig"
+source "drivers/ethernet/Kconfig"
+source "drivers/flash/Kconfig"
+source "drivers/fpga/Kconfig"
 source "drivers/fuel_gauge/Kconfig"
+source "drivers/gpio/Kconfig"
+source "drivers/hwinfo/Kconfig"
+source "drivers/i2c/Kconfig"
+source "drivers/i2s/Kconfig"
+source "drivers/i3c/Kconfig"
+source "drivers/smbus/Kconfig"
+source "drivers/ieee802154/Kconfig"
+source "drivers/input/Kconfig"
+source "drivers/interrupt_controller/Kconfig"
+source "drivers/interrupt_controller/Kconfig.shared_irq"
+source "drivers/ipm/Kconfig"
+source "drivers/kscan/Kconfig"
+source "drivers/led/Kconfig"
+source "drivers/led_strip/Kconfig"
+source "drivers/lora/Kconfig"
+source "drivers/mbox/Kconfig"
+source "drivers/mdio/Kconfig"
+source "drivers/memc/Kconfig"
+source "drivers/mipi_dsi/Kconfig"
+source "drivers/misc/Kconfig"
+source "drivers/mm/Kconfig"
+source "drivers/modem/Kconfig"
+source "drivers/net/Kconfig"
+source "drivers/neural_net/Kconfig"
+source "drivers/pcie/Kconfig"
+source "drivers/peci/Kconfig"
+source "drivers/pinctrl/Kconfig"
+source "drivers/pm_cpu_ops/Kconfig"
+source "drivers/power_domain/Kconfig"
+source "drivers/ps2/Kconfig"
+source "drivers/ptp_clock/Kconfig"
+source "drivers/pwm/Kconfig"
+source "drivers/regulator/Kconfig"
+source "drivers/reset/Kconfig"
+source "drivers/retained_mem/Kconfig"
+source "drivers/rtc/Kconfig"
+source "drivers/sdhc/Kconfig"
+source "drivers/sensor/Kconfig"
+source "drivers/serial/Kconfig"
+source "drivers/spi/Kconfig"
+source "drivers/syscon/Kconfig"
+source "drivers/timer/Kconfig"
+source "drivers/usb/Kconfig"
+source "drivers/usb_c/Kconfig"
+source "drivers/video/Kconfig"
+source "drivers/virtualization/Kconfig"
+source "drivers/w1/Kconfig"
+source "drivers/watchdog/Kconfig"
+source "drivers/wifi/Kconfig"
+source "drivers/xen/Kconfig"
 
 endmenu

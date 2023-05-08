@@ -26,8 +26,8 @@ static struct k_work_delayable iso_send_work;
 static struct bt_iso_chan iso_chan;
 static uint16_t seq_num;
 static uint32_t interval_us = 10U * USEC_PER_MSEC; /* 10 ms */
-NET_BUF_POOL_FIXED_DEFINE(tx_pool, 1, BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU), 8,
-			  NULL);
+NET_BUF_POOL_FIXED_DEFINE(tx_pool, 1, BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU),
+			  CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
 
 /**
  * @brief Send ISO data on timeout
@@ -218,7 +218,7 @@ BT_CONN_CB_DEFINE(conn_callbacks) = {
 	.disconnected = disconnected,
 };
 
-void main(void)
+int main(void)
 {
 	int err;
 	struct bt_iso_chan *channels[1];
@@ -228,7 +228,7 @@ void main(void)
 	err = bt_enable(NULL);
 	if (err) {
 		printk("Bluetooth init failed (err %d)\n", err);
-		return;
+		return 0;
 	}
 
 	if (IS_ENABLED(CONFIG_SETTINGS)) {
@@ -257,10 +257,11 @@ void main(void)
 
 	if (err != 0) {
 		printk("Failed to create CIG (%d)\n", err);
-		return;
+		return 0;
 	}
 
 	start_scan();
 
 	k_work_init_delayable(&iso_send_work, iso_timer_timeout);
+	return 0;
 }

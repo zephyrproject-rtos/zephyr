@@ -36,15 +36,27 @@ LOG_MODULE_REGISTER(usb_dc_stm32);
 #error "Only one interface should be enabled at a time, OTG FS or OTG HS"
 #endif
 
+/*
+ * Vbus sensing is determined based on the presence of the hardware detection
+ * pin(s) in the device tree. E.g: pinctrl-0 = <&usb_otg_fs_vbus_pa9 ...>;
+ *
+ * The detection pins are dependent on the enabled USB driver and the physical
+ * interface(s) offered by the hardware. These are mapped to PA9 and/or PB13
+ * (subject to MCU), being the former the most widespread option.
+ */
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs)
-#define DT_DRV_COMPAT st_stm32_otghs
-#define USB_IRQ_NAME  otghs
+#define DT_DRV_COMPAT    st_stm32_otghs
+#define USB_IRQ_NAME     otghs
+#define USB_VBUS_SENSING (DT_NODE_EXISTS(DT_CHILD(DT_NODELABEL(pinctrl), usb_otg_hs_vbus_pa9)) || \
+			  DT_NODE_EXISTS(DT_CHILD(DT_NODELABEL(pinctrl), usb_otg_hs_vbus_pb13)))
 #elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otgfs)
-#define DT_DRV_COMPAT st_stm32_otgfs
-#define USB_IRQ_NAME  otgfs
+#define DT_DRV_COMPAT    st_stm32_otgfs
+#define USB_IRQ_NAME     otgfs
+#define USB_VBUS_SENSING DT_NODE_EXISTS(DT_CHILD(DT_NODELABEL(pinctrl), usb_otg_fs_vbus_pa9))
 #elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_usb)
-#define DT_DRV_COMPAT st_stm32_usb
-#define USB_IRQ_NAME  usb
+#define DT_DRV_COMPAT    st_stm32_usb
+#define USB_IRQ_NAME     usb
+#define USB_VBUS_SENSING false
 #endif
 
 #define USB_BASE_ADDRESS	DT_INST_REG_ADDR(0)
@@ -52,8 +64,9 @@ LOG_MODULE_REGISTER(usb_dc_stm32);
 #define USB_IRQ_PRI		DT_INST_IRQ_BY_NAME(0, USB_IRQ_NAME, priority)
 #define USB_NUM_BIDIR_ENDPOINTS	DT_INST_PROP(0, num_bidir_endpoints)
 #define USB_RAM_SIZE		DT_INST_PROP(0, ram_size)
-#define USB_CLOCK_BITS		DT_INST_CLOCKS_CELL(0, bits)
-#define USB_CLOCK_BUS		DT_INST_CLOCKS_CELL(0, bus)
+
+static const struct stm32_pclken pclken[] = STM32_DT_INST_CLOCKS(0);
+
 #if DT_INST_NODE_HAS_PROP(0, maximum_speed)
 #define USB_MAXIMUM_SPEED	DT_INST_PROP(0, maximum_speed)
 #endif
@@ -194,107 +207,55 @@ void HAL_PCD_SOFCallback(PCD_HandleTypeDef *hpcd)
 static int usb_dc_stm32_clock_enable(void)
 {
 	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
-	struct stm32_pclken pclken = {
-		.bus = USB_CLOCK_BUS,
-		.enr = USB_CLOCK_BITS,
-	};
-
-	/*
-	 * Some SoCs in STM32F0/L0/L4 series disable USB clock by
-	 * default.  We force USB clock source to MSI or PLL clock for this
-	 * SoCs.  However, if these parts have an HSI48 clock, use
-	 * that instead.  Example reference manual RM0360 for
-	 * STM32F030x4/x6/x8/xC and STM32F070x6/xB.
-	 */
-#if defined(RCC_HSI48_SUPPORT) || \
-	defined(CONFIG_SOC_SERIES_STM32WBX) || \
-	defined(CONFIG_SOC_SERIES_STM32H7X) || \
-	defined(CONFIG_SOC_SERIES_STM32L5X) || \
-	defined(CONFIG_SOC_SERIES_STM32U5X)
-#if !STM32_HSI48_ENABLED
-	/* Deprecated: enable HSI48 using device tree */
-#warning USB device requires HSI48 clock to be enabled using device tree
-#endif /* ! STM32_HSI48_ENABLED*/
-	/*
-	 * In STM32L0 series, HSI48 requires VREFINT and its buffer
-	 * with 48 MHz RC to be enabled.
-	 * See ENREF_HSI48 in reference manual RM0367 section10.2.3:
-	 * "Reference control and status register (SYSCFG_CFGR3)"
-	 */
-#ifdef CONFIG_SOC_SERIES_STM32L0X
-	if (LL_APB2_GRP1_IsEnabledClock(LL_APB2_GRP1_PERIPH_SYSCFG)) {
-		LL_SYSCFG_VREFINT_EnableHSI48();
-	} else {
-		LOG_ERR("System Configuration Controller clock is "
-			"disabled. Unable to enable VREFINT which "
-			"is required by HSI48.");
-	}
-#endif /* CONFIG_SOC_SERIES_STM32L0X */
-
-	z_stm32_hsem_lock(CFG_HW_CLK48_CONFIG_SEMID, HSEM_LOCK_DEFAULT_RETRY);
-
-	/* Keeping this sequence for legacy: */
-	LL_RCC_HSI48_Enable();
-	while (!LL_RCC_HSI48_IsReady()) {
-		/* Wait for HSI48 to become ready */
-	}
-
-	LL_RCC_SetUSBClockSource(LL_RCC_USB_CLKSOURCE_HSI48);
-
-#ifdef CONFIG_SOC_SERIES_STM32U5X
-	/* VDDUSB independent USB supply (PWR clock is on) */
-	LL_PWR_EnableVDDUSB();
-#endif /* CONFIG_SOC_SERIES_STM32U5X */
-
-#if !defined(CONFIG_SOC_SERIES_STM32WBX)
-	/* Specially for STM32WB, don't unlock the HSEM to prevent M0 core
-	 * to disable HSI48 clock used for RNG.
-	 */
-	z_stm32_hsem_unlock(CFG_HW_CLK48_CONFIG_SEMID);
-#endif /* CONFIG_SOC_SERIES_STM32WBX */
-
-#elif defined(LL_RCC_USB_CLKSOURCE_NONE)
-	/* When MSI is configured in PLL mode with a 32.768 kHz clock source,
-	 * the MSI frequency can be automatically trimmed by hardware to reach
-	 * better than ±0.25% accuracy. In this mode the MSI can feed the USB
-	 * device. For now, we only use MSI for USB if not already used as
-	 * system clock source.
-	 */
-#if STM32_MSI_PLL_MODE && !STM32_SYSCLK_SRC_MSI
-	LL_RCC_MSI_Enable();
-	while (!LL_RCC_MSI_IsReady()) {
-		/* Wait for MSI to become ready */
-	}
-	/* Force 48 MHz mode */
-	LL_RCC_MSI_EnableRangeSelection();
-	LL_RCC_MSI_SetRange(LL_RCC_MSIRANGE_11);
-	LL_RCC_SetUSBClockSource(LL_RCC_USB_CLKSOURCE_MSI);
-#else
-	if (LL_RCC_PLL_IsReady()) {
-		LL_RCC_SetUSBClockSource(LL_RCC_USB_CLKSOURCE_PLL);
-	} else {
-		LOG_ERR("Unable to set USB clock source to PLL.");
-	}
-#endif /* STM32_MSI_PLL_MODE && !STM32_SYSCLK_SRC_MSI */
-
-#elif defined(RCC_CFGR_OTGFSPRE) || defined(RCC_CFGR_USBPRE)
-
-#if (MHZ(48) == CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC) && !defined(STM32_PLL_USBPRE)
-	/* PLL output clock is set to 48MHz, it should not be divided */
-#warning USBPRE/OTGFSPRE should be set in rcc node
-#endif
-
-#endif /* RCC_HSI48_SUPPORT / LL_RCC_USB_CLKSOURCE_NONE */
 
 	if (!device_is_ready(clk)) {
 		LOG_ERR("clock control device not ready");
 		return -ENODEV;
 	}
 
-	if (clock_control_on(clk, (clock_control_subsys_t *)&pclken) != 0) {
+#ifdef CONFIG_SOC_SERIES_STM32U5X
+	/* VDDUSB independent USB supply (PWR clock is on) */
+	LL_PWR_EnableVDDUSB();
+#endif /* CONFIG_SOC_SERIES_STM32U5X */
+
+	if (DT_INST_NUM_CLOCKS(0) > 1) {
+		if (clock_control_configure(clk, (clock_control_subsys_t)&pclken[1],
+									NULL) != 0) {
+			LOG_ERR("Could not select USB domain clock");
+			return -EIO;
+		}
+	}
+
+	if (clock_control_on(clk, (clock_control_subsys_t)&pclken[0]) != 0) {
 		LOG_ERR("Unable to enable USB clock");
 		return -EIO;
 	}
+
+	if (IS_ENABLED(CONFIG_USB_DC_STM32_CLOCK_CHECK)) {
+		uint32_t usb_clock_rate;
+
+		if (clock_control_get_rate(clk,
+					   (clock_control_subsys_t)&pclken[1],
+					   &usb_clock_rate) != 0) {
+			LOG_ERR("Failed to get USB domain clock rate");
+			return -EIO;
+		}
+
+		if (usb_clock_rate != MHZ(48)) {
+			LOG_ERR("USB Clock is not 48MHz (%d)", usb_clock_rate);
+			return -ENOTSUP;
+		}
+	}
+
+	/* Previous check won't work in case of F1/F3. Add build time check */
+#if defined(RCC_CFGR_OTGFSPRE) || defined(RCC_CFGR_USBPRE)
+
+#if (MHZ(48) == CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC) && !defined(STM32_PLL_USBPRE)
+	/* PLL output clock is set to 48MHz, it should not be divided */
+#warning USBPRE/OTGFSPRE should be set in rcc node
+#endif
+
+#endif /* RCC_CFGR_OTGFSPRE / RCC_CFGR_USBPRE */
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs)
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_usbphyc)
@@ -322,12 +283,8 @@ static int usb_dc_stm32_clock_enable(void)
 static int usb_dc_stm32_clock_disable(void)
 {
 	const struct device *clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
-	struct stm32_pclken pclken = {
-		.bus = USB_CLOCK_BUS,
-		.enr = USB_CLOCK_BITS,
-	};
 
-	if (clock_control_off(clk, (clock_control_subsys_t *)&pclken) != 0) {
+	if (clock_control_off(clk, (clock_control_subsys_t)&pclken[0]) != 0) {
 		LOG_ERR("Unable to disable USB clock");
 		return -EIO;
 	}
@@ -402,7 +359,7 @@ static int usb_dc_stm32_init(void)
 	usb_dc_stm32_state.pcd.Init.phy_itface = PCD_PHY_EMBEDDED;
 #endif
 	usb_dc_stm32_state.pcd.Init.ep0_mps = USB_OTG_MAX_EP0_SIZE;
-	usb_dc_stm32_state.pcd.Init.vbus_sensing_enable = DISABLE;
+	usb_dc_stm32_state.pcd.Init.vbus_sensing_enable = USB_VBUS_SENSING ? ENABLE : DISABLE;
 
 #ifndef CONFIG_SOC_SERIES_STM32F1X
 	usb_dc_stm32_state.pcd.Init.dma_enable = DISABLE;
@@ -1006,18 +963,6 @@ int usb_dc_detach(void)
 {
 	HAL_StatusTypeDef status;
 	int ret;
-
-#ifdef CONFIG_SOC_SERIES_STM32WBX
-	/* Specially for STM32WB, unlock the HSEM when USB is no more used. */
-	z_stm32_hsem_unlock(CFG_HW_CLK48_CONFIG_SEMID);
-
-	/*
-	 * TODO: AN5289 notes a process of locking Sem0, with possible waits
-	 * via interrupts before switching off CLK48, but lacking any actual
-	 * examples of that, that remains to be implemented.  See
-	 * https://github.com/zephyrproject-rtos/zephyr/pull/25850
-	 */
-#endif /* CONFIG_SOC_SERIES_STM32WBX */
 
 	LOG_DBG("HAL_PCD_DeInit");
 	status = HAL_PCD_DeInit(&usb_dc_stm32_state.pcd);

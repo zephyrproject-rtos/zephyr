@@ -1255,6 +1255,48 @@ Related GitHub Issues and Pull Requests are tagged with the `Inclusive Language 
 .. _CAN in Automation Inclusive Language news post: https://www.can-cia.org/news/archive/view/?tx_news_pi1%5Bnews%5D=699&tx_news_pi1%5Bday%5D=6&tx_news_pi1%5Bmonth%5D=12&tx_news_pi1%5Byear%5D=2020&cHash=784e79eb438141179386cf7c29ed9438
 .. _CAN in Automation Inclusive Language: https://can-newsletter.org/canopen/categories/
 
+
+Rule A.3: Macro name collisions
+===============================
+
+Severity
+--------
+
+Required
+
+Description
+-----------
+
+Macros with commonly used names such as  ``MIN``, ``MAX``, ``ARRAY_SIZE``, must
+not be modified or protected to avoid name collisions with other
+implementations. In particular, they must not be prefixed to place them in a
+Zephyr-specific namespace, re-defined using ``#undef``, or conditionally
+excluded from compilation using ``#ifndef``.  Instead, if a conflict arises with
+an existing definition originating from a :ref:`module <modules>`, the module's
+code itself needs to be modified (ideally upstream, alternatively via a change
+in Zephyr's own fork).
+This rule applies to Zephyr as a project in general, regardless of the time of
+introduction of the macro or its current name in the tree. If a macro name is
+commonly used in several other well-known open source projects then the
+implementation in Zephyr should use that name. While there is a subjective and
+non-measurable component to what "commonly used" means, the ultimate goal is
+to offer users familiar macros.
+Finally, this rule applies to inter-module name collisions as well: in that case
+both modules, prior to their inclusion, should be modified to use
+module-specific versions of the macro name that collides.
+
+Rationale
+---------
+
+Zephyr is an RTOS that comes with additional functionality and dependencies in
+the form of modules. Those modules are typically independent projects that may
+use macro names that can conflict with other modules or with Zephyr itself.
+Since, in the context of this documentation, Zephyr is considered the central or
+main project, it should implement the non-namespaced versions of the
+macros. Given that Zephyr uses a fork of the corresponding upstream for each
+module, it is always possible to patch the macro implementation in each module
+to avoid collisions.
+
 Parasoft Codescan Tool
 **********************
 

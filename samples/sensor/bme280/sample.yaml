@@ -8,17 +8,17 @@ tests:
     integration_platforms:
       - adafruit_feather_m0_basic_proto
     harness_config:
-        type: one_line
-        regex:
-            - "temp: (.*); press: (.*); humidity: (.*)"
-        fixture: fixture_i2c_bme280
+      type: one_line
+      regex:
+        - "temp: (.*); press: (.*); humidity: (.*)"
+      fixture: fixture_i2c_bme280
   sample.sensor.bme280.spi:
     harness: console
     tags: sensors
     depends_on: spi bme280
     extra_args: "DTC_OVERLAY_FILE=arduino_spi.overlay"
     harness_config:
-        type: one_line
-        regex:
-            - "temp: (.*); press: (.*); humidity: (.*)"
-        fixture: fixture_spi_bme280
+      type: one_line
+      regex:
+        - "temp: (.*); press: (.*); humidity: (.*)"
+      fixture: fixture_spi_bme280

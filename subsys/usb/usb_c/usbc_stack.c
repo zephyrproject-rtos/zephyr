@@ -15,7 +15,8 @@
 LOG_MODULE_REGISTER(usbc_stack, CONFIG_USBC_STACK_LOG_LEVEL);
 
 #include "usbc_stack.h"
-
+#include "usbc_pe_common_internal.h"
+#include "usbc_tc_common_internal.h"
 
 static int usbc_subsys_init(const struct device *dev);
 
@@ -39,62 +40,50 @@ static ALWAYS_INLINE void usbc_handler(void *port_dev)
 	k_msleep(CONFIG_USBC_STATE_MACHINE_CYCLE_TIME);
 }
 
-#define USBC_SUBSYS_INIT(inst)							\
-	K_THREAD_STACK_DEFINE(my_stack_area_##inst,				\
-			      CONFIG_USBC_STACK_SIZE);				\
-										\
-	static struct tc_sm_t tc_##inst;					\
-	static struct policy_engine pe_##inst;					\
-	static struct protocol_layer_rx_t prl_rx_##inst;			\
-	static struct protocol_layer_tx_t prl_tx_##inst;			\
-	static struct protocol_hard_reset_t prl_hr_##inst;			\
-										\
-	static void run_usbc_##inst(void *port_dev,				\
-				    void *unused1,				\
-				    void *unused2)				\
-	{									\
-		while (1) {							\
-			usbc_handler(port_dev);					\
-		}								\
-	}									\
-										\
-	static void create_thread_##inst(const struct device *dev)		\
-	{									\
-		struct usbc_port_data *port = dev->data;			\
-										\
-		port->port_thread = k_thread_create(&port->thread_data,		\
-				my_stack_area_##inst,				\
-				K_THREAD_STACK_SIZEOF(my_stack_area_##inst),	\
-				run_usbc_##inst,				\
-				(void *)dev, 0, 0,				\
-				CONFIG_USBC_THREAD_PRIORITY,			\
-				K_ESSENTIAL,					\
-				K_NO_WAIT);					\
-		k_thread_suspend(port->port_thread);				\
-	}									\
-										\
-	static struct usbc_port_data usbc_port_data_##inst = {			\
-		.tc = &tc_##inst,						\
-		.pe = &pe_##inst,						\
-		.prl_rx = &prl_rx_##inst,					\
-		.prl_tx = &prl_tx_##inst,					\
-		.prl_hr = &prl_hr_##inst,					\
-		.tcpc = DEVICE_DT_GET(DT_INST_PROP(inst, tcpc)),		\
-		.vbus = DEVICE_DT_GET(DT_INST_PROP(inst, vbus)),		\
-	};									\
-										\
-static const struct usbc_port_config usbc_port_config_##inst = {		\
-	.create_thread = create_thread_##inst,					\
-};										\
-										\
-DEVICE_DT_INST_DEFINE(inst,							\
-		      &usbc_subsys_init,					\
-		      NULL,							\
-		      &usbc_port_data_##inst,					\
-		      &usbc_port_config_##inst,					\
-		      APPLICATION,						\
-		      CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,			\
-		      NULL);
+#define USBC_SUBSYS_INIT(inst)                                                                     \
+	K_THREAD_STACK_DEFINE(my_stack_area_##inst, CONFIG_USBC_STACK_SIZE);                       \
+                                                                                                   \
+	static struct tc_sm_t tc_##inst;                                                           \
+	static struct policy_engine pe_##inst;                                                     \
+	static struct protocol_layer_rx_t prl_rx_##inst;                                           \
+	static struct protocol_layer_tx_t prl_tx_##inst;                                           \
+	static struct protocol_hard_reset_t prl_hr_##inst;                                         \
+                                                                                                   \
+	static void run_usbc_##inst(void *port_dev, void *unused1, void *unused2)                  \
+	{                                                                                          \
+		while (1) {                                                                        \
+			usbc_handler(port_dev);                                                    \
+		}                                                                                  \
+	}                                                                                          \
+                                                                                                   \
+	static void create_thread_##inst(const struct device *dev)                                 \
+	{                                                                                          \
+		struct usbc_port_data *port = dev->data;                                           \
+                                                                                                   \
+		port->port_thread = k_thread_create(                                               \
+			&port->thread_data, my_stack_area_##inst,                                  \
+			K_THREAD_STACK_SIZEOF(my_stack_area_##inst), run_usbc_##inst, (void *)dev, \
+			0, 0, CONFIG_USBC_THREAD_PRIORITY, K_ESSENTIAL, K_NO_WAIT);                \
+		k_thread_suspend(port->port_thread);                                               \
+	}                                                                                          \
+                                                                                                   \
+	static struct usbc_port_data usbc_port_data_##inst = {                                     \
+		.tc = &tc_##inst,                                                                  \
+		.pe = &pe_##inst,                                                                  \
+		.prl_rx = &prl_rx_##inst,                                                          \
+		.prl_tx = &prl_tx_##inst,                                                          \
+		.prl_hr = &prl_hr_##inst,                                                          \
+		.tcpc = DEVICE_DT_GET(DT_INST_PROP(inst, tcpc)),                                   \
+		.vbus = DEVICE_DT_GET(DT_INST_PROP(inst, vbus)),                                   \
+	};                                                                                         \
+                                                                                                   \
+	static const struct usbc_port_config usbc_port_config_##inst = {                           \
+		.create_thread = create_thread_##inst,                                             \
+	};                                                                                         \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(inst, &usbc_subsys_init, NULL, &usbc_port_data_##inst,               \
+			      &usbc_port_config_##inst, APPLICATION,                               \
+			      CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(USBC_SUBSYS_INIT)
 
@@ -133,8 +122,7 @@ int usbc_suspend(const struct device *dev)
  * @brief Called by the Device Policy Manager to make a request of the
  *	  USB-C Subsystem
  */
-int usbc_request(const struct device *dev,
-		 const enum usbc_policy_request_t req)
+int usbc_request(const struct device *dev, const enum usbc_policy_request_t req)
 {
 	struct usbc_port_data *data = dev->data;
 
@@ -148,8 +136,7 @@ int usbc_request(const struct device *dev,
 /**
  * @brief Sets the Device Policy Manager's data
  */
-void usbc_set_dpm_data(const struct device *dev,
-		       void *dpm_data)
+void usbc_set_dpm_data(const struct device *dev, void *dpm_data)
 {
 	struct usbc_port_data *data = dev->data;
 
@@ -166,6 +153,7 @@ void *usbc_get_dpm_data(const struct device *dev)
 	return data->dpm_data;
 }
 
+#ifdef CONFIG_USBC_CSM_SINK_ONLY
 /**
  * @brief Set the callback that gets the Sink Capabilities from the
  *	  Device Policy Manager
@@ -191,39 +179,6 @@ void usbc_set_policy_cb_set_src_cap(const struct device *dev,
 }
 
 /**
- * @brief Set the callback for the Device Policy Manager policy check
- */
-void usbc_set_policy_cb_check(const struct device *dev,
-			      const policy_cb_check_t policy_cb_check)
-{
-	struct usbc_port_data *data = dev->data;
-
-	data->policy_cb_check = policy_cb_check;
-}
-
-/**
- * @brief Set the callback for the Device Policy Manager policy change notify
- */
-void usbc_set_policy_cb_notify(const struct device *dev,
-			       const policy_cb_notify_t policy_cb_notify)
-{
-	struct usbc_port_data *data = dev->data;
-
-	data->policy_cb_notify = policy_cb_notify;
-}
-
-/**
- * @brief Set the callback for the Device Policy Manager policy change notify
- */
-void usbc_set_policy_cb_wait_notify(const struct device *dev,
-				    const policy_cb_wait_notify_t policy_cb_wait_notify)
-{
-	struct usbc_port_data *data = dev->data;
-
-	data->policy_cb_wait_notify = policy_cb_wait_notify;
-}
-
-/**
  * @brief Set the callback for requesting the data object (RDO)
  */
 void usbc_set_policy_cb_get_rdo(const struct device *dev,
@@ -244,6 +199,159 @@ void usbc_set_policy_cb_is_snk_at_default(const struct device *dev,
 	struct usbc_port_data *data = dev->data;
 
 	data->policy_cb_is_snk_at_default = policy_cb_is_snk_at_default;
+}
+
+#else /* CONFIG_USBC_CSM_SOURCE_ONLY */
+
+/**
+ * @brief Set the callback for sending the Sink Caps to the DPM
+ */
+void usbc_set_policy_cb_set_port_partner_snk_cap(const struct device *dev,
+				    const policy_cb_set_port_partner_snk_cap_t cb)
+{
+	struct usbc_port_data *data = dev->data;
+
+	data->policy_cb_set_port_partner_snk_cap = cb;
+}
+
+/**
+ * @brief Set the callback that gets the Source Capabilities from the
+ *        Device Policy Manager
+ */
+void usbc_set_policy_cb_get_src_caps(const struct device *dev,
+				     const policy_cb_get_src_caps_t cb)
+{
+	struct usbc_port_data *data = dev->data;
+
+	data->policy_cb_get_src_caps = cb;
+}
+
+/**
+ * @brief Set the callback that gets the Source Rp value from the
+ *        Device Policy Manager
+ */
+void usbc_set_policy_cb_get_src_rp(const struct device *dev,
+				   const policy_cb_get_src_rp_t policy_cb_get_src_rp)
+{
+	struct usbc_port_data *data = dev->data;
+
+	data->policy_cb_get_src_rp = policy_cb_get_src_rp;
+}
+
+/**
+ * @brief Set the callback that controls the sourcing of VBUS from the
+ *        Device Policy Manager
+ */
+void usbc_set_policy_cb_src_en(const struct device *dev,
+			       const policy_cb_src_en_t policy_cb_src_en)
+{
+	struct usbc_port_data *data = dev->data;
+
+	data->policy_cb_src_en = policy_cb_src_en;
+}
+
+/**
+ * @brief Set the callback for checking if a Sink Request is valid
+ */
+void usbc_set_policy_cb_check_sink_request(const struct device *dev,
+					   const policy_cb_check_sink_request_t cb)
+{
+	struct usbc_port_data *data = dev->data;
+
+	data->policy_cb_check_sink_request = cb;
+}
+
+/**
+ * @brief Set the callback for checking if the Source Power Supply is ready
+ */
+void usbc_set_policy_cb_is_ps_ready(const struct device *dev,
+					const policy_cb_is_ps_ready_t cb)
+{
+	struct usbc_port_data *data = dev->data;
+
+	data->policy_is_ps_ready = cb;
+}
+
+/**
+ * @brief Set the callback for checking if the Present Contract is still valid
+ */
+void usbc_set_policy_cb_present_contract_is_valid(const struct device *dev,
+					const policy_cb_present_contract_is_valid_t cb)
+{
+	struct usbc_port_data *data = dev->data;
+
+	data->policy_present_contract_is_valid = cb;
+}
+
+/**
+ * @brief Set the callback that requests the use of a new set of Sources Caps if
+ *	  they're available
+ */
+void usbc_set_policy_cb_change_src_caps(const struct device *dev,
+					const policy_cb_change_src_caps_t cb)
+{
+	struct usbc_port_data *data = dev->data;
+
+	data->policy_change_src_caps = cb;
+}
+
+/**
+ * @brief Set the callback that controls the sourcing of VCONN from the
+ *        Device Policy Manager
+ */
+void usbc_set_vconn_control_cb(const struct device *dev,
+			       const tcpc_vconn_control_cb_t cb)
+{
+	struct usbc_port_data *data = dev->data;
+	const struct device *tcpc = data->tcpc;
+
+	tcpc_set_vconn_cb(tcpc, cb);
+}
+
+/**
+ * @brief Set the callback that discharges VCONN from the
+ *        Device Policy Manager
+ */
+void usbc_set_vconn_discharge(const struct device *dev,
+			      const tcpc_vconn_discharge_cb_t cb)
+{
+	struct usbc_port_data *data = dev->data;
+	const struct device *tcpc = data->tcpc;
+
+	tcpc_set_vconn_discharge_cb(tcpc, cb);
+}
+
+#endif /* CONFIG_USBC_CSM_SINK_ONLY */
+
+/**
+ * @brief Set the callback for the Device Policy Manager policy check
+ */
+void usbc_set_policy_cb_check(const struct device *dev, const policy_cb_check_t policy_cb_check)
+{
+	struct usbc_port_data *data = dev->data;
+
+	data->policy_cb_check = policy_cb_check;
+}
+
+/**
+ * @brief Set the callback for the Device Policy Manager policy change notify
+ */
+void usbc_set_policy_cb_notify(const struct device *dev, const policy_cb_notify_t policy_cb_notify)
+{
+	struct usbc_port_data *data = dev->data;
+
+	data->policy_cb_notify = policy_cb_notify;
+}
+
+/**
+ * @brief Set the callback for the Device Policy Manager policy change notify
+ */
+void usbc_set_policy_cb_wait_notify(const struct device *dev,
+				    const policy_cb_wait_notify_t policy_cb_wait_notify)
+{
+	struct usbc_port_data *data = dev->data;
+
+	data->policy_cb_wait_notify = policy_cb_wait_notify;
 }
 
 /**

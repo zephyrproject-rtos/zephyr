@@ -9,77 +9,77 @@ compatible: "invensense,icm42605"
 include: [sensor-device.yaml, spi-device.yaml]
 
 properties:
-    int-gpios:
-      type: phandle-array
-      required: true
-      description: |
-        The INT signal default configuration is active-high.  The
-        property value should ensure the flags properly describe the
-        signal that is presented to the driver.
+  int-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      The INT signal default configuration is active-high.  The
+      property value should ensure the flags properly describe the
+      signal that is presented to the driver.
 
-    accel-hz:
-      type: int
-      default: 12
-      description: |
-        Default frequency of accelerometer. (Unit - Hz)
-        Maps to ACCEL_ODR field in ACCEL_CONFIG0 setting
-      enum:
-        - 1
-        - 3
-        - 6
-        - 12
-        - 25
-        - 50
-        - 100
-        - 200
-        - 500
-        - 1000
-        - 2000
-        - 4000
-        - 8000
+  accel-hz:
+    type: int
+    default: 12
+    description: |
+      Default frequency of accelerometer. (Unit - Hz)
+      Maps to ACCEL_ODR field in ACCEL_CONFIG0 setting
+    enum:
+      - 1
+      - 3
+      - 6
+      - 12
+      - 25
+      - 50
+      - 100
+      - 200
+      - 500
+      - 1000
+      - 2000
+      - 4000
+      - 8000
 
-    gyro-hz:
-      type: int
-      default: 12
-      description: |
-        Default frequency of gyroscope. (Unit - Hz)
-        Maps to GYRO_ODR field in GYRO_CONFIG0 setting
-      enum:
-        - 12
-        - 25
-        - 50
-        - 100
-        - 200
-        - 500
-        - 1000
-        - 2000
-        - 4000
-        - 8000
+  gyro-hz:
+    type: int
+    default: 12
+    description: |
+      Default frequency of gyroscope. (Unit - Hz)
+      Maps to GYRO_ODR field in GYRO_CONFIG0 setting
+    enum:
+      - 12
+      - 25
+      - 50
+      - 100
+      - 200
+      - 500
+      - 1000
+      - 2000
+      - 4000
+      - 8000
 
-    accel-fs:
-      type: int
-      default: 16
-      description: |
-        Default full scale of accelerometer. (Unit - g)
-        Maps to ACCEL_FS_SEL field in ACCEL_CONFIG0 setting
-      enum:
-        - 16
-        - 8
-        - 4
-        - 2
+  accel-fs:
+    type: int
+    default: 16
+    description: |
+      Default full scale of accelerometer. (Unit - g)
+      Maps to ACCEL_FS_SEL field in ACCEL_CONFIG0 setting
+    enum:
+      - 16
+      - 8
+      - 4
+      - 2
 
-    gyro-fs:
-      type: int
-      default: 2000
-      description: |
-        Default full scale of gyroscope. (Unit - DPS)
-        Maps to GYRO_FS_SEL field in GYRO_CONFIG0 setting
-      enum:
-        - 2000
-        - 1000
-        - 500
-        - 250
-        - 125
-        - 62.5
-        - 31.25
-        - 15.625
+  gyro-fs:
+    type: int
+    default: 2000
+    description: |
+      Default full scale of gyroscope. (Unit - DPS)
+      Maps to GYRO_FS_SEL field in GYRO_CONFIG0 setting
+    enum:
+      - 2000
+      - 1000
+      - 500
+      - 250
+      - 125
+      - 62.5
+      - 31.25
+      - 15.625

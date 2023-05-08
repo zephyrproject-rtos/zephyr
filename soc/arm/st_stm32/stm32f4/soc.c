@@ -27,11 +27,10 @@
  *
  * @return 0
  */
-static int st_stm32f4_init(const struct device *arg)
+static int st_stm32f4_init(void)
 {
 	uint32_t key;
 
-	ARG_UNUSED(arg);
 
 	/* Enable ART Flash cache accelerator for both instruction and data */
 	LL_FLASH_EnableInstCache();

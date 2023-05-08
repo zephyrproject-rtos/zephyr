@@ -25,6 +25,8 @@ This board models some of the NRF52 SOC peripherals:
 * Accelerated address resolver
 * Clock control
 * PPI (Programmable Peripheral Interconnect)
+* EGU (Event Generator Unit)
+* TEMP (Temperature sensor)
 
 The nrf52_bsim board definition uses the POSIX architecture to
 run applications natively on the development system, this has the benefit of
@@ -159,7 +161,7 @@ The same
 :ref:`code coverage analysis means from the POSIX arch<coverage_posix>`
 are inherited in this board.
 Similarly, the
-:ref:`address sanitizers can be used as in native_posix<native_posix_asan>`.
+:ref:`address and undefined behavior sanitizers can be used as in native_posix<native_posix_asan>`.
 
 
 Note that BabbleSim will run fine if one or several of its components are

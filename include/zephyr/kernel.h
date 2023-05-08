@@ -42,7 +42,6 @@ BUILD_ASSERT(sizeof(intptr_t) == sizeof(long));
  */
 
 #define K_ANY NULL
-#define K_END NULL
 
 #if CONFIG_NUM_COOP_PRIORITIES + CONFIG_NUM_PREEMPT_PRIORITIES == 0
 #error Zero available thread priorities defined!
@@ -660,7 +659,6 @@ struct _static_thread_data {
 	int init_prio;
 	uint32_t init_options;
 	int32_t init_delay;
-	void (*init_abort)(void);
 	const char *init_name;
 };
 
@@ -708,6 +706,13 @@ struct _static_thread_data {
  * @param options Thread options.
  * @param delay Scheduling delay (in milliseconds), zero for no delay.
  *
+ * @note Static threads with zero delay should not normally have
+ * MetaIRQ priority levels.  This can preempt the system
+ * initialization handling (depending on the priority of the main
+ * thread) and cause surprising ordering side effects.  It will not
+ * affect anything in the OS per se, but consider it bad practice.
+ * Use a SYS_INIT() callback if you need to run code before entrance
+ * to the application main().
  *
  * @internal It has been observed that the x86 compiler by default aligns
  * these _static_thread_data structures to 32-byte boundaries, thereby
@@ -1045,10 +1050,19 @@ static inline bool k_is_pre_kernel(void)
  *
  * This routine can be called recursively.
  *
- * @note k_sched_lock() and k_sched_unlock() should normally be used
- * when the operation being performed can be safely interrupted by ISRs.
- * However, if the amount of processing involved is very small, better
- * performance may be obtained by using irq_lock() and irq_unlock().
+ * Owing to clever implementation details, scheduler locks are
+ * extremely fast for non-userspace threads (just one byte
+ * inc/decrement in the thread struct).
+ *
+ * @note This works by elevating the thread priority temporarily to a
+ * cooperative priority, allowing cheap synchronization vs. other
+ * preemptible or cooperative threads running on the current CPU.  It
+ * does not prevent preemption or asynchrony of other types.  It does
+ * not prevent threads from running on other CPUs when CONFIG_SMP=y.
+ * It does not prevent interrupts from happening, nor does it prevent
+ * threads with MetaIRQ priorities from preempting the current thread.
+ * In general this is a historical API not well-suited to modern
+ * applications, use with care.
  */
 extern void k_sched_lock(void);
 
@@ -2112,6 +2126,8 @@ struct k_event {
 	_wait_q_t         wait_q;
 	uint32_t          events;
 	struct k_spinlock lock;
+
+	SYS_PORT_TRACING_TRACKING_FIELD(k_event)
 };
 
 #define Z_EVENT_INITIALIZER(obj) \
@@ -3499,9 +3515,9 @@ extern int k_work_schedule(struct k_work_delayable *dwork,
 /** @brief Reschedule a work item to a queue after a delay.
  *
  * Unlike k_work_schedule_for_queue() this function can change the deadline of
- * a scheduled work item, and will schedule a work item that isn't idle
- * (e.g. is submitted or running).  This function does not affect ("unsubmit")
- * a work item that has been submitted to a queue.
+ * a scheduled work item, and will schedule a work item that is in any state
+ * (e.g. is idle, submitted, or running).  This function does not affect
+ * ("unsubmit") a work item that has been submitted to a queue.
  *
  * @funcprops \isr_ok
  *
@@ -4448,6 +4464,24 @@ __syscall int k_msgq_get(struct k_msgq *msgq, void *data, k_timeout_t timeout);
  * @retval -ENOMSG Returned when the queue has no message.
  */
 __syscall int k_msgq_peek(struct k_msgq *msgq, void *data);
+
+/**
+ * @brief Peek/read a message from a message queue at the specified index
+ *
+ * This routine reads a message from message queue at the specified index
+ * and leaves the message in the queue.
+ * k_msgq_peek_at(msgq, data, 0) is equivalent to k_msgq_peek(msgq, data)
+ *
+ * @funcprops \isr_ok
+ *
+ * @param msgq Address of the message queue.
+ * @param data Address of area to hold the message read from the queue.
+ * @param idx Message queue index at which to peek
+ *
+ * @retval 0 Message read.
+ * @retval -ENOMSG Returned when the queue has no message at index.
+ */
+__syscall int k_msgq_peek_at(struct k_msgq *msgq, void *data, uint32_t idx);
 
 /**
  * @brief Purge a message queue.

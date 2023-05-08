@@ -7,7 +7,7 @@
 # Clock controller drivers
 #
 menuconfig CLOCK_CONTROL
-	bool "Hardware clock controller support"
+	bool "Clock controller drivers"
 	help
 	  Enable support for hardware clock controller. Such hardware can
 	  provide clock for other subsystem, and thus can be also used for
@@ -60,10 +60,16 @@ source "drivers/clock_control/Kconfig.rcar"
 
 source "drivers/clock_control/Kconfig.xec"
 
+source "drivers/clock_control/Kconfig.ifx_cat1"
+
 source "drivers/clock_control/Kconfig.cavs"
 
 source "drivers/clock_control/Kconfig.aspeed"
 
 source "drivers/clock_control/Kconfig.gd32"
+
+source "drivers/clock_control/Kconfig.sam"
+
+source "drivers/clock_control/Kconfig.smartbond"
 
 endif # CLOCK_CONTROL

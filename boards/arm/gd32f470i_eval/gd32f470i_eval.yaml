@@ -21,3 +21,4 @@ supported:
   - uart
   - watchdog
   - dma
+  - spi

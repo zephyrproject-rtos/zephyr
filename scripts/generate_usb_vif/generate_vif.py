@@ -7,6 +7,7 @@
 EDT.pickle generated at build and generates a XML file containing USB VIF policies"""
 
 import argparse
+import inspect
 import os
 import pickle
 import sys
@@ -17,16 +18,14 @@ import constants
 SCRIPTS_DIR = os.path.join(os.path.dirname(__file__), "..")
 sys.path.insert(0, os.path.join(SCRIPTS_DIR, 'dts', 'python-devicetree', 'src'))
 
-from devicetree import edtlib
-
-
 def main():
+    global edtlib
+
     args = parse_args()
-    try:
-        with open(args.edt_pickle, 'rb') as f:
-            edt = pickle.load(f)
-    except edtlib.EDTError as err:
-        sys.exit(f"devicetree error: {err}")
+    with open(args.edt_pickle, 'rb') as f:
+        edt = pickle.load(f)
+    edtlib = inspect.getmodule(edt)
+
     xml_root = get_root()
     add_elements_to_xml(xml_root, constants.VIF_SPEC_ELEMENTS)
     add_element_to_xml(xml_root, constants.MODEL_PART_NUMBER, args.board)
@@ -248,7 +247,7 @@ def parse_and_add_node_to_xml(xml_ele, node):
 
 
 def parse_args():
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(allow_abbrev=False)
     parser.add_argument("--edt-pickle", required=True,
                         help="path to read the pickled edtlib.EDT object from")
     parser.add_argument("--compatible", required=True,

@@ -6,21 +6,27 @@
 #
 # This module will validate the SHIELD argument.
 #
-# If a shield implementation is not found for one of the specified shields an
-# error will be raised and list of valid shields will be printed.
+# If a shield implementation is not found for one of the specified shields, an
+# error will be raised and a list of valid shields will be printed.
 #
 # Outcome:
 # The following variables will be defined when this module completes:
-# - shield_conf_files: List of shield specific Kconfig fragments
-# - shield_dts_files : List of shield specific devicetree files
-# - SHIELD_AS_LIST   : A CMake list of shields created from SHIELD variable.
+# - shield_conf_files: List of shield-specific Kconfig fragments
+# - shield_dts_files : List of shield-specific devicetree files
+# - SHIELD_AS_LIST   : A CMake list of shields created from the SHIELD variable.
 # - SHIELD_DIRS      : A CMake list of directories which contain shield definitions
+#
+# The following targets will be defined when this CMake module completes:
+# - shields: when invoked, a list of valid shields will be printed
+#
+# If the SHIELD variable is changed after this module completes,
+# a warning will be printed.
 #
 # Optional variables:
 # - BOARD_ROOT: CMake list of board roots containing board implementations
 #
-# Variables set by this module and not mentioned above are considered internal
-# use only and may be removed, renamed, or re-purposed without prior notice.
+# Variables set by this module and not mentioned above are for internal
+# use only, and may be removed, renamed, or re-purposed without prior notice.
 
 include_guard(GLOBAL)
 

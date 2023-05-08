@@ -52,6 +52,8 @@ LOG_MODULE_REGISTER(usb_msc, CONFIG_USB_MASS_STORAGE_LOG_LEVEL);
 #define BLOCK_SIZE	512
 #define DISK_THREAD_PRIO	-5
 
+BUILD_ASSERT(MAX_PACKET <= BLOCK_SIZE);
+
 #define THREAD_OP_READ_QUEUED		1
 #define THREAD_OP_WRITE_QUEUED		3
 #define THREAD_OP_WRITE_DONE		4
@@ -117,7 +119,6 @@ static volatile uint32_t defered_wr_sz;
 static uint8_t __aligned(4) page[BLOCK_SIZE + CONFIG_MASS_STORAGE_BULK_EP_MPS];
 
 /* Initialized during mass_storage_init() */
-static uint32_t memory_size;
 static uint32_t block_count;
 static const char *disk_pdrv = CONFIG_MASS_STORAGE_DISK_NAME;
 
@@ -167,10 +168,13 @@ static struct CBW cbw;
 static struct CSW csw;
 
 /*addr where will be read or written data*/
-static uint32_t addr;
+static uint32_t curr_lba;
 
 /*length of a reading or writing*/
 static uint32_t length;
+
+/*offset into curr_lba for read/write*/
+static uint16_t curr_offset;
 
 static uint8_t max_lun_count;
 
@@ -214,8 +218,9 @@ static void msd_init(void)
 	(void)memset((void *)&cbw, 0, sizeof(struct CBW));
 	(void)memset((void *)&csw, 0, sizeof(struct CSW));
 	(void)memset(page, 0, sizeof(page));
-	addr = 0U;
+	curr_lba = 0U;
 	length = 0U;
+	curr_offset = 0U;
 }
 
 static void sendCSW(void)
@@ -226,6 +231,21 @@ static void sendCSW(void)
 		LOG_ERR("usb write failure");
 	}
 	stage = MSC_WAIT_CSW;
+}
+
+static void fail(void)
+{
+	if (cbw.DataLength) {
+		/* Stall data stage */
+		if ((cbw.Flags & 0x80) != 0U) {
+			usb_ep_set_stall(mass_ep_data[MSD_IN_EP_IDX].ep_addr);
+		} else {
+			usb_ep_set_stall(mass_ep_data[MSD_OUT_EP_IDX].ep_addr);
+		}
+	}
+
+	csw.Status = CSW_FAILED;
+	sendCSW();
 }
 
 static bool write(uint8_t *buf, uint16_t size)
@@ -373,22 +393,26 @@ static bool readCapacity(void)
 
 static void thread_memory_read_done(void)
 {
-	uint32_t n;
+	uint32_t n = length;
 
-	n = (length > MAX_PACKET) ? MAX_PACKET : length;
-	if ((addr + n) > memory_size) {
-		n = memory_size - addr;
-		stage = MSC_ERROR;
+	if (n > MAX_PACKET) {
+		n = MAX_PACKET;
+	}
+	if (n > BLOCK_SIZE - curr_offset) {
+		n = BLOCK_SIZE - curr_offset;
 	}
 
 	if (usb_write(mass_ep_data[MSD_IN_EP_IDX].ep_addr,
-		&page[addr % BLOCK_SIZE], n, NULL) != 0) {
+		&page[curr_offset], n, NULL) != 0) {
 		LOG_ERR("Failed to write EP 0x%x",
 			mass_ep_data[MSD_IN_EP_IDX].ep_addr);
 	}
-	addr += n;
+	curr_offset += n;
+	if (curr_offset >= BLOCK_SIZE) {
+		curr_offset -= BLOCK_SIZE;
+		curr_lba += 1;
+	}
 	length -= n;
-
 	csw.DataResidue -= n;
 
 	if (!length || (stage != MSC_PROCESS_CBW)) {
@@ -401,32 +425,19 @@ static void thread_memory_read_done(void)
 
 static void memoryRead(void)
 {
-	uint32_t n;
-
-	n = (length > MAX_PACKET) ? MAX_PACKET : length;
-	if ((addr + n) > memory_size) {
-		n = memory_size - addr;
-		stage = MSC_ERROR;
-	}
-
-	/* we read an entire block */
-	if (!(addr % BLOCK_SIZE)) {
-		thread_op = THREAD_OP_READ_QUEUED;
-		LOG_DBG("Signal thread for %d", (addr/BLOCK_SIZE));
-		k_sem_give(&disk_wait_sem);
+	if (curr_lba >= block_count) {
+		LOG_WRN("Attempt to read past end of device: lba=%u", curr_lba);
+		fail();
 		return;
 	}
-	usb_write(mass_ep_data[MSD_IN_EP_IDX].ep_addr,
-		  &page[addr % BLOCK_SIZE], n, NULL);
-	addr += n;
-	length -= n;
 
-	csw.DataResidue -= n;
-
-	if (!length || (stage != MSC_PROCESS_CBW)) {
-		csw.Status = (stage == MSC_PROCESS_CBW) ?
-			CSW_PASSED : CSW_FAILED;
-		stage = (stage == MSC_PROCESS_CBW) ? MSC_SEND_CSW : stage;
+	if (!curr_offset) {
+		/* we need a new block */
+		thread_op = THREAD_OP_READ_QUEUED;
+		LOG_DBG("Signal thread for %u", curr_lba);
+		k_sem_give(&disk_wait_sem);
+	} else {
+		thread_memory_read_done();
 	}
 }
 
@@ -454,14 +465,14 @@ static bool infoTransfer(void)
 	n = sys_get_be32(&cbw.CB[2]);
 
 	LOG_DBG("LBA (block) : 0x%x ", n);
-	if ((n * BLOCK_SIZE) >= memory_size) {
+	if (n >= block_count) {
 		LOG_ERR("LBA out of range");
-		csw.Status = CSW_FAILED;
-		sendCSW();
+		fail();
 		return false;
 	}
 
-	addr = n * BLOCK_SIZE;
+	curr_lba = n;
+	curr_offset = 0U;
 
 	/* Number of Blocks to transfer */
 	switch (cbw.CB[0]) {
@@ -481,31 +492,12 @@ static bool infoTransfer(void)
 	length = n * BLOCK_SIZE;
 
 	if (cbw.DataLength != length) {
-		if ((cbw.Flags & 0x80) != 0U) {
-			LOG_WRN("Stall IN endpoint");
-			usb_ep_set_stall(mass_ep_data[MSD_IN_EP_IDX].ep_addr);
-		} else {
-			LOG_WRN("Stall OUT endpoint");
-			usb_ep_set_stall(mass_ep_data[MSD_OUT_EP_IDX].ep_addr);
-		}
-
-		csw.Status = CSW_FAILED;
-		sendCSW();
+		LOG_ERR("DataLength mismatch");
+		fail();
 		return false;
 	}
 
 	return true;
-}
-
-static void fail(void)
-{
-	if (cbw.DataLength) {
-		/* Stall data stage */
-		usb_ep_set_stall(mass_ep_data[MSD_IN_EP_IDX].ep_addr);
-	}
-
-	csw.Status = CSW_FAILED;
-	sendCSW();
 }
 
 static void CBWDecode(uint8_t *buf, uint16_t size)
@@ -632,32 +624,37 @@ static void memoryVerify(uint8_t *buf, uint16_t size)
 {
 	uint32_t n;
 
-	if ((addr + size) > memory_size) {
-		size = memory_size - addr;
-		stage = MSC_ERROR;
-		usb_ep_set_stall(mass_ep_data[MSD_OUT_EP_IDX].ep_addr);
-		LOG_WRN("Stall OUT endpoint");
+	if (curr_lba >= block_count) {
+		LOG_WRN("Attempt to read past end of device: lba=%u", curr_lba);
+		fail();
+		return;
 	}
 
+	/* BUG: if a packet crosses block boundaries, we will probably fail. */
+
 	/* beginning of a new block -> load a whole block in RAM */
-	if (!(addr % BLOCK_SIZE)) {
-		LOG_DBG("Disk READ sector %d", addr/BLOCK_SIZE);
-		if (disk_access_read(disk_pdrv, page, addr/BLOCK_SIZE, 1)) {
-			LOG_ERR("---- Disk Read Error %d", addr/BLOCK_SIZE);
+	if (!curr_offset) {
+		LOG_DBG("Disk READ sector %u", curr_lba);
+		if (disk_access_read(disk_pdrv, page, curr_lba, 1)) {
+			LOG_ERR("---- Disk Read Error %u", curr_lba);
 		}
 	}
 
 	/* info are in RAM -> no need to re-read memory */
 	for (n = 0U; n < size; n++) {
-		if (page[addr%BLOCK_SIZE + n] != buf[n]) {
-			LOG_DBG("Mismatch sector %d offset %d",
-				addr/BLOCK_SIZE, n);
+		if (page[curr_offset + n] != buf[n]) {
+			LOG_DBG("Mismatch sector %u offset %u",
+				curr_lba, curr_offset + n);
 			memOK = false;
 			break;
 		}
 	}
 
-	addr += size;
+	curr_offset += n;
+	if (curr_offset >= BLOCK_SIZE) {
+		curr_offset -= BLOCK_SIZE;
+		curr_lba += 1;
+	}
 	length -= size;
 	csw.DataResidue -= size;
 
@@ -670,23 +667,22 @@ static void memoryVerify(uint8_t *buf, uint16_t size)
 
 static void memoryWrite(uint8_t *buf, uint16_t size)
 {
-	if ((addr + size) > memory_size) {
-		size = memory_size - addr;
-		stage = MSC_ERROR;
-		usb_ep_set_stall(mass_ep_data[MSD_OUT_EP_IDX].ep_addr);
-		LOG_WRN("Stall OUT endpoint");
+	if (curr_lba >= block_count) {
+		LOG_WRN("Attempt to write past end of device: lba=%u", curr_lba);
+		fail();
+		return;
 	}
 
 	/* we fill an array in RAM of 1 block before writing it in memory */
 	for (int i = 0; i < size; i++) {
-		page[addr % BLOCK_SIZE + i] = buf[i];
+		page[curr_offset + i] = buf[i];
 	}
 
 	/* if the array is filled, write it in memory */
-	if ((addr % BLOCK_SIZE) + size >= BLOCK_SIZE) {
+	if (curr_offset + size >= BLOCK_SIZE) {
 		if (!(disk_access_status(disk_pdrv) &
 					DISK_STATUS_WR_PROTECT)) {
-			LOG_DBG("Disk WRITE Qd %d", (addr/BLOCK_SIZE));
+			LOG_DBG("Disk WRITE Qd %u", curr_lba);
 			thread_op = THREAD_OP_WRITE_QUEUED;  /* write_queued */
 			defered_wr_sz = size;
 			k_sem_give(&disk_wait_sem);
@@ -694,7 +690,7 @@ static void memoryWrite(uint8_t *buf, uint16_t size)
 		}
 	}
 
-	addr += size;
+	curr_offset += size;
 	length -= size;
 	csw.DataResidue -= size;
 
@@ -761,13 +757,14 @@ static void mass_storage_bulk_out(uint8_t ep,
 static void thread_memory_write_done(void)
 {
 	uint32_t size = defered_wr_sz;
-	size_t overflowed_len = (addr + size) % CONFIG_MASS_STORAGE_BULK_EP_MPS;
+	size_t overflowed_len = (curr_offset + size) - BLOCK_SIZE;
 
-	if (overflowed_len) {
+	if (overflowed_len > 0) {
 		memmove(page, &page[BLOCK_SIZE], overflowed_len);
 	}
 
-	addr += size;
+	curr_offset = overflowed_len;
+	curr_lba += 1;
 	length -= size;
 	csw.DataResidue -= size;
 
@@ -924,18 +921,18 @@ static void mass_thread_main(int arg1, int unused)
 		switch (thread_op) {
 		case THREAD_OP_READ_QUEUED:
 			if (disk_access_read(disk_pdrv,
-						page, (addr/BLOCK_SIZE), 1)) {
-				LOG_ERR("!! Disk Read Error %d !",
-					addr/BLOCK_SIZE);
+						page, curr_lba, 1)) {
+				LOG_ERR("!! Disk Read Error %u !",
+					curr_lba);
 			}
 
 			thread_memory_read_done();
 			break;
 		case THREAD_OP_WRITE_QUEUED:
 			if (disk_access_write(disk_pdrv,
-						page, (addr/BLOCK_SIZE), 1)) {
-				LOG_ERR("!!!!! Disk Write Error %d !!!!!",
-					addr/BLOCK_SIZE);
+						page, curr_lba, 1)) {
+				LOG_ERR("!!!!! Disk Write Error %u !!!!!",
+					curr_lba);
 			}
 			thread_memory_write_done();
 			break;
@@ -956,11 +953,10 @@ static void mass_thread_main(int arg1, int unused)
  *
  * @return negative errno code on fatal failure, 0 otherwise
  */
-static int mass_storage_init(const struct device *dev)
+static int mass_storage_init(void)
 {
 	uint32_t block_size = 0U;
 
-	ARG_UNUSED(dev);
 
 	if (disk_access_init(disk_pdrv) != 0) {
 		LOG_ERR("Storage init ERROR !!!! - Aborting USB init");
@@ -987,9 +983,8 @@ static int mass_storage_init(const struct device *dev)
 	}
 
 
-	LOG_INF("Sect Count %d", block_count);
-	memory_size = block_count * BLOCK_SIZE;
-	LOG_INF("Memory Size %d", memory_size);
+	LOG_INF("Sect Count %u", block_count);
+	LOG_INF("Memory Size %llu", (uint64_t) block_count * BLOCK_SIZE);
 
 	msd_state_machine_reset();
 	msd_init();

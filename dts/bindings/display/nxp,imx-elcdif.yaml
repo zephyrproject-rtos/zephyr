@@ -8,103 +8,103 @@ compatible: "nxp,imx-elcdif"
 include: [display-controller.yaml, pinctrl-device.yaml]
 
 properties:
-    reg:
-      required: true
+  reg:
+    required: true
 
-    interrupts:
-      required: true
+  interrupts:
+    required: true
 
-    hsync:
-      type: int
-      required: true
-      description: HSYNC pulse width in display clock cycles
+  hsync:
+    type: int
+    required: true
+    description: HSYNC pulse width in display clock cycles
 
-    hfp:
-      type: int
-      required: true
-      description: Horizontal front porch in display clock cycles
+  hfp:
+    type: int
+    required: true
+    description: Horizontal front porch in display clock cycles
 
-    hbp:
-      type: int
-      required: true
-      description: Horizontal back porch in display clock cycles
+  hbp:
+    type: int
+    required: true
+    description: Horizontal back porch in display clock cycles
 
-    vsync:
-      type: int
-      required: true
-      description: VSYNC pulse width in display clock cycles
+  vsync:
+    type: int
+    required: true
+    description: VSYNC pulse width in display clock cycles
 
-    vfp:
-      type: int
-      required: true
-      description: Vertical front porch in display clock cycles
+  vfp:
+    type: int
+    required: true
+    description: Vertical front porch in display clock cycles
 
-    vbp:
-      type: int
-      required: true
-      description: Vertical back porch in display clock cycles
+  vbp:
+    type: int
+    required: true
+    description: Vertical back porch in display clock cycles
 
-    polarity:
-      type: int
-      required: true
-      enum:
-        - 0
-        - 1
-        - 2
-        - 3
-        - 4
-        - 5
-        - 6
-        - 7
-        - 8
-        - 9
-        - 10
-        - 11
-        - 12
-        - 13
-        - 14
-        - 15
-      description:
-        OR'ed value of elcdif_polarity_flags, used to control the signal polarity.
-        0000 VSYNC active low, HSYNC active low, Drive data on falling edge, DE active low.
-        0001 VSYNC active low, HSYNC active low, Drive data on falling edge, DE active high.
-        0010 VSYNC active low, HSYNC active low, Drive data on rising edge, DE active low.
-        0011 VSYNC active low, HSYNC active low, Drive data on rising edge, DE active high.
-        0100 VSYNC active low, HSYNC active high, Drive data on falling edge, DE active low.
-        0101 VSYNC active low, HSYNC active high, Drive data on falling edge, DE active high.
-        0110 VSYNC active low, HSYNC active high, Drive data on rising edge, DE active low.
-        0111 VSYNC active low, HSYNC active high, Drive data on rising edge, DE active high.
-        1000 VSYNC active high, HSYNC active low, Drive data on falling edge, DE active low.
-        1001 VSYNC active high, HSYNC active low, Drive data on falling edge, DE active high.
-        1010 VSYNC active high, HSYNC active low, Drive data on rising edge, DE active low.
-        1011 VSYNC active high, HSYNC active low, Drive data on rising edge, DE active high.
-        1100 VSYNC active high, HSYNC active high, Drive data on falling edge, DE active low.
-        1101 VSYNC active high, HSYNC active high, Drive data on falling edge, DE active high.
-        1110 VSYNC active high, HSYNC active high, Drive data on rising edge, DE active low.
-        1111 VSYNC active high, HSYNC active high, Drive data on rising edge, DE active high.
+  polarity:
+    type: int
+    required: true
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
+      - 4
+      - 5
+      - 6
+      - 7
+      - 8
+      - 9
+      - 10
+      - 11
+      - 12
+      - 13
+      - 14
+      - 15
+    description:
+      OR'ed value of elcdif_polarity_flags, used to control the signal polarity.
+      0000 VSYNC active low, HSYNC active low, Drive data on falling edge, DE active low.
+      0001 VSYNC active low, HSYNC active low, Drive data on falling edge, DE active high.
+      0010 VSYNC active low, HSYNC active low, Drive data on rising edge, DE active low.
+      0011 VSYNC active low, HSYNC active low, Drive data on rising edge, DE active high.
+      0100 VSYNC active low, HSYNC active high, Drive data on falling edge, DE active low.
+      0101 VSYNC active low, HSYNC active high, Drive data on falling edge, DE active high.
+      0110 VSYNC active low, HSYNC active high, Drive data on rising edge, DE active low.
+      0111 VSYNC active low, HSYNC active high, Drive data on rising edge, DE active high.
+      1000 VSYNC active high, HSYNC active low, Drive data on falling edge, DE active low.
+      1001 VSYNC active high, HSYNC active low, Drive data on falling edge, DE active high.
+      1010 VSYNC active high, HSYNC active low, Drive data on rising edge, DE active low.
+      1011 VSYNC active high, HSYNC active low, Drive data on rising edge, DE active high.
+      1100 VSYNC active high, HSYNC active high, Drive data on falling edge, DE active low.
+      1101 VSYNC active high, HSYNC active high, Drive data on falling edge, DE active high.
+      1110 VSYNC active high, HSYNC active high, Drive data on rising edge, DE active low.
+      1111 VSYNC active high, HSYNC active high, Drive data on rising edge, DE active high.
 
-    pixel-format:
-      type: string
-      required: true
-      enum:
-        - "rgb-888"
-        - "bgr-565"
-      description:
-        Display pixel format.
+  pixel-format:
+    type: string
+    required: true
+    enum:
+      - "rgb-888"
+      - "bgr-565"
+    description:
+      Display pixel format.
 
-    data-buswidth:
-      type: string
-      default: "16-bit"
-      enum:
-        - "16-bit"
-        - "8-bit"
-        - "18-bit"
-        - "24-bit"
-      description:
-        LCD data bus width. The default is set to the reset value of 16-bit
+  data-buswidth:
+    type: string
+    default: "16-bit"
+    enum:
+      - "16-bit"
+      - "8-bit"
+      - "18-bit"
+      - "24-bit"
+    description:
+      LCD data bus width. The default is set to the reset value of 16-bit
 
-    backlight-gpios:
-      type: phandle-array
-      required: true
-      description:
-        LCB backlight control gpio. Driver will initialize this GPIO to active high
+  backlight-gpios:
+    type: phandle-array
+    required: true
+    description:
+      LCB backlight control gpio. Driver will initialize this GPIO to active high

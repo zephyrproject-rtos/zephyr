@@ -10,17 +10,29 @@ menuconfig ETH_STM32_HAL
 	depends on DT_HAS_ST_STM32_ETHERNET_ENABLED
 	select USE_STM32_HAL_ETH
 	select NOCACHE_MEMORY if SOC_SERIES_STM32H7X && CPU_CORTEX_M7
+	select HWINFO
 	help
 	  Enable STM32 HAL based Ethernet driver. It is available for
 	  all Ethernet enabled variants of the F2, F4, F7 and H7 series.
 
 if ETH_STM32_HAL
 
+choice ETH_STM32_HAL_API_VERSION
+	prompt "STM32Cube HAL Ethernet version"
+
 config ETH_STM32_HAL_API_V2
 	bool "Use new HAL driver"
-	depends on SOC_SERIES_STM32H7X || SOC_SERIES_STM32F4X
+	depends on SOC_SERIES_STM32H7X || SOC_SERIES_STM32F4X || SOC_SERIES_STM32F7X
 	help
 	  Use the new HAL driver instead of the legacy one.
+
+config ETH_STM32_HAL_API_V1
+	bool "Use new HAL driver"
+	select DEPRECATED if SOC_SERIES_STM32H7X || SOC_SERIES_STM32F4X || SOC_SERIES_STM32F7X
+	help
+	  Driver version based on legacy HAL version. Deprecated unless using STM32F2 series.
+
+endchoice
 
 config ETH_STM32_HAL_RX_THREAD_STACK_SIZE
 	int "RX thread stack size"
@@ -48,37 +60,59 @@ config ETH_STM32_HAL_PHY_ADDRESS
 	help
 	  The phy address to use.
 
+choice
+	prompt "Mac address definition method"
+	optional
+	help
+	  The driver supports 2 methods to define 3 last bytes of MAC address
+	  1. Statically defined by user
+	  2. Generated dynamically at each boot
+
+	  Note: Configuring this methods using Kconfig is now deprecated in favor
+	  of device tree based configuration.
+
 config ETH_STM32_HAL_RANDOM_MAC
-	bool "Random MAC address"
+	bool "Random MAC address (DEPRECATED)"
 	depends on ENTROPY_GENERATOR
-	default y
+	select DEPRECATED
 	help
 	  Generate a random MAC address dynamically.
+	  Deprecated in favor of device tree property "zephyr,random-mac-address"
 
-if !ETH_STM32_HAL_RANDOM_MAC
+config ETH_STM32_HAL_USER_STATIC_MAC
+	bool "User defined MAC address (DEPRECATED)"
+	select DEPRECATED
+	help
+	  3 last bytes of MAC address are defined by user thanks to
+	  ETH_STM32_HAL_MAC3, ETH_STM32_HAL_MAC4 and ETH_STM32_HAL_MAC5.
+	  Deprecated in favor of device tree property "local-mac-address"
+
+endchoice
+
+if ETH_STM32_HAL_USER_STATIC_MAC
 
 config ETH_STM32_HAL_MAC3
-	hex "MAC Address Byte 3"
+	hex "MAC Address Byte 3 (DEPRECATED)"
 	default 0
 	range 0 0xff
 	help
 	  This is the byte 3 of the MAC address.
 
 config ETH_STM32_HAL_MAC4
-	hex "MAC Address Byte 4"
+	hex "MAC Address Byte 4 (DEPRECATED)"
 	default 0
 	range 0 0xff
 	help
 	  This is the byte 4 of the MAC address.
 
 config ETH_STM32_HAL_MAC5
-	hex "MAC Address Byte 5"
+	hex "MAC Address Byte 5 (DEPRECATED)"
 	default 0
 	range 0 0xff
 	help
 	  This is the byte 5 of the MAC address.
 
-endif # !ETH_STM32_HAL_RANDOM_MAC
+endif # ETH_STM32_HAL_USER_STATIC_MAC
 
 config ETH_STM32_HAL_MII
 	bool "Use MII interface"
@@ -98,6 +132,14 @@ config ETH_STM32_AUTO_NEGOTIATION_ENABLE
 	default y
 	help
 	  Enable this if using autonegotiation
+
+config ETH_STM32_HW_CHECKSUM
+	bool "Use TX and RX hardware checksum"
+	depends on !SOC_SERIES_STM32H7X
+	help
+	  Enable receive and transmit checksum offload to enhance throughput
+	  performances.
+	  See reference manual for more information on this feature.
 
 if !ETH_STM32_AUTO_NEGOTIATION_ENABLE
 
@@ -156,5 +198,16 @@ config ETH_STM32_HAL_PTP_CLOCK_INIT_PRIO
 	  initializes before network stack (NET_INIT_PRIO).
 
 endif # SOC_SERIES_STM32F7X || SOC_SERIES_STM32H7X
+
+config ETH_STM32_MULTICAST_FILTER
+	bool "Multicast hash filter support"
+	help
+	  Enable support for multicast hash filtering in the MAC.
+	  Once enabled the ethernet MAC performs imperfect filtering
+	  based on a computed hash of the destination MAC address of
+	  the multicast address. Only multicast with the computed
+	  hash set in the multicast table will be received and all
+	  other multicast is dropped by the MAC. If disabled then all
+	  multicast is received by the MAC.
 
 endif # ETH_STM32_HAL

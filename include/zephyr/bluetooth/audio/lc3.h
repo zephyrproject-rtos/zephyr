@@ -18,7 +18,6 @@
  * @{
  */
 
-#include <zephyr/types.h>
 #include <zephyr/sys/util_macro.h>
 
 #ifdef __cplusplus

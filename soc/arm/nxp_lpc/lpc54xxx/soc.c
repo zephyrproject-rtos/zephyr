@@ -107,9 +107,8 @@ static ALWAYS_INLINE void clock_init(void)
  * @return 0
  */
 
-static int nxp_lpc54114_init(const struct device *arg)
+static int nxp_lpc54114_init(void)
 {
-	ARG_UNUSED(arg);
 
 	/* old interrupt lock level */
 	unsigned int oldLevel;
@@ -139,6 +138,18 @@ static int nxp_lpc54114_init(const struct device *arg)
 
 SYS_INIT(nxp_lpc54114_init, PRE_KERNEL_1, 0);
 
+#if defined(CONFIG_PLATFORM_SPECIFIC_INIT) && defined(CONFIG_SOC_LPC54114_M0)
+
+/* M4 core has a custom platform initialization routine in assembly,
+ * but M0 core does not. install one here to call SystemInit.
+ */
+void z_arm_platform_init(void)
+{
+	SystemInit();
+}
+
+#endif /* CONFIG_PLATFORM_SPECIFIC_INIT */
+
 
 #if defined(CONFIG_SECOND_CORE_MCUX) && defined(CONFIG_SOC_LPC54114_M4)
 
@@ -154,11 +165,10 @@ SYS_INIT(nxp_lpc54114_init, PRE_KERNEL_1, 0);
  *
  */
 /* This function is also called at deep sleep resume. */
-int _slave_init(const struct device *arg)
+int _slave_init(void)
 {
 	int32_t temp;
 
-	ARG_UNUSED(arg);
 
 	/* Enable SRAM2, used by other core */
 	SYSCON->AHBCLKCTRLSET[0] = SYSCON_AHBCLKCTRL_SRAM2_MASK;

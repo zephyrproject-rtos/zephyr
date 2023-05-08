@@ -33,11 +33,12 @@ do {									\
  * (see udp() below), but at the moment it's just a dummy loop
  * to keep the sample running in order to execute TTCN-3 TCP sanity check.
  */
-void main(void)
+int main(void)
 {
 	while (true) {
 		k_sleep(K_SECONDS(1));
 	}
+	return 0;
 }
 
 void udp(void)

@@ -411,18 +411,7 @@ ZTEST(mem_protect_domain, test_mem_part_overlap)
 
 extern struct k_spinlock z_mem_domain_lock;
 
-static ZTEST_BMEM bool need_recover_spinlock;
-
 static struct k_mem_domain test_domain_fail;
-
-void post_fatal_error_handler(unsigned int reason, const z_arch_esf_t *pEsf)
-{
-	if (need_recover_spinlock) {
-		k_spin_release(&z_mem_domain_lock);
-
-		need_recover_spinlock = false;
-	}
-}
 
 static volatile uint8_t __aligned(MEM_REGION_ALLOC)
 	exceed_buf[MEM_REGION_ALLOC];
@@ -451,7 +440,6 @@ ZTEST(mem_protect_domain, test_mem_part_assert_add_overmax)
 			"domain still have room of partitions(%d).",
 			max_parts);
 
-	need_recover_spinlock = false;
 	set_fault_valid(false);
 
 	/* Add one more partition will fail due to exceeding */
@@ -478,7 +466,6 @@ ZTEST(mem_protect_domain, test_mem_domain_remove_part_fail)
 {
 	struct k_mem_partition *no_parts = &find_no_part;
 
-	need_recover_spinlock = false;
 	set_fault_valid(false);
 
 	zassert_not_equal(
@@ -505,7 +492,6 @@ ZTEST(mem_protect_domain, test_mem_domain_init_fail)
 	struct k_mem_partition *no_parts[] = {&ro_part, 0};
 
 	/* init another domain fail */
-	need_recover_spinlock = false;
 	set_fault_valid(false);
 
 	zassert_not_equal(
@@ -607,7 +593,6 @@ ZTEST(mem_protect_domain, test_mem_part_remove_error_zerosize)
 	no_parts->size = 0U;
 
 	/* remove partition fail */
-	need_recover_spinlock = false;
 	set_fault_valid(false);
 
 	zassert_not_equal(

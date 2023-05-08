@@ -11,6 +11,12 @@ config FLASH_HAS_DRIVER_ENABLED
 	help
 	  This option is enabled when any flash driver is enabled.
 
+config FLASH_HAS_EX_OP
+	bool
+	help
+	  This option is selected by drivers that support flash extended
+	  operations.
+
 config FLASH_HAS_PAGE_LAYOUT
 	bool
 	help
@@ -24,7 +30,7 @@ config FLASH_JESD216
 	 devices to enable building a common support module.
 
 menuconfig FLASH
-	bool "Flash hardware support"
+	bool "Flash drivers"
 	help
 	  Enable support for the flash hardware.
 
@@ -51,12 +57,40 @@ config FLASH_SHELL
 	  Enable the flash shell with flash related commands such as test,
 	  write, read and erase.
 
+if FLASH_SHELL
+
+config FLASH_SHELL_TEST_COMMANDS
+	bool "Flash read/write/erase test commands"
+	select CBPRINTF_FP_SUPPORT
+	help
+	  Enable additional flash shell commands for performing
+	  read/write/erase tests with speed output.
+
+config FLASH_SHELL_BUFFER_SIZE
+	hex "Flash shell buffer size"
+	default 0x4000 if FLASH_SHELL_TEST_COMMANDS
+	default 0x1000
+	range 0x400 0x1000000
+	help
+	  Size of the buffer used for flash commands, will determine the
+	  maximum size that can be used with a read/write test.
+
+endif # FLASH_SHELL
+
 config FLASH_PAGE_LAYOUT
 	bool "API for retrieving the layout of pages"
 	depends on FLASH_HAS_PAGE_LAYOUT
 	default y
 	help
 	  Enables API for retrieving the layout of flash memory pages.
+
+config FLASH_EX_OP_ENABLED
+	bool "API for extended flash operations"
+	depends on FLASH_HAS_EX_OP
+	default n
+	help
+	  Enables flash extended operations API. It can be used to perform
+	  non-standard operations e.g. manipulating flash protection.
 
 config FLASH_INIT_PRIORITY
 	int "Flash init priority"

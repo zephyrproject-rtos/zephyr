@@ -13,6 +13,8 @@
 #include <zephyr/dt-bindings/pwm/pwm.h>
 #include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/pwm/stm32_pwm.h>
+#include <zephyr/dt-bindings/dma/stm32_dma.h>
+#include <zephyr/dt-bindings/adc/stm32l4_adc.h>
 #include <zephyr/dt-bindings/reset/stm32g4_l4_5_reset.h>
 #include <freq.h>
 
@@ -79,6 +81,21 @@
 		};
 	};
 
+	power-states {
+		stop0: state0 {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-idle";
+				substate-id = <1>;
+				min-residency-us = <20>;
+			};
+		stop1: state1 {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-idle";
+				substate-id = <2>;
+				min-residency-us = <100>;
+			};
+	};
+
 	soc {
 		/*
 		 * Both adc instances cannot be used in parallel right now.
@@ -89,10 +106,13 @@
 			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00002000>;
 			interrupts = <18 0>;
 			status = "disabled";
-			vref-mv = <3300>;
 			#io-channel-cells = <1>;
-			has-vref-channel;
-			has-temp-channel;
+			temp-channel = <16>;
+			vref-channel = <18>;
+			resolutions = <STM32_ADC_RES(12, 0x00)
+				       STM32_ADC_RES(10, 0x01)
+				       STM32_ADC_RES(8, 0x02)
+				       STM32_ADC_RES(6, 0x03)>;
 		};
 
 		adc2: adc@50000100 {
@@ -102,6 +122,10 @@
 			interrupts = <18 0>;
 			status = "disabled";
 			#io-channel-cells = <1>;
+			resolutions = <STM32_ADC_RES(12, 0x00)
+				       STM32_ADC_RES(10, 0x01)
+				       STM32_ADC_RES(8, 0x02)
+				       STM32_ADC_RES(6, 0x03)>;
 		};
 
 		dac1: dac@50000800 {
@@ -155,7 +179,15 @@
 			compatible = "st,stm32-exti";
 			interrupt-controller;
 			#interrupt-cells = <1>;
+			#address-cells = <1>;
 			reg = <0x40010400 0x400>;
+			num-lines = <16>;
+			interrupts = <6 0>, <7 0>, <8 0>, <9 0>,
+				     <10 0>, <23 0>, <40 0>;
+			interrupt-names = "line0", "line1", "line2-TSC", "line3",
+					  "line4", "line5-9", "line10-15";
+			line-ranges = <0 1>, <1 1>, <2 1>, <3 1>,
+				      <4 1>, <5 5>, <10 6>;
 		};
 
 		pinctrl: pin-controller@48000000 {
@@ -410,6 +442,11 @@
 			st,prescaler = <0>;
 			status = "disabled";
 
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
+			};
+
 			pwm {
 				compatible = "st,stm32-pwm";
 				status = "disabled";
@@ -427,6 +464,11 @@
 			st,prescaler = <0>;
 			status = "disabled";
 
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
+			};
+
 			pwm {
 				compatible = "st,stm32-pwm";
 				status = "disabled";
@@ -443,6 +485,11 @@
 			interrupt-names = "global";
 			st,prescaler = <0>;
 			status = "disabled";
+
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
+			};
 
 			pwm {
 				compatible = "st,stm32-pwm";
@@ -505,6 +552,11 @@
 				status = "disabled";
 				#pwm-cells = <3>;
 			};
+
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
+			};
 		};
 
 		timers16: timers@40014400 {
@@ -522,6 +574,11 @@
 				status = "disabled";
 				#pwm-cells = <3>;
 			};
+
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
+			};
 		};
 
 		timers17: timers@40014800 {
@@ -538,6 +595,11 @@
 				compatible = "st,stm32-pwm";
 				status = "disabled";
 				#pwm-cells = <3>;
+			};
+
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
 			};
 		};
 
@@ -566,7 +628,8 @@
 			num-bidir-endpoints = <8>;
 			ram-size = <1024>;
 			phys = <&usb_fs_phy>;
-			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00800000>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00800000>,
+				 <&rcc STM32_SRC_HSI48 CLK48_SEL(0)>;
 			status = "disabled";
 		};
 

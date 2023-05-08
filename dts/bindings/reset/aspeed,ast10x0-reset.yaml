@@ -8,8 +8,8 @@ compatible: "aspeed,ast10x0-reset"
 include: [base.yaml, reset-controller.yaml]
 
 properties:
-    "#reset-cells":
-      const: 1
+  "#reset-cells":
+    const: 1
 
 clock-cells:
   - reset_id

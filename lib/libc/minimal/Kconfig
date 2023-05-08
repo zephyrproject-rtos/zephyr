@@ -14,31 +14,43 @@ config MINIMAL_LIBC_NON_REENTRANT_FUNCTIONS
 	  option may require an additional memory protection region.
 
 config MINIMAL_LIBC_MALLOC
-	bool "Minimal libc malloc implementation"
+	bool "[DEPRECATED] Minimal libc malloc implementation"
 	default y
+	imply COMMON_LIBC_MALLOC
 	help
+	  [DEPRECATED] Use COMMON_LIBC_MALLOC
+
 	  Enable the minimal libc's implementation of malloc, free, and realloc.
 	  Disable if you wish to provide your own implementations of these functions.
 
 config MINIMAL_LIBC_MALLOC_ARENA_SIZE
-	int "Size of the minimal libc malloc arena"
+	int "[DEPRECATED] Size of the minimal libc malloc arena"
 	default 0
-	depends on MINIMAL_LIBC_MALLOC
+	depends on COMMON_LIBC_MALLOC
 	help
+	  [DEPRECATED] Use COMMON_LIBC_MALLOC_ARENA_SIZE
+
+	  If set to zero, then the value of COMMON_LIBC_MALLOC_ARENA_SIZE
+	  will be used.
+
 	  Indicate the size in bytes of the memory arena used for
 	  minimal libc's malloc() implementation.
 
 config MINIMAL_LIBC_CALLOC
-	bool "Minimal libc trivial calloc implementation"
+	bool "[DEPRECATED] Minimal libc trivial calloc implementation"
 	default y
 	help
+	  [DEPRECATED] Use COMMON_LIBC_CALLOC
+
 	  Enable the minimal libc's trivial implementation of calloc, which
 	  forwards to malloc and memset.
 
 config MINIMAL_LIBC_REALLOCARRAY
-	bool "Minimal libc trivial reallocarray implementation"
+	bool "[DEPRECATED] Minimal libc trivial reallocarray implementation"
 	default y
 	help
+	  [DEPRECATED] Use COMMON_LIBC_REALLOCARRAY
+
 	  Enable the minimal libc's trivial implementation of reallocarray, which
 	  forwards to realloc.
 
@@ -66,6 +78,7 @@ config MINIMAL_LIBC_RAND
 
 config MINIMAL_LIBC_TIME
 	bool "Time functions"
+	select COMMON_LIBC_TIME if POSIX_CLOCK
 	default y
 	help
 	  Enable time() and gmtime_r() for the minimal libc.

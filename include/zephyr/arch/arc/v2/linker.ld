@@ -30,7 +30,8 @@
 #ifdef CONFIG_ARC_MPU_ENABLE
 	#if CONFIG_ARC_MPU_VER == 2
 		#define MPU_MIN_SIZE 2048
-	#elif (CONFIG_ARC_MPU_VER == 3) ||  (CONFIG_ARC_MPU_VER == 4) || (CONFIG_ARC_MPU_VER == 6)
+	#elif (CONFIG_ARC_MPU_VER == 3) ||  (CONFIG_ARC_MPU_VER == 4) || \
+			(CONFIG_ARC_MPU_VER == 6) || (CONFIG_ARC_MPU_VER == 8)
 		#define MPU_MIN_SIZE 32
 	#endif
 	#define MPU_MIN_SIZE_ALIGN . = ALIGN(MPU_MIN_SIZE);
@@ -130,12 +131,12 @@ SECTIONS {
 #include <snippets-rodata.ld>
 #include <zephyr/linker/kobject-rom.ld>
 
-#if defined(CONFIG_CPLUSPLUS) && !defined(CONFIG_CPP_STATIC_INIT_GNU) && defined(__MWDT_LINKER_CMD__)
+#if defined(CONFIG_CPP) && !defined(CONFIG_CPP_STATIC_INIT_GNU) && defined(__MWDT_LINKER_CMD__)
 		. = ALIGN(4);
 		_fctors = .;
 		KEEP(*(.ctors*))
 		_ectors = .;
-#endif /* CONFIG_CPLUSPLUS && !CONFIG_CPP_STATIC_INIT_GNU && __MWDT_LINKER_CMD__ */
+#endif /* CONFIG_CPP && !CONFIG_CPP_STATIC_INIT_GNU && __MWDT_LINKER_CMD__ */
 
 		MPU_ALIGN(ABSOLUTE(.) - __rom_region_start);
 	} GROUP_LINK_IN(ROMABLE_REGION)
@@ -293,11 +294,11 @@ SECTIONS {
 #endif
 
 	/DISCARD/ : {
-#if defined(CONFIG_CPLUSPLUS) && !defined(CONFIG_CPP_STATIC_INIT_GNU) && defined(__MWDT_LINKER_CMD__)
+#if defined(CONFIG_CPP) && !defined(CONFIG_CPP_STATIC_INIT_GNU) && defined(__MWDT_LINKER_CMD__)
 		*(.dtors*)
 		*(.fini*)
 		*(.eh_frame*)
-#endif /* CONFIG_CPLUSPLUS && !CONFIG_CPP_STATIC_INIT_GNU && __MWDT_LINKER_CMD__ */
+#endif /* CONFIG_CPP && !CONFIG_CPP_STATIC_INIT_GNU && __MWDT_LINKER_CMD__ */
 		*(.note.GNU-stack)
 		*(.got.plt)
 		*(.igot.plt)

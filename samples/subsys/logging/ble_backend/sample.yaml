@@ -1,0 +1,11 @@
+sample:
+  description: A simple application that demonstrates the
+    use of the logging ble backend.
+  name: logger backend ble
+tests:
+  sample.logging.ble_backend.nrf52833:
+    harness: bluetooth
+    platform_allow: qemu_cortex_m3 qemu_x86
+    integration_platforms:
+      - qemu_cortex_m3
+    tags: bluetooth

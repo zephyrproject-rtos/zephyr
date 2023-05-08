@@ -11,12 +11,12 @@ description: |
 compatible: "test-pwm-loopback"
 
 properties:
-    pwms:
-        type: phandle-array
-        required: true
-        description: |
-          PWM pins that will be used for generating and capturing a pulse-width
-          modulated signal. The pin at the first index will be used for signal
-          generation while the pin at the second index will be used for capuring
-          the generated signal. The two pins must be physically connected to
-          each other.
+  pwms:
+    type: phandle-array
+    required: true
+    description: |
+      PWM pins that will be used for generating and capturing a pulse-width
+      modulated signal. The pin at the first index will be used for signal
+      generation while the pin at the second index will be used for capuring
+      the generated signal. The two pins must be physically connected to
+      each other.

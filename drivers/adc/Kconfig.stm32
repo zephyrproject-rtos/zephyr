@@ -4,6 +4,7 @@
 # Copyright (c) 2019 Endre Karlson
 # Copyright (c) 2019 Song Qiang <songqiang1304521@gmail.com>
 # Copyright (c) 2021 Marius Scholtz, RIC Electronics
+# Copyright (c) 2022 Hein Wessels, Nobleo Technology
 # SPDX-License-Identifier: Apache-2.0
 
 config ADC_STM32
@@ -13,12 +14,24 @@ config ADC_STM32
 	help
 	  Enable the driver implementation for the stm32xx ADC
 
+if ADC_STM32
+
+config ADC_STM32_DMA
+	bool "STM32 MCU ADC DMA Support"
+	select DMA
+	help
+	  Enable the ADC DMA mode for ADC instances
+	  that enable dma channels in their device tree node.
+
 if SOC_SERIES_STM32F2X || SOC_SERIES_STM32F4X || SOC_SERIES_STM32F7X || SOC_SERIES_STM32G4X
 
 config ADC_STM32_SHARED_IRQS
 	bool "STM32 ADC shared interrupts"
 	default y
-	depends on ADC_STM32
+	depends on ADC_STM32 && !ADC_STM32_DMA
 	help
 	  Enable the use of shared interrupts for families that only have a single interrupt for all ADC's
+
+endif
+
 endif

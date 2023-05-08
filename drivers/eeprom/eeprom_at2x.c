@@ -651,7 +651,7 @@ static const struct eeprom_driver_api eeprom_at2x_api = {
 	DEVICE_DT_DEFINE(INST_DT_AT2X(n, t), &eeprom_at2x_init, \
 			    NULL, &eeprom_at##t##_data_##n, \
 			    &eeprom_at##t##_config_##n, POST_KERNEL, \
-			    CONFIG_EEPROM_INIT_PRIORITY, \
+			    CONFIG_EEPROM_AT2X_INIT_PRIORITY, \
 			    &eeprom_at2x_api)
 
 #define EEPROM_AT24_DEVICE(n) EEPROM_AT2X_DEVICE(n, 24)

@@ -13,9 +13,8 @@ config MCUMGR_GRP_ZBASIC_STORAGE_ERASE
 	help
 	  Enables command that allows to erase storage partition.
 
-module=MCUMGR_GRP_ZBASIC
-module-dep=LOG
-module-str=mcumgr_grp_zbasic
+module = MCUMGR_GRP_ZBASIC
+module-str = mcumgr_grp_zbasic
 source "subsys/logging/Kconfig.template.log_config"
 
 endif

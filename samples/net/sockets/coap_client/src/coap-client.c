@@ -624,7 +624,7 @@ static int register_observer(void)
 	return 0;
 }
 
-void main(void)
+int main(void)
 {
 	int r;
 
@@ -657,10 +657,11 @@ void main(void)
 
 	LOG_DBG("Done");
 
-	return;
+	return 0;
 
 quit:
 	(void)close(sock);
 
 	LOG_ERR("quit");
+	return 0;
 }

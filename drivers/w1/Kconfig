@@ -5,7 +5,7 @@
 
 menuconfig W1
 	bool
-	prompt "1-Wire Drivers"
+	prompt "1-Wire bus drivers"
 	select CRC
 	help
 	  Enable 1-Wire Drivers
@@ -40,6 +40,7 @@ config W1_SHELL_BUFFER_SIZE
 	  To be able to write more than 8 bytes make
 	  sure to also increase SHELL_ARGC_MAX accordingly.
 
+rsource "Kconfig.ds2482-800"
 rsource "Kconfig.ds2484"
 rsource "Kconfig.ds2477_85"
 rsource "Kconfig.ds2485"

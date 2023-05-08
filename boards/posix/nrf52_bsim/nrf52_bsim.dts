@@ -6,11 +6,12 @@
 
 /dts-v1/;
 
-#include <arm/nordic/nrf52832.dtsi>
+#include <mem.h>
+#include <arm/nordic/nrf52833.dtsi>
 
 / {
 	model = "nrf52 bsim";
-	compatible = "bsim,nrf52832";
+	compatible = "bsim,nrf52833";
 
 	/* We need to remove aliases to nodes we delete */
 	aliases {
@@ -19,19 +20,23 @@
 		/delete-property/ spi-0;
 		/delete-property/ spi-1;
 		/delete-property/ spi-2;
+		/delete-property/ spi-3;
 		/delete-property/ uart-0;
+		/delete-property/ uart-1;
 		/delete-property/ adc-0;
-		/delete-property/ gpio-0;
+		/delete-property/ gpio-1;
 		/delete-property/ gpiote-0;
 		/delete-property/ wdt-0;
 		/delete-property/ pwm-0;
 		/delete-property/ pwm-1;
 		/delete-property/ pwm-2;
+		/delete-property/ pwm-3;
 		/delete-property/ qdec-0;
 	};
 
 	chosen {
 		/delete-property/ zephyr,flash-controller;
+		zephyr,ieee802154 = &ieee802154;
 	};
 
 	soc {
@@ -39,20 +44,41 @@
 		/delete-node/ memory@20000000;
 		/delete-node/ adc@40007000;
 		/delete-node/ uart@40002000;
+		/delete-node/ uart@40028000;
 		/delete-node/ gpiote@40006000;
-		/delete-node/ gpio@50000000;
+		/delete-node/ gpio@50000300;
 		/delete-node/ i2c@40003000;
 		/delete-node/ i2c@40004000;
 		/delete-node/ pwm@4001c000;
 		/delete-node/ pwm@40021000;
 		/delete-node/ pwm@40022000;
+		/delete-node/ pwm@4002d000;
 		/delete-node/ qdec@40012000;
 		/delete-node/ spi@40003000;
 		/delete-node/ spi@40004000;
 		/delete-node/ spi@40023000;
-		/delete-node/ temp@4000c000;
+		/delete-node/ spi@4002f000;
 		/delete-node/ watchdog@40010000;
+		/delete-node/ acl@4001e000;
+		/delete-node/ usbd@40027000;
 	};
 
 	/delete-node/ sw-pwm;
+};
+
+&radio {
+	/* These features are not yet supported by the RADIO model */
+	/delete-property/ dfe-supported;
+	/delete-property/ ble-coded-phy-supported;
+};
+
+&ieee802154 {
+	status = "okay";
+};
+
+&gpio0 {
+	/* Needed by
+	 * modules/hal_nordic/nrf_802154/sl_opensource/platform/nrf_802154_gpiote_zephyr.c
+	 */
+	status = "okay";
 };

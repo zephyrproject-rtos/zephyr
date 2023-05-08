@@ -38,7 +38,7 @@ def parse_coccinelle(contents: str, violations: dict):
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        description="Check if change requires full twister")
+        description="Check if change requires full twister", allow_abbrev=False)
     parser.add_argument('-c', '--commits', default=None,
                         help="Commit range in the form: a..b")
     parser.add_argument("-o", "--output", required=False,

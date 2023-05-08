@@ -70,11 +70,14 @@
 #define BUILD_ASSERT(EXPR, MSG...) static_assert(EXPR, "" MSG)
 
 /*
- * GCC 4.6 and higher have the C11 _Static_assert built in, and its
+ * GCC 4.6 and higher have the C11 _Static_assert built in and its
  * output is easier to understand than the common BUILD_ASSERT macros.
+ * Don't use this in C++98 mode though (which we can hit, as
+ * static_assert() is not available)
  */
-#elif (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)) || \
-	(__STDC_VERSION__) >= 201100
+#elif !defined(__cplusplus) && \
+	((__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)) ||	\
+	 (__STDC_VERSION__) >= 201100)
 #define BUILD_ASSERT(EXPR, MSG...) _Static_assert(EXPR, "" MSG)
 #else
 #define BUILD_ASSERT(EXPR, MSG...)
@@ -309,7 +312,7 @@ do {                                                                    \
 
 #else
 
-#define FUNC_CODE() .code 32
+#define FUNC_CODE() .code 32;
 #define FUNC_INSTR(a)
 
 #endif /* CONFIG_ASSEMBLER_ISA_THUMB2 */
@@ -623,6 +626,17 @@ do {                                                                    \
 #define __noasan __attribute__((no_sanitize("address")))
 #else
 #define __noasan /**/
+#endif
+
+/**
+ * @brief Function attribute to disable stack protector.
+ *
+ * @note Only supported for GCC >= 11.0.0 or Clang >= 7.
+ */
+#if (TOOLCHAIN_GCC_VERSION >= 110000) || (TOOLCHAIN_CLANG_VERSION >= 70000)
+#define FUNC_NO_STACK_PROTECTOR __attribute__((no_stack_protector))
+#else
+#define FUNC_NO_STACK_PROTECTOR
 #endif
 
 #endif /* !_LINKER */

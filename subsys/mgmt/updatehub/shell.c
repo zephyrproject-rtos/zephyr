@@ -1,16 +1,18 @@
 /*
- * Copyright (c) 2018 O.S.Systems
+ * Copyright (c) 2018-2023 O.S.Systems
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/logging/log.h>
+LOG_MODULE_DECLARE(updatehub, CONFIG_UPDATEHUB_LOG_LEVEL);
+
 #include <zephyr/shell/shell.h>
-#include <zephyr/drivers/flash.h>
-#include <zephyr/dfu/mcuboot.h>
-#include <zephyr/dfu/flash_img.h>
-#include "include/updatehub.h"
+#include <zephyr/mgmt/updatehub.h>
+
 #include "updatehub_firmware.h"
 #include "updatehub_device.h"
+#include "updatehub_storage.h"
 
 #if defined(CONFIG_UPDATEHUB_CE)
 #define UPDATEHUB_SERVER CONFIG_UPDATEHUB_SERVER
@@ -18,12 +20,12 @@
 #define UPDATEHUB_SERVER "coap.updatehub.io"
 #endif
 
-static int cmd_run(const struct shell *shell, size_t argc,
+static int cmd_run(const struct shell *sh, size_t argc,
 		   char **argv)
 {
 	int ret = -1;
 
-	shell_fprintf(shell, SHELL_INFO, "Starting UpdateHub run...\n");
+	shell_fprintf(sh, SHELL_INFO, "Starting UpdateHub run...\n");
 
 	switch (updatehub_probe()) {
 	case UPDATEHUB_HAS_UPDATE:
@@ -32,47 +34,65 @@ static int cmd_run(const struct shell *shell, size_t argc,
 			ret = 0;
 			break;
 		default:
-			shell_fprintf(shell, SHELL_ERROR, "Error installing update.\n");
+			shell_fprintf(sh, SHELL_ERROR, "Error installing update.\n");
 			break;
 		}
 		break;
 
 	case UPDATEHUB_NO_UPDATE:
-		shell_fprintf(shell, SHELL_INFO, "No update found\n");
+		shell_fprintf(sh, SHELL_INFO, "No update found\n");
 		ret = 0;
 		break;
 
 	default:
-		shell_fprintf(shell, SHELL_ERROR, "Invalid response\n");
+		shell_fprintf(sh, SHELL_ERROR, "Invalid response\n");
 		break;
 	}
 
 	return ret;
 }
 
-static int cmd_info(const struct shell *shell, size_t argc, char **argv)
+static int cmd_info(const struct shell *sh, size_t argc, char **argv)
 {
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
 	char *device_id = k_malloc(DEVICE_ID_HEX_MAX_SIZE);
-	char *firmware_version = k_malloc(BOOT_IMG_VER_STRLEN_MAX);
+	char *firmware_version = k_malloc(FIRMWARE_IMG_VER_STRLEN_MAX);
+	int ret = 0;
+
+	if (device_id == NULL || firmware_version == NULL) {
+		LOG_ERR("Could not alloc device_id or firmware_version memory");
+
+		ret = -ENOMEM;
+
+		goto updatehub_shell_error;
+	}
 
 	updatehub_get_device_identity(device_id, DEVICE_ID_HEX_MAX_SIZE);
-	updatehub_get_firmware_version(firmware_version, BOOT_IMG_VER_STRLEN_MAX);
+	updatehub_get_firmware_version(UPDATEHUB_SLOT_PARTITION_0,
+				       firmware_version,
+				       FIRMWARE_IMG_VER_STRLEN_MAX);
 
-	shell_fprintf(shell, SHELL_NORMAL, "Unique device id: %s\n",
+	shell_fprintf(sh, SHELL_NORMAL, "Unique device id: %s\n",
 		      device_id);
-	shell_fprintf(shell, SHELL_NORMAL, "Firmware Version: %s\n",
+	shell_fprintf(sh, SHELL_NORMAL, "Firmware Version: %s\n",
 		      firmware_version);
-	shell_fprintf(shell, SHELL_NORMAL, "Product uid: %s\n",
+	shell_fprintf(sh, SHELL_NORMAL, "Product uid: %s\n",
 		      CONFIG_UPDATEHUB_PRODUCT_UID);
-	shell_fprintf(shell, SHELL_NORMAL, "UpdateHub Server: %s\n",
+	shell_fprintf(sh, SHELL_NORMAL, "UpdateHub Server: %s\n",
 		      UPDATEHUB_SERVER);
 
-	k_free(device_id);
-	k_free(firmware_version);
-	return 0;
+updatehub_shell_error:
+	if (device_id) {
+		k_free(device_id);
+	}
+
+	if (firmware_version) {
+		k_free(firmware_version);
+	}
+
+	return ret;
 }
 
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_updatehub, SHELL_CMD(info, NULL, "Dump UpdateHub information",

@@ -7,5 +7,15 @@ config PWM_XEC
 	bool "Microchip XEC PWM"
 	default y
 	depends on DT_HAS_MICROCHIP_XEC_PWM_ENABLED
+	select PINCTRL
 	help
 	  Enable driver to utilize PWM on the Microchip XEC IP block.
+
+config PWM_BBLED_XEC
+	bool "Microchip XEC PWM-BBLED"
+	default y
+	depends on DT_HAS_MICROCHIP_XEC_PWMBBLED_ENABLED
+	select PINCTRL
+	help
+	  Enable driver to utilize the Microchip XEC Breathing-Blinking LED
+	  as a PWM

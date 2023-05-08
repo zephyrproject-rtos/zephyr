@@ -8,9 +8,8 @@
 #include <soc.h>
 #include <board.h>
 
-static int eos_s3_board_init(const struct device *arg)
+static int eos_s3_board_init(void)
 {
-	ARG_UNUSED(arg);
 
 	/* IO MUX setup for UART */
 	eos_s3_io_mux(UART_TX_PAD, UART_TX_PAD_CFG);

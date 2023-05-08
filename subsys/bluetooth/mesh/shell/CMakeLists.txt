@@ -8,3 +8,29 @@ zephyr_library_sources(
 zephyr_library_sources_ifdef(CONFIG_BT_MESH_SHELL_HEALTH_CLI health.c)
 
 zephyr_library_sources_ifdef(CONFIG_BT_MESH_SHELL_CFG_CLI cfg.c)
+
+zephyr_library_sources_ifdef(CONFIG_BT_MESH_SHELL_LARGE_COMP_DATA_CLI large_comp_data.c)
+
+zephyr_library_sources_ifdef(CONFIG_BT_MESH_SHELL_OP_AGG_CLI op_agg.c)
+
+zephyr_library_sources_ifdef(CONFIG_BT_MESH_SHELL_PRIV_BEACON_CLI priv_beacon.c)
+
+zephyr_library_sources_ifdef(CONFIG_BT_MESH_SHELL_RPR_CLI rpr.c)
+
+zephyr_library_sources_ifdef(CONFIG_BT_MESH_SHELL_SAR_CFG_CLI sar.c)
+
+if(CONFIG_BT_MESH_SHELL_BLOB_CLI OR CONFIG_BT_MESH_SHELL_BLOB_SRV OR
+	CONFIG_BT_MESH_SHELL_BLOB_IO_FLASH)
+zephyr_library_sources(blob.c)
+endif()
+
+if(CONFIG_BT_MESH_SHELL_DFU_SLOT OR CONFIG_BT_MESH_SHELL_DFU_METADATA OR
+	CONFIG_BT_MESH_SHELL_DFU_CLI OR CONFIG_BT_MESH_SHELL_DFU_SRV)
+zephyr_library_sources(dfu.c)
+endif()
+
+zephyr_library_sources_ifdef(CONFIG_BT_MESH_SHELL_DFD_SRV dfd.c)
+
+zephyr_library_sources_ifdef(CONFIG_BT_MESH_OD_PRIV_PROXY_CLI od_priv_proxy.c)
+
+zephyr_library_sources_ifdef(CONFIG_BT_MESH_SOL_PDU_RPL_CLI sol_pdu_rpl.c)

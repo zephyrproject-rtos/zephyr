@@ -130,27 +130,27 @@ struct coredump_backend_api coredump_backend_logging = {
 #ifdef CONFIG_DEBUG_COREDUMP_SHELL
 #include <zephyr/shell/shell.h>
 
-static int cmd_coredump_error_get(const struct shell *shell,
+static int cmd_coredump_error_get(const struct shell *sh,
 				  size_t argc, char **argv)
 {
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
 	if (error == 0) {
-		shell_print(shell, "No error.");
+		shell_print(sh, "No error.");
 	} else {
-		shell_print(shell, "Error: %d", error);
+		shell_print(sh, "Error: %d", error);
 	}
 
 	return 0;
 }
 
-static int cmd_coredump_error_clear(const struct shell *shell,
+static int cmd_coredump_error_clear(const struct shell *sh,
 				    size_t argc, char **argv)
 {
 	error = 0;
 
-	shell_print(shell, "Error cleared.");
+	shell_print(sh, "Error cleared.");
 
 	return 0;
 }

@@ -14,10 +14,10 @@ properties:
     type: int
     default: 16
     enum:
-     - 8
-     - 16
-     - 24
-     - 32
+      - 8
+      - 16
+      - 24
+      - 32
   # channel configuration options
   channel-l:
     type: boolean

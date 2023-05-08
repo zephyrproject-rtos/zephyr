@@ -111,6 +111,10 @@
 	status = "okay";
 };
 
+&clk_hsi48 {
+	status = "okay";
+};
+
 &clk_hsi {
 	status = "okay";
 };
@@ -173,6 +177,8 @@
 };
 
 &rng {
+	clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x00100000>,
+		 <&rcc STM32_SRC_HSI48 HSI48_SEL(1)>;
 	status = "okay";
 };
 

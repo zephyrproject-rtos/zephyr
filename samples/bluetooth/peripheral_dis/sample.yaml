@@ -1,6 +1,6 @@
 sample:
-  description: TBD
-  name: TBD
+  name: Bluetooth Peripheral DIS
+  description: Demonstrates the DIS (Device Information) GATT Service
 tests:
   sample.bluetooth.peripheral_dis:
     harness: bluetooth

@@ -29,8 +29,6 @@
 #define NON_CACHED_BSS_ALIGN16          __aligned(16)
 #endif
 
-#define DIV_ROUND_UP(n, d) (((n) + (d) - 1) / (d))
-
 #define reg_read_poll_timeout(map, reg, val, cond, sleep_ms, timeout_ms)	    \
 	({									    \
 		uint32_t __timeout_tick = Z_TIMEOUT_MS(timeout_ms).ticks;	    \

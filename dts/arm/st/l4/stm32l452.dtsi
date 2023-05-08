@@ -35,6 +35,11 @@
 			};
 		};
 
+		rng: rng@50060800 {
+			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00040000>,
+				 <&rcc STM32_SRC_HSI48 CLK48_SEL(0)>;
+		};
+
 		usb: usb@40006800 {
 			compatible = "st,stm32-usb";
 			reg = <0x40006800 0x40000>;
@@ -44,7 +49,8 @@
 			ram-size = <1024>;
 			maximum-speed = "full-speed";
 			phys = <&usb_fs_phy>;
-			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x04000000>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x04000000>,
+				 <&rcc STM32_SRC_HSI48 CLK48_SEL(0)>;
 			status = "disabled";
 		};
 
@@ -151,9 +157,14 @@
 			sample-point = <875>;
 		};
 
-		adc1: adc@50040000 {
-			has-temp-channel;
-			has-vref-channel;
+		sdmmc1: sdmmc@40012800 {
+			compatible = "st,stm32-sdmmc";
+			reg = <0x40012800 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00000400>,
+				 <&rcc STM32_SRC_HSI48 CLK48_SEL(0)>;
+			resets = <&rctl STM32_RESET(APB2, 10U)>;
+			interrupts = <49 0>;
+			status = "disabled";
 		};
 
 		rtc@40002800 {
@@ -163,10 +174,6 @@
 				status = "disabled";
 			};
 		};
-	};
-
-	die_temp: dietemp {
-		ts-cal2-temp = <130>;
 	};
 
 	usb_fs_phy: usbphy {

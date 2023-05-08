@@ -11,8 +11,7 @@
 
 menuconfig MCUMGR_TRANSPORT_BT
 	bool "Bluetooth mcumgr SMP transport"
-	select BT
-	select BT_PERIPHERAL
+	depends on BT_PERIPHERAL
 	select BT_GATT_DYNAMIC_DB
 	help
 	  Enables handling of SMP commands received over Bluetooth.
@@ -26,10 +25,9 @@ config MCUMGR_TRANSPORT_BT_REASSEMBLY
 	  When enabled, the SMP BT transport will buffer and reassemble received
 	  packet fragments before passing it for further processing.
 
-
 config MCUMGR_TRANSPORT_BT_AUTHEN
 	bool "Authenticated requirement for Bluetooth mcumgr SMP transport"
-	select BT_SMP
+	depends on BT_SMP
 	default y
 	help
 	  Enables encrypted and authenticated connection requirement to
@@ -93,25 +91,5 @@ config MCUMGR_TRANSPORT_BT_CONN_PARAM_CONTROL_RETRY_TIME
 	  option specifies the time of the next update attempt.
 
 endif # MCUMGR_TRASNPORT_BT_CONN_PARAM_CONTROL
-
-config MCUMGR_TRANSPORT_BT_AUTOMATIC_INIT
-	bool "Bluetooth SMP stack enable autostart/setup"
-	default y
-	help
-	  If this option is enabled, then the Bluetooth stack will be enabled
-	  when the Bluetooth SMP (MCUmgr) transport initialises. If another
-	  system or the application does this, then this option should be
-	  disabled. Note that Bluetooth will need to be enabled prior to the
-	  Bluetooth SMP (MCUmgr) transport being initialised (by calling
-	  ``smp_bt_start()``) if this option is disabled.
-
-config MCUMGR_TRANSPORT_BT_AUTOMATIC_INIT_WAIT
-	bool "Bluetooth SMP wait for autostart/setup completion"
-	default y
-	depends on MCUMGR_TRANSPORT_BT_AUTOMATIC_INIT
-	help
-	  If this option is enabled, then the setup handler will wait for the
-	  Bluetooth stack to become ready from the ``bt_enable()`` call,
-	  otherwise will return instantly without waiting.
 
 endif # MCUMGR_TRANSPORT_BT

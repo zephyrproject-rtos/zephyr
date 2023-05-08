@@ -4,7 +4,7 @@
 description: Reset Controller
 
 properties:
-    "#reset-cells":
-      type: int
-      required: true
-      description: Number of cells in reset property
+  "#reset-cells":
+    type: int
+    required: true
+    description: Number of cells in reset property

@@ -40,7 +40,24 @@
 			status = "disabled";
 		};
 
+		/*
+		 * ADC3 on STM32H723, 725, 730, 733 & 735 is a 12-bit resolution
+		 * ADC, so we redefine the resolution for these devices.
+		 */
+		adc3: adc@58026000 {
+			temp-channel = <17>;
+			vref-channel = <18>;
+			resolutions = <STM32H72X_ADC3_RES(12, 0x00)
+				       STM32H72X_ADC3_RES(10, 0x01)
+				       STM32H72X_ADC3_RES(8, 0x02)
+				       STM32H72X_ADC3_RES(6, 0x03)>;
+		};
+
 		dmamux1: dmamux@40020800 {
+			dma-requests= <129>;
+		};
+
+		dmamux2: dmamux@58025800 {
 			dma-requests= <129>;
 		};
 
@@ -57,7 +74,8 @@
 			num-bidir-endpoints = <9>;
 			ram-size = <DT_SIZE_K(4)>;
 			maximum-speed = "full-speed";
-			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x02000000>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x02000000>,
+				 <&rcc STM32_SRC_HSI48 USB_SEL(3)>;
 			phys = <&otghs_fs_phy>;
 			status = "disabled";
 		};
@@ -96,26 +114,8 @@
 		};
 
 		can {
-			can2: can@4000A400 {
-				compatible = "st,stm32h7-fdcan";
-				#address-cells = <1>;
-				#size-cells = <1>;
-				reg = <0x4000A400 0x400>, <0x4000ac00 0x350>;
-				reg-names = "m_can", "message_ram";
-				clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x00000100>;
-				interrupts = <20 0>, <22 0>, <63 0>;
-				interrupt-names = "LINE_0", "LINE_1", "CALIB";
-				sjw = <1>;
-				sample-point = <875>;
-				sjw-data = <1>;
-				sample-point-data = <875>;
-				status = "disabled";
-			};
-
 			can3: can@4000D400 {
 				compatible = "st,stm32h7-fdcan";
-				#address-cells = <1>;
-				#size-cells = <1>;
 				reg = <0x4000D400 0x400>, <0x4000ac00 0x350>;
 				reg-names = "m_can", "message_ram";
 				clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x00000100>;
@@ -152,8 +152,8 @@
 	};
 
 	/* D2 domain, AHB SRAM */
-	sram2: memory@30040000 {
-		reg = <0x30040000 DT_SIZE_K(16)>;
+	sram2: memory@30004000 {
+		reg = <0x30004000 DT_SIZE_K(16)>;
 		compatible = "zephyr,memory-region", "mmio-sram";
 		zephyr,memory-region = "SRAM2";
 	};

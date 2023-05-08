@@ -24,37 +24,37 @@ compatible: "st,stm32f105-pll-clock"
 include: [clock-controller.yaml, base.yaml]
 
 properties:
-    "#clock-cells":
-      const: 0
+  "#clock-cells":
+    const: 0
 
-    clocks:
-      required: true
+  clocks:
+    required: true
 
-    mul:
-      type: int
-      required: true
-      description: |
-          Main PLL multiplication factor for VCO.
-          Note: For x6.5 multiplier value, please use "mul = <15>;"
-      enum:
-        - 4   # x4
-        - 5   # x5
-        - 6   # x6
-        - 7   # x7
-        - 8   # x8
-        - 9   # x9
-        - 15  # x6.5
+  mul:
+    type: int
+    required: true
+    description: |
+        Main PLL multiplication factor for VCO.
+        Note: For x6.5 multiplier value, please use "mul = <15>;"
+    enum:
+      - 4   # x4
+      - 5   # x5
+      - 6   # x6
+      - 7   # x7
+      - 8   # x8
+      - 9   # x9
+      - 15  # x6.5
 
-    prediv:
-      type: int
-      required: true
-      description: |
-          Configurable prescaler
-          Valid range: 1 - 16
+  prediv:
+    type: int
+    required: true
+    description: |
+        Configurable prescaler
+        Valid range: 1 - 16
 
-    otgfspre:
-      type: boolean
-      description: |
-          Otpional PLL output divisor to generate a 48MHz USB clock.
-          When set, PLL output clock is not divided.
-          Otherwise, PLL output clock is divided by 1.5.
+  otgfspre:
+    type: boolean
+    description: |
+        Otpional PLL output divisor to generate a 48MHz USB clock.
+        When set, PLL output clock is not divided.
+        Otherwise, PLL output clock is divided by 1.5.

@@ -6,6 +6,7 @@
 
 #include <zephyr/sys/util.h>
 #include <zephyr/stats/stats.h>
+#include <zephyr/logging/log.h>
 #include <string.h>
 #include <stdio.h>
 
@@ -17,6 +18,8 @@
 #include <zephyr/mgmt/mcumgr/mgmt/handlers.h>
 #include <zephyr/mgmt/mcumgr/smp/smp.h>
 #include <zephyr/mgmt/mcumgr/grp/stat_mgmt/stat_mgmt.h>
+
+LOG_MODULE_REGISTER(mcumgr_stat_grp, CONFIG_MCUMGR_GRP_STAT_LOG_LEVEL);
 
 static struct mgmt_handler stat_mgmt_handlers[];
 
@@ -153,6 +156,7 @@ stat_mgmt_show(struct smp_streamer *ctxt)
 	stat_name[value.len] = '\0';
 
 	if (stat_mgmt_count(stat_name, &counter) != 0) {
+		LOG_ERR("Invalid stat name: %s", stat_name);
 		return MGMT_ERR_EUNKNOWN;
 	}
 

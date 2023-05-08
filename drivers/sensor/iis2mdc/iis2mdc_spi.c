@@ -102,6 +102,7 @@ int iis2mdc_spi_init(const struct device *dev)
 
 	data->ctx_spi.read_reg = (stmdev_read_ptr) iis2mdc_spi_read;
 	data->ctx_spi.write_reg = (stmdev_write_ptr) iis2mdc_spi_write;
+	data->ctx_spi.mdelay = (stmdev_mdelay_ptr) stmemsc_mdelay;
 
 	data->ctx = &data->ctx_spi;
 	data->ctx->handle = (void *)dev;

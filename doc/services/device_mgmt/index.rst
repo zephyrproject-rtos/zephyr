@@ -13,6 +13,7 @@ Device Management
     smp_transport.rst
     dfu.rst
     ota.rst
+    ec_host_cmd.rst
 
 SMP Groups
 ==========

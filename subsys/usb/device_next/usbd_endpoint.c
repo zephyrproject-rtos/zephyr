@@ -75,7 +75,7 @@ static void usbd_ep_ctrl_set_zlp(struct usbd_contex *const uds_ctx,
 		 * Transfer length is less as requested by wLength and
 		 * is multiple of wMaxPacketSize.
 		 */
-		LOG_DBG("add ZLP, wLength %u buf length %u",
+		LOG_DBG("add ZLP, wLength %u buf length %zu",
 			setup->wLength, min_len);
 		udc_ep_buf_set_zlp(buf);
 

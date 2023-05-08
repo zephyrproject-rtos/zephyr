@@ -21,6 +21,8 @@
 #include "util/memq.h"
 #include "util/dbuf.h"
 
+#include "pdu_df.h"
+#include "pdu_vendor.h"
 #include "pdu.h"
 
 #include "lll.h"
@@ -31,6 +33,7 @@
 #include "lll_adv.h"
 #include "lll_adv_pdu.h"
 #include "lll_adv_sync.h"
+#include "lll_adv_iso.h"
 #include "lll_df_types.h"
 
 #include "lll_internal.h"
@@ -245,6 +248,12 @@ static int prepare_cb(struct lll_prepare_param *p)
 	{
 		uint32_t ret;
 
+#if defined(CONFIG_BT_CTLR_ADV_ISO) && defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
+		if (lll->iso) {
+			ull_adv_iso_lll_biginfo_fill(pdu, lll);
+		}
+#endif /* CONFIG_BT_CTLR_ADV_ISO && CONFIG_BT_TICKER_EXT_EXPIRE_INFO */
+
 		ret = lll_prepare_done(lll);
 		LL_ASSERT(!ret);
 	}
@@ -289,7 +298,7 @@ static void isr_done(void *param)
 
 #if defined(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
 	if (lll->cte_started) {
-		lll_df_conf_cte_tx_disable();
+		lll_df_cte_tx_disable();
 	}
 #endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
 

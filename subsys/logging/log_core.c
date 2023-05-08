@@ -112,7 +112,8 @@ static STRUCT_SECTION_ITERABLE(log_msg_ptr, log_msg_ptr);
 static STRUCT_SECTION_ITERABLE_ALTERNATE(log_mpsc_pbuf, mpsc_pbuf_buffer, log_buffer);
 static struct mpsc_pbuf_buffer *curr_log_buffer;
 
-static uint32_t __aligned(Z_LOG_MSG2_ALIGNMENT)
+#ifdef CONFIG_MPSC_PBUF
+static uint32_t __aligned(Z_LOG_MSG_ALIGNMENT)
 	buf32[CONFIG_LOG_BUFFER_SIZE / sizeof(int)];
 
 static void z_log_notify_drop(const struct mpsc_pbuf_buffer *buffer,
@@ -128,6 +129,7 @@ static const struct mpsc_pbuf_buffer_config mpsc_config = {
 		 (IS_ENABLED(CONFIG_LOG_MEM_UTILIZATION) ?
 		  MPSC_PBUF_MAX_UTILIZATION : 0)
 };
+#endif
 
 /* Check that default tag can fit in tag buffer. */
 COND_CODE_0(CONFIG_LOG_TAG_MAX_LEN, (),
@@ -201,7 +203,7 @@ void z_log_vprintk(const char *fmt, va_list ap)
 
 	z_log_msg_runtime_vcreate(Z_LOG_LOCAL_DOMAIN_ID, NULL,
 				   LOG_LEVEL_INTERNAL_RAW_STRING, NULL, 0,
-				   Z_LOG_MSG2_CBPRINTF_FLAGS(0),
+				   Z_LOG_MSG_CBPRINTF_FLAGS(0),
 				   fmt, ap);
 }
 
@@ -581,8 +583,10 @@ bool z_log_dropped_pending(void)
 
 void z_log_msg_init(void)
 {
+#ifdef CONFIG_MPSC_PBUF
 	mpsc_pbuf_init(&log_buffer, &mpsc_config);
 	curr_log_buffer = &log_buffer;
+#endif
 }
 
 static struct log_msg *msg_alloc(struct mpsc_pbuf_buffer *buffer, uint32_t wlen)
@@ -610,7 +614,9 @@ static void msg_commit(struct mpsc_pbuf_buffer *buffer, struct log_msg *msg)
 		return;
 	}
 
+#ifdef CONFIG_MPSC_PBUF
 	mpsc_pbuf_commit(buffer, &m->buf);
+#endif
 	z_log_msg_post_finalize();
 }
 
@@ -622,7 +628,12 @@ void z_log_msg_commit(struct log_msg *msg)
 
 union log_msg_generic *z_log_msg_local_claim(void)
 {
+#ifdef CONFIG_MPSC_PBUF
 	return (union log_msg_generic *)mpsc_pbuf_claim(&log_buffer);
+#else
+	return NULL;
+#endif
+
 }
 
 /* If there are buffers dedicated for each link, claim the oldest message (lowest timestamp). */
@@ -640,9 +651,11 @@ union log_msg_generic *z_log_msg_claim_oldest(k_timeout_t *backoff)
 
 		STRUCT_SECTION_GET(log_mpsc_pbuf, i, &buf);
 
+#ifdef CONFIG_MPSC_PBUF
 		if (msg_ptr->msg == NULL) {
 			msg_ptr->msg = (union log_msg_generic *)mpsc_pbuf_claim(&buf->buf);
 		}
+#endif
 
 		if (msg_ptr->msg) {
 			log_timestamp_t t = log_msg_get_timestamp(&msg_ptr->msg->log);
@@ -706,7 +719,9 @@ union log_msg_generic *z_log_msg_claim(k_timeout_t *backoff)
 
 static void msg_free(struct mpsc_pbuf_buffer *buffer, const union log_msg_generic *msg)
 {
+#ifdef CONFIG_MPSC_PBUF
 	mpsc_pbuf_free(buffer, &msg->buf);
+#endif
 }
 
 void z_log_msg_free(union log_msg_generic *msg)
@@ -716,7 +731,11 @@ void z_log_msg_free(union log_msg_generic *msg)
 
 static bool msg_pending(struct mpsc_pbuf_buffer *buffer)
 {
+#ifdef CONFIG_MPSC_PBUF
 	return mpsc_pbuf_is_pending(buffer);
+#else
+	return false;
+#endif
 }
 
 bool z_log_msg_pending(void)
@@ -752,7 +771,7 @@ bool z_log_msg_pending(void)
 void z_log_msg_enqueue(const struct log_link *link, const void *data, size_t len)
 {
 	struct log_msg *log_msg = (struct log_msg *)data;
-	size_t wlen = ceiling_fraction(ROUND_UP(len, Z_LOG_MSG2_ALIGNMENT), sizeof(int));
+	size_t wlen = DIV_ROUND_UP(ROUND_UP(len, Z_LOG_MSG_ALIGNMENT), sizeof(int));
 	struct mpsc_pbuf_buffer *mpsc_pbuffer = link->mpsc_pbuf ? link->mpsc_pbuf : &log_buffer;
 	struct log_msg *local_msg = msg_alloc(mpsc_pbuffer, wlen);
 
@@ -885,10 +904,8 @@ static void log_process_thread_func(void *dummy1, void *dummy2, void *dummy3)
 K_KERNEL_STACK_DEFINE(logging_stack, CONFIG_LOG_PROCESS_THREAD_STACK_SIZE);
 struct k_thread logging_thread;
 
-static int enable_logger(const struct device *arg)
+static int enable_logger(void)
 {
-	ARG_UNUSED(arg);
-
 	if (IS_ENABLED(CONFIG_LOG_PROCESS_THREAD)) {
 		k_timer_init(&log_process_thread_timer,
 				log_process_thread_timer_expiry_fn, NULL);

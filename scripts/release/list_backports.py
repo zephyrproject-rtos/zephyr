@@ -56,7 +56,7 @@ def valid_date_type(arg_date_str):
 
 
 def parse_args():
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(allow_abbrev=False)
     parser.add_argument('-t', '--token', dest='tokenfile',
                         help='File containing GitHub token (alternatively, use GITHUB_TOKEN env variable)', metavar='FILE')
     parser.add_argument('-b', '--base', dest='base',

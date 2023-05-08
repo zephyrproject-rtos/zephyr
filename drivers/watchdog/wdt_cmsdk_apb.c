@@ -12,6 +12,7 @@
 
 #include <errno.h>
 #include <soc.h>
+#include <zephyr/arch/arm/aarch32/nmi.h>
 #include <zephyr/drivers/watchdog.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/reboot.h>
@@ -148,7 +149,6 @@ static const struct wdt_driver_api wdog_cmsdk_apb_api = {
 };
 
 #ifdef CONFIG_RUNTIME_NMI
-extern void z_NmiHandlerSet(void (*pHandler)(void));
 
 static int wdog_cmsdk_apb_has_fired(void)
 {
@@ -189,7 +189,7 @@ static int wdog_cmsdk_apb_init(const struct device *dev)
 
 #ifdef CONFIG_RUNTIME_NMI
 	/* Configure the interrupts */
-	z_NmiHandlerSet(wdog_cmsdk_apb_isr);
+	z_arm_nmi_set_handler(wdog_cmsdk_apb_isr);
 #endif
 
 #ifdef CONFIG_WDOG_CMSDK_APB_START_AT_BOOT

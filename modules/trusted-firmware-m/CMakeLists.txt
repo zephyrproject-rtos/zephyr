@@ -1,22 +1,22 @@
-# Copyright (c) 2019, 2020 Linaro
-# Copyright (c) 2020, 2021 Nordic Semiconductor ASA
+# Copyright (c) 2019 - 2023 Linaro
+# Copyright (c) 2020 - 2023 Nordic Semiconductor ASA
 #
 # SPDX-License-Identifier: Apache-2.0
 
 # List of all partitions supported by TF-M
-# Name must match name in 'trusted-firmware-m/config/config_default.cmake'
+# Name must match name in 'trusted-firmware-m/tools/tfm_manifest_list.yaml'
 set(TFM_VALID_PARTITIONS
+  TFM_PARTITION_NS_AGENT_MAILBOX
   TFM_PARTITION_PROTECTED_STORAGE
   TFM_PARTITION_INTERNAL_TRUSTED_STORAGE
   TFM_PARTITION_CRYPTO
-  TFM_PARTITION_INITIAL_ATTESTATION
   TFM_PARTITION_PLATFORM
-  TFM_PARTITION_AUDIT_LOG
+  TFM_PARTITION_INITIAL_ATTESTATION
   TFM_PARTITION_FIRMWARE_UPDATE
   )
 
 # List of all crypto modules that can be enabled/disabled
-# Corresponds to the *_MODULE_DISABLED configs in 'trusted-firmware-m/config/config_default.cmake'
+# Corresponds to the *_MODULE_DISABLED configs in 'trusted-firmware-m/secure_fw/partitions/crypto/Kconfig'
 set(TFM_CRYPTO_MODULES
   CRYPTO_RNG_MODULE
   CRYPTO_KEY_MODULE
@@ -24,24 +24,19 @@ set(TFM_CRYPTO_MODULES
   CRYPTO_MAC_MODULE
   CRYPTO_HASH_MODULE
   CRYPTO_CIPHER_MODULE
-  CRYPTO_ASYM_ENCRYPT_MODULE
   CRYPTO_ASYM_SIGN_MODULE
+  CRYPTO_ASYM_ENCRYPT_MODULE
   CRYPTO_KEY_DERIVATION_MODULE
   )
 
 
 if (CONFIG_BUILD_WITH_TFM)
-  if (CONFIG_TFM_LIBRARY)
-    list(APPEND TFM_CMAKE_ARGS -DTFM_LIB_MODEL=ON)
-  else()
-    list(APPEND TFM_CMAKE_ARGS -DTFM_LIB_MODEL=OFF)
-    # PSA API awareness for the Non-Secure application
-    target_compile_definitions(app PRIVATE "TFM_PSA_API")
-    if (CONFIG_TFM_SFN)
-      list(APPEND TFM_CMAKE_ARGS -DCONFIG_TFM_SPM_BACKEND="SFN")
-    else() # CONFIG_TFM_IPC
-      list(APPEND TFM_CMAKE_ARGS -DCONFIG_TFM_SPM_BACKEND="IPC")
-    endif()
+  # PSA API awareness for the Non-Secure application
+  target_compile_definitions(app PRIVATE "TFM_PSA_API")
+  if (CONFIG_TFM_SFN)
+    list(APPEND TFM_CMAKE_ARGS -DCONFIG_TFM_SPM_BACKEND="SFN")
+  else() # CONFIG_TFM_IPC
+    list(APPEND TFM_CMAKE_ARGS -DCONFIG_TFM_SPM_BACKEND="IPC")
   endif()
   if (CONFIG_TFM_REGRESSION_S)
     list(APPEND TFM_CMAKE_ARGS -DTEST_S=ON)
@@ -51,6 +46,8 @@ if (CONFIG_BUILD_WITH_TFM)
   endif()
   if (CONFIG_TFM_BL2)
     list(APPEND TFM_CMAKE_ARGS -DBL2=TRUE)
+    list(APPEND TFM_CMAKE_ARGS -DMCUBOOT_IMAGE_VERSION_S=${CONFIG_TFM_IMAGE_VERSION_S})
+    list(APPEND TFM_CMAKE_ARGS -DMCUBOOT_IMAGE_VERSION_NS=${CONFIG_TFM_IMAGE_VERSION_NS})
   else()
     list(APPEND TFM_CMAKE_ARGS -DBL2=FALSE)
   endif()
@@ -156,9 +153,12 @@ if (CONFIG_BUILD_WITH_TFM)
 
   set(TFM_BINARY_DIR ${CMAKE_BINARY_DIR}/tfm)
 
+  set(TFM_TEST_REPO_PATH ${ZEPHYR_CURRENT_MODULE_DIR}/../tf-m-tests)
+  set(PSA_ARCH_TESTS_PATH ${ZEPHYR_CURRENT_MODULE_DIR}/../psa-arch-tests)
+
   set(VENEERS_FILE ${TFM_BINARY_DIR}/secure_fw/s_veneers.o)
   set(TFM_API_NS_PATH ${TFM_BINARY_DIR}/tf-m-tests/app/libtfm_api_ns.a)
-  set(PLATFORM_NS_FILE ${TFM_BINARY_DIR}/platform/libplatform_ns.a)
+  set(PLATFORM_NS_FILE ${TFM_BINARY_DIR}/platform/ns/libplatform_ns.a)
   set(TFM_GENERATED_INCLUDES ${TFM_BINARY_DIR}/generated/interface/include)
   set(TFM_INTERFACE_SOURCE_DIR ${TFM_BINARY_DIR}/install/interface/src)
 
@@ -207,21 +207,13 @@ if (CONFIG_BUILD_WITH_TFM)
     ${TFM_NS_SIGNED_BIN_FILE}
     ${TFM_S_NS_SIGNED_BIN_FILE}
 
-    ${TFM_INTERFACE_SOURCE_DIR}/tfm_platform_ipc_api.c
-    ${TFM_INTERFACE_SOURCE_DIR}/tfm_ps_ipc_api.c
-    ${TFM_INTERFACE_SOURCE_DIR}/tfm_its_ipc_api.c
-    ${TFM_INTERFACE_SOURCE_DIR}/tfm_crypto_ipc_api.c
-    ${TFM_INTERFACE_SOURCE_DIR}/tfm_initial_attestation_ipc_api.c
-    ${TFM_INTERFACE_SOURCE_DIR}/tfm_firmware_update_ipc_api.c
-
+    ${TFM_INTERFACE_SOURCE_DIR}/tfm_attest_api.c
+    ${TFM_INTERFACE_SOURCE_DIR}/tfm_crypto_api.c
+    ${TFM_INTERFACE_SOURCE_DIR}/tfm_its_api.c
+    ${TFM_INTERFACE_SOURCE_DIR}/tfm_platform_api.c
+    ${TFM_INTERFACE_SOURCE_DIR}/tfm_ps_api.c
     ${TFM_INTERFACE_SOURCE_DIR}/tfm_psa_ns_api.c
-
-    ${TFM_INTERFACE_SOURCE_DIR}/tfm_platform_func_api.c
-    ${TFM_INTERFACE_SOURCE_DIR}/tfm_ps_func_api.c
-    ${TFM_INTERFACE_SOURCE_DIR}/tfm_its_func_api.c
-    ${TFM_INTERFACE_SOURCE_DIR}/tfm_crypto_func_api.c
-    ${TFM_INTERFACE_SOURCE_DIR}/tfm_initial_attestation_func_api.c
-    ${TFM_INTERFACE_SOURCE_DIR}/tfm_firmware_update_func_api.c
+    ${TFM_INTERFACE_SOURCE_DIR}/tfm_psa_ns_connection_api.c
 
     # Specific to nordic_nrf platform
     ${TFM_INTERFACE_SOURCE_DIR}/tfm_ioctl_core_ns_api.c
@@ -246,6 +238,34 @@ if (CONFIG_BUILD_WITH_TFM)
     message(FATAL_ERROR "Unsupported ZEPHYR_TOOLCHAIN_VARIANT: ${ZEPHYR_TOOLCHAIN_VARIANT}")
   endif()
 
+  if (CONFIG_TFM_PARTITION_INITIAL_ATTESTATION AND CONFIG_TFM_QCBOR_PATH STREQUAL "")
+    # TODO: Remove this when QCBOR licensing issues w/t_cose have been resolved,
+    # or only allow it when 'QCBOR_PATH' is set to a local path where QCBOR has
+    # been manually downloaded by the user before starting the build.
+    message(FATAL_ERROR "CONFIG_TFM_PARTITION_INITIAL_ATTESTATION is not available "
+      "with TF-M 1.7.0 due to licensing issues with a dependent library. This "
+      "restriction will be removed once licensing issues have been resolved."
+      )
+  endif()
+
+  if (CONFIG_TFM_PSA_TEST_INITIAL_ATTESTATION AND CONFIG_TFM_QCBOR_PATH STREQUAL "")
+    # TODO: Remove this when QCBOR licensing issues w/t_cose have been resolved,
+    # or only allow it when 'QCBOR_PATH' is set to a local path where QCBOR has
+    # been manually downloaded by the user before starting the build.
+    message(FATAL_ERROR "CONFIG_TFM_PSA_TEST_INITIAL_ATTESTATION is not available "
+      "with TF-M 1.7.0 due to licensing issues with a dependent library. This "
+      "restriction will be removed once licensing issues have been resolved."
+      )
+  endif()
+
+  if (CONFIG_TFM_QCBOR_PATH STREQUAL "DOWNLOAD")
+    # Change CMake cache type to string to avoid QCBOR_PATH=/absolute/path/DOWNLOAD being set.
+    set(QCBOR_PATH_TYPE ":STRING")
+  endif()
+  # Always set QCBOR_PATH, this will make sure that we don't automatically download this
+  # dependency in the TF-M build system and it will fail when set to an invalid value.
+  list(APPEND TFM_CMAKE_ARGS -DQCBOR_PATH${QCBOR_PATH_TYPE}=${CONFIG_TFM_QCBOR_PATH})
+
   if(CONFIG_BOARD_LPCXPRESSO55S69_CPU0)
     # Supply path to NXP HAL sources used for TF-M build
     set(TFM_PLATFORM_NXP_HAL_FILE_PATH ${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/platform/ext/target/nxp/)
@@ -269,10 +289,13 @@ if (CONFIG_BUILD_WITH_TFM)
   endif()
 
   if(CONFIG_FPU AND CONFIG_FP_HARDABI)
-    list(APPEND TFM_CMAKE_ARGS -DCONFIG_TFM_FP=hard)
+    list(APPEND TFM_CMAKE_ARGS -DCONFIG_TFM_ENABLE_FP=ON)
+    # Note: This is not a cmake option in TF-M.
+    # This should be specified by the platform in preload.cmake
+    # This works as a workaround for the platforms that do not have this.
     list(APPEND TFM_CMAKE_ARGS -DCONFIG_TFM_FP_ARCH=${FPU_FOR_${GCC_M_CPU}})
   else()
-    list(APPEND TFM_CMAKE_ARGS -DCONFIG_TFM_FP=soft)
+    list(APPEND TFM_CMAKE_ARGS -DCONFIG_TFM_ENABLE_FP=OFF)
   endif()
 
   file(MAKE_DIRECTORY ${TFM_BINARY_DIR})
@@ -288,11 +311,12 @@ if (CONFIG_BUILD_WITH_TFM)
       -DCMAKE_BUILD_TYPE=${TFM_CMAKE_BUILD_TYPE}
       -DTFM_PLATFORM=${CONFIG_TFM_BOARD}
       -DCONFIG_TFM_BUILD_LOG_QUIET=ON
+      -DCONFIG_TFM_MEMORY_USAGE_QUIET=OFF
       ${TFM_CMAKE_ARGS}
       $<GENEX_EVAL:$<TARGET_PROPERTY:zephyr_property_target,TFM_CMAKE_OPTIONS>>
-      -DTFM_TEST_REPO_PATH=${ZEPHYR_TF_M_TESTS_MODULE_DIR}
       -DMBEDCRYPTO_PATH=$<IF:$<BOOL:$<TARGET_PROPERTY:zephyr_property_target,TFM_MBEDCRYPTO_PATH>>,$<TARGET_PROPERTY:zephyr_property_target,TFM_MBEDCRYPTO_PATH>,${ZEPHYR_MBEDTLS_MODULE_DIR}>
-      -DPSA_ARCH_TESTS_PATH=${ZEPHYR_PSA_ARCH_TESTS_MODULE_DIR}
+      -DTFM_TEST_REPO_PATH=${TFM_TEST_REPO_PATH}
+      -DPSA_ARCH_TESTS_PATH=${PSA_ARCH_TESTS_PATH}
       ${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}
     WORKING_DIRECTORY ${TFM_BINARY_DIR}
     COMMAND_EXPAND_LISTS
@@ -377,26 +401,18 @@ if (CONFIG_BUILD_WITH_TFM)
   endif()
 
   if(NOT CONFIG_TFM_BUILD_NS)
-    if(CONFIG_TFM_IPC OR CONFIG_TFM_SFN)
-      zephyr_library_sources_ifdef(CONFIG_TFM_PARTITION_PLATFORM                 ${TFM_INTERFACE_SOURCE_DIR}/tfm_platform_ipc_api.c)
-      zephyr_library_sources_ifdef(CONFIG_TFM_PARTITION_PROTECTED_STORAGE        ${TFM_INTERFACE_SOURCE_DIR}/tfm_ps_ipc_api.c)
-      zephyr_library_sources_ifdef(CONFIG_TFM_PARTITION_INTERNAL_TRUSTED_STORAGE ${TFM_INTERFACE_SOURCE_DIR}/tfm_its_ipc_api.c)
-      zephyr_library_sources_ifdef(CONFIG_TFM_PARTITION_CRYPTO                   ${TFM_INTERFACE_SOURCE_DIR}/tfm_crypto_ipc_api.c)
-      zephyr_library_sources_ifdef(CONFIG_TFM_PARTITION_INITIAL_ATTESTATION      ${TFM_INTERFACE_SOURCE_DIR}/tfm_initial_attestation_ipc_api.c)
-      zephyr_library_sources_ifdef(CONFIG_TFM_PARTITION_FIRMWARE_UPDATE          ${TFM_INTERFACE_SOURCE_DIR}/tfm_firmware_update_ipc_api.c)
+    zephyr_library_sources_ifdef(CONFIG_TFM_PARTITION_PLATFORM                 ${TFM_INTERFACE_SOURCE_DIR}/tfm_platform_api.c)
+    zephyr_library_sources_ifdef(CONFIG_TFM_PARTITION_PROTECTED_STORAGE        ${TFM_INTERFACE_SOURCE_DIR}/tfm_ps_api.c)
+    zephyr_library_sources_ifdef(CONFIG_TFM_PARTITION_INTERNAL_TRUSTED_STORAGE ${TFM_INTERFACE_SOURCE_DIR}/tfm_its_api.c)
+    zephyr_library_sources_ifdef(CONFIG_TFM_PARTITION_CRYPTO                   ${TFM_INTERFACE_SOURCE_DIR}/tfm_crypto_api.c)
+    zephyr_library_sources_ifdef(CONFIG_TFM_PARTITION_INITIAL_ATTESTATION      ${TFM_INTERFACE_SOURCE_DIR}/tfm_attest_api.c)
+    zephyr_library_sources_ifdef(CONFIG_TFM_PARTITION_FIRMWARE_UPDATE          ${TFM_INTERFACE_SOURCE_DIR}/tfm_fwu_api.c)
 
-      zephyr_library_sources(${TFM_INTERFACE_SOURCE_DIR}/tfm_psa_ns_api.c)
-    else()
-      zephyr_library_sources_ifdef(CONFIG_TFM_PARTITION_PLATFORM                 ${TFM_INTERFACE_SOURCE_DIR}/tfm_platform_func_api.c)
-      zephyr_library_sources_ifdef(CONFIG_TFM_PARTITION_PROTECTED_STORAGE        ${TFM_INTERFACE_SOURCE_DIR}/tfm_ps_func_api.c)
-      zephyr_library_sources_ifdef(CONFIG_TFM_PARTITION_INTERNAL_TRUSTED_STORAGE ${TFM_INTERFACE_SOURCE_DIR}/tfm_its_func_api.c)
-      zephyr_library_sources_ifdef(CONFIG_TFM_PARTITION_CRYPTO                   ${TFM_INTERFACE_SOURCE_DIR}/tfm_crypto_func_api.c)
-      zephyr_library_sources_ifdef(CONFIG_TFM_PARTITION_INITIAL_ATTESTATION      ${TFM_INTERFACE_SOURCE_DIR}/tfm_initial_attestation_func_api.c)
-      zephyr_library_sources_ifdef(CONFIG_TFM_PARTITION_FIRMWARE_UPDATE          ${TFM_INTERFACE_SOURCE_DIR}/tfm_firmware_update_func_api.c)
-    endif()
+    zephyr_library_sources_ifdef(CONFIG_TFM_CONNECTION_BASED_SERVICE_API       ${TFM_INTERFACE_SOURCE_DIR}/tfm_psa_ns_connection_api.c)
+    zephyr_library_sources(${TFM_INTERFACE_SOURCE_DIR}/tfm_psa_ns_api.c)
 
     if(CONFIG_SOC_FAMILY_NRF)
-      zephyr_library_sources_ifdef(CONFIG_TFM_PARTITION_PLATFORM                 ${TFM_INTERFACE_SOURCE_DIR}/tfm_ioctl_core_ns_api.c)
+      zephyr_library_sources_ifdef(CONFIG_TFM_PARTITION_PLATFORM               ${TFM_INTERFACE_SOURCE_DIR}/tfm_ioctl_core_ns_api.c)
     endif()
 
   else()
@@ -412,6 +428,7 @@ if (CONFIG_BUILD_WITH_TFM)
 
   target_include_directories(tfm_api PRIVATE
     ${TFM_BINARY_DIR}/install/interface/include
+    ${TFM_BINARY_DIR}/install/interface/include/crypto_keys
     )
 
   zephyr_library_link_libraries(
@@ -460,17 +477,18 @@ if (CONFIG_BUILD_WITH_TFM)
       ${HEX_ADDR_ARGS_${SUFFIX}}
       ${ADD_${SUFFIX}_IMAGE_MIN_VER}
       -s auto
+      --measured-boot-record
       -H ${CONFIG_ROM_START_OFFSET}
       ${INPUT_FILE}
       ${OUTPUT_FILE}
       PARENT_SCOPE)
   endfunction()
 
-  set(MERGED_FILE ${CMAKE_BINARY_DIR}/tfm_merged.hex)
-  set(S_NS_FILE ${CMAKE_BINARY_DIR}/tfm_s_zephyr_ns.hex)
-  set(S_NS_SIGNED_FILE ${CMAKE_BINARY_DIR}/tfm_s_zephyr_ns_signed.hex)
-  set(NS_SIGNED_FILE ${CMAKE_BINARY_DIR}/zephyr_ns_signed.hex)
-  set(S_SIGNED_FILE ${CMAKE_BINARY_DIR}/tfm_s_signed.hex)
+  set(MERGED_FILE ${CMAKE_BINARY_DIR}/zephyr/tfm_merged.hex)
+  set(S_NS_FILE ${CMAKE_BINARY_DIR}/zephyr/tfm_s_zephyr_ns.hex)
+  set(S_NS_SIGNED_FILE ${CMAKE_BINARY_DIR}/zephyr/tfm_s_zephyr_ns_signed.hex)
+  set(NS_SIGNED_FILE ${CMAKE_BINARY_DIR}/zephyr/zephyr_ns_signed.hex)
+  set(S_SIGNED_FILE ${CMAKE_BINARY_DIR}/zephyr/tfm_s_signed.hex)
 
   if (CONFIG_TFM_USE_NS_APP)
     # Use the TF-M NS binary as the Non-Secure application firmware image

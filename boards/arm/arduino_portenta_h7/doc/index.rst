@@ -108,7 +108,7 @@ Here is an example for the :ref:`hello_world` application.
 
 Run a serial host program to connect with your board:
 
-code-block:: console
+.. code-block:: console
 
    $ minicom -D /dev/ttyACM0
 

@@ -1,50 +1,36 @@
 /*
- * Copyright (c) 2022 Nordic Semiconductor ASA
+ * Copyright (c) 2022-2023 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/* This DTS overlay allows to test MX25R6435F  using SPI_NOR driver */
-
-&pinctrl {
-	spi1_alt_default: spi1_alt_default {
-		group1 {
-			psels = <NRF_PSEL(SPIM_SCK, 0, 19)>,
-				<NRF_PSEL(SPIM_MOSI, 0, 20)>,
-				<NRF_PSEL(SPIM_MISO, 0, 21)>;
-		};
-	};
-
-	spi1_alt_sleep: spi1_alt_sleep {
-		group1 {
-			psels = <NRF_PSEL(SPIM_SCK, 0, 19)>,
-				<NRF_PSEL(SPIM_MOSI, 0, 20)>,
-				<NRF_PSEL(SPIM_MISO, 0, 21)>;
-			low-power-enable;
-		};
-	};
-};
-
 /delete-node/ &mx25r64;
 
-&spi1 {
+&qspi {
+	status = "disabled";
+};
+
+/* The mx25, on nrf52840dk_nrf52840, uses pins for spi0, spi1, spi2 and spi3
+ * to provide quad-spi feature. In individual specifications each of the spi
+ * notes define own clock source (SCK), but spi2 shares the same clock source
+ * as qspi configuration, which is pin (0,19). That is why spi2 is used here
+ * to communicate with mx25, when qspi is not used, to avoid rerouting clock
+ * pin.
+ */
+&spi2 {
 	compatible = "nordic,nrf-spi";
 	status = "okay";
 	cs-gpios = <&gpio0 17 GPIO_ACTIVE_LOW>;
-	pinctrl-0 = <&spi1_alt_default>;
-	pinctrl-1 = <&spi1_alt_sleep>;
+	pinctrl-0 = <&spi2_default>;
+	pinctrl-1 = <&spi2_sleep>;
 	pinctrl-names = "default", "sleep";
 	mx25r64: mx25r6435f@0  {
 		compatible = "jedec,spi-nor";
 		reg = <0>;
-		spi-max-frequency = <33000000>;
+		spi-max-frequency = <8000000>;
 		jedec-id = [c2 28 17];
 		size = <67108864>;
 		wp-gpios = <&gpio0 22 GPIO_ACTIVE_LOW>;
 		hold-gpios = <&gpio0 23 GPIO_ACTIVE_LOW>;
 	};
-};
-
-&qspi {
-	status = "disabled";
 };

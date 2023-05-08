@@ -458,4 +458,9 @@ config MBEDTLS_PSA_CRYPTO_C
 	depends on MBEDTLS_CTR_DRBG_ENABLED || MBEDTLS_HMAC_DRBG_ENABLED
 	default y if UOSCORE || UEDHOC
 
+config MBEDTLS_LMS
+	bool "Support LMS signature schemes"
+	depends on MBEDTLS_PSA_CRYPTO_C
+	depends on MBEDTLS_HASH_SHA256_ENABLED
+
 endmenu

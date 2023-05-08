@@ -6,13 +6,14 @@ DT_STM32_SDMMC_HAS_DMA := $(dt_nodelabel_has_prop,sdmmc,dmas)
 
 config DISK_DRIVER_SDMMC
 	bool "SDMMC card driver"
-	default y if DT_HAS_ZEPHYR_SDMMC_DISK_ENABLED
+	default y if DT_HAS_ZEPHYR_SDMMC_DISK_ENABLED || \
+			DT_HAS_ST_STM32_SDMMC_ENABLED
 	help
 	  SDMMC card driver.
 
 if DISK_DRIVER_SDMMC
 
-config SDMMC_INIT_PRIORITY
+config SD_INIT_PRIORITY
 	int "Init priority"
 	default 90
 	help
@@ -27,12 +28,11 @@ config SDMMC_VOLUME_NAME
 
 config SDMMC_SUBSYS
 	bool "SDMMC access via SD subsystem"
-	select SD_STACK
-	select SDHC
+	select SDMMC_STACK
 	default y
 	depends on DT_HAS_ZEPHYR_SDMMC_DISK_ENABLED
 	help
-	  Enable SDMMC access via SD subsystem
+	  Enable SDMMC access via SD subsystem.
 
 config SDMMC_STM32
 	bool "STM32 SDMMC driver"
@@ -43,6 +43,7 @@ config SDMMC_STM32
 	select USE_STM32_LL_SDMMC
 	select USE_STM32_HAL_DMA if (SOC_SERIES_STM32L4X || SOC_SERIES_STM32F7X || SOC_SERIES_STM32F4X)
 	select DMA if ($(DT_STM32_SDMMC_HAS_DMA) && SOC_SERIES_STM32F4X)
+	select RESET
 	help
 	  File system on sdmmc accessed through stm32 sdmmc.
 
@@ -56,6 +57,15 @@ config SDMMC_STM32_HWFC
 	help
 	  Enable SDMMC Hardware Flow Control to avoid FIFO underrun (TX mode) and
 	  overrun (RX mode) errors.
+
+config SDMMC_STM32_CLOCK_CHECK
+	bool "Runtime SDMMC 48MHz clock check"
+	depends on SDMMC_STM32
+	default y
+	help
+	  Enable SDMMC clock 48MHz configuration runtime check.
+	  In specific cases, this check might provide wrong verdict and should
+	  be disabled.
 
 module = SDMMC
 module-str = sdmmc

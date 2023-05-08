@@ -1,0 +1,13 @@
+identifier: hsdk4xd
+name: HS4xD Development Kit
+type: mcu
+arch: arc
+toolchain:
+  - zephyr
+  - cross-compile
+  - xtools
+  - arcmwdt
+testing:
+  ignore_tags:
+    - net
+    - bluetooth

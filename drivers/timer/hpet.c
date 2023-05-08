@@ -37,11 +37,6 @@
  *
  * HPET_COUNTER_CLK_PERIOD can be overridden in soc.h if
  * COUNTER_CLK_PERIOD is not in femtoseconds (1e-15 sec).
- *
- * HPET_CMP_MIN_DELAY can be overridden in soc.h to better match
- * the frequency of the timers. Default is 1000 where the value
- * written to the comparator must be 1000 larger than the current
- * main counter value.
  */
 
 /* General Configuration register */
@@ -153,18 +148,6 @@ static inline void hpet_gconf_set(uint32_t val)
 }
 
 /**
- * @brief Write to General Interrupt Status Register
- *
- * This is used to acknowledge and clear interrupt bits.
- *
- * @param val Value to be written to the register
- */
-static inline void hpet_int_sts_set(uint32_t val)
-{
-	sys_write32(val, INTR_STATUS_REG);
-}
-
-/**
  * @brief Return the value of the Timer Configuration Register
  *
  * This reads and returns the value of the Timer Configuration
@@ -227,11 +210,6 @@ static inline void hpet_timer_comparator_set(uint64_t val)
 #define HPET_COUNTER_CLK_PERIOD		(1000000000000000ULL)
 #endif
 
-#ifndef HPET_CMP_MIN_DELAY
-/* Minimal delay for comparator before the next timer event */
-#define HPET_CMP_MIN_DELAY		(1000)
-#endif
-
 /*
  * HPET_INT_LEVEL_TRIGGER is used to set HPET interrupt as level trigger
  * for ARM CPU with NVIC like EHL PSE, whose DTS interrupt setting
@@ -249,6 +227,8 @@ __WARN("HPET_INT_LEVEL_TRIGGER has no effect, DTS setting is used instead")
 
 static __pinned_bss struct k_spinlock lock;
 static __pinned_bss uint64_t last_count;
+static __pinned_bss uint64_t last_tick;
+static __pinned_bss uint32_t last_elapsed;
 
 #ifdef CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME
 static __pinned_bss unsigned int cyc_per_tick;
@@ -258,6 +238,39 @@ static __pinned_bss unsigned int cyc_per_tick;
 #endif /* CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME */
 
 #define HPET_MAX_TICKS ((int32_t)0x7fffffff)
+
+#ifdef HPET_INT_LEVEL_TRIGGER
+/**
+ * @brief Write to General Interrupt Status Register
+ *
+ * This is used to acknowledge and clear interrupt bits.
+ *
+ * @param val Value to be written to the register
+ */
+static inline void hpet_int_sts_set(uint32_t val)
+{
+	sys_write32(val, INTR_STATUS_REG);
+}
+#endif
+
+/* ensure the comparator is always set ahead of the current counter value */
+static inline void hpet_timer_comparator_set_safe(uint64_t next)
+{
+	hpet_timer_comparator_set(next);
+
+	uint64_t now = hpet_counter_get();
+
+	if (unlikely((int64_t)(next - now) <= 0)) {
+		uint32_t bump = 1;
+
+		do {
+			next = now + bump;
+			bump *= 2;
+			hpet_timer_comparator_set(next);
+			now = hpet_counter_get();
+		} while ((int64_t)(next - now) <= 0);
+	}
+}
 
 __isr
 static void hpet_isr(const void *arg)
@@ -293,14 +306,13 @@ static void hpet_isr(const void *arg)
 	uint32_t dticks = (uint32_t)((now - last_count) / cyc_per_tick);
 
 	last_count += (uint64_t)dticks * cyc_per_tick;
+	last_tick += dticks;
+	last_elapsed = 0;
 
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		uint64_t next = last_count + cyc_per_tick;
 
-		if ((int64_t)(next - now) < HPET_CMP_MIN_DELAY) {
-			next = now + HPET_CMP_MIN_DELAY;
-		}
-		hpet_timer_comparator_set(next);
+		hpet_timer_comparator_set_safe(next);
 	}
 
 	k_spin_unlock(&lock, key);
@@ -352,28 +364,12 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 	}
 
 	ticks = ticks == K_TICKS_FOREVER ? HPET_MAX_TICKS : ticks;
-	ticks = CLAMP(ticks - 1, 0, HPET_MAX_TICKS);
+	ticks = CLAMP(ticks, 0, HPET_MAX_TICKS/2);
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
-	uint64_t now = hpet_counter_get(), cyc, adj;
-	uint64_t max_cyc = (uint64_t)HPET_MAX_TICKS * cyc_per_tick;
+	uint64_t cyc = (last_tick + last_elapsed + ticks) * cyc_per_tick;
 
-	/* Round up to next tick boundary. */
-	cyc = (uint64_t)ticks * cyc_per_tick;
-	adj = (now - last_count) + (cyc_per_tick - 1);
-	if (cyc <= max_cyc - adj) {
-		cyc += adj;
-	} else {
-		cyc = max_cyc;
-	}
-	cyc = (cyc / cyc_per_tick) * cyc_per_tick;
-	cyc += last_count;
-
-	if ((int64_t)(cyc - now) < HPET_CMP_MIN_DELAY) {
-		cyc = now + HPET_CMP_MIN_DELAY;
-	}
-
-	hpet_timer_comparator_set(cyc);
+	hpet_timer_comparator_set_safe(cyc);
 	k_spin_unlock(&lock, key);
 #endif
 }
@@ -389,6 +385,7 @@ uint32_t sys_clock_elapsed(void)
 	uint64_t now = hpet_counter_get();
 	uint32_t ret = (uint32_t)((now - last_count) / cyc_per_tick);
 
+	last_elapsed = ret;
 	k_spin_unlock(&lock, key);
 	return ret;
 }
@@ -416,12 +413,11 @@ void sys_clock_idle_exit(void)
 }
 
 __boot_func
-static int sys_clock_driver_init(const struct device *dev)
+static int sys_clock_driver_init(void)
 {
 	extern int z_clock_hw_cycles_per_sec;
 	uint32_t hz, reg;
 
-	ARG_UNUSED(dev);
 	ARG_UNUSED(hz);
 	ARG_UNUSED(z_clock_hw_cycles_per_sec);
 
@@ -460,12 +456,9 @@ static int sys_clock_driver_init(const struct device *dev)
 
 	hpet_gconf_set(reg);
 
-	last_count = hpet_counter_get();
-	if (cyc_per_tick >= HPET_CMP_MIN_DELAY) {
-		hpet_timer_comparator_set(last_count + cyc_per_tick);
-	} else {
-		hpet_timer_comparator_set(last_count + HPET_CMP_MIN_DELAY);
-	}
+	last_tick = hpet_counter_get() / cyc_per_tick;
+	last_count = last_tick * cyc_per_tick;
+	hpet_timer_comparator_set_safe(last_count + cyc_per_tick);
 
 	return 0;
 }

@@ -94,7 +94,7 @@ static inline uint8_t model_time_encode(int32_t ms)
 			continue;
 		}
 
-		uint8_t steps = ceiling_fraction(ms, time_res[i]);
+		uint8_t steps = DIV_ROUND_UP(ms, time_res[i]);
 
 		return steps | (i << 6);
 	}
@@ -399,7 +399,7 @@ static void bt_ready(int err)
 	printk("Mesh initialized\n");
 }
 
-void main(void)
+int main(void)
 {
 	static struct k_work button_work;
 	int err = -1;
@@ -420,7 +420,7 @@ void main(void)
 	err = board_init(&button_work);
 	if (err) {
 		printk("Board init failed (err: %d)\n", err);
-		return;
+		return 0;
 	}
 
 	k_work_init_delayable(&onoff.work, onoff_timeout);
@@ -430,4 +430,5 @@ void main(void)
 	if (err) {
 		printk("Bluetooth init failed (err %d)\n", err);
 	}
+	return 0;
 }

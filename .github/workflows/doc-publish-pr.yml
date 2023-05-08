@@ -32,7 +32,7 @@ jobs:
 
     - name: Check PR number
       id: check-pr
-      uses: carpentries/actions/check-valid-pr@v0.8
+      uses: carpentries/actions/check-valid-pr@v0.14.0
       with:
         pr: ${{ env.PR_NUM }}
         sha: ${{ github.event.workflow_run.head_sha }}
@@ -48,7 +48,7 @@ jobs:
         tar xf html-output/html-output.tar.xz -C html-output
 
     - name: Configure AWS Credentials
-      uses: aws-actions/configure-aws-credentials@v1
+      uses: aws-actions/configure-aws-credentials@v2
       with:
         aws-access-key-id: ${{ secrets.AWS_BUILDS_ZEPHYR_PR_ACCESS_KEY_ID }}
         aws-secret-access-key: ${{ secrets.AWS_BUILDS_ZEPHYR_PR_SECRET_ACCESS_KEY }}

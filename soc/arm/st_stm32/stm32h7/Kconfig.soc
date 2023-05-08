@@ -5,6 +5,10 @@
 # Copyright (c) 2021 Electrolance Solutions
 # SPDX-License-Identifier: Apache-2.0
 
+config STM32H7_DUAL_CORE
+	bool "Dual Core"
+	depends on SOC_SERIES_STM32H7X
+
 choice
 	prompt "STM32H7x MCU Selection"
 	depends on SOC_SERIES_STM32H7X
@@ -24,6 +28,11 @@ config SOC_STM32H730XX
 	select CPU_CORTEX_M7
 	select CPU_HAS_FPU_DOUBLE_PRECISION
 
+config SOC_STM32H730XXQ
+	bool "STM32H730XXQ"
+	select CPU_CORTEX_M7
+	select CPU_HAS_FPU_DOUBLE_PRECISION
+
 config SOC_STM32H735XX
 	bool "STM32H735XX"
 	select CPU_CORTEX_M7
@@ -37,10 +46,12 @@ config SOC_STM32H743XX
 config SOC_STM32H745XX
 	bool "STM32H745XX"
 	select CPU_HAS_FPU_DOUBLE_PRECISION if CPU_CORTEX_M7
+	select STM32H7_DUAL_CORE
 
 config SOC_STM32H747XX
 	bool "STM32H747XX"
 	select CPU_HAS_FPU_DOUBLE_PRECISION if CPU_CORTEX_M7
+	select STM32H7_DUAL_CORE
 
 config SOC_STM32H750XX
 	bool "STM32H750XX"
@@ -73,3 +84,7 @@ config SOC_STM32H7B3XXQ
 	select CPU_HAS_FPU_DOUBLE_PRECISION
 
 endchoice
+
+config STM32H7_BOOT_M4_AT_INIT
+	bool "Boot M4 core during M7 init independent of option byte BCM4."
+	default y

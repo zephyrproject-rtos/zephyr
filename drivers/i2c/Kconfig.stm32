@@ -43,4 +43,10 @@ config I2C_STM32_COMBINED_INTERRUPT
 	depends on I2C_STM32_INTERRUPT
 	default y if SOC_SERIES_STM32F0X || SOC_SERIES_STM32G0X || SOC_SERIES_STM32L0X
 
+config I2C_STM32_BUS_RECOVERY
+	bool "Bus recovery support"
+	select I2C_BITBANG
+	help
+	  Enable STM32 driver bus recovery support via GPIO bitbanging.
+
 endif # I2C_STM32

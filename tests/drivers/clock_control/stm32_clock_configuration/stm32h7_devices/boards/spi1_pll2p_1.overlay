@@ -9,7 +9,7 @@
  * It is assumed that it is applied after core_init.overlay file.
  */
 
-&pll3 {
+&pll2 {
 	clocks = <&clk_hse>;
 	div-m = <1>;
 	mul-n = <24>;

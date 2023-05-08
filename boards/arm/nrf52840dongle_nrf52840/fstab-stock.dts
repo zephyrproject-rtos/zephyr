@@ -23,11 +23,15 @@
 
 		slot0_partition: partition@10000 {
 			label = "image-0";
-			reg = <0x00010000 0x00068000>;
+			reg = <0x00010000 0x00066000>;
 		};
-		slot1_partition: partition@78000 {
+		slot1_partition: partition@76000 {
 			label = "image-1";
-			reg = <0x00078000 0x00068000>;
+			reg = <0x00076000 0x00066000>;
+		};
+		storage_partition: partition@dc000 {
+			label = "storage";
+			reg = <0x000dc000 0x00004000>;
 		};
 
 		/* Nordic nRF5 bootloader <0xe0000 0x1c000>

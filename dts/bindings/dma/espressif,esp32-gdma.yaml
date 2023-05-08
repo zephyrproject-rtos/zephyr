@@ -1,0 +1,33 @@
+# Copyright (c) 2022 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Espressif's GDMA (General Direct Memory Access) Node
+
+  General Direct Memory Access (GDMA) is a feature that allows
+  peripheral-to-memory, memory-to-peripheral, and memory-to-memory
+  data transfer at a high speed.
+
+  The GDMA controller in ESP32-C3 has six independent channels,
+  three transmit channels and three receive channels.
+
+  Every channel can be connected to different peripherals.
+
+  Peripherals with GDMA:
+  * SPI2
+  * UHCI0 (UART0/UART1)
+  * I2S
+  * AES
+  * SHA
+  * ADC
+
+compatible: "espressif,esp32-gdma"
+
+include: dma-controller.yaml
+
+properties:
+  "#dma-cells":
+    const: 1
+
+dma-cells:
+  - channel

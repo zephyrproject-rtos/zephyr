@@ -855,8 +855,8 @@ static int littlefs_mount(struct fs_mount_t *mountp)
 	ret = lfs_mount(&fs->lfs, &fs->cfg);
 	if (ret < 0 &&
 	    (mountp->flags & FS_MOUNT_FLAG_NO_FORMAT) == 0) {
-		LOG_WRN("can't mount (LFS %d); formatting", ret);
 		if ((mountp->flags & FS_MOUNT_FLAG_READ_ONLY) == 0) {
+			LOG_WRN("can't mount (LFS %d); formatting", ret);
 			ret = lfs_format(&fs->lfs, &fs->cfg);
 			if (ret < 0) {
 				LOG_ERR("format failed (LFS %d)", ret);
@@ -875,6 +875,9 @@ static int littlefs_mount(struct fs_mount_t *mountp)
 			ret = lfs_to_errno(ret);
 			goto out;
 		}
+	} else {
+		ret = lfs_to_errno(ret);
+		goto out;
 	}
 
 	LOG_INF("%s mounted", mountp->mnt_point);
@@ -1031,9 +1034,8 @@ static void mount_init(struct fs_mount_t *mp)
 	}
 }
 
-static int littlefs_init(const struct device *dev)
+static int littlefs_init(void)
 {
-	ARG_UNUSED(dev);
 	static struct fs_mount_t *partitions[] = {
 		DT_INST_FOREACH_STATUS_OKAY(REFERENCE_MOUNT)
 	};

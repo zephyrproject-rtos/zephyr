@@ -66,14 +66,7 @@ struct lsm6dso_config {
 #endif /* CONFIG_LSM6DSO_TRIGGER */
 };
 
-union samples {
-	uint8_t raw[6];
-	struct {
-		int16_t axis[3];
-	};
-} __aligned(2);
-
-#define LSM6DSO_SHUB_MAX_NUM_SLVS			2
+#define LSM6DSO_SHUB_MAX_NUM_TARGETS			3
 
 struct lsm6dso_data {
 	const struct device *dev;
@@ -85,7 +78,7 @@ struct lsm6dso_data {
 	int16_t temp_sample;
 #endif
 #if defined(CONFIG_LSM6DSO_SENSORHUB)
-	uint8_t ext_data[2][6];
+	uint8_t ext_data[LSM6DSO_SHUB_MAX_NUM_TARGETS][6];
 	uint16_t magn_gain;
 
 	struct hts221_data {
@@ -96,7 +89,7 @@ struct lsm6dso_data {
 	} hts221;
 	bool shub_inited;
 	uint8_t num_ext_dev;
-	uint8_t shub_ext[LSM6DSO_SHUB_MAX_NUM_SLVS];
+	uint8_t shub_ext[LSM6DSO_SHUB_MAX_NUM_TARGETS];
 #endif /* CONFIG_LSM6DSO_SENSORHUB */
 
 	uint16_t accel_freq;
@@ -107,8 +100,11 @@ struct lsm6dso_data {
 #ifdef CONFIG_LSM6DSO_TRIGGER
 	struct gpio_callback gpio_cb;
 	sensor_trigger_handler_t handler_drdy_acc;
+	const struct sensor_trigger *trig_drdy_acc;
 	sensor_trigger_handler_t handler_drdy_gyr;
+	const struct sensor_trigger *trig_drdy_gyr;
 	sensor_trigger_handler_t handler_drdy_temp;
+	const struct sensor_trigger *trig_drdy_temp;
 
 #if defined(CONFIG_LSM6DSO_TRIGGER_OWN_THREAD)
 	K_KERNEL_STACK_MEMBER(thread_stack, CONFIG_LSM6DSO_THREAD_STACK_SIZE);

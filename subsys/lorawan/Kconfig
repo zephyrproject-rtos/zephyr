@@ -59,4 +59,6 @@ config LORAMAC_REGION_RU864
 
 rsource "nvm/Kconfig"
 
+rsource "services/Kconfig"
+
 endif # LORAWAN

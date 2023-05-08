@@ -186,6 +186,9 @@ enum {
 #else /* !CONFIG_BT_CTLR_ADV_ISO && !CONFIG_BT_CTLR_SYNC_ISO */
 #define BT_CTLR_CONN_ISO_STREAM_HANDLE_BASE (CONFIG_BT_MAX_CONN)
 #endif /* !CONFIG_BT_CTLR_ADV_ISO && !CONFIG_BT_CTLR_SYNC_ISO */
+#define LL_CIS_HANDLE_BASE (BT_CTLR_CONN_ISO_STREAM_HANDLE_BASE)
+#define LL_CIS_IDX_FROM_HANDLE(handle) \
+	((handle) - LL_CIS_HANDLE_BASE)
 #endif /* CONFIG_BT_CTLR_CONN_ISO */
 
 #define TICKER_ID_ULL_BASE ((TICKER_ID_LLL_PREEMPT) + 1)
@@ -497,20 +500,30 @@ struct event_done_extra {
 	union {
 		struct {
 			union {
-				uint32_t trx_performed_mask;
-				uint16_t trx_cnt;
-			};
-			uint8_t  crc_valid:1;
+#if defined(CONFIG_BT_CTLR_CONN_ISO)
+				uint32_t trx_performed_bitmask;
+#endif /* CONFIG_BT_CTLR_CONN_ISO */
+
+				struct {
+					uint16_t trx_cnt;
+					uint8_t  crc_valid:1;
 #if defined(CONFIG_BT_CTLR_SYNC_PERIODIC_CTE_TYPE_FILTERING) && \
 	defined(CONFIG_BT_CTLR_CTEINLINE_SUPPORT)
-			/* Used to inform ULL that periodic advertising sync scan should be
-			 * terminated.
-			 */
-			uint8_t  sync_term:1;
-#endif /* CONFIG_BT_CTLR_SYNC_PERIODIC_CTE_TYPE_FILTERING && CONFIG_BT_CTLR_CTEINLINE_SUPPORT */
+					/* Used to inform ULL that periodic
+					 * advertising sync scan should be
+					 * terminated.
+					 */
+					uint8_t  sync_term:1;
+#endif /* CONFIG_BT_CTLR_SYNC_PERIODIC_CTE_TYPE_FILTERING && \
+	* CONFIG_BT_CTLR_CTEINLINE_SUPPORT
+	*/
+				};
+			};
+
 #if defined(CONFIG_BT_CTLR_LE_ENC)
 			uint8_t  mic_state;
 #endif /* CONFIG_BT_CTLR_LE_ENC */
+
 #if defined(CONFIG_BT_PERIPHERAL) || defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
 			union {
 				struct event_done_extra_drift drift;

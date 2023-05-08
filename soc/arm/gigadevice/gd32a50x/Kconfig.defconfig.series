@@ -1,0 +1,11 @@
+# Copyright (c) 2022 YuLong Yao <feilongphone@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_GD32A50X
+
+source "soc/arm/gigadevice/gd32a50x/Kconfig.defconfig.gd32*"
+
+config SOC_SERIES
+	default "gd32a50x"
+
+endif # SOC_SERIES_GD32A50X

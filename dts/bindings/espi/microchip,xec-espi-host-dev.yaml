@@ -10,59 +10,59 @@ include: [base.yaml]
 on-bus: espi
 
 properties:
-    reg:
-      required: true
+  reg:
+    required: true
 
-    ldn:
-      type: int
-      required: true
-      description: logical device number
+  ldn:
+    type: int
+    required: true
+    description: logical device number
 
-    girqs:
-      type: array
-      description: array of GIRQ and bit positions
+  girqs:
+    type: array
+    description: array of GIRQ and bit positions
 
-    pcrs:
-      type: array
-      description: PCR sleep register index and bit position
+  pcrs:
+    type: array
+    description: PCR sleep register index and bit position
 
-    # optional properties application to different host facing devices
-    host-io:
-      type: int
-      description: |
-        Logical device Host I/O (x86) base. Refer to SoC documentation for the
-        number of I/O decoders implemented by a device (1 or 2) and the fixed
-        I/O masks.
+  # optional properties application to different host facing devices
+  host-io:
+    type: int
+    description: |
+      Logical device Host I/O (x86) base. Refer to SoC documentation for the
+      number of I/O decoders implemented by a device (1 or 2) and the fixed
+      I/O masks.
 
-    host-io-addr-mask:
-      type: int
-      description: |
-        Host I/O address mask. This value is fixed for all HW and is only
-        used by Port80 BIOS debug alias device to specify the byte lane the
-        alias address is mapped to in the 80h to 83h I/O range.
+  host-io-addr-mask:
+    type: int
+    description: |
+      Host I/O address mask. This value is fixed for all HW and is only
+      used by Port80 BIOS debug alias device to specify the byte lane the
+      alias address is mapped to in the 80h to 83h I/O range.
 
-    host-mem:
-      type: int
-      description: |
-        Logical device Host memory (x86) base address. Refer to SoC
-        documentation for which logical devices implement a memory decoder
-        and the fixed memory address masking.
+  host-mem:
+    type: int
+    description: |
+      Logical device Host memory (x86) base address. Refer to SoC
+      documentation for which logical devices implement a memory decoder
+      and the fixed memory address masking.
 
-    emi-mems:
-      type: array
-      description: |
-        Each EMI host device supports Host access to two SoC data memory
-        regions. Each region requires three configuration parameters:
-        Base address in the SoC data memory, read limit, and write limit.
-        If bits[14:2] of the address written by the Host to the EC address
-        register is less than the limit value the access is allowed. Bit[15]
-        of the EC address selects which of the two memory regions is accessed.
+  emi-mems:
+    type: array
+    description: |
+      Each EMI host device supports Host access to two SoC data memory
+      regions. Each region requires three configuration parameters:
+      Base address in the SoC data memory, read limit, and write limit.
+      If bits[14:2] of the address written by the Host to the EC address
+      register is less than the limit value the access is allowed. Bit[15]
+      of the EC address selects which of the two memory regions is accessed.
 
-    "emi-mem-cells":
-      type: int
-      const: 3
+  "emi-mem-cells":
+    type: int
+    const: 3
 
 emi-mem-cells:
-    - base
-    - rdlimit
-    - wrlimit
+  - base
+  - rdlimit
+  - wrlimit

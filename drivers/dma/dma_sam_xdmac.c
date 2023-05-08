@@ -17,6 +17,7 @@
 #include <string.h>
 #include <soc.h>
 #include <zephyr/drivers/dma.h>
+#include <zephyr/drivers/clock_control/atmel_sam_pmc.h>
 #include "dma_sam_xdmac.h"
 
 #define LOG_LEVEL CONFIG_DMA_LOG_LEVEL
@@ -38,7 +39,7 @@ struct sam_xdmac_channel_cfg {
 struct sam_xdmac_dev_cfg {
 	Xdmac *regs;
 	void (*irq_config)(void);
-	uint8_t periph_id;
+	const struct atmel_sam_pmc_config clock_cfg;
 	uint8_t irq_id;
 };
 
@@ -357,8 +358,9 @@ static int sam_xdmac_initialize(const struct device *dev)
 	/* Configure interrupts */
 	dev_cfg->irq_config();
 
-	/* Enable module's clock */
-	soc_pmc_peripheral_enable(dev_cfg->periph_id);
+	/* Enable XDMAC clock in PMC */
+	(void)clock_control_on(SAM_DT_PMC_CONTROLLER,
+			       (clock_control_subsys_t)&dev_cfg->clock_cfg);
 
 	/* Disable all channels */
 	xdmac->XDMAC_GD = UINT32_MAX;
@@ -391,7 +393,7 @@ static void dma0_sam_irq_config(void)
 static const struct sam_xdmac_dev_cfg dma0_sam_config = {
 	.regs = (Xdmac *)DT_INST_REG_ADDR(0),
 	.irq_config = dma0_sam_irq_config,
-	.periph_id = DT_INST_PROP(0, peripheral_id),
+	.clock_cfg = SAM_DT_INST_CLOCK_PMC_CFG(0),
 	.irq_id = DT_INST_IRQN(0),
 };
 

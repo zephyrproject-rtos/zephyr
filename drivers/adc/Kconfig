@@ -7,7 +7,7 @@
 # ADC options
 #
 menuconfig ADC
-	bool "ADC drivers"
+	bool "Analog-to-Digital Converter (ADC) drivers"
 	# All platforms that implement the ADC driver are now required to
 	# provide relevant DTS entries.
 	help
@@ -54,6 +54,8 @@ source "drivers/adc/Kconfig.nrfx"
 
 source "drivers/adc/Kconfig.sam_afec"
 
+source "drivers/adc/Kconfig.sam"
+
 source "drivers/adc/Kconfig.sam0"
 
 source "drivers/adc/Kconfig.stm32"
@@ -82,8 +84,16 @@ source "drivers/adc/Kconfig.gd32"
 
 source "drivers/adc/Kconfig.ads1119"
 
+source "drivers/adc/Kconfig.ads7052"
+
+source "drivers/adc/Kconfig.ads114s0x"
+
 source "drivers/adc/Kconfig.rpi_pico"
 
 source "drivers/adc/Kconfig.xmc4xxx"
+
+source "drivers/adc/Kconfig.gecko"
+
+source "drivers/adc/Kconfig.ifx_cat1"
 
 endif # ADC

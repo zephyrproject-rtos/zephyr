@@ -1,0 +1,33 @@
+# Copyright 2019 Oticon A/S
+# SPDX-License-Identifier: Apache-2.0
+
+HCI/CCO/BV-07-C
+HCI/CCO/BV-09-C # [Handling LE Set Data Length Command]
+HCI/CCO/BV-10-C
+HCI/CCO/BV-11-C
+HCI/CCO/BV-12-C
+HCI/CCO/BV-13-C
+HCI/CCO/BV-14-C
+HCI/CCO/BV-15-C
+HCI/CCO/BV-18-C
+HCI/CFC/BV-02-C
+HCI/CIN/BV-01-C
+HCI/CIN/BV-03-C
+HCI/CIN/BV-04-C
+HCI/CIN/BV-06-C
+HCI/CIN/BV-09-C
+HCI/CM/BV-01-C # [Handling LE Read Peer Resolvable Address Command]
+HCI/CM/BV-02-C # [Handling LE Read Local Resolvable Address Command]
+HCI/CM/BV-03-C # [Handling LE Read PHY Command]
+HCI/DDI/BI-02-C
+HCI/DDI/BV-03-C
+HCI/DDI/BI-63-C
+HCI/DDI/BI-65-C
+HCI/DDI/BV-04-C
+HCI/DSU/BV-02-C
+HCI/DSU/BV-03-C # [Reset Command received in Slave Role]
+HCI/DSU/BV-04-C
+HCI/DSU/BV-05-C
+HCI/DSU/BV-06-C # [Reset Command received in Master Role]
+#HCI/GEV/BV-01-C # Test fails since it assumes extended advertising is not supported
+HCI/HFC/BV-04-C # [Events enabled by LE Set Event Mask Command]

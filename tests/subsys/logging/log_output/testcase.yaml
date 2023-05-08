@@ -4,12 +4,10 @@ common:
 
 tests:
   logging.log_output:
-    platform_exclude: intel_adsp_cavs15
     tags: log_output logging
     extra_configs:
       - CONFIG_LOG_TIMESTAMP_64BIT=n
   logging.log_output_ts64:
-    platform_exclude: intel_adsp_cavs15 qemu_arc_hs5x
     tags: log_output logging
     extra_configs:
       - CONFIG_LOG_TIMESTAMP_64BIT=y

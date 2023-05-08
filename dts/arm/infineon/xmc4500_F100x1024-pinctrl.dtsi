@@ -86,4 +86,117 @@
 	/omit-if-no-ref/ uart_rx_p4_0_u2c1: uart_rx_p4_0_u2c1 {
 		pinmux = <XMC4XXX_PINMUX_SET(4, 0, 0)>;	/* USIC input src = DX0C */
 	};
+
+	/omit-if-no-ref/ spi_mosi_p0_1_u1c1: spi_mosi_p0_1_u1c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(0, 1, 2)>;
+	};
+	/omit-if-no-ref/ spi_mosi_p0_5_u1c0: spi_mosi_p0_5_u1c0 {
+		pinmux = <XMC4XXX_PINMUX_SET(0, 5, 2)>;
+	};
+	/omit-if-no-ref/ spi_mosi_p1_5_u0c0: spi_mosi_p1_5_u0c0 {
+		pinmux = <XMC4XXX_PINMUX_SET(1, 5, 2)>;
+	};
+	/omit-if-no-ref/ spi_mosi_p1_7_u0c0: spi_mosi_p1_7_u0c0 {
+		pinmux = <XMC4XXX_PINMUX_SET(1, 7, 2)>;
+	};
+	/omit-if-no-ref/ spi_mosi_p2_5_u0c1: spi_mosi_p2_5_u0c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(2, 5, 2)>;
+	};
+	/omit-if-no-ref/ spi_mosi_p2_14_u1c0: spi_mosi_p2_14_u1c0 {
+		pinmux = <XMC4XXX_PINMUX_SET(2, 14, 2)>;
+	};
+	/omit-if-no-ref/ spi_mosi_p3_5_u2c1: spi_mosi_p3_5_u2c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(3, 5, 1)>;
+	};
+	/omit-if-no-ref/ spi_mosi_p3_5_u0c1: spi_mosi_p3_5_u0c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(3, 5, 4)>;
+	};
+	/omit-if-no-ref/ spi_mosi_p5_0_u2c0: spi_mosi_p5_0_u2c0 {
+		pinmux = <XMC4XXX_PINMUX_SET(5, 0, 1)>;
+	};
+	/omit-if-no-ref/ spi_mosi_p5_1_u0c0: spi_mosi_p5_1_u0c0 {
+		pinmux = <XMC4XXX_PINMUX_SET(5, 1, 1)>;
+	};
+
+	/omit-if-no-ref/ spi_miso_p1_4_u0c0: spi_miso_p1_4_u0c0 {
+		pinmux = <XMC4XXX_PINMUX_SET(1, 4, 0)>;	/* USIC input src = DX0B */
+	};
+	/omit-if-no-ref/ spi_miso_p1_5_u0c0: spi_miso_p1_5_u0c0 {
+		pinmux = <XMC4XXX_PINMUX_SET(1, 5, 0)>;	/* USIC input src = DX0A */
+	};
+	/omit-if-no-ref/ spi_miso_p5_0_u0c0: spi_miso_p5_0_u0c0 {
+		pinmux = <XMC4XXX_PINMUX_SET(5, 0, 0)>;	/* USIC input src = DX0D */
+	};
+	/omit-if-no-ref/ spi_miso_p2_2_u0c1: spi_miso_p2_2_u0c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(2, 2, 0)>;	/* USIC input src = DX0A */
+	};
+	/omit-if-no-ref/ spi_miso_p2_5_u0c1: spi_miso_p2_5_u0c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(2, 5, 0)>;	/* USIC input src = DX0B */
+	};
+	/omit-if-no-ref/ spi_miso_p4_0_u0c1: spi_miso_p4_0_u0c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(4, 0, 0)>;	/* USIC input src = DX0E */
+	};
+	/omit-if-no-ref/ spi_miso_p0_4_u1c0: spi_miso_p0_4_u1c0 {
+		pinmux = <XMC4XXX_PINMUX_SET(0, 4, 0)>;	/* USIC input src = DX0A */
+	};
+	/omit-if-no-ref/ spi_miso_p0_5_u1c0: spi_miso_p0_5_u1c0 {
+		pinmux = <XMC4XXX_PINMUX_SET(0, 5, 0)>;	/* USIC input src = DX0B */
+	};
+	/omit-if-no-ref/ spi_miso_p2_14_u1c0: spi_miso_p2_14_u1c0 {
+		pinmux = <XMC4XXX_PINMUX_SET(2, 14, 0)>;	/* USIC input src = DX0D */
+	};
+	/omit-if-no-ref/ spi_miso_p2_15_u1c0: spi_miso_p2_15_u1c0 {
+		pinmux = <XMC4XXX_PINMUX_SET(2, 15, 0)>;	/* USIC input src = DX0C */
+	};
+	/omit-if-no-ref/ spi_miso_p0_0_u1c1: spi_miso_p0_0_u1c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(0, 0, 0)>;	/* USIC input src = DX0D */
+	};
+	/omit-if-no-ref/ spi_miso_p5_0_u2c0: spi_miso_p5_0_u2c0 {
+		pinmux = <XMC4XXX_PINMUX_SET(5, 0, 0)>;	/* USIC input src = DX0B */
+	};
+	/omit-if-no-ref/ spi_miso_p5_1_u2c0: spi_miso_p5_1_u2c0 {
+		pinmux = <XMC4XXX_PINMUX_SET(5, 1, 0)>;	/* USIC input src = DX0A */
+	};
+	/omit-if-no-ref/ spi_miso_p3_4_u2c1: spi_miso_p3_4_u2c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(3, 4, 0)>;	/* USIC input src = DX0B */
+	};
+	/omit-if-no-ref/ spi_miso_p3_5_u2c1: spi_miso_p3_5_u2c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(3, 5, 0)>;	/* USIC input src = DX0A */
+	};
+	/omit-if-no-ref/ spi_miso_p4_0_u2c1: spi_miso_p4_0_u2c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(4, 0, 0)>;	/* USIC input src = DX0C */
+	};
+	/omit-if-no-ref/ spi_sclk_p0_8_u0c0: spi_sclk_p0_8_u0c0 {
+		pinmux = <XMC4XXX_PINMUX_SET(0, 8, 2)>;
+	};
+	/omit-if-no-ref/ spi_sclk_p0_10_u1c1: spi_sclk_p0_10_u1c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(0, 10, 2)>;
+	};
+	/omit-if-no-ref/ spi_sclk_p0_11_u1c0: spi_sclk_p0_11_u1c0 {
+		pinmux = <XMC4XXX_PINMUX_SET(0, 11, 2)>;
+	};
+	/omit-if-no-ref/ spi_sclk_p1_1_u0c0: spi_sclk_p1_1_u0c0 {
+		pinmux = <XMC4XXX_PINMUX_SET(1, 1, 2)>;
+	};
+	/omit-if-no-ref/ spi_sclk_p1_6_u0c0: spi_sclk_p1_6_u0c0 {
+		pinmux = <XMC4XXX_PINMUX_SET(1, 6, 2)>;
+	};
+	/omit-if-no-ref/ spi_sclk_p1_10_u0c0: spi_sclk_p1_10_u0c0 {
+		pinmux = <XMC4XXX_PINMUX_SET(1, 10, 2)>;
+	};
+	/omit-if-no-ref/ spi_sclk_p2_4_u0c1: spi_sclk_p2_4_u0c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(2, 4, 2)>;
+	};
+	/omit-if-no-ref/ spi_sclk_p3_0_u0c1: spi_sclk_p3_0_u0c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(3, 0, 2)>;
+	};
+	/omit-if-no-ref/ spi_sclk_p3_6_u2c1: spi_sclk_p3_6_u2c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(3, 6, 1)>;
+	};
+	/omit-if-no-ref/ spi_sclk_p3_6_u0c1: spi_sclk_p3_6_u0c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(3, 6, 4)>;
+	};
+	/omit-if-no-ref/ spi_sclk_p5_2_u2c0: spi_sclk_p5_2_u2c0 {
+		pinmux = <XMC4XXX_PINMUX_SET(5, 2, 1)>;
+	};
 };

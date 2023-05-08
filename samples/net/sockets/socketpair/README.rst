@@ -33,32 +33,27 @@ Build the Zephyr version of the sockets/echo application like this:
    :goals: build
    :compact:
 
-After the sample starts, several clients thread are spawned and each client
-thread sends a fixed number of messages to the server (main). Each client
-sends a message (it's name) to the server.
+After the sample starts, several client threads are spawned. Each client
+thread sends a fixed number of messages to the server (main).
 
 .. code-block:: console
 
-    *** Booting Zephyr OS build v2.3.0-rc1-215-g0e36f9686836  ***
-    Alpha: socketpair: 3 <=> 4
-    Bravo: socketpair: 5 <=> 7
-    Charlie: socketpair: 8 <=> 9
-    Charlie closed fd 9
-    fd: 8: read 21 bytes
-    fd: 8: hung up
-    main: closed fd 8
-    joined Charlie
-    Alpha closed fd 4
-    fd: 3: read 15 bytes
-    fd: 3: hung up
-    main: closed fd 3
-    joined Alpha
-    Bravo closed fd 7
-    fd: 5: read 15 bytes
-    fd: 5: hung up
-    main: closed fd 5
-    joined Bravo
-    finished!
+    *** Booting Zephyr OS build v3.3.0-rc1-97-g432ff20a72e1 ***
+    setting-up
+    Alpha: socketpair: 4 <=> 3
+    Bravo: socketpair: 6 <=> 5
+    Charlie: socketpair: 8 <=> 7
+    main: read 'Alpha' on fd 4
+    main: read 'Bravo' on fd 6
+    main: read 'Charlie' on fd 8
+    main: read 'Alpha' on fd 4
+    main: read 'Bravo' on fd 6
+    main: read 'Charlie' on fd 8
+    main: read 'Alpha' on fd 4
+    main: read 'Bravo' on fd 6
+    main: read 'Charlie' on fd 8
+    tearing-down
+    SUCCESS
 
 Running application on POSIX Host
 =================================
@@ -76,26 +71,22 @@ To run:
 
 .. code-block:: console
 
-    $ ./socketpair_example
+    ./socketpair_example
+    setting-up
     Alpha: socketpair: 3 <=> 4
     Bravo: socketpair: 5 <=> 6
     Charlie: socketpair: 7 <=> 8
-    Alpha closed fd 4
-    fd: 3: read 15 bytes
-    fd: 3: hung up
-    main: closed fd 3
-    joined Alpha
-    fd: 5: read 15 bytes
-    fd: 5: hung up
-    Bravo closed fd 6
-    main: closed fd 5
-    joined Bravo
-    Charlie closed fd 8
-    fd: 7: read 21 bytes
-    fd: 7: hung up
-    main: closed fd 7
-    joined Charlie
-    finished!
+    main: read 'Alpha' on fd 3
+    main: read 'Bravo' on fd 5
+    main: read 'Charlie' on fd 7
+    main: read 'Alpha' on fd 3
+    main: read 'Alpha' on fd 3
+    main: read 'Bravo' on fd 5
+    main: read 'Charlie' on fd 7
+    main: read 'Bravo' on fd 5
+    main: read 'Charlie' on fd 7
+    tearing-down
+    SUCCESS
 
 As can be seen, the behavior of the application is approximately the same as
 the Zephyr version.

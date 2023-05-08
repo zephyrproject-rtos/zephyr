@@ -57,7 +57,7 @@ struct lis2ds12_data {
 #ifdef CONFIG_LIS2DS12_TRIGGER
 	struct gpio_callback gpio_cb;
 
-	struct sensor_trigger data_ready_trigger;
+	const struct sensor_trigger *data_ready_trigger;
 	sensor_trigger_handler_t data_ready_handler;
 	const struct device *dev;
 

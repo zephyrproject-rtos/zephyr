@@ -76,7 +76,87 @@ BT_MESH_HB_CB_DEFINE(hb_cb) = {
 	.recv = heartbeat,
 };
 
+static void show_mesh_status(bool mesh_started_ok, int addr)
+{
+	if (!mesh_started_ok) {
+		board_show_text("Starting Mesh Failed", false, K_SECONDS(2));
+	} else {
+		char buf[32];
+
+		snprintk(buf, sizeof(buf), "Mesh Started\nAddr: 0x%04x", addr);
+		board_show_text(buf, false, K_SECONDS(4));
+	}
+}
+
+static void cfg_cli_app_key_status_cb(struct bt_mesh_cfg_cli *cli, uint16_t
+				addr, uint8_t status, uint16_t net_idx,
+				uint16_t app_idx)
+{
+	struct bt_mesh_cfg_cli_mod_pub pub = {
+		.addr = GROUP_ADDR,
+		.app_idx = APP_IDX,
+		.ttl = DEFAULT_TTL,
+		.period = BT_MESH_PUB_PERIOD_SEC(10),
+	};
+	int err;
+
+	/* Bind to vendor model */
+	err = bt_mesh_cfg_cli_mod_app_bind_vnd(NET_IDX, addr, addr, APP_IDX,
+				MOD_LF, BT_COMP_ID_LF, NULL);
+	if (err) {
+		printk("Failed to bind to vendor model (err %d)\n", err);
+		goto end;
+	}
+
+	err = bt_mesh_cfg_cli_mod_app_bind(NET_IDX, addr, addr, APP_IDX,
+				BT_MESH_MODEL_ID_GEN_ONOFF_SRV, NULL);
+	if (err) {
+		printk("Failed to bind to vendor model (err %d)\n", err);
+		goto end;
+	}
+
+	err = bt_mesh_cfg_cli_mod_app_bind(NET_IDX, addr, addr, APP_IDX,
+				BT_MESH_MODEL_ID_SENSOR_SRV, NULL);
+	if (err) {
+		printk("Failed to bind to vendor model (err %d)\n", err);
+		goto end;
+	}
+
+	/* Bind to Health model */
+	err = bt_mesh_cfg_cli_mod_app_bind(NET_IDX, addr, addr, APP_IDX,
+				BT_MESH_MODEL_ID_HEALTH_SRV, NULL);
+	if (err) {
+		printk("Failed to bind to Health Server (err %d)\n", err);
+		goto end;
+	}
+
+	/* Add model subscription */
+	err = bt_mesh_cfg_cli_mod_sub_add_vnd(NET_IDX, addr, addr, GROUP_ADDR,
+				MOD_LF, BT_COMP_ID_LF, NULL);
+	if (err) {
+		printk("Failed to add subscription (err %d)\n", err);
+		goto end;
+	}
+
+	err = bt_mesh_cfg_cli_mod_pub_set_vnd(NET_IDX, addr, addr, MOD_LF,
+				BT_COMP_ID_LF, &pub, NULL);
+	if (err) {
+		printk("Failed to set publication (err %d)\n", err);
+		goto end;
+	}
+
+	printk("Configuration complete\n");
+
+end:
+	show_mesh_status(err == 0, addr);
+}
+
+static const struct bt_mesh_cfg_cli_cb cfg_cli_cb = {
+	.app_key_status = cfg_cli_app_key_status_cb,
+};
+
 static struct bt_mesh_cfg_cli cfg_cli = {
+	.cb = &cfg_cli_cb,
 };
 
 static void attention_on(struct bt_mesh_model *model)
@@ -504,12 +584,6 @@ static int provision_and_configure(void)
 		0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa,
 		0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa,
 	};
-	struct bt_mesh_cfg_cli_mod_pub pub = {
-		.addr = GROUP_ADDR,
-		.app_idx = APP_IDX,
-		.ttl = DEFAULT_TTL,
-		.period = BT_MESH_PUB_PERIOD_SEC(10),
-	};
 	uint8_t dev_key[16];
 	uint16_t addr;
 	int err;
@@ -529,8 +603,7 @@ static int provision_and_configure(void)
 	/* Make sure it's a unicast address (highest bit unset) */
 	addr &= ~0x8000;
 
-	err = bt_mesh_provision(net_key, NET_IDX, FLAGS, IV_INDEX, addr,
-				dev_key);
+	err = bt_mesh_provision(net_key, NET_IDX, FLAGS, IV_INDEX, addr, dev_key);
 	if (err) {
 		return err;
 	}
@@ -538,28 +611,12 @@ static int provision_and_configure(void)
 	printk("Configuring...\n");
 
 	/* Add Application Key */
-	bt_mesh_cfg_cli_app_key_add(NET_IDX, addr, NET_IDX, APP_IDX, app_key, NULL);
-
-	/* Bind to vendor model */
-	bt_mesh_cfg_cli_mod_app_bind_vnd(NET_IDX, addr, addr, APP_IDX, MOD_LF, BT_COMP_ID_LF, NULL);
-
-	bt_mesh_cfg_cli_mod_app_bind(NET_IDX, addr, addr, APP_IDX, BT_MESH_MODEL_ID_GEN_ONOFF_SRV,
-				     NULL);
-
-	bt_mesh_cfg_cli_mod_app_bind(NET_IDX, addr, addr, APP_IDX, BT_MESH_MODEL_ID_SENSOR_SRV,
-				     NULL);
-
-	/* Bind to Health model */
-	bt_mesh_cfg_cli_mod_app_bind(NET_IDX, addr, addr, APP_IDX, BT_MESH_MODEL_ID_HEALTH_SRV,
-				     NULL);
-
-	/* Add model subscription */
-	bt_mesh_cfg_cli_mod_sub_add_vnd(NET_IDX, addr, addr, GROUP_ADDR, MOD_LF, BT_COMP_ID_LF,
-					NULL);
-
-	bt_mesh_cfg_cli_mod_pub_set_vnd(NET_IDX, addr, addr, MOD_LF, BT_COMP_ID_LF, &pub, NULL);
-
-	printk("Configuration complete\n");
+	err = bt_mesh_cfg_cli_app_key_add(NET_IDX, addr, NET_IDX, APP_IDX,
+				app_key, NULL);
+	if (err) {
+		printk("Failed to add application key (err %d)\n", err);
+		return err;
+	}
 
 	return addr;
 }
@@ -570,14 +627,7 @@ static void start_mesh(struct k_work *work)
 
 	err = provision_and_configure();
 	if (err < 0) {
-		board_show_text("Starting Mesh Failed", false,
-				K_SECONDS(2));
-	} else {
-		char buf[32];
-
-		snprintk(buf, sizeof(buf),
-			 "Mesh Started\nAddr: 0x%04x", err);
-		board_show_text(buf, false, K_SECONDS(4));
+		printk("Provisioning failed (err %d)\n", err);
 	}
 }
 

@@ -218,7 +218,7 @@ static int regulator_pca9420_set_voltage(const struct device *dev,
 	ret = linear_range_group_get_win_index(config->desc->ranges,
 					       config->desc->num_ranges, min_uv,
 					       max_uv, &idx);
-	if (ret < 0) {
+	if (ret == -EINVAL) {
 		return ret;
 	}
 
@@ -327,7 +327,7 @@ static int regulator_pca9420_init(const struct device *dev)
 			ret = linear_range_group_get_win_index(
 				config->desc->ranges, config->desc->num_ranges,
 				config->modes_uv[i], config->modes_uv[i], &idx);
-			if (ret < 0) {
+			if (ret == -EINVAL) {
 				return ret;
 			}
 
@@ -343,7 +343,7 @@ static int regulator_pca9420_init(const struct device *dev)
 		}
 	}
 
-	return regulator_common_init_enable(dev);
+	return regulator_common_init(dev, false);
 }
 
 int regulator_pca9420_dvs_state_set(const struct device *dev,

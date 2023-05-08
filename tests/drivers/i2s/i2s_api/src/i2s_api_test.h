@@ -11,37 +11,6 @@
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/i2s.h>
 
-void test_i2s_tx_transfer_configure_0(void);
-void test_i2s_rx_transfer_configure_0(void);
-void test_i2s_transfer_short(void);
-void test_i2s_transfer_long(void);
-void test_i2s_rx_sync_start(void);
-void test_i2s_rx_empty_timeout(void);
-void test_i2s_transfer_restart(void);
-void test_i2s_transfer_rx_overrun(void);
-void test_i2s_transfer_tx_underrun(void);
-
-void test_i2s_tx_transfer_configure_1(void);
-void test_i2s_rx_transfer_configure_1(void);
-void test_i2s_state_not_ready_neg(void);
-void test_i2s_state_ready_neg(void);
-void test_i2s_state_running_neg(void);
-void test_i2s_state_stopping_neg(void);
-void test_i2s_state_error_neg(void);
-
-void test_i2s_dir_both_transfer_configure_0(void);
-void test_i2s_dir_both_transfer_short(void);
-void test_i2s_dir_both_transfer_long(void);
-void test_i2s_dir_both_rx_empty_timeout(void);
-void test_i2s_dir_both_transfer_restart(void);
-void test_i2s_dir_both_transfer_rx_overrun(void);
-void test_i2s_dir_both_transfer_tx_underrun(void);
-
-void test_i2s_dir_both_transfer_configure_1(void);
-void test_i2s_dir_both_state_running_neg(void);
-void test_i2s_dir_both_state_stopping_neg(void);
-void test_i2s_dir_both_state_error_neg(void);
-
 extern struct k_mem_slab rx_mem_slab;
 extern struct k_mem_slab tx_mem_slab;
 
@@ -52,11 +21,16 @@ extern struct k_mem_slab tx_mem_slab;
 extern int16_t data_l[SAMPLE_NO];
 extern int16_t data_r[SAMPLE_NO];
 
-#define I2S_DEV_NAME_RX "I2S_0"
+extern const struct device *dev_i2s_rx;
+extern const struct device *dev_i2s_tx;
+extern const struct device *dev_i2s;
+extern bool dir_both_supported;
+
+#define I2S_DEV_NODE_RX DT_ALIAS(i2s_node0)
 #ifdef CONFIG_I2S_TEST_SEPARATE_DEVICES
-#define I2S_DEV_NAME_TX "I2S_1"
+#define I2S_DEV_NODE_TX DT_ALIAS(i2s_node1)
 #else
-#define I2S_DEV_NAME_TX "I2S_0"
+#define I2S_DEV_NODE_TX DT_ALIAS(i2s_node0)
 #endif
 #define BLOCK_SIZE (2 * sizeof(data_l))
 

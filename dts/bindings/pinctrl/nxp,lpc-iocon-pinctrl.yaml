@@ -102,8 +102,8 @@ child-binding:
       power-source:
         type: string
         enum:
-         - "3v3"
-         - "1v8"
+          - "3v3"
+          - "1v8"
         description: |
           Pin output power source. Only valid for I2C mode pins running in I2C
           mode.
@@ -114,16 +114,16 @@ child-binding:
       nxp,i2c-filter:
         type: string
         enum:
-         - "slow"
-         - "fast"
+          - "slow"
+          - "fast"
         description: |
           I2C glitch filter speed. Only valid for I2C mode pins. Fast mode
           typically only required for High speed I2C.
       nxp,i2c-speed:
         type: string
         enum:
-         - "slow"
-         - "fast"
+          - "slow"
+          - "fast"
         description: |
           I2C speed. Only valid for I2C mode pins. Fast mode should be used for
           fast mode plus I2C.

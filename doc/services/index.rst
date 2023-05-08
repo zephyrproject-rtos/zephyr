@@ -13,6 +13,7 @@ OS Services
    dsp/index.rst
    file_system/index.rst
    formatted_output.rst
+   input/index.rst
    ipc/index.rst
    logging/index.rst
    tracing/index.rst
@@ -29,6 +30,7 @@ OS Services
    tfm/index
    usb/index.rst
    virtualization/index.rst
+   retention/index.rst
    rtio/index.rst
    zbus/index.rst
    misc.rst

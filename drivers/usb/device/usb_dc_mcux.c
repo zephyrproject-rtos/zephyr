@@ -69,8 +69,14 @@ static void usb_isr_handler(void);
 #define NUM_OF_EP_MAX		(DT_INST_PROP(0, num_bidir_endpoints) * 2)
 #define CONTROLLER_ID		(DT_INST_ENUM_IDX(0, usb_controller_index))
 
-/* The minimum value is 1 */
-#define EP_BUF_NUMOF_BLOCKS	((NUM_OF_EP_MAX + 3) / 4)
+/* We do not need a buffer for the write side on platforms that have USB RAM.
+ * The SDK driver will copy the data buffer to be sent to USB RAM.
+ */
+#ifdef FSL_FEATURE_USBHSD_USB_RAM_BASE_ADDRESS
+#define EP_BUF_NUMOF_BLOCKS	(NUM_OF_EP_MAX / 2)
+#else
+#define EP_BUF_NUMOF_BLOCKS	NUM_OF_EP_MAX
+#endif
 
 /* The max MPS is 1023 for FS, 1024 for HS. */
 #if defined(CONFIG_NOCACHE_MEMORY)
@@ -85,7 +91,6 @@ struct usb_ep_ctrl_data {
 	struct k_mem_block block;
 	usb_dc_ep_callback callback;
 	uint16_t ep_mps;
-	uint8_t ep_type;
 	uint8_t ep_enabled : 1;
 	uint8_t ep_occupied : 1;
 };
@@ -97,7 +102,6 @@ struct usb_dc_state {
 	struct usb_ep_ctrl_data *eps;
 	bool attached;
 	uint8_t setup_data_stage;
-
 	K_KERNEL_STACK_MEMBER(thread_stack, CONFIG_USB_MCUX_THREAD_STACK_SIZE);
 
 	struct k_thread thread;
@@ -243,7 +247,6 @@ int usb_dc_ep_configure(const struct usb_dc_ep_cfg_data *const cfg)
 {
 	uint8_t ep_abs_idx =  EP_ABS_IDX(cfg->ep_addr);
 	usb_device_endpoint_init_struct_t ep_init;
-	struct k_mem_block *block;
 	struct usb_ep_ctrl_data *eps = &dev_state.eps[ep_abs_idx];
 	usb_status_t status;
 	uint8_t ep;
@@ -252,7 +255,6 @@ int usb_dc_ep_configure(const struct usb_dc_ep_cfg_data *const cfg)
 	ep_init.endpointAddress = cfg->ep_addr;
 	ep_init.maxPacketSize = cfg->ep_mps;
 	ep_init.transferType = cfg->ep_type;
-	dev_state.eps[ep_abs_idx].ep_type = cfg->ep_type;
 
 	if (ep_abs_idx >= NUM_OF_EP_MAX) {
 		LOG_ERR("Wrong endpoint index/address");
@@ -272,19 +274,29 @@ int usb_dc_ep_configure(const struct usb_dc_ep_cfg_data *const cfg)
 		LOG_WRN("Failed to un-initialize endpoint (status=%d)", (int)status);
 	}
 
-	block = &(eps->block);
-	if (block->data) {
-		k_heap_free(&ep_buf_pool, block->data);
-		block->data = NULL;
-	}
+#ifdef FSL_FEATURE_USBHSD_USB_RAM_BASE_ADDRESS
+	/* Allocate buffers used during read operation */
+	if (USB_EP_DIR_IS_OUT(cfg->ep_addr)) {
+#endif
+		struct k_mem_block *block;
 
-	block->data = k_heap_alloc(&ep_buf_pool, cfg->ep_mps, K_NO_WAIT);
-	if (block->data == NULL) {
-		LOG_ERR("Failed to allocate memory");
-		return -ENOMEM;
-	}
+		block = &(eps->block);
+		if (block->data) {
+			k_heap_free(&ep_buf_pool, block->data);
+			block->data = NULL;
+		}
 
-	memset(block->data, 0, cfg->ep_mps);
+		block->data = k_heap_alloc(&ep_buf_pool, cfg->ep_mps, K_NO_WAIT);
+		if (block->data == NULL) {
+			LOG_ERR("Failed to allocate memory");
+			return -ENOMEM;
+		}
+
+		memset(block->data, 0, cfg->ep_mps);
+#ifdef FSL_FEATURE_USBHSD_USB_RAM_BASE_ADDRESS
+	}
+#endif
+
 	dev_state.eps[ep_abs_idx].ep_mps = cfg->ep_mps;
 	status = dev_state.dev_struct.controllerInterface->deviceControl(
 			dev_state.dev_struct.controllerHandle,
@@ -489,8 +501,8 @@ int usb_dc_ep_write(const uint8_t ep, const uint8_t *const data,
 		    const uint32_t data_len, uint32_t *const ret_bytes)
 {
 	uint8_t ep_abs_idx = EP_ABS_IDX(ep);
-	uint8_t *buffer = (uint8_t *)dev_state.eps[ep_abs_idx].block.data;
-	uint32_t len_to_send;
+	uint8_t *buffer;
+	uint32_t len_to_send = data_len;
 	usb_status_t status;
 
 	if (ep_abs_idx >= NUM_OF_EP_MAX) {
@@ -498,15 +510,28 @@ int usb_dc_ep_write(const uint8_t ep, const uint8_t *const data,
 		return -EINVAL;
 	}
 
+	if (USB_EP_GET_DIR(ep) != USB_EP_DIR_IN) {
+		LOG_ERR("Wrong endpoint direction");
+		return -EINVAL;
+	}
+
+	/* Copy the data for SoC's that do not have a USB RAM
+	 * as the SDK driver will copy the data into USB RAM,
+	 * if available.
+	 */
+#ifndef FSL_FEATURE_USBHSD_USB_RAM_BASE_ADDRESS
+	buffer = (uint8_t *)dev_state.eps[ep_abs_idx].block.data;
+
 	if (data_len > dev_state.eps[ep_abs_idx].ep_mps) {
 		len_to_send = dev_state.eps[ep_abs_idx].ep_mps;
-	} else {
-		len_to_send = data_len;
 	}
 
 	for (uint32_t n = 0; n < len_to_send; n++) {
 		buffer[n] = data[n];
 	}
+#else
+	buffer = (uint8_t *)data;
+#endif
 
 #if defined(CONFIG_HAS_MCUX_CACHE) && !defined(EP_BUF_NONCACHED)
 	DCACHE_CleanByRange((uint32_t)buffer, len_to_send);
@@ -558,7 +583,7 @@ int usb_dc_ep_read_wait(uint8_t ep, uint8_t *data, uint32_t max_data_len,
 	uint32_t data_len;
 	uint8_t *bufp = NULL;
 
-	while (dev_state.eps[ep_abs_idx].ep_occupied) {
+	if (dev_state.eps[ep_abs_idx].ep_occupied) {
 		LOG_ERR("Endpoint is occupied by the controller");
 		return -EBUSY;
 	}
@@ -626,8 +651,9 @@ int usb_dc_ep_read_continue(uint8_t ep)
 	uint8_t ep_abs_idx = EP_ABS_IDX(ep);
 	usb_status_t status;
 
-	if (ep_abs_idx >= NUM_OF_EP_MAX) {
-		LOG_ERR("Wrong endpoint index/address");
+	if (ep_abs_idx >= NUM_OF_EP_MAX ||
+	    USB_EP_GET_DIR(ep) != USB_EP_DIR_OUT) {
+		LOG_ERR("Wrong endpoint index/address/direction");
 		return -EINVAL;
 	}
 
@@ -887,9 +913,8 @@ static void usb_isr_handler(void)
 #endif
 }
 
-static int usb_mcux_init(const struct device *dev)
+static int usb_mcux_init(void)
 {
-	ARG_UNUSED(dev);
 
 	k_thread_create(&dev_state.thread, dev_state.thread_stack,
 			CONFIG_USB_MCUX_THREAD_STACK_SIZE,

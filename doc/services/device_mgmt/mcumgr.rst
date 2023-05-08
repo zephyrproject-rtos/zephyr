@@ -43,6 +43,15 @@ Command-line Tool
 MCUmgr provides a command-line tool, :file:`mcumgr`, for managing remote devices.
 The tool is written in the Go programming language.
 
+.. note::
+    This tool is provided for evaluation use only and is not recommended for
+    use in a production environment. It has known issues and will not respect
+    the MCUmgr protocol properly e.g. when an error is received, instead of
+    aborting will, in some circumstances, sit in an endless loop of sending the
+    same command over and over again. A universal replacement for this tool is
+    currently in development and once released, support for the go tool will be
+    dropped entirely.
+
 To install the tool:
 
 .. tabs::
@@ -230,9 +239,10 @@ J-Link Virtual MSD Interaction Note
 On boards where a J-Link OB is present which has both CDC and MSC (virtual Mass
 Storage Device, also known as drag-and-drop) support, the MSD functionality can
 prevent mcumgr commands over the CDC UART port from working due to how USB
-endpoints are configured in the J-Link firmware (for example on the Nordic
-``nrf52840dk``) because of limiting the maximum packet size (most likely to occur
-when using image management commands for updating firmware). This issue can be
+endpoints are configured in the J-Link firmware (for example on the
+:ref:`Nordic nrf52840dk_nrf52840 board <nrf52840dk_nrf52840>`) because of
+limiting the maximum packet size (most likely to occur when using image
+management commands for updating firmware). This issue can be
 resolved by disabling MSD functionality on the J-Link device, follow the
 instructions on :ref:`nordic_segger_msd` to disable MSD support.
 
@@ -387,14 +397,16 @@ After a reset the output with change to::
 The ``confirmed`` flag in the secondary slot tells that after the next reset a
 revert upgrade will be performed to switch back to the original layout.
 
-The command used to confirm that an image is OK and no revert should happen
-(no ``hash`` required) is::
+The ``confirm`` command used to confirm that an image is OK and no revert
+should happen (empty ``hash`` required) is::
 
-  mcumgr <connection-options> image confirm [hash]
+  mcumgr <connection-options> image confirm ""
 
 The ``confirm`` command can also be run passing in a ``hash`` so that instead of
 doing a ``test``/``revert`` procedure, the image in the secondary partition is
-directly upgraded to.
+directly upgraded to, eg::
+
+  mcumgr <connection-options> image confirm <hash>
 
 .. tip::
 
@@ -423,8 +435,8 @@ available sub-commands are::
 
 Statistics are organized in sections (also called groups), and each section can
 be individually queried. Defining new statistics sections is done by using macros
-available under ``<stats/stats.h>``. Each section consists of multiple variables
-(or counters), all with the same size (16, 32 or 64 bits).
+available under :file:`zephyr/stats/stats.h`. Each section consists of multiple
+variables (or counters), all with the same size (16, 32 or 64 bits).
 
 To create a new section ``my_stats``::
 
@@ -436,8 +448,9 @@ To create a new section ``my_stats``::
 
   STATS_SECT_DECL(my_stats) my_stats;
 
-Each entry can be declared with ``STATS_SECT_ENTRY`` (or the equivalent
-``STATS_SECT_ENTRY32``), ``STATS_SECT_ENTRY16`` or ``STATS_SECT_ENTRY64``.
+Each entry can be declared with :c:macro:`STATS_SECT_ENTRY` (or the equivalent
+:c:macro:`STATS_SECT_ENTRY32`), :c:macro:`STATS_SECT_ENTRY16` or
+:c:macro:`STATS_SECT_ENTRY64`.
 All statistics in a section must be declared with the same size.
 
 The statistics counters can either have names or not, depending on the setting
@@ -468,7 +481,8 @@ The final steps to use a statistics section is to initialize and register it::
   assert (rc == 0);
 
 In the running code a statistics counter can be incremented by 1 using
-``STATS_INC``, by N using ``STATS_INCN`` or reset with ``STATS_CLEAR``.
+:c:macro:`STATS_INC`, by N using :c:macro:`STATS_INCN` or reset with
+:c:macro:`STATS_CLEAR`.
 
 Let's suppose we want to increment those counters by ``1``, ``2`` and ``3``
 every second. To get a list of stats::
@@ -580,3 +594,8 @@ Discord channel
 Developers welcome!
 
 * Discord mcumgr channel: https://discord.com/invite/Ck7jw53nU2
+
+API Reference
+*************
+
+.. doxygengroup:: mcumgr_mgmt_api

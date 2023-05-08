@@ -1,0 +1,16 @@
+# ST Microelectronics STM32H5 MCU line
+
+# Copyright (c) 2023 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_STM32H5X
+
+source "soc/arm/st_stm32/stm32h5/Kconfig.defconfig.stm32h5*"
+
+config SOC_SERIES
+	default "stm32h5"
+
+config ROM_START_OFFSET
+	default 0x400 if BOOTLOADER_MCUBOOT
+
+endif # SOC_SERIES_STM32H5X

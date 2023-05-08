@@ -1,0 +1,7 @@
+sample:
+  name: Bluetooh Peripheral Accept List
+tests:
+  sample.bluetooth.peripheral_accept_list:
+    harness: bluetooth
+    platform_allow: qemu_x86
+    tags: bluetooth

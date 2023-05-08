@@ -30,5 +30,5 @@ zephyr_linker_sources_ifdef(CONFIG_USB_DEVICE_DRIVER
   SECTIONS usb.ld)
 
 if(CONFIG_FLASH_MCUX_FLEXSPI_XIP)
-zephyr_code_relocate(flash_clock_setup.c RAM)
+  zephyr_code_relocate(FILES flash_clock_setup.c LOCATION RAM)
 endif()

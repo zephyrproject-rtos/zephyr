@@ -10,6 +10,7 @@ config ZEPHYR_TRUSTED_FIRMWARE_M_MODULE
 config TFM_BOARD
 	string
 	default "nordic_nrf/nrf9160dk_nrf9160" if BOARD_NRF9160DK_NRF9160_NS
+	default "nordic_nrf/nrf9161dk_nrf9161" if BOARD_NRF9161DK_NRF9161_NS
 	default "nordic_nrf/nrf5340dk_nrf5340_cpuapp" if BOARD_NRF5340DK_NRF5340_CPUAPP_NS
 	default "nxp/lpcxpresso55s69" if BOARD_LPCXPRESSO55S69_CPU0
 	default "arm/mps2/an521" if BOARD_MPS2_AN521_CPU0_NS
@@ -231,6 +232,18 @@ config TFM_USE_NS_APP
 	  This option is intended for testing purposes only, since this is the
 	  easiest way to integrate and run the TF-M regression tests in the
 	  zephyr build system.
+
+config TFM_CONNECTION_BASED_SERVICE_API
+	bool "TF-M use connection based service APIs"
+	help
+	  The TF-M build system produces an interface source file for accessing
+	  connection based services.
+	  Select this option when TF-M service models requires this source file.
+
+	  Note: This is an auto-generated configuration in the TF-M build
+	  system. When this option is not enabled in the TF-M build system this
+	  will result in compilation error.
+
 if TFM_BL2
 
 config TFM_MCUBOOT_IMAGE_NUMBER
@@ -268,6 +281,17 @@ config TFM_MCUBOOT_PATH_DOWNLOAD
 
 endchoice
 
+config TFM_QCBOR_PATH
+	string
+	prompt "Path to QCBOR or DOWNLOAD to fetch automatically"
+	default ""
+	help
+	  Path to QCBOR for TF-M builds. Due to a license issue with this
+	  library Zephyr does not ship with this library.
+	  If the application wishes to still use this library they can point
+	  to their own checkout of this library, or set to DOWNLOAD to allow
+	  TF-M build system to automatically download this.
+
 config TFM_MCUBOOT_DATA_SHARING
 	bool "Share app-specific data between TF-M and MCUBoot"
 	help
@@ -282,16 +306,6 @@ choice TFM_MODEL
 	help
 	  The Firmware Framework M (FF-M) provides different programming models
 	  for Secure Partitions.
-
-config TFM_LIBRARY
-	bool "Library Model"
-	help
-	  Use the library model instead of PSA API.
-
-	  The library model conforms to the PSA Firmware Framework for M (FF-M)
-	  v1.0.
-
-	  NOTE: The Library Model will be removed and replaced by the SFN model.
 
 config TFM_IPC
 	bool "IPC Model"

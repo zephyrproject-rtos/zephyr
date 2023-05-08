@@ -8,6 +8,6 @@ compatible: "ti,cc1200"
 include: spi-device.yaml
 
 properties:
-    int-gpios:
-      type: phandle-array
-      required: true
+  int-gpios:
+    type: phandle-array
+    required: true

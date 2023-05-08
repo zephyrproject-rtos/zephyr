@@ -8,6 +8,7 @@
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/drivers/clock_control/atmel_sam_pmc.h>
 #include <soc.h>
 
 #include <zephyr/logging/log.h>
@@ -23,11 +24,9 @@ struct memc_smc_bank_config {
 
 struct memc_smc_config {
 	Smc *regs;
-	uint32_t periph_id;
-
 	size_t banks_len;
 	const struct memc_smc_bank_config *banks;
-
+	const struct atmel_sam_pmc_config clock_cfg;
 	const struct pinctrl_dev_config *pcfg;
 };
 
@@ -37,7 +36,9 @@ static int memc_smc_init(const struct device *dev)
 	const struct memc_smc_config *cfg = dev->config;
 	SmcCs_number *bank;
 
-	soc_pmc_peripheral_enable(cfg->periph_id);
+	/* Enable SMC clock in PMC */
+	(void)clock_control_on(SAM_DT_PMC_CONTROLLER,
+			       (clock_control_subsys_t)&cfg->clock_cfg);
 
 	ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret < 0) {
@@ -93,7 +94,7 @@ static int memc_smc_init(const struct device *dev)
 	PINCTRL_DT_INST_DEFINE(inst);							\
 	static const struct memc_smc_config smc_config_##inst = {			\
 		.regs = (Smc *)DT_INST_REG_ADDR(inst),					\
-		.periph_id = DT_INST_PROP(inst, peripheral_id),				\
+		.clock_cfg = SAM_DT_INST_CLOCK_PMC_CFG(inst),				\
 		.banks_len = ARRAY_SIZE(smc_bank_config_##inst),			\
 		.banks = smc_bank_config_##inst,					\
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),				\

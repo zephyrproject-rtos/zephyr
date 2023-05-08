@@ -1,0 +1,6 @@
+# Copyright (c) 2022 Bjarki Arge Andreasen
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  drivers.rtc.rtc_api:
+    tags: drivers rtc api helpers

@@ -26,9 +26,8 @@ int bt_long_wq_submit(struct k_work *work)
 	return k_work_submit_to_queue(&bt_long_wq, work);
 }
 
-static int long_wq_init(const struct device *d)
+static int long_wq_init(void)
 {
-	ARG_UNUSED(d);
 
 	const struct k_work_queue_config cfg = {.name = "BT_LW_WQ"};
 

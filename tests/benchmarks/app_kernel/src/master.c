@@ -111,7 +111,7 @@ void output_close(void)
  * see config.h to select or to unselect
  *
  */
-void main(void)
+int main(void)
 {
 	int autorun = 0, continuously = 0;
 
@@ -144,6 +144,7 @@ void main(void)
 	k_thread_abort(RECVTASK);
 
 	output_close();
+	return 0;
 }
 
 

@@ -24,6 +24,7 @@
 
 #include "ticker/ticker.h"
 
+#include "pdu_vendor.h"
 #include "pdu.h"
 
 #include "lll.h"
@@ -78,7 +79,7 @@ static inline bool isr_rx_ci_adva_check(struct pdu_adv *adv,
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 #define PAYLOAD_BASED_FRAG_COUNT \
-	ceiling_fraction(CONFIG_BT_CTLR_ADV_DATA_LEN_MAX, \
+	DIV_ROUND_UP(CONFIG_BT_CTLR_ADV_DATA_LEN_MAX, \
 			 PDU_AC_PAYLOAD_SIZE_MAX)
 #define BT_CTLR_ADV_AUX_SET  CONFIG_BT_CTLR_ADV_AUX_SET
 #if defined(CONFIG_BT_CTLR_ADV_PERIODIC)

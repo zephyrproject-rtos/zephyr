@@ -45,10 +45,6 @@ static struct k_thread cmd_thread_data;
 struct usb_rndis_config {
 	struct usb_association_descriptor iad;
 	struct usb_if_descriptor if0;
-	struct cdc_header_descriptor if0_header;
-	struct cdc_cm_descriptor if0_cm;
-	struct cdc_acm_descriptor if0_acm;
-	struct cdc_union_descriptor if0_union;
 	struct usb_ep_descriptor if0_int_ep;
 
 	struct usb_if_descriptor if1;
@@ -62,59 +58,22 @@ USBD_CLASS_DESCR_DEFINE(primary, 0) struct usb_rndis_config rndis_cfg = {
 		.bDescriptorType = USB_DESC_INTERFACE_ASSOC,
 		.bFirstInterface = 0,
 		.bInterfaceCount = 0x02,
-		.bFunctionClass = USB_BCC_CDC_CONTROL,
-		.bFunctionSubClass = 6,
-		.bFunctionProtocol = 0,
+		.bFunctionClass = USB_BCC_MISCELLANEOUS,
+		.bFunctionSubClass = 4,
+		.bFunctionProtocol = 1,
 		.iFunction = 0,
 	},
 	/* Interface descriptor 0 */
-	/* CDC Communication interface */
 	.if0 = {
 		.bLength = sizeof(struct usb_if_descriptor),
 		.bDescriptorType = USB_DESC_INTERFACE,
 		.bInterfaceNumber = 0,
 		.bAlternateSetting = 0,
 		.bNumEndpoints = 1,
-		.bInterfaceClass = USB_BCC_CDC_CONTROL,
-		.bInterfaceSubClass = ACM_SUBCLASS,
-		.bInterfaceProtocol = ACM_VENDOR_PROTOCOL,
+		.bInterfaceClass = USB_BCC_MISCELLANEOUS,
+		.bInterfaceSubClass = 4,
+		.bInterfaceProtocol = 1,
 		.iInterface = 0,
-	},
-	/* Header Functional Descriptor */
-	.if0_header = {
-		.bFunctionLength = sizeof(struct cdc_header_descriptor),
-		.bDescriptorType = USB_DESC_CS_INTERFACE,
-		.bDescriptorSubtype = HEADER_FUNC_DESC,
-		.bcdCDC = sys_cpu_to_le16(USB_SRN_1_1),
-	},
-	/* Call Management Functional Descriptor */
-	.if0_cm = {
-		.bFunctionLength = sizeof(struct cdc_cm_descriptor),
-		.bDescriptorType = USB_DESC_CS_INTERFACE,
-		.bDescriptorSubtype = CALL_MANAGEMENT_FUNC_DESC,
-		.bmCapabilities = 0x00,
-		.bDataInterface = 1,
-	},
-	/* ACM Functional Descriptor */
-	.if0_acm = {
-		.bFunctionLength = sizeof(struct cdc_acm_descriptor),
-		.bDescriptorType = USB_DESC_CS_INTERFACE,
-		.bDescriptorSubtype = ACM_FUNC_DESC,
-		/* Device supports the request combination of:
-		 *	Set_Line_Coding,
-		 *	Set_Control_Line_State,
-		 *	Get_Line_Coding
-		 *	and the notification Serial_State
-		 */
-		.bmCapabilities = 0x00,
-	},
-	/* Union Functional Descriptor */
-	.if0_union = {
-		.bFunctionLength = sizeof(struct cdc_union_descriptor),
-		.bDescriptorType = USB_DESC_CS_INTERFACE,
-		.bDescriptorSubtype = UNION_FUNC_DESC,
-		.bControlInterface = 0,
-		.bSubordinateInterface0 = 1,
 	},
 	/* Notification EP Descriptor */
 	.if0_int_ep = {
@@ -126,9 +85,7 @@ USBD_CLASS_DESCR_DEFINE(primary, 0) struct usb_rndis_config rndis_cfg = {
 			sys_cpu_to_le16(CONFIG_RNDIS_INTERRUPT_EP_MPS),
 		.bInterval = 0x09,
 	},
-
 	/* Interface descriptor 1 */
-	/* CDC Data Interface */
 	.if1 = {
 		.bLength = sizeof(struct usb_if_descriptor),
 		.bDescriptorType = USB_DESC_INTERFACE,
@@ -197,7 +154,7 @@ static struct __rndis {
 	uint8_t media_status;
 } rndis = {
 	.mac =  { 0x00, 0x00, 0x5E, 0x00, 0x53, 0x01 },
-	.mtu = 1500, /* Ethernet frame */
+	.mtu = NET_ETH_MTU, /* Ethernet frame */
 	.media_status = RNDIS_OBJECT_ID_MEDIA_DISCONNECTED,
 	.state = UNINITIALIZED,
 	.skip_bytes = 0,
@@ -207,8 +164,17 @@ static struct __rndis {
 static uint8_t manufacturer[] = CONFIG_USB_DEVICE_MANUFACTURER;
 static uint32_t drv_version = 1U;
 
-static uint8_t tx_buf[NET_ETH_MAX_FRAME_SIZE +
-				sizeof(struct rndis_payload_packet)];
+/**
+ * Assumes MaxPacketsPerTransfer of 1 and 802.2 (ethernet) medium.
+ */
+#define RNDIS_BUF_SIZE (NET_ETH_MAX_FRAME_SIZE + sizeof(struct rndis_payload_packet))
+
+static uint8_t tx_buf[RNDIS_BUF_SIZE];
+
+/**
+ * TODO: package reception can be optimized to avoid rx_buf usage.
+ */
+static uint8_t rx_buf[RNDIS_BUF_SIZE];
 
 static uint32_t object_id_supported[] = {
 	RNDIS_OBJECT_ID_GEN_SUPP_LIST,
@@ -318,7 +284,6 @@ void rndis_clean(void)
 
 static void rndis_bulk_out(uint8_t ep, enum usb_dc_ep_cb_status_code ep_status)
 {
-	uint8_t buffer[CONFIG_RNDIS_BULK_EP_MPS];
 	uint32_t hdr_offset = 0U;
 	uint32_t len, read;
 
@@ -326,13 +291,13 @@ static void rndis_bulk_out(uint8_t ep, enum usb_dc_ep_cb_status_code ep_status)
 
 	LOG_DBG("EP 0x%x status %d len %u", ep, ep_status, len);
 
-	if (len > CONFIG_RNDIS_BULK_EP_MPS) {
-		LOG_WRN("Limit read len %u to MPS %u", len,
-			CONFIG_RNDIS_BULK_EP_MPS);
-		len = CONFIG_RNDIS_BULK_EP_MPS;
+	if (len > sizeof(rx_buf)) {
+		LOG_WRN("Trying to receive too much data, drop");
+		rndis_clean();
+		return;
 	}
 
-	usb_read(ep, buffer, len, &read);
+	usb_read(ep, rx_buf, len, &read);
 	if (len != read) {
 		LOG_ERR("Read %u instead of expected %u, skip the rest",
 			    read, len);
@@ -343,7 +308,7 @@ static void rndis_bulk_out(uint8_t ep, enum usb_dc_ep_cb_status_code ep_status)
 	/* We already use frame keeping with len, warn here about
 	 * receiving frame delimiter
 	 */
-	if (len == 1U && !buffer[0]) {
+	if (len == 1U && !rx_buf[0]) {
 		LOG_DBG("Got frame delimiter, skip");
 		return;
 	}
@@ -371,7 +336,7 @@ static void rndis_bulk_out(uint8_t ep, enum usb_dc_ep_cb_status_code ep_status)
 		/* Append data only, skipping RNDIS header */
 		hdr_offset = sizeof(struct rndis_payload_packet);
 
-		rndis.in_pkt_len = parse_rndis_header(buffer, len);
+		rndis.in_pkt_len = parse_rndis_header(rx_buf, len);
 		if (rndis.in_pkt_len < 0) {
 			LOG_ERR("Error parsing RNDIS header");
 
@@ -399,7 +364,7 @@ static void rndis_bulk_out(uint8_t ep, enum usb_dc_ep_cb_status_code ep_status)
 	}
 
 	if (net_pkt_write(rndis.in_pkt,
-			  buffer + hdr_offset, len - hdr_offset)) {
+			  rx_buf + hdr_offset, len - hdr_offset)) {
 		LOG_ERR("Error writing data to pkt: %p", rndis.in_pkt);
 		rndis_clean();
 		rndis.rx_err++;
@@ -500,10 +465,7 @@ static int rndis_init_handle(uint8_t *data, uint32_t len)
 	rsp->flags = sys_cpu_to_le32(RNDIS_FLAG_CONNECTIONLESS);
 	rsp->medium = sys_cpu_to_le32(RNDIS_MEDIUM_WIRED_ETHERNET);
 	rsp->max_packets = sys_cpu_to_le32(1);
-	rsp->max_transfer_size = sys_cpu_to_le32(rndis.mtu +
-						 sizeof(struct net_eth_hdr) +
-						 sizeof(struct
-							rndis_payload_packet));
+	rsp->max_transfer_size = sys_cpu_to_le32(RNDIS_BUF_SIZE);
 
 	rsp->pkt_align_factor = sys_cpu_to_le32(0);
 	(void)memset(rsp->__reserved, 0, sizeof(rsp->__reserved));
@@ -1068,9 +1030,8 @@ static struct usb_os_descriptor os_desc = {
 };
 #endif /* CONFIG_USB_DEVICE_OS_DESC */
 
-static int rndis_init(const struct device *arg)
+static int rndis_init(void)
 {
-	ARG_UNUSED(arg);
 
 	LOG_DBG("RNDIS initialization");
 
@@ -1151,8 +1112,6 @@ static void netusb_interface_config(struct usb_desc_header *head,
 	ARG_UNUSED(head);
 
 	rndis_cfg.if0.bInterfaceNumber = bInterfaceNumber;
-	rndis_cfg.if0_union.bControlInterface = bInterfaceNumber;
-	rndis_cfg.if0_union.bSubordinateInterface0 = bInterfaceNumber + 1;
 	rndis_cfg.if1.bInterfaceNumber = bInterfaceNumber + 1;
 	rndis_cfg.iad.bFirstInterface = bInterfaceNumber;
 }

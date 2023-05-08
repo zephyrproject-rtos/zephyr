@@ -38,6 +38,32 @@ references to optional :ref:`binary blobs <bin-blobs>`.
 This page summarizes a list of policies and best practices which aim at
 better organizing the workflow in Zephyr modules.
 
+.. _modules-vs-projects:
+
+Modules vs west projects
+************************
+
+Zephyr modules, described in this page, are not the same as :ref:`west projects
+<west-workspace>`. In fact, modules :ref:`do not require west
+<modules_without_west>` at all. However, when using modules :ref:`with west
+<modules_using_west>`, then the build system uses west in order to find modules.
+
+In summary:
+
+Modules are repositories that contain a :file:`zephyr/module.yml` file, so that
+the Zephyr build system can pull in the source code from the repository.
+:ref:`West projects <west-manifests-projects>` are entries in the `projects:`
+section in the :file:`west.yml` manifest file.
+West projects are often also modules, but not always. There are west projects
+that are not included in the final firmware image (eg. tools) and thus do not
+need to be modules.
+Modules are found by the Zephyr build system either via :ref:`west itself
+<modules_using_west>`, or via the :ref:`ZEPHYR_MODULES CMake variable
+<modules_without_west>`.
+
+The contents of this page only apply to modules, and not to west projects in
+general (unless they are a module themselves).
+
 Module Repositories
 *******************
 
@@ -495,12 +521,63 @@ module:
      cmake: .
      kconfig: Kconfig
 
+.. _sysbuild_module_integration:
+
+Sysbuild integration
+====================
+
+:ref:`Sysbuild<sysbuild>` is the Zephyr build system that allows for building
+multiple images as part of a single application, the sysbuild build process
+can be extended externally with modules as needed, for example to add custom
+build steps or add additional targets to a build. Inclusion of
+sysbuild-specific build files, :file:`CMakeLists.txt` and :file:`Kconfig`, can
+be described as:
+
+.. code-block:: yaml
+
+   build:
+     sysbuild-cmake: <cmake-directory>
+     sysbuild-kconfig: <directory>/Kconfig
+
+The ``sysbuild-cmake: <cmake-directory>`` part specifies that
+:file:`<cmake-directory>` contains the :file:`CMakeLists.txt` to use. The
+``sysbuild-kconfig: <directory>/Kconfig`` part specifies the Kconfig file to
+use.
+
+Here is an example :file:`module.yml` file referring to
+:file:`CMakeLists.txt` and :file:`Kconfig` files in the `sysbuild` directory of
+the module:
+
+.. code-block:: yaml
+
+   build:
+     sysbuild-cmake: sysbuild
+     sysbuild-kconfig: sysbuild/Kconfig
+
+The module description file :file:`zephyr/module.yml` can also be used to
+specify that the build files, :file:`CMakeLists.txt` and :file:`Kconfig`, are
+located in a :ref:`modules_module_ext_root`.
+
+Build files located in a ``MODULE_EXT_ROOT`` can be described as:
+
+.. code-block:: yaml
+
+   build:
+     sysbuild-cmake-ext: True
+     sysbuild-kconfig-ext: True
+
+This allows control of the build inclusion to be described externally to the
+Zephyr module.
+
 Build system integration
 ========================
 
 When a module has a :file:`module.yml` file, it will automatically be included into
 the Zephyr build system. The path to the module is then accessible through Kconfig
 and CMake variables.
+
+Zephyr modules
+--------------
 
 In both Kconfig and CMake, the variable ``ZEPHYR_<MODULE_NAME>_MODULE_DIR``
 contains the absolute path to the module.
@@ -561,6 +638,88 @@ Zephyr CMakeLists.txt scope:
 
 An example of a Zephyr list where this is useful is when adding additional
 directories to the ``SYSCALL_INCLUDE_DIRS`` list.
+
+Sysbuild modules
+----------------
+
+In both Kconfig and CMake, the variable ``SYSBUILD_CURRENT_MODULE_DIR``
+contains the absolute path to the sysbuild module. In CMake,
+``SYSBUILD_CURRENT_CMAKE_DIR`` contains the absolute path to the directory
+containing the :file:`CMakeLists.txt` file that is included into CMake build
+system. This variable's value is empty if the module.yml file does not specify
+a CMakeLists.txt.
+
+To read these variables for a sysbuild module:
+
+- In CMake: use ``${SYSBUILD_CURRENT_MODULE_DIR}`` for the module's top level
+  directory, and ``${SYSBUILD_CURRENT_CMAKE_DIR}`` for the directory containing
+  its :file:`CMakeLists.txt`
+- In Kconfig: use ``$(SYSBUILD_CURRENT_MODULE_DIR)`` for the module's top level
+  directory
+
+In Kconfig, the variable may be used to find additional files to include.
+For example, to include the file :file:`some/Kconfig`:
+
+.. code-block:: kconfig
+
+  source "$(SYSBUILD_CURRENT_MODULE_DIR)/some/Kconfig"
+
+The module can source additional CMake files using these variables. For
+example:
+
+.. code-block:: cmake
+
+  include(${SYSBUILD_CURRENT_MODULE_DIR}/cmake/code.cmake)
+
+It is possible to append values to a Zephyr CMake list variable from the
+module's first CMakeLists.txt file.
+To do so, append the value to the list and then set the list in the
+PARENT_SCOPE of the CMakeLists.txt file. For example, to append ``bar`` to the
+``FOO_LIST`` variable in the Zephyr CMakeLists.txt scope:
+
+.. code-block:: cmake
+
+  list(APPEND FOO_LIST bar)
+  set(FOO_LIST ${FOO_LIST} PARENT_SCOPE)
+
+Sysbuild modules hooks
+----------------------
+
+Sysbuild provides an infrastructure which allows a sysbuild module to define
+a function which will be invoked by sysbuild at a pre-defined point in the
+CMake flow.
+
+Functions invoked by sysbuild:
+
+- ``<module-name>_pre_cmake(IMAGES <images>)``: This function is called for each
+  sysbuild module before CMake configure is invoked for all images.
+- ``<module-name>_post_cmake(IMAGES <images>)``: This function is called for each
+  sysbuild module after CMake configure has completed for all images.
+- ``<module-name>_pre_domains(IMAGES <images>)``: This function is called for each
+  sysbuild module before domains yaml is created by sysbuild.
+- ``<module-name>_post_domains(IMAGES <images>)``: This function is called for each
+  sysbuild module after domains yaml has been created by sysbuild.
+
+arguments passed from sysbuild to the function defined by a module:
+
+- ``<images>`` is the list of Zephyr images that will be created by the build system.
+
+If a module ``foo`` want to provide a post CMake configure function, then the
+module's sysbuild :file:`CMakeLists.txt` file must define function ``foo_post_cmake()``.
+
+To facilitate naming of functions, the module name is provided by sysbuild CMake
+through the ``SYSBUILD_CURRENT_MODULE_NAME`` CMake variable when loading the
+module's sysbuild :file:`CMakeLists.txt` file.
+
+Example of how the ``foo`` sysbuild module can define ``foo_post_cmake()``:
+
+.. code-block:: cmake
+
+   function(${SYSBUILD_CURRENT_MODULE_NAME}_post_cmake)
+     cmake_parse_arguments(POST_CMAKE "" "" "IMAGES" ${ARGN})
+
+     message("Invoking ${CMAKE_CURRENT_FUNCTION}. Images: ${POST_CMAKE_IMAGES}")
+   endfunction()
 
 Zephyr module dependencies
 ==========================
@@ -717,6 +876,12 @@ Build settings supported in the :file:`module.yml` file are:
 - ``dts_root``: Contains additional dts files related to the architecture/soc
   families. Additional dts files must be located in a :file:`<dts_root>/dts`
   folder.
+- ``snippet_root``: Contains additional snippets that are available for use.
+  These snippets must be defined in :file:`snippet.yml` files underneath the
+  :file:`<snippet_root>/snippets` folder. For example, if you have
+  ``snippet_root: foo``, then you should place your module's
+  :file:`snippet.yml` files in :file:`<your-module>/foo/snippets` or any
+  nested subdirectory.
 - ``soc_root``: Contains additional SoCs that are available to the build
   system. Additional SoCs must be located in a :file:`<soc_root>/soc` folder.
 - ``arch_root``: Contains additional architectures that are available to the
@@ -724,6 +889,10 @@ Build settings supported in the :file:`module.yml` file are:
   :file:`<arch_root>/arch` folder.
 - ``module_ext_root``: Contains :file:`CMakeLists.txt` and :file:`Kconfig` files
   for Zephyr modules, see also :ref:`modules_module_ext_root`.
+- ``sca_root``: Contains additional :ref:`SCA <sca>` tool implementations
+  available to the build system. Each tool must be located in
+  :file:`<sca_root>/sca/<tool>` folder. The folder must contain a
+  :file:`sca.cmake`.
 
 Example of a :file:`module.yaml` file containing additional roots, and the
 corresponding file system layout.
@@ -894,7 +1063,9 @@ module.
 To avoid merging changes to master with pull request information, the pull
 request should be marked as ``DNM`` (Do Not Merge) or preferably a draft pull
 request to make sure it is not merged by mistake and to allow for the module to
-be merged first and be assigned a permanent commit hash. Once the module is
+be merged first and be assigned a permanent commit hash. Drafts reduce noise by
+not automatically notifying anyone until marked as "Ready for review".
+Once the module is
 merged, the revision will need to be changed either by the submitter or by the
 maintainer to the commit hash of the module which reflects the changes.
 
@@ -951,7 +1122,8 @@ Process for submitting changes to existing modules
 ==================================================
 
 #. Submit the changes using a pull request to an existing repository following
-   the :ref:`contribution guidelines <contribute_guidelines>`.
+   the :ref:`contribution guidelines <contribute_guidelines>` and
+   :ref:`expectations <contributor-expectations>`.
 #. Submit a pull request changing the entry referencing the module into the
    :zephyr_file:`west.yml` of the main Zephyr tree with the following
    information:

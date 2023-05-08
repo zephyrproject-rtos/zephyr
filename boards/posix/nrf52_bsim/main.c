@@ -8,7 +8,6 @@
 #include "NRF_HW_model_top.h"
 #include "NRF_HWLowL.h"
 #include "bs_tracing.h"
-#include "bs_symbols.h"
 #include "bs_types.h"
 #include "bs_utils.h"
 #include "bs_rand_main.h"
@@ -81,8 +80,6 @@ int main(int argc, char *argv[])
 	args = nrfbsim_argsparse(argc, argv);
 	global_device_nbr = args->global_device_nbr;
 
-	bs_read_function_names_from_Tsymbols(argv[0]);
-
 	run_native_tasks(_NATIVE_PRE_BOOT_2_LEVEL);
 
 	bs_trace_raw(9, "%s: Connecting to phy...\n", __func__);
@@ -95,11 +92,13 @@ int main(int argc, char *argv[])
 	/* We pass to a possible testcase its command line arguments */
 	bst_pass_args(args->test_case_argc, args->test_case_argv);
 
-	if ((args->nrf_hw.start_offset > 0) && (args->delay_init)) {
+	if (((args->nrf_hw.start_offset > 0) && (args->delay_init))
+	    || args->sync_preinit) {
 		/* Delay the next steps until the simulation time has
-		 * reached start_offset
+		 * reached either time 0 or start_offset.
 		 */
-		hwll_wait_for_phy_simu_time(args->nrf_hw.start_offset);
+		hwll_wait_for_phy_simu_time(BS_MAX(args->nrf_hw.start_offset, 0));
+		args->sync_preboot = false; /* Already sync'ed */
 	}
 
 	nrf_hw_initialize(&args->nrf_hw);
@@ -107,6 +106,10 @@ int main(int argc, char *argv[])
 	run_native_tasks(_NATIVE_PRE_BOOT_3_LEVEL);
 
 	bst_pre_init();
+
+	if (args->sync_preboot) {
+		hwll_wait_for_phy_simu_time(BS_MAX(args->nrf_hw.start_offset, 0));
+	}
 
 	posix_boot_cpu();
 

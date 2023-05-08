@@ -124,6 +124,74 @@ type, and provide the common code for walking through submission queue
 chains by providing calls the iodev may use to signal completion,
 error, or a need to suspend and wait.
 
+Memory pools
+************
+
+In some cases, the consumer may not know how much data will be produced.
+Alternatively, a consumer might be handling data from multiple producers where
+the frequency of the data is unpredictable. In these cases, read operations may
+not want to bind memory at the time of allocation, but leave it to the IODev.
+In such cases, there exists a macro :c:macro:`RTIO_DEFINE_WITH_MEMPOOL`. It
+allows creating the RTIO context with a dedicated pool of "memory blocks" which
+can be consumed by the IODev. Below is a snippet setting up the RTIO context
+with a memory pool. The memory pool has 128 blocks, each block has the size of
+16 bytes, and the data is 4 byte aligned.
+
+.. code-block:: C
+
+  #include <zephyr/rtio/rtio.h>
+
+  #define SQ_SIZE       4
+  #define CQ_SIZE       4
+  #define MEM_BLK_COUNT 128
+  #define MEM_BLK_SIZE  16
+  #define MEM_BLK_ALIGN 4
+
+  RTIO_EXECUTOR_SIMPLE_DEFINE(simple_exec);
+  RTIO_DEFINE_WITH_MEMPOOL(rtio_context, (struct rtio_executor *)&simple_exec,
+      SQ_SIZE, CQ_SIZE, MEM_BLK_COUNT, MEM_BLK_SIZE, MEM_BLK_ALIGN);
+
+When a read is needed, the consumer simply needs to replace the call
+:c:func:`rtio_sqe_prep_read` (which takes a pointer to a buffer and a length)
+with a call to :c:func:`rtio_sqe_prep_read_with_pool`. The IODev requires
+only a small change which works with both pre-allocated data buffers as well as
+the mempool. When the read is ready, instead of getting the buffers directly
+from the :c:struct:`rtio_iodev_sqe`, the IODev should get the buffer and count
+by calling :c:func:`rtio_sqe_rx_buf` like so:
+
+.. code-block:: C
+
+  uint8_t *buf;
+  uint32_t buf_len;
+  int rc = rtio_sqe_rx_buff(iodev_sqe, MIN_BUF_LEN, DESIRED_BUF_LEN, &buf, &buf_len);
+
+  if (rc != 0) {
+    LOG_ERR("Failed to get buffer of at least %u bytes", MIN_BUF_LEN);
+    return;
+  }
+
+Finally, the consumer will be able to access the allocated buffer via
+c:func:`rtio_cqe_get_mempool_buffer`.
+
+.. code-block:: C
+
+  uint8_t *buf;
+  uint32_t buf_len;
+  int rc = rtio_cqe_get_mempool_buffer(&rtio_context, &cqe, &buf, &buf_len);
+
+  if (rc != 0) {
+    LOG_ERR("Failed to get mempool buffer");
+    return rc;
+  }
+
+  /* Release the cqe events (note that the buffer is not released yet */
+  rtio_cqe_release_all(&rtio_context);
+
+  /* Do something with the memory */
+
+  /* Release the mempool buffer */
+  rtio_release_buffer(&rtio_context, buf);
+
 Outstanding Questions
 *********************
 

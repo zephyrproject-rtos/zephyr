@@ -74,7 +74,7 @@ ACCEPTABLE_ESCAPE_CHARS = [
 
 def parse_args():
     """Parse command line arguments"""
-    argparser = argparse.ArgumentParser()
+    argparser = argparse.ArgumentParser(allow_abbrev=False)
 
     argparser.add_argument("elffile", help="Zephyr ELF binary")
     argparser.add_argument("--build", help="Build ID")
@@ -167,7 +167,7 @@ def find_log_const_symbols(elf):
     return ret_list
 
 
-def parse_log_const_symbols(database, log_const_section, log_const_symbols, string_mappings):
+def parse_log_const_symbols(database, log_const_area, log_const_symbols, string_mappings):
     """Find the log instances and map source IDs to names"""
     if database.is_tgt_little_endian():
         formatter = "<"
@@ -192,17 +192,17 @@ def parse_log_const_symbols(database, log_const_section, log_const_symbols, stri
         if sym.entry['st_value'] < first_offset:
             first_offset = sym.entry['st_value']
 
-    first_offset -= log_const_section['start']
+    first_offset -= log_const_area['start']
 
     # find all log_const_*
     for sym in log_const_symbols:
-        # Find data offset in log_const_section for this symbol
-        offset = sym.entry['st_value'] - log_const_section['start']
+        # Find data offset in log_const_area for this symbol
+        offset = sym.entry['st_value'] - log_const_area['start']
 
         idx_s = offset
         idx_e = offset + datum_size
 
-        datum = log_const_section['data'][idx_s:idx_e]
+        datum = log_const_area['data'][idx_s:idx_e]
 
         if len(datum) != datum_size:
             # Not enough data to unpack
@@ -266,13 +266,13 @@ def extract_logging_subsys_information(elf, database, string_mappings):
     mapping from source ID to name.
     """
     # Extract log constant section for module names
-    section_log_const = find_elf_sections(elf, "log_const_sections")
+    section_log_const = find_elf_sections(elf, "log_const_area")
     if section_log_const is None:
-        # ESP32 puts "log_const_*" info log_static_section instead of log_const_sections
+        # ESP32 puts "log_const_*" info log_static_section instead of log_const_areas
         section_log_const = find_elf_sections(elf, "log_static_section")
 
     if section_log_const is None:
-        logger.error("Cannot find section 'log_const_sections' in ELF file, exiting...")
+        logger.error("Cannot find section 'log_const_areas' in ELF file, exiting...")
         sys.exit(1)
 
     # Find all "log_const_*" symbols and parse them

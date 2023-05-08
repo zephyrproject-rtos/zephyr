@@ -5,5 +5,5 @@ description: Interrupt controller with two cells
 compatible: "interrupt-two-cell"
 
 interrupt-cells:
-    - one
-    - two
+  - one
+  - two

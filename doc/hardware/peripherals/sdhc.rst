@@ -1,8 +1,8 @@
 .. _sdhc_api:
 
 
-SDHC
-####
+Secure Digital High Capacity (SDHC)
+###################################
 
 The SDHC api offers a generic interface for interacting with an SD host
 controller device. It is used by the SD subsystem, and is not intended to be

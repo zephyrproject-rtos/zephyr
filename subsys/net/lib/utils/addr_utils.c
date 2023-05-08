@@ -31,8 +31,8 @@ const char *net_addr_str_find_port(const char *addr_str)
 }
 
 int net_getaddrinfo_addr_str(const char *addr_str, const char *def_port,
-			     const struct addrinfo *hints,
-			     struct addrinfo **res)
+			     const struct zsock_addrinfo *hints,
+			     struct zsock_addrinfo **res)
 {
 	const char *port;
 	char host[NI_MAXHOST];
@@ -58,7 +58,7 @@ int net_getaddrinfo_addr_str(const char *addr_str, const char *def_port,
 		addr_str = host;
 	}
 
-	return getaddrinfo(addr_str, port, hints, res);
+	return zsock_getaddrinfo(addr_str, port, hints, res);
 }
 
 #endif

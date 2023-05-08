@@ -239,11 +239,10 @@ __weak void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 }
 
 /* Initialize power system */
-static int rt10xx_power_init(const struct device *dev)
+static int rt10xx_power_init(void)
 {
 	dcdc_internal_regulator_config_t reg_config;
 
-	ARG_UNUSED(dev);
 
 	/* Ensure clocks to ARM core memory will not be gated in low power mode
 	 * if interrupt is pending

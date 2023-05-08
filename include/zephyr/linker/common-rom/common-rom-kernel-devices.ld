@@ -73,12 +73,7 @@
 	ITERABLE_SECTION_ROM(_static_thread_data, 4)
 
 #if defined(CONFIG_PCIE)
-	SECTION_DATA_PROLOGUE(irq_alloc,,)
-	{
-		__irq_alloc_start = .;
-		KEEP(*(SORT_BY_NAME("._irq_alloc*")));
-		__irq_alloc_end = .;
-	} GROUP_LINK_IN(ROMABLE_REGION)
+	ITERABLE_SECTION_ROM(irq_alloc, 4)
 #endif /* CONFIG_PCIE */
 
 #if !defined(CONFIG_HAS_DYNAMIC_DEVICE_HANDLES)

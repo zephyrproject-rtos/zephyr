@@ -9,11 +9,11 @@ compatible: "intel,adsp-power-domain"
 include: power-domain.yaml
 
 properties:
-    bit-position:
-      type: int
-      required: true
-      description: |
-        Position of the bit to set in write_address (PWRCTL) or read in
-        read_address (PWRSTS) to set power active or confirm power active
-        for a desired domain.
-        Same for write and read addresses
+  bit-position:
+    type: int
+    required: true
+    description: |
+      Position of the bit to set in write_address (PWRCTL) or read in
+      read_address (PWRSTS) to set power active or confirm power active
+      for a desired domain.
+      Same for write and read addresses

@@ -5,17 +5,17 @@ compatible: "xlnx,xps-timer-1.00.a-pwm"
 include: ["xlnx,xps-timer-1.00.a.yaml", pwm-controller.yaml]
 
 properties:
-    xlnx,gen0-assert:
-      required: true
+  xlnx,gen0-assert:
+    required: true
 
-    xlnx,gen1-assert:
-      required: true
+  xlnx,gen1-assert:
+    required: true
 
-    xlnx,trig0-assert:
-      required: true
+  xlnx,trig0-assert:
+    required: true
 
-    xlnx,trig1-assert:
-      required: true
+  xlnx,trig1-assert:
+    required: true
 
 pwm-cells:
   - channel

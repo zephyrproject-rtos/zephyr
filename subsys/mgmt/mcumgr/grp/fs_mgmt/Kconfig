@@ -1,5 +1,5 @@
 # Copyright Runtime.io 2018. All rights reserved.
-# Copyright Nordic Semiconductor ASA 2020-2022. All rights reserved.
+# Copyright Nordic Semiconductor ASA 2020-2023. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 
 # The Kconfig file is dedicated to File System management group of
@@ -160,5 +160,29 @@ config MCUMGR_GRP_FS_FILE_ACCESS_HOOK
 	  re-writing or changing of supplied file paths.
 	  Note that this will be called multiple times for each file read and
 	  write due to mcumgr's method of stateless operation.
+
+config MCUMGR_GRP_FS_FILE_SEMAPHORE_TAKE_TIME
+	int "File handle semaphore take time (ms)"
+	default 100
+	help
+	  Maximum time (in ms) to acquire the file handle semaphore when a file
+	  upload/download command is used. If unable to acquire the semaphore,
+	  then MGMT_ERR_EBUSY will be returned.
+
+	  Can specify 0 to not wait for the lock and return instantly if it
+	  cannot be acquired.
+
+config MCUMGR_GRP_FS_FILE_AUTOMATIC_IDLE_CLOSE_TIME
+	int "Automatic file handle close time (ms)"
+	default 4000
+	range 1 99999999
+	help
+	  Time (in ms) for a file upload/download to be declared aborted and
+	  file handle cleaned up. Each access to the file will reset the idle
+	  time to 0.
+
+module = MCUMGR_GRP_FS
+module-str = mcumgr_grp_fs
+source "subsys/logging/Kconfig.template.log_config"
 
 endif

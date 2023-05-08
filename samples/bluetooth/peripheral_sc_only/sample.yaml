@@ -1,6 +1,6 @@
 sample:
-  description: TBD
-  name: TBD
+  name: Bluetooth Peripheral SC-only
+  description: Demonstrates Secure Connections Only mode
 tests:
   sample.bluetooth.peripheral_sc_only:
     harness: bluetooth

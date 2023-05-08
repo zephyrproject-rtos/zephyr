@@ -9,9 +9,8 @@
 #include <fsl_iocon.h>
 #include <soc.h>
 
-static int lpcxpresso_55s69_pinmux_init(const struct device *dev)
+static int lpcxpresso_55s69_pinmux_init(void)
 {
-	ARG_UNUSED(dev);
 
 #if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm6), nxp_lpc_i2s, okay)) && \
 		(DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm7), nxp_lpc_i2s, okay)) && \

@@ -17,7 +17,12 @@
 struct pinctrl_soc_pin {
 	/* Pinmux control group */
 	const struct device *pinctrls;
-	/* Pin configuration (impedance, pullup/down, voltate selection, input). */
+	/*
+	 * Pin configuration
+	 * kSI[7:0] and KSO[15:0] pins only support pull-up, push-pull/open-drain.
+	 * GPIO group pinctrl pins (include KSO[17:16]) support impedance,
+	 * pull-up/down, voltage selection, input.
+	 */
 	uint32_t pincfg;
 	/* GPIO pin */
 	uint8_t pin;
@@ -31,11 +36,12 @@ typedef struct pinctrl_soc_pin pinctrl_soc_pin_t;
  * @brief PIN configuration bitfield.
  *
  * Pin configuration is coded with the following
- * fields.
- *    Pin impedance config     [ 0 ]
- *    Pin pull-up/down config  [ 4 : 5 ]
- *    Pin voltage selection    [ 8 ]
- *    Pin input enable config  [ 12 ]
+ * bit fields.
+ *    Pin impedance config      [ 0 ]
+ *    Pin pull-up/down config   [ 4 : 5 ]
+ *    Pin voltage selection     [ 8 ]
+ *    Pin input enable config   [ 12 ]
+ *    Pin push-pull/open-drain  [ 16 ]
  */
 #define IT8XXX2_HIGH_IMPEDANCE     0x1U
 #define IT8XXX2_PULL_PIN_DEFAULT   0x0U
@@ -44,6 +50,8 @@ typedef struct pinctrl_soc_pin pinctrl_soc_pin_t;
 #define IT8XXX2_VOLTAGE_3V3        0x0U
 #define IT8XXX2_VOLTAGE_1V8        0x1U
 #define IT8XXX2_INPUT_ENABLE       0x1U
+#define IT8XXX2_PUSH_PULL          0x0U
+#define IT8XXX2_OPEN_DRAIN         0x1U
 
 /* Pin tri-state mode. */
 #define IT8XXX2_IMPEDANCE_SHIFT    0U
@@ -51,12 +59,16 @@ typedef struct pinctrl_soc_pin pinctrl_soc_pin_t;
 /* Pin pull-up or pull-down */
 #define IT8XXX2_PUPDR_SHIFT        4U
 #define IT8XXX2_PUPDR_MASK         0x3U
+#define IT8XXX2_PULL_UP_MASK       BIT_MASK(1)
 /* Pin 3.3V or 1.8V */
 #define IT8XXX2_VOLTAGE_SHIFT      8U
 #define IT8XXX2_VOLTAGE_MASK       0x1U
 /* Pin INPUT enable or disable */
 #define IT8XXX2_INPUT_SHIFT        12U
 #define IT8XXX2_INPUT_MASK         0x1U
+/* Pin push-pull/open-drain mode */
+#define IT8XXX2_PP_OD_SHIFT        16U
+#define IT8XXX2_PP_OD_MASK         BIT_MASK(1)
 
 /**
  * @brief Utility macro to obtain configuration of tri-state.
@@ -83,6 +95,18 @@ typedef struct pinctrl_soc_pin pinctrl_soc_pin_t;
 	(((__mode) >> IT8XXX2_INPUT_SHIFT) & IT8XXX2_INPUT_MASK)
 
 /**
+ * @brief Utility macro to obtain configuration of pull-up or not.
+ */
+#define IT8XXX2_DT_PINCFG_PULLUP(__mode) \
+	(((__mode) >> IT8XXX2_PUPDR_SHIFT) & IT8XXX2_PULL_UP_MASK)
+
+/**
+ * @brief Utility macro to obtain configuration of push-pull/open-drain mode.
+ */
+#define IT8XXX2_DT_PINCFG_PP_OD(__mode) \
+	(((__mode) >> IT8XXX2_PP_OD_SHIFT) & IT8XXX2_PP_OD_MASK)
+
+/**
  * @brief Utility macro to initialize pincfg field in #pinctrl_pin_t.
  *
  * @param node_id Node identifier.
@@ -99,7 +123,9 @@ typedef struct pinctrl_soc_pin pinctrl_soc_pin_t;
 	 ((IT8XXX2_VOLTAGE_1V8 * DT_ENUM_IDX(node_id, gpio_voltage))           \
 	 << IT8XXX2_VOLTAGE_SHIFT) |                                           \
 	 ((IT8XXX2_INPUT_ENABLE * DT_PROP(node_id, input_enable))              \
-	 << IT8XXX2_INPUT_SHIFT))
+	 << IT8XXX2_INPUT_SHIFT) |                                             \
+	 ((IT8XXX2_OPEN_DRAIN * DT_PROP(node_id, drive_open_drain))            \
+	 << IT8XXX2_PP_OD_SHIFT))
 
 /**
  * @brief Utility macro to initialize pinctrls of pinmuxs field in #pinctrl_pin_t.

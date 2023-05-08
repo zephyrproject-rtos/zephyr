@@ -19,6 +19,8 @@
 #include "util/mfifo.h"
 #include "util/dbuf.h"
 
+#include "pdu_df.h"
+#include "lll/pdu_vendor.h"
 #include "pdu.h"
 
 #include "lll.h"
@@ -490,8 +492,9 @@ uint8_t ll_df_set_cl_iq_sampling_enable(uint16_t handle,
 			/* Extend sync event by maximum CTE duration.
 			 * CTE duration depends on transmitter configuration
 			 * so it is unknown for receiver upfront.
+			 * BT_HCI_LE_CTE_LEN_MAX is in 8us units.
 			 */
-			slot_plus_us = BT_HCI_LE_CTE_LEN_MAX;
+			slot_plus_us = BT_HCI_LE_CTE_LEN_MAX * 8U;
 		}
 	}
 

@@ -5,11 +5,11 @@ compatible: "neorv32-trng"
 include: base.yaml
 
 properties:
-    reg:
-      required: true
+  reg:
+    required: true
 
-    syscon:
-      type: phandle
-      required: true
-      description: |
-        phandle to syscon (NEORV32 SYSINFO) node.
+  syscon:
+    type: phandle
+    required: true
+    description: |
+      phandle to syscon (NEORV32 SYSINFO) node.

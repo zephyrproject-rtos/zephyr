@@ -62,7 +62,7 @@ def test_gd32isp_create(cc, req, runner_config):
             '--speed', TEST_GD32ISP_SPEED,
             '--addr', TEST_GD32ISP_ADDR,
             '--isp', TEST_GD32ISP_CLI_T]
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(allow_abbrev=False)
     Gd32ispBinaryRunner.add_parser(parser)
     arg_namespace = parser.parse_args(args)
     runner = Gd32ispBinaryRunner.create(runner_config, arg_namespace)

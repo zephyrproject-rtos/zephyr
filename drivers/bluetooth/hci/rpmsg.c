@@ -327,9 +327,8 @@ static const struct bt_hci_driver drv = {
 #endif
 };
 
-static int bt_rpmsg_init(const struct device *unused)
+static int bt_rpmsg_init(void)
 {
-	ARG_UNUSED(unused);
 
 	int err;
 

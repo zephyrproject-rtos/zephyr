@@ -9,6 +9,8 @@
 #ifndef ZEPHYR_INCLUDE_BLUETOOTH_HCI_VS_H_
 #define ZEPHYR_INCLUDE_BLUETOOTH_HCI_VS_H_
 
+#include <stdint.h>
+
 #include <zephyr/bluetooth/hci.h>
 
 #ifdef __cplusplus

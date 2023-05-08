@@ -37,7 +37,8 @@ LOG_MODULE_REGISTER(counter_rtc_stm32, CONFIG_COUNTER_LOG_LEVEL);
 
 #if defined(CONFIG_SOC_SERIES_STM32L4X)
 #define RTC_EXTI_LINE	LL_EXTI_LINE_18
-#elif defined(CONFIG_SOC_SERIES_STM32G0X)
+#elif defined(CONFIG_SOC_SERIES_STM32C0X) \
+	|| defined(CONFIG_SOC_SERIES_STM32G0X)
 #define RTC_EXTI_LINE	LL_EXTI_LINE_19
 #elif defined(CONFIG_SOC_SERIES_STM32F4X) \
 	|| defined(CONFIG_SOC_SERIES_STM32F0X) \
@@ -51,6 +52,7 @@ LOG_MODULE_REGISTER(counter_rtc_stm32, CONFIG_COUNTER_LOG_LEVEL);
 	|| defined(CONFIG_SOC_SERIES_STM32L1X) \
 	|| defined(CONFIG_SOC_SERIES_STM32L5X) \
 	|| defined(CONFIG_SOC_SERIES_STM32H7X) \
+	|| defined(CONFIG_SOC_SERIES_STM32H5X) \
 	|| defined(CONFIG_SOC_SERIES_STM32WLX)
 #define RTC_EXTI_LINE	LL_EXTI_LINE_17
 #endif
@@ -371,7 +373,10 @@ void rtc_stm32_isr(const struct device *dev)
 
 #if defined(CONFIG_SOC_SERIES_STM32H7X) && defined(CONFIG_CPU_CORTEX_M4)
 	LL_C2_EXTI_ClearFlag_0_31(RTC_EXTI_LINE);
-#elif defined(CONFIG_SOC_SERIES_STM32G0X) || defined(CONFIG_SOC_SERIES_STM32L5X)
+#elif defined(CONFIG_SOC_SERIES_STM32C0X) \
+	|| defined(CONFIG_SOC_SERIES_STM32G0X) \
+	|| defined(CONFIG_SOC_SERIES_STM32L5X) \
+	|| defined(CONFIG_SOC_SERIES_STM32H5X)
 	LL_EXTI_ClearRisingFlag_0_31(RTC_EXTI_LINE);
 #elif defined(CONFIG_SOC_SERIES_STM32U5X)
 	/* in STM32U5 family RTC is not connected to EXTI */
@@ -395,18 +400,21 @@ static int rtc_stm32_init(const struct device *dev)
 	}
 
 	/* Enable RTC bus clock */
-	if (clock_control_on(clk, (clock_control_subsys_t *) &cfg->pclken[0]) != 0) {
+	if (clock_control_on(clk, (clock_control_subsys_t) &cfg->pclken[0]) != 0) {
 		LOG_ERR("clock op failed\n");
 		return -EIO;
 	}
 
 	/* Enable Backup access */
 	z_stm32_hsem_lock(CFG_HW_RCC_SEMID, HSEM_LOCK_DEFAULT_RETRY);
+#if defined(PWR_CR_DBP) || defined(PWR_CR1_DBP) || \
+	defined(PWR_DBPCR_DBP) || defined(PWR_DBPR_DBP)
 	LL_PWR_EnableBkUpAccess();
+#endif /* PWR_CR_DBP || PWR_CR1_DBP || PWR_DBPR_DBP */
 
 	/* Enable RTC clock source */
 	if (clock_control_configure(clk,
-				    (clock_control_subsys_t *) &cfg->pclken[1],
+				    (clock_control_subsys_t) &cfg->pclken[1],
 				    NULL) != 0) {
 		LOG_ERR("clock configure failed\n");
 		return -EIO;
@@ -451,15 +459,15 @@ static int rtc_stm32_init(const struct device *dev)
 static struct rtc_stm32_data rtc_data;
 
 #if DT_INST_NUM_CLOCKS(0) == 1
-#warning Kconfig COUNTER_RTC_STM32_CLOCK_LS* are deprecated. Please define clock source in dtsi file
+#warning STM32 RTC needs a kernel source clock. Please define it in dts file
 static const struct stm32_pclken rtc_clk[] = {
 	STM32_CLOCK_INFO(0, DT_DRV_INST(0)),
-	/* Use Kconfig to configure source clocks fields */
+	/* Use Kconfig to configure source clocks fields (Deprecated) */
 	/* Fortunately, values are consistent across enabled series */
-#ifdef COUNTER_RTC_STM32_CLOCK_LSI
-	{.bus = STM32_SRC_LSI, .enr = RTC_SEL(2)}
-#else
+#ifdef CONFIG_COUNTER_RTC_STM32_CLOCK_LSE
 	{.bus = STM32_SRC_LSE, .enr = RTC_SEL(1)}
+#else
+	{.bus = STM32_SRC_LSI, .enr = RTC_SEL(2)}
 #endif
 };
 #else

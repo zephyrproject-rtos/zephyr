@@ -2,7 +2,7 @@
 
 /*
  * Copyright (c) 2019 Bose Corporation
- * Copyright (c) 2022 Nordic Semiconductor ASA
+ * Copyright (c) 2022-2023 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -120,7 +120,7 @@ static int parse_recv_state(const void *data, uint16_t length,
 		}
 
 		broadcast_code = net_buf_simple_pull_mem(&buf,
-							 BT_BAP_BROADCAST_CODE_SIZE);
+							 BT_AUDIO_BROADCAST_CODE_SIZE);
 		(void)memcpy(recv_state->bad_code, broadcast_code,
 			     sizeof(recv_state->bad_code));
 	}
@@ -814,7 +814,7 @@ int bt_bap_broadcast_assistant_mod_src(struct bt_conn *conn,
 
 int bt_bap_broadcast_assistant_set_broadcast_code(
 	struct bt_conn *conn, uint8_t src_id,
-	uint8_t broadcast_code[BT_BAP_BROADCAST_CODE_SIZE])
+	uint8_t broadcast_code[BT_AUDIO_BROADCAST_CODE_SIZE])
 {
 	struct bt_bap_bass_cp_broadcase_code *cp;
 
@@ -834,7 +834,7 @@ int bt_bap_broadcast_assistant_set_broadcast_code(
 	cp->src_id = src_id;
 
 	(void)memcpy(cp->broadcast_code, broadcast_code,
-		     BT_BAP_BROADCAST_CODE_SIZE);
+		     BT_AUDIO_BROADCAST_CODE_SIZE);
 
 	return bt_bap_broadcast_assistant_common_cp(conn, &cp_buf);
 }

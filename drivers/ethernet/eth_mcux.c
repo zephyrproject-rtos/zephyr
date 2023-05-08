@@ -113,6 +113,11 @@ enum eth_mcux_phy_state {
 	eth_mcux_phy_state_closing
 };
 
+struct _phy_resource {
+	mdioWrite write;
+	mdioRead read;
+};
+
 #if defined(CONFIG_NET_POWER_MANAGEMENT)
 extern uint32_t ENET_GetInstance(ENET_Type * base);
 static const clock_ip_name_t enet_clocks[] = ENET_CLOCKS;
@@ -174,6 +179,7 @@ struct eth_context {
 #endif
 	struct k_sem tx_buf_sem;
 	phy_handle_t *phy_handle;
+	struct _phy_resource *phy_config;
 	struct k_sem rx_thread_sem;
 	enum eth_mcux_phy_state phy_state;
 	bool enabled;
@@ -446,7 +452,7 @@ static void eth_mcux_phy_event(struct eth_context *context)
 	bool link_up;
 #if defined(CONFIG_SOC_SERIES_IMX_RT)
 	status_t res;
-	uint32_t ctrl2;
+	uint16_t ctrl2;
 #endif
 	phy_duplex_t phy_duplex = kPHY_FullDuplex;
 	phy_speed_t phy_speed = kPHY_Speed100M;
@@ -546,7 +552,7 @@ static void eth_mcux_phy_event(struct eth_context *context)
 		status = ENET_ReadSMIData(context->base);
 		link_up =  status & PHY_BSTATUS_LINKSTATUS_MASK;
 #endif
-		if (link_up && !context->link_up) {
+		if (link_up && !context->link_up && context->iface != NULL) {
 			/* Start reading the PHY control register. */
 #if !defined(CONFIG_ETH_MCUX_NO_PHY_SMI)
 			ENET_StartSMIRead(context->base, context->phy_addr,
@@ -555,16 +561,12 @@ static void eth_mcux_phy_event(struct eth_context *context)
 #endif
 			context->link_up = link_up;
 			context->phy_state = eth_mcux_phy_state_read_duplex;
-
-			/* Network interface might be NULL at this point */
-			if (context->iface) {
-				net_eth_carrier_on(context->iface);
-				k_msleep(USEC_PER_MSEC);
-			}
+			net_eth_carrier_on(context->iface);
+			k_msleep(1);
 #if defined(CONFIG_ETH_MCUX_NO_PHY_SMI)
 			k_work_submit(&context->phy_work);
 #endif
-		} else if (!link_up && context->link_up) {
+		} else if (!link_up && context->link_up && context->iface != NULL) {
 			LOG_INF("%s link down", eth_name(context->base));
 			context->link_up = link_up;
 			k_work_reschedule(&context->delayed_phy_work,
@@ -629,7 +631,7 @@ static void eth_mcux_phy_setup(struct eth_context *context)
 {
 #if defined(CONFIG_SOC_SERIES_IMX_RT)
 	status_t res;
-	uint32_t oms_override;
+	uint16_t oms_override;
 
 	/* Disable MII interrupts to prevent triggering PHY events. */
 	ENET_DisableInterrupts(context->base, ENET_EIR_MII_MASK);
@@ -1016,7 +1018,6 @@ static void eth_mcux_init(const struct device *dev)
 #endif
 
 	context->phy_state = eth_mcux_phy_state_initial;
-	context->phy_handle->mdioHandle->ops = &enet_ops;
 	context->phy_handle->ops = &phyksz8081_ops;
 
 #if defined(CONFIG_SOC_SERIES_IMX_RT10XX)
@@ -1547,19 +1548,30 @@ static void eth_mcux_err_isr(const struct device *dev)
 		tx_enet_frame_##n##_buf[NET_ETH_MAX_FRAME_SIZE];	\
 	static _mcux_driver_buffer uint8_t				\
 		rx_enet_frame_##n##_buf[NET_ETH_MAX_FRAME_SIZE];	\
+	static status_t _MDIO_Write(uint8_t phyAddr, uint8_t regAddr, uint16_t data) \
+	{								\
+		return ENET_MDIOWrite((ENET_Type *)DT_INST_REG_ADDR(n), phyAddr, regAddr, data);\
+	};								\
 									\
-	static mdio_handle_t eth##n##_mdio_handle = {			\
-		  .resource.base = (ENET_Type *)DT_INST_REG_ADDR(n),	\
-		};							\
+	static status_t _MDIO_Read(uint8_t phyAddr, uint8_t regAddr, uint16_t *pData) \
+	{  \
+		return ENET_MDIORead((ENET_Type *)DT_INST_REG_ADDR(n), phyAddr, regAddr, pData); \
+	}; \
 									\
+	static struct _phy_resource eth##n##_phy_resource = {		\
+		.read = _MDIO_Read,					\
+		.write = _MDIO_Write					\
+	};								\
 	static phy_handle_t eth##n##_phy_handle = {			\
-		  .mdioHandle = &eth##n##_mdio_handle,			\
-		};							\
+		.resource = (void *)&eth##n##_phy_resource		\
+	};								\
+	static struct _phy_resource eth##n##_phy_config;		\
 									\
 	static struct eth_context eth##n##_context = {			\
 		.base = (ENET_Type *)DT_INST_REG_ADDR(n),		\
 		.config_func = eth##n##_config_func,			\
-		.phy_addr = DT_INST_PROP(n, phy_addr),		\
+		.phy_config = &eth##n##_phy_config,			\
+		.phy_addr = DT_INST_PROP(n, phy_addr),		        \
 		.phy_duplex = kPHY_FullDuplex,				\
 		.phy_speed = kPHY_Speed100M,				\
 		.phy_handle = &eth##n##_phy_handle,			\
@@ -1725,20 +1737,20 @@ static int ptp_clock_mcux_rate_adjust(const struct device *dev, double ratio)
 	ratio *= context->clk_ratio;
 
 	/* Limit possible ratio. */
-	if ((ratio > 1.0f + 1.0f/(2 * hw_inc)) ||
-			(ratio < 1.0f - 1.0f/(2 * hw_inc))) {
+	if ((ratio > 1.0 + 1.0/(2 * hw_inc)) ||
+			(ratio < 1.0 - 1.0/(2 * hw_inc))) {
 		return -EINVAL;
 	}
 
 	/* Save new ratio. */
 	context->clk_ratio = ratio;
 
-	if (ratio < 1.0f) {
+	if (ratio < 1.0) {
 		corr = hw_inc - 1;
-		val = 1.0f / (hw_inc * (1.0f - ratio));
-	} else if (ratio > 1.0f) {
+		val = 1.0 / (hw_inc * (1.0 - ratio));
+	} else if (ratio > 1.0) {
 		corr = hw_inc + 1;
-		val = 1.0f / (hw_inc * (ratio - 1.0f));
+		val = 1.0 / (hw_inc * (ratio - 1.0));
 	} else {
 		val = 0;
 		corr = hw_inc;

@@ -89,19 +89,18 @@ uint32_t sys_clock_cycle_get_32(void)
  * The second one is used for cycles count, the match value is set
  * at max uint32_t.
  */
-static int sys_clock_driver_init(const struct device *dev)
+static int sys_clock_driver_init(void)
 {
 	const struct device *clk;
 	uint32_t reg_val;
 	int i, ret;
 
-	ARG_UNUSED(dev);
 	clk = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(0));
 	if (!device_is_ready(clk)) {
 		return -ENODEV;
 	}
 
-	ret = clock_control_on(clk, (clock_control_subsys_t *)&mod_clk);
+	ret = clock_control_on(clk, (clock_control_subsys_t)&mod_clk);
 	if (ret < 0) {
 		return ret;
 	}

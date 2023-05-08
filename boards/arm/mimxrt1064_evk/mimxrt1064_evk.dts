@@ -17,7 +17,7 @@
 		led0 = &green_led;
 		pwm-led0 = &green_pwm_led;
 		sw0 = &user_button;
-		kscan0 = &touch_controller;
+		kscan0 = &kscan_input;
 		watchdog0 = &wdog0;
 		sdhc0 = &usdhc1;
 	};
@@ -33,7 +33,7 @@
 		zephyr,shell-uart = &lpuart1;
 		zephyr,canbus = &flexcan2;
 		zephyr,display = &lcdif;
-		zephyr,keyboard-scan = &touch_controller;
+		zephyr,keyboard-scan = &kscan_input;
 	};
 
 	sdram0: memory@80000000 {
@@ -54,7 +54,7 @@
 		compatible = "pwm-leds";
 
 		green_pwm_led: green_pwm_led {
-			pwms = <&flexpwm2_pwm3 0 PWM_MSEC(20)>;
+			pwms = <&flexpwm2_pwm3 0 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
 		};
 	};
 
@@ -167,10 +167,14 @@ arduino_i2c: &lpi2c1 {};
 		};
 	};
 
-	touch_controller: ft5336@38 {
+	ft5336@38 {
 		compatible = "focaltech,ft5336";
 		reg = <0x38>;
 		int-gpios = <&gpio1 11 GPIO_ACTIVE_LOW>;
+
+		kscan_input: kscan-input {
+			compatible = "zephyr,kscan-input";
+		};
 	};
 };
 

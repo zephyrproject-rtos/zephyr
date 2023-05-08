@@ -359,8 +359,6 @@ int net_context_unref(struct net_context *context)
 
 	k_mutex_lock(&context->lock, K_FOREVER);
 
-	net_tcp_unref(context);
-
 	if (context->conn_handler) {
 		if (IS_ENABLED(CONFIG_NET_TCP) || IS_ENABLED(CONFIG_NET_UDP) ||
 		    IS_ENABLED(CONFIG_NET_SOCKETS_CAN) ||
@@ -949,6 +947,11 @@ int net_context_connect(struct net_context *context,
 	NET_ASSERT(PART_OF_ARRAY(contexts, context));
 
 	k_mutex_lock(&context->lock, K_FOREVER);
+
+	if (net_context_get_state(context) == NET_CONTEXT_CONNECTING) {
+		ret = -EALREADY;
+		goto unlock;
+	}
 
 	if (!net_context_is_used(context)) {
 		ret = -EBADF;
@@ -1763,6 +1766,21 @@ static int context_sendto(struct net_context *context,
 		net_pkt_cursor_init(pkt);
 
 		if (net_context_get_proto(context) == IPPROTO_RAW) {
+			char type = (NET_IPV6_HDR(pkt)->vtc & 0xf0);
+
+			/* Set the family to pkt if detected */
+			switch (type) {
+			case 0x60:
+				net_pkt_set_family(pkt, AF_INET6);
+				break;
+			case 0x40:
+				net_pkt_set_family(pkt, AF_INET);
+				break;
+			default:
+				/* Not IP traffic, let it go forward as it is */
+				break;
+			}
+
 			/* Pass to L2: */
 			ret = net_send_data(pkt);
 		} else {

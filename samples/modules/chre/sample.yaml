@@ -4,7 +4,7 @@ sample:
   name: chre
 tests:
   sample.modules.chre:
-    tags: introduction
+    tags: introduction chre
     platform_exclude: qemu_leon3
     modules:
       - chre
@@ -13,14 +13,15 @@ tests:
       type: multi_line
       ordered: false
       regex:
-      - "Hello CHRE!"
-      - "I: EventLoop start.*"
-      - "D: Instance ID 1 assigned to app ID 0x0000000000000001.*"
-      - "EchoApp::nanoappStart\\(\\)"
-      - "EchoApp::nanoappHandleEvent\\(sender_instance_id=0, event_type=1, event_data@\\(nil\\)\\)"
-      - "Event \\(1\\) complete!"
-      - "EchoApp::nanoappEnd\\(\\)"
-      - "I: Exiting EventLoop.*"
+        - "Hello CHRE!"
+        - "I: EventLoop start.*"
+        - "D: Instance ID 1 assigned to app ID 0x0000000000000001.*"
+        - "EchoApp::nanoappStart\\(\\)"
+        - "EchoApp::nanoappHandleEvent\\(sender_instance_id=0, event_type=1,
+          event_data@(\\(nil\\))|0\\)"
+        - "Event \\(1\\) complete!"
+        - "EchoApp::nanoappEnd\\(\\)"
+        - "I: Exiting EventLoop.*"
     integration_platforms:
-    - native_posix
-    filter: not CONFIG_MINIMAL_LIBC
+      - native_posix
+    filter: CONFIG_FULL_LIBC_SUPPORTED

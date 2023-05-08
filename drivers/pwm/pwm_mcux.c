@@ -25,6 +25,7 @@ struct pwm_mcux_config {
 	const struct device *clock_dev;
 	clock_control_subsys_t clock_subsys;
 	pwm_clock_prescale_t prescale;
+	pwm_register_reload_t reload;
 	pwm_mode_t mode;
 	bool run_wait;
 	bool run_debug;
@@ -80,7 +81,7 @@ static int mcux_pwm_set_cycles(const struct device *dev, uint32_t channel,
 
 		data->period_cycles[channel] = period_cycles;
 
-		LOG_DBG("SETUP dutycycle to %u\n", duty_cycle);
+		LOG_DBG("SETUP dutycycle to %u", duty_cycle);
 
 		if (clock_control_get_rate(config->clock_dev, config->clock_subsys,
 				&clock_freq)) {
@@ -93,6 +94,7 @@ static int mcux_pwm_set_cycles(const struct device *dev, uint32_t channel,
 			LOG_ERR("Could not set up pwm_freq=%d", pwm_freq);
 			return -EINVAL;
 		}
+		data->channel[channel].pwmchannelenable = true;
 
 		PWM_StopTimer(config->base, 1U << config->index);
 
@@ -153,9 +155,12 @@ static int pwm_mcux_init(const struct device *dev)
 		return err;
 	}
 
+	LOG_DBG("Set prescaler %d, reload mode %d",
+			1 << config->prescale, config->reload);
+
 	PWM_GetDefaultConfig(&pwm_config);
 	pwm_config.prescale = config->prescale;
-	pwm_config.reloadLogic = kPWM_ReloadPwmFullCycle;
+	pwm_config.reloadLogic = config->reload;
 	pwm_config.clockSource = kPWM_BusClock;
 	pwm_config.enableDebugMode = config->run_debug;
 	pwm_config.enableWait = config->run_wait;
@@ -193,6 +198,8 @@ static const struct pwm_driver_api pwm_mcux_driver_api = {
 		.index = DT_INST_PROP(n, index),			  \
 		.mode = kPWM_EdgeAligned,				  \
 		.prescale = _CONCAT(kPWM_Prescale_Divide_, DT_INST_PROP(n, nxp_prescaler)),\
+		.reload = DT_ENUM_IDX_OR(DT_DRV_INST(n), nxp_reload,\
+				kPWM_ReloadPwmFullCycle),\
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),		\
 		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),\
 		.run_wait = DT_INST_PROP(n, run_in_wait),		  \

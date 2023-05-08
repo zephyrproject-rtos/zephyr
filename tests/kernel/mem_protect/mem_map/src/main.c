@@ -38,7 +38,8 @@ void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *pEsf)
 		expect_fault = false;
 		ztest_test_pass();
 	} else {
-		printk("Unexpected fault during test");
+		printk("Unexpected fault during test\n");
+		printk("PROJECT EXECUTION FAILED\n");
 		k_fatal_halt(reason);
 	}
 }

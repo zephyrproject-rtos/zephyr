@@ -197,7 +197,7 @@ static void socket_close(struct modem_socket *sock)
 	char buf[sizeof("AT+QICLOSE=##")] = {0};
 	int  ret;
 
-	snprintk(buf, sizeof(buf), "AT+QICLOSE=%d", sock->sock_fd);
+	snprintk(buf, sizeof(buf), "AT+QICLOSE=%d", sock->id);
 
 	/* Tell the modem to close the socket. */
 	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler,
@@ -452,7 +452,7 @@ static ssize_t send_socket_data(struct modem_socket *sock,
 
 	/* Create a buffer with the correct params. */
 	mdata.sock_written = buf_len;
-	snprintk(send_buf, sizeof(send_buf), "AT+QISEND=%d,%ld", sock->sock_fd, (long) buf_len);
+	snprintk(send_buf, sizeof(send_buf), "AT+QISEND=%d,%ld", sock->id, (long) buf_len);
 
 	/* Setup the locks correctly. */
 	k_sem_take(&mdata.cmd_handler_data.sem_tx_lock, K_FOREVER);
@@ -594,7 +594,7 @@ static ssize_t offload_recvfrom(void *obj, void *buf, size_t len,
 		return -1;
 	}
 
-	snprintk(sendbuf, sizeof(sendbuf), "AT+QIRD=%d,%zd", sock->sock_fd, len);
+	snprintk(sendbuf, sizeof(sendbuf), "AT+QIRD=%d,%zd", sock->id, len);
 
 	/* Socket read settings */
 	(void) memset(&sock_data, 0, sizeof(sock_data));
@@ -604,7 +604,7 @@ static ssize_t offload_recvfrom(void *obj, void *buf, size_t len,
 	sock->data	       = &sock_data;
 	mdata.sock_fd	       = sock->sock_fd;
 
-	/* Tell the modem to give us data (AT+QIRD=sock_fd,data_len). */
+	/* Tell the modem to give us data (AT+QIRD=id,data_len). */
 	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler,
 			     data_cmd, ARRAY_SIZE(data_cmd), sendbuf, &mdata.sem_response,
 			     MDM_CMD_TIMEOUT);
@@ -695,7 +695,8 @@ static int offload_connect(void *obj, const struct sockaddr *addr,
 	int		    ret;
 	char		    ip_str[NET_IPV6_ADDR_LEN];
 
-	if (sock->id < mdata.socket_config.base_socket_num - 1) {
+	/* Verify socket has been allocated */
+	if (modem_socket_is_allocated(&mdata.socket_config, sock) == false) {
 		LOG_ERR("Invalid socket_id(%d) from fd:%d",
 			sock->id, sock->sock_fd);
 		errno = EINVAL;
@@ -734,8 +735,8 @@ static int offload_connect(void *obj, const struct sockaddr *addr,
 	}
 
 	/* Formulate the complete string. */
-	snprintk(buf, sizeof(buf), "AT+QIOPEN=%d,%d,\"%s\",\"%s\",%d,0,0", 1, sock->sock_fd, protocol,
-		ip_str, dst_port);
+	snprintk(buf, sizeof(buf), "AT+QIOPEN=%d,%d,\"%s\",\"%s\",%d,0,0", 1, sock->id, protocol,
+		 ip_str, dst_port);
 
 	/* Send out the command. */
 	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler,
@@ -792,8 +793,8 @@ static int offload_close(void *obj)
 {
 	struct modem_socket *sock = (struct modem_socket *) obj;
 
-	/* Make sure we assigned an id */
-	if (sock->id < mdata.socket_config.base_socket_num) {
+	/* Make sure socket is allocated */
+	if (modem_socket_is_allocated(&mdata.socket_config, sock) == false) {
 		return 0;
 	}
 
@@ -848,9 +849,9 @@ static void modem_rx(void)
 	while (true) {
 
 		/* Wait for incoming data */
-		k_sem_take(&mdata.iface_data.rx_sem, K_FOREVER);
+		modem_iface_uart_rx_wait(&mctx.iface, K_FOREVER);
 
-		mctx.cmd_handler.process(&mctx.cmd_handler, &mctx.iface);
+		modem_cmd_handler_process(&mctx.cmd_handler, &mctx.iface);
 	}
 }
 
@@ -1096,8 +1097,8 @@ static void modem_net_iface_init(struct net_if *iface)
 	net_if_socket_offload_set(iface, offload_socket);
 }
 
-static struct net_if_api api_funcs = {
-	.init = modem_net_iface_init,
+static struct offloaded_if_api api_funcs = {
+	.iface_api.init = modem_net_iface_init,
 };
 
 static bool offload_is_supported(int family, int type, int proto)
@@ -1145,34 +1146,41 @@ static int modem_init(const struct device *dev)
 			   K_PRIO_COOP(7), NULL);
 
 	/* socket config */
-	mdata.socket_config.sockets	    = &mdata.sockets[0];
-	mdata.socket_config.sockets_len	    = ARRAY_SIZE(mdata.sockets);
-	mdata.socket_config.base_socket_num = MDM_BASE_SOCKET_NUM;
-	ret = modem_socket_init(&mdata.socket_config, &offload_socket_fd_op_vtable);
+	ret = modem_socket_init(&mdata.socket_config, &mdata.sockets[0], ARRAY_SIZE(mdata.sockets),
+				MDM_BASE_SOCKET_NUM, true, &offload_socket_fd_op_vtable);
 	if (ret < 0) {
 		goto error;
 	}
 
-	/* cmd handler */
-	mdata.cmd_handler_data.cmds[CMD_RESP]	   = response_cmds;
-	mdata.cmd_handler_data.cmds_len[CMD_RESP]  = ARRAY_SIZE(response_cmds);
-	mdata.cmd_handler_data.cmds[CMD_UNSOL]	   = unsol_cmds;
-	mdata.cmd_handler_data.cmds_len[CMD_UNSOL] = ARRAY_SIZE(unsol_cmds);
-	mdata.cmd_handler_data.match_buf	   = &mdata.cmd_match_buf[0];
-	mdata.cmd_handler_data.match_buf_len	   = sizeof(mdata.cmd_match_buf);
-	mdata.cmd_handler_data.buf_pool		   = &mdm_recv_pool;
-	mdata.cmd_handler_data.alloc_timeout	   = BUF_ALLOC_TIMEOUT;
-	mdata.cmd_handler_data.eol		   = "\r\n";
-	ret = modem_cmd_handler_init(&mctx.cmd_handler, &mdata.cmd_handler_data);
+	/* cmd handler setup */
+	const struct modem_cmd_handler_config cmd_handler_config = {
+		.match_buf = &mdata.cmd_match_buf[0],
+		.match_buf_len = sizeof(mdata.cmd_match_buf),
+		.buf_pool = &mdm_recv_pool,
+		.alloc_timeout = BUF_ALLOC_TIMEOUT,
+		.eol = "\r\n",
+		.user_data = NULL,
+		.response_cmds = response_cmds,
+		.response_cmds_len = ARRAY_SIZE(response_cmds),
+		.unsol_cmds = unsol_cmds,
+		.unsol_cmds_len = ARRAY_SIZE(unsol_cmds),
+	};
+
+	ret = modem_cmd_handler_init(&mctx.cmd_handler, &mdata.cmd_handler_data,
+				     &cmd_handler_config);
 	if (ret < 0) {
 		goto error;
 	}
 
 	/* modem interface */
-	mdata.iface_data.rx_rb_buf     = &mdata.iface_rb_buf[0];
-	mdata.iface_data.rx_rb_buf_len = sizeof(mdata.iface_rb_buf);
-	ret = modem_iface_uart_init(&mctx.iface, &mdata.iface_data,
-				    MDM_UART_DEV);
+	const struct modem_iface_uart_config uart_config = {
+		.rx_rb_buf = &mdata.iface_rb_buf[0],
+		.rx_rb_buf_len = sizeof(mdata.iface_rb_buf),
+		.dev = MDM_UART_DEV,
+		.hw_flow_control = DT_PROP(MDM_UART_NODE, hw_flow_control),
+	};
+
+	ret = modem_iface_uart_init(&mctx.iface, &mdata.iface_data, &uart_config);
 	if (ret < 0) {
 		goto error;
 	}

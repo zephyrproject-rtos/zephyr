@@ -1,5 +1,5 @@
 tests:
-  peripheral.gpio.get_direction:
+  drivers.gpio.get_direction:
     tags: drivers gpio
     depends_on: gpio
     min_flash: 48

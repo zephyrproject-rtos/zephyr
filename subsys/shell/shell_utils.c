@@ -9,29 +9,28 @@
 #include "shell_utils.h"
 #include "shell_wildcard.h"
 
-extern const union shell_cmd_entry __shell_root_cmds_start[];
-extern const union shell_cmd_entry __shell_root_cmds_end[];
+TYPE_SECTION_START_EXTERN(union shell_cmd_entry, shell_dynamic_subcmds);
+TYPE_SECTION_END_EXTERN(union shell_cmd_entry, shell_dynamic_subcmds);
 
-extern const union shell_cmd_entry __shell_dynamic_subcmds_start[];
-extern const union shell_cmd_entry __shell_dynamic_subcmds_end[];
-
-extern const union shell_cmd_entry __shell_subcmds_start[];
-extern const union shell_cmd_entry __shell_subcmds_end[];
+TYPE_SECTION_START_EXTERN(union shell_cmd_entry, shell_subcmds);
+TYPE_SECTION_END_EXTERN(union shell_cmd_entry, shell_subcmds);
 
 /* Macro creates empty entry at the bottom of the memory section with subcommands
  * it is used to detect end of subcommand set that is located before this marker.
  */
 #define Z_SHELL_SUBCMD_END_MARKER_CREATE()				\
-	static const struct shell_static_entry z_shell_subcmd_end_marker\
-	__attribute__ ((section("."					\
-			STRINGIFY(Z_SHELL_SUBCMD_NAME(999)))))		\
-	__attribute__((used))
+	static const TYPE_SECTION_ITERABLE(struct shell_static_entry, \
+			z_shell_subcmd_end_marker, shell_subcmds, Z_SHELL_UNDERSCORE(999))
 
 Z_SHELL_SUBCMD_END_MARKER_CREATE();
 
 static inline const union shell_cmd_entry *shell_root_cmd_get(uint32_t id)
 {
-	return &__shell_root_cmds_start[id];
+	const union shell_cmd_entry *cmd;
+
+	TYPE_SECTION_GET(union shell_cmd_entry, shell_root_cmds, id, &cmd);
+
+	return cmd;
 }
 
 /* Determine if entry is a dynamic command by checking if address is within
@@ -39,8 +38,8 @@ static inline const union shell_cmd_entry *shell_root_cmd_get(uint32_t id)
  */
 static inline bool is_dynamic_cmd(const union shell_cmd_entry *entry)
 {
-	return (entry >= __shell_dynamic_subcmds_start) &&
-		(entry < __shell_dynamic_subcmds_end);
+	return (entry >= TYPE_SECTION_START(shell_dynamic_subcmds)) &&
+		(entry < TYPE_SECTION_END(shell_dynamic_subcmds));
 }
 
 /* Determine if entry is a section command by checking if address is within
@@ -48,8 +47,8 @@ static inline bool is_dynamic_cmd(const union shell_cmd_entry *entry)
  */
 static inline bool is_section_cmd(const union shell_cmd_entry *entry)
 {
-	return (entry >= __shell_subcmds_start) &&
-		(entry < __shell_subcmds_end);
+	return (entry >= TYPE_SECTION_START(shell_subcmds)) &&
+		(entry < TYPE_SECTION_END(shell_subcmds));
 }
 
 /* Calculates relative line number of given position in buffer */
@@ -194,7 +193,7 @@ static char make_argv(char **ppcmd, uint8_t c)
 			}
 		}
 
-		if (!quote && isspace((int) c)) {
+		if (!quote && isspace((int) c) != 0) {
 			break;
 		}
 
@@ -219,7 +218,7 @@ char z_shell_make_argv(size_t *argc, const char **argv, char *cmd,
 			break;
 		}
 
-		if (isspace((int) c)) {
+		if (isspace((int) c) != 0) {
 			*cmd++ = '\0';
 			continue;
 		}
@@ -259,9 +258,11 @@ void z_shell_pattern_remove(char *buff, uint16_t *buff_len, const char *pattern)
 
 static inline uint32_t shell_root_cmd_count(void)
 {
-	return ((uint8_t *)__shell_root_cmds_end -
-			(uint8_t *)__shell_root_cmds_start)/
-				sizeof(union shell_cmd_entry);
+	size_t len;
+
+	TYPE_SECTION_COUNT(union shell_cmd_entry, shell_root_cmds, &len);
+
+	return len;
 }
 
 /* Function returning pointer to parent command matching requested syntax. */
@@ -431,9 +432,9 @@ void z_shell_spaces_trim(char *str)
 	}
 
 	for (uint16_t i = 0; i < len - 1; i++) {
-		if (isspace((int)str[i])) {
+		if (isspace((int)str[i]) != 0) {
 			for (uint16_t j = i + 1; j < len; j++) {
-				if (isspace((int)str[j])) {
+				if (isspace((int)str[j]) != 0) {
 					shift++;
 					continue;
 				}
@@ -465,7 +466,7 @@ static void buffer_trim(char *buff, uint16_t *buff_len)
 		return;
 	}
 
-	while (isspace((int) buff[*buff_len - 1U])) {
+	while (isspace((int) buff[*buff_len - 1U]) != 0) {
 		*buff_len -= 1U;
 		if (*buff_len == 0U) {
 			buff[0] = '\0';
@@ -477,7 +478,7 @@ static void buffer_trim(char *buff, uint16_t *buff_len)
 	/* Counting whitespace characters starting from beginning of the
 	 * command.
 	 */
-	while (isspace((int) buff[i++])) {
+	while (isspace((int) buff[i++]) != 0) {
 	}
 
 
@@ -488,10 +489,10 @@ static void buffer_trim(char *buff, uint16_t *buff_len)
 	}
 }
 
-void z_shell_cmd_trim(const struct shell *shell)
+void z_shell_cmd_trim(const struct shell *sh)
 {
-	buffer_trim(shell->ctx->cmd_buff, &shell->ctx->cmd_buff_len);
-	shell->ctx->cmd_buff_pos = shell->ctx->cmd_buff_len;
+	buffer_trim(sh->ctx->cmd_buff, &sh->ctx->cmd_buff_len);
+	sh->ctx->cmd_buff_pos = sh->ctx->cmd_buff_len;
 }
 
 const struct device *shell_device_lookup(size_t idx,

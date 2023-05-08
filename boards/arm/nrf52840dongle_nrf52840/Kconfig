@@ -1,6 +1,6 @@
 # nRF52840 Dongle NRF52840 board configuration
 
-# Copyright (c) 2018 Nordic Semiconductor ASA
+# Copyright (c) 2018-2023 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
 if BOARD_NRF52840DONGLE_NRF52840
@@ -21,5 +21,9 @@ config BOARD_HAS_NRF5_BOOTLOADER
 	help
 	  If selected, applications are linked so that they can be loaded by Nordic
 	  nRF5 bootloader.
+
+config BOARD_SERIAL_BACKEND_CDC_ACM
+	bool "USB CDC"
+	default y
 
 endif # BOARD_NRF52840DONGLE_NRF52840

@@ -5,6 +5,7 @@
  */
 
 #include <arm/armv8-m.dtsi>
+#include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/clock/mcux_lpc_syscon_clock.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
@@ -118,20 +119,12 @@
 		pinctrl: pinctrl {
 			compatible = "nxp,lpc-iocon-pinctrl";
 		};
-		pio0: pio0@0 {
-			compatible = "nxp,lpc-iocon-pio";
-			reg = <0x0 0x80>;
-		};
-		pio1: pio0@80 {
-			compatible = "nxp,lpc-iocon-pio";
-			reg = <0x80 0x80>;
-		};
 	};
 
 	gpio0: gpio@0 {
 		compatible = "nxp,lpc-gpio";
 		reg = <0x8c000 0x278c>;
-		interrupts = <4 2>,<5 2>,<6 2>,<7 2>;
+		int-source = "pint";
 		gpio-controller;
 		#gpio-cells = <2>;
 		port = <0>;
@@ -140,7 +133,7 @@
 	gpio1: gpio@1 {
 		compatible = "nxp,lpc-gpio";
 		reg = <0x8c000 0x278c>;
-		interrupts = <32 2>,<33 2>,<34 2>,<35 2>;
+		int-source = "pint";
 		gpio-controller;
 		#gpio-cells = <2>;
 		port = <1>;
@@ -149,10 +142,21 @@
 	gpio2: gpio@2 {
 		compatible = "nxp,lpc-gpio";
 		reg = <0x8c000 0x278c>;
-		#interrupts = <32 2>,<33 2>,<34 2>,<35 2>;
 		gpio-controller;
 		#gpio-cells = <2>;
 		port = <2>;
+	};
+
+	pint: pint@4000 {
+		compatible = "nxp,pint";
+		reg = <0x4000 0x1000>;
+		interrupt-controller;
+		#interrupt-cells = <1>;
+		#address-cells = <0>;
+		interrupts = <4 2>, <5 2>, <6 2>, <7 2>,
+			<32 2>, <33 2>, <34 2>, <35 2>;
+		num-lines = <8>;
+		num-inputs = <64>;
 	};
 
 	flexcomm0: flexcomm@86000 {
@@ -235,6 +239,21 @@
 		status = "okay";
 	};
 
+	adc0: adc@A0000 {
+		compatible = "nxp,lpc-lpadc";
+		reg = <0xA0000 0x1000>;
+		interrupts = <22 0>;
+		status = "disabled";
+		clk-divider = <8>;
+		clk-source = <0>;
+		voltage-ref= <1>;
+		calibration-average = <128>;
+		power-level = <0>;
+		offset-value-a = <10>;
+		offset-value-b = <10>;
+		#io-channel-cells = <1>;
+	};
+
 	can0: can@4009d000 {
 		compatible = "nxp,lpc-mcan";
 		reg = <0x4009d000 0x1000>;
@@ -264,7 +283,7 @@
 			index = <0>;
 			interrupt-names = "COMPARE-SUB0", "RELOAD-SUB0";
 			interrupts = <83 0>, <84 0>;
-			#pwm-cells = <2>;
+			#pwm-cells = <3>;
 			clocks = <&syscon MCUX_BUS_CLK 0 0>;
 			nxp,prescaler = <128>;
 			status = "disabled";
@@ -276,7 +295,7 @@
 			index = <1>;
 			interrupt-names = "COMPARE-SUB1", "RELOAD-SUB1";
 			interrupts = <85 0>, <86 0>;
-			#pwm-cells = <2>;
+			#pwm-cells = <3>;
 			clocks = <&syscon MCUX_BUS_CLK 0 0>;
 			nxp,prescaler = <128>;
 			status = "disabled";
@@ -288,7 +307,7 @@
 			index = <2>;
 			interrupt-names = "COMPARE-SUB2", "RELOAD-SUB2";
 			interrupts = <87 0>, <88 0>;
-			#pwm-cells = <2>;
+			#pwm-cells = <3>;
 			clocks = <&syscon MCUX_BUS_CLK 0 0>;
 			nxp,prescaler = <128>;
 			status = "disabled";
@@ -300,7 +319,7 @@
 			index = <3>;
 			interrupt-names = "COMPARE-SUB3", "RELOAD-SUB3";
 			interrupts = <89 0>, <90 0>;
-			#pwm-cells = <2>;
+			#pwm-cells = <3>;
 			clocks = <&syscon MCUX_BUS_CLK 0 0>;
 			nxp,prescaler = <128>;
 			status = "disabled";
@@ -319,7 +338,7 @@
 			index = <0>;
 			interrupt-names = "COMPARE-SUB0", "RELOAD-SUB0";
 			interrupts = <94 0>, <95 0>;
-			#pwm-cells = <2>;
+			#pwm-cells = <3>;
 			clocks = <&syscon MCUX_BUS_CLK 0 0>;
 			nxp,prescaler = <128>;
 			status = "disabled";
@@ -331,7 +350,7 @@
 			index = <1>;
 			interrupt-names = "COMPARE-SUB1", "RELOAD-SUB1";
 			interrupts = <96 0>, <97 0>;
-			#pwm-cells = <2>;
+			#pwm-cells = <3>;
 			clocks = <&syscon MCUX_BUS_CLK 0 0>;
 			nxp,prescaler = <128>;
 			status = "disabled";
@@ -343,7 +362,7 @@
 			index = <2>;
 			interrupt-names = "COMPARE-SUB2", "RELOAD-SUB2";
 			interrupts = <98 0>, <99 0>;
-			#pwm-cells = <2>;
+			#pwm-cells = <3>;
 			clocks = <&syscon MCUX_BUS_CLK 0 0>;
 			nxp,prescaler = <128>;
 			status = "disabled";
@@ -355,7 +374,7 @@
 			index = <3>;
 			interrupt-names = "COMPARE-SUB3", "RELOAD-SUB3";
 			interrupts = <100 0>, <101 0>;
-			#pwm-cells = <2>;
+			#pwm-cells = <3>;
 			clocks = <&syscon MCUX_BUS_CLK 0 0>;
 			nxp,prescaler = <128>;
 			status = "disabled";

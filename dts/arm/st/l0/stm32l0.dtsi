@@ -12,6 +12,8 @@
 #include <zephyr/dt-bindings/pwm/pwm.h>
 #include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/pwm/stm32_pwm.h>
+#include <zephyr/dt-bindings/dma/stm32_dma.h>
+#include <zephyr/dt-bindings/adc/stm32l4_adc.h>
 #include <zephyr/dt-bindings/reset/stm32l0_reset.h>
 #include <freq.h>
 
@@ -95,7 +97,7 @@
 		};
 
 		flash: flash-controller@40022000 {
-			compatible = "st,stm32-flash-controller", "st,stm32l0-flash-controller";
+			compatible = "st,stm32-flash-controller", "st,stm32f1-flash-controller";
 			reg = <0x40022000 0x400>;
 			interrupts = <3 0>;
 
@@ -126,7 +128,12 @@
 			compatible = "st,stm32-exti";
 			interrupt-controller;
 			#interrupt-cells = <1>;
+			#address-cells = <1>;
 			reg = <0x40010400 0x400>;
+			num-lines = <16>;
+			interrupts = <5 0>, <6 0>, <7 0>;
+			interrupt-names = "line0-1", "line2-3", "line4-15";
+			line-ranges = <0 2>, <2 2>, <4 12>;
 		};
 
 		pinctrl: pin-controller@50000000 {
@@ -245,6 +252,11 @@
 				status = "disabled";
 				#pwm-cells = <3>;
 			};
+
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
+			};
 		};
 
 		timers21: timers@40010800 {
@@ -261,6 +273,11 @@
 				compatible = "st,stm32-pwm";
 				status = "disabled";
 				#pwm-cells = <3>;
+			};
+
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
 			};
 		};
 
@@ -281,10 +298,12 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00000200>;
 			interrupts = <12 0>;
 			status = "disabled";
-			vref-mv = <3300>;
 			#io-channel-cells = <1>;
-			has-temp-channel;
-			has-vref-channel;
+			vref-channel = <17>;
+			resolutions = <STM32_ADC_RES(12, 0x00)
+				       STM32_ADC_RES(10, 0x01)
+				       STM32_ADC_RES(8, 0x02)
+				       STM32_ADC_RES(6, 0x03)>;
 		};
 
 		dma1: dma@40020000 {

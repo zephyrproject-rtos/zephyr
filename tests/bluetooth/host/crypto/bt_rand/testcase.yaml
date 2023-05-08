@@ -1,0 +1,9 @@
+common:
+  tags: bluetooth host
+tests:
+  bluetooth.host.bt_rand.default:
+    type: unit
+  bluetooth.host.bt_rand.host_crypto_prng_disabled:
+    type: unit
+    extra_configs:
+      - CONFIG_BT_HOST_CRYPTO_PRNG=n

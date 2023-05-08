@@ -7,6 +7,7 @@
 /dts-v1/;
 #include <st/h7/stm32h735Xg.dtsi>
 #include <st/h7/stm32h735igkx-pinctrl.dtsi>
+#include "pmod_connector.dtsi"
 
 / {
 	model = "STMicroelectronics STM32H735G DISCOVERY board";
@@ -59,6 +60,10 @@
 	status = "okay";
 };
 
+&clk_hsi48 {
+	status = "okay";
+};
+
 &pll {
 	div-m = <5>;
 	mul-n = <110>;
@@ -98,6 +103,16 @@
 	pinctrl-names = "default";
 };
 
+&rng {
+	status = "okay";
+};
+
+&adc1 {
+	pinctrl-0 = <&adc1_inp0_pa0_c>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
 &mac {
 	pinctrl-0 = <&eth_mdc_pc1
 		     &eth_rxd0_pc4
@@ -109,6 +124,7 @@
 		     &eth_txd0_pb12
 		     &eth_txd1_pb13>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &sdmmc1 {

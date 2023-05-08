@@ -166,13 +166,13 @@
 		reg = <0x10>;
 	};
 
-	bh1749@38 {
+	bh1749: bh1749@38 {
 		compatible = "rohm,bh1749";
 		reg = <0x38>;
 		int-gpios = <&gpio1 5 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 	};
 
-	bme688@76 {
+	bme688: bme688@76 {
 		compatible = "bosch,bme680";
 		reg = <0x76>;
 	};
@@ -247,18 +247,6 @@
 		t-enter-dpd = <10000>;
 		t-exit-dpd = <35000>;
 	};
-};
-
-&timer0 {
-	status = "okay";
-};
-
-&timer1 {
-	status = "okay";
-};
-
-&timer2 {
-	status = "okay";
 };
 
 &flash0 {

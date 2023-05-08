@@ -20,8 +20,17 @@
 			};
 		};
 
+		adc2: adc@40022100 {
+			temp-channel = <18>;
+			vref-channel = <19>;
+		};
+
 		dmamux1: dmamux@40020800 {
-			dma-requests= <111>;
+			dma-requests= <107>;
+		};
+
+		dmamux2: dmamux@58025800 {
+			dma-requests= <107>;
 		};
 
 		usbotg_hs: usb@40040000 {
@@ -32,7 +41,8 @@
 			num-bidir-endpoints = <9>;
 			ram-size = <4096>;
 			maximum-speed = "full-speed";
-			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x02000000>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x02000000>,
+				 <&rcc STM32_SRC_HSI48 USB_SEL(3)>;
 			phys = <&otghs_fs_phy>;
 			status = "disabled";
 		};

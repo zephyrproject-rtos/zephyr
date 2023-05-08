@@ -22,6 +22,8 @@ The nrf5340dk_nrf5340_cpuapp build target provides support for the application
 core on the nRF5340 SoC. The nrf5340dk_nrf5340_cpunet build target provides
 support for the network core on the nRF5340 SoC.
 
+.. note::
+   Trusted Firmware-M (TF-M) and building the ``ns`` target is not supported for this board.
 
 The `Nordic Semiconductor Infocenter`_ contains the processor's information and
 the datasheet.

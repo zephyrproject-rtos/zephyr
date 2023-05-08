@@ -9,7 +9,7 @@
 
 menuconfig IMG_MANAGER
 	bool "DFU image manager"
-	select STREAM_FLASH
+	depends on STREAM_FLASH
 	help
 	  Enable support for managing DFU image.
 
@@ -24,7 +24,7 @@ choice
 
 config MCUBOOT_IMG_MANAGER
 	bool "Image manager for mcuboot"
-	select FLASH_MAP
+	depends on FLASH_MAP
 	select MCUBOOT_BOOTUTIL_LIB
 	help
 	  Enable support for managing DFU image downloaded using mcuboot.

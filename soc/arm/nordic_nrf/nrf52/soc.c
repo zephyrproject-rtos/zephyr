@@ -15,51 +15,31 @@
 #include <zephyr/kernel.h>
 #include <zephyr/init.h>
 #include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
+#include <zephyr/arch/arm/aarch32/nmi.h>
 #include <hal/nrf_power.h>
 #include <soc/nrfx_coredep.h>
 #include <zephyr/logging/log.h>
 
-#ifdef CONFIG_RUNTIME_NMI
-extern void z_arm_nmi_init(void);
-#define NMI_INIT() z_arm_nmi_init()
-#else
-#define NMI_INIT()
-#endif
-
-#if defined(CONFIG_SOC_NRF52805)
-#include <system_nrf52805.h>
-#elif defined(CONFIG_SOC_NRF52810)
-#include <system_nrf52810.h>
-#elif defined(CONFIG_SOC_NRF52811)
-#include <system_nrf52811.h>
-#elif defined(CONFIG_SOC_NRF52820)
-#include <system_nrf52820.h>
-#elif defined(CONFIG_SOC_NRF52832)
-#include <system_nrf52.h>
-#elif defined(CONFIG_SOC_NRF52833)
-#include <system_nrf52833.h>
-#elif defined(CONFIG_SOC_NRF52840)
-#include <system_nrf52840.h>
-#else
-#error "Unknown SoC."
-#endif
-
 #define LOG_LEVEL CONFIG_SOC_LOG_LEVEL
 LOG_MODULE_REGISTER(soc);
 
+#ifdef CONFIG_NRF_STORE_REBOOT_TYPE_GPREGRET
 /* Overrides the weak ARM implementation:
-   Set general purpose retention register and reboot */
+ * Set general purpose retention register and reboot
+ * This is deprecated and has been replaced with the boot mode retention
+ * subsystem
+ */
 void sys_arch_reboot(int type)
 {
 	nrf_power_gpregret_set(NRF_POWER, (uint8_t)type);
 	NVIC_SystemReset();
 }
+#endif
 
-static int nordicsemi_nrf52_init(const struct device *arg)
+static int nordicsemi_nrf52_init(void)
 {
 	uint32_t key;
 
-	ARG_UNUSED(arg);
 
 	key = irq_lock();
 

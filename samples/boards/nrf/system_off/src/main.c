@@ -25,9 +25,8 @@
  * before the threading system starts up between PRE_KERNEL_2 and
  * POST_KERNEL.  Do it at the start of PRE_KERNEL_2.
  */
-static int disable_ds_1(const struct device *dev)
+static int disable_ds_1(void)
 {
-	ARG_UNUSED(dev);
 
 	pm_policy_state_lock_get(PM_STATE_SOFT_OFF, PM_ALL_SUBSTATES);
 	return 0;
@@ -35,14 +34,14 @@ static int disable_ds_1(const struct device *dev)
 
 SYS_INIT(disable_ds_1, PRE_KERNEL_2, 0);
 
-void main(void)
+int main(void)
 {
 	int rc;
 	const struct device *const cons = DEVICE_DT_GET(DT_CHOSEN(zephyr_console));
 
 	if (!device_is_ready(cons)) {
 		printk("%s: device not ready.\n", cons->name);
-		return;
+		return 0;
 	}
 
 	printk("\n%s system off demo\n", CONFIG_BOARD);
@@ -108,4 +107,5 @@ void main(void)
 	while (true) {
 		/* spin to avoid fall-off behavior */
 	}
+	return 0;
 }

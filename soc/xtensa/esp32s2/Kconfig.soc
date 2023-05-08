@@ -13,6 +13,10 @@ config SOC_ESP32S2
 
 if SOC_ESP32S2
 
+config SOC_FAMILY_ESP32
+	bool
+	default y
+
 config IDF_TARGET_ESP32S2
 	bool "ESP32S2 as target board"
 	default y

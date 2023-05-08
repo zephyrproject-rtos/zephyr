@@ -8,5 +8,5 @@ compatible: "st,vl53l0x"
 include: [sensor-device.yaml, i2c-device.yaml]
 
 properties:
-    xshut-gpios:
-      type: phandle-array
+  xshut-gpios:
+    type: phandle-array

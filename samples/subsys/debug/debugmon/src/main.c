@@ -55,19 +55,19 @@ void z_arm_debug_monitor(void)
 		;
 }
 
-void main(void)
+int main(void)
 {
 	/* Set up led and led timer */
 	if (!device_is_ready(led.port)) {
 		printk("Device not ready\n");
-		return;
+		return 0;
 	}
 
 	int err = gpio_pin_configure_dt(&led, GPIO_OUTPUT_ACTIVE);
 
 	if (err) {
 		printk("Error configuring LED\n");
-		return;
+		return 0;
 	}
 	k_timer_start(&led_timer, K_NO_WAIT, K_SECONDS(1));
 
@@ -76,9 +76,10 @@ void main(void)
 	if (err) {
 		printk("Error enabling monitor mode:\n"
 			"Cannot enable DBM when CPU is in Debug mode");
-		return;
+		return 0;
 	}
 
 	/* Enter a breakpoint */
 	__asm("bkpt");
+	return 0;
 }

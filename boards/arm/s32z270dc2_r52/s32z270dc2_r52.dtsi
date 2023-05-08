@@ -89,3 +89,51 @@
 &swt4 {
 	clock-frequency = <48000000>;
 };
+
+&emdio {
+	pinctrl-0 = <&emdio_default>;
+	pinctrl-names = "default";
+	protocol = "clause 22";
+	status = "okay";
+
+	phy0: ethernet-phy {
+		compatible = "ethernet-phy";
+		address = <0x7>;
+		mdio = <&emdio>;
+		status = "okay";
+	};
+};
+
+&enetc_psi0 {
+	local-mac-address = [00 00 00 01 02 00];
+	pinctrl-0 = <&eth0_default>;
+	pinctrl-names = "default";
+	clock-frequency = <300000000>;
+	phy-dev = <&phy0>;
+	status = "okay";
+};
+
+&can0 {
+	pinctrl-0 = <&can0_default>;
+	pinctrl-names = "default";
+	clock-frequency = <80000000>;
+	bus-speed = <125000>;
+	sample-point = <875>;
+	sjw = <1>;
+	bus-speed-data = <1000000>;
+	sample-point-data = <875>;
+	sjw-data = <1>;
+	status = "okay";
+};
+
+&can1 {
+	pinctrl-0 = <&can1_default>;
+	pinctrl-names = "default";
+	clock-frequency = <80000000>;
+	bus-speed = <125000>;
+	sample-point = <875>;
+	sjw = <1>;
+	bus-speed-data = <1000000>;
+	sample-point-data = <875>;
+	sjw-data = <1>;
+};

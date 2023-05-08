@@ -1,7 +1,5 @@
 common:
-    tags: test_framework bluetooth bt_le_cte_req bt_ull_llcp
+  tags: bluetooth bt_le_cte_req bt_ull_llcp
 tests:
   bluetooth.controller.ctrl_cte_req.test:
-     type: unit
-     extra_configs:
-     - CONFIG_ZTEST_NEW_API=y
+    type: unit

@@ -126,7 +126,7 @@ config BT_RX_STACK_SIZE
 	int "Size of the receiving thread stack"
 	default 768 if BT_HCI_RAW
 	default 3092 if BT_MESH_GATT_CLIENT
-	default 2200 if BT_MESH
+	default 2600 if BT_MESH
 	default 2048 if BT_AUDIO
 	default 2200 if BT_SETTINGS
 	default 1200
@@ -208,14 +208,39 @@ config BT_SETTINGS_CCC_LAZY_LOADING
 	  Disabling this option will increase memory usage as CCC values for all
 	  bonded devices will be loaded when calling settings_load.
 
+config BT_SETTINGS_DELAYED_STORE
+	# Enables delayed non-volatile storage mechanism
+	bool
+	help
+	  Triggers the storage of the CF and CCC right after a write.
+	  This is done in the workqueue context, in order to not block the BT RX
+	  thread for too long.
+
+config BT_SETTINGS_DELAYED_STORE_MS
+	int
+	default 1000
+	help
+	  (Advanced) Governs the timeout after which the settings write will
+	  take effect.
+
 config BT_SETTINGS_CCC_STORE_ON_WRITE
 	bool "Store CCC value immediately after it has been written"
 	depends on BT_CONN
+	select BT_SETTINGS_DELAYED_STORE
 	default y
 	help
 	  Store Client Configuration Characteristic value right after it has
 	  been updated. If the option is disabled, the CCC is only stored on
 	  disconnection.
+
+config BT_SETTINGS_CF_STORE_ON_WRITE
+	bool "Store CF value immediately after it has been written"
+	depends on BT_CONN && BT_GATT_CACHING
+	select BT_SETTINGS_DELAYED_STORE
+	default y
+	help
+	  Store Client Supported Features value right after it has been updated.
+	  If the option is disabled, the CF is only stored on disconnection.
 
 config BT_SETTINGS_USE_PRINTK
 	bool "Use snprintk to encode Bluetooth settings key strings"
@@ -254,6 +279,14 @@ config BT_LIM_ADV_TIMEOUT
 	  set shall be terminated. As per BT Core Spec 5.2, Vol 3, Part C,
 	  Appendix A (NORMATIVE): TIMERS AND CONSTANTS it's required to be no more
 	  than 180s.
+
+config BT_CONN_TX_USER_DATA_SIZE
+	int
+	default 16 if 64BIT
+	default 8
+	help
+	  Necessary user_data size for allowing packet fragmentation when
+	  sending over HCI. See `struct tx_meta` in conn.c.
 
 if BT_CONN
 
@@ -324,13 +357,18 @@ config BT_SMP
 	  (SMP), making it possible to pair devices over LE.
 
 if BT_SMP
+config BT_PASSKEY_KEYPRESS
+	bool "Passkey Keypress Notification support [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  Enable support for receiving and sending Keypress Notifications during
+	  Passkey Entry during pairing.
+
 config BT_PRIVACY
 	bool "Privacy Feature"
 	help
-	  Enable Privacy Feature support. This makes it possible to generate and use
-	  Resolvable Private Addresses (RPAs).
-
-	  Disabling this will remove the capability to resolve private addresses.
+	  Enable local Privacy Feature support. This makes it possible
+	  to use Resolvable Private Addresses (RPAs).
 
 config BT_PRIVACY_RANDOMIZE_IR
 	bool "Randomize identity root for fallback identities"
@@ -842,23 +880,12 @@ config BT_DF_VS_CONN_IQ_REPORT_16_BITS_IQ_SAMPLES
 	  extenstion to handle connection IQ report with samples that are in 16 bit signed integer
 	  format.
 
-config BT_DEBUG_DF
-	bool "Bluetooth Direction Finding debug"
-	select DEPRECATED
-	help
-	  This option enables debug support for Bluetooth Direction Finding
-
-module = BT_DF
-legacy-debug-sym = BT_DEBUG_DF
-module-str = "Bluetooth Direction Finding"
-source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
-
 endif # BT_DF
 endif # BT_HCI_HOST
 
 config BT_ECC
 	bool "ECDH key generation support"
-	default y if BT_MESH_PROV || (BT_SMP && !BT_SMP_OOB_LEGACY_PAIR_ONLY)
+	default y if BT_SMP && !BT_SMP_OOB_LEGACY_PAIR_ONLY
 	help
 	  This option adds support for ECDH HCI commands.
 
@@ -899,57 +926,6 @@ config BT_PER_ADV_SYNC_BUF_SIZE
 	  than this buffer size, then the data will be discarded.
 	  Unfragmented reports are forwarded as they are received.
 
-if BT_DEBUG
-
-config BT_DEBUG_SETTINGS
-	bool "Bluetooth storage debug"
-	select DEPRECATED
-	depends on BT_SETTINGS
-	help
-	  This option enables debug support for Bluetooth storage.
-
-module = BT_SETTINGS
-legacy-debug-sym = BT_DEBUG_SETTINGS
-module-str = "Bluetooth storage"
-source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
-
-config BT_DEBUG_HCI_CORE
-	bool "Bluetooth HCI core debug"
-	select DEPRECATED
-	help
-	  This option enables debug support for Bluetooth HCI
-	  core.
-
-module = BT_HCI_CORE
-legacy-debug-sym = BT_DEBUG_HCI_CORE
-module-str = "Bluetooth HCI core"
-source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
-
-config BT_DEBUG_CONN
-	bool "Bluetooth connection debug"
-	select DEPRECATED
-	depends on BT_CONN || BT_ISO
-	help
-	  This option enables debug support for Bluetooth
-	  connection handling.
-
-module = BT_CONN
-legacy-debug-sym = BT_DEBUG_CONN
-module-str = "Bluetooth connection"
-source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
-
-config BT_DEBUG_ISO
-	bool "ISO channel debug"
-	select DEPRECATED
-	help
-	  Use this option to enable ISO channels debug logs for the
-	  Bluetooth Audio functionality.
-
-module = BT_ISO
-legacy-debug-sym = BT_DEBUG_ISO
-module-str = "ISO channel"
-source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
-
 config BT_DEBUG_ISO_DATA
 	bool "ISO channel data debug"
 	depends on BT_ISO_LOG_LEVEL_DBG
@@ -957,42 +933,6 @@ config BT_DEBUG_ISO_DATA
 	  Use this option to enable ISO channels data debug logs for the
 	  Bluetooth Audio functionality. This will enable debug logs for all
 	  ISO data received and sent.
-
-config BT_DEBUG_KEYS
-	bool "Bluetooth security keys debug"
-	select DEPRECATED
-	depends on BT_HCI_HOST
-	depends on BT_SMP
-	help
-	  This option enables debug support for the handling of
-	  Bluetooth security keys.
-
-	  WARNING: This option prints out private security keys such as
-	  the Long Term Key.
-	  Use of this feature in production is strongly discouraged.
-
-module = BT_KEYS
-legacy-debug-sym = BT_DEBUG_KEYS
-module-str = "Bluetooth security keys"
-source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
-
-config BT_DEBUG_SMP
-	bool "Bluetooth Security Manager Protocol (SMP) debug"
-	select DEPRECATED
-	depends on BT_HCI_HOST
-	depends on BT_SMP
-	help
-	  This option enables debug support for the Bluetooth
-	  Security Manager Protocol (SMP).
-
-	  WARNING: This option prints out private security keys such as
-	  the Long Term Key.
-	  Use of this feature in production is strongly discouraged.
-
-module = BT_SMP
-legacy-debug-sym = BT_DEBUG_SMP
-module-str = "Bluetooth Security Manager Protocol"
-source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
 
 config BT_SMP_SELFTEST
 	bool "Bluetooth SMP self tests executed on init"
@@ -1008,85 +948,6 @@ config BT_SMP_FORCE_BREDR
 	  This option enables SMP over BR/EDR even if controller is not
 	  supporting BR/EDR Secure Connections. This option is solely for
 	  testing and should never be enabled on production devices.
-
-config BT_DEBUG_RFCOMM
-	bool "Bluetooth RFCOMM debug"
-	select DEPRECATED
-	depends on BT_RFCOMM
-	help
-	  This option enables debug support for the Bluetooth
-	  RFCOMM layer.
-
-module = BT_RFCOMM
-legacy-debug-sym = BT_DEBUG_RFCOMM
-module-str = "Bluetooth RFCOMM"
-source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
-
-config BT_DEBUG_HFP_HF
-	bool "Bluetooth Hands Free Profile (HFP) debug"
-	select DEPRECATED
-	depends on BT_HFP_HF
-	help
-	  This option enables debug support for the Bluetooth
-	  Hands Free Profile (HFP).
-
-module = BT_HFP_HF
-legacy-debug-sym = BT_DEBUG_HFP_HF
-module-str = "Bluetooth Hands Free Profile (HFP)"
-source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
-
-config BT_DEBUG_AVDTP
-	bool "Bluetooth AVDTP debug"
-	select DEPRECATED
-	depends on BT_AVDTP
-	help
-	  This option enables debug support for the Bluetooth AVDTP.
-
-module = BT_AVDTP
-legacy-debug-sym = BT_DEBUG_AVDTP
-module-str = "Bluetooth AVDTP debug"
-source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
-
-config BT_DEBUG_A2DP
-	bool "Bluetooth A2DP debug"
-	select DEPRECATED
-	depends on BT_A2DP
-	help
-	  This option enables debug support for the Bluetooth
-	  A2DP profile.
-
-module = BT_A2DP
-legacy-debug-sym = BT_DEBUG_A2DP
-module-str = "Bluetooth A2DP"
-source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
-
-config BT_DEBUG_SDP
-	bool "Bluetooth Service Discovery Protocol (SDP) debug"
-	select DEPRECATED
-	depends on BT_BREDR
-	help
-	  This option enables debug support for the Bluetooth
-	  Service Discovery Protocol (SDP).
-
-module = BT_SDP
-legacy-debug-sym = BT_DEBUG_SDP
-module-str = "Bluetooth Service Discovery Protocol (SDP)"
-source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
-
-config BT_DEBUG_SERVICE
-	bool "Bluetooth Services debug"
-	select DEPRECATED
-	depends on BT_CONN
-	help
-	  This option enables debug support for the Bluetooth
-	  Services.
-
-module = BT_SERVICE
-legacy-debug-sym = BT_DEBUG_SERVICE
-module-str = "Bluetooth Services"
-source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
-
-endif # BT_DEBUG
 
 config BT_LOG_SNIFFER_INFO
 	bool "Bluetooth log information for sniffer"

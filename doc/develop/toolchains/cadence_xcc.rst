@@ -28,7 +28,7 @@ Cadence Tensilica Xtensa C/C++ Compiler (XCC)
 
 #. :ref:`Set these environment variables <env_vars>`:
 
-   * Set :envvar:`ZEPHYR_TOOLCHAIN_VARIANT` to ``xcc`` or ``xcc-clang``.
+   * Set :envvar:`ZEPHYR_TOOLCHAIN_VARIANT` to ``xcc`` or ``xt-clang``.
    * Set :envvar:`XTENSA_TOOLCHAIN_PATH` to the toolchain installation
      directory.
    * Set :envvar:`XTENSA_CORE` to the SoC ID where application is being
@@ -49,7 +49,7 @@ Cadence Tensilica Xtensa C/C++ Compiler (XCC)
 
 #. To use Clang-based compiler:
 
-   * Set :envvar:`ZEPHYR_TOOLCHAIN_VARIANT` to ``xcc-clang``.
+   * Set :envvar:`ZEPHYR_TOOLCHAIN_VARIANT` to ``xt-clang``.
 
    * Note that the Clang-based compiler may contain an old LLVM bug which
      results in the following error:
@@ -71,4 +71,4 @@ Cadence Tensilica Xtensa C/C++ Compiler (XCC)
 
    * Also note that setting :envvar:`XCC_USE_CLANG` to ``1`` and
      :envvar:`ZEPHYR_TOOLCHAIN_VARIANT` to ``xcc`` is deprecated.
-     Set :envvar:`ZEPHYR_TOOLCHAIN_VARIANT` to ``xcc-clang`` instead.
+     Set :envvar:`ZEPHYR_TOOLCHAIN_VARIANT` to ``xt-clang`` instead.

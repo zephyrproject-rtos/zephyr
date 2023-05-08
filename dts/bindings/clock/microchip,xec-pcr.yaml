@@ -8,99 +8,95 @@ compatible: "microchip,xec-pcr"
 include: [clock-controller.yaml, pinctrl-device.yaml, base.yaml]
 
 properties:
-    reg:
-      required: true
+  reg:
+    required: true
 
-    interrupts:
-      required: false
+  core-clock-div:
+    type: int
+    required: true
+    description: Divide 96 MHz PLL clock to produce Cortex-M4 core clock
 
-    core-clock-div:
-      type: int
-      required: true
-      description: Divide 96 MHz PLL clock to produce Cortex-M4 core clock
+  slow-clock-div:
+    type: int
+    description: |
+      PWM and TACH clock domain divided down from 48 MHz AHB clock. The
+      default value is 480 for 100 kHz.
 
-    slow-clock-div:
-      type: int
-      description: |
-        PWM and TACH clock domain divided down from 48 MHz AHB clock. The
-        default value is 480 for 100 kHz.
+  pll-32k-src:
+    type: int
+    required: true
+    description: 32 KHz clock source for PLL
 
-    pll-32k-src:
-      type: int
-      required: true
-      description: 32 KHz clock source for PLL
+  periph-32k-src:
+    type: int
+    required: true
+    description: 32 KHz clock source for peripherals
 
-    periph-32k-src:
-      type: int
-      required: true
-      description: 32 KHz clock source for peripherals
+  xtal-single-ended:
+    type: boolean
+    description: Use single ended crystal connection to XTAL2 pin.
 
-    xtal-single-ended:
-      type: boolean
-      description: Use single ended crystal connection to XTAL2 pin.
+  clk32kmon-period-min:
+    type: int
+    required: true
+    description: |
+      32KHz clock monitor minimum valid 32KHz period in 48MHz units
 
-    clk32kmon-period-min:
-      type: int
-      required: true
-      description: |
-        32KHz clock monitor minimum valid 32KHz period in 48MHz units
+  clk32kmon-period-max:
+    type: int
+    required: true
+    description: |
+      32KHz clock monitor maximum valid 32KHz period in 48MHz units
 
-    clk32kmon-period-max:
-      type: int
-      required: true
-      description: |
-        32KHz clock monitor maximum valid 32KHz period in 48MHz units
+  clk32kmon-duty-cycle-var-max:
+    type: int
+    required: true
+    description: |
+      Maximum duty cycle variation. Difference in units of 48HMz between
+      the measured 32KHz high and low pulse widths.
 
-    clk32kmon-duty-cycle-var-max:
-      type: int
-      required: true
-      description: |
-        Maximum duty cycle variation. Difference in units of 48HMz between
-        the measured 32KHz high and low pulse widths.
+  clk32kmon-valid-min:
+    type: int
+    required: true
+    description: |
+      Mininum number of consecutive 32KHz pulses that pass all monitor tests
 
-    clk32kmon-valid-min:
-      type: int
-      required: true
-      description: |
-        Mininum number of consecutive 32KHz pulses that pass all monitor tests
+  xtal-enable-delay-ms:
+    type: int
+    required: true
+    default: 300
+    description: |
+      Delay in milliseconds after crystal is enabled and clock monitor is
+      started.
 
-    xtal-enable-delay-ms:
-      type: int
-      required: true
-      default: 300
-      description: |
-        Delay in milliseconds after crystal is enabled and clock monitor is
-        started.
+  pll-lock-timeout-ms:
+    type: int
+    required: true
+    default: 30
+    description: |
+      Timeout in milliseconds waiting for PLL to lock to new clock source.
 
-    pll-lock-timeout-ms:
-      type: int
-      required: true
-      default: 30
-      description: |
-        Timeout in milliseconds waiting for PLL to lock to new clock source.
+  clkmon-bypass:
+    type: boolean
+    description: Bypass clkmon check of crystal or XTAL2 single-ended clock.
 
-    clkmon-bypass:
-      type: boolean
-      required: false
-      description: Bypass clkmon check of crystal or XTAL2 single-ended clock.
+  internal-osc-disable:
+    type: boolean
+    description: |
+      If the internal silicon 32KHz oscillator is not chosen as the source
+      for PLL and Periheral devices then disable the internal 32KHz
+      oscillator to save power.
 
-    internal-osc-disable:
-      type: boolean
-      required: false
-      description: |
-        If the internal silicon 32KHz oscillator is not chosen as the source
-        for PLL and Periheral devices then disable the internal 32KHz
-        oscillator to save power.
+  pinctrl-0:
+    required: true
 
-    pinctrl-0:
-      required: true
+  pinctrl-names:
+    required: true
 
-    pinctrl-names:
-      required: true
-
-    "#clock-cells":
-      const: 2
+  "#clock-cells":
+    const: 3
 
 clock-cells:
   - regidx
   - bitpos
+  - domain

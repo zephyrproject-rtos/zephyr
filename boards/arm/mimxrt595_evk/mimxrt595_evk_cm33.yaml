@@ -25,3 +25,5 @@ supported:
   - spi
   - usb_device
   - watchdog
+  - sdhc
+  - pwm

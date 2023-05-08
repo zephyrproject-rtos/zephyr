@@ -1,6 +1,6 @@
 sample:
-  description: TBD
-  name: TBD
+  name: Bluetooth Peripheral HR
+  description: Demonstrates the HR (Heart Rate) GATT Service
 tests:
   sample.bluetooth.peripheral_hr:
     harness: bluetooth

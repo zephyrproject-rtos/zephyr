@@ -71,11 +71,10 @@ static void configure_debug_interface(void)
 #endif /* CONFIG_SOC_MEC1501_DEBUG_WITHOUT_TRACING */
 }
 
-static int soc_init(const struct device *dev)
+static int soc_init(void)
 {
 	uint32_t isave;
 
-	ARG_UNUSED(dev);
 
 	isave = __get_PRIMASK();
 	__disable_irq();

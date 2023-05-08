@@ -62,6 +62,19 @@ config BT_EATT_AUTO_CONNECT
 
 endif # BT_EATT
 
+config BT_GATT_AUTO_RESUBSCRIBE
+	bool "Automatic re-subscription to characteristics"
+	default y
+	imply BT_GATT_AUTO_SEC_REQ
+	depends on BT_GATT_CLIENT
+	help
+	  Quirk: upon re-establishing a bonded connection, assumes the remote
+	  forgot the CCC values and sets them again. If this behavior is not
+	  desired for a particular subscription, set the
+	  `BT_GATT_SUBSCRIBE_FLAG_NO_RESUB` flag.
+	  This also means that upon a reconnection, the application will get an
+	  unprompted call to its `subscribe` callback.
+
 config BT_GATT_AUTO_SEC_REQ
 	bool "Automatic security re-establishment request as a peripheral"
 	default y
@@ -262,33 +275,5 @@ config DEVICE_NAME_GATT_WRITABLE_AUTHEN
 	  authenticated to write to the device name GAP characteristic.
 
 endif #BT_DEVICE_NAME_GATT_WRITABLE
-
-if BT_DEBUG
-
-config BT_DEBUG_ATT
-	bool "Bluetooth Attribute Protocol (ATT) debug"
-	select DEPRECATED
-	help
-	  This option enables debug support for the Bluetooth
-	  Attribute Protocol (ATT).
-
-module = BT_ATT
-legacy-debug-sym = BT_DEBUG_ATT
-module-str = "Bluetooth Attribute Protocol (ATT)"
-source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
-
-config BT_DEBUG_GATT
-	bool "Bluetooth Generic Attribute Profile (GATT) debug"
-	select DEPRECATED
-	help
-	  This option enables debug support for the Bluetooth
-	  Generic Attribute Profile (GATT).
-
-module = BT_GATT
-legacy-debug-sym = BT_DEBUG_GATT
-module-str = "Bluetooth Generic Attribute Profile (GATT)"
-source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
-
-endif # BT_DEBUG
 
 endmenu

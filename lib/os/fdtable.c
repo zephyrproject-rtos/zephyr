@@ -14,7 +14,7 @@
  */
 
 #include <errno.h>
-#include <fcntl.h>
+#include <zephyr/posix/fcntl.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/fdtable.h>
 #include <zephyr/sys/speculation.h>

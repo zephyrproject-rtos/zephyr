@@ -203,6 +203,12 @@ enum net_if_flag {
 	/** Driver signals dormant. */
 	NET_IF_DORMANT,
 
+	/** IPv6 Neighbor Discovery disabled. */
+	NET_IF_IPV6_NO_ND,
+
+	/** IPv6 Multicast Listener Discovery disabled. */
+	NET_IF_IPV6_NO_MLD,
+
 /** @cond INTERNAL_HIDDEN */
 	/* Total number of flags - must be at the end of the enum */
 	NET_IF_NUM_FLAGS
@@ -332,6 +338,12 @@ struct net_if_dhcpv4 {
 
 	/** Number of attempts made for REQUEST and RENEWAL messages */
 	uint8_t attempts;
+
+	/** The address of the server the request is sent to */
+	struct in_addr request_server_addr;
+
+	/** The source address of a received DHCP message */
+	struct in_addr response_src_addr;
 };
 #endif /* CONFIG_NET_DHCPV4 */
 
@@ -1504,6 +1516,10 @@ uint32_t net_if_ipv6_calc_reachable_time(struct net_if_ipv6 *ipv6);
 static inline void net_if_ipv6_set_reachable_time(struct net_if_ipv6 *ipv6)
 {
 #if defined(CONFIG_NET_NATIVE_IPV6)
+	if (ipv6 == NULL) {
+		return;
+	}
+
 	ipv6->reachable_time = net_if_ipv6_calc_reachable_time(ipv6);
 #endif
 }
@@ -2338,14 +2354,30 @@ void net_if_add_tx_timestamp(struct net_pkt *pkt);
  *
  * @return 0 on success, <0 if error
  */
+#if defined(CONFIG_NET_PROMISCUOUS_MODE)
 int net_if_set_promisc(struct net_if *iface);
+#else
+static inline int net_if_set_promisc(struct net_if *iface)
+{
+	ARG_UNUSED(iface);
+
+	return -ENOTSUP;
+}
+#endif
 
 /**
  * @brief Set network interface into normal mode
  *
  * @param iface Pointer to network interface
  */
+#if defined(CONFIG_NET_PROMISCUOUS_MODE)
 void net_if_unset_promisc(struct net_if *iface);
+#else
+static inline void net_if_unset_promisc(struct net_if *iface)
+{
+	ARG_UNUSED(iface);
+}
+#endif
 
 /**
  * @brief Check if promiscuous mode is set or not.
@@ -2355,7 +2387,16 @@ void net_if_unset_promisc(struct net_if *iface);
  * @return True if interface is in promisc mode,
  *         False if interface is not in in promiscuous mode.
  */
+#if defined(CONFIG_NET_PROMISCUOUS_MODE)
 bool net_if_is_promisc(struct net_if *iface);
+#else
+static inline bool net_if_is_promisc(struct net_if *iface)
+{
+	ARG_UNUSED(iface);
+
+	return false;
+}
+#endif
 
 /**
  * @brief Check if there are any pending TX network data for a given network
@@ -2458,6 +2499,7 @@ struct net_if_api {
 				NET_IF_DEV_GET_NAME(dev_id, sfx)) = {	\
 		.dev = &(DEVICE_NAME_GET(dev_id)),			\
 		.mtu = _mtu,						\
+		.l2 = &(NET_L2_GET_NAME(OFFLOADED_NETDEV)),		\
 	};								\
 	static Z_DECL_ALIGN(struct net_if)				\
 		NET_IF_GET_NAME(dev_id, sfx)[NET_IF_MAX_CONFIGS]	\

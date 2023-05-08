@@ -1,13 +1,13 @@
 common:
   harness: console
-  platform_exclude: native_posix native_posix_64 nrf52_bsim
+  arch_exclude: posix
   tags: cbprintf
   integration_platforms:
     - qemu_x86
     - qemu_x86_64
   filter: CONFIG_CONSOLE_HAS_DRIVER
 tests:
-  lib.cbprintf_fp.printk:
+  libraries.cbprintf_fp.printk:
     extra_configs:
       - CONFIG_APP_FORMATTER_PRINTK=y
     harness_config:
@@ -16,7 +16,7 @@ tests:
       regex:
         - "Hello with printk"
         - "Complete"
-  lib.cbprintf_fp.printf:
+  libraries.cbprintf_fp.printf:
     extra_configs:
       - CONFIG_APP_FORMATTER_PRINTF=y
     harness_config:
@@ -25,7 +25,7 @@ tests:
       regex:
         - "Hello with printf"
         - "Complete"
-  lib.cbprintf_fp.printf_nl:
+  libraries.cbprintf_fp.printf_nl:
     filter: TOOLCHAIN_HAS_NEWLIB == 1
     extra_configs:
       - CONFIG_APP_FORMATTER_PRINTF=y
@@ -36,7 +36,7 @@ tests:
       regex:
         - "Hello with printf/newlib"
         - "Complete"
-  lib.cbprintf_fp.printfcb:
+  libraries.cbprintf_fp.printfcb:
     extra_configs:
       - CONFIG_APP_FORMATTER_PRINTFCB=y
     harness_config:
@@ -45,7 +45,7 @@ tests:
       regex:
         - "Hello with printfcb"
         - "Complete"
-  lib.cbprintf_fp.printfcb_nl:
+  libraries.cbprintf_fp.printfcb_nl:
     filter: TOOLCHAIN_HAS_NEWLIB == 1
     extra_configs:
       - CONFIG_APP_FORMATTER_PRINTFCB=y
@@ -56,7 +56,7 @@ tests:
       regex:
         - "Hello with printfcb/newlib"
         - "Complete"
-  lib.cbprintf_fp.fprintf:
+  libraries.cbprintf_fp.fprintf:
     extra_configs:
       - CONFIG_APP_FORMATTER_FPRINTF=y
     harness_config:
@@ -65,7 +65,7 @@ tests:
       regex:
         - "Hello with fprintf"
         - "Complete"
-  lib.cbprintf_fp.fprintfcb:
+  libraries.cbprintf_fp.fprintfcb:
     extra_configs:
       - CONFIG_APP_FORMATTER_FPRINTFCB=y
     harness_config:
@@ -74,7 +74,7 @@ tests:
       regex:
         - "Hello with fprintfcb"
         - "Complete"
-  lib.cbprintf_fp.printf.picolibc:
+  libraries.cbprintf_fp.printf.picolibc:
     filter: CONFIG_PICOLIBC_SUPPORTED
     tags: picolibc
     extra_configs:
@@ -86,7 +86,7 @@ tests:
       regex:
         - "Hello with printf"
         - "Complete"
-  lib.cbprintf_fp.printfcb.picolibc:
+  libraries.cbprintf_fp.printfcb.picolibc:
     filter: CONFIG_PICOLIBC_SUPPORTED
     tags: picolibc
     extra_configs:

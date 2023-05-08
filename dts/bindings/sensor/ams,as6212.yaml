@@ -10,8 +10,8 @@ compatible: "ams,as6212"
 include: i2c-device.yaml
 
 properties:
-    alert-gpios:
-      type: phandle-array
-      description: |
-        Identifies the ALERT signal, which is active-low open drain when
-        produced by the sensor.
+  alert-gpios:
+    type: phandle-array
+    description: |
+      Identifies the ALERT signal, which is active-low open drain when
+      produced by the sensor.

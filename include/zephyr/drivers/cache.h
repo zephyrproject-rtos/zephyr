@@ -12,14 +12,14 @@
 #ifndef ZEPHYR_INCLUDE_DRIVERS_CACHE_H_
 #define ZEPHYR_INCLUDE_DRIVERS_CACHE_H_
 
+#include <stddef.h>
+
 /**
  * @brief External Cache Controller Interface
  * @defgroup cache_external_interface External Cache Controller Interface
  * @ingroup io_interfaces
  * @{
  */
-
-#include <zephyr/cache.h>
 
 #ifdef __cplusplus
 extern "C" {

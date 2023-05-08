@@ -1,0 +1,14 @@
+# Copyright 2023 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+if INPUT
+
+menu "Input drivers"
+
+source "drivers/input/Kconfig.ft5336"
+source "drivers/input/Kconfig.gpio_keys"
+source "drivers/input/Kconfig.sdl"
+
+endmenu # Input Drivers
+
+endif # INPUT

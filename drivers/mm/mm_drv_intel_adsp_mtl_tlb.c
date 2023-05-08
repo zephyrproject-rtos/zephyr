@@ -21,13 +21,24 @@
  */
 
 #include "mm_drv_intel_adsp.h"
-
+#include <soc_util.h>
 #include <zephyr/drivers/mm/mm_drv_intel_adsp_mtl_tlb.h>
+#include <zephyr/drivers/mm/mm_drv_bank.h>
+#include <zephyr/debug/sparse.h>
+#include <zephyr/cache.h>
 
 static struct k_spinlock tlb_lock;
 extern struct k_spinlock sys_mm_drv_common_lock;
 
-static int hpsram_ref[L2_SRAM_BANK_NUM];
+static struct mem_drv_bank hpsram_bank[L2_SRAM_BANK_NUM];
+
+#ifdef CONFIG_SOC_INTEL_COMM_WIDGET
+#include <adsp_comm_widget.h>
+
+static uint32_t used_pages;
+/* PMC uses 32 KB banks */
+static uint32_t used_pmc_banks_reported;
+#endif
 
 
 /* Define a marker which is placed by the linker script just after
@@ -139,6 +150,21 @@ static int sys_mm_drv_hpsram_pwr(uint32_t bank_idx, bool enable, bool non_blocki
 	return 0;
 }
 
+#ifdef CONFIG_SOC_INTEL_COMM_WIDGET
+static void sys_mm_drv_report_page_usage(void)
+{
+	/* PMC uses 32 KB banks */
+	uint32_t pmc_banks = DIV_ROUND_UP(used_pages, KB(32) / CONFIG_MM_DRV_PAGE_SIZE);
+
+	if (used_pmc_banks_reported != pmc_banks) {
+		if (!adsp_comm_widget_pmc_send_ipc(pmc_banks)) {
+			/* Store reported value if message was sent successfully. */
+			used_pmc_banks_reported = pmc_banks;
+		}
+	}
+}
+#endif
+
 int sys_mm_drv_map_page(void *virt, uintptr_t phys, uint32_t flags)
 {
 	k_spinlock_key_t key;
@@ -167,7 +193,7 @@ int sys_mm_drv_map_page(void *virt, uintptr_t phys, uint32_t flags)
 	}
 
 	/* Check bounds of virtual address space */
-	CHECKIF((va <= UNUSED_L2_START_ALIGNED) ||
+	CHECKIF((va < UNUSED_L2_START_ALIGNED) ||
 		(va >= (CONFIG_KERNEL_VM_BASE + CONFIG_KERNEL_VM_SIZE))) {
 		ret = -EINVAL;
 		goto out;
@@ -207,9 +233,13 @@ int sys_mm_drv_map_page(void *virt, uintptr_t phys, uint32_t flags)
 
 	entry_idx = get_tlb_entry_idx(va);
 
-	bank_idx = get_hpsram_bank_idx(pa);
+#ifdef CONFIG_SOC_INTEL_COMM_WIDGET
+	used_pages++;
+	sys_mm_drv_report_page_usage();
+#endif
 
-	if (!hpsram_ref[bank_idx]++) {
+	bank_idx = get_hpsram_bank_idx(pa);
+	if (sys_mm_drv_bank_page_mapped(&hpsram_bank[bank_idx]) == 1) {
 		sys_mm_drv_hpsram_pwr(bank_idx, true, false);
 	}
 
@@ -240,7 +270,7 @@ int sys_mm_drv_map_page(void *virt, uintptr_t phys, uint32_t flags)
 	 * Invalid the cache of the newly mapped virtual page to
 	 * avoid stale data.
 	 */
-	z_xtensa_cache_inv(virt, CONFIG_MM_DRV_PAGE_SIZE);
+	sys_cache_data_invd_range(virt, CONFIG_MM_DRV_PAGE_SIZE);
 
 	k_spin_unlock(&tlb_lock, key);
 
@@ -264,7 +294,7 @@ int sys_mm_drv_map_region(void *virt, uintptr_t phys,
 		goto out;
 	}
 
-	va = (uint8_t *)z_soc_cached_ptr(virt);
+	va = (__sparse_force uint8_t *)z_soc_cached_ptr(virt);
 	pa = phys;
 
 	key = k_spin_lock(&sys_mm_drv_common_lock);
@@ -292,7 +322,7 @@ out:
 int sys_mm_drv_map_array(void *virt, uintptr_t *phys,
 			 size_t cnt, uint32_t flags)
 {
-	void *va = z_soc_cached_ptr(virt);
+	void *va = (__sparse_force void *)z_soc_cached_ptr(virt);
 
 	return sys_mm_drv_simple_map_array(va, phys, cnt, flags);
 }
@@ -309,7 +339,7 @@ int sys_mm_drv_unmap_page(void *virt)
 	uintptr_t va = POINTER_TO_UINT(z_soc_cached_ptr(virt));
 
 	/* Check bounds of virtual address space */
-	CHECKIF((va <= UNUSED_L2_START_ALIGNED) ||
+	CHECKIF((va < UNUSED_L2_START_ALIGNED) ||
 		(va >= (CONFIG_KERNEL_VM_BASE + CONFIG_KERNEL_VM_SIZE))) {
 		ret = -EINVAL;
 		goto out;
@@ -327,7 +357,7 @@ int sys_mm_drv_unmap_page(void *virt)
 	 * Flush the cache to make sure the backing physical page
 	 * has the latest data.
 	 */
-	z_xtensa_cache_flush(virt, CONFIG_MM_DRV_PAGE_SIZE);
+	sys_cache_data_flush_range(virt, CONFIG_MM_DRV_PAGE_SIZE);
 
 	entry_idx = get_tlb_entry_idx(va);
 
@@ -343,7 +373,12 @@ int sys_mm_drv_unmap_page(void *virt)
 					       UINT_TO_POINTER(pa), 1);
 
 		bank_idx = get_hpsram_bank_idx(pa);
-		if (--hpsram_ref[bank_idx] == 0) {
+#ifdef CONFIG_SOC_INTEL_COMM_WIDGET
+		used_pages--;
+		sys_mm_drv_report_page_usage();
+#endif
+
+		if (sys_mm_drv_bank_page_unmapped(&hpsram_bank[bank_idx]) == 0) {
 			sys_mm_drv_hpsram_pwr(bank_idx, false, false);
 		}
 	}
@@ -356,7 +391,7 @@ out:
 
 int sys_mm_drv_unmap_region(void *virt, size_t size)
 {
-	void *va = z_soc_cached_ptr(virt);
+	void *va = (__sparse_force void *)z_soc_cached_ptr(virt);
 
 	return sys_mm_drv_simple_unmap_region(va, size);
 }
@@ -447,8 +482,8 @@ out:
 int sys_mm_drv_remap_region(void *virt_old, size_t size,
 			    void *virt_new)
 {
-	void *va_new = z_soc_cached_ptr(virt_new);
-	void *va_old = z_soc_cached_ptr(virt_old);
+	void *va_new = (__sparse_force void *)z_soc_cached_ptr(virt_new);
+	void *va_old = (__sparse_force void *)z_soc_cached_ptr(virt_old);
 
 	return sys_mm_drv_simple_remap_region(va_old, size, va_new);
 }
@@ -460,8 +495,8 @@ int sys_mm_drv_move_region(void *virt_old, size_t size, void *virt_new,
 	size_t offset;
 	int ret = 0;
 
-	virt_new = z_soc_cached_ptr(virt_new);
-	virt_old = z_soc_cached_ptr(virt_old);
+	virt_new = (__sparse_force void *)z_soc_cached_ptr(virt_new);
+	virt_old = (__sparse_force void *)z_soc_cached_ptr(virt_old);
 
 	CHECKIF(!sys_mm_drv_is_virt_addr_aligned(virt_old) ||
 		!sys_mm_drv_is_virt_addr_aligned(virt_new) ||
@@ -547,8 +582,8 @@ out:
 	 * flush the cache to make sure the backing physical
 	 * pages have the new data.
 	 */
-	z_xtensa_cache_flush(virt_new, size);
-	z_xtensa_cache_flush_inv(virt_old, size);
+	sys_cache_data_flush_range(virt_new, size);
+	sys_cache_data_flush_and_invd_range(virt_old, size);
 
 	return ret;
 }
@@ -558,8 +593,8 @@ int sys_mm_drv_move_array(void *virt_old, size_t size, void *virt_new,
 {
 	int ret;
 
-	void *va_new = z_soc_cached_ptr(virt_new);
-	void *va_old = z_soc_cached_ptr(virt_old);
+	void *va_new = (__sparse_force void *)z_soc_cached_ptr(virt_new);
+	void *va_old = (__sparse_force void *)z_soc_cached_ptr(virt_old);
 
 	ret = sys_mm_drv_simple_move_array(va_old, size, va_new,
 					    phys_new, phys_cnt);
@@ -569,7 +604,7 @@ int sys_mm_drv_move_array(void *virt_old, size_t size, void *virt_new,
 	 * flush the cache to make sure the backing physical
 	 * pages have the new data.
 	 */
-	z_xtensa_cache_flush(va_new, size);
+	sys_cache_data_flush_range(va_new, size);
 
 	return ret;
 }
@@ -613,8 +648,12 @@ static int sys_mm_drv_mm_init(const struct device *dev)
 	 * of pages within single memory bank.
 	 */
 	for (int i = 0; i < L2_SRAM_BANK_NUM; i++) {
-		hpsram_ref[i] = SRAM_BANK_SIZE / CONFIG_MM_DRV_PAGE_SIZE;
+		sys_mm_drv_bank_init(&hpsram_bank[i],
+				     SRAM_BANK_SIZE / CONFIG_MM_DRV_PAGE_SIZE);
 	}
+#ifdef CONFIG_SOC_INTEL_COMM_WIDGET
+	used_pages = L2_SRAM_BANK_NUM * SRAM_BANK_SIZE / CONFIG_MM_DRV_PAGE_SIZE;
+#endif
 
 #ifdef CONFIG_MM_DRV_INTEL_ADSP_TLB_REMAP_UNUSED_RAM
 	/*
@@ -639,6 +678,13 @@ static int sys_mm_drv_mm_init(const struct device *dev)
 
 	ret = sys_mm_drv_unmap_region(UINT_TO_POINTER(UNUSED_L2_START_ALIGNED),
 				      unused_size);
+#endif
+
+	/*
+	 * Notify PMC about used HP-SRAM pages.
+	 */
+#ifdef CONFIG_SOC_INTEL_COMM_WIDGET
+	sys_mm_drv_report_page_usage();
 #endif
 
 	return 0;
@@ -677,7 +723,8 @@ static void adsp_mm_save_context(void *storage_buffer)
 			 * all cache data has been flushed before
 			 * do this for pages to remap only
 			 */
-			z_xtensa_cache_inv(UINT_TO_POINTER(phys_addr), CONFIG_MM_DRV_PAGE_SIZE);
+			sys_cache_data_invd_range(UINT_TO_POINTER(phys_addr),
+						  CONFIG_MM_DRV_PAGE_SIZE);
 
 			/* Enable the translation in the TLB entry */
 			entry |= TLB_ENABLE_BIT;
@@ -701,7 +748,7 @@ static void adsp_mm_save_context(void *storage_buffer)
 	*((uint32_t *) location) = 0;
 	location += sizeof(uint32_t);
 
-	z_xtensa_cache_flush(
+	sys_cache_data_flush_range(
 		storage_buffer,
 		(uint32_t)location - (uint32_t)storage_buffer);
 
@@ -725,7 +772,8 @@ __imr void adsp_mm_restore_context(void *storage_buffer)
 
 	while (phys_addr != 0) {
 		uint32_t phys_addr_uncached =
-				POINTER_TO_UINT(z_soc_uncached_ptr(UINT_TO_POINTER(phys_addr)));
+				POINTER_TO_UINT(z_soc_uncached_ptr(
+					(void __sparse_cache *)UINT_TO_POINTER(phys_addr)));
 		uint32_t phys_offset = phys_addr - L2_SRAM_BASE;
 		uint32_t bank_idx = (phys_offset / SRAM_BANK_SIZE);
 
@@ -742,7 +790,7 @@ __imr void adsp_mm_restore_context(void *storage_buffer)
 		bmemcpy(UINT_TO_POINTER(phys_addr_uncached),
 			location,
 			CONFIG_MM_DRV_PAGE_SIZE);
-		z_xtensa_cache_inv(UINT_TO_POINTER(phys_addr), CONFIG_MM_DRV_PAGE_SIZE);
+		sys_cache_data_invd_range(UINT_TO_POINTER(phys_addr), CONFIG_MM_DRV_PAGE_SIZE);
 
 		location += CONFIG_MM_DRV_PAGE_SIZE;
 		phys_addr = *((uint32_t *) location);

@@ -171,6 +171,78 @@
 			status = "okay";
 		};
 
+		alh4: alh4@24400 {
+			compatible = "intel,alh-dai";
+			reg = <0x00024400 0x00024600>;
+			status = "okay";
+		};
+
+		alh5: alh5@24400 {
+			compatible = "intel,alh-dai";
+			reg = <0x00024400 0x00024600>;
+			status = "okay";
+		};
+
+		alh6: alh6@24400 {
+			compatible = "intel,alh-dai";
+			reg = <0x00024400 0x00024600>;
+			status = "okay";
+		};
+
+		alh7: alh7@24400 {
+			compatible = "intel,alh-dai";
+			reg = <0x00024400 0x00024600>;
+			status = "okay";
+		};
+
+		alh8: alh8@24400 {
+			compatible = "intel,alh-dai";
+			reg = <0x00024400 0x00024600>;
+			status = "okay";
+		};
+
+		alh9: alh9@24400 {
+			compatible = "intel,alh-dai";
+			reg = <0x00024400 0x00024600>;
+			status = "okay";
+		};
+
+		alh10: alh10@24400 {
+			compatible = "intel,alh-dai";
+			reg = <0x00024400 0x00024600>;
+			status = "okay";
+		};
+
+		alh11: alh11@24400 {
+			compatible = "intel,alh-dai";
+			reg = <0x00024400 0x00024600>;
+			status = "okay";
+		};
+
+		alh12: alh12@24400 {
+			compatible = "intel,alh-dai";
+			reg = <0x00024400 0x00024600>;
+			status = "okay";
+		};
+
+		alh13: alh13@24400 {
+			compatible = "intel,alh-dai";
+			reg = <0x00024400 0x00024600>;
+			status = "okay";
+		};
+
+		alh14: alh14@24400 {
+			compatible = "intel,alh-dai";
+			reg = <0x00024400 0x00024600>;
+			status = "okay";
+		};
+
+		alh15: alh15@24400 {
+			compatible = "intel,alh-dai";
+			reg = <0x00024400 0x00024600>;
+			status = "okay";
+		};
+
 		ssp0: ssp@28000 {
 			compatible = "intel,ssp-dai";
 			#address-cells = <1>;
@@ -348,6 +420,14 @@
 			};
 		};
 
+		ace_comm_widget: ace_comm_widget@71c00 {
+			compatible = "intel,adsp-communication-widget";
+			reg = <0x00071c00 0x100>;
+			interrupts = <0x19 0 0>;
+			interrupt-parent = <&ace_intc>;
+			status = "okay";
+		};
+
 		shim: shim@71f00 {
 			compatible = "intel,adsp-shim";
 			reg = <0x71f00 0x100>;
@@ -430,6 +510,32 @@
 			interrupt-parent = <&ace_intc>;
 		};
 
+		watchdog0: watchdog@78300 {
+			compatible = "snps,designware-watchdog";
+			reg = <0x78300 0x100>;
+			interrupts = <8 0 0>;
+			interrupt-parent = <&core_intc>;
+			clock-frequency = <32768>;
+			reset-pulse-length = <2>;
+			status = "okay";
+		};
+
+		watchdog1: watchdog@78400 {
+			compatible = "snps,designware-watchdog";
+			reg = <0x78400 0x100>;
+			clock-frequency = <32768>;
+			reset-pulse-length = <2>;
+			status = "okay";
+		};
+
+		watchdog2: watchdog@78500 {
+			compatible = "snps,designware-watchdog";
+			reg = <0x78500 0x100>;
+			clock-frequency = <32768>;
+			reset-pulse-length = <2>;
+			status = "okay";
+		};
+
 		/* This is actually an array of per-core designware
 		 * controllers, but the special setup and extra
 		 * masking layer makes it easier for MTL to handle
@@ -456,6 +562,7 @@
 			dma-copy-alignment = <4>;
 			status = "okay";
 			power-domain = <&hub_ulp_domain>;
+			zephyr,pm-device-runtime-auto;
 		};
 
 		lpgpdma1: dma@7d000 {
@@ -469,6 +576,7 @@
 			dma-copy-alignment = <4>;
 			status = "okay";
 			power-domain = <&io0_domain>;
+			zephyr,pm-device-runtime-auto;
 		};
 
 		lpgpdma2: dma@7e000 {
@@ -482,6 +590,7 @@
 			dma-copy-alignment = <4>;
 			power-domain = <&io0_domain>;
 			status = "okay";
+			zephyr,pm-device-runtime-auto;
 		};
 
 		sha: adsp-sha@17df00 {

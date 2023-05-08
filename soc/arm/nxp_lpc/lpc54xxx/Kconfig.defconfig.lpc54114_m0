@@ -8,10 +8,6 @@ if SOC_LPC54114_M0
 config SOC
 	default "lpc54114_m0"
 
-config PINMUX_MCUX_LPC
-	default n
-	depends on PINMUX
-
 config GPIO
 	default n
 

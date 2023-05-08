@@ -1,6 +1,6 @@
 common:
-    timeout: 5
-    platform_allow: b_u585i_iot02a
+  timeout: 5
+  platform_allow: b_u585i_iot02a
 tests:
   drivers.stm32_clock_configuration.u5.sysclksrc_pll_msis_160:
     extra_args: DTC_OVERLAY_FILE="boards/clear_clocks.overlay;boards/pll_msis_160.overlay"

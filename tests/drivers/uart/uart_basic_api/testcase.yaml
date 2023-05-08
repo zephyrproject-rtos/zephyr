@@ -1,13 +1,13 @@
 tests:
   drivers.uart.basic_api:
-    tags: drivers
+    tags: drivers uart
     filter: CONFIG_UART_CONSOLE
     harness: keyboard
     integration_platforms:
       - mps2_an385
   drivers.uart.basic_api.poll:
     extra_args: CONF_FILE=prj_poll.conf
-    tags: drivers
+    tags: drivers uart
     filter: CONFIG_UART_CONSOLE
     harness: keyboard
     integration_platforms:
@@ -15,7 +15,7 @@ tests:
   drivers.uart.basic_api.shell:
     extra_args: CONF_FILE=prj_shell.conf
     min_flash: 64
-    tags: drivers
+    tags: drivers uart
     filter: CONFIG_UART_CONSOLE
     harness: keyboard
     integration_platforms:

@@ -1,6 +1,6 @@
 sample:
-  description: TBD
-  name: TBD
+  name: Bluetooth HCI UART
+  description: Allows Zephyr to provide Bluetooth connectivity via UART
 tests:
   sample.bluetooth.hci_uart.arm:
     harness: bluetooth

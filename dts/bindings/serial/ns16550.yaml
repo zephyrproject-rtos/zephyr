@@ -2,18 +2,22 @@ description: ns16550 UART
 
 compatible: "ns16550"
 
-include: [uart-controller.yaml, pcie-device.yaml]
+include: [uart-controller.yaml, pcie-device.yaml, pinctrl-device.yaml]
 
 properties:
-    reg-shift:
-      type: int
-      required: true
-      description: quantity to shift the register offsets by
+  reg-shift:
+    type: int
+    required: true
+    description: quantity to shift the register offsets by
 
-    pcp:
-      type: int
-      description: custom clock (PRV_CLOCK_PARAMS, if supported)
+  pcp:
+    type: int
+    description: custom clock (PRV_CLOCK_PARAMS, if supported)
 
-    dlf:
-      type: int
-      description: divisor latch fraction (DLF, if supported)
+  dlf:
+    type: int
+    description: divisor latch fraction (DLF, if supported)
+
+  io-mapped:
+    type: boolean
+    description: specify registers are IO mapped or memory mapped

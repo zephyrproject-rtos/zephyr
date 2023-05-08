@@ -18,7 +18,11 @@
 #include "util/mem.h"
 #include "util/dbuf.h"
 
+#include "pdu_df.h"
+#include "lll/pdu_vendor.h"
 #include "pdu.h"
+
+#include "hal/ccm.h"
 
 #include "lll.h"
 #include "lll/lll_adv_types.h"

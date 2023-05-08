@@ -10,6 +10,7 @@
 #include <assert.h>
 #include <string.h>
 #include <zephyr/toolchain.h>
+#include <zephyr/logging/log.h>
 
 #include <zcbor_common.h>
 #include <zcbor_decode.h>
@@ -34,8 +35,7 @@
 #include <zephyr/mgmt/mcumgr/mgmt/callbacks.h>
 #endif
 
-#include <zephyr/logging/log.h>
-LOG_MODULE_DECLARE(mcumgr_img_mgmt, CONFIG_MCUMGR_GRP_IMG_LOG_LEVEL);
+LOG_MODULE_REGISTER(mcumgr_img_grp, CONFIG_MCUMGR_GRP_IMG_LOG_LEVEL);
 
 struct img_mgmt_state g_img_mgmt_state;
 
@@ -85,30 +85,6 @@ int
 img_mgmt_read_info(int image_slot, struct image_version *ver, uint8_t *hash,
 				   uint32_t *flags)
 {
-
-#ifdef CONFIG_MCUMGR_GRP_IMG_DUMMY_HDR
-	uint8_t dummy_hash[] = {0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x00, 0x11, 0x22,
-				0x33, 0x44, 0x55, 0x66, 0x77};
-
-	if (!hash && !ver && !flags) {
-		return 0;
-	}
-
-	if (hash) {
-		memcpy(hash, dummy_hash, IMG_MGMT_HASH_LEN);
-	}
-
-	if (ver) {
-		memset(ver, 0xff, sizeof(*ver));
-	}
-
-	if (flags) {
-		*flags = 0;
-	}
-
-	return 0;
-#endif
-
 	struct image_header hdr;
 	struct image_tlv tlv;
 	size_t data_off;
@@ -267,7 +243,6 @@ img_mgmt_erase(struct smp_streamer *ctxt)
 	struct image_version ver;
 	int rc;
 	zcbor_state_t *zsd = ctxt->reader->zs;
-	zcbor_state_t *zse = ctxt->writer->zs;
 	bool ok;
 	uint32_t slot = 1;
 	size_t decoded = 0;
@@ -307,12 +282,15 @@ img_mgmt_erase(struct smp_streamer *ctxt)
 		return rc;
 	}
 
-	if (IS_ENABLED(CONFIG_MCUMGR_SMP_LEGACY_RC_BEHAVIOUR) && zcbor_tstr_put_lit(zse, "rc") &&
-	    zcbor_int32_put(zse, 0)) {
-		return MGMT_ERR_EOK;
+	if (IS_ENABLED(CONFIG_MCUMGR_SMP_LEGACY_RC_BEHAVIOUR)) {
+		zcbor_state_t *zse = ctxt->writer->zs;
+
+		if (!zcbor_tstr_put_lit(zse, "rc") || !zcbor_int32_put(zse, 0)) {
+			return MGMT_ERR_EMSGSIZE;
+		}
 	}
 
-	return MGMT_ERR_EMSGSIZE;
+	return MGMT_ERR_EOK;
 }
 
 static int
@@ -428,6 +406,7 @@ img_mgmt_upload(struct smp_streamer *ctxt)
 #endif
 
 		MGMT_CTXT_SET_RC_RSN(ctxt, IMG_MGMT_UPLOAD_ACTION_RC_RSN(&action));
+		LOG_ERR("Image upload inspect failed: %d", rc);
 		return rc;
 	}
 
@@ -545,6 +524,8 @@ img_mgmt_upload(struct smp_streamer *ctxt)
 			reset = true;
 			IMG_MGMT_UPLOAD_ACTION_SET_RC_RSN(&action,
 				img_mgmt_err_str_flash_write_failed);
+
+			LOG_ERR("Irrecoverable error: flash write failed: %d", rc);
 
 			goto end;
 		}

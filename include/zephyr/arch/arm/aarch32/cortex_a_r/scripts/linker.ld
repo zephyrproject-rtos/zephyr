@@ -153,7 +153,7 @@ SECTIONS
         . = ALIGN(_region_min_align);
     } GROUP_LINK_IN(ROMABLE_REGION)
 
-#if defined (CONFIG_CPLUSPLUS)
+#if defined (CONFIG_CPP)
     SECTION_PROLOGUE(.ARM.extab,,)
     {
         /*

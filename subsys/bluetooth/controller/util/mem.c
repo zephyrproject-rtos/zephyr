@@ -97,12 +97,12 @@ uint16_t mem_free_count_get(void *mem_head)
 	return free_count;
 }
 
-void *mem_get(void *mem_pool, uint16_t mem_size, uint16_t index)
+void *mem_get(const void *mem_pool, uint16_t mem_size, uint16_t index)
 {
 	return ((void *)((uint8_t *)mem_pool + (mem_size * index)));
 }
 
-uint16_t mem_index_get(void *mem, void *mem_pool, uint16_t mem_size)
+uint16_t mem_index_get(const void *mem, const void *mem_pool, uint16_t mem_size)
 {
 	return ((uint8_t *)mem - (uint8_t *)mem_pool) / mem_size;
 }
@@ -132,6 +132,24 @@ uint8_t mem_nz(uint8_t *src, uint16_t len)
 	}
 
 	return 0;
+}
+
+/**
+ * @brief XOR bytes
+ */
+inline void mem_xor_n(uint8_t *dst, uint8_t *src1, uint8_t *src2, uint16_t len)
+{
+	while (len--) {
+		*dst++ = *src1++ ^ *src2++;
+	}
+}
+
+/**
+ * @brief XOR 32-bits
+ */
+void mem_xor_32(uint8_t *dst, uint8_t *src1, uint8_t *src2)
+{
+	mem_xor_n(dst, src1, src2, 4U);
 }
 
 /**

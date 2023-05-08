@@ -57,6 +57,15 @@ config USB_DC_STM32
 	help
 	  Enable STM32 family USB device controller shim driver.
 
+config USB_DC_STM32_CLOCK_CHECK
+	bool "Runtime USB 48MHz clock check"
+	depends on USB_DC_STM32
+	default y if !(SOC_SERIES_STM32F1X || SOC_SERIES_STM32F3X)
+	help
+	  Enable USB clock 48MHz configuration runtime check.
+	  In specific cases, this check might provide wrong verdict and should
+	  be disabled.
+
 config USB_DC_SAM0
 	bool "SAM0 series USB Device Controller driver"
 	default y
@@ -143,11 +152,13 @@ choice USB_MCUX_CONTROLLER_TYPE
 config USB_DC_NXP_EHCI
 	bool "MXRT EHCI USB Device Controller"
 	select NOCACHE_MEMORY if HAS_MCUX_CACHE
+	select USB_DC_HAS_HS_SUPPORT
 	help
 	  Kinetis and RT EHCI USB Device Controller Driver.
 
 config USB_DC_NXP_LPCIP3511
 	bool "LPC USB Device Controller"
+	select USB_DC_HAS_HS_SUPPORT
 	help
 	  LPC USB Device Controller Driver.
 

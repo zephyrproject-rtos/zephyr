@@ -34,13 +34,16 @@ static struct k_spinlock xlat_lock;
 /* Returns a reference to a free table */
 static uint64_t *new_table(void)
 {
+	uint64_t *table;
 	unsigned int i;
 
 	/* Look for a free table. */
 	for (i = 0U; i < CONFIG_MAX_XLAT_TABLES; i++) {
 		if (xlat_use_count[i] == 0U) {
+			table = &xlat_tables[i * Ln_XLAT_NUM_ENTRIES];
 			xlat_use_count[i] = 1U;
-			return &xlat_tables[i * Ln_XLAT_NUM_ENTRIES];
+			MMU_DEBUG("allocating table [%d]%p\n", i, table);
+			return table;
 		}
 	}
 
@@ -427,21 +430,11 @@ static int privatize_page_range(struct arm_mmu_ptables *dst_pt,
 	return ret;
 }
 
-/*
- * GCC 12 and above may report a warning about the potential infinite recursion
- * in the `discard_table` function.
- */
-#if defined(__GNUC__)
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wpragmas"
-#pragma GCC diagnostic ignored "-Winfinite-recursion"
-#endif
-
 static void discard_table(uint64_t *table, unsigned int level)
 {
 	unsigned int i;
 
-	for (i = 0U; Ln_XLAT_NUM_ENTRIES; i++) {
+	for (i = 0U; i < Ln_XLAT_NUM_ENTRIES; i++) {
 		if (is_table_desc(table[i], level)) {
 			table_usage(pte_desc_table(table[i]), -1);
 			discard_table(pte_desc_table(table[i]), level + 1);
@@ -453,10 +446,6 @@ static void discard_table(uint64_t *table, unsigned int level)
 	}
 	free_table(table);
 }
-
-#if defined(__GNUC__)
-#pragma GCC diagnostic pop
-#endif
 
 static int globalize_table(uint64_t *dst_table, uint64_t *src_table,
 			   uintptr_t virt, size_t size, unsigned int level)
@@ -501,11 +490,17 @@ static int globalize_table(uint64_t *dst_table, uint64_t *src_table,
 		uint64_t *old_table = is_table_desc(dst_table[i], level) ?
 					pte_desc_table(dst_table[i]) : NULL;
 
-		dst_table[i] = src_table[i];
-		debug_show_pte(&dst_table[i], level);
+		if (is_free_desc(dst_table[i])) {
+			table_usage(dst_table, 1);
+		}
+		if (is_free_desc(src_table[i])) {
+			table_usage(dst_table, -1);
+		}
 		if (is_table_desc(src_table[i], level)) {
 			table_usage(pte_desc_table(src_table[i]), 1);
 		}
+		dst_table[i] = src_table[i];
+		debug_show_pte(&dst_table[i], level);
 
 		if (old_table) {
 			/* we can discard the whole branch */
@@ -624,8 +619,9 @@ static int __add_map(struct arm_mmu_ptables *ptables, const char *name,
 	uint64_t desc = get_region_desc(attrs);
 	bool may_overwrite = !(attrs & MT_NO_OVERWRITE);
 
-	MMU_DEBUG("mmap [%s]: virt %lx phys %lx size %lx attr %llx\n",
-		  name, virt, phys, size, desc);
+	MMU_DEBUG("mmap [%s]: virt %lx phys %lx size %lx attr %llx %s overwrite\n",
+		  name, virt, phys, size, desc,
+		  may_overwrite ? "may" : "no");
 	__ASSERT(((virt | phys | size) & (CONFIG_MMU_PAGE_SIZE - 1)) == 0,
 		 "address/size are not page aligned\n");
 	desc |= phys;
@@ -896,7 +892,7 @@ static void sync_domains(uintptr_t virt, size_t size)
 static int __arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flags)
 {
 	struct arm_mmu_ptables *ptables;
-	uint32_t entry_flags = MT_DEFAULT_SECURE_STATE | MT_P_RX_U_NA;
+	uint32_t entry_flags = MT_DEFAULT_SECURE_STATE | MT_P_RX_U_NA | MT_NO_OVERWRITE;
 
 	/* Always map in the kernel page tables */
 	ptables = &kernel_ptables;

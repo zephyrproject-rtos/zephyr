@@ -5,13 +5,19 @@
  */
 
 #include <arm/armv6-m.dtsi>
+#include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/regulator/rpi_pico.h>
 #include <mem.h>
 
 #include "rpi_pico_common.dtsi"
 
 / {
+	aliases {
+		die-temp0 = &die_temp;
+	};
+
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -180,10 +186,53 @@
 			status = "disabled";
 			#pwm-cells = <3>;
 		};
+
+		dma: dma@50000000 {
+			compatible = "raspberrypi,pico-dma";
+			reg = <0x50000000 DT_SIZE_K(64)>;
+			resets = <&reset RPI_PICO_RESETS_RESET_DMA>;
+			clocks = <&system_clk>;
+			interrupts = <11 RPI_PICO_DEFAULT_IRQ_PRIORITY>,
+				     <12 RPI_PICO_DEFAULT_IRQ_PRIORITY>;
+			interrupt-names = "dma0", "dma1";
+			dma-channels = <12>;
+			status = "disabled";
+			#dma-cells = <3>;
+		};
+
+		vreg: vreg@40064000 {
+			compatible = "raspberrypi,core-supply-regulator";
+			reg = <0x40064000 1>;
+			status = "okay";
+			raspberrypi,brown-out-detection;
+			raspberrypi,brown-out-threshold = <860000>;
+		};
+
+		pio0: pio@50200000 {
+			compatible = "raspberrypi,pico-pio";
+			reg = <0x50200000 DT_SIZE_K(4)>;
+			clocks = <&system_clk>;
+			resets = <&reset RPI_PICO_RESETS_RESET_PIO0>;
+			status = "disabled";
+		};
+
+		pio1: pio@50300000 {
+			compatible = "raspberrypi,pico-pio";
+			reg = <0x50300000 DT_SIZE_K(4)>;
+			clocks = <&system_clk>;
+			resets = <&reset RPI_PICO_RESETS_RESET_PIO1>;
+			status = "disabled";
+		};
 	};
 
 	pinctrl: pin-controller {
 		compatible = "raspberrypi,pico-pinctrl";
+	};
+
+	die_temp: dietemp {
+		compatible = "raspberrypi,pico-temp";
+		io-channels = <&adc 4>;
+		status = "disabled";
 	};
 };
 

@@ -2,9 +2,10 @@
  * SPDX-License-Identifier: Apache-2.0
  *
  * Copyright (c) 2020 Linaro Limited
+ * Copyright 2023 NXP
  */
 
-#include <zephyr/dt-bindings/adc/adc.h>
+#include <zephyr/dt-bindings/adc/mcux-lpadc.h>
 
 / {
 	zephyr,user {
@@ -29,5 +30,6 @@
 		zephyr,vref-mv = <1800>;
 		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
 		zephyr,resolution = <12>;
+		zephyr,input-positive = <MCUX_LPADC_CH0A>;
 	};
 };

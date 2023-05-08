@@ -166,7 +166,15 @@ struct mgmt_callback {
 	/** Callback that will be called. */
 	mgmt_cb callback;
 
-	/** MGMT_EVT_[...] Event ID for handler to be called on. */
+	/**
+	 * MGMT_EVT_[...] Event ID for handler to be called on. This has special meaning if
+	 * #MGMT_EVT_OP_ALL is used (which will cover all events for all groups), or
+	 * MGMT_EVT_OP_*_MGMT_ALL (which will cover all events for a single group). For events
+	 * that are part of a single group, they can be or'd together for this to have one
+	 * registration trigger on multiple events, please note that this will only work for
+	 * a single group, to register for events in different groups, they must be registered
+	 * separately.
+	 */
 	uint32_t event_id;
 };
 

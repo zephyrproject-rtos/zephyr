@@ -50,7 +50,7 @@ int at_get_number(struct at_client *at, uint32_t *val)
 	skip_space(at);
 
 	for (i = 0U, *val = 0U;
-	     isdigit((unsigned char)at->buf[at->pos]);
+	     isdigit((unsigned char)at->buf[at->pos]) != 0;
 	     at->pos++, i++) {
 		*val = *val * 10U + at->buf[at->pos] - '0';
 	}
@@ -187,7 +187,7 @@ static int at_state_start_lf(struct at_client *at, struct net_buf *buf)
 	if (at_check_byte(buf, '+') == 0) {
 		at->state = AT_STATE_GET_CMD_STRING;
 		return 0;
-	} else if (isalpha(*buf->data)) {
+	} else if (isalpha(*buf->data) != 0) {
 		at->state = AT_STATE_GET_RESULT_STRING;
 		return 0;
 	}
@@ -507,7 +507,7 @@ int at_list_get_range(struct at_client *at, uint32_t *min, uint32_t *max)
 		goto out;
 	}
 
-	if (!isdigit((unsigned char)at->buf[at->pos])) {
+	if (isdigit((unsigned char)at->buf[at->pos]) == 0) {
 		return -ENODATA;
 	}
 out:

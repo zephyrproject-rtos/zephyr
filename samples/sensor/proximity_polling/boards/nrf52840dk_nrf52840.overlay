@@ -1,0 +1,24 @@
+/ {
+	aliases {
+		prox-sensor0 = &tmd2620;
+	};
+};
+
+&i2c0 {
+	status = "okay";
+
+	tmd2620: tmd2620@29 {
+		compatible = "ams,tmd2620";
+		reg = <0x29>;
+		int-gpios = <&gpio1 3 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+		proximity-gain = <4>;
+		proximity-pulse-length = <16>;
+		proximity-pulse-count = <15>;
+		proximity-high-threshold = <255>;
+		proximity-low-threshold = <0>;
+		proximity-led-drive-strength = <4>;
+		proximity-interrupt-filter = <0>;
+		wait-time-factor = <0>;
+		status = "okay";
+	};
+};

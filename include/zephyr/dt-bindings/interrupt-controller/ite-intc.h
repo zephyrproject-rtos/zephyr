@@ -18,6 +18,7 @@
 #define IT8XXX2_IRQ_WU20        1
 #define IT8XXX2_IRQ_KBC_OBE     2
 #define IT8XXX2_IRQ_SMB_D       4
+#define IT8XXX2_IRQ_WKINTD      5
 #define IT8XXX2_IRQ_WU23        6
 /* Group 1 */
 #define IT8XXX2_IRQ_SMB_A       9

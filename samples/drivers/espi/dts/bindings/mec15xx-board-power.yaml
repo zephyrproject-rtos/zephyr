@@ -9,16 +9,16 @@ description: |
     GPIOs required before performing a eSPI host-slave handshake
 
 properties:
-   pwrg-gpios:
-        type: phandle-array
-        required: true
-        description: |
-          Board GPIO input used to detect that power rails are stable.
+  pwrg-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      Board GPIO input used to detect that power rails are stable.
 
-   rsm-gpios:
-        type: phandle-array
-        required: true
-        description: |
-          Board GPIO output used to notify eSPI master to ackwnowledge
-          power has stabilized and bare minimum initialization in eSPI slave
-          is complete so eSPI master can proceed with eSPI handshake.
+  rsm-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      Board GPIO output used to notify eSPI master to ackwnowledge
+      power has stabilized and bare minimum initialization in eSPI slave
+      is complete so eSPI master can proceed with eSPI handshake.

@@ -8,17 +8,17 @@ compatible: "espressif,esp32-temp"
 include: sensor-device.yaml
 
 properties:
-    range:
-      type: int
-      description: |
-        The temperature sensor is available on the ESP32-S2, ESP32-C3. Note
-        that it is unavailable on the ESP32 due to missing offset calibration.
-        Temperature range is defined by the temperature offset which is used
-        during calculation of the output temperature from the measured value.
-      default: 2
-      enum:
-      - 0    # measure range: 50°C ~ 125°C, error < 3°C
-      - 1    # measure range: 20°C ~ 100°C, error < 2°C
-      - 2    # measure range:-10°C ~  80°C, error < 1°C
-      - 3    # measure range:-30°C ~  50°C, error < 2°C
-      - 4    # measure range:-40°C ~  20°C, error < 3°C
+  range:
+    type: int
+    description: |
+      The temperature sensor is available on the ESP32-S2, ESP32-C3. Note
+      that it is unavailable on the ESP32 due to missing offset calibration.
+      Temperature range is defined by the temperature offset which is used
+      during calculation of the output temperature from the measured value.
+    default: 2
+    enum:
+    - 0    # measure range: 50°C ~ 125°C, error < 3°C
+    - 1    # measure range: 20°C ~ 100°C, error < 2°C
+    - 2    # measure range:-10°C ~  80°C, error < 1°C
+    - 3    # measure range:-30°C ~  50°C, error < 2°C
+    - 4    # measure range:-40°C ~  20°C, error < 3°C

@@ -1,0 +1,40 @@
+# Copyright (c) 2023 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: Intel Penwell SPI
+
+compatible: "intel,penwell-spi"
+
+include: [spi-controller.yaml, pcie-device.yaml]
+
+properties:
+  interrupts:
+    required: true
+
+  cs-gpios:
+    required: true
+
+  pw,cs-mode:
+    type: int
+    required: true
+    description: |
+      Chip select configuration. possible values:
+      0: Hardware
+      1: Software
+      2: GPIO
+
+  pw,cs-output:
+    type: int
+    required: true
+    description: |
+      Use GSPI chip select CS0 or CS1. GSPI 0, 1 & 2 instance supports both chip selects.
+      It can be configured with this DTS property. By default, CS0 is set.
+      Chip select output possible values:
+      0: CS0
+      1: CS1
+
+  pw,fifo-depth:
+    type: int
+    required: true
+    description: SPI controller with embedded Tx and Rx FIFOs.

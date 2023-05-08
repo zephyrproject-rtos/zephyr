@@ -195,7 +195,7 @@ A workspace using this topology looks like this:
    │                                    │
    ├── modules/
    │   └── lib/
-   │       └── tinycbor/    # .git/ project from either the main manifest or some import.
+   │       └── zcbor/       # .git/ project from either the main manifest or some import.
    │
    └── zephyr/              # .git/ project
        └── west.yml         # This can be partially imported with lower precedence or ignored.
@@ -286,7 +286,7 @@ A workspace using this topology looks like this:
    │   └── west.yml        # main manifest with optional import(s) and override(s)
    ├── modules/
    │   └── lib/
-   │       └── tinycbor/   # .git/ project from either the main manifest or
+   │       └── zcbor/      # .git/ project from either the main manifest or
    │                       #       from some import
    │
    └── zephyr/             # .git/ project

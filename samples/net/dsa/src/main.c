@@ -116,9 +116,10 @@ static int init_dsa_ports(void)
 	return 0;
 }
 
-void main(void)
+int main(void)
 {
 	init_dsa_ports();
 
 	LOG_INF("DSA ports init - OK");
+	return 0;
 }

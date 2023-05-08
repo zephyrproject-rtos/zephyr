@@ -3,17 +3,17 @@ sample:
     a number of threads
   name: SMP Pktqueue
 common:
-    tags: introduction
-    harness: console
-    harness_config:
-      type: multi_line
-      ordered: true
-      regex:
-        - "RESULT: OK(.*)"
+  tags: introduction
+  harness: console
+  harness_config:
+    type: multi_line
+    ordered: true
+    regex:
+      - "RESULT: OK(.*)"
 
 tests:
   sample.smp.pktqueue:
     tags: introduction
     filter: (CONFIG_MP_MAX_NUM_CPUS > 1)
     platform_exclude: esp32 esp_wrover_kit esp32_ethernet_kit
-      heltec_wifi_lora32_v2 odroid_go olimex_esp32_evb
+      heltec_wifi_lora32_v2 m5stickc_plus odroid_go olimex_esp32_evb

@@ -81,8 +81,10 @@ list(APPEND zephyr_cmake_modules zephyr_module)
 
 list(APPEND zephyr_cmake_modules boards)
 list(APPEND zephyr_cmake_modules shields)
+list(APPEND zephyr_cmake_modules snippets)
 list(APPEND zephyr_cmake_modules arch)
 list(APPEND zephyr_cmake_modules configuration_files)
+list(APPEND zephyr_cmake_modules generated_file_directories)
 
 # Include board specific device-tree flags before parsing.
 set(pre_dt_board "\${BOARD_DIR}/pre_dt_board.cmake" OPTIONAL)

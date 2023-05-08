@@ -103,6 +103,7 @@ bool label_is_valid(const char *label, size_t label_size)
 	size_t i;
 
 	if (label == NULL) {
+		NET_DBG("label is NULL");
 		return false;
 	}
 
@@ -113,16 +114,20 @@ bool label_is_valid(const char *label, size_t label_size)
 
 	if (label_size < DNS_LABEL_MIN_SIZE ||
 	    label_size > DNS_LABEL_MAX_SIZE) {
+		NET_DBG("label invalid size (%zu, min: %u, max: %u)",
+			 label_size,
+			 DNS_LABEL_MIN_SIZE,
+			 DNS_LABEL_MAX_SIZE);
 		return false;
 	}
 
 	for (i = 0; i < label_size; ++i) {
-		if (isalpha((int)label[i])) {
+		if (isalpha((int)label[i]) != 0) {
 			continue;
 		}
 
 		if (i > 0) {
-			if (isdigit((int)label[i])) {
+			if (isdigit((int)label[i]) != 0) {
 				continue;
 			}
 
@@ -131,6 +136,7 @@ bool label_is_valid(const char *label, size_t label_size)
 			}
 		}
 
+		NET_DBG("label '%s' contains illegal byte 0x%02x", label, label[i]);
 		return false;
 	}
 
@@ -143,20 +149,20 @@ static bool instance_is_valid(const char *instance)
 	size_t instance_size;
 
 	if (instance == NULL) {
-		NET_DBG("label is NULL");
+		NET_DBG("instance is NULL");
 		return false;
 	}
 
 	instance_size = strlen(instance);
 	if (instance_size < DNS_SD_INSTANCE_MIN_SIZE) {
-		NET_DBG("label '%s' is too small (%zu, min: %u)",
+		NET_DBG("instance '%s' is too small (%zu, min: %u)",
 			instance, instance_size,
 			DNS_SD_INSTANCE_MIN_SIZE);
 		return false;
 	}
 
 	if (instance_size > DNS_SD_INSTANCE_MAX_SIZE) {
-		NET_DBG("label '%s' is too big (%zu, max: %u)",
+		NET_DBG("instance '%s' is too big (%zu, max: %u)",
 			instance, instance_size,
 			DNS_SD_INSTANCE_MAX_SIZE);
 		return false;
@@ -181,19 +187,19 @@ static bool service_is_valid(const char *service)
 	size_t service_size;
 
 	if (service == NULL) {
-		NET_DBG("label is NULL");
+		NET_DBG("service is NULL");
 		return false;
 	}
 
 	service_size = strlen(service);
 	if (service_size < DNS_SD_SERVICE_MIN_SIZE) {
-		NET_DBG("label '%s' is too small (%zu, min: %u)",
+		NET_DBG("service '%s' is too small (%zu, min: %u)",
 			service, service_size, DNS_SD_SERVICE_MIN_SIZE);
 		return false;
 	}
 
 	if (service_size > DNS_SD_SERVICE_MAX_SIZE) {
-		NET_DBG("label '%s' is too big (%zu, max: %u)",
+		NET_DBG("service '%s' is too big (%zu, max: %u)",
 			service, service_size, DNS_SD_SERVICE_MAX_SIZE);
 		return false;
 	}
@@ -218,13 +224,13 @@ static bool proto_is_valid(const char *proto)
 	size_t proto_size;
 
 	if (proto == NULL) {
-		NET_DBG("label is NULL");
+		NET_DBG("proto is NULL");
 		return false;
 	}
 
 	proto_size = strlen(proto);
 	if (proto_size != DNS_SD_PROTO_SIZE) {
-		NET_DBG("label '%s' wrong size (%zu, exp: %u)",
+		NET_DBG("proto '%s' wrong size (%zu, exp: %u)",
 			proto, proto_size, DNS_SD_PROTO_SIZE);
 		return false;
 	}
@@ -245,19 +251,19 @@ static bool domain_is_valid(const char *domain)
 	size_t domain_size;
 
 	if (domain == NULL) {
-		NET_DBG("label is NULL");
+		NET_DBG("domain is NULL");
 		return false;
 	}
 
 	domain_size = strlen(domain);
 	if (domain_size < DNS_SD_DOMAIN_MIN_SIZE) {
-		NET_DBG("label '%s' is too small (%zu, min: %u)",
+		NET_DBG("domain '%s' is too small (%zu, min: %u)",
 			domain, domain_size, DNS_SD_DOMAIN_MIN_SIZE);
 		return false;
 	}
 
 	if (domain_size > DNS_SD_DOMAIN_MAX_SIZE) {
-		NET_DBG("label '%s' is too big (%zu, max: %u)",
+		NET_DBG("domain '%s' is too big (%zu, max: %u)",
 			domain, domain_size, DNS_SD_DOMAIN_MAX_SIZE);
 		return false;
 	}
@@ -926,7 +932,7 @@ bool dns_sd_rec_match(const struct dns_sd_rec *record,
 	};
 
 	if (!rec_is_valid(record)) {
-		LOG_WRN("DNS SD record at %p is invalid", record);
+		LOG_DBG("DNS SD record at %p is invalid", record);
 		return false;
 	}
 

@@ -1,14 +1,14 @@
 sample:
   name: JESD216 Sample
 common:
-    tags: spi flash
-    harness: console
-    harness_config:
-        type: multi_line
-        ordered: true
-        regex:
-            - "sfdp-bfp ="
-            - "jedec-id ="
+  tags: spi flash
+  harness: console
+  harness_config:
+    type: multi_line
+    ordered: true
+    regex:
+      - "sfdp-bfp ="
+      - "jedec-id ="
 tests:
   sample.drivers.jesd216:
     platform_exclude: hifive1 hifive_unleashed hifive_unmatched mimxrt1170_evk_cm7

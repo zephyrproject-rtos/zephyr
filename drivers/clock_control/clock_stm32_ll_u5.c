@@ -16,7 +16,6 @@
 #include <zephyr/arch/cpu.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/sys/util.h>
-#include <stm32_ll_utils.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 
 /* Macros to fill up prescaler values */
@@ -122,6 +121,7 @@ static int enabled_clock(uint32_t src_clk)
 	if ((src_clk == STM32_SRC_SYSCLK) ||
 	    ((src_clk == STM32_SRC_HSE) && IS_ENABLED(STM32_HSE_ENABLED)) ||
 	    ((src_clk == STM32_SRC_HSI16) && IS_ENABLED(STM32_HSI_ENABLED)) ||
++	    ((src_clk == STM32_SRC_HSI48) && IS_ENABLED(STM32_HSI48_ENABLED)) ||
 	    ((src_clk == STM32_SRC_LSE) && IS_ENABLED(STM32_LSE_ENABLED)) ||
 	    ((src_clk == STM32_SRC_LSI) && IS_ENABLED(STM32_LSI_ENABLED)) ||
 	    ((src_clk == STM32_SRC_MSIS) && IS_ENABLED(STM32_MSIS_ENABLED)) ||
@@ -193,6 +193,8 @@ static inline int stm32_clock_control_configure(const struct device *dev,
 		return err;
 	}
 
+	sys_clear_bits(DT_REG_ADDR(DT_NODELABEL(rcc)) + STM32_CLOCK_REG_GET(pclken->enr),
+		       STM32_CLOCK_MASK_GET(pclken->enr) << STM32_CLOCK_SHIFT_GET(pclken->enr));
 	sys_set_bits(DT_REG_ADDR(DT_NODELABEL(rcc)) + STM32_CLOCK_REG_GET(pclken->enr),
 		     STM32_CLOCK_VAL_GET(pclken->enr) << STM32_CLOCK_SHIFT_GET(pclken->enr));
 
@@ -269,6 +271,11 @@ static int stm32_clock_control_get_subsys_rate(const struct device *dev,
 		*rate = STM32_LSI_FREQ;
 		break;
 #endif /* STM32_LSI_ENABLED */
+#if defined(STM32_HSI48_ENABLED)
+	case STM32_SRC_HSI48:
+		*rate = STM32_HSI48_FREQ;
+		break;
+#endif /* STM32_HSI48_ENABLED */
 #if defined(STM32_PLL_ENABLED)
 	case STM32_SRC_PLL1_P:
 		*rate = get_pllout_frequency(get_pllsrc_frequency(PLL1_ID),

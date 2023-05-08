@@ -8,120 +8,120 @@ compatible: "ti,ina219"
 include: [sensor-device.yaml, i2c-device.yaml]
 
 properties:
-    lsb-microamp:
-      type: int
-      required: true
-      description: |
-        Current LSB in microAmpere
-        Current LSB = max expected current [A] / 2^15
-        example: 100 -> ~3A
-    shunt-milliohm:
-      type: int
-      required: true
-      description: |
-        Value of the shunt resistor in milliOhm
-    brng:
-      type: int
-      default: 1
-      description: |
-        Bus Voltage Range
-        0 = 16 V FSR
-        1 = 32 V FSR
+  lsb-microamp:
+    type: int
+    required: true
+    description: |
+      Current LSB in microAmpere
+      Current LSB = max expected current [A] / 2^15
+      example: 100 -> ~3A
+  shunt-milliohm:
+    type: int
+    required: true
+    description: |
+      Value of the shunt resistor in milliOhm
+  brng:
+    type: int
+    default: 1
+    description: |
+      Bus Voltage Range
+      0 = 16 V FSR
+      1 = 32 V FSR
 
-        The default of 32V is the power-on reset value of the device.
+      The default of 32V is the power-on reset value of the device.
 
-        Should the expected bus voltage be below 16V set this to 0.
-      enum:
-        - 0
-        - 1
-    pg:
-      type: int
-      default: 3
-      description: |
-        Programmable Gain
-        0 = 1  -> ±40 mV
-        1 = /2 -> ±80 mV
-        2 = /4 -> ±160 mV
-        3 = /8 -> ±320 mV
+      Should the expected bus voltage be below 16V set this to 0.
+    enum:
+      - 0
+      - 1
+  pg:
+    type: int
+    default: 3
+    description: |
+      Programmable Gain
+      0 = 1  -> ±40 mV
+      1 = /2 -> ±80 mV
+      2 = /4 -> ±160 mV
+      3 = /8 -> ±320 mV
 
-        The default of ±320 mV is the power-on reset value of the device.
+      The default of ±320 mV is the power-on reset value of the device.
 
-        In case the expected voltage drop across the shunt resistor is lower
-        one can adjust this to get more accurate readings.
-      enum:
-        - 0
-        - 1
-        - 2
-        - 3
-    badc:
-      type: int
-      default: 3
-      description: |
-        Bus ADC configuration
-        0  = 9 bit -> 84 µs
-        1  = 10 bit -> 148 µs
-        2  = 11 bit -> 276 µs
-        3  = 12 bit -> 532 µs
-        9  = 12 bit - 2 sample averaging -> 1.06 ms
-        10 = 12 bit - 4 sample averaging -> 2.13 ms
-        11 = 12 bit - 8 sample averaging -> 4.26 ms
-        12 = 12 bit - 16 sample averaging -> 8.51 ms
-        13 = 12 bit - 32 sample averaging -> 17.02 ms
-        14 = 12 bit - 64 sample averaging -> 34.05 ms
-        15 = 12 bit - 128 sample averaging -> 68.10 ms
+      In case the expected voltage drop across the shunt resistor is lower
+      one can adjust this to get more accurate readings.
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
+  badc:
+    type: int
+    default: 3
+    description: |
+      Bus ADC configuration
+      0  = 9 bit -> 84 µs
+      1  = 10 bit -> 148 µs
+      2  = 11 bit -> 276 µs
+      3  = 12 bit -> 532 µs
+      9  = 12 bit - 2 sample averaging -> 1.06 ms
+      10 = 12 bit - 4 sample averaging -> 2.13 ms
+      11 = 12 bit - 8 sample averaging -> 4.26 ms
+      12 = 12 bit - 16 sample averaging -> 8.51 ms
+      13 = 12 bit - 32 sample averaging -> 17.02 ms
+      14 = 12 bit - 64 sample averaging -> 34.05 ms
+      15 = 12 bit - 128 sample averaging -> 68.10 ms
 
-        The default of 12 bit is the power-on reset value of the device.
+      The default of 12 bit is the power-on reset value of the device.
 
-        Lowering the resolution of the ADC gives less accurate readings but
-        cuts down on conversion times.
+      Lowering the resolution of the ADC gives less accurate readings but
+      cuts down on conversion times.
 
-        Averaging over multiple samples gives more stable readings but adds
-        to overall conversion time.
-      enum:
-        - 0
-        - 1
-        - 2
-        - 3
-        - 9
-        - 10
-        - 11
-        - 12
-        - 13
-        - 14
-        - 15
-    sadc:
-      type: int
-      default: 3
-      description: |
-        Shunt ADC configuration
-        0  = 9 bit -> 84 µs
-        1  = 10 bit -> 148 µs
-        2  = 11 bit -> 276 µs
-        3  = 12 bit -> 532 µs
-        9  = 12 bit - 2 sample averaging -> 1.06 ms
-        10 = 12 bit - 4 sample averaging -> 2.13 ms
-        11 = 12 bit - 8 sample averaging -> 4.26 ms
-        12 = 12 bit - 16 sample averaging -> 8.51 ms
-        13 = 12 bit - 32 sample averaging -> 17.02 ms
-        14 = 12 bit - 64 sample averaging -> 34.05 ms
-        15 = 12 bit - 128 sample averaging -> 68.10 ms
+      Averaging over multiple samples gives more stable readings but adds
+      to overall conversion time.
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
+      - 9
+      - 10
+      - 11
+      - 12
+      - 13
+      - 14
+      - 15
+  sadc:
+    type: int
+    default: 3
+    description: |
+      Shunt ADC configuration
+      0  = 9 bit -> 84 µs
+      1  = 10 bit -> 148 µs
+      2  = 11 bit -> 276 µs
+      3  = 12 bit -> 532 µs
+      9  = 12 bit - 2 sample averaging -> 1.06 ms
+      10 = 12 bit - 4 sample averaging -> 2.13 ms
+      11 = 12 bit - 8 sample averaging -> 4.26 ms
+      12 = 12 bit - 16 sample averaging -> 8.51 ms
+      13 = 12 bit - 32 sample averaging -> 17.02 ms
+      14 = 12 bit - 64 sample averaging -> 34.05 ms
+      15 = 12 bit - 128 sample averaging -> 68.10 ms
 
-        The default of 12 bit is the power-on reset value of the device.
+      The default of 12 bit is the power-on reset value of the device.
 
-        Lowering the resolution of the ADC gives less accurate readings but
-        cuts down on conversion times.
+      Lowering the resolution of the ADC gives less accurate readings but
+      cuts down on conversion times.
 
-        Averaging over multiple samples gives more stable readings but adds
-        to overall conversion time.
-      enum:
-        - 0
-        - 1
-        - 2
-        - 3
-        - 9
-        - 10
-        - 11
-        - 12
-        - 13
-        - 14
-        - 15
+      Averaging over multiple samples gives more stable readings but adds
+      to overall conversion time.
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
+      - 9
+      - 10
+      - 11
+      - 12
+      - 13
+      - 14
+      - 15

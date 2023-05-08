@@ -11,6 +11,7 @@
 #include <stdio.h>
 #include <zephyr/device.h>
 #include <zephyr/pm/device.h>
+#include <zephyr/pm/device_runtime.h>
 #include <zephyr/sys/arch_interface.h>
 
 extern const struct device __device_EARLY_start[];
@@ -130,7 +131,7 @@ static int cmd_device_levels(const struct shell *sh,
 }
 
 struct cmd_device_list_visitor_context {
-	const struct shell *shell;
+	const struct shell *sh;
 	char *buf;
 	size_t buf_size;
 };
@@ -140,7 +141,7 @@ static int cmd_device_list_visitor(const struct device *dev,
 {
 	const struct cmd_device_list_visitor_context *ctx = context;
 
-	shell_fprintf(ctx->shell, SHELL_NORMAL, "  requires: %s\n",
+	shell_fprintf(ctx->sh, SHELL_NORMAL, "  requires: %s\n",
 		      get_device_name(dev, ctx->buf, ctx->buf_size));
 
 	return 0;
@@ -153,6 +154,7 @@ static int cmd_device_list(const struct shell *sh,
 	size_t devcnt = z_device_get_all_static(&devlist);
 	const struct device *devlist_end = devlist + devcnt;
 	const struct device *dev;
+
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
@@ -180,7 +182,7 @@ static int cmd_device_list(const struct shell *sh,
 		shell_fprintf(sh, SHELL_NORMAL, " (%s)\n", state);
 		if (!k_is_user_context()) {
 			struct cmd_device_list_visitor_context ctx = {
-				.shell = sh,
+				.sh = sh,
 				.buf = buf,
 				.buf_size = sizeof(buf),
 			};
@@ -192,10 +194,51 @@ static int cmd_device_list(const struct shell *sh,
 	return 0;
 }
 
+#ifdef CONFIG_PM_DEVICE_RUNTIME
+static int cmd_device_pm_toggle(const struct shell *sh,
+			 size_t argc, char **argv)
+{
+	const struct device *dev;
+	enum pm_device_state pm_state;
+
+	dev = device_get_binding(argv[1]);
+	if (dev == NULL) {
+		shell_error(sh, "Device unknown (%s)", argv[1]);
+		return -ENODEV;
+	}
+
+	if (!pm_device_runtime_is_enabled(dev)) {
+		shell_error(sh, "Device (%s) does not have runtime power management",
+			    argv[1]);
+		return -ENOTSUP;
+	}
+
+	(void)pm_device_state_get(dev, &pm_state);
+
+	if (pm_state == PM_DEVICE_STATE_ACTIVE) {
+		shell_fprintf(sh, SHELL_NORMAL, "pm_device_runtime_put(%s)\n",
+			      argv[1]);
+		pm_device_runtime_put(dev);
+	} else {
+		shell_fprintf(sh, SHELL_NORMAL, "pm_device_runtime_get(%s)\n",
+			      argv[1]);
+		pm_device_runtime_get(dev);
+	}
+
+	return 0;
+}
+#define PM_SHELL_CMD SHELL_CMD(pm_toggle, NULL, "Toggle device power (pm get/put)",\
+			       cmd_device_pm_toggle),
+#else
+#define PM_SHELL_CMD
+#endif /* CONFIG_PM_DEVICE_RUNTIME  */
+
+
 
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_device,
 	SHELL_CMD(levels, NULL, "List configured devices by levels", cmd_device_levels),
 	SHELL_CMD(list, NULL, "List configured devices", cmd_device_list),
+	PM_SHELL_CMD
 	SHELL_SUBCMD_SET_END /* Array terminated. */
 );
 

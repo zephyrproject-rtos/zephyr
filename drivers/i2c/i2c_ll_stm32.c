@@ -7,6 +7,8 @@
 
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <zephyr/drivers/clock_control.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/device_runtime.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/kernel.h>
 #include <soc.h>
@@ -16,6 +18,10 @@
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/pinctrl.h>
 #include "i2c_ll_stm32.h"
+
+#ifdef CONFIG_I2C_STM32_BUS_RECOVERY
+#include "i2c_bitbang.h"
+#endif /* CONFIG_I2C_STM32_BUS_RECOVERY */
 
 #define LOG_LEVEL CONFIG_I2C_LOG_LEVEL
 #include <zephyr/logging/log.h>
@@ -55,7 +61,7 @@ int i2c_stm32_runtime_configure(const struct device *dev, uint32_t config)
 		}
 	} else {
 		if (clock_control_get_rate(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
-					   (clock_control_subsys_t *) &cfg->pclken[0],
+					   (clock_control_subsys_t) &cfg->pclken[0],
 					   &clock) < 0) {
 			LOG_ERR("Failed call clock_control_get_rate(pclken[0])");
 			return -EIO;
@@ -65,9 +71,23 @@ int i2c_stm32_runtime_configure(const struct device *dev, uint32_t config)
 	data->dev_config = config;
 
 	k_sem_take(&data->bus_mutex, K_FOREVER);
+
+#ifdef CONFIG_PM_DEVICE_RUNTIME
+	(void)pm_device_runtime_get(dev);
+#else
+	pm_device_busy_set(dev);
+#endif
+
 	LL_I2C_Disable(i2c);
 	LL_I2C_SetMode(i2c, LL_I2C_MODE_I2C);
 	ret = stm32_i2c_configure_timing(dev, clock);
+
+#ifdef CONFIG_PM_DEVICE_RUNTIME
+	(void)pm_device_runtime_put(dev);
+#else
+	pm_device_busy_clear(dev);
+#endif
+
 	k_sem_give(&data->bus_mutex);
 
 	return ret;
@@ -176,8 +196,20 @@ static int i2c_stm32_transfer(const struct device *dev, struct i2c_msg *msg,
 		return ret;
 	}
 
+	ret = pm_device_runtime_get(dev);
+	if (ret < 0) {
+		return ret;
+	}
+
 	/* Send out messages */
 	k_sem_take(&data->bus_mutex, K_FOREVER);
+
+	/* Prevent driver from being suspended by PM until I2C transaction is complete */
+#ifdef CONFIG_PM_DEVICE_RUNTIME
+	(void)pm_device_runtime_get(dev);
+#else
+	pm_device_busy_set(dev);
+#endif
 
 	current = msg;
 
@@ -196,18 +228,166 @@ static int i2c_stm32_transfer(const struct device *dev, struct i2c_msg *msg,
 		num_msgs--;
 	}
 
+#ifdef CONFIG_PM_DEVICE_RUNTIME
+	(void)pm_device_runtime_put(dev);
+#else
+	pm_device_busy_clear(dev);
+#endif
+
 	k_sem_give(&data->bus_mutex);
+
 	return ret;
 }
+
+#if CONFIG_I2C_STM32_BUS_RECOVERY
+static void i2c_stm32_bitbang_set_scl(void *io_context, int state)
+{
+	const struct i2c_stm32_config *config = io_context;
+
+	gpio_pin_set_dt(&config->scl, state);
+}
+
+static void i2c_stm32_bitbang_set_sda(void *io_context, int state)
+{
+	const struct i2c_stm32_config *config = io_context;
+
+	gpio_pin_set_dt(&config->sda, state);
+}
+
+static int i2c_stm32_bitbang_get_sda(void *io_context)
+{
+	const struct i2c_stm32_config *config = io_context;
+
+	return gpio_pin_get_dt(&config->sda) == 0 ? 0 : 1;
+}
+
+static int i2c_stm32_recover_bus(const struct device *dev)
+{
+	const struct i2c_stm32_config *config = dev->config;
+	struct i2c_stm32_data *data = dev->data;
+	struct i2c_bitbang bitbang_ctx;
+	struct i2c_bitbang_io bitbang_io = {
+		.set_scl = i2c_stm32_bitbang_set_scl,
+		.set_sda = i2c_stm32_bitbang_set_sda,
+		.get_sda = i2c_stm32_bitbang_get_sda,
+	};
+	uint32_t bitrate_cfg;
+	int error = 0;
+
+	LOG_ERR("attempting to recover bus");
+
+	if (!device_is_ready(config->scl.port)) {
+		LOG_ERR("SCL GPIO device not ready");
+		return -EIO;
+	}
+
+	if (!device_is_ready(config->sda.port)) {
+		LOG_ERR("SDA GPIO device not ready");
+		return -EIO;
+	}
+
+	k_sem_take(&data->bus_mutex, K_FOREVER);
+
+	error = gpio_pin_configure_dt(&config->scl, GPIO_OUTPUT_HIGH);
+	if (error != 0) {
+		LOG_ERR("failed to configure SCL GPIO (err %d)", error);
+		goto restore;
+	}
+
+	error = gpio_pin_configure_dt(&config->sda, GPIO_OUTPUT_HIGH);
+	if (error != 0) {
+		LOG_ERR("failed to configure SDA GPIO (err %d)", error);
+		goto restore;
+	}
+
+	i2c_bitbang_init(&bitbang_ctx, &bitbang_io, (void *)config);
+
+	bitrate_cfg = i2c_map_dt_bitrate(config->bitrate) | I2C_MODE_CONTROLLER;
+	error = i2c_bitbang_configure(&bitbang_ctx, bitrate_cfg);
+	if (error != 0) {
+		LOG_ERR("failed to configure I2C bitbang (err %d)", error);
+		goto restore;
+	}
+
+	error = i2c_bitbang_recover_bus(&bitbang_ctx);
+	if (error != 0) {
+		LOG_ERR("failed to recover bus (err %d)", error);
+	}
+
+restore:
+	(void)pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
+
+	k_sem_give(&data->bus_mutex);
+
+	return error;
+}
+#endif /* CONFIG_I2C_STM32_BUS_RECOVERY */
+
 
 static const struct i2c_driver_api api_funcs = {
 	.configure = i2c_stm32_runtime_configure,
 	.transfer = i2c_stm32_transfer,
+#if CONFIG_I2C_STM32_BUS_RECOVERY
+	.recover_bus = i2c_stm32_recover_bus,
+#endif /* CONFIG_I2C_STM32_BUS_RECOVERY */
 #if defined(CONFIG_I2C_TARGET)
 	.target_register = i2c_stm32_target_register,
 	.target_unregister = i2c_stm32_target_unregister,
 #endif
 };
+
+#ifdef CONFIG_PM_DEVICE
+
+static int i2c_stm32_suspend(const struct device *dev)
+{
+	int ret;
+	const struct i2c_stm32_config *cfg = dev->config;
+	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
+
+	/* Disable device clock. */
+	ret = clock_control_off(clk, (clock_control_subsys_t)&cfg->pclken[0]);
+	if (ret < 0) {
+		LOG_ERR("failure disabling I2C clock");
+		return ret;
+	}
+
+	/* Move pins to sleep state */
+	ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_SLEEP);
+	if (ret == -ENOENT) {
+		/* Warn but don't block suspend */
+		LOG_WRN("I2C pinctrl sleep state not available ");
+	} else if (ret < 0) {
+		return ret;
+	}
+
+	return 0;
+}
+
+#endif
+
+static int i2c_stm32_activate(const struct device *dev)
+{
+	int ret;
+	const struct i2c_stm32_config *cfg = dev->config;
+	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
+
+	/* Move pins to active/default state */
+	ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
+	if (ret < 0) {
+		LOG_ERR("I2C pinctrl setup failed (%d)", ret);
+		return ret;
+	}
+
+	/* Enable device clock. */
+	if (clock_control_on(clk,
+			     (clock_control_subsys_t) &cfg->pclken[0]) != 0) {
+		LOG_ERR("i2c: failure enabling clock");
+		return -EIO;
+	}
+
+	return 0;
+}
+
 
 static int i2c_stm32_init(const struct device *dev)
 {
@@ -221,13 +401,6 @@ static int i2c_stm32_init(const struct device *dev)
 	cfg->irq_config_func(dev);
 #endif
 
-	/* Configure dt provided device signals when available */
-	ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
-	if (ret < 0) {
-		LOG_ERR("I2C pinctrl setup failed (%d)", ret);
-		return ret;
-	}
-
 	/*
 	 * initialize mutex used when multiple transfers
 	 * are taking place to guarantee that each one is
@@ -240,16 +413,12 @@ static int i2c_stm32_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	if (clock_control_on(clk,
-		(clock_control_subsys_t *) &cfg->pclken[0]) != 0) {
-		LOG_ERR("i2c: failure enabling clock");
-		return -EIO;
-	}
+	i2c_stm32_activate(dev);
 
 	if (IS_ENABLED(STM32_I2C_DOMAIN_CLOCK_SUPPORT) && (cfg->pclk_len > 1)) {
 		/* Enable I2C clock source */
 		ret = clock_control_configure(clk,
-					(clock_control_subsys_t *) &cfg->pclken[1],
+					(clock_control_subsys_t) &cfg->pclken[1],
 					NULL);
 		if (ret < 0) {
 			return -EIO;
@@ -262,7 +431,7 @@ static int i2c_stm32_init(const struct device *dev)
 	 * So that they can enter master mode properly.
 	 * Issue described in ES096 2.14.7
 	 */
-	I2C_TypeDef * i2c = cfg->i2c;
+	I2C_TypeDef *i2c = cfg->i2c;
 
 	LL_I2C_EnableReset(i2c);
 	LL_I2C_DisableReset(i2c);
@@ -276,8 +445,36 @@ static int i2c_stm32_init(const struct device *dev)
 		return ret;
 	}
 
+#ifdef CONFIG_PM_DEVICE_RUNTIME
+	i2c_stm32_suspend(dev);
+	pm_device_init_suspended(dev);
+	(void)pm_device_runtime_enable(dev);
+#endif
+
 	return 0;
 }
+
+#ifdef CONFIG_PM_DEVICE
+
+static int i2c_stm32_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	int err;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		err = i2c_stm32_activate(dev);
+		break;
+	case PM_DEVICE_ACTION_SUSPEND:
+		err = i2c_stm32_suspend(dev);
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	return err;
+}
+
+#endif
 
 /* Macros for I2C instance declaration */
 
@@ -326,6 +523,14 @@ static void i2c_stm32_irq_config_func_##index(const struct device *dev)	\
 
 #endif /* CONFIG_I2C_STM32_INTERRUPT */
 
+#if CONFIG_I2C_STM32_BUS_RECOVERY
+#define I2C_STM32_SCL_INIT(n) .scl = GPIO_DT_SPEC_INST_GET_OR(n, scl_gpios, {0}),
+#define I2C_STM32_SDA_INIT(n) .sda = GPIO_DT_SPEC_INST_GET_OR(n, sda_gpios, {0}),
+#else
+#define I2C_STM32_SCL_INIT(n)
+#define I2C_STM32_SDA_INIT(n)
+#endif /* CONFIG_I2C_STM32_BUS_RECOVERY */
+
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_i2c_v2)
 #define DEFINE_TIMINGS(index)						\
 	static const uint32_t i2c_timings_##index[] =			\
@@ -355,13 +560,18 @@ static const struct i2c_stm32_config i2c_stm32_cfg_##index = {		\
 	STM32_I2C_IRQ_HANDLER_FUNCTION(index)				\
 	.bitrate = DT_INST_PROP(index, clock_frequency),		\
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),			\
+	I2C_STM32_SCL_INIT(index)					\
+	I2C_STM32_SDA_INIT(index)					\
 	USE_TIMINGS(index)						\
 };									\
 									\
 static struct i2c_stm32_data i2c_stm32_dev_data_##index;		\
 									\
+PM_DEVICE_DT_INST_DEFINE(index, i2c_stm32_pm_action);			\
+									\
 I2C_DEVICE_DT_INST_DEFINE(index, i2c_stm32_init,			\
-			 NULL, &i2c_stm32_dev_data_##index,		\
+			 PM_DEVICE_DT_INST_GET(index),			\
+			 &i2c_stm32_dev_data_##index,			\
 			 &i2c_stm32_cfg_##index,			\
 			 POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,		\
 			 &api_funcs);					\

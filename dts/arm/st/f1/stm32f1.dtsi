@@ -11,6 +11,8 @@
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/pwm/pwm.h>
 #include <zephyr/dt-bindings/pwm/stm32_pwm.h>
+#include <zephyr/dt-bindings/dma/stm32_dma.h>
+#include <zephyr/dt-bindings/adc/stm32f1_adc.h>
 #include <zephyr/dt-bindings/reset/stm32f0_1_3_reset.h>
 #include <zephyr/dt-bindings/adc/adc.h>
 #include <freq.h>
@@ -105,7 +107,15 @@
 			compatible = "st,stm32-exti";
 			interrupt-controller;
 			#interrupt-cells = <1>;
+			#address-cells = <1>;
 			reg = <0x40010400 0x400>;
+			num-lines = <16>;
+			interrupts = <6 0>, <7 0>, <8 0>, <9 0>,
+				     <10 0>, <23 0>, <40 0>;
+			interrupt-names = "line0", "line1", "line2", "line3",
+					  "line4", "line5-9", "line10-15";
+			line-ranges = <0 1>, <1 1>, <2 1>, <3 1>,
+				      <4 1>, <5 5>, <10 6>;
 		};
 
 		pinctrl: pin-controller@40010800 {
@@ -262,6 +272,11 @@
 				status = "disabled";
 				#pwm-cells = <3>;
 			};
+
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
+			};
 		};
 
 		timers3: timers@40000400 {
@@ -278,6 +293,11 @@
 				compatible = "st,stm32-pwm";
 				status = "disabled";
 				#pwm-cells = <3>;
+			};
+
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
 			};
 		};
 
@@ -296,6 +316,11 @@
 				status = "disabled";
 				#pwm-cells = <3>;
 			};
+
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
+			};
 		};
 
 		rtc: rtc@40002800 {
@@ -313,10 +338,10 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00000200>;
 			interrupts = <18 0>;
 			status = "disabled";
-			vref-mv = <3300>;
 			#io-channel-cells = <1>;
-			has-temp-channel;
-			has-vref-channel;
+			temp-channel = <16>;
+			vref-channel = <17>;
+			resolutions = <STM32F1_ADC_RES(12)>;
 		};
 
 		dma1: dma@40020000 {

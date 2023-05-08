@@ -6,6 +6,7 @@ simulation: nsim
 simulation_exec: nsimdrv
 toolchain:
   - zephyr
+  - cross-compile
   - arcmwdt
 testing:
   default: true

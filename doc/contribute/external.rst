@@ -14,6 +14,12 @@ There are three main factors that will be considered during the inclusion
 process in order to determine whether it will be accepted. These will be
 described in the following sections.
 
+Note that most of this page deals with external components that end up being
+compiled and linked into the final image, and programmed into the target
+hardware. For external tooling that is only used during compilation,
+code analysis, testing or simulation please refer to the
+:ref:`external-tooling` section at the end of the page.
+
 Software License
 ================
 
@@ -164,3 +170,55 @@ The flowchart below shows an overview of the process:
    :align: center
 
    Submission process
+
+.. _external-tooling:
+
+Contributing External Tooling
+*****************************
+
+This section deals exclusively with the inclusion of external tooling in the
+Zephyr project, where tooling is defined as software that assists the
+compilation, testing or simulation processes but in no case ends up being part
+of the code compiled and linked into the final image. "Inclusion" in this
+context means becoming part of the Zephyr default distribution either in the
+main tree directly under the :file:`scripts/` folder or indirectly as a west
+project in the main :file:`west.yml` manifest. Therefore, this section does not
+apply to 3rd-party tooling such as toolchains, simulators or others, which may
+still be referenced by the Zephyr build system or docs without being included in
+Zephyr.
+
+Tooling components must be released under a license approved by the
+`Open Source Initiative (OSI)`_.
+
+Just like with regular external components, tooling that is imported from
+another project can be integrated either in the main tree or as a :ref:`west
+project <west-workspace>`. Note that in this case the corresponding west project
+will not be a :ref:`module <modules>`, because tooling does not make use of the
+Zephyr build system and does not need to be processed by it. Please see
+:ref:`modules-vs-projects` for additional information on the differences.
+
+If the tool is integrated in the main tree it should be placed under the
+:file:`scripts/` folder.
+If the tool is integrated as a west project, then the project repository can be
+hosted outside the zephyrproject-rtos GitHub organization, provided that the
+project is made optional via the ``group-filter:`` field in the main
+:file:`west.yml` manifest. More info on optional projects can be found in
+:ref:`this section <west-manifest-groups>`.
+
+The TSC must approve every Pull Request that introduces a new external tooling
+component. This will be done on a case-by-case, individual analysis of the
+proposed addition by the TSC representatives.
+
+Additional considerations about the main manifest
+*************************************************
+
+In general, any additions or removals whatsoever to the ``projects:`` section of
+the `main manifest file`_ requires TSC approval. This includes, but is not
+limited to:
+
+- Adding and removing groups and group filters
+- Adding and removing projects
+- Adding and removing ``import`` statements
+
+.. _main manifest file:
+   https://github.com/zephyrproject-rtos/zephyr/blob/main/west.yml

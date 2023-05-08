@@ -107,6 +107,10 @@ config USB_DEVICE_INITIALIZE_AT_BOOT
 
 config SHELL_BACKEND_SERIAL_CHECK_DTR
 	default SHELL
+	depends on UART_LINE_CTRL
+
+config UART_LINE_CTRL
+	default SHELL
 
 config USB_DEVICE_REMOTE_WAKEUP
 	default n
@@ -114,12 +118,14 @@ config USB_DEVICE_REMOTE_WAKEUP
 if LOG
 
 # Logger cannot use itself to log
-config USB_CDC_ACM_LOG_LEVEL
-	default 0
+choice USB_CDC_ACM_LOG_LEVEL_CHOICE
+	default USB_CDC_ACM_LOG_LEVEL_OFF
+endchoice
 
 # Set USB log level to error only
-config USB_DEVICE_LOG_LEVEL
-	default 1
+choice USB_DEVICE_LOG_LEVEL_CHOICE
+	default USB_DEVICE_LOG_LEVEL_ERR
+endchoice
 
 # Wait 4000ms at startup for logging
 config LOG_PROCESS_THREAD_STARTUP_DELAY_MS

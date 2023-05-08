@@ -10,4 +10,4 @@ ram: 128
 testing:
   default: true
   only_tags:
-     - xip
+    - xip

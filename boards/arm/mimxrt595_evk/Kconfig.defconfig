@@ -1,6 +1,6 @@
 # MIMXRT595-EVK board
 
-# Copyright (c) 2022, NXP
+# Copyright 2022-2023, NXP
 # SPDX-License-Identifier: Apache-2.0
 
 if BOARD_MIMXRT595_EVK
@@ -28,5 +28,45 @@ config HEAP_MEM_POOL_SIZE
 	default 4096
 
 endif # DMA_MCUX_LPC
+
+if DISPLAY
+
+# Enable MIPI display driver
+
+config MIPI_DSI
+	default y
+
+# Use external framebuffer memory for the LCDIF framebuffer
+config MCUX_DCNANO_LCDIF_EXTERNAL_FB_MEM
+	default y
+# Use FlexSPI2 base address for framebuffer (pSRAM is present on this bus)
+config MCUX_DCNANO_LCDIF_EXTERNAL_FB_ADDR
+	default 0x38000000
+# M33 core and LCDIF both access FlexSPI2 through the same cache,
+# so coherency does not need to be managed.
+config MCUX_DCNANO_LCDIF_MAINTAIN_CACHE
+	depends on !MCUX_DCNANO_LCDIF_EXTERNAL_FB_MEM
+
+endif # DISPLAY
+
+config KSCAN
+	default y if LVGL
+
+if LVGL
+
+config LV_Z_POINTER_KSCAN
+	default y
+
+config LV_Z_VDB_SIZE
+	default 16
+
+config LV_Z_DPI
+	default 128
+
+choice LV_COLOR_DEPTH
+	default LV_COLOR_DEPTH_16
+endchoice
+
+endif # LVGL
 
 endif # BOARD_MIMXRT595_EVK

@@ -5,6 +5,7 @@
 
 #include <zephyr/init.h>
 #include "fsl_power.h"
+#include <zephyr/pm/policy.h>
 
 #if CONFIG_REGULATOR
 #include <zephyr/drivers/regulator.h>
@@ -44,7 +45,7 @@ static int32_t board_calc_volt_level(void)
 	return volt;
 }
 
-static int board_config_pmic(const struct device *dev)
+static int board_config_pmic(void)
 {
 	uint32_t volt;
 	int ret = 0;
@@ -71,11 +72,14 @@ static int board_config_pmic(const struct device *dev)
 		return ret;
 	}
 
+	/* We can enter deep low power modes */
+	pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+
 	return ret;
 }
 #endif
 
-static int mimxrt595_evk_init(const struct device *dev)
+static int mimxrt595_evk_init(void)
 {
 	/* Set the correct voltage range according to the board. */
 	power_pad_vrange_t vrange = {
@@ -87,6 +91,9 @@ static int mimxrt595_evk_init(const struct device *dev)
 	};
 
 	POWER_SetPadVolRange(&vrange);
+
+	/* Do not enter deep low power modes until the PMIC modes have been initialized */
+	pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
 
 	return 0;
 }

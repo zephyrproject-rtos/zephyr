@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig ENTROPY_GENERATOR
-	bool "Entropy Drivers"
+	bool "Entropy drivers"
 	help
 	  Include entropy drivers in system config.
 
@@ -27,6 +27,7 @@ source "drivers/entropy/Kconfig.stm32"
 source "drivers/entropy/Kconfig.esp32"
 source "drivers/entropy/Kconfig.nrf5"
 source "drivers/entropy/Kconfig.sam"
+source "drivers/entropy/Kconfig.smartbond"
 source "drivers/entropy/Kconfig.native_posix"
 source "drivers/entropy/Kconfig.rv32m1"
 source "drivers/entropy/Kconfig.litex"

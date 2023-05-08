@@ -19,6 +19,8 @@ void posix_isr_declare(unsigned int irq_p, int flags, void isr_p(const void *),
 		       const void *isr_param_p);
 void posix_irq_priority_set(unsigned int irq, unsigned int prio,
 			    uint32_t flags);
+void nrfbsim_WFE_model(void);
+void nrfbsim_SEV_model(void);
 
 /**
  * Configure a static interrupt.
@@ -79,6 +81,8 @@ extern void posix_irq_check_idle_exit(void);
 #else
 #define ARCH_ISR_DIRECT_PM() do { } while (false)
 #endif
+
+#define IRQ_ZERO_LATENCY	BIT(1) /* Unused in this board*/
 
 #ifdef __cplusplus
 }

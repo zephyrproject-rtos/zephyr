@@ -7,7 +7,7 @@
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/stat.h>
+#include <zephyr/posix/sys/stat.h>
 #include <sys/time.h>
 #include <zephyr/arch/cpu.h>
 #include <zephyr/linker/linker-defs.h>
@@ -141,9 +141,8 @@ extern char _heap_sentry[];
 
 #ifdef USE_MALLOC_PREPARE
 
-static int malloc_prepare(const struct device *unused)
+static int malloc_prepare(void)
 {
-	ARG_UNUSED(unused);
 
 #ifdef CONFIG_MMU
 
@@ -329,9 +328,8 @@ K_MUTEX_DEFINE(__lock___libc_recursive_mutex);
 
 #ifdef CONFIG_USERSPACE
 /* Grant public access to picolibc lock after boot */
-static int picolibc_locks_prepare(const struct device *unused)
+static int picolibc_locks_prepare(void)
 {
-	ARG_UNUSED(unused);
 
 	/* Initialise recursive locks */
 	k_object_access_all_grant(&__lock___libc_recursive_mutex);

@@ -8,7 +8,6 @@
 
 #include <string.h>
 #include <errno.h>
-#include <zephyr/arch/xtensa/cache.h>
 #include <zephyr/linker/sections.h>
 
 #include <adsp_interrupt.h>
@@ -29,9 +28,9 @@ extern bool soc_cpus_active[CONFIG_MP_MAX_NUM_CPUS];
 
 /* Legacy cache APIs still used in a few places */
 #define SOC_DCACHE_FLUSH(addr, size)		\
-	z_xtensa_cache_flush((addr), (size))
+	sys_cache_data_flush_range((addr), (size))
 #define SOC_DCACHE_INVALIDATE(addr, size)	\
-	z_xtensa_cache_inv((addr), (size))
+	sys_cache_data_invd_range((addr), (size))
 #define z_soc_cached_ptr(p) arch_xtensa_cached_ptr(p)
 #define z_soc_uncached_ptr(p) arch_xtensa_uncached_ptr(p)
 
@@ -65,30 +64,5 @@ static ALWAYS_INLINE void z_idelay(int n)
 		__asm__ volatile("nop");
 	}
 }
-
-/* memcopy used by boot loader */
-static ALWAYS_INLINE void bmemcpy(void *dest, void *src, size_t bytes)
-{
-	uint32_t *d = (uint32_t *)dest;
-	uint32_t *s = (uint32_t *)src;
-
-	z_xtensa_cache_inv(src, bytes);
-	for (size_t i = 0; i < (bytes >> 2); i++)
-		d[i] = s[i];
-
-	z_xtensa_cache_flush(dest, bytes);
-}
-
-/* bzero used by bootloader */
-static ALWAYS_INLINE void bbzero(void *dest, size_t bytes)
-{
-	uint32_t *d = (uint32_t *)dest;
-
-	for (size_t i = 0; i < (bytes >> 2); i++)
-		d[i] = 0;
-
-	z_xtensa_cache_flush(dest, bytes);
-}
-
 
 #endif /* ZEPHYR_SOC_INTEL_ADSP_COMMON_SOC_H_ */

@@ -22,7 +22,6 @@ struct vnd_sensor_data {
 	struct rtio_iodev iodev;
 	struct k_timer timer;
 	const struct device *dev;
-	struct k_msgq msgq;
 	uint32_t sample_number;
 };
 
@@ -53,48 +52,51 @@ static int vnd_sensor_iodev_read(const struct device *dev, uint8_t *buf,
 }
 
 static void vnd_sensor_iodev_execute(const struct device *dev,
-		const struct rtio_sqe *sqe, struct rtio *r)
+		struct rtio_iodev_sqe *iodev_sqe)
 {
+	const struct vnd_sensor_config *config = dev->config;
+	const struct rtio_sqe *sqe = iodev_sqe->sqe;
+	uint8_t *buf = NULL;
+	uint32_t buf_len;
 	int result;
 
 	if (sqe->op == RTIO_OP_RX) {
-		result = vnd_sensor_iodev_read(dev, sqe->buf, sqe->buf_len);
+
+		result = rtio_sqe_rx_buf(iodev_sqe, config->sample_size, config->sample_size, &buf,
+					 &buf_len);
+		if (result != 0) {
+			LOG_ERR("Failed to get RX buffer");
+		} else {
+			result = vnd_sensor_iodev_read(dev, buf, buf_len);
+		}
 	} else {
 		LOG_ERR("%s: Invalid op", dev->name);
 		result = -EINVAL;
 	}
 
 	if (result < 0) {
-		rtio_sqe_err(r, sqe, result);
+		rtio_iodev_sqe_err(iodev_sqe, result);
 	} else {
-		rtio_sqe_ok(r, sqe, result);
+		rtio_iodev_sqe_ok(iodev_sqe, result);
 	}
 }
 
-static void vnd_sensor_iodev_submit(const struct rtio_sqe *sqe, struct rtio *r)
+static void vnd_sensor_iodev_submit(struct rtio_iodev_sqe *iodev_sqe)
 {
-	struct vnd_sensor_data *data = (struct vnd_sensor_data *) sqe->iodev;
-	const struct device *dev = data->dev;
-	struct rtio_iodev_sqe *iodev_sqe = rtio_spsc_acquire(data->iodev.iodev_sq);
+	struct vnd_sensor_data *data = (struct vnd_sensor_data *) iodev_sqe->sqe->iodev;
 
-	if (iodev_sqe != NULL) {
-		iodev_sqe->sqe = sqe;
-		iodev_sqe->r = r;
-		rtio_spsc_produce(data->iodev.iodev_sq);
-	} else {
-		LOG_ERR("%s: Could not put a msg", dev->name);
-		rtio_sqe_err(r, sqe, -EWOULDBLOCK);
-	}
+	rtio_mpsc_push(&data->iodev.iodev_sq, &iodev_sqe->q);
 }
 
 static void vnd_sensor_handle_int(const struct device *dev)
 {
 	struct vnd_sensor_data *data = dev->data;
-	struct rtio_iodev_sqe *iodev_sqe = rtio_spsc_consume(data->iodev.iodev_sq);
+	struct rtio_mpsc_node *node = rtio_mpsc_pop(&data->iodev.iodev_sq);
 
-	if (iodev_sqe != NULL) {
-		vnd_sensor_iodev_execute(dev, iodev_sqe->sqe, iodev_sqe->r);
-		rtio_spsc_release(data->iodev.iodev_sq);
+	if (node != NULL) {
+		struct rtio_iodev_sqe *iodev_sqe = CONTAINER_OF(node, struct rtio_iodev_sqe, q);
+
+		vnd_sensor_iodev_execute(dev, iodev_sqe);
 	} else {
 		LOG_ERR("%s: Could not get a msg", dev->name);
 	}
@@ -116,6 +118,8 @@ static int vnd_sensor_init(const struct device *dev)
 
 	data->dev = dev;
 
+	rtio_mpsc_init(&data->iodev.iodev_sq);
+
 	k_timer_init(&data->timer, vnd_sensor_timer_expiry, NULL);
 
 	k_timer_start(&data->timer, K_MSEC(sample_period),
@@ -135,13 +139,10 @@ static const struct rtio_iodev_api vnd_sensor_iodev_api = {
 		.sample_size = DT_INST_PROP(n, sample_size),                                       \
 	};                                                                                         \
                                                                                                    \
-	RTIO_IODEV_SQ_DEFINE(vnd_sensor_iodev_sq_##n, DT_INST_PROP(n, max_msgs));                  \
-                                                                                                   \
 	static struct vnd_sensor_data vnd_sensor_data_##n = {                                      \
 		.iodev =                                                                           \
 			{                                                                          \
 				.api = &vnd_sensor_iodev_api,                                      \
-				.iodev_sq = (struct rtio_iodev_sq *)&vnd_sensor_iodev_sq_##n,     \
 			},                                                                         \
 	};                                                                                         \
                                                                                                    \

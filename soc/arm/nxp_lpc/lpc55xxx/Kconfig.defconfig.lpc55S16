@@ -8,12 +8,12 @@ if SOC_LPC55S16
 config SOC
 	default "lpc55S16"
 
-config PINMUX_MCUX_LPC
-	default y
-	depends on PINMUX
-
 config CAN_MCUX_MCAN
 	default y
 	depends on CAN
+
+choice USB_MCUX_CONTROLLER_TYPE
+	default USB_DC_NXP_LPCIP3511
+endchoice
 
 endif # SOC_LPC55S16

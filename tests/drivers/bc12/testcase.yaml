@@ -1,0 +1,4 @@
+tests:
+  drivers.bc12:
+    tags: drivers bc12
+    platform_allow: native_posix

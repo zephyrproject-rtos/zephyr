@@ -4,9 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <zephyr/drivers/counter.h>
+#include <hal/nrf_rtc.h>
+#ifdef CONFIG_CLOCK_CONTROL_NRF
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/nrf_clock_control.h>
-#include <hal/nrf_rtc.h>
+#endif
 #include <zephyr/sys/atomic.h>
 #ifdef DPPI_PRESENT
 #include <nrfx_dppi.h>
@@ -28,7 +30,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_COUNTER_LOG_LEVEL);
 #define DBG(...) LOG_INST_DBG( \
 	((const struct counter_nrfx_config *)dev->config)->log, __VA_ARGS__)
 
-#define COUNTER_MAX_TOP_VALUE RTC_COUNTER_COUNTER_Msk
+#define DT_DRV_COMPAT nordic_nrf_rtc
 
 #define COUNTER_GET_TOP_CH(dev) counter_get_num_of_channels(dev)
 
@@ -102,12 +104,6 @@ static int get_value(const struct device *dev, uint32_t *ticks)
 	return 0;
 }
 
-/* Return true if value equals 2^n - 1 */
-static inline bool is_bit_mask(uint32_t val)
-{
-	return !(val & (val + 1));
-}
-
 /* Function calculates distance between to values assuming that one first
  * argument is in front and that values wrap.
  */
@@ -115,8 +111,8 @@ static uint32_t ticks_sub(const struct device *dev, uint32_t val,
 			  uint32_t old, uint32_t top)
 {
 	if (IS_FIXED_TOP(dev)) {
-		return (val - old) & COUNTER_MAX_TOP_VALUE;
-	} else if (likely(is_bit_mask(top))) {
+		return (val - old) & NRF_RTC_COUNTER_MAX;
+	} else if (likely(IS_BIT_MASK(top))) {
 		return (val - old) & top;
 	}
 
@@ -130,7 +126,7 @@ static uint32_t skip_zero_on_custom_top(uint32_t val, uint32_t top)
 	/* From Product Specification: If a CC register value is 0 when
 	 * a CLEAR task is set, this will not trigger a COMPARE event.
 	 */
-	if (unlikely(val == 0) && (top != COUNTER_MAX_TOP_VALUE)) {
+	if (unlikely(val == 0) && (top != NRF_RTC_COUNTER_MAX)) {
 		val++;
 	}
 
@@ -144,9 +140,9 @@ static uint32_t ticks_add(const struct device *dev, uint32_t val1,
 
 	if (IS_FIXED_TOP(dev)) {
 		ARG_UNUSED(top);
-		return sum & COUNTER_MAX_TOP_VALUE;
+		return sum & NRF_RTC_COUNTER_MAX;
 	}
-	if (likely(is_bit_mask(top))) {
+	if (likely(IS_BIT_MASK(top))) {
 		sum = sum & top;
 	} else {
 		sum = sum > top ? sum - (top + 1) : sum;
@@ -189,7 +185,7 @@ static void handle_next_tick_case(const struct device *dev, uint8_t chan,
 	if (nrf_rtc_counter_get(config->rtc) != now) {
 		set_cc_int_pending(dev, chan);
 	} else {
-		nrf_rtc_int_enable(config->rtc, RTC_CHANNEL_INT_MASK(chan));
+		nrf_rtc_int_enable(config->rtc, NRF_RTC_CHANNEL_INT_MASK(chan));
 	}
 }
 
@@ -234,7 +230,7 @@ static int set_cc(const struct device *dev, uint8_t chan, uint32_t val,
 	uint32_t top;
 	uint32_t now;
 	uint32_t diff;
-	uint32_t int_mask = RTC_CHANNEL_INT_MASK(chan);
+	uint32_t int_mask = NRF_RTC_CHANNEL_INT_MASK(chan);
 	int err = 0;
 	uint32_t max_rel_val;
 	bool absolute = flags & COUNTER_ALARM_CFG_ABSOLUTE;
@@ -243,7 +239,7 @@ static int set_cc(const struct device *dev, uint8_t chan, uint32_t val,
 	__ASSERT(nrf_rtc_int_enable_check(rtc, int_mask) == 0,
 			"Expected that CC interrupt is disabled.");
 
-	evt = RTC_CHANNEL_EVENT_ADDR(chan);
+	evt = NRF_RTC_CHANNEL_EVENT_ADDR(chan);
 	top =  data->top;
 	now = nrf_rtc_counter_get(rtc);
 
@@ -355,10 +351,10 @@ static void disable(const struct device *dev, uint8_t chan)
 {
 	const struct counter_nrfx_config *config = dev->config;
 	NRF_RTC_Type *rtc = config->rtc;
-	nrf_rtc_event_t evt = RTC_CHANNEL_EVENT_ADDR(chan);
+	nrf_rtc_event_t evt = NRF_RTC_CHANNEL_EVENT_ADDR(chan);
 
-	nrf_rtc_int_disable(rtc, RTC_CHANNEL_INT_MASK(chan));
-	nrf_rtc_event_disable(rtc, RTC_CHANNEL_INT_MASK(chan));
+	nrf_rtc_int_disable(rtc, NRF_RTC_CHANNEL_INT_MASK(chan));
+	nrf_rtc_event_disable(rtc, NRF_RTC_CHANNEL_INT_MASK(chan));
 	nrf_rtc_event_clear(rtc, evt);
 	config->ch_data[chan].callback = NULL;
 }
@@ -376,14 +372,14 @@ static int ppi_setup(const struct device *dev, uint8_t chan)
 	const struct counter_nrfx_config *nrfx_config = dev->config;
 	struct counter_nrfx_data *data = dev->data;
 	NRF_RTC_Type *rtc = nrfx_config->rtc;
-	nrf_rtc_event_t evt = RTC_CHANNEL_EVENT_ADDR(chan);
+	nrf_rtc_event_t evt = NRF_RTC_CHANNEL_EVENT_ADDR(chan);
 	nrfx_err_t result;
 
 	if (!nrfx_config->use_ppi) {
 		return 0;
 	}
 
-	nrf_rtc_event_enable(rtc, RTC_CHANNEL_INT_MASK(chan));
+	nrf_rtc_event_enable(rtc, NRF_RTC_CHANNEL_INT_MASK(chan));
 #ifdef DPPI_PRESENT
 	result = nrfx_dppi_channel_alloc(&data->ppi_ch);
 	if (result != NRFX_SUCCESS) {
@@ -392,7 +388,7 @@ static int ppi_setup(const struct device *dev, uint8_t chan)
 	}
 
 	nrf_rtc_subscribe_set(rtc, NRF_RTC_TASK_CLEAR, data->ppi_ch);
-	nrf_rtc_publish_set(rtc->p_reg, evt, data->ppi_ch);
+	nrf_rtc_publish_set(rtc, evt, data->ppi_ch);
 	(void)nrfx_dppi_channel_enable(data->ppi_ch);
 #else /* DPPI_PRESENT */
 	uint32_t evt_addr;
@@ -424,10 +420,9 @@ static void ppi_free(const struct device *dev, uint8_t chan)
 	if (!nrfx_config->use_ppi) {
 		return;
 	}
-	nrf_rtc_event_disable(rtc, RTC_CHANNEL_INT_MASK(chan));
+	nrf_rtc_event_disable(rtc, NRF_RTC_CHANNEL_INT_MASK(chan));
 #ifdef DPPI_PRESENT
-	NRF_RTC_Type *rtc = nrfx_config->rtc;
-	nrf_rtc_event_t evt = RTC_CHANNEL_EVENT_ADDR(chan);
+	nrf_rtc_event_t evt = NRF_RTC_CHANNEL_EVENT_ADDR(chan);
 
 	(void)nrfx_dppi_channel_disable(ppi_ch);
 	nrf_rtc_subscribe_clear(rtc, NRF_RTC_TASK_CLEAR);
@@ -447,7 +442,7 @@ static bool sw_wrap_required(const struct device *dev)
 {
 	struct counter_nrfx_data *data = dev->data;
 
-	return (data->top != COUNTER_MAX_TOP_VALUE) && !IS_PPI_WRAP(dev);
+	return (data->top != NRF_RTC_COUNTER_MAX) && !IS_PPI_WRAP(dev);
 }
 
 static int set_fixed_top_value(const struct device *dev,
@@ -458,7 +453,7 @@ static int set_fixed_top_value(const struct device *dev,
 
 	NRF_RTC_Type *rtc = config->rtc;
 
-	if (cfg->ticks != COUNTER_MAX_TOP_VALUE) {
+	if (cfg->ticks != NRF_RTC_COUNTER_MAX) {
 		return -EINVAL;
 	}
 
@@ -499,14 +494,14 @@ static int set_top_value(const struct device *dev,
 		}
 	}
 
-	nrf_rtc_int_disable(rtc, RTC_CHANNEL_INT_MASK(top_ch));
+	nrf_rtc_int_disable(rtc, NRF_RTC_CHANNEL_INT_MASK(top_ch));
 
 	if (IS_PPI_WRAP(dev)) {
-		if ((dev_data->top == COUNTER_MAX_TOP_VALUE) &&
-				cfg->ticks != COUNTER_MAX_TOP_VALUE) {
+		if ((dev_data->top == NRF_RTC_COUNTER_MAX) &&
+				cfg->ticks != NRF_RTC_COUNTER_MAX) {
 			err = ppi_setup(dev, top_ch);
-		} else if (((dev_data->top != COUNTER_MAX_TOP_VALUE) &&
-				cfg->ticks == COUNTER_MAX_TOP_VALUE)) {
+		} else if (((dev_data->top != NRF_RTC_COUNTER_MAX) &&
+				cfg->ticks == NRF_RTC_COUNTER_MAX)) {
 			ppi_free(dev, top_ch);
 		}
 	}
@@ -526,7 +521,7 @@ static int set_top_value(const struct device *dev,
 	}
 
 	if (cfg->callback || sw_wrap_required(dev)) {
-		nrf_rtc_int_enable(rtc, RTC_CHANNEL_INT_MASK(top_ch));
+		nrf_rtc_int_enable(rtc, NRF_RTC_CHANNEL_INT_MASK(top_ch));
 	}
 
 	return err;
@@ -542,18 +537,20 @@ static int init_rtc(const struct device *dev, uint32_t prescaler)
 	const struct counter_nrfx_config *nrfx_config = dev->config;
 	struct counter_nrfx_data *data = dev->data;
 	struct counter_top_cfg top_cfg = {
-		.ticks = COUNTER_MAX_TOP_VALUE
+		.ticks = NRF_RTC_COUNTER_MAX
 	};
 	NRF_RTC_Type *rtc = nrfx_config->rtc;
 	int err;
 
+#ifdef CONFIG_CLOCK_CONTROL_NRF
 	z_nrf_clock_control_lf_on(CLOCK_CONTROL_NRF_LF_START_NOWAIT);
+#endif
 
 	nrf_rtc_prescaler_set(rtc, prescaler);
 
 	NRFX_IRQ_ENABLE(NRFX_IRQ_NUMBER_GET(rtc));
 
-	data->top = COUNTER_MAX_TOP_VALUE;
+	data->top = NRF_RTC_COUNTER_MAX;
 	err = set_top_value(dev, &top_cfg);
 	DBG("Initialized");
 
@@ -594,7 +591,7 @@ static void top_irq_handle(const struct device *dev)
 
 	top_evt = IS_FIXED_TOP(dev) ?
 		  NRF_RTC_EVENT_OVERFLOW :
-		  RTC_CHANNEL_EVENT_ADDR(counter_get_num_of_channels(dev));
+		  NRF_RTC_CHANNEL_EVENT_ADDR(counter_get_num_of_channels(dev));
 
 	if (nrf_rtc_event_check(rtc, top_evt)) {
 		nrf_rtc_event_clear(rtc, top_evt);
@@ -618,8 +615,8 @@ static void alarm_irq_handle(const struct device *dev, uint32_t chan)
 	struct counter_nrfx_data *data = dev->data;
 
 	NRF_RTC_Type *rtc = config->rtc;
-	nrf_rtc_event_t evt = RTC_CHANNEL_EVENT_ADDR(chan);
-	uint32_t int_mask = RTC_CHANNEL_INT_MASK(chan);
+	nrf_rtc_event_t evt = NRF_RTC_CHANNEL_EVENT_ADDR(chan);
+	uint32_t int_mask = NRF_RTC_CHANNEL_INT_MASK(chan);
 	bool hw_irq_pending = nrf_rtc_event_check(rtc, evt) &&
 			      nrf_rtc_int_enable_check(rtc, int_mask);
 	bool sw_irq_pending = data->ipend_adj & BIT(chan);
@@ -676,72 +673,60 @@ static const struct counter_driver_api counter_nrfx_driver_api = {
  * are indexed by peripheral number, so DT_INST APIs won't work.
  */
 
-#define RTC(idx)		DT_NODELABEL(rtc##idx)
-#define RTC_PROP(idx, prop)	DT_PROP(RTC(idx), prop)
-
 #define RTC_IRQ_CONNECT(idx)						       \
-	COND_CODE_1(CONFIG_COUNTER_RTC##idx##_ZLI,			       \
-		(IRQ_DIRECT_CONNECT(DT_IRQN(RTC(idx)),			       \
-				    DT_IRQ(RTC(idx), priority),		       \
+	COND_CODE_1(DT_INST_PROP(idx, zli),				       \
+		(IRQ_DIRECT_CONNECT(DT_INST_IRQN(idx),			       \
+				    DT_INST_IRQ(idx, priority),		       \
 				    counter_rtc##idx##_isr_wrapper,	       \
 				    IRQ_ZERO_LATENCY)),			       \
-		(IRQ_CONNECT(DT_IRQN(RTC(idx)), DT_IRQ(RTC(idx), priority),    \
-			    irq_handler, DEVICE_DT_GET(RTC(idx)), 0))	       \
+		(IRQ_CONNECT(DT_INST_IRQN(idx), DT_INST_IRQ(idx, priority),    \
+			    irq_handler, DEVICE_DT_INST_GET(idx), 0))	       \
 	)
 
 #define COUNTER_NRF_RTC_DEVICE(idx)					       \
-	BUILD_ASSERT((RTC_PROP(idx, prescaler) - 1) <=			       \
+	BUILD_ASSERT((DT_INST_PROP(idx, prescaler) - 1) <=		       \
 		     RTC_PRESCALER_PRESCALER_Msk,			       \
 		     "RTC prescaler out of range");			       \
-	COND_CODE_1(CONFIG_COUNTER_RTC##idx##_ZLI, (			       \
+	COND_CODE_1(DT_INST_PROP(idx, zli), (				       \
 		ISR_DIRECT_DECLARE(counter_rtc##idx##_isr_wrapper)	       \
 		{							       \
-			irq_handler(DEVICE_DT_GET(RTC(idx)));		       \
+			irq_handler(DEVICE_DT_INST_GET(idx));		       \
 			/* No rescheduling, it shall not access zephyr primitives. */ \
 			return 0;					       \
 		}), ())							       \
 	static int counter_##idx##_init(const struct device *dev)	       \
 	{								       \
 		RTC_IRQ_CONNECT(idx);					       \
-		return init_rtc(dev, RTC_PROP(idx, prescaler) - 1);	       \
+		return init_rtc(dev, DT_INST_PROP(idx, prescaler) - 1);	       \
 	}								       \
 	static struct counter_nrfx_data counter_##idx##_data;		       \
 	static struct counter_nrfx_ch_data				       \
-		counter##idx##_ch_data[RTC##idx##_CC_NUM];		       \
+		counter##idx##_ch_data[DT_INST_PROP(idx, cc_num)];	       \
 	LOG_INSTANCE_REGISTER(LOG_MODULE_NAME, idx, CONFIG_COUNTER_LOG_LEVEL); \
 	static const struct counter_nrfx_config nrfx_counter_##idx##_config = {\
 		.info = {						       \
-			.max_top_value = COUNTER_MAX_TOP_VALUE,		       \
-			.freq = RTC_PROP(idx, clock_frequency) /	       \
-				RTC_PROP(idx, prescaler),		       \
+			.max_top_value = NRF_RTC_COUNTER_MAX,		       \
+			.freq = DT_INST_PROP(idx, clock_frequency) /	       \
+				DT_INST_PROP(idx, prescaler),		       \
 			.flags = COUNTER_CONFIG_INFO_COUNT_UP,		       \
-			.channels = RTC_PROP(idx, fixed_top) ?		       \
-				RTC##idx##_CC_NUM : RTC##idx##_CC_NUM - 1      \
+			.channels = DT_INST_PROP(idx, fixed_top)	       \
+				  ? DT_INST_PROP(idx, cc_num)		       \
+				  : DT_INST_PROP(idx, cc_num) - 1	       \
 		},							       \
 		.ch_data = counter##idx##_ch_data,			       \
-		.rtc = (NRF_RTC_Type *)DT_REG_ADDR(RTC(idx)),		       \
+		.rtc = (NRF_RTC_Type *)DT_INST_REG_ADDR(idx),		       \
 		IF_ENABLED(CONFIG_COUNTER_RTC_WITH_PPI_WRAP,		       \
-			   (.use_ppi = RTC_PROP(idx, ppi_wrap),))	       \
+			   (.use_ppi = DT_INST_PROP(idx, ppi_wrap),))	       \
 		IF_ENABLED(CONFIG_COUNTER_RTC_CUSTOM_TOP_SUPPORT,	       \
-			   (.fixed_top = RTC_PROP(idx, fixed_top),))	       \
+			   (.fixed_top = DT_INST_PROP(idx, fixed_top),))       \
 		LOG_INSTANCE_PTR_INIT(log, LOG_MODULE_NAME, idx)	       \
 	};								       \
-	DEVICE_DT_DEFINE(RTC(idx),					       \
+	DEVICE_DT_INST_DEFINE(idx,					       \
 			    counter_##idx##_init,			       \
 			    NULL,					       \
 			    &counter_##idx##_data,			       \
 			    &nrfx_counter_##idx##_config.info,		       \
 			    PRE_KERNEL_1, CONFIG_COUNTER_INIT_PRIORITY,	       \
-			    &counter_nrfx_driver_api)
+			    &counter_nrfx_driver_api);
 
-#ifdef CONFIG_COUNTER_RTC0
-COUNTER_NRF_RTC_DEVICE(0);
-#endif
-
-#ifdef CONFIG_COUNTER_RTC1
-COUNTER_NRF_RTC_DEVICE(1);
-#endif
-
-#ifdef CONFIG_COUNTER_RTC2
-COUNTER_NRF_RTC_DEVICE(2);
-#endif
+DT_INST_FOREACH_STATUS_OKAY(COUNTER_NRF_RTC_DEVICE)

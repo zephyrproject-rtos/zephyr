@@ -18,6 +18,7 @@
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/math_extras.h>
 #include <zephyr/timing/timing.h>
+#include <zephyr/sys/util.h>
 
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
@@ -178,6 +179,7 @@ static ALWAYS_INLINE struct k_thread *_priq_dumb_mask_best(sys_dlist_t *pq)
 }
 #endif
 
+#if defined(CONFIG_SCHED_DUMB) || defined(CONFIG_WAITQ_DUMB)
 static ALWAYS_INLINE void z_priq_dumb_add(sys_dlist_t *pq,
 					  struct k_thread *thread)
 {
@@ -195,6 +197,7 @@ static ALWAYS_INLINE void z_priq_dumb_add(sys_dlist_t *pq,
 
 	sys_dlist_append(pq, &thread->base.qnode_dlist);
 }
+#endif
 
 static ALWAYS_INLINE void *thread_runq(struct k_thread *thread)
 {
@@ -399,22 +402,21 @@ static void move_thread_to_end_of_prio_q(struct k_thread *thread)
 	update_cache(thread == _current);
 }
 
-#ifdef CONFIG_TIMESLICING
-
-static int slice_ticks;
-static int slice_max_prio;
-
-static inline int slice_time(struct k_thread *curr)
+static void flag_ipi(void)
 {
-	int ret = slice_ticks;
-
-#ifdef CONFIG_TIMESLICE_PER_THREAD
-	if (curr->base.slice_ticks != 0) {
-		ret = curr->base.slice_ticks;
+#if defined(CONFIG_SMP) && defined(CONFIG_SCHED_IPI_SUPPORTED)
+	if (arch_num_cpus() > 1) {
+		_kernel.pending_ipi = true;
 	}
 #endif
-	return ret;
 }
+
+#ifdef CONFIG_TIMESLICING
+
+static int slice_ticks = DIV_ROUND_UP(CONFIG_TIMESLICE_SIZE * Z_HZ_ticks, Z_HZ_ms);
+static int slice_max_prio = CONFIG_TIMESLICE_PRIORITY;
+static struct _timeout slice_timeouts[CONFIG_MP_MAX_NUM_CPUS];
+static bool slice_expired[CONFIG_MP_MAX_NUM_CPUS];
 
 #ifdef CONFIG_SWAP_NONATOMIC
 /* If z_swap() isn't atomic, then it's possible for a timer interrupt
@@ -425,29 +427,64 @@ static inline int slice_time(struct k_thread *curr)
 static struct k_thread *pending_current;
 #endif
 
+static inline int slice_time(struct k_thread *thread)
+{
+	int ret = slice_ticks;
+
+#ifdef CONFIG_TIMESLICE_PER_THREAD
+	if (thread->base.slice_ticks != 0) {
+		ret = thread->base.slice_ticks;
+	}
+#endif
+	return ret;
+}
+
+static inline bool sliceable(struct k_thread *thread)
+{
+	bool ret = is_preempt(thread)
+		&& slice_time(thread) != 0
+		&& !z_is_prio_higher(thread->base.prio, slice_max_prio)
+		&& !z_is_thread_prevented_from_running(thread)
+		&& !z_is_idle_thread_object(thread);
+
+#ifdef CONFIG_TIMESLICE_PER_THREAD
+	ret |= thread->base.slice_ticks != 0;
+#endif
+
+	return ret;
+}
+
+static void slice_timeout(struct _timeout *t)
+{
+	int cpu = ARRAY_INDEX(slice_timeouts, t);
+
+	slice_expired[cpu] = true;
+
+	/* We need an IPI if we just handled a timeslice expiration
+	 * for a different CPU.  Ideally this would be able to target
+	 * the specific core, but that's not part of the API yet.
+	 */
+	if (IS_ENABLED(CONFIG_SMP) && cpu != _current_cpu->id) {
+		flag_ipi();
+	}
+}
+
 void z_reset_time_slice(struct k_thread *curr)
 {
-	/* Add the elapsed time since the last announced tick to the
-	 * slice count, as we'll see those "expired" ticks arrive in a
-	 * FUTURE z_time_slice() call.
-	 */
-	if (slice_time(curr) != 0) {
-		_current_cpu->slice_ticks = slice_time(curr) + sys_clock_elapsed();
-		z_set_timeout_expiry(slice_time(curr), false);
+	int cpu = _current_cpu->id;
+
+	z_abort_timeout(&slice_timeouts[cpu]);
+	slice_expired[cpu] = false;
+	if (sliceable(curr)) {
+		z_add_timeout(&slice_timeouts[cpu], slice_timeout,
+			      K_TICKS(slice_time(curr) - 1));
 	}
 }
 
 void k_sched_time_slice_set(int32_t slice, int prio)
 {
 	LOCKED(&sched_spinlock) {
-		_current_cpu->slice_ticks = 0;
 		slice_ticks = k_ms_to_ticks_ceil32(slice);
-		if (IS_ENABLED(CONFIG_TICKLESS_KERNEL) && slice > 0) {
-			/* It's not possible to reliably set a 1-tick
-			 * timeout if ticks aren't regular.
-			 */
-			slice_ticks = MAX(2, slice_ticks);
-		}
 		slice_max_prio = prio;
 		z_reset_time_slice(_current);
 	}
@@ -465,74 +502,33 @@ void k_thread_time_slice_set(struct k_thread *th, int32_t slice_ticks,
 }
 #endif
 
-static inline bool sliceable(struct k_thread *thread)
+/* Called out of each timer interrupt */
+void z_time_slice(void)
 {
-	bool ret = is_preempt(thread)
-		&& !z_is_thread_prevented_from_running(thread)
-		&& !z_is_prio_higher(thread->base.prio, slice_max_prio)
-		&& !z_is_idle_thread_object(thread);
-
-#ifdef CONFIG_TIMESLICE_PER_THREAD
-	ret |= thread->base.slice_ticks != 0;
-#endif
-
-	return ret;
-}
-
-static k_spinlock_key_t slice_expired_locked(k_spinlock_key_t sched_lock_key)
-{
+	k_spinlock_key_t key = k_spin_lock(&sched_spinlock);
 	struct k_thread *curr = _current;
 
-#ifdef CONFIG_TIMESLICE_PER_THREAD
-	if (curr->base.slice_expired) {
-		k_spin_unlock(&sched_spinlock, sched_lock_key);
-		curr->base.slice_expired(curr, curr->base.slice_data);
-		sched_lock_key = k_spin_lock(&sched_spinlock);
-	}
-#endif
-	if (!z_is_thread_prevented_from_running(curr)) {
-		move_thread_to_end_of_prio_q(curr);
-	}
-	z_reset_time_slice(curr);
-
-	return sched_lock_key;
-}
-
-/* Called out of each timer interrupt */
-void z_time_slice(int ticks)
-{
-	/* Hold sched_spinlock, so that activity on another CPU
-	 * (like a call to k_thread_abort() at just the wrong time)
-	 * won't affect the correctness of the decisions made here.
-	 * Also prevents any nested interrupts from changing
-	 * thread state to avoid similar issues, since this would
-	 * normally run with IRQs enabled.
-	 */
-	k_spinlock_key_t key = k_spin_lock(&sched_spinlock);
-
 #ifdef CONFIG_SWAP_NONATOMIC
-	if (pending_current == _current) {
-		z_reset_time_slice(_current);
+	if (pending_current == curr) {
+		z_reset_time_slice(curr);
 		k_spin_unlock(&sched_spinlock, key);
 		return;
 	}
 	pending_current = NULL;
 #endif
 
-	if (slice_time(_current) && sliceable(_current)) {
-		if (ticks >= _current_cpu->slice_ticks) {
-			/* Note: this will (if so enabled) internally
-			 * drop and reacquire the scheduler lock
-			 * around the callback!  Don't put anything
-			 * after this line that requires
-			 * synchronization.
-			 */
-			key = slice_expired_locked(key);
-		} else {
-			_current_cpu->slice_ticks -= ticks;
+	if (slice_expired[_current_cpu->id] && sliceable(curr)) {
+#ifdef CONFIG_TIMESLICE_PER_THREAD
+		if (curr->base.slice_expired) {
+			k_spin_unlock(&sched_spinlock, key);
+			curr->base.slice_expired(curr, curr->base.slice_data);
+			key = k_spin_lock(&sched_spinlock);
 		}
-	} else {
-		_current_cpu->slice_ticks = 0;
+#endif
+		if (!z_is_thread_prevented_from_running(curr)) {
+			move_thread_to_end_of_prio_q(curr);
+		}
+		z_reset_time_slice(curr);
 	}
 	k_spin_unlock(&sched_spinlock, key);
 }
@@ -603,15 +599,6 @@ static bool thread_active_elsewhere(struct k_thread *thread)
 	}
 #endif
 	return false;
-}
-
-static void flag_ipi(void)
-{
-#if defined(CONFIG_SMP) && defined(CONFIG_SCHED_IPI_SUPPORTED)
-	if (arch_num_cpus() > 1) {
-		_kernel.pending_ipi = true;
-	}
-#endif
 }
 
 static void ready_thread(struct k_thread *thread)
@@ -786,8 +773,41 @@ static inline void unpend_thread_no_timeout(struct k_thread *thread)
 ALWAYS_INLINE void z_unpend_thread_no_timeout(struct k_thread *thread)
 {
 	LOCKED(&sched_spinlock) {
-		unpend_thread_no_timeout(thread);
+		if (thread->base.pended_on != NULL) {
+			unpend_thread_no_timeout(thread);
+		}
 	}
+}
+
+void z_sched_wake_thread(struct k_thread *thread, bool is_timeout)
+{
+	LOCKED(&sched_spinlock) {
+		bool killed = ((thread->base.thread_state & _THREAD_DEAD) ||
+			       (thread->base.thread_state & _THREAD_ABORTING));
+
+#ifdef CONFIG_EVENTS
+		bool do_nothing = thread->no_wake_on_timeout && is_timeout;
+
+		thread->no_wake_on_timeout = false;
+
+		if (do_nothing) {
+			continue;
+		}
+#endif
+
+		if (!killed) {
+			/* The thread is not being killed */
+			if (thread->base.pended_on != NULL) {
+				unpend_thread_no_timeout(thread);
+			}
+			z_mark_thread_as_started(thread);
+			if (is_timeout) {
+				z_mark_thread_as_not_suspended(thread);
+			}
+			ready_thread(thread);
+		}
+	}
+
 }
 
 #ifdef CONFIG_SYS_CLOCK_EXISTS
@@ -797,19 +817,7 @@ void z_thread_timeout(struct _timeout *timeout)
 	struct k_thread *thread = CONTAINER_OF(timeout,
 					       struct k_thread, base.timeout);
 
-	LOCKED(&sched_spinlock) {
-		bool killed = ((thread->base.thread_state & _THREAD_DEAD) ||
-			       (thread->base.thread_state & _THREAD_ABORTING));
-
-		if (!killed) {
-			if (thread->base.pended_on != NULL) {
-				unpend_thread_no_timeout(thread);
-			}
-			z_mark_thread_as_started(thread);
-			z_mark_thread_as_not_suspended(thread);
-			ready_thread(thread);
-		}
-	}
+	z_sched_wake_thread(thread, true);
 }
 #endif
 
@@ -1293,18 +1301,11 @@ void init_ready_q(struct _ready_q *rq)
 void z_sched_init(void)
 {
 #ifdef CONFIG_SCHED_CPU_MASK_PIN_ONLY
-	unsigned int num_cpus = arch_num_cpus();
-
-	for (int i = 0; i < num_cpus; i++) {
+	for (int i = 0; i < CONFIG_MP_MAX_NUM_CPUS; i++) {
 		init_ready_q(&_kernel.cpus[i].ready_q);
 	}
 #else
 	init_ready_q(&_kernel.ready_q);
-#endif
-
-#ifdef CONFIG_TIMESLICING
-	k_sched_time_slice_set(CONFIG_TIMESLICE_SIZE,
-		CONFIG_TIMESLICE_PRIORITY);
 #endif
 }
 
@@ -1551,6 +1552,12 @@ void z_sched_ipi(void)
 	 */
 #ifdef CONFIG_TRACE_SCHED_IPI
 	z_trace_sched_ipi();
+#endif
+
+#ifdef CONFIG_TIMESLICING
+	if (sliceable(_current)) {
+		z_time_slice();
+	}
 #endif
 }
 #endif
@@ -1910,4 +1917,29 @@ int z_sched_wait(struct k_spinlock *lock, k_spinlock_key_t key,
 		*data = _current->base.swap_data;
 	}
 	return ret;
+}
+
+int z_sched_waitq_walk(_wait_q_t  *wait_q,
+		       int (*func)(struct k_thread *, void *), void *data)
+{
+	struct k_thread *thread;
+	int  status = 0;
+
+	LOCKED(&sched_spinlock) {
+		_WAIT_Q_FOR_EACH(wait_q, thread) {
+
+			/*
+			 * Invoke the callback function on each waiting thread
+			 * for as long as there are both waiting threads AND
+			 * it returns 0.
+			 */
+
+			status = func(thread, data);
+			if (status != 0) {
+				break;
+			}
+		}
+	}
+
+	return status;
 }

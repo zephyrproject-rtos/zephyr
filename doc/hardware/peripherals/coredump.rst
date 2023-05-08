@@ -1,7 +1,7 @@
 .. _coredump_device_api:
 
 Coredump Device
-####################
+###############
 
 Overview
 ********

@@ -106,9 +106,11 @@ int32_t mgmt_callback_notify(uint32_t event, void *data, size_t data_size)
 		struct mgmt_callback *loop_group =
 			CONTAINER_OF(snp, struct mgmt_callback, node);
 
-		if (loop_group->event_id == event || loop_group->event_id == MGMT_EVT_OP_ALL ||
+		if (loop_group->event_id == MGMT_EVT_OP_ALL ||
 		    (MGMT_EVT_GET_GROUP(loop_group->event_id) == group &&
-		     MGMT_EVT_GET_ID(loop_group->event_id) == MGMT_EVT_OP_ID_ALL)) {
+		     (MGMT_EVT_GET_ID(event) & MGMT_EVT_GET_ID(loop_group->event_id)) ==
+		     MGMT_EVT_GET_ID(event))) {
+
 			rc = loop_group->callback(event, return_rc, &abort_more, data, data_size);
 
 			if (rc != MGMT_ERR_EOK && failed == false) {
@@ -127,9 +129,8 @@ int32_t mgmt_callback_notify(uint32_t event, void *data, size_t data_size)
 #endif
 
 /* Processes all registered MCUmgr handlers at start up and registers them */
-static int mcumgr_handlers_init(const struct device *dev)
+static int mcumgr_handlers_init(void)
 {
-	ARG_UNUSED(dev);
 
 	STRUCT_SECTION_FOREACH(mcumgr_handler, handler) {
 		if (handler->init) {

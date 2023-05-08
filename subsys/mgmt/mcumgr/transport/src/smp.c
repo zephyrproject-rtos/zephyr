@@ -229,7 +229,7 @@ void smp_rx_clear(struct smp_transport *zst)
 	}
 }
 
-static int smp_init(const struct device *dev)
+static int smp_init(void)
 {
 	k_work_queue_init(&smp_work_queue);
 

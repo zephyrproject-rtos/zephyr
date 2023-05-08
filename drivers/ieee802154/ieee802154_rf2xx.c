@@ -267,7 +267,7 @@ static void rf2xx_process_tx_frame(const struct device *dev)
 	struct rf2xx_context *ctx = dev->data;
 
 	ctx->trx_trac = (rf2xx_iface_reg_read(dev, RF2XX_TRX_STATE_REG) >>
-			 RF2XX_TRAC_STATUS) & 7;
+			 RF2XX_TRAC_STATUS) & RF2XX_TRAC_BIT_MASK;
 	k_sem_give(&ctx->trx_tx_sync);
 	rf2xx_trx_set_rx_state(dev);
 }
@@ -326,7 +326,8 @@ static void rf2xx_thread_main(void *arg)
 				rf2xx_iface_sram_read(ctx->dev, 0,
 						      &ctx->rx_phr, 1);
 			}
-		} else if (isr_status & (1 << RF2XX_TRX_END)) {
+		}
+		if (isr_status & (1 << RF2XX_TRX_END)) {
 			rf2xx_process_trx_end(ctx->dev);
 		}
 	}
@@ -431,7 +432,7 @@ static int rf2xx_set_channel(const struct device *dev, uint16_t channel)
 
 	if (ctx->trx_model == RF2XX_TRX_MODEL_212) {
 		if ((ctx->cc_page == RF2XX_TRX_CC_PAGE_0
-		     && ctx->cc_page == RF2XX_TRX_CC_PAGE_2)
+		     || ctx->cc_page == RF2XX_TRX_CC_PAGE_2)
 		    && channel > 10) {
 			LOG_ERR("Unsupported channel %u", channel);
 			return -EINVAL;
@@ -485,34 +486,34 @@ static int rf2xx_set_txpower(const struct device *dev, int16_t dbm)
 
 	min = conf->tx_pwr_min[1];
 	if (conf->tx_pwr_min[0] == 0x01) {
-		min *= -1.0;
+		min *= -1.0f;
 	}
 
 	max = conf->tx_pwr_max[1];
 	if (conf->tx_pwr_max[0] == 0x01) {
-		min *= -1.0;
+		min *= -1.0f;
 	}
 
-	step = (max - min) / ((float)conf->tx_pwr_table_size - 1.0);
+	step = (max - min) / ((float)conf->tx_pwr_table_size - 1.0f);
 
-	if (step == 0.0) {
-		step = 1.0;
+	if (step == 0.0f) {
+		step = 1.0f;
 	}
 
 	LOG_DBG("Tx-power values: min %f, max %f, step %f, entries %d",
-		min, max, step, conf->tx_pwr_table_size);
+		(double)min, (double)max, (double)step, conf->tx_pwr_table_size);
 
 	if (dbm < min) {
 		LOG_INF("TX-power %d dBm below min of %f dBm, using %f dBm",
-			dbm, min, max);
+			dbm, (double)min, (double)max);
 		dbm = min;
 	} else if (dbm > max) {
 		LOG_INF("TX-power %d dBm above max of %f dBm, using %f dBm",
-			dbm, min, max);
+			dbm, (double)min, (double)max);
 		dbm = max;
 	}
 
-	idx = abs(((float)(dbm - max) / step));
+	idx = abs((int) (((float)(dbm - max) / step)));
 	LOG_DBG("Tx-power idx: %d", idx);
 
 	if (idx >= conf->tx_pwr_table_size) {

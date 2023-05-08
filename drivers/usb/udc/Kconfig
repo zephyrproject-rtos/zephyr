@@ -3,7 +3,7 @@
 
 
 menuconfig UDC_DRIVER
-	bool "USB device controller driver [EXPERIMENTAL]"
+	bool "USB device controller drivers [EXPERIMENTAL]"
 	select EXPERIMENTAL
 	select NET_BUF
 	help

@@ -5,3 +5,11 @@
  */
 
 #include <st/wb/stm32wb.dtsi>
+
+/ {
+	soc {
+		adc1: adc@50040000 {
+			temp-channel = <17>;
+		};
+	};
+};

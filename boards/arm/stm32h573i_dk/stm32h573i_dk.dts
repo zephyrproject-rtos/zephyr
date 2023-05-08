@@ -1,0 +1,243 @@
+/*
+ * Copyright (c) 2023 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/h5/stm32h573Xi.dtsi>
+#include <st/h5/stm32h573iikxq-pinctrl.dtsi>
+#include "arduino_r3_connector.dtsi"
+
+/ {
+	model = "STMicroelectronics STM32H573I DISCOVERY KIT board";
+	compatible = "st,stm32h573i-dk";
+
+	chosen {
+		zephyr,console = &usart1;
+		zephyr,shell-uart = &usart1;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,canbus = &can1;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		green_led_0: led_1 {
+			gpios = <&gpioi 9 GPIO_ACTIVE_LOW>;
+			label = "User LD1";
+		};
+		orange_led_0: led_2 {
+			gpios = <&gpioi 8 GPIO_ACTIVE_LOW>;
+			label = "User LD2";
+		};
+		red_led_0: led_3 {
+			gpios = <&gpiof 1 GPIO_ACTIVE_LOW>;
+			label = "User LD3";
+		};
+		blue_led_0: led_4 {
+			gpios = <&gpiof 4 GPIO_ACTIVE_LOW>;
+			label = "User LD4";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		user_button: button {
+			label = "User";
+			gpios = <&gpioc 13 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	aliases {
+		led0 = &blue_led_0;
+		sw0 = &user_button;
+		watchdog0 = &iwdg;
+		spi-flash0 = &mx25lm51245;
+		die-temp0 = &die_temp;
+	};
+};
+
+&clk_hsi48 {
+	status = "okay";
+};
+
+&clk_lse {
+	status = "okay";
+};
+
+&clk_hse {
+	clock-frequency = <DT_FREQ_M(25)>;
+	hse-bypass; /* X3 is a 25MHz oscillator on PH0 */
+	status = "okay";
+};
+
+&pll {
+	div-m = <5>;
+	mul-n = <96>;
+	div-p = <2>;
+	div-q = <2>;
+	div-r = <2>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+	clock-frequency = <DT_FREQ_M(240)>;
+	ahb-prescaler = <1>;
+	apb1-prescaler = <1>;
+	apb2-prescaler = <1>;
+	apb3-prescaler = <1>;
+};
+
+&usart1 {
+	pinctrl-0 = <&usart1_tx_pa9 &usart1_rx_pa10>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&timers2 {
+	st,prescaler = <10000>;
+	status = "okay";
+
+	pwm2: pwm {
+		status = "okay";
+		pinctrl-0 = <&tim2_ch4_pa3>;
+		pinctrl-names = "default";
+	};
+};
+
+&timers3 {
+	st,prescaler = <10000>;
+	status = "okay";
+
+	pwm3: pwm {
+		status = "okay";
+		pinctrl-0 = <&tim3_ch2_pb5>;
+		pinctrl-names = "default";
+	};
+};
+
+&rng {
+	status = "okay";
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* Set the partitions with first MB to make use of the whole Bank1 */
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 DT_SIZE_K(64)>;
+		};
+		slot0_partition: partition@10000 {
+			label = "image-0";
+			reg = <0x00010000 DT_SIZE_K(416)>;
+		};
+		slot1_partition: partition@78000 {
+			label = "image-1";
+			reg = <0x00078000 DT_SIZE_K(416)>;
+		};
+		scratch_partition: partition@e0000 {
+			label = "image-scratch";
+			reg = <0x000e0000 DT_SIZE_K(64)>;
+		};
+		/* Set 64KB of storage at the end of Bank1 */
+		storage_partition: partition@f0000 {
+			label = "storage";
+			reg = <0x000f0000 DT_SIZE_K(64)>;
+		};
+	};
+};
+
+&rtc {
+	clocks = <&rcc STM32_CLOCK_BUS_APB3 0x00200000>,
+		 <&rcc STM32_SRC_LSE RTC_SEL(1)>;
+	status = "okay";
+};
+
+&iwdg {
+	status = "okay";
+};
+
+&gpdma1 {
+	status = "okay";
+};
+
+&gpdma2 {
+	status = "okay";
+};
+
+&dac1 {
+	/* only 2 output channels : out1 on pa4 or out2 on pa5 */
+	pinctrl-0 = <&dac1_out1_pa4>;  /* Arduino A1 */
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&adc1 {
+	pinctrl-0 = <&adc1_inp6_pf12>; /* Arduino A5 */
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&spi2 {
+	pinctrl-0 = <&spi2_nss_pa3 &spi2_sck_pi1
+		     &spi2_miso_pi2 &spi2_mosi_pb15>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&can1 {
+	clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x00000200>,
+		<&rcc STM32_SRC_PLL1_Q FDCAN_SEL(1)>;
+	pinctrl-0 = <&fdcan1_rx_pa11 &fdcan1_tx_pa12>;
+	pinctrl-names = "default";
+	bus-speed = <125000>;
+	bus-speed-data = <1000000>;
+	status = "okay";
+};
+
+&octospi1 {
+	pinctrl-0 = <&octospi1_io0_pb1 &octospi1_io1_pd12
+		     &octospi1_io2_pc2 &octospi1_io3_pd13
+		     &octospi1_io4_ph2 &octospi1_io5_ph3
+		     &octospi1_io6_pg9 &octospi1_io7_pc0
+		     &octospi1_clk_pf10 &octospi1_ncs_pg6
+		     &octospi1_dqs_pb2>;
+	pinctrl-names = "default";
+
+	status = "okay";
+
+	mx25lm51245: ospi-nor-flash@0 {
+		compatible = "st,stm32-ospi-nor";
+		reg = <0>;
+		ospi-max-frequency = <DT_FREQ_M(50)>;
+		size = <DT_SIZE_M(512)>; /* 64 MBytes */
+		spi-bus-width = <OSPI_OPI_MODE>;
+		data-rate = <OSPI_DTR_TRANSFER>;
+		four-byte-opcodes;
+		status = "okay";
+
+		partitions {
+			   compatible = "fixed-partitions";
+			   #address-cells = <1>;
+			   #size-cells = <1>;
+
+			   partition@0 {
+			       label = "nor";
+			       reg = <0x00000000 DT_SIZE_M(64)>;
+			   };
+		};
+	};
+};
+
+&die_temp {
+	status = "okay";
+};

@@ -3,37 +3,68 @@
 # Copyright (c) 2016 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-menu "C Library"
-
 config REQUIRES_FULL_LIBC
+	prompt "Require complete C library"
 	bool
 	help
-	  Helper symbol to indicate some feature requires a C library implementation
-	  with more functionality than what MINIMAL_LIBC provides
+	  Select a C library implementation that provides a complete C library
+	  implementation, rather than the subset provided by MINIMAL_LIBC.
+
+config FULL_LIBC_SUPPORTED
+	bool
+	help
+	  Selected when the target has at least one C library that offers a
+	  complete implementation and which would be selected when
+	  REQUIRES_FULL_LIBC is set.
+
+config MINIMAL_LIBC_SUPPORTED
+	bool
+	default y
+	help
+	  Selected when the target has support for the minimal C library
+
+config NEWLIB_LIBC_SUPPORTED
+	bool
+	default y
+	depends on "$(TOOLCHAIN_HAS_NEWLIB)" = "y"
+	select FULL_LIBC_SUPPORTED
+	help
+	  Selected when the target has support for the newlib C library
+
+# Picolibc with C++ support in Zephyr SDK is handled by Zephyr SDK's own Kconfig.
+config PICOLIBC_SUPPORTED
+	bool
+	depends on !NATIVE_APPLICATION
+	depends on "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "zephyr"
+	depends on !(CPP && "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "zephyr")
+	# picolibc text is outside .pinned.text on this board. #54148
+	default y
+	select FULL_LIBC_SUPPORTED
+	help
+	  Selected when the target has support for picolibc.
 
 config SUPPORT_MINIMAL_LIBC
 	bool
-	default y
-
-config PICOLIBC_SUPPORTED
-	bool
-	depends on ARC || ARM || ARM64 || MIPS || RISCV
-	depends on "$(ZEPHYR_TOOLCHAIN_VARIANT)" != "arcmwdt"
-	default y
+	select MINIMAL_LIBC_SUPPORTED
+	select DEPRECATED
 	help
-	  Selected when the target has support for picolibc.
+	  Legacy symbol that selects MINIMAL_LIBC_SUPPORTED
+
+menu "C Library"
 
 choice LIBC_IMPLEMENTATION
 	prompt "C Library Implementation"
 	default EXTERNAL_LIBC if NATIVE_APPLICATION
 	default NEWLIB_LIBC if REQUIRES_FULL_LIBC
+	default PICOLIBC if REQUIRES_FULL_LIBC
 	default MINIMAL_LIBC
 
 config MINIMAL_LIBC
 	bool "Minimal C library"
 	depends on !NATIVE_APPLICATION
 	depends on !REQUIRES_FULL_LIBC
-	depends on SUPPORT_MINIMAL_LIBC
+	depends on MINIMAL_LIBC_SUPPORTED
+	imply COMPILER_FREESTANDING
 	help
 	  Build with minimal C library.
 
@@ -42,6 +73,7 @@ config PICOLIBC
 	select THREAD_LOCAL_STORAGE if ARCH_HAS_THREAD_LOCAL_STORAGE && TOOLCHAIN_SUPPORTS_THREAD_LOCAL_STORAGE
 	select LIBC_ERRNO if THREAD_LOCAL_STORAGE
 	depends on !NATIVE_APPLICATION
+	depends on PICOLIBC_SUPPORTED
 	help
 	  Build with picolibc library. The picolibc library is built as
 	  a module if PICOLIBC_MODULE is set, otherwise picolibc is
@@ -50,6 +82,7 @@ config PICOLIBC
 config NEWLIB_LIBC
 	bool "Newlib C library"
 	depends on !NATIVE_APPLICATION
+	depends on NEWLIB_LIBC_SUPPORTED
 	help
 	  Build with newlib library. The newlib library is expected to be
 	  part of the SDK in this case.
@@ -71,6 +104,7 @@ endchoice # LIBC_IMPLEMENTATION
 config HAS_NEWLIB_LIBC_NANO
 	bool
 
+rsource "common/Kconfig"
 rsource "minimal/Kconfig"
 rsource "newlib/Kconfig"
 rsource "picolibc/Kconfig"

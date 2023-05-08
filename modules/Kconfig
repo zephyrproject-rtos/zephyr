@@ -36,7 +36,7 @@ source "modules/Kconfig.st"
 source "modules/Kconfig.stm32"
 source "modules/Kconfig.syst"
 source "modules/Kconfig.telink"
-source "modules/Kconfig.tinycbor"
+source "modules/thrift/Kconfig"
 source "modules/Kconfig.tinycrypt"
 source "modules/Kconfig.vega"
 source "modules/Kconfig.wurthelektronik"
@@ -95,6 +95,12 @@ comment "zcbor module not available."
 
 comment "CHRE module not available."
 	depends on !ZEPHYR_CHRE_MODULE
+
+comment "THRIFT module not available."
+	depends on !ZEPHYR_THRIFT_MODULE
+
+comment "Segger module not available."
+	depends on !ZEPHYR_SEGGER_MODULE
 
 # This ensures that symbols are available in Kconfig for dependency checking
 # and referencing, while keeping the settings themselves unavailable when the

@@ -4,7 +4,7 @@ on: pull_request
 
 jobs:
   check_compliance:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     name: Run compliance checks on patch series (PR)
     steps:
     - name: Update PATH for west
@@ -27,7 +27,7 @@ jobs:
       run: |
         pip3 install setuptools
         pip3 install wheel
-        pip3 install python-magic lxml junitparser gitlint pylint pykwalify
+        pip3 install python-magic lxml junitparser gitlint pylint pykwalify yamllint
         pip3 install west
 
     - name: west setup

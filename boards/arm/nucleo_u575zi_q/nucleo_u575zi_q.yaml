@@ -11,13 +11,13 @@ supported:
   - arduino_serial
   - arduino_spi
   - can
-  - canfd
   - dac
   - gpio
   - i2c
   - spi
   - usart
   - watchdog
+  - backup_sram
   - dma
 ram: 786
 flash: 2048

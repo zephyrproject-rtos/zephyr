@@ -34,4 +34,11 @@ config WINSTREAM_CONSOLE
 	def_bool y
 endif
 
+config CACHE_MANAGEMENT
+	def_bool y
+
+choice CACHE_TYPE
+	default ARCH_CACHE
+endchoice
+
 endif # SOC_FAMILY_INTEL_ADSP

@@ -15,7 +15,7 @@
  * the result every 4 seconds.
  */
 
-void main(void)
+int main(void)
 {
 	const struct device *const dev = DEVICE_DT_GET_ONE(maxim_max44009);
 	struct sensor_value val;
@@ -25,18 +25,18 @@ void main(void)
 
 	if (!device_is_ready(dev)) {
 		printk("Device %s is not ready\n", dev->name);
-		return;
+		return 0;
 	}
 
 	while (1) {
 		if (sensor_sample_fetch_chan(dev, SENSOR_CHAN_LIGHT) != 0) {
 			printk("sensor: sample fetch fail.\n");
-			return;
+			return 0;
 		}
 
 		if (sensor_channel_get(dev, SENSOR_CHAN_LIGHT, &val) != 0) {
 			printk("sensor: channel get fail.\n");
-			return;
+			return 0;
 		}
 
 		lum = val.val1;
@@ -44,4 +44,5 @@ void main(void)
 
 		k_sleep(K_MSEC(4000));
 	}
+	return 0;
 }

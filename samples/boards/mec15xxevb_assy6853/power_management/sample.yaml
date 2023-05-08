@@ -6,9 +6,9 @@ tests:
     tags: board pm
     harness: console
     harness_config:
-        type: multi_line
-        ordered: false
-        regex:
-            - "Wake from Light Sleep"
-            - "Wake from Deep Sleep"
-        repeat: 3
+      type: multi_line
+      ordered: false
+      regex:
+        - "Wake from Light Sleep"
+        - "Wake from Deep Sleep"
+      repeat: 3

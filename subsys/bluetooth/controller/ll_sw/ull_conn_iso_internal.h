@@ -32,9 +32,10 @@ struct ll_conn_iso_stream *ll_conn_iso_stream_get_by_acl(struct ll_conn *conn,
 struct ll_conn_iso_stream *ll_conn_iso_stream_get_by_group(struct ll_conn_iso_group *cig,
 							   uint16_t *handle_iter);
 
-void ull_conn_iso_start(struct ll_conn *acl, uint32_t ticks_at_expire, uint16_t cis_handle);
+void ull_conn_iso_start(struct ll_conn *acl, uint16_t cis_handle,
+			uint32_t ticks_at_expire, uint32_t remainder,
+			uint16_t instant_latency);
 void ull_conn_iso_done(struct node_rx_event_done *done);
-void ull_conn_iso_cis_established(struct ll_conn_iso_stream *cis);
 void ull_conn_iso_cis_stop(struct ll_conn_iso_stream *cis,
 			   ll_iso_stream_released_cb_t cis_released_cb,
 			   uint8_t reason);

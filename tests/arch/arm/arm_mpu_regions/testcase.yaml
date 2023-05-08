@@ -1,0 +1,4 @@
+tests:
+  arch.mpu_regions.arm:
+    platform_allow: mps2_an385
+    tags: sram mpu

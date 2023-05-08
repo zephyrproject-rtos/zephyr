@@ -9,6 +9,8 @@ choice
 
 config SOC_MEC172X_NSZ
 	bool "MEC172X_NSZ"
+config SOC_MEC172X_NLJ
+	bool "MEC172X_NLJ"
 
 endchoice
 
@@ -24,3 +26,49 @@ config SOC_MEC172X_PROC_CLK_DIV
 	  and main 96 MHz clock (MCK):
 	  HCLK = MCK / PROC_CLK_DIV
 	  Allowed divider values: 1, 3, 4, 16, and 48.
+
+choice
+	prompt "MEC172x debug interface general configuration"
+	default SOC_MEC172X_DEBUG_WITHOUT_TRACING
+	depends on SOC_SERIES_MEC172X
+	help
+	  Select Debug SoC interface support for MEC172X SoC family
+
+	config SOC_MEC172X_DEBUG_DISABLED
+		bool "Disable debug support"
+		help
+		  Debug port is disabled, JTAG/SWD cannot be enabled. JTAG_RST#
+		  pin is ignored. All other JTAG pins can be used as GPIOs
+		  or other non-JTAG alternate functions.
+
+	config SOC_MEC172X_DEBUG_WITHOUT_TRACING
+		bool "Debug support via Serial wire debug"
+		help
+		  JTAG port in SWD mode. I2C09 and ADC00-03 can be used.
+
+	config SOC_MEC172X_DEBUG_AND_TRACING
+		bool "Debug support via Serial wire debug with tracing enabled"
+		help
+		  JTAG port is enabled in SWD mode. Refer to tracing options
+		  to see if ADC00-03 can be used or not.
+endchoice
+
+choice
+	prompt "MEC172X debug interface trace configuration"
+	default SOC_MEC172X_DEBUG_AND_ETM_TRACING
+	depends on SOC_MEC172X_DEBUG_AND_TRACING
+	help
+	  Select tracing mode for debug interface
+
+	config SOC_MEC172X_DEBUG_AND_ETM_TRACING
+		bool "Debug support via Serial wire debug"
+		help
+		  JTAG port in SWD mode and ETM as tracing method.
+		  I2C09 can be used, but ADC00-03 cannot.
+
+	config SOC_MEC172X_DEBUG_AND_SWV_TRACING
+		bool "debug support via Serial Wire Debug and Viewer"
+		help
+		  JTAG port in SWD mode and SWV as tracing method.
+		  I2C09 cannot be used. ADC00-03 can be used.
+endchoice

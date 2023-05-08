@@ -1,6 +1,6 @@
 sample:
-  description: TBD
-  name: TBD
+  name: Bluetooth Peripheral HT
+  description: Demonstrates the HT (Health Thermometer) GATT Service
 tests:
   sample.bluetooth.peripheral_ht:
     harness: bluetooth

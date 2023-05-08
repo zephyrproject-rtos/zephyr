@@ -108,7 +108,7 @@
 /** Hardware Semaphore wait forever value */
 #define HSEM_LOCK_WAIT_FOREVER    0xFFFFFFFFU
 /** Hardware Semaphore default retry value */
-#define HSEM_LOCK_DEFAULT_RETRY       0xFFFFU
+#define HSEM_LOCK_DEFAULT_RETRY       0x100000U
 
 /**
  * @brief Lock Hardware Semaphore

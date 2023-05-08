@@ -1,6 +1,7 @@
 sample:
-  description: TBD
-  name: TBD
+  description: Bluetooth Peripheral Identity
+  name: Demonstrates use of multiple identity and the ability to be connected
+    to from multiple central devices
 tests:
   sample.bluetooth.peripheral_identity:
     harness: bluetooth

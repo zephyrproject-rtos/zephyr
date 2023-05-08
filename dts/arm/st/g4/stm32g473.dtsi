@@ -41,7 +41,7 @@
 			interrupts = <62 0>;
 			status = "disabled";
 			#io-channel-cells = <1>;
-			has-temp-channel;
+			temp-channel = <4>;
 		};
 
 		spi4: spi@40013c00 {

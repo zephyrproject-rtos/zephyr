@@ -2,40 +2,12 @@
  * @brief Internal APIs for ASCS handling
 
  * Copyright (c) 2020 Intel Corporation
- * Copyright (c) 2022 Nordic Semiconductor ASA
+ * Copyright (c) 2022-2023 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/* Response Status Code */
-#define BT_ASCS_RSP_SUCCESS              0x00
-#define BT_ASCS_RSP_NOT_SUPPORTED        0x01
-#define BT_ASCS_RSP_TRUNCATED            0x02
-#define BT_ASCS_RSP_INVALID_ASE          0x03
-#define BT_ASCS_RSP_INVALID_ASE_STATE    0x04
-#define BT_ASCS_RSP_INVALID_DIR          0x05
-#define BT_ASCS_RSP_CAP_UNSUPPORTED      0x06
-#define BT_ASCS_RSP_CONF_UNSUPPORTED     0x07
-#define BT_ASCS_RSP_CONF_REJECTED        0x08
-#define BT_ASCS_RSP_CONF_INVALID         0x09
-#define BT_ASCS_RSP_METADATA_UNSUPPORTED 0x0a
-#define BT_ASCS_RSP_METADATA_REJECTED    0x0b
-#define BT_ASCS_RSP_METADATA_INVALID     0x0c
-#define BT_ASCS_RSP_NO_MEM               0x0d
-#define BT_ASCS_RSP_UNSPECIFIED          0x0e
-
-/* Response Reasons */
-#define BT_ASCS_REASON_NONE              0x00
-#define BT_ASCS_REASON_CODEC             0x01
-#define BT_ASCS_REASON_CODEC_DATA        0x02
-#define BT_ASCS_REASON_INTERVAL          0x03
-#define BT_ASCS_REASON_FRAMING           0x04
-#define BT_ASCS_REASON_PHY               0x05
-#define BT_ASCS_REASON_SDU               0x06
-#define BT_ASCS_REASON_RTN               0x07
-#define BT_ASCS_REASON_LATENCY           0x08
-#define BT_ASCS_REASON_PD                0x09
-#define BT_ASCS_REASON_CIS               0x0a
+#define BT_ASCS_ASE_ID_NONE              0x00
 
 /* Transport QoS Packing */
 #define BT_ASCS_QOS_PACKING_SEQ          0x00
@@ -295,35 +267,35 @@ static inline const char *bt_ascs_op_str(uint8_t op)
 static inline const char *bt_ascs_rsp_str(uint8_t code)
 {
 	switch (code) {
-	case BT_ASCS_RSP_SUCCESS:
+	case BT_BAP_ASCS_RSP_CODE_SUCCESS:
 		return "Success";
-	case BT_ASCS_RSP_NOT_SUPPORTED:
+	case BT_BAP_ASCS_RSP_CODE_NOT_SUPPORTED:
 		return "Unsupported Opcode";
-	case BT_ASCS_RSP_TRUNCATED:
-		return "Truncated Operation";
-	case BT_ASCS_RSP_INVALID_ASE:
+	case BT_BAP_ASCS_RSP_CODE_INVALID_LENGTH:
+		return "Invalid Length";
+	case BT_BAP_ASCS_RSP_CODE_INVALID_ASE:
 		return "Invalid ASE_ID";
-	case BT_ASCS_RSP_INVALID_ASE_STATE:
+	case BT_BAP_ASCS_RSP_CODE_INVALID_ASE_STATE:
 		return "Invalid ASE State";
-	case BT_ASCS_RSP_INVALID_DIR:
+	case BT_BAP_ASCS_RSP_CODE_INVALID_DIR:
 		return "Invalid ASE Direction";
-	case BT_ASCS_RSP_CAP_UNSUPPORTED:
+	case BT_BAP_ASCS_RSP_CODE_CAP_UNSUPPORTED:
 		return "Unsupported Capabilities";
-	case BT_ASCS_RSP_CONF_UNSUPPORTED:
+	case BT_BAP_ASCS_RSP_CODE_CONF_UNSUPPORTED:
 		return "Unsupported Configuration Value";
-	case BT_ASCS_RSP_CONF_REJECTED:
+	case BT_BAP_ASCS_RSP_CODE_CONF_REJECTED:
 		return "Rejected Configuration Value";
-	case BT_ASCS_RSP_CONF_INVALID:
+	case BT_BAP_ASCS_RSP_CODE_CONF_INVALID:
 		return "Invalid Configuration Value";
-	case BT_ASCS_RSP_METADATA_UNSUPPORTED:
+	case BT_BAP_ASCS_RSP_CODE_METADATA_UNSUPPORTED:
 		return "Unsupported Metadata";
-	case BT_ASCS_RSP_METADATA_REJECTED:
+	case BT_BAP_ASCS_RSP_CODE_METADATA_REJECTED:
 		return "Rejected Metadata";
-	case BT_ASCS_RSP_METADATA_INVALID:
+	case BT_BAP_ASCS_RSP_CODE_METADATA_INVALID:
 		return "Invalid Metadata";
-	case BT_ASCS_RSP_NO_MEM:
+	case BT_BAP_ASCS_RSP_CODE_NO_MEM:
 		return "Insufficient Resources";
-	case BT_ASCS_RSP_UNSPECIFIED:
+	case BT_BAP_ASCS_RSP_CODE_UNSPECIFIED:
 		return "Unspecified Error";
 	}
 
@@ -333,31 +305,39 @@ static inline const char *bt_ascs_rsp_str(uint8_t code)
 static inline const char *bt_ascs_reason_str(uint8_t reason)
 {
 	switch (reason) {
-	case BT_ASCS_REASON_NONE:
+	case BT_BAP_ASCS_REASON_NONE:
 		return "None";
-	case BT_ASCS_REASON_CODEC:
+	case BT_BAP_ASCS_REASON_CODEC:
 		return "Codec ID";
-	case BT_ASCS_REASON_CODEC_DATA:
+	case BT_BAP_ASCS_REASON_CODEC_DATA:
 		return "Codec Specific Configuration";
-	case BT_ASCS_REASON_INTERVAL:
+	case BT_BAP_ASCS_REASON_INTERVAL:
 		return "SDU Interval";
-	case BT_ASCS_REASON_FRAMING:
+	case BT_BAP_ASCS_REASON_FRAMING:
 		return "Framing";
-	case BT_ASCS_REASON_PHY:
+	case BT_BAP_ASCS_REASON_PHY:
 		return "PHY";
-	case BT_ASCS_REASON_SDU:
+	case BT_BAP_ASCS_REASON_SDU:
 		return "Maximum SDU Size";
-	case BT_ASCS_REASON_RTN:
+	case BT_BAP_ASCS_REASON_RTN:
 		return "Retransmission Number";
-	case BT_ASCS_REASON_LATENCY:
+	case BT_BAP_ASCS_REASON_LATENCY:
 		return "Maximum Transport Delay";
-	case BT_ASCS_REASON_PD:
+	case BT_BAP_ASCS_REASON_PD:
 		return "Presentation Delay";
-	case BT_ASCS_REASON_CIS:
+	case BT_BAP_ASCS_REASON_CIS:
 		return "Invalid ASE CIS Mapping";
 	}
 
 	return "Unknown";
 }
 
-void ascs_ep_set_state(struct bt_audio_ep *ep, uint8_t state);
+int bt_ascs_init(const struct bt_bap_unicast_server_cb *cb);
+void bt_ascs_cleanup(void);
+
+void ascs_ep_set_state(struct bt_bap_ep *ep, uint8_t state);
+
+int bt_ascs_config_ase(struct bt_conn *conn, struct bt_bap_stream *stream, struct bt_codec *codec,
+		       const struct bt_codec_qos_pref *qos_pref);
+
+void bt_ascs_foreach_ep(struct bt_conn *conn, bt_bap_ep_func_t func, void *user_data);

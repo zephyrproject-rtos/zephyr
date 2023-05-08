@@ -134,8 +134,10 @@ settings from three sources:
 
 3. The application configuration
 
-The application configuration can come from the sources below. By default,
-:file:`prj.conf` is used.
+The application configuration can come from the sources below (each file is
+known as a Kconfig fragment, which are then merged to get the final
+configuration used for a particular build). By default, :file:`prj.conf` is
+used.
 
 1. If ``CONF_FILE`` is set, the configuration file(s) specified in it are
    merged and used as the application configuration. ``CONF_FILE`` can be set
@@ -165,8 +167,8 @@ The application configuration can come from the sources below. By default,
    configuration directory, the result of merging it with :file:`prj.conf` and
    :file:`boards/<BOARD>.conf` is used.
 
-6. Otherwise, :file:`prj.conf` is used if it exists in the application
-   configuration directory
+6. Otherwise, :file:`prj.conf` is used from the application configuration
+   directory. If it does not exist then a fatal error will be emitted.
 
 All configuration files will be taken from the application's configuration
 directory except for files with an absolute path that are given with the

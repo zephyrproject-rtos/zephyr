@@ -25,7 +25,6 @@
 	status = "okay";
 	clock-frequency = <12000000>;
 	lines = <2>;
-	port-sel = <2>;
 	chip-select = <0>;
 	pinctrl-0 = < &gpspi_cs_n_gpio116
 		      &gpspi_clk_gpio117

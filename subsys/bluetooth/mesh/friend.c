@@ -60,18 +60,22 @@ struct friend_pdu_info {
 	uint32_t  iv_index;
 };
 
-NET_BUF_POOL_FIXED_DEFINE(friend_buf_pool, FRIEND_BUF_COUNT,
-			  BT_MESH_ADV_DATA_SIZE, 8, NULL);
-
-static struct friend_adv {
+struct friend_adv {
 	uint16_t app_idx;
-} adv_pool[FRIEND_BUF_COUNT];
+	bool     seg;
+};
+
+NET_BUF_POOL_FIXED_DEFINE(friend_buf_pool, FRIEND_BUF_COUNT, BT_MESH_ADV_DATA_SIZE,
+			  sizeof(struct friend_adv), NULL);
+
+static struct friend_adv adv_pool[FRIEND_BUF_COUNT];
 
 #define FRIEND_ADV(buf) (*(struct friend_adv **)net_buf_user_data(buf))
 
 static struct friend_adv *adv_alloc(int id)
 {
 	adv_pool[id].app_idx = BT_MESH_KEY_UNUSED;
+	adv_pool[id].seg = false;
 	return &adv_pool[id];
 }
 
@@ -130,25 +134,11 @@ static int friend_cred_create(struct bt_mesh_friend *frnd, uint8_t idx)
 
 static void purge_buffers(sys_slist_t *list)
 {
-	while (!sys_slist_is_empty(list)) {
-		struct net_buf *buf;
+	struct net_buf *buf;
 
-		buf = (void *)sys_slist_get_not_empty(list);
-
+	while ((buf = (void *)net_buf_slist_get(list))) {
 		net_buf_unref(buf);
 	}
-}
-
-static void purge_seg_buffers(struct net_buf *buf)
-{
-	/* Fragments head has always 2 references: one when allocated, one when becomes
-	 * fragments head.
-	 */
-	net_buf_unref(buf);
-
-	do {
-		buf = net_buf_frag_del(NULL, buf);
-	} while (buf != NULL);
 }
 
 /* Intentionally start a little bit late into the ReceiveWindow when
@@ -186,10 +176,8 @@ static void friend_clear(struct bt_mesh_friend *frnd)
 	for (i = 0; i < ARRAY_SIZE(frnd->seg); i++) {
 		struct bt_mesh_friend_seg *seg = &frnd->seg[i];
 
-		if (seg->buf) {
-			purge_seg_buffers(seg->buf);
-			seg->seg_count = 0U;
-		}
+		purge_buffers(&seg->queue);
+		seg->seg_count = 0U;
 	}
 
 	STRUCT_SECTION_FOREACH(bt_mesh_friend_cb, cb) {
@@ -262,7 +250,7 @@ int bt_mesh_friend_clear(struct bt_mesh_net_rx *rx, struct net_buf_simple *buf)
 
 	if (buf->len < sizeof(*msg)) {
 		LOG_WRN("Too short Friend Clear");
-		return -EINVAL;
+		return -EBADMSG;
 	}
 
 	lpn_addr = sys_be16_to_cpu(msg->lpn_addr);
@@ -526,7 +514,7 @@ static int encrypt_friend_pdu(struct bt_mesh_friend *frnd, struct net_buf *buf,
 
 	buf->data[0] = (cred->nid | (iv_index & 1) << 7);
 
-	if (bt_mesh_net_encrypt(cred->enc, &buf->b, iv_index, false)) {
+	if (bt_mesh_net_encrypt(cred->enc, &buf->b, iv_index, BT_MESH_NONCE_NETWORK)) {
 		LOG_ERR("Encrypting failed");
 		return -EINVAL;
 	}
@@ -630,7 +618,7 @@ int bt_mesh_friend_sub_add(struct bt_mesh_net_rx *rx,
 
 	if (buf->len < BT_MESH_FRIEND_SUB_MIN_LEN) {
 		LOG_WRN("Too short Friend Subscription Add");
-		return -EINVAL;
+		return -EBADMSG;
 	}
 
 	frnd = bt_mesh_friend_find(rx->sub->net_idx, rx->ctx.addr, true, true);
@@ -665,7 +653,7 @@ int bt_mesh_friend_sub_rem(struct bt_mesh_net_rx *rx,
 
 	if (buf->len < BT_MESH_FRIEND_SUB_MIN_LEN) {
 		LOG_WRN("Too short Friend Subscription Remove");
-		return -EINVAL;
+		return -EBADMSG;
 	}
 
 	frnd = bt_mesh_friend_find(rx->sub->net_idx, rx->ctx.addr, true, true);
@@ -718,7 +706,7 @@ int bt_mesh_friend_poll(struct bt_mesh_net_rx *rx, struct net_buf_simple *buf)
 
 	if (buf->len < sizeof(*msg)) {
 		LOG_WRN("Too short Friend Poll");
-		return -EINVAL;
+		return -EBADMSG;
 	}
 
 	frnd = bt_mesh_friend_find(rx->sub->net_idx, rx->ctx.addr, true, false);
@@ -729,7 +717,7 @@ int bt_mesh_friend_poll(struct bt_mesh_net_rx *rx, struct net_buf_simple *buf)
 
 	if (msg->fsn & ~1) {
 		LOG_WRN("Prohibited (non-zero) padding bits");
-		return -EINVAL;
+		return -EBADMSG;
 	}
 
 	if (frnd->pending_buf) {
@@ -877,7 +865,7 @@ int bt_mesh_friend_clear_cfm(struct bt_mesh_net_rx *rx,
 
 	if (buf->len < sizeof(*msg)) {
 		LOG_WRN("Too short Friend Clear Confirm");
-		return -EINVAL;
+		return -EBADMSG;
 	}
 
 	frnd = find_clear(rx->ctx.addr);
@@ -987,34 +975,34 @@ int bt_mesh_friend_req(struct bt_mesh_net_rx *rx, struct net_buf_simple *buf)
 
 	if (buf->len < sizeof(*msg)) {
 		LOG_WRN("Too short Friend Request");
-		return -EINVAL;
+		return -EBADMSG;
 	}
 
 	if (msg->recv_delay <= 0x09) {
 		LOG_WRN("Prohibited ReceiveDelay (0x%02x)", msg->recv_delay);
-		return -EINVAL;
+		return -EBADMSG;
 	}
 
 	poll_to = sys_get_be24(msg->poll_to);
 
 	if (poll_to <= 0x000009 || poll_to >= 0x34bc00) {
 		LOG_WRN("Prohibited PollTimeout (0x%06x)", poll_to);
-		return -EINVAL;
+		return -EBADMSG;
 	}
 
 	if (msg->num_elem == 0x00) {
 		LOG_WRN("Prohibited NumElements value (0x00)");
-		return -EINVAL;
+		return -EBADMSG;
 	}
 
 	if (!BT_MESH_ADDR_IS_UNICAST(rx->ctx.addr + msg->num_elem - 1)) {
 		LOG_WRN("LPN elements stretch outside of unicast range");
-		return -EINVAL;
+		return -EBADMSG;
 	}
 
 	if (!MIN_QUEUE_SIZE_LOG(msg->criteria)) {
 		LOG_WRN("Prohibited Minimum Queue Size in Friend Request");
-		return -EINVAL;
+		return -EBADMSG;
 	}
 
 	if (CONFIG_BT_MESH_FRIEND_QUEUE_SIZE < MIN_QUEUE_SIZE(msg->criteria)) {
@@ -1046,7 +1034,7 @@ init_friend:
 	frnd->lpn = rx->ctx.addr;
 	frnd->num_elem = msg->num_elem;
 	frnd->subnet = rx->sub;
-	frnd->recv_delay = msg->recv_delay;
+	frnd->recv_delay = msg->recv_delay - CONFIG_BT_MESH_FRIEND_ADV_LATENCY;
 	frnd->poll_to = poll_to * 100U;
 	frnd->lpn_counter = sys_be16_to_cpu(msg->lpn_counter);
 	frnd->clear.frnd = sys_be16_to_cpu(msg->prev_addr);
@@ -1076,7 +1064,7 @@ init_friend:
 
 static bool is_seg(struct bt_mesh_friend_seg *seg, uint16_t src, uint16_t seq_zero)
 {
-	struct net_buf *buf = seg->buf;
+	struct net_buf *buf = (void *)sys_slist_peek_head(&seg->queue);
 	struct net_buf_simple_state state;
 	uint16_t buf_seq_zero;
 	uint16_t buf_src;
@@ -1109,7 +1097,7 @@ static struct bt_mesh_friend_seg *get_seg(struct bt_mesh_friend *frnd,
 			return seg;
 		}
 
-		if (!unassigned && !seg->buf) {
+		if (!unassigned && !sys_slist_peek_head(&seg->queue)) {
 			unassigned = seg;
 		}
 	}
@@ -1144,13 +1132,15 @@ static void enqueue_friend_pdu(struct bt_mesh_friend *frnd,
 		return;
 	}
 
-	seg->buf = net_buf_frag_add(seg->buf, buf);
+	net_buf_slist_put(&seg->queue, buf);
 
 	if (type == BT_MESH_FRIEND_PDU_COMPLETE) {
-		net_buf_slist_put(&frnd->queue, seg->buf);
+		sys_slist_merge_slist(&frnd->queue, &seg->queue);
 
 		frnd->queue_size += seg->seg_count;
 		seg->seg_count = 0U;
+	} else {
+		FRIEND_ADV(buf)->seg = true;
 	}
 }
 
@@ -1260,20 +1250,11 @@ static void friend_timeout(struct k_work *work)
 		return;
 	}
 
-	frnd->last = (void *)sys_slist_get(&frnd->queue);
+	frnd->last = (void *)net_buf_slist_get(&frnd->queue);
 	if (!frnd->last) {
 		LOG_WRN("Friendship not established with 0x%04x", frnd->lpn);
 		friend_clear(frnd);
 		return;
-	}
-
-	/* Put next segment to the friend queue. */
-	if (frnd->last != net_buf_frag_last(frnd->last)) {
-		struct net_buf *next;
-
-		next = net_buf_frag_del(NULL, frnd->last);
-		net_buf_frag_add(NULL, next);
-		sys_slist_prepend(&frnd->queue, &next->node);
 	}
 
 	md = (uint8_t)(sys_slist_peek_head(&frnd->queue) != NULL);
@@ -1288,7 +1269,7 @@ static void friend_timeout(struct k_work *work)
 	frnd->queue_size--;
 
 send_last:
-	buf = bt_mesh_adv_create(BT_MESH_ADV_DATA, BT_MESH_LOCAL_ADV,
+	buf = bt_mesh_adv_create(BT_MESH_ADV_DATA, BT_MESH_FRIEND_ADV,
 				 FRIEND_XMIT, K_NO_WAIT);
 	if (!buf) {
 		LOG_ERR("Unable to allocate friend adv buffer");
@@ -1357,11 +1338,16 @@ int bt_mesh_friend_init(void)
 
 	for (i = 0; i < ARRAY_SIZE(bt_mesh.frnd); i++) {
 		struct bt_mesh_friend *frnd = &bt_mesh.frnd[i];
+		int j;
 
 		sys_slist_init(&frnd->queue);
 
 		k_work_init_delayable(&frnd->timer, friend_timeout);
 		k_work_init_delayable(&frnd->clear.timer, clear_timeout);
+
+		for (j = 0; j < ARRAY_SIZE(frnd->seg); j++) {
+			sys_slist_init(&frnd->seg[j].queue);
+		}
 	}
 
 	return 0;
@@ -1419,8 +1405,6 @@ static void friend_purge_old_ack(struct bt_mesh_friend *frnd,
 
 			sys_slist_remove(&frnd->queue, prev, cur);
 			frnd->queue_size--;
-			/* Make sure old slist entry state doesn't remain */
-			buf->frags = NULL;
 
 			net_buf_unref(buf);
 			break;
@@ -1631,6 +1615,26 @@ bool bt_mesh_friend_queue_has_space(uint16_t net_idx, uint16_t src, uint16_t dst
 	return someone_has_space;
 }
 
+static bool friend_queue_check_dup(struct bt_mesh_friend *frnd, uint32_t seq,
+				   uint16_t src)
+{
+	struct bt_mesh_net_rx rx;
+	sys_snode_t *cur;
+
+	for (cur = sys_slist_peek_head(&frnd->queue); cur != NULL;
+	     cur = sys_slist_peek_next(cur)) {
+		struct net_buf *buf = (void *)cur;
+
+		bt_mesh_net_header_parse(&buf->b, &rx);
+
+		if ((src == rx.ctx.addr) && (seq == rx.seq)) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
 static bool friend_queue_prepare_space(struct bt_mesh_friend *frnd, uint16_t addr,
 				       const uint64_t *seq_auth, uint8_t seg_count)
 {
@@ -1645,7 +1649,7 @@ static bool friend_queue_prepare_space(struct bt_mesh_friend *frnd, uint16_t add
 	pending_segments = false;
 
 	while (pending_segments || avail_space < seg_count) {
-		struct net_buf *buf = (void *)sys_slist_get(&frnd->queue);
+		struct net_buf *buf = (void *)net_buf_slist_get(&frnd->queue);
 
 		if (!buf) {
 			LOG_ERR("Unable to free up enough buffers");
@@ -1655,16 +1659,7 @@ static bool friend_queue_prepare_space(struct bt_mesh_friend *frnd, uint16_t add
 		frnd->queue_size--;
 		avail_space++;
 
-		if (buf != net_buf_frag_last(buf)) {
-			struct net_buf *next;
-
-			next = net_buf_frag_del(NULL, buf);
-
-			net_buf_frag_add(NULL, next);
-			sys_slist_prepend(&frnd->queue, &next->node);
-
-			pending_segments = true;
-		}
+		pending_segments = FRIEND_ADV(buf)->seg;
 
 		net_buf_unref(buf);
 	}
@@ -1698,6 +1693,10 @@ void bt_mesh_friend_enqueue_rx(struct bt_mesh_net_rx *rx,
 
 		if (friend_lpn_matches(frnd, rx->sub->net_idx,
 					rx->ctx.addr)) {
+			continue;
+		}
+
+		if (friend_queue_check_dup(frnd, rx->seq, rx->ctx.addr)) {
 			continue;
 		}
 
@@ -1785,7 +1784,7 @@ void bt_mesh_friend_clear_incomplete(struct bt_mesh_subnet *sub, uint16_t src,
 
 			LOG_WRN("Clearing incomplete segments for 0x%04x", src);
 
-			purge_seg_buffers(seg->buf);
+			purge_buffers(&seg->queue);
 			seg->seg_count = 0U;
 			break;
 		}

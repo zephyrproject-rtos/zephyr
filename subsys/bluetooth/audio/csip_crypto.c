@@ -25,7 +25,7 @@
 LOG_MODULE_REGISTER(bt_csip_crypto, CONFIG_BT_CSIP_SET_MEMBER_CRYPTO_LOG_LEVEL);
 
 #define BT_CSIP_CRYPTO_PADDING_SIZE 13
-#define BT_CSIP_R_SIZE              3 /* r is 24 bit / 3 octet */
+#define BT_CSIP_PADDED_RAND_SIZE    (BT_CSIP_CRYPTO_PADDING_SIZE + BT_CSIP_CRYPTO_PRAND_SIZE)
 #define BT_CSIP_R_MASK              BIT_MASK(24) /* r is 24 bit / 3 octet */
 
 static int aes_cmac(const uint8_t key[BT_CSIP_CRYPTO_KEY_SIZE],
@@ -61,34 +61,27 @@ static void xor_128(const uint8_t a[16], const uint8_t b[16], uint8_t out[16])
 	}
 }
 
-int bt_csip_sih(const uint8_t sirk[BT_CSIP_SET_SIRK_SIZE], uint32_t r,
-		uint32_t *out)
+int bt_csip_sih(const uint8_t sirk[BT_CSIP_SET_SIRK_SIZE], uint8_t r[BT_CSIP_CRYPTO_PRAND_SIZE],
+		uint8_t out[BT_CSIP_CRYPTO_HASH_SIZE])
 {
-	uint8_t res[16]; /* need to store 128 bit */
+	uint8_t res[BT_CSIP_PADDED_RAND_SIZE]; /* need to store 128 bit */
 	int err;
-	uint8_t sirk_tmp[BT_CSIP_SET_SIRK_SIZE];
 
-	if ((r & BIT(23)) || ((r & BIT(22)) == 0)) {
-		LOG_DBG("Invalid r %0x06x", (uint32_t)(r & BT_CSIP_R_MASK));
+	if ((r[BT_CSIP_CRYPTO_PRAND_SIZE - 1] & BIT(7)) ||
+	   ((r[BT_CSIP_CRYPTO_PRAND_SIZE - 1] & BIT(6)) == 0)) {
+		LOG_DBG("Invalid r %s", bt_hex(r, BT_CSIP_CRYPTO_PRAND_SIZE));
 	}
 
 	LOG_DBG("SIRK %s", bt_hex(sirk, BT_CSIP_SET_SIRK_SIZE));
-	LOG_DBG("r 0x%06x", r);
+	LOG_DBG("r %s", bt_hex(r, BT_CSIP_CRYPTO_PRAND_SIZE));
 
 	/* r' = padding || r */
-	(void)memset(res, 0, BT_CSIP_CRYPTO_PADDING_SIZE);
-	sys_put_be24(r, res + BT_CSIP_CRYPTO_PADDING_SIZE);
+	(void)memset(res + BT_CSIP_CRYPTO_PRAND_SIZE, 0, BT_CSIP_CRYPTO_PADDING_SIZE);
+	memcpy(res, r, BT_CSIP_CRYPTO_PRAND_SIZE);
 
-	LOG_DBG("BE: r' %s", bt_hex(res, sizeof(res)));
+	LOG_DBG("r' %s", bt_hex(res, sizeof(res)));
 
-	if (IS_ENABLED(CONFIG_LITTLE_ENDIAN)) {
-		/* Swap to Big Endian (BE) */
-		sys_memcpy_swap(sirk_tmp, sirk, BT_CSIP_SET_SIRK_SIZE);
-	} else {
-		(void)memcpy(sirk_tmp, sirk, BT_CSIP_SET_SIRK_SIZE);
-	}
-
-	err = bt_encrypt_be(sirk_tmp, res, res);
+	err = bt_encrypt_le(sirk, res, res);
 
 	if (err != 0) {
 		return err;
@@ -101,12 +94,12 @@ int bt_csip_sih(const uint8_t sirk[BT_CSIP_SET_SIRK_SIZE], uint32_t r,
 	 * result of sih.
 	 */
 
-	LOG_DBG("BE: res %s", bt_hex(res, sizeof(res)));
+	LOG_DBG("res %s", bt_hex(res, sizeof(res)));
 
 	/* Result is the lowest 3 bytes */
-	*out = sys_get_be24(res + 13);
+	memcpy(out, res, BT_CSIP_CRYPTO_HASH_SIZE);
 
-	LOG_DBG("sih 0x%06x", *out);
+	LOG_DBG("sih %s", bt_hex(out, BT_CSIP_CRYPTO_HASH_SIZE));
 
 	return 0;
 }

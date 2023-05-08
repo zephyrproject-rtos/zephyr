@@ -25,7 +25,7 @@ static inline size_t nvs_lookup_cache_pos(uint16_t id)
 {
 	size_t pos;
 
-#if CONFIG_NVS_LOOKUP_CACHE_SIZE <= UINT8_MAX
+#if CONFIG_NVS_LOOKUP_CACHE_SIZE <= (UINT8_MAX + 1)
 	/*
 	 * CRC8-CCITT is used for ATE checksums and it also acts well as a hash
 	 * function, so it can be a good choice from the code size perspective.
@@ -629,7 +629,15 @@ static int nvs_gc(struct nvs_fs *fs)
 			continue;
 		}
 
+#ifdef CONFIG_NVS_LOOKUP_CACHE
+		wlk_addr = fs->lookup_cache[nvs_lookup_cache_pos(gc_ate.id)];
+
+		if (wlk_addr == NVS_LOOKUP_CACHE_NO_ADDR) {
+			wlk_addr = fs->ate_wra;
+		}
+#else
 		wlk_addr = fs->ate_wra;
+#endif
 		do {
 			wlk_prev_addr = wlk_addr;
 			rc = nvs_prev_ate(fs, &wlk_addr, &wlk_ate);
@@ -854,6 +862,16 @@ static int nvs_startup(struct nvs_fs *fs)
 		fs->ate_wra &= ADDR_SECT_MASK;
 		fs->ate_wra += (fs->sector_size - 2 * ate_size);
 		fs->data_wra = (fs->ate_wra & ADDR_SECT_MASK);
+#ifdef CONFIG_NVS_LOOKUP_CACHE
+		/**
+		 * At this point, the lookup cache wasn't built but the gc function need to use it.
+		 * So, temporarily, we set the lookup cache to the end of the fs.
+		 * The cache will be rebuilt afterwards
+		 **/
+		for (int i = 0; i < CONFIG_NVS_LOOKUP_CACHE_SIZE; i++) {
+			fs->lookup_cache[i] = fs->ate_wra;
+		}
+#endif
 		rc = nvs_gc(fs);
 		goto end;
 	}
@@ -887,11 +905,13 @@ static int nvs_startup(struct nvs_fs *fs)
 		fs->data_wra = fs->ate_wra & ADDR_SECT_MASK;
 	}
 
-#ifdef CONFIG_NVS_LOOKUP_CACHE
-	rc = nvs_lookup_cache_rebuild(fs);
-#endif
-
 end:
+
+#ifdef CONFIG_NVS_LOOKUP_CACHE
+	if (!rc) {
+		rc = nvs_lookup_cache_rebuild(fs);
+	}
+#endif
 	/* If the sector is empty add a gc done ate to avoid having insufficient
 	 * space when doing gc.
 	 */
@@ -1014,7 +1034,15 @@ ssize_t nvs_write(struct nvs_fs *fs, uint16_t id, const void *data, size_t len)
 	}
 
 	/* find latest entry with same id */
+#ifdef CONFIG_NVS_LOOKUP_CACHE
+	wlk_addr = fs->lookup_cache[nvs_lookup_cache_pos(id)];
+
+	if (wlk_addr == NVS_LOOKUP_CACHE_NO_ADDR) {
+		goto no_cached_entry;
+	}
+#else
 	wlk_addr = fs->ate_wra;
+#endif
 	rd_addr = wlk_addr;
 
 	while (1) {
@@ -1031,6 +1059,10 @@ ssize_t nvs_write(struct nvs_fs *fs, uint16_t id, const void *data, size_t len)
 			break;
 		}
 	}
+
+#ifdef CONFIG_NVS_LOOKUP_CACHE
+no_cached_entry:
+#endif
 
 	if (prev_found) {
 		/* previous entry found */

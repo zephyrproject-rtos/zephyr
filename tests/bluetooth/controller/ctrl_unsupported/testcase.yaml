@@ -1,17 +1,9 @@
 common:
-    tags: test_framework bluetooth bt_unsupported bt_ull_llcp
+  tags: bluetooth bt_unsupported bt_ull_llcp
 tests:
   bluetooth.controller.ctrl_unsupported.default.test:
-     type: unit
-  bluetooth.controller.ctrl_unsupported.no_enc.test:
-     type: unit
-     extra_args: NO_ENC=y KCONFIG_OVERRIDE_FILE="kconfig_override.h"
-  bluetooth.controller.ctrl_unsupported.no_per_feat_exch.test:
-     type: unit
-     extra_args: NO_PER_FEAT_EXCH=y KCONFIG_OVERRIDE_FILE="kconfig_override.h"
-  bluetooth.controller.ctrl_unsupported.no_cpr.test:
-     type: unit
-     extra_args: NO_CPR=y KCONFIG_OVERRIDE_FILE="kconfig_override.h"
-  bluetooth.controller.ctrl_unsupported.no_phy.test:
-     type: unit
-     extra_args: NO_PHY=y KCONFIG_OVERRIDE_FILE="kconfig_override.h"
+    type: unit
+
+  bluetooth.controller.ctrl_unsupported.test:
+    type: unit
+    extra_args: CONF_FILE=prj_unsupported.conf

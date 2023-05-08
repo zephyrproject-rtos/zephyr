@@ -6,7 +6,7 @@
        };
 };
 
-&lpuart2 {
+dut: &lpuart2 {
 	status = "okay";
 	current-speed = <115200>;
 };

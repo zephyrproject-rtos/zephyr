@@ -3,11 +3,17 @@
 
 menuconfig REGULATOR
 	bool "Regulator drivers"
-	select ONOFF
 	help
 	  Include drivers for current/voltage regulators in system config
 
 if REGULATOR
+
+config REGULATOR_THREAD_SAFE_REFCNT
+	bool "Thread-safe reference counting"
+	depends on MULTITHREADING
+	default y
+	help
+	  When enabled, regulator reference counting is thread-safe.
 
 config REGULATOR_SHELL
 	bool "Regulator shell"
@@ -23,7 +29,10 @@ source "subsys/logging/Kconfig.template.log_config"
 
 source "drivers/regulator/Kconfig.fake"
 source "drivers/regulator/Kconfig.fixed"
+source "drivers/regulator/Kconfig.npm1100"
+source "drivers/regulator/Kconfig.npm1300"
 source "drivers/regulator/Kconfig.npm6001"
 source "drivers/regulator/Kconfig.pca9420"
+source "drivers/regulator/Kconfig.rpi_pico"
 
 endif # REGULATOR

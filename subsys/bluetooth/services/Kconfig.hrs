@@ -27,8 +27,4 @@ config BT_HRS_DEFAULT_PERM_RW_AUTHEN
 
 endchoice
 
-module = BT_HRS
-module-str = HRS
-source "subsys/logging/Kconfig.template.log_config"
-
 endif # BT_HRS

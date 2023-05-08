@@ -27,6 +27,11 @@
 #include <sl_device_init_hfxo.h>
 #include <sl_device_init_nvic.h>
 
+#ifdef CONFIG_PM
+#include <sl_hfxo_manager.h>
+#include <sl_power_manager.h>
+#endif
+
 #endif
 
 LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
@@ -36,12 +41,44 @@ LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
  * @brief Initialization parameters for the external high frequency oscillator
  */
 static CMU_HFXOInit_TypeDef hfxoInit = CMU_HFXOINIT_DEFAULT;
-#elif (defined CONFIG_CMU_HFCLK_LFXO)
+#endif
+
+#ifdef CONFIG_CMU_NEED_LFXO
 /**
  * @brief Initialization parameters for the external low frequency oscillator
  */
 static CMU_LFXOInit_TypeDef lfxoInit = CMU_LFXOINIT_DEFAULT;
-#endif
+
+static void init_lfxo(void)
+{
+	/*
+	 * Configuring LFXO disables it, so we can do that only if it's not
+	 * used as a SYSCLK/HFCLK source.
+	 */
+#if defined(_SILICON_LABS_32B_SERIES_2)
+	if (CMU_ClockSelectGet(cmuClock_SYSCLK) != cmuSelect_LFXO) {
+		/*
+		 * Check if device has LFXO configuration info in DEVINFO
+		 * See AN0016.2
+		 */
+		if ((DEVINFO->MODULEINFO & DEVINFO_MODULEINFO_LFXOCALVAL) ==
+		    DEVINFO_MODULEINFO_LFXOCALVAL_VALID) {
+			lfxoInit.capTune =
+				(DEVINFO->MODXOCAL & _DEVINFO_MODXOCAL_LFXOCAPTUNE_MASK) >>
+				_DEVINFO_MODXOCAL_LFXOCAPTUNE_SHIFT;
+		}
+		CMU_LFXOInit(&lfxoInit);
+	}
+#else
+	if (CMU_ClockSelectGet(cmuClock_HF) != cmuSelect_LFXO) {
+		CMU_LFXOInit(&lfxoInit);
+		CMU_OscillatorEnable(cmuOsc_LFXO, true, true);
+	}
+#endif /* _SILICON_LABS_32B_SERIES_2 */
+	SystemLFXOClockSet(CONFIG_CMU_LFXO_FREQ);
+}
+
+#endif /* CONFIG_CMU_NEED_LFXO */
 
 /**
  * @brief Initialize the system clock
@@ -80,29 +117,11 @@ static ALWAYS_INLINE void clock_init(void)
 	CMU_OscillatorEnable(cmuOsc_HFRCO, false, false);
 #endif /* _SILICON_LABS_32B_SERIES_2 */
 #elif (defined CONFIG_CMU_HFCLK_LFXO)
+	/* LFXO should've been already brought up by init_lfxo() */
 #if defined(_SILICON_LABS_32B_SERIES_2)
-	if (CMU_ClockSelectGet(cmuClock_SYSCLK) != cmuSelect_LFXO) {
-		/*
-		 * Start the LFXO Oscillator as well (use by RTCC)
-		 * Check if device has HFXO configuration info in DEVINFO
-		 * See AN0016.2
-		 */
-		if ((DEVINFO->MODULEINFO & DEVINFO_MODULEINFO_LFXOCALVAL) ==
-		    DEVINFO_MODULEINFO_LFXOCALVAL_VALID) {
-			lfxoInit.capTune =
-				(DEVINFO->MODXOCAL & _DEVINFO_MODXOCAL_LFXOCAPTUNE_MASK) >>
-				_DEVINFO_MODXOCAL_LFXOCAPTUNE_SHIFT;
-		}
-	}
-
-	SystemLFXOClockSet(CONFIG_CMU_LFXO_FREQ);
+	CMU_ClockSelectSet(cmuClock_SYSCLK, cmuSelect_LFXO);
 #else
-	if (CMU_ClockSelectGet(cmuClock_HF) != cmuSelect_LFXO) {
-		CMU_LFXOInit(&lfxoInit);
-		CMU_OscillatorEnable(cmuOsc_LFXO, true, true);
-		CMU_ClockSelectSet(cmuClock_HF, cmuSelect_LFXO);
-	}
-	SystemLFXOClockSet(CONFIG_CMU_LFXO_FREQ);
+	CMU_ClockSelectSet(cmuClock_HF, cmuSelect_LFXO);
 	CMU_OscillatorEnable(cmuOsc_HFRCO, false, false);
 #endif /* _SILICON_LABS_32B_SERIES_2 */
 #elif (defined CONFIG_CMU_HFCLK_HFRCO)
@@ -188,9 +207,8 @@ static void swo_init(void)
  *
  * @return 0
  */
-static int silabs_exx32_init(const struct device *arg)
+static int silabs_exx32_init(void)
 {
-	ARG_UNUSED(arg);
 
 	unsigned int oldLevel; /* old interrupt lock level */
 
@@ -200,12 +218,22 @@ static int silabs_exx32_init(const struct device *arg)
 	/* handle chip errata */
 	CHIP_Init();
 
+#ifdef CONFIG_CMU_NEED_LFXO
+	init_lfxo();
+#endif
+
 #ifdef CONFIG_SOC_GECKO_DEV_INIT
 	sl_device_init_dcdc();
 	sl_device_init_hfxo();
 	sl_device_init_dpll();
 	sl_device_init_emu();
-#else
+
+#ifdef CONFIG_PM
+	sl_power_manager_init();
+	sl_hfxo_manager_init();
+#endif
+
+#else /* !CONFIG_SOC_GECKO_DEV_INIT */
 
 #ifdef CONFIG_SOC_GECKO_EMU_DCDC
 	dcdc_init();
@@ -224,7 +252,8 @@ static int silabs_exx32_init(const struct device *arg)
 	/* Configure SWO debug output */
 	swo_init();
 #endif
-#endif
+#endif /* !CONFIG_SOC_GECKO_DEV_INIT */
+
 	/* restore interrupt state */
 	irq_unlock(oldLevel);
 	return 0;

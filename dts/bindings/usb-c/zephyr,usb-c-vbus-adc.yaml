@@ -10,5 +10,5 @@ compatible: "zephyr,usb-c-vbus-adc"
 include: [base.yaml, voltage-divider.yaml]
 
 properties:
-    discharge-gpios:
-       type: phandle-array
+  discharge-gpios:
+    type: phandle-array

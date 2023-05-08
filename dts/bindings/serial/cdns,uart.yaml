@@ -10,17 +10,17 @@ compatible: "cdns,uart"
 include: uart-controller.yaml
 
 properties:
-    current-speed:
-      type: int
-      required: true
-      description: Baud Rate in bps.
-    clock-frequency:
-      type: int
-      required: true
-      description: Frequency(Hz) of Clock to the UART IP.
-    bdiv:
-      type: int
-      required: true
-      description: Baud Rate Divide register value.
-    reg:
-      required: true
+  current-speed:
+    type: int
+    required: true
+    description: Baud Rate in bps.
+  clock-frequency:
+    type: int
+    required: true
+    description: Frequency(Hz) of Clock to the UART IP.
+  bdiv:
+    type: int
+    required: true
+    description: Baud Rate Divide register value.
+  reg:
+    required: true

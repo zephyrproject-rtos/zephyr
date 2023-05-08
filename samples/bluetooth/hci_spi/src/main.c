@@ -259,9 +259,8 @@ static void bt_tx_thread(void *p1, void *p2, void *p3)
 	}
 }
 
-static int hci_spi_init(const struct device *unused)
+static int hci_spi_init(void)
 {
-	ARG_UNUSED(unused);
 
 	LOG_DBG("");
 
@@ -281,7 +280,7 @@ static int hci_spi_init(const struct device *unused)
 
 SYS_INIT(hci_spi_init, APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
 
-void main(void)
+int main(void)
 {
 	static K_FIFO_DEFINE(rx_queue);
 	struct bt_hci_evt_hdr *evt_hdr;
@@ -294,7 +293,7 @@ void main(void)
 	err = bt_enable_raw(&rx_queue);
 	if (err) {
 		LOG_ERR("bt_enable_raw: %d; aborting", err);
-		return;
+		return 0;
 	}
 
 	/* Spawn the TX thread, which feeds cmds and data to the controller */
@@ -314,7 +313,7 @@ void main(void)
 	if (err) {
 		LOG_ERR("can't send initialization event; aborting");
 		k_thread_abort(tx_id);
-		return;
+		return 0;
 	}
 
 	while (1) {
@@ -323,5 +322,11 @@ void main(void)
 		if (err) {
 			LOG_ERR("Failed to send");
 		}
+		/* Ensure that the IRQ line is de-asserted for some minimum
+		 * duration between buffers, so that the HCI controller has
+		 * time to observe the edge.
+		 */
+		k_sleep(K_TICKS(1));
 	}
+	return 0;
 }

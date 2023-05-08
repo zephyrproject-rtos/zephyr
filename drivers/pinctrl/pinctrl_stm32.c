@@ -14,6 +14,32 @@
 #include <stm32_ll_gpio.h>
 #include <stm32_ll_system.h>
 
+/** Helper to extract IO port number from STM32PIN() encoded value */
+#define STM32_PORT(__pin) \
+	((__pin) >> 4)
+
+/** Helper to extract IO pin number from STM32PIN() encoded value */
+#define STM32_PIN(__pin) \
+	((__pin) & 0xf)
+
+/** Helper to extract IO port number from STM32_PINMUX() encoded value */
+#define STM32_DT_PINMUX_PORT(__pin) \
+	(((__pin) >> STM32_PORT_SHIFT) & STM32_PORT_MASK)
+
+/** Helper to extract IO pin number from STM32_PINMUX() encoded value */
+#define STM32_DT_PINMUX_LINE(__pin) \
+	(((__pin) >> STM32_LINE_SHIFT) & STM32_LINE_MASK)
+
+/** Helper to extract IO pin func from STM32_PINMUX() encoded value */
+#define STM32_DT_PINMUX_FUNC(__pin) \
+	(((__pin) >> STM32_MODE_SHIFT) & STM32_MODE_MASK)
+
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_pinctrl)
+/** Helper to extract IO pin remap from STM32_PINMUX() encoded value */
+#define STM32_DT_PINMUX_REMAP(__pin) \
+	(((__pin) >> STM32_REMAP_SHIFT) & STM32_REMAP_MASK)
+#endif
+
 /**
  * @brief Array containing pointers to each GPIO port.
  *
@@ -48,9 +74,8 @@ static const size_t gpio_ports_cnt = ARRAY_SIZE(gpio_ports);
 
 #if REMAP_PA11 || REMAP_PA12 || REMAP_PA11_PA12
 
-int stm32_pinmux_init_remap(const struct device *dev)
+int stm32_pinmux_init_remap(void)
 {
-	ARG_UNUSED(dev);
 
 #if REMAP_PA11 || REMAP_PA12
 
@@ -91,9 +116,8 @@ SYS_INIT(stm32_pinmux_init_remap, PRE_KERNEL_1,
 #if ((DT_NODE_HAS_PROP(DT_NODELABEL(pinctrl), swj_cfg)) && \
 	(DT_ENUM_IDX(DT_NODELABEL(pinctrl), swj_cfg) != 0))
 
-static int stm32f1_swj_cfg_init(const struct device *dev)
+static int stm32f1_swj_cfg_init(void)
 {
-	ARG_UNUSED(dev);
 
 	LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_AFIO);
 

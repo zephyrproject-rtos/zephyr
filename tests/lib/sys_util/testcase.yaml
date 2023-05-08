@@ -1,4 +1,3 @@
 tests:
-  lib.sys_util:
-    platform_exclude: native_posix native_posix_64
+  libraries.sys_util:
     tags: sys_util

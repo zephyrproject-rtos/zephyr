@@ -179,11 +179,6 @@ static void bt_h4_status_cb(struct usb_cfg_data *cfg,
 		if (suspended) {
 			LOG_DBG("from suspend");
 			suspended = false;
-			if (configured) {
-				/* Start reading */
-				bt_h4_read(bt_h4_ep_data[BT_H4_OUT_EP_IDX].ep_addr,
-					   0, NULL);
-			}
 		} else {
 			LOG_DBG("Spurious resume event");
 		}
@@ -226,7 +221,7 @@ USBD_DEFINE_CFG_DATA(bt_h4_config) = {
 	.endpoint = bt_h4_ep_data,
 };
 
-static int bt_h4_init(const struct device *dev)
+static int bt_h4_init(void)
 {
 	int ret;
 

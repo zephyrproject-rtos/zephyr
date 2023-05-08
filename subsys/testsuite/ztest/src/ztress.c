@@ -451,7 +451,7 @@ uint32_t ztress_optimized_ticks(uint32_t id)
  * cpu load (e.g. busy simulator) running that would influence the result.
  *
  */
-static int ztress_cpu_clock_to_sys_clock_check(const struct device *unused)
+static int ztress_cpu_clock_to_sys_clock_check(void)
 {
 	static volatile int cnt = 2000;
 	uint32_t t = sys_clock_tick_get_32();

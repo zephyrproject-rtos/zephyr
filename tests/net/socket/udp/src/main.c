@@ -984,16 +984,8 @@ static struct ethernet_api eth_fake_api_funcs = {
 	.send = eth_fake_send,
 };
 
-static int eth_fake_init(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-
-	return 0;
-}
-
-ETH_NET_DEVICE_INIT(eth_fake, "eth_fake", eth_fake_init, NULL,
-		    &eth_fake_data, NULL, CONFIG_ETH_INIT_PRIORITY,
-		    &eth_fake_api_funcs, NET_ETH_MTU);
+ETH_NET_DEVICE_INIT(eth_fake, "eth_fake", NULL, NULL, &eth_fake_data, NULL,
+		    CONFIG_ETH_INIT_PRIORITY, &eth_fake_api_funcs, NET_ETH_MTU);
 
 static void iface_cb(struct net_if *iface, void *user_data)
 {

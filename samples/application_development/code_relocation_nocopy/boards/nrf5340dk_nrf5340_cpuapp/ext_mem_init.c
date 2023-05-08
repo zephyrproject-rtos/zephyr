@@ -16,9 +16,8 @@
 
 #define QSPI_NODE DT_NODELABEL(qspi)
 
-static int qspi_ext_mem_init(const struct device *dev)
+static int qspi_ext_mem_init(void)
 {
-	ARG_UNUSED(dev);
 
 	static const nrfx_qspi_config_t qspi_config = {
 		.prot_if = {

@@ -22,8 +22,9 @@
  * ongoing development.
  */
 
-#include <zephyr/bluetooth/bluetooth.h>
 #include <sys/types.h>
+
+#include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/sys/util.h>
 
 #ifdef __cplusplus
@@ -72,10 +73,20 @@ struct bt_has_register_param {
 	/** Hearing Aid Type value */
 	enum bt_has_hearing_aid_type type;
 
-	/** Preset Synchronization Support. Only applicable for binaural hearing aids. */
+	/**
+	 * @brief Preset Synchronization Support.
+	 *
+	 * Only applicable if @p type is @ref BT_HAS_HEARING_AID_TYPE_BINAURAL
+	 * and @kconfig{CONFIG_BT_HAS_PRESET_COUNT} is non-zero.
+	 */
 	bool preset_sync_support;
 
-	/** Independent Presets. Only applicable for binaural hearing aids. */
+	/**
+	 * @brief Independent Presets.
+	 *
+	 * Only applicable if @p type is @ref BT_HAS_HEARING_AID_TYPE_BINAURAL
+	 * and @kconfig{CONFIG_BT_HAS_PRESET_COUNT} is non-zero.
+	 */
 	bool independent_presets;
 };
 

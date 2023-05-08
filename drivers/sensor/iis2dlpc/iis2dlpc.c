@@ -69,7 +69,7 @@ static int iis2dlpc_set_odr(const struct device *dev, uint16_t odr)
 		return iis2dlpc_data_rate_set(ctx, IIS2DLPC_XL_ODR_OFF);
 	}
 
-	val =  IIS2DLPC_ODR_TO_REG(odr);
+	val = IIS2DLPC_ODR_TO_REG(odr);
 	if (val > IIS2DLPC_XL_ODR_1k6Hz) {
 		LOG_ERR("ODR too high");
 		return -ENOTSUP;
@@ -138,6 +138,46 @@ static int iis2dlpc_channel_get(const struct device *dev,
 	return -ENOTSUP;
 }
 
+#ifdef CONFIG_IIS2DLPC_ACTIVITY
+static int ii2sdlpc_set_slope_th(const struct device *dev, uint16_t th)
+{
+	int err;
+	const struct iis2dlpc_config *cfg = dev->config;
+	stmdev_ctx_t *ctx = (stmdev_ctx_t *) &cfg->ctx;
+
+	err = iis2dlpc_wkup_threshold_set(ctx, th & 0x3F);
+	if (err) {
+		LOG_ERR("Could not set WK_THS to 0x%02X, error %d",
+			th & 0x03, err);
+		return err;
+	}
+	return 0;
+}
+static int ii2sdlpc_set_slope_dur(const struct device *dev, uint16_t dur)
+{
+	int err;
+	const struct iis2dlpc_config *cfg = dev->config;
+	stmdev_ctx_t *ctx = (stmdev_ctx_t *) &cfg->ctx;
+	uint8_t val;
+
+	val = (dur & 0x0F);
+	err = iis2dlpc_act_sleep_dur_set(ctx, val);
+	if (err) {
+		LOG_ERR("Could not set SLEEP_DUR to 0x%02X, error %d",
+			val, err);
+		return err;
+	}
+	val = ((dur >> 5) & 0x03);
+	err = iis2dlpc_wkup_dur_set(ctx, val);
+	if (err) {
+		LOG_ERR("Could not set WAKE_DUR to 0x%02X, error %d",
+			val, err);
+		return err;
+	}
+	return 0;
+}
+#endif /* CONFIG_IIS2DLPC_ACTIVITY */
+
 static int iis2dlpc_dev_config(const struct device *dev,
 			       enum sensor_channel chan,
 			       enum sensor_attribute attr,
@@ -149,6 +189,12 @@ static int iis2dlpc_dev_config(const struct device *dev,
 				IIS2DLPC_FS_TO_REG(sensor_ms2_to_g(val)));
 	case SENSOR_ATTR_SAMPLING_FREQUENCY:
 		return iis2dlpc_set_odr(dev, val->val1);
+#ifdef CONFIG_IIS2DLPC_ACTIVITY
+	case SENSOR_ATTR_SLOPE_TH:
+		return ii2sdlpc_set_slope_th(dev, val->val1);
+	case SENSOR_ATTR_SLOPE_DUR:
+		return ii2sdlpc_set_slope_dur(dev, val->val1);
+#endif /* CONFIG_IIS2DLPC_ACTIVITY */
 	default:
 		LOG_DBG("Acc attribute not supported");
 		break;
@@ -413,6 +459,8 @@ static int iis2dlpc_init(const struct device *dev)
 			   (stmdev_read_ptr) stmemsc_spi_read,		\
 			.write_reg =					\
 			   (stmdev_write_ptr) stmemsc_spi_write,	\
+			.mdelay =					\
+			   (stmdev_mdelay_ptr) stmemsc_mdelay,		\
 			.handle =					\
 			   (void *)&iis2dlpc_config_##inst.stmemsc_cfg,	\
 		},							\
@@ -439,6 +487,8 @@ static int iis2dlpc_init(const struct device *dev)
 			   (stmdev_read_ptr) stmemsc_i2c_read,		\
 			.write_reg =					\
 			   (stmdev_write_ptr) stmemsc_i2c_write,	\
+			.mdelay =					\
+			   (stmdev_mdelay_ptr) stmemsc_mdelay,		\
 			.handle =					\
 			   (void *)&iis2dlpc_config_##inst.stmemsc_cfg,	\
 		},							\

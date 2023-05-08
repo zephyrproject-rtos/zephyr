@@ -13,6 +13,17 @@
 #define DT_DRV_COMPAT vnd_gpio
 
 #include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/gpio/gpio_utils.h>
+
+struct vnd_gpio_config {
+	/* gpio_driver_config needs to be first */
+	struct gpio_driver_config common;
+};
+
+struct vnd_gpio_data {
+	/* gpio_driver_data needs to be first */
+	struct gpio_driver_data common;
+};
 
 static int vnd_gpio_pin_configure(const struct device *port,
 				  gpio_pin_t pin,
@@ -84,15 +95,18 @@ static const struct gpio_driver_api vnd_gpio_api = {
 	.get_pending_int = vnd_gpio_get_pending_int
 };
 
-static int vnd_gpio_init(const struct device *dev)
-{
-	return 0;
-}
-
-#define VND_GPIO_INIT(n)					  \
-	DEVICE_DT_INST_DEFINE(n, &vnd_gpio_init, NULL,		  \
-			      NULL, NULL, POST_KERNEL,		  \
-			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, \
+#define VND_GPIO_INIT(n)						\
+	static const struct vnd_gpio_config vnd_gpio_config_##n = {	\
+		.common = {						\
+			.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n), \
+		},							\
+	};								\
+									\
+	static struct vnd_gpio_data vnd_gpio_data_##n;			\
+									\
+	DEVICE_DT_INST_DEFINE(n, NULL, NULL, &vnd_gpio_data_##n,	\
+			      &vnd_gpio_config_##n, POST_KERNEL,	\
+			      CONFIG_GPIO_INIT_PRIORITY,		\
 			      &vnd_gpio_api);
 
 DT_INST_FOREACH_STATUS_OKAY(VND_GPIO_INIT)

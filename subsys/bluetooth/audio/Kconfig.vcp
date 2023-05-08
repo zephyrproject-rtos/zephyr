@@ -11,6 +11,7 @@
 config BT_VCP_VOL_REND
 	bool "Volume Control Profile Volume Renderer Support [EXPERIMENTAL]"
 	select EXPERIMENTAL
+	select BT_GATT_DYNAMIC_DB
 	help
 	  This option enables support for Volume Control Profile Volume Renderer
 	  role and the Volume Control Service.
@@ -45,20 +46,6 @@ config BT_VCP_VOL_REND_AICS
 	help
 	  This hidden option makes it possible to easily check if AICS is
 	  enabled for VCS.
-
-############# DEBUG #############
-
-config BT_DEBUG_VCP_VOL_REND
-	bool "Volume Control Profile Volume Renderer debug"
-	select DEPRECATED
-	help
-	  Use this option to enable Volume Control Profile debug logs for the
-	  Bluetooth Audio functionality.
-
-module = BT_VCP_VOL_REND
-legacy-debug-sym = BT_DEBUG_VCP_VOL_REND
-module-str = "Volume Control Profile Voluem Renderer"
-source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
 
 endif # BT_VCP_VOL_REND
 
@@ -104,19 +91,5 @@ config BT_VCP_VOL_CTLR_AICS
 	help
 	  This hidden option makes it possible to easily check if AICS is
 	  enabled for VCS client.
-
-############# DEBUG #############
-
-config BT_DEBUG_VCP_VOL_CTLR
-	bool "Volume Control Profile Volume Controller debug"
-	select DEPRECATED
-	help
-	  Use this option to enable Volume Control Profile Volume Controller
-	  debug logs for the Bluetooth Audio functionality.
-
-module = BT_VCP_VOL_CTLR
-legacy-debug-sym = BT_DEBUG_VCP_VOL_CTLR
-module-str = "Volume Control Profile Volume Controller"
-source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
 
 endif # BT_VCP_VOL_CTLR

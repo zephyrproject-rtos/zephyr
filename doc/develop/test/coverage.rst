@@ -165,6 +165,8 @@ default for the Twister ``--gcov-tool`` argument default:
 | Toolchain | ``--gcov-tool`` value |
 +-----------+-----------------------+
 | host      | ``gcov``              |
++-----------+-----------------------+
 | llvm      | ``llvm-cov gcov``     |
++-----------+-----------------------+
 | zephyr    | ``gcov``              |
 +-----------+-----------------------+

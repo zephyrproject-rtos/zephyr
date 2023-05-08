@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2019-2021 Nordic Semiconductor ASA.
- * Copyright (c) 2021 Laird Connectivity
+ * Copyright (c) 2021-2023 Laird Connectivity
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,19 +13,29 @@
 
 LOG_MODULE_REGISTER(bl5340_dvk_cpuapp, CONFIG_LOG_DEFAULT_LEVEL);
 
+#if defined(CONFIG_BT_CTLR_DEBUG_PINS_CPUAPP)
+#include <../subsys/bluetooth/controller/ll_sw/nordic/hal/nrf5/debug.h>
+#else
+#define DEBUG_SETUP()
+#endif
+
 static void remoteproc_mgr_config(void)
 {
+#if !defined(CONFIG_TRUSTED_EXECUTION_NONSECURE) || defined(CONFIG_BUILD_WITH_TFM)
+	/* Route Bluetooth Controller Debug Pins */
+	DEBUG_SETUP();
+#endif /* !defined(CONFIG_TRUSTED_EXECUTION_NONSECURE) || defined(CONFIG_BUILD_WITH_TFM) */
+
 #if !defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
 	/* Retain nRF5340 Network MCU in Secure domain (bus
 	 * accesses by Network MCU will have Secure attribute set).
 	 */
 	NRF_SPU->EXTDOMAIN[0].PERM = 1 << 4;
-#endif /* !CONFIG_TRUSTED_EXECUTION_NONSECURE */
+#endif /* !defined(CONFIG_TRUSTED_EXECUTION_NONSECURE) */
 }
 
-static int remoteproc_mgr_boot(const struct device *dev)
+static int remoteproc_mgr_boot(void)
 {
-	ARG_UNUSED(dev);
 
 	/* Secure domain may configure permissions for the Network MCU. */
 	remoteproc_mgr_config();

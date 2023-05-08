@@ -179,6 +179,10 @@ struct usbd_class_node;
  * @brief USB device support class instance API
  */
 struct usbd_class_api {
+	/** Feature halt state update handler */
+	void (*feature_halt)(struct usbd_class_node *const node,
+			     uint8_t ep, bool halted);
+
 	/** Configuration update handler */
 	void (*update)(struct usbd_class_node *const node,
 		       uint8_t iface, uint8_t alternate);
@@ -222,7 +226,9 @@ struct usbd_class_api {
 struct usbd_class_data {
 	/** Pointer to USB device stack context structure */
 	struct usbd_contex *uds_ctx;
-	/** Terminated descriptor for class implementation */
+	/** Pointer to a class implementation descriptor that should end with
+	 *  a nil descriptor (bLength = 0 and bDescriptorType = 0).
+	 */
 	void *desc;
 	/** Supported vendor request table, can be NULL */
 	const struct usbd_cctx_vendor_req *v_reqs;

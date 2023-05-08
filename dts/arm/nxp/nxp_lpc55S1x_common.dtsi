@@ -56,11 +56,12 @@
 		zephyr,memory-region = "SRAM2";
 	};
 
-	sram4: memory@20010000 {
+	usb_sram: memory@20010000 {
 		/* Connected to USB bus*/
 		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x20010000 DT_SIZE_K(16)>;
-		zephyr,memory-region = "SRAM4";
+		zephyr,memory-region = "USB_SRAM";
+		zephyr,memory-region-mpu = "RAM";
 	};
 };
 
@@ -114,20 +115,12 @@
 		pinctrl: pinctrl {
 			compatible = "nxp,lpc-iocon-pinctrl";
 		};
-		pio0: pio0@0 {
-			compatible = "nxp,lpc-iocon-pio";
-			reg = <0x0 0x80>;
-		};
-		pio1: pio0@80 {
-			compatible = "nxp,lpc-iocon-pio";
-			reg = <0x80 0x80>;
-		};
 	};
 
 	gpio0: gpio@0 {
 		compatible = "nxp,lpc-gpio";
 		reg = <0x8c000 0x2488>;
-		interrupts = <4 2>,<5 2>,<6 2>,<7 2>;
+		int-source = "pint";
 		gpio-controller;
 		#gpio-cells = <2>;
 		port = <0>;
@@ -136,10 +129,22 @@
 	gpio1: gpio@1 {
 		compatible = "nxp,lpc-gpio";
 		reg = <0x8c000 0x2488>;
-		interrupts = <32 2>,<33 2>,<34 2>,<35 2>;
+		int-source = "pint";
 		gpio-controller;
 		#gpio-cells = <2>;
 		port = <1>;
+	};
+
+	pint: pint@4000 {
+		compatible = "nxp,pint";
+		reg = <0x4000 0x1000>;
+		interrupt-controller;
+		#interrupt-cells = <1>;
+		#address-cells = <0>;
+		interrupts = <4 2>, <5 2>, <6 2>, <7 2>,
+			<32 2>, <33 2>, <34 2>, <35 2>;
+		num-lines = <8>;
+		num-inputs = <64>;
 	};
 
 	flexcomm0: flexcomm@86000 {
@@ -239,6 +244,15 @@
 		compatible = "nxp,lpc-rng";
 		reg = <0x3a000 0x1000>;
 		status = "okay";
+	};
+
+	usbhs: usbhs@144000 {
+		compatible = "nxp,mcux-usbd";
+		reg = <0x94000 0x1000>;
+		interrupts = <47 1>;
+		num-bidir-endpoints = <6>;
+		usb-controller-index = "LpcIp3511Hs0";
+		status = "disabled";
 	};
 };
 

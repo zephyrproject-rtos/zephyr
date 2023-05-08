@@ -1038,9 +1038,8 @@ static void usb_kinetis_thread_main(void *arg1, void *unused1, void *unused2)
 	}
 }
 
-static int usb_kinetis_init(const struct device *dev)
+static int usb_kinetis_init(void)
 {
-	ARG_UNUSED(dev);
 
 	k_thread_create(&dev_data.thread, dev_data.thread_stack,
 			USBD_THREAD_STACK_SIZE,

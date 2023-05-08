@@ -6,137 +6,137 @@ description: FXOS8700 6-axis accelerometer/magnetometer sensor
 include: sensor-device.yaml
 
 properties:
-    reset-gpios:
-      type: phandle-array
-      description: |
-        RST pin
-        This pin defaults to active high when consumed by the sensor.
-        The property value should ensure the flags properly describe
-        the signal that is presented to the driver.
+  reset-gpios:
+    type: phandle-array
+    description: |
+      RST pin
+      This pin defaults to active high when consumed by the sensor.
+      The property value should ensure the flags properly describe
+      the signal that is presented to the driver.
 
-    int1-gpios:
-      type: phandle-array
-      description: |
-        INT1 pin
-        This pin defaults to active low when produced by the sensor.
-        The property value should ensure the flags properly describe
-        the signal that is presented to the driver.
+  int1-gpios:
+    type: phandle-array
+    description: |
+      INT1 pin
+      This pin defaults to active low when produced by the sensor.
+      The property value should ensure the flags properly describe
+      the signal that is presented to the driver.
 
-    int2-gpios:
-      type: phandle-array
-      description: |
-        INT2 pin
-        This pin defaults to active low when produced by the sensor.
-        The property value should ensure the flags properly describe
-        the signal that is presented to the driver.
+  int2-gpios:
+    type: phandle-array
+    description: |
+      INT2 pin
+      This pin defaults to active low when produced by the sensor.
+      The property value should ensure the flags properly describe
+      the signal that is presented to the driver.
 
-    range:
-      type: int
-      default: 8
-      description: Range in g
-      enum:
-        - 8 # 8g (0.976 mg/LSB)
-        - 4 # 4g (0.488 mg/LSB)
-        - 2 # 2g (0.244 mg/LSB)
+  range:
+    type: int
+    default: 8
+    description: Range in g
+    enum:
+      - 8 # 8g (0.976 mg/LSB)
+      - 4 # 4g (0.488 mg/LSB)
+      - 2 # 2g (0.244 mg/LSB)
 
-    power-mode:
-      type: int
-      default: 0
-      description: Power mode
-      enum:
-        - 0 # Normal
-        - 1 # Low noise, low power
-        - 2 # High resolution
-        - 3 # Low power
+  power-mode:
+    type: int
+    default: 0
+    description: Power mode
+    enum:
+      - 0 # Normal
+      - 1 # Low noise, low power
+      - 2 # High resolution
+      - 3 # Low power
 
-    pulse-cfg:
-      type: int
-      default: 0x3f
-      description: Pulse configuration register
+  pulse-cfg:
+    type: int
+    default: 0x3f
+    description: Pulse configuration register
 
-    pulse-thsx:
-      type: int
-      default: 0x20
-      description: |
-        Pulse X-axis threshold
-        Threshold to start the pulse-event detection procedure on the X-axis.
-        Threshold values for each axis are unsigned 7-bit numbers with a fixed
-        resolution of 0.063 g/LSB, corresponding to an 8g acceleration
-        full-scale range.
+  pulse-thsx:
+    type: int
+    default: 0x20
+    description: |
+      Pulse X-axis threshold
+      Threshold to start the pulse-event detection procedure on the X-axis.
+      Threshold values for each axis are unsigned 7-bit numbers with a fixed
+      resolution of 0.063 g/LSB, corresponding to an 8g acceleration
+      full-scale range.
 
-    pulse-thsy:
-      type: int
-      default: 0x20
-      description: |
-        Pulse Y-axis threshold
-        Threshold to start the pulse-event detection procedure on the Y-axis.
-        Threshold values for each axis are unsigned 7-bit numbers with a fixed
-        resolution of 0.063 g/LSB, corresponding to an 8g acceleration
-        full-scale range.
+  pulse-thsy:
+    type: int
+    default: 0x20
+    description: |
+      Pulse Y-axis threshold
+      Threshold to start the pulse-event detection procedure on the Y-axis.
+      Threshold values for each axis are unsigned 7-bit numbers with a fixed
+      resolution of 0.063 g/LSB, corresponding to an 8g acceleration
+      full-scale range.
 
-    pulse-thsz:
-      type: int
-      default: 0x40
-      description: |
-        Pulse Z-axis threshold
-        Threshold to start the pulse-event detection procedure on the Z-axis.
-        Threshold values for each axis are unsigned 7-bit numbers with a fixed
-        resolution of 0.063 g/LSB, corresponding to an 8g acceleration
-        full-scale range.
+  pulse-thsz:
+    type: int
+    default: 0x40
+    description: |
+      Pulse Z-axis threshold
+      Threshold to start the pulse-event detection procedure on the Z-axis.
+      Threshold values for each axis are unsigned 7-bit numbers with a fixed
+      resolution of 0.063 g/LSB, corresponding to an 8g acceleration
+      full-scale range.
 
-    pulse-tmlt:
-      type: int
-      default: 0x18
-      description: |
-        Pulse time limit
-        The maximum time interval that can elapse between the start of the
-        acceleration on the selected channel exceeding the specified threshold
-        and the end when the channel acceleration goes back below the specified
-        threshold. The resolution depends upon the sample rate (ODR) and the
-        high-pass filter configuration (HP_FILTER_CUTOFF[pls_hpf_en]). For
-        ODR=800 Hz and pls_hpf_en=0, the resolution is 0.625 ms/LSB.
+  pulse-tmlt:
+    type: int
+    default: 0x18
+    description: |
+      Pulse time limit
+      The maximum time interval that can elapse between the start of the
+      acceleration on the selected channel exceeding the specified threshold
+      and the end when the channel acceleration goes back below the specified
+      threshold. The resolution depends upon the sample rate (ODR) and the
+      high-pass filter configuration (HP_FILTER_CUTOFF[pls_hpf_en]). For
+      ODR=800 Hz and pls_hpf_en=0, the resolution is 0.625 ms/LSB.
 
-    pulse-ltcy:
-      type: int
-      default: 0x28
-      description: |
-        Pulse latency
-        The time interval that starts after the first pulse detection where the
-        pulse-detection function ignores the start of a new pulse. The
-        resolution depends upon the sample rate (ODR) and the high-pass filter
-        configuration (HP_FILTER_CUTOFF[pls_hpf_en]). For ODR=800 Hz and
-        pls_hpf_en=0, the resolution is 1.25 ms/LSB.
+  pulse-ltcy:
+    type: int
+    default: 0x28
+    description: |
+      Pulse latency
+      The time interval that starts after the first pulse detection where the
+      pulse-detection function ignores the start of a new pulse. The
+      resolution depends upon the sample rate (ODR) and the high-pass filter
+      configuration (HP_FILTER_CUTOFF[pls_hpf_en]). For ODR=800 Hz and
+      pls_hpf_en=0, the resolution is 1.25 ms/LSB.
 
-    pulse-wind:
-      type: int
-      default: 0x3c
-      description: |
-        Pulse window
-        The maximum interval of time that can elapse after the end of the
-        latency interval in which the start of the second pulse event must be
-        detected provided the device has been configured for double pulse
-        detection. The detected second pulse width must be shorter than the
-        time limit constraint specified by the PULSE_TMLT register, but the end
-        of the double pulse need not finish within the time specified by the
-        PULSE_WIND register. The resolution depends upon the sample rate (ODR)
-        and the high-pass filter configuration (HP_FILTER_CUTOFF[pls_hpf_en]).
-        For ODR=800 Hz and pls_hpf_en=0, the resolution is 1.25 ms/LSB.
+  pulse-wind:
+    type: int
+    default: 0x3c
+    description: |
+      Pulse window
+      The maximum interval of time that can elapse after the end of the
+      latency interval in which the start of the second pulse event must be
+      detected provided the device has been configured for double pulse
+      detection. The detected second pulse width must be shorter than the
+      time limit constraint specified by the PULSE_TMLT register, but the end
+      of the double pulse need not finish within the time specified by the
+      PULSE_WIND register. The resolution depends upon the sample rate (ODR)
+      and the high-pass filter configuration (HP_FILTER_CUTOFF[pls_hpf_en]).
+      For ODR=800 Hz and pls_hpf_en=0, the resolution is 1.25 ms/LSB.
 
-    mag-vecm-cfg:
-      type: int
-      default: 0x4e
-      description: Magnetic vector-magnitude configuration register
+  mag-vecm-cfg:
+    type: int
+    default: 0x4e
+    description: Magnetic vector-magnitude configuration register
 
-    mag-vecm-ths-msb:
-      type: int
-      default: 0x00
-      description: |
-        Magnetic vector-magnitude threshold most significant byte.
-        Resolution is 0.1 uT/LSB.
+  mag-vecm-ths-msb:
+    type: int
+    default: 0x00
+    description: |
+      Magnetic vector-magnitude threshold most significant byte.
+      Resolution is 0.1 uT/LSB.
 
-    mag-vecm-ths-lsb:
-      type: int
-      default: 0x5a
-      description: |
-        Magnetic vector-magnitude threshold least significant byte.
-        Resolution is 0.1 uT/LSB.
+  mag-vecm-ths-lsb:
+    type: int
+    default: 0x5a
+    description: |
+      Magnetic vector-magnitude threshold least significant byte.
+      Resolution is 0.1 uT/LSB.

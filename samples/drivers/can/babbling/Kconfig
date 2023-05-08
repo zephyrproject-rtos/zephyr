@@ -23,7 +23,7 @@ config SAMPLE_CAN_BABBLING_RTR
 
 config SAMPLE_CAN_BABBLING_FD_MODE
 	bool "Send CAN-FD format frames"
-	depends on CAN_FD_MODE
+	select CAN_FD_MODE
 	help
 	  Babbling node sends CAN-FD format frames.
 

@@ -31,18 +31,32 @@ config BT_L2CAP_TX_MTU
 	int "Maximum supported L2CAP MTU for L2CAP TX buffers"
 	default 253 if BT_BREDR
 	default 69 if BT_MESH_GATT
+	default 66 if BT_EATT
 	default 65 if BT_SMP
-	default 64 if BT_AUDIO_UNICAST_SERVER || \
-		      BT_AUDIO_UNICAST_CLIENT || \
-		      BT_AUDIO_BROADCAST_SINK || \
+	default 64 if BT_BAP_UNICAST_SERVER || \
+		      BT_BAP_UNICAST_CLIENT || \
+		      BT_BAP_BROADCAST_SINK || \
 		      BT_BAP_SCAN_DELEGATOR || \
 		      BT_BAP_BROADCAST_ASSISTANT
 	default 49 if BT_HAS || BT_HAS_CLIENT
 	default 23
+	range 66 2000 if BT_EATT
 	range 65 2000 if BT_SMP
 	range 23 2000
 	help
 	  Maximum L2CAP MTU for L2CAP TX buffers.
+
+config BT_L2CAP_RESCHED_MS
+	int
+	default 1000
+	help
+	  Delay between retries for sending L2CAP segment. Necessary because the
+	  stack might not be able to allocate enough conn contexts and might not
+	  have enough credits, leading to a state where an SDU is stuck
+	  mid-transfer and never resumes.
+
+	  Note that this should seldom happen, this is just to work around a few
+	  edge cases.
 
 config BT_L2CAP_DYNAMIC_CHANNEL
 	bool "L2CAP Dynamic Channel support"
@@ -57,18 +71,5 @@ config BT_L2CAP_ECRED
 	help
 	  This option enables support for LE Connection oriented Channels with
 	  Enhanced Credit Based Flow Control support on dynamic L2CAP Channels.
-
-config BT_DEBUG_L2CAP
-	bool "Bluetooth L2CAP debug"
-	select DEPRECATED
-	depends on BT_DEBUG
-	help
-	  This option enables debug support for the Bluetooth
-	  L2ACP layer.
-
-module = BT_L2CAP
-legacy-debug-sym = BT_DEBUG_L2CAP
-module-str = "Bluetooth L2CAP"
-source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
 
 endmenu

@@ -28,12 +28,11 @@ static int enable_supply(const struct supply_cfg *cfg)
 	return rv;
 }
 
-static int efr32mg_sltb004a_init(const struct device *dev)
+static int efr32mg_sltb004a_init(void)
 {
 	struct supply_cfg cfg;
 	int rc = 0;
 
-	ARG_UNUSED(dev);
 	(void)cfg;
 
 #define CCS811 DT_NODELABEL(ccs811)

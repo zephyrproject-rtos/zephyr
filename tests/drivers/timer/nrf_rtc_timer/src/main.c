@@ -427,6 +427,121 @@ ZTEST(nrf_rtc_timer, test_overflow)
 	z_nrf_rtc_timer_chan_free(chan);
 }
 
+static void next_cycle_timeout_handler(int32_t chan,
+				       uint64_t expire_time,
+				       void *user_data)
+{
+	static uint32_t delay;
+	uint32_t *timeouts_left = (uint32_t *)user_data;
+
+	if (--*timeouts_left) {
+		k_busy_wait(delay);
+		++delay;
+
+		z_nrf_rtc_timer_set(chan, z_nrf_rtc_timer_read() + 1,
+			next_cycle_timeout_handler, user_data);
+	}
+}
+
+ZTEST(nrf_rtc_timer, test_next_cycle_timeouts)
+{
+	enum {
+		MAX_TIMEOUTS = 60,
+		/* Allow 5 cycles per each expected timeout. */
+		CYCLES_TO_WAIT = 5 * MAX_TIMEOUTS,
+	};
+	volatile uint32_t timeouts_left = MAX_TIMEOUTS;
+	int32_t chan;
+	uint32_t start;
+
+	chan = z_nrf_rtc_timer_chan_alloc();
+	zassert_true(chan > 0, "Failed to allocate RTC channel.");
+
+	/* First timeout is scheduled here, all further ones are scheduled
+	 * from the timeout handler, always on the next cycle of the system
+	 * timer but after a delay that increases 1 microsecond each time.
+	 */
+	z_nrf_rtc_timer_set(chan, z_nrf_rtc_timer_read() + 1,
+		next_cycle_timeout_handler, (void *)&timeouts_left);
+
+	start = k_cycle_get_32();
+	while (timeouts_left) {
+		if ((k_cycle_get_32() - start) > CYCLES_TO_WAIT) {
+			break;
+		}
+		Z_SPIN_DELAY(10);
+	}
+
+	zassert_equal(0, timeouts_left,
+		"Failed to get %u timeouts.", timeouts_left);
+
+	z_nrf_rtc_timer_chan_free(chan);
+}
+
+static void tight_rescheduling_handler(int32_t chan,
+				       uint64_t expire_time,
+				       void *user_data)
+{
+	if (user_data) {
+		*(bool *)user_data = true;
+	}
+}
+
+ZTEST(nrf_rtc_timer, test_tight_rescheduling)
+{
+	int32_t chan;
+	volatile bool expired;
+	/* This test tries to schedule an alarm to CYCLE_DIFF cycles from
+	 * the current moment and then, after a delay that is changed in
+	 * each iteration, tries to reschedule this alarm to one cycle later.
+	 * It does not matter if the first alarm actually occurs, the key
+	 * thing is to always get the second one.
+	 */
+	enum {
+		CYCLE_DIFF = 5,
+		/* One RTC cycle is ~30.5 us. Check a range of delays from
+		 * more than one cycle before the moment on which the first
+		 * alarm is scheduled to a few microseconds after that alarm
+		 * (when it is actually too late for rescheduling).
+		 */
+		DELAY_MIN = 30 * CYCLE_DIFF - 40,
+		DELAY_MAX = 30 * CYCLE_DIFF + 10,
+	};
+
+	chan = z_nrf_rtc_timer_chan_alloc();
+	zassert_true(chan > 0, "Failed to allocate RTC channel.");
+
+	/* Repeat the whole test a couple of times to get also (presumably)
+	 * various micro delays resulting from execution of the test routine
+	 * itself asynchronously to the RTC.
+	 */
+	for (uint32_t i = 0; i < 20; ++i) {
+		for (uint32_t delay = DELAY_MIN; delay <= DELAY_MAX; ++delay) {
+			uint64_t start = z_nrf_rtc_timer_read();
+
+			z_nrf_rtc_timer_set(chan, start + CYCLE_DIFF,
+				tight_rescheduling_handler, NULL);
+
+			k_busy_wait(delay);
+
+			expired = false;
+			z_nrf_rtc_timer_set(chan, start + CYCLE_DIFF + 1,
+				tight_rescheduling_handler, (void *)&expired);
+
+			while (!expired &&
+				(z_nrf_rtc_timer_read() - start) <
+					CYCLE_DIFF + 10) {
+				Z_SPIN_DELAY(10);
+			}
+			zassert_true(expired,
+				"Timeout expiration missed (d: %u us, i: %u)",
+				delay, i);
+		}
+	}
+
+	z_nrf_rtc_timer_chan_free(chan);
+}
+
 static void *rtc_timer_setup(void)
 {
 	init_zli_timer0();

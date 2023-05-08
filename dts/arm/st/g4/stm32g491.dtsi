@@ -63,7 +63,16 @@
 			interrupts = <47 0>;
 			status = "disabled";
 			#io-channel-cells = <1>;
-			has-vref-channel;
+			vref-channel = <18>;
+		};
+
+		uart5: serial@40005000 {
+			compatible = "st,stm32-uart";
+			reg = <0x40005000 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00100000>;
+			resets = <&rctl STM32_RESET(APB1L, 20U)>;
+			interrupts = <53 0>;
+			status = "disabled";
 		};
 	};
 };

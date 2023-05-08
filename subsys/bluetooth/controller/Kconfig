@@ -43,12 +43,20 @@ config BT_CTLR_ADV_PERIODIC_SUPPORT
 	depends on BT_CTLR_ADV_EXT_SUPPORT
 	bool
 
+config BT_CTLR_ADV_PERIODIC_RSP_SUPPORT
+	depends on BT_CTLR_ADV_PERIODIC_SUPPORT
+	bool
+
 config BT_CTLR_SYNC_PERIODIC_SUPPORT
 	depends on BT_CTLR_ADV_EXT_SUPPORT
 	bool
 
-config BT_CTLR_SYNC_TRANSFER_SENDER_SUPPORT
+config BT_CTLR_SYNC_PERIODIC_RSP_SUPPORT
 	depends on BT_CTLR_SYNC_PERIODIC_SUPPORT
+	bool
+
+config BT_CTLR_SYNC_TRANSFER_SENDER_SUPPORT
+	depends on BT_CTLR_SYNC_PERIODIC_SUPPORT || BT_CTLR_ADV_PERIODIC_SUPPORT
 	bool
 
 config BT_CTLR_SYNC_TRANSFER_RECEIVER_SUPPORT
@@ -108,8 +116,6 @@ choice BT_LL_CHOICE
 config BT_LL_SW_SPLIT
 	bool "Software-based BLE Link Layer"
 	select ENTROPY_GENERATOR
-	select NRF_HW_TIMER0_RESERVED
-	select NRF_HW_RTC0_RESERVED
 	help
 	  Use Zephyr software BLE Link Layer ULL LLL split implementation.
 
@@ -220,7 +226,8 @@ config BT_CTLR_ISO_RX_BUFFERS
 config BT_CTLR_ISO_TX_BUFFERS
 	int "Number of Isochronous Tx buffers"
 	depends on BT_CTLR_ADV_ISO || BT_CTLR_CONN_ISO
-	range 1 19
+	range 1 255
+	default BT_ISO_TX_BUF_COUNT if BT_ISO
 	default 3
 	help
 	  Set the number of Isochronous Tx PDUs to be queued for transmission
@@ -230,7 +237,7 @@ config BT_CTLR_ISO_TX_BUFFER_SIZE
 	int "Isochronous Tx buffer size"
 	depends on BT_CTLR_ADV_ISO || BT_CTLR_CONN_ISO
 	range 1 4095
-	default 27
+	default 1
 	help
 	  Size of the Isochronous Tx buffers and the value returned in HCI LE
 	  Read Buffer Size V2 command response.
@@ -345,6 +352,24 @@ config BT_CTLR_TX_PWR_MINUS_40
 	depends on SOC_COMPATIBLE_NRF52X || SOC_SERIES_NRF53X
 
 endchoice
+
+config BT_CTLR_TX_PWR_DBM
+	int
+	default 8 if BT_CTLR_TX_PWR_PLUS_8
+	default 7 if BT_CTLR_TX_PWR_PLUS_7
+	default 6 if BT_CTLR_TX_PWR_PLUS_6
+	default 5 if BT_CTLR_TX_PWR_PLUS_5
+	default 4 if BT_CTLR_TX_PWR_PLUS_4
+	default 3 if BT_CTLR_TX_PWR_PLUS_3
+	default 2 if BT_CTLR_TX_PWR_PLUS_2
+	default 0 if BT_CTLR_TX_PWR_0
+	default -4 if BT_CTLR_TX_PWR_MINUS_4
+	default -8 if BT_CTLR_TX_PWR_MINUS_8
+	default -12 if BT_CTLR_TX_PWR_MINUS_12
+	default -16 if BT_CTLR_TX_PWR_MINUS_16
+	default -20 if BT_CTLR_TX_PWR_MINUS_20
+	default -30 if BT_CTLR_TX_PWR_MINUS_30
+	default -40 if BT_CTLR_TX_PWR_MINUS_40
 
 config BT_CTLR_TX_PWR_ANTENNA
 	int "Set TX power (dBm)"
@@ -485,7 +510,7 @@ config BT_CTLR_PRIVACY
 	depends on BT_CTLR_PRIVACY_SUPPORT
 	select BT_CTLR_FILTER_ACCEPT_LIST if BT_LL_SW_SPLIT
 	select BT_RPA
-	default y if BT_HCI_RAW || BT_PRIVACY
+	default y if BT_HCI_RAW || BT_SMP
 	help
 	  Enable support for Bluetooth v4.2 LE Controller-based Privacy feature
 	  in the Controller.
@@ -607,6 +632,15 @@ config BT_CTLR_ADV_PERIODIC
 	  Enable support for Bluetooth 5.0 LE Periodic Advertising in the
 	  Controller.
 
+config BT_CTLR_ADV_PERIODIC_RSP
+	bool "LE Periodic Advertising with Responses in Advertising State"
+	depends on BT_BROADCASTER && BT_CTLR_ADV_PERIODIC_RSP_SUPPORT
+	select BT_CTLR_CHAN_SEL_2
+	default y if BT_PER_ADV_RSP
+	help
+	  Enable support for Bluetooth 5.4 LE Periodic Advertising with
+	  Responses in the Controller.
+
 if BT_CTLR_ADV_PERIODIC
 
 config BT_CTLR_ADV_PERIODIC_ADI_SUPPORT
@@ -636,6 +670,15 @@ config BT_CTLR_SYNC_PERIODIC
 	help
 	  Enable support for Bluetooth 5.0 LE Periodic Advertising in
 	  Synchronization state in the Controller.
+
+config BT_CTLR_SYNC_PERIODIC_RSP
+	bool "LE Periodic Advertising with Responses in Synchronization State"
+	depends on BT_OBSERVER && BT_CTLR_SYNC_PERIODIC_RSP_SUPPORT
+	select BT_CTLR_CHAN_SEL_2
+	default y if BT_PER_ADV_SYNC_RSP
+	help
+	  Enable support for Bluetooth 5.4 LE Periodic Advertising with
+	  Responses in Synchronization state in the Controller.
 
 if BT_CTLR_SYNC_PERIODIC
 
@@ -673,15 +716,6 @@ config BT_CTLR_CHECK_SAME_PEER_SYNC
 	bool
 	default BT_PER_ADV_SYNC_MAX > 1
 
-config BT_CTLR_SYNC_TRANSFER_SENDER
-	bool "Periodic Advertising Sync Transfer sender"
-	depends on BT_CTLR_SYNC_TRANSFER_SENDER_SUPPORT
-	default BT_PER_ADV_SYNC_TRANSFER_SENDER
-	help
-	  Enable support for the Periodic Advertising Sync Transfer control procedure
-	  as a transmitter of the LL_PERIODIC_SYNC_IND. See Core_v5.3, Vol 6, Part B,
-	  Section 5.1.13
-
 config BT_CTLR_SYNC_TRANSFER_RECEIVER
 	bool "Periodic Advertising Sync Transfer receiver"
 	depends on BT_CTLR_SYNC_TRANSFER_RECEIVER_SUPPORT
@@ -692,6 +726,15 @@ config BT_CTLR_SYNC_TRANSFER_RECEIVER
 	  Section 5.1.13
 
 endif # BT_CTLR_SYNC_PERIODIC
+
+config BT_CTLR_SYNC_TRANSFER_SENDER
+	bool "Periodic Advertising Sync Transfer sender"
+	depends on BT_CTLR_SYNC_TRANSFER_SENDER_SUPPORT
+	default BT_PER_ADV_SYNC_TRANSFER_SENDER
+	help
+	  Enable support for the Periodic Advertising Sync Transfer control procedure
+	  as a transmitter of the LL_PERIODIC_SYNC_IND. See Core_v5.3, Vol 6, Part B,
+	  Section 5.1.13
 
 config BT_CTLR_ADV_ISO
 	bool "LE Broadcast Isochronous Channel advertising" if !BT_LL_SW_SPLIT
@@ -721,6 +764,7 @@ config BT_CTLR_SYNC_ISO
 
 config BT_CTLR_BROADCAST_ISO
 	bool
+	select BT_CRYPTO if BT_LL_SW_SPLIT
 	default BT_CTLR_ADV_ISO || BT_CTLR_SYNC_ISO
 
 config BT_CTLR_ADV_ISO_SET
@@ -748,7 +792,7 @@ config BT_CTLR_ADV_ISO_STREAM_COUNT
 config BT_CTLR_ADV_ISO_PDU_LEN_MAX
 	int "Maximum Broadcast Isochronous Channel PDU Length"
 	depends on BT_CTLR_ADV_ISO
-	range 27 251
+	range 1 251
 	default 251
 	help
 	  Maximum Broadcast Isochronous Channel PDU Length.
@@ -773,7 +817,7 @@ config BT_CTLR_SYNC_ISO_PDU_LEN_MAX
 	int "Maximum Synchronized Isochronous Channel PDU Length"
 	depends on BT_CTLR_SYNC_ISO
 	range 251 251 if BT_HCI_RAW
-	range 27 251
+	range 1 251
 	default 251
 	help
 	  Maximum Synchronized Receiver Isochronous Channel PDU Length.
@@ -844,6 +888,23 @@ config BT_CTLR_CONN_ISO_HCI_DATAPATH_SKIP_INVALID_DATA
 	help
 	  This allows for applications to decide whether to
 	  forward invalid SDUs through HCI upwards.
+
+config BT_CTLR_CONN_ISO_PDU_LEN_MAX
+	int "Maximum Connected Isochronous Channel PDU Length"
+	depends on BT_CTLR_CONN_ISO
+	range 251 251 if BT_HCI_RAW
+	range 1 251
+	default 251
+	help
+	  Maximum Connected Isochronous Channel PDU Length.
+
+config BT_CTLR_CONN_ISO_SDU_LEN_MAX
+	int "Maximum Connected Isochronous Channel SDU Length"
+	depends on BT_CTLR_CONN_ISO
+	range BT_CTLR_CONN_ISO_PDU_LEN_MAX 4095
+	default 251
+	help
+	  Maximum Connected Isochronous Channel SDU Length.
 
 config BT_CTLR_CONN_ISO_STREAMS_MAX_NSE
 	int "LE Connected Isochronous Streams max number of subevents"

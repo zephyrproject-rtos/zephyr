@@ -10,6 +10,8 @@
 #include <xtensa/hal.h>
 #include <xtensa-asm2-context.h>
 
+#include <offsets.h>
+
 	.section    .iram1, "ax"
 	.align      4
 	.global     z_xtensa_backtrace_get_start
@@ -24,15 +26,15 @@ z_xtensa_backtrace_get_start:
 	/* Load address for interrupted stack */
 	l32i    a6, a5, 0
 	/* Load i PC in a7 */
-	l32i    a7, a6, BSA_PC_OFF
+	l32i    a7, a6, ___xtensa_irq_bsa_t_pc_OFFSET
 	/* Store value of i PC in a2 */
 	s32i    a7, a2, 0
 	/* Load value for (i-1) PC, which return address of i into a7 */
-	l32i    a7, a6, BSA_A0_OFF
+	l32i    a7, a6, ___xtensa_irq_bsa_t_a0_OFFSET
 	/* Store value of (i-1) PC in a4 */
 	s32i    a7, a4, 0
-	/* Add BASE_SAVE_AREA_SIZE in interrupted stack to get i SP */
-	addi    a6, a6, BASE_SAVE_AREA_SIZE
+	/* Add base stack frame size in interrupted stack to get i SP */
+	addi    a6, a6, ___xtensa_irq_bsa_t_SIZEOF
 	/* Store i SP in a3 */
 	s32i    a6, a3, 0
 	retw

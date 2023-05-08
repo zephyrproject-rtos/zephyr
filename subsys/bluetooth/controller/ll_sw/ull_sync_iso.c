@@ -5,8 +5,9 @@
  */
 
 #include <zephyr/kernel.h>
-#include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/hci.h>
 
 #include "util/util.h"
 #include "util/mem.h"
@@ -20,6 +21,8 @@
 
 #include "ticker/ticker.h"
 
+#include "pdu_df.h"
+#include "lll/pdu_vendor.h"
 #include "pdu.h"
 
 #include "lll.h"
@@ -44,7 +47,7 @@
 
 #include "ll.h"
 
-#include <zephyr/bluetooth/hci.h>
+#include "bt_crypto.h"
 
 #include "hal/debug.h"
 
@@ -142,6 +145,23 @@ uint8_t ll_big_sync_create(uint8_t big_handle, uint16_t sync_handle,
 	lll->cssn_next = 0U;
 	lll->term_reason = 0U;
 
+	if (encryption) {
+		const uint8_t BIG1[16] = {0x31, 0x47, 0x49, 0x42, };
+		const uint8_t BIG2[4]  = {0x32, 0x47, 0x49, 0x42};
+		uint8_t igltk[16];
+		int err;
+
+		/* Calculate GLTK */
+		err = bt_crypto_h7(BIG1, bcode, igltk);
+		LL_ASSERT(!err);
+		err = bt_crypto_h6(igltk, BIG2, sync_iso->gltk);
+		LL_ASSERT(!err);
+
+		lll->enc = 1U;
+	} else {
+		lll->enc = 0U;
+	}
+
 	/* TODO: Implement usage of MSE to limit listening to subevents */
 
 	/* Allocate streams */
@@ -199,7 +219,7 @@ uint8_t ll_big_sync_terminate(uint8_t big_handle, void **rx)
 
 		node_rx = (void *)&sync_iso->node_rx_lost;
 		node_rx->hdr.type = NODE_RX_TYPE_SYNC_ISO;
-		node_rx->hdr.handle = 0xffff;
+		node_rx->hdr.handle = big_handle;
 
 		/* NOTE: Since NODE_RX_TYPE_SYNC_ISO is only generated from ULL
 		 *       context, pass ULL context as parameter.
@@ -296,10 +316,10 @@ void ull_sync_iso_stream_release(struct ll_sync_iso_set *sync_iso)
 	while (lll->stream_count--) {
 		struct lll_sync_iso_stream *stream;
 		struct ll_iso_datapath *dp;
-		uint16_t handle;
+		uint16_t stream_handle;
 
-		handle = lll->stream_handle[lll->stream_count];
-		stream = ull_sync_iso_stream_get(handle);
+		stream_handle = lll->stream_handle[lll->stream_count];
+		stream = ull_sync_iso_stream_get(stream_handle);
 		LL_ASSERT(stream);
 
 		dp = stream->dp;
@@ -323,24 +343,48 @@ void ull_sync_iso_setup(struct ll_sync_iso_set *sync_iso,
 	uint32_t ticks_slot_overhead;
 	uint32_t sync_iso_offset_us;
 	uint32_t ticks_slot_offset;
+	uint32_t ticks_threshold;
 	struct lll_sync_iso *lll;
 	struct node_rx_ftr *ftr;
 	struct pdu_big_info *bi;
 	uint32_t ready_delay_us;
+	uint32_t ticks_expire;
 	uint32_t interval_us;
+	uint32_t ticks_diff;
 	struct pdu_adv *pdu;
 	uint8_t bi_size;
 	uint8_t handle;
 	uint32_t ret;
 	uint8_t sca;
 
-	if (acad_len < (PDU_BIG_INFO_CLEARTEXT_SIZE +
-			PDU_ADV_DATA_HEADER_SIZE)) {
+	while (acad_len) {
+		const uint8_t hdr_len = acad[PDU_ADV_DATA_HEADER_LEN_OFFSET];
+
+		if ((hdr_len >= PDU_ADV_DATA_HEADER_TYPE_SIZE) &&
+		    (acad[PDU_ADV_DATA_HEADER_TYPE_OFFSET] ==
+		     BT_DATA_BIG_INFO)) {
+			break;
+		}
+
+		if (acad_len < (hdr_len + PDU_ADV_DATA_HEADER_LEN_SIZE)) {
+			return;
+		}
+
+		acad_len -= hdr_len + PDU_ADV_DATA_HEADER_LEN_SIZE;
+		acad += hdr_len + PDU_ADV_DATA_HEADER_LEN_SIZE;
+	}
+
+	if ((acad_len < (PDU_BIG_INFO_CLEARTEXT_SIZE +
+			 PDU_ADV_DATA_HEADER_SIZE)) ||
+	    ((acad[PDU_ADV_DATA_HEADER_LEN_OFFSET] !=
+	      (PDU_ADV_DATA_HEADER_TYPE_SIZE + PDU_BIG_INFO_CLEARTEXT_SIZE)) &&
+	     (acad[PDU_ADV_DATA_HEADER_LEN_OFFSET] !=
+	      (PDU_ADV_DATA_HEADER_TYPE_SIZE + PDU_BIG_INFO_ENCRYPTED_SIZE)))) {
 		return;
 	}
 
-	/* FIXME: Parse and find the BIGInfo */
-	bi_size = acad[PDU_ADV_DATA_HEADER_LEN_OFFSET];
+	bi_size = acad[PDU_ADV_DATA_HEADER_LEN_OFFSET] -
+		  PDU_ADV_DATA_HEADER_TYPE_SIZE;
 	bi = (void *)&acad[PDU_ADV_DATA_HEADER_DATA_OFFSET];
 
 	lll = &sync_iso->lll;
@@ -378,11 +422,36 @@ void ull_sync_iso_setup(struct ll_sync_iso_set *sync_iso,
 	lll->irc = bi->irc;
 	lll->sdu_interval = sys_le24_to_cpu(bi->sdu_interval);
 
+	/* Pick the 39-bit payload count, 1 MSb is framing bit */
 	lll->payload_count = (uint64_t)bi->payload_count_framing[0];
 	lll->payload_count |= (uint64_t)bi->payload_count_framing[1] << 8;
 	lll->payload_count |= (uint64_t)bi->payload_count_framing[2] << 16;
 	lll->payload_count |= (uint64_t)bi->payload_count_framing[3] << 24;
-	lll->payload_count |= (uint64_t)bi->payload_count_framing[4] << 32;
+	lll->payload_count |= (uint64_t)(bi->payload_count_framing[4] & 0x7f) << 32;
+
+	if (lll->enc && (bi_size == PDU_BIG_INFO_ENCRYPTED_SIZE)) {
+		const uint8_t BIG3[4]  = {0x33, 0x47, 0x49, 0x42};
+		struct ccm *ccm_rx;
+		uint8_t gsk[16];
+		int err;
+
+		/* Copy the GIV in BIGInfo */
+		(void)memcpy(lll->giv, bi->giv, sizeof(lll->giv));
+
+		/* Calculate GSK */
+		err = bt_crypto_h8(sync_iso->gltk, bi->gskd, BIG3, gsk);
+		LL_ASSERT(!err);
+
+		/* Prepare the CCM parameters */
+		ccm_rx = &lll->ccm_rx;
+		ccm_rx->direction = 1U;
+		(void)memcpy(&ccm_rx->iv[4], &lll->giv[4], 4U);
+		(void)mem_rcopy(ccm_rx->key, gsk, sizeof(ccm_rx->key));
+
+		/* NOTE: counter is filled in LLL */
+	} else {
+		lll->enc = 0U;
+	}
 
 	/* Initialize payload pointers */
 	lll->payload_count_max = PDU_BIG_PAYLOAD_COUNT_MAX;
@@ -403,7 +472,7 @@ void ull_sync_iso_setup(struct ll_sync_iso_set *sync_iso,
 
 	sca = sync_iso->sync->lll.sca;
 	lll->window_widening_periodic_us =
-		ceiling_fraction(((lll_clock_ppm_local_get() +
+		DIV_ROUND_UP(((lll_clock_ppm_local_get() +
 				   lll_clock_ppm_get(sca)) *
 				 interval_us), USEC_PER_SEC);
 	lll->window_widening_max_us = (interval_us >> 1) - EVENT_IFS_US;
@@ -455,6 +524,22 @@ void ull_sync_iso_setup(struct ll_sync_iso_set *sync_iso,
 		ticks_slot_overhead = 0U;
 	}
 	ticks_slot_offset += HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US);
+
+	/* Check and skip to next interval if CPU processing introduces latency
+	 * that can delay scheduling the first ISO event.
+	 */
+	ticks_expire = ftr->ticks_anchor - ticks_slot_offset +
+		       HAL_TICKER_US_TO_TICKS(sync_iso_offset_us);
+	ticks_threshold = ticker_ticks_now_get() +
+			  HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US);
+	ticks_diff = ticker_ticks_diff_get(ticks_expire, ticks_threshold);
+	if (ticks_diff & BIT(HAL_TICKER_CNTR_MSBIT)) {
+		sync_iso_offset_us += interval_us -
+			lll->window_widening_periodic_us;
+		lll->window_widening_event_us +=
+			lll->window_widening_periodic_us;
+		lll->payload_count += lll->bn;
+	}
 
 	/* setup to use ISO create prepare function until sync established */
 	mfy_lll_prepare.fp = lll_sync_iso_create_prepare;

@@ -48,7 +48,7 @@
 
 /* Basic Status Register */
 #define PHY_BSR		      BIT(0)
-#define PHY_AUTOCAP	      BIT(30) /* Auto-negotiation capability */
+#define PHY_AUTOCAP	      BIT(3) /* Auto-negotiation capability */
 #define PHY_LINKED_STATUS     BIT(2)
 #define PHY_AUTONEGO_COMPLETE BIT(5)
 
@@ -58,16 +58,20 @@
 #define PHYANA_10BASETFD   BIT(6)
 #define PHYANA_100BASETX   BIT(7)
 #define PHYANA_100BASETXFD BIT(8)
+#define PHYSYMETRIC_PAUSE  BIT(10)
 #define PHYASYMETRIC_PAUSE BIT(11)
 
 /* 1000Base-T Control */
 #define PHY_1GCTL (9)
+#define PHYADVERTISE_1000HALF BIT(8)
+#define PHYADVERTISE_1000FULL BIT(9)
+#define PHYINDICATE_PORTTYPE  BIT(10)
+#define PHYCONFIG_MASTER      BIT(11)
+#define PHYENABLE_MANUALCONFIG BIT(12)
 
 /* PHY Control Register */
 #define PHY_CR		      (31)
-#define PHY_DUPLEX_STATUS     (0x0008)
-#define PHYADVERTISE_1000FULL BIT(9)
-#define PHYADVERTISE_1000HALF BIT(8)
+#define PHY_DUPLEX_STATUS     BIT(3)
 
 /* Extended registers */
 #define MII_KSZPHY_CLK_CONTROL_PAD_SKEW 0x104
@@ -92,7 +96,7 @@ int alt_eth_phy_write_register(uint16_t emac_instance, uint16_t phy_reg,
 		uint16_t phy_value, struct eth_cyclonev_priv *p)
 {
 	uint16_t tmpreg = 0;
-	volatile uint16_t timeout = 0;
+	volatile uint32_t timeout = 0;
 	uint16_t phy_addr;
 
 	if (emac_instance > 1) {
@@ -139,7 +143,7 @@ int alt_eth_phy_read_register(uint16_t emac_instance, uint16_t phy_reg, uint16_t
 		struct eth_cyclonev_priv *p)
 {
 	uint16_t tmpreg = 0;
-	volatile uint16_t timeout = 0;
+	volatile uint32_t timeout = 0;
 	uint16_t phy_addr;
 
 	if (emac_instance > 1) {
@@ -218,7 +222,8 @@ int alt_eth_phy_config(uint16_t instance, struct eth_cyclonev_priv *p)
 {
 
 	int rc;
-	uint16_t rdval, timeout;
+	uint16_t rdval;
+	uint32_t timeout;
 	/*--------------------   Configure the PHY skew values  ----------------*/
 
 	rc = alt_eth_phy_write_register_extended(instance, MII_KSZPHY_CLK_CONTROL_PAD_SKEW,
@@ -250,7 +255,7 @@ int alt_eth_phy_config(uint16_t instance, struct eth_cyclonev_priv *p)
 	}
 
 	rdval |= (PHYANA_10BASET | PHYANA_10BASETFD | PHYANA_100BASETX | PHYANA_100BASETXFD |
-		  PHYASYMETRIC_PAUSE);
+		  PHYSYMETRIC_PAUSE);
 	rc = alt_eth_phy_write_register(instance, PHY_AUTON, rdval, p);
 	if (rc == -1) {
 		return rc;
@@ -259,7 +264,9 @@ int alt_eth_phy_config(uint16_t instance, struct eth_cyclonev_priv *p)
 	/* Set Advertise capabilities for 1000 Base-T/1000 Base-T full-duplex */
 
 	rc = alt_eth_phy_write_register(instance, PHY_1GCTL,
-					PHYADVERTISE_1000FULL | PHYADVERTISE_1000HALF, p);
+			PHYADVERTISE_1000FULL | PHYADVERTISE_1000HALF |
+			PHYINDICATE_PORTTYPE |  PHYCONFIG_MASTER | PHYENABLE_MANUALCONFIG
+					, p);
 	if (rc == -1) {
 		return rc;
 	}

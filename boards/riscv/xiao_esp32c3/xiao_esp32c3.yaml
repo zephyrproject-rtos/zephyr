@@ -1,7 +1,7 @@
 identifier: xiao_esp32c3
 name: XIAO ESP32C3
 type: mcu
-arch: riscv
+arch: riscv32
 toolchain:
   - zephyr
 supported:

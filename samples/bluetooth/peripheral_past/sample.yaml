@@ -3,7 +3,7 @@ sample:
 tests:
   sample.bluetooth.peripheral_past:
     harness: bluetooth
-    platform_allow: qemu_cortex_m3 qemu_x86 nrf52_bsim
+    platform_allow: qemu_cortex_m3 qemu_x86
     tags: bluetooth
     integration_platforms:
       - qemu_cortex_m3

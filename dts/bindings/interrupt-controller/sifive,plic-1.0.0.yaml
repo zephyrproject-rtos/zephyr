@@ -8,7 +8,7 @@ compatible: "sifive,plic-1.0.0"
 include: riscv,plic0.yaml
 
 properties:
-    riscv,ndev:
-        type: int
-        description: Number of external interrupts supported
-        required: true
+  riscv,ndev:
+    type: int
+    description: Number of external interrupts supported
+    required: true

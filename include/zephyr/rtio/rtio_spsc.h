@@ -10,7 +10,9 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <zephyr/toolchain/common.h>
 #include <zephyr/sys/atomic.h>
+#include <zephyr/sys/util_macro.h>
 
 /**
  * @brief RTIO Single Producer Single Consumer (SPSC) Queue API
@@ -75,18 +77,19 @@ struct rtio_spsc {
 /**
  * @brief Statically initialize an rtio_spsc
  *
- * @param name Name of the spsc symbol to be provided
- * @param type Type stored in the spsc
  * @param sz Size of the spsc, must be power of 2 (ex: 2, 4, 8)
+ * @param buf Buffer pointer
  */
-#define RTIO_SPSC_INITIALIZER(name, type, sz)	  \
-	{ ._spsc = {				  \
-		  .acquire = 0,			  \
-		  .consume = 0,			  \
-		  .in = ATOMIC_INIT(0),		  \
-		  .out = ATOMIC_INIT(0),	  \
-		  .mask = sz - 1,		  \
-	  }					  \
+#define RTIO_SPSC_INITIALIZER(sz, buf)		\
+	{					\
+		._spsc = {			\
+			.acquire = 0,		\
+			.consume = 0,		\
+			.in = ATOMIC_INIT(0),	\
+			.out = ATOMIC_INIT(0),	\
+			.mask = sz - 1,		\
+		},				\
+		.buffer = buf,			\
 	}
 
 /**
@@ -94,12 +97,11 @@ struct rtio_spsc {
  *
  * @param name Name of the spsc symbol to be provided
  * @param type Type stored in the spsc
- * @param sz Size of the spsc, must be power of 2 (ex: 2, 4, 8)
  */
-#define RTIO_SPSC_DECLARE(name, type, sz) \
-	struct rtio_spsc_ ## name {	  \
-		struct rtio_spsc _spsc;	  \
-		type buffer[sz];	  \
+#define RTIO_SPSC_DECLARE(name, type)		\
+	static struct rtio_spsc_##name {	\
+		struct rtio_spsc _spsc;	\
+		type * const buffer;		\
 	}
 
 /**
@@ -109,8 +111,10 @@ struct rtio_spsc {
  * @param type Type stored in the spsc
  * @param sz Size of the spsc, must be power of 2 (ex: 2, 4, 8)
  */
-#define RTIO_SPSC_DEFINE(name, type, sz)                                                           \
-	RTIO_SPSC_DECLARE(name, type, sz) name = RTIO_SPSC_INITIALIZER(name, type, sz);
+#define RTIO_SPSC_DEFINE(name, type, sz)				\
+	BUILD_ASSERT(IS_POWER_OF_TWO(sz));				\
+	static type __spsc_buf_##name[sz];				\
+	RTIO_SPSC_DECLARE(name, type) name = RTIO_SPSC_INITIALIZER(sz, __spsc_buf_##name);
 
 /**
  * @brief Size of the SPSC queue
@@ -127,6 +131,19 @@ struct rtio_spsc {
  * @param i Value to modulo to the size of the spsc
  */
 #define z_rtio_spsc_mask(spsc, i) ((i) & (spsc)->_spsc.mask)
+
+
+/**
+ * @private
+ * @brief Load the current "in" index from the spsc as an unsigned long
+ */
+#define z_rtio_spsc_in(spsc) (unsigned long)atomic_get(&(spsc)->_spsc.in)
+
+/**
+ * @private
+ * @brief Load the current "out" index from the spsc as an unsigned long
+ */
+#define z_rtio_spsc_out(spsc) (unsigned long)atomic_get(&(spsc)->_spsc.out)
 
 /**
  * @brief Initialize/reset a spsc such that its empty
@@ -153,8 +170,8 @@ struct rtio_spsc {
  */
 #define rtio_spsc_acquire(spsc)                                                                    \
 	({                                                                                         \
-		unsigned long idx = atomic_get(&(spsc)->_spsc.in) + (spsc)->_spsc.acquire;         \
-		bool acq = (idx - atomic_get(&(spsc)->_spsc.out)) < rtio_spsc_size(spsc);          \
+		unsigned long idx = z_rtio_spsc_in(spsc) + (spsc)->_spsc.acquire;                  \
+		bool acq = (idx - z_rtio_spsc_out(spsc)) < rtio_spsc_size(spsc);                   \
 		if (acq) {                                                                         \
 			(spsc)->_spsc.acquire += 1;                                                \
 		}                                                                                  \
@@ -214,8 +231,8 @@ struct rtio_spsc {
  */
 #define rtio_spsc_consume(spsc)                                                                    \
 	({                                                                                         \
-		unsigned long idx = atomic_get(&(spsc)->_spsc.out) + (spsc)->_spsc.consume;        \
-		bool has_consumable = (idx != atomic_get(&(spsc)->_spsc.in));                      \
+		unsigned long idx = z_rtio_spsc_out(spsc) + (spsc)->_spsc.consume;                 \
+		bool has_consumable = (idx != z_rtio_spsc_in(spsc));                               \
 		if (has_consumable) {                                                              \
 			(spsc)->_spsc.consume += 1;                                                \
 		}                                                                                  \
@@ -278,8 +295,8 @@ struct rtio_spsc {
  */
 #define rtio_spsc_peek(spsc)                                                                       \
 	({                                                                                         \
-		unsigned long idx = atomic_get(&(spsc)->_spsc.out) + (spsc)->_spsc.consume;        \
-		bool has_consumable = (idx != atomic_get(&(spsc)->_spsc.in));                      \
+		unsigned long idx = z_rtio_spsc_out(spsc) + (spsc)->_spsc.consume;                 \
+		bool has_consumable = (idx != z_rtio_spsc_in(spsc));                               \
 		has_consumable ? &((spsc)->buffer[z_rtio_spsc_mask(spsc, idx)]) : NULL;            \
 	})
 
@@ -296,7 +313,7 @@ struct rtio_spsc {
 	({                                                                                         \
 		unsigned long idx = ((item) - (spsc)->buffer);                                     \
 		bool has_next = z_rtio_spsc_mask(spsc, (idx + 1)) !=                               \
-				(z_rtio_spsc_mask(spsc, atomic_get(&(spsc)->_spsc.in)));           \
+				(z_rtio_spsc_mask(spsc, z_rtio_spsc_in(spsc)));                    \
 		has_next ? &((spsc)->buffer[z_rtio_spsc_mask((spsc), idx + 1)]) : NULL;            \
 	})
 
@@ -311,7 +328,7 @@ struct rtio_spsc {
 #define rtio_spsc_prev(spsc, item)                                                                 \
 	({                                                                                         \
 		unsigned long idx = ((item) - &(spsc)->buffer[0]) / sizeof((spsc)->buffer[0]);     \
-		bool has_prev = idx != z_rtio_spsc_mask(spsc, atomic_get(&(spsc)->_spsc.out));     \
+		bool has_prev = idx != z_rtio_spsc_mask(spsc, z_rtio_spsc_out(spsc));              \
 		has_prev ? &((spsc)->buffer[z_rtio_spsc_mask(spsc, idx - 1)]) : NULL;              \
 	})
 

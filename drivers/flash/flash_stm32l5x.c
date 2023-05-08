@@ -20,7 +20,10 @@ LOG_MODULE_REGISTER(LOG_DOMAIN);
 
 #include "flash_stm32.h"
 
-#if defined(CONFIG_SOC_SERIES_STM32L5X)
+#if defined(CONFIG_SOC_SERIES_STM32H5X)
+/* at this time stm32h5 mcus have 128KB (stm32h50x) or 2MB (stm32h56x/57x) */
+#define STM32_SERIES_MAX_FLASH	2048
+#elif defined(CONFIG_SOC_SERIES_STM32L5X)
 #define STM32_SERIES_MAX_FLASH	512
 #elif defined(CONFIG_SOC_SERIES_STM32U5X)
 /* at this time stm32u5 mcus have 1MB (stm32u575) or 2MB (stm32u585) */
@@ -114,6 +117,16 @@ static int icache_wait_for_invalidate_complete(void)
 	return status;
 }
 
+/* Macro to check if the flash is Dual bank or not */
+#if defined(CONFIG_SOC_SERIES_STM32H5X)
+#define stm32_flash_has_2_banks(flash_device) true
+#else
+#define stm32_flash_has_2_banks(flash_device) \
+	(((FLASH_STM32_REGS(flash_device)->OPTR & FLASH_STM32_DBANK) \
+	== FLASH_STM32_DBANK) \
+	? (true) : (false))
+#endif /* CONFIG_SOC_SERIES_STM32H5X */
+
 /*
  * offset and len must be aligned on 8 for write,
  * positive and not beyond end of flash
@@ -122,9 +135,7 @@ bool flash_stm32_valid_range(const struct device *dev, off_t offset,
 			     uint32_t len,
 			     bool write)
 {
-	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
-
-	if (((regs->OPTR & FLASH_STM32_DBANK) == FLASH_STM32_DBANK) &&
+	if (stm32_flash_has_2_banks(dev) &&
 			(CONFIG_FLASH_SIZE < STM32_SERIES_MAX_FLASH)) {
 		/*
 		 * In case of bank1/2 discontinuity, the range should not
@@ -212,7 +223,7 @@ static int erase_page(const struct device *dev, unsigned int offset)
 		return rc;
 	}
 
-	if ((regs->OPTR & FLASH_STM32_DBANK) == FLASH_STM32_DBANK) {
+	if (stm32_flash_has_2_banks(dev)) {
 		bool bank_swap;
 		/* Check whether bank1/2 are swapped */
 		bank_swap =
@@ -261,7 +272,7 @@ static int erase_page(const struct device *dev, unsigned int offset)
 	/* Wait for the NSBSY bit */
 	rc = flash_stm32_wait_flash_idle(dev);
 
-	if ((regs->OPTR & FLASH_STM32_DBANK) == FLASH_STM32_DBANK) {
+	if (stm32_flash_has_2_banks(dev)) {
 		regs->NSCR &= ~(FLASH_STM32_NSPER | FLASH_STM32_NSBKER);
 	} else {
 		regs->NSCR &= ~(FLASH_STM32_NSPER);
@@ -356,18 +367,18 @@ void flash_stm32_page_layout(const struct device *dev,
 			     const struct flash_pages_layout **layout,
 			     size_t *layout_size)
 {
-	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
 	static struct flash_pages_layout stm32_flash_layout[3];
+	static size_t stm32_flash_layout_size;
 
 	*layout = stm32_flash_layout;
-	*layout_size = ARRAY_SIZE(stm32_flash_layout);
 
 	if (stm32_flash_layout[0].pages_count != 0) {
-		/* Short circuit calculation logic if already performed */
+		/* Short circuit calculation logic if already performed (size is known) */
+		*layout_size = stm32_flash_layout_size;
 		return;
 	}
 
-	if (((regs->OPTR & FLASH_STM32_DBANK) == FLASH_STM32_DBANK) &&
+	if (stm32_flash_has_2_banks(dev) &&
 			(CONFIG_FLASH_SIZE < STM32_SERIES_MAX_FLASH)) {
 		/*
 		 * For stm32l552xx with 256 kB flash or stm32u57x with 1MB flash
@@ -386,15 +397,19 @@ void flash_stm32_page_layout(const struct device *dev,
 		/* Bank2 */
 		stm32_flash_layout[2].pages_count = PAGES_PER_BANK;
 		stm32_flash_layout[2].pages_size = FLASH_PAGE_SIZE;
+
+		stm32_flash_layout_size = ARRAY_SIZE(stm32_flash_layout);
 	} else {
 		/*
 		 * For stm32l562xx & stm32l552xx with 512 flash or stm32u58x
 		 * with 2MB flash which has no space between banks 1 and 2.
 		 */
 
-		if ((regs->OPTR & FLASH_STM32_DBANK) == FLASH_STM32_DBANK) {
+		if (stm32_flash_has_2_banks(dev)) {
 			/* L5 flash with dualbank has 2k pages */
 			/* U5 flash pages are always 8 kB in size */
+			/* H5 flash pages are always 8 kB in size */
+			/* Considering one layout of full flash size, even with 2 banks */
 			stm32_flash_layout[0].pages_count = FLASH_SIZE / FLASH_PAGE_SIZE;
 			stm32_flash_layout[0].pages_size = FLASH_PAGE_SIZE;
 #if defined(CONFIG_SOC_SERIES_STM32L5X)
@@ -404,6 +419,13 @@ void flash_stm32_page_layout(const struct device *dev,
 			stm32_flash_layout[0].pages_size = FLASH_PAGE_SIZE_128_BITS;
 #endif /* CONFIG_SOC_SERIES_STM32L5X */
 		}
+
+		/*
+		 * In this case the stm32_flash_layout table has one single element
+		 * when read by the flash_get_page_info()
+		 */
+		stm32_flash_layout_size = 1;
 	}
 
+	*layout_size = stm32_flash_layout_size;
 }

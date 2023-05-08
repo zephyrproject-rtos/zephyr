@@ -1,14 +1,14 @@
 tests:
   # section.subsection
-  drivers.sbs_gauge:
+  drivers.sensors.sbs_gauge:
     build_only: true
-    tags: test_framework
+    tags: drivers sensors
     filter: dt_compat_enabled("sbs,sbs-gauge")
     integration_platforms:
       - nucleo_f070rb
-  drivers.sbs_gauge.emulated:
-    tags: test_framework
+  drivers.sensors.sbs_gauge.emulated:
+    tags: drivers sensors
     filter: dt_compat_enabled("sbs,sbs-gauge")
-    platform_allow: native_posix qemu_cortex_a9
+    platform_allow: native_posix qemu_cortex_a9 qemu_arc_hs
     integration_platforms:
       - native_posix

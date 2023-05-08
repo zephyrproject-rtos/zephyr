@@ -870,7 +870,7 @@ static struct net_buf *pkt_alloc_buffer(struct net_buf_pool *pool,
 	struct net_buf *first = NULL;
 	struct net_buf *current = NULL;
 
-	while (size) {
+	do {
 		struct net_buf *new;
 
 		new = net_buf_alloc_fixed(pool, timeout);
@@ -911,7 +911,7 @@ static struct net_buf *pkt_alloc_buffer(struct net_buf_pool *pool,
 			pool2str(pool), get_name(pool), get_frees(pool),
 			new, new->ref, caller, line);
 #endif
-	}
+	} while (size);
 
 	return first;
 error:

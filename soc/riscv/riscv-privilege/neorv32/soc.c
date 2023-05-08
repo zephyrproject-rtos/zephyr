@@ -12,6 +12,6 @@ void soc_interrupt_init(void)
 {
 	(void)arch_irq_lock();
 
-	__asm__ volatile ("csrwi mie, 0\n");
+	csr_write(mie, 0);
 }
 #endif

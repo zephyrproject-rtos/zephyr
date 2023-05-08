@@ -1,0 +1,126 @@
+# Copyright 2023 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP DCNano LCDIF (LCD Interface) controller
+
+compatible: "nxp,dcnano-lcdif"
+
+include: [display-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clk-div:
+    type: int
+    required: true
+    description: |
+      Clock divider for LCDIF. This should be used to set the pixel clock
+      based on the root clock provided to the module.
+      The clock should follow the following formula:
+      (display height + VSYNC pulse width + vertical front porch + vertical back porch) *
+      (display width + HSYNC pulse width + horizontal front porch + horizontal back porch) *
+      frame rate
+
+  backlight-gpios:
+    type: phandle-array
+    required: true
+    description:
+      LCB backlight control gpio. Driver will initialize this GPIO to active high
+
+  hsync:
+    type: int
+    required: true
+    description: HSYNC pulse width in display clock cycles
+
+  hfp:
+    type: int
+    required: true
+    description: Horizontal front porch in display clock cycles
+
+  hbp:
+    type: int
+    required: true
+    description: Horizontal back porch in display clock cycles
+
+  vsync:
+    type: int
+    required: true
+    description: VSYNC pulse width in display clock cycles
+
+  vfp:
+    type: int
+    required: true
+    description: Vertical front porch in display clock cycles
+
+  vbp:
+    type: int
+    required: true
+    description: Vertical back porch in display clock cycles
+
+  data-bus-width:
+    type: string
+    default: "24-bit"
+    enum:
+      - "16-bit-config1" # 16 bit configuration 1. RGB565: XXXXXXXX_RRRRRGGG_GGGBBBBB
+      - "16-bit-config2" # 16 bit configuration 2. RGB565: XXXRRRRR_XXGGGGGG_XXXBBBBB
+      - "16-bit-config3" # 16-bit configuration 3. RGB565: XXRRRRRX_XXGGGGGG_XXBBBBBX
+      - "18-bit-config1" # 18-bit configuration 1. RGB666: XXXXXXRR_RRRRGGGG_GGBBBBBB
+      - "18-bit-config2" # 18-bit configuration 2. RGB666: XXRRRRRR_XXGGGGGG_XXBBBBBB
+      - "24-bit" # 24 Bit
+    description:
+      LCD data bus width. The default is set to the reset value of 24-bit
+
+  pixel-format:
+    type: string
+    required: true
+    enum:
+      - "unused"
+      - "xrgb-4444" # XRGB4444, 16-bit each pixel, 4-bit each element. R4G4B4 in reference manual.
+      - "xrgb-1555" # XRGB1555, 16-bit each pixel, 5-bit each element. R5G5B5 in reference manual.
+      - "rgb-565"   # RGB565, 16-bit each pixel. R5G6B5 in reference manual.
+      - "xrgb-8888" # XRGB8888, 32-bit each pixel, 8-bit each element. R8G8B8 in reference manual.
+    description:
+      Display pixel format.
+
+  polarity:
+    type: int
+    required: true
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
+      - 4
+      - 5
+      - 6
+      - 7
+      - 8
+      - 9
+      - 10
+      - 11
+      - 12
+      - 13
+      - 14
+      - 15
+    description:
+      OR'ed value of lcdif_polarity_flags, used to control the signal polarity.
+      0000 VSYNC active low, HSYNC active low, DE active low, Drive data on falling edge.
+      0001 VSYNC active high, HSYNC active low, DE active low, Drive data on falling edge.
+      0010 VSYNC active low, HSYNC active high, DE active low, Drive data on falling edge.
+      0011 VSYNC active high, HSYNC active high, DE active low, Drive data on falling edge.
+      0100 VSYNC active low, HSYNC active low, DE active high, Drive data on falling edge.
+      0101 VSYNC active high, HSYNC active low, DE active high, Drive data on falling edge.
+      0110 VSYNC active low, HSYNC active high, DE active high, Drive data on falling edge.
+      0111 VSYNC active high, HSYNC active high, DE active high, Drive data on falling edge.
+      1000 VSYNC active low, HSYNC active low, DE active low, Drive data on rising edge.
+      1001 VSYNC active high, HSYNC active low, DE active low, Drive data on rising edge.
+      1010 VSYNC active low, HSYNC active high, DE active low, Drive data on rising edge.
+      1011 VSYNC active high, HSYNC active high, DE active low, Drive data on rising edge.
+      1100 VSYNC active low, HSYNC active low, DE active high, Drive data on rising edge.
+      1101 VSYNC active high, HSYNC active low, DE active high, Drive data on rising edge.
+      1110 VSYNC active low, HSYNC active high, DE active high, Drive data on rising edge.
+      1111 VSYNC active high, HSYNC active high, DE active high, Drive data on rising edge.

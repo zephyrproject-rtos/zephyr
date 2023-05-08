@@ -15,11 +15,18 @@ tests:
       - CONFIG_UPDATEHUB_PRODUCT_UID="e4d37cfe6ec48a2d069cc0bbb8b078677e9a0d8df3a027c4d8ea131130c4265f"
       - CONFIG_UPDATEHUB_POLL_INTERVAL=1
       - CONFIG_UPDATEHUB_CE=y
-      - CONFIG_UPDATEHUB_SERVER="10.5.3.67"
+      - CONFIG_UPDATEHUB_SERVER="updatehub.io"
+  sample.net.updatehub.userspace:
+    extra_configs:
+      - CONFIG_UPDATEHUB_PRODUCT_UID="e4d37cfe6ec48a2d069cc0bbb8b078677e9a0d8df3a027c4d8ea131130c4265f"
+      - CONFIG_UPDATEHUB_POLL_INTERVAL=1
+      - CONFIG_UPDATEHUB_CE=y
+      - CONFIG_UPDATEHUB_SERVER="updatehub.io"
+      - CONFIG_USERSPACE=y
   sample.net.updatehub.dtls:
     extra_args: OVERLAY_CONFIG="overlay-dtls.conf"
     extra_configs:
       - CONFIG_UPDATEHUB_PRODUCT_UID="e4d37cfe6ec48a2d069cc0bbb8b078677e9a0d8df3a027c4d8ea131130c4265f"
       - CONFIG_UPDATEHUB_POLL_INTERVAL=1
       - CONFIG_UPDATEHUB_CE=y
-      - CONFIG_UPDATEHUB_SERVER="10.5.3.67"
+      - CONFIG_UPDATEHUB_SERVER="updatehub.io"

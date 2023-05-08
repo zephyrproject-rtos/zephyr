@@ -8,7 +8,42 @@ compatible: "st,stm32-lptim"
 include:
   - name: st,stm32-timers.yaml
     property-blocklist:
-        # 'resets' property is not supported yet
-        - resets
-        - st,prescaler
-        - st,countermode
+      # 'resets' property is not supported yet
+      - resets
+      - st,prescaler
+      - st,countermode
+
+properties:
+  st,prescaler:
+    type: int
+    default: 1
+    description: |
+        Clock divider at the input of the lptimer clock, default reset value is 'not divided'.
+
+        Prescaler allows to achieve higher LPTIM timeout (up to 256s when lptim clocked by LSE)
+        and consequently higher core sleep durations, but impacts the tick precision.
+        To be used with caution.
+        CONFIG_SYS_CLOCK_TICKS_PER_SEC could be used to tune tick duration and gain precision,
+        at kernel timing granularity cost.
+
+        For example, when LPTIM is clocked by the LSE (32768Hz) and st,prescaler = <32>:
+        LPTIM global timeout is 64 seconds with an increment of 0.97 ms.
+        Using CONFIG_SYS_CLOCK_TICKS_PER_SEC = 4096, tick = 0.24 ms, LPTIM precision is 4 ticks.
+        Using CONFIG_SYS_CLOCK_TICKS_PER_SEC = 1024, tick = 0.97 ms, LPTIM precision is 1 ticks.
+    enum:
+      - 1
+      - 2
+      - 4
+      - 8
+      - 16
+      - 32
+      - 64
+      - 128
+
+  st,static-prescaler:
+    type: boolean
+    description: |
+        Clock x2 factor at the input of the LPTIM,
+        depending on the serie.
+        For example, stm32U5x have a x2-factor for LPTIM1,3,4.
+        To be adapted once the value is selectable.

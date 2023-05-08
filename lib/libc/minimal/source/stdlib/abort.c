@@ -11,4 +11,5 @@ void abort(void)
 {
 	printk("abort()\n");
 	k_panic();
+	CODE_UNREACHABLE;
 }

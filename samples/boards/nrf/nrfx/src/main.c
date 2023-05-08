@@ -28,7 +28,7 @@ static void button_handler(nrfx_gpiote_pin_t pin,
 	LOG_INF("GPIO input event callback");
 }
 
-void main(void)
+int main(void)
 {
 	LOG_INF("nrfx_gpiote sample on %s", CONFIG_BOARD);
 
@@ -47,19 +47,19 @@ void main(void)
 	err = nrfx_gpiote_init(0);
 	if (err != NRFX_SUCCESS) {
 		LOG_ERR("nrfx_gpiote_init error: 0x%08X", err);
-		return;
+		return 0;
 	}
 
 	err = nrfx_gpiote_channel_alloc(&in_channel);
 	if (err != NRFX_SUCCESS) {
 		LOG_ERR("Failed to allocate in_channel, error: 0x%08X", err);
-		return;
+		return 0;
 	}
 
 	err = nrfx_gpiote_channel_alloc(&out_channel);
 	if (err != NRFX_SUCCESS) {
 		LOG_ERR("Failed to allocate out_channel, error: 0x%08X", err);
-		return;
+		return 0;
 	}
 
 	/* Initialize input pin to generate event on high to low transition
@@ -81,7 +81,7 @@ void main(void)
 					  &handler_config);
 	if (err != NRFX_SUCCESS) {
 		LOG_ERR("nrfx_gpiote_input_configure error: 0x%08X", err);
-		return;
+		return 0;
 	}
 
 	/* Initialize output pin. SET task will turn the LED on,
@@ -102,7 +102,7 @@ void main(void)
 					   &task_config);
 	if (err != NRFX_SUCCESS) {
 		LOG_ERR("nrfx_gpiote_output_configure error: 0x%08X", err);
-		return;
+		return 0;
 	}
 
 	nrfx_gpiote_trigger_enable(INPUT_PIN, true);
@@ -114,7 +114,7 @@ void main(void)
 	err = nrfx_gppi_channel_alloc(&ppi_channel);
 	if (err != NRFX_SUCCESS) {
 		LOG_ERR("nrfx_gppi_channel_alloc error: 0x%08X", err);
-		return;
+		return 0;
 	}
 
 	/* Configure endpoints of the channel so that the input pin event is
@@ -122,11 +122,12 @@ void main(void)
 	 * the button is pressed, the LED pin will be toggled.
 	 */
 	nrfx_gppi_channel_endpoints_setup(ppi_channel,
-		nrfx_gpiote_in_event_addr_get(INPUT_PIN),
-		nrfx_gpiote_out_task_addr_get(OUTPUT_PIN));
+		nrfx_gpiote_in_event_address_get(INPUT_PIN),
+		nrfx_gpiote_out_task_address_get(OUTPUT_PIN));
 
 	/* Enable the channel. */
 	nrfx_gppi_channels_enable(BIT(ppi_channel));
 
 	LOG_INF("(D)PPI configured, leaving main()");
+	return 0;
 }

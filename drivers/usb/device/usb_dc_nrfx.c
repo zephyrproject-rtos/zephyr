@@ -686,7 +686,7 @@ static inline void usbd_work_process_pwr_events(struct usbd_pwr_event *pwr_evt)
 
 	case USBD_POWERED:
 		usbd_enable_endpoints(ctx);
-		nrfx_usbd_start(true);
+		nrfx_usbd_start(IS_ENABLED(CONFIG_USB_DEVICE_SOF));
 		ctx->ready = true;
 
 		LOG_DBG("USB Powered");
@@ -1869,7 +1869,7 @@ int usb_dc_wakeup_request(void)
 	return 0;
 }
 
-static int usb_init(const struct device *arg)
+static int usb_init(void)
 {
 	struct nrf_usbd_ctx *ctx = get_usbd_ctx();
 	nrfx_err_t err;

@@ -15,6 +15,10 @@ properties:
     type: string
     description: A string used as a descriptive name for regulator outputs
 
+  regulator-init-microvolt:
+    type: int
+    description: Voltage set during initialisation
+
   regulator-min-microvolt:
     type: int
     description: smallest voltage consumers may set

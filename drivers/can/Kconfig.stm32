@@ -7,7 +7,6 @@ config CAN_STM32
 	bool "STM32 CAN Driver"
 	default y
 	depends on DT_HAS_ST_STM32_CAN_ENABLED
-	select CAN_HAS_RX_TIMESTAMP
 	help
 	  Enable STM32 CAN Driver.
 	  Tested on STM32F0, STM32F4, STM32L4 and STM32F7 series.

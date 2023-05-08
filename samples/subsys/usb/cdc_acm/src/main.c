@@ -150,7 +150,7 @@ static void interrupt_handler(const struct device *dev, void *user_data)
 	}
 }
 
-void main(void)
+int main(void)
 {
 	const struct device *dev;
 	uint32_t baudrate, dtr = 0U;
@@ -159,7 +159,7 @@ void main(void)
 	dev = DEVICE_DT_GET_ONE(zephyr_cdc_acm_uart);
 	if (!device_is_ready(dev)) {
 		LOG_ERR("CDC ACM device not ready");
-		return;
+		return 0;
 	}
 
 #if defined(CONFIG_USB_DEVICE_STACK_NEXT)
@@ -170,7 +170,7 @@ void main(void)
 
 	if (ret != 0) {
 		LOG_ERR("Failed to enable USB");
-		return;
+		return 0;
 	}
 
 	ring_buf_init(&ringbuf, sizeof(ring_buffer), ring_buffer);
@@ -200,8 +200,8 @@ void main(void)
 		LOG_WRN("Failed to set DSR, ret code %d", ret);
 	}
 
-	/* Wait 1 sec for the host to do all settings */
-	k_busy_wait(1000000);
+	/* Wait 100ms for the host to do all settings */
+	k_msleep(100);
 
 	ret = uart_line_ctrl_get(dev, UART_LINE_CTRL_BAUD_RATE, &baudrate);
 	if (ret) {
@@ -214,4 +214,5 @@ void main(void)
 
 	/* Enable rx interrupts */
 	uart_irq_rx_enable(dev);
+	return 0;
 }

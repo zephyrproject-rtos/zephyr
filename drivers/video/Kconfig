@@ -7,7 +7,7 @@
 # VIDEO Drivers
 #
 menuconfig VIDEO
-	bool "VIDEO hardware support"
+	bool "Video drivers"
 	help
 	  Enable support for the VIDEO.
 

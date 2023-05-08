@@ -291,18 +291,7 @@ static int entropy_nrf5_get_entropy_isr(const struct device *dev,
 
 			while (!nrf_rng_event_check(NRF_RNG,
 						    NRF_RNG_EVENT_VALRDY)) {
-				/*
-				 * To guarantee waking up from the event, the
-				 * SEV-On-Pend feature must be enabled (enabled
-				 * during ARCH initialization).
-				 *
-				 * DSB is recommended by spec before WFE (to
-				 * guarantee completion of memory transactions)
-				 */
-				__DSB();
-				__WFE();
-				__SEV();
-				__WFE();
+				k_cpu_atomic_idle(irq_lock());
 			}
 
 			byte = random_byte_get();

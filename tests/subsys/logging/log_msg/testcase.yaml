@@ -5,6 +5,7 @@ common:
   tags: log_api logging
   integration_platforms:
     - native_posix
+  filter: not CONFIG_LOG_ALWAYS_RUNTIME
 tests:
   logging.log_msg:
     extra_configs:

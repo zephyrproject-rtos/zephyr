@@ -119,6 +119,9 @@ void z_arm64_secondary_start(void)
 
 	/* Initialize tpidrro_el0 with our struct _cpu instance address */
 	write_tpidrro_el0((uintptr_t)&_kernel.cpus[cpu_num]);
+#ifdef CONFIG_ARM64_SAFE_EXCEPTION_STACK
+	z_arm64_safe_exception_stack_init();
+#endif
 
 	z_arm64_mm_init(false);
 
@@ -223,9 +226,8 @@ void z_arm64_flush_fpu_ipi(unsigned int cpu)
 }
 #endif
 
-static int arm64_smp_init(const struct device *dev)
+static int arm64_smp_init(void)
 {
-	ARG_UNUSED(dev);
 
 	/*
 	 * SGI0 is use for sched ipi, this might be changed to use Kconfig

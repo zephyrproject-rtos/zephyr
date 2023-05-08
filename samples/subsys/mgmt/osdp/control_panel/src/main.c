@@ -28,9 +28,9 @@ enum osdp_pd_e {
 	OSDP_PD_SENTINEL,
 };
 
-int key_press_callback(int pd, uint8_t key)
+int key_press_callback(int pd, uint8_t *data, int len)
 {
-	printk("CP PD[%d] key press - data: 0x%02x\n", pd, key);
+	printk("CP PD[%d] key press - data: 0x%02x\n", pd, data[0]);
 	return 0;
 }
 
@@ -49,7 +49,23 @@ int card_read_callback(int pd, int format, uint8_t *data, int len)
 	return 0;
 }
 
-void main(void)
+int event_handler(void *unused, int pd, struct osdp_event *e)
+{
+	switch (e->type) {
+	case OSDP_EVENT_CARDREAD:
+		card_read_callback(pd, e->cardread.format,
+				   e->cardread.data, e->cardread.length);
+		break;
+	case OSDP_EVENT_KEYPRESS:
+		key_press_callback(pd, e->keypress.data, e->keypress.length);
+		break;
+	default:
+		break;
+	}
+	return 0;
+}
+
+int main(void)
 {
 	int ret, led_state;
 	uint32_t cnt = 0;
@@ -62,17 +78,16 @@ void main(void)
 
 	if (!device_is_ready(led0.port)) {
 		printk("Failed to get LED GPIO port %s\n", led0.port->name);
-		return;
+		return 0;
 	}
 
 	ret = gpio_pin_configure_dt(&led0, GPIO_OUTPUT_ACTIVE);
 	if (ret < 0) {
 		printk("Failed to configure gpio pin\n");
-		return;
+		return 0;
 	}
 
-	osdp_cp_set_callback_key_press(key_press_callback);
-	osdp_cp_set_callback_card_read(card_read_callback);
+	osdp_cp_set_event_callback(event_handler, NULL);
 
 	led_state = 0;
 	while (1) {
@@ -87,4 +102,5 @@ void main(void)
 		k_msleep(SLEEP_TIME_MS);
 		cnt++;
 	}
+	return 0;
 }

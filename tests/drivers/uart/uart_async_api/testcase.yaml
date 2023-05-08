@@ -1,8 +1,9 @@
 common:
   platform_exclude: seeeduino_xiao serpente arduino_nano_33_iot atsamr21_xpro
-    adafruit_itsybitsy_m4_express atsame54_xpro atsamd21_xpro adafruit_trinket_m0
+    adafruit_itsybitsy_m4_express atsame54_xpro atsamc21n_xpro adafruit_trinket_m0
     arduino_nano_33_iot arduino_zero atsamd21_xpro adafruit_feather_m0_basic_proto
-    adafruit_feather_m0_lora arduino_mkrzero atsaml21_xpro atsamr34_xpro
+    adafruit_feather_m0_lora arduino_mkrzero atsaml21_xpro atsamr34_xpro stamp_c3
+    wio_terminal xiao_esp32c3 atsamd20_xpro
   tags: drivers uart
 tests:
   drivers.uart.async_api:
@@ -26,6 +27,7 @@ tests:
     extra_configs:
       - CONFIG_USE_SEGGER_RTT=y
       - CONFIG_UART_RTT=y
+    platform_exclude: xmc45_relax_kit xmc47_relax_kit
     build_only: true
   drivers.uart.async_api.lpuart:
     filter: CONFIG_UART_CONSOLE and CONFIG_SERIAL_SUPPORT_ASYNC and CONFIG_UART_MCUX_LPUART

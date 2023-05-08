@@ -105,7 +105,7 @@ To ease debugging you may want to compile your code without optimizations
 Address Sanitizer (ASan)
 ========================
 
-You can also build Zephyr with `Address Sanitizer`_. To do this, set
+You can also build Zephyr with the `Address Sanitizer`_. To do this, set
 :kconfig:option:`CONFIG_ASAN`, for example, in the application project file, or in the
 ``west build`` or ``cmake`` command line invocation.
 
@@ -114,6 +114,16 @@ In Debian/Ubuntu this is ``libasan1``.
 
 .. _Address Sanitizer:
    https://github.com/google/sanitizers/wiki/AddressSanitizer
+
+Undefined Behavior Sanitizer (UBSan)
+====================================
+
+You can also build Zephyr with the `Undefined Behavior Sanitizer`_. To do this, set
+:kconfig:option:`CONFIG_UBSAN`, for example, in the application project file, or in the
+``west build`` or ``cmake`` command line invocation.
+
+.. _Undefined Behavior Sanitizer:
+   https://clang.llvm.org/docs/UndefinedBehaviorSanitizer.html
 
 Coverage reports
 ================

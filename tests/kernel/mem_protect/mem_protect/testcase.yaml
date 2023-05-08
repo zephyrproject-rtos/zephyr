@@ -5,7 +5,7 @@ tests:
   kernel.memory_protection:
     filter: CONFIG_ARCH_HAS_USERSPACE
     platform_exclude: twr_ke18f
-    extra_args: CONFIG_TEST_HW_STACK_PROTECTION=n
+    extra_args: CONFIG_TEST_HW_STACK_PROTECTION=n CONFIG_MINIMAL_LIBC=y
   kernel.memory_protection.gap_filling.arc:
     filter: CONFIG_ARCH_HAS_USERSPACE and CONFIG_MPU_REQUIRES_NON_OVERLAPPING_REGIONS
     arch_allow: arc

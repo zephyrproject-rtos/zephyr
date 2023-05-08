@@ -20,7 +20,7 @@ LOG_MODULE_REGISTER(soc_mp, CONFIG_SOC_LOG_LEVEL);
 #include <zsr.h>
 #include <cavs-idc.h>
 #include <soc.h>
-#include <zephyr/arch/xtensa/cache.h>
+#include <zephyr/cache.h>
 #include <adsp_shim.h>
 #include <adsp_memory.h>
 #include <cpu_init.h>
@@ -99,20 +99,6 @@ __asm__(".section .text.z_soc_mp_asm_entry, \"x\" \n\t"
 __imr void z_mp_entry(void)
 {
 	cpu_early_init();
-
-	/* We don't know what the boot ROM (on pre-2.5 DSPs) might
-	 * have touched and we don't care.  Make sure it's not in our
-	 * local cache to be flushed accidentally later.
-	 *
-	 * Note that technically this is dropping our own (cached)
-	 * stack memory, which we don't have a guarantee the compiler
-	 * isn't using yet.  Manual inspection of generated code says
-	 * we're safe, but really we need a better solution here.
-	 */
-	if (!IS_ENABLED(CONFIG_SOC_INTEL_CAVS_V25)) {
-		z_xtensa_cache_flush_inv_all();
-	}
-
 	/* Set up the CPU pointer. */
 	_cpu_t *cpu = &_kernel.cpus[start_rec.cpu];
 

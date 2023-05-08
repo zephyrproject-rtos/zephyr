@@ -127,7 +127,17 @@
 	bus-speed-data = <1000000>;
 	pinctrl-0 = <&pinmux_mcan_can0>;
 	pinctrl-names = "default";
-	status = "ok";
+	status = "okay";
+
+	can-transceiver {
+		max-bitrate = <5000000>;
+	};
+};
+
+&adc0 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_lpadc0>;
+	pinctrl-names = "default";
 };
 
 &flash0 {

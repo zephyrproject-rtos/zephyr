@@ -1,6 +1,7 @@
 /*
- * Copyright (c) 2018 Justin Watson
  * Copyright (c) 2016 Piotr Mienkowski
+ * Copyright (c) 2018 Justin Watson
+ * Copyright (c) 2023 Gerson Fernando Budke
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -8,10 +9,6 @@
 
 /** @file
  * @brief USART driver for Atmel SAM MCU family.
- *
- * Note:
- * - Only basic USART features sufficient to support printf functionality
- *   are currently implemented.
  */
 
 #include <errno.h>
@@ -21,14 +18,15 @@
 #include <soc.h>
 #include <zephyr/drivers/uart.h>
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/drivers/clock_control/atmel_sam_pmc.h>
 #include <zephyr/irq.h>
 
 /* Device constant configuration parameters */
 struct usart_sam_dev_cfg {
 	Usart *regs;
-	uint32_t periph_id;
-	bool hw_flow_control;
+	const struct atmel_sam_pmc_config clock_cfg;
 	const struct pinctrl_dev_config *pcfg;
+	bool hw_flow_control;
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	uart_irq_config_func_t	irq_config_func;
@@ -485,7 +483,8 @@ static int usart_sam_init(const struct device *dev)
 	Usart * const usart = cfg->regs;
 
 	/* Enable USART clock in PMC */
-	soc_pmc_peripheral_enable(cfg->periph_id);
+	(void)clock_control_on(SAM_DT_PMC_CONTROLLER,
+			       (clock_control_subsys_t)&cfg->clock_cfg);
 
 	/* Connect pins to the peripheral */
 	retval = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
@@ -542,7 +541,7 @@ static const struct uart_driver_api usart_sam_driver_api = {
 #define USART_SAM_DECLARE_CFG(n, IRQ_FUNC_INIT)				\
 	static const struct usart_sam_dev_cfg usart##n##_sam_config = {	\
 		.regs = (Usart *)DT_INST_REG_ADDR(n),			\
-		.periph_id = DT_INST_PROP(n, peripheral_id),		\
+		.clock_cfg = SAM_DT_INST_CLOCK_PMC_CFG(n),		\
 		.hw_flow_control = DT_INST_PROP(n, hw_flow_control),	\
 									\
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),		\

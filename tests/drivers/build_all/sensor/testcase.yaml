@@ -3,8 +3,12 @@ common:
   platform_allow: native_posix
   build_only: true
 tests:
-  sensors.build.trigger:
+  sensors.build.trigger.own:
     extra_args: OVERLAY_CONFIG=sensors_trigger_own.conf
+  sensors.build.trigger.global:
+    extra_args: OVERLAY_CONFIG=sensors_trigger_global.conf
+  sensors.build.trigger.none:
+    extra_args: OVERLAY_CONFIG=sensors_trigger_none.conf
   sensors.build:
     tags: sensors
   sensors.build.pm:

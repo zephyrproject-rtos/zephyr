@@ -107,20 +107,12 @@
 			pinctrl: pinctrl {
 				compatible = "nxp,lpc-iocon-pinctrl";
 			};
-			pio0: pio0@0 {
-				compatible = "nxp,lpc-iocon-pio";
-				reg = <0x0 0x80>;
-			};
-			pio1: pio0@80 {
-				compatible = "nxp,lpc-iocon-pio";
-				reg = <0x80 0x80>;
-			};
 		};
 
 		gpio0: gpio@0 {
 			compatible = "nxp,lpc-gpio";
 			reg = <0x4008c000 0x2488>;
-			interrupts = <4 2>,<5 2>,<6 2>,<7 2>;
+			int-source = "pint";
 			gpio-controller;
 			#gpio-cells = <2>;
 			port = <0>;
@@ -129,10 +121,22 @@
 		gpio1: gpio@1 {
 			compatible = "nxp,lpc-gpio";
 			reg = <0x4008C000 0x2488>;
-			interrupts = <32 2>,<33 2>,<34 2>,<35 2>;
+			int-source = "pint";
 			gpio-controller;
 			#gpio-cells = <2>;
 			port = <1>;
+		};
+
+		pint: pint@4000 {
+			compatible = "nxp,pint";
+			reg = <0x4000 0x1000>;
+			interrupt-controller;
+			#interrupt-cells = <1>;
+			#address-cells = <0>;
+			interrupts = <4 2>, <5 2>, <6 2>, <7 2>,
+				<32 2>, <33 2>, <34 2>, <35 2>;
+			num-lines = <8>;
+			num-inputs = <64>;
 		};
 
 		mailbox0:mailbox@4008b000 {

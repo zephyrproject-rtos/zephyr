@@ -95,20 +95,11 @@ static struct ethernet_api eth_fake_api_funcs = {
 	.send = eth_fake_send,
 };
 
-static int eth_fake_init(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-
-	return 0;
-}
-
-ETH_NET_DEVICE_INIT(eth_fake1, "eth_fake1", eth_fake_init,
-		    NULL, &eth_fake_data1, NULL,
+ETH_NET_DEVICE_INIT(eth_fake1, "eth_fake1", NULL, NULL, &eth_fake_data1, NULL,
 		    CONFIG_ETH_INIT_PRIORITY, &eth_fake_api_funcs,
 		    NET_ETH_MTU);
 
-ETH_NET_DEVICE_INIT(eth_fake2, "eth_fake2", eth_fake_init,
-		    NULL, &eth_fake_data2, NULL,
+ETH_NET_DEVICE_INIT(eth_fake2, "eth_fake2", NULL, NULL, &eth_fake_data2, NULL,
 		    CONFIG_ETH_INIT_PRIORITY, &eth_fake_api_funcs,
 		    NET_ETH_MTU);
 

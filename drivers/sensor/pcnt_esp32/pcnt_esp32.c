@@ -46,6 +46,7 @@ struct pcnt_esp32_data {
 	struct k_mutex cmd_mux;
 #ifdef CONFIG_PCNT_ESP32_TRIGGER
 	sensor_trigger_handler_t trigger_handler;
+	const struct sensor_trigger *trigger;
 #endif /* CONFIG_PCNT_ESP32_TRIGGER */
 };
 
@@ -280,7 +281,6 @@ static void IRAM_ATTR pcnt_esp32_isr(const struct device *dev)
 
 	uint32_t pcnt_intr_status;
 	uint32_t pcnt_unit_status;
-	struct sensor_trigger trigger;
 
 	pcnt_intr_status = pcnt_ll_get_intr_status(data->hal.dev);
 	pcnt_ll_clear_intr_status(data->hal.dev, pcnt_intr_status);
@@ -315,9 +315,7 @@ static void IRAM_ATTR pcnt_esp32_isr(const struct device *dev)
 		return;
 	}
 
-	trigger.type = SENSOR_TRIG_THRESHOLD;
-	trigger.chan = SENSOR_CHAN_ROTATION;
-	data->trigger_handler(dev, &trigger);
+	data->trigger_handler(dev, data->trigger);
 }
 
 static int pcnt_esp32_trigger_set(const struct device *dev, const struct sensor_trigger *trig,
@@ -340,6 +338,7 @@ static int pcnt_esp32_trigger_set(const struct device *dev, const struct sensor_
 	}
 
 	data->trigger_handler = handler;
+	data->trigger = trig;
 
 	ret = esp_intr_alloc(config->irq_src, 0, (intr_handler_t)pcnt_esp32_isr, (void *)dev, NULL);
 	if (ret != 0) {

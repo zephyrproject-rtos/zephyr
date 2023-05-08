@@ -34,7 +34,7 @@ struct foobaz_iface_desc {
 	struct usb_if_descriptor if1;
 	struct usb_ep_descriptor if1_out_ep;
 	struct usb_ep_descriptor if1_in_ep;
-	struct usb_desc_header term_desc;
+	struct usb_desc_header nil_desc;
 } __packed;
 
 static struct foobaz_iface_desc foobaz_desc = {
@@ -81,7 +81,7 @@ static struct foobaz_iface_desc foobaz_desc = {
 	},
 
 	/* Termination descriptor */
-	.term_desc = {
+	.nil_desc = {
 		.bLength = 0,
 		.bDescriptorType = 0,
 	},
@@ -130,7 +130,7 @@ static int foobaz_cth(struct usbd_class_node *const node,
 
 		net_buf_add_mem(buf, foobaz_buf, min_len);
 		shell_info(ctx_shell,
-			   "dev: conrol transfer to host, wLength %u | %u",
+			   "dev: conrol transfer to host, wLength %u | %zu",
 			   setup->wLength, min_len);
 
 		return 0;
@@ -148,7 +148,7 @@ static int foobaz_ctd(struct usbd_class_node *const node,
 
 	if (setup->bRequest == FOOBAZ_VREQ_OUT) {
 		shell_info(ctx_shell,
-			   "dev: control transfer to device, wLength %u | %u",
+			   "dev: control transfer to device, wLength %u | %zu",
 			   setup->wLength, min_len);
 		memcpy(foobaz_buf, buf->data, min_len);
 		return 0;
@@ -299,7 +299,7 @@ static int cmd_submit_request(const struct shell *sh,
 		net_buf_add_mem(buf, foobaz_buf, len);
 	}
 
-	shell_print(sh, "dev: Submit ep 0x%02x len %u buf %p", ep, len, buf);
+	shell_print(sh, "dev: Submit ep 0x%02x len %zu buf %p", ep, len, buf);
 	ret = usbd_ep_enqueue(&foobaz, buf);
 	if (ret) {
 		shell_print(sh, "dev: Failed to queue request buffer");

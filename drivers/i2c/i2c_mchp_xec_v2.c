@@ -11,6 +11,7 @@
 #include <soc.h>
 #include <errno.h>
 #include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/clock_control/mchp_xec_clock_control.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/interrupt_controller/intc_mchp_xec_ecia.h>
@@ -223,11 +224,9 @@ static int i2c_xec_reset_config(const struct device *dev)
 	data->state = I2C_XEC_STATE_STOPPED;
 	data->read_discard = 0;
 
-	/* Assert RESET and clr others */
-	regs->CFG = MCHP_I2C_SMB_CFG_RESET;
-	k_busy_wait(RESET_WAIT_US);
-	/* clear reset, set filter enable, select port */
-	regs->CFG = 0;
+	/* Assert RESET */
+	z_mchp_xec_pcr_periph_reset(cfg->pcr_idx, cfg->pcr_bitpos);
+
 	regs->CFG = MCHP_I2C_SMB_CFG_FLUSH_SXBUF_WO |
 		    MCHP_I2C_SMB_CFG_FLUSH_SRBUF_WO |
 		    MCHP_I2C_SMB_CFG_FLUSH_MXBUF_WO |
@@ -318,8 +317,8 @@ static int i2c_xec_recover_bus(const struct device *dev)
 	LOG_ERR("I2C attempt bus recovery\n");
 
 	/* reset controller to a known state */
-	regs->CFG = MCHP_I2C_SMB_CFG_RESET;
-	k_busy_wait(RESET_WAIT_US);
+	z_mchp_xec_pcr_periph_reset(cfg->pcr_idx, cfg->pcr_bitpos);
+
 	regs->CFG = BIT(14) | MCHP_I2C_SMB_CFG_FEN |
 		    (cfg->port_sel & MCHP_I2C_SMB_CFG_PORT_SEL_MASK);
 	regs->CFG |= MCHP_I2C_SMB_CFG_FLUSH_SXBUF_WO |

@@ -69,6 +69,8 @@ enum uart_rx_stop_reason {
 	 * support collision checking.
 	 */
 	UART_ERROR_COLLISION = (1 << 4),
+	/** @brief Noise error */
+	UART_ERROR_NOISE = (1 << 5),
 };
 
 /** @brief Parity modes */

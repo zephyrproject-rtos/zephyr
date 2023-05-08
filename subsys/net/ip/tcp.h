@@ -52,17 +52,6 @@ int net_tcp_get(struct net_context *context);
  */
 int net_tcp_put(struct net_context *context);
 
-/* TODO: Clarify what happens if the ref count goes to 0 */
-/**
- * @brief Unref a TCP connection
- *
- * @param context Network context
- *
- * @return 0 if successful, < 0 on error
- */
-int net_tcp_unref(struct net_context *context);
-/* TODO: Merge net_tcp_unref() and net_tcp_put() */
-
 /**
  * @brief Listen for an incoming TCP connection
  *

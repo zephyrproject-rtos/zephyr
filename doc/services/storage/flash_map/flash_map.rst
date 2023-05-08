@@ -3,7 +3,7 @@
 Flash map
 #########
 
-The ``<storage/flash_map.h>`` API allows accessing information about device
+The ``<zephyr/storage/flash_map.h>`` API allows accessing information about device
 flash partitions via :c:struct:`flash_area` structures.
 
 Each :c:struct:`flash_area` describes a flash partition. The API provides access
@@ -28,7 +28,7 @@ The main examples are :c:func:`flash_area_read` and :c:func:`flash_area_write`.
 These functions are basically wrappers around the flash API with additional
 offset and size checks, to limit flash operations to a predefined area.
 
-Most ``<storage/flash_map.h>`` API functions require a :c:struct:`flash_area` object pointer
+Most ``<zephyr/storage/flash_map.h>`` API functions require a :c:struct:`flash_area` object pointer
 characterizing the flash area they will be working on. There are two possible
 methods to obtain such a pointer:
 
@@ -95,7 +95,7 @@ using :c:func:`flash_area_open` and DTS node label:
 
 .. code-block:: c
 
-   struct flash_area *my_area;
+   const struct flash_area *my_area;
    int err = flash_area_open(FIXED_PARITION_ID(slot0_partition), &my_area);
 
    if (err != 0) {

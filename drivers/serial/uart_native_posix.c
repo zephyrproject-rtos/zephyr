@@ -21,7 +21,7 @@
 #include <zephyr/kernel.h>
 
 #include "cmdline.h" /* native_posix command line options header */
-#include "soc.h"
+#include "posix_native_task.h"
 
 /*
  * UART driver for POSIX ARCH based boards.

@@ -30,6 +30,11 @@ LOG_MODULE_REGISTER(smp_shell);
 BUILD_ASSERT(CONFIG_MCUMGR_TRANSPORT_SHELL_MTU != 0,
 	     "CONFIG_MCUMGR_TRANSPORT_SHELL_MTU must be > 0");
 
+#ifdef CONFIG_MCUMGR_TRANSPORT_SHELL_INPUT_TIMEOUT
+BUILD_ASSERT(CONFIG_MCUMGR_TRANSPORT_SHELL_INPUT_TIMEOUT_TIME != 0,
+	     "CONFIG_MCUMGR_TRANSPORT_SHELL_INPUT_TIMEOUT_TIME must be > 0");
+#endif
+
 static struct smp_transport smp_shell_transport;
 
 static struct mcumgr_serial_rx_ctxt smp_shell_rx_ctxt;
@@ -48,6 +53,30 @@ enum smp_shell_mcumgr_state {
 	SMP_SHELL_MCUMGR_STATE_HEADER,
 	SMP_SHELL_MCUMGR_STATE_PAYLOAD
 };
+
+#ifdef CONFIG_MCUMGR_TRANSPORT_SHELL_INPUT_TIMEOUT
+extern struct shell_transport shell_transport_uart;
+
+static void smp_shell_input_timeout_handler(struct k_timer *timer)
+{
+	ARG_UNUSED(timer);
+	struct shell_uart *sh_uart = (struct shell_uart *)shell_transport_uart.ctx;
+	struct smp_shell_data *const data = &sh_uart->ctrl_blk->smp;
+
+	atomic_clear_bit(&data->esc_state, ESC_MCUMGR_PKT_1);
+	atomic_clear_bit(&data->esc_state, ESC_MCUMGR_PKT_2);
+	atomic_clear_bit(&data->esc_state, ESC_MCUMGR_FRAG_1);
+	atomic_clear_bit(&data->esc_state, ESC_MCUMGR_FRAG_2);
+
+	if (data->buf) {
+		net_buf_reset(data->buf);
+		net_buf_unref(data->buf);
+		data->buf = NULL;
+	}
+}
+
+K_TIMER_DEFINE(smp_shell_input_timer, smp_shell_input_timeout_handler, NULL);
+#endif
 
 static int read_mcumgr_byte(struct smp_shell_data *data, uint8_t byte)
 {
@@ -70,12 +99,22 @@ static int read_mcumgr_byte(struct smp_shell_data *data, uint8_t byte)
 		if (byte == MCUMGR_SERIAL_HDR_PKT_2) {
 			/* Final framing byte received. */
 			atomic_set_bit(&data->esc_state, ESC_MCUMGR_PKT_2);
+#ifdef CONFIG_MCUMGR_TRANSPORT_SHELL_INPUT_TIMEOUT
+			k_timer_start(&smp_shell_input_timer,
+				      K_MSEC(CONFIG_MCUMGR_TRANSPORT_SHELL_INPUT_TIMEOUT_TIME),
+				      K_NO_WAIT);
+#endif
 			return SMP_SHELL_MCUMGR_STATE_PAYLOAD;
 		}
 	} else if (frag_1) {
 		if (byte == MCUMGR_SERIAL_HDR_FRAG_2) {
 			/* Final framing byte received. */
 			atomic_set_bit(&data->esc_state, ESC_MCUMGR_FRAG_2);
+#ifdef CONFIG_MCUMGR_TRANSPORT_SHELL_INPUT_TIMEOUT
+			k_timer_start(&smp_shell_input_timer,
+				      K_MSEC(CONFIG_MCUMGR_TRANSPORT_SHELL_INPUT_TIMEOUT_TIME),
+				      K_NO_WAIT);
+#endif
 			return SMP_SHELL_MCUMGR_STATE_PAYLOAD;
 		}
 	} else {
@@ -129,6 +168,10 @@ size_t smp_shell_rx_bytes(struct smp_shell_data *data, const uint8_t *bytes,
 			atomic_clear_bit(&data->esc_state, ESC_MCUMGR_PKT_2);
 			atomic_clear_bit(&data->esc_state, ESC_MCUMGR_FRAG_1);
 			atomic_clear_bit(&data->esc_state, ESC_MCUMGR_FRAG_2);
+
+#ifdef CONFIG_MCUMGR_TRANSPORT_SHELL_INPUT_TIMEOUT
+			k_timer_stop(&smp_shell_input_timer);
+#endif
 		}
 
 		++consumed;

@@ -1,0 +1,17 @@
+# Copyright (c) 2022 Meta
+#
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  integration_platforms:
+    - native_posix
+tests:
+  libraries.hash_function.identity:
+    # RNG seems to be broken on qemu_cortex_a53
+    platform_exclude: qemu_cortex_a53
+    extra_configs:
+      - CONFIG_SYS_HASH_FUNC32_CHOICE_IDENTITY=y
+  libraries.hash_function.djb2:
+    extra_configs:
+      - CONFIG_SYS_HASH_FUNC32_DJB2=y
+      - CONFIG_SYS_HASH_FUNC32_CHOICE_DJB2=y

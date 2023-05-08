@@ -32,7 +32,7 @@
 			label = "USR2 LED";
 		};
 		bt_blue_led: led_3 {
-			gpios = <&gpioa 15 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpiob 5 GPIO_ACTIVE_HIGH>;
 			label = "BT LED";
 		};
 	};

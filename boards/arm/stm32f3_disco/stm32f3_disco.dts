@@ -71,6 +71,7 @@
 		magn0 = &lsm303dlhc_magn;
 		watchdog0 = &iwdg;
 		accel0 = &lsm303dlhc_accel;
+		die-temp0 = &die_temp;
 	};
 };
 

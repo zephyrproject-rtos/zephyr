@@ -73,8 +73,7 @@ static uint32_t get_pll_div_frequency(uint32_t pllsrc_freq,
 {
 	__ASSERT_NO_MSG(pllm_div && pllout_div);
 
-	return (pllsrc_freq * plln_mul) /
-		(pllm_div * pllout_div);
+	return pllsrc_freq / pllm_div * plln_mul / pllout_div;
 }
 
 static uint32_t get_bus_clock(uint32_t clock, uint32_t prescaler)
@@ -139,6 +138,13 @@ static int enabled_clock(uint32_t src_clk)
 		}
 		break;
 #endif /* STM32_SRC_LSI */
+#if defined(STM32_SRC_HSI48)
+	case STM32_SRC_HSI48:
+		if (!IS_ENABLED(STM32_HSI48_ENABLED)) {
+			r = -ENOTSUP;
+		}
+		break;
+#endif /* STM32_SRC_HSI48 */
 #if defined(STM32_SRC_MSI)
 	case STM32_SRC_MSI:
 		if (!IS_ENABLED(STM32_MSI_ENABLED)) {
@@ -174,6 +180,13 @@ static int enabled_clock(uint32_t src_clk)
 		}
 		break;
 #endif /* STM32_SRC_PLL_R */
+#if defined(STM32_SRC_PLLI2S_R)
+	case STM32_SRC_PLLI2S_R:
+		if (!IS_ENABLED(STM32_PLLI2S_R_ENABLED)) {
+			r = -ENOTSUP;
+		}
+		break;
+#endif /* STM32_SRC_PLLI2S_R */
 	default:
 		return -ENOTSUP;
 	}
@@ -235,6 +248,13 @@ static inline int stm32_clock_control_configure(const struct device *dev,
 		return err;
 	}
 
+	if (pclken->enr == NO_SEL) {
+		/* Domain clock is fixed. Nothing to set. Exit */
+		return 0;
+	}
+
+	sys_clear_bits(DT_REG_ADDR(DT_NODELABEL(rcc)) + STM32_CLOCK_REG_GET(pclken->enr),
+		       STM32_CLOCK_MASK_GET(pclken->enr) << STM32_CLOCK_SHIFT_GET(pclken->enr));
 	sys_set_bits(DT_REG_ADDR(DT_NODELABEL(rcc)) + STM32_CLOCK_REG_GET(pclken->enr),
 		     STM32_CLOCK_VAL_GET(pclken->enr) << STM32_CLOCK_SHIFT_GET(pclken->enr));
 
@@ -351,9 +371,16 @@ static int stm32_clock_control_get_subsys_rate(const struct device *clock,
 					      STM32_PLL_R_DIVISOR);
 		break;
 #endif
+#if defined(STM32_SRC_PLLI2S_R) & STM32_PLLI2S_ENABLED
+	case STM32_SRC_PLLI2S_R:
+		*rate = get_pll_div_frequency(get_pllsrc_frequency(),
+					      STM32_PLLI2S_M_DIVISOR,
+					      STM32_PLLI2S_N_MULTIPLIER,
+					      STM32_PLLI2S_R_DIVISOR);
+		break;
+#endif /* STM32_SRC_PLLI2S_R */
 /* PLLSAI1x not supported yet */
 /* PLLSAI2x not supported yet */
-/* PLLI2Sx not supported yet */
 #if defined(STM32_SRC_LSE)
 	case STM32_SRC_LSE:
 		*rate = STM32_LSE_FREQ;
@@ -369,11 +396,21 @@ static int stm32_clock_control_get_subsys_rate(const struct device *clock,
 		*rate = STM32_HSI_FREQ;
 		break;
 #endif
+#if defined(STM32_SRC_MSI)
+	case STM32_SRC_MSI:
+		*rate = get_msi_frequency();
+		break;
+#endif
 #if defined(STM32_SRC_HSE)
 	case STM32_SRC_HSE:
 		*rate = STM32_HSE_FREQ;
 		break;
 #endif
+#if defined(STM32_HSI48_ENABLED)
+	case STM32_SRC_HSI48:
+		*rate = STM32_HSI48_FREQ;
+		break;
+#endif /* STM32_HSI48_ENABLED */
 	default:
 		return -ENOTSUP;
 	}
@@ -381,10 +418,36 @@ static int stm32_clock_control_get_subsys_rate(const struct device *clock,
 	return 0;
 }
 
+static enum clock_control_status stm32_clock_control_get_status(const struct device *dev,
+								clock_control_subsys_t sub_system)
+{
+	struct stm32_pclken *pclken = (struct stm32_pclken *)sub_system;
+
+	ARG_UNUSED(dev);
+
+	if (IN_RANGE(pclken->bus, STM32_PERIPH_BUS_MIN, STM32_PERIPH_BUS_MAX) == true) {
+		/* Gated clocks */
+		if ((sys_read32(DT_REG_ADDR(DT_NODELABEL(rcc)) + pclken->bus) & pclken->enr)
+		    == pclken->enr) {
+			return CLOCK_CONTROL_STATUS_ON;
+		} else {
+			return CLOCK_CONTROL_STATUS_OFF;
+		}
+	} else {
+		/* Domain clock sources */
+		if (enabled_clock(pclken->bus) == 0) {
+			return CLOCK_CONTROL_STATUS_ON;
+		} else {
+			return CLOCK_CONTROL_STATUS_OFF;
+		}
+	}
+}
+
 static struct clock_control_driver_api stm32_clock_control_api = {
 	.on = stm32_clock_control_on,
 	.off = stm32_clock_control_off,
 	.get_rate = stm32_clock_control_get_subsys_rate,
+	.get_status = stm32_clock_control_get_status,
 	.configure = stm32_clock_control_configure,
 };
 
@@ -488,6 +551,16 @@ static void set_up_plls(void)
 	}
 
 #endif /* STM32_PLL_ENABLED */
+
+#if defined(STM32_PLLI2S_ENABLED)
+	config_plli2s();
+
+	/* Enable PLL */
+	LL_RCC_PLLI2S_Enable();
+	while (LL_RCC_PLLI2S_IsReady() != 1U) {
+		/* Wait for PLL ready */
+	}
+#endif /* STM32_PLLI2S_ENABLED */
 }
 
 static void set_up_fixed_clock_sources(void)
@@ -577,11 +650,13 @@ static void set_up_fixed_clock_sources(void)
 
 		z_stm32_hsem_lock(CFG_HW_RCC_SEMID, HSEM_LOCK_DEFAULT_RETRY);
 
+#if defined(PWR_CR_DBP) || defined(PWR_CR1_DBP) || defined(PWR_DBPR_DBP)
 		/* Set the DBP bit in the Power control register 1 (PWR_CR1) */
 		LL_PWR_EnableBkUpAccess();
 		while (!LL_PWR_IsEnabledBkUpAccess()) {
 			/* Wait for Backup domain access */
 		}
+#endif /* PWR_CR_DBP || PWR_CR1_DBP || PWR_DBPR_DBP */
 
 #if STM32_LSE_DRIVING
 		/* Configure driving capability */
@@ -606,7 +681,9 @@ static void set_up_fixed_clock_sources(void)
 		}
 #endif /* RCC_BDCR_LSESYSEN */
 
+#if defined(PWR_CR_DBP) || defined(PWR_CR1_DBP) || defined(PWR_DBPR_DBP)
 		LL_PWR_DisableBkUpAccess();
+#endif /* PWR_CR_DBP || PWR_CR1_DBP || PWR_DBPR_DBP */
 
 		z_stm32_hsem_unlock(CFG_HW_RCC_SEMID);
 	}
@@ -622,6 +699,13 @@ static void set_up_fixed_clock_sources(void)
 		LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_SYSCFG);
 		LL_SYSCFG_VREFINT_EnableHSI48();
 #endif /* CONFIG_SOC_SERIES_STM32L0X */
+
+		/*
+		 * STM32WB: Lock the CLK48 HSEM and do not release to prevent
+		 * M0 core to disable this clock (used for RNG on M0).
+		 * No-op on other series.
+		 */
+		z_stm32_hsem_lock(CFG_HW_CLK48_CONFIG_SEMID, HSEM_LOCK_DEFAULT_RETRY);
 
 		LL_RCC_HSI48_Enable();
 		while (LL_RCC_HSI48_IsReady() != 1) {

@@ -12,6 +12,13 @@
 
 #include "mcuboot_priv.h"
 
+#ifdef CONFIG_RETENTION_BOOT_MODE
+#include <zephyr/retention/bootmode.h>
+#ifdef CONFIG_REBOOT
+#include <zephyr/sys/reboot.h>
+#endif
+#endif
+
 struct area_desc {
 	const char *name;
 	unsigned int id;
@@ -76,7 +83,7 @@ static const char *swap_state_flag_str(uint8_t flag)
 	return "unknown";
 }
 
-static int cmd_mcuboot_erase(const struct shell *shell, size_t argc,
+static int cmd_mcuboot_erase(const struct shell *sh, size_t argc,
 			     char **argv)
 {
 	unsigned int id;
@@ -86,27 +93,27 @@ static int cmd_mcuboot_erase(const struct shell *shell, size_t argc,
 
 	err = boot_erase_img_bank(id);
 	if (err) {
-		shell_error(shell, "failed to erase bank %u", id);
+		shell_error(sh, "failed to erase bank %u", id);
 		return err;
 	}
 
 	return 0;
 }
 
-static int cmd_mcuboot_confirm(const struct shell *shell, size_t argc,
+static int cmd_mcuboot_confirm(const struct shell *sh, size_t argc,
 			       char **argv)
 {
 	int err;
 
 	err = boot_write_img_confirmed();
 	if (err) {
-		shell_error(shell, "failed to confirm: %d", err);
+		shell_error(sh, "failed to confirm: %d", err);
 	}
 
 	return err;
 }
 
-static int cmd_mcuboot_request_upgrade(const struct shell *shell, size_t argc,
+static int cmd_mcuboot_request_upgrade(const struct shell *sh, size_t argc,
 				       char **argv)
 {
 	int permanent = 0;
@@ -116,20 +123,44 @@ static int cmd_mcuboot_request_upgrade(const struct shell *shell, size_t argc,
 		if (!strcmp(argv[1], "permanent")) {
 			permanent = 1;
 		} else {
-			shell_warn(shell, "invalid argument!");
+			shell_warn(sh, "invalid argument!");
 			return -EINVAL;
 		}
 	}
 
 	err = boot_request_upgrade(permanent);
 	if (err) {
-		shell_error(shell, "failed to request upgrade: %d", err);
+		shell_error(sh, "failed to request upgrade: %d", err);
 	}
 
 	return err;
 }
 
-static int cmd_mcuboot_info_area(const struct shell *shell,
+#ifdef CONFIG_RETENTION_BOOT_MODE
+static int cmd_mcuboot_serial_recovery(const struct shell *sh, size_t argc,
+				       char **argv)
+{
+	int rc;
+
+	rc = bootmode_set(BOOT_MODE_TYPE_BOOTLOADER);
+
+	if (rc) {
+		shell_error(sh, "Failed to set serial recovery mode: %d", rc);
+
+		return rc;
+	}
+
+#ifdef CONFIG_REBOOT
+	sys_reboot(SYS_REBOOT_COLD);
+#else
+	shell_error(sh, "mcuboot serial recovery mode set, please reboot your device");
+#endif
+
+	return rc;
+}
+#endif
+
+static int cmd_mcuboot_info_area(const struct shell *sh,
 				 const struct area_desc *area)
 {
 	struct mcuboot_img_header hdr;
@@ -138,54 +169,54 @@ static int cmd_mcuboot_info_area(const struct shell *shell,
 
 	err = boot_read_bank_header(area->id, &hdr, sizeof(hdr));
 	if (err) {
-		shell_error(shell, "failed to read %s area (%u) %s: %d",
+		shell_error(sh, "failed to read %s area (%u) %s: %d",
 			    area->name, area->id, "header", err);
 		return err;
 	}
 
-	shell_print(shell, "%s area (%u):", area->name, area->id);
-	shell_print(shell, "  version: %u.%u.%u+%u",
+	shell_print(sh, "%s area (%u):", area->name, area->id);
+	shell_print(sh, "  version: %u.%u.%u+%u",
 		    (unsigned int) hdr.h.v1.sem_ver.major,
 		    (unsigned int) hdr.h.v1.sem_ver.minor,
 		    (unsigned int) hdr.h.v1.sem_ver.revision,
 		    (unsigned int) hdr.h.v1.sem_ver.build_num);
-	shell_print(shell, "  image size: %u",
+	shell_print(sh, "  image size: %u",
 		    (unsigned int) hdr.h.v1.image_size);
 
 	err = boot_read_swap_state_by_id(area->id, &swap_state);
 	if (err) {
-		shell_error(shell, "failed to read %s area (%u) %s: %d",
+		shell_error(sh, "failed to read %s area (%u) %s: %d",
 			    area->name, area->id, "swap state", err);
 		return err;
 	}
 
-	shell_print(shell, "  magic: %s",
+	shell_print(sh, "  magic: %s",
 		    swap_state_magic_str(swap_state.magic));
 
 	if (IS_ENABLED(CONFIG_MCUBOOT_TRAILER_SWAP_TYPE)) {
-		shell_print(shell, "  swap type: %s",
+		shell_print(sh, "  swap type: %s",
 			    swap_type_str(swap_state.swap_type));
 	}
 
-	shell_print(shell, "  copy done: %s",
+	shell_print(sh, "  copy done: %s",
 		    swap_state_flag_str(swap_state.copy_done));
-	shell_print(shell, "  image ok: %s",
+	shell_print(sh, "  image ok: %s",
 		    swap_state_flag_str(swap_state.image_ok));
 
 	return 0;
 }
 
-static int cmd_mcuboot_info(const struct shell *shell, size_t argc,
+static int cmd_mcuboot_info(const struct shell *sh, size_t argc,
 			    char **argv)
 {
 	int i;
 
-	shell_print(shell, "swap type: %s", swap_type_str(mcuboot_swap_type()));
-	shell_print(shell, "confirmed: %d", boot_is_img_confirmed());
+	shell_print(sh, "swap type: %s", swap_type_str(mcuboot_swap_type()));
+	shell_print(sh, "confirmed: %d", boot_is_img_confirmed());
 
 	for (i = 0; i < ARRAY_SIZE(areas); i++) {
-		shell_print(shell, "");
-		cmd_mcuboot_info_area(shell, &areas[i]);
+		shell_print(sh, "");
+		cmd_mcuboot_info_area(sh, &areas[i]);
 	}
 
 	return 0;
@@ -196,6 +227,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(mcuboot_cmds,
 	SHELL_CMD_ARG(erase, NULL, "erase <area_id>", cmd_mcuboot_erase, 2, 0),
 	SHELL_CMD_ARG(request_upgrade, NULL, "request_upgrade [permanent]",
 		      cmd_mcuboot_request_upgrade, 1, 1),
+#ifdef CONFIG_RETENTION_BOOT_MODE
+	SHELL_CMD_ARG(serial_recovery, NULL, "serial_recovery", cmd_mcuboot_serial_recovery, 1, 0),
+#endif
 	SHELL_SUBCMD_SET_END /* Array terminated. */
 );
 

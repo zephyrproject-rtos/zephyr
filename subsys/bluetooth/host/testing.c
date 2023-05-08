@@ -44,6 +44,18 @@ void bt_test_mesh_net_recv(uint8_t ttl, uint8_t ctl, uint16_t src, uint16_t dst,
 	}
 }
 
+void bt_test_mesh_model_recv(uint16_t src, uint16_t dst, const void *payload,
+			     size_t payload_len)
+{
+	struct bt_test_cb *cb;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&cb_slist, cb, node) {
+		if (cb->mesh_model_recv) {
+			cb->mesh_model_recv(src, dst, payload, payload_len);
+		}
+	}
+}
+
 void bt_test_mesh_model_bound(uint16_t addr, struct bt_mesh_model *model,
 			      uint16_t key_idx)
 {

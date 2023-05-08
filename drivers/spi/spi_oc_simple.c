@@ -109,7 +109,7 @@ int spi_oc_simple_transceive(const struct device *dev,
 	spi_oc_simple_configure(info, spi, config);
 
 	/* Set chip select */
-	if (config->cs) {
+	if (spi_cs_is_gpio(config)) {
 		spi_context_cs_control(&spi->ctx, true);
 	} else {
 		sys_write8(1 << config->slave, SPI_OC_SIMPLE_SPSS(info));
@@ -147,7 +147,7 @@ int spi_oc_simple_transceive(const struct device *dev,
 	}
 
 	/* Clear chip-select */
-	if (config->cs) {
+	if (spi_cs_is_gpio(config)) {
 		spi_context_cs_control(&spi->ctx, false);
 	} else {
 		sys_write8(0 << config->slave, SPI_OC_SIMPLE_SPSS(info));

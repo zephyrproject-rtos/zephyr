@@ -474,6 +474,18 @@ This example configures the ``nrfjprog``, ``jlink``, and ``pyocd`` runners.
    runner wraps Segger's J-Link tools, and so on. But the runner command line
    options like ``--speed`` etc. are specific to the Python scripts.
 
+.. note::
+
+   Runners and board configuration should be created without being targeted to
+   a single operating system if the tool supports multiple operating systems,
+   nor should it rely upon special system setup/configuration. For example; do
+   not assume that a user will have prior knowledge/configuration or (if using
+   Linux) special udev rules installed, do not assume one specific ``/dev/X``
+   device for all platforms as this will not be compatible with Windows or
+   macOS, and allow for overriding of the selected device so that multiple
+   boards can be connected to a single system and flashed/debugged at the
+   choice of the user.
+
 For more details:
 
 - Run ``west flash --context`` to see a list of available runners which support

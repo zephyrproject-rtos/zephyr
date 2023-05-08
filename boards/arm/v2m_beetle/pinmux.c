@@ -132,9 +132,8 @@ static void arm_v2m_beetle_pinmux_defaults(void)
 	CMSDK_AHB_GPIO1_DEV->data |= (0x1 << 15);
 }
 
-static int arm_v2m_beetle_pinmux_init(const struct device *port)
+static int arm_v2m_beetle_pinmux_init(void)
 {
-	ARG_UNUSED(port);
 
 	arm_v2m_beetle_pinmux_defaults();
 

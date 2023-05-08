@@ -58,12 +58,15 @@
 	 (((val) & STM32_CLOCK_VAL_MASK) << STM32_CLOCK_VAL_SHIFT))
 
 /** @brief RCC_CFGRx register offset */
+#define CFGR_REG		0x04
 #define CFGR3_REG		0x30
 
 /** @brief RCC_BDCR register offset */
 #define BDCR_REG		0x20
 
 /** @brief Device domain clocks selection helpers) */
+/** CFGR devices */
+#define I2S_SEL(val)		STM32_CLOCK(val, 1, 23, CFGR_REG)
 /** CFGR3 devices */
 #define USART1_SEL(val)		STM32_CLOCK(val, 3, 0, CFGR3_REG)
 #define I2C1_SEL(val)		STM32_CLOCK(val, 1, 4, CFGR3_REG)
@@ -83,5 +86,7 @@
 #define TIM3_4_SEL(val)		STM32_CLOCK(val, 1, 25, CFGR3_REG)
 /** BDCR devices */
 #define RTC_SEL(val)		STM32_CLOCK(val, 3, 8, BDCR_REG)
+/** Dummy: Add a specificier when no selection is possible */
+#define NO_SEL			0xFF
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32F3_CLOCK_H_ */

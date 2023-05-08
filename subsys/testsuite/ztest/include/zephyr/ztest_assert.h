@@ -27,6 +27,7 @@ extern "C" {
 const char *ztest_relative_filename(const char *file);
 void ztest_test_fail(void);
 void ztest_test_skip(void);
+void ztest_test_expect_fail(void);
 void ztest_skip_failed_assumption(void);
 #if CONFIG_ZTEST_ASSERT_VERBOSE == 0
 
@@ -55,6 +56,19 @@ static inline bool z_zassume_(bool cond, const char *file, int line)
 }
 
 #define z_zassume(cond, default_msg, file, line, func, msg, ...) z_zassume_(cond, file, line)
+
+static inline bool z_zexpect_(bool cond, const char *file, int line)
+{
+	if (cond == false) {
+		PRINT("\n    Expectation failed at %s:%d\n", ztest_relative_filename(file), line);
+		ztest_test_expect_fail();
+		return false;
+	}
+
+	return true;
+}
+
+#define z_zexpect(cond, default_msg, file, line, func, msg, ...) z_zexpect_(cond, file, line)
 
 #else /* CONFIG_ZTEST_ASSERT_VERBOSE != 0 */
 
@@ -100,6 +114,30 @@ static inline bool z_zassume(bool cond, const char *default_msg, const char *fil
 #if CONFIG_ZTEST_ASSERT_VERBOSE == 2
 	else {
 		PRINT("\n   Assumption succeeded at %s:%d (%s)\n", ztest_relative_filename(file),
+		      line, func);
+	}
+#endif
+	return true;
+}
+
+static inline bool z_zexpect(bool cond, const char *default_msg, const char *file, int line,
+			     const char *func, const char *msg, ...)
+{
+	if (cond == false) {
+		va_list vargs;
+
+		va_start(vargs, msg);
+		PRINT("\n    Expectation failed at %s:%d: %s: %s\n", ztest_relative_filename(file),
+		      line, func, default_msg);
+		vprintk(msg, vargs);
+		printk("\n");
+		va_end(vargs);
+		ztest_test_expect_fail();
+		return false;
+	}
+#if CONFIG_ZTEST_ASSERT_VERBOSE == 2
+	else {
+		PRINT("\n   Expectation succeeded at %s:%d (%s)\n", ztest_relative_filename(file),
 		      line, func);
 	}
 #endif
@@ -186,6 +224,36 @@ static inline bool z_zassume(bool cond, const char *default_msg, const char *fil
 
 #define zassume(cond, default_msg, ...)                                                            \
 	_zassume_va(cond, default_msg, COND_CODE_1(__VA_OPT__(1), (__VA_ARGS__), (NULL)))
+
+/**
+ * @brief If @a cond is false, fail the test but continue its execution.
+ *
+ * You probably don't need to call this macro directly. You should
+ * instead use zexpect_{condition} macros below.
+ *
+ * @param cond Condition to check
+ * @param default_msg Message to print if @a cond is false
+ * @param msg Optional, can be NULL. Message to print if @a cond is false.
+ */
+#define _zexpect_base(cond, default_msg, msg, ...)                                                 \
+	do {                                                                                       \
+		bool _msg = (msg != NULL);                                                         \
+		bool _ret =                                                                        \
+			z_zexpect(cond, _msg ? ("(" default_msg ")") : (default_msg), __FILE__,    \
+				  __LINE__, __func__, _msg ? msg : "", ##__VA_ARGS__);             \
+		(void)_msg;                                                                        \
+		if (!_ret) {                                                                       \
+			/* If kernel but without multithreading return. */                         \
+			COND_CODE_1(KERNEL, (COND_CODE_1(CONFIG_MULTITHREADING, (), (return;))),   \
+				    ())                                                            \
+		}                                                                                  \
+	} while (0)
+
+#define _zexpect_va(cond, default_msg, msg, ...)                                                   \
+	_zexpect_base(cond, default_msg, msg, ##__VA_ARGS__)
+
+#define zexpect(cond, default_msg, ...)                                                            \
+	_zexpect_va(cond, default_msg, COND_CODE_1(__VA_OPT__(1), (__VA_ARGS__), (NULL)))
 
 /**
  * @brief Assert that this function call won't be reached
@@ -471,6 +539,132 @@ static inline bool z_zassume(bool cond, const char *default_msg, const char *fil
  */
 #define zassume_mem_equal__(buf, exp, size, ...)                                                   \
 	zassume(memcmp(buf, exp, size) == 0, #buf " not equal to " #exp, ##__VA_ARGS__)
+
+/**
+ * @}
+ */
+
+/**
+ * @defgroup ztest_expect Ztest expectation macros
+ * @ingroup ztest
+ *
+ * This module provides expectations when using Ztest.
+ *
+ * @{
+ */
+
+/**
+ * @brief Expect that @a cond is true, otherwise mark test as failed but continue its execution.
+ *
+ * @param cond Condition to check
+ * @param ... Optional message and variables to print if the expectation fails
+ */
+#define zexpect_true(cond, ...) zexpect(cond, #cond " is false", ##__VA_ARGS__)
+
+/**
+ * @brief Expect that @a cond is false, otherwise mark test as failed but continue its execution.
+ *
+ * @param cond Condition to check
+ * @param ... Optional message and variables to print if the expectation fails
+ */
+#define zexpect_false(cond, ...) zexpect(!(cond), #cond " is true", ##__VA_ARGS__)
+
+/**
+ * @brief Expect that @a cond is 0 (success), otherwise mark test as failed but continue its
+ * execution.
+ *
+ * @param cond Condition to check
+ * @param ... Optional message and variables to print if the expectation fails
+ */
+#define zexpect_ok(cond, ...) zexpect(!(cond), #cond " is non-zero", ##__VA_ARGS__)
+
+/**
+ * @brief Expect that @a ptr is NULL, otherwise mark test as failed but continue its execution.
+ *
+ * @param ptr Pointer to compare
+ * @param ... Optional message and variables to print if the expectation fails
+ */
+#define zexpect_is_null(ptr, ...) zexpect((ptr) == NULL, #ptr " is not NULL", ##__VA_ARGS__)
+
+/**
+ * @brief Expect that @a ptr is not NULL, otherwise mark test as failed but continue its execution.
+ *
+ * @param ptr Pointer to compare
+ * @param ... Optional message and variables to print if the expectation fails
+ */
+#define zexpect_not_null(ptr, ...) zexpect((ptr) != NULL, #ptr " is NULL", ##__VA_ARGS__)
+
+/**
+ * @brief Expect that @a a equals @a b, otherwise mark test as failed but continue its execution.
+ * expectation fails, the test will be marked as "skipped".
+ *
+ * @param a Value to compare
+ * @param b Value to compare
+ * @param ... Optional message and variables to print if the expectation fails
+ */
+#define zexpect_equal(a, b, ...) zexpect((a) == (b), #a " not equal to " #b, ##__VA_ARGS__)
+
+/**
+ * @brief Expect that @a a does not equal @a b, otherwise mark test as failed but continue its
+ * execution.
+ *
+ * @a a and @a b won't be converted and will be compared directly.
+ *
+ * @param a Value to compare
+ * @param b Value to compare
+ * @param ... Optional message and variables to print if the expectation fails
+ */
+#define zexpect_not_equal(a, b, ...) zexpect((a) != (b), #a " equal to " #b, ##__VA_ARGS__)
+
+/**
+ * @brief Expect that @a a equals @a b, otherwise mark test as failed but continue its execution.
+ *
+ * @a a and @a b will be converted to `void *` before comparing.
+ *
+ * @param a Value to compare
+ * @param b Value to compare
+ * @param ... Optional message and variables to print if the expectation fails
+ */
+#define zexpect_equal_ptr(a, b, ...)                                                               \
+	zexpect((void *)(a) == (void *)(b), #a " not equal to " #b, ##__VA_ARGS__)
+
+/**
+ * @brief Expect that @a a is within @a b with delta @a d, otherwise mark test as failed but
+ * continue its execution.
+ *
+ * @param a Value to compare
+ * @param b Value to compare
+ * @param delta Difference between a and b
+ * @param ... Optional message and variables to print if the expectation fails
+ */
+#define zexpect_within(a, b, delta, ...)                                                           \
+	zexpect(((a) >= ((b) - (delta))) && ((a) <= ((b) + (delta))),                              \
+		#a " not within " #b " +/- " #delta, ##__VA_ARGS__)
+
+/**
+ * @brief Expect that @a a is greater than or equal to @a l and less
+ *        than or equal to @a u, otherwise mark test as failed but continue its execution.
+ *
+ * @param a Value to compare
+ * @param lower Lower limit
+ * @param upper Upper limit
+ * @param ... Optional message and variables to print if the expectation fails
+ */
+#define zexpect_between_inclusive(a, lower, upper, ...)                                            \
+	zexpect(((a) >= (lower)) && ((a) <= (upper)),                                              \
+		#a " not between " #lower " and " #upper " inclusive", ##__VA_ARGS__)
+
+/**
+ * @brief Expect that 2 memory buffers have the same contents, otherwise mark test as failed but
+ * continue its execution.
+ *
+ * @param buf Buffer to compare
+ * @param exp Buffer with expected contents
+ * @param size Size of buffers
+ * @param ... Optional message and variables to print if the expectation fails
+ */
+#define zexpect_mem_equal(buf, exp, size, ...)                                                     \
+	zexpect(memcmp(buf, exp, size) == 0, #buf " not equal to " #exp, ##__VA_ARGS__)
 
 /**
  * @}

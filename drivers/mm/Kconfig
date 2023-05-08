@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig MM_DRV
-	bool "Memory Management Drivers [EXPERIMENTAL]"
+	bool "Memory Management drivers [EXPERIMENTAL]"
 	select EXPERIMENTAL
 	select KERNEL_VM_SUPPORT
 	help

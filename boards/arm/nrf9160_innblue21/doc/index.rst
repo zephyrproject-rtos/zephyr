@@ -104,6 +104,9 @@ have to set the IDAU (SPU) configuration to allow Non-Secure access to all
 CPU resources utilized by the Non-Secure application firmware. SPU
 configuration shall take place before jumping to the Non-Secure application.
 
+.. note::
+   Trusted Firmware-M (TF-M) and building the ``ns`` target is not supported for this board.
+
 Building a Secure only application
 ==================================
 

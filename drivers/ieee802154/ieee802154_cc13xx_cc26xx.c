@@ -149,16 +149,42 @@ static int ieee802154_cc13xx_cc26xx_cca(const struct device *dev)
 	}
 }
 
+static inline int ieee802154_cc13xx_cc26xx_channel_to_frequency(
+	uint16_t channel, uint16_t *frequency, uint16_t *fractFreq)
+{
+	__ASSERT_NO_MSG(frequency != NULL);
+	__ASSERT_NO_MSG(fractFreq != NULL);
+
+	if (channel >= IEEE802154_2_4_GHZ_CHANNEL_MIN
+		&& channel <= IEEE802154_2_4_GHZ_CHANNEL_MAX) {
+		*frequency = 2405 + 5 * (channel - IEEE802154_2_4_GHZ_CHANNEL_MIN);
+		*fractFreq = 0;
+	} else {
+		*frequency = 0;
+		*fractFreq = 0;
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
 static int ieee802154_cc13xx_cc26xx_set_channel(const struct device *dev,
 						uint16_t channel)
 {
 	int r;
-	RF_Stat status;
 	RF_CmdHandle cmd_handle;
+	RF_EventMask reason;
+	uint16_t freq, fract;
 	struct ieee802154_cc13xx_cc26xx_data *drv_data = dev->data;
 
 	/* TODO Support sub-GHz for CC13xx */
 	if (channel < 11 || channel > 26) {
+		return -EINVAL;
+	}
+
+	r = ieee802154_cc13xx_cc26xx_channel_to_frequency(
+		channel, &freq, &fract);
+	if (r < 0) {
 		return -EINVAL;
 	}
 
@@ -171,11 +197,14 @@ static int ieee802154_cc13xx_cc26xx_set_channel(const struct device *dev,
 	/* Block TX while changing channel */
 	k_mutex_lock(&drv_data->tx_mutex, K_FOREVER);
 
-	/* Set all RX entries to empty */
-	status = RF_runImmediateCmd(drv_data->rf_handle,
-		(uint32_t *)&drv_data->cmd_clear_rx);
-	if (status != RF_StatCmdDoneSuccess && status != RF_StatSuccess) {
-		LOG_ERR("Failed to clear RX queue (%d)", status);
+	/* Set the frequency */
+	drv_data->cmd_fs.status = IDLE;
+	drv_data->cmd_fs.frequency = freq;
+	drv_data->cmd_fs.fractFreq = fract;
+	reason = RF_runCmd(drv_data->rf_handle, (RF_Op *)&drv_data->cmd_fs,
+			   RF_PriorityNormal, NULL, 0);
+	if (reason != RF_EventLastCmdDone) {
+		LOG_ERR("Failed to set frequency: 0x%" PRIx64, reason);
 		r = -EIO;
 		goto out;
 	}
@@ -463,6 +492,25 @@ static int ieee802154_cc13xx_cc26xx_stop(const struct device *dev)
 	return 0;
 }
 
+/**
+ * Stops the sub-GHz interface and yields the radio (tells RF module to power
+ * down).
+ */
+static int ieee802154_cc13xx_cc26xx_stop_if(const struct device *dev)
+{
+	struct ieee802154_cc13xx_cc26xx_data *drv_data = dev->data;
+	int ret;
+
+	ret = ieee802154_cc13xx_cc26xx_stop(dev);
+	if (ret < 0) {
+		return ret;
+	}
+
+	/* power down radio */
+	RF_yield(drv_data->rf_handle);
+	return 0;
+}
+
 static int
 ieee802154_cc13xx_cc26xx_configure(const struct device *dev,
 				   enum ieee802154_config_type type,
@@ -531,18 +579,20 @@ static struct ieee802154_radio_api ieee802154_cc13xx_cc26xx_radio_api = {
 	.set_txpower = ieee802154_cc13xx_cc26xx_set_txpower,
 	.tx = ieee802154_cc13xx_cc26xx_tx,
 	.start = ieee802154_cc13xx_cc26xx_start,
-	.stop = ieee802154_cc13xx_cc26xx_stop,
+	.stop = ieee802154_cc13xx_cc26xx_stop_if,
 	.configure = ieee802154_cc13xx_cc26xx_configure,
+};
+
+/** RF patches to use (note: RF core keeps a pointer to this, so no stack). */
+static RF_Mode rf_mode = {
+	.rfMode      = RF_MODE_MULTIPLE,
+	.cpePatchFxn = &rf_patch_cpe_multi_protocol,
 };
 
 static int ieee802154_cc13xx_cc26xx_init(const struct device *dev)
 {
 	RF_Params rf_params;
 	RF_EventMask reason;
-	RF_Mode rf_mode = {
-		.rfMode      = RF_MODE_MULTIPLE,
-		.cpePatchFxn = &rf_patch_cpe_multi_protocol,
-	};
 	struct ieee802154_cc13xx_cc26xx_data *drv_data = dev->data;
 
 	/* Initialize driver data */

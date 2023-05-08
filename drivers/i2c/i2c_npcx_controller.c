@@ -161,9 +161,6 @@ struct i2c_ctrl_data {
 #define HAL_I2C_INSTANCE(dev)                                                                      \
 	((struct smb_reg *)((const struct i2c_ctrl_config *)(dev)->config)->base)
 
-#define HAL_I2C_FIFO_INSTANCE(dev)                                                                 \
-	((struct smb_fifo_reg *)((const struct i2c_ctrl_config *)(dev)->config)->base)
-
 /* Recommended I2C timing values are based on 15 MHz */
 static const struct npcx_i2c_timing_cfg npcx_15m_speed_confs[] = {
 	[NPCX_I2C_BUS_SPEED_100KHZ] = {.HLDT = 15, .k1 = 76, .k2 = 0},
@@ -180,23 +177,23 @@ static const struct npcx_i2c_timing_cfg npcx_20m_speed_confs[] = {
 /* I2C controller inline functions access shared registers */
 static inline void i2c_ctrl_start(const struct device *dev)
 {
-	struct smb_fifo_reg *const inst_fifo = HAL_I2C_FIFO_INSTANCE(dev);
+	struct smb_reg *const inst = HAL_I2C_INSTANCE(dev);
 
-	inst_fifo->SMBCTL1 |= BIT(NPCX_SMBCTL1_START);
+	inst->SMBCTL1 |= BIT(NPCX_SMBCTL1_START);
 }
 
 static inline void i2c_ctrl_stop(const struct device *dev)
 {
-	struct smb_fifo_reg *const inst_fifo = HAL_I2C_FIFO_INSTANCE(dev);
+	struct smb_reg *const inst = HAL_I2C_INSTANCE(dev);
 
-	inst_fifo->SMBCTL1 |= BIT(NPCX_SMBCTL1_STOP);
+	inst->SMBCTL1 |= BIT(NPCX_SMBCTL1_STOP);
 }
 
 static inline int i2c_ctrl_bus_busy(const struct device *dev)
 {
-	struct smb_fifo_reg *const inst_fifo = HAL_I2C_FIFO_INSTANCE(dev);
+	struct smb_reg *const inst = HAL_I2C_INSTANCE(dev);
 
-	return IS_BIT_SET(inst_fifo->SMBCST, NPCX_SMBCST_BB);
+	return IS_BIT_SET(inst->SMBCST, NPCX_SMBCST_BB);
 }
 
 static inline void i2c_ctrl_bank_sel(const struct device *dev, int bank)
@@ -282,54 +279,54 @@ static inline void i2c_ctrl_norm_free_sda(const struct device *dev)
 /* I2C controller inline functions access registers in 'FIFO' bank */
 static inline void i2c_ctrl_fifo_write(const struct device *dev, uint8_t data)
 {
-	struct smb_fifo_reg *const inst_fifo = HAL_I2C_FIFO_INSTANCE(dev);
+	struct smb_reg *const inst = HAL_I2C_INSTANCE(dev);
 
-	inst_fifo->SMBSDA = data;
+	inst->SMBSDA = data;
 }
 
 static inline uint8_t i2c_ctrl_fifo_read(const struct device *dev)
 {
-	struct smb_fifo_reg *const inst_fifo = HAL_I2C_FIFO_INSTANCE(dev);
+	struct smb_reg *const inst = HAL_I2C_INSTANCE(dev);
 
-	return inst_fifo->SMBSDA;
+	return inst->SMBSDA;
 }
 
 static inline int i2c_ctrl_fifo_tx_avail(const struct device *dev)
 {
-	struct smb_fifo_reg *const inst_fifo = HAL_I2C_FIFO_INSTANCE(dev);
+	struct smb_reg *const inst = HAL_I2C_INSTANCE(dev);
 
-	return NPCX_I2C_FIFO_MAX_SIZE - (inst_fifo->SMBTXF_STS & 0x3f);
+	return NPCX_I2C_FIFO_MAX_SIZE - (inst->SMBTXF_STS & 0x3f);
 }
 
 static inline int i2c_ctrl_fifo_rx_occupied(const struct device *dev)
 {
-	struct smb_fifo_reg *const inst_fifo = HAL_I2C_FIFO_INSTANCE(dev);
+	struct smb_reg *const inst = HAL_I2C_INSTANCE(dev);
 
-	return inst_fifo->SMBRXF_STS & 0x3f;
+	return inst->SMBRXF_STS & 0x3f;
 }
 
 static inline void i2c_ctrl_fifo_rx_setup_threshold_nack(
 		const struct device *dev, int threshold, int last)
 {
-	struct smb_fifo_reg *const inst_fifo = HAL_I2C_FIFO_INSTANCE(dev);
+	struct smb_reg *const inst = HAL_I2C_INSTANCE(dev);
 	uint8_t value = MIN(threshold, NPCX_I2C_FIFO_MAX_SIZE);
 
-	SET_FIELD(inst_fifo->SMBRXF_CTL, NPCX_SMBRXF_CTL_RX_THR, value);
+	SET_FIELD(inst->SMBRXF_CTL, NPCX_SMBRXF_CTL_RX_THR, value);
 
 	/*
 	 * Is it last received transaction? If so, set LAST bit. Then the
 	 * hardware will generate NACK automatically when receiving last byte.
 	 */
 	if (last && (value == threshold)) {
-		inst_fifo->SMBRXF_CTL |= BIT(NPCX_SMBRXF_CTL_LAST);
+		inst->SMBRXF_CTL |= BIT(NPCX_SMBRXF_CTL_LAST);
 	}
 }
 
 static inline void i2c_ctrl_fifo_clear_status(const struct device *dev)
 {
-	struct smb_fifo_reg *const inst_fifo = HAL_I2C_FIFO_INSTANCE(dev);
+	struct smb_reg *const inst = HAL_I2C_INSTANCE(dev);
 
-	inst_fifo->SMBFIF_CTS |= BIT(NPCX_SMBFIF_CTS_CLR_FIFO);
+	inst->SMBFIF_CTS |= BIT(NPCX_SMBFIF_CTS_CLR_FIFO);
 }
 
 /*
@@ -407,7 +404,7 @@ static void i2c_ctrl_config_bus_freq(const struct device *dev,
 /* I2C controller local functions */
 static int i2c_ctrl_wait_stop_completed(const struct device *dev, int timeout)
 {
-	struct smb_fifo_reg *const inst_fifo = HAL_I2C_FIFO_INSTANCE(dev);
+	struct smb_reg *const inst = HAL_I2C_INSTANCE(dev);
 
 	if (timeout <= 0) {
 		return -EINVAL;
@@ -418,7 +415,7 @@ static int i2c_ctrl_wait_stop_completed(const struct device *dev, int timeout)
 		 * Wait till i2c bus is idle. This bit is cleared to 0
 		 * automatically after the STOP condition is generated.
 		 */
-		if (!IS_BIT_SET(inst_fifo->SMBCTL1, NPCX_SMBCTL1_STOP))
+		if (!IS_BIT_SET(inst->SMBCTL1, NPCX_SMBCTL1_STOP))
 			break;
 		k_msleep(1);
 	} while (--timeout);
@@ -465,7 +462,7 @@ static int i2c_ctrl_wait_idle_completed(const struct device *dev, int timeout)
 
 static int i2c_ctrl_recovery(const struct device *dev)
 {
-	struct smb_fifo_reg *const inst_fifo = HAL_I2C_FIFO_INSTANCE(dev);
+	struct smb_reg *const inst = HAL_I2C_INSTANCE(dev);
 	struct i2c_ctrl_data *const data = dev->data;
 	int ret;
 
@@ -482,9 +479,9 @@ static int i2c_ctrl_recovery(const struct device *dev)
 	 * - Wait for STOP condition completed
 	 * - Then clear BB (BUS BUSY) bit
 	 */
-	inst_fifo->SMBST = BIT(NPCX_SMBST_BER) | BIT(NPCX_SMBST_NEGACK);
+	inst->SMBST = BIT(NPCX_SMBST_BER) | BIT(NPCX_SMBST_NEGACK);
 	ret = i2c_ctrl_wait_stop_completed(dev, I2C_MAX_TIMEOUT);
-	inst_fifo->SMBCST |= BIT(NPCX_SMBCST_BB);
+	inst->SMBCST |= BIT(NPCX_SMBCST_BB);
 	if (ret != 0) {
 		LOG_ERR("Abort i2c port%02x fail! Bus might be stalled.",
 								data->port);
@@ -496,7 +493,7 @@ static int i2c_ctrl_recovery(const struct device *dev)
 	 * - Wait both SCL/SDA line are high
 	 * - Enable i2c module again
 	 */
-	inst_fifo->SMBCTL2 &= ~BIT(NPCX_SMBCTL2_ENABLE);
+	inst->SMBCTL2 &= ~BIT(NPCX_SMBCTL2_ENABLE);
 	ret = i2c_ctrl_wait_idle_completed(dev, I2C_MAX_TIMEOUT);
 	if (ret != 0) {
 		LOG_ERR("Reset i2c port%02x fail! Bus might be stalled.",
@@ -743,11 +740,11 @@ static int i2c_ctrl_proc_read_msg(const struct device *dev, struct i2c_msg *msg)
 /* I2C controller isr function */
 static void i2c_ctrl_isr(const struct device *dev)
 {
-	struct smb_fifo_reg *const inst_fifo = HAL_I2C_FIFO_INSTANCE(dev);
+	struct smb_reg *const inst = HAL_I2C_INSTANCE(dev);
 	struct i2c_ctrl_data *const data = dev->data;
 	uint8_t status, tmp;
 
-	status = inst_fifo->SMBST & NPCX_VALID_SMBST_MASK;
+	status = inst->SMBST & NPCX_VALID_SMBST_MASK;
 	LOG_DBG("status: %02x, %d", status, data->oper_state);
 
 	/* A 'Bus Error' has been identified */
@@ -756,7 +753,7 @@ static void i2c_ctrl_isr(const struct device *dev)
 		i2c_ctrl_stop(dev);
 
 		/* Clear BER Bit */
-		inst_fifo->SMBST = BIT(NPCX_SMBST_BER);
+		inst->SMBST = BIT(NPCX_SMBST_BER);
 
 		/* Make sure slave doesn't hold bus by reading FIFO again */
 		tmp = i2c_ctrl_fifo_read(dev);
@@ -775,7 +772,7 @@ static void i2c_ctrl_isr(const struct device *dev)
 		i2c_ctrl_stop(dev);
 
 		/* Clear NEGACK Bit */
-		inst_fifo->SMBST = BIT(NPCX_SMBST_NEGACK);
+		inst->SMBST = BIT(NPCX_SMBST_NEGACK);
 
 		/* End transaction */
 		data->oper_state = NPCX_I2C_WAIT_STOP;
@@ -795,7 +792,7 @@ static void i2c_ctrl_isr(const struct device *dev)
 
 	/* Clear unexpected status bits */
 	if (status != 0) {
-		inst_fifo->SMBST = status;
+		inst->SMBST = status;
 		LOG_ERR("Unexpected  SMBST 0x%02x occurred on i2c port%02x!",
 			status, data->port);
 	}
@@ -1042,7 +1039,7 @@ static int i2c_ctrl_init(const struct device *dev)
 
 	/* Turn on device clock first and get source clock freq. */
 	if (clock_control_on(clk_dev,
-		(clock_control_subsys_t *) &config->clk_cfg) != 0) {
+		(clock_control_subsys_t) &config->clk_cfg) != 0) {
 		LOG_ERR("Turn on %s clock fail.", dev->name);
 		return -EIO;
 	}
@@ -1052,7 +1049,7 @@ static int i2c_ctrl_init(const struct device *dev)
 	 * configuration of the device to meet SMBus timing spec. Please refer
 	 * Table 21/22/23 and section 7.5.9 SMBus Timing for more detail.
 	 */
-	if (clock_control_get_rate(clk_dev, (clock_control_subsys_t *)
+	if (clock_control_get_rate(clk_dev, (clock_control_subsys_t)
 			&config->clk_cfg, &i2c_rate) != 0) {
 		LOG_ERR("Get %s clock rate error.", dev->name);
 		return -EIO;

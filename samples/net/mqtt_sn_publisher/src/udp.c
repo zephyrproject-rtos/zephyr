@@ -116,7 +116,7 @@ static void process_thread(void)
 	gateway.sin_family = AF_INET;
 	gateway.sin_port = htons(CONFIG_NET_SAMPLE_MQTT_SN_GATEWAY_PORT);
 	err = zsock_inet_pton(AF_INET, CONFIG_NET_SAMPLE_MQTT_SN_GATEWAY_IP, &gateway.sin_addr);
-	__ASSERT(err == 0, "zsock_inet_pton() failed %d", err);
+	__ASSERT(err == 1, "zsock_inet_pton() failed %d", err);
 
 	LOG_INF("Waiting for connection...");
 	LOG_HEXDUMP_DBG(&gateway, sizeof(gateway), "gateway");

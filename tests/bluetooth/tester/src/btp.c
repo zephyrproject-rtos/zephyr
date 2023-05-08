@@ -20,7 +20,7 @@
 
 #include <zephyr/logging/log.h>
 #define LOG_MODULE_NAME bttester
-LOG_MODULE_REGISTER(LOG_MODULE_NAME);
+LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_BTTESTER_LOG_LEVEL);
 
 #include "btp/btp.h"
 
@@ -35,6 +35,7 @@ struct btp_buf {
 		uint8_t data[BTP_MTU];
 		struct btp_hdr hdr;
 	};
+	uint8_t rsp[BTP_MTU];
 };
 
 static struct btp_buf cmd_buf[CMD_QUEUED];
@@ -42,188 +43,92 @@ static struct btp_buf cmd_buf[CMD_QUEUED];
 static K_FIFO_DEFINE(cmds_queue);
 static K_FIFO_DEFINE(avail_queue);
 
-static void supported_commands(uint8_t *data, uint16_t len)
+static struct btp_buf *delayed_cmd;
+
+static struct {
+	const struct btp_handler *handlers;
+	size_t num;
+} service_handler[BTP_SERVICE_ID_MAX + 1];
+
+static void tester_send_with_index(uint8_t service, uint8_t opcode, uint8_t index,
+				   const uint8_t *data, size_t len);
+static void tester_rsp_with_index(uint8_t service, uint8_t opcode, uint8_t index,
+				  uint8_t status);
+
+void tester_register_command_handlers(uint8_t service,
+				      const struct btp_handler *handlers,
+				      size_t num)
 {
-	uint8_t buf[1];
-	struct core_read_supported_commands_rp *rp = (void *) buf;
+	__ASSERT_NO_MSG(service <= BTP_SERVICE_ID_MAX);
+	__ASSERT_NO_MSG(service_handler[service].handlers == NULL);
 
-	(void)memset(buf, 0, sizeof(buf));
-
-	tester_set_bit(buf, CORE_READ_SUPPORTED_COMMANDS);
-	tester_set_bit(buf, CORE_READ_SUPPORTED_SERVICES);
-	tester_set_bit(buf, CORE_REGISTER_SERVICE);
-	tester_set_bit(buf, CORE_UNREGISTER_SERVICE);
-
-	tester_send(BTP_SERVICE_ID_CORE, CORE_READ_SUPPORTED_COMMANDS,
-		    BTP_INDEX_NONE, (uint8_t *) rp, sizeof(buf));
+	service_handler[service].handlers = handlers;
+	service_handler[service].num = num;
 }
 
-static void supported_services(uint8_t *data, uint16_t len)
+static const struct btp_handler *find_btp_handler(uint8_t service, uint8_t opcode)
 {
-	uint8_t buf[1];
-	struct core_read_supported_services_rp *rp = (void *) buf;
+	if ((service > BTP_SERVICE_ID_MAX) ||
+	    (service_handler[service].handlers == NULL)) {
+		return NULL;
+	}
 
-	(void)memset(buf, 0, sizeof(buf));
-
-	tester_set_bit(buf, BTP_SERVICE_ID_CORE);
-	tester_set_bit(buf, BTP_SERVICE_ID_GAP);
-	tester_set_bit(buf, BTP_SERVICE_ID_GATT);
-#if defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)
-	tester_set_bit(buf, BTP_SERVICE_ID_L2CAP);
-#endif /* CONFIG_BT_L2CAP_DYNAMIC_CHANNEL */
-#if defined(CONFIG_BT_MESH)
-	tester_set_bit(buf, BTP_SERVICE_ID_MESH);
-#endif /* CONFIG_BT_MESH */
-
-	tester_send(BTP_SERVICE_ID_CORE, CORE_READ_SUPPORTED_SERVICES,
-		    BTP_INDEX_NONE, (uint8_t *) rp, sizeof(buf));
-}
-
-static void register_service(uint8_t *data, uint16_t len)
-{
-	struct core_register_service_cmd *cmd = (void *) data;
-	uint8_t status;
-
-	switch (cmd->id) {
-	case BTP_SERVICE_ID_GAP:
-		status = tester_init_gap();
-		/* Rsp with success status will be handled by bt enable cb */
-		if (status == BTP_STATUS_FAILED) {
-			goto rsp;
+	for (uint8_t i = 0; i < service_handler[service].num; i++) {
+		if (service_handler[service].handlers[i].opcode == opcode) {
+			return &service_handler[service].handlers[i];
 		}
-		return;
-	case BTP_SERVICE_ID_GATT:
-		status = tester_init_gatt();
-		break;
-#if defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)
-	case BTP_SERVICE_ID_L2CAP:
-		status = tester_init_l2cap();
-#endif /* CONFIG_BT_L2CAP_DYNAMIC_CHANNEL */
-		break;
-#if defined(CONFIG_BT_MESH)
-	case BTP_SERVICE_ID_MESH:
-		status = tester_init_mesh();
-		break;
-#endif /* CONFIG_BT_MESH */
-	default:
-		LOG_WRN("unknown id: 0x%02x", cmd->id);
-		status = BTP_STATUS_FAILED;
-		break;
 	}
 
-rsp:
-	tester_rsp(BTP_SERVICE_ID_CORE, CORE_REGISTER_SERVICE, BTP_INDEX_NONE,
-		   status);
-}
-
-static void unregister_service(uint8_t *data, uint16_t len)
-{
-	struct core_unregister_service_cmd *cmd = (void *) data;
-	uint8_t status;
-
-	switch (cmd->id) {
-	case BTP_SERVICE_ID_GAP:
-		status = tester_unregister_gap();
-		break;
-	case BTP_SERVICE_ID_GATT:
-		status = tester_unregister_gatt();
-		break;
-#if defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)
-	case BTP_SERVICE_ID_L2CAP:
-		status = tester_unregister_l2cap();
-		break;
-#endif /* CONFIG_BT_L2CAP_DYNAMIC_CHANNEL */
-#if defined(CONFIG_BT_MESH)
-	case BTP_SERVICE_ID_MESH:
-		status = tester_unregister_mesh();
-		break;
-#endif /* CONFIG_BT_MESH */
-	default:
-		LOG_WRN("unknown id: 0x%x", cmd->id);
-		status = BTP_STATUS_FAILED;
-		break;
-	}
-
-	tester_rsp(BTP_SERVICE_ID_CORE, CORE_UNREGISTER_SERVICE, BTP_INDEX_NONE,
-		   status);
-}
-
-static void handle_core(uint8_t opcode, uint8_t index, uint8_t *data,
-			uint16_t len)
-{
-	if (index != BTP_INDEX_NONE) {
-		LOG_WRN("index != BTP_INDEX_NONE: 0x%x", index);
-		tester_rsp(BTP_SERVICE_ID_CORE, opcode, index, BTP_STATUS_FAILED);
-		return;
-	}
-
-	switch (opcode) {
-	case CORE_READ_SUPPORTED_COMMANDS:
-		supported_commands(data, len);
-		return;
-	case CORE_READ_SUPPORTED_SERVICES:
-		supported_services(data, len);
-		return;
-	case CORE_REGISTER_SERVICE:
-		register_service(data, len);
-		return;
-	case CORE_UNREGISTER_SERVICE:
-		unregister_service(data, len);
-		return;
-	default:
-		LOG_WRN("unknown opcode: 0x%x", opcode);
-		tester_rsp(BTP_SERVICE_ID_CORE, opcode, BTP_INDEX_NONE,
-			   BTP_STATUS_UNKNOWN_CMD);
-		return;
-	}
+	return NULL;
 }
 
 static void cmd_handler(void *p1, void *p2, void *p3)
 {
 	while (1) {
+		const struct btp_handler *btp;
 		struct btp_buf *cmd;
+		uint8_t status;
+		uint16_t rsp_len = 0;
 		uint16_t len;
 
 		cmd = k_fifo_get(&cmds_queue, K_FOREVER);
 
 		len = sys_le16_to_cpu(cmd->hdr.len);
 
-		/* TODO
-		 * verify if service is registered before calling handler
-		 */
+		btp = find_btp_handler(cmd->hdr.service, cmd->hdr.opcode);
+		if (btp) {
+			if (btp->index != cmd->hdr.index) {
+				status = BTP_STATUS_FAILED;
+			} else if ((btp->expect_len >= 0) && (btp->expect_len != len)) {
+				status = BTP_STATUS_FAILED;
+			} else {
+				status = btp->func(cmd->hdr.data, len,
+						   cmd->rsp, &rsp_len);
+			}
 
-		switch (cmd->hdr.service) {
-		case BTP_SERVICE_ID_CORE:
-			handle_core(cmd->hdr.opcode, cmd->hdr.index,
-				    cmd->hdr.data, len);
-			break;
-		case BTP_SERVICE_ID_GAP:
-			tester_handle_gap(cmd->hdr.opcode, cmd->hdr.index,
-					  cmd->hdr.data, len);
-			break;
-		case BTP_SERVICE_ID_GATT:
-			tester_handle_gatt(cmd->hdr.opcode, cmd->hdr.index,
-					   cmd->hdr.data, len);
-			break;
-#if defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)
-		case BTP_SERVICE_ID_L2CAP:
-			tester_handle_l2cap(cmd->hdr.opcode, cmd->hdr.index,
-					    cmd->hdr.data, len);
-#endif /* CONFIG_BT_L2CAP_DYNAMIC_CHANNEL */
-			break;
-#if defined(CONFIG_BT_MESH)
-		case BTP_SERVICE_ID_MESH:
-			tester_handle_mesh(cmd->hdr.opcode, cmd->hdr.index,
-					   cmd->hdr.data, len);
-			break;
-#endif /* CONFIG_BT_MESH */
-		default:
-			LOG_WRN("unknown service: 0x%x", cmd->hdr.service);
-			tester_rsp(cmd->hdr.service, cmd->hdr.opcode,
-				   cmd->hdr.index, BTP_STATUS_FAILED);
-			break;
+			__ASSERT_NO_MSG((rsp_len + sizeof(struct btp_hdr)) <= BTP_MTU);
+		} else {
+			status = BTP_STATUS_UNKNOWN_CMD;
+		}
+		/* Allow to delay only 1 command. This is for convenience only
+		 * of using cmd data without need of copying those in async
+		 * functions. Should be not needed eventually.
+		 */
+		if (status == BTP_STATUS_DELAY_REPLY) {
+			__ASSERT_NO_MSG(delayed_cmd == NULL);
+			delayed_cmd = cmd;
+			continue;
 		}
 
+		if ((status == BTP_STATUS_SUCCESS) && rsp_len > 0) {
+			tester_send_with_index(cmd->hdr.service, cmd->hdr.opcode,
+					       cmd->hdr.index, cmd->rsp, rsp_len);
+		} else {
+			tester_rsp_with_index(cmd->hdr.service, cmd->hdr.opcode,
+					      cmd->hdr.index, status);
+		}
+
+		(void)memset(cmd, 0, sizeof(*cmd));
 		k_fifo_put(&avail_queue, cmd);
 	}
 }
@@ -269,7 +174,7 @@ static void uart_init(uint8_t *data)
 	uart_pipe_register(data, BTP_MTU, recv_cb);
 }
 
-static void uart_send(uint8_t *data, size_t len)
+static void uart_send(const uint8_t *data, size_t len)
 {
 	uart_pipe_send(data, len);
 }
@@ -301,7 +206,7 @@ static void uart_init(uint8_t *data)
 	k_timer_start(&timer, K_MSEC(10), K_MSEC(10));
 }
 
-static void uart_send(uint8_t *data, size_t len)
+static void uart_send(const uint8_t *data, size_t len)
 {
 	int i;
 
@@ -329,19 +234,22 @@ void tester_init(void)
 
 	uart_init(buf->data);
 
-	tester_send(BTP_SERVICE_ID_CORE, CORE_EV_IUT_READY, BTP_INDEX_NONE,
-		    NULL, 0);
+	/* core service is always available */
+	tester_init_core();
+
+	tester_send_with_index(BTP_SERVICE_ID_CORE, BTP_CORE_EV_IUT_READY,
+			      BTP_INDEX_NONE, NULL, 0);
 }
 
-void tester_send(uint8_t service, uint8_t opcode, uint8_t index, uint8_t *data,
-		 size_t len)
+static void tester_send_with_index(uint8_t service, uint8_t opcode, uint8_t index,
+				   const uint8_t *data, size_t len)
 {
 	struct btp_hdr msg;
 
 	msg.service = service;
 	msg.opcode = opcode;
 	msg.index = index;
-	msg.len = len;
+	msg.len = sys_cpu_to_le16(len);
 
 	uart_send((uint8_t *)&msg, sizeof(msg));
 	if (data && len) {
@@ -349,15 +257,54 @@ void tester_send(uint8_t service, uint8_t opcode, uint8_t index, uint8_t *data,
 	}
 }
 
-void tester_rsp(uint8_t service, uint8_t opcode, uint8_t index, uint8_t status)
+static void tester_rsp_with_index(uint8_t service, uint8_t opcode, uint8_t index,
+				  uint8_t status)
 {
 	struct btp_status s;
 
 	if (status == BTP_STATUS_SUCCESS) {
-		tester_send(service, opcode, index, NULL, 0);
+		tester_send_with_index(service, opcode, index, NULL, 0);
 		return;
 	}
 
 	s.code = status;
-	tester_send(service, BTP_STATUS, index, (uint8_t *) &s, sizeof(s));
+	tester_send_with_index(service, BTP_STATUS, index, (uint8_t *) &s, sizeof(s));
+}
+
+void tester_event(uint8_t service, uint8_t opcode, const void *data, size_t len)
+{
+	__ASSERT_NO_MSG(opcode >= 0x80);
+	tester_send_with_index(service, opcode, BTP_INDEX, data, len);
+}
+
+void tester_rsp_full(uint8_t service, uint8_t opcode, const void *rsp, size_t len)
+{
+	struct btp_buf *cmd;
+
+	__ASSERT_NO_MSG(opcode < 0x80);
+	__ASSERT_NO_MSG(delayed_cmd != NULL);
+
+	tester_send_with_index(service, opcode, BTP_INDEX, rsp, len);
+
+	cmd = delayed_cmd;
+	delayed_cmd = NULL;
+
+	(void)memset(cmd, 0, sizeof(*cmd));
+	k_fifo_put(&avail_queue, cmd);
+}
+
+void tester_rsp(uint8_t service, uint8_t opcode, uint8_t status)
+{
+	struct btp_buf *cmd;
+
+	__ASSERT_NO_MSG(opcode < 0x80);
+	__ASSERT_NO_MSG(delayed_cmd != NULL);
+
+	tester_rsp_with_index(service, opcode, BTP_INDEX, status);
+
+	cmd = delayed_cmd;
+	delayed_cmd = NULL;
+
+	(void)memset(cmd, 0, sizeof(*cmd));
+	k_fifo_put(&avail_queue, cmd);
 }

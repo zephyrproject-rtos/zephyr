@@ -392,10 +392,6 @@ static void cdc_acm_do_cb(struct cdc_acm_dev_data_t *dev_data,
 		if (dev_data->suspended) {
 			LOG_INF("from suspend");
 			dev_data->suspended = false;
-			if (dev_data->configured) {
-				cdc_acm_read_cb(cfg->endpoint[ACM_OUT_EP_IDX].ep_addr,
-					0, dev_data);
-			}
 		} else {
 			LOG_DBG("Spurious resume event");
 		}
@@ -555,7 +551,7 @@ static int cdc_acm_fifo_read(const struct device *dev, uint8_t *rx_data,
 		if (ring_buf_space_get(dev_data->rx_ringbuf) >= CDC_ACM_BUFFER_SIZE) {
 			struct usb_cfg_data *cfg = (void *)dev->config;
 
-			if (dev_data->configured && !dev_data->suspended) {
+			if (dev_data->configured) {
 				cdc_acm_read_cb(cfg->endpoint[ACM_OUT_EP_IDX].ep_addr, 0, dev_data);
 			}
 			dev_data->rx_paused = false;

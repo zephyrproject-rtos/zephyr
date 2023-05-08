@@ -48,11 +48,21 @@
 		};
 	};
 
+	pwmleds: pwmleds {
+		compatible = "pwm-leds";
+		status = "disabled";
+
+		red_pwm_led: red_pwm_led {
+			pwms = <&pwm3 1 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+		};
+	};
+
 	aliases {
 		led0 = &red_up_led_3;
 		led1 = &yellow_left_4;
 		led2 = &green_right_led_5;
 		led3 = &blue_low_led_6;
+		pwm-led0 = &red_pwm_led;
 		sw0 = &user_button;
 		watchdog0 = &iwdg;
 	};
@@ -112,4 +122,15 @@
 
 &iwdg {
 	status = "okay";
+};
+
+&timers3 {
+	st,prescaler = <10000>;
+	status = "okay";
+
+	pwm3: pwm {
+		status = "okay";
+		pinctrl-0 = <&tim3_ch1_pc6>;
+		pinctrl-names = "default";
+	};
 };

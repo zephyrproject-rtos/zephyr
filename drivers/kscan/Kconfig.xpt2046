@@ -1,0 +1,11 @@
+# Copyright (c) 2023 Seppo Takalo
+# SPDX-License-Identifier: Apache-2.0
+
+config KSCAN_XPT2046
+	bool "XPT2046 resistive touch panel driver"
+	default y
+	depends on DT_HAS_XPTEK_XPT2046_ENABLED
+	select SPI
+	help
+	  Enable driver for Xptek XPT2046 resistive touch panel.
+	  This driver is very similar to ADS7843, but differs on channel numbering.

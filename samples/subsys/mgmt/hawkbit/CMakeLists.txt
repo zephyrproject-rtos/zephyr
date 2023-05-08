@@ -14,7 +14,7 @@ FILE(GLOB app_sources src/*.c)
 target_sources(app PRIVATE ${app_sources})
 target_sources_ifdef(CONFIG_NET_DHCPV4 app PRIVATE src/dhcp.c)
 
-include($ENV{ZEPHYR_BASE}/samples/net/common/common.cmake)
+include(${ZEPHYR_BASE}/samples/net/common/common.cmake)
 
 set(gen_dir ${ZEPHYR_BINARY_DIR}/include/generated/)
 

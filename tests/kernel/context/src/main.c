@@ -239,7 +239,7 @@ static void _test_kernel_cpu_idle(int atomic)
 			k_cpu_idle();
 		}
 		dt = k_uptime_ticks() - t0;
-		zassert_true(abs(dt - dur) <= slop,
+		zassert_true(abs((int32_t) (dt - dur)) <= slop,
 			     "Inaccurate wakeup, idled for %d ticks, expected %d",
 			     dt, dur);
 	}
@@ -254,9 +254,7 @@ static void _test_kernel_cpu_idle(int atomic)
 	/* Align to a "ms boundary". */
 	tms = k_uptime_get_32();
 	while (tms == k_uptime_get_32()) {
-#if defined(CONFIG_ARCH_POSIX)
-		k_busy_wait(50);
-#endif
+		Z_SPIN_DELAY(50);
 	}
 
 	tms = k_uptime_get_32();
@@ -396,16 +394,12 @@ static void _test_kernel_interrupts(disable_int_func disable_int,
 	/* Align to a "tick boundary" */
 	tick = sys_clock_tick_get_32();
 	while (sys_clock_tick_get_32() == tick) {
-#if defined(CONFIG_ARCH_POSIX)
-		k_busy_wait(1000);
-#endif
+		Z_SPIN_DELAY(1000);
 	}
 
 	tick++;
 	while (sys_clock_tick_get_32() == tick) {
-#if defined(CONFIG_ARCH_POSIX)
-		k_busy_wait(1000);
-#endif
+		Z_SPIN_DELAY(1000);
 		count++;
 	}
 
@@ -422,9 +416,7 @@ static void _test_kernel_interrupts(disable_int_func disable_int,
 	tick = sys_clock_tick_get_32();
 	for (i = 0; i < count; i++) {
 		sys_clock_tick_get_32();
-#if defined(CONFIG_ARCH_POSIX)
-		k_busy_wait(1000);
-#endif
+		Z_SPIN_DELAY(1000);
 	}
 
 	tick2 = sys_clock_tick_get_32();
@@ -446,9 +438,7 @@ static void _test_kernel_interrupts(disable_int_func disable_int,
 	/* Now repeat with interrupts unlocked. */
 	for (i = 0; i < count; i++) {
 		sys_clock_tick_get_32();
-#if defined(CONFIG_ARCH_POSIX)
-		k_busy_wait(1000);
-#endif
+		Z_SPIN_DELAY(1000);
 	}
 
 	tick2 = sys_clock_tick_get_32();

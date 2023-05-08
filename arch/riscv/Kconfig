@@ -46,6 +46,49 @@ config INCLUDE_RESET_VECTOR
 	  Include the reset vector stub, which initializes the stack and
 	  prepares for running C code.
 
+config RISCV_SOC_HAS_ISR_STACKING
+	bool
+	depends on !USERSPACE
+	help
+	  Enable low-level SOC-specific hardware stacking / unstacking
+	  operations during ISR. This hidden option needs to be selected by SoC
+	  if this feature is supported.
+
+	  Some SOCs implement a mechanism for which, on interrupt handling,
+	  part of the context is automatically saved by the hardware on the
+	  stack according to a custom ESF format. The same part of the context
+	  is automatically restored by hardware on mret.
+
+	  Enabling this option requires that the SoC provides a
+	  soc_isr_stacking.h header which defines the following:
+
+	  - SOC_ISR_SW_STACKING: macro guarded by _ASMLANGUAGE called by the
+	    IRQ wrapper assembly code on ISR entry to save in the ESF the
+	    remaining part of the context not pushed already on the stack by
+	    the hardware.
+
+	  - SOC_ISR_SW_UNSTACKING: macro guarded by _ASMLANGUAGE called by the
+	    IRQ wrapper assembly code on ISR exit to restore the part of the
+	    context from the ESF that won't be restored by hardware on mret.
+
+	  - SOC_ISR_STACKING_ESF_DECLARE: structure declaration for the ESF
+	    guarded by !_ASMLANGUAGE. The ESF should be defined to account for
+	    the hardware stacked registers in the proper order as they are
+	    saved on the stack by the hardware, and the registers saved by the
+	    software macros. The structure must be called '__esf'.
+
+config RISCV_SOC_HAS_CUSTOM_IRQ_LOCK_OPS
+	bool
+	help
+	  Hidden option to allow SoC to overwrite arch_irq_lock(),
+	  arch_irq_unlock() and arch_irq_unlocked() functions with
+	  platform-specific versions named z_soc_irq_lock(), z_soc_irq_unlock()
+	  and z_soc_irq_unlocked().
+
+	  Enable this hidden option and specialize the z_soc_* functions when
+	  the RISC-V SoC needs to do something different and more than reading and
+	  writing the mstatus register to lock and unlock the IRQs.
+
 config RISCV_SOC_CONTEXT_SAVE
 	bool "SOC-based context saving in IRQ handlers"
 	select RISCV_SOC_OFFSETS
@@ -128,6 +171,14 @@ config GEN_IRQ_VECTOR_TABLE
 config NUM_IRQS
 	int
 
+config RV_BOOT_HART
+	int "Starting HART ID"
+	default 0
+	help
+	  This option sets the starting HART ID for the SMP core.
+	  For RISC-V systems such as MPFS and FU540 this would be set to 1 to
+	  skip the E51 HART 0 as it is not usable in SMP configurations.
+
 config RISCV_PMP
 	bool "RISC-V PMP Support"
 	select THREAD_STACK_INFO
@@ -151,17 +202,41 @@ config PMP_SLOTS
 	  This is the number of PMP entries implemented by the hardware.
 	  Typical values are 8 or 16.
 
+config PMP_NO_TOR
+	bool
+	help
+	  Set this if TOR (Top Of Range) mode is not supported.
+
+config PMP_NO_NA4
+	bool
+	help
+	  Set this if NA4 (Naturally Aligned 4-byte) mode is not supported.
+
+config PMP_NO_NAPOT
+	bool
+	help
+	  Set this if NAPOT (Naturally Aligned Power Of Two) is not supported.
+
 config PMP_POWER_OF_TWO_ALIGNMENT
-	bool "Enforce power-of-two alignment on PMP memory areas"
-	depends on USERSPACE
+	bool "Enforce power-of-two alignment on PMP memory areas" if !PMP_NO_TOR
 	default y if TEST_USERSPACE
 	default y if (PMP_SLOTS = 8)
+	default y if PMP_NO_TOR
 	select MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT
 	select GEN_PRIV_STACKS
 	help
 	  This option reduces the PMP slot usage but increases
 	  memory consumption. Useful when enabling userspace mode with
 	  many memory domains and/or few PMP slots available.
+
+config PMP_GRANULARITY
+	int "The granularity of PMP address matching"
+	default 8 if (PMP_NO_TOR && PMP_NO_NA4)
+	default 4
+	help
+	  The granularity must be a power of 2 greater than or equal to 4
+	  (ie 4, 8, 16, ...), but if neither TOR mode nor NA4 mode is
+	  supported, the minimum granularity is 8.
 
 endif #RISCV_PMP
 
@@ -191,7 +266,7 @@ config MAIN_STACK_SIZE
 	default 2048 if PMP_STACK_GUARD
 
 config TEST_EXTRA_STACK_SIZE
-	default 1024
+	default 1536
 
 config CMSIS_THREAD_MAX_STACK_SIZE
 	default 1024 if 64BIT

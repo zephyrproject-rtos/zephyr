@@ -8,6 +8,7 @@ menu "System Monitoring Options"
 
 menuconfig THREAD_ANALYZER
 	bool "Thread analyzer"
+	depends on !ARCH_POSIX
 	select INIT_STACKS
 	select THREAD_MONITOR
 	select THREAD_STACK_INFO

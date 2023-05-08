@@ -27,6 +27,4 @@ struct ipm_dummy_driver_data {
 	void *cb_context;
 	volatile struct ipm_dummy_regs regs;
 };
-
-int ipm_dummy_init(const struct device *d);
 #endif

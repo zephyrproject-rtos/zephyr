@@ -21,6 +21,7 @@ BUILD_ASSERT((GD32_OTYPE_PP == GPIO_OTYPE_PP) &&
 
 BUILD_ASSERT((GD32_OSPEED_2MHZ == GPIO_OSPEED_2MHZ) &&
 #if defined(CONFIG_SOC_SERIES_GD32F3X0) || \
+	defined(CONFIG_SOC_SERIES_GD32A50X) || \
 	defined(CONFIG_SOC_SERIES_GD32L23X)
 	     (GD32_OSPEED_10MHZ == GPIO_OSPEED_10MHZ) &&
 	     (GD32_OSPEED_50MHZ == GPIO_OSPEED_50MHZ) &&
@@ -88,7 +89,7 @@ static void pinctrl_configure_pin(pinctrl_soc_pin_t pin)
 	af = GD32_AF_GET(pin);
 
 	(void)clock_control_on(GD32_CLOCK_CONTROLLER,
-			       (clock_control_subsys_t *)&clkid);
+			       (clock_control_subsys_t)&clkid);
 
 	if (af != GD32_ANALOG) {
 		mode = GPIO_MODE_AF;

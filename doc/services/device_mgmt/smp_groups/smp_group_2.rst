@@ -4,7 +4,7 @@ Statistics management
 #####################
 
 Statistics management allows to obtain data gathered by Statistics subsystem
-of Zephyr, enabled by ``CONFIG_STATS``.
+of Zephyr, enabled with :kconfig:option:`CONFIG_STATS`.
 
 Statistics management group defines commands:
 
@@ -23,9 +23,9 @@ Statistics: group data
 **********************
 
 The command is used to obtain data for group specified by a name.
-The name is one of group names as registered, with ``STATS_INIT_AND_REG`` macro
-or ``stats_init_and_reg(...)`` function call, within module that gathers
-the statistics.
+The name is one of group names as registered, with
+:c:macro:`STATS_INIT_AND_REG` macro or :c:func:`stats_init_and_reg` function
+call, within module that gathers the statistics.
 
 Statistics: group data request
 ==============================
@@ -108,7 +108,7 @@ where:
     | <entry_name>          | single entry to value mapping; value is hardcoded |
     |                       | to unsigned integer type, in a CBOR meaning       |
     +-----------------------+---------------------------------------------------+
-    | "rc"                  | :ref:`mcumgr_smp_protocol_status_codes`           |
+    | "rc"                  | :c:enum:`mcumgr_err_t`                            |
     |                       | only appears if non-zero (error condition).       |
     +-----------------------+---------------------------------------------------+
 
@@ -117,11 +117,10 @@ Statistics: list of groups
 
 The command is used to obtain list of groups of statistics that are gathered
 on a device. This is a list of names as given to groups with
-``STATS_INIT_AND_REG`` macro or ``stats_init_and_reg(...)`` function calls,
-within module that gathers the statistics; this means that this command may
-be considered optional as it is known during compilation what groups will
-be included into build and listing them is not needed prior to issuing
-a query.
+:c:macro:`STATS_INIT_AND_REG` macro or :c:func:`stats_init_and_reg` function
+calls, within module that gathers the statistics; this means that this command
+may be considered optional as it is known during compilation what groups will
+be included into build and listing them is not needed prior to issuing a query.
 
 Statistics: list of groups request
 ==================================
@@ -180,6 +179,6 @@ where:
     | "stat_list"           | array of strings representing group names; this   |
     |                       | array may be empty if there are no groups         |
     +-----------------------+---------------------------------------------------+
-    | "rc"                  | :ref:`mcumgr_smp_protocol_status_codes`           |
+    | "rc"                  | :c:enum:`mcumgr_err_t`                            |
     |                       | only appears if non-zero (error condition).       |
     +-----------------------+---------------------------------------------------+

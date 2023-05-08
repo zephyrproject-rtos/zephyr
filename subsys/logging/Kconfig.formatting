@@ -168,4 +168,10 @@ config LOG_OUTPUT_FORMAT_LINUX_TIMESTAMP
 	  which timestamps are printed as fixed point values with seconds on the
 	  left side of the point and microseconds on the right side.
 
+config LOG_OUTPUT_FORMAT_CUSTOM_TIMESTAMP
+	bool "Custom timestamp format support"
+	help
+	  Enable support for custom formatter for the timestamp.
+	  It will be applied to all backends.
+
 endmenu

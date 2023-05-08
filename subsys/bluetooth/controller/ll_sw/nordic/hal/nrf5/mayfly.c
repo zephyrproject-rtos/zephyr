@@ -71,7 +71,15 @@ uint32_t mayfly_is_enabled(uint8_t caller_id, uint8_t callee_id)
 
 uint32_t mayfly_prio_is_equal(uint8_t caller_id, uint8_t callee_id)
 {
-	return (caller_id == callee_id) ||
+	return 0 ||
+#if defined(CONFIG_BT_CTLR_ZLI)
+		((caller_id != MAYFLY_CALL_ID_LLL) &&
+		 (callee_id != MAYFLY_CALL_ID_LLL) &&
+		 (caller_id == callee_id)) ||
+		((caller_id == MAYFLY_CALL_ID_LLL) &&
+		 (caller_id == callee_id)) ||
+#else /* !CONFIG_BT_CTLR_ZLI */
+		(caller_id == callee_id) ||
 #if (CONFIG_BT_CTLR_LLL_PRIO == CONFIG_BT_CTLR_ULL_HIGH_PRIO)
 	       ((caller_id == MAYFLY_CALL_ID_LLL) &&
 		(callee_id == MAYFLY_CALL_ID_WORKER)) ||
@@ -84,6 +92,7 @@ uint32_t mayfly_prio_is_equal(uint8_t caller_id, uint8_t callee_id)
 	       ((caller_id == MAYFLY_CALL_ID_JOB) &&
 		(callee_id == MAYFLY_CALL_ID_LLL)) ||
 #endif
+#endif /* !CONFIG_BT_CTLR_ZLI */
 #if (CONFIG_BT_CTLR_ULL_HIGH_PRIO == CONFIG_BT_CTLR_ULL_LOW_PRIO)
 	       ((caller_id == MAYFLY_CALL_ID_WORKER) &&
 		(callee_id == MAYFLY_CALL_ID_JOB)) ||

@@ -8,26 +8,26 @@ compatible: "ti,cc2520"
 include: spi-device.yaml
 
 properties:
-    vreg-en-gpios:
-      type: phandle-array
-      required: true
+  vreg-en-gpios:
+    type: phandle-array
+    required: true
 
-    reset-gpios:
-      type: phandle-array
-      required: true
+  reset-gpios:
+    type: phandle-array
+    required: true
 
-    fifo-gpios:
-      type: phandle-array
-      required: true
+  fifo-gpios:
+    type: phandle-array
+    required: true
 
-    cca-gpios:
-      type: phandle-array
-      required: true
+  cca-gpios:
+    type: phandle-array
+    required: true
 
-    sfd-gpios:
-      type: phandle-array
-      required: true
+  sfd-gpios:
+    type: phandle-array
+    required: true
 
-    fifop-gpios:
-      type: phandle-array
-      required: true
+  fifop-gpios:
+    type: phandle-array
+    required: true

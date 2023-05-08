@@ -163,27 +163,28 @@ Abstract code for this task would look like this:
 
 .. code-block:: c
 
-        static int gain_cmd_handler(const struct shell *shell,
-                                    size_t argc, char **argv, void *data)
-        {
-                int gain;
+	static int gain_cmd_handler(const struct shell *sh,
+				    size_t argc, char **argv, void *data)
+	{
+		int gain;
 
-                /* data is a value corresponding to called command syntax */
-                gain = (int)data;
-                adc_set_gain(gain);
+		/* data is a value corresponding to called command syntax */
+		gain = (int)data;
+		adc_set_gain(gain);
 
-                shell_print(shell, "ADC gain set to: %s\n"
-                                   "Value send to ADC driver: %d",
-                                   argv[0],
-                                   gain);
+		shell_print(sh, "ADC gain set to: %s\n"
+				   "Value send to ADC driver: %d",
+				   argv[0],
+				   gain);
 
-                return 0;
-        }
+		return 0;
+	}
 
-        SHELL_SUBCMD_DICT_SET_CREATE(sub_gain, gain_cmd_handler,
-                (gain_1, 1), (gain_2, 2), (gain_1_2, 3), (gain_1_4, 4)
-        );
-        SHELL_CMD_REGISTER(gain, &sub_gain, "Set ADC gain", NULL);
+	SHELL_SUBCMD_DICT_SET_CREATE(sub_gain, gain_cmd_handler,
+		(gain_1, 1, "gain 1"), (gain_2, 2, "gain 2"),
+		(gain_1_2, 3, "gain 1/2"), (gain_1_4, 4, "gain 1/4")
+	);
+	SHELL_CMD_REGISTER(gain, &sub_gain, "Set ADC gain", NULL);
 
 
 This is how it would look like in the shell:
@@ -270,7 +271,7 @@ and a function :c:func:`shell_execute_cmd`, as shown in this example:
 
 .. code-block:: c
 
-	void main(void)
+	int main(void)
 	{
 		/* Below code will execute "clear" command on a DUMMY backend */
 		shell_execute_cmd(NULL, "clear");
@@ -285,6 +286,44 @@ and a function :c:func:`shell_execute_cmd`, as shown in this example:
 Enable the DUMMY backend by setting the Kconfig
 :kconfig:option:`CONFIG_SHELL_BACKEND_DUMMY` option.
 
+Commands execution example
+--------------------------
+
+Let's assume a command structure as in the following figure, where:
+
+* :c:macro:`root_cmd` - root command without a handler
+* :c:macro:`cmd_xxx_h` - command has a handler
+* :c:macro:`cmd_xxx` - command does not have a handler
+
+.. image:: images/execution.png
+      :align: center
+      :alt: Command tree with static commands.
+
+Example 1
+^^^^^^^^^
+Sequence: :c:macro:`root_cmd` :c:macro:`cmd_1_h` :c:macro:`cmd_12_h`
+:c:macro:`cmd_121_h` :c:macro:`parameter` will execute command
+:c:macro:`cmd_121_h` and :c:macro:`parameter` will be passed as an argument.
+
+Example 2
+^^^^^^^^^
+Sequence: :c:macro:`root_cmd` :c:macro:`cmd_2` :c:macro:`cmd_22_h`
+:c:macro:`parameter1` :c:macro:`parameter2` will execute command
+:c:macro:`cmd_22_h` and :c:macro:`parameter1` :c:macro:`parameter2`
+will be passed as an arguments.
+
+Example 3
+^^^^^^^^^
+Sequence: :c:macro:`root_cmd` :c:macro:`cmd_1_h` :c:macro:`parameter1`
+:c:macro:`cmd_121_h` :c:macro:`parameter2` will execute command
+:c:macro:`cmd_1_h` and :c:macro:`parameter1`, :c:macro:`cmd_121_h` and
+:c:macro:`parameter2` will be passed as an arguments.
+
+Example 4
+^^^^^^^^^
+Sequence: :c:macro:`root_cmd` :c:macro:`parameter` :c:macro:`cmd_121_h`
+:c:macro:`parameter2` will not execute any command.
+
 
 Command handler
 ----------------
@@ -293,7 +332,7 @@ Simple command handler implementation:
 
 .. code-block:: c
 
-	static int cmd_handler(const struct shell *shell, size_t argc,
+	static int cmd_handler(const struct shell *sh, size_t argc,
 				char **argv)
 	{
 		ARG_UNUSED(argc);
@@ -301,11 +340,11 @@ Simple command handler implementation:
 
 		shell_fprintf(shell, SHELL_INFO, "Print info message\n");
 
-		shell_print(shell, "Print simple text.");
+		shell_print(sh, "Print simple text.");
 
-		shell_warn(shell, "Print warning text.");
+		shell_warn(sh, "Print warning text.");
 
-		shell_error(shell, "Print error text.");
+		shell_error(sh, "Print error text.");
 
 		return 0;
 	}
@@ -340,7 +379,7 @@ commands or the parent commands, depending on how you index ``argv``.
 
 .. code-block:: c
 
-	static int cmd_handler(const struct shell *shell, size_t argc,
+	static int cmd_handler(const struct shell *sh, size_t argc,
 			       char **argv)
 	{
 		ARG_UNUSED(argc);
@@ -348,14 +387,14 @@ commands or the parent commands, depending on how you index ``argv``.
 		/* If it is a subcommand handler parent command syntax
 		 * can be found using argv[-1].
 		 */
-		shell_print(shell, "This command has a parent command: %s",
+		shell_print(sh, "This command has a parent command: %s",
 			      argv[-1]);
 
 		/* Print this command syntax */
-		shell_print(shell, "This command syntax is: %s", argv[0]);
+		shell_print(sh, "This command syntax is: %s", argv[0]);
 
 		/* Print first argument */
-		shell_print(shell, "%s", argv[1]);
+		shell_print(sh, "%s", argv[1]);
 
 		return 0;
 	}
@@ -584,6 +623,33 @@ This feature is activated by: :kconfig:option:`CONFIG_SHELL_LOG_BACKEND` set to 
 	RTT (:kconfig:option:`CONFIG_LOG_BACKEND_RTT`), which are available earlier
 	during system initialization.
 
+RTT Backend Channel Selection
+*****************************
+
+Instead of using the shell as a logger backend, RTT shell backend and RTT log
+backend can also be used simulatenously, but over different channels. By
+separating them, the log can be captured or monitored without shell output or
+the shell may be scripted without log interference. Enabling both the Shell RTT
+backend and the Log RTT backend does not work by default, because both default
+to channel ``0``. There are two options:
+
+1. The Shell buffer can use an alternate channel, for example using
+:kconfig:option:`SHELL_BACKEND_RTT_BUFFER` set to ``1``.
+This allows monitoring the log using `JLinkRTTViewer
+<https://www.segger.com/products/debug-probes/j-link/technology/about-real-time-transfer/#j-link-rtt-viewer>`_
+while a script interfaces over channel 1.
+
+2. The Log buffer can use an alternate channel, for example using
+:kconfig:option:`LOG_BACKEND_RTT_BUFFER` set to ``1``.
+This allows interactive use of the shell through JLinkRTTViewer, while the log
+is written to file.
+
+.. warning::
+	Regardless of the channel selection, the RTT log backend must be explicitly
+	enabled using :kconfig:option:`LOG_BACKEND_RTT` set to ``y``, because it
+	defaults to ``n`` when the Shell RTT backend is also enabled using
+	:kconfig:option:`SHELL_BACKEND_RTT` being set to ``y``.
+
 Usage
 *****
 
@@ -594,29 +660,29 @@ The following code shows a simple use case of this library:
 
 .. code-block:: c
 
-	void main(void)
+	int main(void)
 	{
 
 	}
 
-	static int cmd_demo_ping(const struct shell *shell, size_t argc,
+	static int cmd_demo_ping(const struct shell *sh, size_t argc,
 				 char **argv)
 	{
 		ARG_UNUSED(argc);
 		ARG_UNUSED(argv);
 
-		shell_print(shell, "pong");
+		shell_print(sh, "pong");
 		return 0;
 	}
 
-	static int cmd_demo_params(const struct shell *shell, size_t argc,
+	static int cmd_demo_params(const struct shell *sh, size_t argc,
 				   char **argv)
 	{
 		int cnt;
 
-		shell_print(shell, "argc = %d", argc);
+		shell_print(sh, "argc = %d", argc);
 		for (cnt = 0; cnt < argc; cnt++) {
-			shell_print(shell, "  argv[%d] = %s", cnt, argv[cnt]);
+			shell_print(sh, "  argv[%d] = %s", cnt, argv[cnt]);
 		}
 		return 0;
 	}

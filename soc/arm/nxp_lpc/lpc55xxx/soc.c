@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, NXP
+ * Copyright 2017, 2019-2023 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -30,6 +30,9 @@
 #if CONFIG_USB_DC_NXP_LPCIP3511
 #include "usb_phy.h"
 #include "usb.h"
+#endif
+#if defined(CONFIG_SOC_LPC55S36) && defined(CONFIG_ADC_MCUX_LPADC)
+#include <fsl_vref.h>
 #endif
 
 #define CTIMER_CLOCK_SOURCE(node_id) \
@@ -220,6 +223,33 @@ DT_FOREACH_STATUS_OKAY(nxp_lpc_ctimer, CTIMER_CLOCK_SETUP)
 	  (SYSCON_PWM1SUBCTL_CLK0_EN_MASK | SYSCON_PWM1SUBCTL_CLK1_EN_MASK |
 	   SYSCON_PWM1SUBCTL_CLK2_EN_MASK);
 #endif
+
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(adc0), nxp_lpc_lpadc, okay)
+#if defined(CONFIG_SOC_LPC55S36)
+	CLOCK_SetClkDiv(kCLOCK_DivAdc0Clk, 2U, true);
+	CLOCK_AttachClk(kFRO_HF_to_ADC0);
+
+#if defined(CONFIG_ADC_MCUX_LPADC)
+	/* Vref is required for LPADC reference */
+	POWER_DisablePD(kPDRUNCFG_PD_VREF);
+
+	vref_config_t vrefConfig;
+
+	VREF_GetDefaultConfig(&vrefConfig);
+	vrefConfig.bufferMode                     = kVREF_ModeHighPowerBuffer;
+	vrefConfig.enableInternalVoltageRegulator = true;
+	vrefConfig.enableVrefOut                  = true;
+	VREF_Init((VREF_Type *)VREF_BASE, &vrefConfig);
+#endif
+#else
+	CLOCK_SetClkDiv(kCLOCK_DivAdcAsyncClk,
+			DT_PROP(DT_NODELABEL(adc0), clk_divider), true);
+	CLOCK_AttachClk(MUX_A(CM_ADCASYNCCLKSEL, DT_PROP(DT_NODELABEL(adc0), clk_source)));
+
+	/* Power up the ADC */
+	POWER_DisablePD(kPDRUNCFG_PD_LDOGPADC);
+#endif
+#endif
 }
 
 /**
@@ -232,9 +262,8 @@ DT_FOREACH_STATUS_OKAY(nxp_lpc_ctimer, CTIMER_CLOCK_SETUP)
  * @return 0
  */
 
-static int nxp_lpc55xxx_init(const struct device *arg)
+static int nxp_lpc55xxx_init(void)
 {
-	ARG_UNUSED(arg);
 
 	/* old interrupt lock level */
 	unsigned int oldLevel;
@@ -264,6 +293,24 @@ static int nxp_lpc55xxx_init(const struct device *arg)
 	return 0;
 }
 
+#ifdef CONFIG_PLATFORM_SPECIFIC_INIT
+
+void z_arm_platform_init(void)
+{
+	SystemInit();
+
+
+#ifndef CONFIG_LOG_BACKEND_SWO
+	/*
+	 * SystemInit unconditionally enables the trace clock.
+	 * Disable the trace clock unless SWO is used
+	 */
+	 SYSCON->TRACECLKDIV = 0x4000000;
+#endif
+}
+
+#endif /* CONFIG_PLATFORM_SPECIFIC_INIT */
+
 SYS_INIT(nxp_lpc55xxx_init, PRE_KERNEL_1, 0);
 
 #if defined(CONFIG_SECOND_CORE_MCUX) && defined(CONFIG_SOC_LPC55S69_CPU0)
@@ -277,11 +324,10 @@ SYS_INIT(nxp_lpc55xxx_init, PRE_KERNEL_1, 0);
  *
  */
 /* This function is also called at deep sleep resume. */
-int _second_core_init(const struct device *arg)
+int _second_core_init(void)
 {
 	int32_t temp;
 
-	ARG_UNUSED(arg);
 
 	/* Setup the reset handler pointer (PC) and stack pointer value.
 	 * This is used once the second core runs its startup code.

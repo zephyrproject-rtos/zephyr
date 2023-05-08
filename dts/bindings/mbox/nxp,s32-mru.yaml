@@ -1,0 +1,64 @@
+# Copyright 2022 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  NXP S32 Message Receive Unit
+
+  The MRU couples with a processor and allows to receive messages from senders,
+  which are other modules or processors. The interrupts from each MRU instance
+  route to specific Private Peripheral Interrupts (PPIs) of the corresponding
+  core.
+
+  This driver offers a simplified operation in order to integrate with Zephyr
+  Mbox API:
+    - Each channel uses only the first mailbox, as current API does not allow
+      to group hardware channel's mailboxes in logical channels.
+    - The MTU is fixed to the size of one mailbox, as current API does not
+      allow variable length per channel.
+
+  In a normal use-case for IPC, the receiver core must enable and set the number
+  of receive channels on the MRU instance coupled with the core, for instance in
+  a devicetree overlay. In turn, the sender(s) must enable the MRU instance of the
+  receiver to be able to transmit on it. There is no need to define the transmit
+  channels on which the sender is intended to transmit.
+
+  For example, core B and C want to send messages to core A in channels 0 and 1,
+  respectively, then the devicetree overlays will look like:
+
+    // overlay of core A
+    mruA {
+      rx-channels = <2>;
+      status = "okay";
+    };
+
+    // overlays of core B and core C
+    mruA {
+      status = "okay";
+    };
+
+compatible: "nxp,s32-mru"
+
+include: [base.yaml, mailbox-controller.yaml]
+
+properties:
+  interrupts:
+    required: true
+
+  rx-channels:
+    type: int
+    enum: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+    description: |
+      Number of receive channels enabled on this instance.
+      Setting this value to N, will enable channels 0 to N-1, consecutively.
+      It should be set by the receiver core coupled with this MRU instance.
+
+      For example, if receiver A wants to Rx on channels 0 and 1, then A must
+      set rx-channels of mruA as follows:
+
+        mruA {
+          rx-channels = <2>;
+          status = "okay";
+        };
+
+mbox-cells:
+  - channel

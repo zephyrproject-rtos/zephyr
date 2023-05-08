@@ -82,6 +82,7 @@ static void adc_dma_callback(const struct device *dma_dev, void *callback_arg,
 	struct mcux_adc16_data *data = dev->data;
 
 	LOG_DBG("DMA done");
+	data->buffer++;
 	adc_context_on_sampling_done(&data->ctx, dev);
 }
 #endif
@@ -196,6 +197,19 @@ static int start_read(const struct device *dev,
 	}
 	ADC16_SetHardwareAverage(config->base, mode);
 
+	if (sequence->buffer_size < 2) {
+		LOG_ERR("sequence buffer size too small %d < 2", sequence->buffer_size);
+		return -EINVAL;
+	}
+
+	if (sequence->options) {
+		if (sequence->buffer_size <
+			2 * (sequence->options->extra_samplings + 1)) {
+			LOG_ERR("sequence buffer size too small < 2 * extra + 2");
+			return -EINVAL;
+		}
+	}
+
 	data->buffer = sequence->buffer;
 
 	adc_context_start_read(&data->ctx, sequence);
@@ -271,8 +285,7 @@ static void adc_context_start_sampling(struct adc_context *ctx)
 
 #ifdef CONFIG_ADC_MCUX_ADC16_ENABLE_EDMA
 	LOG_DBG("config dma");
-	data->buffer = ctx->sequence.buffer;
-	data->adc_dma_config.dma_block.block_size = ctx->sequence.buffer_size;
+	data->adc_dma_config.dma_block.block_size = 2;
 	data->adc_dma_config.dma_block.dest_address = (uint32_t)data->buffer;
 	data->adc_dma_config.dma_cfg.head_block =
 		&(data->adc_dma_config.dma_block);
@@ -380,20 +393,18 @@ static int mcux_adc16_init(const struct device *dev)
 #ifdef CONFIG_ADC_MCUX_ADC16_ENABLE_EDMA
 	/* Enable DMA. */
 	ADC16_EnableDMA(base, true);
-
 	data->adc_dma_config.dma_cfg.block_count = 1U;
 	data->adc_dma_config.dma_cfg.dma_slot = config->dma_slot;
 	data->adc_dma_config.dma_cfg.channel_direction = PERIPHERAL_TO_MEMORY;
-	data->adc_dma_config.dma_cfg.source_burst_length = 4U;
-	data->adc_dma_config.dma_cfg.dest_burst_length = 4U;
+	data->adc_dma_config.dma_cfg.source_burst_length = 2U;
+	data->adc_dma_config.dma_cfg.dest_burst_length = 2U;
 	data->adc_dma_config.dma_cfg.channel_priority = 0U;
 	data->adc_dma_config.dma_cfg.dma_callback = adc_dma_callback;
 	data->adc_dma_config.dma_cfg.user_data = (void *)dev;
 
-	data->adc_dma_config.dma_cfg.source_data_size = 4U;
-	data->adc_dma_config.dma_cfg.dest_data_size = 4U;
+	data->adc_dma_config.dma_cfg.source_data_size = 2U;
+	data->adc_dma_config.dma_cfg.dest_data_size = 2U;
 	data->adc_dma_config.dma_block.source_address = (uint32_t)&base->R[0];
-
 
 	if (data->dev_dma == NULL || !device_is_ready(data->dev_dma)) {
 		LOG_ERR("dma binding fail");

@@ -61,7 +61,7 @@ static inline void lll_adv_scan_rsp_enqueue(struct lll_adv *lll, uint8_t idx)
 	lll_adv_pdu_enqueue(&lll->scan_rsp, idx);
 }
 
-static inline struct pdu_adv *lll_adv_scan_rsp_peek(struct lll_adv *lll)
+static inline struct pdu_adv *lll_adv_scan_rsp_peek(const struct lll_adv *lll)
 {
 	return (void *)lll->scan_rsp.pdu[lll->scan_rsp.last];
 }
@@ -172,8 +172,8 @@ static inline void lll_adv_sync_data_enqueue(struct lll_adv_sync *lll,
 	lll_adv_pdu_enqueue(&lll->data, idx);
 }
 
-static inline struct pdu_adv *lll_adv_sync_data_peek(struct lll_adv_sync *lll,
-						     void **extra_data)
+static inline struct pdu_adv *
+lll_adv_sync_data_peek(const struct lll_adv_sync *lll, void **extra_data)
 {
 	uint8_t last = lll->data.last;
 

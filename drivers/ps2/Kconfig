@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig PS2
-	bool "PS/2 Drivers"
+	bool "PS/2 drivers"
 	help
 	  Include PS/2 drivers in system config.
 

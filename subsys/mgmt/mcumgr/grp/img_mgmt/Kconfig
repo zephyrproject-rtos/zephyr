@@ -14,9 +14,9 @@
 
 menuconfig MCUMGR_GRP_IMG
 	bool "Mcumgr handlers for image management"
-	select FLASH
+	depends on FLASH
+	depends on IMG_MANAGER
 	select MPU_ALLOW_FLASH_WRITE if ARM_MPU
-	select IMG_MANAGER
 	select MCUMGR_SMP_CBOR_MIN_DECODING_LEVEL_2
 	help
 	  Enables mcumgr handlers for image management
@@ -57,12 +57,6 @@ config MCUMGR_GRP_IMG_VERBOSE_ERR
 	help
 	  Add additional "rsn" key to SMP responses, where provided, explaining
 	  non-0 "rc" codes.
-
-config MCUMGR_GRP_IMG_DUMMY_HDR
-	bool "Return dummy image header data for imgr functions"
-	help
-	  Returns dummy image header data for imgr functions,
-	  useful when there are no images present, Eg: unit tests.
 
 config MCUMGR_GRP_IMG_DIRECT_UPLOAD
 	bool "Allow direct image upload"
@@ -111,7 +105,7 @@ config MCUMGR_GRP_IMG_STATUS_HOOKS
 	  or prevent it, CONFIG_MCUMGR_GRP_IMG_UPLOAD_CHECK_HOOK must be used.
 
 module = MCUMGR_GRP_IMG
-module-str = mcumgr_img_mgmt
+module-str = mcumgr_grp_img
 source "subsys/logging/Kconfig.template.log_config"
 
 endif

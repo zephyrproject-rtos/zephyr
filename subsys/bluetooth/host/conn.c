@@ -14,6 +14,7 @@
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/check.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/sys/util_macro.h>
 #include <zephyr/sys/slist.h>
 #include <zephyr/debug/stack.h>
 #include <zephyr/sys/__assert.h>
@@ -27,6 +28,7 @@
 
 #include "common/assert.h"
 
+#include "addr_internal.h"
 #include "hci_core.h"
 #include "id.h"
 #include "adv.h"
@@ -50,7 +52,12 @@ struct tx_meta {
 	 * continuations).
 	 */
 	bool is_cont;
+	/* Indicates whether the ISO PDU contains a timestamp */
+	bool iso_has_ts;
 };
+
+BUILD_ASSERT(sizeof(struct tx_meta) == CONFIG_BT_CONN_TX_USER_DATA_SIZE,
+	     "User data size is wrong!");
 
 #define tx_data(buf) ((struct tx_meta *)net_buf_user_data(buf))
 K_FIFO_DEFINE(free_tx);
@@ -87,7 +94,7 @@ static void notify_connected(struct bt_conn *conn);
 static struct bt_conn acl_conns[CONFIG_BT_MAX_CONN];
 NET_BUF_POOL_DEFINE(acl_tx_pool, CONFIG_BT_L2CAP_TX_BUF_COUNT,
 		    BT_L2CAP_BUF_SIZE(CONFIG_BT_L2CAP_TX_MTU),
-		    sizeof(struct tx_meta), NULL);
+		    CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
 
 #if CONFIG_BT_L2CAP_TX_FRAG_COUNT > 0
 /* Dedicated pool for fragment buffers in case queued up TX buffers don't
@@ -97,7 +104,8 @@ NET_BUF_POOL_DEFINE(acl_tx_pool, CONFIG_BT_L2CAP_TX_BUF_COUNT,
  * another buffer from the acl_tx_pool would result in a deadlock.
  */
 NET_BUF_POOL_FIXED_DEFINE(frag_pool, CONFIG_BT_L2CAP_TX_FRAG_COUNT,
-			  BT_BUF_ACL_SIZE(CONFIG_BT_BUF_ACL_TX_SIZE), 8, NULL);
+			  BT_BUF_ACL_SIZE(CONFIG_BT_BUF_ACL_TX_SIZE),
+			  CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
 
 #endif /* CONFIG_BT_L2CAP_TX_FRAG_COUNT > 0 */
 
@@ -118,6 +126,8 @@ static struct bt_conn sco_conns[CONFIG_BT_MAX_SCO_CONN];
 #endif /* CONFIG_BT_CONN */
 
 #if defined(CONFIG_BT_ISO)
+extern struct bt_conn iso_conns[CONFIG_BT_ISO_MAX_CHAN];
+
 /* Callback TX buffers for ISO */
 static struct bt_conn_tx iso_tx[CONFIG_BT_ISO_TX_BUF_COUNT];
 
@@ -138,6 +148,7 @@ struct k_sem *bt_conn_get_pkts(struct bt_conn *conn)
 		return &bt_dev.br.pkts;
 	}
 #endif /* CONFIG_BT_BREDR */
+
 #if defined(CONFIG_BT_ISO)
 	/* Use ISO pkts semaphore if LE Read Buffer Size command returned
 	 * dedicated ISO buffers.
@@ -150,11 +161,14 @@ struct k_sem *bt_conn_get_pkts(struct bt_conn *conn)
 		return NULL;
 	}
 #endif /* CONFIG_BT_ISO */
+
 #if defined(CONFIG_BT_CONN)
-	return &bt_dev.le.acl_pkts;
-#else
-	return NULL;
+	if (bt_dev.le.acl_mtu) {
+		return &bt_dev.le.acl_pkts;
+	}
 #endif /* CONFIG_BT_CONN */
+
+	return NULL;
 }
 
 static inline const char *state2str(bt_conn_state_t state)
@@ -398,6 +412,24 @@ static struct bt_conn_tx *conn_tx_alloc(void)
 	return k_fifo_get(&free_tx, K_FOREVER);
 }
 
+int bt_conn_send_iso_cb(struct bt_conn *conn, struct net_buf *buf,
+			bt_conn_tx_cb_t cb, bool has_ts)
+{
+	int err = bt_conn_send_cb(conn, buf, cb, NULL);
+
+	if (err) {
+		return err;
+	}
+
+	/* Necessary for setting the TS_Flag bit when we pop the buffer from the
+	 * send queue.
+	 * Size check for the user_data is already done in `bt_conn_send_cb`.
+	 */
+	tx_data(buf)->iso_has_ts = has_ts;
+
+	return 0;
+}
+
 int bt_conn_send_cb(struct bt_conn *conn, struct net_buf *buf,
 		    bt_conn_tx_cb_t cb, void *user_data)
 {
@@ -405,6 +437,13 @@ int bt_conn_send_cb(struct bt_conn *conn, struct net_buf *buf,
 
 	LOG_DBG("conn handle %u buf len %u cb %p user_data %p", conn->handle, buf->len, cb,
 		user_data);
+
+	if (buf->user_data_size < CONFIG_BT_CONN_TX_USER_DATA_SIZE) {
+		LOG_ERR("not enough room in user_data %d < %d",
+			buf->user_data_size,
+			CONFIG_BT_CONN_TX_USER_DATA_SIZE);
+		return -EINVAL;
+	}
 
 	if (conn->state != BT_CONN_CONNECTED) {
 		LOG_ERR("not connected!");
@@ -414,7 +453,7 @@ int bt_conn_send_cb(struct bt_conn *conn, struct net_buf *buf,
 	if (cb) {
 		tx = conn_tx_alloc();
 		if (!tx) {
-			LOG_ERR("Unable to allocate TX context");
+			LOG_DBG("Unable to allocate TX context");
 			return -ENOBUFS;
 		}
 
@@ -476,6 +515,7 @@ static int send_acl(struct bt_conn *conn, struct net_buf *buf, uint8_t flags)
 static int send_iso(struct bt_conn *conn, struct net_buf *buf, uint8_t flags)
 {
 	struct bt_hci_iso_hdr *hdr;
+	bool ts;
 
 	switch (flags) {
 	case FRAG_START:
@@ -495,8 +535,12 @@ static int send_iso(struct bt_conn *conn, struct net_buf *buf, uint8_t flags)
 	}
 
 	hdr = net_buf_push(buf, sizeof(*hdr));
-	hdr->handle = sys_cpu_to_le16(bt_iso_handle_pack(conn->handle, flags,
-							 0));
+
+	ts = tx_data(buf)->iso_has_ts &&
+		(flags == BT_ISO_START || flags == BT_ISO_SINGLE);
+
+	hdr->handle = sys_cpu_to_le16(bt_iso_handle_pack(conn->handle, flags, ts));
+
 	hdr->len = sys_cpu_to_le16(buf->len - sizeof(*hdr));
 
 	bt_buf_set_type(buf, BT_BUF_ISO_OUT);
@@ -604,6 +648,21 @@ fail:
 	return err;
 }
 
+static size_t iso_hdr_len(struct net_buf *buf, struct bt_conn *conn)
+{
+#if defined(CONFIG_BT_ISO)
+	if (conn->type == BT_CONN_TYPE_ISO) {
+		if (tx_data(buf)->iso_has_ts) {
+			return BT_HCI_ISO_TS_DATA_HDR_SIZE;
+		} else {
+			return BT_HCI_ISO_DATA_HDR_SIZE;
+		}
+	}
+#endif
+
+	return 0;
+}
+
 static int send_frag(struct bt_conn *conn,
 		     struct net_buf *buf, struct net_buf *frag,
 		     uint8_t flags)
@@ -616,7 +675,9 @@ static int send_frag(struct bt_conn *conn,
 
 	/* Add the data to the buffer */
 	if (frag) {
-		uint16_t frag_len = MIN(conn_mtu(conn), net_buf_tailroom(frag));
+		size_t iso_hdr = flags == FRAG_START ? iso_hdr_len(buf, conn) : 0;
+		uint16_t frag_len = MIN(conn_mtu(conn) + iso_hdr,
+					net_buf_tailroom(frag));
 
 		net_buf_add_mem(frag, buf->data, frag_len);
 		net_buf_pull(buf, frag_len);
@@ -664,6 +725,11 @@ static struct net_buf *create_frag(struct bt_conn *conn, struct net_buf *buf)
 	return frag;
 }
 
+static bool fits_single_ctlr_buf(struct net_buf *buf, struct bt_conn *conn)
+{
+	return buf->len - iso_hdr_len(buf, conn) <= conn_mtu(conn);
+}
+
 static int send_buf(struct bt_conn *conn, struct net_buf *buf)
 {
 	struct net_buf *frag;
@@ -673,7 +739,7 @@ static int send_buf(struct bt_conn *conn, struct net_buf *buf)
 	LOG_DBG("conn %p buf %p len %u", conn, buf, buf->len);
 
 	/* Send directly if the packet fits the ACL MTU */
-	if (buf->len <= conn_mtu(conn) && !tx_data(buf)->is_cont) {
+	if (fits_single_ctlr_buf(buf, conn) && !tx_data(buf)->is_cont) {
 		LOG_DBG("send single");
 		return send_frag(conn, buf, NULL, FRAG_SINGLE);
 	}
@@ -742,11 +808,10 @@ static void conn_cleanup(struct bt_conn *conn)
 
 static void conn_destroy(struct bt_conn *conn, void *data)
 {
-	k_work_cancel_delayable(&conn->deferred_work);
-
-	conn->pending_no_cb = 0;
-
-	conn_cleanup(conn);
+	if (conn->state == BT_CONN_CONNECTED ||
+	    conn->state == BT_CONN_DISCONNECTING) {
+		bt_conn_set_state(conn, BT_CONN_DISCONNECT_COMPLETE);
+	}
 
 	bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
 }
@@ -775,7 +840,16 @@ static int conn_prepare_events(struct bt_conn *conn,
 
 	LOG_DBG("Adding conn %p to poll list", conn);
 
-	bool buffers_available = k_sem_count_get(bt_conn_get_pkts(conn)) > 0;
+	/* ISO Synchronized Receiver only builds do not transmit and hence
+	 * may not have any tx buffers allocated in a Controller.
+	 */
+	struct k_sem *conn_pkts = bt_conn_get_pkts(conn);
+
+	if (!conn_pkts) {
+		return -ENOTCONN;
+	}
+
+	bool buffers_available = k_sem_count_get(conn_pkts) > 0;
 	bool packets_waiting = !k_fifo_is_empty(&conn->tx_queue);
 
 	if (packets_waiting && !buffers_available) {
@@ -786,7 +860,7 @@ static int conn_prepare_events(struct bt_conn *conn,
 		k_poll_event_init(&events[0],
 				  K_POLL_TYPE_SEM_AVAILABLE,
 				  K_POLL_MODE_NOTIFY_ONLY,
-				  bt_conn_get_pkts(conn));
+				  conn_pkts);
 	} else {
 		/* Wait until there is more data to send. */
 		LOG_DBG("wait on host fifo");
@@ -1086,10 +1160,6 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 			bt_conn_unref(conn);
 			break;
 		case BT_CONN_CONNECTED:
-			/* Can only happen if bt_conn_cleanup_all is called
-			 * whilst in a connection.
-			 */
-			break;
 		case BT_CONN_DISCONNECTING:
 		case BT_CONN_DISCONNECTED:
 			/* Cannot happen. */
@@ -1114,7 +1184,8 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 		 * will handle connection timeout.
 		 */
 		if (IS_ENABLED(CONFIG_BT_CENTRAL) &&
-		    conn->type == BT_CONN_TYPE_LE) {
+		    conn->type == BT_CONN_TYPE_LE &&
+		    bt_dev.create_param.timeout != 0) {
 			k_work_schedule(&conn->deferred_work,
 					K_MSEC(10 * bt_dev.create_param.timeout));
 		}
@@ -1969,6 +2040,11 @@ struct bt_conn *bt_conn_add_sco(const bt_addr_t *peer, int link_type)
 	}
 
 	sco_conn->sco.acl = bt_conn_lookup_addr_br(peer);
+	if (!sco_conn->sco.acl) {
+		bt_conn_unref(sco_conn);
+		return NULL;
+	}
+
 	sco_conn->type = BT_CONN_TYPE_SCO;
 
 	if (link_type == BT_HCI_SCO) {
@@ -2033,6 +2109,25 @@ static int bt_hci_connect_br_cancel(struct bt_conn *conn)
 #endif /* CONFIG_BT_BREDR */
 
 #if defined(CONFIG_BT_SMP)
+bool bt_conn_ltk_present(const struct bt_conn *conn)
+{
+	const struct bt_keys *keys = conn->le.keys;
+
+	if (!keys) {
+		keys = bt_keys_find_addr(conn->id, &conn->le.dst);
+	}
+
+	if (keys) {
+		if (conn->role == BT_HCI_ROLE_CENTRAL) {
+			return keys->keys & (BT_KEYS_LTK_P256 | BT_KEYS_PERIPH_LTK);
+		} else {
+			return keys->keys & (BT_KEYS_LTK_P256 | BT_KEYS_LTK);
+		}
+	}
+
+	return false;
+}
+
 void bt_conn_identity_resolved(struct bt_conn *conn)
 {
 	const bt_addr_le_t *rpa;
@@ -2442,7 +2537,7 @@ int bt_conn_get_info(const struct bt_conn *conn, struct bt_conn_info *info)
 #if defined(CONFIG_BT_ISO)
 	case BT_CONN_TYPE_ISO:
 		if (IS_ENABLED(CONFIG_BT_ISO_UNICAST) &&
-		    conn->iso.info.type == BT_ISO_CHAN_TYPE_CONNECTED) {
+		    conn->iso.info.type == BT_ISO_CHAN_TYPE_CONNECTED && conn->iso.acl != NULL) {
 			info->le.dst = &conn->iso.acl->le.dst;
 			info->le.src = &bt_dev.id_addr[conn->iso.acl->id];
 		} else {
@@ -2767,24 +2862,15 @@ int bt_conn_create_auto_stop(void)
 }
 #endif /* defined(CONFIG_BT_FILTER_ACCEPT_LIST) */
 
-int bt_conn_le_create(const bt_addr_le_t *peer,
-		      const struct bt_conn_le_create_param *create_param,
-		      const struct bt_le_conn_param *conn_param,
-		      struct bt_conn **ret_conn)
+static int conn_le_create_common_checks(const bt_addr_le_t *peer,
+					const struct bt_le_conn_param *conn_param)
 {
-	struct bt_conn *conn;
-	bt_addr_le_t dst;
-	int err;
 
 	if (!atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
 		return -EAGAIN;
 	}
 
 	if (!bt_le_conn_params_valid(conn_param)) {
-		return -EINVAL;
-	}
-
-	if (!create_param_validate(create_param)) {
 		return -EINVAL;
 	}
 
@@ -2804,10 +2890,17 @@ int bt_conn_le_create(const bt_addr_le_t *peer,
 		return -EINVAL;
 	}
 
-	if (peer->type == BT_ADDR_LE_PUBLIC_ID ||
-	    peer->type == BT_ADDR_LE_RANDOM_ID) {
-		bt_addr_le_copy(&dst, peer);
-		dst.type -= BT_ADDR_LE_PUBLIC_ID;
+	return 0;
+}
+
+static struct bt_conn *conn_le_create_helper(const bt_addr_le_t *peer,
+				     const struct bt_le_conn_param *conn_param)
+{
+	bt_addr_le_t dst;
+	struct bt_conn *conn;
+
+	if (bt_addr_le_is_resolved(peer)) {
+		bt_addr_le_copy_resolved(&dst, peer);
 	} else {
 		bt_addr_le_copy(&dst, bt_lookup_id_addr(BT_ID_DEFAULT, peer));
 	}
@@ -2815,15 +2908,38 @@ int bt_conn_le_create(const bt_addr_le_t *peer,
 	/* Only default identity supported for now */
 	conn = bt_conn_add_le(BT_ID_DEFAULT, &dst);
 	if (!conn) {
-		return -ENOMEM;
+		return NULL;
 	}
 
 	bt_conn_set_param_le(conn, conn_param);
+
+	return conn;
+}
+
+int bt_conn_le_create(const bt_addr_le_t *peer, const struct bt_conn_le_create_param *create_param,
+		      const struct bt_le_conn_param *conn_param, struct bt_conn **ret_conn)
+{
+	struct bt_conn *conn;
+	int err;
+
+	err = conn_le_create_common_checks(peer, conn_param);
+	if (err) {
+		return err;
+	}
+
+	if (!create_param_validate(create_param)) {
+		return -EINVAL;
+	}
+
+	conn = conn_le_create_helper(peer, conn_param);
+	if (!conn) {
+		return -ENOMEM;
+	}
+
 	create_param_setup(create_param);
 
 #if defined(CONFIG_BT_SMP)
-	if (IS_ENABLED(CONFIG_BT_PRIVACY) &&
-	    (bt_dev.le.rl_entries > bt_dev.le.rl_size)) {
+	if (bt_dev.le.rl_entries > bt_dev.le.rl_size) {
 		/* Use host-based identity resolving. */
 		bt_conn_set_state(conn, BT_CONN_CONNECTING_SCAN);
 
@@ -2849,6 +2965,56 @@ int bt_conn_le_create(const bt_addr_le_t *peer,
 		bt_conn_unref(conn);
 
 		bt_le_scan_update(false);
+		return err;
+	}
+
+	*ret_conn = conn;
+	return 0;
+}
+
+int bt_conn_le_create_synced(const struct bt_le_ext_adv *adv,
+			     const struct bt_conn_le_create_synced_param *synced_param,
+			     const struct bt_le_conn_param *conn_param, struct bt_conn **ret_conn)
+{
+	struct bt_conn *conn;
+	int err;
+
+	err = conn_le_create_common_checks(synced_param->peer, conn_param);
+	if (err) {
+		return err;
+	}
+
+	if (!atomic_test_bit(adv->flags, BT_PER_ADV_ENABLED)) {
+		return -EINVAL;
+	}
+
+	if (!BT_FEAT_LE_PAWR_ADVERTISER(bt_dev.le.features)) {
+		return -ENOTSUP;
+	}
+
+	if (synced_param->subevent >= BT_HCI_PAWR_SUBEVENT_MAX) {
+		return -EINVAL;
+	}
+
+	conn = conn_le_create_helper(synced_param->peer, conn_param);
+	if (!conn) {
+		return -ENOMEM;
+	}
+
+	/* The connection creation timeout is not really useful for PAwR.
+	 * The controller will give a result for the connection attempt
+	 * within a periodic interval. We do not know the periodic interval
+	 * used, so disable the timeout.
+	 */
+	bt_dev.create_param.timeout = 0;
+	bt_conn_set_state(conn, BT_CONN_CONNECTING);
+
+	err = bt_le_create_conn_synced(conn, adv, synced_param->subevent);
+	if (err) {
+		conn->err = 0;
+		bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
+		bt_conn_unref(conn);
+
 		return err;
 	}
 
@@ -3048,6 +3214,19 @@ int bt_conn_auth_passkey_entry(struct bt_conn *conn, unsigned int passkey)
 
 	return -EINVAL;
 }
+
+#if defined(CONFIG_BT_PASSKEY_KEYPRESS)
+int bt_conn_auth_keypress_notify(struct bt_conn *conn,
+				 enum bt_conn_auth_keypress type)
+{
+	if (IS_ENABLED(CONFIG_BT_SMP) && conn->type == BT_CONN_TYPE_LE) {
+		return bt_smp_auth_keypress_notify(conn, type);
+	}
+
+	LOG_ERR("Not implemented for conn type %d", conn->type);
+	return -EINVAL;
+}
+#endif
 
 int bt_conn_auth_passkey_confirm(struct bt_conn *conn)
 {

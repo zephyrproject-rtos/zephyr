@@ -8,7 +8,7 @@ include: base.yaml
 bus: w1
 
 properties:
-    active-pullup:
-      type: boolean
-      description: |
-        Enable the active pullup for the 1-Wire bus.
+  active-pullup:
+    type: boolean
+    description: |
+      Enable the active pullup for the 1-Wire bus.

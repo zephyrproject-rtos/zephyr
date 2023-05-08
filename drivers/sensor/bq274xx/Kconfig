@@ -12,6 +12,16 @@ menuconfig BQ274XX
 
 if BQ274XX
 
+config BQ274XX_PM
+	bool "BQ274XX Power Management"
+	depends on PM_DEVICE
+	default y
+	help
+	  This option enables the device power management feature of the
+	  BQ274XX.
+	  Note: if the int_gpios pin is not used then this feature must be
+	  disabled.
+
 choice BQ274XX_TRIGGER_MODE
 	prompt "Trigger mode"
 	default BQ274XX_TRIGGER_NONE

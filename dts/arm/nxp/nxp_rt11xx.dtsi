@@ -6,6 +6,7 @@
 
 #include <mem.h>
 #include <arm/armv7-m.dtsi>
+#include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/clock/imx_ccm_rev2.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
@@ -529,7 +530,7 @@
 				compatible = "nxp,imx-pwm";
 				index = <0>;
 				interrupts = <125 0>;
-				#pwm-cells = <2>;
+				#pwm-cells = <3>;
 				clocks = <&ccm IMX_CCM_PWM_CLK 0 0>;
 				nxp,prescaler = <128>;
 				status = "disabled";
@@ -539,7 +540,7 @@
 				compatible = "nxp,imx-pwm";
 				index = <1>;
 				interrupts = <126 0>;
-				#pwm-cells = <2>;
+				#pwm-cells = <3>;
 				clocks = <&ccm IMX_CCM_PWM_CLK 0 0>;
 				nxp,prescaler = <128>;
 				status = "disabled";
@@ -549,7 +550,7 @@
 				compatible = "nxp,imx-pwm";
 				index = <2>;
 				interrupts = <127 0>;
-				#pwm-cells = <2>;
+				#pwm-cells = <3>;
 				clocks = <&ccm IMX_CCM_PWM_CLK 0 0>;
 				nxp,prescaler = <128>;
 				status = "disabled";
@@ -559,7 +560,7 @@
 				compatible = "nxp,imx-pwm";
 				index = <3>;
 				interrupts = <128 0>;
-				#pwm-cells = <2>;
+				#pwm-cells = <3>;
 				clocks = <&ccm IMX_CCM_PWM_CLK 0 0>;
 				nxp,prescaler = <128>;
 				status = "disabled";
@@ -575,7 +576,7 @@
 				compatible = "nxp,imx-pwm";
 				index = <0>;
 				interrupts = <177 0>;
-				#pwm-cells = <2>;
+				#pwm-cells = <3>;
 				clocks = <&ccm IMX_CCM_PWM_CLK 0 0>;
 				nxp,prescaler = <128>;
 				status = "disabled";
@@ -585,7 +586,7 @@
 				compatible = "nxp,imx-pwm";
 				index = <1>;
 				interrupts = <178 0>;
-				#pwm-cells = <2>;
+				#pwm-cells = <3>;
 				clocks = <&ccm IMX_CCM_PWM_CLK 0 0>;
 				nxp,prescaler = <128>;
 				status = "disabled";
@@ -595,7 +596,7 @@
 				compatible = "nxp,imx-pwm";
 				index = <2>;
 				interrupts = <179 0>;
-				#pwm-cells = <2>;
+				#pwm-cells = <3>;
 				clocks = <&ccm IMX_CCM_PWM_CLK 0 0>;
 				nxp,prescaler = <128>;
 				status = "disabled";
@@ -605,7 +606,7 @@
 				compatible = "nxp,imx-pwm";
 				index = <3>;
 				interrupts = <180 0>;
-				#pwm-cells = <2>;
+				#pwm-cells = <3>;
 				clocks = <&ccm IMX_CCM_PWM_CLK 0 0>;
 				nxp,prescaler = <128>;
 				status = "disabled";
@@ -621,7 +622,7 @@
 				compatible = "nxp,imx-pwm";
 				index = <0>;
 				interrupts = <182 0>;
-				#pwm-cells = <2>;
+				#pwm-cells = <3>;
 				clocks = <&ccm IMX_CCM_PWM_CLK 0 0>;
 				nxp,prescaler = <128>;
 				status = "disabled";
@@ -631,7 +632,7 @@
 				compatible = "nxp,imx-pwm";
 				index = <1>;
 				interrupts = <183 0>;
-				#pwm-cells = <2>;
+				#pwm-cells = <3>;
 				clocks = <&ccm IMX_CCM_PWM_CLK 0 0>;
 				nxp,prescaler = <128>;
 				status = "disabled";
@@ -641,7 +642,7 @@
 				compatible = "nxp,imx-pwm";
 				index = <2>;
 				interrupts = <184 0>;
-				#pwm-cells = <2>;
+				#pwm-cells = <3>;
 				clocks = <&ccm IMX_CCM_PWM_CLK 0 0>;
 				nxp,prescaler = <128>;
 				status = "disabled";
@@ -651,7 +652,7 @@
 				compatible = "nxp,imx-pwm";
 				index = <3>;
 				interrupts = <185 0>;
-				#pwm-cells = <2>;
+				#pwm-cells = <3>;
 				clocks = <&ccm IMX_CCM_PWM_CLK 0 0>;
 				nxp,prescaler = <128>;
 				status = "disabled";
@@ -667,7 +668,7 @@
 				compatible = "nxp,imx-pwm";
 				index = <0>;
 				interrupts = <187 0>;
-				#pwm-cells = <2>;
+				#pwm-cells = <3>;
 				clocks = <&ccm IMX_CCM_PWM_CLK 0 0>;
 				nxp,prescaler = <128>;
 				status = "disabled";
@@ -677,7 +678,7 @@
 				compatible = "nxp,imx-pwm";
 				index = <1>;
 				interrupts = <188 0>;
-				#pwm-cells = <2>;
+				#pwm-cells = <3>;
 				clocks = <&ccm IMX_CCM_PWM_CLK 0 0>;
 				nxp,prescaler = <128>;
 				status = "disabled";
@@ -687,7 +688,7 @@
 				compatible = "nxp,imx-pwm";
 				index = <2>;
 				interrupts = <189 0>;
-				#pwm-cells = <2>;
+				#pwm-cells = <3>;
 				clocks = <&ccm IMX_CCM_PWM_CLK 0 0>;
 				nxp,prescaler = <128>;
 				status = "disabled";
@@ -697,7 +698,7 @@
 				compatible = "nxp,imx-pwm";
 				index = <3>;
 				interrupts = <190 0>;
-				#pwm-cells = <2>;
+				#pwm-cells = <3>;
 				clocks = <&ccm IMX_CCM_PWM_CLK 0 0>;
 				nxp,prescaler = <128>;
 				status = "disabled";
@@ -800,7 +801,7 @@
 		};
 
 		flexcan1: can@400c4000 {
-			compatible = "nxp,kinetis-flexcan";
+			compatible = "nxp,flexcan";
 			reg = <0x400c4000 0x1000>;
 			interrupts = <44 0>, <45 0>;
 			interrupt-names = "common", "error";
@@ -812,7 +813,7 @@
 		};
 
 		flexcan2: can@400c8000 {
-			compatible = "nxp,kinetis-flexcan";
+			compatible = "nxp,flexcan";
 			reg = <0x400c8000 0x1000>;
 			interrupts = <46 0>, <47 0>;
 			interrupt-names = "common", "error";
@@ -824,7 +825,7 @@
 		};
 
 		flexcan3: can@40c3c000 {
-			compatible = "nxp,kinetis-flexcan";
+			compatible = "nxp,flexcan";
 			reg = <0x40c3c000 0x1000>;
 			interrupts = <48 0>, <49 0>;
 			interrupt-names = "common", "error";
@@ -867,9 +868,9 @@
 			status = "disabled";
 			clk-divider = <8>;
 			clk-source = <0>;
-			voltage-ref= <2>;
+			voltage-ref= <1>;
 			calibration-average = <128>;
-			power-level = <1>;
+			power-level = <0>;
 			offset-value-a = <10>;
 			offset-value-b = <10>;
 			#io-channel-cells = <1>;
@@ -882,7 +883,7 @@
 			status = "disabled";
 			clk-divider = <8>;
 			clk-source = <0>;
-			voltage-ref= <2>;
+			voltage-ref= <1>;
 			calibration-average = <128>;
 			power-level = <1>;
 			offset-value-a = <10>;

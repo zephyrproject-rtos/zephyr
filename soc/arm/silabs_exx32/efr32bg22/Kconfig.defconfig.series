@@ -17,6 +17,7 @@ config NUM_IRQS
 
 config PM
 	select COUNTER
+	select UART_INTERRUPT_DRIVEN
 
 source "soc/arm/silabs_exx32/efr32bg22/Kconfig.defconfig.efr32bg22"
 
