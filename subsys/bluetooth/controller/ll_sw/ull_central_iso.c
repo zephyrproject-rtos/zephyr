@@ -761,11 +761,18 @@ uint8_t ull_central_iso_setup(uint16_t cis_handle,
 
 		/* CIG is started. Use the CIG reference point and latest ticks_at_expire
 		 * for associated ACL, to calculate the offset.
+		 * NOTE: The following calculations are done in a 32-bit time
+		 * range with full consideration and expectation that the
+		 * controller clock does not support the full 32-bit range in
+		 * microseconds. However it is valid as the purpose is to
+		 * calculate the difference and the spare higher order bits will
+		 * ensure that no wrapping can occur before the termination
+		 * condition of the while loop is met. Using time wrapping will
+		 * complicate this.
 		 */
-		time_of_intant = isoal_get_wrapped_time_us(
-			HAL_TICKER_TICKS_TO_US(conn->llcp.prep.ticks_at_expire),
-			EVENT_OVERHEAD_START_US +
-			(instant - event_counter) * conn->lll.interval * CONN_INT_UNIT_US);
+		time_of_intant = HAL_TICKER_TICKS_TO_US(conn->llcp.prep.ticks_at_expire) +
+				EVENT_OVERHEAD_START_US +
+				((instant - event_counter) * conn->lll.interval * CONN_INT_UNIT_US);
 
 		cig_ref_point = cig->cig_ref_point;
 		while (cig_ref_point < time_of_intant) {

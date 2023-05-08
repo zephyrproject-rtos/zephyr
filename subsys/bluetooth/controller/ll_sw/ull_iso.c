@@ -1410,8 +1410,8 @@ static void iso_rx_cig_ref_point_update(struct ll_conn_iso_group *cig,
 			/* Update the CIG reference point based on the CIS
 			 * anchor point
 			 */
-			cig->cig_ref_point = meta->timestamp + cis_sync_delay -
-					     cig_sync_delay;
+			cig->cig_ref_point = isoal_get_wrapped_time_us(meta->timestamp,
+						cis_sync_delay - cig_sync_delay);
 		}
 	}
 }
