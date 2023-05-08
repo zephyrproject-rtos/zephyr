@@ -5,9 +5,10 @@
 
 import scl
 import warnings
+from typing import Union
 from twisterlib.error import ConfigurationError
 
-def extract_fields_from_arg_list(target_fields: set, arg_list: str):
+def extract_fields_from_arg_list(target_fields: set, arg_list: Union[str, list]):
     """
     Given a list of "FIELD=VALUE" args, extract values of args with a
     given field name and return the remaining args separately.
@@ -15,7 +16,12 @@ def extract_fields_from_arg_list(target_fields: set, arg_list: str):
     extracted_fields = {f : list() for f in target_fields}
     other_fields = []
 
-    for field in arg_list.split(" "):
+    if isinstance(arg_list, str):
+        args = arg_list.strip().split()
+    else:
+        args = arg_list
+
+    for field in args:
         try:
             name, val = field.split("=", 1)
         except ValueError:
@@ -154,8 +160,7 @@ class TwisterConfigParser:
             if k == "extra_args":
                 # Pull out these fields and leave the rest
                 extracted_common, d[k] = extract_fields_from_arg_list(
-                    {"CONF_FILE", "OVERLAY_CONFIG", "DTC_OVERLAY_FILE"},
-                    v.strip()
+                    {"CONF_FILE", "OVERLAY_CONFIG", "DTC_OVERLAY_FILE"}, v
                 )
             else:
                 d[k] = v
@@ -164,8 +169,7 @@ class TwisterConfigParser:
             if k == "extra_args":
                 # Pull out these fields and leave the rest
                 extracted_testsuite, v = extract_fields_from_arg_list(
-                    {"CONF_FILE", "OVERLAY_CONFIG", "DTC_OVERLAY_FILE"},
-                    v.strip()
+                    {"CONF_FILE", "OVERLAY_CONFIG", "DTC_OVERLAY_FILE"}, v
                 )
             if k in d:
                 if isinstance(d[k], str):
@@ -176,7 +180,12 @@ class TwisterConfigParser:
                     if k == "filter":
                         d[k] = "(%s) and (%s)" % (d[k], v)
                     else:
-                        d[k] += " " + v
+                        if isinstance(d[k], str) and isinstance(v, list):
+                            d[k] = d[k].split() + v
+                        elif isinstance(d[k], list) and isinstance(v, str):
+                            d[k] = d[v] + v.split()
+                        else:
+                            d[k] += " " + v
             else:
                 d[k] = v
 
