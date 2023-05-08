@@ -12,6 +12,7 @@
 #include <zephyr/drivers/eeprom.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/smbus.h>
 #include <zephyr/drivers/spi.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/kernel.h>
@@ -38,15 +39,23 @@ LOG_MODULE_REGISTER(eeprom_at2x);
 #define ANY_INST_HAS_WP_GPIOS (DT_FOREACH_STATUS_OKAY(atmel_at24, HAS_WP_OR) \
 			       DT_FOREACH_STATUS_OKAY(atmel_at25, HAS_WP_OR) 0)
 
+enum bus_type {
+	I2C,
+	SMBUS,
+	SPI,
+};
+
 struct eeprom_at2x_config {
 	union {
 #ifdef CONFIG_EEPROM_AT24
 		struct i2c_dt_spec i2c;
+		struct smbus_dt_spec smbus;
 #endif /* CONFIG_EEPROM_AT24 */
 #ifdef CONFIG_EEPROM_AT25
 		struct spi_dt_spec spi;
 #endif /* CONFIG_EEPROM_AT25 */
 	} bus;
+	enum bus_type bus_type;
 #if ANY_INST_HAS_WP_GPIOS
 	struct gpio_dt_spec wp_gpio;
 #endif /* ANY_INST_HAS_WP_GPIOS */
@@ -257,6 +266,21 @@ static size_t eeprom_at24_adjust_read_count(const struct device *dev,
 	return len;
 }
 
+static int smbus_read(const struct device *bus, uint16_t addr, uint8_t offset,
+		      uint8_t *buf, size_t len)
+{
+	int err = 0;
+
+	for (int i = 0; i < len; i++) {
+		err = smbus_byte_data_read(bus, addr, offset + i, buf + i);
+		if (err < 0) {
+			break;
+		}
+	}
+
+	return err;
+}
+
 static int eeprom_at24_read(const struct device *dev, off_t offset, void *buf,
 			    size_t len)
 {
@@ -283,9 +307,20 @@ static int eeprom_at24_read(const struct device *dev, off_t offset, void *buf,
 	timeout = k_uptime_get() + config->timeout;
 	while (1) {
 		int64_t now = k_uptime_get();
-		err = i2c_write_read(config->bus.i2c.bus, bus_addr,
-				     addr, config->addr_width / 8,
-				     buf, len);
+
+		if (config->bus_type == I2C) {
+			err = i2c_write_read(config->bus.i2c.bus, bus_addr,
+					     addr, config->addr_width / 8,
+					     buf, len);
+		} else if (config->bus_type == SMBUS) {
+			err = smbus_read(config->bus.smbus.bus,
+					 config->bus.smbus.addr,
+					 offset, buf, len);
+		} else {
+			err = -ENOTSUP;
+			break;
+		}
+
 		if (!err || now > timeout) {
 			break;
 		}
@@ -297,6 +332,21 @@ static int eeprom_at24_read(const struct device *dev, off_t offset, void *buf,
 	}
 
 	return len;
+}
+
+static int smbus_write(const struct device *bus, uint16_t addr, uint8_t offset,
+		       const uint8_t *buf, size_t len)
+{
+	int err = 0;
+
+	for (int i = 0; i < len; i++) {
+		err = smbus_byte_data_write(bus, addr, offset + i, buf[i]);
+		if (err < 0) {
+			break;
+		}
+	}
+
+	return err;
 }
 
 static int eeprom_at24_write(const struct device *dev, off_t offset,
@@ -331,8 +381,19 @@ static int eeprom_at24_write(const struct device *dev, off_t offset,
 	timeout = k_uptime_get() + config->timeout;
 	while (1) {
 		int64_t now = k_uptime_get();
-		err = i2c_write(config->bus.i2c.bus, block, sizeof(block),
-				bus_addr);
+
+		if (config->bus_type == I2C) {
+			err = i2c_write(config->bus.i2c.bus, block,
+					sizeof(block), bus_addr);
+		} else if (config->bus_type == SMBUS) {
+			err = smbus_write(config->bus.smbus.bus,
+					  config->bus.smbus.addr,
+					  offset, buf, len);
+		} else {
+			err = -ENOTSUP;
+			break;
+		}
+
 		if (!err || now > timeout) {
 			break;
 		}
@@ -590,6 +651,8 @@ static int eeprom_at2x_init(const struct device *dev)
 	}
 #endif /* ANY_INST_HAS_WP_GPIOS */
 
+	LOG_INF("EEPROM device %s initialized", dev->name);
+
 	return 0;
 }
 
@@ -629,6 +692,14 @@ static const struct eeprom_driver_api eeprom_at2x_api = {
 	IF_ENABLED(DT_NODE_HAS_PROP(id, wp_gpios),			\
 		   (.wp_gpio = GPIO_DT_SPEC_GET(id, wp_gpios),))
 
+#define EEPROM_AT2X_SET_BUS_TYPE(node_id)				\
+	IF_ENABLED(DT_ON_BUS(node_id, i2c),				\
+		   (.bus_type = I2C,))					\
+	IF_ENABLED(DT_ON_BUS(node_id, smbus),				\
+		   (.bus_type = SMBUS,))				\
+	IF_ENABLED(DT_ON_BUS(node_id, spi),				\
+		   (.bus_type = SPI,))
+
 #define EEPROM_AT2X_DEVICE(n, t) \
 	ASSERT_PAGESIZE_IS_POWER_OF_2(DT_PROP(INST_DT_AT2X(n, t), pagesize)); \
 	ASSERT_SIZE_PAGESIZE_VALID(DT_PROP(INST_DT_AT2X(n, t), size), \
@@ -637,6 +708,7 @@ static const struct eeprom_driver_api eeprom_at2x_api = {
 					    address_width)); \
 	static const struct eeprom_at2x_config eeprom_at##t##_config_##n = { \
 		.bus = EEPROM_AT##t##_BUS(n, t), \
+		EEPROM_AT2X_SET_BUS_TYPE(INST_DT_AT2X(n, t)) \
 		EEPROM_AT2X_WP_GPIOS(INST_DT_AT2X(n, t)) \
 		.size = DT_PROP(INST_DT_AT2X(n, t), size), \
 		.pagesize = DT_PROP(INST_DT_AT2X(n, t), pagesize), \
