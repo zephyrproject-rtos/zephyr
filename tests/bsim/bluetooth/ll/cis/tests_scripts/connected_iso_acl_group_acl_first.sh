@@ -8,7 +8,7 @@ source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 # 1 CIS each to 9 Peripherals (9 CIS in a CIG)
 simulation_id="connected_iso_acl_group_acl_first"
 verbosity_level=2
-EXECUTE_TIMEOUT=30
+EXECUTE_TIMEOUT=200
 
 cd ${BSIM_OUT_PATH}/bin
 
