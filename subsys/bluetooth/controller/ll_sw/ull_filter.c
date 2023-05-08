@@ -1493,7 +1493,7 @@ static void target_resolve(struct k_work *work)
 	idx = twork->idx;
 	search_rpa = &(twork->rpa);
 
-	if (rl[idx].taken && !bt_addr_cmp(&(rl[idx].target_rpa), search_rpa)) {
+	if (rl[idx].taken && bt_addr_eq(&(rl[idx].target_rpa), search_rpa)) {
 		j = idx;
 	} else {
 		/* No match - so not in list Need to see if we can resolve */
@@ -1618,7 +1618,7 @@ static uint8_t prpa_cache_find(bt_addr_t *rpa)
 {
 	for (uint8_t i = 0; i < CONFIG_BT_CTLR_RPA_CACHE_SIZE; i++) {
 		if (prpa_cache[i].taken &&
-		    !bt_addr_cmp(&(prpa_cache[i].rpa), rpa)) {
+		    bt_addr_eq(&(prpa_cache[i].rpa), rpa)) {
 			return i;
 		}
 	}

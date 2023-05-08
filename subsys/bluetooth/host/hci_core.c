@@ -1358,8 +1358,7 @@ void bt_hci_le_enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt)
 			if (IS_ENABLED(CONFIG_BT_PRIVACY) &&
 			    !atomic_test_bit(adv->flags, BT_ADV_USE_IDENTITY)) {
 				conn->le.resp_addr.type = BT_ADDR_LE_RANDOM;
-				if (bt_addr_cmp(&evt->local_rpa,
-						BT_ADDR_ANY) != 0) {
+				if (!bt_addr_eq(&evt->local_rpa, BT_ADDR_ANY)) {
 					bt_addr_copy(&conn->le.resp_addr.a,
 						     &evt->local_rpa);
 				} else {
@@ -1404,7 +1403,7 @@ void bt_hci_le_enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt)
 
 		if (IS_ENABLED(CONFIG_BT_PRIVACY)) {
 			conn->le.init_addr.type = BT_ADDR_LE_RANDOM;
-			if (bt_addr_cmp(&evt->local_rpa, BT_ADDR_ANY) != 0) {
+			if (!bt_addr_eq(&evt->local_rpa, BT_ADDR_ANY)) {
 				bt_addr_copy(&conn->le.init_addr.a,
 					     &evt->local_rpa);
 			} else {

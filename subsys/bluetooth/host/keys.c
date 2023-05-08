@@ -244,7 +244,7 @@ struct bt_keys *bt_keys_find_irk(uint8_t id, const bt_addr_le_t *addr)
 		}
 
 		if (key_pool[i].id == id &&
-		    !bt_addr_cmp(&addr->a, &key_pool[i].irk.rpa)) {
+		    bt_addr_eq(&addr->a, &key_pool[i].irk.rpa)) {
 			LOG_DBG("cached RPA %s for %s", bt_addr_str(&key_pool[i].irk.rpa),
 				bt_addr_le_str(&key_pool[i].addr));
 			return &key_pool[i];

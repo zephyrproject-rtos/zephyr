@@ -1993,7 +1993,7 @@ struct bt_conn *bt_conn_lookup_addr_sco(const bt_addr_t *peer)
 			continue;
 		}
 
-		if (bt_addr_cmp(peer, &conn->sco.acl->br.dst) != 0) {
+		if (!bt_addr_eq(peer, &conn->sco.acl->br.dst)) {
 			bt_conn_unref(conn);
 			continue;
 		}
@@ -2020,7 +2020,7 @@ struct bt_conn *bt_conn_lookup_addr_br(const bt_addr_t *peer)
 			continue;
 		}
 
-		if (bt_addr_cmp(peer, &conn->br.dst) != 0) {
+		if (!bt_addr_eq(peer, &conn->br.dst)) {
 			bt_conn_unref(conn);
 			continue;
 		}

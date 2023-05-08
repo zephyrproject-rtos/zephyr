@@ -147,7 +147,7 @@ static void tryfix_event(TL_Evt_t *tev)
 	struct bt_hci_evt_le_enh_conn_complete *evt =
 			(void *)((uint8_t *)mev + (sizeof(*mev)));
 
-	if (!bt_addr_cmp(&evt->peer_addr.a, BT_ADDR_NONE)) {
+	if (bt_addr_eq(&evt->peer_addr.a, BT_ADDR_NONE)) {
 		LOG_WRN("Invalid peer addr %s", bt_addr_le_str(&evt->peer_addr));
 		bt_addr_copy(&evt->peer_addr.a, &evt->peer_rpa);
 		evt->peer_addr.type = BT_ADDR_LE_RANDOM;
