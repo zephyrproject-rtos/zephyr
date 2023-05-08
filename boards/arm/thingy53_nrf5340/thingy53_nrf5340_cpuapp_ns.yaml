@@ -9,6 +9,7 @@ toolchain:
 ram: 192
 flash: 192
 supported:
+  - gpio
   - i2c
   - pwm
   - watchdog
