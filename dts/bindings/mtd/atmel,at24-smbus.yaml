@@ -1,0 +1,9 @@
+# Copyright (c) 2023 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: Atmel AT24 - compatible SMBus EEPROM
+
+compatible: "atmel,at24"
+
+include: ["atmel,at2x-base.yaml", smbus-device.yaml]
