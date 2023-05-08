@@ -530,6 +530,11 @@ uint8_t ll_cis_create_check(uint16_t cis_handle, uint16_t acl_handle)
 	if (conn) {
 		struct ll_conn_iso_stream *cis;
 
+		/* Verify conn refers to a device acting as central */
+		if (conn->lll.role != BT_HCI_ROLE_CENTRAL) {
+			return BT_HCI_ERR_CMD_DISALLOWED;
+		}
+
 		/* Verify handle validity and association */
 		cis = ll_conn_iso_stream_get(cis_handle);
 		if (cis->lll.handle == cis_handle) {
@@ -537,7 +542,7 @@ uint8_t ll_cis_create_check(uint16_t cis_handle, uint16_t acl_handle)
 		}
 	}
 
-	return BT_HCI_ERR_CMD_DISALLOWED;
+	return BT_HCI_ERR_UNKNOWN_CONN_ID;
 }
 
 void ll_cis_create(uint16_t cis_handle, uint16_t acl_handle)
