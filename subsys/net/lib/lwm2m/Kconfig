@@ -545,6 +545,7 @@ config LWM2M_LOCATION_OBJ_SUPPORT
 
 config LWM2M_GATEWAY_OBJ_SUPPORT
 	bool "LwM2M Gateway Object (25) [EXPERIMENTAL]"
+	select EXPERIMENTAL
 
 config LWM2M_EVENT_LOG_OBJ_SUPPORT
 	bool "LwM2M Event Log Object (20)"
