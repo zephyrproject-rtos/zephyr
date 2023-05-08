@@ -14,4 +14,7 @@ common:
       - ".*allocated 0, free ..., max allocated ..., heap size 256.*"
 tests:
   sample.basic.sys_heap:
-    tags: heap statistics dynamic_memory
+    tags:
+      - heap
+      - statistics
+      - dynamic_memory

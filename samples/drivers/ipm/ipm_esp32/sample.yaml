@@ -3,4 +3,6 @@ sample:
 tests:
   sample.ipm.ipm_esp32:
     platform_allow: esp32
-    tags: samples ipm
+    tags:
+      - samples
+      - ipm

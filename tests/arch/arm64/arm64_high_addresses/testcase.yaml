@@ -1,6 +1,8 @@
 common:
   arch_allow: arm64
-  tags: arm userspace
+  tags:
+    - arm
+    - userspace
   build_only: true
 
 tests:

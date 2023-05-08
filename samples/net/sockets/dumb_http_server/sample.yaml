@@ -6,7 +6,9 @@ common:
   harness: net
   min_ram: 32
   min_flash: 96
-  tags: net socket
+  tags:
+    - net
+    - socket
   platform_exclude: intel_adsp_cavs25
 tests:
   sample.net.sockets.dumb_http_server:

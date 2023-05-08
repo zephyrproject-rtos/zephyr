@@ -1,7 +1,9 @@
 common:
   arch_allow: x86
   platform_allow: ehl_crb
-  tags: edac ibecc
+  tags:
+    - edac
+    - ibecc
 tests:
   edac.ibecc.production:
     extra_configs:

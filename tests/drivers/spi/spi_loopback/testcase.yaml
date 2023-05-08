@@ -1,8 +1,11 @@
 common:
   depends_on: spi
-  tags: drivers spi dma
+  tags:
+    - drivers
+    - spi
+    - dma
   filter: dt_compat_enabled("test-spi-loopback-slow") and
-    dt_compat_enabled("test-spi-loopback-fast")
+          dt_compat_enabled("test-spi-loopback-fast")
   harness: ztest
   harness_config:
     fixture: spi_loopback
@@ -15,30 +18,61 @@ tests:
       - CONFIG_SPI_RTIO=y
     platform_allow: tdk_robokit1
   drivers.spi.mcux_dspi_dma.loopback:
-    extra_args: OVERLAY_CONFIG="overlay-mcux-dspi-dma.conf"
-      DTC_OVERLAY_FILE="overlay-mcux-dspi-dma.overlay"
+    extra_args:
+      - OVERLAY_CONFIG="overlay-mcux-dspi-dma.conf"
+      - DTC_OVERLAY_FILE="overlay-mcux-dspi-dma.overlay"
     platform_allow: frdm_k64f
   drivers.spi.sam_spi_dma.loopback:
-    extra_args: OVERLAY_CONFIG="overlay-sam-spi-dma.conf"
-      DTC_OVERLAY_FILE="overlay-sam-spi-dma.overlay"
-    platform_allow: sam_e70_xplained sam_v71_xult tdk_robokit1
+    extra_args:
+      - OVERLAY_CONFIG="overlay-sam-spi-dma.conf"
+      - DTC_OVERLAY_FILE="overlay-sam-spi-dma.overlay"
+    platform_allow:
+      - sam_e70_xplained
+      - sam_v71_xult
+      - tdk_robokit1
     integration_platforms:
       - sam_e70_xplained
   drivers.spi.stm32_spi_dma.loopback:
     extra_args: OVERLAY_CONFIG="overlay-stm32-spi-dma.conf"
     filter: CONFIG_SOC_FAMILY_STM32
-    platform_allow: nucleo_g474re nucleo_f207zg nucleo_f429zi nucleo_f746zg nucleo_wb55rg
-        nucleo_l152re nucleo_wl55jc nucleo_h743zi stm32h573i_dk
+    platform_allow:
+      - nucleo_g474re
+      - nucleo_f207zg
+      - nucleo_f429zi
+      - nucleo_f746zg
+      - nucleo_wb55rg
+      - nucleo_l152re
+      - nucleo_wl55jc
+      - nucleo_h743zi
+      - stm32h573i_dk
     integration_platforms:
       - nucleo_g474re
   drivers.spi.gd32_spi_interrupt.loopback:
     extra_args: OVERLAY_CONFIG="overlay-gd32-spi-interrupt.conf"
-    platform_allow: gd32f403z_eval gd32f407v_start gd32f450i_eval gd32f450v_start
-      gd32f450z_eval gd32f470i_eval gd32vf103c_starter gd32vf103v_eval longan_nano longan_nano_lite
+    platform_allow:
+      - gd32f403z_eval
+      - gd32f407v_start
+      - gd32f450i_eval
+      - gd32f450v_start
+      - gd32f450z_eval
+      - gd32f470i_eval
+      - gd32vf103c_starter
+      - gd32vf103v_eval
+      - longan_nano
+      - longan_nano_lite
   drivers.spi.gd32_spi_dma.loopback:
     extra_args: OVERLAY_CONFIG="overlay-gd32-spi-dma.conf"
-    platform_allow: gd32f403z_eval gd32f407v_start gd32f450i_eval gd32f450v_start
-      gd32f450z_eval gd32f470i_eval gd32vf103c_starter gd32vf103v_eval longan_nano longan_nano_lite
+    platform_allow:
+      - gd32f403z_eval
+      - gd32f407v_start
+      - gd32f450i_eval
+      - gd32f450v_start
+      - gd32f450z_eval
+      - gd32f470i_eval
+      - gd32vf103c_starter
+      - gd32vf103v_eval
+      - longan_nano
+      - longan_nano_lite
   drivers.pl022_spi_interrupt.loopback:
     extra_configs:
       - CONFIG_SPI_PL022_INTERRUPT=y

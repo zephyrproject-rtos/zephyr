@@ -3,4 +3,8 @@
 
 tests:
   drivers.rtc.rtc_api:
-    tags: drivers rtc api helpers
+    tags:
+      - drivers
+      - rtc
+      - api
+      - helpers

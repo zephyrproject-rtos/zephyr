@@ -4,7 +4,9 @@ sample:
 common:
   depends_on: usb_device
   harness: net
-  tags: usb ieee802154
+  tags:
+    - usb
+    - ieee802154
   platform_exclude: pinnacle_100_dvk
 tests:
   sample.net.wpan.serial:

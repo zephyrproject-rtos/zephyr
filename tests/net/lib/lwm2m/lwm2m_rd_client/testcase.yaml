@@ -1,7 +1,12 @@
 common:
   depends_on: netif
-  tags: net lwm2m
-  platform_allow: native_posix qemu_x86 qemu_x86_64
+  tags:
+    - net
+    - lwm2m
+  platform_allow:
+    - native_posix
+    - qemu_x86
+    - qemu_x86_64
   integration_platforms:
     - native_posix
     - qemu_x86

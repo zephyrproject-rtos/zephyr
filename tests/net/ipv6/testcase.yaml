@@ -1,5 +1,7 @@
 common:
-  tags: net ipv6
+  tags:
+    - net
+    - ipv6
   depends_on: netif
 tests:
   net.ipv6:

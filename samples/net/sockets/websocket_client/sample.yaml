@@ -1,5 +1,10 @@
 common:
-  tags: net http http_client websocket_client websocket
+  tags:
+    - net
+    - http
+    - http_client
+    - websocket_client
+    - websocket
   min_ram: 35
   depends_on: netif
 sample:

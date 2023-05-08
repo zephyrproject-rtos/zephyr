@@ -1,6 +1,9 @@
 common:
   ignore_faults: true
-  tags: kernel threads userspace
+  tags:
+    - kernel
+    - threads
+    - userspace
 tests:
   kernel.threads.apis:
     min_flash: 34

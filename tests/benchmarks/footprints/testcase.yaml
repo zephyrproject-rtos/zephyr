@@ -3,12 +3,19 @@ tests:
     tags: benchmark
     build_only: true
   benchmark.kernel.footprints.pm:
-    tags: benchmark pm
+    tags:
+      - benchmark
+      - pm
     build_only: true
     extra_args: CONF_FILE=prj_pm.conf
   benchmark.kernel.footprints.userspace:
     filter: CONFIG_ARCH_HAS_USERSPACE
     extra_args: CONF_FILE=prj_userspace.conf
-    arch_allow: x86 arm arc
-    tags: benchmark userspace
+    arch_allow:
+      - x86
+      - arm
+      - arc
+    tags:
+      - benchmark
+      - userspace
     build_only: true

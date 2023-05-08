@@ -1,5 +1,7 @@
 common:
-  platform_allow: ehl_crb rpl_crb
+  platform_allow:
+    - ehl_crb
+    - rpl_crb
   tags: smbus
 tests:
   drivers.smbus.api:

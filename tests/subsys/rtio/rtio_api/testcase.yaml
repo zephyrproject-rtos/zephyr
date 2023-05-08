@@ -16,10 +16,14 @@ tests:
     filter: CONFIG_ARCH_HAS_USERSPACE
     extra_configs:
       - CONFIG_USERSPACE=y
-    tags: rtio userspace
+    tags:
+      - rtio
+      - userspace
   rtio.api.userspace.submit_sem:
     filter: CONFIG_ARCH_HAS_USERSPACE
     extra_configs:
       - CONFIG_USERSPACE=y
       - CONFIG_RTIO_SUBMIT_SEM=y
-    tags: rtio userspace
+    tags:
+      - rtio
+      - userspace

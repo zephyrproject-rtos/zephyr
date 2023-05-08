@@ -1,12 +1,14 @@
 sample:
-  description: Sample application to verify the secure monitor for
-     Designware ARC SecureShiled.
+  description: Sample application to verify the secure monitor for Designware ARC
+    SecureShiled.
   name: Designware ARC Secure monitor
 tests:
   sample.board.arc_secure_services:
     # Requires multiple kernels in an AMP config. See README.rst
     build_only: true
-    platform_allow: nsim_sem em_starterkit_em7d
+    platform_allow:
+      - nsim_sem
+      - em_starterkit_em7d
     integration_platforms:
       - nsim_sem
     tags: secure

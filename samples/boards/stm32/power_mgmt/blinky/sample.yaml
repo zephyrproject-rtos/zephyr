@@ -2,7 +2,9 @@ sample:
   name: STM32 GPIO Power Management
 tests:
   sample.boards.stm32.power_mgmt.blinky:
-    tags: LED power
+    tags:
+      - LED
+      - power
     harness: console
     harness_config:
       type: one_line

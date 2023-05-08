@@ -1,5 +1,7 @@
 common:
-  tags: ring_buffer circular_buffer
+  tags:
+    - ring_buffer
+    - circular_buffer
   timeout: 150
 
 tests:
