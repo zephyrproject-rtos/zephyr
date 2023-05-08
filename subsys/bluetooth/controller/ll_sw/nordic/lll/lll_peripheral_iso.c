@@ -510,29 +510,6 @@ static void isr_rx(void *param)
 			/* Increment sequence number */
 			cis_lll->sn++;
 
-#if defined(CONFIG_BT_CTLR_LE_ENC)
-			if (!cis_lll->npi) {
-				/* Get reference to PDU Tx */
-				struct node_tx_iso *node_tx;
-				struct pdu_cis *pdu_tx;
-				uint8_t payload_index;
-				memq_link_t *link;
-
-				payload_index = bn_tx - 1U;
-				link = memq_peek_n(cis_lll->memq_tx.head,
-						   cis_lll->memq_tx.tail,
-						   payload_index,
-						   (void **)&node_tx);
-				pdu_tx = (void *)node_tx->pdu;
-				if (pdu_tx->len) {
-					/* if encrypted increment tx counter */
-					if (conn_lll->enc_tx) {
-						cis_lll->tx.ccm.counter++;
-					}
-				}
-			}
-#endif /* CONFIG_BT_CTLR_LE_ENC */
-
 			/* Increment burst number */
 			if (bn_tx <= cis_lll->tx.bn) {
 				bn_tx++;
@@ -571,9 +548,6 @@ static void isr_rx(void *param)
 
 					return;
 				}
-
-				/* Increment counter */
-				cis_lll->rx.ccm.counter++;
 
 				/* Record MIC valid */
 				mic_state = LLL_CONN_MIC_PASS;
