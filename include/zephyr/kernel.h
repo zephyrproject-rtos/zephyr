@@ -4349,7 +4349,7 @@ struct k_msgq_attrs {
 		_k_fifo_buf_##q_name[(q_max_msgs) * (q_msg_size)];	\
 	STRUCT_SECTION_ITERABLE(k_msgq, q_name) =			\
 	       Z_MSGQ_INITIALIZER(q_name, _k_fifo_buf_##q_name,	\
-				  q_msg_size, q_max_msgs)
+				  (q_msg_size), (q_max_msgs))
 
 /**
  * @brief Initialize a message queue.

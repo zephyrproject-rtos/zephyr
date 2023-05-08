@@ -141,6 +141,8 @@ int z_impl_k_msgq_put(struct k_msgq *msgq, const void *data, k_timeout_t timeout
 			return 0;
 		} else {
 			/* put message in queue */
+			__ASSERT_NO_MSG(msgq->write_ptr >= msgq->buffer_start &&
+					msgq->write_ptr < msgq->buffer_end);
 			(void)memcpy(msgq->write_ptr, data, msgq->msg_size);
 			msgq->write_ptr += msgq->msg_size;
 			if (msgq->write_ptr == msgq->buffer_end) {
@@ -230,6 +232,8 @@ int z_impl_k_msgq_get(struct k_msgq *msgq, void *data, k_timeout_t timeout)
 			SYS_PORT_TRACING_OBJ_FUNC_BLOCKING(k_msgq, get, msgq, timeout);
 
 			/* add thread's message to queue */
+			__ASSERT_NO_MSG(msgq->write_ptr >= msgq->buffer_start &&
+					msgq->write_ptr < msgq->buffer_end);
 			(void)memcpy(msgq->write_ptr, pending_thread->base.swap_data,
 			       msgq->msg_size);
 			msgq->write_ptr += msgq->msg_size;
