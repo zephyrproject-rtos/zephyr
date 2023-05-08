@@ -10,7 +10,6 @@ tests:
 
   libraries.mpsc_pbuf_concurrent:
     tags: mpsc_pbuf
-    timeout: 90
     platform_allow: >
       qemu_cortex_m3 qemu_x86 qemu_x86_64
     extra_configs:
