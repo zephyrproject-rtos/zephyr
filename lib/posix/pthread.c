@@ -143,6 +143,31 @@ static void zephyr_thread_wrapper(void *arg1, void *arg2, void *arg3)
 	pthread_exit(NULL);
 }
 
+static bool pthread_attr_is_valid(const struct pthread_attr *attr)
+{
+	/*
+	 * FIXME: Pthread attribute must be non-null and it provides stack
+	 * pointer and stack size. So even though POSIX 1003.1 spec accepts
+	 * attrib as NULL but zephyr needs it initialized with valid stack.
+	 */
+	if (attr == NULL || attr->initialized == 0U || attr->stack == NULL ||
+	    attr->stacksize == 0) {
+		return false;
+	}
+
+	/* require a valid scheduler policy */
+	if (!valid_posix_policy(attr->schedpolicy)) {
+		return false;
+	}
+
+	/* require a valid detachstate */
+	if (!(attr->detachstate == PTHREAD_JOINABLE || attr->detachstate == PTHREAD_DETACHED)) {
+		return false;
+	}
+
+	return true;
+}
+
 /**
  * @brief Create a new thread.
  *
@@ -154,7 +179,6 @@ static void zephyr_thread_wrapper(void *arg1, void *arg2, void *arg3)
 int pthread_create(pthread_t *newthread, const pthread_attr_t *_attr,
 		   void *(*threadroutine)(void *), void *arg)
 {
-	int rv;
 	int32_t prio;
 	k_spinlock_key_t key;
 	uint32_t pthread_num;
@@ -163,22 +187,21 @@ int pthread_create(pthread_t *newthread, const pthread_attr_t *_attr,
 	struct posix_thread *thread;
 	const struct pthread_attr *attr = (const struct pthread_attr *)_attr;
 
-	/*
-	 * FIXME: Pthread attribute must be non-null and it provides stack
-	 * pointer and stack size. So even though POSIX 1003.1 spec accepts
-	 * attrib as NULL but zephyr needs it initialized with valid stack.
-	 */
-	if ((attr == NULL) || (attr->initialized == 0U)
-	    || (attr->stack == NULL) || (attr->stacksize == 0)) {
+	if (!pthread_attr_is_valid(attr)) {
 		return EINVAL;
 	}
 
 	key = k_spin_lock(&pthread_pool_lock);
-	for (pthread_num = 0;
-	    pthread_num < CONFIG_MAX_PTHREAD_COUNT; pthread_num++) {
+	for (pthread_num = 0; pthread_num < CONFIG_MAX_PTHREAD_COUNT; pthread_num++) {
 		thread = &posix_thread_pool[pthread_num];
 		if (thread->state == PTHREAD_TERMINATED) {
-			thread->state = PTHREAD_JOINABLE;
+			if (pthread_mutex_init(&thread->state_lock, NULL) == 0) {
+				thread->state = attr->detachstate;
+				sys_slist_init(&thread->key_list);
+			} else {
+				/* cannot allocate resources so break early and return EAGAIN */
+				pthread_num = CONFIG_MAX_PTHREAD_COUNT;
+			}
 			break;
 		}
 	}
@@ -188,14 +211,6 @@ int pthread_create(pthread_t *newthread, const pthread_attr_t *_attr,
 		return EAGAIN;
 	}
 
-	rv = pthread_mutex_init(&thread->state_lock, NULL);
-	if (rv != 0) {
-		key = k_spin_lock(&pthread_pool_lock);
-		thread->state = PTHREAD_EXITED;
-		k_spin_unlock(&pthread_pool_lock, key);
-		return rv;
-	}
-
 	prio = posix_to_zephyr_priority(attr->priority, attr->schedpolicy);
 
 	cancel_key = k_spin_lock(&thread->cancel_lock);
@@ -203,12 +218,7 @@ int pthread_create(pthread_t *newthread, const pthread_attr_t *_attr,
 	thread->cancel_pending = 0;
 	k_spin_unlock(&thread->cancel_lock, cancel_key);
 
-	pthread_mutex_lock(&thread->state_lock);
-	thread->state = attr->detachstate;
-	pthread_mutex_unlock(&thread->state_lock);
-
 	pthread_cond_init(&thread->state_cond, &cond_attr);
-	sys_slist_init(&thread->key_list);
 
 	*newthread = pthread_num;
 	k_thread_create(&thread->thread, attr->stack, attr->stacksize,
@@ -216,7 +226,6 @@ int pthread_create(pthread_t *newthread, const pthread_attr_t *_attr,
 			prio, (~K_ESSENTIAL & attr->flags), K_MSEC(attr->delayedstart));
 	return 0;
 }
-
 
 /**
  * @brief Set cancelability State.
@@ -377,6 +386,7 @@ int pthread_once(pthread_once_t *once, void (*init_func)(void))
  */
 void pthread_exit(void *retval)
 {
+	bool destroy = false;
 	k_spinlock_key_t cancel_key;
 	struct posix_thread *self = to_posix_thread(pthread_self());
 	pthread_key_obj *key_obj;
@@ -397,6 +407,7 @@ void pthread_exit(void *retval)
 		self->retval = retval;
 		pthread_cond_broadcast(&self->state_cond);
 	} else {
+		destroy = true;
 		self->state = PTHREAD_TERMINATED;
 	}
 
@@ -411,11 +422,15 @@ void pthread_exit(void *retval)
 	}
 
 	pthread_mutex_unlock(&self->state_lock);
-	pthread_mutex_destroy(&self->state_lock);
+
+	if (destroy) {
+		/* A detached thread must have its resources destroyed by pthread_exit() */
+		pthread_mutex_destroy(&self->state_lock);
+	}
 
 	pthread_cond_destroy(&self->state_cond);
 
-	k_thread_abort((k_tid_t)self);
+	k_thread_abort(&self->thread);
 }
 
 /**
@@ -425,6 +440,7 @@ void pthread_exit(void *retval)
  */
 int pthread_join(pthread_t thread, void **status)
 {
+	bool destroy = false;
 	struct posix_thread *pthread = to_posix_thread(thread);
 	int ret = 0;
 
@@ -443,17 +459,19 @@ int pthread_join(pthread_t thread, void **status)
 	}
 
 	if (pthread->state == PTHREAD_EXITED) {
+		destroy = true;
+		pthread->state = PTHREAD_TERMINATED;
 		if (status != NULL) {
 			*status = pthread->retval;
 		}
-	} else if (pthread->state == PTHREAD_DETACHED) {
-		ret = EINVAL;
 	} else {
 		ret = ESRCH;
 	}
 
 	pthread_mutex_unlock(&pthread->state_lock);
-	if (pthread->state == PTHREAD_EXITED) {
+
+	if (destroy) {
+		/* A joined thread must have its resources destroyed by pthread_join() */
 		pthread_mutex_destroy(&pthread->state_lock);
 	}
 
@@ -467,6 +485,7 @@ int pthread_join(pthread_t thread, void **status)
  */
 int pthread_detach(pthread_t thread)
 {
+	bool join = false;
 	struct posix_thread *pthread = to_posix_thread(thread);
 	int ret = 0;
 
@@ -485,10 +504,7 @@ int pthread_detach(pthread_t thread)
 		pthread_cond_broadcast(&pthread->state_cond);
 		break;
 	case PTHREAD_EXITED:
-		pthread->state = PTHREAD_TERMINATED;
-		/* THREAD has already exited.
-		 * Pthread remained to provide exit status.
-		 */
+		join = true;
 		break;
 	case PTHREAD_TERMINATED:
 		ret = ESRCH;
@@ -499,6 +515,11 @@ int pthread_detach(pthread_t thread)
 	}
 
 	pthread_mutex_unlock(&pthread->state_lock);
+
+	if (join) {
+		pthread_join(thread, NULL);
+	}
+
 	return ret;
 }
 
@@ -718,7 +739,7 @@ static int posix_thread_pool_init(void)
 
 
 	for (i = 0; i < CONFIG_MAX_PTHREAD_COUNT; ++i) {
-		posix_thread_pool[i].state = PTHREAD_EXITED;
+		posix_thread_pool[i].state = PTHREAD_TERMINATED;
 	}
 
 	return 0;

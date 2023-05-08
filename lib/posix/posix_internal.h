@@ -31,10 +31,10 @@ enum pthread_state {
 	PTHREAD_DETACHED = PTHREAD_CREATE_DETACHED,
 	/* The thread is running and joinable. */
 	PTHREAD_JOINABLE = PTHREAD_CREATE_JOINABLE,
+	/* A joinable thread exited and its return code is available. */
+	PTHREAD_EXITED,
 	/* The thread structure is unallocated and available for reuse. */
 	PTHREAD_TERMINATED,
-	/* A joinable thread exited and its return code is available. */
-	PTHREAD_EXITED
 };
 
 struct posix_thread {
