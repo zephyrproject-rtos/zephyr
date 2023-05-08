@@ -15,10 +15,10 @@ mapping:
     required: false
     mapping:
       "arch_exclude":
-        type: str
+        type: any
         required: false
       "arch_allow":
-        type: str
+        type: any
         required: false
       "build_only":
         type: bool
@@ -27,10 +27,10 @@ mapping:
         type: bool
         required: false
       "depends_on":
-        type: str
+        type: any
         required: false
       "extra_args":
-        type: str
+        type: any
         required: false
       "extra_conf_files":
         type: seq
@@ -48,7 +48,7 @@ mapping:
         sequence:
           - type: str
       "extra_sections":
-        type: str
+        type: any
         required: false
       "filter":
         type: str
@@ -126,10 +126,10 @@ mapping:
         sequence:
           - type: str
       "platform_exclude":
-        type: str
+        type: any
         required: false
       "platform_allow":
-        type: str
+        type: any
         required: false
       "platform_type":
         type: seq
@@ -143,16 +143,16 @@ mapping:
         sequence:
           - type: str
       "tags":
-        type: str
+        type: any
         required: false
       "timeout":
         type: int
         required: false
       "toolchain_exclude":
-        type: str
+        type: any
         required: false
       "toolchain_allow":
-        type: str
+        type: any
         required: false
       "type":
         type: str
@@ -195,10 +195,10 @@ mapping:
         required: false
         mapping:
           "arch_exclude":
-            type: str
+            type: any
             required: false
           "arch_allow":
-            type: str
+            type: any
             required: false
           "testcases":
             type: seq
@@ -212,10 +212,10 @@ mapping:
             type: bool
             required: false
           "depends_on":
-            type: str
+            type: any
             required: false
           "extra_args":
-            type: str
+            type: any
             required: false
           "extra_configs":
             type: seq
@@ -238,7 +238,7 @@ mapping:
             sequence:
               - type: str
           "extra_sections":
-            type: str
+            type: any
             required: false
           "filter":
             type: str
@@ -311,10 +311,10 @@ mapping:
             sequence:
               - type: str
           "platform_exclude":
-            type: str
+            type: any
             required: false
           "platform_allow":
-            type: str
+            type: any
             required: false
           "platform_type":
             type: seq
@@ -328,16 +328,16 @@ mapping:
             sequence:
               - type: str
           "tags":
-            type: str
+            type: any
             required: false
           "timeout":
             type: int
             required: false
           "toolchain_exclude":
-            type: str
+            type: any
             required: false
           "toolchain_allow":
-            type: str
+            type: any
             required: false
           "type":
             type: str
