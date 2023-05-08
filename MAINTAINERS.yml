@@ -472,8 +472,9 @@ Debug:
 Device Driver Model:
   status: maintained
   maintainers:
-    - tbursztyka
+    - gmarull
   collaborators:
+    - tbursztyka
     - dcpleung
     - nashif
   files:
