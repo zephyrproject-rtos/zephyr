@@ -1,11 +1,17 @@
 tests:
   drivers.i2s:
     depends_on: i2s
-    tags: drivers userspace
+    tags:
+      - drivers
+      - userspace
     filter: not CONFIG_I2S_TEST_USE_GPIO_LOOPBACK
   drivers.i2s.gpio_loopback:
-    depends_on: i2s gpio
-    tags: drivers userspace
+    depends_on:
+      - i2s
+      - gpio
+    tags:
+      - drivers
+      - userspace
     filter: CONFIG_I2S_TEST_USE_GPIO_LOOPBACK
     harness: ztest
     harness_config:

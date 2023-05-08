@@ -2,7 +2,9 @@ sample:
   name: Device Idle Power Management
 tests:
   sample.power.ospm.dev_idle_pm:
-    platform_allow: nrf52840dk_nrf52840 nrf52dk_nrf52832
+    platform_allow:
+      - nrf52840dk_nrf52840
+      - nrf52dk_nrf52832
     integration_platforms:
       - nrf52840dk_nrf52840
     tags: power

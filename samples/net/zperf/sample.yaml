@@ -1,8 +1,13 @@
 common:
   harness: net
-  tags: net zperf
+  tags:
+    - net
+    - zperf
   # TODO: Does not work properly with native_posix, need more TLC
-  platform_exclude: native_posix native_posix_64 sam_e70_xplained
+  platform_exclude:
+    - native_posix
+    - native_posix_64
+    - sam_e70_xplained
   min_ram: 64
 sample:
   description: Network performance measurement tool for Zephyr
@@ -16,24 +21,38 @@ tests:
     platform_allow: qemu_x86
   sample.net.zperf.netusb_ecm:
     extra_args: OVERLAY_CONFIG="overlay-netusb.conf"
-    tags: usb net zperf
+    tags:
+      - usb
+      - net
+      - zperf
     depends_on: usb_device
   sample.net.zperf.netusb_eem:
     extra_args: OVERLAY_CONFIG="overlay-netusb.conf"
     extra_configs:
       - CONFIG_USB_DEVICE_NETWORK_ECM=n
       - CONFIG_USB_DEVICE_NETWORK_EEM=y
-    tags: usb net zperf
+    tags:
+      - usb
+      - net
+      - zperf
     depends_on: usb_device
   sample.net.zperf.netusb_rndis:
     extra_args: OVERLAY_CONFIG="overlay-netusb.conf"
     extra_configs:
       - CONFIG_USB_DEVICE_NETWORK_ECM=n
       - CONFIG_USB_DEVICE_NETWORK_RNDIS=y
-    tags: usb net zperf
+    tags:
+      - usb
+      - net
+      - zperf
     depends_on: usb_device
   sample.net.zperf.shield:
     platform_allow: reel_board
     extra_args: SHIELD=link_board_eth
-    tags: shield net zperf
-    depends_on: arduino_spi arduino_gpio
+    tags:
+      - shield
+      - net
+      - zperf
+    depends_on:
+      - arduino_spi
+      - arduino_gpio

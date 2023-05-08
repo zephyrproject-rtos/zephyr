@@ -3,4 +3,6 @@ common:
 tests:
   net.icmpv6:
     min_ram: 16
-    tags: net icmpv6
+    tags:
+      - net
+      - icmpv6

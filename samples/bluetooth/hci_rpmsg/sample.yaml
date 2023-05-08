@@ -1,12 +1,13 @@
 sample:
-  description: Allows Zephyr to provide Bluetooth connectivity
-    via RPMsg.
+  description: Allows Zephyr to provide Bluetooth connectivity via RPMsg.
   name: Bluetooth HCI RPMsg
 tests:
   sample.bluetooth.hci_rpmsg:
     harness: bluetooth
     tags: bluetooth
-    platform_allow: nrf5340dk_nrf5340_cpunet nrf5340_audio_dk_nrf5340_cpunet
+    platform_allow:
+      - nrf5340dk_nrf5340_cpunet
+      - nrf5340_audio_dk_nrf5340_cpunet
     integration_platforms:
       - nrf5340dk_nrf5340_cpunet
       - nrf5340_audio_dk_nrf5340_cpunet
@@ -14,7 +15,9 @@ tests:
     harness: bluetooth
     tags: bluetooth
     extra_args: CONF_FILE="nrf5340_cpunet_iso_broadcast-bt_ll_sw_split.conf"
-    platform_allow: nrf5340dk_nrf5340_cpunet nrf5340_audio_dk_nrf5340_cpunet
+    platform_allow:
+      - nrf5340dk_nrf5340_cpunet
+      - nrf5340_audio_dk_nrf5340_cpunet
     integration_platforms:
       - nrf5340dk_nrf5340_cpunet
       - nrf5340_audio_dk_nrf5340_cpunet
@@ -22,35 +25,45 @@ tests:
     harness: bluetooth
     tags: bluetooth
     extra_args: CONF_FILE="nrf5340_cpunet_iso_receive-bt_ll_sw_split.conf"
-    platform_allow: nrf5340dk_nrf5340_cpunet nrf5340_audio_dk_nrf5340_cpunet
+    platform_allow:
+      - nrf5340dk_nrf5340_cpunet
+      - nrf5340_audio_dk_nrf5340_cpunet
     integration_platforms:
       - nrf5340dk_nrf5340_cpunet
   sample.bluetooth.hci_rpmsg.bis.bt_ll_sw_split:
     harness: bluetooth
     tags: bluetooth
     extra_args: CONF_FILE="nrf5340_cpunet_bis-bt_ll_sw_split.conf"
-    platform_allow: nrf5340dk_nrf5340_cpunet nrf5340_audio_dk_nrf5340_cpunet
+    platform_allow:
+      - nrf5340dk_nrf5340_cpunet
+      - nrf5340_audio_dk_nrf5340_cpunet
     integration_platforms:
       - nrf5340dk_nrf5340_cpunet
   sample.bluetooth.hci_rpmsg.iso_central.bt_ll_sw_split:
     harness: bluetooth
     tags: bluetooth
     extra_args: CONF_FILE="nrf5340_cpunet_iso_central-bt_ll_sw_split.conf"
-    platform_allow: nrf5340dk_nrf5340_cpunet nrf5340_audio_dk_nrf5340_cpunet
+    platform_allow:
+      - nrf5340dk_nrf5340_cpunet
+      - nrf5340_audio_dk_nrf5340_cpunet
     integration_platforms:
       - nrf5340dk_nrf5340_cpunet
   sample.bluetooth.hci_rpmsg.iso_peripheral.bt_ll_sw_split:
     harness: bluetooth
     tags: bluetooth
     extra_args: CONF_FILE="nrf5340_cpunet_iso_peripheral-bt_ll_sw_split.conf"
-    platform_allow: nrf5340dk_nrf5340_cpunet nrf5340_audio_dk_nrf5340_cpunet
+    platform_allow:
+      - nrf5340dk_nrf5340_cpunet
+      - nrf5340_audio_dk_nrf5340_cpunet
     integration_platforms:
       - nrf5340dk_nrf5340_cpunet
   sample.bluetooth.hci_rpmsg.cis.bt_ll_sw_split:
     harness: bluetooth
     tags: bluetooth
     extra_args: CONF_FILE="nrf5340_cpunet_cis-bt_ll_sw_split.conf"
-    platform_allow: nrf5340dk_nrf5340_cpunet nrf5340_audio_dk_nrf5340_cpunet
+    platform_allow:
+      - nrf5340dk_nrf5340_cpunet
+      - nrf5340_audio_dk_nrf5340_cpunet
     integration_platforms:
       - nrf5340dk_nrf5340_cpunet
   sample.bluetooth.hci_rpmsg.iso.bt_ll_sw_split:
@@ -63,8 +76,9 @@ tests:
   sample.bluetooth.hci_rpmsg.df.bt_ll_sw_split:
     harness: bluetooth
     tags: bluetooth
-    extra_args: CONF_FILE="nrf5340_cpunet_df-bt_ll_sw_split.conf"
-      DTC_OVERLAY_FILE="nrf5340_cpunet_df-bt_ll_sw_split.overlay"
+    extra_args:
+      - CONF_FILE="nrf5340_cpunet_df-bt_ll_sw_split.conf"
+      - DTC_OVERLAY_FILE="nrf5340_cpunet_df-bt_ll_sw_split.overlay"
     platform_allow: nrf5340dk_nrf5340_cpunet
     integration_platforms:
       - nrf5340dk_nrf5340_cpunet

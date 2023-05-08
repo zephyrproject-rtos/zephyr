@@ -1,5 +1,7 @@
 common:
-  tags: http net
+  tags:
+    - http
+    - net
   depends_on: netif
 tests:
   net.http:

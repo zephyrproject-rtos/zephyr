@@ -1,6 +1,9 @@
 common:
   filter: CONFIG_ARMV6_M_ARMV8_M_BASELINE or CONFIG_ARMV7_M_ARMV8_M_MAINLINE
-  tags: arm fpu interrupt
+  tags:
+    - arm
+    - fpu
+    - interrupt
   ignore_faults: true
   arch_allow: arm
 tests:

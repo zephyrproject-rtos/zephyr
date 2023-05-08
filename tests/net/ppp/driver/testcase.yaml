@@ -1,6 +1,8 @@
 common:
   depends_on: serial-net
-  tags: net ppp
+  tags:
+    - net
+    - ppp
 tests:
   net.ppp:
     min_ram: 21

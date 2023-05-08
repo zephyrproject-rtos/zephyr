@@ -1,5 +1,7 @@
 common:
-  tags: drivers ieee802154
+  tags:
+    - drivers
+    - ieee802154
   build_only: true
 tests:
   ieee802154.build.external:

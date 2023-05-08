@@ -1,7 +1,9 @@
 common:
   platform_type:
     - qemu
-  tags: log_api logging
+  tags:
+    - log_api
+    - logging
   skip: true
   integration_platforms:
     - qemu_x86

@@ -1,6 +1,8 @@
 common:
   arch_exclude: posix
-  tags: posix getopt
+  tags:
+    - posix
+    - getopt
 tests:
   portability.posix.getopt:
     integration_platforms:

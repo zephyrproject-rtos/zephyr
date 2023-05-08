@@ -1,6 +1,8 @@
 common:
   depends_on: netif
-  tags: net tcp
+  tags:
+    - net
+    - tcp
 tests:
   net.tcp.simple:
     extra_configs:

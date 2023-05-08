@@ -1,6 +1,8 @@
 tests:
   kernel.mailbox.api:
-    tags: kernel mailbox
+    tags:
+      - kernel
+      - mailbox
   kernel.mailbox.api.linker_generator:
     platform_allow: qemu_cortex_m3
     tags: linker_generator

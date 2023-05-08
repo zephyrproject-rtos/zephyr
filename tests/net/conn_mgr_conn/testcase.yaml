@@ -3,4 +3,6 @@ common:
   depends_on: netif
 tests:
   net.conn_mgr_conn:
-    tags: net iface
+    tags:
+      - net
+      - iface

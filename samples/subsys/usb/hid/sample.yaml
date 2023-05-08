@@ -26,7 +26,9 @@ tests:
   sample.usb.hid.buildonly:
     depends_on: usb_device
     tags: usb
-    platform_allow: native_posix native_posix_64
+    platform_allow:
+      - native_posix
+      - native_posix_64
     build_only: true
     integration_platforms:
       - native_posix

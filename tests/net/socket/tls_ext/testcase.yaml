@@ -1,5 +1,8 @@
 common:
-  tags: net socket tls
+  tags:
+    - net
+    - socket
+    - tls
 tests:
   net.socket.tls.ext:
     platform_allow: qemu_x86

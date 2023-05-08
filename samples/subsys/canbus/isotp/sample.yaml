@@ -2,7 +2,9 @@ sample:
   name: ISO-TP sample
 tests:
   sample.subsys.canbus.isotp:
-    tags: can isotp
+    tags:
+      - can
+      - isotp
     depends_on: can
     filter: dt_chosen_enabled("zephyr,canbus") and not dt_compat_enabled("kvaser,pcican")
     extra_configs:

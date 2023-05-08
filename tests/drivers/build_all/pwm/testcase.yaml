@@ -1,6 +1,8 @@
 common:
   build_only: true
-  tags: drivers pwm
+  tags:
+    - drivers
+    - pwm
 tests:
   drivers.pwm.gecko.build:
     platform_allow: efr32_radio_brd4250b
@@ -51,7 +53,9 @@ tests:
     platform_allow: atsame54_xpro
     tags: pwm_sam0_tcc
   drivers.pwm.build.sam:
-    platform_allow: sam_e70_xplained sam_v71b_xult
+    platform_allow:
+      - sam_e70_xplained
+      - sam_v71b_xult
     tags: pwm_sam
   drivers.pwm.stm32.build:
     platform_allow: disco_l475_iot1

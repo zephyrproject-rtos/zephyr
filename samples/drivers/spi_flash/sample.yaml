@@ -2,9 +2,11 @@ sample:
   name: SPI Flash Sample
 tests:
   sample.drivers.spi.flash:
-    tags: spi flash
-    filter: dt_compat_enabled("jedec,spi-nor") or dt_compat_enabled("st,stm32-qspi-nor") or
-      dt_compat_enabled("st,stm32-ospi-nor")
+    tags:
+      - spi
+      - flash
+    filter: dt_compat_enabled("jedec,spi-nor") or dt_compat_enabled("st,stm32-qspi-nor")
+      or dt_compat_enabled("st,stm32-ospi-nor")
     platform_exclude: hifive_unmatched
     harness: console
     harness_config:
@@ -18,7 +20,9 @@ tests:
         - "Data read matches data written. Good!!"
     depends_on: spi
   sample.drivers.spi.flash_dpd:
-    tags: spi flash
+    tags:
+      - spi
+      - flash
     filter: dt_compat_enabled("jedec,spi-nor")
     platform_exclude: hifive_unmatched
     build_only: true

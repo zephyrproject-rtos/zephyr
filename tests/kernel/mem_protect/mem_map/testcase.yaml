@@ -1,6 +1,8 @@
 common:
   ignore_faults: true
-  tags: kernel mmu
+  tags:
+    - kernel
+    - mmu
 tests:
   kernel.memory_protection.mem_map:
     filter: CONFIG_MMU and not CONFIG_X86_64

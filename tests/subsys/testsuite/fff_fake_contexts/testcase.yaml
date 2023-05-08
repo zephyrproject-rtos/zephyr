@@ -10,4 +10,6 @@ tests:
       - qemu_cortex_m3
       - native_posix_64
     tags: test_framework
-    platform_allow: qemu_cortex_m3 native_posix_64
+    platform_allow:
+      - qemu_cortex_m3
+      - native_posix_64
