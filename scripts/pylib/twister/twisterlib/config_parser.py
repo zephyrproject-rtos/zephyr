@@ -106,23 +106,29 @@ class TwisterConfigParser:
         elif typestr == "bool":
             return value
 
-        elif typestr.startswith("list") and isinstance(value, list):
-            return value
-        elif typestr.startswith("list") and isinstance(value, str):
-            vs = v.split()
-            if len(typestr) > 4 and typestr[4] == ":":
-                return [self._cast_value(vsi, typestr[5:]) for vsi in vs]
+        elif typestr.startswith("list"):
+            if isinstance(value, list):
+                return value
+            elif isinstance(value, str):
+                vs = v.split()
+                if len(typestr) > 4 and typestr[4] == ":":
+                    return [self._cast_value(vsi, typestr[5:]) for vsi in vs]
+                else:
+                    return vs
             else:
-                return vs
+                raise ValueError
 
-        elif typestr.startswith("set") and isinstance(value, list):
-            return set(value)
-        elif typestr.startswith("set") and isinstance(value, str):
-            vs = v.split()
-            if len(typestr) > 3 and typestr[3] == ":":
-                return {self._cast_value(vsi, typestr[4:]) for vsi in vs}
+        elif typestr.startswith("set"):
+            if isinstance(value, list):
+                return set(value)
+            elif isinstance(value, str):
+                vs = v.split()
+                if len(typestr) > 3 and typestr[3] == ":":
+                    return {self._cast_value(vsi, typestr[4:]) for vsi in vs}
+                else:
+                    return set(vs)
             else:
-                return set(vs)
+                raise ValueError
 
         elif typestr.startswith("map"):
             return value
