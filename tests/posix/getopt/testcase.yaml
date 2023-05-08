@@ -16,3 +16,9 @@ tests:
     filter: CONFIG_PICOLIBC_SUPPORTED
     extra_configs:
       - CONFIG_PICOLIBC=y
+  portability.posix.getopt.logger:
+    integration_platforms:
+      - qemu_x86
+    extra_configs:
+      - CONFIG_LOG=y
+    build_only: true
