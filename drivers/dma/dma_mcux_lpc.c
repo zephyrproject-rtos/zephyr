@@ -70,6 +70,8 @@ static void nxp_lpc_dma_callback(dma_handle_t *handle, void *param,
 		DMA_AbortTransfer(handle);
 	}
 
+	data->busy = DMA_ChannelIsBusy(data->dma_handle.base, channel);
+
 	data->dma_callback(data->dev, data->user_data, channel, ret);
 }
 
@@ -455,9 +457,18 @@ static int dma_mcux_lpc_reload(const struct device *dev, uint32_t channel,
 static int dma_mcux_lpc_get_status(const struct device *dev, uint32_t channel,
 				   struct dma_status *status)
 {
+	const struct dma_mcux_lpc_config *config = dev->config;
 	struct dma_mcux_lpc_dma_data *dev_data = dev->data;
 	uint32_t virtual_channel = dev_data->channel_index[channel];
 	struct call_back *data = DEV_CHANNEL_DATA(dev, virtual_channel);
+
+	if (channel > config->num_of_channels) {
+		return -EINVAL;
+	}
+
+	if (virtual_channel > config->num_of_channels) {
+		return -EACCES;
+	}
 
 	if (data->busy) {
 		status->busy = true;
