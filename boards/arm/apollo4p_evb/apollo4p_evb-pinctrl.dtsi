@@ -1,0 +1,19 @@
+/*
+ * Copyright (c) 2023 Antmicro <www.antmicro.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <dt-bindings/pinctrl/ambiq-apollo4-pinctrl.h>
+
+&pinctrl {
+	uart0_default: uart0_default {
+		group1 {
+			pinmux = <UART0TX_P60>;
+		};
+		group2 {
+			pinmux = <UART0RX_P47>;
+			input-enable;
+		};
+	};
+};
