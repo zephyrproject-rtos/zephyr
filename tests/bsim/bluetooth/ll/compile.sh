@@ -32,6 +32,12 @@ app=tests/bsim/bluetooth/ll/bis conf_file=prj_vs_dp.conf compile
 app=tests/bsim/bluetooth/ll/bis conf_file=prj_past.conf compile
 
 app=tests/bsim/bluetooth/ll/edtt/hci_test_app \
+  conf_file=prj_dut.conf compile
+app=tests/bsim/bluetooth/ll/edtt/hci_test_app \
+  conf_file=prj_tst.conf compile
+app=tests/bsim/bluetooth/ll/edtt/gatt_test_app \
+  conf_file=prj.conf compile
+app=tests/bsim/bluetooth/ll/edtt/hci_test_app \
   conf_file=prj_dut_llcp.conf compile
 app=tests/bsim/bluetooth/ll/edtt/hci_test_app \
   conf_file=prj_tst_llcp.conf compile
