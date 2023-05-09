@@ -183,7 +183,6 @@ int pthread_create(pthread_t *newthread, const pthread_attr_t *_attr,
 	k_spinlock_key_t key;
 	uint32_t pthread_num;
 	k_spinlock_key_t cancel_key;
-	pthread_condattr_t cond_attr;
 	struct posix_thread *thread;
 	const struct pthread_attr *attr = (const struct pthread_attr *)_attr;
 
@@ -217,8 +216,6 @@ int pthread_create(pthread_t *newthread, const pthread_attr_t *_attr,
 	thread->cancel_state = (1 << _PTHREAD_CANCEL_POS) & attr->flags;
 	thread->cancel_pending = 0;
 	k_spin_unlock(&thread->cancel_lock, cancel_key);
-
-	pthread_cond_init(&thread->state_cond, &cond_attr);
 
 	*newthread = pthread_num;
 	k_thread_create(&thread->thread, attr->stack, attr->stacksize,
@@ -283,7 +280,6 @@ int pthread_cancel(pthread_t pthread)
 		} else {
 			thread->retval = PTHREAD_CANCELED;
 			thread->state = PTHREAD_EXITED;
-			pthread_cond_broadcast(&thread->state_cond);
 		}
 		pthread_mutex_unlock(&thread->state_lock);
 
@@ -405,7 +401,6 @@ void pthread_exit(void *retval)
 	if (self->state == PTHREAD_JOINABLE) {
 		self->state = PTHREAD_EXITED;
 		self->retval = retval;
-		pthread_cond_broadcast(&self->state_cond);
 	} else {
 		destroy = true;
 		self->state = PTHREAD_TERMINATED;
@@ -427,8 +422,6 @@ void pthread_exit(void *retval)
 		/* A detached thread must have its resources destroyed by pthread_exit() */
 		pthread_mutex_destroy(&self->state_lock);
 	}
-
-	pthread_cond_destroy(&self->state_cond);
 
 	k_thread_abort(&self->thread);
 }
@@ -452,11 +445,13 @@ int pthread_join(pthread_t thread, void **status)
 		return ESRCH;
 	}
 
-	pthread_mutex_lock(&pthread->state_lock);
-
-	if (pthread->state == PTHREAD_JOINABLE) {
-		pthread_cond_wait(&pthread->state_cond, &pthread->state_lock);
+	if (pthread->state == PTHREAD_DETACHED) {
+		return EINVAL;
 	}
+
+	k_thread_join(&pthread->thread, K_FOREVER);
+
+	pthread_mutex_lock(&pthread->state_lock);
 
 	if (pthread->state == PTHREAD_EXITED) {
 		destroy = true;
@@ -498,10 +493,7 @@ int pthread_detach(pthread_t thread)
 	switch (pthread->state) {
 	case PTHREAD_JOINABLE:
 		pthread->state = PTHREAD_DETACHED;
-		/* Broadcast the condition.
-		 * This will make threads waiting to join this thread continue.
-		 */
-		pthread_cond_broadcast(&pthread->state_cond);
+		z_thread_wake_joiners(&pthread->thread);
 		break;
 	case PTHREAD_EXITED:
 		join = true;
