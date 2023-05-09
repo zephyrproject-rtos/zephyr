@@ -443,6 +443,26 @@ uint8_t ll_cig_parameters_commit(uint8_t cig_id)
 	cig->c_latency = c_max_latency;
 	cig->p_latency = p_max_latency;
 
+#if !defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
+	uint32_t slot_us;
+
+	/* CIG sync_delay has been calculated considering the configured
+	 * packing.
+	 */
+	slot_us = cig->sync_delay;
+
+	slot_us += EVENT_OVERHEAD_START_US + EVENT_OVERHEAD_END_US;
+
+	/* Populate the ULL hdr with event timings overheads */
+	cig->ull.ticks_active_to_start = 0U;
+	cig->ull.ticks_prepare_to_start =
+		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US);
+	cig->ull.ticks_preempt_to_start =
+		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_PREEMPT_MIN_US);
+	cig->ull.ticks_slot = HAL_TICKER_US_TO_TICKS(slot_us);
+#endif /* !CONFIG_BT_CTLR_JIT_SCHEDULING */
+
+	/* Reset params cache */
 	ll_iso_setup.cis_idx = 0U;
 
 	return BT_HCI_ERR_SUCCESS;

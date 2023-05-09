@@ -910,30 +910,34 @@ void ull_conn_iso_start(struct ll_conn *conn, uint16_t cis_handle,
 #else /* !CONFIG_BT_CTLR_JIT_SCHEDULING */
 	uint32_t ticks_slot_overhead;
 	uint32_t ticks_slot_offset;
-	uint32_t slot_us;
 
 	/* Calculate time reservations for sequential and interleaved packing as
 	 * configured.
 	 */
-	if (IS_CENTRAL(cig)) {
-		/* CIG sync_delay has been calculated considering the configured
-		 * packing.
-		 */
-		slot_us = cig->sync_delay;
-	} else {
+	if (IS_PERIPHERAL(cig)) {
+		uint32_t slot_us;
+
 		/* FIXME: Time reservation for interleaved packing */
 		/* Below is time reservation for sequential packing */
 		slot_us = cis->lll.sub_interval * cis->lll.nse;
-	}
-	slot_us += EVENT_OVERHEAD_START_US + EVENT_OVERHEAD_END_US;
 
-	/* Populate the ULL hdr with event timings overheads */
-	cig->ull.ticks_active_to_start = 0U;
-	cig->ull.ticks_prepare_to_start =
-		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US);
-	cig->ull.ticks_preempt_to_start =
-		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_PREEMPT_MIN_US);
-	cig->ull.ticks_slot = HAL_TICKER_US_TO_TICKS(slot_us);
+		slot_us += EVENT_OVERHEAD_START_US + EVENT_OVERHEAD_END_US;
+
+		/* FIXME: How to use ready_delay_us in the time reservation?
+		 *        i.e. when CISes use different PHYs? Is that even
+		 *        allowed?
+		 *
+		 *        Missing code here, i.e. slot_us += ready_delay_us;
+		 */
+
+		/* Populate the ULL hdr with event timings overheads */
+		cig->ull.ticks_active_to_start = 0U;
+		cig->ull.ticks_prepare_to_start =
+			HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US);
+		cig->ull.ticks_preempt_to_start =
+			HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_PREEMPT_MIN_US);
+		cig->ull.ticks_slot = HAL_TICKER_US_TO_TICKS(slot_us);
+	}
 
 	ticks_slot_offset = MAX(cig->ull.ticks_active_to_start,
 				cig->ull.ticks_prepare_to_start);
