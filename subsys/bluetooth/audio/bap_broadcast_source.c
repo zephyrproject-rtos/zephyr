@@ -523,8 +523,8 @@ static bool valid_create_param(const struct bt_bap_broadcast_source_create_param
 		return false;
 	}
 
-	CHECKIF(param->params_count == 0U) {
-		LOG_DBG("param->params_count is 0");
+	CHECKIF(!IN_RANGE(param->params_count, 1U, CONFIG_BT_BAP_BROADCAST_SRC_SUBGROUP_COUNT)) {
+		LOG_DBG("param->params_count %zu is invalid", param->params_count);
 		return false;
 	}
 
