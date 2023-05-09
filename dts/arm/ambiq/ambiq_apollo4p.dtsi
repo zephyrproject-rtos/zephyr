@@ -1,0 +1,32 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
+#include <arm/armv7-m.dtsi>
+#include <mem.h>
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			compatible = "arm,cortex-m4f";
+			reg = <0>;
+		};
+	};
+
+	/* MRAM region */
+	flash0: flash@18000 {
+		compatible = "soc-nv-flash";
+		reg = <0x00018000 0x1e8000>;
+	};
+
+	/* TCM + SRAM region */
+	sram0: memory@10000000 {
+		compatible = "mmio-sram";
+		reg = <0x10000000 0x2C0000>;
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <3>;
+};
