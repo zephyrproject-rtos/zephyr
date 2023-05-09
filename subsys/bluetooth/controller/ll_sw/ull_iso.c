@@ -36,7 +36,9 @@
 #include "lll_conn_iso.h"
 #include "lll_iso_tx.h"
 
-#include "ll_sw/ull_tx_queue.h"
+#if !defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
+#include "ull_tx_queue.h"
+#endif
 
 #include "isoal.h"
 
@@ -246,8 +248,12 @@ uint8_t ll_setup_iso_path(uint16_t handle, uint8_t path_dir, uint8_t path_id,
 			 * disallowed status.
 			 */
 #if defined(CONFIG_BT_CTLR_PERIPHERAL_ISO)
+#if defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
+			const uint8_t cis_waiting = (conn->llcp_cis.state ==
+						     LLCP_CIS_STATE_RSP_WAIT);
+#else
 			const uint8_t cis_waiting = ull_cp_cc_awaiting_reply(conn);
-
+#endif
 			if (cis_waiting) {
 				return BT_HCI_ERR_CMD_DISALLOWED;
 			}

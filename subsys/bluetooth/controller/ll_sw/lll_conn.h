@@ -87,6 +87,17 @@ struct lll_conn {
 	};
 
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
+
+#ifdef CONFIG_BT_LL_SW_LLCP_LEGACY
+	uint16_t max_tx_octets;
+	uint16_t max_rx_octets;
+
+#if defined(CONFIG_BT_CTLR_PHY)
+	uint16_t max_tx_time;
+	uint16_t max_rx_time;
+#endif /* CONFIG_BT_CTLR_PHY */
+
+#else /* CONFIG_BT_LL_SW_LLCP_LEGACY */
 	struct {
 		struct data_pdu_length local;
 		struct data_pdu_length remote;
@@ -98,6 +109,7 @@ struct lll_conn {
 		uint8_t update;
 	} dle;
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
+#endif/* CONFIG_BT_LL_SW_LLCP_LEGACY */
 
 #if defined(CONFIG_BT_CTLR_PHY)
 	uint8_t phy_tx:3;

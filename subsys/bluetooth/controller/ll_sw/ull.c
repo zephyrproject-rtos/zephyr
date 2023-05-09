@@ -49,7 +49,9 @@
 #include "ull_adv_types.h"
 #include "ull_scan_types.h"
 #include "ull_sync_types.h"
-#include "ll_sw/ull_tx_queue.h"
+#if !defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
+#include "ull_tx_queue.h"
+#endif
 #include "ull_conn_types.h"
 #include "ull_filter.h"
 #include "ull_df_types.h"
@@ -370,11 +372,20 @@ static RXFIFO_DEFINE(done, sizeof(struct node_rx_event_done),
  * simultaneous parallel PHY update or Connection Update procedures amongst
  * active connections.
  * Minimum node rx of 2 that can be reserved happens when:
+ * - for legacy LLCPs:
+ *   Local central initiated PHY Update reserves 2 node rx,
+ *   one for PHY update complete and another for Data Length Update complete
+ *   notification. Otherwise, a peripheral only needs 1 additional node rx to
+ *   generate Data Length Update complete when PHY Update completes; node rx for
+ *   PHY update complete is reserved as the received PHY Update Ind PDU.
+ * - for new LLCPs:
  *   Central and peripheral always use two new nodes for handling completion
  *   notification one for PHY update complete and another for Data Length Update
  *   complete.
  */
-#if defined(CONFIG_BT_CTLR_DATA_LENGTH) && defined(CONFIG_BT_CTLR_PHY)
+#if defined(CONFIG_BT_CTLR_DATA_LENGTH) && defined(CONFIG_BT_CTLR_PHY) &&  \
+	(defined(CONFIG_BT_LL_SW_LLCP_LEGACY) && defined(CONFIG_BT_CENTRAL) || \
+	 !defined(CONFIG_BT_LL_SW_LLCP_LEGACY))
 #define LL_PDU_RX_CNT (2 * (CONFIG_BT_CTLR_LLCP_CONN))
 #elif defined(CONFIG_BT_CONN)
 #define LL_PDU_RX_CNT (CONFIG_BT_CTLR_LLCP_CONN)

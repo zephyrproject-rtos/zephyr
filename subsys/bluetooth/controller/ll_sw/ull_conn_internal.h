@@ -77,6 +77,8 @@ static inline void cpr_active_reset(void)
 }
 #endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
 
+#if !defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
+
 uint16_t ull_conn_event_counter(struct ll_conn *conn);
 
 void ull_conn_update_parameters(struct ll_conn *conn, uint8_t is_cu_proc,
@@ -126,6 +128,8 @@ void ull_conn_pause_rx_data(struct ll_conn *conn);
  * @brief Resume the data path of a rx queue.
  */
 void ull_conn_resume_rx_data(struct ll_conn *conn);
+
+#endif /* CONFIG_BT_LL_SW_LLCP_LEGACY */
 
 /**
  * @brief Check if the lower link layer transmit queue is empty

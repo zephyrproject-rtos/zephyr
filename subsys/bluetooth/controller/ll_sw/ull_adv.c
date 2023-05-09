@@ -42,7 +42,9 @@
 #include "lll_filter.h"
 #include "lll_conn_iso.h"
 
+#if !defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
 #include "ll_sw/ull_tx_queue.h"
+#endif /* !CONFIG_BT_LL_SW_LLCP_LEGACY */
 
 #include "ull_adv_types.h"
 #include "ull_scan_types.h"
@@ -58,12 +60,13 @@
 #include "ll_feat.h"
 #include "ll_settings.h"
 
-#include "ll_sw/isoal.h"
-#include "ll_sw/ull_iso_types.h"
-#include "ll_sw/ull_conn_iso_types.h"
+#if !defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
+#include "isoal.h"
+#include "ull_iso_types.h"
+#include "ull_conn_iso_types.h"
 
-#include "ll_sw/ull_llcp.h"
-
+#include "ull_llcp.h"
+#endif /* !CONFIG_BT_LL_SW_LLCP_LEGACY */
 
 #include "hal/debug.h"
 
@@ -1011,6 +1014,33 @@ uint8_t ll_adv_enable(uint8_t enable)
 		conn_lll->nesn = 0;
 		conn_lll->empty = 0;
 
+#if defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
+#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
+		conn_lll->max_tx_octets = PDU_DC_PAYLOAD_SIZE_MIN;
+		conn_lll->max_rx_octets = PDU_DC_PAYLOAD_SIZE_MIN;
+
+#if defined(CONFIG_BT_CTLR_PHY)
+		/* Use the default 1M packet max time */
+		conn_lll->max_tx_time = PDU_DC_MAX_US(PDU_DC_PAYLOAD_SIZE_MIN,
+						      PHY_1M);
+		conn_lll->max_rx_time = PDU_DC_MAX_US(PDU_DC_PAYLOAD_SIZE_MIN,
+						      PHY_1M);
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+		if (pdu_adv->type == PDU_ADV_TYPE_EXT_IND) {
+			conn_lll->max_tx_time =
+				MAX(conn_lll->max_tx_time,
+				    PDU_DC_MAX_US(PDU_DC_PAYLOAD_SIZE_MIN,
+						  lll->phy_s));
+			conn_lll->max_rx_time =
+				MAX(conn_lll->max_rx_time,
+				    PDU_DC_MAX_US(PDU_DC_PAYLOAD_SIZE_MIN,
+						  lll->phy_s));
+		}
+#endif /* CONFIG_BT_CTLR_ADV_EXT */
+#endif /* CONFIG_BT_CTLR_PHY */
+#endif
+#endif /* CONFIG_BT_LL_SW_LLCP_LEGACY */
+
 #if defined(CONFIG_BT_CTLR_PHY)
 		conn_lll->phy_flags = 0;
 		if (0) {
@@ -1067,6 +1097,9 @@ uint8_t ll_adv_enable(uint8_t enable)
 #endif /* CONFIG_BT_CTLR_DF_CONN_CTE_TX */
 		conn->connect_expire = 6;
 		conn->supervision_expire = 0;
+#if defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
+		conn->procedure_expire = 0;
+#endif /* CONFIG_BT_LL_SW_LLCP_LEGACY */
 
 #if defined(CONFIG_BT_CTLR_LE_PING)
 		conn->apto_expire = 0U;
@@ -1082,6 +1115,70 @@ uint8_t ll_adv_enable(uint8_t enable)
 			     sizeof(conn->peer_id_addr));
 #endif /* CONFIG_BT_CTLR_CHECK_SAME_PEER_CONN */
 
+#if defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
+		conn->common.fex_valid = 0;
+		conn->common.txn_lock = 0;
+		conn->periph.latency_cancel = 0;
+
+		conn->llcp_req = conn->llcp_ack = conn->llcp_type = 0;
+		conn->llcp_rx = NULL;
+		conn->llcp_cu.req = conn->llcp_cu.ack = 0;
+		conn->llcp_cu.pause_tx = 0U;
+		conn->llcp_feature.req = conn->llcp_feature.ack = 0;
+		conn->llcp_feature.features_conn = ll_feat_get();
+		conn->llcp_feature.features_peer = 0;
+		conn->llcp_version.req = conn->llcp_version.ack = 0;
+		conn->llcp_version.tx = conn->llcp_version.rx = 0;
+		conn->llcp_terminate.req = conn->llcp_terminate.ack = 0;
+		conn->llcp_terminate.reason_final = 0;
+		/* NOTE: use allocated link for generating dedicated
+		 * terminate ind rx node
+		 */
+		conn->llcp_terminate.node_rx.hdr.link = link;
+
+#if defined(CONFIG_BT_CTLR_RX_ENQUEUE_HOLD)
+		conn->llcp_rx_hold = NULL;
+		conn_lll->rx_hold_req = 0U;
+		conn_lll->rx_hold_ack = 0U;
+#endif /* CONFIG_BT_CTLR_RX_ENQUEUE_HOLD */
+
+#if defined(CONFIG_BT_CTLR_LE_ENC)
+		conn_lll->enc_rx = conn_lll->enc_tx = 0U;
+		conn->llcp_enc.req = conn->llcp_enc.ack = 0U;
+		conn->llcp_enc.pause_tx = conn->llcp_enc.pause_rx = 0U;
+		conn->llcp_enc.refresh = 0U;
+		conn->periph.llcp_type = 0U;
+#endif /* CONFIG_BT_CTLR_LE_ENC */
+
+#if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
+		conn->llcp_conn_param.req = 0U;
+		conn->llcp_conn_param.ack = 0U;
+		conn->llcp_conn_param.disabled = 0U;
+		conn->llcp_conn_param.cache.timeout = 0U;
+		conn->periph.ticks_to_offset = 0U;
+#endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
+
+#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
+		conn->llcp_length.req = conn->llcp_length.ack = 0U;
+		conn->llcp_length.disabled = 0U;
+		conn->llcp_length.cache.tx_octets = 0U;
+		conn->default_tx_octets = ull_conn_default_tx_octets_get();
+#if defined(CONFIG_BT_CTLR_PHY)
+		conn->default_tx_time = ull_conn_default_tx_time_get();
+#endif /* CONFIG_BT_CTLR_PHY */
+#endif /* CONFIG_BT_CTLR_DATA_LENGTH */
+
+#if defined(CONFIG_BT_CTLR_PHY)
+		conn->llcp_phy.req = conn->llcp_phy.ack = 0;
+		conn->llcp_phy.disabled = 0U;
+		conn->llcp_phy.pause_tx = 0U;
+		conn->phy_pref_tx = ull_conn_default_phy_tx_get();
+		conn->phy_pref_rx = ull_conn_default_phy_rx_get();
+#endif /* CONFIG_BT_CTLR_PHY */
+
+		conn->tx_head = conn->tx_ctrl = conn->tx_ctrl_last =
+		conn->tx_data = conn->tx_data_last = 0;
+#else /* !CONFIG_BT_LL_SW_LLCP_LEGACY */
 		/* Re-initialize the control procedure data structures */
 		ull_llcp_init(conn);
 
@@ -1115,6 +1212,7 @@ uint8_t ll_adv_enable(uint8_t enable)
 
 		/* Re-initialize the Tx Q */
 		ull_tx_q_init(&conn->tx_q);
+#endif /* !CONFIG_BT_LL_SW_LLCP_LEGACY */
 
 		/* NOTE: using same link as supplied for terminate ind */
 		adv->link_cc_free = link;
