@@ -305,11 +305,6 @@ SECTIONS
 
     __data_region_end = .;
 
-    MPU_MIN_SIZE_ALIGN
-
-     _image_ram_end = .;
-     _end = .; /* end of image */
-
 	__kernel_ram_end = .;
 	__kernel_ram_size = __kernel_ram_end - __kernel_ram_start;
 
@@ -370,7 +365,11 @@ GROUP_END(DTCM)
  */
 #include <snippets-sections.ld>
 
-     GROUP_END(RAMABLE_REGION)
+#define LAST_RAM_ALIGN MPU_MIN_SIZE_ALIGN
+
+#include <zephyr/linker/ram-end.ld>
+
+    GROUP_END(RAMABLE_REGION)
 
 #include <zephyr/linker/debug-sections.ld>
 
