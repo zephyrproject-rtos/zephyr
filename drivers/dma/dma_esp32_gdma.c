@@ -53,8 +53,6 @@ struct dma_esp32_channel {
 	dma_callback_t cb;
 	void *user_data;
 	dma_descriptor_t desc;
-	uint8_t *buf_temp;
-	uint8_t *buf_original;
 #if defined(CONFIG_SOC_ESP32S3)
 	struct intr_handle_data_t *intr_handle;
 #endif
@@ -82,9 +80,6 @@ static void IRAM_ATTR dma_esp32_isr_handle_rx(const struct device *dev,
 
 	if (intr_status & (GDMA_LL_EVENT_RX_SUC_EOF | GDMA_LL_EVENT_RX_DONE)) {
 		intr_status &= ~(GDMA_LL_EVENT_RX_SUC_EOF | GDMA_LL_EVENT_RX_DONE);
-		if (rx->buf_temp) {
-			memcpy(rx->buf_original, rx->buf_temp, rx->desc.dw0.length);
-		}
 	}
 
 	if (rx->cb) {
@@ -162,21 +157,13 @@ static int dma_esp32_disable_interrupt(const struct device *dev,
 static int dma_esp32_config_rx_descriptor(struct dma_esp32_channel *dma_channel,
 					   struct dma_block_config *block)
 {
+	if (!esp_ptr_dma_capable((uint32_t *)block->dest_address)) {
+		LOG_ERR("Rx buffer not in DMA capable memory: %p", (uint32_t *)block->dest_address);
+		return -EINVAL;
+	}
+
 	memset(&dma_channel->desc, 0, sizeof(dma_channel->desc));
 	dma_channel->desc.buffer = (void *)block->dest_address;
-	dma_channel->buf_original = (uint8_t *)block->dest_address;
-	k_free(dma_channel->buf_temp);
-	dma_channel->buf_temp = NULL;
-	if (!esp_ptr_dma_capable((uint32_t *)block->dest_address)) {
-		LOG_DBG("Rx buffer not in DMA capable memory: %p", (uint32_t *)block->dest_address);
-		dma_channel->buf_temp = k_aligned_alloc(32, block->block_size);
-		if (!dma_channel->buf_temp) {
-			LOG_ERR("Not able to allocate mem");
-			return -ENOMEM;
-		}
-		memset(dma_channel->buf_temp, 0, block->block_size);
-		dma_channel->desc.buffer = dma_channel->buf_temp;
-	}
 	dma_channel->desc.dw0.size = block->block_size;
 	dma_channel->desc.dw0.owner = DMA_DESCRIPTOR_BUFFER_OWNER_DMA;
 
@@ -222,21 +209,14 @@ static int dma_esp32_config_rx(const struct device *dev, struct dma_esp32_channe
 static int dma_esp32_config_tx_descriptor(struct dma_esp32_channel *dma_channel,
 					   struct dma_block_config *block)
 {
-	memset(&dma_channel->desc, 0, sizeof(dma_channel->desc));
-	dma_channel->desc.buffer = (void *)block->source_address;
-	k_free(dma_channel->buf_temp);
 	if (!esp_ptr_dma_capable((uint32_t *)block->source_address)) {
-		LOG_DBG("Tx buffer not in DMA capable memory");
-		dma_channel->buf_temp = k_malloc(block->block_size);
-		if (!dma_channel->buf_temp) {
-			LOG_ERR("Not able to allocate mem");
-			return -ENOMEM;
-		}
-		memcpy(dma_channel->buf_temp, (uint8_t *)block->source_address, block->block_size);
-		dma_channel->buf_original = (uint8_t *)block->source_address;
-		dma_channel->desc.buffer = dma_channel->buf_temp;
+		LOG_ERR("Tx buffer not in DMA capable memory: %p",
+			(uint32_t *)block->source_address);
+		return -EINVAL;
 	}
 
+	memset(&dma_channel->desc, 0, sizeof(dma_channel->desc));
+	dma_channel->desc.buffer = (void *)block->source_address;
 	dma_channel->desc.dw0.size = block->block_size;
 	dma_channel->desc.dw0.length = block->block_size;
 	dma_channel->desc.dw0.suc_eof = 1;
@@ -286,6 +266,7 @@ static int dma_esp32_config(const struct device *dev, uint32_t channel,
 	struct dma_esp32_config *config = (struct dma_esp32_config *)dev->config;
 	struct dma_esp32_data *data = (struct dma_esp32_data *const)(dev)->data;
 	struct dma_esp32_channel *dma_channel = &config->dma_channel[channel];
+	int ret = 0;
 
 	if (channel >= config->dma_channel_max) {
 		LOG_ERR("Unsupported channel");
@@ -326,21 +307,21 @@ static int dma_esp32_config(const struct device *dev, uint32_t channel,
 		dma_channel_rx->periph_id = dma_channel->periph_id;
 		dma_channel_tx->periph_id = dma_channel->periph_id;
 
-		dma_esp32_config_rx(dev, dma_channel_rx, config_dma);
-		dma_esp32_config_tx(dev, dma_channel_tx, config_dma);
+		ret = dma_esp32_config_rx(dev, dma_channel_rx, config_dma);
+		ret = dma_esp32_config_tx(dev, dma_channel_tx, config_dma);
 		break;
 	case PERIPHERAL_TO_MEMORY:
-		dma_esp32_config_rx(dev, dma_channel, config_dma);
+		ret = dma_esp32_config_rx(dev, dma_channel, config_dma);
 		break;
 	case MEMORY_TO_PERIPHERAL:
-		dma_esp32_config_tx(dev, dma_channel, config_dma);
+		ret = dma_esp32_config_tx(dev, dma_channel, config_dma);
 		break;
 	default:
 		LOG_ERR("Invalid Channel direction");
 		return -EINVAL;
 	}
 
-	return 0;
+	return ret;
 }
 
 static int dma_esp32_start(const struct device *dev, uint32_t channel)
@@ -555,8 +536,6 @@ static int dma_esp32_init(const struct device *dev)
 
 	for (uint8_t i = 0; i < DMA_MAX_CHANNEL * 2; i++) {
 		dma_channel = &config->dma_channel[i];
-		dma_channel->buf_original = NULL;
-		dma_channel->buf_temp = NULL;
 		dma_channel->cb = NULL;
 		dma_channel->dir = DMA_UNCONFIGURED;
 		dma_channel->periph_id = GDMA_TRIG_PERIPH_INVALID;
