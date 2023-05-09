@@ -507,8 +507,7 @@ static inline void i2c_xfer_stats(const struct device *dev, struct i2c_msg *msgs
 	for (uint8_t i = 0U; i < num_msgs; i++) {
 		if (msgs[i].flags & I2C_MSG_READ) {
 			bytes_read += msgs[i].len;
-		}
-		if (msgs[i].flags & I2C_MSG_WRITE) {
+		} else {
 			bytes_written += msgs[i].len;
 		}
 	}
