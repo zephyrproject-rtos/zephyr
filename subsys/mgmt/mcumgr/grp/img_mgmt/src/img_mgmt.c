@@ -669,7 +669,11 @@ img_mgmt_my_version(struct image_version *ver)
 static const struct mgmt_handler img_mgmt_handlers[] = {
 	[IMG_MGMT_ID_STATE] = {
 		.mh_read = img_mgmt_state_read,
+#ifdef CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP
+		.mh_write = NULL
+#else
 		.mh_write = img_mgmt_state_write,
+#endif
 	},
 	[IMG_MGMT_ID_UPLOAD] = {
 		.mh_read = NULL,

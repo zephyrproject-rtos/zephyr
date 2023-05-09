@@ -124,13 +124,18 @@ img_mgmt_state_any_pending(void)
 int
 img_mgmt_slot_in_use(int slot)
 {
-	uint8_t state_flags;
 	int active_slot = img_mgmt_active_slot(img_mgmt_active_image());
 
-	state_flags = img_mgmt_state_flags(slot);
-	return slot == active_slot				||
-		   state_flags & IMG_MGMT_STATE_F_CONFIRMED	||
-		   state_flags & IMG_MGMT_STATE_F_PENDING;
+#ifndef CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP
+	uint8_t state_flags = img_mgmt_state_flags(slot);
+
+	if (state_flags & IMG_MGMT_STATE_F_CONFIRMED ||
+	    state_flags & IMG_MGMT_STATE_F_PENDING) {
+		return 1;
+	}
+#endif
+
+	return (active_slot == slot);
 }
 
 /**
