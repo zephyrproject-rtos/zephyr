@@ -796,8 +796,9 @@ static void mfy_cig_offset_get(void *param)
 	struct ll_conn_iso_group *cig;
 	uint32_t conn_interval_us;
 	uint32_t ticks_to_expire;
+	uint32_t offset_max_us;
+	uint32_t offset_min_us;
 	struct ll_conn *conn;
-	uint32_t offset_us;
 	int err;
 
 	cis = param;
@@ -807,18 +808,20 @@ static void mfy_cig_offset_get(void *param)
 						 &ticks_to_expire);
 	LL_ASSERT(!err);
 
-	offset_us = HAL_TICKER_TICKS_TO_US(ticks_to_expire) +
-		    (EVENT_TICKER_RES_MARGIN_US << 1U) +
-		    cig->sync_delay - cis->sync_delay;
+	offset_min_us = HAL_TICKER_TICKS_TO_US(ticks_to_expire) +
+			(EVENT_TICKER_RES_MARGIN_US << 1U);
+	offset_min_us += cig->sync_delay - cis->sync_delay;
 
 	conn = ll_conn_get(cis->lll.acl_handle);
 
 	conn_interval_us = (uint32_t)conn->lll.interval * CONN_INT_UNIT_US;
-	while (offset_us > conn_interval_us) {
-		offset_us -= conn_interval_us;
+	while (offset_min_us > conn_interval_us) {
+		offset_min_us -= conn_interval_us;
 	}
 
-	ull_cp_cc_offset_calc_reply(conn, offset_us);
+	offset_max_us = conn_interval_us - cig->sync_delay;
+
+	ull_cp_cc_offset_calc_reply(conn, offset_min_us, offset_max_us);
 }
 
 static void cis_offset_get(struct ll_conn_iso_stream *cis)
@@ -839,9 +842,9 @@ static void mfy_cis_offset_get(void *param)
 	struct ll_conn_iso_group *cig;
 	uint32_t ticks_to_expire;
 	uint32_t ticks_current;
+	uint32_t offset_min_us;
 	struct ll_conn *conn;
 	uint32_t remainder;
-	uint32_t offset_us;
 	uint8_t ticker_id;
 	uint16_t lazy;
 	uint8_t retry;
@@ -909,12 +912,12 @@ static void mfy_cis_offset_get(void *param)
 	 */
 	hal_ticker_remove_jitter(&ticks_to_expire, &remainder);
 
-	offset_us = HAL_TICKER_TICKS_TO_US(ticks_to_expire) + remainder +
+	offset_min_us = HAL_TICKER_TICKS_TO_US(ticks_to_expire) + remainder +
 		    cig->sync_delay - cis->sync_delay;
 
 	conn = ll_conn_get(cis->lll.acl_handle);
 
-	ull_cp_cc_offset_calc_reply(conn, offset_us);
+	ull_cp_cc_offset_calc_reply(conn, offset_min_us, offset_min_us);
 }
 
 static void ticker_op_cb(uint32_t status, void *param)
