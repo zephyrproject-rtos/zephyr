@@ -3449,7 +3449,7 @@ static struct bt_smp *smp_find(int flag)
 
 static void bt_smp_dhkey_ready(const uint8_t *dhkey)
 {
-	LOG_DBG("%p", dhkey);
+	LOG_DBG("%p", (void *)dhkey);
 	int err;
 
 	struct bt_smp *smp = smp_find(SMP_FLAG_DHKEY_GEN);
