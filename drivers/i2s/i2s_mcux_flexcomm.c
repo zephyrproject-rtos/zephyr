@@ -876,10 +876,10 @@ static int i2s_mcux_init(const struct device *dev)
 #define I2S_DMA_CHANNELS(id)				\
 	.tx = {						\
 		.dev_dma = UTIL_AND(		\
-			DT_DMAS_HAS_NAME(DT_NODELABEL(i2s##id), tx),	\
+			DT_INST_DMAS_HAS_NAME(id, tx),	\
 			DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_NAME(id, tx))), \
 		.channel = UTIL_AND(		\
-			DT_DMAS_HAS_NAME(DT_NODELABEL(i2s##id), tx),	\
+			DT_INST_DMAS_HAS_NAME(id, tx),	\
 			DT_INST_DMAS_CELL_BY_NAME(id, tx, channel)),	\
 		.dma_cfg = {					\
 			.channel_direction = MEMORY_TO_PERIPHERAL,	\
@@ -890,10 +890,10 @@ static int i2s_mcux_init(const struct device *dev)
 	},								\
 	.rx = {						\
 		.dev_dma = UTIL_AND(		\
-			DT_DMAS_HAS_NAME(DT_NODELABEL(i2s##id), rx),	\
+			DT_INST_DMAS_HAS_NAME(id, rx),	\
 			DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_NAME(id, rx))), \
 		.channel = UTIL_AND(		\
-			DT_DMAS_HAS_NAME(DT_NODELABEL(i2s##id), rx),	\
+			DT_INST_DMAS_HAS_NAME(id, rx),	\
 			DT_INST_DMAS_CELL_BY_NAME(id, rx, channel)),	\
 		.dma_cfg = {				\
 			.channel_direction = PERIPHERAL_TO_MEMORY,	\
