@@ -60,7 +60,7 @@ K_APPMEM_PARTITION_DEFINE(z_malloc_partition);
 #    elif defined(CONFIG_ARC)
 #     define HEAP_ALIGN	Z_ARC_MPU_ALIGN
 #    elif defined(CONFIG_RISCV)
-#     define HEAP_ALIGN	Z_RISCV_STACK_GUARD_SIZE
+#     define HEAP_ALIGN	Z_POW2_CEIL(Z_RISCV_STACK_GUARD_SIZE)
 #    else
 /* Default to 64-bytes; we'll get a run-time error if this doesn't work. */
 #     define HEAP_ALIGN	64
