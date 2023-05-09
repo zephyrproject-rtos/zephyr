@@ -1,10 +1,10 @@
 .. cli:
 
-Command Line Interface
-###########
+Intel SoCFPGA Command Line Interface
+####################################
 
 Overview
 ********
 
 A simple program that provide the command line interface
-for the Intel SoC FPGA Agilex board
+for the Intel SoCFPGA Agilex and Agilex5 platforms.
