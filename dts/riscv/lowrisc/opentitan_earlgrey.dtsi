@@ -63,6 +63,12 @@
 			status = "disabled";
 		};
 
+		pwrmgr: pwrmgr@40400000 {
+			compatible = "lowrisc,opentitan-pwrmgr";
+			reg = <0x40400000 0x80>;
+			status = "okay";
+		};
+
 		plic: interrupt-controller@48000000 {
 			compatible = "sifive,plic-1.0.0";
 			#address-cells = <0>;
