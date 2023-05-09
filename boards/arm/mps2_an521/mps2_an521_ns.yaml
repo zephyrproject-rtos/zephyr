@@ -4,7 +4,10 @@ type: mcu
 arch: arm
 ram: 4096
 flash: 4096
-simulation: qemu
+  # TFM is not supported by default in the Zephyr LTS release.
+  # Excluding this board's simulator to avoid CI failures.
+  #
+  #simulation: qemu
 toolchain:
   - gnuarmemb
   - zephyr
