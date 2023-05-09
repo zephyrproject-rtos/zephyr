@@ -569,7 +569,9 @@ check_reschedule:
 	addi sp, sp, -16
 	sr a1, 0(sp)
 	mv a0, zero
+#ifdef CONFIG_MULTITHREADING
 	call z_get_next_switch_handle
+#endif
 	lr a1, 0(sp)
 	addi sp, sp, 16
 	beqz a0, no_reschedule

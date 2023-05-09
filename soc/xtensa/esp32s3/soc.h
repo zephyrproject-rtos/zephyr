@@ -65,8 +65,17 @@ extern void esp_rom_uart_set_clock_baudrate(uint8_t uart_no, uint32_t clock_hz, 
 extern void esp_rom_ets_set_appcpu_boot_addr(void *addr);
 void esp_appcpu_start(void *entry_point);
 
+extern int esp_rom_Cache_Dbus_MMU_Set(uint32_t ext_ram, uint32_t vaddr, uint32_t paddr,
+				uint32_t psize, uint32_t num, uint32_t fixed);
+extern int esp_rom_Cache_Ibus_MMU_Set(uint32_t ext_ram, uint32_t vaddr, uint32_t paddr,
+				uint32_t psize, uint32_t num, uint32_t fixed);
+
 /* ROM functions which read/write internal i2c control bus for PLL, APLL */
 extern uint8_t esp_rom_i2c_readReg(uint8_t block, uint8_t host_id, uint8_t reg_add);
 extern void esp_rom_i2c_writeReg(uint8_t block, uint8_t host_id, uint8_t reg_add, uint8_t data);
+
+/* cache initialization functions */
+void esp_config_instruction_cache_mode(void);
+void esp_config_data_cache_mode(void);
 
 #endif /* __SOC_H__ */

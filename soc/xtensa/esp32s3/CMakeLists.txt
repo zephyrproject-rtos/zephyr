@@ -2,6 +2,7 @@
 
 zephyr_sources(
   soc.c
+  soc_cache.c
   loader.c
   )
 
@@ -58,14 +59,6 @@ if(CONFIG_BOOTLOADER_ESP_IDF)
     INSTALL_COMMAND ""
     )
 
-  if(CONFIG_BUILD_OUTPUT_BIN)
-    set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
-      COMMAND ${PYTHON_EXECUTABLE} ${ESP_IDF_PATH}/components/esptool_py/esptool/esptool.py
-      ARGS --chip esp32s3 elf2image --flash_mode dio --flash_freq 40m --flash_size ${esptoolpy_flashsize}MB
-      -o ${CMAKE_BINARY_DIR}/zephyr/${CONFIG_KERNEL_BIN_NAME}.bin
-      ${CMAKE_BINARY_DIR}/zephyr/${CONFIG_KERNEL_BIN_NAME}.elf)
-  endif()
-
   set_property(TARGET bintools PROPERTY disassembly_flag_inline_source)
 
   add_dependencies(app EspIdfBootloader EspPartitionTable)
@@ -77,6 +70,24 @@ if(CONFIG_BOOTLOADER_ESP_IDF)
   board_finalize_runner_args(esp32 "--esp-partition-table-address=0x8000")
 
 endif()
+
+if(CONFIG_MCUBOOT OR CONFIG_BOOTLOADER_ESP_IDF)
+
+  if(CONFIG_BUILD_OUTPUT_BIN)
+    set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
+      COMMAND ${PYTHON_EXECUTABLE} ${ESP_IDF_PATH}/components/esptool_py/esptool/esptool.py
+      ARGS --chip esp32s3 elf2image --flash_mode dio --flash_freq 40m --flash_size ${esptoolpy_flashsize}MB
+      -o ${CMAKE_BINARY_DIR}/zephyr/${CONFIG_KERNEL_BIN_NAME}.bin
+      ${CMAKE_BINARY_DIR}/zephyr/${CONFIG_KERNEL_BIN_NAME}.elf)
+  endif()
+
+  if(CONFIG_MCUBOOT)
+    board_finalize_runner_args(esp32 "--esp-flash-bootloader=${CMAKE_BINARY_DIR}/zephyr/${CONFIG_KERNEL_BIN_NAME}.bin")
+  endif()
+
+endif()
+
+set_property(TARGET bintools PROPERTY disassembly_flag_inline_source)
 
 board_finalize_runner_args(esp32 "--esp-boot-address=${boot_off}")
 

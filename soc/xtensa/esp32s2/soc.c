@@ -25,11 +25,16 @@
 #include "esp_cpu.h"
 #include "hal/cpu_ll.h"
 #include "hal/soc_ll.h"
+#include "hal/wdt_hal.h"
 #include "esp_timer.h"
 #include "esp_err.h"
 #include "esp32s2/spiram.h"
 #include "esp_clk_internal.h"
 #include <zephyr/sys/printk.h>
+
+#ifdef CONFIG_MCUBOOT
+#include "bootloader_init.h"
+#endif /* CONFIG_MCUBOOT */
 
 extern void rtc_clk_cpu_freq_set_xtal(void);
 
@@ -45,8 +50,6 @@ extern int _ext_ram_bss_end;
  */
 void __attribute__((section(".iram1"))) __esp_platform_start(void)
 {
-	volatile uint32_t *wdt_rtc_protect = (uint32_t *)RTC_CNTL_WDTWPROTECT_REG;
-	volatile uint32_t *wdt_rtc_reg = (uint32_t *)RTC_CNTL_WDTCONFIG0_REG;
 	extern uint32_t _init_start;
 
 	/* Move the exception vector table to IRAM. */
@@ -88,13 +91,21 @@ void __attribute__((section(".iram1"))) __esp_platform_start(void)
 	 */
 	__asm__ volatile("wsr.MISC0 %0; rsync" : : "r"(&_kernel.cpus[0]));
 
+#ifdef CONFIG_MCUBOOT
+	/* MCUboot early initialisation. */
+	if (bootloader_init()) {
+		abort();
+	}
+#else
 	/* ESP-IDF 2nd stage bootloader enables RTC WDT to check on startup sequence
 	 * related issues in application. Hence disable that as we are about to start
 	 * Zephyr environment.
 	 */
-	*wdt_rtc_protect = RTC_CNTL_WDT_WKEY_VALUE;
-	*wdt_rtc_reg &= ~RTC_CNTL_WDT_EN;
-	*wdt_rtc_protect = 0;
+	wdt_hal_context_t rtc_wdt_ctx = {.inst = WDT_RWDT, .rwdt_dev = &RTCCNTL};
+
+	wdt_hal_write_protect_disable(&rtc_wdt_ctx);
+	wdt_hal_disable(&rtc_wdt_ctx);
+	wdt_hal_write_protect_enable(&rtc_wdt_ctx);
 
 	/* Configures the CPU clock, RTC slow and fast clocks, and performs
 	 * RTC slow clock calibration.
@@ -131,6 +142,9 @@ void __attribute__((section(".iram1"))) __esp_platform_start(void)
 #if CONFIG_SOC_FLASH_ESP32 || CONFIG_ESP_SPIRAM
 	spi_flash_guard_set(&g_flash_guard_default_ops);
 #endif
+
+#endif /* CONFIG_MCUBOOT */
+
 	esp_intr_initialize();
 	/* Start Zephyr */
 	z_cstart();
