@@ -127,4 +127,46 @@ config MCUBOOT_GENERATE_CONFIRMED_IMAGE
 	  The existence of bin and hex files depends on CONFIG_BUILD_OUTPUT_BIN
 	  and CONFIG_BUILD_OUTPUT_HEX.
 
+choice MCUBOOT_BOOTLOADER_MODE
+	prompt "Application assumed MCUboot mode of operation"
+	default MCUBOOT_BOOTLOADER_MODE_SWAP_WITHOUT_SCRATCH # MCUBOOT_BOOTLOADER_MODE
+	help
+	  Informs application build on assumed MCUboot mode of operation.
+	  This is important for validataing application against DT configuration,
+	  which is done by west sign.
+
+config MCUBOOT_BOOTLOADER_MODE_SINGLE_APP
+	bool "MCUboot has been configured for single slot execution"
+	help
+	  MCUboot will only boot slot0_partition placed application and does
+	  not care about other slots. In this mode application is not able
+	  to DFU its own update to secondary slot and all updates need to
+	  be performed using MCUboot serial recovery.
+
+config MCUBOOT_BOOTLOADER_MODE_SWAP_WITHOUT_SCRATCH
+	bool "MCUboot has been configured for swap without scratch operation"
+	help
+	  MCUboot expects slot0_partition and slot1_partition to be present
+	  in DT and application will boot from slot0_partition.
+
+config MCUBOOT_BOOTLOADER_MODE_SWAP_SCRATCH
+	bool "MCUboot has been configured for swap using scratch operation"
+	help
+	  MCUboot expects slot0_partition, slot1_partition and scratch_partition
+	  to be present in DT, and application will boot from slot0_partition.
+	  In this mode scratch_partition is used as temporary storage when
+	  MCUboot swaps application from the secondary slot to the primary
+	  slot.
+
+config MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP
+	bool "MCUboot has been configured for DirectXIP operation"
+	help
+	  MCUboot expects slot0_partition and slot1_partition to exist in DT.
+	  In this mode MCUboot can boot from either partition and will
+	  select one with higher application image version, which usually
+	  means major.minor.patch triple, unless BOOT_VERSION_CMP_USE_BUILD_NUMBER
+	  is also selected that enables comparison of build number.
+
+endchoice # MCUBOOT_BOOTLOADER_MODE
+
 endif # BOOTLOADER_MCUBOOT
