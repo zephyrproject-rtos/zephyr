@@ -104,14 +104,17 @@ static void broadcast_source_set_ep_state(struct bt_bap_ep *ep, uint8_t state)
 	}
 
 	ep->status.state = state;
+}
 
-	if (state == BT_BAP_EP_STATE_IDLE) {
-		struct bt_bap_stream *stream = ep->stream;
+static void broadcast_source_set_state(struct bt_bap_broadcast_source *source, uint8_t state)
+{
+	struct bt_bap_broadcast_subgroup *subgroup;
 
-		if (stream != NULL) {
-			stream->ep = NULL;
-			stream->codec = NULL;
-			ep->stream = NULL;
+	SYS_SLIST_FOR_EACH_CONTAINER(&source->subgroups, subgroup, _node) {
+		struct bt_bap_stream *stream;
+
+		SYS_SLIST_FOR_EACH_CONTAINER(&subgroup->streams, stream, _node) {
+			broadcast_source_set_ep_state(stream->ep, state);
 		}
 	}
 }
@@ -669,7 +672,6 @@ static enum bt_bap_ep_state broadcast_source_get_state(struct bt_bap_broadcast_s
 int bt_bap_broadcast_source_create(struct bt_bap_broadcast_source_create_param *param,
 				   struct bt_bap_broadcast_source **out_source)
 {
-	struct bt_bap_broadcast_subgroup *subgroup;
 	struct bt_bap_broadcast_source *source;
 	struct bt_codec_qos *qos;
 	size_t stream_count;
@@ -710,6 +712,7 @@ int bt_bap_broadcast_source_create(struct bt_bap_broadcast_source_create_param *
 	 */
 	for (size_t i = 0U; i < param->params_count; i++) {
 		const struct bt_bap_broadcast_source_subgroup_param *subgroup_param;
+		struct bt_bap_broadcast_subgroup *subgroup;
 
 		subgroup_param = &param->params[i];
 
@@ -774,13 +777,7 @@ int bt_bap_broadcast_source_create(struct bt_bap_broadcast_source_create_param *
 	}
 
 	/* Finalize state changes and store information */
-	SYS_SLIST_FOR_EACH_CONTAINER(&source->subgroups, subgroup, _node) {
-		struct bt_bap_stream *stream;
-
-		SYS_SLIST_FOR_EACH_CONTAINER(&subgroup->streams, stream, _node) {
-			broadcast_source_set_ep_state(stream->ep, BT_BAP_EP_STATE_QOS_CONFIGURED);
-		}
-	}
+	broadcast_source_set_state(source, BT_BAP_EP_STATE_QOS_CONFIGURED);
 	source->qos = qos;
 	source->packing = param->packing;
 
@@ -975,13 +972,7 @@ int bt_bap_broadcast_source_start(struct bt_bap_broadcast_source *source, struct
 		return err;
 	}
 
-	SYS_SLIST_FOR_EACH_CONTAINER(&source->subgroups, subgroup, _node) {
-		SYS_SLIST_FOR_EACH_CONTAINER(&subgroup->streams, stream, _node) {
-			struct bt_bap_ep *ep = stream->ep;
-
-			broadcast_source_set_ep_state(ep, BT_BAP_EP_STATE_ENABLING);
-		}
-	}
+	broadcast_source_set_state(source, BT_BAP_EP_STATE_ENABLING);
 
 	return 0;
 }
@@ -1033,6 +1024,8 @@ int bt_bap_broadcast_source_delete(struct bt_bap_broadcast_source *source)
 		LOG_DBG("Broadcast source invalid state: %u", broadcast_state);
 		return -EBADMSG;
 	}
+
+	broadcast_source_set_state(source, BT_BAP_EP_STATE_IDLE);
 
 	/* Reset the broadcast source */
 	broadcast_source_cleanup(source);
