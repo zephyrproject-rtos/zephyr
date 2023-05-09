@@ -1227,7 +1227,7 @@ void ull_conn_done(struct node_rx_event_done *done)
 		lazy = lll->latency_event + 1U;
 	}
 
-#if defined(CONFIG_BT_CTLR_SLOT_RESERVATION_UPDATE)
+#if !defined(CONFIG_BT_LL_SW_LLCP_LEGACY) && defined(CONFIG_BT_CTLR_SLOT_RESERVATION_UPDATE)
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH) || defined(CONFIG_BT_CTLR_PHY)
 	if (lll->evt_len_upd) {
 		uint32_t ready_delay, rx_time, tx_time, ticks_slot;
@@ -1268,10 +1268,10 @@ void ull_conn_done(struct node_rx_event_done *done)
 		conn->ull.ticks_slot = ticks_slot;
 	}
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH || CONFIG_BT_CTLR_PHY */
-#else /* CONFIG_BT_CTLR_SLOT_RESERVATION_UPDATE */
+#else /* !CONFIG_BT_LL_SW_LLCP_LEGACY && CONFIG_BT_CTLR_SLOT_RESERVATION_UPDATE */
 	ticks_slot_plus = 0;
 	ticks_slot_minus = 0;
-#endif /* CONFIG_BT_CTLR_SLOT_RESERVATION_UPDATE */
+#endif /* !CONFIG_BT_LL_SW_LLCP_LEGACY && CONFIG_BT_CTLR_SLOT_RESERVATION_UPDATE */
 
 	/* update conn ticker */
 	if (ticks_drift_plus || ticks_drift_minus ||
@@ -1978,7 +1978,7 @@ static int empty_data_start_release(struct ll_conn *conn, struct node_tx *tx)
 #endif /* CONFIG_BT_CTLR_LLID_DATA_START_EMPTY */
 
 #if defined(CONFIG_BT_CTLR_FORCE_MD_AUTO)
-static uint8_t force_md_cnt_calc(struct lll_conn *lll_connection, uint32_t tx_rate)
+static uint8_t force_md_cnt_calc(struct lll_conn *lll_conn, uint32_t tx_rate)
 {
 	uint32_t time_incoming, time_outgoing;
 	uint8_t force_md_cnt;
@@ -1987,15 +1987,15 @@ static uint8_t force_md_cnt_calc(struct lll_conn *lll_connection, uint32_t tx_ra
 	uint8_t phy;
 
 #if defined(CONFIG_BT_CTLR_PHY)
-	phy = lll_connection->phy_tx;
-	phy_flags = lll_connection->phy_flags;
+	phy = lll_conn->phy_tx;
+	phy_flags = lll_conn->phy_flags;
 #else /* !CONFIG_BT_CTLR_PHY */
 	phy = PHY_1M;
 	phy_flags = 0U;
 #endif /* !CONFIG_BT_CTLR_PHY */
 
 #if defined(CONFIG_BT_CTLR_LE_ENC)
-	mic_size = PDU_MIC_SIZE * lll_connection->enc_tx;
+	mic_size = PDU_MIC_SIZE * lll_conn->enc_tx;
 #else /* !CONFIG_BT_CTLR_LE_ENC */
 	mic_size = 0U;
 #endif /* !CONFIG_BT_CTLR_LE_ENC */
