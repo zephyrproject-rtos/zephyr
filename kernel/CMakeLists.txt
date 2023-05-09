@@ -107,6 +107,7 @@ target_sources_ifdef(CONFIG_POLL                  kernel PRIVATE poll.c)
 target_sources_ifdef(CONFIG_EVENTS                kernel PRIVATE events.c)
 target_sources_ifdef(CONFIG_PIPES                 kernel PRIVATE pipes.c)
 target_sources_ifdef(CONFIG_SCHED_THREAD_USAGE    kernel PRIVATE usage.c)
+target_sources_ifdef(CONFIG_OBJ_CORE              kernel PRIVATE obj_core.c)
 
 if(${CONFIG_KERNEL_MEM_POOL})
   target_sources(kernel PRIVATE mempool.c)
