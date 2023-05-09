@@ -199,6 +199,11 @@ static void lldp_start_timer(struct ethernet_context *ctx,
 			     struct net_if *iface,
 			     int slot)
 {
+	/* exit if started */
+	if (ctx->lldp[slot].tx_timer_start != 0) {
+		return;
+	}
+
 	ctx->lldp[slot].iface = iface;
 
 	sys_slist_append(&lldp_ifaces, &ctx->lldp[slot].node);
@@ -243,8 +248,10 @@ static int lldp_start(struct net_if *iface, uint32_t mgmt_event)
 	slot = ret;
 
 	if (mgmt_event == NET_EVENT_IF_DOWN) {
-		sys_slist_find_and_remove(&lldp_ifaces,
-					  &ctx->lldp[slot].node);
+		if (sys_slist_find_and_remove(&lldp_ifaces,
+					      &ctx->lldp[slot].node)) {
+			ctx->lldp[slot].tx_timer_start = 0;
+		}
 
 		if (sys_slist_is_empty(&lldp_ifaces)) {
 			k_work_cancel_delayable(&lldp_tx_timer);
