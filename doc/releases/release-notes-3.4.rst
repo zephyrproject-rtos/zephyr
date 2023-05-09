@@ -159,6 +159,12 @@ Changes in this release
   registration function now returns a value which is 0 for success or a
   negative error code if an error occurred.
 
+* Added a new flag :c:struct:`dac_channel_cfg` ``buffered`` for DAC channels in
+  :c:struct:`dac_channel_cfg` to allow the configuration of the output buffer.
+  The actual interpretation of this depends on the hardware and is so far only
+  implemented for the STM32 DAC driver. Implicitly for this driver this changes
+  the default from being buffered to unbuffered.
+
 Removed APIs in this release
 ============================
 
