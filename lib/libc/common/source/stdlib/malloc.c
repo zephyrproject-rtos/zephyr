@@ -134,8 +134,6 @@ void *malloc(size_t size)
 	return ret;
 }
 
-/* Compile in when C11 */
-#if __STDC_VERSION__ >= 201112L
 void *aligned_alloc(size_t alignment, size_t size)
 {
 	int lock_ret;
@@ -154,7 +152,6 @@ void *aligned_alloc(size_t alignment, size_t size)
 
 	return ret;
 }
-#endif /* __STDC_VERSION__ >= 201112L */
 
 static int malloc_prepare(void)
 {
