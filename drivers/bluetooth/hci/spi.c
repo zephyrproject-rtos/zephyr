@@ -58,6 +58,17 @@ LOG_MODULE_REGISTER(bt_driver);
 
 #define DATA_DELAY_US DT_INST_PROP(0, controller_data_delay_us)
 
+/* Single byte header denoting the buffer type */
+#define H4_HDR_SIZE 1
+
+/* Maximum L2CAP MTU that can fit in a single packet */
+#define MAX_MTU (SPI_MAX_MSG_LEN - H4_HDR_SIZE - BT_L2CAP_HDR_SIZE - BT_HCI_ACL_HDR_SIZE)
+
+#if CONFIG_BT_L2CAP_TX_MTU > MAX_MTU
+#warning CONFIG_BT_L2CAP_TX_MTU is too large and can result in packets that cannot \
+	be transmitted across this HCI link
+#endif /* CONFIG_BT_L2CAP_TX_MTU > MAX_MTU */
+
 static uint8_t rxmsg[SPI_MAX_MSG_LEN];
 static uint8_t txmsg[SPI_MAX_MSG_LEN];
 
@@ -403,7 +414,7 @@ static int bt_spi_send(struct net_buf *buf)
 
 	/* Buffer needs an additional byte for type */
 	if (buf->len >= SPI_MAX_MSG_LEN) {
-		LOG_ERR("Message too long");
+		LOG_ERR("Message too long (%d)", buf->len);
 		return -EINVAL;
 	}
 
