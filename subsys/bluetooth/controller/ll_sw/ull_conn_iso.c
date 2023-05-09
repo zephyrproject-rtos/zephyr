@@ -338,12 +338,29 @@ void ull_conn_iso_lll_cis_established(struct lll_conn_iso_stream *cis_lll)
 		return;
 	}
 
+#if !defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
 	node_rx->hdr.type = NODE_RX_TYPE_CIS_ESTABLISHED;
 
 	/* Send node to ULL RX demuxer for triggering LLCP state machine */
 	node_rx->hdr.handle = cis->lll.acl_handle;
 
 	ull_rx_put_sched(node_rx->hdr.link, node_rx);
+
+#else /* CONFIG_BT_LL_SW_LLCP_LEGACY */
+	struct node_rx_conn_iso_estab *est;
+
+	node_rx->hdr.type = NODE_RX_TYPE_CIS_ESTABLISHED;
+
+	/* TODO: Send CIS_ESTABLISHED with status != 0 in error scenarios */
+	node_rx->hdr.handle = 0xFFFF;
+	node_rx->hdr.rx_ftr.param = cis;
+
+	est = (void *)node_rx->pdu;
+	est->status = 0U;
+	est->cis_handle = cis_lll->handle;
+
+	ll_rx_put_sched(node_rx->hdr.link, node_rx);
+#endif /* CONFIG_BT_LL_SW_LLCP_LEGACY */
 
 	cis->established = 1;
 }
@@ -1146,6 +1163,7 @@ static void cis_disabled_cb(void *param)
 				*((uint8_t *)node_terminate->pdu) = cis->terminate_reason;
 
 				ll_rx_put_sched(node_terminate->hdr.link, node_terminate);
+#if !defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
 			} else {
 				conn = ll_conn_get(cis->lll.acl_handle);
 
@@ -1153,6 +1171,7 @@ static void cis_disabled_cb(void *param)
 				if (ull_cp_cc_awaiting_established(conn)) {
 					ull_cp_cc_established(conn, cis->terminate_reason);
 				}
+#endif /* CONFIG_BT_LL_SW_LLCP_LEGACY */
 			}
 
 			if (cig->lll.resume_cis == cis->lll.handle) {
