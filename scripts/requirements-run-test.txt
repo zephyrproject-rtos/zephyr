@@ -3,7 +3,7 @@
 # things used by twister or related in run time testing
 
 # used to flash & debug various boards
-pyocd>=0.29.0
+pyocd>=0.35.0
 
 # used by twister for board/hardware map
 tabulate
