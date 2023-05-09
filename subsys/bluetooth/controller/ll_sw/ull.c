@@ -51,7 +51,9 @@
 #include "ull_adv_types.h"
 #include "ull_scan_types.h"
 #include "ull_sync_types.h"
-#include "ll_sw/ull_tx_queue.h"
+#if !defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
+#include "ull_tx_queue.h"
+#endif
 #include "ull_conn_types.h"
 #include "ull_filter.h"
 #include "ull_df_types.h"
@@ -75,8 +77,10 @@
 #include "ull_conn_internal.h"
 #include "ull_conn_iso_types.h"
 #include "ull_central_iso_internal.h"
+#if !defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
 #include "ull_llcp_internal.h"
 #include "ull_llcp.h"
+#endif
 
 #include "ull_conn_iso_internal.h"
 #include "ull_peripheral_iso_internal.h"
@@ -395,11 +399,20 @@ static RXFIFO_DEFINE(done, sizeof(struct node_rx_event_done),
  * simultaneous parallel PHY update or Connection Update procedures amongst
  * active connections.
  * Minimum node rx of 2 that can be reserved happens when:
+ * - for legacy LLCPs:
+ *   Local central initiated PHY Update reserves 2 node rx,
+ *   one for PHY update complete and another for Data Length Update complete
+ *   notification. Otherwise, a peripheral only needs 1 additional node rx to
+ *   generate Data Length Update complete when PHY Update completes; node rx for
+ *   PHY update complete is reserved as the received PHY Update Ind PDU.
+ * - for new LLCPs:
  *   Central and peripheral always use two new nodes for handling completion
  *   notification one for PHY update complete and another for Data Length Update
  *   complete.
  */
-#if defined(CONFIG_BT_CTLR_DATA_LENGTH) && defined(CONFIG_BT_CTLR_PHY)
+#if defined(CONFIG_BT_CTLR_DATA_LENGTH) && defined(CONFIG_BT_CTLR_PHY) &&  \
+	(defined(CONFIG_BT_LL_SW_LLCP_LEGACY) && defined(CONFIG_BT_CENTRAL) || \
+	 !defined(CONFIG_BT_LL_SW_LLCP_LEGACY))
 #define LL_PDU_RX_CNT (2 * (CONFIG_BT_CTLR_LLCP_CONN))
 #elif defined(CONFIG_BT_CONN)
 #define LL_PDU_RX_CNT (CONFIG_BT_CTLR_LLCP_CONN)
@@ -538,7 +551,12 @@ static void *mark_update;
 
 #if defined(CONFIG_BT_CONN) || defined(CONFIG_BT_CTLR_ADV_ISO)
 #if defined(CONFIG_BT_CONN)
+#if defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
+#define BT_CTLR_TX_BUFFERS (CONFIG_BT_BUF_ACL_TX_COUNT + \
+			    (4 * CONFIG_BT_CTLR_LLCP_CONN))
+#else /* !CONFIG_BT_LL_SW_LLCP_LEGACY */
 #define BT_CTLR_TX_BUFFERS (CONFIG_BT_BUF_ACL_TX_COUNT + LLCP_TX_CTRL_BUF_COUNT)
+#endif /* !CONFIG_BT_LL_SW_LLCP_LEGACY */
 #else
 #define BT_CTLR_TX_BUFFERS 0
 #endif /* CONFIG_BT_CONN */
@@ -576,7 +594,7 @@ static inline void rx_demux_conn_tx_ack(uint8_t ack_last, uint16_t handle,
 					memq_link_t *link,
 					struct node_tx *node_tx);
 #endif /* CONFIG_BT_CONN || CONFIG_BT_CTLR_ADV_ISO */
-static inline void rx_demux_rx(memq_link_t *link, struct node_rx_hdr *rx_hdr);
+static inline int rx_demux_rx(memq_link_t *link, struct node_rx_hdr *rx);
 static inline void rx_demux_event_done(memq_link_t *link,
 				       struct node_rx_event_done *done);
 static void ll_rx_link_quota_inc(void);
@@ -2560,6 +2578,7 @@ static void rx_demux(void *param)
 			memq_link_t *link_tx;
 			uint16_t handle; /* Handle to Ack TX */
 #endif /* CONFIG_BT_CONN */
+			int nack = 0;
 
 			LL_ASSERT(rx);
 
@@ -2572,11 +2591,17 @@ static void rx_demux(void *param)
 			} else
 #endif /* CONFIG_BT_CONN */
 			{
-				rx_demux_rx(link, rx);
+				nack = rx_demux_rx(link, rx);
 			}
 
 #if defined(CONFIG_BT_CTLR_LOW_LAT_ULL)
-			rx_demux_yield();
+			if (!nack) {
+				rx_demux_yield();
+			}
+#else /* !CONFIG_BT_CTLR_LOW_LAT_ULL */
+			if (nack) {
+				break;
+			}
 #endif /* !CONFIG_BT_CTLR_LOW_LAT_ULL */
 
 #if defined(CONFIG_BT_CONN)
@@ -2802,7 +2827,7 @@ static inline void rx_demux_conn_tx_ack(uint8_t ack_last, uint16_t handle,
  * @details Rx objects are only peeked, not dequeued yet.
  *   Execution context: ULL high priority Mayfly
  */
-static inline void rx_demux_rx(memq_link_t *link, struct node_rx_hdr *rx)
+static inline int rx_demux_rx(memq_link_t *link, struct node_rx_hdr *rx)
 {
 	/* Demux Rx objects */
 	switch (rx->type) {
@@ -2903,12 +2928,19 @@ static inline void rx_demux_rx(memq_link_t *link, struct node_rx_hdr *rx)
 
 	case NODE_RX_TYPE_DC_PDU:
 	{
-		ull_conn_rx(link, (struct node_rx_pdu **)&rx);
+		int nack;
+
+		nack = ull_conn_rx(link, (struct node_rx_pdu **)&rx);
+		if (nack) {
+			return nack;
+		}
 
 		(void)memq_dequeue(memq_ull_rx.tail, &memq_ull_rx.head, NULL);
 
 		/* Only schedule node if not marked as retain by LLCP */
-		if (rx && rx->type != NODE_RX_TYPE_RETAIN) {
+		if (rx &&
+		    (!IS_ENABLED(CONFIG_BT_LL_SW_LLCP) ||
+		     (rx->type != NODE_RX_TYPE_RETAIN))) {
 			ll_rx_put_sched(link, rx);
 		}
 	}
@@ -2983,6 +3015,8 @@ static inline void rx_demux_rx(memq_link_t *link, struct node_rx_hdr *rx)
 	}
 	break;
 	}
+
+	return 0;
 }
 
 static inline void rx_demux_event_done(memq_link_t *link,
