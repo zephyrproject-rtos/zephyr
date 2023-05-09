@@ -812,13 +812,15 @@ static void biginfo_recv(struct bt_le_per_adv_sync *sync,
 
 static uint16_t interval_to_sync_timeout(uint16_t interval)
 {
+	uint32_t interval_ms;
 	uint16_t timeout;
 
 	/* Ensure that the following calculation does not overflow silently */
 	__ASSERT(SYNC_RETRY_COUNT < 10, "SYNC_RETRY_COUNT shall be less than 10");
 
 	/* Add retries and convert to unit in 10's of ms */
-	timeout = ((uint32_t)interval * SYNC_RETRY_COUNT) / 10;
+	interval_ms = BT_GAP_PER_ADV_INTERVAL_TO_MS(interval);
+	timeout = (interval_ms * SYNC_RETRY_COUNT) / 10;
 
 	/* Enforce restraints */
 	timeout = CLAMP(timeout, BT_GAP_PER_ADV_MIN_TIMEOUT,
