@@ -30,6 +30,8 @@
 #include <zephyr/arch/xtensa/gdbstub.h>
 #include <zephyr/debug/sparse.h>
 
+#include <zephyr/arch/xtensa/xtensa_mmu.h>
+
 #ifdef CONFIG_KERNEL_COHERENCE
 #define ARCH_STACK_PTR_ALIGN XCHAL_DCACHE_LINESIZE
 #else

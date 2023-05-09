@@ -344,11 +344,39 @@ DEF_EXCINT XCHAL_DEBUGLEVEL, _handle_excint, xtensa_debugint_c
 _Level1RealVector:
 	wsr a0, ZSR_ALLOCA
 	rsr.exccause a0
+#ifdef CONFIG_XTENSA_MMU
+	beqi a0, EXCCAUSE_ITLB_MISS, _handle_miss
+	addi a0, a0, -EXCCAUSE_DTLB_MISS
+	beqz a0, _handle_miss
+	rsr.exccause a0
+#endif /* CONFIG_XTENSA_MMU */
 	bnei a0, EXCCAUSE_ALLOCA, _not_alloca
+
 	j _xt_alloca_exc
 _not_alloca:
 	rsr a0, ZSR_ALLOCA
 	j _Level1Vector
+#ifdef CONFIG_XTENSA_MMU
+_handle_miss:
+/**
+ * That is a temporary way to load a page for a tlb miss.
+ * The way it works is, when we try to access an address that is not
+ * mapped, we will have a miss. The HW then will try to get the correspondent
+ * memory in the page table. As the page table is not mapped in memory we
+ * will have a second miss, which will trigger an exception. In the exception
+ * (here) what we do is to exploit this hardware capability just trying to load
+ * the page table (not mapped address), which will cause a miss, but then the
+ * hardware will automatically map it again from the page table. This time it will
+ * work since the page necessary to map the page table itself are wired map.
+ *
+ * This solution is temporary because we don't gracefully handle a second level
+ * miss. We are just assuming that the requested memory is available.
+ */
+	rsr.ptevaddr a0
+	l32i a0, a0, 0
+	rsr a0, ZSR_ALLOCA
+	rfe
+#endif /* CONFIG_XTENSA_MMU */
 .popsection
 
 /* In theory you can have levels up to 15, but known hardware only uses 7. */
