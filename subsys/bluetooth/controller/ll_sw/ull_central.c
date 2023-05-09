@@ -338,7 +338,9 @@ conn_is_valid:
 	ready_delay_us = lll_radio_tx_ready_delay_get(0, 0);
 #endif
 
+	/* TODO(thoh-ot): Not entirely sure this is correct */
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
+	/* TODO: do we need to do the following? */
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 	conn_lll->dle.eff.max_tx_time = MAX(conn_lll->dle.eff.max_tx_time,
 					    PDU_DC_MAX_US(PDU_DC_PAYLOAD_SIZE_MIN,
