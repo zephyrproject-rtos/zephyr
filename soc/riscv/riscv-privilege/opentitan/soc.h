@@ -10,6 +10,11 @@
 #include <soc_common.h>
 #include <zephyr/devicetree.h>
 
+/* OpenTitan power management regs. */
+#define PWRMGR_CFG_CDC_SYNC_REG_OFFSET  0x018
+#define PWRMGR_RESET_EN_REG_OFFSET      0x02c
+#define PWRMGR_RESET_EN_WDOG_SRC_MASK   0x002
+
 /* Ibex timer registers. */
 #define RV_TIMER_CTRL_REG_OFFSET        0x004
 #define RV_TIMER_INTR_ENABLE_REG_OFFSET 0x100
