@@ -1064,6 +1064,14 @@ void ull_conn_done(struct node_rx_event_done *done)
 	}
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 
+	/* Legacy LLCP:
+	 * Peripheral received terminate ind or
+	 * Central received ack for the transmitted terminate ind or
+	 * Central transmitted ack for the received terminate ind or
+	 * there has been MIC failure
+	 * Refactored LLCP:
+	 * reason_final is set exactly under the above conditions
+	 */
 	reason_final = conn->llcp_terminate.reason_final;
 	if (reason_final) {
 		conn_cleanup(conn, reason_final);
@@ -1891,8 +1899,10 @@ static void conn_cleanup_iso_cis_released_cb(struct ll_conn *conn)
 static void conn_cleanup_finalize(struct ll_conn *conn)
 {
 	struct lll_conn *lll = &conn->lll;
+	struct node_rx_pdu *rx;
 	uint32_t ticker_status;
 
+	ARG_UNUSED(rx);
 	ull_cp_state_set(conn, ULL_CP_DISCONNECTED);
 
 	/* Update tx buffer queue handling */
@@ -2083,7 +2093,8 @@ static void tx_lll_flush(void *param)
 	rx->hdr.link = NULL;
 
 	/* Enqueue the terminate towards ULL context */
-	ull_rx_put_sched(link, rx);
+	ull_rx_put(link, rx);
+	ull_rx_sched();
 }
 
 #if defined(CONFIG_BT_CTLR_LLID_DATA_START_EMPTY)
@@ -2690,6 +2701,11 @@ void ull_dle_local_tx_update(struct ll_conn *conn, uint16_t tx_octets, uint16_t 
 
 void ull_dle_init(struct ll_conn *conn, uint8_t phy)
 {
+	/*
+	 * TODO:
+	 * legacy code uses the maximum of the time for 1M phy and actual phy
+	 * for max_time_min, to be verified if that is required here as well
+	 */
 #if defined(CONFIG_BT_CTLR_PHY)
 	const uint16_t max_time_min = PDU_DC_MAX_US(PDU_DC_PAYLOAD_SIZE_MIN, phy);
 	const uint16_t max_time_max = PDU_DC_MAX_US(LL_LENGTH_OCTETS_RX_MAX, phy);
