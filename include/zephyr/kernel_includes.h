@@ -29,6 +29,7 @@
 #include <zephyr/sys/slist.h>
 #include <zephyr/sys/sflist.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/kernel/obj_core.h>
 #include <zephyr/kernel_structs.h>
 #include <zephyr/kernel/mempool_heap.h>
 #include <zephyr/kernel_version.h>
