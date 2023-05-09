@@ -167,6 +167,10 @@ struct proc_ctx {
 
 	/* Procedure data */
 	union {
+		/* Feature Exchange Procedure */
+		struct {
+			uint8_t host_initiated:1;
+		} fex;
 		/* Used by Minimum Used Channels Procedure */
 #if defined(CONFIG_BT_CTLR_MIN_USED_CHAN)
 		struct {
