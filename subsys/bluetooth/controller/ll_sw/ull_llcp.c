@@ -701,7 +701,7 @@ uint8_t ull_cp_le_ping(struct ll_conn *conn)
 #endif /* CONFIG_BT_CTLR_LE_PING */
 
 #if defined(CONFIG_BT_CENTRAL) || defined(CONFIG_BT_CTLR_PER_INIT_FEAT_XCHG)
-uint8_t ull_cp_feature_exchange(struct ll_conn *conn)
+uint8_t ull_cp_feature_exchange(struct ll_conn *conn, uint8_t host_initiated)
 {
 	struct proc_ctx *ctx;
 
@@ -709,6 +709,8 @@ uint8_t ull_cp_feature_exchange(struct ll_conn *conn)
 	if (!ctx) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
+
+	ctx->data.fex.host_initiated = host_initiated;
 
 	llcp_lr_enqueue(conn, ctx);
 

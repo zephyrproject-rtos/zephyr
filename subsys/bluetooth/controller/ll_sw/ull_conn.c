@@ -447,7 +447,7 @@ uint8_t ll_feature_req_send(uint16_t handle)
 
 	uint8_t err;
 
-	err = ull_cp_feature_exchange(conn);
+	err = ull_cp_feature_exchange(conn, 1U);
 	if (err) {
 		return err;
 	}
