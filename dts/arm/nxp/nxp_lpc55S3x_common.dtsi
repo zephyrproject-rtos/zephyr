@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 NXP
+ * Copyright 2022-2023 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -370,6 +370,36 @@
 		status = "disabled";
 		prescaler = <2>;
 		#pwm-cells = <3>;
+	};
+
+	adc0: adc@A0000 {
+		compatible = "nxp,lpc-lpadc";
+		reg = <0xA0000 0x1000>;
+		interrupts = <22 0>;
+		status = "disabled";
+		clk-divider = <2>;
+		clk-source = <2>;
+		voltage-ref = <2>;
+		calibration-average = <128>;
+		power-level = <1>;
+		offset-value-a = <10>;
+		offset-value-b = <10>;
+		#io-channel-cells = <1>;
+	};
+
+	adc1: adc@B1000 {
+		compatible = "nxp,lpc-lpadc";
+		reg = <0xB1000 0x1000>;
+		interrupts = <22 0>;
+		status = "disabled";
+		clk-divider = <2>;
+		clk-source = <2>;
+		voltage-ref = <2>;
+		calibration-average = <128>;
+		power-level = <1>;
+		offset-value-a = <10>;
+		offset-value-b = <10>;
+		#io-channel-cells = <1>;
 	};
 };
 

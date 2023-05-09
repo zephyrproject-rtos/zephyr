@@ -4,6 +4,7 @@
  * Based on adc_mcux_adc16.c and adc_mcux_adc12.c, which are:
  * Copyright (c) 2017-2018, NXP
  * Copyright (c) 2019 Vestas Wind Systems A/S
+ * Copyright (c) 2023, NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -297,6 +298,9 @@ static int mcux_lpadc_init(const struct device *dev)
 	CLOCK_AttachClk(kSFRO_to_ADC_CLK);
 	CLOCK_SetClkDiv(kCLOCK_DivAdcClk, config->clock_div);
 
+#elif defined(CONFIG_SOC_LPC55S36)
+	CLOCK_SetClkDiv(kCLOCK_DivAdc0Clk, config->clock_div, true);
+	CLOCK_AttachClk(config->clock_source);
 #else
 
 	CLOCK_SetClkDiv(kCLOCK_DivAdcAsyncClk, config->clock_div, true);
@@ -387,6 +391,8 @@ static const struct adc_driver_api mcux_lpadc_driver_api = {
 
 #if defined(CONFIG_SOC_SERIES_IMX_RT11XX) || defined(CONFIG_SOC_SERIES_IMX_RT6XX)
 #define TO_LPADC_CLOCK_SOURCE(val) 0
+#elif defined(CONFIG_SOC_LPC55S36)
+#define TO_LPADC_CLOCK_SOURCE(val) MUX_A(CM_ADC0CLKSEL, val)
 #else
 #define TO_LPADC_CLOCK_SOURCE(val) \
 	MUX_A(CM_ADCASYNCCLKSEL, val)

@@ -1,5 +1,5 @@
 #
-# Copyright 2022 NXP
+# Copyright 2022-2023 NXP
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -17,3 +17,4 @@ toolchain:
 supported:
   - gpio
   - pwm
+  - adc
