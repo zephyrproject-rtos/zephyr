@@ -427,23 +427,6 @@ static void lp_comm_terminate_invalid_pdu(struct ll_conn *conn, struct proc_ctx 
 	ctx->state = LP_COMMON_STATE_IDLE;
 }
 
-static void lp_comm_ntf_complete_proxy(struct ll_conn *conn, struct proc_ctx *ctx,
-				       const bool valid_pdu)
-{
-	if (valid_pdu) {
-		if (!llcp_ntf_alloc_is_available()) {
-			ctx->state = LP_COMMON_STATE_WAIT_NTF;
-		} else {
-			lp_comm_ntf(conn, ctx);
-			llcp_lr_complete(conn);
-			ctx->state = LP_COMMON_STATE_IDLE;
-		}
-	} else {
-		/* Illegal response opcode */
-		lp_comm_terminate_invalid_pdu(conn, ctx);
-	}
-}
-
 static void lp_comm_complete(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
 	switch (ctx->proc) {
@@ -460,9 +443,21 @@ static void lp_comm_complete(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t
 		break;
 #endif /* CONFIG_BT_CTLR_LE_PING */
 	case PROC_FEATURE_EXCHANGE:
-		lp_comm_ntf_complete_proxy(conn, ctx,
-			(ctx->response_opcode == PDU_DATA_LLCTRL_TYPE_UNKNOWN_RSP ||
-			 ctx->response_opcode == PDU_DATA_LLCTRL_TYPE_FEATURE_RSP));
+		if (ctx->response_opcode == PDU_DATA_LLCTRL_TYPE_UNKNOWN_RSP ||
+		    ctx->response_opcode == PDU_DATA_LLCTRL_TYPE_FEATURE_RSP) {
+			if (ctx->data.fex.host_initiated) {
+				if (!llcp_ntf_alloc_is_available()) {
+					ctx->state = LP_COMMON_STATE_WAIT_NTF;
+					break;
+				}
+				lp_comm_ntf(conn, ctx);
+			}
+			llcp_lr_complete(conn);
+			ctx->state = LP_COMMON_STATE_IDLE;
+		} else {
+			/* Illegal response opcode */
+			lp_comm_terminate_invalid_pdu(conn, ctx);
+		}
 		break;
 #if defined(CONFIG_BT_CTLR_MIN_USED_CHAN) && defined(CONFIG_BT_PERIPHERAL)
 	case PROC_MIN_USED_CHANS:
@@ -471,8 +466,18 @@ static void lp_comm_complete(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t
 		break;
 #endif /* CONFIG_BT_CTLR_MIN_USED_CHAN && CONFIG_BT_PERIPHERAL */
 	case PROC_VERSION_EXCHANGE:
-		lp_comm_ntf_complete_proxy(conn, ctx,
-			(ctx->response_opcode == PDU_DATA_LLCTRL_TYPE_VERSION_IND));
+		if (ctx->response_opcode == PDU_DATA_LLCTRL_TYPE_VERSION_IND) {
+			if (!llcp_ntf_alloc_is_available()) {
+				ctx->state = LP_COMMON_STATE_WAIT_NTF;
+			} else {
+				lp_comm_ntf(conn, ctx);
+				llcp_lr_complete(conn);
+				ctx->state = LP_COMMON_STATE_IDLE;
+			}
+		} else {
+			/* Illegal response opcode */
+			lp_comm_terminate_invalid_pdu(conn, ctx);
+		}
 		break;
 	case PROC_TERMINATE:
 		/* No notification */
