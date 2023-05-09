@@ -14,6 +14,8 @@
 
 #include <zephyr/drivers/pcie/cap.h>
 
+#include "vc.h"
+
 struct pcie_cap_id_to_str {
 	uint32_t id;
 	char *str;
@@ -200,6 +202,42 @@ static void show_capabilities(const struct shell *sh, pcie_bdf_t bdf)
 	}
 }
 
+static void show_vc(const struct shell *sh, pcie_bdf_t bdf)
+{
+	uint32_t base;
+	struct pcie_vc_regs regs;
+	struct pcie_vc_resource_regs res_regs[PCIE_VC_MAX_COUNT];
+	int idx;
+
+	base = pcie_vc_cap_lookup(bdf, &regs);
+	if (base == 0) {
+		return;
+	}
+
+	shell_fprintf(sh, SHELL_NORMAL,
+		      "    VC exposed : VC/LPVC count: %u/%u, "
+		      "PAT entry size 0x%x, VCA cap 0x%x, "
+		      "VCA table Offset 0x%x\n",
+		      regs.cap_reg_1.vc_count + 1,
+		      regs.cap_reg_1.lpvc_count,
+		      regs.cap_reg_1.pat_entry_size,
+		      regs.cap_reg_2.vca_cap,
+		      regs.cap_reg_2.vca_table_offset);
+
+	pcie_vc_load_resources_regs(bdf, base, res_regs,
+				    regs.cap_reg_1.vc_count + 1);
+
+	for (idx = 0; idx < regs.cap_reg_1.vc_count + 1; idx++) {
+		shell_fprintf(sh, SHELL_NORMAL,
+			      "        VC %d - PA Cap 0x%x, RST %u,"
+			      "Max TS %u PAT offset 0x%x\n",
+			      idx, res_regs[idx].cap_reg.pa_cap,
+			      res_regs[idx].cap_reg.rst,
+			      res_regs[idx].cap_reg.max_time_slots,
+			      res_regs[idx].cap_reg.pa_table_offset);
+	}
+}
+
 static void pcie_dump(const struct shell *sh, pcie_bdf_t bdf)
 {
 	for (int i = 0; i < 16; i++) {
@@ -289,6 +327,7 @@ static void show(const struct shell *sh, pcie_bdf_t bdf, bool details, bool dump
 
 	if (details) {
 		show_capabilities(sh, bdf);
+		show_vc(sh, bdf);
 	}
 
 	if (dump) {
