@@ -305,7 +305,7 @@ struct ec_host_cmd_backend *ec_host_cmd_backend_get_uart(const struct device *de
 #if DT_NODE_EXISTS(DT_CHOSEN(zephyr_host_cmd_uart_backend))
 static int host_cmd_init(void)
 {
-	const struct device *const dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_host_cmd_backend));
+	const struct device *const dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_host_cmd_uart_backend));
 
 	ec_host_cmd_init(ec_host_cmd_backend_get_uart(dev));
 	return 0;
