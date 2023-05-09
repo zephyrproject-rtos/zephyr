@@ -494,6 +494,19 @@ endif # THREAD_RUNTIME_STATS
 
 endmenu
 
+menuconfig OBJ_CORE
+	bool "Object core framework"
+	default n
+	help
+	  This option enables the object core framework. This will link
+	  participating kernel objects and their respective types together
+	  in a way that allows them to both have common information stored
+	  together and for that information to be easily retrieved by
+	  automated means.
+
+if OBJ_CORE
+endif  # OBJ_CORE
+
 menu "Work Queue Options"
 config SYSTEM_WORKQUEUE_STACK_SIZE
 	int "System workqueue stack size"
