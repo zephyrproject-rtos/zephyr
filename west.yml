@@ -64,7 +64,7 @@ manifest:
       groups:
         - hal
     - name: hal_espressif
-      revision: 075894ed22caa5c2d1686a1e33953edd6aa41333
+      revision: 8d8d537fa2131c43fd55caa8cfce69f7723b0562
       path: modules/hal/espressif
       west-commands: west/west-commands.yml
       groups:
@@ -188,7 +188,7 @@ manifest:
       groups:
         - crypto
     - name: mcuboot
-      revision: 2878eb4e32fabc14bc391c3221cbf285064d9db4
+      revision: 676934427632a51fd7b428044babc66a79514262
       path: bootloader/mcuboot
     - name: mipi-sys-t
       path: modules/debug/mipi-sys-t
