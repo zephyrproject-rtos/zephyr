@@ -19,7 +19,8 @@
 #endif
 
 #include <zephyr/devicetree.h>
-#ifdef CONFIG_TRUSTED_EXECUTION_NONSECURE
+#if defined(CONFIG_TRUSTED_EXECUTION_NONSECURE) && \
+	!defined(CONFIG_IMG_IGNORE_NONSECURE_PARTITION)
 	#define UPLOAD_FLASH_AREA_LABEL slot1_ns_partition
 #else
 #if FIXED_PARTITION_EXISTS(slot1_partition)

@@ -80,6 +80,14 @@ config IMG_ENABLE_IMAGE_CHECK
 	  Another use is to ensure that firmware upgrade routines from internet
 	  server to flash slot are performing properly.
 
+config IMG_IGNORE_NONSECURE_PARTITION
+	bool "Don't try and use _ns partitions for writing new images"
+	depends on MCUBOOT_IMG_MANAGER
+	help
+	  Applications built with TRUSTED_EXECUTION_NONSECURE may still
+	  want to use the standard mcuboot partitions. Enabling this option
+	  means that slot1_ns_partition is not automatically selected.
+
 module = IMG_MANAGER
 module-str = image manager
 source "subsys/logging/Kconfig.template.log_config"
