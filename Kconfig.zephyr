@@ -816,8 +816,8 @@ config BOOTLOADER_SRAM_SIZE
 
 config BOOTLOADER_ESP_IDF
 	bool "ESP-IDF bootloader support"
-	depends on (SOC_ESP32 || SOC_ESP32S2 || SOC_ESP32C3 || SOC_ESP32S3) && !BOOTLOADER_MCUBOOT
-	default y
+	depends on SOC_FAMILY_ESP32 && !BOOTLOADER_MCUBOOT && !MCUBOOT
+	default	y
 	help
 	  This option will trigger the compilation of the ESP-IDF bootloader
 	  inside the build folder.

@@ -9,7 +9,7 @@ config SOC_ESP32
 	select ARCH_HAS_GDBSTUB
 	select ARCH_SUPPORTS_COREDUMP
 	select PINCTRL
-	select XIP
+	select XIP if !MCUBOOT
 	select HAS_ESPRESSIF_HAL
 	select CPU_HAS_FPU
 
@@ -45,6 +45,7 @@ config ESP32_BT_RESERVE_DRAM
 
 config ESP_HEAP_MEM_POOL_REGION_1_SIZE
 	int "Internal DRAM region 1 mempool size"
+	default 0 if MCUBOOT
 	default 1024 if ESP32_NETWORK_CORE
 	default 49152
 	help
