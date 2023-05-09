@@ -14,7 +14,6 @@
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/types.h>
 #include <zephyr/drivers/gpio.h>
-#include <zephyr/drivers/spi.h>
 #include <zephyr/sys/util.h>
 #include <stmemsc.h>
 #include "lsm6dso16is_reg.h"
