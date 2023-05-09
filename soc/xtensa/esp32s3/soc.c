@@ -33,16 +33,21 @@
 #include "esp_timer.h"
 #include "esp_app_format.h"
 #include "esp_clk_internal.h"
+
+#ifdef CONFIG_MCUBOOT
+#include "bootloader_init.h"
+#endif /* CONFIG_MCUBOOT */
 #include <zephyr/sys/printk.h>
 
 extern void z_cstart(void);
-extern void rom_config_instruction_cache_mode(uint32_t cfg_cache_size,
-	uint8_t cfg_cache_ways, uint8_t cfg_cache_line_size);
-extern void rom_config_data_cache_mode(uint32_t cfg_cache_size,
-	uint8_t cfg_cache_ways, uint8_t cfg_cache_line_size);
-extern void Cache_Set_IDROM_MMU_Info(uint32_t instr_page_num, uint32_t rodata_page_num,
-	uint32_t rodata_start, uint32_t rodata_end, int i_off, int ro_off);
+extern void rom_config_instruction_cache_mode(uint32_t cfg_cache_size, uint8_t cfg_cache_ways,
+					      uint8_t cfg_cache_line_size);
+extern void rom_config_data_cache_mode(uint32_t cfg_cache_size, uint8_t cfg_cache_ways,
+				       uint8_t cfg_cache_line_size);
 extern uint32_t Cache_Set_IDROM_MMU_Size(uint32_t irom_size, uint32_t drom_size);
+extern void Cache_Set_IDROM_MMU_Info(uint32_t instr_page_num, uint32_t rodata_page_num,
+				     uint32_t rodata_start, uint32_t rodata_end, int i_off,
+				     int ro_off);
 extern int _rodata_reserved_start;
 extern int _rodata_reserved_end;
 
@@ -53,60 +58,63 @@ extern int _rodata_reserved_end;
  */
 void IRAM_ATTR __esp_platform_start(void)
 {
+	volatile soc_reset_reason_t rst_reas[SOC_CPU_CORES_NUM];
 	extern uint32_t _init_start;
 
 	/* Move the exception vector table to IRAM. */
-	__asm__ __volatile__ (
-		"wsr %0, vecbase"
-		:
-		: "r"(&_init_start));
+	__asm__ __volatile__("wsr %0, vecbase" : : "r"(&_init_start));
 
 	z_bss_zero();
 
-	/*
-	 * Configure the mode of instruction cache :
-	 * cache size, cache associated ways, cache line size.
-	 */
-	rom_config_instruction_cache_mode(CONFIG_ESP32S3_INSTRUCTION_CACHE_SIZE,
-		CONFIG_ESP32S3_ICACHE_ASSOCIATED_WAYS,
-		CONFIG_ESP32S3_INSTRUCTION_CACHE_LINE_SIZE);
-
-	/* configure the mode of data: cache size, cache line size.*/
-	Cache_Suspend_DCache();
-	rom_config_data_cache_mode(CONFIG_ESP32S3_DATA_CACHE_SIZE,
-		CONFIG_ESP32S3_DCACHE_ASSOCIATED_WAYS,
-		CONFIG_ESP32S3_DATA_CACHE_LINE_SIZE);
-	Cache_Resume_DCache(0);
-
-	/* Configure the Cache MMU size for instruction and rodata in flash. */
-	uint32_t rodata_start_align = (uint32_t)&_rodata_reserved_start & ~(MMU_PAGE_SIZE - 1);
-	uint32_t cache_mmu_irom_size = ((rodata_start_align - SOC_DROM_LOW) / MMU_PAGE_SIZE)
-		* sizeof(uint32_t);
-	uint32_t cache_mmu_drom_size = DIV_ROUND_UP(
-			(uint32_t)&_rodata_reserved_end - rodata_start_align,
-			MMU_PAGE_SIZE) * sizeof(uint32_t);
-
-	Cache_Set_IDROM_MMU_Size(cache_mmu_irom_size, CACHE_DROM_MMU_MAX_END - cache_mmu_irom_size);
-	Cache_Set_IDROM_MMU_Info(cache_mmu_irom_size / sizeof(uint32_t),
-		cache_mmu_drom_size / sizeof(uint32_t), (uint32_t)&_rodata_reserved_start,
-		(uint32_t)&_rodata_reserved_end, 0, 0);
-
-#if CONFIG_ESP32S3_DATA_CACHE_16KB
-	Cache_Invalidate_DCache_All();
-	Cache_Occupy_Addr(SOC_DROM_LOW, 0x4000);
-#endif
-
 	/* Disable normal interrupts. */
-	__asm__ __volatile__ (
-		"wsr %0, PS"
-		:
-		: "r"(PS_INTLEVEL(XCHAL_EXCM_LEVEL) | PS_UM | PS_WOE));
+	__asm__ __volatile__("wsr %0, PS" : : "r"(PS_INTLEVEL(XCHAL_EXCM_LEVEL) | PS_UM | PS_WOE));
 
 	/* Initialize the architecture CPU pointer.  Some of the
 	 * initialization code wants a valid _current before
 	 * arch_kernel_init() is invoked.
 	 */
 	__asm__ volatile("wsr.MISC0 %0; rsync" : : "r"(&_kernel.cpus[0]));
+
+#ifdef CONFIG_MCUBOOT
+	/* MCUboot early initialisation. */
+	if (bootloader_init()) {
+		abort();
+	}
+#else
+	/* Configure the mode of instruction cache : cache size, cache line size. */
+	rom_config_instruction_cache_mode(CONFIG_ESP32S3_INSTRUCTION_CACHE_SIZE,
+					CONFIG_ESP32S3_ICACHE_ASSOCIATED_WAYS,
+					CONFIG_ESP32S3_INSTRUCTION_CACHE_LINE_SIZE);
+
+	/* If we need use SPIRAM, we should use data cache.
+	 * Configure the mode of data : cache size, cache line size.
+	 */
+	Cache_Suspend_DCache();
+	rom_config_data_cache_mode(CONFIG_ESP32S3_DATA_CACHE_SIZE,
+				CONFIG_ESP32S3_DCACHE_ASSOCIATED_WAYS,
+				CONFIG_ESP32S3_DATA_CACHE_LINE_SIZE);
+	Cache_Resume_DCache(0);
+	/* Configure the Cache MMU size for instruction and rodata in flash. */
+	uint32_t rodata_reserved_start_align =
+		(uint32_t)&_rodata_reserved_start & ~(MMU_PAGE_SIZE - 1);
+	uint32_t cache_mmu_irom_size =
+		((rodata_reserved_start_align - SOC_DROM_LOW) / MMU_PAGE_SIZE) * sizeof(uint32_t);
+	uint32_t cache_mmu_drom_size =
+		(((uint32_t)&_rodata_reserved_end - rodata_reserved_start_align + MMU_PAGE_SIZE - 1)
+		 / MMU_PAGE_SIZE) * sizeof(uint32_t);
+	Cache_Set_IDROM_MMU_Size(cache_mmu_irom_size, CACHE_DROM_MMU_MAX_END - cache_mmu_irom_size);
+
+	REG_CLR_BIT(SYSTEM_CORE_1_CONTROL_0_REG, SYSTEM_CONTROL_CORE_1_CLKGATE_EN);
+	/* The clock gating signal of the App core is invalid. We use RUNSTALL and RESETTING
+	 * signals to ensure that the App core stops running in single-core mode.
+	 */
+	REG_SET_BIT(SYSTEM_CORE_1_CONTROL_0_REG, SYSTEM_CONTROL_CORE_1_RUNSTALL);
+	REG_CLR_BIT(SYSTEM_CORE_1_CONTROL_0_REG, SYSTEM_CONTROL_CORE_1_RESETTING);
+
+#if CONFIG_ESP32S3_DATA_CACHE_16KB
+	Cache_Invalidate_DCache_All();
+	Cache_Occupy_Addr(SOC_DROM_LOW, 0x4000);
+#endif
 
 	/* ESP-IDF/MCUboot 2nd stage bootloader enables RTC WDT to check on startup sequence
 	 * related issues in application. Hence disable that as we are about to start
@@ -116,7 +124,6 @@ void IRAM_ATTR __esp_platform_start(void)
 
 	wdt_hal_write_protect_disable(&rtc_wdt_ctx);
 	wdt_hal_disable(&rtc_wdt_ctx);
-	wdt_hal_feed(&rtc_wdt_ctx);
 	wdt_hal_write_protect_enable(&rtc_wdt_ctx);
 
 	esp_clk_init();
@@ -126,6 +133,7 @@ void IRAM_ATTR __esp_platform_start(void)
 #if CONFIG_SOC_FLASH_ESP32
 	spi_flash_guard_set(&g_flash_guard_default_ops);
 #endif
+#endif /* CONFIG_MCUBOOT */
 
 	esp_intr_initialize();
 
@@ -209,16 +217,15 @@ void IRAM_ATTR esp_restart_noos(void)
 
 	/* Reset wifi/bluetooth/ethernet/sdio (bb/mac) */
 	SET_PERI_REG_MASK(SYSTEM_CORE_RST_EN_REG,
-				SYSTEM_BB_RST | SYSTEM_FE_RST | SYSTEM_MAC_RST |
-				SYSTEM_BT_RST | SYSTEM_BTMAC_RST | SYSTEM_SDIO_RST |
-				SYSTEM_SDIO_HOST_RST | SYSTEM_EMAC_RST | SYSTEM_MACPWR_RST |
-				SYSTEM_RW_BTMAC_RST | SYSTEM_RW_BTLP_RST |
-				SYSTEM_BLE_REG_RST | SYSTEM_PWR_REG_RST);
+			  SYSTEM_BB_RST | SYSTEM_FE_RST | SYSTEM_MAC_RST | SYSTEM_BT_RST |
+				  SYSTEM_BTMAC_RST | SYSTEM_SDIO_RST | SYSTEM_SDIO_HOST_RST |
+				  SYSTEM_EMAC_RST | SYSTEM_MACPWR_RST | SYSTEM_RW_BTMAC_RST |
+				  SYSTEM_RW_BTLP_RST | SYSTEM_BLE_REG_RST | SYSTEM_PWR_REG_RST);
 	REG_WRITE(SYSTEM_CORE_RST_EN_REG, 0);
 
 	/* Reset timer/spi/uart */
-	SET_PERI_REG_MASK(SYSTEM_PERIP_RST_EN0_REG,
-		SYSTEM_TIMERS_RST | SYSTEM_SPI01_RST | SYSTEM_UART_RST | SYSTEM_SYSTIMER_RST);
+	SET_PERI_REG_MASK(SYSTEM_PERIP_RST_EN0_REG, SYSTEM_TIMERS_RST | SYSTEM_SPI01_RST |
+							    SYSTEM_UART_RST | SYSTEM_SYSTIMER_RST);
 	REG_WRITE(SYSTEM_PERIP_RST_EN0_REG, 0);
 
 	/* Reset DMA */
