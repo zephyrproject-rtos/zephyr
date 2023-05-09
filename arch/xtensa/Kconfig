@@ -103,4 +103,31 @@ config XTENSA_CCOUNT_HZ
 	  Rate in HZ of the Xtensa core as measured by the value of
 	  the CCOUNT register.
 
+if CPU_HAS_MMU
+
+config XTENSA_MMU
+	bool "Xtensa MMU Support"
+	default n
+	select MMU
+	help
+	  Enable support for Xtensa Memory Management Unit.
+
+if XTENSA_MMU
+
+	config XTENSA_MMU_PTEVADDR
+		hex "PageTable virtual adddress"
+		default 0x20000000
+		help
+		  The virtual address for Xtensa page table (PTEVADDR).
+
+	config XTENSA_MMU_NUM_L2_TABLES
+		int "Number of L2 page tables"
+		default 10
+		help
+		  Each table can address up to 4MB memory address.
+
+endif # XTENSA_MMU
+
+endif # CPU_HAS_MMU
+
 endmenu

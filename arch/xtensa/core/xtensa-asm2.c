@@ -244,12 +244,15 @@ void *xtensa_excint1_c(int *interrupted_stack)
 	int cause, vaddr;
 	_xtensa_irq_bsa_t *bsa = (void *)*(int **)interrupted_stack;
 	bool is_fatal_error = false;
+	uint32_t ps;
+	void *pc;
 
 	__asm__ volatile("rsr.exccause %0" : "=r"(cause));
 
-	if (cause == EXCCAUSE_LEVEL1_INTERRUPT) {
+	switch (cause) {
+	case EXCCAUSE_LEVEL1_INTERRUPT:
 		return xtensa_int1_c(interrupted_stack);
-	} else if (cause == EXCCAUSE_SYSCALL) {
+	case EXCCAUSE_SYSCALL:
 		/* Just report it to the console for now */
 		LOG_ERR(" ** SYSCALL PS %p PC %p",
 			(void *)bsa->ps, (void *)bsa->pc);
@@ -260,9 +263,11 @@ void *xtensa_excint1_c(int *interrupted_stack)
 		 * else it will just loop forever
 		 */
 		bsa->pc += 3;
-	} else {
-		uint32_t ps = bsa->ps;
-		void *pc = (void *)bsa->pc;
+		break;
+	/* TODO: Implement proper exception handler for MMU exceptions. */
+	default:
+		ps = bsa->ps;
+		pc = (void *)bsa->pc;
 
 		__asm__ volatile("rsr.excvaddr %0" : "=r"(vaddr));
 
@@ -305,6 +310,7 @@ void *xtensa_excint1_c(int *interrupted_stack)
 		 */
 		z_xtensa_fatal_error(reason,
 				     (void *)interrupted_stack);
+		break;
 	}
 
 	if (is_fatal_error) {
