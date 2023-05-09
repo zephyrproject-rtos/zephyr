@@ -100,6 +100,12 @@ config OPENTHREAD_PLATFORM_CSL_UNCERT
 	help
 	  The fixed uncertainty of the Device for scheduling CSL Transmissions in units of 10 microseconds.
 
+config OPENTHREAD_CSL_TIMEOUT
+	int "CSL timeout in seconds"
+	default 100
+	help
+	  The default CSL timeout in seconds.
+
 config OPENTHREAD_MAC_SOFTWARE_TX_SECURITY_ENABLE
 	bool "Software transmission security logic"
 	default y if !OPENTHREAD_THREAD_VERSION_1_1
