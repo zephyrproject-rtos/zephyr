@@ -24,30 +24,26 @@ static int ism330dhcx_spi_read(const struct device *dev, uint8_t reg_addr, uint8
 			       uint8_t len)
 {
 	const struct ism330dhcx_config *cfg = dev->config;
-	uint8_t buffer_tx[2] = { reg_addr | ISM330DHCX_SPI_READ, 0 };
-	const struct spi_buf tx_buf = {
+	uint8_t buffer_tx[2] = { reg_addr | ISM330DHCX_SPI_READ, 0U };
+	uint8_t buffer_rx[2] = {0U};
+
+	const struct spi_buf spi_buf_tx = {
 			.buf = buffer_tx,
-			.len = 2,
+			.len = sizeof(buffer_tx) + len
 	};
 	const struct spi_buf_set tx = {
-		.buffers = &tx_buf,
+		.buffers = &spi_buf_tx,
 		.count = 1
 	};
-	const struct spi_buf rx_buf[2] = {
-		{
-			.buf = NULL,
-			.len = 1,
-		},
-		{
-			.buf = value,
-			.len = len,
-		}
+
+	const struct spi_buf spi_buf_rx = {
+		.buf = &buffer_rx,
+		.len = sizeof(buffer_rx) + len
 	};
 	const struct spi_buf_set rx = {
-		.buffers = rx_buf,
-		.count = 2
+		.buffers = &spi_buf_rx,
+		.count = 1
 	};
-
 
 	if (len > 64) {
 		return -EIO;
@@ -57,6 +53,9 @@ static int ism330dhcx_spi_read(const struct device *dev, uint8_t reg_addr, uint8
 		return -EIO;
 	}
 
+	for(uint8_t i=0;i < len;i++){
+		value[i] = buffer_rx[i+1];
+	}
 	return 0;
 }
 
@@ -107,7 +106,7 @@ int ism330dhcx_spi_init(const struct device *dev)
 	data->ctx_spi.mdelay = (stmdev_mdelay_ptr) stmemsc_mdelay;
 
 	data->ctx = &data->ctx_spi;
-	data->ctx->handle = data;
+	data->ctx->handle = (void*) dev;
 
 	return 0;
 }
