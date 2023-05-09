@@ -943,6 +943,11 @@ int bt_bap_broadcast_source_start(struct bt_bap_broadcast_source *source, struct
 		return -EINVAL;
 	}
 
+	CHECKIF(adv == NULL) {
+		LOG_DBG("adv is NULL");
+		return -EINVAL;
+	}
+
 	broadcast_state = broadcast_source_get_state(source);
 	if (broadcast_source_get_state(source) != BT_BAP_EP_STATE_QOS_CONFIGURED) {
 		LOG_DBG("Broadcast source invalid state: %u", broadcast_state);
