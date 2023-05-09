@@ -133,9 +133,6 @@ config OPENTHREAD_ENABLE_SERVICE
 	help
 	  Enable Thread Services capability in OpenThread stack
 
-config OPENTHREAD_EXCLUDE_TCPLP_LIB
-	bool "Exclude TCPlp library from build"
-
 config OPENTHREAD_EXTERNAL_HEAP
 	bool "External heap support"
 
