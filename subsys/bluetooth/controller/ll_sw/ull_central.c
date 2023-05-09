@@ -284,6 +284,13 @@ uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window,
 			     conn->apto_reload;
 #endif /* CONFIG_BT_CTLR_LE_PING */
 
+/* TODO: verify if we need to enable CTLR_RX_ENQUEUE_HOLD */
+#if defined(CONFIG_BT_CTLR_RX_ENQUEUE_HOLD)
+	conn->llcp_rx_hold = NULL;
+	conn_lll->rx_hold_req = 0U;
+	conn_lll->rx_hold_ack = 0U;
+#endif /* CONFIG_BT_CTLR_RX_ENQUEUE_HOLD */
+
 	/* Re-initialize the control procedure data structures */
 	ull_llcp_init(conn);
 
