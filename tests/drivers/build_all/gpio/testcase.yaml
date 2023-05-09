@@ -11,3 +11,9 @@ tests:
       - gpio
       - spi
       - i2c
+
+  drivers.gpio.build.efinix_sapphire:
+    min_ram: 32
+    platform_allow: titanium_ti60_f225
+    depends_on: gpio
+    extra_args: DTC_OVERLAY_FILE="efinix_sapphire.overlay"
