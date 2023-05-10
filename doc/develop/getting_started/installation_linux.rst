@@ -317,5 +317,5 @@ To make sure this variable is unset, run:
 
    unset ZEPHYR_SDK_INSTALL_DIR
 
-.. _Zephyr SDK Releases: https://github.com/zephyrproject-rtos/sdk-ng/releases
+.. _Zephyr SDK Releases: https://github.com/zephyrproject-rtos/sdk-ng/tags
 .. _CMake Downloads: https://cmake.org/download
