@@ -98,7 +98,8 @@ struct ll_conn_iso_group *ll_conn_iso_group_acquire(void)
 void ll_conn_iso_group_release(struct ll_conn_iso_group *cig)
 {
 	cig->cig_id  = 0xFF;
-	cig->started = 0;
+	cig->started = 0U;
+	cig->lll.num_cis = 0U;
 
 	mem_release(cig, &cig_free);
 }
