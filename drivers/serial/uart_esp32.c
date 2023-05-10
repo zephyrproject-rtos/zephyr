@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2019 Mohamed ElShahawi (extremegtx@hotmail.com)
+ * Copyright (c) 2023 Espressif Systems (Shanghai) Co., Ltd.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,15 +20,16 @@
 #elif defined(CONFIG_SOC_ESP32S3)
 #include <esp32s3/rom/ets_sys.h>
 #include <esp32s3/rom/gpio.h>
+#include <zephyr/dt-bindings/clock/esp32s3_clock.h>
 #elif defined(CONFIG_SOC_ESP32C3)
 #include <esp32c3/rom/ets_sys.h>
 #include <esp32c3/rom/gpio.h>
+#include <zephyr/dt-bindings/clock/esp32c3_clock.h>
+#endif
 #ifdef CONFIG_UART_ASYNC_API
 #include <zephyr/drivers/dma.h>
 #include <zephyr/drivers/dma/dma_esp32.h>
 #include <hal/uhci_ll.h>
-#include <zephyr/dt-bindings/clock/esp32c3_clock.h>
-#endif
 #endif
 #include <soc/uart_struct.h>
 #include <hal/uart_ll.h>
@@ -64,6 +66,7 @@ struct uart_esp32_config {
 	const struct pinctrl_dev_config *pcfg;
 	const clock_control_subsys_t clock_subsys;
 	int irq_source;
+	int irq_priority;
 #if CONFIG_UART_ASYNC_API
 	const struct device *dma_dev;
 	uint8_t tx_dma_channel;
@@ -94,7 +97,6 @@ struct uart_esp32_async_data {
 struct uart_esp32_data {
 	struct uart_config uart_config;
 	uart_hal_context_t hal;
-	int irq_line;
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	uart_irq_callback_user_data_t irq_cb;
 	void *irq_cb_data;
@@ -466,6 +468,7 @@ static void uart_esp32_isr(void *arg)
 	struct uart_esp32_data *data = dev->data;
 	uint32_t uart_intr_status = uart_hal_get_intsts_mask(&data->hal);
 	const struct uart_esp32_config *config = dev->config;
+
 	if (uart_intr_status == 0) {
 		return;
 	}
@@ -884,9 +887,21 @@ static int uart_esp32_init(const struct device *dev)
 	struct uart_esp32_data *data = dev->data;
 	int ret = uart_esp32_configure(dev, &data->uart_config);
 
+	if (ret < 0) {
+		LOG_ERR("Error configuring UART (%d)", ret);
+		return ret;
+	}
+
 #if CONFIG_UART_INTERRUPT_DRIVEN || CONFIG_UART_ASYNC_API
-	data->irq_line = esp_intr_alloc(config->irq_source, 0, (ISR_HANDLER)uart_esp32_isr,
-					(void *)dev, NULL);
+	ret = esp_intr_alloc(config->irq_source,
+			config->irq_priority,
+			(ISR_HANDLER)uart_esp32_isr,
+			(void *)dev,
+			NULL);
+	if (ret < 0) {
+		LOG_ERR("Error allocating UART interrupt (%d)", ret);
+		return ret;
+	}
 #endif
 #if CONFIG_UART_ASYNC_API
 	if (config->dma_dev) {
@@ -905,7 +920,7 @@ static int uart_esp32_init(const struct device *dev)
 		k_work_init_delayable(&data->async.rx_timeout_work, uart_esp32_async_rx_timeout);
 	}
 #endif
-	return ret;
+	return 0;
 }
 
 static const DRAM_ATTR struct uart_driver_api uart_esp32_api = {
@@ -952,9 +967,12 @@ static const DRAM_ATTR struct uart_driver_api uart_esp32_api = {
 #define ESP_UART_UHCI_INIT(n)                                                                      \
 	.uhci_dev = COND_CODE_1(DT_INST_NODE_HAS_PROP(n, dmas), (&UHCI0), (NULL))
 
+#define UART_IRQ_PRIORITY ESP_INTR_FLAG_LEVEL2
+
 #else
 #define ESP_UART_DMA_INIT(n)
 #define ESP_UART_UHCI_INIT(n)
+#define UART_IRQ_PRIORITY (0)
 #endif
 
 #define ESP32_UART_INIT(idx)                                                                       \
@@ -966,6 +984,7 @@ static const DRAM_ATTR struct uart_driver_api uart_esp32_api = {
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(idx),                                       \
 		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(idx, offset),          \
 		.irq_source = DT_INST_IRQN(idx),                                                   \
+		.irq_priority = UART_IRQ_PRIORITY,                                                 \
 		ESP_UART_DMA_INIT(idx)};                                                           \
                                                                                                    \
 	static struct uart_esp32_data uart_esp32_data_##idx = {                                    \
