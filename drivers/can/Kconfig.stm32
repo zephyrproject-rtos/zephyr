@@ -11,6 +11,8 @@ config CAN_STM32
 	  Enable STM32 CAN Driver.
 	  Tested on STM32F0, STM32F4, STM32L4 and STM32F7 series.
 
+if CAN_STM32
+
 config CAN_MAX_STD_ID_FILTER
 	int "Maximum number of std ID filters"
 	default 14
@@ -42,3 +44,5 @@ config CAN_MAX_EXT_ID_FILTER
 	  filters:
 
 	    CAN_MAX_STD_ID_FILTER + CAN_MAX_EXT_ID_FILTER * 2 <= 28
+
+endif # CAN_STM32
