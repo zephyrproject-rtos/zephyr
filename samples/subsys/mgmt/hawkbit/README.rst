@@ -80,7 +80,7 @@ Step 4: Build Hawkbit
 ``Hawkbit`` can be built for the frdm_k64f as follows:
 
 .. zephyr-app-commands::
-    :zephyr-app: samples/net/hawkbit
+    :zephyr-app: samples/subsys/mgmt/hawkbit
     :board: frdm_k64f
     :conf: "prj.conf"
     :goals: build
@@ -286,7 +286,7 @@ Step 11: Build Hawkbit HTTPS
 ``Hawkbit https`` can be built for the frdm_k64f as follows:
 
 .. zephyr-app-commands::
-    :zephyr-app: samples/net/hawkbit
+    :zephyr-app: samples/subsys/mgmt/hawkbit
     :board: frdm_k64f
     :conf: "prj.conf overlay-tls.conf"
     :goals: build

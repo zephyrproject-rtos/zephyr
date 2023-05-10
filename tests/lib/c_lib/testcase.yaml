@@ -1,6 +1,6 @@
 common:
   tags: clib
-  platform_exclude: native_posix native_posix_64 nrf52_bsim
+  arch_exclude: posix
 tests:
   libraries.libc:
     ignore_faults: true

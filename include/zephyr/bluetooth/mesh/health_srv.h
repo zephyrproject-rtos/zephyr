@@ -18,6 +18,7 @@
  */
 
 #include <zephyr/bluetooth/mesh.h>
+#include <zephyr/bluetooth/byteorder.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -206,7 +207,7 @@ struct bt_mesh_health_srv {
  *  @return A comma separated list of values that make Health Test Info Metadata
  */
 #define BT_MESH_HEALTH_TEST_INFO(cid, tests...)                                \
-	(cid & 0xff), (cid >> 8), sizeof((uint8_t[]){ tests }), tests
+	BT_BYTES_LIST_LE16(cid), sizeof((uint8_t[]){ tests }), tests
 
 /** @brief Notify the stack that the fault array state of the given element has
  *  changed.

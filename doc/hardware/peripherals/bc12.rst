@@ -73,9 +73,10 @@ host configures the USB device.
 Charging port mode is used by the application when the USB port is configured as
 a downstream facing port, i.e. a USB host port. For charging port mode, the
 BC1.2 driver powers up the detection chip and configures the charger type
-specified by a devicetree property. There is no callback notification when
-setting charging port mode.
-
+specified by a devicetree property. If the driver supports detection of plug and
+and unplug events, the BC1.2 driver notifies the callback registered with
+``bc12_set_result_cb()`` to indicate the current connection state of the
+portable device partner.
 
 Configuration Options
 *********************

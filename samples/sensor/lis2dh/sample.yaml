@@ -3,5 +3,9 @@ sample:
 tests:
   sample.sensor.lis2dh:
     harness: sensor
-    tags: samples sensor
-    depends_on: i2c lis2dh
+    tags:
+      - samples
+      - sensor
+    depends_on:
+      - i2c
+      - lis2dh

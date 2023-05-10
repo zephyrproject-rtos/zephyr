@@ -62,6 +62,7 @@
 #define DAC_CHANNEL_ID		0
 
 #elif defined(CONFIG_BOARD_ESP32) || \
+	defined(CONFIG_BOARD_ESP_WROVER_KIT) || \
 	defined(CONFIG_BOARD_ESP32S2_SAOLA) || \
 	defined(CONFIG_BOARD_GD32A503V_EVAL) || \
 	defined(CONFIG_BOARD_GD32E103V_EVAL) || \

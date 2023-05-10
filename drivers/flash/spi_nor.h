@@ -36,6 +36,7 @@
 #define SPI_NOR_CMD_PP_1_4_4    0x38    /* Quad Page program (1-4-4) */
 #define SPI_NOR_CMD_RDCR        0x15    /* Read control register */
 #define SPI_NOR_CMD_SE          0x20    /* Sector erase */
+#define SPI_NOR_CMD_SE_4B       0x21    /* Sector erase 4 byte address*/
 #define SPI_NOR_CMD_BE_32K      0x52    /* Block erase 32KB */
 #define SPI_NOR_CMD_BE          0xD8    /* Block erase */
 #define SPI_NOR_CMD_CE          0xC7    /* Chip erase */
@@ -82,6 +83,9 @@
 /* Flash Auto-polling values */
 #define SPI_NOR_WREN_MATCH    0x02
 #define SPI_NOR_WREN_MASK     0x02
+
+#define SPI_NOR_WEL_MATCH     0x00
+#define SPI_NOR_WEL_MASK      0x02
 
 #define SPI_NOR_MEM_RDY_MATCH 0x00
 #define SPI_NOR_MEM_RDY_MASK  0x01

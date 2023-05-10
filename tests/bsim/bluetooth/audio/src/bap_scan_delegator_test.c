@@ -6,6 +6,7 @@
 
 #ifdef CONFIG_BT_BAP_SCAN_DELEGATOR
 #include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/byteorder.h>
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/sys/byteorder.h>
@@ -529,8 +530,7 @@ static int mod_source(struct sync_state *state)
 	uint8_t pref_context_metadata[4] = {
 		0x03, /* length of the type and value */
 		BT_AUDIO_METADATA_TYPE_PREF_CONTEXT,
-		((pref_context >> 0) & 0xFF),
-		((pref_context >> 8) & 0xFF),
+		BT_BYTES_LIST_LE16(pref_context),
 	};
 	int err;
 

@@ -251,6 +251,14 @@ config SHELL_AUTOSTART
 	help
 	  If enabled, shell will be automatically started.
 
+config SHELL_CMDS_RETURN_VALUE
+	bool "Retval command"
+	depends on SHELL_CMDS
+	default y
+	help
+	  This option enables the retval command. It is used to retrieve
+	  the return value from the most recently executed command.
+
 source "subsys/shell/modules/Kconfig"
 
 endif # SHELL

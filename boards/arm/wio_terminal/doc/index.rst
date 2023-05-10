@@ -166,7 +166,7 @@ Debugging
 In addition to the built-in bootloader, the Wio Terminal can be flashed and
 debugged using an SWD probe such as the Segger J-Link.
 
-#.  Solder cables to the code:`SWCLK`, :code:`SWDIO`, :code:`RESET`,
+#.  Solder cables to the :code:`SWCLK`, :code:`SWDIO`, :code:`RESET`,
     :code:`GND`, and :code:`3V3` pins. See `Test with SWD`_ for more
     information.
 

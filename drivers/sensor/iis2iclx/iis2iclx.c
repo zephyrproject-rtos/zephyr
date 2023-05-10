@@ -651,6 +651,12 @@ static int iis2iclx_init(const struct device *dev)
 #define IIS2ICLX_CFG_IRQ(inst)
 #endif /* CONFIG_IIS2ICLX_TRIGGER */
 
+#define IIS2ICLX_CONFIG_COMMON(inst)					\
+	.odr = DT_INST_PROP(inst, odr),					\
+	.range = DT_INST_PROP(inst, range),				\
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, drdy_gpios),		\
+		(IIS2ICLX_CFG_IRQ(inst)), ())
+
 #define IIS2ICLX_SPI_OPERATION (SPI_WORD_SET(8) |			\
 				SPI_OP_MODE_MASTER |			\
 				SPI_MODE_CPOL |				\
@@ -658,25 +664,13 @@ static int iis2iclx_init(const struct device *dev)
 
 #define IIS2ICLX_CONFIG_SPI(inst)					\
 	{								\
-		.ctx = {						\
-			.read_reg =					\
-			   (stmdev_read_ptr) stmemsc_spi_read,		\
-			.write_reg =					\
-			   (stmdev_write_ptr) stmemsc_spi_write,	\
-			.mdelay =					\
-			   (stmdev_mdelay_ptr) stmemsc_mdelay,		\
-			.handle =					\
-			   (void *)&iis2iclx_config_##inst.stmemsc_cfg,	\
-		},							\
+		STMEMSC_CTX_SPI(&iis2iclx_config_##inst.stmemsc_cfg),	\
 		.stmemsc_cfg = {					\
 			.spi = SPI_DT_SPEC_INST_GET(inst,		\
 					   IIS2ICLX_SPI_OPERATION,	\
 					   0),				\
 		},							\
-		.odr = DT_INST_PROP(inst, odr),				\
-		.range = DT_INST_PROP(inst, range),			\
-		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, drdy_gpios),	\
-			(IIS2ICLX_CFG_IRQ(inst)), ())			\
+		IIS2ICLX_CONFIG_COMMON(inst)				\
 	}
 
 /*
@@ -685,23 +679,11 @@ static int iis2iclx_init(const struct device *dev)
 
 #define IIS2ICLX_CONFIG_I2C(inst)					\
 	{								\
-		.ctx = {						\
-			.read_reg =					\
-			   (stmdev_read_ptr) stmemsc_i2c_read,		\
-			.write_reg =					\
-			   (stmdev_write_ptr) stmemsc_i2c_write,	\
-			.mdelay =					\
-			   (stmdev_mdelay_ptr) stmemsc_mdelay,		\
-			.handle =					\
-			   (void *)&iis2iclx_config_##inst.stmemsc_cfg,	\
-		},							\
+		STMEMSC_CTX_I2C(&iis2iclx_config_##inst.stmemsc_cfg),	\
 		.stmemsc_cfg = {					\
 			.i2c = I2C_DT_SPEC_INST_GET(inst),		\
 		},							\
-		.odr = DT_INST_PROP(inst, odr),				\
-		.range = DT_INST_PROP(inst, range),			\
-		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, drdy_gpios),	\
-			(IIS2ICLX_CFG_IRQ(inst)), ())			\
+		IIS2ICLX_CONFIG_COMMON(inst)				\
 	}
 
 /*

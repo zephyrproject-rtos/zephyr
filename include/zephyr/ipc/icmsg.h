@@ -46,6 +46,9 @@ struct icmsg_data_t {
 	struct spsc_pbuf *tx_ib;
 	struct spsc_pbuf *rx_ib;
 	atomic_t send_buffer_reserved;
+#ifdef CONFIG_IPC_SERVICE_ICMSG_SHMEM_ACCESS_SYNC
+	struct k_mutex send;
+#endif
 
 	/* Callbacks for an endpoint. */
 	const struct ipc_service_cb *cb;
@@ -275,30 +278,6 @@ int icmsg_release_rx_buffer(const struct icmsg_config_t *conf,
 			    struct icmsg_data_t *dev_data,
 			    const void *data);
 #endif
-
-/** @brief Clear memory in TX buffer.
- *
- *  This function is intended to be called at an early stage of boot process,
- *  before the instance is initialized and before the remote core has started.
- *
- *  @param[in] conf Structure containing configuration parameters for the icmsg
- *                  instance being created.
- *
- *  @retval 0 on success.
- */
-int icmsg_clear_tx_memory(const struct icmsg_config_t *conf);
-
-/** @brief Clear memory in RX buffer.
- *
- *  This function is intended to be called at an early stage of boot process,
- *  before the instance is initialized and before the remote core has started.
- *
- *  @param[in] conf Structure containing configuration parameters for the icmsg
- *                  instance being created.
- *
- *  @retval 0 on success.
- */
-int icmsg_clear_rx_memory(const struct icmsg_config_t *conf);
 
 /**
  * @}

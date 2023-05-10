@@ -6,5 +6,7 @@ sample:
 tests:
   sample.net.sockets.coap_client:
     harness: net
-    tags: net socket
+    tags:
+      - net
+      - socket
     platform_allow: qemu_x86

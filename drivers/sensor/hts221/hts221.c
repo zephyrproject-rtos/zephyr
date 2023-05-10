@@ -227,31 +227,25 @@ int hts221_init(const struct device *dev)
 #define HTS221_CFG_IRQ(inst)
 #endif /* CONFIG_HTS221_TRIGGER */
 
+#define HTS221_CONFIG_COMMON(inst)					\
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, drdy_gpios),		\
+		(HTS221_CFG_IRQ(inst)), ())
+
 #define HTS221_SPI_OPERATION (SPI_WORD_SET(8) |				\
 			      SPI_OP_MODE_MASTER |			\
 			      SPI_MODE_CPOL |				\
 			      SPI_MODE_CPHA |				\
 			      SPI_HALF_DUPLEX)				\
 
-#define HTS221_CONFIG_SPI(inst)						\
-	{								\
-		.ctx = {						\
-			.read_reg =					\
-			   (stmdev_read_ptr) stmemsc_spi_read,		\
-			.write_reg =					\
-			   (stmdev_write_ptr) stmemsc_spi_write,	\
-			.mdelay =					\
-			   (stmdev_mdelay_ptr) stmemsc_mdelay,		\
-			.handle =					\
-			   (void *)&hts221_config_##inst.stmemsc_cfg,	\
-		},							\
-		.stmemsc_cfg = {					\
-			.spi = SPI_DT_SPEC_INST_GET(inst,		\
-						    HTS221_SPI_OPERATION, \
-						    0),			\
-		},							\
-		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, drdy_gpios),	\
-			(HTS221_CFG_IRQ(inst)), ())			\
+#define HTS221_CONFIG_SPI(inst)							\
+		{								\
+		STMEMSC_CTX_SPI(&hts221_config_##inst.stmemsc_cfg),		\
+		.stmemsc_cfg = {						\
+			.spi = SPI_DT_SPEC_INST_GET(inst,			\
+						    HTS221_SPI_OPERATION,	\
+						    0),				\
+		},								\
+		HTS221_CONFIG_COMMON(inst)					\
 	}
 
 /*
@@ -260,21 +254,11 @@ int hts221_init(const struct device *dev)
 
 #define HTS221_CONFIG_I2C(inst)						\
 	{								\
-		.ctx = {						\
-			.read_reg =					\
-			   (stmdev_read_ptr) stmemsc_i2c_read,		\
-			.write_reg =					\
-			   (stmdev_write_ptr) stmemsc_i2c_write,	\
-			.mdelay =					\
-			   (stmdev_mdelay_ptr) stmemsc_mdelay,		\
-			.handle =					\
-			   (void *)&hts221_config_##inst.stmemsc_cfg,	\
-		},							\
+		STMEMSC_CTX_I2C(&hts221_config_##inst.stmemsc_cfg),	\
 		.stmemsc_cfg = {					\
 			.i2c = I2C_DT_SPEC_INST_GET(inst),		\
 		},							\
-		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, drdy_gpios),	\
-			(HTS221_CFG_IRQ(inst)), ())			\
+		HTS221_CONFIG_COMMON(inst)				\
 	}
 
 /*

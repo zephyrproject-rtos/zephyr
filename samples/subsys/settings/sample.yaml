@@ -5,7 +5,10 @@ tests:
   sample.subsys.settings:
     tags: settings
     timeout: 10
-    platform_allow: qemu_x86 native_posix native_posix_64
+    platform_allow:
+      - qemu_x86
+      - native_posix
+      - native_posix_64
     integration_platforms:
       - native_posix
     harness: console
@@ -32,6 +35,7 @@ tests:
         - "direct.length_1 = 46"
         - "direct.length_2 = 54"
         - "<gamma> = 5"
-        - "The settings destination off the key <alpha/beta/source> has got value: \"RT\""
-        - "String value \"rtos\" was retrieved from the settings destination off the key \
-           <alpha/beta/source>"
+        - "The settings destination off the key <alpha/beta/source> has got value:\
+        \ \"RT\""
+        - "String value \"rtos\" was retrieved from the settings destination off the\
+        \ key <alpha/beta/source>"

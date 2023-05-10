@@ -5,6 +5,7 @@
 
 config USB_DEVICE_AUDIO
 	bool "USB Audio Device Class Driver"
+	select EXPERIMENTAL
 	help
 	  USB Audio Device Class driver.
 	  Zephyr USB Audio Class is considered experimental

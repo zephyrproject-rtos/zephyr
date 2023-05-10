@@ -28,7 +28,7 @@ if BT
 config FPU
 	default y
 
-config MINIMAL_LIBC_MALLOC_ARENA_SIZE
+config COMMON_LIBC_MALLOC_ARENA_SIZE
 	default 8192
 
 config MAIN_STACK_SIZE

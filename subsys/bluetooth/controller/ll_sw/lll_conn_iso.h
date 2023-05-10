@@ -39,7 +39,7 @@ struct lll_conn_iso_stream {
 	uint8_t sn:1;               /* Sequence number */
 	uint8_t nesn:1;             /* Next expected sequence number */
 	uint8_t cie:1;              /* Close isochronous event */
-	uint8_t empty:1;            /* 1 if CIS LLL has Tx-ed empty PDU */
+	uint8_t npi:1;              /* 1 if CIS LLL has Tx-ed Null PDU Indicator */
 	uint8_t flushed:1;          /* 1 if CIS LLL has been flushed */
 	uint8_t active:1;           /* 1 if CIS LLL is active */
 	uint8_t datapath_ready_rx:1;/* 1 if datapath for RX is ready */
@@ -60,6 +60,10 @@ struct lll_conn_iso_group {
 	uint8_t  num_cis:5;   /* Number of CISes in this CIG */
 	uint8_t  role:1;      /* 0: CENTRAL, 1: PERIPHERAL*/
 	uint8_t  paused:1;    /* 1: CIG is paused */
+
+	/* Accumulates LLL prepare callback latencies */
+	uint16_t latency_prepare;
+	uint16_t latency_event;
 
 	/* Resumption information */
 	uint16_t resume_cis;  /* CIS handle to schedule at resume */
@@ -93,6 +97,7 @@ ull_conn_iso_lll_stream_get_by_group(struct lll_conn_iso_group *cig_lll,
 				     uint16_t *handle_iter);
 extern struct lll_conn_iso_group *
 ull_conn_iso_lll_group_get_by_stream(struct lll_conn_iso_stream *cis_lll);
+extern struct lll_conn_iso_stream *ull_conn_iso_lll_stream_get(uint16_t handle);
 extern void
 ull_conn_iso_lll_cis_established(struct lll_conn_iso_stream *cis_lll);
 extern void ll_iso_rx_put(memq_link_t *link, void *rx);

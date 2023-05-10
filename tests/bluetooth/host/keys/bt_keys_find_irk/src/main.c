@@ -68,7 +68,7 @@ static bool bt_rpa_irk_matches_unreachable_custom_fake(const uint8_t irk[16], co
 
 static bool bt_rpa_irk_matches_custom_fake(const uint8_t irk[16], const bt_addr_t *addr)
 {
-	if (irk[0] != (params_it) && !bt_addr_cmp(&current_params_vector->addr->a, addr)) {
+	if (irk[0] != (params_it) && bt_addr_eq(&current_params_vector->addr->a, addr)) {
 		return false;
 	}
 

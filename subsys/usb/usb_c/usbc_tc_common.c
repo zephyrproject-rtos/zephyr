@@ -9,6 +9,7 @@ LOG_MODULE_DECLARE(usbc_stack, CONFIG_USBC_STACK_LOG_LEVEL);
 
 #include "usbc_stack.h"
 #include "usbc_tc_snk_states_internal.h"
+#include "usbc_tc_src_states_internal.h"
 #include "usbc_tc_common_internal.h"
 
 static const struct smf_state tc_states[TC_STATE_COUNT];
@@ -89,7 +90,11 @@ void tc_run(const struct device *dev, const int32_t dpm_request)
  */
 bool tc_is_in_attached_state(const struct device *dev)
 {
+#ifdef CONFIG_USBC_CSM_SINK_ONLY
 	return (tc_get_state(dev) == TC_ATTACHED_SNK_STATE);
+#else
+	return (tc_get_state(dev) == TC_ATTACHED_SRC_STATE);
+#endif
 }
 
 /**
@@ -99,17 +104,29 @@ static void tc_init(const struct device *dev)
 {
 	struct usbc_port_data *data = dev->data;
 	struct tc_sm_t *tc = data->tc;
+	const struct device *tcpc = data->tcpc;
 
 	/* Initialize the timers */
 	usbc_timer_init(&tc->tc_t_error_recovery, TC_T_ERROR_RECOVERY_SOURCE_MIN_MS);
 	usbc_timer_init(&tc->tc_t_cc_debounce, TC_T_CC_DEBOUNCE_MAX_MS);
 	usbc_timer_init(&tc->tc_t_rp_value_change, TC_T_RP_VALUE_CHANGE_MAX_MS);
+#ifdef CONFIG_USBC_CSM_SOURCE_ONLY
+	usbc_timer_init(&tc->tc_t_vconn_off, TC_T_VCONN_OFF_MAX_MS);
+#endif
 
 	/* Clear the flags */
 	tc->flags = ATOMIC_INIT(0);
 
 	/* Initialize the TCPC */
-	tcpc_init(data->tcpc);
+	tcpc_init(tcpc);
+
+#ifdef CONFIG_USBC_CSM_SOURCE_ONLY
+	/* Stop sourcing VBUS */
+	data->policy_cb_src_en(dev, false);
+
+	/* Stop sourcing VCONN */
+	tcpc_set_vconn(tcpc, false);
+#endif
 
 	/* Initialize the state machine */
 	/*
@@ -153,6 +170,21 @@ void tc_pd_enable(const struct device *dev, const bool enable)
 		prl_suspend(dev);
 		pe_suspend(dev);
 	}
+}
+
+/**
+ * @brief TCPC CC/Rp management
+ */
+void tc_select_src_collision_rp(const struct device *dev, enum tc_rp_value rp)
+{
+	struct usbc_port_data *data = dev->data;
+	const struct device *tcpc = data->tcpc;
+
+	/* Select Rp value */
+	tcpc_select_rp_value(tcpc, rp);
+
+	/* Place Rp on CC lines */
+	tcpc_set_cc(tcpc, TC_CC_RP);
 }
 
 /**
@@ -216,8 +248,13 @@ static void tc_error_recovery_run(void *obj)
 		return;
 	}
 
+#ifdef CONFIG_USBC_CSM_SINK_ONLY
 	/* Transition to Unattached.SNK */
 	tc_set_state(dev, TC_UNATTACHED_SNK_STATE);
+#else
+	/* Transition to Unattached.SRC */
+	tc_set_state(dev, TC_UNATTACHED_SRC_STATE);
+#endif
 }
 
 /**
@@ -230,12 +267,21 @@ static const struct smf_state tc_states[TC_STATE_COUNT] = {
 		NULL,
 		NULL,
 		NULL),
+#ifdef CONFIG_USBC_CSM_SINK_ONLY
 	[TC_CC_RD_SUPER_STATE] = SMF_CREATE_STATE(
 		tc_cc_rd_entry,
 		NULL,
 		NULL,
 		NULL),
+#else
+	[TC_CC_RP_SUPER_STATE] = SMF_CREATE_STATE(
+		tc_cc_rp_entry,
+		NULL,
+		NULL,
+		NULL),
+#endif
 	/* Normal States */
+#ifdef CONFIG_USBC_CSM_SINK_ONLY
 	[TC_UNATTACHED_SNK_STATE] = SMF_CREATE_STATE(
 		tc_unattached_snk_entry,
 		tc_unattached_snk_run,
@@ -251,6 +297,28 @@ static const struct smf_state tc_states[TC_STATE_COUNT] = {
 		tc_attached_snk_run,
 		tc_attached_snk_exit,
 		NULL),
+#else
+	[TC_UNATTACHED_SRC_STATE] = SMF_CREATE_STATE(
+		tc_unattached_src_entry,
+		tc_unattached_src_run,
+		NULL,
+		&tc_states[TC_CC_RP_SUPER_STATE]),
+	[TC_UNATTACHED_WAIT_SRC_STATE] = SMF_CREATE_STATE(
+		tc_unattached_wait_src_entry,
+		tc_unattached_wait_src_run,
+		tc_unattached_wait_src_exit,
+		NULL),
+	[TC_ATTACH_WAIT_SRC_STATE] = SMF_CREATE_STATE(
+		tc_attach_wait_src_entry,
+		tc_attach_wait_src_run,
+		tc_attach_wait_src_exit,
+		&tc_states[TC_CC_RP_SUPER_STATE]),
+	[TC_ATTACHED_SRC_STATE] = SMF_CREATE_STATE(
+		tc_attached_src_entry,
+		tc_attached_src_run,
+		tc_attached_src_exit,
+		NULL),
+#endif
 	[TC_DISABLED_STATE] = SMF_CREATE_STATE(
 		tc_disabled_entry,
 		tc_disabled_run,

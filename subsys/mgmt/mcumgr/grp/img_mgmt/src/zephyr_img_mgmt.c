@@ -278,7 +278,13 @@ img_mgmt_vercmp(const struct image_version *a, const struct image_version *b)
 		return 1;
 	}
 
-	/* Note: For semver compatibility, don't compare the 32-bit build num. */
+#if defined(CONFIG_MCUMGR_GRP_IMG_VERSION_CMP_USE_BUILD_NUMBER)
+	if (a->iv_build_num < b->iv_build_num) {
+		return -1;
+	} else if (a->iv_build_num > b->iv_build_num) {
+		return 1;
+	}
+#endif
 
 	return 0;
 }
@@ -646,7 +652,7 @@ img_mgmt_upload_inspect(const struct img_mgmt_upload_req *req,
 
 
 		if (req->upgrade) {
-			/* User specified upgrade-only.  Make sure new image version is
+			/* User specified upgrade-only. Make sure new image version is
 			 * greater than that of the currently running image.
 			 */
 			rc = img_mgmt_my_version(&cur_ver);
@@ -654,7 +660,7 @@ img_mgmt_upload_inspect(const struct img_mgmt_upload_req *req,
 				return MGMT_ERR_EUNKNOWN;
 			}
 
-			if (img_mgmt_vercmp(&cur_ver, &hdr->ih_ver) > 0) {
+			if (img_mgmt_vercmp(&cur_ver, &hdr->ih_ver) >= 0) {
 				IMG_MGMT_UPLOAD_ACTION_SET_RC_RSN(action,
 					img_mgmt_err_str_downgrade);
 				return MGMT_ERR_EBADSTATE;

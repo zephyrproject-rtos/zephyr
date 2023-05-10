@@ -8,7 +8,6 @@
 #include <arm/armv7-m.dtsi>
 #include "../psoc6_02/psoc6_02.124-bga.dtsi"
 
-
 / {
 	cpus {
 		#address-cells = <1>;
@@ -35,12 +34,14 @@
 		flash0: flash@10000000 {
 			compatible = "soc-nv-flash";
 			reg = <0x10000000 0x200000>;
-			write-block-size = <4>;
+			write-block-size = <512>;
+			erase-block-size = <512>;
 		};
 		flash1: flash@14000000 {
 			compatible = "soc-nv-flash";
 			reg = <0x14000000 0x8000>;
-			write-block-size = <4>;
+			write-block-size = <512>;
+			erase-block-size = <512>;
 		};
 	};
 

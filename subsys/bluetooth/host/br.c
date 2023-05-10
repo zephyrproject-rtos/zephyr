@@ -428,7 +428,7 @@ static struct bt_br_discovery_result *get_result_slot(const bt_addr_t *addr,
 
 	/* check if already present in results */
 	for (i = 0; i < discovery_results_count; i++) {
-		if (!bt_addr_cmp(addr, &discovery_results[i].addr)) {
+		if (bt_addr_eq(addr, &discovery_results[i].addr)) {
 			return &discovery_results[i];
 		}
 	}

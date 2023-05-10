@@ -97,12 +97,12 @@ uint16_t mem_free_count_get(void *mem_head)
 	return free_count;
 }
 
-void *mem_get(void *mem_pool, uint16_t mem_size, uint16_t index)
+void *mem_get(const void *mem_pool, uint16_t mem_size, uint16_t index)
 {
 	return ((void *)((uint8_t *)mem_pool + (mem_size * index)));
 }
 
-uint16_t mem_index_get(void *mem, void *mem_pool, uint16_t mem_size)
+uint16_t mem_index_get(const void *mem, const void *mem_pool, uint16_t mem_size)
 {
 	return ((uint8_t *)mem - (uint8_t *)mem_pool) / mem_size;
 }

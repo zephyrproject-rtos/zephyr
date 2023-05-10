@@ -5,7 +5,7 @@ if(CONFIG_BOARD_NRF9161DK_NRF9161_NS)
 endif()
 
 if(CONFIG_TFM_FLASH_MERGED_BINARY)
-  set_property(TARGET runners_yaml_props_target PROPERTY hex_file "${CMAKE_BINARY_DIR}/tfm_merged.hex")
+  set_property(TARGET runners_yaml_props_target PROPERTY hex_file tfm_merged.hex)
 endif()
 
 # TODO: change to nRF9161_xxAA when such device is available in JLink

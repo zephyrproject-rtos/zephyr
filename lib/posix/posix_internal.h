@@ -7,6 +7,8 @@
 #ifndef ZEPHYR_LIB_POSIX_POSIX_INTERNAL_H_
 #define ZEPHYR_LIB_POSIX_POSIX_INTERNAL_H_
 
+#include <zephyr/kernel.h>
+
 /*
  * Bit used to mark a pthread object as initialized. Initialization status is
  * verified (against internal status) in lock / unlock / destroy functions.

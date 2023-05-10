@@ -476,17 +476,17 @@ static void lfclk_spinwait(enum nrf_lfclk_start_mode mode)
 	static const nrf_clock_domain_t d = NRF_CLOCK_DOMAIN_LFCLK;
 	static const nrf_clock_lfclk_t target_type =
 		/* For sources XTAL, EXT_LOW_SWING, and EXT_FULL_SWING,
-		 * NRF_CLOCK_LFCLK_Xtal is returned as the type of running clock.
+		 * NRF_CLOCK_LFCLK_XTAL is returned as the type of running clock.
 		 */
 		(IS_ENABLED(CONFIG_CLOCK_CONTROL_NRF_K32SRC_XTAL) ||
 		 IS_ENABLED(CONFIG_CLOCK_CONTROL_NRF_K32SRC_EXT_LOW_SWING) ||
 		 IS_ENABLED(CONFIG_CLOCK_CONTROL_NRF_K32SRC_EXT_FULL_SWING))
-		? NRF_CLOCK_LFCLK_Xtal
+		? NRF_CLOCK_LFCLK_XTAL
 		: CLOCK_CONTROL_NRF_K32SRC;
 	nrf_clock_lfclk_t type;
 
 	if ((mode == CLOCK_CONTROL_NRF_LF_START_AVAILABLE) &&
-	    (target_type == NRF_CLOCK_LFCLK_Xtal) &&
+	    (target_type == NRF_CLOCK_LFCLK_XTAL) &&
 	    (nrf_clock_lf_srccopy_get(NRF_CLOCK) == CLOCK_CONTROL_NRF_K32SRC)) {
 		/* If target clock source is using XTAL then due to two-stage
 		 * clock startup sequence, RC might already be running.
@@ -519,7 +519,7 @@ static void lfclk_spinwait(enum nrf_lfclk_start_mode mode)
 		}
 
 		/* Clock interrupt is locked, LFCLKSTARTED is handled here. */
-		if ((target_type ==  NRF_CLOCK_LFCLK_Xtal)
+		if ((target_type ==  NRF_CLOCK_LFCLK_XTAL)
 		    && (nrf_clock_lf_src_get(NRF_CLOCK) == NRF_CLOCK_LFCLK_RC)
 		    && nrf_clock_event_check(NRF_CLOCK,
 					     NRF_CLOCK_EVENT_LFCLKSTARTED)) {

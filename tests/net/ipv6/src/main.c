@@ -1560,7 +1560,7 @@ ZTEST(net_ipv6, test_y_dst_unjoined_group_mcast_recv)
 	/* add multicast address to interface but do not join the group yet */
 	maddr = net_if_ipv6_maddr_add(TEST_NET_IF, &mcast_unjoined_group);
 
-	net_if_ipv6_maddr_leave(maddr);
+	net_if_ipv6_maddr_leave(TEST_NET_IF, maddr);
 
 	/* receive multicast on interface that did not join the group yet.
 	 * Expectation: packet should be dropped by first interface on IP
@@ -1573,7 +1573,7 @@ ZTEST(net_ipv6, test_y_dst_unjoined_group_mcast_recv)
 		      "dropped.");
 
 	/* now join the multicast group and attempt to receive again */
-	net_if_ipv6_maddr_join(maddr);
+	net_if_ipv6_maddr_join(TEST_NET_IF, maddr);
 	verdict = recv_msg(&addr, &mcast_unjoined_group);
 
 	zassert_equal(verdict, NET_OK,
@@ -1593,6 +1593,7 @@ ZTEST(net_ipv6, test_dst_is_other_iface_mcast_recv)
 	struct in6_addr in6_addr_any = IN6ADDR_ANY_INIT;
 	struct in6_addr addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0, 0, 0,
 				     0, 0, 0, 0, 0, 0x1 } } };
+	struct net_if *test_iface = net_if_get_first_by_type(&NET_L2_GET_NAME(DUMMY));
 	struct net_if_mcast_addr *maddr;
 	struct net_context *ctx;
 	enum net_verdict verdict;
@@ -1604,11 +1605,9 @@ ZTEST(net_ipv6, test_dst_is_other_iface_mcast_recv)
 	net_ctx_recv(ctx);
 
 	/* Join multicast group on second interface. */
-	maddr = net_if_ipv6_maddr_add(
-		net_if_get_first_by_type(&NET_L2_GET_NAME(DUMMY)),
-		&mcast_iface2);
+	maddr = net_if_ipv6_maddr_add(test_iface, &mcast_iface2);
 	zassert_not_null(maddr, "Cannot add multicast address to interface");
-	net_if_ipv6_maddr_join(maddr);
+	net_if_ipv6_maddr_join(test_iface, maddr);
 
 	/* Receive multicast on first interface that did not join the group.
 	 * Expectation: packet should be dropped by first interface on IP
@@ -1623,12 +1622,39 @@ ZTEST(net_ipv6, test_dst_is_other_iface_mcast_recv)
 		      "Packet sent to multicast group joined by second "
 		      "interface not dropped");
 
-	net_if_ipv6_maddr_leave(maddr);
+	net_if_ipv6_maddr_leave(test_iface, maddr);
 
-	net_if_ipv6_maddr_rm(net_if_get_first_by_type(&NET_L2_GET_NAME(DUMMY)),
-			     &mcast_iface2);
+	net_if_ipv6_maddr_rm(test_iface, &mcast_iface2);
 
 	net_context_put(ctx);
+}
+
+ZTEST(net_ipv6, test_no_nd_flag)
+{
+	bool ret;
+	struct in6_addr addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
+				     0, 0, 0, 0, 0, 0, 0x99, 0x1 } } };
+	struct net_if *iface = TEST_NET_IF;
+	struct net_if_addr *ifaddr;
+
+	dad_time[0] = 0;
+
+	net_if_flag_set(iface, NET_IF_IPV6_NO_ND);
+
+	ifaddr = net_if_ipv6_addr_add(iface, &addr, NET_ADDR_AUTOCONF, 0xffff);
+	zassert_not_null(ifaddr, "Address cannot be added");
+
+	/* Let the network stack to proceed */
+	k_sleep(K_MSEC(10));
+
+	zassert_equal(dad_time[0], 0, "Received ND message when not expected");
+	zassert_equal(ifaddr->addr_state, NET_ADDR_PREFERRED,
+		      "Address should've been set to preferred");
+
+	ret = net_if_ipv6_addr_rm(iface, &addr);
+	zassert_true(ret, "Failed to remove address");
+
+	net_if_flag_clear(iface, NET_IF_IPV6_NO_ND);
 }
 
 ZTEST_SUITE(net_ipv6, NULL, ipv6_setup, NULL, NULL, ipv6_teardown);

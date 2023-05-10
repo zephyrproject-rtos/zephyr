@@ -182,6 +182,9 @@ set_compiler_property(PROPERTY debug -g)
 # Flags to save temporary object files
 set_compiler_property(PROPERTY save_temps -save-temps=obj)
 
+# Flags to not track macro expansion
+set_compiler_property(PROPERTY no_track_macro_expansion -ftrack-macro-expansion=0)
+
 # GCC 11 by default emits DWARF version 5 which cannot be parsed by
 # pyelftools. Can be removed once pyelftools supports v5.
 check_set_compiler_property(APPEND PROPERTY debug -gdwarf-4)

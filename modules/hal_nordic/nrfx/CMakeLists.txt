@@ -66,6 +66,8 @@ zephyr_library_sources_ifdef(CONFIG_SOC_SERIES_NRF91X  ${MDK_DIR}/system_nrf91.c
 
 zephyr_library_sources(nrfx_glue.c)
 zephyr_library_sources(${HELPERS_DIR}/nrfx_flag32_allocator.c)
+zephyr_library_sources_ifdef(CONFIG_NRFX_DPPI    ${HELPERS_DIR}/nrfx_gppi_dppi.c)
+zephyr_library_sources_ifdef(CONFIG_NRFX_PPI     ${HELPERS_DIR}/nrfx_gppi_ppi.c)
 
 zephyr_library_sources_ifdef(CONFIG_NRFX_PRS     ${SRC_DIR}/prs/nrfx_prs.c)
 

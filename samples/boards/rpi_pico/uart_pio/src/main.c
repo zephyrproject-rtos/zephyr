@@ -8,18 +8,18 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/uart.h>
 
-void main(void)
+int main(void)
 {
 	char data;
 	const struct device *uart0 = DEVICE_DT_GET(DT_NODELABEL(pio1_uart0));
 	const struct device *uart1 = DEVICE_DT_GET(DT_NODELABEL(pio1_uart1));
 
 	if (!device_is_ready(uart0)) {
-		return;
+		return 0;
 	}
 
 	if (!device_is_ready(uart1)) {
-		return;
+		return 0;
 	}
 
 	while (1) {
@@ -31,4 +31,6 @@ void main(void)
 			uart_poll_out(uart1, data);
 		}
 	}
+
+	return 0;
 }

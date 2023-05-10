@@ -18,6 +18,25 @@ config IPC_SERVICE_ICMSG_NOCOPY_RX
 	  Enable nocopy feature for receiving path of the icmsg library that
 	  might be used by backends based on icmsg.
 
+config IPC_SERVICE_ICMSG_SHMEM_ACCESS_SYNC
+	bool "Synchronize access to shared memory"
+	default y
+	help
+	  Provide synchronization access to shared memory at a library level.
+	  This option is enabled by default to allow to use sending API from
+	  multiple contexts. Mutex is used to guard access to the memory.
+	  This option can be safely disabled if an application ensures data
+	  are sent from single context.
+
+config IPC_SERVICE_ICMSG_SHMEM_ACCESS_TO_MS
+	int "Mutex lock timeout in milliseconds"
+	depends on IPC_SERVICE_ICMSG_SHMEM_ACCESS_SYNC
+	range 1 5
+	default 1
+	help
+	  Maximum time to wait, in milliseconds, for access to send data with
+	  backends basing on icmsg library. This time should be relatively low.
+
 # The Icmsg library in its simplicity requires the system workqueue to execute
 # at a cooperative priority.
 config SYSTEM_WORKQUEUE_PRIORITY

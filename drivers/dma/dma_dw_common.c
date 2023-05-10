@@ -70,7 +70,7 @@ void dw_dma_isr(const struct device *dev)
 			 */
 			chan_data->dma_blkcallback(dev,
 						   chan_data->blkuser_data,
-						   channel, 0);
+						   channel, DMA_STATUS_BLOCK);
 		}
 	}
 
@@ -89,7 +89,7 @@ void dw_dma_isr(const struct device *dev)
 			LOG_DBG("Dispatching transfer callback");
 			chan_data->dma_tfrcallback(dev,
 						   chan_data->tfruser_data,
-						   channel, 0);
+						   channel, DMA_STATUS_COMPLETE);
 		}
 	}
 }

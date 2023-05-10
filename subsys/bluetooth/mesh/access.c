@@ -1850,6 +1850,11 @@ static void store_pending_mod(struct bt_mesh_model *mod,
 		mod->flags &= ~BT_MESH_MOD_PUB_PENDING;
 		store_pending_mod_pub(mod, vnd);
 	}
+
+	if (mod->flags & BT_MESH_MOD_DATA_PENDING) {
+		mod->flags &= ~BT_MESH_MOD_DATA_PENDING;
+		mod->cb->pending_store(mod);
+	}
 }
 
 void bt_mesh_model_pending_store(void)
@@ -1905,7 +1910,7 @@ int bt_mesh_comp_change_prepare(void)
 	return bt_mesh_comp_store();
 }
 
-void bt_mesh_comp_clear(void)
+static void comp_data_clear(void)
 {
 	int err;
 
@@ -2073,7 +2078,7 @@ int bt_mesh_models_metadata_read(struct net_buf_simple *buf, size_t offset)
 }
 #endif
 
-void bt_mesh_models_metadata_clear(void)
+static void models_metadata_clear(void)
 {
 	int err;
 
@@ -2085,6 +2090,17 @@ void bt_mesh_models_metadata_clear(void)
 	}
 
 	atomic_clear_bit(bt_mesh.flags, BT_MESH_METADATA_DIRTY);
+}
+
+void bt_mesh_comp_data_pending_clear(void)
+{
+	comp_data_clear();
+	models_metadata_clear();
+}
+
+void bt_mesh_comp_data_clear(void)
+{
+	bt_mesh_settings_store_schedule(BT_MESH_SETTINGS_COMP_PENDING);
 }
 
 int bt_mesh_models_metadata_change_prepare(void)
@@ -2122,4 +2138,10 @@ static void commit_mod(struct bt_mesh_model *mod, struct bt_mesh_elem *elem,
 void bt_mesh_model_settings_commit(void)
 {
 	bt_mesh_model_foreach(commit_mod, NULL);
+}
+
+void bt_mesh_model_data_store_schedule(struct bt_mesh_model *mod)
+{
+	mod->flags |= BT_MESH_MOD_DATA_PENDING;
+	bt_mesh_settings_store_schedule(BT_MESH_SETTINGS_MOD_PENDING);
 }

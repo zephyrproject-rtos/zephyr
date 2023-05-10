@@ -923,16 +923,7 @@ static int lsm6dso_init(const struct device *dev)
 
 #define LSM6DSO_CONFIG_SPI(inst)					\
 	{								\
-		.ctx = {						\
-			.read_reg =					\
-			   (stmdev_read_ptr) stmemsc_spi_read,		\
-			.write_reg =					\
-			   (stmdev_write_ptr) stmemsc_spi_write,	\
-			.mdelay =					\
-			   (stmdev_mdelay_ptr) stmemsc_mdelay,		\
-			.handle =					\
-			   (void *)&lsm6dso_config_##inst.stmemsc_cfg,	\
-		},							\
+		STMEMSC_CTX_SPI(&lsm6dso_config_##inst.stmemsc_cfg),	\
 		.stmemsc_cfg = {					\
 			.spi = SPI_DT_SPEC_INST_GET(inst,		\
 					   LSM6DSO_SPI_OP,		\
@@ -947,16 +938,7 @@ static int lsm6dso_init(const struct device *dev)
 
 #define LSM6DSO_CONFIG_I2C(inst)					\
 	{								\
-		.ctx = {						\
-			.read_reg =					\
-			   (stmdev_read_ptr) stmemsc_i2c_read,		\
-			.write_reg =					\
-			   (stmdev_write_ptr) stmemsc_i2c_write,	\
-			.mdelay =					\
-			   (stmdev_mdelay_ptr) stmemsc_mdelay,		\
-			.handle =					\
-			   (void *)&lsm6dso_config_##inst.stmemsc_cfg,	\
-		},							\
+		STMEMSC_CTX_I2C(&lsm6dso_config_##inst.stmemsc_cfg),	\
 		.stmemsc_cfg = {					\
 			.i2c = I2C_DT_SPEC_INST_GET(inst),		\
 		},							\

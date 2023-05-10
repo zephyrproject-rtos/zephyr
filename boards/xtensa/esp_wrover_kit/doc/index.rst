@@ -439,8 +439,52 @@ Do not install any other jumpers.
 
 Turn the Power Switch to ON, the 5V Power On LED should light up.
 
+Supported Features
+==================
+
+Current Zephyr's ESP32-Wrover-Kit board supports the following features:
+
++------------+------------+-------------------------------------+
+| Interface  | Controller | Driver/Component                    |
++============+============+=====================================+
++------------+------------+-------------------------------------+
+| UART       | on-chip    | serial port                         |
++------------+------------+-------------------------------------+
+| GPIO       | on-chip    | gpio                                |
++------------+------------+-------------------------------------+
+| PINMUX     | on-chip    | pinmux                              |
++------------+------------+-------------------------------------+
+| USB-JTAG   | on-chip    | hardware interface                  |
++------------+------------+-------------------------------------+
+| SPI Master | on-chip    | spi                                 |
++------------+------------+-------------------------------------+
+| Timers     | on-chip    | counter                             |
++------------+------------+-------------------------------------+
+| Watchdog   | on-chip    | watchdog                            |
++------------+------------+-------------------------------------+
+| TRNG       | on-chip    | entropy                             |
++------------+------------+-------------------------------------+
+| LEDC       | on-chip    | pwm                                 |
++------------+------------+-------------------------------------+
+| MCPWM      | on-chip    | pwm                                 |
++------------+------------+-------------------------------------+
+| PCNT       | on-chip    | qdec                                |
++------------+------------+-------------------------------------+
+| SPI DMA    | on-chip    | spi                                 |
++------------+------------+-------------------------------------+
+| TWAI       | on-chip    | can                                 |
++------------+------------+-------------------------------------+
+| ADC        | on-chip    | adc                                 |
++------------+------------+-------------------------------------+
+| DAC        | on-chip    | dac                                 |
++------------+------------+-------------------------------------+
+| Wi-Fi      | on-chip    |                                     |
++------------+------------+-------------------------------------+
+| Bluetooth  | on-chip    |                                     |
++------------+------------+-------------------------------------+
+
 System requirements
-*******************
+===================
 
 Prerequisites
 -------------
@@ -493,13 +537,17 @@ message in the monitor:
 Debugging
 ---------
 
-As with much custom hardware, the ESP32 modules require patches to
-OpenOCD that are not upstreamed yet. Espressif maintains their own fork of
-the project. The custom OpenOCD can be obtained at `OpenOCD ESP32`_
+ESP32 support on OpenOCD is available upstream as of version 0.12.0.
+Download and install OpenOCD from `OpenOCD`_.
 
-The Zephyr SDK uses a bundled version of OpenOCD by default. You can overwrite that behavior by adding the
-``-DOPENOCD=<path/to/bin/openocd> -DOPENOCD_DEFAULT_PATH=<path/to/openocd/share/openocd/scripts>``
-parameter when building.
+On the ESP-WROVER-KIT board, the JTAG pins are connected internally to
+a USB serial port on the same device as the console.  These boards
+require no external hardware and are debuggable as-is.  The JTAG
+signals, however, must be jumpered closed to connect the internal
+controller (the default is to leave them disconnected).  The jumper
+headers are on the right side of the board as viewed from the power
+switch, next to similar headers for SPI and UART.  See
+`ESP-WROVER-32 V3 Getting Started Guide`_ for details.
 
 Here is an example for building the :ref:`hello_world` application.
 
@@ -516,12 +564,14 @@ You can debug an application in the usual way. Here is an example for the :ref:`
    :board: esp_wrover_kit
    :goals: debug
 
+.. _`OpenOCD`: https://github.com/openocd-org/openocd
+.. _`ESP-WROVER-32 V3 Getting Started Guide`: https://docs.espressif.com/projects/esp-idf/en/latest/esp32/hw-reference/esp32/get-started-wrover-kit.html
+
 Related Documents
 *****************
 
-- `ESP-WROVER-KIT V4.1 schematic <https://dl.espressif.com/dl/schematics/ESP-WROVER-KIT_V4_1.pdf>`_ (PDF)
-- `ESP-WROVER-KIT V4.1 layout <https://dl.espressif.com/dl/schematics/ESP-WROVER-KIT_V4.1.dxf>`_ (DXF)
-- `ESP32 Datasheet <https://www.espressif.com/sites/default/files/documentation/esp32_datasheet_en.pdf>`_ (PDF)
-- `ESP32-WROVER-E Datasheet <https://www.espressif.com/sites/default/files/documentation/esp32-wrover-e_esp32-wrover-ie_datasheet_en.pdf>`_ (PDF)
-- `ESP32 Hardware Reference <https://docs.espressif.com/projects/esp-idf/en/latest/esp32/hw-reference/index.html>`_
-- `OpenOCD ESP32 <https://github.com/espressif/openocd-esp32/releases>`_
+.. _ESP-WROVER-KIT V4.1 schematics: https://dl.espressif.com/dl/schematics/ESP-WROVER-KIT_V4_1.pdf (PDF)
+.. _ESP-WROVER-KIT V4.1 layout: https://dl.espressif.com/dl/schematics/ESP-WROVER-KIT_V4.1.dxf (DXF)
+.. _ESP32 Datasheet: https://www.espressif.com/sites/default/files/documentation/esp32_datasheet_en.pdf (PDF)
+.. _ESP32-WROVER-E Datasheet: https://www.espressif.com/sites/default/files/documentation/esp32-wrover-e_esp32-wrover-ie_datasheet_en.pdf (PDF)
+.. _ESP32 Hardware Reference: https://docs.espressif.com/projects/esp-idf/en/latest/esp32/hw-reference/index.html

@@ -306,6 +306,7 @@ SECTIONS
     *libsoc.a:rtc_*.*(.literal .text .literal.* .text.*)
     *libsoc.a:cpu_util.*(.literal .text .literal.* .text.*)
     *libgcc.a:lib2funcs.*(.literal .text .literal.* .text.*)
+    *libdrivers__flash.a:flash_esp32.*(.literal .text .literal.* .text.*)
     *libzephyr.a:windowspill_asm.*(.literal .text .literal.* .text.*)
     *libzephyr.a:log_noos.*(.literal .text .literal.* .text.*)
     *libdrivers__timer.a:xtensa_sys_timer.*(.literal .text .literal.* .text.*)
@@ -379,6 +380,7 @@ SECTIONS
     *libzephyr.a:log_output.*(.rodata .rodata.*)
     *libzephyr.a:loader.*(.rodata .rodata.*)
     *libdrivers__serial.a:uart_esp32.*(.rodata .rodata.*)
+    *libdrivers__flash.a:flash_esp32.*(.rodata  .rodata.*)
 
     KEEP(*(.jcr))
     *(.dram1 .dram1.*)

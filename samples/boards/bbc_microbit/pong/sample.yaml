@@ -3,4 +3,7 @@ sample:
 tests:
   sample.board.bbc_microbit.pong:
     platform_allow: bbc_microbit
-    tags: microbit mesh bluetooth
+    tags:
+      - microbit
+      - mesh
+      - bluetooth

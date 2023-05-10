@@ -512,6 +512,12 @@ static int lis2mdl_pm_action(const struct device *dev,
 #define LIS2MDL_CFG_IRQ(inst)
 #endif /* CONFIG_LIS2MDL_TRIGGER */
 
+#define LIS2MDL_CONFIG_COMMON(inst)					\
+	.cancel_offset = DT_INST_PROP(inst, cancel_offset),		\
+	.single_mode = DT_INST_PROP(inst, single_mode),			\
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, irq_gpios),		\
+			(LIS2MDL_CFG_IRQ(inst)), ())
+
 #define LIS2MDL_SPI_OPERATION (SPI_WORD_SET(8) |			\
 				SPI_OP_MODE_MASTER |			\
 				SPI_MODE_CPOL |				\
@@ -519,26 +525,14 @@ static int lis2mdl_pm_action(const struct device *dev,
 
 #define LIS2MDL_CONFIG_SPI(inst)					\
 	{								\
-		.ctx = {						\
-			.read_reg =					\
-			   (stmdev_read_ptr) stmemsc_spi_read,		\
-			.write_reg =					\
-			   (stmdev_write_ptr) stmemsc_spi_write,	\
-			.mdelay =					\
-			   (stmdev_mdelay_ptr) stmemsc_mdelay,		\
-			.handle =					\
-			   (void *)&lis2mdl_config_##inst.stmemsc_cfg,	\
-		},							\
+		STMEMSC_CTX_SPI(&lis2mdl_config_##inst.stmemsc_cfg),	\
 		.stmemsc_cfg = {					\
 			.spi = SPI_DT_SPEC_INST_GET(inst,		\
 					   LIS2MDL_SPI_OPERATION,	\
 					   0),				\
 		},							\
-		.cancel_offset = DT_INST_PROP(inst, cancel_offset),	\
-		.single_mode = DT_INST_PROP(inst, single_mode),		\
 		.spi_4wires = DT_INST_PROP(inst, spi_full_duplex),	\
-		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, irq_gpios),	\
-			(LIS2MDL_CFG_IRQ(inst)), ())			\
+		LIS2MDL_CONFIG_COMMON(inst)				\
 	}
 
 /*
@@ -547,23 +541,11 @@ static int lis2mdl_pm_action(const struct device *dev,
 
 #define LIS2MDL_CONFIG_I2C(inst)					\
 	{								\
-		.ctx = {						\
-			.read_reg =					\
-			   (stmdev_read_ptr) stmemsc_i2c_read,		\
-			.write_reg =					\
-			   (stmdev_write_ptr) stmemsc_i2c_write,	\
-			.mdelay =					\
-			   (stmdev_mdelay_ptr) stmemsc_mdelay,		\
-			.handle =					\
-			   (void *)&lis2mdl_config_##inst.stmemsc_cfg,	\
-		},							\
+		STMEMSC_CTX_I2C(&lis2mdl_config_##inst.stmemsc_cfg),	\
 		.stmemsc_cfg = {					\
 			.i2c = I2C_DT_SPEC_INST_GET(inst),		\
 		},							\
-		.cancel_offset = DT_INST_PROP(inst, cancel_offset),	\
-		.single_mode = DT_INST_PROP(inst, single_mode),		\
-		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, irq_gpios),	\
-			(LIS2MDL_CFG_IRQ(inst)), ())			\
+		LIS2MDL_CONFIG_COMMON(inst)				\
 	}
 
 /*

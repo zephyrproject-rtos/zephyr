@@ -464,24 +464,30 @@ img_mgmt_upload(struct smp_streamer *ctxt)
 			   IMG_MGMT_DATA_SHA_LEN - req.data_sha.len);
 
 #ifdef CONFIG_IMG_ENABLE_IMAGE_CHECK
-		/* Check if the existing image hash matches the hash of the underlying data */
-		fic.match = g_img_mgmt_state.data_sha;
-		fic.clen = g_img_mgmt_state.size;
+		/* Check if the existing image hash matches the hash of the underlying data,
+		 * this check can only be performed if the provided hash is a full SHA256 hash
+		 * of the file that is being uploaded, do not attempt the check if the length
+		 * of the provided hash is less.
+		 */
+		if (g_img_mgmt_state.data_sha_len == IMG_MGMT_DATA_SHA_LEN) {
+			fic.match = g_img_mgmt_state.data_sha;
+			fic.clen = g_img_mgmt_state.size;
 
-		if (flash_img_check(&ctx, &fic, g_img_mgmt_state.area_id) == 0) {
-			/* Underlying data already matches, no need to upload any more, set offset
-			 * to image size so client knows upload has finished.
-			 */
-			g_img_mgmt_state.off = g_img_mgmt_state.size;
-			reset = true;
-			last = true;
-			data_match = true;
+			if (flash_img_check(&ctx, &fic, g_img_mgmt_state.area_id) == 0) {
+				/* Underlying data already matches, no need to upload any more,
+				 * set offset to image size so client knows upload has finished.
+				 */
+				g_img_mgmt_state.off = g_img_mgmt_state.size;
+				reset = true;
+				last = true;
+				data_match = true;
 
 #if defined(CONFIG_MCUMGR_SMP_COMMAND_STATUS_HOOKS)
-			cmd_status_arg.status = IMG_MGMT_ID_UPLOAD_STATUS_COMPLETE;
+				cmd_status_arg.status = IMG_MGMT_ID_UPLOAD_STATUS_COMPLETE;
 #endif
 
-			goto end;
+				goto end;
+			}
 		}
 #endif
 

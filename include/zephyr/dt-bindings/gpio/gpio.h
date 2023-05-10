@@ -14,6 +14,9 @@
  * @{
  */
 
+/** Mask for DT GPIO flags. */
+#define GPIO_DT_FLAGS_MASK 0x3F
+
 /**
  * @name GPIO pin active level flags
  * @{

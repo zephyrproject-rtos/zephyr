@@ -23,28 +23,12 @@ static void lis2dw12_trigger_handler(const struct device *dev,
 
 #ifdef CONFIG_LSM6DSO_TRIGGER
 static int lsm6dso_acc_trig_cnt;
-static int lsm6dso_gyr_trig_cnt;
-static int lsm6dso_temp_trig_cnt;
 
 static void lsm6dso_acc_trig_handler(const struct device *dev,
 				     const struct sensor_trigger *trig)
 {
-	sensor_sample_fetch_chan(dev, SENSOR_CHAN_ACCEL_XYZ);
+	sensor_sample_fetch(dev);
 	lsm6dso_acc_trig_cnt++;
-}
-
-static void lsm6dso_gyr_trig_handler(const struct device *dev,
-				     const struct sensor_trigger *trig)
-{
-	sensor_sample_fetch_chan(dev, SENSOR_CHAN_GYRO_XYZ);
-	lsm6dso_gyr_trig_cnt++;
-}
-
-static void lsm6dso_temp_trig_handler(const struct device *dev,
-				      const struct sensor_trigger *trig)
-{
-	sensor_sample_fetch_chan(dev, SENSOR_CHAN_DIE_TEMP);
-	lsm6dso_temp_trig_cnt++;
 }
 #endif
 
@@ -154,14 +138,6 @@ static void lsm6dso_config(const struct device *lsm6dso)
 	trig.type = SENSOR_TRIG_DATA_READY;
 	trig.chan = SENSOR_CHAN_ACCEL_XYZ;
 	sensor_trigger_set(lsm6dso, &trig, lsm6dso_acc_trig_handler);
-
-	trig.type = SENSOR_TRIG_DATA_READY;
-	trig.chan = SENSOR_CHAN_GYRO_XYZ;
-	sensor_trigger_set(lsm6dso, &trig, lsm6dso_gyr_trig_handler);
-
-	trig.type = SENSOR_TRIG_DATA_READY;
-	trig.chan = SENSOR_CHAN_DIE_TEMP;
-	sensor_trigger_set(lsm6dso, &trig, lsm6dso_temp_trig_handler);
 #endif
 }
 
@@ -284,9 +260,6 @@ int main(void)
 
 #ifdef CONFIG_LSM6DSO_TRIGGER
 		printk("%d:: lsm6dso acc trig %d\n", cnt, lsm6dso_acc_trig_cnt);
-		printk("%d:: lsm6dso gyr trig %d\n", cnt, lsm6dso_gyr_trig_cnt);
-		printk("%d:: lsm6dso temp trig %d\n", cnt,
-			lsm6dso_temp_trig_cnt);
 #endif
 
 		cnt++;

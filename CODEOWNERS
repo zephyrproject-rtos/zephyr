@@ -399,7 +399,7 @@
 /drivers/serial/uart_altera_jtag.c        @nashif @gohshunjing
 /drivers/serial/uart_altera.c             @gohleuartshunjing
 /drivers/serial/*ns16550*                 @dcpleung @nashif @aasthagr
-/drivers/serial/*nrfx*                    @Mierunski @anangl
+/drivers/serial/*nrfx*                    @anangl
 /drivers/serial/uart_liteuart.c           @mateusz-holenko @kgugala @pgielda
 /drivers/serial/Kconfig.mcux_iuart        @Mani-Sadhasivam
 /drivers/serial/uart_mcux_iuart.c         @Mani-Sadhasivam
@@ -421,6 +421,7 @@
 /drivers/serial/Kconfig.it8xxx2           @GTLin08
 /drivers/serial/uart_ite_it8xxx2.c        @GTLin08
 /drivers/smbus/                           @finikorg
+/drivers/sip_svc/                         @maheshraotm
 /drivers/disk/                            @jfischer-no
 /drivers/disk/sdmmc_sdhc.h                @JunYangNXP
 /drivers/disk/sdmmc_stm32.c               @anthonybrandon
@@ -521,7 +522,7 @@
 /dts/arm/silabs/efr32fg13*                @yonsch
 /dts/riscv/                               @kgugala @pgielda
 /dts/riscv/ite/                           @ite
-/dts/riscv/microsemi/microsemi-miv.dtsi   @galak
+/dts/riscv/microchip/microchip-miv.dtsi   @galak
 /dts/riscv/openisa/rv32m1*                @dleach02
 /dts/riscv/riscv32-litex-vexriscv.dtsi    @mateusz-holenko @kgugala @pgielda
 /dts/riscv/starfive/                      @rajnesh-kanwal
@@ -570,6 +571,7 @@
 /dts/bindings/sensor/*ina23*              @bbilas
 /dts/bindings/sensor/st*                  @avisconti
 /dts/bindings/smbus/                      @finikorg
+/dts/bindings/sip_svc/                    @maheshraotm
 /dts/bindings/cpu/intel,niosv.yaml        @sweeaun
 /dts/common/                              @galak
 /include/                                 @nashif @carlescufi @galak @MaureenHelm
@@ -596,6 +598,7 @@
 /include/zephyr/drivers/sensor.h                 @MaureenHelm
 /include/zephyr/drivers/smbus.h                  @finikorg
 /include/zephyr/drivers/spi.h                    @tbursztyka
+/include/zephyr/drivers/sip_svc/                 @maheshraotm
 /include/zephyr/drivers/lora.h                   @Mani-Sadhasivam
 /include/zephyr/drivers/peci.h                   @albertofloyd @franciscomunoz @sjvasanth1
 /include/zephyr/drivers/pm_cpu_ops.h             @carlocaione
@@ -667,6 +670,7 @@
 /include/zephyr/shell/shell_mqtt.h               @ycsin
 /include/zephyr/sw_isr_table.h                   @dcpleung @nashif @andyross
 /include/zephyr/sd/                              @danieldegrasse
+/include/zephyr/sip_svc/                         @maheshraotm
 /include/zephyr/sys_clock.h                      @dcpleung @nashif @andyross
 /include/zephyr/sys/sys_io.h                     @dcpleung @nashif @andyross
 /include/zephyr/sys/kobject.h                    @dcpleung @nashif
@@ -723,6 +727,7 @@
 /samples/subsys/logging/                  @nordic-krch @jakub-uC
 /samples/subsys/logging/syst/             @dcpleung
 /samples/subsys/shell/                    @jakub-uC @nordic-krch
+/samples/subsys/sip_svc/                  @maheshraotm
 /samples/subsys/mgmt/mcumgr/              @de-nordic @nordicjm
 /samples/subsys/mgmt/updatehub/           @nandojve @otavio
 /samples/subsys/mgmt/osdp/                @sidcha
@@ -831,6 +836,7 @@ scripts/build/gen_image_info.py           @tejlmand
 /subsys/shell/                            @jakub-uC @nordic-krch
 /subsys/shell/backends/shell_mqtt.c       @ycsin
 /subsys/sd/                               @danieldegrasse
+/subsys/sip_svc/                          @maheshraotm
 /subsys/task_wdt/                         @martinjaeger
 /subsys/testsuite/                        @nashif
 /subsys/testsuite/ztest/*/ztress*         @nordic-krch
@@ -859,7 +865,7 @@ scripts/build/gen_image_info.py           @tejlmand
 /tests/drivers/hwinfo/                    @alexanderwachter
 /tests/drivers/smbus/                     @finikorg
 /tests/drivers/spi/                       @tbursztyka
-/tests/drivers/uart/uart_async_api/       @Mierunski
+/tests/drivers/uart/uart_async_api/       @anangl
 /tests/drivers/w1/                        @str4t0m
 /tests/kernel/                            @dcpleung @andyross @nashif
 /tests/lib/                               @nashif

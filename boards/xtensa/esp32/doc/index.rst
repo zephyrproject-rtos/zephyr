@@ -41,8 +41,52 @@ The features include the following:
 - Cryptographic hardware acceleration (RNG, ECC, RSA, SHA-2, AES)
 - 5uA deep sleep current
 
+Supported Features
+==================
+
+Current Zephyr's ESP32-devkitc board supports the following features:
+
++------------+------------+-------------------------------------+
+| Interface  | Controller | Driver/Component                    |
++============+============+=====================================+
++------------+------------+-------------------------------------+
+| UART       | on-chip    | serial port                         |
++------------+------------+-------------------------------------+
+| GPIO       | on-chip    | gpio                                |
++------------+------------+-------------------------------------+
+| PINMUX     | on-chip    | pinmux                              |
++------------+------------+-------------------------------------+
+| USB-JTAG   | on-chip    | hardware interface                  |
++------------+------------+-------------------------------------+
+| SPI Master | on-chip    | spi                                 |
++------------+------------+-------------------------------------+
+| Timers     | on-chip    | counter                             |
++------------+------------+-------------------------------------+
+| Watchdog   | on-chip    | watchdog                            |
++------------+------------+-------------------------------------+
+| TRNG       | on-chip    | entropy                             |
++------------+------------+-------------------------------------+
+| LEDC       | on-chip    | pwm                                 |
++------------+------------+-------------------------------------+
+| MCPWM      | on-chip    | pwm                                 |
++------------+------------+-------------------------------------+
+| PCNT       | on-chip    | qdec                                |
++------------+------------+-------------------------------------+
+| SPI DMA    | on-chip    | spi                                 |
++------------+------------+-------------------------------------+
+| TWAI       | on-chip    | can                                 |
++------------+------------+-------------------------------------+
+| ADC        | on-chip    | adc                                 |
++------------+------------+-------------------------------------+
+| DAC        | on-chip    | dac                                 |
++------------+------------+-------------------------------------+
+| Wi-Fi      | on-chip    |                                     |
++------------+------------+-------------------------------------+
+| Bluetooth  | on-chip    |                                     |
++------------+------------+-------------------------------------+
+
 System requirements
-*******************
+===================
 
 Prerequisites
 -------------
@@ -95,40 +139,8 @@ message in the monitor:
 Debugging
 ---------
 
-As with much custom hardware, the ESP32 modules require patches to
-OpenOCD that are not upstreamed yet. Espressif maintains their own fork of
-the project. The custom OpenOCD can be obtained at `OpenOCD ESP32`_
-
-The Zephyr SDK uses a bundled version of OpenOCD by default. You can overwrite that behavior by adding the
-``-DOPENOCD=<path/to/bin/openocd> -DOPENOCD_DEFAULT_PATH=<path/to/openocd/share/openocd/scripts>``
-parameter when building.
-
-Here is an example for building the :ref:`hello_world` application.
-
-.. zephyr-app-commands::
-   :zephyr-app: samples/hello_world
-   :board: esp32
-   :goals: build flash
-   :gen-args: -DOPENOCD=<path/to/bin/openocd> -DOPENOCD_DEFAULT_PATH=<path/to/openocd/share/openocd/scripts>
-
-You can debug an application in the usual way. Here is an example for the :ref:`hello_world` application.
-
-.. zephyr-app-commands::
-   :zephyr-app: samples/hello_world
-   :board: esp32
-   :goals: debug
-
-Using JTAG
-======================
-
-On the ESP-WROVER-KIT board, the JTAG pins are connected internally to
-a USB serial port on the same device as the console.  These boards
-require no external hardware and are debuggable as-is.  The JTAG
-signals, however, must be jumpered closed to connect the internal
-controller (the default is to leave them disconnected).  The jumper
-headers are on the right side of the board as viewed from the power
-switch, next to similar headers for SPI and UART.  See
-`ESP-WROVER-32 V3 Getting Started Guide`_ for details.
+ESP32 support on OpenOCD is available upstream as of version 0.12.0.
+Download and install OpenOCD from `OpenOCD`_.
 
 On the ESP-WROOM-32 DevKitC board, the JTAG pins are not run to a
 standard connector (e.g. ARM 20-pin) and need to be manually connected
@@ -152,32 +164,22 @@ to the external programmer (e.g. a Flyswatter2):
 | IO15       | TDO       |
 +------------+-----------+
 
-Once the device is connected, you should be able to connect with (for
-a DevKitC board, replace with esp32-wrover.cfg for WROVER):
-
-.. code-block:: console
-
-    cd ~/esp/openocd-esp32
-    src/openocd -f interface/ftdi/flyswatter2.cfg -c 'set ESP32_ONLYCPU 1' -c 'set ESP32_RTOS none' -f board/esp-wroom-32.cfg -s tcl
-
-The ESP32_ONLYCPU setting is critical: without it OpenOCD will present
-only the "APP_CPU" via the gdbserver, and not the "PRO_CPU" on which
-Zephyr is running.  It's currently unexplored as to whether the CPU
-can be switched at runtime or if breakpoints can be set for
-either/both.
-
-Now you can connect to openocd with gdb and point it to the OpenOCD
-gdbserver running (by default) on localhost port 3333.  Note that you
-must use the gdb distributed with the ESP-32 SDK.  Builds off of the
-FSF mainline get inexplicable protocol errors when connecting.
-
-.. code-block:: console
-
-    ~/esp/xtensa-esp32-elf/bin/xtensa-esp32-elf-gdb outdir/esp32/zephyr.elf
-    (gdb) target remote localhost:3333
-
 Further documentation can be obtained from the SoC vendor in `JTAG debugging
 for ESP32`_.
+
+Here is an example for building the :ref:`hello_world` application.
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: esp32
+   :goals: build flash
+
+You can debug an application in the usual way. Here is an example for the :ref:`hello_world` application.
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: esp32
+   :goals: debug
 
 Note on Debugging with GDB Stub
 ===============================
@@ -190,12 +192,12 @@ GDB stub is enabled on ESP32.
   This does not work as the code is on flash which cannot be randomly
   accessed for modification.
 
+.. _`JTAG debugging for ESP32`: https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/jtag-debugging/index.html
+.. _`OpenOCD`: https://github.com/openocd-org/openocd
+
 References
 **********
 
 .. [1] https://en.wikipedia.org/wiki/ESP32
-.. _`ESP32 Technical Reference Manual`: https://espressif.com/sites/default/files/documentation/esp32_technical_reference_manual_en.pdf
-.. _`JTAG debugging for ESP32`: https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/jtag-debugging/index.html
-.. _`Hardware Reference`: https://docs.espressif.com/projects/esp-idf/en/latest/esp32/hw-reference/index.html
-.. _`ESP-WROVER-32 V3 Getting Started Guide`: https://docs.espressif.com/projects/esp-idf/en/latest/esp32/hw-reference/esp32/get-started-wrover-kit.html
-.. _`OpenOCD ESP32`: https://github.com/espressif/openocd-esp32/releases
+.. _ESP32 Technical Reference Manual: https://espressif.com/sites/default/files/documentation/esp32_technical_reference_manual_en.pdf
+.. _Hardware Reference: https://docs.espressif.com/projects/esp-idf/en/latest/esp32/hw-reference/index.html

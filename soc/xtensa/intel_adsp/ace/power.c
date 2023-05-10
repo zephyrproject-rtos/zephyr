@@ -9,6 +9,7 @@
 #include <zephyr/debug/sparse.h>
 #include <zephyr/cache.h>
 #include <cpu_init.h>
+#include <soc_util.h>
 
 #include <adsp_boot.h>
 #include <adsp_power.h>
@@ -40,8 +41,6 @@ __imr void power_init(void)
 #define L3_INTERRUPT_MASK       (1<<L3_INTERRUPT_NUMBER)
 
 #define ALL_USED_INT_LEVELS_MASK (L2_INTERRUPT_MASK | L3_INTERRUPT_MASK)
-
-__aligned(XCHAL_DCACHE_LINESIZE) uint8_t d0i3_stack[CONFIG_MM_DRV_PAGE_SIZE];
 
 /**
  * @brief Power down procedure.
@@ -116,6 +115,7 @@ static ALWAYS_INLINE void _save_core_context(uint32_t core_id)
 	core_desc[core_id].thread_ptr = XTENSA_RUR("THREADPTR");
 	__asm__ volatile("mov %0, a0" : "=r"(core_desc[core_id].a0));
 	__asm__ volatile("mov %0, a1" : "=r"(core_desc[core_id].a1));
+	sys_cache_data_flush_range(&core_desc[core_id], sizeof(struct core_state));
 }
 
 static ALWAYS_INLINE void _restore_core_context(void)
@@ -135,16 +135,24 @@ void dsp_restore_vector(void);
 
 void power_gate_entry(uint32_t core_id)
 {
-	struct lpsram_header *lpsheader =
-		(struct lpsram_header *) DT_REG_ADDR(DT_NODELABEL(sram1));
-
 	xthal_window_spill();
-	_save_core_context(core_id);
-	lpsheader->adsp_lpsram_magic = LPSRAM_MAGIC_VALUE;
-	lpsheader->lp_restore_vector = &dsp_restore_vector;
-	soc_cpus_active[core_id] = false;
 	sys_cache_data_flush_and_invd_all();
-	z_xt_ints_on(ALL_USED_INT_LEVELS_MASK);
+	_save_core_context(core_id);
+	if (core_id == 0) {
+		struct lpsram_header *lpsheader =
+			(struct lpsram_header *) DT_REG_ADDR(DT_NODELABEL(sram1));
+
+		lpsheader->adsp_lpsram_magic = LPSRAM_MAGIC_VALUE;
+		lpsheader->lp_restore_vector = &dsp_restore_vector;
+		sys_cache_data_flush_range(lpsheader, sizeof(struct lpsram_header));
+		/* Re-enabling interrupts for core 0 because someone has to wake-up us
+		 * from power gaiting.
+		 */
+		z_xt_ints_on(ALL_USED_INT_LEVELS_MASK);
+	}
+
+	soc_cpus_active[core_id] = false;
+	sys_cache_data_flush_range(soc_cpus_active, sizeof(soc_cpus_active));
 	k_cpu_idle();
 	z_xt_ints_off(0xffffffff);
 }
@@ -152,10 +160,12 @@ void power_gate_entry(uint32_t core_id)
 void power_gate_exit(void)
 {
 	cpu_early_init();
+	sys_cache_data_flush_and_invd_all();
 	_restore_core_context();
 }
 
 __asm__(".align 4\n\t"
+	".global dsp_restore_vector\n\t"
 	"dsp_restore_vector:\n\t"
 	"  movi  a0, 0\n\t"
 	"  movi  a1, 1\n\t"
@@ -164,9 +174,12 @@ __asm__(".align 4\n\t"
 	"  wsr   a1, WINDOWSTART\n\t"
 	"  wsr   a0, WINDOWBASE\n\t"
 	"  rsync\n\t"
-	"  movi  sp, d0i3_stack\n\t"
-	"  movi a2, 0x1000\n\t"
-	"  add sp, sp, a2\n\t"
+	"  movi  a1, z_interrupt_stacks\n\t"
+	"  rsr   a2, PRID\n\t"
+	"  movi  a3, " STRINGIFY(CONFIG_ISR_STACK_SIZE) "\n\t"
+	"  mull  a2, a2, a3\n\t"
+	"  add   a2, a2, a3\n\t"
+	"  add   a1, a1, a2\n\t"
 	"  call0 power_gate_exit\n\t");
 
 #ifdef CONFIG_ADSP_IMR_CONTEXT_SAVE
@@ -205,15 +218,15 @@ __weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 	ARG_UNUSED(substate_id);
 	uint32_t cpu = arch_proc_id();
 
+	/* save interrupt state and turn off all interrupts */
+	core_desc[cpu].intenable = XTENSA_RSR("INTENABLE");
+	z_xt_ints_off(0xffffffff);
+
 	if (state == PM_STATE_SOFT_OFF) {
-		/* save interrupt state and turn off all interrupts */
-		core_desc[cpu].intenable = XTENSA_RSR("INTENABLE");
-		z_xt_ints_off(0xffffffff);
 		core_desc[cpu].bctl = DSPCS.bootctl[cpu].bctl;
 		DSPCS.bootctl[cpu].bctl &= ~DSPBR_BCTL_WAITIPCG;
-		soc_cpus_active[cpu] = false;
-		sys_cache_data_flush_and_invd_all();
 		if (cpu == 0) {
+			soc_cpus_active[cpu] = false;
 #ifdef CONFIG_ADSP_IMR_CONTEXT_SAVE
 			/* save storage and restore information to imr */
 			__ASSERT_NO_MSG(global_imr_ram_storage != NULL);
@@ -222,6 +235,7 @@ __weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 
 			imr_layout->imr_state.header.adsp_imr_magic = ADSP_IMR_MAGIC_VALUE;
 #ifdef CONFIG_ADSP_IMR_CONTEXT_SAVE
+			sys_cache_data_flush_and_invd_all();
 			imr_layout->imr_state.header.imr_restore_vector =
 					(void *)boot_entry_d3_restore;
 			imr_layout->imr_state.header.imr_ram_storage = global_imr_ram_storage;
@@ -265,16 +279,9 @@ __weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 			power_down(true, uncache_to_cache(&hpsram_mask),
 				   true);
 		} else {
-			/* Temporary re-enabling interrupts before going to waiti. Right now
-			 * secondary cores don't have proper context restore flow and after leaving
-			 * D3 state core will return here and stuck.
-			 */
-			z_xt_ints_on(core_desc[cpu].intenable);
-			k_cpu_idle();
+			power_gate_entry(cpu);
 		}
 	} else if (state == PM_STATE_RUNTIME_IDLE) {
-		core_desc[cpu].intenable = XTENSA_RSR("INTENABLE");
-		z_xt_ints_off(0xffffffff);
 		DSPCS.bootctl[cpu].bctl &= ~DSPBR_BCTL_WAITIPPG;
 		DSPCS.bootctl[cpu].bctl &= ~DSPBR_BCTL_WAITIPCG;
 		ACE_PWRCTL->wpdsphpxpg &= ~BIT(cpu);
@@ -312,10 +319,8 @@ __weak void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 			imr_layout->imr_state.header.imr_ram_storage = NULL;
 		}
 #endif /* CONFIG_ADSP_IMR_CONTEXT_SAVE */
-
 		soc_cpus_active[cpu] = true;
 		sys_cache_data_flush_and_invd_all();
-		z_xt_ints_on(core_desc[cpu].intenable);
 	} else if (state == PM_STATE_RUNTIME_IDLE) {
 		if (cpu != 0) {
 			/* NOTE: HW should support dynamic power gating on secondary cores.
@@ -342,10 +347,11 @@ __weak void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 
 		soc_cpus_active[cpu] = true;
 		sys_cache_data_flush_and_invd_all();
-		z_xt_ints_on(core_desc[cpu].intenable);
 	} else {
 		__ASSERT(false, "invalid argument - unsupported power state");
 	}
+
+	z_xt_ints_on(core_desc[cpu].intenable);
 }
 
 #endif

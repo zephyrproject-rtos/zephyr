@@ -99,6 +99,7 @@ source "drivers/can/Kconfig.sja1000"
 source "drivers/can/Kconfig.esp32"
 source "drivers/can/Kconfig.kvaser"
 source "drivers/can/Kconfig.fake"
+source "drivers/can/Kconfig.nxp_s32"
 
 source "drivers/can/transceiver/Kconfig"
 

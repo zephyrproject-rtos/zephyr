@@ -3,6 +3,7 @@
  * Copyright (c) 2015 Runtime Inc
  * Copyright (c) 2017 Linaro Ltd
  * Copyright (c) 2020 Gerson Fernando Budke <nandojve@gmail.com>
+ * Copyright (c) 2023 Sensorfy B.V.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -99,6 +100,13 @@ const struct device *flash_area_get_device(const struct flash_area *fa)
 {
 	return fa->fa_dev;
 }
+
+#if CONFIG_FLASH_MAP_LABELS
+const char *flash_area_label(const struct flash_area *fa)
+{
+	return fa->fa_label;
+}
+#endif
 
 uint8_t flash_area_erased_val(const struct flash_area *fa)
 {

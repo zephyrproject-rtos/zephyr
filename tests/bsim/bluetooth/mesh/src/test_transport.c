@@ -179,11 +179,10 @@ static void test_tx_loopback(void)
 	bt_mesh_test_setup();
 
 	for (int i = 0; i < ARRAY_SIZE(test_vector); i++) {
-		bt_mesh_test_recv(test_vector[i].len, cfg->addr, K_NO_WAIT);
-		err = bt_mesh_test_send(cfg->addr, test_vector[i].len,
-					test_vector[i].flags,
-					K_SECONDS(20));
+		err = bt_mesh_test_send(cfg->addr, test_vector[i].len, test_vector[i].flags,
+					K_NO_WAIT);
 		ASSERT_OK_MSG(err, "Failed sending vector %d", i);
+		bt_mesh_test_recv(test_vector[i].len, cfg->addr, K_SECONDS(1));
 
 		if (test_stats.received != i + 1) {
 			FAIL("Didn't receive message %d", i);

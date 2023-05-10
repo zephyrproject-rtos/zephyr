@@ -10,6 +10,7 @@
 #include "shell_vt100.h"
 
 #define SHELL_MSG_CMD_NOT_SUPPORTED	"Command not supported.\n"
+#define SHELL_HELP_RETVAL		"Print return value of most recent command"
 #define SHELL_HELP_CLEAR		"Clear screen."
 #define SHELL_HELP_BACKENDS		"List active shell backends.\n"
 #define SHELL_HELP_BACKSPACE_MODE	"Toggle backspace key mode.\n"	      \
@@ -402,6 +403,15 @@ static int cmd_resize(const struct shell *sh, size_t argc, char **argv)
 	return 0;
 }
 
+static int cmd_get_retval(const struct shell *sh, size_t argc, char **argv)
+{
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
+	shell_print(sh, "%d", shell_get_return_value(sh));
+	return 0;
+}
+
 static bool no_args(const struct shell_static_entry *entry)
 {
 	return (entry->args.mandatory == 1) && (entry->args.optional == 0);
@@ -498,3 +508,5 @@ SHELL_COND_CMD_ARG_REGISTER(CONFIG_SHELL_CMDS_RESIZE, resize, &m_sub_resize,
 SHELL_COND_CMD_ARG_REGISTER(CONFIG_SHELL_CMDS_SELECT, select, NULL,
 			    SHELL_HELP_SELECT, cmd_select, 2,
 			    SHELL_OPT_ARG_CHECK_SKIP);
+SHELL_COND_CMD_ARG_REGISTER(CONFIG_SHELL_CMDS_RETURN_VALUE, retval, NULL,
+			    SHELL_HELP_RETVAL, cmd_get_retval, 1, 0);

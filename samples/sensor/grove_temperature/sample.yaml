@@ -5,7 +5,11 @@ sample:
 tests:
   sample.sensor.grove_temperature:
     min_flash: 33
-    tags: drivers sensor grove temperature
+    tags:
+      - drivers
+      - sensor
+      - grove
+      - temperature
     platform_allow: nrf52dk_nrf52832
     integration_platforms:
       - nrf52dk_nrf52832

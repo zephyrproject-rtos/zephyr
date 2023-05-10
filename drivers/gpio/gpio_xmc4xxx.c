@@ -94,6 +94,11 @@ static int gpio_xmc4xxx_pin_configure(const struct device *dev, gpio_pin_t pin, 
 		return -EINVAL;
 	}
 
+	if ((port == (XMC_GPIO_PORT_t *)PORT14_BASE || port == (XMC_GPIO_PORT_t *)PORT15_BASE) &&
+	    (flags & GPIO_OUTPUT)) {
+		return -EINVAL;
+	}
+
 	ret = gpio_xmc4xxx_convert_flags(&pin_config, flags);
 	if (ret) {
 		return ret;

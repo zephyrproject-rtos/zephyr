@@ -203,6 +203,12 @@ enum net_if_flag {
 	/** Driver signals dormant. */
 	NET_IF_DORMANT,
 
+	/** IPv6 Neighbor Discovery disabled. */
+	NET_IF_IPV6_NO_ND,
+
+	/** IPv6 Multicast Listener Discovery disabled. */
+	NET_IF_IPV6_NO_MLD,
+
 /** @cond INTERNAL_HIDDEN */
 	/* Total number of flags - must be at the end of the enum */
 	NET_IF_NUM_FLAGS
@@ -526,7 +532,23 @@ struct net_if {
 	 */
 	int tx_pending;
 #endif
+
+	struct k_mutex lock;
 };
+
+static inline void net_if_lock(struct net_if *iface)
+{
+	NET_ASSERT(iface);
+
+	(void)k_mutex_lock(&iface->lock, K_FOREVER);
+}
+
+static inline void net_if_unlock(struct net_if *iface)
+{
+	NET_ASSERT(iface);
+
+	k_mutex_unlock(&iface->lock);
+}
 
 /**
  * @brief Set a value in network interface flags
@@ -1243,9 +1265,11 @@ void net_if_mcast_monitor(struct net_if *iface, const struct net_addr *addr,
 /**
  * @brief Mark a given multicast address to be joined.
  *
+ * @param iface Network interface the address belongs to
  * @param addr IPv6 multicast address
  */
-void net_if_ipv6_maddr_join(struct net_if_mcast_addr *addr);
+void net_if_ipv6_maddr_join(struct net_if *iface,
+			    struct net_if_mcast_addr *addr);
 
 /**
  * @brief Check if given multicast address is joined or not.
@@ -1264,9 +1288,11 @@ static inline bool net_if_ipv6_maddr_is_joined(struct net_if_mcast_addr *addr)
 /**
  * @brief Mark a given multicast address to be left.
  *
+ * @param iface Network interface the address belongs to
  * @param addr IPv6 multicast address
  */
-void net_if_ipv6_maddr_leave(struct net_if_mcast_addr *addr);
+void net_if_ipv6_maddr_leave(struct net_if *iface,
+			     struct net_if_mcast_addr *addr);
 
 /**
  * @brief Return prefix that corresponds to this IPv6 address.
@@ -1797,9 +1823,11 @@ struct net_if_mcast_addr *net_if_ipv4_maddr_lookup(const struct in_addr *addr,
 /**
  * @brief Mark a given multicast address to be joined.
  *
+ * @param iface Network interface the address belongs to
  * @param addr IPv4 multicast address
  */
-void net_if_ipv4_maddr_join(struct net_if_mcast_addr *addr);
+void net_if_ipv4_maddr_join(struct net_if *iface,
+			    struct net_if_mcast_addr *addr);
 
 /**
  * @brief Check if given multicast address is joined or not.
@@ -1818,9 +1846,11 @@ static inline bool net_if_ipv4_maddr_is_joined(struct net_if_mcast_addr *addr)
 /**
  * @brief Mark a given multicast address to be left.
  *
+ * @param iface Network interface the address belongs to
  * @param addr IPv4 multicast address
  */
-void net_if_ipv4_maddr_leave(struct net_if_mcast_addr *addr);
+void net_if_ipv4_maddr_leave(struct net_if *iface,
+			     struct net_if_mcast_addr *addr);
 
 /**
  * @brief Get the IPv4 address of the given router

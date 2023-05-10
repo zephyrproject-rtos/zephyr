@@ -12,6 +12,7 @@
 #define ZEPHYR_INCLUDE_BLUETOOTH_GAP_H_
 
 #include <zephyr/sys/util_macro.h>
+#include <zephyr/bluetooth/byteorder.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -531,12 +532,7 @@ enum {
  * @return The comma separated values for LE Supported Features value that
  *         may be used directly as an argument for @ref BT_DATA_BYTES.
  */
-#define BT_LE_SUPP_FEAT_40_ENCODE(w64) \
-	(((w64) >> 0) & 0xFF),  \
-	(((w64) >> 8) & 0xFF),  \
-	(((w64) >> 16) & 0xFF), \
-	(((w64) >> 24) & 0xFF), \
-	(((w64) >> 32) & 0xFF)
+#define BT_LE_SUPP_FEAT_40_ENCODE(w64) BT_BYTES_LIST_LE40(w64)
 
 /** @brief Encode 4 least significant bytes of 64-bit LE Supported Features into
  *         4 bytes long array of values in little-endian format.
@@ -556,11 +552,7 @@ enum {
  * @return The comma separated values for LE Supported Features value that
  *         may be used directly as an argument for @ref BT_DATA_BYTES.
  */
-#define BT_LE_SUPP_FEAT_32_ENCODE(w64) \
-	(((w64) >> 0) & 0xFF),  \
-	(((w64) >> 8) & 0xFF),  \
-	(((w64) >> 16) & 0xFF), \
-	(((w64) >> 24) & 0xFF)
+#define BT_LE_SUPP_FEAT_32_ENCODE(w64) BT_BYTES_LIST_LE32(w64)
 
 /**
  * @brief Encode 3 least significant bytes of 64-bit LE Supported Features into
@@ -581,10 +573,7 @@ enum {
  * @return The comma separated values for LE Supported Features value that
  *         may be used directly as an argument for @ref BT_DATA_BYTES.
  */
-#define BT_LE_SUPP_FEAT_24_ENCODE(w64) \
-	(((w64) >> 0) & 0xFF),  \
-	(((w64) >> 8) & 0xFF),  \
-	(((w64) >> 16) & 0xFF),
+#define BT_LE_SUPP_FEAT_24_ENCODE(w64) BT_BYTES_LIST_LE24(w64)
 
 /**
  * @brief Encode 2 least significant bytes of 64-bit LE Supported Features into
@@ -605,9 +594,7 @@ enum {
  * @return The comma separated values for LE Supported Features value that
  *         may be used directly as an argument for @ref BT_DATA_BYTES.
  */
-#define BT_LE_SUPP_FEAT_16_ENCODE(w64) \
-	(((w64) >> 0) & 0xFF),  \
-	(((w64) >> 8) & 0xFF),
+#define BT_LE_SUPP_FEAT_16_ENCODE(w64) BT_BYTES_LIST_LE16(w64)
 
 /**
  * @brief Encode the least significant byte of 64-bit LE Supported Features into

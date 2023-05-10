@@ -36,6 +36,13 @@ zephyr_file(APPLICATION_ROOT ARCH_ROOT)
 # Convert paths to absolute, relative from APPLICATION_SOURCE_DIR
 zephyr_file(APPLICATION_ROOT SCA_ROOT)
 
+# Merge in variables from other sources (e.g. sysbuild)
+zephyr_get(MODULE_EXT_ROOT MERGE SYSBUILD GLOBAL)
+zephyr_get(BOARD_ROOT MERGE SYSBUILD GLOBAL)
+zephyr_get(SOC_ROOT MERGE SYSBUILD GLOBAL)
+zephyr_get(ARCH_ROOT MERGE SYSBUILD GLOBAL)
+zephyr_get(SCA_ROOT MERGE SYSBUILD GLOBAL)
+
 if(unittest IN_LIST Zephyr_FIND_COMPONENTS)
   # Zephyr used in unittest mode, use dedicated unittest root.
   set(BOARD_ROOT ${ZEPHYR_BASE}/subsys/testsuite)

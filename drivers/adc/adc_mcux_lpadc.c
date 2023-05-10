@@ -1,4 +1,5 @@
 /*
+ * Copyright 2023 NXP
  * Copyright (c) 2020 Toby Firth
  *
  * Based on adc_mcux_adc16.c and adc_mcux_adc12.c, which are:
@@ -15,14 +16,6 @@
 #include <fsl_lpadc.h>
 
 #include <zephyr/drivers/pinctrl.h>
-
-#if !defined(CONFIG_SOC_SERIES_IMX_RT11XX)
-#include <fsl_power.h>
-#endif
-
-#if defined(CONFIG_SOC_LPC55S36)
-#include <fsl_vref.h>
-#endif
 
 #define LOG_LEVEL CONFIG_ADC_LOG_LEVEL
 #include <zephyr/logging/log.h>
@@ -43,9 +36,8 @@ LOG_MODULE_REGISTER(nxp_mcux_lpadc);
 
 struct mcux_lpadc_config {
 	ADC_Type *base;
-	uint32_t clock_div;
-	uint32_t clock_source;
 	lpadc_reference_voltage_source_t voltage_ref;
+	uint8_t power_level;
 	uint32_t calibration_average;
 	uint32_t offset_a;
 	uint32_t offset_b;
@@ -400,49 +392,6 @@ static int mcux_lpadc_init(const struct device *dev)
 		return err;
 	}
 
-#if !defined(CONFIG_SOC_SERIES_IMX_RT11XX)
-#if	defined(CONFIG_SOC_SERIES_IMX_RT6XX)
-
-	SYSCTL0->PDRUNCFG0_CLR = SYSCTL0_PDRUNCFG0_ADC_PD_MASK;
-	SYSCTL0->PDRUNCFG0_CLR = SYSCTL0_PDRUNCFG0_ADC_LP_MASK;
-	RESET_PeripheralReset(kADC0_RST_SHIFT_RSTn);
-	CLOCK_AttachClk(kSFRO_to_ADC_CLK);
-	CLOCK_SetClkDiv(kCLOCK_DivAdcClk, config->clock_div);
-
-#elif	defined(CONFIG_SOC_SERIES_IMX_RT5XX)
-	SYSCTL0->PDRUNCFG0_CLR = SYSCTL0_PDRUNCFG0_ADC_PD_MASK;
-	SYSCTL0->PDRUNCFG0_CLR = SYSCTL0_PDRUNCFG0_ADC_LP_MASK;
-	RESET_PeripheralReset(kADC0_RST_SHIFT_RSTn);
-	CLOCK_AttachClk(kFRO_DIV4_to_ADC_CLK);
-	CLOCK_SetClkDiv(kCLOCK_DivAdcClk, 1);
-
-#elif defined(CONFIG_SOC_LPC55S36)
-	CLOCK_SetClkDiv(kCLOCK_DivAdc0Clk, 2U, true);
-	CLOCK_AttachClk(kFRO_HF_to_ADC0);
-
-	/* Disable VREF power down */
-	POWER_DisablePD(kPDRUNCFG_PD_VREF);
-
-	vref_config_t vrefConfig;
-
-	VREF_GetDefaultConfig(&vrefConfig);
-	vrefConfig.bufferMode                     = kVREF_ModeHighPowerBuffer;
-	vrefConfig.enableInternalVoltageRegulator = true;
-	vrefConfig.enableVrefOut                  = true;
-	adc_config.referenceVoltageSource = kLPADC_ReferenceVoltageAlt3;
-	VREF_Init((VREF_Type *)VREF_BASE, &vrefConfig);
-
-#else
-
-	CLOCK_SetClkDiv(kCLOCK_DivAdcAsyncClk, config->clock_div, true);
-	CLOCK_AttachClk(config->clock_source);
-
-	/* Power up the ADC */
-	POWER_DisablePD(kPDRUNCFG_PD_LDOGPADC);
-
-#endif
-#endif
-
 	LPADC_GetDefaultConfig(&adc_config);
 
 	adc_config.enableAnalogPreliminary = true;
@@ -452,6 +401,8 @@ static int mcux_lpadc_init(const struct device *dev)
 	&& FSL_FEATURE_LPADC_HAS_CTRL_CAL_AVGS
 	adc_config.conversionAverageMode = config->calibration_average;
 #endif /* FSL_FEATURE_LPADC_HAS_CTRL_CAL_AVGS */
+
+	adc_config.powerLevelMode = config->power_level;
 
 	LPADC_Init(base, &adc_config);
 
@@ -505,36 +456,15 @@ static const struct adc_driver_api mcux_lpadc_driver_api = {
 };
 
 
-#define ASSERT_LPADC_CLK_SOURCE_VALID(val, str)	\
-	BUILD_ASSERT(val == 0 || val == 1 || val == 2 || val == 7, str)
-
-#define ASSERT_LPADC_CLK_DIV_VALID(val, str) \
-	BUILD_ASSERT(val == 1 || val == 2 || val == 4 || val == 8, str)
-
-#if defined(CONFIG_SOC_SERIES_IMX_RT11XX) || \
-	defined(CONFIG_SOC_SERIES_IMX_RT6XX) || \
-	defined(CONFIG_SOC_SERIES_IMX_RT5XX) || \
-	defined(CONFIG_SOC_LPC55S36)
-#define TO_LPADC_CLOCK_SOURCE(val) 0
-#else
-#define TO_LPADC_CLOCK_SOURCE(val) \
-	MUX_A(CM_ADCASYNCCLKSEL, val)
-#endif
-
 #define LPADC_MCUX_INIT(n)						\
 	static void mcux_lpadc_config_func_##n(const struct device *dev);	\
 									\
-	ASSERT_LPADC_CLK_SOURCE_VALID(DT_INST_PROP(n, clk_source),	\
-			  "Invalid clock source");			\
-	ASSERT_LPADC_CLK_DIV_VALID(DT_INST_PROP(n, clk_divider),	\
-		   "Invalid clock divider");			\
 	PINCTRL_DT_INST_DEFINE(n);						\
 	static const struct mcux_lpadc_config mcux_lpadc_config_##n = {	\
 		.base = (ADC_Type *)DT_INST_REG_ADDR(n),	\
-		.clock_source = TO_LPADC_CLOCK_SOURCE(DT_INST_PROP(n, clk_source)),	\
-		.clock_div = DT_INST_PROP(n, clk_divider),					\
 		.voltage_ref =	DT_INST_PROP(n, voltage_ref),	\
 		.calibration_average = DT_INST_ENUM_IDX_OR(n, calibration_average, 0),	\
+		.power_level = DT_INST_PROP(n, power_level),	\
 		.offset_a = DT_INST_PROP(n, offset_value_a),	\
 		.offset_b = DT_INST_PROP(n, offset_value_b),	\
 		.irq_config_func = mcux_lpadc_config_func_##n,				\

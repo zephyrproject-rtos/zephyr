@@ -43,7 +43,7 @@ struct bt_keys_link_key *bt_keys_find_link_key(const bt_addr_t *addr)
 	for (i = 0; i < ARRAY_SIZE(key_pool); i++) {
 		key = &key_pool[i];
 
-		if (!bt_addr_cmp(&key->addr, addr)) {
+		if (bt_addr_eq(&key->addr, addr)) {
 			return key;
 		}
 	}

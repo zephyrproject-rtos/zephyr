@@ -15,6 +15,7 @@ from itertools import islice
 import logging
 import copy
 import shutil
+import random
 
 logger = logging.getLogger('twister')
 logger.setLevel(logging.DEBUG)
@@ -250,6 +251,17 @@ class TestPlan:
                                 key=lambda x: x[0][x[0].find("/") + 1:]))
         else:
             self.instances = OrderedDict(sorted(self.instances.items()))
+
+        if self.options.shuffle_tests:
+            seed_value = int.from_bytes(os.urandom(8), byteorder="big")
+            if self.options.shuffle_tests_seed is not None:
+                seed_value = self.options.shuffle_tests_seed
+
+            logger.info(f"Shuffle tests with seed: {seed_value}")
+            random.seed(seed_value)
+            temp_list = list(self.instances.items())
+            random.shuffle(temp_list)
+            self.instances = OrderedDict(temp_list)
 
         # Do calculation based on what is actually going to be run and evaluated
         # at runtime, ignore the cases we already know going to be skipped.
@@ -673,10 +685,8 @@ class TestPlan:
                 b = set(filter(lambda item: item.name in ts.platform_allow, self.platforms))
                 c = a.intersection(b)
                 if not c:
-                    _platform_scope = list(filter(lambda item: item.name in ts.platform_allow, \
+                    platform_scope = list(filter(lambda item: item.name in ts.platform_allow, \
                                              self.platforms))
-                    if len(_platform_scope) > 0:
-                        platform_scope = _platform_scope[:1]
 
 
             # list of instances per testsuite, aka configurations.

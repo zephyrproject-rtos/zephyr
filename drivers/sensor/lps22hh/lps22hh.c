@@ -258,6 +258,11 @@ static int lps22hh_init(const struct device *dev)
 #define LPS22HH_CFG_IRQ(inst)
 #endif /* CONFIG_LPS22HH_TRIGGER */
 
+#define LPS22HH_CONFIG_COMMON(inst)					\
+	.odr = DT_INST_PROP(inst, odr),					\
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, drdy_gpios),		\
+			(LPS22HH_CFG_IRQ(inst)), ())
+
 #define LPS22HH_SPI_OPERATION (SPI_WORD_SET(8) |			\
 				SPI_OP_MODE_MASTER |			\
 				SPI_MODE_CPOL |				\
@@ -265,24 +270,13 @@ static int lps22hh_init(const struct device *dev)
 
 #define LPS22HH_CONFIG_SPI(inst)					\
 	{								\
-		.ctx = {						\
-			.read_reg =					\
-			   (stmdev_read_ptr) stmemsc_spi_read,		\
-			.write_reg =					\
-			   (stmdev_write_ptr) stmemsc_spi_write,	\
-			.mdelay =					\
-			   (stmdev_mdelay_ptr) stmemsc_mdelay,		\
-			.handle =					\
-			   (void *)&lps22hh_config_##inst.stmemsc_cfg,	\
-		},							\
+		STMEMSC_CTX_SPI(&lps22hh_config_##inst.stmemsc_cfg),	\
 		.stmemsc_cfg = {					\
 			.spi = SPI_DT_SPEC_INST_GET(inst,		\
 					   LPS22HH_SPI_OPERATION,	\
 					   0),				\
 		},							\
-		.odr = DT_INST_PROP(inst, odr),				\
-		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, drdy_gpios),	\
-			(LPS22HH_CFG_IRQ(inst)), ())			\
+		LPS22HH_CONFIG_COMMON(inst)				\
 	}
 
 /*
@@ -291,22 +285,11 @@ static int lps22hh_init(const struct device *dev)
 
 #define LPS22HH_CONFIG_I2C(inst)					\
 	{								\
-		.ctx = {						\
-			.read_reg =					\
-			   (stmdev_read_ptr) stmemsc_i2c_read,		\
-			.write_reg =					\
-			   (stmdev_write_ptr) stmemsc_i2c_write,	\
-			.mdelay =					\
-			   (stmdev_mdelay_ptr) stmemsc_mdelay,		\
-			.handle =					\
-			   (void *)&lps22hh_config_##inst.stmemsc_cfg,	\
-		},							\
+		STMEMSC_CTX_I2C(&lps22hh_config_##inst.stmemsc_cfg),	\
 		.stmemsc_cfg = {					\
 			.i2c = I2C_DT_SPEC_INST_GET(inst),		\
 		},							\
-		.odr = DT_INST_PROP(inst, odr),				\
-		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, drdy_gpios),	\
-			(LPS22HH_CFG_IRQ(inst)), ())			\
+		LPS22HH_CONFIG_COMMON(inst)				\
 	}
 
 /*
@@ -315,20 +298,13 @@ static int lps22hh_init(const struct device *dev)
 
 #define LPS22HH_CONFIG_I3C(inst)					\
 	{								\
-		.ctx = {						\
-			.read_reg =					\
-			   (stmdev_read_ptr) stmemsc_i3c_read,		\
-			.write_reg =					\
-			   (stmdev_write_ptr) stmemsc_i3c_write,	\
-			.handle =					\
-			   (void *)&lps22hh_config_##inst.stmemsc_cfg,	\
-		},							\
+		STMEMSC_CTX_I3C(&lps22hh_config_##inst.stmemsc_cfg),	\
 		.stmemsc_cfg = {					\
 			.i3c = &lps22hh_data_##inst.i3c_dev,		\
 		},							\
-		.odr = DT_INST_PROP(inst, odr),				\
 		.i3c.bus = DEVICE_DT_GET(DT_INST_BUS(inst)),		\
 		.i3c.dev_id = I3C_DEVICE_ID_DT_INST(inst),		\
+		LPS22HH_CONFIG_COMMON(inst)				\
 	}
 
 #define LPS22HH_CONFIG_I3C_OR_I2C(inst)					\

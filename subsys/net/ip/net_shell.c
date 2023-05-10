@@ -291,7 +291,7 @@ static const char *iface_flags2str(struct net_if *iface)
 	static char str[sizeof("POINTOPOINT") + sizeof("PROMISC") +
 			sizeof("NO_AUTO_START") + sizeof("SUSPENDED") +
 			sizeof("MCAST_FORWARD") + sizeof("IPv4") +
-			sizeof("IPv6")];
+			sizeof("IPv6") + sizeof("NO_ND") + sizeof("NO_MLD")];
 	int pos = 0;
 
 	if (net_if_flag_is_set(iface, NET_IF_POINTOPOINT)) {
@@ -325,6 +325,16 @@ static const char *iface_flags2str(struct net_if *iface)
 	if (net_if_flag_is_set(iface, NET_IF_IPV6)) {
 		pos += snprintk(str + pos, sizeof(str) - pos,
 				"IPv6,");
+	}
+
+	if (net_if_flag_is_set(iface, NET_IF_IPV6_NO_ND)) {
+		pos += snprintk(str + pos, sizeof(str) - pos,
+				"NO_ND,");
+	}
+
+	if (net_if_flag_is_set(iface, NET_IF_IPV6_NO_MLD)) {
+		pos += snprintk(str + pos, sizeof(str) - pos,
+				"NO_MLD,");
 	}
 
 	/* get rid of last ',' character */
@@ -430,12 +440,14 @@ static void iface_cb(struct net_if *iface, void *user_data)
 	}
 #endif /* CONFIG_NET_L2_VIRTUAL */
 
+	net_if_lock(iface);
 	if (net_if_get_link_addr(iface) &&
 	    net_if_get_link_addr(iface)->addr) {
 		PR("Link addr : %s\n",
 		   net_sprint_ll_addr(net_if_get_link_addr(iface)->addr,
 				      net_if_get_link_addr(iface)->len));
 	}
+	net_if_unlock(iface);
 
 	PR("MTU       : %d\n", net_if_get_mtu(iface));
 	PR("Flags     : %s\n", iface_flags2str(iface));

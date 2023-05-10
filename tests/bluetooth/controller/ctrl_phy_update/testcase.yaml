@@ -1,5 +1,8 @@
 common:
-  tags: bluetooth bt_phy_update bt_ull_llcp
+  tags:
+    - bluetooth
+    - bt_phy_update
+    - bt_ull_llcp
 tests:
   bluetooth.controller.ctrl_phy_update.test:
     type: unit

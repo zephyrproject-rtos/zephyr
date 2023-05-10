@@ -79,8 +79,8 @@ static void show_clocks(const char *tag)
 		[NRF_CLOCK_LFCLK_LFULP] = "LFULP",
 #endif
 		[NRF_CLOCK_LFCLK_RC] = "LFRC",
-		[NRF_CLOCK_LFCLK_Xtal] = "LFXO",
-		[NRF_CLOCK_LFCLK_Synth] = "LFSYNT",
+		[NRF_CLOCK_LFCLK_XTAL] = "LFXO",
+		[NRF_CLOCK_LFCLK_SYNTH] = "LFSYNT",
 	};
 	static const char *const hfsrc_s[] = {
 		[NRF_CLOCK_HFCLK_LOW_ACCURACY] = "HFINT",

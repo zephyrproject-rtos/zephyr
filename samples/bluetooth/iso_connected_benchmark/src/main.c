@@ -69,7 +69,7 @@ static uint32_t iso_send_count;
 static struct bt_iso_cig *cig;
 
 NET_BUF_POOL_FIXED_DEFINE(tx_pool, 1, BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU),
-			   8, NULL);
+			  CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
 static uint8_t iso_data[CONFIG_BT_ISO_TX_MTU];
 
 static K_SEM_DEFINE(sem_adv, 0, 1);

@@ -8,6 +8,7 @@
 #include <st/g4/stm32g431Xb.dtsi>
 #include <st/g4/stm32g431r(6-8-b)tx-pinctrl.dtsi>
 #include "arduino_r3_connector.dtsi"
+#include "st_morpho_connector.dtsi"
 
 / {
 	model = "STMicroelectronics STM32G431RB-NUCLEO board";

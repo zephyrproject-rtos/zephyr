@@ -1001,7 +1001,7 @@ static void state_collect(const struct shell *sh)
 					z_cursor_next_line_move(sh);
 				} else {
 					/* Command execution */
-					(void)execute(sh);
+					sh->ctx->ret_val = execute(sh);
 				}
 				/* Function responsible for printing prompt
 				 * on received NL.
@@ -1668,6 +1668,15 @@ int shell_use_vt100_set(const struct shell *sh, bool val)
 	}
 
 	return (int)z_flag_use_vt100_set(sh, val);
+}
+
+int shell_get_return_value(const struct shell *sh)
+{
+	if (sh == NULL) {
+		return -EINVAL;
+	}
+
+	return z_shell_get_return_value(sh);
 }
 
 int shell_echo_set(const struct shell *sh, bool val)

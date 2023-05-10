@@ -176,7 +176,7 @@ __csSet:
 	andl	$~0x400, %eax		/* CR4[OSXMMEXCPT] = 0 */
 	movl	%eax, %cr4		/* move EAX to CR4 */
 
-	ldmxcsr _sse_mxcsr_default_value   /* initialize SSE control/status reg */
+	ldmxcsr Z_MEM_PHYS_ADDR(_sse_mxcsr_default_value)   /* initialize SSE control/status reg */
 
   #endif /* CONFIG_X86_SSE */
 

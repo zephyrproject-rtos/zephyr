@@ -13,3 +13,4 @@ supported:
   - gpio
   - watchdog
   - netif:eth
+  - can

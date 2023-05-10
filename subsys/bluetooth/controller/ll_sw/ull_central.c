@@ -60,6 +60,7 @@
 #include "ll_sw/isoal.h"
 #include "ll_sw/ull_iso_types.h"
 #include "ll_sw/ull_conn_iso_types.h"
+#include "ll_sw/ull_conn_iso_internal.h"
 
 #include "ll_sw/ull_llcp.h"
 
@@ -555,6 +556,14 @@ uint8_t ll_enc_req_send(uint16_t handle, uint8_t const *const rand_num,
 		return BT_HCI_ERR_UNKNOWN_CONN_ID;
 	}
 
+#if defined(CONFIG_BT_CTLR_CENTRAL_ISO)
+	struct ll_conn_iso_stream *cis = ll_conn_iso_stream_get_by_acl(conn, NULL);
+
+	if (cis || ull_lp_cc_is_enqueued(conn)) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+#endif /* CONFIG_BT_CTLR_CENTRAL_ISO */
+
 	if (!conn->lll.enc_tx && !conn->lll.enc_rx) {
 		/* Encryption is fully disabled */
 		return ull_cp_encryption_start(conn, rand_num, ediv, ltk);
@@ -793,7 +802,6 @@ void ull_central_setup(struct node_rx_hdr *rx, struct node_rx_ftr *ftr,
 
 	conn_interval_us = lll->interval * CONN_INT_UNIT_US;
 	conn_offset_us = ftr->radio_end_us;
-	conn_offset_us += EVENT_TICKER_RES_MARGIN_US;
 
 #if defined(CONFIG_BT_CTLR_PHY)
 	conn_offset_us -= lll_radio_tx_ready_delay_get(lll->phy_tx,
@@ -856,18 +864,18 @@ void ull_central_setup(struct node_rx_hdr *rx, struct node_rx_ftr *ftr,
 
 	/* Start central */
 	ticker_id_conn = TICKER_ID_CONN_BASE + ll_conn_handle_get(conn);
-	ticker_status = ticker_start(TICKER_INSTANCE_ID_CTLR,
-				     TICKER_USER_ID_ULL_HIGH,
-				     ticker_id_conn,
-				     ftr->ticks_anchor - ticks_slot_offset,
-				     HAL_TICKER_US_TO_TICKS(conn_offset_us),
-				     HAL_TICKER_US_TO_TICKS(conn_interval_us),
-				     HAL_TICKER_REMAINDER(conn_interval_us),
-				     TICKER_NULL_LAZY,
-				     (conn->ull.ticks_slot +
-				      ticks_slot_overhead),
-				     ull_central_ticker_cb, conn, ticker_op_cb,
-				     (void *)__LINE__);
+	ticker_status = ticker_start_us(TICKER_INSTANCE_ID_CTLR,
+					TICKER_USER_ID_ULL_HIGH,
+					ticker_id_conn,
+					ftr->ticks_anchor - ticks_slot_offset,
+					HAL_TICKER_US_TO_TICKS(conn_offset_us),
+					HAL_TICKER_REMAINDER(conn_offset_us),
+					HAL_TICKER_US_TO_TICKS(conn_interval_us),
+					HAL_TICKER_REMAINDER(conn_interval_us),
+					TICKER_NULL_LAZY,
+					(conn->ull.ticks_slot + ticks_slot_overhead),
+					ull_central_ticker_cb, conn,
+					ticker_op_cb, (void *)__LINE__);
 	LL_ASSERT((ticker_status == TICKER_STATUS_SUCCESS) ||
 		  (ticker_status == TICKER_STATUS_BUSY));
 
@@ -912,7 +920,7 @@ void ull_central_ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 		int ret;
 
 		/* Handle any LL Control Procedures */
-		ret = ull_conn_llcp(conn, ticks_at_expire, lazy);
+		ret = ull_conn_llcp(conn, ticks_at_expire, remainder, lazy);
 		if (ret) {
 			/* NOTE: Under BT_CTLR_LOW_LAT, ULL_LOW context is
 			 *       disabled inside radio events, hence, abort any

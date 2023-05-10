@@ -254,6 +254,15 @@ void bt_conn_recv(struct bt_conn *conn, struct net_buf *buf, uint8_t flags);
 int bt_conn_send_cb(struct bt_conn *conn, struct net_buf *buf,
 		    bt_conn_tx_cb_t cb, void *user_data);
 
+/* Thin wrapper over `bt_conn_send_cb`
+ *
+ * Used to set the TS_Flag bit in `buf`'s metadata.
+ *
+ * Return values & buf ownership same as parent.
+ */
+int bt_conn_send_iso_cb(struct bt_conn *conn, struct net_buf *buf,
+			bt_conn_tx_cb_t cb, bool has_ts);
+
 static inline int bt_conn_send(struct bt_conn *conn, struct net_buf *buf)
 {
 	return bt_conn_send_cb(conn, buf, NULL, NULL);

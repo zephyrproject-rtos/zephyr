@@ -412,7 +412,7 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 		 * Periodic Advertiser List or with the explicitly supplied.
 		 */
 		if (IS_ENABLED(CONFIG_BT_CTLR_SYNC_PERIODIC) && sync && adi &&
-		    ull_sync_setup_sid_match(scan, adi->sid)) {
+		    ull_sync_setup_sid_match(scan, PDU_ADV_ADI_SID_GET(adi))) {
 			ull_sync_setup(scan, aux, rx, si);
 		}
 	}

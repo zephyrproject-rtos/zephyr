@@ -782,9 +782,9 @@ static void dma_callback(const struct device *dev, void *user_data,
 
 	if (channel == data->dma.channel) {
 #if !defined(CONFIG_SOC_SERIES_STM32F1X)
-		if (LL_ADC_IsActiveFlag_OVR(adc) || (status == 0)) {
+		if (LL_ADC_IsActiveFlag_OVR(adc) || (status >= 0)) {
 #else
-		if (status == 0) {
+		if (status >= 0) {
 #endif /* !defined(CONFIG_SOC_SERIES_STM32F1X) */
 			data->samples_count = data->channel_count;
 			data->buffer += data->channel_count;
@@ -801,7 +801,7 @@ static void dma_callback(const struct device *dev, void *user_data,
 			 * the address is in a non-cacheable SRAM region.
 			 */
 			adc_context_on_sampling_done(&data->ctx, dev);
-		} else {
+		} else if (status < 0) {
 			LOG_ERR("DMA sampling complete, but DMA reported error %d", status);
 			data->dma_error = status;
 			LL_ADC_REG_StopConversion(adc);

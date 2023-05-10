@@ -30,6 +30,9 @@
 
 #define CSIP_SET_LOCK_TIMER_VALUE       K_SECONDS(60)
 
+#define CSIS_CHAR_ATTR_COUNT	  3 /* declaration + value + cccd */
+#define CSIS_RANK_CHAR_ATTR_COUNT 2 /* declaration + value */
+
 #include "common/bt_str.h"
 
 #include <zephyr/logging/log.h>
@@ -681,9 +684,9 @@ static bool valid_register_param(const struct bt_csip_set_member_register_param 
 		return false;
 	}
 
-	if (param->rank > 0 && param->rank > param->set_size) {
-		LOG_DBG("Invalid rank: %u (shall be less than set_size: %u)", param->set_size,
-			param->set_size);
+	if (param->rank > 0 && param->set_size > 0 && param->rank > param->set_size) {
+		LOG_DBG("Invalid rank: %u (shall be less than or equal to set_size: %u)",
+			param->rank, param->set_size);
 		return false;
 	}
 
@@ -697,14 +700,60 @@ static bool valid_register_param(const struct bt_csip_set_member_register_param 
 	return true;
 }
 
+static void remove_csis_char(const struct bt_uuid *uuid, struct bt_gatt_service *svc)
+{
+	size_t attrs_to_rem;
+
+	/* Rank does not have any CCCD */
+	if (bt_uuid_cmp(uuid, BT_UUID_CSIS_RANK) == 0) {
+		attrs_to_rem = CSIS_RANK_CHAR_ATTR_COUNT;
+	} else {
+		attrs_to_rem = CSIS_CHAR_ATTR_COUNT;
+	}
+
+	/* Start at index 4 as the first 4 attributes are mandatory */
+	for (size_t i = 4U; i < svc->attr_count; i++) {
+		if (bt_uuid_cmp(svc->attrs[i].uuid, uuid) == 0) {
+			/* Remove the characteristic declaration, the characteristic value and
+			 * potentially the CCCD. The value declaration will be a i - 1, the
+			 * characteristic value at i and the CCCD is potentially at i + 1
+			 */
+
+			/* We use attrs_to_rem to determine whether there is a CCCD after the
+			 * characteristic value or not, which then determines if this is the last
+			 * characteristic or not
+			 */
+			if (i == (svc->attr_count - (attrs_to_rem - 1))) {
+				/* This is the last characteristic in the service: just decrement
+				 * the attr_count by number of attributes to remove
+				 * (CSIS_CHAR_ATTR_COUNT)
+				 */
+			} else {
+				/* Move all following attributes attrs_to_rem locations "up" */
+				for (size_t j = i - 1U; j < svc->attr_count - attrs_to_rem; j++) {
+					svc->attrs[j] = svc->attrs[j + attrs_to_rem];
+				}
+			}
+
+			svc->attr_count -= attrs_to_rem;
+
+			return;
+		}
+	}
+
+	__ASSERT(false, "Failed to remove CSIS char %s", bt_uuid_str(uuid));
+}
+
 int bt_csip_set_member_register(const struct bt_csip_set_member_register_param *param,
 				struct bt_csip_set_member_svc_inst **svc_inst)
 {
+	static bool callbacks_registered;
 	static uint8_t instance_cnt;
 	struct bt_csip_set_member_svc_inst *inst;
 	int err;
 
 	if (instance_cnt == ARRAY_SIZE(svc_insts)) {
+		LOG_DBG("Too many set member registrations");
 		return -ENOMEM;
 	}
 
@@ -722,8 +771,28 @@ int bt_csip_set_member_register(const struct bt_csip_set_member_register_param *
 	inst->service_p = &csip_set_member_service_list[instance_cnt];
 	instance_cnt++;
 
-	bt_conn_cb_register(&conn_callbacks);
-	bt_conn_auth_info_cb_register(&auth_callbacks);
+	if (!callbacks_registered) {
+		bt_conn_cb_register(&conn_callbacks);
+		bt_conn_auth_info_cb_register(&auth_callbacks);
+
+		callbacks_registered = true;
+	}
+
+	/* The removal of the optional characteristics should be done in reverse order of the order
+	 * in BT_CSIP_SERVICE_DEFINITION, as that improves the performance of remove_csis_char,
+	 * since it's easier to remove the last characteristic
+	 */
+	if (param->rank == 0U) {
+		remove_csis_char(BT_UUID_CSIS_RANK, inst->service_p);
+	}
+
+	if (param->set_size == 0U) {
+		remove_csis_char(BT_UUID_CSIS_SET_SIZE, inst->service_p);
+	}
+
+	if (!param->lockable) {
+		remove_csis_char(BT_UUID_CSIS_SET_LOCK, inst->service_p);
+	}
 
 	err = bt_gatt_service_register(inst->service_p);
 	if (err != 0) {

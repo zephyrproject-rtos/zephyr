@@ -1,0 +1,109 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Copyright (c) 2023 Schlumberger
+ *
+ */
+
+/dts-v1/;
+
+#include <infineon/xmc4700_F144x2048.dtsi>
+#include <infineon/xmc4700_F144x2048-intc.dtsi>
+#include "xmc47_relax_kit-pinctrl.dtsi"
+
+/ {
+	model = "Infineon XMC4700 Relax Kit board";
+	compatible = "infineon,xmc4700", "infineon,xmc4xxx";
+
+	aliases {
+		led0 = &led1;
+		die-temp0 = &die_temp;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		/* leds are labelled LED1 and LED2 in the relax kit documentation */
+		led1: led1 {
+			gpios = <&gpio5 9 GPIO_ACTIVE_HIGH>;
+		};
+		led2: led2 {
+			gpios = <&gpio5 8 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	chosen {
+		zephyr,sram = &psram1;
+		zephyr,flash = &flash0;
+		zephyr,console = &usic0ch0;
+		zephyr,shell-uart = &usic0ch0;
+		zephyr,flash-controller = &flash_controller;
+		zephyr,code-partition = &code_partition;
+	};
+
+};
+
+&dsram1 {
+	compatible = "zephyr,memory-region", "mmio-sram";
+	zephyr,memory-region = "DSRAM1";
+};
+
+&dsram2 {
+	compatible = "zephyr,memory-region", "mmio-sram";
+	zephyr,memory-region = "DSRAM2";
+};
+
+&cpu0 {
+	clock-frequency = <144000000>;
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		code_partition: partition@0 {
+			reg = <0x0 0x80000>;
+			read-only;
+		};
+
+		storage_partition: partition@80000 {
+			label = "storage";
+			reg = <0x80000 0x80000>;
+		};
+	};
+};
+
+&usic0ch0 {
+	compatible = "infineon,xmc4xxx-uart";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart_tx_p1_5_u0c0 &uart_rx_p1_4_u0c0>;
+	pinctrl-names = "default";
+	input-src = "DX0B";
+	interrupts = <84 1 85 1>;
+	interrupt-names = "tx", "rx";
+	fifo-start-offset = <0>;
+	fifo-tx-size = <16>;
+	fifo-rx-size = <16>;
+	status = "okay";
+};
+
+&adc0 {
+	vref-internal-mv = <3300>;
+};
+
+&adc1 {
+	vref-internal-mv = <3300>;
+};
+
+&adc2 {
+	vref-internal-mv = <3300>;
+};
+
+&adc3 {
+	vref-internal-mv = <3300>;
+};
+
+&gpio5 {
+	status = "okay";
+};

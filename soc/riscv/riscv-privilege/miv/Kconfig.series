@@ -4,8 +4,8 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config SOC_SERIES_RISCV32_MIV
-	bool "Microsemi Mi-V implementation"
+	bool "Microchip Mi-V implementation"
 	select RISCV
 	select SOC_FAMILY_RISCV_PRIVILEGE
 	help
-	  Enable support for Microsemi Mi-V
+	  Enable support for Microchip Mi-V

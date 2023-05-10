@@ -76,6 +76,8 @@ source "drivers/adc/Kconfig.cc13xx_cc26xx"
 
 source "drivers/adc/Kconfig.adc_emul"
 
+source "drivers/adc/Kconfig.vf610"
+
 source "drivers/adc/Kconfig.test"
 
 source "drivers/adc/Kconfig.ads1x1x"
@@ -85,6 +87,8 @@ source "drivers/adc/Kconfig.gd32"
 source "drivers/adc/Kconfig.ads1119"
 
 source "drivers/adc/Kconfig.ads7052"
+
+source "drivers/adc/Kconfig.ads114s0x"
 
 source "drivers/adc/Kconfig.rpi_pico"
 

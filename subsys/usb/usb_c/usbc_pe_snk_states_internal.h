@@ -60,6 +60,7 @@ void pe_snk_transition_sink_exit(void *obj);
  */
 void pe_snk_ready_entry(void *obj);
 void pe_snk_ready_run(void *obj);
+void pe_snk_ready_exit(void *obj);
 
 /**
  * @brief PE_SNK_Hard_Reset

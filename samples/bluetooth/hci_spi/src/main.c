@@ -322,6 +322,11 @@ int main(void)
 		if (err) {
 			LOG_ERR("Failed to send");
 		}
+		/* Ensure that the IRQ line is de-asserted for some minimum
+		 * duration between buffers, so that the HCI controller has
+		 * time to observe the edge.
+		 */
+		k_sleep(K_TICKS(1));
 	}
 	return 0;
 }

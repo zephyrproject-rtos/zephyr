@@ -1,15 +1,15 @@
 .. _m2gl025-miv:
 
-Microsemi M2GL025 Mi-V
+Microchip M2GL025 Mi-V
 ######################
 
 Overview
 ********
 
-The Microsemi M2GL025 board is an IGLOO2 FPGA based development board.
+The Microchip M2GL025 board is an IGLOO2 FPGA based development board.
 The Mi-V RISC-V soft CPU can be deployed on the MGL025 board.
 More information can be found on
-`Microsemi's website <https://www.microsemi.com/product-directory/embedded-processing/4406-cpus>`_.
+`Microchip's website <https://www.microchip.com/en-us/products/fpgas-and-plds/fpga-and-soc-design-tools/mi-v>`_.
 
 Programming and debugging
 *************************
@@ -31,8 +31,8 @@ In order to upload the application to the device, you'll need OpenOCD and GDB
 with RISC-V support.
 You can get them as a part of SoftConsole SDK.
 Download and installation instructions can be found on
-`Microsemi's SoftConsole website
-<https://www.microsemi.com/product-directory/design-tools/4879-softconsole>`_.
+`Microchip's SoftConsole website
+<https://www.microchip.com/en-us/products/fpgas-and-plds/fpga-and-soc-design-tools/soc-fpga/softconsole>`_.
 
 With the necessary tools installed, you can connect to the board using OpenOCD.
 To establish an OpenOCD connection run:

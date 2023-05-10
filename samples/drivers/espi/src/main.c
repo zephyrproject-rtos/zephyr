@@ -239,7 +239,10 @@ int spi_saf_init(void)
 	 */
 	jedec_id = 0U;
 	spi_cfg.slave = 0;
-	spi_cfg.cs = NULL;
+	spi_cfg.cs.delay = 0;
+	spi_cfg.cs.gpio.pin = 0;
+	spi_cfg.cs.gpio.dt_flags = 0;
+	spi_cfg.cs.gpio.port = NULL;
 
 	txb.buf = &safbuf;
 	txb.len = 1U;

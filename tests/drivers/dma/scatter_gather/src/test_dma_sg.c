@@ -44,7 +44,7 @@ static struct dma_block_config dma_block_cfgs[XFERS];
 static void dma_sg_callback(const struct device *dma_dev, void *user_data,
 			    uint32_t channel, int status)
 {
-	if (status) {
+	if (status < 0) {
 		TC_PRINT("callback status %d\n", status);
 	} else {
 		TC_PRINT("giving xfer_sem\n");
@@ -102,11 +102,19 @@ static int test_sg(void)
 	for (int i = 0; i < XFERS; i++) {
 		dma_block_cfgs[i].source_gather_en = 1U;
 		dma_block_cfgs[i].block_size = XFER_SIZE;
+#ifdef CONFIG_DMA_64BIT
+		dma_block_cfgs[i].source_address = (uint64_t)(tx_data);
+		dma_block_cfgs[i].dest_address = (uint64_t)(rx_data[i]);
+		TC_PRINT("dma block %d block_size %d, source addr %" PRIx64 ", dest addr %"
+		     PRIx64 "\n", i, XFER_SIZE, dma_block_cfgs[i].source_address,
+			 dma_block_cfgs[i].dest_address);
+#else
 		dma_block_cfgs[i].source_address = (uint32_t)(tx_data);
 		dma_block_cfgs[i].dest_address = (uint32_t)(rx_data[i]);
 		TC_PRINT("dma block %d block_size %d, source addr %x, dest addr %x\n",
 			 i, XFER_SIZE, dma_block_cfgs[i].source_address,
 			 dma_block_cfgs[i].dest_address);
+#endif
 		if (i < XFERS - 1) {
 			dma_block_cfgs[i].next_block = &dma_block_cfgs[i+1];
 			TC_PRINT("set next block pointer to %p\n", dma_block_cfgs[i].next_block);

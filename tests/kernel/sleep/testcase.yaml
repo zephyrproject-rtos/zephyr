@@ -1,3 +1,5 @@
 tests:
   kernel.common.timing:
-    tags: kernel sleep
+    tags:
+      - kernel
+      - sleep

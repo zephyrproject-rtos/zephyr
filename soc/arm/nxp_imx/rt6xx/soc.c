@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, NXP
+ * Copyright 2020-2023 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -302,6 +302,14 @@ static ALWAYS_INLINE void clock_init(void)
 #if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(i3c0), nxp_mcux_i3c, okay))
 	CLOCK_AttachClk(kFFRO_to_I3C_CLK);
 	CLOCK_AttachClk(kLPOSC_to_I3C_TC_CLK);
+#endif
+
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(lpadc0), nxp_lpc_lpadc, okay)
+	SYSCTL0->PDRUNCFG0_CLR = SYSCTL0_PDRUNCFG0_ADC_PD_MASK;
+	SYSCTL0->PDRUNCFG0_CLR = SYSCTL0_PDRUNCFG0_ADC_LP_MASK;
+	RESET_PeripheralReset(kADC0_RST_SHIFT_RSTn);
+	CLOCK_AttachClk(kSFRO_to_ADC_CLK);
+	CLOCK_SetClkDiv(kCLOCK_DivAdcClk, DT_PROP(DT_NODELABEL(lpadc0), clk_divider));
 #endif
 
 #ifdef CONFIG_FLASH_MCUX_FLEXSPI_XIP

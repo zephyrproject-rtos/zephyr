@@ -33,13 +33,14 @@ extern "C" {
  */
 __subsystem struct bc12_emul_driver_api {
 	int (*set_charging_partner)(const struct emul *emul, enum bc12_type partner_type);
+	int (*set_pd_partner)(const struct emul *emul, bool connected);
 };
 /**
  * @endcond
  */
 
 /**
- * @brief Set the tye charging partner type connected to the BC1.2 device.
+ * @brief Set the charging partner type connected to the BC1.2 device.
  *
  * The corresponding BC1.2 emulator updates the vendor specific registers
  * to simulate connection of the specified charging partner type.  The emulator
@@ -59,6 +60,29 @@ static inline int bc12_emul_set_charging_partner(const struct emul *target,
 		(const struct bc12_emul_driver_api *)target->backend_api;
 
 	return backend_api->set_charging_partner(target, partner_type);
+}
+
+/**
+ * @brief Set the portable device partner state.
+ *
+ * The corresponding BC1.2 emulator updates the vendor specific registers
+ * to simulate connection or disconnection of a portable device partner.
+ * The emulator also generates an interrupt for processing by the real driver,
+ * if supported.
+ *
+ * @param target Pointer to the emulator structure for the BC1.2 emulator instance.
+ * @param connected If true, emulate a connection of a portable device partner. If
+ * false, emulate a disconnect event.
+ *
+ * @retval 0 If successful.
+ * @retval -EINVAL if the connection/disconnection of PD partner is not supported.
+ */
+static inline int bc12_emul_set_pd_partner(const struct emul *target, bool connected)
+{
+	const struct bc12_emul_driver_api *backend_api =
+		(const struct bc12_emul_driver_api *)target->backend_api;
+
+	return backend_api->set_pd_partner(target, connected);
 }
 
 #ifdef __cplusplus

@@ -96,6 +96,10 @@ static int gt911_process(const struct device *dev)
 		return 0;
 	}
 
+	if (!(status & TOUCH_STATUS_MSK)) {
+		/* Status bit not set, ignore this event */
+		return 0;
+	}
 	/* need to clear the status */
 	uint8_t clear_buffer[3] = {(uint8_t)REG_STATUS, (uint8_t)(REG_STATUS >> 8), 0};
 

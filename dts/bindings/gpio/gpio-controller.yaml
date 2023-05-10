@@ -24,7 +24,7 @@ properties:
         all 32 bits, some using 18 and some using 12. In this case, setting
         "ngpios = <18>;" informs the driver that only the first 18 GPIOs, at
         local offset 0 .. 17, are in use.  For cases in which there might be
-        holes in the slot range, this value should be the max slot number-1.
+        holes in the slot range, this value should be the max slot number+1.
   gpio-reserved-ranges:
     type: array
     description: |

@@ -46,25 +46,53 @@ Supported Features
 The atsame54_xpro board configuration supports the following hardware
 features:
 
-+-----------+------------+--------------------------------------+
-| Interface | Controller | Driver/Component                     |
-+===========+============+======================================+
-| NVIC      | on-chip    | nested vector interrupt controller   |
-+-----------+------------+--------------------------------------+
-| SYSTICK   | on-chip    | systick                              |
-+-----------+------------+--------------------------------------+
-| WDT       | on-chip    | Watchdog                             |
-+-----------+------------+--------------------------------------+
-| GPIO      | on-chip    | I/O ports                            |
-+-----------+------------+--------------------------------------+
-| PWM       | on-chip    | Pulse Width Modulation               |
-+-----------+------------+--------------------------------------+
-| USART     | on-chip    | Serial ports                         |
-+-----------+------------+--------------------------------------+
-| SPI       | on-chip    | Serial Peripheral Interface ports    |
-+-----------+------------+--------------------------------------+
-| I2C       | on-chip    | Serial Peripheral Interface ports    |
-+-----------+------------+--------------------------------------+
++---------------+------------+----------------------------+
+| Interface     | Controller | Driver/Component           |
++===============+============+============================+
+| ADC           | on-chip    | adc                        |
++---------------+------------+----------------------------+
+| DAC           | on-chip    | dac                        |
++---------------+------------+----------------------------+
+| DMAC          | on-chip    | dma                        |
++---------------+------------+----------------------------+
+| EEPROM        | i2c        | eeprom, EUI-48 MAC Address |
++---------------+------------+----------------------------+
+| EIC           | on-chip    | interrupt_controller       |
++---------------+------------+----------------------------+
+| GMAC          | on-chip    | ethernet, mdio             |
++---------------+------------+----------------------------+
+| GPIO          | on-chip    | gpio                       |
++---------------+------------+----------------------------+
+| MPU           | on-chip    | arch/arm                   |
++---------------+------------+----------------------------+
+| NVIC          | on-chip    | arch/arm                   |
++---------------+------------+----------------------------+
+| NVMCTRL       | on-chip    | flash                      |
++---------------+------------+----------------------------+
+| PORT          | on-chip    | pinctrl                    |
++---------------+------------+----------------------------+
+| RTC           | on-chip    | timer                      |
++---------------+------------+----------------------------+
+| SERCOM I2C    | on-chip    | i2c                        |
++---------------+------------+----------------------------+
+| SERCOM SPI    | on-chip    | spi                        |
++---------------+------------+----------------------------+
+| SERCOM USART  | on-chip    | serial, console            |
++---------------+------------+----------------------------+
+| Serial Number | on-chip    | hwinfo                     |
++---------------+------------+----------------------------+
+| SYSTICK       | on-chip    | timer                      |
++---------------+------------+----------------------------+
+| TC            | on-chip    | counter                    |
++---------------+------------+----------------------------+
+| TCC           | on-chip    | counter, pwm               |
++---------------+------------+----------------------------+
+| TRNG          | on-chip    | entropy                    |
++---------------+------------+----------------------------+
+| USB           | on-chip    | usb                        |
++---------------+------------+----------------------------+
+| WDT           | on-chip    | watchdog                   |
++---------------+------------+----------------------------+
 
 Other hardware features are not currently supported by Zephyr.
 
@@ -90,6 +118,23 @@ Default Zephyr Peripheral Mapping:
 - SERCOM2 USART RX : PB25
 - GPIO/PWM LED0    : PC18
 - GPIO SW0         : PB31
+- GMAC RMII REFCK  : PA14
+- GMAC RMII TXEN   : PA17
+- GMAC RMII TXD0   : PA18
+- GMAC RMII TXD1   : PA19
+- GMAC RMII CRSDV  : PC20
+- GMAC RMII RXD0   : PA13
+- GMAC RMII RXD1   : PA12
+- GMAC RMII RXER   : PA15
+- GMAC MDIO MDC    : PC11
+- GMAC MDIO MDIO   : PC12
+- SERCOM4 SPI SCK  : PB26
+- SERCOM4 SPI MOSI : PB27
+- SERCOM4 SPI MISO : PB29
+- SERCOM7 I2C SDA  : PD08
+- SERCOM7 I2C SCL  : PD09
+- USB DP           : PA25
+- USB DM           : PA24
 
 System Clock
 ============

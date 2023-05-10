@@ -384,5 +384,70 @@ function(sysbuild_module_call)
       endforeach()
     endif()
   endforeach()
+endfunction()
 
+# Usage:
+#   sysbuild_cache_set(VAR <variable> [APPEND [REMOVE_DUPLICATES]] <value>)
+#
+# This function will set the specified value of the sysbuild cache variable in
+# the CMakeCache.txt file which can then be accessed by images.
+# `VAR` specifies the variable name to set/update.
+#
+# The result will be returned in `<variable>`.
+#
+# Example use:
+#   sysbuild_cache_set(VAR ATTRIBUTES APPEND REMOVE_DUPLICATES battery)
+#     Will add the item `battery` to the `ATTRIBUTES` variable as a new element
+#     in the list in the CMakeCache and remove any duplicates from the list.
+#
+# <variable>:        Name of variable in CMake cache.
+# APPEND:            If specified then will append the supplied data to the
+#                    existing value as a list.
+# REMOVE_DUPLICATES: If specified then remove duplicate entries contained
+#                    within the list before saving to the cache.
+# <value>:           Value to set/update.
+function(sysbuild_cache_set)
+  cmake_parse_arguments(VARS "APPEND;REMOVE_DUPLICATES" "VAR" "" ${ARGN})
+
+  zephyr_check_arguments_required(sysbuild_cache_set VARS VAR)
+
+  if(NOT VARS_UNPARSED_ARGUMENTS AND VARS_APPEND)
+    # Nothing to append so do nothing
+    return()
+  elseif(VARS_REMOVE_DUPLICATES AND NOT VARS_APPEND)
+    message(FATAL_ERROR
+            "sysbuild_set(VAR <var> APPEND REMOVE_DUPLICATES ...) missing required APPEND option")
+  endif()
+
+  get_property(var_type CACHE ${VARS_VAR} PROPERTY TYPE)
+  get_property(var_help CACHE ${VARS_VAR} PROPERTY HELPSTRING)
+
+  # If the variable type is not set, use UNINITIALIZED which will not apply any
+  # specific formatting.
+  if(NOT var_type)
+    set(var_type "UNINITIALIZED")
+  endif()
+
+  if(VARS_APPEND)
+    set(var_new "$CACHE{${VARS_VAR}}")
+
+    # Search for these exact items in the existing value and prevent adding
+    # them if they are already present which avoids issues with double addition
+    # when cmake is reran.
+    string(FIND "$CACHE{${VARS_VAR}}" "${VARS_UNPARSED_ARGUMENTS}" index)
+
+    if(NOT ${index} EQUAL -1)
+      return()
+    endif()
+
+    list(APPEND var_new "${VARS_UNPARSED_ARGUMENTS}")
+
+    if(VARS_REMOVE_DUPLICATES)
+      list(REMOVE_DUPLICATES var_new)
+    endif()
+  else()
+    set(var_new "${VARS_UNPARSED_ARGUMENTS}")
+  endif()
+
+  set(${VARS_VAR} "${var_new}" CACHE "${var_type}" "${var_help}" FORCE)
 endfunction()

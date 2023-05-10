@@ -9,4 +9,7 @@ config REGULATOR
 config GPIO
 	default y
 
+config SENSOR
+	default y
+
 endif # SHIELD_NPM1300_EK

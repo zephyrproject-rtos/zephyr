@@ -304,7 +304,7 @@ int net_ipv4_igmp_join(struct net_if *iface, const struct in_addr *addr)
 		return ret;
 	}
 
-	net_if_ipv4_maddr_join(maddr);
+	net_if_ipv4_maddr_join(iface, maddr);
 
 	net_if_mcast_monitor(iface, &maddr->address, true);
 
@@ -333,7 +333,7 @@ int net_ipv4_igmp_leave(struct net_if *iface, const struct in_addr *addr)
 		return ret;
 	}
 
-	net_if_ipv4_maddr_leave(maddr);
+	net_if_ipv4_maddr_leave(iface, maddr);
 
 	net_if_mcast_monitor(iface, &maddr->address, false);
 
@@ -374,7 +374,7 @@ void net_ipv4_igmp_init(struct net_if *iface)
 		}
 	}
 
-	net_if_ipv4_maddr_join(maddr);
+	net_if_ipv4_maddr_join(iface, maddr);
 
 	net_if_mcast_monitor(iface, &maddr->address, true);
 }

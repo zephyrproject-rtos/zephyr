@@ -722,3 +722,9 @@ test_i2c_ina3221: ina3221@6e {
 	conv-time-shunt = <7>;
 	avg-mode = <2>;
 };
+
+test_i2c_lsm6dso16is: lsm6dso16is@6f {
+	compatible = "st,lsm6dso16is";
+	reg = <0x6f>;
+	irq-gpios = <&test_gpio 0 0>;
+};

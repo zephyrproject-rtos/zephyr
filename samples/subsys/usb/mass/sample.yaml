@@ -4,10 +4,12 @@ tests:
   sample.usb.mass_ram_none:
     min_ram: 64
     depends_on: usb_device
-    platform_exclude: native_posix native_posix_64
+    arch_exclude: posix
     extra_configs:
       - CONFIG_LOG_DEFAULT_LEVEL=3
-    tags: msd usb
+    tags:
+      - msd
+      - usb
     harness: console
     harness_config:
       type: multi_line
@@ -18,11 +20,15 @@ tests:
   sample.usb_device_next.mass_ram_none:
     min_ram: 64
     depends_on: usb_device
-    platform_allow: nrf52840dk_nrf52840 frdm_k64f
+    platform_allow:
+      - nrf52840dk_nrf52840
+      - frdm_k64f
     extra_args: CONF_FILE="usbd_next_prj.conf"
     extra_configs:
       - CONFIG_LOG_DEFAULT_LEVEL=3
-    tags: msd usb
+    tags:
+      - msd
+      - usb
     harness: console
     harness_config:
       type: multi_line
@@ -33,11 +39,13 @@ tests:
   sample.usb.mass_ram_fat:
     min_ram: 128
     depends_on: usb_device
-    platform_exclude: native_posix native_posix_64
+    arch_exclude: posix
     extra_configs:
       - CONFIG_LOG_DEFAULT_LEVEL=3
       - CONFIG_APP_MSC_STORAGE_RAM=y
-    tags: msd usb
+    tags:
+      - msd
+      - usb
     harness: console
     harness_config:
       type: multi_line
@@ -51,13 +59,18 @@ tests:
       - fatfs
     depends_on: usb_device
     filter: dt_compat_enabled("nordic,qspi-nor")
-    platform_allow: nrf52840dk_nrf52840 nrf5340dk_nrf5340_cpuapp adafruit_feather_nrf52840
+    platform_allow:
+      - nrf52840dk_nrf52840
+      - nrf5340dk_nrf5340_cpuapp
+      - adafruit_feather_nrf52840
     integration_platforms:
       - nrf52840dk_nrf52840
     extra_configs:
       - CONFIG_LOG_DEFAULT_LEVEL=3
       - CONFIG_APP_MSC_STORAGE_FLASH_FATFS=y
-    tags: msd usb
+    tags:
+      - msd
+      - usb
     harness: console
     harness_config:
       type: multi_line
@@ -71,14 +84,19 @@ tests:
       - fatfs
     depends_on: usb_device
     filter: dt_compat_enabled("nordic,qspi-nor")
-    platform_allow: nrf52840dk_nrf52840 nrf5340dk_nrf5340_cpuapp adafruit_feather_nrf52840
+    platform_allow:
+      - nrf52840dk_nrf52840
+      - nrf5340dk_nrf5340_cpuapp
+      - adafruit_feather_nrf52840
     integration_platforms:
       - nrf52840dk_nrf52840
     extra_args: CONF_FILE="usbd_next_prj.conf"
     extra_configs:
       - CONFIG_LOG_DEFAULT_LEVEL=3
       - CONFIG_APP_MSC_STORAGE_FLASH_FATFS=y
-    tags: msd usb
+    tags:
+      - msd
+      - usb
     harness: console
     harness_config:
       type: multi_line
@@ -90,11 +108,15 @@ tests:
     min_ram: 32
     modules:
       - fatfs
-    depends_on: usb_device sdhc
+    depends_on:
+      - usb_device
+      - sdhc
     extra_configs:
       - CONFIG_LOG_DEFAULT_LEVEL=3
       - CONFIG_APP_MSC_STORAGE_SDCARD=y
-    tags: msd usb
+    tags:
+      - msd
+      - usb
     harness: console
     harness_config:
       fixture: fixture_sdcard
@@ -109,13 +131,18 @@ tests:
     min_ram: 32
     depends_on: usb_device
     filter: dt_compat_enabled("nordic,qspi-nor")
-    platform_allow: nrf52840dk_nrf52840 nrf5340dk_nrf5340_cpuapp adafruit_feather_nrf52840
+    platform_allow:
+      - nrf52840dk_nrf52840
+      - nrf5340dk_nrf5340_cpuapp
+      - adafruit_feather_nrf52840
     integration_platforms:
       - nrf52840dk_nrf52840
     extra_configs:
       - CONFIG_LOG_DEFAULT_LEVEL=3
       - CONFIG_APP_MSC_STORAGE_FLASH_LITTLEFS=y
-    tags: msd usb
+    tags:
+      - msd
+      - usb
     harness: console
     harness_config:
       type: multi_line

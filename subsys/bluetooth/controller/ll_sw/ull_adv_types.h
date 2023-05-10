@@ -91,6 +91,10 @@ struct ll_adv_sync_set {
 	uint8_t is_enabled:1;
 	uint8_t is_started:1;
 	uint8_t is_data_cmplt:1;
+
+#if !defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
+	uint32_t aux_remainder;
+#endif /* !CONFIG_BT_TICKER_EXT_EXPIRE_INFO */
 };
 
 struct ll_adv_iso_set {

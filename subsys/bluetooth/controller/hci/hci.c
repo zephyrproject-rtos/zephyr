@@ -862,6 +862,10 @@ static void read_supported_commands(struct net_buf *buf, struct net_buf **evt)
 #if defined(CONFIG_BT_CTLR_ADV_PERIODIC)
 	/* LE Set PA Params, LE Set PA Data, LE Set PA Enable */
 	rp->commands[37] |= BIT(2) | BIT(3) | BIT(4);
+#if defined(CONFIG_BT_CTLR_ADV_ISO)
+	/* LE Create BIG, LE Create BIG Test, LE Terminate BIG */
+	rp->commands[42] |= BIT(5) | BIT(6) | BIT(7);
+#endif /* CONFIG_BT_CTLR_ADV_ISO */
 #endif /* CONFIG_BT_CTLR_ADV_PERIODIC */
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 #endif /* CONFIG_BT_BROADCASTER */
@@ -886,6 +890,10 @@ static void read_supported_commands(struct net_buf *buf, struct net_buf **evt)
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC_ADV_LIST */
 	/* LE Set PA Receive Enable */
 	rp->commands[40] |= BIT(5);
+#if defined(CONFIG_BT_CTLR_SYNC_ISO)
+	/* LE BIG Create Sync, LE BIG Terminate Sync */
+	rp->commands[43] |= BIT(0) | BIT(1);
+#endif /* CONFIG_BT_CTLR_SYNC_ISO */
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 
@@ -1048,7 +1056,7 @@ static void read_supported_commands(struct net_buf *buf, struct net_buf **evt)
 	/* LE Read ISO Link Quality */
 	rp->commands[44] |= BIT(2);
 #endif /* CONFIG_BT_CTLR_READ_ISO_LINK_QUALITY */
-#endif /* CONFIG_BT_CTLR_ADV_ISO || CONFIG_BT_CTLR_CONN_ISO */
+#endif /* CONFIG_BT_CTLR_SYNC_ISO || CONFIG_BT_CTLR_CONN_ISO */
 
 #if defined(CONFIG_BT_CTLR_ISO)
 	/* LE Setup ISO Data Path, LE Remove ISO Data Path */
@@ -5938,7 +5946,7 @@ static void dup_periodic_adv_reset(uint8_t addr_type, const uint8_t *addr,
 			struct dup_ext_adv_set *adv_set;
 
 			adv_set = &dup_mode->set[set_idx];
-			if (adv_set->adi.sid != sid) {
+			if (PDU_ADV_ADI_SID_GET(&adv_set->adi) != sid) {
 				continue;
 			}
 
@@ -5985,13 +5993,14 @@ static inline bool is_dup_or_update(struct dup_entry *dup, uint8_t adv_type,
 			struct dup_ext_adv_set *adv_set;
 
 			adv_set = &dup_mode->set[j];
-			if (adv_set->adi.sid != adi->sid) {
+			if (PDU_ADV_ADI_SID_GET(&adv_set->adi) != PDU_ADV_ADI_SID_GET(adi)) {
 				continue;
 			}
 
-			if (adv_set->adi.did != adi->did) {
+			if (PDU_ADV_ADI_DID_GET(&adv_set->adi) != PDU_ADV_ADI_DID_GET(adi)) {
 				/* report different DID */
-				adv_set->adi.did = adi->did;
+				adv_set->adi.did_sid_packed[0] = adi->did_sid_packed[0];
+				adv_set->adi.did_sid_packed[1] = adi->did_sid_packed[1];
 				/* set new data status */
 				if (data_status == BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_COMPLETE) {
 					adv_set->data_cmplt = 1U;
@@ -6586,7 +6595,7 @@ static void ext_adv_info_fill(uint8_t evt_type, uint8_t phy, uint8_t sec_phy,
 
 	adv_info->prim_phy = find_lsb_set(phy);
 	adv_info->sec_phy = sec_phy;
-	adv_info->sid = (adi) ? adi->sid : BT_HCI_LE_EXT_ADV_SID_INVALID;
+	adv_info->sid = (adi) ? PDU_ADV_ADI_SID_GET(adi) : BT_HCI_LE_EXT_ADV_SID_INVALID;
 	adv_info->tx_power = tx_pwr;
 	adv_info->rssi = rssi;
 	adv_info->interval = interval_le16;
@@ -6856,8 +6865,8 @@ static void le_ext_adv_report(struct pdu_data *pdu_data,
 
 			ptr += sizeof(*adi);
 
-			LOG_DBG("    AdvDataInfo DID = 0x%x, SID = 0x%x", adi_curr->did,
-				adi_curr->sid);
+			LOG_DBG("    AdvDataInfo DID = 0x%x, SID = 0x%x",
+				PDU_ADV_ADI_DID_GET(adi_curr), PDU_ADV_ADI_SID_GET(adi_curr));
 		}
 
 		if (h->aux_ptr) {

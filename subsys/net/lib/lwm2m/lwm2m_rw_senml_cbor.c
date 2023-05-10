@@ -952,11 +952,11 @@ int do_write_op_senml_cbor(struct lwm2m_message *msg)
 	 * go directly to the message processing
 	 */
 	if (msg->in.block_ctx != NULL && msg->in.block_ctx->ctx.current > 0) {
-		msg->path.res_id = msg->in.block_ctx->res_id;
-		msg->path.level = msg->in.block_ctx->level;
+		msg->path.res_id = msg->in.block_ctx->path.res_id;
+		msg->path.level = msg->in.block_ctx->path.level;
 
 		if (msg->path.level == LWM2M_PATH_LEVEL_RESOURCE_INST) {
-			msg->path.res_inst_id = msg->in.block_ctx->res_inst_id;
+			msg->path.res_inst_id = msg->in.block_ctx->path.res_inst_id;
 		}
 
 		return do_write_op_item(msg, NULL);

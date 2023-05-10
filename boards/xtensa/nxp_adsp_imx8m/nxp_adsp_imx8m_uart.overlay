@@ -1,0 +1,19 @@
+/*
+ * Copyright (c) 2023 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		zephyr,console = &uart4;
+		zephyr,shell-uart = &uart4;
+	};
+};
+
+&uart4 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart4_default>;
+	pinctrl-names = "default";
+};

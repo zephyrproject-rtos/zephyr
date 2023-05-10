@@ -466,8 +466,9 @@ static void rp_cc_check_instant(struct ll_conn *conn, struct proc_ctx *ctx, uint
 		uint16_t instant_latency = (event_counter - start_event_count) & 0xffff;
 
 		/* Start CIS */
-		ull_conn_iso_start(conn, conn->llcp.prep.ticks_at_expire,
-				   ctx->data.cis_create.cis_handle,
+		ull_conn_iso_start(conn, ctx->data.cis_create.cis_handle,
+				   conn->llcp.prep.ticks_at_expire,
+				   conn->llcp.prep.remainder,
 				   instant_latency);
 
 		/* Now we can wait for CIS to become established */
@@ -663,6 +664,8 @@ static void lp_cc_execute_fsm(struct ll_conn *conn, struct proc_ctx *ctx, uint8_
 /* LLCP Local Procedure FSM states */
 enum {
 	LP_CC_STATE_IDLE,
+	LP_CC_STATE_WAIT_OFFSET_CALC,
+	LP_CC_STATE_WAIT_OFFSET_CALC_TX_REQ,
 	LP_CC_STATE_WAIT_TX_CIS_REQ,
 	LP_CC_STATE_WAIT_RX_CIS_RSP,
 	LP_CC_STATE_WAIT_TX_CIS_IND,
@@ -675,6 +678,9 @@ enum {
 enum {
 	/* Procedure run */
 	LP_CC_EVT_RUN,
+
+	/* Offset calculation reply received */
+	LP_CC_EVT_OFFSET_CALC_REPLY,
 
 	/* Response received */
 	LP_CC_EVT_CIS_RSP,
@@ -742,16 +748,76 @@ void llcp_lp_cc_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pd
 	}
 }
 
+void llcp_lp_cc_offset_calc_reply(struct ll_conn *conn, struct proc_ctx *ctx)
+{
+	lp_cc_execute_fsm(conn, ctx, LP_CC_EVT_OFFSET_CALC_REPLY, NULL);
+}
+
+static void lp_cc_offset_calc_req(struct ll_conn *conn, struct proc_ctx *ctx,
+				  uint8_t evt, void *param)
+{
+	if (llcp_lr_ispaused(conn) || !llcp_tx_alloc_peek(conn, ctx)) {
+		ctx->state = LP_CC_STATE_WAIT_OFFSET_CALC_TX_REQ;
+	} else {
+		int err;
+
+		/* Update conn_event_count */
+		err = ull_central_iso_cis_offset_get(ctx->data.cis_create.cis_handle,
+						     &ctx->data.cis_create.cis_offset_min,
+						     &ctx->data.cis_create.cis_offset_max,
+						     &ctx->data.cis_create.conn_event_count);
+		if (err) {
+			ctx->state = LP_CC_STATE_WAIT_OFFSET_CALC;
+
+			return;
+		}
+
+		lp_cc_tx(conn, ctx, PDU_DATA_LLCTRL_TYPE_CIS_REQ);
+
+		ctx->state = LP_CC_STATE_WAIT_RX_CIS_RSP;
+		ctx->rx_opcode = PDU_DATA_LLCTRL_TYPE_CIS_RSP;
+	}
+}
+
+static void lp_cc_st_wait_offset_calc_tx_req(struct ll_conn *conn,
+					     struct proc_ctx *ctx,
+					     uint8_t evt, void *param)
+{
+	switch (evt) {
+	case LP_CC_EVT_RUN:
+		lp_cc_offset_calc_req(conn, ctx, evt, param);
+		break;
+	default:
+		/* Ignore other evts */
+		break;
+	}
+}
+
+static void lp_cc_st_wait_offset_calc(struct ll_conn *conn,
+				      struct proc_ctx *ctx,
+				      uint8_t evt, void *param)
+{
+	switch (evt) {
+	case LP_CC_EVT_RUN:
+		/* TODO: May be have a timeout calculating the CIS offset?
+		 *       otherwise, ignore
+		 */
+		break;
+	case LP_CC_EVT_OFFSET_CALC_REPLY:
+		ctx->state = LP_CC_STATE_WAIT_TX_CIS_REQ;
+		break;
+	default:
+		/* Ignore other evts */
+		break;
+	}
+}
+
 static void lp_cc_send_cis_req(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
 			       void *param)
 {
 	if (llcp_lr_ispaused(conn) || !llcp_tx_alloc_peek(conn, ctx)) {
 		ctx->state = LP_CC_STATE_WAIT_TX_CIS_REQ;
 	} else {
-		/* Update conn_event_count */
-		ctx->data.cis_create.conn_event_count =
-			ull_central_iso_cis_offset_get(ctx->data.cis_create.cis_handle, NULL, NULL);
-
 		lp_cc_tx(conn, ctx, PDU_DATA_LLCTRL_TYPE_CIS_REQ);
 
 		ctx->state = LP_CC_STATE_WAIT_RX_CIS_RSP;
@@ -778,7 +844,7 @@ static void lp_cc_st_idle(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t ev
 	case LP_CC_EVT_RUN:
 		switch (ctx->proc) {
 		case PROC_CIS_CREATE:
-			lp_cc_send_cis_req(conn, ctx, evt, param);
+			lp_cc_offset_calc_req(conn, ctx, evt, param);
 			break;
 		default:
 			/* Unknown procedure */
@@ -889,8 +955,9 @@ static void lp_cc_check_instant(struct ll_conn *conn, struct proc_ctx *ctx, uint
 	instant_latency = (event_counter - start_event_count) & 0xffff;
 	if (instant_latency <= 0x7fff) {
 		/* Start CIS */
-		ull_conn_iso_start(conn, conn->llcp.prep.ticks_at_expire,
-				   ctx->data.cis_create.cis_handle,
+		ull_conn_iso_start(conn, ctx->data.cis_create.cis_handle,
+				   conn->llcp.prep.ticks_at_expire,
+				   conn->llcp.prep.remainder,
 				   instant_latency);
 
 		/* Now we can wait for CIS to become established */
@@ -948,6 +1015,12 @@ static void lp_cc_execute_fsm(struct ll_conn *conn, struct proc_ctx *ctx, uint8_
 	switch (ctx->state) {
 	case LP_CC_STATE_IDLE:
 		lp_cc_st_idle(conn, ctx, evt, param);
+		break;
+	case LP_CC_STATE_WAIT_OFFSET_CALC_TX_REQ:
+		lp_cc_st_wait_offset_calc_tx_req(conn, ctx, evt, param);
+		break;
+	case LP_CC_STATE_WAIT_OFFSET_CALC:
+		lp_cc_st_wait_offset_calc(conn, ctx, evt, param);
 		break;
 	case LP_CC_STATE_WAIT_TX_CIS_REQ:
 		lp_cc_st_wait_tx_cis_req(conn, ctx, evt, param);

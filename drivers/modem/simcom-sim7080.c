@@ -35,7 +35,7 @@ NET_BUF_POOL_DEFINE(mdm_recv_pool, MDM_RECV_MAX_BUF, MDM_RECV_BUF_SIZE, 0, NULL)
 static const struct gpio_dt_spec power_gpio = GPIO_DT_SPEC_INST_GET(0, mdm_power_gpios);
 
 static void socket_close(struct modem_socket *sock);
-const struct socket_dns_offload offload_dns_ops;
+static const struct socket_dns_offload offload_dns_ops;
 
 static inline uint32_t hash32(char *str, int len)
 {
@@ -756,7 +756,7 @@ static void offload_freeaddrinfo(struct zsock_addrinfo *res)
 /*
  * DNS vtable.
  */
-const struct socket_dns_offload offload_dns_ops = {
+static const struct socket_dns_offload offload_dns_ops = {
 	.getaddrinfo = offload_getaddrinfo,
 	.freeaddrinfo = offload_freeaddrinfo,
 };

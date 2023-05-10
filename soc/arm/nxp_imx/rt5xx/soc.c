@@ -382,6 +382,15 @@ static void clock_init(void)
 	/* Reset peripheral module */
 	RESET_PeripheralReset(kFLEXSPI1_RST_SHIFT_RSTn);
 #endif
+
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(lpadc0), nxp_lpc_lpadc, okay)
+	SYSCTL0->PDRUNCFG0_CLR = SYSCTL0_PDRUNCFG0_ADC_PD_MASK;
+	SYSCTL0->PDRUNCFG0_CLR = SYSCTL0_PDRUNCFG0_ADC_LP_MASK;
+	RESET_PeripheralReset(kADC0_RST_SHIFT_RSTn);
+	CLOCK_AttachClk(kFRO_DIV4_to_ADC_CLK);
+	CLOCK_SetClkDiv(kCLOCK_DivAdcClk, 1);
+#endif
+
 	/* Set SystemCoreClock variable. */
 	SystemCoreClock = CLOCK_INIT_CORE_CLOCK;
 

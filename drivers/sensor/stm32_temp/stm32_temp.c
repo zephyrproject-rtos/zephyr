@@ -10,6 +10,9 @@
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/drivers/adc.h>
 #include <zephyr/logging/log.h>
+#if defined(CONFIG_SOC_SERIES_STM32H5X)
+#include <stm32_ll_icache.h>
+#endif /* CONFIG_SOC_SERIES_STM32H5X */
 
 LOG_MODULE_REGISTER(stm32_temp, CONFIG_SENSOR_LOG_LEVEL);
 #define CAL_RES 12
@@ -98,6 +101,11 @@ static int stm32_temp_channel_get(const struct device *dev, enum sensor_channel 
 	}
 
 #if HAS_CALIBRATION
+
+#if defined(CONFIG_SOC_SERIES_STM32H5X)
+	LL_ICACHE_Disable();
+#endif /* CONFIG_SOC_SERIES_STM32H5X */
+
 	temp = ((float)data->raw * adc_ref_internal(data->adc)) / cfg->cal_vrefanalog;
 	temp -= (*cfg->cal1_addr >> cfg->ts_cal_shift);
 #if HAS_SINGLE_CALIBRATION
@@ -110,6 +118,11 @@ static int stm32_temp_channel_get(const struct device *dev, enum sensor_channel 
 	temp /= ((*cfg->cal2_addr - *cfg->cal1_addr) >> cfg->ts_cal_shift);
 #endif
 	temp += cfg->cal1_temp;
+
+#if defined(CONFIG_SOC_SERIES_STM32H5X)
+	LL_ICACHE_Enable();
+#endif /* CONFIG_SOC_SERIES_STM32H5X */
+
 #else
 	/* Sensor value in millivolts */
 	int32_t mv = data->raw * adc_ref_internal(data->adc) / 0x0FFF;

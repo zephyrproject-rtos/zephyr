@@ -22,8 +22,10 @@ used by network administrators to configure and diagnose mesh nodes.
    op_agg_srv
    rpr_cli
    rpr_srv
-   srpl
-   od
+   od_cli
+   od_srv
+   srpl_cli
+   srpl_srv
 
 Model specification models
 **************************

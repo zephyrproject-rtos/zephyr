@@ -22,3 +22,21 @@ config EMUL_BC12_PI3USB9201
 
 	  The backend API allows test code to force the type of the partner
 	  charginging device.
+
+if USB_BC12_PI3USB9201
+
+config USB_BC12_PI3USB9201_CDP_ERRATA
+	bool "PI3USB9201 CDP Errata"
+	default y
+	help
+	  When this option is enabled and the charging mode is configured for
+	  CDP (Charging Downstream Port), after successful CDP detection the
+	  driver automatically sets the charging mode to SDP (Standard
+	  Downstream Port).
+
+	  This is a workaround for a glitch seen on the USB data lines when
+	  operating in CDP mode. Note that the BC1.2 negotiation compeletes
+	  before switching to SDP mode, so the attached portable device can
+	  continue to draw up to 1.5 A.
+
+endif # USB_BC12_PI3USB9201

@@ -11,6 +11,7 @@
 #include <zephyr/sys/printk.h>
 
 #include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/byteorder.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/bap.h>
@@ -30,7 +31,7 @@
 
 NET_BUF_POOL_FIXED_DEFINE(tx_pool, CONFIG_BT_ASCS_ASE_SRC_COUNT,
 			  BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU),
-			  8, NULL);
+			  CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
 
 static struct bt_codec lc3_codec =
 	BT_CODEC_LC3(BT_CODEC_LC3_FREQ_ANY, BT_CODEC_LC3_DURATION_10,
@@ -56,10 +57,8 @@ static K_SEM_DEFINE(sem_disconnected, 0, 1);
 static uint8_t unicast_server_addata[] = {
 	BT_UUID_16_ENCODE(BT_UUID_ASCS_VAL), /* ASCS UUID */
 	BT_AUDIO_UNICAST_ANNOUNCEMENT_TARGETED, /* Target Announcement */
-	(((AVAILABLE_SINK_CONTEXT) >>  0) & 0xFF),
-	(((AVAILABLE_SINK_CONTEXT) >>  8) & 0xFF),
-	(((AVAILABLE_SOURCE_CONTEXT) >>  0) & 0xFF),
-	(((AVAILABLE_SOURCE_CONTEXT) >>  8) & 0xFF),
+	BT_BYTES_LIST_LE16(AVAILABLE_SINK_CONTEXT),
+	BT_BYTES_LIST_LE16(AVAILABLE_SOURCE_CONTEXT),
 	0x00, /* Metadata length */
 };
 
@@ -123,7 +122,7 @@ static void print_codec(const struct bt_codec *codec)
 	if (codec->id == BT_CODEC_LC3_ID) {
 		/* LC3 uses the generic LTV format - other codecs might do as well */
 
-		uint32_t chan_allocation;
+		enum bt_audio_location chan_allocation;
 
 		printk("  Frequency: %d Hz\n", bt_codec_cfg_get_freq(codec));
 		printk("  Frame Duration: %d us\n", bt_codec_cfg_get_frame_duration_us(codec));

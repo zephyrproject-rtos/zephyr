@@ -17,6 +17,7 @@ enum {
 	BT_MESH_MOD_PUB_PENDING = BIT(2),
 	BT_MESH_MOD_EXTENDED = BIT(3),
 	BT_MESH_MOD_DEVKEY_ONLY = BIT(4),
+	BT_MESH_MOD_DATA_PENDING = BIT(5),
 };
 
 void bt_mesh_elem_register(struct bt_mesh_elem *elem, uint8_t count);
@@ -62,12 +63,13 @@ int bt_mesh_model_recv(struct bt_mesh_msg_ctx *ctx, struct net_buf_simple *buf);
 
 int bt_mesh_comp_register(const struct bt_mesh_comp *comp);
 int bt_mesh_comp_store(void);
-void bt_mesh_comp_clear(void);
 int bt_mesh_comp_read(struct net_buf_simple *buf);
 
 int bt_mesh_models_metadata_store(void);
-void bt_mesh_models_metadata_clear(void);
 int bt_mesh_models_metadata_read(struct net_buf_simple *buf, size_t offset);
+
+void bt_mesh_comp_data_pending_clear(void);
+void bt_mesh_comp_data_clear(void);
 
 void bt_mesh_model_pending_store(void);
 void bt_mesh_model_bind_store(struct bt_mesh_model *mod);

@@ -41,13 +41,14 @@ __syscall size_t zephyr_fwrite(const void *ZRESTRICT ptr, size_t size,
 
 /* Handle deprecated malloc arena size configuration values */
 #ifdef CONFIG_COMMON_LIBC_MALLOC
-# if CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE == 0
+# if defined(CONFIG_MINIMAL_LIBC) && (CONFIG_MINIMAL_LIBC_MALLOC_ARENA_SIZE != -2)
 #  undef CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE
-#  ifdef CONFIG_MINIMAL_LIBC
-#   define CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE CONFIG_MINIMAL_LIBC_MALLOC_ARENA_SIZE
-#  else
-#   define CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE 0
-#  endif
+#  define CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE CONFIG_MINIMAL_LIBC_MALLOC_ARENA_SIZE
+#  warning Using deprecated setting CONFIG_MINIMAL_LIBC_MALLOC_ARENA_SIZE
+# elif defined(CONFIG_PICOLIBC) && (CONFIG_PICOLIBC_HEAP_SIZE != -2)
+#  undef CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE
+#  define CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE CONFIG_PICOLIBC_HEAP_SIZE
+#  warning Using deprecated setting CONFIG_PICOLIBC_HEAP_SIZE
 # endif
 #endif
 
@@ -75,20 +76,9 @@ __syscall size_t zephyr_fwrite(const void *ZRESTRICT ptr, size_t size,
      (defined(CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT) && \
       CONFIG_NEWLIB_LIBC_ALIGNED_HEAP_SIZE))
 #define Z_MALLOC_PARTITION_EXISTS 1
-extern struct k_mem_partition z_malloc_partition;
 #endif
 
-#elif defined(CONFIG_PICOLIBC)
-/*
- * When using picolibc, we need z_malloc_partition whenever
- * the heap size is not zero and there is an mpu or an mmu
- */
-#if CONFIG_PICOLIBC_HEAP_SIZE != 0 && \
-(defined(CONFIG_MPU) || defined(CONFIG_MMU))
-#define Z_MALLOC_PARTITION_EXISTS 1
-#endif
-
-#endif /* CONFIG_PICOLIBC */
+#endif /* CONFIG_NEWLIB_LIBC */
 
 #ifdef Z_MALLOC_PARTITION_EXISTS
 /* Memory partition containing the libc malloc arena. Configuration controls

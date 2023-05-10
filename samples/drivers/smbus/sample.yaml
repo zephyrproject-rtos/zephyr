@@ -2,7 +2,10 @@ sample:
   description: SMBus sample
   name: smbus sample
 common:
-  platform_allow: qemu_x86_64 ehl_crb rpl_crb
+  platform_allow:
+    - qemu_x86_64
+    - ehl_crb
+    - rpl_crb
   harness: console
   harness_config:
     type: one_line

@@ -495,6 +495,20 @@ void pe_snk_ready_run(void *obj)
 	sink_dpm_requests(dev);
 }
 
+void pe_snk_ready_exit(void *obj)
+{
+	struct policy_engine *pe = (struct policy_engine *)obj;
+	const struct device *dev = pe->dev;
+
+	/*
+	 * If the Source is initiating an AMS, then notify the
+	 * PRL that the first message in an AMS will follow.
+	 */
+	if (pe_dpm_initiated_ams(dev)) {
+		prl_first_msg_notificaiton(dev);
+	}
+}
+
 /**
  * @brief PE_SNK_Hard_Reset Entry State
  */

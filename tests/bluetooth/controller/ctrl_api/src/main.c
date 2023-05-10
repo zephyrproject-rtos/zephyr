@@ -334,6 +334,23 @@ ZTEST(public, test_int_pause_resume_data_path)
 	zassert_equal_ptr(node, NULL, "");
 }
 
+ZTEST(public, test_check_peek_proc)
+{
+	struct proc_ctx *ctx1, *ctx2;
+
+	ctx1 = llcp_create_local_procedure(PROC_CHAN_MAP_UPDATE);
+	llcp_lr_enqueue(&conn, ctx1);
+
+	zassert_is_null(llcp_lr_peek_proc(&conn, PROC_CIS_CREATE), "CTX is not null");
+	zassert_equal(llcp_lr_peek_proc(&conn, PROC_CHAN_MAP_UPDATE), ctx1, "CTX is not correct");
+
+	ctx2 = llcp_create_local_procedure(PROC_CIS_CREATE);
+	llcp_lr_enqueue(&conn, ctx2);
+
+	zassert_equal(llcp_lr_peek_proc(&conn, PROC_CHAN_MAP_UPDATE), ctx1, "CTX is not correct");
+	zassert_equal(llcp_lr_peek_proc(&conn, PROC_CIS_CREATE), ctx2, "CTX is not correct");
+	zassert_is_null(llcp_lr_peek_proc(&conn, PROC_CIS_TERMINATE), "CTX is not null");
+}
 
 ZTEST(internal, test_int_mem_proc_ctx)
 {
@@ -540,7 +557,6 @@ ZTEST(internal, test_int_remote_pending_requests)
 	dequeue_ctx = llcp_rr_dequeue(&conn);
 	zassert_is_null(dequeue_ctx, NULL);
 }
-
 
 ZTEST_SUITE(public, NULL, NULL, NULL, NULL, NULL);
 ZTEST_SUITE(internal, NULL, NULL, NULL, NULL, NULL);

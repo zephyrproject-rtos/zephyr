@@ -52,6 +52,8 @@ struct tx_meta {
 	 * continuations).
 	 */
 	bool is_cont;
+	/* Indicates whether the ISO PDU contains a timestamp */
+	bool iso_has_ts;
 };
 
 BUILD_ASSERT(sizeof(struct tx_meta) == CONFIG_BT_CONN_TX_USER_DATA_SIZE,
@@ -410,6 +412,24 @@ static struct bt_conn_tx *conn_tx_alloc(void)
 	return k_fifo_get(&free_tx, K_FOREVER);
 }
 
+int bt_conn_send_iso_cb(struct bt_conn *conn, struct net_buf *buf,
+			bt_conn_tx_cb_t cb, bool has_ts)
+{
+	int err = bt_conn_send_cb(conn, buf, cb, NULL);
+
+	if (err) {
+		return err;
+	}
+
+	/* Necessary for setting the TS_Flag bit when we pop the buffer from the
+	 * send queue.
+	 * Size check for the user_data is already done in `bt_conn_send_cb`.
+	 */
+	tx_data(buf)->iso_has_ts = has_ts;
+
+	return 0;
+}
+
 int bt_conn_send_cb(struct bt_conn *conn, struct net_buf *buf,
 		    bt_conn_tx_cb_t cb, void *user_data)
 {
@@ -419,7 +439,9 @@ int bt_conn_send_cb(struct bt_conn *conn, struct net_buf *buf,
 		user_data);
 
 	if (buf->user_data_size < CONFIG_BT_CONN_TX_USER_DATA_SIZE) {
-		LOG_ERR("not enough room in user_data");
+		LOG_ERR("not enough room in user_data %d < %d",
+			buf->user_data_size,
+			CONFIG_BT_CONN_TX_USER_DATA_SIZE);
 		return -EINVAL;
 	}
 
@@ -493,6 +515,7 @@ static int send_acl(struct bt_conn *conn, struct net_buf *buf, uint8_t flags)
 static int send_iso(struct bt_conn *conn, struct net_buf *buf, uint8_t flags)
 {
 	struct bt_hci_iso_hdr *hdr;
+	bool ts;
 
 	switch (flags) {
 	case FRAG_START:
@@ -512,8 +535,12 @@ static int send_iso(struct bt_conn *conn, struct net_buf *buf, uint8_t flags)
 	}
 
 	hdr = net_buf_push(buf, sizeof(*hdr));
-	hdr->handle = sys_cpu_to_le16(bt_iso_handle_pack(conn->handle, flags,
-							 0));
+
+	ts = tx_data(buf)->iso_has_ts &&
+		(flags == BT_ISO_START || flags == BT_ISO_SINGLE);
+
+	hdr->handle = sys_cpu_to_le16(bt_iso_handle_pack(conn->handle, flags, ts));
+
 	hdr->len = sys_cpu_to_le16(buf->len - sizeof(*hdr));
 
 	bt_buf_set_type(buf, BT_BUF_ISO_OUT);
@@ -621,6 +648,21 @@ fail:
 	return err;
 }
 
+static size_t iso_hdr_len(struct net_buf *buf, struct bt_conn *conn)
+{
+#if defined(CONFIG_BT_ISO)
+	if (conn->type == BT_CONN_TYPE_ISO) {
+		if (tx_data(buf)->iso_has_ts) {
+			return BT_HCI_ISO_TS_DATA_HDR_SIZE;
+		} else {
+			return BT_HCI_ISO_DATA_HDR_SIZE;
+		}
+	}
+#endif
+
+	return 0;
+}
+
 static int send_frag(struct bt_conn *conn,
 		     struct net_buf *buf, struct net_buf *frag,
 		     uint8_t flags)
@@ -633,7 +675,9 @@ static int send_frag(struct bt_conn *conn,
 
 	/* Add the data to the buffer */
 	if (frag) {
-		uint16_t frag_len = MIN(conn_mtu(conn), net_buf_tailroom(frag));
+		size_t iso_hdr = flags == FRAG_START ? iso_hdr_len(buf, conn) : 0;
+		uint16_t frag_len = MIN(conn_mtu(conn) + iso_hdr,
+					net_buf_tailroom(frag));
 
 		net_buf_add_mem(frag, buf->data, frag_len);
 		net_buf_pull(buf, frag_len);
@@ -681,6 +725,11 @@ static struct net_buf *create_frag(struct bt_conn *conn, struct net_buf *buf)
 	return frag;
 }
 
+static bool fits_single_ctlr_buf(struct net_buf *buf, struct bt_conn *conn)
+{
+	return buf->len - iso_hdr_len(buf, conn) <= conn_mtu(conn);
+}
+
 static int send_buf(struct bt_conn *conn, struct net_buf *buf)
 {
 	struct net_buf *frag;
@@ -690,7 +739,7 @@ static int send_buf(struct bt_conn *conn, struct net_buf *buf)
 	LOG_DBG("conn %p buf %p len %u", conn, buf, buf->len);
 
 	/* Send directly if the packet fits the ACL MTU */
-	if (buf->len <= conn_mtu(conn) && !tx_data(buf)->is_cont) {
+	if (fits_single_ctlr_buf(buf, conn) && !tx_data(buf)->is_cont) {
 		LOG_DBG("send single");
 		return send_frag(conn, buf, NULL, FRAG_SINGLE);
 	}
@@ -1135,7 +1184,8 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 		 * will handle connection timeout.
 		 */
 		if (IS_ENABLED(CONFIG_BT_CENTRAL) &&
-		    conn->type == BT_CONN_TYPE_LE) {
+		    conn->type == BT_CONN_TYPE_LE &&
+		    bt_dev.create_param.timeout != 0) {
 			k_work_schedule(&conn->deferred_work,
 					K_MSEC(10 * bt_dev.create_param.timeout));
 		}
@@ -1943,7 +1993,7 @@ struct bt_conn *bt_conn_lookup_addr_sco(const bt_addr_t *peer)
 			continue;
 		}
 
-		if (bt_addr_cmp(peer, &conn->sco.acl->br.dst) != 0) {
+		if (!bt_addr_eq(peer, &conn->sco.acl->br.dst)) {
 			bt_conn_unref(conn);
 			continue;
 		}
@@ -1970,7 +2020,7 @@ struct bt_conn *bt_conn_lookup_addr_br(const bt_addr_t *peer)
 			continue;
 		}
 
-		if (bt_addr_cmp(peer, &conn->br.dst) != 0) {
+		if (!bt_addr_eq(peer, &conn->br.dst)) {
 			bt_conn_unref(conn);
 			continue;
 		}
@@ -2812,24 +2862,15 @@ int bt_conn_create_auto_stop(void)
 }
 #endif /* defined(CONFIG_BT_FILTER_ACCEPT_LIST) */
 
-int bt_conn_le_create(const bt_addr_le_t *peer,
-		      const struct bt_conn_le_create_param *create_param,
-		      const struct bt_le_conn_param *conn_param,
-		      struct bt_conn **ret_conn)
+static int conn_le_create_common_checks(const bt_addr_le_t *peer,
+					const struct bt_le_conn_param *conn_param)
 {
-	struct bt_conn *conn;
-	bt_addr_le_t dst;
-	int err;
 
 	if (!atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
 		return -EAGAIN;
 	}
 
 	if (!bt_le_conn_params_valid(conn_param)) {
-		return -EINVAL;
-	}
-
-	if (!create_param_validate(create_param)) {
 		return -EINVAL;
 	}
 
@@ -2849,6 +2890,15 @@ int bt_conn_le_create(const bt_addr_le_t *peer,
 		return -EINVAL;
 	}
 
+	return 0;
+}
+
+static struct bt_conn *conn_le_create_helper(const bt_addr_le_t *peer,
+				     const struct bt_le_conn_param *conn_param)
+{
+	bt_addr_le_t dst;
+	struct bt_conn *conn;
+
 	if (bt_addr_le_is_resolved(peer)) {
 		bt_addr_le_copy_resolved(&dst, peer);
 	} else {
@@ -2858,10 +2908,34 @@ int bt_conn_le_create(const bt_addr_le_t *peer,
 	/* Only default identity supported for now */
 	conn = bt_conn_add_le(BT_ID_DEFAULT, &dst);
 	if (!conn) {
-		return -ENOMEM;
+		return NULL;
 	}
 
 	bt_conn_set_param_le(conn, conn_param);
+
+	return conn;
+}
+
+int bt_conn_le_create(const bt_addr_le_t *peer, const struct bt_conn_le_create_param *create_param,
+		      const struct bt_le_conn_param *conn_param, struct bt_conn **ret_conn)
+{
+	struct bt_conn *conn;
+	int err;
+
+	err = conn_le_create_common_checks(peer, conn_param);
+	if (err) {
+		return err;
+	}
+
+	if (!create_param_validate(create_param)) {
+		return -EINVAL;
+	}
+
+	conn = conn_le_create_helper(peer, conn_param);
+	if (!conn) {
+		return -ENOMEM;
+	}
+
 	create_param_setup(create_param);
 
 #if defined(CONFIG_BT_SMP)
@@ -2891,6 +2965,56 @@ int bt_conn_le_create(const bt_addr_le_t *peer,
 		bt_conn_unref(conn);
 
 		bt_le_scan_update(false);
+		return err;
+	}
+
+	*ret_conn = conn;
+	return 0;
+}
+
+int bt_conn_le_create_synced(const struct bt_le_ext_adv *adv,
+			     const struct bt_conn_le_create_synced_param *synced_param,
+			     const struct bt_le_conn_param *conn_param, struct bt_conn **ret_conn)
+{
+	struct bt_conn *conn;
+	int err;
+
+	err = conn_le_create_common_checks(synced_param->peer, conn_param);
+	if (err) {
+		return err;
+	}
+
+	if (!atomic_test_bit(adv->flags, BT_PER_ADV_ENABLED)) {
+		return -EINVAL;
+	}
+
+	if (!BT_FEAT_LE_PAWR_ADVERTISER(bt_dev.le.features)) {
+		return -ENOTSUP;
+	}
+
+	if (synced_param->subevent >= BT_HCI_PAWR_SUBEVENT_MAX) {
+		return -EINVAL;
+	}
+
+	conn = conn_le_create_helper(synced_param->peer, conn_param);
+	if (!conn) {
+		return -ENOMEM;
+	}
+
+	/* The connection creation timeout is not really useful for PAwR.
+	 * The controller will give a result for the connection attempt
+	 * within a periodic interval. We do not know the periodic interval
+	 * used, so disable the timeout.
+	 */
+	bt_dev.create_param.timeout = 0;
+	bt_conn_set_state(conn, BT_CONN_CONNECTING);
+
+	err = bt_le_create_conn_synced(conn, adv, synced_param->subevent);
+	if (err) {
+		conn->err = 0;
+		bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
+		bt_conn_unref(conn);
+
 		return err;
 	}
 

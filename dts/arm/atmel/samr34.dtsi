@@ -9,6 +9,7 @@
 #include <zephyr/dt-bindings/lora/sx126x.h>
 
 #include "saml21.dtsi"
+#include "samr34-pinctrl.dtsi"
 
 / {
 	aliases {
@@ -35,14 +36,19 @@
 &sercom4 {
 	/* SERCOM4 is used to interface with the internal LoRa radio */
 	compatible = "atmel,sam0-spi";
+	status = "disabled";
 	dipo = <0>;
 	dopo = <1>;
 	cs-gpios = <&portb 31 GPIO_ACTIVE_LOW>;
 	#address-cells = <1>;
 	#size-cells = <0>;
 
+	pinctrl-0 = <&sercom4_default>;
+	pinctrl-names = "default";
+
 	lora: sx1276@0 {
 		compatible = "semtech,sx1276";
+		status = "disabled";
 		reg = <0>;
 		reset-gpios = <&portb 15 GPIO_ACTIVE_LOW>;               /* nRST */
 		dio-gpios =

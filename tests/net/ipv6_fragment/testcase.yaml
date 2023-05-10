@@ -2,4 +2,7 @@ common:
   depends_on: netif
 tests:
   net.ipv6.fragment:
-    tags: net ipv6 fragment
+    tags:
+      - net
+      - ipv6
+      - fragment

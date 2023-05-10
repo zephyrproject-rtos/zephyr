@@ -15,3 +15,8 @@
 		zephyr,code-partition = &slot0_ns_partition;
 	};
 };
+
+/* Disable UART1, because it is used by default in TF-M */
+&uart1 {
+	status = "disabled";
+};

@@ -44,11 +44,13 @@ static struct bt_iso_recv_info iso_info_data[CONFIG_BT_ISO_RX_BUF_COUNT];
 
 #if defined(CONFIG_BT_ISO_UNICAST) || defined(CONFIG_BT_ISO_BROADCAST)
 NET_BUF_POOL_FIXED_DEFINE(iso_tx_pool, CONFIG_BT_ISO_TX_BUF_COUNT,
-			  BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU), 8, NULL);
+			  BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU),
+			  CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
 
 #if CONFIG_BT_ISO_TX_FRAG_COUNT > 0
 NET_BUF_POOL_FIXED_DEFINE(iso_frag_pool, CONFIG_BT_ISO_TX_FRAG_COUNT,
-			  BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU), 8, NULL);
+			  BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU),
+			  CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
 #endif /* CONFIG_BT_ISO_TX_FRAG_COUNT > 0 */
 #endif /* CONFIG_BT_ISO_UNICAST || CONFIG_BT_ISO_BROADCAST */
 
@@ -803,7 +805,10 @@ int bt_iso_chan_send(struct bt_iso_chan *chan, struct net_buf *buf,
 								     BT_ISO_DATA_VALID));
 	}
 
-	return bt_conn_send_cb(iso_conn, buf, bt_iso_send_cb, NULL);
+	return bt_conn_send_iso_cb(iso_conn,
+				   buf,
+				   bt_iso_send_cb,
+				   ts != BT_ISO_TIMESTAMP_NONE);
 }
 
 #if defined(CONFIG_BT_ISO_CENTRAL) || defined(CONFIG_BT_ISO_BROADCASTER)

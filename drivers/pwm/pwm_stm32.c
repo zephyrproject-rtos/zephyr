@@ -692,13 +692,29 @@ static int pwm_stm32_init(const struct device *dev)
 }
 
 #ifdef CONFIG_PWM_CAPTURE
-#define IRQ_CONFIG_FUNC(index)                                                 \
-static void pwm_stm32_irq_config_func_##index(const struct device *dev)        \
-{                                                                              \
-	IRQ_CONNECT(DT_IRQN(DT_INST_PARENT(index)),                            \
-			DT_IRQ(DT_INST_PARENT(index), priority),               \
-			pwm_stm32_isr, DEVICE_DT_INST_GET(index), 0);          \
-	irq_enable(DT_IRQN(DT_INST_PARENT(index)));                            \
+#define IRQ_CONNECT_AND_ENABLE_BY_NAME(index, name)				\
+{										\
+	IRQ_CONNECT(DT_IRQ_BY_NAME(DT_INST_PARENT(index), name, irq),		\
+			DT_IRQ_BY_NAME(DT_INST_PARENT(index), name, priority),	\
+			pwm_stm32_isr, DEVICE_DT_INST_GET(index), 0);		\
+	irq_enable(DT_IRQ_BY_NAME(DT_INST_PARENT(index), name, irq));		\
+}
+
+#define IRQ_CONNECT_AND_ENABLE_DEFAULT(index)					\
+{										\
+	IRQ_CONNECT(DT_IRQN(DT_INST_PARENT(index)),				\
+			DT_IRQ(DT_INST_PARENT(index), priority),		\
+			pwm_stm32_isr, DEVICE_DT_INST_GET(index), 0);		\
+	irq_enable(DT_IRQN(DT_INST_PARENT(index)));				\
+}
+
+#define IRQ_CONFIG_FUNC(index)                                                  \
+static void pwm_stm32_irq_config_func_##index(const struct device *dev)		\
+{										\
+	COND_CODE_1(DT_IRQ_HAS_NAME(DT_INST_PARENT(index), cc),			\
+		(IRQ_CONNECT_AND_ENABLE_BY_NAME(index, cc)),			\
+		(IRQ_CONNECT_AND_ENABLE_DEFAULT(index))				\
+	);									\
 }
 #define CAPTURE_INIT(index)                                                    \
 	.irq_config_func = pwm_stm32_irq_config_func_##index

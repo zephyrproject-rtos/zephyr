@@ -25,7 +25,7 @@
 	soc {
 		#address-cells = <1>;
 		#size-cells = <1>;
-		compatible = "simple-bus";
+		compatible = "gaisler,leon3-soc", "simple-bus";
 		ranges;
 		interrupt-parent = <&irqmp>;
 

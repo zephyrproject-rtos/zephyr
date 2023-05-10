@@ -1480,6 +1480,7 @@ struct bt_hci_cp_le_set_ext_scan_enable {
 } __packed;
 
 #define BT_HCI_OP_LE_EXT_CREATE_CONN            BT_OP(BT_OGF_LE, 0x0043)
+#define BT_HCI_OP_LE_EXT_CREATE_CONN_V2         BT_OP(BT_OGF_LE, 0x0085)
 struct bt_hci_ext_conn_phy {
 	uint16_t scan_interval;
 	uint16_t scan_window;
@@ -1492,6 +1493,16 @@ struct bt_hci_ext_conn_phy {
 } __packed;
 
 struct bt_hci_cp_le_ext_create_conn {
+	uint8_t      filter_policy;
+	uint8_t      own_addr_type;
+	bt_addr_le_t peer_addr;
+	uint8_t      phys;
+	struct bt_hci_ext_conn_phy p[0];
+} __packed;
+
+struct bt_hci_cp_le_ext_create_conn_v2 {
+	uint8_t      adv_handle;
+	uint8_t      subevent;
 	uint8_t      filter_policy;
 	uint8_t      own_addr_type;
 	bt_addr_le_t peer_addr;
@@ -2426,6 +2437,22 @@ struct bt_hci_evt_le_per_adv_response_report {
 	struct bt_hci_evt_le_per_adv_response responses[0];
 } __packed;
 
+#define BT_HCI_EVT_LE_ENH_CONN_COMPLETE_V2 0x29
+struct bt_hci_evt_le_enh_conn_complete_v2 {
+	uint8_t      status;
+	uint16_t     handle;
+	uint8_t      role;
+	bt_addr_le_t peer_addr;
+	bt_addr_t    local_rpa;
+	bt_addr_t    peer_rpa;
+	uint16_t     interval;
+	uint16_t     latency;
+	uint16_t     supv_timeout;
+	uint8_t      clock_accuracy;
+	uint8_t adv_handle;
+	uint16_t sync_handle;
+} __packed;
+
 #define BT_HCI_EVT_SYNC_CONN_COMPLETE           0x2c
 struct bt_hci_evt_sync_conn_complete {
 	uint8_t    status;
@@ -2955,6 +2982,7 @@ struct bt_hci_evt_le_biginfo_adv_report {
 #define BT_EVT_MASK_LE_PAST_RECEIVED_V2            BT_EVT_BIT(37)
 #define BT_EVT_MASK_LE_PER_ADV_SUBEVENT_DATA_REQ   BT_EVT_BIT(38)
 #define BT_EVT_MASK_LE_PER_ADV_RESPONSE_REPORT     BT_EVT_BIT(39)
+#define BT_EVT_MASK_LE_ENH_CONN_COMPLETE_V2        BT_EVT_BIT(40)
 
 /** Allocate a HCI command buffer.
   *

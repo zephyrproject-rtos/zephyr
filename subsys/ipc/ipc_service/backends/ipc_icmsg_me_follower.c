@@ -337,7 +337,8 @@ static int backend_init(const struct device *instance)
 	return icmsg_me_init(conf, &dev_data->icmsg_me_data);
 }
 
-#define BACKEND_CONFIG_POPULATE(i)						\
+#define DEFINE_BACKEND_DEVICE(i)						\
+	static const struct icmsg_config_t backend_config_##i =			\
 	{									\
 		.tx_shm_size = DT_REG_SIZE(DT_INST_PHANDLE(i, tx_region)),	\
 		.tx_shm_addr = DT_REG_ADDR(DT_INST_PHANDLE(i, tx_region)),	\
@@ -345,11 +346,7 @@ static int backend_init(const struct device *instance)
 		.rx_shm_addr = DT_REG_ADDR(DT_INST_PHANDLE(i, rx_region)),	\
 		.mbox_tx = MBOX_DT_CHANNEL_GET(DT_DRV_INST(i), tx),		\
 		.mbox_rx = MBOX_DT_CHANNEL_GET(DT_DRV_INST(i), rx),		\
-	}
-
-#define DEFINE_BACKEND_DEVICE(i)						\
-	static const struct icmsg_config_t backend_config_##i =			\
-		BACKEND_CONFIG_POPULATE(i);					\
+	};									\
 	static struct backend_data_t backend_data_##i;				\
 										\
 	DEVICE_DT_INST_DEFINE(i,						\
@@ -362,25 +359,3 @@ static int backend_init(const struct device *instance)
 			 &backend_ops);
 
 DT_INST_FOREACH_STATUS_OKAY(DEFINE_BACKEND_DEVICE)
-
-#if defined(CONFIG_IPC_SERVICE_BACKEND_ICMSG_ME_SHMEM_RESET)
-#define BACKEND_CONFIG_DEFINE(i) BACKEND_CONFIG_POPULATE(i),
-static int shared_memory_prepare(void)
-{
-	const struct icmsg_config_t *backend_config;
-	const struct icmsg_config_t backend_configs[] = {
-		DT_INST_FOREACH_STATUS_OKAY(BACKEND_CONFIG_DEFINE)
-	};
-
-	for (backend_config = backend_configs;
-	     backend_config < backend_configs + ARRAY_SIZE(backend_configs);
-	     backend_config++) {
-		icmsg_clear_tx_memory(backend_config);
-		icmsg_clear_rx_memory(backend_config);
-	}
-
-	return 0;
-}
-
-SYS_INIT(shared_memory_prepare, PRE_KERNEL_1, 1);
-#endif /* CONFIG_IPC_SERVICE_BACKEND_ICMSG_ME_SHMEM_RESET */

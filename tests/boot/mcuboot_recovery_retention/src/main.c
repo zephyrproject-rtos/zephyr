@@ -10,7 +10,7 @@
 #include <zephyr/kernel.h>
 #include <stdio.h>
 
-void main(void)
+int main(void)
 {
 	printf("Waiting...\n");
 	k_sleep(K_SECONDS(1));
@@ -22,4 +22,6 @@ void main(void)
 	} else {
 		printf("Error, failed to set boot mode: %d\n", rc);
 	}
+
+	return 0;
 }

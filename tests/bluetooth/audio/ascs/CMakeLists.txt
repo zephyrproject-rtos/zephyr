@@ -15,6 +15,7 @@ target_sources(testbinary
   PRIVATE
     src/main.c
     src/test_ase_control_params.c
+    src/test_ase_state_transition_invalid.c
     src/test_ase_state_transition.c
     src/test_common.c
 )

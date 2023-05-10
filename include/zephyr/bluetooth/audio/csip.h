@@ -243,6 +243,9 @@ struct bt_csip_set_coordinator_set_info {
 	 * Will be 0 if not exposed by the server.
 	 */
 	uint8_t rank;
+
+	/** Whether or not the set can be locked on this device */
+	bool lockable;
 };
 
 /**

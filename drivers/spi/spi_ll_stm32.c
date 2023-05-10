@@ -61,7 +61,7 @@ static void dma_callback(const struct device *dev, void *arg,
 	/* arg directly holds the spi device */
 	struct spi_stm32_data *data = arg;
 
-	if (status != 0) {
+	if (status < 0) {
 		LOG_ERR("DMA callback error with channel %d.", channel);
 		data->status_flags |= SPI_STM32_DMA_ERROR_FLAG;
 	} else {
@@ -628,7 +628,11 @@ static int transceive(const struct device *dev,
 	}
 
 	/* Set buffers info */
-	spi_context_buffers_setup(&data->ctx, tx_bufs, rx_bufs, 1);
+	if (SPI_WORD_SIZE_GET(config->operation) == 8) {
+		spi_context_buffers_setup(&data->ctx, tx_bufs, rx_bufs, 1);
+	} else {
+		spi_context_buffers_setup(&data->ctx, tx_bufs, rx_bufs, 2);
+	}
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_spi_fifo)
 	/* Flush RX buffer */
@@ -729,7 +733,11 @@ static int transceive_dma(const struct device *dev,
 	}
 
 	/* Set buffers info */
-	spi_context_buffers_setup(&data->ctx, tx_bufs, rx_bufs, 1);
+	if (SPI_WORD_SIZE_GET(config->operation) == 8) {
+		spi_context_buffers_setup(&data->ctx, tx_bufs, rx_bufs, 1);
+	} else {
+		spi_context_buffers_setup(&data->ctx, tx_bufs, rx_bufs, 2);
+	}
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
 	/* set request before enabling (else SPI CFG1 reg is write protected) */

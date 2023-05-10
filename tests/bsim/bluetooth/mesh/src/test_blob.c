@@ -717,7 +717,7 @@ static void test_cli_broadcast_trans(void)
 		FAIL("Broadcast did not trigger send CB");
 	}
 
-	if (k_sem_take(&blob_broad_next_sem, K_NO_WAIT)) {
+	if (k_sem_take(&blob_broad_next_sem, K_SECONDS(1))) {
 		FAIL("Broadcast did not trigger next CB");
 	}
 

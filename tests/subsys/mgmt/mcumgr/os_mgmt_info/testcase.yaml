@@ -7,12 +7,26 @@ tests:
   os.mgmt.info:
     # FIXME: Exclude architectures that lack a reboot handler function
     # FIXME: Exclude systems whereby the processor type is not known and emits a warning
-    arch_exclude: arm64 nios2 sparc arc xtensa mips posix
+    arch_exclude:
+      - arm64
+      - nios2
+      - sparc
+      - arc
+      - xtensa
+      - mips
+      - posix
     tags: os_mgmt_info
   os.mgmt.info_no_hooks:
     # FIXME: Exclude architectures that lack a reboot handler function
     # FIXME: Exclude systems whereby the processor type is not known and emits a warning
-    arch_exclude: arm64 nios2 sparc arc xtensa mips posix
+    arch_exclude:
+      - arm64
+      - nios2
+      - sparc
+      - arc
+      - xtensa
+      - mips
+      - posix
     tags: os_mgmt_info
     extra_configs:
       - CONFIG_MCUMGR_GRP_OS_INFO_CUSTOM_HOOKS=n
@@ -21,7 +35,14 @@ tests:
     depends_on: ble
     # FIXME: Exclude architectures that lack a reboot handler function
     # FIXME: Exclude systems whereby the processor type is not known and emits a warning
-    arch_exclude: arm64 nios2 sparc arc xtensa mips posix
+    arch_exclude:
+      - arm64
+      - nios2
+      - sparc
+      - arc
+      - xtensa
+      - mips
+      - posix
     tags: os_mgmt_info
     extra_configs:
       - CONFIG_BT=y
@@ -30,9 +51,24 @@ tests:
     depends_on: netif
     # FIXME: Exclude architectures that lack a reboot handler function
     # FIXME: Exclude systems whereby the processor type is not known and emits a warning
-    arch_exclude: arm64 nios2 sparc arc xtensa mips posix
-    platform_exclude: qemu_cortex_a9 qemu_x86 qemu_riscv64_smp qemu_riscv64 qemu_riscv32e
-        qemu_riscv32 qemu_riscv32_smp qemu_cortex_m3 mps2_an385
+    arch_exclude:
+      - arm64
+      - nios2
+      - sparc
+      - arc
+      - xtensa
+      - mips
+      - posix
+    platform_exclude:
+      - qemu_cortex_a9
+      - qemu_x86
+      - qemu_riscv64_smp
+      - qemu_riscv64
+      - qemu_riscv32e
+      - qemu_riscv32
+      - qemu_riscv32_smp
+      - qemu_cortex_m3
+      - mps2_an385
     tags: os_mgmt_info
     extra_configs:
       - CONFIG_NETWORKING=y
@@ -42,14 +78,28 @@ tests:
   os.mgmt.info_build_date:
     # FIXME: Exclude architectures that lack a reboot handler function
     # FIXME: Exclude systems whereby the processor type is not known and emits a warning
-    arch_exclude: arm64 nios2 sparc arc xtensa mips posix
+    arch_exclude:
+      - arm64
+      - nios2
+      - sparc
+      - arc
+      - xtensa
+      - mips
+      - posix
     tags: os_mgmt_info
     extra_configs:
       - CONFIG_BUILD_DATE_TIME_TEST=y
   os.mgmt.info_limited_size:
     # FIXME: Exclude architectures that lack a reboot handler function
     # FIXME: Exclude systems whereby the processor type is not known and emits a warning
-    arch_exclude: arm64 nios2 sparc arc xtensa mips posix
+    arch_exclude:
+      - arm64
+      - nios2
+      - sparc
+      - arc
+      - xtensa
+      - mips
+      - posix
     tags: os_mgmt_info
     extra_configs:
       - CONFIG_LIMITED_TEST=y

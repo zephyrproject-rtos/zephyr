@@ -885,7 +885,7 @@ static int write_tlv_resource(struct lwm2m_message *msg, struct oma_tlv *tlv)
 	int ret;
 
 	if (msg->in.block_ctx) {
-		msg->in.block_ctx->res_id = tlv->id;
+		msg->in.block_ctx->path.res_id = tlv->id;
 	}
 
 	msg->path.res_id = tlv->id;
@@ -916,7 +916,7 @@ static int lwm2m_multi_resource_tlv_parse(struct lwm2m_message *msg,
 	int ret;
 
 	if (msg->in.block_ctx) {
-		msg->in.block_ctx->res_id = multi_resource_tlv->id;
+		msg->in.block_ctx->path.res_id = multi_resource_tlv->id;
 	}
 
 	if (multi_resource_tlv->length == 0U) {
@@ -964,7 +964,7 @@ int do_write_op_tlv(struct lwm2m_message *msg)
 	 * header.
 	 */
 	if (msg->in.block_ctx != NULL && msg->in.block_ctx->ctx.current > 0) {
-		msg->path.res_id = msg->in.block_ctx->res_id;
+		msg->path.res_id = msg->in.block_ctx->path.res_id;
 		msg->path.level = 3U;
 		ret = do_write_op_tlv_item(msg);
 		if (ret < 0) {

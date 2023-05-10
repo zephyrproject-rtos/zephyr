@@ -14,6 +14,9 @@
 
 #define WIFI_COUNTRY_CODE_LEN 2
 
+#define WIFI_LISTEN_INTERVAL_MIN 0
+#define WIFI_LISTEN_INTERVAL_MAX 65535
+
 /* Not having support for legacy types is deliberate to enforce
  * higher security.
  */
@@ -369,6 +372,58 @@ static inline const char *get_twt_err_code_str(int16_t err_no)
 {
 	if ((err_no) < ARRAY_SIZE(twt_err_code_tbl)) {
 		return twt_err_code_tbl[err_no];
+	}
+
+	return "<unknown>";
+}
+
+enum ps_param_type {
+	WIFI_PS_PARAM_STATE,
+	WIFI_PS_PARAM_LISTEN_INTERVAL,
+	WIFI_PS_PARAM_WAKEUP_MODE,
+	WIFI_PS_PARAM_MODE,
+	WIFI_PS_PARAM_TIMEOUT,
+};
+
+enum wifi_ps_wakeup_mode {
+	WIFI_PS_WAKEUP_MODE_DTIM = 0,
+	WIFI_PS_WAKEUP_MODE_LISTEN_INTERVAL,
+};
+
+static const char * const wifi_ps_wakeup_mode2str[] = {
+	[WIFI_PS_WAKEUP_MODE_DTIM] = "PS wakeup mode DTIM",
+	[WIFI_PS_WAKEUP_MODE_LISTEN_INTERVAL] = "PS wakeup mode listen interval",
+};
+
+enum wifi_config_ps_param_fail_reason {
+	WIFI_PS_PARAM_FAIL_UNSPECIFIED,
+	WIFI_PS_PARAM_FAIL_CMD_EXEC_FAIL,
+	WIFI_PS_PARAM_FAIL_OPERATION_NOT_SUPPORTED,
+	WIFI_PS_PARAM_FAIL_UNABLE_TO_GET_IFACE_STATUS,
+	WIFI_PS_PARAM_FAIL_DEVICE_NOT_CONNECTED,
+	WIFI_PS_PARAM_FAIL_DEVICE_CONNECTED,
+	WIFI_PS_PARAM_LISTEN_INTERVAL_RANGE_INVALID,
+};
+
+static const char * const ps_param_config_err_code_tbl[] = {
+	[WIFI_PS_PARAM_FAIL_UNSPECIFIED] = "Unspecfied",
+	[WIFI_PS_PARAM_FAIL_CMD_EXEC_FAIL] = "Command Execution failed",
+	[WIFI_PS_PARAM_FAIL_OPERATION_NOT_SUPPORTED] =
+		"Operation not supported",
+	[WIFI_PS_PARAM_FAIL_UNABLE_TO_GET_IFACE_STATUS] =
+		"Unable to get iface status",
+	[WIFI_PS_PARAM_FAIL_DEVICE_NOT_CONNECTED] =
+		"Can not set while device not connected",
+	[WIFI_PS_PARAM_FAIL_DEVICE_CONNECTED] =
+		"Can not set while device already connected",
+	[WIFI_PS_PARAM_LISTEN_INTERVAL_RANGE_INVALID] =
+		"Can not set due to invalid range",
+};
+
+static inline const char *get_ps_config_err_code_str(int16_t err_no)
+{
+	if ((err_no) < ARRAY_SIZE(ps_param_config_err_code_tbl)) {
+		return ps_param_config_err_code_tbl[err_no];
 	}
 
 	return "<unknown>";

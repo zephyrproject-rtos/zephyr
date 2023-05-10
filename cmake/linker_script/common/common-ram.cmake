@@ -21,8 +21,7 @@ if(CONFIG_PM_DEVICE)
   zephyr_iterable_section(NAME pm_device_slots GROUP DATA_REGION ${XIP_ALIGN_WITH_INPUT} SUBALIGN 4)
 endif()
 
-zephyr_linker_section(NAME log_dynamic GROUP DATA_REGION NOINPUT)
-zephyr_linker_section_configure(SECTION log_dynamic KEEP INPUT ".log_dynamic_*")
+zephyr_iterable_section(NAME log_dynamic GROUP DATA_REGION ${XIP_ALIGN_WITH_INPUT} SUBALIGN 4)
 
 if(CONFIG_USERSPACE)
   # All kernel objects within are assumed to be either completely

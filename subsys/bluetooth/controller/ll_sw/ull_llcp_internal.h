@@ -511,6 +511,7 @@ void llcp_pdu_decode_terminate_ind(struct proc_ctx *ctx, struct pdu_data *pdu);
  * LLCP Local Request
  */
 struct proc_ctx *llcp_lr_peek(struct ll_conn *conn);
+struct proc_ctx *llcp_lr_peek_proc(struct ll_conn *conn, uint8_t proc);
 bool llcp_lr_ispaused(struct ll_conn *conn);
 void llcp_lr_pause(struct ll_conn *conn);
 void llcp_lr_resume(struct ll_conn *conn);
@@ -710,6 +711,7 @@ void llcp_pdu_encode_cte_rsp(const struct proc_ctx *ctx, struct pdu_data *pdu);
 #endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RSP */
 
 void llcp_lp_cc_init_proc(struct proc_ctx *ctx);
+void llcp_lp_cc_offset_calc_reply(struct ll_conn *conn, struct proc_ctx *ctx);
 void llcp_lp_cc_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx);
 void llcp_lp_cc_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param);
 bool llcp_lp_cc_is_active(struct proc_ctx *ctx);

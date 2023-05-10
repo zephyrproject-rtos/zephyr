@@ -169,6 +169,27 @@ struct proc_ctx *llcp_lr_peek(struct ll_conn *conn)
 	return ctx;
 }
 
+struct proc_ctx *llcp_lr_peek_proc(struct ll_conn *conn, uint8_t proc)
+{
+	/* This function is called from both Thread and Mayfly (ISR),
+	 * make sure only a single context have access at a time.
+	 */
+
+	struct proc_ctx *ctx, *tmp;
+
+	bool key = shared_data_access_lock();
+
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&conn->llcp.local.pend_proc_list, ctx, tmp, node) {
+		if (ctx->proc == proc) {
+			break;
+		}
+	}
+
+	shared_data_access_unlock(key);
+
+	return ctx;
+}
+
 bool llcp_lr_ispaused(struct ll_conn *conn)
 {
 	return conn->llcp.local.pause == 1U;

@@ -120,14 +120,14 @@ static bool data_size_valid(const size_t data_size)
 static void nxp_edma_callback(edma_handle_t *handle, void *param, bool transferDone,
 			      uint32_t tcds)
 {
-	int ret = 1;
+	int ret = -EIO;
 	struct call_back *data = (struct call_back *)param;
 	uint32_t channel = handle->channel;
 
 	if (transferDone) {
 		/* DMA is no longer busy when there are no remaining TCDs to transfer */
 		data->busy = (handle->tcdPool != NULL) && (handle->tcdUsed > 0);
-		ret = 0;
+		ret = DMA_STATUS_COMPLETE;
 	}
 	LOG_DBG("transfer %d", tcds);
 	data->dma_callback(data->dev, data->user_data, channel, ret);

@@ -181,6 +181,16 @@
 				#io-channel-cells = <1>;
 			};
 
+
+			test_spi_ads114s08: ads114s08@9 {
+				compatible = "ti,ads114s08";
+				reg = <0x9>;
+				spi-max-frequency = <0>;
+				#io-channel-cells = <1>;
+				reset-gpios = <&test_gpio 0 0>;
+				drdy-gpios = <&test_gpio 0 0>;
+				start-sync-gpios = <&test_gpio 0 0>;
+			};
 		};
 	};
 };

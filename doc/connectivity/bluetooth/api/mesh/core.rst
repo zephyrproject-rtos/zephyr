@@ -67,6 +67,46 @@ vulnerability and flash wear out.
    the RPL between reboots, will make the device vulnerable to replay attacks
    and not perform the replay protection required by the spec.
 
+Persistent storage
+******************
+
+The mesh stack uses the :ref:`Settings Subsystem <settings_api>` for storing the
+device configuration persistently. When the stack configuration changes and
+the change needs to be stored persistently, the stack schedules a work item.
+The delay between scheduling the work item and submitting it to the workqueue
+is defined by the :kconfig:option:`CONFIG_BT_MESH_STORE_TIMEOUT` option. Once
+storing of data is scheduled, it can not be rescheduled until the work item is
+processed. Exceptions are made in certain cases as described below.
+
+When IV index, Sequence Number or CDB configuration have to be stored, the work
+item is submitted to the workqueue without the delay. If the work item was
+previously scheduled, it will be rescheduled without the delay.
+
+The Replay Protection List uses the same work item to store RPL entries. If
+storing of RPL entries is requested and no other configuration is pending to be
+stored, the delay is set to :kconfig:option:`CONFIG_BT_MESH_RPL_STORE_TIMEOUT`.
+If other stack configuration has to be stored, the delay defined by
+the :kconfig:option:`CONFIG_BT_MESH_STORE_TIMEOUT` option is less than
+:kconfig:option:`CONFIG_BT_MESH_RPL_STORE_TIMEOUT`, and the work item was
+scheduled by the Replay Protection List, the work item will be rescheduled.
+
+When the work item is running, the stack will store all pending configuration,
+including the RPL entries.
+
+Work item execution context
+===========================
+
+The :kconfig:option:`CONFIG_BT_MESH_SETTINGS_WORKQ` option configures the
+context from which the work item is executed. This option is enabled by
+default, and results in stack using a dedicated cooperative thread to
+process the work item. This allows the stack to process other incoming and
+outgoing messages, as well as other work items submitted to the system
+workqueue, while the stack configuration is being stored.
+
+When this option is disabled, the work item is submitted to the system workqueue.
+This means that the system workqueue is blocked for the time it takes to store
+the stack's configuration. It is not recommended to disable this option as this
+will make the device non-responsive for a noticeable amount of time.
 
 API reference
 **************

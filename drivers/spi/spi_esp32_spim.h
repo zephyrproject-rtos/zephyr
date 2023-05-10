@@ -36,6 +36,8 @@ struct spi_esp32_config {
 	bool dma_enabled;
 	int dma_clk_src;
 	int dma_host;
+	int cs_setup;
+	int cs_hold;
 };
 
 struct spi_esp32_data {
@@ -52,7 +54,6 @@ struct spi_esp32_data {
 	int irq_line;
 	lldesc_t dma_desc_tx;
 	lldesc_t dma_desc_rx;
-	uint8_t word_size;
 };
 
 #endif /* ZEPHYR_DRIVERS_SPI_ESP32_SPIM_H_ */

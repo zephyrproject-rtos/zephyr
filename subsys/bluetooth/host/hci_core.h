@@ -156,6 +156,11 @@ struct bt_le_ext_adv {
 #endif /* defined(CONFIG_BT_EXT_ADV) */
 
 	struct k_work_delayable	lim_adv_timeout_work;
+
+	/** The options used to set the parameters for this advertising set
+	 * @ref bt_le_adv_param
+	 */
+	uint32_t options;
 };
 
 enum {
@@ -429,6 +434,8 @@ int bt_le_scan_update(bool fast_scan);
 
 int bt_le_create_conn(const struct bt_conn *conn);
 int bt_le_create_conn_cancel(void);
+int bt_le_create_conn_synced(const struct bt_conn *conn, const struct bt_le_ext_adv *adv,
+			     uint8_t subevent);
 
 bool bt_addr_le_is_bonded(uint8_t id, const bt_addr_le_t *addr);
 const bt_addr_le_t *bt_lookup_id_addr(uint8_t id, const bt_addr_le_t *addr);

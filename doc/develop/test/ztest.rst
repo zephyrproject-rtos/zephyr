@@ -559,7 +559,8 @@ and adding a file :file:`tc_util_user_override.h` with your overrides.
 Add the line ``zephyr_include_directories(my_folder)`` to
 your project's :file:`CMakeLists.txt` to let Zephyr find your header file during builds.
 
-See the file :zephyr_file:`subsys/testsuite/include/tc_util.h` to see which macros and/or defines can be overridden.
+See the file :zephyr_file:`subsys/testsuite/include/zephyr/tc_util.h` to see
+which macros and/or defines can be overridden.
 These will be surrounded by blocks such as:
 
 .. code-block:: C
@@ -573,14 +574,15 @@ These will be surrounded by blocks such as:
 Shuffling Test Sequence
 ***********************
 By default the tests are sorted and ran in alphanumerical order.  Test cases may
-be dependent on this sequence. Enable `ZTEST_SHUFFLE` to randomize the order. The
-output from the test will display the seed for failed tests.  For native posix
-builds you can provide the seed as an argument to twister with `--seed`
+be dependent on this sequence. Enable :kconfig:option:`CONFIG_ZTEST_SHUFFLE` to
+randomize the order. The output from the test will display the seed for failed
+tests.  For native posix builds you can provide the seed as an argument to
+twister with `--seed`
 
 Static configuration of ZTEST_SHUFFLE contains:
 
- - :c:macro:`ZTEST_SHUFFLE_SUITE_REPEAT_COUNT` - Number of iterations the test suite will run.
- - :c:macro:`ZTEST_SHUFFLE_TEST_REPEAT_COUNT` - Number of iterations the test will run.
+ - :kconfig:option:`CONFIG_ZTEST_SHUFFLE_SUITE_REPEAT_COUNT` - Number of iterations the test suite will run.
+ - :kconfig:option:`CONFIG_ZTEST_SHUFFLE_TEST_REPEAT_COUNT` - Number of iterations the test will run.
 
 
 Test Selection

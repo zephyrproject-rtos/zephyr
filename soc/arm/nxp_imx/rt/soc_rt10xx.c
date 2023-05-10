@@ -292,6 +292,11 @@ static int imxrt_init(void)
 #ifndef CONFIG_IMXRT1XXX_CODE_CACHE
 	/* SystemInit enables code cache, disable it here */
 	SCB_DisableICache();
+#else
+	/* z_arm_init_arch_hw_at_boot() disables code cache if CONFIG_ARCH_CACHE is enabled,
+	 * enable it here.
+	 */
+	SCB_EnableICache();
 #endif
 
 	if (IS_ENABLED(CONFIG_IMXRT1XXX_DATA_CACHE)) {
