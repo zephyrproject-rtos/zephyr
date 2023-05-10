@@ -305,7 +305,7 @@ static int sdhc_cdns_prepare(uint32_t dma_start_addr, uintptr_t dma_buff,
 
 	if (desc_cnt > CONFIG_CDNS_DESC_COUNT) {
 		LOG_ERR("Requested data transfer length %d greater than configured length %d",
-			size, (CONFIG_CDNS_DESC_COUNT	* SDMMC_DMA_MAX_BUFFER_SIZE));
+			size, (CONFIG_CDNS_DESC_COUNT * SDMMC_DMA_MAX_BUFFER_SIZE));
 		return -EINVAL;
 	}
 
@@ -339,7 +339,7 @@ static int sdhc_cdns_prepare(uint32_t dma_start_addr, uintptr_t dma_buff,
 	sys_write32((uint32_t)desc_base, cdns_params.reg_base + SDHC_CDNS_SRS22);
 	sys_write32((uint32_t)(desc_base >> 32), cdns_params.reg_base + SDHC_CDNS_SRS23);
 	arch_dcache_flush_range((void *)cdns_params.desc_base,
-				desc_cnt * SDMMC_DMA_MAX_BUFFER_SIZE);
+				desc_cnt * sizeof(struct sdhc_cdns_desc));
 
 	sys_write32((data->block_size << CDNS_SRS01_BLK_SIZE |
 		data->blocks << CDNS_SRS01_BLK_COUNT_CT | CDNS_SRS01_SDMA_BUF),
