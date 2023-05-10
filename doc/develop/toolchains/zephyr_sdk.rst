@@ -72,7 +72,7 @@ For the full list of compatible Zephyr and Zephyr SDK versions, refer to the
 Install Zephyr SDK on Linux
 ***************************
 
-#. Download and verify the `latest Zephyr SDK bundle`_:
+#. Download and verify the `Zephyr SDK bundle`_:
 
    .. code-block:: bash
 
@@ -125,7 +125,7 @@ If you relocate the SDK directory, you need to re-run the setup script.
 Install Zephyr SDK on macOS
 ***************************
 
-#. Download and verify the `latest Zephyr SDK bundle`_:
+#. Download and verify the `Zephyr SDK bundle`_:
 
    .. code-block:: bash
 
@@ -177,7 +177,7 @@ Install Zephyr SDK on Windows
 
 #. Open a ``cmd.exe`` window by pressing the Windows key typing "cmd.exe".
 
-#. Download the `latest Zephyr SDK bundle`_:
+#. Download the `Zephyr SDK bundle`_:
 
    .. code-block:: console
 
@@ -214,6 +214,6 @@ Install Zephyr SDK on Windows
       You must rerun the setup script if you relocate the Zephyr SDK bundle directory after
       the initial setup.
 
-.. _latest Zephyr SDK bundle: https://github.com/zephyrproject-rtos/sdk-ng/releases
+.. _Zephyr SDK bundle: https://github.com/zephyrproject-rtos/sdk-ng/releases/tag/v0.16.1
 .. _Zephyr SDK Releases: https://github.com/zephyrproject-rtos/sdk-ng/releases
 .. _Zephyr SDK Version Compatibility Matrix: https://github.com/zephyrproject-rtos/sdk-ng/wiki/Zephyr-SDK-Version-Compatibility-Matrix

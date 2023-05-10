@@ -227,8 +227,8 @@ The Zephyr SDK supports the following target architectures:
 
 Follow these steps to install the Zephyr SDK:
 
-#. Download and verify the `latest Zephyr SDK bundle
-   <https://github.com/zephyrproject-rtos/sdk-ng/releases>`_:
+#. Download and verify the `Zephyr SDK bundle
+   <https://github.com/zephyrproject-rtos/sdk-ng/releases/tag/v0.16.1>`_:
 
    .. code-block:: bash
 
