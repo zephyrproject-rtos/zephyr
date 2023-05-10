@@ -430,8 +430,23 @@ Coding Guidelines:
     - carlescufi
     - jfischer-no
   files:
+    - .checkpatch.conf
     - .clang-format
+    - .editorconfig
+    - .gitlint
+    - .yamllint
     - doc/contribute/guidelines.rst
+    - doc/contribute/coding_guidelines/
+    - scripts/checkpatch.pl
+    - scripts/checkpatch/
+    - scripts/ci/check_compliance.py
+    - scripts/ci/guideline_check.py
+    - scripts/ci/pylintrc
+    - scripts/coccicheck
+    - scripts/coccinelle/
+    - scripts/gitlint/
+    - scripts/pylint/
+    - scripts/spelling.txt
 
 Common Architecture Interface:
   status: odd fixes
