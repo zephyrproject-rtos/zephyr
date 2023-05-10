@@ -1,8 +1,12 @@
 # Copyright (c) 2018 Linaro Limited
 # SPDX-License-Identifier: Apache-2.0
 
+config ZEPHYR_LIBMETAL_MODULE
+	bool
+
 menuconfig LIBMETAL
 	bool "libmetal Support"
+	depends on ZEPHYR_LIBMETAL_MODULE
 	help
 	  This option enables the libmetal HAL abstraction layer
 
