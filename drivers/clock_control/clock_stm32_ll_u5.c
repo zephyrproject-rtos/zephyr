@@ -451,12 +451,12 @@ static void clock_switch_to_hsi(void)
 		}
 	}
 
-	LL_RCC_SetAHBPrescaler(LL_RCC_SYSCLK_DIV_1);
-
 	/* Set HSI as SYSCLCK source */
 	LL_RCC_SetSysClkSource(LL_RCC_SYS_CLKSOURCE_HSI);
 	while (LL_RCC_GetSysClkSource() != LL_RCC_SYS_CLKSOURCE_STATUS_HSI) {
 	}
+
+	LL_RCC_SetAHBPrescaler(LL_RCC_SYSCLK_DIV_1);
 }
 
 __unused
