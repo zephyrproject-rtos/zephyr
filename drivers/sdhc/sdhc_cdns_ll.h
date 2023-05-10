@@ -174,7 +174,7 @@
 #define CDNS_SRS03_CMD_SEND_INIT	BIT(15)
 /* Command type */
 #define CDNS_SRS03_CMD_TYPE		BIT(22)
-#define CMD_STOP_ABORT_CMD		(4 << 22)
+#define CMD_STOP_ABORT_CMD		(3 << 22)
 #define CMD_RESUME_CMD			(2 << 22)
 #define CMD_SUSPEND_CMD			BIT(22)
 #define CDNS_SRS03_DATA_PRSNT		BIT(21)

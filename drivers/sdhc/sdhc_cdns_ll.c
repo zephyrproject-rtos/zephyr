@@ -277,7 +277,13 @@ static int sdhc_cdns_program_phy_reg(struct sdhc_cdns_combo_phy *sdhc_cdns_combo
 
 static int sdhc_cdns_cache_invd(int lba, uintptr_t buf, size_t size)
 {
-	arch_dcache_invd_range((void *)buf, size);
+	int ret = 0;
+
+	ret = arch_dcache_invd_range((void *)buf, size);
+	if (ret != 0) {
+		LOG_ERR("%s: error in invalidate dcache with ret %d", __func__, ret);
+		return ret;
+	}
 
 	return 0;
 }
@@ -304,7 +310,7 @@ static int sdhc_cdns_prepare(uint32_t dma_start_addr, uintptr_t dma_buff,
 		cdns_params.desc_size);
 
 	if (desc_cnt > CONFIG_CDNS_DESC_COUNT) {
-		LOG_ERR("Requested data transfer length %d greater than configured length %d",
+		LOG_ERR("Requested data transfer length %u greater than configured length %u",
 			size, (CONFIG_CDNS_DESC_COUNT * SDMMC_DMA_MAX_BUFFER_SIZE));
 		return -EINVAL;
 	}
@@ -352,7 +358,7 @@ static int sdhc_cdns_host_set_clk(int clk)
 {
 	uint32_t sdclkfsval = 0;
 	uint32_t dtcvval = 0xe;
-	uint32_t ret = 0;
+	int ret = 0;
 
 	sdclkfsval = (cdns_params.clk_rate / 2000) / clk;
 	sys_write32(0, cdns_params.reg_base + SDHC_CDNS_SRS11);
@@ -385,7 +391,7 @@ static int sdhc_cdns_host_set_clk(int clk)
 
 static int sdhc_cdns_set_ios(unsigned int clk, unsigned int width)
 {
-	uint32_t ret = 0;
+	int ret = 0;
 
 	switch (width) {
 	case SDHC_BUS_WIDTH1BIT:
@@ -463,7 +469,7 @@ static int sdhc_cdns_init_hrs_io(struct sdhc_cdns_combo_phy *sdhc_cdns_combo_phy
 static int sdhc_cdns_set_clk(struct sdhc_cdns_params *cdn_sdmmc_dev_type_params)
 {
 	uint32_t dtcvval, sdclkfsval;
-	uint32_t ret = 0;
+	int ret = 0;
 
 	dtcvval = DTC_VAL;
 	sdclkfsval = 0;
@@ -583,7 +589,6 @@ static int sdhc_cdns_send_cmd(struct sdmmc_cmd *cmd, struct sdhc_data *data)
 	uintptr_t base;
 	int32_t timeout;
 	uint32_t cmd_indx;
-	uint32_t status = 0;
 	uint32_t status_check = 0;
 
 	__ASSERT(cmd, "Assert %s function call", __func__);
@@ -720,7 +725,7 @@ static int sdhc_cdns_send_cmd(struct sdmmc_cmd *cmd, struct sdhc_data *data)
 	value = sys_read32(cdns_params.reg_base + SDHC_CDNS_SRS12);
 	status_check = value & CDNS_SRS12_ERR_MASK;
 	if (status_check != 0U) {
-		LOG_ERR("SD host controller send command failed, SRS12 = %x", status);
+		LOG_ERR("SD host controller send command failed, SRS12 = %X", status_check);
 		return -EIO;
 	}
 

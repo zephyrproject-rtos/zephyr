@@ -119,8 +119,11 @@ static int sdhc_cdns_request(const struct device *dev,
 	if (ret == 0) {
 		if (cmd->opcode == SD_READ_SINGLE_BLOCK || cmd->opcode == SD_APP_SEND_SCR ||
 			cmd->opcode == SD_READ_MULTIPLE_BLOCK) {
-			cdns_sdmmc_ops->cache_invd(data->block_addr, (uintptr_t)data->data,
+			ret = cdns_sdmmc_ops->cache_invd(data->block_addr, (uintptr_t)data->data,
 				data->block_size);
+			if (ret != 0) {
+				return ret;
+			}
 		}
 	}
 	/* copying all responses as per response type */
