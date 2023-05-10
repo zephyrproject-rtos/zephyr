@@ -683,6 +683,14 @@
 		status = "disabled";
 	};
 
+	vref: vref {
+		compatible = "st,stm32-vref";
+		vrefint-cal-addr = <0x1FFF75AA>;
+		vrefint-cal-mv = <3000>;
+		io-channels = <&adc1 18>;
+		status = "disabled";
+	};
+
 	usb_fs_phy: usbphy {
 		compatible = "usb-nop-xceiv";
 		#phy-cells = <0>;
