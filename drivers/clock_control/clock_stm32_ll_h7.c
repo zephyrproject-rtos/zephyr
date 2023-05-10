@@ -672,8 +672,8 @@ static int set_up_plls(void)
 	 *
 	 */
 	if (LL_RCC_GetSysClkSource() == LL_RCC_SYS_CLKSOURCE_STATUS_PLL1) {
-		LL_RCC_SetAHBPrescaler(LL_RCC_SYSCLK_DIV_1);
 		stm32_clock_switch_to_hsi();
+		LL_RCC_SetAHBPrescaler(LL_RCC_SYSCLK_DIV_1);
 	}
 	LL_RCC_PLL1_Disable();
 
