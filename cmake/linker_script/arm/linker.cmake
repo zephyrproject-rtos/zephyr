@@ -135,6 +135,8 @@ if(NOT CONFIG_USERSPACE)
   zephyr_linker_section_configure(SECTION .noinit INPUT ".kernel_noinit.*")
 endif()
 
+include(${COMMON_ZEPHYR_LINKER_DIR}/ram-end.cmake)
+
 zephyr_linker_symbol(OBJECT REGION_RAM SYMBOL __kernel_ram_start EXPR "(@__bss_start@)")
 zephyr_linker_symbol(OBJECT REGION_RAM SYMBOL __kernel_ram_end  EXPR "(${RAM_ADDR} + ${RAM_SIZE})")
 zephyr_linker_symbol(OBJECT REGION_RAM SYMBOL __kernel_ram_size EXPR "(@__kernel_ram_end@ - @__bss_start@)")
