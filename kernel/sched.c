@@ -1729,6 +1729,13 @@ static void end_thread(struct k_thread *thread)
 	}
 }
 
+void z_thread_wake_joiners(struct k_thread *thread)
+{
+	LOCKED(&sched_spinlock) {
+		unpend_all(&thread->join_queue);
+	}
+}
+
 void z_thread_abort(struct k_thread *thread)
 {
 	k_spinlock_key_t key = k_spin_lock(&sched_spinlock);
