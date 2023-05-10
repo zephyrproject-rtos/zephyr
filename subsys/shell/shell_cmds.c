@@ -30,6 +30,9 @@
 #define SHELL_HELP_VT100		"Toggle vt100 commands."
 #define SHELL_HELP_VT100_OFF		"Disable vt100 commands."
 #define SHELL_HELP_VT100_ON		"Enable vt100 commands."
+#define SHELL_HELP_PROMPT		"Toggle prompt."
+#define SHELL_HELP_PROMPT_OFF		"Disable prompt."
+#define SHELL_HELP_PROMPT_ON		"Enable prompt."
 #define SHELL_HELP_STATISTICS		"Shell statistics."
 #define SHELL_HELP_STATISTICS_SHOW	\
 	"Get shell statistics for the Logger module."
@@ -286,6 +289,26 @@ static int cmd_vt100_on(const struct shell *sh, size_t argc, char **argv)
 	return 0;
 }
 
+static int cmd_prompt_off(const struct shell *sh, size_t argc, char **argv)
+{
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
+	shell_prompt_change(sh, "");
+
+	return 0;
+}
+
+static int cmd_prompt_on(const struct shell *sh, size_t argc, char **argv)
+{
+	ARG_UNUSED(argv);
+	ARG_UNUSED(argv);
+
+	shell_prompt_change(sh, sh->default_prompt);
+
+	return 0;
+}
+
 static int cmd_echo_off(const struct shell *sh, size_t argc, char **argv)
 {
 	ARG_UNUSED(argc);
@@ -458,6 +481,12 @@ SHELL_STATIC_SUBCMD_SET_CREATE(m_sub_vt100,
 	SHELL_SUBCMD_SET_END
 );
 
+SHELL_STATIC_SUBCMD_SET_CREATE(m_sub_prompt,
+	SHELL_CMD_ARG(off, NULL, SHELL_HELP_PROMPT_OFF, cmd_prompt_off, 1, 0),
+	SHELL_CMD_ARG(on, NULL, SHELL_HELP_PROMPT_ON, cmd_prompt_on, 1, 0),
+	SHELL_SUBCMD_SET_END
+);
+
 SHELL_STATIC_SUBCMD_SET_CREATE(m_sub_echo,
 	SHELL_CMD_ARG(off, NULL, SHELL_HELP_ECHO_OFF, cmd_echo_off, 1, 0),
 	SHELL_CMD_ARG(on, NULL, SHELL_HELP_ECHO_ON, cmd_echo_on, 1, 0),
@@ -488,6 +517,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(m_sub_shell,
 		       SHELL_HELP_COLORS, NULL),
 	SHELL_COND_CMD(CONFIG_SHELL_VT100_COMMANDS, vt100, &m_sub_vt100,
 		       SHELL_HELP_VT100, NULL),
+	SHELL_CMD(prompt, &m_sub_prompt, SHELL_HELP_PROMPT, NULL),
 	SHELL_CMD_ARG(echo, &m_sub_echo, SHELL_HELP_ECHO, cmd_echo, 1, 1),
 	SHELL_COND_CMD(CONFIG_SHELL_STATS, stats, &m_sub_shell_stats,
 			SHELL_HELP_STATISTICS, NULL),
