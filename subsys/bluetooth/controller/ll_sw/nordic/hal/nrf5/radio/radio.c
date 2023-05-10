@@ -592,7 +592,7 @@ static uint32_t last_pdu_end_us;
 
 uint32_t radio_is_done(void)
 {
-	if (NRF_RADIO->EVENTS_END != 0) {
+	if (NRF_RADIO->NRF_RADIO_TXRX_END_EVENT != 0) {
 		/* On packet END event increment last packet end time value.
 		 * Note: this depends on the function being called exactly once
 		 * in the ISR function.
