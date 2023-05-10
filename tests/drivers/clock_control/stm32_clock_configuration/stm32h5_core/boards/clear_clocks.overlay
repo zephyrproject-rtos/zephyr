@@ -10,6 +10,16 @@
  * be found in stm32h5.dtsi
  */
 
+/* Keep csi on to be the usart1-console clock */
+&clk_csi {
+	status = "okay";
+};
+
+&usart1 {
+	clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00004000>,
+		<&rcc STM32_SRC_CSI USART1_SEL(4)>;
+};
+
 &clk_hse {
 	status = "disabled";
 	/delete-property/ clock-frequency;
@@ -22,10 +32,6 @@
 };
 
 &clk_lse {
-	status = "disabled";
-};
-
-&clk_csi {
 	status = "disabled";
 };
 

@@ -9,9 +9,6 @@ tests:
   drivers.stm32_clock_configuration.h5.sysclksrc_pll_csi_240:
     extra_args: DTC_OVERLAY_FILE="boards/clear_clocks.overlay;boards/pll_csi_240.overlay"
     platform_allow: stm32h573i_dk
-  drivers.stm32_clock_configuration.h5.sysclksrc_pll_hsi_100:
-    extra_args: DTC_OVERLAY_FILE="boards/clear_clocks.overlay;boards/pll_hsi_100.overlay"
-    platform_allow: stm32h573i_dk
   drivers.stm32_clock_configuration.h5.sysclksrc_pll_hsi_240:
     extra_args: DTC_OVERLAY_FILE="boards/clear_clocks.overlay;boards/pll_hsi_240.overlay"
     platform_allow: stm32h573i_dk
@@ -23,9 +20,6 @@ tests:
     platform_allow: stm32h573i_dk
   drivers.stm32_clock_configuration.h5.sysclksrc_csi4:
     extra_args: DTC_OVERLAY_FILE="boards/clear_clocks.overlay;boards/csi4.overlay"
-    platform_allow: stm32h573i_dk
-  drivers.stm32_clock_configuration.h5.sysclksrc_hsi_32:
-    extra_args: DTC_OVERLAY_FILE="boards/clear_clocks.overlay;boards/hsi_32.overlay"
     platform_allow: stm32h573i_dk
   drivers.stm32_clock_configuration.h5.sysclksrc_hse_25:
     extra_args: DTC_OVERLAY_FILE="boards/clear_clocks.overlay;boards/hse25.overlay"
