@@ -215,5 +215,5 @@ Install Zephyr SDK on Windows
       the initial setup.
 
 .. _Zephyr SDK bundle: https://github.com/zephyrproject-rtos/sdk-ng/releases/tag/v0.16.1
-.. _Zephyr SDK Releases: https://github.com/zephyrproject-rtos/sdk-ng/releases
+.. _Zephyr SDK Releases: https://github.com/zephyrproject-rtos/sdk-ng/tags
 .. _Zephyr SDK Version Compatibility Matrix: https://github.com/zephyrproject-rtos/sdk-ng/wiki/Zephyr-SDK-Version-Compatibility-Matrix
