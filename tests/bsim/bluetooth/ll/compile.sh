@@ -25,6 +25,7 @@ app=tests/bsim/bluetooth/ll/advx \
 app=tests/bsim/bluetooth/ll/conn conf_file=prj_split.conf compile
 app=tests/bsim/bluetooth/ll/conn conf_file=prj_split_privacy.conf compile
 app=tests/bsim/bluetooth/ll/conn conf_file=prj_split_low_lat.conf compile
+app=tests/bsim/bluetooth/ll/conn conf_file=prj_split_single_timer.conf compile
 
 app=tests/bsim/bluetooth/ll/bis compile
 app=tests/bsim/bluetooth/ll/bis \
