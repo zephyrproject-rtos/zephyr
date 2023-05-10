@@ -257,6 +257,8 @@ source "drivers/sensor/stm32_temp/Kconfig"
 
 source "drivers/sensor/stm32_vbat/Kconfig"
 
+source "drivers/sensor/stm32_vref/Kconfig"
+
 source "drivers/sensor/stts751/Kconfig"
 
 source "drivers/sensor/sx9500/Kconfig"
