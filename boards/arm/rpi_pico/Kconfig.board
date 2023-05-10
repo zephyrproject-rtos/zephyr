@@ -4,3 +4,7 @@
 config BOARD_RPI_PICO
 	bool "Raspberry Pi Pico Board"
 	depends on SOC_RP2040
+
+config BOARD_RPI_PICO_W
+	bool "Raspberry Pi Pico W Board"
+	depends on SOC_RP2040
