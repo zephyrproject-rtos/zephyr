@@ -27,6 +27,10 @@ properties:
     type: string-array
     description: name of each register space
 
+  io-mapped:
+    type: boolean
+    description: specify registers are IO mapped or memory mapped
+
   interrupts:
     type: array
     description: interrupts for device

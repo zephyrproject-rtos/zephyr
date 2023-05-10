@@ -1,0 +1,10 @@
+# Copyright (c) 2022 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+# Common fields for acpi bus driver
+
+description: Root node
+
+compatible: "root"
+
+include: base.yaml

@@ -16,6 +16,19 @@
 extern "C" {
 #endif
 
+#ifdef CONFIG_PLATFORM_ABST_SUPPORT
+enum notify_boot_level {
+	NOTIFY_LEVEL_PRE_KERNEL,
+	NOTIFY_LEVEL_POST_KERNEL,
+	NOTIFY_LEVEL_APPLICATION,
+	NOTIFY_LEVEL_MAX,
+};
+
+typedef void (*boot_notify_cb)(enum notify_boot_level type);
+
+enum notify_boot_level current_boot_stage_get(void);
+#endif
+
 /**
  * @defgroup sys_init System Initialization
  *
@@ -156,6 +169,10 @@ struct init_entry {
 			.init_fn = {.sys = (init_fn_)},                        \
 			.dev = NULL,                                           \
 	}
+
+#ifdef CONFIG_PLATFORM_ABST_SUPPORT
+int device_boot_notify_register(enum notify_boot_level type, boot_notify_cb cb);
+#endif
 
 /** @} */
 

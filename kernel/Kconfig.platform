@@ -1,0 +1,23 @@
+# Copyright (c) 2021 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+menu "Platform Abstract Support"
+
+config PLATFORM_ABST_SUPPORT
+	bool "enable Platform Abstract Support"
+	default n
+	help
+	  Option to enable Platform Abstract Support.
+
+if PLATFORM_ABST_SUPPORT
+
+config PLATFORM_SPECIFIC_DEV_INIT
+	bool "Enable platform specifc initialize Support"
+	default n
+	help
+	  Option to enable platform specifc initialize Support.
+
+endif # PLATFORM_ABST_SUPPORT
+
+endmenu # Platform Abstract Support

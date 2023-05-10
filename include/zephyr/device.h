@@ -14,6 +14,9 @@
 #include <zephyr/linker/sections.h>
 #include <zephyr/sys/device_mmio.h>
 #include <zephyr/sys/util.h>
+#if defined(CONFIG_PLATFORM_ABST_SUPPORT)
+#include <zephyr/sys/slist.h>
+#endif
 #include <zephyr/toolchain.h>
 
 #ifdef __cplusplus
@@ -332,6 +335,8 @@ typedef int16_t device_handle_t;
 #define DEVICE_INIT_DT_GET(node_id)                                            \
 	(&Z_INIT_ENTRY_NAME(DEVICE_DT_NAME_GET(node_id)))
 
+#define DEVICE_INIT_DT_NAME_GET(node_id)\
+	Z_INIT_ENTRY_NAME(DEVICE_DT_NAME_GET(node_id))
 /**
  * @brief Get a @ref init_entry reference from a device identifier.
  *
@@ -373,6 +378,17 @@ struct pm_device;
 #define Z_DEVICE_HANDLES_CONST const
 #endif
 
+#ifdef CONFIG_PLATFORM_ABST_SUPPORT
+/**
+ * @brief device config info (in ROM) per driver instance
+ */
+union mmio_info {
+	uintptr_t mem;
+	uint32_t port;
+	uint32_t dev_id;
+};
+#endif
+
 /**
  * @brief Runtime device structure (in ROM) per driver instance
  */
@@ -402,6 +418,17 @@ struct device {
 	 * @kconfig{CONFIG_PM_DEVICE} is enabled).
 	 */
 	struct pm_device *pm;
+#endif
+
+#if defined(CONFIG_PLATFORM_ABST_SUPPORT)
+	/* Device resource such as mmio address. */
+	union mmio_info *mmio;
+	/* Platform specific configuration info. */
+	const void  *platform_cfg;
+	/* Default device conifg such as baud rate, clk freq etc. */
+	const void *default_cfg;
+	/* Flags describe type of Device object, requried boot priority etc. */
+	uint32_t flag;
 #endif
 };
 
@@ -919,7 +946,7 @@ static inline bool z_impl_device_is_ready(const struct device *dev)
  * @param prio Initialization priority.
  */
 #define Z_DEVICE_INIT_ENTRY_DEFINE(dev_id, init_fn_, level, prio)              \
-	static const Z_DECL_ALIGN(struct init_entry)                           \
+	const Z_DECL_ALIGN(struct init_entry)                           \
 		Z_INIT_ENTRY_SECTION(level, prio) __used __noasan              \
 		Z_INIT_ENTRY_NAME(DEVICE_NAME_GET(dev_id)) = {                 \
 			.init_fn = {.dev = (init_fn_)},                        \
@@ -973,10 +1000,19 @@ static inline bool z_impl_device_is_ready(const struct device *dev)
 	extern const struct device DEVICE_DT_NAME_GET(node_id);
 
 DT_FOREACH_STATUS_OKAY_NODE(Z_MAYBE_DEVICE_DECLARE_INTERNAL)
+
+#define Z_MAYBE_DEVICE_INIT_DECLARE_INTERNAL(node_id)                               \
+	extern const struct init_entry DEVICE_INIT_DT_NAME_GET(node_id);
+
+DT_FOREACH_STATUS_OKAY_NODE(Z_MAYBE_DEVICE_INIT_DECLARE_INTERNAL)
+
 #endif /* CONFIG_HAS_DTS */
 
-/** @endcond */
+#ifdef CONFIG_PLATFORM_ABST_SUPPORT
+#include <zephyr/platform.h>
+#endif
 
+/** @endcond */
 #ifdef __cplusplus
 }
 #endif

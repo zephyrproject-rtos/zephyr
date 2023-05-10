@@ -35,6 +35,7 @@
 #include <zephyr/timing/timing.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/pm/device_runtime.h>
+
 LOG_MODULE_REGISTER(os, CONFIG_KERNEL_LOG_LEVEL);
 
 
@@ -94,7 +95,63 @@ K_KERNEL_PINNED_STACK_ARRAY_DEFINE(z_interrupt_stacks,
 
 extern void idle(void *unused1, void *unused2, void *unused3);
 
+#ifdef CONFIG_PLATFORM_ABST_SUPPORT
+extern int device_init(void);
 
+struct boot_notify {
+	boot_notify_cb cb;
+	enum notify_boot_level type;
+};
+#define CONFIG_BOOT_NOTIFY_MAX 20
+
+static struct boot_notify notify_ctx[CONFIG_BOOT_NOTIFY_MAX];
+static enum notify_boot_level current_boot_stage;
+
+/**
+ *  TODO: need to replce this api with static registration.
+ *
+ *  @brief register various boot stage notification
+ *
+ * @param notify_boot_level stage level at which user need notification.
+ * @param cb callback function for recieve notification.
+ *
+ * @return return 0 if success else error code.
+ */
+int device_boot_notify_register(enum notify_boot_level type, boot_notify_cb cb)
+{
+	int i = 0;
+
+	if (type >= NOTIFY_LEVEL_MAX) {
+		return -EINVAL;
+	}
+
+	do {
+		if (atomic_ptr_cas((atomic_ptr_t *)&notify_ctx[i].cb, (void *)NULL, (void *)cb)) {
+			notify_ctx[i].type = type;
+			return 0;
+		}
+	} while (i++ < CONFIG_BOOT_NOTIFY_MAX);
+
+	return -ENOMEM;
+}
+
+static void device_boot_notify(enum notify_boot_level type)
+{
+	int i = 0;
+
+	current_boot_stage = type;
+	do {
+		if (atomic_ptr_get((atomic_ptr_t *)&notify_ctx[i].cb) && type == notify_ctx[i].type) {
+			notify_ctx[i].cb(type);
+		}
+	} while (i++ < CONFIG_BOOT_NOTIFY_MAX);
+}
+
+enum notify_boot_level current_boot_stage_get(void)
+{
+	return current_boot_stage;
+}
+#endif
 /* LCOV_EXCL_START
  *
  * This code is called so early in the boot process that code coverage
@@ -254,6 +311,14 @@ static void z_sys_init_run_level(enum init_level level)
 		if (dev != NULL) {
 			int rc = 0;
 
+#ifdef CONFIG_PLATFORM_ABST_SUPPORT
+			if (IS_PLATFORM_DEVICE(dev)) {
+				continue;
+			}
+#endif
+			if (dev->state->initialized == true) {
+				continue;
+			}
 			if (entry->init_fn.dev != NULL) {
 				rc = entry->init_fn.dev(dev);
 				/* Mark device initialized. If initialization
@@ -311,6 +376,11 @@ static void bg_thread_main(void *unused1, void *unused2, void *unused3)
 #if CONFIG_STACK_POINTER_RANDOM
 	z_stack_adjust_initialized = 1;
 #endif
+
+#ifdef CONFIG_PLATFORM_ABST_SUPPORT
+	device_boot_notify(NOTIFY_LEVEL_POST_KERNEL);
+#endif
+
 	boot_banner();
 
 #if defined(CONFIG_CPP)
@@ -320,6 +390,10 @@ static void bg_thread_main(void *unused1, void *unused2, void *unused3)
 
 	/* Final init level before app starts */
 	z_sys_init_run_level(INIT_LEVEL_APPLICATION);
+
+#ifdef CONFIG_PLATFORM_ABST_SUPPORT
+	device_boot_notify(NOTIFY_LEVEL_APPLICATION);
+#endif
 
 	z_init_static_threads();
 
@@ -362,6 +436,7 @@ static void init_idle_thread(int i)
 
 #if CONFIG_MP_MAX_NUM_CPUS > 1
 	char tname[8];
+
 	snprintk(tname, 8, "idle %02d", i);
 #else
 	char *tname = "idle";
@@ -538,8 +613,12 @@ FUNC_NORETURN void z_cstart(void)
 
 	/* perform basic hardware initialization */
 	z_sys_init_run_level(INIT_LEVEL_PRE_KERNEL_1);
+
 	z_sys_init_run_level(INIT_LEVEL_PRE_KERNEL_2);
 
+#ifdef CONFIG_PLATFORM_ABST_SUPPORT
+	device_boot_notify(NOTIFY_LEVEL_PRE_KERNEL);
+#endif
 #ifdef CONFIG_STACK_CANARIES
 	uintptr_t stack_guard;
 

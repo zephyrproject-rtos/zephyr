@@ -21,6 +21,7 @@ list(APPEND kernel_files
   main_weak.c
   banner.c
   device.c
+  platform.c
   errno.c
   fatal.c
   init.c

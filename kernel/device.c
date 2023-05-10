@@ -12,7 +12,9 @@
 
 extern const struct device __device_start[];
 extern const struct device __device_end[];
+extern const struct init_entry __init_end[];
 
+/* sys_slist_t pend_dev_list; */
 
 /**
  * @brief Initialize state for all static devices.
@@ -29,6 +31,7 @@ void z_device_state_init(void)
 		++dev;
 	}
 }
+
 
 const struct device *z_impl_device_get_binding(const char *name)
 {
