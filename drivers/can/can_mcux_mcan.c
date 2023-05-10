@@ -49,6 +49,31 @@ static int mcux_mcan_write_reg(const struct device *dev, uint16_t reg, uint32_t 
 	return can_mcan_sys_write_reg(mcux_config->base, reg, val);
 }
 
+static int mcux_mcan_read_mram(const struct device *dev, uint16_t offset, void *dst, size_t len)
+{
+	struct can_mcan_data *mcan_data = dev->data;
+	struct mcux_mcan_data *mcux_data = mcan_data->custom;
+
+	return can_mcan_sys_read_mram(POINTER_TO_UINT(&mcux_data->msg_ram), offset, dst, len);
+}
+
+static int mcux_mcan_write_mram(const struct device *dev, uint16_t offset, const void *src,
+				size_t len)
+{
+	struct can_mcan_data *mcan_data = dev->data;
+	struct mcux_mcan_data *mcux_data = mcan_data->custom;
+
+	return can_mcan_sys_write_mram(POINTER_TO_UINT(&mcux_data->msg_ram), offset, src, len);
+}
+
+static int mcux_mcan_clear_mram(const struct device *dev, uint16_t offset, size_t len)
+{
+	struct can_mcan_data *mcan_data = dev->data;
+	struct mcux_mcan_data *mcux_data = mcan_data->custom;
+
+	return can_mcan_sys_clear_mram(POINTER_TO_UINT(&mcux_data->msg_ram), offset, len);
+}
+
 static int mcux_mcan_get_core_clock(const struct device *dev, uint32_t *rate)
 {
 	const struct can_mcan_config *mcan_config = dev->config;
@@ -88,7 +113,7 @@ static int mcux_mcan_init(const struct device *dev)
 		return -EIO;
 	}
 
-	err = can_mcan_configure_message_ram(dev, mrba);
+	err = can_mcan_configure_mram(dev, mrba, POINTER_TO_UINT(&mcux_data->msg_ram));
 	if (err != 0) {
 		return -EIO;
 	}
@@ -170,6 +195,14 @@ static const struct can_driver_api mcux_mcan_driver_api = {
 #endif /* CONFIG_CAN_FD_MODE */
 };
 
+static const struct can_mcan_ops mcux_mcan_ops = {
+	.read_reg = mcux_mcan_read_reg,
+	.write_reg = mcux_mcan_write_reg,
+	.read_mram = mcux_mcan_read_mram,
+	.write_mram = mcux_mcan_write_mram,
+	.clear_mram = mcux_mcan_clear_mram,
+};
+
 #define MCUX_MCAN_INIT(n)						\
 	PINCTRL_DT_INST_DEFINE(n);					\
 									\
@@ -186,14 +219,12 @@ static const struct can_driver_api mcux_mcan_driver_api = {
 									\
 	static const struct can_mcan_config can_mcan_config_##n =	\
 		CAN_MCAN_DT_CONFIG_INST_GET(n, &mcux_mcan_config_##n,	\
-					    mcux_mcan_read_reg,		\
-					    mcux_mcan_write_reg);	\
+					    &mcux_mcan_ops);            \
 									\
 	static struct mcux_mcan_data mcux_mcan_data_##n;		\
 									\
 	static struct can_mcan_data can_mcan_data_##n =			\
-		CAN_MCAN_DATA_INITIALIZER(&mcux_mcan_data_##n.msg_ram,	\
-					  &mcux_mcan_data_##n);		\
+		CAN_MCAN_DATA_INITIALIZER(&mcux_mcan_data_##n);		\
 									\
 	DEVICE_DT_INST_DEFINE(n, &mcux_mcan_init, NULL,			\
 			      &can_mcan_data_##n,			\

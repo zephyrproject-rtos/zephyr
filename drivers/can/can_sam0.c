@@ -63,6 +63,31 @@ static int can_sam0_write_reg(const struct device *dev, uint16_t reg, uint32_t v
 	return can_mcan_sys_write_reg(sam_config->base, reg, val);
 }
 
+static int can_sam0_read_mram(const struct device *dev, uint16_t offset, void *dst, size_t len)
+{
+	struct can_mcan_data *mcan_data = dev->data;
+	struct can_sam0_data *sam_data = mcan_data->custom;
+
+	return can_mcan_sys_read_mram(POINTER_TO_UINT(&sam_data->msg_ram), offset, dst, len);
+}
+
+static int can_sam0_write_mram(const struct device *dev, uint16_t offset, const void *src,
+				size_t len)
+{
+	struct can_mcan_data *mcan_data = dev->data;
+	struct can_sam0_data *sam_data = mcan_data->custom;
+
+	return can_mcan_sys_write_mram(POINTER_TO_UINT(&sam_data->msg_ram), offset, src, len);
+}
+
+static int can_sam0_clear_mram(const struct device *dev, uint16_t offset, size_t len)
+{
+	struct can_mcan_data *mcan_data = dev->data;
+	struct can_sam0_data *sam_data = mcan_data->custom;
+
+	return can_mcan_sys_clear_mram(POINTER_TO_UINT(&sam_data->msg_ram), offset, len);
+}
+
 void can_sam0_line_x_isr(const struct device *dev)
 {
 	can_mcan_line_0_isr(dev);
@@ -98,6 +123,8 @@ static int can_sam0_init(const struct device *dev)
 {
 	const struct can_mcan_config *mcan_cfg = dev->config;
 	const struct can_sam0_config *sam_cfg = mcan_cfg->custom;
+	struct can_mcan_data *mcan_data = dev->data;
+	struct can_sam0_data *sam_data = mcan_data->custom;
 	int ret;
 
 	can_sam0_clock_enable(sam_cfg);
@@ -108,7 +135,7 @@ static int can_sam0_init(const struct device *dev)
 		return ret;
 	}
 
-	ret = can_mcan_configure_message_ram(dev, 0U);
+	ret = can_mcan_configure_mram(dev, 0U, POINTER_TO_UINT(&sam_data->msg_ram));
 	if (ret != 0) {
 		LOG_ERR("failed to configure message ram");
 		return ret;
@@ -175,6 +202,14 @@ static const struct can_driver_api can_sam0_driver_api = {
 #endif /* CONFIG_CAN_FD_MODE */
 };
 
+static const struct can_mcan_ops can_sam0_ops = {
+	.read_reg = can_sam0_read_reg,
+	.write_reg = can_sam0_write_reg,
+	.read_mram = can_sam0_read_mram,
+	.write_mram = can_sam0_write_mram,
+	.clear_mram = can_sam0_clear_mram,
+};
+
 #define CAN_SAM0_IRQ_CFG_FUNCTION(inst)							\
 static void config_can_##inst##_irq(void)						\
 {											\
@@ -197,16 +232,13 @@ static void config_can_##inst##_irq(void)						\
 	};										\
 											\
 	static const struct can_mcan_config can_mcan_cfg_##inst =			\
-		CAN_MCAN_DT_CONFIG_INST_GET(inst, &can_sam0_cfg_##inst,			\
-					    can_sam0_read_reg,				\
-					    can_sam0_write_reg);
+		CAN_MCAN_DT_CONFIG_INST_GET(inst, &can_sam0_cfg_##inst, &can_sam0_ops);
 
 #define CAN_SAM0_DATA_INST(inst)							\
 	static struct can_sam0_data can_sam0_data_##inst;				\
 											\
 	static struct can_mcan_data can_mcan_data_##inst =				\
-		CAN_MCAN_DATA_INITIALIZER(&can_sam0_data_##inst.msg_ram,		\
-					  &can_sam0_data_##inst);			\
+		CAN_MCAN_DATA_INITIALIZER(&can_sam0_data_##inst);
 
 #define CAN_SAM0_DEVICE_INST(inst)							\
 	DEVICE_DT_INST_DEFINE(inst, &can_sam0_init, NULL,				\
