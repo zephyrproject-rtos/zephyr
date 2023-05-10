@@ -801,7 +801,7 @@ static int cmd_bap_broadcast_assistant_add_pa_sync(const struct shell *sh,
 		shell_error(sh, "failed to parse pa_sync: %d", err);
 
 		return -ENOEXEC;
-	} else if (pa_sync_req != 0U || pa_sync_req != 1U) {
+	} else if (pa_sync_req != 0U && pa_sync_req != 1U) {
 		shell_error(sh, "pa_sync_req shall be boolean: %lu", pa_sync_req);
 
 		return -ENOEXEC;
