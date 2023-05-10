@@ -185,4 +185,11 @@ config X86_MFENCE_INSTRUCTION_SUPPORTED
 	  Set n to disable the use of MFENCE instruction in arch_dcache_flush()
 	  for X86 CPUs have CLFLUSH instruction but no MFENCE
 
+config X86_RUNTIME_IRQ_STATS
+	bool
+	help
+	  Add irq runtime statistics to allow runtime profiling irq performance
+	  data with Host tools, enable this and implement platform dependent API
+	  runtime_irq_stats().
+
 endif # !X86_64
