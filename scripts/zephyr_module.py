@@ -350,7 +350,10 @@ def process_kconfig(module, meta):
         return kconfig_snippet(meta, module_path, Path(kconfig_file),
                                blobs=taint_blobs)
     else:
-        return ""
+        name_sanitized = meta['name-sanitized']
+        return (f'config ZEPHYR_{name_sanitized.upper()}_MODULE\n'
+                f'   bool\n'
+                f'   default y\n')
 
 
 def process_sysbuildkconfig(module, meta):
