@@ -25,6 +25,7 @@ foreach(report ram_report rom_report footprint)
     -o ${CMAKE_BINARY_DIR}
     ${workspace_arg}
     -d ${report_depth}
+    -s ${sort_key}
     ${flag_for_${report}}
     DEPENDS ${logical_target_for_zephyr_elf}
             $<TARGET_PROPERTY:zephyr_property_target,${report}_DEPENDENCIES>
@@ -64,6 +65,7 @@ if (CONFIG_TFM_BL2)
     -o ${CMAKE_BINARY_DIR}
     ${workspace_arg}
     -d ${report_depth}
+    -s ${sort_key}
     ${flag_for_${report}}
     DEPENDS tfm
     USES_TERMINAL
