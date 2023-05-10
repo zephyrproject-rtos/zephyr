@@ -115,8 +115,6 @@ static int lsm6dsl_accel_set_fs_raw(const struct device *dev, uint8_t fs)
 		return -EIO;
 	}
 
-	data->accel_fs = fs;
-
 	return 0;
 }
 
@@ -748,7 +746,6 @@ static int lsm6dsl_init_chip(const struct device *dev)
 	}
 	data->gyro_sensitivity = LSM6DSL_DEFAULT_GYRO_SENSITIVITY;
 
-	data->gyro_freq = lsm6dsl_odr_to_freq_val(CONFIG_LSM6DSL_GYRO_ODR);
 	if (lsm6dsl_gyro_set_odr_raw(dev, CONFIG_LSM6DSL_GYRO_ODR) < 0) {
 		LOG_DBG("failed to set gyroscope sampling rate");
 		return -EIO;
