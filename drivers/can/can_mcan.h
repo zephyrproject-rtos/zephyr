@@ -9,6 +9,7 @@
 #ifndef ZEPHYR_DRIVERS_CAN_MCAN_H_
 #define ZEPHYR_DRIVERS_CAN_MCAN_H_
 
+#include <zephyr/cache.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/can.h>
 #include <zephyr/kernel.h>
@@ -389,13 +390,173 @@
 #define MCAN_DT_PATH DT_PATH(soc, can)
 #endif
 
-#define NUM_STD_FILTER_ELEMENTS    DT_PROP_BY_IDX(MCAN_DT_PATH, bosch_mram_cfg, 1)
-#define NUM_EXT_FILTER_ELEMENTS    DT_PROP_BY_IDX(MCAN_DT_PATH, bosch_mram_cfg, 2)
-#define NUM_RX_FIFO0_ELEMENTS      DT_PROP_BY_IDX(MCAN_DT_PATH, bosch_mram_cfg, 3)
-#define NUM_RX_FIFO1_ELEMENTS      DT_PROP_BY_IDX(MCAN_DT_PATH, bosch_mram_cfg, 4)
-#define NUM_RX_BUF_ELEMENTS        DT_PROP_BY_IDX(MCAN_DT_PATH, bosch_mram_cfg, 5)
-#define NUM_TX_EVENT_FIFO_ELEMENTS DT_PROP_BY_IDX(MCAN_DT_PATH, bosch_mram_cfg, 6)
-#define NUM_TX_BUF_ELEMENTS        DT_PROP_BY_IDX(MCAN_DT_PATH, bosch_mram_cfg, 7)
+/**
+ * @brief Indexes for the cells in the devicetree bosch,mram-cfg property. These match the
+ * description of the cells in the bosch,m_can-base devicetree binding.
+ */
+enum can_mcan_mram_cfg {
+	CAN_MCAN_MRAM_CFG_OFFSET = 0,
+	CAN_MCAN_MRAM_CFG_STD_FILTER,
+	CAN_MCAN_MRAM_CFG_EXT_FILTER,
+	CAN_MCAN_MRAM_CFG_RX_FIFO0,
+	CAN_MCAN_MRAM_CFG_RX_FIFO1,
+	CAN_MCAN_MRAM_CFG_RX_BUFFER,
+	CAN_MCAN_MRAM_CFG_TX_EVENT,
+	CAN_MCAN_MRAM_CFG_TX_BUFFER,
+	CAN_MCAN_MRAM_CFG_NUM_CELLS
+};
+
+/**
+ * @brief Get the Bosch M_CAN Message RAM offset
+ *
+ * @param node_id node identifier
+ * @return the Message RAM offset in bytes
+ */
+#define CAN_MCAN_DT_MRAM_OFFSET(node_id) \
+	DT_PROP_BY_IDX(node_id, bosch_mram_cfg, 0)
+
+/**
+ * @brief Get the number of standard (11-bit) filter elements in Bosch M_CAN Message RAM
+ *
+ * @param node_id node identifier
+ * @return the number of standard (11-bit) filter elements
+ */
+#define CAN_MCAN_DT_MRAM_STD_FILTER_ELEM(node_id) \
+	DT_PROP_BY_IDX(node_id, bosch_mram_cfg, 1)
+
+/**
+ * @brief Get the number of extended (29-bit) filter elements in Bosch M_CAN Message RAM
+ *
+ * @param node_id node identifier
+ * @return the number of extended (29-bit) filter elements
+ */
+#define CAN_MCAN_DT_MRAM_EXT_FILTER_ELEM(node_id) \
+	DT_PROP_BY_IDX(node_id, bosch_mram_cfg, 2)
+
+/**
+ * @brief Get the number of Rx FIFO 0 elements in Bosch M_CAN Message RAM
+ *
+ * @param node_id node identifier
+ * @return the number of Rx FIFO 0 elements
+ */
+#define CAN_MCAN_DT_MRAM_RX_FIFO0_ELEM(node_id) \
+	DT_PROP_BY_IDX(node_id, bosch_mram_cfg, 3)
+
+/**
+ * @brief Get the number of Rx FIFO 1 elements in Bosch M_CAN Message RAM
+ *
+ * @param node_id node identifier
+ * @return the number of Rx FIFO 1 elements
+ */
+#define CAN_MCAN_DT_MRAM_RX_FIFO1_ELEM(node_id) \
+	DT_PROP_BY_IDX(node_id, bosch_mram_cfg, 4)
+
+/**
+ * @brief Get the number of Rx Buffer elements in Bosch M_CAN Message RAM
+ *
+ * @param node_id node identifier
+ * @return the number of Rx Buffer elements
+ */
+#define CAN_MCAN_DT_MRAM_RX_BUFFER_ELEM(node_id) \
+	DT_PROP_BY_IDX(node_id, bosch_mram_cfg, 5)
+
+/**
+ * @brief Get the number of Tx Event FIFO elements in Bosch M_CAN Message RAM
+ *
+ * @param node_id node identifier
+ * @return the number of Tx Event FIFO elements
+ */
+#define CAN_MCAN_DT_MRAM_TX_EVENT_FIFO_ELEM(node_id) \
+	DT_PROP_BY_IDX(node_id, bosch_mram_cfg, 6)
+
+/**
+ * @brief Get the number of Tx Buffer elements in Bosch M_CAN Message RAM
+ *
+ * @param node_id node identifier
+ * @return the number of Tx Buffer elements
+ */
+#define CAN_MCAN_DT_MRAM_TX_BUFFER_ELEM(node_id) \
+	DT_PROP_BY_IDX(node_id, bosch_mram_cfg, 7)
+
+/**
+ * @brief Equivalent to CAN_MCAN_DT_MRAM_OFFSET(DT_DRV_INST(inst))
+ * @param inst DT_DRV_COMPAT instance number
+ * @return the Message RAM offset in bytes
+ * @see CAN_MCAN_DT_MRAM_OFFSET()
+ */
+#define CAN_MCAN_DT_INST_MRAM_OFFSET(inst)			\
+	CAN_MCAN_DT_MRAM_OFFSET(DT_DRV_INST(inst))
+
+/**
+ * @brief Equivalent to CAN_MCAN_DT_MRAM_STD_FILTER_ELEM(DT_DRV_INST(inst))
+ * @param inst DT_DRV_COMPAT instance number
+ * @return the number of standard (11-bit) elements
+ * @see CAN_MCAN_DT_MRAM_STD_FILTER_ELEM()
+ */
+#define CAN_MCAN_DT_INST_MRAM_STD_FILTER_ELEM(inst)		\
+	CAN_MCAN_DT_MRAM_STD_FILTER_ELEMDT_DRV_INST(inst))
+
+/**
+ * @brief Equivalent to CAN_MCAN_DT_MRAM_EXT_FILTER_ELEM(DT_DRV_INST(inst))
+ * @param inst DT_DRV_COMPAT instance number
+ * @return the number of extended (29-bit) elements
+ * @see CAN_MCAN_DT_MRAM_EXT_FILTER_ELEM()
+ */
+#define CAN_MCAN_DT_INST_MRAM_EXT_FILTER_ELEM(inst)		\
+	CAN_MCAN_DT_MRAM_EXT_FILTER_ELEM(DT_DRV_INST(inst))
+
+/**
+ * @brief Equivalent to CAN_MCAN_DT_MRAM_RX_FIFO0_ELEM(DT_DRV_INST(inst))
+ * @param inst DT_DRV_COMPAT instance number
+ * @return the number of Rx FIFO 0 elements
+ * @see CAN_MCAN_DT_MRAM_RX_FIFO0_ELEM()
+ */
+#define CAN_MCAN_DT_INST_MRAM_RX_FIFO0_ELEM(inst)		\
+	CAN_MCAN_DT_MRAM_RX_FIFO0_ELEM(DT_DRV_INST(inst))
+
+/**
+ * @brief Equivalent to CAN_MCAN_DT_MRAM_RX_FIFO1_ELEM(DT_DRV_INST(inst))
+ * @param inst DT_DRV_COMPAT instance number
+ * @return the number of Rx FIFO 1 elements
+ * @see CAN_MCAN_DT_MRAM_RX_FIFO1_ELEM()
+ */
+#define CAN_MCAN_DT_INST_MRAM_RX_FIFO1_ELEM(inst)		\
+	CAN_MCAN_DT_MRAM_RX_FIFO1_ELEM(DT_DRV_INST(inst))
+
+/**
+ * @brief Equivalent to CAN_MCAN_DT_MRAM_RX_BUFFER_ELEM(DT_DRV_INST(inst))
+ * @param inst DT_DRV_COMPAT instance number
+ * @return the number of Rx Buffer elements
+ * @see CAN_MCAN_DT_MRAM_RX_BUFFER_ELEM()
+ */
+#define CAN_MCAN_DT_INST_MRAM_RX_BUFFER_ELEM(inst)		\
+	CAN_MCAN_DT_MRAM_RX_BUFFER_ELEM(DT_DRV_INST(inst))
+
+/**
+ * @brief Equivalent to CAN_MCAN_DT_MRAM_TX_EVENT_ELEM(DT_DRV_INST(inst))
+ * @param inst DT_DRV_COMPAT instance number
+ * @return the number of Tx Event FIFO elements
+ * @see CAN_MCAN_DT_MRAM_TX_EVENT_FIFO_ELEM()
+ */
+#define CAN_MCAN_DT_INST_MRAM_TX_EVENT_FIFO_ELEM(inst)		\
+	CAN_MCAN_DT_MRAM_TX_EVENT_FIFO_ELEM(DT_DRV_INST(inst))
+
+/**
+ * @brief Equivalent to CAN_MCAN_DT_MRAM_TX_BUFFER_ELEM(DT_DRV_INST(inst))
+ * @param inst DT_DRV_COMPAT instance number
+ * @return the number of Tx Buffer elements
+ * @see CAN_MCAN_DT_MRAM_TX_BUFFER_ELEM()
+ */
+#define CAN_MCAN_DT_INST_MRAM_TX_BUFFER_ELEM(inst)		\
+	CAN_MCAN_DT_MRAM_TX_BUFFER_ELEM(DT_DRV_INST(inst))
+
+#define NUM_STD_FILTER_ELEMENTS    CAN_MCAN_DT_MRAM_STD_FILTER_ELEM(MCAN_DT_PATH)
+#define NUM_EXT_FILTER_ELEMENTS    CAN_MCAN_DT_MRAM_EXT_FILTER_ELEM(MCAN_DT_PATH)
+#define NUM_RX_FIFO0_ELEMENTS      CAN_MCAN_DT_MRAM_RX_FIFO0_ELEM(MCAN_DT_PATH)
+#define NUM_RX_FIFO1_ELEMENTS      CAN_MCAN_DT_MRAM_RX_FIFO1_ELEM(MCAN_DT_PATH)
+#define NUM_RX_BUF_ELEMENTS        CAN_MCAN_DT_MRAM_RX_BUFFER_ELEM(MCAN_DT_PATH)
+#define NUM_TX_EVENT_FIFO_ELEMENTS CAN_MCAN_DT_MRAM_TX_EVENT_FIFO_ELEM(MCAN_DT_PATH)
+#define NUM_TX_BUF_ELEMENTS        CAN_MCAN_DT_MRAM_TX_BUFFER_ELEM(MCAN_DT_PATH)
 
 #ifdef CONFIG_CAN_STM32FD
 #define NUM_STD_FILTER_DATA CONFIG_CAN_MAX_STD_ID_FILTER
@@ -408,68 +569,68 @@
 struct can_mcan_rx_fifo_hdr {
 	union {
 		struct {
-			volatile uint32_t ext_id: 29; /* Extended Identifier */
-			volatile uint32_t rtr: 1;     /* Remote Transmission Request*/
-			volatile uint32_t xtd: 1;     /* Extended identifier */
-			volatile uint32_t esi: 1;     /* Error state indicator */
+			uint32_t ext_id: 29; /* Extended Identifier */
+			uint32_t rtr: 1;     /* Remote Transmission Request*/
+			uint32_t xtd: 1;     /* Extended identifier */
+			uint32_t esi: 1;     /* Error state indicator */
 		};
 		struct {
-			volatile uint32_t pad1: 18;
-			volatile uint32_t std_id: 11; /* Standard Identifier */
-			volatile uint32_t pad2: 3;
+			uint32_t pad1: 18;
+			uint32_t std_id: 11; /* Standard Identifier */
+			uint32_t pad2: 3;
 		};
 	};
 
-	volatile uint32_t rxts: 16; /* Rx timestamp */
-	volatile uint32_t dlc: 4;   /* Data Length Code */
-	volatile uint32_t brs: 1;   /* Bit Rate Switch */
-	volatile uint32_t fdf: 1;   /* FD Format */
-	volatile uint32_t res: 2;   /* Reserved */
-	volatile uint32_t fidx: 7;  /* Filter Index */
-	volatile uint32_t anmf: 1;  /* Accepted non-matching frame */
+	uint32_t rxts: 16; /* Rx timestamp */
+	uint32_t dlc: 4;   /* Data Length Code */
+	uint32_t brs: 1;   /* Bit Rate Switch */
+	uint32_t fdf: 1;   /* FD Format */
+	uint32_t res: 2;   /* Reserved */
+	uint32_t fidx: 7;  /* Filter Index */
+	uint32_t anmf: 1;  /* Accepted non-matching frame */
 } __packed __aligned(4);
 
 struct can_mcan_rx_fifo {
 	struct can_mcan_rx_fifo_hdr hdr;
 	union {
-		volatile uint8_t data[64];
-		volatile uint32_t data_32[16];
+		uint8_t data[64];
+		uint32_t data_32[16];
 	};
 } __packed __aligned(4);
 
 struct can_mcan_mm {
-	volatile uint8_t idx: 5;
-	volatile uint8_t cnt: 3;
+	uint8_t idx: 5;
+	uint8_t cnt: 3;
 } __packed;
 
 struct can_mcan_tx_buffer_hdr {
 	union {
 		struct {
-			volatile uint32_t ext_id: 29; /* Identifier */
-			volatile uint32_t rtr: 1;     /* Remote Transmission Request*/
-			volatile uint32_t xtd: 1;     /* Extended identifier */
-			volatile uint32_t esi: 1;     /* Error state indicator */
+			uint32_t ext_id: 29; /* Identifier */
+			uint32_t rtr: 1;     /* Remote Transmission Request*/
+			uint32_t xtd: 1;     /* Extended identifier */
+			uint32_t esi: 1;     /* Error state indicator */
 		};
 		struct {
-			volatile uint32_t pad1: 18;
-			volatile uint32_t std_id: 11; /* Identifier */
-			volatile uint32_t pad2: 3;
+			uint32_t pad1: 18;
+			uint32_t std_id: 11; /* Identifier */
+			uint32_t pad2: 3;
 		};
 	};
-	volatile uint16_t res1;	  /* Reserved */
-	volatile uint8_t dlc: 4;  /* Data Length Code */
-	volatile uint8_t brs: 1;  /* Bit Rate Switch */
-	volatile uint8_t fdf: 1;  /* FD Format */
-	volatile uint8_t res2: 1; /* Reserved */
-	volatile uint8_t efc: 1;  /* Event FIFO control (Store Tx events) */
+	uint16_t res1;   /* Reserved */
+	uint8_t dlc: 4;  /* Data Length Code */
+	uint8_t brs: 1;  /* Bit Rate Switch */
+	uint8_t fdf: 1;  /* FD Format */
+	uint8_t res2: 1; /* Reserved */
+	uint8_t efc: 1;  /* Event FIFO control (Store Tx events) */
 	struct can_mcan_mm mm;	  /* Message marker */
 } __packed __aligned(4);
 
 struct can_mcan_tx_buffer {
 	struct can_mcan_tx_buffer_hdr hdr;
 	union {
-		volatile uint8_t data[64];
-		volatile uint32_t data_32[16];
+		uint8_t data[64];
+		uint32_t data_32[16];
 	};
 } __packed __aligned(4);
 
@@ -477,16 +638,16 @@ struct can_mcan_tx_buffer {
 #define CAN_MCAN_TE_TXC 0x2 /* TX event in spite of cancellation */
 
 struct can_mcan_tx_event_fifo {
-	volatile uint32_t id: 29; /* Identifier */
-	volatile uint32_t rtr: 1; /* Remote Transmission Request*/
-	volatile uint32_t xtd: 1; /* Extended identifier */
-	volatile uint32_t esi: 1; /* Error state indicator */
+	uint32_t id: 29; /* Identifier */
+	uint32_t rtr: 1; /* Remote Transmission Request*/
+	uint32_t xtd: 1; /* Extended identifier */
+	uint32_t esi: 1; /* Error state indicator */
 
-	volatile uint16_t txts;	 /* TX Timestamp */
-	volatile uint8_t dlc: 4; /* Data Length Code */
-	volatile uint8_t brs: 1; /* Bit Rate Switch */
-	volatile uint8_t fdf: 1; /* FD Format */
-	volatile uint8_t et: 2;	 /* Event type */
+	uint16_t txts;  /* TX Timestamp */
+	uint8_t dlc: 4; /* Data Length Code */
+	uint8_t brs: 1; /* Bit Rate Switch */
+	uint8_t fdf: 1; /* FD Format */
+	uint8_t et: 2;	/* Event type */
 	struct can_mcan_mm mm;	 /* Message marker */
 } __packed __aligned(4);
 
@@ -504,11 +665,11 @@ struct can_mcan_tx_event_fifo {
 #define CAN_MCAN_SFT_DISABLED 0x3
 
 struct can_mcan_std_filter {
-	volatile uint32_t id2: 11; /* ID2 for dual or range, mask otherwise */
-	volatile uint32_t res: 5;
-	volatile uint32_t id1: 11;
-	volatile uint32_t sfce: 3; /* Filter config */
-	volatile uint32_t sft: 2;  /* Filter type */
+	uint32_t id2: 11; /* ID2 for dual or range, mask otherwise */
+	uint32_t res: 5;
+	uint32_t id1: 11;
+	uint32_t sfce: 3; /* Filter config */
+	uint32_t sft: 2;  /* Filter type */
 } __packed __aligned(4);
 
 #define CAN_MCAN_EFT_RANGE_XIDAM 0x0
@@ -517,25 +678,32 @@ struct can_mcan_std_filter {
 #define CAN_MCAN_EFT_RANGE	 0x3
 
 struct can_mcan_ext_filter {
-	volatile uint32_t id1: 29;
-	volatile uint32_t efce: 3; /* Filter config */
-	volatile uint32_t id2: 29; /* ID2 for dual or range, mask otherwise */
-	volatile uint32_t res: 1;
-	volatile uint32_t eft: 2; /* Filter type */
+	uint32_t id1: 29;
+	uint32_t efce: 3; /* Filter config */
+	uint32_t id2: 29; /* ID2 for dual or range, mask otherwise */
+	uint32_t res: 1;
+	uint32_t eft: 2; /* Filter type */
 } __packed __aligned(4);
 
 struct can_mcan_msg_sram {
-	volatile struct can_mcan_std_filter std_filt[NUM_STD_FILTER_ELEMENTS];
-	volatile struct can_mcan_ext_filter ext_filt[NUM_EXT_FILTER_ELEMENTS];
-	volatile struct can_mcan_rx_fifo rx_fifo0[NUM_RX_FIFO0_ELEMENTS];
-	volatile struct can_mcan_rx_fifo rx_fifo1[NUM_RX_FIFO1_ELEMENTS];
-	volatile struct can_mcan_rx_fifo rx_buffer[NUM_RX_BUF_ELEMENTS];
-	volatile struct can_mcan_tx_event_fifo tx_event_fifo[NUM_TX_EVENT_FIFO_ELEMENTS];
-	volatile struct can_mcan_tx_buffer tx_buffer[NUM_TX_BUF_ELEMENTS];
+	struct can_mcan_std_filter std_filt[NUM_STD_FILTER_ELEMENTS];
+	struct can_mcan_ext_filter ext_filt[NUM_EXT_FILTER_ELEMENTS];
+	struct can_mcan_rx_fifo rx_fifo0[NUM_RX_FIFO0_ELEMENTS];
+	struct can_mcan_rx_fifo rx_fifo1[NUM_RX_FIFO1_ELEMENTS];
+	struct can_mcan_rx_fifo rx_buffer[NUM_RX_BUF_ELEMENTS];
+	struct can_mcan_tx_event_fifo tx_event_fifo[NUM_TX_EVENT_FIFO_ELEMENTS];
+	struct can_mcan_tx_buffer tx_buffer[NUM_TX_BUF_ELEMENTS];
 } __packed __aligned(4);
 
+#define CAN_MCAN_MRAM_OFFSET_STD_FILTER offsetof(struct can_mcan_msg_sram, std_filt)
+#define CAN_MCAN_MRAM_OFFSET_EXT_FILTER offsetof(struct can_mcan_msg_sram, ext_filt)
+#define CAN_MCAN_MRAM_OFFSET_RX_FIFO0 offsetof(struct can_mcan_msg_sram, rx_fifo0)
+#define CAN_MCAN_MRAM_OFFSET_RX_FIFO1 offsetof(struct can_mcan_msg_sram, rx_fifo1)
+#define CAN_MCAN_MRAM_OFFSET_RX_BUFFER offsetof(struct can_mcan_msg_sram, rx_buffer)
+#define CAN_MCAN_MRAM_OFFSET_TX_EVENT_FIFO offsetof(struct can_mcan_msg_sram, tx_event_fifo)
+#define CAN_MCAN_MRAM_OFFSET_TX_BUFFER offsetof(struct can_mcan_msg_sram, tx_buffer)
+
 struct can_mcan_data {
-	struct can_mcan_msg_sram *msg_ram;
 	struct k_mutex lock;
 	struct k_sem tx_sem;
 	struct k_mutex tx_mtx;
@@ -587,16 +755,71 @@ typedef int (*can_mcan_read_reg_t)(const struct device *dev, uint16_t reg, uint3
  */
 typedef int (*can_mcan_write_reg_t)(const struct device *dev, uint16_t reg, uint32_t val);
 
-struct can_mcan_config {
+/**
+ * @brief Bosch M_CAN driver front-end callback for reading from Message RAM
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ * @param offset Offset from the start of the Message RAM for the given Bosch M_CAN instance. The
+ *        offset must be 32-bit aligned.
+ * @param[out] dst Destination for the data read. The destination address must be 32-bit aligned.
+ * @param len Number of bytes to read. Must be a multiple of 4.
+ *
+ * @retval 0 If successful.
+ * @retval -EIO General input/output error.
+ */
+typedef int (*can_mcan_read_mram_t)(const struct device *dev, uint16_t offset, void *dst,
+				    size_t len);
+
+/**
+ * @brief Bosch M_CAN driver front-end callback for writing to Message RAM
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ * @param offset Offset from the start of the Message RAM for the given Bosch M_CAN instance. The
+ *        offset must be 32-bit aligned.
+ * @param src Source for the data to be written. The source address must be 32-bit aligned.
+ * @param len Number of bytes to write. Must be a multiple of 4.
+ *
+ * @retval 0 If successful.
+ * @retval -EIO General input/output error.
+ */
+typedef int (*can_mcan_write_mram_t)(const struct device *dev, uint16_t offset, const void *src,
+				     size_t len);
+
+/**
+ * @brief Bosch M_CAN driver front-end callback for clearing Message RAM
+ *
+ * Clear Message RAM by writing 0 to all words.
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ * @param offset Offset from the start of the Message RAM for the given Bosch M_CAN instance. The
+ *        offset must be 32-bit aligned.
+ * @param len Number of bytes to clear. Must be a multiple of 4.
+ *
+ * @retval 0 If successful.
+ * @retval -EIO General input/output error.
+ */
+typedef int (*can_mcan_clear_mram_t)(const struct device *dev, uint16_t offset, size_t len);
+
+/**
+ * @brief Bosch M_CAN driver front-end operations.
+ */
+struct can_mcan_ops {
 	can_mcan_read_reg_t read_reg;
 	can_mcan_write_reg_t write_reg;
+	can_mcan_read_mram_t read_mram;
+	can_mcan_write_mram_t write_mram;
+	can_mcan_clear_mram_t clear_mram;
+};
+
+struct can_mcan_config {
+	struct can_mcan_ops *ops;
 	uint32_t bus_speed;
-	uint32_t bus_speed_data;
 	uint16_t sjw;
 	uint16_t sample_point;
 	uint16_t prop_ts1;
 	uint16_t ts2;
 #ifdef CONFIG_CAN_FD_MODE
+	uint32_t bus_speed_data;
 	uint16_t sample_point_data;
 	uint8_t sjw_data;
 	uint8_t prop_ts1_data;
@@ -613,14 +836,14 @@ struct can_mcan_config {
  *
  * @param node_id Devicetree node identifier
  * @param _custom Pointer to custom driver frontend configuration structure
- * @param _read_reg Driver frontend Bosch M_CAN register read function
- * @param _write_reg Driver frontend Bosch M_CAN register write function
+ * @param _ops Pointer to front-end @a can_mcan_ops
  */
 #ifdef CONFIG_CAN_FD_MODE
-#define CAN_MCAN_DT_CONFIG_GET(node_id, _custom, _read_reg, _write_reg)                            \
+#define CAN_MCAN_DT_CONFIG_GET(node_id, _custom, _ops)                                             \
 	{                                                                                          \
-		.read_reg = _read_reg, .write_reg = _write_reg,                                    \
-		.bus_speed = DT_PROP(node_id, bus_speed), .sjw = DT_PROP(node_id, sjw),            \
+		.ops = _ops,                                                                       \
+		.bus_speed = DT_PROP(node_id, bus_speed),                                          \
+		.sjw = DT_PROP(node_id, sjw),                                                      \
 		.sample_point = DT_PROP_OR(node_id, sample_point, 0),                              \
 		.prop_ts1 = DT_PROP_OR(node_id, prop_seg, 0) + DT_PROP_OR(node_id, phase_seg1, 0), \
 		.ts2 = DT_PROP_OR(node_id, phase_seg2, 0),                                         \
@@ -636,10 +859,11 @@ struct can_mcan_config {
 		.custom = _custom,                                                                 \
 	}
 #else /* CONFIG_CAN_FD_MODE */
-#define CAN_MCAN_DT_CONFIG_GET(node_id, _custom, _read_reg, _write_reg)                            \
+#define CAN_MCAN_DT_CONFIG_GET(node_id, _custom, _ops)                                             \
 	{                                                                                          \
-		.read_reg = _read_reg, .write_reg = _write_reg,                                    \
-		.bus_speed = DT_PROP(node_id, bus_speed), .sjw = DT_PROP(node_id, sjw),            \
+		.ops = _ops,                                                                       \
+		.bus_speed = DT_PROP(node_id, bus_speed),                                          \
+		.sjw = DT_PROP(node_id, sjw),                                                      \
 		.sample_point = DT_PROP_OR(node_id, sample_point, 0),                              \
 		.prop_ts1 = DT_PROP_OR(node_id, prop_seg, 0) + DT_PROP_OR(node_id, phase_seg1, 0), \
 		.ts2 = DT_PROP_OR(node_id, phase_seg2, 0),                                         \
@@ -654,21 +878,20 @@ struct can_mcan_config {
  *
  * @param inst DT_DRV_COMPAT instance number
  * @param _custom Pointer to custom driver frontend configuration structure
- * @param _read_reg Driver frontend Bosch M_CAN register read function
- * @param _write_reg Driver frontend Bosch M_CAN register write function
+ * @param _ops Pointer to front-end @a can_mcan_ops
  * @see CAN_MCAN_DT_CONFIG_GET()
  */
-#define CAN_MCAN_DT_CONFIG_INST_GET(inst, _custom, _read_reg, _write_reg)                          \
-	CAN_MCAN_DT_CONFIG_GET(DT_DRV_INST(inst), _custom, _read_reg, _write_reg)
+#define CAN_MCAN_DT_CONFIG_INST_GET(inst, _custom, _ops)                                           \
+	CAN_MCAN_DT_CONFIG_GET(DT_DRV_INST(inst), _custom, _ops)
 
 /**
  * @brief Initializer for a @a can_mcan_data struct
  * @param _msg_ram Pointer to message RAM structure
  * @param _custom Pointer to custom driver frontend data structure
  */
-#define CAN_MCAN_DATA_INITIALIZER(_msg_ram, _custom)                                               \
+#define CAN_MCAN_DATA_INITIALIZER(_custom)                                                         \
 	{                                                                                          \
-		.msg_ram = _msg_ram, .custom = _custom,                                            \
+		.custom = _custom,                                                                 \
 	}
 
 /**
@@ -704,6 +927,116 @@ static inline int can_mcan_sys_write_reg(mm_reg_t base, uint16_t reg, uint32_t v
 }
 
 /**
+ * @brief Bosch M_CAN driver front-end callback helper for reading from memory mapped Message RAM
+ *
+ * @param base Base address of the Message RAM for the given Bosch M_CAN instance. The base address
+ *        must be 32-bit aligned.
+ * @param offset Offset from the start of the Message RAM for the given Bosch M_CAN instance. The
+ *        offset must be 32-bit aligned.
+ * @param[out] dst Destination for the data read. The destination address must be 32-bit aligned.
+ * @param len Number of bytes to read. Must be a multiple of 4.
+ *
+ * @retval 0 If successful.
+ * @retval -EIO General input/output error.
+ */
+static inline int can_mcan_sys_read_mram(mem_addr_t base, uint16_t offset, void *dst, size_t len)
+{
+	volatile uint32_t *src32 = (volatile uint32_t *)(base + offset);
+	uint32_t *dst32 = (uint32_t *)dst;
+	size_t len32 = len / sizeof(uint32_t);
+
+	__ASSERT(base % 4U == 0U, "base must be a multiple of 4");
+	__ASSERT(offset % 4U == 0U, "offset must be a multiple of 4");
+	__ASSERT(POINTER_TO_UINT(dst) % 4U == 0U, "dst must be 32-bit aligned");
+	__ASSERT(len % 4U == 0U, "len must be a multiple of 4");
+
+#if defined(CONFIG_CACHE_MANAGEMENT) && defined(CONFIG_DCACHE)
+	int err;
+
+	err = sys_cache_data_invd_range((void *)(base + offset), len);
+	if (err != 0) {
+		return err;
+	}
+#endif /* !defined(CONFIG_CACHE_MANAGEMENT) && defined(CONFIG_DCACHE) */
+
+	while (len32-- > 0) {
+		*dst32++ = *src32++;
+	}
+
+	return 0;
+}
+
+/**
+ * @brief Bosch M_CAN driver front-end callback helper for writing to memory mapped Message RAM
+ *
+ * @param base Base address of the Message RAM for the given Bosch M_CAN instance. The base address
+ *        must be 32-bit aligned.
+ * @param offset Offset from the start of the Message RAM for the given Bosch M_CAN instance. The
+ *        offset must be 32-bit aligned.
+ * @param src Source for the data to be written. The source address must be 32-bit aligned.
+ * @param len Number of bytes to write. Must be a multiple of 4.
+ *
+ * @retval 0 If successful.
+ * @retval -EIO General input/output error.
+ */
+static inline int can_mcan_sys_write_mram(mem_addr_t base, uint16_t offset, const void *src,
+					  size_t len)
+{
+	volatile uint32_t *dst32 = (volatile uint32_t *)(base + offset);
+	const uint32_t *src32 = (const uint32_t *)src;
+	size_t len32 = len / sizeof(uint32_t);
+
+	__ASSERT(base % 4U == 0U, "base must be a multiple of 4");
+	__ASSERT(offset % 4U == 0U, "offset must be a multiple of 4");
+	__ASSERT(POINTER_TO_UINT(src) % 4U == 0U, "src must be 32-bit aligned");
+	__ASSERT(len % 4U == 0U, "len must be a multiple of 4");
+
+	while (len32-- > 0) {
+		*dst32++ = *src32++;
+	}
+
+#if defined(CONFIG_CACHE_MANAGEMENT) && defined(CONFIG_DCACHE)
+	return sys_cache_data_flush_range((void *)(base + offset), len);
+#else /* defined(CONFIG_CACHE_MANAGEMENT) && defined(CONFIG_DCACHE) */
+	return 0;
+#endif /* !defined(CONFIG_CACHE_MANAGEMENT) && defined(CONFIG_DCACHE) */
+}
+
+/**
+ * @brief Bosch M_CAN driver front-end callback helper for clearing memory mapped Message RAM
+ *
+ * Clear Message RAM by writing 0 to all words.
+ *
+ * @param base Base address of the Message RAM for the given Bosch M_CAN instance. The base address
+ *        must be 32-bit aligned.
+ * @param offset Offset from the start of the Message RAM for the given Bosch M_CAN instance. The
+ *        offset must be 32-bit aligned.
+ * @param len Number of bytes to clear. Must be a multiple of 4.
+ *
+ * @retval 0 If successful.
+ * @retval -EIO General input/output error.
+ */
+static inline int can_mcan_sys_clear_mram(mem_addr_t base, uint16_t offset, size_t len)
+{
+	volatile uint32_t *dst32 = (volatile uint32_t *)(base + offset);
+	size_t len32 = len / sizeof(uint32_t);
+
+	__ASSERT(base % 4U == 0U, "base must be a multiple of 4");
+	__ASSERT(offset % 4U == 0U, "offset must be a multiple of 4");
+	__ASSERT(len % 4U == 0U, "len must be a multiple of 4");
+
+	while (len32-- > 0) {
+		*dst32++ = 0U;
+	}
+
+#if defined(CONFIG_CACHE_MANAGEMENT) && defined(CONFIG_DCACHE)
+	return sys_cache_data_flush_range((void *)(base + offset), len);
+#else /* defined(CONFIG_CACHE_MANAGEMENT) && defined(CONFIG_DCACHE) */
+	return 0;
+#endif /* !defined(CONFIG_CACHE_MANAGEMENT) && defined(CONFIG_DCACHE) */
+}
+
+/**
  * @brief Read a Bosch M_CAN register
  *
  * @param dev Pointer to the device structure for the driver instance.
@@ -730,6 +1063,66 @@ int can_mcan_read_reg(const struct device *dev, uint16_t reg, uint32_t *val);
 int can_mcan_write_reg(const struct device *dev, uint16_t reg, uint32_t val);
 
 /**
+ * @brief Read from Bosch M_CAN Message RAM
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ * @param offset Offset from the start of the Message RAM for the given Bosch M_CAN instance. The
+ *        offset must be 32-bit aligned.
+ * @param[out] dst Destination for the data read.
+ * @param len Number of bytes to read. Must be a multiple of 4.
+ *
+ * @retval 0 If successful.
+ * @retval -EIO General input/output error.
+ */
+static inline int can_mcan_read_mram(const struct device *dev, uint16_t offset, void *dst,
+				     size_t len)
+{
+	const struct can_mcan_config *config = dev->config;
+
+	return config->ops->read_mram(dev, offset, dst, len);
+}
+
+/**
+ * @brief Write to Bosch M_CAN Message RAM
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ * @param offset Offset from the start of the Message RAM for the given Bosch M_CAN instance. The
+ *        offset must be 32-bit aligned.
+ * @param src Source for the data to be written
+ * @param len Number of bytes to write. Must be a multiple of 4.
+ *
+ * @retval 0 If successful.
+ * @retval -EIO General input/output error.
+ */
+static inline int can_mcan_write_mram(const struct device *dev, uint16_t offset, const void *src,
+				      size_t len)
+{
+	const struct can_mcan_config *config = dev->config;
+
+	return config->ops->write_mram(dev, offset, src, len);
+}
+
+/**
+ * @brief Clear Bosch M_CAN Message RAM
+ *
+ * Clear Message RAM by writing 0 to all words.
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ * @param offset Offset from the start of the Message RAM for the given Bosch M_CAN instance. The
+ *        offset must be 32-bit aligned.
+ * @param len Number of bytes to clear. Must be a multiple of 4.
+ *
+ * @retval 0 If successful.
+ * @retval -EIO General input/output error.
+ */
+static inline int can_mcan_clear_mram(const struct device *dev, uint16_t offset, size_t len)
+{
+	const struct can_mcan_config *config = dev->config;
+
+	return config->ops->clear_mram(dev, offset, len);
+}
+
+/**
  * @brief Configure Bosch M_MCAN Message RAM start addresses.
  *
  * Bosch M_CAN driver front-end callback helper function for configuring the start addresses of the
@@ -746,11 +1139,12 @@ int can_mcan_write_reg(const struct device *dev, uint16_t reg, uint32_t val);
  *
  * @param dev Pointer to the device structure for the driver instance.
  * @param mrba Message RAM Base Address.
+ * @param mram Message RAM Address.
  *
  * @retval 0 If successful.
  * @retval -EIO General input/output error.
  */
-int can_mcan_configure_message_ram(const struct device *dev, uintptr_t mrba);
+int can_mcan_configure_mram(const struct device *dev, uintptr_t mrba, uintptr_t mram);
 
 int can_mcan_get_capabilities(const struct device *dev, can_mode_t *cap);
 

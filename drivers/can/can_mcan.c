@@ -5,7 +5,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/cache.h>
 #include <zephyr/drivers/can.h>
 #include <zephyr/drivers/can/transceiver.h>
 #include <zephyr/kernel.h>
@@ -19,39 +18,12 @@ LOG_MODULE_REGISTER(can_mcan, CONFIG_CAN_LOG_LEVEL);
 
 #define CAN_INIT_TIMEOUT_MS 100
 
-static void memcpy32_volatile(volatile void *dst_, const volatile void *src_, size_t len)
-{
-	volatile uint32_t *dst = dst_;
-	const volatile uint32_t *src = src_;
-
-	__ASSERT(len % 4 == 0U, "len must be a multiple of 4!");
-	len /= sizeof(uint32_t);
-
-	while (len--) {
-		*dst = *src;
-		++dst;
-		++src;
-	}
-}
-
-static void memset32_volatile(volatile void *dst_, uint32_t val, size_t len)
-{
-	volatile uint32_t *dst = dst_;
-
-	__ASSERT(len % 4 == 0U, "len must be a multiple of 4!");
-	len /= sizeof(uint32_t);
-
-	while (len--) {
-		*dst++ = val;
-	}
-}
-
 int can_mcan_read_reg(const struct device *dev, uint16_t reg, uint32_t *val)
 {
 	const struct can_mcan_config *config = dev->config;
 	int err;
 
-	err = config->read_reg(dev, reg, val);
+	err = config->ops->read_reg(dev, reg, val);
 	if (err != 0) {
 		LOG_ERR("failed to read reg 0x%03x (err %d)", reg, err);
 	} else {
@@ -66,7 +38,7 @@ int can_mcan_write_reg(const struct device *dev, uint16_t reg, uint32_t val)
 	const struct can_mcan_config *config = dev->config;
 	int err;
 
-	err = config->write_reg(dev, reg, val);
+	err = config->ops->write_reg(dev, reg, val);
 	if (err != 0) {
 		LOG_ERR("failed to write reg 0x%03x (err %d)", reg, err);
 	} else {
@@ -505,8 +477,7 @@ static void can_mcan_state_change_handler(const struct device *dev)
 static void can_mcan_tc_event_handler(const struct device *dev)
 {
 	struct can_mcan_data *data = dev->data;
-	struct can_mcan_msg_sram *msg_ram = data->msg_ram;
-	volatile struct can_mcan_tx_event_fifo *tx_event;
+	struct can_mcan_tx_event_fifo tx_event;
 	can_tx_callback_t tx_cb;
 	uint32_t event_idx;
 	uint32_t tx_idx;
@@ -520,10 +491,17 @@ static void can_mcan_tc_event_handler(const struct device *dev)
 
 	while ((txefs & CAN_MCAN_TXEFS_EFFL) != 0U) {
 		event_idx = FIELD_GET(CAN_MCAN_TXEFS_EFGI, txefs);
-		sys_cache_data_invd_range((void *)&msg_ram->tx_event_fifo[event_idx],
-					  sizeof(struct can_mcan_tx_event_fifo));
-		tx_event = &msg_ram->tx_event_fifo[event_idx];
-		tx_idx = tx_event->mm.idx;
+		err = can_mcan_read_mram(dev, CAN_MCAN_MRAM_OFFSET_TX_EVENT_FIFO +
+					 event_idx * sizeof(struct can_mcan_tx_event_fifo),
+					 &tx_event,
+					 sizeof(struct can_mcan_tx_event_fifo));
+		if (err != 0) {
+			LOG_ERR("failed to read tx event fifo (err %d)", err);
+			return;
+		}
+
+		tx_idx = tx_event.mm.idx;
+
 		/* Acknowledge TX event */
 		err = can_mcan_write_reg(dev, CAN_MCAN_TXEFA, event_idx);
 		if (err != 0) {
@@ -592,7 +570,7 @@ void can_mcan_line_0_isr(const struct device *dev)
 	}
 }
 
-static void can_mcan_get_message(const struct device *dev, volatile struct can_mcan_rx_fifo *fifo,
+static void can_mcan_get_message(const struct device *dev, uint16_t fifo_offset,
 				 uint16_t fifo_status_reg, uint16_t fifo_ack_reg)
 {
 	struct can_mcan_data *data = dev->data;
@@ -613,12 +591,17 @@ static void can_mcan_get_message(const struct device *dev, volatile struct can_m
 		return;
 	}
 
-	while ((fifo_status & CAN_MCAN_RXF0S_F0FL) != 0U) {
+	while (FIELD_GET(CAN_MCAN_RXF0S_F0FL, fifo_status) != 0U) {
 		get_idx = FIELD_GET(CAN_MCAN_RXF0S_F0GI, fifo_status);
 
-		sys_cache_data_invd_range((void *)&fifo[get_idx].hdr,
-					  sizeof(struct can_mcan_rx_fifo_hdr));
-		memcpy32_volatile(&hdr, &fifo[get_idx].hdr, sizeof(struct can_mcan_rx_fifo_hdr));
+		err = can_mcan_read_mram(dev, fifo_offset + get_idx *
+					 sizeof(struct can_mcan_rx_fifo) +
+					 offsetof(struct can_mcan_rx_fifo, hdr),
+					 &hdr, sizeof(struct can_mcan_rx_fifo_hdr));
+		if (err != 0) {
+			LOG_ERR("failed to read Rx FIFO header (err %d)", err);
+			return;
+		}
 
 		frame.dlc = hdr.dlc;
 
@@ -675,11 +658,15 @@ static void can_mcan_get_message(const struct device *dev, volatile struct can_m
 
 		data_length = can_dlc_to_bytes(frame.dlc);
 		if (data_length <= sizeof(frame.data)) {
-			/* Data needs to be written in 32 bit blocks! */
-			sys_cache_data_invd_range((void *)fifo[get_idx].data_32,
-						  ROUND_UP(data_length, sizeof(uint32_t)));
-			memcpy32_volatile(frame.data_32, fifo[get_idx].data_32,
-					  ROUND_UP(data_length, sizeof(uint32_t)));
+			err = can_mcan_read_mram(dev, fifo_offset + get_idx *
+						 sizeof(struct can_mcan_rx_fifo) +
+						 offsetof(struct can_mcan_rx_fifo, data_32),
+						 &frame.data_32,
+						 ROUND_UP(data_length, sizeof(uint32_t)));
+			if (err != 0) {
+				LOG_ERR("failed to read Rx FIFO data (err %d)", err);
+				return;
+			}
 
 			if ((frame.flags & CAN_FRAME_IDE) != 0) {
 				LOG_DBG("Frame on filter %d, ID: 0x%x",
@@ -718,8 +705,6 @@ void can_mcan_line_1_isr(const struct device *dev)
 {
 	const uint32_t events =
 		CAN_MCAN_IR_RF0N | CAN_MCAN_IR_RF1N | CAN_MCAN_IR_RF0L | CAN_MCAN_IR_RF1L;
-	struct can_mcan_data *data = dev->data;
-	struct can_mcan_msg_sram *msg_ram = data->msg_ram;
 	uint32_t ir;
 	int err;
 
@@ -731,13 +716,13 @@ void can_mcan_line_1_isr(const struct device *dev)
 	while ((ir & events) != 0U) {
 		if ((ir & CAN_MCAN_IR_RF0N) != 0U) {
 			LOG_DBG("RX FIFO0 INT");
-			can_mcan_get_message(dev, msg_ram->rx_fifo0, CAN_MCAN_RXF0S,
+			can_mcan_get_message(dev, CAN_MCAN_MRAM_OFFSET_RX_FIFO0, CAN_MCAN_RXF0S,
 					     CAN_MCAN_RXF0A);
 		}
 
 		if ((ir & CAN_MCAN_IR_RF1N) != 0U) {
 			LOG_DBG("RX FIFO1 INT");
-			can_mcan_get_message(dev, msg_ram->rx_fifo1, CAN_MCAN_RXF1S,
+			can_mcan_get_message(dev, CAN_MCAN_MRAM_OFFSET_RX_FIFO1, CAN_MCAN_RXF1S,
 					     CAN_MCAN_RXF1A);
 		}
 
@@ -817,7 +802,6 @@ int can_mcan_send(const struct device *dev, const struct can_frame *frame, k_tim
 		  can_tx_callback_t callback, void *user_data)
 {
 	struct can_mcan_data *data = dev->data;
-	struct can_mcan_msg_sram *msg_ram = data->msg_ram;
 	size_t data_length = can_dlc_to_bytes(frame->dlc);
 	struct can_mcan_tx_buffer_hdr tx_hdr = {
 		.rtr = (frame->flags & CAN_FRAME_RTR) != 0U ? 1U : 0U,
@@ -921,12 +905,23 @@ int can_mcan_send(const struct device *dev, const struct can_frame *frame, k_tim
 		tx_hdr.std_id = frame->id & CAN_STD_ID_MASK;
 	}
 
-	memcpy32_volatile(&msg_ram->tx_buffer[put_idx].hdr, &tx_hdr, sizeof(tx_hdr));
-	memcpy32_volatile(msg_ram->tx_buffer[put_idx].data_32, frame->data_32,
-			  ROUND_UP(data_length, 4));
-	sys_cache_data_flush_range((void *)&msg_ram->tx_buffer[put_idx].hdr, sizeof(tx_hdr));
-	sys_cache_data_flush_range((void *)&msg_ram->tx_buffer[put_idx].data_32,
-				   ROUND_UP(data_length, 4));
+	err = can_mcan_write_mram(dev, CAN_MCAN_MRAM_OFFSET_TX_BUFFER + put_idx *
+				  sizeof(struct can_mcan_tx_buffer) +
+				  offsetof(struct can_mcan_tx_buffer, hdr),
+				  &tx_hdr, sizeof(struct can_mcan_tx_buffer_hdr));
+	if (err != 0) {
+		LOG_ERR("failed to write Tx Buffer header (err %d)", err);
+		return err;
+	}
+
+	err = can_mcan_write_mram(dev, CAN_MCAN_MRAM_OFFSET_TX_BUFFER + put_idx *
+				  sizeof(struct can_mcan_tx_buffer) +
+				  offsetof(struct can_mcan_tx_buffer, data_32),
+				  &frame->data_32, ROUND_UP(data_length, sizeof(uint32_t)));
+	if (err != 0) {
+		LOG_ERR("failed to write Tx Buffer data (err %d)", err);
+		return err;
+	}
 
 	data->tx_fin_cb[put_idx] = callback;
 	data->tx_fin_cb_arg[put_idx] = user_data;
@@ -942,12 +937,22 @@ unlock:
 	return err;
 }
 
-static int can_mcan_get_free_std(volatile struct can_mcan_std_filter *filters)
+static int can_mcan_get_free_std(const struct device *dev)
 {
+	struct can_mcan_std_filter filter;
+	int err;
 	int i;
 
 	for (i = 0; i < NUM_STD_FILTER_DATA; ++i) {
-		if (filters[i].sfce == CAN_MCAN_FCE_DISABLE) {
+		err = can_mcan_read_mram(dev, CAN_MCAN_MRAM_OFFSET_STD_FILTER +
+					 i * sizeof(struct can_mcan_std_filter), &filter,
+					 sizeof(struct can_mcan_std_filter));
+		if (err != 0) {
+			LOG_ERR("failed to read std filter (err %d)", err);
+			return err;
+		}
+
+		if (filter.sfce == CAN_MCAN_FCE_DISABLE) {
 			return i;
 		}
 	}
@@ -975,15 +980,18 @@ int can_mcan_add_rx_filter_std(const struct device *dev, can_rx_callback_t callb
 			       void *user_data, const struct can_filter *filter)
 {
 	struct can_mcan_data *data = dev->data;
-	struct can_mcan_msg_sram *msg_ram = data->msg_ram;
 	struct can_mcan_std_filter filter_element = {
-		.id1 = filter->id, .id2 = filter->mask, .sft = CAN_MCAN_SFT_MASKED};
+		.id1 = filter->id,
+		.id2 = filter->mask,
+		.sft = CAN_MCAN_SFT_MASKED
+	};
 	int filter_id;
+	int err;
 
 	k_mutex_lock(&data->lock, K_FOREVER);
-	filter_id = can_mcan_get_free_std(msg_ram->std_filt);
+	filter_id = can_mcan_get_free_std(dev);
 
-	if (filter_id == -ENOSPC) {
+	if (filter_id < 0) {
 		LOG_WRN("No free standard id filter left");
 		k_mutex_unlock(&data->lock);
 		return -ENOSPC;
@@ -992,10 +1000,13 @@ int can_mcan_add_rx_filter_std(const struct device *dev, can_rx_callback_t callb
 	/* TODO proper fifo balancing */
 	filter_element.sfce = filter_id & 0x01 ? CAN_MCAN_FCE_FIFO1 : CAN_MCAN_FCE_FIFO0;
 
-	memcpy32_volatile(&msg_ram->std_filt[filter_id], &filter_element,
-			  sizeof(struct can_mcan_std_filter));
-	sys_cache_data_flush_range((void *)&msg_ram->std_filt[filter_id],
-				   sizeof(struct can_mcan_std_filter));
+	err = can_mcan_write_mram(dev, CAN_MCAN_MRAM_OFFSET_STD_FILTER +
+				  filter_id * sizeof(struct can_mcan_std_filter),
+				  &filter_element, sizeof(filter_element));
+	if (err != 0) {
+		LOG_ERR("failed to write std filter element (err %d)", err);
+		return err;
+	}
 
 	k_mutex_unlock(&data->lock);
 
@@ -1026,12 +1037,22 @@ int can_mcan_add_rx_filter_std(const struct device *dev, can_rx_callback_t callb
 	return filter_id;
 }
 
-static int can_mcan_get_free_ext(volatile struct can_mcan_ext_filter *filters)
+static int can_mcan_get_free_ext(const struct device *dev)
 {
+	struct can_mcan_ext_filter filter;
+	int err;
 	int i;
 
 	for (i = 0; i < NUM_EXT_FILTER_DATA; ++i) {
-		if (filters[i].efce == CAN_MCAN_FCE_DISABLE) {
+		err = can_mcan_read_mram(dev, CAN_MCAN_MRAM_OFFSET_EXT_FILTER +
+					 i * sizeof(struct can_mcan_ext_filter), &filter,
+					 sizeof(struct can_mcan_ext_filter));
+		if (err != 0) {
+			LOG_ERR("failed to read ext filter (err %d)", err);
+			return err;
+		}
+
+		if (filter.efce == CAN_MCAN_FCE_DISABLE) {
 			return i;
 		}
 	}
@@ -1043,15 +1064,18 @@ static int can_mcan_add_rx_filter_ext(const struct device *dev, can_rx_callback_
 				      void *user_data, const struct can_filter *filter)
 {
 	struct can_mcan_data *data = dev->data;
-	struct can_mcan_msg_sram *msg_ram = data->msg_ram;
 	struct can_mcan_ext_filter filter_element = {
-		.id2 = filter->mask, .id1 = filter->id, .eft = CAN_MCAN_EFT_MASKED};
+		.id2 = filter->mask,
+		.id1 = filter->id,
+		.eft = CAN_MCAN_EFT_MASKED
+	};
 	int filter_id;
+	int err;
 
 	k_mutex_lock(&data->lock, K_FOREVER);
-	filter_id = can_mcan_get_free_ext(msg_ram->ext_filt);
+	filter_id = can_mcan_get_free_ext(dev);
 
-	if (filter_id == -ENOSPC) {
+	if (filter_id < 0) {
 		LOG_WRN("No free extended id filter left");
 		k_mutex_unlock(&data->lock);
 		return -ENOSPC;
@@ -1060,10 +1084,13 @@ static int can_mcan_add_rx_filter_ext(const struct device *dev, can_rx_callback_
 	/* TODO proper fifo balancing */
 	filter_element.efce = filter_id & 0x01 ? CAN_MCAN_FCE_FIFO1 : CAN_MCAN_FCE_FIFO0;
 
-	memcpy32_volatile(&msg_ram->ext_filt[filter_id], &filter_element,
-			  sizeof(struct can_mcan_ext_filter));
-	sys_cache_data_flush_range((void *)&msg_ram->ext_filt[filter_id],
-				   sizeof(struct can_mcan_ext_filter));
+	err = can_mcan_write_mram(dev, CAN_MCAN_MRAM_OFFSET_EXT_FILTER +
+				  filter_id * sizeof(struct can_mcan_ext_filter),
+				  &filter_element, sizeof(filter_element));
+	if (err != 0) {
+		LOG_ERR("failed to write std filter element (err %d)", err);
+		return err;
+	}
 
 	k_mutex_unlock(&data->lock);
 
@@ -1128,7 +1155,7 @@ int can_mcan_add_rx_filter(const struct device *dev, can_rx_callback_t callback,
 void can_mcan_remove_rx_filter(const struct device *dev, int filter_id)
 {
 	struct can_mcan_data *data = dev->data;
-	struct can_mcan_msg_sram *msg_ram = data->msg_ram;
+	int err;
 
 	k_mutex_lock(&data->lock, K_FOREVER);
 
@@ -1140,15 +1167,19 @@ void can_mcan_remove_rx_filter(const struct device *dev, int filter_id)
 			return;
 		}
 
-		memset32_volatile(&msg_ram->ext_filt[filter_id], 0,
-				  sizeof(struct can_mcan_ext_filter));
-		sys_cache_data_flush_range((void *)&msg_ram->ext_filt[filter_id],
-					   sizeof(struct can_mcan_ext_filter));
+		err = can_mcan_clear_mram(dev, CAN_MCAN_MRAM_OFFSET_EXT_FILTER +
+					filter_id * sizeof(struct can_mcan_ext_filter),
+					sizeof(struct can_mcan_ext_filter));
+		if (err != 0) {
+			LOG_ERR("failed to clear ext filter element (err %d)", err);
+		}
 	} else {
-		memset32_volatile(&msg_ram->std_filt[filter_id], 0,
-				  sizeof(struct can_mcan_std_filter));
-		sys_cache_data_flush_range((void *)&msg_ram->std_filt[filter_id],
-					   sizeof(struct can_mcan_std_filter));
+		err = can_mcan_clear_mram(dev, CAN_MCAN_MRAM_OFFSET_STD_FILTER +
+					filter_id * sizeof(struct can_mcan_std_filter),
+					sizeof(struct can_mcan_std_filter));
+		if (err != 0) {
+			LOG_ERR("failed to clear std filter element (err %d)", err);
+		}
 	}
 
 	k_mutex_unlock(&data->lock);
@@ -1200,10 +1231,8 @@ unlock:
 	k_mutex_unlock(&data->lock);
 }
 
-int can_mcan_configure_message_ram(const struct device *dev, uintptr_t mrba)
+int can_mcan_configure_mram(const struct device *dev, uintptr_t mrba, uintptr_t mram)
 {
-	struct can_mcan_data *data = dev->data;
-	struct can_mcan_msg_sram *msg_ram = data->msg_ram;
 	uint32_t reg;
 	int err;
 
@@ -1221,78 +1250,63 @@ int can_mcan_configure_message_ram(const struct device *dev, uintptr_t mrba)
 
 	can_mcan_enable_configuration_change(dev);
 
-	reg = ((POINTER_TO_UINT(msg_ram->std_filt) - mrba) & CAN_MCAN_SIDFC_FLSSA) |
-	      FIELD_PREP(CAN_MCAN_SIDFC_LSS, ARRAY_SIZE(msg_ram->std_filt));
+	reg = ((mram - mrba + CAN_MCAN_MRAM_OFFSET_STD_FILTER) & CAN_MCAN_SIDFC_FLSSA) |
+		FIELD_PREP(CAN_MCAN_SIDFC_LSS, NUM_STD_FILTER_ELEMENTS);
 	err = can_mcan_write_reg(dev, CAN_MCAN_SIDFC, reg);
 	if (err != 0) {
 		return err;
 	}
 
-	reg = ((POINTER_TO_UINT(msg_ram->ext_filt) - mrba) & CAN_MCAN_XIDFC_FLESA) |
-	      FIELD_PREP(CAN_MCAN_XIDFC_LSS, ARRAY_SIZE(msg_ram->ext_filt));
+	reg = ((mram - mrba + CAN_MCAN_MRAM_OFFSET_EXT_FILTER) & CAN_MCAN_XIDFC_FLESA) |
+	      FIELD_PREP(CAN_MCAN_XIDFC_LSS, NUM_EXT_FILTER_ELEMENTS);
 	err = can_mcan_write_reg(dev, CAN_MCAN_XIDFC, reg);
 	if (err != 0) {
 		return err;
 	}
 
-	reg = ((POINTER_TO_UINT(msg_ram->rx_fifo0) - mrba) & CAN_MCAN_RXF0C_F0SA) |
-	      FIELD_PREP(CAN_MCAN_RXF0C_F0S, ARRAY_SIZE(msg_ram->rx_fifo0));
+	reg = ((mram - mrba + CAN_MCAN_MRAM_OFFSET_RX_FIFO0) & CAN_MCAN_RXF0C_F0SA) |
+	      FIELD_PREP(CAN_MCAN_RXF0C_F0S, NUM_RX_FIFO0_ELEMENTS);
 	err = can_mcan_write_reg(dev, CAN_MCAN_RXF0C, reg);
 	if (err != 0) {
 		return err;
 	}
 
-	reg = ((POINTER_TO_UINT(msg_ram->rx_fifo1) - mrba) & CAN_MCAN_RXF1C_F1SA) |
-	      FIELD_PREP(CAN_MCAN_RXF1C_F1S, ARRAY_SIZE(msg_ram->rx_fifo1));
+	reg = ((mram - mrba + CAN_MCAN_MRAM_OFFSET_RX_FIFO1) & CAN_MCAN_RXF1C_F1SA) |
+	      FIELD_PREP(CAN_MCAN_RXF1C_F1S, NUM_RX_FIFO1_ELEMENTS);
 	err = can_mcan_write_reg(dev, CAN_MCAN_RXF1C, reg);
 	if (err != 0) {
 		return err;
 	}
 
-	reg = ((POINTER_TO_UINT(msg_ram->rx_buffer) - mrba) & CAN_MCAN_RXBC_RBSA);
+	reg = ((mram - mrba + CAN_MCAN_MRAM_OFFSET_RX_BUFFER) & CAN_MCAN_RXBC_RBSA);
 	err = can_mcan_write_reg(dev, CAN_MCAN_RXBC, reg);
 	if (err != 0) {
 		return err;
 	}
 
-	reg = ((POINTER_TO_UINT(msg_ram->tx_event_fifo) - mrba) & CAN_MCAN_TXEFC_EFSA) |
-	      FIELD_PREP(CAN_MCAN_TXEFC_EFS, ARRAY_SIZE(msg_ram->tx_event_fifo));
+	reg = ((mram - mrba + CAN_MCAN_MRAM_OFFSET_TX_EVENT_FIFO) & CAN_MCAN_TXEFC_EFSA) |
+	      FIELD_PREP(CAN_MCAN_TXEFC_EFS, NUM_TX_EVENT_FIFO_ELEMENTS);
 	err = can_mcan_write_reg(dev, CAN_MCAN_TXEFC, reg);
 	if (err != 0) {
 		return err;
 	}
 
-	reg = ((POINTER_TO_UINT(msg_ram->tx_buffer) - mrba) & CAN_MCAN_TXBC_TBSA) |
-	      FIELD_PREP(CAN_MCAN_TXBC_TFQS, ARRAY_SIZE(msg_ram->tx_buffer)) | CAN_MCAN_TXBC_TFQM;
+	reg = ((mram - mrba + CAN_MCAN_MRAM_OFFSET_TX_BUFFER) & CAN_MCAN_TXBC_TBSA) |
+	      FIELD_PREP(CAN_MCAN_TXBC_TFQS, NUM_TX_BUF_ELEMENTS) | CAN_MCAN_TXBC_TFQM;
 	err = can_mcan_write_reg(dev, CAN_MCAN_TXBC, reg);
 	if (err != 0) {
 		return err;
 	}
 
-	if (sizeof(msg_ram->tx_buffer[0].data) <= 24) {
-		reg = (sizeof(msg_ram->tx_buffer[0].data) - 8) / 4;
-	} else {
-		reg = (sizeof(msg_ram->tx_buffer[0].data) - 32) / 16 + 5;
-	}
-
+	/* 64 byte Tx Buffer data fields size */
+	reg = CAN_MCAN_TXESC_TBDS;
 	err = can_mcan_write_reg(dev, CAN_MCAN_TXESC, reg);
 	if (err != 0) {
 		return err;
 	}
 
-	if (sizeof(msg_ram->rx_fifo0[0].data) <= 24) {
-		reg = FIELD_PREP(CAN_MCAN_RXESC_F0DS, (sizeof(msg_ram->rx_fifo0[0].data) - 8) / 4) |
-		      FIELD_PREP(CAN_MCAN_RXESC_F1DS, (sizeof(msg_ram->rx_fifo1[0].data) - 8) / 4) |
-		      FIELD_PREP(CAN_MCAN_RXESC_RBDS, (sizeof(msg_ram->rx_buffer[0].data) - 8) / 4);
-	} else {
-		reg = FIELD_PREP(CAN_MCAN_RXESC_F0DS,
-				 (sizeof(msg_ram->rx_fifo0[0].data) - 32) / 16 + 5) |
-		      FIELD_PREP(CAN_MCAN_RXESC_F1DS,
-				 (sizeof(msg_ram->rx_fifo1[0].data) - 32) / 16 + 5) |
-		      FIELD_PREP(CAN_MCAN_RXESC_RBDS,
-				 (sizeof(msg_ram->rx_buffer[0].data) - 32) / 16 + 5);
-	}
-
+	/* 64 byte Rx Buffer/FIFO1/FIFO0 data fields size */
+	reg = CAN_MCAN_RXESC_RBDS | CAN_MCAN_RXESC_F1DS | CAN_MCAN_RXESC_F0DS;
 	err = can_mcan_write_reg(dev, CAN_MCAN_RXESC, reg);
 	if (err != 0) {
 		return err;
@@ -1305,13 +1319,18 @@ int can_mcan_init(const struct device *dev)
 {
 	const struct can_mcan_config *config = dev->config;
 	struct can_mcan_data *data = dev->data;
-	struct can_mcan_msg_sram *msg_ram = data->msg_ram;
 	struct can_timing timing;
 #ifdef CONFIG_CAN_FD_MODE
 	struct can_timing timing_data;
 #endif /* CONFIG_CAN_FD_MODE */
 	uint32_t reg;
 	int err;
+
+	__ASSERT_NO_MSG(config->ops->read_reg != NULL);
+	__ASSERT_NO_MSG(config->ops->write_reg != NULL);
+	__ASSERT_NO_MSG(config->ops->read_mram != NULL);
+	__ASSERT_NO_MSG(config->ops->write_mram != NULL);
+	__ASSERT_NO_MSG(config->ops->clear_mram != NULL);
 
 	k_mutex_init(&data->lock);
 	k_mutex_init(&data->tx_mtx);
@@ -1488,8 +1507,5 @@ int can_mcan_init(const struct device *dev)
 		return err;
 	}
 
-	memset32_volatile(msg_ram, 0, sizeof(struct can_mcan_msg_sram));
-	sys_cache_data_flush_range(msg_ram, sizeof(struct can_mcan_msg_sram));
-
-	return 0;
+	return can_mcan_clear_mram(dev, 0, sizeof(struct can_mcan_msg_sram));
 }
