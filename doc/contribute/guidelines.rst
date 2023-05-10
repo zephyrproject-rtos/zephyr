@@ -559,14 +559,14 @@ workflow here:
      upstream https://github.com/zephyrproject-rtos/zephyr (fetch)
      upstream https://github.com/zephyrproject-rtos/zephyr (push)
 
-#. Create a topic branch (off of main) for your work (if you're addressing
+#. Create a topic branch (off of ``main``) for your work (if you're addressing
    an issue, we suggest including the issue number in the branch name)::
 
      git checkout main
      git checkout -b fix_comment_typo
 
    Some Zephyr subsystems do development work on a separate branch from
-   main so you may need to indicate this in your checkout::
+   ``main`` so you may need to indicate this in your checkout::
 
      git checkout -b fix_out_of_date_patch origin/net
 
@@ -604,9 +604,9 @@ workflow here:
    ``Compare & pull request`` button for the branch you just worked on and
    you want to open a pull request with.
 
-#. Review the pull request changes, and verify that you are opening a
-   pull request for the appropriate branch (if unsure, use `main`). The title
-   and message from your commit message should appear as well.
+#. Review the pull request changes, and verify that you are opening a pull
+   request for the ``main`` branch. The title and message from your commit
+   message should appear as well.
 
 #. GitHub will assign one or more suggested reviewers (based on the
    CODEOWNERS file in the repo). If you are a project member, you can
@@ -625,7 +625,7 @@ workflow here:
 
 #. While you're waiting for your pull request to be accepted and merged, you
    can create another branch to work on another issue. (Be sure to make your
-   new branch off of main and not the previous branch.)::
+   new branch off of ``main`` and not the previous branch.)::
 
      git checkout main
      git checkout -b fix_another_issue
