@@ -138,6 +138,12 @@ SYS_INIT(malloc_prepare, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 /* Current offset from HEAP_BASE of unused memory */
 LIBC_BSS static size_t heap_sz;
 
+void get_heap_statistics(size_t *total, size_t *used)
+{
+	*total = MAX_HEAP_SIZE;
+	*used = heap_sz;
+}
+
 static int _stdout_hook_default(int c)
 {
 	(void)(c);  /* Prevent warning about unused argument */
