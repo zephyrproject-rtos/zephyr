@@ -1,8 +1,12 @@
 # Copyright (c) 2018 Linaro Limited
 # SPDX-License-Identifier: Apache-2.0
 
+config ZEPHYR_OPEN_AMP_MODULE
+	bool
+
 config OPENAMP
 	bool "OpenAMP Support"
+	depends on ZEPHYR_OPEN_AMP_MODULE
 	select LIBMETAL
 	help
 	  This option enables the OpenAMP IPC library
