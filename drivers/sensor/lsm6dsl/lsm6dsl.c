@@ -24,7 +24,7 @@
 LOG_MODULE_REGISTER(LSM6DSL, CONFIG_SENSOR_LOG_LEVEL);
 
 static const uint16_t lsm6dsl_odr_map[] = {0, 12, 26, 52, 104, 208, 416, 833,
-					1660, 3330, 6660};
+					1666, 3332, 6664};
 
 #if defined(LSM6DSL_ACCEL_ODR_RUNTIME) || defined(LSM6DSL_GYRO_ODR_RUNTIME)
 static int lsm6dsl_freq_to_odr_val(uint16_t freq)

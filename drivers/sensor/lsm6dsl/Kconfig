@@ -143,9 +143,9 @@ config LSM6DSL_ACCEL_ODR
 	  5: 208Hz
 	  6: 416Hz
 	  7: 833Hz
-	  8: 1660Hz
-	  9: 3330Hz
-	  10: 6660Hz
+	  8: 1666Hz
+	  9: 3332Hz
+	  10: 6664Hz
 endmenu
 
 endif # LSM6DSL
