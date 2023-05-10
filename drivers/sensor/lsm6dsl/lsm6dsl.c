@@ -71,7 +71,7 @@ static int lsm6dsl_accel_range_to_fs_val(int32_t range)
 #endif
 
 #ifdef LSM6DSL_GYRO_FS_RUNTIME
-static const uint16_t lsm6dsl_gyro_fs_map[] = {245, 500, 1000, 2000, 125};
+static const uint16_t lsm6dsl_gyro_fs_map[] = {250, 500, 1000, 2000, 125};
 static const uint16_t lsm6dsl_gyro_fs_sens[] = {2, 4, 8, 16, 1};
 
 static int lsm6dsl_gyro_range_to_fs_val(int32_t range)

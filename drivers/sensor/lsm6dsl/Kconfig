@@ -91,7 +91,7 @@ config LSM6DSL_GYRO_FS
 	  second. Valid values are:
 	  0:  Full Scale selected at runtime
 	  125:   +/- 125dps
-	  245:   +/- 245dps
+	  250:   +/- 250dps
 	  500:   +/- 500dps
 	  1000:  +/- 1000dps
 	  2000:  +/- 2000dps
