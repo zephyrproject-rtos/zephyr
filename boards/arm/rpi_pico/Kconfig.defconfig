@@ -1,10 +1,11 @@
 # Copyright (c) 2021 Yonatan Schachter
 # SPDX-License-Identifier: Apache-2.0
 
-if BOARD_RPI_PICO
+if BOARD_RPI_PICO || BOARD_RPI_PICO_W
 
 config BOARD
-	default "rpi_pico"
+	default "rpi_pico" if BOARD_RPI_PICO
+	default "rpi_pico_w" if BOARD_RPI_PICO_W
 
 config RP2_FLASH_W25Q080
 	default y
@@ -16,4 +17,4 @@ config I2C_DW_CLOCK_SPEED
 
 endif #I2C_DW
 
-endif # BOARD_RPI_PICO
+endif # BOARD_RPI_PICO || BOARD_RPI_PICO_W
