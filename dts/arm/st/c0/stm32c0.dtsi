@@ -300,6 +300,14 @@
 		io-channels = <&adc1 9>;
 		status = "disabled";
 	};
+
+	vref: vref {
+		compatible = "st,stm32-vref";
+		vrefint-cal-addr = <0x1FFF756A>;
+		vrefint-cal-mv = <3000>;
+		io-channels = <&adc1 10>;
+		status = "disabled";
+	};
 };
 
 &nvic {

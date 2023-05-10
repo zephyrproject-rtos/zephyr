@@ -155,4 +155,9 @@
 		io-channels = <&adc2 18>;
 		ts-cal2-temp = <130>;
 	};
+
+	vref: vref {
+		vrefint-cal-addr = <0x08FFF810>;
+		io-channels = <&adc2 19>;
+	};
 };
