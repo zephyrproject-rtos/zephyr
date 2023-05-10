@@ -447,6 +447,8 @@ Coding Guidelines:
     - scripts/gitlint/
     - scripts/pylint/
     - scripts/spelling.txt
+  labels:
+    - "area: Coding Guidelines"
 
 Common Architecture Interface:
   status: odd fixes
