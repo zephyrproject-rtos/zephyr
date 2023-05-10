@@ -666,6 +666,10 @@ static const struct eeprom_driver_api eeprom_at2x_api = {
 	BUILD_ASSERT(w == 8U || w == 16U,		\
 		     "Unsupported address width")
 
+#define ASSERT_AT24_SMBUS_ADDR_W_VALID(w) \
+	BUILD_ASSERT(w == 8U,				\
+		     "Unsupported address width")
+
 #define ASSERT_AT25_ADDR_W_VALID(w)			\
 	BUILD_ASSERT(w == 8U || w == 16U || w == 24U,	\
 		     "Unsupported address width")
@@ -703,12 +707,25 @@ static const struct eeprom_driver_api eeprom_at2x_api = {
 	IF_ENABLED(DT_ON_BUS(node_id, spi),				\
 		   (.bus_type = SPI,))
 
+#define ASSERT_AT24_ADDR_WIDTH_VALID(node_id)				\
+	IF_ENABLED(DT_ON_BUS(node_id, i2c),				\
+		   (ASSERT_AT24_ADDR_W_VALID(DT_PROP(node_id,		\
+						     address_width))))	\
+	IF_ENABLED(DT_ON_BUS(node_id, smbus),				\
+		   (ASSERT_AT24_SMBUS_ADDR_W_VALID(DT_PROP(node_id,	\
+							   address_width))))
+
+#define ASSERT_AT25_ADDR_WIDTH_VALID(node_id)				\
+	ASSERT_AT25_ADDR_W_VALID(DT_PROP(node_id, address_width))
+
+#define ASSERT_ADDR_WIDTH_VALID(n, t)					\
+	ASSERT_AT##t##_ADDR_WIDTH_VALID(INST_DT_AT2X(n, t))
+
 #define EEPROM_AT2X_DEVICE(n, t) \
 	ASSERT_PAGESIZE_IS_POWER_OF_2(DT_PROP(INST_DT_AT2X(n, t), pagesize)); \
 	ASSERT_SIZE_PAGESIZE_VALID(DT_PROP(INST_DT_AT2X(n, t), size), \
 				   DT_PROP(INST_DT_AT2X(n, t), pagesize)); \
-	ASSERT_AT##t##_ADDR_W_VALID(DT_PROP(INST_DT_AT2X(n, t), \
-					    address_width)); \
+	ASSERT_ADDR_WIDTH_VALID(n, t); \
 	static const struct eeprom_at2x_config eeprom_at##t##_config_##n = { \
 		.bus = EEPROM_AT##t##_BUS(INST_DT_AT2X(n, t)) \
 		EEPROM_AT2X_SET_BUS_TYPE(INST_DT_AT2X(n, t)) \
