@@ -34,14 +34,13 @@ static inline void hal_radio_enable_on_tick_ppi_config_and_enable(uint8_t trx)
 	/* No need to configure anything for the pre-programmed channels.
 	 * Just enable and disable them accordingly.
 	 */
-	nrf_ppi_channels_disable(
-		NRF_PPI,
-		trx ? BIT(HAL_RADIO_ENABLE_RX_ON_TICK_PPI)
-		    : BIT(HAL_RADIO_ENABLE_TX_ON_TICK_PPI));
-	nrf_ppi_channels_enable(
-		NRF_PPI,
-		trx ? BIT(HAL_RADIO_ENABLE_TX_ON_TICK_PPI)
-		    : BIT(HAL_RADIO_ENABLE_RX_ON_TICK_PPI));
+	if (trx) {
+		nrf_ppi_channels_enable(NRF_PPI,
+					BIT(HAL_RADIO_ENABLE_TX_ON_TICK_PPI));
+	} else {
+		nrf_ppi_channels_enable(NRF_PPI,
+					BIT(HAL_RADIO_ENABLE_RX_ON_TICK_PPI));
+	}
 }
 
 #else
