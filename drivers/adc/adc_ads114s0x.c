@@ -800,7 +800,8 @@ static int ads114s0x_send_start_read(const struct device *dev)
 
 		k_sleep(K_USEC(ADS114S0X_START_SYNC_PULSE_DURATION_IN_US +
 			       ADS114S0X_SETUP_TIME_IN_US));
-		gpio_pin_set_dt(&config->gpio_start_sync, 0);
+
+		result = gpio_pin_set_dt(&config->gpio_start_sync, 0);
 
 		if (result != 0) {
 			LOG_ERR("unable to start ADC operation");
