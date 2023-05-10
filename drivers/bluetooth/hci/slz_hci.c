@@ -140,12 +140,11 @@ static int slz_bt_open(void)
 		goto deinit;
 	}
 
-	sl_btctrl_init_scan();
 	sl_btctrl_init_adv();
+	sl_btctrl_init_scan();
 	sl_btctrl_init_conn();
-
-	sl_btctrl_hci_parser_init_adv();
-	sl_btctrl_hci_parser_init_conn();
+	sl_btctrl_init_adv_ext();
+	sl_btctrl_init_scan_ext();
 
 	ret = sl_btctrl_init_basic(SL_BT_CONFIG_MAX_CONNECTIONS,
 			SL_BT_CONFIG_USER_ADVERTISERS,
@@ -156,6 +155,10 @@ static int slz_bt_open(void)
 	}
 
 	sl_bthci_init_upper();
+	sl_btctrl_hci_parser_init_default();
+	sl_btctrl_hci_parser_init_conn();
+	sl_btctrl_hci_parser_init_adv();
+	sl_btctrl_hci_parser_init_phy();
 
 #ifdef CONFIG_PM
 	{
