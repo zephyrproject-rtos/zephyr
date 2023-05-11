@@ -44,8 +44,11 @@ jobs:
       - name: Update PATH for west
         run: |
           echo "$HOME/.local/bin" >> $GITHUB_PATH
-      - name: Install pip packages
+
+      - name: Install packages
         run: |
+          sudo apt-get update
+          sudo apt-get install -y python3-venv
           sudo pip3 install -U setuptools wheel pip gitpython
 
       - name: checkout
@@ -73,4 +76,10 @@ jobs:
         run: |
           export ZEPHYR_BASE=${PWD}
           ./scripts/footprint/track.py  -p scripts/footprint/plan.txt
+
+      - name: Upload footprint data
+        run: |
+          python3 -m venv .venv
+          . .venv/bin/activate
+          pip3 install awscli
           aws s3 sync  --quiet footprint_data/ s3://testing.zephyrproject.org/footprint_data/
