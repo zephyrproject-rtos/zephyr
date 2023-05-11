@@ -220,12 +220,31 @@ Default settings are 115200 8N1.
 Programming and Debugging
 *************************
 
+Nucleo WBA52CG board includes an ST-LINK/V3 embedded debug tool interface.
+It could be used for flash and debug using either OpenOCD or STM32Cube ecosystem tools.
+
+OpenOCD Support
+===============
+
+For now, openocd support is available only on `STMicroelectronics OpenOCD fork`_.
+In order to use it, you should clone and compile it following usual README
+guidelines.
+Once it is done, you can set the OPENOCD and OPENOCD_DEFAULT_PATH variables in
+:zephyr_file:`boards/arm/nucleo_wba52cg/board.cmake` to point the build
+to the paths of the OpenOCD binary and its scripts,  before
+including the common openocd.board.cmake file:
+
+   .. code-block:: none
+
+      set(OPENOCD "<path_to_opneocd_repo>/src/openocd" CACHE FILEPATH "" FORCE)
+      set(OPENOCD_DEFAULT_PATH <path_to_opneocd_repo>/tcl)
+      include(${ZEPHYR_BASE}/boards/common/openocd.board.cmake)
+
 Flashing
 ========
 
-Nucleo WBA52CG board includes an ST-LINK/V3 embedded debug tool interface.
-For now, only STM32CubeProgrammer is available for flashing. It is configured
-as flashing tool by default.
+STM32CubeProgrammer is configured as flashing tool by default.
+If available OpenOCD could be used. Same process applies with both tools.
 
 Flashing an application to Nucleo WBA52CG
 -----------------------------------------
@@ -241,6 +260,21 @@ You will see the LED blinking every second.
 
 Debugging
 =========
+
+Debugging using OpenOCD
+-----------------------
+
+You can debug an application in the usual way using OpenOCD. Here is an example for the
+:ref:`blinky-sample` application.
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/basic/blinky
+   :board: nucleo_wba52cg
+   :maybe-skip-config:
+   :goals: debug
+
+Debugging using STM32CubeIDE
+----------------------------
 
 You can debug an application using a STM32WBA compatible version of STM32CubeIDE.
 For that:
@@ -263,3 +297,6 @@ For that:
 
 .. _STM32WBA52CG reference manual:
    https://www.st.com/resource/en/reference_manual/rm0493-multiprotocol-wireless-bluetooth-lowenergy-armbased-32bit-mcu-stmicroelectronics.pdf
+
+.. _STMicroelectronics openocd fork:
+   https://github.com/STMicroelectronics/OpenOCD/commit/26301c4dd261419ae2a656d4024a020cae1db221
