@@ -1,0 +1,47 @@
+/*
+ * Copyright (c) 2023 EPAM Systems
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/delete-node/ &sram0;
+
+&uart0 {
+	/* Xen consoleio will be used */
+	status = "disabled";
+};
+
+/ {
+	/*
+	 * This node may differs on different setups, please check
+	 * following line in Xen boot log to set it right:
+	 * (XEN) Grant table range: 0x00000040200000-0x00000040240000
+	 *
+	 * Xen passes actual values for setup in domain device tree, but Zephyr
+	 * is not capable to parse and handle it in runtime.
+	 */
+	hypervisor: hypervisor@40200000 {
+		compatible = "xen,xen";
+		reg = <0x0 0x40200000 0x0 0x40000>;
+		interrupts = <GIC_PPI 0x0 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
+		interrupt-parent = <&gic>;
+		status = "okay";
+	};
+
+	/*
+	 * This node may differs on different setups, because Xen picks
+	 * region for Domain-0 for every specific configuration. You can
+	 * start Xen for your platform and check following log:
+	 * (XEN) Allocating 1:1 mappings for dom0:
+	 * (XEN) BANK[0] 0x00000058000000-0x00000060000000 (128MB)
+	 *
+	 * Xen passes actual values for setup in domain device tree, but Zephyr
+	 * is not capable to parse and handle it in runtime.
+	 */
+	soc {
+		sram0: memory@58000000 {
+			device_type = "mmio-sram";
+			reg = <0x00 0x58000000 0x00 DT_SIZE_M(128)>;
+		};
+	};
+};
