@@ -51,7 +51,7 @@ void *xtensa_init_stack(struct k_thread *thread, int *stack_top,
 	frame->bsa.ps = PS_WOE | PS_UM | PS_CALLINC(1);
 
 #if XCHAL_HAVE_THREADPTR && defined(CONFIG_THREAD_LOCAL_STORAGE)
-	bsa->threadptr = thread->tls;
+	frame->bsa.threadptr = thread->tls;
 #endif
 
 	/* Arguments to z_thread_entry().  Remember these start at A6,
