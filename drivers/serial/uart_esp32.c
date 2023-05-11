@@ -160,7 +160,7 @@ static int uart_esp32_config_get(const struct device *dev, struct uart_config *c
 	uart_word_length_t data_bit;
 	uart_hw_flowcontrol_t hw_flow;
 
-	cfg->baudrate = data->uart_config.baudrate;
+	uart_hal_get_baudrate(&data->hal, &cfg->baudrate);
 
 	uart_hal_get_parity(&data->hal, &parity);
 	switch (parity) {
