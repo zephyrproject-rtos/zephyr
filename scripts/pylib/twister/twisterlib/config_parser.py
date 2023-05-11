@@ -184,20 +184,21 @@ class TwisterConfigParser:
                     {"CONF_FILE", "OVERLAY_CONFIG", "DTC_OVERLAY_FILE"}, v
                 )
             if k in d:
-                if isinstance(d[k], str):
-                    # By default, we just concatenate string values of keys
-                    # which appear both in "common" and per-test sections,
-                    # but some keys are handled in adhoc way based on their
-                    # semantics.
-                    if k == "filter":
-                        d[k] = "(%s) and (%s)" % (d[k], v)
+                if k == "filter":
+                    d[k] = "(%s) and (%s)" % (d[k], v)
+                elif k not in ("extra_conf_files", "extra_overlay_confs",
+                               "extra_dtc_overlay_files"):
+                    if isinstance(d[k], str) and isinstance(v, list):
+                        d[k] = d[k].split() + v
+                    elif isinstance(d[k], list) and isinstance(v, str):
+                        d[k] += v.split()
+                    elif isinstance(d[k], list) and isinstance(v, list):
+                        d[k] += v
+                    elif isinstance(d[k], str) and isinstance(v, str):
+                        d[k] += " " + v
                     else:
-                        if isinstance(d[k], str) and isinstance(v, list):
-                            d[k] = d[k].split() + v
-                        elif isinstance(d[k], list) and isinstance(v, str):
-                            d[k] = d[v] + v.split()
-                        else:
-                            d[k] += " " + v
+                        # replace value if not str/list (e.g. integer)
+                        d[k] = v
             else:
                 d[k] = v
 
