@@ -192,9 +192,11 @@ static ssize_t write_vcs_control(struct bt_conn *conn,
 	if (volume_change && !vol_rend.flags) {
 		vol_rend.flags = 1;
 
-		bt_gatt_notify_uuid(NULL, BT_UUID_VCS_FLAGS,
-				    vol_rend.service_p->attrs,
-				    &vol_rend.flags, sizeof(vol_rend.flags));
+		if (IS_ENABLED(CONFIG_BT_VCP_VOL_REND_VOL_FLAGS_NOTIFIABLE)) {
+			bt_gatt_notify_uuid(NULL, BT_UUID_VCS_FLAGS,
+					    vol_rend.service_p->attrs,
+					    &vol_rend.flags, sizeof(vol_rend.flags));
+		}
 
 		if (vol_rend.cb && vol_rend.cb->flags) {
 			vol_rend.cb->flags(0, vol_rend.flags);
@@ -203,10 +205,12 @@ static ssize_t write_vcs_control(struct bt_conn *conn,
 	return len;
 }
 
+#if defined(CONFIG_BT_VCP_VOL_REND_VOL_FLAGS_NOTIFIABLE)
 static void flags_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
 {
 	LOG_DBG("value 0x%04x", value);
 }
+#endif /* CONFIG_BT_VCP_VOL_REND_VOL_FLAGS_NOTIFIABLE */
 
 static ssize_t read_flags(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			  void *buf, uint16_t len, uint16_t offset)
@@ -220,26 +224,34 @@ static ssize_t read_flags(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 #define VOCS_INCLUDES(cnt) LISTIFY(cnt, DUMMY_INCLUDE, ())
 #define AICS_INCLUDES(cnt) LISTIFY(cnt, DUMMY_INCLUDE, ())
 
-#define BT_VCS_DEFINITION \
-	BT_GATT_PRIMARY_SERVICE(BT_UUID_VCS), \
-	VOCS_INCLUDES(CONFIG_BT_VCP_VOL_REND_VOCS_INSTANCE_COUNT) \
-	AICS_INCLUDES(CONFIG_BT_VCP_VOL_REND_AICS_INSTANCE_COUNT) \
-	BT_AUDIO_CHRC(BT_UUID_VCS_STATE, \
-		      BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY, \
-		      BT_GATT_PERM_READ_ENCRYPT, \
-		      read_vol_state, NULL, NULL), \
-	BT_AUDIO_CCC(volume_state_cfg_changed), \
-	BT_AUDIO_CHRC(BT_UUID_VCS_CONTROL, \
-		      BT_GATT_CHRC_WRITE, \
-		      BT_GATT_PERM_WRITE_ENCRYPT, \
-		      NULL, write_vcs_control, NULL), \
-	BT_AUDIO_CHRC(BT_UUID_VCS_FLAGS, \
-		      BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY, \
-		      BT_GATT_PERM_READ_ENCRYPT, \
-		      read_flags, NULL, NULL), \
+/* Volume Control Service GATT Attributes */
+static struct bt_gatt_attr vcs_attrs[] = {
+	BT_GATT_PRIMARY_SERVICE(BT_UUID_VCS),
+	VOCS_INCLUDES(CONFIG_BT_VCP_VOL_REND_VOCS_INSTANCE_COUNT)
+	AICS_INCLUDES(CONFIG_BT_VCP_VOL_REND_AICS_INSTANCE_COUNT)
+	BT_AUDIO_CHRC(BT_UUID_VCS_STATE,
+		      BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY,
+		      BT_GATT_PERM_READ_ENCRYPT,
+		      read_vol_state, NULL, NULL),
+	BT_AUDIO_CCC(volume_state_cfg_changed),
+	BT_AUDIO_CHRC(BT_UUID_VCS_CONTROL,
+		      BT_GATT_CHRC_WRITE,
+		      BT_GATT_PERM_WRITE_ENCRYPT,
+		      NULL, write_vcs_control, NULL),
+#if defined(CONFIG_BT_VCP_VOL_REND_VOL_FLAGS_NOTIFIABLE)
+	BT_AUDIO_CHRC(BT_UUID_VCS_FLAGS,
+		      BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY,
+		      BT_GATT_PERM_READ_ENCRYPT,
+		      read_flags, NULL, NULL),
 	BT_AUDIO_CCC(flags_cfg_changed)
+#else
+	BT_AUDIO_CHRC(BT_UUID_VCS_FLAGS,
+		      BT_GATT_CHRC_READ,
+		      BT_GATT_PERM_READ_ENCRYPT,
+		      read_flags, NULL, NULL)
+#endif /* CONFIG_BT_VCP_VOL_REND_VOL_FLAGS_NOTIFIABLE */
+};
 
-static struct bt_gatt_attr vcs_attrs[] = { BT_VCS_DEFINITION };
 static struct bt_gatt_service vcs_svc;
 
 static int prepare_vocs_inst(struct bt_vcp_vol_rend_register_param *param)
