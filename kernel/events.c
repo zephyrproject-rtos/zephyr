@@ -45,6 +45,10 @@ struct event_walk_data {
 	uint32_t events;
 };
 
+#ifdef CONFIG_OBJ_CORE_EVENT
+static struct k_obj_type obj_type_event;
+#endif
+
 void z_impl_k_event_init(struct k_event *event)
 {
 	event->events = 0;
@@ -55,6 +59,10 @@ void z_impl_k_event_init(struct k_event *event)
 	z_waitq_init(&event->wait_q);
 
 	z_object_init(event);
+
+#ifdef CONFIG_OBJ_CORE_EVENT
+	k_obj_core_init_and_link(K_OBJ_CORE(event), &obj_type_event);
+#endif
 }
 
 #ifdef CONFIG_USERSPACE
@@ -335,4 +343,25 @@ uint32_t z_vrfy_k_event_wait_all(struct k_event *event, uint32_t events,
 	return z_impl_k_event_wait_all(event, events, reset, timeout);
 }
 #include <syscalls/k_event_wait_all_mrsh.c>
+#endif
+
+#ifdef CONFIG_OBJ_CORE_EVENT
+static int init_event_obj_core_list(void)
+{
+	/* Initialize condvar object type */
+
+	z_obj_type_init(&obj_type_event, K_OBJ_TYPE_EVENT_ID,
+			offsetof(struct k_event, obj_core));
+
+	/* Initialize and link statically defined condvars */
+
+	STRUCT_SECTION_FOREACH(k_event, event) {
+		k_obj_core_init_and_link(K_OBJ_CORE(event), &obj_type_event);
+	}
+
+	return 0;
+}
+
+SYS_INIT(init_event_obj_core_list, PRE_KERNEL_1,
+	 CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
 #endif
