@@ -17,6 +17,10 @@
 #include <ksched.h>
 #include <wait_q.h>
 
+#ifdef CONFIG_OBJ_CORE_MEM_SLAB
+static struct k_obj_type obj_type_mem_slab;
+#endif
+
 /**
  * @brief Initialize kernel memory slab subsystem.
  *
@@ -55,9 +59,18 @@ static int create_free_list(struct k_mem_slab *slab)
  *
  * @return 0 on success, fails otherwise.
  */
-static int init_mem_slab_module(void)
+static int init_mem_slab_obj_core_list(void)
 {
 	int rc = 0;
+
+	/* Initialize mem_slab object type */
+
+#ifdef CONFIG_OBJ_CORE_MEM_SLAB
+	z_obj_type_init(&obj_type_mem_slab, K_OBJ_TYPE_MEM_SLAB_ID,
+			offsetof(struct k_mem_slab, obj_core));
+#endif
+
+	/* Initialize statically defined mem_slabs */
 
 	STRUCT_SECTION_FOREACH(k_mem_slab, slab) {
 		rc = create_free_list(slab);
@@ -65,13 +78,17 @@ static int init_mem_slab_module(void)
 			goto out;
 		}
 		z_object_init(slab);
+
+#ifdef CONFIG_OBJ_CORE_MEM_SLAB
+		k_obj_core_init_and_link(K_OBJ_CORE(slab), &obj_type_mem_slab);
+#endif
 	}
 
 out:
 	return rc;
 }
 
-SYS_INIT(init_mem_slab_module, PRE_KERNEL_1,
+SYS_INIT(init_mem_slab_obj_core_list, PRE_KERNEL_1,
 	 CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
 
 int k_mem_slab_init(struct k_mem_slab *slab, void *buffer,
@@ -93,6 +110,10 @@ int k_mem_slab_init(struct k_mem_slab *slab, void *buffer,
 	if (rc < 0) {
 		goto out;
 	}
+
+#ifdef CONFIG_OBJ_CORE_MEM_SLAB
+	k_obj_core_init_and_link(K_OBJ_CORE(slab), &obj_type_mem_slab);
+#endif
 
 	z_waitq_init(&slab->wait_q);
 	z_object_init(slab);
