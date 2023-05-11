@@ -1,11 +1,11 @@
 # Copyright (c) 2022 Nuvoton Technology Corporation.
 # SPDX-License-Identifier: Apache-2.0
 
-description: Nuvoton, NPCX keyboard scan controller
+description: Nuvoton NPCX keyboard scan controller
 
-compatible: "nuvoton,npcx-kscan"
+compatible: "nuvoton,npcx-kbd"
 
-include: [kscan.yaml, pinctrl-device.yaml]
+include: [base.yaml, pinctrl-device.yaml]
 
 properties:
   reg:
