@@ -860,6 +860,8 @@ static void mfy_cis_offset_get(void *param)
 {
 	struct ll_conn_iso_stream *cis;
 	struct ll_conn_iso_group *cig;
+	uint32_t cig_remainder_us;
+	uint32_t acl_remainder_us;
 	uint32_t ticks_to_expire;
 	uint32_t ticks_current;
 	uint32_t offset_min_us;
@@ -931,11 +933,20 @@ static void mfy_cis_offset_get(void *param)
 	 * value.
 	 */
 	hal_ticker_remove_jitter(&ticks_to_expire, &remainder);
+	cig_remainder_us = remainder;
 
-	offset_min_us = HAL_TICKER_TICKS_TO_US(ticks_to_expire) + remainder +
-		    cig->sync_delay - cis->sync_delay;
-
+	/* Add a tick for negative remainder and return positive remainder
+	 * value.
+	 */
 	conn = ll_conn_get(cis->lll.acl_handle);
+	remainder = conn->llcp.prep.remainder;
+	hal_ticker_add_jitter(&ticks_to_expire, &remainder);
+	acl_remainder_us = remainder;
+
+	/* Calculate the CIS offset in the CIG */
+	offset_min_us = HAL_TICKER_TICKS_TO_US(ticks_to_expire) +
+			cig_remainder_us + cig->sync_delay -
+			acl_remainder_us - cis->sync_delay;
 
 	ull_cp_cc_offset_calc_reply(conn, offset_min_us, offset_min_us);
 }
