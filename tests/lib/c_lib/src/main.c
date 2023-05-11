@@ -1261,3 +1261,37 @@ ZTEST(test_c_lib, test_exit)
 	zassert_equal(a, 0, "exit failed");
 #endif
 }
+
+ZTEST(test_c_lib, test_clock)
+{
+	uint64_t pct;
+	uint64_t now;
+	uint64_t then;
+	uint64_t ppm;
+	uint64_t act_cps;
+	uint64_t exp_cps = CLOCKS_PER_SEC;
+
+	if (IS_ENABLED(CONFIG_ARCH_POSIX)) {
+		ztest_test_skip();
+	}
+
+	printk("checking CLOCKS_PER_SEC..\n");
+
+	then = clock();
+	k_busy_wait(USEC_PER_SEC);
+	now = clock(); 
+	zassert_true(now > then);
+	act_cps = now - then;
+
+	printk("expected CLOCKS_PER_SEC: %llu\n", exp_cps);
+	printk("actual   CLOCKS_PER_SEC: %llu\n", act_cps);
+
+	pct = (100 * (MAX(exp_cps, act_cps) - MIN(exp_cps, act_cps))) / exp_cps;
+	ppm = (1000000ULL * (MAX(exp_cps, act_cps) - MIN(exp_cps, act_cps))) / exp_cps;
+
+	printk("err[%%]: %llu\n", pct);
+	printk("err[ppm]: %llu\n", ppm);
+
+	zassert_true(pct <= CONFIG_TEST_LIBC_CLOCK_MAX_ERROR_PCT);
+	zassert_true(ppm <= CONFIG_TEST_LIBC_CLOCK_MAX_ERROR_PPM);
+}

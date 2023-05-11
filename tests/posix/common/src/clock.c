@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <sys/time.h>
+#include <sys/times.h>
 #include <time.h>
 #include <unistd.h>
 
@@ -122,4 +123,37 @@ ZTEST(posix_apis, test_realtime)
 			" provide correct result");
 	zassert_true(rts.tv_nsec >= tv.tv_usec * NSEC_PER_USEC,
 			"gettimeofday didn't provide correct result");
+}
+
+ZTEST(posix_apis, test_times)
+{
+	clock_t now;
+	clock_t then;
+	struct tms tms_now;
+	struct tms tms_then;
+
+	then = times(&tms_then);
+	zassert_not_equal(then, -1);
+	zassert_true(tms_then.tms_utime >= 0);
+	zassert_true(tms_then.tms_stime >= 0);
+	zassert_true(tms_then.tms_cutime >= 0);
+	zassert_true(tms_then.tms_cstime >= 0);
+	zassert_true(tms_then.tms_utime + tms_then.tms_cutime + tms_then.tms_stime +
+			     tms_then.tms_cstime <=
+		     then);
+
+	k_msleep(MSEC_PER_SEC);
+
+	now = times(&tms_now);
+	zassert_not_equal(now, -1);
+	zassert_true(tms_now.tms_utime >= 0);
+	zassert_true(tms_now.tms_stime >= 0);
+	zassert_true(tms_now.tms_cutime >= 0);
+	zassert_true(tms_now.tms_cstime >= 0);
+	zassert_true(tms_now.tms_utime + tms_now.tms_cutime + tms_now.tms_stime +
+			     tms_now.tms_cstime <=
+		     now);
+
+	zassert_true(now > then);
+	zassert_true(now - then >= USEC_PER_SEC);
 }

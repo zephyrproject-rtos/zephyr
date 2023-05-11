@@ -14,3 +14,11 @@ config MINIMAL_LIBC_DISABLE_STRING_ERROR_TABLE
 	  This option is only here to simplify conditional expressions
 	  in test_strerror.c rather than inverting logic for the
 	  global MINIMAL_LIBC_STRING_ERROR_TABLE option.
+
+config TEST_LIBC_CLOCK_MAX_ERROR_PCT
+	int "Maximum tolerance (%) for CLOCKS_PER_SEC"
+	default 1
+
+config TEST_LIBC_CLOCK_MAX_ERROR_PPM
+	int "Maximum tolerance (parts-per-million) for CLOCKS_PER_SEC"
+	default 20000

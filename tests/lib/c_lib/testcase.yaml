@@ -28,12 +28,18 @@ tests:
       - CONFIG_NEWLIB_LIBC_NANO=y
   libraries.libc.minimal.strerror_table:
     filter: CONFIG_MINIMAL_LIBC_SUPPORTED
+    platform_exclude:
+      - native_sim
+      - native_sim64
     tags: minimal_libc
     extra_configs:
       - CONFIG_MINIMAL_LIBC=y
       - CONFIG_MINIMAL_LIBC_STRING_ERROR_TABLE=y
   libraries.libc.minimal.no_strerror_table:
     filter: CONFIG_MINIMAL_LIBC_SUPPORTED
+    platform_exclude:
+      - native_sim
+      - native_sim64
     tags: minimal_libc
     extra_configs:
       - CONFIG_MINIMAL_LIBC=y
