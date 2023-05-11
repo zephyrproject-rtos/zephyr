@@ -6,6 +6,7 @@
  * HW IRQ controller model
  */
 
+#include <stdatomic.h>
 #include <stdint.h>
 #include <stdbool.h>
 #include "hw_models_top.h"
@@ -19,8 +20,8 @@
 uint64_t irq_ctrl_timer = NEVER;
 
 
-static uint64_t irq_status;  /* pending interrupts */
-static uint64_t irq_premask; /* interrupts before the mask */
+static _Atomic uint64_t irq_status;  /* pending interrupts */
+static _Atomic uint64_t irq_premask; /* interrupts before the mask */
 
 /*
  * Mask of which interrupts will actually cause the cpu to vector into its
@@ -30,7 +31,7 @@ static uint64_t irq_premask; /* interrupts before the mask */
  * If the irq_mask enables and interrupt pending in irq_premask, it will cause
  * the controller to raise the interrupt immediately
  */
-static uint64_t irq_mask;
+static _Atomic uint64_t irq_mask;
 
 /*
  * Interrupts lock/disable. When set, interrupts are registered
@@ -124,7 +125,7 @@ uint32_t hw_irq_ctrl_change_lock(uint32_t new_lock)
 	irqs_locked = new_lock;
 
 	if ((previous_lock == true) && (new_lock == false)) {
-		if (irq_status != 0U) {
+		if (atomic_load_explicit(&irq_status, memory_order_acquire) != 0U) {
 			posix_irq_handler_im_from_sw();
 		}
 	}
@@ -133,40 +134,42 @@ uint32_t hw_irq_ctrl_change_lock(uint32_t new_lock)
 
 uint64_t hw_irq_ctrl_get_irq_status(void)
 {
-	return irq_status;
+	return atomic_load_explicit(&irq_status, memory_order_acquire);
 }
 
 void hw_irq_ctrl_clear_all_enabled_irqs(void)
 {
-	irq_status  = 0U;
-	irq_premask &= ~irq_mask;
+	atomic_store_explicit(&irq_status, 0U, memory_order_release);
+	atomic_fetch_and_explicit(&irq_premask,
+				~atomic_load_explicit(&irq_mask, memory_order_acquire),
+				memory_order_acq_rel);
 }
 
 void hw_irq_ctrl_clear_all_irqs(void)
 {
-	irq_status  = 0U;
-	irq_premask = 0U;
+	atomic_store_explicit(&irq_status, 0U, memory_order_release);
+	atomic_store_explicit(&irq_premask, 0U, memory_order_release);
 }
 
 void hw_irq_ctrl_disable_irq(unsigned int irq)
 {
-	irq_mask &= ~((uint64_t)1<<irq);
+	atomic_fetch_and_explicit(&irq_mask, ~((uint64_t)1<<irq), memory_order_acq_rel);
 }
 
 int hw_irq_ctrl_is_irq_enabled(unsigned int irq)
 {
-	return (irq_mask & ((uint64_t)1 << irq))?1:0;
+	return (atomic_load_explicit(&irq_mask, memory_order_acquire) & ((uint64_t)1<<irq))?1:0;
 }
 
 uint64_t hw_irq_ctrl_get_irq_mask(void)
 {
-	return irq_mask;
+	return atomic_load_explicit(&irq_mask, memory_order_acquire);
 }
 
 void hw_irq_ctrl_clear_irq(unsigned int irq)
 {
-	irq_status  &= ~((uint64_t)1<<irq);
-	irq_premask &= ~((uint64_t)1<<irq);
+	atomic_fetch_and_explicit(&irq_status, ~((uint64_t)1<<irq), memory_order_acq_rel);
+	atomic_fetch_and_explicit(&irq_premask, ~((uint64_t)1<<irq), memory_order_acq_rel);
 }
 
 
@@ -180,8 +183,10 @@ void hw_irq_ctrl_clear_irq(unsigned int irq)
  */
 void hw_irq_ctrl_enable_irq(unsigned int irq)
 {
-	irq_mask |= ((uint64_t)1<<irq);
-	if (irq_premask & ((uint64_t)1<<irq)) { /* if IRQ is pending */
+	atomic_fetch_or_explicit(&irq_mask, ((uint64_t)1<<irq), memory_order_acq_rel);
+
+	/* if IRQ is pending */
+	if (atomic_load_explicit(&irq_premask, memory_order_acquire) & ((uint64_t)1<<irq)) {
 		hw_irq_ctrl_raise_im_from_sw(irq);
 	}
 }
@@ -190,10 +195,10 @@ void hw_irq_ctrl_enable_irq(unsigned int irq)
 static inline void hw_irq_ctrl_irq_raise_prefix(unsigned int irq)
 {
 	if (irq < N_IRQS) {
-		irq_premask |= ((uint64_t)1<<irq);
+		atomic_fetch_or_explicit(&irq_premask, ((uint64_t)1<<irq), memory_order_acq_rel);
 
-		if (irq_mask & (1 << irq)) {
-			irq_status |= ((uint64_t)1<<irq);
+		if (atomic_load_explicit(&irq_mask, memory_order_acquire) & (((uint64_t)1<<irq))) {
+			atomic_fetch_or_explicit(&irq_status, ((uint64_t)1<<irq), memory_order_acq_rel);
 		}
 	} else if (irq == PHONY_HARD_IRQ) {
 		lock_ignore = true;
