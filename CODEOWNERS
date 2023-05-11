@@ -245,7 +245,7 @@
 /drivers/can/*rcar*                       @aaillet @pmarzin
 /drivers/clock_control/*agilex*           @siclim
 /drivers/clock_control/*nrf*              @nordic-krch
-/drivers/clock_control/*esp32*            @extremegtx @glaubermaroto
+/drivers/clock_control/*esp32*            @extremegtx @sylvioalves
 /drivers/clock_control/*cpg_mssr*         @aaillet
 /drivers/counter/                         @nordic-krch
 /drivers/console/ipm_console.c            @finikorg
@@ -253,7 +253,7 @@
 /drivers/console/jailhouse_debug_console.c @MrVan
 /drivers/counter/counter_cmos.c           @dcpleung
 /drivers/counter/counter_ll_stm32_timer.c @kentjhall
-/drivers/counter/*esp32*                  @glaubermaroto
+/drivers/counter/*esp32*                  @sylvioalves
 /drivers/crypto/*nrf_ecb*                 @maciekfabia @anangl
 /drivers/display/*rm68200*                @mmahadevan108
 /drivers/dac/                             @martinjaeger
@@ -292,7 +292,7 @@
 /drivers/flash/*cadence*                  @ngboonkhai
 /drivers/flash/*cc13xx_cc26xx*            @pepe2k
 /drivers/flash/*nrf*                      @de-nordic
-/drivers/flash/*esp32*                    @glaubermaroto
+/drivers/flash/*esp32*                    @sylvioalves
 /drivers/fpga/                            @tgorochowik @kgugala
 /drivers/gpio/                            @mnkp
 /drivers/gpio/*b91*                       @andy-liu-telink
@@ -301,7 +301,7 @@
 /drivers/gpio/*stm32*                     @erwango
 /drivers/gpio/*eos_s3*                    @fkokosinski @kgugala
 /drivers/gpio/*rcar*                      @aaillet
-/drivers/gpio/*esp32*                     @glaubermaroto
+/drivers/gpio/*esp32*                     @sylvioalves
 /drivers/gpio/*rpi_pico*                  @yonsch
 /drivers/gpio/*xlnx_ps*                   @ibirnbaum
 /drivers/hwinfo/                          @alexanderwachter
@@ -328,7 +328,7 @@
 /drivers/ieee802154/ieee802154_cc13xx*    @bwitherspoon @cfriedt @vaishnavachath
 /drivers/interrupt_controller/            @dcpleung @nashif
 /drivers/interrupt_controller/intc_gic.c  @stephanosio
-/drivers/interrupt_controller/*esp32*     @glaubermaroto
+/drivers/interrupt_controller/*esp32*     @sylvioalves
 /drivers/interrupt_controller/intc_nuclei_eclic.c  @soburi
 /drivers/ipm/ipm_mhu*                     @karl-zh
 /drivers/ipm/Kconfig.nrfx                 @masz-nordic
@@ -358,7 +358,7 @@
 /drivers/pcie/                            @dcpleung @nashif @jhedberg
 /drivers/peci/                            @albertofloyd @franciscomunoz @sjvasanth1
 /drivers/pinctrl/                         @gmarull
-/drivers/pinctrl/*esp32*                  @glaubermaroto
+/drivers/pinctrl/*esp32*                  @sylvioalves
 /drivers/pinctrl/*it8xxx2*                @ite
 /drivers/pm_cpu_ops/                      @carlocaione
 /drivers/power_domain/                    @ceolin
@@ -429,7 +429,7 @@
 /drivers/spi/                             @tbursztyka
 /drivers/spi/*b91*                        @andy-liu-telink
 /drivers/spi/spi_rv32m1_lpspi*            @karstenkoenig
-/drivers/spi/*esp32*                      @glaubermaroto
+/drivers/spi/*esp32*                      @sylvioalves
 /drivers/sdhc/                            @danieldegrasse
 /drivers/timer/*apic*                     @dcpleung @nashif
 /drivers/timer/apic_tsc.c                 @andyross
@@ -534,7 +534,7 @@
 /dts/x86/                                 @jhedberg
 /dts/xtensa/xtensa.dtsi                   @ydamigos
 /dts/xtensa/intel/                        @dcpleung
-/dts/xtensa/espressif/                    @glaubermaroto
+/dts/xtensa/espressif/                    @sylvioalves
 /dts/xtensa/nxp/                          @iuliana-prodan @dbaluta
 /dts/sparc/                               @julius-barendt
 /dts/bindings/                            @galak
@@ -636,7 +636,7 @@
 /include/zephyr/dt-bindings/clock/kinetis_scg.h  @henrikbrixandersen
 /include/zephyr/dt-bindings/ethernet/xlnx_gem.h  @ibirnbaum
 /include/zephyr/dt-bindings/pcie/                @dcpleung
-/include/zephyr/dt-bindings/pinctrl/esp*         @glaubermaroto
+/include/zephyr/dt-bindings/pinctrl/esp*         @sylvioalves
 /include/zephyr/dt-bindings/pwm/*it8xxx2*        @RuibinChang
 /include/zephyr/dt-bindings/usb/usb.h            @galak
 /include/zephyr/drivers/emul.h                   @sjg20
