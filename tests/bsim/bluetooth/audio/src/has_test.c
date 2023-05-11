@@ -29,7 +29,7 @@ static const struct bt_has_preset_ops preset_ops = {
 
 static void test_main(void)
 {
-	struct bt_has_register_param has_param = {0};
+	struct bt_has_features_param has_param = {0};
 	struct bt_has_preset_register_param preset_param;
 
 	int err;
@@ -50,9 +50,19 @@ static void test_main(void)
 
 	printk("Advertising successfully started\n");
 
-	has_param.type = BT_HAS_HEARING_AID_TYPE_MONAURAL;
+	has_param.type = BT_HAS_HEARING_AID_TYPE_BINAURAL;
+	has_param.preset_sync_support = true;
 
 	err = bt_has_register(&has_param);
+	if (err) {
+		FAIL("HAS register failed (err %d)\n", err);
+		return;
+	}
+
+	has_param.type = BT_HAS_HEARING_AID_TYPE_MONAURAL;
+	has_param.preset_sync_support = false;
+
+	err = bt_has_features_set(&has_param);
 	if (err) {
 		FAIL("HAS register failed (err %d)\n", err);
 		return;

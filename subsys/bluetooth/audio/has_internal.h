@@ -52,6 +52,9 @@ struct bt_has {
 
 	/** Active preset index value */
 	uint8_t active_index;
+
+	/* Whether the service has been registered or not */
+	bool registered;
 };
 
 struct bt_has_cp_hdr {
