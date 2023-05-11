@@ -12,6 +12,8 @@
 #ifndef ZEPHYR_INCLUDE_NET_WIFI_H_
 #define ZEPHYR_INCLUDE_NET_WIFI_H_
 
+#include <zephyr/sys/util.h>  /* for ARRAY_SIZE */
+
 #define WIFI_COUNTRY_CODE_LEN 2
 
 #define WIFI_LISTEN_INTERVAL_MIN 0
