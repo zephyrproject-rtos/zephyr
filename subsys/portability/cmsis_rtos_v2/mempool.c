@@ -172,7 +172,7 @@ uint32_t osMemoryPoolGetCapacity(osMemoryPoolId_t mp_id)
 	if (mslab == NULL) {
 		return 0;
 	} else {
-		return mslab->z_mslab.num_blocks;
+		return mslab->z_mslab.info.num_blocks;
 	}
 }
 
@@ -186,7 +186,7 @@ uint32_t osMemoryPoolGetBlockSize(osMemoryPoolId_t mp_id)
 	if (mslab == NULL) {
 		return 0;
 	} else {
-		return mslab->z_mslab.block_size;
+		return mslab->z_mslab.info.block_size;
 	}
 }
 

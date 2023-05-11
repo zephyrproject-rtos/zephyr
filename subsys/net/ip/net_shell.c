@@ -4080,9 +4080,9 @@ static void context_info(struct net_context *context, void *user_data)
 
 #if defined(CONFIG_NET_BUF_POOL_USAGE)
 		PR("%p\t%u\t%u\tETX\n",
-		   slab, slab->num_blocks, k_mem_slab_num_free_get(slab));
+		   slab, slab->info.num_blocks, k_mem_slab_num_free_get(slab));
 #else
-		PR("%p\t%d\tETX\n", slab, slab->num_blocks);
+		PR("%p\t%d\tETX\n", slab, slab->info.num_blocks);
 #endif
 		info->are_external_pools = true;
 		info->tx_slabs[info->pos] = slab;
@@ -4133,10 +4133,10 @@ static int cmd_net_mem(const struct shell *sh, size_t argc, char *argv[])
 	PR("Address\t\tTotal\tAvail\tName\n");
 
 	PR("%p\t%d\t%u\tRX\n",
-	       rx, rx->num_blocks, k_mem_slab_num_free_get(rx));
+	       rx, rx->info.num_blocks, k_mem_slab_num_free_get(rx));
 
 	PR("%p\t%d\t%u\tTX\n",
-	       tx, tx->num_blocks, k_mem_slab_num_free_get(tx));
+	       tx, tx->info.num_blocks, k_mem_slab_num_free_get(tx));
 
 	PR("%p\t%d\t%ld\tRX DATA (%s)\n", rx_data, rx_data->buf_count,
 	   atomic_get(&rx_data->avail_count), rx_data->name);
@@ -4146,8 +4146,8 @@ static int cmd_net_mem(const struct shell *sh, size_t argc, char *argv[])
 #else
 	PR("Address\t\tTotal\tName\n");
 
-	PR("%p\t%d\tRX\n", rx, rx->num_blocks);
-	PR("%p\t%d\tTX\n", tx, tx->num_blocks);
+	PR("%p\t%d\tRX\n", rx, rx->info.num_blocks);
+	PR("%p\t%d\tTX\n", tx, tx->info.num_blocks);
 	PR("%p\t%d\tRX DATA\n", rx_data, rx_data->buf_count);
 	PR("%p\t%d\tTX DATA\n", tx_data, tx_data->buf_count);
 	PR_INFO("Set %s to enable %s support.\n",
@@ -4772,7 +4772,7 @@ static int cmd_net_ping(const struct shell *sh, size_t argc, char *argv[])
 
 static bool is_pkt_part_of_slab(const struct k_mem_slab *slab, const char *ptr)
 {
-	size_t last_offset = (slab->num_blocks - 1) * slab->block_size;
+	size_t last_offset = (slab->info.num_blocks - 1) * slab->info.block_size;
 	size_t ptr_offset;
 
 	/* Check if pointer fits into slab buffer area. */
@@ -4782,7 +4782,7 @@ static bool is_pkt_part_of_slab(const struct k_mem_slab *slab, const char *ptr)
 
 	/* Check if pointer offset is correct. */
 	ptr_offset = ptr - slab->buffer;
-	if (ptr_offset % slab->block_size != 0) {
+	if (ptr_offset % slab->info.block_size != 0) {
 		return false;
 	}
 

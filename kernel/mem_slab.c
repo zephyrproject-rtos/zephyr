@@ -32,7 +32,7 @@ static int create_free_list(struct k_mem_slab *slab)
 	char *p;
 
 	/* blocks must be word aligned */
-	CHECKIF(((slab->block_size | (uintptr_t)slab->buffer) &
+	CHECKIF(((slab->info.block_size | (uintptr_t)slab->buffer) &
 				(sizeof(void *) - 1)) != 0U) {
 		return -EINVAL;
 	}
@@ -40,10 +40,10 @@ static int create_free_list(struct k_mem_slab *slab)
 	slab->free_list = NULL;
 	p = slab->buffer;
 
-	for (j = 0U; j < slab->num_blocks; j++) {
+	for (j = 0U; j < slab->info.num_blocks; j++) {
 		*(char **)p = slab->free_list;
 		slab->free_list = p;
-		p += slab->block_size;
+		p += slab->info.block_size;
 	}
 	return 0;
 }
@@ -79,14 +79,14 @@ int k_mem_slab_init(struct k_mem_slab *slab, void *buffer,
 {
 	int rc = 0;
 
-	slab->num_blocks = num_blocks;
-	slab->block_size = block_size;
+	slab->info.num_blocks = num_blocks;
+	slab->info.block_size = block_size;
 	slab->buffer = buffer;
-	slab->num_used = 0U;
+	slab->info.num_used = 0U;
 	slab->lock = (struct k_spinlock) {};
 
 #ifdef CONFIG_MEM_SLAB_TRACE_MAX_UTILIZATION
-	slab->max_used = 0U;
+	slab->info.max_used = 0U;
 #endif
 
 	rc = create_free_list(slab);
@@ -113,10 +113,11 @@ int k_mem_slab_alloc(struct k_mem_slab *slab, void **mem, k_timeout_t timeout)
 		/* take a free block */
 		*mem = slab->free_list;
 		slab->free_list = *(char **)(slab->free_list);
-		slab->num_used++;
+		slab->info.num_used++;
 
 #ifdef CONFIG_MEM_SLAB_TRACE_MAX_UTILIZATION
-		slab->max_used = MAX(slab->num_used, slab->max_used);
+		slab->info.max_used = MAX(slab->info.num_used,
+					  slab->info.max_used);
 #endif
 
 		result = 0;
@@ -151,8 +152,9 @@ void k_mem_slab_free(struct k_mem_slab *slab, void *mem)
 	k_spinlock_key_t key = k_spin_lock(&slab->lock);
 
 	__ASSERT(((char *)mem >= slab->buffer) &&
-		 ((((char *)mem - slab->buffer) % slab->block_size) == 0) &&
-		 ((char *)mem <= (slab->buffer + (slab->block_size * (slab->num_blocks - 1)))),
+		 ((((char *)mem - slab->buffer) % slab->info.block_size) == 0) &&
+		 ((char *)mem <= (slab->buffer + (slab->info.block_size *
+						  (slab->info.num_blocks - 1)))),
 		 "Invalid memory pointer provided");
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_mem_slab, free, slab);
@@ -170,7 +172,7 @@ void k_mem_slab_free(struct k_mem_slab *slab, void *mem)
 	}
 	*(char **) mem = slab->free_list;
 	slab->free_list = (char *) mem;
-	slab->num_used--;
+	slab->info.num_used--;
 
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_mem_slab, free, slab);
 
@@ -185,10 +187,12 @@ int k_mem_slab_runtime_stats_get(struct k_mem_slab *slab, struct sys_memory_stat
 
 	k_spinlock_key_t key = k_spin_lock(&slab->lock);
 
-	stats->allocated_bytes = slab->num_used * slab->block_size;
-	stats->free_bytes = (slab->num_blocks - slab->num_used) * slab->block_size;
+	stats->allocated_bytes = slab->info.num_used * slab->info.block_size;
+	stats->free_bytes = (slab->info.num_blocks - slab->info.num_used) *
+			    slab->info.block_size;
 #ifdef CONFIG_MEM_SLAB_TRACE_MAX_UTILIZATION
-	stats->max_allocated_bytes = slab->max_used * slab->block_size;
+	stats->max_allocated_bytes = slab->info.max_used *
+				     slab->info.block_size;
 #else
 	stats->max_allocated_bytes = 0;
 #endif
@@ -207,7 +211,7 @@ int k_mem_slab_runtime_stats_reset_max(struct k_mem_slab *slab)
 
 	k_spinlock_key_t key = k_spin_lock(&slab->lock);
 
-	slab->max_used = slab->num_used;
+	slab->info.max_used = slab->info.num_used;
 
 	k_spin_unlock(&slab->lock, key);
 
