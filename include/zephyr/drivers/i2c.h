@@ -56,7 +56,7 @@ extern "C" {
 #define I2C_SPEED_SET(speed)		(((speed) << I2C_SPEED_SHIFT) \
 						& I2C_SPEED_MASK)
 #define I2C_SPEED_MASK			(0x7U << I2C_SPEED_SHIFT) /* 3 bits */
-#define I2C_SPEED_GET(cfg) 		(((cfg) & I2C_SPEED_MASK) \
+#define I2C_SPEED_GET(cfg)		(((cfg) & I2C_SPEED_MASK) \
 						>> I2C_SPEED_SHIFT)
 
 /** Use 10-bit addressing. DEPRECATED - Use I2C_MSG_ADDR_10_BITS instead. */
@@ -587,7 +587,6 @@ static inline void i2c_xfer_stats(const struct device *dev, struct i2c_msg *msgs
 			__VA_ARGS__)
 
 #else /* CONFIG_I2C_STATS */
-
 static inline void i2c_xfer_stats(const struct device *dev, struct i2c_msg *msgs,
 				  uint8_t num_msgs)
 {
@@ -595,6 +594,58 @@ static inline void i2c_xfer_stats(const struct device *dev, struct i2c_msg *msgs
 	ARG_UNUSED(msgs);
 	ARG_UNUSED(num_msgs);
 }
+
+#ifdef CONFIG_PLATFORM_ABST_SUPPORT
+struct i2c_default_config {
+	uint32_t clock_frequency;
+};
+
+#define I2C_GET_CLOCK_FREQ(dev)\
+			((struct i2c_default_config *)dev->default_cfg)->clock_frequency
+
+#define I2C_DEV_INIT(n, init)						\
+	static int __i2c_dev_init_##n(const struct device *dev)		\
+	{								\
+		int status;						\
+									\
+		status = init(dev);					\
+		if (status) {						\
+			return status;					\
+		}							\
+		DEVICE_PROB_CHILD_NODE(i2c##n);				\
+		return 0;						\
+	}
+
+/**
+ * @brief Like PLATFORM_DEV_DT_DEFINE() with I2C specifics.
+ *
+ * @details Defines a device which implements the I2C API.
+ *
+ * @param node_id The devicetree node identifier.
+ * @param flag describe type of Device object and requried boot priority.
+ * @param init_fn Pointer to the device's initialization function, which will be
+ * run by the kernel during system initialization.
+ * @param pm Pointer to the device's power management resources, a
+ * @ref pm_device, which will be stored in @ref device.pm. Use `NULL` if the
+ * device does not use PM.
+ * @param data Pointer to the device's private mutable data, which will be
+ * stored in @ref device.data.
+ * @param config Pointer to the device's private constant data, which will be
+ * stored in @ref device.config field.
+ * @param api Pointer to the device's API structure. Can be `NULL`.
+ * @param isr Pointer to the device's ISR function. Can be `NULL`.
+ */
+#define I2C_PLATFORM_DEV_DT_DEFINE(node_id, flag, init_fn, pm, data,				\
+				config, api, isr, ...)					\
+		static const struct i2c_default_config __default_cfg##node_id = {	\
+			.clock_frequency = DT_PROP_OR(node_id, clock_frequency, 0),	\
+		};									\
+		I2C_DEV_INIT(node_id, init_fn)						\
+		PLATFORM_DEV_DT_INST_DEFINE(node_id, flag,			\
+			&__default_cfg##node_id, __i2c_dev_init_##node_id, pm, data,	\
+			config, api, isr, __VA_ARGS__)
+
+#endif /* CONFIG_PLATFORM_ABST_SUPPORT */
 
 #define I2C_DEVICE_DT_DEFINE(node_id, init_fn, pm, data, config, level,	\
 			     prio, api, ...)				\

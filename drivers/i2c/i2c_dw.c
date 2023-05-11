@@ -17,6 +17,7 @@
 #include <zephyr/pm/device.h>
 #include <zephyr/arch/cpu.h>
 #include <string.h>
+#include <zephyr/platform.h>
 
 #if defined(CONFIG_PINCTRL)
 #include <zephyr/drivers/pinctrl.h>
@@ -42,7 +43,7 @@ LOG_MODULE_REGISTER(i2c_dw);
 
 static inline uint32_t get_regs(const struct device *dev)
 {
-	return (uint32_t)DEVICE_MMIO_GET(dev);
+	return (uint32_t)PLATFORM_MMIO_GET(dev);
 }
 
 static inline void i2c_dw_data_ask(const struct device *dev)
@@ -197,8 +198,9 @@ static inline void i2c_dw_write_byte_non_blocking(const struct device *dev, uint
 static void i2c_dw_slave_read_clear_intr_bits(const struct device *dev);
 #endif
 
-static void i2c_dw_isr(const struct device *port)
+static void i2c_dw_isr(const void *arg)
 {
+	const struct device *port = arg;
 	struct i2c_dw_dev_config * const dw = port->data;
 	union ic_interrupt_register intr_stat;
 	uint32_t value;
@@ -842,7 +844,9 @@ static const struct i2c_driver_api funcs = {
 
 static int i2c_dw_initialize(const struct device *dev)
 {
+#if defined(CONFIG_PINCTRL)
 	const struct i2c_dw_rom_config * const rom = dev->config;
+#endif
 	struct i2c_dw_dev_config * const dw = dev->data;
 	union ic_con_register ic_con;
 	int ret = 0;
@@ -853,30 +857,11 @@ static int i2c_dw_initialize(const struct device *dev)
 		return ret;
 	}
 #endif
-
-#if DT_ANY_INST_ON_BUS_STATUS_OKAY(pcie)
-	if (rom->pcie) {
-		struct pcie_bar mbar;
-
-		if (rom->pcie->bdf == PCIE_BDF_NONE) {
-			return -EINVAL;
-		}
-
-		pcie_probe_mbar(rom->pcie->bdf, 0, &mbar);
-		pcie_set_cmd(rom->pcie->bdf, PCIE_CONF_CMDSTAT_MEM, true);
-
-		device_map(DEVICE_MMIO_RAM_PTR(dev), mbar.phys_addr,
-			   mbar.size, K_MEM_CACHE_NONE);
-	} else
-#endif
-	{
-		DEVICE_MMIO_MAP(dev, K_MEM_CACHE_NONE);
-	}
-
 	k_sem_init(&dw->device_sync_sem, 0, K_SEM_MAX_LIMIT);
 	k_mutex_init(&dw->bus_mutex);
 
 	uint32_t reg_base = get_regs(dev);
+
 	clear_bit_enable_en(reg_base);
 
 	/* verify that we have a valid DesignWare register first */
@@ -900,12 +885,9 @@ static int i2c_dw_initialize(const struct device *dev)
 		dw->support_hs_mode = false;
 	}
 
-	rom->config_func(dev);
-
-	dw->app_config = I2C_MODE_CONTROLLER | i2c_map_dt_bitrate(rom->bitrate);
+	dw->app_config = I2C_MODE_CONTROLLER | i2c_map_dt_bitrate(I2C_GET_CLOCK_FREQ(dev));
 
 	if (i2c_dw_runtime_configure(dev, dw->app_config) != 0) {
-		LOG_DBG("I2C: Cannot set default configuration");
 		return -EIO;
 	}
 
@@ -922,77 +904,13 @@ static int i2c_dw_initialize(const struct device *dev)
 #define PINCTRL_DW_CONFIG(n)
 #endif
 
-#define I2C_DW_INIT_PCIE0(n)
-#define I2C_DW_INIT_PCIE1(n) DEVICE_PCIE_INST_INIT(n, pcie),
-#define I2C_DW_INIT_PCIE(n) \
-	_CONCAT(I2C_DW_INIT_PCIE, DT_INST_ON_BUS(n, pcie))(n)
-
-#define I2C_DEFINE_PCIE0(n)
-#define I2C_DEFINE_PCIE1(n) DEVICE_PCIE_INST_DECLARE(n)
-#define I2C_PCIE_DEFINE(n) \
-	_CONCAT(I2C_DEFINE_PCIE, DT_INST_ON_BUS(n, pcie))(n)
-
-#define I2C_DW_IRQ_FLAGS_SENSE0(n) 0
-#define I2C_DW_IRQ_FLAGS_SENSE1(n) DT_INST_IRQ(n, sense)
-#define I2C_DW_IRQ_FLAGS(n) \
-	_CONCAT(I2C_DW_IRQ_FLAGS_SENSE, DT_INST_IRQ_HAS_CELL(n, sense))(n)
-
-/* not PCI(e) */
-#define I2C_DW_IRQ_CONFIG_PCIE0(n)                                            \
-	static void i2c_config_##n(const struct device *port)                 \
-	{                                                                     \
-		ARG_UNUSED(port);                                             \
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority),	      \
-			    i2c_dw_isr, DEVICE_DT_INST_GET(n),                \
-			    I2C_DW_IRQ_FLAGS(n));                             \
-		irq_enable(DT_INST_IRQN(n));                                  \
-	}
-
-/* PCI(e) with auto IRQ detection */
-#define I2C_DW_IRQ_CONFIG_PCIE1(n)                                            \
-	static void i2c_config_##n(const struct device *port)                 \
-	{                                                                     \
-		BUILD_ASSERT(DT_INST_IRQN(n) == PCIE_IRQ_DETECT,              \
-			     "Only runtime IRQ configuration is supported");  \
-		BUILD_ASSERT(IS_ENABLED(CONFIG_DYNAMIC_INTERRUPTS),           \
-			     "DW I2C PCI needs CONFIG_DYNAMIC_INTERRUPTS");   \
-		const struct i2c_dw_rom_config * const dev_cfg = port->config;\
-		unsigned int irq = pcie_alloc_irq(dev_cfg->pcie->bdf);        \
-		if (irq == PCIE_CONF_INTR_IRQ_NONE) {                         \
-			return;                                               \
-		}                                                             \
-		pcie_connect_dynamic_irq(dev_cfg->pcie->bdf, irq,	      \
-				     DT_INST_IRQ(n, priority),		      \
-				    (void (*)(const void *))i2c_dw_isr,       \
-				    DEVICE_DT_INST_GET(n),                    \
-				    I2C_DW_IRQ_FLAGS(n));                     \
-		pcie_irq_enable(dev_cfg->pcie->bdf, irq);                     \
-	}
-
-#define I2C_DW_IRQ_CONFIG(n) \
-	_CONCAT(I2C_DW_IRQ_CONFIG_PCIE, DT_INST_ON_BUS(n, pcie))(n)
-
-#define I2C_CONFIG_REG_INIT_PCIE0(n) DEVICE_MMIO_ROM_INIT(DT_DRV_INST(n)),
-#define I2C_CONFIG_REG_INIT_PCIE1(n)
-#define I2C_CONFIG_REG_INIT(n) \
-	_CONCAT(I2C_CONFIG_REG_INIT_PCIE, DT_INST_ON_BUS(n, pcie))(n)
-
-#define I2C_DEVICE_INIT_DW(n)                                                 \
+#define I2C_DEVICE_INIT_DW(n) \
 	PINCTRL_DW_DEFINE(n);                                                 \
-	I2C_PCIE_DEFINE(n);                                                   \
-	static void i2c_config_##n(const struct device *port);                \
 	static const struct i2c_dw_rom_config i2c_config_dw_##n = {           \
-		I2C_CONFIG_REG_INIT(n)                                        \
-		.config_func = i2c_config_##n,                                \
-		.bitrate = DT_INST_PROP(n, clock_frequency),                  \
 		PINCTRL_DW_CONFIG(n)                                          \
-		I2C_DW_INIT_PCIE(n)                                           \
 	};                                                                    \
 	static struct i2c_dw_dev_config i2c_##n##_runtime;                    \
-	I2C_DEVICE_DT_INST_DEFINE(n, i2c_dw_initialize, NULL,                 \
-			      &i2c_##n##_runtime, &i2c_config_dw_##n,         \
-			      POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,          \
-			      &funcs);                                        \
-	I2C_DW_IRQ_CONFIG(n)
+	I2C_PLATFORM_DEV_DT_DEFINE(n, BOOT_POST_KERNEL, i2c_dw_initialize,\
+		NULL, &i2c_##n##_runtime, &i2c_config_dw_##n, &funcs, i2c_dw_isr);   \
 
 DT_INST_FOREACH_STATUS_OKAY(I2C_DEVICE_INIT_DW)
