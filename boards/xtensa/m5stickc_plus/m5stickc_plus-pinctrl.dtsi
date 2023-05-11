@@ -12,6 +12,7 @@
 
 	uart0_tx_gpio1: uart0_tx_gpio1 {
 		pinmux = <UART0_TX_GPIO1>;
+		output-high;
 	};
 
 	uart0_rx_gpio3: uart0_rx_gpio3 {
