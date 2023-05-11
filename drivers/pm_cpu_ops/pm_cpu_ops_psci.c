@@ -99,7 +99,7 @@ static int psci_features_check(unsigned long function_id)
 		result = psci_data.invoke_psci_fn(PSCI_FN_NATIVE(1_0, PSCI_FEATURES), function_id,
 						  0, 0);
 	} else {
-		LOG_ERR("Function ID %lx not supported", function_id);
+		LOG_ERR("Function ID %lu not supported", function_id);
 		result = -ENOTSUP;
 	}
 
