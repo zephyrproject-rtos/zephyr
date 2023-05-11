@@ -183,6 +183,27 @@ static uint8_t draw_char_vtmono(const struct char_framebuffer *fb,
 	return fptr->width;
 }
 
+static inline void draw_point(struct char_framebuffer *fb, int16_t x, int16_t y)
+{
+	const bool need_reverse = ((fb->screen_info & SCREEN_INFO_MONO_MSB_FIRST) != 0);
+	const size_t index = ((y / 8) * fb->x_res);
+	uint8_t m = BIT(y % 8);
+
+	if (x < 0 || x >= fb->x_res) {
+		return;
+	}
+
+	if (y < 0 || y >= fb->y_res) {
+		return;
+	}
+
+	if (need_reverse) {
+		m = byte_reverse(m);
+	}
+
+	fb->buf[index + x] |= m;
+}
+
 static int draw_text(const struct device *dev, const char *const str, int16_t x, int16_t y,
 		     bool wrap)
 {
@@ -213,6 +234,15 @@ static int draw_text(const struct device *dev, const char *const str, int16_t x,
 
 	LOG_ERR("Unsupported framebuffer configuration");
 	return -EINVAL;
+}
+
+int cfb_draw_point(const struct device *dev, const struct cfb_position *pos)
+{
+	struct char_framebuffer *fb = &char_fb;
+
+	draw_point(fb, pos->x, pos->y);
+
+	return 0;
 }
 
 int cfb_draw_text(const struct device *dev, const char *const str, int16_t x, int16_t y)

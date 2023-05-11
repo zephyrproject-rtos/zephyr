@@ -57,6 +57,11 @@ struct cfb_font {
 	uint8_t last_char;
 };
 
+struct cfb_position {
+	uint16_t x;
+	uint16_t y;
+};
+
 /**
  * @brief Macro for creating a font entry.
  *
@@ -103,6 +108,16 @@ int cfb_print(const struct device *dev, const char *const str, uint16_t x, uint1
  * @return 0 on success, negative value otherwise
  */
 int cfb_draw_text(const struct device *dev, const char *const str, int16_t x, int16_t y);
+
+/**
+ * @brief Draw a point.
+ *
+ * @param dev Pointer to device structure for driver instance
+ * @param pos position of the point
+ *
+ * @return 0 on success, negative value otherwise
+ */
+int cfb_draw_point(const struct device *dev, const struct cfb_position *pos);
 
 /**
  * @brief Clear framebuffer.
