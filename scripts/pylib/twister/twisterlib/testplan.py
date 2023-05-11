@@ -505,6 +505,16 @@ class TestPlan:
                 suite_yaml_path = os.path.join(dirpath, filename)
                 suite_path = os.path.dirname(suite_yaml_path)
 
+                for alt_config_root in self.env.alt_config_root:
+                    alt_config = os.path.join(os.path.abspath(alt_config_root),
+                                              os.path.relpath(suite_path, root),
+                                              filename)
+                    if os.path.exists(alt_config):
+                        logger.info("Using alternative configuration from %s" %
+                                    os.path.normpath(alt_config))
+                        suite_yaml_path = alt_config
+                        break
+
                 try:
                     parsed_data = TwisterConfigParser(suite_yaml_path, self.suite_schema)
                     parsed_data.load()
