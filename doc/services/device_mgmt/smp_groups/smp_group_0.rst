@@ -28,6 +28,8 @@ OS management group defines following commands:
     +-------------------+-----------------------------------------------+
     | ``7``             | OS/Application info                           |
     +-------------------+-----------------------------------------------+
+    | ``8``             | Bootloader information                        |
+    +-------------------+-----------------------------------------------+
 
 Echo command
 ************
@@ -840,3 +842,200 @@ where:
     | "rc"             | :c:enum:`mcumgr_err_t` only appears if non-zero (error condition) when  |
     |                  | using SMP version 1 or for SMP errors when using SMP version 2.         |
     +------------------+-------------------------------------------------------------------------+
+
+Bootloader Information
+**********************
+
+Allows retrieving information about the on-board bootloader and its parameters.
+
+Bootloader Information Request
+==============================
+
+Bootloader information request header:
+
+.. table::
+    :align: center
+
+    +--------+--------------+----------------+
+    | ``OP`` | ``Group ID`` | ``Command ID`` |
+    +========+==============+================+
+    | ``0``  | ``0``        |  ``8``         |
+    +--------+--------------+----------------+
+
+CBOR data of request:
+
+.. code-block:: none
+
+    {
+        (str,opt)"query"  : (str)
+    }
+
+where:
+
+.. table::
+    :align: center
+
+    +--------------+-----------------------------------------------+
+    | "query"      | Is string representing query for parameters,  |
+    |              | with no restrictions how the query looks like |
+    |              | as processing of query is left for bootloader |
+    |              | backend.                                      |
+    |              | If there is no query, then response will      |
+    |              | return string identifying the bootloader.     |
+    +--------------+-----------------------------------------------+
+
+Bootloader Information Response
+===============================
+
+Bootloader information response header:
+
+.. table::
+    :align: center
+
+    +--------+--------------+----------------+
+    | ``OP`` | ``Group ID`` | ``Command ID`` |
+    +========+==============+================+
+    | ``1``  | ``0``        |  ``8``         |
+    +--------+--------------+----------------+
+
+In case when no "query" has been provided in request,
+CBOR data of response:
+
+.. code-block:: none
+
+    {
+        (str)"bootloader"      : (str)
+    }
+
+where:
+
+.. table::
+    :align: center
+
+    +--------------+-----------------------------------------------+
+    | "bootloader" | String representing bootloader name           |
+    +--------------+-----------------------------------------------+
+
+In case when "query" is provided:
+
+.. code-block:: none
+
+    {
+        (str,opt)<response>   : ()
+	...
+    }
+
+where:
+
+.. table::
+    :align: center
+
+    +------------------+-------------------------------------------------------------------------+
+    | <response>       | Response to "query". This is optional and may be left out in case when  |
+    |                  | query yields no response, SMP version 2 error code of                   |
+    |                  | `OS_MGMT_ERR_QUERY_YIELDS_NO_ANSWER` is expected.                       |
+    |                  | Response may have more than one parameter reported back or it may be    |
+    |                  | a map, that is dependent on bootloader backednd and query.              |
+    +------------------+-------------------------------------------------------------------------+
+    | ...              | Parameter characteristic information.                                   |
+    +------------------+-------------------------------------------------------------------------+
+
+Parameter may be accompanied by additional, parameter specific, information keywords with
+assigned values.
+
+In case of error the CBOR data takes the form:
+
+.. tabs::
+
+   .. group-tab:: SMP version 2
+
+      .. code-block:: none
+
+          {
+              (str)"err" : {
+                  (str)"group"    : (uint)
+                  (str)"rc"       : (uint)
+              }
+          }
+
+   .. group-tab:: SMP version 1 (and non-group SMP version 2)
+
+      .. code-block:: none
+
+          {
+              (str)"rc"       : (int)
+          }
+
+where:
+
+.. table::
+    :align: center
+
+    +------------------+-------------------------------------------------------------------------+
+    | "err" -> "group" | :c:enum:`mcumgr_group_t` group of the group-based error code. Only      |
+    |                  | appears if an error is returned when using SMP version 2.               |
+    +------------------+-------------------------------------------------------------------------+
+    | "err" -> "rc"    | contains the index of the group-based error code. Only appears if       |
+    |                  | non-zero (error condition) when using SMP version 2.                    |
+    +------------------+-------------------------------------------------------------------------+
+    | "rc"             | :c:enum:`mcumgr_err_t` only appears if non-zero (error condition) when  |
+    |                  | using SMP version 1 or for SMP errors when using SMP version 2.         |
+    +------------------+-------------------------------------------------------------------------+
+
+Bootloader Information: MCUboot
+===============================
+
+In case when MCUboot is application bootloader empty request will
+be responded with:
+
+.. code-block:: none
+
+    {
+        (str)"bootloader"      : (str)"MCUboot"
+    }
+
+Currently "MCUboot" supports querying for mode of operation:
+
+.. code-block:: none
+
+    {
+        (str)"query"           : (str)"mode"
+    }
+
+Response to "mode" is:
+
+.. code-block:: none
+
+    {
+        (str)"mode"                     : (int)
+        (str,opt)"no-downgrade"         : (bool)
+    }
+
+where "mode" is one of:
+
+.. table::
+    :align: center
+
+    +-----+-----------------------------------------------------+
+    | -1  | Unknown mode of MCUboot.                            |
+    +-----+-----------------------------------------------------+
+    |  0  | MCUboot is in single application mode.              |
+    +-----+-----------------------------------------------------+
+    |  1  | MCUboot is in swap using scratch partition mode.    |
+    +-----+-----------------------------------------------------+
+    |  2  | MCUboot is in overwrite (upgrade-only) mode.        |
+    +-----+-----------------------------------------------------+
+    |  3  | MCUboot is in swap without scratch mode.            |
+    +-----+-----------------------------------------------------+
+    |  4  | MCUboot is in DirectXIP without revert mode.        |
+    +-----+-----------------------------------------------------+
+    |  5  | MCUboot is in DirectXIP with revert mode.           |
+    +-----+-----------------------------------------------------+
+    |  6  | MCUboot is in RAM loader mode.                      |
+    +-----+-----------------------------------------------------+
+
+The "no-downgrade" is a flag, which is always sent when true, indicating that
+mode has downgrade prevention enabled; downgrade prevention means that
+if uploaded image has lower version than running, it will notbe taken
+for exectuion by MCUboot.
+MCUmgr may reject image with lower version in that MCUboot configuration.
