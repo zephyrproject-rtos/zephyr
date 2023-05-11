@@ -347,6 +347,10 @@ struct k_thread {
 	struct _pipe_desc pipe_desc;
 #endif
 
+#ifdef CONFIG_OBJ_CORE_THREAD
+	struct k_obj_core  obj_core;
+#endif
+
 	/** arch-specifics: must always be at the end */
 	struct _thread_arch arch;
 };

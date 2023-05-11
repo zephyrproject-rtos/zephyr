@@ -133,4 +133,12 @@ config SYS_MEM_BLOCKS_RUNTIME_STATS
 	  blocks statistics related to the current and maximum number
 	  of allocations in a given memory block.
 
+config OBJ_CORE_SYS_MEM_BLOCKS
+	bool "Kernel object for memory blocks"
+	depends on SYS_MEM_BLOCKS && OBJ_CORE
+	default y if SYS_MEM_BLOCKS && OBJ_CORE
+	help
+	  This option allows object cores to be integrated into memory block
+	  objects.
+
 endmenu

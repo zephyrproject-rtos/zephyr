@@ -29,6 +29,7 @@
 #include <zephyr/sys/sys_heap.h>
 #include <zephyr/arch/structs.h>
 #include <zephyr/kernel/stats.h>
+#include <zephyr/kernel/obj_core.h>
 #endif
 
 #ifdef __cplusplus
@@ -145,6 +146,10 @@ struct _cpu {
 #endif
 #endif
 
+#ifdef CONFIG_OBJ_CORE_SYSTEM
+	struct k_obj_core  obj_core;
+#endif
+
 	/* Per CPU architecture specifics */
 	struct _cpu_arch arch;
 };
@@ -185,6 +190,10 @@ struct z_kernel {
 #endif
 #ifdef CONFIG_SCHED_THREAD_USAGE_ALL
 	struct k_cycle_stats usage[CONFIG_MP_MAX_NUM_CPUS];
+#endif
+
+#ifdef CONFIG_OBJ_CORE_SYSTEM
+	struct k_obj_core  obj_core;
 #endif
 
 #if defined(CONFIG_SMP) && defined(CONFIG_SCHED_IPI_SUPPORTED)
