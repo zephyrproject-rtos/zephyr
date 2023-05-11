@@ -1,0 +1,15 @@
+sample:
+  description: SoC voltage sensor example
+  name: soc_voltage
+tests:
+  sample.sensor.soc_voltage:
+    depends_on: adc
+    tags: sensors
+    timeout: 10
+    filter: dt_alias_exists("volt-sensor0")
+    harness: console
+    harness_config:
+      type: one_line
+      ordered: true
+      regex:
+        - "Sensor voltage\\[[A-Za-z0-9_]+\\]: -?([0-5])\\.([0-9]+) V"
