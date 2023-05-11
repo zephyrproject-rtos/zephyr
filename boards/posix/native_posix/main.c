@@ -39,6 +39,11 @@ void posix_exit(int exit_code)
 {
 	static int max_exit_code;
 
+#if defined(CONFIG_GPROF) && defined(CONFIG_CPP)
+	extern void _mcleanup(void);
+	_mcleanup();
+#endif
+
 	max_exit_code = MAX(exit_code, max_exit_code);
 	/*
 	 * posix_soc_clean_up may not return if this is called from a SW thread,
