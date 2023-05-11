@@ -7,3 +7,13 @@ config LED_GPIO
 	depends on GPIO && DT_HAS_GPIO_LEDS_ENABLED
 	help
 	  Enable driver for GPIO LEDs.
+
+if LED_GPIO
+
+config LED_GPIO_BLINK
+	bool "Software LED blinking"
+	default n
+	help
+	  Enable software LED blinking.
+
+endif # LED_GPIO
