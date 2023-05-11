@@ -3,10 +3,12 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <zephyr/kernel.h>
 #include <errno.h>
+
+#include <zephyr/kernel.h>
 #include <zephyr/posix/time.h>
 #include <zephyr/posix/sys/time.h>
+#include <zephyr/posix/sys/times.h>
 #include <zephyr/syscall_handler.h>
 #include <zephyr/spinlock.h>
 
@@ -194,4 +196,49 @@ int gettimeofday(struct timeval *tv, void *tz)
 	tv->tv_usec = ts.tv_nsec / NSEC_PER_USEC;
 
 	return res;
+}
+
+clock_t times(struct tms *buffer)
+{
+#ifndef CONFIG_SCHED_THREAD_USAGE_ALL
+	errno = ENOSYS;
+	return -1;
+#else
+	int ret;
+	clock_t rtime;
+	clock_t utime;
+	k_thread_runtime_stats_t stats;
+
+	BUILD_ASSERT(CLOCKS_PER_SEC == USEC_PER_SEC, "POSIX requires CLOCKS_PER_SEC to be 1000000");
+
+	ret = k_thread_runtime_stats_all_get(&stats);
+	if (ret < 0) {
+		errno = -ret;
+		return -1;
+	}
+
+	utime = z_tmcvt(stats.total_cycles - stats.idle_cycles, sys_clock_hw_cycles_per_sec(),
+			USEC_PER_SEC,
+			IS_ENABLED(CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME) ? false : true,
+			sizeof(rtime) == sizeof(uint32_t), false, false);
+
+	rtime = stats.total_cycles;
+
+	*buffer = (struct tms){
+		.tms_utime = utime,
+	};
+
+	return rtime;
+#endif
+}
+
+clock_t clock(void)
+{
+	struct tms usage = {0};
+
+	if (times(&usage) < 0) {
+		return -1;
+	}
+
+	return usage.tms_utime;
 }

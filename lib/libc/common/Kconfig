@@ -67,3 +67,11 @@ config COMMON_LIBC_STRNLEN
 	bool
 	help
 	  common implementation of strnlen().
+
+config COMMON_LIBC_CLOCK
+	bool
+	depends on !POSIX_CLOCK
+	help
+	  Common implementation of clock(). For precise values
+	  it is suggested to enable CONFIG_THREAD_RUNTIME_STATS, and
+	  CONFIG_SCHED_THREAD_USAGE=y.

@@ -30,4 +30,12 @@ struct k_cycle_stats {
 	bool      track_usage;  /**< true if gathering usage stats */
 };
 
+/**
+ * @brief Return the cumulative number of cycles used in system calls.
+ *
+ * @param thread The thread to query system call stats for, or `NULL` for all threads.
+ * @return uint64_t
+ */
+uint64_t k_syscall_cycle_stats(struct k_thread *thread);
+
 #endif

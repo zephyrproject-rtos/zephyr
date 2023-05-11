@@ -21,6 +21,13 @@
 extern "C" {
 #endif
 
+#ifdef CONFIG_POSIX_CLOCK
+/* Defined in order to be consistent with XSI */
+#define CLOCKS_PER_SEC 1000000
+#else
+#define CLOCKS_PER_SEC sys_clock_hw_cycles_per_sec()
+#endif
+
 struct tm {
 	int tm_sec;
 	int tm_min;
@@ -43,6 +50,11 @@ typedef _TIME_T_ time_t;
 typedef _SUSECONDS_T_ suseconds_t;
 #endif
 
+#if !defined(__clock_t_defined)
+#define __clock_t_defined
+typedef _CLOCK_T_ clock_t;
+#endif
+
 /*
  * Conversion between civil time and UNIX time.  The companion
  * localtime() and inverse mktime() are not provided here since they
@@ -53,6 +65,8 @@ struct tm *gmtime_r(const time_t *ZRESTRICT timep,
 		    struct tm *ZRESTRICT result);
 
 time_t time(time_t *tloc);
+
+clock_t clock(void);
 
 #ifdef __cplusplus
 }
