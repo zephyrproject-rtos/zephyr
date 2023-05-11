@@ -533,6 +533,13 @@ Libraries / Subsystems
     correctly, allowing other transports or other parts of the application
     code to use it.
 
+  * A new version of the SMP protocol used by MCUmgr has been introduced in the
+    header, which is used to indicate the version of the protocol being used.
+    This updated protocol allows returning much more detailed error responses
+    per group, see the
+    :ref:`MCUmgr SMP protocol specification <mcumgr_smp_protocol_specification>`
+    for details.
+
 * Retention
 
   * Retention subsystem has been added which adds enhanced features over
