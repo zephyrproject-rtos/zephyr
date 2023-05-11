@@ -13,6 +13,7 @@
 	};
 
 	soc {
+		compatible = "st,stm32f103", "st,stm32f1", "simple-bus";
 
 		flash-controller@40022000 {
 			flash0: flash@8000000 {

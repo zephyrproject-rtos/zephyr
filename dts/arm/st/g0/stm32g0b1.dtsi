@@ -9,6 +9,8 @@
 
 / {
 	soc {
+		compatible = "st,stm32g0b1", "st,stm32g0", "simple-bus";
+
 		clocks {
 			clk_hsi48: clk-hsi48 {
 				#clock-cells = <0>;

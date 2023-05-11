@@ -9,6 +9,8 @@
 
 / {
 	soc {
+		compatible = "st,stm32h747", "st,stm32h7", "simple-bus";
+
 		mipi_dsi: dsihost@50000000 {
 			compatible = "st,stm32-mipi-dsi";
 			#address-cells = <1>;

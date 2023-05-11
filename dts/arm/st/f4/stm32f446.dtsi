@@ -16,6 +16,8 @@
 	};
 
 	soc {
+		compatible = "st,stm32f446", "st,stm32f4", "simple-bus";
+
 		i2s1: i2s@40013000 {
 			compatible = "st,stm32-i2s";
 			#address-cells = <1>;

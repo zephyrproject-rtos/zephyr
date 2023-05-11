@@ -5,3 +5,9 @@
  */
 
 #include <st/h5/stm32h562.dtsi>
+
+/ {
+	soc {
+		compatible = "st,stm32h563", "st,stm32h5", "simple-bus";
+	};
+};
