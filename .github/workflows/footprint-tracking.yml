@@ -23,7 +23,7 @@ concurrency:
 jobs:
   footprint-tracking:
     runs-on: ubuntu-22.04
-    if: github.repository == 'zephyrproject-rtos/zephyr'
+    if: github.repository_owner == 'zephyrproject-rtos'
     container:
       image: ghcr.io/zephyrproject-rtos/ci:v0.26.2
       options: '--entrypoint /bin/bash'
