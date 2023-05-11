@@ -9,6 +9,6 @@ config SOC
 	default "intel_ace20_lnl"
 
 config MP_MAX_NUM_CPUS
-	default 4
+	default 5
 
 endif
