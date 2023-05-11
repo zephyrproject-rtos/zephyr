@@ -7,7 +7,7 @@ description: Infineon CAT1 I2C
 
 compatible: "infineon,cat1-i2c"
 
-include: [i2c-controller.yaml, pinctrl-device.yaml]
+include: [i2c-controller.yaml, pinctrl-device.yaml, "infineon,cat1-scb.yaml"]
 
 properties:
   reg:
