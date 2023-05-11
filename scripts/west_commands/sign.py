@@ -525,10 +525,13 @@ class RimageSigner(Signer):
             cmake_default_key = cache.get('RIMAGE_SIGN_KEY')
             extra_ri_args += [ '-k', str(sof_src_dir / 'keys' / cmake_default_key) ]
 
+        if '-c' not in sign_config_extra_args + args.tool_args:
+            extra_ri_args += conf_path_cmd
+
         # Warning: while not officially supported (yet?), the rimage --option that is last
         # on the command line currently wins in case of duplicate options. So pay
         # attention to the _args order below.
-        sign_base += (['-o', out_bin] + sign_config_extra_args + conf_path_cmd +
+        sign_base += (['-o', out_bin] + sign_config_extra_args +
                       extra_ri_args + args.tool_args + components)
 
         if not args.quiet:
