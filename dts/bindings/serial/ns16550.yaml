@@ -18,6 +18,3 @@ properties:
     type: int
     description: divisor latch fraction (DLF, if supported)
 
-  io-mapped:
-    type: boolean
-    description: specify registers are IO mapped or memory mapped

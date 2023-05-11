@@ -1654,6 +1654,48 @@ static inline int z_impl_uart_drv_cmd(const struct device *dev, uint32_t cmd,
 #endif
 }
 
+#ifdef CONFIG_PLATFORM_ABST_SUPPORT
+
+#define DEV_DATA_FLOW_CTRL0 UART_CFG_FLOW_CTRL_NONE
+#define DEV_DATA_FLOW_CTRL1 UART_CFG_FLOW_CTRL_RTS_CTS
+#define DEV_DATA_FLOW_CTRL(n) \
+	_CONCAT(DEV_DATA_FLOW_CTRL, DT_INST_PROP_OR(n, hw_flow_control, 0))
+
+#define UART_DEFAULT_CONF_GET(dev)\
+			(struct uart_config *)dev->default_cfg
+
+/**
+ * @brief Like PLATFORM_DEV_DT_DEFINE() with UART specifics.
+ *
+ * @details Defines a device which implements the UART API.
+ *
+ * @param node_id The devicetree node identifier.
+ * @param flag describe type of Device object and requried boot priority.
+ * @param init_fn Pointer to the device's initialization function, which will be
+ * run by the kernel during system initialization.
+ * @param pm Pointer to the device's power management resources, a
+ * @ref pm_device, which will be stored in @ref device.pm. Use `NULL` if the
+ * device does not use PM.
+ * @param data Pointer to the device's private mutable data, which will be
+ * stored in @ref device.data.
+ * @param config Pointer to the device's private constant data, which will be
+ * stored in @ref device.config field.
+ * @param api Pointer to the device's API structure. Can be `NULL`.
+ * @param isr Pointer to the device's ISR function. Can be `NULL`.
+ */
+#define UART_PLATFORM_DEV_DT_DEFINE(node_id, flag, init_fn, pm, data,\
+				config, api, isr, ...)				\
+		static const struct uart_config __default_cfg##node_id = {\
+		.baudrate = DT_INST_PROP_OR(n, current_speed, 0),        \
+		.parity = DT_INST_PROP_OR(n, parity, UART_CFG_PARITY_NONE),                          \
+		.stop_bits = DT_INST_PROP_OR(n, stop_bits, UART_CFG_STOP_BITS_1),                       \
+		.data_bits = DT_INST_PROP_OR(n, data_bits, UART_CFG_DATA_BITS_8),                       \
+		.flow_ctrl = DEV_DATA_FLOW_CTRL(n),                      \
+		};\
+		PLATFORM_DEV_DT_DEFINE(DT_DRV_INST(node_id), flag,\
+			&__default_cfg##node_id, init_fn, pm, data, config, api, isr, __VA_ARGS__)
+#endif
+
 #ifdef __cplusplus
 }
 #endif
