@@ -168,6 +168,7 @@ config OPENTHREAD_MAC_STAY_AWAKE_BETWEEN_FRAGMENTS
 config OPENTHREAD_DEFAULT_TX_POWER
 	int "OpenThread default tx power in dBm"
 	range -40 20 if NRF_802154_RADIO_DRIVER
+	range -30 9 if IEEE802154_TELINK_B91
 	default 0
 	help
 	  Set the default TX output power [dBm] in radio driver for OpenThread purpose.
