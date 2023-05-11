@@ -1699,9 +1699,9 @@ Mbed TLS:
 MCU Manager:
   status: maintained
   maintainers:
-    - de-nordic
-  collaborators:
     - nordicjm
+  collaborators:
+    - de-nordic
   files:
     - subsys/mgmt/mcumgr/
     - include/zephyr/mgmt/mcumgr/

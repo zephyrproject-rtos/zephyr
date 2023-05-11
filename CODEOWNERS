@@ -651,7 +651,7 @@
 /include/zephyr/logging/                         @nordic-krch
 /include/zephyr/lorawan/lorawan.h                @Mani-Sadhasivam
 /include/zephyr/mgmt/osdp.h                      @sidcha
-/include/zephyr/mgmt/mcumgr/                     @de-nordic
+/include/zephyr/mgmt/mcumgr/                     @nordicjm
 /include/zephyr/net/                             @rlubos @tbursztyka
 /include/zephyr/net/buf.h                        @jhedberg @tbursztyka @rlubos
 /include/zephyr/net/coap*.h                      @rlubos
