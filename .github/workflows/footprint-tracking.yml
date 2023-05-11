@@ -8,6 +8,9 @@ on:
     paths:
       - 'VERSION'
       - '.github/workflows/footprint-tracking.yml'
+    branches:
+      - main
+      - v*-branch
     tags:
       # only publish v* tags, do not care about zephyr-v* which point to the
       # same commit
