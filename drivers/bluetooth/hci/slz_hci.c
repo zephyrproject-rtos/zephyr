@@ -10,6 +10,7 @@
 #include <sl_hci_common_transport.h>
 #include <pa_conversions_efr32.h>
 #include <sl_bt_ll_zephyr.h>
+#include <rail.h>
 
 #define LOG_LEVEL CONFIG_BT_HCI_DRIVER_LOG_LEVEL
 #include <zephyr/logging/log.h>
@@ -155,6 +156,19 @@ static int slz_bt_open(void)
 	}
 
 	sl_bthci_init_upper();
+
+#ifdef CONFIG_PM
+	{
+		RAIL_Status_t status = RAIL_InitPowerManager();
+
+		if (status != RAIL_STATUS_NO_ERROR) {
+			LOG_ERR("RAIL: failed to initialize power management, status=%d",
+					status);
+			ret = -EIO;
+			goto deinit;
+		}
+	}
+#endif
 
 	LOG_DBG("SiLabs BT HCI started");
 
