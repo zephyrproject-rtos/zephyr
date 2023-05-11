@@ -21,19 +21,18 @@
 #include <zephyr/drivers/dma.h>
 #include <zephyr/ztest.h>
 
-#define XFERS 2
-#define XFER_SIZE 64
+#define XFERS 4
+#define XFER_SIZE 8192
 
 #if CONFIG_NOCACHE_MEMORY
-static __aligned(32) const char TX_DATA[] = "The quick brown fox jumps over the lazy dog";
-static __aligned(32) char tx_data[XFER_SIZE] __used
+static __aligned(32) uint8_t tx_data[XFER_SIZE] __used
 	__attribute__((__section__(".nocache")));
-static __aligned(32) char rx_data[XFERS][XFER_SIZE] __used
+static __aligned(32) uint8_t rx_data[XFERS][XFER_SIZE] __used
 	__attribute__((__section__(".nocache.dma")));
 #else
 /* this src memory shall be in RAM to support usingas a DMA source pointer.*/
-static __aligned(32) const char tx_data[] = "The quick brown fox jumps over the lazy dog";
-static __aligned(32) char rx_data[XFERS][XFER_SIZE] = { { 0 } };
+static __aligned(32) uint8_t tx_data[XFER_SIZE];
+static __aligned(32) uint8_t rx_data[XFERS][XFER_SIZE] = { { 0 } };
 #endif
 
 K_SEM_DEFINE(xfer_sem, 0, 1);
@@ -60,10 +59,12 @@ static int test_sg(void)
 	TC_PRINT("DMA memory to memory transfer started\n");
 	TC_PRINT("Preparing DMA Controller\n");
 
-#if CONFIG_NOCACHE_MEMORY
 	memset(tx_data, 0, sizeof(tx_data));
-	memcpy(tx_data, TX_DATA, sizeof(TX_DATA));
-#endif
+
+	for (int i = 0; i < XFER_SIZE; i++) {
+		tx_data[i] = i;
+	}
+
 	memset(rx_data, 0, sizeof(rx_data));
 
 	dma = DEVICE_DT_GET(DT_ALIAS(dma0));
@@ -143,8 +144,8 @@ static int test_sg(void)
 	TC_PRINT("Verify RX buffer should contain the full TX buffer string.\n");
 
 	for (int i = 0; i < XFERS; i++) {
-		TC_PRINT("rx_data[%d] %s\n", i, rx_data[i]);
-		if (strncmp(tx_data, rx_data[i], sizeof(rx_data[i])) != 0) {
+		TC_PRINT("rx_data[%d]\n", i);
+		if (memcmp(tx_data, rx_data[i], XFER_SIZE)) {
 			return TC_FAIL;
 		}
 	}
