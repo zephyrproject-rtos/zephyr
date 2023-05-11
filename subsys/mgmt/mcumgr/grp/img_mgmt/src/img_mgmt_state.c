@@ -54,6 +54,7 @@ LOG_MODULE_DECLARE(mcumgr_img_grp, CONFIG_MCUMGR_GRP_IMG_LOG_LEVEL);
 /**
  * Collects information about the specified image slot.
  */
+#ifndef CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP
 uint8_t
 img_mgmt_state_flags(int query_slot)
 {
@@ -105,6 +106,34 @@ img_mgmt_state_flags(int query_slot)
 
 	return flags;
 }
+#else
+uint8_t
+img_mgmt_state_flags(int query_slot)
+{
+	uint8_t flags = 0;
+	int image = query_slot / 2;	/* We support max 2 images for now */
+	int active_slot = img_mgmt_active_slot(image);
+
+	/* In case when MCUboot is configured for DirectXIP slot may only be
+	 * active or pending. Slot is marked pending only when version in that slot
+	 * is higher than version of active slot.
+	 */
+	if (image == img_mgmt_active_image() && query_slot == active_slot) {
+		flags = IMG_MGMT_STATE_F_ACTIVE;
+	} else {
+		struct image_version sver;
+		struct image_version aver;
+		int rcs = img_mgmt_read_info(query_slot, &sver, NULL, NULL);
+		int rca = img_mgmt_read_info(active_slot, &aver, NULL, NULL);
+
+		if (rcs == 0 && rca == 0 && img_mgmt_vercmp(&aver, &sver) < 0) {
+			flags = IMG_MGMT_STATE_F_PENDING;
+		}
+	}
+
+	return flags;
+}
+#endif
 
 /**
  * Indicates whether any image slot is pending (i.e., whether a test swap will
