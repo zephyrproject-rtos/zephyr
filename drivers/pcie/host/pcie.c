@@ -4,12 +4,15 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+ 
+#define DT_DRV_COMPAT intel_pcie
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(pcie, LOG_LEVEL_ERR);
 
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
+#include <zephyr/init.h>
 #include <zephyr/sys/check.h>
 #include <stdbool.h>
 #include <zephyr/drivers/pcie/pcie.h>
@@ -505,7 +508,132 @@ static bool pcie_dev_cb(pcie_bdf_t bdf, pcie_id_t id, void *cb_data)
 	return (data->found != data->max_dev);
 }
 
-static int pcie_init(void)
+#ifdef CONFIG_PLATFORM_ABST_SUPPORT
+
+/* TODO: add support for MSI interrupt. */
+static int child_dev_config_irq(const struct device *dev, struct pci_platform_conf *pci_cfg)
+{
+	int irq;
+	const struct pcie_device_config  *platform_cfg = dev->platform_cfg;
+
+	/* If found valid ISR for the device. */
+	if (pci_cfg->irq_num == PCIE_IRQ_DETECT) {
+		BUILD_ASSERT(IS_ENABLED(CONFIG_DYNAMIC_INTERRUPTS),
+			     "please configure CONFIG_DYNAMIC_INTERRUPTS");
+		irq = pcie_alloc_irq(platform_cfg->pcie->bdf);
+		if (irq == PCIE_CONF_INTR_IRQ_NONE) {
+			return -EINVAL;
+		}
+	} else {
+		irq = pci_cfg->irq_num;
+		pcie_conf_write(platform_cfg->pcie->bdf,
+				PCIE_CONF_INTR, irq);
+	}
+
+	pcie_connect_dynamic_irq(platform_cfg->pcie->bdf, irq,
+				 pci_cfg->irq_prio,
+				 (void (*)(const void *))platform_cfg->isr,
+				 dev,
+				 pci_cfg->irq_flag);
+
+	pcie_irq_enable(platform_cfg->pcie->bdf, irq);
+
+	return 0;
+}
+
+int pcie_dev_config(const struct device *dev,  struct pci_platform_conf *pci_cfg)
+{
+	int status = 0;
+	const struct pcie_device_config  *platform_cfg = dev->platform_cfg;
+	struct pcie_bar mbar;
+
+	if (!(platform_cfg->pcie)) {
+		return -EINVAL;
+	}
+
+	if (!pcie_probe_mbar(platform_cfg->pcie->bdf, 0, &mbar)) {
+		return -EINVAL;
+	}
+
+	if (!pci_cfg->io_mapped) {
+		pcie_set_cmd(platform_cfg->pcie->bdf, PCIE_CONF_CMDSTAT_MEM,
+			 true);
+	}
+#if defined(CONFIG_MMU)
+	device_map(&dev->mmio->mem, mbar.phys_addr,
+		   mbar.size, K_MEM_CACHE_NONE);
+#else
+		dev->mmio->mem = mbar.phys_addr;
+#endif
+
+	if (pci_cfg->bus_master) {
+		pcie_set_cmd(platform_cfg->pcie->bdf,
+			 PCIE_CONF_CMDSTAT_MASTER,
+			 true);
+	}
+
+	if (platform_cfg->isr) {
+		status = child_dev_config_irq(dev, pci_cfg);
+	}
+
+	return status;
+}
+
+int pcie_dev_update(const struct device *dev, struct pci_platform_conf *pci_cfg, int status)
+{
+	if (status != 0) {
+		if (status < 0) {
+			status = -status;
+		}
+		if (status > UINT8_MAX) {
+			status = UINT8_MAX;
+		}
+		dev->state->init_res = status;
+	}
+
+	dev->state->initialized = true;
+
+	return 0;
+}
+
+static void pcie_node_init(const struct init_entry *entry)
+{
+	const struct device *dev;
+
+	if (!entry || !entry->dev || !entry->init_fn.dev) {
+		return;
+	}
+
+	dev = entry->dev;
+
+	if (((dev->flag & BOOT_PCI_DEVICE) != BOOT_PCI_DEVICE) ||
+		(dev->state->initialized == true) ||
+		(BOOT_FLAG_LEVEL(dev) > current_boot_stage_get())) {
+		return;
+	}
+
+	entry->init_fn.dev(dev);
+}
+
+#define PCI_PROB_CHILD_NODE(n) pcie_node_init(DEVICE_INIT_DT_GET(n))
+
+static void pcie_prob_child_device(void)
+{
+	DT_FOREACH_CHILD_STATUS_OKAY_SEP(DT_NODELABEL(pcie0), PCI_PROB_CHILD_NODE, (;));
+}
+
+static void pcie_boot_notfy(enum notify_boot_level)
+{
+	pcie_prob_child_device();
+}
+
+#endif
+
+static int pcie_init(
+#ifdef CONFIG_PLATFORM_ABST_SUPPORT
+const struct device *dev
+#endif
+)
 {
 	struct scan_data data;
 	struct pcie_scan_opt opt = {
@@ -513,7 +641,6 @@ static int pcie_init(void)
 		.cb_data = &data,
 		.flags = PCIE_SCAN_RECURSIVE,
 	};
-
 
 	STRUCT_SECTION_COUNT(pcie_dev, &data.max_dev);
 	/* Don't bother calling pcie_scan() if there are no devices to look for */
@@ -525,9 +652,15 @@ static int pcie_init(void)
 
 	pcie_scan(&opt);
 
+#ifdef CONFIG_PLATFORM_ABST_SUPPORT
+	device_boot_notify_register(NOTIFY_LEVEL_POST_KERNEL, pcie_boot_notfy);
+	device_boot_notify_register(NOTIFY_LEVEL_APPLICATION, pcie_boot_notfy);
+
+	pcie_prob_child_device();
+
+#endif /* CONFIG_PLATFORM_ABST_SUPPORT */
 	return 0;
 }
-
 
 /*
  * If a pcie controller is employed, pcie_scan() depends on it for working.
@@ -539,4 +672,13 @@ static int pcie_init(void)
 #define PCIE_SYS_INIT_LEVEL	PRE_KERNEL_1
 #endif
 
+#ifdef CONFIG_PLATFORM_ABST_SUPPORT
+#define PCIE_INIT(n)\
+PLATFORM_DEV_DT_INST_DEFINE(n, BOOT_PRE_KERNEL, NULL, pcie_init,\
+		NULL, NULL, NULL, NULL, NULL);
+
+DT_INST_FOREACH_STATUS_OKAY(PCIE_INIT)
+
+#else
 SYS_INIT(pcie_init, PCIE_SYS_INIT_LEVEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+#endif

@@ -9,6 +9,7 @@
 
 #include <stddef.h>
 #include <zephyr/devicetree.h>
+#include <zephyr/device.h>
 #include <zephyr/dt-bindings/pcie/pcie.h>
 #include <zephyr/types.h>
 #include <zephyr/kernel.h>
@@ -51,6 +52,42 @@ typedef uint32_t pcie_id_t;
 struct pcie_dev {
 	pcie_bdf_t bdf;
 	pcie_id_t  id;
+};
+
+struct pcie_device_config {
+	/* Hardware id for uniqully identify a device. */
+	struct pcie_dev *pcie;
+	/**
+	 * Config function for the device.
+	 *
+	 * @param dev Device pointer.
+	 *
+	 * @retval 0 if success else system error code.
+	 */
+	int (*conf)(const struct device *dev);
+	/**
+	 * Isr function for the device.
+	 *
+	 * @param arg Device pointer, or any custom argu or can be NULL.
+	 *
+	 * @retval NIL
+	 */
+	void (*isr)(const void *arg);
+};
+
+struct pci_platform_conf {
+	pcie_id_t pci_id;
+	uint8_t io_mapped:1;
+	uint8_t bus_master:1;
+	int irq_num;
+	int irq_prio;
+	int irq_flag;
+};
+
+struct pcie_dev_id {
+	/* Hardware id for uniqully identify a device. */
+	pcie_id_t id;
+	struct device *dev_obj;
 };
 
 #define Z_DEVICE_PCIE_NAME(node_id) _CONCAT(pcie_dev_, DT_DEP_ORD(node_id))
