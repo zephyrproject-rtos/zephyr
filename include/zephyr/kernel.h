@@ -4999,31 +4999,33 @@ __syscall void k_pipe_buffer_flush(struct k_pipe *pipe);
  * @cond INTERNAL_HIDDEN
  */
 
-struct k_mem_slab {
-	_wait_q_t wait_q;
-	struct k_spinlock lock;
+struct k_mem_slab_info {
 	uint32_t num_blocks;
-	size_t block_size;
-	char *buffer;
-	char *free_list;
+	size_t   block_size;
 	uint32_t num_used;
 #ifdef CONFIG_MEM_SLAB_TRACE_MAX_UTILIZATION
 	uint32_t max_used;
 #endif
+};
+
+struct k_mem_slab {
+	_wait_q_t wait_q;
+	struct k_spinlock lock;
+	char *buffer;
+	char *free_list;
+	struct k_mem_slab_info info;
 
 	SYS_PORT_TRACING_TRACKING_FIELD(k_mem_slab)
 };
 
 #define Z_MEM_SLAB_INITIALIZER(obj, slab_buffer, slab_block_size, \
-			       slab_num_blocks) \
-	{ \
-	.wait_q = Z_WAIT_Q_INIT(&obj.wait_q), \
-	.lock = {}, \
-	.num_blocks = slab_num_blocks, \
-	.block_size = slab_block_size, \
-	.buffer = slab_buffer, \
-	.free_list = NULL, \
-	.num_used = 0, \
+			       slab_num_blocks)                   \
+	{                                                         \
+	.wait_q = Z_WAIT_Q_INIT(&obj.wait_q),                     \
+	.lock = {},                                               \
+	.buffer = slab_buffer,                                    \
+	.free_list = NULL,                                        \
+	.info = {slab_num_blocks, slab_block_size, 0}             \
 	}
 
 
@@ -5162,7 +5164,7 @@ extern void k_mem_slab_free(struct k_mem_slab *slab, void *mem);
  */
 static inline uint32_t k_mem_slab_num_used_get(struct k_mem_slab *slab)
 {
-	return slab->num_used;
+	return slab->info.num_used;
 }
 
 /**
@@ -5178,7 +5180,7 @@ static inline uint32_t k_mem_slab_num_used_get(struct k_mem_slab *slab)
 static inline uint32_t k_mem_slab_max_used_get(struct k_mem_slab *slab)
 {
 #ifdef CONFIG_MEM_SLAB_TRACE_MAX_UTILIZATION
-	return slab->max_used;
+	return slab->info.max_used;
 #else
 	ARG_UNUSED(slab);
 	return 0;
@@ -5197,7 +5199,7 @@ static inline uint32_t k_mem_slab_max_used_get(struct k_mem_slab *slab)
  */
 static inline uint32_t k_mem_slab_num_free_get(struct k_mem_slab *slab)
 {
-	return slab->num_blocks - slab->num_used;
+	return slab->info.num_blocks - slab->info.num_used;
 }
 
 /**
