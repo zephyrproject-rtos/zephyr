@@ -9,6 +9,8 @@
 
 / {
 	soc {
+		compatible = "st,stm32f303", "st,stm32f3", "simple-bus";
+
 		usb: usb@40005c00 {
 			/* Remap USB_LP IRQ to enable use with CAN_1 */
 			interrupts = <75 0>;

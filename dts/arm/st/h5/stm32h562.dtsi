@@ -18,6 +18,8 @@
 	};
 
 	soc {
+		compatible = "st,stm32h562", "st,stm32h5", "simple-bus";
+
 		pinctrl: pin-controller@42020000 {
 			gpioe: gpio@42021000 {
 				compatible = "st,stm32-gpio";

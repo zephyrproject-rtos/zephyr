@@ -8,6 +8,8 @@
 
 / {
 	soc {
+		compatible = "st,stm32g491", "st,stm32g4", "simple-bus";
+
 		can {
 			can2: can@40006800 {
 				compatible = "st,stm32-fdcan";
