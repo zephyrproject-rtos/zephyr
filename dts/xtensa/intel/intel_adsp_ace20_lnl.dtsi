@@ -42,6 +42,13 @@
 			cpu-power-states = <&d0i3 &d3>;
 		};
 
+		cpu4: cpu@4 {
+			device_type = "cpu";
+			compatible = "cdns,tensilica-xtensa-lx7";
+			reg = <4>;
+			cpu-power-states = <&d0i3 &d3>;
+		};
+
 	};
 
 	power-states {
