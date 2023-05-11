@@ -1216,15 +1216,6 @@ static int eth_initialize(const struct device *dev)
 	k_sem_init(&dev_data->tx_int_sem, 0, K_SEM_MAX_LIMIT);
 #endif /* CONFIG_SOC_SERIES_STM32H7X || CONFIG_ETH_STM32_HAL_API_V2 */
 
-	/* Start interruption-poll thread */
-	k_thread_create(&dev_data->rx_thread, dev_data->rx_thread_stack,
-			K_KERNEL_STACK_SIZEOF(dev_data->rx_thread_stack),
-			rx_thread, (void *) dev, NULL, NULL,
-			K_PRIO_COOP(CONFIG_ETH_STM32_HAL_RX_THREAD_PRIO),
-			0, K_NO_WAIT);
-
-	k_thread_name_set(&dev_data->rx_thread, "stm_eth");
-
 #if defined(CONFIG_SOC_SERIES_STM32H7X) || defined(CONFIG_ETH_STM32_HAL_API_V2)
 	/* Adjust MDC clock range depending on HCLK frequency: */
 	HAL_ETH_SetMDIOClockRange(heth);
@@ -1519,6 +1510,15 @@ static void eth_iface_init(struct net_if *iface)
 		/* Now that the iface is setup, we are safe to enable IRQs. */
 		__ASSERT_NO_MSG(cfg->config_func != NULL);
 		cfg->config_func();
+
+		/* Start interruption-poll thread */
+		k_thread_create(&dev_data->rx_thread, dev_data->rx_thread_stack,
+				K_KERNEL_STACK_SIZEOF(dev_data->rx_thread_stack),
+				rx_thread, (void *) dev, NULL, NULL,
+				K_PRIO_COOP(CONFIG_ETH_STM32_HAL_RX_THREAD_PRIO),
+				0, K_NO_WAIT);
+
+		k_thread_name_set(&dev_data->rx_thread, "stm_eth");
 	}
 }
 
