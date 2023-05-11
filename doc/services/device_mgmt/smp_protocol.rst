@@ -28,7 +28,7 @@ one byte lone, and takes the following form:
     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
     |7|6|5|4|3|2|1|0|7|6|5|4|3|2|1|0|7|6|5|4|3|2|1|0|7|6|5|4|3|2|1|0|
     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-    |   Res   | OP  |      Flags    |          Data Length          |
+    | Res |Ver| OP  |      Flags    |          Data Length          |
     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
     |            Group ID           | Sequence Num  |   Command ID  |
     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -56,6 +56,14 @@ Where meaning of fields is:
     +===================+===================================================+
     | ``Res``           | This is reserved, not-used field and should be    |
     |                   | always set to 0.                                  |
+    +-------------------+---------------------------------------------------+
+    | ``Ver`` (Version) | This indicates the version of the protocol being  |
+    |                   | used, this should be set to 0b01 to use the newer |
+    |                   | SMP transport where error codes are more detailed |
+    |                   | and returned in the map, otherwise left as 0b00   |
+    |                   | to use the legacy SMP protocol. Versions 0b10 and |
+    |                   | 0x11 are reserved for future use and should not   |
+    |                   | be used.                                          |
     +-------------------+---------------------------------------------------+
     | ``OP``            | :c:enum:`mcumgr_op_t`, determines whether         |
     |                   | information is written to a device or requested   |
