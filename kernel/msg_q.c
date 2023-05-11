@@ -25,6 +25,10 @@
 #include <kernel_internal.h>
 #include <zephyr/sys/check.h>
 
+#ifdef CONFIG_OBJ_CORE_MSGQ
+static struct k_obj_type obj_type_msgq;
+#endif
+
 #ifdef CONFIG_POLL
 static inline void handle_poll_events(struct k_msgq *msgq, uint32_t state)
 {
@@ -48,6 +52,10 @@ void k_msgq_init(struct k_msgq *msgq, char *buffer, size_t msg_size,
 #ifdef CONFIG_POLL
 	sys_dlist_init(&msgq->poll_events);
 #endif	/* CONFIG_POLL */
+
+#ifdef CONFIG_OBJ_CORE_MSGQ
+	k_obj_core_init_and_link(K_OBJ_CORE(msgq), &obj_type_msgq);
+#endif
 
 	SYS_PORT_TRACING_OBJ_INIT(k_msgq, msgq);
 
@@ -407,5 +415,27 @@ static inline uint32_t z_vrfy_k_msgq_num_used_get(struct k_msgq *msgq)
 	return z_impl_k_msgq_num_used_get(msgq);
 }
 #include <syscalls/k_msgq_num_used_get_mrsh.c>
+
+#endif
+
+#ifdef CONFIG_OBJ_CORE_MSGQ
+static int init_msgq_obj_core_list(void)
+{
+	/* Initialize msgq object type */
+
+	z_obj_type_init(&obj_type_msgq, K_OBJ_TYPE_MSGQ_ID,
+			offsetof(struct k_msgq, obj_core));
+
+	/* Initialize and link statically defined message queues */
+
+	STRUCT_SECTION_FOREACH(k_msgq, msgq) {
+		k_obj_core_init_and_link(K_OBJ_CORE(msgq), &obj_type_msgq);
+	}
+
+	return 0;
+};
+
+SYS_INIT(init_msgq_obj_core_list, PRE_KERNEL_1,
+	 CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
 
 #endif

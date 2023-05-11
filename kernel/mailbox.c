@@ -20,6 +20,10 @@
 #include <ksched.h>
 #include <wait_q.h>
 
+#ifdef CONFIG_OBJ_CORE_MAILBOX
+static struct k_obj_type  obj_type_mailbox;
+#endif
+
 #if (CONFIG_NUM_MBOX_ASYNC_MSGS > 0)
 
 /* asynchronous message descriptor type */
@@ -90,6 +94,10 @@ void k_mbox_init(struct k_mbox *mbox)
 	z_waitq_init(&mbox->tx_msg_queue);
 	z_waitq_init(&mbox->rx_msg_queue);
 	mbox->lock = (struct k_spinlock) {};
+
+#ifdef CONFIG_OBJ_CORE_MAILBOX
+	k_obj_core_init_and_link(K_OBJ_CORE(mbox), &obj_type_mailbox);
+#endif
 
 	SYS_PORT_TRACING_OBJ_INIT(k_mbox, mbox);
 }
@@ -447,3 +455,25 @@ int k_mbox_get(struct k_mbox *mbox, struct k_mbox_msg *rx_msg, void *buffer,
 
 	return result;
 }
+
+#ifdef CONFIG_OBJ_CORE_MAILBOX
+
+static int init_mailbox_obj_core_list(void)
+{
+	/* Initialize mailbox object type */
+
+	z_obj_type_init(&obj_type_mailbox, K_OBJ_TYPE_MBOX_ID,
+			offsetof(struct k_mbox, obj_core));
+
+	/* Initialize and link satically defined mailboxes */
+
+	STRUCT_SECTION_FOREACH(k_mbox, mbox) {
+		k_obj_core_init_and_link(K_OBJ_CORE(mbox), &obj_type_mailbox);
+	}
+
+	return 0;
+}
+
+SYS_INIT(init_mailbox_obj_core_list, PRE_KERNEL_1,
+	 CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
+#endif

@@ -15,6 +15,10 @@
 
 static struct k_spinlock lock;
 
+#ifdef CONFIG_OBJ_CORE_TIMER
+static struct k_obj_type obj_type_timer;
+#endif
+
 /**
  * @brief Handle expiration of a kernel timer object.
  *
@@ -125,6 +129,10 @@ void k_timer_init(struct k_timer *timer,
 	timer->user_data = NULL;
 
 	z_object_init(timer);
+
+#ifdef CONFIG_OBJ_CORE_TIMER
+	k_obj_core_init_and_link(K_OBJ_CORE(timer), &obj_type_timer);
+#endif
 }
 
 
@@ -324,4 +332,24 @@ static inline void z_vrfy_k_timer_user_data_set(struct k_timer *timer,
 }
 #include <syscalls/k_timer_user_data_set_mrsh.c>
 
+#endif
+
+#ifdef CONFIG_OBJ_CORE_TIMER
+static int init_timer_obj_core_list(void)
+{
+	/* Initialize timer object type */
+
+	z_obj_type_init(&obj_type_timer, K_OBJ_TYPE_TIMER_ID,
+			offsetof(struct k_timer, obj_core));
+
+	/* Initialize and link statically defined timers */
+
+	STRUCT_SECTION_FOREACH(k_timer, timer) {
+		k_obj_core_init_and_link(K_OBJ_CORE(timer), &obj_type_timer);
+	}
+
+	return 0;
+}
+SYS_INIT(init_timer_obj_core_list, PRE_KERNEL_1,
+	 CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
 #endif

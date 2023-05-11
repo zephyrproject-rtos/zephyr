@@ -505,6 +505,113 @@ menuconfig OBJ_CORE
 	  automated means.
 
 if OBJ_CORE
+config OBJ_CORE_CONDVAR
+	bool "Integrate condition variables into object core framework"
+	default y
+	help
+	  When enabled, this option integrates condition variables into the
+	  object core framework.
+
+config OBJ_CORE_EVENT
+	bool "Integrate events into object core framework"
+	default y if EVENTS
+	help
+	  When enabled, this option integrate kernel events into the object
+	  core framework.
+
+config OBJ_CORE_FIFO
+	bool "Integrate FIFOs into object core framework"
+	default y
+	help
+	  When enabled, this option integrates FIFOs into the object core
+	  framework.
+
+config OBJ_CORE_LIFO
+	bool "Integrate LIFOs into object core framework"
+	default y
+	help
+	  When enabled, this option integrates LIFOs into the object core
+	  framework.
+
+config OBJ_CORE_MAILBOX
+	bool "Integrate mailboxes into object core framework"
+	default y
+	help
+	  When enabled, this option integrates mailboxes into the object core
+	  framework.
+
+config OBJ_CORE_MEM_SLAB
+	bool "Integrate memory slabs into object core framework"
+	default y
+	help
+	  When enabled, this option integrates memory slabs into the object
+	  core framework.
+
+config OBJ_CORE_MUTEX
+	bool "Integrate mutexes into object core framework"
+	default y
+	help
+	  When enabled, this option integrates mutexes into the object core
+	  framework.
+
+config OBJ_CORE_MSGQ
+	bool "Integrate message queues into object core framework"
+	default y
+	help
+	  When enabled, this option integrates message queues into the object
+	  core framework.
+
+config OBJ_CORE_SEM
+	bool "Integrate semaphores into object core framework"
+	default y
+	help
+	  When enabled, this option integrates semaphores into the object core
+	  framework.
+
+config OBJ_CORE_PIPE
+	bool "Integrate pipe into object core framework"
+	default y if PIPES
+	help
+	  When enabled, this option integrates pipes into the object core
+	  framework.
+
+config OBJ_CORE_SEM
+	bool "Integrate semaphores into object core framework"
+	default y
+	help
+	  When enabled, this option integrates semaphores into the object core
+	  framework.
+
+config OBJ_CORE_STACK
+	bool "Integrate stacks into object core framework"
+	default y
+	help
+	  When enabled, this option integrates stacks into the object core
+	  framework.
+
+config OBJ_CORE_THREAD
+	bool "Integrate threads into object core framework"
+	default y
+	help
+	  When enabled, this option integrates threads into the object core
+	  framework.
+
+config OBJ_CORE_TIMER
+	bool "Integrate timers into object core framework"
+	default y
+	help
+	  When enabled, this option integrates timers into the object core
+	  framework.
+
+config OBJ_CORE_SYSTEM
+	bool
+	default y
+	help
+	  When enabled, this option integrates the internal CPU and kernel
+	  system objects into the object core framework. As these are internal
+	  structures, this option is hidden by default and only available to
+	  advanced users.
+
 endif  # OBJ_CORE
 
 menu "Work Queue Options"

@@ -10,6 +10,7 @@
 #include <zephyr/sys/heap_listener.h>
 #include <zephyr/sys/mem_blocks.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/init.h>
 
 static void *alloc_blocks(sys_mem_blocks_t *mem_block, size_t num_blocks)
 {
@@ -364,7 +365,7 @@ int sys_multi_mem_blocks_alloc(sys_multi_mem_blocks_t *group,
 		goto out;
 	}
 
-	if (count > allocator->num_blocks) {
+	if (count > allocator->info.num_blocks) {
 		ret = -ENOMEM;
 		goto out;
 	}
@@ -453,4 +454,29 @@ int sys_mem_blocks_runtime_stats_reset_max(sys_mem_blocks_t *mem_block)
 
 	return 0;
 }
+#endif
+
+#ifdef CONFIG_OBJ_CORE_SYS_MEM_BLOCKS
+static struct k_obj_type obj_type_sys_mem_blocks;
+
+static int init_sys_mem_blocks_obj_core_list(void)
+{
+	/* Initialize the sys_mem_blocks object type */
+
+	z_obj_type_init(&obj_type_sys_mem_blocks, K_OBJ_TYPE_MEM_BLOCK_ID,
+			offsetof(struct sys_mem_blocks, obj_core));
+
+	/* Initialize statically defined sys_mem_blocks */
+
+	STRUCT_SECTION_FOREACH_ALTERNATE(sys_mem_blocks_ptr,
+					 sys_mem_blocks *, block_pp) {
+		k_obj_core_init_and_link(K_OBJ_CORE(*block_pp),
+					 &obj_type_sys_mem_blocks);
+	}
+
+	return 0;
+}
+
+SYS_INIT(init_sys_mem_blocks_obj_core_list, PRE_KERNEL_1,
+	 CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
 #endif

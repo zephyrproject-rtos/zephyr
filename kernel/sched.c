@@ -1742,6 +1742,10 @@ static void end_thread(struct k_thread *thread)
 		z_thread_cmsis_status_mask_clear(thread);
 #endif
 
+#ifdef CONFIG_OBJ_CORE_THREAD
+		k_obj_core_unlink(K_OBJ_CORE(thread));
+#endif
+
 #ifdef CONFIG_USERSPACE
 		z_mem_domain_exit_thread(thread);
 		z_thread_perms_all_clear(thread);

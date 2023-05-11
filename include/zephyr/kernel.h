@@ -1463,6 +1463,10 @@ struct k_timer {
 	void *user_data;
 
 	SYS_PORT_TRACING_TRACKING_FIELD(k_timer)
+
+#ifdef CONFIG_OBJ_CORE_TIMER
+	struct k_obj_core  obj_core;
+#endif
 };
 
 #define Z_TIMER_INITIALIZER(obj, expiry, stop) \
@@ -2201,6 +2205,11 @@ struct k_event {
 	struct k_spinlock lock;
 
 	SYS_PORT_TRACING_TRACKING_FIELD(k_event)
+
+#ifdef CONFIG_OBJ_CORE_EVENT
+	struct k_obj_core obj_core;
+#endif
+
 };
 
 #define Z_EVENT_INITIALIZER(obj) \
@@ -2359,6 +2368,9 @@ static inline uint32_t k_event_test(struct k_event *event, uint32_t events_mask)
 
 struct k_fifo {
 	struct k_queue _queue;
+#ifdef CONFIG_OBJ_CORE_FIFO
+	struct k_obj_core  obj_core;
+#endif
 };
 
 /**
@@ -2386,11 +2398,13 @@ struct k_fifo {
  *
  * @param fifo Address of the FIFO queue.
  */
-#define k_fifo_init(fifo) \
-	({ \
+#define k_fifo_init(fifo)                                    \
+	({                                                   \
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_fifo, init, fifo); \
-	k_queue_init(&(fifo)->_queue); \
-	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_fifo, init, fifo); \
+	k_queue_init(&(fifo)->_queue);                       \
+	K_OBJ_CORE_INIT(K_OBJ_CORE(fifo), _obj_type_fifo);   \
+	K_OBJ_CORE_LINK(K_OBJ_CORE(fifo));                   \
+	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_fifo, init, fifo);  \
 	})
 
 /**
@@ -2593,6 +2607,9 @@ struct k_fifo {
 
 struct k_lifo {
 	struct k_queue _queue;
+#ifdef CONFIG_OBJ_CORE_LIFO
+	struct k_obj_core  obj_core;
+#endif
 };
 
 /**
@@ -2621,11 +2638,13 @@ struct k_lifo {
  *
  * @param lifo Address of the LIFO queue.
  */
-#define k_lifo_init(lifo) \
-	({ \
+#define k_lifo_init(lifo)                                    \
+	({                                                   \
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_lifo, init, lifo); \
-	k_queue_init(&(lifo)->_queue); \
-	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_lifo, init, lifo); \
+	k_queue_init(&(lifo)->_queue);                       \
+	K_OBJ_CORE_INIT(K_OBJ_CORE(lifo), _obj_type_lifo);   \
+	K_OBJ_CORE_LINK(K_OBJ_CORE(lifo));                   \
+	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_lifo, init, lifo);  \
 	})
 
 /**
@@ -2726,6 +2745,10 @@ struct k_stack {
 	uint8_t flags;
 
 	SYS_PORT_TRACING_TRACKING_FIELD(k_stack)
+
+#ifdef CONFIG_OBJ_CORE_STACK
+	struct k_obj_core  obj_core;
+#endif
 };
 
 #define Z_STACK_INITIALIZER(obj, stack_buffer, stack_num_entries) \
@@ -2882,6 +2905,10 @@ struct k_mutex {
 	int owner_orig_prio;
 
 	SYS_PORT_TRACING_TRACKING_FIELD(k_mutex)
+
+#ifdef CONFIG_OBJ_CORE_MUTEX
+	struct k_obj_core obj_core;
+#endif
 };
 
 /**
@@ -2979,6 +3006,10 @@ __syscall int k_mutex_unlock(struct k_mutex *mutex);
 
 struct k_condvar {
 	_wait_q_t wait_q;
+
+#ifdef CONFIG_OBJ_CORE_CONDVAR
+	struct k_obj_core  obj_core;
+#endif
 };
 
 #define Z_CONDVAR_INITIALIZER(obj)                                             \
@@ -3067,6 +3098,9 @@ struct k_sem {
 
 	SYS_PORT_TRACING_TRACKING_FIELD(k_sem)
 
+#ifdef CONFIG_OBJ_CORE_SEM
+	struct k_obj_core  obj_core;
+#endif
 };
 
 #define Z_SEM_INITIALIZER(obj, initial_count, count_limit) \
@@ -4379,6 +4413,10 @@ struct k_msgq {
 	uint8_t flags;
 
 	SYS_PORT_TRACING_TRACKING_FIELD(k_msgq)
+
+#ifdef CONFIG_OBJ_CORE_MSGQ
+	struct k_obj_core  obj_core;
+#endif
 };
 /**
  * @cond INTERNAL_HIDDEN
@@ -4677,6 +4715,10 @@ struct k_mbox {
 	struct k_spinlock lock;
 
 	SYS_PORT_TRACING_TRACKING_FIELD(k_mbox)
+
+#ifdef CONFIG_OBJ_CORE_MAILBOX
+	struct k_obj_core  obj_core;
+#endif
 };
 /**
  * @cond INTERNAL_HIDDEN
@@ -4814,6 +4856,10 @@ struct k_pipe {
 	uint8_t	       flags;		/**< Flags */
 
 	SYS_PORT_TRACING_TRACKING_FIELD(k_pipe)
+
+#ifdef CONFIG_OBJ_CORE_PIPE
+	struct k_obj_core  obj_core;
+#endif
 };
 
 /**
@@ -5016,16 +5062,20 @@ struct k_mem_slab {
 	struct k_mem_slab_info info;
 
 	SYS_PORT_TRACING_TRACKING_FIELD(k_mem_slab)
+
+#ifdef CONFIG_OBJ_CORE_MEM_SLAB
+	struct k_obj_core  obj_core;
+#endif
 };
 
-#define Z_MEM_SLAB_INITIALIZER(obj, slab_buffer, slab_block_size, \
-			       slab_num_blocks)                   \
-	{                                                         \
-	.wait_q = Z_WAIT_Q_INIT(&obj.wait_q),                     \
-	.lock = {},                                               \
-	.buffer = slab_buffer,                                    \
-	.free_list = NULL,                                        \
-	.info = {slab_num_blocks, slab_block_size, 0}             \
+#define Z_MEM_SLAB_INITIALIZER(_slab, _slab_buffer, _slab_block_size, \
+			       _slab_num_blocks)                      \
+	{                                                             \
+	.wait_q = Z_WAIT_Q_INIT(&(_slab).wait_q),                     \
+	.lock = {},                                                   \
+	.buffer = _slab_buffer,                                       \
+	.free_list = NULL,                                            \
+	.info = {_slab_num_blocks, _slab_block_size, 0}               \
 	}
 
 
