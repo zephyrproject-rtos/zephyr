@@ -292,10 +292,18 @@ static int prepare_cb(struct lll_prepare_param *p)
 	radio_tmr_aa_save(0U);
 	radio_tmr_aa_capture();
 
+	/* Header Complete Timeout, use additional EVENT_TICKER_RES_MARGIN_US to
+	 * compensate for possible shift in ACL peripheral's anchor point at
+	 * the instant the CIS is to be established.
+	 *
+	 * FIXME: use a one time value in a window member variable to avoid
+	 *        using this additional EVENT_TICKER_RES_MARGIN_US window in
+	 *        subsequent events once CIS is established.
+	 */
 	hcto = start_us +
 	       ((EVENT_JITTER_US + EVENT_TICKER_RES_MARGIN_US +
 		 EVENT_US_FRAC_TO_US(cig_lll->window_widening_event_us_frac)) <<
-		1U);
+		1U) + EVENT_TICKER_RES_MARGIN_US;
 
 #if defined(CONFIG_BT_CTLR_PHY)
 	hcto += radio_rx_ready_delay_get(cis_lll->rx.phy, PHY_FLAGS_S8);
