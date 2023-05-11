@@ -87,14 +87,6 @@ uart2: &scb2 {
 	};
 };
 
-&i2c3 {
-	status = "okay";
-
-	/* I2C pins */
-	pinctrl-0 = <&p6_0_scb3_i2c_scl &p6_1_scb3_i2c_sda>;
-	pinctrl-names = "default";
-};
-
 /* System clock configuration */
 &fll0 {
 	status = "okay";
@@ -129,6 +121,8 @@ uart2: &scb2 {
 
 i2c3: &scb3 {
 	compatible = "infineon,cat1-i2c";
+
+	status = "okay";
 
 	/* I2C pins */
 	pinctrl-0 = <&p6_0_scb3_i2c_scl &p6_1_scb3_i2c_sda>;

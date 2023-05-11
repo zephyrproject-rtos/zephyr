@@ -1,0 +1,22 @@
+sample:
+  name: I2C sample
+tests:
+  sample.drivers.i2c:
+    tags: drivers i2c
+    depends_on: i2c
+    filter: dt_enabled_alias_with_parent_compat("i2c0", "i2c1")
+    harness: console
+    harness_config:
+      type: multi_line
+      ordered: true
+      regex:
+        - "MSR RX: 01: 0x0B"
+        - "MSR RX: 02: 0x0C"
+        - "MSR RX: 03: 0x0D"
+        - "MSR RX: 04: 0x0E"
+        - "MSR RX: 05: 0x0F"
+        - "MSR RX: 06: 0x10"
+        - "MSR RX: 07: 0x11"
+        - "MSR RX: 08: 0x12"
+        - "MSR RX: 09: 0x13"
+        - "MSR RX: 10: 0x14"
