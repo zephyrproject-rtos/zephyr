@@ -8,6 +8,8 @@
 
 / {
 	soc {
+		compatible = "st,stm32f091", "st,stm32f0", "simple-bus";
+
 		/*
 		 * USARTs 3-8 share the same IRQ on stm32f091xx devices. This
 		 * configuration is not currently supported, so at most one of

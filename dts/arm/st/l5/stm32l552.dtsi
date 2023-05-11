@@ -5,3 +5,9 @@
  */
 
 #include <st/l5/stm32l5.dtsi>
+
+/ {
+	soc {
+		compatible = "st,stm32l552", "st,stm32l5", "simple-bus";
+	};
+};

@@ -8,6 +8,8 @@
 
 / {
 	soc {
+		compatible = "st,stm32f107", "st,stm32f1", "simple-bus";
+
 		dma2: dma@40020400 {
 			compatible = "st,stm32-dma-v2bis";
 			#dma-cells = <2>;

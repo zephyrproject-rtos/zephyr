@@ -9,6 +9,8 @@
 
 / {
 	soc {
+		compatible = "st,stm32f429", "st,stm32f4", "simple-bus";
+
 		dac1: dac@40007400 {
 			compatible = "st,stm32-dac";
 			reg = <0x40007400 0x400>;
