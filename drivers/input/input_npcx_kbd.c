@@ -21,8 +21,9 @@ LOG_MODULE_REGISTER(input_npcx_kbd);
 
 #define KEYBOARD_COLUMN_DRIVE_ALL  -2
 #define KEYBOARD_COLUMN_DRIVE_NONE -1
+
 /* Number of tracked scan times */
-#define SCAN_OCURRENCES		   30U
+#define SCAN_OCURRENCES 30U
 
 #define KSCAN_ROW_SIZE DT_INST_PROP(0, row_size)
 #define KSCAN_COL_SIZE DT_INST_PROP(0, col_size)
@@ -31,11 +32,11 @@ LOG_MODULE_REGISTER(input_npcx_kbd);
 
 /* Driver config */
 struct input_npcx_kbd_config {
-	/* keyboard scan controller base address */
+	/* Keyboard scan controller base address */
 	struct kbs_reg *base;
-	/* clock configuration */
+	/* Clock configuration */
 	struct npcx_clk_cfg clk_cfg;
-	/* pinmux configuration */
+	/* Pinmux configuration */
 	const struct pinctrl_dev_config *pcfg;
 	/* Keyboard scan input (KSI) wake-up irq */
 	int irq;
@@ -50,9 +51,8 @@ struct input_npcx_kbd_config {
 };
 
 struct input_npcx_kbd_data {
-	/* variables in usec units */
-	int64_t poll_timeout;
-	uint32_t poll_period;
+	int64_t poll_timeout_us;
+	uint32_t poll_period_us;
 	uint8_t matrix_stable_state[KSCAN_COL_SIZE];
 	uint8_t matrix_unstable_state[KSCAN_COL_SIZE];
 	uint8_t matrix_previous_state[KSCAN_COL_SIZE];
@@ -71,7 +71,7 @@ struct input_npcx_kbd_data {
 	K_KERNEL_STACK_MEMBER(thread_stack, CONFIG_INPUT_NPCX_KBD_THREAD_STACK_SIZE);
 };
 
-/* Keyboard Scan local functions */
+/* Keyboard scan local functions */
 static void input_npcx_kbd_ksi_isr(const struct device *dev, struct npcx_wui *wui)
 {
 	ARG_UNUSED(wui);
@@ -104,7 +104,7 @@ static int input_npcx_kbd_drive_column(const struct device *dev, int col)
 	}
 
 	if (col == KEYBOARD_COLUMN_DRIVE_NONE) {
-		/* Drive all lines to high. ie. Key detection is disabled. */
+		/* Drive all lines to high: key detection is disabled */
 		mask = ~0;
 	} else if (col == KEYBOARD_COLUMN_DRIVE_ALL) {
 		/* Drive all lines to low for detection any key press */
@@ -117,9 +117,8 @@ static int input_npcx_kbd_drive_column(const struct device *dev, int col)
 		mask = ~BIT(col);
 	}
 
-	LOG_DBG("Drive col mask:%x", mask);
+	LOG_DBG("Drive col mask: %x", mask);
 
-	/* Set KBSOUT */
 	inst->KBSOUT0 = (mask & 0xFFFF);
 	inst->KBSOUT1 = ((mask >> 16) & 0x03);
 
@@ -145,19 +144,18 @@ static bool is_matrix_ghosting(const struct device *dev, const uint8_t *state)
 	const struct input_npcx_kbd_config *const config = dev->config;
 
 	/*
-	 * matrix keyboard designs are suceptible to ghosting.
-	 * An extra key appears to be pressed when 3 keys
-	 * belonging to the same block are pressed.
-	 * for example, in the following block
+	 * Matrix keyboard designs are suceptible to ghosting.
+	 * An extra key appears to be pressed when 3 keys belonging to the same
+	 * block are pressed. For example, in the following block:
 	 *
 	 * . . w . q .
 	 * . . . . . .
 	 * . . . . . .
 	 * . . m . a .
 	 *
-	 * the key m would look as pressed if the user pressed keys
-	 * w, q and a simultaneously. A block can also be formed,
-	 * with not adjacent columns.
+	 * the key m would look as pressed if the user pressed keys w, q and a
+	 * simultaneously. A block can also be formed, with not adjacent
+	 * columns.
 	 */
 	for (int c = 0; c < config->col_size; c++) {
 		if (!state[c]) {
@@ -166,13 +164,13 @@ static bool is_matrix_ghosting(const struct device *dev, const uint8_t *state)
 
 		for (int c_next = c + 1; c_next < config->col_size; c_next++) {
 			/*
-			 * We AND the columns to detect a "block".
-			 * This is an indication of ghosting, due to current
-			 * flowing from a key which was never pressed. In our
-			 * case, current flowing is a bit set to 1 as we
-			 * flipped the bits when the matrix was scanned.
-			 * Now we OR the colums using z&(z-1) which is
-			 * non-zero only if z has more than one bit set.
+			 * We AND the columns to detect a "block". This is an
+			 * indication of ghosting, due to current flowing from
+			 * a key which was never pressed. In our case, current
+			 * flowing is a bit set to 1 as we flipped the bits
+			 * when the matrix was scanned. Now we OR the colums
+			 * using z&(z-1) which is non-zero only if z has more
+			 * than one bit set.
 			 */
 			uint8_t common_row_bits = state[c] & state[c_next];
 
@@ -233,8 +231,8 @@ static void update_matrix_state(const struct device *dev, uint8_t *matrix_new_st
 			uint8_t cyc_idx = c * config->row_size + r;
 
 			/*
-			 * Index all they keys that changed for each row
-			 * in order to debounce each key in terms of it
+			 * Index all they keys that changed for each row in
+			 * order to debounce each key in terms of it
 			 */
 			if (row_changed & BIT(r)) {
 				data->scan_cycle_idx[cyc_idx] = data->scan_cycles_idx;
@@ -327,7 +325,7 @@ static bool check_key_events(const struct device *dev)
 static void kbd_matrix_poll(const struct device *dev)
 {
 	struct input_npcx_kbd_data *const data = dev->data;
-	uint64_t poll_time_end = sys_clock_timeout_end_calc(K_USEC(data->poll_timeout));
+	uint64_t poll_time_end = sys_clock_timeout_end_calc(K_USEC(data->poll_timeout_us));
 	uint32_t current_cycles;
 	uint32_t cycles_diff;
 	uint32_t wait_period;
@@ -336,18 +334,18 @@ static void kbd_matrix_poll(const struct device *dev)
 		uint32_t start_period_cycles = k_cycle_get_32();
 
 		if (check_key_events(dev)) {
-			poll_time_end = sys_clock_timeout_end_calc(K_USEC(data->poll_timeout));
+			poll_time_end = sys_clock_timeout_end_calc(K_USEC(data->poll_timeout_us));
 		} else if (start_period_cycles > poll_time_end) {
 			break;
 		}
 
 		/*
-		 * Subtract the time invested from the sleep period in order
-		 * to compensate for the time invested in debouncing a key
+		 * Subtract the time invested from the sleep period in order to
+		 * compensate for the time invested in debouncing a key
 		 */
 		current_cycles = k_cycle_get_32();
 		cycles_diff = current_cycles - start_period_cycles;
-		wait_period = data->poll_period - k_cyc_to_us_floor32(cycles_diff);
+		wait_period = data->poll_period_us - k_cyc_to_us_floor32(cycles_diff);
 
 		/* Override wait_period in case it is less than 1 ms */
 		if (wait_period < USEC_PER_MSEC) {
@@ -355,13 +353,13 @@ static void kbd_matrix_poll(const struct device *dev)
 		}
 
 		/*
-		 * wait period results in a larger number when current cycles
+		 * Wait period results in a larger number when current cycles
 		 * counter wrap. In this case, the whole poll period is used
 		 */
-		if (wait_period > data->poll_period) {
-			LOG_DBG("wait_period : %u", wait_period);
+		if (wait_period > data->poll_period_us) {
+			LOG_DBG("wait_period: %u", wait_period);
 
-			wait_period = data->poll_period;
+			wait_period = data->poll_period_us;
 		}
 
 		/* Allow other threads to run while we sleep */
@@ -382,7 +380,7 @@ static void kbd_matrix_polling_thread(const struct device *dev, void *dummy2, vo
 
 		input_npcx_kbd_drive_column(dev, KEYBOARD_COLUMN_DRIVE_ALL);
 		k_sem_take(&data->poll_lock, K_FOREVER);
-		LOG_DBG("Start KB scan!!");
+		LOG_DBG("Start KB scan");
 
 		/* Disable interrupt of KSI pins and start polling */
 		input_npcx_kbd_resume_detection(dev, false);
@@ -455,10 +453,11 @@ static int input_npcx_kbd_init(const struct device *dev)
 	input_npcx_kbd_drive_column(dev, KEYBOARD_COLUMN_DRIVE_NONE);
 
 	/* Configure wake-up input and callback for keyboard input signal */
-	for (int i = 0; i < config->row_size; i++)
+	for (int i = 0; i < config->row_size; i++) {
 		input_npcx_kbd_init_ksi_wui_callback(
 				dev, &data->ksi_callback[i], &config->wui_maps[i],
 				input_npcx_kbd_ksi_isr);
+	}
 
 	/* Configure pin-mux for keyboard scan device */
 	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
@@ -467,17 +466,17 @@ static int input_npcx_kbd_init(const struct device *dev)
 		return ret;
 	}
 
-	/* Initialize semaphore usbed by keyboard scan task and driver */
+	/* Initialize semaphore used by keyboard scan task and driver */
 	k_sem_init(&data->poll_lock, 0, 1);
 
 	/* Time figures are transformed from msec to usec */
-	data->poll_period = (uint32_t)(CONFIG_INPUT_NPCX_KBD_POLL_PERIOD_MS * USEC_PER_MSEC);
-	data->poll_timeout = 100 * USEC_PER_MSEC;
+	data->poll_period_us = (uint32_t)(CONFIG_INPUT_NPCX_KBD_POLL_PERIOD_MS * USEC_PER_MSEC);
+	data->poll_timeout_us = 100 * USEC_PER_MSEC;
 
 	k_thread_create(&data->thread, data->thread_stack,
 			CONFIG_INPUT_NPCX_KBD_THREAD_STACK_SIZE,
-			(void (*)(void *, void *, void *))kbd_matrix_polling_thread, (void *)dev,
-			NULL, NULL, K_PRIO_COOP(4), 0, K_NO_WAIT);
+			(k_thread_entry_t)kbd_matrix_polling_thread, (void *)dev, NULL, NULL,
+			K_PRIO_COOP(4), 0, K_NO_WAIT);
 
 	return 0;
 }
@@ -499,8 +498,9 @@ static const struct input_npcx_kbd_config npcx_kbd_cfg = {
 
 static struct input_npcx_kbd_data npcx_kbd_data;
 
-DEVICE_DT_INST_DEFINE(0, input_npcx_kbd_init, NULL, &npcx_kbd_data, &npcx_kbd_cfg, POST_KERNEL,
-		      CONFIG_INPUT_INIT_PRIORITY, NULL);
+DEVICE_DT_INST_DEFINE(0, input_npcx_kbd_init, NULL,
+		      &npcx_kbd_data, &npcx_kbd_cfg,
+		      POST_KERNEL, CONFIG_INPUT_INIT_PRIORITY, NULL);
 
 BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 1,
 	     "only one nuvoton,npcx-kbd compatible node can be supported");
