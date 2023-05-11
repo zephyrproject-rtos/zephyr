@@ -2035,6 +2035,11 @@ int bt_id_init(void)
 {
 	int err;
 
+#if defined(CONFIG_BT_PRIVACY)
+	bt_addr_le_copy(&bt_dev.rpa[BT_ID_DEFAULT], BT_ADDR_LE_NONE);
+	k_work_init_delayable(&bt_dev.rpa_update, rpa_timeout);
+#endif
+
 	if (!IS_ENABLED(CONFIG_BT_SETTINGS) && !bt_dev.id_count) {
 		LOG_DBG("No user identity. Trying to set public.");
 
@@ -2065,10 +2070,6 @@ int bt_id_init(void)
 			return err;
 		}
 	}
-
-#if defined(CONFIG_BT_PRIVACY)
-	k_work_init_delayable(&bt_dev.rpa_update, rpa_timeout);
-#endif
 
 	return 0;
 }
