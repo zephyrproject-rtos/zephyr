@@ -25,6 +25,8 @@
 	};
 
 	soc {
+		compatible = "st,stm32f105", "st,stm32f1", "simple-bus";
+
 		flash-controller@40022000 {
 			flash0: flash@8000000 {
 				erase-block-size = <DT_SIZE_K(2)>;

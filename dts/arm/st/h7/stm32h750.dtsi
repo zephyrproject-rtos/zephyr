@@ -9,6 +9,8 @@
 
 / {
 	soc {
+		compatible = "st,stm32h750", "st,stm32h7", "simple-bus";
+
 		flash-controller@52002000 {
 			flash0: flash@8000000 {
 				compatible = "st,stm32-nv-flash", "soc-nv-flash";

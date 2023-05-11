@@ -5,3 +5,9 @@
  */
 
 #include <st/g0/stm32g0.dtsi>
+
+/ {
+	soc {
+		compatible = "st,stm32g030", "st,stm32g0", "simple-bus";
+	};
+};

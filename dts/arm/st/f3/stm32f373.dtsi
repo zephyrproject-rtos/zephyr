@@ -9,6 +9,8 @@
 
 / {
 	soc {
+		compatible = "st,stm32f373", "st,stm32f3", "simple-bus";
+
 		pinctrl: pin-controller@48000000 {
 			gpioe: gpio@48001000 {
 				compatible = "st,stm32-gpio";
