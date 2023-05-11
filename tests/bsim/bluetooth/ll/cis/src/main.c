@@ -45,34 +45,57 @@ static K_SEM_DEFINE(sem_iso_data, CONFIG_BT_ISO_TX_BUF_COUNT,
 				   CONFIG_BT_ISO_TX_BUF_COUNT);
 static bt_addr_le_t peer_addr;
 
+#define SCAN_INTERVAL        0x0010
+#define SCAN_WINDOW          0x0010
+
+#define CREATE_CONN_INTERVAL 0x0010
+#define CREATE_CONN_WINDOW   0x0010
+
+#define ISO_INTERVAL_US      10000U
+#define ISO_LATENCY_MS       DIV_ROUND_UP(ISO_INTERVAL_US, USEC_PER_MSEC)
+
+#define BT_CONN_US_TO_INTERVAL(t) ((uint16_t)((t) * 4U / 5U / USEC_PER_MSEC))
+
+#if (CONFIG_BT_CTLR_CENTRAL_SPACING == 0)
+#define CONN_INTERVAL_MIN    BT_CONN_US_TO_INTERVAL(ISO_INTERVAL_US)
+#else /* CONFIG_BT_CTLR_CENTRAL_SPACING > 0 */
+#define CONN_INTERVAL_MIN    BT_CONN_US_TO_INTERVAL(ISO_INTERVAL_US * CONFIG_BT_MAX_CONN)
+#endif /* CONFIG_BT_CTLR_CENTRAL_SPACING > 0 */
+
+#define CONN_INTERVAL_MAX    CONN_INTERVAL_MIN
+#define CONN_TIMEOUT         MAX((BT_CONN_INTERVAL_TO_MS(CONN_INTERVAL_MAX) * 6U / 10U), 10U)
+
+#define ADV_INTERVAL_MIN     0x0020
+#define ADV_INTERVAL_MAX     0x0020
+
 #define BT_LE_SCAN_CUSTOM \
 	BT_LE_SCAN_PARAM(BT_LE_SCAN_TYPE_PASSIVE, \
 			 BT_LE_SCAN_OPT_NONE, \
-			 0x0010, \
-			 0x0010)
+			 SCAN_INTERVAL, \
+			 SCAN_WINDOW)
 
 #define BT_CONN_LE_CREATE_CONN_CUSTOM  \
 	BT_CONN_LE_CREATE_PARAM(BT_CONN_LE_OPT_NONE, \
-				0x0010, \
-				0x0010)
+				CREATE_CONN_INTERVAL, \
+				CREATE_CONN_WINDOW)
 
 #define BT_LE_CONN_PARAM_CUSTOM \
-	BT_LE_CONN_PARAM(0x0048, 0x0048, 0, 54)
+	BT_LE_CONN_PARAM(CONN_INTERVAL_MIN, CONN_INTERVAL_MAX, 0U, CONN_TIMEOUT)
 
 #if defined(CONFIG_TEST_USE_LEGACY_ADVERTISING)
 #define BT_LE_ADV_CONN_CUSTOM BT_LE_ADV_PARAM(BT_LE_ADV_OPT_CONNECTABLE | \
 					      BT_LE_ADV_OPT_ONE_TIME | \
 					      BT_LE_ADV_OPT_USE_NAME, \
-					      0x0020, \
-					      0x0020, \
+					      ADV_INTERVAL_MIN, \
+					      ADV_INTERVAL_MAX, \
 					      NULL)
 #else /* !CONFIG_TEST_USE_LEGACY_ADVERTISING */
 #define BT_LE_ADV_CONN_CUSTOM BT_LE_ADV_PARAM(BT_LE_ADV_OPT_CONNECTABLE | \
 					      BT_LE_ADV_OPT_EXT_ADV | \
 					      BT_LE_ADV_OPT_ONE_TIME | \
 					      BT_LE_ADV_OPT_USE_NAME, \
-					      0x0022, \
-					      0x0022, \
+					      ADV_INTERVAL_MIN, \
+					      ADV_INTERVAL_MAX, \
 					      NULL)
 #endif /* !CONFIG_TEST_USE_LEGACY_ADVERTISING */
 
@@ -358,8 +381,8 @@ static void test_cis_central(void)
 	cig_param.sca = BT_GAP_SCA_UNKNOWN;
 	cig_param.packing = 0U;
 	cig_param.framing = 0U;
-	cig_param.latency = 10U; /* ms */
-	cig_param.interval = 10000U; /* us */
+	cig_param.latency = ISO_LATENCY_MS;
+	cig_param.interval = ISO_INTERVAL_US;
 
 	printk("Create CIG...");
 	err = bt_iso_cig_create(&cig_param, &cig);
