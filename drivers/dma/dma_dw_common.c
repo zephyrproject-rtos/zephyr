@@ -206,6 +206,7 @@ int dw_dma_config(const struct device *dev, uint32_t channel,
 		case 1:
 			/* byte at a time transfer */
 			lli_desc->ctrl_lo |= DW_CTLL_SRC_WIDTH(0);
+			break;
 		case 2:
 			/* non peripheral copies are optimal using words */
 			switch (cfg->channel_direction) {
@@ -236,7 +237,8 @@ int dw_dma_config(const struct device *dev, uint32_t channel,
 		switch (cfg->dest_data_size) {
 		case 1:
 			/* byte at a time transfer */
-			lli_desc->ctrl_lo |= DW_CTLL_SRC_WIDTH(0);
+			lli_desc->ctrl_lo |= DW_CTLL_DST_WIDTH(0);
+			break;
 		case 2:
 			/* non peripheral copies are optimal using words */
 			switch (cfg->channel_direction) {
