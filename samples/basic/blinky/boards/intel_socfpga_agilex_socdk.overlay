@@ -1,0 +1,24 @@
+/*
+ * Copyright (C) 2023 Intel Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <dt-bindings/gpio/gpio.h>
+
+/ {
+	aliases {
+		led0 = &myled0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		myled0: led_0 {
+			gpios = <&gpio1 19 GPIO_ACTIVE_HIGH>;
+		};
+	};
+};
+
+&gpio1 {
+	status = "okay";
+};
