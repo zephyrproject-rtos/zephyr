@@ -29,3 +29,12 @@ void bt_conn_unref(struct bt_conn *conn)
 {
 
 }
+
+void mock_bt_conn_disconnected(struct bt_conn *conn, uint8_t err)
+{
+	STRUCT_SECTION_FOREACH(bt_conn_cb, cb) {
+		if (cb->disconnected) {
+			cb->disconnected(conn, err);
+		}
+	}
+}
