@@ -12,7 +12,7 @@ jobs:
     container:
       image: ghcr.io/zephyrproject-rtos/ci:v0.26.4
     env:
-      ZEPHYR_SDK_INSTALL_DIR: /opt/toolchains/zephyr-sdk-0.16.0
+      ZEPHYR_SDK_INSTALL_DIR: /opt/toolchains/zephyr-sdk-0.16.1
 
     steps:
       - name: Apply container owner mismatch workaround
