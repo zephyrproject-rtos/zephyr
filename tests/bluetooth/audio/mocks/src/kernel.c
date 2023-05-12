@@ -38,10 +38,12 @@ int k_work_reschedule(struct k_work_delayable *dwork, k_timeout_t delay)
 	/* Determine whether the work item is queued already. */
 	SYS_SLIST_FOR_EACH_CONTAINER(&work_pending, work, node) {
 		if (work == &dwork->work) {
+			dwork->timeout.dticks = delay.ticks;
 			return 0;
 		}
 	}
 
+	dwork->timeout.dticks = delay.ticks;
 	sys_slist_append(&work_pending, &dwork->work.node);
 
 	return 0;
@@ -50,6 +52,27 @@ int k_work_reschedule(struct k_work_delayable *dwork, k_timeout_t delay)
 int k_work_cancel_delayable(struct k_work_delayable *dwork)
 {
 	(void)sys_slist_find_and_remove(&work_pending, &dwork->work.node);
+
+	return 0;
+}
+
+int32_t k_sleep(k_timeout_t timeout)
+{
+	struct k_work *work;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&work_pending, work, node) {
+		if (work->flags & K_WORK_DELAYED) {
+			struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+
+			if (dwork->timeout.dticks > timeout.ticks) {
+				dwork->timeout.dticks -= timeout.ticks;
+				continue;
+			}
+		}
+
+		(void)sys_slist_remove(&work_pending, NULL, &work->node);
+		work->handler(work);
+	}
 
 	return 0;
 }
