@@ -301,4 +301,11 @@
 			<&reset RSTMGR_SOFTPHY_RSTLINE>;
 		status = "disabled";
 	};
+
+	sip_smc: smc{
+		compatible = "intel,socfpga-agilex-sip-smc";
+		method = "smc";
+		status = "disabled";
+		zephyr,num-clients = <2>;
+	};
 };
