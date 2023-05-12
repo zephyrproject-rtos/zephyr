@@ -989,7 +989,6 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
 	for (size_t i = 0; i < ARRAY_SIZE(ase_pool); i++) {
 		struct bt_ascs_ase *ase = &ase_pool[i];
-		struct bt_bap_stream *stream = ase->ep.stream;
 
 		if (ase->conn != conn) {
 			continue;
@@ -998,11 +997,6 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 		if (ase->ep.status.state != BT_BAP_EP_STATE_IDLE) {
 			ase_release(ase);
 			/* At this point, `ase` object have been free'd */
-		}
-
-		if (stream != NULL && stream->conn != NULL) {
-			bt_conn_unref(stream->conn);
-			stream->conn = NULL;
 		}
 	}
 }
