@@ -83,9 +83,13 @@ static int sbs_gauge_get_prop(const struct device *dev, struct fuel_gauge_get_pr
 		rc = sbs_cmd_reg_read(dev, SBS_GAUGE_CMD_MANUFACTURER_ACCESS, &val);
 		prop->value.sbs_mfr_access_word = val;
 		break;
-	case FUEL_GAUGE_STATE_OF_CHARGE:
+	case FUEL_GAUGE_ABSOLUTE_STATE_OF_CHARGE:
 		rc = sbs_cmd_reg_read(dev, SBS_GAUGE_CMD_ASOC, &val);
-		prop->value.state_of_charge = val;
+		prop->value.absolute_state_of_charge = val;
+		break;
+	case FUEL_GAUGE_RELATIVE_STATE_OF_CHARGE:
+		rc = sbs_cmd_reg_read(dev, SBS_GAUGE_CMD_RSOC, &val);
+		prop->value.relative_state_of_charge = val;
 		break;
 	case FUEL_GAUGE_TEMPERATURE:
 		rc = sbs_cmd_reg_read(dev, SBS_GAUGE_CMD_TEMP, &val);

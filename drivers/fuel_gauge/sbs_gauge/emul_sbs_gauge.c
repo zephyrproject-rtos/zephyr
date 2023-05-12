@@ -91,6 +91,7 @@ static int emul_sbs_gauge_reg_read(const struct emul *target, int reg, int *val)
 	case SBS_GAUGE_CMD_AVG_CURRENT:
 	case SBS_GAUGE_CMD_TEMP:
 	case SBS_GAUGE_CMD_ASOC:
+	case SBS_GAUGE_CMD_RSOC:
 	case SBS_GAUGE_CMD_FULL_CAPACITY:
 	case SBS_GAUGE_CMD_REM_CAPACITY:
 	case SBS_GAUGE_CMD_NOM_CAPACITY:
