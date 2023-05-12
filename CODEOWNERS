@@ -288,6 +288,7 @@
 /drivers/ethernet/*adin2111*              @GeorgeCGV
 /drivers/ethernet/phy/                    @rlubos @tbursztyka @arvinf
 /drivers/mdio/                            @rlubos @tbursztyka @arvinf
+/drivers/mdio/*adin2111*                  @GeorgeCGV
 /drivers/flash/                           @nashif @de-nordic
 /drivers/flash/*stm32_qspi*               @lmajewski
 /drivers/flash/*b91*                      @andy-liu-telink
