@@ -23,6 +23,9 @@ config CPU_AARCH64_CORTEX_R
 	select HAS_FLASH_LOAD_OFFSET
 	select CPU_HAS_DCACHE
 	select CPU_HAS_ICACHE
+	select CPU_HAS_FPU
+	imply FPU
+	imply FPU_SHARING
 	help
 	  This option signifies the use of a CPU of the Cortex-R 64-bit family.
 
