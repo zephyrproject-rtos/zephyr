@@ -9,7 +9,6 @@
 #include <stdio.h>
 #include <ctype.h>
 #include <stdlib.h>
-#include <errno.h>
 
 #define ARGV_DEV           1
 #define ARGV_CHN           2
@@ -92,8 +91,7 @@ static int cmd_timer_stop(const struct shell *shctx, size_t argc, char **argv)
 static int cmd_timer_oneshot(const struct shell *shctx, size_t argc, char **argv)
 {
 	ARG_UNUSED(argc);
-	char *endptr;
-	int32_t err = 0;
+	int err = 0;
 	unsigned long delay = 0;
 	unsigned long channel = 0;
 	const struct device *timer_dev;
@@ -107,31 +105,28 @@ static int cmd_timer_oneshot(const struct shell *shctx, size_t argc, char **argv
 		return -ENODEV;
 	}
 
-	errno = 0;
-	delay = strtoul(argv[ARGV_ONESHOT_TIME], &endptr, 10);
-	if (delay > MAX_DELAY) {
-		shell_error(shctx, "delay:%ld greater than max delay:%d", delay, MAX_DELAY);
-		return -EINVAL;
-	} else if (*endptr || (delay == LONG_MAX && errno)) {
-		shell_error(shctx, "delay:%ld out of range, Max Delay: %d", delay, MAX_DELAY);
-		return -EINVAL;
+	delay = shell_strtoul(argv[ARGV_ONESHOT_TIME], 10, &err);
+	if (err != 0) {
+		shell_error(shctx, "invalid delay parameter");
+		return err;
+	} else if (delay > MAX_DELAY) {
+		shell_error(shctx, "delay out of range");
+		return -ERANGE;
 	}
 
-	errno = 0;
-	channel = strtoul(argv[ARGV_CHN], &endptr, 10);
-	if (channel > MAX_CHANNEL) {
-		shell_error(shctx, "Channel :%ld greater than max allowed channel:%d",
-				channel, MAX_CHANNEL);
-		return -EINVAL;
-	} else if (*endptr || (channel == LONG_MAX && errno)) {
-		shell_error(shctx, "Channel:%ld out of range, Max Channel:%d",
-				channel, MAX_CHANNEL);
-		return -EINVAL;
+	channel = shell_strtoul(argv[ARGV_CHN], 10, &err);
+	if (err != 0) {
+		shell_error(shctx, "invalid channel parameter");
+		return err;
+	} else if (channel > MAX_CHANNEL) {
+		shell_error(shctx, "channel out of range");
+		return -ERANGE;
 	}
 
 	alarm_cfg.flags = 0;
 	alarm_cfg.ticks = counter_us_to_ticks(timer_dev, (uint64_t)delay);
 	alarm_cfg.callback = timer_alarm_handler;
+	alarm_cfg.user_data = NULL;
 
 	/* set an alarm */
 	err = counter_set_channel_alarm(timer_dev, (uint8_t)channel, &alarm_cfg);
@@ -150,9 +145,8 @@ static int cmd_timer_oneshot(const struct shell *shctx, size_t argc, char **argv
 static int cmd_timer_periodic(const struct shell *shctx, size_t argc, char **argv)
 {
 	ARG_UNUSED(argc);
-	char *endptr;
 	uint32_t count = 0;
-	int32_t err = 0;
+	int err = 0;
 	unsigned long delay = 0;
 	const struct device *timer_dev;
 	struct counter_top_cfg top_cfg;
@@ -165,19 +159,20 @@ static int cmd_timer_periodic(const struct shell *shctx, size_t argc, char **arg
 		return -ENODEV;
 	}
 
-	errno = 0;
-	delay = strtoul(argv[ARGV_PERIODIC_TIME], &endptr, 10);
-	if (delay > MAX_DELAY) {
-		shell_error(shctx, "delay:%ld greater than max delay:%d", delay, MAX_DELAY);
-	} else if (*endptr || (delay == LONG_MAX && errno)) {
-		shell_error(shctx, "delay:%ld out of range, Max Delay: %d", delay, MAX_DELAY);
-		return -EINVAL;
+	delay = shell_strtoul(argv[ARGV_PERIODIC_TIME], 10, &err);
+	if (err != 0) {
+		shell_error(shctx, "invalid delay parameter");
+		return err;
+	} else if (delay > MAX_DELAY) {
+		shell_error(shctx, "delay out of range");
+		return -ERANGE;
 	}
 
 	top_cfg.flags = 0;
 	top_cfg.ticks = counter_us_to_ticks(timer_dev, (uint64_t)delay);
 	/* interrupt will be triggered periodically */
 	top_cfg.callback = timer_top_handler;
+	top_cfg.user_data = NULL;
 
 	/* set top value */
 	err = counter_set_top_value(timer_dev, &top_cfg);
