@@ -149,6 +149,7 @@
  */
 &os_timer {
 	status = "okay";
+	wakeup-source;
 };
 
 &rtc {

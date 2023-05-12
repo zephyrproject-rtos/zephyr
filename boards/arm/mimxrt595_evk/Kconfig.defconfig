@@ -69,4 +69,12 @@ endchoice
 
 endif # LVGL
 
+if PM
+# Turn on Device Level Power Management as we wish
+# to reconfigure the FlexSPI pins for power savings
+# when transitioning the SoC to Deep Low Power modes.
+config PM_DEVICE
+	default y
+endif # PM
+
 endif # BOARD_MIMXRT595_EVK
