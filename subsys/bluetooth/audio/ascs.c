@@ -998,18 +998,6 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 		if (ase->ep.status.state != BT_BAP_EP_STATE_IDLE) {
 			ase_release(ase);
 			/* At this point, `ase` object have been free'd */
-
-			if (stream != NULL) {
-				const struct bt_bap_stream_ops *ops;
-
-				/* Notify upper layer */
-				ops = stream->ops;
-				if (ops != NULL && ops->released != NULL) {
-					ops->released(stream);
-				} else {
-					LOG_WRN("No callback for released set");
-				}
-			}
 		}
 
 		if (stream != NULL && stream->conn != NULL) {
