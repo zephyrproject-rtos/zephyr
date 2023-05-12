@@ -334,7 +334,7 @@ static void smp_on_err(struct smp_streamer *streamer, const struct smp_hdr *req_
 	/* Build and transmit the error response. */
 	rc = smp_build_err_rsp(streamer, req_hdr, status, rsn);
 	if (rc == 0) {
-		streamer->smpt->output(rsp);
+		streamer->smpt->functions.output(rsp);
 		rsp = NULL;
 	}
 
@@ -415,7 +415,7 @@ int smp_process_request_packet(struct smp_streamer *streamer, void *vreq)
 		}
 
 		/* Send the response. */
-		rc = streamer->smpt->output(rsp);
+		rc = streamer->smpt->functions.output(rsp);
 		rsp = NULL;
 		if (rc != 0) {
 			break;

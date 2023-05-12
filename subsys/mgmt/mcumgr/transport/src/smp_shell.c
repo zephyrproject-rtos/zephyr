@@ -235,8 +235,12 @@ static int smp_shell_tx_pkt(struct net_buf *nb)
 
 int smp_shell_init(void)
 {
-	smp_transport_init(&smp_shell_transport, smp_shell_tx_pkt,
-			   smp_shell_get_mtu, NULL, NULL, NULL);
+	int rc;
 
-	return 0;
+	smp_shell_transport.functions.output = smp_shell_tx_pkt;
+	smp_shell_transport.functions.get_mtu = smp_shell_get_mtu;
+
+	rc = smp_transport_init(&smp_shell_transport);
+
+	return rc;
 }

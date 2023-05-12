@@ -5,6 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <assert.h>
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/net/buf.h>
@@ -72,8 +73,8 @@ void *smp_alloc_rsp(const void *req, void *arg)
 		return NULL;
 	}
 
-	if (smpt->ud_copy) {
-		smpt->ud_copy(rsp_nb, req_nb);
+	if (smpt->functions.ud_copy) {
+		smpt->functions.ud_copy(rsp_nb, req_nb);
 	} else {
 		memcpy(net_buf_user_data(rsp_nb),
 		       net_buf_user_data((void *)req_nb),
@@ -91,8 +92,8 @@ void smp_free_buf(void *buf, void *arg)
 		return;
 	}
 
-	if (smpt->ud_free) {
-		smpt->ud_free(net_buf_user_data((struct net_buf *)buf));
+	if (smpt->functions.ud_free) {
+		smpt->functions.ud_free(net_buf_user_data((struct net_buf *)buf));
 	}
 
 	smp_packet_free(buf);
@@ -135,21 +136,14 @@ smp_handle_reqs(struct k_work *work)
 	}
 }
 
-void
-smp_transport_init(struct smp_transport *smpt,
-		   smp_transport_out_fn output_func,
-		   smp_transport_get_mtu_fn get_mtu_func,
-		   smp_transport_ud_copy_fn ud_copy_func,
-		   smp_transport_ud_free_fn ud_free_func,
-		   smp_transport_query_valid_check_fn query_valid_check_func)
+int smp_transport_init(struct smp_transport *smpt)
 {
-	*smpt = (struct smp_transport) {
-		.output = output_func,
-		.get_mtu = get_mtu_func,
-		.ud_copy = ud_copy_func,
-		.ud_free = ud_free_func,
-		.query_valid_check = query_valid_check_func,
-	};
+	__ASSERT((smpt->functions.output != NULL),
+		 "Required transport output function pointer cannot be NULL");
+
+	if (smpt->functions.output == NULL) {
+		return -EINVAL;
+	}
 
 #ifdef CONFIG_MCUMGR_TRANSPORT_REASSEMBLY
 	smp_reassembly_init(smpt);
@@ -157,6 +151,8 @@ smp_transport_init(struct smp_transport *smpt,
 
 	k_work_init(&smpt->work, smp_handle_reqs);
 	k_fifo_init(&smpt->fifo);
+
+	return 0;
 }
 
 /**
@@ -180,7 +176,7 @@ void smp_rx_remove_invalid(struct smp_transport *zst, void *arg)
 	struct net_buf *nb;
 	struct k_fifo temp_fifo;
 
-	if (zst->query_valid_check == NULL) {
+	if (zst->functions.query_valid_check == NULL) {
 		/* No check check function registered, abort check */
 		return;
 	}
@@ -196,7 +192,7 @@ void smp_rx_remove_invalid(struct smp_transport *zst, void *arg)
 	k_fifo_init(&temp_fifo);
 
 	while ((nb = net_buf_get(&zst->fifo, K_NO_WAIT)) != NULL) {
-		if (!zst->query_valid_check(nb, arg)) {
+		if (!zst->functions.query_valid_check(nb, arg)) {
 			smp_free_buf(nb, zst);
 		} else {
 			net_buf_put(&temp_fifo, nb);
