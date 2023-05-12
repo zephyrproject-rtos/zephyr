@@ -285,6 +285,7 @@
 /drivers/ethernet/*w5500*                 @parthitce
 /drivers/ethernet/*xlnx_gem*              @ibirnbaum
 /drivers/ethernet/*smsc91x*               @sgrrzhf
+/drivers/ethernet/*adin2111*              @GeorgeCGV
 /drivers/ethernet/phy/                    @rlubos @tbursztyka @arvinf
 /drivers/mdio/                            @rlubos @tbursztyka @arvinf
 /drivers/flash/                           @nashif @de-nordic
