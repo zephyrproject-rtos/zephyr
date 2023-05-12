@@ -57,6 +57,8 @@ LOG_MODULE_REGISTER(adc_stm32);
  * ADC_VER_V5_V90 -> STM32H72x/H73x
  * ADC_VER_V5_X -> STM32H74x/H75x && U5
  * ADC_VER_V5_3 -> STM32H7Ax/H7Bx
+ * compat st_stm32f1_adc -> STM32F1, F37x (ADC1_V2_5)
+ * compat st_stm32f4_adc -> STM32F2, F4, F7, L1
  */
 
 #define ANY_NUM_COMMON_SAMPLING_TIME_CHANNELS_IS(value) \
@@ -308,20 +310,14 @@ static void adc_stm32_start_conversion(const struct device *dev)
 	LOG_DBG("Starting conversion");
 
 #if !defined(CONFIG_SOC_SERIES_STM32F1X) && \
-	!defined(CONFIG_SOC_SERIES_STM32F2X) && \
-	!defined(CONFIG_SOC_SERIES_STM32F4X) && \
-	!defined(CONFIG_SOC_SERIES_STM32F7X) && \
-	!defined(CONFIG_SOC_SERIES_STM32L1X)
+	!DT_HAS_COMPAT_STATUS_OKAY(st_stm32f4_adc)
 	LL_ADC_REG_StartConversion(adc);
 #else
 	LL_ADC_REG_StartConversionSWStart(adc);
 #endif
 }
 
-#if !defined(CONFIG_SOC_SERIES_STM32F2X) && \
-	!defined(CONFIG_SOC_SERIES_STM32F4X) && \
-	!defined(CONFIG_SOC_SERIES_STM32F7X) && \
-	!defined(CONFIG_SOC_SERIES_STM32L1X)
+#if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32f4_adc)
 
 /* Number of ADC clock cycles to wait before of after starting calibration */
 #if defined(LL_ADC_DELAY_CALIB_ENABLE_ADC_CYCLES)
@@ -375,8 +371,7 @@ static void adc_stm32_calib(const struct device *dev)
 	LL_ADC_StartCalibration(adc, LL_ADC_SINGLE_ENDED);
 #elif defined(CONFIG_SOC_SERIES_STM32C0X) || \
 	defined(CONFIG_SOC_SERIES_STM32F0X) || \
-	defined(CONFIG_SOC_SERIES_STM32F1X) || \
-	defined(STM32F3X_ADC_V2_5) || \
+	DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc) || \
 	defined(CONFIG_SOC_SERIES_STM32G0X) || \
 	defined(CONFIG_SOC_SERIES_STM32L0X) || \
 	defined(CONFIG_SOC_SERIES_STM32WLX)
@@ -408,12 +403,8 @@ static void adc_stm32_disable(ADC_TypeDef *adc)
 	 * the ADC is completely stopped.
 	 */
 
-#if !defined(CONFIG_SOC_SERIES_STM32F2X) && \
-	!defined(CONFIG_SOC_SERIES_STM32F4X) && \
-	!defined(CONFIG_SOC_SERIES_STM32F7X) && \
-	!defined(CONFIG_SOC_SERIES_STM32F1X) && \
-	!defined(STM32F3X_ADC_V2_5) && \
-	!defined(CONFIG_SOC_SERIES_STM32L1X)
+#if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc) && \
+	!DT_HAS_COMPAT_STATUS_OKAY(st_stm32f4_adc)
 	if (LL_ADC_REG_IsConversionOngoing(adc)) {
 		LL_ADC_REG_StopConversion(adc);
 		while (LL_ADC_REG_IsConversionOngoing(adc)) {
@@ -423,14 +414,10 @@ static void adc_stm32_disable(ADC_TypeDef *adc)
 
 #if !defined(CONFIG_SOC_SERIES_STM32C0X) && \
 	!defined(CONFIG_SOC_SERIES_STM32F0X) && \
-	!defined(CONFIG_SOC_SERIES_STM32F1X) && \
-	!defined(STM32F3X_ADC_V2_5) && \
-	!defined(CONFIG_SOC_SERIES_STM32F2X) && \
-	!defined(CONFIG_SOC_SERIES_STM32F4X) && \
-	!defined(CONFIG_SOC_SERIES_STM32F7X) && \
+	!DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc) && \
+	!DT_HAS_COMPAT_STATUS_OKAY(st_stm32f4_adc) && \
 	!defined(CONFIG_SOC_SERIES_STM32G0X) && \
 	!defined(CONFIG_SOC_SERIES_STM32L0X) && \
-	!defined(CONFIG_SOC_SERIES_STM32L1X) && \
 	!defined(CONFIG_SOC_SERIES_STM32WLX)
 	if (LL_ADC_INJ_IsConversionOngoing(adc)) {
 		LL_ADC_INJ_StopConversion(adc);
@@ -450,11 +437,8 @@ static void adc_stm32_disable(ADC_TypeDef *adc)
 
 #if !defined(CONFIG_SOC_SERIES_STM32F0X) && \
 	!defined(CONFIG_SOC_SERIES_STM32F1X) && \
-	!defined(CONFIG_SOC_SERIES_STM32F2X) && \
 	!defined(CONFIG_SOC_SERIES_STM32F3X) && \
-	!defined(CONFIG_SOC_SERIES_STM32F4X) && \
-	!defined(CONFIG_SOC_SERIES_STM32F7X) && \
-	!defined(CONFIG_SOC_SERIES_STM32L1X)
+	!DT_HAS_COMPAT_STATUS_OKAY(st_stm32f4_adc)
 
 #ifdef LL_ADC_OVS_RATIO_2
 /* table for shifting oversampling mostly for ADC3 != ADC_VER_V5_V90 */
@@ -560,12 +544,8 @@ static int adc_stm32_enable(ADC_TypeDef *adc)
 		return 0;
 	}
 
-#if !defined(STM32F3X_ADC_V2_5) && \
-	!defined(CONFIG_SOC_SERIES_STM32F1X) && \
-	!defined(CONFIG_SOC_SERIES_STM32F2X) && \
-	!defined(CONFIG_SOC_SERIES_STM32F4X) && \
-	!defined(CONFIG_SOC_SERIES_STM32F7X) && \
-	!defined(CONFIG_SOC_SERIES_STM32L1X)
+#if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc) && \
+	!DT_HAS_COMPAT_STATUS_OKAY(st_stm32f4_adc)
 	LL_ADC_ClearFlag_ADRDY(adc);
 	LL_ADC_Enable(adc);
 
@@ -700,11 +680,11 @@ static void dma_callback(const struct device *dev, void *user_data,
 	LOG_DBG("dma callback");
 
 	if (channel == data->dma.channel) {
-#if !defined(CONFIG_SOC_SERIES_STM32F1X) && !defined(STM32F3X_ADC_V2_5)
+#if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc)
 		if (LL_ADC_IsActiveFlag_OVR(adc) || (status >= 0)) {
 #else
 		if (status >= 0) {
-#endif /* !defined(CONFIG_SOC_SERIES_STM32F1X) && !defined(STM32F3X_ADC_V2_5) */
+#endif /* !DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc) */
 			data->samples_count = data->channel_count;
 			data->buffer += data->channel_count;
 			/* Stop the DMA engine, only to start it again when the callback returns
@@ -713,9 +693,9 @@ static void dma_callback(const struct device *dev, void *user_data,
 			 * within adc_context_start_sampling
 			 */
 			dma_stop(data->dma.dma_dev, data->dma.channel);
-#if !defined(CONFIG_SOC_SERIES_STM32F1X) && !defined(STM32F3X_ADC_V2_5)
+#if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc)
 			LL_ADC_ClearFlag_OVR(adc);
-#endif /* !defined(CONFIG_SOC_SERIES_STM32F1X) && !defined(STM32F3X_ADC_V2_5) */
+#endif /* !DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc) */
 			/* No need to invalidate the cache because it's assumed that
 			 * the address is in a non-cacheable SRAM region.
 			 */
@@ -926,11 +906,8 @@ static int start_read(const struct device *dev,
 
 #if !defined(CONFIG_SOC_SERIES_STM32F0X) && \
 	!defined(CONFIG_SOC_SERIES_STM32F1X) && \
-	!defined(CONFIG_SOC_SERIES_STM32F2X) && \
 	!defined(CONFIG_SOC_SERIES_STM32F3X) && \
-	!defined(CONFIG_SOC_SERIES_STM32F4X) && \
-	!defined(CONFIG_SOC_SERIES_STM32F7X) && \
-	!defined(CONFIG_SOC_SERIES_STM32L1X)
+	!DT_HAS_COMPAT_STATUS_OKAY(st_stm32f4_adc)
 
 	switch (sequence->oversampling) {
 	case 0:
@@ -982,12 +959,8 @@ static int start_read(const struct device *dev,
 #endif
 
 	if (sequence->calibrate) {
-#if !defined(CONFIG_SOC_SERIES_STM32F2X) && \
-	!defined(CONFIG_SOC_SERIES_STM32F4X) && \
-	!defined(CONFIG_SOC_SERIES_STM32F7X) && \
-	!defined(CONFIG_SOC_SERIES_STM32F1X) && \
-	!defined(STM32F3X_ADC_V2_5) && \
-	!defined(CONFIG_SOC_SERIES_STM32L1X)
+#if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc) && \
+	!DT_HAS_COMPAT_STATUS_OKAY(st_stm32f4_adc)
 
 		/* we cannot calibrate the ADC while the ADC is enabled */
 		adc_stm32_disable(adc);
@@ -1005,18 +978,14 @@ static int start_read(const struct device *dev,
 	 */
 	adc_stm32_enable(adc);
 
-#if !defined(CONFIG_SOC_SERIES_STM32F1X) && !defined(STM32F3X_ADC_V2_5)
+#if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc)
 	LL_ADC_ClearFlag_OVR(adc);
-#endif /* !defined(CONFIG_SOC_SERIES_STM32F1X) && !defined(STM32F3X_ADC_V2_5) */
+#endif /* !DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc) */
 
 #if !defined(CONFIG_ADC_STM32_DMA)
-#if defined(CONFIG_SOC_SERIES_STM32F2X) || \
-	defined(CONFIG_SOC_SERIES_STM32F4X) || \
-	defined(CONFIG_SOC_SERIES_STM32F7X) || \
-	defined(CONFIG_SOC_SERIES_STM32L1X)
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32f4_adc)
 	LL_ADC_EnableIT_EOCS(adc);
-#elif defined(STM32F3X_ADC_V2_5) || \
-	defined(CONFIG_SOC_SERIES_STM32F1X)
+#elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc)
 	LL_ADC_EnableIT_EOS(adc);
 #else
 	LL_ADC_EnableIT_EOC(adc);
@@ -1321,12 +1290,8 @@ static int adc_stm32_init(const struct device *dev)
 	 * any enable or calibration actions.
 	 */
 #if !defined(CONFIG_SOC_SERIES_STM32F0X) && \
-	!defined(CONFIG_SOC_SERIES_STM32F1X) && \
-	!defined(CONFIG_SOC_SERIES_STM32F2X) && \
-	!defined(CONFIG_SOC_SERIES_STM32F4X) && \
-	!defined(CONFIG_SOC_SERIES_STM32F7X) && \
-	!defined(STM32F3X_ADC_V2_5) && \
-	!defined(CONFIG_SOC_SERIES_STM32L1X)
+	!DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc) && \
+	!DT_HAS_COMPAT_STATUS_OKAY(st_stm32f4_adc)
 	LL_ADC_EnableInternalRegulator(adc);
 	k_busy_wait(LL_ADC_DELAY_INTERNAL_REGUL_STAB_US);
 #endif
@@ -1362,16 +1327,13 @@ static int adc_stm32_init(const struct device *dev)
 			LL_ADC_CLOCK_ASYNC_DIV4);
 #endif
 
-#if !defined(CONFIG_SOC_SERIES_STM32F2X) && \
-	!defined(CONFIG_SOC_SERIES_STM32F4X) && \
-	!defined(CONFIG_SOC_SERIES_STM32F7X) && \
-	!defined(CONFIG_SOC_SERIES_STM32L1X)
+#if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32f4_adc)
 
-#if !defined(CONFIG_SOC_SERIES_STM32F1X) && !defined(STM32F3X_ADC_V2_5)
+#if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc)
 	adc_stm32_disable(adc);
 	adc_stm32_calib(dev);
 	adc_stm32_calib_delay(dev);
-#endif /* !defined(CONFIG_SOC_SERIES_STM32F1X) && !defined(STM32F3X_ADC_V2_5) */
+#endif /* !DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc) */
 #endif
 
 	err = adc_stm32_enable(adc);
@@ -1381,11 +1343,11 @@ static int adc_stm32_init(const struct device *dev)
 
 	config->irq_cfg_func();
 
-#if defined(CONFIG_SOC_SERIES_STM32F1X) || defined(STM32F3X_ADC_V2_5)
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc)
 	adc_stm32_calib_delay(dev);
 	adc_stm32_calib(dev);
 	LL_ADC_REG_SetTriggerSource(adc, LL_ADC_REG_TRIG_SOFTWARE);
-#endif /* !defined(CONFIG_SOC_SERIES_STM32F1X) && !defined(STM32F3X_ADC_V2_5) */
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc) */
 
 #ifdef CONFIG_SOC_SERIES_STM32H7X
 	/*
