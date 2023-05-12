@@ -41,6 +41,13 @@ extern "C" {
 #define DW_DSR(chan) \
 	(0x0050 + DW_CHAN_OFFSET(chan))
 
+#ifdef CONFIG_DMA_64BIT
+#define DW_SAR_HI(chan) \
+	(0x0004 + DW_CHAN_OFFSET(chan))
+#define DW_DAR_HI(chan) \
+	(0x000C + DW_CHAN_OFFSET(chan))
+#endif
+
 /* registers */
 #define DW_RAW_TFR		0x02C0
 #define DW_RAW_BLOCK		0x02C8
@@ -174,6 +181,10 @@ struct dw_drv_plat_data {
 
 /* DMA descriptor used by HW */
 struct dw_lli {
+#ifdef CONFIG_DMA_64BIT
+	uint64_t sar;
+	uint64_t dar;
+#else
 	uint32_t sar;
 	uint32_t dar;
 	uint32_t llp;
@@ -239,16 +250,16 @@ struct dw_dma_dev_data {
 
 /* Device constant configuration parameters */
 struct dw_dma_dev_cfg {
-	uint32_t base;
+	uintptr_t base;
 	void (*irq_config)(void);
 };
 
-static ALWAYS_INLINE void dw_write(uint32_t dma_base, uint32_t reg, uint32_t value)
+static ALWAYS_INLINE void dw_write(uintptr_t dma_base, uint32_t reg, uint32_t value)
 {
 	*((volatile uint32_t *)(dma_base + reg)) = value;
 }
 
-static ALWAYS_INLINE uint32_t dw_read(uint32_t dma_base, uint32_t reg)
+static ALWAYS_INLINE uint32_t dw_read(uintptr_t dma_base, uint32_t reg)
 {
 	return *((volatile uint32_t *)(dma_base + reg));
 }
