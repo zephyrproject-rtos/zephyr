@@ -28,6 +28,7 @@ config MDIO_SHELL
 source "drivers/mdio/Kconfig.esp32"
 source "drivers/mdio/Kconfig.sam"
 source "drivers/mdio/Kconfig.nxp_s32"
+source "drivers/mdio/Kconfig.adin2111"
 
 config MDIO_INIT_PRIORITY
 	int "Init priority"
