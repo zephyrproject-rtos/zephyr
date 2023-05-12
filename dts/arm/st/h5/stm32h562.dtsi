@@ -285,6 +285,14 @@
 			};
 		};
 
+		aes: aes@420c0000 {
+			compatible = "st,stm32-aes";
+			reg = <0x420c0000 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00010000>;
+			interrupts = <116 0>;
+			status = "disabled";
+		};
+
 		can {
 			can2: can@4000a800 {
 				compatible = "st,stm32-fdcan";
