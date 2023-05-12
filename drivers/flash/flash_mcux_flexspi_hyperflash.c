@@ -413,7 +413,7 @@ static int flash_flexspi_hyperflash_write(const struct device *dev, off_t offset
 	size_t size = len;
 	uint8_t *src = (uint8_t *)buffer;
 	unsigned int key = 0;
-	int i;
+	int i, j;
 	int ret = -1;
 
 	uint8_t *dst = memc_flexspi_get_ahb_address(&data->controller,
@@ -443,7 +443,9 @@ static int flash_flexspi_hyperflash_write(const struct device *dev, off_t offset
 		i = MIN(SPI_HYPERFLASH_PAGE_SIZE - (offset %
 					SPI_HYPERFLASH_PAGE_SIZE), len);
 #ifdef CONFIG_FLASH_MCUX_FLEXSPI_HYPERFLASH_WRITE_BUFFER
-		memcpy(hyperflash_write_buf, src, i);
+		for (j = 0; j < i; j++) {
+			hyperflash_write_buf[j] = src[j];
+		}
 #endif
 		ret = flash_flexspi_hyperflash_write_enable(dev, offset);
 		if (ret != 0) {
@@ -477,14 +479,14 @@ static int flash_flexspi_hyperflash_write(const struct device *dev, off_t offset
 	(void)memc_flexspi_update_clock(&data->controller, &data->config,
 					data->port, MEMC_FLEXSPI_CLOCK_166M);
 
+#ifdef CONFIG_HAS_MCUX_CACHE
+	DCACHE_InvalidateByRange((uint32_t) dst, size);
+#endif
+
 	if (memc_flexspi_is_running_xip(&data->controller)) {
 		/* ==== EXIT CRITICAL SECTION ==== */
 		irq_unlock(key);
 	}
-
-#ifdef CONFIG_HAS_MCUX_CACHE
-	DCACHE_InvalidateByRange((uint32_t) dst, size);
-#endif
 
 	return ret;
 }
@@ -558,14 +560,14 @@ static int flash_flexspi_hyperflash_erase(const struct device *dev, off_t offset
 		offset += SPI_HYPERFLASH_SECTOR_SIZE;
 	}
 
+#ifdef CONFIG_HAS_MCUX_CACHE
+	DCACHE_InvalidateByRange((uint32_t) dst, size);
+#endif
+
 	if (memc_flexspi_is_running_xip(&data->controller)) {
 		/* ==== EXIT CRITICAL SECTION ==== */
 		irq_unlock(key);
 	}
-
-#ifdef CONFIG_HAS_MCUX_CACHE
-	DCACHE_InvalidateByRange((uint32_t) dst, size);
-#endif
 
 	return ret;
 }
