@@ -735,7 +735,7 @@
 		};
 
 		adc1: adc@40012000 {
-			compatible = "st,stm32-adc";
+			compatible = "st,stm32f4-adc", "st,stm32-adc";
 			reg = <0x40012000 0x50>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00000100>;
 			interrupts = <18 0>;
@@ -751,7 +751,7 @@
 		};
 
 		adc2: adc@40012100 {
-			compatible = "st,stm32-adc";
+			compatible = "st,stm32f4-adc", "st,stm32-adc";
 			reg = <0x40012100 0x50>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00000200>;
 			interrupts = <18 0>;
@@ -765,7 +765,7 @@
 		};
 
 		adc3: adc@40012200 {
-			compatible = "st,stm32-adc";
+			compatible = "st,stm32f4-adc", "st,stm32-adc";
 			reg = <0x40012200 0x50>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00000400>;
 			interrupts = <18 0>;
