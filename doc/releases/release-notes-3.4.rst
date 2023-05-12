@@ -148,6 +148,14 @@ Changes in this release
   * :c:func:`net_if_ipv6_maddr_join`
   * :c:func:`net_if_ipv6_maddr_leave`
 
+* MCUmgr transports now need to set up the struct before registering it by
+  setting the function pointers to the function handlers, these have been
+  moved to a ``functions`` struct object of type
+  :c:struct:`smp_transport_api_t`. Because of these changes, the legacy
+  transport registration function and object are no longer available. The
+  registration function now returns a value which is 0 for success or a
+  negative error code if an error occurred.
+
 Removed APIs in this release
 ============================
 
