@@ -625,7 +625,7 @@ static int sys_mm_drv_mm_init(const struct device *dev)
 
 	uint32_t avalible_memory_size = ace_hpsram_get_bank_count() * SRAM_BANK_SIZE;
 
-	L2_PHYS_SRAM_REGION.num_blocks = avalible_memory_size / CONFIG_MM_DRV_PAGE_SIZE;
+	L2_PHYS_SRAM_REGION.info.num_blocks = avalible_memory_size / CONFIG_MM_DRV_PAGE_SIZE;
 
 	ret = calculate_memory_regions(UNUSED_L2_START_ALIGNED);
 	CHECKIF(ret != 0) {

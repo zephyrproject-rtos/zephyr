@@ -383,7 +383,7 @@ static inline size_t rtio_mempool_block_size(const struct rtio *r)
 	if (r == NULL || r->block_pool == NULL) {
 		return 0;
 	}
-	return BIT(r->block_pool->blk_sz_shift);
+	return BIT(r->block_pool->info.blk_sz_shift);
 #endif
 }
 
@@ -402,7 +402,7 @@ static inline uint16_t __rtio_compute_mempool_block_index(const struct rtio *r, 
 	uint32_t block_size = rtio_mempool_block_size(r);
 
 	uintptr_t buff = (uintptr_t)mem_pool->buffer;
-	uint32_t buff_size = mem_pool->num_blocks * block_size;
+	uint32_t buff_size = mem_pool->info.num_blocks * block_size;
 
 	if (addr < buff || addr >= buff + buff_size) {
 		return UINT16_MAX;
@@ -693,7 +693,7 @@ static inline int rtio_block_pool_alloc(struct rtio *r, size_t min_sz,
 static inline void rtio_block_pool_free(struct rtio *r, void *buf, uint32_t buf_len)
 {
 #ifdef CONFIG_RTIO_SYS_MEM_BLOCKS
-	size_t num_blks = buf_len >> r->block_pool->blk_sz_shift;
+	size_t num_blks = buf_len >> r->block_pool->info.blk_sz_shift;
 
 	sys_mem_blocks_free_contiguous(r->block_pool, buf, num_blks);
 #endif
@@ -1019,8 +1019,9 @@ static inline uint32_t rtio_cqe_compute_flags(struct rtio_iodev_sqe *iodev_sqe)
 	if (iodev_sqe->sqe.op == RTIO_OP_RX && iodev_sqe->sqe.flags & RTIO_SQE_MEMPOOL_BUFFER) {
 		struct rtio *r = iodev_sqe->r;
 		struct sys_mem_blocks *mem_pool = r->block_pool;
-		int blk_index = (iodev_sqe->sqe.buf - mem_pool->buffer) >> mem_pool->blk_sz_shift;
-		int blk_count = iodev_sqe->sqe.buf_len >> mem_pool->blk_sz_shift;
+		int blk_index = (iodev_sqe->sqe.buf - mem_pool->buffer) >>
+				mem_pool->info.blk_sz_shift;
+		int blk_count = iodev_sqe->sqe.buf_len >> mem_pool->info.blk_sz_shift;
 
 		flags = RTIO_CQE_FLAG_PREP_MEMPOOL(blk_index, blk_count);
 	}
@@ -1062,7 +1063,7 @@ static inline int z_impl_rtio_cqe_get_mempool_buffer(const struct rtio *r, struc
 		*buff_len = blk_count * blk_size;
 		__ASSERT_NO_MSG(*buff >= r->block_pool->buffer);
 		__ASSERT_NO_MSG(*buff <
-				r->block_pool->buffer + blk_size * r->block_pool->num_blocks);
+				r->block_pool->buffer + blk_size * r->block_pool->info.num_blocks);
 		return 0;
 	}
 	return -EINVAL;
