@@ -24,6 +24,8 @@ extern "C" {
 #define SIGEV_THREAD 3
 #endif
 
+typedef int	sig_atomic_t;		/* Atomic entity type (ANSI) */
+
 typedef union sigval {
 	int sival_int;
 	void *sival_ptr;
