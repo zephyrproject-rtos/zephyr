@@ -14,6 +14,13 @@
 
 __weak void *__dso_handle;
 
+#if !defined(CONFIG_ARCH_POSIX)
+/*
+ * For the POSIX architecture we do not define an empty __cxa_atexit() as it otherwise
+ * would override its host libC counterpart. And this would both disable the atexit()
+ * hooks, and prevent possible test code global destructors from being registered.
+ */
+
 /**
  * @brief Register destructor for a global object
  *
@@ -33,3 +40,4 @@ int __cxa_atexit(void (*destructor)(void *), void *objptr, void *dso)
 	ARG_UNUSED(dso);
 	return 0;
 }
+#endif
