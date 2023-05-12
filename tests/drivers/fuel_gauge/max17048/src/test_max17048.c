@@ -93,7 +93,7 @@ ZTEST_USER_F(max17048, test_get_props__returns_ok)
 			.property_type = FUEL_GAUGE_RUNTIME_TO_FULL,
 		},
 		{
-			.property_type = FUEL_GAUGE_STATE_OF_CHARGE,
+			.property_type = FUEL_GAUGE_RELATIVE_STATE_OF_CHARGE,
 		},
 		{
 			.property_type = FUEL_GAUGE_VOLTAGE,

@@ -187,8 +187,8 @@ static int max17048_get_prop(const struct device *dev, struct fuel_gauge_get_pro
 	case FUEL_GAUGE_RUNTIME_TO_FULL:
 		prop->value.runtime_to_full = data->time_to_full;
 		break;
-	case FUEL_GAUGE_STATE_OF_CHARGE:
-		prop->value.state_of_charge = data->charge;
+	case FUEL_GAUGE_RELATIVE_STATE_OF_CHARGE:
+		prop->value.relative_state_of_charge = data->charge;
 		break;
 	case FUEL_GAUGE_VOLTAGE:
 		prop->value.voltage = data->voltage;
