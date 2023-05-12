@@ -34,7 +34,7 @@ jobs:
       MATRIX_SIZE: 10
       PUSH_MATRIX_SIZE: 15
       DAILY_MATRIX_SIZE: 80
-      ZEPHYR_SDK_INSTALL_DIR: /opt/toolchains/zephyr-sdk-0.16.0
+      ZEPHYR_SDK_INSTALL_DIR: /opt/toolchains/zephyr-sdk-0.16.1
       BSIM_OUT_PATH: /opt/bsim/
       BSIM_COMPONENTS_PATH: /opt/bsim/components
       TESTS_PER_BUILDER: 700
@@ -129,7 +129,7 @@ jobs:
       matrix:
         subset: ${{fromJSON(needs.twister-build-prep.outputs.subset)}}
     env:
-      ZEPHYR_SDK_INSTALL_DIR: /opt/toolchains/zephyr-sdk-0.16.0
+      ZEPHYR_SDK_INSTALL_DIR: /opt/toolchains/zephyr-sdk-0.16.1
       BSIM_OUT_PATH: /opt/bsim/
       BSIM_COMPONENTS_PATH: /opt/bsim/components
       TWISTER_COMMON: ' --force-color --inline-logs -v -N -M --retry-failed 3 '
