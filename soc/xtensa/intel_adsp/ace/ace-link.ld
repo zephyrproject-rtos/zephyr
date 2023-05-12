@@ -282,7 +282,6 @@ SECTIONS {
     LONG(_bss_start)
     LONG(_bss_end)
     _bss_table_end = .;
-    __rodata_region_end = .;
   } >ram
 
   .module_init : {
@@ -294,6 +293,7 @@ SECTIONS {
 #define RAMABLE_REGION ram
 #define ROMABLE_REGION ram
 #include <zephyr/linker/common-rom.ld>
+   __rodata_region_end = .;
 
   .fw_ready : {
     KEEP(*(".fw_ready"));
