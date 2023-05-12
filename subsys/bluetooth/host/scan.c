@@ -1034,7 +1034,7 @@ static void bt_hci_le_per_adv_sync_established_common(struct net_buf *buf)
 
 	memset(&sync_info, 0, sizeof(sync_info));
 	sync_info.interval = pending_per_adv_sync->interval;
-	sync_info.phy = bt_get_phy(pending_per_adv_sync->phy);
+	sync_info.phy = pending_per_adv_sync->phy;
 
 	if (atomic_test_bit(pending_per_adv_sync->flags,
 			    BT_PER_ADV_SYNC_SYNCING_USE_LIST)) {
