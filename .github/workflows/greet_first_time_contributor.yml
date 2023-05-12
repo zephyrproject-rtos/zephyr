@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v3
-      - uses: zephyrproject-rtos/action-first-interaction@v1.1.1-zephyr-1
+      - uses: zephyrproject-rtos/action-first-interaction@v1.1.1-zephyr-3
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
 
