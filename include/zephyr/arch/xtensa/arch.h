@@ -94,11 +94,6 @@ static ALWAYS_INLINE void xtensa_vecbase_lock(void)
 	__asm__ volatile("wsr.vecbase %0; rsync" : : "r" (vecbase | 1));
 }
 
-#ifdef __cplusplus
-}
-#endif
-
-
 #if defined(CONFIG_XTENSA_RPO_CACHE)
 #if defined(CONFIG_ARCH_HAS_COHERENCE)
 static inline bool arch_mem_coherent(void *ptr)
@@ -232,6 +227,10 @@ static inline void *arch_xtensa_uncached_ptr(void __sparse_cache *ptr)
 	FOR_EACH(_SET_ONE_TLB, (;), 0, 1, 2, 3, 4, 5, 6, 7);	\
 } while (0)
 
+#endif
+
+#ifdef __cplusplus
+}
 #endif
 
 #endif /* !defined(_ASMLANGUAGE) && !defined(__ASSEMBLER__)  */
