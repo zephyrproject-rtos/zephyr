@@ -1,6 +1,6 @@
 /*
  * Copyright Runtime.io 2018. All rights reserved.
- * Copyright (c) 2022 Nordic Semiconductor ASA
+ * Copyright (c) 2022-2023 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -35,8 +35,6 @@ struct net_buf;
  * @return                      0 on success, #mcumgr_err_t code on failure.
  */
 typedef int (*smp_transport_out_fn)(struct net_buf *nb);
-/* use smp_transport_out_fn instead */
-typedef int zephyr_smp_transport_out_fn(struct net_buf *nb);
 
 /** @typedef smp_transport_get_mtu_fn
  * @brief SMP MTU query callback for transport
@@ -52,8 +50,6 @@ typedef int zephyr_smp_transport_out_fn(struct net_buf *nb);
  *                              0 if transmission is currently not possible.
  */
 typedef uint16_t (*smp_transport_get_mtu_fn)(const struct net_buf *nb);
-/* use smp_transport_get_mtu_fn instead */
-typedef uint16_t zephyr_smp_transport_get_mtu_fn(const struct net_buf *nb);
 
 /** @typedef smp_transport_ud_copy_fn
  * @brief SMP copy user_data callback
@@ -70,9 +66,6 @@ typedef uint16_t zephyr_smp_transport_get_mtu_fn(const struct net_buf *nb);
  */
 typedef int (*smp_transport_ud_copy_fn)(struct net_buf *dst,
 					const struct net_buf *src);
-/* use smp_transport_ud_copy_fn instead */
-typedef int zephyr_smp_transport_ud_copy_fn(struct net_buf *dst,
-					    const struct net_buf *src);
 
 /** @typedef smp_transport_ud_free_fn
  * @brief SMP free user_data callback
@@ -84,8 +77,6 @@ typedef int zephyr_smp_transport_ud_copy_fn(struct net_buf *dst,
  * @param ud                    Contains a user_data pointer to be freed.
  */
 typedef void (*smp_transport_ud_free_fn)(void *ud);
-/* use smp_transport_ud_free_fn instead */
-typedef void zephyr_smp_transport_ud_free_fn(void *ud);
 
 /** @typedef smp_transport_query_valid_check_fn
  * @brief Function for checking if queued data is still valid.
@@ -101,6 +92,27 @@ typedef void zephyr_smp_transport_ud_free_fn(void *ud);
 typedef bool (*smp_transport_query_valid_check_fn)(struct net_buf *nb, void *arg);
 
 /**
+ * @brief Function pointers of SMP transport functions, if a handler is NULL then it is not
+ * supported/implemented.
+ */
+struct smp_transport_api_t {
+	/** Transport's send function. */
+	smp_transport_out_fn output;
+
+	/** Transport's get-MTU function. */
+	smp_transport_get_mtu_fn get_mtu;
+
+	/** Transport buffer user_data copy function. */
+	smp_transport_ud_copy_fn ud_copy;
+
+	/** Transport buffer user_data free function. */
+	smp_transport_ud_free_fn ud_free;
+
+	/** Transport's check function for if a query is valid. */
+	smp_transport_query_valid_check_fn query_valid_check;
+};
+
+/**
  * @brief SMP transport object for sending SMP responses.
  */
 struct smp_transport {
@@ -110,33 +122,8 @@ struct smp_transport {
 	/* FIFO containing incoming requests to be processed. */
 	struct k_fifo fifo;
 
-	smp_transport_out_fn output;
-	smp_transport_get_mtu_fn get_mtu;
-	smp_transport_ud_copy_fn ud_copy;
-	smp_transport_ud_free_fn ud_free;
-	smp_transport_query_valid_check_fn query_valid_check;
-
-#ifdef CONFIG_MCUMGR_TRANSPORT_REASSEMBLY
-	/* Packet reassembly internal data, API access only */
-	struct {
-		struct net_buf *current;	/* net_buf used for reassembly */
-		uint16_t expected;		/* expected bytes to come */
-	} __reassembly;
-#endif
-};
-
-/* Deprecated, use smp_transport instead */
-struct zephyr_smp_transport {
-	/* Must be the first member. */
-	struct k_work zst_work;
-
-	/* FIFO containing incoming requests to be processed. */
-	struct k_fifo zst_fifo;
-
-	smp_transport_out_fn zst_output;
-	smp_transport_get_mtu_fn zst_get_mtu;
-	smp_transport_ud_copy_fn zst_ud_copy;
-	smp_transport_ud_free_fn zst_ud_free;
+	/* Function pointers */
+	struct smp_transport_api_t functions;
 
 #ifdef CONFIG_MCUMGR_TRANSPORT_REASSEMBLY
 	/* Packet reassembly internal data, API access only */
@@ -150,33 +137,12 @@ struct zephyr_smp_transport {
 /**
  * @brief Initializes a Zephyr SMP transport object.
  *
- * @param smpt				The transport to construct.
- * @param output_func			The transport's send function.
- * @param get_mtu_func			The transport's get-MTU function.
- * @param ud_copy_func			The transport buffer user_data copy function.
- * @param ud_free_func			The transport buffer user_data free function.
- * @param query_valid_check_func	The transport's check function for if a query is valid.
+ * @param smpt	The transport to construct.
+ *
+ * @return	0 If successful
+ * @return	Negative errno code if failure.
  */
-void smp_transport_init(struct smp_transport *smpt,
-			smp_transport_out_fn output_func,
-			smp_transport_get_mtu_fn get_mtu_func,
-			smp_transport_ud_copy_fn ud_copy_func,
-			smp_transport_ud_free_fn ud_free_func,
-			smp_transport_query_valid_check_fn query_valid_check_func);
-
-__deprecated static inline
-void zephyr_smp_transport_init(struct zephyr_smp_transport *smpt,
-			       zephyr_smp_transport_out_fn *output_func,
-			       zephyr_smp_transport_get_mtu_fn *get_mtu_func,
-			       zephyr_smp_transport_ud_copy_fn *ud_copy_func,
-			       zephyr_smp_transport_ud_free_fn *ud_free_func)
-{
-	smp_transport_init((struct smp_transport *)smpt,
-			   (smp_transport_out_fn)output_func,
-			   (smp_transport_get_mtu_fn)get_mtu_func,
-			   (smp_transport_ud_copy_fn)ud_copy_func,
-			   (smp_transport_ud_free_fn)ud_free_func, NULL);
-}
+int smp_transport_init(struct smp_transport *smpt);
 
 /**
  * @brief	Used to remove queued requests for an SMP transport that are no longer valid. A
