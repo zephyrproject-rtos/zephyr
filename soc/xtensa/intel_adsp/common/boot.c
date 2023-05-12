@@ -154,6 +154,8 @@ __imr void boot_core0(void)
 	parse_manifest();
 	sys_cache_data_flush_all();
 
+	xtensa_vecbase_lock();
+
 	/* Zephyr! */
 	extern FUNC_NORETURN void z_cstart(void);
 	z_cstart();
