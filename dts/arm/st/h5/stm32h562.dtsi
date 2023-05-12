@@ -99,6 +99,30 @@
 			status = "disabled";
 		};
 
+		i2c3: i2c@44002800 {
+			compatible = "st,stm32-i2c-v2";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x44002800 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB3 0x00000080>;
+			interrupts = <80 0>, <81 0>;
+			interrupt-names = "event", "error";
+			status = "disabled";
+		};
+
+		i2c4: i2c@44002c00 {
+			compatible = "st,stm32-i2c-v2";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x44002c00 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB3 0x00000100>;
+			interrupts = <125 0>, <126 0>;
+			interrupt-names = "event", "error";
+			status = "disabled";
+		};
+
 		spi4: spi@40014c00 {
 			compatible = "st,stm32h7-spi", "st,stm32-spi-fifo", "st,stm32-spi";
 			#address-cells = <1>;
