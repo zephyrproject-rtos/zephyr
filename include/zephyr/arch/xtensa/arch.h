@@ -81,6 +81,19 @@ static ALWAYS_INLINE void arch_nop(void)
 	__asm__ volatile("nop");
 }
 
+static ALWAYS_INLINE void xtensa_vecbase_lock(void)
+{
+	int vecbase;
+
+	__asm__ volatile("rsr.vecbase %0" : "=r" (vecbase));
+
+	/* In some targets the bit 0 of VECBASE works as lock bit.
+	 * When this bit set, VECBASE can't be changed until it is cleared by
+	 * reset. When the target does not have it, it is hardwired to 0.
+	 **/
+	__asm__ volatile("wsr.vecbase %0; rsync" : : "r" (vecbase | 1));
+}
+
 #ifdef __cplusplus
 }
 #endif
