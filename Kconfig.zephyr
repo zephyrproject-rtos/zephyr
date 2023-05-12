@@ -507,7 +507,7 @@ config OUTPUT_PRINT_MEMORY_USAGE
 	default y
 	help
 	  If the toolchain supports it, this option will pass
-	  --print-memory-region to the linker when it is doing it's first
+	  --print-memory-usage to the linker when it is doing it's first
 	  linker pass. Note that the memory regions are symbolic concepts
 	  defined by the linker scripts and do not necessarily map
 	  directly to the real physical address space. Take also note that
