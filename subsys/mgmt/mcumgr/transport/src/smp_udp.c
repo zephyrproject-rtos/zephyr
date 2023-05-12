@@ -174,20 +174,25 @@ static void smp_udp_receive_thread(void *p1, void *p2, void *p3)
 
 static int smp_udp_init(void)
 {
+	int rc;
 
 #ifdef CONFIG_MCUMGR_TRANSPORT_UDP_IPV4
-	smp_transport_init(&configs.ipv4.smp_transport,
-			   smp_udp4_tx, smp_udp_get_mtu,
-			   smp_udp_ud_copy, NULL, NULL);
+	configs.ipv4.smp_transport.functions.output = smp_udp4_tx;
+	configs.ipv4.smp_transport.functions.get_mtu = smp_udp_get_mtu;
+	configs.ipv4.smp_transport.functions.ud_copy = smp_udp_ud_copy;
+
+	rc = smp_transport_init(&configs.ipv4.smp_transport);
 #endif
 
 #ifdef CONFIG_MCUMGR_TRANSPORT_UDP_IPV6
-	smp_transport_init(&configs.ipv6.smp_transport,
-			   smp_udp6_tx, smp_udp_get_mtu,
-			   smp_udp_ud_copy, NULL, NULL);
+	configs.ipv6.smp_transport.functions.output = smp_udp6_tx;
+	configs.ipv6.smp_transport.functions.get_mtu = smp_udp_get_mtu;
+	configs.ipv6.smp_transport.functions.ud_copy = smp_udp_ud_copy;
+
+	rc = smp_transport_init(&configs.ipv6.smp_transport);
 #endif
 
-	return MGMT_ERR_EOK;
+	return rc;
 }
 
 static int create_socket(struct sockaddr *addr, const char *proto)
