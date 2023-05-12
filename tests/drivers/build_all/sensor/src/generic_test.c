@@ -58,7 +58,7 @@ static void before(void *args)
 
 	/* Wipe the mempool by marking every block free */
 	zassert_ok(sys_bitarray_clear_region(sensor_read_rtio_ctx.block_pool->bitmap,
-					     sensor_read_rtio_ctx.block_pool->num_blocks,
+					     sensor_read_rtio_ctx.block_pool->info.num_blocks,
 					     0));
 
 	/* Flush the SQ and CQ */
