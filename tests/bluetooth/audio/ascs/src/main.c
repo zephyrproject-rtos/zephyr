@@ -14,6 +14,7 @@
 #include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/bluetooth/audio/pacs.h>
 #include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/hci_err.h>
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/sys/util_macro.h>
@@ -219,4 +220,80 @@ ZTEST_F(ascs_test_suite, test_abort_client_operation_if_callback_not_registered)
 	zassert_equal(0x0E, param->response_code, "unexpected Response_Code 0x%02x",
 		      param->response_code);
 	zassert_equal(0x00, param->reason, "unexpected Reason 0x%02x", param->reason);
+}
+
+ZTEST_F(ascs_test_suite, test_release_ase_on_acl_disconnection_client_terminates_cis)
+{
+	struct bt_bap_stream *stream = &fixture->stream;
+	struct bt_conn *conn = &fixture->conn;
+	const struct bt_gatt_attr *ase;
+	struct bt_iso_chan *chan;
+	uint8_t ase_id;
+
+	if (IS_ENABLED(CONFIG_BT_ASCS_ASE_SNK)) {
+		ase = fixture->ase_snk.attr;
+		ase_id = fixture->ase_snk.id;
+	} else {
+		ase = fixture->ase_src.attr;
+		ase_id = fixture->ase_src.id;
+	}
+
+	zexpect_not_null(ase);
+	zexpect_true(ase_id != 0x00);
+
+	bt_bap_unicast_server_register_cb(&mock_bap_unicast_server_cb);
+
+	/* Set ASE to non-idle state */
+	test_preamble_state_streaming(conn, ase_id, stream, &chan,
+				      !IS_ENABLED(CONFIG_BT_ASCS_ASE_SNK));
+
+	/* Mock ACL disconnection */
+	mock_bt_conn_disconnected(conn, BT_HCI_ERR_CONN_TIMEOUT);
+
+	/* Mock CIS disconnection */
+	mock_bt_iso_disconnect(chan);
+
+	/* Expected to notify the upper layers */
+	expect_bt_bap_unicast_server_cb_release_called_once(stream);
+	expect_bt_bap_stream_ops_released_called_once(stream);
+
+	bt_bap_unicast_server_unregister_cb(&mock_bap_unicast_server_cb);
+}
+
+ZTEST_F(ascs_test_suite, test_release_ase_on_acl_disconnection_server_terminates_cis)
+{
+	struct bt_bap_stream *stream = &fixture->stream;
+	struct bt_conn *conn = &fixture->conn;
+	const struct bt_gatt_attr *ase;
+	struct bt_iso_chan *chan;
+	uint8_t ase_id;
+
+	if (IS_ENABLED(CONFIG_BT_ASCS_ASE_SNK)) {
+		ase = fixture->ase_snk.attr;
+		ase_id = fixture->ase_snk.id;
+	} else {
+		ase = fixture->ase_src.attr;
+		ase_id = fixture->ase_src.id;
+	}
+
+	zexpect_not_null(ase);
+	zexpect_true(ase_id != 0x00);
+
+	bt_bap_unicast_server_register_cb(&mock_bap_unicast_server_cb);
+
+	/* Set ASE to non-idle state */
+	test_preamble_state_streaming(conn, ase_id, stream, &chan,
+				      !IS_ENABLED(CONFIG_BT_ASCS_ASE_SNK));
+
+	/* Mock ACL disconnection */
+	mock_bt_conn_disconnected(conn, BT_HCI_ERR_CONN_TIMEOUT);
+
+	/* Client does not disconnect the CIS in expected time */
+	k_sleep(K_MSEC(CONFIG_BT_ASCS_ISO_DISCONNECT_DELAY));
+
+	/* Expected to notify the upper layers */
+	expect_bt_bap_unicast_server_cb_release_called_once(stream);
+	expect_bt_bap_stream_ops_released_called_once(stream);
+
+	bt_bap_unicast_server_unregister_cb(&mock_bap_unicast_server_cb);
 }
