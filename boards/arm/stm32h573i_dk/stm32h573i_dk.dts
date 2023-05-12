@@ -121,6 +121,10 @@
 	};
 };
 
+&aes {
+	status = "okay";
+};
+
 &rng {
 	status = "okay";
 };

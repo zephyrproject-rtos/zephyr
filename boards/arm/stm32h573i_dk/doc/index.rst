@@ -189,6 +189,8 @@ hardware features:
 +-----------+------------+-------------------------------------+
 | CAN       | on-chip    | can bus                             |
 +-----------+------------+-------------------------------------+
+| AES       | on-chip    | crypto                              |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on this Zephyr port.
 
