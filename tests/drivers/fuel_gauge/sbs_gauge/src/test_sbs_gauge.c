@@ -214,7 +214,10 @@ ZTEST_USER_F(sbs_gauge_new_api, test_get_props__returns_ok)
 			.property_type = FUEL_GAUGE_TEMPERATURE,
 		},
 		{
-			.property_type = FUEL_GAUGE_STATE_OF_CHARGE,
+			.property_type = FUEL_GAUGE_ABSOLUTE_STATE_OF_CHARGE,
+		},
+		{
+			.property_type = FUEL_GAUGE_RELATIVE_STATE_OF_CHARGE,
 		},
 		{
 			.property_type = FUEL_GAUGE_RUNTIME_TO_FULL,

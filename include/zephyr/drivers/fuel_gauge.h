@@ -59,9 +59,11 @@ extern "C" {
 /** Retrieve word from SBS1.1 ManufactuerAccess */
 #define FUEL_GAUGE_SBS_MFR_ACCESS		FUEL_GAUGE_RUNTIME_TO_FULL + 1
 /** Absolute state of charge (percent, 0-100) - expressed as % of design capacity */
-#define FUEL_GAUGE_STATE_OF_CHARGE		FUEL_GAUGE_SBS_MFR_ACCESS + 1
+#define FUEL_GAUGE_ABSOLUTE_STATE_OF_CHARGE	    FUEL_GAUGE_SBS_MFR_ACCESS + 1
+/** Relative state of charge (percent, 0-100) - expressed as % of full charge capacity */
+#define FUEL_GAUGE_RELATIVE_STATE_OF_CHARGE		FUEL_GAUGE_ABSOLUTE_STATE_OF_CHARGE + 1
 /** Temperature in 0.1 K */
-#define FUEL_GAUGE_TEMPERATURE			FUEL_GAUGE_STATE_OF_CHARGE + 1
+#define FUEL_GAUGE_TEMPERATURE		    FUEL_GAUGE_RELATIVE_STATE_OF_CHARGE + 1
 /** Battery voltage (uV) */
 #define FUEL_GAUGE_VOLTAGE			FUEL_GAUGE_TEMPERATURE + 1
 /** Battery Mode (flags) */
@@ -134,8 +136,10 @@ struct fuel_gauge_get_property {
 		uint32_t runtime_to_full;
 		/** FUEL_GAUGE_SBS_MFR_ACCESS */
 		uint16_t sbs_mfr_access_word;
-		/** FUEL_GAUGE_STATE_OF_CHARGE */
-		uint8_t state_of_charge;
+		/** FUEL_GAUGE_ABSOLUTE_STATE_OF_CHARGE */
+		uint8_t absolute_state_of_charge;
+		/** FUEL_GAUGE_RELATIVE_STATE_OF_CHARGE */
+		uint8_t relative_state_of_charge;
 		/** FUEL_GAUGE_TEMPERATURE */
 		uint16_t temperature;
 		/** FUEL_GAUGE_VOLTAGE */
