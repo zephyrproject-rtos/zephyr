@@ -108,9 +108,7 @@ int z_xtensa_backtrace_print(int depth, int *interrupted_stack)
 	/* Ignore the first corrupted PC in case of InstrFetchProhibited */
 				cause == EXCCAUSE_INSTR_PROHIBITED));
 
-	uint32_t i = (depth <= 0) ? INT32_MAX : depth;
-
-	while (i-- > 0 && stk_frame.next_pc != 0 && !corrupted) {
+	while (depth-- > 0 && stk_frame.next_pc != 0 && !corrupted) {
 		/* Get previous stack frame */
 		if (!z_xtensa_backtrace_get_next_frame(&stk_frame)) {
 			corrupted = true;
