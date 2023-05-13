@@ -171,12 +171,26 @@ void llcp_ntf_encode_feature_rsp(struct ll_conn *conn, struct pdu_data *pdu)
 	sys_put_le64(conn->llcp.fex.features_peer, p->features);
 }
 
+static uint64_t features_used(uint64_t featureset)
+{
+	uint64_t x;
+
+	/* swap bits for role specific features */
+	x = ((featureset >> BT_LE_FEAT_BIT_CIS_CENTRAL) ^
+	     (featureset >> BT_LE_FEAT_BIT_CIS_PERIPHERAL)) & 0x01;
+	x = (x << BT_LE_FEAT_BIT_CIS_CENTRAL) |
+	    (x << BT_LE_FEAT_BIT_CIS_PERIPHERAL);
+	x ^= featureset;
+
+	return ll_feat_get() & x;
+}
+
 void llcp_pdu_decode_feature_req(struct ll_conn *conn, struct pdu_data *pdu)
 {
 	uint64_t featureset;
 
 	feature_filter(pdu->llctrl.feature_req.features, &featureset);
-	conn->llcp.fex.features_used = ll_feat_get() & featureset;
+	conn->llcp.fex.features_used = features_used(featureset);
 
 	featureset &= (FEAT_FILT_OCTET0 | conn->llcp.fex.features_used);
 	conn->llcp.fex.features_peer = featureset;
@@ -189,8 +203,7 @@ void llcp_pdu_decode_feature_rsp(struct ll_conn *conn, struct pdu_data *pdu)
 	uint64_t featureset;
 
 	feature_filter(pdu->llctrl.feature_rsp.features, &featureset);
-	conn->llcp.fex.features_used = ll_feat_get() & featureset;
-
+	conn->llcp.fex.features_used = features_used(featureset);
 	conn->llcp.fex.features_peer = featureset;
 	conn->llcp.fex.valid = 1;
 }
