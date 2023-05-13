@@ -394,8 +394,8 @@ SECTIONS
 		*(.text.*.constprop.*)
 
 #if defined(CONFIG_NEWLIB_LIBC) || defined(CONFIG_PICOLIBC)
-		*libc.a:(.text)
-		*libc.a:(.text.*)
+		*libc*.a:(.text)
+		*libc*.a:(.text.*)
 #endif
 
 #ifdef CONFIG_COVERAGE
@@ -438,8 +438,8 @@ SECTIONS
 		*(.rodata.*.str*.*)
 
 #if defined(CONFIG_NEWLIB_LIBC) || defined(CONFIG_PICOLIBC)
-		*libc.a:(.rodata)
-		*libc.a:(.rodata.*)
+		*libc*.a:(.rodata)
+		*libc*.a:(.rodata.*)
 #endif
 
 #include <snippets-rodata.ld>
