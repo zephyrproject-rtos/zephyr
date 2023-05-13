@@ -832,7 +832,7 @@ struct i3c_device_desc *mcux_i3c_device_find(const struct device *dev,
 static struct i3c_i2c_device_desc *
 mcux_i3c_i2c_device_find(const struct device *dev, uint16_t addr)
 {
-	struct cdns_i3c_data *data = dev->data;
+	struct mcux_i3c_data *data = dev->data;
 
 	return i3c_dev_list_i2c_addr_find(&data->common.attached_dev, addr);
 }
@@ -2115,7 +2115,7 @@ static const struct i3c_driver_api mcux_i3c_driver_api = {
 };
 
 #define I3C_MCUX_DEVICE(id)							\
-	PINCTRL_DT_INST_DEFINE(n);						\
+	PINCTRL_DT_INST_DEFINE(id);						\
 	static void mcux_i3c_config_func_##id(const struct device *dev);	\
 	static struct i3c_device_desc mcux_i3c_device_array_##id[] =			\
 		I3C_DEVICE_ARRAY_DT_INST(id);					\
@@ -2131,7 +2131,7 @@ static const struct i3c_driver_api mcux_i3c_driver_api = {
 		.common.dev_list.num_i3c = ARRAY_SIZE(mcux_i3c_device_array_##id),	\
 		.common.dev_list.i2c = mcux_i3c_i2c_device_array_##id,			\
 		.common.dev_list.num_i2c = ARRAY_SIZE(mcux_i3c_i2c_device_array_##id),	\
-		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),			\
+		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(id),			\
 	};									\
 	static struct mcux_i3c_data mcux_i3c_data_##id = {			\
 		.clocks.i3c_od_scl_hz = DT_INST_PROP_OR(id, i3c_od_scl_hz, 0),	\
