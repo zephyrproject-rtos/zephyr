@@ -60,15 +60,12 @@ struct i2c_stm32_data {
 	struct {
 #ifdef CONFIG_I2C_STM32_V1
 		unsigned int is_restart;
-		unsigned int flags;
 #endif
 		unsigned int is_write;
 		unsigned int is_arlo;
 		unsigned int is_nack;
 		unsigned int is_err;
-		struct i2c_msg *msg;
-		unsigned int len;
-		uint8_t *buf;
+		struct i2c_msg msg;
 	} current;
 #ifdef CONFIG_I2C_TARGET
 	bool master_active;

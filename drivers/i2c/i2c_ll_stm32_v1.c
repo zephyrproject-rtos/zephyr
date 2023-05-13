@@ -152,15 +152,12 @@ static inline void msg_init(const struct device *dev, struct i2c_msg *msg,
 	k_sem_reset(&data->device_sync_sem);
 #endif
 
-	data->current.len = msg->len;
-	data->current.buf = msg->buf;
-	data->current.flags = msg->flags;
 	data->current.is_restart = 0U;
 	data->current.is_write = (transfer == I2C_REQUEST_WRITE);
 	data->current.is_arlo = 0U;
 	data->current.is_err = 0U;
 	data->current.is_nack = 0U;
-	data->current.msg = msg;
+	data->current.msg = *msg;
 #if defined(CONFIG_I2C_TARGET)
 	data->master_active = true;
 #endif
@@ -250,7 +247,7 @@ static inline void handle_sb(const struct device *dev)
 		LL_I2C_TransmitData8(i2c, slave | I2C_REQUEST_WRITE);
 	} else {
 		LL_I2C_TransmitData8(i2c, slave | I2C_REQUEST_READ);
-		if (data->current.len == 2) {
+		if (data->current.msg.len == 2) {
 			LL_I2C_EnableBitPOS(i2c);
 		}
 	}
@@ -280,16 +277,16 @@ static inline void handle_addr(const struct device *dev)
 	 * specific way.
 	 * Please ref to STM32F10xxC/D/E I2C peripheral Errata sheet 2.14.1
 	 */
-	if (data->current.len == 0U && IS_ENABLED(CONFIG_SOC_SERIES_STM32F1X)) {
+	if (data->current.msg.len == 0U && IS_ENABLED(CONFIG_SOC_SERIES_STM32F1X)) {
 		LL_I2C_GenerateStopCondition(i2c);
-	} else if (data->current.len == 1U) {
+	} else if (data->current.msg.len == 1U) {
 		/* Single byte reception: enable NACK and clear POS */
 		LL_I2C_AcknowledgeNextData(i2c, LL_I2C_NACK);
 #ifdef CONFIG_SOC_SERIES_STM32F1X
 		LL_I2C_ClearFlag_ADDR(i2c);
 		LL_I2C_GenerateStopCondition(i2c);
 #endif
-	} else if (data->current.len == 2U) {
+	} else if (data->current.msg.len == 2U) {
 #ifdef CONFIG_SOC_SERIES_STM32F1X
 		LL_I2C_ClearFlag_ADDR(i2c);
 #endif
@@ -306,19 +303,19 @@ static inline void handle_txe(const struct device *dev)
 	struct i2c_stm32_data *data = dev->data;
 	I2C_TypeDef *i2c = cfg->i2c;
 
-	if (data->current.len) {
-		data->current.len--;
-		if (data->current.len == 0U) {
+	if (data->current.msg.len) {
+		data->current.msg.len--;
+		if (data->current.msg.len == 0U) {
 			/*
 			 * This is the last byte to transmit disable Buffer
 			 * interrupt and wait for a BTF interrupt
 			 */
 			LL_I2C_DisableIT_BUF(i2c);
 		}
-		LL_I2C_TransmitData8(i2c, *data->current.buf);
-		data->current.buf++;
+		LL_I2C_TransmitData8(i2c, *data->current.msg.buf);
+		data->current.msg.buf++;
 	} else {
-		if (data->current.flags & I2C_MSG_STOP) {
+		if (data->current.msg.flags & I2C_MSG_STOP) {
 			LL_I2C_GenerateStopCondition(i2c);
 		}
 		if (LL_I2C_IsActiveFlag_BTF(i2c)) {
@@ -336,19 +333,19 @@ static inline void handle_rxne(const struct device *dev)
 	struct i2c_stm32_data *data = dev->data;
 	I2C_TypeDef *i2c = cfg->i2c;
 
-	if (data->current.len > 0) {
-		switch (data->current.len) {
+	if (data->current.msg.len > 0) {
+		switch (data->current.msg.len) {
 		case 1:
 			LL_I2C_AcknowledgeNextData(i2c, LL_I2C_NACK);
 			LL_I2C_DisableBitPOS(i2c);
 			/* Single byte reception */
-			if (data->current.flags & I2C_MSG_STOP) {
+			if (data->current.msg.flags & I2C_MSG_STOP) {
 				LL_I2C_GenerateStopCondition(i2c);
 			}
 			LL_I2C_DisableIT_BUF(i2c);
-			data->current.len--;
-			*data->current.buf = LL_I2C_ReceiveData8(i2c);
-			data->current.buf++;
+			data->current.msg.len--;
+			*data->current.msg.buf = LL_I2C_ReceiveData8(i2c);
+			data->current.msg.buf++;
 
 			k_sem_give(&data->device_sync_sem);
 			break;
@@ -365,13 +362,13 @@ static inline void handle_rxne(const struct device *dev)
 			break;
 		default:
 			/* N byte reception when N > 3 */
-			data->current.len--;
-			*data->current.buf = LL_I2C_ReceiveData8(i2c);
-			data->current.buf++;
+			data->current.msg.len--;
+			*data->current.msg.buf = LL_I2C_ReceiveData8(i2c);
+			data->current.msg.buf++;
 		}
 	} else {
 
-		if (data->current.flags & I2C_MSG_STOP) {
+		if (data->current.msg.flags & I2C_MSG_STOP) {
 			LL_I2C_GenerateStopCondition(i2c);
 		}
 		k_sem_give(&data->device_sync_sem);
@@ -389,29 +386,29 @@ static inline void handle_btf(const struct device *dev)
 	} else {
 		uint32_t counter = 0U;
 
-		switch (data->current.len) {
+		switch (data->current.msg.len) {
 		case 2:
 			/*
 			 * Stop condition must be generated before reading the
 			 * last two bytes.
 			 */
-			if (data->current.flags & I2C_MSG_STOP) {
+			if (data->current.msg.flags & I2C_MSG_STOP) {
 				LL_I2C_GenerateStopCondition(i2c);
 			}
 
 			for (counter = 2U; counter > 0; counter--) {
-				data->current.len--;
-				*data->current.buf = LL_I2C_ReceiveData8(i2c);
-				data->current.buf++;
+				data->current.msg.len--;
+				*data->current.msg.buf = LL_I2C_ReceiveData8(i2c);
+				data->current.msg.buf++;
 			}
 			k_sem_give(&data->device_sync_sem);
 			break;
 		case 3:
 			/* Set NACK before reading N-2 byte*/
 			LL_I2C_AcknowledgeNextData(i2c, LL_I2C_NACK);
-			data->current.len--;
-			*data->current.buf = LL_I2C_ReceiveData8(i2c);
-			data->current.buf++;
+			data->current.msg.len--;
+			*data->current.msg.buf = LL_I2C_ReceiveData8(i2c);
+			data->current.msg.buf++;
 			break;
 		default:
 			handle_rxne(dev);

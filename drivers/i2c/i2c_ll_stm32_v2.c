@@ -318,19 +318,19 @@ static void stm32_i2c_event(const struct device *dev)
 		return;
 	}
 #endif
-	if (data->current.len) {
+	if (data->current.msg.len) {
 		/* Send next byte */
 		if (LL_I2C_IsActiveFlag_TXIS(i2c)) {
-			LL_I2C_TransmitData8(i2c, *data->current.buf);
+			LL_I2C_TransmitData8(i2c, *data->current.msg.buf);
 		}
 
 		/* Receive next byte */
 		if (LL_I2C_IsActiveFlag_RXNE(i2c)) {
-			*data->current.buf = LL_I2C_ReceiveData8(i2c);
+			*data->current.msg.buf = LL_I2C_ReceiveData8(i2c);
 		}
 
-		data->current.buf++;
-		data->current.len--;
+		data->current.msg.buf++;
+		data->current.msg.len--;
 	}
 
 	/* NACK received */
@@ -356,7 +356,7 @@ static void stm32_i2c_event(const struct device *dev)
 	if (LL_I2C_IsActiveFlag_TC(i2c) ||
 	    LL_I2C_IsActiveFlag_TCR(i2c)) {
 		/* Issue stop condition if necessary */
-		if (data->current.msg->flags & I2C_MSG_STOP) {
+		if (data->current.msg.flags & I2C_MSG_STOP) {
 			LL_I2C_GenerateStopCondition(i2c);
 		} else {
 			stm32_i2c_disable_transfer_interrupts(dev);
@@ -435,12 +435,10 @@ static int stm32_i2c_msg_write(const struct device *dev, struct i2c_msg *msg,
 	I2C_TypeDef *i2c = cfg->i2c;
 	bool is_timeout = false;
 
-	data->current.len = msg->len;
-	data->current.buf = msg->buf;
 	data->current.is_write = 1U;
 	data->current.is_nack = 0U;
 	data->current.is_err = 0U;
-	data->current.msg = msg;
+	data->current.msg = *msg;
 
 	msg_init(dev, msg, next_msg_flags, slave, LL_I2C_REQUEST_WRITE);
 
@@ -493,13 +491,11 @@ static int stm32_i2c_msg_read(const struct device *dev, struct i2c_msg *msg,
 	I2C_TypeDef *i2c = cfg->i2c;
 	bool is_timeout = false;
 
-	data->current.len = msg->len;
-	data->current.buf = msg->buf;
 	data->current.is_write = 0U;
 	data->current.is_arlo = 0U;
 	data->current.is_err = 0U;
 	data->current.is_nack = 0U;
-	data->current.msg = msg;
+	data->current.msg = *msg;
 
 	msg_init(dev, msg, next_msg_flags, slave, LL_I2C_REQUEST_READ);
 
