@@ -273,6 +273,22 @@ restore:
 }
 #endif /* CONFIG_I2C_STM32_BUS_RECOVERY */
 
+#ifdef CONFIG_I2C_STM32_COMBINED_INTERRUPT
+void i2c_stm32_combined_isr(void *arg)
+{
+	stm32_i2c_combined_isr(arg);
+}
+#else
+void i2c_stm32_event_isr(void *arg)
+{
+	stm32_i2c_event_isr(arg);
+}
+
+void i2c_stm32_error_isr(void *arg)
+{
+	stm32_i2c_error_isr(arg);
+}
+#endif
 
 static const struct i2c_driver_api api_funcs = {
 	.configure = i2c_stm32_runtime_configure,
@@ -435,7 +451,7 @@ static int i2c_stm32_pm_action(const struct device *dev, enum pm_device_action a
 	do {								\
 		IRQ_CONNECT(DT_INST_IRQN(index),			\
 			    DT_INST_IRQ(index, priority),		\
-			    stm32_i2c_combined_isr,			\
+			    i2c_stm32_combined_isr,			\
 			    DEVICE_DT_INST_GET(index), 0);		\
 		irq_enable(DT_INST_IRQN(index));			\
 	} while (false)
@@ -444,13 +460,13 @@ static int i2c_stm32_pm_action(const struct device *dev, enum pm_device_action a
 	do {								\
 		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(index, event, irq),	\
 			    DT_INST_IRQ_BY_NAME(index, event, priority),\
-			    stm32_i2c_event_isr,			\
+			    i2c_stm32_event_isr,			\
 			    DEVICE_DT_INST_GET(index), 0);		\
 		irq_enable(DT_INST_IRQ_BY_NAME(index, event, irq));	\
 									\
 		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(index, error, irq),	\
 			    DT_INST_IRQ_BY_NAME(index, error, priority),\
-			    stm32_i2c_error_isr,			\
+			    i2c_stm32_error_isr,			\
 			    DEVICE_DT_INST_GET(index), 0);		\
 		irq_enable(DT_INST_IRQ_BY_NAME(index, error, irq));	\
 	} while (false)
