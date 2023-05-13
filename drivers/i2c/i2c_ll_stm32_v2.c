@@ -427,37 +427,15 @@ void stm32_i2c_error_isr(void *arg)
 }
 #endif
 
-static int stm32_i2c_msg_write(const struct device *dev, struct i2c_msg *msg,
-			uint8_t *next_msg_flags, uint16_t slave)
+int stm32_i2c_check_error(struct i2c_stm32_data *data, bool is_timeout)
 {
-	const struct i2c_stm32_config *cfg = dev->config;
-	struct i2c_stm32_data *data = dev->data;
-	I2C_TypeDef *i2c = cfg->i2c;
-	bool is_timeout = false;
-
-	data->current.is_write = 1U;
-	data->current.is_nack = 0U;
-	data->current.is_err = 0U;
-	data->current.msg = *msg;
-
-	msg_init(dev, msg, next_msg_flags, slave, LL_I2C_REQUEST_WRITE);
-
-	stm32_i2c_enable_transfer_interrupts(dev);
-	LL_I2C_EnableIT_TX(i2c);
-
-	if (k_sem_take(&data->device_sync_sem,
-		       K_MSEC(STM32_I2C_TRANSFER_TIMEOUT_MSEC)) != 0) {
-		stm32_i2c_master_mode_end(dev);
-		k_sem_take(&data->device_sync_sem, K_FOREVER);
-		is_timeout = true;
-	}
-
 	if (data->current.is_nack || data->current.is_err ||
-	    data->current.is_arlo || is_timeout) {
+		data->current.is_arlo || is_timeout) {
 		goto error;
 	}
 
 	return 0;
+
 error:
 	if (data->current.is_arlo) {
 		LOG_DBG("%s: ARLO %d", __func__,
@@ -483,6 +461,34 @@ error:
 	return -EIO;
 }
 
+static int stm32_i2c_msg_write(const struct device *dev, struct i2c_msg *msg,
+			uint8_t *next_msg_flags, uint16_t slave)
+{
+	const struct i2c_stm32_config *cfg = dev->config;
+	struct i2c_stm32_data *data = dev->data;
+	I2C_TypeDef *i2c = cfg->i2c;
+	bool is_timeout = false;
+
+	data->current.is_write = 1U;
+	data->current.is_nack = 0U;
+	data->current.is_err = 0U;
+	data->current.msg = *msg;
+
+	msg_init(dev, msg, next_msg_flags, slave, LL_I2C_REQUEST_WRITE);
+
+	stm32_i2c_enable_transfer_interrupts(dev);
+	LL_I2C_EnableIT_TX(i2c);
+
+	if (k_sem_take(&data->device_sync_sem,
+			K_MSEC(STM32_I2C_TRANSFER_TIMEOUT_MSEC)) != 0) {
+		stm32_i2c_master_mode_end(dev);
+		k_sem_take(&data->device_sync_sem, K_FOREVER);
+		is_timeout = true;
+	}
+
+	return stm32_i2c_check_error(data, is_timeout);
+}
+
 static int stm32_i2c_msg_read(const struct device *dev, struct i2c_msg *msg,
 		       uint8_t *next_msg_flags, uint16_t slave)
 {
@@ -503,41 +509,13 @@ static int stm32_i2c_msg_read(const struct device *dev, struct i2c_msg *msg,
 	LL_I2C_EnableIT_RX(i2c);
 
 	if (k_sem_take(&data->device_sync_sem,
-		       K_MSEC(STM32_I2C_TRANSFER_TIMEOUT_MSEC)) != 0) {
+			K_MSEC(STM32_I2C_TRANSFER_TIMEOUT_MSEC)) != 0) {
 		stm32_i2c_master_mode_end(dev);
 		k_sem_take(&data->device_sync_sem, K_FOREVER);
 		is_timeout = true;
 	}
 
-	if (data->current.is_nack || data->current.is_err ||
-	    data->current.is_arlo || is_timeout) {
-		goto error;
-	}
-
-	return 0;
-error:
-	if (data->current.is_arlo) {
-		LOG_DBG("%s: ARLO %d", __func__,
-				    data->current.is_arlo);
-		data->current.is_arlo = 0U;
-	}
-
-	if (data->current.is_nack) {
-		LOG_DBG("%s: NACK", __func__);
-		data->current.is_nack = 0U;
-	}
-
-	if (data->current.is_err) {
-		LOG_DBG("%s: ERR %d", __func__,
-				    data->current.is_err);
-		data->current.is_err = 0U;
-	}
-
-	if (is_timeout) {
-		LOG_DBG("%s: TIMEOUT", __func__);
-	}
-
-	return -EIO;
+	return stm32_i2c_check_error(data, is_timeout);
 }
 
 #else /* !CONFIG_I2C_STM32_INTERRUPT */
