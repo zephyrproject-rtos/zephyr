@@ -161,7 +161,7 @@ static inline bool feature_peer_smi_tx(struct ll_conn *conn)
 
 static inline bool feature_peer_iso_central(struct ll_conn *conn)
 {
-	return (conn->llcp.fex.features_peer & LL_FEAT_BIT_CIS_CENTRAL) != 0;
+	return (conn->llcp.fex.features_peer & BIT64(BT_LE_FEAT_BIT_CIS_CENTRAL)) != 0;
 }
 
 static inline bool feature_iso_central(struct ll_conn *conn)
@@ -171,7 +171,7 @@ static inline bool feature_iso_central(struct ll_conn *conn)
 
 static inline bool feature_peer_iso_peripheral(struct ll_conn *conn)
 {
-	return (conn->llcp.fex.features_peer & LL_FEAT_BIT_CIS_PERIPHERAL) != 0;
+	return (conn->llcp.fex.features_peer & BIT64(BT_LE_FEAT_BIT_CIS_PERIPHERAL)) != 0;
 }
 
 static inline bool feature_iso_peripheral(struct ll_conn *conn)
