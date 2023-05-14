@@ -11,6 +11,7 @@
 #include <ksched.h>
 #include <zephyr/wait_q.h>
 #include <zephyr/posix/pthread.h>
+#include <zephyr/sys/bitarray.h>
 #include <zephyr/sys/slist.h>
 
 #include "posix_internal.h"
@@ -37,22 +38,58 @@ static const struct pthread_attr init_pthread_attrs = {
 };
 
 static struct posix_thread posix_thread_pool[CONFIG_MAX_PTHREAD_COUNT];
-static struct k_spinlock pthread_pool_lock;
+SYS_BITARRAY_DEFINE_STATIC(posix_thread_bitarray, CONFIG_MAX_PTHREAD_COUNT);
 
-pthread_t pthread_self(void)
+/*
+ * We reserve the MSB to mark a pthread_t as initialized (from the
+ * perspective of the application). With a linear space, this means that
+ * the theoretical pthread_t range is [0,2147483647].
+ */
+BUILD_ASSERT(CONFIG_MAX_PTHREAD_COUNT < PTHREAD_OBJ_MASK_INIT,
+	     "CONFIG_MAX_PTHREAD_COUNT is too high");
+
+static inline size_t posix_thread_to_offset(struct posix_thread *t)
 {
-	return (struct posix_thread *)
-		CONTAINER_OF(k_current_get(), struct posix_thread, thread)
-		- posix_thread_pool;
+	return t - posix_thread_pool;
 }
 
-struct posix_thread *to_posix_thread(pthread_t pthread)
+static inline size_t get_posix_thread_idx(pthread_t pth)
 {
-	if (pthread >= CONFIG_MAX_PTHREAD_COUNT) {
+	return mark_pthread_obj_uninitialized(pth);
+}
+
+struct posix_thread *to_posix_thread(pthread_t pth)
+{
+	int actually_initialized;
+	size_t bit = get_posix_thread_idx(pth);
+
+	/* if the provided thread does not claim to be initialized, its invalid */
+	if (!is_pthread_obj_initialized(pth)) {
 		return NULL;
 	}
 
-	return &posix_thread_pool[pthread];
+	/* Mask off the MSB to get the actual bit index */
+	if (sys_bitarray_test_bit(&posix_thread_bitarray, bit, &actually_initialized) < 0) {
+		return NULL;
+	}
+
+	if (actually_initialized == 0) {
+		/* The thread claims to be initialized but is actually not */
+		return NULL;
+	}
+
+	return &posix_thread_pool[bit];
+}
+
+pthread_t pthread_self(void)
+{
+	size_t bit;
+	struct posix_thread *t;
+
+	t = (struct posix_thread *)CONTAINER_OF(k_current_get(), struct posix_thread, thread);
+	bit = posix_thread_to_offset(t);
+
+	return mark_pthread_obj_initialized(bit);
 }
 
 static bool is_posix_policy_prio_valid(uint32_t priority, int policy)
@@ -135,12 +172,13 @@ int pthread_attr_setstack(pthread_attr_t *_attr, void *stackaddr, size_t stacksi
 	return 0;
 }
 
+FUNC_NORETURN
 static void zephyr_thread_wrapper(void *arg1, void *arg2, void *arg3)
 {
-	void * (*fun_ptr)(void *) = arg3;
+	void *(*fun_ptr)(void *) = arg3;
 
-	fun_ptr(arg1);
-	pthread_exit(NULL);
+	pthread_exit(fun_ptr(arg1));
+	CODE_UNREACHABLE;
 }
 
 static bool pthread_attr_is_valid(const struct pthread_attr *attr)
@@ -179,48 +217,36 @@ static bool pthread_attr_is_valid(const struct pthread_attr *attr)
 int pthread_create(pthread_t *newthread, const pthread_attr_t *_attr,
 		   void *(*threadroutine)(void *), void *arg)
 {
+	size_t bit;
 	int32_t prio;
 	k_spinlock_key_t key;
-	uint32_t pthread_num;
-	k_spinlock_key_t cancel_key;
-	struct posix_thread *thread;
+	struct posix_thread *t;
 	const struct pthread_attr *attr = (const struct pthread_attr *)_attr;
 
 	if (!pthread_attr_is_valid(attr)) {
 		return EINVAL;
 	}
 
-	key = k_spin_lock(&pthread_pool_lock);
-	for (pthread_num = 0; pthread_num < CONFIG_MAX_PTHREAD_COUNT; pthread_num++) {
-		thread = &posix_thread_pool[pthread_num];
-		if (thread->state == PTHREAD_TERMINATED) {
-			if (pthread_mutex_init(&thread->state_lock, NULL) == 0) {
-				thread->state = attr->detachstate;
-				sys_slist_init(&thread->key_list);
-			} else {
-				/* cannot allocate resources so break early and return EAGAIN */
-				pthread_num = CONFIG_MAX_PTHREAD_COUNT;
-			}
-			break;
-		}
-	}
-	k_spin_unlock(&pthread_pool_lock, key);
-
-	if (pthread_num >= CONFIG_MAX_PTHREAD_COUNT) {
+	if (sys_bitarray_alloc(&posix_thread_bitarray, 1, &bit) < 0) {
+		/* No threads left to allocate */
 		return EAGAIN;
 	}
 
+	t = &posix_thread_pool[bit];
+	key = k_spin_lock(&t->lock);
+	__ASSERT_NO_MSG(t->state == PTHREAD_TERMINATED);
+	t->state = attr->detachstate;
 	prio = posix_to_zephyr_priority(attr->priority, attr->schedpolicy);
+	t->cancel_state = BIT(_PTHREAD_CANCEL_POS) & attr->flags;
+	t->cancel_pending = 0;
+	sys_slist_init(&t->key_list);
+	k_spin_unlock(&t->lock, key);
 
-	cancel_key = k_spin_lock(&thread->cancel_lock);
-	thread->cancel_state = (1 << _PTHREAD_CANCEL_POS) & attr->flags;
-	thread->cancel_pending = 0;
-	k_spin_unlock(&thread->cancel_lock, cancel_key);
-
-	*newthread = pthread_num;
-	k_thread_create(&thread->thread, attr->stack, attr->stacksize,
+	k_thread_create(&t->thread, attr->stack, attr->stacksize,
 			(k_thread_entry_t)zephyr_thread_wrapper, (void *)arg, NULL, threadroutine,
 			prio, (~K_ESSENTIAL & attr->flags), K_MSEC(attr->delayedstart));
+	*newthread = mark_pthread_obj_initialized(bit);
+
 	return 0;
 }
 
@@ -232,22 +258,22 @@ int pthread_create(pthread_t *newthread, const pthread_attr_t *_attr,
 int pthread_setcancelstate(int state, int *oldstate)
 {
 	bool cancel_pending;
-	k_spinlock_key_t cancel_key;
-	struct posix_thread *pthread = to_posix_thread(pthread_self());
+	k_spinlock_key_t key;
+	struct posix_thread *t = to_posix_thread(pthread_self());
 
 	if (state != PTHREAD_CANCEL_ENABLE &&
 	    state != PTHREAD_CANCEL_DISABLE) {
 		return EINVAL;
 	}
 
-	cancel_key = k_spin_lock(&pthread->cancel_lock);
-	*oldstate = pthread->cancel_state;
-	pthread->cancel_state = state;
-	cancel_pending = pthread->cancel_pending;
-	k_spin_unlock(&pthread->cancel_lock, cancel_key);
+	key = k_spin_lock(&t->lock);
+	*oldstate = t->cancel_state;
+	t->cancel_state = state;
+	cancel_pending = t->cancel_pending;
+	k_spin_unlock(&t->lock, key);
 
 	if (state == PTHREAD_CANCEL_ENABLE && cancel_pending) {
-		pthread_exit((void *)PTHREAD_CANCELED);
+		pthread_exit(INT_TO_POINTER(PTHREAD_CANCELED));
 	}
 
 	return 0;
@@ -260,33 +286,46 @@ int pthread_setcancelstate(int state, int *oldstate)
  */
 int pthread_cancel(pthread_t pthread)
 {
-	struct posix_thread *thread = to_posix_thread(pthread);
-	int cancel_state;
-	k_spinlock_key_t cancel_key;
+	int rv = 0;
+	k_spinlock_key_t key;
+	bool should_abort = false;
+	struct posix_thread *t = to_posix_thread(pthread);
+	size_t bit = get_posix_thread_idx(pthread);
 
-	if ((thread == NULL) || (thread->state == PTHREAD_TERMINATED)) {
+	if (t == NULL) {
 		return ESRCH;
 	}
 
-	cancel_key = k_spin_lock(&thread->cancel_lock);
-	thread->cancel_pending = 1;
-	cancel_state = thread->cancel_state;
-	k_spin_unlock(&thread->cancel_lock, cancel_key);
+	key = k_spin_lock(&t->lock);
+	switch (t->state) {
+	case PTHREAD_DETACHED:
+		t->cancel_pending = 1;
+		t->state = PTHREAD_TERMINATED;
+		should_abort = true;
+		break;
+	case PTHREAD_JOINABLE:
+		t->retval = PTHREAD_CANCELED;
+		t->state = PTHREAD_EXITED;
+		should_abort = true;
+		break;
+	case PTHREAD_EXITED:
+		break;
+	case PTHREAD_TERMINATED:
+		rv = ESRCH;
+		break;
+	default:
+		__ASSERT(false, "bad thread state %d", t->state);
+		rv = ESRCH;
+		break;
+	}
+	k_spin_unlock(&t->lock, key);
 
-	if (cancel_state == PTHREAD_CANCEL_ENABLE) {
-		pthread_mutex_lock(&thread->state_lock);
-		if (thread->state == PTHREAD_DETACHED) {
-			thread->state = PTHREAD_TERMINATED;
-		} else {
-			thread->retval = PTHREAD_CANCELED;
-			thread->state = PTHREAD_EXITED;
-		}
-		pthread_mutex_unlock(&thread->state_lock);
-
-		k_thread_abort(&thread->thread);
+	if (should_abort) {
+		sys_bitarray_free(&posix_thread_bitarray, 1, bit);
+		k_thread_abort(&t->thread);
 	}
 
-	return 0;
+	return rv;
 }
 
 /**
@@ -380,50 +419,68 @@ int pthread_once(pthread_once_t *once, void (*init_func)(void))
  *
  * See IEEE 1003.1
  */
+FUNC_NORETURN
 void pthread_exit(void *retval)
 {
-	bool destroy = false;
-	k_spinlock_key_t cancel_key;
-	struct posix_thread *self = to_posix_thread(pthread_self());
-	pthread_key_obj *key_obj;
-	pthread_thread_data *thread_spec_data;
 	sys_snode_t *node_l;
+	k_spinlock_key_t key;
+	pthread_key_obj *key_obj;
+	bool should_free = false;
+	bool should_destruct = false;
+	pthread_thread_data *thread_spec_data;
+	struct posix_thread *t = to_posix_thread(pthread_self());
+	size_t bit = posix_thread_to_offset(t);
 
-	/* Make a thread as cancelable before exiting */
-	cancel_key = k_spin_lock(&self->cancel_lock);
-	if (self->cancel_state == PTHREAD_CANCEL_DISABLE) {
-		self->cancel_state = PTHREAD_CANCEL_ENABLE;
+	__ASSERT(t != NULL, "not a valid pthread (%p)", k_current_get());
+	__ASSERT(&t->thread == k_current_get(), "mismatch! &self->thread: %p k_current_get(): %p",
+		 &t->thread, k_current_get());
+
+	key = k_spin_lock(&t->lock);
+	switch (t->state) {
+	case PTHREAD_DETACHED:
+		t->state = PTHREAD_TERMINATED;
+		should_free = true;
+		should_destruct = true;
+		break;
+	case PTHREAD_JOINABLE:
+		z_thread_wake_joiners(&t->thread);
+		t->state = PTHREAD_EXITED;
+		should_destruct = true;
+		if (retval) {
+			t->retval = retval;
+		}
+		break;
+	case PTHREAD_EXITED:
+	/* fall through */
+	case PTHREAD_TERMINATED:
+	/* fall through */
+	default:
+		__ASSERT(false, "bad thread state %d", t->state);
+		break;
 	}
+	k_spin_unlock(&t->lock, key);
 
-	k_spin_unlock(&self->cancel_lock, cancel_key);
-
-	pthread_mutex_lock(&self->state_lock);
-	if (self->state == PTHREAD_JOINABLE) {
-		self->state = PTHREAD_EXITED;
-		self->retval = retval;
-	} else {
-		destroy = true;
-		self->state = PTHREAD_TERMINATED;
-	}
-
-	SYS_SLIST_FOR_EACH_NODE(&self->key_list, node_l) {
-		thread_spec_data = (pthread_thread_data *)node_l;
-		if (thread_spec_data != NULL) {
-			key_obj = thread_spec_data->key;
-			if (key_obj->destructor != NULL) {
-				(key_obj->destructor)(thread_spec_data->spec_data);
+	if (should_destruct) {
+		SYS_SLIST_FOR_EACH_NODE(&t->key_list, node_l) {
+			thread_spec_data = (pthread_thread_data *)node_l;
+			if (thread_spec_data != NULL) {
+				key_obj = thread_spec_data->key;
+				if (key_obj->destructor != NULL) {
+					(key_obj->destructor)(thread_spec_data->spec_data);
+				}
 			}
 		}
 	}
 
-	pthread_mutex_unlock(&self->state_lock);
-
-	if (destroy) {
-		/* A detached thread must have its resources destroyed by pthread_exit() */
-		pthread_mutex_destroy(&self->state_lock);
+	if (should_free) {
+		/* only free detached threads on exit */
+		sys_bitarray_free(&posix_thread_bitarray, 1, bit);
 	}
 
-	k_thread_abort(&self->thread);
+	/* caller will *ALWAYS* be aborted  */
+	k_thread_abort(k_current_get());
+
+	CODE_UNREACHABLE;
 }
 
 /**
@@ -431,43 +488,55 @@ void pthread_exit(void *retval)
  *
  * See IEEE 1003.1
  */
-int pthread_join(pthread_t thread, void **status)
+int pthread_join(pthread_t pthread, void **status)
 {
-	bool destroy = false;
-	struct posix_thread *pthread = to_posix_thread(thread);
-	int ret = 0;
+	int ret;
+	k_spinlock_key_t key;
+	bool should_free = false;
+	struct posix_thread *t = to_posix_thread(pthread);
+	size_t bit = get_posix_thread_idx(pthread);
 
-	if (thread == pthread_self()) {
+	if (pthread == pthread_self()) {
 		return EDEADLK;
 	}
 
-	if (pthread == NULL) {
+	if (t == NULL) {
 		return ESRCH;
 	}
 
-	if (pthread->state == PTHREAD_DETACHED) {
-		return EINVAL;
-	}
-
-	k_thread_join(&pthread->thread, K_FOREVER);
-
-	pthread_mutex_lock(&pthread->state_lock);
-
-	if (pthread->state == PTHREAD_EXITED) {
-		destroy = true;
-		pthread->state = PTHREAD_TERMINATED;
+	key = k_spin_lock(&t->lock);
+	switch (t->state) {
+	case PTHREAD_DETACHED:
+		ret = EINVAL;
+		break;
+	case PTHREAD_JOINABLE:
+		k_spin_unlock(&t->lock, key);
+		ret = k_thread_join(&t->thread, K_FOREVER);
+		__ASSERT(ret == 0, "k_thread_join() failed: %d", ret);
+		key = k_spin_lock(&t->lock);
+		/* fall through */
+	case PTHREAD_EXITED:
+		ret = 0;
+		should_free = true;
+		t->state = PTHREAD_TERMINATED;
 		if (status != NULL) {
-			*status = pthread->retval;
+			*status = t->retval;
 		}
-	} else {
+		z_thread_wake_joiners(&t->thread);
+		break;
+	case PTHREAD_TERMINATED:
 		ret = ESRCH;
+		break;
+	default:
+		__ASSERT(false, "bad pthread state %d", t->state);
+		ret = ESRCH;
+		break;
 	}
+	k_spin_unlock(&t->lock, key);
 
-	pthread_mutex_unlock(&pthread->state_lock);
-
-	if (destroy) {
-		/* A joined thread must have its resources destroyed by pthread_join() */
-		pthread_mutex_destroy(&pthread->state_lock);
+	if (should_free) {
+		/* only free joinable threads on join */
+		sys_bitarray_free(&posix_thread_bitarray, 1, bit);
 	}
 
 	return ret;
@@ -478,22 +547,22 @@ int pthread_join(pthread_t thread, void **status)
  *
  * See IEEE 1003.1
  */
-int pthread_detach(pthread_t thread)
+int pthread_detach(pthread_t pthread)
 {
-	bool join = false;
-	struct posix_thread *pthread = to_posix_thread(thread);
 	int ret = 0;
+	bool join = false;
+	k_spinlock_key_t key;
+	struct posix_thread *t = to_posix_thread(pthread);
 
-	if (pthread == NULL) {
+	if (t == NULL) {
 		return ESRCH;
 	}
 
-	pthread_mutex_lock(&pthread->state_lock);
-
-	switch (pthread->state) {
+	key = k_spin_lock(&t->lock);
+	switch (t->state) {
 	case PTHREAD_JOINABLE:
-		pthread->state = PTHREAD_DETACHED;
-		z_thread_wake_joiners(&pthread->thread);
+		t->state = PTHREAD_DETACHED;
+		z_thread_wake_joiners(&t->thread);
 		break;
 	case PTHREAD_EXITED:
 		join = true;
@@ -505,11 +574,10 @@ int pthread_detach(pthread_t thread)
 		ret = EINVAL;
 		break;
 	}
-
-	pthread_mutex_unlock(&pthread->state_lock);
+	k_spin_unlock(&t->lock, key);
 
 	if (join) {
-		pthread_join(thread, NULL);
+		pthread_join(pthread, NULL);
 	}
 
 	return ret;
@@ -678,16 +746,17 @@ int pthread_attr_destroy(pthread_attr_t *_attr)
 	return EINVAL;
 }
 
-int pthread_setname_np(pthread_t thread, const char *name)
+int pthread_setname_np(pthread_t pthread, const char *name)
 {
 #ifdef CONFIG_THREAD_NAME
 	k_tid_t kthread;
+	struct posix_thread *t = to_posix_thread(pthread);
 
-	if (thread >= CONFIG_MAX_PTHREAD_COUNT) {
+	if (t == NULL) {
 		return ESRCH;
 	}
 
-	kthread = &posix_thread_pool[thread].thread;
+	kthread = &posix_thread_pool[pthread].thread;
 
 	if (name == NULL) {
 		return EINVAL;
@@ -695,18 +764,19 @@ int pthread_setname_np(pthread_t thread, const char *name)
 
 	return k_thread_name_set(kthread, name);
 #else
-	ARG_UNUSED(thread);
+	ARG_UNUSED(pthread);
 	ARG_UNUSED(name);
 	return 0;
 #endif
 }
 
-int pthread_getname_np(pthread_t thread, char *name, size_t len)
+int pthread_getname_np(pthread_t pthread, char *name, size_t len)
 {
 #ifdef CONFIG_THREAD_NAME
 	k_tid_t kthread;
+	struct posix_thread *t = to_posix_thread(pthread);
 
-	if (thread >= CONFIG_MAX_PTHREAD_COUNT) {
+	if (t == NULL) {
 		return ESRCH;
 	}
 
@@ -715,10 +785,10 @@ int pthread_getname_np(pthread_t thread, char *name, size_t len)
 	}
 
 	memset(name, '\0', len);
-	kthread = &posix_thread_pool[thread].thread;
+	kthread = &posix_thread_pool[pthread].thread;
 	return k_thread_name_copy(kthread, name, len-1);
 #else
-	ARG_UNUSED(thread);
+	ARG_UNUSED(pthread);
 	ARG_UNUSED(name);
 	ARG_UNUSED(len);
 	return 0;

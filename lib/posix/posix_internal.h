@@ -8,6 +8,7 @@
 #define ZEPHYR_LIB_POSIX_POSIX_INTERNAL_H_
 
 #include <zephyr/kernel.h>
+#include <zephyr/sys/atomic.h>
 
 /*
  * Bit used to mark a pthread object as initialized. Initialization status is
@@ -39,6 +40,7 @@ enum pthread_state {
 
 struct posix_thread {
 	struct k_thread thread;
+	struct k_spinlock lock;
 
 	/* List of keys that thread has called pthread_setspecific() on */
 	sys_slist_t key_list;
@@ -49,11 +51,9 @@ struct posix_thread {
 	/* Pthread cancellation */
 	int cancel_state;
 	int cancel_pending;
-	struct k_spinlock cancel_lock;
 
 	/* Pthread State */
 	enum pthread_state state;
-	pthread_mutex_t state_lock;
 };
 
 typedef struct pthread_key_obj {
