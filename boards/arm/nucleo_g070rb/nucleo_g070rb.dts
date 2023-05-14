@@ -42,6 +42,7 @@
 		sw0 = &user_button;
 		watchdog0 = &iwdg;
 		die-temp0 = &die_temp;
+		volt-sensor0 = &vref;
 	};
 };
 
@@ -159,4 +160,8 @@
 
 &cpu0 {
 	cpu-power-states = <&stop0 &stop1>;
+};
+
+&vref {
+	status = "okay";
 };
