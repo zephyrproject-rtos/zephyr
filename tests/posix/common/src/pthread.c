@@ -594,6 +594,12 @@ ZTEST(posix_apis, test_pthread_descriptor_leak)
 	for (size_t i = 0; i < CONFIG_MAX_PTHREAD_COUNT * 2; ++i) {
 		zassert_ok(pthread_create(&pthread1, &attr, create_thread1, NULL),
 			   "unable to create thread %zu", i);
+		/*
+		 * k_msleep() should not be necessary, but it is added as a workaround
+		 * for #56163 and #58116, which identified race conditions on some
+		 * platforms.
+		 */
+		k_msleep(100);
 		zassert_ok(pthread_join(pthread1, NULL), "unable to join thread %zu", i);
 	}
 }
