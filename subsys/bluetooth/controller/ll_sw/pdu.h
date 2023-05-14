@@ -351,6 +351,7 @@
 						    ((enc) ? \
 						     (PDU_MIC_SIZE) : 0), \
 						    (phy))
+#define PDU_CIS_OFFSET_MIN_US 500U
 
 struct pdu_adv_adv_ind {
 	uint8_t addr[BDADDR_SIZE];

@@ -563,7 +563,7 @@ void ll_cis_create(uint16_t cis_handle, uint16_t acl_handle)
 	/* Initialize stream states */
 	cis->established = 0;
 	cis->teardown = 0;
-	cis->lll.event_count = 0;
+	cis->lll.event_count = LLL_CONN_ISO_EVENT_COUNT_MAX;
 	cis->lll.sn = 0;
 	cis->lll.nesn = 0;
 	cis->lll.cie = 0;
@@ -732,7 +732,6 @@ uint8_t ull_central_iso_setup(uint16_t cis_handle,
 #endif /* !CONFIG_BT_CTLR_JIT_SCHEDULING */
 
 	cis->central.instant = instant;
-	cis->lll.event_count = -1;
 	cis->lll.next_subevent = 0U;
 	cis->lll.sn = 0U;
 	cis->lll.nesn = 0U;
@@ -863,10 +862,13 @@ static void cis_offset_get(struct ll_conn_iso_stream *cis)
 
 static void mfy_cis_offset_get(void *param)
 {
+	uint32_t elapsed_acl_us, elapsed_cig_us;
+	uint16_t latency_acl, latency_cig;
 	struct ll_conn_iso_stream *cis;
 	struct ll_conn_iso_group *cig;
 	uint32_t cig_remainder_us;
 	uint32_t acl_remainder_us;
+	uint32_t cig_interval_us;
 	uint32_t ticks_to_expire;
 	uint32_t ticks_current;
 	uint32_t offset_min_us;
@@ -952,6 +954,32 @@ static void mfy_cis_offset_get(void *param)
 	offset_min_us = HAL_TICKER_TICKS_TO_US(ticks_to_expire) +
 			cig_remainder_us + cig->sync_delay -
 			acl_remainder_us - cis->sync_delay;
+
+	/* Calculate instant latency */
+	/* 32-bits are sufficient as maximum connection interval is 4 seconds,
+	 * and latency counts (typically 3) is low enough to avoid 32-bit
+	 * overflow. Refer to ull_central_iso_cis_offset_get().
+	 */
+	latency_acl = cis->central.instant - ull_conn_event_counter(conn);
+	elapsed_acl_us = latency_acl * conn->lll.interval * CONN_INT_UNIT_US;
+
+	/* Calculate elapsed CIG intervals until the instant */
+	cig_interval_us = cig->iso_interval * ISO_INT_UNIT_US;
+	latency_cig = DIV_ROUND_UP(elapsed_acl_us, cig_interval_us);
+	elapsed_cig_us = latency_cig * cig_interval_us;
+
+	/* Compensate for the difference between ACL elapsed vs CIG elapsed */
+	offset_min_us += elapsed_cig_us - elapsed_acl_us;
+	while (offset_min_us > (cig_interval_us + PDU_CIS_OFFSET_MIN_US)) {
+		offset_min_us -= cig_interval_us;
+	}
+
+	/* Decrement event_count to compensate for offset_min_us greater than
+	 * CIG interval due to offset being atleast PDU_CIS_OFFSET_MIN_US.
+	 */
+	if (offset_min_us > cig_interval_us) {
+		cis->lll.event_count--;
+	}
 
 	ull_cp_cc_offset_calc_reply(conn, offset_min_us, offset_min_us);
 }
