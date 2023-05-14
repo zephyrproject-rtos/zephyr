@@ -72,6 +72,8 @@ source "drivers/clock_control/Kconfig.gd32"
 
 source "drivers/clock_control/Kconfig.sam"
 
+source "drivers/clock_control/Kconfig.si32"
+
 source "drivers/clock_control/Kconfig.smartbond"
 
 source "drivers/clock_control/Kconfig.numaker"
