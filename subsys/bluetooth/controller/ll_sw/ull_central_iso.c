@@ -1022,6 +1022,7 @@ static void mfy_cig_offset_get(void *param)
 	struct ll_conn_iso_stream *cis;
 	struct ll_conn_iso_group *cig;
 	uint32_t conn_interval_us;
+	uint32_t offset_limit_us;
 	uint32_t ticks_to_expire;
 	uint32_t offset_max_us;
 	uint32_t offset_min_us;
@@ -1031,17 +1032,25 @@ static void mfy_cig_offset_get(void *param)
 	cis = param;
 	cig = cis->group;
 
+	/* Find a free offset that does not overlap other periodically scheduled
+	 * states/roles.
+	 */
 	err = ull_sched_conn_iso_free_offset_get(cig->ull.ticks_slot,
 						 &ticks_to_expire);
 	LL_ASSERT(!err);
 
+	/* Calculate the offset for the select CIS in the CIG */
 	offset_min_us = HAL_TICKER_TICKS_TO_US(ticks_to_expire) +
 			(EVENT_TICKER_RES_MARGIN_US << 2U);
 	offset_min_us += cig->sync_delay - cis->sync_delay;
 
+	/* Ensure the offset is not greater than the ACL interval, considering
+	 * the minimum CIS offset requirement.
+	 */
 	conn = ll_conn_get(cis->lll.acl_handle);
 	conn_interval_us = (uint32_t)conn->lll.interval * CONN_INT_UNIT_US;
-	while (offset_min_us >= (conn_interval_us + PDU_CIS_OFFSET_MIN_US)) {
+	offset_limit_us = conn_interval_us + PDU_CIS_OFFSET_MIN_US;
+	while (offset_min_us >= offset_limit_us) {
 		offset_min_us -= conn_interval_us;
 	}
 
@@ -1071,6 +1080,7 @@ static void mfy_cis_offset_get(void *param)
 	uint32_t cig_remainder_us;
 	uint32_t acl_remainder_us;
 	uint32_t cig_interval_us;
+	uint32_t offset_limit_us;
 	uint32_t ticks_to_expire;
 	uint32_t ticks_current;
 	uint32_t offset_min_us;
@@ -1172,12 +1182,18 @@ static void mfy_cis_offset_get(void *param)
 
 	/* Compensate for the difference between ACL elapsed vs CIG elapsed */
 	offset_min_us += elapsed_cig_us - elapsed_acl_us;
-	while (offset_min_us >= (cig_interval_us + PDU_CIS_OFFSET_MIN_US)) {
+
+	/* Ensure that the minimum offset is not greater than ISO interval
+	 * considering the select CIS in the CIG meets the minimum CIS offset
+	 * requirement.
+	 */
+	offset_limit_us = cig_interval_us + cig->sync_delay - cis->sync_delay;
+	while (offset_min_us >= offset_limit_us) {
 		offset_min_us -= cig_interval_us;
 	}
 
 	/* Decrement event_count to compensate for offset_min_us greater than
-	 * CIG interval due to offset being at least PDU_CIS_OFFSET_MIN_US.
+	 * CIG interval.
 	 */
 	if (offset_min_us > cig_interval_us) {
 		cis->lll.event_count--;
