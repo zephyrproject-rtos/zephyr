@@ -66,6 +66,7 @@
 		watchdog0 = &iwdg;
 		spi-flash0 = &mx25r6435f;
 		accel0 = &lsm6dsl;
+		volt-sensor0 = &vref;
 	};
 };
 
@@ -343,4 +344,8 @@ zephyr_udc0: &usbotg_fs {
 			};
 		};
 	};
+};
+
+&vref {
+	status = "okay";
 };

@@ -57,6 +57,7 @@
 		sw0 = &user_button;
 		watchdog0 = &iwdg;
 		die-temp0 = &die_temp;
+		volt-sensor0 = &vref;
 	};
 };
 
@@ -211,5 +212,9 @@
 	pinctrl-names = "default";
 	bus-speed = <125000>;
 	bus-speed-data = <1000000>;
+	status = "okay";
+};
+
+&vref {
 	status = "okay";
 };
