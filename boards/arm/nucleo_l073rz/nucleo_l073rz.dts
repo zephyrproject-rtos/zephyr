@@ -62,6 +62,7 @@
 		watchdog0 = &iwdg;
 		eeprom-0 = &eeprom;
 		die-temp0 = &die_temp;
+		volt-sensor0 = &vref;
 	};
 };
 
@@ -166,5 +167,9 @@
 };
 
 &eeprom {
+	status = "okay";
+};
+
+&vref {
 	status = "okay";
 };

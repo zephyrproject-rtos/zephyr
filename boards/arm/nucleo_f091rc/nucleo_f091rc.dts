@@ -52,6 +52,7 @@
 		pwm-led0 = &green_pwm_led;
 		watchdog0 = &iwdg;
 		die-temp0 = &die_temp;
+		volt-sensor0 = &vref;
 	};
 };
 
@@ -172,4 +173,8 @@
 		pinctrl-0 = <&tim2_ch1_pa5>;
 		pinctrl-names = "default";
 	};
+};
+
+&vref {
+	status = "okay";
 };

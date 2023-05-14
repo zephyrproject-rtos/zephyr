@@ -37,6 +37,7 @@
 	aliases {
 		led0 = &green_led_3;
 		pwm-led0 = &green_pwm_led;
+		volt-sensor0 = &vref;
 	};
 };
 
@@ -102,5 +103,9 @@
 &rtc {
 	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x10000000>,
 		 <&rcc STM32_SRC_LSI RTC_SEL(2)>;
+	status = "okay";
+};
+
+&vref {
 	status = "okay";
 };
