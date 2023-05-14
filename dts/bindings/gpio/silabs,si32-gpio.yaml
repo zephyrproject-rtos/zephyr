@@ -1,0 +1,23 @@
+# SPDX-License-Identifier: Apache-2.0
+
+description: SI32 GPIO node
+
+compatible: "silabs,si32-gpio"
+
+include: [gpio-controller.yaml, base.yaml]
+
+properties:
+    reg:
+      required: true
+
+    "#gpio-cells":
+      const: 2
+
+    disable-pullups:
+      required: false
+      type: boolean
+
+gpio-cells:
+  - pin
+  - flags
+
