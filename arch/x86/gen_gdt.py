@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 #
-# Copyright (c) 2017 Intel Corporation
+# Copyright (c) 2017-2023 Intel Corporation
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -137,7 +137,7 @@ def create_tss_entry(base, limit, dpl):
     gran = 0
 
     flags = (gran << 7) | limit_hi
-    type_byte = ((present << 7) | (dpl << 5) | type_code)
+    type_byte = (present << 7) | (dpl << 5) | type_code
 
     return struct.pack(GDT_ENT_FMT, limit_lo, base_lo, base_mid,
                        type_byte, flags, base_hi)
@@ -197,12 +197,20 @@ def main():
         # x86_64 does not use descriptor for thread local storage
         num_entries += 1
 
+    # add extra entries at the end, don't need to update current front entries map
+    extra_entries = 0
+
+    use_pf_tss = False
+    if "CONFIG_X86_PF_USE_TSS" in syms:
+        use_pf_tss = True
+        extra_entries += 1
+
     gdt_base = syms["_gdt"]
 
     with open(args.output_gdt, "wb") as output_fp:
         # The pseudo descriptor is stuffed into the NULL descriptor
         # since the CPU never looks at it
-        output_fp.write(create_gdt_pseudo_desc(gdt_base, num_entries * 8))
+        output_fp.write(create_gdt_pseudo_desc(gdt_base, (num_entries + extra_entries) * 8))
 
         # Selector 0x08: code descriptor
         output_fp.write(create_code_data_entry(0, 0xFFFFF, 0,
@@ -240,6 +248,10 @@ def main():
             output_fp.write(create_code_data_entry(0, 0xFFFFF, 3,
                                             FLAGS_GRAN, ACCESS_RW))
 
+        if use_pf_tss:
+            # Selector 0x20, 0x30 or 0x40 (depending on entries above):
+            pf_tss = syms["_pf_tss"]
+            output_fp.write(create_tss_entry(pf_tss, 0x67, 0))
 
 if __name__ == "__main__":
     main()

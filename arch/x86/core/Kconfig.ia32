@@ -84,6 +84,25 @@ config X86_USERSPACE
 	  supporting user-level threads that are protected from each other and
 	  from crashing the kernel.
 
+config X86_PF_USE_TSS
+	bool "Use TSS for page fault exception"
+	select SET_GDT
+	select GDT_DYNAMIC
+	select X86_ENABLE_TSS
+	help
+	  This option enables TSS for page fault exception, without TSS, page
+	  fault exception go through common exception handling, then require
+	  to pin stack memory of all threads when enable paging, or will lead
+	  to fatal errors. This TSS option will use dedicate stack to make it
+	  works with memory critical system.
+
+config X86_PF_TSS_STACK_SIZE
+	int
+	default 2048
+	depends on X86_PF_USE_TSS
+	help
+	  Stack size for page fault exception handling.
+
 config X86_PAE
 	bool "Use PAE page tables"
 	default y
