@@ -21,6 +21,7 @@
 #include "access.h"
 #include "foundation.h"
 #include "friend.h"
+#include "va.h"
 
 #define LOG_LEVEL CONFIG_BT_MESH_FRIEND_LOG_LEVEL
 #include <zephyr/logging/log.h>
@@ -60,9 +61,15 @@ struct friend_pdu_info {
 	uint32_t  iv_index;
 };
 
+BUILD_ASSERT(CONFIG_BT_MESH_LABEL_COUNT <= 0xFFFU, "Friend doesn't support more than 4096 labels.");
+
 struct friend_adv {
 	uint16_t app_idx;
-	bool     seg;
+	struct {
+		/* CONFIG_BT_MESH_LABEL_COUNT max value is 4096. */
+		uint16_t uuidx:15,
+			 seg:1;
+	};
 };
 
 NET_BUF_POOL_FIXED_DEFINE(friend_buf_pool, FRIEND_BUF_COUNT, BT_MESH_ADV_DATA_SIZE,
@@ -309,6 +316,7 @@ static void friend_sub_add(struct bt_mesh_friend *frnd, uint16_t addr)
 
 	if (empty_idx != INT_MAX) {
 		frnd->sub_list[empty_idx] = addr;
+		LOG_DBG("%04x added %04x to subscription list", frnd->lpn, addr);
 	} else {
 		LOG_WRN("No space in friend subscription list");
 	}
@@ -320,6 +328,7 @@ static void friend_sub_rem(struct bt_mesh_friend *frnd, uint16_t addr)
 
 	for (i = 0; i < ARRAY_SIZE(frnd->sub_list); i++) {
 		if (frnd->sub_list[i] == addr) {
+			LOG_DBG("%04x removed %04x from subscription list", frnd->lpn, addr);
 			frnd->sub_list[i] = BT_MESH_ADDR_UNASSIGNED;
 			return;
 		}
@@ -370,6 +379,7 @@ static int unseg_app_sdu_unpack(struct bt_mesh_friend *frnd,
 				struct unseg_app_sdu_meta *meta)
 {
 	uint16_t app_idx = FRIEND_ADV(buf)->app_idx;
+	uint16_t uuidx = FRIEND_ADV(buf)->uuidx;
 	struct bt_mesh_net_rx net = {
 		.ctx = {
 			.app_idx = app_idx,
@@ -393,10 +403,7 @@ static int unseg_app_sdu_unpack(struct bt_mesh_friend *frnd,
 	meta->crypto.aszmic = 0;
 
 	if (BT_MESH_ADDR_IS_VIRTUAL(meta->crypto.dst)) {
-		meta->crypto.ad = bt_mesh_va_label_get(meta->crypto.dst);
-		if (!meta->crypto.ad) {
-			return -ENOENT;
-		}
+		meta->crypto.ad = bt_mesh_va_get_uuid_by_idx(uuidx);
 	} else {
 		meta->crypto.ad = NULL;
 	}
@@ -1504,11 +1511,26 @@ static void friend_lpn_enqueue_tx(struct bt_mesh_friend *frnd,
 		 * when encrypting in transport and network.
 		 */
 		FRIEND_ADV(buf)->app_idx = tx->ctx->app_idx;
+
+		/* When reencrypting a virtual address message, we need to know uuid as well. */
+		if (BT_MESH_ADDR_IS_VIRTUAL(tx->ctx->addr)) {
+			uint16_t uuidx;
+			int err;
+
+			err = bt_mesh_va_get_idx_by_uuid(tx->ctx->uuid, &uuidx);
+			if (err) {
+				net_buf_unref(buf);
+				return;
+			}
+
+			FRIEND_ADV(buf)->uuidx = uuidx;
+		}
 	}
 
 	enqueue_friend_pdu(frnd, type, info.src, seg_count, buf);
 
-	LOG_DBG("Queued message for LPN 0x%04x", frnd->lpn);
+	LOG_DBG("Queued message for LPN 0x%04x, dst: %04x, uuid: %p", frnd->lpn, tx->ctx->addr,
+		tx->ctx->uuid);
 }
 
 static bool friend_lpn_matches(struct bt_mesh_friend *frnd, uint16_t net_idx,
