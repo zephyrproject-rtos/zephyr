@@ -34,6 +34,32 @@
 		status = "okay";
 	};
 
+	clocks {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		pll0: pll0@4003b000 {
+			compatible = "silabs,si32-pll";
+			#clock-cells = <0>;
+			reg = <0x4003b000>;
+			status = "disabled";
+		};
+
+		clk_ahb: clk-ahb {
+			compatible = "silabs,si32-ahb";
+			#clock-cells = <0>;
+			status = "disabled";
+		};
+
+		clk_apb: clk-apb {
+			compatible = "silabs,si32-apb";
+			#clock-cells = <0>;
+			divider = <1>;
+			clocks = <&clk_ahb>;
+			status = "disabled";
+		};
+	};
+
 	soc {
 		flash: flash-controller@4002e000 {
 			compatible = "silabs,si32-flash-controller";
