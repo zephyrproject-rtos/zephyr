@@ -120,6 +120,7 @@ static int32_t poll_timeout(struct bt_mesh_lpn *lpn)
 {
 	/* If we're waiting for segment acks keep polling at high freq */
 	if (bt_mesh_tx_in_progress()) {
+		LOG_DBG("Tx is in progress. Keep polling");
 		return MIN(POLL_TIMEOUT_MAX(lpn), 1 * MSEC_PER_SEC);
 	}
 
