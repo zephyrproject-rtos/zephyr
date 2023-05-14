@@ -57,6 +57,18 @@ static const struct bt_mesh_test_cfg rx_cfg = {
 
 static int expected_send_err;
 
+static uint8_t test_va_col_uuid[][16] = {
+	{
+		0xe3, 0x94, 0xe7, 0xc1, 0xc5, 0x14, 0x72, 0x11,
+		0x68, 0x36, 0x19, 0x30, 0x99, 0x34, 0x53, 0x62
+	},
+	{
+		0x5e, 0x49, 0x5a, 0xd9, 0x44, 0xdf, 0xae, 0xc0,
+		0x62, 0xd8, 0x0d, 0xed, 0x16, 0x82, 0xd1, 0x7d
+	},
+};
+static const uint16_t test_va_col_addr = 0x809D;
+
 static void test_tx_init(void)
 {
 	bt_mesh_test_cfg_set(&tx_cfg, WAIT_TIME);
@@ -175,6 +187,37 @@ static void test_tx_va(void)
 		err = bt_mesh_test_send(va->addr, va->uuid, test_vector[i].len,
 					test_vector[i].flags, K_SECONDS(20));
 		ASSERT_OK_MSG(err, "Failed sending vector %d", i);
+	}
+
+	PASS();
+}
+
+/** Test sending the test vector using virtual addresses with collision.
+ */
+static void test_tx_va_collision(void)
+{
+	const struct bt_mesh_va *va[ARRAY_SIZE(test_va_col_uuid)];
+	int err;
+
+	bt_mesh_test_setup();
+
+	for (int i = 0; i < ARRAY_SIZE(test_va_col_uuid); i++) {
+		err = bt_mesh_va_add(test_va_col_uuid[i], &va[i]);
+		ASSERT_OK_MSG(err, "Virtual addr add failed (err %d)", err);
+		ASSERT_EQUAL(test_va_col_addr, va[i]->addr);
+	}
+
+	/* Wait for the receiver to subscribe on address. */
+	k_sleep(K_SECONDS(1));
+
+	for (int i = 0; i < ARRAY_SIZE(test_vector); i++) {
+		for (int j = 0; j < ARRAY_SIZE(test_va_col_uuid); j++) {
+			LOG_INF("Sending msg #%d to %s addr", i, (j == 0 ? "first" : "second"));
+
+			err = bt_mesh_test_send(test_va_col_addr, va[j]->uuid, test_vector[i].len,
+						test_vector[i].flags, K_SECONDS(20));
+			ASSERT_OK_MSG(err, "Failed sending vector %d", i);
+		}
 	}
 
 	PASS();
@@ -458,6 +501,36 @@ static void test_rx_va(void)
 	PASS();
 }
 
+/** @brief Receive the test vector using virtual addresses with collision.
+ */
+static void test_rx_va_collision(void)
+{
+	uint16_t virtual_addr;
+	uint8_t status;
+	int err;
+
+	bt_mesh_test_setup();
+
+	for (int i = 0; i < ARRAY_SIZE(test_va_col_uuid); i++) {
+		err = bt_mesh_cfg_cli_mod_sub_va_add(0, cfg->addr, cfg->addr, test_va_col_uuid[i],
+						     TEST_MOD_ID, &virtual_addr, &status);
+		ASSERT_OK_MSG(err || status, "Sub add failed (err %d, status %u)", err, status);
+		ASSERT_EQUAL(test_va_col_addr, virtual_addr);
+	}
+
+	for (int i = 0; i < ARRAY_SIZE(test_vector); i++) {
+		for (int j = 0; j < ARRAY_SIZE(test_va_col_uuid); j++) {
+			LOG_INF("Recv msg #%d from %s addr", i, (j == 0 ? "first" : "second"));
+
+			err = bt_mesh_test_recv(test_vector[i].len, test_va_col_addr,
+						test_va_col_uuid[j], K_SECONDS(20));
+			ASSERT_OK_MSG(err, "Failed receiving vector %d", i);
+		}
+	}
+
+	PASS();
+}
+
 /** @brief Verify that this device doesn't receive any messages.
  */
 static void test_rx_none(void)
@@ -538,6 +611,7 @@ static const struct bst_test_instance test_connect[] = {
 	TEST_CASE(tx, unicast,        "Transport: send to unicast addr"),
 	TEST_CASE(tx, group,          "Transport: send to group addr"),
 	TEST_CASE(tx, va,             "Transport: send to virtual addr"),
+	TEST_CASE(tx, va_collision,   "Transport: send to virtual addr"),
 	TEST_CASE(tx, loopback,       "Transport: send loopback"),
 	TEST_CASE(tx, loopback_group, "Transport: send loopback and group"),
 	TEST_CASE(tx, unknown_app,    "Transport: send with unknown app key"),
@@ -549,10 +623,12 @@ static const struct bst_test_instance test_connect[] = {
 	TEST_CASE(rx, unicast,        "Transport: receive on unicast addr"),
 	TEST_CASE(rx, group,          "Transport: receive on group addr"),
 	TEST_CASE(rx, va,             "Transport: receive on virtual addr"),
+	TEST_CASE(rx, va_collision,   "Transport: receive on virtual addr"),
 	TEST_CASE(rx, none,           "Transport: receive no messages"),
 	TEST_CASE(rx, seg_block,      "Transport: receive blocked segmented"),
 	TEST_CASE(rx, seg_concurrent, "Transport: receive concurrent segmented"),
 	TEST_CASE(rx, seg_ivu,        "Transport: receive segmented during IV update"),
+
 	BSTEST_END_MARKER
 };
 
