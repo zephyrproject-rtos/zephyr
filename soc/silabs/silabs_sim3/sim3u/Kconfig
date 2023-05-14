@@ -4,6 +4,7 @@
 
 config SOC_SERIES_SIM3U
 	select ARM
+	select CLOCK_CONTROL
 	select CPU_CORTEX_M3
 	select CPU_CORTEX_M_HAS_SYSTICK
 	select HAS_SILABS_SI32
