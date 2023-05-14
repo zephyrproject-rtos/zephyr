@@ -594,6 +594,8 @@ ZTEST(posix_apis, test_pthread_descriptor_leak)
 	for (size_t i = 0; i < CONFIG_MAX_PTHREAD_COUNT * 2; ++i) {
 		zassert_ok(pthread_create(&pthread1, &attr, create_thread1, NULL),
 			   "unable to create thread %zu", i);
+		/* Small delay to prevent joining before the thread has been spawned */
+		k_msleep(100);
 		zassert_ok(pthread_join(pthread1, NULL), "unable to join thread %zu", i);
 	}
 }
