@@ -74,6 +74,22 @@
 			};
 		};
 
+		usart0: usart@40000000 {
+			compatible = "silabs,si32-usart";
+			reg = <0x40000000 0x1000>;
+			interrupts = <27 0>;
+			clocks = <&clk_apb>;
+			status = "disabled";
+		};
+
+		usart1: usart@40001000 {
+			compatible = "silabs,si32-usart";
+			reg = <0x40001000 0x1000>;
+			interrupts = <28 0>;
+			clocks = <&clk_apb>;
+			status = "disabled";
+		};
+
 		gpio0: gpio@4002a0a0 {
 			compatible = "silabs,si32-gpio";
 			gpio-controller;

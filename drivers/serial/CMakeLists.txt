@@ -76,6 +76,7 @@ zephyr_library_sources_ifdef(CONFIG_UART_RENESAS_RA uart_renesas_ra.c)
 zephyr_library_sources_ifdef(CONFIG_UART_ENE_KB1200 uart_ene_kb1200.c)
 zephyr_library_sources_ifdef(CONFIG_UART_RZT2M uart_rzt2m.c)
 zephyr_library_sources_ifdef(CONFIG_UART_RA8_SCI_B uart_renesas_ra8_sci_b.c)
+zephyr_library_sources_ifdef(CONFIG_UART_SI32_USART uart_si32_usart.c)
 zephyr_library_sources_ifdef(CONFIG_USERSPACE   uart_handlers.c)
 zephyr_library_sources_ifdef(CONFIG_UART_SCI_RA uart_renesas_ra_sci.c)
 
