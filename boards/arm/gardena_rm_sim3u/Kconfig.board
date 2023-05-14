@@ -1,0 +1,8 @@
+# Copyright (c) 2023 GARDENA GmbH
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_GARDENA_RM_SIM3U
+	bool "GARDENA SIM3U radio module"
+	depends on SOC_SERIES_SIM3U
+	select SOC_PART_NUMBER_SIM3U167_B_GM

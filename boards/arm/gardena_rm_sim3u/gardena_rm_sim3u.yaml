@@ -1,0 +1,16 @@
+# Copyright (c) 2023 GARDENA GmbH
+#
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: gardena_rm_sim3u
+name: GARDENA sim3u radio module
+type: mcu
+arch: arm
+ram: 32
+flash: 256
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - gpio

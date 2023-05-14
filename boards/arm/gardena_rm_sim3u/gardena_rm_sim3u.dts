@@ -1,0 +1,148 @@
+/*
+ * Copyright (c) 2023 GARDENA GmbH
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <silabs/sim3u167bgm.dtsi>
+#include <zephyr/dt-bindings/gpio/silabs-si32-hd-gpio.h>
+#include "gardena_rm_sim3u-pinctrl.dtsi"
+
+/ {
+	model = "GARDENA sim3u radio module";
+	compatible = "gardena,rm_sim3u", "silabs,sim3u";
+
+	chosen {
+		zephyr,console = &usart0;
+		zephyr,shell-uart = &usart0;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		status = "okay";
+
+		led_red: led_red {
+			gpios = <&gpio4 0 (GPIO_ACTIVE_LOW | SI32_GPIO_DS_ENABLE_CURRENT_LIMIT)>;
+			label = "Red LED 0";
+		};
+		led_green: led_green {
+			gpios = <&gpio4 1 (GPIO_ACTIVE_LOW | SI32_GPIO_DS_ENABLE_CURRENT_LIMIT)>;
+			label = "Green LED 0";
+		};
+		led_blue: led_blue {
+			gpios = <&gpio4 2 (GPIO_ACTIVE_LOW | SI32_GPIO_DS_ENABLE_CURRENT_LIMIT)>;
+			label = "Blue LED 0";
+		};
+	};
+
+	gardena_antenna: gardena_antenna {
+		compatible = "gardena,antenna";
+		diversity-mode-gpios = <&gpio2 14 GPIO_ACTIVE_HIGH>;
+		diversity-state-gpios = <&gpio2 10 GPIO_ACTIVE_HIGH>;
+		antenna-control-gpios = <&gpio0 7 GPIO_ACTIVE_HIGH>;
+		antenna-input-gpios = <&gpio1 8 GPIO_ACTIVE_HIGH>;
+
+		led-red-input-gpios = <&gpio0 4 GPIO_ACTIVE_HIGH>;
+		led-green-input-gpios = <&gpio0 5 GPIO_ACTIVE_HIGH>;
+		led-blue-input-gpios = <&gpio0 6 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&cpu0 {
+	clock-frequency = <76953600>;
+};
+
+&pll0 {
+	status = "okay";
+};
+
+&clk_ahb {
+	clocks = <&pll0>;
+	status = "okay";
+};
+
+&clk_apb {
+	divider = <2>;
+	status = "okay";
+};
+
+&usart0 {
+	current-speed = <115200>;
+	pinctrl-0 = <&usart0_default>;
+	pinctrl-names = "default";
+	hw-flow-control;
+	status = "okay";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&gpio2 {
+	disable-pullups;
+	status = "okay";
+};
+
+&gpio3 {
+	status = "okay";
+};
+
+&gpio4 {
+	nchannel-current-limit = <7>;
+	pchannel-current-limit = <15>;
+	enable-bias;
+	low-power-port-mode;
+	enable-drivers;
+	status = "okay";
+};
+
+&spi2 {
+	pinctrl-0 = <&spi2_default>;
+	pinctrl-names = "default";
+	status = "ok";
+
+	si4467@0 {
+		compatible = "silabs,si4467";
+		spi-max-frequency = <2000000>;
+		xtal-frequency = <26000000>;
+		reg = <0>;
+		gpio-0-gpios = <&gpio2 4 GPIO_ACTIVE_HIGH>;
+		gpio-1-gpios = <&gpio2 5 GPIO_ACTIVE_HIGH>;
+		gpio-2-gpios = <&gpio2 6 GPIO_ACTIVE_HIGH>;
+		gpio-3-gpios = <&gpio2 7 GPIO_ACTIVE_HIGH>;
+
+		sdn-gpios    = <&gpio3 4 GPIO_ACTIVE_HIGH>;
+		nirq-gpios   = <&gpio3 5 GPIO_ACTIVE_LOW>;
+
+		rx-enable-gpios = <&gpio4 4 (GPIO_ACTIVE_HIGH | SI32_GPIO_DS_ENABLE_CURRENT_LIMIT)>;
+		tx-enable-gpios = <&gpio4 5 (GPIO_ACTIVE_HIGH | SI32_GPIO_DS_ENABLE_CURRENT_LIMIT)>;
+	};
+
+};
+
+&flash0 {
+	status = "okay";
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		slot0_partition: partition@0 {
+			label = "image-0";
+			reg = <0x00000000 DT_SIZE_K(1664)>;
+		};
+
+		storage_partition: partition@250000 {
+			label = "storage";
+			reg = <0x00030000 DT_SIZE_K(64)>;
+		};
+	};
+};

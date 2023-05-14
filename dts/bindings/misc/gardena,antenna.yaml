@@ -1,0 +1,32 @@
+# Copyright (c) 2023 GARDENA GmbH
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: default GPIO config for GARDENA sim3u radio module
+
+compatible: "gardena,antenna"
+
+include: base.yaml
+
+properties:
+    diversity-mode-gpios:
+        type: phandle-array
+        required: true
+    diversity-state-gpios:
+        type: phandle-array
+        required: true
+    antenna-control-gpios:
+        type: phandle-array
+        required: true
+    antenna-input-gpios:
+        type: phandle-array
+        required: true
+    led-red-input-gpios:
+        type: phandle-array
+        required: true
+    led-green-input-gpios:
+        type: phandle-array
+        required: true
+    led-blue-input-gpios:
+        type: phandle-array
+        required: true
