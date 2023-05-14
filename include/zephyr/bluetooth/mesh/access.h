@@ -17,10 +17,18 @@
 /* Internal macros used to initialize array members */
 #define BT_MESH_KEY_UNUSED_ELT_(IDX, _) BT_MESH_KEY_UNUSED
 #define BT_MESH_ADDR_UNASSIGNED_ELT_(IDX, _) BT_MESH_ADDR_UNASSIGNED
+#define BT_MESH_UUID_UNASSIGNED_ELT_(IDX, _) NULL
 #define BT_MESH_MODEL_KEYS_UNUSED(_keys)			\
 	{ LISTIFY(_keys, BT_MESH_KEY_UNUSED_ELT_, (,)) }
 #define BT_MESH_MODEL_GROUPS_UNASSIGNED(_grps)			\
 	{ LISTIFY(_grps, BT_MESH_ADDR_UNASSIGNED_ELT_, (,)) }
+#if CONFIG_BT_MESH_LABEL_COUNT > 0
+#define BT_MESH_MODEL_UUIDS_UNASSIGNED()			\
+	.uuids = (const uint8_t *[]){ LISTIFY(CONFIG_BT_MESH_LABEL_COUNT, \
+				     BT_MESH_UUID_UNASSIGNED_ELT_, (,)) },
+#else
+#define BT_MESH_MODEL_UUIDS_UNASSIGNED()
+#endif
 
 /**
  * @brief Access layer
@@ -286,6 +294,7 @@ struct bt_mesh_model_op {
 	.keys_cnt = _keys,							\
 	.groups = (uint16_t []) BT_MESH_MODEL_GROUPS_UNASSIGNED(_grps),		\
 	.groups_cnt = _grps,							\
+	BT_MESH_MODEL_UUIDS_UNASSIGNED()					\
 	.op = _op,								\
 	.cb = _cb,								\
 	.user_data = _user_data,						\
@@ -319,6 +328,7 @@ struct bt_mesh_model_op {
 	.keys_cnt = _keys,									\
 	.groups = (uint16_t []) BT_MESH_MODEL_GROUPS_UNASSIGNED(_grps),				\
 	.groups_cnt = _grps,									\
+	BT_MESH_MODEL_UUIDS_UNASSIGNED()							\
 	.user_data = _user_data,								\
 	.cb = _cb,										\
 }
@@ -364,6 +374,7 @@ struct bt_mesh_model_op {
 	.keys_cnt = CONFIG_BT_MESH_MODEL_KEY_COUNT,                          \
 	.groups = (uint16_t []) BT_MESH_MODEL_GROUPS_UNASSIGNED(CONFIG_BT_MESH_MODEL_GROUP_COUNT), \
 	.groups_cnt = CONFIG_BT_MESH_MODEL_GROUP_COUNT,                      \
+	BT_MESH_MODEL_UUIDS_UNASSIGNED()                                     \
 	.op = _op,                                                           \
 	.cb = _cb,                                                           \
 	.user_data = _user_data,                                             \
@@ -418,6 +429,7 @@ struct bt_mesh_model_op {
 	.keys_cnt = CONFIG_BT_MESH_MODEL_KEY_COUNT,                          \
 	.groups = (uint16_t []) BT_MESH_MODEL_GROUPS_UNASSIGNED(CONFIG_BT_MESH_MODEL_GROUP_COUNT), \
 	.groups_cnt = CONFIG_BT_MESH_MODEL_GROUP_COUNT,                      \
+	BT_MESH_MODEL_UUIDS_UNASSIGNED()                                     \
 	.user_data = _user_data,                                             \
 	.cb = _cb,                                                           \
 	.metadata = _metadata,                                               \
@@ -545,6 +557,7 @@ struct bt_mesh_model_pub {
 	struct bt_mesh_model *mod;
 
 	uint16_t addr;          /**< Publish Address. */
+	const uint8_t *uuid;    /**< Label UUID if Publish Address is Virtual Address. */
 	uint16_t key:12,        /**< Publish AppKey Index. */
 		 cred:1,        /**< Friendship Credentials Flag. */
 		 send_rel:1,    /**< Force reliable sending (segment acks) */
@@ -743,6 +756,11 @@ struct bt_mesh_model {
 	/** Subscription List (group or virtual addresses) */
 	uint16_t * const groups;
 	const uint16_t groups_cnt;
+
+#if CONFIG_BT_MESH_LABEL_COUNT > 0
+	/** List of Label UUIDs the model is subscribed to. */
+	const uint8_t ** const uuids;
+#endif
 
 	/** Opcode handler list */
 	const struct bt_mesh_model_op * const op;
