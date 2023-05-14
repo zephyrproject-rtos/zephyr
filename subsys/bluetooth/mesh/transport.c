@@ -467,7 +467,7 @@ static void seg_tx_send_unacked(struct seg_tx *tx)
 
 end:
 	if (IS_ENABLED(CONFIG_BT_MESH_LOW_POWER) &&
-	    bt_mesh_lpn_established()) {
+	    bt_mesh_lpn_established() && !bt_mesh_has_addr(ctx.addr)) {
 		bt_mesh_lpn_poll();
 	}
 
@@ -1104,7 +1104,7 @@ static int send_ack(struct bt_mesh_subnet *sub, uint16_t src, uint16_t dst,
 
 	LOG_DBG("SeqZero 0x%04x Block 0x%08x OBO %u", seq_zero, block, obo);
 
-	if (bt_mesh_lpn_established()) {
+	if (bt_mesh_lpn_established() && !bt_mesh_has_addr(ctx.addr)) {
 		LOG_WRN("Not sending ack when LPN is enabled");
 		return 0;
 	}
