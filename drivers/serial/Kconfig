@@ -247,4 +247,6 @@ source "drivers/serial/Kconfig.intel_lw"
 
 source "drivers/serial/Kconfig.ra"
 
+source "drivers/serial/Kconfig.si32"
+
 endif # SERIAL
