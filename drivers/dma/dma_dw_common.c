@@ -132,7 +132,7 @@ int dw_dma_config(const struct device *dev, uint32_t channel,
 	uint32_t msize = 3;/* default msize, 8 bytes */
 	int ret = 0;
 
-	if (channel >= DW_MAX_CHAN) {
+	if (channel >= DW_CHAN_COUNT) {
 		LOG_ERR("%s: invalid dma channel %d", __func__, channel);
 		ret = -EINVAL;
 		goto out;
@@ -444,7 +444,7 @@ int dw_dma_start(const struct device *dev, uint32_t channel)
 	int ret = 0;
 
 	/* validate channel */
-	if (channel >= DW_MAX_CHAN) {
+	if (channel >= DW_CHAN_COUNT) {
 		ret = -EINVAL;
 		goto out;
 	}
@@ -492,10 +492,10 @@ int dw_dma_start(const struct device *dev, uint32_t channel)
 
 	/* channel needs to start from scratch, so write SAR and DAR */
 #ifdef CONFIG_DMA_64BIT
-	dw_write(dev_cfg->base, DW_SAR(channel), (uint32_t)(lli->sar & BIT_MASK(32)));
-	dw_write(dev_cfg->base, DW_SAR_HI(channel), (uint32_t)(lli->sar >> 32));
-	dw_write(dev_cfg->base, DW_DAR(channel), (uint32_t)(lli->dar & BIT_MASK(32)));
-	dw_write(dev_cfg->base, DW_DAR_HI(channel), (uint32_t)(lli->dar >> 32));
+	dw_write(dev_cfg->base, DW_SAR(channel), (uint32_t)(lli->sar & DW_ADDR_MASK_32));
+	dw_write(dev_cfg->base, DW_SAR_HI(channel), (uint32_t)(lli->sar >> DW_ADDR_RIGHT_SHIFT));
+	dw_write(dev_cfg->base, DW_DAR(channel), (uint32_t)(lli->dar & DW_ADDR_MASK_32));
+	dw_write(dev_cfg->base, DW_DAR_HI(channel), (uint32_t)(lli->dar >> DW_ADDR_RIGHT_SHIFT));
 #else
 	dw_write(dev_cfg->base, DW_SAR(channel), lli->sar);
 	dw_write(dev_cfg->base, DW_DAR(channel), lli->dar);
@@ -548,7 +548,7 @@ int dw_dma_stop(const struct device *dev, uint32_t channel)
 	struct dw_dma_chan_data *chan_data = &dev_data->chan[channel];
 	int ret = 0;
 
-	if (channel >= DW_MAX_CHAN) {
+	if (channel >= DW_CHAN_COUNT) {
 		ret = -EINVAL;
 		goto out;
 	}
@@ -617,7 +617,7 @@ int dw_dma_resume(const struct device *dev, uint32_t channel)
 	int ret = 0;
 
 	/* Validate channel index */
-	if (channel >= DW_MAX_CHAN) {
+	if (channel >= DW_CHAN_COUNT) {
 		ret = -EINVAL;
 		goto out;
 	}
@@ -649,7 +649,7 @@ int dw_dma_suspend(const struct device *dev, uint32_t channel)
 	int ret = 0;
 
 	/* Validate channel index */
-	if (channel >= DW_MAX_CHAN) {
+	if (channel >= DW_CHAN_COUNT) {
 		ret = -EINVAL;
 		goto out;
 	}
@@ -704,7 +704,7 @@ int dw_dma_setup(const struct device *dev)
 
 	LOG_DBG("%s: dma %s", __func__, dev->name);
 
-	for (i = 0; i <  DW_MAX_CHAN; i++) {
+	for (i = 0; i <  DW_CHAN_COUNT; i++) {
 		dw_read(dev_cfg->base, DW_DMA_CHAN_EN);
 	}
 
