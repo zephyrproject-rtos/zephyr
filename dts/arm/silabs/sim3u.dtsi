@@ -73,6 +73,34 @@
 				write-block-size = <2>;
 			};
 		};
+
+		gpio0: gpio@4002a0a0 {
+			compatible = "silabs,si32-gpio";
+			gpio-controller;
+			#gpio-cells = <2>;
+			reg = <0x4002a0a0 0xa0>;
+		};
+
+		gpio1: gpio@4002a140 {
+			compatible = "silabs,si32-gpio";
+			gpio-controller;
+			#gpio-cells = <2>;
+			reg = <0x4002a140 0xa0>;
+		};
+
+		gpio2: gpio@4002a1e0 {
+			compatible = "silabs,si32-gpio";
+			gpio-controller;
+			#gpio-cells = <2>;
+			reg = <0x4002a1e0 0xc0>;
+		};
+
+		gpio3: gpio@4002a320 {
+			compatible = "silabs,si32-gpio";
+			gpio-controller;
+			#gpio-cells = <2>;
+			reg = <0x4002a320 0xa0>;
+		};
 	};
 };
 
