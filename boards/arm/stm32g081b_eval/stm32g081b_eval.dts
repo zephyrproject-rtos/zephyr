@@ -74,6 +74,7 @@
 		sw3 = &joy_right;
 		sw4 = &joy_up;
 		watchdog0 = &iwdg;
+		volt-sensor0 = &vref;
 	};
 };
 
@@ -210,5 +211,9 @@
 };
 
 &iwdg {
+	status = "okay";
+};
+
+&vref {
 	status = "okay";
 };

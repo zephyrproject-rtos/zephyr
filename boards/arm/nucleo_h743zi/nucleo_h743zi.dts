@@ -58,6 +58,7 @@
 		sw0 = &user_button;
 		watchdog0 = &iwdg;
 		die-temp0 = &die_temp;
+		volt-sensor0 = &vref;
 	};
 };
 
@@ -241,5 +242,9 @@ zephyr_udc0: &usbotg_fs {
 };
 
 &iwdg1 {
+	status = "okay";
+};
+
+&vref {
 	status = "okay";
 };

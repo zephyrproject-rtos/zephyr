@@ -51,6 +51,7 @@
 	aliases {
 		led0 = &led0;
 		sw0 = &user_button;
+		volt-sensor0 = &vref;
 	};
 };
 
@@ -191,5 +192,9 @@ zephyr_udc0: &usbotg_fs {
 &adc1 {
 	pinctrl-0 = <&adc1_in6_pa1>;
 	pinctrl-names = "default";
+	status = "okay";
+};
+
+&vref {
 	status = "okay";
 };

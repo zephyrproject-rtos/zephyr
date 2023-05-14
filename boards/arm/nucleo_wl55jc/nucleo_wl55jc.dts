@@ -61,6 +61,7 @@
 		lora0 = &lora;
 		watchdog0 = &iwdg;
 		die-temp0 = &die_temp;
+		volt-sensor0 = &vref;
 	};
 };
 
@@ -195,4 +196,8 @@
 			reg = <0x0003c000 DT_SIZE_K(16)>;
 		};
 	};
+};
+
+&vref {
+	status = "okay";
 };

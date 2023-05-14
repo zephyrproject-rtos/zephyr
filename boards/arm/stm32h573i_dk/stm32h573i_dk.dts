@@ -56,6 +56,7 @@
 		watchdog0 = &iwdg;
 		spi-flash0 = &mx25lm51245;
 		die-temp0 = &die_temp;
+		volt-sensor0 = &vref;
 	};
 };
 
@@ -243,5 +244,9 @@
 };
 
 &die_temp {
+	status = "okay";
+};
+
+&vref {
 	status = "okay";
 };

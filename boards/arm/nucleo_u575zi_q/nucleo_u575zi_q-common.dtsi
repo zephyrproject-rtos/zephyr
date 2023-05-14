@@ -174,3 +174,7 @@
 	bus-speed-data = <1000000>;
 	status = "okay";
 };
+
+&vref1 {
+	status = "okay";
+};

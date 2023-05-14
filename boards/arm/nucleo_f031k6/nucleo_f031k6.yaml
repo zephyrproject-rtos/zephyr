@@ -9,6 +9,7 @@ toolchain:
 ram: 4
 flash: 32
 supported:
+  - adc
   - i2c
   - spi
   - gpio
