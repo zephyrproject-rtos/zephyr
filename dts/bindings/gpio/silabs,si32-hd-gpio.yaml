@@ -1,0 +1,40 @@
+# Copyright (c) 2023 GARDENA GmbH
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: SI32 HD GPIO node
+
+compatible: "silabs,si32-hd-gpio"
+
+include: [gpio-controller.yaml, base.yaml]
+
+properties:
+    reg:
+      required: true
+
+    "#gpio-cells":
+      const: 2
+
+    nchannel-current-limit:
+      required: false
+      type: int
+
+    pchannel-current-limit:
+      required: false
+      type: int
+
+    enable-bias:
+        required: false
+        type: boolean
+
+    low-power-port-mode:
+      required: false
+      type: boolean
+
+    enable-drivers:
+      required: false
+      type: boolean
+
+gpio-cells:
+  - pin
+  - flags
