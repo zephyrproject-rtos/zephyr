@@ -319,7 +319,7 @@ uint8_t ull_peripheral_iso_setup(struct pdu_data_llctrl_cis_ind *ind,
 	cis->sync_delay = sys_get_le24(ind->cis_sync_delay);
 	cis->offset = cis_offset;
 	memcpy(cis->lll.access_addr, ind->aa, sizeof(ind->aa));
-	cis->lll.event_count = -1;
+	cis->lll.event_count = LLL_CONN_ISO_EVENT_COUNT_MAX;
 	cis->lll.next_subevent = 0U;
 	cis->lll.sn = 0U;
 	cis->lll.nesn = 0U;
