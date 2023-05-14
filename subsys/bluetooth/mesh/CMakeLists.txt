@@ -17,6 +17,7 @@ zephyr_library_sources_ifdef(CONFIG_BT_MESH
     msg.c
     cfg_srv.c
     health_srv.c
+    va.c
 )
 
 if (CONFIG_BT_MESH_V1d1)

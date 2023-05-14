@@ -134,7 +134,8 @@ static void test_ivu_deferring(void)
 	atomic_set_bit(bt_mesh.flags, BT_MESH_IVU_IN_PROGRESS);
 	bt_mesh.ivu_duration = BT_MESH_IVU_MIN_HOURS;
 
-	ASSERT_OK(bt_mesh_test_send_async(0x0002, 20, FORCE_SEGMENTATION, &async_send_cb, &sem));
+	ASSERT_OK(bt_mesh_test_send_async(0x0002, NULL, 20, FORCE_SEGMENTATION, &async_send_cb,
+					  &sem));
 	ASSERT_FALSE(bt_mesh_net_iv_update(TEST_IV_IDX, BCN_IV_IN_IDLE));
 	ASSERT_TRUE(atomic_test_bit(bt_mesh.flags, BT_MESH_IVU_IN_PROGRESS));
 

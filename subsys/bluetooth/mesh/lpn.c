@@ -955,7 +955,7 @@ void bt_mesh_lpn_group_add(uint16_t group)
 	sub_update(TRANS_CTL_OP_FRIEND_SUB_ADD);
 }
 
-void bt_mesh_lpn_group_del(uint16_t *groups, size_t group_count)
+void bt_mesh_lpn_group_del(const uint16_t *groups, size_t group_count)
 {
 	int i;
 

@@ -141,13 +141,13 @@ void bt_mesh_test_timeout(bs_time_t HW_device_time);
 
 void bt_mesh_device_setup(const struct bt_mesh_prov *prov, const struct bt_mesh_comp *comp);
 
-int bt_mesh_test_recv(uint16_t len, uint16_t dst, k_timeout_t timeout);
+int bt_mesh_test_recv(uint16_t len, uint16_t dst, const uint8_t *uuid, k_timeout_t timeout);
 int bt_mesh_test_recv_msg(struct bt_mesh_test_msg *msg, k_timeout_t timeout);
 int bt_mesh_test_recv_clear(void);
 
-int bt_mesh_test_send(uint16_t addr, size_t len,
+int bt_mesh_test_send(uint16_t addr, const uint8_t *uuid, size_t len,
 		      enum bt_mesh_test_send_flags flags, k_timeout_t timeout);
-int bt_mesh_test_send_async(uint16_t addr, size_t len,
+int bt_mesh_test_send_async(uint16_t addr, const uint8_t *uuid, size_t len,
 			    enum bt_mesh_test_send_flags flags,
 			    const struct bt_mesh_send_cb *send_cb,
 			    void *cb_data);
