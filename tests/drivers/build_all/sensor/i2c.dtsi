@@ -745,3 +745,9 @@ test_i2c_tcs3400: tcs3400@72 {
 	reg = <0x72>;
 	int-gpios = <&test_gpio 0 0>;
 };
+
+test_tcn75a: tcn75a@73 {
+	compatible = "microchip,tcn75a";
+	reg = <0x73>;
+	alert-gpios = <&test_gpio 0 0>;
+};
