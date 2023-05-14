@@ -51,6 +51,12 @@
 #define GS_TLS_SEG	(0x18 | 0x03)
 #endif
 
+#if CONFIG_THREAD_LOCAL_STORAGE
+#define PF_TSS		((GS_TLS_SEG & 0xF8) + 8)
+#else
+#define PF_TSS		(GS_TLS_SEG & 0xF8)
+#endif /*CONFIG_THREAD_LOCAL_STORAGE*/
+
 /**
  * Macro used internally by NANO_CPU_INT_REGISTER and NANO_CPU_INT_REGISTER_ASM.
  * Not meant to be used explicitly by platform, driver or application code.

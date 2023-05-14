@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2013-2014 Wind River Systems, Inc.
+ * Copyright (c) 2023 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -117,7 +118,9 @@ EXC_FUNC_CODE(IV_ALIGNMENT_CHECK, 0);
 EXC_FUNC_NOCODE(IV_MACHINE_CHECK, 0);
 #endif
 
+#ifndef CONFIG_X86_PF_USE_TSS
 _EXCEPTION_CONNECT_CODE(z_x86_page_fault_handler, IV_PAGE_FAULT, 0);
+#endif
 
 #ifdef CONFIG_X86_ENABLE_TSS
 static __pinned_noinit volatile z_arch_esf_t _df_esf;
@@ -142,7 +145,15 @@ struct task_state_segment _main_tss = {
 	 * In a special kernel page that, unlike all other kernel pages,
 	 * is marked present in the user page table.
 	 */
-	.esp0 = (uint32_t)&z_trampoline_stack_end
+	.esp0 = (uint32_t)&z_trampoline_stack_end,
+#endif
+#ifdef CONFIG_X86_PF_USE_TSS
+	.cs = CODE_SEG,
+	.ds = DATA_SEG,
+	.es = DATA_SEG,
+	.ss = DATA_SEG,
+	.cr3 = (uint32_t)
+		Z_MEM_PHYS_ADDR(POINTER_TO_UINT(&z_x86_kernel_ptables[0])),
 #endif
 };
 
@@ -229,3 +240,55 @@ static FUNC_NORETURN __used void df_handler_top(void)
 _X86_IDT_TSS_REGISTER(DF_TSS, -1, -1, IV_DOUBLE_FAULT, 0);
 
 #endif /* CONFIG_X86_ENABLE_TSS */
+
+#ifdef CONFIG_X86_PF_USE_TSS
+__pinned_noinit static char _pf_stack[CONFIG_X86_PF_TSS_STACK_SIZE];
+
+static FUNC_NORETURN __used void pf_handler(void);
+
+Z_GENERIC_SECTION(.tss)
+struct task_state_segment _pf_tss = {
+	.esp = (uint32_t)(_pf_stack + sizeof(_pf_stack)),
+	.cs = CODE_SEG,
+	.ds = DATA_SEG,
+	.es = DATA_SEG,
+	.ss = DATA_SEG,
+	.eip = (uint32_t)pf_handler,
+	.cr3 = (uint32_t)
+		Z_MEM_PHYS_ADDR(POINTER_TO_UINT(&z_x86_kernel_ptables[0]))
+};
+
+static __pinned_noinit z_arch_esf_t pf_esf;
+__pinned_func
+static FUNC_NORETURN __used void pf_handler(void)
+{
+	while (1) {
+		pf_esf.esp = _main_tss.esp;
+		pf_esf.ebp = _main_tss.ebp;
+		pf_esf.ebx = _main_tss.ebx;
+		pf_esf.esi = _main_tss.esi;
+		pf_esf.edi = _main_tss.edi;
+		pf_esf.edx = _main_tss.edx;
+		pf_esf.eax = _main_tss.eax;
+		pf_esf.ecx = _main_tss.ecx;
+		pf_esf.errorCode = *((unsigned int *)(_pf_tss.esp - 4));
+		pf_esf.eip = _main_tss.eip;
+		pf_esf.cs = _main_tss.cs;
+		pf_esf.eflags = _main_tss.eflags;
+
+		z_x86_page_fault_handler(&pf_esf);
+
+		/* recover %esp */
+		__asm__ volatile ("movl %0, %%esp\n\t" \
+				: : "r" (_pf_tss.esp) : "memory");
+
+		/* switch back to _main_tss */
+		__asm__ volatile ("iret");
+	}
+
+	CODE_UNREACHABLE;
+}
+
+_X86_IDT_TSS_REGISTER(PF_TSS, -1, -1, IV_PAGE_FAULT, 0);
+
+#endif /* CONFIG_X86_PF_USE_TSS */

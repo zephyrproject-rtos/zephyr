@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Intel Corporation
+ * Copyright (c) 2021-2023 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -46,7 +46,14 @@
 #else
     #define GDT_NUM_ENTRIES 3
 #endif /* CONFIG_X86_USERSPACE */
-	. += (GDT_NUM_ENTRIES + GDT_NUM_TLS_ENTRIES) * 8;
+
+#ifdef CONFIG_X86_PF_USE_TSS
+#define GDT_NUM_PF_TSS_ENTRIES 1
+#else
+#define GDT_NUM_PF_TSS_ENTRIES 0
+#endif
+
+	. += (GDT_NUM_ENTRIES + GDT_NUM_TLS_ENTRIES + GDT_NUM_PF_TSS_ENTRIES) * 8;
 	. += CONFIG_GDT_RESERVED_NUM_ENTRIES * 8;
 #endif /* LINKER_ZEPHYR_FINAL */
 #endif /* CONFIG_GDT_DYNAMIC */
