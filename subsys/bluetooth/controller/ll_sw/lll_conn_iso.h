@@ -53,6 +53,8 @@ struct lll_conn_iso_stream {
 	memq_link_t *link_tx_free;
 };
 
+#define LLL_CONN_ISO_EVENT_COUNT_MAX BIT64_MASK(39)
+
 struct lll_conn_iso_group {
 	struct lll_hdr hdr;
 
