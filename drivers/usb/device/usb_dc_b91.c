@@ -19,6 +19,11 @@
 
 #include <soc.h>
 
+#if (defined CONFIG_USB_TELINK_B91 && DT_PROP(DT_PATH(cpus, cpu_0), clock_frequency) != 48000000u) \
+&& (defined CONFIG_USB_TELINK_B91 && DT_PROP(DT_PATH(cpus, cpu_0), clock_frequency) != 96000000u)
+#error USB on current paltform requires CPU clocks frequency equal 48MHz or 96 MHz.
+#endif
+
 #define LOG_LEVEL CONFIG_USB_DRIVER_LOG_LEVEL
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(usb_b91);
