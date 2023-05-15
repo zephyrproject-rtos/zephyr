@@ -235,24 +235,11 @@ function(ExternalZephyrProject_Add)
     set_target_properties(${ZBUILD_APPLICATION} PROPERTIES MAIN_APP True)
   endif()
 
-  if(DEFINED ZBUILD_BOARD)
-    # Only set image specific board if provided.
-    # The sysbuild BOARD is exported through sysbuild cache, and will be used
-    # unless <image>_BOARD is defined.
-    if(DEFINED ZBUILD_BOARD_REVISION)
-      # Use provided board revision
-      set_target_properties(${ZBUILD_APPLICATION} PROPERTIES BOARD ${ZBUILD_BOARD}@${ZBUILD_BOARD_REVISION})
-    else()
-      set_target_properties(${ZBUILD_APPLICATION} PROPERTIES BOARD ${ZBUILD_BOARD})
-    endif()
-  elseif(DEFINED ZBUILD_BOARD_REVISION)
+  if(DEFINED ZBUILD_BOARD_REVISION AND NOT DEFINED ZBUILD_BOARD)
     message(FATAL_ERROR
       "ExternalZephyrProject_Add(... BOARD_REVISION ${ZBUILD_BOARD_REVISION})"
       " requires BOARD."
     )
-  elseif(DEFINED BOARD_REVISION)
-    # Include build revision for target image
-    set_target_properties(${ZBUILD_APPLICATION} PROPERTIES BOARD ${BOARD}@${BOARD_REVISION})
   endif()
 
   if(DEFINED ZBUILD_GROUP)
@@ -260,6 +247,12 @@ function(ExternalZephyrProject_Add)
       ExternalZephyrProject_Group(${group} INCLUDE ${ZBUILD_APPLICATION})
     endforeach()
   endif()
+
+  foreach(arg BOARD BOARD_REVISION)
+    if(DEFINED ZBUILD_${arg})
+      set_target_properties(${ZBUILD_APPLICATION} PROPERTIES ${arg} "${ZBUILD_${arg}}")
+    endif()
+  endforeach()
 endfunction()
 
 # Usage:
@@ -303,9 +296,10 @@ function(ExternalZephyrProject_Cmake)
   )
 
   ExternalProject_Get_Property(${ZCMAKE_APPLICATION} SOURCE_DIR BINARY_DIR CMAKE_ARGS)
-  get_target_property(${ZCMAKE_APPLICATION}_CACHE_FILE ${ZCMAKE_APPLICATION} CACHE_FILE)
-  get_target_property(${ZCMAKE_APPLICATION}_BOARD      ${ZCMAKE_APPLICATION} BOARD)
-  get_target_property(${ZCMAKE_APPLICATION}_MAIN_APP   ${ZCMAKE_APPLICATION} MAIN_APP)
+  get_target_property(${ZCMAKE_APPLICATION}_CACHE_FILE     ${ZCMAKE_APPLICATION} CACHE_FILE)
+  get_target_property(${ZCMAKE_APPLICATION}_BOARD          ${ZCMAKE_APPLICATION} BOARD)
+  get_target_property(${ZCMAKE_APPLICATION}_BOARD_REVISION ${ZCMAKE_APPLICATION} BOARD_REVISION)
+  get_target_property(${ZCMAKE_APPLICATION}_MAIN_APP       ${ZCMAKE_APPLICATION} MAIN_APP)
 
   get_cmake_property(sysbuild_cache CACHE_VARIABLES)
   foreach(var_name ${sysbuild_cache})
@@ -329,12 +323,23 @@ function(ExternalZephyrProject_Cmake)
     list(APPEND sysbuild_cache_strings "SYSBUILD_MAIN_APP:BOOL=True\n")
   endif()
 
+  unset(image_board)
   if(${ZCMAKE_APPLICATION}_BOARD)
     # Only set image specific board if provided.
     # The sysbuild BOARD is exported through sysbuild cache, and will be used
     # unless <image>_BOARD is defined.
+    set(image_board ${${ZCMAKE_APPLICATION}_BOARD})
+    if(${ZCMAKE_APPLICATION}_BOARD_REVISION)
+      # Use provided board revision
+      set(image_board ${image_board}@${${ZCMAKE_APPLICATION}_BOARD_REVISION})
+    endif()
+  elseif(DEFINED BOARD_REVISION)
+    # Include build revision for target image
+    set(image_board ${BOARD}@${BOARD_REVISION})
+  endif()
+  if(DEFINED image_board)
     list(APPEND sysbuild_cache_strings
-         "${ZCMAKE_APPLICATION}_BOARD:STRING=${${ZCMAKE_APPLICATION}_BOARD}\n"
+         "${ZCMAKE_APPLICATION}_BOARD:STRING=${image_board}\n"
     )
   endif()
 
