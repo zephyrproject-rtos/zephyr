@@ -8,6 +8,8 @@
 #include <zephyr/dt-bindings/display/panel.h>
 #include <zephyr/dt-bindings/flash_controller/ospi.h>
 
+/delete-node/ &adc3;
+
 / {
 	soc {
 		compatible = "st,stm32h7a3", "st,stm32h7", "simple-bus";
