@@ -114,6 +114,7 @@ enum net_event_wifi_cmd {
 	NET_EVENT_WIFI_CMD_TWT,
 	NET_EVENT_WIFI_CMD_TWT_SLEEP_STATE,
 	NET_EVENT_WIFI_CMD_RAW_SCAN_RESULT,
+	NET_EVENT_WIFI_CMD_DISCONNECT_COMPLETE,
 };
 
 #define NET_EVENT_WIFI_SCAN_RESULT				\
@@ -139,6 +140,9 @@ enum net_event_wifi_cmd {
 
 #define NET_EVENT_WIFI_RAW_SCAN_RESULT                          \
 	(_NET_WIFI_EVENT | NET_EVENT_WIFI_CMD_RAW_SCAN_RESULT)
+
+#define NET_EVENT_WIFI_DISCONNECT_COMPLETE			\
+	(_NET_WIFI_EVENT | NET_EVENT_WIFI_CMD_DISCONNECT_COMPLETE)
 /* Each result is provided to the net_mgmt_event_callback
  * via its info attribute (see net_mgmt.h)
  */
@@ -344,6 +348,7 @@ void wifi_mgmt_raise_twt_sleep_state(struct net_if *iface, int twt_sleep_state);
 void wifi_mgmt_raise_raw_scan_result_event(struct net_if *iface,
 		struct wifi_raw_scan_result *raw_scan_info);
 #endif /* CONFIG_WIFI_MGMT_RAW_SCAN_RESULTS */
+void wifi_mgmt_raise_disconnect_complete_event(struct net_if *iface, int status);
 #ifdef __cplusplus
 }
 #endif
