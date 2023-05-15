@@ -58,13 +58,17 @@ extern "C" {
  * Descriptor node
  *
  * Descriptor node is used to manage descriptors that are not
- * directly part of a structure string, and bos descriptors.
+ * directly part of a structure, such as string or bos descriptors.
  */
 struct usbd_desc_node {
 	/** slist node struct */
 	sys_snode_t node;
-	/** Optional descriptor index, required for string descriptors */
-	uint32_t idx;
+	/** Descriptor index, required for string descriptors */
+	unsigned int idx : 8;
+	/** If not set, string descriptor must be converted to UTF16LE */
+	unsigned int utf16le : 1;
+	/** If not set, device stack obtains SN using the hwinfo API */
+	unsigned int custom_sn : 1;
 	/** Pointer to a descriptor */
 	void *desc;
 };
