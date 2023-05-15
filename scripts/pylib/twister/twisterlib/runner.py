@@ -677,6 +677,8 @@ class ProjectBuilder(FilterBuilder):
         new_ztest_unit_test_regex = re.compile(r"z_ztest_unit_test__([^\s]*)__([^\s]*)")
         for section in elf.iter_sections():
             if isinstance(section, SymbolTableSection):
+                self.instance.testcases.clear()
+                self.instance.testsuite.testcases.clear()
                 for sym in section.iter_symbols():
                     # It is only meant for new ztest fx because only new ztest fx exposes test functions
                     # precisely.
@@ -685,9 +687,6 @@ class ProjectBuilder(FilterBuilder):
                     # The 2nd capture group is new ztest unit test name.
                     matches = new_ztest_unit_test_regex.findall(sym.name)
                     if matches:
-                        # this is new ztest fx
-                        self.instance.testcases.clear()
-                        self.instance.testsuite.testcases.clear()
                         for m in matches:
                             # new_ztest_suite = m[0] # not used for now
                             test_func_name = m[1].replace("test_", "")
@@ -697,7 +696,6 @@ class ProjectBuilder(FilterBuilder):
                             # Then we can further include the new_ztest_suite info in the testcase_id.
                             self.instance.add_testcase(name=testcase_id)
                             self.instance.testsuite.add_testcase(name=testcase_id)
-
 
     def cleanup_artifacts(self, additional_keep=[]):
         logger.debug("Cleaning up {}".format(self.instance.build_dir))
