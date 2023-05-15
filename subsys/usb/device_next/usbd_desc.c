@@ -11,6 +11,7 @@
 #include <zephyr/usb/usbd.h>
 #include <zephyr/drivers/hwinfo.h>
 
+#include "usbd_desc.h"
 #include "usbd_device.h"
 
 #include <zephyr/logging/log.h>
@@ -115,6 +116,19 @@ void *usbd_get_descriptor(struct usbd_contex *const uds_ctx,
 	}
 
 	return NULL;
+}
+
+int usbd_desc_remove_all(struct usbd_contex *const uds_ctx)
+{
+	struct usbd_desc_node *tmp;
+	sys_snode_t *node;
+
+	while ((node = sys_slist_get(&uds_ctx->descriptors))) {
+		tmp = CONTAINER_OF(node, struct usbd_desc_node, node);
+		LOG_DBG("Remove descriptor node %p", tmp);
+	}
+
+	return 0;
 }
 
 int usbd_add_descriptor(struct usbd_contex *const uds_ctx,
