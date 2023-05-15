@@ -14,8 +14,8 @@ include(python)
 # WEST_PYTHON not being used.
 if(DEFINED WEST_PYTHON)
   # Cut out any symbolic links, e.g. python3.x -> python
-  get_filename_component(west_realpath ${WEST_PYTHON} REALPATH)
-  get_filename_component(python_realpath ${PYTHON_EXECUTABLE} REALPATH)
+  file(REAL_PATH west_realpath ${WEST_PYTHON})
+  file(REAL_PATH python_realpath ${PYTHON_EXECUTABLE})
 
   # If realpaths differ from the variables we're using, add extra
   # diagnostics.
@@ -104,5 +104,16 @@ else()
     # west topdir is undefined.
     # That's fine; west is optional, so could be custom Zephyr project.
     set(WEST WEST-NOTFOUND CACHE INTERNAL "West")
+  endif()
+endif()
+
+if(WIN32)
+  # Replace windows back-slashes in path with forward-slashes to prevent issues
+  # with the back-slashes being wrongly interpreted as escape sequence codes.
+  if(DEFINED WEST_PYTHON)
+    file(TO_CMAKE_PATH "${WEST_PYTHON}" WEST_PYTHON)
+  endif()
+  if(DEFINED PYTHON_EXECUTABLE)
+    file(TO_CMAKE_PATH "${PYTHON_EXECUTABLE}" PYTHON_EXECUTABLE)
   endif()
 endif()
