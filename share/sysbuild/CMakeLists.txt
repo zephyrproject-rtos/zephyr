@@ -24,9 +24,6 @@ find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE} COMPONENTS ${zephyr_modules
 
 project(sysbuild LANGUAGES)
 
-# Global list of images enabled in this multi image build system.
-set(IMAGES)
-
 get_filename_component(APP_DIR  ${APP_DIR} ABSOLUTE)
 get_filename_component(app_name ${APP_DIR} NAME)
 
@@ -85,7 +82,6 @@ ExternalZephyrProject_Add(
   SOURCE_DIR ${APP_DIR}
   MAIN_APP
 )
-list(APPEND IMAGES "${app_name}")
 set(DEFAULT_IMAGE "${app_name}")
 
 add_subdirectory(bootloader)
@@ -94,25 +90,24 @@ add_subdirectory(bootloader)
 include(${BOARD_DIR}/sysbuild.cmake OPTIONAL)
 
 # This allows image specific sysbuild.cmake to be processed.
-list(LENGTH IMAGES images_length)
-while(NOT "${images_length}" EQUAL "${processed_length}")
-  foreach(image ${IMAGES})
-    if(NOT image IN_LIST images_sysbuild_processed)
-      ExternalProject_Get_property(${image} SOURCE_DIR)
-      include(${SOURCE_DIR}/sysbuild.cmake OPTIONAL)
-      list(APPEND images_sysbuild_processed ${image})
-    endif()
-  endforeach()
-
+set(i 0)
+while(TRUE)
+  get_property(IMAGES GLOBAL PROPERTY sysbuild_images)
   list(LENGTH IMAGES images_length)
-  list(LENGTH images_sysbuild_processed processed_length_new)
-
-  # Check for any duplicate entries in image names to prevent an infinite loop
-  if("${processed_length_new}" EQUAL "${processed_length}")
-    # Image length was different than processed length, but no new images are processed.
-    message(FATAL_ERROR "A duplicate image name was provided, image names must be unique.")
+  if(i GREATER_EQUAL ${images_length})
+    break()
   endif()
-  set(processed_length ${processed_length_new})
+
+  list(GET IMAGES ${i} image)
+  list(FIND IMAGES ${image} j)
+  if(NOT ${i} EQUAL ${j})
+    message(FATAL_ERROR "Found multiple images named '${image}'. Image names must be unique.")
+  endif()
+
+  ExternalProject_Get_property(${image} SOURCE_DIR)
+  include(${SOURCE_DIR}/sysbuild.cmake OPTIONAL)
+
+  math(EXPR i "${i} + 1")
 endwhile()
 
 sysbuild_images_order(IMAGES_CONFIGURATION_ORDER CONFIGURE IMAGES ${IMAGES})

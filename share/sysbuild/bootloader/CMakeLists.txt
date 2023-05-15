@@ -10,5 +10,5 @@ if(SB_CONFIG_BOOTLOADER_MCUBOOT)
   )
   # MCUBoot default configuration is to perform a full chip erase.
   # Placing MCUBoot first in list to ensure it is flashed before other images.
-  set(IMAGES "mcuboot" ${IMAGES} PARENT_SCOPE)
+  sysbuild_add_dependencies(FLASH ${DEFAULT_IMAGE} mcuboot)
 endif()
