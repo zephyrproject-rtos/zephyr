@@ -1017,6 +1017,10 @@ int usb_dc_ep_check_cap(const struct usb_dc_ep_cfg_data *const ep_cfg)
 			LOG_ERR("EP%d can only be a control endpoint.", USBD_EP0_IDX);
 			return -EINVAL;
 		}
+		if (ep_cfg->ep_mps > 8) {
+			LOG_ERR("EP%d's max packet size is fixed to 8.", USBD_EP0_IDX);
+			return -EINVAL;
+		}
 	} else if (USB_EP_DIR_IS_IN(ep_cfg->ep_addr)) {
 		if (ep_cfg->ep_type == USB_DC_EP_CONTROL) {
 			LOG_ERR("EP%d cannot be a control endpoint.", ep_idx);
@@ -1076,11 +1080,6 @@ int usb_dc_ep_configure(const struct usb_dc_ep_cfg_data *const ep_cfg)
 			LOG_ERR("EP%d only supports the control transmission mode.", USBD_EP0_IDX);
 			return -EINVAL;
 		}
-		if (ep_cfg->ep_mps > 8) {
-			LOG_ERR("EP%d's max packet size is fixed to 8.", USBD_EP0_IDX);
-			return -EINVAL;
-		}
-		ep_ctx->cfg.max_sz = 8;
 	} else {
 		if (ep_cfg->ep_type == USB_DC_EP_CONTROL) {
 			LOG_ERR("Only EP%d supports the control transmission mode!", USBD_EP0_IDX);
@@ -1107,13 +1106,13 @@ int usb_dc_ep_configure(const struct usb_dc_ep_cfg_data *const ep_cfg)
 			}
 		}
 		ep_ctx->cfg.type = ep_cfg->ep_type;
-		ep_ctx->cfg.max_sz = ep_cfg->ep_mps;
 		reg_usb_ep_buf_addr(ep_idx) = eps_buf_inf.seg_addr;
 		eps_buf_inf.seg_addr += ep_ctx->cfg.max_sz;
 		eps_buf_inf.remaining_size -= ep_ctx->cfg.max_sz;
 		eps_buf_inf.init_list[eps_buf_inf.init_num] = ep_idx;
 		eps_buf_inf.init_num++;
 	}
+	ep_ctx->cfg.max_sz = ep_cfg->ep_mps;
 	ep_buf_init(ep_cfg->ep_addr);
 	ep_ctx->cfg.addr = ep_cfg->ep_addr;
 	ep_ctx->cfg.type = ep_cfg->ep_type;

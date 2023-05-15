@@ -89,6 +89,11 @@ jobs:
         cd ..
         west build -b tlsr9518adk80d -d build_bt_smp_svr            zephyr/samples/subsys/mgmt/mcumgr/smp_svr   -- -DOVERLAY_CONFIG=overlay-bt.conf
 
+    - name: Build subsys/usb/console for USB driver
+      run: |
+        cd ..
+        west build -b tlsr9518adk80d -d build_usb_console           zephyr/samples/subsys/usb/console
+
     - name: Collect artifacts
       run: |
         mkdir telink_build_artifacts
@@ -102,6 +107,7 @@ jobs:
         cp ../build_ot_echo_client_pm/zephyr/zephyr.bin     telink_build_artifacts/ot_echo_client_pm.bin
         cp ../build_mcuboot/zephyr/zephyr.bin               telink_build_artifacts/mcuboot.bin
         cp ../build_bt_smp_svr/zephyr/zephyr.signed.bin     telink_build_artifacts/bt_smp_svr.signed.bin
+        cp ../build_usb_console/zephyr/zephyr.bin           telink_build_artifacts/usb_console.bin
 
     - name: Publish artifacts
       uses: actions/upload-artifact@v3
