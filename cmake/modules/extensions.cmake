@@ -2814,6 +2814,91 @@ function(target_byproducts)
   )
 endfunction()
 
+# Usage:
+#   zephyr_topological_sort(VERTICES <v_0> [<v_1> ...]
+#                           [EDGES <v_i>,<v_j> ...]
+#                           OUTPUT_RESULT <out-variable>
+#                           [OUTPUT_CYCLE <out-variable>])
+#
+# This function implements topological sorting of a directed acyclic graph
+# (given a pair of vertices v_i and v_j, if there is an edge from v_i -> v_j,
+# then v_i must appear before v_j in the ordered list). If the provided graph
+# contains a cycle, then sorting it is impossible, so an error will be raised.
+#
+# VERTICES:      Non-empty list of vertices. Each should be a non-empty string
+#                with no commas. Other strings will lead to undefined behavior.
+# EDGES:         List of edges of the form: "<v_i>,<v_j>", where v_i and v_j are
+#                both vertices. Edges between unknown vertices (i.e., the ones
+#                absent from the VERTICES list) will be ignored. Malformed edges
+#                with no commas, or more than one comma, will also be ignored.
+# OUTPUT_RESULT: On success, an ordered list of vertices will be returned here.
+#                On error, the returned value will be empty.
+# OUTPUT_CYCLE:  Optional output variable for error reporting. If given, it may
+#                be set to the first cycle found in the graph, represented as a
+#                list of adjacent vertices: "<v_0>;<v_1>;<v_2>;...;<v_n>;<v_0>".
+#                On success (no cycles found), the returned value will be empty.
+#
+function(zephyr_topological_sort)
+  cmake_parse_arguments(ZTSORT "" "OUTPUT_RESULT;OUTPUT_CYCLE" "VERTICES;EDGES" ${ARGN})
+  zephyr_check_arguments_required_all("zephyr_topological_sort" ZTSORT OUTPUT_RESULT VERTICES)
+
+  # Run non-recursive DFS. If the provided graph contains cycles, this algorithm
+  # will let us return the first cycle we find and raise an error.
+  set(result)
+  set(current_path)
+  set(unvisited_vertices ${ZTSORT_VERTICES})
+
+  while(unvisited_vertices)
+    list(GET unvisited_vertices -1 vertex)
+
+    # Initialize the stack with a dummy value affixed to the bottom. We want to
+    # freely APPEND and POP_BACK empty strings to the stack without accidentally
+    # creating a list consisting of only one empty string, because CMake would
+    # effectively turn it into an empty list and break our algorithm.
+    set(stack __BOTTOM__ ${vertex})
+    while(NOT stack STREQUAL "__BOTTOM__")
+      list(POP_BACK stack vertex)
+
+      if(NOT vertex)
+        # Popped delimiter. We visited every edge adjacent to the current path.
+        list(POP_BACK current_path visited_vertex)
+        list(REMOVE_ITEM unvisited_vertices ${visited_vertex})
+        list(INSERT result 0 ${visited_vertex})
+        continue()
+      endif()
+
+      # Check for a repeated vertex in the current path, hence a found cycle.
+      list(FIND current_path ${vertex} cycle_start)
+      if(cycle_start GREATER -1)
+        list(SUBLIST current_path ${cycle_start} -1 cycle)
+        list(APPEND cycle ${vertex})
+        message(SEND_ERROR "zephyr_topological_sort(...) found cycle: ${cycle}")
+
+        set(${ZTSORT_OUTPUT_RESULT} PARENT_SCOPE)
+        if(DEFINED ZTSORT_OUTPUT_CYCLE)
+          set(${ZTSORT_OUTPUT_CYCLE} ${cycle} PARENT_SCOPE)
+        endif()
+        return()
+      endif()
+
+      if(vertex IN_LIST unvisited_vertices)
+        set(neighbors ${ZTSORT_EDGES})
+        list(FILTER neighbors INCLUDE REGEX "^${vertex},")
+        list(TRANSFORM neighbors REPLACE "^${vertex}," "")
+
+        # Push the current vertex's neighbors + delimiter on the stack.
+        list(APPEND stack "" ${neighbors})
+        list(APPEND current_path ${vertex})
+      endif()
+    endwhile()
+  endwhile()
+
+  set(${ZTSORT_OUTPUT_RESULT} ${result} PARENT_SCOPE)
+  if(DEFINED ZTSORT_OUTPUT_CYCLE)
+    set(${ZTSORT_OUTPUT_CYCLE} PARENT_SCOPE)
+  endif()
+endfunction()
+
 ########################################################
 # 4. Devicetree extensions
 ########################################################
