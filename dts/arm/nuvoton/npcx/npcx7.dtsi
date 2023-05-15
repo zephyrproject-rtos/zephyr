@@ -94,6 +94,13 @@
 			apb2-prescaler = <6>; /* APB2_CLK runs at 15MHz */
 			apb3-prescaler = <6>; /* APB3_CLK runs at 15MHz */
 			ram-pd-depth = <12>; /* Valid bit-depth of RAM_PDn reg */
+			pwdwn-ctl-val = <0xfb /* No FIU_PD */
+					 0xff
+					 0x1f /* No GDMA_PD */
+					 0xff
+					 0xfa
+					 0x7f /* No ESPI_PD */
+					 0xe7>;
 		};
 
 		/* Wake-up input source mapping for GPIOs in npcx7 series */

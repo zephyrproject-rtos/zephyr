@@ -115,6 +115,14 @@
 			apb3-prescaler = <8>; /* APB3_CLK runs at 15MHz */
 			apb4-prescaler = <8>; /* APB4_CLK runs at 15MHz */
 			ram-pd-depth = <8>; /* Valid bit-depth of RAM_PDn reg */
+			pwdwn-ctl-val = <0xfb
+					 0xff
+					 0x1f /* No GDMA1_PD/GDMA2_PD */
+					 0xff
+					 0xfa
+					 0x7f /* No ESPI_PD */
+					 0xff
+					 0xcf>; /* No FIU_PD */
 		};
 
 		/* Wake-up input source mapping for GPIOs in npcx4 series */
