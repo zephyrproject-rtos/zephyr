@@ -15,6 +15,7 @@
 #include <zephyr/init.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/atomic.h>
+#include <zephyr/sys/iterable_sections.h>
 #include <ctype.h>
 #include <zephyr/logging/log_frontend.h>
 #include <zephyr/syscall_handler.h>

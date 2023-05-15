@@ -10,6 +10,7 @@
 #include <zephyr/device.h>
 #include <zephyr/mgmt/mcumgr/mgmt/mgmt.h>
 #include <zephyr/mgmt/mcumgr/mgmt/handlers.h>
+#include <zephyr/sys/iterable_sections.h>
 #include <string.h>
 
 #ifdef CONFIG_MCUMGR_MGMT_NOTIFICATION_HOOKS

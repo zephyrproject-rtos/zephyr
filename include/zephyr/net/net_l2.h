@@ -15,6 +15,7 @@
 #include <zephyr/device.h>
 #include <zephyr/net/buf.h>
 #include <zephyr/net/capture.h>
+#include <zephyr/sys/iterable_sections.h>
 
 #ifdef __cplusplus
 extern "C" {

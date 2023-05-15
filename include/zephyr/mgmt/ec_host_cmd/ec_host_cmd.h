@@ -17,6 +17,7 @@
 #include <stdint.h>
 #include <zephyr/mgmt/ec_host_cmd/backend.h>
 #include <zephyr/sys/__assert.h>
+#include <zephyr/sys/iterable_sections.h>
 
 struct ec_host_cmd {
 	struct ec_host_cmd_rx_ctx rx_ctx;

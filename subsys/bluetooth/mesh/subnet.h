@@ -11,6 +11,7 @@
 #include <sys/types.h>
 #include <zephyr/net/buf.h>
 #include <zephyr/kernel.h>
+#include <zephyr/sys/iterable_sections.h>
 
 #define BT_MESH_NET_FLAG_KR       BIT(0)
 #define BT_MESH_NET_FLAG_IVU      BIT(1)

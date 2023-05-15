@@ -13,8 +13,8 @@ LOG_MODULE_REGISTER(net_l2_ppp, CONFIG_NET_L2_PPP_LOG_LEVEL);
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/net/net_mgmt.h>
-
 #include <zephyr/net/ppp.h>
+#include <zephyr/sys/iterable_sections.h>
 
 #include "net_private.h"
 #include "ipv4_autoconf_internal.h"

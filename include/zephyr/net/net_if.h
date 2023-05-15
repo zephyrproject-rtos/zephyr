@@ -21,7 +21,7 @@
 
 #include <zephyr/device.h>
 #include <zephyr/sys/slist.h>
-
+#include <zephyr/sys/iterable_sections.h>
 #include <zephyr/net/net_core.h>
 #include <zephyr/net/hostname.h>
 #include <zephyr/net/net_linkaddr.h>

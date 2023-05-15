@@ -8,6 +8,7 @@
 #include <zephyr/toolchain/common.h>
 #include <zephyr/drivers/usb/udc.h>
 #include <zephyr/sys/slist.h>
+#include <zephyr/sys/iterable_sections.h>
 
 #include "usbd_device.h"
 #include "usbd_class_api.h"

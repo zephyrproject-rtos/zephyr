@@ -26,6 +26,7 @@ struct emul;
 #include <zephyr/drivers/espi_emul.h>
 #include <zephyr/drivers/i2c_emul.h>
 #include <zephyr/drivers/spi_emul.h>
+#include <zephyr/sys/iterable_sections.h>
 
 /**
  * The types of supported buses.
