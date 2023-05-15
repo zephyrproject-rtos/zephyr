@@ -382,3 +382,15 @@ void wifi_mgmt_raise_raw_scan_result_event(struct net_if *iface,
 					sizeof(*raw_scan_result));
 }
 #endif /* CONFIG_WIFI_MGMT_RAW_SCAN_RESULTS */
+
+void wifi_mgmt_raise_disconnect_complete_event(struct net_if *iface,
+					       int status)
+{
+	struct wifi_status cnx_status = {
+		.status = status,
+	};
+
+	net_mgmt_event_notify_with_info(NET_EVENT_WIFI_CMD_DISCONNECT_COMPLETE,
+					iface, &cnx_status,
+					sizeof(struct wifi_status));
+}
