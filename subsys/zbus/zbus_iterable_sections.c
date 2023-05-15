@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <zephyr/logging/log.h>
+#include <zephyr/sys/iterable_sections.h>
 #include <zephyr/zbus/zbus.h>
 LOG_MODULE_DECLARE(zbus, CONFIG_ZBUS_LOG_LEVEL);
 

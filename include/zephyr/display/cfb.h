@@ -14,6 +14,7 @@
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/display.h>
+#include <zephyr/sys/iterable_sections.h>
 
 #ifdef __cplusplus
 extern "C" {

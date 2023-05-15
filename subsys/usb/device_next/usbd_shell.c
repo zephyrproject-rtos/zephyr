@@ -12,6 +12,7 @@
 #include <zephyr/usb/usbd.h>
 #include <zephyr/drivers/usb/udc.h>
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/iterable_sections.h>
 
 const struct shell *ctx_shell;
 

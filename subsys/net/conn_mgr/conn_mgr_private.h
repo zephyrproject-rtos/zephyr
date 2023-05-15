@@ -8,6 +8,7 @@
 #define __CONN_MGR_PRV_H__
 
 #include <zephyr/net/conn_mgr_connectivity.h>
+#include <zephyr/sys/iterable_sections.h>
 
 #if defined(CONFIG_NET_IPV6) && defined(CONFIG_NET_IPV4)
 #define CONN_MGR_IFACE_MAX		MAX(CONFIG_NET_IF_MAX_IPV6_COUNT, \

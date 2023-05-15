@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <zephyr/shell/shell.h>
+#include <zephyr/sys/iterable_sections.h>
+
 #include "shell_utils.h"
 #include "shell_help.h"
 #include "shell_ops.h"

@@ -25,6 +25,7 @@
 #include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/gap.h>
 #include <zephyr/bluetooth/direction.h>
+#include <zephyr/sys/iterable_sections.h>
 
 #ifdef __cplusplus
 extern "C" {

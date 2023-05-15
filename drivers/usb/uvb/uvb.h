@@ -12,9 +12,9 @@
 #ifndef ZEPHYR_INCLUDE_UVB
 #define ZEPHYR_INCLUDE_UVB
 
-#include <zephyr/linker/linker-defs.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/dlist.h>
+#include <zephyr/sys/iterable_sections.h>
 
 #ifdef __cplusplus
 extern "C" {

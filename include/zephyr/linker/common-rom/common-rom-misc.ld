@@ -1,5 +1,7 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 
+#include <zephyr/linker/iterable_sections.h>
+
 #if defined(CONFIG_EC_HOST_CMD)
 	ITERABLE_SECTION_ROM(ec_host_cmd_handler, 4)
 #endif

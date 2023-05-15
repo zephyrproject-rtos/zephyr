@@ -12,6 +12,7 @@
 #include <zephyr/dt-bindings/pcie/pcie.h>
 #include <zephyr/types.h>
 #include <zephyr/kernel.h>
+#include <zephyr/sys/iterable_sections.h>
 
 #ifdef __cplusplus
 extern "C" {

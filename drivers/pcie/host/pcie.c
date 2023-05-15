@@ -13,6 +13,7 @@ LOG_MODULE_REGISTER(pcie, LOG_LEVEL_ERR);
 #include <zephyr/sys/check.h>
 #include <stdbool.h>
 #include <zephyr/drivers/pcie/pcie.h>
+#include <zephyr/sys/iterable_sections.h>
 
 #if CONFIG_PCIE_MSI
 #include <zephyr/drivers/pcie/msi.h>

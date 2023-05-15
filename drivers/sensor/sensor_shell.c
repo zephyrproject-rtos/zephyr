@@ -10,6 +10,7 @@
 #include <ctype.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/sensor.h>
+#include <zephyr/sys/iterable_sections.h>
 
 #define SENSOR_GET_HELP                                                                            \
 	"Get sensor data. Channel names are optional. All channels are read "                      \

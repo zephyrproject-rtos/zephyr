@@ -5,6 +5,7 @@
  */
 
 #include <zephyr/ztest.h>
+#include <zephyr/sys/iterable_sections.h>
 
 struct test_ram {
 	int i;

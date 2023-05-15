@@ -21,6 +21,7 @@ LOG_MODULE_REGISTER(net_if, CONFIG_NET_IF_LOG_LEVEL);
 #include <zephyr/net/net_mgmt.h>
 #include <zephyr/net/ethernet.h>
 #include <zephyr/net/virtual.h>
+#include <zephyr/sys/iterable_sections.h>
 
 #include "net_private.h"
 #include "ipv4.h"

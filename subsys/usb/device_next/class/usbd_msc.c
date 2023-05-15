@@ -11,7 +11,7 @@
 #include <zephyr/usb/usbd.h>
 #include <zephyr/usb/usb_ch9.h>
 #include <zephyr/usb/class/usbd_msc.h>
-
+#include <zephyr/sys/iterable_sections.h>
 #include <zephyr/drivers/usb/udc.h>
 
 #include "usbd_msc_scsi.h"
