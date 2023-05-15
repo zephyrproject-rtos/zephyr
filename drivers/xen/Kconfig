@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
-# Copyright (c) 2022-2024 EPAM Systems
+# Copyright (c) 2022-2026 EPAM Systems
 
 if XEN
 
@@ -11,9 +11,18 @@ config XEN_DMOP
 	  Enable lightweight wrappers for Xen dm_op hypercalls used by
 	  Xen device backends. Disable to drop dmop.c from the build.
 
+config XEN_REGIONS
+	bool "Xen extended regions driver"
+	select SYS_MEM_BLOCKS
+	help
+	  Xen extended regions driver. Allows using extended regions, provided by
+	  XEN hypervisor to Zephyr. This memory can be used to avoid allocations
+	  from Zephyr heap memory in favour of free unmapped space on Stage 2
+	  translation level.
+
 config XEN_GRANT_TABLE
 	bool "Xen grant table driver"
-	depends on HEAP_MEM_POOL_SIZE > 0
+	depends on HEAP_MEM_POOL_SIZE > 0 || XEN_REGIONS
 	default y
 	help
 	  Xen grant table driver. Please note that driver uses dynamic memory
