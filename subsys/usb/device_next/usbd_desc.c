@@ -61,6 +61,8 @@ static void usbd_ascii7_to_utf16le(struct usbd_desc_node *const dn)
 		buf[i] = 0U;
 		buf[i - 1] = buf[ascii_idx_max--];
 	}
+
+	dn->utf16le = true;
 }
 
 /**
@@ -163,16 +165,18 @@ int usbd_add_descriptor(struct usbd_contex *const uds_ctx,
 			dev_desc->iProduct = desc_nd->idx;
 			break;
 		case USBD_DESC_SERIAL_NUMBER_IDX:
-			/* FIXME, should we force the use of hwid here? */
-			ret = usbd_get_sn_from_hwid(desc_nd);
+			if (!desc_nd->custom_sn) {
+				ret = usbd_get_sn_from_hwid(desc_nd);
+				desc_nd->utf16le = false;
+			}
+
 			dev_desc->iSerialNumber = desc_nd->idx;
 			break;
 		default:
 			break;
 		}
 
-		if (desc_nd->idx) {
-			/* FIXME, should we force ascii7 -> utf16le? */
+		if (desc_nd->idx && !desc_nd->utf16le) {
 			usbd_ascii7_to_utf16le(desc_nd);
 		}
 	}
