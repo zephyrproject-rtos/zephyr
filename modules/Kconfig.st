@@ -55,6 +55,9 @@ config USE_STDC_IIS3DHHC
 config USE_STDC_IIS3DWB
 	bool
 
+config USE_STDC_ILPS22QS
+	bool
+
 config USE_STDC_ISM303DAC
 	bool
 
