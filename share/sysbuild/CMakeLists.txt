@@ -24,9 +24,6 @@ find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE} COMPONENTS ${zephyr_modules
 
 project(sysbuild LANGUAGES)
 
-# Global list of images enabled in this multi image build system.
-set(IMAGES)
-
 get_filename_component(APP_DIR  ${APP_DIR} ABSOLUTE)
 get_filename_component(app_name ${APP_DIR} NAME)
 
@@ -54,7 +51,6 @@ ExternalZephyrProject_Add(
   SOURCE_DIR ${APP_DIR}
   APP_TYPE MAIN
 )
-list(APPEND IMAGES "${app_name}")
 set(DEFAULT_IMAGE "${app_name}")
 
 add_subdirectory(bootloader)
@@ -63,6 +59,7 @@ add_subdirectory(bootloader)
 include(${BOARD_DIR}/sysbuild.cmake OPTIONAL)
 
 # This allows image specific sysbuild.cmake to be processed.
+get_property(IMAGES GLOBAL PROPERTY sysbuild_images)
 list(LENGTH IMAGES images_length)
 while(NOT "${images_length}" EQUAL "${processed_length}")
   foreach(image ${IMAGES})
@@ -73,6 +70,7 @@ while(NOT "${images_length}" EQUAL "${processed_length}")
     endif()
   endforeach()
 
+  get_property(IMAGES GLOBAL PROPERTY sysbuild_images)
   list(LENGTH IMAGES images_length)
   list(LENGTH images_sysbuild_processed processed_length_new)
 

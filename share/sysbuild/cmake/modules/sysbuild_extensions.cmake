@@ -155,6 +155,11 @@ function(ExternalZephyrProject_Add)
 
   endif()
 
+  set_property(
+    GLOBAL
+    APPEND PROPERTY sysbuild_images ${ZBUILD_APPLICATION}
+  )
+
   set(sysbuild_image_conf_dir ${APP_DIR}/sysbuild)
   set(sysbuild_image_name_conf_dir ${APP_DIR}/sysbuild/${ZBUILD_APPLICATION})
   # User defined `-D<image>_CONF_FILE=<file.conf>` takes precedence over anything else.
