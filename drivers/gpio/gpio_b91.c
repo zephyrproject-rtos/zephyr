@@ -57,14 +57,11 @@
 /* GPIO interrupt types */
 #define INTR_RISING_EDGE         ((uint8_t)0u)
 #define INTR_FALLING_EDGE        ((uint8_t)1u)
-#define INTR_HIGH_LEVEL          ((uint8_t)2u)
-#define INTR_LOW_LEVEL           ((uint8_t)3u)
 
 /* Supported IRQ numbers */
 #define IRQ_GPIO                 ((uint8_t)25u)
 #define IRQ_GPIO2_RISC0          ((uint8_t)26u)
 #define IRQ_GPIO2_RISC1          ((uint8_t)27u)
-
 
 /* B91 GPIO registers structure */
 struct gpio_b91_t {
@@ -78,12 +75,21 @@ struct gpio_b91_t {
 	uint8_t irq_en;                 /* Act as GPIO: enable (1) or disable (0) GPIO function */
 };
 
+/* GPIO IRQ configuration structure */
+struct gpio_b91_pin_irq_config {
+	gpio_port_value_t pin_last_value;
+	gpio_port_value_t irq_en_rising;
+	gpio_port_value_t irq_en_falling;
+	gpio_port_value_t irq_en_both;
+};
+
 /* GPIO driver configuration structure */
 struct gpio_b91_config {
 	struct gpio_driver_config common;
 	uint32_t gpio_base;
 	uint8_t irq_num;
 	uint8_t irq_priority;
+	struct gpio_b91_pin_irq_config *pin_irq_state;
 	void (*pirq_connect)(void);
 };
 
@@ -105,12 +111,10 @@ static inline void gpio_b91_irq_pin_wakeup_set(const struct device *dev, gpio_pi
 
 	switch (trigger_type) {
 	case INTR_RISING_EDGE:
-	case INTR_HIGH_LEVEL:
 		analog_write_reg8(wakeup_trigger_pol_reg,
 			analog_read_reg8(wakeup_trigger_pol_reg) & ~BIT(pin));
 		break;
 	case INTR_FALLING_EDGE:
-	case INTR_LOW_LEVEL:
 		analog_write_reg8(wakeup_trigger_pol_reg,
 			analog_read_reg8(wakeup_trigger_pol_reg) | BIT(pin));
 		break;
@@ -245,16 +249,6 @@ void gpio_b91_irq_set(const struct device *dev, gpio_pin_t pin,
 	case INTR_FALLING_EDGE:
 		BM_SET(gpio->polarity, BIT(pin));
 		BM_CLR(reg_gpio_irq_risc_mask, irq_lvl);
-		break;
-
-	case INTR_HIGH_LEVEL:
-		BM_CLR(gpio->polarity, BIT(pin));
-		BM_SET(reg_gpio_irq_risc_mask, irq_lvl);
-		break;
-
-	case INTR_LOW_LEVEL:
-		BM_SET(gpio->polarity, BIT(pin));
-		BM_SET(reg_gpio_irq_risc_mask, irq_lvl);
 		break;
 	}
 
@@ -465,12 +459,33 @@ static int gpio_b91_port_toggle_bits(const struct device *dev,
 	IS_INST_IRQ_EN(3) || IS_INST_IRQ_EN(4)
 static void gpio_b91_irq_handler(const struct device *dev)
 {
-	struct gpio_b91_data *data = dev->data;
+	struct gpio_b91_data *data				= dev->data;
+	const struct gpio_b91_config *cfg		= dev->config;
+	const uint8_t wakeup_trigger_pol_reg	= reg_wakeup_trig_pol_base +
+		GET_PORT_NUM(GET_GPIO(dev));
 	uint8_t irq = GET_IRQ_NUM(dev);
-	uint8_t status = gpio_b91_irq_en_get(dev);
+
+	gpio_port_value_t current_pins       = GET_GPIO(dev)->input;
+	gpio_port_value_t changed_pins0      = (cfg->pin_irq_state->pin_last_value ^ current_pins)
+		& (~current_pins);
+	gpio_port_value_t changed_pins1      = (cfg->pin_irq_state->pin_last_value ^ current_pins)
+		& current_pins;
+	gpio_port_value_t fired_irqs_rising  = changed_pins1 & cfg->pin_irq_state->irq_en_rising;
+	gpio_port_value_t fired_irqs_falling = changed_pins0 & cfg->pin_irq_state->irq_en_falling;
+	gpio_port_value_t fired_irqs_both    = (changed_pins0 | changed_pins1)
+		& cfg->pin_irq_state->irq_en_both;
+	gpio_port_value_t fired_irqs         = fired_irqs_rising | fired_irqs_falling
+		| fired_irqs_both;
+
+	cfg->pin_irq_state->pin_last_value = current_pins;
+	GET_GPIO(dev)->polarity ^= (changed_pins0 | changed_pins1);
+
+#if CONFIG_PM
+	analog_write_reg8(wakeup_trigger_pol_reg, GET_GPIO(dev)->polarity);
+#endif
 
 	gpio_b91_irq_status_clr(irq);
-	gpio_fire_callbacks(&data->callbacks, dev, status);
+	gpio_fire_callbacks(&data->callbacks, dev, fired_irqs);
 }
 #endif
 
@@ -480,33 +495,52 @@ static int gpio_b91_pin_interrupt_configure(const struct device *dev,
 					    enum gpio_int_mode mode,
 					    enum gpio_int_trig trig)
 {
+	const struct gpio_b91_config *cfg = dev->config;
 	int ret_status = 0;
+	bool current_pin_value = ((GET_GPIO(dev)->input) >> pin) & 0x0001;
 
 	switch (mode) {
 	case GPIO_INT_MODE_DISABLED:                /* GPIO interrupt disable */
 		gpio_b91_irq_en_clr(dev, pin);
 		break;
 
-	case GPIO_INT_MODE_LEVEL:
-		if (trig == GPIO_INT_TRIG_HIGH) {       /* GPIO interrupt High level */
-			gpio_b91_irq_set(dev, pin, INTR_HIGH_LEVEL);
-		} else if (trig == GPIO_INT_TRIG_LOW) { /* GPIO interrupt Low level */
-			gpio_b91_irq_set(dev, pin, INTR_LOW_LEVEL);
-		} else {
-			ret_status = -ENOTSUP;
-		}
-		break;
-
 	case GPIO_INT_MODE_EDGE:
 		if (trig == GPIO_INT_TRIG_HIGH) {       /* GPIO interrupt Rising edge */
+			BM_SET(cfg->pin_irq_state->irq_en_rising, BIT(pin));
+			BM_CLR(cfg->pin_irq_state->irq_en_falling, BIT(pin));
+			BM_CLR(cfg->pin_irq_state->irq_en_both, BIT(pin));
 			gpio_b91_irq_set(dev, pin, INTR_RISING_EDGE);
 		} else if (trig == GPIO_INT_TRIG_LOW) { /* GPIO interrupt Falling edge */
+			BM_SET(cfg->pin_irq_state->irq_en_falling, BIT(pin));
+			BM_CLR(cfg->pin_irq_state->irq_en_rising, BIT(pin));
+			BM_CLR(cfg->pin_irq_state->irq_en_both, BIT(pin));
 			gpio_b91_irq_set(dev, pin, INTR_FALLING_EDGE);
+		} else if (trig == GPIO_INT_TRIG_BOTH) { /* GPIO interrupt Both edge */
+			BM_SET(cfg->pin_irq_state->irq_en_both, BIT(pin));
+			BM_CLR(cfg->pin_irq_state->irq_en_rising, BIT(pin));
+			BM_CLR(cfg->pin_irq_state->irq_en_falling, BIT(pin));
+
+			/*
+			 * Select the falling edge/low level IRQ as
+			 * a wakeup source if the initial pin state is high.
+			 * The opposite solution is used when initial state is low.
+			 */
+			if (current_pin_value) {
+				gpio_b91_irq_set(dev, pin, INTR_FALLING_EDGE);
+			} else {
+				gpio_b91_irq_set(dev, pin, INTR_RISING_EDGE);
+			}
 		} else {
 			ret_status = -ENOTSUP;
 		}
+
+		if (ret_status == 0) {
+			current_pin_value ? BM_SET(cfg->pin_irq_state->pin_last_value, BIT(pin)) :
+				BM_CLR(cfg->pin_irq_state->pin_last_value, BIT(pin));
+		}
 		break;
 
+	case GPIO_INT_MODE_LEVEL:
 	default:
 		ret_status = -ENOTSUP;
 		break;
@@ -599,6 +633,7 @@ static void gpio_b91_irq_connect_4(void)
 
 /* GPIO driver registration */
 #define GPIO_B91_INIT(n)						    \
+	static struct gpio_b91_pin_irq_config gpio_b91_pin_irq_state_##n; \
 	static const struct gpio_b91_config gpio_b91_config_##n = {	    \
 		.common = {						    \
 			.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n) \
@@ -606,6 +641,7 @@ static void gpio_b91_irq_connect_4(void)
 		.gpio_base = DT_INST_REG_ADDR(n),			    \
 		.irq_num = DT_INST_IRQN(n),				    \
 		.irq_priority = DT_INST_IRQ(n, priority),		    \
+		.pin_irq_state = &gpio_b91_pin_irq_state_##n,	\
 		.pirq_connect = gpio_b91_irq_connect_##n		    \
 	};								    \
 	static struct gpio_b91_data gpio_b91_data_##n;			    \
