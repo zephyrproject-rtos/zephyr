@@ -75,7 +75,7 @@ LOG_MODULE_REGISTER(host_cmd_shi_npcx, CONFIG_EC_HC_LOG_LEVEL);
  * overhead, as passed to the host command handler, must be 32-bit aligned.
  */
 #define SHI_OUT_START_PAD (4 * (EC_SHI_FRAME_START_LENGTH / 4 + 1))
-#define SHI_OUT_END_PAD	  (4 * (EC_SHI_PAST_END_LENGTH / 4 + 1))
+#define SHI_OUT_END_PAD   (4 * (EC_SHI_PAST_END_LENGTH / 4 + 1))
 
 enum shi_npcx_state {
 	SHI_STATE_NONE = -1,
@@ -114,14 +114,14 @@ struct shi_npcx_data {
 	/* Communication status */
 	enum shi_npcx_state state;
 	enum shi_npcx_state last_error_state;
-	uint8_t *rx_msg;	  /* Entry pointer of msg rx buffer   */
-	uint8_t *tx_msg;	  /* Entry pointer of msg tx buffer   */
+	uint8_t *rx_msg;          /* Entry pointer of msg rx buffer   */
+	uint8_t *tx_msg;          /* Entry pointer of msg tx buffer   */
 	volatile uint8_t *rx_buf; /* Entry pointer of receive buffer  */
 	volatile uint8_t *tx_buf; /* Entry pointer of transmit buffer */
-	uint16_t sz_sending;	  /* Size of sending data in bytes    */
-	uint16_t sz_request;	  /* Request bytes need to receive    */
-	uint16_t sz_response;	  /* Response bytes need to receive   */
-	uint64_t rx_deadline;	  /* Deadline of receiving            */
+	uint16_t sz_sending;      /* Size of sending data in bytes    */
+	uint16_t sz_request;      /* Request bytes need to receive    */
+	uint16_t sz_response;     /* Response bytes need to receive   */
+	uint64_t rx_deadline;     /* Deadline of receiving            */
 	/* Buffers */
 	uint8_t out_msg_padded[SHI_OUT_START_PAD + CONFIG_EC_HOST_CMD_BACKEND_SHI_MAX_RESPONSE +
 			       SHI_OUT_END_PAD] __aligned(4);
