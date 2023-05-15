@@ -1,5 +1,7 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 
+#include <zephyr/linker/iterable_sections.h>
+
 	ITERABLE_SECTION_ROM(bt_l2cap_fixed_chan, 4)
 
 #if defined(CONFIG_BT_BREDR)

@@ -9,6 +9,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/mgmt/ec_host_cmd/ec_host_cmd.h>
 #include <zephyr/mgmt/ec_host_cmd/backend.h>
+#include <zephyr/sys/iterable_sections.h>
 #include <string.h>
 
 LOG_MODULE_REGISTER(host_cmd_handler, CONFIG_EC_HC_LOG_LEVEL);

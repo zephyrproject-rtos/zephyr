@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <zephyr/types.h>
 #include <zephyr/bluetooth/gatt.h>
+#include <zephyr/sys/iterable_sections.h>
 
 #include "gatt.h"
 

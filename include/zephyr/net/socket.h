@@ -27,6 +27,7 @@
 #include <zephyr/net/net_ip.h>
 #include <zephyr/net/dns_resolve.h>
 #include <zephyr/net/socket_select.h>
+#include <zephyr/sys/iterable_sections.h>
 #include <stdlib.h>
 
 #ifdef __cplusplus

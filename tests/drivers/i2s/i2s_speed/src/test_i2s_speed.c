@@ -8,6 +8,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
 #include <zephyr/drivers/i2s.h>
+#include <zephyr/sys/iterable_sections.h>
 
 #define I2S_DEV_NODE_RX DT_ALIAS(i2s_node0)
 #ifdef CONFIG_I2S_TEST_SEPARATE_DEVICES

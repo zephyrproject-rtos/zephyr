@@ -7,6 +7,7 @@
 #define ZEPHYR_INCLUDE_SYS_P4WQ_H_
 
 #include <zephyr/kernel.h>
+#include <zephyr/sys/iterable_sections.h>
 
 /* Zephyr Pooled Parallel Preemptible Priority-based Work Queues */
 

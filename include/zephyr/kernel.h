@@ -21,6 +21,7 @@
 #include <zephyr/toolchain.h>
 #include <zephyr/tracing/tracing_macros.h>
 #include <zephyr/sys/mem_stats.h>
+#include <zephyr/sys/iterable_sections.h>
 
 #ifdef __cplusplus
 extern "C" {
