@@ -14,6 +14,3 @@ ExternalZephyrProject_Add(
 # remote core's build, such as the output image's LMA
 add_dependencies(openamp openamp_remote)
 sysbuild_add_dependencies(IMAGE CONFIGURE openamp openamp_remote)
-
-# Make sure MCUboot is flashed first
-sysbuild_add_dependencies(IMAGE FLASH openamp_remote mcuboot)

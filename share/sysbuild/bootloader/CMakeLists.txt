@@ -8,7 +8,10 @@ if(SB_CONFIG_BOOTLOADER_MCUBOOT)
     APPLICATION mcuboot
     SOURCE_DIR ${ZEPHYR_MCUBOOT_MODULE_DIR}/boot/zephyr/
   )
-  # MCUBoot default configuration is to perform a full chip erase.
-  # Placing MCUBoot first in list to ensure it is flashed before other images.
-  sysbuild_add_dependencies(IMAGE FLASH ${DEFAULT_IMAGE} mcuboot)
 endif()
+
+# MCUboot should be flashed first, in case the user configures it with
+# CONFIG_ZEPHYR_TRY_MASS_ERASE=y. Add a 'mass_erase' group to account for this.
+# It can be removed once that config is removed (it is already deprecated).
+ExternalZephyrProject_Group(mass_erase INCLUDE mcuboot)
+sysbuild_add_dependencies(GROUP FLASH all mass_erase)

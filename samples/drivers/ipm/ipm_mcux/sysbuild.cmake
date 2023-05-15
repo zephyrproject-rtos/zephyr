@@ -14,6 +14,3 @@ ExternalZephyrProject_Add(
 # remote core's build, such as the output image's LMA
 add_dependencies(ipm_mcux ipm_mcux_remote)
 sysbuild_add_dependencies(IMAGE CONFIGURE ipm_mcux ipm_mcux_remote)
-
-# Make sure MCUboot is flashed first
-sysbuild_add_dependencies(IMAGE FLASH ipm_mcux_remote mcuboot)
