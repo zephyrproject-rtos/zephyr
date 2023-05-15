@@ -954,6 +954,7 @@ void media_proxy_sctrl_seeking_speed_cb(int8_t speed)
 	notify(BT_UUID_MCS_SEEKING_SPEED, &speed, sizeof(speed));
 }
 
+#if defined(CONFIG_BT_OTS)
 void media_proxy_sctrl_current_track_id_cb(uint64_t id)
 {
 	LOG_DBG_OBJ_ID("Notifying current track ID: ", id);
@@ -984,6 +985,7 @@ void media_proxy_sctrl_current_group_id_cb(uint64_t id)
 	LOG_DBG_OBJ_ID("Notifying current group ID: ", id);
 	notify(BT_UUID_MCS_CURRENT_GROUP_OBJ_ID, &id, BT_OTS_OBJ_ID_SIZE);
 }
+#endif /* CONFIG_BT_OTS */
 
 void media_proxy_sctrl_playing_order_cb(uint8_t order)
 {
@@ -1011,6 +1013,7 @@ void media_proxy_sctrl_commands_supported_cb(uint32_t opcodes)
 	       BT_MCS_OPCODES_SUPPORTED_LEN);
 }
 
+#if defined(CONFIG_BT_OTS)
 void media_proxy_sctrl_search_cb(uint8_t result_code)
 {
 	LOG_DBG("Notifying search control point - result: %d", result_code);
@@ -1023,6 +1026,7 @@ void media_proxy_sctrl_search_results_id_cb(uint64_t id)
 	LOG_DBG_OBJ_ID("Notifying search results ID: ", id);
 	notify(BT_UUID_MCS_SEARCH_RESULTS_OBJ_ID, &id, BT_OTS_OBJ_ID_SIZE);
 }
+#endif /* CONFIG_BT_OTS */
 
 /* Register the service */
 int bt_mcs_init(struct bt_ots_cb *ots_cbs)
