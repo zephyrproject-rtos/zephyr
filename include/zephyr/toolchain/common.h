@@ -369,6 +369,17 @@
 	TYPE_SECTION_ITERABLE(struct struct_type, varname, secname, varname)
 
 /**
+ * @brief Defines an array of elements of alternate data type for an iterable
+ * section.
+ *
+ * @see STRUCT_SECTION_ITERABLE_ALTERNATE
+ */
+#define STRUCT_SECTION_ITERABLE_ARRAY_ALTERNATE(secname, struct_type, varname, \
+						size)                          \
+	TYPE_SECTION_ITERABLE(struct struct_type, varname[size], secname,      \
+			      varname)
+
+/**
  * @brief Defines a new element for an iterable section.
  *
  * @details
@@ -384,6 +395,15 @@
  */
 #define STRUCT_SECTION_ITERABLE(struct_type, varname) \
 	STRUCT_SECTION_ITERABLE_ALTERNATE(struct_type, struct_type, varname)
+
+/**
+ * @brief Defines an array of elements for an iterable section.
+ *
+ * @see STRUCT_SECTION_ITERABLE
+ */
+#define STRUCT_SECTION_ITERABLE_ARRAY(struct_type, varname, size)              \
+	STRUCT_SECTION_ITERABLE_ARRAY_ALTERNATE(struct_type, struct_type,      \
+						varname, size)
 
 /**
  * @brief Defines a new element for an iterable section with a custom name.
