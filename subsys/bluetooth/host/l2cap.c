@@ -2,6 +2,7 @@
 
 /*
  * Copyright (c) 2015-2016 Intel Corporation
+ * Copyright (c) 2023 Nordic Semiconductor
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,6 +13,7 @@
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/iterable_sections.h>
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/math_extras.h>
 #include <zephyr/sys/util.h>
 
 #include <zephyr/bluetooth/hci.h>
@@ -505,8 +507,7 @@ static int l2cap_le_conn_req(struct bt_l2cap_le_chan *ch)
 	req->scid = sys_cpu_to_le16(ch->rx.cid);
 	req->mtu = sys_cpu_to_le16(ch->rx.mtu);
 	req->mps = sys_cpu_to_le16(ch->rx.mps);
-	req->credits = sys_cpu_to_le16(1);
-	atomic_set(&ch->rx.credits, 1);
+	req->credits = sys_cpu_to_le16(ch->rx.credits);
 
 	l2cap_chan_send_req(&ch->chan, buf, L2CAP_CONN_TIMEOUT);
 
@@ -542,7 +543,7 @@ static int l2cap_ecred_conn_req(struct bt_l2cap_chan **chan, int channels)
 	req->psm = sys_cpu_to_le16(ch->psm);
 	req->mtu = sys_cpu_to_le16(ch->rx.mtu);
 	req->mps = sys_cpu_to_le16(ch->rx.mps);
-	req->credits = sys_cpu_to_le16(1);
+	req->credits = sys_cpu_to_le16(ch->rx.credits);
 	req_psm = ch->psm;
 	req_mtu = ch->tx.mtu;
 
@@ -840,9 +841,30 @@ int bt_l2cap_server_register(struct bt_l2cap_server *server)
 	return 0;
 }
 
+#if defined(CONFIG_BT_L2CAP_SEG_RECV)
+static void l2cap_chan_seg_recv_rx_init(struct bt_l2cap_le_chan *chan)
+{
+	if (chan->rx.mps > BT_L2CAP_RX_MTU) {
+		LOG_ERR("Limiting RX MPS by stack buffer size.");
+		chan->rx.mps = BT_L2CAP_RX_MTU;
+	}
+
+	chan->_sdu_len = 0;
+	chan->_sdu_len_done = 0;
+}
+#endif /* CONFIG_BT_L2CAP_SEG_RECV */
+
 static void l2cap_chan_rx_init(struct bt_l2cap_le_chan *chan)
 {
 	LOG_DBG("chan %p", chan);
+
+	/* Redirect to experimental API. */
+	IF_ENABLED(CONFIG_BT_L2CAP_SEG_RECV, ({
+		if (chan->chan.ops->seg_recv) {
+			l2cap_chan_seg_recv_rx_init(chan);
+			return;
+		}
+	}))
 
 	/* Use existing MTU if defined */
 	if (!chan->rx.mtu) {
@@ -1030,10 +1052,17 @@ static uint16_t l2cap_chan_accept(struct bt_conn *conn,
 		return le_err_to_result(err);
 	}
 
+#if defined(CONFIG_BT_L2CAP_SEG_RECV)
+	if (!(*chan)->ops->recv == !(*chan)->ops->seg_recv) {
+		LOG_ERR("Exactly one of 'recv' or 'seg_recv' must be set");
+		return BT_L2CAP_LE_ERR_UNACCEPT_PARAMS;
+	}
+#else
 	if (!(*chan)->ops->recv) {
 		LOG_ERR("Mandatory callback 'recv' missing");
 		return BT_L2CAP_LE_ERR_UNACCEPT_PARAMS;
 	}
+#endif
 
 	le_chan = BT_L2CAP_LE_CHAN(*chan);
 
@@ -1052,7 +1081,6 @@ static uint16_t l2cap_chan_accept(struct bt_conn *conn,
 
 	/* Init RX parameters */
 	l2cap_chan_rx_init(le_chan);
-	atomic_set(&le_chan->rx.credits, 1);
 
 	/* Set channel PSM */
 	le_chan->psm = server->psm;
@@ -1120,7 +1148,7 @@ static void le_conn_req(struct bt_l2cap *l2cap, uint8_t ident,
 	LOG_DBG("psm 0x%02x scid 0x%04x mtu %u mps %u credits %u", psm, scid, mtu, mps, credits);
 
 	if (mtu < L2CAP_LE_MIN_MTU || mps < L2CAP_LE_MIN_MTU) {
-		LOG_ERR("Invalid LE-Conn Req params");
+		LOG_ERR("Invalid LE-Conn Req params: mtu %u mps %u", mtu, mps);
 		return;
 	}
 
@@ -1160,8 +1188,7 @@ static void le_conn_req(struct bt_l2cap *l2cap, uint8_t ident,
 	rsp->dcid = sys_cpu_to_le16(le_chan->rx.cid);
 	rsp->mps = sys_cpu_to_le16(le_chan->rx.mps);
 	rsp->mtu = sys_cpu_to_le16(le_chan->rx.mtu);
-	rsp->credits = sys_cpu_to_le16(1);
-	atomic_set(&le_chan->rx.credits, 1);
+	rsp->credits = sys_cpu_to_le16(le_chan->rx.credits);
 
 	rsp->result = BT_L2CAP_LE_SUCCESS;
 
@@ -1212,7 +1239,7 @@ static void le_ecred_conn_req(struct bt_l2cap *l2cap, uint8_t ident,
 	LOG_DBG("psm 0x%02x mtu %u mps %u credits %u", psm, mtu, mps, credits);
 
 	if (mtu < L2CAP_ECRED_MIN_MTU || mps < L2CAP_ECRED_MIN_MTU) {
-		LOG_ERR("Invalid ecred conn req params");
+		LOG_ERR("Invalid ecred conn req params. mtu %u mps %u", mtu, mps);
 		result = BT_L2CAP_LE_ERR_INVALID_PARAMS;
 		goto response;
 	}
@@ -1271,7 +1298,7 @@ response:
 	if (ch) {
 		rsp->mps = sys_cpu_to_le16(ch->rx.mps);
 		rsp->mtu = sys_cpu_to_le16(ch->rx.mtu);
-		rsp->credits = sys_cpu_to_le16(1);
+		rsp->credits = sys_cpu_to_le16(ch->rx.credits);
 	}
 	rsp->result = sys_cpu_to_le16(result);
 
@@ -1633,7 +1660,6 @@ static void le_ecred_conn_rsp(struct bt_l2cap *l2cap, uint8_t ident,
 
 			/* Give credits */
 			l2cap_chan_tx_give_credits(chan, credits);
-			atomic_set(&chan->rx.credits, 1);
 
 			succeeded++;
 		}
@@ -1709,7 +1735,6 @@ static void le_conn_rsp(struct bt_l2cap *l2cap, uint8_t ident,
 
 		/* Give credits */
 		l2cap_chan_tx_give_credits(chan, credits);
-		atomic_set(&chan->rx.credits, 1);
 
 		break;
 	case BT_L2CAP_LE_ERR_AUTHENTICATION:
@@ -2268,6 +2293,95 @@ static void l2cap_chan_send_credits(struct bt_l2cap_le_chan *chan,
 	LOG_DBG("chan %p credits %lu", chan, atomic_get(&chan->rx.credits));
 }
 
+#if defined(CONFIG_BT_L2CAP_SEG_RECV)
+static int l2cap_chan_send_credits_pdu(struct bt_conn *conn, uint16_t cid, uint16_t credits)
+{
+	int err;
+	struct net_buf *buf;
+	struct bt_l2cap_le_credits *ev;
+
+	buf = l2cap_create_le_sig_pdu(NULL, BT_L2CAP_LE_CREDITS, get_ident(), sizeof(*ev));
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	ev = net_buf_add(buf, sizeof(*ev));
+	*ev = (struct bt_l2cap_le_credits){
+		.cid = sys_cpu_to_le16(cid),
+		.credits = sys_cpu_to_le16(credits),
+	};
+
+	err = bt_l2cap_send(conn, BT_L2CAP_CID_LE_SIG, buf);
+	if (err) {
+		net_buf_unref(buf);
+		return err;
+	}
+
+	return 0;
+}
+
+/**
+ * Combination of @ref atomic_add and @ref u16_add_overflow. Leaves @p
+ * target unchanged if an overflow would occur. Assumes the current
+ * value of @p target is representable by uint16_t.
+ */
+static bool atomic_add_safe_u16(atomic_t *target, uint16_t addition)
+{
+	uint16_t target_old, target_new;
+
+	do {
+		target_old = atomic_get(target);
+		if (u16_add_overflow(target_old, addition, &target_new)) {
+			return true;
+		}
+	} while (!atomic_cas(target, target_old, target_new));
+
+	return false;
+}
+
+int bt_l2cap_chan_give_credits(struct bt_l2cap_chan *chan, uint16_t additional_credits)
+{
+	struct bt_l2cap_le_chan *le_chan = BT_L2CAP_LE_CHAN(chan);
+
+	if (!chan || !chan->ops) {
+		LOG_ERR("%s: Invalid chan object.", __func__);
+		return -EINVAL;
+	}
+
+	if (!chan->ops->seg_recv) {
+		LOG_ERR("%s: Available only with seg_recv.", __func__);
+		return -EINVAL;
+	}
+
+	if (additional_credits == 0) {
+		LOG_ERR("%s: Refusing to give 0.", __func__);
+		return -EINVAL;
+	}
+
+	if (bt_l2cap_chan_get_state(chan) == BT_L2CAP_CONNECTING) {
+		LOG_ERR("%s: Cannot give credits while connecting.", __func__);
+		return -EBUSY;
+	}
+
+	if (atomic_add_safe_u16(&le_chan->rx.credits, additional_credits)) {
+		LOG_ERR("%s: Overflow.", __func__);
+		return -EOVERFLOW;
+	}
+
+	if (bt_l2cap_chan_get_state(chan) == BT_L2CAP_CONNECTED) {
+		int err;
+
+		err = l2cap_chan_send_credits_pdu(chan->conn, le_chan->rx.cid, additional_credits);
+		if (err) {
+			LOG_ERR("%s: PDU failed %d.", __func__, err);
+			return err;
+		}
+	}
+
+	return 0;
+}
+#endif /* CONFIG_BT_L2CAP_SEG_RECV */
+
 int bt_l2cap_chan_recv_complete(struct bt_l2cap_chan *chan, struct net_buf *buf)
 {
 	struct bt_l2cap_le_chan *le_chan = BT_L2CAP_LE_CHAN(chan);
@@ -2393,6 +2507,49 @@ static void l2cap_chan_le_recv_seg(struct bt_l2cap_le_chan *chan,
 	l2cap_chan_le_recv_sdu(chan, buf, seg);
 }
 
+#if defined(CONFIG_BT_L2CAP_SEG_RECV)
+static void l2cap_chan_le_recv_seg_direct(struct bt_l2cap_le_chan *chan, struct net_buf *seg)
+{
+	uint16_t seg_offset;
+	uint16_t sdu_remaining;
+
+	if (chan->_sdu_len_done == chan->_sdu_len) {
+
+		/* This is the first PDU in a SDU. */
+
+		if (seg->len < 2) {
+			LOG_WRN("Missing SDU header");
+			bt_l2cap_chan_disconnect(&chan->chan);
+			return;
+		}
+
+		/* Pop off the "SDU header". */
+		chan->_sdu_len = net_buf_pull_le16(seg);
+		chan->_sdu_len_done = 0;
+
+		if (chan->_sdu_len > chan->rx.mtu) {
+			LOG_WRN("SDU exceeds MTU");
+			bt_l2cap_chan_disconnect(&chan->chan);
+			return;
+		}
+	}
+
+	seg_offset = chan->_sdu_len_done;
+	sdu_remaining = chan->_sdu_len - chan->_sdu_len_done;
+
+	if (seg->len > sdu_remaining) {
+		LOG_WRN("L2CAP RX PDU total exceeds SDU");
+		bt_l2cap_chan_disconnect(&chan->chan);
+	}
+
+	/* Commit receive. */
+	chan->_sdu_len_done += seg->len;
+
+	/* Tail call. */
+	chan->chan.ops->seg_recv(&chan->chan, chan->_sdu_len, seg_offset, &seg->b);
+}
+#endif /* CONFIG_BT_L2CAP_SEG_RECV */
+
 static void l2cap_chan_le_recv(struct bt_l2cap_le_chan *chan,
 			       struct net_buf *buf)
 {
@@ -2410,6 +2567,14 @@ static void l2cap_chan_le_recv(struct bt_l2cap_le_chan *chan,
 		bt_l2cap_chan_disconnect(&chan->chan);
 		return;
 	}
+
+	/* Redirect to experimental API. */
+	IF_ENABLED(CONFIG_BT_L2CAP_SEG_RECV, (
+		if (chan->chan.ops->seg_recv) {
+			l2cap_chan_le_recv_seg_direct(chan, buf);
+			return;
+		}
+	))
 
 	/* Check if segments already exist */
 	if (chan->_sdu) {
