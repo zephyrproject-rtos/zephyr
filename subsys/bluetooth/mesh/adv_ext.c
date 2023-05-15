@@ -84,7 +84,7 @@ static STRUCT_SECTION_ITERABLE(bt_mesh_ext_adv, adv_main) = {
 };
 
 #if CONFIG_BT_MESH_RELAY_ADV_SETS
-static STRUCT_SECTION_ITERABLE(bt_mesh_ext_adv, adv_relay[CONFIG_BT_MESH_RELAY_ADV_SETS]) = {
+static STRUCT_SECTION_ITERABLE_ARRAY(bt_mesh_ext_adv, adv_relay, CONFIG_BT_MESH_RELAY_ADV_SETS) = {
 	[0 ... CONFIG_BT_MESH_RELAY_ADV_SETS - 1] = {
 		.tag = BT_MESH_RELAY_ADV,
 		.work = Z_WORK_DELAYABLE_INITIALIZER(send_pending_adv),
