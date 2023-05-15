@@ -18,7 +18,7 @@
 		enable-gpios = <&gpio1 8 (NRF_GPIO_DRIVE_S0H1 | GPIO_ACTIVE_HIGH)>;
 		regulator-name = "LSM6DS3TR_C_EN";
 		regulator-boot-on;
-		startup-delay-us = <900>;
+		startup-delay-us = <3000>;
 	};
 };
 
