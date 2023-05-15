@@ -89,6 +89,8 @@ add_subdirectory(bootloader)
 # This allows for board and app specific images to be included.
 include(${BOARD_DIR}/sysbuild.cmake OPTIONAL)
 
+set(image_boards "")
+
 # This allows image specific sysbuild.cmake to be processed.
 set(i 0)
 while(TRUE)
@@ -104,11 +106,29 @@ while(TRUE)
     message(FATAL_ERROR "Found multiple images named '${image}'. Image names must be unique.")
   endif()
 
+  get_property(image_board TARGET ${image} PROPERTY BOARD)
+  set_ifndef(image_board ${BOARD})
+  if(NOT image_board IN_LIST image_boards)
+    list(APPEND image_boards ${image_board})
+    set(images_${image_board} "")
+  endif()
+  list(APPEND images_${image_board} ${image})
+
   ExternalProject_Get_property(${image} SOURCE_DIR)
   include(${SOURCE_DIR}/sysbuild.cmake OPTIONAL)
 
   math(EXPR i "${i} + 1")
 endwhile()
+
+# This creates a special group with 'all' images in it.
+ExternalZephyrProject_Group(all IMMUTABLE INCLUDE ${IMAGES})
+
+# This creates a special group for every board in the multi-image build.
+foreach(image_board ${image_boards})
+  ExternalZephyrProject_Group(board_${image_board} IMMUTABLE INCLUDE ${images_${image_board}})
+  set(images_${image_board})
+endforeach()
+set(image_boards)
 
 get_property(GROUPS GLOBAL PROPERTY sysbuild_groups)
 sysbuild_groups_resolve(GROUPS ${GROUPS} IMAGES ${IMAGES})
