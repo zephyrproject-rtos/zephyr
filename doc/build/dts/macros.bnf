@@ -38,6 +38,10 @@ node-macro =/ %s"DT_N" path-id %s"_REG_IDX_" DIGIT
 node-macro =/ %s"DT_N" path-id %s"_REG_NAME_" dt-name
               %s"_VAL_" ( %s"ADDRESS" / %s"SIZE")
 node-macro =/ %s"DT_N" path-id %s"_REG_NAME_" dt-name "_EXISTS"
+node-macro =/ %s"DT_N" path-id %s"_FOREACH_REG"
+node-macro =/ %s"DT_N" path-id %s"_FOREACH_REG_SEP"
+node-macro =/ %s"DT_N" path-id %s"_FOREACH_REG_VARGS"
+node-macro =/ %s"DT_N" path-id %s"_FOREACH_REG_SEP_VARGS"
 ; The interrupts property is also special.
 node-macro =/ %s"DT_N" path-id %s"_IRQ_NUM"
 node-macro =/ %s"DT_N" path-id %s"_IRQ_LEVEL"
