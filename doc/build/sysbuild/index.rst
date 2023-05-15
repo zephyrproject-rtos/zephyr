@@ -639,6 +639,50 @@ configuration files for ``my_sample`` will be ignored.
 This give you full control on how images are configured when integrating those
 with ``application``.
 
+.. _sysbuild_zephyr_application_dependencies:
+
+Adding dependencies among Zephyr applications
+=============================================
+
+Sometimes, in a multi-image build, you may want certain Zephyr applications to
+be configured or flashed in a specific order. For example, if you need some
+information from one application's build system to be available to another's,
+then the first thing to do is to add a configuration dependency between them.
+Separately, you can also add flashing dependencies to control the sequence of
+images used by ``west flash``; this could be used if a specific flashing order
+is required by an SoC, a _runner_, or something else.
+
+By default, sysbuild will configure and flash applications in the order that
+they are added, as ``ExternalZephyrProject_Add()`` calls are processed by CMake.
+You can use the ``sysbuild_add_dependencies()`` function to make adjustments to
+this order, according to your needs. Its usage is similar to the standard
+``add_dependencies()`` function in CMake.
+
+Here is an example of adding configuration dependencies for ``my_sample``:
+
+.. code-block:: cmake
+
+   sysbuild_add_dependencies(IMAGE CONFIGURE my_sample sample_a sample_b)
+
+This will ensure that sysbuild will run CMake for ``sample_a`` and ``sample_b``
+(in some order) before doing the same for ``my_sample``, when building these
+domains in a single invocation.
+
+If you want to add flashing dependencies instead, then do it like this:
+
+.. code-block:: cmake
+
+   sysbuild_add_dependencies(IMAGE FLASH my_sample sample_a sample_b)
+
+As a result, ``my_sample`` will be flashed after ``sample_a`` and ``sample_b``
+(in some order), when flashing these domains in a single invocation.
+
+.. note::
+
+   Adding flashing dependencies is not allowed for build-only applications.
+   If ``my_sample`` had been created with ``BUILD_ONLY TRUE``, then the above
+   call to ``sysbuild_add_dependencies()`` would have produced an error.
+
 Adding non-Zephyr applications to sysbuild
 ******************************************
 
