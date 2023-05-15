@@ -207,7 +207,6 @@ static void uart_mcux_irq_tx_enable(const struct device *dev)
 {
 	const struct uart_mcux_config *config = dev->config;
 	uint32_t mask = kUART_TxDataRegEmptyInterruptEnable;
-	config->base->C2 |= UART_C2_TE_MASK;
 	pm_device_busy_set(dev);
 	UART_EnableInterrupts(config->base, mask);
 }
@@ -216,7 +215,6 @@ static void uart_mcux_irq_tx_disable(const struct device *dev)
 {
 	const struct uart_mcux_config *config = dev->config;
 	uint32_t mask = kUART_TxDataRegEmptyInterruptEnable;
-	config->base->C2 &= ~UART_C2_TE_MASK;
 	pm_device_busy_clear(dev);
 	UART_DisableInterrupts(config->base, mask);
 }
