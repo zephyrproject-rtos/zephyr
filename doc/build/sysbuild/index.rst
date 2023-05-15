@@ -693,3 +693,285 @@ each image that is part of a project. Alternatively, there are
 which can be used to include CMake and Kconfig files for the overall sysbuild
 image itself, this is where e.g. a custom image for a particular board or SoC
 can be added.
+
+Grouping Zephyr applications in sysbuild
+****************************************
+
+When integrating multiple Zephyr applications into a single sysbuild project,
+you may find it useful to distinguish between different categories of images,
+such as bootloaders and non-bootloaders. Each image could be further divided
+according to which core it targets on whichever SoC on your physical board.
+As these groups emerge, often with some overlap, you may want all images in a
+particular group to share a set of properties, including a common configuration
+or a relationship to another group.
+
+You can use the ``ExternalZephyrProject_Group()`` function to arbitrarily define
+named groups of sysbuild domains. This function can both create new groups and
+progressively extend the definition of existing groups in-tree and out-of-tree.
+
+Defining sysbuild groups
+========================
+
+When adding a new Zephyr application to sysbuild, you can assign it to a group
+simply like this:
+
+.. code-block:: cmake
+
+   ExternalZephyrProject_Add(
+     APPLICATION my_sample
+     SOURCE_DIR <path-to>/my_sample
+     GROUP my_group
+   )
+
+Alternatively, you could use the ``ExternalZephyrProject_Group()`` function:
+
+.. code-block:: cmake
+
+   ExternalZephyrProject_Group(
+     other_group
+     INCLUDE my_sample
+   )
+
+In particular, if you are defining an out-of-tree group and you want to assign
+pre-existing application images to it, then this is the way to do that. At this
+point, ``my_sample`` belongs to both ``my_group`` and ``other_group``.
+
+As mentioned above, it is possible to extend the definition of existing groups
+in sysbuild. For instance, if you would like to add more images to ``my group``,
+then you can do it as follows:
+
+.. code-block:: cmake
+
+   ExternalZephyrProject_Group(
+     my_group
+     INCLUDE hci_rpmsg mcuboot
+   )
+
+Now, ``my_group`` contains ``my_sample``, ``hci_rpmsg``, and ``mcuboot``,
+provided that all of these images are present in the current multi-image build
+(non-existent images are quietly ignored). This works, because calling this
+function multiple times for the same group has a cumulative effect by default.
+
+On the other hand, if you want to actively prevent ``my_group`` from being
+extended like this, then you can define it as immutable:
+
+.. code-block:: cmake
+
+   ExternalZephyrProject_Group(
+     my_group
+     IMMUTABLE
+     INCLUDE my_sample
+   )
+
+An immutable group can only be defined once. In this case, since ``my_group``
+already exists, this would produce an error, so you could use a different name
+to ensure that your group has a consistent meaning in the build system.
+
+Composing sysbuild groups with each other
+=========================================
+
+Besides defining sysbuild groups in terms of individual images, you also have
+the option to inherit images from another group:
+
+.. code-block:: cmake
+
+   ExternalZephyrProject_Group(
+     my_group
+     INCLUDE_FROM other_group
+   )
+
+Here, every image in ``other_group`` now belongs to ``my_group`` as well.
+Remember that groups can be defined progressively, so as more images are added
+to ``other_group`` during sysbuild's own CMake configuration stage, those same
+images will automatically appear in ``my_group`` as well.
+
+As ``my_group`` starts inheriting images from other groups, its final contents
+may become less predictable. If you know for sure that there are certain images
+which should not be part of this group, then you can filter them out, like so:
+
+.. code-block:: cmake
+
+   ExternalZephyrProject_Group(
+     my_group
+     EXCLUDE hello_world
+   )
+
+Similarly, you can filter out entire groups of images:
+
+.. code-block:: cmake
+
+   ExternalZephyrProject_Group(
+     another_group
+     INCLUDE_FROM my_group
+     EXCLUDE_FROM other_group
+   )
+
+This example defines ``another_group``, which contains images that are unique to
+``my_group`` and do not overlap with ``other_group``. This illustrates a basic
+set difference operation for sysbuild groups.
+
+Exclusion takes precedence over inclusion when evaluating the contents of each
+group. For example, recall that the image ``my_sample`` has been added to both
+``my_group`` and ``other_group``, but it is filtered out from ``another_group``.
+Furthermore, trying to add that image back to the group by naïvely extending it:
+
+.. code-block:: cmake
+
+   ExternalZephyrProject_Group(
+     another_group
+     INCLUDE my_sample
+   )
+
+would not work, because the prior ``EXCLUDE_FROM`` directive still applies with
+higher priority. If you do need this to work, then you should consider defining
+yet another group:
+
+.. code-block:: cmake
+
+   ExternalZephyrProject_Group(
+     yet_another_group
+     INCLUDE_FROM another_group
+     INCLUDE my_sample
+   )
+
+In this way, ``yet_another_group`` can successfully include ``my_sample``,
+even though ``another_group`` excludes it. This is because group contents are
+evaluated in isolation, so by the time ``another_group`` is merged in, its own
+inclusions and exclusions will already have been squashed. The same goes for
+``my_group`` and ``other_group``, which need to be resolved like this first.
+
+Adding dependencies among sysbuild groups
+=========================================
+
+Just like for individual Zephyr applications, you can add configuration or
+flashing dependencies for groups of these applications.
+See :ref:`sysbuild_zephyr_application_dependencies` for more information.
+
+Here is an example of group-wise dependencies:
+
+.. code-block:: cmake
+
+   sysbuild_add_dependencies(GROUP CONFIGURE my_group group_a group_b)
+   sysbuild_add_dependencies(GROUP FLASH     my_group group_a group_b)
+
+This will ensure that every image in ``group_a`` and ``group_b`` will be
+configured and flashed before every image in ``my_group``. The ordering within
+the groups themselves is not determined here. Moreover, groups are not treated
+as units; once other image-wise and group-wise dependencies are factored in,
+the images belonging to one group are not expected to stick together in the
+sorted order.
+
+Note that ``my_group`` is allowed to overlap with ``group_a`` or ``group_b``.
+If two groups overlap and one group depends on the other, then the images that
+the two groups have in common will be placed in the middle of the sorted order,
+relative to the images unique to either group.
+
+To help illustrate what this means, consider a different example:
+
+.. code-block:: cmake
+
+   ExternalZephyrProject_Group(
+     group_a
+     INCLUDE i_1 i_2 i_3 i_4 i_5 i_6
+   )
+   ExternalZephyrProject_Group(
+     group_b
+     INCLUDE i_1 i_2 i_3 i_7 i_8 i_9
+   )
+   sysbuild_add_dependencies(GROUP FLASH group_a group_b)
+
+The flashing order represented by this dependency would be something like this:
+
+.. code-block:: none
+
+      ┌───────────────────────────── unique to group_b
+      │                     ┌─────── unique to group_a
+     i_7        i_1        i_4
+   { i_8 } -> { i_2 } -> { i_5 }
+     i_9        i_3        i_6
+                 └────────────────── intersection
+
+In terms of image-wise sysbuild dependencies, this is equivalent to:
+
+.. code-block:: cmake
+
+   sysbuild_add_dependencies(IMAGE FLASH i_1 i_7 i_8 i_9)
+   sysbuild_add_dependencies(IMAGE FLASH i_2 i_7 i_8 i_9)
+   sysbuild_add_dependencies(IMAGE FLASH i_3 i_7 i_8 i_9)
+
+   sysbuild_add_dependencies(IMAGE FLASH i_4 i_1 i_2 i_3 i_7 i_8 i_9)
+   sysbuild_add_dependencies(IMAGE FLASH i_5 i_1 i_2 i_3 i_7 i_8 i_9)
+   sysbuild_add_dependencies(IMAGE FLASH i_6 i_1 i_2 i_3 i_7 i_8 i_9)
+
+If you are not sure how this works when a group has multiple dependencies,
+remember that the ``sysbuild_add_dependencies()`` function is associative,
+so the following is true:
+
+.. code-block:: cmake
+
+   sysbuild_add_dependencies(GROUP CONFIGURE g_1 g_2 g_3 ... g_n)
+
+   # This is equivalent to:
+   sysbuild_add_dependencies(GROUP CONFIGURE g_1 g_2)
+   sysbuild_add_dependencies(GROUP CONFIGURE g_1 g_3)
+   ...
+   sysbuild_add_dependencies(GROUP CONFIGURE g_1 g_n)
+
+.. tip::
+
+   You are allowed to use ``sysbuild_add_dependencies()`` with non-existent
+   groups, just as well as with non-existent images.
+
+Special sysbuild groups
+=======================
+
+Sysbuild reserves a few special, immutable groups, which are automatically
+defined for your convenience. These are:
+
+* ``all``. This group names all of the images to build.
+* ``board_<BOARD>``. There is a group named after every ``BOARD`` in Zephyr,
+  and it contains all images currently targeting that board.
+
+As an example of how the special groups could come in handy, if you ever need to
+define the complement of a group, then you can define it with the help of the
+``all`` group, like this:
+
+.. code-block:: cmake
+
+   ExternalZephyrProject_Group(
+     not_my_group
+     INCLUDE_FROM all
+     EXCLUDE_FROM my_group
+   )
+
+Another example is for when you have a sysbuild project which incorporates
+multiple boards. If you ever want the images targeting one of these boards,
+say ``reel_board``, to always be flashed first, then here is how to do it:
+
+.. code-block:: cmake
+
+   sysbuild_add_dependencies(GROUP FLASH all board_reel_board)
+
+This kind of thing is not recommended in-tree, as it is likely to cause
+complications across Zephyr samples, but it should be fine to use in your own
+private project if you need it.
+
+Listing the contents of a sysbuild group
+========================================
+
+Since sysbuild groups are defined progressively, their contents will be unknown
+until all inclusion-exclusion directives have been evaluated, across successive
+``ExternalZephyrProject_Group()`` calls. This will not happen until all sysbuild
+modules and all :file:`sysbuild.cmake` files have already been processed.
+Therefore, the only place where you will be able to list group contents is
+within :ref:`<sysbuild_module_hooks>`.
+
+For that, sysbuild provides the following function:
+
+.. code-block:: cmake
+
+   sysbuild_images_list(my_group_images GROUP my_group)
+
+It will populate the ``my_group_images`` variable with the complete list of
+images belonging to ``my_group``. If the group is undefined, then the returned
+list will be empty.

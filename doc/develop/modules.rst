@@ -682,8 +682,10 @@ PARENT_SCOPE of the CMakeLists.txt file. For example, to append ``bar`` to the
   list(APPEND FOO_LIST bar)
   set(FOO_LIST ${FOO_LIST} PARENT_SCOPE)
 
-Sysbuild modules hooks
-----------------------
+.. _sysbuild_module_hooks:
+
+Sysbuild module hooks
+---------------------
 
 Sysbuild provides an infrastructure which allows a sysbuild module to define
 a function which will be invoked by sysbuild at a pre-defined point in the
