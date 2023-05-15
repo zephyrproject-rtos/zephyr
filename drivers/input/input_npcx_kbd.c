@@ -478,6 +478,8 @@ static int input_npcx_kbd_init(const struct device *dev)
 			(k_thread_entry_t)kbd_matrix_polling_thread, (void *)dev, NULL, NULL,
 			K_PRIO_COOP(4), 0, K_NO_WAIT);
 
+	k_thread_name_set(&data->thread, "npcx-kbd");
+
 	return 0;
 }
 
