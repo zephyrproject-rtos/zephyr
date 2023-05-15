@@ -552,12 +552,22 @@ function(sysbuild_cache_set)
 endfunction()
 
 # Usage:
-#   sysbuild_add_dependencies(<CONFIGURE | FLASH> <image> [<image-dependency> ...])
+#   sysbuild_add_dependencies(<IMAGE | GROUP> <CONFIGURE | FLASH> <item> [<item-dependency> ...])
 #
-# This function makes an image depend on other images in the configuration or
-# flashing order. Each image named "<image-dependency>" will be ordered before
-# the image named "<image>".
+# This function makes an image or group depend on other images or groups in the
+# configuration or flashing order.
 #
+# IMAGE:     Interpret <item> and every <item-dependency> as images, created
+#            using `ExternalZephyrProject_Add()`. Each image "<item-dependency>"
+#            will be ordered before the image named "<item>".
+# GROUP:     Interpret <item> and every <item-dependency> as groups of images,
+#            created using `ExternalZephyrProject_Group()`. For each group named
+#            "<item-dependency>", its images will be ordered before the images
+#            belonging to the group "<item>". If these groups have a set of
+#            images in common, then those images will be placed in the middle.
+#            In mock set notation:
+#             - (<item-dependency> \ <item>) before (<item-dependency> & <item>)
+#             - (<item-dependency> & <item>) before (<item> \ <item-dependency>)
 # CONFIGURE: Add CMake configuration dependencies. This will determine the order
 #            in which `ExternalZephyrProject_Cmake()` will be called, as well as
 #            the order of images passed to all PRE_CMAKE and POST_CMAKE hooks.
@@ -565,11 +575,21 @@ endfunction()
 #            all images will appear in `domains.yaml`, as well as the order of
 #            images passed to all PRE_DOMAINS and POST_DOMAINS hooks.
 #
-# Note: specifying dependencies on non-existent images is allowed. This makes it
-# possible to define relationships between various images in the build system,
-# regardless of whether they are present in the current multiimage build.
+# Note: specifying dependencies on non-existent images and groups is allowed.
+# This makes it possible to define relationships between various images/groups
+# in the build system, regardless of whether they are present in the current
+# multiimage build.
 #
-function(sysbuild_add_dependencies dependency_type image)
+function(sysbuild_add_dependencies item_type dependency_type image)
+  set(valid_item_types IMAGE GROUP)
+  if(NOT item_type IN_LIST valid_item_types)
+    list(JOIN valid_item_types ", " valid_item_types)
+    message(FATAL_ERROR "sysbuild_add_dependencies(...) item type "
+                        "${item_type} must be one of the following: "
+                        "${valid_item_types}"
+    )
+  endif()
+
   set(valid_dependency_types CONFIGURE FLASH)
   if(NOT dependency_type IN_LIST valid_dependency_types)
     list(JOIN valid_dependency_types ", " valid_dependency_types)
@@ -579,7 +599,7 @@ function(sysbuild_add_dependencies dependency_type image)
     )
   endif()
 
-  set(property_name sysbuild_deps_${dependency_type}_${image})
+  set(property_name sysbuild_deps_${item_type}_${dependency_type}_${image})
   set_property(GLOBAL APPEND PROPERTY ${property_name} ${ARGN})
 endfunction()
 
@@ -588,7 +608,19 @@ endfunction()
 macro(add_dependencies_to_graph)
   cmake_parse_arguments(DEP "" "HINT;OUTPUT_EDGES" "VERTICES_FROM;VERTICES_TO" ${ARGN})
 
+  # Create three disjoint sets. Let MID be the intersection of FROM and TO.
+  set(DEP_VERTICES_MID ${DEP_VERTICES_FROM})
+  list(REMOVE_ITEM DEP_VERTICES_FROM ${DEP_VERTICES_TO})
+  list(REMOVE_ITEM DEP_VERTICES_MID ${DEP_VERTICES_FROM})
+  list(REMOVE_ITEM DEP_VERTICES_TO ${DEP_VERTICES_MID})
+
   foreach(from ${DEP_VERTICES_FROM})
+    foreach(to ${DEP_VERTICES_MID} ${DEP_VERTICES_TO})
+      list(APPEND ${DEP_OUTPUT_EDGES} ${from},${to})
+      list(APPEND hint_${from}_${to} "${DEP_HINT}")
+    endforeach()
+  endforeach()
+  foreach(from ${DEP_VERTICES_MID})
     foreach(to ${DEP_VERTICES_TO})
       list(APPEND ${DEP_OUTPUT_EDGES} ${from},${to})
       list(APPEND hint_${from}_${to} "${DEP_HINT}")
@@ -735,16 +767,19 @@ function(sysbuild_images_list variable)
 endfunction()
 
 # Usage:
-#   sysbuild_images_order(<variable> <CONFIGURE | FLASH> IMAGES <images>)
+#   sysbuild_images_order(<variable> <CONFIGURE | FLASH> IMAGES <images> [GROUPS <groups>])
 #
 # This function will sort the provided `<images>` to satisfy the dependencies
 # specified using `sysbuild_add_dependencies()`. The result will be returned in
 # `<variable>`.
 #
+# Note: if `<groups>` are given, then this function should not be called before
+# `sysbuild_groups_resolve(GROUPS <groups>)`.
+#
 # Raises a fatal error if cyclic dependencies are found.
 #
 function(sysbuild_images_order variable dependency_type)
-  cmake_parse_arguments(SIS "" "" "IMAGES" ${ARGN})
+  cmake_parse_arguments(SIS "" "" "IMAGES;GROUPS" ${ARGN})
   zephyr_check_arguments_required_all("sysbuild_images_order" SIS IMAGES)
 
   set(valid_dependency_types CONFIGURE FLASH)
@@ -760,16 +795,34 @@ function(sysbuild_images_order variable dependency_type)
   set(V ${SIS_IMAGES})
   set(E)
   foreach(image ${V})
-    set(property_name sysbuild_deps_${dependency_type}_${image})
+    set(property_name sysbuild_deps_IMAGE_${dependency_type}_${image})
     get_property(image_dependencies GLOBAL PROPERTY ${property_name})
 
     foreach(dependent ${image_dependencies})
       add_dependencies_to_graph(
-        HINT "sysbuild_add_dependencies(${dependency_type} ${image} ... ${dependent} ...)"
+        HINT "sysbuild_add_dependencies(IMAGE ${dependency_type} ${image} ... ${dependent} ...)"
         VERTICES_FROM ${dependent}
         VERTICES_TO ${image}
         OUTPUT_EDGES E
       )
+    endforeach()
+  endforeach()
+
+  foreach(group ${SIS_GROUPS})
+    sysbuild_images_list(images GROUP ${group})
+
+    set(property_name sysbuild_deps_GROUP_${dependency_type}_${group})
+    get_property(group_dependencies GLOBAL PROPERTY ${property_name})
+    foreach(group_dependent ${group_dependencies})
+      if(group_dependent IN_LIST SIS_GROUPS)
+        sysbuild_images_list(dependents GROUP ${group_dependent})
+        add_dependencies_to_graph(
+          HINT "sysbuild_add_dependencies(GROUP ${dependency_type} ${group} ... ${group_dependent} ...)"
+          VERTICES_FROM ${dependents}
+          VERTICES_TO ${images}
+          OUTPUT_EDGES E
+        )
+      endif()
     endforeach()
   endforeach()
 

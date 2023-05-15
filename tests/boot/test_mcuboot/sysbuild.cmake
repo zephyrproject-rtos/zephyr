@@ -22,5 +22,5 @@ ExternalZephyrProject_Add(
 # This order means that if the debugger resets the MCU in between flash
 # iterations, the MCUBoot swap won't be triggered until the secondary app
 # is actually present in flash.
-sysbuild_add_dependencies(FLASH test_mcuboot swapped_app)
-sysbuild_add_dependencies(FLASH swapped_app mcuboot)
+sysbuild_add_dependencies(IMAGE FLASH test_mcuboot swapped_app)
+sysbuild_add_dependencies(IMAGE FLASH swapped_app mcuboot)

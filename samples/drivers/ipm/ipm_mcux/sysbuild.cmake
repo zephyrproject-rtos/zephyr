@@ -13,7 +13,7 @@ ExternalZephyrProject_Add(
 # This is required because some primary cores need information from the
 # remote core's build, such as the output image's LMA
 add_dependencies(ipm_mcux ipm_mcux_remote)
-sysbuild_add_dependencies(CONFIGURE ipm_mcux ipm_mcux_remote)
+sysbuild_add_dependencies(IMAGE CONFIGURE ipm_mcux ipm_mcux_remote)
 
 # Make sure MCUboot is flashed first
-sysbuild_add_dependencies(FLASH ipm_mcux_remote mcuboot)
+sysbuild_add_dependencies(IMAGE FLASH ipm_mcux_remote mcuboot)
