@@ -836,6 +836,8 @@ static int cmd_bap_broadcast_assistant_add_pa_sync(const struct shell *sh,
 		if (index < BT_ISO_BIS_INDEX_MIN ||
 		    index > BT_ISO_BIS_INDEX_MAX) {
 			shell_error(sh, "Invalid index: %ld", index);
+
+			return -ENOEXEC;
 		}
 
 		bis_bitfield_req |= BIT(index);
