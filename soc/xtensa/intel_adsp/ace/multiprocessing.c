@@ -18,7 +18,7 @@
 #include <zephyr/irq.h>
 #include <zephyr/cache.h>
 
-#define CORE_POWER_CHECK_NUM 32
+#define CORE_POWER_CHECK_NUM 128
 #define ACE_INTC_IRQ DT_IRQN(DT_NODELABEL(ace_intc))
 
 static void ipc_isr(void *arg)
