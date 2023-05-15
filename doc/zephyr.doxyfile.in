@@ -2350,6 +2350,7 @@ PREDEFINED             = __DOXYGEN__ \
                          CONFIG_ARCH_HAS_CUSTOM_SWAP_TO_MAIN \
                          CONFIG_BT_BREDR \
                          CONFIG_BT_EATT \
+                         CONFIG_BT_L2CAP_SEG_RECV \
                          CONFIG_BT_MESH_MODEL_EXTENSIONS \
                          CONFIG_BT_REMOTE_INFO \
                          CONFIG_BT_USER_DATA_LEN_UPDATE \
