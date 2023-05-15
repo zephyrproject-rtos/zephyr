@@ -7,7 +7,7 @@
 #define ZEPHYR_SOC_INTEL_ADSP_POWER_H_
 
 /* Value used as delay when waiting for hw register state change. */
-#define HW_STATE_CHECK_DELAY 256
+#define HW_STATE_CHECK_DELAY  64
 
 
 struct ace_pwrctl {
