@@ -31,14 +31,6 @@
  */
 static void native_posix_stdout_init(void)
 {
-	/* Let's ensure that even if we are redirecting to a file, we get stdout
-	 * and stderr line buffered (default for console). Note that glibc
-	 * ignores size. But just in case we set a reasonable number in case
-	 * somebody tries to compile against a different library
-	 */
-	setvbuf(stdout, NULL, _IOLBF, 512);
-	setvbuf(stderr, NULL, _IOLBF, 512);
-
 #ifdef CONFIG_PRINTK
 	extern void __printk_hook_install(int (*fn)(int));
 	__printk_hook_install(putchar);
