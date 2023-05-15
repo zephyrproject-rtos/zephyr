@@ -14,6 +14,7 @@
 #include <stdint.h>
 
 #include <zephyr/kernel.h>
+#include <zephyr/sys/iterable_sections.h>
 
 /**
  * @brief Provisioning

@@ -8,7 +8,7 @@
 #include <zephyr/device.h>
 #include <zephyr/toolchain/common.h>
 #include <zephyr/sys/slist.h>
-
+#include <zephyr/sys/iterable_sections.h>
 #include <zephyr/drivers/usb/udc.h>
 #include <zephyr/usb/usbd.h>
 

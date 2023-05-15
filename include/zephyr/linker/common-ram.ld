@@ -1,5 +1,7 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 
+#include <zephyr/linker/iterable_sections.h>
+
 #if defined(CONFIG_NETWORKING)
 #ifndef NETWORK_RAM_SECTIONS
 #define NETWORK_RAM_SECTIONS \

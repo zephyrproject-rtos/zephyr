@@ -15,6 +15,7 @@
 
 #include <zephyr/app_memory/app_memdomain.h>
 #include <zephyr/init.h>
+#include <zephyr/sys/iterable_sections.h>
 #include <stdbool.h>
 
 #if defined(CONFIG_USERSPACE)

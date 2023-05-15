@@ -11,6 +11,7 @@
  */
 
 #include <zephyr/net/ppp.h>
+#include <zephyr/sys/iterable_sections.h>
 
 /**
  * FSM flags that control how it operates.

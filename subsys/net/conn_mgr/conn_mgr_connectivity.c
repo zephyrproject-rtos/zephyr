@@ -9,6 +9,8 @@ LOG_MODULE_REGISTER(conn_mgr_conn, CONFIG_NET_CONNECTION_MANAGER_LOG_LEVEL);
 
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/conn_mgr_connectivity.h>
+#include <zephyr/sys/iterable_sections.h>
+
 #include "conn_mgr_private.h"
 
 int conn_mgr_if_connect(struct net_if *iface)

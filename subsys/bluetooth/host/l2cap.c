@@ -10,6 +10,7 @@
 #include <string.h>
 #include <errno.h>
 #include <zephyr/sys/atomic.h>
+#include <zephyr/sys/iterable_sections.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/util.h>
 

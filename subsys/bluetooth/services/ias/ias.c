@@ -17,6 +17,7 @@
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/services/ias.h>
+#include <zephyr/sys/iterable_sections.h>
 
 #define LOG_LEVEL CONFIG_BT_IAS_LOG_LEVEL
 LOG_MODULE_REGISTER(ias);
