@@ -103,7 +103,7 @@ static int request_expected_size(const struct ec_host_cmd_request_header *r)
 /* Waiting time in microseconds to detect overrun */
 #define UART_OVERRUN_TIMEOUT_US 300
 /* Timeout after receiving first byte */
-#define UART_REQ_RX_TIMEOUT	K_MSEC(150)
+#define UART_REQ_RX_TIMEOUT     K_MSEC(150)
 
 static void rx_timeout(struct k_work *work)
 {
