@@ -24,6 +24,7 @@ source "subsys/net/Kconfig.template.log_config.net"
 
 config NET_CONNECTION_MANAGER_MONITOR_STACK_SIZE
 	int "Size of the stack allocated for the conn_mgr_monitor thread"
+	default 8192 if WPA_SUPP
 	default 512
 	help
 	  Sets the stack size which will be used by the connection manager for connectivity monitoring.
