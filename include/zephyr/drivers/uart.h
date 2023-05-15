@@ -1523,6 +1523,9 @@ static inline int uart_rx_buf_rsp_u16(const struct device *dev, uint16_t *buf,
  * after that #UART_RX_DISABLED event will be generated. Additionally, if there
  * is any pending received data, the #UART_RX_RDY event for that data will be
  * generated before the #UART_RX_BUF_RELEASED events.
+ * 
+ * @note The UART_RX_DISABLED event must be handled before the peripheral can be
+ * 	     suspended and turned off.
  *
  * @param dev UART device instance.
  *
