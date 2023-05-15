@@ -181,6 +181,20 @@ mikrobus_serial: &flexcomm2 {
 mikrobus_spi: &hs_lspi {
 };
 
+&dma0 {
+	/*
+	 * The total number of dma channels available is defined by
+	 * FSL_FEATURE_DMA_NUMBER_OF_CHANNELS in the SoC features file.
+	 * Since memory from the heap pool is allocated based on the number
+	 * of DMA channels, set this property to as many channels is needed
+	 * for the platform. Adjust HEAP_MEM_POOL_SIZE in case you need more
+	 * memory.
+	 */
+	dma-channels = <20>;
+	nxp,dma-num-of-otrigs = <4>;
+	status = "okay";
+};
+
 &flexcomm0 {
 	pinctrl-0 = <&pinmux_flexcomm0_usart>;
 	pinctrl-names = "default";
