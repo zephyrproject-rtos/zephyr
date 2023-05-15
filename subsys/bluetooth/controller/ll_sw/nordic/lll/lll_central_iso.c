@@ -179,9 +179,19 @@ static int prepare_cb(struct lll_prepare_param *p)
 	cig_lll->latency_prepare = 0U;
 
 	/* Adjust the SN and NESN for skipped CIG events */
-	/* sn and nesn are 1-bit, only Least Significant bit is needed */
-	cis_lll->sn += cis_lll->tx.bn * lazy;
-	cis_lll->nesn += cis_lll->rx.bn * lazy;
+	if (cis_lll->event_count) {
+		uint16_t cis_lazy;
+
+		if (lazy > cis_lll->event_count) {
+			cis_lazy = lazy - cis_lll->event_count;
+		} else {
+			cis_lazy = lazy;
+		}
+
+		/* sn and nesn are 1-bit, only Least Significant bit is needed */
+		cis_lll->sn += cis_lll->tx.bn * cis_lazy;
+		cis_lll->nesn += cis_lll->rx.bn * cis_lazy;
+	}
 
 	se_curr = 1U;
 	bn_tx = 1U;
@@ -368,9 +378,19 @@ static int prepare_cb(struct lll_prepare_param *p)
 	do {
 		cis_lll = ull_conn_iso_lll_stream_get_by_group(cig_lll, &cis_handle);
 		if (cis_lll && cis_lll->active) {
-			/* sn and nesn are 1-bit, only Least Significant bit is needed */
-			cis_lll->sn += cis_lll->tx.bn * lazy;
-			cis_lll->nesn += cis_lll->rx.bn * lazy;
+			if (cis_lll->event_count) {
+				uint16_t cis_lazy;
+
+				if (lazy > cis_lll->event_count) {
+					cis_lazy = lazy - cis_lll->event_count;
+				} else {
+					cis_lazy = lazy;
+				}
+
+				/* sn and nesn are 1-bit, only Least Significant bit is needed */
+				cis_lll->sn += cis_lll->tx.bn * cis_lazy;
+				cis_lll->nesn += cis_lll->rx.bn * cis_lazy;
+			}
 		}
 	} while (cis_lll);
 
