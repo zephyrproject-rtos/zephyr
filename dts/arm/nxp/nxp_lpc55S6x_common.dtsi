@@ -9,6 +9,7 @@
 #include <zephyr/dt-bindings/clock/mcux_lpc_syscon_clock.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/inputmux/inputmux_trigger_ports.h>
 #include <arm/armv8-m.dtsi>
 
 / {
@@ -178,6 +179,8 @@
 		compatible = "nxp,lpc-dma";
 		reg = <0x82000 0x1000>;
 		interrupts = <1 0>;
+		nxp,dma-otrig-base-address = <LPC55S69_DMA0_OTRIG_BASE>;
+		nxp,dma-itrig-base-address = <LPC55S69_DMA0_ITRIG_BASE>;
 		status = "disabled";
 		#dma-cells = <1>;
 	};
@@ -186,6 +189,8 @@
 		compatible = "nxp,lpc-dma";
 		reg = <0xa7000 0x1000>;
 		interrupts = <58 0>;
+		nxp,dma-otrig-base-address = <LPC55S69_DMA1_OTRIG_BASE>;
+		nxp,dma-itrig-base-address = <LPC55S69_DMA1_ITRIG_BASE>;
 		status = "disabled";
 		#dma-cells = <1>;
 	};
