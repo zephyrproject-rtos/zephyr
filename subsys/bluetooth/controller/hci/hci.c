@@ -2039,8 +2039,10 @@ static void le_set_cig_parameters(struct net_buf *buf, struct net_buf **evt)
 			handle = UINT16_MAX;
 
 			for (uint8_t i = 0; i < cis_count; i++) {
-				(void)ll_conn_iso_stream_get_by_group(cig, &handle);
-				rp->handle[i] = sys_cpu_to_le16(handle);
+				struct ll_conn_iso_stream *cis;
+
+				cis = ll_conn_iso_stream_get_by_group(cig, &handle);
+				rp->handle[i] = sys_cpu_to_le16(cis->lll.handle);
 			}
 		}
 	}
@@ -2116,8 +2118,10 @@ static void le_set_cig_params_test(struct net_buf *buf, struct net_buf **evt)
 			handle = UINT16_MAX;
 
 			for (uint8_t i = 0; i < cis_count; i++) {
-				(void)ll_conn_iso_stream_get_by_group(cig, &handle);
-				rp->handle[i] = sys_cpu_to_le16(handle);
+				struct ll_conn_iso_stream *cis;
+
+				cis = ll_conn_iso_stream_get_by_group(cig, &handle);
+				rp->handle[i] = sys_cpu_to_le16(cis->lll.handle);
 			}
 		}
 	}
