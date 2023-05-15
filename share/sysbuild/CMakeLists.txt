@@ -110,6 +110,9 @@ while(TRUE)
   math(EXPR i "${i} + 1")
 endwhile()
 
+get_property(GROUPS GLOBAL PROPERTY sysbuild_groups)
+sysbuild_groups_resolve(GROUPS ${GROUPS} IMAGES ${IMAGES})
+
 sysbuild_images_order(IMAGES_CONFIGURATION_ORDER CONFIGURE IMAGES ${IMAGES})
 sysbuild_images_order(IMAGES_FLASHING_ORDER FLASH IMAGES ${IMAGES})
 

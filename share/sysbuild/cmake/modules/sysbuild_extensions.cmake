@@ -106,6 +106,7 @@ endfunction()
 #   ExternalZephyrProject_Add(APPLICATION <name>
 #                             SOURCE_DIR <dir>
 #                             [BOARD <board> [BOARD_REVISION <revision>]]
+#                             [GROUP <groups>]
 #                             [MAIN_APP]
 #   )
 #
@@ -118,6 +119,9 @@ endfunction()
 # BOARD <board>:             Use <board> for application build instead user defined BOARD.
 # BOARD_REVISION <revision>: Use <revision> of <board> for application (only valid if
 #                            <board> is also supplied).
+# GROUP <groups>:            Add the application to each group in the `<groups>` list.
+#                            Equivalent to: ExternalZephyrProject_Group(<g> INCLUDE <name>)
+#                            for every `<g>` in `<groups>`.
 # MAIN_APP:                  Flag indicating this application is the main application
 #                            and where user defined settings should be passed on as-is
 #                            except for multi image build flags.
@@ -125,7 +129,7 @@ endfunction()
 #                            MAIN_APP unmodified.
 #
 function(ExternalZephyrProject_Add)
-  cmake_parse_arguments(ZBUILD "MAIN_APP" "APPLICATION;BOARD;BOARD_REVISION;SOURCE_DIR" "" ${ARGN})
+  cmake_parse_arguments(ZBUILD "MAIN_APP" "APPLICATION;BOARD;BOARD_REVISION;SOURCE_DIR" "GROUP" ${ARGN})
 
   if(ZBUILD_UNPARSED_ARGUMENTS)
     message(FATAL_ERROR
@@ -250,6 +254,12 @@ function(ExternalZephyrProject_Add)
     # Include build revision for target image
     set_target_properties(${ZBUILD_APPLICATION} PROPERTIES BOARD ${BOARD}@${BOARD_REVISION})
   endif()
+
+  if(DEFINED ZBUILD_GROUP)
+    foreach(group ${ZBUILD_GROUP})
+      ExternalZephyrProject_Group(${group} INCLUDE ${ZBUILD_APPLICATION})
+    endforeach()
+  endif()
 endfunction()
 
 # Usage:
@@ -351,6 +361,93 @@ function(ExternalZephyrProject_Cmake)
   endif()
   load_cache(IMAGE ${ZCMAKE_APPLICATION} BINARY_DIR ${BINARY_DIR})
   import_kconfig(CONFIG_ ${BINARY_DIR}/zephyr/.config TARGET ${ZCMAKE_APPLICATION})
+endfunction()
+
+# Usage:
+#   ExternalZephyrProject_Group(<name>
+#                               [INCLUDE <images>]
+#                               [EXCLUDE <images>]
+#                               [INCLUDE_FROM <groups>]
+#                               [EXCLUDE_FROM <groups>]
+#                               [IMMUTABLE]
+#   )
+#
+# This function defines groups of external Zephyr projects. Images added using
+# `ExternalZephyrProject_Add()` may inherit common properties of the group(s)
+# they are assigned to.
+#
+# This function can either add a new group "<name>", or extend the definition of
+# an existing group with that name. This lets multiple sources influence what a
+# given group should represent in the multiimage build system. The final set of
+# images/properties for every group is evaluated in `sysbuild_groups_resolve()`.
+#
+# <name>                 Name of the group.
+# INCLUDE <images>:      Add a set of images to the group.
+# EXCLUDE <images>:      Remove a set of images from the group.
+# INCLUDE_FROM <groups>: INCLUDE all images belonging to each group in the list.
+# EXCLUDE_FROM <groups>: EXCLUDE all images belonging to each group in the list.
+# IMMUTABLE:             Disallow extending the definition of this group.
+#                        Raises an error if the group already exists.
+#
+# Example use:
+#   ExternalZephyrProject_Group(g_1
+#                               INCLUDE i_1 i_2 i_3 i_4
+#   )
+#   ExternalZephyrProject_Group(g_2
+#                               INCLUDE_FROM g_1
+#                               EXCLUDE i_1 i_2
+#   )
+#   ExternalZephyrProject_Group(g_3
+#                               INCLUDE_FROM g_1
+#                               EXCLUDE_FROM g_2
+#   )
+#   ExternalZephyrProject_Group(g_4
+#                               INCLUDE_FROM g_3
+#                               EXCLUDE_FROM g_1
+#   )
+#
+# In this example, the contents of each group will be as follows:
+#   g_1: i_1, i_2, i_3, i_4
+#   g_2: i_3, i_4
+#   g_3: i_1, i_2
+#   g_4: <empty>
+#
+function(ExternalZephyrProject_Group name)
+  set(options IMMUTABLE)
+  set(multi_args INCLUDE INCLUDE_FROM EXCLUDE EXCLUDE_FROM)
+  cmake_parse_arguments(ZGROUP "${options}" "" "${multi_args}" ${ARGN})
+  if(ZGROUP_UNPARSED_ARGUMENTS)
+    message(FATAL_ERROR
+      "ExternalZephyrProject_Group(${ARGV0} <val> ...) given unknown arguments:"
+      " ${ZGROUP_UNPARSED_ARGUMENTS}"
+    )
+  endif()
+
+  set(target_name ${name}_group)
+  if(NOT TARGET ${target_name})
+    add_custom_target(${target_name})
+    set_property(GLOBAL APPEND PROPERTY sysbuild_groups ${name})
+  elseif(ZGROUP_IMMUTABLE)
+    message(FATAL_ERROR
+      "ExternalZephyrProject_Group(${ARGV0} <val> ...) failed to define "
+      "group '${name}' as IMMUTABLE, because it already exists."
+    )
+  else()
+    get_property(is_immutable TARGET ${target_name} PROPERTY IMMUTABLE)
+    if(is_immutable)
+      message(FATAL_ERROR
+        "ExternalZephyrProject_Group(${ARGV0} <val> ...) group '${name}' is "
+        "IMMUTABLE and cannot be extended."
+      )
+    endif()
+  endif()
+
+  set_property(TARGET ${target_name} PROPERTY IMMUTABLE "${ZGROUP_IMMUTABLE}")
+  foreach(arg ${multi_args})
+    if(DEFINED ZGROUP_${arg})
+      set_property(TARGET ${target_name} APPEND PROPERTY ${arg} "${ZGROUP_${arg}}")
+    endif()
+  endforeach()
 endfunction()
 
 # Usage:
@@ -525,6 +622,117 @@ macro(assert_no_cyclic_dependencies cycle message)
     message(FATAL_ERROR "${message}")
   endif()
 endmacro()
+
+# Usage:
+#   sysbuild_groups_resolve(GROUPS <groups> IMAGES <images>)
+#
+# This function evaluates which images belong to each group in `<groups>`.
+#
+# First, it resolves the INCLUDE, EXCLUDE, INCLUDE_FROM, EXCLUDE_FROM directives
+# passed to `ExternalZephyrProject_Group()`. Then, it restricts every group to
+# be a subset of all provided `<images>`.
+#
+function(sysbuild_groups_resolve)
+  cmake_parse_arguments(SGR "" "" "GROUPS;IMAGES" ${ARGN})
+  zephyr_check_arguments_required_all("sysbuild_groups_resolve" SGR GROUPS IMAGES)
+
+  # Groups need to be sorted, so that if <a> INCLUDE_FROM/EXCLUDE_FROM <b>, then
+  # the images belonging to group <b> will be known before resolving group <a>.
+  set(V ${SGR_GROUPS})
+  set(E)
+  foreach(group ${V})
+    if(NOT TARGET ${group}_group)
+      message(FATAL_ERROR
+        "sysbuild_groups_resolve(...) group ${group} does not exist. "
+        "Remember to call ExternalZephyrProject_Group(${group} ...) first."
+      )
+    endif()
+    get_property(${group}_include      TARGET ${group}_group PROPERTY INCLUDE)
+    get_property(${group}_exclude      TARGET ${group}_group PROPERTY EXCLUDE)
+    get_property(${group}_include_from TARGET ${group}_group PROPERTY INCLUDE_FROM)
+    get_property(${group}_exclude_from TARGET ${group}_group PROPERTY EXCLUDE_FROM)
+
+    foreach(dependent ${${group}_include_from})
+      add_dependencies_to_graph(
+        HINT "ExternalZephyrProject_Group(${group} ... INCLUDE_FROM ${dependent} ...)"
+        VERTICES_FROM ${dependent}
+        VERTICES_TO ${group}
+        OUTPUT_EDGES E
+      )
+    endforeach()
+    foreach(dependent ${${group}_exclude_from})
+      add_dependencies_to_graph(
+        HINT "ExternalZephyrProject_Group(${group} ... EXCLUDE_FROM ${dependent} ...)"
+        VERTICES_FROM ${dependent}
+        VERTICES_TO ${group}
+        OUTPUT_EDGES E
+      )
+    endforeach()
+  endforeach()
+
+  zephyr_topological_sort(VERTICES "${V}" EDGES "${E}" OUTPUT_RESULT sorted OUTPUT_CYCLE cycle)
+  assert_no_cyclic_dependencies(cycle "Failed to resolve sysbuild groups.")
+
+  # Evaluate the images for each group in isolation.
+  foreach(group ${sorted})
+    # Apply inclusion filtering.
+    set(images ${${group}_include})
+    foreach(dependent ${${group}_include_from})
+      if(dependent IN_LIST sorted)
+        get_property(dependent_images TARGET ${dependent}_group PROPERTY IMAGES_RESOLVED)
+        list(APPEND images ${dependent_images})
+      endif()
+    endforeach()
+
+    # Apply exclusion filtering.
+    list(REMOVE_ITEM images ${${group}_exclude})
+    foreach(dependent ${${group}_exclude_from})
+      if(dependent IN_LIST sorted)
+        get_property(dependent_images TARGET ${dependent}_group PROPERTY IMAGES_RESOLVED)
+        list(REMOVE_ITEM images ${dependent_images})
+      endif()
+    endforeach()
+
+    # Remove non-existent images.
+    set(images_diff ${images})
+    list(REMOVE_ITEM images_diff ${SGR_IMAGES})
+    list(REMOVE_ITEM images ${images_diff})
+
+    list(REMOVE_DUPLICATES images)
+    set_property(TARGET ${group}_group PROPERTY IMAGES_RESOLVED "${images}")
+  endforeach()
+endfunction()
+
+# Usage:
+#   sysbuild_images_list(<variable> GROUP <group>)
+#
+# This function will list all images belonging to a given `<group>`. The result
+# will be returned in `<variable>`.
+#
+# It should not be called before `sysbuild_groups_resolve()` because group
+# contents are unknown before that point. If `<group>` is unresolved or even
+# undefined, then an empty list will be returned.
+#
+function(sysbuild_images_list variable)
+  cmake_parse_arguments(SIL "" "GROUP" "" ${ARGN})
+  zephyr_check_arguments_required_all("sysbuild_groups_resolve" SIL GROUP)
+
+  set(output "")
+
+  set(target_name ${SIL_GROUP}_group)
+  if(TARGET ${target_name})
+    get_property(is_resolved TARGET ${target_name} PROPERTY IMAGES_RESOLVED SET)
+    if(NOT is_resolved)
+      message(WARNING
+        "sysbuild_images_list(...) group ${SIL_GROUP} exists, "
+        "but its contents are not yet resolved."
+      )
+    endif()
+    get_property(output TARGET ${target_name} PROPERTY IMAGES_RESOLVED)
+  endif()
+
+  set(${variable} ${output} PARENT_SCOPE)
+endfunction()
 
 # Usage:
 #   sysbuild_images_order(<variable> <CONFIGURE | FLASH> IMAGES <images>)
