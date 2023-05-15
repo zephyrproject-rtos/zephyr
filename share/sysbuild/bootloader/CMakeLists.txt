@@ -12,7 +12,7 @@ if(SB_CONFIG_BOOTLOADER_MCUBOOT)
   )
   # MCUBoot default configuration is to perform a full chip erase.
   # Placing MCUBoot first in list to ensure it is flashed before other images.
-  set(IMAGES ${image} ${IMAGES} PARENT_SCOPE)
+  sysbuild_add_dependencies(FLASH ${DEFAULT_IMAGE} ${image})
 
   set_config_string(${image} CONFIG_BOOT_SIGNATURE_KEY_FILE "${SB_CONFIG_BOOT_SIGNATURE_KEY_FILE}")
 endif()
