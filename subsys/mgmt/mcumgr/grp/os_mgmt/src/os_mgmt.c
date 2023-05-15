@@ -33,10 +33,15 @@
 #include <zephyr/mgmt/mcumgr/mgmt/callbacks.h>
 #endif
 
-#ifdef CONFIG_MCUMGR_GRP_OS_INFO
+#if defined(CONFIG_MCUMGR_GRP_OS_INFO) || defined(CONFIG_MCUMGR_GRP_OS_BOOTLOADER_INFO)
 #include <stdio.h>
 #include <version.h>
+#if defined(CONFIG_MCUMGR_GRP_OS_INFO)
 #include <os_mgmt_processor.h>
+#endif
+#if defined(CONFIG_MCUMGR_GRP_OS_BOOTLOADER_INFO)
+#include <bootutil/boot_status.h>
+#endif
 #include <mgmt/mcumgr/util/zcbor_bulk.h>
 #if defined(CONFIG_NET_HOSTNAME_ENABLE)
 #include <zephyr/net/hostname.h>
@@ -365,6 +370,64 @@ os_mgmt_mcumgr_params(struct smp_streamer *ctxt)
 	     zcbor_uint32_put(zse, CONFIG_MCUMGR_TRANSPORT_NETBUF_SIZE)	&&
 	     zcbor_tstr_put_lit(zse, "buf_count")		&&
 	     zcbor_uint32_put(zse, CONFIG_MCUMGR_TRANSPORT_NETBUF_COUNT);
+
+	return ok ? MGMT_ERR_EOK : MGMT_ERR_EMSGSIZE;
+}
+#endif
+
+#if defined(CONFIG_MCUMGR_GRP_OS_BOOTLOADER_INFO)
+
+#if IS_ENABLED(CONFIG_MCUBOOT_BOOTLOADER_MODE_SINGLE_APP)
+#define BOOTLOADER_MODE MCUBOOT_MODE_SINGLE_SLOT
+#elif IS_ENABLED(CONFIG_MCUBOOT_BOOTLOADER_MODE_SWAP_SCRATCH)
+#define BOOTLOADER_MODE MCUBOOT_MODE_SWAP_USING_SCRATCH
+#elif IS_ENABLED(CONFIG_MCUBOOT_BOOTLOADER_MODE_OVERWRITE_ONLY)
+#define BOOTLOADER_MODE MCUBOOT_MODE_UPGRADE_ONLY
+#elif IS_ENABLED(CONFIG_MCUBOOT_BOOTLOADER_MODE_SWAP_WITHOUT_SCRATCH)
+#define BOOTLOADER_MODE MCUBOOT_MODE_SWAP_USING_MOVE
+#elif IS_ENABLED(CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP)
+#define BOOTLOADER_MODE MCUBOOT_MODE_DIRECT_XIP
+#elif IS_ENABLED(CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP_WITH_REVERT)
+#define BOOTLOADER_MODE MCUBOOT_MODE_DIRECT_XIP_WITH_REVERT
+#else
+#define BOOTLOADER_MODE -1
+#endif
+
+static int
+os_mgmt_bootloader_info(struct smp_streamer *ctxt)
+{
+	zcbor_state_t *zse = ctxt->writer->zs;
+	zcbor_state_t *zsd = ctxt->reader->zs;
+	struct zcbor_string query = { 0 };
+	size_t decoded;
+	bool ok;
+
+	struct zcbor_map_decode_key_val bootloader_info[] = {
+		ZCBOR_MAP_DECODE_KEY_DECODER("query", zcbor_tstr_decode, &query),
+	};
+
+	if (zcbor_map_decode_bulk(zsd, bootloader_info, ARRAY_SIZE(bootloader_info), &decoded)) {
+		return MGMT_ERR_EINVAL;
+	}
+
+	/* If no parameter is recognized then just introduce the bootloader. */
+	if (decoded == 0) {
+		ok = zcbor_tstr_put_lit(zse, "bootloader") &&
+		     zcbor_tstr_put_lit(zse, "MCUboot");
+	} else if (zcbor_map_decode_bulk_key_found(bootloader_info, ARRAY_SIZE(bootloader_info),
+		   "query") &&
+		   (sizeof("mode") - 1) == query.len &&
+		   memcmp("mode", query.value, query.len) == 0) {
+
+		ok = zcbor_tstr_put_lit(zse, "mode") &&
+		     zcbor_int32_put(zse, BOOTLOADER_MODE);
+#if IS_ENABLED(MCUBOOT_BOOTLOADER_NO_DOWNGRADE)
+		ok = zcbor_tstr_put_lit(zse, "no-downgrade") &&
+		     zcbor_bool_encode(zse, true);
+#endif
+	} else {
+		return OS_MGMT_ERR_QUERY_YIELDS_NO_ANSWER;
+	}
 
 	return ok ? MGMT_ERR_EOK : MGMT_ERR_EMSGSIZE;
 }
@@ -731,6 +794,11 @@ static const struct mgmt_handler os_mgmt_group_handlers[] = {
 #ifdef CONFIG_MCUMGR_GRP_OS_INFO
 	[OS_MGMT_ID_INFO] = {
 		os_mgmt_info, NULL
+	},
+#endif
+#ifdef CONFIG_MCUMGR_GRP_OS_BOOTLOADER_INFO
+	[OS_MGMT_ID_BOOTLOADER_INFO] = {
+		os_mgmt_bootloader_info, NULL
 	},
 #endif
 };

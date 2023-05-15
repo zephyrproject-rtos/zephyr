@@ -24,6 +24,7 @@ extern "C" {
 #define OS_MGMT_ID_RESET		5
 #define OS_MGMT_ID_MCUMGR_PARAMS	6
 #define OS_MGMT_ID_INFO			7
+#define OS_MGMT_ID_BOOTLOADER_INFO	8
 
 /**
  * Command result codes for OS management group.
@@ -37,6 +38,9 @@ enum os_mgmt_err_code_t {
 
 	/** The provided format value is not valid. */
 	OS_MGMT_ERR_INVALID_FORMAT,
+
+	/** Query was not recognized. */
+	OS_MGMT_ERR_QUERY_YIELDS_NO_ANSWER,
 };
 
 /* Bitmask values used by the os info command handler. Note that the width of this variable is

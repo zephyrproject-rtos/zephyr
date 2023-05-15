@@ -173,6 +173,16 @@ config MCUMGR_GRP_OS_INFO_BUILD_DATE_TIME
 
 endif
 
+if BOOTLOADER_MCUBOOT
+
+config MCUMGR_GRP_OS_BOOTLOADER_INFO
+	bool "Bootloader information"
+	help
+	  Allows to query MCUmgr about bootloader used by device and various bootloader
+	  parameters.
+
+endif # BOOTLOADER_MCUBOOT
+
 module = MCUMGR_GRP_OS
 module-str = mcumgr_grp_os
 source "subsys/logging/Kconfig.template.log_config"
