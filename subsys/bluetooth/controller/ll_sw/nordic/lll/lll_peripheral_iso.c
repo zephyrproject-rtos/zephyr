@@ -403,6 +403,21 @@ static void abort_cb(struct lll_prepare_param *prepare_param, void *param)
 
 		cis_lll = ull_conn_iso_lll_stream_get_by_group(cig_lll, NULL);
 
+		/* FIXME: Consider Flush Timeout when resetting current burst number */
+		if (!has_tx) {
+			has_tx = 1U;
+
+			/* Adjust nesn when flushing Tx */
+			/* FIXME: When Flush Timeout is implemented */
+			if (bn_tx <= cis_lll->tx.bn) {
+				/* sn and nesn are 1-bit, only Least Significant bit is needed */
+				cis_lll->sn += cis_lll->tx.bn + 1U - bn_tx;
+			}
+
+			/* Set to last burst number in previous event */
+			bn_tx = cis_lll->tx.bn;
+		}
+
 		/* Perform event abort here.
 		 * After event has been cleanly aborted, clean up resources
 		 * and dispatch event done.
@@ -462,8 +477,8 @@ static void isr_rx(void *param)
 				cis_lll->sn += cis_lll->tx.bn + 1U - bn_tx;
 			}
 
-			/* Start transmitting new burst */
-			bn_tx = 1U;
+			/* Set to last burst number in previous event */
+			bn_tx = cis_lll->tx.bn;
 		}
 
 		if (se_curr < cis_lll->nse) {
