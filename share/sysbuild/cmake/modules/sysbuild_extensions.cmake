@@ -560,3 +560,69 @@ endfunction()
 function(set_config_string image setting value)
   set_property(TARGET ${image} APPEND_STRING PROPERTY CONFIG "${setting}=\"${value}\"\n")
 endfunction()
+
+# Usage:
+#   sysbuild_add_dependencies(<CONFIGURE | FLASH> <image> [<image-dependency> ...])
+#
+# This function makes an image depend on other images in the configuration or
+# flashing order. Each image named "<image-dependency>" will be ordered before
+# the image named "<image>".
+#
+# CONFIGURE: Add CMake configuration dependencies. This will determine the order
+#            in which `ExternalZephyrProject_Cmake()` will be called.
+# FLASH:     Add flashing dependencies. This will determine the order in which
+#            all images will appear in `domains.yaml`.
+#
+function(sysbuild_add_dependencies dependency_type image)
+  set(valid_dependency_types CONFIGURE FLASH)
+  if(NOT dependency_type IN_LIST valid_dependency_types)
+    list(JOIN valid_dependency_types ", " valid_dependency_types)
+    message(FATAL_ERROR "sysbuild_add_dependencies(...) dependency type "
+                        "${dependency_type} must be one of the following: "
+                        "${valid_dependency_types}"
+    )
+  endif()
+
+  if(NOT TARGET ${image})
+    message(FATAL_ERROR
+      "${image} does not exist. Remember to call "
+      "ExternalZephyrProject_Add(APPLICATION ${image} ...) first."
+    )
+  endif()
+
+  get_target_property(image_is_build_only ${image} BUILD_ONLY)
+  if(image_is_build_only AND dependency_type STREQUAL "FLASH")
+    message(FATAL_ERROR
+      "sysbuild_add_dependencies(...) cannot add FLASH dependencies to "
+      "BUILD_ONLY image ${image}."
+    )
+  endif()
+
+  set(property_name ${dependency_type}_DEPENDS)
+  set_property(TARGET ${image} APPEND PROPERTY ${property_name} ${ARGN})
+endfunction()
+
+# Usage:
+#   sysbuild_images_order(<variable> <CONFIGURE | FLASH> IMAGES <images>)
+#
+# This function will sort the provided `<images>` to satisfy the dependencies
+# specified using `sysbuild_add_dependencies()`. The result will be returned in
+# `<variable>`.
+#
+function(sysbuild_images_order variable dependency_type)
+  cmake_parse_arguments(SIS "" "" "IMAGES" ${ARGN})
+  zephyr_check_arguments_required_all("sysbuild_images_order" SIS IMAGES)
+
+  set(valid_dependency_types CONFIGURE FLASH)
+  if(NOT dependency_type IN_LIST valid_dependency_types)
+    list(JOIN valid_dependency_types ", " valid_dependency_types)
+    message(FATAL_ERROR "sysbuild_images_order(...) dependency type "
+                        "${dependency_type} must be one of the following: "
+                        "${valid_dependency_types}"
+    )
+  endif()
+
+  set(property_name ${dependency_type}_DEPENDS)
+  topological_sort(TARGETS ${SIS_IMAGES} PROPERTY_NAME ${property_name} RESULT sorted)
+  set(${variable} ${sorted} PARENT_SCOPE)
+endfunction()
