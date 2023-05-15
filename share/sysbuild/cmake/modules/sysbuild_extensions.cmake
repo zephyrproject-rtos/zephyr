@@ -451,3 +451,120 @@ function(sysbuild_cache_set)
 
   set(${VARS_VAR} "${var_new}" CACHE "${var_type}" "${var_help}" FORCE)
 endfunction()
+
+# Usage:
+#   sysbuild_add_dependencies(<CONFIGURE | FLASH> <image> [<image-dependency> ...])
+#
+# This function makes an image depend on other images in the configuration or
+# flashing order. Each image named "<image-dependency>" will be ordered before
+# the image named "<image>".
+#
+# CONFIGURE: Add CMake configuration dependencies. This will determine the order
+#            in which `ExternalZephyrProject_Cmake()` will be called, as well as
+#            the order of images passed to all PRE_CMAKE and POST_CMAKE hooks.
+# FLASH:     Add flashing dependencies. This will determine the order in which
+#            all images will appear in `domains.yaml`, as well as the order of
+#            images passed to all PRE_DOMAINS and POST_DOMAINS hooks.
+#
+# Note: specifying dependencies on non-existent images is allowed. This makes it
+# possible to define relationships between various images in the build system,
+# regardless of whether they are present in the current multiimage build.
+#
+function(sysbuild_add_dependencies dependency_type image)
+  set(valid_dependency_types CONFIGURE FLASH)
+  if(NOT dependency_type IN_LIST valid_dependency_types)
+    list(JOIN valid_dependency_types ", " valid_dependency_types)
+    message(FATAL_ERROR "sysbuild_add_dependencies(...) dependency type "
+                        "${dependency_type} must be one of the following: "
+                        "${valid_dependency_types}"
+    )
+  endif()
+
+  set(property_name sysbuild_deps_${dependency_type}_${image})
+  set_property(GLOBAL APPEND PROPERTY ${property_name} ${ARGN})
+endfunction()
+
+# Internal helper macro. Add edges between two sets of vertices in a dependency
+# graph. Define "hint" strings explaining every edge in current scope.
+macro(add_dependencies_to_graph)
+  cmake_parse_arguments(DEP "" "HINT;OUTPUT_EDGES" "VERTICES_FROM;VERTICES_TO" ${ARGN})
+
+  foreach(from ${DEP_VERTICES_FROM})
+    foreach(to ${DEP_VERTICES_TO})
+      list(APPEND ${DEP_OUTPUT_EDGES} ${from},${to})
+      list(APPEND hint_${from}_${to} "${DEP_HINT}")
+    endforeach()
+  endforeach()
+endmacro()
+
+# Internal helper macro. If `<cycle>` is non-empty, then display the `<message>`
+# with helpful information about the dependency graph where the cycle was found.
+# There should be a `hint_<from>_<to>` variable for every "<from>,<to>" edge,
+# defined in the current scope, containing helper strings.
+macro(assert_no_cyclic_dependencies cycle message)
+  if(cycle)
+    list(LENGTH cycle cycle_length)
+    math(EXPR cycle_length "${cycle_length} - 1")
+
+    message("Found cyclic dependencies:\n")
+    set(i 0)
+    while(i LESS cycle_length)
+      list(GET cycle ${i} image_0)
+      math(EXPR i "${i} + 1")
+      list(GET cycle ${i} image_1)
+
+      message("${image_1} <- ${image_0}")
+      foreach(hint ${hint_${image_0}_${image_1}})
+        message("- ${hint}")
+      endforeach()
+      message("")
+    endwhile()
+
+    message(FATAL_ERROR "${message}")
+  endif()
+endmacro()
+
+# Usage:
+#   sysbuild_images_order(<variable> <CONFIGURE | FLASH> IMAGES <images>)
+#
+# This function will sort the provided `<images>` to satisfy the dependencies
+# specified using `sysbuild_add_dependencies()`. The result will be returned in
+# `<variable>`.
+#
+# Raises a fatal error if cyclic dependencies are found.
+#
+function(sysbuild_images_order variable dependency_type)
+  cmake_parse_arguments(SIS "" "" "IMAGES" ${ARGN})
+  zephyr_check_arguments_required_all("sysbuild_images_order" SIS IMAGES)
+
+  set(valid_dependency_types CONFIGURE FLASH)
+  if(NOT dependency_type IN_LIST valid_dependency_types)
+    list(JOIN valid_dependency_types ", " valid_dependency_types)
+    message(FATAL_ERROR "sysbuild_images_order(...) dependency type "
+                        "${dependency_type} must be one of the following: "
+                        "${valid_dependency_types}"
+    )
+  endif()
+
+  # Generate dependency graph.
+  set(V ${SIS_IMAGES})
+  set(E)
+  foreach(image ${V})
+    set(property_name sysbuild_deps_${dependency_type}_${image})
+    get_property(image_dependencies GLOBAL PROPERTY ${property_name})
+
+    foreach(dependent ${image_dependencies})
+      add_dependencies_to_graph(
+        HINT "sysbuild_add_dependencies(${dependency_type} ${image} ... ${dependent} ...)"
+        VERTICES_FROM ${dependent}
+        VERTICES_TO ${image}
+        OUTPUT_EDGES E
+      )
+    endforeach()
+  endforeach()
+
+  zephyr_topological_sort(VERTICES "${V}" EDGES "${E}" OUTPUT_RESULT sorted OUTPUT_CYCLE cycle)
+  assert_no_cyclic_dependencies(cycle "Failed to produce ${dependency_type} ordering for sysbuild images.")
+
+  set(${variable} ${sorted} PARENT_SCOPE)
+endfunction()
