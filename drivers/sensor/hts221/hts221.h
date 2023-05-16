@@ -69,7 +69,6 @@ struct hts221_config {
 
 #ifdef CONFIG_HTS221_TRIGGER
 	const struct gpio_dt_spec gpio_drdy;
-	const struct gpio_dt_spec gpio_int;
 #endif /* CONFIG_HTS221_TRIGGER */
 };
 
