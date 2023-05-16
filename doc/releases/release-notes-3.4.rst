@@ -126,6 +126,9 @@ Changes in this release
     option from ``KSCAN_SDL`` to :kconfig:option:`CONFIG_INPUT_SDL_TOUCH` and the
     compatible from ``zephyr,sdl-kscan`` to
     :dtcompatible:`zephyr,input-sdl-touch`.
+  * ``nuvoton,npcx-kscan`` moved to :ref:`input`, renamed the Kconfig option
+    names from ``KSCAN_NPCX_...`` to ``INPUT_NPCX_KBD...`` and the compatible
+    from ``nuvoton,npcx-kscan`` to :dtcompatible:`nuvoton,npcx-kbd`.
   * Touchscreen drivers converted to use the input APIs can use the
     :dtcompatible:`zephyr,kscan-input` driver to maintain Kscan compatilibity.
 
