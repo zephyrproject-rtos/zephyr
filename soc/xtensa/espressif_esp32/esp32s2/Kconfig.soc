@@ -56,9 +56,9 @@ config ESP_SYSTEM_RTC_EXT_XTAL
 config ESP_SYSTEM_RTC_EXT_OSC
 	bool
 
-choice ESP32S2_RTC_CLK_SRC
+choice ESP32_RTC_CLK_SRC
 	prompt "RTC clock source"
-	default ESP32S2_RTC_CLK_SRC_INT_RC
+	default ESP32_RTC_CLK_SRC_INT_RC
 	help
 	  Choose which clock is used as RTC clock source.
 
@@ -79,26 +79,26 @@ choice ESP32S2_RTC_CLK_SRC
 	    deep sleep current (by 5uA) but has better frequency stability than
 	    the internal 90kHz oscillator. It does not require external components.
 
-config ESP32S2_RTC_CLK_SRC_INT_RC
+config ESP32_RTC_CLK_SRC_INT_RC
 	bool "Internal 90kHz RC oscillator"
 
-config ESP32S2_RTC_CLK_SRC_EXT_CRYS
+config ESP32_RTC_CLK_SRC_EXT_CRYS
 	bool "External 32kHz crystal"
 	select ESP_SYSTEM_RTC_EXT_XTAL
 
-config ESP32S2_RTC_CLK_SRC_EXT_OSC
+config ESP32_RTC_CLK_SRC_EXT_OSC
 	bool "External 32kHz oscillator at 32K_XN pin"
 	select ESP_SYSTEM_RTC_EXT_OSC
 
-config ESP32S2_RTC_CLK_SRC_INT_8MD256
+config ESP32_RTC_CLK_SRC_INT_8MD256
 	bool "Internal 8MHz oscillator, divided by 256 (~32kHz)"
 
 endchoice
 
-config ESP32S2_RTC_CLK_CAL_CYCLES
+config ESP32_RTC_CLK_CAL_CYCLES
 	int "Number of cycles for RTC_SLOW_CLK calibration"
-	default 3000 if ESP32S2_RTC_CLK_SRC_EXT_CRYS || ESP32S2_RTC_CLK_SRC_EXT_OSC || ESP32S2_RTC_CLK_SRC_INT_8MD256
-	default 576 if ESP32S2_RTC_CLK_SRC_INT_RC
+	default 3000 if ESP32_RTC_CLK_SRC_EXT_CRYS || ESP32_RTC_CLK_SRC_EXT_OSC || ESP32_RTC_CLK_SRC_INT_8MD256
+	default 576 if ESP32_RTC_CLK_SRC_INT_RC
 	range 0 125000
 	help
 	  When the startup code initializes RTC_SLOW_CLK, it can perform
