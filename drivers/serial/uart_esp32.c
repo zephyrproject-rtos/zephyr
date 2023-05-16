@@ -35,7 +35,7 @@
 #include <hal/uart_ll.h>
 #include <hal/uart_hal.h>
 #include <hal/uart_types.h>
-
+#include <esp_clk_tree.h>
 #include <zephyr/drivers/pinctrl.h>
 
 #include <soc/uart_reg.h>
@@ -161,8 +161,13 @@ static int uart_esp32_config_get(const struct device *dev, struct uart_config *c
 	uart_stop_bits_t stop_bit;
 	uart_word_length_t data_bit;
 	uart_hw_flowcontrol_t hw_flow;
+	uart_sclk_t src_clk;
+	uint32_t sclk_freq;
 
-	uart_hal_get_baudrate(&data->hal, &cfg->baudrate);
+	uart_hal_get_sclk(&data->hal, &src_clk);
+	esp_clk_tree_src_get_freq_hz((soc_module_clk_t)src_clk,
+		ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &sclk_freq);
+	uart_hal_get_baudrate(&data->hal, &cfg->baudrate, sclk_freq);
 
 	uart_hal_get_parity(&data->hal, &parity);
 	switch (parity) {
@@ -236,6 +241,9 @@ static int uart_esp32_configure(const struct device *dev, const struct uart_conf
 {
 	const struct uart_esp32_config *config = dev->config;
 	struct uart_esp32_data *data = dev->data;
+	uart_sclk_t src_clk;
+	uint32_t sclk_freq;
+
 	int ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 
 	if (ret < 0) {
@@ -314,7 +322,10 @@ static int uart_esp32_configure(const struct device *dev, const struct uart_conf
 		return -ENOTSUP;
 	}
 
-	uart_hal_set_baudrate(&data->hal, cfg->baudrate);
+	uart_hal_get_sclk(&data->hal, &src_clk);
+	esp_clk_tree_src_get_freq_hz((soc_module_clk_t)src_clk,
+		ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &sclk_freq);
+	uart_hal_set_baudrate(&data->hal, cfg->baudrate, sclk_freq);
 
 	uart_hal_set_rx_timeout(&data->hal, 0x16);
 
