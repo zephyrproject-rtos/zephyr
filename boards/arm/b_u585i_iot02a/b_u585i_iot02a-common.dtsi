@@ -35,6 +35,7 @@
 		spi-flash0 = &mx25lm51245;
 		die-temp0 = &die_temp;
 		volt-sensor0 = &vref1;
+		volt-sensor1 = &vbat4;
 	};
 };
 
@@ -214,5 +215,9 @@ zephyr_udc0: &usbotg_fs {
 };
 
 &vref1 {
+	status = "okay";
+};
+
+&vbat4 {
 	status = "okay";
 };
