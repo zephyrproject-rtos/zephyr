@@ -76,7 +76,7 @@ static K_SEM_DEFINE(read_buf_sem, 1, 1);
 NET_BUF_SIMPLE_DEFINE_STATIC(read_buf, BT_ATT_MAX_ATTRIBUTE_LEN);
 
 static ssize_t pac_data_add(struct net_buf_simple *buf, size_t count,
-			    struct bt_codec_data *data)
+			    struct bt_audio_codec_data *data)
 {
 	size_t len = 0;
 
@@ -108,7 +108,7 @@ struct pac_records_build_data {
 static bool build_pac_records(const struct bt_pacs_cap *cap, void *user_data)
 {
 	struct pac_records_build_data *data = user_data;
-	struct bt_codec *codec = cap->codec;
+	struct bt_audio_codec_cap *codec_cap = cap->codec_cap;
 	struct net_buf_simple *buf = data->buf;
 	struct net_buf_simple_state state;
 	struct bt_pac_ltv_data *cc, *meta;
@@ -122,9 +122,9 @@ static bool build_pac_records(const struct bt_pacs_cap *cap, void *user_data)
 	}
 
 	pac_codec = net_buf_simple_add(buf, sizeof(*pac_codec));
-	pac_codec->id = codec->id;
-	pac_codec->cid = sys_cpu_to_le16(codec->cid);
-	pac_codec->vid = sys_cpu_to_le16(codec->vid);
+	pac_codec->id = codec_cap->id;
+	pac_codec->cid = sys_cpu_to_le16(codec_cap->cid);
+	pac_codec->vid = sys_cpu_to_le16(codec_cap->vid);
 
 	if (net_buf_simple_tailroom(buf) < sizeof(*cc)) {
 		goto fail;
@@ -132,7 +132,7 @@ static bool build_pac_records(const struct bt_pacs_cap *cap, void *user_data)
 
 	cc = net_buf_simple_add(buf, sizeof(*cc));
 
-	len = pac_data_add(buf, codec->data_count, codec->data);
+	len = pac_data_add(buf, codec_cap->data_count, codec_cap->data);
 	if (len < 0 || len > UINT8_MAX) {
 		goto fail;
 	}
@@ -145,7 +145,7 @@ static bool build_pac_records(const struct bt_pacs_cap *cap, void *user_data)
 
 	meta = net_buf_simple_add(buf, sizeof(*meta));
 
-	len = pac_data_add(buf, codec->meta_count, codec->meta);
+	len = pac_data_add(buf, codec_cap->meta_count, codec_cap->meta);
 	if (len < 0 || len > UINT8_MAX) {
 		goto fail;
 	}
@@ -777,20 +777,22 @@ void bt_pacs_cap_foreach(enum bt_audio_dir dir, bt_pacs_cap_foreach_func_t func,
 /* Register Audio Capability */
 int bt_pacs_cap_register(enum bt_audio_dir dir, struct bt_pacs_cap *cap)
 {
+	const struct bt_audio_codec_cap *codec_cap;
 	struct pacs *pac;
 
-	if (!cap || !cap->codec) {
+	if (!cap || !cap->codec_cap) {
 		return -EINVAL;
 	}
+
+	codec_cap = cap->codec_cap;
 
 	pac = pacs_get(dir);
 	if (!pac) {
 		return -EINVAL;
 	}
 
-	LOG_DBG("cap %p dir %s codec 0x%02x codec cid 0x%04x "
-	       "codec vid 0x%04x", cap, bt_audio_dir_str(dir), cap->codec->id,
-	       cap->codec->cid, cap->codec->vid);
+	LOG_DBG("cap %p dir %s codec_cap id 0x%02x codec_cap cid 0x%04x codec_cap vid 0x%04x", cap,
+		bt_audio_dir_str(dir), codec_cap->id, codec_cap->cid, codec_cap->vid);
 
 	sys_slist_append(&pac->list, &cap->_node);
 
