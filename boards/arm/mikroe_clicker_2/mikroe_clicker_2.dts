@@ -50,6 +50,7 @@
 		sw0 = &user_button_0;
 		sw1 = &user_button_1;
 		volt-sensor0 = &vref;
+		volt-sensor1 = &vbat;
 	};
 };
 
@@ -145,6 +146,10 @@ zephyr_udc0: &usbotg_fs {
 };
 
 &vref {
+	status = "okay";
+};
+
+&vbat {
 	status = "okay";
 };
 

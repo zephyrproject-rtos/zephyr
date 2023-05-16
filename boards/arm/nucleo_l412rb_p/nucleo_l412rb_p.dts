@@ -40,6 +40,7 @@
 		led0 = &green_led;
 		sw0 = &user_button;
 		volt-sensor0 = &vref;
+		volt-sensor1 = &vbat;
 	};
 };
 
@@ -138,5 +139,9 @@
 };
 
 &vref {
+	status = "okay";
+};
+
+&vbat {
 	status = "okay";
 };
