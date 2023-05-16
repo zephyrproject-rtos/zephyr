@@ -18,18 +18,16 @@
 #include <zephyr/toolchain.h>
 #include <zephyr/types.h>
 
-#include "esp_private/system_internal.h"
-#include "esp32s2/rom/cache.h"
-#include "soc/gpio_periph.h"
-#include "esp_spi_flash.h"
-#include "esp_cpu.h"
-#include "hal/cpu_ll.h"
-#include "hal/soc_ll.h"
-#include "hal/wdt_hal.h"
-#include "esp_timer.h"
-#include "esp_err.h"
-#include "esp32s2/spiram.h"
-#include "esp_clk_internal.h"
+#include <esp_private/system_internal.h>
+#include <esp32s2/rom/cache.h>
+#include <soc/gpio_periph.h>
+#include <esp_cpu.h>
+#include <hal/cpu_hal.h>
+#include <hal/soc_hal.h>
+#include <hal/wdt_hal.h>
+#include <esp_timer.h>
+#include <esp_err.h>
+#include <esp_clk_internal.h>
 #include <zephyr/sys/printk.h>
 
 #ifdef CONFIG_MCUBOOT
@@ -90,7 +88,7 @@ void __attribute__((section(".iram1"))) __esp_platform_start(void)
 	 * initialization code wants a valid _current before
 	 * arch_kernel_init() is invoked.
 	 */
-	__asm__ volatile("wsr.MISC0 %0; rsync" : : "r"(&_kernel.cpus[0]));
+	__asm__ __volatile__("wsr.MISC0 %0; rsync" : : "r"(&_kernel.cpus[0]));
 
 	esp_reset_reason_init();
 
@@ -168,61 +166,4 @@ int IRAM_ATTR arch_printk_char_out(int c)
 void sys_arch_reboot(int type)
 {
 	esp_restart_noos();
-}
-
-void IRAM_ATTR esp_restart_noos(void)
-{
-	/* Disable interrupts */
-	z_xt_ints_off(0xFFFFFFFF);
-
-	/*
-	 * Reset and stall the other CPU.
-	 * CPU must be reset before stalling, in case it was running a s32c1i
-	 * instruction. This would cause memory pool to be locked by arbiter
-	 * to the stalled CPU, preventing current CPU from accessing this pool.
-	 */
-	const uint32_t core_id = cpu_ll_get_core_id();
-
-	/* Flush any data left in UART FIFOs */
-	esp_rom_uart_tx_wait_idle(0);
-	esp_rom_uart_tx_wait_idle(1);
-	/* Disable cache */
-	esp_rom_Cache_Disable_ICache();
-	esp_rom_Cache_Disable_DCache();
-
-	/*
-	 * 2nd stage bootloader reconfigures SPI flash signals.
-	 * Reset them to the defaults expected by ROM
-	 */
-	WRITE_PERI_REG(GPIO_FUNC0_IN_SEL_CFG_REG, 0x30);
-	WRITE_PERI_REG(GPIO_FUNC1_IN_SEL_CFG_REG, 0x30);
-	WRITE_PERI_REG(GPIO_FUNC2_IN_SEL_CFG_REG, 0x30);
-	WRITE_PERI_REG(GPIO_FUNC3_IN_SEL_CFG_REG, 0x30);
-	WRITE_PERI_REG(GPIO_FUNC4_IN_SEL_CFG_REG, 0x30);
-	WRITE_PERI_REG(GPIO_FUNC5_IN_SEL_CFG_REG, 0x30);
-
-	/* Reset wifi/ethernet/sdio (bb/mac) */
-	DPORT_SET_PERI_REG_MASK(DPORT_CORE_RST_EN_REG,
-				DPORT_BB_RST | DPORT_FE_RST | DPORT_MAC_RST | DPORT_BT_RST |
-				DPORT_BTMAC_RST | DPORT_SDIO_RST | DPORT_SDIO_RST |
-				DPORT_SDIO_HOST_RST | DPORT_EMAC_RST | DPORT_MACPWR_RST |
-				DPORT_RW_BTMAC_RST | DPORT_RW_BTLP_RST);
-	DPORT_REG_WRITE(DPORT_CORE_RST_EN_REG, 0);
-
-	/* Reset timer/spi/uart */
-	DPORT_SET_PERI_REG_MASK(
-		DPORT_PERIP_RST_EN_REG,
-		DPORT_TIMERS_RST | DPORT_SPI01_RST | DPORT_SPI2_RST |
-		DPORT_SPI3_RST | DPORT_SPI2_DMA_RST | DPORT_SPI3_DMA_RST |
-		DPORT_UART_RST);
-	DPORT_REG_WRITE(DPORT_PERIP_RST_EN_REG, 0);
-
-	/* Reset CPUs */
-	if (core_id == 0) {
-		soc_ll_reset_core(0);
-	}
-
-	while (true) {
-		;
-	}
 }

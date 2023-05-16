@@ -11,9 +11,8 @@
 #include <stdlib.h>
 
 #include <esp32s2/rom/cache.h>
-#include "soc/cache_memory.h"
+#include <soc/ext_mem_defs.h>
 #include "soc/extmem_reg.h"
-#include <bootloader_flash_priv.h>
 
 #ifdef CONFIG_BOOTLOADER_MCUBOOT
 
