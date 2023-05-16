@@ -68,6 +68,13 @@
 		reg = <0xff200000 DT_SIZE_K(640)>;
 	};
 
+	aon: memory@ff800000 {
+		device_type = "memory";
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0xff800000 DT_SIZE_K(8)>;
+		zephyr,memory-region = "AON";
+	};
+
 	soc {
 		#address-cells = <1>;
 		#size-cells = <1>;
