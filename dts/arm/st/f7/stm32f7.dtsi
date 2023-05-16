@@ -741,7 +741,9 @@
 			interrupts = <18 0>;
 			status = "disabled";
 			#io-channel-cells = <1>;
+			/* Temperature and VBAT sensor share channel 18 */
 			temp-channel = <18>;
+			vbat-channel = <18>;
 			vref-channel = <17>;
 			resolutions = <STM32_ADC_RES(12, 0x00)
 				       STM32_ADC_RES(10, 0x01)
@@ -859,6 +861,13 @@
 		vrefint-cal-addr = <0x1FFF7A2A>;
 		vrefint-cal-mv = <3300>;
 		io-channels = <&adc1 17>;
+		status = "disabled";
+	};
+
+	vbat: vbat {
+		compatible = "st,stm32-vbat";
+		ratio = <4>;
+		io-channels = <&adc1 18>;
 		status = "disabled";
 	};
 
