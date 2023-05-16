@@ -179,14 +179,14 @@ struct bt_cap_unicast_audio_start_stream_param {
 	/**
 	 * @brief Codec configuration.
 	 *
-	 * The @p codec.meta shall include a list of CCIDs
+	 * The @p codec_cfg.meta shall include a list of CCIDs
 	 * (@ref BT_AUDIO_METADATA_TYPE_CCID_LIST) as well as a non-0
 	 * stream context (@ref BT_AUDIO_METADATA_TYPE_STREAM_CONTEXT) bitfield.
 	 */
-	struct bt_codec *codec;
+	struct bt_audio_codec_cfg *codec_cfg;
 
 	/** Quality of Service configuration. */
-	struct bt_codec_qos *qos;
+	struct bt_audio_codec_qos *qos;
 };
 
 struct bt_cap_unicast_audio_start_param {
@@ -212,7 +212,7 @@ struct bt_cap_unicast_audio_update_param {
 	 * The metadata shall a list of CCIDs as
 	 * well as a non-0 context bitfield.
 	 */
-	struct bt_codec_data *meta;
+	struct bt_audio_codec_data *meta;
 };
 
 /**
@@ -310,7 +310,7 @@ struct bt_cap_initiator_broadcast_stream_param {
 	size_t data_count;
 
 	/** BIS Codec Specific Configuration */
-	struct bt_codec_data *data;
+	struct bt_audio_codec_data *data;
 };
 
 struct bt_cap_initiator_broadcast_subgroup_param {
@@ -321,7 +321,7 @@ struct bt_cap_initiator_broadcast_subgroup_param {
 	struct bt_cap_initiator_broadcast_stream_param *stream_params;
 
 	/** Subgroup Codec configuration. */
-	struct bt_codec *codec;
+	struct bt_audio_codec_cfg *codec_cfg;
 };
 
 struct bt_cap_initiator_broadcast_create_param {
@@ -332,7 +332,7 @@ struct bt_cap_initiator_broadcast_create_param {
 	struct bt_cap_initiator_broadcast_subgroup_param *subgroup_params;
 
 	/** Quality of Service configuration. */
-	struct bt_codec_qos *qos;
+	struct bt_audio_codec_qos *qos;
 
 	/** @brief Broadcast Source packing mode.
 	 *
@@ -415,7 +415,7 @@ int bt_cap_initiator_broadcast_audio_start(struct bt_cap_broadcast_source *broad
  * @return 0 on success or negative error value on failure.
  */
 int bt_cap_initiator_broadcast_audio_update(struct bt_cap_broadcast_source *broadcast_source,
-					    const struct bt_codec_data meta[],
+					    const struct bt_audio_codec_data meta[],
 					    size_t meta_count);
 
 /**

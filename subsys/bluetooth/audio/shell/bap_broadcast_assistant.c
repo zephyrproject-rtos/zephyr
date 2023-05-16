@@ -871,9 +871,9 @@ static int cmd_bap_broadcast_assistant_add_pa_sync(const struct shell *sh,
 
 		subgroup_param->bis_sync = subgroup_bis_indexes & bis_bitfield_req;
 
-#if CONFIG_BT_CODEC_MAX_METADATA_COUNT > 0
-		metadata_len = bt_audio_codec_data_to_buf(subgroup->codec.meta,
-							  subgroup->codec.meta_count,
+#if CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_COUNT > 0
+		metadata_len = bt_audio_codec_data_to_buf(subgroup->codec_cfg.meta,
+							  subgroup->codec_cfg.meta_count,
 							  subgroup_param->metadata,
 							  sizeof(subgroup_param->metadata));
 		if (metadata_len < 0) {
@@ -881,7 +881,7 @@ static int cmd_bap_broadcast_assistant_add_pa_sync(const struct shell *sh,
 		}
 #else
 		metadata_len = 0U;
-#endif /* CONFIG_BT_CODEC_MAX_METADATA_COUNT > 0 */
+#endif /* CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_COUNT > 0 */
 		subgroup_param->metadata_len = metadata_len;
 	}
 

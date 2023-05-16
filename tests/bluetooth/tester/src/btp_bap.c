@@ -40,12 +40,10 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_BTTESTER_LOG_LEVEL);
 #define AVAILABLE_SINK_CONTEXT SUPPORTED_SINK_CONTEXT
 #define AVAILABLE_SOURCE_CONTEXT SUPPORTED_SOURCE_CONTEXT
 
-static struct bt_codec default_codec =
-	BT_CODEC_LC3(BT_CODEC_LC3_FREQ_ANY, BT_CODEC_LC3_DURATION_10,
-		     BT_CODEC_LC3_CHAN_COUNT_SUPPORT(1),
-		     40u, 120u, 1u,
-		     (BT_AUDIO_CONTEXT_TYPE_CONVERSATIONAL |
-		      BT_AUDIO_CONTEXT_TYPE_MEDIA));
+static struct bt_audio_codec_cap default_codec_cap =
+	BT_AUDIO_CODEC_LC3(BT_AUDIO_CODEC_LC3_FREQ_ANY, BT_AUDIO_CODEC_LC3_DURATION_10,
+			   BT_AUDIO_CODEC_LC3_CHAN_COUNT_SUPPORT(1), 40u, 120u, 1u,
+			   (BT_AUDIO_CONTEXT_TYPE_CONVERSATIONAL | BT_AUDIO_CONTEXT_TYPE_MEDIA));
 
 struct audio_stream {
 	struct bt_bap_stream stream;
@@ -69,15 +67,15 @@ struct audio_connection {
 	struct audio_stream streams[MAX_STREAMS_COUNT];
 	size_t configured_sink_stream_count;
 	size_t configured_source_stream_count;
-	struct bt_codec codec;
-	struct bt_codec_qos qos;
+	struct bt_audio_codec_cfg codec_cfg;
+	struct bt_audio_codec_qos qos;
 	struct bt_bap_unicast_group *unicast_group;
 	struct bt_bap_ep *end_points[MAX_END_POINTS_COUNT];
 	size_t end_points_count;
 } connections[CONFIG_BT_MAX_CONN];
 
-static struct bt_codec_qos_pref qos_pref = BT_CODEC_QOS_PREF(true, BT_GAP_LE_PHY_2M, 0x02,
-							     10, 10000, 40000, 10000, 40000);
+static struct bt_audio_codec_qos_pref qos_pref =
+	BT_AUDIO_CODEC_QOS_PREF(true, BT_GAP_LE_PHY_2M, 0x02, 10, 10000, 40000, 10000, 40000);
 
 NET_BUF_POOL_FIXED_DEFINE(tx_pool, MAX(CONFIG_BT_ASCS_ASE_SRC_COUNT,
 				       CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT),
@@ -97,45 +95,73 @@ static void audio_send_timeout(struct k_work *work);
 K_THREAD_STACK_DEFINE(iso_data_thread_stack_area, ISO_DATA_THREAD_STACK_SIZE);
 static struct k_work_q iso_data_work_q;
 
-
-static void print_codec(const struct bt_codec *codec)
+static void print_codec_cfg(const struct bt_audio_codec_cfg *codec_cfg)
 {
-	LOG_DBG("codec 0x%02x cid 0x%04x vid 0x%04x count %zu",
-	       codec->id, codec->cid, codec->vid, codec->data_count);
+	LOG_DBG("codec_cfg 0x%02x cid 0x%04x vid 0x%04x count %zu", codec_cfg->id, codec_cfg->cid,
+		codec_cfg->vid, codec_cfg->data_count);
 
-	for (size_t i = 0; i < codec->data_count; i++) {
-		LOG_DBG("data #%zu: type 0x%02x len %u", i, codec->data[i].data.type,
-			codec->data[i].data.data_len);
-		LOG_HEXDUMP_DBG(codec->data[i].data.data, codec->data[i].data.data_len -
-				sizeof(codec->data[i].data.type), "");
+	for (size_t i = 0; i < codec_cfg->data_count; i++) {
+		LOG_DBG("data #%zu: type 0x%02x len %u", i, codec_cfg->data[i].data.type,
+			codec_cfg->data[i].data.data_len);
+		LOG_HEXDUMP_DBG(codec_cfg->data[i].data.data,
+				codec_cfg->data[i].data.data_len -
+					sizeof(codec_cfg->data[i].data.type),
+				"");
 	}
 
-	if (codec->id == BT_CODEC_LC3_ID) {
+	if (codec_cfg->id == BT_AUDIO_CODEC_LC3_ID) {
 		/* LC3 uses the generic LTV format - other codecs might do as well */
 
 		enum bt_audio_location chan_allocation;
 
-		LOG_DBG("  Frequency: %d Hz", bt_codec_cfg_get_freq(codec));
-		LOG_DBG("  Frame Duration: %d us", bt_codec_cfg_get_frame_duration_us(codec));
-		if (bt_codec_cfg_get_chan_allocation_val(codec, &chan_allocation) == 0) {
+		LOG_DBG("  Frequency: %d Hz", bt_audio_codec_cfg_get_freq(codec_cfg));
+		LOG_DBG("  Frame Duration: %d us",
+			bt_audio_codec_cfg_get_frame_duration_us(codec_cfg));
+		if (bt_audio_codec_cfg_get_chan_allocation_val(codec_cfg, &chan_allocation) == 0) {
 			LOG_DBG("  Channel allocation: 0x%x", chan_allocation);
 		}
 
 		LOG_DBG("  Octets per frame: %d (negative means value not pressent)",
-			bt_codec_cfg_get_octets_per_frame(codec));
+			bt_audio_codec_cfg_get_octets_per_frame(codec_cfg));
 		LOG_DBG("  Frames per SDU: %d",
-			bt_codec_cfg_get_frame_blocks_per_sdu(codec, true));
+			bt_audio_codec_cfg_get_frame_blocks_per_sdu(codec_cfg, true));
 	}
 
-	for (size_t i = 0; i < codec->meta_count; i++) {
-		LOG_DBG("meta #%zu: type 0x%02x len %u", i, codec->meta[i].data.type,
-			codec->meta[i].data.data_len);
-		LOG_HEXDUMP_DBG(codec->meta[i].data.data, codec->meta[i].data.data_len -
-				sizeof(codec->meta[i].data.type), "");
+	for (size_t i = 0; i < codec_cfg->meta_count; i++) {
+		LOG_DBG("meta #%zu: type 0x%02x len %u", i, codec_cfg->meta[i].data.type,
+			codec_cfg->meta[i].data.data_len);
+		LOG_HEXDUMP_DBG(codec_cfg->meta[i].data.data,
+				codec_cfg->meta[i].data.data_len -
+					sizeof(codec_cfg->meta[i].data.type),
+				"");
 	}
 }
 
-static inline void print_qos(const struct bt_codec_qos *qos)
+static void print_codec_cap(const struct bt_audio_codec_cap *codec_cap)
+{
+	LOG_DBG("codec_cap 0x%02x cid 0x%04x vid 0x%04x count %zu", codec_cap->id, codec_cap->cid,
+		codec_cap->vid, codec_cap->data_count);
+
+	for (size_t i = 0; i < codec_cap->data_count; i++) {
+		LOG_DBG("data #%zu: type 0x%02x len %u", i, codec_cap->data[i].data.type,
+			codec_cap->data[i].data.data_len);
+		LOG_HEXDUMP_DBG(codec_cap->data[i].data.data,
+				codec_cap->data[i].data.data_len -
+					sizeof(codec_cap->data[i].data.type),
+				"");
+	}
+
+	for (size_t i = 0; i < codec_cap->meta_count; i++) {
+		LOG_DBG("meta #%zu: type 0x%02x len %u", i, codec_cap->meta[i].data.type,
+			codec_cap->meta[i].data.data_len);
+		LOG_HEXDUMP_DBG(codec_cap->meta[i].data.data,
+				codec_cap->meta[i].data.data_len -
+					sizeof(codec_cap->meta[i].data.type),
+				"");
+	}
+}
+
+static inline void print_qos(const struct bt_audio_codec_qos *qos)
 {
 	LOG_DBG("QoS: interval %u framing 0x%02x phy 0x%02x sdu %u rtn %u latency %u pd %u",
 		qos->interval, qos->framing, qos->phy, qos->sdu, qos->rtn, qos->latency, qos->pd);
@@ -196,7 +222,7 @@ static void btp_send_ascs_operation_completed_ev(struct bt_conn *conn, uint8_t a
 	tester_event(BTP_SERVICE_ID_ASCS, BTP_ASCS_EV_OPERATION_COMPLETED, &ev, sizeof(ev));
 }
 
-static int validate_codec_parameters(const struct bt_codec *codec)
+static int validate_codec_parameters(const struct bt_audio_codec_cfg *codec_cfg)
 {
 	int freq_hz;
 	int frame_duration_us;
@@ -205,11 +231,12 @@ static int validate_codec_parameters(const struct bt_codec *codec)
 	int chan_allocation_err;
 	enum bt_audio_location chan_allocation;
 
-	freq_hz = bt_codec_cfg_get_freq(codec);
-	frame_duration_us = bt_codec_cfg_get_frame_duration_us(codec);
-	chan_allocation_err = bt_codec_cfg_get_chan_allocation_val(codec, &chan_allocation);
-	octets_per_frame = bt_codec_cfg_get_octets_per_frame(codec);
-	frames_per_sdu = bt_codec_cfg_get_frame_blocks_per_sdu(codec, true);
+	freq_hz = bt_audio_codec_cfg_get_freq(codec_cfg);
+	frame_duration_us = bt_audio_codec_cfg_get_frame_duration_us(codec_cfg);
+	chan_allocation_err =
+		bt_audio_codec_cfg_get_chan_allocation_val(codec_cfg, &chan_allocation);
+	octets_per_frame = bt_audio_codec_cfg_get_octets_per_frame(codec_cfg);
+	frames_per_sdu = bt_audio_codec_cfg_get_frame_blocks_per_sdu(codec_cfg, true);
 
 	if (freq_hz < 0) {
 		LOG_DBG("Error: Invalid codec frequency.");
@@ -240,17 +267,17 @@ static int validate_codec_parameters(const struct bt_codec *codec)
 }
 
 static int lc3_config(struct bt_conn *conn, const struct bt_bap_ep *ep, enum bt_audio_dir dir,
-		      const struct bt_codec *codec, struct bt_bap_stream **stream,
-		      struct bt_codec_qos_pref *const pref, struct bt_bap_ascs_rsp *rsp)
+		      const struct bt_audio_codec_cfg *codec_cfg, struct bt_bap_stream **stream,
+		      struct bt_audio_codec_qos_pref *const pref, struct bt_bap_ascs_rsp *rsp)
 {
 	struct audio_connection *audio_conn;
 	struct audio_stream *stream_wrap;
 
 	LOG_DBG("ASE Codec Config: ep %p dir %u", ep, dir);
 
-	print_codec(codec);
+	print_codec_cfg(codec_cfg);
 
-	if (validate_codec_parameters(codec)) {
+	if (validate_codec_parameters(codec_cfg)) {
 		*rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_CONF_REJECTED,
 				       BT_BAP_ASCS_REASON_CODEC_DATA);
 
@@ -288,17 +315,17 @@ static int lc3_config(struct bt_conn *conn, const struct bt_bap_ep *ep, enum bt_
 }
 
 static int lc3_reconfig(struct bt_bap_stream *stream, enum bt_audio_dir dir,
-			const struct bt_codec *codec, struct bt_codec_qos_pref *const pref,
-			struct bt_bap_ascs_rsp *rsp)
+			const struct bt_audio_codec_cfg *codec_cfg,
+			struct bt_audio_codec_qos_pref *const pref, struct bt_bap_ascs_rsp *rsp)
 {
 	LOG_DBG("ASE Codec Reconfig: stream %p", stream);
 
-	print_codec(codec);
+	print_codec_cfg(codec_cfg);
 
 	return 0;
 }
 
-static int lc3_qos(struct bt_bap_stream *stream, const struct bt_codec_qos *qos,
+static int lc3_qos(struct bt_bap_stream *stream, const struct bt_audio_codec_qos *qos,
 		   struct bt_bap_ascs_rsp *rsp)
 {
 	LOG_DBG("QoS: stream %p qos %p", stream, qos);
@@ -308,7 +335,7 @@ static int lc3_qos(struct bt_bap_stream *stream, const struct bt_codec_qos *qos,
 	return 0;
 }
 
-static int lc3_enable(struct bt_bap_stream *stream, const struct bt_codec_data *meta,
+static int lc3_enable(struct bt_bap_stream *stream, const struct bt_audio_codec_data *meta,
 		      size_t meta_count, struct bt_bap_ascs_rsp *rsp)
 {
 	LOG_DBG("Enable: stream %p meta_count %zu", stream, meta_count);
@@ -370,14 +397,13 @@ static bool valid_metadata_type(uint8_t type, uint8_t len, const uint8_t *data)
 	}
 }
 
-static int lc3_metadata(struct bt_bap_stream *stream,
-			const struct bt_codec_data *meta,
+static int lc3_metadata(struct bt_bap_stream *stream, const struct bt_audio_codec_data *meta,
 			size_t meta_count, struct bt_bap_ascs_rsp *rsp)
 {
 	LOG_DBG("Metadata: stream %p meta_count %zu", stream, meta_count);
 
 	for (size_t i = 0; i < meta_count; i++) {
-		const struct bt_codec_data *data = data = &meta[i];
+		const struct bt_audio_codec_data *data = data = &meta[i];
 
 		if (!valid_metadata_type(data->data.type, data->data.data_len, data->data.data)) {
 			LOG_DBG("Invalid metadata type %u or length %u",
@@ -455,7 +481,7 @@ static void btp_send_stream_received_ev(struct bt_conn *conn, struct bt_bap_ep *
 }
 
 static void stream_configured(struct bt_bap_stream *stream,
-			      const struct bt_codec_qos_pref *pref)
+			      const struct bt_audio_codec_qos_pref *pref)
 {
 	struct audio_connection *audio_conn;
 	struct audio_stream *a_stream = CONTAINER_OF(stream, struct audio_stream, stream);
@@ -618,26 +644,27 @@ static void btp_send_discovery_completed_ev(struct bt_conn *conn, uint8_t status
 	tester_event(BTP_SERVICE_ID_BAP, BTP_BAP_EV_DISCOVERY_COMPLETED, &ev, sizeof(ev));
 }
 
-static void btp_send_pac_codec_found_ev(struct bt_conn *conn, const struct bt_codec *codec,
+static void btp_send_pac_codec_found_ev(struct bt_conn *conn,
+					const struct bt_audio_codec_cfg *codec_cfg,
 					enum bt_audio_dir dir)
 {
 	struct btp_bap_codec_cap_found_ev ev;
 	struct bt_conn_info info;
-	const struct bt_codec_data *data;
+	const struct bt_audio_codec_data *data;
 
 	(void)bt_conn_get_info(conn, &info);
 	bt_addr_le_copy(&ev.address, info.le.dst);
 
 	ev.dir = dir;
-	ev.coding_format = codec->id;
+	ev.coding_format = codec_cfg->id;
 
-	bt_codec_get_val(codec, BT_CODEC_LC3_FREQ, &data);
+	bt_audio_codec_cfg_get_val(codec_cfg, BT_AUDIO_CODEC_LC3_FREQ, &data);
 	memcpy(&ev.frequencies, data->data.data, sizeof(ev.frequencies));
 
-	bt_codec_get_val(codec, BT_CODEC_LC3_DURATION, &data);
+	bt_audio_codec_cfg_get_val(codec_cfg, BT_AUDIO_CODEC_LC3_DURATION, &data);
 	memcpy(&ev.frame_durations, data->data.data, sizeof(ev.frame_durations));
 
-	bt_codec_get_val(codec, BT_CODEC_LC3_FRAME_LEN, &data);
+	bt_audio_codec_cfg_get_val(codec_cfg, BT_AUDIO_CODEC_LC3_FRAME_LEN, &data);
 	memcpy(&ev.octets_per_frame, data->data.data, sizeof(ev.octets_per_frame));
 
 	bt_codec_get_val(codec, BT_CODEC_LC3_CHAN_COUNT, &data);
@@ -724,14 +751,15 @@ static void release_cb(struct bt_bap_stream *stream, enum bt_bap_ascs_rsp_code r
 	LOG_DBG("stream %p release operation rsp_code %u reason %u", stream, rsp_code, reason);
 }
 
-static void pac_record_cb(struct bt_conn *conn, enum bt_audio_dir dir, const struct bt_codec *codec)
+static void pac_record_cb(struct bt_conn *conn, enum bt_audio_dir dir,
+			  const struct bt_audio_codec_cap *codec_cap)
 {
 	LOG_DBG("");
 
-	if (codec != NULL) {
-		LOG_DBG("Discovered codec capabilities %p", codec);
-		print_codec(codec);
-		btp_send_pac_codec_found_ev(conn, codec, dir);
+	if (codec_cap != NULL) {
+		LOG_DBG("Discovered codec capabilities %p", codec_cap);
+		print_codec_cap(codec_cap);
+		btp_send_pac_codec_found_ev(conn, codec_cap, dir);
 	}
 }
 
@@ -1008,11 +1036,11 @@ static struct bt_conn_cb conn_callbacks = {
 };
 
 static struct bt_pacs_cap cap_sink = {
-	.codec = &default_codec,
+	.codec_cap = &default_codec_cap,
 };
 
 static struct bt_pacs_cap cap_source = {
-	.codec = &default_codec,
+	.codec_cap = &default_codec_cap,
 };
 
 static uint8_t ascs_supported_commands(const void *cmd, uint16_t cmd_len,
@@ -1029,17 +1057,18 @@ static uint8_t ascs_supported_commands(const void *cmd, uint16_t cmd_len,
 }
 
 static int server_stream_config(struct bt_conn *conn, struct bt_bap_stream *stream,
-				struct bt_codec *codec, struct bt_codec_qos_pref *qos)
+				struct bt_audio_codec_cfg *codec_cfg,
+				struct bt_audio_codec_qos_pref *qos)
 {
 	int err;
 	struct bt_bap_ep *ep;
 
-	err = bt_bap_unicast_server_config_ase(conn, stream, codec, qos);
+	err = bt_bap_unicast_server_config_ase(conn, stream, codec_cfg, qos);
 	if (err != 0) {
 		return err;
 	}
 
-	print_codec(&default_codec);
+	print_codec_cfg(&codec_cfg);
 
 	ep = stream->ep;
 	LOG_DBG("ASE Codec Config: ase_id %u dir %u", ep->status.id, ep->dir);
@@ -1101,15 +1130,15 @@ static int client_create_unicast_group(struct audio_connection *audio_conn, uint
 
 static bool codec_config_store(struct bt_data *data, void *user_data)
 {
-	struct bt_codec *codec = user_data;
-	struct bt_codec_data *cdata;
+	struct bt_audio_codec_cfg *codec_cfg = user_data;
+	struct bt_audio_codec_data *cdata;
 
-	if (codec->data_count >= ARRAY_SIZE(codec->data)) {
+	if (codec_cfg->data_count >= ARRAY_SIZE(codec_cfg->data)) {
 		LOG_ERR("No slot available for Codec Config");
 		return false;
 	}
 
-	cdata = &codec->data[codec->data_count];
+	cdata = &codec_cfg->data[codec_cfg->data_count];
 
 	if (data->data_len > sizeof(cdata->value)) {
 		LOG_ERR("Not enough space for Codec Config: %u > %zu", data->data_len,
@@ -1117,7 +1146,7 @@ static bool codec_config_store(struct bt_data *data, void *user_data)
 		return false;
 	}
 
-	LOG_DBG("#%u type 0x%02x len %u", codec->data_count, data->type, data->data_len);
+	LOG_DBG("#%u type 0x%02x len %u", codec_cfg->data_count, data->type, data->data_len);
 
 	cdata->data.type = data->type;
 	cdata->data.data_len = data->data_len;
@@ -1128,7 +1157,7 @@ static bool codec_config_store(struct bt_data *data, void *user_data)
 
 	LOG_HEXDUMP_DBG(cdata->value, data->data_len, "data");
 
-	codec->data_count++;
+	codec_cfg->data_count++;
 
 	return true;
 }
@@ -1142,7 +1171,7 @@ static uint8_t ascs_configure_codec(const void *cmd, uint16_t cmd_len,
 	struct bt_conn_info conn_info;
 	struct audio_connection *audio_conn;
 	struct audio_stream *stream;
-	struct bt_codec *codec;
+	struct bt_audio_codec_cfg *codec_cfg;
 	struct bt_bap_ep *ep;
 	struct net_buf_simple buf;
 
@@ -1156,18 +1185,18 @@ static uint8_t ascs_configure_codec(const void *cmd, uint16_t cmd_len,
 
 	(void)bt_conn_get_info(conn, &conn_info);
 
-	codec = &audio_conn->codec;
-	memset(codec, 0, sizeof(*codec));
+	codec_cfg = &audio_conn->codec_cfg;
+	memset(codec_cfg, 0, sizeof(*codec_cfg));
 
-	codec->id = cp->coding_format;
-	codec->vid = cp->vid;
-	codec->cid = cp->cid;
+	codec_cfg->id = cp->coding_format;
+	codec_cfg->vid = cp->vid;
+	codec_cfg->cid = cp->cid;
 
 	if (cp->ltvs_len != 0) {
 		net_buf_simple_init_with_data(&buf, (uint8_t *)cp->ltvs, cp->ltvs_len);
 
 		/* Parse LTV entries */
-		bt_data_parse(&buf, codec_config_store, codec);
+		bt_data_parse(&buf, codec_config_store, codec_cfg);
 
 		/* Check if all entries could be parsed */
 		if (buf.len) {
@@ -1205,13 +1234,13 @@ static uint8_t ascs_configure_codec(const void *cmd, uint16_t cmd_len,
 				return BTP_STATUS_FAILED;
 			}
 
-			err = bt_bap_stream_config(conn, &stream->stream, ep, codec);
+			err = bt_bap_stream_config(conn, &stream->stream, ep, codec_cfg);
 		} else {
-			err = server_stream_config(conn, &stream->stream, codec, &qos_pref);
+			err = server_stream_config(conn, &stream->stream, codec_cfg, &qos_pref);
 		}
 	} else {
 		/* Reconfigure a stream */
-		err = bt_bap_stream_reconfig(&stream->stream, codec);
+		err = bt_bap_stream_reconfig(&stream->stream, codec_cfg);
 	}
 
 	bt_conn_unref(conn);
@@ -1231,7 +1260,7 @@ static uint8_t ascs_configure_qos(const void *cmd, uint16_t cmd_len,
 	const struct btp_ascs_configure_qos_cmd *cp = cmd;
 	struct bt_conn_info conn_info;
 	struct audio_connection *audio_conn;
-	struct bt_codec_qos *qos;
+	struct bt_audio_codec_qos *qos;
 	struct bt_conn *conn;
 
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
@@ -1262,7 +1291,7 @@ static uint8_t ascs_configure_qos(const void *cmd, uint16_t cmd_len,
 	}
 
 	qos = &audio_conn->qos;
-	qos->phy = BT_CODEC_QOS_2M;
+	qos->phy = BT_AUDIO_CODEC_QOS_2M;
 	qos->framing = cp->framing;
 	qos->rtn = cp->retransmission_num;
 	qos->sdu = cp->max_sdu;
@@ -1464,7 +1493,7 @@ static uint8_t ascs_update_metadata(const void *cmd, uint16_t cmd_len, void *rsp
 	const struct btp_ascs_update_metadata_cmd *cp = cmd;
 	struct audio_connection *audio_conn;
 	struct audio_stream *stream;
-	struct bt_codec_data meta;
+	struct bt_audio_codec_data meta;
 	struct bt_conn *conn;
 
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);

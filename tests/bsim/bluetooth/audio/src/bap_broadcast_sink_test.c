@@ -26,13 +26,13 @@ CREATE_FLAG(flag_received);
 static struct bt_bap_broadcast_sink *g_sink;
 static struct bt_bap_stream broadcast_sink_streams[CONFIG_BT_BAP_BROADCAST_SNK_STREAM_COUNT];
 static struct bt_bap_stream *streams[ARRAY_SIZE(broadcast_sink_streams)];
-static struct bt_bap_lc3_preset preset_16_2_1 = BT_BAP_LC3_BROADCAST_PRESET_16_2_1(
+static struct bt_audio_codec_cap codec_cap_16_2_1 = BT_AUDIO_CODEC_LC3_CONFIG_16_2(
 	BT_AUDIO_LOCATION_FRONT_LEFT, BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED);
 
 static K_SEM_DEFINE(sem_started, 0U, ARRAY_SIZE(streams));
 static K_SEM_DEFINE(sem_stopped, 0U, ARRAY_SIZE(streams));
 
-static struct bt_codec_data metadata[CONFIG_BT_CODEC_MAX_METADATA_COUNT];
+static struct bt_audio_codec_data metadata[CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_COUNT];
 
 /* Create a mask for the maximum BIS we can sync to using the number of streams
  * we have. We add an additional 1 since the bis indexes start from 1 and not
@@ -81,11 +81,11 @@ static void base_recv_cb(struct bt_bap_broadcast_sink *sink, const struct bt_bap
 	if (TEST_FLAG(base_received)) {
 
 		if (base->subgroup_count > 0 &&
-		    memcmp(metadata, base->subgroups[0].codec.meta,
-			   sizeof(base->subgroups[0].codec.meta)) != 0) {
+		    memcmp(metadata, base->subgroups[0].codec_cfg.meta,
+			   sizeof(base->subgroups[0].codec_cfg.meta)) != 0) {
 
-			(void)memcpy(metadata, base->subgroups[0].codec.meta,
-				     sizeof(base->subgroups[0].codec.meta));
+			(void)memcpy(metadata, base->subgroups[0].codec_cfg.meta,
+				     sizeof(base->subgroups[0].codec_cfg.meta));
 
 			SET_FLAG(flag_base_metadata_updated);
 		}
@@ -145,7 +145,7 @@ static struct bt_bap_broadcast_sink_cb broadcast_sink_cbs = {
 };
 
 static struct bt_pacs_cap cap = {
-	.codec = &preset_16_2_1.codec,
+	.codec_cap = &codec_cap_16_2_1,
 };
 
 static void started_cb(struct bt_bap_stream *stream)
