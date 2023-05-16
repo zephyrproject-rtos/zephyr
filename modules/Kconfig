@@ -42,7 +42,7 @@ source "modules/Kconfig.vega"
 source "modules/Kconfig.wurthelektronik"
 source "modules/Kconfig.xtensa"
 source "modules/zcbor/Kconfig"
-source "modules/Kconfig.mcuboot_bootutil"
+source "modules/Kconfig.mcuboot"
 
 comment "Unavailable modules, please install those via the project manifest."
 
