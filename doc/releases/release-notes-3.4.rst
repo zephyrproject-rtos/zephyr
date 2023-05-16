@@ -572,6 +572,8 @@ Libraries / Subsystems
     :ref:`MCUmgr SMP protocol specification <mcumgr_smp_protocol_specification>`
     for details.
 
+  * MCUmgr has now been marked as a stable Zephyr API.
+
 * Retention
 
   * Retention subsystem has been added which adds enhanced features over
