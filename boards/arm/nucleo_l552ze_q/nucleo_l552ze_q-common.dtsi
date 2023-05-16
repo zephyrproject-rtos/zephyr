@@ -36,6 +36,7 @@
 	aliases {
 		die-temp0 = &die_temp;
 		volt-sensor0 = &vref;
+		volt-sensor1 = &vbat;
 	};
 };
 
@@ -108,5 +109,9 @@
 };
 
 &vref {
+	status = "okay";
+};
+
+&vbat {
 	status = "okay";
 };

@@ -45,6 +45,7 @@
 		watchdog0 = &iwdg;
 		die-temp0 = &die_temp;
 		volt-sensor0 = &vref;
+		volt-sensor1 = &vbat;
 	};
 };
 
@@ -219,5 +220,9 @@ zephyr_udc0: &usb {
 };
 
 &vref {
+	status = "okay";
+};
+
+&vbat {
 	status = "okay";
 };

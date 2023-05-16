@@ -178,3 +178,7 @@
 &vref1 {
 	status = "okay";
 };
+
+&vbat4 {
+	status = "okay";
+};

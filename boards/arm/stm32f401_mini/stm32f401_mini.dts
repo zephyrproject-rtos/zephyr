@@ -39,6 +39,7 @@
 		led0 = &user_led;
 		sw0 = &boot1;
 		volt-sensor0 = &vref;
+		volt-sensor1 = &vbat;
 	};
 };
 
@@ -144,5 +145,9 @@ zephyr_udc0: &usbotg_fs {
 };
 
 &vref {
+	status = "okay";
+};
+
+&vbat {
 	status = "okay";
 };
