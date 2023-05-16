@@ -87,6 +87,10 @@ SECTIONS
 	*(.iplt)
 	}
 
+#if defined(CONFIG_SOC_FAMILY_INTEL_ISH) && defined(CONFIG_PM)
+#include <zephyr/arch/x86/ia32/scripts/ish_aon.ld>
+#endif
+
 #ifdef CONFIG_LINKER_USE_BOOT_SECTION
 
 	SECTION_PROLOGUE(boot.text,,)
