@@ -24,15 +24,17 @@ USBD_DESC_STRING_DEFINE(mfr, "ZEPHYR", 1);
 USBD_DESC_STRING_DEFINE(product, "Zephyr USBD foobaz", 2);
 USBD_DESC_STRING_DEFINE(sn, "0123456789ABCDEF", 3);
 
-USBD_DEVICE_DEFINE(uds_ctx, DEVICE_DT_GET(DT_NODELABEL(zephyr_udc0)),
+USBD_DEVICE_DEFINE(sh_uds_ctx, DEVICE_DT_GET(DT_NODELABEL(zephyr_udc0)),
 		   0x2fe3, 0xffff);
+
+static struct usbd_contex *my_uds_ctx = &sh_uds_ctx;
 
 int cmd_wakeup_request(const struct shell *sh,
 		       size_t argc, char **argv)
 {
 	int err;
 
-	err = usbd_wakeup_request(&uds_ctx);
+	err = usbd_wakeup_request(my_uds_ctx);
 	if (err) {
 		shell_error(sh, "dev: Failed to wakeup remote %d", err);
 	} else {
@@ -49,7 +51,7 @@ static int cmd_register(const struct shell *sh,
 	int ret;
 
 	cfg = strtol(argv[2], NULL, 10);
-	ret = usbd_register_class(&uds_ctx, argv[1], cfg);
+	ret = usbd_register_class(my_uds_ctx, argv[1], cfg);
 
 	if (ret) {
 		shell_error(sh,
@@ -71,7 +73,7 @@ static int cmd_unregister(const struct shell *sh,
 	int ret;
 
 	cfg = strtol(argv[2], NULL, 10);
-	ret = usbd_unregister_class(&uds_ctx, argv[1], cfg);
+	ret = usbd_unregister_class(my_uds_ctx, argv[1], cfg);
 	if (ret) {
 		shell_error(sh,
 			    "dev: failed to remove USB class %s from configuration %u",
@@ -90,33 +92,34 @@ static int cmd_usbd_magic(const struct shell *sh,
 {
 	int err;
 
-	err = usbd_add_descriptor(&uds_ctx, &lang);
-	err |= usbd_add_descriptor(&uds_ctx, &mfr);
-	err |= usbd_add_descriptor(&uds_ctx, &product);
-	err |= usbd_add_descriptor(&uds_ctx, &sn);
+	err = usbd_add_descriptor(my_uds_ctx, &lang);
+	err |= usbd_add_descriptor(my_uds_ctx, &mfr);
+	err |= usbd_add_descriptor(my_uds_ctx, &product);
+	err |= usbd_add_descriptor(my_uds_ctx, &sn);
+
 	if (err) {
 		shell_error(sh, "dev: Failed to initialize descriptors, %d", err);
 	}
 
-	err = usbd_add_configuration(&uds_ctx, &config_foo);
+	err = usbd_add_configuration(my_uds_ctx, &config_foo);
 	if (err) {
 		shell_error(sh, "dev: Failed to add configuration");
 	}
 
 	if (IS_ENABLED(CONFIG_USBD_LOOPBACK_CLASS)) {
-		err = usbd_register_class(&uds_ctx, "loopback_0", 1);
+		err = usbd_register_class(my_uds_ctx, "loopback_0", 1);
 		if (err) {
 			shell_error(sh, "dev: Failed to add loopback_0 class");
 		}
 	}
 
 	ctx_shell = sh;
-	err = usbd_init(&uds_ctx);
+	err = usbd_init(my_uds_ctx);
 	if (err) {
 		shell_error(sh, "dev: Failed to initialize device support");
 	}
 
-	err = usbd_enable(&uds_ctx);
+	err = usbd_enable(my_uds_ctx);
 	if (err) {
 		shell_error(sh, "dev: Failed to enable device support");
 	}
@@ -129,10 +132,10 @@ static int cmd_usbd_defaults(const struct shell *sh,
 {
 	int err;
 
-	err = usbd_add_descriptor(&uds_ctx, &lang);
-	err |= usbd_add_descriptor(&uds_ctx, &mfr);
-	err |= usbd_add_descriptor(&uds_ctx, &product);
-	err |= usbd_add_descriptor(&uds_ctx, &sn);
+	err = usbd_add_descriptor(my_uds_ctx, &lang);
+	err |= usbd_add_descriptor(my_uds_ctx, &mfr);
+	err |= usbd_add_descriptor(my_uds_ctx, &product);
+	err |= usbd_add_descriptor(my_uds_ctx, &sn);
 
 	if (err) {
 		shell_error(sh, "dev: Failed to initialize descriptors, %d", err);
@@ -149,7 +152,7 @@ static int cmd_usbd_init(const struct shell *sh,
 	int err;
 
 	ctx_shell = sh;
-	err = usbd_init(&uds_ctx);
+	err = usbd_init(my_uds_ctx);
 
 	if (err == -EALREADY) {
 		shell_error(sh, "dev: USB already initialized");
@@ -167,7 +170,7 @@ static int cmd_usbd_enable(const struct shell *sh,
 {
 	int err;
 
-	err = usbd_enable(&uds_ctx);
+	err = usbd_enable(my_uds_ctx);
 
 	if (err == -EALREADY) {
 		shell_error(sh, "dev: USB already enabled");
@@ -185,7 +188,7 @@ static int cmd_usbd_disable(const struct shell *sh,
 {
 	int err;
 
-	err = usbd_disable(&uds_ctx);
+	err = usbd_disable(my_uds_ctx);
 
 	if (err) {
 		shell_error(sh, "dev: Failed to disable USB");
@@ -202,7 +205,7 @@ static int cmd_usbd_shutdown(const struct shell *sh,
 {
 	int err;
 
-	err = usbd_shutdown(&uds_ctx);
+	err = usbd_shutdown(my_uds_ctx);
 
 	if (err) {
 		shell_error(sh, "dev: Failed to shutdown USB");
@@ -214,6 +217,24 @@ static int cmd_usbd_shutdown(const struct shell *sh,
 	return 0;
 }
 
+static int cmd_select(const struct shell *sh, size_t argc, char **argv)
+{
+	STRUCT_SECTION_FOREACH(usbd_contex, ctx) {
+		if (strcmp(argv[1], ctx->name) == 0) {
+			my_uds_ctx = ctx;
+			shell_print(sh,
+				    "dev: select %s as my USB device context",
+				    argv[1]);
+
+			return 0;
+		}
+	}
+
+	shell_error(sh, "dev: failed to select %s", argv[1]);
+
+	return -ENODEV;
+}
+
 static int cmd_device_bcd(const struct shell *sh, size_t argc,
 			  char *argv[])
 {
@@ -221,7 +242,7 @@ static int cmd_device_bcd(const struct shell *sh, size_t argc,
 	int ret;
 
 	bcd = strtol(argv[1], NULL, 16);
-	ret = usbd_device_set_bcd(&uds_ctx, bcd);
+	ret = usbd_device_set_bcd(my_uds_ctx, bcd);
 	if (ret) {
 		shell_error(sh, "dev: failed to set device bcdUSB to %x", bcd);
 	}
@@ -236,7 +257,7 @@ static int cmd_device_pid(const struct shell *sh, size_t argc,
 	int ret;
 
 	pid = strtol(argv[1], NULL, 16);
-	ret = usbd_device_set_pid(&uds_ctx, pid);
+	ret = usbd_device_set_pid(my_uds_ctx, pid);
 	if (ret) {
 		shell_error(sh, "dev: failed to set device idProduct to %x", pid);
 	}
@@ -251,7 +272,7 @@ static int cmd_device_vid(const struct shell *sh, size_t argc,
 	int ret;
 
 	vid = strtol(argv[1], NULL, 16);
-	ret = usbd_device_set_vid(&uds_ctx, vid);
+	ret = usbd_device_set_vid(my_uds_ctx, vid);
 	if (ret) {
 		shell_error(sh, "dev: failed to set device idVendor to %x", vid);
 	}
@@ -266,7 +287,7 @@ static int cmd_device_class(const struct shell *sh, size_t argc,
 	int ret;
 
 	value = strtol(argv[1], NULL, 16);
-	ret = usbd_device_set_class(&uds_ctx, value);
+	ret = usbd_device_set_class(my_uds_ctx, value);
 	if (ret) {
 		shell_error(sh, "dev: failed to set device class to %x", value);
 	}
@@ -281,7 +302,7 @@ static int cmd_device_subclass(const struct shell *sh, size_t argc,
 	int ret;
 
 	value = strtol(argv[1], NULL, 16);
-	ret = usbd_device_set_subclass(&uds_ctx, value);
+	ret = usbd_device_set_subclass(my_uds_ctx, value);
 	if (ret) {
 		shell_error(sh, "dev: failed to set device subclass to %x", value);
 	}
@@ -296,7 +317,7 @@ static int cmd_device_proto(const struct shell *sh, size_t argc,
 	int ret;
 
 	value = strtol(argv[1], NULL, 16);
-	ret = usbd_device_set_proto(&uds_ctx, value);
+	ret = usbd_device_set_proto(my_uds_ctx, value);
 	if (ret) {
 		shell_error(sh, "dev: failed to set device proto to %x", value);
 	}
@@ -313,9 +334,9 @@ static int cmd_config_add(const struct shell *sh, size_t argc,
 	cfg = strtol(argv[1], NULL, 10);
 
 	if (cfg == 1) {
-		ret = usbd_add_configuration(&uds_ctx, &config_foo);
+		ret = usbd_add_configuration(my_uds_ctx, &config_foo);
 	} else if (cfg == 2) {
-		ret = usbd_add_configuration(&uds_ctx, &config_baz);
+		ret = usbd_add_configuration(my_uds_ctx, &config_baz);
 	} else {
 		shell_error(sh, "dev: Configuration %u not available", cfg);
 		return -EINVAL;
@@ -342,7 +363,7 @@ static int cmd_config_self(const struct shell *sh, size_t argc,
 		self = false;
 	}
 
-	ret = usbd_config_attrib_self(&uds_ctx, cfg, self);
+	ret = usbd_config_attrib_self(my_uds_ctx, cfg, self);
 	if (ret) {
 		shell_error(sh,
 			    "dev: failed to set attribute self powered to %u",
@@ -366,7 +387,7 @@ static int cmd_config_rwup(const struct shell *sh, size_t argc,
 		rwup = false;
 	}
 
-	ret = usbd_config_attrib_rwup(&uds_ctx, cfg, rwup);
+	ret = usbd_config_attrib_rwup(my_uds_ctx, cfg, rwup);
 	if (ret) {
 		shell_error(sh,
 			    "dev: failed to set attribute remote wakeup to %x",
@@ -386,7 +407,7 @@ static int cmd_config_power(const struct shell *sh, size_t argc,
 	cfg = strtol(argv[1], NULL, 10);
 	power = strtol(argv[1], NULL, 10);
 
-	ret = usbd_config_maxpower(&uds_ctx, cfg, power);
+	ret = usbd_config_maxpower(my_uds_ctx, cfg, power);
 	if (ret) {
 		shell_error(sh, "dev: failed to set bMaxPower value to %u", cfg);
 	}
@@ -415,7 +436,29 @@ static void class_node_name_lookup(size_t idx, struct shell_static_entry *entry)
 	}
 }
 
+static void device_context_lookup(size_t idx, struct shell_static_entry *entry)
+{
+	size_t match_idx = 0;
+
+	entry->syntax = NULL;
+	entry->handler = NULL;
+	entry->help = NULL;
+	entry->subcmd = NULL;
+
+	STRUCT_SECTION_FOREACH(usbd_contex, ctx) {
+		if ((ctx->name != NULL) && (strlen(ctx->name) != 0)) {
+			if (match_idx == idx) {
+				entry->syntax = ctx->name;
+				break;
+			}
+
+			++match_idx;
+		}
+	}
+}
+
 SHELL_DYNAMIC_CMD_CREATE(dsub_node_name, class_node_name_lookup);
+SHELL_DYNAMIC_CMD_CREATE(dsub_context_name, device_context_lookup);
 
 SHELL_STATIC_SUBCMD_SET_CREATE(device_cmds,
 	SHELL_CMD_ARG(bcd, NULL, "<bcdUSB>",
@@ -448,7 +491,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(config_cmds,
 SHELL_STATIC_SUBCMD_SET_CREATE(class_cmds,
 	SHELL_CMD_ARG(add, &dsub_node_name, "<name> <configuration>",
 		      cmd_register, 3, 0),
-	SHELL_CMD_ARG(add, &dsub_node_name, "<name> <configuration>",
+	SHELL_CMD_ARG(remove, &dsub_node_name, "<name> <configuration>",
 		      cmd_unregister, 3, 0),
 	SHELL_SUBCMD_SET_END
 );
@@ -468,6 +511,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_usbd_cmds,
 		      cmd_usbd_disable, 1, 0),
 	SHELL_CMD_ARG(shutdown, NULL, "[none]",
 		      cmd_usbd_shutdown, 1, 0),
+	SHELL_CMD_ARG(select, &dsub_context_name, "<USB device context name>",
+		      cmd_select, 2, 0),
 	SHELL_CMD_ARG(device, &device_cmds, "device commands",
 		      NULL, 1, 0),
 	SHELL_CMD_ARG(config, &config_cmds, "configuration commands",
