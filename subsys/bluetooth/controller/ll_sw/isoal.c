@@ -1582,7 +1582,7 @@ uint16_t isoal_tx_unframed_get_next_payload_number(isoal_source_handle_t source_
 		time_diff_valid = false;
 		time_diff = 0;
 		/* Adjust payload number */
-		if (session->sn) {
+		if (session->sn && 0) {
 			/* Not the first SDU in this session, so reference
 			 * information should be valid. At this point, the
 			 * current payload number should be at the first PDU of
