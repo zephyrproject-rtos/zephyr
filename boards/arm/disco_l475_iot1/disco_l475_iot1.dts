@@ -67,6 +67,7 @@
 		spi-flash0 = &mx25r6435f;
 		accel0 = &lsm6dsl;
 		volt-sensor0 = &vref;
+		volt-sensor1 = &vbat;
 	};
 };
 
@@ -347,5 +348,9 @@ zephyr_udc0: &usbotg_fs {
 };
 
 &vref {
+	status = "okay";
+};
+
+&vbat {
 	status = "okay";
 };

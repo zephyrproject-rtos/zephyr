@@ -38,6 +38,7 @@
 		led0 = &green_led_3;
 		pwm-led0 = &green_pwm_led;
 		volt-sensor0 = &vref;
+		volt-sensor1 = &vbat;
 	};
 };
 
@@ -108,5 +109,9 @@
 };
 
 &vref {
+	status = "okay";
+};
+
+&vbat {
 	status = "okay";
 };
