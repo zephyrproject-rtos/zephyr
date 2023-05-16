@@ -413,6 +413,7 @@
 			status = "disabled";
 			#io-channel-cells = <1>;
 			temp-channel = <17>;
+			vbat-channel = <18>;
 			vref-channel = <0>;
 			resolutions = <STM32_ADC_RES(12, 0x00)
 				       STM32_ADC_RES(10, 0x01)
@@ -519,6 +520,13 @@
 		vrefint-cal-addr = <0x1FFF75AA>;
 		vrefint-cal-mv = <3600>;
 		io-channels = <&adc1 0>;
+		status = "disabled";
+	};
+
+	vbat: vbat {
+		compatible = "st,stm32-vbat";
+		ratio = <3>;
+		io-channels = <&adc1 18>;
 		status = "disabled";
 	};
 

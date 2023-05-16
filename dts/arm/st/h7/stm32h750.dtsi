@@ -22,6 +22,7 @@
 		};
 
 		adc3: adc@58026000 {
+			vbat-channel = <17>;
 			temp-channel = <18>;
 			vref-channel = <19>;
 		};
@@ -94,5 +95,9 @@
 
 	vref: vref {
 		io-channels = <&adc3 19>;
+	};
+
+	vbat: vbat {
+		io-channels = <&adc3 17>;
 	};
 };
