@@ -181,8 +181,6 @@ void z_arm64_mm_init(bool is_primary_core)
 		return;
 	}
 
-	LOG_DBG("total region count: %d", get_num_regions());
-
 	arm_core_mpu_disable();
 
 	/* Architecture-specific configuration */
