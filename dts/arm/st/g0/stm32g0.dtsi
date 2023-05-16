@@ -454,6 +454,13 @@
 		io-channels = <&adc1 13>;
 		status = "disabled";
 	};
+
+	vbat: vbat {
+		compatible = "st,stm32-vbat";
+		ratio = <3>;
+		io-channels = <&adc1 14>;
+		status = "disabled";
+	};
 };
 
 &nvic {

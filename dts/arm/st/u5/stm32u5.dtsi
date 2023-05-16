@@ -859,6 +859,20 @@
 		io-channels = <&adc4 0>;
 		status = "disabled";
 	};
+
+	vbat1: vbat_1 {
+		compatible = "st,stm32-vbat";
+		ratio = <4>;
+		io-channels = <&adc1 18>;
+		status = "disabled";
+	};
+
+	vbat4: vbat_4 {
+		compatible = "st,stm32-vbat";
+		ratio = <4>;
+		io-channels = <&adc4 14>;
+		status = "disabled";
+	};
 };
 
 &nvic {

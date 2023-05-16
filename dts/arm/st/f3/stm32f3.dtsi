@@ -453,6 +453,13 @@
 		status = "disabled";
 	};
 
+	vbat: vbat {
+		compatible = "st,stm32-vbat";
+		ratio = <2>;
+		io-channels = <&adc1 17>;
+		status = "disabled";
+	};
+
 	usb_fs_phy: usbphy {
 		compatible = "usb-nop-xceiv";
 		#phy-cells = <0>;
