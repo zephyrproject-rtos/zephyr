@@ -461,8 +461,10 @@ static void gpio_b91_irq_handler(const struct device *dev)
 {
 	struct gpio_b91_data *data				= dev->data;
 	const struct gpio_b91_config *cfg		= dev->config;
+#ifdef CONFIG_PM
 	const uint8_t wakeup_trigger_pol_reg	= reg_wakeup_trig_pol_base +
 		GET_PORT_NUM(GET_GPIO(dev));
+#endif
 	uint8_t irq = GET_IRQ_NUM(dev);
 
 	gpio_port_value_t current_pins       = GET_GPIO(dev)->input;
