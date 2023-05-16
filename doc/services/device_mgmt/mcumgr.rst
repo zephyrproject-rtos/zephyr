@@ -11,9 +11,10 @@ The following management operations are available:
 
 * Image management
 * File System management
-* Log management (currently disabled)
 * OS management
 * Shell management
+* Statistic management
+* Zephyr-basic management
 
 over the following transports:
 
@@ -26,14 +27,11 @@ provided by `MCUmgr`_, an open source project that provides a
 management subsystem that is portable across multiple real-time operating
 systems.
 
-The management subsystem is split in two different locations in the Zephyr tree:
+The management subsystem is located in :zephyr_file:`subsys/mgmt/` inside of
+the Zephyr tree.
 
-* `zephyrproject-rtos/mcumgr repo <https://github.com/zephyrproject-rtos/mcumgr>`_
-  contains a clean import of the MCUmgr project
-* :zephyr_file:`subsys/mgmt/` contains the Zephyr-specific bindings to MCUmgr
-
-Additionally there is a :ref:`sample <smp_svr_sample>` that provides management
-functionality over BLE and serial.
+Additionally, there is a :ref:`sample <smp_svr_sample>` that provides
+management functionality over BLE and serial.
 
 .. _mcumgr_cli:
 
@@ -238,7 +236,7 @@ J-Link Virtual MSD Interaction Note
 
 On boards where a J-Link OB is present which has both CDC and MSC (virtual Mass
 Storage Device, also known as drag-and-drop) support, the MSD functionality can
-prevent mcumgr commands over the CDC UART port from working due to how USB
+prevent MCUmgr commands over the CDC UART port from working due to how USB
 endpoints are configured in the J-Link firmware (for example on the
 :ref:`Nordic nrf52840dk_nrf52840 board <nrf52840dk_nrf52840>`) because of
 limiting the maximum packet size (most likely to occur when using image
@@ -279,7 +277,7 @@ An image can be manually erased using::
 
   mcumgr <connection-options> image erase
 
-The behavior of ``erase`` is defined by the server (``mcumgr`` in the device).
+The behavior of ``erase`` is defined by the server (``MCUmgr`` in the device).
 The current implementation is limited to erasing the image in the secondary
 partition.
 
@@ -519,9 +517,10 @@ Filesystem Management
 *********************
 
 The filesystem module is disabled by default due to security concerns:
-because of a lack of access control every file in the FS will be accessible,
-including secrets, etc. To enable it :kconfig:option:`CONFIG_MCUMGR_GRP_FS` must
-be set (``y``). Once enabled the following sub-commands can be used::
+because of a lack of access control by default, every file in the FS will be
+accessible, including secrets, etc. To enable it
+:kconfig:option:`CONFIG_MCUMGR_GRP_FS` must be set (``y``). Once enabled the
+following sub-commands can be used::
 
   mcumgr <connection-options> fs download <remote-file> <local-file>
   mcumgr <connection-options> fs upload <local-file> <remote-file>
@@ -574,6 +573,13 @@ saving RAM resources.
 
    :kconfig:option:`CONFIG_MCUMGR_GRP_FS_PATH_LEN` sets the maximum PATH accepted for a file
    name. It might require tweaking for longer file names.
+
+.. note::
+    To add security to the filesystem management group, callbacks for MCUmgr
+    hooks can be registered by a user application when the upload/download
+    functions are ran which allows the application to control if access to a
+    file is allowed or denied. See the :ref:`mcumgr_callbacks` section for
+    details.
 
 Bootloader Integration
 **********************
