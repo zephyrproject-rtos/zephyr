@@ -239,29 +239,11 @@ typedef uint32_t (*policy_cb_get_rdo_t)(const struct device *dev);
  * @return true if power supply is at default level
  */
 typedef bool (*policy_cb_is_snk_at_default_t)(const struct device *dev);
+
 /** @}*/
 /** \addtogroup source_callbacks
  *  @{
  */
-/**
- * @brief Callback type used to get the Rp value that should be placed on
- *        the CC lines
- *
- * @param dev USB-C Connector Instance
- * @param rp Rp value
- * @return 0 on success
- */
-typedef int (*policy_cb_get_src_rp_t)(const struct device *dev, enum tc_rp_value *rp);
-
-/**
- * @brief Callback type used to enable VBUS
- *
- * @param dev USB-C Connector Instance
- * @param en true to enable VBUS, else disable it
- * @return 0 on success
- */
-typedef int (*policy_cb_src_en_t)(const struct device *dev, bool en);
-
 /**
  * @brief Callback type used to get the Source Capabilities
  *	  from the Device Policy Manager
