@@ -26,6 +26,7 @@
 #define NPM_GPIO_OFFSET_PULLDOWN  0x0FU
 #define NPM_GPIO_OFFSET_OPENDRAIN 0x14U
 #define NPM_GPIO_OFFSET_DEBOUNCE  0x19U
+#define NPM_GPIO_OFFSET_STATUS	  0x1EU
 
 /* nPM1300 Channel counts */
 #define NPM1300_GPIO_PINS 5U
@@ -59,9 +60,28 @@ static int reg_write(const struct device *dev, uint8_t base, uint8_t offset, uin
 	return i2c_write_dt(&config->bus, buff, sizeof(buff));
 }
 
+static int reg_read(const struct device *dev, uint8_t base, uint8_t offset, uint8_t *data)
+{
+	const struct gpio_npm1300_config *config = dev->config;
+	uint8_t buff[] = {base, offset};
+
+	return i2c_write_read_dt(&config->bus, buff, sizeof(buff), data, 1U);
+}
+
 static int gpio_npm1300_port_get_raw(const struct device *dev, uint32_t *value)
 {
-	return -ENOTSUP;
+	int ret;
+	uint8_t data;
+
+	ret = reg_read(dev, NPM_GPIO_BASE, NPM_GPIO_OFFSET_STATUS, &data);
+
+	if (ret < 0) {
+		return ret;
+	}
+
+	*value = data;
+
+	return 0;
 }
 
 static int gpio_npm1300_port_set_masked_raw(const struct device *dev, gpio_port_pins_t mask,
@@ -160,7 +180,16 @@ static inline int gpio_npm1300_configure(const struct device *dev, gpio_pin_t pi
 
 static int gpio_npm1300_port_toggle_bits(const struct device *dev, gpio_port_pins_t pins)
 {
-	return -ENOTSUP;
+	int ret;
+	uint32_t value;
+
+	ret = gpio_npm1300_port_get_raw(dev, &value);
+
+	if (ret < 0) {
+		return ret;
+	}
+
+	return gpio_npm1300_port_set_masked_raw(dev, pins, ~value);
 }
 
 static int gpio_npm1300_pin_interrupt_configure(const struct device *dev, gpio_pin_t pin,
