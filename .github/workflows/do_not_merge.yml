@@ -6,12 +6,13 @@ on:
 
 jobs:
   do-not-merge:
-    if: ${{ contains(github.event.*.labels.*.name, 'DNM') }}
+    if: ${{ contains(github.event.*.labels.*.name, 'DNM') ||
+            contains(github.event.*.labels.*.name, 'TSC') }}
     name: Prevent Merging
     runs-on: ubuntu-22.04
     steps:
       - name: Check for label
         run: |
-          echo "Pull request is labeled as 'DNM'"
+          echo "Pull request is labeled as 'DNM' or 'TSC'"
           echo "This workflow fails so that the pull request cannot be merged"
           exit 1
