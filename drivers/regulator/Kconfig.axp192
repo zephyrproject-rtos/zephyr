@@ -1,0 +1,28 @@
+# Copyright (c) 2023 M5Stack
+# SPDX -License-Identifier: Apache-2.0
+
+config REGULATOR_AXP192
+	bool "X-Powers AXP192 PMIC regulator driver"
+	default y
+	depends on DT_HAS_XPOWERS_AXP192_REGULATOR_ENABLED
+	select I2C
+	help
+	  Enable the X-Powers AXP192 PMIC regulator driver
+
+if REGULATOR_AXP192
+
+config REGULATOR_AXP192_COMMON_INIT_PRIORITY
+	int "AXP192 regulator driver init priority (common part)"
+	default 75
+	help
+	  Init priority for the X-Powers AXP192 regulator driver (common part).
+	  It must be greater than I2C init priority.
+
+config REGULATOR_AXP192_INIT_PRIORITY
+	int "AXP192 regulator driver init priority"
+	default 76
+	help
+	  Init priority for the X-Powers AXP192 regulator driver. It must be
+	  greater than REGULATOR_AXP192_COMMON_INIT_PRIORITY.
+
+endif

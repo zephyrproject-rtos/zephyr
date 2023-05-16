@@ -1,0 +1,55 @@
+# Copyright (c), 2023 M5Stack
+# SPDX -License-Identifier: Apache-2.0
+
+description: |
+  X-Powers AXP192 PMIC
+
+  The PMIC has 3 buck converters and 3 LDOs.
+  The regulators need to be defined as child nodes, strictly following the
+  BUCK1,2,3 LDO2,3 node names. For example:
+
+  pmic@34 {
+    reg = <0x34>;
+    ...
+    regulators {
+      compatible = "xpowers,axp192-regulator";
+
+      BUCK1 {
+        /* all properties for BUCK1 */
+      };
+      BUCK2 {
+        /* all properties for BUCK2 */
+      };
+      BUCK3 {
+        /* all properties for BUCK3 */
+      };
+      LDO1 {
+        /* all properties for LDO1 */
+      };
+      LDO2 {
+        /* all properties for LDO2 */
+      };
+      LDO3 {
+        /* all properties for LDO3 */
+      };
+      LDOIO0 {
+        /* all properties for LDOIO0 */
+      };
+    };
+  };
+
+compatible: "xpowers,axp192-regulator"
+
+include: base.yaml
+
+child-binding:
+  include:
+    - name: regulator.yaml
+      property-allowlist:
+        - regulator-always-on
+        - regulator-boot-on
+        - regulator-min-microvolt
+        - regulator-max-microvolt
+        - regulator-init-microvolt
+        - regulator-min-microamp
+        - regulator-max-microamp

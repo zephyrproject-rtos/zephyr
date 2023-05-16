@@ -681,6 +681,7 @@ xiphera	Xiphera Ltd.
 xlnx	Xilinx
 xnano	Xnano
 xptek	Shenzhen Xptek Technology Co., Ltd
+xpowers	X-Powers
 xunlong	Shenzhen Xunlong Software CO.,Limited
 xylon	Xylon
 yamaha	Yamaha Corporation
