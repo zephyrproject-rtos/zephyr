@@ -18,14 +18,36 @@
 		cpu@0 {
 			device_type = "cpu";
 			compatible = "arm,cortex-a55";
-			reg = <0>;
+			enable-method = "psci";
+			reg = <0x0>;
+		};
+
+		cpu@100 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a55";
+			enable-method = "psci";
+			reg = <0x100>;
+		};
+
+		cpu@200 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a76";
+			enable-method = "psci";
+			reg = <0x200>;
+		};
+
+		cpu@300 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a76";
+			enable-method = "psci";
+			reg = <0x300>;
 		};
 	};
 
 	gic: interrupt-controller@1d000000  {
 		compatible = "arm,gic";
 		reg = <0x1d000000 0x10000>, /* GICD */
-			  <0x1d060000 0x80000>; /* GICR */
+		      <0x1d060000 0x80000>; /* GICR */
 		interrupt-controller;
 		#interrupt-cells = <4>;
 		status = "okay";
