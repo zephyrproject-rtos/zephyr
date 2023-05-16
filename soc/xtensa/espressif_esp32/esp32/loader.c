@@ -11,7 +11,6 @@
 
 #include <esp32/rom/cache.h>
 #include <soc/dport_reg.h>
-#include <bootloader_flash_priv.h>
 
 #ifdef CONFIG_BOOTLOADER_MCUBOOT
 
