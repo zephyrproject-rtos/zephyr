@@ -390,7 +390,7 @@ void wifi_mgmt_raise_disconnect_complete_event(struct net_if *iface,
 		.status = status,
 	};
 
-	net_mgmt_event_notify_with_info(NET_EVENT_WIFI_CMD_DISCONNECT_COMPLETE,
+	net_mgmt_event_notify_with_info(NET_EVENT_WIFI_DISCONNECT_COMPLETE,
 					iface, &cnx_status,
 					sizeof(struct wifi_status));
 }
