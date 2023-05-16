@@ -47,6 +47,7 @@
 		 * ADC, so we redefine the resolution for these devices.
 		 */
 		adc3: adc@58026000 {
+			vbat-channel = <16>;
 			temp-channel = <17>;
 			vref-channel = <18>;
 			resolutions = <STM32H72X_ADC3_RES(12, 0x00)
@@ -194,5 +195,9 @@
 
 	vref: vref {
 		io-channels = <&adc3 18>;
+	};
+
+	vbat: vbat {
+		io-channels = <&adc3 16>;
 	};
 };
