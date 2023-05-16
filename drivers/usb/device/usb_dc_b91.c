@@ -1726,7 +1726,7 @@ static void usbd_work_handler(struct k_work *item)
 	}
 }
 
-static int usb_init(const struct device *arg)
+static int usb_init(void)
 {
 	int ret;
 
