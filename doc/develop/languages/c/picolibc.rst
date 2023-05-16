@@ -23,6 +23,8 @@ the library internal system calls to the equivalent Zephyr API calls.
 .. _`C17 (ISO/IEC 9899:2018)`: https://www.iso.org/standard/74528.html
 .. _`POSIX 2018 (IEEE Std 1003.1-2017)`: https://pubs.opengroup.org/onlinepubs/9699919799/functions/printf.html
 
+.. _c_library_picolibc_module:
+
 Picolibc Module
 ===============
 
@@ -38,6 +40,12 @@ The Picolibc module can be enabled by selecting
 :kconfig:option:`CONFIG_PICOLIBC_USE_MODULE` in the application
 configuration file.
 
+When updating the Picolibc module to a newer version, the
+:ref:`toolchain-bundled Picolibc in the Zephyr SDK
+<c_library_picolibc_toolchain>` must also be updated to the same version.
+
+.. _c_library_picolibc_toolchain:
+
 Toolchain Picolibc
 ==================
 
@@ -48,6 +56,11 @@ precompiled versions of libstdc++.
 The toolchain version of Picolibc can be enabled by de-selecting
 :kconfig:option:`CONFIG_PICOLIBC_USE_MODULE` in the application
 configuration file.
+
+For every release of Zephyr, the toolchain-bundled Picolibc and the
+:ref:`Picolibc module <c_library_picolibc_module>` are guaranteed to be in
+sync when using the
+:ref:`recommended version of Zephyr SDK <toolchain_zephyr_sdk_compatibility>`.
 
 Formatted Output
 ****************
