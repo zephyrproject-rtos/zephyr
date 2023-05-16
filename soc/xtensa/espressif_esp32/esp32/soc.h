@@ -18,7 +18,7 @@
 #include <zephyr/arch/xtensa/arch.h>
 
 #include <xtensa/core-macros.h>
-#include <esp32/clk.h>
+#include <esp_private/esp_clk.h>
 
 void __esp_platform_start(void);
 

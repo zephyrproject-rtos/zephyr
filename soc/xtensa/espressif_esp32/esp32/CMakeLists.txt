@@ -5,7 +5,6 @@ if (CONFIG_SOC_ESP32_APPCPU)
 else()
   zephyr_sources(
     soc.c
-    loader.c
     esp32-mp.c
     )
 endif()
@@ -76,7 +75,7 @@ if(CONFIG_MCUBOOT OR CONFIG_BOOTLOADER_ESP_IDF)
 
   if(CONFIG_BUILD_OUTPUT_BIN)
     set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
-      COMMAND ${PYTHON_EXECUTABLE} ${ESP_IDF_PATH}/components/esptool_py/esptool/esptool.py
+      COMMAND ${PYTHON_EXECUTABLE} ${ESP_IDF_PATH}/tools/esptool_py/esptool/esptool.py
       ARGS --chip esp32 elf2image --flash_mode dio --flash_freq 40m --flash_size ${esptoolpy_flashsize}MB
       -o ${CMAKE_BINARY_DIR}/zephyr/${CONFIG_KERNEL_BIN_NAME}.bin
       ${CMAKE_BINARY_DIR}/zephyr/${CONFIG_KERNEL_BIN_NAME}.elf)
