@@ -63,6 +63,7 @@ struct spi_stm32_data {
 	struct stream dma_rx;
 	struct stream dma_tx;
 #endif /* CONFIG_SPI_STM32_DMA */
+	bool half_duplex;
 };
 
 #ifdef CONFIG_SPI_STM32_DMA

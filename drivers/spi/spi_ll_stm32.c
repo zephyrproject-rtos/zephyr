@@ -250,6 +250,71 @@ static int spi_stm32_get_err(SPI_TypeDef *spi)
 	return 0;
 }
 
+static void spi_stm32_shift_half_m(SPI_TypeDef *spi,
+				   struct spi_stm32_data *data)
+{
+	if (spi_context_tx_buf_on(&data->ctx)) {
+		uint16_t tx_frame;
+
+		if (SPI_WORD_SIZE_GET(data->ctx.config->operation) == 8) {
+			tx_frame = UNALIGNED_GET((uint8_t *)(data->ctx.tx_buf));
+			LL_SPI_TransmitData8(spi, tx_frame);
+			spi_context_update_tx(&data->ctx, 1, 1);
+		} else {
+			tx_frame = UNALIGNED_GET((uint16_t *)(data->ctx.tx_buf));
+			LL_SPI_TransmitData16(spi, tx_frame);
+			spi_context_update_tx(&data->ctx, 2, 1);
+		}
+
+		if (!spi_context_tx_buf_on(&data->ctx) &&
+		    spi_context_rx_buf_on(&data->ctx)) {
+			while (!ll_func_tx_is_empty(spi)) {
+				/* NOP */
+			}
+
+			while (ll_func_spi_is_busy(spi)) {
+				/* NOP - Waiting until TX is done */
+			}
+
+			while (ll_func_rx_is_not_empty(spi)) {
+				/* Cleaning up RX */
+				LL_SPI_ReceiveData8(spi);
+			}
+
+			/* Switching to RX */
+			LL_SPI_SetTransferDirection(spi, LL_SPI_HALF_DUPLEX_RX);
+		} else {
+			return;
+		}
+	}
+
+	while (spi_context_rx_buf_on(&data->ctx)) {
+		uint16_t rx_frame;
+
+		while (!ll_func_rx_is_not_empty(spi)) {
+			/* NOP - Waiting until RX is effective */
+		}
+
+		if (SPI_WORD_SIZE_GET(data->ctx.config->operation) == 8) {
+			rx_frame = LL_SPI_ReceiveData8(spi);
+			UNALIGNED_PUT(rx_frame, (uint8_t *)data->ctx.rx_buf);
+			spi_context_update_rx(&data->ctx, 1, 1);
+		} else {
+			rx_frame = LL_SPI_ReceiveData16(spi);
+			UNALIGNED_PUT(rx_frame, (uint16_t *)data->ctx.rx_buf);
+			spi_context_update_rx(&data->ctx, 2, 1);
+		}
+	}
+
+	/* Switching back to TX */
+	LL_SPI_SetTransferDirection(spi, LL_SPI_HALF_DUPLEX_TX);
+
+	while (ll_func_rx_is_not_empty(spi)) {
+		/* Cleaning up RX */
+		LL_SPI_ReceiveData8(spi);
+	}
+}
+
 /* Shift a SPI frame as master. */
 static void spi_stm32_shift_m(SPI_TypeDef *spi, struct spi_stm32_data *data)
 {
@@ -274,6 +339,11 @@ static void spi_stm32_shift_m(SPI_TypeDef *spi, struct spi_stm32_data *data)
 	}
 #endif
 
+	if (data->half_duplex) {
+		spi_stm32_shift_half_m(spi, data);
+		return;
+	}
+
 	if (SPI_WORD_SIZE_GET(data->ctx.config->operation) == 8) {
 		if (spi_context_tx_buf_on(&data->ctx)) {
 			tx_frame = UNALIGNED_GET((uint8_t *)(data->ctx.tx_buf));
@@ -291,7 +361,7 @@ static void spi_stm32_shift_m(SPI_TypeDef *spi, struct spi_stm32_data *data)
 	}
 
 	while (!ll_func_rx_is_not_empty(spi)) {
-		/* NOP */
+		/* NOP - Waiting until RX is effective */
 	}
 
 	if (SPI_WORD_SIZE_GET(data->ctx.config->operation) == 8) {
@@ -533,7 +603,13 @@ static int spi_stm32_configure(const struct device *dev,
 		LL_SPI_SetClockPhase(spi, LL_SPI_PHASE_1EDGE);
 	}
 
-	LL_SPI_SetTransferDirection(spi, LL_SPI_FULL_DUPLEX);
+	if (config->operation & SPI_HALF_DUPLEX) {
+		LL_SPI_SetTransferDirection(spi, LL_SPI_HALF_DUPLEX_TX);
+		data->half_duplex = true;
+	} else {
+		LL_SPI_SetTransferDirection(spi, LL_SPI_FULL_DUPLEX);
+		data->half_duplex = false;
+	}
 
 	if (config->operation & SPI_TRANSFER_LSB) {
 		LL_SPI_SetTransferBitOrder(spi, LL_SPI_LSB_FIRST);
@@ -561,6 +637,9 @@ static int spi_stm32_configure(const struct device *dev,
 
 	if (config->operation & SPI_OP_MODE_SLAVE) {
 		LL_SPI_SetMode(spi, LL_SPI_MODE_SLAVE);
+		if (data->half_duplex) {
+			return -ENOTSUP;
+		}
 	} else {
 		LL_SPI_SetMode(spi, LL_SPI_MODE_MASTER);
 	}
@@ -659,7 +738,7 @@ static int transceive(const struct device *dev,
 #ifdef CONFIG_SPI_STM32_INTERRUPT
 	ll_func_enable_int_errors(spi);
 
-	if (rx_bufs) {
+	if (rx_bufs && !data->half_duplex) {
 		ll_func_enable_int_rx_not_empty(spi);
 	}
 
