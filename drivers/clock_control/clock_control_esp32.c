@@ -46,6 +46,7 @@
 #include <zephyr/drivers/clock_control.h>
 #include <driver/periph_ctrl.h>
 #include <hal/cpu_hal.h>
+#include <esp_rom_caps.h>
 
 struct esp32_clock_config {
 	int clk_src_sel;
