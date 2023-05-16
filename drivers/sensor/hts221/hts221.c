@@ -75,8 +75,8 @@ static int hts221_sample_fetch(const struct device *dev,
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
 
-	status = hts221_read_reg(ctx, HTS221_HUMIDITY_OUT_L |
-				 HTS221_AUTOINCREMENT_ADDR, buf, 4);
+	status = hts221_read_reg(ctx, HTS221_HUMIDITY_OUT_L | cfg->auto_inc,
+				 buf, 4);
 	if (status < 0) {
 		LOG_ERR("Failed to fetch data sample.");
 		return status;
@@ -96,12 +96,14 @@ static int hts221_read_conversion_data(const struct device *dev)
 	uint8_t buf[16];
 	int status;
 
-	status = hts221_read_reg(ctx, HTS221_H0_RH_X2 |
-				 HTS221_AUTOINCREMENT_ADDR, buf, 16);
+	status = hts221_read_reg(ctx, HTS221_H0_RH_X2 | cfg->auto_inc,
+				 buf, 16);
 	if (status < 0) {
 		LOG_ERR("Failed to read conversion data.");
 		return status;
 	}
+
+	LOG_HEXDUMP_DBG(buf, 16, "");
 
 	data->h0_rh_x2 = buf[0];
 	data->h1_rh_x2 = buf[1];
@@ -222,7 +224,7 @@ int hts221_init(const struct device *dev)
 
 #ifdef CONFIG_HTS221_TRIGGER
 #define HTS221_CFG_IRQ(inst)					\
-	.gpio_drdy = GPIO_DT_SPEC_INST_GET(inst, drdy_gpios)
+	.gpio_drdy = GPIO_DT_SPEC_INST_GET(inst, drdy_gpios),
 #else
 #define HTS221_CFG_IRQ(inst)
 #endif /* CONFIG_HTS221_TRIGGER */
@@ -246,6 +248,7 @@ int hts221_init(const struct device *dev)
 						    0),				\
 		},								\
 		HTS221_CONFIG_COMMON(inst)					\
+		.auto_inc = HTS221_SPI_AUTOINCREMENT_ADDR,			\
 	}
 
 /*
@@ -259,6 +262,7 @@ int hts221_init(const struct device *dev)
 			.i2c = I2C_DT_SPEC_INST_GET(inst),		\
 		},							\
 		HTS221_CONFIG_COMMON(inst)				\
+		.auto_inc = HTS221_I2C_AUTOINCREMENT_ADDR,		\
 	}
 
 /*

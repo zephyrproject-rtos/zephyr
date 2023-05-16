@@ -16,7 +16,8 @@
 
 #include "hts221_reg.h"
 
-#define HTS221_AUTOINCREMENT_ADDR      BIT(7)
+#define HTS221_I2C_AUTOINCREMENT_ADDR      BIT(7)
+#define HTS221_SPI_AUTOINCREMENT_ADDR      BIT(6)
 
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
 #include <zephyr/drivers/spi.h>
@@ -70,6 +71,9 @@ struct hts221_config {
 #ifdef CONFIG_HTS221_TRIGGER
 	const struct gpio_dt_spec gpio_drdy;
 #endif /* CONFIG_HTS221_TRIGGER */
+
+	/* Command for auto increment of address, bus dependent */
+	uint8_t auto_inc;
 };
 
 #ifdef CONFIG_HTS221_TRIGGER
