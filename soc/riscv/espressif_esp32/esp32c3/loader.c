@@ -5,9 +5,8 @@
  */
 
 #include <esp32c3/rom/cache.h>
-#include "soc/cache_memory.h"
-#include "soc/extmem_reg.h"
-#include <bootloader_flash_priv.h>
+#include <soc/ext_mem_defs.h>
+#include <soc/extmem_reg.h>
 
 #include <zephyr/kernel.h>
 #include <soc.h>

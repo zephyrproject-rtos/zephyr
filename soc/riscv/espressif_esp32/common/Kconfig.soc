@@ -12,4 +12,8 @@ config FLASH_SIZE
 config FLASH_BASE_ADDRESS
 	hex
 
+config MMU_PAGE_SIZE
+	hex
+	default 0x10000
+
 endif # SOC_FAMILY_ESP32
