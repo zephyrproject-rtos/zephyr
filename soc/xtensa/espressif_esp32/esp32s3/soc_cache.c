@@ -13,7 +13,6 @@ extern void rom_config_data_cache_mode(uint32_t cfg_cache_size, uint8_t cfg_cach
 						uint8_t cfg_cache_line_size);
 extern void rom_config_instruction_cache_mode(uint32_t cfg_cache_size, uint8_t cfg_cache_ways,
 						uint8_t cfg_cache_line_size);
-extern uint32_t Cache_Set_IDROM_MMU_Size(uint32_t irom_size, uint32_t drom_size);
 extern void Cache_Set_IDROM_MMU_Info(uint32_t instr_page_num, uint32_t rodata_page_num,
 					uint32_t rodata_start, uint32_t rodata_end,
 					int i_off, int ro_off);
@@ -40,12 +39,12 @@ void IRAM_ATTR esp_config_data_cache_mode(void)
 
 	/* Configure the Cache MMU size for instruction and rodata in flash. */
 	uint32_t rodata_reserved_start_align =
-		(uint32_t)&_rodata_reserved_start & ~(MMU_PAGE_SIZE - 1);
+		(uint32_t)&_rodata_reserved_start & ~(CONFIG_MMU_PAGE_SIZE - 1);
 	uint32_t cache_mmu_irom_size =
-		((rodata_reserved_start_align - SOC_DROM_LOW) / MMU_PAGE_SIZE) * sizeof(uint32_t);
+		((rodata_reserved_start_align - SOC_DROM_LOW) / CONFIG_MMU_PAGE_SIZE) * sizeof(uint32_t);
 	uint32_t cache_mmu_drom_size =
-		(((uint32_t)&_rodata_reserved_end - rodata_reserved_start_align + MMU_PAGE_SIZE - 1)
-		/ MMU_PAGE_SIZE) * sizeof(uint32_t);
+		(((uint32_t)&_rodata_reserved_end - rodata_reserved_start_align + CONFIG_MMU_PAGE_SIZE - 1)
+		/ CONFIG_MMU_PAGE_SIZE) * sizeof(uint32_t);
 	Cache_Set_IDROM_MMU_Size(cache_mmu_irom_size, CACHE_DROM_MMU_MAX_END - cache_mmu_irom_size);
 
 	Cache_Set_IDROM_MMU_Info(cache_mmu_irom_size / sizeof(uint32_t),
