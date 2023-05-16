@@ -13,7 +13,8 @@
 #include <zephyr/bluetooth/audio/audio.h>
 
 void print_hex(const uint8_t *ptr, size_t len);
-void print_codec(const struct bt_codec *codec);
-void print_qos(const struct bt_codec_qos *qos);
+void print_codec_cap(const struct bt_audio_codec_cap *codec_cap);
+void print_codec_cfg(const struct bt_audio_codec_cfg *codec_cfg);
+void print_qos(const struct bt_audio_codec_qos *qos);
 
 #endif /* ZEPHYR_TEST_BSIM_BT_AUDIO_TEST_UNICAST_COMMON_ */

@@ -11,6 +11,7 @@
 #include <zephyr/bluetooth/audio/bap_lc3_preset.h>
 #include <zephyr/bluetooth/audio/cap.h>
 #include <zephyr/bluetooth/audio/bap.h>
+#include <zephyr/bluetooth/audio/lc3.h>
 #include "common.h"
 
 #define BROADCAST_STREMT_CNT    CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT
@@ -224,15 +225,15 @@ static void stop_and_delete_extended_adv(struct bt_le_ext_adv *adv)
 
 static void test_broadcast_audio_create_inval(void)
 {
-	struct bt_codec_data bis_codec_data =
-		BT_CODEC_DATA(BT_CODEC_CONFIG_LC3_FREQ, BT_CODEC_CONFIG_LC3_FREQ_16KHZ);
+	struct bt_audio_codec_data bis_codec_data = BT_AUDIO_CODEC_DATA(
+		BT_AUDIO_CODEC_CONFIG_LC3_FREQ, BT_AUDIO_CODEC_CONFIG_LC3_FREQ_16KHZ);
 	struct bt_cap_initiator_broadcast_stream_param
 		stream_params[ARRAY_SIZE(broadcast_source_streams)];
 	struct bt_cap_initiator_broadcast_subgroup_param subgroup_param;
 	struct bt_cap_initiator_broadcast_create_param create_param;
 	struct bt_cap_broadcast_source *broadcast_source;
-	struct bt_codec invalid_codec =
-		BT_CODEC_LC3_CONFIG_16_2(BT_AUDIO_LOCATION_FRONT_LEFT, BT_AUDIO_CONTEXT_TYPE_MEDIA);
+	struct bt_audio_codec_cfg invalid_codec = BT_AUDIO_CODEC_LC3_CONFIG_16_2(
+		BT_AUDIO_LOCATION_FRONT_LEFT, BT_AUDIO_CONTEXT_TYPE_MEDIA);
 	int err;
 
 	for (size_t i = 0U; i < ARRAY_SIZE(broadcast_streams); i++) {
@@ -243,7 +244,7 @@ static void test_broadcast_audio_create_inval(void)
 
 	subgroup_param.stream_count = ARRAY_SIZE(broadcast_streams);
 	subgroup_param.stream_params = stream_params;
-	subgroup_param.codec = &broadcast_preset_16_2_1.codec;
+	subgroup_param.codec_cfg = &broadcast_preset_16_2_1.codec_cfg;
 
 	create_param.subgroup_count = 1U;
 	create_param.subgroup_params = &subgroup_param;
@@ -267,7 +268,7 @@ static void test_broadcast_audio_create_inval(void)
 
 	/* Clear metadata so that it does not contain the mandatory stream context */
 	memset(&invalid_codec.meta, 0, sizeof(invalid_codec.meta));
-	subgroup_param.codec = &invalid_codec;
+	subgroup_param.codec_cfg = &invalid_codec;
 	err = bt_cap_initiator_broadcast_audio_create(&create_param, NULL);
 	if (err == 0) {
 		FAIL("bt_cap_initiator_broadcast_audio_create with invalid metadata did not "
@@ -282,8 +283,8 @@ static void test_broadcast_audio_create_inval(void)
 
 static void test_broadcast_audio_create(struct bt_cap_broadcast_source **broadcast_source)
 {
-	struct bt_codec_data bis_codec_data =
-		BT_CODEC_DATA(BT_CODEC_CONFIG_LC3_FREQ, BT_CODEC_CONFIG_LC3_FREQ_16KHZ);
+	struct bt_audio_codec_data bis_codec_data = BT_AUDIO_CODEC_DATA(
+		BT_AUDIO_CODEC_CONFIG_LC3_FREQ, BT_AUDIO_CODEC_CONFIG_LC3_FREQ_16KHZ);
 	struct bt_cap_initiator_broadcast_stream_param
 		stream_params[ARRAY_SIZE(broadcast_source_streams)];
 	struct bt_cap_initiator_broadcast_subgroup_param subgroup_param;
@@ -298,7 +299,7 @@ static void test_broadcast_audio_create(struct bt_cap_broadcast_source **broadca
 
 	subgroup_param.stream_count = ARRAY_SIZE(broadcast_streams);
 	subgroup_param.stream_params = stream_params;
-	subgroup_param.codec = &broadcast_preset_16_2_1.codec;
+	subgroup_param.codec_cfg = &broadcast_preset_16_2_1.codec_cfg;
 
 	create_param.subgroup_count = 1U;
 	create_param.subgroup_params = &subgroup_param;
@@ -357,16 +358,16 @@ static void test_broadcast_audio_start(struct bt_cap_broadcast_source *broadcast
 static void test_broadcast_audio_update_inval(struct bt_cap_broadcast_source *broadcast_source)
 {
 	const uint16_t mock_ccid = 0x1234;
-	const struct bt_codec_data new_metadata[] = {
-		BT_CODEC_DATA(BT_AUDIO_METADATA_TYPE_STREAM_CONTEXT,
-			      (BT_AUDIO_CONTEXT_TYPE_MEDIA & 0xFFU),
-			      ((BT_AUDIO_CONTEXT_TYPE_MEDIA >> 8) & 0xFFU)),
-		BT_CODEC_DATA(BT_AUDIO_METADATA_TYPE_CCID_LIST, (mock_ccid & 0xFFU),
-			      ((mock_ccid >> 8) & 0xFFU)),
+	const struct bt_audio_codec_data new_metadata[] = {
+		BT_AUDIO_CODEC_DATA(BT_AUDIO_METADATA_TYPE_STREAM_CONTEXT,
+				    (BT_AUDIO_CONTEXT_TYPE_MEDIA & 0xFFU),
+				    ((BT_AUDIO_CONTEXT_TYPE_MEDIA >> 8) & 0xFFU)),
+		BT_AUDIO_CODEC_DATA(BT_AUDIO_METADATA_TYPE_CCID_LIST, (mock_ccid & 0xFFU),
+				    ((mock_ccid >> 8) & 0xFFU)),
 	};
-	const struct bt_codec_data invalid_metadata[] = {
-		BT_CODEC_DATA(BT_AUDIO_METADATA_TYPE_CCID_LIST, (mock_ccid & 0xFFU),
-			      ((mock_ccid >> 8) & 0xFFU)),
+	const struct bt_audio_codec_data invalid_metadata[] = {
+		BT_AUDIO_CODEC_DATA(BT_AUDIO_METADATA_TYPE_CCID_LIST, (mock_ccid & 0xFFU),
+				    ((mock_ccid >> 8) & 0xFFU)),
 	};
 	int err;
 
@@ -407,10 +408,11 @@ static void test_broadcast_audio_update_inval(struct bt_cap_broadcast_source *br
 static void test_broadcast_audio_update(struct bt_cap_broadcast_source *broadcast_source)
 {
 	const uint16_t mock_ccid = 0x1234;
-	const struct bt_codec_data new_metadata[] = {
-		BT_CODEC_DATA(BT_AUDIO_METADATA_TYPE_STREAM_CONTEXT,
-			      BT_BYTES_LIST_LE16(BT_AUDIO_CONTEXT_TYPE_MEDIA)),
-		BT_CODEC_DATA(BT_AUDIO_METADATA_TYPE_CCID_LIST, BT_BYTES_LIST_LE16(mock_ccid)),
+	const struct bt_audio_codec_data new_metadata[] = {
+		BT_AUDIO_CODEC_DATA(BT_AUDIO_METADATA_TYPE_STREAM_CONTEXT,
+				    BT_BYTES_LIST_LE16(BT_AUDIO_CONTEXT_TYPE_MEDIA)),
+		BT_AUDIO_CODEC_DATA(BT_AUDIO_METADATA_TYPE_CCID_LIST,
+				    BT_BYTES_LIST_LE16(mock_ccid)),
 	};
 	int err;
 

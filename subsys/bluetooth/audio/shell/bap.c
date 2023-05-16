@@ -37,8 +37,8 @@
 struct unicast_stream unicast_streams[CONFIG_BT_MAX_CONN *
 				      (UNICAST_SERVER_STREAM_COUNT + UNICAST_CLIENT_STREAM_COUNT)];
 
-static const struct bt_codec_qos_pref qos_pref = BT_CODEC_QOS_PREF(true, BT_GAP_LE_PHY_2M, 0u, 60u,
-								   20000u, 40000u, 20000u, 40000u);
+static const struct bt_audio_codec_qos_pref qos_pref =
+	BT_AUDIO_CODEC_QOS_PREF(true, BT_GAP_LE_PHY_2M, 0u, 60u, 20000u, 40000u, 20000u, 40000u);
 
 #if defined(CONFIG_BT_BAP_UNICAST_CLIENT)
 struct bt_bap_unicast_group *default_unicast_group;
@@ -229,16 +229,16 @@ static void init_lc3(const struct bt_bap_stream *stream)
 {
 	size_t num_samples;
 
-	if (stream == NULL || stream->codec == NULL) {
+	if (stream == NULL || stream->codec_cfg == NULL) {
 		shell_error(ctx_shell, "invalid stream to init LC3");
 		return;
 	}
 
-	freq_hz = bt_codec_cfg_get_freq(stream->codec);
-	frame_duration_us = bt_codec_cfg_get_frame_duration_us(stream->codec);
-	octets_per_frame = bt_codec_cfg_get_octets_per_frame(stream->codec);
-	frames_per_sdu = bt_codec_cfg_get_frame_blocks_per_sdu(stream->codec, true);
-	octets_per_frame = bt_codec_cfg_get_octets_per_frame(stream->codec);
+	freq_hz = bt_audio_codec_cfg_get_freq(stream->codec_cfg);
+	frame_duration_us = bt_audio_codec_cfg_get_frame_duration_us(stream->codec_cfg);
+	octets_per_frame = bt_audio_codec_cfg_get_octets_per_frame(stream->codec_cfg);
+	frames_per_sdu = bt_audio_codec_cfg_get_frame_blocks_per_sdu(stream->codec_cfg, true);
+	octets_per_frame = bt_audio_codec_cfg_get_octets_per_frame(stream->codec_cfg);
 
 	if (freq_hz < 0) {
 		printk("Error: Codec frequency not set, cannot start codec.");
@@ -416,12 +416,12 @@ static struct bt_bap_stream *stream_alloc(void)
 }
 
 static int lc3_config(struct bt_conn *conn, const struct bt_bap_ep *ep, enum bt_audio_dir dir,
-		      const struct bt_codec *codec, struct bt_bap_stream **stream,
-		      struct bt_codec_qos_pref *const pref, struct bt_bap_ascs_rsp *rsp)
+		      const struct bt_audio_codec_cfg *codec_cfg, struct bt_bap_stream **stream,
+		      struct bt_audio_codec_qos_pref *const pref, struct bt_bap_ascs_rsp *rsp)
 {
 	shell_print(ctx_shell, "ASE Codec Config: conn %p ep %p dir %u", conn, ep, dir);
 
-	print_codec(ctx_shell, codec);
+	print_codec_cfg(ctx_shell, codec_cfg);
 
 	*stream = stream_alloc();
 	if (*stream == NULL) {
@@ -442,12 +442,12 @@ static int lc3_config(struct bt_conn *conn, const struct bt_bap_ep *ep, enum bt_
 }
 
 static int lc3_reconfig(struct bt_bap_stream *stream, enum bt_audio_dir dir,
-			const struct bt_codec *codec, struct bt_codec_qos_pref *const pref,
-			struct bt_bap_ascs_rsp *rsp)
+			const struct bt_audio_codec_cfg *codec_cfg,
+			struct bt_audio_codec_qos_pref *const pref, struct bt_bap_ascs_rsp *rsp)
 {
 	shell_print(ctx_shell, "ASE Codec Reconfig: stream %p", stream);
 
-	print_codec(ctx_shell, codec);
+	print_codec_cfg(ctx_shell, codec_cfg);
 
 	if (default_stream == NULL) {
 		set_unicast_stream(stream);
@@ -458,7 +458,7 @@ static int lc3_reconfig(struct bt_bap_stream *stream, enum bt_audio_dir dir,
 	return 0;
 }
 
-static int lc3_qos(struct bt_bap_stream *stream, const struct bt_codec_qos *qos,
+static int lc3_qos(struct bt_bap_stream *stream, const struct bt_audio_codec_qos *qos,
 		   struct bt_bap_ascs_rsp *rsp)
 {
 	shell_print(ctx_shell, "QoS: stream %p %p", stream, qos);
@@ -468,7 +468,7 @@ static int lc3_qos(struct bt_bap_stream *stream, const struct bt_codec_qos *qos,
 	return 0;
 }
 
-static int lc3_enable(struct bt_bap_stream *stream, const struct bt_codec_data *meta,
+static int lc3_enable(struct bt_bap_stream *stream, const struct bt_audio_codec_data *meta,
 		      size_t meta_count, struct bt_bap_ascs_rsp *rsp)
 {
 	shell_print(ctx_shell, "Enable: stream %p meta_count %zu", stream,
@@ -528,14 +528,14 @@ static bool valid_metadata_type(uint8_t type, uint8_t len)
 	}
 }
 
-static int lc3_metadata(struct bt_bap_stream *stream, const struct bt_codec_data *meta,
+static int lc3_metadata(struct bt_bap_stream *stream, const struct bt_audio_codec_data *meta,
 			size_t meta_count, struct bt_bap_ascs_rsp *rsp)
 {
 	shell_print(ctx_shell, "Metadata: stream %p meta_count %zu", stream,
 		    meta_count);
 
 	for (size_t i = 0; i < meta_count; i++) {
-		const struct bt_codec_data *data = &meta[i];
+		const struct bt_audio_codec_data *data = &meta[i];
 
 		if (!valid_metadata_type(data->data.type, data->data.data_len)) {
 			shell_print(ctx_shell,
@@ -575,11 +575,10 @@ static int lc3_release(struct bt_bap_stream *stream, struct bt_bap_ascs_rsp *rsp
 	return 0;
 }
 
-static struct bt_codec lc3_codec = BT_CODEC_LC3(BT_CODEC_LC3_FREQ_ANY,
-						BT_CODEC_LC3_DURATION_ANY,
-						BT_CODEC_LC3_CHAN_COUNT_SUPPORT(1, 2), 30, 240, 2,
-						(BT_AUDIO_CONTEXT_TYPE_CONVERSATIONAL |
-						BT_AUDIO_CONTEXT_TYPE_MEDIA));
+static struct bt_audio_codec_cap lc3_codec_cap =
+	BT_AUDIO_CODEC_LC3(BT_AUDIO_CODEC_LC3_FREQ_ANY, BT_AUDIO_CODEC_LC3_DURATION_ANY,
+			   BT_AUDIO_CODEC_LC3_CHAN_COUNT_SUPPORT(1, 2), 30, 240, 2,
+			   (BT_AUDIO_CONTEXT_TYPE_CONVERSATIONAL | BT_AUDIO_CONTEXT_TYPE_MEDIA));
 
 static const struct bt_bap_unicast_server_cb unicast_server_cb = {
 	.config = lc3_config,
@@ -594,11 +593,11 @@ static const struct bt_bap_unicast_server_cb unicast_server_cb = {
 };
 
 static struct bt_pacs_cap cap_sink = {
-	.codec = &lc3_codec,
+	.codec_cap = &lc3_codec_cap,
 };
 
 static struct bt_pacs_cap cap_source = {
-	.codec = &lc3_codec,
+	.codec_cap = &lc3_codec_cap,
 };
 #if defined(CONFIG_BT_BAP_UNICAST)
 
@@ -633,7 +632,7 @@ static uint16_t strmeta(const char *name)
 	return 0u;
 }
 
-static int set_metadata(struct bt_codec *codec, const char *meta_str)
+static int set_metadata(struct bt_audio_codec_cfg *codec_cfg, const char *meta_str)
 {
 	uint16_t context;
 
@@ -643,7 +642,7 @@ static int set_metadata(struct bt_codec *codec, const char *meta_str)
 	}
 
 	/* TODO: Check the type and only overwrite the streaming context */
-	sys_put_le16(context, codec->meta[0].value);
+	sys_put_le16(context, codec_cfg->meta[0].value);
 
 	return 0;
 }
@@ -679,12 +678,14 @@ static uint8_t stream_dir(const struct bt_bap_stream *stream)
 	return 0;
 }
 
-static void print_remote_codec(const struct bt_conn *conn, const struct bt_codec *codec,
-			       enum bt_audio_dir dir)
+static void print_remote_codec_cap(const struct bt_conn *conn,
+				   const struct bt_audio_codec_cap *codec_cap,
+				   enum bt_audio_dir dir)
 {
-	shell_print(ctx_shell, "conn %p: codec %p dir 0x%02x", conn, codec, dir);
+	shell_print(ctx_shell, "conn %p: codec_cap %p dir 0x%02x", conn, codec_cap,
+		    dir);
 
-	print_codec(ctx_shell, codec);
+	print_codec_cap(ctx_shell, codec_cap);
 }
 
 #if CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0
@@ -723,9 +724,10 @@ static void add_source(const struct bt_conn *conn, struct bt_bap_ep *ep)
 }
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 0 */
 
-static void pac_record_cb(struct bt_conn *conn, enum bt_audio_dir dir, const struct bt_codec *codec)
+static void pac_record_cb(struct bt_conn *conn, enum bt_audio_dir dir,
+			  const struct bt_audio_codec_cap *codec_cap)
 {
-	print_remote_codec(conn, codec, dir);
+	print_remote_codec_cap(conn, codec_cap, dir);
 }
 
 static void endpoint_cb(struct bt_conn *conn, enum bt_audio_dir dir, struct bt_bap_ep *ep)
@@ -1027,11 +1029,11 @@ static int cmd_config(const struct shell *sh, size_t argc, char *argv[])
 
 	/* If location has been modifed, we update the location in the codec configuration */
 	if (location != BT_AUDIO_LOCATION_PROHIBITED) {
-		for (size_t i = 0U; i < uni_stream->codec.data_count; i++) {
-			struct bt_codec_data *data = &uni_stream->codec.data[i];
+		for (size_t i = 0U; i < uni_stream->codec_cfg.data_count; i++) {
+			struct bt_audio_codec_data *data = &uni_stream->codec_cfg.data[i];
 
 			/* Overwrite the location value */
-			if (data->data.type == BT_CODEC_CONFIG_LC3_CHAN_ALLOC) {
+			if (data->data.type == BT_AUDIO_CODEC_CONFIG_LC3_CHAN_ALLOC) {
 				const uint32_t loc_32 = location;
 
 				sys_put_le32(loc_32, data->value);
@@ -1043,13 +1045,14 @@ static int cmd_config(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	if (bap_stream->ep == ep) {
-		err = bt_bap_stream_reconfig(bap_stream, &uni_stream->codec);
+		err = bt_bap_stream_reconfig(bap_stream, &uni_stream->codec_cfg);
 		if (err != 0) {
 			shell_error(sh, "Unable reconfig stream: %d", err);
 			return -ENOEXEC;
 		}
 	} else {
-		err = bt_bap_stream_config(default_conn, bap_stream, ep, &uni_stream->codec);
+		err = bt_bap_stream_config(default_conn, bap_stream, ep,
+					   &uni_stream->codec_cfg);
 		if (err != 0) {
 			shell_error(sh, "Unable to config stream: %d", err);
 			return err;
@@ -1063,7 +1066,7 @@ static int cmd_config(const struct shell *sh, size_t argc, char *argv[])
 
 static int cmd_stream_qos(const struct shell *sh, size_t argc, char *argv[])
 {
-	struct bt_codec_qos *qos;
+	struct bt_audio_codec_qos *qos;
 	unsigned long interval;
 	int err;
 
@@ -1276,7 +1279,7 @@ static int cmd_qos(const struct shell *sh, size_t argc, char *argv[])
 
 static int cmd_enable(const struct shell *sh, size_t argc, char *argv[])
 {
-	struct bt_codec *codec;
+	struct bt_audio_codec_cfg *codec_cfg;
 	int err;
 
 	if (default_stream == NULL) {
@@ -1284,17 +1287,17 @@ static int cmd_enable(const struct shell *sh, size_t argc, char *argv[])
 		return -ENOEXEC;
 	}
 
-	codec = default_stream->codec;
+	codec_cfg = default_stream->codec_cfg;
 
 	if (argc > 1) {
-		err = set_metadata(codec, argv[1]);
+		err = set_metadata(codec_cfg, argv[1]);
 		if (err != 0) {
 			shell_error(sh, "Unable to handle metadata update: %d", err);
 			return err;
 		}
 	}
 
-	err = bt_bap_stream_enable(default_stream, codec->meta, codec->meta_count);
+	err = bt_bap_stream_enable(default_stream, codec_cfg->meta, codec_cfg->meta_count);
 	if (err) {
 		shell_error(sh, "Unable to enable Channel");
 		return -ENOEXEC;
@@ -1358,18 +1361,18 @@ static int cmd_preset(const struct shell *sh, size_t argc, char *argv[])
 
 	shell_print(sh, "%s", named_preset->name);
 
-	print_codec(ctx_shell, &named_preset->preset.codec);
+	print_codec_cfg(ctx_shell, &named_preset->preset.codec_cfg);
 	print_qos(ctx_shell, &named_preset->preset.qos);
 
 	return 0;
 }
 
-#define MAX_META_DATA \
-	(CONFIG_BT_CODEC_MAX_METADATA_COUNT * sizeof(struct bt_codec_data))
+#define MAX_META_DATA                                                                              \
+	(CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_COUNT * sizeof(struct bt_audio_codec_data))
 
 static int cmd_metadata(const struct shell *sh, size_t argc, char *argv[])
 {
-	struct bt_codec *codec;
+	struct bt_audio_codec_cfg *codec_cfg;
 	int err;
 
 	if (default_stream == NULL) {
@@ -1377,17 +1380,17 @@ static int cmd_metadata(const struct shell *sh, size_t argc, char *argv[])
 		return -ENOEXEC;
 	}
 
-	codec = default_stream->codec;
+	codec_cfg = default_stream->codec_cfg;
 
 	if (argc > 1) {
-		err = set_metadata(codec, argv[1]);
+		err = set_metadata(codec_cfg, argv[1]);
 		if (err != 0) {
 			shell_error(sh, "Unable to handle metadata update: %d", err);
 			return err;
 		}
 	}
 
-	err = bt_bap_stream_metadata(default_stream, codec->meta, codec->meta_count);
+	err = bt_bap_stream_metadata(default_stream, codec_cfg->meta, codec_cfg->meta_count);
 	if (err) {
 		shell_error(sh, "Unable to set Channel metadata");
 		return -ENOEXEC;
@@ -1570,7 +1573,7 @@ static void base_recv(struct bt_bap_broadcast_sink *sink, const struct bt_bap_ba
 		subgroup = &base->subgroups[i];
 
 		shell_print(ctx_shell, "%2sSubgroup[%d]:", "", i);
-		print_codec(ctx_shell, &subgroup->codec);
+		print_codec_cfg(ctx_shell, &subgroup->codec_cfg);
 
 		for (int j = 0; j < subgroup->bis_count; j++) {
 			const struct bt_bap_base_bis_data *bis_data;
@@ -1581,7 +1584,7 @@ static void base_recv(struct bt_bap_broadcast_sink *sink, const struct bt_bap_ba
 			bis_indexes[index_count++] = bis_data->index;
 
 			for (int k = 0; k < bis_data->data_count; k++) {
-				const struct bt_codec_data *codec_data;
+				const struct bt_audio_codec_data *codec_data;
 
 				codec_data = &bis_data->data[k];
 
@@ -1898,7 +1901,7 @@ static int cmd_create_broadcast(const struct shell *sh, size_t argc,
 	}
 	subgroup_param.params_count = ARRAY_SIZE(stream_params);
 	subgroup_param.params = stream_params;
-	subgroup_param.codec = &default_source.codec;
+	subgroup_param.codec_cfg = &default_source.codec_cfg;
 	create_param.params_count = 1U;
 	create_param.params = &subgroup_param;
 	create_param.qos = &default_source.qos;
