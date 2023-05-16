@@ -575,6 +575,11 @@ HALs
 MCUboot
 *******
 
+* Relocated the MCUboot Kconfig options from the main ``Kconfig.zephyr`` file to
+  a new ``modules/Kconfig.mcuboot`` module-specific file. This means that, for
+  interactive Kconfig interfaces, the MCUboot options will now be located under
+  ``Modules`` instead of under ``Boot Options``.
+
 * Added :kconfig:option:`CONFIG_MCUBOOT_CMAKE_WEST_SIGN_PARAMS` that allows to pass arguments to
   west sign when invoked from cmake.
 
