@@ -10,3 +10,9 @@ zephyr_library_sources(
 	swap.c
 	thread.c
 	)
+
+if(CONFIG_ARCH_HAS_TIMING_FUNCTIONS AND
+		NOT CONFIG_SOC_HAS_TIMING_FUNCTIONS AND
+    NOT CONFIG_BOARD_HAS_TIMING_FUNCTIONS)
+	zephyr_library_sources_ifdef(CONFIG_TIMING_FUNCTIONS timing.c)
+endif()

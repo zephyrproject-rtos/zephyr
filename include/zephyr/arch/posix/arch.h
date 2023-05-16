@@ -21,7 +21,6 @@
 #include <zephyr/devicetree.h>
 
 #include <zephyr/toolchain.h>
-#include <zephyr/irq.h>
 #include <zephyr/arch/posix/asm_inline.h>
 #include <zephyr/arch/posix/thread.h>
 #include <board_irq.h> /* Each board must define this */
