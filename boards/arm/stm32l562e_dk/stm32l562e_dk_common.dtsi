@@ -53,6 +53,10 @@
 	status = "okay";
 };
 
+&clk_hsi {
+	status = "okay";
+};
+
 &pll {
 	div-m = <1>;
 	mul-n = <55>;
@@ -78,6 +82,9 @@
 };
 
 &usart1 {
+	/* HSI clock is stable before PCLK2 for usart1 console output */
+	clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00004000>,
+		<&rcc STM32_SRC_HSI USART1_SEL(2)>;
 	current-speed = <115200>;
 	pinctrl-0 = <&usart1_tx_pa9 &usart1_rx_pa10>;
 	pinctrl-names = "default";
