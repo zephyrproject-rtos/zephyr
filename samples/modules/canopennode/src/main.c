@@ -4,11 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/drivers/gpio.h>
 #include <zephyr/kernel.h>
-#include <zephyr/settings/settings.h>
+#include <zephyr/drivers/gpio.h>
 #include <zephyr/sys/reboot.h>
-
+#include <zephyr/settings/settings.h>
 #include <canopennode.h>
 
 #define LOG_LEVEL CONFIG_CANOPEN_LOG_LEVEL
@@ -18,10 +17,13 @@ LOG_MODULE_REGISTER(app);
 #define CAN_INTERFACE DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus))
 #define CAN_BITRATE (DT_PROP(DT_CHOSEN(zephyr_canbus), bus_speed) / 1000)
 
-static struct gpio_dt_spec led_green_gpio = GPIO_DT_SPEC_GET_OR(DT_ALIAS(green_led), gpios, {0});
-static struct gpio_dt_spec led_red_gpio = GPIO_DT_SPEC_GET_OR(DT_ALIAS(red_led), gpios, {0});
+static struct gpio_dt_spec led_green_gpio = GPIO_DT_SPEC_GET_OR(
+		DT_ALIAS(green_led), gpios, {0});
+static struct gpio_dt_spec led_red_gpio = GPIO_DT_SPEC_GET_OR(
+		DT_ALIAS(red_led), gpios, {0});
 
-static struct gpio_dt_spec button_gpio = GPIO_DT_SPEC_GET_OR(DT_ALIAS(sw0), gpios, {0});
+static struct gpio_dt_spec button_gpio = GPIO_DT_SPEC_GET_OR(
+		DT_ALIAS(sw0), gpios, {0});
 static struct gpio_callback button_callback;
 
 struct led_indicator {
@@ -66,7 +68,8 @@ static void config_leds(CO_NMT_t *nmt)
 		LOG_ERR("Green LED device not ready");
 		led_green_gpio.port = NULL;
 	} else {
-		err = gpio_pin_configure_dt(&led_green_gpio, GPIO_OUTPUT_INACTIVE);
+		err = gpio_pin_configure_dt(&led_green_gpio,
+					    GPIO_OUTPUT_INACTIVE);
 		if (err) {
 			LOG_ERR("failed to configure Green LED gpio: %d", err);
 			led_green_gpio.port = NULL;
@@ -79,14 +82,17 @@ static void config_leds(CO_NMT_t *nmt)
 		LOG_ERR("Red LED device not ready");
 		led_red_gpio.port = NULL;
 	} else {
-		err = gpio_pin_configure_dt(&led_red_gpio, GPIO_OUTPUT_INACTIVE);
+		err = gpio_pin_configure_dt(&led_red_gpio,
+					    GPIO_OUTPUT_INACTIVE);
 		if (err) {
 			LOG_ERR("failed to configure Red LED gpio: %d", err);
 			led_red_gpio.port = NULL;
 		}
 	}
 
-	canopen_leds_init(nmt, led_callback, &led_green_gpio, led_callback, &led_red_gpio);
+	canopen_leds_init(nmt,
+			  led_callback, &led_green_gpio,
+			  led_callback, &led_red_gpio);
 }
 
 /**
@@ -132,7 +138,9 @@ static CO_SDO_abortCode_t odf_2102(CO_ODF_arg_t *odf_arg)
  * @param cb GPIO callback struct.
  * @param pins GPIO pin mask that triggered the interrupt.
  */
-static void button_isr_callback(const struct device *port, struct gpio_callback *cb, uint32_t pins)
+static void button_isr_callback(const struct device *port,
+				struct gpio_callback *cb,
+				uint32_t pins)
 {
 	counter++;
 }
@@ -162,7 +170,8 @@ static void config_button(void)
 		return;
 	}
 
-	gpio_init_callback(&button_callback, button_isr_callback, BIT(button_gpio.pin));
+	gpio_init_callback(&button_callback, button_isr_callback,
+			   BIT(button_gpio.pin));
 
 	err = gpio_add_callback(button_gpio.port, &button_callback);
 	if (err) {
@@ -170,7 +179,8 @@ static void config_button(void)
 		return;
 	}
 
-	err = gpio_pin_interrupt_configure_dt(&button_gpio, GPIO_INT_EDGE_TO_ACTIVE);
+	err = gpio_pin_interrupt_configure_dt(&button_gpio,
+					      GPIO_INT_EDGE_TO_ACTIVE);
 	if (err) {
 		LOG_ERR("failed to enable button callback: %d", err);
 		return;
@@ -200,14 +210,11 @@ void main(void)
 	uint8_t pendingNodeId = CONFIG_CANOPEN_NODE_ID;
 	uint16_t pendingBitRate = 125;
 
-	/* Configure microcontroller. */
-
 	can.dev = CAN_INTERFACE;
 	if (!device_is_ready(can.dev)) {
 		LOG_ERR("CAN interface not ready");
 		return;
 	}
-	LOG_INF("CAN interface configured: %s\n", can.dev->name);
 	CANmoduleAddress = (void *)&can;
 
 	/* Allocate memory */
@@ -222,7 +229,8 @@ void main(void)
 #ifdef CONFIG_CANOPENNODE_STORAGE
 	ret = settings_subsys_init();
 	if (ret) {
-		LOG_ERR("failed to initialize settings subsystem (err = %d)", ret);
+		LOG_ERR("failed to initialize settings subsystem (err = %d)",
+			ret);
 		return;
 	}
 
@@ -231,7 +239,6 @@ void main(void)
 		LOG_ERR("failed to load settings (err = %d)", ret);
 		return;
 	}
-	LOG_INF("Settings loaded.");
 #endif /* CONFIG_CANOPENNODE_STORAGE */
 
 	OD_powerOnCounter++;
@@ -258,14 +265,15 @@ void main(void)
 
 #ifdef CONFIG_CANOPENNODE_STORAGE
 		canopen_storage_attach(CO->SDO[0], CO->em);
-		LOG_INF("CANopen storage attached");
 #endif /* CONFIG_CANOPENNODE_STORAGE */
 
 		config_leds(CO->NMT);
-		CO_OD_configure(CO->SDO[0], OD_2102_buttonPressCounter, odf_2102, NULL, 0U, 0U);
+		CO_OD_configure(CO->SDO[0], OD_2102_buttonPressCounter,
+				odf_2102, NULL, 0U, 0U);
 
 		if (IS_ENABLED(CONFIG_CANOPENNODE_PROGRAM_DOWNLOAD)) {
-			canopen_program_download_attach(CO->NMT, CO->SDO[0], CO->em);
+			canopen_program_download_attach(CO->NMT, CO->SDO[0],
+							CO->em);
 		}
 
 		CO_CANsetNormalMode(CO->CANmodule[0]);
@@ -285,7 +293,8 @@ void main(void)
 				CO_UNLOCK_OD();
 
 #ifdef CONFIG_CANOPENNODE_STORAGE
-				ret = canopen_storage_save(CANOPEN_STORAGE_EEPROM);
+				ret = canopen_storage_save(
+					CANOPEN_STORAGE_EEPROM);
 				if (ret) {
 					LOG_ERR("failed to save EEPROM");
 				}
