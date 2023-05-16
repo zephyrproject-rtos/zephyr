@@ -4,7 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef CONFIG_CANOPENNODE_CRC16_ENABLE
 #include <zephyr/sys/crc.h>
 
 uint16_t crc16(uint16_t poly, uint16_t seed, const uint8_t *src, size_t len)
@@ -75,4 +74,3 @@ uint16_t crc16_itu_t(uint16_t seed, const uint8_t *src, size_t len)
 
 	return seed;
 }
-#endif

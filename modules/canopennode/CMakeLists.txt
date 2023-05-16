@@ -26,11 +26,7 @@ if(CONFIG_CANOPENNODE)
     ${CANOPENNODE_DIR}/301/CO_HBconsumer.c
     ${CANOPENNODE_DIR}/301/CO_NMT_Heartbeat.c
     ${CANOPENNODE_DIR}/301/CO_fifo.c
-
-    # this requires an ugly hack for now. Zephyr's own crc functions need
-    # to be disabled in zephyr/lib/os/crc16_sw.c for this to work!
     ${CANOPENNODE_DIR}/301/crc16-ccitt.c
-
     ${CANOPENNODE_DIR}/301/CO_PDO.c
     ${CANOPENNODE_DIR}/303/CO_LEDs.c
     ${CANOPENNODE_DIR}/304/CO_SRDO.c
@@ -45,5 +41,6 @@ if(CONFIG_CANOPENNODE)
   zephyr_library_sources_ifdef(CONFIG_CANOPENNODE_STORAGE canopen_storage.c)
   zephyr_library_sources_ifdef(CONFIG_CANOPENNODE_LEDS_ENABLE canopen_leds.c)
   zephyr_library_sources_ifdef(CONFIG_CANOPENNODE_PROGRAM_DOWNLOAD canopen_program.c)
+  zephyr_library_sources_ifdef(CONFIG_CANOPENNODE_CRC16_EXTERNAL canopen_crc16.c)
 
 endif()
