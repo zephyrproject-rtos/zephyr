@@ -6,6 +6,7 @@
 config SOC_FAMILY_NXP_ADSP
 	bool
 	select ARCH_HAS_COHERENCE
+	select CPU_HAS_DCACHE
 
 if SOC_FAMILY_NXP_ADSP
 
