@@ -11,11 +11,7 @@
 #include <stdlib.h>
 
 #include <esp32s3/rom/cache.h>
-#include "esp32s3/dport_access.h"
-#include "soc/cache_memory.h"
-#include <soc/dport_reg.h>
 #include "soc/extmem_reg.h"
-#include <bootloader_flash_priv.h>
 
 #ifdef CONFIG_BOOTLOADER_MCUBOOT
 
@@ -50,8 +46,9 @@ static int map_rom_segments(void)
 	/* Clear the MMU entries that are already set up,
 	 * so the new app only has the mappings it creates.
 	 */
-	for (size_t i = 0; i < FLASH_MMU_TABLE_SIZE; i++) {
-		FLASH_MMU_TABLE[i] = MMU_TABLE_INVALID_VAL;
+	for (int i = 0; i < DPORT_FLASH_MMU_TABLE_SIZE; i++) {
+		DPORT_PRO_FLASH_MMU_TABLE[i] =
+			DPORT_FLASH_MMU_TABLE_INVALID_VAL;
 	}
 
 	uint32_t drom_page_count = bootloader_cache_pages_to_map(_app_drom_size, _app_drom_vaddr);

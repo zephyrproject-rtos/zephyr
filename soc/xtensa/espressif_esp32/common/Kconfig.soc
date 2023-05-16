@@ -212,4 +212,8 @@ config SPIRAM
 
 endmenu # SPI RAM config
 
+config MMU_PAGE_SIZE
+	hex
+	default 0x10000
+
 endif # SOC_FAMILY_ESP32
