@@ -1,5 +1,6 @@
 /*
  * Copyright 2022 Google LLC
+ * Copyright 2023 Microsoft Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -90,9 +91,15 @@ extern "C" {
 #define FUEL_GAUGE_SBS_REMAINING_CAPACITY_ALARM FUEL_GAUGE_SBS_ATRATE_OK + 1
 /** Remaining Time Alarm (minutes) */
 #define FUEL_GAUGE_SBS_REMAINING_TIME_ALARM	FUEL_GAUGE_SBS_REMAINING_CAPACITY_ALARM + 1
+/** Manufacturer of pack (1 byte length + 20 bytes data) */
+#define FUEL_GAUGE_MANUFACTURER_NAME		FUEL_GAUGE_SBS_REMAINING_TIME_ALARM + 1
+/** Name of pack (1 byte length + 20 bytes data) */
+#define FUEL_GAUGE_DEVICE_NAME			FUEL_GAUGE_MANUFACTURER_NAME + 1
+/** Chemistry (1 byte length + 4 bytes data) */
+#define FUEL_GAUGE_DEVICE_CHEMISTRY		FUEL_GAUGE_DEVICE_NAME + 1
 
 /** Reserved to demark end of common fuel gauge properties */
-#define FUEL_GAUGE_COMMON_COUNT FUEL_GAUGE_DESIGN_VOLTAGE + 1
+#define FUEL_GAUGE_COMMON_COUNT FUEL_GAUGE_DEVICE_CHEMISTRY + 1
 /**
  * Reserved to demark downstream custom properties - use this value as the actual value may change
  * over future versions of this API
@@ -198,6 +205,37 @@ struct fuel_gauge_set_property {
 	} value;
 };
 
+/** Buffer properties are separated due to size */
+struct fuel_gauge_get_buffer_property {
+	/** Battery fuel gauge property to get */
+	uint16_t property_type;
+
+	/** Negative error status set by callee e.g. -ENOTSUP for an unsupported property */
+	int status;
+};
+
+/**
+ * Data structures for reading SBS buffer properties
+ */
+#define SBS_GAUGE_MANUFACTURER_NAME_MAX_SIZE 20
+#define SBS_GAUGE_DEVICE_NAME_MAX_SIZE       20
+#define SBS_GAUGE_DEVICE_CHEMISTRY_MAX_SIZE  4
+
+struct sbs_gauge_manufacturer_name {
+	uint8_t manufacturer_name_length;
+	char manufacturer_name[SBS_GAUGE_MANUFACTURER_NAME_MAX_SIZE];
+} __packed;
+
+struct sbs_gauge_device_name {
+	uint8_t device_name_length;
+	char device_name[SBS_GAUGE_DEVICE_NAME_MAX_SIZE];
+} __packed;
+
+struct sbs_gauge_device_chemistry {
+	uint8_t device_chemistry_length;
+	char device_chemistry[SBS_GAUGE_DEVICE_CHEMISTRY_MAX_SIZE];
+} __packed;
+
 /**
  * @typedef fuel_gauge_get_property_t
  * @brief Callback API for getting a fuel_gauge property.
@@ -216,11 +254,23 @@ typedef int (*fuel_gauge_get_property_t)(const struct device *dev,
 typedef int (*fuel_gauge_set_property_t)(const struct device *dev,
 					 struct fuel_gauge_set_property *props, size_t props_len);
 
+/**
+ * @typedef fuel_gauge_get_buffer_property_t
+ * @brief Callback API for getting a fuel_gauge buffer property.
+ *
+ * See fuel_gauge_get_buffer_property() for argument description
+ */
+typedef int (*fuel_gauge_get_buffer_property_t)(const struct device *dev,
+					       struct fuel_gauge_get_buffer_property *prop,
+					       void *dst, size_t dst_len);
+
+
 /* Caching is entirely on the onus of the client */
 
 __subsystem struct fuel_gauge_driver_api {
 	fuel_gauge_get_property_t get_property;
 	fuel_gauge_set_property_t set_property;
+	fuel_gauge_get_buffer_property_t get_buffer_property;
 };
 
 /**
@@ -278,6 +328,35 @@ static inline int z_impl_fuel_gauge_set_prop(const struct device *dev,
 	}
 
 	return api->set_property(dev, props, props_len);
+}
+
+/**
+ * @brief Fetch a battery fuel-gauge buffer property
+ *
+ * @param dev Pointer to the battery fuel-gauge device
+ * @param prop pointer to single fuel_gauge_get_buffer_property struct where the property struct
+ * field is set by the caller to determine what property is read from the
+ * fuel gauge device into the dst field.
+ * @param dst byte array or struct that will hold the buffer data that is read from the fuel gauge
+ * @param dst_len the length of the destination array in bytes
+ *
+ * @return return=0 if successful, return < 0 if getting property failed, return 0 on success
+ */
+__syscall int fuel_gauge_get_buffer_prop(const struct device *dev,
+					struct fuel_gauge_get_buffer_property *prop, void *dst,
+					size_t dst_len);
+
+static inline int z_impl_fuel_gauge_get_buffer_prop(const struct device *dev,
+						   struct fuel_gauge_get_buffer_property *prop,
+						   void *dst, size_t dst_len)
+{
+	const struct fuel_gauge_driver_api *api = (const struct fuel_gauge_driver_api *)dev->api;
+
+	if (api->get_buffer_property == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->get_buffer_property(dev, prop, dst, dst_len);
 }
 
 /**

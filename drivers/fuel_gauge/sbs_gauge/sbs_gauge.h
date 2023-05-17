@@ -42,7 +42,7 @@
 #define SBS_GAUGE_CMD_SN                    0x1C /* SerialNumber */
 #define SBS_GAUGE_CMD_MANUFACTURER_NAME     0x20 /* ManufacturerName */
 #define SBS_GAUGE_CMD_DEVICE_NAME           0x21 /* DeviceName */
-#define SBS_GAUGE_CMD_DEVICE_CHEM           0x22 /* DeviceChemistry */
+#define SBS_GAUGE_CMD_DEVICE_CHEMISTRY      0x22 /* DeviceChemistry */
 #define SBS_GAUGE_CMD_MANUFACTURER_DATA     0x23 /* ManufacturerData */
 
 #define SBS_GAUGE_DELAY                     1000
