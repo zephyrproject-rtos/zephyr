@@ -55,6 +55,9 @@ foreach(root ${kconfig_board_root})
 endforeach()
 
 if(KCONFIG_ROOT)
+  # Perform any variable substitutions if they are present
+  string(CONFIGURE "${KCONFIG_ROOT}" KCONFIG_ROOT)
+
   zephyr_file(APPLICATION_ROOT KCONFIG_ROOT)
   # KCONFIG_ROOT has either been specified as a CMake variable or is
   # already in the CMakeCache.txt. This has precedence.
