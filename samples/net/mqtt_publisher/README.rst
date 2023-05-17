@@ -129,7 +129,7 @@ try this sample with TLS enabled, by following these steps:
   i.e., the IP address of test.mosquitto.org ``"37.187.106.16"``
 - In :file:`src/main.c`, set TLS_SNI_HOSTNAME to ``"test.mosquitto.org"``
   to match the Common Name (CN) in the downloaded certificate.
-- Build the sample by specifying ``-DOVERLAY_CONFIG=overlay-tls.conf``
+- Build the sample by specifying ``-DEXTRA_CONF_FILE=overlay-tls.conf``
   when running ``west build`` or ``cmake`` (or refer to the TLS offloading
   section below if your platform uses the offloading feature).
 - Flash the binary onto the device to run the sample:
@@ -142,7 +142,7 @@ TLS offloading
 ==============
 
 For boards that support this feature, TLS offloading is used by
-specifying ``-DOVERLAY_CONFIG=overlay-tls-offload.conf`` when running ``west
+specifying ``-DEXTRA_CONF_FILE=overlay-tls-offload.conf`` when running ``west
 build`` or ``cmake``.
 
 Using this overlay enables TLS without bringing in mbedtls.
@@ -151,7 +151,7 @@ SOCKS5 proxy support
 ====================
 
 It is also possible to connect to the MQTT broker through a SOCKS5 proxy.
-To enable it, use ``-DOVERLAY_CONFIG=overlay-socks5.conf`` when running ``west
+To enable it, use ``-DEXTRA_CONF_FILE=overlay-socks5.conf`` when running ``west
 build`` or  ``cmake``.
 
 By default, to make the testing easier, the proxy is expected to run on the
