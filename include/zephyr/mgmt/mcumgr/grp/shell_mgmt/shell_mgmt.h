@@ -24,7 +24,13 @@ enum shell_mgmt_ret_code_t {
 	/** No error, this is implied if there is no ret value in the response */
 	SHELL_MGMT_RET_RC_OK = 0,
 
+	/** Unknown error occurred. */
+	SHELL_MGMT_RET_RC_UNKNOWN,
+
+	/** The provided command to execute is too long. */
 	SHELL_MGMT_RET_RC_COMMAND_TOO_LONG,
+
+	/** No command to execute was provided. */
 	SHELL_MGMT_RET_RC_EMPTY_COMMAND,
 };
 
