@@ -61,7 +61,7 @@ int ntc_compensation_compare_ohm(const struct ntc_type *type, const void *key, c
 	} else if (ntc_key->ohm == element_val->ohm) {
 		sgn = 0;
 	} else {
-		if (element_idx == (type->n_comp / 2) - 1) {
+		if (element_idx == type->n_comp - 1) {
 			sgn = 0;
 		} else {
 			if (ntc_key->ohm > type->comp[element_idx + 1].ohm) {

@@ -119,11 +119,13 @@ static int ntc_thermistor_init(const struct device *dev)
 				.pullup_ohm = DT_INST_PROP(inst, pullup_ohm),                      \
 				.pulldown_ohm = DT_INST_PROP(inst, pulldown_ohm),                  \
 				.connected_positive = DT_INST_PROP(inst, connected_positive),      \
-				.type = {                                                          \
-					.comp = (const struct ntc_compensation *)comp_table,       \
-					.n_comp = ARRAY_SIZE(comp_table),                          \
-					.ohm_cmp = compare_ohm_##id##inst,                         \
-				},                                                                 \
+				.type =                                                            \
+					{                                                          \
+						.comp = (const struct ntc_compensation *)          \
+							comp_table,                                \
+						.n_comp = ARRAY_SIZE(comp_table) / 2,              \
+						.ohm_cmp = compare_ohm_##id##inst,                 \
+					},                                                         \
 			},                                                                         \
 	};                                                                                         \
                                                                                                    \
