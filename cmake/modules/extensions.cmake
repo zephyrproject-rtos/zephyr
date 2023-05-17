@@ -2467,10 +2467,41 @@ function(zephyr_list transform list_var action)
 endfunction()
 
 # Usage:
-#   zephyr_get(<variable> [MERGE] [SYSBUILD [LOCAL|GLOBAL]])
+#   zephyr_var_name(<variable> <scope> <out>)
+#
+# Internal function for construction of scoped variable name expansion string.
+# Examples:
+#   reading a current scope FOO variable is identical to expand ${FOO}.
+#   reading a cache scope FOO variable is identical to expand $CACHE{FOO}.
+#
+# this functions will return the var name in out var for the scope if it is
+# defined, else it will set the outvar to undefined.
+function(zephyr_var_name variable scope out)
+  if(scope STREQUAL "ENV" OR scope STREQUAL "CACHE")
+    if(DEFINED ${scope}{${variable}})
+      set(${out} "$${scope}{${variable}}" PARENT_SCOPE)
+    else()
+      set(${out} PARENT_SCOPE)
+    endif()
+  else()
+    if(DEFINED ${scope}_${variable})
+      set(${out} "${${scope}_${variable}}" PARENT_SCOPE)
+    else()
+      set(${out} PARENT_SCOPE)
+    endif()
+  endif()
+endfunction()
+
+# Usage:
+#   zephyr_get(<variable> [MERGE] [SYSBUILD [LOCAL|GLOBAL]] [VAR <var1> ...])
 #
 # Return the value of <variable> as local scoped variable of same name. If MERGE
 # is supplied, will return a list of found items.
+#
+# VAR can be used either to store the result in a variable with a different
+# name, or to look for values from multiple variables.
+# zephyr_get(FOO VAR FOO_A FOO_B)
+# zephyr_get(FOO MERGE VAR FOO_A FOO_B)
 #
 # zephyr_get() is a common function to provide a uniform way of supporting
 # build settings that can be set from sysbuild, CMakeLists.txt, CMake cache, or
@@ -2495,7 +2526,7 @@ endfunction()
 # using `-DZEPHYR_TOOLCHAIN_VARIANT=<val>`, then the value from the cache is
 # returned.
 function(zephyr_get variable)
-  cmake_parse_arguments(GET_VAR "MERGE" "SYSBUILD" "" ${ARGN})
+  cmake_parse_arguments(GET_VAR "MERGE" "SYSBUILD" "VAR" ${ARGN})
 
   if(DEFINED GET_VAR_SYSBUILD)
     if(NOT ("${GET_VAR_SYSBUILD}" STREQUAL "GLOBAL" OR
@@ -2507,76 +2538,69 @@ function(zephyr_get variable)
     set(GET_VAR_SYSBUILD "GLOBAL")
   endif()
 
-  if(GET_VAR_MERGE)
-    # Clear variable before appending items in MERGE mode but keep a backup for
-    # local appending later
-    set(local_var_backup ${${variable}})
-    set(${variable})
+  if(NOT DEFINED GET_VAR_VAR)
+    set(GET_VAR_VAR ${variable})
   endif()
 
-  set(used_global false)
+  # Keep current scope variables in internal variables.
+  # This is needed to properly handle cases where we want to check value against
+  # environment value or when appending with the MERGE operation.
+  foreach(var ${GET_VAR_VAR})
+    set(current_${var} ${${var}})
+    set(${var})
 
-  if(SYSBUILD)
-    get_property(sysbuild_name TARGET sysbuild_cache PROPERTY SYSBUILD_NAME)
-    get_property(sysbuild_main_app TARGET sysbuild_cache PROPERTY SYSBUILD_MAIN_APP)
-    get_property(sysbuild_${variable} TARGET sysbuild_cache PROPERTY ${sysbuild_name}_${variable})
-    if(NOT DEFINED sysbuild_${variable} AND
-       ("${GET_VAR_SYSBUILD}" STREQUAL "GLOBAL" OR sysbuild_main_app)
-    )
-      get_property(sysbuild_${variable} TARGET sysbuild_cache PROPERTY ${variable})
-      set(used_global true)
-    endif()
-  endif()
-
-  if(DEFINED sysbuild_${variable})
-    if(GET_VAR_MERGE)
-      list(APPEND ${variable} ${sysbuild_${variable}})
-    else()
-      set(${variable} ${sysbuild_${variable}} PARENT_SCOPE)
-      return()
-    endif()
-  endif()
-  if(SYSBUILD AND GET_VAR_MERGE AND NOT used_global AND "${GET_VAR_SYSBUILD}" STREQUAL "GLOBAL")
-    get_property(sysbuild_${variable} TARGET sysbuild_cache PROPERTY ${variable})
-    list(APPEND ${variable} ${sysbuild_${variable}})
-  endif()
-  if(DEFINED CACHE{${variable}})
-    if(GET_VAR_MERGE)
-      list(APPEND ${variable} $CACHE{${variable}})
-    else()
-      set(${variable} $CACHE{${variable}} PARENT_SCOPE)
-      return()
-    endif()
-  endif()
-  if(DEFINED ENV{${variable}})
-    if(GET_VAR_MERGE)
-      list(APPEND ${variable} $ENV{${variable}}})
-    else()
-      set(${variable} $ENV{${variable}} PARENT_SCOPE)
-      # Set the environment variable in CMake cache, so that a build invocation
-      # triggering a CMake rerun doesn't rely on the environment variable still
-      # being available / have identical value.
-      set(${variable} $ENV{${variable}} CACHE INTERNAL "")
-    endif()
-
-    if(DEFINED ${variable} AND NOT "${${variable}}" STREQUAL "$ENV{${variable}}")
-      # Variable exists as a local scoped variable, defined in a CMakeLists.txt
-      # file, however it is also set in environment.
-      # This might be a surprise to the user, so warn about it.
-      message(WARNING "environment variable '${variable}' is hiding local "
-                      "variable of same name.\n"
-                      "Environment value (in use): $ENV{${variable}}\n"
-                      "Local scope value (hidden): ${${variable}}\n"
+    if(SYSBUILD)
+      get_property(sysbuild_name TARGET sysbuild_cache PROPERTY SYSBUILD_NAME)
+      get_property(sysbuild_main_app TARGET sysbuild_cache PROPERTY SYSBUILD_MAIN_APP)
+      get_property(sysbuild_${var} TARGET sysbuild_cache PROPERTY ${sysbuild_name}_${var})
+      if(NOT DEFINED sysbuild_${var} AND
+         ("${GET_VAR_SYSBUILD}" STREQUAL "GLOBAL" OR sysbuild_main_app)
       )
+        get_property(sysbuild_${var} TARGET sysbuild_cache PROPERTY ${var})
+      endif()
+    else()
+      set(sysbuild_${var})
     endif()
+  endforeach()
 
-    if(NOT GET_VAR_MERGE)
-      return()
-    endif()
-  endif()
+  set(scopes "sysbuild;CACHE;ENV;current")
+  foreach(scope IN LISTS scopes)
+    foreach(var ${GET_VAR_VAR})
+      zephyr_var_name("${var}" "${scope}" expansion_var)
+      if(DEFINED expansion_var)
+        string(CONFIGURE "${expansion_var}" scope_value)
+        if(GET_VAR_MERGE)
+          list(APPEND ${variable} ${scope_value})
+        else()
+          set(${variable} ${scope_value} PARENT_SCOPE)
+
+          if("${scope}" STREQUAL "ENV")
+            # Set the environment variable in CMake cache, so that a build
+            # invocation triggering a CMake rerun doesn't rely on the
+            # environment variable still being available / have identical value.
+            set(${var} $ENV{${var}} CACHE INTERNAL "Cached environment variable ${var}")
+          endif()
+
+          if("${scope}" STREQUAL "ENV" AND DEFINED current_${var}
+             AND NOT "${current_${var}}" STREQUAL "$ENV{${var}}"
+          )
+            # Variable exists as current scoped variable, defined in a CMakeLists.txt
+            # file, however it is also set in environment.
+            # This might be a surprise to the user, so warn about it.
+            message(WARNING "environment variable '${var}' is hiding local "
+                            "variable of same name.\n"
+                            "Environment value (in use): $ENV{${var}}\n"
+                            "Current scope value (hidden): ${current_${var}}\n"
+            )
+          endif()
+
+          return()
+        endif()
+      endif()
+    endforeach()
+  endforeach()
 
   if(GET_VAR_MERGE)
-    list(APPEND ${variable} ${local_var_backup})
     list(REMOVE_DUPLICATES ${variable})
     set(${variable} ${${variable}} PARENT_SCOPE)
   endif()
