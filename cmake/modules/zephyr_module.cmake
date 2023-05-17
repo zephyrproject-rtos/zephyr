@@ -36,9 +36,9 @@ if(ZEPHYR_MODULES)
   set(ZEPHYR_MODULES_ARG "--modules" ${ZEPHYR_MODULES})
 endif()
 
-zephyr_get(ZEPHYR_EXTRA_MODULES)
-if(ZEPHYR_EXTRA_MODULES)
-  set(ZEPHYR_EXTRA_MODULES_ARG "--extra-modules" ${ZEPHYR_EXTRA_MODULES})
+zephyr_get(EXTRA_ZEPHYR_MODULES VAR EXTRA_ZEPHYR_MODULES ZEPHYR_EXTRA_MODULES)
+if(EXTRA_ZEPHYR_MODULES)
+  set(EXTRA_ZEPHYR_MODULES_ARG "--extra-modules" ${EXTRA_ZEPHYR_MODULES})
 endif()
 
 file(MAKE_DIRECTORY ${KCONFIG_BINARY_DIR})
@@ -60,7 +60,7 @@ if(WEST OR ZEPHYR_MODULES)
     ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/zephyr_module.py
     ${west_arg}
     ${ZEPHYR_MODULES_ARG}
-    ${ZEPHYR_EXTRA_MODULES_ARG}
+    ${EXTRA_ZEPHYR_MODULES_ARG}
     --kconfig-out ${kconfig_modules_file}
     --cmake-out ${cmake_modules_file}
     --sysbuild-kconfig-out ${kconfig_sysbuild_file}
