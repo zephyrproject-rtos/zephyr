@@ -233,7 +233,7 @@ static int fs_mgmt_file_download(struct smp_streamer *ctxt)
 	ok = zcbor_map_decode_bulk(zsd, fs_download_decode,
 		ARRAY_SIZE(fs_download_decode), &decoded) == 0;
 
-	if (!ok || name.len == 0 || name.len > (sizeof(path) - 1)) {
+	if (!ok || off == ULLONG_MAX || name.len == 0 || name.len > (sizeof(path) - 1)) {
 		return MGMT_ERR_EINVAL;
 	}
 
