@@ -87,13 +87,13 @@ static void ntc_lookup_comp(const struct ntc_type *type, uint32_t ohm, unsigned 
 
 	ptr = bsearch(&search_ohm_key, type->comp, type->n_comp, sizeof(type->comp[0]),
 		      type->ohm_cmp);
-	if (ptr) {
-		*i_low = (unsigned int)(ptr - type->comp);
-		*i_high = *i_low + 1;
-	} else {
-		*i_low = 0;
-		*i_high = 0;
+	__ASSERT_NO_MSG(ptr != NULL);
+
+	*i_low = (unsigned int)(ptr - type->comp);
+	if (*i_low == type->n_comp - 1) {
+		--*i_low;
 	}
+	*i_high = *i_low + 1;
 }
 
 /**
