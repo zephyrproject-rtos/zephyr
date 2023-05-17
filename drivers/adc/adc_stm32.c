@@ -319,6 +319,8 @@ static void adc_stm32_start_conversion(const struct device *dev)
 
 #if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32f4_adc)
 
+#define HAS_CALIBRATION
+
 /* Number of ADC clock cycles to wait before of after starting calibration */
 #if defined(LL_ADC_DELAY_CALIB_ENABLE_ADC_CYCLES)
 #define ADC_DELAY_CALIB_ADC_CYCLES	LL_ADC_DELAY_CALIB_ENABLE_ADC_CYCLES
@@ -439,6 +441,8 @@ static void adc_stm32_disable(ADC_TypeDef *adc)
 	!defined(CONFIG_SOC_SERIES_STM32F1X) && \
 	!defined(CONFIG_SOC_SERIES_STM32F3X) && \
 	!DT_HAS_COMPAT_STATUS_OKAY(st_stm32f4_adc)
+
+#define HAS_OVERSAMPLING
 
 #define OVS_SHIFT(n)		LL_ADC_OVS_SHIFT_RIGHT_##n
 static const uint32_t table_oversampling_shift[] = {
@@ -933,10 +937,7 @@ static int start_read(const struct device *dev,
 		return err;
 	}
 
-#if !defined(CONFIG_SOC_SERIES_STM32F0X) && \
-	!defined(CONFIG_SOC_SERIES_STM32F1X) && \
-	!defined(CONFIG_SOC_SERIES_STM32F3X) && \
-	!DT_HAS_COMPAT_STATUS_OKAY(st_stm32f4_adc)
+#ifdef HAS_OVERSAMPLING
 	err = adc_stm32_oversampling(adc, sequence->oversampling);
 	if (err) {
 		return err;
@@ -946,7 +947,7 @@ static int start_read(const struct device *dev,
 		LOG_ERR("Oversampling not supported");
 		return -ENOTSUP;
 	}
-#endif
+#endif /* HAS_OVERSAMPLING */
 
 	if (sequence->calibrate) {
 #if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc) && \
@@ -1317,14 +1318,11 @@ static int adc_stm32_init(const struct device *dev)
 			LL_ADC_CLOCK_ASYNC_DIV4);
 #endif
 
-#if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32f4_adc)
-
-#if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc)
+#if defined(HAS_CALIBRATION) && !DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc)
 	adc_stm32_disable(adc);
 	adc_stm32_calib(dev);
 	adc_stm32_calib_delay(dev);
-#endif /* !DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc) */
-#endif
+#endif /* HAS_CALIBRATION && !DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc) */
 
 	err = adc_stm32_enable(adc);
 	if (err < 0) {
@@ -1333,11 +1331,11 @@ static int adc_stm32_init(const struct device *dev)
 
 	config->irq_cfg_func();
 
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc)
+#if defined(HAS_CALIBRATION) && DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc)
 	adc_stm32_calib_delay(dev);
 	adc_stm32_calib(dev);
 	LL_ADC_REG_SetTriggerSource(adc, LL_ADC_REG_TRIG_SOFTWARE);
-#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc) */
+#endif /* HAS_CALIBRATION && DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc) */
 
 #ifdef CONFIG_SOC_SERIES_STM32H7X
 	/*
