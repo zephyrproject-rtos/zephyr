@@ -367,6 +367,22 @@ extern "C" {
 #define UTIL_AND(a, b) COND_CODE_1(UTIL_BOOL(a), (b), (0))
 
 /**
+ * @brief UTIL_INC(x) for an integer literal x from 0 to 255 expands to an
+ * integer literal whose value is x+1.
+ *
+ * Similarly, UTIL_DEC(x) is (x-1) as an integer literal.
+ */
+#define UTIL_INC(x) UTIL_PRIMITIVE_CAT(UTIL_INC_, x)
+#define UTIL_DEC(x) UTIL_PRIMITIVE_CAT(UTIL_DEC_, x)
+
+/**
+ * @brief UTIL_X2(y) for an integer literal y from 0 to 255 expands to an
+ * integer literal whose value is 2y.
+ */
+#define UTIL_X2(y) UTIL_PRIMITIVE_CAT(UTIL_X2_, y)
+
+
+/**
  * @brief Generates a sequence of code with configurable separator.
  *
  * Example:
