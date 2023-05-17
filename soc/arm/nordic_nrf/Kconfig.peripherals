@@ -24,6 +24,9 @@ config HAS_HW_NRF_CCM
 config HAS_HW_NRF_CCM_LFLEN_8BIT
 	def_bool $(dt_nodelabel_bool_prop,ccm,length-field-length-8-bits)
 
+config HAS_HW_NRF_CCM_HEADERMASK
+	def_bool $(dt_nodelabel_bool_prop,ccm,headermask-supported)
+
 config HAS_HW_NRF_CLOCK
 	def_bool $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF_CLOCK))
 
