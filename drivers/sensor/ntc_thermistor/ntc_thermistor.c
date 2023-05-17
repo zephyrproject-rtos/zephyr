@@ -14,7 +14,7 @@ LOG_MODULE_REGISTER(NTC_THERMISTOR, CONFIG_SENSOR_LOG_LEVEL);
 struct ntc_thermistor_data {
 	struct k_mutex mutex;
 	int16_t raw;
-	int16_t sample_val;
+	uint16_t sample_mv;
 };
 
 struct ntc_thermistor_config {
@@ -39,10 +39,16 @@ static int ntc_thermistor_sample_fetch(const struct device *dev, enum sensor_cha
 
 	adc_sequence_init_dt(&cfg->adc_channel, &sequence);
 	res = adc_read(cfg->adc_channel.dev, &sequence);
-	if (res) {
+	if (res == 0) {
 		val_mv = data->raw;
 		res = adc_raw_to_millivolts_dt(&cfg->adc_channel, &val_mv);
-		data->sample_val = val_mv;
+		if (res == 0) {
+			if (val_mv < 0) {
+				val_mv = 0;
+			}
+			__ASSERT_NO_MSG(val_mv <= UINT16_MAX);
+			data->sample_mv = (uint16_t)val_mv;
+		}
 	}
 
 	k_mutex_unlock(&data->mutex);

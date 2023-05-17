@@ -11,13 +11,15 @@
 /**
  * fixp_linear_interpolate() - interpolates a value from two known points
  *
- * @x0: x value of point 0
- * @y0: y value of point 0
- * @x1: x value of point 1
- * @y1: y value of point 1
- * @x: the linear interpolant
+ * @x0: x value of point 0 (Ohms)
+ * @y0: y value of point 0 (Celsius)
+ * @x1: x value of point 1 (Ohms)
+ * @y1: y value of point 1 (Celsius)
+ * @x: the linear interpolant (Ohms)
+ *
+ * @return: interpolated value (Celsius)
  */
-static int ntc_fixp_linear_interpolate(int x0, int y0, int x1, int y1, int x)
+static int ntc_fixp_linear_interpolate(uint32_t x0, int32_t y0, uint32_t x1, int32_t y1, uint32_t x)
 {
 	if (y0 == y1 || x == x0) {
 		return y0;
@@ -26,7 +28,7 @@ static int ntc_fixp_linear_interpolate(int x0, int y0, int x1, int y1, int x)
 		return y1;
 	}
 
-	return y0 + ((y1 - y0) * (x - x0) / (x1 - x0));
+	return (int32_t)(y0 + ((y1 - y0) * ((int64_t)x - x0) / ((int64_t)x1 - x0)));
 }
 
 /**
@@ -44,7 +46,7 @@ int ntc_compensation_compare_ohm(const struct ntc_type *type, const void *key, c
 	int sgn = 0;
 	const struct ntc_compensation *ntc_key = key;
 	const struct ntc_compensation *element_val = element;
-	int element_idx = element_val - type->comp;
+	unsigned int element_idx = (unsigned int)(element_val - type->comp);
 
 	if (ntc_key->ohm > element_val->ohm) {
 		if (element_idx == 0) {
@@ -77,7 +79,8 @@ int ntc_compensation_compare_ohm(const struct ntc_type *type, const void *key, c
  * @i_low: return Lower interval index value
  * @i_high: return Higher interval index value
  */
-static void ntc_lookup_comp(const struct ntc_type *type, unsigned int ohm, int *i_low, int *i_high)
+static void ntc_lookup_comp(const struct ntc_type *type, uint32_t ohm, unsigned int *i_low,
+			    unsigned int *i_high)
 {
 	const struct ntc_compensation *ptr;
 	struct ntc_compensation search_ohm_key = {.ohm = ohm};
@@ -85,7 +88,7 @@ static void ntc_lookup_comp(const struct ntc_type *type, unsigned int ohm, int *
 	ptr = bsearch(&search_ohm_key, type->comp, type->n_comp, sizeof(type->comp[0]),
 		      type->ohm_cmp);
 	if (ptr) {
-		*i_low = ptr - type->comp;
+		*i_low = (unsigned int)(ptr - type->comp);
 		*i_high = *i_low + 1;
 	} else {
 		*i_low = 0;
@@ -113,10 +116,10 @@ uint32_t ntc_get_ohm_of_thermistor(const struct ntc_config *cfg, uint32_t max_ad
 	return ohm;
 }
 
-int32_t ntc_get_temp_mc(const struct ntc_type *type, unsigned int ohm)
+int32_t ntc_get_temp_mc(const struct ntc_type *type, uint32_t ohm)
 {
-	int low, high;
-	int temp;
+	unsigned int low, high;
+	int32_t temp;
 
 	ntc_lookup_comp(type, ohm, &low, &high);
 	/*

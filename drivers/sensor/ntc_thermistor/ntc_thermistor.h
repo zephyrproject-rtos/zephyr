@@ -16,7 +16,7 @@ struct ntc_compensation {
 
 struct ntc_type {
 	const struct ntc_compensation *comp;
-	int n_comp;
+	unsigned int n_comp;
 	int (*ohm_cmp)(const void *key, const void *element);
 };
 
@@ -50,7 +50,7 @@ int ntc_compensation_compare_ohm(const struct ntc_type *type, const void *key, c
  *
  * @return temperature in milli centigrade
  */
-int32_t ntc_get_temp_mc(const struct ntc_type *type, unsigned int ohm);
+int32_t ntc_get_temp_mc(const struct ntc_type *type, uint32_t ohm);
 
 /**
  * @brief Calculate the resistance read from NTC Thermistor
