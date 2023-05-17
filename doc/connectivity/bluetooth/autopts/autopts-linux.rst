@@ -300,7 +300,7 @@ Testing Zephyr Host Stack on native posix:
     # A Bluetooth controller needs to be mounted.
     # For running with HCI UART, please visit: https://docs.zephyrproject.org/latest/samples/bluetooth/hci_uart/README.html#bluetooth-hci-uart
 
-    west build -b native_posix zephyr/tests/bluetooth/tester/ -DOVERLAY_CONFIG=overlay-native.conf
+    west build -b native_posix zephyr/tests/bluetooth/tester/ -DEXTRA_CONF_FILE=overlay-native.conf
 
     sudo python ./autoptsclient-zephyr.py "C:\Users\USER_NAME\Documents\Profile Tuning Suite\PTS_PROJECT\PTS_PROJECT.pqw6" \
     	~/zephyrproject/build/zephyr/zephyr.exe -i SERVER_IP -l LOCAL_IP --hci 0
