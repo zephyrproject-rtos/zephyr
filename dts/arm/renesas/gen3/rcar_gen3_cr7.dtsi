@@ -31,7 +31,7 @@
 		};
 
 		gic: interrupt-controller@f1110000 {
-			compatible = "arm,gic";
+			compatible = "arm,gic-v2", "arm,gic";
 			reg = <0xf1110000 0x1000>,
 			      <0xf1120000 0x20000>,
 			      <0xf1140000 0x20000>,
