@@ -122,7 +122,7 @@ application. To enable debug over RTT the debug configuration file can be used.
 
 .. code-block:: console
 
-   west build samples/bluetooth/hci_uart -- -DOVERLAY_CONFIG='debug.conf'
+   west build samples/bluetooth/hci_uart -- -DEXTRA_CONF_FILE='debug.conf'
 
 Then attach RTT as described here: :ref:`Using Segger J-Link <Using Segger J-Link>`
 

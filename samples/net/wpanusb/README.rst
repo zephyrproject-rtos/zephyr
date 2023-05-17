@@ -39,7 +39,7 @@ Build the wpanusb sample for a board:
 .. zephyr-app-commands::
    :zephyr-app: samples/net/wpanusb
    :board: <board to use>
-   :gen-args: -DOVERLAY_CONFIG=<overlay file to use>
+   :gen-args: -DEXTRA_CONF_FILE=<overlay file to use>
    :goals: build
    :compact:
 
