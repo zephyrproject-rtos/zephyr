@@ -26,7 +26,7 @@ Build the TCP sample app:
 
    cd samples/net/sockets/tcp
    mkdir build && cd build
-   cmake -DBOARD=qemu_x86 -DOVERLAY_CONFIG="overlay-slip.conf" ..
+   cmake -DBOARD=qemu_x86 -DEXTRA_CONF_FILE="overlay-slip.conf" ..
    make run
 
 Compile and run the TCP sanity check `net-test-suites`_:

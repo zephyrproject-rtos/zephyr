@@ -45,7 +45,7 @@ Enable TLS support in the sample by building the project with the
    :goals: build
    :compact:
 
-An alternative way is to specify ``-DOVERLAY_CONFIG=overlay-tls.conf`` when
+An alternative way is to specify ``-DEXTRA_CONF_FILE=overlay-tls.conf`` when
 running ``west build`` or ``cmake``.
 
 The certificate and private key used by the sample can be found in the sample's
