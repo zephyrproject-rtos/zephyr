@@ -60,7 +60,7 @@
 		interrupt-parent = <&gic>;
 
 		gic: interrupt-controller@af000000 {
-			compatible = "arm,gic";
+			compatible = "arm,gic-v3", "arm,gic";
 			reg = <0xaf000000 0x10000>,
 			      <0xaf100000 0x200000>;
 			interrupt-controller;
