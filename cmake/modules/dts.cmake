@@ -75,6 +75,12 @@ find_package(Dtc 1.4.6)
 # - BOARD_DIR: board directory to use when looking for DTS_SOURCE
 # - BOARD_REVISION_STRING: used when looking for a board revision's
 #   devicetree overlay file in BOARD_DIR
+# - DTC_OVERLAY_FILE: list of devicetree overlay files which will be
+#   used to modify or extend the base devicetree.
+# - EXTRA_DTC_OVERLAY_FILE: list of extra devicetree overlay files.
+#   This variable is is similar to DTC_OVERLAY_FILE but the files in
+#   EXTRA_DTC_OVERLAY_FILE will be applied after DTC_OVERLAY_FILE and
+#   thus files specified by EXTRA_DTC_OVERLAY_FILE have higher precedence.
 # - EXTRA_DTC_FLAGS: list of extra command line options to pass to
 #   dtc when using it to check for additional errors and warnings;
 #   invalid flags are automatically filtered out of the list
@@ -82,7 +88,7 @@ find_package(Dtc 1.4.6)
 #   C preprocessor when generating the devicetree from DTS_SOURCE
 # - DTS_SOURCE: the devicetree source file to use may be pre-set
 #   with this variable; otherwise, it defaults to
-#   ${BOARD_DIR}/${BOARD.dts}
+#   ${BOARD_DIR}/${BOARD}.dts
 #
 # Variables set by this module and not mentioned above are for internal
 # use only, and may be removed, renamed, or re-purposed without prior notice.
@@ -155,6 +161,15 @@ if(DTC_OVERLAY_FILE)
   list(APPEND
     dts_files
     ${DTC_OVERLAY_FILE_AS_LIST}
+    )
+endif()
+
+if(EXTRA_DTC_OVERLAY_FILE)
+  zephyr_list(TRANSFORM EXTRA_DTC_OVERLAY_FILE NORMALIZE_PATHS
+              OUTPUT_VARIABLE EXTRA_DTC_OVERLAY_FILE_AS_LIST)
+  list(APPEND
+    dts_files
+    ${EXTRA_DTC_OVERLAY_FILE_AS_LIST}
     )
 endif()
 
