@@ -57,6 +57,39 @@ struct spi_nrfx_config {
 
 static void event_handler(const nrfx_spim_evt_t *p_event, void *p_context);
 
+static inline uint32_t get_nrf_spim_frequency(uint32_t frequency)
+{
+	/* Get the highest supported frequency not exceeding the requested one.
+	 */
+	if (frequency < KHZ(250U)) {
+		return KHZ(125U);
+	} else if (frequency < KHZ(500U)) {
+		return KHZ(250U);
+	} else if (frequency < MHZ(1U)) {
+		return KHZ(500U);
+	} else if (frequency < MHZ(2U)) {
+		return MHZ(1U);
+	} else if (frequency < MHZ(4U)) {
+		return MHZ(2U);
+	} else if (frequency < MHZ(8U)) {
+		return MHZ(4U);
+/* Only the devices with HS-SPI can use SPI clock higher than 8 MHz and
+ * have SPIM_FREQUENCY_FREQUENCY_M32 defined in their own bitfields.h
+ */
+#if defined(SPIM_FREQUENCY_FREQUENCY_M32)
+	} else if (frequency < MHZ(16U)) {
+		return MHZ(8U);
+	} else if (frequency < MHZ(32U)) {
+		return MHZ(16U);
+	} else {
+		return MHZ(32U);
+#else
+	} else {
+		return MHZ(8U);
+#endif
+	}
+}
+
 static inline nrf_spim_mode_t get_nrf_spim_mode(uint16_t operation)
 {
 	if (SPI_MODE_GET(operation) & SPI_MODE_CPOL) {
@@ -143,7 +176,8 @@ static int configure(const struct device *dev,
 	config = dev_config->def_config;
 
 	/* Limit the frequency to that supported by the SPIM instance. */
-	config.frequency = MIN(spi_cfg->frequency, max_freq);
+	config.frequency = get_nrf_spim_frequency(MIN(spi_cfg->frequency,
+						      max_freq));
 	config.mode      = get_nrf_spim_mode(spi_cfg->operation);
 	config.bit_order = get_nrf_spim_bit_order(spi_cfg->operation);
 
