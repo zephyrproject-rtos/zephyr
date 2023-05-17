@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2020 NXP
+ * Copyright  2017-2023 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -54,7 +54,12 @@ const clock_enet_pll_config_t ethPllConfig = {
 	.enableClkOutput500M = true,
 #endif
 #ifdef CONFIG_ETH_MCUX
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(enet), okay)
 	.enableClkOutput = true,
+#endif
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(enet2), okay)
+	.enableClkOutput1 = true,
+#endif
 #endif
 #if defined(CONFIG_PTP_CLOCK_MCUX)
 	.enableClkOutput25M = true,
