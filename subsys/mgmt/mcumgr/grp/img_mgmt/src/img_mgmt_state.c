@@ -176,9 +176,7 @@ img_mgmt_slot_in_use(int slot)
 int
 img_mgmt_state_set_pending(int slot, int permanent)
 {
-	uint8_t hash[IMAGE_HASH_LEN];
 	uint8_t state_flags;
-	const uint8_t *hashp;
 	int rc;
 
 	state_flags = img_mgmt_state_flags(slot);
@@ -194,12 +192,6 @@ img_mgmt_state_set_pending(int slot, int permanent)
 	rc = img_mgmt_write_pending(slot, permanent);
 
 done:
-	/* Log the image hash if we know it. */
-	if (img_mgmt_read_info(slot, NULL, hash, NULL)) {
-		hashp = NULL;
-	} else {
-		hashp = hash;
-	}
 
 	return rc;
 }
