@@ -31,6 +31,9 @@
 #ifdef CONFIG_MCUMGR_GRP_IMG
 #include <zephyr/mgmt/mcumgr/grp/img_mgmt/img_mgmt.h>
 #endif
+#ifdef CONFIG_MCUMGR_GRP_OS
+#include <zephyr/mgmt/mcumgr/grp/os_mgmt/os_mgmt.h>
+#endif
 #ifdef CONFIG_MCUMGR_GRP_SHELL
 #include <zephyr/mgmt/mcumgr/grp/shell_mgmt/shell_mgmt.h>
 #endif
@@ -45,6 +48,11 @@
 static int smp_translate_error_code(uint16_t group, uint16_t ret)
 {
 	switch (group) {
+#ifdef CONFIG_MCUMGR_GRP_OS
+	case MGMT_GROUP_ID_OS:
+	return os_mgmt_translate_error_code(ret);
+#endif
+
 #ifdef CONFIG_MCUMGR_GRP_IMG
 	case MGMT_GROUP_ID_IMAGE:
 	return img_mgmt_translate_error_code(ret);
