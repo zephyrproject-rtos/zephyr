@@ -28,36 +28,27 @@ BUILD_ASSERT(NUMBER_OF_CHOSEN_BACKENDS < 2, "Number of chosen backends > 1");
 #define RX_HEADER_SIZE (sizeof(struct ec_host_cmd_request_header))
 #define TX_HEADER_SIZE (sizeof(struct ec_host_cmd_response_header))
 
-#define EC_HOST_CMD_DEFINE(_name)                                                                  \
-	COND_CODE_1(                                                                               \
-		CONFIG_EC_HOST_CMD_HANDLER_RX_BUFFER_DEF,                                          \
-		(static uint8_t _name##_rx_buffer[CONFIG_EC_HOST_CMD_HANDLER_RX_BUFFER_SIZE];),    \
-		())                                                                                \
-	COND_CODE_1(                                                                               \
-		CONFIG_EC_HOST_CMD_HANDLER_TX_BUFFER_DEF,                                          \
-		(static uint8_t _name##_tx_buffer[CONFIG_EC_HOST_CMD_HANDLER_TX_BUFFER_SIZE];),    \
-		())                                                                                \
-	static K_KERNEL_STACK_DEFINE(_name##stack, CONFIG_EC_HOST_CMD_HANDLER_STACK_SIZE);         \
-	static struct k_thread _name##thread;                                                      \
-	static struct ec_host_cmd _name = {                                                        \
-		.rx_ctx =                                                                          \
-			{                                                                          \
-				.buf = COND_CODE_1(CONFIG_EC_HOST_CMD_HANDLER_RX_BUFFER_DEF,       \
-						   (_name##_rx_buffer), (NULL)),                   \
-			},                                                                         \
-		.tx =                                                                              \
-			{                                                                          \
-				.buf = COND_CODE_1(CONFIG_EC_HOST_CMD_HANDLER_TX_BUFFER_DEF,       \
-						   (_name##_tx_buffer), (NULL)),                   \
-				.len_max = COND_CODE_1(                                            \
-					CONFIG_EC_HOST_CMD_HANDLER_TX_BUFFER_DEF,                  \
-					(CONFIG_EC_HOST_CMD_HANDLER_TX_BUFFER_SIZE), (0)),         \
-			},                                                                         \
-		.thread = &_name##thread,                                                          \
-		.stack = _name##stack,                                                             \
-	}
+COND_CODE_1(CONFIG_EC_HOST_CMD_HANDLER_RX_BUFFER_DEF,
+	    (static uint8_t hc_rx_buffer[CONFIG_EC_HOST_CMD_HANDLER_RX_BUFFER_SIZE];), ())
+COND_CODE_1(CONFIG_EC_HOST_CMD_HANDLER_TX_BUFFER_DEF,
+	    (static uint8_t hc_tx_buffer[CONFIG_EC_HOST_CMD_HANDLER_TX_BUFFER_SIZE];), ())
 
-EC_HOST_CMD_DEFINE(ec_host_cmd);
+#ifdef CONFIG_EC_HOST_CMD_DEDICATED_THREAD
+static K_KERNEL_STACK_DEFINE(hc_stack, CONFIG_EC_HOST_CMD_HANDLER_STACK_SIZE);
+#endif /* CONFIG_EC_HOST_CMD_DEDICATED_THREAD */
+
+static struct ec_host_cmd ec_host_cmd = {
+	.rx_ctx = {
+			.buf = COND_CODE_1(CONFIG_EC_HOST_CMD_HANDLER_RX_BUFFER_DEF, (hc_rx_buffer),
+					   (NULL)),
+		},
+	.tx = {
+			.buf = COND_CODE_1(CONFIG_EC_HOST_CMD_HANDLER_TX_BUFFER_DEF, (hc_tx_buffer),
+					   (NULL)),
+			.len_max = COND_CODE_1(CONFIG_EC_HOST_CMD_HANDLER_TX_BUFFER_DEF,
+					       (CONFIG_EC_HOST_CMD_HANDLER_TX_BUFFER_SIZE), (0)),
+		},
+};
 
 static uint8_t cal_checksum(const uint8_t *const buffer, const uint16_t size)
 {
@@ -162,7 +153,7 @@ static enum ec_host_cmd_status prepare_response(struct ec_host_cmd_tx_buf *tx, u
 	return EC_HOST_CMD_SUCCESS;
 }
 
-static void ec_host_cmd_thread(void *hc_handle, void *arg2, void *arg3)
+FUNC_NORETURN static void ec_host_cmd_thread(void *hc_handle, void *arg2, void *arg3)
 {
 	ARG_UNUSED(arg2);
 	ARG_UNUSED(arg3);
@@ -232,6 +223,13 @@ static void ec_host_cmd_thread(void *hc_handle, void *arg2, void *arg3)
 	}
 }
 
+#ifndef CONFIG_EC_HOST_CMD_DEDICATED_THREAD
+FUNC_NORETURN void ec_host_cmd_task(void)
+{
+	ec_host_cmd_thread(&ec_host_cmd, NULL, NULL);
+}
+#endif
+
 int ec_host_cmd_init(struct ec_host_cmd_backend *backend)
 {
 	struct ec_host_cmd *hc = &ec_host_cmd;
@@ -268,17 +266,19 @@ int ec_host_cmd_init(struct ec_host_cmd_backend *backend)
 	 * buffer to make space for preamble. Make sure the rx/tx pointers are within the provided
 	 * buffers ranges.
 	 */
-	if ((handler_tx_buf && !((handler_tx_buf <= backend_tx_buf) &&
-				(handler_tx_buf_end > backend_tx_buf))) ||
-	    (handler_rx_buf && !((handler_rx_buf <= backend_rx_buf) &&
-				(handler_rx_buf_end < backend_rx_buf)))) {
+	if ((handler_tx_buf &&
+	     !((handler_tx_buf <= backend_tx_buf) && (handler_tx_buf_end > backend_tx_buf))) ||
+	    (handler_rx_buf &&
+	     !((handler_rx_buf <= backend_rx_buf) && (handler_rx_buf_end < backend_rx_buf)))) {
 		LOG_WRN("Host Command handler provided unused buffer");
 	}
 
-	hc->thread_id = k_thread_create(
-		hc->thread, hc->stack, CONFIG_EC_HOST_CMD_HANDLER_STACK_SIZE, ec_host_cmd_thread,
-		(void *)hc, NULL, NULL, CONFIG_EC_HOST_CMD_HANDLER_PRIO, 0, K_NO_WAIT);
-	k_thread_name_set(hc->thread, "ec_host_cmd");
+#ifdef CONFIG_EC_HOST_CMD_DEDICATED_THREAD
+	k_thread_create(&hc->thread, hc_stack, CONFIG_EC_HOST_CMD_HANDLER_STACK_SIZE,
+			ec_host_cmd_thread, (void *)hc, NULL, NULL, CONFIG_EC_HOST_CMD_HANDLER_PRIO,
+			0, K_NO_WAIT);
+	k_thread_name_set(&hc->thread, "ec_host_cmd");
+#endif /* CONFIG_EC_HOST_CMD_DEDICATED_THREAD */
 
 	return 0;
 }
