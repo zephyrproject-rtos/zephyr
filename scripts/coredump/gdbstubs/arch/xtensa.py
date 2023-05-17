@@ -292,12 +292,6 @@ class GdbRegDef_Sample_Controller:
 # espressif xtensa-overlays -> xtensa_esp32/gdb/gdb/xtensa-config.c
 class GdbRegDef_ESP32:
     ARCH_DATA_BLK_STRUCT_REGS = '<IIIIIIIIIIIIIIIIIIIIIIIII'
-
-    # Maximum index register that can be sent in a group packet is
-    # 104, which prevents us from sending An registers directly.
-    # We get around this by assigning each An in the dump to ARn
-    # and setting WINDOWBASE to 0 and WINDOWSTART to 1; ESP32 GDB
-    # will recalculate the corresponding An.
     SOC_GDB_GPKT_BIN_SIZE = 420
 
     class RegNum(Enum):
@@ -307,22 +301,22 @@ class GdbRegDef_ESP32:
         SAR = 68
         PS = 73
         SCOMPARE1 = 76
-        AR0 = 1
-        AR1 = 2
-        AR2 = 3
-        AR3 = 4
-        AR4 = 5
-        AR5 = 6
-        AR6 = 7
-        AR7 = 8
-        AR8 = 9
-        AR9 = 10
-        AR10 = 11
-        AR11 = 12
-        AR12 = 13
-        AR13 = 14
-        AR14 = 15
-        AR15 = 16
+        A0 = 157
+        A1 = 158
+        A2 = 159
+        A3 = 160
+        A4 = 161
+        A5 = 162
+        A6 = 163
+        A7 = 164
+        A8 = 165
+        A9 = 166
+        A10 = 167
+        A11 = 168
+        A12 = 169
+        A13 = 170
+        A14 = 171
+        A15 = 172
         LBEG = 65
         LEND = 66
         LCOUNT = 67
