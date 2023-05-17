@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018-2021 mcumgr authors
- * Copyright (c) 2021-2022 Nordic Semiconductor ASA
+ * Copyright (c) 2021-2023 Nordic Semiconductor ASA
  * Copyright (c) 2022 Laird Connectivity
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -489,7 +489,9 @@ static int os_mgmt_info(struct smp_streamer *ctxt)
 
 	if (valid_formats != format.len) {
 		/* A provided format specifier is not valid */
-		return MGMT_ERR_EINVAL;
+		bool ok = smp_add_cmd_ret(zse, MGMT_GROUP_ID_OS, OS_MGMT_RET_RC_INVALID_FORMAT);
+
+		return ok ? MGMT_ERR_EOK : MGMT_ERR_EMSGSIZE;
 	} else if (format_bitmask == 0) {
 		/* If no value is provided, use default of kernel name */
 		format_bitmask = OS_MGMT_INFO_FORMAT_KERNEL_NAME;
@@ -712,5 +714,24 @@ static void os_mgmt_register_group(void)
 {
 	mgmt_register_group(&os_mgmt_group);
 }
+
+#ifdef CONFIG_MCUMGR_SMP_SUPPORT_ORIGINAL_PROTOCOL
+int os_mgmt_translate_error_code(uint16_t ret)
+{
+	int rc;
+
+	switch (ret) {
+	case OS_MGMT_RET_RC_INVALID_FORMAT:
+	rc = MGMT_ERR_EINVAL;
+	break;
+
+	case OS_MGMT_RET_RC_UNKNOWN:
+	default:
+	rc = MGMT_ERR_EUNKNOWN;
+	}
+
+	return rc;
+}
+#endif
 
 MCUMGR_HANDLER_DEFINE(os_mgmt, os_mgmt_register_group);
