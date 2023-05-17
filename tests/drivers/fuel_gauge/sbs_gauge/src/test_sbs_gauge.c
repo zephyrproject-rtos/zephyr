@@ -1,5 +1,6 @@
 /*
  * Copyright 2022 Google LLC
+ * Copyright 2023 Microsoft Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -316,5 +317,32 @@ ZTEST_USER_F(sbs_gauge_new_api, test_set_props__returns_ok)
 
 	zassert_ok(ret);
 }
+
+
+ZTEST_USER_F(sbs_gauge_new_api, test_get_buffer_props__returns_ok)
+{
+	/* Validate what properties are supported by the driver */
+	struct fuel_gauge_get_buffer_property prop;
+	struct sbs_gauge_manufacturer_name mfg_name;
+	struct sbs_gauge_device_name dev_name;
+	struct sbs_gauge_device_chemistry chem;
+	int ret;
+
+	prop.property_type = FUEL_GAUGE_MANUFACTURER_NAME;
+	ret = fuel_gauge_get_buffer_prop(fixture->dev, &prop, &mfg_name, sizeof(mfg_name));
+	zassert_ok(prop.status, "Property %d has a bad status.", prop.property_type);
+	zassert_ok(ret);
+
+	prop.property_type = FUEL_GAUGE_DEVICE_NAME;
+	ret = fuel_gauge_get_buffer_prop(fixture->dev, &prop, &dev_name, sizeof(dev_name));
+	zassert_ok(prop.status, "Property %d has a bad status.", prop.property_type);
+	zassert_ok(ret);
+
+	prop.property_type = FUEL_GAUGE_DEVICE_CHEMISTRY;
+	ret = fuel_gauge_get_buffer_prop(fixture->dev, &prop, &chem, sizeof(chem));
+	zassert_ok(prop.status, "Property %d has a bad status.", prop.property_type);
+	zassert_ok(ret);
+}
+
 
 ZTEST_SUITE(sbs_gauge_new_api, NULL, sbs_gauge_new_api_setup, NULL, NULL, NULL);
