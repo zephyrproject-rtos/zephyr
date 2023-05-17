@@ -38,5 +38,5 @@ enabled.
    :zephyr-app: samples/subsys/lorawan/class_a
    :board: nucleo_wl55jc
    :goals: build flash
-   :gen-args: -DOVERLAY_CONFIG=overlay-clock-sync.conf
+   :gen-args: -DEXTRA_CONF_FILE=overlay-clock-sync.conf
    :compact:
