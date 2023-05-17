@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2019 Tavish Naruka <tavishnaruka@gmail.com>
  * Copyright (c) 2023 Nordic Semiconductor ASA
+ * Copyright (c) 2023 Antmicro <www.antmicro.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,16 +13,17 @@
 #include <zephyr/storage/disk_access.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/fs/fs.h>
+
+#if defined(CONFIG_FAT_FILESYSTEM_ELM)
+
 #include <ff.h>
 
-LOG_MODULE_REGISTER(main);
-
+/*
+ *  Note the fatfs library is able to mount only strings inside _VOLUME_STRS
+ *  in ffconf.h
+ */
 #define DISK_DRIVE_NAME "SD"
 #define DISK_MOUNT_PT "/"DISK_DRIVE_NAME":"
-#define MAX_PATH 128
-#define SOME_FILE_NAME "some.dat"
-#define SOME_DIR_NAME "some"
-#define SOME_REQUIRED_LEN MAX(sizeof(SOME_FILE_NAME), sizeof(SOME_DIR_NAME))
 
 static FATFS fat_fs;
 /* mounting info */
@@ -30,8 +32,31 @@ static struct fs_mount_t mp = {
 	.fs_data = &fat_fs,
 };
 
+#elif defined(CONFIG_FILE_SYSTEM_EXT2)
+
+#include <zephyr/fs/ext2.h>
+
+#define DISK_DRIVE_NAME "SDMMC"
+#define DISK_MOUNT_PT "/ext"
+
+static struct fs_mount_t mp = {
+	.type = FS_EXT2,
+	.flags = FS_MOUNT_FLAG_NO_FORMAT,
+	.storage_dev = (void *)DISK_DRIVE_NAME,
+	.mnt_point = "/ext",
+};
+
+#endif
+
+LOG_MODULE_REGISTER(main);
+
+#define MAX_PATH 128
+#define SOME_FILE_NAME "some.dat"
+#define SOME_DIR_NAME "some"
+#define SOME_REQUIRED_LEN MAX(sizeof(SOME_FILE_NAME), sizeof(SOME_DIR_NAME))
+
 static int lsdir(const char *path);
-#ifdef CONFIG_SAMPLE_FATFS_CREATE_SOME_ENTRIES
+#ifdef CONFIG_FS_SAMPLE_CREATE_SOME_ENTRIES
 static bool create_some_entries(const char *base_path)
 {
 	char path[MAX_PATH];
@@ -71,10 +96,6 @@ static bool create_some_entries(const char *base_path)
 }
 #endif
 
-/*
-*  Note the fatfs library is able to mount only strings inside _VOLUME_STRS
-*  in ffconf.h
-*/
 static const char *disk_mount_pt = DISK_MOUNT_PT;
 
 int main(void)
@@ -113,10 +134,14 @@ int main(void)
 
 	int res = fs_mount(&mp);
 
+#if defined(CONFIG_FAT_FILESYSTEM_ELM)
 	if (res == FR_OK) {
+#else
+	if (res == 0) {
+#endif
 		printk("Disk mounted.\n");
 		if (lsdir(disk_mount_pt) == 0) {
-#ifdef CONFIG_SAMPLE_FATFS_CREATE_SOME_ENTRIES
+#ifdef CONFIG_FS_SAMPLE_CREATE_SOME_ENTRIES
 			if (create_some_entries(disk_mount_pt)) {
 				lsdir(disk_mount_pt);
 			}
@@ -125,6 +150,8 @@ int main(void)
 	} else {
 		printk("Error mounting disk.\n");
 	}
+
+	fs_unmount(&mp);
 
 	while (1) {
 		k_sleep(K_MSEC(1000));
