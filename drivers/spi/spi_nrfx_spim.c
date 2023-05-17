@@ -57,6 +57,31 @@ struct spi_nrfx_config {
 
 static void event_handler(const nrfx_spim_evt_t *p_event, void *p_context);
 
+static inline uint32_t get_nrf_spim_frequency(uint32_t frequency)
+{
+	/* Get the highest supported frequency not exceeding the requested one.
+	 */
+	if (frequency >= MHZ(32) && NRF_SPIM_HAS_32_MHZ_FREQ) {
+		return MHZ(32);
+	} else if (frequency >= MHZ(16) && NRF_SPIM_HAS_16_MHZ_FREQ) {
+		return MHZ(16);
+	} else if (frequency >= MHZ(8)) {
+		return MHZ(8);
+	} else if (frequency >= MHZ(4)) {
+		return MHZ(4);
+	} else if (frequency >= MHZ(2)) {
+		return MHZ(2);
+	} else if (frequency >= MHZ(1)) {
+		return MHZ(1);
+	} else if (frequency >= KHZ(500)) {
+		return KHZ(500);
+	} else if (frequency >= KHZ(250)) {
+		return KHZ(250);
+	} else {
+		return KHZ(125);
+	}
+}
+
 static inline nrf_spim_mode_t get_nrf_spim_mode(uint16_t operation)
 {
 	if (SPI_MODE_GET(operation) & SPI_MODE_CPOL) {
@@ -143,7 +168,8 @@ static int configure(const struct device *dev,
 	config = dev_config->def_config;
 
 	/* Limit the frequency to that supported by the SPIM instance. */
-	config.frequency = MIN(spi_cfg->frequency, max_freq);
+	config.frequency = get_nrf_spim_frequency(MIN(spi_cfg->frequency,
+						      max_freq));
 	config.mode      = get_nrf_spim_mode(spi_cfg->operation);
 	config.bit_order = get_nrf_spim_bit_order(spi_cfg->operation);
 
