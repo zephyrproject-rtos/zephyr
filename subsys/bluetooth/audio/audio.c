@@ -112,6 +112,8 @@ ssize_t bt_audio_ccc_cfg_write(struct bt_conn *conn, const struct bt_gatt_attr *
 static int decode_codec_ltv(struct net_buf_simple *buf,
 			    struct bt_codec_data *codec_data)
 {
+	void *value;
+
 	if (buf->len < sizeof(codec_data->data.data_len)) {
 		LOG_DBG("Not enough data for LTV length field: %u", buf->len);
 
@@ -132,8 +134,6 @@ static int decode_codec_ltv(struct net_buf_simple *buf,
 	codec_data->data.data_len -= sizeof(codec_data->data.type);
 
 	codec_data->data.type = net_buf_simple_pull_u8(buf);
-#if CONFIG_BT_CODEC_MAX_DATA_LEN > 0
-	void *value;
 
 	codec_data->data.data = codec_data->value;
 
@@ -146,15 +146,6 @@ static int decode_codec_ltv(struct net_buf_simple *buf,
 
 	value = net_buf_simple_pull_mem(buf, codec_data->data.data_len);
 	(void)memcpy(codec_data->value, value, codec_data->data.data_len);
-#else /* CONFIG_BT_CODEC_MAX_DATA_LEN == 0 */
-	if (codec_data->data.data_len > 0) {
-		LOG_DBG("Cannot store data");
-
-		return -ENOMEM;
-	}
-
-	codec_data->data.data = NULL;
-#endif /* CONFIG_BT_CODEC_MAX_DATA_LEN > 0 */
 
 	return 0;
 }
@@ -186,7 +177,6 @@ static int decode_bis_data(struct net_buf_simple *buf, struct bt_bap_base_bis_da
 	}
 
 	if (len > 0) {
-#if CONFIG_BT_CODEC_MAX_DATA_LEN > 0
 		struct net_buf_simple ltv_buf;
 		void *ltv_data;
 
@@ -218,11 +208,6 @@ static int decode_bis_data(struct net_buf_simple *buf, struct bt_bap_base_bis_da
 
 			bis->data_count++;
 		}
-#else /* CONFIG_BT_CODEC_MAX_DATA_LEN == 0 */
-		LOG_DBG("Cannot store codec config data");
-
-		return -ENOMEM;
-#endif /* CONFIG_BT_CODEC_MAX_DATA_LEN */
 	}
 
 	return 0;

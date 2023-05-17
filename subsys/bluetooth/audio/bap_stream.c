@@ -182,7 +182,6 @@ enum bt_bap_ascs_reason bt_audio_verify_qos(const struct bt_codec_qos *qos)
 	return BT_BAP_ASCS_REASON_NONE;
 }
 
-#if CONFIG_BT_CODEC_MAX_DATA_LEN > 0
 bool bt_audio_valid_codec_data(const struct bt_codec_data *data)
 {
 	LOG_ERR("data->data.data_len %u ARRAY_SIZE(data->value) %zu", data->data.data_len,
@@ -195,7 +194,6 @@ bool bt_audio_valid_codec_data(const struct bt_codec_data *data)
 
 	return true;
 }
-#endif /* CONFIG_BT_CODEC_MAX_DATA_LEN > 0 */
 
 bool bt_audio_valid_codec(const struct bt_codec *codec)
 {
