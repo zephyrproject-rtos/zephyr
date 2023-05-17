@@ -27,6 +27,7 @@ def test_runner_imports():
                     'intel_adsp',
                     'intel_cyclonev',
                     'jlink',
+                    'linkserver',
                     'mdb-nsim',
                     'mdb-hw',
                     'misc-flasher',
