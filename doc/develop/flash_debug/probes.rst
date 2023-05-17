@@ -58,6 +58,35 @@ onboard debug probe may have limitations, such as lack of support for advanced
 debuggers or high-speed tracing. You may need to adjust jumpers to prevent the
 onboard debug probe from interfering with the external debug probe.
 
+.. _lpclink2-cmsis-onboard-debug-probe:
+
+LPC-LINK2 CMSIS DAP Onboard Debug Probe
+***************************************
+
+The CMSIS-DAP debug probes allow debugging from any compatible toolchain,
+including IAR EWARM, Keil MDK, as well as NXP’s MCUXpresso IDE and
+MCUXpresso extension for VS Code.
+As well as providing debug probe functionality, the LPC-Link2 probes also
+provide:
+
+1. SWO trace end point: this virtual device is used by MCUXpresso to retrieve
+   SWO trace data. See the MCUXpresso IDE documentation for more information.
+2. Virtual COM (VCOM) port / UART bridge connected to the target processor
+3. LPCSIO bridge that provides communication to I2C and SPI slave devices
+
+This probe is realized by programming the LPC-Link2 microcontroller with the CMSIS-DAP
+LPC-Link2 firmware. Download and install `LPCScrypt`_ to get the firmware and
+programming scripts.
+
+.. note:: Verify the firmware supports your board by visiting `Firmware for LPCXpresso`_
+
+1. Put the LPC-Link2 microcontroller into DFU boot mode by attaching the DFU
+   jumper, then powering up the board.
+
+#. Run the ``program_CMSIS`` script.
+
+#. Remove the DFU jumper and power cycle the board.
+
 .. _lpclink2-jlink-onboard-debug-probe:
 
 LPC-Link2 J-Link Onboard Debug Probe

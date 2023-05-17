@@ -37,6 +37,7 @@ _names = [
     'intel_adsp',
     'intel_cyclonev',
     'jlink',
+    'linkserver',
     'mdb',
     'misc',
     'native_gdb',
