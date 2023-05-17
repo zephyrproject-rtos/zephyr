@@ -1,5 +1,6 @@
 /*
  * Copyright 2022 Google LLC
+ * Copyright 2023 Microsoft Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -20,6 +21,7 @@ LOG_MODULE_REGISTER(sbs_sbs_gauge);
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/i2c_emul.h>
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/drivers/fuel_gauge.h>
 
 #include "sbs_gauge.h"
 
@@ -119,6 +121,37 @@ static int emul_sbs_gauge_reg_read(const struct emul *target, int reg, int *val)
 	return 0;
 }
 
+static int emul_sbs_gauge_buffer_read(const struct emul *target, int reg, char *val)
+{
+	char mfg[] = "ACME";
+	char dev[] = "B123456";
+	char chem[] = "LiPO";
+	struct sbs_gauge_manufacturer_name *mfg_name = (struct sbs_gauge_manufacturer_name *)val;
+	struct sbs_gauge_device_name *dev_name = (struct sbs_gauge_device_name *)val;
+	struct sbs_gauge_device_chemistry *dev_chem = (struct sbs_gauge_device_chemistry *)val;
+
+	switch (reg) {
+	case SBS_GAUGE_CMD_MANUFACTURER_NAME:
+		mfg_name->manufacturer_name_length = sizeof(mfg);
+		memcpy(mfg_name->manufacturer_name, mfg, mfg_name->manufacturer_name_length);
+		break;
+	case SBS_GAUGE_CMD_DEVICE_NAME:
+		dev_name->device_name_length = sizeof(dev);
+		memcpy(dev_name->device_name, dev, dev_name->device_name_length);
+		break;
+
+	case SBS_GAUGE_CMD_DEVICE_CHEMISTRY:
+		dev_chem->device_chemistry_length = sizeof(chem);
+		memcpy(dev_chem->device_chemistry, chem, dev_chem->device_chemistry_length);
+		break;
+	default:
+		LOG_ERR("Unknown register 0x%x read", reg);
+		return -EIO;
+	}
+
+	return 0;
+}
+
 static int sbs_gauge_emul_transfer_i2c(const struct emul *target, struct i2c_msg *msgs,
 				       int num_msgs, int addr)
 {
@@ -148,8 +181,8 @@ static int sbs_gauge_emul_transfer_i2c(const struct emul *target, struct i2c_msg
 		/* Now process the 'read' part of the message */
 		msgs++;
 		if (msgs->flags & I2C_MSG_READ) {
-			switch (msgs->len - 1) {
-			case 1:
+			switch (msgs->len) {
+			case 2:
 				rc = emul_sbs_gauge_reg_read(target, reg, &val);
 				if (rc) {
 					/* Return before writing bad value to message buffer */
@@ -158,6 +191,11 @@ static int sbs_gauge_emul_transfer_i2c(const struct emul *target, struct i2c_msg
 
 				/* SBS uses SMBus, which sends data in little-endian format. */
 				sys_put_le16(val, msgs->buf);
+				break;
+					/* buffer properties */
+			case (sizeof(struct sbs_gauge_manufacturer_name)):
+			case (sizeof(struct sbs_gauge_device_chemistry)):
+				rc = emul_sbs_gauge_buffer_read(target, reg, (char *)msgs->buf);
 				break;
 			default:
 				LOG_ERR("Unexpected msg1 length %d", msgs->len);
