@@ -704,6 +704,14 @@ endif()
 
 if(CONFIG_ZTEST)
   list(APPEND SYSCALL_INCLUDE_DIRS ${ZEPHYR_BASE}/subsys/testsuite/ztest/include)
+
+  if(CONFIG_NO_OPTIMIZATIONS AND NOT CONFIG_ZTEST_ALLOW_NO_OPTIMIZATIONS)
+    message(FATAL_ERROR "Running tests with CONFIG_NO_OPTIMIZATIONS is not "
+    "supported and known to break many tests, please do not file issues about "
+    "it. If you really mean to do this also enable "
+    "CONFIG_ZTEST_ALLOW_NO_OPTIMIZATIONS.")
+  endif()
+
 endif()
 
 foreach(d ${SYSCALL_INCLUDE_DIRS})
