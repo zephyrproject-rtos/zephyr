@@ -1,5 +1,5 @@
 sample:
-  name: Fat filesystem sample
+  name: Filesystems sample
 common:
   tags: filesystem
   modules:
@@ -42,3 +42,6 @@ tests:
     filter: dt_compat_enabled("zephyr,sdmmc-disk")
     integration_platforms:
       - frdm_k64f
+  sample.filesystem.ext2:
+    extra_args: CONF_FILE="prj_ext.conf"
+    platform_allow: hifive_unmatched bl5340_dvk_cpuapp
