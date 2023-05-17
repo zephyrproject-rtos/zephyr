@@ -35,7 +35,7 @@ def is_flash_cmd_need_exit_immediately(mdb_runner):
         return True
 
 def mdb_do_run(mdb_runner, command):
-    commander = "mdb"
+    commander = "mdb64"
 
     mdb_runner.require(commander)
 
