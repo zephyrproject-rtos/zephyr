@@ -74,6 +74,14 @@ config NET_DHCPV4_INITIAL_DELAY_MAX
 	  As per RFC2131 4.1.1, we wait a random period between
 	  1 and 10 seconds before sending the initial discover.
 
+config NET_DHCPV4_OPTION_CALLBACKS
+	bool "Option callbacks"
+	depends on NET_DHCPV4
+	help
+	  If set, custom callbacks for arbitrary DHCP options
+	  can be added. These can be used to support otherwise
+	  DHCP options not used by the rest of the system.
+
 config NET_IPV4_AUTO
 	bool "IPv4 autoconfiguration [EXPERIMENTAL]"
 	depends on NET_ARP
