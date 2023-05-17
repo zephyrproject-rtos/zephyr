@@ -410,7 +410,8 @@ static int os_mgmt_info(struct smp_streamer *ctxt)
 	uint16_t ret_group;
 #endif
 
-	if (zcbor_map_decode_bulk(zsd, fs_info_decode, ARRAY_SIZE(fs_info_decode), &decoded)) {
+	if (zcbor_map_decode_bulk(zsd, fs_info_decode, ARRAY_SIZE(fs_info_decode), &decoded) ||
+	    !zcbor_map_decode_bulk_key_found(fs_info_decode, ARRAY_SIZE(fs_info_decode), "format")) {
 		return MGMT_ERR_EINVAL;
 	}
 
