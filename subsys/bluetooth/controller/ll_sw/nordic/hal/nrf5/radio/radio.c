@@ -445,7 +445,9 @@ void radio_pkt_configure(uint8_t bits_len, uint8_t max_len, uint8_t flags)
 	/* To use same Data Channel PDU structure with nRF5 specific overhead
 	 * byte, include the S1 field in radio packet configuration.
 	 */
-	if (pdu_type == RADIO_PKT_CONF_PDU_TYPE_DC) {
+	if ((pdu_type == RADIO_PKT_CONF_PDU_TYPE_DC) ||
+	    (pdu_type == RADIO_PKT_CONF_PDU_TYPE_BIS) ||
+	    (pdu_type == RADIO_PKT_CONF_PDU_TYPE_CIS)) {
 		extra |= (RADIO_PCNF0_S1INCL_Include <<
 			  RADIO_PCNF0_S1INCL_Pos) & RADIO_PCNF0_S1INCL_Msk;
 #if defined(CONFIG_BT_CTLR_DF)
@@ -1643,7 +1645,7 @@ void radio_gpio_pa_lna_disable(void)
 
 static uint8_t MALIGN(4) _ccm_scratch[(HAL_RADIO_PDU_LEN_MAX - 4) + 16];
 
-void *radio_ccm_rx_pkt_set(struct ccm *ccm, uint8_t phy, void *pkt)
+static void *radio_ccm_ext_rx_pkt_set(struct ccm *cnf, uint8_t phy, uint8_t pdu_type, void *pkt)
 {
 	uint32_t mode;
 
@@ -1726,8 +1728,23 @@ void *radio_ccm_rx_pkt_set(struct ccm *ccm, uint8_t phy, void *pkt)
 	NRF_CCM->MAXPACKETSIZE = max_len - 4U;
 #endif
 
+#if defined(CONFIG_HAS_HW_NRF_CCM_HEADERMASK)
+	switch (pdu_type) {
+	case RADIO_PKT_CONF_PDU_TYPE_BIS:
+		NRF_CCM->HEADERMASK = 0xC3; /* mask CSSN and CSTF */
+		break;
+	case RADIO_PKT_CONF_PDU_TYPE_CIS:
+		NRF_CCM->HEADERMASK = 0xA3; /* mask SN, NESN, CIE and NPI */
+		break;
+	default:
+		/* Using default reset value of HEADERMASK */
+		NRF_CCM->HEADERMASK = 0xE3; /* mask SN, NESN and MD */
+		break;
+	}
+#endif /* CONFIG_HAS_HW_NRF_CCM_HEADERMASK */
+
 	NRF_CCM->MODE = mode;
-	NRF_CCM->CNFPTR = (uint32_t)ccm;
+	NRF_CCM->CNFPTR = (uint32_t)cnf;
 	NRF_CCM->INPTR = (uint32_t)_pkt_scratch;
 	NRF_CCM->OUTPTR = (uint32_t)pkt;
 	NRF_CCM->SCRATCHPTR = (uint32_t)_ccm_scratch;
@@ -1741,7 +1758,17 @@ void *radio_ccm_rx_pkt_set(struct ccm *ccm, uint8_t phy, void *pkt)
 	return _pkt_scratch;
 }
 
-void *radio_ccm_tx_pkt_set(struct ccm *ccm, void *pkt)
+void *radio_ccm_rx_pkt_set(struct ccm *cnf, uint8_t phy, void *pkt)
+{
+	return radio_ccm_ext_rx_pkt_set(cnf, phy, RADIO_PKT_CONF_PDU_TYPE_DC, pkt);
+}
+
+void *radio_ccm_iso_rx_pkt_set(struct ccm *cnf, uint8_t phy, uint8_t pdu_type, void *pkt)
+{
+	return radio_ccm_ext_rx_pkt_set(cnf, phy, pdu_type, pkt);
+}
+
+static void *radio_ccm_ext_tx_pkt_set(struct ccm *cnf, uint8_t pdu_type, void *pkt)
 {
 	uint32_t mode;
 
@@ -1772,8 +1799,23 @@ void *radio_ccm_tx_pkt_set(struct ccm *ccm, void *pkt)
 	NRF_CCM->MAXPACKETSIZE = max_len - 4U;
 #endif
 
+#if defined(CONFIG_HAS_HW_NRF_CCM_HEADERMASK)
+	switch (pdu_type) {
+	case RADIO_PKT_CONF_PDU_TYPE_BIS:
+		NRF_CCM->HEADERMASK = 0xC3; /* mask CSSN and CSTF */
+		break;
+	case RADIO_PKT_CONF_PDU_TYPE_CIS:
+		NRF_CCM->HEADERMASK = 0xA3; /* mask SN, NESN, CIE and NPI */
+		break;
+	default:
+		/* Using default reset value of HEADERMASK */
+		NRF_CCM->HEADERMASK = 0xE3; /* mask SN, NESN and MD */
+		break;
+	}
+#endif /* CONFIG_HAS_HW_NRF_CCM_HEADERMASK */
+
 	NRF_CCM->MODE = mode;
-	NRF_CCM->CNFPTR = (uint32_t)ccm;
+	NRF_CCM->CNFPTR = (uint32_t)cnf;
 	NRF_CCM->INPTR = (uint32_t)pkt;
 	NRF_CCM->OUTPTR = (uint32_t)_pkt_scratch;
 	NRF_CCM->SCRATCHPTR = (uint32_t)_ccm_scratch;
@@ -1785,6 +1827,16 @@ void *radio_ccm_tx_pkt_set(struct ccm *ccm, void *pkt)
 	nrf_ccm_task_trigger(NRF_CCM, NRF_CCM_TASK_KSGEN);
 
 	return _pkt_scratch;
+}
+
+void *radio_ccm_tx_pkt_set(struct ccm *cnf, void *pkt)
+{
+	return radio_ccm_ext_tx_pkt_set(cnf, RADIO_PKT_CONF_PDU_TYPE_DC, pkt);
+}
+
+void *radio_ccm_iso_tx_pkt_set(struct ccm *cnf, uint8_t pdu_type, void *pkt)
+{
+	return radio_ccm_ext_tx_pkt_set(cnf, pdu_type, pkt);
 }
 
 uint32_t radio_ccm_is_done(void)
