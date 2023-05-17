@@ -110,7 +110,7 @@ void *usbd_get_descriptor(struct usbd_contex *const uds_ctx,
 	struct usbd_desc_node *tmp;
 	struct usb_desc_header *dh;
 
-	SYS_SLIST_FOR_EACH_CONTAINER(&uds_ctx->descriptors, tmp, node) {
+	SYS_DLIST_FOR_EACH_CONTAINER(&uds_ctx->descriptors, tmp, node) {
 		dh = tmp->desc;
 		if (tmp->idx == idx && dh->bDescriptorType == type) {
 			return tmp->desc;
@@ -123,9 +123,9 @@ void *usbd_get_descriptor(struct usbd_contex *const uds_ctx,
 int usbd_desc_remove_all(struct usbd_contex *const uds_ctx)
 {
 	struct usbd_desc_node *tmp;
-	sys_snode_t *node;
+	sys_dnode_t *node;
 
-	while ((node = sys_slist_get(&uds_ctx->descriptors))) {
+	while ((node = sys_dlist_get(&uds_ctx->descriptors))) {
 		tmp = CONTAINER_OF(node, struct usbd_desc_node, node);
 		LOG_DBG("Remove descriptor node %p", tmp);
 	}
@@ -142,9 +142,15 @@ int usbd_add_descriptor(struct usbd_contex *const uds_ctx,
 
 	usbd_device_lock(uds_ctx);
 
+	/* Check if descriptor list is initialized */
+	if (!sys_dnode_is_linked(&uds_ctx->descriptors)) {
+		LOG_DBG("Initialize descriptors list");
+		sys_dlist_init(&uds_ctx->descriptors);
+	}
+
 	head = desc_nd->desc;
 	type = head->bDescriptorType;
-	if (usbd_get_descriptor(uds_ctx, type, desc_nd->idx)) {
+	if (sys_dnode_is_linked(&desc_nd->node)) {
 		ret = -EALREADY;
 		goto add_descriptor_error;
 	}
@@ -181,7 +187,7 @@ int usbd_add_descriptor(struct usbd_contex *const uds_ctx,
 		}
 	}
 
-	sys_slist_append(&uds_ctx->descriptors, &desc_nd->node);
+	sys_dlist_append(&uds_ctx->descriptors, &desc_nd->node);
 
 add_descriptor_error:
 	usbd_device_unlock(uds_ctx);
