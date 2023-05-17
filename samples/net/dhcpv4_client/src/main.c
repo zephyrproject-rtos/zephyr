@@ -20,7 +20,13 @@ LOG_MODULE_REGISTER(net_dhcpv4_client_sample, LOG_LEVEL_DBG);
 #include <zephyr/net/net_context.h>
 #include <zephyr/net/net_mgmt.h>
 
+#define DHCP_OPTION_NTP (42)
+
+static uint8_t ntp_server[4];
+
 static struct net_mgmt_event_callback mgmt_cb;
+
+static struct net_dhcpv4_option_callback dhcp_cb;
 
 static void handler(struct net_mgmt_event_callback *cb,
 		    uint32_t mgmt_event,
@@ -57,6 +63,17 @@ static void handler(struct net_mgmt_event_callback *cb,
 	}
 }
 
+static void option_handler(struct net_dhcpv4_option_callback *cb,
+			   size_t length,
+			   enum net_dhcpv4_msg_type msg_type,
+			   struct net_if *iface)
+{
+	char buf[NET_IPV4_ADDR_LEN];
+
+	LOG_INF("DHCP Option %d: %s", cb->option,
+		net_addr_ntop(AF_INET, cb->data, buf, sizeof(buf)));
+}
+
 int main(void)
 {
 	struct net_if *iface;
@@ -68,6 +85,12 @@ int main(void)
 	net_mgmt_add_event_callback(&mgmt_cb);
 
 	iface = net_if_get_default();
+
+	net_dhcpv4_init_option_callback(&dhcp_cb, option_handler,
+					DHCP_OPTION_NTP, ntp_server,
+					sizeof(ntp_server));
+
+	net_dhcpv4_add_option_callback(&dhcp_cb);
 
 	net_dhcpv4_start(iface);
 	return 0;
