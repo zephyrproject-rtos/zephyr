@@ -148,6 +148,7 @@ static const struct in_addr client_addr = { { { 255, 255, 255, 255 } } };
 #define MSG_TYPE	53
 #define DISCOVER	1
 #define REQUEST		3
+#define OPTION_DOMAIN	15
 
 struct dhcp_msg {
 	uint32_t xid;
@@ -389,6 +390,10 @@ NET_DEVICE_INIT(net_dhcpv4_test, "net_dhcpv4_test",
 static struct net_mgmt_event_callback rx_cb;
 static struct net_mgmt_event_callback dns_cb;
 static struct net_mgmt_event_callback dhcp_cb;
+#ifdef CONFIG_NET_DHCPV4_OPTION_CALLBACKS
+static struct net_dhcpv4_option_callback opt_cb;
+static uint8_t buffer[15];
+#endif
 static int event_count;
 
 static void receiver_cb(struct net_mgmt_event_callback *cb,
@@ -407,6 +412,27 @@ static void receiver_cb(struct net_mgmt_event_callback *cb,
 
 	k_sem_give(&test_lock);
 }
+
+#ifdef CONFIG_NET_DHCPV4_OPTION_CALLBACKS
+
+static void option_cb(struct net_dhcpv4_option_callback *cb,
+		      size_t length,
+		      enum net_dhcpv4_msg_type msg_type,
+		      struct net_if *iface)
+{
+	char expectation[] = "fi.intel.com";
+
+	zassert_equal(cb->option, OPTION_DOMAIN, "Unexpected option value");
+	zassert_equal(length, sizeof(expectation), "Incorrect data length");
+	zassert_mem_equal(buffer, expectation, sizeof(expectation),
+			  "Incorrect buffer contents");
+
+	event_count++;
+
+	k_sem_give(&test_lock);
+}
+
+#endif /* CONFIG_NET_DHCPV4_OPTION_CALLBACKS */
 
 ZTEST(dhcpv4_tests, test_dhcp)
 {
@@ -431,6 +457,14 @@ ZTEST(dhcpv4_tests, test_dhcp)
 
 	net_mgmt_add_event_callback(&dhcp_cb);
 
+#ifdef CONFIG_NET_DHCPV4_OPTION_CALLBACKS
+	net_dhcpv4_init_option_callback(&opt_cb, option_cb,
+					OPTION_DOMAIN, buffer,
+					sizeof(buffer));
+
+	net_dhcpv4_add_option_callback(&opt_cb);
+#endif /* CONFIG_NET_DHCPV4_OPTION_CALLBACKS */
+
 	iface = net_if_get_first_by_type(&NET_L2_GET_NAME(DUMMY));
 	if (!iface) {
 		zassert_true(false, "Interface not available");
@@ -438,7 +472,11 @@ ZTEST(dhcpv4_tests, test_dhcp)
 
 	net_dhcpv4_start(iface);
 
+#ifdef CONFIG_NET_DHCPV4_OPTION_CALLBACKS
+	while (event_count < 6) {
+#else
 	while (event_count < 5) {
+#endif
 		if (k_sem_take(&test_lock, WAIT_TIME)) {
 			zassert_true(false, "Timeout while waiting");
 		}
