@@ -88,6 +88,7 @@ test_i2c_bmg160: bmg160@c {
 test_i2c_bmm150: bmm150@d {
 	compatible = "bosch,bmm150";
 	reg = <0xd>;
+	drdy-gpios = <&test_gpio 0 0>;
 };
 
 test_i2c_hmc5883l: hmc5883l@e {
