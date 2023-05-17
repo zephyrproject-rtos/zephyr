@@ -101,7 +101,7 @@ static int emul_sbs_gauge_reg_read(const struct emul *target, int reg, int *val)
 	return 0;
 }
 
-static int emul_sbs_gauge_block_read(const struct emul *target, int reg, char *val)
+static int emul_sbs_gauge_buffer_read(const struct emul *target, int reg, char *val)
 {
 	char mfg[] = "ACME";
 	char dev[] = "B123456";
@@ -173,10 +173,10 @@ static int sbs_gauge_emul_transfer_i2c(const struct emul *target, struct i2c_msg
 				sys_put_le16(val, msgs->buf);
 				break;
 
-			/* Block properties */
+			/* buffer properties */
 			case (sizeof(struct sbs_gauge_manufacturer_name)):
 			case (sizeof(struct sbs_gauge_device_chemistry)):
-				rc = emul_sbs_gauge_block_read(target, reg, (char *)msgs->buf);
+				rc = emul_sbs_gauge_buffer_read(target, reg, (char *)msgs->buf);
 				if (rc) {
 					/* Return before writing bad value to message buffer */
 					return rc;

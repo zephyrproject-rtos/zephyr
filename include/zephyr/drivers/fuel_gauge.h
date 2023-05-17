@@ -165,8 +165,8 @@ struct fuel_gauge_get_property {
 	} value;
 };
 
-/** Block properties are separated due to size */
-struct fuel_gauge_get_block_property {
+/** buffer properties are separated due to size */
+struct fuel_gauge_get_buffer_property {
 	/** Battery fuel gauge property to get */
 	uint16_t property_type;
 
@@ -198,7 +198,7 @@ struct fuel_gauge_set_property {
 };
 
 /**
- * Data structures for reading SBS block properties
+ * Data structures for reading SBS buffer properties
  */
 #define SBS_GAUGE_MANUFACTURER_NAME_MAX_SIZE 20
 #define SBS_GAUGE_DEVICE_NAME_MAX_SIZE       20
@@ -229,13 +229,13 @@ typedef int (*fuel_gauge_get_property_t)(const struct device *dev,
 					 struct fuel_gauge_get_property *props, size_t props_len);
 
 /**
- * @typedef fuel_gauge_get_block_property_t
- * @brief Callback API for getting a fuel_gauge block property.
+ * @typedef fuel_gauge_get_buffer_property_t
+ * @brief Callback API for getting a fuel_gauge buffer property.
  *
- * See fuel_gauge_get_block_property() for argument description
+ * See fuel_gauge_get_buffer_property() for argument description
  */
-typedef int (*fuel_gauge_get_block_property_t)(const struct device *dev,
-					       struct fuel_gauge_get_block_property *prop,
+typedef int (*fuel_gauge_get_buffer_property_t)(const struct device *dev,
+					       struct fuel_gauge_get_buffer_property *prop,
 					       void *dst, size_t dst_len);
 
 /**
@@ -251,7 +251,7 @@ typedef int (*fuel_gauge_set_property_t)(const struct device *dev,
 
 __subsystem struct fuel_gauge_driver_api {
 	fuel_gauge_get_property_t get_property;
-	fuel_gauge_get_block_property_t get_block_property;
+	fuel_gauge_get_buffer_property_t get_buffer_property;
 	fuel_gauge_set_property_t set_property;
 };
 
@@ -285,32 +285,32 @@ static inline int z_impl_fuel_gauge_get_prop(const struct device *dev,
 }
 
 /**
- * @brief Fetch a battery fuel-gauge block property
+ * @brief Fetch a battery fuel-gauge buffer property
  *
  * @param dev Pointer to the battery fuel-gauge device
- * @param prop pointer to single fuel_gauge_get_block_property struct where the property struct
+ * @param prop pointer to single fuel_gauge_get_buffer_property struct where the property struct
  * field is set by the caller to determine what property is read from the
  * fuel gauge device into the dst field.
- * @param dst byte array or struct that will hold the block data that is read from the fuel gauge
+ * @param dst byte array or struct that will hold the buffer data that is read from the fuel gauge
  * @param dst_len the length of the destination array in bytes
  *
  * @return return=0 if successful, return < 0 if getting property failed, return 0 on success
  */
-__syscall int fuel_gauge_get_block_prop(const struct device *dev,
-					struct fuel_gauge_get_block_property *prop, void *dst,
+__syscall int fuel_gauge_get_buffer_prop(const struct device *dev,
+					struct fuel_gauge_get_buffer_property *prop, void *dst,
 					size_t dst_len);
 
-static inline int z_impl_fuel_gauge_get_block_prop(const struct device *dev,
-						   struct fuel_gauge_get_block_property *prop,
+static inline int z_impl_fuel_gauge_get_buffer_prop(const struct device *dev,
+						   struct fuel_gauge_get_buffer_property *prop,
 						   void *dst, size_t dst_len)
 {
 	const struct fuel_gauge_driver_api *api = (const struct fuel_gauge_driver_api *)dev->api;
 
-	if (api->get_block_property == NULL) {
+	if (api->get_buffer_property == NULL) {
 		return -ENOSYS;
 	}
 
-	return api->get_block_property(dev, prop, dst, dst_len);
+	return api->get_buffer_property(dev, prop, dst, dst_len);
 }
 
 /**
