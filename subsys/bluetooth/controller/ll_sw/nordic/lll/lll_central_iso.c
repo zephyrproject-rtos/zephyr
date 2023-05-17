@@ -312,20 +312,21 @@ static int prepare_cb(struct lll_prepare_param *p)
 
 		cis_lll->tx.ccm.counter = payload_count;
 
-		pkt_flags = RADIO_PKT_CONF_FLAGS(RADIO_PKT_CONF_PDU_TYPE_DC,
+		pkt_flags = RADIO_PKT_CONF_FLAGS(RADIO_PKT_CONF_PDU_TYPE_CIS,
 						 phy,
 						 RADIO_PKT_CONF_CTE_DISABLED);
 		radio_pkt_configure(RADIO_PKT_CONF_LENGTH_8BIT,
 				    (cis_lll->tx.max_pdu + PDU_MIC_SIZE),
 				    pkt_flags);
-		radio_pkt_tx_set(radio_ccm_tx_pkt_set(&cis_lll->tx.ccm,
+		radio_pkt_tx_set(radio_ccm_iso_tx_pkt_set(&cis_lll->tx.ccm,
+						      RADIO_PKT_CONF_PDU_TYPE_CIS,
 						      pdu_tx));
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 
 	} else {
 		uint8_t pkt_flags;
 
-		pkt_flags = RADIO_PKT_CONF_FLAGS(RADIO_PKT_CONF_PDU_TYPE_DC,
+		pkt_flags = RADIO_PKT_CONF_FLAGS(RADIO_PKT_CONF_PDU_TYPE_CIS,
 						 phy,
 						 RADIO_PKT_CONF_CTE_DISABLED);
 		radio_pkt_configure(RADIO_PKT_CONF_LENGTH_8BIT,
@@ -506,23 +507,25 @@ static void isr_tx(void *param)
 
 		payload_count = (cis_lll->event_count * cis_lll->rx.bn) +
 				(cis_lll->rx.bn_curr - 1U);
+
 		cis_lll->rx.ccm.counter = payload_count;
 
-		pkt_flags = RADIO_PKT_CONF_FLAGS(RADIO_PKT_CONF_PDU_TYPE_DC,
+		pkt_flags = RADIO_PKT_CONF_FLAGS(RADIO_PKT_CONF_PDU_TYPE_CIS,
 						 cis_lll->rx.phy,
 						 RADIO_PKT_CONF_CTE_DISABLED);
 		radio_pkt_configure(RADIO_PKT_CONF_LENGTH_8BIT,
 				    (cis_lll->rx.max_pdu + PDU_MIC_SIZE),
 				    pkt_flags);
-		radio_pkt_rx_set(radio_ccm_rx_pkt_set(&cis_lll->rx.ccm,
-						      cis_lll->rx.phy,
-						      node_rx->pdu));
+		radio_pkt_rx_set(radio_ccm_iso_rx_pkt_set(&cis_lll->rx.ccm,
+							  cis_lll->rx.phy,
+							  RADIO_PKT_CONF_PDU_TYPE_CIS,
+							  node_rx->pdu));
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 
 	} else {
 		uint8_t pkt_flags;
 
-		pkt_flags = RADIO_PKT_CONF_FLAGS(RADIO_PKT_CONF_PDU_TYPE_DC,
+		pkt_flags = RADIO_PKT_CONF_FLAGS(RADIO_PKT_CONF_PDU_TYPE_CIS,
 						 cis_lll->rx.phy,
 						 RADIO_PKT_CONF_CTE_DISABLED);
 		radio_pkt_configure(RADIO_PKT_CONF_LENGTH_8BIT,
@@ -1093,19 +1096,20 @@ static void isr_prepare_subevent(void *param)
 
 		cis_lll->tx.ccm.counter = payload_count;
 
-		pkt_flags = RADIO_PKT_CONF_FLAGS(RADIO_PKT_CONF_PDU_TYPE_DC,
+		pkt_flags = RADIO_PKT_CONF_FLAGS(RADIO_PKT_CONF_PDU_TYPE_CIS,
 						 cis_lll->tx.phy,
 						 RADIO_PKT_CONF_CTE_DISABLED);
 		radio_pkt_configure(RADIO_PKT_CONF_LENGTH_8BIT,
 				    (cis_lll->tx.max_pdu + PDU_MIC_SIZE), pkt_flags);
-		radio_pkt_tx_set(radio_ccm_tx_pkt_set(&cis_lll->tx.ccm,
+		radio_pkt_tx_set(radio_ccm_iso_tx_pkt_set(&cis_lll->tx.ccm,
+						      RADIO_PKT_CONF_PDU_TYPE_CIS,
 						      pdu_tx));
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 
 	} else {
 		uint8_t pkt_flags;
 
-		pkt_flags = RADIO_PKT_CONF_FLAGS(RADIO_PKT_CONF_PDU_TYPE_DC,
+		pkt_flags = RADIO_PKT_CONF_FLAGS(RADIO_PKT_CONF_PDU_TYPE_CIS,
 						 cis_lll->tx.phy,
 						 RADIO_PKT_CONF_CTE_DISABLED);
 		radio_pkt_configure(RADIO_PKT_CONF_LENGTH_8BIT,

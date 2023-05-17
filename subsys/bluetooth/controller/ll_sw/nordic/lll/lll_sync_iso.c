@@ -320,8 +320,9 @@ static int prepare_cb_common(struct lll_prepare_param *p)
 						 RADIO_PKT_CONF_CTE_DISABLED);
 		radio_pkt_configure(RADIO_PKT_CONF_LENGTH_8BIT,
 				    (lll->max_pdu + PDU_MIC_SIZE), pkt_flags);
-		radio_pkt_rx_set(radio_ccm_rx_pkt_set(&lll->ccm_rx, phy,
-						      node_rx->pdu));
+		radio_pkt_rx_set(radio_ccm_iso_rx_pkt_set(&lll->ccm_rx, phy,
+							  RADIO_PKT_CONF_PDU_TYPE_BIS,
+							  node_rx->pdu));
 	} else {
 		uint8_t pkt_flags;
 
@@ -905,7 +906,9 @@ isr_rx_next_subevent:
 		(void)memcpy(lll->ccm_rx.iv, lll->giv, 4U);
 		mem_xor_32(lll->ccm_rx.iv, lll->ccm_rx.iv, access_addr);
 
-		radio_pkt_rx_set(radio_ccm_rx_pkt_set(&lll->ccm_rx, lll->phy, pdu));
+		radio_pkt_rx_set(radio_ccm_iso_rx_pkt_set(&lll->ccm_rx, lll->phy,
+							  RADIO_PKT_CONF_PDU_TYPE_BIS,
+							  pdu));
 
 	} else {
 		struct pdu_bis *pdu;
