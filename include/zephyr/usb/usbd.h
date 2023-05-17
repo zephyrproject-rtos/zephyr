@@ -62,7 +62,7 @@ extern "C" {
  */
 struct usbd_desc_node {
 	/** slist node struct */
-	sys_snode_t node;
+	sys_dnode_t node;
 	/** Descriptor index, required for string descriptors */
 	unsigned int idx : 8;
 	/** If not set, string descriptor must be converted to UTF16LE */
@@ -156,7 +156,7 @@ struct usbd_contex {
 	/** Middle layer runtime data */
 	struct usbd_ch9_data ch9_data;
 	/** slist to manage descriptors like string, bos */
-	sys_slist_t descriptors;
+	sys_dlist_t descriptors;
 	/** slist to manage device configurations */
 	sys_slist_t configs;
 	/** Status of the USB device support */
