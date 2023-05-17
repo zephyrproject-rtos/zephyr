@@ -27,11 +27,11 @@ from get_maintainer import Maintainers, MaintainersError
 
 logger = None
 
-def git(*args, cwd=None):
+def git(*args, cwd=None, ignore_non_zero=False):
     # Helper for running a Git command. Returns the rstrip()ed stdout output.
     # Called like git("diff"). Exits with SystemError (raised by sys.exit()) on
-    # errors. 'cwd' is the working directory to use (default: current
-    # directory).
+    # errors if 'ignore_non_zero' is set to False (default: False). 'cwd' is the
+    # working directory to use (default: current directory).
 
     git_cmd = ("git",) + args
     try:
@@ -39,7 +39,7 @@ def git(*args, cwd=None):
     except OSError as e:
         err(f"failed to run '{cmd2str(git_cmd)}': {e}")
 
-    if cp.returncode or cp.stderr:
+    if not ignore_non_zero and (cp.returncode or cp.stderr):
         err(f"'{cmd2str(git_cmd)}' exited with status {cp.returncode} and/or "
             f"wrote to stderr.\n"
             f"==stdout==\n"
@@ -796,6 +796,33 @@ concatenated together, so no document separators are needed.""")
 
         if contents.endswith("\n\n"):
             self.failure(f"Please remove blank lines at end of '{fname}'")
+
+
+class GitDiffCheck(ComplianceTest):
+    """
+    Checks for conflict markers or whitespace errors with git diff --check
+    """
+    name = "GitDiffCheck"
+    doc = "Git conflict markers and whitespace errors are not allowed in added changes"
+    path_hint = "<git-top>"
+
+    def run(self):
+        offending_lines = []
+        # Use regex to filter out unnecessay output
+        # Reason: `--check` is mutually exclusive with `--name-only` and `-s`
+        p = re.compile(r"\S+\: .*\.")
+
+        for shaidx in get_shas(COMMIT_RANGE):
+            # Ignore non-zero return status code
+            # Reason: `git diff --check` sets the return code to the number of offending lines
+            diff = git("diff", f"{shaidx}^!", "--check", ignore_non_zero=True)
+
+            lines = p.findall(diff)
+            lines = map(lambda x: f"{shaidx}: {x}", lines)
+            offending_lines.extend(lines)
+
+        if len(offending_lines) > 0:
+            self.failure("\n".join(offending_lines))
 
 
 class GitLint(ComplianceTest):
