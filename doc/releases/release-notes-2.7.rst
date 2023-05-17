@@ -2,6 +2,33 @@
 
 .. _zephyr_2.7:
 
+.. _zephyr_2.7.5:
+
+Zephyr 2.7.5
+####################
+
+This is an LTS maintenance release with fixes.
+
+Issues Fixed
+************
+
+These GitHub issues were addressed since the previous 2.7.4 tagged
+release:
+
+.. comment  List derived from GitHub Issue query: ...
+   * :github:`issuenumber` - issue title
+
+
+Security Vulnerability Related
+******************************
+
+The following security vulnerabilities (CVEs) were addressed in this
+release:
+
+
+More detailed information can be found in:
+https://docs.zephyrproject.org/latest/security/vulnerabilities.html
+
 .. _zephyr_2.7.4:
 
 Zephyr 2.7.4
