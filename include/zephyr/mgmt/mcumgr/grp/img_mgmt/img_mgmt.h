@@ -66,34 +66,91 @@ enum img_mgmt_ret_code_t {
 	/** No error, this is implied if there is no ret value in the response */
 	IMG_MGMT_RET_RC_OK = 0,
 
+	/** Unknown error occurred. */
 	IMG_MGMT_RET_RC_UNKNOWN,
+
+	/** Failed to query flash area configuration. */
 	IMG_MGMT_RET_RC_FLASH_CONFIG_QUERY_FAIL,
+
+	/** There is no image in the slot. */
 	IMG_MGMT_RET_RC_NO_IMAGE,
+
+	/** The image in the slot has no TLVs (tag, length, value). */
 	IMG_MGMT_RET_RC_NO_TLVS,
+
+	/** The image in the slot has an invalid TLV type and/or length. */
 	IMG_MGMT_RET_RC_INVALID_TLV,
+
+	/** The image in the slot has multiple hash TLVs, which is invalid. */
 	IMG_MGMT_RET_RC_TLV_MULTIPLE_HASHES_FOUND,
+
+	/** The image in the slot has an invalid TLV size. */
 	IMG_MGMT_RET_RC_TLV_INVALID_SIZE,
+
+	/** The image in the slot does not have a hash TLV, which is required.  */
 	IMG_MGMT_RET_RC_HASH_NOT_FOUND,
+
+	/** There is no free slot to place the image. */
 	IMG_MGMT_RET_RC_NO_FREE_SLOT,
+
+	/** Flash area opening failed. */
 	IMG_MGMT_RET_RC_FLASH_OPEN_FAILED,
+
+	/** Flash area reading failed. */
 	IMG_MGMT_RET_RC_FLASH_READ_FAILED,
+
+	/** Flash area writing failed. */
 	IMG_MGMT_RET_RC_FLASH_WRITE_FAILED,
+
+	/** Flash area erase failed. */
 	IMG_MGMT_RET_RC_FLASH_ERASE_FAILED,
+
+	/** The provided slot is not valid. */
 	IMG_MGMT_RET_RC_INVALID_SLOT,
+
+	/** Insufficient heap memory (malloc failed). */
 	IMG_MGMT_RET_RC_NO_FREE_MEMORY,
+
+	/** The flash context is already set. */
 	IMG_MGMT_RET_RC_FLASH_CONTEXT_ALREADY_SET,
+
+	/** The flash context is not set. */
 	IMG_MGMT_RET_RC_FLASH_CONTEXT_NOT_SET,
+
+	/** The device for the flash area is NULL. */
 	IMG_MGMT_RET_RC_FLASH_AREA_DEVICE_NULL,
+
+	/** The offset for a page number is invalid. */
 	IMG_MGMT_RET_RC_INVALID_PAGE_OFFSET,
+
+	/** The offset parameter was not provided and is required. */
 	IMG_MGMT_RET_RC_INVALID_OFFSET,
+
+	/** The length parameter was not provided and is required. */
 	IMG_MGMT_RET_RC_INVALID_LENGTH,
+
+	/** The image length is smaller than the size of an image header. */
 	IMG_MGMT_RET_RC_INVALID_IMAGE_HEADER,
+
+	/** The image header magic value does not match the expected value. */
 	IMG_MGMT_RET_RC_INVALID_IMAGE_HEADER_MAGIC,
+
+	/** The hash parameter provided is not valid. */
 	IMG_MGMT_RET_RC_INVALID_HASH,
+
+	/** The image load address does not match the address of the flash area. */
 	IMG_MGMT_RET_RC_INVALID_FLASH_ADDRESS,
+
+	/** Failed to get version of currently running application. */
 	IMG_MGMT_RET_RC_VERSION_GET_FAILED,
+
+	/** The currently running application is newer than the version being uploaded. */
 	IMG_MGMT_RET_RC_CURRENT_VERSION_IS_NEWER,
+
+	/** There is already an image operating pending. */
 	IMG_MGMT_RET_RC_IMAGE_ALREADY_PENDING,
+
+	/** The image vector table is invalid. */
 	IMG_MGMT_RET_RC_INVALID_IMAGE_VECTOR_TABLE,
 };
 
