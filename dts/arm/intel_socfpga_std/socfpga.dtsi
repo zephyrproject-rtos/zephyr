@@ -39,7 +39,7 @@
 	};
 
 	intc: intc@fffed000 {
-		compatible = "arm,gic";
+		compatible = "arm,gic-v1", "arm,gic";
 		#interrupt-cells = <4>;
 		interrupt-controller;
 		reg = <0xfffed000 0x1000>,
