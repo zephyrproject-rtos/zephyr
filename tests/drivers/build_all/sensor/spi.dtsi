@@ -225,6 +225,7 @@ test_spi_bmm150: bmm150@1d {
 	compatible = "bosch,bmm150";
 	reg = <0x1d>;
 	spi-max-frequency = <0>;
+	drdy-gpios = <&test_gpio 0 0>;
 };
 
 test_spi_hts221: hts221@1e {
