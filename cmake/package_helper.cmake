@@ -29,18 +29,18 @@
 # It is also possible to pass additional build settings.
 # If you invoke CMake for 'hello_world' as:
 #
-#   $ cmake -DBOARD=<board> -B build -S samples/hello_world -DOVERLAY_CONFIG=foo.overlay
+#   $ cmake -DBOARD=<board> -B build -S samples/hello_world -DEXTRA_CONF_FILE=foo.conf
 #
 # you just add the same argument to the helper like:
-#   $ cmake -DBOARD=<board> -B build -S samples/hello_world -DOVERLAY_CONFIG=foo.overlay \
+#   $ cmake -DBOARD=<board> -B build -S samples/hello_world -DEXTRA_CONF_FILE=foo.conf \
 #           -DMODULES=dts -P <ZEPHYR_BASE>/cmake/package_helper.cmake
 #
 # Note: the samples CMakeLists.txt file is not processed by package helper, so
 #       any 'set(<var> <value>)' specified before 'find_package(Zephyr)' must be
 #       manually applied, for example if the CMakeLists.txt contains:
-#          set(OVERLAY_CONFIG foo.overlay)
+#          set(EXTRA_CONF_FILE foo.conf)
 #          find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
-#       the 'foo.overlay' must be specified using '-DOVERLAY_CONFIG=foo.overlay'
+#       the 'foo.conf' must be specified using '-DEXTRA_CONF_FILE=foo.conf'
 
 cmake_minimum_required(VERSION 3.20.5)
 
