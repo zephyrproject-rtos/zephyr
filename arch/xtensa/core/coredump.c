@@ -18,6 +18,7 @@ enum xtensa_soc_code {
 	XTENSA_SOC_ESP32,
 	XTENSA_SOC_INTEL_ADSP,
 	XTENSA_SOC_ESP32S2,
+	XTENSA_SOC_ESP32S3,
 };
 
 struct xtensa_arch_block {
@@ -114,6 +115,8 @@ void arch_coredump_info_dump(const z_arch_esf_t *esf)
 		arch_blk.soc = XTENSA_SOC_INTEL_ADSP;
 	#elif CONFIG_SOC_ESP32S2
 		arch_blk.soc = XTENSA_SOC_ESP32S2;
+	#elif CONFIG_SOC_ESP32S3
+		arch_blk.soc = XTENSA_SOC_ESP32S3;
 	#else
 		arch_blk.soc = XTENSA_SOC_UNKNOWN;
 	#endif

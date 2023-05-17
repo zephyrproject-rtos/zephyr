@@ -24,6 +24,8 @@ class XtensaSoc(Enum):
     ESP32 = 2
     INTEL_ADSP_CAVS = 3
     ESP32S2 = 4
+    ESP32S3 = 5
+
 
 # The previous version of this script didn't need to know
 # what toolchain Zephyr was built with; it assumed sample_controller
@@ -64,6 +66,8 @@ def get_gdb_reg_definition(soc, toolchain):
             raise NotImplementedError
     elif soc == XtensaSoc.ESP32S2:
         return GdbRegDef_ESP32S2
+    elif soc == XtensaSoc.ESP32S3:
+        return GdbRegDef_ESP32S3
     else:
         raise NotImplementedError
 
@@ -147,9 +151,12 @@ class GdbStub_Xtensa(GdbStub):
         arch_data_blk = self.logfile.get_arch_data()['data']
 
         self.version = struct.unpack('H', arch_data_blk[1:3])[0]
+        logger.debug("Xtensa GDB stub version: %d" % self.version)
 
         # Get SOC and toolchain to get correct format for unpack
         self.soc = XtensaSoc(bytearray(arch_data_blk)[0])
+        logger.debug("Xtensa SOC: %s" % self.soc.name)
+
         if self.version >= 2:
             self.toolchain = XtensaToolchain(bytearray(arch_data_blk)[3])
             arch_data_blk_regs = arch_data_blk[4:]
@@ -161,6 +168,8 @@ class GdbStub_Xtensa(GdbStub):
             else:
                 self.toolchain = XtensaToolchain.ZEPHYR
             arch_data_blk_regs = arch_data_blk[3:]
+
+        logger.debug("Xtensa toolchain: %s" % self.toolchain.name)
 
         self.gdb_reg_def = get_gdb_reg_definition(self.soc, self.toolchain)
 
@@ -353,6 +362,39 @@ class GdbRegDef_ESP32S2:
         A15 = 170
         WINDOWBASE = 66
         WINDOWSTART = 67
+
+class GdbRegDef_ESP32S3:
+    ARCH_DATA_BLK_STRUCT_REGS = '<IIIIIIIIIIIIIIIIIIIIIIIII'
+    SOC_GDB_GPKT_BIN_SIZE = 420
+
+    class RegNum(Enum):
+        PC = 0
+        EXCCAUSE = 166
+        EXCVADDR = 172
+        SAR = 68
+        PS = 73
+        SCOMPARE1 = 76
+        A0 = 212
+        A1 = 213
+        A2 = 214
+        A3 = 215
+        A4 = 216
+        A5 = 217
+        A6 = 218
+        A7 = 219
+        A8 = 220
+        A9 = 221
+        A10 = 222
+        A11 = 223
+        A12 = 224
+        A13 = 225
+        A14 = 226
+        A15 = 227
+        LBEG = 65
+        LEND = 66
+        LCOUNT = 67
+        WINDOWBASE = 69
+        WINDOWSTART = 70
 
 # sdk-ng -> overlays/xtensa_intel_apl/gdb/gdb/xtensa-config.c
 class GdbRegDef_Intel_Adsp_CAVS_Zephyr:
