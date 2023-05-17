@@ -56,11 +56,10 @@ int32_t ntc_get_temp_mc(const struct ntc_type *type, uint32_t ohm);
  * @brief Calculate the resistance read from NTC Thermistor
  *
  * @param cfg: NTC Thermistor configuration
- * @param max_adc: Max ADC value
- * @param raw_adc: Raw ADC value read
+ * @param vout: Measured voltage divider output voltage in millivolts
  *
- * @return resistance from raw ADC value
+ * @return thermistor resistance in Ohms
  */
-uint32_t ntc_get_ohm_of_thermistor(const struct ntc_config *cfg, uint32_t max_adc, int16_t raw_adc);
+uint32_t ntc_get_ohm_of_thermistor(const struct ntc_config *cfg, uint32_t vout);
 
 #endif /* NTC_THERMISTOR_H */

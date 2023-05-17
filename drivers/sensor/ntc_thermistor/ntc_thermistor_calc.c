@@ -6,8 +6,11 @@
 
 #include <stdlib.h>
 #include <zephyr/devicetree.h>
+#include <zephyr/logging/log.h>
 #include <zephyr/sys/util.h>
 #include "ntc_thermistor.h"
+
+LOG_MODULE_DECLARE(NTC_THERMISTOR, CONFIG_SENSOR_LOG_LEVEL);
 
 /**
  * fixp_linear_interpolate() - interpolates a value from two known points
@@ -100,17 +103,34 @@ static void ntc_lookup_comp(const struct ntc_type *type, uint32_t ohm, unsigned 
  * ntc_get_ohm_of_thermistor() - Calculate the resistance read from NTC Thermistor
  *
  * @cfg: NTC Thermistor configuration
- * @max_adc: Max ADC value
- * @raw_adc: Raw ADC value read
+ * @vout: Measured voltage divider output voltage in millivolts
  */
-uint32_t ntc_get_ohm_of_thermistor(const struct ntc_config *cfg, uint32_t max_adc, int16_t raw_adc)
+uint32_t ntc_get_ohm_of_thermistor(const struct ntc_config *cfg, uint32_t vout)
 {
+	const uint32_t vin = cfg->pullup_uv / 1000;
 	uint32_t ohm;
 
+	if (vout > vin) {
+		LOG_WRN("Measured Vout is higher than Vin ('pullup_uv' or ADC reference voltage "
+			"needs to be fixed in devicetree)");
+		vout = vin;
+	}
+
+	/* Vout = (R2 / (R1 + R2)) * Vin */
 	if (cfg->connected_positive) {
-		ohm = cfg->pulldown_ohm * max_adc / (raw_adc - 1);
+		if (!vout) {
+			/* Edge case to avoid dividing by 0 (R1 headed to infinity) */
+			ohm = UINT32_MAX;
+		} else {
+			ohm = ((cfg->pulldown_ohm * vin) / vout) - cfg->pulldown_ohm;
+		}
 	} else {
-		ohm = cfg->pullup_ohm * (raw_adc - 1) / max_adc;
+		if (vout == vin) {
+			/* Edge case to avoid dividing by 0 (R2 headed to infinity) */
+			ohm = UINT32_MAX;
+		} else {
+			ohm = (vout * cfg->pullup_ohm) / (vin - vout);
+		}
 	}
 
 	return ohm;

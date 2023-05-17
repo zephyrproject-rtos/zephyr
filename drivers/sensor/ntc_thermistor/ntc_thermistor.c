@@ -61,17 +61,17 @@ static int ntc_thermistor_channel_get(const struct device *dev, enum sensor_chan
 {
 	struct ntc_thermistor_data *data = dev->data;
 	const struct ntc_thermistor_config *cfg = dev->config;
-	uint32_t ohm, max_adc;
+	uint32_t ohm;
 	int32_t temp;
 
 	switch (chan) {
 	case SENSOR_CHAN_AMBIENT_TEMP:
-		max_adc = (1 << (cfg->adc_channel.resolution - 1)) - 1;
-		ohm = ntc_get_ohm_of_thermistor(&cfg->ntc_cfg, max_adc, data->raw);
+		ohm = ntc_get_ohm_of_thermistor(&cfg->ntc_cfg, data->sample_mv);
 		temp = ntc_get_temp_mc(&cfg->ntc_cfg.type, ohm);
 		val->val1 = temp / 1000;
 		val->val2 = (temp % 1000) * 1000;
-		LOG_INF("ntc temp says %u", val->val1);
+		LOG_DBG("vin=%u vout=%u ohms=%u temp=%d", cfg->ntc_cfg.pullup_uv / 1000,
+			data->sample_mv, ohm, temp);
 		break;
 	default:
 		return -ENOTSUP;
