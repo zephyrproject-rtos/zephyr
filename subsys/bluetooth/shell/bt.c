@@ -32,9 +32,6 @@
 #include <zephyr/bluetooth/rfcomm.h>
 #include <zephyr/bluetooth/sdp.h>
 #include <zephyr/bluetooth/iso.h>
-#include <zephyr/bluetooth/audio/audio.h>
-#include <zephyr/bluetooth/audio/pacs.h>
-#include <zephyr/bluetooth/audio/csip.h>
 
 #include <zephyr/shell/shell.h>
 
