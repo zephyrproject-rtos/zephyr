@@ -62,14 +62,6 @@ config BT_CODEC_MAX_METADATA_COUNT
 	  This option defines the maximum number of LTV entries a metadata can
 	  store.
 
-config BT_CODEC_MAX_METADATA_LEN
-	int "Codec Metadata Length"
-	default 4
-	range 1 128
-	help
-	  This option defines the maximum value length of an LTV entry a
-	  metadata can store.
-
 if BT_BAP_UNICAST_CLIENT
 config BT_BAP_UNICAST_CLIENT_GROUP_COUNT
 	int "Basic Audio Unicast Group count"

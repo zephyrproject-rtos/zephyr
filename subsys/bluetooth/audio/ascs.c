@@ -1854,7 +1854,7 @@ static bool ascs_parse_metadata(struct bt_data *data, void *user_data)
 
 	if (result->count > CONFIG_BT_CODEC_MAX_METADATA_COUNT) {
 		LOG_ERR("Not enough buffers for Codec Config Metadata: %zu > %zu", result->count,
-			CONFIG_BT_CODEC_MAX_METADATA_LEN);
+			CONFIG_BT_CODEC_MAX_DATA_LEN);
 		*result->rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_NO_MEM,
 					       BT_BAP_ASCS_REASON_NONE);
 		result->err = -ENOMEM;
@@ -1862,9 +1862,9 @@ static bool ascs_parse_metadata(struct bt_data *data, void *user_data)
 		return false;
 	}
 
-	if (data_len > CONFIG_BT_CODEC_MAX_METADATA_LEN) {
+	if (data_len > CONFIG_BT_CODEC_MAX_DATA_LEN) {
 		LOG_ERR("Not enough space for Codec Config Metadata: %u > %zu", data->data_len,
-			CONFIG_BT_CODEC_MAX_METADATA_LEN);
+			CONFIG_BT_CODEC_MAX_DATA_LEN);
 		*result->rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_NO_MEM,
 					       BT_BAP_ASCS_REASON_NONE);
 		result->err = -ENOMEM;
