@@ -81,6 +81,12 @@ config EC_HOST_CMD_INITIALIZE_AT_BOOT
 	  Automatically initialize the host command subsystem with the chosen backend.
 	  The ec_host_cmd_init function is called by the chosen backend.
 
+config EC_HOST_CMD_DEDICATED_THREAD
+	bool "Create a new task for host command"
+	help
+	  The ec_host_cmd_init function creates a new thread dedicated for Host Command.
+	  Otherwise the ec_host_cmd_task function has to be called within another thread.
+
 endif # EC_HOST_CMD
 
 source "subsys/mgmt/ec_host_cmd/backends/Kconfig"
