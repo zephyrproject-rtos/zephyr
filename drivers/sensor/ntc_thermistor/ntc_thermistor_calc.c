@@ -6,6 +6,7 @@
 
 #include <stdlib.h>
 #include <zephyr/devicetree.h>
+#include <zephyr/sys/util.h>
 #include "ntc_thermistor.h"
 
 /**
@@ -117,6 +118,8 @@ uint32_t ntc_get_ohm_of_thermistor(const struct ntc_config *cfg, uint32_t max_ad
 
 int32_t ntc_get_temp_mc(const struct ntc_type *type, uint32_t ohm)
 {
+	const int32_t min_temp = type->comp[0].temp_c * 1000;
+	const int32_t max_temp = type->comp[type->n_comp - 1].temp_c * 1000;
 	unsigned int low, high;
 	int32_t temp;
 
@@ -129,5 +132,6 @@ int32_t ntc_get_temp_mc(const struct ntc_type *type, uint32_t ohm)
 	temp = ntc_fixp_linear_interpolate(type->comp[low].ohm, type->comp[low].temp_c * 1000,
 					   type->comp[high].ohm, type->comp[high].temp_c * 1000,
 					   ohm);
-	return temp;
+
+	return CLAMP(temp, min_temp, max_temp);
 }
