@@ -148,13 +148,15 @@ function(ExternalZephyrProject_Add)
      # The contents of these are appended to the image existing configuration
      # when user is not specifying custom fragments.
     if(NOT "${CONF_FILE_BUILD_TYPE}" STREQUAL "")
-      set(sysbuil_image_conf_fragment ${sysbuild_image_conf_dir}/${ZBUILD_APPLICATION}_${CONF_FILE_BUILD_TYPE}.conf)
+      set(sysbuild_image_conf_fragment ${sysbuild_image_conf_dir}/${ZBUILD_APPLICATION}_${CONF_FILE_BUILD_TYPE}.conf)
     else()
       set(sysbuild_image_conf_fragment ${sysbuild_image_conf_dir}/${ZBUILD_APPLICATION}.conf)
     endif()
 
-    if (NOT ${ZBUILD_APPLICATION}_OVERLAY_CONFIG AND EXISTS ${sysbuild_image_conf_fragment})
-      set(${ZBUILD_APPLICATION}_OVERLAY_CONFIG ${sysbuild_image_conf_fragment}
+    if (NOT (${ZBUILD_APPLICATION}_OVERLAY_CONFIG OR ${ZBUILD_APPLICATION}_EXTRA_CONF_FILE)
+        AND EXISTS ${sysbuild_image_conf_fragment}
+    )
+      set(${ZBUILD_APPLICATION}_EXTRA_CONF_FILE ${sysbuild_image_conf_fragment}
           CACHE INTERNAL "Kconfig fragment defined by main application"
       )
     endif()
