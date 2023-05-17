@@ -246,9 +246,18 @@ use as devicetree overlays:
    system will stop looking for more files.
 #. Otherwise, if :file:`app.overlay` exists, it will be used.
 
+Extra devicetree overlays may be provided using ``EXTRA_DTC_OVERLAY_FILE`` which
+will still allow the build system to automatically use devicetree overlays
+described in the above steps.
+
+The build system appends overlays specified in ``EXTRA_DTC_OVERLAY_FILE``
+to the overlays in ``DTC_OVERLAY_FILE`` when processing devicetree overlays.
+This means that changes made via ``EXTRA_DTC_OVERLAY_FILE`` have higher
+precedence than those made via ``DTC_OVERLAY_FILE``.
+
 All configuration files will be taken from the application's configuration
 directory except for files with an absolute path that are given with the
-``DTC_OVERLAY_FILE`` argument.
+``DTC_OVERLAY_FILE`` or ``EXTRA_DTC_OVERLAY_FILE`` argument.
 
 See :ref:`Application Configuration Directory <application-configuration-directory>`
 on how the application configuration directory is defined.

@@ -132,7 +132,7 @@ In terminal #4, if you are using QEMU, type this:
 
    west build -d build/server -b qemu_x86 -t run \
       samples/net/sockets/echo_server -- \
-      -DOVERLAY_CONFIG=overlay-e1000.conf \
+      -DEXTRA_CONF_FILE=overlay-e1000.conf \
       -DCONFIG_NET_CONFIG_MY_IPV4_ADDR=\"198.51.100.1\" \
       -DCONFIG_NET_CONFIG_PEER_IPV4_ADDR=\"203.0.113.1\" \
       -DCONFIG_NET_CONFIG_MY_IPV6_ADDR=\"2001:db8:100::1\" \
@@ -163,7 +163,7 @@ In terminal #5, if you are using QEMU, type this:
 
    west build -d build/client -b qemu_x86 -t run \
       samples/net/sockets/echo_client -- \
-      -DOVERLAY_CONFIG=overlay-e1000.conf \
+      -DEXTRA_CONF_FILE=overlay-e1000.conf \
       -DCONFIG_NET_CONFIG_MY_IPV4_ADDR=\"203.0.113.1\" \
       -DCONFIG_NET_CONFIG_PEER_IPV4_ADDR=\"198.51.100.1\" \
       -DCONFIG_NET_CONFIG_MY_IPV6_ADDR=\"2001:db8:200::1\" \
