@@ -255,7 +255,7 @@ struct spi_cs_control {
  * @brief Get a pointer to a @p spi_cs_control from a devicetree node
  *
  * This is equivalent to
- * <tt>SPI_CS_CONTROL_PTR_DT(DT_DRV_INST(inst), delay)</tt>.
+ * <tt>SPI_CS_CONTROL_INIT(DT_DRV_INST(inst), delay)</tt>.
  *
  * Therefore, @p DT_DRV_COMPAT must already be defined before using
  * this macro.
@@ -264,8 +264,8 @@ struct spi_cs_control {
  * @param delay_ The @p delay field to set in the @p spi_cs_control
  * @return a pointer to the @p spi_cs_control structure
  */
-#define SPI_CS_CONTROL_PTR_DT_INST(inst, delay_)		\
-	SPI_CS_CONTROL_PTR_DT(DT_DRV_INST(inst), delay_)
+#define SPI_CS_CONTROL_INIT_INST(inst, delay_)		\
+	SPI_CS_CONTROL_INIT(DT_DRV_INST(inst), delay_)
 
 /**
  * @brief SPI controller configuration structure
@@ -315,7 +315,7 @@ struct spi_config {
  * @p cs data from the devicetree.
  *
  * Important: the @p cs field is initialized using
- * SPI_CS_CONTROL_PTR_DT(). The @p gpio_dev value pointed to by this
+ * SPI_CS_CONTROL_INIT(). The @p gpio_dev value pointed to by this
  * structure must be checked using device_is_ready() before use.
  *
  * @param node_id Devicetree node identifier for the SPI device whose
