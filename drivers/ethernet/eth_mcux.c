@@ -3,6 +3,7 @@
  *  Copyright (c) 2016-2017 ARM Ltd
  *  Copyright (c) 2016 Linaro Ltd
  *  Copyright (c) 2018 Intel Corporation
+ *  Copyright 2023 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -1021,7 +1022,12 @@ static void eth_mcux_init(const struct device *dev)
 	context->phy_handle->ops = &phyksz8081_ops;
 
 #if defined(CONFIG_SOC_SERIES_IMX_RT10XX)
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(enet), okay)
 	sys_clock = CLOCK_GetFreq(kCLOCK_IpgClk);
+#endif
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(enet2), okay)
+	sys_clock = CLOCK_GetFreq(kCLOCK_EnetPll1Clk);
+#endif
 #elif defined(CONFIG_SOC_SERIES_IMX_RT11XX)
 	sys_clock = CLOCK_GetRootClockFreq(kCLOCK_Root_Bus);
 #else
