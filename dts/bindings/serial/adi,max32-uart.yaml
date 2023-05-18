@@ -1,0 +1,41 @@
+# Copyright (c) 2023 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: MAX32 UART
+
+include: [uart-controller.yaml, pinctrl-device.yaml]
+
+compatible: "adi,max32-uart"
+
+properties:
+    reg:
+      required: true
+
+    clocks:
+      required: true
+
+    interrupts:
+      required: false
+
+    pinctrl:
+      type: phandles
+      required: false
+
+    clock-source:
+      type: string
+      default: "SYSCLK"
+      description: |
+        Clock source to be used by the UART peripheral. The following options
+        are available:
+        - "SYSCLK": Use System Clock. Specified by clocks property of gcr node.
+          Required for higher baud rates.
+        - "OBRC": Use fixed Oscillator Baud Rate Clock. More accurate clock for
+          standard baud rates.
+      enum:
+        - "SYSCLK"
+        - "OBRC"
+
+    data-bits:
+      type: int
+      default: 8
+      description: Data bits. Can be set to 5, 6, 7 or 8.
