@@ -23,7 +23,7 @@ class XtensaSoc(Enum):
     SAMPLE_CONTROLLER = 1
     ESP32 = 2
     INTEL_ADSP_CAVS = 3
-
+    ESP32S2 = 4
 
 # The previous version of this script didn't need to know
 # what toolchain Zephyr was built with; it assumed sample_controller
@@ -62,6 +62,8 @@ def get_gdb_reg_definition(soc, toolchain):
             sys.exit(1)
         else:
             raise NotImplementedError
+    elif soc == XtensaSoc.ESP32S2:
+        return GdbRegDef_ESP32S2
     else:
         raise NotImplementedError
 
@@ -323,6 +325,34 @@ class GdbRegDef_ESP32:
         WINDOWBASE = 69
         WINDOWSTART = 70
 
+class GdbRegDef_ESP32S2:
+    ARCH_DATA_BLK_STRUCT_REGS = '<IIIIIIIIIIIIIIIIIIIII'
+    SOC_GDB_GPKT_BIN_SIZE = 420
+
+    class RegNum(Enum):
+        PC = 0
+        EXCCAUSE = 99
+        EXCVADDR = 115
+        SAR = 65
+        PS = 70
+        A0 = 155
+        A1 = 156
+        A2 = 157
+        A3 = 158
+        A4 = 159
+        A5 = 160
+        A6 = 161
+        A7 = 162
+        A8 = 163
+        A9 = 164
+        A10 = 165
+        A11 = 166
+        A12 = 167
+        A13 = 168
+        A14 = 169
+        A15 = 170
+        WINDOWBASE = 66
+        WINDOWSTART = 67
 
 # sdk-ng -> overlays/xtensa_intel_apl/gdb/gdb/xtensa-config.c
 class GdbRegDef_Intel_Adsp_CAVS_Zephyr:
