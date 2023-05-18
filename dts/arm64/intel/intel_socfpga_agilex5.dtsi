@@ -75,9 +75,10 @@
 		reg = <0x10d13000 0x1000>;
 	};
 
+
 	mem0: memory@80100000 {
 		device_type = "memory";
-		reg = <0x80100000 0x10000000>;
+		reg = <0x80100000 DT_SIZE_M(8)>;
 	};
 
 	/* This qspi setting included
