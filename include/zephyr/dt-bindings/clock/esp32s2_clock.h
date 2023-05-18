@@ -21,7 +21,7 @@
 #define ESP32_CLK_CPU_240M             240000000
 
 /* Supported XTAL Frequencies */
-#define ESP32_CLK_XTAL_40M             0U
+#define ESP32_CLK_XTAL_40M             40
 
 /* Supported RTC fast clock frequencies */
 #define ESP32_RTC_FAST_CLK_FREQ_8M     8500000U
