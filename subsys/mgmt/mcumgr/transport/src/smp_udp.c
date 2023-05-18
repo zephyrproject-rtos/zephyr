@@ -232,6 +232,7 @@ SYS_INIT(smp_udp_init, APPLICATION, CONFIG_APPLICATION_INIT_PRIORITY);
 int smp_udp_open(void)
 {
 	struct config *conf;
+	int sock;
 
 #ifdef CONFIG_MCUMGR_TRANSPORT_UDP_IPV4
 	struct sockaddr_in addr4;
@@ -242,11 +243,12 @@ int smp_udp_open(void)
 	addr4.sin_addr.s_addr = htonl(INADDR_ANY);
 
 	conf = &configs.ipv4;
-	conf->sock = create_socket((struct sockaddr *)&addr4, conf->proto);
+	sock = create_socket((struct sockaddr *)&addr4, conf->proto);
 
-	if (conf->sock < 0) {
+	if (sock < 0) {
 		return -MGMT_ERR_EUNKNOWN;
 	}
+	conf->sock = sock;
 
 	create_thread(conf, "smp_udp4");
 #endif
@@ -260,11 +262,12 @@ int smp_udp_open(void)
 	addr6.sin6_addr = in6addr_any;
 
 	conf = &configs.ipv6;
-	conf->sock = create_socket((struct sockaddr *)&addr6, conf->proto);
+	sock = create_socket((struct sockaddr *)&addr6, conf->proto);
 
-	if (conf->sock < 0) {
+	if (sock < 0) {
 		return -MGMT_ERR_EUNKNOWN;
 	}
+	conf->sock = sock;
 
 	create_thread(conf, "smp_udp6");
 #endif
