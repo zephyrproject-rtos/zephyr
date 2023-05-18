@@ -1,0 +1,9 @@
+# Copyright (c) 2023 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config CLOCK_CONTROL_MAX32
+	bool "MAX32 Clock Control Driver"
+	default y
+	depends on SOC_FAMILY_ADI
+	help
+	  Enable clock control support for Analog Devices max32 SoC series.
