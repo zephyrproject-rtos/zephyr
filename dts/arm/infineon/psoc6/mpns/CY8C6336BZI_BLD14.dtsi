@@ -8,10 +8,6 @@
 #include <arm/armv7-m.dtsi>
 #include "../psoc6_01/psoc6_01.124-bga-sip.dtsi"
 
-/ {
-
-};
-
 &nvic {
 	arm,num-irq-priority-bits = <3>;
 };
