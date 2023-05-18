@@ -33,6 +33,15 @@
 
 #define TRANSFER_LOOPS (4)
 
+#if CONFIG_DMA_INFINEON_CAT1
+	/* For INFINEON CAT1 DMA we can transfer only 256 bytes
+	 * with BURST_LENGTH = 1, so increase it to transfer 1024 bytes.
+	 */
+	#define BURST_LENGTH (CONFIG_DMA_LOOP_TRANSFER_SIZE/256)
+#else
+	#define BURST_LENGTH (1)
+#endif
+
 #if CONFIG_NOCACHE_MEMORY
 static __aligned(32) uint8_t tx_data[CONFIG_DMA_LOOP_TRANSFER_SIZE] __used
 	__attribute__((__section__(CONFIG_DMA_LOOP_TRANSFER_SRAM_SECTION)));
@@ -117,8 +126,8 @@ static int test_loop(const struct device *dma)
 	dma_cfg.channel_direction = MEMORY_TO_MEMORY;
 	dma_cfg.source_data_size = 1U;
 	dma_cfg.dest_data_size = 1U;
-	dma_cfg.source_burst_length = 1U;
-	dma_cfg.dest_burst_length = 1U;
+	dma_cfg.source_burst_length = BURST_LENGTH;
+	dma_cfg.dest_burst_length = BURST_LENGTH;
 #ifdef CONFIG_DMAMUX_STM32
 	dma_cfg.user_data = (void *)dma;
 #else
@@ -208,8 +217,8 @@ static int test_loop_suspend_resume(const struct device *dma)
 	dma_cfg.channel_direction = MEMORY_TO_MEMORY;
 	dma_cfg.source_data_size = 1U;
 	dma_cfg.dest_data_size = 1U;
-	dma_cfg.source_burst_length = 1U;
-	dma_cfg.dest_burst_length = 1U;
+	dma_cfg.source_burst_length = BURST_LENGTH;
+	dma_cfg.dest_burst_length = BURST_LENGTH;
 #ifdef CONFIG_DMAMUX_STM32
 	dma_cfg.user_data = (struct device *)dma;
 #else
@@ -382,8 +391,8 @@ static int test_loop_repeated_start_stop(const struct device *dma)
 	dma_cfg.channel_direction = MEMORY_TO_MEMORY;
 	dma_cfg.source_data_size = 1U;
 	dma_cfg.dest_data_size = 1U;
-	dma_cfg.source_burst_length = 1U;
-	dma_cfg.dest_burst_length = 1U;
+	dma_cfg.source_burst_length = BURST_LENGTH;
+	dma_cfg.dest_burst_length = BURST_LENGTH;
 #ifdef CONFIG_DMAMUX_STM32
 	dma_cfg.user_data = (void *)dma;
 #else

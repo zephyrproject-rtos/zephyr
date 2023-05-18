@@ -1,0 +1,14 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+
+test_dma0: &dma0 {
+
+    status = "okay";
+};
+
+test_dma1: &dma1 {
+
+    status = "okay";
+};
