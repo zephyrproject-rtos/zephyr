@@ -123,4 +123,6 @@ source "drivers/spi/Kconfig.smartbond"
 
 source "drivers/spi/Kconfig.opentitan"
 
+source "drivers/spi/Kconfig.max32"
+
 endif # SPI
