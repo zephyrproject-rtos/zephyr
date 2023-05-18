@@ -74,8 +74,8 @@ static int test_sg(void)
 	}
 
 	dma_cfg.channel_direction = MEMORY_TO_MEMORY;
-	dma_cfg.source_data_size = 4U;
-	dma_cfg.dest_data_size = 4U;
+	dma_cfg.source_data_size = 1U;
+	dma_cfg.dest_data_size = 1U;
 	dma_cfg.source_burst_length = 4U;
 	dma_cfg.dest_burst_length = 4U;
 #ifdef CONFIG_DMAMUX_STM32
