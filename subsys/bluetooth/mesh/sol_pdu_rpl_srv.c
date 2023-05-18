@@ -67,7 +67,7 @@ static int item_clear(struct bt_mesh_model *mod,
 		return -EINVAL;
 	}
 
-	for (int i = 0; i < len; i++) {
+	for (int i = 0; i < len || i == 0; i++) {
 		bt_mesh_srpl_entry_clear(primary + i);
 	}
 
