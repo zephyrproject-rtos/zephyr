@@ -1,0 +1,16 @@
+# Analog Devices MAX32 MCU series
+
+# Copyright (c) 2023 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_MAX32
+
+source "soc/arm/adi/max32/Kconfig.defconfig.max32*"
+
+config SOC_SERIES
+	default "max32"
+
+config SRAM_VECTOR_TABLE
+	default y
+
+endif # SOC_SERIES_MAX32

@@ -1,0 +1,15 @@
+# Analog Devices MAX32 MCU series
+
+# Copyright (c) 2023 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_MAX32
+	bool "MAX32XXX Series MCU"
+	select ARM
+	select CPU_CORTEX_M4
+	select CPU_CORTEX_M4_HAS_VECTOR_TABLE_REMAP
+	select SOC_FAMILY_MAX32
+	select CPU_CORTEX_M_HAS_SYSTICK
+	select SOC_FAMILY_ADI
+	help
+	  Enable support for MAX32 MCU series
