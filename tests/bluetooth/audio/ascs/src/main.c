@@ -297,3 +297,127 @@ ZTEST_F(ascs_test_suite, test_release_ase_on_acl_disconnection_server_terminates
 
 	bt_bap_unicast_server_unregister_cb(&mock_bap_unicast_server_cb);
 }
+
+ZTEST_F(ascs_test_suite, test_release_stream_pair_on_acl_disconnection_client_terminates_cis)
+{
+	const struct bt_gatt_attr *ase_snk, *ase_src;
+	struct bt_bap_stream snk_stream, src_stream;
+	struct bt_conn *conn = &fixture->conn;
+	uint8_t ase_snk_id, ase_src_id;
+	struct bt_iso_chan *chan;
+	int err;
+
+	if (CONFIG_BT_ASCS_MAX_ACTIVE_ASES < 2) {
+		ztest_test_skip();
+	}
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_BT_ASCS_ASE_SNK);
+	memset(&snk_stream, 0, sizeof(snk_stream));
+	ase_snk = fixture->ase_snk.attr;
+	zexpect_not_null(ase_snk);
+	ase_snk_id = fixture->ase_snk.id;
+	zexpect_true(ase_snk_id != 0x00);
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_BT_ASCS_ASE_SRC);
+	memset(&src_stream, 0, sizeof(src_stream));
+	ase_src = fixture->ase_src.attr;
+	zexpect_not_null(ase_src);
+	ase_src_id = fixture->ase_src.id;
+	zexpect_true(ase_src_id != 0x00);
+
+	bt_bap_unicast_server_register_cb(&mock_bap_unicast_server_cb);
+
+	test_ase_control_client_config_codec(conn, ase_snk_id, &snk_stream);
+	test_ase_control_client_config_qos(conn, ase_snk_id);
+	test_ase_control_client_enable(conn, ase_snk_id);
+
+	test_ase_control_client_config_codec(conn, ase_src_id, &src_stream);
+	test_ase_control_client_config_qos(conn, ase_src_id);
+	test_ase_control_client_enable(conn, ase_src_id);
+
+	err = mock_bt_iso_accept(conn, 0x01, 0x01, &chan);
+	zassert_equal(0, err, "Failed to connect iso: err %d", err);
+
+	test_ase_control_client_receiver_start_ready(conn, ase_src_id);
+
+	err = bt_bap_stream_start(&snk_stream);
+	zassert_equal(0, err, "bt_bap_stream_start err %d", err);
+
+	test_mocks_reset();
+
+	/* Mock ACL disconnection */
+	mock_bt_conn_disconnected(conn, BT_HCI_ERR_CONN_TIMEOUT);
+
+	/* Mock CIS disconnection */
+	mock_bt_iso_disconnect(chan);
+
+	/* Expected to notify the upper layers */
+	const struct bt_bap_stream *streams[2] = { &snk_stream, &src_stream };
+
+	expect_bt_bap_stream_ops_released_called_twice(streams);
+	expect_bt_bap_unicast_server_cb_release_called_twice(streams);
+
+	bt_bap_unicast_server_unregister_cb(&mock_bap_unicast_server_cb);
+}
+
+ZTEST_F(ascs_test_suite, test_release_stream_pair_on_acl_disconnection_server_terminates_cis)
+{
+	const struct bt_gatt_attr *ase_snk, *ase_src;
+	struct bt_bap_stream snk_stream, src_stream;
+	struct bt_conn *conn = &fixture->conn;
+	uint8_t ase_snk_id, ase_src_id;
+	struct bt_iso_chan *chan;
+	int err;
+
+	if (CONFIG_BT_ASCS_MAX_ACTIVE_ASES < 2) {
+		ztest_test_skip();
+	}
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_BT_ASCS_ASE_SNK);
+	memset(&snk_stream, 0, sizeof(snk_stream));
+	ase_snk = fixture->ase_snk.attr;
+	zexpect_not_null(ase_snk);
+	ase_snk_id = fixture->ase_snk.id;
+	zexpect_true(ase_snk_id != 0x00);
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_BT_ASCS_ASE_SRC);
+	memset(&src_stream, 0, sizeof(src_stream));
+	ase_src = fixture->ase_src.attr;
+	zexpect_not_null(ase_src);
+	ase_src_id = fixture->ase_src.id;
+	zexpect_true(ase_src_id != 0x00);
+
+	bt_bap_unicast_server_register_cb(&mock_bap_unicast_server_cb);
+
+	test_ase_control_client_config_codec(conn, ase_snk_id, &snk_stream);
+	test_ase_control_client_config_qos(conn, ase_snk_id);
+	test_ase_control_client_enable(conn, ase_snk_id);
+
+	test_ase_control_client_config_codec(conn, ase_src_id, &src_stream);
+	test_ase_control_client_config_qos(conn, ase_src_id);
+	test_ase_control_client_enable(conn, ase_src_id);
+
+	err = mock_bt_iso_accept(conn, 0x01, 0x01, &chan);
+	zassert_equal(0, err, "Failed to connect iso: err %d", err);
+
+	test_ase_control_client_receiver_start_ready(conn, ase_src_id);
+
+	err = bt_bap_stream_start(&snk_stream);
+	zassert_equal(0, err, "bt_bap_stream_start err %d", err);
+
+	test_mocks_reset();
+
+	/* Mock ACL disconnection */
+	mock_bt_conn_disconnected(conn, BT_HCI_ERR_CONN_TIMEOUT);
+
+	/* Client does not disconnect the CIS in expected time */
+	k_sleep(K_MSEC(CONFIG_BT_ASCS_ISO_DISCONNECT_DELAY));
+
+	/* Expected to notify the upper layers */
+	const struct bt_bap_stream *streams[2] = { &snk_stream, &src_stream };
+
+	expect_bt_bap_stream_ops_released_called_twice(streams);
+	expect_bt_bap_unicast_server_cb_release_called_twice(streams);
+
+	bt_bap_unicast_server_unregister_cb(&mock_bap_unicast_server_cb);
+}

@@ -129,6 +129,26 @@ static inline void expect_bt_bap_stream_ops_disabled_not_called(void)
 		      "'%s()' was called unexpectedly", func_name);
 }
 
+static inline void expect_bt_bap_stream_ops_released_called_twice(
+	const struct bt_bap_stream *streams[2])
+{
+	const char *func_name = "bt_bap_stream_ops.released";
+
+	zexpect_equal(2, mock_bap_stream_released_cb_fake.call_count,
+		      "'%s()' was called %u times, but expected once",
+		      func_name, mock_bap_stream_released_cb_fake.call_count);
+
+	if (mock_bap_stream_released_cb_fake.call_count > 0) {
+		zexpect_equal_ptr(streams[0], mock_bap_stream_released_cb_fake.arg0_history[0],
+				  "'%s()' was called with incorrect '%s'", func_name, "stream");
+	}
+
+	if (mock_bap_stream_released_cb_fake.call_count > 1) {
+		zexpect_equal_ptr(streams[1], mock_bap_stream_released_cb_fake.arg0_history[1],
+				  "'%s()' was called with incorrect '%s'", func_name, "stream");
+	}
+}
+
 static inline void expect_bt_bap_stream_ops_released_called_once(struct bt_bap_stream *stream)
 {
 	const char *func_name = "bt_bap_stream_ops.released";
