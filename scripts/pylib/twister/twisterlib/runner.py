@@ -938,7 +938,7 @@ class ProjectBuilder(FilterBuilder):
                 else:
                     more_info = "build"
 
-                if ( instance.status in [Status.ERROR, Status.FAIL, "timeout"]
+                if ( instance.status in [Status.ERROR, Status.FAIL]
                      and hasattr(self.instance.handler, 'seed')
                      and self.instance.handler.seed is not None ):
                     more_info += "/seed: " + str(self.options.seed)
@@ -946,7 +946,7 @@ class ProjectBuilder(FilterBuilder):
                 results.done, total_tests_width, total_to_do , instance.platform.name,
                 instance.testsuite.name, status, more_info))
 
-            if instance.status in [Status.ERROR, Status.FAIL, "timeout"]:
+            if instance.status in [Status.ERROR, Status.FAIL]:
                 self.log_info_file(self.options.inline_logs)
         else:
             completed_perc = 0
