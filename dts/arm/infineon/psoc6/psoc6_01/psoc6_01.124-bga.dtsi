@@ -11,8 +11,8 @@
 
 / {
 	soc {
-		pinctrl: pinctrl@40310000 {
 
+		pinctrl: pinctrl@40310000 {
 			/* scb_i2c_scl */
 			/omit-if-no-ref/ p0_2_scb0_i2c_scl: p0_2_scb0_i2c_scl {
 				pinmux = <DT_CAT1_PINMUX(0, 2, HSIOM_SEL_ACT_7)>;

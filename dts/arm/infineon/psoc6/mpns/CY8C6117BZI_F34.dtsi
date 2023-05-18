@@ -8,12 +8,16 @@
 #include <arm/armv7-m.dtsi>
 #include "../psoc6_01/psoc6_01.124-bga.dtsi"
 
-&sram0 {
-	reg = <0x8000000 0x48000>;
+cpus {
+	/delete-node/ cpu@0;
 };
 
 &flash0 {
 	reg = <0x10000000 0x100000>;
+};
+
+&sram0 {
+	reg = <0x8000000 0x48000>;
 };
 
 &nvic {

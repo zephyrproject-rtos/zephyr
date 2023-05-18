@@ -8,6 +8,10 @@
 #include <arm/armv7-m.dtsi>
 #include "../psoc6_01/psoc6_01.124-bga.dtsi"
 
+cpus {
+	/delete-node/ cpu@0;
+};
+
 &flash0 {
 	reg = <0x10000000 0x100000>;
 };
