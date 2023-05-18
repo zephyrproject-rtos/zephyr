@@ -463,13 +463,17 @@ void bt_mesh_sol_reset(void)
 #if CONFIG_BT_MESH_PROXY_SOLICITATION
 	sseq_out = 0;
 
-	bt_mesh_settings_store_schedule(BT_MESH_SETTINGS_SSEQ_PENDING);
+	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
+		bt_mesh_settings_store_schedule(BT_MESH_SETTINGS_SSEQ_PENDING);
+	}
 #endif
 
 #if CONFIG_BT_MESH_OD_PRIV_PROXY_SRV
-	(void)atomic_cas(&clear, 0, 1);
+	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
+		(void)atomic_cas(&clear, 0, 1);
 
-	bt_mesh_settings_store_schedule(BT_MESH_SETTINGS_SRPL_PENDING);
+		bt_mesh_settings_store_schedule(BT_MESH_SETTINGS_SRPL_PENDING);
+	}
 #endif
 }
 
@@ -533,7 +537,9 @@ int bt_mesh_sol_send(void)
 
 	sseq_out++;
 
-	bt_mesh_settings_store_schedule(BT_MESH_SETTINGS_SSEQ_PENDING);
+	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
+		bt_mesh_settings_store_schedule(BT_MESH_SETTINGS_SSEQ_PENDING);
+	}
 
 	return 0;
 #else
