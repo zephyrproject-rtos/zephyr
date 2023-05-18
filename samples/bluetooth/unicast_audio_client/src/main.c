@@ -353,26 +353,43 @@ static void print_hex(const uint8_t *ptr, size_t len)
 	}
 }
 
+static void print_ltv_elem(const char *str, uint8_t type, uint8_t value_len, const uint8_t *value,
+			   size_t cnt)
+{
+	printk("%s #%zu: type 0x%02x value_len %u\n", str, cnt, type, value_len);
+	print_hex(value, value_len);
+	printk("\n");
+}
+
+static void print_ltv_array(const char *str, const uint8_t *ltv_data, size_t ltv_data_len)
+{
+	size_t cnt = 0U;
+
+	for (size_t i = 0U; i < ltv_data_len; i++) {
+		const uint8_t len = ltv_data[i++];
+		const uint8_t type = ltv_data[i++];
+		const uint8_t *value = &ltv_data[i];
+		const uint8_t value_len = len - sizeof(type);
+
+		print_ltv_elem(str, type, value_len, value, cnt++);
+		i += value_len;
+	}
+}
+
 static void print_codec_cap(const struct bt_audio_codec_cap *codec_cap)
 {
-	printk("codec 0x%02x cid 0x%04x vid 0x%04x count %u\n", codec_cap->id, codec_cap->cid,
-	       codec_cap->vid, codec_cap->data_count);
+	printk("codec id 0x%02x cid 0x%04x vid 0x%04x count %u\n", codec_cap->id, codec_cap->cid,
+	       codec_cap->vid, codec_cap->data_len);
 
-	for (size_t i = 0; i < codec_cap->data_count; i++) {
-		printk("data #%zu: type 0x%02x len %u\n", i, codec_cap->data[i].data.type,
-		       codec_cap->data[i].data.data_len);
-		print_hex(codec_cap->data[i].data.data,
-			  codec_cap->data[i].data.data_len - sizeof(codec_cap->data[i].data.type));
+	if (codec_cap->id == BT_AUDIO_CODEC_LC3_ID) {
+		print_ltv_array("data", codec_cap->data, codec_cap->data_len);
+	} else { /* If not LC3, we cannot assume it's LTV */
+		printk("data: ");
+		print_hex(codec_cap->data, codec_cap->data_len);
 		printk("\n");
 	}
 
-	for (size_t i = 0; i < codec_cap->meta_count; i++) {
-		printk("meta #%zu: type 0x%02x len %u\n", i, codec_cap->meta[i].data.type,
-		       codec_cap->meta[i].data.data_len);
-		print_hex(codec_cap->meta[i].data.data,
-			  codec_cap->meta[i].data.data_len - sizeof(codec_cap->meta[i].data.type));
-		printk("\n");
-	}
+	print_ltv_array("meta", codec_cap->meta, codec_cap->meta_len);
 }
 
 static bool check_audio_support_and_connect(struct bt_data *data,
