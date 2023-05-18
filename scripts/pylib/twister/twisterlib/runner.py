@@ -634,6 +634,7 @@ class ProjectBuilder(FilterBuilder):
             if self.instance.run and self.instance.handler.ready:
                 pipeline.put({"op": "run", "test": self.instance})
             else:
+                self.instance.status = Status.NOTRUN
                 pipeline.put({"op": "report", "test": self.instance})
 
         # Run the generated binary using one of the supported handlers
@@ -920,6 +921,8 @@ class ProjectBuilder(FilterBuilder):
                 # test cases skipped at the test case level
                 if case.status == Status.SKIP:
                     results.skipped_cases += 1
+        elif instance.status == Status.NOTRUN:
+            status = Fore.YELLOW + "NOTRUN" + Fore.RESET
         else:
             logger.debug(f"Unknown status = {instance.status}")
             status = Fore.YELLOW + "UNKNOWN" + Fore.RESET
