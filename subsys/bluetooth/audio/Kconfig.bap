@@ -46,14 +46,6 @@ config BT_AUDIO_CODEC_CFG_MAX_DATA_COUNT
 	  This option defines the maximum number of LTV entries a codec can
 	  store.
 
-config BT_AUDIO_CODEC_CAP_MAX_DATA_COUNT
-	int "Codec Capabilities Data Count"
-	default 5
-	range 1 128
-	help
-	  This option defines the maximum number of LTV entries a codec can
-	  store.
-
 config BT_AUDIO_CODEC_MAX_DATA_LEN
 	int "Codec Capabilities Data Length"
 	default 4
@@ -70,13 +62,19 @@ config BT_AUDIO_CODEC_CFG_MAX_METADATA_COUNT
 	  This option defines the maximum number of LTV entries a metadata can
 	  store.
 
-config BT_AUDIO_CODEC_CAP_MAX_METADATA_COUNT
-	int "Codec Capabilities Metadata Count"
-	default 2
-	range 1 128
+config BT_AUDIO_CODEC_CAP_MAX_DATA_SIZE
+	int "Codec Capabilities Data Size"
+	default 19
+	range 0 255
 	help
-	  This option defines the maximum number of LTV entries a metadata can
-	  store.
+	  Number of octets to support for Codec Specific Capabilities data.
+
+config BT_AUDIO_CODEC_CAP_MAX_METADATA_SIZE
+	int "Codec Capabilities Metadata Size"
+	default 4
+	range 0 255
+	help
+	  Number of octets to support for Codec Specific Capabilities metadata.
 
 if BT_BAP_UNICAST_CLIENT
 config BT_BAP_UNICAST_CLIENT_GROUP_COUNT

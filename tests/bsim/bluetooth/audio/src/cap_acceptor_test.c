@@ -29,8 +29,11 @@ CREATE_FLAG(flag_pa_sync_lost);
 
 static struct bt_bap_broadcast_sink *g_broadcast_sink;
 static struct bt_cap_stream broadcast_sink_streams[CONFIG_BT_BAP_BROADCAST_SNK_STREAM_COUNT];
-static struct bt_audio_codec_cap codec_cap_16_2_1 = BT_AUDIO_CODEC_LC3_CONFIG_16_2(
-	BT_AUDIO_LOCATION_FRONT_LEFT, BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED);
+
+static struct bt_audio_codec_cap codec_cap = BT_AUDIO_CODEC_CAP_LC3(
+	BT_AUDIO_CODEC_LC3_FREQ_ANY, BT_AUDIO_CODEC_LC3_DURATION_ANY,
+	BT_AUDIO_CODEC_LC3_CHAN_COUNT_SUPPORT(1, 2), 30, 240, 2,
+	(BT_AUDIO_CONTEXT_TYPE_CONVERSATIONAL | BT_AUDIO_CONTEXT_TYPE_MEDIA));
 
 static const struct bt_audio_codec_qos_pref unicast_qos_pref =
 	BT_AUDIO_CODEC_QOS_PREF(true, BT_GAP_LE_PHY_2M, 0u, 60u, 20000u, 40000u, 20000u, 40000u);
@@ -520,7 +523,7 @@ static void init(void)
 
 	if (IS_ENABLED(CONFIG_BT_BAP_UNICAST_SERVER)) {
 		static struct bt_pacs_cap unicast_cap = {
-			.codec_cap = &codec_cap_16_2_1,
+			.codec_cap = &codec_cap,
 		};
 
 		err = bt_pacs_cap_register(BT_AUDIO_DIR_SINK, &unicast_cap);
@@ -560,7 +563,7 @@ static void init(void)
 
 	if (IS_ENABLED(CONFIG_BT_BAP_BROADCAST_SINK)) {
 		static struct bt_pacs_cap broadcast_cap = {
-			.codec_cap = &codec_cap_16_2_1,
+			.codec_cap = &codec_cap,
 		};
 
 		err = bt_pacs_cap_register(BT_AUDIO_DIR_SINK, &broadcast_cap);
