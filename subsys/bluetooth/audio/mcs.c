@@ -16,6 +16,7 @@
 #include <stdio.h>
 #include <zephyr/types.h>
 #include <zephyr/sys/atomic.h>
+#include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/util.h>
 
 #include <zephyr/bluetooth/bluetooth.h>
@@ -124,10 +125,14 @@ static ssize_t read_icon_id(struct bt_conn *conn,
 			    uint16_t len, uint16_t offset)
 {
 	uint64_t icon_id = media_proxy_sctrl_get_icon_id();
+	uint8_t icon_id_le[BT_OTS_OBJ_ID_SIZE];
+
+	sys_put_le48(icon_id, icon_id_le);
 
 	LOG_DBG_OBJ_ID("Icon object read: ", icon_id);
-	return bt_gatt_attr_read(conn, attr, buf, len, offset, &icon_id,
-				 BT_OTS_OBJ_ID_SIZE);
+
+	return bt_gatt_attr_read(conn, attr, buf, len, offset, icon_id_le,
+				 sizeof(icon_id_le));
 }
 #endif /* CONFIG_BT_OTS */
 
@@ -186,13 +191,14 @@ static ssize_t read_track_duration(struct bt_conn *conn,
 {
 	struct client_state *client = &clients[bt_conn_index(conn)];
 	int32_t duration = media_proxy_sctrl_get_track_duration();
+	int32_t duration_le = sys_cpu_to_le32(duration);
 
 	LOG_DBG("Track duration read: %d (0x%08x)", duration, duration);
 
 	atomic_clear_bit(client->flags, FLAG_TRACK_DURATION_CHANGED);
 
-	return bt_gatt_attr_read(conn, attr, buf, len, offset, &duration,
-				 sizeof(duration));
+	return bt_gatt_attr_read(conn, attr, buf, len, offset, &duration_le,
+				 sizeof(duration_le));
 }
 
 static void track_duration_cfg_changed(const struct bt_gatt_attr *attr,
@@ -207,13 +213,14 @@ static ssize_t read_track_position(struct bt_conn *conn,
 {
 	struct client_state *client = &clients[bt_conn_index(conn)];
 	int32_t position = media_proxy_sctrl_get_track_position();
+	int32_t position_le = sys_cpu_to_le32(position);
 
 	LOG_DBG("Track position read: %d (0x%08x)", position, position);
 
 	atomic_clear_bit(client->flags, FLAG_TRACK_POSITION_CHANGED);
 
-	return bt_gatt_attr_read(conn, attr, buf, len, offset, &position,
-				 sizeof(position));
+	return bt_gatt_attr_read(conn, attr, buf, len, offset, &position_le,
+				 sizeof(position_le));
 }
 
 static ssize_t write_track_position(struct bt_conn *conn,
@@ -226,11 +233,12 @@ static ssize_t write_track_position(struct bt_conn *conn,
 	if (offset != 0) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
 	}
+
 	if (len != sizeof(position)) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
 	}
 
-	memcpy(&position, buf, len);
+	position = sys_get_le32((uint8_t *)buf);
 
 	media_proxy_sctrl_set_track_position(position);
 
@@ -316,10 +324,14 @@ static ssize_t read_track_segments_id(struct bt_conn *conn,
 				      void *buf, uint16_t len, uint16_t offset)
 {
 	uint64_t track_segments_id = media_proxy_sctrl_get_track_segments_id();
+	uint8_t track_segments_id_le[BT_OTS_OBJ_ID_SIZE];
+
+	sys_put_le48(track_segments_id, track_segments_id_le);
 
 	LOG_DBG_OBJ_ID("Track segments ID read: ", track_segments_id);
+
 	return bt_gatt_attr_read(conn, attr, buf, len, offset,
-				 &track_segments_id, BT_OTS_OBJ_ID_SIZE);
+				 track_segments_id_le, sizeof(track_segments_id_le));
 }
 
 static ssize_t read_current_track_id(struct bt_conn *conn,
@@ -328,13 +340,16 @@ static ssize_t read_current_track_id(struct bt_conn *conn,
 {
 	struct client_state *client = &clients[bt_conn_index(conn)];
 	uint64_t track_id = media_proxy_sctrl_get_current_track_id();
+	uint8_t track_id_le[BT_OTS_OBJ_ID_SIZE];
+
+	sys_put_le48(track_id, track_id_le);
 
 	LOG_DBG_OBJ_ID("Current track ID read: ", track_id);
 
 	atomic_clear_bit(client->flags, FLAG_CURRENT_TRACK_OBJ_ID_CHANGED);
 
-	return bt_gatt_attr_read(conn, attr, buf, len, offset, &track_id,
-				 BT_OTS_OBJ_ID_SIZE);
+	return bt_gatt_attr_read(conn, attr, buf, len, offset, track_id_le,
+				 sizeof(track_id_le));
 }
 
 static ssize_t write_current_track_id(struct bt_conn *conn,
@@ -379,6 +394,9 @@ static ssize_t read_next_track_id(struct bt_conn *conn,
 {
 	struct client_state *client = &clients[bt_conn_index(conn)];
 	uint64_t track_id = media_proxy_sctrl_get_next_track_id();
+	uint8_t track_id_le[BT_OTS_OBJ_ID_SIZE];
+
+	sys_put_le48(track_id, track_id_le);
 
 	atomic_clear_bit(client->flags, FLAG_NEXT_TRACK_OBJ_ID_CHANGED);
 
@@ -391,7 +409,7 @@ static ssize_t read_next_track_id(struct bt_conn *conn,
 
 	LOG_DBG_OBJ_ID("Next track read: ", track_id);
 	return bt_gatt_attr_read(conn, attr, buf, len, offset,
-				 &track_id, BT_OTS_OBJ_ID_SIZE);
+				 track_id_le, sizeof(track_id_le));
 }
 
 static ssize_t write_next_track_id(struct bt_conn *conn,
@@ -436,13 +454,16 @@ static ssize_t read_parent_group_id(struct bt_conn *conn,
 {
 	struct client_state *client = &clients[bt_conn_index(conn)];
 	uint64_t group_id = media_proxy_sctrl_get_parent_group_id();
+	uint8_t group_id_le[BT_OTS_OBJ_ID_SIZE];
+
+	sys_put_le48(group_id, group_id_le);
 
 	LOG_DBG_OBJ_ID("Parent group read: ", group_id);
 
 	atomic_clear_bit(client->flags, FLAG_PARENT_GROUP_OBJ_ID_CHANGED);
 
-	return bt_gatt_attr_read(conn, attr, buf, len, offset, &group_id,
-				 BT_OTS_OBJ_ID_SIZE);
+	return bt_gatt_attr_read(conn, attr, buf, len, offset, group_id_le,
+				 sizeof(group_id_le));
 }
 
 static void parent_group_id_cfg_changed(const struct bt_gatt_attr *attr,
@@ -457,13 +478,16 @@ static ssize_t read_current_group_id(struct bt_conn *conn,
 {
 	struct client_state *client = &clients[bt_conn_index(conn)];
 	uint64_t group_id = media_proxy_sctrl_get_current_group_id();
+	uint8_t group_id_le[BT_OTS_OBJ_ID_SIZE];
+
+	sys_put_le48(group_id, group_id_le);
 
 	LOG_DBG_OBJ_ID("Current group read: ", group_id);
 
 	atomic_clear_bit(client->flags, FLAG_CURRENT_GROUP_OBJ_ID_CHANGED);
 
-	return bt_gatt_attr_read(conn, attr, buf, len, offset, &group_id,
-				 BT_OTS_OBJ_ID_SIZE);
+	return bt_gatt_attr_read(conn, attr, buf, len, offset, group_id_le,
+				 sizeof(group_id_le));
 }
 
 static ssize_t write_current_group_id(struct bt_conn *conn,
@@ -554,11 +578,12 @@ static ssize_t read_playing_orders_supported(struct bt_conn *conn,
 					     void *buf, uint16_t len, uint16_t offset)
 {
 	uint16_t orders = media_proxy_sctrl_get_playing_orders_supported();
+	uint16_t orders_le = sys_cpu_to_le16(orders);
 
 	LOG_DBG("Playing orders read: %d (0x%04x)", orders, orders);
 
-	return bt_gatt_attr_read(conn, attr, buf, len, offset, &orders,
-				 sizeof(orders));
+	return bt_gatt_attr_read(conn, attr, buf, len, offset, &orders_le,
+				 sizeof(orders_le));
 }
 
 static ssize_t read_media_state(struct bt_conn *conn,
@@ -630,9 +655,7 @@ static ssize_t write_control_point(struct bt_conn *conn,
 	}
 
 	if (len == sizeof(command.opcode) + sizeof(command.param)) {
-		memcpy(&command.param,
-		       (char *)buf + sizeof(command.opcode),
-		       sizeof(command.param));
+		command.param = sys_get_le32((char *)buf + sizeof(command.opcode));
 		command.use_param = true;
 		LOG_DBG("Parameter: %d", command.param);
 	}
@@ -654,13 +677,14 @@ static ssize_t read_opcodes_supported(struct bt_conn *conn,
 {
 	struct client_state *client = &clients[bt_conn_index(conn)];
 	uint32_t opcodes = media_proxy_sctrl_get_commands_supported();
+	uint32_t opcodes_le = sys_cpu_to_le32(opcodes);
 
 	LOG_DBG("Opcodes_supported read: %d (0x%08x)", opcodes, opcodes);
 
 	atomic_clear_bit(client->flags, FLAG_MEDIA_CONTROL_OPCODES_CHANGED);
 
 	return bt_gatt_attr_read(conn, attr, buf, len, offset,
-				 &opcodes, BT_MCS_OPCODES_SUPPORTED_LEN);
+				 &opcodes_le, sizeof(opcodes_le));
 }
 
 static void opcodes_supported_cfg_changed(const struct bt_gatt_attr *attr,
@@ -736,8 +760,12 @@ static ssize_t read_search_results_id(struct bt_conn *conn,
 		return bt_gatt_attr_read(conn, attr, buf, len, offset,
 					 NULL, 0);
 	} else {
+		uint8_t search_id_le[BT_OTS_OBJ_ID_SIZE];
+
+		sys_put_le48(search_id, search_id_le);
+
 		return bt_gatt_attr_read(conn, attr, buf, len, offset,
-					 &search_id, BT_OTS_OBJ_ID_SIZE);
+					 &search_id_le, sizeof(search_id_le));
 	}
 }
 
@@ -993,16 +1021,18 @@ static void notify_cb(struct bt_conn *conn, void *data)
 
 	if (atomic_test_and_clear_bit(client->flags, FLAG_TRACK_DURATION_CHANGED)) {
 		int32_t duration = media_proxy_sctrl_get_track_duration();
+		int32_t duration_le = sys_cpu_to_le32(duration);
 
 		LOG_DBG("Notifying track duration: %d", duration);
-		notify(BT_UUID_MCS_TRACK_DURATION, &duration, sizeof(duration));
+		notify(BT_UUID_MCS_TRACK_DURATION, &duration_le, sizeof(duration_le));
 	}
 
 	if (atomic_test_and_clear_bit(client->flags, FLAG_TRACK_POSITION_CHANGED)) {
 		int32_t position = media_proxy_sctrl_get_track_position();
+		int32_t position_le = sys_cpu_to_le32(position);
 
 		LOG_DBG("Notifying track position: %d", position);
-		notify(BT_UUID_MCS_TRACK_POSITION, &position, sizeof(position));
+		notify(BT_UUID_MCS_TRACK_POSITION, &position_le, sizeof(position_le));
 	}
 
 	if (atomic_test_and_clear_bit(client->flags, FLAG_PLAYBACK_SPEED_CHANGED)) {
@@ -1022,9 +1052,12 @@ static void notify_cb(struct bt_conn *conn, void *data)
 #if defined(CONFIG_BT_OTS)
 	if (atomic_test_and_clear_bit(client->flags, FLAG_CURRENT_TRACK_OBJ_ID_CHANGED)) {
 		uint64_t track_id = media_proxy_sctrl_get_current_track_id();
+		uint8_t track_id_le[BT_OTS_OBJ_ID_SIZE];
+
+		sys_put_le48(track_id, track_id_le);
 
 		LOG_DBG_OBJ_ID("Notifying current track ID: ", track_id);
-		notify(BT_UUID_MCS_CURRENT_TRACK_OBJ_ID, &track_id, BT_OTS_OBJ_ID_SIZE);
+		notify(BT_UUID_MCS_CURRENT_TRACK_OBJ_ID, track_id_le, sizeof(track_id_le));
 	}
 
 	if (atomic_test_and_clear_bit(client->flags, FLAG_NEXT_TRACK_OBJ_ID_CHANGED)) {
@@ -1037,23 +1070,33 @@ static void notify_cb(struct bt_conn *conn, void *data)
 			LOG_DBG_OBJ_ID("Notifying EMPTY next track ID: ", track_id);
 			notify(BT_UUID_MCS_NEXT_TRACK_OBJ_ID, NULL, 0);
 		} else {
+			uint8_t track_id_le[BT_OTS_OBJ_ID_SIZE];
+
+			sys_put_le48(track_id, track_id_le);
+
 			LOG_DBG_OBJ_ID("Notifying next track ID: ", track_id);
-			notify(BT_UUID_MCS_NEXT_TRACK_OBJ_ID, &track_id, BT_OTS_OBJ_ID_SIZE);
+			notify(BT_UUID_MCS_NEXT_TRACK_OBJ_ID, track_id_le, sizeof(track_id_le));
 		}
 	}
 
 	if (atomic_test_and_clear_bit(client->flags, FLAG_PARENT_GROUP_OBJ_ID_CHANGED)) {
 		uint64_t group_id = media_proxy_sctrl_get_parent_group_id();
+		uint8_t group_id_le[BT_OTS_OBJ_ID_SIZE];
+
+		sys_put_le48(group_id, group_id_le);
 
 		LOG_DBG_OBJ_ID("Notifying parent group ID: ", group_id);
-		notify(BT_UUID_MCS_PARENT_GROUP_OBJ_ID, &group_id, BT_OTS_OBJ_ID_SIZE);
+		notify(BT_UUID_MCS_PARENT_GROUP_OBJ_ID, &group_id_le, sizeof(group_id_le));
 	}
 
 	if (atomic_test_and_clear_bit(client->flags, FLAG_CURRENT_GROUP_OBJ_ID_CHANGED)) {
 		uint64_t group_id = media_proxy_sctrl_get_current_group_id();
+		uint8_t group_id_le[BT_OTS_OBJ_ID_SIZE];
+
+		sys_put_le48(group_id, group_id_le);
 
 		LOG_DBG_OBJ_ID("Notifying current group ID: ", group_id);
-		notify(BT_UUID_MCS_CURRENT_GROUP_OBJ_ID, &group_id, BT_OTS_OBJ_ID_SIZE);
+		notify(BT_UUID_MCS_CURRENT_GROUP_OBJ_ID, &group_id_le, sizeof(group_id_le));
 	}
 #endif /* CONFIG_BT_OTS */
 
@@ -1078,17 +1121,21 @@ static void notify_cb(struct bt_conn *conn, void *data)
 
 	if (atomic_test_and_clear_bit(client->flags, FLAG_MEDIA_CONTROL_OPCODES_CHANGED)) {
 		uint32_t opcodes = media_proxy_sctrl_get_commands_supported();
+		uint32_t opcodes_le = sys_cpu_to_le32(opcodes);
 
 		LOG_DBG("Notifying command opcodes supported: %d (0x%08x)", opcodes, opcodes);
-		notify(BT_UUID_MCS_MEDIA_CONTROL_OPCODES, &opcodes, BT_MCS_OPCODES_SUPPORTED_LEN);
+		notify(BT_UUID_MCS_MEDIA_CONTROL_OPCODES, &opcodes_le, sizeof(opcodes_le));
 	}
 
 #if defined(CONFIG_BT_OTS)
 	if (atomic_test_and_clear_bit(client->flags, FLAG_SEARCH_RESULTS_OBJ_ID_CHANGED)) {
 		uint64_t search_id = media_proxy_sctrl_get_search_results_id();
+		uint8_t search_id_le[BT_OTS_OBJ_ID_SIZE];
+
+		sys_put_le48(search_id, search_id_le);
 
 		LOG_DBG_OBJ_ID("Notifying search results ID: ", search_id);
-		notify(BT_UUID_MCS_SEARCH_RESULTS_OBJ_ID, &search_id, BT_OTS_OBJ_ID_SIZE);
+		notify(BT_UUID_MCS_SEARCH_RESULTS_OBJ_ID, &search_id_le, sizeof(search_id_le));
 	}
 
 	if (atomic_test_and_clear_bit(client->flags, FLAG_SEARCH_CONTROL_POINT_RESULT)) {
