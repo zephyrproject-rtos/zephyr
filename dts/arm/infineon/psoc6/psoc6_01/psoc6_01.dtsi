@@ -12,7 +12,7 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 
-		cpu0: cpu@0 {
+		cpu@0 {
 			device_type = "cpu";
 			compatible = "arm,cortex-m0+";
 			reg = <0>;
@@ -32,7 +32,7 @@
 
 		flash0: flash@10000000 {
 			compatible = "soc-nv-flash";
-			reg = <0x10000000 0x80000>;
+			reg = <0x10000000 0x100000>;
 			write-block-size = <512>;
 			erase-block-size = <512>;
 		};
@@ -46,16 +46,10 @@
 
 	sram0: memory@8000000 {
 		compatible = "mmio-sram";
-		reg = <0x8000000 0x20000>;
+		reg = <0x8000000 0x48000>;
 	};
 
 	soc {
-		uid: device_uid@16000600 {
-			compatible = "infineon,cat1-uid";
-			reg = <0x16000600 0xb>;
-			status = "disabled";
-		};
-
 		pinctrl: pinctrl@40310000 {
 			compatible = "infineon,cat1-pinctrl";
 			reg = <0x40310000 0x20000>;
@@ -204,6 +198,11 @@
 				status = "disabled";
 				#gpio-cells = <2>;
 			};
+		};
+		uid: device_uid@16000600 {
+			compatible = "infineon,cat1-uid";
+			reg = <0x16000600 0xb>;
+			status = "disabled";
 		};
 
 		adc0: adc@411f0000 {
