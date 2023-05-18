@@ -153,6 +153,10 @@ static ALWAYS_INLINE k_spinlock_key_t k_spin_lock(struct k_spinlock *l)
 
 #ifdef CONFIG_SMP
 	while (!atomic_cas(&l->locked, 0, 1)) {
+#if defined(CONFIG_ARM64) && defined(CONFIG_FPU_SHARING)
+		extern void z_arm64_flush_local_fpu_proactive(void);
+		z_arm64_flush_local_fpu_proactive();
+#endif
 	}
 #endif
 

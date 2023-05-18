@@ -89,6 +89,32 @@ void z_arm64_flush_local_fpu(void)
 }
 
 #ifdef CONFIG_SMP
+/*
+ * Using FPU with FPU sharing in a spin-locked critical section might cause a 'deadlock'.
+ * When core 0 got a spinlock that other cores are waiting for, it will 'deadlock'
+ * if the core 0 current threads' FPU context is living in another one that is waiting
+ * for the spinlock but never receives the FPU IPI.
+ *
+ * To avoid the 'deadlock', let the spinning cores flush their FPU if its fpu_owner is
+ * the current thread of another core.
+ */
+void z_arm64_flush_local_fpu_proactive(void)
+{
+	struct k_thread *owner = _current_cpu->arch.fpu_owner;
+	unsigned int num_cpus = arch_num_cpus();
+	int i;
+
+	for (i = 0; i < num_cpus; i++) {
+		if (i == _current_cpu->id) {
+			continue;
+		}
+
+		if (owner == _kernel.cpus[i].current) {
+			z_arm64_flush_local_fpu();
+		}
+	}
+}
+
 static void flush_owned_fpu(struct k_thread *thread)
 {
 	__ASSERT(read_daif() & DAIF_IRQ_BIT, "must be called with IRQs disabled");
