@@ -26,6 +26,8 @@
 #include <zephyr/irq.h>
 #include "boot.h"
 
+#define INV_MPID	UINT64_MAX
+
 #define SGI_SCHED_IPI	0
 #define SGI_MMCFG_IPI	1
 #define SGI_FPU_IPI	2
@@ -48,6 +50,11 @@ volatile struct boot_params __aligned(L1_CACHE_BYTES) arm64_cpu_boot_params = {
 
 static const uint64_t cpu_node_list[] = {
 	DT_FOREACH_CHILD_STATUS_OKAY_SEP(DT_PATH(cpus), DT_REG_ADDR, (,))
+};
+
+/* cpu_map saves the maping of core id and mpid */
+static uint64_t cpu_map[CONFIG_MP_MAX_NUM_CPUS] = {
+	[0 ... (CONFIG_MP_MAX_NUM_CPUS - 1)] = INV_MPID
 };
 
 extern void z_arm64_mm_init(bool is_primary_core);
@@ -106,6 +113,9 @@ void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 	while (arm64_cpu_boot_params.fn) {
 		wfe();
 	}
+
+	cpu_map[cpu_num] = cpu_mpid;
+
 	printk("Secondary CPU core %d (MPID:%#llx) is up\n", cpu_num, cpu_mpid);
 }
 
@@ -166,13 +176,14 @@ static void broadcast_ipi(unsigned int ipi)
 	unsigned int num_cpus = arch_num_cpus();
 
 	for (int i = 0; i < num_cpus; i++) {
-		uint64_t target_mpidr = cpu_node_list[i];
-		uint8_t aff0 = MPIDR_AFFLVL(target_mpidr, 0);
+		uint64_t target_mpidr = cpu_map[i];
+		uint8_t aff0;
 
-		if (mpidr == target_mpidr) {
+		if (mpidr == target_mpidr || mpidr == INV_MPID) {
 			continue;
 		}
 
+		aff0 = MPIDR_AFFLVL(target_mpidr, 0);
 		gic_raise_sgi(ipi, target_mpidr, 1 << aff0);
 	}
 }
@@ -220,9 +231,14 @@ void flush_fpu_ipi_handler(const void *unused)
 
 void z_arm64_flush_fpu_ipi(unsigned int cpu)
 {
-	const uint64_t mpidr = cpu_node_list[cpu];
-	uint8_t aff0 = MPIDR_AFFLVL(mpidr, 0);
+	const uint64_t mpidr = cpu_map[cpu];
+	uint8_t aff0;
 
+	if (mpidr == INV_MPID) {
+		return;
+	}
+
+	aff0 = MPIDR_AFFLVL(mpidr, 0);
 	gic_raise_sgi(SGI_FPU_IPI, mpidr, 1 << aff0);
 }
 
@@ -248,6 +264,7 @@ void arch_spin_relax(void)
 
 static int arm64_smp_init(void)
 {
+	cpu_map[0] = MPIDR_TO_CORE(GET_MPIDR());
 
 	/*
 	 * SGI0 is use for sched ipi, this might be changed to use Kconfig
