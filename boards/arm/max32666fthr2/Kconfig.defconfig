@@ -1,0 +1,11 @@
+# MAX32666FTHR2 board configuration
+
+# Copyright (c) 2023 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_MAX32666FTHR2
+
+config BOARD
+	default "max32666fthr2"
+
+endif # BOARD_MAX32666FTHR2

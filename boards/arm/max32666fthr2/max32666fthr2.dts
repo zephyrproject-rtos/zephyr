@@ -1,0 +1,82 @@
+/*
+ * Copyright (c) 2023 Analog Devices, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+ #include <adi/max32666.dtsi>
+ #include <adi/max32666-pinctrl.dtsi>
+
+/ {
+	 model = "Analog Devices MAX32666FTHR2";
+	 compatible = "adi,max32666fthr2";
+
+	 chosen {
+		 zephyr,console = &uart0;
+		 zephyr,shell-uart = &uart0;
+		 zephyr,sram = &sram0;
+		 zephyr,flash = &flash0;
+	 };
+
+	 leds {
+		 compatible = "gpio-leds";
+		 led1: led_1 {
+			 gpios = <&gpio0 29 GPIO_ACTIVE_LOW>;
+			 label = "Red LED";
+		 };
+		 led2: led_2 {
+			 gpios = <&gpio0 30 GPIO_ACTIVE_LOW>;
+			 label = "Blue LED";
+		 };
+		 led3: led_3 {
+			 gpios = <&gpio0 31 GPIO_ACTIVE_LOW>;
+			 label = "Green LED";
+		 };
+	 };
+
+	 buttons {
+		 compatible = "gpio-keys";
+		 pb1: pb1 {
+			 gpios = <&gpio0 24 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			 label = "SW2";
+		 };
+		 pb2: pb2 {
+			 gpios = <&gpio0 28 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			 label = "SW3";
+		 };
+	 };
+
+	 /* These aliases are provided for compatibility with samples */
+	 aliases {
+		led0 = &led1;
+		led1 = &led2;
+		led2 = &led3;
+		sw0 = &pb1;
+		sw1 = &pb2;
+	 };
+};
+
+&uart0 {
+	pinctrl-0 = <&uart0_tx_p0_9 &uart0_rx_p0_10>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	parity = "none";
+	status = "okay";
+};
+
+&spi1 {
+	pinctrl-0 = <&spi1_ss0_p0_16 &spi1_mosi_p0_17
+		     &spi1_miso_p0_18 &spi1_sck_p0_19>;
+	pinctrl-names = "default";
+	cs0-pin = "HSPI_CSN_PA1";
+	status = "okay";
+};
+
+&i2c0 {
+	pinctrl-0 = <&i2c0_scl_p0_6 &i2c0_sda_p0_7>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	status = "okay";
+};

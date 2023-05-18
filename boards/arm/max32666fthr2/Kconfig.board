@@ -1,0 +1,9 @@
+# MAX32666FTHR2 board configuration
+
+# Copyright (c) 2023 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_MAX32666FTHR2
+	bool "MAX32666FTHR2"
+	depends on SOC_SERIES_MAX32
+	select SOC_PART_NUMBER_MAX32666
