@@ -938,7 +938,7 @@ class ProjectBuilder(FilterBuilder):
                 else:
                     more_info = "build"
 
-                if ( instance.status in [Status.ERROR, Status.FAIL, "timeout", "flash_error"]
+                if ( instance.status in [Status.ERROR, Status.FAIL, "timeout"]
                      and hasattr(self.instance.handler, 'seed')
                      and self.instance.handler.seed is not None ):
                     more_info += "/seed: " + str(self.options.seed)
