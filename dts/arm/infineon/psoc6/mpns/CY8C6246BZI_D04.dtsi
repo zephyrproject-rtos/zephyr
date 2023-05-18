@@ -8,6 +8,14 @@
 #include <arm/armv7-m.dtsi>
 #include "../psoc6_01/psoc6_01.124-bga.dtsi"
 
+&flash0 {
+	reg = <0x10000000 0x80000>;
+};
+
+&sram0 {
+	reg = <0x8000000 0x20000>;
+};
+
 &nvic {
 	arm,num-irq-priority-bits = <3>;
 };
