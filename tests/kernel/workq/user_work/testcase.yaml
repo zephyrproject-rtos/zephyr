@@ -5,3 +5,4 @@ tests:
     tags:
       - kernel
       - userspace
+      - pearl_gecko

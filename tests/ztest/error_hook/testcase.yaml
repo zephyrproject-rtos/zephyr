@@ -4,6 +4,7 @@ tests:
     tags:
       - test_framework
       - userspace
+      - pearl_gecko
     ignore_faults: true
     testcases:
       - catch_assert_fail
@@ -13,7 +14,8 @@ tests:
 
   testing.ztest.error_hook.no_userspace:
     extra_args: CONF_FILE=prj_no_userspace.conf
-    tags: test_framework
+    tags:
+      - test_framework
     ignore_faults: true
     testcases:
       - catch_fatal_error

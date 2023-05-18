@@ -4,4 +4,5 @@ tests:
     tags:
       - kernel
       - userspace
+      - pearl_gecko
     ignore_faults: true

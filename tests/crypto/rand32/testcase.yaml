@@ -4,6 +4,7 @@ tests:
       - crypto
       - random
       - security
+      - pearl_gecko
     min_ram: 16
   crypto.rand32.random_sw_systimer:
     extra_args: CONF_FILE=prj_sw_random_systimer.conf
@@ -11,6 +12,7 @@ tests:
       - crypto
       - random
       - security
+      - pearl_gecko
     min_ram: 16
   crypto.rand32.random_hw_xoshiro:
     extra_args: CONF_FILE=prj_hw_random_xoshiro.conf

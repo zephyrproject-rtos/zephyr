@@ -3,6 +3,7 @@ common:
     - fpu
     - kernel
     - userspace
+    - pearl_gecko
 tests:
   kernel.fpu_sharing.float_disable:
     arch_allow:

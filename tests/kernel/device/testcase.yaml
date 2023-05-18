@@ -13,6 +13,7 @@ tests:
     tags:
       - kernel
       - device
+      - pearl_gecko
     platform_exclude: mec15xxevb_assy6853
     extra_configs:
       - CONFIG_PM_DEVICE=y

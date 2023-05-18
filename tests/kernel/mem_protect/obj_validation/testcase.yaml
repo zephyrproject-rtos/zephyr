@@ -5,3 +5,4 @@ tests:
       - kernel
       - security
       - userspace
+      - pearl_gecko

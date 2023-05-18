@@ -14,6 +14,5 @@ supported:
   - nvs
   - watchdog
 testing:
-  ignore_tags:
-    - net
-    - bluetooth
+  only_tags:
+    - pearl_gecko

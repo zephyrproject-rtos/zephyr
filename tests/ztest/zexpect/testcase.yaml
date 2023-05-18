@@ -8,10 +8,14 @@ tests:
   testing.ztest.expect:
     integration_platforms:
       - native_posix
+    tags:
+      - pearl_gecko
   testing.ztest.expect_cpp:
     extra_configs:
       - CONFIG_CPLUSPLUS=y
     integration_platforms:
       - native_posix
+    tags:
+      - pearl_gecko
   testing.ztest.expect.unit:
     type: unit

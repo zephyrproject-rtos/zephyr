@@ -1,6 +1,8 @@
 tests:
   kernel.scheduler.deadline:
-    tags: kernel
+    tags:
+      - kernel
+      - pearl_gecko
   kernel.scheduler.deadline.linker_generator:
     platform_allow: qemu_cortex_m3
     tags: linker_generator

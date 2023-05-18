@@ -4,6 +4,7 @@ tests:
     tags:
       - kernel
       - xip
+      - pearl_gecko
   arch.common.xip.linker_generator:
     platform_allow: qemu_cortex_m3
     tags: linker_generator

@@ -5,6 +5,7 @@ tests:
     tags:
       - kernel
       - interrupt
+      - pearl_gecko
     filter: not CONFIG_TRUSTED_EXECUTION_NONSECURE
 
   arch.interrupt.linker_generator:

@@ -6,6 +6,7 @@ tests:
       - sha256
       - hmac
       - prng
+      - pearl_gecko
     platform_exclude:
       - mec15xxevb_assy6853
       - mec1501modular_assy6885

@@ -1,6 +1,8 @@
 tests:
   kernel.logging.message_capture:
-    tags: kernel
+    tags:
+      - kernel
+      - pearl_gecko
     harness: console
     harness_config:
       type: multi_line

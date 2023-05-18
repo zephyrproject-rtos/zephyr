@@ -4,13 +4,16 @@ tests:
     tags:
       - kernel
       - userspace
+      - pearl_gecko
     testcases:
       - mutex
       - user_access
       - supervisor_access
 
   system.mutex.nouser:
-    tags: kernel
+    tags:
+      - kernel
+      - pearl_gecko
     extra_configs:
       - CONFIG_TEST_USERSPACE=n
     testcases:

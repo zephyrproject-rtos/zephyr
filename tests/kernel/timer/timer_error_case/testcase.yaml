@@ -4,4 +4,5 @@ tests:
       - kernel
       - timer
       - userspace
+      - pearl_gecko
     ignore_faults: true
