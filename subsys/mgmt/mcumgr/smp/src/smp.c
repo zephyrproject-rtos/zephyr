@@ -124,7 +124,8 @@ static void smp_make_rsp_hdr(const struct smp_hdr *req_hdr, struct smp_hdr *rsp_
 		.nh_group = sys_cpu_to_be16(req_hdr->nh_group),
 		.nh_seq = req_hdr->nh_seq,
 		.nh_id = req_hdr->nh_id,
-		.nh_ver = req_hdr->nh_ver,
+		.nh_version = (req_hdr->nh_version > SMP_MCUMGR_VERSION_2 ? SMP_MCUMGR_VERSION_2 :
+			       req_hdr->nh_version),
 	};
 }
 
@@ -276,14 +277,14 @@ static int smp_handle_single_req(struct smp_streamer *streamer, const struct smp
 	nbw->error_group = 0;
 	nbw->error_ret = 0;
 #else
-	if (req_hdr->nh_ver == SMP_MCUMGR_VERSION_1) {
+	if (req_hdr->nh_version == SMP_MCUMGR_VERSION_1) {
 		/* Support for the original version is excluded in this build */
 		return MGMT_ERR_UNSUPPORTED_TOO_OLD;
 	}
 #endif
 
 	/* We do not currently support future versions of the protocol */
-	if (req_hdr->nh_ver > SMP_MCUMGR_VERSION_2) {
+	if (req_hdr->nh_version > SMP_MCUMGR_VERSION_2) {
 		return MGMT_ERR_UNSUPPORTED_TOO_NEW;
 	}
 
@@ -296,7 +297,7 @@ static int smp_handle_single_req(struct smp_streamer *streamer, const struct smp
 
 #ifdef CONFIG_MCUMGR_SMP_SUPPORT_ORIGINAL_PROTOCOL
 	/* If using the legacy protocol, translate the error code to a return code */
-	if (nbw->error_ret != 0 && req_hdr->nh_ver == 0) {
+	if (nbw->error_ret != 0 && req_hdr->nh_version == 0) {
 		rc = smp_translate_error_code(nbw->error_group, nbw->error_ret);
 		*rsn = MGMT_CTXT_RC_RSN(streamer);
 		return rc;
