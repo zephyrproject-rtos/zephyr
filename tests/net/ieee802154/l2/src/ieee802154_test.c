@@ -156,9 +156,10 @@ uint8_t raw_payload[] = {
 #define RAW_MAC_PAYLOAD_START_INDEX 17
 #define RAW_MAC_PAYLOAD_LENGTH 3
 
-struct net_pkt *current_pkt;
-struct net_if *iface;
-K_SEM_DEFINE(driver_lock, 0, UINT_MAX);
+extern struct net_pkt *current_pkt;
+extern struct k_sem driver_lock;
+
+static struct net_if *iface;
 
 static void pkt_hexdump(uint8_t *pkt, uint8_t length)
 {
@@ -1102,6 +1103,7 @@ static void test_teardown(void *test_fixture)
 	ARG_UNUSED(test_fixture);
 
 	net_pkt_unref(current_pkt);
+	current_pkt = NULL;
 }
 
 ZTEST(ieee802154_l2, test_parsing_ns_pkt)
