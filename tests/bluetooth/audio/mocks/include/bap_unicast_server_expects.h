@@ -155,6 +155,26 @@ do {                                                                            
 				       func_name, "stream");))                                     \
 } while (0)
 
+#define expect_bt_bap_unicast_server_cb_release_called_twice(_streams)                             \
+do {                                                                                               \
+	const char *func_name = "bt_bap_unicast_server_cb.release";                                \
+												   \
+	zassert_equal(2, mock_bap_unicast_server_cb_release_fake.call_count,                       \
+		      "'%s()' was called %u times, but expected once",                             \
+		      func_name, mock_bap_unicast_server_cb_release_fake.call_count);              \
+												   \
+	IF_NOT_EMPTY(_stream[0], (                                                                 \
+		     zassert_equal_ptr(_streams[0],                                                \
+				       mock_bap_unicast_server_cb_release_fake.arg0_history[0],    \
+				       "'%s()' was called with incorrect '%s' value",              \
+				       func_name, "stream[0]");))                                  \
+	IF_NOT_EMPTY(_stream[1], (                                                                 \
+		     zassert_equal_ptr(_streams[1],                                                \
+				       mock_bap_unicast_server_cb_release_fake.arg0_history[1],    \
+				       "'%s()' was called with incorrect '%s' value",              \
+				       func_name, "stream[1]");))                                  \
+} while (0)
+
 #define expect_bt_bap_unicast_server_cb_start_called_once(_stream)                                 \
 do {                                                                                               \
 	const char *func_name = "bt_bap_unicast_server_cb.start";                                  \
