@@ -14,8 +14,14 @@ LOG_MODULE_REGISTER(net_mdns_responder_sample, LOG_LEVEL_DBG);
 
 extern void service(void);
 
-/* Note that this application does not do anything itself.
- * It is just a placeholder for waiting mDNS queries.
+/*
+ * Note that mDNS support requires no application interaction with zephyr,
+ * beyond optional runtime hostname configuration calls and setting
+ * CONFIG_MDNS_RESPONDER=y.
+ *
+ * The service() function provides an echo server to make it possible to
+ * verify that the IP address resolved by mDNS is the system that this
+ * code is running upon.
  */
 int main(void)
 {
