@@ -1,0 +1,44 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+
+test_dma0: &dma0 {
+    #address-cells = <1>;
+    #size-cells = <0>;
+    channel@0 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	reg = <0>;
+	preemptable = <0>;
+	priority = <3>;
+	descriptor = <0>;
+
+	descriptor@0 {
+		reg = <0>;
+        retrigger = "dma_retrig_im";
+		data-size = "dma_byte";
+		channel-state = "dma_channel_enabled";
+
+		interrupt-type = "dma_descr_chain";
+		trigger-out-type = "dma_descr_chain";
+		trigger-in-type = "dma_descr_chain";
+
+		src-transfer-size = "dma_transfer_size_data";
+		dst-transfer-size = "dma_transfer_size_data";
+
+		descriptor-type = "dma_2d_transfer";
+
+		src-x-increment = <1>;
+		dst-x-increment = <1>;
+		x-count = <4>;
+
+		src-y-increment = <4>;
+		dst-y-increment = <4>;
+		y-count = <231>;
+	};
+
+    };
+    status = "okay";
+};
