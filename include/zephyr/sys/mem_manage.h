@@ -55,6 +55,13 @@
 #define K_MEM_PERM_USER		BIT(5)
 
 /*
+ * Region mapping behaviour attributes
+ */
+
+/** Region will be mapped to 1:1 virtual and physical address */
+#define K_MEM_DIRECT_MAP	BIT(6)
+
+/*
  * This is the offset to subtract from a virtual address mapped in the
  * kernel's permanent mapping of RAM, to obtain its physical address.
  *
