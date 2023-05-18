@@ -43,6 +43,7 @@ zephyr_library_sources_ifdef(CONFIG_I2C_ANDES_ATCIIC100		i2c_andes_atciic100.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_SC18IM704	i2c_sc18im704.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_SMARTBOND	i2c_smartbond.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_XILINX_AXI	i2c_xilinx_axi.c)
+zephyr_library_sources_ifdef(CONFIG_I2C_MAX32_V1 i2c_max32_v1.c)
 
 zephyr_library_sources_ifdef(CONFIG_I2C_STM32_V1
 	i2c_ll_stm32_v1.c
