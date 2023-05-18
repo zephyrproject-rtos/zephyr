@@ -1207,6 +1207,18 @@ int can_mcan_configure_message_ram(const struct device *dev, uintptr_t mrba)
 	uint32_t reg;
 	int err;
 
+	err = can_mcan_exit_sleep_mode(dev);
+	if (err != 0) {
+		LOG_ERR("Failed to exit sleep mode");
+		return -EIO;
+	}
+
+	err = can_mcan_enter_init_mode(dev, K_MSEC(CAN_INIT_TIMEOUT_MS));
+	if (err != 0) {
+		LOG_ERR("Failed to enter init mode");
+		return -EIO;
+	}
+
 	can_mcan_enable_configuration_change(dev);
 
 	reg = ((POINTER_TO_UINT(msg_ram->std_filt) - mrba) & CAN_MCAN_SIDFC_FLSSA) |
