@@ -486,7 +486,6 @@ static int dma_mcux_lpc_get_status(const struct device *dev, uint32_t channel,
 
 static int dma_mcux_lpc_init(const struct device *dev)
 {
-	const struct dma_mcux_lpc_config *config = dev->config;
 	struct dma_mcux_lpc_dma_data *data = dev->data;
 	int total_dma_channels;
 
