@@ -19,11 +19,11 @@ extern "C" {
 struct smp_hdr {
 #ifdef CONFIG_LITTLE_ENDIAN
 	uint8_t  nh_op:3;		/* MGMT_OP_[...] */
-	uint8_t  nh_ver:2;
+	uint8_t  nh_version:2;
 	uint8_t  _res1:3;
 #else
 	uint8_t  _res1:3;
-	uint8_t  nh_ver:2;
+	uint8_t  nh_version:2;
 	uint8_t  nh_op:3;		/* MGMT_OP_[...] */
 #endif
 	uint8_t  nh_flags;		/* Reserved for future flags */
