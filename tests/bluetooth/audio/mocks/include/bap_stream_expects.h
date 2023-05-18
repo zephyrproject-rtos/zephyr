@@ -16,9 +16,7 @@
 do {                                                                                               \
 	const char *func_name = "bt_bap_stream_ops.configured";                                    \
 												   \
-	zexpect_equal(1, mock_bap_stream_configured_cb_fake.call_count,                            \
-		      "'%s()' was called %u times, but expected once",                             \
-		      func_name, mock_bap_stream_configured_cb_fake.call_count);                   \
+	zexpect_call_count(func_name, 1, mock_bap_stream_configured_cb_fake.call_count);           \
 												   \
 	if (mock_bap_stream_configured_cb_fake.call_count > 0) {                                   \
 		IF_NOT_EMPTY(_stream, (                                                            \
@@ -36,17 +34,14 @@ static inline void expect_bt_bap_stream_ops_configured_not_called(void)
 {
 	const char *func_name = "bt_bap_stream_ops.configured";
 
-	zexpect_equal(0, mock_bap_stream_configured_cb_fake.call_count,
-		      "'%s()' was called unexpectedly", func_name);
+	zexpect_call_count(func_name, 0, mock_bap_stream_configured_cb_fake.call_count);
 }
 
 static inline void expect_bt_bap_stream_ops_qos_set_called_once(struct bt_bap_stream *stream)
 {
 	const char *func_name = "bt_bap_stream_ops.qos_set";
 
-	zexpect_equal(1, mock_bap_stream_qos_set_cb_fake.call_count,
-		      "'%s()' was called %u times, but expected once",
-		      func_name, mock_bap_stream_qos_set_cb_fake.call_count);
+	zexpect_call_count(func_name, 1, mock_bap_stream_qos_set_cb_fake.call_count);
 
 	if (mock_bap_stream_qos_set_cb_fake.call_count > 0) {
 		zexpect_equal_ptr(stream, mock_bap_stream_qos_set_cb_fake.arg0_val,
@@ -58,17 +53,14 @@ static inline void expect_bt_bap_stream_ops_qos_set_not_called(void)
 {
 	const char *func_name = "bt_bap_stream_ops.qos_set";
 
-	zexpect_equal(0, mock_bap_stream_qos_set_cb_fake.call_count,
-		      "'%s()' was called unexpectedly", func_name);
+	zexpect_call_count(func_name, 0, mock_bap_stream_qos_set_cb_fake.call_count);
 }
 
 static inline void expect_bt_bap_stream_ops_enabled_called_once(struct bt_bap_stream *stream)
 {
 	const char *func_name = "bt_bap_stream_ops.enabled";
 
-	zexpect_equal(1, mock_bap_stream_enabled_cb_fake.call_count,
-		      "'%s()' was called %u times, but expected once",
-		      func_name, mock_bap_stream_enabled_cb_fake.call_count);
+	zexpect_call_count(func_name, 1, mock_bap_stream_enabled_cb_fake.call_count);
 
 	if (mock_bap_stream_enabled_cb_fake.call_count > 0) {
 		zexpect_equal_ptr(stream, mock_bap_stream_enabled_cb_fake.arg0_val,
@@ -80,8 +72,7 @@ static inline void expect_bt_bap_stream_ops_enabled_not_called(void)
 {
 	const char *func_name = "bt_bap_stream_ops.enabled";
 
-	zexpect_equal(0, mock_bap_stream_enabled_cb_fake.call_count,
-		      "'%s()' was called unexpectedly", func_name);
+	zexpect_call_count(func_name, 0, mock_bap_stream_enabled_cb_fake.call_count);
 }
 
 static inline void expect_bt_bap_stream_ops_metadata_updated_called_once(
@@ -89,9 +80,7 @@ static inline void expect_bt_bap_stream_ops_metadata_updated_called_once(
 {
 	const char *func_name = "bt_bap_stream_ops.metadata_updated";
 
-	zexpect_equal(1, mock_bap_stream_metadata_updated_cb_fake.call_count,
-		      "'%s()' was called %u times, but expected once",
-		      func_name, mock_bap_stream_metadata_updated_cb_fake.call_count);
+	zexpect_call_count(func_name, 1, mock_bap_stream_metadata_updated_cb_fake.call_count);
 
 	if (mock_bap_stream_metadata_updated_cb_fake.call_count > 0) {
 		zexpect_equal_ptr(stream, mock_bap_stream_metadata_updated_cb_fake.arg0_val,
@@ -103,17 +92,14 @@ static inline void expect_bt_bap_stream_ops_metadata_updated_not_called(void)
 {
 	const char *func_name = "bt_bap_stream_ops.metadata_updated";
 
-	zexpect_equal(0, mock_bap_stream_metadata_updated_cb_fake.call_count,
-		      "'%s()' was called unexpectedly", func_name);
+	zexpect_call_count(func_name, 0, mock_bap_stream_metadata_updated_cb_fake.call_count);
 }
 
 static inline void expect_bt_bap_stream_ops_disabled_called_once(struct bt_bap_stream *stream)
 {
 	const char *func_name = "bt_bap_stream_ops.disabled";
 
-	zexpect_equal(1, mock_bap_stream_disabled_cb_fake.call_count,
-		      "'%s()' was called %u times, but expected once",
-		      func_name, mock_bap_stream_disabled_cb_fake.call_count);
+	zexpect_call_count(func_name, 1, mock_bap_stream_disabled_cb_fake.call_count);
 
 	if (mock_bap_stream_disabled_cb_fake.call_count > 0) {
 		zexpect_equal_ptr(stream, mock_bap_stream_disabled_cb_fake.arg0_val,
@@ -125,8 +111,7 @@ static inline void expect_bt_bap_stream_ops_disabled_not_called(void)
 {
 	const char *func_name = "bt_bap_stream_ops.disabled";
 
-	zexpect_equal(0, mock_bap_stream_disabled_cb_fake.call_count,
-		      "'%s()' was called unexpectedly", func_name);
+	zexpect_call_count(func_name, 0, mock_bap_stream_disabled_cb_fake.call_count);
 }
 
 static inline void expect_bt_bap_stream_ops_released_called_twice(
@@ -134,9 +119,7 @@ static inline void expect_bt_bap_stream_ops_released_called_twice(
 {
 	const char *func_name = "bt_bap_stream_ops.released";
 
-	zexpect_equal(2, mock_bap_stream_released_cb_fake.call_count,
-		      "'%s()' was called %u times, but expected once",
-		      func_name, mock_bap_stream_released_cb_fake.call_count);
+	zexpect_call_count(func_name, 2, mock_bap_stream_released_cb_fake.call_count);
 
 	if (mock_bap_stream_released_cb_fake.call_count > 0) {
 		zexpect_equal_ptr(streams[0], mock_bap_stream_released_cb_fake.arg0_history[0],
@@ -153,9 +136,7 @@ static inline void expect_bt_bap_stream_ops_released_called_once(struct bt_bap_s
 {
 	const char *func_name = "bt_bap_stream_ops.released";
 
-	zexpect_equal(1, mock_bap_stream_released_cb_fake.call_count,
-		      "'%s()' was called %u times, but expected once",
-		      func_name, mock_bap_stream_released_cb_fake.call_count);
+	zexpect_call_count(func_name, 1, mock_bap_stream_released_cb_fake.call_count);
 
 	if (mock_bap_stream_released_cb_fake.call_count > 0) {
 		zexpect_equal_ptr(stream, mock_bap_stream_released_cb_fake.arg0_val,
@@ -175,9 +156,7 @@ static inline void expect_bt_bap_stream_ops_started_called_once(struct bt_bap_st
 {
 	const char *func_name = "bt_bap_stream_ops.started";
 
-	zexpect_equal(1, mock_bap_stream_started_cb_fake.call_count,
-		      "'%s()' was called %u times, but expected once",
-		      func_name, mock_bap_stream_started_cb_fake.call_count);
+	zexpect_call_count(func_name, 1, mock_bap_stream_started_cb_fake.call_count);
 
 	if (mock_bap_stream_started_cb_fake.call_count > 0) {
 		zexpect_equal_ptr(stream, mock_bap_stream_started_cb_fake.arg0_val,
@@ -189,17 +168,14 @@ static inline void expect_bt_bap_stream_ops_started_not_called(void)
 {
 	const char *func_name = "bt_bap_stream_ops.started";
 
-	zexpect_equal(0, mock_bap_stream_started_cb_fake.call_count,
-		      "'%s()' was called unexpectedly", func_name);
+	zexpect_call_count(func_name, 0, mock_bap_stream_started_cb_fake.call_count);
 }
 
 #define expect_bt_bap_stream_ops_stopped_called_once(_stream, _reason)                             \
 do {                                                                                               \
 	const char *func_name = "bt_bap_stream_ops.stopped";                                       \
 												   \
-	zexpect_equal(1, mock_bap_stream_stopped_cb_fake.call_count,                               \
-		      "'%s()' was called %u times, but expected once",                             \
-		      func_name, mock_bap_stream_stopped_cb_fake.call_count);                      \
+	zexpect_call_count(func_name, 1, mock_bap_stream_stopped_cb_fake.call_count);              \
 												   \
 	if (mock_bap_stream_stopped_cb_fake.call_count > 0) {                                      \
 		IF_NOT_EMPTY(_stream, (                                                            \
@@ -218,8 +194,7 @@ static inline void expect_bt_bap_stream_ops_stopped_not_called(void)
 {
 	const char *func_name = "bt_bap_stream_ops.stopped";
 
-	zexpect_equal(0, mock_bap_stream_stopped_cb_fake.call_count,
-		      "'%s()' was called unexpectedly", func_name);
+	zexpect_call_count(func_name, 0, mock_bap_stream_stopped_cb_fake.call_count);
 }
 
 static inline void expect_bt_bap_stream_ops_recv_called_once(struct bt_bap_stream *stream,
@@ -228,9 +203,7 @@ static inline void expect_bt_bap_stream_ops_recv_called_once(struct bt_bap_strea
 {
 	const char *func_name = "bt_bap_stream_ops.recv";
 
-	zexpect_equal(1, mock_bap_stream_recv_cb_fake.call_count,
-		      "'%s()' was called %u times, but expected once",
-		      func_name, mock_bap_stream_recv_cb_fake.call_count);
+	zexpect_call_count(func_name, 1, mock_bap_stream_recv_cb_fake.call_count);
 
 	if (mock_bap_stream_recv_cb_fake.call_count > 0) {
 		zexpect_equal_ptr(stream, mock_bap_stream_recv_cb_fake.arg0_val,
@@ -244,17 +217,14 @@ static inline void expect_bt_bap_stream_ops_recv_not_called(void)
 {
 	const char *func_name = "bt_bap_stream_ops.recv";
 
-	zexpect_equal(0, mock_bap_stream_recv_cb_fake.call_count,
-		      "'%s()' was called unexpectedly", func_name);
+	zexpect_call_count(func_name, 0, mock_bap_stream_recv_cb_fake.call_count);
 }
 
 static inline void expect_bt_bap_stream_ops_sent_called_once(struct bt_bap_stream *stream)
 {
 	const char *func_name = "bt_bap_stream_ops.sent";
 
-	zexpect_equal(1, mock_bap_stream_sent_cb_fake.call_count,
-		      "'%s()' was called %u times, but expected once",
-		      func_name, mock_bap_stream_sent_cb_fake.call_count);
+	zexpect_call_count(func_name, 1, mock_bap_stream_sent_cb_fake.call_count);
 
 	if (mock_bap_stream_sent_cb_fake.call_count > 0) {
 		zexpect_equal_ptr(stream, mock_bap_stream_sent_cb_fake.arg0_val,
@@ -266,8 +236,7 @@ static inline void expect_bt_bap_stream_ops_sent_not_called(void)
 {
 	const char *func_name = "bt_bap_stream_ops.sent";
 
-	zexpect_equal(0, mock_bap_stream_sent_cb_fake.call_count,
-		      "'%s()' was called unexpectedly", func_name);
+	zexpect_call_count(func_name, 0, mock_bap_stream_sent_cb_fake.call_count);
 }
 
 #endif /* MOCKS_BAP_STREAM_EXPECTS_H_ */
