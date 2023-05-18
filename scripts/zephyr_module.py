@@ -521,7 +521,9 @@ def west_projects(manifest = None):
     # (and thus maybe not installed)
     # if user is providing a specific modules list.
     try:
-        from west.manifest import Manifest
+        from west.manifest import Manifest, \
+            ManifestImportFailed, MalformedManifest, ManifestVersionError
+        from west.configuration import MalformedConfig
         from west.util import WestNotFound
         from west.version import __version__ as WestVersion
     except ImportError:
@@ -539,6 +541,9 @@ def west_projects(manifest = None):
             projects = manifest.get_projects([])
         manifest_path = manifest.path
         return {'manifest_path': manifest_path, 'projects': projects}
+    except (ManifestImportFailed, MalformedManifest,
+            ManifestVersionError, MalformedConfig) as e:
+        sys.exit(f'ERROR: {e}')
     except WestNotFound:
         # Only accept WestNotFound, meaning we are not in a west
         # workspace. Such setup is allowed, as west may be installed
