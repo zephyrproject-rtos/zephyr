@@ -640,6 +640,7 @@ class ProjectBuilder(FilterBuilder):
                 pipeline.put({"op": "run", "test": self.instance})
             else:
                 self.instance.status = Status.NOTRUN
+                self.instance.reason = "Test was built only"
                 pipeline.put({"op": "report", "test": self.instance})
 
         # Run the generated binary using one of the supported handlers
