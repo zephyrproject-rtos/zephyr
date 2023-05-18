@@ -31,8 +31,11 @@ static struct bt_le_per_adv_sync *pa_sync;
 static uint32_t broadcaster_broadcast_id;
 static struct bt_bap_stream broadcast_sink_streams[CONFIG_BT_BAP_BROADCAST_SNK_STREAM_COUNT];
 static struct bt_bap_stream *streams[ARRAY_SIZE(broadcast_sink_streams)];
-static struct bt_audio_codec_cap codec_cap_16_2_1 = BT_AUDIO_CODEC_LC3_CONFIG_16_2(
-	BT_AUDIO_LOCATION_FRONT_LEFT, BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED);
+
+static struct bt_audio_codec_cap codec_cap = BT_AUDIO_CODEC_CAP_LC3(
+	BT_AUDIO_CODEC_LC3_FREQ_ANY, BT_AUDIO_CODEC_LC3_DURATION_ANY,
+	BT_AUDIO_CODEC_LC3_CHAN_COUNT_SUPPORT(1, 2), 30, 240, 2,
+	(BT_AUDIO_CONTEXT_TYPE_CONVERSATIONAL | BT_AUDIO_CONTEXT_TYPE_MEDIA));
 
 static K_SEM_DEFINE(sem_started, 0U, ARRAY_SIZE(streams));
 static K_SEM_DEFINE(sem_stopped, 0U, ARRAY_SIZE(streams));
@@ -179,7 +182,7 @@ static struct bt_le_per_adv_sync_cb bap_pa_sync_cb = {
 };
 
 static struct bt_pacs_cap cap = {
-	.codec_cap = &codec_cap_16_2_1,
+	.codec_cap = &codec_cap,
 };
 
 static void started_cb(struct bt_bap_stream *stream)

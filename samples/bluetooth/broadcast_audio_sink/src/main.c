@@ -51,8 +51,10 @@ static struct bt_bap_stream *streams_p[ARRAY_SIZE(streams)];
 static struct bt_conn *broadcast_assistant_conn;
 static struct bt_le_ext_adv *ext_adv;
 
-static struct bt_audio_codec_cap codec_cap = BT_AUDIO_CODEC_LC3_CONFIG_16_2(
-	BT_AUDIO_LOCATION_FRONT_LEFT, BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED);
+static struct bt_audio_codec_cap codec_cap = BT_AUDIO_CODEC_CAP_LC3(
+	BT_AUDIO_CODEC_LC3_FREQ_16KHZ | BT_AUDIO_CODEC_LC3_FREQ_24KHZ,
+	BT_AUDIO_CODEC_LC3_DURATION_10, BT_AUDIO_CODEC_LC3_CHAN_COUNT_SUPPORT(1), 40u, 60u, 1u,
+	(BT_AUDIO_CONTEXT_TYPE_CONVERSATIONAL | BT_AUDIO_CONTEXT_TYPE_MEDIA));
 
 /* Create a mask for the maximum BIS we can sync to using the number of streams
  * we have. We add an additional 1 since the bis indexes start from 1 and not
