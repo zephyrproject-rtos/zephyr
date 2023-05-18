@@ -285,14 +285,24 @@
 #endif /* CONFIG_OPENTHREAD_CSL_RECEIVE_TIME_AHEAD */
 
 /**
- * @def OPENTHREAD_CONFIG_CSL_MIN_RECEIVE_ON
+ * @def OPENTHREAD_CONFIG_MIN_RECEIVE_ON_AHEAD
  *
- * The minimum CSL receive window (in microseconds) required to receive an IEEE 802.15.4 frame.
+ * The minimum time (microseconds) that radio has to be in receive mode before the start of the MHR.
  *
  */
-#ifdef CONFIG_OPENTHREAD_CSL_MIN_RECEIVE_ON
-#define OPENTHREAD_CONFIG_CSL_MIN_RECEIVE_ON CONFIG_OPENTHREAD_CSL_MIN_RECEIVE_ON
-#endif /* CONFIG_OPENTHREAD_CSL_MIN_RECEIVE_ON */
+#ifdef CONFIG_OPENTHREAD_MIN_RECEIVE_ON_AHEAD
+#define OPENTHREAD_CONFIG_MIN_RECEIVE_ON_AHEAD CONFIG_OPENTHREAD_MIN_RECEIVE_ON_AHEAD
+#endif /* CONFIG_OPENTHREAD_MIN_RECEIVE_ON_AHEAD */
+
+/**
+ * @def OPENTHREAD_CONFIG_MIN_RECEIVE_ON_AFTER
+ *
+ * The minimum time (microseconds) that radio has to be in receive mode after the start of the MHR .
+ *
+ */
+#ifdef CONFIG_OPENTHREAD_MIN_RECEIVE_ON_AFTER
+#define OPENTHREAD_CONFIG_MIN_RECEIVE_ON_AFTER CONFIG_OPENTHREAD_MIN_RECEIVE_ON_AFTER
+#endif /* CONFIG_OPENTHREAD_MIN_RECEIVE_ON_AFTER */
 
 /**
  * @def OPENTHREAD_CONFIG_CSL_TIMEOUT
