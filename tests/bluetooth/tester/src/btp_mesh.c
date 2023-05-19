@@ -773,6 +773,108 @@ static uint8_t proxy_private_identity_enable(const void *cmd, uint16_t cmd_len,
 }
 #endif
 
+#if defined(CONFIG_BT_MESH_SOL_PDU_RPL_CLI)
+static struct bt_mesh_sol_pdu_rpl_cli srpl_cli;
+#endif
+
+
+#if defined(CONFIG_BT_MESH_OD_PRIV_PROXY_CLI)
+static struct bt_mesh_od_priv_proxy_cli od_priv_proxy_cli;
+
+static uint8_t od_priv_proxy_get(const void *cmd, uint16_t cmd_len,
+				 void *rsp, uint16_t *rsp_len)
+{
+	const struct btp_od_priv_proxy_get_cmd *cp = cmd;
+	uint8_t val_rsp;
+	int err;
+
+	LOG_DBG("");
+
+	err = bt_mesh_od_priv_proxy_cli_get(net.net_idx, cp->dst, &val_rsp);
+	if (err) {
+		LOG_ERR("Failed to get On-Demand Private Proxy state (err %d)", err);
+		return BTP_STATUS_FAILED;
+	}
+
+	LOG_DBG("On-Demand Private Proxy state: %u", val_rsp);
+
+	return BTP_STATUS_SUCCESS;
+}
+
+static uint8_t od_priv_proxy_set(const void *cmd, uint16_t cmd_len,
+				 void *rsp, uint16_t *rsp_len)
+{
+	const struct btp_od_priv_proxy_set_cmd *cp = cmd;
+	uint8_t val_rsp;
+	int err;
+
+	LOG_DBG("");
+
+	err = bt_mesh_od_priv_proxy_cli_set(net.net_idx, cp->dst, cp->val, &val_rsp);
+	if (err) {
+		LOG_ERR("Failed to set On-Demand Private Proxy state (err %d)", err);
+		return BTP_STATUS_FAILED;
+	}
+
+	LOG_DBG("On-Demand Private Proxy set state: %u", val_rsp);
+
+	return BTP_STATUS_SUCCESS;
+}
+
+#endif
+
+#if defined(CONFIG_BT_MESH_SOL_PDU_RPL_CLI)
+static uint8_t srpl_clear(const void *cmd, uint16_t cmd_len,
+			  void *rsp, uint16_t *rsp_len)
+{
+	const struct btp_srpl_clear_cmd *cp = cmd;
+	uint16_t app_idx = BT_MESH_KEY_UNUSED;
+	uint16_t start_rsp;
+	uint8_t len_rsp;
+	int err;
+
+	/* Lookup source address */
+	for (int i = 0; i < ARRAY_SIZE(model_bound); i++) {
+		if (model_bound[i].model->id == BT_MESH_MODEL_ID_SOL_PDU_RPL_CLI) {
+			app_idx = model_bound[i].appkey_idx;
+			break;
+		}
+	}
+
+	struct bt_mesh_msg_ctx ctx = BT_MESH_MSG_CTX_INIT_APP(app_idx, cp->dst);
+
+	if (cp->acked) {
+		err = bt_mesh_sol_pdu_rpl_clear(&ctx, cp->range_start, cp->range_len, &start_rsp,
+						&len_rsp);
+	} else {
+		err = bt_mesh_sol_pdu_rpl_clear_unack(&ctx, cp->range_start, cp->range_len);
+	}
+	if (err) {
+		LOG_ERR("Failed to clear SRPL (err %d)", err);
+		return BTP_STATUS_FAILED;
+	}
+
+	return BTP_STATUS_SUCCESS;
+}
+#endif
+
+#if defined(CONFIG_BT_MESH_PROXY_SOLICITATION)
+static uint8_t proxy_solicit(const void *cmd, uint16_t cmd_len,
+			     void *rsp, uint16_t *rsp_len)
+{
+	const struct btp_proxy_solicit_cmd *cp = cmd;
+	int err;
+
+	err = bt_mesh_proxy_solicit(cp->net_idx);
+	if (err) {
+		LOG_ERR("Failed to advertise solicitation PDU (err %d)", err);
+		return BTP_STATUS_FAILED;
+	}
+
+	return BTP_STATUS_SUCCESS;
+}
+#endif /* CONFIG_BT_MESH_PROXY_SOLICITATION */
+
 static struct bt_mesh_model root_models[] = {
 	BT_MESH_MODEL_CFG_SRV,
 	BT_MESH_MODEL_CFG_CLI(&cfg_cli),
@@ -817,6 +919,16 @@ static struct bt_mesh_model root_models[] = {
 #if defined(CONFIG_BT_MESH_PRIV_BEACON_CLI)
 	BT_MESH_MODEL_PRIV_BEACON_CLI(&priv_beacon_cli),
 #endif
+#if defined(CONFIG_BT_MESH_OD_PRIV_PROXY_CLI)
+	BT_MESH_MODEL_OD_PRIV_PROXY_CLI(&od_priv_proxy_cli),
+#endif
+#if defined(CONFIG_BT_MESH_SOL_PDU_RPL_CLI)
+	BT_MESH_MODEL_SOL_PDU_RPL_CLI(&srpl_cli),
+#endif
+#if defined(CONFIG_BT_MESH_OD_PRIV_PROXY_SRV)
+	BT_MESH_MODEL_OD_PRIV_PROXY_SRV,
+#endif
+
 };
 struct model_data *lookup_model_bound(uint16_t id)
 {
@@ -4781,6 +4893,32 @@ static const struct btp_handler handlers[] = {
 		.opcode = BTP_MESH_PROXY_PRIVATE_IDENTITY,
 		.expect_len = 0,
 		.func = proxy_private_identity_enable
+	},
+#endif
+#if defined(CONFIG_BT_MESH_OD_PRIV_PROXY_CLI)
+	{
+		.opcode = BTP_MESH_OD_PRIV_PROXY_GET,
+		.expect_len = sizeof(struct btp_od_priv_proxy_get_cmd),
+		.func = od_priv_proxy_get
+	},
+	{
+		.opcode = BTP_MESH_OD_PRIV_PROXY_SET,
+		.expect_len = sizeof(struct btp_od_priv_proxy_set_cmd),
+		.func = od_priv_proxy_set
+	},
+#endif
+#if defined(CONFIG_BT_MESH_SOL_PDU_RPL_CLI)
+	{
+		.opcode = BTP_MESH_SRPL_CLEAR,
+		.expect_len = sizeof(struct btp_srpl_clear_cmd),
+		.func = srpl_clear
+	},
+#endif
+#if defined(CONFIG_BT_MESH_SOLICITATION)
+	{
+		.opcode = BTP_MESH_PROXY_SOLICIT,
+		.expect_len = sizeof(struct btp_proxy_solicit_cmd),
+		.func = proxy_solicit
 	},
 #endif
 };
