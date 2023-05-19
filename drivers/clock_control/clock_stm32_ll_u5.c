@@ -781,7 +781,7 @@ static inline void stm32_clock_control_mco_init(void)
     LL_RCC_ConfigMCO(MCO1_SOURCE, mco1_prescaler(1));
 #else
     LL_RCC_ConfigMCO(MCO1_SOURCE, mco1_prescaler(CONFIG_CLOCK_STM32_MCO1_DIV));
-#endif // CONFIG_CLOCK_STM32_MCO2_SRC_NOCLOCK
+#endif /* CONFIG_CLOCK_STM32_MCO2_SRC_NOCLOCK */
 }
 
 int stm32_clock_control_init(const struct device *dev)
@@ -851,8 +851,8 @@ int stm32_clock_control_init(const struct device *dev)
 	/* Update CMSIS variable */
 	SystemCoreClock = CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC;
 
-    // configure MCO1 based on Kconfig
-    stm32_clock_control_mco_init();
+	/* configure MCO1 based on Kconfig */
+	stm32_clock_control_mco_init();
 
 	return 0;
 }

@@ -27,9 +27,9 @@
 #elif CONFIG_CLOCK_STM32_MCO1_SRC_MSI
 	#define MCO1_SOURCE		LL_RCC_MCO1SOURCE_MSI
 #elif CONFIG_CLOCK_STM32_MCO1_SRC_MSIS
-    #define MCO1_SOURCE		LL_RCC_MCO1SOURCE_MSIS
+	#define MCO1_SOURCE		LL_RCC_MCO1SOURCE_MSIS
 #elif CONFIG_CLOCK_STM32_MCO1_SRC_MSIK
-    #define MCO1_SOURCE		LL_RCC_MCO1SOURCE_MSIK
+	#define MCO1_SOURCE		LL_RCC_MCO1SOURCE_MSIK
 #elif CONFIG_CLOCK_STM32_MCO1_SRC_HSI
 	#define MCO1_SOURCE		LL_RCC_MCO1SOURCE_HSI
 #elif CONFIG_CLOCK_STM32_MCO1_SRC_HSI16
@@ -86,11 +86,11 @@ extern "C" {
 #if defined(STM32_PLL_ENABLED)
 void config_pll_sysclock(void);
 #if defined(CONFIG_SOC_SERIES_STM32U5X)
-    // get_pllout_frequency and get_pllsrc_frequency are not exposed by clock_stm32_ll_u5.c
+    /* get_pllout_frequency and get_pllsrc_frequency are not exposed by clock_stm32_ll_u5.c */
 #else
 uint32_t get_pllout_frequency(void);
 uint32_t get_pllsrc_frequency(void);
-#endif // CONFIG_SOC_SERIES_STM32U5X
+#endif /* CONFIG_SOC_SERIES_STM32U5X */
 #endif
 #if defined(STM32_PLL2_ENABLED)
 void config_pll2(void);
