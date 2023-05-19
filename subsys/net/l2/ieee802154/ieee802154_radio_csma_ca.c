@@ -48,6 +48,9 @@ loop:
 		while (1) {
 			if (!ieee802154_cca(iface)) {
 				break;
+			} else if (ret != -EBUSY) {
+				/* CCA exited with failure code. */
+				return -EIO;
 			}
 
 			be = MIN(be + 1, max_be);
