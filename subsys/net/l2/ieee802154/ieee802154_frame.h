@@ -29,7 +29,6 @@
 #define IEEE802154_MIN_LENGTH	  IEEE802154_ACK_PKT_LENGTH
 
 #define IEEE802154_FCF_SEQ_LENGTH     3
-#define IEEE802154_SIMPLE_ADDR_LENGTH 1
 #define IEEE802154_PAN_ID_LENGTH      2
 
 #define IEEE802154_BEACON_MIN_SIZE	  4
@@ -58,13 +57,10 @@ enum ieee802154_frame_type {
 /* See section 7.2.2.9, table 7-3 */
 enum ieee802154_addressing_mode {
 	IEEE802154_ADDR_MODE_NONE = 0x0,
-	IEEE802154_ADDR_MODE_SIMPLE = 0x1,
+	IEEE802154_ADDR_MODE_RESERVED = 0x1,
 	IEEE802154_ADDR_MODE_SHORT = 0x2,
 	IEEE802154_ADDR_MODE_EXTENDED = 0x3,
 };
-
-/* Version 2006 (and before) do no support simple addressing mode */
-#define IEEE802154_ADDR_MODE_RESERVED IEEE802154_ADDR_MODE_SIMPLE
 
 /* See section 7.2.2.10 */
 enum ieee802154_version {
@@ -111,7 +107,6 @@ struct ieee802154_fcf_seq {
 
 struct ieee802154_address {
 	union {
-		uint8_t simple_addr;
 		uint16_t short_addr;
 		uint8_t ext_addr[0];
 	};
