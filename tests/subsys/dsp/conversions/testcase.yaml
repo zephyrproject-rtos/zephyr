@@ -1,0 +1,8 @@
+# Copyright (c) 2023 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+tests:
+  zdsp.conversions:
+    filter: (CONFIG_CPU_HAS_FPU and TOOLCHAIN_HAS_NEWLIB == 1) or CONFIG_ARCH_POSIX
+    tags:
+      - zdsp
+      - fpu
