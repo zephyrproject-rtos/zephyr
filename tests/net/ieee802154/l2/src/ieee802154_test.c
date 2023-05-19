@@ -22,6 +22,7 @@ LOG_MODULE_REGISTER(net_ieee802154_test, LOG_LEVEL_DBG);
 
 #include "net_private.h"
 #include <ieee802154_frame.h>
+#include <ieee802154_radio_utils.h>
 #include <ipv6.h>
 
 struct ieee802154_pkt_test {
@@ -895,6 +896,67 @@ out:
 	return result;
 }
 
+static bool test_wait_for_ack(struct ieee802154_pkt_test *t)
+{
+	struct ieee802154_context *ctx = net_if_l2_data(iface);
+	struct ieee802154_mpdu mpdu;
+	struct net_pkt *ack_pkt;
+	struct net_pkt *tx_pkt;
+	bool result = false;
+	bool ack_required;
+
+	NET_INFO("- Waiting for ACK reply when sending a data packet\n");
+
+	tx_pkt = get_data_pkt_with_ar();
+	if (!tx_pkt) {
+		goto out;
+	}
+
+	ack_required = prepare_for_ack(ctx, tx_pkt, tx_pkt->frags);
+	if (!ack_required) {
+		NET_ERR("*** Expected AR flag to be set\n");
+		goto release_tx_pkt;
+	}
+
+	if (!ieee802154_validate_frame(net_pkt_data(tx_pkt), net_pkt_get_len(tx_pkt), &mpdu)) {
+		NET_ERR("*** Could not parse data pkt.\n");
+		goto release_tx_pkt;
+	}
+
+	ack_pkt = net_pkt_rx_alloc_with_buffer(iface, IEEE802154_ACK_PKT_LENGTH, AF_UNSPEC, 0,
+					       K_FOREVER);
+	if (!ack_pkt) {
+		NET_ERR("*** Could not allocate ack pkt.\n");
+		goto release_tx_pkt;
+	}
+
+	if (!ieee802154_create_ack_frame(iface, ack_pkt, mpdu.mhr.fs->sequence)) {
+		NET_ERR("*** Could not create ack frame.\n");
+		goto release_tx_pkt;
+	}
+
+	pkt_hexdump(net_pkt_data(ack_pkt), net_pkt_get_len(ack_pkt));
+
+	if (handle_ack(ctx, ack_pkt) != NET_OK) {
+		NET_ERR("*** Ack frame was not handled.\n");
+		goto release_ack_pkt;
+	}
+
+	if (wait_for_ack(iface, ack_required) != 0) {
+		NET_ERR("*** Ack frame was not recorded.\n");
+		goto release_ack_pkt;
+	}
+
+	result = true;
+
+release_ack_pkt:
+	net_pkt_unref(ack_pkt);
+release_tx_pkt:
+	net_pkt_unref(tx_pkt);
+out:
+	return result;
+}
+
 static bool test_packet_cloning_with_cb(void)
 {
 	struct net_pkt *pkt = net_pkt_rx_alloc_with_buffer(iface, 64, AF_UNSPEC, 0, K_NO_WAIT);
@@ -1005,6 +1067,15 @@ ZTEST(ieee802154_l2, test_receiving_pkt_and_replying_ack_pkt)
 	ret = test_recv_and_send_ack_reply(&test_ack_pkt);
 
 	zassert_true(ret, "ACK sent");
+}
+
+ZTEST(ieee802154_l2, test_waiting_for_ack_pkt)
+{
+	bool ret;
+
+	ret = test_wait_for_ack(&test_ack_pkt);
+
+	zassert_true(ret, "ACK received");
 }
 
 ZTEST(ieee802154_l2, test_parsing_beacon_pkt)
