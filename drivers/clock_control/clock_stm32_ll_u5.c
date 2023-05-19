@@ -17,6 +17,7 @@
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
+#include "clock_stm32_ll_common.h"
 
 /* Macros to fill up prescaler values */
 #define z_ahb_prescaler(v) LL_RCC_SYSCLK_DIV_ ## v
@@ -30,6 +31,9 @@
 
 #define z_apb3_prescaler(v) LL_RCC_APB3_DIV_ ## v
 #define apb3_prescaler(v) z_apb3_prescaler(v)
+
+#define z_mco1_prescaler(v) LL_RCC_MCO1_DIV_ ## v
+#define mco1_prescaler(v) z_mco1_prescaler(v)
 
 #define PLL1_ID		1
 #define PLL2_ID		2
@@ -767,6 +771,19 @@ static void set_up_fixed_clock_sources(void)
 	}
 }
 
+/*
+ * MCO configure doesn't active requested clock source,
+ * so please make sure the clock source was enabled.
+ */
+static inline void stm32_clock_control_mco_init(void)
+{
+#if defined(CONFIG_CLOCK_STM32_MCO1_SRC_NOCLOCK)
+    LL_RCC_ConfigMCO(MCO1_SOURCE, mco1_prescaler(1));
+#else
+    LL_RCC_ConfigMCO(MCO1_SOURCE, mco1_prescaler(CONFIG_CLOCK_STM32_MCO1_DIV));
+#endif // CONFIG_CLOCK_STM32_MCO2_SRC_NOCLOCK
+}
+
 int stm32_clock_control_init(const struct device *dev)
 {
 	uint32_t old_hclk_freq = 0;
@@ -833,6 +850,9 @@ int stm32_clock_control_init(const struct device *dev)
 
 	/* Update CMSIS variable */
 	SystemCoreClock = CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC;
+
+    // configure MCO1 based on Kconfig
+    stm32_clock_control_mco_init();
 
 	return 0;
 }
