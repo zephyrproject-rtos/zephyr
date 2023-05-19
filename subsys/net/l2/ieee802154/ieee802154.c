@@ -472,7 +472,7 @@ static int ieee802154_send(struct net_if *iface, struct net_pkt *pkt)
 	bool send_raw = false;
 	int len;
 #ifdef CONFIG_NET_L2_IEEE802154_FRAGMENT
-	struct ieee802154_6lo_fragment_ctx f_ctx;
+	struct ieee802154_6lo_fragment_ctx frag_ctx;
 	int requires_fragmentation = 0;
 #endif
 
@@ -515,7 +515,7 @@ static int ieee802154_send(struct net_if *iface, struct net_pkt *pkt)
 #ifdef CONFIG_NET_6LO
 #ifdef CONFIG_NET_L2_IEEE802154_FRAGMENT
 		requires_fragmentation =
-			ieee802154_6lo_encode_pkt(iface, pkt, &f_ctx, ll_hdr_len, authtag_len);
+			ieee802154_6lo_encode_pkt(iface, pkt, &frag_ctx, ll_hdr_len, authtag_len);
 		if (requires_fragmentation < 0) {
 			return requires_fragmentation;
 		}
@@ -538,7 +538,7 @@ static int ieee802154_send(struct net_if *iface, struct net_pkt *pkt)
 
 #ifdef CONFIG_NET_L2_IEEE802154_FRAGMENT
 		if (requires_fragmentation) {
-			pkt_buf = ieee802154_6lo_fragment(&f_ctx, frame_buf, true);
+			pkt_buf = ieee802154_6lo_fragment(&frag_ctx, frame_buf, true);
 		} else {
 			net_buf_add_mem(frame_buf, pkt_buf->data, pkt_buf->len);
 			pkt_buf = pkt_buf->frags;
