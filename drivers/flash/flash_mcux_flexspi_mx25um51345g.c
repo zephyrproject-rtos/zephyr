@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 NXP
+ * Copyright 2021,2023 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -504,6 +504,7 @@ static int flash_flexspi_nor_init(const struct device *dev)
 {
 	struct flash_flexspi_nor_data *data = dev->data;
 	uint8_t vendor_id;
+	uint32_t temp_lut[sizeof(flash_flexspi_nor_lut) / sizeof(uint32_t)];
 
 	if (!device_is_ready(data->controller)) {
 		LOG_ERR("Controller device not ready");
@@ -517,9 +518,19 @@ static int flash_flexspi_nor_init(const struct device *dev)
 		return -EINVAL;
 	}
 
+	/*
+	 * Using the LUT stored in the FlexSPI directly when updating
+	 * the FlexSPI can result in an invalid LUT entry being stored,
+	 * as the LUT itself describes how the FlexSPI should access the flash.
+	 * To resolve this, copy the LUT to a array placed in RAM before
+	 * updating the FlexSPI.
+	 */
+	memcpy(temp_lut, flash_flexspi_nor_lut,
+		sizeof(flash_flexspi_nor_lut));
+
 	if (memc_flexspi_update_lut(data->controller, 0,
-				   (const uint32_t *) flash_flexspi_nor_lut,
-				   sizeof(flash_flexspi_nor_lut) / 4)) {
+				   (const uint32_t *) temp_lut,
+				   sizeof(temp_lut) / sizeof(uint32_t))) {
 		LOG_ERR("Could not update lut");
 		return -EINVAL;
 	}
