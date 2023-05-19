@@ -224,7 +224,7 @@ int ext2_inode_sync(struct ext2_inode *inode);
 /**
  * @brief Get directory entry
  *
- * Reads directory entry that is at offset specified in `ext2_dir` structure.
+ * Reads directory entry that is at offset specified in `ext2_file` structure.
  *
  * @param dir Read directory
  * @param ent Directory entry to fill in
@@ -232,7 +232,7 @@ int ext2_inode_sync(struct ext2_inode *inode);
  * @retval 0 on success
  * @retval <0 on error
  */
-int ext2_get_direntry(struct ext2_dir *dir, struct fs_dirent *ent);
+int ext2_get_direntry(struct ext2_file *dir, struct fs_dirent *ent);
 
 /**
  * @brief Fill in the directory structure with given attributes

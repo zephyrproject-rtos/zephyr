@@ -18,11 +18,14 @@
 
 LOG_MODULE_DECLARE(ext2);
 
+K_MEM_SLAB_DEFINE(file_struct_slab, sizeof(struct ext2_file), CONFIG_MAX_FILES, sizeof(void *));
+
 /* File operations */
 
 static int ext2_open(struct fs_file_t *filp, const char *fs_path, fs_mode_t flags)
 {
 	int rc, ret = 0;
+	struct ext2_file *file;
 	struct ext2_data *fs = filp->mp->fs_data;
 
 	if (fs->open_files >= CONFIG_MAX_FILES) {
@@ -87,18 +90,17 @@ static int ext2_open(struct fs_file_t *filp, const char *fs_path, fs_mode_t flag
 		goto out;
 	}
 
-	struct ext2_file *f = ext2_heap_alloc(sizeof(struct ext2_file));
-
-	if (!f) {
+	rc = k_mem_slab_alloc(&file_struct_slab, (void **)&file, K_FOREVER);
+	if (rc < 0) {
 		ret = -ENOMEM;
 		goto out;
 	}
 
-	f->f_inode = found_inode;
-	f->f_off = 0;
-	f->f_flags = flags & (FS_O_RDWR | FS_O_APPEND);
+	file->f_inode = found_inode;
+	file->f_off = 0;
+	file->f_flags = flags & (FS_O_RDWR | FS_O_APPEND);
 
-	filp->filep = f;
+	filp->filep = file;
 
 	ext2_inode_drop(parent);
 	return 0;
@@ -124,7 +126,7 @@ static int ext2_close(struct fs_file_t *filp)
 		goto out;
 	}
 
-	ext2_heap_free(f);
+	k_mem_slab_free(&file_struct_slab, (void **)&f);
 	filp->filep = NULL;
 out:
 	return rc;
@@ -287,6 +289,7 @@ out:
 static int ext2_opendir(struct fs_dir_t *dirp, const char *fs_path)
 {
 	int rc, ret = 0;
+	struct ext2_file *dir;
 	const char *path = fs_impl_strip_prefix(fs_path, dirp->mp);
 	struct ext2_data *fs = dirp->mp->fs_data;
 	struct ext2_lookup_args args = {
@@ -307,15 +310,20 @@ static int ext2_opendir(struct fs_dir_t *dirp, const char *fs_path)
 		goto out;
 	}
 
-	struct ext2_dir *dir = ext2_heap_alloc(sizeof(struct ext2_dir));
+	rc = k_mem_slab_alloc(&file_struct_slab, (void **)&dir, K_FOREVER);
+	if (rc < 0) {
+		ret = -ENOMEM;
+		goto out;
+	}
+
 
 	if (!dir) {
 		ret = -ENOMEM;
 		goto out;
 	}
 
-	dir->d_inode = found_inode;
-	dir->d_off = 0;
+	dir->f_inode = found_inode;
+	dir->f_off = 0;
 
 	dirp->dirp = dir;
 	return 0;
@@ -327,7 +335,7 @@ out:
 
 static int ext2_readdir(struct fs_dir_t *dirp, struct fs_dirent *entry)
 {
-	struct ext2_dir *dir = dirp->dirp;
+	struct ext2_file *dir = dirp->dirp;
 	int rc = ext2_get_direntry(dir, entry);
 
 	if (rc < 0) {
@@ -339,10 +347,10 @@ static int ext2_readdir(struct fs_dir_t *dirp, struct fs_dirent *entry)
 
 static int ext2_closedir(struct fs_dir_t *dirp)
 {
-	struct ext2_dir *dir = dirp->dirp;
+	struct ext2_file *dir = dirp->dirp;
 
-	ext2_inode_drop(dir->d_inode);
-	ext2_heap_free(dir);
+	ext2_inode_drop(dir->f_inode);
+	k_mem_slab_free(&file_struct_slab, (void **)&dir);
 	return 0;
 }
 
@@ -352,23 +360,20 @@ static int ext2_closedir(struct fs_dir_t *dirp)
 FS_EXT2_DECLARE_DEFAULT_CONFIG(ext2_default_cfg);
 #endif
 
+/* Superblock is used only once. Because ext2 may have only one instance at the time we could
+ * statically allocate this strusture.
+ */
+static struct ext2_disk_superblock superblock;
+
 static int ext2_mount(struct fs_mount_t *mountp)
 {
 	int ret = 0;
 	struct ext2_data *fs = NULL;
-	struct ext2_disk_superblock *sb;
 #ifdef CONFIG_FILE_SYSTEM_MKFS
 	bool do_format = false;
 	bool possible_format = (mountp->flags & FS_MOUNT_FLAG_NO_FORMAT) == 0 &&
 				(mountp->flags & FS_MOUNT_FLAG_READ_ONLY) == 0;
 #endif
-
-	/* Allocate superblock structure for temporary use */
-	sb = ext2_heap_alloc(sizeof(struct ext2_disk_superblock));
-	if (sb == NULL) {
-		ret = -ENOMEM;
-		goto err;
-	}
 
 	ret = ext2_init_storage(&fs, mountp->storage_dev, mountp->flags);
 	if (ret < 0) {
@@ -380,17 +385,17 @@ static int ext2_mount(struct fs_mount_t *mountp)
 		fs->flags |= EXT2_DATA_FLAGS_RO;
 	}
 
-	ret = fs->backend_ops->read_superblock(fs, sb);
+	ret = fs->backend_ops->read_superblock(fs, &superblock);
 	if (ret < 0) {
 		goto err;
 	}
 
-	ret = ext2_verify_superblock(sb);
+	ret = ext2_verify_superblock(&superblock);
 	if (ret == 0) {
-		fs->block_size = 1024 << sb->s_log_block_size;
+		fs->block_size = 1024 << superblock.s_log_block_size;
 
 	} else if (ret == -EROFS) {
-		fs->block_size = 1024 << sb->s_log_block_size;
+		fs->block_size = 1024 << superblock.s_log_block_size;
 		fs->flags |= EXT2_DATA_FLAGS_RO;
 
 #ifdef CONFIG_FILE_SYSTEM_MKFS
@@ -409,9 +414,6 @@ static int ext2_mount(struct fs_mount_t *mountp)
 		ret = -ENOTSUP;
 		goto err;
 	}
-
-	/* Temporary superblock won't be used anymore */
-	ext2_heap_free(sb);
 
 	ext2_init_blocks_slab(fs);
 
@@ -438,7 +440,6 @@ static int ext2_mount(struct fs_mount_t *mountp)
 	return 0;
 
 err:
-	ext2_heap_free(sb);
 	ext2_close_struct(fs);
 	return ret;
 }
@@ -597,7 +598,7 @@ static int ext2_stat(struct fs_mount_t *mountp, const char *path, struct fs_dire
 
 	uint32_t offset = args.offset;
 	struct ext2_inode *parent = args.parent;
-	struct ext2_dir dir = {.d_inode = parent, .d_off = offset};
+	struct ext2_file dir = {.f_inode = parent, .f_off = offset};
 
 	rc = ext2_get_direntry(&dir, entry);
 

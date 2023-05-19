@@ -54,7 +54,7 @@ static int32_t get_itable_entry(struct ext2_data *fs, uint32_t ino)
 
 	LOG_DBG("block_index:%d block_offset:%d", block_index, block_offset);
 
-	rc = ext2_fetch_bg_itable(fs->bgroup, block_index);
+	rc = ext2_fetch_bg_itable(&fs->bgroup, block_index);
 	if (rc < 0) {
 		return rc;
 	}
@@ -72,7 +72,7 @@ int ext2_fetch_inode(struct ext2_data *fs, uint32_t ino, struct ext2_inode *inod
 		return itable_offset;
 	}
 
-	struct ext2_disk_inode *dino = &BGROUP_INODE_TABLE(fs->bgroup)[itable_offset];
+	struct ext2_disk_inode *dino = &BGROUP_INODE_TABLE(&fs->bgroup)[itable_offset];
 
 	/* Copy needed data into inode structure */
 	inode->i_fs = fs;
@@ -411,16 +411,7 @@ static inline uint32_t get_ngroups(struct ext2_data *fs)
 
 int ext2_fetch_block_group(struct ext2_data *fs, uint32_t group)
 {
-	if (fs->bgroup == NULL) {
-		fs->bgroup = ext2_heap_alloc(sizeof(struct ext2_bgroup));
-		if (fs->bgroup == NULL) {
-			return -ENOMEM;
-		}
-		memset(fs->bgroup, 0, sizeof(struct ext2_bgroup));
-		LOG_DBG("Allocated new bgroup (%p) for fs (%p)", fs->bgroup, fs);
-	}
-
-	struct ext2_bgroup *bg = fs->bgroup;
+	struct ext2_bgroup *bg = &fs->bgroup;
 
 	/* Check if block group is cached */
 	if (bg->block && group == bg->num) {
@@ -596,8 +587,8 @@ int ext2_clear_inode(struct ext2_data *fs, uint32_t ino)
 		return itable_offset;
 	}
 
-	memset(&BGROUP_INODE_TABLE(fs->bgroup)[itable_offset], 0, sizeof(struct ext2_disk_inode));
-	ret = ext2_write_block(fs, fs->bgroup->inode_table);
+	memset(&BGROUP_INODE_TABLE(&fs->bgroup)[itable_offset], 0, sizeof(struct ext2_disk_inode));
+	ret = ext2_write_block(fs, fs->bgroup.inode_table);
 	return ret;
 }
 
@@ -609,7 +600,7 @@ static int check_zero_inode(struct ext2_data *fs, uint32_t ino)
 		return itable_offset;
 	}
 
-	uint8_t *bytes = (uint8_t *)&BGROUP_INODE_TABLE(fs->bgroup)[itable_offset];
+	uint8_t *bytes = (uint8_t *)&BGROUP_INODE_TABLE(&fs->bgroup)[itable_offset];
 
 	for (int i = 0; i < sizeof(struct ext2_disk_inode); ++i) {
 		if (bytes[i] != 0) {
@@ -630,7 +621,7 @@ int ext2_commit_inode(struct ext2_inode *inode)
 	}
 
 	/* get pointer to proper inode in fetched block */
-	struct ext2_disk_inode *dino = &BGROUP_INODE_TABLE(fs->bgroup)[itable_offset];
+	struct ext2_disk_inode *dino = &BGROUP_INODE_TABLE(&fs->bgroup)[itable_offset];
 
 	/* fill dinode */
 	dino->i_size = inode->i_size;
@@ -639,7 +630,7 @@ int ext2_commit_inode(struct ext2_inode *inode)
 	dino->i_blocks = inode->i_blocks;
 	memcpy(dino->i_block, inode->i_block, sizeof(uint32_t) * 15);
 
-	return ext2_write_block(fs, fs->bgroup->inode_table);
+	return ext2_write_block(fs, fs->bgroup.inode_table);
 }
 
 int64_t ext2_alloc_block(struct ext2_data *fs)
@@ -652,8 +643,8 @@ int64_t ext2_alloc_block(struct ext2_data *fs)
 		return rc;
 	}
 
-	LOG_DBG("Free blocks: %d", current_disk_bgroup(fs->bgroup)->bg_free_blocks_count);
-	while ((rc >= 0) && (current_disk_bgroup(fs->bgroup)->bg_free_blocks_count == 0)) {
+	LOG_DBG("Free blocks: %d", current_disk_bgroup(&fs->bgroup)->bg_free_blocks_count);
+	while ((rc >= 0) && (current_disk_bgroup(&fs->bgroup)->bg_free_blocks_count == 0)) {
 		group++;
 		rc = ext2_fetch_block_group(fs, group);
 		if (rc == -ERANGE) {
@@ -666,12 +657,12 @@ int64_t ext2_alloc_block(struct ext2_data *fs)
 		return rc;
 	}
 
-	rc = ext2_fetch_bg_bbitmap(fs->bgroup);
+	rc = ext2_fetch_bg_bbitmap(&fs->bgroup);
 	if (rc < 0) {
 		return rc;
 	}
 
-	int bitmap_slot = ext2_bitmap_find_free(BGROUP_BLOCK_BITMAP(fs->bgroup), fs->block_size);
+	int bitmap_slot = ext2_bitmap_find_free(BGROUP_BLOCK_BITMAP(&fs->bgroup), fs->block_size);
 
 	if (bitmap_slot < 0) {
 		LOG_WRN("Cannot find free block in group %d (rc: %d)", group, bitmap_slot);
@@ -684,16 +675,16 @@ int64_t ext2_alloc_block(struct ext2_data *fs)
 
 	LOG_DBG("Found free block %d in group %d (total: %d)", bitmap_slot, group, total);
 
-	rc = ext2_bitmap_set(BGROUP_BLOCK_BITMAP(fs->bgroup), bitmap_slot, fs->block_size);
+	rc = ext2_bitmap_set(BGROUP_BLOCK_BITMAP(&fs->bgroup), bitmap_slot, fs->block_size);
 	if (rc < 0) {
 		return rc;
 	}
 
-	current_disk_bgroup(fs->bgroup)->bg_free_blocks_count -= 1;
+	current_disk_bgroup(&fs->bgroup)->bg_free_blocks_count -= 1;
 	EXT2_DATA_SBLOCK(fs)->s_free_blocks_count -= 1;
 
 	struct ext2_disk_superblock *sb = EXT2_DATA_SBLOCK(fs);
-	uint32_t set = ext2_bitmap_count_set(BGROUP_BLOCK_BITMAP(fs->bgroup), sb->s_blocks_count);
+	uint32_t set = ext2_bitmap_count_set(BGROUP_BLOCK_BITMAP(&fs->bgroup), sb->s_blocks_count);
 
 	if (set != (sb->s_blocks_count - sb->s_free_blocks_count)) {
 		error_behavior(fs, "Wrong number of used blocks in superblock and bitmap");
@@ -705,12 +696,12 @@ int64_t ext2_alloc_block(struct ext2_data *fs)
 		LOG_DBG("super block write returned: %d", rc);
 		return -EIO;
 	}
-	rc = ext2_write_block(fs, fs->bgroup->block);
+	rc = ext2_write_block(fs, fs->bgroup.block);
 	if (rc < 0) {
 		LOG_DBG("block group write returned: %d", rc);
 		return -EIO;
 	}
-	rc = ext2_write_block(fs, fs->bgroup->block_bitmap);
+	rc = ext2_write_block(fs, fs->bgroup.block_bitmap);
 	if (rc < 0) {
 		LOG_DBG("block bitmap write returned: %d", rc);
 		return -EIO;
@@ -725,7 +716,7 @@ int32_t ext2_alloc_inode(struct ext2_data *fs)
 
 	rc = ext2_fetch_block_group(fs, group);
 
-	while (current_disk_bgroup(fs->bgroup)->bg_free_inodes_count == 0 && rc >= 0) {
+	while (current_disk_bgroup(&fs->bgroup)->bg_free_inodes_count == 0 && rc >= 0) {
 		group++;
 		rc = ext2_fetch_block_group(fs, group);
 		if (rc == -ERANGE) {
@@ -738,15 +729,15 @@ int32_t ext2_alloc_inode(struct ext2_data *fs)
 		return rc;
 	}
 
-	LOG_DBG("Free inodes (bg): %d", current_disk_bgroup(fs->bgroup)->bg_free_inodes_count);
+	LOG_DBG("Free inodes (bg): %d", current_disk_bgroup(&fs->bgroup)->bg_free_inodes_count);
 	LOG_DBG("Free inodes (sb): %d", EXT2_DATA_SBLOCK(fs)->s_free_inodes_count);
 
-	rc = ext2_fetch_bg_ibitmap(fs->bgroup);
+	rc = ext2_fetch_bg_ibitmap(&fs->bgroup);
 	if (rc < 0) {
 		return rc;
 	}
 
-	int r = ext2_bitmap_find_free(BGROUP_INODE_BITMAP(fs->bgroup), fs->block_size);
+	int r = ext2_bitmap_find_free(BGROUP_INODE_BITMAP(&fs->bgroup), fs->block_size);
 
 	if (r < 0) {
 		LOG_DBG("Cannot find free inode in group %d (rc: %d)", group, r);
@@ -764,16 +755,16 @@ int32_t ext2_alloc_inode(struct ext2_data *fs)
 
 	LOG_DBG("Found free inode %d in group %d (global_idx: %d)", r, group, global_idx);
 
-	rc = ext2_bitmap_set(BGROUP_INODE_BITMAP(fs->bgroup), r, fs->block_size);
+	rc = ext2_bitmap_set(BGROUP_INODE_BITMAP(&fs->bgroup), r, fs->block_size);
 	if (rc < 0) {
 		return rc;
 	}
 
-	current_disk_bgroup(fs->bgroup)->bg_free_inodes_count -= 1;
+	current_disk_bgroup(&fs->bgroup)->bg_free_inodes_count -= 1;
 	EXT2_DATA_SBLOCK(fs)->s_free_inodes_count -= 1;
 
 	struct ext2_disk_superblock *sb = EXT2_DATA_SBLOCK(fs);
-	uint32_t set = ext2_bitmap_count_set(BGROUP_INODE_BITMAP(fs->bgroup), sb->s_inodes_count);
+	uint32_t set = ext2_bitmap_count_set(BGROUP_INODE_BITMAP(&fs->bgroup), sb->s_inodes_count);
 
 	if (set != sb->s_inodes_count - sb->s_free_inodes_count) {
 		error_behavior(fs, "Wrong number of used inodes in superblock and bitmap");
@@ -785,18 +776,18 @@ int32_t ext2_alloc_inode(struct ext2_data *fs)
 		LOG_DBG("super block write returned: %d", rc);
 		return -EIO;
 	}
-	rc = ext2_write_block(fs, fs->bgroup->block);
+	rc = ext2_write_block(fs, fs->bgroup.block);
 	if (rc < 0) {
 		LOG_DBG("block group write returned: %d", rc);
 		return -EIO;
 	}
-	rc = ext2_write_block(fs, fs->bgroup->inode_bitmap);
+	rc = ext2_write_block(fs, fs->bgroup.inode_bitmap);
 	if (rc < 0) {
 		LOG_DBG("block bitmap write returned: %d", rc);
 		return -EIO;
 	}
 
-	LOG_DBG("Free inodes (bg): %d", current_disk_bgroup(fs->bgroup)->bg_free_inodes_count);
+	LOG_DBG("Free inodes (bg): %d", current_disk_bgroup(&fs->bgroup)->bg_free_inodes_count);
 	LOG_DBG("Free inodes (sb): %d", EXT2_DATA_SBLOCK(fs)->s_free_inodes_count);
 
 	return global_idx;
@@ -818,21 +809,21 @@ int ext2_free_block(struct ext2_data *fs, uint32_t block)
 		return rc;
 	}
 
-	rc = ext2_fetch_bg_bbitmap(fs->bgroup);
+	rc = ext2_fetch_bg_bbitmap(&fs->bgroup);
 	if (rc < 0) {
 		return rc;
 	}
 
-	rc = ext2_bitmap_unset(BGROUP_BLOCK_BITMAP(fs->bgroup), off, fs->block_size);
+	rc = ext2_bitmap_unset(BGROUP_BLOCK_BITMAP(&fs->bgroup), off, fs->block_size);
 	if (rc < 0) {
 		return rc;
 	}
 
-	current_disk_bgroup(fs->bgroup)->bg_free_blocks_count += 1;
+	current_disk_bgroup(&fs->bgroup)->bg_free_blocks_count += 1;
 	EXT2_DATA_SBLOCK(fs)->s_free_blocks_count += 1;
 
 	struct ext2_disk_superblock *sb = EXT2_DATA_SBLOCK(fs);
-	uint32_t set = ext2_bitmap_count_set(BGROUP_BLOCK_BITMAP(fs->bgroup), sb->s_blocks_count);
+	uint32_t set = ext2_bitmap_count_set(BGROUP_BLOCK_BITMAP(&fs->bgroup), sb->s_blocks_count);
 
 	if (set != sb->s_blocks_count - sb->s_free_blocks_count) {
 		error_behavior(fs, "Wrong number of used blocks in superblock and bitmap");
@@ -844,12 +835,12 @@ int ext2_free_block(struct ext2_data *fs, uint32_t block)
 		LOG_DBG("super block write returned: %d", rc);
 		return -EIO;
 	}
-	rc = ext2_write_block(fs, fs->bgroup->block);
+	rc = ext2_write_block(fs, fs->bgroup.block);
 	if (rc < 0) {
 		LOG_DBG("block group write returned: %d", rc);
 		return -EIO;
 	}
-	rc = ext2_write_block(fs, fs->bgroup->block_bitmap);
+	rc = ext2_write_block(fs, fs->bgroup.block_bitmap);
 	if (rc < 0) {
 		LOG_DBG("block bitmap write returned: %d", rc);
 		return -EIO;
@@ -870,12 +861,12 @@ int ext2_free_inode(struct ext2_data *fs, uint32_t ino, bool directory)
 		return rc;
 	}
 
-	rc = ext2_fetch_bg_ibitmap(fs->bgroup);
+	rc = ext2_fetch_bg_ibitmap(&fs->bgroup);
 	if (rc < 0) {
 		return rc;
 	}
 
-	rc = ext2_bitmap_unset(BGROUP_INODE_BITMAP(fs->bgroup), bitmap_off, fs->block_size);
+	rc = ext2_bitmap_unset(BGROUP_INODE_BITMAP(&fs->bgroup), bitmap_off, fs->block_size);
 	if (rc < 0) {
 		return rc;
 	}
@@ -885,15 +876,15 @@ int ext2_free_inode(struct ext2_data *fs, uint32_t ino, bool directory)
 		return rc;
 	}
 
-	current_disk_bgroup(fs->bgroup)->bg_free_inodes_count += 1;
+	current_disk_bgroup(&fs->bgroup)->bg_free_inodes_count += 1;
 	EXT2_DATA_SBLOCK(fs)->s_free_inodes_count += 1;
 
 	if (directory) {
-		current_disk_bgroup(fs->bgroup)->bg_used_dirs_count -= 1;
+		current_disk_bgroup(&fs->bgroup)->bg_used_dirs_count -= 1;
 	}
 
 	struct ext2_disk_superblock *sb = EXT2_DATA_SBLOCK(fs);
-	uint32_t set = ext2_bitmap_count_set(BGROUP_INODE_BITMAP(fs->bgroup), sb->s_inodes_count);
+	uint32_t set = ext2_bitmap_count_set(BGROUP_INODE_BITMAP(&fs->bgroup), sb->s_inodes_count);
 
 	if (set != sb->s_inodes_count - sb->s_free_inodes_count) {
 		error_behavior(fs, "Wrong number of used inodes in superblock and bitmap");
@@ -907,12 +898,12 @@ int ext2_free_inode(struct ext2_data *fs, uint32_t ino, bool directory)
 		LOG_DBG("super block write returned: %d", rc);
 		return -EIO;
 	}
-	rc = ext2_write_block(fs, fs->bgroup->block);
+	rc = ext2_write_block(fs, fs->bgroup.block);
 	if (rc < 0) {
 		LOG_DBG("block group write returned: %d", rc);
 		return -EIO;
 	}
-	rc = ext2_write_block(fs, fs->bgroup->inode_bitmap);
+	rc = ext2_write_block(fs, fs->bgroup.inode_bitmap);
 	if (rc < 0) {
 		LOG_DBG("block bitmap write returned: %d", rc);
 		return -EIO;
