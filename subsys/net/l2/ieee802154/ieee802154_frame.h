@@ -453,7 +453,7 @@ struct ieee802154_mpdu {
 struct ieee802154_frame_params {
 	struct {
 		union {
-			uint8_t *ext_addr; /* in big endian */
+			uint8_t ext_addr[IEEE802154_EXT_ADDR_LENGTH]; /* in big endian */
 			uint16_t short_addr; /* in CPU byte order */
 		};
 
