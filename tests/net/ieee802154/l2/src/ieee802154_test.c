@@ -32,6 +32,7 @@ struct ieee802154_pkt_test {
 	uint8_t *pkt;
 	uint8_t sequence;
 	uint8_t length;
+	uint8_t payload_length;
 	struct {
 		struct ieee802154_fcf_seq *fc_seq;
 		struct ieee802154_address_field *dst_addr;
@@ -72,6 +73,7 @@ struct ieee802154_pkt_test test_ns_pkt = {
 	.pkt = ns_pkt,
 	.sequence = 69U,
 	.length = sizeof(ns_pkt),
+	.payload_length = 65U,
 	.mhr_check = {
 		.fc_seq = (struct ieee802154_fcf_seq *)ns_pkt,
 		.dst_addr = (struct ieee802154_address_field *)(ns_pkt + 3),
@@ -88,6 +90,7 @@ struct ieee802154_pkt_test test_ack_pkt = {
 	.sequence = 22U,
 	.pkt = ack_pkt,
 	.length = sizeof(ack_pkt),
+	.payload_length = 0U,
 	.mhr_check = {
 		.fc_seq = (struct ieee802154_fcf_seq *)ack_pkt,
 		.dst_addr = NULL,
@@ -110,6 +113,7 @@ struct ieee802154_pkt_test test_beacon_pkt = {
 	.sequence = 17U,
 	.pkt = beacon_pkt,
 	.length = sizeof(beacon_pkt),
+	.payload_length = 6U,
 	.mhr_check = {
 		.fc_seq = (struct ieee802154_fcf_seq *)beacon_pkt,
 		.dst_addr = NULL,
@@ -134,6 +138,7 @@ struct ieee802154_pkt_test test_sec_data_pkt = {
 	.sequence = 69U,
 	.pkt = sec_data_pkt,
 	.length = sizeof(sec_data_pkt),
+	.payload_length = 4U /* encrypted payload */ + 16U /* MIC */,
 	.mhr_check = {
 		.fc_seq = (struct ieee802154_fcf_seq *)sec_data_pkt,
 		.dst_addr = (struct ieee802154_address_field *)(sec_data_pkt + 3),
@@ -366,6 +371,11 @@ static bool test_packet_parsing(struct ieee802154_pkt_test *t)
 
 	if (mpdu.mhr.fs->sequence != t->sequence) {
 		NET_ERR("*** Invalid sequence number\n", t->name);
+		return false;
+	}
+
+	if (mpdu.payload_length != t->payload_length) {
+		NET_ERR("*** Invalid payload length\n", t->name);
 		return false;
 	}
 
