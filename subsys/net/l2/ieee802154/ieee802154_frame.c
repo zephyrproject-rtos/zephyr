@@ -234,12 +234,12 @@ static inline bool validate_beacon(struct ieee802154_mpdu *mpdu, uint8_t *buf, u
 	return true;
 }
 
-static inline bool validate_mac_command_cfi_to_mhr(struct ieee802154_mhr *mhr, uint8_t ar,
-						   bool has_pan_id, uint8_t src_bf,
-						   bool src_pan_brdcst_chk, uint8_t dst_bf,
-						   bool dst_brdcst_chk)
+static inline bool validate_mac_command_cfi_to_mhr(struct ieee802154_mhr *mhr,
+						   bool ack_requested, bool has_pan_id,
+						   uint8_t src_bf, bool src_pan_brdcst_chk,
+						   uint8_t dst_bf, bool dst_brdcst_chk)
 {
-	if (mhr->fs->fc.ar != ar || mhr->fs->fc.pan_id_comp == has_pan_id) {
+	if (mhr->fs->fc.ar != ack_requested || mhr->fs->fc.pan_id_comp == has_pan_id) {
 		return false;
 	}
 
@@ -270,8 +270,8 @@ static inline bool validate_mac_command(struct ieee802154_mpdu *mpdu, uint8_t *b
 	uint8_t len = IEEE802154_CMD_CFI_LENGTH;
 	bool src_pan_brdcst_chk = false;
 	bool dst_brdcst_chk = false;
+	bool ack_requested = false;
 	bool has_pan_id = true;
-	uint8_t ar = 0U;
 	uint8_t src_bf, dst_bf;
 
 	if (length < len) {
@@ -282,8 +282,8 @@ static inline bool validate_mac_command(struct ieee802154_mpdu *mpdu, uint8_t *b
 	case IEEE802154_CFI_UNKNOWN:
 		return false;
 	case IEEE802154_CFI_ASSOCIATION_REQUEST:
-		ar = 1U;
 		len += IEEE802154_CMD_ASSOC_REQ_LENGTH;
+		ack_requested = true;
 		src_bf = BIT(IEEE802154_ADDR_MODE_EXTENDED);
 		src_pan_brdcst_chk = true;
 		dst_bf = BIT(IEEE802154_ADDR_MODE_SHORT) | BIT(IEEE802154_ADDR_MODE_EXTENDED);
@@ -298,14 +298,14 @@ static inline bool validate_mac_command(struct ieee802154_mpdu *mpdu, uint8_t *b
 		}
 		__fallthrough;
 	case IEEE802154_CFI_PAN_ID_CONFLICT_NOTIFICATION:
-		ar = 1U;
+		ack_requested = true;
 		has_pan_id = false;
 		src_bf = BIT(IEEE802154_ADDR_MODE_EXTENDED);
 		dst_bf = BIT(IEEE802154_ADDR_MODE_EXTENDED);
 
 		break;
 	case IEEE802154_CFI_DATA_REQUEST:
-		ar = 1U;
+		ack_requested = true;
 		src_bf = BIT(IEEE802154_ADDR_MODE_SHORT) | BIT(IEEE802154_ADDR_MODE_EXTENDED);
 
 		if (mpdu->mhr.fs->fc.dst_addr_mode == IEEE802154_ADDR_MODE_NONE) {
@@ -343,7 +343,7 @@ static inline bool validate_mac_command(struct ieee802154_mpdu *mpdu, uint8_t *b
 		break;
 	case IEEE802154_CFI_GTS_REQUEST:
 		len += IEEE802154_GTS_REQUEST_LENGTH;
-		ar = 1U;
+		ack_requested = true;
 		src_bf = BIT(IEEE802154_ADDR_MODE_SHORT);
 		dst_bf = BIT(IEEE802154_ADDR_MODE_NONE);
 
@@ -356,7 +356,7 @@ static inline bool validate_mac_command(struct ieee802154_mpdu *mpdu, uint8_t *b
 		return false;
 	}
 
-	if (!validate_mac_command_cfi_to_mhr(&mpdu->mhr, ar, has_pan_id, src_bf,
+	if (!validate_mac_command_cfi_to_mhr(&mpdu->mhr, ack_requested, has_pan_id, src_bf,
 					     src_pan_brdcst_chk, dst_bf,
 					     dst_brdcst_chk)) {
 		return false;
@@ -511,7 +511,7 @@ done:
 	*authtag_len = tag_len;
 }
 
-static inline struct ieee802154_fcf_seq *generate_fcf_grounds(uint8_t **p_buf, bool ack)
+static inline struct ieee802154_fcf_seq *generate_fcf_grounds(uint8_t **p_buf, bool ack_requested)
 {
 	struct ieee802154_fcf_seq *fs;
 
@@ -519,7 +519,7 @@ static inline struct ieee802154_fcf_seq *generate_fcf_grounds(uint8_t **p_buf, b
 
 	fs->fc.security_enabled = 0U;
 	fs->fc.frame_pending = 0U;
-	fs->fc.ar = ack;
+	fs->fc.ar = ack_requested;
 	fs->fc.pan_id_comp = 0U;
 	fs->fc.reserved = 0U;
 	/* We support version 2006 only for now */
@@ -804,7 +804,7 @@ static inline bool cfi_to_fs_settings(enum ieee802154_cfi cfi, struct ieee802154
 		break;
 	case IEEE802154_CFI_COORDINATOR_REALIGNEMENT:
 		fs->fc.src_addr_mode = IEEE802154_ADDR_MODE_EXTENDED;
-		/* TODO: ar and dst addr mode: see section 7.5.10 */
+		/* TODO: ack_requested and dst addr mode: see section 7.5.10 */
 
 		break;
 	case IEEE802154_CFI_GTS_REQUEST:
