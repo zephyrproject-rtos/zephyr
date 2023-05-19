@@ -445,11 +445,12 @@ bool ieee802154_validate_frame(uint8_t *buf, uint8_t length, struct ieee802154_m
 	return validate_payload_and_mfr(mpdu, buf, p_buf, length);
 }
 
-uint8_t ieee802154_compute_header_and_authtag_len(struct net_if *iface, struct net_linkaddr *dst,
-						  struct net_linkaddr *src)
+void ieee802154_compute_header_and_authtag_len(struct net_if *iface, struct net_linkaddr *dst,
+					       struct net_linkaddr *src, uint8_t *ll_hdr_len,
+					       uint8_t *authtag_len)
 {
+	uint8_t hdr_len = sizeof(struct ieee802154_fcf_seq), tag_len = 0;
 	bool broadcast = !dst->addr;
-	uint8_t hdr_len = sizeof(struct ieee802154_fcf_seq);
 
 	/* PAN ID */
 	hdr_len += IEEE802154_PAN_ID_LENGTH;
@@ -470,8 +471,7 @@ uint8_t ieee802154_compute_header_and_authtag_len(struct net_if *iface, struct n
 
 	k_sem_take(&ctx->ctx_lock, K_FOREVER);
 
-	struct ieee802154_security_ctx *sec_ctx =
-		&ctx->sec_ctx;
+	struct ieee802154_security_ctx *sec_ctx = &ctx->sec_ctx;
 	if (sec_ctx->level == IEEE802154_SECURITY_LEVEL_NONE) {
 		goto release;
 	}
@@ -495,18 +495,10 @@ uint8_t ieee802154_compute_header_and_authtag_len(struct net_if *iface, struct n
 		hdr_len += IEEE8021254_KEY_ID_FIELD_SRC_8_INDEX_LENGTH;
 	}
 
-	/* This is a _HACK_: As net_buf does not allow to reserve tailroom
-	 * - here for authentication tag (see section 7.6.3.4.3) - it "reserves"
-	 * it in headroom so the payload won't occupy all the left space
-	 * and then when it will come to finalize the data frame it will
-	 * reduce the reserved space by the tag size, move the payload
-	 * foward accordingly, and only then: run the encryption/authentication
-	 * which will fill the tag space in the end.
-	 */
 	if (sec_ctx->level < IEEE802154_SECURITY_LEVEL_ENC) {
-		hdr_len += level_2_authtag_len[sec_ctx->level];
+		tag_len = level_2_authtag_len[sec_ctx->level];
 	} else {
-		hdr_len += level_2_authtag_len[sec_ctx->level - 4U];
+		tag_len = level_2_authtag_len[sec_ctx->level - 4U];
 	}
 
 release:
@@ -514,9 +506,11 @@ release:
 done:
 #endif /* CONFIG_NET_L2_IEEE802154_SECURITY */
 
-	NET_DBG("Computed size of %u", hdr_len);
+	NET_DBG("Computed header size %u", hdr_len);
+	NET_DBG("Computed authtag size: %u", tag_len);
 
-	return hdr_len;
+	*ll_hdr_len = hdr_len;
+	*authtag_len = tag_len;
 }
 
 static inline struct ieee802154_fcf_seq *generate_fcf_grounds(uint8_t **p_buf, bool ack)
@@ -733,7 +727,6 @@ bool ieee802154_create_data_frame(struct ieee802154_context *ctx, struct net_lin
 		goto out;
 	}
 
-	uint8_t payload_len = buf->len - hdr_len;
 	uint8_t level = ctx->sec_ctx.level;
 
 	if (level >= IEEE802154_SECURITY_LEVEL_ENC) {
@@ -741,14 +734,7 @@ bool ieee802154_create_data_frame(struct ieee802154_context *ctx, struct net_lin
 	}
 
 	uint8_t authtag_len = level_2_authtag_len[level];
-
-	if (authtag_len > 0) {
-		/* If tagged, let's create tailroom for the tag by moving the payload left,
-		 *see comment in ieee802154_compute_header_and_authtag_len().
-		 */
-		memmove(p_buf, buf_start + hdr_len, payload_len);
-		hdr_len -= authtag_len;
-	}
+	uint8_t payload_len = buf->len - hdr_len - authtag_len;
 
 	/* Let's encrypt/auth only in the end, if needed */
 	if (!ieee802154_encrypt_auth(&ctx->sec_ctx, buf_start, hdr_len,
