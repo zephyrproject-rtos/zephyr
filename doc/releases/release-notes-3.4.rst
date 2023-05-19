@@ -369,6 +369,8 @@ Build system and infrastructure
   ``EXTRA_DTC_OVERLAY_FILE`` is new, see
   :ref:`Set devicetree overlays <set-devicetree-overlays>` for further details.
 
+* Twister now supports ``gtest`` harness for running tests written in gTest.
+
 Drivers and Sensors
 *******************
 

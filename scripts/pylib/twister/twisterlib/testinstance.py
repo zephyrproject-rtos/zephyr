@@ -28,6 +28,8 @@ class TestInstance:
         out directory used is <outdir>/<platform>/<test case name>
     """
 
+    __test__ = False
+
     def __init__(self, testsuite, platform, outdir):
 
         self.testsuite = testsuite
@@ -127,7 +129,7 @@ class TestInstance:
     def testsuite_runnable(testsuite, fixtures):
         can_run = False
         # console harness allows us to run the test and capture data.
-        if testsuite.harness in [ 'console', 'ztest', 'pytest', 'test']:
+        if testsuite.harness in [ 'console', 'ztest', 'pytest', 'test', 'gtest']:
             can_run = True
             # if we have a fixture that is also being supplied on the
             # command-line, then we need to run the test, not just build it.
