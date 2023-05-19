@@ -343,6 +343,15 @@ struct usbd_class_node {
 		.desc = &string_desc_##d_name,				\
 	}
 
+#define USBD_DESC_MANUFACTURER_DEFINE(d_name, d_string)			\
+	USBD_DESC_STRING_DEFINE(d_name, d_string, USBD_DESC_MANUFACTURER_IDX)
+
+#define USBD_DESC_PRODUCT_DEFINE(d_name, d_string)			\
+	USBD_DESC_STRING_DEFINE(d_name, d_string, USBD_DESC_PRODUCT_IDX)
+
+#define USBD_DESC_SERIAL_NUMBER_DEFINE(d_name, d_string)		\
+	USBD_DESC_STRING_DEFINE(d_name, d_string, USBD_DESC_SERIAL_NUMBER_IDX)
+
 #define USBD_DEFINE_CLASS(class_name, class_api, class_data)		\
 	static STRUCT_SECTION_ITERABLE(usbd_class_node, class_name) = {	\
 		.name = STRINGIFY(class_name),				\
