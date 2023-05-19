@@ -720,11 +720,12 @@ release_fd:
 out:
 	return result;
 }
+#endif /* CONFIG_NET_SOCKETS */
 
-static bool test_recv_and_ack_reply(struct ieee802154_pkt_test *t)
+static struct net_pkt *get_data_pkt_with_ar(void)
 {
 	/* Incoming IEEE 802.15.4 packet with payload header compression. */
-	static uint8_t data_pkt[] = {
+	static uint8_t data_pkt_with_ar[] = {
 		/* IEEE 802.15.4 MHR */
 		0x61, 0xd8,					/* FCF with AR bit set */
 		0x16,						/* Sequence */
@@ -746,6 +747,23 @@ static bool test_recv_and_ack_reply(struct ieee802154_pkt_test *t)
 		0xe5, 0xac, 0xa1, 0x1c, 0x00, 0x4b, 0x12, 0x00, /* LL address */
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00,		/* Padding */
 	};
+	struct net_pkt *pkt;
+
+	pkt = net_pkt_rx_alloc_with_buffer(iface, sizeof(data_pkt_with_ar), AF_UNSPEC, 0,
+					   K_FOREVER);
+	if (!pkt) {
+		NET_ERR("*** No buffer to allocate\n");
+		return NULL;
+	}
+
+	net_buf_add_mem(pkt->frags, data_pkt_with_ar, sizeof(data_pkt_with_ar));
+
+	return pkt;
+}
+
+#ifdef CONFIG_NET_SOCKETS
+static bool test_recv_and_send_ack_reply(struct ieee802154_pkt_test *t)
+{
 	/* Expected uncompressed IPv6 payload. */
 	static uint8_t expected_rx_pkt[] = {
 		0x60, 0x00, 0x00, 0x00, /* IPv6, Traffic Class, Flow Label */
@@ -781,7 +799,6 @@ static bool test_recv_and_ack_reply(struct ieee802154_pkt_test *t)
 	};
 	struct ieee802154_mpdu mpdu;
 	socklen_t recv_src_sll_len;
-	struct net_buf *frag;
 	struct net_pkt *rx_pkt;
 	bool result = false;
 	uint8_t mac_be[8];
@@ -806,13 +823,10 @@ static bool test_recv_and_ack_reply(struct ieee802154_pkt_test *t)
 		goto release_fd;
 	}
 
-	rx_pkt = net_pkt_rx_alloc(K_FOREVER);
-	frag = net_pkt_get_frag(rx_pkt, sizeof(data_pkt), K_FOREVER);
-
-	memcpy(frag->data, data_pkt, sizeof(data_pkt));
-	frag->len = sizeof(data_pkt);
-
-	net_pkt_frag_add(rx_pkt, frag);
+	rx_pkt = get_data_pkt_with_ar();
+	if (!rx_pkt) {
+		goto release_fd;
+	}
 
 	if (net_recv_data(iface, rx_pkt) < 0) {
 		NET_ERR("Recv data failed");
@@ -988,9 +1002,9 @@ ZTEST(ieee802154_l2, test_receiving_pkt_and_replying_ack_pkt)
 {
 	bool ret;
 
-	ret = test_recv_and_ack_reply(&test_ack_pkt);
+	ret = test_recv_and_send_ack_reply(&test_ack_pkt);
 
-	zassert_true(ret, "ACK replied");
+	zassert_true(ret, "ACK sent");
 }
 
 ZTEST(ieee802154_l2, test_parsing_beacon_pkt)
