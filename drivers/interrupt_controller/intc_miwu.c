@@ -67,9 +67,6 @@ static const struct device *const miwu_devs[] = {
 	DT_INST_FOREACH_STATUS_OKAY(NPCX_MIWU_DEV)
 };
 
-BUILD_ASSERT(ARRAY_SIZE(miwu_devs) == NPCX_MIWU_TABLE_COUNT,
-		"Size of miwu_devs array must equal to NPCX_MIWU_TABLE_COUNT");
-
 /* Driver config */
 struct intc_miwu_config {
 	/* miwu controller base address */
@@ -82,47 +79,54 @@ struct intc_miwu_config {
 struct intc_miwu_data {
 	/* Callback functions list for each MIWU group */
 	sys_slist_t cb_list_grp[8];
+	struct wui_io inputs[8][8];
 };
 
-BUILD_ASSERT(sizeof(struct miwu_io_params) == sizeof(gpio_port_pins_t),
-	"Size of struct miwu_io_params must equal to struct gpio_port_pins_t");
-
-BUILD_ASSERT(offsetof(struct miwu_callback, io_cb.params) +
-	sizeof(struct miwu_io_params) == sizeof(struct gpio_callback),
-	"Failed in size check of miwu_callback and gpio_callback structures!");
-
-BUILD_ASSERT(offsetof(struct miwu_callback, io_cb.params.cb_type) ==
-	offsetof(struct miwu_callback, dev_cb.params.cb_type),
-	"Failed in offset check of cb_type field of miwu_callback structure");
+/*
+ * Callback functions list for the generic hardware modules  wake-up inputs
+ * such as timer, uart, i2c, host interface and so on.
+ */
+sys_slist_t cb_list_generic;
 
 /* MIWU local functions */
-static void intc_miwu_dispatch_isr(sys_slist_t *cb_list, uint8_t mask)
+static void intc_miwu_dispatch_gpio_isr(sys_slist_t *cb_list_io, struct wui_io *input)
 {
-	struct miwu_callback *cb, *tmp;
+	struct gpio_callback *cb, *tmp;
 
-	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(cb_list, cb, tmp, node) {
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(cb_list_io, cb, tmp, node) {
+		if ((cb->pin_mask & BIT(input->pin)) != 0) {
+			__ASSERT(cb->handler, "No GPIO callback handler!");
+			cb->handler(
+				npcx_get_gpio_dev(input->port),
+				(struct gpio_callback *)cb,
+				cb->pin_mask);
+		}
+	}
+}
 
-		if (cb->io_cb.params.cb_type == NPCX_MIWU_CALLBACK_GPIO) {
-			if (BIT(cb->io_cb.params.wui.bit) & mask) {
-				__ASSERT(cb->io_cb.handler, "No GPIO callback handler!");
-				cb->io_cb.handler(
-					npcx_get_gpio_dev(cb->io_cb.params.gpio_port),
-					(struct gpio_callback *)cb,
-					cb->io_cb.params.pin_mask);
-			}
-		} else {
-			if (BIT(cb->dev_cb.params.wui.bit) & mask) {
-				__ASSERT(cb->dev_cb.handler, "No device callback handler!");
+static void intc_miwu_dispatch_generic_isr(uint8_t wui_table,
+					uint8_t wui_group, uint8_t wui_bit)
+{
+	struct miwu_dev_callback *cb, *tmp;
 
-				cb->dev_cb.handler(cb->dev_cb.params.source,
-						   &cb->dev_cb.params.wui);
-			}
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&cb_list_generic, cb, tmp, node) {
+		/* Pending bit, group and table match the wui item in list */
+		if (cb->wui.table == wui_table
+				&& cb->wui.group == wui_group
+				&& cb->wui.bit == wui_bit) {
+			__ASSERT(cb->handler, "No Generic callback handler!");
+			/*
+			 * Execute generic callback and the other callback might
+			 * match the same wui item.
+			 */
+			cb->handler(cb->source, &cb->wui);
 		}
 	}
 }
 
 static void intc_miwu_isr_pri(int wui_table, int wui_group)
 {
+	int wui_bit;
 	const struct intc_miwu_config *config = miwu_devs[wui_table]->config;
 	struct intc_miwu_data *data = miwu_devs[wui_table]->data;
 	const uint32_t base = config->base;
@@ -133,8 +137,17 @@ static void intc_miwu_isr_pri(int wui_table, int wui_group)
 		NPCX_WKPCL(base, wui_group) = mask;
 	}
 
-	/* Dispatch registered gpio isrs */
-	intc_miwu_dispatch_isr(&data->cb_list_grp[wui_group], mask);
+	for (wui_bit = 0; wui_bit < 8; wui_bit++) {
+		if (mask & BIT(wui_bit)) {
+			LOG_DBG("miwu_isr %d %d %d!\n", wui_table,
+							wui_group, wui_bit);
+			/* Dispatch registered gpio and generic isrs */
+			intc_miwu_dispatch_gpio_isr(&data->cb_list_grp[wui_group],
+						    &data->inputs[wui_group][wui_bit]);
+			intc_miwu_dispatch_generic_isr(wui_table,
+							wui_group, wui_bit);
+		}
+	}
 }
 
 /* Platform specific MIWU functions */
@@ -254,47 +267,37 @@ int npcx_miwu_interrupt_configure(const struct npcx_wui *wui,
 	return 0;
 }
 
-void npcx_miwu_init_gpio_callback(struct miwu_callback *callback,
-				const struct npcx_wui *io_wui, int port)
+void npcx_miwu_init_gpio_callback(const struct npcx_wui *io_wui, int port, int pin)
 {
-	/* Initialize WUI and GPIO settings in unused bits field */
-	callback->io_cb.params.wui.table = io_wui->table;
-	callback->io_cb.params.wui.bit   = io_wui->bit;
-	callback->io_cb.params.gpio_port = port;
-	callback->io_cb.params.cb_type = NPCX_MIWU_CALLBACK_GPIO;
-	callback->io_cb.params.wui.group = io_wui->group;
+	struct intc_miwu_data *data = miwu_devs[io_wui->table]->data;
+
+	/* Register a WUI event of GPIO in MIWU driver */
+	data->inputs[io_wui->group][io_wui->bit].port = port;
+	data->inputs[io_wui->group][io_wui->bit].pin = pin;
 }
 
-void npcx_miwu_init_dev_callback(struct miwu_callback *callback,
+void npcx_miwu_init_dev_callback(struct miwu_dev_callback *callback,
 				const struct npcx_wui *dev_wui,
 				miwu_dev_callback_handler_t handler,
 				const struct device *source)
 {
 	/* Initialize WUI and input device settings */
-	callback->dev_cb.params.wui.table = dev_wui->table;
-	callback->dev_cb.params.wui.group = dev_wui->group;
-	callback->dev_cb.params.wui.bit   = dev_wui->bit;
-	callback->dev_cb.params.source = source;
-	callback->dev_cb.params.cb_type = NPCX_MIWU_CALLBACK_DEV;
-	callback->dev_cb.handler = handler;
+	callback->wui.table = dev_wui->table;
+	callback->wui.group = dev_wui->group;
+	callback->wui.bit   = dev_wui->bit;
+	callback->handler = handler;
+	callback->source = source;
 }
 
-int npcx_miwu_manage_callback(struct miwu_callback *cb, bool set)
+int npcx_miwu_manage_gpio_callback(struct gpio_callback *cb,
+				const struct npcx_wui *io_wui, bool set)
 {
-	struct npcx_wui *wui;
-	struct intc_miwu_data *data;
-	sys_slist_t *cb_list;
+	sys_slist_t *cb_list_io;
+	struct intc_miwu_data *data = miwu_devs[io_wui->table]->data;
 
-	if (cb->io_cb.params.cb_type == NPCX_MIWU_CALLBACK_GPIO) {
-		wui = &cb->io_cb.params.wui;
-	} else {
-		wui = &cb->dev_cb.params.wui;
-	}
-
-	data = miwu_devs[wui->table]->data;
-	cb_list = &data->cb_list_grp[wui->group];
-	if (!sys_slist_is_empty(cb_list)) {
-		if (!sys_slist_find_and_remove(cb_list, &cb->node)) {
+	cb_list_io = &data->cb_list_grp[io_wui->group];
+	if (!sys_slist_is_empty(cb_list_io)) {
+		if (!sys_slist_find_and_remove(cb_list_io, &cb->node)) {
 			if (!set) {
 				return -EINVAL;
 			}
@@ -302,7 +305,24 @@ int npcx_miwu_manage_callback(struct miwu_callback *cb, bool set)
 	}
 
 	if (set) {
-		sys_slist_prepend(cb_list, &cb->node);
+		sys_slist_prepend(cb_list_io, &cb->node);
+	}
+
+	return 0;
+}
+
+int npcx_miwu_manage_dev_callback(struct miwu_dev_callback *cb, bool set)
+{
+	if (!sys_slist_is_empty(&cb_list_generic)) {
+		if (!sys_slist_find_and_remove(&cb_list_generic, &cb->node)) {
+			if (!set) {
+				return -EINVAL;
+			}
+		}
+	}
+
+	if (set) {
+		sys_slist_prepend(&cb_list_generic, &cb->node);
 	}
 
 	return 0;

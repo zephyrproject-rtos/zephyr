@@ -356,7 +356,6 @@ static int gpio_npcx_manage_callback(const struct device *dev,
 				      struct gpio_callback *callback, bool set)
 {
 	const struct gpio_npcx_config *const config = dev->config;
-	struct miwu_callback *miwu_cb = (struct miwu_callback *)callback;
 	int pin = find_lsb_set(callback->pin_mask) - 1;
 
 	/* pin_mask should not be zero */
@@ -372,11 +371,10 @@ static int gpio_npcx_manage_callback(const struct device *dev,
 	}
 
 	/* Initialize WUI information in unused bits field */
-	npcx_miwu_init_gpio_callback(miwu_cb, &config->wui_maps[pin],
-			config->port);
+	npcx_miwu_init_gpio_callback(&config->wui_maps[pin], config->port, pin);
 
 	/* Insert or remove a IO callback which being called in MIWU ISRs */
-	return npcx_miwu_manage_callback(miwu_cb, set);
+	return npcx_miwu_manage_gpio_callback(callback, &config->wui_maps[pin], set);
 }
 
 /* GPIO driver registration */
