@@ -55,7 +55,7 @@ static struct bt_le_per_adv_sync *bcast_pa_sync;
 static struct bt_bap_stream streams[CONFIG_BT_BAP_BROADCAST_SNK_STREAM_COUNT];
 struct bt_bap_stream *streams_p[ARRAY_SIZE(streams)];
 
-static struct bt_audio_codec_cap codec = BT_AUDIO_CODEC_CAP_LC3(
+static const struct bt_audio_codec_cap codec = BT_AUDIO_CODEC_CAP_LC3(
 	BT_AUDIO_CODEC_LC3_FREQ_48KHZ, BT_AUDIO_CODEC_LC3_DURATION_10,
 	BT_AUDIO_CODEC_LC3_CHAN_COUNT_SUPPORT(1), 40u, 60u, 1u, (BT_AUDIO_CONTEXT_TYPE_MEDIA));
 

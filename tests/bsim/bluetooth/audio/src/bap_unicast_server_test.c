@@ -38,7 +38,7 @@ extern enum bst_result_t bst_result;
 
 #define LONG_META_LEN (sizeof((uint8_t []){LONG_META}) + 1U) /* Size of data + type */
 
-static struct bt_audio_codec_cap lc3_codec_cap = {
+static const struct bt_audio_codec_cap lc3_codec_cap = {
 	.path_id = BT_ISO_DATA_PATH_HCI,
 	.id = BT_AUDIO_CODEC_LC3_ID,
 	.cid = 0x0000U,

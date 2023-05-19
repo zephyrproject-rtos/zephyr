@@ -1335,7 +1335,7 @@ struct codec_cap_lookup_id_data {
 	uint8_t id;
 	uint16_t cid;
 	uint16_t vid;
-	struct bt_audio_codec_cap *codec_cap;
+	const struct bt_audio_codec_cap *codec_cap;
 };
 
 static bool codec_lookup_id(const struct bt_pacs_cap *cap, void *user_data)

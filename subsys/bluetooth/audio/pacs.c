@@ -74,7 +74,7 @@ struct pac_records_build_data {
 static bool build_pac_records(const struct bt_pacs_cap *cap, void *user_data)
 {
 	struct pac_records_build_data *data = user_data;
-	struct bt_audio_codec_cap *codec_cap = cap->codec_cap;
+	const struct bt_audio_codec_cap *codec_cap = cap->codec_cap;
 	struct net_buf_simple *buf = data->buf;
 	struct net_buf_simple_state state;
 	struct bt_pac_codec *pac_codec;
