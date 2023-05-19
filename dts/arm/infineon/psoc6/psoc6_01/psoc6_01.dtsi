@@ -211,6 +211,7 @@
 			reg = <0x411f0000 0x10000>;
 			interrupts = <138 6>;
 			status = "disabled";
+			#io-channel-cells = <1>;
 		};
 
 		scb0: scb@40610000 {
