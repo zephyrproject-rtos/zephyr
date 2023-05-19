@@ -48,7 +48,7 @@ static struct bt_le_scan_cb broadcast_scan_cb;
 
 struct codec_cap_lookup_id_data {
 	uint8_t id;
-	struct bt_audio_codec_cap *codec_cap;
+	const struct bt_audio_codec_cap *codec_cap;
 };
 
 static sys_slist_t sink_cbs = SYS_SLIST_STATIC_INIT(&sink_cbs);
