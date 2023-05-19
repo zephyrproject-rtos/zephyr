@@ -303,9 +303,12 @@ static enum net_verdict ieee802154_recv(struct net_if *iface, struct net_pkt *pk
  */
 static int ieee802154_send(struct net_if *iface, struct net_pkt *pkt)
 {
+	struct ieee802154_context *ctx = net_if_l2_data(iface);
 	uint8_t ll_hdr_len = 0, authtag_len = 0;
 	static struct net_buf *frame_buf;
+	static struct net_buf *buf;
 	bool send_raw = false;
+	int len;
 #ifdef CONFIG_NET_L2_IEEE802154_FRAGMENT
 	struct ieee802154_6lo_fragment_ctx f_ctx;
 	int requires_fragmentation = 0;
@@ -362,9 +365,8 @@ static int ieee802154_send(struct net_if *iface, struct net_pkt *pkt)
 
 	net_capture_pkt(iface, pkt);
 
-	int len = 0;
-	struct ieee802154_context *ctx = net_if_l2_data(iface);
-	struct net_buf *buf = pkt->buffer;
+	len = 0;
+	buf = pkt->buffer;
 	while (buf) {
 		int ret;
 
