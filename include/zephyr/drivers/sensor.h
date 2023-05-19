@@ -738,6 +738,17 @@ static inline double sensor_value_to_double(const struct sensor_value *val)
 }
 
 /**
+ * @brief Helper function for converting struct sensor_value to float.
+ *
+ * @param val A pointer to a sensor_value struct.
+ * @return The converted value.
+ */
+static inline float sensor_value_to_float(const struct sensor_value *val)
+{
+	return (float)val->val1 + (float)val->val2 / 1000000;
+}
+
+/**
  * @brief Helper function for converting double to struct sensor_value.
  *
  * @param val A pointer to a sensor_value struct.
@@ -753,6 +764,27 @@ static inline int sensor_value_from_double(struct sensor_value *val, double inp)
 	double val2 = (inp - (int32_t)inp) * 1000000.0;
 
 	if (val2 < INT32_MIN || val2 > INT32_MAX) {
+		return -ERANGE;
+	}
+
+	val->val1 = (int32_t)inp;
+	val->val2 = (int32_t)val2;
+
+	return 0;
+}
+
+/**
+ * @brief Helper function for converting float to struct sensor_value.
+ *
+ * @param val A pointer to a sensor_value struct.
+ * @param inp The converted value.
+ * @return 0 if successful, negative errno code if failure.
+ */
+static inline int sensor_value_from_float(struct sensor_value *val, float inp)
+{
+	float val2 = (inp - (int32_t)inp) * 1000000.0;
+
+	if (val2 < INT32_MIN || val2 > (float)(INT32_MAX - 1)) {
 		return -ERANGE;
 	}
 
