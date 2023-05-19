@@ -235,11 +235,11 @@ static inline bool validate_beacon(struct ieee802154_mpdu *mpdu, uint8_t *buf, u
 }
 
 static inline bool validate_mac_command_cfi_to_mhr(struct ieee802154_mhr *mhr, uint8_t ar,
-						   uint8_t comp, uint8_t src_bf,
+						   bool has_pan_id, uint8_t src_bf,
 						   bool src_pan_brdcst_chk, uint8_t dst_bf,
 						   bool dst_brdcst_chk)
 {
-	if (mhr->fs->fc.ar != ar || mhr->fs->fc.pan_id_comp != comp) {
+	if (mhr->fs->fc.ar != ar || mhr->fs->fc.pan_id_comp == has_pan_id) {
 		return false;
 	}
 
@@ -248,14 +248,12 @@ static inline bool validate_mac_command_cfi_to_mhr(struct ieee802154_mhr *mhr, u
 		return false;
 	}
 
-	/* This should be set only when comp == 0 */
 	if (src_pan_brdcst_chk) {
 		if (mhr->src_addr->plain.pan_id != IEEE802154_BROADCAST_PAN_ID) {
 			return false;
 		}
 	}
 
-	/* This should be set only when comp == 0 */
 	if (dst_brdcst_chk) {
 		/* broadcast address is symmetric so no need to swap byte order */
 		if (mhr->dst_addr->plain.addr.short_addr != IEEE802154_BROADCAST_ADDRESS) {
@@ -272,7 +270,7 @@ static inline bool validate_mac_command(struct ieee802154_mpdu *mpdu, uint8_t *b
 	uint8_t len = IEEE802154_CMD_CFI_LENGTH;
 	bool src_pan_brdcst_chk = false;
 	bool dst_brdcst_chk = false;
-	uint8_t comp = 0U;
+	bool has_pan_id = true;
 	uint8_t ar = 0U;
 	uint8_t src_bf, dst_bf;
 
@@ -301,7 +299,7 @@ static inline bool validate_mac_command(struct ieee802154_mpdu *mpdu, uint8_t *b
 		__fallthrough;
 	case IEEE802154_CFI_PAN_ID_CONFLICT_NOTIFICATION:
 		ar = 1U;
-		comp = 1U;
+		has_pan_id = false;
 		src_bf = BIT(IEEE802154_ADDR_MODE_EXTENDED);
 		dst_bf = BIT(IEEE802154_ADDR_MODE_EXTENDED);
 
@@ -313,14 +311,14 @@ static inline bool validate_mac_command(struct ieee802154_mpdu *mpdu, uint8_t *b
 		if (mpdu->mhr.fs->fc.dst_addr_mode == IEEE802154_ADDR_MODE_NONE) {
 			dst_bf = BIT(IEEE802154_ADDR_MODE_NONE);
 		} else {
-			comp = 1U;
+			has_pan_id = false;
 			dst_bf = BIT(IEEE802154_ADDR_MODE_SHORT) |
 				 BIT(IEEE802154_ADDR_MODE_EXTENDED);
 		}
 
 		break;
 	case IEEE802154_CFI_ORPHAN_NOTIFICATION:
-		comp = 1U;
+		has_pan_id = false;
 		src_bf = BIT(IEEE802154_ADDR_MODE_EXTENDED);
 		dst_bf = BIT(IEEE802154_ADDR_MODE_SHORT);
 
@@ -358,7 +356,7 @@ static inline bool validate_mac_command(struct ieee802154_mpdu *mpdu, uint8_t *b
 		return false;
 	}
 
-	if (!validate_mac_command_cfi_to_mhr(&mpdu->mhr, ar, comp, src_bf,
+	if (!validate_mac_command_cfi_to_mhr(&mpdu->mhr, ar, has_pan_id, src_bf,
 					     src_pan_brdcst_chk, dst_bf,
 					     dst_brdcst_chk)) {
 		return false;
