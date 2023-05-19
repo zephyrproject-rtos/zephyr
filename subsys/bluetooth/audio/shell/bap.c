@@ -782,7 +782,6 @@ static void discover_all(struct bt_conn *conn, int err, enum bt_audio_dir dir)
 		err = bt_bap_unicast_client_discover(default_conn, dir);
 		if (err) {
 			shell_error(ctx_shell, "bt_bap_unicast_client_discover err %d", err);
-			discover_cb(conn, err, dir);
 		}
 	}
 }
