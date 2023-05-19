@@ -226,6 +226,46 @@ static int tear_down_short_addr(struct net_if *iface, struct ieee802154_context 
 	return ret;
 }
 
+static struct net_pkt *get_data_pkt_with_ar(void)
+{
+	/* Incoming IEEE 802.15.4 packet with payload header compression. */
+	static uint8_t data_pkt_with_ar[] = {
+		/* IEEE 802.15.4 MHR */
+		0x61, 0xd8,					/* FCF with AR bit set */
+		0x16,						/* Sequence */
+		0xcd, 0xab,					/* Destination PAN */
+		0xff, 0xff,					/* Destination Address */
+		0xc2, 0xa3, 0x9e, 0x00, 0x00, 0x4b, 0x12, 0x00, /* Source Address */
+		/* IEEE 802.15.4 MAC Payload */
+		0x7b, 0x39, /* IPHC header, SAM: compressed, DAM: 48-bits inline */
+		0x3a,	    /* Next header: ICMPv6 */
+		0x02, 0x01, 0xff, 0x4b, 0x12, 0x00, /* IPv6 Destination */
+		0x87,				    /* Type: NS */
+		0x00,				    /* Code*/
+		0xb7, 0x45,			    /* Checksum */
+		0x00, 0x00, 0x00, 0x00,		    /* Reserved */
+		0xfe, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x70, 0x14, 0xa6, 0x1c, 0x00, 0x4b,
+		0x12, 0x00, /* Target Address */
+		0x01,	    /* ICMPv6 Option: Source LL address */
+		0x02,	    /* Length */
+		0xe5, 0xac, 0xa1, 0x1c, 0x00, 0x4b, 0x12, 0x00, /* LL address */
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00,		/* Padding */
+	};
+	struct net_pkt *pkt;
+
+	pkt = net_pkt_rx_alloc_with_buffer(iface, sizeof(data_pkt_with_ar), AF_UNSPEC, 0,
+					   K_FOREVER);
+	if (!pkt) {
+		NET_ERR("*** No buffer to allocate\n");
+		return NULL;
+	}
+
+	net_buf_add_mem(pkt->frags, data_pkt_with_ar, sizeof(data_pkt_with_ar));
+
+	return pkt;
+}
+
+#ifdef CONFIG_NET_SOCKETS
 static bool set_up_security(uint8_t security_level)
 {
 	struct ieee802154_security_params params;
@@ -298,6 +338,7 @@ release_fd:
 	close(fd);
 	return -EFAULT;
 }
+#endif /* CONFIG_NET_SOCKETS */
 
 static bool test_packet_parsing(struct ieee802154_pkt_test *t)
 {
@@ -388,6 +429,102 @@ out:
 	return result;
 }
 
+static bool test_wait_for_ack(struct ieee802154_pkt_test *t)
+{
+	struct ieee802154_context *ctx = net_if_l2_data(iface);
+	struct ieee802154_mpdu mpdu;
+	struct net_pkt *ack_pkt;
+	struct net_pkt *tx_pkt;
+	bool result = false;
+	bool ack_required;
+
+	NET_INFO("- Waiting for ACK reply when sending a data packet\n");
+
+	tx_pkt = get_data_pkt_with_ar();
+	if (!tx_pkt) {
+		goto out;
+	}
+
+	ack_required = prepare_for_ack(ctx, tx_pkt, tx_pkt->frags);
+	if (!ack_required) {
+		NET_ERR("*** Expected AR flag to be set\n");
+		goto release_tx_pkt;
+	}
+
+	if (!ieee802154_validate_frame(net_pkt_data(tx_pkt), net_pkt_get_len(tx_pkt), &mpdu)) {
+		NET_ERR("*** Could not parse data pkt.\n");
+		goto release_tx_pkt;
+	}
+
+	ack_pkt = net_pkt_rx_alloc_with_buffer(iface, IEEE802154_ACK_PKT_LENGTH, AF_UNSPEC, 0,
+					       K_FOREVER);
+	if (!ack_pkt) {
+		NET_ERR("*** Could not allocate ack pkt.\n");
+		goto release_tx_pkt;
+	}
+
+	if (!ieee802154_create_ack_frame(iface, ack_pkt, mpdu.mhr.fs->sequence)) {
+		NET_ERR("*** Could not create ack frame.\n");
+		goto release_tx_pkt;
+	}
+
+	pkt_hexdump(net_pkt_data(ack_pkt), net_pkt_get_len(ack_pkt));
+
+	if (handle_ack(ctx, ack_pkt) != NET_OK) {
+		NET_ERR("*** Ack frame was not handled.\n");
+		goto release_ack_pkt;
+	}
+
+	if (wait_for_ack(iface, ack_required) != 0) {
+		NET_ERR("*** Ack frame was not recorded.\n");
+		goto release_ack_pkt;
+	}
+
+	result = true;
+
+release_ack_pkt:
+	net_pkt_unref(ack_pkt);
+release_tx_pkt:
+	net_pkt_unref(tx_pkt);
+out:
+	return result;
+}
+
+static bool test_packet_cloning_with_cb(void)
+{
+	struct net_pkt *pkt;
+	struct net_pkt *cloned_pkt;
+
+	NET_INFO("- Cloning packet\n");
+
+	pkt = net_pkt_rx_alloc_with_buffer(iface, 64, AF_UNSPEC, 0, K_NO_WAIT);
+	if (!pkt) {
+		NET_ERR("*** No buffer to allocate\n");
+		return false;
+	}
+
+	/* Set some arbitrary flags and data */
+	net_pkt_set_ieee802154_ack_fpb(pkt, true);
+	net_pkt_set_ieee802154_lqi(pkt, 50U);
+	net_pkt_set_ieee802154_frame_secured(pkt, true);
+
+	cloned_pkt = net_pkt_clone(pkt, K_NO_WAIT);
+	zassert_not_equal(net_pkt_cb(cloned_pkt), net_pkt_cb(pkt));
+
+	zassert_true(net_pkt_ieee802154_ack_fpb(cloned_pkt));
+	zassert_true(net_pkt_ieee802154_frame_secured(cloned_pkt));
+	zassert_false(net_pkt_ieee802154_arb(cloned_pkt));
+	zassert_false(net_pkt_ieee802154_mac_hdr_rdy(cloned_pkt));
+	zassert_equal(net_pkt_ieee802154_lqi(cloned_pkt), 50U);
+	zassert_equal(net_pkt_ieee802154_rssi(cloned_pkt), 0U);
+
+	net_pkt_unref(pkt);
+	net_pkt_unref(cloned_pkt);
+
+	return true;
+}
+
+#ifdef CONFIG_NET_SOCKETS
 static bool test_dgram_packet_sending(void *dst_sll, uint8_t dst_sll_halen, uint32_t security_level)
 {
 	/* tests should be run sequentially, so no need for context locking */
@@ -774,48 +911,7 @@ release_fd:
 out:
 	return result;
 }
-#endif /* CONFIG_NET_SOCKETS */
 
-static struct net_pkt *get_data_pkt_with_ar(void)
-{
-	/* Incoming IEEE 802.15.4 packet with payload header compression. */
-	static uint8_t data_pkt_with_ar[] = {
-		/* IEEE 802.15.4 MHR */
-		0x61, 0xd8,					/* FCF with AR bit set */
-		0x16,						/* Sequence */
-		0xcd, 0xab,					/* Destination PAN */
-		0xff, 0xff,					/* Destination Address */
-		0xc2, 0xa3, 0x9e, 0x00, 0x00, 0x4b, 0x12, 0x00, /* Source Address */
-		/* IEEE 802.15.4 MAC Payload */
-		0x7b, 0x39, /* IPHC header, SAM: compressed, DAM: 48-bits inline */
-		0x3a,	    /* Next header: ICMPv6 */
-		0x02, 0x01, 0xff, 0x4b, 0x12, 0x00, /* IPv6 Destination */
-		0x87,				    /* Type: NS */
-		0x00,				    /* Code*/
-		0xb7, 0x45,			    /* Checksum */
-		0x00, 0x00, 0x00, 0x00,		    /* Reserved */
-		0xfe, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x70, 0x14, 0xa6, 0x1c, 0x00, 0x4b,
-		0x12, 0x00, /* Target Address */
-		0x01,	    /* ICMPv6 Option: Source LL address */
-		0x02,	    /* Length */
-		0xe5, 0xac, 0xa1, 0x1c, 0x00, 0x4b, 0x12, 0x00, /* LL address */
-		0x00, 0x00, 0x00, 0x00, 0x00, 0x00,		/* Padding */
-	};
-	struct net_pkt *pkt;
-
-	pkt = net_pkt_rx_alloc_with_buffer(iface, sizeof(data_pkt_with_ar), AF_UNSPEC, 0,
-					   K_FOREVER);
-	if (!pkt) {
-		NET_ERR("*** No buffer to allocate\n");
-		return NULL;
-	}
-
-	net_buf_add_mem(pkt->frags, data_pkt_with_ar, sizeof(data_pkt_with_ar));
-
-	return pkt;
-}
-
-#ifdef CONFIG_NET_SOCKETS
 static bool test_recv_and_send_ack_reply(struct ieee802154_pkt_test *t)
 {
 	/* Expected uncompressed IPv6 payload. */
@@ -953,101 +1049,7 @@ release_fd:
 out:
 	return result;
 }
-
-static bool test_wait_for_ack(struct ieee802154_pkt_test *t)
-{
-	struct ieee802154_context *ctx = net_if_l2_data(iface);
-	struct ieee802154_mpdu mpdu;
-	struct net_pkt *ack_pkt;
-	struct net_pkt *tx_pkt;
-	bool result = false;
-	bool ack_required;
-
-	NET_INFO("- Waiting for ACK reply when sending a data packet\n");
-
-	tx_pkt = get_data_pkt_with_ar();
-	if (!tx_pkt) {
-		goto out;
-	}
-
-	ack_required = prepare_for_ack(ctx, tx_pkt, tx_pkt->frags);
-	if (!ack_required) {
-		NET_ERR("*** Expected AR flag to be set\n");
-		goto release_tx_pkt;
-	}
-
-	if (!ieee802154_validate_frame(net_pkt_data(tx_pkt), net_pkt_get_len(tx_pkt), &mpdu)) {
-		NET_ERR("*** Could not parse data pkt.\n");
-		goto release_tx_pkt;
-	}
-
-	ack_pkt = net_pkt_rx_alloc_with_buffer(iface, IEEE802154_ACK_PKT_LENGTH, AF_UNSPEC, 0,
-					       K_FOREVER);
-	if (!ack_pkt) {
-		NET_ERR("*** Could not allocate ack pkt.\n");
-		goto release_tx_pkt;
-	}
-
-	if (!ieee802154_create_ack_frame(iface, ack_pkt, mpdu.mhr.fs->sequence)) {
-		NET_ERR("*** Could not create ack frame.\n");
-		goto release_tx_pkt;
-	}
-
-	pkt_hexdump(net_pkt_data(ack_pkt), net_pkt_get_len(ack_pkt));
-
-	if (handle_ack(ctx, ack_pkt) != NET_OK) {
-		NET_ERR("*** Ack frame was not handled.\n");
-		goto release_ack_pkt;
-	}
-
-	if (wait_for_ack(iface, ack_required) != 0) {
-		NET_ERR("*** Ack frame was not recorded.\n");
-		goto release_ack_pkt;
-	}
-
-	result = true;
-
-release_ack_pkt:
-	net_pkt_unref(ack_pkt);
-release_tx_pkt:
-	net_pkt_unref(tx_pkt);
-out:
-	return result;
-}
-
-static bool test_packet_cloning_with_cb(void)
-{
-	struct net_pkt *pkt;
-	struct net_pkt *cloned_pkt;
-
-	NET_INFO("- Cloning packet\n");
-
-	pkt = net_pkt_rx_alloc_with_buffer(iface, 64, AF_UNSPEC, 0, K_NO_WAIT);
-	if (!pkt) {
-		NET_ERR("*** No buffer to allocate\n");
-		return false;
-	}
-
-	/* Set some arbitrary flags and data */
-	net_pkt_set_ieee802154_ack_fpb(pkt, true);
-	net_pkt_set_ieee802154_lqi(pkt, 50U);
-	net_pkt_set_ieee802154_frame_secured(pkt, true);
-
-	cloned_pkt = net_pkt_clone(pkt, K_NO_WAIT);
-	zassert_not_equal(net_pkt_cb(cloned_pkt), net_pkt_cb(pkt));
-
-	zassert_true(net_pkt_ieee802154_ack_fpb(cloned_pkt));
-	zassert_true(net_pkt_ieee802154_frame_secured(cloned_pkt));
-	zassert_false(net_pkt_ieee802154_arb(cloned_pkt));
-	zassert_false(net_pkt_ieee802154_mac_hdr_rdy(cloned_pkt));
-	zassert_equal(net_pkt_ieee802154_lqi(cloned_pkt), 50U);
-	zassert_equal(net_pkt_ieee802154_rssi(cloned_pkt), 0U);
-
-	net_pkt_unref(pkt);
-	net_pkt_unref(cloned_pkt);
-
-	return true;
-}
+#endif /* CONFIG_NET_SOCKETS */
 
 static bool initialize_test_environment(void)
 {
@@ -1138,15 +1140,6 @@ ZTEST(ieee802154_l2, test_parsing_ack_pkt)
 	zassert_true(ret, "ACK parsed");
 }
 
-ZTEST(ieee802154_l2, test_receiving_pkt_and_replying_ack_pkt)
-{
-	bool ret;
-
-	ret = test_recv_and_send_ack_reply(&test_ack_pkt);
-
-	zassert_true(ret, "ACK sent");
-}
-
 ZTEST(ieee802154_l2, test_waiting_for_ack_pkt)
 {
 	bool ret;
@@ -1174,7 +1167,28 @@ ZTEST(ieee802154_l2, test_parsing_sec_data_pkt)
 	zassert_true(ret, "Secured data frame parsed");
 }
 
-ZTEST(ieee802154_l2, test_sending_broadcast_dgram_pkt)
+ZTEST(ieee802154_l2, test_clone_cb)
+{
+	bool ret;
+
+	ret = test_packet_cloning_with_cb();
+
+	zassert_true(ret, "IEEE 802.15.4 net_pkt control block correctly cloned.");
+}
+
+ZTEST_SUITE(ieee802154_l2, NULL, test_setup, NULL, NULL, test_teardown);
+
+#ifdef CONFIG_NET_SOCKETS
+ZTEST(ieee802154_l2_sockets, test_receiving_pkt_and_replying_ack_pkt)
+{
+	bool ret;
+
+	ret = test_recv_and_send_ack_reply(&test_ack_pkt);
+
+	zassert_true(ret, "ACK sent");
+}
+
+ZTEST(ieee802154_l2_sockets, test_sending_broadcast_dgram_pkt)
 {
 	uint16_t dst_short_addr = htons(IEEE802154_BROADCAST_ADDRESS);
 	bool ret;
@@ -1185,7 +1199,7 @@ ZTEST(ieee802154_l2, test_sending_broadcast_dgram_pkt)
 	zassert_true(ret, "Broadcast DGRAM packet sent");
 }
 
-ZTEST(ieee802154_l2, test_receiving_broadcast_dgram_pkt)
+ZTEST(ieee802154_l2_sockets, test_receiving_broadcast_dgram_pkt)
 {
 	uint16_t src_short_addr = htons(0x1234);
 	bool ret;
@@ -1196,7 +1210,7 @@ ZTEST(ieee802154_l2, test_receiving_broadcast_dgram_pkt)
 	zassert_true(ret, "Broadcast DGRAM packet received");
 }
 
-ZTEST(ieee802154_l2, test_sending_authenticated_dgram_pkt)
+ZTEST(ieee802154_l2_sockets, test_sending_authenticated_dgram_pkt)
 {
 	uint16_t dst_short_addr = htons(0x1234);
 	bool ret;
@@ -1207,7 +1221,7 @@ ZTEST(ieee802154_l2, test_sending_authenticated_dgram_pkt)
 	zassert_true(ret, "Authenticated DGRAM packet sent");
 }
 
-ZTEST(ieee802154_l2, test_receiving_authenticated_dgram_pkt)
+ZTEST(ieee802154_l2_sockets, test_receiving_authenticated_dgram_pkt)
 {
 	/* TODO: Receiving authenticated packages with short addresses is not
 	 * yet supported (requires neighbour cache).
@@ -1221,7 +1235,7 @@ ZTEST(ieee802154_l2, test_receiving_authenticated_dgram_pkt)
 	zassert_true(ret, "Authenticated DGRAM packet received");
 }
 
-ZTEST(ieee802154_l2, test_sending_encrypted_and_authenticated_dgram_pkt)
+ZTEST(ieee802154_l2_sockets, test_sending_encrypted_and_authenticated_dgram_pkt)
 {
 	uint8_t dst_ext_addr[8] = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08};
 	bool ret;
@@ -1232,7 +1246,7 @@ ZTEST(ieee802154_l2, test_sending_encrypted_and_authenticated_dgram_pkt)
 	zassert_true(ret, "Encrypted and authenticated DGRAM packet sent");
 }
 
-ZTEST(ieee802154_l2, test_receiving_encrypted_and_authenticated_dgram_pkt)
+ZTEST(ieee802154_l2_sockets, test_receiving_encrypted_and_authenticated_dgram_pkt)
 {
 	uint8_t src_ext_addr[8] = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08};
 	bool ret;
@@ -1243,7 +1257,7 @@ ZTEST(ieee802154_l2, test_receiving_encrypted_and_authenticated_dgram_pkt)
 	zassert_true(ret, "Encrypted and authenticated DGRAM packet received");
 }
 
-ZTEST(ieee802154_l2, test_sending_raw_pkt)
+ZTEST(ieee802154_l2_sockets, test_sending_raw_pkt)
 {
 	bool ret;
 
@@ -1252,7 +1266,7 @@ ZTEST(ieee802154_l2, test_sending_raw_pkt)
 	zassert_true(ret, "RAW packet sent");
 }
 
-ZTEST(ieee802154_l2, test_receiving_raw_pkt)
+ZTEST(ieee802154_l2_sockets, test_receiving_raw_pkt)
 {
 	bool ret;
 
@@ -1261,13 +1275,5 @@ ZTEST(ieee802154_l2, test_receiving_raw_pkt)
 	zassert_true(ret, "RAW packet received");
 }
 
-ZTEST(ieee802154_l2, test_clone_cb)
-{
-	bool ret;
-
-	ret = test_packet_cloning_with_cb();
-
-	zassert_true(ret, "IEEE 802.15.4 net_pkt control block correctly cloned.");
-}
-
-ZTEST_SUITE(ieee802154_l2, NULL, test_setup, NULL, NULL, test_teardown);
+ZTEST_SUITE(ieee802154_l2_sockets, NULL, test_setup, NULL, NULL, test_teardown);
+#endif /* CONFIG_NET_SOCKETS */
