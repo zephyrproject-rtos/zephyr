@@ -46,10 +46,14 @@ int ieee802154_security_setup_session(struct ieee802154_security_ctx *sec_ctx, u
 		return 0;
 	}
 
-	if (level >= IEEE802154_SECURITY_LEVEL_ENC) {
+
+	if (level > IEEE802154_SECURITY_LEVEL_ENC) {
 		authtag_len = level_2_authtag_len[level - 4];
-	} else {
+	} else if (level < IEEE802154_SECURITY_LEVEL_ENC) {
 		authtag_len = level_2_authtag_len[level];
+	} else {
+		/* Encryption-only security is no longer supported since IEEE 802.15.4-2020. */
+		return -EINVAL;
 	}
 	sec_ctx->enc.mode_params.ccm_info.tag_len = authtag_len;
 	sec_ctx->dec.mode_params.ccm_info.tag_len = authtag_len;
@@ -99,9 +103,13 @@ static void prepare_cipher_aead_pkt(uint8_t *frame, uint8_t level, uint8_t hdr_l
 				    uint8_t payload_len, uint8_t authtag_len,
 				    struct cipher_aead_pkt *apkt, struct cipher_pkt *pkt)
 {
-	bool is_encrypted = level >= IEEE802154_SECURITY_LEVEL_ENC;
-	bool is_authenticated = level != IEEE802154_SECURITY_LEVEL_NONE &&
-				level != IEEE802154_SECURITY_LEVEL_ENC;
+	bool is_authenticated;
+	bool is_encrypted;
+
+	__ASSERT_NO_MSG(level != IEEE802154_SECURITY_LEVEL_ENC);
+
+	is_encrypted = level > IEEE802154_SECURITY_LEVEL_ENC;
+	is_authenticated = level != IEEE802154_SECURITY_LEVEL_NONE;
 
 	/* See section 9.3.5.3 */
 	pkt->in_buf = is_encrypted && payload_len ? frame + hdr_len : NULL;
@@ -136,12 +144,6 @@ bool ieee802154_decrypt_auth(struct ieee802154_security_ctx *sec_ctx, uint8_t *f
 
 	level = sec_ctx->level;
 
-	if (level == IEEE802154_SECURITY_LEVEL_ENC) {
-		/* See comment in ieee802154_encrypt_auth(). */
-		NET_ERR("Encrypt-only operation is not supported.");
-		return false;
-	}
-
 	/* See section 9.3.3.1 */
 	memcpy(nonce, src_ext_addr, IEEE802154_EXT_ADDR_LENGTH);
 	sys_put_be32(frame_counter, &nonce[8]);
@@ -175,13 +177,8 @@ bool ieee802154_encrypt_auth(struct ieee802154_security_ctx *sec_ctx, uint8_t *f
 
 	level = sec_ctx->level;
 
-	if (level == IEEE802154_SECURITY_LEVEL_ENC) {
-		/* TODO: We currently use CCM rather than CCM* as crypto.h does
-		 *       not provide access to CCM* as of now.
-		 *       The spec requires CCM* to support encryption-only CCM
-		 *       operation, see annex B.1
-		 */
-		NET_ERR("Encrypt-only operation is not supported.");
+	if (level == IEEE802154_SECURITY_LEVEL_RESERVED) {
+		NET_DBG("Encryption-only security is deprecated since IEEE 802.15.4-2015.");
 		return false;
 	}
 
