@@ -46,7 +46,7 @@ static struct bt_bap_broadcast_sink broadcast_sinks[CONFIG_BT_BAP_BROADCAST_SNK_
 
 struct codec_cap_lookup_id_data {
 	uint8_t id;
-	struct bt_audio_codec_cap *codec_cap;
+	const struct bt_audio_codec_cap *codec_cap;
 };
 
 static sys_slist_t sink_cbs = SYS_SLIST_STATIC_INIT(&sink_cbs);
