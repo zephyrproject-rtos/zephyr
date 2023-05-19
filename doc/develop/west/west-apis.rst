@@ -484,10 +484,10 @@ Manifest and sub-objects
 Exceptions
 ==========
 
-.. autoclass:: west.manifest.MalformedManifest
+.. autoclass:: west.configuration.MalformedConfig
    :show-inheritance:
 
-.. autoclass:: west.manifest.MalformedConfig
+.. autoclass:: west.manifest.MalformedManifest
    :show-inheritance:
 
 .. autoclass:: west.manifest.ManifestVersionError
