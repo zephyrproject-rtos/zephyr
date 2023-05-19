@@ -178,11 +178,11 @@ static int ieee802154_scan(uint32_t mgmt_request, struct net_if *iface,
 		k_sem_give(&ctx->scan_ctx_lock);
 	}
 
-	/* Let's come back to context's settings */
+out:
+	/* Let's come back to context's settings. */
 	ieee802154_filter_pan_id(iface, ctx->pan_id);
 	ieee802154_set_channel(iface, ctx->channel);
 
-out:
 	ctx->scan_ctx = NULL;
 	k_sem_give(&ctx->scan_ctx_lock);
 
