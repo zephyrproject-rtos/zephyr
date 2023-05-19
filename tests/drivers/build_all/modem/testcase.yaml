@@ -72,3 +72,12 @@ tests:
     min_ram: 36
     extra_configs:
       - CONFIG_MODEM_IFACE_UART_ASYNC=y
+  drivers.modem.modem_cellular.build:
+    extra_args: CONF_FILE=modem_cellular.conf
+    platform_exclude:
+      - serpente
+      - particle_boron
+      - rak5010_nrf52840
+      - litex_vexriscv
+      - ip_k66f
+    min_ram: 36
