@@ -314,7 +314,17 @@
 		#io-channel-cells = <1>;
 	};
 
-	usbhs: usbhs@144000 {
+	usbfs: usbfs@84000 {
+		compatible = "nxp,mcux-usbd";
+		reg = <0x84000 0x1000>;
+		interrupts = <28 1>;
+		num-bidir-endpoints = <5>;
+		maximum-speed = "full-speed";
+		usb-controller-index = "LpcIp3511Fs0";
+		status = "disabled";
+	};
+
+	usbhs: usbhs@94000 {
 		compatible = "nxp,mcux-usbd";
 		reg = <0x94000 0x1000>;
 		interrupts = <47 1>;
