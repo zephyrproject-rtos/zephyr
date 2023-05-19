@@ -56,10 +56,11 @@ struct ieee802154_pkt_test test_ns_pkt = {
 		      0x00, 0x00, 0x00, 0x01, 0xff, 0x00, 0x00, 0x01 } } },
 	.pkt = ns_pkt,
 	.length = sizeof(ns_pkt),
-	.mhr_check.fc_seq = (struct ieee802154_fcf_seq *)ns_pkt,
-	.mhr_check.dst_addr = (struct ieee802154_address_field *)(ns_pkt + 3),
-	.mhr_check.src_addr = (struct ieee802154_address_field *)(ns_pkt + 7),
-};
+	.mhr_check = {
+		.fc_seq = (struct ieee802154_fcf_seq *)ns_pkt,
+		.dst_addr = (struct ieee802154_address_field *)(ns_pkt + 3),
+		.src_addr = (struct ieee802154_address_field *)(ns_pkt + 7),
+	}};
 
 uint8_t ack_pkt[] = { 0x02, 0x10, 0x16 };
 
@@ -67,10 +68,11 @@ struct ieee802154_pkt_test test_ack_pkt = {
 	.name = "ACK frame",
 	.pkt = ack_pkt,
 	.length = sizeof(ack_pkt),
-	.mhr_check.fc_seq = (struct ieee802154_fcf_seq *)ack_pkt,
-	.mhr_check.dst_addr = NULL,
-	.mhr_check.src_addr = NULL,
-};
+	.mhr_check = {
+		.fc_seq = (struct ieee802154_fcf_seq *)ack_pkt,
+		.dst_addr = NULL,
+		.src_addr = NULL,
+	}};
 
 uint8_t beacon_pkt[] = {
 	0x00, 0xd0, 0x11, 0xcd, 0xab, 0xc2, 0xa3, 0x9e, 0x00, 0x00, 0x4b,
@@ -81,11 +83,11 @@ struct ieee802154_pkt_test test_beacon_pkt = {
 	.name = "Empty beacon frame",
 	.pkt = beacon_pkt,
 	.length = sizeof(beacon_pkt),
-	.mhr_check.fc_seq = (struct ieee802154_fcf_seq *)beacon_pkt,
-	.mhr_check.dst_addr = NULL,
-	.mhr_check.src_addr =
-	(struct ieee802154_address_field *) (beacon_pkt + 3),
-};
+	.mhr_check = {
+		.fc_seq = (struct ieee802154_fcf_seq *)beacon_pkt,
+		.dst_addr = NULL,
+		.src_addr = (struct ieee802154_address_field *)(beacon_pkt + 3),
+	}};
 
 uint8_t sec_data_pkt[] = {
 	0x49, 0xd8, 0x03, 0xcd, 0xab, 0xff, 0xff, 0x02, 0x6d, 0xbb, 0xa7,
@@ -99,12 +101,11 @@ struct ieee802154_pkt_test test_sec_data_pkt = {
 	.name = "Secured data frame",
 	.pkt = sec_data_pkt,
 	.length = sizeof(sec_data_pkt),
-	.mhr_check.fc_seq = (struct ieee802154_fcf_seq *)sec_data_pkt,
-	.mhr_check.dst_addr =
-	(struct ieee802154_address_field *)(sec_data_pkt + 3),
-	.mhr_check.src_addr =
-	(struct ieee802154_address_field *)(sec_data_pkt + 7),
-};
+	.mhr_check = {
+		.fc_seq = (struct ieee802154_fcf_seq *)sec_data_pkt,
+		.dst_addr = (struct ieee802154_address_field *)(sec_data_pkt + 3),
+		.src_addr = (struct ieee802154_address_field *)(sec_data_pkt + 7),
+	}};
 
 struct net_pkt *current_pkt;
 struct net_if *iface;
