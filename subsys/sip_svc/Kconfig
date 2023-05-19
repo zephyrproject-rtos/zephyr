@@ -22,7 +22,7 @@ config ARM_SIP_SVC_SUBSYS_INIT_PRIORITY
 
 config ARM_SIP_SVC_SUBSYS_THREAD_STACK_SIZE
 	int "ARM SiP service thread stack size"
-	default 1856
+	default 4096
 	help
 	  Stack size of the ARM SiP  service.
 	  The thread calls the callbacks of the requestor
