@@ -592,20 +592,21 @@ static uint8_t *generate_addressing_fields(struct ieee802154_context *ctx,
 					   struct ieee802154_fcf_seq *fs,
 					   struct ieee802154_frame_params *params, uint8_t *p_buf)
 {
-	struct ieee802154_address_field *af;
+	struct ieee802154_address_field *address_field;
 
 	/* destination address */
 	if (fs->fc.dst_addr_mode != IEEE802154_ADDR_MODE_NONE) {
-		af = (struct ieee802154_address_field *)p_buf;
+		address_field = (struct ieee802154_address_field *)p_buf;
 
-		af->plain.pan_id = params->dst.pan_id;
+		address_field->plain.pan_id = params->dst.pan_id;
 		p_buf += IEEE802154_PAN_ID_LENGTH;
 
 		if (fs->fc.dst_addr_mode == IEEE802154_ADDR_MODE_SHORT) {
-			af->plain.addr.short_addr = sys_cpu_to_le16(params->dst.short_addr);
+			address_field->plain.addr.short_addr =
+				sys_cpu_to_le16(params->dst.short_addr);
 			p_buf += IEEE802154_SHORT_ADDR_LENGTH;
 		} else {
-			sys_memcpy_swap(af->plain.addr.ext_addr, params->dst.ext_addr,
+			sys_memcpy_swap(address_field->plain.addr.ext_addr, params->dst.ext_addr,
 					IEEE802154_EXT_ADDR_LENGTH);
 			p_buf += IEEE802154_EXT_ADDR_LENGTH;
 		}
@@ -616,14 +617,14 @@ static uint8_t *generate_addressing_fields(struct ieee802154_context *ctx,
 		return p_buf;
 	}
 
-	af = (struct ieee802154_address_field *)p_buf;
+	address_field = (struct ieee802154_address_field *)p_buf;
 	struct ieee802154_address *src_addr;
 
 	if (fs->fc.pan_id_comp) {
-		src_addr = &af->comp.addr;
+		src_addr = &address_field->comp.addr;
 	} else {
-		af->plain.pan_id = params->pan_id;
-		src_addr = &af->plain.addr;
+		address_field->plain.pan_id = params->pan_id;
+		src_addr = &address_field->plain.addr;
 		p_buf += IEEE802154_PAN_ID_LENGTH;
 	}
 
