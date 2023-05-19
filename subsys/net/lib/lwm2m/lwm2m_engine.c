@@ -202,15 +202,18 @@ int lwm2m_engine_connection_resume(struct lwm2m_ctx *client_ctx)
 	int ret;
 
 	if (client_ctx->connection_suspended) {
-		lwm2m_close_socket(client_ctx);
-		client_ctx->connection_suspended = false;
-		ret = lwm2m_open_socket(client_ctx);
-		if (ret) {
-			return ret;
+		if (IS_ENABLED(CONFIG_LWM2M_RD_CLIENT_STOP_POLLING_AT_IDLE)) {
+			lwm2m_socket_update(client_ctx);
+		} else {
+			lwm2m_close_socket(client_ctx);
+			client_ctx->connection_suspended = false;
+			ret = lwm2m_open_socket(client_ctx);
+			if (ret) {
+				return ret;
+			}
+			LOG_DBG("Resume suspended connection");
+			return lwm2m_socket_start(client_ctx);
 		}
-
-		LOG_DBG("Resume suspended connection");
-		return lwm2m_socket_start(client_ctx);
 	}
 
 	return 0;
@@ -822,8 +825,14 @@ int lwm2m_socket_start(struct lwm2m_ctx *client_ctx)
 		}
 	}
 
+	if (client_ctx->set_socketoptions) {
+		ret = client_ctx->set_socketoptions(client_ctx);
+		if (ret) {
+			return ret;
+		}
+	}
 #if defined(CONFIG_LWM2M_DTLS_SUPPORT)
-	if (client_ctx->use_dtls) {
+	else if (client_ctx->use_dtls) {
 		sec_tag_t tls_tag_list[] = {
 			client_ctx->tls_tag,
 		};
