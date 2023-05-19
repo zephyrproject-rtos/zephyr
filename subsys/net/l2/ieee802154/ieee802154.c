@@ -303,8 +303,8 @@ static enum net_verdict ieee802154_recv(struct net_if *iface, struct net_pkt *pk
  */
 static int ieee802154_send(struct net_if *iface, struct net_pkt *pkt)
 {
+	uint8_t ll_hdr_len = 0, authtag_len = 0;
 	static struct net_buf *frame_buf;
-	uint8_t ll_hdr_len = 0;
 	bool send_raw = false;
 #ifdef CONFIG_NET_L2_IEEE802154_FRAGMENT
 	struct ieee802154_6lo_fragment_ctx f_ctx;
@@ -343,17 +343,19 @@ static int ieee802154_send(struct net_if *iface, struct net_pkt *pkt)
 	}
 
 	if (!send_raw) {
-		ll_hdr_len = ieee802154_compute_header_and_authtag_len(
-			iface, net_pkt_lladdr_dst(pkt), net_pkt_lladdr_src(pkt));
+		ieee802154_compute_header_and_authtag_len(iface, net_pkt_lladdr_dst(pkt),
+							  net_pkt_lladdr_src(pkt), &ll_hdr_len,
+							  &authtag_len);
 
 #ifdef CONFIG_NET_6LO
 #ifdef CONFIG_NET_L2_IEEE802154_FRAGMENT
-		requires_fragmentation = ieee802154_6lo_encode_pkt(iface, pkt, &f_ctx, ll_hdr_len);
+		requires_fragmentation =
+			ieee802154_6lo_encode_pkt(iface, pkt, &f_ctx, ll_hdr_len, authtag_len);
 		if (requires_fragmentation < 0) {
 			return requires_fragmentation;
 		}
 #else
-		ieee802154_6lo_encode_pkt(iface, pkt, NULL, ll_hdr_len);
+		ieee802154_6lo_encode_pkt(iface, pkt, NULL, ll_hdr_len, authtag_len);
 #endif /* CONFIG_NET_L2_IEEE802154_FRAGMENT */
 #endif /* CONFIG_NET_6LO */
 	}
@@ -378,14 +380,16 @@ static int ieee802154_send(struct net_if *iface, struct net_pkt *pkt)
 			buf = buf->frags;
 		}
 #else
-
-		if (buf->len > IEEE802154_MTU) {
-			NET_ERR("Wrong packet length: %d", buf->len);
+		if (ll_hdr_len + buf->len + authtag_len > IEEE802154_MTU) {
+			NET_ERR("Frame too long: %d", buf->len);
 			return -EINVAL;
 		}
 		net_buf_add_mem(frame_buf, buf->data, buf->len);
 		buf = buf->frags;
 #endif /* CONFIG_NET_L2_IEEE802154_FRAGMENT */
+
+		__ASSERT_NO_MSG(authtag_len <= net_buf_tailroom(frame_buf));
+		net_buf_add(frame_buf, authtag_len);
 
 		if (!(send_raw || ieee802154_create_data_frame(ctx, net_pkt_lladdr_dst(pkt),
 							       net_pkt_lladdr_src(pkt),
