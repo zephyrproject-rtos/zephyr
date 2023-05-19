@@ -408,8 +408,6 @@ harness: <string>
     keyboard harness is set on tests that require keyboard interaction to reach
     verdict on whether a test has passed or failed, however, Twister lack this
     harness implementation at the momemnt.
-    The console harness tells Twister to parse a test's text output for a regex
-    defined in the test's YAML file.
 
     Supported harnesses:
 
@@ -417,6 +415,14 @@ harness: <string>
     - test
     - console
     - pytest
+    - gtest
+
+    Harnesses ``ztest``, ``gtest`` and ``console`` are based on parsing of the
+    output and matching certain phrases. ``ztest`` and ``gtest`` harnesses look
+    for pass/fail/etc. frames defined in those frameworks. Use ``gtest``
+    harness if you've already got tests written in the gTest framework and do
+    not wish to update them to zTest. The ``console`` harness tells Twister to
+    parse a test's text output for a regex defined in the test's YAML file.
 
     Some widely used harnesses that are not supported yet:
 
