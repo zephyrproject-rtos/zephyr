@@ -209,6 +209,9 @@ static enum net_verdict ieee802154_recv(struct net_if *iface, struct net_pkt *pk
 	struct ieee802154_mpdu mpdu;
 	size_t hdr_len;
 
+	/* The IEEE 802.15.4 stack assumes that drivers provide a single-fragment package. */
+	__ASSERT_NO_MSG(pkt->buffer && pkt->buffer->frags == NULL);
+
 	if (!ieee802154_validate_frame(net_pkt_data(pkt), net_pkt_get_len(pkt), &mpdu)) {
 		return NET_DROP;
 	}
