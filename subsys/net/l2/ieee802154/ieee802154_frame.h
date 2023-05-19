@@ -478,7 +478,8 @@ void ieee802154_compute_header_and_authtag_len(struct net_if *iface, struct net_
 					       uint8_t *authtag_len);
 
 bool ieee802154_create_data_frame(struct ieee802154_context *ctx, struct net_linkaddr *dst,
-				  struct net_linkaddr *src, struct net_buf *buf, uint8_t hdr_len);
+				  struct net_linkaddr *src, struct net_buf *buf,
+				  uint8_t ll_hdr_len);
 
 struct net_pkt *ieee802154_create_mac_cmd_frame(struct net_if *iface, enum ieee802154_cfi type,
 						struct ieee802154_frame_params *params);
