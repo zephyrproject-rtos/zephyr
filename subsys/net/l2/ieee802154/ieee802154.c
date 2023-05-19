@@ -636,7 +636,9 @@ void ieee802154_init(struct net_if *iface)
 		ctx->flags |= NET_L2_PROMISC_MODE;
 	}
 
+	ctx->pan_id = IEEE802154_PAN_ID_NOT_ASSOCIATED;
 	ctx->short_addr = IEEE802154_SHORT_ADDRESS_NOT_ASSOCIATED;
+	ctx->coord_short_addr = IEEE802154_SHORT_ADDRESS_NOT_ASSOCIATED;
 	sys_memcpy_swap(ctx->ext_addr, eui64_be, IEEE802154_EXT_ADDR_LENGTH);
 
 	/* We switch to a link address store that we

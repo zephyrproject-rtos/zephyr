@@ -140,12 +140,14 @@ static int ieee802154_scan(uint32_t mgmt_request, struct net_if *iface,
 
 	ret = 0;
 
+	k_sem_take(&ctx->ctx_lock, K_FOREVER);
+	ieee802154_radio_remove_pan_id(iface, ctx->pan_id);
+	k_sem_give(&ctx->ctx_lock);
 	ieee802154_radio_filter_pan_id(iface, IEEE802154_BROADCAST_PAN_ID);
 
 	if (ieee802154_radio_start(iface)) {
 		NET_DBG("Could not start device");
 		ret = -EIO;
-
 		goto out;
 	}
 
@@ -171,7 +173,6 @@ static int ieee802154_scan(uint32_t mgmt_request, struct net_if *iface,
 				NET_DBG("Could not send Beacon Request (%d)",
 					ret);
 				net_pkt_unref(pkt);
-				k_sem_take(&ctx->scan_ctx_lock, K_FOREVER);
 				goto out;
 			}
 		}
@@ -192,10 +193,16 @@ static int ieee802154_scan(uint32_t mgmt_request, struct net_if *iface,
 
 out:
 	/* Let's come back to context's settings. */
+	ieee802154_radio_remove_pan_id(iface, IEEE802154_BROADCAST_PAN_ID);
+	k_sem_take(&ctx->ctx_lock, K_FOREVER);
 	ieee802154_radio_filter_pan_id(iface, ctx->pan_id);
 	ieee802154_radio_set_channel(iface, ctx->channel);
+	k_sem_give(&ctx->ctx_lock);
 
-	ctx->scan_ctx = NULL;
+	k_sem_take(&ctx->scan_ctx_lock, K_FOREVER);
+	if (ctx->scan_ctx) {
+		ctx->scan_ctx = NULL;
+	}
 	k_sem_give(&ctx->scan_ctx_lock);
 
 	if (pkt) {
@@ -232,37 +239,60 @@ static inline void set_linkaddr_to_ext_addr(struct net_if *iface, struct ieee802
 	update_net_if_link_addr(iface, ctx);
 }
 
-/* Requires the context lock to be held. */
+/* Requires the context lock to be held and the PAN ID to be set. */
 static inline void set_association(struct net_if *iface, struct ieee802154_context *ctx,
 				   uint16_t short_addr)
 {
-	__ASSERT_NO_MSG(short_addr != IEEE802154_SHORT_ADDRESS_NOT_ASSOCIATED);
-
 	uint16_t short_addr_be;
 
-	ctx->linkaddr.len = IEEE802154_SHORT_ADDR_LENGTH;
-	ctx->short_addr = short_addr;
-	short_addr_be = htons(short_addr);
-	memcpy(ctx->linkaddr.addr, &short_addr_be, IEEE802154_SHORT_ADDR_LENGTH);
+	__ASSERT_NO_MSG(ctx->pan_id != IEEE802154_PAN_ID_NOT_ASSOCIATED);
+	__ASSERT_NO_MSG(short_addr != IEEE802154_SHORT_ADDRESS_NOT_ASSOCIATED);
 
-	update_net_if_link_addr(iface, ctx);
-	ieee802154_radio_filter_short_addr(iface, ctx->short_addr);
+	ieee802154_radio_remove_src_short_addr(iface, ctx->short_addr);
+
+	ctx->short_addr = short_addr;
+
+	if (short_addr == IEEE802154_NO_SHORT_ADDRESS_ASSIGNED) {
+		set_linkaddr_to_ext_addr(iface, ctx);
+	} else {
+		ctx->linkaddr.len = IEEE802154_SHORT_ADDR_LENGTH;
+		short_addr_be = htons(short_addr);
+		memcpy(ctx->linkaddr.addr, &short_addr_be, IEEE802154_SHORT_ADDR_LENGTH);
+		update_net_if_link_addr(iface, ctx);
+		ieee802154_radio_filter_short_addr(iface, ctx->short_addr);
+	}
 }
 
 /* Requires the context lock to be held. */
 static inline void remove_association(struct net_if *iface, struct ieee802154_context *ctx)
 {
+	/* An associated device shall disassociate itself by removing all
+	 * references to the PAN; the MLME shall set macPanId, macShortAddress,
+	 * macAssociatedPanCoord [TODO: implement], macCoordShortAddress, and
+	 * macCoordExtendedAddress to the default values, see section 6.4.2.
+	 */
+
+	ieee802154_radio_remove_pan_id(iface, ctx->pan_id);
+	ieee802154_radio_remove_src_short_addr(iface, ctx->short_addr);
+
+	ctx->pan_id = IEEE802154_PAN_ID_NOT_ASSOCIATED;
 	ctx->short_addr = IEEE802154_SHORT_ADDRESS_NOT_ASSOCIATED;
-	memset(ctx->coord_ext_addr, 0, IEEE802154_EXT_ADDR_LENGTH);
-	ctx->coord_short_addr = 0U;
+
+	memset(ctx->coord_ext_addr, 0, sizeof(ctx->coord_ext_addr));
+	ctx->coord_short_addr = IEEE802154_SHORT_ADDRESS_NOT_ASSOCIATED;
+
 	set_linkaddr_to_ext_addr(iface, ctx);
-	ieee802154_radio_filter_short_addr(iface, IEEE802154_SHORT_ADDRESS_NOT_ASSOCIATED);
+
+	ieee802154_radio_filter_pan_id(iface, IEEE802154_BROADCAST_PAN_ID);
+	ieee802154_radio_filter_short_addr(iface, IEEE802154_BROADCAST_ADDRESS);
 }
 
 /* Requires the context lock to be held. */
 static inline bool is_associated(struct ieee802154_context *ctx)
 {
-	return ctx->short_addr != IEEE802154_SHORT_ADDRESS_NOT_ASSOCIATED;
+	/* see section 8.4.3.1, table 8-94, macPanId and macShortAddress */
+	return ctx->pan_id != IEEE802154_PAN_ID_NOT_ASSOCIATED &&
+	       ctx->short_addr != IEEE802154_SHORT_ADDRESS_NOT_ASSOCIATED;
 }
 
 enum net_verdict ieee802154_handle_mac_command(struct net_if *iface,
@@ -276,23 +306,51 @@ enum net_verdict ieee802154_handle_mac_command(struct net_if *iface,
 			return NET_DROP;
 		}
 
-		/* validation of the association response, see section 7.3.3.1 */
-
+		/* Validation of the association response, see section 7.5.3:
+		 *  * The Destination Addressing Mode and Source Addressing Mode
+		 *    fields shall each be set to indicate extended addressing.
+		 *  * The Frame Pending field shall be set to zero and ignored
+		 *    upon reception, and the AR field shall be set to one.
+		 *  * The Destination PAN ID field shall contain the value of
+		 *    macPanId, while the Source PAN ID field shall be omitted.
+		 *  * The Destination Address field shall contain the extended
+		 *    address of the device requesting association (has been
+		 *    tested during generic filtering already).
+		 *
+		 * Note: Unless the packet is authenticated, it cannot be verified
+		 *       that the response comes from the requested coordinator.
+		 */
 		if (mpdu->mhr.fs->fc.src_addr_mode !=
 			    IEEE802154_ADDR_MODE_EXTENDED ||
 		    mpdu->mhr.fs->fc.dst_addr_mode !=
 			    IEEE802154_ADDR_MODE_EXTENDED ||
 		    mpdu->mhr.fs->fc.ar != 1 ||
-		    mpdu->mhr.fs->fc.pan_id_comp != 1) {
+		    mpdu->mhr.fs->fc.pan_id_comp != 1 ||
+		    mpdu->mhr.dst_addr->plain.pan_id != sys_cpu_to_le16(ctx->pan_id) ||
+		    mpdu->command->assoc_res.short_addr == IEEE802154_PAN_ID_NOT_ASSOCIATED) {
 			return NET_DROP;
 		}
 
 		k_sem_take(&ctx->ctx_lock, K_FOREVER);
 
+		if (is_associated(ctx)) {
+			k_sem_give(&ctx->ctx_lock);
+			return NET_DROP;
+		}
+
+		/* If the Association Status field of the Association Response
+		 * command indicates that the association was successful, the
+		 * device shall store the address contained in the Short Address
+		 * field of the command in macShortAddress, see section 6.4.1.
+		 */
 		set_association(iface, ctx, sys_le16_to_cpu(mpdu->command->assoc_res.short_addr));
 
-		memcpy(ctx->coord_ext_addr,
-		       mpdu->mhr.src_addr->comp.addr.ext_addr,
+		/* If the [association request] contained the short address of
+		 * the coordinator, the extended address of the coordinator,
+		 * contained in the MHR of the Association Response command,
+		 * shall be stored in macCoordExtendedAddress, see section 6.4.1.
+		 */
+		memcpy(ctx->coord_ext_addr, mpdu->mhr.src_addr->comp.addr.ext_addr,
 		       IEEE802154_EXT_ADDR_LENGTH);
 
 		k_sem_give(&ctx->ctx_lock);
@@ -316,14 +374,35 @@ enum net_verdict ieee802154_handle_mac_command(struct net_if *iface,
 			goto out;
 		}
 
-		/* validation of the disassociation notification, see section 7.5.4 */
+		/* Validation of the disassociation notification, see section 7.5.4:
+		 *  * The Source Addressing Mode field shall be set to indicate
+		 *    extended addressing.
+		 *  * The Frame Pending field shall be set to zero and ignored
+		 *    upon reception, and the AR field shall be set to one.
+		 *  * The Destination PAN ID field shall contain the value of macPanId.
+		 *  * The Source PAN ID field shall be omitted.
+		 *  * If the coordinator is disassociating a device from the
+		 *    PAN, then the Destination Address field shall contain the
+		 *    address of the device being removed from the PAN (asserted
+		 *    during generic package filtering).
+		 *
+		 * Note: Unless the packet is authenticated, it cannot be verified
+		 *       that the command comes from the requested coordinator.
+		 */
 
 		if (mpdu->mhr.fs->fc.src_addr_mode !=
 			    IEEE802154_ADDR_MODE_EXTENDED ||
-		    mpdu->mhr.fs->fc.pan_id_comp != 1) {
+		    mpdu->mhr.fs->fc.ar != 1 ||
+		    mpdu->mhr.fs->fc.pan_id_comp != 1 ||
+		    mpdu->mhr.dst_addr->plain.pan_id != sys_cpu_to_le16(ctx->pan_id)) {
 			goto out;
 		}
 
+		/* If the source address contained in the Disassociation
+		 * Notification command is equal to macCoordExtendedAddress,
+		 * the device should consider itself disassociated,
+		 * see section 6.4.2.
+		 */
 		if (memcmp(ctx->coord_ext_addr,
 			   mpdu->mhr.src_addr->comp.addr.ext_addr,
 			   IEEE802154_EXT_ADDR_LENGTH)) {
@@ -348,7 +427,7 @@ static int ieee802154_associate(uint32_t mgmt_request, struct net_if *iface,
 				void *data, size_t len)
 {
 	struct ieee802154_context *ctx = net_if_l2_data(iface);
-	struct ieee802154_frame_params params;
+	struct ieee802154_frame_params params = {0};
 	struct ieee802154_req_params *req;
 	struct ieee802154_command *cmd;
 	struct net_pkt *pkt;
@@ -360,15 +439,43 @@ static int ieee802154_associate(uint32_t mgmt_request, struct net_if *iface,
 
 	req = (struct ieee802154_req_params *)data;
 
-	params.dst.len = req->len;
-	if (params.dst.len == IEEE802154_SHORT_ADDR_LENGTH) {
-		params.dst.short_addr = req->short_addr;
-	} else {
-		params.dst.ext_addr = req->addr;
+	/* Validate the coordinator's PAN ID. */
+	if (req->pan_id == IEEE802154_PAN_ID_NOT_ASSOCIATED) {
+		return -EINVAL;
 	}
 
 	params.dst.pan_id = req->pan_id;
-	params.pan_id = req->pan_id;
+
+	/* If the Version field is set to 0b10, the Source PAN ID field is
+	 * omitted. Otherwise, the Source PAN ID field shall contain the
+	 * broadcast PAN ID.
+	 */
+	params.pan_id = IEEE802154_BROADCAST_PAN_ID;
+
+	/* Validate the coordinator's short address - if any. */
+	if (req->len == IEEE802154_SHORT_ADDR_LENGTH) {
+		if (req->short_addr == IEEE802154_SHORT_ADDRESS_NOT_ASSOCIATED ||
+		    req->short_addr == IEEE802154_NO_SHORT_ADDRESS_ASSIGNED) {
+			return -EINVAL;
+		}
+
+		params.dst.short_addr = req->short_addr;
+	} else if (req->len == IEEE802154_EXT_ADDR_LENGTH) {
+		memcpy(params.dst.ext_addr, req->addr, sizeof(params.dst.ext_addr));
+	} else {
+		return -EINVAL;
+	}
+
+	params.dst.len = req->len;
+
+	k_sem_take(&ctx->ctx_lock, K_FOREVER);
+
+	if (is_associated(ctx)) {
+		k_sem_give(&ctx->ctx_lock);
+		return -EALREADY;
+	}
+
+	k_sem_give(&ctx->ctx_lock);
 
 	pkt = ieee802154_create_mac_cmd_frame(
 		iface, IEEE802154_CFI_ASSOCIATION_REQUEST, &params);
@@ -377,35 +484,75 @@ static int ieee802154_associate(uint32_t mgmt_request, struct net_if *iface,
 		goto out;
 	}
 
+	k_sem_take(&ctx->ctx_lock, K_FOREVER);
+
 	cmd = ieee802154_get_mac_command(pkt);
+
 	cmd->assoc_req.ci.reserved_1 = 0U; /* Reserved */
 	cmd->assoc_req.ci.dev_type = 0U; /* RFD */
 	cmd->assoc_req.ci.power_src = 0U; /* TODO: set right power source */
-	cmd->assoc_req.ci.rx_on = 1U; /* TODO: that will depends on PM */
+	cmd->assoc_req.ci.rx_on = 1U; /* TODO: derive from PM settings */
 	cmd->assoc_req.ci.association_type = 0U; /* normal association */
 	cmd->assoc_req.ci.reserved_2 = 0U; /* Reserved */
-	cmd->assoc_req.ci.sec_capability = 0U; /* TODO: security support */
-	cmd->assoc_req.ci.alloc_addr = 0U; /* TODO: handle short addr */
-
-	k_sem_take(&ctx->ctx_lock, K_FOREVER);
-	remove_association(iface, ctx);
-	k_sem_give(&ctx->ctx_lock);
+#ifdef CONFIG_NET_L2_IEEE802154_SECURITY
+	cmd->assoc_req.ci.sec_capability = ctx->sec_ctx.level > IEEE802154_SECURITY_LEVEL_NONE;
+#else
+	cmd->assoc_req.ci.sec_capability = 0U;
+#endif
+	/* request short address
+	 * TODO: support operation with ext addr.
+	 */
+	cmd->assoc_req.ci.alloc_addr = 1U;
 
 	ieee802154_mac_cmd_finalize(pkt, IEEE802154_CFI_ASSOCIATION_REQUEST);
 
+	/* section 6.4.1, Association: Set phyCurrentPage [TODO: implement] and
+	 * phyCurrentChannel to the requested channel and channel page
+	 * parameters.
+	 */
+	if (ieee802154_radio_set_channel(iface, req->channel)) {
+		ret = -EIO;
+		goto release;
+	}
+
+	/* section 6.4.1, Association: Set macPanId to the coordinator's PAN ID. */
+	ieee802154_radio_remove_pan_id(iface, ctx->pan_id);
+	ctx->pan_id = req->pan_id;
 	ieee802154_radio_filter_pan_id(iface, req->pan_id);
 
-	if (net_if_send_data(iface, pkt)) {
+	/* section 6.4.1, Association: Set macCoordExtendedAddress or
+	 * macCoordShortAddress, depending on which is known from the Beacon
+	 * frame from the coordinator through which the device wishes to
+	 * associate.
+	 */
+	if (req->len == IEEE802154_SHORT_ADDR_LENGTH) {
+		ctx->coord_short_addr = req->short_addr;
+	} else  {
+		ctx->coord_short_addr = IEEE802154_NO_SHORT_ADDRESS_ASSIGNED;
+		sys_memcpy_swap(ctx->coord_ext_addr, req->addr, IEEE802154_EXT_ADDR_LENGTH);
+	}
+
+	k_sem_give(&ctx->ctx_lock);
+
+	/* Acquire the scan lock so that the next k_sem_take() blocks. */
+	k_sem_take(&ctx->scan_ctx_lock, K_FOREVER);
+
+	/* section 6.4.1, Association: The MAC sublayer of an unassociated device
+	 * shall initiate the association procedure by sending an Association
+	 * Request command, as described in 7.5.2, to the coordinator of an
+	 * existing PAN.
+	 */
+	if (ieee802154_radio_send(iface, pkt, pkt->buffer)) {
 		net_pkt_unref(pkt);
 		ret = -EIO;
 		goto out;
 	}
 
-	/* Acquire the lock so that the next k_sem_take() blocks. */
-	k_sem_take(&ctx->scan_ctx_lock, K_FOREVER);
-
 	/* Wait macResponseWaitTime PHY symbols for the association response, see
 	 * ieee802154_handle_mac_command() and section 6.4.1.
+	 *
+	 * TODO: The Association Response command shall be sent to the device
+	 *       requesting association using indirect transmission.
 	 */
 	k_sem_take(&ctx->scan_ctx_lock, K_USEC(ieee802154_get_response_wait_time_us(iface)));
 
@@ -423,38 +570,36 @@ static int ieee802154_associate(uint32_t mgmt_request, struct net_if *iface,
 		    ctx->coord_short_addr == req->short_addr) {
 			validated = true;
 		} else {
-			if (req->len == IEEE802154_EXT_ADDR_LENGTH) {
-				uint8_t ext_addr_le[IEEE802154_EXT_ADDR_LENGTH];
+			uint8_t ext_addr_le[IEEE802154_EXT_ADDR_LENGTH];
 
-				sys_memcpy_swap(ext_addr_le, req->addr,
-						IEEE802154_EXT_ADDR_LENGTH);
-				if (!memcmp(ctx->coord_ext_addr, ext_addr_le,
-					    IEEE802154_EXT_ADDR_LENGTH)) {
-					validated = true;
-				}
+			__ASSERT_NO_MSG(req->len == IEEE802154_EXT_ADDR_LENGTH);
+
+			sys_memcpy_swap(ext_addr_le, req->addr, sizeof(ext_addr_le));
+			if (!memcmp(ctx->coord_ext_addr, ext_addr_le, IEEE802154_EXT_ADDR_LENGTH)) {
+				validated = true;
 			}
 		}
 
 		if (!validated) {
-			remove_association(iface, ctx);
 			ret = -EFAULT;
-			goto out;
+			goto release;
 		}
 
 		ctx->channel = req->channel;
-		ctx->pan_id = req->pan_id;
-		goto out;
-
 	} else {
 		ret = -EACCES;
 	}
 
+release:
+	k_sem_give(&ctx->ctx_lock);
 out:
-	if (ret < 0) {
-		ieee802154_radio_filter_pan_id(iface, 0);
+	if (ret) {
+		k_sem_take(&ctx->ctx_lock, K_FOREVER);
+		remove_association(iface, ctx);
+		ieee802154_radio_set_channel(iface, ctx->channel);
+		k_sem_give(&ctx->ctx_lock);
 	}
 
-	k_sem_give(&ctx->ctx_lock);
 	return ret;
 }
 
@@ -465,11 +610,9 @@ static int ieee802154_disassociate(uint32_t mgmt_request, struct net_if *iface,
 				   void *data, size_t len)
 {
 	struct ieee802154_context *ctx = net_if_l2_data(iface);
-	uint8_t ext_addr[IEEE802154_MAX_ADDR_LENGTH];
-	struct ieee802154_frame_params params;
+	struct ieee802154_frame_params params = {0};
 	struct ieee802154_command *cmd;
 	struct net_pkt *pkt;
-	int ret = 0;
 
 	ARG_UNUSED(data);
 	ARG_UNUSED(len);
@@ -477,32 +620,40 @@ static int ieee802154_disassociate(uint32_t mgmt_request, struct net_if *iface,
 	k_sem_take(&ctx->ctx_lock, K_FOREVER);
 
 	if (!is_associated(ctx)) {
-		ret = -EALREADY;
-		goto out;
+		k_sem_give(&ctx->ctx_lock);
+		return -EALREADY;
 	}
 
-	/* See section 7.5.4 */
-
+	/* See section 7.5.4:
+	 *  * The Destination PAN ID field shall contain the value of macPanId.
+	 *  * If an associated device is disassociating from the PAN, then the
+	 *    Destination Address field shall contain the value of either
+	 *    macCoordShortAddress, if the Destination Addressing Mode field is
+	 *    set to indicated short addressing, or macCoordExtendedAddress, if
+	 *    the Destination Addressing Mode field is set to indicated extended
+	 *    addressing.
+	 */
 	params.dst.pan_id = ctx->pan_id;
 
-	if (ctx->coord_short_addr != 0 &&
+	if (ctx->coord_short_addr != IEEE802154_SHORT_ADDRESS_NOT_ASSOCIATED &&
 	    ctx->coord_short_addr != IEEE802154_NO_SHORT_ADDRESS_ASSIGNED) {
 		params.dst.len = IEEE802154_SHORT_ADDR_LENGTH;
 		params.dst.short_addr = ctx->coord_short_addr;
 	} else {
 		params.dst.len = IEEE802154_EXT_ADDR_LENGTH;
-		params.dst.ext_addr = ext_addr;
 		sys_memcpy_swap(params.dst.ext_addr, ctx->coord_ext_addr,
-				IEEE802154_EXT_ADDR_LENGTH);
+				sizeof(params.dst.ext_addr));
 	}
 
-	params.pan_id = ctx->pan_id;
+	k_sem_give(&ctx->ctx_lock);
 
+	/* If an associated device wants to leave the PAN, the MLME of the device
+	 * shall send a Disassociation Notification command to its coordinator.
+	 */
 	pkt = ieee802154_create_mac_cmd_frame(
 		iface, IEEE802154_CFI_DISASSOCIATION_NOTIFICATION, &params);
 	if (!pkt) {
-		ret = -ENOBUFS;
-		goto out;
+		return -ENOBUFS;
 	}
 
 	cmd = ieee802154_get_mac_command(pkt);
@@ -511,17 +662,16 @@ static int ieee802154_disassociate(uint32_t mgmt_request, struct net_if *iface,
 	ieee802154_mac_cmd_finalize(
 		pkt, IEEE802154_CFI_DISASSOCIATION_NOTIFICATION);
 
-	if (net_if_send_data(iface, pkt)) {
+	if (ieee802154_radio_send(iface, pkt, pkt->buffer)) {
 		net_pkt_unref(pkt);
-		ret = -EIO;
-		goto out;
+		return -EIO;
 	}
 
+	k_sem_take(&ctx->ctx_lock, K_FOREVER);
 	remove_association(iface, ctx);
-
-out:
 	k_sem_give(&ctx->ctx_lock);
-	return ret;
+
+	return 0;
 }
 
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_IEEE802154_DISASSOCIATE,
@@ -600,6 +750,7 @@ static int ieee802154_set_parameters(uint32_t mgmt_request,
 		}
 	} else if (mgmt_request == NET_REQUEST_IEEE802154_SET_PAN_ID) {
 		if (ctx->pan_id != value) {
+			ieee802154_radio_remove_pan_id(iface, ctx->pan_id);
 			ctx->pan_id = value;
 			ieee802154_radio_filter_pan_id(iface, ctx->pan_id);
 		}
@@ -622,6 +773,13 @@ static int ieee802154_set_parameters(uint32_t mgmt_request,
 			if (value == IEEE802154_SHORT_ADDRESS_NOT_ASSOCIATED) {
 				remove_association(iface, ctx);
 			} else {
+				/* A PAN is required when associating,
+				 * see section 8.4.3.1, table 8-94.
+				 */
+				if (ctx->pan_id == IEEE802154_PAN_ID_NOT_ASSOCIATED) {
+					ret = -EPERM;
+					goto out;
+				}
 				set_association(iface, ctx, value);
 			}
 		}

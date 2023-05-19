@@ -10,12 +10,14 @@ LOG_MODULE_REGISTER(net_ieee802154_fake_driver, LOG_LEVEL_DBG);
 #include <zephyr/kernel.h>
 
 #include <zephyr/net/net_core.h>
-#include "net_private.h"
-
+#include <zephyr/net/net_if.h>
 #include <zephyr/net/net_pkt.h>
 
 /** FAKE ieee802.15.4 driver **/
 #include <zephyr/net/ieee802154_radio.h>
+
+#include "net_private.h"
+#include <ieee802154_frame.h>
 
 struct net_pkt *current_pkt;
 K_SEM_DEFINE(driver_lock, 0, UINT_MAX);
@@ -73,6 +75,29 @@ static int fake_tx(const struct device *dev,
 
 	insert_frag(pkt, frag);
 
+	if (ieee802154_is_ar_flag_set(frag)) {
+		struct net_if *iface = net_if_lookup_by_dev(dev);
+		struct ieee802154_context *ctx = net_if_l2_data(iface);
+
+		struct net_pkt *ack_pkt;
+
+		ack_pkt = net_pkt_rx_alloc_with_buffer(iface, IEEE802154_ACK_PKT_LENGTH, AF_UNSPEC,
+						       0, K_FOREVER);
+		if (!ack_pkt) {
+			NET_ERR("*** Could not allocate ack pkt.\n");
+			return -ENOMEM;
+		}
+
+		if (!ieee802154_create_ack_frame(iface, ack_pkt, ctx->ack_seq)) {
+			NET_ERR("*** Could not create ack frame.\n");
+			net_pkt_unref(ack_pkt);
+			return -EFAULT;
+		}
+
+		ieee802154_handle_ack(iface, ack_pkt);
+		net_pkt_unref(ack_pkt);
+	}
+
 	k_sem_give(&driver_lock);
 
 	return 0;
@@ -102,7 +127,8 @@ static void fake_iface_init(struct net_if *iface)
 
 	ieee802154_init(iface);
 
-	ctx->pan_id = 0xabcd;
+	ctx->pan_id = IEEE802154_PAN_ID_NOT_ASSOCIATED;
+	ctx->short_addr = IEEE802154_SHORT_ADDRESS_NOT_ASSOCIATED;
 	ctx->channel = 26U;
 	ctx->sequence = 62U;
 

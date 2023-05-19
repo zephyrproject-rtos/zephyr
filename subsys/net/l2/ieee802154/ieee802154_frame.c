@@ -269,10 +269,10 @@ static inline bool validate_mac_command(struct ieee802154_mpdu *mpdu, uint8_t *b
 	struct ieee802154_command *command = (struct ieee802154_command *)buf;
 	uint8_t len = IEEE802154_CMD_CFI_LENGTH;
 	bool src_pan_brdcst_chk = false;
+	uint8_t src_bf = 0, dst_bf = 0;
 	bool dst_brdcst_chk = false;
 	bool ack_requested = false;
 	bool has_pan_id = true;
-	uint8_t src_bf, dst_bf;
 
 	if (length < len) {
 		return false;
@@ -295,13 +295,14 @@ static inline bool validate_mac_command(struct ieee802154_mpdu *mpdu, uint8_t *b
 	case IEEE802154_CFI_DISASSOCIATION_NOTIFICATION:
 		if (command->cfi == IEEE802154_CFI_DISASSOCIATION_NOTIFICATION) {
 			len += IEEE802154_CMD_DISASSOC_NOTE_LENGTH;
+			dst_bf = BIT(IEEE802154_ADDR_MODE_SHORT);
 		}
 		__fallthrough;
 	case IEEE802154_CFI_PAN_ID_CONFLICT_NOTIFICATION:
 		ack_requested = true;
 		has_pan_id = false;
 		src_bf = BIT(IEEE802154_ADDR_MODE_EXTENDED);
-		dst_bf = BIT(IEEE802154_ADDR_MODE_EXTENDED);
+		dst_bf |= BIT(IEEE802154_ADDR_MODE_EXTENDED);
 
 		break;
 	case IEEE802154_CFI_DATA_REQUEST:
@@ -574,7 +575,7 @@ static inline bool data_addr_to_fs_settings(struct net_linkaddr *dst, struct iee
 			params->dst.len = IEEE802154_SHORT_ADDR_LENGTH;
 		} else {
 			__ASSERT_NO_MSG(dst->len == IEEE802154_EXT_ADDR_LENGTH);
-			params->dst.ext_addr = dst->addr;
+			memcpy(params->dst.ext_addr, dst->addr, sizeof(params->dst.ext_addr));
 			params->dst.len = IEEE802154_EXT_ADDR_LENGTH;
 		}
 	}
@@ -765,11 +766,11 @@ static inline bool cfi_to_fs_settings(enum ieee802154_cfi cfi, struct ieee802154
 {
 	switch (cfi) {
 	case IEEE802154_CFI_DISASSOCIATION_NOTIFICATION:
-		fs->fc.ar = 1U;
 		fs->fc.pan_id_comp = 1U;
 
 		__fallthrough;
 	case IEEE802154_CFI_ASSOCIATION_REQUEST:
+		fs->fc.ar = 1U;
 		fs->fc.src_addr_mode = IEEE802154_ADDR_MODE_EXTENDED;
 
 		if (params->dst.len == IEEE802154_SHORT_ADDR_LENGTH) {
