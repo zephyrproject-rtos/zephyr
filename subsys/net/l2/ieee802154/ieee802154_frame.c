@@ -192,13 +192,13 @@ ieee802154_validate_aux_security_hdr(uint8_t *buf, uint8_t **p_buf, uint8_t *len
 }
 #endif /* CONFIG_NET_L2_IEEE802154_SECURITY */
 
-static inline bool validate_beacon(struct ieee802154_mpdu *mpdu, uint8_t *buf, uint8_t *length)
+static inline bool validate_beacon(struct ieee802154_mpdu *mpdu, uint8_t *buf, uint8_t length)
 {
 	struct ieee802154_beacon *b = (struct ieee802154_beacon *)buf;
 	struct ieee802154_pas_spec *pas;
 	uint8_t len = IEEE802154_BEACON_SF_SIZE + IEEE802154_BEACON_GTS_SPEC_SIZE;
 
-	if (*length < len) {
+	if (length < len) {
 		return false;
 	}
 
@@ -207,14 +207,14 @@ static inline bool validate_beacon(struct ieee802154_mpdu *mpdu, uint8_t *buf, u
 		       b->gts.desc_count * IEEE802154_BEACON_GTS_SIZE;
 	}
 
-	if (*length < len) {
+	if (length < len) {
 		return false;
 	}
 
 	pas = (struct ieee802154_pas_spec *)buf + len;
 
 	len += IEEE802154_BEACON_PAS_SPEC_SIZE;
-	if (*length < len) {
+	if (length < len) {
 		return false;
 	}
 
@@ -223,11 +223,10 @@ static inline bool validate_beacon(struct ieee802154_mpdu *mpdu, uint8_t *buf, u
 		       (pas->nb_eap * IEEE802154_EXT_ADDR_LENGTH);
 	}
 
-	if (*length < len) {
+	if (length < len) {
 		return false;
 	}
 
-	*length -= len;
 	mpdu->beacon = b;
 
 	return true;
@@ -265,7 +264,7 @@ static inline bool validate_mac_command_cfi_to_mhr(struct ieee802154_mhr *mhr, u
 	return true;
 }
 
-static inline bool validate_mac_command(struct ieee802154_mpdu *mpdu, uint8_t *buf, uint8_t *length)
+static inline bool validate_mac_command(struct ieee802154_mpdu *mpdu, uint8_t *buf, uint8_t length)
 {
 	struct ieee802154_command *c = (struct ieee802154_command *)buf;
 	uint8_t len = IEEE802154_CMD_CFI_LENGTH;
@@ -275,7 +274,7 @@ static inline bool validate_mac_command(struct ieee802154_mpdu *mpdu, uint8_t *b
 	uint8_t ar = 0U;
 	uint8_t src_bf, dst_bf;
 
-	if (*length < len) {
+	if (length < len) {
 		return false;
 	}
 
@@ -353,7 +352,7 @@ static inline bool validate_mac_command(struct ieee802154_mpdu *mpdu, uint8_t *b
 		return false;
 	}
 
-	if (*length < len) {
+	if (length < len) {
 		return false;
 	}
 
@@ -363,18 +362,17 @@ static inline bool validate_mac_command(struct ieee802154_mpdu *mpdu, uint8_t *b
 		return false;
 	}
 
-	*length -= len;
 	mpdu->command = c;
 
 	return true;
 }
 
 static inline bool validate_payload_and_mfr(struct ieee802154_mpdu *mpdu, uint8_t *buf,
-					    uint8_t *p_buf, uint8_t *length)
+					    uint8_t *p_buf, uint8_t length)
 {
 	uint8_t type = mpdu->mhr.fs->fc.frame_type;
 
-	NET_DBG("Header size: %u, payload size %u", (uint32_t)(p_buf - buf), *length);
+	NET_DBG("Header size: %u, payload size %u", (uint32_t)(p_buf - buf), length);
 
 	if (type == IEEE802154_FRAME_TYPE_BEACON) {
 		if (!validate_beacon(mpdu, p_buf, length)) {
@@ -382,28 +380,26 @@ static inline bool validate_payload_and_mfr(struct ieee802154_mpdu *mpdu, uint8_
 		}
 	} else if (type == IEEE802154_FRAME_TYPE_DATA) {
 		/** A data frame embeds a payload */
-		if (*length == 0U) {
+		if (length == 0U) {
 			return false;
 		}
-
-		mpdu->payload = (void *)p_buf;
 	} else if (type == IEEE802154_FRAME_TYPE_ACK) {
 		/** An ACK frame has no payload */
-		if (*length) {
+		if (length) {
 			return false;
 		}
-
-		mpdu->payload = NULL;
 	} else {
 		if (!validate_mac_command(mpdu, p_buf, length)) {
 			return false;
 		}
 	}
 
-	if (*length) {
-		mpdu->mfr = (struct ieee802154_mfr *)(p_buf + *length);
+	mpdu->payload_length = length;
+
+	if (length) {
+		mpdu->payload = (void *)p_buf;
 	} else {
-		mpdu->mfr = NULL;
+		mpdu->payload = NULL;
 	}
 
 	return true;
@@ -444,7 +440,7 @@ bool ieee802154_validate_frame(uint8_t *buf, uint8_t length, struct ieee802154_m
 	}
 #endif
 
-	return validate_payload_and_mfr(mpdu, buf, p_buf, &length);
+	return validate_payload_and_mfr(mpdu, buf, p_buf, length);
 }
 
 uint8_t ieee802154_compute_header_and_authtag_size(struct net_if *iface, struct net_linkaddr *dst,
