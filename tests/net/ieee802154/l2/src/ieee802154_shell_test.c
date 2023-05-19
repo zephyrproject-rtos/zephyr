@@ -59,6 +59,7 @@ void test_beacon_request(struct ieee802154_mpdu *mpdu)
 {
 	struct ieee802154_command *cmd = mpdu->command;
 
+	zassert_equal(1U, mpdu->payload_length, "Beacon request: invalid payload length.");
 	zassert_equal(IEEE802154_CFI_BEACON_REQUEST, cmd->cfi, "Not a beacon request.");
 	zassert_equal(IEEE802154_ADDR_MODE_SHORT, mpdu->mhr.fs->fc.dst_addr_mode,
 		      "Beacon request: invalid destination address mode.");
