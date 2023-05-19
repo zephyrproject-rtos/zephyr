@@ -207,6 +207,7 @@ static enum net_verdict ieee802154_recv(struct net_if *iface, struct net_pkt *pk
 {
 	const struct ieee802154_radio_api *radio = net_if_get_device(iface)->api;
 	struct ieee802154_mpdu mpdu;
+	enum net_verdict verdict;
 	size_t hdr_len;
 
 	/* The IEEE 802.15.4 stack assumes that drivers provide a single-fragment package. */
@@ -227,7 +228,11 @@ static enum net_verdict ieee802154_recv(struct net_if *iface, struct net_pkt *pk
 	}
 
 	if (mpdu.mhr.fs->fc.frame_type == IEEE802154_FRAME_TYPE_BEACON) {
-		return ieee802154_handle_beacon(iface, &mpdu, net_pkt_ieee802154_lqi(pkt));
+		verdict = ieee802154_handle_beacon(iface, &mpdu, net_pkt_ieee802154_lqi(pkt));
+		if (verdict == NET_OK) {
+			net_pkt_unref(pkt);
+		}
+		return verdict;
 	}
 
 	if (ieee802154_is_scanning(iface)) {
@@ -235,7 +240,11 @@ static enum net_verdict ieee802154_recv(struct net_if *iface, struct net_pkt *pk
 	}
 
 	if (mpdu.mhr.fs->fc.frame_type == IEEE802154_FRAME_TYPE_MAC_COMMAND) {
-		return ieee802154_handle_mac_command(iface, &mpdu);
+		verdict = ieee802154_handle_mac_command(iface, &mpdu);
+		if (verdict == NET_OK) {
+			net_pkt_unref(pkt);
+		}
+		return verdict;
 	}
 
 	/* At this point the frame has to be a DATA one */
@@ -264,7 +273,7 @@ static enum net_verdict ieee802154_recv(struct net_if *iface, struct net_pkt *pk
 	net_buf_pull(pkt->buffer, hdr_len);
 
 #ifdef CONFIG_NET_6LO
-	enum net_verdict verdict = ieee802154_6lo_decode_pkt(iface, pkt);
+	verdict = ieee802154_6lo_decode_pkt(iface, pkt);
 
 	pkt_hexdump(RX_PKT_TITLE, pkt, true);
 	return verdict;
