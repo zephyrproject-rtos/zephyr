@@ -287,23 +287,20 @@ static int ieee802154_send(struct net_if *iface, struct net_pkt *pkt)
 		frame_buf = net_buf_alloc(&tx_frame_buf_pool, K_FOREVER);
 	}
 
-#if defined(CONFIG_NET_SOCKETS_PACKET)
-	uint8_t pkt_family = net_pkt_family(pkt);
+	if (IS_ENABLED(CONFIG_NET_SOCKETS_PACKET) && net_pkt_family(pkt) == AF_PACKET) {
+		enum net_sock_type socket_type;
+		struct net_context *context;
 
-	if (pkt_family == AF_PACKET) {
-		struct net_context *context = net_pkt_context(pkt);
-
+		context = net_pkt_context(pkt);
 		if (!context) {
 			return -EINVAL;
 		}
 
-		switch (net_context_get_type(context)) {
-		case SOCK_RAW:
+		socket_type = net_context_get_type(context);
+		if (socket_type == SOCK_RAW) {
 			send_raw = true;
-			break;
-
-#if defined(CONFIG_NET_SOCKETS_PACKET_DGRAM)
-		case SOCK_DGRAM: {
+		} else if (IS_ENABLED(CONFIG_NET_SOCKETS_PACKET_DGRAM) &&
+			   socket_type == SOCK_DGRAM) {
 			struct sockaddr_ll *dst_addr = (struct sockaddr_ll *)&context->remote;
 			struct sockaddr_ll_ptr *src_addr =
 				(struct sockaddr_ll_ptr *)&context->local;
@@ -312,14 +309,10 @@ static int ieee802154_send(struct net_if *iface, struct net_pkt *pkt)
 			net_pkt_lladdr_dst(pkt)->len = dst_addr->sll_halen;
 			net_pkt_lladdr_src(pkt)->addr = src_addr->sll_addr;
 			net_pkt_lladdr_src(pkt)->len = src_addr->sll_halen;
-			break;
-		}
-#endif
-		default:
+		} else {
 			return -EINVAL;
 		}
 	}
-#endif /* CONFIG_NET_SOCKETS_PACKET */
 
 	if (!send_raw) {
 		ll_hdr_len = ieee802154_compute_header_and_authtag_size(
