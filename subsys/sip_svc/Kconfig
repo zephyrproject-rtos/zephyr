@@ -22,6 +22,7 @@ config ARM_SIP_SVC_SUBSYS_INIT_PRIORITY
 
 config ARM_SIP_SVC_SUBSYS_THREAD_STACK_SIZE
 	int "ARM SiP service thread stack size"
+	default 5008 if NO_OPTIMIZATIONS
 	default 1856
 	help
 	  Stack size of the ARM SiP  service.
