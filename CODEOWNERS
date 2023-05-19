@@ -810,7 +810,6 @@ scripts/build/gen_image_info.py           @tejlmand
 /subsys/mgmt/ec_host_cmd/                 @jettr
 /subsys/mgmt/mcumgr/                      @carlescufi @de-nordic @nordicjm
 /subsys/mgmt/hawkbit/                     @Navin-Sankar
-/subsys/mgmt/mcumgr/transport/src/smp_udp.c @aunsbjerg
 /subsys/mgmt/updatehub/                   @nandojve @otavio
 /subsys/mgmt/osdp/                        @sidcha
 /subsys/modbus/                           @jfischer-no
