@@ -32,9 +32,9 @@ LOG_MODULE_REGISTER(net_ieee802154_frame, CONFIG_NET_L2_IEEE802154_LOG_LEVEL);
 #define BUF_TIMEOUT K_MSEC(50)
 
 #ifdef CONFIG_NET_L2_IEEE802154_SECURITY
-const uint8_t level_2_authtag_len[4] = {0, IEEE8021254_AUTH_TAG_LENGTH_32,
-					IEEE8021254_AUTH_TAG_LENGTH_64,
-					IEEE8021254_AUTH_TAG_LENGTH_128};
+const uint8_t level_2_authtag_len[4] = {0, IEEE802154_AUTH_TAG_LENGTH_32,
+					IEEE802154_AUTH_TAG_LENGTH_64,
+					IEEE802154_AUTH_TAG_LENGTH_128};
 #endif
 
 struct ieee802154_fcf_seq *ieee802154_validate_fc_seq(uint8_t *buf, uint8_t **p_buf,
@@ -153,7 +153,7 @@ ieee802154_validate_aux_security_hdr(uint8_t *buf, uint8_t **p_buf, uint8_t *len
 	case IEEE802154_KEY_ID_MODE_IMPLICIT:
 		break;
 	case IEEE802154_KEY_ID_MODE_INDEX:
-		len += IEEE8021254_KEY_ID_FIELD_INDEX_LENGTH;
+		len += IEEE802154_KEY_ID_FIELD_INDEX_LENGTH;
 		if (*length < len) {
 			return NULL;
 		}
@@ -164,7 +164,7 @@ ieee802154_validate_aux_security_hdr(uint8_t *buf, uint8_t **p_buf, uint8_t *len
 
 		break;
 	case IEEE802154_KEY_ID_MODE_SRC_4_INDEX:
-		len += IEEE8021254_KEY_ID_FIELD_SRC_4_INDEX_LENGTH;
+		len += IEEE802154_KEY_ID_FIELD_SRC_4_INDEX_LENGTH;
 		if (*length < len) {
 			return NULL;
 		}
@@ -175,7 +175,7 @@ ieee802154_validate_aux_security_hdr(uint8_t *buf, uint8_t **p_buf, uint8_t *len
 
 		break;
 	case IEEE802154_KEY_ID_MODE_SRC_8_INDEX:
-		len += IEEE8021254_KEY_ID_FIELD_SRC_8_INDEX_LENGTH;
+		len += IEEE802154_KEY_ID_FIELD_SRC_8_INDEX_LENGTH;
 		if (*length < len) {
 			return NULL;
 		}
@@ -299,7 +299,7 @@ static inline bool validate_mac_command(struct ieee802154_mpdu *mpdu, uint8_t *b
 			len += IEEE802154_CMD_DISASSOC_NOTE_LENGTH;
 		}
 		__fallthrough;
-	case IEEE802154_CFI_PAN_ID_CONLICT_NOTIFICATION:
+	case IEEE802154_CFI_PAN_ID_CONFLICT_NOTIFICATION:
 		ar = 1U;
 		comp = 1U;
 		src_bf = BIT(IEEE802154_ADDR_MODE_EXTENDED);
@@ -486,13 +486,13 @@ void ieee802154_compute_header_and_authtag_len(struct net_if *iface, struct net_
 		 */
 		break;
 	case IEEE802154_KEY_ID_MODE_INDEX:
-		hdr_len += IEEE8021254_KEY_ID_FIELD_INDEX_LENGTH;
+		hdr_len += IEEE802154_KEY_ID_FIELD_INDEX_LENGTH;
 		break;
 	case IEEE802154_KEY_ID_MODE_SRC_4_INDEX:
-		hdr_len += IEEE8021254_KEY_ID_FIELD_SRC_4_INDEX_LENGTH;
+		hdr_len += IEEE802154_KEY_ID_FIELD_SRC_4_INDEX_LENGTH;
 		break;
 	case IEEE802154_KEY_ID_MODE_SRC_8_INDEX:
-		hdr_len += IEEE8021254_KEY_ID_FIELD_SRC_8_INDEX_LENGTH;
+		hdr_len += IEEE802154_KEY_ID_FIELD_SRC_8_INDEX_LENGTH;
 	}
 
 	if (sec_ctx->level < IEEE802154_SECURITY_LEVEL_ENC) {
@@ -781,7 +781,7 @@ static inline bool cfi_to_fs_settings(enum ieee802154_cfi cfi, struct ieee802154
 
 		break;
 	case IEEE802154_CFI_ASSOCIATION_RESPONSE:
-	case IEEE802154_CFI_PAN_ID_CONLICT_NOTIFICATION:
+	case IEEE802154_CFI_PAN_ID_CONFLICT_NOTIFICATION:
 		fs->fc.ar = 1U;
 		fs->fc.pan_id_comp = 1U;
 		fs->fc.src_addr_mode = IEEE802154_ADDR_MODE_EXTENDED;
