@@ -167,7 +167,7 @@ config USB_DC_NXP_EHCI
 
 config USB_DC_NXP_LPCIP3511
 	bool "LPC USB Device Controller"
-	select USB_DC_HAS_HS_SUPPORT
+	select USB_DC_HAS_HS_SUPPORT if "$(dt_nodelabel_enabled,usbhs)"
 	help
 	  LPC USB Device Controller Driver.
 
