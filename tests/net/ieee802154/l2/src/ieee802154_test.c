@@ -338,15 +338,21 @@ static bool test_ns_sending(struct ieee802154_pkt_test *t, bool with_short_addr)
 	return true;
 }
 
-static bool test_dgram_packet_sending(struct sockaddr_ll *pkt_sll, uint32_t security_level)
+static bool test_dgram_packet_sending(void *dst_sll, uint8_t dst_sll_halen, uint32_t security_level)
 {
 	/* tests should be run sequentially, so no need for context locking */
 	struct ieee802154_context *ctx = net_if_l2_data(iface);
-	int fd;
-	struct sockaddr_ll socket_sll = {0};
-	uint8_t payload[4] = {0x01, 0x02, 0x03, 0x04};
+	struct sockaddr_ll socket_sll = {.sll_ifindex = net_if_get_by_iface(iface),
+					 .sll_family = AF_PACKET,
+					 .sll_protocol = ETH_P_IEEE802154};
+	struct sockaddr_ll pkt_dst_sll = {
+		.sll_halen = dst_sll_halen,
+		.sll_protocol = htons(ETH_P_IEEE802154),
+	};
+	uint8_t payload[] = {0x01, 0x02, 0x03, 0x04};
 	struct ieee802154_mpdu mpdu;
 	bool result = false;
+	int fd;
 
 	if (!set_up_security(security_level)) {
 		goto out;
@@ -363,7 +369,8 @@ static bool test_dgram_packet_sending(struct sockaddr_ll *pkt_sll, uint32_t secu
 	 * we simulate an associated device.
 	 */
 	/* TODO: support short addresses with encryption (requires neighbour cache) */
-	bool bind_short_address = pkt_sll->sll_halen == IEEE802154_SHORT_ADDR_LENGTH &&
+	memcpy(pkt_dst_sll.sll_addr, dst_sll, dst_sll_halen);
+	bool bind_short_address = pkt_dst_sll.sll_halen == IEEE802154_SHORT_ADDR_LENGTH &&
 				  security_level == IEEE802154_SECURITY_LEVEL_NONE;
 
 	if (bind_short_address) {
@@ -372,16 +379,12 @@ static bool test_dgram_packet_sending(struct sockaddr_ll *pkt_sll, uint32_t secu
 		}
 	}
 
-	socket_sll.sll_ifindex = net_if_get_by_iface(iface);
-	socket_sll.sll_family = AF_PACKET;
-	socket_sll.sll_protocol = ETH_P_IEEE802154;
-
 	if (bind(fd, (const struct sockaddr *)&socket_sll, sizeof(struct sockaddr_ll))) {
 		NET_ERR("*** Failed to bind packet socket : %d\n", errno);
 		goto release_fd;
 	}
 
-	if (sendto(fd, payload, sizeof(payload), 0, (const struct sockaddr *)pkt_sll,
+	if (sendto(fd, payload, sizeof(payload), 0, (const struct sockaddr *)&pkt_dst_sll,
 		   sizeof(struct sockaddr_ll)) != sizeof(payload)) {
 		NET_ERR("*** Failed to send, errno %d\n", errno);
 		goto release_fd;
@@ -1098,16 +1101,11 @@ ZTEST(ieee802154_l2, test_parsing_sec_data_pkt)
 
 ZTEST(ieee802154_l2, test_sending_broadcast_dgram_pkt)
 {
-	bool ret;
 	uint16_t dst_short_addr = htons(IEEE802154_BROADCAST_ADDRESS);
-	struct sockaddr_ll pkt_sll = {
-		.sll_halen = sizeof(dst_short_addr),
-		.sll_protocol = htons(ETH_P_IEEE802154),
-	};
+	bool ret;
 
-	memcpy(pkt_sll.sll_addr, &dst_short_addr, sizeof(dst_short_addr));
-
-	ret = test_dgram_packet_sending(&pkt_sll, IEEE802154_SECURITY_LEVEL_NONE);
+	ret = test_dgram_packet_sending(&dst_short_addr, sizeof(dst_short_addr),
+					IEEE802154_SECURITY_LEVEL_NONE);
 
 	zassert_true(ret, "Broadcast DGRAM packet sent");
 }
@@ -1125,16 +1123,11 @@ ZTEST(ieee802154_l2, test_receiving_broadcast_dgram_pkt)
 
 ZTEST(ieee802154_l2, test_sending_authenticated_dgram_pkt)
 {
-	bool ret;
 	uint16_t dst_short_addr = htons(0x1234);
-	struct sockaddr_ll pkt_sll = {
-		.sll_halen = sizeof(dst_short_addr),
-		.sll_protocol = htons(ETH_P_IEEE802154),
-	};
+	bool ret;
 
-	memcpy(pkt_sll.sll_addr, &dst_short_addr, sizeof(dst_short_addr));
-
-	ret = test_dgram_packet_sending(&pkt_sll, IEEE802154_SECURITY_LEVEL_MIC_128);
+	ret = test_dgram_packet_sending(&dst_short_addr, sizeof(dst_short_addr),
+					IEEE802154_SECURITY_LEVEL_MIC_128);
 
 	zassert_true(ret, "Authenticated DGRAM packet sent");
 }
@@ -1155,16 +1148,11 @@ ZTEST(ieee802154_l2, test_receiving_authenticated_dgram_pkt)
 
 ZTEST(ieee802154_l2, test_sending_encrypted_and_authenticated_dgram_pkt)
 {
-	bool ret;
 	uint8_t dst_ext_addr[8] = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08};
-	struct sockaddr_ll pkt_sll = {
-		.sll_halen = sizeof(dst_ext_addr),
-		.sll_protocol = htons(ETH_P_IEEE802154),
-	};
+	bool ret;
 
-	memcpy(pkt_sll.sll_addr, dst_ext_addr, sizeof(dst_ext_addr));
-
-	ret = test_dgram_packet_sending(&pkt_sll, IEEE802154_SECURITY_LEVEL_ENC_MIC_128);
+	ret = test_dgram_packet_sending(dst_ext_addr, sizeof(dst_ext_addr),
+					IEEE802154_SECURITY_LEVEL_ENC_MIC_128);
 
 	zassert_true(ret, "Encrypted and authenticated DGRAM packet sent");
 }
