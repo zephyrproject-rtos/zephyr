@@ -1009,6 +1009,33 @@ struct btp_priv_node_id_set_cmd {
 
 #define BTP_MESH_PROXY_PRIVATE_IDENTITY		0x72
 
+#define BTP_MESH_OD_PRIV_PROXY_GET		0x73
+struct btp_od_priv_proxy_get_cmd {
+	uint16_t dst;
+} __packed;
+
+#define BTP_MESH_OD_PRIV_PROXY_SET		0x74
+
+struct btp_od_priv_proxy_set_cmd {
+	uint16_t dst;
+	uint8_t val;
+} __packed;
+
+#define BTP_MESH_SRPL_CLEAR			0x75
+
+struct btp_srpl_clear_cmd {
+	uint16_t dst;
+	uint16_t range_start;
+	uint8_t range_len;
+	uint8_t acked;
+} __packed;
+
+#define BTP_MESH_PROXY_SOLICIT			0x76
+
+struct btp_proxy_solicit_cmd {
+	uint16_t net_idx;
+} __packed;
+
 /* events */
 #define BTP_MESH_EV_OUT_NUMBER_ACTION		0x80
 struct btp_mesh_out_number_action_ev {
