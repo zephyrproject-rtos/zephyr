@@ -83,7 +83,9 @@ configuration supports the following hardware features:
 +-----------+------------+-------------------------------------+
 | HWINFO    | on-chip    | Unique device serial number         |
 +-----------+------------+-------------------------------------+
-| USB       | on-chip    | USB device                          |
+| USB HS    | on-chip    | USB High Speed device               |
++-----------+------------+-------------------------------------+
+| USB FS    | on-chip    | USB Full Speed device               |
 +-----------+------------+-------------------------------------+
 | COUNTER   | on-chip    | counter                             |
 +-----------+------------+-------------------------------------+
