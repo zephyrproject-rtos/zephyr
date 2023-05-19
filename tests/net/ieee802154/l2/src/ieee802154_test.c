@@ -355,15 +355,28 @@ static bool test_raw_packet_sending(void)
 {
 	/* tests should be run sequentially, so no need for context locking */
 	struct ieee802154_context *ctx = net_if_l2_data(iface);
-	int fd;
 	struct sockaddr_ll socket_sll = {0};
+	struct ieee802154_mpdu mpdu;
 	struct msghdr msg = {0};
 	struct iovec io_vector;
-	uint8_t payload[20];
-	struct ieee802154_mpdu mpdu;
+	/* Construct raw packet payload, length and FCS gets added in the radio driver,
+	 * see https://github.com/linux-wpan/wpan-tools/blob/master/examples/af_packet_tx.c
+	 */
+	uint8_t payload[20] = {
+		0x01, 0xc8, /* FCF */
+		0x8b,	    /* Sequence number */
+		0xff, 0xff, /* Destination PAN ID 0xffff */
+		0x02, 0x00, /* Destination short address 0x0002 */
+		0x23, 0x00, /* Source PAN ID 0x0023 */
+		0x60, 0xe2, 0x16, 0x21,
+		0x1c, 0x4a, 0xc2, 0xae, /* Source extended address ae:c2:4a:1c:21:16:e2:60 */
+		0xAA, 0xBB, 0xCC,	/* Payload */
+	};
 	bool result = false;
+	int fd;
 
 	NET_INFO("- Sending RAW packet via AF_PACKET socket\n");
+
 	fd = socket(AF_PACKET, SOCK_RAW, ETH_P_IEEE802154);
 	if (fd < 0) {
 		NET_ERR("*** Failed to create RAW socket : %d\n", errno);
@@ -379,29 +392,6 @@ static bool test_raw_packet_sending(void)
 		goto release_fd;
 	}
 
-	/* Construct raw packet payload, length and FCS gets added in the radio driver,
-	 * see https://github.com/linux-wpan/wpan-tools/blob/master/examples/af_packet_tx.c
-	 */
-	payload[0] = 0x01; /* Frame Control Field */
-	payload[1] = 0xc8; /* Frame Control Field */
-	payload[2] = 0x8b; /* Sequence number */
-	payload[3] = 0xff; /* Destination PAN ID 0xffff */
-	payload[4] = 0xff; /* Destination PAN ID */
-	payload[5] = 0x02; /* Destination short address 0x0002 */
-	payload[6] = 0x00; /* Destination short address */
-	payload[7] = 0x23; /* Source PAN ID 0x0023 */
-	payload[8] = 0x00; /* */
-	payload[9] = 0x60; /* Source extended address ae:c2:4a:1c:21:16:e2:60 */
-	payload[10] = 0xe2; /* */
-	payload[11] = 0x16; /* */
-	payload[12] = 0x21; /* */
-	payload[13] = 0x1c; /* */
-	payload[14] = 0x4a; /* */
-	payload[15] = 0xc2; /* */
-	payload[16] = 0xae; /* */
-	payload[17] = 0xAA; /* Payload */
-	payload[18] = 0xBB; /* */
-	payload[19] = 0xCC; /* */
 	io_vector.iov_base = payload;
 	io_vector.iov_len = sizeof(payload);
 	msg.msg_iov = &io_vector;
