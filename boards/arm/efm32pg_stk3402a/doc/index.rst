@@ -192,74 +192,11 @@ terminal session:
 Twister Testing on EFM32PG-STK3402A
 ===================================
 
-A very simple test on the GPIO functionality can be found at:
-
-	``tests/drivers/gpio/gpio_basic_api``
-
 The Twister tests can be run as follows:
 
 .. code-block:: console
 
    scripts/twister --device-testing --hardware-map <relative path to>-map.yml
-
-Documenting the EFM32PG-STK3402A
-********************************
-
-The Zephyr documentation is based upon
-`reStructuredText <http://sphinx-doc.org/rest.html>`__,
-and `Sphinx <http://sphinx-doc.org/>`__, which are text based tools
-that have limited facilities for `WYSIWYG (pronounced wiz-ee-wig) what you see is what you get:
-<https://www.techtarget.com/whatis/definition/WYSIWYG-what-you-see-is-what-you-get>`__.
-
-However, there are work arounds that can help you convert from
-various other tools to **rst** files. While this is not Pearl Gecko
-specific, it is included here, along with the changes above, as a
-convenience, until we push upstream. Then a more appropriate location
-can be found.
-
-I have a preference for
-`rich text editors <https://froala.com/blog/editor/a-beginners-guide-to-rich-text-editors/>`__\ ”
-and a promoter of
-`Literate Programming <https://en.wikipedia.org/wiki/Literate_programming>`__,
-but I’m using Microsoft’s Word to edit this text. I started from the
-original **rst** file and used `Pandoc <https://pandoc.org/>`__
-to convert to **docx**.
-
-.. code-block:: console
-
-   pandoc -f rst -t docx \
-      "//wsl.localhost/Ubuntu-20.04/<path>/zephyrproject/zephyr/boards/arm/efm32pg_stk3402a/doc/index.rst" \
-      -o gp_stk.docx**
-
-Note that your paths may vary but mine show the variability of the
-systems that can be used. The **wsl** indicates that I’m using
-`WSL2 <https://docs.microsoft.com/en-us/windows/wsl/about>`__ on
-`WIN11 <https://en.wikipedia.org/wiki/Windows_11>`__ to build the
-`**html** <https://docs.zephyrproject.org/latest/contribute/documentation/generation.html>`__
-documentation. That is the version where board documentation is
-generated, rather than the
-`**pdf** <https://docs.zephyrproject.org/latest/contribute/documentation/generation.html>`__
-version.
-
-There may be a need to post the generated documentation internally, or
-integrate some pages into something like
-`Confluence <https://www.atlassian.com/software/confluence>`__, which we
-do and why I chose this path. Word provides that path but you don't need
-to save a **doc** version, rather than a **docx**. Simply create a page
-and **Publish** it. Then hit the **…** to the right of the Edit button and
-choose **Import Word Document**. There will likely be some minor edits you
-need to make, but the content should be close.
-
-If you already have a **Confluence** page, then in that same **…** menu you
-can use the **Export to Word** menu item. That will create a **doc** file
-that Word can convert to a **docx** file before using **Pandoc** to convert
-it to **rst** format by reversing the names used above. Again, you will need
-to make edits to comply with the Zephyr specific macros, but the content
-(other than images) should mostly be there. If the **rst** file was constructed
-by hand, then **Pandoc** may make other choices for line and column widths.
-For small edits, doing it directly in the **rst** file is most efficient, but
-if you have a lot of content, this method may be useful.
-
 
 .. _EFM32PG-STK3402A Website:
    https://www.silabs.com/products/development-tools/mcu/32-bit/efm32-pearl-gecko-pg12-starter-kit
