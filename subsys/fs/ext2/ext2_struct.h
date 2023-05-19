@@ -98,6 +98,9 @@ struct ext2_disk_dentry {
 	char de_name[];
 };
 
+/* Max size of directory entry */
+#define MAX_DIRENTRY_SIZE (sizeof(struct ext2_disk_dentry) + UINT8_MAX)
+
 /* Program structures ------------------------------------------------------- */
 
 #define EXT2_BLOCK_NUM_SIZE (sizeof(uint32_t))
@@ -168,15 +171,11 @@ static inline uint8_t *inode_current_block_mem(struct ext2_inode *inode)
 	return (uint8_t *)inode_current_block(inode)->data;
 }
 
+/* Structure common for files and directories representation */
 struct ext2_file {
 	struct ext2_inode *f_inode;
 	uint32_t f_off;
 	uint8_t f_flags;
-};
-
-struct ext2_dir {
-	struct ext2_inode *d_inode;
-	uint32_t d_off;
 };
 
 #define EXT2_DATA_FLAGS_RO  BIT(0)
@@ -197,12 +196,11 @@ struct ext2_backend_ops {
 	int (*sync)(struct ext2_data *fs);
 };
 
-
 #define MAX_INODES (CONFIG_MAX_FILES + 2)
 
 struct ext2_data {
-	struct ext2_block *sblock;       /* superblock */
-	struct ext2_bgroup *bgroup; /* block group */
+	struct ext2_block *sblock; /* superblock */
+	struct ext2_bgroup bgroup; /* block group */
 
 	int32_t open_inodes;
 	int32_t open_files;
