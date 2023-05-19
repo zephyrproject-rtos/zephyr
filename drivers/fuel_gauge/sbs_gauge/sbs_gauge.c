@@ -94,7 +94,7 @@ static int sbs_gauge_get_prop(const struct device *dev, struct fuel_gauge_get_pr
 		break;
 	case FUEL_GAUGE_RUNTIME_TO_FULL:
 		rc = sbs_cmd_reg_read(dev, SBS_GAUGE_CMD_AVG_TIME2FULL, &val);
-		prop->value.runtime_to_empty = val;
+		prop->value.runtime_to_full = val;
 		break;
 	case FUEL_GAUGE_SBS_MFR_ACCESS:
 		rc = sbs_cmd_reg_read(dev, SBS_GAUGE_CMD_MANUFACTURER_ACCESS, &val);
