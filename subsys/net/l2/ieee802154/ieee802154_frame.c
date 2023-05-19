@@ -196,7 +196,7 @@ ieee802154_validate_aux_security_hdr(uint8_t *buf, uint8_t **p_buf, uint8_t *len
 
 static inline bool validate_beacon(struct ieee802154_mpdu *mpdu, uint8_t *buf, uint8_t length)
 {
-	struct ieee802154_beacon *b = (struct ieee802154_beacon *)buf;
+	struct ieee802154_beacon *beacon = (struct ieee802154_beacon *)buf;
 	struct ieee802154_pas_spec *pas;
 	uint8_t len = IEEE802154_BEACON_SF_SIZE + IEEE802154_BEACON_GTS_SPEC_SIZE;
 
@@ -204,9 +204,9 @@ static inline bool validate_beacon(struct ieee802154_mpdu *mpdu, uint8_t *buf, u
 		return false;
 	}
 
-	if (b->gts.desc_count) {
+	if (beacon->gts.desc_count) {
 		len += IEEE802154_BEACON_GTS_DIR_SIZE +
-		       b->gts.desc_count * IEEE802154_BEACON_GTS_SIZE;
+		       beacon->gts.desc_count * IEEE802154_BEACON_GTS_SIZE;
 	}
 
 	if (length < len) {
@@ -229,7 +229,7 @@ static inline bool validate_beacon(struct ieee802154_mpdu *mpdu, uint8_t *buf, u
 		return false;
 	}
 
-	mpdu->beacon = b;
+	mpdu->beacon = beacon;
 
 	return true;
 }
@@ -266,7 +266,7 @@ static inline bool validate_mac_command_cfi_to_mhr(struct ieee802154_mhr *mhr,
 
 static inline bool validate_mac_command(struct ieee802154_mpdu *mpdu, uint8_t *buf, uint8_t length)
 {
-	struct ieee802154_command *c = (struct ieee802154_command *)buf;
+	struct ieee802154_command *command = (struct ieee802154_command *)buf;
 	uint8_t len = IEEE802154_CMD_CFI_LENGTH;
 	bool src_pan_brdcst_chk = false;
 	bool dst_brdcst_chk = false;
@@ -278,7 +278,7 @@ static inline bool validate_mac_command(struct ieee802154_mpdu *mpdu, uint8_t *b
 		return false;
 	}
 
-	switch (c->cfi) {
+	switch (command->cfi) {
 	case IEEE802154_CFI_UNKNOWN:
 		return false;
 	case IEEE802154_CFI_ASSOCIATION_REQUEST:
@@ -293,7 +293,7 @@ static inline bool validate_mac_command(struct ieee802154_mpdu *mpdu, uint8_t *b
 		len += IEEE802154_CMD_ASSOC_RES_LENGTH;
 		__fallthrough;
 	case IEEE802154_CFI_DISASSOCIATION_NOTIFICATION:
-		if (c->cfi == IEEE802154_CFI_DISASSOCIATION_NOTIFICATION) {
+		if (command->cfi == IEEE802154_CFI_DISASSOCIATION_NOTIFICATION) {
 			len += IEEE802154_CMD_DISASSOC_NOTE_LENGTH;
 		}
 		__fallthrough;
@@ -362,7 +362,7 @@ static inline bool validate_mac_command(struct ieee802154_mpdu *mpdu, uint8_t *b
 		return false;
 	}
 
-	mpdu->command = c;
+	mpdu->command = command;
 
 	return true;
 }
