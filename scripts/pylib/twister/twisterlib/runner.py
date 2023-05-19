@@ -398,6 +398,7 @@ class CMake:
             results = {"returncode": p.returncode}
 
         if out:
+            os.makedirs(self.build_dir, exist_ok=True)
             with open(os.path.join(self.build_dir, self.log), "a", encoding=self.default_encoding) as log:
                 log_msg = out.decode(self.default_encoding)
                 log.write(log_msg)
