@@ -163,6 +163,12 @@ struct lwm2m_ctx {
 	 */
 	int (*load_credentials)(struct lwm2m_ctx *client_ctx);
 #endif
+	/** Client can override default socket options by providing
+	 * a callback that is called afer a socket is created and before
+	 * connect.
+	 */
+	int (*set_socketoptions)(struct lwm2m_ctx *client_ctx);
+
 	/** Flag to indicate if context should use DTLS.
 	 *  Enabled via the use of coaps:// protocol prefix in connection
 	 *  information.
