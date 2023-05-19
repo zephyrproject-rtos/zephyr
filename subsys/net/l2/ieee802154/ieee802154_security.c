@@ -20,12 +20,12 @@ LOG_MODULE_REGISTER(net_ieee802154_security, CONFIG_NET_L2_IEEE802154_LOG_LEVEL)
 #include <zephyr/crypto/crypto.h>
 #include <zephyr/net/net_core.h>
 
-extern const uint8_t level_2_tag_size[4];
+extern const uint8_t level_2_authtag_len[4];
 
 int ieee802154_security_setup_session(struct ieee802154_security_ctx *sec_ctx, uint8_t level,
 				      uint8_t key_mode, uint8_t *key, uint8_t key_len)
 {
-	uint8_t tag_size;
+	uint8_t authtag_len;
 	int ret;
 
 	if (level > IEEE802154_SECURITY_LEVEL_ENC_MIC_128 ||
@@ -47,12 +47,12 @@ int ieee802154_security_setup_session(struct ieee802154_security_ctx *sec_ctx, u
 	}
 
 	if (level >= IEEE802154_SECURITY_LEVEL_ENC) {
-		tag_size = level_2_tag_size[level - 4];
+		authtag_len = level_2_authtag_len[level - 4];
 	} else {
-		tag_size = level_2_tag_size[level];
+		authtag_len = level_2_authtag_len[level];
 	}
-	sec_ctx->enc.mode_params.ccm_info.tag_len = tag_size;
-	sec_ctx->dec.mode_params.ccm_info.tag_len = tag_size;
+	sec_ctx->enc.mode_params.ccm_info.tag_len = authtag_len;
+	sec_ctx->dec.mode_params.ccm_info.tag_len = authtag_len;
 
 	memcpy(sec_ctx->key, key, key_len);
 	sec_ctx->key_len = key_len;
@@ -96,7 +96,7 @@ void ieee802154_security_teardown_session(struct ieee802154_security_ctx *sec_ct
 }
 
 static void prepare_cipher_aead_pkt(uint8_t *frame, uint8_t level, uint8_t hdr_len,
-				    uint8_t payload_len, uint8_t tag_size,
+				    uint8_t payload_len, uint8_t authtag_len,
 				    struct cipher_aead_pkt *apkt, struct cipher_pkt *pkt)
 {
 	bool is_encrypted = level >= IEEE802154_SECURITY_LEVEL_ENC;
@@ -112,7 +112,7 @@ static void prepare_cipher_aead_pkt(uint8_t *frame, uint8_t level, uint8_t hdr_l
 	uint8_t auth_len = is_authenticated ? out_buf_offset : 0;
 
 	pkt->out_buf = frame + out_buf_offset;
-	pkt->out_buf_max = (is_encrypted ? payload_len : 0) + tag_size;
+	pkt->out_buf_max = (is_encrypted ? payload_len : 0) + authtag_len;
 
 	apkt->ad = is_authenticated ? frame : NULL;
 	apkt->ad_len = auth_len;
@@ -121,7 +121,7 @@ static void prepare_cipher_aead_pkt(uint8_t *frame, uint8_t level, uint8_t hdr_l
 }
 
 bool ieee802154_decrypt_auth(struct ieee802154_security_ctx *sec_ctx, uint8_t *frame,
-			     uint8_t hdr_len, uint8_t payload_len, uint8_t tag_size,
+			     uint8_t hdr_len, uint8_t payload_len, uint8_t authtag_len,
 			     uint8_t *src_ext_addr, uint32_t frame_counter)
 {
 	struct cipher_aead_pkt apkt;
@@ -147,7 +147,7 @@ bool ieee802154_decrypt_auth(struct ieee802154_security_ctx *sec_ctx, uint8_t *f
 	sys_put_be32(frame_counter, &nonce[8]);
 	nonce[12] = level;
 
-	prepare_cipher_aead_pkt(frame, level, hdr_len, payload_len, tag_size, &apkt, &pkt);
+	prepare_cipher_aead_pkt(frame, level, hdr_len, payload_len, authtag_len, &apkt, &pkt);
 
 	ret = cipher_ccm_op(&sec_ctx->dec, &apkt, nonce);
 	if (ret) {
@@ -160,7 +160,7 @@ bool ieee802154_decrypt_auth(struct ieee802154_security_ctx *sec_ctx, uint8_t *f
 }
 
 bool ieee802154_encrypt_auth(struct ieee802154_security_ctx *sec_ctx, uint8_t *frame,
-			     uint8_t hdr_len, uint8_t payload_len, uint8_t tag_size,
+			     uint8_t hdr_len, uint8_t payload_len, uint8_t authtag_len,
 			     uint8_t *src_ext_addr)
 {
 	struct cipher_aead_pkt apkt;
@@ -195,7 +195,7 @@ bool ieee802154_encrypt_auth(struct ieee802154_security_ctx *sec_ctx, uint8_t *f
 	sys_put_be32(sec_ctx->frame_counter, &nonce[8]);
 	nonce[12] = level;
 
-	prepare_cipher_aead_pkt(frame, level, hdr_len, payload_len, tag_size, &apkt, &pkt);
+	prepare_cipher_aead_pkt(frame, level, hdr_len, payload_len, authtag_len, &apkt, &pkt);
 
 	ret = cipher_ccm_op(&sec_ctx->enc, &apkt, nonce);
 	if (ret) {

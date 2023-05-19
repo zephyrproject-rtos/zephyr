@@ -690,8 +690,8 @@ static bool test_dgram_packet_reception(void *src_ll_addr, uint8_t src_ll_addr_l
 		goto release_pkt;
 	}
 
-	ll_hdr_len = ieee802154_compute_header_and_authtag_size(iface, net_pkt_lladdr_dst(pkt),
-								net_pkt_lladdr_src(pkt));
+	ll_hdr_len = ieee802154_compute_header_and_authtag_len(iface, net_pkt_lladdr_dst(pkt),
+							       net_pkt_lladdr_src(pkt));
 
 	net_buf_add(frame_buf, ll_hdr_len);
 	net_buf_add_mem(frame_buf, payload, sizeof(payload));

@@ -32,9 +32,9 @@ LOG_MODULE_REGISTER(net_ieee802154_frame, CONFIG_NET_L2_IEEE802154_LOG_LEVEL);
 #define BUF_TIMEOUT K_MSEC(50)
 
 #ifdef CONFIG_NET_L2_IEEE802154_SECURITY
-const uint8_t level_2_tag_size[4] = {0, IEEE8021254_AUTH_TAG_LENGTH_32,
-				     IEEE8021254_AUTH_TAG_LENGTH_64,
-				     IEEE8021254_AUTH_TAG_LENGTH_128};
+const uint8_t level_2_authtag_len[4] = {0, IEEE8021254_AUTH_TAG_LENGTH_32,
+					IEEE8021254_AUTH_TAG_LENGTH_64,
+					IEEE8021254_AUTH_TAG_LENGTH_128};
 #endif
 
 struct ieee802154_fcf_seq *ieee802154_validate_fc_seq(uint8_t *buf, uint8_t **p_buf,
@@ -445,8 +445,8 @@ bool ieee802154_validate_frame(uint8_t *buf, uint8_t length, struct ieee802154_m
 	return validate_payload_and_mfr(mpdu, buf, p_buf, length);
 }
 
-uint8_t ieee802154_compute_header_and_authtag_size(struct net_if *iface, struct net_linkaddr *dst,
-						   struct net_linkaddr *src)
+uint8_t ieee802154_compute_header_and_authtag_len(struct net_if *iface, struct net_linkaddr *dst,
+						  struct net_linkaddr *src)
 {
 	bool broadcast = !dst->addr;
 	uint8_t hdr_len = sizeof(struct ieee802154_fcf_seq);
@@ -504,9 +504,9 @@ uint8_t ieee802154_compute_header_and_authtag_size(struct net_if *iface, struct 
 	 * which will fill the tag space in the end.
 	 */
 	if (sec_ctx->level < IEEE802154_SECURITY_LEVEL_ENC) {
-		hdr_len += level_2_tag_size[sec_ctx->level];
+		hdr_len += level_2_authtag_len[sec_ctx->level];
 	} else {
-		hdr_len += level_2_tag_size[sec_ctx->level - 4U];
+		hdr_len += level_2_authtag_len[sec_ctx->level - 4U];
 	}
 
 release:
@@ -740,19 +740,19 @@ bool ieee802154_create_data_frame(struct ieee802154_context *ctx, struct net_lin
 		level -= 4U;
 	}
 
-	uint8_t tag_size = level_2_tag_size[level];
+	uint8_t authtag_len = level_2_authtag_len[level];
 
-	if (tag_size > 0) {
+	if (authtag_len > 0) {
 		/* If tagged, let's create tailroom for the tag by moving the payload left,
-		 *see comment in ieee802154_compute_header_and_authtag_size().
+		 *see comment in ieee802154_compute_header_and_authtag_len().
 		 */
 		memmove(p_buf, buf_start + hdr_len, payload_len);
-		hdr_len -= tag_size;
+		hdr_len -= authtag_len;
 	}
 
 	/* Let's encrypt/auth only in the end, if needed */
 	if (!ieee802154_encrypt_auth(&ctx->sec_ctx, buf_start, hdr_len,
-				     payload_len, tag_size, ctx->ext_addr)) {
+				     payload_len, authtag_len, ctx->ext_addr)) {
 		goto out;
 	};
 
@@ -972,9 +972,9 @@ bool ieee802154_decipher_data_frame(struct net_if *iface, struct net_pkt *pkt,
 		level -= 4U;
 	}
 
-	uint8_t tag_size = level_2_tag_size[level];
+	uint8_t authtag_len = level_2_authtag_len[level];
 	uint8_t hdr_len = (uint8_t *)mpdu->payload - net_pkt_data(pkt);
-	uint8_t payload_len = net_pkt_get_len(pkt) - hdr_len - tag_size;
+	uint8_t payload_len = net_pkt_get_len(pkt) - hdr_len - authtag_len;
 	uint8_t ext_addr_le[IEEE802154_EXT_ADDR_LENGTH];
 
 	/* TODO: Handle src short address.
@@ -988,14 +988,14 @@ bool ieee802154_decipher_data_frame(struct net_if *iface, struct net_pkt *pkt,
 
 	sys_memcpy_swap(ext_addr_le, net_pkt_lladdr_src(pkt)->addr, net_pkt_lladdr_src(pkt)->len);
 	if (!ieee802154_decrypt_auth(&ctx->sec_ctx, net_pkt_data(pkt), hdr_len, payload_len,
-				     tag_size, ext_addr_le,
+				     authtag_len, ext_addr_le,
 				     sys_le32_to_cpu(mpdu->mhr.aux_sec->frame_counter))) {
 		NET_ERR("Could not decipher the frame");
 		goto out;
 	}
 
 	/* We remove tag size from buf's length, it is now useless. */
-	pkt->buffer->len -= tag_size;
+	pkt->buffer->len -= authtag_len;
 
 	ret = true;
 
