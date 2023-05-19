@@ -177,6 +177,44 @@ static int tear_down_short_addr(struct net_if *iface, struct ieee802154_context 
 	return ret;
 }
 
+static bool set_up_security(uint8_t security_level)
+{
+	struct ieee802154_security_params params;
+
+	if (security_level == IEEE802154_SECURITY_LEVEL_NONE) {
+		return true;
+	}
+
+	params = (struct ieee802154_security_params){
+		.key = {0xc0, 0xc1, 0xc2, 0xc3, 0xc4, 0xc5, 0xc6, 0xc7, 0xc8, 0xc9, 0xca, 0xcb,
+			0xcc, 0xcd, 0xce, 0xcf},
+		.key_len = 16U,
+		.key_mode = IEEE802154_KEY_ID_MODE_IMPLICIT,
+		.level = security_level,
+	};
+
+	if (net_mgmt(NET_REQUEST_IEEE802154_SET_SECURITY_SETTINGS, iface, &params,
+		     sizeof(struct ieee802154_security_params))) {
+		NET_ERR("*** Failed to set security settings\n");
+		return false;
+	}
+
+	return true;
+}
+
+static void tear_down_security(void)
+{
+	struct ieee802154_context *ctx = net_if_l2_data(iface);
+
+	if (ctx->sec_ctx.level == IEEE802154_SECURITY_LEVEL_NONE) {
+		return;
+	}
+
+	cipher_free_session(ctx->sec_ctx.enc.device, &ctx->sec_ctx.enc);
+	cipher_free_session(ctx->sec_ctx.dec.device, &ctx->sec_ctx.dec);
+	ctx->sec_ctx.level = IEEE802154_SECURITY_LEVEL_NONE;
+}
+
 static bool test_packet_parsing(struct ieee802154_pkt_test *t)
 {
 	struct ieee802154_mpdu mpdu;
@@ -257,17 +295,8 @@ static bool test_dgram_packet_sending(struct sockaddr_ll *pkt_sll, uint32_t secu
 	uint8_t payload[4] = {0x01, 0x02, 0x03, 0x04};
 	struct ieee802154_mpdu mpdu;
 	bool result = false;
-	struct ieee802154_security_params params = {
-		.key = {0xc0, 0xc1, 0xc2, 0xc3, 0xc4, 0xc5, 0xc6, 0xc7, 0xc8, 0xc9, 0xca, 0xcb,
-			0xcc, 0xcd, 0xce, 0xcf},
-		.key_len = 16U,
-		.key_mode = IEEE802154_KEY_ID_MODE_IMPLICIT,
-		.level = security_level,
-	};
 
-	if (net_mgmt(NET_REQUEST_IEEE802154_SET_SECURITY_SETTINGS, iface, &params,
-		     sizeof(struct ieee802154_security_params))) {
-		NET_ERR("*** Failed to set security settings\n");
+	if (!set_up_security(security_level)) {
 		goto out;
 	}
 
@@ -275,7 +304,7 @@ static bool test_dgram_packet_sending(struct sockaddr_ll *pkt_sll, uint32_t secu
 	fd = socket(AF_PACKET, SOCK_DGRAM, ETH_P_IEEE802154);
 	if (fd < 0) {
 		NET_ERR("*** Failed to create DGRAM socket : %d\n", errno);
-		goto release_sec_ctx;
+		goto reset_security;
 	}
 
 	/* In case we have a short destination address
@@ -343,18 +372,15 @@ release_frag:
 release_fd:
 	tear_down_short_addr(iface, ctx);
 	close(fd);
-release_sec_ctx:
-	cipher_free_session(ctx->sec_ctx.enc.device, &ctx->sec_ctx.enc);
-	cipher_free_session(ctx->sec_ctx.dec.device, &ctx->sec_ctx.dec);
+reset_security:
+	tear_down_security();
 out:
-	ctx->sec_ctx.level = IEEE802154_SECURITY_LEVEL_NONE;
 	return result;
 }
 
 static bool test_raw_packet_sending(void)
 {
 	/* tests should be run sequentially, so no need for context locking */
-	struct ieee802154_context *ctx = net_if_l2_data(iface);
 	struct sockaddr_ll socket_sll = {0};
 	struct ieee802154_mpdu mpdu;
 	struct msghdr msg = {0};
@@ -431,7 +457,6 @@ release_frag:
 release_fd:
 	close(fd);
 out:
-	ctx->sec_ctx.level = IEEE802154_SECURITY_LEVEL_NONE;
 	return result;
 }
 
