@@ -3,17 +3,14 @@
 # Copyright (c) 2020 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-# BT_CTLR_DF_SUPPORT is a wrapper for all DF features.
-# If only certain DF features are supported, those should be selected
-# individually.
+# BT_CTLR_DF_SUPPORT is a wrapper for all DF features. It is referenced by Host
+# to enable its DF related Kconfigs when build together with the Controller.
+# It is required to enable it when Controller supports any DF related feature
+# but particular features are selected individually.
 config BT_CTLR_DF_SUPPORT
 	bool
-	depends on BT_LL_SW_SPLIT && !BT_CTLR_TIFS_HW
-	select BT_CTLR_DF_CTE_TX_SUPPORT
-	select BT_CTLR_DF_ANT_SWITCH_2US_SUPPORT
-	select BT_CTLR_DF_ANT_SWITCH_1US_SUPPORT
-	select BT_CTLR_DF_CTE_RX_SUPPORT
-	select BT_CTLR_DF_CTE_RX_SAMPLE_1US_SUPPORT
+
+if BT_CTLR_DF_SUPPORT
 
 config BT_CTLR_DF_CTE_TX_SUPPORT
 	bool
@@ -32,6 +29,8 @@ config BT_CTLR_DF_ANT_SWITCH_1US_SUPPORT
 
 config BT_CTLR_CTEINLINE_SUPPORT
 	bool
+
+endif # BT_CTLR_DF_SUPPORT
 
 menuconfig BT_CTLR_DF
 	bool "LE Direction Finding"
