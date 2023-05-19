@@ -376,6 +376,16 @@
 		};
 	};
 
+	usbfs: usbfs@84000 {
+		compatible = "nxp,mcux-usbd";
+		reg = <0x84000 0x1000>;
+		interrupts = <28 0>;
+		num-bidir-endpoints = <5>;
+		maximum-speed = "full-speed";
+		usb-controller-index = "LpcIp3511Fs0";
+		status = "disabled";
+	};
+
 	sc_timer: pwm@85000 {
 		compatible = "nxp,sctimer-pwm";
 		reg = <0x85000 0x1000>;
