@@ -30,6 +30,7 @@ struct ieee802154_pkt_test {
 	struct in6_addr src;
 	struct in6_addr dst;
 	uint8_t *pkt;
+	uint8_t sequence;
 	uint8_t length;
 	struct {
 		struct ieee802154_fcf_seq *fc_seq;
@@ -69,6 +70,7 @@ struct ieee802154_pkt_test test_ns_pkt = {
 	.dst =  { { { 0xff, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 		      0x00, 0x00, 0x00, 0x01, 0xff, 0x00, 0x00, 0x01 } } },
 	.pkt = ns_pkt,
+	.sequence = 69U,
 	.length = sizeof(ns_pkt),
 	.mhr_check = {
 		.fc_seq = (struct ieee802154_fcf_seq *)ns_pkt,
@@ -83,6 +85,7 @@ uint8_t ack_pkt[] = {
 
 struct ieee802154_pkt_test test_ack_pkt = {
 	.name = "ACK frame",
+	.sequence = 22U,
 	.pkt = ack_pkt,
 	.length = sizeof(ack_pkt),
 	.mhr_check = {
@@ -104,6 +107,7 @@ uint8_t beacon_pkt[] = {
 
 struct ieee802154_pkt_test test_beacon_pkt = {
 	.name = "Empty beacon frame",
+	.sequence = 17U,
 	.pkt = beacon_pkt,
 	.length = sizeof(beacon_pkt),
 	.mhr_check = {
@@ -127,6 +131,7 @@ uint8_t sec_data_pkt[] = {
 
 struct ieee802154_pkt_test test_sec_data_pkt = {
 	.name = "Secured data frame",
+	.sequence = 69U,
 	.pkt = sec_data_pkt,
 	.length = sizeof(sec_data_pkt),
 	.mhr_check = {
@@ -296,7 +301,7 @@ release_fd:
 
 static bool test_packet_parsing(struct ieee802154_pkt_test *t)
 {
-	struct ieee802154_mpdu mpdu;
+	struct ieee802154_mpdu mpdu = {0};
 
 	NET_INFO("- Parsing packet 0x%p of frame %s\n", t->pkt, t->name);
 
@@ -317,6 +322,11 @@ static bool test_packet_parsing(struct ieee802154_pkt_test *t)
 		return false;
 	}
 
+	if (mpdu.mhr.fs->sequence != t->sequence) {
+		NET_ERR("*** Invalid sequence number\n", t->name);
+		return false;
+	}
+
 	return true;
 }
 
@@ -324,19 +334,23 @@ static bool test_ns_sending(struct ieee802154_pkt_test *t, bool with_short_addr)
 {
 	struct ieee802154_context *ctx = net_if_l2_data(iface);
 	struct ieee802154_mpdu mpdu;
+	bool result = false;
 
 	NET_INFO("- Sending NS packet\n");
 
+	/* ensure reproducible results */
+	ctx->sequence = t->sequence;
+
 	if (with_short_addr) {
 		if (set_up_short_addr(iface, ctx)) {
-			return false;
+			goto out;
 		}
 	}
 
 	if (net_ipv6_send_ns(iface, NULL, &t->src, &t->dst, &t->dst, false)) {
 		NET_ERR("*** Could not create IPv6 NS packet\n");
 		tear_down_short_addr(iface, ctx);
-		return false;
+		goto out;
 	}
 
 	tear_down_short_addr(iface, ctx);
@@ -346,23 +360,32 @@ static bool test_ns_sending(struct ieee802154_pkt_test *t, bool with_short_addr)
 
 	if (!current_pkt->frags) {
 		NET_ERR("*** Could not send IPv6 NS packet\n");
-		return false;
+		goto out;
 	}
 
 	pkt_hexdump(net_pkt_data(current_pkt), net_pkt_get_len(current_pkt));
 
+	if (!with_short_addr) {
+		if (net_pkt_get_len(current_pkt) != t->length ||
+		    memcmp(net_pkt_data(current_pkt), t->pkt, t->length)) {
+			NET_ERR("*** Sent packet deviates from expected packet\n");
+			goto release_frag;
+		}
+	}
+
 	if (!ieee802154_validate_frame(net_pkt_data(current_pkt),
 				       net_pkt_get_len(current_pkt), &mpdu)) {
 		NET_ERR("*** Sent packet is not valid\n");
-		net_pkt_frag_unref(current_pkt->frags);
-
-		return false;
+		goto release_frag;
 	}
 
+	result = true;
+
+release_frag:
 	net_pkt_frag_unref(current_pkt->frags);
 	current_pkt->frags = NULL;
-
-	return true;
+out:
+	return result;
 }
 
 static bool test_dgram_packet_sending(void *dst_sll, uint8_t dst_sll_halen, uint32_t security_level)
@@ -910,6 +933,11 @@ static bool test_recv_and_send_ack_reply(struct ieee802154_pkt_test *t)
 	if (memcmp(mpdu.mhr.fs, t->mhr_check.fc_seq,
 		   sizeof(struct ieee802154_fcf_seq))) {
 		NET_ERR("*** ACK Reply does not compare\n");
+		goto release_tx_frag;
+	}
+
+	if (mpdu.mhr.fs->sequence != t->sequence) {
+		NET_ERR("*** Sequence number invalid\n");
 		goto release_tx_frag;
 	}
 
