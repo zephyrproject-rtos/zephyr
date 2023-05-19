@@ -989,10 +989,16 @@ out:
 
 static bool test_packet_cloning_with_cb(void)
 {
-	struct net_pkt *pkt = net_pkt_rx_alloc_with_buffer(iface, 64, AF_UNSPEC, 0, K_NO_WAIT);
+	struct net_pkt *pkt;
 	struct net_pkt *cloned_pkt;
 
 	NET_INFO("- Cloning packet\n");
+
+	pkt = net_pkt_rx_alloc_with_buffer(iface, 64, AF_UNSPEC, 0, K_NO_WAIT);
+	if (!pkt) {
+		NET_ERR("*** No buffer to allocate\n");
+		return false;
+	}
 
 	/* Set some arbitrary flags and data */
 	net_pkt_set_ieee802154_ack_fpb(pkt, true);
@@ -1008,6 +1014,9 @@ static bool test_packet_cloning_with_cb(void)
 	zassert_false(net_pkt_ieee802154_mac_hdr_rdy(cloned_pkt));
 	zassert_equal(net_pkt_ieee802154_lqi(cloned_pkt), 50U);
 	zassert_equal(net_pkt_ieee802154_rssi(cloned_pkt), 0U);
+
+	net_pkt_unref(pkt);
+	net_pkt_unref(cloned_pkt);
 
 	return true;
 }
@@ -1027,13 +1036,13 @@ static bool initialize_test_environment(void)
 	dev = device_get_binding("fake_ieee802154");
 	if (!dev) {
 		NET_ERR("*** Could not get fake device\n");
-		return false;
+		goto release_pkt;
 	}
 
 	iface = net_if_lookup_by_dev(dev);
 	if (!iface) {
 		NET_ERR("*** Could not get fake iface\n");
-		return false;
+		goto release_pkt;
 	}
 
 	NET_INFO("Fake IEEE 802.15.4 network interface ready\n");
@@ -1041,9 +1050,13 @@ static bool initialize_test_environment(void)
 	ieee_addr_hexdump(net_if_get_link_addr(iface)->addr, 8);
 
 	return true;
+
+release_pkt:
+	net_pkt_unref(current_pkt);
+	return false;
 }
 
-static void *test_init(void)
+static void *test_setup(void)
 {
 	bool ret;
 
@@ -1052,6 +1065,13 @@ static void *test_init(void)
 	zassert_true(ret, "Test initialization");
 
 	return NULL;
+}
+
+static void test_teardown(void *test_fixture)
+{
+	ARG_UNUSED(test_fixture);
+
+	net_pkt_unref(current_pkt);
 }
 
 ZTEST(ieee802154_l2, test_parsing_ns_pkt)
@@ -1222,4 +1242,4 @@ ZTEST(ieee802154_l2, test_clone_cb)
 	zassert_true(ret, "IEEE 802.15.4 net_pkt control block correctly cloned.");
 }
 
-ZTEST_SUITE(ieee802154_l2, NULL, test_init, NULL, NULL, NULL);
+ZTEST_SUITE(ieee802154_l2, NULL, test_setup, NULL, NULL, test_teardown);
