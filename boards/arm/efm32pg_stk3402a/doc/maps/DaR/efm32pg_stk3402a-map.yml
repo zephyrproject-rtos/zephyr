@@ -3,7 +3,7 @@
   platform: efm32pg_stk3402a
   product: J-Link OB
   runner: jlink
-  serial: /dev/ttyACM1
+  serial: /dev/ttyACM0
   baud: 115200
   fixtures:
     - gpio_loopback

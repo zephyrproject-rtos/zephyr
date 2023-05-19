@@ -19,7 +19,6 @@ tests:
     tags:
       - test_framework
       - userspace
-      - pearl_gecko
     extra_configs:
       - CONFIG_TEST_USERSPACE=y
     integration_platforms:
@@ -33,7 +32,8 @@ tests:
       - native_posix
   testing.ztest.base.verbose_2:
     extra_args: CONF_FILE=prj_verbose_2.conf
-    tags: test_framework
+    tags:
+      - test_framework
+      - pearl_gecko
     integration_platforms:
       - native_posix
-      - pearl_gecko

@@ -1,9 +1,10 @@
 tests:
   testing.ztest.regular_output:
-    tags: test_framework
+    tags:
+      - test_framework
+      - pearl_gecko
     integration_platforms:
       - native_posix
-      - pearl_gecko
   testing.ztest.customized_output:
     extra_args: CONF_FILE=prj_customized_output.conf
     tags: test_framework
