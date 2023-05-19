@@ -1,0 +1,10 @@
+# Copyright 2023 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+config TCS3400
+	bool "TCS3400 Sensor"
+	default y
+	depends on DT_HAS_AMS_TCS3400_ENABLED
+	select I2C
+	help
+	  Enable driver for TCS3400 sensors.

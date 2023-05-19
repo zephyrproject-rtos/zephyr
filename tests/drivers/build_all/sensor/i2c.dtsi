@@ -739,3 +739,9 @@ test_i2c_mcp9600: mcp9600@71 {
 	compatible = "microchip,mcp9600";
 	reg = <0x71>;
 };
+
+test_i2c_tcs3400: tcs3400@72 {
+	compatible = "ams,tcs3400";
+	reg = <0x72>;
+	int-gpios = <&test_gpio 0 0>;
+};
