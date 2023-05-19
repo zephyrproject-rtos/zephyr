@@ -107,6 +107,22 @@ struct ieee802154_pkt_test test_sec_data_pkt = {
 		.src_addr = (struct ieee802154_address_field *)(sec_data_pkt + 7),
 	}};
 
+/* Construct raw packet payload, length and FCS gets added in the radio driver,
+ * see https://github.com/linux-wpan/wpan-tools/blob/master/examples/af_packet_tx.c
+ */
+uint8_t raw_payload[] = {
+	0x01, 0xc8, /* FCF */
+	0x8b,	    /* Sequence number */
+	0xff, 0xff, /* Destination PAN ID 0xffff */
+	0x02, 0x00, /* Destination short address 0x0002 */
+	0x23, 0x00, /* Source PAN ID 0x0023 */
+	0x60, 0xe2, 0x16, 0x21,
+	0x1c, 0x4a, 0xc2, 0xae, /* Source extended address ae:c2:4a:1c:21:16:e2:60 */
+	0xAA, 0xBB, 0xCC,	/* MAC Payload */
+};
+#define RAW_MAC_PAYLOAD_START_INDEX 17
+#define RAW_MAC_PAYLOAD_LENGTH 3
+
 struct net_pkt *current_pkt;
 struct net_if *iface;
 K_SEM_DEFINE(driver_lock, 0, UINT_MAX);
@@ -212,6 +228,42 @@ static void tear_down_security(void)
 		     sizeof(struct ieee802154_security_params))) {
 		NET_ERR("*** Failed to tear down security settings\n");
 	}
+}
+
+static int set_up_recv_socket(enum net_sock_type socket_type)
+{
+	struct sockaddr_ll socket_sll = {
+		.sll_ifindex = net_if_get_by_iface(iface),
+		.sll_family = AF_PACKET,
+		.sll_protocol = ETH_P_IEEE802154,
+	};
+	struct timeval timeo_optval = {
+		.tv_sec = 1,
+		.tv_usec = 0,
+	};
+	int fd;
+
+	fd = socket(AF_PACKET, socket_type, ETH_P_IEEE802154);
+	if (fd < 0) {
+		NET_ERR("*** Failed to create recv socket : %d\n", errno);
+		return fd;
+	}
+
+	if (bind(fd, (const struct sockaddr *)&socket_sll, sizeof(struct sockaddr_ll))) {
+		NET_ERR("*** Failed to bind packet socket : %d\n", errno);
+		goto release_fd;
+	}
+
+	if (setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, &timeo_optval, sizeof(timeo_optval))) {
+		NET_ERR("*** Failed to set reception timeout on packet socket : %d\n", errno);
+		goto release_fd;
+	}
+
+	return fd;
+
+release_fd:
+	close(fd);
+	return -EFAULT;
 }
 
 static bool test_packet_parsing(struct ieee802154_pkt_test *t)
@@ -383,22 +435,13 @@ static bool test_dgram_packet_reception(void *src_ll_addr, uint8_t src_ll_addr_l
 {
 	struct ieee802154_context *ctx = net_if_l2_data(iface);
 	uint8_t our_ext_addr[IEEE802154_EXT_ADDR_LENGTH]; /* big endian */
-	uint16_t our_short_addr = ctx->short_addr;	  /* CPU byte order */
 	uint8_t payload[] = {0x01, 0x02, 0x03, 0x04};
-	uint8_t ll_hdr_len = 0;
+	uint16_t our_short_addr = ctx->short_addr; /* CPU byte order */
 	struct sockaddr_ll recv_src_sll = {0};
-	struct sockaddr_ll socket_sll = {
-		.sll_ifindex = net_if_get_by_iface(iface),
-		.sll_family = AF_PACKET,
-		.sll_protocol = ETH_P_IEEE802154,
-	};
-	struct timeval timeo_optval = {
-		.tv_sec = 1,
-		.tv_usec = 0,
-	};
 	uint8_t received_payload[4] = {0};
 	socklen_t recv_src_sll_len;
 	struct net_buf *frame_buf;
+	uint8_t ll_hdr_len = 0;
 	struct net_pkt *pkt;
 	bool frame_result;
 	int received_len;
@@ -415,20 +458,9 @@ static bool test_dgram_packet_reception(void *src_ll_addr, uint8_t src_ll_addr_l
 
 	NET_INFO("- Receiving DGRAM packet via AF_PACKET socket\n");
 
-	fd = socket(AF_PACKET, SOCK_DGRAM, ETH_P_IEEE802154);
+	fd = set_up_recv_socket(SOCK_DGRAM);
 	if (fd < 0) {
-		NET_ERR("*** Failed to create DGRAM socket : %d\n", errno);
 		goto reset_security;
-	}
-
-	if (bind(fd, (const struct sockaddr *)&socket_sll, sizeof(struct sockaddr_ll))) {
-		NET_ERR("*** Failed to bind packet socket : %d\n", errno);
-		goto release_fd;
-	}
-
-	if (setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, &timeo_optval, sizeof(timeo_optval))) {
-		NET_ERR("*** Failed to set reception timeout on packet socket : %d\n", errno);
-		goto release_fd;
 	}
 
 	pkt = net_pkt_rx_alloc(K_FOREVER);
@@ -545,19 +577,6 @@ static bool test_raw_packet_sending(void)
 	struct ieee802154_mpdu mpdu;
 	struct msghdr msg = {0};
 	struct iovec io_vector;
-	/* Construct raw packet payload, length and FCS gets added in the radio driver,
-	 * see https://github.com/linux-wpan/wpan-tools/blob/master/examples/af_packet_tx.c
-	 */
-	uint8_t payload[20] = {
-		0x01, 0xc8, /* FCF */
-		0x8b,	    /* Sequence number */
-		0xff, 0xff, /* Destination PAN ID 0xffff */
-		0x02, 0x00, /* Destination short address 0x0002 */
-		0x23, 0x00, /* Source PAN ID 0x0023 */
-		0x60, 0xe2, 0x16, 0x21,
-		0x1c, 0x4a, 0xc2, 0xae, /* Source extended address ae:c2:4a:1c:21:16:e2:60 */
-		0xAA, 0xBB, 0xCC,	/* Payload */
-	};
 	bool result = false;
 	int fd;
 
@@ -578,12 +597,12 @@ static bool test_raw_packet_sending(void)
 		goto release_fd;
 	}
 
-	io_vector.iov_base = payload;
-	io_vector.iov_len = sizeof(payload);
+	io_vector.iov_base = raw_payload;
+	io_vector.iov_len = sizeof(raw_payload);
 	msg.msg_iov = &io_vector;
 	msg.msg_iovlen = 1;
 
-	if (sendmsg(fd, &msg, 0) != sizeof(payload)) {
+	if (sendmsg(fd, &msg, 0) != sizeof(raw_payload)) {
 		NET_ERR("*** Failed to send, errno %d\n", errno);
 		goto release_fd;
 	}
@@ -604,7 +623,8 @@ static bool test_raw_packet_sending(void)
 		goto release_frag;
 	}
 
-	if (memcmp(mpdu.payload, &payload[17], 3) != 0) {
+	if (memcmp(mpdu.payload, &raw_payload[RAW_MAC_PAYLOAD_START_INDEX],
+		   RAW_MAC_PAYLOAD_LENGTH) != 0) {
 		NET_ERR("*** Payload of sent packet is incorrect\n");
 		goto release_frag;
 	}
@@ -614,6 +634,87 @@ static bool test_raw_packet_sending(void)
 release_frag:
 	net_pkt_frag_unref(current_pkt->frags);
 	current_pkt->frags = NULL;
+release_fd:
+	close(fd);
+out:
+	return result;
+}
+
+static bool test_raw_packet_reception(void)
+{
+	uint8_t received_payload[sizeof(raw_payload)] = {0};
+	struct net_buf *frame_buf;
+	struct net_pkt *pkt;
+	int received_len;
+	bool result;
+	int fd;
+
+	result = false;
+
+	NET_INFO("- Receiving RAW packet via AF_PACKET socket\n");
+
+	fd = set_up_recv_socket(SOCK_RAW);
+	if (fd < 0) {
+		goto out;
+	}
+
+	pkt = net_pkt_rx_alloc(K_FOREVER);
+	if (!pkt) {
+		NET_ERR("*** Failed to allocate net pkt.\n");
+		goto release_fd;
+	}
+
+	frame_buf = net_pkt_get_frag(pkt, sizeof(raw_payload), K_FOREVER);
+	if (!frame_buf) {
+		NET_ERR("*** Failed to allocate net pkt frag.\n");
+		goto release_pkt;
+	}
+
+	net_buf_add_mem(frame_buf, raw_payload, sizeof(raw_payload));
+	net_pkt_frag_add(pkt, frame_buf);
+
+	if (net_recv_data(iface, pkt)) {
+		NET_ERR("*** Error while processing packet.\n");
+		goto release_pkt;
+	}
+
+	if (current_pkt->frags) {
+		NET_ERR("*** Generated unexpected packet when processing packet.\n");
+		net_pkt_frag_unref(current_pkt->frags);
+		current_pkt->frags = NULL;
+		goto release_pkt;
+	}
+
+	/* TODO: For POSIX compliance raw packets should be parsed and a LL header be
+	 *       extracted. We'll only be able to do so when Zephyr provides hooks to
+	 *       call out to L2 from raw socket contexts.
+	 */
+	received_len = recv(fd, received_payload, sizeof(received_payload), 0);
+	if (received_len < 0) {
+		NET_ERR("*** Failed to receive packet, errno %d\n", errno);
+		goto release_pkt;
+	}
+
+	pkt_hexdump(received_payload, received_len);
+
+	/* TODO: The received raw packet should actually contain an FCS
+	 *       for full compatibility with Linux's raw socket implementation.
+	 *       This will only be possible once we
+	 *         1) let HW drivers include FCS if they have it and
+	 *         2) provide a hook for mangling raw packets that allows us
+	 *            to include a synthetic FCS if the HW driver does not
+	 *            provide one.
+	 */
+	if (received_len != sizeof(raw_payload) ||
+	    memcmp(received_payload, raw_payload, sizeof(raw_payload))) {
+		NET_ERR("*** Payload of received packet is incorrect\n");
+		goto release_pkt;
+	}
+
+	result = true;
+
+release_pkt:
+	net_pkt_unref(pkt);
 release_fd:
 	close(fd);
 out:
@@ -847,7 +948,6 @@ static void *test_init(void)
 	return NULL;
 }
 
-
 ZTEST(ieee802154_l2, test_parsing_ns_pkt)
 {
 	bool ret;
@@ -1002,6 +1102,15 @@ ZTEST(ieee802154_l2, test_sending_raw_pkt)
 	ret = test_raw_packet_sending();
 
 	zassert_true(ret, "RAW packet sent");
+}
+
+ZTEST(ieee802154_l2, test_receiving_raw_pkt)
+{
+	bool ret;
+
+	ret = test_raw_packet_reception();
+
+	zassert_true(ret, "RAW packet received");
 }
 
 ZTEST(ieee802154_l2, test_clone_cb)
