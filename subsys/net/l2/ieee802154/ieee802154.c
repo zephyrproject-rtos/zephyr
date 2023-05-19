@@ -343,7 +343,7 @@ static int ieee802154_send(struct net_if *iface, struct net_pkt *pkt)
 	}
 
 	if (!send_raw) {
-		ll_hdr_len = ieee802154_compute_header_and_authtag_size(
+		ll_hdr_len = ieee802154_compute_header_and_authtag_len(
 			iface, net_pkt_lladdr_dst(pkt), net_pkt_lladdr_src(pkt));
 
 #ifdef CONFIG_NET_6LO
