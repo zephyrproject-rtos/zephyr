@@ -3034,7 +3034,7 @@ West:
     - de-nordic
     - nordicjm
   files:
-    - modules/Kconfig.mcuboot_bootutil
+    - modules/Kconfig.mcuboot
     - tests/boot/test_mcuboot/
   labels:
     - manifest-mcuboot
