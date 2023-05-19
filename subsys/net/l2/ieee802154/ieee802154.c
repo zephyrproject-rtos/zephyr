@@ -154,6 +154,12 @@ static bool ieeee802154_check_dst_addr(struct net_if *iface, struct ieee802154_m
 	 */
 
 	if (mhr->fs->fc.dst_addr_mode == IEEE802154_ADDR_MODE_NONE) {
+		if (mhr->fs->fc.frame_version < IEEE802154_VERSION_802154 &&
+		    mhr->fs->fc.frame_type == IEEE802154_FRAME_TYPE_BEACON) {
+			/* See IEEE 802.15.4-2015, section 7.3.1.1. */
+			return true;
+		}
+
 		/* TODO: apply d.4 and d.5 when PAN coordinator is implemented */
 		/* also, macImplicitBroadcast is not implemented */
 		return false;
