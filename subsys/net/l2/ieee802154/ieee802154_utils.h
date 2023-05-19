@@ -245,6 +245,25 @@ static inline void ieee802154_radio_remove_src_short_addr(struct net_if *iface, 
 	}
 }
 
+static inline void ieee802154_radio_remove_pan_id(struct net_if *iface, uint16_t pan_id)
+{
+	const struct ieee802154_radio_api *radio =
+		net_if_get_device(iface)->api;
+
+	if (radio && (radio->get_capabilities(net_if_get_device(iface)) &
+		      IEEE802154_HW_FILTER)) {
+		struct ieee802154_filter filter;
+
+		filter.pan_id = pan_id;
+
+		if (radio->filter(net_if_get_device(iface), false,
+				  IEEE802154_FILTER_TYPE_PAN_ID,
+				  &filter) != 0) {
+			NET_WARN("Could not remove PAN ID filter");
+		}
+	}
+}
+
 /**
  * @brief Calculates the PHY's symbol period in microseconds.
  *

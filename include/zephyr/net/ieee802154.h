@@ -50,6 +50,7 @@ extern "C" {
 
 /* See IEEE 802.15.4-2020, section 7.3.5 */
 #define IEEE802154_SHORT_ADDRESS_NOT_ASSOCIATED IEEE802154_BROADCAST_ADDRESS
+#define IEEE802154_PAN_ID_NOT_ASSOCIATED	IEEE802154_BROADCAST_PAN_ID
 
 /* MAC PIB attribute aUnitBackoffPeriod, see section 8.4.2, table 8-93, in symbol periods, valid for
  * all PHYs except SUN PHY in the 920 MHz band.

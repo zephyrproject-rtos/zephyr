@@ -162,6 +162,8 @@ uint8_t raw_payload[] = {
 #define RAW_MAC_PAYLOAD_START_INDEX 17
 #define RAW_MAC_PAYLOAD_LENGTH 3
 
+#define MOCK_PAN_ID 0xabcd
+
 extern struct net_pkt *current_pkt;
 extern struct k_sem driver_lock;
 
@@ -201,36 +203,90 @@ static void ieee_addr_hexdump(uint8_t *addr, uint8_t length)
 	printk("%02x\n", *addr);
 }
 
-static int set_up_short_addr(struct net_if *iface, struct ieee802154_context *ctx)
+static int disassociate(struct net_if *iface, struct ieee802154_context *ctx)
 {
-	uint16_t short_addr = 0x5678;
+	uint16_t short_addr_not_associated = IEEE802154_SHORT_ADDRESS_NOT_ASSOCIATED;
+	int ret;
 
-	int ret = net_mgmt(NET_REQUEST_IEEE802154_SET_SHORT_ADDR, iface, &short_addr,
-			   sizeof(short_addr));
-	if (ret) {
-		NET_ERR("*** Failed to set short address\n");
+	if (ctx->short_addr == IEEE802154_SHORT_ADDRESS_NOT_ASSOCIATED) {
+		return 0;
 	}
 
-	return ret;
+	ret = net_mgmt(NET_REQUEST_IEEE802154_SET_SHORT_ADDR, iface, &short_addr_not_associated,
+		       sizeof(short_addr_not_associated));
+	if (ret) {
+		NET_ERR("*** Failed to %s.\n", __func__);
+		return ret;
+	}
+
+	return 0;
+}
+
+static int associate(struct net_if *iface, struct ieee802154_context *ctx, uint16_t short_addr)
+{
+	uint16_t mock_pan_id = MOCK_PAN_ID;
+	int ret;
+
+	if (ctx->short_addr == short_addr) {
+		return -EALREADY;
+	}
+
+	ret = net_mgmt(NET_REQUEST_IEEE802154_SET_PAN_ID, iface, &mock_pan_id,
+		       sizeof(mock_pan_id));
+	if (ret) {
+		NET_ERR("*** Failed to set PAN ID in %s.\n", __func__);
+		return ret;
+	}
+
+	ret = net_mgmt(NET_REQUEST_IEEE802154_SET_SHORT_ADDR, iface, &short_addr,
+		       sizeof(short_addr));
+	if (ret) {
+		NET_ERR("*** Failed to set short addr in %s.\n", __func__);
+		return ret;
+	}
+
+	return 0;
+}
+
+static int set_up_short_addr(struct net_if *iface, struct ieee802154_context *ctx)
+{
+	const uint16_t mock_short_addr = 0x5678;
+	int ret;
+
+	ret = disassociate(iface, ctx);
+	if (ret) {
+		return ret;
+	}
+
+	ret = associate(iface, ctx, mock_short_addr);
+	if (ret) {
+		return ret;
+	}
+
+	return 0;
 }
 
 static int tear_down_short_addr(struct net_if *iface, struct ieee802154_context *ctx)
 {
-	uint16_t short_addr;
+	uint16_t no_short_addr_assigned = IEEE802154_NO_SHORT_ADDRESS_ASSIGNED;
+	int ret;
 
 	if (ctx->linkaddr.len != IEEE802154_SHORT_ADDR_LENGTH) {
 		/* nothing to do */
 		return 0;
 	}
 
-	short_addr = IEEE802154_SHORT_ADDRESS_NOT_ASSOCIATED;
-	int ret = net_mgmt(NET_REQUEST_IEEE802154_SET_SHORT_ADDR, iface, &short_addr,
-			   sizeof(short_addr));
+	ret = disassociate(iface, ctx);
 	if (ret) {
-		NET_ERR("*** Failed to unset short address\n");
+		return ret;
 	}
 
-	return ret;
+	ret = associate(iface, ctx, no_short_addr_assigned);
+	if (ret) {
+		return ret;
+	}
+
+	return 0;
 }
 
 static struct net_pkt *get_data_pkt_with_ar(void)
@@ -275,10 +331,16 @@ static struct net_pkt *get_data_pkt_with_ar(void)
 #ifdef CONFIG_NET_SOCKETS
 static bool set_up_security(uint8_t security_level)
 {
+	struct ieee802154_context *ctx = net_if_l2_data(iface);
+	uint16_t saved_short_addr = ctx->short_addr;
 	struct ieee802154_security_params params;
 
 	if (security_level == IEEE802154_SECURITY_LEVEL_NONE) {
 		return true;
+	}
+
+	if (disassociate(iface, ctx) != 0) {
+		return false;
 	}
 
 	params = (struct ieee802154_security_params){
@@ -295,19 +357,38 @@ static bool set_up_security(uint8_t security_level)
 		return false;
 	}
 
+	if (saved_short_addr != IEEE802154_SHORT_ADDRESS_NOT_ASSOCIATED &&
+	    associate(iface, ctx, saved_short_addr) != 0) {
+		return false;
+	}
+
 	return true;
 }
 
-static void tear_down_security(void)
+static bool tear_down_security(void)
 {
+	struct ieee802154_context *ctx = net_if_l2_data(iface);
+	uint16_t saved_short_addr = ctx->short_addr;
 	struct ieee802154_security_params params = {
 		.level = IEEE802154_SECURITY_LEVEL_NONE,
 	};
 
+	if (disassociate(iface, ctx) != 0) {
+		return false;
+	}
+
 	if (net_mgmt(NET_REQUEST_IEEE802154_SET_SECURITY_SETTINGS, iface, &params,
 		     sizeof(struct ieee802154_security_params))) {
 		NET_ERR("*** Failed to tear down security settings\n");
+		return false;
 	}
+
+	if (saved_short_addr != IEEE802154_SHORT_ADDRESS_NOT_ASSOCIATED &&
+	    associate(iface, ctx, saved_short_addr) != 0) {
+		return false;
+	}
+
+	return true;
 }
 
 static int set_up_recv_socket(enum net_sock_type socket_type)
@@ -394,10 +475,8 @@ static bool test_ns_sending(struct ieee802154_pkt_test *t, bool with_short_addr)
 	/* ensure reproducible results */
 	ctx->sequence = t->sequence;
 
-	if (with_short_addr) {
-		if (set_up_short_addr(iface, ctx)) {
-			goto out;
-		}
+	if (with_short_addr && set_up_short_addr(iface, ctx)) {
+		goto out;
 	}
 
 	if (net_ipv6_send_ns(iface, NULL, &t->src, &t->dst, &t->dst, false)) {
@@ -633,10 +712,8 @@ static bool test_dgram_packet_sending(void *dst_sll, uint8_t dst_sll_halen, uint
 	bool bind_short_address = pkt_dst_sll.sll_halen == IEEE802154_SHORT_ADDR_LENGTH &&
 				  security_level == IEEE802154_SECURITY_LEVEL_NONE;
 
-	if (bind_short_address) {
-		if (set_up_short_addr(iface, ctx)) {
-			goto release_fd;
-		}
+	if (bind_short_address && set_up_short_addr(iface, ctx)) {
+		goto release_fd;
 	}
 
 	if (bind(fd, (const struct sockaddr *)&socket_sll, sizeof(struct sockaddr_ll))) {
@@ -1133,6 +1210,7 @@ out:
 
 static bool initialize_test_environment(void)
 {
+	uint16_t mock_pan_id = MOCK_PAN_ID;
 	const struct device *dev;
 
 	k_sem_reset(&driver_lock);
@@ -1152,6 +1230,11 @@ static bool initialize_test_environment(void)
 	iface = net_if_lookup_by_dev(dev);
 	if (!iface) {
 		NET_ERR("*** Could not get fake iface\n");
+		goto release_pkt;
+	}
+
+	if (net_mgmt(NET_REQUEST_IEEE802154_SET_PAN_ID, iface, &mock_pan_id, sizeof(mock_pan_id))) {
+		NET_ERR("*** Failed to set PAN ID in %s.\n", __func__);
 		goto release_pkt;
 	}
 
