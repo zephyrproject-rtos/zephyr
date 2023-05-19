@@ -477,7 +477,7 @@ static int ieee802154_send(struct net_if *iface, struct net_pkt *pkt)
 	struct ieee802154_context *ctx = net_if_l2_data(iface);
 	uint8_t ll_hdr_len = 0, authtag_len = 0;
 	static struct net_buf *frame_buf;
-	static struct net_buf *buf;
+	static struct net_buf *pkt_buf;
 	bool send_raw = false;
 	int len;
 #ifdef CONFIG_NET_L2_IEEE802154_FRAGMENT
@@ -537,8 +537,8 @@ static int ieee802154_send(struct net_if *iface, struct net_pkt *pkt)
 	net_capture_pkt(iface, pkt);
 
 	len = 0;
-	buf = pkt->buffer;
-	while (buf) {
+	pkt_buf = pkt->buffer;
+	while (pkt_buf) {
 		int ret;
 
 		/* Reinitializing frame_buf */
@@ -547,18 +547,18 @@ static int ieee802154_send(struct net_if *iface, struct net_pkt *pkt)
 
 #ifdef CONFIG_NET_L2_IEEE802154_FRAGMENT
 		if (requires_fragmentation) {
-			buf = ieee802154_6lo_fragment(&f_ctx, frame_buf, true);
+			pkt_buf = ieee802154_6lo_fragment(&f_ctx, frame_buf, true);
 		} else {
-			net_buf_add_mem(frame_buf, buf->data, buf->len);
-			buf = buf->frags;
+			net_buf_add_mem(frame_buf, pkt_buf->data, pkt_buf->len);
+			pkt_buf = pkt_buf->frags;
 		}
 #else
-		if (ll_hdr_len + buf->len + authtag_len > IEEE802154_MTU) {
-			NET_ERR("Frame too long: %d", buf->len);
+		if (ll_hdr_len + pkt_buf->len + authtag_len > IEEE802154_MTU) {
+			NET_ERR("Frame too long: %d", pkt_buf->len);
 			return -EINVAL;
 		}
-		net_buf_add_mem(frame_buf, buf->data, buf->len);
-		buf = buf->frags;
+		net_buf_add_mem(frame_buf, pkt_buf->data, pkt_buf->len);
+		pkt_buf = pkt_buf->frags;
 #endif /* CONFIG_NET_L2_IEEE802154_FRAGMENT */
 
 		__ASSERT_NO_MSG(authtag_len <= net_buf_tailroom(frame_buf));
