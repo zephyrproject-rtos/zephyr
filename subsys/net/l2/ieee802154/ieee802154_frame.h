@@ -327,13 +327,15 @@ struct ieee802154_cmd_assoc_req {
 		uint8_t dev_type : 1;
 		uint8_t power_src : 1;
 		uint8_t rx_on : 1;
-		uint8_t reserved_2 : 2;
+		uint8_t association_type : 1;
+		uint8_t reserved_2 : 1;
 		uint8_t sec_capability : 1;
 		uint8_t alloc_addr : 1;
 #else
 		uint8_t alloc_addr : 1;
 		uint8_t sec_capability : 1;
-		uint8_t reserved_2 : 2;
+		uint8_t reserved_2 : 1;
+		uint8_t association_type : 1;
 		uint8_t rx_on : 1;
 		uint8_t power_src : 1;
 		uint8_t dev_type : 1;
