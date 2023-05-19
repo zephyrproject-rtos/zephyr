@@ -74,6 +74,16 @@ config BT_LLL_VENDOR_OPENISA
 	help
 	  Use OpenISA Lower Link Layer implementation.
 
+# BT_CTLR_DF_SUPPORT is a wrapper for all DF features. Here we select features that are supported by
+# Zephyr's BLE Controller.
+config BT_CTLR_DF_SUPPORT
+	depends on BT_LL_SW_SPLIT && !BT_CTLR_TIFS_HW
+	select BT_CTLR_DF_CTE_TX_SUPPORT
+	select BT_CTLR_DF_ANT_SWITCH_2US_SUPPORT
+	select BT_CTLR_DF_ANT_SWITCH_1US_SUPPORT
+	select BT_CTLR_DF_CTE_RX_SUPPORT
+	select BT_CTLR_DF_CTE_RX_SAMPLE_1US_SUPPORT
+
 config BT_CTLR_XTAL_ADVANCED_SUPPORT
 	bool
 
