@@ -377,6 +377,167 @@ out:
 	return result;
 }
 
+/* src_ll_addr is always big endian */
+static bool test_dgram_packet_reception(void *src_ll_addr, uint8_t src_ll_addr_len,
+					uint32_t security_level, bool is_broadcast)
+{
+	struct ieee802154_context *ctx = net_if_l2_data(iface);
+	uint8_t our_ext_addr[IEEE802154_EXT_ADDR_LENGTH]; /* big endian */
+	uint16_t our_short_addr = ctx->short_addr;	  /* CPU byte order */
+	uint8_t payload[] = {0x01, 0x02, 0x03, 0x04};
+	uint8_t ll_hdr_len = 0;
+	struct sockaddr_ll recv_src_sll = {0};
+	struct sockaddr_ll socket_sll = {
+		.sll_ifindex = net_if_get_by_iface(iface),
+		.sll_family = AF_PACKET,
+		.sll_protocol = ETH_P_IEEE802154,
+	};
+	struct timeval timeo_optval = {
+		.tv_sec = 1,
+		.tv_usec = 0,
+	};
+	uint8_t received_payload[4] = {0};
+	socklen_t recv_src_sll_len;
+	struct net_buf *frame_buf;
+	struct net_pkt *pkt;
+	bool frame_result;
+	int received_len;
+	bool result;
+	int fd;
+
+	result = false;
+
+	sys_memcpy_swap(our_ext_addr, ctx->ext_addr, sizeof(our_ext_addr));
+
+	if (!set_up_security(security_level)) {
+		goto out;
+	}
+
+	NET_INFO("- Receiving DGRAM packet via AF_PACKET socket\n");
+
+	fd = socket(AF_PACKET, SOCK_DGRAM, ETH_P_IEEE802154);
+	if (fd < 0) {
+		NET_ERR("*** Failed to create DGRAM socket : %d\n", errno);
+		goto reset_security;
+	}
+
+	if (bind(fd, (const struct sockaddr *)&socket_sll, sizeof(struct sockaddr_ll))) {
+		NET_ERR("*** Failed to bind packet socket : %d\n", errno);
+		goto release_fd;
+	}
+
+	if (setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, &timeo_optval, sizeof(timeo_optval))) {
+		NET_ERR("*** Failed to set reception timeout on packet socket : %d\n", errno);
+		goto release_fd;
+	}
+
+	pkt = net_pkt_rx_alloc(K_FOREVER);
+	if (!pkt) {
+		NET_ERR("*** Failed to allocate net pkt.\n");
+		goto release_fd;
+	}
+
+	pkt->lladdr_dst.type = NET_LINK_IEEE802154;
+	pkt->lladdr_dst.addr = is_broadcast ? NULL : our_ext_addr;
+	pkt->lladdr_dst.len = is_broadcast ? 0 : sizeof(ctx->ext_addr);
+
+	if (src_ll_addr_len == IEEE802154_SHORT_ADDR_LENGTH ||
+	    src_ll_addr_len == IEEE802154_EXT_ADDR_LENGTH) {
+		pkt->lladdr_src.addr = src_ll_addr;
+	} else {
+		NET_ERR("*** Illegal L2 source address length.\n");
+		goto release_pkt;
+	}
+	pkt->lladdr_src.len = src_ll_addr_len;
+
+	frame_buf = net_pkt_get_frag(pkt, IEEE802154_MTU, K_FOREVER);
+	if (!frame_buf) {
+		NET_ERR("*** Failed to allocate net pkt frag.\n");
+		goto release_pkt;
+	}
+
+	ll_hdr_len = ieee802154_compute_header_and_authtag_size(iface, net_pkt_lladdr_dst(pkt),
+								net_pkt_lladdr_src(pkt));
+
+	net_buf_add(frame_buf, ll_hdr_len);
+	net_buf_add_mem(frame_buf, payload, sizeof(payload));
+
+	/* Temporarily set the ctx address to the given source address so
+	 * we can use ieee802154_create_data_frame().
+	 */
+	if (src_ll_addr_len == IEEE802154_SHORT_ADDR_LENGTH) {
+		ctx->short_addr = ntohs(*(uint16_t *)src_ll_addr);
+	} else if (src_ll_addr_len == IEEE802154_EXT_ADDR_LENGTH) {
+		sys_memcpy_swap(ctx->ext_addr, src_ll_addr, sizeof(ctx->ext_addr));
+	} else {
+		NET_ERR("*** Illegal L2 source address length.\n");
+		goto release_pkt;
+	}
+
+	frame_result = ieee802154_create_data_frame(ctx, net_pkt_lladdr_dst(pkt),
+						    net_pkt_lladdr_src(pkt), frame_buf, ll_hdr_len);
+
+	if (src_ll_addr_len == IEEE802154_SHORT_ADDR_LENGTH) {
+		ctx->short_addr = our_short_addr;
+	} else {
+		sys_memcpy_swap(ctx->ext_addr, our_ext_addr, sizeof(ctx->ext_addr));
+	}
+
+	if (!frame_result) {
+		NET_ERR("*** Error while creating data frame.\n");
+		goto release_pkt;
+	};
+
+	net_pkt_frag_add(pkt, frame_buf);
+
+	if (net_recv_data(iface, pkt)) {
+		NET_ERR("*** Error while processing packet.\n");
+		goto release_pkt;
+	}
+
+	if (current_pkt->frags) {
+		NET_ERR("*** Generated unexpected (ACK?) packet when processing packet.\n");
+		net_pkt_frag_unref(current_pkt->frags);
+		current_pkt->frags = NULL;
+		goto release_pkt;
+	}
+
+	recv_src_sll_len = sizeof(recv_src_sll);
+	received_len = recvfrom(fd, received_payload, sizeof(received_payload), 0,
+				(struct sockaddr *)&recv_src_sll, &recv_src_sll_len);
+	if (received_len < 0) {
+		NET_ERR("*** Failed to receive packet, errno %d\n", errno);
+		goto release_pkt;
+	}
+
+	pkt_hexdump(received_payload, received_len);
+
+	if (received_len != sizeof(payload) || memcmp(received_payload, payload, sizeof(payload))) {
+		NET_ERR("*** Payload of received packet is incorrect\n");
+		goto release_pkt;
+	}
+
+	if (recv_src_sll_len != sizeof(struct sockaddr_ll) ||
+	    recv_src_sll.sll_family != AF_PACKET || recv_src_sll.sll_protocol != ETH_P_IEEE802154 ||
+	    recv_src_sll.sll_ifindex != net_if_get_by_iface(iface) ||
+	    recv_src_sll.sll_halen != src_ll_addr_len ||
+	    memcmp(recv_src_sll.sll_addr, src_ll_addr, src_ll_addr_len)) {
+		NET_ERR("*** Source L2 address of received packet is incorrect\n");
+		goto release_pkt;
+	}
+
+	result = true;
+
+release_pkt:
+	net_pkt_unref(pkt);
+release_fd:
+	close(fd);
+reset_security:
+	tear_down_security();
+out:
+	return result;
+}
+
 static bool test_raw_packet_sending(void)
 {
 	/* tests should be run sequentially, so no need for context locking */
@@ -766,6 +927,17 @@ ZTEST(ieee802154_l2, test_sending_broadcast_dgram_pkt)
 	zassert_true(ret, "Broadcast DGRAM packet sent");
 }
 
+ZTEST(ieee802154_l2, test_receiving_broadcast_dgram_pkt)
+{
+	uint16_t src_short_addr = htons(0x1234);
+	bool ret;
+
+	ret = test_dgram_packet_reception(&src_short_addr, sizeof(src_short_addr),
+					  IEEE802154_SECURITY_LEVEL_NONE, true);
+
+	zassert_true(ret, "Broadcast DGRAM packet received");
+}
+
 ZTEST(ieee802154_l2, test_sending_authenticated_dgram_pkt)
 {
 	bool ret;
@@ -782,6 +954,20 @@ ZTEST(ieee802154_l2, test_sending_authenticated_dgram_pkt)
 	zassert_true(ret, "Authenticated DGRAM packet sent");
 }
 
+ZTEST(ieee802154_l2, test_receiving_authenticated_dgram_pkt)
+{
+	/* TODO: Receiving authenticated packages with short addresses is not
+	 * yet supported (requires neighbour cache).
+	 */
+	uint8_t src_ext_addr[8] = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08};
+	bool ret;
+
+	ret = test_dgram_packet_reception(src_ext_addr, sizeof(src_ext_addr),
+					  IEEE802154_SECURITY_LEVEL_MIC_128, false);
+
+	zassert_true(ret, "Authenticated DGRAM packet received");
+}
+
 ZTEST(ieee802154_l2, test_sending_encrypted_and_authenticated_dgram_pkt)
 {
 	bool ret;
@@ -796,6 +982,17 @@ ZTEST(ieee802154_l2, test_sending_encrypted_and_authenticated_dgram_pkt)
 	ret = test_dgram_packet_sending(&pkt_sll, IEEE802154_SECURITY_LEVEL_ENC_MIC_128);
 
 	zassert_true(ret, "Encrypted and authenticated DGRAM packet sent");
+}
+
+ZTEST(ieee802154_l2, test_receiving_encrypted_and_authenticated_dgram_pkt)
+{
+	uint8_t src_ext_addr[8] = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08};
+	bool ret;
+
+	ret = test_dgram_packet_reception(src_ext_addr, sizeof(src_ext_addr),
+					  IEEE802154_SECURITY_LEVEL_ENC_MIC_128, false);
+
+	zassert_true(ret, "Encrypted and authenticated DGRAM packet received");
 }
 
 ZTEST(ieee802154_l2, test_sending_raw_pkt)
