@@ -8,4 +8,7 @@ if SOC_LPC55S06
 config SOC
 	default "lpc55S06"
 
+config LPC55XXX_USB_RAM
+	default n
+
 endif # SOC_LPC55S06

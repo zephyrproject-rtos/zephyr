@@ -155,6 +155,39 @@ static ALWAYS_INLINE void clock_init(void)
 #endif
 
 #if CONFIG_USB_DC_NXP_LPCIP3511
+
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(usbfs), nxp_mcux_usbd, okay)
+	/*< Turn on USB Phy */
+#if defined(CONFIG_SOC_LPC55S36)
+	POWER_DisablePD(kPDRUNCFG_PD_USBFSPHY);
+#else
+	POWER_DisablePD(kPDRUNCFG_PD_USB0_PHY);
+#endif
+	CLOCK_SetClkDiv(kCLOCK_DivUsb0Clk, 1, false);
+#if defined(CONFIG_SOC_LPC55S36)
+	CLOCK_AttachClk(kFRO_HF_to_USB0);
+#else
+	CLOCK_AttachClk(kFRO_HF_to_USB0_CLK);
+#endif
+	/* enable usb0 host clock */
+	CLOCK_EnableClock(kCLOCK_Usbhsl0);
+	/*
+	 * According to reference mannual, device mode setting has to be set by access
+	 * usb host register
+	 */
+	*((uint32_t *)(USBFSH_BASE + 0x5C)) |= USBFSH_PORTMODE_DEV_ENABLE_MASK;
+	/* disable usb0 host clock */
+	CLOCK_DisableClock(kCLOCK_Usbhsl0);
+
+	/* enable USB IP clock */
+	CLOCK_EnableUsbfs0DeviceClock(kCLOCK_UsbfsSrcFro, CLOCK_GetFroHfFreq());
+#if defined(FSL_FEATURE_USB_USB_RAM) && (FSL_FEATURE_USB_USB_RAM)
+	memset((uint8_t *)FSL_FEATURE_USB_USB_RAM_BASE_ADDRESS, 0, FSL_FEATURE_USB_USB_RAM);
+#endif
+
+#endif /* USB_DEVICE_TYPE_FS */
+
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(usbhs), nxp_mcux_usbd, okay)
 	/* enable usb1 host clock */
 	CLOCK_EnableClock(kCLOCK_Usbh1);
 	/* Put PHY powerdown under software control */
@@ -164,7 +197,7 @@ static ALWAYS_INLINE void clock_init(void)
 	 * access usb host register
 	 */
 	*((uint32_t *)(USBHSH_BASE + 0x50)) |= USBHSH_PORTMODE_DEV_ENABLE_MASK;
-	/* enable usb1 host clock */
+	/* disable usb1 host clock */
 	CLOCK_DisableClock(kCLOCK_Usbh1);
 
 	/* enable USB IP clock */
@@ -172,12 +205,12 @@ static ALWAYS_INLINE void clock_init(void)
 	CLOCK_EnableUsbhs0DeviceClock(kCLOCK_UsbSrcUnused, 0U);
 	USB_EhciPhyInit(kUSB_ControllerLpcIp3511Hs0, CLK_CLK_IN, NULL);
 #if defined(FSL_FEATURE_USBHSD_USB_RAM) && (FSL_FEATURE_USBHSD_USB_RAM)
-	for (int i = 0; i < FSL_FEATURE_USBHSD_USB_RAM; i++) {
-		((uint8_t *)FSL_FEATURE_USBHSD_USB_RAM_BASE_ADDRESS)[i] = 0x00U;
-	}
+	memset((uint8_t *)FSL_FEATURE_USBHSD_USB_RAM_BASE_ADDRESS, 0, FSL_FEATURE_USBHSD_USB_RAM);
 #endif
 
-#endif
+#endif /* USB_DEVICE_TYPE_HS */
+
+#endif /* CONFIG_USB_DC_NXP_LPCIP3511 */
 
 DT_FOREACH_STATUS_OKAY(nxp_lpc_ctimer, CTIMER_CLOCK_SETUP)
 

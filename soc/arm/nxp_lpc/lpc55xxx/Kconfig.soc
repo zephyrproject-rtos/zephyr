@@ -151,4 +151,12 @@ config LPC55XXX_SRAM_CLOCKS
 	  By default, CMSIS SystemInit will enable the clock to these RAM banks.
 	  Disable this Kconfig to leave the ram banks untouched out of reset.
 
+config LPC55XXX_USB_RAM
+	bool
+	default y
+	help
+	  Some SoC's in the LPC5500 Series do have a dedicated USB RAM.
+	  By default, USB RAM is assumed to be present.
+	  Disable this Kconfig in case there is no dedicated USB RAM.
+
 endif # SOC_SERIES_LPC55XXX
