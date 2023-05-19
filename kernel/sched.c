@@ -353,10 +353,6 @@ static ALWAYS_INLINE struct k_thread *next_up(void)
 	 * "ready", it means "is _current already added back to the
 	 * queue such that we don't want to re-add it".
 	 */
-	if (is_aborting(_current)) {
-		end_thread(_current);
-	}
-
 	bool queued = z_is_thread_queued(_current);
 	bool active = !z_is_thread_prevented_from_running(_current);
 
@@ -1085,6 +1081,10 @@ void *z_get_next_switch_handle(void *interrupted)
 
 	LOCKED(&sched_spinlock) {
 		struct k_thread *old_thread = _current, *new_thread;
+
+		if (is_aborting(_current)) {
+			end_thread(_current);
+		}
 
 		if (IS_ENABLED(CONFIG_SMP)) {
 			old_thread->switch_handle = NULL;
