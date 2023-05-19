@@ -284,7 +284,8 @@ int i2c_stm32_target_unregister(const struct device *dev,
 	}
 
 	/* Return if there is a slave remaining */
-	if (!data->slave_cfg || !data->slave2_cfg) {
+	if (data->slave_cfg || data->slave2_cfg) {
+		LOG_DBG("i2c: target#%c still registered", data->slave_cfg?'1':'2');
 		return 0;
 	}
 
