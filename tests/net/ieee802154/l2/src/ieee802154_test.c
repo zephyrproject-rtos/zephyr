@@ -639,11 +639,11 @@ static bool test_dgram_packet_reception(void *src_ll_addr, uint8_t src_ll_addr_l
 	uint8_t our_ext_addr[IEEE802154_EXT_ADDR_LENGTH]; /* big endian */
 	uint8_t payload[] = {0x01, 0x02, 0x03, 0x04};
 	uint16_t our_short_addr = ctx->short_addr; /* CPU byte order */
+	uint8_t ll_hdr_len = 0, authtag_len = 0;
 	struct sockaddr_ll recv_src_sll = {0};
 	uint8_t received_payload[4] = {0};
 	socklen_t recv_src_sll_len;
 	struct net_buf *frame_buf;
-	uint8_t ll_hdr_len = 0;
 	struct net_pkt *pkt;
 	bool frame_result;
 	int received_len;
@@ -690,11 +690,12 @@ static bool test_dgram_packet_reception(void *src_ll_addr, uint8_t src_ll_addr_l
 		goto release_pkt;
 	}
 
-	ll_hdr_len = ieee802154_compute_header_and_authtag_len(iface, net_pkt_lladdr_dst(pkt),
-							       net_pkt_lladdr_src(pkt));
+	ieee802154_compute_header_and_authtag_len(
+		iface, net_pkt_lladdr_dst(pkt), net_pkt_lladdr_src(pkt), &ll_hdr_len, &authtag_len);
 
 	net_buf_add(frame_buf, ll_hdr_len);
 	net_buf_add_mem(frame_buf, payload, sizeof(payload));
+	net_buf_add(frame_buf, authtag_len);
 
 	/* Temporarily set the ctx address to the given source address so
 	 * we can use ieee802154_create_data_frame().
