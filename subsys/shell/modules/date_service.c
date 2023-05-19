@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2020 Nick Ward
+ * Copyright (c) 2023 T-Mobile USA, Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,6 +11,9 @@
 #include <string.h>
 #include <zephyr/posix/time.h>
 #include <zephyr/sys/timeutil.h>
+#if defined(CONFIG_COUNTER_GECKO_RTCC)
+#include <em_rtcc.h>
+#endif
 
 #define HELP_NONE      "[none]"
 #define HELP_DATE_SET  "[Y-m-d] <H:M:S>"
@@ -180,6 +184,10 @@ static int cmd_date_set(const struct shell *sh, size_t argc, char **argv)
 		shell_error(sh, "Could not set date %d", ret);
 		return -EINVAL;
 	}
+
+#if defined(CONFIG_COUNTER_GECKO_RTCC)
+	RTCC_CounterSet(tp.tv_sec);
+#endif
 
 	date_print(sh, &tm);
 

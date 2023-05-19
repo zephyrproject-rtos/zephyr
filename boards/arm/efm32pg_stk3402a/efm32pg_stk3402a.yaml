@@ -1,3 +1,7 @@
+# Copyright (c) 2022 T-Mobile USA, Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+
 identifier: efm32pg_stk3402a
 name: EFM32PG-STK3402A
 type: mcu
@@ -13,6 +17,7 @@ supported:
   - gpio
   - nvs
   - watchdog
+  - counter
 testing:
   ignore_tags:
     - net

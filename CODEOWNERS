@@ -114,7 +114,7 @@
 /boards/arm/cy8ckit_062_wifi_bt/          @ifyall @npal-cy
 /boards/arm/cy8cproto_062_4343w/          @ifyall @npal-cy
 /boards/arm/disco_l475_iot1/              @erwango
-/boards/arm/efm32pg_stk3401a/             @rdmeneze
+/boards/arm/efm32pg_stk3402a/             @rdmeneze @jtbaumann @DRuffer-tmo
 /boards/arm/faze/                         @mbittan @simonguinot
 /boards/arm/frdm*/                        @mmahadevan108 @dleach02
 /boards/arm/frdm*/doc/                    @dleach02 @MeganHansen
