@@ -65,6 +65,11 @@ config NET_DEBUG_L2_IEEE802154_DISPLAY_PACKET_TX
 
 endchoice
 
+# TODO: For IEEE 802.15.4 compliance, this option will be removed in the future.
+#       Acknowledgment is mandatory if requested by the package's "ACK requested"
+#       flag. Drivers with hardware ACK support and otherwise the L2 layer will
+#       have to ensure that compliant ACK packages will always be sent out automatically
+#       as required by the standard.
 config NET_L2_IEEE802154_ACK_REPLY
 	bool "IEEE 802.15.4 ACK reply logic"
 	help
