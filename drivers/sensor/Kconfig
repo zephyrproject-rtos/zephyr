@@ -319,4 +319,6 @@ source "drivers/sensor/ntc_thermistor/Kconfig"
 
 source "drivers/sensor/s11059/Kconfig"
 
+source "drivers/sensor/tcs3400/Kconfig"
+
 endif # SENSOR
