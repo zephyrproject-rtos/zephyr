@@ -665,7 +665,7 @@ static uint8_t *generate_aux_security_hdr(struct ieee802154_security_ctx *sec_ct
 #endif /* CONFIG_NET_L2_IEEE802154_SECURITY */
 
 bool ieee802154_create_data_frame(struct ieee802154_context *ctx, struct net_linkaddr *dst,
-				  struct net_linkaddr *src, struct net_buf *buf, uint8_t hdr_len)
+				  struct net_linkaddr *src, struct net_buf *buf, uint8_t ll_hdr_len)
 {
 	struct ieee802154_frame_params params = {0};
 	struct ieee802154_fcf_seq *fs;
@@ -732,19 +732,19 @@ bool ieee802154_create_data_frame(struct ieee802154_context *ctx, struct net_lin
 	}
 
 	uint8_t authtag_len = level_2_authtag_len[level];
-	uint8_t payload_len = buf->len - hdr_len - authtag_len;
+	uint8_t payload_len = buf->len - ll_hdr_len - authtag_len;
 
 	/* Let's encrypt/auth only in the end, if needed */
-	if (!ieee802154_encrypt_auth(&ctx->sec_ctx, buf_start, hdr_len,
+	if (!ieee802154_encrypt_auth(&ctx->sec_ctx, buf_start, ll_hdr_len,
 				     payload_len, authtag_len, ctx->ext_addr)) {
 		goto out;
 	};
 
 no_security_hdr:
 #endif /* CONFIG_NET_L2_IEEE802154_SECURITY */
-	if ((p_buf - buf_start) != hdr_len) {
-		/* hdr_len was too small? We probably overwrote payload bytes */
-		NET_ERR("Could not generate data frame %zu vs %u", (p_buf - buf_start), hdr_len);
+	if ((p_buf - buf_start) != ll_hdr_len) {
+		/* ll_hdr_len was too small? We probably overwrote payload bytes */
+		NET_ERR("Could not generate data frame %zu vs %u", (p_buf - buf_start), ll_hdr_len);
 		goto out;
 	}
 
@@ -955,8 +955,8 @@ bool ieee802154_decipher_data_frame(struct net_if *iface, struct net_pkt *pkt,
 	}
 
 	uint8_t authtag_len = level_2_authtag_len[level];
-	uint8_t hdr_len = (uint8_t *)mpdu->payload - net_pkt_data(pkt);
-	uint8_t payload_len = net_pkt_get_len(pkt) - hdr_len - authtag_len;
+	uint8_t ll_hdr_len = (uint8_t *)mpdu->payload - net_pkt_data(pkt);
+	uint8_t payload_len = net_pkt_get_len(pkt) - ll_hdr_len - authtag_len;
 	uint8_t ext_addr_le[IEEE802154_EXT_ADDR_LENGTH];
 
 	/* TODO: Handle src short address.
@@ -969,7 +969,7 @@ bool ieee802154_decipher_data_frame(struct net_if *iface, struct net_pkt *pkt,
 	}
 
 	sys_memcpy_swap(ext_addr_le, net_pkt_lladdr_src(pkt)->addr, net_pkt_lladdr_src(pkt)->len);
-	if (!ieee802154_decrypt_auth(&ctx->sec_ctx, net_pkt_data(pkt), hdr_len, payload_len,
+	if (!ieee802154_decrypt_auth(&ctx->sec_ctx, net_pkt_data(pkt), ll_hdr_len, payload_len,
 				     authtag_len, ext_addr_le,
 				     sys_le32_to_cpu(mpdu->mhr.aux_sec->frame_counter))) {
 		NET_ERR("Could not decipher the frame");
