@@ -228,10 +228,6 @@ struct ieee802154_mhr {
 #endif
 };
 
-struct ieee802154_mfr {
-	uint16_t fcs;
-};
-
 struct ieee802154_gts_dir {
 #ifdef CONFIG_LITTLE_ENDIAN
 	uint8_t mask : 7;
@@ -451,7 +447,7 @@ struct ieee802154_mpdu {
 		struct ieee802154_beacon *beacon;
 		struct ieee802154_command *command;
 	};
-	struct ieee802154_mfr *mfr;
+	uint16_t payload_length;
 };
 
 /** Frame build parameters */
