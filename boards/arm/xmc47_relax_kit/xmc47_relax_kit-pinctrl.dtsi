@@ -15,3 +15,31 @@
 	drive-strength = "strong-soft-edge";
 	hwctrl = "disabled";
 };
+
+&uart_tx_p2_14_u1c0 {
+	drive-strength = "strong-soft-edge";
+	drive-push-pull;
+	hwctrl = "disabled";
+};
+
+&uart_rx_p2_15_u1c0 {
+	drive-strength = "strong-soft-edge";
+	hwctrl = "disabled";
+};
+
+&spi_mosi_p3_8_u2c0 {
+	drive-strength = "strong-soft-edge";
+	drive-push-pull;
+	hwctrl = "disabled";
+};
+
+&spi_miso_p3_7_u2c0 {
+	drive-strength = "strong-soft-edge";
+	hwctrl = "disabled";
+};
+
+&spi_sclk_p3_9_u2c0 {
+	drive-strength = "strong-soft-edge";
+	drive-push-pull;
+	hwctrl = "disabled";
+};
