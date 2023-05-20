@@ -38,6 +38,12 @@ int ieee802154_security_setup_session(struct ieee802154_security_ctx *sec_ctx, u
 		return -EINVAL;
 	}
 
+	sec_ctx->level = level;
+
+	if (level == IEEE802154_SECURITY_LEVEL_NONE) {
+		return 0;
+	}
+
 	if (level >= IEEE802154_SECURITY_LEVEL_ENC) {
 		tag_size = level_2_tag_size[level - 4];
 	} else {
@@ -45,12 +51,6 @@ int ieee802154_security_setup_session(struct ieee802154_security_ctx *sec_ctx, u
 	}
 	sec_ctx->enc.mode_params.ccm_info.tag_len = tag_size;
 	sec_ctx->dec.mode_params.ccm_info.tag_len = tag_size;
-
-	sec_ctx->level = level;
-
-	if (level == IEEE802154_SECURITY_LEVEL_NONE) {
-		return 0;
-	}
 
 	memcpy(sec_ctx->key, key, key_len);
 	sec_ctx->key_len = key_len;
@@ -80,6 +80,17 @@ int ieee802154_security_setup_session(struct ieee802154_security_ctx *sec_ctx, u
 	}
 
 	return 0;
+}
+
+void ieee802154_security_teardown_session(struct ieee802154_security_ctx *sec_ctx)
+{
+	if (sec_ctx->level == IEEE802154_SECURITY_LEVEL_NONE) {
+		return;
+	}
+
+	cipher_free_session(sec_ctx->enc.device, &sec_ctx->enc);
+	cipher_free_session(sec_ctx->dec.device, &sec_ctx->dec);
+	sec_ctx->level = IEEE802154_SECURITY_LEVEL_NONE;
 }
 
 static void prepare_cipher_aead_pkt(uint8_t *frame, uint8_t level, uint8_t hdr_len,
