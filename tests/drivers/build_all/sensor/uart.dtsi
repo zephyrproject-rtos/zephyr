@@ -26,3 +26,7 @@ test_uart_grow_r502a {
 		int-gpios = <&test_gpio 0 0>;
 	};
 };
+
+test_uart_a01nyub {
+	compatible = "dfrobot,a01nyub";
+};

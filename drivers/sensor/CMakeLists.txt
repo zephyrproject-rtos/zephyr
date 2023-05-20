@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
+add_subdirectory_ifdef(CONFIG_A01NYUB a01nyub)
 add_subdirectory_ifdef(CONFIG_ADC_CMP_NPCX nuvoton_adc_cmp_npcx)
 add_subdirectory_ifdef(CONFIG_ADT7310 adt7310)
 add_subdirectory_ifdef(CONFIG_ADT7420 adt7420)
