@@ -10,6 +10,7 @@
 #include <infineon/xmc4700_F144x2048.dtsi>
 #include <infineon/xmc4700_F144x2048-intc.dtsi>
 #include "xmc47_relax_kit-pinctrl.dtsi"
+#include "arduino_r3_connector.dtsi"
 
 / {
 	model = "Infineon XMC4700 Relax Kit board";
@@ -86,6 +87,33 @@
 	fifo-tx-size = <16>;
 	fifo-rx-size = <16>;
 	status = "okay";
+};
+
+&usic1ch0 {
+	compatible = "infineon,xmc4xxx-uart";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart_tx_p2_14_u1c0 &uart_rx_p2_15_u1c0>;
+	pinctrl-names = "default";
+	input-src = "DX0C";
+	interrupts = <92 1 93 1>;
+	interrupt-names = "tx", "rx";
+	fifo-start-offset = <0>;
+	fifo-tx-size = <0>;
+	fifo-rx-size = <0>;
+	status = "okay";
+};
+
+&usic2ch0 {
+	compatible = "infineon,xmc4xxx-spi";
+	pinctrl-0 = <&spi_mosi_p3_8_u2c0 &spi_miso_p3_7_u2c0 &spi_sclk_p3_9_u2c0>;
+	pinctrl-names = "default";
+	miso-src = "DX0C";
+	interrupts = <96 1 97 1>;
+	interrupt-names = "tx", "rx";
+	status = "okay";
+
+	#address-cells = <1>;
+	#size-cells = <0>;
 };
 
 &adc0 {

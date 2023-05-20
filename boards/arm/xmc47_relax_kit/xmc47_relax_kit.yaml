@@ -12,5 +12,7 @@ supported:
   - i2c
   - spi
   - uart
+  - arduino_spi
+  - arduino_serial
 ram: 352
 flash: 2048
