@@ -10,5 +10,7 @@ toolchain:
   - cross-compile
 ram: 2048
 flash: 64
+supported:
+  - smp
 testing:
   timeout_multiplier: 8
