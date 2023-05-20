@@ -18,6 +18,8 @@
 int ieee802154_security_setup_session(struct ieee802154_security_ctx *sec_ctx, uint8_t level,
 				      uint8_t key_mode, uint8_t *key, uint8_t key_len);
 
+void ieee802154_security_teardown_session(struct ieee802154_security_ctx *sec_ctx);
+
 /**
  * @brief Decrypt an authenticated payload.
  *

@@ -204,15 +204,14 @@ static bool set_up_security(uint8_t security_level)
 
 static void tear_down_security(void)
 {
-	struct ieee802154_context *ctx = net_if_l2_data(iface);
+	struct ieee802154_security_params params = {
+		.level = IEEE802154_SECURITY_LEVEL_NONE,
+	};
 
-	if (ctx->sec_ctx.level == IEEE802154_SECURITY_LEVEL_NONE) {
-		return;
+	if (net_mgmt(NET_REQUEST_IEEE802154_SET_SECURITY_SETTINGS, iface, &params,
+		     sizeof(struct ieee802154_security_params))) {
+		NET_ERR("*** Failed to tear down security settings\n");
 	}
-
-	cipher_free_session(ctx->sec_ctx.enc.device, &ctx->sec_ctx.enc);
-	cipher_free_session(ctx->sec_ctx.dec.device, &ctx->sec_ctx.dec);
-	ctx->sec_ctx.level = IEEE802154_SECURITY_LEVEL_NONE;
 }
 
 static bool test_packet_parsing(struct ieee802154_pkt_test *t)
