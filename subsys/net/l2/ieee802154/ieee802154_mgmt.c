@@ -701,6 +701,8 @@ static int ieee802154_set_security_settings(uint32_t mgmt_request,
 		goto out;
 	}
 
+	ieee802154_security_teardown_session(&ctx->sec_ctx);
+
 	params = (struct ieee802154_security_params *)data;
 
 	if (ieee802154_security_setup_session(&ctx->sec_ctx, params->level,
