@@ -1,3 +1,6 @@
+common:
+  integration_platforms:
+    - qemu_x86
 tests:
   kernel.threads.tls:
     tags:
