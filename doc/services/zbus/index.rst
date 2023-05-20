@@ -475,7 +475,7 @@ For a complete overview of zbus usage, take a look at the samples. There are the
 Suggested Uses
 **************
 
-Use zbus to transfer data (messages) between threads in one-to-one, one-to-many, and many-to-many synchronously or asynchronously.
+Use zbus to transfer data (messages) between threads in one-to-one, one-to-many, and many-to-many synchronously or asynchronously. Choosing the proper observer type is crucial. Use subscribers for scenarios that can tolerate message losses and duplications; when they cannot, use listeners. In addition to the listener, another asynchronous message processing mechanism (like :ref:`message queues <message_queues_v2>`) may be necessary to retain the pending message until it gets processed.
 
 .. note::
     Zbus can be used to transfer streams from the producer to the consumer. However, this can increase zbus' communication latency. So maybe consider a Pipe a good alternative for this communication topology.
