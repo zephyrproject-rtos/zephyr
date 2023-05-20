@@ -150,6 +150,7 @@ delta	Delta Electronics, Inc.
 denx	Denx Software Engineering
 devantech	Devantech, Ltd.
 dfi	DFI Inc.
+dfrobot	DFRobot
 dh	DH electronics GmbH
 difrnce	Shenzhen Yagu Electronic Technology Co., Ltd.
 digi	Digi International Inc.

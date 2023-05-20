@@ -1,0 +1,30 @@
+/*
+ * Copyright (c) 2023, SteadConnect
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+	zephyr,console = &usart1;
+	zephyr,shell-uart = &usart1;
+	};
+};
+
+&lpuart1 {
+	pinctrl-0 = <&lpuart1_tx_pb11 &lpuart1_rx_pb10>;
+	pinctrl-names = "default";
+	status = "okay";
+	current-speed = <9600>;
+	a01nyub {
+		compatible = "dfrobot,a01nyub";
+		status = "okay";
+	};
+};
+
+&usart1 {
+	pinctrl-0 = <&usart1_tx_pb6 &usart1_rx_pb7>;
+	pinctrl-names = "default";
+	status = "okay";
+	current-speed = <115200>;
+};

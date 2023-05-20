@@ -1,0 +1,16 @@
+# Copyright (c) 2023 SteadConnect
+# SPDX-License-Identifier: Apache-2.0
+
+sample:
+  name: A01NYUB distance sensor
+tests:
+  sample.sensor.a01nyub:
+    build_only: true
+    harness: sensor
+    tags:
+      - sensor
+      - serial
+      - uart
+    depends_on: serial
+    filter: dt_compat_enabled("dfrobot,a01nyub") and CONFIG_SERIAL and
+            CONFIG_UART_INTERRUPT_DRIVEN
