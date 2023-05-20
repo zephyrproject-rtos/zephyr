@@ -89,6 +89,7 @@ struct gpio_pca95xx_drv_data {
 		uint16_t pud_en;
 		uint16_t pud_sel;
 		uint16_t int_mask;
+		uint16_t input_latch;
 	} reg_cache;
 
 	struct k_sem lock;
@@ -325,6 +326,9 @@ static inline int update_int_mask_reg(const struct device *dev, uint8_t pin,
 {
 	struct gpio_pca95xx_drv_data * const drv_data =
 		(struct gpio_pca95xx_drv_data * const)dev->data;
+
+	/* If the interrupt mask is present, so is the input latch */
+	write_port_reg(dev, REG_INPUT_LATCH_PORT0, pin, &drv_data->reg_cache.input_latch, ~value);
 
 	return write_port_reg(dev, REG_INT_MASK_PORT0, pin,
 			      &drv_data->reg_cache.int_mask, value);
@@ -574,34 +578,45 @@ static int gpio_pca95xx_port_toggle_bits(const struct device *dev,
 }
 
 #ifdef CONFIG_GPIO_PCA95XX_INTERRUPT
+static void get_triggered_it(struct gpio_pca95xx_drv_data *drv_data,
+		uint16_t *trig_edge, uint16_t *trig_level)
+{
+	uint16_t input_cache, changed_pins, input_new;
+	int ret;
+
+	input_cache = drv_data->reg_cache.input;
+	ret = update_input_regs(drv_data->instance, &input_new);
+	if (ret == 0) {
+		changed_pins = (input_cache ^ input_new);
+
+		*trig_edge |= (changed_pins & input_new &
+			     drv_data->interrupts.edge_rising);
+		*trig_edge |= (changed_pins & input_cache &
+			      drv_data->interrupts.edge_falling);
+		*trig_level |= (input_new & drv_data->interrupts.level_high);
+		*trig_level |= (~input_new & drv_data->interrupts.level_low);
+	}
+}
+
 static void gpio_pca95xx_interrupt_worker(struct k_work *work)
 {
 	struct gpio_pca95xx_drv_data * const drv_data = CONTAINER_OF(
 		work, struct gpio_pca95xx_drv_data, interrupt_worker);
-	uint16_t input_new, input_cache, changed_pins, trig_edge;
-	uint16_t trig_level = 0;
+	const struct gpio_pca95xx_config * const config = drv_data->instance->config;
+	uint16_t trig_edge = 0, trig_level = 0;
 	uint32_t triggered_int = 0;
-	int ret;
 
 	k_sem_take(&drv_data->lock, K_FOREVER);
 
-	input_cache = drv_data->reg_cache.input;
-
-	ret = update_input_regs(drv_data->instance, &input_new);
-	if (ret == 0) {
-		/* Note: PCA Interrupt status is cleared by reading inputs */
-
-		changed_pins = (input_cache ^ input_new);
-
-		trig_edge = (changed_pins & input_new &
-			     drv_data->interrupts.edge_rising);
-		trig_edge |= (changed_pins & input_cache &
-			      drv_data->interrupts.edge_falling);
-		trig_level = (input_new & drv_data->interrupts.level_high);
-		trig_level |= (~input_new & drv_data->interrupts.level_low);
-
-		triggered_int = (trig_edge | trig_level);
+	/* Note: PCA Interrupt status is cleared by reading inputs */
+	if (config->capabilities & PCA_HAS_INTERRUPT_MASK_REG) {
+		/* gpio latched read values, to be compared to cached ones */
+		get_triggered_it(drv_data, &trig_edge, &trig_level);
 	}
+	/* gpio unlatched read values, in case signal has flipped again */
+	get_triggered_it(drv_data, &trig_edge, &trig_level);
+
+	triggered_int = (trig_edge | trig_level);
 
 	k_sem_give(&drv_data->lock);
 
@@ -847,6 +862,8 @@ static struct gpio_pca95xx_drv_data gpio_pca95xx_##inst##_drvdata = {	\
 	.reg_cache.dir = 0xFFFF,					\
 	.reg_cache.pud_en = 0x0,					\
 	.reg_cache.pud_sel = 0xFFFF,					\
+	.reg_cache.int_mask = 0xFFFF,					\
+	.reg_cache.input_latch = 0x0,				\
 	IF_ENABLED(CONFIG_GPIO_PCA95XX_INTERRUPT, (			\
 	.interrupt_active = false,					\
 	))								\
