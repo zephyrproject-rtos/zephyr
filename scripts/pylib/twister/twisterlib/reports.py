@@ -446,7 +446,7 @@ class Reporting:
 
     def summary(self, results, unrecognized_sections, duration):
         failed = 0
-        run = 0
+        built_only = 0
         for instance in self.instances.values():
             if instance.status == Status.FAIL:
                 failed += 1
@@ -455,22 +455,19 @@ class Reporting:
                              (Fore.RED, Fore.RESET, instance.name,
                               str(instance.metrics.get("unrecognized", []))))
                 failed += 1
-
-            # FIXME: need a better way to identify executed tests
-            handler_time = instance.metrics.get('handler_time', 0)
-            if float(handler_time) > 0:
-                run += 1
+            elif instance.status == Status.NOTRUN:
+                built_only += 1
 
         if results.total and results.total != results.skipped_configs:
-            pass_rate = (float(results.passed) / float(results.total - results.skipped_configs))
+            pass_rate = (float(results.passed) / float(results.total - results.skipped_runtime))
         else:
             pass_rate = 0
 
         logger.info(
-            "{}{} of {}{} test configurations passed ({:.2%}), {}{}{} failed, {}{}{} errored, {} skipped with {}{}{} warnings in {:.2f} seconds".format(
+            "{}{} of {}{} test configurations passed ({:.2%}), {}{}{} failed, {}{}{} errored, {}{}{} warnings in {:.2f} seconds".format(
                 Fore.RED if failed else Fore.GREEN,
                 results.passed,
-                results.total,
+                results.total - results.skipped_runtime,
                 Fore.RESET,
                 pass_rate,
                 Fore.RED if results.failed else Fore.RESET,
@@ -479,7 +476,6 @@ class Reporting:
                 Fore.RED if results.error else Fore.RESET,
                 results.error,
                 Fore.RESET,
-                results.skipped_configs,
                 Fore.YELLOW if self.plan.warnings else Fore.RESET,
                 self.plan.warnings,
                 Fore.RESET,
@@ -496,7 +492,7 @@ class Reporting:
                 (100 * len(self.filtered_platforms) / len(self.platforms))
             ))
 
-        built_only = results.total - run - results.skipped_configs
+        run = results.total - built_only - results.skipped_runtime
         logger.info(f"{Fore.GREEN}{run}{Fore.RESET} test configurations executed on platforms, \
 {Fore.RED}{built_only}{Fore.RESET} test configurations were only built.")
 

@@ -217,6 +217,11 @@ class ExecutionCounter(object):
         with self._total.get_lock():
             return self._total.value
 
+    @total.setter
+    def total(self, value):
+        with self._total.get_lock():
+            self._total.value = value
+
 class CMake:
     config_re = re.compile('(CONFIG_[A-Za-z0-9_]+)[=]\"?([^\"]*)\"?$')
     dt_re = re.compile('([A-Za-z0-9_]+)[=]\"?([^\"]*)\"?$')
@@ -909,8 +914,8 @@ class ProjectBuilder(FilterBuilder):
                         instance.reason))
             if not self.options.verbose:
                 self.log_info_file(self.options.inline_logs)
-        elif instance.status in [Status.SKIP, Status.FILTER]:
-            status = Fore.YELLOW + "SKIPPED" + Fore.RESET
+        elif instance.status in [Status.SKIP]:
+            status = Fore.YELLOW + "FILTERED" + Fore.RESET
             results.skipped_configs += 1
             # test cases skipped at the test instance level
             results.skipped_cases += len(instance.testsuite.testcases)
@@ -956,15 +961,12 @@ class ProjectBuilder(FilterBuilder):
             if total_to_do > 0:
                 completed_perc = int((float(results.done) / total_to_do) * 100)
 
-            sys.stdout.write("INFO    - Total complete: %s%4d/%4d%s  %2d%%  skipped: %s%4d%s, failed: %s%4d%s, error: %s%4d%s\r" % (
+            sys.stdout.write("INFO    - Total complete: %s%4d/%4d%s  %2d%%,  failed: %s%4d%s, error: %s%4d%s\r" % (
                 Fore.GREEN,
                 results.done,
                 total_to_do,
                 Fore.RESET,
                 completed_perc,
-                Fore.YELLOW if results.skipped_configs > 0 else Fore.RESET,
-                results.skipped_configs,
-                Fore.RESET,
                 Fore.RED if results.failed > 0 else Fore.RESET,
                 results.failed,
                 Fore.RESET,
@@ -1100,7 +1102,7 @@ class TwisterRunner:
         manager = BaseManager()
         manager.start()
 
-        self.results = ExecutionCounter(total=len(self.instances))
+        self.results = ExecutionCounter(total=0)
         self.iteration = 0
         pipeline = manager.LifoQueue()
         done_queue = manager.LifoQueue()
@@ -1139,7 +1141,7 @@ class TwisterRunner:
                 if self.options.retry_build_errors:
                     self.results.error = 0
             else:
-                self.results.done = self.results.skipped_filter
+                self.results.done = 0 # self.results.skipped_filter
 
             self.execute(pipeline, done_queue)
 
@@ -1178,12 +1180,15 @@ class TwisterRunner:
                 self.results.skipped_configs += 1
                 self.results.skipped_cases += len(instance.testsuite.testcases)
                 self.results.cases += len(instance.testsuite.testcases)
+                continue
             elif instance.status == Status.ERROR:
                 self.results.error += 1
 
+            self.results.total += 1
+
     def show_brief(self):
         logger.info("%d test scenarios (%d test instances) selected, "
-                    "%d configurations skipped (%d by static filter, %d at runtime)." %
+                    "%d configurations filtered (%d by static filter, %d at runtime)." %
                     (len(self.suites), len(self.instances),
                     self.results.skipped_configs,
                     self.results.skipped_filter,
