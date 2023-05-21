@@ -90,6 +90,9 @@ class ExecutionCounter(object):
         self._error = Value('i', 0)
         self._failed = Value('i', 0)
 
+        # testsuites that we did not run
+        self._notrun = Value('i', 0)
+
         # initialized to number of test instances
         self._total = Value('i', total)
 
@@ -131,6 +134,16 @@ class ExecutionCounter(object):
     def skipped_cases(self, value):
         with self._skipped_cases.get_lock():
             self._skipped_cases.value = value
+
+    @property
+    def notrun(self):
+        with self._notrun.get_lock():
+            return self._notrun.value
+
+    @notrun.setter
+    def notrun(self, value):
+        with self._notrun.get_lock():
+            self._notrun.value = value
 
     @property
     def error(self):
@@ -640,6 +653,7 @@ class ProjectBuilder(FilterBuilder):
                 pipeline.put({"op": "run", "test": self.instance})
             else:
                 self.instance.status = Status.NOTRUN
+                results.notrun += 1
                 self.instance.reason = "Test was built only"
                 pipeline.put({"op": "report", "test": self.instance})
 

@@ -458,7 +458,7 @@ class Reporting:
             pass_rate = 0
 
         logger.info(
-            "{}{} of {}{} test configurations passed ({:.2%}), {}{}{} failed, {}{}{} errored, {}{}{} warnings in {:.2f} seconds".format(
+            "{}{} of {}{} test configurations passed ({:.2%}), {}{}{} failed, {}{}{} errored, {} not run, {}{}{} warnings in {:.2f} seconds".format(
                 Fore.RED if failed else Fore.GREEN,
                 results.passed,
                 results.total - results.skipped_runtime,
@@ -470,6 +470,7 @@ class Reporting:
                 Fore.RED if results.error else Fore.RESET,
                 results.error,
                 Fore.RESET,
+                results.notrun,
                 Fore.YELLOW if self.plan.warnings else Fore.RESET,
                 self.plan.warnings,
                 Fore.RESET,
