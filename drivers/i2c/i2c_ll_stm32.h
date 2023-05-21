@@ -62,6 +62,10 @@ struct i2c_stm32_data {
 	uint32_t msg_buf_pos;
 	struct i2c_msg *msgs;
 	uint32_t num_msgs;
+#ifdef CONFIG_I2C_CALLBACK
+	i2c_callback_t cb;
+	void *userdata;
+#endif
 	struct {
 #ifdef CONFIG_I2C_STM32_V1
 		unsigned int is_restart;
@@ -82,6 +86,7 @@ struct i2c_stm32_data {
 #endif
 };
 
+int stm32_i2c_check_error(struct i2c_stm32_data *data, bool is_timeout);
 int32_t stm32_i2c_transfer_next(const struct device *dev);
 int32_t stm32_i2c_configure_timing(const struct device *dev, uint32_t clk);
 int i2c_stm32_runtime_configure(const struct device *dev, uint32_t config);
