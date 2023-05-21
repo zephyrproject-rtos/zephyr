@@ -798,6 +798,9 @@ add_custom_target(${DRIVER_VALIDATION_H_TARGET} DEPENDS ${DRV_VALIDATION})
 include(${ZEPHYR_BASE}/cmake/kobj.cmake)
 gen_kobj(KOBJ_INCLUDE_PATH)
 
+# Create empty header to be included by device_enum.h before first linker stage
+file(WRITE ${PROJECT_BINARY_DIR}/include/generated/device_enum_generated.h)
+
 # Add a pseudo-target that is up-to-date when all generated headers
 # are up-to-date.
 
