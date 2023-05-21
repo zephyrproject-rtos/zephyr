@@ -739,6 +739,22 @@ static inline bool z_impl_device_is_ready(const struct device *dev)
 }
 
 /**
+ * @brief Define device API from device class
+ *
+ * @details Defines and places device API implementation in appropriate
+ * section in ROM.
+ *
+ * DEVICE_API(rtc, rtc_emul_driver_api) = {
+ *         get_time = rtc_emul_get_time;
+ * };
+ *
+ * @param device_class Device class [rtc, i2c, ...]
+ * @param varname Variable name
+ */
+#define DEVICE_API(device_class, varname) \
+	const STRUCT_SECTION_ITERABLE(device_class##_driver_api, varname)
+
+/**
  * @}
  */
 

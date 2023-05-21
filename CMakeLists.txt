@@ -88,6 +88,7 @@ set(SYSCALL_LIST_H_TARGET      syscall_list_h_target)
 set(DRIVER_VALIDATION_H_TARGET driver_validation_h_target)
 set(KOBJ_TYPES_H_TARGET        kobj_types_h_target)
 set(PARSE_SYSCALLS_TARGET      parse_syscalls_target)
+set(DEVICE_CLASS_LD_TARGET     device_class_ld_target)
 
 define_property(GLOBAL PROPERTY PROPERTY_OUTPUT_FORMAT BRIEF_DOCS " " FULL_DOCS " ")
 set_property(   GLOBAL PROPERTY PROPERTY_OUTPUT_FORMAT elf32-little${ARCH}) # BFD format
@@ -801,6 +802,28 @@ gen_kobj(KOBJ_INCLUDE_PATH)
 # Create empty header to be included by device_enum.h before first linker stage
 file(WRITE ${PROJECT_BINARY_DIR}/include/generated/device_enum_generated.h)
 
+# Generate sections for kernel device subsystems
+set(
+  DEVICE_CLASS_LD_SECTIONS
+  ${CMAKE_CURRENT_BINARY_DIR}/include/generated/device-class-sections.ld
+  )
+
+add_custom_command(
+  OUTPUT ${DEVICE_CLASS_LD_SECTIONS}
+  COMMAND
+    ${PYTHON_EXECUTABLE}
+    ${ZEPHYR_BASE}/scripts/build/gen_iter_sections.py
+    -i ${struct_tags_json}
+    -t __subsystem
+    -o ${DEVICE_CLASS_LD_SECTIONS}
+  DEPENDS
+    ${ZEPHYR_BASE}/scripts/build/gen_iter_sections.py
+    ${struct_tags_json}
+  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+  )
+
+add_custom_target(${DEVICE_CLASS_LD_TARGET} DEPENDS ${DEVICE_CLASS_LD_SECTIONS})
+
 # Add a pseudo-target that is up-to-date when all generated headers
 # are up-to-date.
 
@@ -827,6 +850,7 @@ add_dependencies(zephyr_interface
   ${SYSCALL_LIST_H_TARGET}
   ${DRIVER_VALIDATION_H_TARGET}
   ${KOBJ_TYPES_H_TARGET}
+  ${DEVICE_CLASS_LD_TARGET}
   )
 
 add_custom_command(
