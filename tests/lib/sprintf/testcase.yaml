@@ -24,3 +24,12 @@ tests:
       - libc
       - picolibc
     filter: CONFIG_PICOLIBC_SUPPORTED
+  libraries.libc.picolibc.sprintf_inexact:
+    extra_args: CONF_FILE=prj_picolibc_new.conf
+    extra_configs:
+      - CONFIG_PICOLIBC_USE_MODULE=y
+      - CONFIG_PICOLIBC_IO_FLOAT_EXACT=n
+    tags:
+      - libc
+      - picolibc
+    filter: CONFIG_PICOLIBC_SUPPORTED
