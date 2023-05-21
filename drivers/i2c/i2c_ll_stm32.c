@@ -95,8 +95,8 @@ int i2c_stm32_runtime_configure(const struct device *dev, uint32_t config)
 
 #define OPERATION(msg) (((struct i2c_msg *) msg)->flags & I2C_MSG_RW_MASK)
 
-static int i2c_stm32_transfer(const struct device *dev, struct i2c_msg *msg,
-			      uint8_t num_msgs, uint16_t slave)
+static int i2c_stm32_transfer(const struct device *dev, struct i2c_msg *msgs,
+			      uint8_t num_msgs, uint16_t addr)
 {
 	struct i2c_stm32_data *data = dev->data;
 	struct i2c_msg *current, *next;
@@ -105,7 +105,7 @@ static int i2c_stm32_transfer(const struct device *dev, struct i2c_msg *msg,
 	/* Check for validity of all messages, to prevent having to abort
 	 * in the middle of a transfer
 	 */
-	current = msg;
+	current = msgs;
 
 	/*
 	 * Set I2C_MSG_RESTART flag on first message in order to send start
@@ -161,21 +161,24 @@ static int i2c_stm32_transfer(const struct device *dev, struct i2c_msg *msg,
 	pm_device_busy_set(dev);
 #endif
 
-	current = msg;
+	/* Perform a synchronous, blocking, I2C transfer */
+	data->msgs = msgs;
+	data->num_msgs = num_msgs;
+	data->addr = addr;
+	data->msg = 0;
+	data->msg_buf_pos = 0;
 
-	while (num_msgs > 0) {
-		uint8_t *next_msg_flags = NULL;
-
-		if (num_msgs > 1) {
-			next = current + 1;
-			next_msg_flags = &(next->flags);
-		}
-		ret = stm32_i2c_transaction(dev, *current, next_msg_flags, slave);
-		if (ret < 0) {
-			break;
-		}
-		current++;
-		num_msgs--;
+	/* Transfer next unit of data until there is nothing left to send.
+	 * 0 is success, < 0 is error, 1 is nothing left to send.
+	 */
+	while(ret == 0)
+	{
+		ret = stm32_i2c_transfer_next(dev);
+	}
+	/* If all data was sent then no error */
+	if(ret == 1)
+	{
+		ret = 0;
 	}
 
 #ifdef CONFIG_PM_DEVICE_RUNTIME

@@ -984,16 +984,41 @@ int32_t stm32_i2c_configure_timing(const struct device *dev, uint32_t clock)
 	return 0;
 }
 
-int stm32_i2c_transaction(const struct device *dev,
-						  struct i2c_msg msg, uint8_t *next_msg_flags,
-						  uint16_t periph)
+static int stm32_i2c_transfer_message(const struct device *dev)
 {
-	int ret;
+	/* Transfer an I2C message */
+	struct i2c_stm32_data *data = dev->data;
 
-	if ((msg.flags & I2C_MSG_RW_MASK) == I2C_MSG_WRITE) {
-		ret = stm32_i2c_msg_write(dev, &msg, next_msg_flags, periph);
-	} else {
-		ret = stm32_i2c_msg_read(dev, &msg, next_msg_flags, periph);
+	uint8_t *next_msg_flags = NULL;
+	if (data->msg < data->num_msgs - 1) {
+		next_msg_flags = &(data->msgs[data->msg + 1].flags);
 	}
+	struct i2c_msg msg = data->msgs[data->msg];
+
+	int ret;
+	if ((msg.flags & I2C_MSG_RW_MASK) == I2C_MSG_WRITE) {
+		ret = stm32_i2c_msg_write(dev, &msg, next_msg_flags, data->addr);
+	} else {
+		ret = stm32_i2c_msg_read(dev, &msg, next_msg_flags, data->addr);
+	}
+	return ret;
+}
+
+int stm32_i2c_transfer_next(const struct device *dev)
+{
+	/* Transfer the next unit of data in a transfer consisting of possibly
+	 * multiple messages.
+	 */
+	struct i2c_stm32_data *data = dev->data;
+
+	int ret = 0;
+	/* Current message done but more messages - transfer next message */
+	if (data->msg < data->num_msgs - 1) {
+		data->msg++;
+		ret = stm32_i2c_transfer_message(dev);
+	} else {
+		ret = 1;
+	}
+
 	return ret;
 }
