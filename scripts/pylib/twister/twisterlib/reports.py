@@ -19,7 +19,7 @@ logger.setLevel(logging.DEBUG)
 class Reporting:
 
     def __init__(self, plan, env) -> None:
-        self.plan = plan #FIXME
+        self.plan = plan
         self.instances = plan.instances
         self.platforms = plan.platforms
         self.selected_platforms = plan.selected_platforms
@@ -280,7 +280,7 @@ class Reporting:
             if instance.status in [Status.ERROR, Status.FAIL]:
                 suite['status'] = instance.status
                 suite["reason"] = instance.reason
-                # FIXME
+                # FIXME: move this to a function
                 if os.path.exists(handler_log):
                     suite["log"] = self.process_log(handler_log)
                 elif os.path.exists(device_log):

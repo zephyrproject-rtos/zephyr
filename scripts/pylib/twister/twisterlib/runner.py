@@ -687,6 +687,7 @@ class ProjectBuilder(FilterBuilder):
             else:
                 # Count skipped cases during build, for example
                 # due to ram/rom overflow.
+                # FIXME: ram/rom are now errors!
                 if  self.instance.status == Status.SKIP:
                     results.skipped_runtime += 1
                     self.instance.add_missing_case_status(Status.SKIP, self.instance.reason)
@@ -769,6 +770,8 @@ class ProjectBuilder(FilterBuilder):
         for section in elf.iter_sections():
             if isinstance(section, SymbolTableSection):
                 for sym in section.iter_symbols():
+                    if 'ztest_unit' not in sym.name:
+                        continue
                     # It is only meant for new ztest fx because only new ztest fx exposes test functions
                     # precisely.
 
@@ -959,15 +962,17 @@ class ProjectBuilder(FilterBuilder):
             with open(file_path, "wt") as file:
                 file.write(data)
 
-    def count_testcase_states(self, tests, results):
-        for t in tests:
-            if t.status == Status.NOTRUN:
+    def count_testcase_states(self, instance, results):
+        for t in instance.testcases:
+            if t.status == Status.NOTRUN and instance.status == Status.NOTRUN:
                 results.cases_notrun +=1
+            elif t.status == Status.NOTRUN and instance.status == Status.FAIL:
+                results.cases_blocked +=1
             elif t.status == Status.PASS:
                 results.cases_passed +=1
             elif t.status == Status.SKIP:
                 results.cases_skipped +=1
-            elif t.status == Status.FAIL:
+            elif t.status in [Status.FAIL, Status.INPROGRESS]:
                 results.cases_failed +=1
             elif t.status == Status.BLOCK:
                 results.cases_blocked +=1
@@ -978,12 +983,11 @@ class ProjectBuilder(FilterBuilder):
         results.done += 1
         instance = self.instance
         if results.iteration == 1:
-            if instance.status in [Status.FILTER]:
-                # remove filtered cases which were previously counted against total.
-                results.cases -= len(instance.testcases)
+            if instance.status not in [Status.FILTER]:
+                results.cases += len(instance.testcases)
 
         if instance.status not in [Status.FILTER]:
-            self.count_testcase_states(instance.testcases, results)
+            self.count_testcase_states(instance, results)
 
         if instance.status in [Status.ERROR, Status.FAIL]:
             if instance.status == Status.ERROR:
@@ -1274,7 +1278,6 @@ class TwisterRunner:
             elif instance.status == Status.ERROR:
                 self.results.error += 1
 
-            self.results.cases += len(instance.testsuite.testcases)
             self.results.total += 1
 
     def show_brief(self):
