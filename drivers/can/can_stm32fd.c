@@ -635,9 +635,9 @@ static const struct can_mcan_ops can_stm32fd_ops = {
 	.clear_mram = can_stm32fd_clear_mram,
 };
 
-/* Assert that the Message RAM configuration meets the hardware limitiations */
-BUILD_ASSERT(NUM_STD_FILTER_ELEMENTS <= 28, "Standard filter elements must be 28");
-BUILD_ASSERT(NUM_EXT_FILTER_ELEMENTS <= 8, "Extended filter elements must be 8");
+/* Assert that the Message RAM configuration matches the fixed hardware configuration */
+BUILD_ASSERT(NUM_STD_FILTER_ELEMENTS == 28, "Standard filter elements must be 28");
+BUILD_ASSERT(NUM_EXT_FILTER_ELEMENTS == 8, "Extended filter elements must be 8");
 BUILD_ASSERT(NUM_RX_FIFO0_ELEMENTS == 3, "Rx FIFO 0 elements must be 3");
 BUILD_ASSERT(NUM_RX_FIFO1_ELEMENTS == 3, "Rx FIFO 1 elements must be 3");
 BUILD_ASSERT(NUM_RX_BUF_ELEMENTS == 0, "Rx Buffer elements must be 0");
