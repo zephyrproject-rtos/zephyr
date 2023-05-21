@@ -568,6 +568,7 @@ struct can_mcan_data {
  * @param[out] val Register value
  *
  * @retval 0 If successful.
+ * @retval -ENOTSUP Register not supported.
  * @retval -EIO General input/output error.
  */
 typedef int (*can_mcan_read_reg_t)(const struct device *dev, uint16_t reg, uint32_t *val);
@@ -580,6 +581,7 @@ typedef int (*can_mcan_read_reg_t)(const struct device *dev, uint16_t reg, uint3
  * @param val Register value
  *
  * @retval 0 If successful.
+ * @retval -ENOTSUP Register not supported.
  * @retval -EIO General input/output error.
  */
 typedef int (*can_mcan_write_reg_t)(const struct device *dev, uint16_t reg, uint32_t val);
