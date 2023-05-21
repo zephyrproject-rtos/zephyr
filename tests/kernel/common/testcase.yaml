@@ -22,6 +22,11 @@ tests:
       - native_posix
     extra_configs:
       - CONFIG_MISRA_SANE=y
+  kernel.common.minimallibc:
+    filter: CONFIG_MINIMAL_LIBC_SUPPORTED
+    tags: libc
+    extra_configs:
+      - CONFIG_MINIMAL_LIBC=y
   kernel.common.nano32:
     filter: not CONFIG_KERNEL_COHERENCE
     extra_configs:
