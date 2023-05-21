@@ -102,3 +102,5 @@
 #include <zephyr/linker/device-deps.ld>
 	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 #endif /* !CONFIG_DEVICE_DEPS_DYNAMIC */
+
+#include <device-api-sections.ld>
