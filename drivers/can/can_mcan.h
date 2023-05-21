@@ -558,6 +558,15 @@ enum can_mcan_mram_cfg {
 #define NUM_TX_EVENT_FIFO_ELEMENTS CAN_MCAN_DT_MRAM_TX_EVENT_FIFO_ELEM(MCAN_DT_PATH)
 #define NUM_TX_BUF_ELEMENTS        CAN_MCAN_DT_MRAM_TX_BUFFER_ELEM(MCAN_DT_PATH)
 
+/* Assert that the Message RAM configuration meets the M_CAN IP core restrictions */
+BUILD_ASSERT(NUM_STD_FILTER_ELEMENTS <= 128, "Maximum Standard filter elements exceeded");
+BUILD_ASSERT(NUM_EXT_FILTER_ELEMENTS <= 64, "Maximum Extended filter elements exceeded");
+BUILD_ASSERT(NUM_RX_FIFO0_ELEMENTS <= 64, "Maximum Rx FIFO 0 elements exceeded");
+BUILD_ASSERT(NUM_RX_FIFO1_ELEMENTS <= 64, "Maximum Rx FIFO 1 elements exceeded");
+BUILD_ASSERT(NUM_RX_BUF_ELEMENTS <= 64, "Maximum Rx Buffer elements exceeded");
+BUILD_ASSERT(NUM_TX_EVENT_FIFO_ELEMENTS <= 32, "Maximum Tx Buffer elements exceeded");
+BUILD_ASSERT(NUM_TX_BUF_ELEMENTS <= 32, "Maximum Tx Buffer elements exceeded");
+
 #ifdef CONFIG_CAN_STM32FD
 #define NUM_STD_FILTER_DATA CONFIG_CAN_MAX_STD_ID_FILTER
 #define NUM_EXT_FILTER_DATA CONFIG_CAN_MAX_EXT_ID_FILTER
