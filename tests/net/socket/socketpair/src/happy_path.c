@@ -119,7 +119,7 @@ static void happy_path(
 	zassert_equal(res, 0, "close failed");
 }
 
-ZTEST_USER(net_socketpair, test_AF_LOCAL__SOCK_STREAM__0)
+ZTEST_USER(net_socketpair, test_AF_LOCAL_SOCK_STREAM_0)
 {
 	happy_path(
 		AF_LOCAL, "AF_LOCAL",
@@ -128,7 +128,7 @@ ZTEST_USER(net_socketpair, test_AF_LOCAL__SOCK_STREAM__0)
 	);
 }
 
-ZTEST_USER(net_socketpair, test_AF_UNIX__SOCK_STREAM__0)
+ZTEST_USER(net_socketpair, test_AF_UNIX_SOCK_STREAM_0)
 {
 	happy_path(
 		AF_UNIX, "AF_UNIX",
