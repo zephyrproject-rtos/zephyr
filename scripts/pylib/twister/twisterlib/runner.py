@@ -53,7 +53,7 @@ class ExecutionCounter(object):
     def __init__(self, total=0):
         '''
         Most of the stats are at test instance level
-        Except that "_cases" and "_skipped_cases" are for cases of ALL test instances
+        Except that "_cases" and "_cases_filtered" are for cases of ALL test instances
 
         total complete = done + skipped_filter
         total = yaml test scenarios * applicable platforms
@@ -84,7 +84,7 @@ class ExecutionCounter(object):
         self._skipped_filter = Value('i', 0)
 
         # updated by update_counting_before_pipeline() and report_out()
-        self._skipped_cases = Value('i', 0)
+        self._cases_filtered = Value('i', 0)
 
         # updated by report_out() in pipeline
         self._error = Value('i', 0)
@@ -92,6 +92,14 @@ class ExecutionCounter(object):
 
         # testsuites that we did not run
         self._notrun = Value('i', 0)
+
+
+        self._cases_notrun = Value('i', 0)
+        self._cases_skipped = Value('i', 0)
+        self._cases_passed = Value('i', 0)
+        self._cases_blocked = Value('i', 0)
+        self._cases_failed = Value('i', 0)
+        self._cases_blocked = Value('i', 0)
 
         # initialized to number of test instances
         self._total = Value('i', total)
@@ -104,8 +112,8 @@ class ExecutionCounter(object):
         print("--------------------------------")
         print(f"Total test suites: {self.total}") # actually test instances
         print(f"Total test cases: {self.cases}")
-        print(f"Executed test cases: {self.cases - self.skipped_cases}")
-        print(f"Skipped test cases: {self.skipped_cases}")
+        print(f"Executed test cases: {self.cases - self.cases_filtered}")
+        print(f"Skipped test cases: {self.cases_filtered}")
         print(f"Completed test suites: {self.done}")
         print(f"Passing test suites: {self.passed}")
         print(f"Failing test suites: {self.failed}")
@@ -126,14 +134,64 @@ class ExecutionCounter(object):
             self._cases.value = value
 
     @property
-    def skipped_cases(self):
-        with self._skipped_cases.get_lock():
-            return self._skipped_cases.value
+    def cases_filtered(self):
+        with self._cases_filtered.get_lock():
+            return self._cases_filtered.value
 
-    @skipped_cases.setter
-    def skipped_cases(self, value):
-        with self._skipped_cases.get_lock():
-            self._skipped_cases.value = value
+    @cases_filtered.setter
+    def cases_filtered(self, value):
+        with self._cases_filtered.get_lock():
+            self._cases_filtered.value = value
+
+    @property
+    def cases_notrun(self):
+        with self._cases_notrun.get_lock():
+            return self._cases_notrun.value
+
+    @cases_notrun.setter
+    def cases_notrun(self, value):
+        with self._cases_notrun.get_lock():
+            self._cases_notrun.value = value
+
+    @property
+    def cases_skipped(self):
+        with self._cases_skipped.get_lock():
+            return self._cases_skipped.value
+
+    @cases_skipped.setter
+    def cases_skipped(self, value):
+        with self._cases_skipped.get_lock():
+            self._cases_skipped.value = value
+
+    @property
+    def cases_blocked(self):
+        with self._cases_blocked.get_lock():
+            return self._cases_blocked.value
+
+    @cases_blocked.setter
+    def cases_blocked(self, value):
+        with self._cases_blocked.get_lock():
+            self._cases_blocked.value = value
+
+    @property
+    def cases_passed(self):
+        with self._cases_passed.get_lock():
+            return self._cases_passed.value
+
+    @cases_passed.setter
+    def cases_passed(self, value):
+        with self._cases_passed.get_lock():
+            self._cases_passed.value = value
+
+    @property
+    def cases_failed(self):
+        with self._cases_failed.get_lock():
+            return self._cases_failed.value
+
+    @cases_failed.setter
+    def cases_failed(self, value):
+        with self._cases_failed.get_lock():
+            self._cases_failed.value = value
 
     @property
     def notrun(self):
@@ -901,13 +959,31 @@ class ProjectBuilder(FilterBuilder):
             with open(file_path, "wt") as file:
                 file.write(data)
 
+    def count_testcase_states(self, tests, results):
+        for t in tests:
+            if t.status == Status.NOTRUN:
+                results.cases_notrun +=1
+            elif t.status == Status.PASS:
+                results.cases_passed +=1
+            elif t.status == Status.SKIP:
+                results.cases_skipped +=1
+            elif t.status == Status.FAIL:
+                results.cases_failed +=1
+            elif t.status == Status.BLOCK:
+                results.cases_blocked +=1
+
     def report_out(self, results):
         total_to_do = results.total
         total_tests_width = len(str(total_to_do))
         results.done += 1
         instance = self.instance
         if results.iteration == 1:
-            results.cases += len(instance.testcases)
+            if instance.status in [Status.FILTER]:
+                # remove filtered cases which were previously counted against total.
+                results.cases -= len(instance.testcases)
+
+        if instance.status not in [Status.FILTER]:
+            self.count_testcase_states(instance.testcases, results)
 
         if instance.status in [Status.ERROR, Status.FAIL]:
             if instance.status == Status.ERROR:
@@ -933,14 +1009,14 @@ class ProjectBuilder(FilterBuilder):
             status = Fore.YELLOW + "FILTERED" + Fore.RESET
             results.skipped_configs += 1
             # test cases skipped at the test instance level
-            results.skipped_cases += len(instance.testsuite.testcases)
+            results.cases_filtered += len(instance.testsuite.testcases)
         elif instance.status == Status.PASS:
             status = Fore.GREEN + "PASSED" + Fore.RESET
             results.passed += 1
             for case in instance.testcases:
                 # test cases skipped at the test case level
                 if case.status == Status.SKIP:
-                    results.skipped_cases += 1
+                    results.cases_filtered += 1
         elif instance.status == Status.NOTRUN:
             status = Fore.YELLOW + "NOTRUN" + Fore.RESET
         else:
@@ -1193,12 +1269,12 @@ class TwisterRunner:
             if instance.status == Status.FILTER and not instance.reason == 'runtime filter':
                 self.results.skipped_filter += 1
                 self.results.skipped_configs += 1
-                self.results.skipped_cases += len(instance.testsuite.testcases)
-                self.results.cases += len(instance.testsuite.testcases)
+                self.results.cases_filtered += len(instance.testsuite.testcases)
                 continue
             elif instance.status == Status.ERROR:
                 self.results.error += 1
 
+            self.results.cases += len(instance.testsuite.testcases)
             self.results.total += 1
 
     def show_brief(self):

@@ -477,15 +477,18 @@ class Reporting:
                 duration))
 
         total_platforms = len(self.platforms)
-        # if we are only building, do not report about tests being executed.
-        if self.platforms and not self.env.options.build_only:
-            logger.info("In total {} test cases were executed, {} skipped on {} out of total {} platforms ({:02.2f}%)".format(
-                results.cases - results.skipped_cases,
-                results.skipped_cases,
-                len(self.filtered_platforms),
-                total_platforms,
-                (100 * len(self.filtered_platforms) / len(self.platforms))
-            ))
+        pass_rate = (float(results.cases_passed) / float(results.cases))
+        logger.info("{} of {} test cases passed ({:.2%}), {} failed, {} not run, {} blocked on {} out of total {} platforms ({:02.2f}%)".format(
+            results.cases_passed,
+            results.cases,
+            pass_rate,
+            results.cases_failed,
+            results.cases_notrun,
+            results.cases_blocked,
+            len(self.filtered_platforms),
+            total_platforms,
+            (100 * len(self.filtered_platforms) / len(self.platforms))
+        ))
 
         run = results.total - built_only - results.skipped_runtime
         logger.info(f"{Fore.GREEN}{run}{Fore.RESET} test configurations executed on platforms, \
