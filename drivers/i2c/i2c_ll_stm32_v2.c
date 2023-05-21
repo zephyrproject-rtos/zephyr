@@ -540,6 +540,13 @@ static int stm32_i2c_msg_write(const struct device *dev, struct i2c_msg *msg,
 	stm32_i2c_enable_transfer_interrupts(dev);
 	LL_I2C_EnableIT_TX(i2c);
 
+	/* For async, return immediately without blocking */
+#ifdef CONFIG_I2C_CALLBACK
+	if (data->cb != NULL) {
+		return 0;
+	}
+#endif
+
 	if (k_sem_take(&data->device_sync_sem,
 			K_MSEC(STM32_I2C_TRANSFER_TIMEOUT_MSEC)) != 0) {
 		stm32_i2c_master_mode_end(dev);
@@ -568,6 +575,13 @@ static int stm32_i2c_msg_read(const struct device *dev, struct i2c_msg *msg,
 
 	stm32_i2c_enable_transfer_interrupts(dev);
 	LL_I2C_EnableIT_RX(i2c);
+
+	/* For async, return immediately without blocking */
+#ifdef CONFIG_I2C_CALLBACK
+	if (data->cb != NULL) {
+		return 0;
+	}
+#endif
 
 	if (k_sem_take(&data->device_sync_sem,
 			K_MSEC(STM32_I2C_TRANSFER_TIMEOUT_MSEC)) != 0) {
