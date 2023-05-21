@@ -929,7 +929,7 @@ class ProjectBuilder(FilterBuilder):
                         instance.reason))
             if not self.options.verbose:
                 self.log_info_file(self.options.inline_logs)
-        elif instance.status in [Status.SKIP]:
+        elif instance.status in [Status.FILTER]:
             status = Fore.YELLOW + "FILTERED" + Fore.RESET
             results.skipped_configs += 1
             # test cases skipped at the test instance level
