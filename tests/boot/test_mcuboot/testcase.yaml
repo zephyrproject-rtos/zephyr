@@ -19,3 +19,9 @@ tests:
     integration_platforms:
       - frdm_k64f
       - nrf52840dk_nrf52840
+  boot.mcuboot.assert:
+    tags: mcuboot
+    platform_allow:
+      - b_u585i_iot02a
+    extra_configs:
+      - CONFIG_ASSERT=y
