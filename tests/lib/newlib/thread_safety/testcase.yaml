@@ -6,14 +6,6 @@ tests:
       - clib
       - newlib
     min_ram: 64
-    testcases:
-      - sfp_lock
-      - env_lock
-      - retargetable_lock_sem
-      - malloc_lock
-      - retargetable_lock_mutex
-      - sinit_lock
-      - tz_lock
   libraries.libc.newlib.thread_safety.stress:
     extra_configs:
       - CONFIG_NEWLIB_THREAD_SAFETY_TEST_STRESS=y
@@ -22,15 +14,6 @@ tests:
       - clib
       - newlib
     min_ram: 192
-    testcases:
-      - sfp_lock
-      - env_lock
-      - malloc_thread_safety
-      - retargetable_lock_sem
-      - malloc_lock
-      - retargetable_lock_mutex
-      - sinit_lock
-      - tz_lock
   libraries.libc.newlib.thread_safety.userspace:
     extra_args: CONF_FILE=prj_userspace.conf
     filter: CONFIG_ARCH_HAS_USERSPACE
@@ -39,14 +22,6 @@ tests:
       - newlib
       - userspace
     min_ram: 64
-    testcases:
-      - sfp_lock
-      - env_lock
-      - retargetable_lock_sem
-      - malloc_lock
-      - retargetable_lock_mutex
-      - sinit_lock
-      - tz_lock
   libraries.libc.newlib.thread_safety.userspace.stress:
     extra_args: CONF_FILE=prj_userspace.conf
     extra_configs:
@@ -59,15 +34,6 @@ tests:
       - newlib
       - userspace
     min_ram: 192
-    testcases:
-      - sfp_lock
-      - env_lock
-      - malloc_thread_safety
-      - retargetable_lock_sem
-      - malloc_lock
-      - retargetable_lock_mutex
-      - sinit_lock
-      - tz_lock
     timeout: 120
   libraries.libc.newlib_nano.thread_safety:
     extra_configs:
@@ -77,14 +43,6 @@ tests:
       - clib
       - newlib
     min_ram: 64
-    testcases:
-      - sfp_lock
-      - env_lock
-      - retargetable_lock_sem
-      - malloc_lock
-      - retargetable_lock_mutex
-      - sinit_lock
-      - tz_lock
   libraries.libc.newlib_nano.thread_safety.stress:
     extra_configs:
       - CONFIG_NEWLIB_THREAD_SAFETY_TEST_STRESS=y
@@ -95,15 +53,6 @@ tests:
       - clib
       - newlib
     min_ram: 192
-    testcases:
-      - sfp_lock
-      - env_lock
-      - malloc_thread_safety
-      - retargetable_lock_sem
-      - malloc_lock
-      - retargetable_lock_mutex
-      - sinit_lock
-      - tz_lock
   libraries.libc.newlib_nano.thread_safety.userspace:
     extra_args: CONF_FILE=prj_userspace.conf
     extra_configs:
@@ -114,14 +63,6 @@ tests:
       - newlib
       - userspace
     min_ram: 64
-    testcases:
-      - sfp_lock
-      - env_lock
-      - retargetable_lock_sem
-      - malloc_lock
-      - retargetable_lock_mutex
-      - sinit_lock
-      - tz_lock
   libraries.libc.newlib_nano.thread_safety.userspace.stress:
     extra_args: CONF_FILE=prj_userspace.conf
     extra_configs:
@@ -135,13 +76,4 @@ tests:
       - newlib
       - userspace
     min_ram: 192
-    testcases:
-      - sfp_lock
-      - env_lock
-      - malloc_thread_safety
-      - retargetable_lock_sem
-      - malloc_lock
-      - retargetable_lock_mutex
-      - sinit_lock
-      - tz_lock
     timeout: 120
