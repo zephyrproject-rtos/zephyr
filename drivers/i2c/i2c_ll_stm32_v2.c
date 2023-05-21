@@ -776,51 +776,76 @@ int stm32_i2c_configure_timing(const struct device *dev, uint32_t clock)
 	return 0;
 }
 
-int stm32_i2c_transaction(const struct device *dev,
-						  struct i2c_msg msg, uint8_t *next_msg_flags,
-						  uint16_t periph)
+static int stm32_i2c_transfer_message_chunk(const struct device *dev)
 {
 	/*
-	 * Perform a I2C transaction, while taking into account the STM32 I2C V2
-	 * peripheral has a limited maximum chunk size. Take appropriate action
-	 * if the message to send exceeds that limit.
+	 * Transfer a chunk of an I2C message. The chunk may be a whole message
+	 or part of a message divided to the limited maximum chunk size.
 	 *
-	 * The last chunk of a transmission uses this function's next_msg_flags
-	 * parameter for its backend calls (_write/_read). Any previous chunks
-	 * use a copy of the current message's flags, with the STOP and RESTART
-	 * bits turned off. This will cause the backend to use reload-mode,
-	 * which will make the combination of all chunks to look like one big
-	 * transaction on the wire.
+	 * The last chunk of a transmission uses next_msg_flags for its backend
+	 * calls (_write/_read). Any previous chunks use a copy of the current
+	 * message's flags, with the STOP and RESTART bits turned off. This will
+	 * cause the backend to use reload-mode, which will make the combination
+	 * of all chunks to look like one big transaction on the wire.
 	 */
+	struct i2c_stm32_data *data = dev->data;
+
+	uint8_t *next_msg_flags = NULL;
+
+	if (data->msg < data->num_msgs - 1) {
+		next_msg_flags = &(data->msgs[data->msg + 1].flags);
+	}
+
+	struct i2c_msg msg = data->msgs[data->msg];
 	const uint32_t i2c_stm32_maxchunk = 255U;
 	const uint8_t saved_flags = msg.flags;
 	uint8_t combine_flags =
 		saved_flags & ~(I2C_MSG_STOP | I2C_MSG_RESTART);
 	uint8_t *flagsp = NULL;
-	uint32_t rest = msg.len;
 	int ret = 0;
 
-	do { /* do ... while to allow zero-length transactions */
-		if (msg.len > i2c_stm32_maxchunk) {
-			msg.len = i2c_stm32_maxchunk;
-			msg.flags &= ~I2C_MSG_STOP;
-			flagsp = &combine_flags;
-		} else {
-			msg.flags = saved_flags;
-			flagsp = next_msg_flags;
-		}
-		if ((msg.flags & I2C_MSG_RW_MASK) == I2C_MSG_WRITE) {
-			ret = stm32_i2c_msg_write(dev, &msg, flagsp, periph);
-		} else {
-			ret = stm32_i2c_msg_read(dev, &msg, flagsp, periph);
-		}
-		if (ret < 0) {
-			break;
-		}
-		rest -= msg.len;
-		msg.buf += msg.len;
-		msg.len = rest;
-	} while (rest > 0U);
+	if ((msg.len - data->msg_buf_pos) > i2c_stm32_maxchunk) {
+		msg.len = i2c_stm32_maxchunk;
+		msg.flags &= ~I2C_MSG_STOP;
+		flagsp = &combine_flags;
+	} else {
+		msg.len -= data->msg_buf_pos;
+		flagsp = next_msg_flags;
+	}
+	msg.buf += data->msg_buf_pos;
+	data->msg_buf_pos += msg.len;
+	if ((msg.flags & I2C_MSG_RW_MASK) == I2C_MSG_WRITE) {
+		ret = stm32_i2c_msg_write(dev, &msg, flagsp, data->addr);
+	} else {
+		ret = stm32_i2c_msg_read(dev, &msg, flagsp, data->addr);
+	}
+	return ret;
+}
+
+int stm32_i2c_transfer_next(const struct device *dev)
+{
+	/* Transfer the next unit of data in a transfer consisting of possibly
+	 * multiple messages, while taking into account the STM32 I2C peripheral
+	 * has a limited maximum chunk size. Take appropriate action if the message
+	 * to send exceeds that limit.
+	 *
+	 * Returns 1 if there is nothing more to transfer, 0 on successful
+	 * transfer, error code on unsuccessful transfer.
+	 */
+	struct i2c_stm32_data *data = dev->data;
+
+	int ret = 0;
+	/* More data in current message - transfer next chunk */
+	if (data->msg_buf_pos < data->msgs[data->msg].len) {
+		ret = stm32_i2c_transfer_message_chunk(dev);
+	/* Current message done but more messages - transfer next message */
+	} else if (data->msg < data->num_msgs - 1) {
+		data->msg++;
+		data->msg_buf_pos = 0;
+		ret = stm32_i2c_transfer_message_chunk(dev);
+	} else {
+		ret = 1;
+	}
 
 	return ret;
 }

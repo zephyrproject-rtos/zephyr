@@ -59,6 +59,11 @@ struct i2c_stm32_data {
 #ifdef CONFIG_I2C_STM32_V1
 	uint16_t slave_address;
 #endif
+	uint16_t addr;
+	uint32_t msg;
+	uint32_t msg_buf_pos;
+	struct i2c_msg *msgs;
+	uint32_t num_msgs;
 	struct {
 #ifdef CONFIG_I2C_STM32_V1
 		unsigned int is_restart;
@@ -86,9 +91,7 @@ struct i2c_stm32_data {
 #endif
 };
 
-int32_t stm32_i2c_transaction(const struct device *dev,
-			    struct i2c_msg msg, uint8_t *next_msg_flags,
-			    uint16_t periph);
+int stm32_i2c_transfer_next(const struct device *dev);
 int32_t stm32_i2c_configure_timing(const struct device *dev, uint32_t clk);
 int i2c_stm32_runtime_configure(const struct device *dev, uint32_t config);
 int i2c_stm32_get_config(const struct device *dev, uint32_t *config);
