@@ -7,26 +7,10 @@ tests:
     arch_exclude: posix
     tags: libc
     ignore_faults: true
-    testcases:
-      - sprintf_integer
-      - sprintf_double
-      - sprintf_string
-      - fprintf
-      - vprintf
-      - vsnprintf
-      - fwrite
-      - vfprintf
-      - sprintf_misc
-      - vsprintf
-      - print
-      - put
-      - snprintf
   libraries.libc.sprintf_new:
     extra_args: CONF_FILE=prj_new.conf
     arch_exclude: posix
     tags: libc
-    testcases:
-      - EOF
   libraries.libc.picolibc.sprintf:
     extra_args: CONF_FILE=prj_picolibc.conf
     tags:
