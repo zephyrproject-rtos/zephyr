@@ -902,6 +902,15 @@ endforeach()
 
 get_property(OUTPUT_FORMAT        GLOBAL PROPERTY PROPERTY_OUTPUT_FORMAT)
 
+# Generate list of zephyr libraries excluding the app library
+set_property(GLOBAL PROPERTY ZEPHYR_KERNEL_LIBS_PROPERTY)
+
+foreach(zephyr_lib ${ZEPHYR_LIBS_PROPERTY})
+  if(NOT ${zephyr_lib} STREQUAL app)
+    list(APPEND ZEPHYR_KERNEL_LIBS_PROPERTY ${zephyr_lib})
+  endif()
+endforeach()
+
 if (CONFIG_CODE_DATA_RELOCATION)
   set(CODE_RELOCATION_DEP code_relocation_source_lib)
 endif() # CONFIG_CODE_DATA_RELOCATION
@@ -1204,7 +1213,7 @@ if(CONFIG_USERSPACE OR CONFIG_HAS_DTS)
     LIBRARIES_PRE_SCRIPT  ""
     LINKER_SCRIPT         ${PROJECT_BINARY_DIR}/${ZEPHYR_CURRENT_LINKER_CMD}
     LIBRARIES_POST_SCRIPT ""
-    LIBRARIES             ${ZEPHYR_LIBS_PROPERTY}
+    LIBRARIES             ${ZEPHYR_KERNEL_LIBS_PROPERTY}
     DEPENDENCIES          ${CODE_RELOCATION_DEP}
   )
   target_byproducts(TARGET ${ZEPHYR_LINK_STAGE_EXECUTABLE}
@@ -1422,7 +1431,7 @@ toolchain_ld_link_elf(
   OUTPUT_MAP            ${PROJECT_BINARY_DIR}/${ZEPHYR_LINK_STAGE_EXECUTABLE}.map
   LIBRARIES_PRE_SCRIPT  ""
   LINKER_SCRIPT         ${PROJECT_BINARY_DIR}/${ZEPHYR_CURRENT_LINKER_CMD}
-  LIBRARIES             ${ZEPHYR_LIBS_PROPERTY}
+  LIBRARIES             ${ZEPHYR_KERNEL_LIBS_PROPERTY}
   DEPENDENCIES          ${CODE_RELOCATION_DEP}
 )
 target_byproducts(TARGET ${ZEPHYR_LINK_STAGE_EXECUTABLE}
@@ -1439,11 +1448,11 @@ add_dependencies(
   )
 
 set(generated_kernel_files ${GKSF} ${GKOF})
-if(NOT generated_kernel_files)
-  # Use the prebuilt elf as the final elf since we don't have a
-  # generation stage.
-  set(logical_target_for_zephyr_elf ${ZEPHYR_LINK_STAGE_EXECUTABLE})
-else()
+#if(NOT generated_kernel_files)
+#  # Use the prebuilt elf as the final elf since we don't have a
+#  # generation stage.
+#  set(logical_target_for_zephyr_elf ${ZEPHYR_LINK_STAGE_EXECUTABLE})
+#else()
   # The final linker pass uses the same source linker script of the
   # previous passes, but this time with a different output
   # file and preprocessed with the define LINKER_ZEPHYR_FINAL.
@@ -1481,7 +1490,7 @@ else()
 
   # Use the pass2 elf as the final elf
   set(logical_target_for_zephyr_elf ${ZEPHYR_FINAL_EXECUTABLE})
-endif()
+#endif()
 
 # Export the variable to the application's scope to allow the
 # application to know what the name of the final elf target is.
