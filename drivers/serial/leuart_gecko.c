@@ -10,9 +10,15 @@
 #include <zephyr/drivers/uart.h>
 #include <zephyr/irq.h>
 #include <em_leuart.h>
-#include <em_gpio.h>
+
 #include <em_cmu.h>
 #include <soc.h>
+
+#ifdef CONFIG_PINCTRL
+#include <zephyr/drivers/pinctrl.h>
+#else
+#include <em_gpio.h>
+#endif /* CONFIG_PINCTRL */
 
 #define LEUART_PREFIX cmuClock_LEUART
 #define CLOCK_ID_PRFX2(prefix, suffix) prefix##suffix
@@ -27,9 +33,13 @@ struct leuart_gecko_config {
 	LEUART_TypeDef *base;
 	CMU_Clock_TypeDef clock;
 	uint32_t baud_rate;
+#ifdef CONFIG_PINCTRL
+	const struct pinctrl_dev_config *pcfg;
+#endif /* CONFIG_PINCTRL */
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	void (*irq_config_func)(const struct device *dev);
 #endif
+#ifndef CONFIG_PINCTRL
 	struct soc_gpio_pin pin_rx;
 	struct soc_gpio_pin pin_tx;
 #ifdef CONFIG_SOC_GECKO_HAS_INDIVIDUAL_PIN_LOCATION
@@ -37,6 +47,7 @@ struct leuart_gecko_config {
 	uint8_t loc_tx;
 #else
 	uint8_t loc;
+#endif
 #endif
 };
 
@@ -239,7 +250,7 @@ static void leuart_gecko_isr(const struct device *dev)
 	}
 }
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
-
+#ifndef CONFIG_PINCTRL
 static void leuart_gecko_init_pins(const struct device *dev)
 {
 	const struct leuart_gecko_config *config = dev->config;
@@ -260,9 +271,12 @@ static void leuart_gecko_init_pins(const struct device *dev)
 		| (config->loc << 8);
 #endif
 }
-
+#endif
 static int leuart_gecko_init(const struct device *dev)
 {
+#ifdef CONFIG_PINCTRL
+	int err;
+#endif /* CONFIG_PINCTRL */
 	const struct leuart_gecko_config *config = dev->config;
 	LEUART_TypeDef *base = DEV_BASE(dev);
 	LEUART_Init_TypeDef leuartInit = LEUART_INIT_DEFAULT;
@@ -284,9 +298,15 @@ static int leuart_gecko_init(const struct device *dev)
 
 	/* Init LEUART */
 	LEUART_Init(base, &leuartInit);
-
+#ifdef CONFIG_PINCTRL
+	err = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
+	if (err < 0) {
+		return err;
+	}
+#else
 	/* Initialize LEUART pins */
 	leuart_gecko_init_pins(dev);
+#endif
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	config->irq_config_func(dev);
@@ -319,10 +339,16 @@ static const struct uart_driver_api leuart_gecko_driver_api = {
 
 #if DT_NODE_HAS_STATUS(DT_DRV_INST(0), okay)
 
+#ifdef CONFIG_PINCTRL
+PINCTRL_DT_INST_DEFINE(0);
+#endif
+
+#ifndef CONFIG_PINCTRL
 #define PIN_LEUART_0_RXD {DT_INST_PROP_BY_IDX(0, location_rx, 1), \
 		DT_INST_PROP_BY_IDX(0, location_rx, 2), gpioModeInput, 1}
 #define PIN_LEUART_0_TXD {DT_INST_PROP_BY_IDX(0, location_tx, 1), \
 		DT_INST_PROP_BY_IDX(0, location_tx, 2), gpioModePushPull, 1}
+#endif /* CONFIG_PINCTRL */
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static void leuart_gecko_config_func_0(const struct device *dev);
@@ -332,6 +358,9 @@ static const struct leuart_gecko_config leuart_gecko_0_config = {
 	.base = (LEUART_TypeDef *)DT_INST_REG_ADDR(0),
 	.clock = CLOCK_LEUART(DT_INST_PROP(0, peripheral_id)),
 	.baud_rate = DT_INST_PROP(0, current_speed),
+#ifdef CONFIG_PINCTRL
+	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
+#else
 	.pin_rx = PIN_LEUART_0_RXD,
 	.pin_tx = PIN_LEUART_0_TXD,
 #ifdef CONFIG_SOC_GECKO_HAS_INDIVIDUAL_PIN_LOCATION
@@ -343,6 +372,7 @@ static const struct leuart_gecko_config leuart_gecko_0_config = {
 #error LEUART_0 DTS location-* properties must have identical value
 #endif
 	.loc = DT_INST_PROP_BY_IDX(0, location_rx, 0),
+#endif
 #endif
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.irq_config_func = leuart_gecko_config_func_0,
@@ -372,10 +402,16 @@ static void leuart_gecko_config_func_0(const struct device *dev)
 
 #if DT_NODE_HAS_STATUS(DT_DRV_INST(1), okay)
 
+#ifdef CONFIG_PINCTRL
+PINCTRL_DT_INST_DEFINE(1);
+#endif
+
+#ifndef CONFIG_PINCTRL
 #define PIN_LEUART_1_RXD {DT_INST_PROP_BY_IDX(1, location_rx, 1), \
 		DT_INST_PROP_BY_IDX(1, location_rx, 2), gpioModeInput, 1}
 #define PIN_LEUART_1_TXD {DT_INST_PROP_BY_IDX(1, location_tx, 1), \
 		DT_INST_PROP_BY_IDX(1, location_tx, 2), gpioModePushPull, 1}
+#endif /* CONFIG_PINCTRL */
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static void leuart_gecko_config_func_1(const struct device *dev);
@@ -385,6 +421,9 @@ static const struct leuart_gecko_config leuart_gecko_1_config = {
 	.base = (LEUART_TypeDef *)DT_INST_REG_ADDR(1),
 	.clock = CLOCK_LEUART(DT_INST_PROP(1, peripheral_id)),
 	.baud_rate = DT_INST_PROP(1, current_speed),
+#ifdef CONFIG_PINCTRL
+	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(1),
+#else
 	.pin_rx = PIN_LEUART_1_RXD,
 	.pin_tx = PIN_LEUART_1_TXD,
 #ifdef CONFIG_SOC_GECKO_HAS_INDIVIDUAL_PIN_LOCATION
@@ -397,6 +436,7 @@ static const struct leuart_gecko_config leuart_gecko_1_config = {
 #endif
 	.loc = DT_INST_PROP_BY_IDX(1, location_rx, 0),
 #endif
+#endif /* CONFIG_PINCTRL */
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.irq_config_func = leuart_gecko_config_func_1,
 #endif

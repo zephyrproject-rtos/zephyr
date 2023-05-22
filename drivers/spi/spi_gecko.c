@@ -18,6 +18,7 @@ LOG_MODULE_REGISTER(spi_gecko);
 
 #include "em_cmu.h"
 #include "em_usart.h"
+#include "spi_context.h"
 
 #include <stdbool.h>
 
@@ -70,6 +71,8 @@ LOG_MODULE_REGISTER(spi_gecko);
 #endif /* DT_NODE_HAS_PROP(n, peripheral_id) */
 
 
+#define SPI_WORD_SIZE	    8
+#define SPI_REF_MIN_DIVIDER 6
 #define SPI_WORD_SIZE 8
 
 /* Structure Declarations */
@@ -93,10 +96,8 @@ struct spi_gecko_config {
 #endif /* CONFIG_PINCTRL */
 };
 
-
 /* Helper Functions */
-static int spi_config(const struct device *dev,
-		      const struct spi_config *config,
+static int spi_config(const struct device *dev, const struct spi_config *config,
 		      uint16_t *control)
 {
 	const struct spi_gecko_config *gecko_config = dev->config;
@@ -160,9 +161,40 @@ static int spi_config(const struct device *dev,
 	}
 
 	/* Set word size */
-	gecko_config->base->FRAME = usartDatabits8
-	    | USART_FRAME_STOPBITS_DEFAULT
-	    | USART_FRAME_PARITY_DEFAULT;
+	gecko_config->base->FRAME = usartDatabits8 |
+				    USART_FRAME_STOPBITS_DEFAULT |
+				    USART_FRAME_PARITY_DEFAULT;
+
+	if (data->ctx.config != config) {
+		uint32_t ref_freq;
+#if defined(_SILICON_LABS_32B_SERIES_2)
+		ref_freq = CMU_ClockFreqGet(cmuClock_PCLK);
+#else
+#if defined(_CMU_HFPERPRESCB_MASK)
+		if (usart == USART2) {
+			ref_freq = CMU_ClockFreqGet(cmuClock_HFPERB);
+		} else {
+			ref_freq = CMU_ClockFreqGet(cmuClock_HFPER);
+		}
+#else
+		ref_freq = CMU_ClockFreqGet(cmuClock_HFPER);
+#endif
+#endif
+		const struct spi_gecko_config *gecko_config = dev->config;
+		uint32_t target_freq = config->frequency;
+		/* Lowest divider supported is 6 */
+		if (config->frequency > ref_freq / SPI_REF_MIN_DIVIDER) {
+			/* Frequency is higher than supported */
+			LOG_WRN("Target frequency of %uHz too high, setting "
+				"frequency to highest available %uHz\n",
+				target_freq, ref_freq / SPI_REF_MIN_DIVIDER);
+			target_freq = ref_freq / SPI_REF_MIN_DIVIDER;
+		}
+
+		USART_BaudrateSyncSet(gecko_config->base, 0, target_freq);
+		LOG_DBG("Actual frequency = %u\n",
+			USART_BaudrateGet(gecko_config->base));
+	}
 
 	/* At this point, it's mandatory to set this on the context! */
 	data->ctx.config = config;
@@ -221,7 +253,6 @@ static int spi_gecko_shift_frames(USART_TypeDef *usart,
 	return 0;
 }
 
-
 static void spi_gecko_xfer(const struct device *dev,
 			   const struct spi_config *config)
 {
@@ -263,10 +294,9 @@ static void spi_gecko_init_pins(const struct device *dev)
 	config->base->ROUTELOC1 = _USART_ROUTELOC1_RESETVALUE;
 
 	config->base->ROUTEPEN = USART_ROUTEPEN_RXPEN | USART_ROUTEPEN_TXPEN |
-		USART_ROUTEPEN_CLKPEN;
+				 USART_ROUTEPEN_CLKPEN;
 }
 #endif /* !CONFIG_PINCTRL */
-
 
 /* API Functions */
 
@@ -314,8 +344,13 @@ static int spi_gecko_init(const struct device *dev)
 		return err;
 	}
 
+	err = spi_context_cs_configure_all(&data->ctx);
+	if (err < 0) {
+		return err;
+	}
+
 	/* Enable the peripheral */
-	config->base->CMD = (uint32_t) usartEnable;
+	config->base->CMD = (uint32_t)usartEnable;
 
 	return 0;
 }

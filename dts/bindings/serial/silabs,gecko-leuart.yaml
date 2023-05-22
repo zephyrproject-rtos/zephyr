@@ -2,7 +2,7 @@ description: Gecko LEUART
 
 compatible: "silabs,gecko-leuart"
 
-include: uart-controller.yaml
+include: [uart-controller.yaml, pinctrl-device.yaml]
 
 properties:
   reg:
@@ -13,7 +13,6 @@ properties:
 
   peripheral-id:
     type: int
-    required: true
     description: peripheral ID
 
   # Note: Not all SoC series support setting individual pin location. If this
@@ -21,10 +20,8 @@ properties:
 
   location-rx:
     type: array
-    required: true
     description: RX pin configuration defined as <location port pin>
 
   location-tx:
     type: array
-    required: true
     description: TX pin configuration defined as <location port pin>
