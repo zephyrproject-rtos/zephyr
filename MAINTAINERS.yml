@@ -1126,6 +1126,7 @@ Release Notes:
     - gmarull
   collaborators:
     - danieldegrasse
+    - aasinclair
   files:
     - drivers/regulator/
     - include/zephyr/drivers/regulator/
