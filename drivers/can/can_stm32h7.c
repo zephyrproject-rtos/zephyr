@@ -215,13 +215,19 @@ static const struct can_mcan_ops can_stm32h7_ops = {
 };
 
 #define CAN_STM32H7_MCAN_INIT(n)					    \
+	CAN_MCAN_DT_INST_BUILD_ASSERT_MRAM_CFG(n);			    \
+	BUILD_ASSERT(CAN_MCAN_DT_INST_MRAM_ELEMENTS_SIZE(n) <=		    \
+		     CAN_MCAN_DT_INST_MRAM_SIZE(n),			    \
+		     "Insufficient Message RAM size to hold elements");	    \
+									    \
 	static void stm32h7_mcan_irq_config_##n(void);			    \
 									    \
 	PINCTRL_DT_INST_DEFINE(n);					    \
+	CAN_MCAN_DT_INST_CALLBACKS_DEFINE(n, can_stm32h7_cbs_##n);	    \
 									    \
 	static const struct can_stm32h7_config can_stm32h7_cfg_##n = {	    \
-		.base = (mm_reg_t)DT_INST_REG_ADDR_BY_NAME(n, m_can),       \
-		.mram = (mem_addr_t)DT_INST_REG_ADDR_BY_NAME(n, message_ram), \
+		.base = CAN_MCAN_DT_INST_MCAN_ADDR(n),			    \
+		.mram = CAN_MCAN_DT_INST_MRAM_ADDR(n),			    \
 		.config_irq = stm32h7_mcan_irq_config_##n,		    \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),		    \
 		.pclken = {						    \
@@ -232,7 +238,8 @@ static const struct can_mcan_ops can_stm32h7_ops = {
 									    \
 	static const struct can_mcan_config can_mcan_cfg_##n =		    \
 		CAN_MCAN_DT_CONFIG_INST_GET(n, &can_stm32h7_cfg_##n,	    \
-					    &can_stm32h7_ops);		    \
+					    &can_stm32h7_ops,		    \
+					    &can_stm32h7_cbs_##n);	    \
 									    \
 	static struct can_mcan_data can_mcan_data_##n =			    \
 		CAN_MCAN_DATA_INITIALIZER(NULL);			    \

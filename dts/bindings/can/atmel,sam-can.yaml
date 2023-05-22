@@ -3,7 +3,7 @@ description: Specialization of Bosch m_can CAN-FD controller for Atmel SAM
 compatible: "atmel,sam-can"
 
 include:
-  - name: can-fd-controller.yaml
+  - name: bosch,m_can-base.yaml
   - name: pinctrl-device.yaml
 
 properties:
