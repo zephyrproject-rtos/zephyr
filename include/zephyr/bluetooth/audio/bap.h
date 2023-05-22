@@ -660,13 +660,12 @@ int bt_bap_stream_qos(struct bt_conn *conn, struct bt_bap_unicast_group *group);
  * created.
  *
  * @param stream Stream object
- * @param meta_count Number of metadata entries
- * @param meta Metadata entries
+ * @param meta Metadata
+ * @param meta_len Metadata length
  *
  * @return 0 in case of success or negative value in case of error.
  */
-int bt_bap_stream_enable(struct bt_bap_stream *stream, struct bt_audio_codec_data *meta,
-			 size_t meta_count);
+int bt_bap_stream_enable(struct bt_bap_stream *stream, const uint8_t meta[], size_t meta_len);
 
 /**
  * @brief Change Audio Stream Metadata
@@ -674,13 +673,12 @@ int bt_bap_stream_enable(struct bt_bap_stream *stream, struct bt_audio_codec_dat
  * This procedure is used by a unicast client or unicast server to change the metadata of a stream.
  *
  * @param stream Stream object
- * @param meta_count Number of metadata entries
- * @param meta Metadata entries
+ * @param meta Metadata
+ * @param meta_len Metadata length
  *
  * @return 0 in case of success or negative value in case of error.
  */
-int bt_bap_stream_metadata(struct bt_bap_stream *stream, struct bt_audio_codec_data *meta,
-			   size_t meta_count);
+int bt_bap_stream_metadata(struct bt_bap_stream *stream, const uint8_t meta[], size_t meta_len);
 
 /**
  * @brief Disable Audio Stream
@@ -865,15 +863,15 @@ struct bt_bap_unicast_server_cb {
 	 * Enable callback is called whenever an Audio Stream is requested to be enabled to stream.
 	 *
 	 * @param[in]  stream      Stream object being enabled.
-	 * @param[in]  meta        Metadata entries
-	 * @param[in]  meta_count  Number of metadata entries
+	 * @param[in]  meta        Metadata entries.
+	 * @param[in]  meta_len    Length of metadata.
 	 * @param[out] rsp         Object for the ASE operation response. Only used if the return
 	 *                         value is non-zero.
 	 *
 	 * @return 0 in case of success or negative value in case of error.
 	 */
-	int (*enable)(struct bt_bap_stream *stream, const struct bt_audio_codec_data *meta,
-		      size_t meta_count, struct bt_bap_ascs_rsp *rsp);
+	int (*enable)(struct bt_bap_stream *stream, const uint8_t meta[], size_t meta_len,
+		      struct bt_bap_ascs_rsp *rsp);
 
 	/**
 	 * @brief Stream Start request callback
@@ -894,15 +892,15 @@ struct bt_bap_unicast_server_cb {
 	 * Metadata callback is called whenever an Audio Stream is requested to update its metadata.
 	 *
 	 * @param[in]  stream       Stream object.
-	 * @param[in]  meta         Metadata entries
-	 * @param[in]  meta_count   Number of metadata entries
+	 * @param[in]  meta         Metadata entries.
+	 * @param[in]  meta_len     Length of metadata.
 	 * @param[out] rsp          Object for the ASE operation response. Only used if the return
 	 *                          value is non-zero.
 	 *
 	 * @return 0 in case of success or negative value in case of error.
 	 */
-	int (*metadata)(struct bt_bap_stream *stream, const struct bt_audio_codec_data *meta,
-			size_t meta_count, struct bt_bap_ascs_rsp *rsp);
+	int (*metadata)(struct bt_bap_stream *stream, const uint8_t meta[], size_t meta_len,
+			struct bt_bap_ascs_rsp *rsp);
 
 	/**
 	 * @brief Stream Disable request callback
@@ -1315,18 +1313,12 @@ int bt_bap_unicast_client_discover(struct bt_conn *conn, enum bt_audio_dir dir);
 struct bt_bap_base_bis_data {
 	/* Unique index of the BIS */
 	uint8_t index;
-#if defined(CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_COUNT)
-	/** Codec Specific Data count.
-	 *
-	 *  Only valid if the data_count of struct bt_audio_codec_cfg in the subgroup is 0
-	 */
-	size_t data_count;
-	/** Codec Specific Data
-	 *
-	 *  Only valid if the data_count of struct bt_audio_codec_cfg in the subgroup is 0
-	 */
-	struct bt_audio_codec_data data[CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_COUNT];
-#endif /* CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_COUNT */
+#if CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE > 0
+	/** Codec Specific Data length. */
+	size_t data_len;
+	/** Codec Specific Data */
+	uint8_t data[CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE];
+#endif /* CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE > 0 */
 };
 
 struct bt_bap_base_subgroup {
@@ -1334,7 +1326,7 @@ struct bt_bap_base_subgroup {
 	size_t bis_count;
 	/** Codec information for the subgroup
 	 *
-	 *  If the data_count of the codec is 0, then codec specific data may be
+	 *  If the data_len of the codec is 0, then codec specific data may be
 	 *  found for each BIS in the bis_data.
 	 */
 	struct bt_audio_codec_cfg codec_cfg;
@@ -1382,17 +1374,17 @@ struct bt_bap_broadcast_source_stream_param {
 	/** Audio stream */
 	struct bt_bap_stream *stream;
 
-#if CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_COUNT > 0
+#if CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE > 0
 	/**
 	 * @brief The number of elements in the @p data array.
 	 *
 	 * The BIS specific data may be omitted and this set to 0.
 	 */
-	size_t data_count;
+	size_t data_len;
 
 	/** BIS Codec Specific Configuration */
-	struct bt_audio_codec_data *data;
-#endif /* CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_COUNT > 0 */
+	uint8_t *data;
+#endif /* CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE > 0 */
 };
 
 /** Broadcast Source subgroup parameters*/
@@ -1485,14 +1477,13 @@ int bt_bap_broadcast_source_reconfig(struct bt_bap_broadcast_source *source,
  * To update the metadata in the stopped state, use bt_bap_broadcast_source_reconfig().
  *
  * @param source      Pointer to the broadcast source.
- * @param meta        Metadata entries.
- * @param meta_count  Number of metadata entries.
+ * @param meta        Metadata.
+ * @param meta_len    Length of metadata.
  *
  * @return Zero on success or (negative) error code otherwise.
  */
 int bt_bap_broadcast_source_update_metadata(struct bt_bap_broadcast_source *source,
-					    const struct bt_audio_codec_data meta[],
-					    size_t meta_count);
+					    const uint8_t meta[], size_t meta_len);
 
 /**
  * @brief Start audio broadcast source.

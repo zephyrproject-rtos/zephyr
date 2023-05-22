@@ -506,11 +506,11 @@ static int lc3_qos(struct bt_bap_stream *stream, const struct bt_audio_codec_qos
 	return 0;
 }
 
-static int lc3_enable(struct bt_bap_stream *stream, const struct bt_audio_codec_data *meta,
-		      size_t meta_count, struct bt_bap_ascs_rsp *rsp)
+static int lc3_enable(struct bt_bap_stream *stream, const uint8_t meta[], size_t meta_len,
+		      struct bt_bap_ascs_rsp *rsp)
 {
-	shell_print(ctx_shell, "Enable: stream %p meta_count %zu", stream,
-		    meta_count);
+	shell_print(ctx_shell, "Enable: stream %p meta_len %zu", stream,
+		    meta_len);
 
 	return 0;
 }
@@ -522,26 +522,27 @@ static int lc3_start(struct bt_bap_stream *stream, struct bt_bap_ascs_rsp *rsp)
 	return 0;
 }
 
-static int lc3_metadata(struct bt_bap_stream *stream, const struct bt_audio_codec_data *meta,
-			size_t meta_count, struct bt_bap_ascs_rsp *rsp)
+
+static bool meta_data_func_cb(struct bt_data *data, void *user_data)
 {
-	shell_print(ctx_shell, "Metadata: stream %p meta_count %zu", stream,
-		    meta_count);
+	struct bt_bap_ascs_rsp *rsp = (struct bt_bap_ascs_rsp *)user_data;
 
-	for (size_t i = 0; i < meta_count; i++) {
-		const struct bt_audio_codec_data *data = &meta[i];
-
-		if (!BT_AUDIO_METADATA_TYPE_IS_KNOWN(data->data.type)) {
-			shell_print(ctx_shell,
-				    "Invalid metadata type %u or length %u",
-				    data->data.type, data->data.data_len);
-			*rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_METADATA_REJECTED,
-					       data->data.type);
-			return -EINVAL;
-		}
+	if (!BT_AUDIO_METADATA_TYPE_IS_KNOWN(data->type)) {
+		printk("Invalid metadata type %u or length %u\n", data->type, data->data_len);
+		*rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_METADATA_REJECTED, data->type);
+		return false;
 	}
 
-	return 0;
+	return true;
+}
+
+static int lc3_metadata(struct bt_bap_stream *stream, const uint8_t meta[], size_t meta_len,
+			struct bt_bap_ascs_rsp *rsp)
+{
+	shell_print(ctx_shell, "Metadata: stream %p meta_len %zu", stream,
+		    meta_len);
+
+	return bt_audio_data_parse(meta, meta_len, meta_data_func_cb, rsp);
 }
 
 static int lc3_disable(struct bt_bap_stream *stream, struct bt_bap_ascs_rsp *rsp)
@@ -636,7 +637,7 @@ static int set_metadata(struct bt_audio_codec_cfg *codec_cfg, const char *meta_s
 	}
 
 	/* TODO: Check the type and only overwrite the streaming context */
-	sys_put_le16(context, codec_cfg->meta[0].value);
+	sys_put_le16(context, codec_cfg->meta);
 
 	return 0;
 }
@@ -1088,18 +1089,37 @@ static int cmd_config(const struct shell *sh, size_t argc, char *argv[])
 
 	/* If location has been modifed, we update the location in the codec configuration */
 	if (location != BT_AUDIO_LOCATION_PROHIBITED) {
-		for (size_t i = 0U; i < uni_stream->codec_cfg.data_count; i++) {
-			struct bt_audio_codec_data *data = &uni_stream->codec_cfg.data[i];
+		struct bt_audio_codec_cfg *codec_cfg = &uni_stream->codec_cfg;
 
-			/* Overwrite the location value */
-			if (data->data.type == BT_AUDIO_CODEC_CONFIG_LC3_CHAN_ALLOC) {
+		for (size_t i = 0U; i < codec_cfg->data_len;) {
+			const uint8_t len = codec_cfg->data[i++];
+			uint8_t *value;
+			uint8_t data_len;
+			uint8_t type;
+
+			if (len == 0 || len > codec_cfg->data_len - i) {
+				/* Invalid len field */
+				return false;
+			}
+
+			type = codec_cfg->data[i++];
+			value = &codec_cfg->data[i];
+
+			if (type == BT_AUDIO_CODEC_CONFIG_LC3_CHAN_ALLOC) {
 				const uint32_t loc_32 = location;
 
-				sys_put_le32(loc_32, data->value);
+				sys_put_le32(loc_32, value);
 
 				shell_print(sh, "Setting location to 0x%08X", location);
 				break;
 			}
+
+			data_len = len - sizeof(type);
+
+			/* Since we are incrementing i by the value_len, we don't need to increment
+			 * it further in the `for` statement
+			 */
+			i += data_len;
 		}
 	}
 
@@ -1355,7 +1375,7 @@ static int cmd_enable(const struct shell *sh, size_t argc, char *argv[])
 		}
 	}
 
-	err = bt_bap_stream_enable(default_stream, codec_cfg->meta, codec_cfg->meta_count);
+	err = bt_bap_stream_enable(default_stream, codec_cfg->meta, codec_cfg->meta_len);
 	if (err) {
 		shell_error(sh, "Unable to enable Channel");
 		return -ENOEXEC;
@@ -1425,9 +1445,6 @@ static int cmd_preset(const struct shell *sh, size_t argc, char *argv[])
 	return 0;
 }
 
-#define MAX_META_DATA                                                                              \
-	(CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_COUNT * sizeof(struct bt_audio_codec_data))
-
 static int cmd_metadata(const struct shell *sh, size_t argc, char *argv[])
 {
 	struct bt_audio_codec_cfg *codec_cfg;
@@ -1448,7 +1465,7 @@ static int cmd_metadata(const struct shell *sh, size_t argc, char *argv[])
 		}
 	}
 
-	err = bt_bap_stream_metadata(default_stream, codec_cfg->meta, codec_cfg->meta_count);
+	err = bt_bap_stream_metadata(default_stream, codec_cfg->meta, codec_cfg->meta_len);
 	if (err) {
 		shell_error(sh, "Unable to set Channel metadata");
 		return -ENOEXEC;
@@ -1668,6 +1685,14 @@ static void broadcast_scan_recv(const struct bt_le_scan_recv_info *info, struct 
 	}
 }
 
+static bool print_data_func_cb(struct bt_data *data, void *user_data)
+{
+	shell_print(ctx_shell, "type 0x%02x len %u", data->type, data->data_len);
+	shell_hexdump(ctx_shell, data->data, data->data_len);
+
+	return true;
+}
+
 static void base_recv(struct bt_bap_broadcast_sink *sink, const struct bt_bap_base *base)
 {
 	uint8_t bis_indexes[BROADCAST_SNK_STREAM_CNT] = { 0 };
@@ -1701,16 +1726,17 @@ static void base_recv(struct bt_bap_broadcast_sink *sink, const struct bt_bap_ba
 			shell_print(ctx_shell, "%4sBIS[%d] index 0x%02x", "", i, bis_data->index);
 			bis_indexes[index_count++] = bis_data->index;
 
-			for (int k = 0; k < bis_data->data_count; k++) {
-				const struct bt_audio_codec_data *codec_data;
+			if (subgroup->codec_cfg.id == BT_AUDIO_CODEC_LC3_ID) {
+				const int err =
+					bt_audio_data_parse(bis_data->data, bis_data->data_len,
+							    print_data_func_cb, NULL);
 
-				codec_data = &bis_data->data[k];
-
-				shell_print(ctx_shell, "%6sdata #%u: type 0x%02x len %u", "", i,
-					    codec_data->data.type, codec_data->data.data_len);
-				shell_hexdump(ctx_shell, codec_data->data.data,
-					      codec_data->data.data_len -
-						sizeof(codec_data->data.type));
+				if (err != 0) {
+					shell_error(ctx_shell,
+						    "Failed to parse BIS codec config: %d", err);
+				}
+			} else {
+				shell_hexdump(ctx_shell, bis_data->data, bis_data->data_len);
 			}
 		}
 	}

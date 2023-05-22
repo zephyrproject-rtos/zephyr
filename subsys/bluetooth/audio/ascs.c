@@ -66,13 +66,6 @@ static struct bt_ascs_ase {
 	bool unexpected_iso_link_loss;
 } ase_pool[CONFIG_BT_ASCS_MAX_ACTIVE_ASES];
 
-#define MAX_CODEC_CONFIG                                                                           \
-	MIN(UINT8_MAX,                                                                             \
-	    CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_COUNT * CONFIG_BT_AUDIO_CODEC_MAX_DATA_LEN)
-#define MAX_METADATA                                                                               \
-	MIN(UINT8_MAX,                                                                             \
-	    CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_COUNT * CONFIG_BT_AUDIO_CODEC_MAX_DATA_LEN)
-
 /* Minimum state size when in the codec configured state */
 #define MIN_CONFIG_STATE_SIZE (1 + 1 + 1 + 1 + 1 + 2 + 3 + 3 + 3 + 3 + 5 + 1)
 /* Minimum state size when in the QoS configured state */
@@ -82,9 +75,10 @@ static struct bt_ascs_ase {
  * size of the Codec Configured state or the QoS Configured state, as either
  * of them can be the largest state
  */
-#define ASE_BUF_SIZE MIN(BT_ATT_MAX_ATTRIBUTE_LEN, \
-			 MAX(MIN_CONFIG_STATE_SIZE + MAX_CODEC_CONFIG, \
-			     MIN_QOS_STATE_SIZE + MAX_METADATA))
+#define ASE_BUF_SIZE                                                                               \
+	MIN(BT_ATT_MAX_ATTRIBUTE_LEN,                                                              \
+	    MAX(MIN_CONFIG_STATE_SIZE + CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE,                   \
+		MIN_QOS_STATE_SIZE + CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_SIZE))
 
 /* Verify that the prepare count is large enough to cover the maximum value we support a client
  * writing
@@ -538,25 +532,6 @@ int ascs_ep_set_state(struct bt_bap_ep *ep, uint8_t state)
 	return 0;
 }
 
-static void ascs_codec_data_add(struct net_buf_simple *buf, const char *prefix, uint8_t num,
-				struct bt_audio_codec_data *data)
-{
-	struct bt_ascs_codec_config *cc;
-	int i;
-
-	for (i = 0; i < num; i++) {
-		struct bt_data *d = &data[i].data;
-
-		LOG_DBG("#%u: %s type 0x%02x len %u", i, prefix, d->type, d->data_len);
-		LOG_HEXDUMP_DBG(d->data, d->data_len, prefix);
-
-		cc = net_buf_simple_add(buf, sizeof(*cc));
-		cc->len = d->data_len + sizeof(cc->type);
-		cc->type = d->type;
-		net_buf_simple_add_mem(buf, d->data, d->data_len);
-	}
-}
-
 static void ascs_ep_get_status_config(struct bt_bap_ep *ep, struct net_buf_simple *buf)
 {
 	struct bt_ascs_ase_status_config *cfg;
@@ -582,9 +557,8 @@ static void ascs_ep_get_status_config(struct bt_bap_ep *ep, struct net_buf_simpl
 		pref->latency, pref->pd_min, pref->pd_max, pref->pref_pd_min, pref->pref_pd_max,
 		ep->stream->codec_cfg->id);
 
-	cfg->cc_len = buf->len;
-	ascs_codec_data_add(buf, "data", ep->codec_cfg.data_count, ep->codec_cfg.data);
-	cfg->cc_len = buf->len - cfg->cc_len;
+	cfg->cc_len = ep->codec_cfg.data_len;
+	net_buf_simple_add_mem(buf, ep->codec_cfg.data, ep->codec_cfg.data_len);
 }
 
 static void ascs_ep_get_status_qos(struct bt_bap_ep *ep, struct net_buf_simple *buf)
@@ -617,9 +591,8 @@ static void ascs_ep_get_status_enable(struct bt_bap_ep *ep, struct net_buf_simpl
 	enable->cig_id = ep->cig_id;
 	enable->cis_id = ep->cis_id;
 
-	enable->metadata_len = buf->len;
-	ascs_codec_data_add(buf, "meta", ep->codec_cfg.meta_count, ep->codec_cfg.meta);
-	enable->metadata_len = buf->len - enable->metadata_len;
+	enable->metadata_len = ep->codec_cfg.meta_len;
+	net_buf_simple_add_mem(buf, ep->codec_cfg.meta, ep->codec_cfg.meta_len);
 
 	LOG_DBG("dir %s cig 0x%02x cis 0x%02x",
 		bt_audio_dir_str(ep->dir), ep->cig_id, ep->cis_id);
@@ -1302,40 +1275,6 @@ static void ascs_cp_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
 	LOG_DBG("attr %p value 0x%04x", attr, value);
 }
 
-static bool ascs_codec_config_store(struct bt_data *data, void *user_data)
-{
-	struct bt_audio_codec_cfg *codec_cfg = user_data;
-	struct bt_audio_codec_data *cdata;
-
-	if (codec_cfg->data_count >= ARRAY_SIZE(codec_cfg->data)) {
-		LOG_ERR("No slot available for Codec Config");
-		return false;
-	}
-
-	cdata = &codec_cfg->data[codec_cfg->data_count];
-
-	if (data->data_len > sizeof(cdata->value)) {
-		LOG_ERR("Not enough space for Codec Config: %u > %zu", data->data_len,
-			sizeof(cdata->value));
-		return false;
-	}
-
-	LOG_DBG("#%u type 0x%02x len %u", codec_cfg->data_count, data->type, data->data_len);
-
-	cdata->data.type = data->type;
-	cdata->data.data_len = data->data_len;
-
-	/* Deep copy data contents */
-	cdata->data.data = cdata->value;
-	(void)memcpy(cdata->value, data->data, data->data_len);
-
-	LOG_HEXDUMP_DBG(cdata->value, data->data_len, "data");
-
-	codec_cfg->data_count++;
-
-	return true;
-}
-
 struct codec_cap_lookup_id_data {
 	uint8_t id;
 	uint16_t cid;
@@ -1360,7 +1299,6 @@ static bool codec_lookup_id(const struct bt_pacs_cap *cap, void *user_data)
 static int ascs_ep_set_codec(struct bt_bap_ep *ep, uint8_t id, uint16_t cid, uint16_t vid,
 			     uint8_t *cc, uint8_t len, struct bt_bap_ascs_rsp *rsp)
 {
-	struct net_buf_simple ad;
 	struct bt_audio_codec_cfg *codec_cfg;
 	struct codec_cap_lookup_id_data lookup_data = {
 		.id = id,
@@ -1393,29 +1331,12 @@ static int ascs_ep_set_codec(struct bt_bap_ep *ep, uint8_t id, uint16_t cid, uin
 	codec_cfg->id = id;
 	codec_cfg->cid = cid;
 	codec_cfg->vid = vid;
-	codec_cfg->data_count = 0;
+	codec_cfg->data_len = len;
+	memcpy(codec_cfg->data, cc, len);
 	codec_cfg->path_id = lookup_data.codec_cap->path_id;
 
-	if (len == 0) {
-		*rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_SUCCESS, BT_BAP_ASCS_REASON_NONE);
-		return 0;
-	}
-
-	net_buf_simple_init_with_data(&ad, cc, len);
-
-	/* Parse LTV entries */
-	bt_data_parse(&ad, ascs_codec_config_store, codec_cfg);
-
-	/* Check if all entries could be parsed */
-	if (ad.len) {
-		LOG_ERR("Unable to parse Codec Config: len %u", ad.len);
-		(void)memset(codec_cfg, 0, sizeof(*codec_cfg));
-		*rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_CONF_INVALID,
-				       BT_BAP_ASCS_REASON_CODEC_DATA);
-		return -EINVAL;
-	}
-
 	*rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_SUCCESS, BT_BAP_ASCS_REASON_NONE);
+
 	return 0;
 }
 
@@ -1446,6 +1367,12 @@ static int ase_config(struct bt_ascs_ase *ase, const struct bt_ascs_config *cfg)
 		ascs_cp_rsp_add(ASE_ID(ase), BT_BAP_ASCS_RSP_CODE_CONF_INVALID,
 				BT_BAP_ASCS_REASON_PHY);
 		return -EINVAL;
+	}
+
+	if (cfg->cc_len > CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE) {
+		LOG_DBG("Can not store %u codec configuration data", cfg->cc_len);
+
+		return -ENOMEM;
 	}
 
 	switch (ase->ep.status.state) {
@@ -1546,37 +1473,6 @@ static int ase_config(struct bt_ascs_ase *ase, const struct bt_ascs_config *cfg)
 	return 0;
 }
 
-void copy_codec_cfg_pointers(struct bt_audio_codec_cfg *dst,
-			     struct bt_audio_codec_cfg *src)
-{
-#if CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_COUNT > 0 && CONFIG_BT_AUDIO_CODEC_MAX_DATA_LEN > 0
-	/* Need to update the `bt_data.data` pointer to the new value after copying the codec */
-	for (size_t i = 0U; i < ARRAY_SIZE(dst->data); i++) {
-		const struct bt_audio_codec_data *codec_data = &src->data[i];
-		struct bt_audio_codec_data *data = &dst->data[i];
-		const uint8_t data_len = codec_data->data.data_len;
-
-		data->data.data = data->value;
-		data->data.data_len = data_len;
-		memcpy(data->value, codec_data->data.data, data_len);
-	}
-#endif /* CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_COUNT > 0 && CONFIG_BT_AUDIO_CODEC_MAX_DATA_LEN > 0 */
-
-#if CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_COUNT > 0 && CONFIG_BT_AUDIO_CODEC_MAX_DATA_LEN > 0
-	for (size_t i = 0U; i < ARRAY_SIZE(dst->meta); i++) {
-		const struct bt_audio_codec_data *meta_data = &src->meta[i];
-		struct bt_audio_codec_data *data = &dst->meta[i];
-		const uint8_t data_len = meta_data->data.data_len;
-
-		data->data.data = data->value;
-		data->data.data_len = data_len;
-		memcpy(data->value, meta_data->data.data, data_len);
-	}
-#endif /* CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_COUNT > 0 &&
-	* CONFIG_BT_AUDIO_CODEC_MAX_DATA_LEN > 0
-	*/
-}
-
 int bt_ascs_config_ase(struct bt_conn *conn, struct bt_bap_stream *stream,
 		       struct bt_audio_codec_cfg *codec_cfg,
 		       const struct bt_audio_codec_qos_pref *qos_pref)
@@ -1628,9 +1524,6 @@ int bt_ascs_config_ase(struct bt_conn *conn, struct bt_bap_stream *stream,
 	}
 
 	(void)memcpy(&ep->codec_cfg, codec_cfg, sizeof(ep->codec_cfg));
-
-	/* TODO: Remove this after refactoring bt_audio_codec_cfg to use flat arrays */
-	copy_codec_cfg_pointers(&ep->codec_cfg, codec_cfg);
 
 	ep->qos_pref = *qos_pref;
 
@@ -1979,30 +1872,9 @@ static ssize_t ascs_qos(struct bt_conn *conn, struct net_buf_simple *buf)
 	return buf->size;
 }
 
-static bool ascs_codec_store_metadata(struct bt_data *data, void *user_data)
-{
-	struct bt_audio_codec_cfg *codec_cfg = user_data;
-	struct bt_audio_codec_data *meta;
-
-	meta = &codec_cfg->meta[codec_cfg->meta_count];
-	meta->data.type = data->type;
-	meta->data.data_len = data->data_len;
-
-	/* Deep copy data contents */
-	meta->data.data = meta->value;
-	(void)memcpy(meta->value, data->data, data->data_len);
-
-	LOG_DBG("#%zu: data: %s", codec_cfg->meta_count, bt_hex(meta->value, data->data_len));
-
-	codec_cfg->meta_count++;
-
-	return true;
-}
-
 struct ascs_parse_result {
 	int err;
 	struct bt_bap_ascs_rsp *rsp;
-	size_t count;
 	const struct bt_bap_ep *ep;
 };
 
@@ -2014,29 +1886,7 @@ static bool ascs_parse_metadata(struct bt_data *data, void *user_data)
 	const uint8_t data_type = data->type;
 	const uint8_t *data_value = data->data;
 
-	result->count++;
-
-	LOG_DBG("#%u type 0x%02x len %u", result->count, data_type, data_len);
-
-	if (result->count > CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_COUNT) {
-		LOG_ERR("Not enough buffers for Codec Config Metadata: %zu > %zu", result->count,
-			CONFIG_BT_AUDIO_CODEC_MAX_DATA_LEN);
-		*result->rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_NO_MEM,
-					       BT_BAP_ASCS_REASON_NONE);
-		result->err = -ENOMEM;
-
-		return false;
-	}
-
-	if (data_len > CONFIG_BT_AUDIO_CODEC_MAX_DATA_LEN) {
-		LOG_ERR("Not enough space for Codec Config Metadata: %u > %zu", data->data_len,
-			CONFIG_BT_AUDIO_CODEC_MAX_DATA_LEN);
-		*result->rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_NO_MEM,
-					       BT_BAP_ASCS_REASON_NONE);
-		result->err = -ENOMEM;
-
-		return false;
-	}
+	LOG_DBG("type 0x%02x len %u", data_type, data_len);
 
 	if (!BT_AUDIO_METADATA_TYPE_IS_KNOWN(data_type)) {
 		LOG_WRN("Unknown metadata type 0x%02x", data_type);
@@ -2149,71 +1999,42 @@ static bool ascs_parse_metadata(struct bt_data *data, void *user_data)
 	return true;
 }
 
-static int ascs_verify_metadata(const struct net_buf_simple *buf, struct bt_bap_ep *ep,
+static int ascs_verify_metadata(struct bt_bap_ep *ep, const struct bt_ascs_metadata *meta,
 				struct bt_bap_ascs_rsp *rsp)
 {
 	struct ascs_parse_result result = {
 		.rsp = rsp,
-		.count = 0U,
 		.err = 0,
-		.ep = ep
+		.ep = ep,
 	};
-	struct net_buf_simple meta_ltv;
+	int err;
 
-	/* Clone the buf to avoid pulling data from the original buffer */
-	net_buf_simple_clone(buf, &meta_ltv);
+	if (meta->len > CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_SIZE) {
+		LOG_WRN("Not enough space for Codec Config Metadata: %u > %d", meta->len,
+			CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_SIZE);
+		*rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_NO_MEM, BT_BAP_ASCS_REASON_NONE);
+
+		return -ENOMEM;
+	}
 
 	/* Parse LTV entries */
-	bt_data_parse(&meta_ltv, ascs_parse_metadata, &result);
+	err = bt_audio_data_parse(meta->data, meta->len, ascs_parse_metadata, &result);
+	if (err != 0 && err != -ECANCELED) {
+		/* ECANCELED is called if the callback stops the parsing prematurely, in which case
+		 * result.err will be set
+		 */
+		LOG_DBG("Failed to parse metadata: %d", err);
+		*rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_METADATA_INVALID,
+				       BT_BAP_ASCS_REASON_NONE);
+
+		return err;
+	}
 
 	return result.err;
 }
 
-static int ascs_ep_set_metadata(struct bt_bap_ep *ep, uint8_t *data, uint8_t len,
-				struct bt_audio_codec_cfg *codec_cfg, struct bt_bap_ascs_rsp *rsp)
-{
-	struct net_buf_simple meta_ltv;
-	int err;
-	*rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_SUCCESS, BT_BAP_ASCS_REASON_NONE);
-
-	if (ep == NULL && codec_cfg == NULL) {
-		*rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_INVALID_ASE_STATE,
-				       BT_BAP_ASCS_REASON_NONE);
-		return -EINVAL;
-	}
-
-	LOG_DBG("ep %p len %u codec %p", ep, len, codec_cfg);
-
-	if (len == 0) {
-		(void)memset(codec_cfg->meta, 0, sizeof(codec_cfg->meta));
-		*rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_SUCCESS, BT_BAP_ASCS_REASON_NONE);
-		return 0;
-	}
-
-	if (codec_cfg == NULL) {
-		codec_cfg = &ep->codec_cfg;
-	}
-
-	/* Extract metadata LTV for this specific endpoint */
-	net_buf_simple_init_with_data(&meta_ltv, data, len);
-
-	err = ascs_verify_metadata(&meta_ltv, ep, rsp);
-	if (err != 0) {
-		return err;
-	}
-
-	/* reset cached metadata */
-	ep->codec_cfg.meta_count = 0;
-
-	/* store data contents */
-	bt_data_parse(&meta_ltv, ascs_codec_store_metadata, codec_cfg);
-
-	return 0;
-}
-
 static void ase_metadata(struct bt_ascs_ase *ase, struct bt_ascs_metadata *meta)
 {
-	struct bt_audio_codec_data metadata_backup[CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_COUNT];
 	struct bt_bap_stream *stream;
 	struct bt_bap_ep *ep;
 	struct bt_bap_ascs_rsp rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_SUCCESS,
@@ -2239,22 +2060,15 @@ static void ase_metadata(struct bt_ascs_ase *ase, struct bt_ascs_metadata *meta)
 		return;
 	}
 
-	if (!meta->len) {
-		goto done;
-	}
-
-	/* Backup existing metadata */
-	(void)memcpy(metadata_backup, ep->codec_cfg.meta, sizeof(metadata_backup));
-	err = ascs_ep_set_metadata(ep, meta->data, meta->len, &ep->codec_cfg, &rsp);
-	if (err) {
-		ascs_cp_rsp_add(ASE_ID(ase), rsp.code, rsp.reason);
-		return;
-	}
-
 	stream = ep->stream;
-	if (unicast_server_cb != NULL && unicast_server_cb->metadata != NULL) {
-		err = unicast_server_cb->metadata(stream, ep->codec_cfg.meta,
-						  ep->codec_cfg.meta_count, &rsp);
+
+	err = ascs_verify_metadata(ep, meta, &rsp);
+	if (err != 0) {
+		LOG_DBG("Invalid metadata from client: %d", err);
+
+		/* rsp will be set by ascs_verify_metadata*/
+	} else if (unicast_server_cb != NULL && unicast_server_cb->metadata != NULL) {
+		err = unicast_server_cb->metadata(stream, meta->data, meta->len, &rsp);
 	} else {
 		err = -ENOTSUP;
 		rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_UNSPECIFIED,
@@ -2267,17 +2081,16 @@ static void ase_metadata(struct bt_ascs_ase *ase, struct bt_ascs_metadata *meta)
 					      BT_BAP_ASCS_REASON_NONE);
 		}
 
-		/* Restore backup */
-		(void)memcpy(ep->codec_cfg.meta, metadata_backup, sizeof(metadata_backup));
-
 		LOG_ERR("Metadata failed: err %d, code %u, reason %u", err, rsp.code, rsp.reason);
 		ascs_cp_rsp_add(ASE_ID(ase), rsp.code, rsp.reason);
 		return;
 	}
 
+	ep->codec_cfg.meta_len = meta->len;
+	(void)memcpy(ep->codec_cfg.meta, meta->data, meta->len);
+
 	/* Set the state to the same state to trigger the notifications */
 	ascs_ep_set_state(ep, ep->status.state);
-done:
 	ascs_cp_rsp_success(ASE_ID(ase));
 }
 
@@ -2302,16 +2115,15 @@ static int ase_enable(struct bt_ascs_ase *ase, struct bt_ascs_metadata *meta)
 		return err;
 	}
 
-	err = ascs_ep_set_metadata(ep, meta->data, meta->len, &ep->codec_cfg, &rsp);
-	if (err) {
-		ascs_cp_rsp_add(ASE_ID(ase), rsp.code, rsp.reason);
-		return err;
-	}
-
 	stream = ep->stream;
-	if (unicast_server_cb != NULL && unicast_server_cb->enable != NULL) {
-		err = unicast_server_cb->enable(stream, ep->codec_cfg.meta,
-						ep->codec_cfg.meta_count, &rsp);
+
+	err = ascs_verify_metadata(ep, meta, &rsp);
+	if (err != 0) {
+		LOG_DBG("Invalid metadata from client: %d", err);
+
+		/* rsp will be set by ascs_verify_metadata*/
+	} else if (unicast_server_cb != NULL && unicast_server_cb->enable != NULL) {
+		err = unicast_server_cb->enable(stream, meta->data, meta->len, &rsp);
 	} else {
 		err = -ENOTSUP;
 		rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_UNSPECIFIED,
@@ -2329,6 +2141,9 @@ static int ase_enable(struct bt_ascs_ase *ase, struct bt_ascs_metadata *meta)
 
 		return -EFAULT;
 	}
+
+	ep->codec_cfg.meta_len = meta->len;
+	(void)memcpy(ep->codec_cfg.meta, meta->data, meta->len);
 
 	ascs_ep_set_state(ep, BT_BAP_EP_STATE_ENABLING);
 
@@ -2838,6 +2653,14 @@ static ssize_t ascs_metadata(struct bt_conn *conn, struct net_buf_simple *buf)
 
 		meta = net_buf_simple_pull_mem(buf, sizeof(*meta));
 		(void)net_buf_simple_pull(buf, meta->len);
+
+		if (meta->len > CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_SIZE) {
+			LOG_DBG("Cannot store %u octets of metadata", meta->len);
+
+			ascs_cp_rsp_add(meta->ase, BT_BAP_ASCS_RSP_CODE_NO_MEM,
+					BT_BAP_ASCS_REASON_NONE);
+			continue;
+		}
 
 		if (!is_valid_ase_id(meta->ase)) {
 			ascs_cp_rsp_add(meta->ase, BT_BAP_ASCS_RSP_CODE_INVALID_ASE,

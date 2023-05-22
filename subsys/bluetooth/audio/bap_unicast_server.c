@@ -112,20 +112,24 @@ int bt_bap_unicast_server_start(struct bt_bap_stream *stream)
 	return 0;
 }
 
-int bt_bap_unicast_server_metadata(struct bt_bap_stream *stream, struct bt_audio_codec_data meta[],
-				   size_t meta_count)
+int bt_bap_unicast_server_metadata(struct bt_bap_stream *stream, const uint8_t meta[],
+				   size_t meta_len)
 {
 	struct bt_bap_ep *ep;
 	struct bt_bap_ascs_rsp rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_SUCCESS,
 						     BT_BAP_ASCS_REASON_NONE);
 	int err;
 
+	if (meta_len > sizeof(ep->codec_cfg.meta)) {
+		return -ENOMEM;
+	}
 
 	if (unicast_server_cb != NULL && unicast_server_cb->metadata != NULL) {
-		err = unicast_server_cb->metadata(stream, meta, meta_count, &rsp);
+		err = unicast_server_cb->metadata(stream, meta, meta_len, &rsp);
 	} else {
 		err = -ENOTSUP;
 	}
+
 
 	if (err) {
 		LOG_ERR("Metadata failed: err %d, code %u, reason %u", err, rsp.code, rsp.reason);
@@ -133,9 +137,7 @@ int bt_bap_unicast_server_metadata(struct bt_bap_stream *stream, struct bt_audio
 	}
 
 	ep = stream->ep;
-	for (size_t i = 0U; i < meta_count; i++) {
-		(void)memcpy(&ep->codec_cfg.meta[i], &meta[i], sizeof(ep->codec_cfg.meta[i]));
-	}
+	(void)memcpy(ep->codec_cfg.meta, meta, meta_len);
 
 	/* Set the state to the same state to trigger the notifications */
 	return ascs_ep_set_state(ep, ep->status.state);
