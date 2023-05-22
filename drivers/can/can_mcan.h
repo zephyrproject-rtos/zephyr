@@ -384,27 +384,34 @@
 #define CAN_MCAN_TXEFA      0x0F8
 #define CAN_MCAN_TXEFA_EFAI GENMASK(4, 0)
 
-#ifdef CONFIG_CAN_MCUX_MCAN
-#define MCAN_DT_PATH DT_NODELABEL(can0)
-#else
-#define MCAN_DT_PATH DT_PATH(soc, can)
-#endif
-
 /**
- * @brief Indexes for the cells in the devicetree bosch,mram-cfg property. These match the
- * description of the cells in the bosch,m_can-base devicetree binding.
+ * @name Indexes for the cells in the devicetree bosch,mram-cfg property
+ * @anchor CAN_MCAN_MRAM_CFG
+
+ * These match the description of the cells in the bosch,m_can-base devicetree binding.
+ *
+ * @{
  */
-enum can_mcan_mram_cfg {
-	CAN_MCAN_MRAM_CFG_OFFSET = 0,
-	CAN_MCAN_MRAM_CFG_STD_FILTER,
-	CAN_MCAN_MRAM_CFG_EXT_FILTER,
-	CAN_MCAN_MRAM_CFG_RX_FIFO0,
-	CAN_MCAN_MRAM_CFG_RX_FIFO1,
-	CAN_MCAN_MRAM_CFG_RX_BUFFER,
-	CAN_MCAN_MRAM_CFG_TX_EVENT,
-	CAN_MCAN_MRAM_CFG_TX_BUFFER,
-	CAN_MCAN_MRAM_CFG_NUM_CELLS
-};
+/** offset cell index */
+#define CAN_MCAN_MRAM_CFG_OFFSET        0
+/** std-filter-elements cell index */
+#define CAN_MCAN_MRAM_CFG_STD_FILTER    1
+/** ext-filter-elements cell index */
+#define CAN_MCAN_MRAM_CFG_EXT_FILTER    2
+/** rx-fifo0-elements cell index */
+#define CAN_MCAN_MRAM_CFG_RX_FIFO0      3
+/** rx-fifo1-elements cell index */
+#define CAN_MCAN_MRAM_CFG_RX_FIFO1      4
+/** rx-buffer-elements cell index */
+#define CAN_MCAN_MRAM_CFG_RX_BUFFER     5
+/** tx-event-fifo-elements cell index */
+#define CAN_MCAN_MRAM_CFG_TX_EVENT_FIFO 6
+/** tx-buffer-elements cell index */
+#define CAN_MCAN_MRAM_CFG_TX_BUFFER     7
+/** Total number of cells in bosch,mram-cfg property */
+#define CAN_MCAN_MRAM_CFG_NUM_CELLS     8
+
+/** @} */
 
 /**
  * @brief Get the Bosch M_CAN Message RAM offset
@@ -412,8 +419,8 @@ enum can_mcan_mram_cfg {
  * @param node_id node identifier
  * @return the Message RAM offset in bytes
  */
-#define CAN_MCAN_DT_MRAM_OFFSET(node_id) \
-	DT_PROP_BY_IDX(node_id, bosch_mram_cfg, 0)
+#define CAN_MCAN_DT_MRAM_OFFSET(node_id)                                                           \
+	DT_PROP_BY_IDX(node_id, bosch_mram_cfg, CAN_MCAN_MRAM_CFG_OFFSET)
 
 /**
  * @brief Get the number of standard (11-bit) filter elements in Bosch M_CAN Message RAM
@@ -421,8 +428,8 @@ enum can_mcan_mram_cfg {
  * @param node_id node identifier
  * @return the number of standard (11-bit) filter elements
  */
-#define CAN_MCAN_DT_MRAM_STD_FILTER_ELEM(node_id) \
-	DT_PROP_BY_IDX(node_id, bosch_mram_cfg, 1)
+#define CAN_MCAN_DT_MRAM_STD_FILTER_ELEMENTS(node_id)                                              \
+	DT_PROP_BY_IDX(node_id, bosch_mram_cfg, CAN_MCAN_MRAM_CFG_STD_FILTER)
 
 /**
  * @brief Get the number of extended (29-bit) filter elements in Bosch M_CAN Message RAM
@@ -430,8 +437,8 @@ enum can_mcan_mram_cfg {
  * @param node_id node identifier
  * @return the number of extended (29-bit) filter elements
  */
-#define CAN_MCAN_DT_MRAM_EXT_FILTER_ELEM(node_id) \
-	DT_PROP_BY_IDX(node_id, bosch_mram_cfg, 2)
+#define CAN_MCAN_DT_MRAM_EXT_FILTER_ELEMENTS(node_id)                                              \
+	DT_PROP_BY_IDX(node_id, bosch_mram_cfg, CAN_MCAN_MRAM_CFG_EXT_FILTER)
 
 /**
  * @brief Get the number of Rx FIFO 0 elements in Bosch M_CAN Message RAM
@@ -439,8 +446,8 @@ enum can_mcan_mram_cfg {
  * @param node_id node identifier
  * @return the number of Rx FIFO 0 elements
  */
-#define CAN_MCAN_DT_MRAM_RX_FIFO0_ELEM(node_id) \
-	DT_PROP_BY_IDX(node_id, bosch_mram_cfg, 3)
+#define CAN_MCAN_DT_MRAM_RX_FIFO0_ELEMENTS(node_id)                                                \
+	DT_PROP_BY_IDX(node_id, bosch_mram_cfg, CAN_MCAN_MRAM_CFG_RX_FIFO0)
 
 /**
  * @brief Get the number of Rx FIFO 1 elements in Bosch M_CAN Message RAM
@@ -448,8 +455,8 @@ enum can_mcan_mram_cfg {
  * @param node_id node identifier
  * @return the number of Rx FIFO 1 elements
  */
-#define CAN_MCAN_DT_MRAM_RX_FIFO1_ELEM(node_id) \
-	DT_PROP_BY_IDX(node_id, bosch_mram_cfg, 4)
+#define CAN_MCAN_DT_MRAM_RX_FIFO1_ELEMENTS(node_id)                                                \
+	DT_PROP_BY_IDX(node_id, bosch_mram_cfg, CAN_MCAN_MRAM_CFG_RX_FIFO1)
 
 /**
  * @brief Get the number of Rx Buffer elements in Bosch M_CAN Message RAM
@@ -457,8 +464,8 @@ enum can_mcan_mram_cfg {
  * @param node_id node identifier
  * @return the number of Rx Buffer elements
  */
-#define CAN_MCAN_DT_MRAM_RX_BUFFER_ELEM(node_id) \
-	DT_PROP_BY_IDX(node_id, bosch_mram_cfg, 5)
+#define CAN_MCAN_DT_MRAM_RX_BUFFER_ELEMENTS(node_id)                                               \
+	DT_PROP_BY_IDX(node_id, bosch_mram_cfg, CAN_MCAN_MRAM_CFG_RX_BUFFER)
 
 /**
  * @brief Get the number of Tx Event FIFO elements in Bosch M_CAN Message RAM
@@ -466,8 +473,8 @@ enum can_mcan_mram_cfg {
  * @param node_id node identifier
  * @return the number of Tx Event FIFO elements
  */
-#define CAN_MCAN_DT_MRAM_TX_EVENT_FIFO_ELEM(node_id) \
-	DT_PROP_BY_IDX(node_id, bosch_mram_cfg, 6)
+#define CAN_MCAN_DT_MRAM_TX_EVENT_FIFO_ELEMENTS(node_id)                                           \
+	DT_PROP_BY_IDX(node_id, bosch_mram_cfg, CAN_MCAN_MRAM_CFG_TX_EVENT_FIFO)
 
 /**
  * @brief Get the number of Tx Buffer elements in Bosch M_CAN Message RAM
@@ -475,8 +482,163 @@ enum can_mcan_mram_cfg {
  * @param node_id node identifier
  * @return the number of Tx Buffer elements
  */
-#define CAN_MCAN_DT_MRAM_TX_BUFFER_ELEM(node_id) \
-	DT_PROP_BY_IDX(node_id, bosch_mram_cfg, 7)
+#define CAN_MCAN_DT_MRAM_TX_BUFFER_ELEMENTS(node_id)                                               \
+	DT_PROP_BY_IDX(node_id, bosch_mram_cfg, CAN_MCAN_MRAM_CFG_TX_BUFFER)
+
+/**
+ * @brief Get the base offset of standard (11-bit) filter elements in Bosch M_CAN Message RAM
+ *
+ * @param node_id node identifier
+ * @return the base offset of standard (11-bit) filter elements in bytes
+ */
+#define CAN_MCAN_DT_MRAM_STD_FILTER_OFFSET(node_id) (0U)
+
+/**
+ * @brief Get the base offset of extended (29-bit) filter elements in Bosch M_CAN Message RAM
+ *
+ * @param node_id node identifier
+ * @return the base offset of extended (29-bit) filter elements in bytes
+ */
+#define CAN_MCAN_DT_MRAM_EXT_FILTER_OFFSET(node_id)                                                \
+	(CAN_MCAN_DT_MRAM_STD_FILTER_OFFSET(node_id) +                                             \
+	 CAN_MCAN_DT_MRAM_STD_FILTER_ELEMENTS(node_id) * sizeof(struct can_mcan_std_filter))
+
+/**
+ * @brief Get the base offset of Rx FIFO 0 elements in Bosch M_CAN Message RAM
+ *
+ * @param node_id node identifier
+ * @return the base offset of Rx FIFO 0 elements in bytes
+ */
+#define CAN_MCAN_DT_MRAM_RX_FIFO0_OFFSET(node_id)                                                  \
+	(CAN_MCAN_DT_MRAM_EXT_FILTER_OFFSET(node_id) +                                             \
+	 CAN_MCAN_DT_MRAM_EXT_FILTER_ELEMENTS(node_id) * sizeof(struct can_mcan_ext_filter))
+
+/**
+ * @brief Get the base offset of Rx FIFO 1 elements in Bosch M_CAN Message RAM
+ *
+ * @param node_id node identifier
+ * @return the base offset of Rx FIFO 1 elements in bytes
+ */
+#define CAN_MCAN_DT_MRAM_RX_FIFO1_OFFSET(node_id)                                                  \
+	(CAN_MCAN_DT_MRAM_RX_FIFO0_OFFSET(node_id) +                                               \
+	 CAN_MCAN_DT_MRAM_RX_FIFO0_ELEMENTS(node_id) * sizeof(struct can_mcan_rx_fifo))
+
+/**
+ * @brief Get the base offset of Rx Buffer elements in Bosch M_CAN Message RAM
+ *
+ * @param node_id node identifier
+ * @return the base offset of Rx Buffer elements in bytes
+ */
+#define CAN_MCAN_DT_MRAM_RX_BUFFER_OFFSET(node_id)                                                 \
+	(CAN_MCAN_DT_MRAM_RX_FIFO1_OFFSET(node_id) +                                               \
+	 CAN_MCAN_DT_MRAM_RX_FIFO1_ELEMENTS(node_id) * sizeof(struct can_mcan_rx_fifo))
+
+/**
+ * @brief Get the base offset of Tx Event FIFO elements in Bosch M_CAN Message RAM
+ *
+ * @param node_id node identifier
+ * @return the base offset of Tx Event FIFO elements in bytes
+ */
+#define CAN_MCAN_DT_MRAM_TX_EVENT_FIFO_OFFSET(node_id)                                             \
+	(CAN_MCAN_DT_MRAM_RX_BUFFER_OFFSET(node_id) +                                              \
+	 CAN_MCAN_DT_MRAM_RX_BUFFER_ELEMENTS(node_id) * sizeof(struct can_mcan_rx_fifo))
+
+/**
+ * @brief Get the base offset of Tx Buffer elements in Bosch M_CAN Message RAM
+ *
+ * @param node_id node identifier
+ * @return the base offset of Tx Buffer elements in bytes
+ */
+#define CAN_MCAN_DT_MRAM_TX_BUFFER_OFFSET(node_id)                                                 \
+	(CAN_MCAN_DT_MRAM_TX_EVENT_FIFO_OFFSET(node_id) +                                          \
+	 CAN_MCAN_DT_MRAM_TX_EVENT_FIFO_ELEMENTS(node_id) * sizeof(struct can_mcan_tx_event_fifo))
+
+/**
+ * @brief Get the Bosch M_CAN register base address
+ *
+ * For devicetree nodes with just one register block, this macro returns the base address of that
+ * register block.
+ *
+ * If a devicetree node has more than one register block, this macros returns the base address of
+ * the register block named "m_can".
+ *
+ * @param node_id node identifier
+ * @return the Bosch M_CAN register base address
+ */
+#define CAN_MCAN_DT_MCAN_ADDR(node_id)                                                             \
+	COND_CODE_1(DT_NUM_REGS(node_id), ((mm_reg_t)DT_REG_ADDR(node_id)),                        \
+		    ((mm_reg_t)DT_REG_ADDR_BY_NAME(node_id, m_can)))
+
+/**
+ * @brief Get the Bosch M_CAN Message RAM base address
+ *
+ * For devicetree nodes with dedicated Message RAM area defined via devicetree, this macro returns
+ * the base address of the Message RAM, taking in the Message RAM offset into account.
+ *
+ * @param node_id node identifier
+ * @return the Bosch M_CAN Message RAM base address
+ */
+#define CAN_MCAN_DT_MRAM_ADDR(node_id)                                                             \
+	(mem_addr_t)(DT_REG_ADDR_BY_NAME(node_id, message_ram) + CAN_MCAN_DT_MRAM_OFFSET(node_id))
+
+/**
+ * @brief Get the Bosch M_CAN Message RAM size
+ *
+ * For devicetree nodes with dedicated Message RAM area defined via devicetree, this macro returns
+ * the size of the Message RAM, taking in the Message RAM offset into account.
+ *
+ * @param node_id node identifier
+ * @return the Bosch M_CAN Message RAM base address
+ * @see CAN_MCAN_DT_MRAM_ELEMENTS_SIZE()
+ */
+#define CAN_MCAN_DT_MRAM_SIZE(node_id)                                                             \
+	(mem_addr_t)(DT_REG_SIZE_BY_NAME(node_id, message_ram) - CAN_MCAN_DT_MRAM_OFFSET(node_id))
+
+/**
+ * @brief Get the total size of all Bosch M_CAN Message RAM elements
+ *
+ * @param node_id node identifier
+ * @return the total size of all Message RAM elements in bytes
+ * @see CAN_MCAN_DT_MRAM_SIZE()
+ */
+#define CAN_MCAN_DT_MRAM_ELEMENTS_SIZE(node_id)                                                    \
+	(CAN_MCAN_DT_MRAM_TX_BUFFER_OFFSET(node_id) +                                              \
+	 CAN_MCAN_DT_MRAM_TX_BUFFER_ELEMENTS(node_id) * sizeof(struct can_mcan_tx_buffer))
+
+/**
+ * @brief Define a RAM buffer for Bosch M_CAN Message RAM
+ *
+ * For devicetree nodes without dedicated Message RAM area, this macro defines a suitable RAM buffer
+ * to hold the Message RAM elements. Since this buffer cannot be shared between multiple Bosch M_CAN
+ * instances, the Message RAM offset must be set to 0x0.
+ *
+ * @param node_id node identifier
+ * @param _name buffer variable name
+ */
+#define CAN_MCAN_DT_MRAM_DEFINE(node_id, _name)                                                    \
+	BUILD_ASSERT(CAN_MCAN_DT_MRAM_OFFSET(node_id) == 0, "offset must be 0");                   \
+	static char __noinit __nocache __aligned(4) _name[CAN_MCAN_DT_MRAM_ELEMENTS_SIZE(node_id)];
+
+/**
+ * @brief Assert that the Message RAM configuration meets the Bosch M_CAN IP core restrictions
+ *
+ * @param node_id node identifier
+ */
+#define CAN_MCAN_DT_BUILD_ASSERT_MRAM_CFG(node_id)                                                 \
+	BUILD_ASSERT(CAN_MCAN_DT_MRAM_STD_FILTER_ELEMENTS(node_id) <= 128,                         \
+		     "Maximum Standard filter elements exceeded");                                 \
+	BUILD_ASSERT(CAN_MCAN_DT_MRAM_EXT_FILTER_ELEMENTS(node_id) <= 64,                          \
+		     "Maximum Extended filter elements exceeded");                                 \
+	BUILD_ASSERT(CAN_MCAN_DT_MRAM_RX_FIFO0_ELEMENTS(node_id) <= 64,                            \
+		     "Maximum Rx FIFO 0 elements exceeded");                                       \
+	BUILD_ASSERT(CAN_MCAN_DT_MRAM_RX_FIFO1_ELEMENTS(node_id) <= 64,                            \
+		     "Maximum Rx FIFO 1 elements exceeded");                                       \
+	BUILD_ASSERT(CAN_MCAN_DT_MRAM_RX_BUFFER_ELEMENTS(node_id) <= 64,                           \
+		     "Maximum Rx Buffer elements exceeded");                                       \
+	BUILD_ASSERT(CAN_MCAN_DT_MRAM_TX_EVENT_FIFO_ELEMENTS(node_id) <= 32,                       \
+		     "Maximum Tx Buffer elements exceeded");                                       \
+	BUILD_ASSERT(CAN_MCAN_DT_MRAM_TX_BUFFER_ELEMENTS(node_id) <= 32,                           \
+		     "Maximum Tx Buffer elements exceeded");
 
 /**
  * @brief Equivalent to CAN_MCAN_DT_MRAM_OFFSET(DT_DRV_INST(inst))
@@ -484,96 +646,181 @@ enum can_mcan_mram_cfg {
  * @return the Message RAM offset in bytes
  * @see CAN_MCAN_DT_MRAM_OFFSET()
  */
-#define CAN_MCAN_DT_INST_MRAM_OFFSET(inst)			\
-	CAN_MCAN_DT_MRAM_OFFSET(DT_DRV_INST(inst))
+#define CAN_MCAN_DT_INST_MRAM_OFFSET(inst) CAN_MCAN_DT_MRAM_OFFSET(DT_DRV_INST(inst))
 
 /**
- * @brief Equivalent to CAN_MCAN_DT_MRAM_STD_FILTER_ELEM(DT_DRV_INST(inst))
+ * @brief Equivalent to CAN_MCAN_DT_MRAM_STD_FILTER_ELEMENTS(DT_DRV_INST(inst))
  * @param inst DT_DRV_COMPAT instance number
  * @return the number of standard (11-bit) elements
- * @see CAN_MCAN_DT_MRAM_STD_FILTER_ELEM()
+ * @see CAN_MCAN_DT_MRAM_STD_FILTER_ELEMENTS()
  */
-#define CAN_MCAN_DT_INST_MRAM_STD_FILTER_ELEM(inst)		\
-	CAN_MCAN_DT_MRAM_STD_FILTER_ELEMDT_DRV_INST(inst))
+#define CAN_MCAN_DT_INST_MRAM_STD_FILTER_ELEMENTS(inst)                                            \
+	CAN_MCAN_DT_MRAM_STD_FILTER_ELEMENTS(DT_DRV_INST(inst))
 
 /**
- * @brief Equivalent to CAN_MCAN_DT_MRAM_EXT_FILTER_ELEM(DT_DRV_INST(inst))
+ * @brief Equivalent to CAN_MCAN_DT_MRAM_EXT_FILTER_ELEMENTS(DT_DRV_INST(inst))
  * @param inst DT_DRV_COMPAT instance number
  * @return the number of extended (29-bit) elements
- * @see CAN_MCAN_DT_MRAM_EXT_FILTER_ELEM()
+ * @see CAN_MCAN_DT_MRAM_EXT_FILTER_ELEMENTS()
  */
-#define CAN_MCAN_DT_INST_MRAM_EXT_FILTER_ELEM(inst)		\
-	CAN_MCAN_DT_MRAM_EXT_FILTER_ELEM(DT_DRV_INST(inst))
+#define CAN_MCAN_DT_INST_MRAM_EXT_FILTER_ELEMENTS(inst)                                            \
+	CAN_MCAN_DT_MRAM_EXT_FILTER_ELEMENTS(DT_DRV_INST(inst))
 
 /**
- * @brief Equivalent to CAN_MCAN_DT_MRAM_RX_FIFO0_ELEM(DT_DRV_INST(inst))
+ * @brief Equivalent to CAN_MCAN_DT_MRAM_RX_FIFO0_ELEMENTS(DT_DRV_INST(inst))
  * @param inst DT_DRV_COMPAT instance number
  * @return the number of Rx FIFO 0 elements
- * @see CAN_MCAN_DT_MRAM_RX_FIFO0_ELEM()
+ * @see CAN_MCAN_DT_MRAM_RX_FIFO0_ELEMENTS()
  */
-#define CAN_MCAN_DT_INST_MRAM_RX_FIFO0_ELEM(inst)		\
-	CAN_MCAN_DT_MRAM_RX_FIFO0_ELEM(DT_DRV_INST(inst))
+#define CAN_MCAN_DT_INST_MRAM_RX_FIFO0_ELEMENTS(inst)                                              \
+	CAN_MCAN_DT_MRAM_RX_FIFO0_ELEMENTS(DT_DRV_INST(inst))
 
 /**
- * @brief Equivalent to CAN_MCAN_DT_MRAM_RX_FIFO1_ELEM(DT_DRV_INST(inst))
+ * @brief Equivalent to CAN_MCAN_DT_MRAM_RX_FIFO1_ELEMENTS(DT_DRV_INST(inst))
  * @param inst DT_DRV_COMPAT instance number
  * @return the number of Rx FIFO 1 elements
- * @see CAN_MCAN_DT_MRAM_RX_FIFO1_ELEM()
+ * @see CAN_MCAN_DT_MRAM_RX_FIFO1_ELEMENTS()
  */
-#define CAN_MCAN_DT_INST_MRAM_RX_FIFO1_ELEM(inst)		\
-	CAN_MCAN_DT_MRAM_RX_FIFO1_ELEM(DT_DRV_INST(inst))
+#define CAN_MCAN_DT_INST_MRAM_RX_FIFO1_ELEMENTS(inst)                                              \
+	CAN_MCAN_DT_MRAM_RX_FIFO1_ELEMENTS(DT_DRV_INST(inst))
 
 /**
- * @brief Equivalent to CAN_MCAN_DT_MRAM_RX_BUFFER_ELEM(DT_DRV_INST(inst))
+ * @brief Equivalent to CAN_MCAN_DT_MRAM_RX_BUFFER_ELEMENTS(DT_DRV_INST(inst))
  * @param inst DT_DRV_COMPAT instance number
  * @return the number of Rx Buffer elements
- * @see CAN_MCAN_DT_MRAM_RX_BUFFER_ELEM()
+ * @see CAN_MCAN_DT_MRAM_RX_BUFFER_ELEMENTS()
  */
-#define CAN_MCAN_DT_INST_MRAM_RX_BUFFER_ELEM(inst)		\
-	CAN_MCAN_DT_MRAM_RX_BUFFER_ELEM(DT_DRV_INST(inst))
+#define CAN_MCAN_DT_INST_MRAM_RX_BUFFER_ELEMENTS(inst)                                             \
+	CAN_MCAN_DT_MRAM_RX_BUFFER_ELEMENTS(DT_DRV_INST(inst))
 
 /**
- * @brief Equivalent to CAN_MCAN_DT_MRAM_TX_EVENT_ELEM(DT_DRV_INST(inst))
+ * @brief Equivalent to CAN_MCAN_DT_MRAM_TX_EVENT_FIFO_ELEMENTS(DT_DRV_INST(inst))
  * @param inst DT_DRV_COMPAT instance number
  * @return the number of Tx Event FIFO elements
- * @see CAN_MCAN_DT_MRAM_TX_EVENT_FIFO_ELEM()
+ * @see CAN_MCAN_DT_MRAM_TX_EVENT_FIFO_ELEMENTS()
  */
-#define CAN_MCAN_DT_INST_MRAM_TX_EVENT_FIFO_ELEM(inst)		\
-	CAN_MCAN_DT_MRAM_TX_EVENT_FIFO_ELEM(DT_DRV_INST(inst))
+#define CAN_MCAN_DT_INST_MRAM_TX_EVENT_FIFO_ELEMENTS(inst)                                         \
+	CAN_MCAN_DT_MRAM_TX_EVENT_FIFO_ELEMENTS(DT_DRV_INST(inst))
 
 /**
- * @brief Equivalent to CAN_MCAN_DT_MRAM_TX_BUFFER_ELEM(DT_DRV_INST(inst))
+ * @brief Equivalent to CAN_MCAN_DT_MRAM_TX_BUFFER_ELEMENTS(DT_DRV_INST(inst))
  * @param inst DT_DRV_COMPAT instance number
  * @return the number of Tx Buffer elements
- * @see CAN_MCAN_DT_MRAM_TX_BUFFER_ELEM()
+ * @see CAN_MCAN_DT_MRAM_TX_BUFFER_ELEMENTS()
  */
-#define CAN_MCAN_DT_INST_MRAM_TX_BUFFER_ELEM(inst)		\
-	CAN_MCAN_DT_MRAM_TX_BUFFER_ELEM(DT_DRV_INST(inst))
+#define CAN_MCAN_DT_INST_MRAM_TX_BUFFER_ELEMENTS(inst)                                             \
+	CAN_MCAN_DT_MRAM_TX_BUFFER_ELEMENTS(DT_DRV_INST(inst))
 
-#define NUM_STD_FILTER_ELEMENTS    CAN_MCAN_DT_MRAM_STD_FILTER_ELEM(MCAN_DT_PATH)
-#define NUM_EXT_FILTER_ELEMENTS    CAN_MCAN_DT_MRAM_EXT_FILTER_ELEM(MCAN_DT_PATH)
-#define NUM_RX_FIFO0_ELEMENTS      CAN_MCAN_DT_MRAM_RX_FIFO0_ELEM(MCAN_DT_PATH)
-#define NUM_RX_FIFO1_ELEMENTS      CAN_MCAN_DT_MRAM_RX_FIFO1_ELEM(MCAN_DT_PATH)
-#define NUM_RX_BUF_ELEMENTS        CAN_MCAN_DT_MRAM_RX_BUFFER_ELEM(MCAN_DT_PATH)
-#define NUM_TX_EVENT_FIFO_ELEMENTS CAN_MCAN_DT_MRAM_TX_EVENT_FIFO_ELEM(MCAN_DT_PATH)
-#define NUM_TX_BUF_ELEMENTS        CAN_MCAN_DT_MRAM_TX_BUFFER_ELEM(MCAN_DT_PATH)
+/**
+ * @brief Equivalent to CAN_MCAN_DT_MRAM_STD_FILTER_OFFSET(DT_DRV_INST(inst))
+ * @param inst DT_DRV_COMPAT instance number
+ * @return the base offset of standard (11-bit) filter elements in bytes
+ * @see CAN_MCAN_DT_MRAM_STD_FILTER_OFFSET()
+ */
+#define CAN_MCAN_DT_INST_MRAM_STD_FILTER_OFFSET(inst)                                              \
+	CAN_MCAN_DT_MRAM_STD_FILTER_OFFSET(DT_DRV_INST(inst))
 
-/* Assert that the Message RAM configuration meets the M_CAN IP core restrictions */
-BUILD_ASSERT(NUM_STD_FILTER_ELEMENTS <= 128, "Maximum Standard filter elements exceeded");
-BUILD_ASSERT(NUM_EXT_FILTER_ELEMENTS <= 64, "Maximum Extended filter elements exceeded");
-BUILD_ASSERT(NUM_RX_FIFO0_ELEMENTS <= 64, "Maximum Rx FIFO 0 elements exceeded");
-BUILD_ASSERT(NUM_RX_FIFO1_ELEMENTS <= 64, "Maximum Rx FIFO 1 elements exceeded");
-BUILD_ASSERT(NUM_RX_BUF_ELEMENTS <= 64, "Maximum Rx Buffer elements exceeded");
-BUILD_ASSERT(NUM_TX_EVENT_FIFO_ELEMENTS <= 32, "Maximum Tx Buffer elements exceeded");
-BUILD_ASSERT(NUM_TX_BUF_ELEMENTS <= 32, "Maximum Tx Buffer elements exceeded");
+/**
+ * @brief Equivalent to CAN_MCAN_DT_MRAM_EXT_FILTER_OFFSET(DT_DRV_INST(inst))
+ * @param inst DT_DRV_COMPAT instance number
+ * @return the base offset of extended (29-bit) filter elements in bytes
+ * @see CAN_MCAN_DT_MRAM_EXT_FILTER_OFFSET()
+ */
+#define CAN_MCAN_DT_INST_MRAM_EXT_FILTER_OFFSET(inst)                                              \
+	CAN_MCAN_DT_MRAM_EXT_FILTER_OFFSET(DT_DRV_INST(inst))
 
-#ifdef CONFIG_CAN_STM32FD
-#define NUM_STD_FILTER_DATA CONFIG_CAN_MAX_STD_ID_FILTER
-#define NUM_EXT_FILTER_DATA CONFIG_CAN_MAX_EXT_ID_FILTER
-#else
-#define NUM_STD_FILTER_DATA NUM_STD_FILTER_ELEMENTS
-#define NUM_EXT_FILTER_DATA NUM_EXT_FILTER_ELEMENTS
-#endif
+/**
+ * @brief Equivalent to CAN_MCAN_DT_MRAM_RX_FIFO0_OFFSET(DT_DRV_INST(inst))
+ * @param inst DT_DRV_COMPAT instance number
+ * @return the base offset of Rx FIFO 0 elements in bytes
+ * @see CAN_MCAN_DT_MRAM_RX_FIFO0_OFFSET()
+ */
+#define CAN_MCAN_DT_INST_MRAM_RX_FIFO0_OFFSET(inst)                                                \
+	CAN_MCAN_DT_MRAM_RX_FIFO0_OFFSET(DT_DRV_INST(inst))
+
+/**
+ * @brief Equivalent to CAN_MCAN_DT_MRAM_RX_FIFO1_OFFSET(DT_DRV_INST(inst))
+ * @param inst DT_DRV_COMPAT instance number
+ * @return the base offset of Rx FIFO 1 elements in bytes
+ * @see CAN_MCAN_DT_MRAM_RX_FIFO1_OFFSET()
+ */
+#define CAN_MCAN_DT_INST_MRAM_RX_FIFO1_OFFSET(inst)                                                \
+	CAN_MCAN_DT_MRAM_RX_FIFO1_OFFSET(DT_DRV_INST(inst))
+
+/**
+ * @brief Equivalent to CAN_MCAN_DT_MRAM_RX_BUFFER_OFFSET(DT_DRV_INST(inst))
+ * @param inst DT_DRV_COMPAT instance number
+ * @return the base offset of Rx Buffer elements in bytes
+ * @see CAN_MCAN_DT_MRAM_RX_BUFFER_OFFSET()
+ */
+#define CAN_MCAN_DT_INST_MRAM_RX_BUFFER_OFFSET(inst)                                               \
+	CAN_MCAN_DT_MRAM_RX_BUFFER_OFFSET(DT_DRV_INST(inst))
+
+/**
+ * @brief Equivalent to CAN_MCAN_DT_MRAM_TX_EVENT_FIFO_OFFSET(DT_DRV_INST(inst))
+ * @param inst DT_DRV_COMPAT instance number
+ * @return the base offset of Tx Event FIFO elements in bytes
+ * @see CAN_MCAN_DT_MRAM_TX_EVENT_FIFO_OFFSET()
+ */
+#define CAN_MCAN_DT_INST_MRAM_TX_EVENT_FIFO_OFFSET(inst)                                           \
+	CAN_MCAN_DT_MRAM_TX_EVENT_FIFO_OFFSET(DT_DRV_INST(inst))
+
+/**
+ * @brief Equivalent to CAN_MCAN_DT_MRAM_TX_BUFFER_OFFSET(DT_DRV_INST(inst))
+ * @param inst DT_DRV_COMPAT instance number
+ * @return the base offset of Tx Buffer elements in bytes
+ * @see CAN_MCAN_DT_MRAM_TX_BUFFER_OFFSET()
+ */
+#define CAN_MCAN_DT_INST_MRAM_TX_BUFFER_OFFSET(inst)                                               \
+	CAN_MCAN_DT_MRAM_TX_BUFFER_OFFSET(DT_DRV_INST(inst))
+
+/**
+ * @brief Equivalent to CAN_MCAN_DT_MCAN_ADDR(DT_DRV_INST(inst))
+ * @param inst DT_DRV_COMPAT instance number
+ * @return the Bosch M_CAN register base address
+ * @see CAN_MCAN_DT_MRAM_ADDR()
+ */
+#define CAN_MCAN_DT_INST_MCAN_ADDR(inst) CAN_MCAN_DT_MCAN_ADDR(DT_DRV_INST(inst))
+
+/**
+ * @brief Equivalent to CAN_MCAN_DT_MRAM_ADDR(DT_DRV_INST(inst))
+ * @param inst DT_DRV_COMPAT instance number
+ * @return the Bosch M_CAN Message RAM base address
+ * @see CAN_MCAN_DT_MRAM_ADDR()
+ */
+#define CAN_MCAN_DT_INST_MRAM_ADDR(inst) CAN_MCAN_DT_MRAM_ADDR(DT_DRV_INST(inst))
+
+/**
+ * @brief Equivalent to CAN_MCAN_DT_MRAM_SIZE(DT_DRV_INST(inst))
+ * @param inst DT_DRV_COMPAT instance number
+ * @return the Bosch M_CAN Message RAM size in bytes
+ * @see CAN_MCAN_DT_MRAM_SIZE()
+ */
+#define CAN_MCAN_DT_INST_MRAM_SIZE(inst) CAN_MCAN_DT_MRAM_SIZE(DT_DRV_INST(inst))
+
+/**
+ * @brief Equivalent to CAN_MCAN_DT_MRAM_ELEMENTS_SIZE(DT_DRV_INST(inst))
+ * @param inst DT_DRV_COMPAT instance number
+ * @return the total size of all Message RAM elements in bytes
+ * @see CAN_MCAN_DT_MRAM_ELEMENTS_SIZE()
+ */
+#define CAN_MCAN_DT_INST_MRAM_ELEMENTS_SIZE(inst) CAN_MCAN_DT_MRAM_ELEMENTS_SIZE(DT_DRV_INST(inst))
+
+/**
+ * @brief Equivalent to CAN_MCAN_DT_MRAM_DEFINE(DT_DRV_INST(inst))
+ * @param inst DT_DRV_COMPAT instance number
+ * @param _name buffer variable name
+ * @see CAN_MCAN_DT_MRAM_DEFINE()
+ */
+#define CAN_MCAN_DT_INST_MRAM_DEFINE(inst, _name) CAN_MCAN_DT_MRAM_DEFINE(DT_DRV_INST(inst), _name)
+
+/**
+ * @brief Equivalent to CAN_MCAN_DT_BUILD_ASSERT_MRAM_CFG(DT_DRV_INST(inst))
+ * @param inst DT_DRV_COMPAT instance number
+ * @see CAN_MCAN_DT_BUILD_ASSERT_MRAM_CFG()
+ */
+#define CAN_MCAN_DT_INST_BUILD_ASSERT_MRAM_CFG(inst)                                               \
+	CAN_MCAN_DT_BUILD_ASSERT_MRAM_CFG(DT_DRV_INST(inst))
 
 struct can_mcan_rx_fifo_hdr {
 	union {
@@ -689,42 +936,12 @@ struct can_mcan_ext_filter {
 	uint32_t eft: 2; /* Filter type */
 } __packed __aligned(4);
 
-struct can_mcan_msg_sram {
-	struct can_mcan_std_filter std_filt[NUM_STD_FILTER_ELEMENTS];
-	struct can_mcan_ext_filter ext_filt[NUM_EXT_FILTER_ELEMENTS];
-	struct can_mcan_rx_fifo rx_fifo0[NUM_RX_FIFO0_ELEMENTS];
-	struct can_mcan_rx_fifo rx_fifo1[NUM_RX_FIFO1_ELEMENTS];
-	struct can_mcan_rx_fifo rx_buffer[NUM_RX_BUF_ELEMENTS];
-	struct can_mcan_tx_event_fifo tx_event_fifo[NUM_TX_EVENT_FIFO_ELEMENTS];
-	struct can_mcan_tx_buffer tx_buffer[NUM_TX_BUF_ELEMENTS];
-} __packed __aligned(4);
-
-#define CAN_MCAN_MRAM_OFFSET_STD_FILTER offsetof(struct can_mcan_msg_sram, std_filt)
-#define CAN_MCAN_MRAM_OFFSET_EXT_FILTER offsetof(struct can_mcan_msg_sram, ext_filt)
-#define CAN_MCAN_MRAM_OFFSET_RX_FIFO0 offsetof(struct can_mcan_msg_sram, rx_fifo0)
-#define CAN_MCAN_MRAM_OFFSET_RX_FIFO1 offsetof(struct can_mcan_msg_sram, rx_fifo1)
-#define CAN_MCAN_MRAM_OFFSET_RX_BUFFER offsetof(struct can_mcan_msg_sram, rx_buffer)
-#define CAN_MCAN_MRAM_OFFSET_TX_EVENT_FIFO offsetof(struct can_mcan_msg_sram, tx_event_fifo)
-#define CAN_MCAN_MRAM_OFFSET_TX_BUFFER offsetof(struct can_mcan_msg_sram, tx_buffer)
-
 struct can_mcan_data {
 	struct k_mutex lock;
 	struct k_sem tx_sem;
 	struct k_mutex tx_mtx;
-	can_tx_callback_t tx_fin_cb[NUM_TX_BUF_ELEMENTS];
-	void *tx_fin_cb_arg[NUM_TX_BUF_ELEMENTS];
-	can_rx_callback_t rx_cb_std[NUM_STD_FILTER_DATA];
-	can_rx_callback_t rx_cb_ext[NUM_EXT_FILTER_DATA];
-	void *cb_arg_std[NUM_STD_FILTER_DATA];
-	void *cb_arg_ext[NUM_EXT_FILTER_DATA];
 	can_state_change_callback_t state_change_cb;
 	void *state_change_cb_data;
-	uint32_t std_filt_fd_frame;
-	uint32_t std_filt_rtr;
-	uint32_t std_filt_rtr_mask;
-	uint16_t ext_filt_fd_frame;
-	uint16_t ext_filt_rtr;
-	uint16_t ext_filt_rtr_mask;
 	bool started;
 #ifdef CONFIG_CAN_FD_MODE
 	bool fd;
@@ -814,8 +1031,90 @@ struct can_mcan_ops {
 	can_mcan_clear_mram_t clear_mram;
 };
 
+/**
+ * @brief Bosch M_CAN driver internal Tx callback structure.
+ */
+struct can_mcan_tx_callback {
+	can_tx_callback_t function;
+	void *user_data;
+};
+
+/**
+ * @brief Bosch M_CAN driver internal Rx callback structure.
+ */
+struct can_mcan_rx_callback {
+	can_rx_callback_t function;
+	void *user_data;
+	uint8_t flags;
+};
+
+/**
+ * @brief Bosch M_CAN driver internal Tx + Rx callbacks structure.
+ */
+struct can_mcan_callbacks {
+	struct can_mcan_tx_callback *tx;
+	struct can_mcan_rx_callback *std;
+	struct can_mcan_rx_callback *ext;
+	uint8_t num_tx;
+	uint8_t num_std;
+	uint8_t num_ext;
+};
+
+/**
+ * @brief Define Bosch M_CAN TX and RX callbacks
+ *
+ * This macro allows a Bosch M_CAN driver frontend using a fixed Message RAM configuration to limit
+ * the required software resources (e.g. limit the number of the standard (11-bit) or extended
+ * (29-bit) filters in use).
+ *
+ * Frontend drivers supporting dynamic Message RAM configuration should use @ref
+ * CAN_MCAN_DT_CALLBACKS_DEFINE() or @ref CAN_MCAN_DT_INST_CALLBACKS_DEFINE() instead.
+ *
+ * @param _name callbacks variable name
+ * @param _tx Number of Tx callbacks
+ * @param _std Number of standard (11-bit) filter callbacks
+ * @param _ext Number of extended (29-bit) filter callbacks
+ * @see CAN_MCAN_DT_CALLBACKS_DEFINE()
+ */
+#define CAN_MCAN_CALLBACKS_DEFINE(_name, _tx, _std, _ext)                                          \
+	static struct can_mcan_tx_callback _name##_tx_cbs[_tx];                                    \
+	static struct can_mcan_rx_callback _name##_std_cbs[_std];                                  \
+	static struct can_mcan_rx_callback _name##_ext_cbs[_ext];                                  \
+	static const struct can_mcan_callbacks _name = {                                           \
+		.tx = _name##_tx_cbs,                                                              \
+		.std = _name##_std_cbs,                                                            \
+		.ext = _name##_ext_cbs,                                                            \
+		.num_tx = _tx,                                                                     \
+		.num_std = _std,                                                                   \
+		.num_ext = _ext,                                                                   \
+	}
+
+/**
+ * @brief Define Bosch M_CAN TX and RX callbacks
+ * @param node_id node identifier
+ * @param _name callbacks variable name
+ * @see CAN_MCAN_CALLBACKS_DEFINE()
+ */
+#define CAN_MCAN_DT_CALLBACKS_DEFINE(node_id, _name)                                               \
+	CAN_MCAN_CALLBACKS_DEFINE(_name, CAN_MCAN_DT_MRAM_TX_BUFFER_ELEMENTS(node_id),             \
+				  CAN_MCAN_DT_MRAM_STD_FILTER_ELEMENTS(node_id),                   \
+				  CAN_MCAN_DT_MRAM_EXT_FILTER_ELEMENTS(node_id))
+
+/**
+ * @brief Equivalent to CAN_MCAN_DT_CALLBACKS_DEFINE(DT_DRV_INST(inst))
+ * @param inst DT_DRV_COMPAT instance number
+ * @param _name callbacks variable name
+ * @see CAN_MCAN_DT_CALLBACKS_DEFINE()
+ */
+#define CAN_MCAN_DT_INST_CALLBACKS_DEFINE(inst, _name)                                             \
+	CAN_MCAN_DT_CALLBACKS_DEFINE(DT_DRV_INST(inst), _name)
+
 struct can_mcan_config {
-	struct can_mcan_ops *ops;
+	const struct can_mcan_ops *ops;
+	const struct can_mcan_callbacks *callbacks;
+	uint16_t mram_elements[CAN_MCAN_MRAM_CFG_NUM_CELLS];
+	uint16_t mram_offsets[CAN_MCAN_MRAM_CFG_NUM_CELLS];
+	size_t mram_size;
 	uint32_t bus_speed;
 	uint16_t sjw;
 	uint16_t sample_point;
@@ -835,16 +1134,61 @@ struct can_mcan_config {
 };
 
 /**
+ * @brief Get an array containing the number of elements in Bosch M_CAN Message RAM
+ *
+ * The order of the array entries is given by the @ref CAN_MCAN_MRAM_CFG definitions.
+ *
+ * @param node_id node identifier
+ * @return array of number of elements
+ */
+#define CAN_MCAN_DT_MRAM_ELEMENTS_GET(node_id)                                                     \
+	{                                                                                          \
+		0, /* offset cell */                                                               \
+			CAN_MCAN_DT_MRAM_STD_FILTER_ELEMENTS(node_id),                             \
+			CAN_MCAN_DT_MRAM_EXT_FILTER_ELEMENTS(node_id),                             \
+			CAN_MCAN_DT_MRAM_RX_FIFO0_ELEMENTS(node_id),                               \
+			CAN_MCAN_DT_MRAM_RX_FIFO1_ELEMENTS(node_id),                               \
+			CAN_MCAN_DT_MRAM_RX_BUFFER_ELEMENTS(node_id),                              \
+			CAN_MCAN_DT_MRAM_TX_EVENT_FIFO_ELEMENTS(node_id),                          \
+			CAN_MCAN_DT_MRAM_TX_BUFFER_ELEMENTS(node_id)                               \
+	}
+
+/**
+ * @brief Get an array containing the base offsets for element in Bosch M_CAN Message RAM
+ *
+ * The order of the array entries is given by the @ref CAN_MCAN_MRAM_CFG definitions.
+ *
+ * @param node_id node identifier
+ * @return array of base offsets for elements
+ */
+#define CAN_MCAN_DT_MRAM_OFFSETS_GET(node_id)                                                      \
+	{                                                                                          \
+		0, /* offset cell */                                                               \
+			CAN_MCAN_DT_MRAM_STD_FILTER_OFFSET(node_id),                               \
+			CAN_MCAN_DT_MRAM_EXT_FILTER_OFFSET(node_id),                               \
+			CAN_MCAN_DT_MRAM_RX_FIFO0_OFFSET(node_id),                                 \
+			CAN_MCAN_DT_MRAM_RX_FIFO1_OFFSET(node_id),                                 \
+			CAN_MCAN_DT_MRAM_RX_BUFFER_OFFSET(node_id),                                \
+			CAN_MCAN_DT_MRAM_TX_EVENT_FIFO_OFFSET(node_id),                            \
+			CAN_MCAN_DT_MRAM_TX_BUFFER_OFFSET(node_id)                                 \
+	}
+
+/**
  * @brief Static initializer for @p can_mcan_config struct
  *
  * @param node_id Devicetree node identifier
  * @param _custom Pointer to custom driver frontend configuration structure
  * @param _ops Pointer to front-end @a can_mcan_ops
+ * @param _cbs Pointer to front-end @a can_mcan_callbacks
  */
 #ifdef CONFIG_CAN_FD_MODE
-#define CAN_MCAN_DT_CONFIG_GET(node_id, _custom, _ops)                                             \
+#define CAN_MCAN_DT_CONFIG_GET(node_id, _custom, _ops, _cbs)                                       \
 	{                                                                                          \
 		.ops = _ops,                                                                       \
+		.callbacks = _cbs,                                                                 \
+		.mram_elements = CAN_MCAN_DT_MRAM_ELEMENTS_GET(node_id),                           \
+		.mram_offsets = CAN_MCAN_DT_MRAM_OFFSETS_GET(node_id),                             \
+		.mram_size = CAN_MCAN_DT_MRAM_ELEMENTS_SIZE(node_id),                              \
 		.bus_speed = DT_PROP(node_id, bus_speed),                                          \
 		.sjw = DT_PROP(node_id, sjw),                                                      \
 		.sample_point = DT_PROP_OR(node_id, sample_point, 0),                              \
@@ -862,9 +1206,13 @@ struct can_mcan_config {
 		.custom = _custom,                                                                 \
 	}
 #else /* CONFIG_CAN_FD_MODE */
-#define CAN_MCAN_DT_CONFIG_GET(node_id, _custom, _ops)                                             \
+#define CAN_MCAN_DT_CONFIG_GET(node_id, _custom, _ops, _cbs)                                       \
 	{                                                                                          \
 		.ops = _ops,                                                                       \
+		.callbacks = _cbs,                                                                 \
+		.mram_elements = CAN_MCAN_DT_MRAM_ELEMENTS_GET(node_id),                           \
+		.mram_offsets = CAN_MCAN_DT_MRAM_OFFSETS_GET(node_id),                             \
+		.mram_size = CAN_MCAN_DT_MRAM_ELEMENTS_SIZE(node_id),                              \
 		.bus_speed = DT_PROP(node_id, bus_speed),                                          \
 		.sjw = DT_PROP(node_id, sjw),                                                      \
 		.sample_point = DT_PROP_OR(node_id, sample_point, 0),                              \
@@ -882,14 +1230,14 @@ struct can_mcan_config {
  * @param inst DT_DRV_COMPAT instance number
  * @param _custom Pointer to custom driver frontend configuration structure
  * @param _ops Pointer to front-end @a can_mcan_ops
+ * @param _cbs Pointer to front-end @a can_mcan_callbacks
  * @see CAN_MCAN_DT_CONFIG_GET()
  */
-#define CAN_MCAN_DT_CONFIG_INST_GET(inst, _custom, _ops)                                           \
-	CAN_MCAN_DT_CONFIG_GET(DT_DRV_INST(inst), _custom, _ops)
+#define CAN_MCAN_DT_CONFIG_INST_GET(inst, _custom, _ops, _cbs)                                     \
+	CAN_MCAN_DT_CONFIG_GET(DT_DRV_INST(inst), _custom, _ops, _cbs)
 
 /**
  * @brief Initializer for a @a can_mcan_data struct
- * @param _msg_ram Pointer to message RAM structure
  * @param _custom Pointer to custom driver frontend data structure
  */
 #define CAN_MCAN_DATA_INITIALIZER(_custom)                                                         \

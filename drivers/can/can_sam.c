@@ -21,14 +21,11 @@ LOG_MODULE_REGISTER(can_sam, CONFIG_CAN_LOG_LEVEL);
 
 struct can_sam_config {
 	mm_reg_t base;
+	mem_addr_t mram;
 	void (*config_irq)(void);
 	const struct atmel_sam_pmc_config clock_cfg;
 	const struct pinctrl_dev_config *pcfg;
 	int divider;
-};
-
-struct can_sam_data {
-	struct can_mcan_msg_sram msg_ram;
 };
 
 static int can_sam_read_reg(const struct device *dev, uint16_t reg, uint32_t *val)
@@ -49,27 +46,27 @@ static int can_sam_write_reg(const struct device *dev, uint16_t reg, uint32_t va
 
 static int can_sam_read_mram(const struct device *dev, uint16_t offset, void *dst, size_t len)
 {
-	struct can_mcan_data *mcan_data = dev->data;
-	struct can_sam_data *sam_data = mcan_data->custom;
+	const struct can_mcan_config *mcan_config = dev->config;
+	const struct can_sam_config *sam_config = mcan_config->custom;
 
-	return can_mcan_sys_read_mram(POINTER_TO_UINT(&sam_data->msg_ram), offset, dst, len);
+	return can_mcan_sys_read_mram(sam_config->mram, offset, dst, len);
 }
 
 static int can_sam_write_mram(const struct device *dev, uint16_t offset, const void *src,
 				size_t len)
 {
-	struct can_mcan_data *mcan_data = dev->data;
-	struct can_sam_data *sam_data = mcan_data->custom;
+	const struct can_mcan_config *mcan_config = dev->config;
+	const struct can_sam_config *sam_config = mcan_config->custom;
 
-	return can_mcan_sys_write_mram(POINTER_TO_UINT(&sam_data->msg_ram), offset, src, len);
+	return can_mcan_sys_write_mram(sam_config->mram, offset, src, len);
 }
 
 static int can_sam_clear_mram(const struct device *dev, uint16_t offset, size_t len)
 {
-	struct can_mcan_data *mcan_data = dev->data;
-	struct can_sam_data *sam_data = mcan_data->custom;
+	const struct can_mcan_config *mcan_config = dev->config;
+	const struct can_sam_config *sam_config = mcan_config->custom;
 
-	return can_mcan_sys_clear_mram(POINTER_TO_UINT(&sam_data->msg_ram), offset, len);
+	return can_mcan_sys_clear_mram(sam_config->mram, offset, len);
 }
 
 static int can_sam_get_core_clock(const struct device *dev, uint32_t *rate)
@@ -96,8 +93,6 @@ static int can_sam_init(const struct device *dev)
 {
 	const struct can_mcan_config *mcan_cfg = dev->config;
 	const struct can_sam_config *sam_cfg = mcan_cfg->custom;
-	struct can_mcan_data *mcan_data = dev->data;
-	struct can_sam_data *sam_data = mcan_data->custom;
 	int ret;
 
 	can_sam_clock_enable(sam_cfg);
@@ -107,7 +102,7 @@ static int can_sam_init(const struct device *dev)
 		return ret;
 	}
 
-	ret = can_mcan_configure_mram(dev, 0U, POINTER_TO_UINT(&sam_data->msg_ram));
+	ret = can_mcan_configure_mram(dev, 0U, sam_cfg->mram);
 	if (ret != 0) {
 		return ret;
 	}
@@ -195,8 +190,12 @@ static void config_can_##inst##_irq(void)                                       
 }
 
 #define CAN_SAM_CFG_INST(inst)						\
+	CAN_MCAN_DT_INST_CALLBACKS_DEFINE(inst, can_sam_cbs_##inst);	\
+	CAN_MCAN_DT_INST_MRAM_DEFINE(inst, can_sam_mram_##inst);	\
+									\
 	static const struct can_sam_config can_sam_cfg_##inst = {	\
-		.base = (mm_reg_t)DT_INST_REG_ADDR(inst),		\
+		.base = CAN_MCAN_DT_INST_MCAN_ADDR(inst),		\
+		.mram = (mem_addr_t)POINTER_TO_UINT(&can_sam_mram_##inst), \
 		.clock_cfg = SAM_DT_INST_CLOCK_PMC_CFG(inst),		\
 		.divider = DT_INST_PROP(inst, divider),			\
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),		\
@@ -205,13 +204,12 @@ static void config_can_##inst##_irq(void)                                       
 									\
 	static const struct can_mcan_config can_mcan_cfg_##inst =	\
 		CAN_MCAN_DT_CONFIG_INST_GET(inst, &can_sam_cfg_##inst,  \
-					    &can_sam_ops);
+					    &can_sam_ops,		\
+					    &can_sam_cbs_##inst);
 
 #define CAN_SAM_DATA_INST(inst)						\
-	static struct can_sam_data can_sam_data_##inst;			\
-									\
 	static struct can_mcan_data can_mcan_data_##inst =		\
-		CAN_MCAN_DATA_INITIALIZER(&can_sam_data_##inst);
+		CAN_MCAN_DATA_INITIALIZER(NULL);
 
 #define CAN_SAM_DEVICE_INST(inst)					\
 	DEVICE_DT_INST_DEFINE(inst, &can_sam_init, NULL,		\
@@ -221,6 +219,7 @@ static void config_can_##inst##_irq(void)                                       
 			      &can_sam_driver_api);
 
 #define CAN_SAM_INST(inst)                                                     \
+	CAN_MCAN_DT_INST_BUILD_ASSERT_MRAM_CFG(inst);                          \
 	PINCTRL_DT_INST_DEFINE(inst);                                          \
 	CAN_SAM_IRQ_CFG_FUNCTION(inst)                                         \
 	CAN_SAM_CFG_INST(inst)                                                 \
