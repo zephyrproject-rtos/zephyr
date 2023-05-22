@@ -89,6 +89,7 @@ set(DRIVER_VALIDATION_H_TARGET driver_validation_h_target)
 set(KOBJ_TYPES_H_TARGET        kobj_types_h_target)
 set(PARSE_SYSCALLS_TARGET      parse_syscalls_target)
 set(DEVICE_CLASS_LD_TARGET     device_class_ld_target)
+set(DEVICE_ENUM_H_TARGET       device_enum_h_target)
 
 define_property(GLOBAL PROPERTY PROPERTY_OUTPUT_FORMAT BRIEF_DOCS " " FULL_DOCS " ")
 set_property(   GLOBAL PROPERTY PROPERTY_OUTPUT_FORMAT elf32-little${ARCH}) # BFD format
@@ -902,12 +903,37 @@ endforeach()
 
 get_property(OUTPUT_FORMAT        GLOBAL PROPERTY PROPERTY_OUTPUT_FORMAT)
 
+# Generate device enumerations from ${ZEPHYR_LINK_STAGE_EXECUTABLE}
+set(
+  DEVICE_ENUM_GENERATED_HEADER
+  ${CMAKE_CURRENT_BINARY_DIR}/include/generated/device_enum_generated.h
+  )
+
+add_custom_command(
+  OUTPUT ${DEVICE_ENUM_GENERATED_HEADER}
+  COMMAND ${PYTHON_EXECUTABLE}
+    ${ZEPHYR_BASE}/scripts/build/gen_device_enums.py
+    -k $<TARGET_FILE:${ZEPHYR_LINK_STAGE_EXECUTABLE}>
+    -o ${DEVICE_ENUM_GENERATED_HEADER}
+    -z ${ZEPHYR_BASE}
+    -e ${EDT_PICKLE}
+  VERBATIM
+  DEPENDS
+  ${ZEPHYR_BASE}/scripts/build/gen_device_enums.py
+  ${ZEPHYR_LINK_STAGE_EXECUTABLE}
+  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+  )
+
+add_custom_target(${DEVICE_ENUM_H_TARGET} DEPENDS ${DEVICE_ENUM_GENERATED_HEADER})
+
 # Generate list of zephyr libraries excluding the app library
 set_property(GLOBAL PROPERTY ZEPHYR_KERNEL_LIBS_PROPERTY)
 
 foreach(zephyr_lib ${ZEPHYR_LIBS_PROPERTY})
   if(NOT ${zephyr_lib} STREQUAL app)
     list(APPEND ZEPHYR_KERNEL_LIBS_PROPERTY ${zephyr_lib})
+  else()
+    add_dependencies(${zephyr_lib} ${DEVICE_ENUM_H_TARGET})
   endif()
 endforeach()
 
