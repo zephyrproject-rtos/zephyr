@@ -372,7 +372,7 @@ static const char * const twt_err_code_tbl[] = {
 
 static inline const char *get_twt_err_code_str(int16_t err_no)
 {
-	if ((err_no) < ARRAY_SIZE(twt_err_code_tbl)) {
+	if ((err_no) < (int16_t)ARRAY_SIZE(twt_err_code_tbl)) {
 		return twt_err_code_tbl[err_no];
 	}
 
@@ -424,7 +424,7 @@ static const char * const ps_param_config_err_code_tbl[] = {
 
 static inline const char *get_ps_config_err_code_str(int16_t err_no)
 {
-	if ((err_no) < ARRAY_SIZE(ps_param_config_err_code_tbl)) {
+	if ((err_no) < (int16_t)ARRAY_SIZE(ps_param_config_err_code_tbl)) {
 		return ps_param_config_err_code_tbl[err_no];
 	}
 
