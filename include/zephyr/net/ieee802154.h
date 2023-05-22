@@ -85,12 +85,14 @@ struct ieee802154_context {
 #endif
 	int16_t tx_power;
 	enum net_l2_flags flags;
+
 	uint8_t sequence;
 
-	uint8_t ack_seq;	   /* guarded by ack_lock */
+	uint8_t _unused : 6;
+
 	uint8_t ack_received : 1;  /* guarded by ack_lock */
 	uint8_t ack_requested : 1; /* guarded by ack_lock */
-	uint8_t _unused : 6;
+	uint8_t ack_seq;	   /* guarded by ack_lock */
 	struct k_sem ack_lock;
 
 	struct k_sem ctx_lock; /* guards all mutable context attributes unless
