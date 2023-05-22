@@ -59,8 +59,8 @@ static void update_max_latency(void)
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&latency_reqs, req, node) {
 		if ((new_max_latency_us == SYS_FOREVER_US) ||
-		    ((int32_t)req->value < new_max_latency_us)) {
-			new_max_latency_us = (int32_t)req->value;
+		    ((int32_t)req->value_us < new_max_latency_us)) {
+			new_max_latency_us = (int32_t)req->value_us;
 		}
 	}
 
@@ -157,9 +157,9 @@ bool pm_policy_state_lock_is_active(enum pm_state state, uint8_t substate_id)
 }
 
 void pm_policy_latency_request_add(struct pm_policy_latency_request *req,
-				   uint32_t value)
+				   uint32_t value_us)
 {
-	req->value = value;
+	req->value_us = value_us;
 
 	k_spinlock_key_t key = k_spin_lock(&latency_lock);
 
@@ -170,11 +170,11 @@ void pm_policy_latency_request_add(struct pm_policy_latency_request *req,
 }
 
 void pm_policy_latency_request_update(struct pm_policy_latency_request *req,
-				      uint32_t value)
+				      uint32_t value_us)
 {
 	k_spinlock_key_t key = k_spin_lock(&latency_lock);
 
-	req->value = value;
+	req->value_us = value_us;
 	update_max_latency();
 
 	k_spin_unlock(&latency_lock, key);
