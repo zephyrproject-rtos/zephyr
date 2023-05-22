@@ -18,6 +18,7 @@
 LOG_MODULE_REGISTER(pwm_mcux_sctimer, CONFIG_PWM_LOG_LEVEL);
 
 #define CHANNEL_COUNT FSL_FEATURE_SCT_NUMBER_OF_OUTPUTS
+#define SC_TIMER_UNUSED_EVENT_NUMBER UINT32_MAX
 
 struct pwm_mcux_sctimer_config {
 	SCT_Type *base;
@@ -31,6 +32,53 @@ struct pwm_mcux_sctimer_data {
 	sctimer_pwm_signal_param_t channel[CHANNEL_COUNT];
 };
 
+static int mcux_sctimer_pwm_init_device(
+	const struct pwm_mcux_sctimer_config *config)
+{
+	sctimer_config_t pwm_config;
+	status_t status;
+
+	SCTIMER_GetDefaultConfig(&pwm_config);
+	pwm_config.prescale_l = config->prescale - 1;
+	status = SCTIMER_Init(config->base, &pwm_config);
+	if (status != kStatus_Success) {
+		LOG_ERR("Unable to init PWM");
+		return -EIO;
+	}
+
+	return 0;
+}
+
+static int mcux_sctimer_pwm_reconfigure_all(const struct device *dev, uint32_t clock_freq)
+{
+	const struct pwm_mcux_sctimer_config *config = dev->config;
+	struct pwm_mcux_sctimer_data *data = dev->data;
+	status_t setup_pwm_status;
+	uint32_t pwm_freq;
+
+	LOG_DBG("PWM period changed, reconfiguring all SCTIMER channels");
+	SCTIMER_Deinit(config->base);
+	mcux_sctimer_pwm_init_device(config);
+
+	for (int i = 0 ; i < CHANNEL_COUNT ; i++) {
+		if (data->event_number[i] == SC_TIMER_UNUSED_EVENT_NUMBER) {
+			continue;
+		}
+
+		pwm_freq = (clock_freq / config->prescale) /
+			   data->period_cycles[i];
+		setup_pwm_status = SCTIMER_SetupPwm(
+			config->base, &data->channel[i],
+			kSCTIMER_EdgeAlignedPwm, pwm_freq, clock_freq,
+			&data->event_number[i]);
+		if (setup_pwm_status != kStatus_Success) {
+			LOG_ERR("Could reconfigure PWM channel %i", i);
+			return -ENOTSUP;
+		}
+	}
+	return 0;
+}
+
 static int mcux_sctimer_pwm_set_cycles(const struct device *dev,
 				       uint32_t channel, uint32_t period_cycles,
 				       uint32_t pulse_cycles, pwm_flags_t flags)
@@ -38,6 +86,7 @@ static int mcux_sctimer_pwm_set_cycles(const struct device *dev,
 	const struct pwm_mcux_sctimer_config *config = dev->config;
 	struct pwm_mcux_sctimer_data *data = dev->data;
 	uint8_t duty_cycle;
+	int status = 0;
 
 	if (channel >= CHANNEL_COUNT) {
 		LOG_ERR("Invalid channel");
@@ -95,11 +144,21 @@ static int mcux_sctimer_pwm_set_cycles(const struct device *dev,
 
 		LOG_DBG("SETUP dutycycle to %u\n", duty_cycle);
 		data->channel[channel].dutyCyclePercent = duty_cycle;
-		if (SCTIMER_SetupPwm(config->base, &data->channel[channel],
-				     kSCTIMER_EdgeAlignedPwm, pwm_freq,
-				     clock_freq, &data->event_number[channel]) == kStatus_Fail) {
-			LOG_ERR("Could not set up pwm");
-			return -ENOTSUP;
+		if (data->event_number[channel] !=
+				SC_TIMER_UNUSED_EVENT_NUMBER) {
+			status = mcux_sctimer_pwm_reconfigure_all(dev,
+								  clock_freq);
+		} else {
+			status_t setup_pwm_status;
+
+			setup_pwm_status = SCTIMER_SetupPwm(
+				config->base, &data->channel[channel],
+				kSCTIMER_EdgeAlignedPwm, pwm_freq, clock_freq,
+				&data->event_number[channel]);
+			if (setup_pwm_status != kStatus_Success) {
+				LOG_ERR("Could not set up pwm");
+				status = -ENOTSUP;
+			}
 		}
 
 		SCTIMER_StartTimer(config->base, kSCTIMER_Counter_U);
@@ -109,7 +168,7 @@ static int mcux_sctimer_pwm_set_cycles(const struct device *dev,
 					   data->event_number[channel]);
 	}
 
-	return 0;
+	return status;
 }
 
 static int mcux_sctimer_pwm_get_cycles_per_sec(const struct device *dev,
@@ -127,7 +186,6 @@ static int mcux_sctimer_pwm_init(const struct device *dev)
 {
 	const struct pwm_mcux_sctimer_config *config = dev->config;
 	struct pwm_mcux_sctimer_data *data = dev->data;
-	sctimer_config_t pwm_config;
 	status_t status;
 	int i;
 	int err;
@@ -137,20 +195,16 @@ static int mcux_sctimer_pwm_init(const struct device *dev)
 		return err;
 	}
 
-	SCTIMER_GetDefaultConfig(&pwm_config);
-	/* Divide the SCT clock by 8 */
-	pwm_config.prescale_l = config->prescale - 1;
-
-	status = SCTIMER_Init(config->base, &pwm_config);
-	if (status != kStatus_Success) {
-		LOG_ERR("Unable to init PWM");
-		return -EIO;
+	status = mcux_sctimer_pwm_init_device(config);
+	if (status) {
+		return status;
 	}
 
 	for (i = 0; i < CHANNEL_COUNT; i++) {
 		data->channel[i].output = i;
 		data->channel[i].level = kSCTIMER_HighTrue;
 		data->channel[i].dutyCyclePercent = 0;
+		data->event_number[i] = SC_TIMER_UNUSED_EVENT_NUMBER;
 		data->period_cycles[i] = 0;
 	}
 
