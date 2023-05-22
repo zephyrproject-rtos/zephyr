@@ -69,6 +69,11 @@
 				compatible = "ti,tlc59108";
 				reg = <0x6>;
 			};
+
+			lp5569@5 {
+				compatible = "ti,lp5569";
+				reg = <0x7>;
+			};
 		};
 	};
 };
