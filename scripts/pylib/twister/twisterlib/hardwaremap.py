@@ -166,7 +166,7 @@ class HardwareMap:
                 if not self.options.platform:
                     self.options.platform = []
                     for d in self.duts:
-                        if d.connected:
+                        if d.connected and d.platform != 'unknown':
                             self.options.platform.append(d.platform)
 
             elif self.options.device_serial:
