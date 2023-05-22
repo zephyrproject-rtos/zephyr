@@ -1564,7 +1564,7 @@ static int cmd_mod_pub(const struct shell *sh, size_t argc, char *argv[])
 	argc -= 3;
 	argv += 3;
 
-	if (argc == 1 || argc == 8) {
+	if (argc == 1 || argc == 9) {
 		cid = shell_strtoul(argv[0], 0, &err);
 		argc--;
 		argv++;
