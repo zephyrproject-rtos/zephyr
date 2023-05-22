@@ -93,7 +93,7 @@ means Pin number 2 on PORTA, as used in the board's datasheets and manuals.
 
 The default configuration can be found in the defconfig file:
 
-	``boards/arm/efr32_radio/efr32_radio_brd4186a_defconfig``
+	``boards/arm/efr32xg24_dk2601b/efr32xg24_dk2601b_defconfig``
 
 System Clock
 ============
