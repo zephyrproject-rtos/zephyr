@@ -1163,6 +1163,59 @@ class YAMLLint(ComplianceTest):
                                       p.line, col=p.column, desc=p.desc)
 
 
+class KeepSorted(ComplianceTest):
+    """
+    Check for blocks of code or config that should be kept sorted.
+    """
+    name = "KeepSorted"
+    doc = "Check for blocks of code or config that should be kept sorted."
+    path_hint = "<git-top>"
+
+    MARKER = "zephyr-keep-sorted"
+
+    def check_file(self, file, fp):
+        lines = []
+        in_block = False
+
+        start_marker = f"{self.MARKER}-start"
+        stop_marker = f"{self.MARKER}-stop"
+
+        for line_num, line in enumerate(fp.readlines(), start=1):
+            if start_marker in line:
+                if in_block:
+                    desc = f"nested {start_marker}"
+                    self.fmtd_failure("error", "KeepSorted", file, line_num,
+                                     desc=desc)
+                in_block = True
+                lines = []
+            elif stop_marker in line:
+                if not in_block:
+                    desc = f"{stop_marker} without {start_marker}"
+                    self.fmtd_failure("error", "KeepSorted", file, line_num,
+                                     desc=desc)
+                in_block = False
+
+                if lines != sorted(lines):
+                    desc = f"sorted block is not sorted"
+                    self.fmtd_failure("error", "KeepSorted", file, line_num,
+                                     desc=desc)
+            elif not line.strip() or line.startswith("#"):
+                # Ignore comments and blank lines
+                continue
+            elif in_block:
+                if line.startswith((" ", "\t")):
+                    lines[-1] += line
+                else:
+                    lines.append(line)
+
+        if in_block:
+            self.failure(f"unterminated {start_marker} in {file}")
+
+    def run(self):
+        for file in get_files(filter="d"):
+            with open(file, "r") as fp:
+                self.check_file(file, fp)
+
 def init_logs(cli_arg):
     # Initializes logging
 
