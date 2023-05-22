@@ -102,15 +102,16 @@ endfunction()
 #     LIBRARIES_PRE_SCRIPT   [libraries_pre_script]
 #     LINKER_SCRIPT          <linker_script>
 #     LIBRARIES_POST_SCRIPT  [libraries_post_script]
+#     LIBRARIES              [libraries_list]
 #     DEPENDENCIES           [dependencies]
 #   )
 function(toolchain_ld_link_elf)
   cmake_parse_arguments(
-    TOOLCHAIN_LD_LINK_ELF                                     # prefix of output variables
-    ""                                                        # list of names of the boolean arguments
-    "TARGET_ELF;OUTPUT_MAP;LINKER_SCRIPT"                     # list of names of scalar arguments
-    "LIBRARIES_PRE_SCRIPT;LIBRARIES_POST_SCRIPT;DEPENDENCIES" # list of names of list arguments
-    ${ARGN}                                                   # input args to parse
+    TOOLCHAIN_LD_LINK_ELF                                                # prefix of output variables
+    ""                                                                   # list of names of the boolean arguments
+    "TARGET_ELF;OUTPUT_MAP;LINKER_SCRIPT"                                # list of names of scalar arguments
+    "LIBRARIES_PRE_SCRIPT;LIBRARIES_POST_SCRIPT;LIBRARIES;DEPENDENCIES;" # list of names of list arguments
+    ${ARGN}                                                              # input args to parse
   )
 
   if((${CMAKE_LINKER} STREQUAL "${CROSS_COMPILE}ld.bfd") OR
@@ -129,7 +130,7 @@ function(toolchain_ld_link_elf)
 
     ${LINKERFLAGPREFIX},-Map=${TOOLCHAIN_LD_LINK_ELF_OUTPUT_MAP}
     ${LINKERFLAGPREFIX},--whole-archive
-    ${ZEPHYR_LIBS_PROPERTY}
+    ${TOOLCHAIN_LD_LINK_ELF_LIBRARIES}
     ${LINKERFLAGPREFIX},--no-whole-archive
     kernel
     $<TARGET_OBJECTS:${OFFSETS_LIB}>

@@ -57,11 +57,11 @@ endmacro()
 
 function(toolchain_ld_link_elf)
   cmake_parse_arguments(
-    TOOLCHAIN_LD_LINK_ELF                                     # prefix of output variables
-    ""                                                        # list of names of the boolean arguments
-    "TARGET_ELF;OUTPUT_MAP;LINKER_SCRIPT"                     # list of names of scalar arguments
-    "LIBRARIES_PRE_SCRIPT;LIBRARIES_POST_SCRIPT;DEPENDENCIES" # list of names of list arguments
-    ${ARGN}                                                   # input args to parse
+    TOOLCHAIN_LD_LINK_ELF                                                # prefix of output variables
+    ""                                                                   # list of names of the boolean arguments
+    "TARGET_ELF;OUTPUT_MAP;LINKER_SCRIPT"                                # list of names of scalar arguments
+    "LIBRARIES_PRE_SCRIPT;LIBRARIES_POST_SCRIPT;LIBRARIES;DEPENDENCIES;" # list of names of list arguments
+    ${ARGN}                                                              # input args to parse
   )
 
   foreach(lib ${ZEPHYR_LIBS_PROPERTY})
@@ -78,7 +78,7 @@ function(toolchain_ld_link_elf)
     ${TOOLCHAIN_LD_LINK_ELF_LIBRARIES_POST_SCRIPT}
     $<TARGET_OBJECTS:arch__arm__core__aarch32__cortex_m>
     --map --list=${TOOLCHAIN_LD_LINK_ELF_OUTPUT_MAP}
-    ${ZEPHYR_LIBS_OBJECTS}
+    ${TOOLCHAIN_LD_LINK_ELF_LIBRARIES}
     kernel
     $<TARGET_OBJECTS:${OFFSETS_LIB}>
     --library_type=microlib
