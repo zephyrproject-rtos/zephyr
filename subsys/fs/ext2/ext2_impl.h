@@ -12,6 +12,8 @@
 
 #include "ext2_struct.h"
 
+extern struct k_heap direntry_heap;
+
 void error_behavior(struct ext2_data *fs, const char *msg);
 
 /* Memory allocation for ext2 implementation */
@@ -78,7 +80,7 @@ int ext2_init_storage(struct ext2_data **fsp, const void *storage_dev, int flags
  * @retval -EINVAL when superblock is not valid and file system cannot be mounted at all
  * @retval -ENOTSUP when superblock has some field set to value that we don't support
  */
-int ext2_verify_superblock(struct ext2_disk_superblock *sb);
+int ext2_verify_disk_superblock(struct ext2_disk_superblock *sb);
 
 /**
  * @brief Initialize all data needed to perform operations on file system
@@ -235,20 +237,21 @@ int ext2_inode_sync(struct ext2_inode *inode);
 int ext2_get_direntry(struct ext2_file *dir, struct fs_dirent *ent);
 
 /**
- * @brief Fill in the directory structure with given attributes
+ * @brief Create a directory entry with given attributes
  *
- * Fills in all the fields of directory entry. Automatically calculates de_rec_len field.
+ * Automatically calculates and sets de_rec_len field.
  *
- * NOTE: if you need to adjust the size (e.g. when this entry is last in the block)
+ * NOTE: if you need to adjust the size (e.g. when this entry is the last one in the block)
  *       then just update the size after this function returns.
  *
- * @param de Structure to fill in
  * @param name Name of direntry
  * @param namelen Length of name
  * @param ino Inode associated with that entry
  * @param filetype File type of that entry
+ *
+ * @returns structure allocated on direntry_heap filled with given data
  */
-void ext2_fill_direntry(struct ext2_disk_dentry *de, const char *name, uint8_t len, uint32_t ino,
+struct ext2_direntry *ext2_create_direntry(const char *name, uint8_t namelen, uint32_t ino,
 		uint8_t filetype);
 
 /**

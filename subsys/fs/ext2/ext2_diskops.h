@@ -11,6 +11,13 @@
 
 #include "ext2_struct.h"
 
+/** @brief Fetch superblock into buffer in fs structure.
+ *
+ * @retval 0 on success
+ * @retval <0 error
+ */
+int ext2_fetch_superblock(struct ext2_data *fs);
+
 /**
  * @brief Fetch inode into given buffer.
  *
@@ -38,8 +45,6 @@ int ext2_fetch_inode_block(struct ext2_inode *inode, uint32_t block);
  * @brief Fetch block group into buffer in fs structure.
  *
  * If the group was already fetched then this function has no effect.
- * If the group was not fetched but the block that holds this group is present in
- * the internal buffer, then the block isn't fetched again.
  *
  * @param fs File system data
  * @param group Block group number
@@ -52,8 +57,8 @@ int ext2_fetch_block_group(struct ext2_data *fs, uint32_t group);
 /*
  * @brief Fetch one block of inode table into internal buffer
  *
- * If the block of inode table was already fetched then this function has no
- * effect.
+ * If the block of inode table was already fetched then this function does nothing and returns
+ * with success.
  *
  * @param bg Block group structure
  * @param block Number of inode table block to fetch (relative to start of the inode table)
@@ -127,6 +132,31 @@ int ext2_commit_inode(struct ext2_inode *inode);
  */
 int ext2_commit_inode_block(struct ext2_inode *inode);
 
+/**
+ * @brief Commit changes made to superblock structure.
+ *
+ * The changes made to program structure are copied to disk representation and written to the
+ * backing storage.
+ *
+ * @param fs File system data struct
+ *
+ * @retval 0 on success
+ * @retval <0 error
+ */
+int ext2_commit_superblock(struct ext2_data *fs);
+
+/**
+ * @brief Commit changes made to block group structure.
+ *
+ * The changes made to program structure are copied to disk representation and written to the
+ * backing storage.
+ *
+ * @param fs File system data struct
+ *
+ * @retval 0 on success
+ * @retval <0 error
+ */
+int ext2_commit_bg(struct ext2_data *fs);
 
 /* Operations that reserve or free the block or inode in the file system. They
  * mark an inode or block as used in the bitmap and change free inode/block
@@ -180,5 +210,30 @@ int ext2_free_block(struct ext2_data *fs, uint32_t block);
  * @retval <0 error
  */
 int ext2_free_inode(struct ext2_data *fs, uint32_t ino, bool directory);
+
+/**
+ * @brief Allocate directory entry filled with data from disk directory entry.
+ *
+ * NOTE: This function never fails.
+ *
+ * Returns structure allocated on direntry_heap.
+ */
+struct ext2_direntry *ext2_fetch_direntry(struct ext2_disk_direntry *disk_de);
+
+/**
+ * @brief Write the data from program directory entry to disk structure.
+ */
+void ext2_write_direntry(struct ext2_disk_direntry *disk_de, struct ext2_direntry *de);
+
+uint32_t ext2_get_disk_direntry_inode(struct ext2_disk_direntry *de);
+uint32_t ext2_get_disk_direntry_reclen(struct ext2_disk_direntry *de);
+uint8_t ext2_get_disk_direntry_namelen(struct ext2_disk_direntry *de);
+uint8_t ext2_get_disk_direntry_type(struct ext2_disk_direntry *de);
+
+void ext2_set_disk_direntry_inode(struct ext2_disk_direntry *de, uint32_t inode);
+void ext2_set_disk_direntry_reclen(struct ext2_disk_direntry *de, uint16_t reclen);
+void ext2_set_disk_direntry_namelen(struct ext2_disk_direntry *de, uint8_t namelen);
+void ext2_set_disk_direntry_type(struct ext2_disk_direntry *de, uint8_t type);
+void ext2_set_disk_direntry_name(struct ext2_disk_direntry *de, const char *name, size_t len);
 
 #endif /* __EXT2_DISKOPS_H__ */

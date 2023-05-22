@@ -7,10 +7,12 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/random/rand32.h>
 #include <zephyr/fs/ext2.h>
+#include <zephyr/sys/byteorder.h>
 
 #include "ext2.h"
 #include "ext2_impl.h"
 #include "ext2_struct.h"
+#include "ext2_diskops.h"
 
 LOG_MODULE_DECLARE(ext2, LOG_LEVEL_DBG);
 
@@ -73,21 +75,21 @@ static void default_directory_inode(struct ext2_disk_inode *in, uint32_t nblocks
 					struct ext2_cfg *cfg)
 {
 	LOG_DBG("Set directory inode: %p", in);
-	in->i_mode = EXT2_S_IFDIR;
-	in->i_uid = 0;
-	in->i_size = nblocks * cfg->block_size;
-	in->i_atime = 0;
-	in->i_ctime = 0;
-	in->i_mtime = 0;
-	in->i_dtime = 0;
-	in->i_gid = 0;
-	in->i_blocks = nblocks * cfg->block_size / 512;
-	in->i_flags = 0;
-	in->i_osd1 = 0;
+	in->i_mode       = sys_cpu_to_le16(EXT2_DEF_DIR_MODE);
+	in->i_uid        = 0;
+	in->i_size       = sys_cpu_to_le32(nblocks * cfg->block_size);
+	in->i_atime      = 0;
+	in->i_ctime      = 0;
+	in->i_mtime      = 0;
+	in->i_dtime      = 0;
+	in->i_gid        = 0;
+	in->i_blocks     = sys_cpu_to_le32(nblocks * cfg->block_size / 512);
+	in->i_flags      = 0;
+	in->i_osd1       = 0;
 	in->i_generation = 0;
-	in->i_file_acl = 0;
-	in->i_dir_acl = 0;
-	in->i_faddr = 0;
+	in->i_file_acl   = 0;
+	in->i_dir_acl    = 0;
+	in->i_faddr      = 0;
 	memset(in->i_block, 0, EXT2_INODE_BLOCKS * sizeof(uint32_t));
 }
 
@@ -206,43 +208,43 @@ int ext2_format(struct ext2_data *fs, struct ext2_cfg *cfg)
 		(struct ext2_disk_superblock *)((uint8_t *)sb_block->data + sb_offset);
 
 	memset(sb, 0, 1024);
-	sb->s_inodes_count = inodes_count;
-	sb->s_blocks_count = blocks_count;
-	sb->s_r_blocks_count = 0;
-	sb->s_free_blocks_count = free_blocks;
-	sb->s_free_inodes_count = inodes_count - used_inodes;
-	sb->s_first_data_block = first_data_block;
-	sb->s_log_block_size = block_log_size;
-	sb->s_log_frag_size = block_log_size;
-	sb->s_blocks_per_group = cfg->block_size * 8;
-	sb->s_frags_per_group = cfg->block_size * 8;
-	sb->s_inodes_per_group = inodes_count;
-	sb->s_mtime = 0;
-	sb->s_wtime = 0;
-	sb->s_mnt_count = 0;
-	sb->s_max_mnt_count = -1;
-	sb->s_magic = 0xEF53;
-	sb->s_state = EXT2_VALID_FS;
-	sb->s_errors = EXT2_ERRORS_RO;
-	sb->s_minor_rev_level = 0;
-	sb->s_lastcheck = 0;
-	sb->s_checkinterval = 0;
-	sb->s_creator_os = 5; /* Unknown OS */
-	sb->s_rev_level = EXT2_DYNAMIC_REV;
-	sb->s_def_resuid = 0;
-	sb->s_def_resgid = 0;
-	sb->s_first_ino = 11;
-	sb->s_inode_size = sizeof(struct ext2_disk_inode);
-	sb->s_block_group_nr = 0;
-	sb->s_feature_compat = 0;
-	sb->s_feature_incompat = EXT2_FEATURE_INCOMPAT_FILETYPE;
-	sb->s_feature_ro_compat = 0;
-	sb->s_algo_bitmap = 0;
-	sb->s_prealloc_blocks = 0;
-	sb->s_prealloc_dir_blocks = 0;
-	sb->s_journal_inum = 0;
-	sb->s_journal_dev = 0;
-	sb->s_last_orphan = 0;
+	sb->s_inodes_count        = sys_cpu_to_le32(inodes_count);
+	sb->s_blocks_count        = sys_cpu_to_le32(blocks_count);
+	sb->s_r_blocks_count      = sys_cpu_to_le32(0);
+	sb->s_free_blocks_count   = sys_cpu_to_le32(free_blocks);
+	sb->s_free_inodes_count   = sys_cpu_to_le32(inodes_count - used_inodes);
+	sb->s_first_data_block    = sys_cpu_to_le32(first_data_block);
+	sb->s_log_block_size      = sys_cpu_to_le32(block_log_size);
+	sb->s_log_frag_size       = sys_cpu_to_le32(block_log_size);
+	sb->s_blocks_per_group    = sys_cpu_to_le32(cfg->block_size * 8);
+	sb->s_frags_per_group     = sys_cpu_to_le32(cfg->block_size * 8);
+	sb->s_inodes_per_group    = sys_cpu_to_le32(inodes_count);
+	sb->s_mtime               = sys_cpu_to_le32(0);
+	sb->s_wtime               = sys_cpu_to_le32(0);
+	sb->s_mnt_count           = sys_cpu_to_le32(0);
+	sb->s_max_mnt_count       = sys_cpu_to_le32(-1);
+	sb->s_magic               = sys_cpu_to_le32(0xEF53);
+	sb->s_state               = sys_cpu_to_le32(EXT2_VALID_FS);
+	sb->s_errors              = sys_cpu_to_le32(EXT2_ERRORS_RO);
+	sb->s_minor_rev_level     = sys_cpu_to_le32(0);
+	sb->s_lastcheck           = sys_cpu_to_le32(0);
+	sb->s_checkinterval       = sys_cpu_to_le32(0);
+	sb->s_creator_os          = sys_cpu_to_le32(5); /* Unknown OS */
+	sb->s_rev_level           = sys_cpu_to_le32(EXT2_DYNAMIC_REV);
+	sb->s_def_resuid          = sys_cpu_to_le32(0);
+	sb->s_def_resgid          = sys_cpu_to_le32(0);
+	sb->s_first_ino           = sys_cpu_to_le32(11);
+	sb->s_inode_size          = sys_cpu_to_le32(sizeof(struct ext2_disk_inode));
+	sb->s_block_group_nr      = sys_cpu_to_le32(0);
+	sb->s_feature_compat      = sys_cpu_to_le32(0);
+	sb->s_feature_incompat    = sys_cpu_to_le32(EXT2_FEATURE_INCOMPAT_FILETYPE);
+	sb->s_feature_ro_compat   = sys_cpu_to_le32(0);
+	sb->s_algo_bitmap         = sys_cpu_to_le32(0);
+	sb->s_prealloc_blocks     = sys_cpu_to_le32(0);
+	sb->s_prealloc_dir_blocks = sys_cpu_to_le32(0);
+	sb->s_journal_inum        = sys_cpu_to_le32(0);
+	sb->s_journal_dev         = sys_cpu_to_le32(0);
+	sb->s_last_orphan         = sys_cpu_to_le32(0);
 
 	memcpy(sb->s_uuid, cfg->uuid, 16);
 	strcpy(sb->s_volume_name, cfg->volume_name);
@@ -257,12 +259,12 @@ int ext2_format(struct ext2_data *fs, struct ext2_cfg *cfg)
 	struct ext2_disk_bgroup *bg = (struct ext2_disk_bgroup *)bg_block->data;
 
 	memset(bg, 0, cfg->block_size);
-	bg->bg_block_bitmap = bbitmap_block_num;
-	bg->bg_inode_bitmap = ibitmap_block_num;
-	bg->bg_inode_table = itable_block_num;
-	bg->bg_free_blocks_count = free_blocks;
-	bg->bg_free_inodes_count = inodes_count - used_inodes;
-	bg->bg_used_dirs_count = 2; /* '/' and 'lost+found' */
+	bg->bg_block_bitmap      = sys_cpu_to_le32(bbitmap_block_num);
+	bg->bg_inode_bitmap      = sys_cpu_to_le32(ibitmap_block_num);
+	bg->bg_inode_table       = sys_cpu_to_le32(itable_block_num);
+	bg->bg_free_blocks_count = sys_cpu_to_le16(free_blocks);
+	bg->bg_free_inodes_count = sys_cpu_to_le16(inodes_count - used_inodes);
+	bg->bg_used_dirs_count   = sys_cpu_to_le16(2); /* '/' and 'lost+found' */
 
 	if (ext2_write_block(fs, bg_block) < 0) {
 		ret = -EIO;
@@ -313,9 +315,8 @@ int ext2_format(struct ext2_data *fs, struct ext2_cfg *cfg)
 	inode_offset = EXT2_ROOT_INODE - 1;
 	default_directory_inode(&in[inode_offset], 1, cfg);
 
-	in[inode_offset].i_mode = EXT2_DEF_DIR_MODE;
-	in[inode_offset].i_links_count = 3; /* 2 from itself and 1 from child directory */
-	in[inode_offset].i_block[0] = root_dir_blk_num;
+	in[inode_offset].i_links_count = sys_cpu_to_le16(3); /* 2 from itself, 1 from child */
+	in[inode_offset].i_block[0]    = sys_cpu_to_le32(root_dir_blk_num);
 	if (ext2_write_block(fs, itable_block1) < 0) {
 		ret = -EIO;
 		goto out;
@@ -335,9 +336,8 @@ int ext2_format(struct ext2_data *fs, struct ext2_cfg *cfg)
 	}
 
 	default_directory_inode(&in[inode_offset], 1, cfg);
-	in[inode_offset].i_mode = EXT2_DEF_DIR_MODE;
-	in[inode_offset].i_links_count = 2; /* 1 from itself and 1 from parent directory */
-	in[inode_offset].i_block[0] = lost_found_dir_blk_num;
+	in[inode_offset].i_links_count = sys_cpu_to_le16(2); /* 1 from itself, 1 from parent */
+	in[inode_offset].i_block[0]    = sys_cpu_to_le32(lost_found_dir_blk_num);
 	if (itable_block2) {
 		if (ext2_write_block(fs, itable_block2) < 0) {
 			ret = -EIO;
@@ -345,8 +345,9 @@ int ext2_format(struct ext2_data *fs, struct ext2_cfg *cfg)
 		}
 	}
 
-	struct ext2_disk_dentry *de;
-	uint32_t current_size;
+	struct ext2_disk_direntry *disk_de;
+	struct ext2_direntry *de;
+	uint32_t de_offset;
 
 	/* Contents of '/' directory */
 	LOG_DBG("Root dir blk: %d", root_dir_blk_num);
@@ -357,22 +358,33 @@ int ext2_format(struct ext2_data *fs, struct ext2_cfg *cfg)
 	}
 	memset(root_dir_blk->data, 0, cfg->block_size);
 
-	current_size = 0;
+	de_offset = 0;
 
-	de = (struct ext2_disk_dentry *)root_dir_blk->data;
-	ext2_fill_direntry(de, ".", 1, EXT2_ROOT_INODE, EXT2_FT_DIR);
-	current_size += de->de_rec_len;
+	disk_de = EXT2_DISK_DIRENTRY_BY_OFFSET(root_dir_blk->data, de_offset);
+	de = ext2_create_direntry(".", 1, EXT2_ROOT_INODE, EXT2_FT_DIR);
+	ext2_write_direntry(disk_de, de);
 
-	de = EXT2_NEXT_DISK_DIRENTRY(de);
-	ext2_fill_direntry(de, "..", 2, EXT2_ROOT_INODE, EXT2_FT_DIR);
-	current_size += de->de_rec_len;
+	de_offset += de->de_rec_len;
+	k_heap_free(&direntry_heap, de);
 
-	de = EXT2_NEXT_DISK_DIRENTRY(de);
-	ext2_fill_direntry(de, "lost+found", strlen("lost+found"), lost_found_inode, EXT2_FT_DIR);
-	current_size += de->de_rec_len;
+	disk_de = EXT2_DISK_DIRENTRY_BY_OFFSET(root_dir_blk->data, de_offset);
+	de = ext2_create_direntry("..", 2, EXT2_ROOT_INODE, EXT2_FT_DIR);
+	ext2_write_direntry(disk_de, de);
+
+	de_offset += de->de_rec_len;
+	k_heap_free(&direntry_heap, de);
+
+	char *name = "lost+found";
+
+	disk_de = EXT2_DISK_DIRENTRY_BY_OFFSET(root_dir_blk->data, de_offset);
+	de = ext2_create_direntry(name, strlen(name), lost_found_inode, EXT2_FT_DIR);
+	de_offset += de->de_rec_len;
 
 	/* This was the last entry so add padding until end of block */
-	de->de_rec_len += cfg->block_size - current_size;
+	de->de_rec_len += cfg->block_size - de_offset;
+
+	ext2_write_direntry(disk_de, de);
+	k_heap_free(&direntry_heap, de);
 
 	if (ext2_write_block(fs, root_dir_blk) < 0) {
 		ret = -EIO;
@@ -388,22 +400,24 @@ int ext2_format(struct ext2_data *fs, struct ext2_cfg *cfg)
 	}
 	memset(lost_found_dir_blk->data, 0, cfg->block_size);
 
-	current_size = 0;
+	de_offset = 0;
 
-	de = (struct ext2_disk_dentry *)lost_found_dir_blk->data;
-	ext2_fill_direntry(de, ".", 1, lost_found_inode, EXT2_FT_DIR);
-	current_size += de->de_rec_len;
+	disk_de = EXT2_DISK_DIRENTRY_BY_OFFSET(lost_found_dir_blk->data, de_offset);
+	de = ext2_create_direntry(".", 1, lost_found_inode, EXT2_FT_DIR);
+	ext2_write_direntry(disk_de, de);
 
-	de = EXT2_NEXT_DISK_DIRENTRY(de);
-	ext2_fill_direntry(de, "..", 2, EXT2_ROOT_INODE, EXT2_FT_DIR);
-	current_size += de->de_rec_len;
+	de_offset += de->de_rec_len;
+	k_heap_free(&direntry_heap, de);
+
+	disk_de = EXT2_DISK_DIRENTRY_BY_OFFSET(lost_found_dir_blk->data, de_offset);
+	de = ext2_create_direntry("..", 2, EXT2_ROOT_INODE, EXT2_FT_DIR);
+	de_offset += de->de_rec_len;
 
 	/* This was the last entry so add padding until end of block */
-	de->de_rec_len += cfg->block_size - current_size;
+	de->de_rec_len += cfg->block_size - de_offset;
 
-	LOG_DBG("Initialized directory entry %p{%s(%d) %d %d %c}",
-			de, de->de_name, de->de_name_len, de->de_inode, de->de_rec_len,
-			de->de_file_type == EXT2_FT_DIR ? 'd' : 'f');
+	ext2_write_direntry(disk_de, de);
+	k_heap_free(&direntry_heap, de);
 
 	if (ext2_write_block(fs, lost_found_dir_blk) < 0) {
 		ret = -EIO;

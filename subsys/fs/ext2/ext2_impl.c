@@ -9,6 +9,7 @@
 #include <zephyr/fs/fs.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/sys/byteorder.h>
 
 #include "ext2.h"
 #include "ext2_impl.h"
@@ -40,12 +41,12 @@ void error_behavior(struct ext2_data *fs, const char *msg)
 	LOG_ERR("File system corrupted: %s", msg);
 
 	/* If file system is not initialized panic */
-	if (!fs->sblock) {
+	if (!initialized) {
 		LOG_ERR("File system data not found. Panic...");
 		k_panic();
 	}
 
-	switch (EXT2_DATA_SBLOCK(fs)->s_errors) {
+	switch (fs->sblock.s_errors) {
 	case EXT2_ERRORS_CONTINUE:
 		/* Do nothing */
 		break;
@@ -193,6 +194,7 @@ int ext2_init_storage(struct ext2_data **fsp, const void *storage_dev, int flags
 	*fsp = fs;
 	fs->open_inodes = 0;
 	fs->flags = 0;
+	fs->bgroup.num = -1;
 
 	ret = ext2_init_disk_access_backend(fs, storage_dev, flags);
 	if (ret < 0) {
@@ -228,35 +230,35 @@ err:
 	return ret;
 }
 
-int ext2_verify_superblock(struct ext2_disk_superblock *sb)
+int ext2_verify_disk_superblock(struct ext2_disk_superblock *sb)
 {
 	/* Check if it is a valid Ext2 file system. */
-	if (sb->s_magic != EXT2_MAGIC_NUMBER) {
+	if (sys_le16_to_cpu(sb->s_magic) != EXT2_MAGIC_NUMBER) {
 		LOG_ERR("Wrong file system magic number (%x)", sb->s_magic);
 		return -EINVAL;
 	}
 
 	/* For now we don't support file systems with frag size different from block size */
-	if (sb->s_log_block_size != sb->s_log_frag_size) {
+	if (sys_le32_to_cpu(sb->s_log_block_size) != sb->s_log_frag_size) {
 		LOG_ERR("Filesystem with frag_size != block_size is not supported");
 		return -ENOTSUP;
 	}
 
 	/* Support only second revision */
-	if (sb->s_rev_level != EXT2_DYNAMIC_REV) {
+	if (sys_le32_to_cpu(sb->s_rev_level) != EXT2_DYNAMIC_REV) {
 		LOG_ERR("Filesystem with revision %d is not supported", sb->s_rev_level);
 		return -ENOTSUP;
 	}
 
-	if (sb->s_inode_size != EXT2_GOOD_OLD_INODE_SIZE) {
+	if (sys_le16_to_cpu(sb->s_inode_size) != EXT2_GOOD_OLD_INODE_SIZE) {
 		LOG_ERR("Filesystem with inode size %d is not supported", sb->s_inode_size);
 		return -ENOTSUP;
 	}
 
 	/* Check if file system may contain errors. */
-	if (sb->s_state == EXT2_ERROR_FS) {
+	if (sys_le16_to_cpu(sb->s_state) == EXT2_ERROR_FS) {
 		LOG_WRN("File system may contain errors.");
-		switch (sb->s_errors) {
+		switch (sys_le16_to_cpu(sb->s_errors)) {
 		case EXT2_ERRORS_CONTINUE:
 			break;
 
@@ -272,18 +274,18 @@ int ext2_verify_superblock(struct ext2_disk_superblock *sb)
 		}
 	}
 
-	if ((sb->s_feature_incompat & EXT2_FEATURE_INCOMPAT_FILETYPE) == 0) {
+	if ((sys_le32_to_cpu(sb->s_feature_incompat) & EXT2_FEATURE_INCOMPAT_FILETYPE) == 0) {
 		LOG_ERR("File system without file type stored in de is not supported");
 		return -ENOTSUP;
 	}
 
-	if ((sb->s_feature_incompat & ~EXT2_FEATURE_INCOMPAT_SUPPORTED) > 0) {
+	if ((sys_le32_to_cpu(sb->s_feature_incompat) & ~EXT2_FEATURE_INCOMPAT_SUPPORTED) > 0) {
 		LOG_ERR("File system can't be mounted. Incompat features %d not supported",
 				(sb->s_feature_incompat & ~EXT2_FEATURE_INCOMPAT_SUPPORTED));
 		return -ENOTSUP;
 	}
 
-	if ((sb->s_feature_ro_compat & ~EXT2_FEATURE_RO_COMPAT_SUPPORTED) > 0) {
+	if ((sys_le32_to_cpu(sb->s_feature_ro_compat) & ~EXT2_FEATURE_RO_COMPAT_SUPPORTED) > 0) {
 		LOG_WRN("File system can be mounted read only. RO features %d detected.",
 				(sb->s_feature_ro_compat & ~EXT2_FEATURE_RO_COMPAT_SUPPORTED));
 		return -EROFS;
@@ -291,9 +293,15 @@ int ext2_verify_superblock(struct ext2_disk_superblock *sb)
 
 	LOG_DBG("ino_cnt:%d blk_cnt:%d blk_per_grp:%d ino_per_grp:%d free_ino:%d free_blk:%d "
 			"blk_size:%d ino_size:%d mntc:%d",
-			sb->s_inodes_count, sb->s_blocks_count, sb->s_blocks_per_group,
-			sb->s_inodes_per_group, sb->s_free_inodes_count, sb->s_free_blocks_count,
-			1024 << sb->s_log_block_size, sb->s_inode_size, sb->s_mnt_count);
+			sys_le32_to_cpu(sb->s_inodes_count),
+			sys_le32_to_cpu(sb->s_blocks_count),
+			sys_le32_to_cpu(sb->s_blocks_per_group),
+			sys_le32_to_cpu(sb->s_inodes_per_group),
+			sys_le32_to_cpu(sb->s_free_inodes_count),
+			sys_le32_to_cpu(sb->s_free_blocks_count),
+			sys_le32_to_cpu(1024 << sb->s_log_block_size),
+			sys_le16_to_cpu(sb->s_inode_size),
+			sys_le16_to_cpu(sb->s_mnt_count));
 	return 0;
 }
 
@@ -302,40 +310,37 @@ int ext2_init_fs(struct ext2_data *fs)
 	int ret = 0;
 
 	/* Fetch superblock */
-	if (fs->block_size == 1024) {
-		fs->sblock_offset = 0;
-		fs->sblock = ext2_get_block(fs, 1);
-	} else {
-		fs->sblock_offset = 1024;
-		fs->sblock = ext2_get_block(fs, 0);
-	}
-
-	if (fs->sblock == NULL) {
-		ret = ENOENT;
-		goto out;
+	ret = ext2_fetch_superblock(fs);
+	if (ret < 0) {
+		return ret;
 	}
 
 	if (!(fs->flags & EXT2_DATA_FLAGS_RO)) {
 		/* Update sblock fields set during the successful mount. */
-		EXT2_DATA_SBLOCK(fs)->s_state = EXT2_ERROR_FS;
-		EXT2_DATA_SBLOCK(fs)->s_mnt_count += 1;
-		ret = ext2_write_block(fs, fs->sblock);
+		fs->sblock.s_state = EXT2_ERROR_FS;
+		fs->sblock.s_mnt_count += 1;
+		ret = ext2_commit_superblock(fs);
 		if (ret < 0) {
-			goto out;
+			return ret;
 		}
 	}
 
 	ret = ext2_fetch_block_group(fs, 0);
 	if (ret < 0) {
-		goto out;
+		return ret;
 	}
-
 	ret = ext2_fetch_bg_ibitmap(&fs->bgroup);
+	if (ret < 0) {
+		return ret;
+	}
 	ret = ext2_fetch_bg_bbitmap(&fs->bgroup);
+	if (ret < 0) {
+		return ret;
+	}
 
 	/* Validate superblock */
 	uint32_t set;
-	struct ext2_disk_superblock *sb = EXT2_DATA_SBLOCK(fs);
+	struct ext2_superblock *sb = &fs->sblock;
 	uint32_t fs_blocks = sb->s_blocks_count - sb->s_first_data_block;
 
 	set = ext2_bitmap_count_set(BGROUP_BLOCK_BITMAP(&fs->bgroup), fs_blocks);
@@ -352,10 +357,6 @@ int ext2_init_fs(struct ext2_data *fs)
 		return -EINVAL;
 	}
 	return 0;
-out:
-	ext2_drop_block(fs->sblock);
-	fs->sblock = NULL;
-	return ret;
 }
 
 int ext2_close_fs(struct ext2_data *fs)
@@ -371,10 +372,10 @@ int ext2_close_fs(struct ext2_data *fs)
 
 	/* To save file system as correct it must be writable and without errors */
 	if (!(fs->flags & (EXT2_DATA_FLAGS_RO | EXT2_DATA_FLAGS_ERR))) {
-		EXT2_DATA_SBLOCK(fs)->s_state = EXT2_VALID_FS;
-		ret = ext2_write_block(fs, fs->sblock);
+		fs->sblock.s_state = EXT2_VALID_FS;
+		ret = ext2_commit_superblock(fs);
 		if (ret < 0) {
-			return -EIO;
+			return ret;
 		}
 	}
 
@@ -386,8 +387,6 @@ int ext2_close_fs(struct ext2_data *fs)
 	if (fs->backend_ops->sync(fs) < 0) {
 		return -EIO;
 	}
-	ext2_drop_block(fs->sblock);
-	fs->sblock = NULL;
 	return 0;
 }
 
@@ -565,7 +564,9 @@ static int64_t find_dir_entry(struct ext2_inode *inode, const char *name, size_t
 {
 	int rc;
 	uint32_t block, block_off, offset = 0;
+	int64_t ino = -1;
 	struct ext2_data *fs = inode->i_fs;
+	struct ext2_direntry *de;
 
 	while (offset < inode->i_size) {
 		block = offset / fs->block_size;
@@ -576,24 +577,31 @@ static int64_t find_dir_entry(struct ext2_inode *inode, const char *name, size_t
 			return rc;
 		}
 
-		struct ext2_disk_dentry *de =
-			(struct ext2_disk_dentry *)(inode_current_block_mem(inode) + block_off);
+		struct ext2_disk_direntry *disk_de =
+			EXT2_DISK_DIRENTRY_BY_OFFSET(inode_current_block_mem(inode), block_off);
+
+		de = ext2_fetch_direntry(disk_de);
+		if (de == NULL) {
+			return -EINVAL;
+		}
 
 		if (len == de->de_name_len && strncmp(de->de_name, name, len) == 0) {
-
+			ino = de->de_inode;
 			if (r_offset) {
 				/* Return offset*/
 				*r_offset = offset;
 			}
-
-			return (int64_t)de->de_inode;
+			goto success;
 		}
-
-		/* move to next directory entry */
+		/* move to the next directory entry */
 		offset += de->de_rec_len;
+		k_heap_free(&direntry_heap, de);
 	}
 
 	return -EINVAL;
+success:
+	k_heap_free(&direntry_heap, de);
+	return (int64_t)ino;
 }
 
 /* Inode operations --------------------------------------------------------- */
@@ -810,13 +818,14 @@ int ext2_get_direntry(struct ext2_file *dir, struct fs_dirent *ent)
 		return rc;
 	}
 
-	struct ext2_disk_dentry *de =
-		(struct ext2_disk_dentry *)(inode_current_block_mem(dir->f_inode) + block_off);
 	struct ext2_inode *inode = NULL;
+	struct ext2_disk_direntry *disk_de =
+		EXT2_DISK_DIRENTRY_BY_OFFSET(inode_current_block_mem(dir->f_inode), block_off);
+	struct ext2_direntry *de = ext2_fetch_direntry(disk_de);
 
 	LOG_DBG("inode=%d name_len=%d rec_len=%d", de->de_inode, de->de_name_len, de->de_rec_len);
 
-	if (de->de_name_len > EXT2_MAX_FILE_NAME) {
+	if (de == NULL) {
 		LOG_ERR("Read directory entry name too long");
 		return -EINVAL;
 	}
@@ -852,6 +861,7 @@ int ext2_get_direntry(struct ext2_file *dir, struct fs_dirent *ent)
 	dir->f_off += de->de_rec_len;
 
 out:
+	k_heap_free(&direntry_heap, de);
 	ext2_inode_drop(inode);
 	return ret;
 }
@@ -882,8 +892,8 @@ static int ext2_create_inode(struct ext2_data *fs, struct ext2_inode *parent,
 		/* Block group current block is already fetched. We don't have to do it again.
 		 * (It was done above in ext2_alloc_inode function.)
 		 */
-		current_disk_bgroup(&fs->bgroup)->bg_used_dirs_count += 1;
-		rc = ext2_write_block(fs, fs->bgroup.block);
+		fs->bgroup.bg_used_dirs_count += 1;
+		rc = ext2_commit_bg(fs);
 		if (rc < 0) {
 			return rc;
 		}
@@ -893,15 +903,19 @@ static int ext2_create_inode(struct ext2_data *fs, struct ext2_inode *parent,
 	return rc;
 }
 
-void ext2_fill_direntry(struct ext2_disk_dentry *de, const char *name, uint8_t namelen,
-		uint32_t ino, uint8_t filetype)
+struct ext2_direntry *ext2_create_direntry(const char *name, uint8_t namelen, uint32_t ino,
+		uint8_t filetype)
 {
-	uint32_t reclen = sizeof(struct ext2_disk_dentry) + namelen;
+	__ASSERT(namelen <= EXT2_MAX_FILE_NAME, "Name length to long");
+
+	uint32_t prog_rec_len = sizeof(struct ext2_direntry) + namelen;
+	struct ext2_direntry *de = k_heap_alloc(&direntry_heap, prog_rec_len, K_FOREVER);
+
+	/* Size of future disk structure. */
+	uint32_t reclen = sizeof(struct ext2_disk_direntry) + namelen;
 
 	/* Align reclen to 4 bytes. */
 	reclen = ROUND_UP(reclen, 4);
-
-	__ASSERT(namelen <= EXT2_MAX_FILE_NAME, "Name length to long");
 
 	de->de_inode = ino;
 	de->de_rec_len = reclen;
@@ -912,16 +926,17 @@ void ext2_fill_direntry(struct ext2_disk_dentry *de, const char *name, uint8_t n
 	LOG_DBG("Initialized directory entry %p{%s(%d) %d %d %c}",
 			de, de->de_name, de->de_name_len, de->de_inode, de->de_rec_len,
 			de->de_file_type == EXT2_FT_DIR ? 'd' : 'f');
+	return de;
 }
 
-static int ext2_add_direntry(struct ext2_inode *dir, struct ext2_disk_dentry *entry)
+static int ext2_add_direntry(struct ext2_inode *dir, struct ext2_direntry *entry)
 {
 	LOG_DBG("Adding entry: {in=%d type=%d name_len=%d} to directory (in=%d)",
 			entry->de_inode, entry->de_file_type, entry->de_name_len, dir->i_id);
 
 	int rc = 0;
 	uint32_t block_size = dir->i_fs->block_size;
-	uint32_t entry_size = sizeof(struct ext2_disk_dentry) + entry->de_name_len;
+	uint32_t entry_size = sizeof(struct ext2_disk_direntry) + entry->de_name_len;
 
 	if (entry_size > block_size) {
 		return -EINVAL;
@@ -937,31 +952,33 @@ static int ext2_add_direntry(struct ext2_inode *dir, struct ext2_disk_dentry *en
 	}
 
 	uint32_t offset = 0;
+	uint16_t reclen;
 
-	struct ext2_disk_dentry *de = 0;
+	struct ext2_disk_direntry *de = 0;
+
 	/* loop must be executed at least once, because block_size > 0 */
 	while (offset < block_size) {
-		de = (struct ext2_disk_dentry *)(inode_current_block_mem(dir) + offset);
-		if (offset + de->de_rec_len == block_size) {
+		de = EXT2_DISK_DIRENTRY_BY_OFFSET(inode_current_block_mem(dir), offset);
+		reclen = ext2_get_disk_direntry_reclen(de);
+		if (offset + reclen == block_size) {
 			break;
 		}
-		offset += de->de_rec_len;
+		offset += reclen;
 	}
 
 
-	uint32_t occupied = sizeof(struct ext2_disk_dentry) + de->de_name_len;
+	uint32_t occupied = sizeof(struct ext2_disk_direntry) + ext2_get_disk_direntry_namelen(de);
 
 	/* Align to 4 bytes */
 	occupied = ROUND_UP(occupied, 4);
 
-	LOG_DBG("Occupied: %d total: %d needed: %d", occupied, de->de_rec_len, entry_size);
+	LOG_DBG("Occupied: %d total: %d needed: %d", occupied, reclen, entry_size);
 
-	if (de->de_rec_len - occupied >= entry_size) {
+	if (reclen - occupied >= entry_size) {
 		/* Entry fits into current block */
 		offset += occupied;
-		de->de_rec_len = occupied;
 		entry->de_rec_len = block_size - offset;
-
+		ext2_set_disk_direntry_reclen(de, occupied);
 	} else {
 		LOG_DBG("Allocating new block for directory");
 
@@ -991,7 +1008,9 @@ static int ext2_add_direntry(struct ext2_inode *dir, struct ext2_disk_dentry *en
 			entry->de_inode, entry->de_file_type, entry->de_rec_len, entry->de_name_len,
 			inode_current_block(dir)->num, dir->i_id);
 
-	memcpy(inode_current_block_mem(dir) + offset, entry, entry_size);
+
+	de = EXT2_DISK_DIRENTRY_BY_OFFSET(inode_current_block_mem(dir), offset);
+	ext2_write_direntry(de, entry);
 
 	rc = ext2_commit_inode_block(dir);
 	return rc;
@@ -1001,6 +1020,7 @@ int ext2_create_file(struct ext2_inode *parent, struct ext2_inode *new_inode,
 		struct ext2_lookup_args *args)
 {
 	int rc, ret = 0;
+	struct ext2_direntry *entry;
 	struct ext2_data *fs = parent->i_fs;
 
 	rc = ext2_create_inode(fs, args->inode, new_inode, FS_DIR_ENTRY_FILE);
@@ -1008,15 +1028,7 @@ int ext2_create_file(struct ext2_inode *parent, struct ext2_inode *new_inode,
 		return rc;
 	}
 
-	size_t dentry_size = sizeof(struct ext2_disk_dentry) + args->name_len;
-	struct ext2_disk_dentry *entry = k_heap_alloc(&direntry_heap, dentry_size, K_NO_WAIT);
-
-	if (entry == NULL) {
-		ret = -ENOMEM;
-		goto out;
-	}
-
-	ext2_fill_direntry(entry, args->path + args->name_pos, args->name_len, new_inode->i_id,
+	entry = ext2_create_direntry(args->path + args->name_pos, args->name_len, new_inode->i_id,
 			EXT2_FT_REG_FILE);
 
 	rc = ext2_add_direntry(parent, entry);
@@ -1041,6 +1053,8 @@ int ext2_create_dir(struct ext2_inode *parent, struct ext2_inode *new_inode,
 		struct ext2_lookup_args *args)
 {
 	int rc, ret = 0;
+	struct ext2_direntry *entry;
+	struct ext2_disk_direntry *disk_de;
 	struct ext2_data *fs = parent->i_fs;
 	uint32_t block_size = parent->i_fs->block_size;
 
@@ -1052,15 +1066,7 @@ int ext2_create_dir(struct ext2_inode *parent, struct ext2_inode *new_inode,
 	/* Directory must have at least one block */
 	new_inode->i_size = block_size;
 
-	size_t dentry_size = sizeof(struct ext2_disk_dentry) + args->name_len;
-	struct ext2_disk_dentry *entry = k_heap_alloc(&direntry_heap, dentry_size, K_NO_WAIT);
-
-	if (entry == NULL) {
-		ret = -ENOMEM;
-		goto out;
-	}
-
-	ext2_fill_direntry(entry, args->path + args->name_pos, args->name_len, new_inode->i_id,
+	entry = ext2_create_direntry(args->path + args->name_pos, args->name_len, new_inode->i_id,
 			EXT2_FT_DIR);
 
 	rc = ext2_add_direntry(parent, entry);
@@ -1072,12 +1078,11 @@ int ext2_create_dir(struct ext2_inode *parent, struct ext2_inode *new_inode,
 	/* Successfully added to directory */
 	new_inode->i_links_count += 1;
 
-	/* Add "." directory entry */
-	entry->de_inode = new_inode->i_id;
-	entry->de_name_len = 1;
-	entry->de_file_type = EXT2_FT_DIR;
+	k_heap_free(&direntry_heap, entry);
+
+	/* Create "." directory entry */
+	entry = ext2_create_direntry(".", 1, new_inode->i_id, EXT2_FT_DIR);
 	entry->de_rec_len = block_size;
-	memcpy(entry->de_name, ".", 1);
 
 	/* It has to be inserted manually */
 	rc = ext2_fetch_inode_block(new_inode, 0);
@@ -1086,15 +1091,15 @@ int ext2_create_dir(struct ext2_inode *parent, struct ext2_inode *new_inode,
 		goto out;
 	}
 
-	memcpy(inode_current_block_mem(new_inode), entry, sizeof(struct ext2_disk_dentry) + 1);
+	disk_de = EXT2_DISK_DIRENTRY_BY_OFFSET(inode_current_block_mem(new_inode), 0);
+	ext2_write_direntry(disk_de, entry);
 
 	new_inode->i_links_count += 1;
 
+	k_heap_free(&direntry_heap, entry);
+
 	/* Add ".." directory entry */
-	entry->de_inode = parent->i_id;
-	entry->de_name_len = 2;
-	entry->de_file_type = EXT2_FT_DIR;
-	memcpy(entry->de_name, "..", 2);
+	entry = ext2_create_direntry("..", 2, parent->i_id, EXT2_FT_DIR);
 
 	rc = ext2_add_direntry(new_inode, entry);
 	if (rc < 0) {
@@ -1144,10 +1149,11 @@ static int ext2_del_direntry(struct ext2_inode *parent, uint32_t offset)
 	}
 
 	if (blk_off == 0) {
-		struct ext2_disk_dentry *de =
-			(struct ext2_disk_dentry *)(inode_current_block_mem(parent));
+		struct ext2_disk_direntry *de =
+			EXT2_DISK_DIRENTRY_BY_OFFSET(inode_current_block_mem(parent), 0);
+		uint16_t reclen = ext2_get_disk_direntry_reclen(de);
 
-		if (de->de_rec_len == block_size) {
+		if (reclen == block_size) {
 			/* Remove whole block */
 
 			uint32_t last_blk = parent->i_size / block_size - 1;
@@ -1170,14 +1176,13 @@ static int ext2_del_direntry(struct ext2_inode *parent, uint32_t offset)
 				return rc;
 			}
 		} else {
-
 			/* Move next entry to beginning of block */
-			struct ext2_disk_dentry *next = (struct ext2_disk_dentry *)
-				(inode_current_block_mem(parent) + de->de_rec_len);
-			uint32_t new_size = de->de_rec_len + next->de_rec_len;
+			struct ext2_disk_direntry *next =
+			      EXT2_DISK_DIRENTRY_BY_OFFSET(inode_current_block_mem(parent), reclen);
+			uint16_t next_reclen = ext2_get_disk_direntry_reclen(next);
 
-			memmove(de, next, next->de_rec_len);
-			de->de_rec_len = new_size;
+			memmove(de, next, next_reclen);
+			ext2_set_disk_direntry_reclen(de, reclen + next_reclen);
 
 			rc = ext2_commit_inode_block(parent);
 			if (rc < 0) {
@@ -1188,21 +1193,24 @@ static int ext2_del_direntry(struct ext2_inode *parent, uint32_t offset)
 	} else {
 		/* Entry inside the block */
 		uint32_t cur = 0;
+		uint16_t reclen;
 
-		struct ext2_disk_dentry *de =
-			(struct ext2_disk_dentry *)(inode_current_block_mem(parent));
+		struct ext2_disk_direntry *de =
+			EXT2_DISK_DIRENTRY_BY_OFFSET(inode_current_block_mem(parent), 0);
 
+		reclen = ext2_get_disk_direntry_reclen(de);
 		/* find previous entry */
-		while (cur + de->de_rec_len < blk_off) {
-			cur += de->de_rec_len;
-			de = (struct ext2_disk_dentry *)(inode_current_block_mem(parent) + cur);
+		while (cur + reclen < blk_off) {
+			cur += reclen;
+			de = EXT2_DISK_DIRENTRY_BY_OFFSET(inode_current_block_mem(parent), cur);
+			reclen = ext2_get_disk_direntry_reclen(de);
 		}
 
-		struct ext2_disk_dentry *del_entry =
-			(struct ext2_disk_dentry *)(inode_current_block_mem(parent) + blk_off);
+		struct ext2_disk_direntry *del_entry =
+			EXT2_DISK_DIRENTRY_BY_OFFSET(inode_current_block_mem(parent), blk_off);
+		uint16_t del_reclen = ext2_get_disk_direntry_reclen(del_entry);
 
-		de->de_rec_len += del_entry->de_rec_len;
-
+		ext2_set_disk_direntry_reclen(de, reclen + del_reclen);
 		rc = ext2_commit_inode_block(parent);
 		if (rc < 0) {
 			return rc;
@@ -1245,15 +1253,15 @@ static int can_unlink(struct ext2_inode *inode)
 	/* If directory check if it is empty */
 
 	uint32_t offset = 0;
-	struct ext2_disk_dentry *de;
+	struct ext2_disk_direntry *de;
 
 	/* Get first entry */
-	de = (struct ext2_disk_dentry *)(inode_current_block_mem(inode));
-	offset += de->de_rec_len;
+	de = EXT2_DISK_DIRENTRY_BY_OFFSET(inode_current_block_mem(inode), 0);
+	offset += ext2_get_disk_direntry_reclen(de);
 
 	/* Get second entry */
-	de = (struct ext2_disk_dentry *)(inode_current_block_mem(inode) + de->de_rec_len);
-	offset += de->de_rec_len;
+	de = EXT2_DISK_DIRENTRY_BY_OFFSET(inode_current_block_mem(inode), offset);
+	offset += ext2_get_disk_direntry_reclen(de);
 
 	uint32_t block_size = inode->i_fs->block_size;
 
@@ -1304,7 +1312,7 @@ int ext2_replace_file(struct ext2_lookup_args *args_from, struct ext2_lookup_arg
 	LOG_DBG("Inode: %d Inode to replace: %d", args_from->inode->i_id, args_to->inode->i_id);
 
 	int rc = 0;
-	struct ext2_disk_dentry *de;
+	struct ext2_disk_direntry *de;
 
 	uint32_t block_size = args_from->parent->i_fs->block_size;
 	uint32_t from_offset = args_from->offset;
@@ -1316,16 +1324,21 @@ int ext2_replace_file(struct ext2_lookup_args *args_from, struct ext2_lookup_arg
 		return rc;
 	}
 
-	de = (struct ext2_disk_dentry *)(inode_current_block_mem(args_from->parent) + from_blk_off);
+	de = EXT2_DISK_DIRENTRY_BY_OFFSET(inode_current_block_mem(args_from->parent), from_blk_off);
 
 	/* record file type */
-	uint8_t file_type = de->de_file_type;
+	uint8_t file_type = ext2_get_disk_direntry_type(de);
 
-	de->de_inode = args_to->inode->i_id;
+	/* NOTE: Replace the inode number in removed entry with inode of file that will be replaced
+	 * with new one. Thanks to that we can use the function that unlinks directory entry to get
+	 * rid of old directory entry and link to inode that will no longer be referenced by the
+	 * directory entry after it is replaced with moved file.
+	 */
+	ext2_set_disk_direntry_inode(de, args_to->inode->i_id);
 	rc = ext2_inode_unlink(args_from->parent, args_to->inode, args_from->offset);
 	if (rc < 0) {
-		/* restore made changes */
-		de->de_inode = args_from->inode->i_id;
+		/* restore the old inode number */
+		ext2_set_disk_direntry_inode(de, args_from->inode->i_id);
 		return rc;
 	}
 
@@ -1338,17 +1351,16 @@ int ext2_replace_file(struct ext2_lookup_args *args_from, struct ext2_lookup_arg
 		return rc;
 	}
 
-	de = (struct ext2_disk_dentry *)(inode_current_block_mem(args_to->parent) + to_blk_off);
+	de = EXT2_DISK_DIRENTRY_BY_OFFSET(inode_current_block_mem(args_to->parent), to_blk_off);
 
 	/* change inode of new entry */
-	de->de_inode = args_from->inode->i_id;
-	de->de_file_type = file_type;
+	ext2_set_disk_direntry_inode(de, args_from->inode->i_id);
+	ext2_set_disk_direntry_type(de, file_type);
 
 	rc = ext2_commit_inode_block(args_to->parent);
 	if (rc < 0) {
 		return rc;
 	}
-
 	return 0;
 }
 
@@ -1370,15 +1382,18 @@ int ext2_move_file(struct ext2_lookup_args *args_from, struct ext2_lookup_args *
 			return rc;
 		}
 
-		struct ext2_disk_dentry *de;
+		struct ext2_disk_direntry *de;
 
-		de = (struct ext2_disk_dentry *)(inode_current_block_mem(fparent) + blk_off);
+		de = EXT2_DISK_DIRENTRY_BY_OFFSET(inode_current_block_mem(fparent), blk_off);
+
+		uint16_t reclen = ext2_get_disk_direntry_reclen(de);
 
 		/* If new name fits in old entry, then just copy it there */
-		if (de->de_rec_len - sizeof(struct ext2_disk_dentry) >= args_to->name_len) {
+		if (reclen - sizeof(struct ext2_disk_direntry) >= args_to->name_len) {
 			LOG_DBG("Old entry is modified to hold new name");
-			de->de_name_len = args_to->name_len;
-			memcpy(de->de_name, args_to->path + args_to->name_pos, args_to->name_len);
+			ext2_set_disk_direntry_namelen(de, args_to->name_len);
+			ext2_set_disk_direntry_name(de, args_to->path + args_to->name_pos,
+					args_to->name_len);
 
 			rc = ext2_commit_inode_block(fparent);
 			return rc;
@@ -1394,22 +1409,16 @@ int ext2_move_file(struct ext2_lookup_args *args_from, struct ext2_lookup_args *
 		return rc;
 	}
 
-	struct ext2_disk_dentry *old_de, *new_de;
+	struct ext2_disk_direntry *old_de;
+	struct ext2_direntry *new_de;
 
-	old_de = (struct ext2_disk_dentry *)(inode_current_block_mem(fparent) + blk_off);
+	old_de = EXT2_DISK_DIRENTRY_BY_OFFSET(inode_current_block_mem(fparent), blk_off);
 
-	size_t dentry_size = sizeof(struct ext2_disk_dentry) + args_to->name_len;
+	uint32_t inode = ext2_get_disk_direntry_inode(old_de);
+	uint8_t file_type = ext2_get_disk_direntry_type(old_de);
 
-	new_de = k_heap_alloc(&direntry_heap, dentry_size, K_NO_WAIT);
-	if (new_de == NULL) {
-		ret = -ENOMEM;
-		goto out;
-	}
-
-	new_de->de_inode = old_de->de_inode;
-	new_de->de_name_len = args_to->name_len;
-	new_de->de_file_type = old_de->de_file_type;
-	memcpy(new_de->de_name, args_to->path + args_to->name_pos, args_to->name_len);
+	new_de = ext2_create_direntry(args_to->path + args_to->name_pos, args_to->name_len, inode,
+			file_type);
 
 	rc = ext2_add_direntry(tparent, new_de);
 	if (rc < 0) {
