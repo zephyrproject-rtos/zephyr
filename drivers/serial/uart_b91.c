@@ -571,6 +571,15 @@ static int uart_b91_pm_action(const struct device *dev, enum pm_device_action ac
 
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
+#ifdef CONFIG_BOARD_TLSR9518ADK80D_RETENTION
+		{
+			extern volatile bool b91_deep_sleep_retention;
+
+			if (b91_deep_sleep_retention) {
+				uart_b91_driver_init(dev);
+			}
+		}
+#endif /* CONFIG_BOARD_TLSR9518ADK80D_RETENTION */
 		/* reset TX/RX byte index */
 		data->tx_byte_index = 0;
 		data->rx_byte_index = 0;

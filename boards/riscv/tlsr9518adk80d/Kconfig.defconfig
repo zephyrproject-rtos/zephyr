@@ -1,10 +1,24 @@
-# Copyright (c) 2021 Telink Semiconductor
+# Copyright (c) 2023 Telink Semiconductor
 # SPDX-License-Identifier: Apache-2.0
 
 if BOARD_TLSR9518ADK80D
 
 config BOARD
 	default "tlsr9518adk80d"
+
+endif
+
+if BOARD_TLSR9518ADK80D_RETENTION
+
+config BOARD
+	default "tlsr9518adk80d_retention"
+
+config BOARD_TLSR9518ADK80D_NON_RETENTION_RAM_CODE
+	default n
+
+endif
+
+if BOARD_TLSR9518ADK80D || BOARD_TLSR9518ADK80D_RETENTION
 
 config SOC_FLASH_TELINK_B91
 	default y if FLASH

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Telink Semiconductor
+ * Copyright (c) 2023 Telink Semiconductor
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -58,7 +58,7 @@
  *
  * @return 0
  */
-static int soc_b91_init(void)
+int soc_b91_init(void)
 {
 	unsigned int cclk = DT_PROP(DT_PATH(cpus, cpu_0), clock_frequency);
 

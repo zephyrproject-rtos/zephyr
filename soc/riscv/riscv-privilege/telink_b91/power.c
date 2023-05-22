@@ -40,7 +40,7 @@ LOG_MODULE_DECLARE(soc, CONFIG_SOC_LOG_LEVEL);
 static uint64_t get_mtime_compare(void)
 {
 	return *(const volatile uint64_t *const)((uint32_t)(MTIMECMP_REG +
-						 (_current_cpu->id * sizeof(uint64_t))));
+		(_current_cpu->id * sizeof(uint64_t))));
 }
 
 /**
@@ -60,6 +60,14 @@ static uint64_t get_mtime(void)
 	return (((uint64_t)mtime_h) << 32) | mtime_l;
 }
 
+#ifdef CONFIG_BOARD_TLSR9518ADK80D_RETENTION
+static void set_mtime_compare(uint64_t time_cmp)
+{
+	*(volatile uint64_t *const)((uint32_t)(MTIMECMP_REG +
+		(_current_cpu->id * sizeof(uint64_t)))) = time_cmp;
+}
+#endif
+
 /**
  * @brief Set Machine Timer value.
  */
@@ -73,6 +81,10 @@ static void set_mtime(uint64_t time)
 	*rh = (uint32_t)(time >> 32);
 	*rl = (uint32_t)time;
 }
+
+#ifdef CONFIG_BOARD_TLSR9518ADK80D_RETENTION
+volatile bool b91_deep_sleep_retention;
+#endif /* CONFIG_BOARD_TLSR9518ADK80D_RETENTION */
 
 /**
  * @brief PM state set API implementation.
@@ -107,7 +119,24 @@ __weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 			}
 		}
 		break;
-
+#ifdef CONFIG_BOARD_TLSR9518ADK80D_RETENTION
+	case PM_STATE_STANDBY:
+		if (stimer_sleep_ticks < SYSTICKS_MIN_SLEEP) {
+			k_cpu_idle();
+		} else {
+			if (stimer_sleep_ticks > SYSTICKS_MAX_SLEEP) {
+				stimer_sleep_ticks = SYSTICKS_MAX_SLEEP;
+			}
+			if (b91_deep_sleep(tl_sleep_tick + stimer_sleep_ticks)) {
+				current_time +=
+					systicks_to_mticks(stimer_get_tick() - tl_sleep_tick);
+				set_mtime_compare(wakeup_time);
+				set_mtime(current_time);
+				b91_deep_sleep_retention = true;
+			}
+		}
+		break;
+#endif /* CONFIG_BOARD_TLSR9518ADK80D_RETENTION */
 	default:
 		LOG_DBG("Unsupported power state %u", state);
 		k_cpu_idle();
@@ -122,6 +151,10 @@ __weak void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 {
 	ARG_UNUSED(state);
 	ARG_UNUSED(substate_id);
+
+#ifdef CONFIG_BOARD_TLSR9518ADK80D_RETENTION
+	b91_deep_sleep_retention = false;
+#endif /* CONFIG_BOARD_TLSR9518ADK80D_RETENTION */
 
 	/*
 	 * System is now in active mode. Enabling interrupts which were

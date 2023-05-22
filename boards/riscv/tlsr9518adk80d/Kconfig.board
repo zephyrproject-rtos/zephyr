@@ -1,6 +1,16 @@
-# Copyright (c) 2021 Telink Semiconductor
+# Copyright (c) 2023 Telink Semiconductor
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_TLSR9518ADK80D
 	bool "Telink B91 Platform"
 	depends on SOC_RISCV_TELINK_B91
+
+config BOARD_TLSR9518ADK80D_RETENTION
+	bool "Telink B91 Platform with retention"
+	depends on SOC_RISCV_TELINK_B91
+
+config BOARD_TLSR9518ADK80D_NON_RETENTION_RAM_CODE
+	bool "Place Telink RAM code into non retention memory"
+	depends on SOC_SERIES_RISCV_TELINK_B91 && BOARD_TLSR9518ADK80D_RETENTION
+	help
+		Place Telink RAM code into non retention memory and restore ram code on each boot.
