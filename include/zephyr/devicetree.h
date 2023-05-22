@@ -18,6 +18,10 @@
 
 #include <devicetree_generated.h>
 
+#if !defined(_LINKER) && !defined(_ASMLANGUAGE)
+#include <stdint.h>
+#endif
+
 #include <zephyr/sys/util.h>
 
 /**
@@ -2220,6 +2224,18 @@
 #define DT_REG_ADDR(node_id) DT_REG_ADDR_BY_IDX(node_id, 0)
 
 /**
+ * @brief 64-bit version of DT_REG_ADDR()
+ *
+ * This macro version adds the appropriate suffix for 64-bit unsigned
+ * integer literals.
+ * Note that this macro is equivalent to DT_REG_ADDR() in linker/ASM context.
+ *
+ * @param node_id node identifier
+ * @return node's register block address
+ */
+#define DT_REG_ADDR_U64(node_id) DT_U64_C(DT_REG_ADDR(node_id))
+
+/**
  * @brief Get a node's (only) register block size
  *
  * Equivalent to DT_REG_SIZE_BY_IDX(node_id, 0).
@@ -2236,6 +2252,21 @@
  */
 #define DT_REG_ADDR_BY_NAME(node_id, name) \
 	DT_CAT4(node_id, _REG_NAME_, name, _VAL_ADDRESS)
+
+/**
+ * @brief 64-bit version of DT_REG_ADDR_BY_NAME()
+ *
+ * This macro version adds the appropriate suffix for 64-bit unsigned
+ * integer literals.
+ * Note that this macro is equivalent to DT_REG_ADDR_BY_NAME() in
+ * linker/ASM context.
+ *
+ * @param node_id node identifier
+ * @param name lowercase-and-underscores register specifier name
+ * @return address of the register block specified by name
+ */
+#define DT_REG_ADDR_BY_NAME_U64(node_id, name) \
+	DT_U64_C(DT_REG_ADDR_BY_NAME(node_id, name))
 
 /**
  * @brief Get a register block's size by name
@@ -3682,6 +3713,21 @@
 	DT_REG_ADDR_BY_NAME(DT_DRV_INST(inst), name)
 
 /**
+ * @brief 64-bit version of DT_INST_REG_ADDR_BY_NAME()
+ *
+ * This macro version adds the appropriate suffix for 64-bit unsigned
+ * integer literals.
+ * Note that this macro is equivalent to DT_INST_REG_ADDR_BY_NAME() in
+ * linker/ASM context.
+ *
+ * @param inst instance number
+ * @param name lowercase-and-underscores register specifier name
+ * @return address of the register block with the given @p name
+ */
+#define DT_INST_REG_ADDR_BY_NAME_U64(inst, name) \
+	DT_U64_C(DT_INST_REG_ADDR_BY_NAME(inst, name))
+
+/**
  * @brief Get a `DT_DRV_COMPAT`'s register block size by name
  * @param inst instance number
  * @param name lowercase-and-underscores register specifier name
@@ -3696,6 +3742,19 @@
  * @return instance's register block address
  */
 #define DT_INST_REG_ADDR(inst) DT_INST_REG_ADDR_BY_IDX(inst, 0)
+
+/**
+ * @brief 64-bit version of DT_INST_REG_ADDR()
+ *
+ * This macro version adds the appropriate suffix for 64-bit unsigned
+ * integer literals.
+ * Note that this macro is equivalent to DT_INST_REG_ADDR() in
+ * linker/ASM context.
+ *
+ * @param inst instance number
+ * @return instance's register block address
+ */
+#define DT_INST_REG_ADDR_U64(inst) DT_U64_C(DT_INST_REG_ADDR(inst))
 
 /**
  * @brief Get a `DT_DRV_COMPAT`'s (only) register block size
@@ -4171,6 +4230,16 @@
 /** @brief Helper macro to OR multiple has property checks in a loop macro */
 #define DT_INST_NODE_HAS_PROP_AND_OR(inst, prop) \
 	DT_INST_NODE_HAS_PROP(inst, prop) ||
+
+/**
+ * @def DT_U64_C
+ * @brief Macro to add ULL postfix to the devicetree address constants
+ */
+#if defined(_LINKER) || defined(_ASMLANGUAGE)
+#define DT_U64_C(_v) (_v)
+#else
+#define DT_U64_C(_v) UINT64_C(_v)
+#endif
 
 /** @endcond */
 
