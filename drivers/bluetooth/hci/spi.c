@@ -411,7 +411,6 @@ static void bt_spi_rx_thread(void)
 static int bt_spi_send(struct net_buf *buf)
 {
 	uint8_t header[5] = { SPI_WRITE, 0x00,  0x00,  0x00,  0x00 };
-	int pending;
 	int ret;
 
 	LOG_DBG("");
@@ -422,15 +421,7 @@ static int bt_spi_send(struct net_buf *buf)
 		return -EINVAL;
 	}
 
-	/* Allow time for the read thread to handle interrupt */
-	while (true) {
-		pending = gpio_pin_get_dt(&irq_gpio);
-		if (pending <= 0) {
-			break;
-		}
-		k_sleep(K_MSEC(1));
-	}
-
+	/* Wait for SPI bus to be available */
 	k_sem_take(&sem_busy, K_FOREVER);
 
 	switch (bt_buf_get_type(buf)) {
