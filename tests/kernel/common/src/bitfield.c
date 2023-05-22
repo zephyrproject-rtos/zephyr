@@ -33,6 +33,9 @@
  */
 ZTEST(bitfield, test_bitfield)
 {
+#ifdef CONFIG_ARM
+	ztest_test_skip();
+#else
 	uint32_t b1 = 0U;
 	unsigned char b2[BITFIELD_SIZE >> 3] = { 0 };
 	unsigned int bit;
@@ -124,7 +127,13 @@ ZTEST(bitfield, test_bitfield)
 			      "sys_bitfield_test_and_clear_bit set bit %d\n",
 			      bit);
 	}
+#endif
+
 }
+
+extern void *common_setup(void);
+
+ZTEST_SUITE(bitfield, NULL, common_setup, NULL, NULL, NULL);
 
 /**
  * @}

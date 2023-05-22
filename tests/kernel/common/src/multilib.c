@@ -26,6 +26,9 @@ ZTEST(multilib, test_multilib)
 	zassert_equal(c, 33, "smoke-test failed: wrong multilib selected");
 }
 
+extern void *common_setup(void);
+ZTEST_SUITE(multilib, NULL, common_setup, NULL, NULL, NULL);
+
 /**
  * @}
  */

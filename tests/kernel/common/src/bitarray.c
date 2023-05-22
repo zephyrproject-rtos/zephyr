@@ -665,6 +665,8 @@ ZTEST(bitarray, test_ffs)
 		zassert_equal(find_lsb_set(value), bit + 1, "LSB is not matched");
 	}
 }
+extern void *common_setup(void);
+ZTEST_SUITE(bitarray, NULL, common_setup, NULL, NULL, NULL);
 
 /**
  * @}

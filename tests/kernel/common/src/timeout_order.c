@@ -88,6 +88,10 @@ ZTEST(common_1cpu, test_timeout_order)
 	}
 }
 
+extern void *common_setup(void);
+ZTEST_SUITE(common_1cpu, NULL, common_setup,
+		ztest_simple_1cpu_before, ztest_simple_1cpu_after, NULL);
+
 /**
  * @}
  */
