@@ -49,7 +49,7 @@ For more information about the EFR32BG SoC and Thunderboard EFR32BG22 board:
 Supported Features
 ==================
 
-The efr32bg_sltb010a board configuration supports the following hardware features:
+The efr32bg22_brd4184a board configuration supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |
@@ -141,7 +141,7 @@ Build the Zephyr kernel and application, then flash it to the device:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: efr32bg_brd4184a
+   :board: efr32bg22_brd4184a
    :goals: flash
 
 .. note::
@@ -178,7 +178,7 @@ this example.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/bluetooth/observer
-   :board: efr32bg_sltb010a
+   :board: efr32bg22_brd4184a
    :goals: build
 
 
