@@ -39,6 +39,7 @@
 #define TEST_VENDOR	DT_NODELABEL(test_vendor)
 #define TEST_MODEL	DT_NODELABEL(test_vendor)
 #define TEST_ENUM_0	DT_NODELABEL(test_enum_0)
+#define TEST_64BIT	DT_NODELABEL(test_reg_64)
 
 #define TEST_I2C DT_NODELABEL(test_i2c)
 #define TEST_I2C_DEV DT_PATH(test, i2c_11112222, test_i2c_dev_10)
@@ -546,12 +547,19 @@ ZTEST(devicetree_api, test_reg)
 	/* DT_REG_ADDR */
 	zassert_equal(DT_REG_ADDR(TEST_ABCD1234), 0xabcd1234, "");
 
+	/* DT_REG_ADDR_U64 */
+	zassert_equal(DT_REG_ADDR_U64(TEST_ABCD1234), 0xabcd1234, "");
+
 	/* DT_REG_SIZE */
 	zassert_equal(DT_REG_SIZE(TEST_ABCD1234), 0x500, "");
 
 	/* DT_REG_ADDR_BY_NAME */
 	zassert_equal(DT_REG_ADDR_BY_NAME(TEST_ABCD1234, one), 0xabcd1234, "");
 	zassert_equal(DT_REG_ADDR_BY_NAME(TEST_ABCD1234, two), 0x98765432, "");
+
+	/* DT_REG_ADDR_BY_NAME_U64 */
+	zassert_equal(DT_REG_ADDR_BY_NAME_U64(TEST_ABCD1234, one), 0xabcd1234, "");
+	zassert_equal(DT_REG_ADDR_BY_NAME_U64(TEST_ABCD1234, two), 0x98765432, "");
 
 	/* DT_REG_SIZE_BY_NAME */
 	zassert_equal(DT_REG_SIZE_BY_NAME(TEST_ABCD1234, one), 0x500, "");
@@ -576,6 +584,9 @@ ZTEST(devicetree_api, test_reg)
 	/* DT_INST_REG_ADDR */
 	zassert_equal(DT_INST_REG_ADDR(0), 0x9999aaaa, "");
 
+	/* DT_INST_REG_ADDR_U64 */
+	zassert_equal(DT_INST_REG_ADDR_U64(0), 0x9999aaaa, "");
+
 	/* DT_INST_REG_SIZE */
 	zassert_equal(DT_INST_REG_SIZE(0), 0x1000, "");
 
@@ -583,9 +594,30 @@ ZTEST(devicetree_api, test_reg)
 	zassert_equal(DT_INST_REG_ADDR_BY_NAME(0, first), 0x9999aaaa, "");
 	zassert_equal(DT_INST_REG_ADDR_BY_NAME(0, second), 0xbbbbcccc, "");
 
+	/* DT_INST_REG_ADDR_BY_NAME_U64 */
+	zassert_equal(DT_INST_REG_ADDR_BY_NAME_U64(0, first), 0x9999aaaa, "");
+	zassert_equal(DT_INST_REG_ADDR_BY_NAME_U64(0, second), 0xbbbbcccc, "");
+
 	/* DT_INST_REG_SIZE_BY_NAME */
 	zassert_equal(DT_INST_REG_SIZE_BY_NAME(0, first), 0x1000, "");
 	zassert_equal(DT_INST_REG_SIZE_BY_NAME(0, second), 0x3f, "");
+}
+
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT vnd_reg_holder_64
+ZTEST(devicetree_api, test_reg_64)
+{
+	/* DT_REG_ADDR_U64 */
+	zassert_equal(DT_REG_ADDR_U64(TEST_64BIT), 0xffffffff11223344, "");
+
+	/* DT_REG_ADDR_BY_NAME_U64 */
+	zassert_equal(DT_REG_ADDR_BY_NAME_U64(TEST_64BIT, test_name), 0xffffffff11223344, "");
+
+	/* DT_INST_REG_ADDR_U64 */
+	zassert_equal(DT_INST_REG_ADDR_U64(0), 0xffffffff11223344, "");
+
+	/* DT_INST_REG_ADDR_BY_NAME_U64 */
+	zassert_equal(DT_INST_REG_ADDR_BY_NAME_U64(0, test_name), 0xffffffff11223344, "");
 }
 
 #undef DT_DRV_COMPAT
