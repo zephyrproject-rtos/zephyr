@@ -510,26 +510,22 @@ uint8_t ll_setup_iso_path(uint16_t handle, uint8_t path_dir, uint8_t path_id,
 
 uint8_t ll_remove_iso_path(uint16_t handle, uint8_t path_dir)
 {
+	/* If the Host issues this command with a Connection_Handle that does
+	 * not exist or is not for a CIS or a BIS, the Controller shall return
+	 * the error code Unknown Connection Identifier (0x02).
+	 */
 	if (false) {
 
 #if defined(CONFIG_BT_CTLR_CONN_ISO)
 	} else if (IS_CIS_HANDLE(handle)) {
 		struct ll_conn_iso_stream *cis;
+		struct ll_iso_stream_hdr *hdr;
+		struct ll_iso_datapath *dp;
 
-		/* If the Host issues this command with a Connection_Handle that does
-		 * not exist or is not for a CIS or a BIS, the Controller shall return
-		 * the error code Unknown Connection Identifier (0x02).
-		 */
 		cis = ll_conn_iso_stream_get(handle);
-		if (!cis) {
-			return BT_HCI_ERR_UNKNOWN_CONN_ID;
-		}
+		hdr = &cis->hdr;
 
-		if (path_dir == BT_HCI_DATAPATH_DIR_HOST_TO_CTLR) {
-			struct ll_iso_stream_hdr *hdr;
-			struct ll_iso_datapath *dp;
-
-			hdr = &cis->hdr;
+		if (path_dir & BIT(BT_HCI_DATAPATH_DIR_HOST_TO_CTLR)) {
 			dp = hdr->datapath_in;
 			if (dp) {
 				isoal_source_destroy(dp->source_hdl);
@@ -540,11 +536,9 @@ uint8_t ll_remove_iso_path(uint16_t handle, uint8_t path_dir)
 				/* Datapath was not previously set up */
 				return BT_HCI_ERR_CMD_DISALLOWED;
 			}
-		} else if (path_dir == BT_HCI_DATAPATH_DIR_CTLR_TO_HOST) {
-			struct ll_iso_stream_hdr *hdr;
-			struct ll_iso_datapath *dp;
+		}
 
-			hdr = &cis->hdr;
+		if (path_dir & BIT(BT_HCI_DATAPATH_DIR_CTLR_TO_HOST)) {
 			dp = hdr->datapath_out;
 			if (dp) {
 				isoal_sink_destroy(dp->sink_hdl);
@@ -555,9 +549,6 @@ uint8_t ll_remove_iso_path(uint16_t handle, uint8_t path_dir)
 				/* Datapath was not previously set up */
 				return BT_HCI_ERR_CMD_DISALLOWED;
 			}
-		} else {
-			/* Reserved for future use */
-			return BT_HCI_ERR_CMD_DISALLOWED;
 		}
 #endif /* CONFIG_BT_CTLR_CONN_ISO */
 
@@ -567,7 +558,7 @@ uint8_t ll_remove_iso_path(uint16_t handle, uint8_t path_dir)
 		struct ll_iso_datapath *dp;
 		uint16_t stream_handle;
 
-		if (path_dir != BT_HCI_DATAPATH_DIR_HOST_TO_CTLR) {
+		if (!(path_dir & BIT(BT_HCI_DATAPATH_DIR_HOST_TO_CTLR))) {
 			return BT_HCI_ERR_CMD_DISALLOWED;
 		}
 
@@ -594,7 +585,7 @@ uint8_t ll_remove_iso_path(uint16_t handle, uint8_t path_dir)
 			struct ll_iso_datapath *dp;
 		uint16_t stream_handle;
 
-		if (path_dir != BT_HCI_DATAPATH_DIR_CTLR_TO_HOST) {
+		if (!(path_dir & BIT(BT_HCI_DATAPATH_DIR_CTLR_TO_HOST))) {
 			return BT_HCI_ERR_CMD_DISALLOWED;
 		}
 

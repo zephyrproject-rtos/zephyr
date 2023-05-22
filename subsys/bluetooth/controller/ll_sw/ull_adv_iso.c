@@ -561,7 +561,7 @@ uint8_t ll_big_terminate(uint8_t big_handle, uint8_t reason)
 		stream_handle = lll_adv_iso->stream_handle[num_bis];
 		handle = LL_BIS_ADV_HANDLE_FROM_IDX(stream_handle);
 		err = ll_remove_iso_path(handle,
-					 BT_HCI_DATAPATH_DIR_HOST_TO_CTLR);
+					 BIT(BT_HCI_DATAPATH_DIR_HOST_TO_CTLR));
 		if (err) {
 			return err;
 		}
