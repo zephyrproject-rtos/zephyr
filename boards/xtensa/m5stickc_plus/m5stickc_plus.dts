@@ -80,7 +80,7 @@
 	clock-frequency = <I2C_BITRATE_STANDARD>;
 	sda-gpios = <&gpio0 21 GPIO_OPEN_DRAIN>;
 	scl-gpios = <&gpio0 22 GPIO_OPEN_DRAIN>;
-	pinctrl-0 = <&i2c0_sda_gpio21 &i2c0_scl_gpio22>;
+	pinctrl-0 = <&i2c0_default>;
 	pinctrl-names = "default";
 };
 
@@ -88,8 +88,7 @@
 	#address-cells = <1>;
 	#size-cells = <0>;
 	status = "okay";
-	pinctrl-0 = <&spim2_miso_gpio12 &spim2_mosi_gpio11
-				&spim2_sclk_gpio14 &spim2_csel_gpio16>;
+	pinctrl-0 = <&spim2_default>;
 	pinctrl-names = "default";
 };
 
@@ -98,8 +97,7 @@
 	#address-cells = <1>;
 	#size-cells = <0>;
 	status = "okay";
-	pinctrl-0 = <&spim3_miso_gpio25 &spim3_mosi_gpio15
-				&spim3_sclk_gpio13 &spim3_csel_gpio5>;
+	pinctrl-0 = <&spim3_default>;
 	pinctrl-names = "default";
 };
 
