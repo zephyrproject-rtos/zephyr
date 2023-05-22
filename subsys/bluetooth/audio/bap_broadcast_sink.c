@@ -450,34 +450,10 @@ static int update_recv_state_base_copy_meta(const struct bt_bap_base *base,
 	for (uint8_t i = 0U; i < base->subgroup_count; i++) {
 		struct bt_bap_scan_delegator_subgroup *subgroup_param = &param->subgroups[i];
 		const struct bt_bap_base_subgroup *subgroup = &base->subgroups[i];
-		uint8_t *metadata_param = subgroup_param->metadata;
-		size_t total_len;
 
-		/* Copy metadata into subgroup_param, changing it from an array
-		 * of bt_audio_codec_data to a uint8_t buffer
-		 */
-		total_len = 0U;
-		for (size_t j = 0; j < subgroup->codec_cfg.meta_count; j++) {
-			const struct bt_audio_codec_data *meta = &subgroup->codec_cfg.meta[j];
-			const struct bt_data *data = &meta->data;
-			const uint8_t len = data->data_len;
-			const uint8_t type = data->type;
-			const size_t ltv_len = sizeof(len) + sizeof(type) + len;
-
-			if (total_len + ltv_len > sizeof(subgroup_param->metadata)) {
-				LOG_WRN("Could not fit entire metadata for subgroup[%u]", i);
-
-				return -ENOMEM;
-			}
-
-			metadata_param[total_len++] = len + 1;
-			metadata_param[total_len++] = type;
-			(void)memcpy(&metadata_param[total_len], data->data,
-				     len);
-			total_len += len;
-		}
-
-		subgroup_param->metadata_len = total_len;
+		subgroup_param->metadata_len = subgroup->codec_cfg.meta_len;
+		memcpy(subgroup_param->metadata, subgroup->codec_cfg.meta,
+		       subgroup->codec_cfg.meta_len);
 	}
 
 	return 0;

@@ -139,8 +139,8 @@ static void bap_broadcast_assistant_recv_state_cb(
 		const struct bt_bap_scan_delegator_subgroup *subgroup = &state->subgroups[i];
 		struct net_buf_simple buf;
 
-		shell_print(ctx_shell, "\t[%d]: BIS sync 0x%04X, metadata_len %u",
-			    i, subgroup->bis_sync, subgroup->metadata_len);
+		shell_print(ctx_shell, "\t[%d]: BIS sync 0x%04X, metadata_len %zu", i,
+			    subgroup->bis_sync, subgroup->metadata_len);
 
 		net_buf_simple_init_with_data(&buf, (void *)subgroup->metadata,
 					      subgroup->metadata_len);
@@ -871,17 +871,12 @@ static int cmd_bap_broadcast_assistant_add_pa_sync(const struct shell *sh,
 
 		subgroup_param->bis_sync = subgroup_bis_indexes & bis_bitfield_req;
 
-#if CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_COUNT > 0
-		metadata_len = bt_audio_codec_data_to_buf(subgroup->codec_cfg.meta,
-							  subgroup->codec_cfg.meta_count,
-							  subgroup_param->metadata,
-							  sizeof(subgroup_param->metadata));
-		if (metadata_len < 0) {
-			return -ENOMEM;
-		}
+#if CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_SIZE > 0
+		metadata_len = subgroup->codec_cfg.meta_len;
+		memcpy(subgroup_param->metadata, subgroup->codec_cfg.meta, metadata_len);
 #else
 		metadata_len = 0U;
-#endif /* CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_COUNT > 0 */
+#endif /* CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_SIZE > 0 */
 		subgroup_param->metadata_len = metadata_len;
 	}
 

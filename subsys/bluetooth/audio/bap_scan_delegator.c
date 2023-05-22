@@ -131,10 +131,10 @@ static void bt_debug_dump_recv_state(const struct bass_recv_state_internal *recv
 	for (int i = 0; i < state->num_subgroups; i++) {
 		const struct bt_bap_scan_delegator_subgroup *subgroup = &state->subgroups[i];
 
-		LOG_DBG("\tSubgroup[%d]: BIS sync %u (requested %u), metadata_len %u, metadata: %s",
+		LOG_DBG("\tSubgroup[%d]: BIS sync %u (requested %u), metadata_len %zu, metadata: "
+			"%s",
 			i, subgroup->bis_sync, recv_state->requested_bis_sync[i],
-			subgroup->metadata_len,
-			bt_hex(subgroup->metadata, subgroup->metadata_len));
+			subgroup->metadata_len, bt_hex(subgroup->metadata, subgroup->metadata_len));
 	}
 }
 

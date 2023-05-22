@@ -48,23 +48,28 @@ static void print_hex(const uint8_t *ptr, size_t len)
 	}
 }
 
+static bool print_cb(struct bt_data *data, void *user_data)
+{
+	const char *str = (const char *)user_data;
+
+	printk("%s: type 0x%02x value_len %u\n", str, data->type, data->data_len);
+	print_hex(data->data, data->data_len);
+	printk("\n");
+
+	return true;
+}
+
 static void print_codec_cfg(const struct bt_audio_codec_cfg *codec_cfg)
 {
 	printk("codec_cfg 0x%02x cid 0x%04x vid 0x%04x count %u\n", codec_cfg->id, codec_cfg->cid,
-	       codec_cfg->vid, codec_cfg->data_count);
-
-	for (size_t i = 0; i < codec_cfg->data_count; i++) {
-		printk("data #%zu: type 0x%02x len %u\n", i, codec_cfg->data[i].data.type,
-		       codec_cfg->data[i].data.data_len);
-		print_hex(codec_cfg->data[i].data.data,
-			  codec_cfg->data[i].data.data_len - sizeof(codec_cfg->data[i].data.type));
-		printk("\n");
-	}
+	       codec_cfg->vid, codec_cfg->data_len);
 
 	if (codec_cfg->id == BT_AUDIO_CODEC_LC3_ID) {
 		/* LC3 uses the generic LTV format - other codecs might do as well */
 
-		uint32_t chan_allocation;
+		enum bt_audio_location chan_allocation;
+
+		bt_audio_data_parse(codec_cfg->data, codec_cfg->data_len, print_cb, "data");
 
 		printk("  Frequency: %d Hz\n", bt_audio_codec_cfg_get_freq(codec_cfg));
 		printk("  Frame Duration: %d us\n",
@@ -77,15 +82,11 @@ static void print_codec_cfg(const struct bt_audio_codec_cfg *codec_cfg)
 		       bt_audio_codec_cfg_get_octets_per_frame(codec_cfg));
 		printk("  Frames per SDU: %d\n",
 		       bt_audio_codec_cfg_get_frame_blocks_per_sdu(codec_cfg, true));
+	} else {
+		print_hex(codec_cfg->data, codec_cfg->data_len);
 	}
 
-	for (size_t i = 0; i < codec_cfg->meta_count; i++) {
-		printk("meta #%zu: type 0x%02x len %u\n", i, codec_cfg->meta[i].data.type,
-		       codec_cfg->meta[i].data.data_len);
-		print_hex(codec_cfg->meta[i].data.data,
-			  codec_cfg->meta[i].data.data_len - sizeof(codec_cfg->meta[i].data.type));
-		printk("\n");
-	}
+	bt_audio_data_parse(codec_cfg->meta, codec_cfg->meta_len, print_cb, "meta");
 }
 
 static void print_qos(const struct bt_audio_codec_qos *qos)
@@ -158,10 +159,10 @@ static int lc3_qos(struct bt_bap_stream *stream, const struct bt_audio_codec_qos
 	return 0;
 }
 
-static int lc3_enable(struct bt_bap_stream *stream, const struct bt_audio_codec_data *meta,
-		      size_t meta_count, struct bt_bap_ascs_rsp *rsp)
+static int lc3_enable(struct bt_bap_stream *stream, const uint8_t meta[], size_t meta_len,
+		      struct bt_bap_ascs_rsp *rsp)
 {
-	printk("Enable: stream %p meta_count %u\n", stream, meta_count);
+	printk("Enable: stream %p meta_len %zu\n", stream, meta_len);
 
 	return 0;
 }
@@ -173,46 +174,63 @@ static int lc3_start(struct bt_bap_stream *stream, struct bt_bap_ascs_rsp *rsp)
 	return 0;
 }
 
-static int lc3_metadata(struct bt_bap_stream *stream, const struct bt_audio_codec_data *meta,
-			size_t meta_count, struct bt_bap_ascs_rsp *rsp)
+struct data_func_param {
+	struct bt_bap_ascs_rsp *rsp;
+	bool stream_context_present;
+};
+
+static bool data_func_cb(struct bt_data *data, void *user_data)
 {
-	printk("Metadata: stream %p meta_count %u\n", stream, meta_count);
-	bool stream_context_present = false;
+	struct data_func_param *func_param = (struct data_func_param *)user_data;
 
-	for (size_t i = 0; i < meta_count; i++) {
-		const struct bt_audio_codec_data *data = &meta[i];
+	if (!BT_AUDIO_METADATA_TYPE_IS_KNOWN(data->type)) {
+		printk("Invalid metadata type %u or length %u\n", data->type, data->data_len);
+		*func_param->rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_METADATA_REJECTED,
+						   data->type);
 
-		if (!BT_AUDIO_METADATA_TYPE_IS_KNOWN(data->data.type)) {
-			printk("Invalid metadata type %u or length %u\n",
-			       data->data.type, data->data.data_len);
-			*rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_METADATA_REJECTED,
-					       data->data.type);
+		return false;
+	}
 
-			return -EINVAL;
-		}
+	if (data->type == BT_AUDIO_METADATA_TYPE_STREAM_CONTEXT) {
+		func_param->stream_context_present = true;
+	}
 
-		if (data->data.type == BT_AUDIO_METADATA_TYPE_STREAM_CONTEXT) {
-			stream_context_present = true;
-		}
+	if (data->type == BT_AUDIO_METADATA_TYPE_CCID_LIST) {
+		for (uint8_t j = 0; j < data->data_len; j++) {
+			const uint8_t ccid = data->data[j];
 
-		if (data->data.type == BT_AUDIO_METADATA_TYPE_CCID_LIST) {
-			for (uint8_t j = 0; j < data->data.data_len; j++) {
-				const uint8_t ccid = data->data.data[j];
+			if (!(IS_ENABLED(CONFIG_BT_TBS_CLIENT_CCID) &&
+			      bt_tbs_client_get_by_ccid(default_conn, ccid) != NULL)) {
+				printk("CCID %u is unknown", ccid);
+				*func_param->rsp =
+					BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_METADATA_REJECTED,
+							BT_BAP_ASCS_REASON_NONE);
 
-				if (!(IS_ENABLED(CONFIG_BT_TBS_CLIENT_CCID) &&
-					bt_tbs_client_get_by_ccid(default_conn, ccid) != NULL)) {
-					printk("CCID %u is unknown", ccid);
-					*rsp = BT_BAP_ASCS_RSP(
-						BT_BAP_ASCS_RSP_CODE_METADATA_REJECTED,
-						BT_BAP_ASCS_REASON_NONE);
-
-					return -EINVAL;
-				}
+				return false;
 			}
 		}
 	}
 
-	if (stream_context_present == false) {
+	return true;
+}
+
+static int lc3_metadata(struct bt_bap_stream *stream, const uint8_t meta[], size_t meta_len,
+			struct bt_bap_ascs_rsp *rsp)
+{
+	struct data_func_param func_param = {
+		.rsp = rsp,
+		.stream_context_present = false,
+	};
+	int err;
+
+	printk("Metadata: stream %p meta_len %zu\n", stream, meta_len);
+
+	err = bt_audio_data_parse(meta, meta_len, data_func_cb, &func_param);
+	if (err != 0) {
+		return err;
+	}
+
+	if (!func_param.stream_context_present) {
 		printk("Stream audio context not present on peer!");
 		*rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_METADATA_REJECTED,
 				       BT_BAP_ASCS_REASON_NONE);

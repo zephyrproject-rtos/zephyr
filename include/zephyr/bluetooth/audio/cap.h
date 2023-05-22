@@ -241,15 +241,15 @@ struct bt_cap_unicast_audio_update_param {
 	/** @brief Stream for the @p member */
 	struct bt_cap_stream *stream;
 
-	/** The number of entries in @p meta. */
-	size_t meta_count;
+	/** The length of @p meta. */
+	size_t meta_len;
 
 	/** @brief The new metadata.
 	 *
 	 * The metadata shall a list of CCIDs as
 	 * well as a non-0 context bitfield.
 	 */
-	struct bt_audio_codec_data *meta;
+	uint8_t *meta;
 };
 
 /**
@@ -340,14 +340,14 @@ struct bt_cap_initiator_broadcast_stream_param {
 	/** Audio stream */
 	struct bt_cap_stream *stream;
 
-	/** The number of elements in the %p data array.
+	/** The length of the %p data array.
 	 *
 	 * The BIS specific data may be omitted and this set to 0.
 	 */
-	size_t data_count;
+	size_t data_len;
 
 	/** BIS Codec Specific Configuration */
-	struct bt_audio_codec_data *data;
+	uint8_t *data;
 };
 
 struct bt_cap_initiator_broadcast_subgroup_param {
@@ -445,15 +445,14 @@ int bt_cap_initiator_broadcast_audio_start(struct bt_cap_broadcast_source *broad
  * to be enabled.
  *
  * @param broadcast_source The broadcast source to update.
- * @param meta_count       The number of entries in @p meta.
  * @param meta             The new metadata. The metadata shall contain a list
  *                         of CCIDs as well as a non-0 context bitfield.
+ * @param meta_len         The length of @p meta.
  *
  * @return 0 on success or negative error value on failure.
  */
 int bt_cap_initiator_broadcast_audio_update(struct bt_cap_broadcast_source *broadcast_source,
-					    const struct bt_audio_codec_data meta[],
-					    size_t meta_count);
+					    const uint8_t meta[], size_t meta_len);
 
 /**
  * @brief Stop broadcast audio streams for a Common Audio Profile broadcast source.

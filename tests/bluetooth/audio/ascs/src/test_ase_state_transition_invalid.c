@@ -491,10 +491,9 @@ static void test_server_config_qos_expect_error(struct bt_bap_stream *stream)
 
 static void test_server_enable_expect_error(struct bt_bap_stream *stream)
 {
-	struct bt_audio_codec_data meta[] = {
+	const uint8_t meta[] = {
 		BT_AUDIO_CODEC_DATA(BT_AUDIO_METADATA_TYPE_STREAM_CONTEXT,
-			      (BT_AUDIO_CONTEXT_TYPE_RINGTONE & 0xFFU),
-			      ((BT_AUDIO_CONTEXT_TYPE_RINGTONE >> 8) & 0xFFU)),
+				    BT_BYTES_LIST_LE16(BT_AUDIO_CONTEXT_TYPE_RINGTONE)),
 	};
 	int err;
 
@@ -517,10 +516,9 @@ static void test_server_receiver_stop_ready_expect_error(struct bt_bap_stream *s
 
 static void test_server_update_metadata_expect_error(struct bt_bap_stream *stream)
 {
-	struct bt_audio_codec_data meta[] = {
+	const uint8_t meta[] = {
 		BT_AUDIO_CODEC_DATA(BT_AUDIO_METADATA_TYPE_STREAM_CONTEXT,
-			      (BT_AUDIO_CONTEXT_TYPE_RINGTONE & 0xFFU),
-			      ((BT_AUDIO_CONTEXT_TYPE_RINGTONE >> 8) & 0xFFU)),
+				    BT_BYTES_LIST_LE16(BT_AUDIO_CONTEXT_TYPE_RINGTONE)),
 	};
 	int err;
 

@@ -685,7 +685,7 @@ static void unicast_audio_update_inval(void)
 
 	param.stream = &unicast_client_streams[0];
 	param.meta = unicast_preset_16_2_1.codec_cfg.meta;
-	param.meta_count = unicast_preset_16_2_1.codec_cfg.meta_count;
+	param.meta_len = unicast_preset_16_2_1.codec_cfg.meta_len;
 
 	err = bt_cap_initiator_unicast_audio_update(NULL, 1);
 	if (err == 0) {
@@ -718,7 +718,7 @@ static void unicast_audio_update(void)
 
 	param.stream = &unicast_client_streams[0];
 	param.meta = unicast_preset_16_2_1.codec_cfg.meta;
-	param.meta_count = unicast_preset_16_2_1.codec_cfg.meta_count;
+	param.meta_len = unicast_preset_16_2_1.codec_cfg.meta_len;
 
 	UNSET_FLAG(flag_updated);
 
@@ -929,36 +929,6 @@ static inline void copy_unicast_stream_preset(struct unicast_stream *stream,
 	printk("named_preset %p\n", named_preset);
 	memcpy(&stream->qos, &named_preset->preset.qos, sizeof(stream->qos));
 	memcpy(&stream->codec_cfg, &named_preset->preset.codec_cfg, sizeof(stream->codec_cfg));
-
-#if CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_COUNT > 0 && CONFIG_BT_AUDIO_CODEC_MAX_DATA_LEN > 0
-	/* Need to update the `bt_data.data` pointer to the new value after copying the codec */
-	for (size_t i = 0U; i < ARRAY_SIZE(stream->codec_cfg.data); i++) {
-		const struct bt_audio_codec_data *preset_data =
-			&named_preset->preset.codec_cfg.data[i];
-		struct bt_audio_codec_data *data = &stream->codec_cfg.data[i];
-		const uint8_t data_len = preset_data->data.data_len;
-
-		data->data.data = data->value;
-		data->data.data_len = data_len;
-		memcpy(data->value, preset_data->data.data, data_len);
-	}
-#endif /* CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_COUNT > 0 && CONFIG_BT_AUDIO_CODEC_MAX_DATA_LEN > 0   \
-	*/
-
-#if CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_COUNT > 0 && CONFIG_BT_AUDIO_CODEC_MAX_DATA_LEN > 0
-	for (size_t i = 0U; i < ARRAY_SIZE(stream->codec_cfg.meta); i++) {
-		const struct bt_audio_codec_data *preset_data =
-			&named_preset->preset.codec_cfg.meta[i];
-		struct bt_audio_codec_data *data = &stream->codec_cfg.meta[i];
-		const uint8_t data_len = preset_data->data.data_len;
-
-		data->data.data = data->value;
-		data->data.data_len = data_len;
-		memcpy(data->value, preset_data->data.data, data_len);
-	}
-#endif /* CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_COUNT > 0 && CONFIG_BT_AUDIO_CODEC_MAX_DATA_LEN > \
-	* 0                                                                                        \
-	*/
 }
 
 static int cap_initiator_ac_create_unicast_group(const struct cap_initiator_ac_param *param,
@@ -1029,20 +999,32 @@ static int cap_initiator_ac_create_unicast_group(const struct cap_initiator_ac_p
 
 static int set_chan_alloc(enum bt_audio_location loc, struct bt_audio_codec_cfg *codec_cfg)
 {
-	for (size_t i = 0U; i < codec_cfg->data_count; i++) {
-		struct bt_audio_codec_data *data = &codec_cfg->data[i];
+	for (size_t i = 0U; i < codec_cfg->data_len;) {
+		const uint8_t len = codec_cfg->data[i++];
+		uint8_t value_len;
+		uint8_t *value;
+		uint8_t type;
 
-		/* Overwrite the location value */
-		if (data->data.type == BT_AUDIO_CODEC_CONFIG_LC3_CHAN_ALLOC) {
+		if (len == 0 || len > codec_cfg->data_len - i) {
+			/* Invalid len field */
+			return false;
+		}
+
+		type = codec_cfg->data[i++];
+		value = &codec_cfg->data[i];
+		value_len = len - sizeof(type);
+
+		if (type == BT_AUDIO_CODEC_CONFIG_LC3_CHAN_ALLOC) {
 			const uint32_t loc_32 = loc;
 
-			sys_put_le32(loc_32, data->value);
+			sys_put_le32(loc_32, value);
 
-			break;
+			return 0;
 		}
+		i += value_len;
 	}
 
-	return 0;
+	return -ENODATA;
 }
 
 static int cap_initiator_ac_cap_unicast_start(const struct cap_initiator_ac_param *param,

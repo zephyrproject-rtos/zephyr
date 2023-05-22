@@ -97,8 +97,8 @@ static struct bt_bap_stream_ops stream_ops = {
 	.sent = sent_cb
 };
 
-static struct bt_audio_codec_data valid_bis_codec_data =
-	BT_AUDIO_CODEC_DATA(BT_AUDIO_CODEC_CONFIG_LC3_FREQ, BT_AUDIO_CODEC_CONFIG_LC3_FREQ_16KHZ);
+static uint8_t valid_bis_codec_data[] = {BT_AUDIO_CODEC_DATA(
+	BT_AUDIO_CODEC_CONFIG_LC3_FREQ, BT_BYTES_LIST_LE16(BT_AUDIO_CODEC_CONFIG_LC3_FREQ_16KHZ))};
 
 static void broadcast_source_create_inval_reset_param(
 	struct bt_bap_broadcast_source_create_param *param,
@@ -110,8 +110,8 @@ static void broadcast_source_create_inval_reset_param(
 	struct bt_bap_broadcast_source_create_param create_param;
 
 	valid_stream_param.stream = &broadcast_source_streams[0];
-	valid_stream_param.data_count = 1U;
-	valid_stream_param.data = &valid_bis_codec_data;
+	valid_stream_param.data_len = ARRAY_SIZE(valid_bis_codec_data);
+	valid_stream_param.data = valid_bis_codec_data;
 
 	valid_subgroup_param.params_count = 1U;
 	valid_subgroup_param.params = &valid_stream_param;
@@ -154,15 +154,15 @@ static void broadcast_source_create_inval_stream_param(void)
 	broadcast_source_create_inval_reset_param(&create_param, &subgroup_param, &stream_param);
 
 	/* Initialize codec configuration data that is too large */
-	stream_param.data_count = CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_COUNT + 1;
+	stream_param.data_len = CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE + 1;
 
-	printk("Test bt_bap_broadcast_source_create with stream_param.data_count %zu\n",
-	       stream_param.data_count);
+	printk("Test bt_bap_broadcast_source_create with stream_param.data_len %zu\n",
+	       stream_param.data_len);
 	err = bt_bap_broadcast_source_create(&create_param, &broadcast_source);
 	if (err == 0) {
-		FAIL("bt_bap_broadcast_source_create with stream_param data count %u "
+		FAIL("bt_bap_broadcast_source_create with stream_param data len %u "
 		     "did not fail\n",
-		     stream_param.data_count);
+		     stream_param.data_len);
 		return;
 	}
 
@@ -181,22 +181,22 @@ static void broadcast_source_create_inval_stream_param(void)
 
 	broadcast_source_create_inval_reset_param(&create_param, &subgroup_param, &stream_param);
 
-	if (CONFIG_BT_AUDIO_CODEC_MAX_DATA_LEN < 255) {
-		struct bt_audio_codec_data bis_codec_data;
+	if (CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE < 255) {
+		uint8_t bis_codec_data[CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE + 1] = {0};
 
-		memcpy(&bis_codec_data, &valid_bis_codec_data, sizeof(valid_bis_codec_data));
+		memcpy(bis_codec_data, valid_bis_codec_data, ARRAY_SIZE(valid_bis_codec_data));
 
 		/* Set LTV data to invalid size */
-		bis_codec_data.data.data_len = CONFIG_BT_AUDIO_CODEC_MAX_DATA_LEN + 1;
-		stream_param.data = &bis_codec_data;
+		stream_param.data_len = CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE + 1;
+		stream_param.data = bis_codec_data;
 
 		printk("Test bt_bap_broadcast_source_create with CC LTV size %u\n",
-		       bis_codec_data.data.data_len);
+		       stream_param.data_len);
 		err = bt_bap_broadcast_source_create(&create_param, &broadcast_source);
 		if (err == 0) {
 			FAIL("bt_bap_broadcast_source_create with CC LTV size %u in stream_param "
 			     "did not fail\n",
-			     bis_codec_data.data.data_len);
+			     stream_param.data_len);
 			return;
 		}
 	}
@@ -215,14 +215,13 @@ static void broadcast_source_create_inval_subgroup_codec_param(void)
 	subgroup_param.codec_cfg =
 		memcpy(&codec_cfg, &preset_16_2_1.codec_cfg, sizeof(preset_16_2_1.codec_cfg));
 
-	codec_cfg.data_count = CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_COUNT + 1;
+	codec_cfg.data_len = CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE + 1;
 
-	printk("Test bt_bap_broadcast_source_create with codec.data_count %u\n",
-	       codec_cfg.data_count);
+	printk("Test bt_bap_broadcast_source_create with codec.data_len %zu\n", codec_cfg.data_len);
 	err = bt_bap_broadcast_source_create(&create_param, &broadcast_source);
 	if (err == 0) {
-		FAIL("bt_bap_broadcast_source_create with codec data count %zu did not fail\n",
-		     codec_cfg.data_count);
+		FAIL("bt_bap_broadcast_source_create with codec data len %zu did not fail\n",
+		     codec_cfg.data_len);
 		return;
 	}
 
@@ -230,53 +229,52 @@ static void broadcast_source_create_inval_subgroup_codec_param(void)
 	subgroup_param.codec_cfg =
 		memcpy(&codec_cfg, &preset_16_2_1.codec_cfg, sizeof(preset_16_2_1.codec_cfg));
 
-	codec_cfg.meta_count = CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_COUNT + 1;
+	codec_cfg.meta_len = CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_SIZE + 1;
 
-	printk("Test bt_bap_broadcast_source_create with codec.meta_count %u\n",
-	       codec_cfg.meta_count);
+	printk("Test bt_bap_broadcast_source_create with codec.meta_len %zu\n", codec_cfg.meta_len);
 	err = bt_bap_broadcast_source_create(&create_param, &broadcast_source);
 	if (err == 0) {
-		FAIL("bt_bap_broadcast_source_create with codec meta count %zu did not fail\n",
-		     codec_cfg.meta_count);
+		FAIL("bt_bap_broadcast_source_create with codec meta len %zu did not fail\n",
+		     codec_cfg.meta_len);
 		return;
 	}
 
-	if (CONFIG_BT_AUDIO_CODEC_MAX_DATA_LEN < 255) {
+	if (CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE < 255) {
 		broadcast_source_create_inval_reset_param(&create_param, &subgroup_param,
 							  &stream_param);
 		subgroup_param.codec_cfg = memcpy(&codec_cfg, &preset_16_2_1.codec_cfg,
 						  sizeof(preset_16_2_1.codec_cfg));
 
 		/* Set LTV data to invalid size */
-		codec_cfg.data[0].data.data_len = CONFIG_BT_AUDIO_CODEC_MAX_DATA_LEN + 1;
+		codec_cfg.data_len = CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE + 1;
 
 		printk("Test bt_bap_broadcast_source_create with CC LTV size %u\n",
-		       codec_cfg.data[0].data.data_len);
+		       codec_cfg.data_len);
 		err = bt_bap_broadcast_source_create(&create_param, &broadcast_source);
 		if (err == 0) {
 			FAIL("bt_bap_broadcast_source_create with CC LTV size %zu in "
 			     "subgroup_param did not fail\n",
-			     codec_cfg.data[0].data.data_len);
+			     codec_cfg.data_len);
 			return;
 		}
 	}
 
-	if (CONFIG_BT_AUDIO_CODEC_MAX_DATA_LEN < 255) {
+	if (CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_SIZE < 255) {
 		broadcast_source_create_inval_reset_param(&create_param, &subgroup_param,
 							  &stream_param);
 		subgroup_param.codec_cfg = memcpy(&codec_cfg, &preset_16_2_1.codec_cfg,
 						  sizeof(preset_16_2_1.codec_cfg));
 
 		/* Set LTV data to invalid size */
-		codec_cfg.meta[0].data.data_len = CONFIG_BT_AUDIO_CODEC_MAX_DATA_LEN + 1;
+		codec_cfg.meta_len = CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_SIZE + 1;
 
 		printk("Test bt_bap_broadcast_source_create with Meta LTV size %u\n",
-		       codec_cfg.meta[0].data.data_len);
+		       codec_cfg.meta_len);
 		err = bt_bap_broadcast_source_create(&create_param, &broadcast_source);
 		if (err == 0) {
 			FAIL("bt_bap_broadcast_source_create with meta LTV size %zu in "
 			     "subgroup_param did not fail\n",
-			     codec_cfg.meta[0].data.data_len);
+			     codec_cfg.meta_len);
 			return;
 		}
 	}
@@ -542,8 +540,8 @@ static void broadcast_source_create_inval(void)
 
 static int setup_broadcast_source(struct bt_bap_broadcast_source **source)
 {
-	struct bt_audio_codec_data bis_codec_data = BT_AUDIO_CODEC_DATA(
-		BT_AUDIO_CODEC_CONFIG_LC3_FREQ, BT_AUDIO_CODEC_CONFIG_LC3_FREQ_16KHZ);
+	uint8_t bis_codec_data[] = {3, BT_AUDIO_CODEC_CONFIG_LC3_FREQ,
+				    BT_BYTES_LIST_LE16(BT_AUDIO_CODEC_CONFIG_LC3_FREQ_16KHZ)};
 	struct bt_bap_broadcast_source_stream_param
 		stream_params[ARRAY_SIZE(broadcast_source_streams)];
 	struct bt_bap_broadcast_source_subgroup_param
@@ -558,8 +556,10 @@ static int setup_broadcast_source(struct bt_bap_broadcast_source **source)
 		stream_params[i].stream = &broadcast_source_streams[i];
 		bt_bap_stream_cb_register(stream_params[i].stream,
 					    &stream_ops);
-		stream_params[i].data_count = 1U;
-		stream_params[i].data = &bis_codec_data;
+#if CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE > 0
+		stream_params[i].data_len = ARRAY_SIZE(bis_codec_data);
+		stream_params[i].data = bis_codec_data;
+#endif /* CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE > 0 */
 	}
 
 	for (size_t i = 0U; i < ARRAY_SIZE(subgroup_params); i++) {
@@ -781,38 +781,38 @@ static void test_broadcast_source_reconfig_inval(struct bt_bap_broadcast_source 
 	/* Test invalid codec values */
 	memcpy(&codec_cfg, &preset_16_2_1.codec_cfg, sizeof(preset_16_2_1.codec_cfg));
 
-	codec_cfg.data_count = CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_COUNT + 1;
+	codec_cfg.data_len = CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE + 1;
 
-	printk("Test bt_bap_broadcast_source_reconfig with codec.data_count %u\n",
-	       codec_cfg.data_count);
+	printk("Test bt_bap_broadcast_source_reconfig with codec.data_len %zu\n",
+	       codec_cfg.data_len);
 	err = bt_bap_broadcast_source_reconfig(source, &codec_cfg, &preset_16_2_1.qos);
 	if (err == 0) {
-		FAIL("bt_bap_broadcast_source_reconfig with too high codec data count did not "
+		FAIL("bt_bap_broadcast_source_reconfig with too high codec data len did not "
 		     "fail\n");
 		return;
 	}
 
 	memcpy(&codec_cfg, &preset_16_2_1.codec_cfg, sizeof(preset_16_2_1.codec_cfg));
 
-	codec_cfg.meta_count = CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_COUNT + 1;
+	codec_cfg.meta_len = CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_SIZE + 1;
 
-	printk("Test bt_bap_broadcast_source_reconfig with codec.meta_count %u\n",
-	       codec_cfg.meta_count);
+	printk("Test bt_bap_broadcast_source_reconfig with codec.meta_len %zu\n",
+	       codec_cfg.meta_len);
 	err = bt_bap_broadcast_source_reconfig(source, &codec_cfg, &preset_16_2_1.qos);
 	if (err == 0) {
-		FAIL("bt_bap_broadcast_source_reconfig with too high codec meta count did not "
+		FAIL("bt_bap_broadcast_source_reconfig with too high codec meta len did not "
 		     "fail\n");
 		return;
 	}
 
 	memcpy(&codec_cfg, &preset_16_2_1.codec_cfg, sizeof(preset_16_2_1.codec_cfg));
 
-	if (CONFIG_BT_AUDIO_CODEC_MAX_DATA_LEN < 255) {
+	if (CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE < 255) {
 		/* Set LTV data to invalid size */
-		codec_cfg.data[0].data.data_len = CONFIG_BT_AUDIO_CODEC_MAX_DATA_LEN + 1;
+		codec_cfg.data_len = CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE + 1;
 
 		printk("Test bt_bap_broadcast_source_reconfig with CC LTV size %u\n",
-		       codec_cfg.data[0].data.data_len);
+		       codec_cfg.data_len);
 		err = bt_bap_broadcast_source_reconfig(source, &codec_cfg, &preset_16_2_1.qos);
 		if (err == 0) {
 			FAIL("bt_bap_broadcast_source_reconfig with too large CC LTV did not "
@@ -823,12 +823,12 @@ static void test_broadcast_source_reconfig_inval(struct bt_bap_broadcast_source 
 		memcpy(&codec_cfg, &preset_16_2_1.codec_cfg, sizeof(preset_16_2_1.codec_cfg));
 	}
 
-	if (CONFIG_BT_AUDIO_CODEC_MAX_DATA_LEN < 255) {
+	if (CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_SIZE < 255) {
 		/* Set LTV data to invalid size */
-		codec_cfg.meta[0].data.data_len = CONFIG_BT_AUDIO_CODEC_MAX_DATA_LEN + 1;
+		codec_cfg.meta_len = CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_SIZE + 1;
 
 		printk("Test bt_bap_broadcast_source_reconfig with meta LTV size %u\n",
-		       codec_cfg.meta[0].data.data_len);
+		       codec_cfg.meta_len);
 		err = bt_bap_broadcast_source_reconfig(source, &codec_cfg, &preset_16_2_1.qos);
 		if (err == 0) {
 			FAIL("bt_bap_broadcast_source_reconfig with too large meta LTV did not "
@@ -1101,8 +1101,7 @@ static int stop_extended_adv(struct bt_le_ext_adv *adv)
 
 static void test_main(void)
 {
-	struct bt_audio_codec_data new_metadata[1] =
-		BT_AUDIO_CODEC_LC3_CONFIG_META(BT_AUDIO_CONTEXT_TYPE_ALERTS);
+	uint8_t new_metadata[] = BT_AUDIO_CODEC_CFG_LC3_META(BT_AUDIO_CONTEXT_TYPE_ALERTS);
 	struct bt_bap_broadcast_source *source;
 	struct bt_le_ext_adv *adv;
 	int err;

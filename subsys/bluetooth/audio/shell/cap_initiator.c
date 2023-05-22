@@ -392,7 +392,7 @@ static int cmd_cap_initiator_unicast_update(const struct shell *sh, size_t argc,
 			}
 
 			params[count].meta = uni_stream->codec_cfg.meta;
-			params[count].meta_count = uni_stream->codec_cfg.meta_count;
+			params[count].meta_len = uni_stream->codec_cfg.meta_len;
 
 			count++;
 		}
@@ -434,7 +434,7 @@ static int cmd_cap_initiator_unicast_update(const struct shell *sh, size_t argc,
 			}
 
 			params[count].meta = uni_stream->codec_cfg.meta;
-			params[count].meta_count = uni_stream->codec_cfg.meta_count;
+			params[count].meta_len = uni_stream->codec_cfg.meta_len;
 
 			count++;
 		}
@@ -1048,13 +1048,13 @@ static int cap_ac_broadcast(const struct shell *sh, size_t argc, char **argv,
 {
 	/* TODO: Use CAP API when the CAP shell has broadcast support */
 	struct bt_bap_broadcast_source_stream_param stream_params[BAP_UNICAST_AC_MAX_SRC] = {0};
-	struct bt_audio_codec_data stereo_data =
+	uint8_t stereo_data[] = {
 		BT_AUDIO_CODEC_DATA(BT_AUDIO_CODEC_CONFIG_LC3_CHAN_ALLOC,
-				    BT_AUDIO_LOCATION_FRONT_RIGHT | BT_AUDIO_LOCATION_FRONT_LEFT);
-	struct bt_audio_codec_data right_data = BT_AUDIO_CODEC_DATA(
-		BT_AUDIO_CODEC_CONFIG_LC3_CHAN_ALLOC, BT_AUDIO_LOCATION_FRONT_RIGHT);
-	struct bt_audio_codec_data left_data = BT_AUDIO_CODEC_DATA(
-		BT_AUDIO_CODEC_CONFIG_LC3_CHAN_ALLOC, BT_AUDIO_LOCATION_FRONT_LEFT);
+				    BT_AUDIO_LOCATION_FRONT_RIGHT | BT_AUDIO_LOCATION_FRONT_LEFT)};
+	uint8_t right_data[] = {BT_AUDIO_CODEC_DATA(BT_AUDIO_CODEC_CONFIG_LC3_CHAN_ALLOC,
+						    BT_AUDIO_LOCATION_FRONT_RIGHT)};
+	uint8_t left_data[] = {BT_AUDIO_CODEC_DATA(BT_AUDIO_CODEC_CONFIG_LC3_CHAN_ALLOC,
+						   BT_AUDIO_LOCATION_FRONT_LEFT)};
 	struct bt_bap_broadcast_source_subgroup_param subgroup_param = {0};
 	struct bt_bap_broadcast_source_create_param create_param = {0};
 	const struct named_lc3_preset *named_preset;
@@ -1083,14 +1083,16 @@ static int cap_ac_broadcast(const struct shell *sh, size_t argc, char **argv,
 
 	for (size_t i = 0U; i < param->stream_cnt; i++) {
 		stream_params[i].stream = &broadcast_source_streams[i].stream.bap_stream;
-		stream_params[i].data_count = 1U;
 
 		if (param->stream_cnt == 1U) {
-			stream_params[i].data = &stereo_data;
+			stream_params[i].data_len = ARRAY_SIZE(stereo_data);
+			stream_params[i].data = stereo_data;
 		} else if (i == 0U) {
-			stream_params[i].data = &left_data;
+			stream_params[i].data_len = ARRAY_SIZE(left_data);
+			stream_params[i].data = left_data;
 		} else if (i == 1U) {
-			stream_params[i].data = &right_data;
+			stream_params[i].data_len = ARRAY_SIZE(right_data);
+			stream_params[i].data = right_data;
 		}
 	}
 
