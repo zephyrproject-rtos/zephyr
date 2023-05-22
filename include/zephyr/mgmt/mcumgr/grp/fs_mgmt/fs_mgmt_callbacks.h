@@ -19,6 +19,21 @@ extern "C" {
  * @{
  */
 
+/** The type of operation that is being requested for a given file access callback. */
+enum fs_mgmt_file_access_types {
+	/** Access to read file (file upload). */
+	FS_MGMT_FILE_ACCESS_READ,
+
+	/** Access to write file (file download). */
+	FS_MGMT_FILE_ACCESS_WRITE,
+
+	/** Access to get status of file. */
+	FS_MGMT_FILE_ACCESS_STATUS,
+
+	/** Access to calculate hash or checksum of file. */
+	FS_MGMT_FILE_ACCESS_HASH_CHECKSUM,
+};
+
 /**
  * Structure provided in the #MGMT_EVT_OP_FS_MGMT_FILE_ACCESS notification callback: This callback
  * function is used to notify the application about a pending file read/write request and to
@@ -26,8 +41,8 @@ extern "C" {
  * #MGMT_ERR_EOK, if one returns an error then access will be denied.
  */
 struct fs_mgmt_file_access {
-	/** True if the request is for uploading data to the file, otherwise false */
-	bool upload;
+	/** Specifies the type of the operation that is being requested. */
+	enum fs_mgmt_file_access_types access;
 
 	/**
 	 * Path and filename of file be accesses, note that this can be changed by handlers to
