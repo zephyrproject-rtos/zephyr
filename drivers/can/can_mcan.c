@@ -500,7 +500,7 @@ static void can_mcan_tc_event_handler(const struct device *dev)
 			return;
 		}
 
-		tx_idx = tx_event.mm.idx;
+		tx_idx = tx_event.mm;
 
 		/* Acknowledge TX event */
 		err = can_mcan_write_reg(dev, CAN_MCAN_TXEFA, event_idx);
@@ -817,7 +817,6 @@ int can_mcan_send(const struct device *dev, const struct can_frame *frame, k_tim
 #endif /* !CONFIG_CAN_FD_MODE */
 		.efc = 1U,
 	};
-	struct can_mcan_mm mm;
 	uint32_t put_idx;
 	uint32_t reg;
 	int err;
@@ -894,10 +893,7 @@ int can_mcan_send(const struct device *dev, const struct can_frame *frame, k_tim
 	k_mutex_lock(&data->tx_mtx, K_FOREVER);
 
 	put_idx = FIELD_GET(CAN_MCAN_TXFQS_TFQPI, reg);
-
-	mm.idx = put_idx;
-	mm.cnt = data->mm.cnt++;
-	tx_hdr.mm = mm;
+	tx_hdr.mm = put_idx;
 
 	if ((frame->flags & CAN_FRAME_IDE) != 0U) {
 		tx_hdr.ext_id = frame->id;

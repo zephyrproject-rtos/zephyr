@@ -607,11 +607,6 @@ struct can_mcan_rx_fifo {
 	};
 } __packed __aligned(4);
 
-struct can_mcan_mm {
-	uint8_t idx: 5;
-	uint8_t cnt: 3;
-} __packed;
-
 struct can_mcan_tx_buffer_hdr {
 	union {
 		struct {
@@ -632,7 +627,7 @@ struct can_mcan_tx_buffer_hdr {
 	uint8_t fdf: 1;  /* FD Format */
 	uint8_t res2: 1; /* Reserved */
 	uint8_t efc: 1;  /* Event FIFO control (Store Tx events) */
-	struct can_mcan_mm mm;	  /* Message marker */
+	uint8_t mm;      /* Message marker */
 } __packed __aligned(4);
 
 struct can_mcan_tx_buffer {
@@ -657,7 +652,7 @@ struct can_mcan_tx_event_fifo {
 	uint8_t brs: 1; /* Bit Rate Switch */
 	uint8_t fdf: 1; /* FD Format */
 	uint8_t et: 2;	/* Event type */
-	struct can_mcan_mm mm;	 /* Message marker */
+	uint8_t mm;	/* Message marker */
 } __packed __aligned(4);
 
 #define CAN_MCAN_FCE_DISABLE	0x0
@@ -730,7 +725,6 @@ struct can_mcan_data {
 	uint16_t ext_filt_fd_frame;
 	uint16_t ext_filt_rtr;
 	uint16_t ext_filt_rtr_mask;
-	struct can_mcan_mm mm;
 	bool started;
 #ifdef CONFIG_CAN_FD_MODE
 	bool fd;
