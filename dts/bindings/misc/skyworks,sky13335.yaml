@@ -1,0 +1,17 @@
+# Copyright (c) 2023, Caspar Friedrich <c.s.w.friedrich@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: Output selectors for Skyworks SKY13335 GaAs SPDT Switch
+
+compatible: "skyworks,sky13335"
+
+include: [base.yaml]
+
+properties:
+  vctl1-gpios:
+    type: phandle-array
+    description: DC control voltage input. Active high.
+
+  vctl2-gpios:
+    type: phandle-array
+    description: DC control voltage input. Active high.
