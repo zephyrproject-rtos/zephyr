@@ -12,3 +12,11 @@
 		zephyr,shell-uart = &uart0;
 	};
 };
+
+&uart0 {
+	status = "okay";
+};
+
+&uart1 {
+	status = "okay";
+};
