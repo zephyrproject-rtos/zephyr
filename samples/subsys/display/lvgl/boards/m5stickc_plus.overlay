@@ -1,0 +1,43 @@
+/*
+ * Copyright (c) 2023 M5Stack
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+ / {
+	chosen {
+		zephyr,display = &st7789v;
+	};
+};
+
+&spi3 {
+	st7789v: st7789v@0 {
+		compatible = "sitronix,st7789v";
+		spi-max-frequency = <20000000>;
+		reg = <0>;
+		cmd-data-gpios = <&gpio0 23 GPIO_ACTIVE_LOW>;
+		reset-gpios = <&gpio0 18 GPIO_ACTIVE_LOW>;
+		vcom = <0x28>;
+		gctrl = <0x35>;
+		vrhs = <0x10>;
+		vdvs = <0x20>;
+
+		/* Landscape */
+		width = <240>;
+		height = <135>;
+		x-offset = <40>;
+		y-offset = <52>;
+		mdac = <0xA8>;
+
+		gamma = <0x01>;
+		colmod = <0x55>;
+		lcm = <0x0C>;
+		porch-param = [0C 0C 00 33 33];
+		cmd2en-param = [5A 69 02 01];
+		pwctrl1-param = [A4 A1];
+		pvgam-param = [D0 00 02 07 0A 28 32 44 42 06 0E 12 14 17];
+		nvgam-param = [D0 00 02 07 0A 28 31 54 47 0E 1C 17 1B 1E];
+		ram-param = [00 E0];
+		rgb-param = [CD 08 14];
+	};
+};
