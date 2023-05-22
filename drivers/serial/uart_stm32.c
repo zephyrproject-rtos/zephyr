@@ -56,6 +56,13 @@ LOG_MODULE_REGISTER(uart_stm32, CONFIG_UART_LOG_LEVEL);
 #define HAS_LPUART_1 (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(lpuart1), \
 					 st_stm32_lpuart, okay))
 
+/* Available everywhere except l1, f1, f2, f4. */
+#ifdef USART_CR3_DEM
+#define HAS_DRIVER_ENABLE 1
+#else
+#define HAS_DRIVER_ENABLE 0
+#endif
+
 #if HAS_LPUART_1
 #ifdef USART_PRESC_PRESCALER
 uint32_t lpuartdiv_calc(const uint64_t clock_rate, const uint16_t presc_idx,
@@ -256,6 +263,27 @@ static inline uint32_t uart_stm32_get_hwctrl(const struct device *dev)
 	return LL_USART_GetHWFlowCtrl(config->usart);
 }
 
+#if HAS_DRIVER_ENABLE
+static inline void uart_stm32_set_driver_enable(const struct device *dev,
+						bool driver_enable)
+{
+	const struct uart_stm32_config *config = dev->config;
+
+	if (driver_enable) {
+		LL_USART_EnableDEMode(config->usart);
+	} else {
+		LL_USART_DisableDEMode(config->usart);
+	}
+}
+
+static inline bool uart_stm32_get_driver_enable(const struct device *dev)
+{
+	const struct uart_stm32_config *config = dev->config;
+
+	return LL_USART_IsEnabledDEMode(config->usart);
+}
+#endif
+
 static inline uint32_t uart_stm32_cfg2ll_parity(enum uart_config_parity parity)
 {
 	switch (parity) {
@@ -388,7 +416,7 @@ static inline enum uart_config_data_bits uart_stm32_ll2cfg_databits(uint32_t db,
 /**
  * @brief  Get LL hardware flow control define from
  *         Zephyr hardware flow control option.
- * @note   Supports only UART_CFG_FLOW_CTRL_RTS_CTS.
+ * @note   Supports only UART_CFG_FLOW_CTRL_RTS_CTS and UART_CFG_FLOW_CTRL_RS485.
  * @param  fc: Zephyr hardware flow control option.
  * @retval LL_USART_HWCONTROL_RTS_CTS, or LL_USART_HWCONTROL_NONE.
  */
@@ -396,6 +424,9 @@ static inline uint32_t uart_stm32_cfg2ll_hwctrl(enum uart_config_flow_control fc
 {
 	if (fc == UART_CFG_FLOW_CTRL_RTS_CTS) {
 		return LL_USART_HWCONTROL_RTS_CTS;
+	} else if (fc == UART_CFG_FLOW_CTRL_RS485) {
+		/* Driver Enable is handled separately */
+		return LL_USART_HWCONTROL_NONE;
 	}
 
 	return LL_USART_HWCONTROL_NONE;
@@ -428,6 +459,9 @@ static int uart_stm32_configure(const struct device *dev,
 	const uint32_t databits = uart_stm32_cfg2ll_databits(cfg->data_bits,
 							     cfg->parity);
 	const uint32_t flowctrl = uart_stm32_cfg2ll_hwctrl(cfg->flow_ctrl);
+#if HAS_DRIVER_ENABLE
+	bool driver_enable = cfg->flow_ctrl == UART_CFG_FLOW_CTRL_RS485;
+#endif
 
 	/* Hardware doesn't support mark or space parity */
 	if ((cfg->parity == UART_CFG_PARITY_MARK) ||
@@ -473,12 +507,16 @@ static int uart_stm32_configure(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	/* Driver supports only RTS CTS flow control */
-	if (cfg->flow_ctrl != UART_CFG_FLOW_CTRL_NONE) {
-		if (!IS_UART_HWFLOW_INSTANCE(config->usart) ||
-		    UART_CFG_FLOW_CTRL_RTS_CTS != cfg->flow_ctrl) {
-			return -ENOTSUP;
-		}
+	/* Driver supports only RTS/CTS and RS485 flow control */
+	if (!(cfg->flow_ctrl == UART_CFG_FLOW_CTRL_NONE
+		|| (cfg->flow_ctrl == UART_CFG_FLOW_CTRL_RTS_CTS &&
+			IS_UART_HWFLOW_INSTANCE(config->usart))
+#if HAS_DRIVER_ENABLE
+		|| (cfg->flow_ctrl == UART_CFG_FLOW_CTRL_RS485 &&
+			IS_UART_DRIVER_ENABLE_INSTANCE(config->usart))
+#endif
+		)) {
+		return -ENOTSUP;
 	}
 
 	LL_USART_Disable(config->usart);
@@ -498,6 +536,12 @@ static int uart_stm32_configure(const struct device *dev,
 	if (flowctrl != uart_stm32_get_hwctrl(dev)) {
 		uart_stm32_set_hwctrl(dev, flowctrl);
 	}
+
+#if HAS_DRIVER_ENABLE
+	if (driver_enable != uart_stm32_get_driver_enable(dev)) {
+		uart_stm32_set_driver_enable(dev, driver_enable);
+	}
+#endif
 
 	if (cfg->baudrate != data->baud_rate) {
 		uart_stm32_set_baudrate(dev, cfg->baudrate);
@@ -521,6 +565,11 @@ static int uart_stm32_config_get(const struct device *dev,
 		uart_stm32_get_databits(dev), uart_stm32_get_parity(dev));
 	cfg->flow_ctrl = uart_stm32_ll2cfg_hwctrl(
 		uart_stm32_get_hwctrl(dev));
+#if HAS_DRIVER_ENABLE
+	if (uart_stm32_get_driver_enable(dev)) {
+		cfg->flow_ctrl = UART_CFG_FLOW_CTRL_RS485;
+	}
+#endif
 	return 0;
 }
 #endif /* CONFIG_UART_USE_RUNTIME_CONFIGURE */
@@ -1705,14 +1754,14 @@ static int uart_stm32_init(const struct device *dev)
 	}
 #endif
 
-#ifdef USART_CR3_DEM
+#if HAS_DRIVER_ENABLE
 	if (config->de_enable) {
 		if (!IS_UART_DRIVER_ENABLE_INSTANCE(config->usart)) {
 			LOG_ERR("%s does not support driver enable", dev->name);
 			return -EINVAL;
 		}
 
-		LL_USART_EnableDEMode(config->usart);
+		uart_stm32_set_driver_enable(dev, true);
 		LL_USART_SetDEAssertionTime(config->usart, config->de_assert_time);
 		LL_USART_SetDEDeassertionTime(config->usart, config->de_deassert_time);
 
