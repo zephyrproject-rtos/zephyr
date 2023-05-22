@@ -130,3 +130,6 @@ ZTEST(common_1cpu, test_nested_irq_offload)
 
 	k_thread_abort(&offload_thread);
 }
+
+extern void *common_setup(void);
+ZTEST_SUITE(irq_offload, NULL, common_setup, NULL, NULL, NULL);
