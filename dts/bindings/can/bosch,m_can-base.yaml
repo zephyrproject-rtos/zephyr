@@ -1,6 +1,6 @@
 description: Bosch M_CAN CAN-FD controller base
 
-compatible: "bosch,m_can-base"
+include: [can-fd-controller.yaml]
 
 properties:
   bosch,mram-cfg:
