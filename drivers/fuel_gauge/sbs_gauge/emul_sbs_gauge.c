@@ -141,7 +141,8 @@ static int emul_sbs_gauge_buffer_read(const struct emul *target, int reg, char *
 		break;
 
 	case SBS_GAUGE_CMD_DEVICE_CHEMISTRY:
-		dev_chem->device_chemistry_length = sizeof(chem);
+		dev_chem->device_chemistry_length = MIN(sizeof(chem),
+							sizeof(dev_chem->device_chemistry));
 		memcpy(dev_chem->device_chemistry, chem, dev_chem->device_chemistry_length);
 		break;
 	default:
