@@ -365,10 +365,14 @@ config BT_PASSKEY_KEYPRESS
 	  Passkey Entry during pairing.
 
 config BT_PRIVACY
-	bool "Privacy Feature"
+	bool "Device privacy"
 	help
-	  Enable local Privacy Feature support. This makes it possible
-	  to use Resolvable Private Addresses (RPAs).
+	  Enable privacy for the local device. This makes the device use Resolvable
+	  Private Addresses (RPAs) by default.
+
+	  Note:
+	  Establishing connections as a directed advertiser, or to a directed
+	  advertiser is only possible if the controller also supports privacy.
 
 config BT_PRIVACY_RANDOMIZE_IR
 	bool "Randomize identity root for fallback identities"
