@@ -81,6 +81,12 @@ config OPENTHREAD_CSL_AUTO_SYNC
 	bool "CSL autosync"
 	default y if OPENTHREAD_CSL_RECEIVER
 
+config OPENTHREAD_CSL_REQUEST_TIME_AHEAD
+	int "CSL transmitter request time ahead"
+	default 2000
+	help
+	  Defines how many microseconds ahead should MAC deliver a CSL frame to the sub-MAC layer.
+
 config OPENTHREAD_CSL_RECEIVE_TIME_AHEAD
 	int "CSL receiver wake up margin in microseconds"
 	default 5000
