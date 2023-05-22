@@ -81,6 +81,7 @@ class Device(_Symbol):
     Represents information about a device object and its references to other objects.
     """
     required_ld_consts = [
+        "_DEVICE_STRUCT_API_OFFSET",
         "_DEVICE_STRUCT_HANDLES_OFFSET",
         "_DEVICE_STRUCT_PM_OFFSET"
     ]
@@ -91,6 +92,11 @@ class Device(_Symbol):
         self.handle = None
         self.ordinals = None
         self.pm = None
+        self.api = None
+
+        # Pointer to device API
+        api_offset = self.elf.ld_consts['_DEVICE_STRUCT_API_OFFSET']
+        self.api = self._data_native_read(api_offset)
 
         # Devicetree dependencies, injected dependencies, supported devices
         self.devs_depends_on = set()
@@ -156,6 +162,14 @@ class ZephyrElf:
             if (start <= addr) and (addr + len) <= end:
                 offset = addr - section['sh_addr']
                 return bytes(section.data()[offset:offset + len])
+
+    def find_section_by_address(self, address):
+        for section in self.elf.iter_sections():
+            start = section['sh_addr']
+            end = start + section['sh_size']
+            if start <= address < end:
+                return section
+        return None
 
     def _symbols_find_value(self, names):
         symbols = {}
