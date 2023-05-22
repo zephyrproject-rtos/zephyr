@@ -31,6 +31,7 @@ struct ll_conn_iso_stream *ll_conn_iso_stream_get_by_acl(struct ll_conn *conn,
 							 uint16_t *cis_iter);
 struct ll_conn_iso_stream *ll_conn_iso_stream_get_by_group(struct ll_conn_iso_group *cig,
 							   uint16_t *handle_iter);
+struct ll_conn_iso_stream *ll_conn_iso_stream_get_by_id(uint8_t cis_id);
 
 void ull_conn_iso_start(struct ll_conn *acl, uint16_t cis_handle,
 			uint32_t ticks_at_expire, uint32_t remainder,
