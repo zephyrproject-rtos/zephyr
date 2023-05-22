@@ -583,11 +583,8 @@ static void *irq_handlers[] = {
 #endif
 	};
 
-#define DMA_ESP32_IRQ_NUM(node, prop, idx) DT_PROP_BY_IDX(node, interrupts, idx),
-
 #define DMA_ESP32_INIT(idx)                                                                        \
-	static int irq_numbers[] = {                                                               \
-		DT_INST_FOREACH_PROP_ELEM(idx, interrupts, DMA_ESP32_IRQ_NUM)};                    \
+	static int irq_numbers[] = DT_INST_PROP(idx, interrupts);                                  \
 	static struct dma_esp32_config dma_config_##idx = {                                        \
 		.irq_src = irq_numbers,                                                            \
 		.irq_size = ARRAY_SIZE(irq_numbers),                                               \
