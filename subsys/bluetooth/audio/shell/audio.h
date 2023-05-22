@@ -147,36 +147,41 @@ static inline void print_qos(const struct shell *sh, const struct bt_audio_codec
 #endif /* CONFIG_BT_BAP_BROADCAST_SOURCE || CONFIG_BT_BAP_UNICAST */
 }
 
-static void print_ltv_elem(const struct shell *sh, const char *str, uint8_t type, uint8_t value_len,
-			   const uint8_t *value, size_t cnt)
+struct print_ltv_info {
+	const struct shell *sh;
+	const char *str;
+	size_t cnt;
+};
+
+static bool print_ltv_elem(struct bt_data *data, void *user_data)
 {
-	shell_print(sh, "%s #%zu: type 0x%02x value_len %u", str, cnt, type, value_len);
-	shell_hexdump(sh, value, value_len);
+	struct print_ltv_info *ltv_info = user_data;
+
+	shell_print(ltv_info->sh, "%s #%zu: type 0x%02x value_len %u", ltv_info->str, ltv_info->cnt,
+		    data->type, data->data_len);
+	shell_hexdump(ltv_info->sh, data->data, data->data_len);
+
+	ltv_info->cnt++;
+
+	return true;
 }
 
 static void print_ltv_array(const struct shell *sh, const char *str, const uint8_t *ltv_data,
 			    size_t ltv_data_len)
 {
-	size_t cnt = 0U;
+	struct print_ltv_info ltv_info = {
+		.sh = sh,
+		.str = str,
+		.cnt = 0U,
+	};
 
-	for (size_t i = 0U; i < ltv_data_len;) {
-		const uint8_t len = ltv_data[i++];
-		const uint8_t type = ltv_data[i++];
-		const uint8_t *value = &ltv_data[i];
-		const uint8_t value_len = len - sizeof(type);
-
-		print_ltv_elem(sh, str, type, value_len, value, cnt++);
-		/* Since we are incrementing i by the value_len, we don't need to increment it
-		 * further in the `for` statement
-		 */
-		i += value_len;
-	}
+	bt_audio_data_parse(ltv_data, ltv_data_len, print_ltv_elem, &ltv_info);
 }
 
 static inline void print_codec_cap(const struct shell *sh,
 				   const struct bt_audio_codec_cap *codec_cap)
 {
-	shell_print(sh, "codec id 0x%02x cid 0x%04x vid 0x%04x count %u", codec_cap->id,
+	shell_print(sh, "codec cap id 0x%02x cid 0x%04x vid 0x%04x count %u", codec_cap->id,
 		    codec_cap->cid, codec_cap->vid, codec_cap->data_len);
 
 #if CONFIG_BT_AUDIO_CODEC_CAP_MAX_DATA_SIZE > 0
@@ -195,26 +200,20 @@ static inline void print_codec_cap(const struct shell *sh,
 static inline void print_codec_cfg(const struct shell *sh,
 				   const struct bt_audio_codec_cfg *codec_cfg)
 {
-	shell_print(sh, "codec cfg id 0x%02x cid 0x%04x vid 0x%04x", codec_cfg->id, codec_cfg->cid,
-		    codec_cfg->vid);
+	shell_print(sh, "codec cfg id 0x%02x cid 0x%04x vid 0x%04x count %u", codec_cfg->id,
+		    codec_cfg->cid, codec_cfg->vid, codec_cfg->data_len);
 
-#if CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_COUNT > 0
-	shell_print(sh, "data_count %u", codec_cfg->data_count);
-	for (size_t i = 0U; i < codec_cfg->data_count; i++) {
-		shell_print(sh, "data #%u: type 0x%02x len %u", i, codec_cfg->data[i].data.type,
-			    codec_cfg->data[i].data.data_len);
-		shell_hexdump(sh, codec_cfg->data[i].data.data, codec_cfg->data[i].data.data_len);
+#if CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE > 0
+	if (codec_cfg->id == BT_AUDIO_CODEC_LC3_ID) {
+		print_ltv_array(sh, "data", codec_cfg->data, codec_cfg->data_len);
+	} else { /* If not LC3, we cannot assume it's LTV */
+		shell_hexdump(sh, codec_cfg->data, codec_cfg->data_len);
 	}
-#endif /* CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_COUNT > 0 */
+#endif /* CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE > 0 */
 
-#if CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_COUNT > 0
-	shell_print(sh, "meta_count %u", codec_cfg->data_count);
-	for (size_t i = 0U; i < codec_cfg->meta_count; i++) {
-		shell_print(sh, "meta #%u: type 0x%02x len %u", i, codec_cfg->meta[i].data.type,
-			    codec_cfg->meta[i].data.data_len);
-		shell_hexdump(sh, codec_cfg->meta[i].data.data, codec_cfg->meta[i].data.data_len);
-	}
-#endif /* CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_COUNT > 0 */
+#if CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_SIZE > 0
+	print_ltv_array(sh, "meta", codec_cfg->meta, codec_cfg->meta_len);
+#endif /* CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_SIZE > 0 */
 }
 
 #if defined(CONFIG_BT_BAP_BROADCAST_SOURCE)
@@ -252,19 +251,9 @@ static inline void print_base(const struct shell *sh, const struct bt_bap_base *
 			shell_print(sh, "BIS[%d] index 0x%02x", j, bis_data->index);
 			bis_indexes[index_count++] = bis_data->index;
 
-#if CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_COUNT > 0
-			for (size_t k = 0U; k < bis_data->data_count; k++) {
-				const struct bt_audio_codec_data *codec_data;
-
-				codec_data = &bis_data->data[k];
-
-				shell_print(sh, "data #%u: type 0x%02x len %u", k,
-					    codec_data->data.type, codec_data->data.data_len);
-				shell_hexdump(sh, codec_data->data.data,
-					      codec_data->data.data_len -
-						      sizeof(codec_data->data.type));
-			}
-#endif /* CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_COUNT > 0 */
+#if CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE > 0
+			shell_hexdump(sh, bis_data->data, bis_data->data_len);
+#endif /* CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE > 0 */
 		}
 	}
 
@@ -289,37 +278,6 @@ static inline void copy_unicast_stream_preset(struct shell_stream *stream,
 {
 	memcpy(&stream->qos, &named_preset->preset.qos, sizeof(stream->qos));
 	memcpy(&stream->codec_cfg, &named_preset->preset.codec_cfg, sizeof(stream->codec_cfg));
-
-#if CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_COUNT > 0 && CONFIG_BT_AUDIO_CODEC_MAX_DATA_LEN > 0
-	/* Need to update the `bt_data.data` pointer to the new value after copying the codec */
-	for (size_t i = 0U; i < ARRAY_SIZE(stream->codec_cfg.data); i++) {
-		const struct bt_audio_codec_data *preset_data =
-			&named_preset->preset.codec_cfg.data[i];
-		struct bt_audio_codec_data *data = &stream->codec_cfg.data[i];
-		const uint8_t data_len = preset_data->data.data_len;
-
-		data->data.data = data->value;
-		data->data.data_len = data_len;
-		memcpy(data->value, preset_data->data.data, data_len);
-	}
-#endif /* CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_COUNT > 0 &&                                          \
-	* CONFIG_BT_AUDIO_CODEC_MAX_DATA_LEN > 0                                                   \
-	*/
-
-#if CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_COUNT > 0 && CONFIG_BT_AUDIO_CODEC_MAX_DATA_LEN > 0
-	for (size_t i = 0U; i < ARRAY_SIZE(stream->codec_cfg.meta); i++) {
-		const struct bt_audio_codec_data *preset_data =
-			&named_preset->preset.codec_cfg.meta[i];
-		struct bt_audio_codec_data *data = &stream->codec_cfg.meta[i];
-		const uint8_t data_len = preset_data->data.data_len;
-
-		data->data.data = data->value;
-		data->data.data_len = data_len;
-		memcpy(data->value, preset_data->data.data, data_len);
-	}
-#endif /* CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_COUNT > 0 &&                                      \
-	* CONFIG_BT_AUDIO_CODEC_MAX_DATA_LEN > 0                                                   \
-	*/
 }
 
 static inline void copy_broadcast_source_preset(struct broadcast_source *source,
@@ -327,73 +285,28 @@ static inline void copy_broadcast_source_preset(struct broadcast_source *source,
 {
 	memcpy(&source->qos, &named_preset->preset.qos, sizeof(source->qos));
 	memcpy(&source->codec_cfg, &named_preset->preset.codec_cfg, sizeof(source->codec_cfg));
-
-#if CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_COUNT > 0 && CONFIG_BT_AUDIO_CODEC_MAX_DATA_LEN > 0
-	/* Need to update the `bt_data.data` pointer to the new value after copying the codec */
-	for (size_t i = 0U; i < ARRAY_SIZE(source->codec_cfg.data); i++) {
-		const struct bt_audio_codec_data *preset_data =
-			&named_preset->preset.codec_cfg.data[i];
-		struct bt_audio_codec_data *data = &source->codec_cfg.data[i];
-		const uint8_t data_len = preset_data->data.data_len;
-
-		data->data.data = data->value;
-		data->data.data_len = data_len;
-		memcpy(data->value, preset_data->data.data, data_len);
-	}
-#endif /* CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_COUNT > 0 && CONFIG_BT_AUDIO_CODEC_MAX_DATA_LEN > \
-	* 0                                                                                        \
-	*/
-
-#if CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_COUNT > 0 && CONFIG_BT_AUDIO_CODEC_MAX_DATA_LEN > 0
-	for (size_t i = 0U; i < ARRAY_SIZE(source->codec_cfg.meta); i++) {
-		const struct bt_audio_codec_data *preset_data =
-			&named_preset->preset.codec_cfg.meta[i];
-		struct bt_audio_codec_data *data = &source->codec_cfg.meta[i];
-		const uint8_t data_len = preset_data->data.data_len;
-
-		data->data.data = data->value;
-		data->data.data_len = data_len;
-		memcpy(data->value, preset_data->data.data, data_len);
-	}
-#endif /* CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_COUNT > 0 && CONFIG_BT_AUDIO_CODEC_MAX_DATA_LEN > \
-	* 0                                                                                        \
-	*/
-}
-
-static inline void codec_data_set_chan_alloc(struct bt_audio_codec_data *data,
-					     enum bt_audio_location loc)
-{
-	const uint32_t loc_32 = loc;
-
-	data->data.type = BT_AUDIO_CODEC_CONFIG_LC3_CHAN_ALLOC;
-	data->data.data_len = sizeof(loc_32);
-	sys_put_le32(loc_32, data->value);
 }
 
 static inline int codec_set_chan_alloc(struct bt_audio_codec_cfg *codec_cfg,
 				       enum bt_audio_location loc)
 {
-	for (size_t i = 0U; i < codec_cfg->data_count; i++) {
-		struct bt_audio_codec_data *data = &codec_cfg->data[i];
+	for (size_t i = 0U; i < codec_cfg->data_len;) {
+		const uint8_t len = codec_cfg->data[i++];
+		const uint8_t type = codec_cfg->data[i++];
+		uint8_t *value = &codec_cfg->data[i];
+		const uint8_t value_len = len - sizeof(type);
 
-		/* Overwrite the location value */
-		if (data->data.type == BT_AUDIO_CODEC_CONFIG_LC3_CHAN_ALLOC) {
-			codec_data_set_chan_alloc(data, loc);
+		if (type == BT_AUDIO_CODEC_CONFIG_LC3_CHAN_ALLOC) {
+			const uint32_t loc_32 = loc;
+
+			sys_put_le32(loc_32, value);
 
 			return 0;
 		}
+		i += value_len;
 	}
 
-	/* Not found, add new if possible */
-	if (codec_cfg->data_count < CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_COUNT) {
-		struct bt_audio_codec_data *data = &codec_cfg->data[codec_cfg->data_count++];
-
-		codec_data_set_chan_alloc(data, loc);
-
-		return 0;
-	}
-
-	return -ENOMEM;
+	return -ENODATA;
 }
 
 #endif /* CONFIG_BT_AUDIO */

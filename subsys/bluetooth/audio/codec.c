@@ -18,37 +18,71 @@
 
 LOG_MODULE_REGISTER(bt_audio_codec, CONFIG_BT_AUDIO_CODEC_LOG_LEVEL);
 
-bool bt_audio_codec_cfg_get_val(const struct bt_audio_codec_cfg *codec_cfg, uint8_t type,
-				const struct bt_audio_codec_data **data)
+#if CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE > 0
+
+struct search_type_param {
+	uint8_t type;
+	const uint8_t *data;
+};
+
+static bool print_cb(struct bt_data *data, void *user_data)
 {
+	struct search_type_param *param = (struct search_type_param *)user_data;
+
+	if (param->type == data->type) {
+		param->data = data->data;
+
+		return false;
+	}
+
+	return true;
+}
+
+bool bt_audio_codec_cfg_get_val(const struct bt_audio_codec_cfg *codec_cfg, uint8_t type,
+				const uint8_t **data)
+{
+	struct search_type_param param = {
+		.type = type,
+		.data = NULL,
+	};
+	int err;
+
 	CHECKIF(codec_cfg == NULL) {
 		LOG_DBG("codec is NULL");
 		return false;
 	}
 
-	for (size_t i = 0; i < codec_cfg->data_count; i++) {
-		if (codec_cfg->data[i].data.type == type) {
-			*data = &codec_cfg->data[i];
+	err = bt_audio_data_parse(codec_cfg->data, codec_cfg->data_len, print_cb, &param);
+	if (err != 0 && err != -ECANCELED) {
+		LOG_DBG("Could not parse the data: %d", err);
 
-			return true;
-		}
+		return false;
 	}
 
-	return false;
+	if (param.data == NULL) {
+		LOG_DBG("Could not find the type %u", type);
+
+		return false;
+	}
+
+	*data = param.data;
+
+	return true;
 }
 
 int bt_audio_codec_cfg_get_freq(const struct bt_audio_codec_cfg *codec_cfg)
 {
-	const struct bt_audio_codec_data *element;
+	const uint8_t *data;
 
 	CHECKIF(codec_cfg == NULL) {
 		LOG_DBG("codec is NULL");
 		return BT_AUDIO_CODEC_PARSE_ERR_INVALID_PARAM;
 	}
 
-	if (bt_audio_codec_cfg_get_val(codec_cfg, BT_AUDIO_CODEC_CONFIG_LC3_FREQ, &element)) {
+	if (bt_audio_codec_cfg_get_val(codec_cfg, BT_AUDIO_CODEC_CONFIG_LC3_FREQ, &data)) {
+		const uint8_t freq = data[0];
 
-		switch (element->data.data[0]) {
+		switch (freq) {
 		case BT_AUDIO_CODEC_CONFIG_LC3_FREQ_8KHZ:
 			return 8000;
 		case BT_AUDIO_CODEC_CONFIG_LC3_FREQ_11KHZ:
@@ -85,15 +119,17 @@ int bt_audio_codec_cfg_get_freq(const struct bt_audio_codec_cfg *codec_cfg)
 
 int bt_audio_codec_cfg_get_frame_duration_us(const struct bt_audio_codec_cfg *codec_cfg)
 {
-	const struct bt_audio_codec_data *element;
+	const uint8_t *data;
 
 	CHECKIF(codec_cfg == NULL) {
 		LOG_DBG("codec is NULL");
 		return BT_AUDIO_CODEC_PARSE_ERR_INVALID_PARAM;
 	}
 
-	if (bt_audio_codec_cfg_get_val(codec_cfg, BT_AUDIO_CODEC_CONFIG_LC3_DURATION, &element)) {
-		switch (element->data.data[0]) {
+	if (bt_audio_codec_cfg_get_val(codec_cfg, BT_AUDIO_CODEC_CONFIG_LC3_DURATION, &data)) {
+		const uint8_t duration = data[0];
+
+		switch (duration) {
 		case BT_AUDIO_CODEC_CONFIG_LC3_DURATION_7_5:
 			return 7500;
 		case BT_AUDIO_CODEC_CONFIG_LC3_DURATION_10:
@@ -107,9 +143,9 @@ int bt_audio_codec_cfg_get_frame_duration_us(const struct bt_audio_codec_cfg *co
 }
 
 int bt_audio_codec_cfg_get_chan_allocation_val(const struct bt_audio_codec_cfg *codec_cfg,
-					 enum bt_audio_location *chan_allocation)
+					       enum bt_audio_location *chan_allocation)
 {
-	const struct bt_audio_codec_data *element;
+	const uint8_t *data;
 
 	CHECKIF(codec_cfg == NULL) {
 		LOG_DBG("codec is NULL");
@@ -120,38 +156,39 @@ int bt_audio_codec_cfg_get_chan_allocation_val(const struct bt_audio_codec_cfg *
 		return BT_AUDIO_CODEC_PARSE_ERR_INVALID_PARAM;
 	}
 
-	*chan_allocation = 0;
-	if (bt_audio_codec_cfg_get_val(codec_cfg, BT_AUDIO_CODEC_CONFIG_LC3_CHAN_ALLOC, &element)) {
+	if (bt_audio_codec_cfg_get_val(codec_cfg, BT_AUDIO_CODEC_CONFIG_LC3_CHAN_ALLOC, &data)) {
 
-		*chan_allocation = sys_le32_to_cpu(*((uint32_t *)&element->data.data[0]));
+		*chan_allocation = sys_get_le32(data);
 
 		return BT_AUDIO_CODEC_PARSE_ERR_SUCCESS;
 	}
+
+	*chan_allocation = 0;
 
 	return BT_AUDIO_CODEC_PARSE_ERR_TYPE_NOT_FOUND;
 }
 
 int bt_audio_codec_cfg_get_octets_per_frame(const struct bt_audio_codec_cfg *codec_cfg)
 {
-	const struct bt_audio_codec_data *element;
+	const uint8_t *data;
 
 	CHECKIF(codec_cfg == NULL) {
 		LOG_DBG("codec is NULL");
 		return BT_AUDIO_CODEC_PARSE_ERR_INVALID_PARAM;
 	}
 
-	if (bt_audio_codec_cfg_get_val(codec_cfg, BT_AUDIO_CODEC_CONFIG_LC3_FRAME_LEN, &element)) {
+	if (bt_audio_codec_cfg_get_val(codec_cfg, BT_AUDIO_CODEC_CONFIG_LC3_FRAME_LEN, &data)) {
 
-		return sys_le16_to_cpu(*((uint16_t *)&element->data.data[0]));
+		return sys_get_le16(data);
 	}
 
 	return BT_AUDIO_CODEC_PARSE_ERR_TYPE_NOT_FOUND;
 }
 
 int bt_audio_codec_cfg_get_frame_blocks_per_sdu(const struct bt_audio_codec_cfg *codec_cfg,
-					  bool fallback_to_default)
+						bool fallback_to_default)
 {
-	const struct bt_audio_codec_data *element;
+	const uint8_t *data;
 
 	CHECKIF(codec_cfg == NULL) {
 		LOG_DBG("codec is NULL");
@@ -159,9 +196,9 @@ int bt_audio_codec_cfg_get_frame_blocks_per_sdu(const struct bt_audio_codec_cfg 
 	}
 
 	if (bt_audio_codec_cfg_get_val(codec_cfg, BT_AUDIO_CODEC_CONFIG_LC3_FRAME_BLKS_PER_SDU,
-				       &element)) {
+				       &data)) {
 
-		return element->data.data[0];
+		return data[0];
 	}
 
 	if (fallback_to_default) {
@@ -171,3 +208,4 @@ int bt_audio_codec_cfg_get_frame_blocks_per_sdu(const struct bt_audio_codec_cfg 
 
 	return BT_AUDIO_CODEC_PARSE_ERR_TYPE_NOT_FOUND;
 }
+#endif /* CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE > 0 */

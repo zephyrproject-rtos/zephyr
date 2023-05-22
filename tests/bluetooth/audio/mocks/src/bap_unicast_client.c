@@ -24,15 +24,15 @@ int bt_bap_unicast_client_qos(struct bt_conn *conn, struct bt_bap_unicast_group 
 	return 0;
 }
 
-int bt_bap_unicast_client_enable(struct bt_bap_stream *stream, struct bt_audio_codec_data *meta,
-				 size_t meta_count)
+int bt_bap_unicast_client_enable(struct bt_bap_stream *stream, uint8_t meta[],
+				 size_t meta_len)
 {
 	zassert_unreachable("Unexpected call to '%s()' occurred", __func__);
 	return 0;
 }
 
-int bt_bap_unicast_client_metadata(struct bt_bap_stream *stream, struct bt_audio_codec_data *meta,
-				   size_t meta_count)
+int bt_bap_unicast_client_metadata(struct bt_bap_stream *stream, uint8_t meta[],
+				   size_t meta_len)
 {
 	zassert_unreachable("Unexpected call to '%s()' occurred", __func__);
 	return 0;

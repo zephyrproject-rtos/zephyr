@@ -14,30 +14,33 @@ void print_hex(const uint8_t *ptr, size_t len)
 	}
 }
 
-static void print_ltv_elem(const char *str, uint8_t type, uint8_t value_len, const uint8_t *value,
-			   size_t cnt)
+struct print_ltv_info {
+	const char *str;
+	size_t cnt;
+};
+
+static bool print_ltv_elem(struct bt_data *data, void *user_data)
 {
-	printk("%s #%zu: type 0x%02x value_len %u\n", str, cnt, type, value_len);
-	print_hex(value, value_len);
+	struct print_ltv_info *ltv_info = user_data;
+
+	printk("%s #%zu: type 0x%02x value_len %u", ltv_info->str, ltv_info->cnt, data->type,
+	       data->data_len);
+	print_hex(data->data, data->data_len);
 	printk("\n");
+
+	ltv_info->cnt++;
+
+	return true;
 }
 
 static void print_ltv_array(const char *str, const uint8_t *ltv_data, size_t ltv_data_len)
 {
-	size_t cnt = 0U;
+	struct print_ltv_info ltv_info = {
+		.str = str,
+		.cnt = 0U,
+	};
 
-	for (size_t i = 0U; i < ltv_data_len;) {
-		const uint8_t len = ltv_data[i++];
-		const uint8_t type = ltv_data[i++];
-		const uint8_t *value = &ltv_data[i];
-		const uint8_t value_len = len - sizeof(type);
-
-		print_ltv_elem(str, type, value_len, value, cnt++);
-		/* Since we are incrementing i by the value_len, we don't need to increment it
-		 * further in the `for` statement
-		 */
-		i += value_len;
-	}
+	bt_audio_data_parse(ltv_data, ltv_data_len, print_ltv_elem, &ltv_info);
 }
 
 void print_codec_cap(const struct bt_audio_codec_cap *codec_cap)
@@ -58,28 +61,18 @@ void print_codec_cap(const struct bt_audio_codec_cap *codec_cap)
 
 void print_codec_cfg(const struct bt_audio_codec_cfg *codec_cfg)
 {
-	printk("codec_cap ID 0x%02x cid 0x%04x vid 0x%04x count %u\n", codec_cfg->id,
-	       codec_cfg->cid, codec_cfg->vid, codec_cfg->data_count);
+	printk("codec_cfg ID 0x%02x cid 0x%04x vid 0x%04x count %u\n", codec_cfg->id,
+	       codec_cfg->cid, codec_cfg->vid, codec_cfg->data_len);
 
-	for (uint8_t i = 0; i < codec_cfg->data_count; i++) {
-		printk("data #%u: type 0x%02x len %u\n",
-		       i, codec_cfg->data[i].data.type,
-		       codec_cfg->data[i].data.data_len);
-		print_hex(codec_cfg->data[i].data.data,
-			  codec_cfg->data[i].data.data_len -
-				sizeof(codec_cfg->data[i].data.type));
+	if (codec_cfg->id == BT_AUDIO_CODEC_LC3_ID) {
+		print_ltv_array("data", codec_cfg->data, codec_cfg->data_len);
+	} else { /* If not LC3, we cannot assume it's LTV */
+		printk("data: ");
+		print_hex(codec_cfg->data, codec_cfg->data_len);
 		printk("\n");
 	}
 
-	for (uint8_t i = 0; i < codec_cfg->meta_count; i++) {
-		printk("meta #%u: type 0x%02x len %u\n",
-		       i, codec_cfg->meta[i].data.type,
-		       codec_cfg->meta[i].data.data_len);
-		print_hex(codec_cfg->meta[i].data.data,
-			  codec_cfg->meta[i].data.data_len -
-				sizeof(codec_cfg->meta[i].data.type));
-		printk("\n");
-	}
+	print_ltv_array("meta", codec_cfg->meta, codec_cfg->meta_len);
 }
 
 void print_qos(const struct bt_audio_codec_qos *qos)

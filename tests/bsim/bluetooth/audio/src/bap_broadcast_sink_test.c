@@ -40,7 +40,7 @@ static const struct bt_audio_codec_cap codec_cap = BT_AUDIO_CODEC_CAP_LC3(
 static K_SEM_DEFINE(sem_started, 0U, ARRAY_SIZE(streams));
 static K_SEM_DEFINE(sem_stopped, 0U, ARRAY_SIZE(streams));
 
-static struct bt_audio_codec_data metadata[CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_COUNT];
+static uint8_t metadata[CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_SIZE];
 
 /* Create a mask for the maximum BIS we can sync to using the number of streams
  * we have. We add an additional 1 since the bis indexes start from 1 and not

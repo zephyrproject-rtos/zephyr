@@ -75,7 +75,7 @@ do {                                                                            
 		     zassert_unreachable("Not implemented");))                                     \
 } while (0)
 
-#define expect_bt_bap_unicast_server_cb_enable_called_once(_stream, _meta, _meta_count)            \
+#define expect_bt_bap_unicast_server_cb_enable_called_once(_stream, _meta, _meta_len)            \
 do {                                                                                               \
 	const char *func_name = "bt_bap_unicast_server_cb.enable";                                 \
 												   \
@@ -90,12 +90,12 @@ do {                                                                            
 		     /* TODO */                                                                    \
 		     zassert_unreachable("Not implemented");))                                     \
 												   \
-	IF_NOT_EMPTY(_meta_count, (                                                                \
+	IF_NOT_EMPTY(_meta_len, (                                                                \
 		     /* TODO */                                                                    \
 		     zassert_unreachable("Not implemented");))                                     \
 } while (0)
 
-#define expect_bt_bap_unicast_server_cb_metadata_called_once(_stream, _meta, _meta_count)          \
+#define expect_bt_bap_unicast_server_cb_metadata_called_once(_stream, _meta, _meta_len)          \
 do {                                                                                               \
 	const char *func_name = "bt_bap_unicast_server_cb.enable";                                 \
 												   \
@@ -110,7 +110,7 @@ do {                                                                            
 		     /* TODO */                                                                    \
 		     zassert_unreachable("Not implemented");))                                     \
 												   \
-	IF_NOT_EMPTY(_meta_count, (                                                                \
+	IF_NOT_EMPTY(_meta_len, (                                                                \
 		     /* TODO */                                                                    \
 		     zassert_unreachable("Not implemented");))                                     \
 } while (0)

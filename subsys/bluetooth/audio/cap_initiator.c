@@ -38,25 +38,35 @@ int bt_cap_initiator_register_cb(const struct bt_cap_initiator_cb *cb)
 	return 0;
 }
 
-static bool cap_initiator_valid_metadata(const struct bt_audio_codec_data meta[], size_t meta_count)
+static bool data_func_cb(struct bt_data *data, void *user_data)
 {
-	bool stream_context_found;
+	bool *stream_context_found = (bool *)user_data;
 
-	LOG_DBG("meta %p count %zu", meta, meta_count);
+	LOG_DBG("type %u len %u data %s", data->type, data->data_len,
+		bt_hex(data->data, data->data_len));
 
-	/* Streaming Audio Context shall be present in CAP */
-	stream_context_found = false;
-	for (size_t i = 0U; i < meta_count; i++) {
-		const struct bt_data *metadata = &meta[i].data;
-
-		LOG_DBG("metadata %p type %u len %u data %s",
-			metadata, metadata->type, metadata->data_len,
-			bt_hex(metadata->data, metadata->data_len));
-
-		if (metadata->type == BT_AUDIO_METADATA_TYPE_STREAM_CONTEXT) {
-			stream_context_found = true;
-			break;
+	if (data->type == BT_AUDIO_METADATA_TYPE_STREAM_CONTEXT) {
+		if (data->data_len != 2) { /* Stream context size */
+			return false;
 		}
+
+		*stream_context_found = true;
+		return false;
+	}
+
+	return true;
+}
+
+static bool cap_initiator_valid_metadata(const uint8_t meta[], size_t meta_len)
+{
+	bool stream_context_found = false;
+	int err;
+
+	LOG_DBG("meta %p len %zu", meta, meta_len);
+
+	err = bt_audio_data_parse(meta, meta_len, data_func_cb, &stream_context_found);
+	if (err != 0 && err != -ECANCELED) {
+		return false;
 	}
 
 	if (!stream_context_found) {
@@ -91,7 +101,7 @@ static bool cap_initiator_broadcast_audio_start_valid_param(
 		}
 
 		valid_metadata =
-			cap_initiator_valid_metadata(codec_cfg->meta, codec_cfg->meta_count);
+			cap_initiator_valid_metadata(codec_cfg->meta, codec_cfg->meta_len);
 
 		CHECKIF(!valid_metadata) {
 			LOG_DBG("Invalid metadata supplied for subgroup[%zu]", i);
@@ -141,13 +151,13 @@ static void cap_initiator_broadcast_to_bap_broadcast_param(
 				&bap_subgroup_param->params[j];
 
 			bap_stream_param->stream = &cap_stream_param->stream->bap_stream;
-#if CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_COUNT > 0
-			bap_stream_param->data_count = cap_stream_param->data_count;
+#if CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE > 0
+			bap_stream_param->data_len = cap_stream_param->data_len;
 			/* We do not need to copy the data, as that is the same type of struct, so
 			 * we can just point to the CAP parameter data
 			 */
 			bap_stream_param->data = cap_stream_param->data;
-#endif /* CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_COUNT > 0 */
+#endif /* CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE > 0 */
 		}
 	}
 }
@@ -207,8 +217,7 @@ int bt_cap_initiator_broadcast_audio_start(struct bt_cap_broadcast_source *broad
 }
 
 int bt_cap_initiator_broadcast_audio_update(struct bt_cap_broadcast_source *broadcast_source,
-					    const struct bt_audio_codec_data meta[],
-					    size_t meta_count)
+					    const uint8_t meta[], size_t meta_len)
 {
 	CHECKIF(broadcast_source == NULL) {
 		LOG_DBG("broadcast_source is NULL");
@@ -220,13 +229,13 @@ int bt_cap_initiator_broadcast_audio_update(struct bt_cap_broadcast_source *broa
 		return -EINVAL;
 	}
 
-	if (!cap_initiator_valid_metadata(meta, meta_count)) {
+	if (!cap_initiator_valid_metadata(meta, meta_len)) {
 		LOG_DBG("Invalid metadata");
 		return -EINVAL;
 	}
 
 	return bt_bap_broadcast_source_update_metadata(broadcast_source->bap_broadcast, meta,
-						       meta_count);
+						       meta_len);
 }
 
 int bt_cap_initiator_broadcast_audio_stop(struct bt_cap_broadcast_source *broadcast_source)
@@ -657,7 +666,7 @@ static bool valid_unicast_audio_start_param(const struct bt_cap_unicast_audio_st
 			return false;
 		}
 
-		CHECKIF(!cap_initiator_valid_metadata(codec_cfg->meta, codec_cfg->meta_count)) {
+		CHECKIF(!cap_initiator_valid_metadata(codec_cfg->meta, codec_cfg->meta_len)) {
 			LOG_DBG("param->stream_params[%zu].codec_cfg  is invalid", i);
 			return false;
 		}
@@ -1019,7 +1028,7 @@ void bt_cap_initiator_qos_configured(struct bt_cap_stream *cap_stream)
 
 		/* TODO: Add metadata */
 		err = bt_bap_stream_enable(bap_stream, bap_stream->codec_cfg->meta,
-					   bap_stream->codec_cfg->meta_count);
+					   bap_stream->codec_cfg->meta_len);
 		if (err != 0) {
 			LOG_DBG("Failed to enable stream %p: %d",
 				cap_stream_active, err);
@@ -1194,7 +1203,7 @@ int bt_cap_initiator_unicast_audio_update(const struct bt_cap_unicast_audio_upda
 		}
 
 		CHECKIF(!cap_initiator_valid_metadata(params[i].meta,
-						      params[i].meta_count)) {
+						      params[i].meta_len)) {
 			LOG_DBG("params[%zu].meta is invalid", i);
 
 			return -EINVAL;
@@ -1232,7 +1241,7 @@ int bt_cap_initiator_unicast_audio_update(const struct bt_cap_unicast_audio_upda
 		active_proc.streams[i] = params[i].stream;
 
 		err = bt_bap_stream_metadata(&params[i].stream->bap_stream, params[i].meta,
-					     params[i].meta_count);
+					     params[i].meta_len);
 		if (err != 0) {
 			LOG_DBG("Failed to update metadata for stream %p: %d",
 				params[i].stream, err);

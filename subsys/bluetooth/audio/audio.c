@@ -18,6 +18,53 @@
 
 LOG_MODULE_REGISTER(bt_audio, CONFIG_BT_AUDIO_LOG_LEVEL);
 
+int bt_audio_data_parse(const uint8_t ltv[], size_t size,
+			bool (*func)(struct bt_data *data, void *user_data), void *user_data)
+{
+	CHECKIF(ltv == NULL) {
+		LOG_DBG("ltv is NULL");
+
+		return -EINVAL;
+	}
+
+	CHECKIF(func == NULL) {
+		LOG_DBG("func is NULL");
+
+		return -EINVAL;
+	}
+
+	for (size_t i = 0; i < size;) {
+		const uint8_t len = ltv[i++];
+		struct bt_data data;
+
+		if (i + len > size || len < sizeof(data.type)) {
+			LOG_DBG("Invalid len %u at i = %zu", len, i - 1);
+
+			return -EINVAL;
+		}
+
+		data.type = ltv[i++];
+		data.data_len = len - sizeof(data.type);
+
+		if (data.data_len > 0) {
+			data.data = &ltv[i];
+		} else {
+			data.data = NULL;
+		}
+
+		if (!func(&data, user_data)) {
+			return -ECANCELED;
+		}
+
+		/* Since we are incrementing i by the value_len, we don't need to increment it
+		 * further in the `for` statement
+		 */
+		i += data.data_len;
+	}
+
+	return 0;
+}
+
 #if defined(CONFIG_BT_CONN)
 
 static uint8_t bt_audio_security_check(const struct bt_conn *conn)
@@ -109,56 +156,6 @@ ssize_t bt_audio_ccc_cfg_write(struct bt_conn *conn, const struct bt_gatt_attr *
 /* Broadcast sink depends on Scan Delegator, so we can just guard it with the Scan Delegator */
 #if defined(CONFIG_BT_BAP_SCAN_DELEGATOR)
 
-static int decode_codec_ltv(struct net_buf_simple *buf, struct bt_audio_codec_data *codec_data)
-{
-	if (buf->len < sizeof(codec_data->data.data_len)) {
-		LOG_DBG("Not enough data for LTV length field: %u", buf->len);
-
-		return -ENOMEM;
-	}
-
-	codec_data->data.data_len = net_buf_simple_pull_u8(buf);
-
-	if (buf->len < sizeof(codec_data->data.type)) {
-		LOG_DBG("Not enough data for LTV type field: %u", buf->len);
-
-		return -EMSGSIZE;
-	}
-
-	/* LTV structures include the data.type in the length field,
-	 * but we do not do that for the bt_data struct in Zephyr
-	 */
-	codec_data->data.data_len -= sizeof(codec_data->data.type);
-
-	codec_data->data.type = net_buf_simple_pull_u8(buf);
-
-#if CONFIG_BT_AUDIO_CODEC_MAX_DATA_LEN > 0
-	void *value;
-
-	codec_data->data.data = codec_data->value;
-
-	if (buf->len < codec_data->data.data_len) {
-		LOG_DBG("Not enough data for LTV value field: %u/%zu", buf->len,
-			codec_data->data.data_len);
-
-		return -EMSGSIZE;
-	}
-
-	value = net_buf_simple_pull_mem(buf, codec_data->data.data_len);
-	(void)memcpy(codec_data->value, value, codec_data->data.data_len);
-#else /* CONFIG_BT_AUDIO_CODEC_MAX_DATA_LEN == 0 */
-	if (codec_data->data.data_len > 0) {
-		LOG_DBG("Cannot store data");
-
-		return -ENOMEM;
-	}
-
-	codec_data->data.data = NULL;
-#endif /* CONFIG_BT_AUDIO_CODEC_MAX_DATA_LEN > 0 */
-
-	return 0;
-}
-
 static int decode_bis_data(struct net_buf_simple *buf, struct bt_bap_base_bis_data *bis)
 {
 	uint8_t len;
@@ -186,43 +183,24 @@ static int decode_bis_data(struct net_buf_simple *buf, struct bt_bap_base_bis_da
 	}
 
 	if (len > 0) {
-#if CONFIG_BT_AUDIO_CODEC_MAX_DATA_LEN > 0
-		struct net_buf_simple ltv_buf;
+#if CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_SIZE > 0
 		void *ltv_data;
 
-		/* Use an extra net_buf_simple to be able to decode until it
-		 * is empty (len = 0)
-		 */
-		ltv_data = net_buf_simple_pull_mem(buf, len);
-		net_buf_simple_init_with_data(&ltv_buf, ltv_data, len);
+		if (len > sizeof(bis->data)) {
+			LOG_DBG("Cannot store codec config data of length %u", len);
 
-
-		while (ltv_buf.len != 0) {
-			struct bt_audio_codec_data *bis_codec_data;
-			int err;
-
-			if (bis->data_count >= ARRAY_SIZE(bis->data)) {
-				LOG_WRN("BIS data overflow; discarding");
-				break;
-			}
-
-			bis_codec_data = &bis->data[bis->data_count];
-
-			err = decode_codec_ltv(&ltv_buf, bis_codec_data);
-			if (err != 0) {
-				LOG_DBG("Failed to decode BIS config data for entry[%u]: %d",
-					bis->data_count, err);
-
-				return err;
-			}
-
-			bis->data_count++;
+			return -ENOMEM;
 		}
-#else /* CONFIG_BT_AUDIO_CODEC_MAX_DATA_LEN == 0 */
+
+		ltv_data = net_buf_simple_pull_mem(buf, len);
+
+		bis->data_len = len;
+		memcpy(bis->data, ltv_data, len);
+#else  /* CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_SIZE == 0 */
 		LOG_DBG("Cannot store codec config data");
 
 		return -ENOMEM;
-#endif /* CONFIG_BT_AUDIO_CODEC_MAX_DATA_LEN */
+#endif /* CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_SIZE */
 	}
 
 	return 0;
@@ -230,9 +208,7 @@ static int decode_bis_data(struct net_buf_simple *buf, struct bt_bap_base_bis_da
 
 static int decode_subgroup(struct net_buf_simple *buf, struct bt_bap_base_subgroup *subgroup)
 {
-	struct net_buf_simple ltv_buf;
 	struct bt_audio_codec_cfg *codec_cfg;
-	void *ltv_data;
 	uint8_t len;
 
 	codec_cfg = &subgroup->codec_cfg;
@@ -257,52 +233,26 @@ static int decode_subgroup(struct net_buf_simple *buf, struct bt_bap_base_subgro
 		return -EINVAL;
 	}
 
-#if CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_COUNT > 0
-	/* Use an extra net_buf_simple to be able to decode until it
-	 * is empty (len = 0)
-	 */
-	ltv_data = net_buf_simple_pull_mem(buf, len);
-	net_buf_simple_init_with_data(&ltv_buf, ltv_data, len);
+#if CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE > 0
+	void *cfg_ltv_data;
 
-	/* The loop below is very similar to codec_config_store with notable
-	 * exceptions that it can do early termination, and also does not log
-	 * every LTV entry, which would simply be too much for handling
-	 * broadcasted BASEs
-	 */
-	while (ltv_buf.len != 0) {
-		struct bt_audio_codec_data *codec_data;
-		int err;
-
-		if (codec_cfg->data_count >= ARRAY_SIZE(codec_cfg->data)) {
-			LOG_WRN("BIS codec data overflow; discarding");
-			break;
-		}
-
-		codec_data = &codec_cfg->data[codec_cfg->data_count];
-
-		err = decode_codec_ltv(&ltv_buf, codec_data);
-		if (err != 0) {
-			LOG_DBG("Failed to decode codec config data for entry %u: %d",
-				codec_cfg->data_count, err);
-
-			return err;
-		}
-
-		codec_cfg->data_count++;
-	}
-
-	if (buf->len < sizeof(len)) {
-		LOG_DBG("Cannot store BASE in buffer");
+	if (len > sizeof(subgroup->codec_cfg.data)) {
+		LOG_DBG("Cannot store codec config data of length %u", len);
 
 		return -ENOMEM;
 	}
-#else /* CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_COUNT == 0 */
+
+	cfg_ltv_data = net_buf_simple_pull_mem(buf, len);
+
+	subgroup->codec_cfg.data_len = len;
+	memcpy(subgroup->codec_cfg.data, cfg_ltv_data, len);
+#else  /* CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE == 0 */
 	if (len > 0) {
-		LOG_DBG("Cannot store codec config data");
+		LOG_DBG("Cannot store codec config data of length %u", len);
 
 		return -ENOMEM;
 	}
-#endif /* CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_COUNT */
+#endif /* CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE > 0 */
 
 	/* codec metadata length */
 	len = net_buf_simple_pull_u8(buf);
@@ -312,46 +262,26 @@ static int decode_subgroup(struct net_buf_simple *buf, struct bt_bap_base_subgro
 		return -EMSGSIZE;
 	}
 
-#if CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_COUNT > 0
-	/* Use an extra net_buf_simple to be able to decode until it
-	 * is empty (len = 0)
-	 */
-	ltv_data = net_buf_simple_pull_mem(buf, len);
-	net_buf_simple_init_with_data(&ltv_buf, ltv_data, len);
+#if CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_SIZE > 0
+	void *meta_ltv_data;
 
-	/* The loop below is very similar to codec_config_store with notable
-	 * exceptions that it can do early termination, and also does not log
-	 * every LTV entry, which would simply be too much for handling
-	 * broadcasted BASEs
-	 */
-	while (ltv_buf.len != 0) {
-		struct bt_audio_codec_data *metadata;
-		int err;
+	if (len > sizeof(subgroup->codec_cfg.meta)) {
+		LOG_DBG("Cannot store codec config meta of length %u", len);
 
-		if (codec_cfg->meta_count >= ARRAY_SIZE(codec_cfg->meta)) {
-			LOG_WRN("BIS codec metadata overflow; discarding");
-			break;
-		}
-
-		metadata = &codec_cfg->meta[codec_cfg->meta_count];
-
-		err = decode_codec_ltv(&ltv_buf, metadata);
-		if (err != 0) {
-			LOG_DBG("Failed to decode codec metadata for entry %u: %d",
-				codec_cfg->meta_count, err);
-
-			return err;
-		}
-
-		codec_cfg->meta_count++;
+		return -ENOMEM;
 	}
-#else /* CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_COUNT == 0 */
+
+	meta_ltv_data = net_buf_simple_pull_mem(buf, len);
+
+	subgroup->codec_cfg.meta_len = len;
+	memcpy(subgroup->codec_cfg.meta, meta_ltv_data, len);
+#else  /* CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_SIZE == 0 */
 	if (len > 0) {
 		LOG_DBG("Cannot store metadata");
 
 		return -ENOMEM;
 	}
-#endif /* CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_COUNT */
+#endif /* CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_SIZE */
 
 	for (size_t i = 0U; i < subgroup->bis_count; i++) {
 		const int err = decode_bis_data(buf, &subgroup->bis_data[i]);
@@ -433,31 +363,3 @@ int bt_bap_decode_base(struct bt_data *data, struct bt_bap_base *base)
 	return 0;
 }
 #endif /* CONFIG_BT_BAP_SCAN_DELEGATOR */
-
-ssize_t bt_audio_codec_data_to_buf(const struct bt_audio_codec_data *codec_data, size_t count,
-				   uint8_t *buf, size_t buf_size)
-{
-	size_t total_len = 0;
-
-	for (size_t i = 0; i < count; i++) {
-		const struct bt_data *ltv = &codec_data[i].data;
-		const uint8_t length = ltv->data_len;
-		const uint8_t type = ltv->type;
-		const uint8_t *value = ltv->data;
-		const size_t ltv_len = sizeof(length) + sizeof(type) + length;
-
-		/* Verify that the buffer can hold the next LTV structure */
-		if (buf_size < total_len + ltv_len) {
-			return -ENOMEM;
-		}
-
-		/* Copy data */
-		buf[total_len++] = length + sizeof(type);
-		buf[total_len++] = type;
-		(void)memcpy(&buf[total_len], value, length);
-
-		total_len += length;
-	}
-
-	return total_len;
-}
