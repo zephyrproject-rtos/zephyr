@@ -1078,9 +1078,8 @@ static void cis_disabled_cb(void *param)
 				 * CIS for both directions.
 				 */
 				ll_remove_iso_path(cis->lll.handle,
-						   BT_HCI_DATAPATH_DIR_CTLR_TO_HOST);
-				ll_remove_iso_path(cis->lll.handle,
-						   BT_HCI_DATAPATH_DIR_HOST_TO_CTLR);
+						   BIT(BT_HCI_DATAPATH_DIR_CTLR_TO_HOST) |
+						   BIT(BT_HCI_DATAPATH_DIR_HOST_TO_CTLR));
 
 				ll_conn_iso_stream_release(cis);
 
