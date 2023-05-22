@@ -59,8 +59,9 @@ endchoice
 config NET_L2_IEEE802154_ACK_REPLY
 	bool "IEEE 802.15.4 ACK reply logic"
 	help
-	  Enable inner stack's logic on handling ACK request. Note that
-	  if the hw driver has an AUTOACK feature, this is then unnecessary.
+	  Enable sending of ACK replies when receiving packages that request
+	  ACK. Note that if the HW driver has an AUTOACK feature, this should be
+	  disabled to avoid duplicate ACK packages.
 
 choice
 	prompt "Device features level support"
@@ -119,7 +120,11 @@ config NET_L2_IEEE802154_SECURITY
 	select EXPERIMENTAL
 	help
 	  Enable 802.15.4 frame security handling, in order to bring data
-	  confidentiality and authenticity.
+	  confidentiality and authenticity. The implementation is incomplete
+	  (only implicit key mode, no key/device specific state, incoming
+	  and outgoing security procedures only partially implemented, etc.).
+	  Therefore the feature is to be considered EXPERIMENTAL work in
+	  progress.
 
 config NET_L2_IEEE802154_SECURITY_CRYPTO_DEV_NAME
 	string "Crypto device name used for <en/de>cryption"

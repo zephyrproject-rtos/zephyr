@@ -29,7 +29,7 @@ extern "C" {
 /**
  * @brief IEEE 802.15.4 Channel assignments
  *
- * Channel numbering for 868 MHz, 915 MHz, and 2450 MHz bands.
+ * Channel numbering for 868 MHz, 915 MHz, and 2450 MHz bands (channel page zero).
  *
  * - Channel 0 is for 868.3 MHz.
  * - Channels 1-10 are for 906 to 924 MHz with 2 MHz channel spacing.
@@ -177,6 +177,10 @@ enum ieee802154_config_type {
 
 	/** Configure a radio reception slot. This can be used for any scheduler reception, e.g.:
 	 *  Zigbee GP device, CSL, TSCH, etc.
+	 */
+	IEEE802154_CONFIG_RX_SLOT,
+
+	/** Configure CSL receiver (Endpoint) period
 	 *
 	 *  In order to configure a CSL receiver the upper layer should combine several
 	 *  configuration options in the following way:
@@ -210,9 +214,6 @@ enum ieee802154_config_type {
 	 *                                            |                                    |
 	 *                                            +--------------------- loop ---------+
 	 */
-	IEEE802154_CONFIG_RX_SLOT,
-
-	/** Configure CSL receiver (Endpoint) period */
 	IEEE802154_CONFIG_CSL_PERIOD,
 
 	/** Configure the next CSL receive window center, in units of microseconds,

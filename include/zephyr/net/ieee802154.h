@@ -28,11 +28,11 @@ extern "C" {
  * @{
  */
 
-/* See IEEE 802.15.4-2006, sections 5.5.3.2, 6.4.1 and 7.2.1.9 */
-#define IEEE802154_MAX_PHY_PACKET_SIZE	127
-#define IEEE802154_FCS_LENGTH		2
+/* References are to the IEEE 802.15.4-2020 standard */
+#define IEEE802154_MAX_PHY_PACKET_SIZE	127 /* see section 11.3, aMaxPhyPacketSize */
+#define IEEE802154_FCS_LENGTH		2   /* see section 7.2.1.1 */
 #define IEEE802154_MTU			(IEEE802154_MAX_PHY_PACKET_SIZE - IEEE802154_FCS_LENGTH)
-/* TODO: Support flexible MTU for IEEE 802.15.4-2015 */
+/* TODO: Support flexible MTU and FCS lengths for IEEE 802.15.4-2015ff */
 
 #define IEEE802154_SHORT_ADDR_LENGTH	2
 #define IEEE802154_EXT_ADDR_LENGTH	8
@@ -40,11 +40,15 @@ extern "C" {
 
 #define IEEE802154_NO_CHANNEL		USHRT_MAX
 
-/* See IEEE 802.15.4-2006, section 7.2.1.4 */
-#define IEEE802154_BROADCAST_ADDRESS 0xFFFF
-#define IEEE802154_NO_SHORT_ADDRESS_ASSIGNED 0xFFFE
-#define IEEE802154_SHORT_ADDRESS_NOT_ASSOCIATED 0x0000
-#define IEEE802154_BROADCAST_PAN_ID  0xFFFF
+/* See IEEE 802.15.4-2020, sections 6.1 and 7.3.5 */
+#define IEEE802154_BROADCAST_ADDRESS	     0xffff
+#define IEEE802154_NO_SHORT_ADDRESS_ASSIGNED 0xfffe
+
+/* See IEEE 802.15.4-2020, section 6.1 */
+#define IEEE802154_BROADCAST_PAN_ID 0xffff
+
+/* See IEEE 802.15.4-2020, section 7.3.5 */
+#define IEEE802154_SHORT_ADDRESS_NOT_ASSOCIATED IEEE802154_BROADCAST_ADDRESS
 
 struct ieee802154_security_ctx {
 	uint32_t frame_counter;
@@ -60,7 +64,7 @@ struct ieee802154_security_ctx {
 /* This not meant to be used by any code but 802.15.4 L2 stack */
 struct ieee802154_context {
 	uint16_t pan_id; /* in CPU byte order */
-	uint16_t channel;
+	uint16_t channel; /* in CPU byte order */
 	/* short address:
 	 *   0 == not associated,
 	 *   0xfffe == associated but no short address assigned
