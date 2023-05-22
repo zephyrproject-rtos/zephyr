@@ -12,13 +12,16 @@
 #include <errno.h>
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
-#include <zephyr/posix/time.h>
 #include <soc.h>
 #include <em_cmu.h>
-#include <em_rmu.h>
 #include <em_rtcc.h>
-#include <zephyr/sys/timeutil.h>
 #include <zephyr/drivers/counter.h>
+
+#ifdef CONFIG_PERSISTENT_GECKO_RTCC
+#include <zephyr/sys/timeutil.h>
+#include <zephyr/posix/time.h>
+#include <em_rmu.h>
+#endif
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(counter_gecko, CONFIG_COUNTER_LOG_LEVEL);

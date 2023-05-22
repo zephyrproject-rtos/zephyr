@@ -11,7 +11,8 @@
 #include <string.h>
 #include <zephyr/posix/time.h>
 #include <zephyr/sys/timeutil.h>
-#if defined(CONFIG_COUNTER_GECKO_RTCC)
+
+#ifdef CONFIG_PERSISTENT_GECKO_RTCC
 #include <em_rtcc.h>
 #endif
 
@@ -185,7 +186,7 @@ static int cmd_date_set(const struct shell *sh, size_t argc, char **argv)
 		return -EINVAL;
 	}
 
-#if defined(CONFIG_COUNTER_GECKO_RTCC)
+#ifdef CONFIG_PERSISTENT_GECKO_RTCC
 	RTCC_CounterSet(tp.tv_sec);
 #endif
 
