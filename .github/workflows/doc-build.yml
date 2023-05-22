@@ -114,6 +114,18 @@ jobs:
         name: pr_num
         path: pr_num
 
+    # Keep this last not to break upload and other "functional" tests above.
+    - name: time-incremental-build
+      if: github.event_name == 'pull_request'
+      run: |
+        # Catch major incremental build time regressions like the ones
+        # fixed by commits 52842317505f, a140a249b33b and 9d119431945f.
+        sed -i -e 's/Zephyr /Xephyr /' doc/index.rst # make a small .rst change
+        export DOC_TAG=development SPHINXOPTS='-j auto -t publish' # as above
+        time timeout 35 make -C doc/  html-fast    # ${DOC_TARGET} as above
+        git checkout HEAD -- doc/index.rst         # restore to be safe
+
+
   doc-build-pdf:
     name: "Documentation Build (PDF)"
     if: github.event_name != 'pull_request'
