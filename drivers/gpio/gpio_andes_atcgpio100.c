@@ -288,6 +288,29 @@ static int gpio_atcgpio100_manage_callback(const struct device *port,
 	return gpio_manage_callback(&data->cb, callback, set);
 }
 
+#ifdef CONFIG_GPIO_GET_DIRECTION
+static int gpio_atcgpio100_port_get_dir(const struct device *port,
+					gpio_port_pins_t map,
+					gpio_port_pins_t *inputs,
+					gpio_port_pins_t *outputs)
+{
+	const struct gpio_atcgpio100_config * const dev_cfg = port->config;
+	uint32_t direction = sys_read32(GPIO_DIR(port));
+
+	map &= dev_cfg->common.port_pin_mask;
+
+	if (inputs != NULL) {
+		*inputs = map & ~direction;
+	}
+
+	if (outputs != NULL) {
+		*outputs = map & direction;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_GPIO_GET_DIRECTION */
+
 static void gpio_atcgpio100_irq_handler(const struct device *port)
 {
 	struct gpio_atcgpio100_data * const data = port->data;
@@ -309,6 +332,9 @@ static const struct gpio_driver_api gpio_atcgpio100_api = {
 	.port_toggle_bits        = gpio_atcgpio100_toggle_bits,
 	.pin_interrupt_configure = gpio_atcgpio100_pin_interrupt_configure,
 	.manage_callback         = gpio_atcgpio100_manage_callback
+#ifdef CONFIG_GPIO_GET_DIRECTION
+	.port_get_direction      = gpio_atcgpio100_port_get_dir,
+#endif /* CONFIG_GPIO_GET_DIRECTION */
 };
 
 static int gpio_atcgpio100_init(const struct device *port)
