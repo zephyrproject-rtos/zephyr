@@ -148,7 +148,7 @@ uint8_t ll_cis_parameters_set(uint8_t cis_id,
 			      uint16_t c_sdu, uint16_t p_sdu,
 			      uint8_t c_phy, uint8_t p_phy,
 			      uint8_t c_rtn, uint8_t p_rtn);
-uint8_t ll_cig_parameters_commit(uint8_t cig_id);
+uint8_t ll_cig_parameters_commit(uint8_t cig_id, uint16_t *handles);
 uint8_t ll_cig_parameters_test_open(uint8_t cig_id,
 				    uint32_t c_interval,
 				    uint32_t p_interval,

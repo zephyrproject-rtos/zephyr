@@ -136,7 +136,7 @@ uint8_t ll_cis_parameters_set(uint8_t cis_id,
  * - Drop retransmissions to stay within Max_Transmission_Latency instead of asserting
  * - Calculate ISO_Interval to allow SDU_Interval < ISO_Interval
  */
-uint8_t ll_cig_parameters_commit(uint8_t cig_id)
+uint8_t ll_cig_parameters_commit(uint8_t cig_id, uint16_t *handles)
 {
 	struct ll_conn_iso_stream *cis;
 	struct ll_conn_iso_group *cig;
@@ -146,7 +146,9 @@ uint8_t ll_cig_parameters_commit(uint8_t cig_id)
 	uint32_t c_max_latency;
 	uint32_t p_max_latency;
 	uint16_t handle_iter;
-	uint8_t  cis_count;
+	uint32_t total_time;
+	bool force_framed;
+	uint8_t  num_cis;
 
 	/* Intermediate subevent data */
 	struct {
@@ -154,28 +156,37 @@ uint8_t ll_cig_parameters_commit(uint8_t cig_id)
 		uint8_t  total_count;
 	} se[STREAMS_PER_GROUP];
 
-	/* If CIG already exists, controller and host are not in sync */
+	/* If CIG already exists, this is a reconfigure */
 	cig = ll_conn_iso_group_get_by_id(cig_id);
-	LL_ASSERT(!cig);
-
-	/* CIG does not exist - create it */
-	cig = ll_conn_iso_group_acquire();
 	if (!cig) {
-		ll_iso_setup.cis_idx = 0U;
+		/* CIG does not exist - create it */
+		cig = ll_conn_iso_group_acquire();
+		if (!cig) {
+			ll_iso_setup.cis_idx = 0U;
 
-		/* No space for new CIG */
-		return BT_HCI_ERR_INSUFFICIENT_RESOURCES;
+			/* No space for new CIG */
+			return BT_HCI_ERR_INSUFFICIENT_RESOURCES;
+		}
+		cig->state = CIG_STATE_CONFIGURABLE;
+		cig->lll.num_cis = 0U;
+
+	} else if (cig->state != CIG_STATE_CONFIGURABLE) {
+		/* CIG is not in configurable state */
+		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
-	/* Transfer parameters from update cache and clear LLL fields */
+	/* Store currently configured number of CISes before cache transfer */
+	num_cis = cig->lll.num_cis;
+
+	/* Transfer parameters from configuration cache and clear LLL fields */
 	memcpy(cig, &ll_iso_setup.group, sizeof(struct ll_conn_iso_group));
-	cis_count = ll_iso_setup.cis_count;
 
 	/* Setup LLL parameters */
 	cig->lll.handle = ll_conn_iso_group_handle_get(cig);
 	cig->lll.role = BT_HCI_ROLE_CENTRAL;
 	cig->lll.resume_cis = LLL_HANDLE_INVALID;
-	cig->lll.num_cis = cis_count;
+	cig->lll.num_cis = num_cis;
+	force_framed = false;
 
 	if (!cig->central.test) {
 		/* TODO: Calculate ISO_Interval based on SDU_Interval and Max_SDU vs Max_PDU,
@@ -188,14 +199,76 @@ uint8_t ll_cig_parameters_commit(uint8_t cig_id)
 		 *  10 ms          10 ms          40        40        100%
 		 *  10 ms          12.5 ms        40        50         25%
 		 */
-		iso_interval_us = cig->c_sdu_interval;
-		cig->iso_interval = DIV_ROUND_UP(iso_interval_us, ISO_INT_UNIT_US);
-	} else {
-		iso_interval_us = cig->iso_interval * ISO_INT_UNIT_US;
+
+		/* Set ISO_Interval to the closest lower value of SDU_Interval to be able to
+		 * handle the throughput. For unframed these must be divisible, if they're not,
+		 * framed mode must be forced.
+		 */
+		cig->iso_interval = cig->c_sdu_interval / ISO_INT_UNIT_US;
+
+		if (cig->iso_interval < BT_HCI_ISO_INTERVAL_MIN) {
+			/* ISO_Interval is below minimum (5 ms) */
+			cig->iso_interval = BT_HCI_ISO_INTERVAL_MIN;
+		}
+
+		if (!cig->central.framing && (cig->c_sdu_interval % ISO_INT_UNIT_US)) {
+			/* Framing not requested but requirement for unframed is not met. Force
+			 * CIG into framed mode.
+			 */
+			force_framed = true;
+		}
 	}
 
+	iso_interval_us = cig->iso_interval * ISO_INT_UNIT_US;
+
 	lll_hdr_init(&cig->lll, cig);
-	max_se_length = 0;
+	max_se_length = 0U;
+
+	/* Create all configurable CISes */
+	for (uint8_t i = 0U; i < ll_iso_setup.cis_count; i++) {
+		memq_link_t *link_tx_free;
+
+		cis = ll_conn_iso_stream_get_by_id(ll_iso_setup.stream[i].cis_id);
+		if (cis) {
+			/* Check if Max_SDU reconfigure violates datapath by changing
+			 * non-zero Max_SDU with associated datapath, to zero.
+			 */
+			if ((cis->c_max_sdu && cis->hdr.datapath_in &&
+			     !ll_iso_setup.stream[i].c_max_sdu) ||
+			    (cis->p_max_sdu && cis->hdr.datapath_out &&
+			     !ll_iso_setup.stream[i].p_max_sdu)) {
+				/* Reconfiguring CIS with datapath to wrong direction is
+				 * not allowed.
+				 */
+				return BT_HCI_ERR_CMD_DISALLOWED;
+			}
+		} else {
+			/* Acquire new CIS */
+			cis = ll_conn_iso_stream_acquire();
+			if (!cis) {
+				/* No space for new CIS */
+				ll_iso_setup.cis_idx = 0U;
+				return BT_HCI_ERR_INSUFFICIENT_RESOURCES;
+			}
+			cig->lll.num_cis++;
+		}
+
+		/* Store TX free link before transfer */
+		link_tx_free = cis->lll.link_tx_free;
+
+		/* Transfer parameters from configuration cache */
+		memcpy(cis, &ll_iso_setup.stream[i], sizeof(struct ll_conn_iso_stream));
+
+		cis->group  = cig;
+		cis->framed = cig->central.framing || force_framed;
+
+		cis->lll.link_tx_free = link_tx_free;
+		cis->lll.handle = ll_conn_iso_stream_handle_get(cis);
+		handles[i] = cis->lll.handle;
+	}
+
+	num_cis = cig->lll.num_cis;
+	handle_iter = UINT16_MAX;
 
 	/* 1) Acquire CIS instances and initialize instance data.
 	 * 2) Calculate SE_Length for each CIS and store the largest
@@ -211,27 +284,13 @@ uint8_t ll_cig_parameters_commit(uint8_t cig_id)
 	 * CIS_Sync_Delay 1        |......|              |..........|
 	 * ISO_Interval      |.................|..     |.................|..
 	 */
-	for (uint8_t i = 0; i < cis_count; i++) {
+	for (uint8_t i = 0U; i < num_cis; i++) {
 		uint32_t mpt_c;
 		uint32_t mpt_p;
 		bool tx;
 		bool rx;
 
-		/* Acquire new CIS */
-		cis = ll_conn_iso_stream_acquire();
-		if (cis == NULL) {
-			ll_iso_setup.cis_idx = 0U;
-
-			/* No space for new CIS */
-			return BT_HCI_ERR_INSUFFICIENT_RESOURCES;
-		}
-
-		/* Transfer parameters from update cache */
-		memcpy(cis, &ll_iso_setup.stream[i], sizeof(struct ll_conn_iso_stream));
-		cis->group  = cig;
-		cis->framed = cig->central.framing;
-
-		cis->lll.handle = ll_conn_iso_stream_handle_get(cis);
+		cis = ll_conn_iso_stream_get_by_group(cig, &handle_iter);
 
 		if (cig->central.test) {
 			cis->lll.tx.ft = ll_iso_setup.c_ft;
@@ -268,7 +327,7 @@ uint8_t ll_cig_parameters_commit(uint8_t cig_id)
 				cis->lll.tx.bn = bn;
 				cis->lll.tx.max_pdu = max_pdu;
 			} else {
-				cis->lll.tx.bn = 0;
+				cis->lll.tx.bn = 0U;
 			}
 
 			if (rx) {
@@ -283,7 +342,7 @@ uint8_t ll_cig_parameters_commit(uint8_t cig_id)
 				cis->lll.rx.bn = bn;
 				cis->lll.rx.max_pdu = max_pdu;
 			} else {
-				cis->lll.rx.bn = 0;
+				cis->lll.rx.bn = 0U;
 			}
 		}
 
@@ -300,31 +359,21 @@ uint8_t ll_cig_parameters_commit(uint8_t cig_id)
 	}
 
 	handle_iter = UINT16_MAX;
-	uint32_t total_time = 0;
+	total_time = 0U;
 
 	/* 1) Prepare calculation of the flush timeout by adding up the total time needed to
 	 *    transfer all payloads, including retransmissions.
 	 */
-	for (uint8_t i = 0; i < cis_count; i++) {
-		cis = ll_conn_iso_stream_get_by_group(cig, &handle_iter);
-
-		if (cig->central.packing == BT_ISO_PACKING_SEQUENTIAL) {
-			/* Sequential CISes - add up the duration and set individual
-			 * subinterval.
-			 */
+	if (cig->central.packing == BT_ISO_PACKING_SEQUENTIAL) {
+		/* Sequential CISes - add up the total duration */
+		for (uint8_t i = 0U; i < num_cis; i++) {
+			cis = ll_conn_iso_stream_get_by_group(cig, &handle_iter);
 			total_time += se[i].total_count * se[i].length;
-		} else {
-			/* Interleaved CISes - find the largest total duration and
-			 * set all subintervals to the largest SE_Length of any CIS x
-			 * the number of interleaved CISes.
-			 */
-			total_time = MAX(total_time, se[i].total_count * cis->lll.sub_interval +
-					 (i * cis->lll.sub_interval / cis_count));
 		}
 	}
 
 	handle_iter = UINT16_MAX;
-	cig_sync_delay = 0;
+	cig_sync_delay = 0U;
 
 	/* 1) Calculate the flush timeout either by dividing the total time needed to transfer all,
 	 *    payloads including retransmissions, and divide by the ISO_Interval (low latency
@@ -336,11 +385,14 @@ uint8_t ll_cig_parameters_commit(uint8_t cig_id)
 	 *    largest SE_Length times number of CISes (interleaved). Min. subinterval is 400 us.
 	 * 4) Calculate CIG_Sync_Delay
 	 */
-	for (uint8_t i = 0; i < cis_count; i++) {
+	for (uint8_t i = 0U; i < num_cis; i++) {
 		cis = ll_conn_iso_stream_get_by_group(cig, &handle_iter);
 
 		if (!cig->central.test) {
 #if defined(CONFIG_BT_CTLR_CONN_ISO_LOW_LATENCY_POLICY)
+			/* TODO: Only implemented for sequential packing */
+			LL_ASSERT(cig->central.packing == BT_ISO_PACKING_SEQUENTIAL);
+
 			/* Use symmetric flush timeout */
 			cis->lll.tx.ft = DIV_ROUND_UP(total_time, iso_interval_us);
 			cis->lll.rx.ft = cis->lll.tx.ft;
@@ -371,35 +423,34 @@ uint8_t ll_cig_parameters_commit(uint8_t cig_id)
 #else
 			LL_ASSERT(0);
 #endif
-			cis->lll.nse = DIV_ROUND_UP(se[i].total_count,
-								  cis->lll.tx.ft);
+			cis->lll.nse = DIV_ROUND_UP(se[i].total_count, cis->lll.tx.ft);
 		}
 
 		if (cig->central.packing == BT_ISO_PACKING_SEQUENTIAL) {
 			/* Accumulate CIG sync delay for sequential CISes */
-			cis->lll.sub_interval = MAX(400, se[i].length);
+			cis->lll.sub_interval = MAX(SUB_INTERVAL_MIN, se[i].length);
 			cig_sync_delay += cis->lll.nse * cis->lll.sub_interval;
 		} else {
 			/* For interleaved CISes, offset each CIS by a fraction of a subinterval,
 			 * positioning them evenly within the subinterval.
 			 */
-			cis->lll.sub_interval = MAX(400, cis_count * max_se_length);
+			cis->lll.sub_interval = MAX(SUB_INTERVAL_MIN, num_cis * max_se_length);
 			cig_sync_delay = MAX(cig_sync_delay,
 					     (cis->lll.nse * cis->lll.sub_interval) +
-					     (i * cis->lll.sub_interval / cis_count));
+					     (i * cis->lll.sub_interval / num_cis));
 		}
 	}
 
 	cig->sync_delay = cig_sync_delay;
 
 	handle_iter = UINT16_MAX;
-	c_max_latency = 0;
-	p_max_latency = 0;
+	c_max_latency = 0U;
+	p_max_latency = 0U;
 
 	/* 1) Calculate transport latencies for each CIS and validate against Max_Transport_Latency.
 	 * 2) Lay out CISes by updating CIS_Sync_Delay, distributing according to the packing.
 	 */
-	for (uint8_t i = 0; i < cis_count; i++) {
+	for (uint8_t i = 0U; i < num_cis; i++) {
 		uint32_t c_latency;
 		uint32_t p_latency;
 
@@ -440,11 +491,11 @@ uint8_t ll_cig_parameters_commit(uint8_t cig_id)
 		} else {
 			/* Distribute CISes interleaved */
 			cis->sync_delay = cig_sync_delay;
-			cig_sync_delay -= (cis->lll.sub_interval / cis_count);
+			cig_sync_delay -= (cis->lll.sub_interval / num_cis);
 		}
 
 		if (cis->lll.nse <= 1) {
-			cis->lll.sub_interval = 0;
+			cis->lll.sub_interval = 0U;
 		}
 	}
 
@@ -522,8 +573,8 @@ uint8_t ll_cis_parameters_test_set(uint8_t cis_id, uint8_t nse,
 	ll_iso_setup.stream[cis_idx].c_max_sdu = c_sdu;
 	ll_iso_setup.stream[cis_idx].p_max_sdu = p_sdu;
 	ll_iso_setup.stream[cis_idx].lll.nse = nse;
-	ll_iso_setup.stream[cis_idx].lll.tx.max_pdu = c_bn ? c_pdu : 0;
-	ll_iso_setup.stream[cis_idx].lll.rx.max_pdu = p_bn ? p_pdu : 0;
+	ll_iso_setup.stream[cis_idx].lll.tx.max_pdu = c_bn ? c_pdu : 0U;
+	ll_iso_setup.stream[cis_idx].lll.rx.max_pdu = p_bn ? p_pdu : 0U;
 	ll_iso_setup.stream[cis_idx].lll.tx.phy = c_phy;
 	ll_iso_setup.stream[cis_idx].lll.rx.phy = p_phy;
 	ll_iso_setup.stream[cis_idx].lll.tx.bn = c_bn;
@@ -618,13 +669,13 @@ uint8_t ll_cig_remove(uint8_t cig_id)
 		return BT_HCI_ERR_UNKNOWN_CONN_ID;
 	}
 
-	if (cig->started) {
+	if (cig->state == CIG_STATE_ACTIVE) {
 		/* CIG is in active state */
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
 	handle_iter = UINT16_MAX;
-	for (int i = 0; i < cig->lll.num_cis; i++)  {
+	for (uint8_t i = 0U; i < cig->lll.num_cis; i++)  {
 		struct ll_conn *conn;
 
 		cis = ll_conn_iso_stream_get_by_group(cig, &handle_iter);
@@ -704,7 +755,7 @@ uint8_t ull_central_iso_setup(uint16_t cis_handle,
 	cis_offset = *cis_offset_min;
 
 	/* Calculate offset for CIS */
-	if (cig->started) {
+	if (cig->state == CIG_STATE_ACTIVE) {
 		uint32_t time_of_intant;
 		uint32_t cig_ref_point;
 
@@ -767,7 +818,7 @@ uint8_t ull_central_iso_setup(uint16_t cis_handle,
 
 	*conn_event_count = instant;
 
-	return 0;
+	return 0U;
 }
 
 int ull_central_iso_cis_offset_get(uint16_t cis_handle,
@@ -801,7 +852,7 @@ int ull_central_iso_cis_offset_get(uint16_t cis_handle,
 	}
 
 #if (CONFIG_BT_CTLR_CENTRAL_SPACING == 0)
-	if (cig->started) {
+	if (cig->state == CIG_STATE_ACTIVE) {
 		cis_offset_get(cis);
 	} else {
 		cig_offset_get(cis);
