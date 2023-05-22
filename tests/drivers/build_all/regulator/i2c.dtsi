@@ -46,3 +46,15 @@ npm1300@2 {
 		LDO2 {};
 	};
 };
+
+apd356x@3 {
+	compatible = "adi,adp5360";
+	reg = <0x3>;
+
+	regulators {
+		compatible = "adi,adp5360-regulator";
+
+		BUCK {};
+		BUCKBOOST {};
+	};
+};

@@ -1,0 +1,28 @@
+# Copyright (c) 2023 Nordic Semiconductor ASA
+# SPDX -License-Identifier: Apache-2.0
+
+config REGULATOR_ADP5360
+	bool "ADP5360 PMIC regulator driver"
+	default y
+	depends on DT_HAS_ADI_ADP5360_REGULATOR_ENABLED
+	select I2C
+	help
+	  Enable the Analog Devices ADP5360 PMIC regulator driver
+
+if REGULATOR_ADP5360
+
+config REGULATOR_ADP5360_COMMON_INIT_PRIORITY
+	int "ADP5360 regulator driver init priority (common part)"
+	default 75
+	help
+	  Init priority for the Analog Devices ADP5360 regulator driver (common
+	  part). It must be greater than I2C init priority.
+
+config REGULATOR_ADP5360_INIT_PRIORITY
+	int "ADP5360 regulator driver init priority"
+	default 76
+	help
+	  Init priority for the Analog Devices ADP5360 regulator driver. It must
+	  be greater than REGULATOR_ADP5360_COMMON_INIT_PRIORITY.
+
+endif
