@@ -34,18 +34,24 @@ extern "C" {
  */
 typedef void (*pm_policy_latency_changed_cb_t)(int32_t latency);
 
-/** @brief Latency change subscription. */
+/**
+ * @brief Latency change subscription.
+ *
+ * @note All fields in this structure are meant for private usage.
+ */
 struct pm_policy_latency_subscription {
 	sys_snode_t node;
-	/** Notification callback. */
 	pm_policy_latency_changed_cb_t cb;
 };
 
-/** @brief Latency request. */
+/**
+ * @brief Latency request.
+ *
+ * @note All fields in this structure are meant for private usage.
+ */
 struct pm_policy_latency_request {
 	sys_snode_t node;
-	/** Request value. */
-	uint32_t value;
+	uint32_t value_us;
 };
 
 /** @cond INTERNAL_HIDDEN */
@@ -121,19 +127,19 @@ bool pm_policy_state_lock_is_active(enum pm_state state, uint8_t substate_id);
  * exceed the given latency value.
  *
  * @param req Latency request.
- * @param value Maximum allowed latency in microseconds.
+ * @param value_us Maximum allowed latency in microseconds.
  */
 void pm_policy_latency_request_add(struct pm_policy_latency_request *req,
-				   uint32_t value);
+				   uint32_t value_us);
 
 /**
  * @brief Update a latency requirement.
  *
  * @param req Latency request.
- * @param value New maximum allowed latency in microseconds.
+ * @param value_us New maximum allowed latency in microseconds.
  */
 void pm_policy_latency_request_update(struct pm_policy_latency_request *req,
-				      uint32_t value);
+				      uint32_t value_us);
 
 /**
  * @brief Remove a latency requirement.
@@ -180,17 +186,17 @@ static inline bool pm_policy_state_lock_is_active(enum pm_state state, uint8_t s
 }
 
 static inline void pm_policy_latency_request_add(
-	struct pm_policy_latency_request *req, uint32_t value)
+	struct pm_policy_latency_request *req, uint32_t value_us)
 {
 	ARG_UNUSED(req);
-	ARG_UNUSED(value);
+	ARG_UNUSED(value_us);
 }
 
 static inline void pm_policy_latency_request_update(
-	struct pm_policy_latency_request *req, uint32_t value)
+	struct pm_policy_latency_request *req, uint32_t value_us)
 {
 	ARG_UNUSED(req);
-	ARG_UNUSED(value);
+	ARG_UNUSED(value_us);
 }
 
 static inline void pm_policy_latency_request_remove(
