@@ -50,9 +50,14 @@ extern "C" {
  */
 #define USB_STRING_DESCRIPTOR_LENGTH(s)	(sizeof(s) * 2)
 
-#define USBD_DESC_MANUFACTURER_IDX		1
-#define USBD_DESC_PRODUCT_IDX			2
-#define USBD_DESC_SERIAL_NUMBER_IDX		3
+/* Used internally to keep descriptors in order */
+enum usbd_desc_usage_type {
+	USBD_DUT_STRING_LANG,
+	USBD_DUT_STRING_MANUFACTURER,
+	USBD_DUT_STRING_PRODUCT,
+	USBD_DUT_STRING_SERIAL_NUMBER,
+	USBD_DUT_STRING_INTERFACE,
+};
 
 /**
  * Descriptor node
@@ -65,6 +70,8 @@ struct usbd_desc_node {
 	sys_dnode_t node;
 	/** Descriptor index, required for string descriptors */
 	unsigned int idx : 8;
+	/** Descriptor usage type (not bDescriptorType) */
+	unsigned int utype : 8;
 	/** If not set, string descriptor must be converted to UTF16LE */
 	unsigned int utf16le : 1;
 	/** If not set, device stack obtains SN using the hwinfo API */
@@ -312,7 +319,19 @@ struct usbd_class_node {
 		.desc = &cfg_desc_##name,				\
 	}
 
-
+/**
+ * @brief Create a string descriptor node and language string descriptor
+ *
+ * This macro defines a descriptor node and a string descriptor that,
+ * when added to the device context, is automatically used as the language
+ * string descriptor zero. Both descriptor node and descriptor are defined with
+ * static-storage-class specifier. Default and currently only supported
+ * language ID is 0x0409 English (United States).
+ * If string descriptors are used, it is necessary to add this descriptor
+ * as the first one to the USB device context.
+ *
+ * @param name Language string descriptor node identifier.
+ */
 #define USBD_DESC_LANG_DEFINE(name)					\
 	static struct usb_string_descriptor				\
 	string_desc_##name = {						\
@@ -322,10 +341,11 @@ struct usbd_class_node {
 	};								\
 	static struct usbd_desc_node name = {				\
 		.idx = 0,						\
+		.utype = USBD_DUT_STRING_LANG,				\
 		.desc = &string_desc_##name,				\
 	}
 
-#define USBD_DESC_STRING_DEFINE(d_name, d_string, d_idx)		\
+#define USBD_DESC_STRING_DEFINE(d_name, d_string, d_utype)		\
 	struct usb_string_descriptor_##d_name {				\
 		uint8_t bLength;					\
 		uint8_t bDescriptorType;				\
@@ -337,20 +357,53 @@ struct usbd_class_node {
 		.bDescriptorType = USB_DESC_STRING,			\
 		.bString = d_string,					\
 	};								\
-	BUILD_ASSERT(d_idx != 0, "Index 0 is not allowed");		\
 	static struct usbd_desc_node d_name = {				\
-		.idx = d_idx,						\
+		.utype = d_utype,					\
 		.desc = &string_desc_##d_name,				\
 	}
 
+/**
+ * @brief Create a string descriptor node and manufacturer string descriptor
+ *
+ * This macro defines a descriptor node and a string descriptor that,
+ * when added to the device context, is automatically used as the manufacturer
+ * string descriptor. Both descriptor node and descriptor are defined with
+ * static-storage-class specifier.
+ *
+ * @param d_name   String descriptor node identifier.
+ * @param d_string ASCII7 encoded manufacturer string literal
+ */
 #define USBD_DESC_MANUFACTURER_DEFINE(d_name, d_string)			\
-	USBD_DESC_STRING_DEFINE(d_name, d_string, USBD_DESC_MANUFACTURER_IDX)
+	USBD_DESC_STRING_DEFINE(d_name, d_string, USBD_DUT_STRING_MANUFACTURER)
 
+/**
+ * @brief Create a string descriptor node and product string descriptor
+ *
+ * This macro defines a descriptor node and a string descriptor that,
+ * when added to the device context, is automatically used as the product
+ * string descriptor. Both descriptor node and descriptor are defined with
+ * static-storage-class specifier.
+ *
+ * @param d_name   String descriptor node identifier.
+ * @param d_string ASCII7 encoded product string literal
+ */
 #define USBD_DESC_PRODUCT_DEFINE(d_name, d_string)			\
-	USBD_DESC_STRING_DEFINE(d_name, d_string, USBD_DESC_PRODUCT_IDX)
+	USBD_DESC_STRING_DEFINE(d_name, d_string, USBD_DUT_STRING_PRODUCT)
 
+/**
+ * @brief Create a string descriptor node and serial number string descriptor
+ *
+ * This macro defines a descriptor node and a string descriptor that,
+ * when added to the device context, is automatically used as the serial number
+ * string descriptor. The string literal parameter is used as a placeholder,
+ * the unique number is obtained from hwinfo. Both descriptor node and descriptor
+ * are defined with static-storage-class specifier.
+ *
+ * @param d_name   String descriptor node identifier.
+ * @param d_string ASCII7 encoded serial number string literal placeholder
+ */
 #define USBD_DESC_SERIAL_NUMBER_DEFINE(d_name, d_string)		\
-	USBD_DESC_STRING_DEFINE(d_name, d_string, USBD_DESC_SERIAL_NUMBER_IDX)
+	USBD_DESC_STRING_DEFINE(d_name, d_string, USBD_DUT_STRING_SERIAL_NUMBER)
 
 #define USBD_DEFINE_CLASS(class_name, class_api, class_data)		\
 	static STRUCT_SECTION_ITERABLE(usbd_class_node, class_name) = {	\
