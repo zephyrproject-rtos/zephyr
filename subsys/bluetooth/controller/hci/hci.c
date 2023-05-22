@@ -2127,6 +2127,7 @@ static void le_set_cig_params_test(struct net_buf *buf, struct net_buf **evt)
 
 static void le_create_cis(struct net_buf *buf, struct net_buf **evt)
 {
+	uint16_t handle_used[CONFIG_BT_CTLR_CONN_ISO_STREAMS_PER_GROUP] = {0};
 	struct bt_hci_cp_le_create_cis *cmd = (void *)buf->data;
 	uint8_t status;
 	uint8_t i;
@@ -2145,9 +2146,19 @@ static void le_create_cis(struct net_buf *buf, struct net_buf **evt)
 	for (i = 0; !status && i < cmd->num_cis; i++) {
 		uint16_t cis_handle;
 		uint16_t acl_handle;
+		uint8_t cis_idx;
 
 		cis_handle = sys_le16_to_cpu(cmd->cis[i].cis_handle);
 		acl_handle = sys_le16_to_cpu(cmd->cis[i].acl_handle);
+
+		cis_idx = LL_CIS_IDX_FROM_HANDLE(cis_handle);
+		if (handle_used[cis_idx]) {
+			/* Handle must be unique in request */
+			status = BT_HCI_ERR_INVALID_PARAM;
+			break;
+		}
+
+		handle_used[cis_idx]++;
 		status = ll_cis_create_check(cis_handle, acl_handle);
 	}
 

@@ -1899,6 +1899,21 @@ struct bt_hci_rp_le_read_iso_tx_sync {
 	uint8_t  offset[3];
 } __packed;
 
+#define BT_HCI_ISO_CIG_ID_MAX                   0xFE
+#define BT_HCI_ISO_CIS_COUNT_MAX                0x1F
+#define BT_HCI_ISO_SDU_INTERVAL_MIN             0x0000FF
+#define BT_HCI_ISO_SDU_INTERVAL_MAX             0x0FFFFF
+#define BT_HCI_ISO_WORST_CASE_SCA_VALID_MASK    0x07
+#define BT_HCI_ISO_PACKING_VALID_MASK           0x01
+#define BT_HCI_ISO_FRAMING_VALID_MASK           0x01
+#define BT_HCI_ISO_MAX_TRANSPORT_LATENCY_MIN    0x0005
+#define BT_HCI_ISO_MAX_TRANSPORT_LATENCY_MAX    0x0FA0
+#define BT_HCI_ISO_CIS_ID_VALID_MAX             0xEF
+#define BT_HCI_ISO_MAX_SDU_VALID_MASK           0x0FFF
+#define BT_HCI_ISO_PHY_VALID_MASK               0x07
+#define BT_HCI_ISO_INTERVAL_MIN                 0x0004
+#define BT_HCI_ISO_INTERVAL_MAX                 0x0C80
+
 #define BT_HCI_OP_LE_SET_CIG_PARAMS             BT_OP(BT_OGF_LE, 0x0062)
 struct bt_hci_cis_params {
 	uint8_t  cis_id;

@@ -54,6 +54,9 @@
 #include "hal/debug.h"
 
 #define SDU_MAX_DRIFT_PPM 100
+#define SUB_INTERVAL_MIN  400
+
+#define STREAMS_PER_GROUP CONFIG_BT_CTLR_CONN_ISO_STREAMS_PER_GROUP
 
 #if (CONFIG_BT_CTLR_CENTRAL_SPACING == 0)
 static void cig_offset_get(struct ll_conn_iso_stream *cis);
@@ -66,6 +69,10 @@ static void ticker_op_cb(uint32_t status, void *param);
 static void set_bn_max_pdu(bool framed, uint32_t iso_interval,
 			   uint32_t sdu_interval, uint16_t max_sdu, uint8_t *bn,
 			   uint8_t *max_pdu);
+static uint8_t ll_cig_parameters_validate(void);
+static uint8_t ll_cis_parameters_validate(uint8_t cis_idx, uint8_t cis_id,
+					  uint16_t c_sdu, uint16_t p_sdu,
+					  uint16_t c_phy, uint16_t p_phy);
 
 /* Setup cache for CIG commit transaction */
 static struct {
@@ -88,14 +95,14 @@ uint8_t ll_cig_parameters_open(uint8_t cig_id,
 	ll_iso_setup.group.cig_id = cig_id;
 	ll_iso_setup.group.c_sdu_interval = c_interval;
 	ll_iso_setup.group.p_sdu_interval = p_interval;
-	ll_iso_setup.group.c_latency = c_latency * 1000;
-	ll_iso_setup.group.p_latency = p_latency * 1000;
+	ll_iso_setup.group.c_latency = c_latency * USEC_PER_MSEC;
+	ll_iso_setup.group.p_latency = p_latency * USEC_PER_MSEC;
 	ll_iso_setup.group.central.sca = sca;
 	ll_iso_setup.group.central.packing = packing;
 	ll_iso_setup.group.central.framing = framing;
 	ll_iso_setup.cis_count = num_cis;
 
-	return BT_HCI_ERR_SUCCESS;
+	return ll_cig_parameters_validate();
 }
 
 uint8_t ll_cis_parameters_set(uint8_t cis_id,
@@ -104,9 +111,11 @@ uint8_t ll_cis_parameters_set(uint8_t cis_id,
 			      uint8_t c_rtn, uint8_t p_rtn)
 {
 	uint8_t cis_idx = ll_iso_setup.cis_idx;
+	uint8_t status;
 
-	if (cis_idx >= CONFIG_BT_CTLR_CONN_ISO_STREAMS_PER_GROUP) {
-		return BT_HCI_ERR_INSUFFICIENT_RESOURCES;
+	status = ll_cis_parameters_validate(cis_idx, cis_id, c_sdu, p_sdu, c_phy, p_phy);
+	if (status) {
+		return status;
 	}
 
 	memset(&ll_iso_setup.stream[cis_idx], 0, sizeof(struct ll_conn_iso_stream));
@@ -143,7 +152,7 @@ uint8_t ll_cig_parameters_commit(uint8_t cig_id)
 	struct {
 		uint32_t length;
 		uint8_t  total_count;
-	} se[CONFIG_BT_CTLR_CONN_ISO_STREAMS_PER_GROUP];
+	} se[STREAMS_PER_GROUP];
 
 	/* If CIG already exists, controller and host are not in sync */
 	cig = ll_conn_iso_group_get_by_id(cig_id);
@@ -490,7 +499,7 @@ uint8_t ll_cig_parameters_test_open(uint8_t cig_id, uint32_t c_interval,
 	ll_iso_setup.c_ft = c_ft;
 	ll_iso_setup.p_ft = p_ft;
 
-	return BT_HCI_ERR_SUCCESS;
+	return ll_cig_parameters_validate();
 }
 
 uint8_t ll_cis_parameters_test_set(uint8_t cis_id, uint8_t nse,
@@ -500,9 +509,11 @@ uint8_t ll_cis_parameters_test_set(uint8_t cis_id, uint8_t nse,
 				   uint8_t c_bn, uint8_t p_bn)
 {
 	uint8_t cis_idx = ll_iso_setup.cis_idx;
+	uint8_t status;
 
-	if (cis_idx >= CONFIG_BT_CTLR_CONN_ISO_STREAMS_PER_GROUP) {
-		return BT_HCI_ERR_INSUFFICIENT_RESOURCES;
+	status = ll_cis_parameters_validate(cis_idx, cis_id, c_sdu, p_sdu, c_phy, p_phy);
+	if (status) {
+		return status;
 	}
 
 	memset(&ll_iso_setup.stream[cis_idx], 0, sizeof(struct ll_conn_iso_stream));
@@ -1032,4 +1043,81 @@ static void set_bn_max_pdu(bool framed, uint32_t iso_interval,
 		 */
 		*bn = DIV_ROUND_UP(max_sdu * iso_interval, (*max_pdu) * sdu_interval);
 	}
+}
+
+static uint8_t ll_cig_parameters_validate(void)
+{
+	if (ll_iso_setup.cis_count > BT_HCI_ISO_CIS_COUNT_MAX) {
+		/* Invalid CIS_Count */
+		return BT_HCI_ERR_INVALID_PARAM;
+	}
+
+	if (ll_iso_setup.group.cig_id > BT_HCI_ISO_CIG_ID_MAX) {
+		/* Invalid CIG_ID */
+		return BT_HCI_ERR_INVALID_PARAM;
+	}
+
+	if (!IN_RANGE(ll_iso_setup.group.c_sdu_interval, BT_HCI_ISO_SDU_INTERVAL_MIN,
+		      BT_HCI_ISO_SDU_INTERVAL_MAX) ||
+	    !IN_RANGE(ll_iso_setup.group.p_sdu_interval, BT_HCI_ISO_SDU_INTERVAL_MIN,
+		      BT_HCI_ISO_SDU_INTERVAL_MAX)) {
+		/* Parameter out of range */
+		return BT_HCI_ERR_INVALID_PARAM;
+	}
+
+	if (ll_iso_setup.group.central.test) {
+		if (!IN_RANGE(ll_iso_setup.group.iso_interval,
+			      BT_HCI_ISO_INTERVAL_MIN, BT_HCI_ISO_INTERVAL_MAX)) {
+			/* Parameter out of range */
+			return BT_HCI_ERR_INVALID_PARAM;
+		}
+	} else {
+		if (!IN_RANGE(ll_iso_setup.group.c_latency,
+			      BT_HCI_ISO_MAX_TRANSPORT_LATENCY_MIN * USEC_PER_MSEC,
+			      BT_HCI_ISO_MAX_TRANSPORT_LATENCY_MAX * USEC_PER_MSEC) ||
+		    !IN_RANGE(ll_iso_setup.group.p_latency,
+			      BT_HCI_ISO_MAX_TRANSPORT_LATENCY_MIN * USEC_PER_MSEC,
+			      BT_HCI_ISO_MAX_TRANSPORT_LATENCY_MAX * USEC_PER_MSEC)) {
+			/* Parameter out of range */
+			return BT_HCI_ERR_INVALID_PARAM;
+		}
+	}
+
+	if (((ll_iso_setup.group.central.sca & ~BT_HCI_ISO_WORST_CASE_SCA_VALID_MASK) != 0U) ||
+	    ((ll_iso_setup.group.central.packing & ~BT_HCI_ISO_PACKING_VALID_MASK) != 0U) ||
+	    ((ll_iso_setup.group.central.framing & ~BT_HCI_ISO_FRAMING_VALID_MASK) != 0U)) {
+		/* Worst_Case_SCA, Packing or Framing sets RFU value */
+		return BT_HCI_ERR_INVALID_PARAM;
+	}
+
+	if (ll_iso_setup.cis_count > STREAMS_PER_GROUP) {
+		/* Requested number of CISes not available by configuration. Check as last
+		 * to avoid interfering with qualification parameter checks.
+		 */
+		return BT_HCI_ERR_INSUFFICIENT_RESOURCES;
+	}
+
+	return BT_HCI_ERR_SUCCESS;
+}
+
+static uint8_t ll_cis_parameters_validate(uint8_t cis_idx, uint8_t cis_id,
+					  uint16_t c_sdu, uint16_t p_sdu,
+					  uint16_t c_phy, uint16_t p_phy)
+{
+	if ((cis_id > BT_HCI_ISO_CIS_ID_VALID_MAX) ||
+	    ((c_sdu & ~BT_HCI_ISO_MAX_SDU_VALID_MASK) != 0U) ||
+	    ((p_sdu & ~BT_HCI_ISO_MAX_SDU_VALID_MASK) != 0U)) {
+		return BT_HCI_ERR_INVALID_PARAM;
+	}
+
+	if (!c_phy || ((c_phy & ~BT_HCI_ISO_PHY_VALID_MASK) != 0U) ||
+	    !p_phy || ((p_phy & ~BT_HCI_ISO_PHY_VALID_MASK) != 0U)) {
+		return BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL;
+	}
+
+	if (cis_idx >= STREAMS_PER_GROUP) {
+		return BT_HCI_ERR_INSUFFICIENT_RESOURCES;
+	}
+
+	return BT_HCI_ERR_SUCCESS;
 }
