@@ -51,4 +51,7 @@ config UART_CONSOLE
 
 endif # CONSOLE
 
+config ZTEST_ALLOW_NO_OPTIMIZATIONS
+	default y if ZTEST
+
 endif # BOARD_NRF52_BSIM
