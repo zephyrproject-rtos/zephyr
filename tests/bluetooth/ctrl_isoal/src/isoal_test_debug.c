@@ -86,7 +86,7 @@ void isoal_test_debug_print_rx_sdu(const struct isoal_sink             *sink_ctx
 
 	PRINT("\n");
 	PRINT("SDU %04d (%10d) | %12s [%10s] %03d: ",
-		sdu_frag->sdu.seqn,
+		sdu_frag->sdu.sn,
 		sdu_frag->sdu.timestamp,
 		STATE_TO_STR(sdu_frag->sdu_state),
 		DU_ERR_TO_STR(sdu_frag->sdu.status),
