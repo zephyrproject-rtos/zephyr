@@ -357,6 +357,18 @@ Build system and infrastructure
 * Added a new CMake helper function for setting/updating sysbuild CMake cache
   variables: ``sysbuild_cache_set``.
 
+* Enhanced ``zephyr_get`` CMake helper function to lookup multiple variables
+  and return the result in a variable of different name.
+
+* Introduced ``EXTRA_CONF_FILE``, ``EXTRA_DTC_OVERLAY_FILE``, and
+  ``EXTRA_ZEPHYR_MODULES`` for better naming consistency and uniform behavior
+  for applying extra build settings in addition to Zephyr automatic build
+  setting lookup.
+  ``EXTRA_CONF_FILE`` replaces ``OVERLAY_CONFIG``.
+  ``EXTRA_ZEPHYR_MODULES`` replaces ``ZEPHYR_EXTRA_MODULES``.
+  ``EXTRA_DTC_OVERLAY_FILE`` is new, see
+  :ref:`Set devicetree overlays <set-devicetree-overlays>` for further details.
+
 Drivers and Sensors
 *******************
 
