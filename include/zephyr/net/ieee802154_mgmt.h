@@ -236,8 +236,8 @@ struct ieee802154_req_params {
 
 	/** Result address */
 	union {
+		uint16_t short_addr;			  /* in CPU byte order */
 		uint8_t addr[IEEE802154_MAX_ADDR_LENGTH]; /* in big endian */
-		uint16_t short_addr; /* in CPU byte order */
 	};
 
 	/** length of address */
