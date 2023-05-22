@@ -1371,9 +1371,9 @@ static void bt_iso_remove_data_path(struct bt_conn *iso)
 
 		/* Only remove one data path for BIS as per the spec */
 		if (tx_qos) {
-			dir = BT_HCI_DATAPATH_DIR_HOST_TO_CTLR;
+			dir = BIT(BT_HCI_DATAPATH_DIR_HOST_TO_CTLR);
 		} else {
-			dir = BT_HCI_DATAPATH_DIR_CTLR_TO_HOST;
+			dir = BIT(BT_HCI_DATAPATH_DIR_CTLR_TO_HOST);
 		}
 
 		(void)hci_le_remove_iso_data_path(iso, dir);
@@ -1385,9 +1385,8 @@ static void bt_iso_remove_data_path(struct bt_conn *iso)
 		 * data paths that are not setup
 		 */
 		(void)hci_le_remove_iso_data_path(iso,
-						  BT_HCI_DATAPATH_DIR_CTLR_TO_HOST);
-		(void)hci_le_remove_iso_data_path(iso,
-						  BT_HCI_DATAPATH_DIR_HOST_TO_CTLR);
+			BIT(BT_HCI_DATAPATH_DIR_CTLR_TO_HOST) |
+			BIT(BT_HCI_DATAPATH_DIR_HOST_TO_CTLR));
 	} else {
 		__ASSERT(false, "Invalid iso.type: %u", type);
 	}
