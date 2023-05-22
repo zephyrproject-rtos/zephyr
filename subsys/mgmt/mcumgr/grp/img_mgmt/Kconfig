@@ -20,7 +20,7 @@ menuconfig MCUMGR_GRP_IMG
 	select MPU_ALLOW_FLASH_WRITE if ARM_MPU
 	select MCUMGR_SMP_CBOR_MIN_DECODING_LEVEL_2
 	help
-	  Enables mcumgr handlers for image management
+	  Enables MCUmgr handlers for image management
 
 if MCUMGR_GRP_IMG
 
@@ -48,7 +48,7 @@ config MCUMGR_GRP_IMG_UPDATABLE_IMAGE_NUMBER
 	  Sets how many application images are supported (pairs of secondary and primary slots).
 	  Setting this to 2 requires MCUMGR_TRANSPORT_NETBUF_SIZE to be at least 512b.
 	  NOTE: The UPDATEABLE_IMAGE_NUMBER of MCUBOOT configuration, even for Zephyr build,
-	  needs to be set to the same value; this is due to the fact that the mcumgr uses
+	  needs to be set to the same value; this is due to the fact that the MCUmgr uses
 	  boot_util and the UPDATEABLE_IMAGE_NUMBER controls number of images supported
 	  by that library.
 
@@ -63,8 +63,8 @@ config MCUMGR_GRP_IMG_DIRECT_UPLOAD
 	bool "Allow direct image upload"
 	help
 	  Enables directly uploading image to selected image partition.
-	  This changes how "image" is understood by mcumgr: normally the mcumgr allows to upload
-	  to first slot of the only image it knows, where image is understood as two slots
+	  This changes how "image" is understood by MCUmgr: normally MCUmgr allows uploading to
+	  the first slot of the only image it knows, where image is understood as two slots
 	  (two DTS images for Zephyr); this allows to treat every DTS defined image as direct
 	  target for upload, and more than two may be used (4 at this time).
 	  NOTE: When direct upload is used the image numbers are shifted by + 1, and the default
@@ -74,7 +74,7 @@ config MCUMGR_GRP_IMG_DIRECT_UPLOAD
 config MCUMGR_GRP_IMG_REJECT_DIRECT_XIP_MISMATCHED_SLOT
 	bool "Reject Direct-XIP applications with mismatched address"
 	help
-	  When enabled, the mcumgr will compare base address of application,
+	  When enabled, the MCUmgr will compare base address of application,
 	  encoded into .bin file header with use of imgtool, on upload and will
 	  reject binaries that would not be able to start from available
 	  Direct-XIP address.
@@ -87,7 +87,7 @@ config MCUMGR_GRP_IMG_FRUGAL_LIST
 	  The status list send back from the device will only be filled with data that is non-zero,
 	  non-empty or true.  This option slightly reduces number of bytes transferred back from
 	  a device but requires support in client software, which has to default omitted values.
-	  Works correctly with mcumgr-cli.
+	  Works correctly with the go mcumgr-cli application.
 
 config MCUMGR_GRP_IMG_VERSION_CMP_USE_BUILD_NUMBER
 	bool "Use build number while comparing image version"
