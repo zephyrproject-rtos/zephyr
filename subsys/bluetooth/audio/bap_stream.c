@@ -184,8 +184,6 @@ enum bt_bap_ascs_reason bt_audio_verify_qos(const struct bt_codec_qos *qos)
 
 bool bt_audio_valid_codec_data(const struct bt_codec_data *data)
 {
-	LOG_ERR("data->data.data_len %u ARRAY_SIZE(data->value) %zu", data->data.data_len,
-		ARRAY_SIZE(data->value));
 	if (data->data.data_len > ARRAY_SIZE(data->value)) {
 		LOG_DBG("data invalid length: %zu/%zu", data->data.data_len,
 			ARRAY_SIZE(data->value));
