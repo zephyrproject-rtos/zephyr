@@ -390,7 +390,7 @@ static int ext2_mount(struct fs_mount_t *mountp)
 		goto err;
 	}
 
-	ret = ext2_verify_superblock(&superblock);
+	ret = ext2_verify_disk_superblock(&superblock);
 	if (ret == 0) {
 		fs->block_size = 1024 << superblock.s_log_block_size;
 
@@ -614,8 +614,8 @@ static int ext2_statvfs(struct fs_mount_t *mountp, const char *path, struct fs_s
 
 	stat->f_bsize = fs->block_size;
 	stat->f_frsize = fs->block_size;
-	stat->f_blocks = EXT2_DATA_SBLOCK(fs)->s_blocks_count;
-	stat->f_bfree = EXT2_DATA_SBLOCK(fs)->s_free_blocks_count;
+	stat->f_blocks = fs->sblock.s_blocks_count;
+	stat->f_bfree = fs->sblock.s_free_blocks_count;
 
 	return 0;
 }
