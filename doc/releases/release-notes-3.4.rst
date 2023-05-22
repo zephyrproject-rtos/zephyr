@@ -165,6 +165,14 @@ Changes in this release
   implemented for the STM32 DAC driver. Implicitly for this driver this changes
   the default from being buffered to unbuffered.
 
+* MCUmgr fs_mgmt group's file access hook is now called for all fs_mgmt group
+  functions (adding support for file status and file hash/checksum). In
+  addition, if the file access state is not lost, it will now only be called
+  once for the file access instead of each time a command is received.
+  Note that the structure for the notification has changed, the ``upload`` bool
+  has been replaced with an enum to indicate what function is used, see
+  :c:struct:`fs_mgmt_file_access` for the new structure definition.
+
 Removed APIs in this release
 ============================
 
