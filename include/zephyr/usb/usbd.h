@@ -221,8 +221,8 @@ struct usbd_class_api {
 	/** Initialization of the class implementation */
 	int (*init)(struct usbd_class_node *const node);
 
-	/** Shutdown of the class implementation (TODO) */
-	int (*shutdown)(struct usbd_class_node *const node);
+	/** Shutdown of the class implementation */
+	void (*shutdown)(struct usbd_class_node *const node);
 };
 
 /**

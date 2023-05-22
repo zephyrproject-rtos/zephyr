@@ -272,6 +272,7 @@ int usbd_class_remove_all(struct usbd_contex *const uds_ctx,
 	while ((node = sys_slist_get(&cfg_nd->class_list))) {
 		c_nd = CONTAINER_OF(node, struct usbd_class_node, node);
 		atomic_clear_bit(&c_nd->data->state, USBD_CCTX_REGISTERED);
+		usbd_class_shutdown(c_nd);
 		LOG_DBG("Remove class node %p from configuration %u", c_nd, cfg);
 	}
 
@@ -361,6 +362,7 @@ int usbd_unregister_class(struct usbd_contex *const uds_ctx,
 	ret = usbd_class_remove(uds_ctx, c_nd, cfg);
 	if (ret == 0) {
 		atomic_clear_bit(&data->state, USBD_CCTX_REGISTERED);
+		usbd_class_shutdown(c_nd);
 		data->uds_ctx = NULL;
 	}
 
