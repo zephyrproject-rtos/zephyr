@@ -2025,26 +2025,21 @@ static void le_set_cig_parameters(struct net_buf *buf, struct net_buf **evt)
 
 	rp = hci_cmd_complete(evt, sizeof(*rp) + cis_count * sizeof(uint16_t));
 	rp->cig_id = cig_id;
-	rp->num_handles = cis_count;
 
 	/* Only apply parameters if all went well */
 	if (!status) {
-		status = ll_cig_parameters_commit(cig_id);
+		uint16_t handles[CONFIG_BT_CTLR_CONN_ISO_STREAMS_PER_GROUP];
+
+		status = ll_cig_parameters_commit(cig_id, handles);
 
 		if (status == BT_HCI_ERR_SUCCESS) {
-			struct ll_conn_iso_group *cig;
-			uint16_t handle;
-
-			cig = ll_conn_iso_group_get_by_id(cig_id);
-			handle = UINT16_MAX;
-
 			for (uint8_t i = 0; i < cis_count; i++) {
-				(void)ll_conn_iso_stream_get_by_group(cig, &handle);
-				rp->handle[i] = sys_cpu_to_le16(handle);
+				rp->handle[i] = sys_cpu_to_le16(handles[i]);
 			}
 		}
 	}
 
+	rp->num_handles = status ? 0U : cis_count;
 	rp->status = status;
 }
 
@@ -2102,26 +2097,21 @@ static void le_set_cig_params_test(struct net_buf *buf, struct net_buf **evt)
 
 	rp = hci_cmd_complete(evt, sizeof(*rp) + cis_count * sizeof(uint16_t));
 	rp->cig_id = cig_id;
-	rp->num_handles = cis_count;
 
 	/* Only apply parameters if all went well */
 	if (!status) {
-		status = ll_cig_parameters_commit(cig_id);
+		uint16_t handles[CONFIG_BT_CTLR_CONN_ISO_STREAMS_PER_GROUP];
+
+		status = ll_cig_parameters_commit(cig_id, handles);
 
 		if (status == BT_HCI_ERR_SUCCESS) {
-			struct ll_conn_iso_group *cig;
-			uint16_t handle;
-
-			cig = ll_conn_iso_group_get_by_id(cig_id);
-			handle = UINT16_MAX;
-
 			for (uint8_t i = 0; i < cis_count; i++) {
-				(void)ll_conn_iso_stream_get_by_group(cig, &handle);
-				rp->handle[i] = sys_cpu_to_le16(handle);
+				rp->handle[i] = sys_cpu_to_le16(handles[i]);
 			}
 		}
 	}
 
+	rp->num_handles = status ? 0U : cis_count;
 	rp->status = status;
 }
 

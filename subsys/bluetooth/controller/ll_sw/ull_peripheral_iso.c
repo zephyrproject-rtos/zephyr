@@ -307,7 +307,7 @@ uint8_t ull_peripheral_iso_setup(struct pdu_data_llctrl_cis_ind *ind,
 	cis_offset = sys_get_le24(ind->cis_offset);
 
 #if defined(CONFIG_BT_CTLR_PERIPHERAL_ISO_EARLY_CIG_START)
-	if (!cig->started) {
+	if (cig->state != CIG_STATE_ACTIVE) {
 		/* This is the first CIS. Make sure we can make the anchorpoint, otherwise
 		 * we need to move up the instant up by one connection interval.
 		 */
