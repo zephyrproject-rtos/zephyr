@@ -12,7 +12,3 @@
 		zephyr,shell-uart = &uart0_legacy;
 	};
 };
-
-&uart0 {
-	status = "disabled";
-};
