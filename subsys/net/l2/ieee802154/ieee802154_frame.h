@@ -9,6 +9,12 @@
  * @brief IEEE 802.15.4 MAC frame related functions
  *
  * This is not to be included by the application.
+ *
+ * All specification references in this file refer to IEEE 802.15.4-2020.
+ *
+ * Note: All structs and attributes (e.g. PAN id, ext address and short
+ * address) in this file that directly represent IEEE 802.15.4 frames
+ * are in LITTLE ENDIAN, see section 4, especially section 4.3.
  */
 
 #ifndef __IEEE802154_FRAME_H__
@@ -19,17 +25,8 @@
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/toolchain.h>
 
-/* All specification references in this file refer to IEEE 802.15.4-2006
- * unless otherwise noted.
- *
- * Note: All structs and attributes (e.g. PAN id, ext address and short
- * address) in this file that directly represent IEEE 802.15.4 frames
- * are in LITTLE ENDIAN, see section 4, especially section 4.3.
- */
-
-#define IEEE802154_MIN_LENGTH	     3
-/* ACK packet size is the minimum size, see section 7.2.2.3 */
-#define IEEE802154_ACK_PKT_LENGTH    IEEE802154_MIN_LENGTH
+#define IEEE802154_ACK_PKT_LENGTH 3 /* Imm-Ack length, see section 7.3.3 */
+#define IEEE802154_MIN_LENGTH	  IEEE802154_ACK_PKT_LENGTH
 
 #define IEEE802154_FCF_SEQ_LENGTH     3
 #define IEEE802154_SIMPLE_ADDR_LENGTH 1
@@ -46,7 +43,7 @@
 #define IEEE802154_BEACON_GTS_RX	  1
 #define IEEE802154_BEACON_GTS_TX	  0
 
-/* See section 7.2.1.1.1 and IEEE 802.15.4-2020, section 7.2.2.2 */
+/* See section 7.2.2.2 */
 enum ieee802154_frame_type {
 	IEEE802154_FRAME_TYPE_BEACON = 0x0,
 	IEEE802154_FRAME_TYPE_DATA = 0x1,
@@ -58,7 +55,7 @@ enum ieee802154_frame_type {
 	IEEE802154_FRAME_TYPE_EXTENDED = 0x7,
 };
 
-/* See section 7.2.1.1.6 */
+/* See section 7.2.2.9, table 7-3 */
 enum ieee802154_addressing_mode {
 	IEEE802154_ADDR_MODE_NONE = 0x0,
 	IEEE802154_ADDR_MODE_SIMPLE = 0x1,
@@ -69,10 +66,7 @@ enum ieee802154_addressing_mode {
 /* Version 2006 (and before) do no support simple addressing mode */
 #define IEEE802154_ADDR_MODE_RESERVED IEEE802154_ADDR_MODE_SIMPLE
 
-/*
- * See IEEE 802.15.4-2006 section 7.2.1.1.7 and
- * IEEE 802.15.4-2015, section 7.2.1.9
- */
+/* See section 7.2.2.10 */
 enum ieee802154_version {
 	IEEE802154_VERSION_802154_2003 = 0x0,
 	IEEE802154_VERSION_802154_2006 = 0x1,
@@ -81,8 +75,7 @@ enum ieee802154_version {
 };
 
 /*
- * Frame Control Field and sequence number,
- * see section 7.2.1.1
+ * Frame Control Field, see section 7.2.2
  */
 struct ieee802154_fcf_seq {
 	struct {
@@ -140,7 +133,7 @@ struct ieee802154_address_field {
 	};
 } __packed;
 
-/* See section 7.6.2.2.1 */
+/* See section 9.4.2.2, table 9-6 */
 enum ieee802154_security_level {
 	IEEE802154_SECURITY_LEVEL_NONE = 0x0,
 	IEEE802154_SECURITY_LEVEL_MIC_32 = 0x1,
@@ -157,7 +150,7 @@ enum ieee802154_security_level {
 #define IEEE8021254_AUTH_TAG_LENGTH_64	8
 #define IEEE8021254_AUTH_TAG_LENGTH_128 16
 
-/* See section 7.6.2.2.2 */
+/* See section 9.4.2.3, table 9-7 */
 enum ieee802154_key_id_mode {
 	IEEE802154_KEY_ID_MODE_IMPLICIT = 0x0,
 	IEEE802154_KEY_ID_MODE_INDEX = 0x1,
@@ -171,7 +164,7 @@ enum ieee802154_key_id_mode {
 
 #define IEEE802154_KEY_MAX_LEN 16
 
-/* See section 7.6.2.2 */
+/* See section 9.4.2 */
 struct ieee802154_security_control_field {
 #ifdef CONFIG_LITTLE_ENDIAN
 	uint8_t security_level : 3;
@@ -186,7 +179,7 @@ struct ieee802154_security_control_field {
 
 #define IEEE802154_SECURITY_CF_LENGTH 1
 
-/* See section 7.6.2.4 */
+/* see section 9.4.4 */
 struct ieee802154_key_identifier_field {
 	union {
 		/* mode_0 being implicit, it holds no info here */
@@ -208,7 +201,7 @@ struct ieee802154_key_identifier_field {
 
 /*
  * Auxiliary Security Header
- * See section 7.6.2
+ * see section 9.4
  */
 struct ieee802154_aux_security_hdr {
 	struct ieee802154_security_control_field control;
@@ -228,6 +221,7 @@ struct ieee802154_mhr {
 #endif
 };
 
+/* see section 7.3.1.5, figure 7-10 */
 struct ieee802154_gts_dir {
 #ifdef CONFIG_LITTLE_ENDIAN
 	uint8_t mask : 7;
@@ -238,6 +232,7 @@ struct ieee802154_gts_dir {
 #endif
 } __packed;
 
+/* see section 7.3.1.5, figure 7-11 */
 struct ieee802154_gts {
 	uint16_t short_address;
 #ifdef CONFIG_LITTLE_ENDIAN
@@ -249,6 +244,7 @@ struct ieee802154_gts {
 #endif
 } __packed;
 
+/* see section 7.3.1.5, figure 7-9 */
 struct ieee802154_gts_spec {
 #ifdef CONFIG_LITTLE_ENDIAN
 	/* Descriptor Count */
@@ -265,6 +261,7 @@ struct ieee802154_gts_spec {
 #endif
 } __packed;
 
+/* see section 7.3.1.6, figure 7-13 */
 struct ieee802154_pas_spec {
 #ifdef CONFIG_LITTLE_ENDIAN
 	/* Number of Short Addresses Pending */
@@ -283,6 +280,7 @@ struct ieee802154_pas_spec {
 #endif
 } __packed;
 
+/* see section 7.3.1.4, figure 7-7 */
 struct ieee802154_beacon_sf {
 #ifdef CONFIG_LITTLE_ENDIAN
 	/* Beacon Order*/
@@ -315,6 +313,7 @@ struct ieee802154_beacon_sf {
 #endif
 } __packed;
 
+/* see section 7.3.1.1, figure 7-5 */
 struct ieee802154_beacon {
 	struct ieee802154_beacon_sf sf;
 
@@ -322,7 +321,7 @@ struct ieee802154_beacon {
 	struct ieee802154_gts_spec gts;
 } __packed;
 
-/* See section 7.3.1 */
+/* see section 7.5.2 */
 struct ieee802154_cmd_assoc_req {
 	struct {
 #ifdef CONFIG_LITTLE_ENDIAN
@@ -347,7 +346,7 @@ struct ieee802154_cmd_assoc_req {
 
 #define IEEE802154_CMD_ASSOC_REQ_LENGTH 1
 
-/* See section 7.3.2 */
+/* See section 7.5.3 */
 enum ieee802154_association_status_field {
 	IEEE802154_ASF_SUCCESSFUL = 0x00,
 	IEEE802154_ASF_PAN_AT_CAPACITY = 0x01,
@@ -363,7 +362,7 @@ struct ieee802154_cmd_assoc_res {
 
 #define IEEE802154_CMD_ASSOC_RES_LENGTH 3
 
-/* See section 7.3.3.2 */
+/* See section 7.5.4 */
 enum ieee802154_disassociation_reason_field {
 	IEEE802154_DRF_RESERVED_1 = 0x00,
 	IEEE802154_DRF_COORDINATOR_WISH = 0x01,
@@ -378,7 +377,7 @@ struct ieee802154_cmd_disassoc_note {
 
 #define IEEE802154_CMD_DISASSOC_NOTE_LENGTH 1
 
-/* Coordinator realignment, see section 7.3.8 */
+/* Coordinator realignment, see section 7.5.10 */
 struct ieee802154_cmd_coord_realign {
 	uint16_t pan_id;
 	uint16_t coordinator_short_addr;
@@ -389,7 +388,7 @@ struct ieee802154_cmd_coord_realign {
 
 #define IEEE802154_CMD_COORD_REALIGN_LENGTH 3
 
-/* GTS request, see section 7.3.9 */
+/* GTS request, see section 7.5.11 */
 struct ieee802154_gts_request {
 	struct {
 #ifdef CONFIG_LITTLE_ENDIAN
@@ -408,7 +407,7 @@ struct ieee802154_gts_request {
 
 #define IEEE802154_GTS_REQUEST_LENGTH 1
 
-/* Command Frame Identifiers (CFI), see Section 7.3 */
+/* Command Frame Identifiers (CFI), see section 7.5.1 */
 enum ieee802154_cfi {
 	IEEE802154_CFI_UNKNOWN = 0x00,
 	IEEE802154_CFI_ASSOCIATION_REQUEST = 0x01,
@@ -431,8 +430,8 @@ struct ieee802154_command {
 		struct ieee802154_cmd_disassoc_note disassoc_note;
 		struct ieee802154_cmd_coord_realign coord_realign;
 		struct ieee802154_gts_request gts_request;
-		/* Data request, PAN ID conflict, Orphan notification
-		 * or Beacon request do not provide more than the CIF.
+		/* Data request, PAN ID conflict, orphan notification
+		 * or beacon request just provide the CFI.
 		 */
 	};
 } __packed;

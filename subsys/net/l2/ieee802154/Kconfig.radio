@@ -16,7 +16,8 @@ config NET_L2_IEEE802154_RADIO_TX_RETRIES
 	range 1 7
 	help
 	  Number of transmission attempts radio driver should do, before
-	  replying it could not send the packet.
+	  replying it could not send the packet (MAC PIB attribute:
+	  macMaxFrameRetries).
 
 choice
 	prompt "Radio protocol"
@@ -47,7 +48,8 @@ config NET_L2_IEEE802154_RADIO_CSMA_CA_MAX_BO
 	range 1 5
 	help
 	  The maximum number of backoffs the CSMA-CA algorithm will attempt
-	  before declaring a channel access failure.
+	  before declaring a channel access failure (MAC PIB attribute:
+	  maxMaxCSMABackoffs).
 
 config NET_L2_IEEE802154_RADIO_CSMA_CA_MIN_BE
 	int "CSMA MAC minimum backoff exponent"
@@ -55,7 +57,7 @@ config NET_L2_IEEE802154_RADIO_CSMA_CA_MIN_BE
 	range 1 8
 	help
 	  The minimum value of the backoff exponent (BE) in the CSMA-CA
-	  algorithm.
+	  algorithm (MAC PIB attribute: macMinBe).
 
 config NET_L2_IEEE802154_RADIO_CSMA_CA_MAX_BE
 	int "CSMA MAC maximum backoff exponent"
@@ -63,7 +65,7 @@ config NET_L2_IEEE802154_RADIO_CSMA_CA_MAX_BE
 	range 1 8
 	help
 	  The maximum value of the backoff exponent (BE) in the CSMA-CA
-	  algorithm.
+	  algorithm (MAC PIB attribute: macMaxBe).
 
 endif # NET_L2_IEEE802154_RADIO_CSMA_CA
 

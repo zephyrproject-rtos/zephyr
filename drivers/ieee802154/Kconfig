@@ -88,7 +88,8 @@ config IEEE802154_2015
 config IEEE802154_CSL_ENDPOINT
 	bool "Support for CSL Endpoint"
 	help
-	  Enable support for CSL Endpoint with delayed reception handling and CSL IE injection.
+	  Make this device a CSL (coordinated sampled listening) endpoint with delayed
+	  reception handling and CSL IE injection.
 
 config IEEE802154_SELECTIVE_TXPOWER
 	bool "Support selective TX power setting"
