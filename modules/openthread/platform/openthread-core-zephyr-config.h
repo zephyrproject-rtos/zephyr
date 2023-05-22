@@ -284,6 +284,16 @@
 #define RADIO_CONFIG_SRC_MATCH_EXT_ENTRY_NUM 0
 
 /**
+ * @def OPENTHREAD_CONFIG_MAC_CSL_REQUEST_AHEAD_US
+ *
+ * Define how many microseconds ahead should MAC deliver CSL frame to SubMac.
+ *
+ */
+#ifdef CONFIG_OPENTHREAD_CSL_REQUEST_TIME_AHEAD
+#define OPENTHREAD_CONFIG_MAC_CSL_REQUEST_AHEAD_US CONFIG_OPENTHREAD_CSL_REQUEST_TIME_AHEAD
+#endif /* CONFIG_OPENTHREAD_CSL_REQUEST_TIME_AHEAD */
+
+/**
  * @def OPENTHREAD_CONFIG_CSL_RECEIVE_TIME_AHEAD
  *
  * For some reasons, CSL receivers wake up a little later than expected. This
