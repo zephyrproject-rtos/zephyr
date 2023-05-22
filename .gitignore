@@ -76,6 +76,7 @@ ImageSize.txt
 Kconfig.txt
 KconfigBasic.txt
 KconfigBasicNoModules.txt
+KeepSorted.txt
 MaintainersFormat.txt
 ModulesMaintainers.txt
 Nits.txt
