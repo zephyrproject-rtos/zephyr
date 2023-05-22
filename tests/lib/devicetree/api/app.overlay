@@ -621,4 +621,16 @@
 			val = "XA XPLUS XB", "XC XPLUS XD", "XA XMINUS XB", "XC XMINUS XD";
 		};
 	};
+
+	test_64 {
+		#address-cells = < 2 >;
+		#size-cells = < 0 >;
+
+		test_reg_64: reg-holder-64@ffffffff11223344 {
+			compatible = "vnd,reg-holder-64";
+			reg = < 0xffffffff 0x11223344>;
+			status = "okay";
+			reg-names = "test_name";
+		};
+	};
 };
