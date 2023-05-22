@@ -82,6 +82,56 @@
 	scl-gpios = <&gpio0 22 GPIO_OPEN_DRAIN>;
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-names = "default";
+
+	pmic_xpowers_axp192: pmic@34 {
+		compatible = "xpowers,axp192";
+		reg = <0x34>;
+
+		pmic_axp192_regulators: regulators {
+			compatible = "xpowers,axp192-regulator";
+
+			pmic_axp192_buck1: BUCK1 {
+				/* 700mV~3500mV@25mV/step, max output 1200mA */
+				regulator-init-microvolt = <3300000>;
+				regulator-boot-on;
+			};
+
+			pmic_axp192_buck2: BUCK2 {
+				/* 700mV~2275mV@25mV/step, max output 1600mA */
+				regulator-init-microvolt = <2275000>;
+				regulator-boot-on;
+			};
+
+			pmic_axp192_buck3: BUCK3 {
+				/* 700mV~3500mV@25mV/step, max output 700mA */
+				regulator-init-microvolt = <3300000>;
+				regulator-boot-on;
+			};
+
+			pmic_axp192_ldo1: LDO1 {
+				/* Always on */
+				regulator-always-on;
+			};
+
+			pmic_axp192_ldo2: LDO2 {
+				/* 1800mV~3300mV@100mV/step, max output 200mA */
+				regulator-init-microvolt = <3300000>;
+				regulator-boot-on;
+			};
+
+			pmic_axp192_ldo3: LDO3 {
+				/* 1800mV~3300mV@100mV/step, max output 200mA */
+				regulator-init-microvolt = <3300000>;
+				regulator-boot-on;
+			};
+
+			pmic_axp192_ldoio0: LDOIO0 {
+				/* 1800mV~3300mV@100mV/step, max output 50mA */
+				regulator-init-microvolt = <3300000>;
+				regulator-boot-on;
+			};
+		};
+	};
 };
 
 &spi2 {
