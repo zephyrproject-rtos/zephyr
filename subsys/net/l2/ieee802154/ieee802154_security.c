@@ -7,6 +7,8 @@
 /**
  * @file
  * @brief 802.15.4 6LoWPAN authentication and encryption implementation
+ *
+ * All references to the spec refer to IEEE 802.15.4-2020.
  */
 
 #include <zephyr/logging/log.h>
@@ -101,15 +103,14 @@ static void prepare_cipher_aead_pkt(uint8_t *frame, uint8_t level, uint8_t hdr_l
 	bool is_authenticated = level != IEEE802154_SECURITY_LEVEL_NONE &&
 				level != IEEE802154_SECURITY_LEVEL_ENC;
 
-	/* See section 7.6.3.4.2 */
+	/* See section 9.3.5.3 */
 	pkt->in_buf = is_encrypted && payload_len ? frame + hdr_len : NULL;
 	pkt->in_len = is_encrypted ? payload_len : 0;
 
-	/* See section 7.6.3.4.2 */
+	/* See section 9.3.5.4 */
 	uint8_t out_buf_offset = is_encrypted ? hdr_len : hdr_len + payload_len;
 	uint8_t auth_len = is_authenticated ? out_buf_offset : 0;
 
-	/* See section 7.5.8.2.1 i) 1) */
 	pkt->out_buf = frame + out_buf_offset;
 	pkt->out_buf_max = (is_encrypted ? payload_len : 0) + tag_size;
 
@@ -141,7 +142,7 @@ bool ieee802154_decrypt_auth(struct ieee802154_security_ctx *sec_ctx, uint8_t *f
 		return false;
 	}
 
-	/* See section 7.6.3.2 */
+	/* See section 9.3.3.1 */
 	memcpy(nonce, src_ext_addr, IEEE802154_EXT_ADDR_LENGTH);
 	sys_put_be32(frame_counter, &nonce[8]);
 	nonce[12] = level;
@@ -184,13 +185,12 @@ bool ieee802154_encrypt_auth(struct ieee802154_security_ctx *sec_ctx, uint8_t *f
 		return false;
 	}
 
-	/* See section 7.5.8.2.1 f) */
 	if (sec_ctx->frame_counter == 0xffffffff) {
 		NET_ERR("Max frame counter reached. Update key material to reset the counter.");
 		return false;
 	}
 
-	/* See section 7.6.3.2 */
+	/* See section 9.3.3.1 */
 	memcpy(nonce, src_ext_addr, IEEE802154_EXT_ADDR_LENGTH);
 	sys_put_be32(sec_ctx->frame_counter, &nonce[8]);
 	nonce[12] = level;

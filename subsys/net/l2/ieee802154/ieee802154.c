@@ -7,6 +7,8 @@
 /**
  * @file
  * @brief IEEE 802.15.4 MAC layer implementation
+ *
+ * All references to the spec refer to IEEE 802.15.4-2020.
  */
 
 #include <zephyr/logging/log.h>
@@ -139,8 +141,9 @@ static inline void swap_and_set_pkt_ll_addr(struct net_linkaddr *addr, bool comp
 }
 
 /**
- * Filters the destination address of the frame (used when IEEE802154_HW_FILTER
- * is not available).
+ * Filters the destination address of the frame.
+ *
+ * This is done before deciphering and authenticating encrypted frames.
  */
 static bool ieeee802154_check_dst_addr(struct net_if *iface, struct ieee802154_mhr *mhr)
 {
@@ -148,9 +151,8 @@ static bool ieeee802154_check_dst_addr(struct net_if *iface, struct ieee802154_m
 	struct ieee802154_context *ctx = net_if_l2_data(iface);
 	bool ret = false;
 
-	/*
-	 * Apply filtering requirements from chapter 6.7.2 of the IEEE
-	 * 802.15.4-2015 standard:
+	/* Apply filtering requirements from section 6.7.2 c)-e). For a)-b),
+	 * see ieee802154_parse_fcf_seq()
 	 */
 
 	if (mhr->fs->fc.dst_addr_mode == IEEE802154_ADDR_MODE_NONE) {
@@ -167,9 +169,8 @@ static bool ieeee802154_check_dst_addr(struct net_if *iface, struct ieee802154_m
 
 	k_sem_take(&ctx->ctx_lock, K_FOREVER);
 
-	/*
-	 * c. If a destination PAN ID is included in the frame, it shall match
-	 * macPanId or shall be the broadcastPAN ID
+	/* c) If a destination PAN ID is included in the frame, it shall match
+	 * macPanId or shall be the broadcast PAN ID.
 	 */
 	if (!(dst_plain->pan_id == IEEE802154_BROADCAST_PAN_ID ||
 	      dst_plain->pan_id == ctx->pan_id)) {
@@ -178,8 +179,7 @@ static bool ieeee802154_check_dst_addr(struct net_if *iface, struct ieee802154_m
 	}
 
 	if (mhr->fs->fc.dst_addr_mode == IEEE802154_ADDR_MODE_SHORT) {
-		/*
-		 * d.1. A short destination address is included in the frame,
+		/* d.1) A short destination address is included in the frame,
 		 * and it matches either macShortAddress or the broadcast
 		 * address.
 		 */
@@ -190,17 +190,23 @@ static bool ieeee802154_check_dst_addr(struct net_if *iface, struct ieee802154_m
 		}
 
 	} else if (mhr->fs->fc.dst_addr_mode == IEEE802154_ADDR_MODE_EXTENDED) {
-		/*
-		 * An extended destination address is included in the frame and
-		 * matches either macExtendedAddress or, if macGroupRxMode is
-		 * set to TRUE, an 64-bit extended unique identifier (EUI-64)
-		 * group address.
+		/* d.2) An extended destination address is included in the frame and
+		 * matches [...] macExtendedAddress [...].
 		 */
 		if (memcmp(dst_plain->addr.ext_addr, ctx->ext_addr,
 				IEEE802154_EXT_ADDR_LENGTH) != 0) {
 			LOG_DBG("Frame dst address (ext) does not match!");
 			goto out;
 		}
+
+		/* TODO: d.3) The Destination Address field and the Destination PAN ID
+		 *       field are not included in the frame and macImplicitBroadcast is TRUE.
+		 */
+
+		/* TODO: d.4) The device is the PAN coordinator, only source addressing fields
+		 *       are included in a Data frame or MAC command and the source PAN ID
+		 *       matches macPanId.
+		 */
 	}
 	ret = true;
 
@@ -253,7 +259,7 @@ static enum net_verdict ieee802154_recv(struct net_if *iface, struct net_pkt *pk
 		return verdict;
 	}
 
-	/* At this point the frame has to be a DATA one */
+	/* At this point the frame has to be a data frame. */
 
 	ieee802154_acknowledge(iface, &mpdu);
 
@@ -286,8 +292,15 @@ static enum net_verdict ieee802154_recv(struct net_if *iface, struct net_pkt *pk
 #else
 	return NET_CONTINUE;
 #endif /* CONFIG_NET_6LO */
+
+	/* At this point the call amounts to (part of) an
+	 * MCPS-DATA.indication primitive, see section 8.3.3.
+	 */
 }
 
+/**
+ * Implements (part of) the MCPS-DATA.request/confirm primitives, see sections 8.3.2/3.
+ */
 static int ieee802154_send(struct net_if *iface, struct net_pkt *pkt)
 {
 	static struct net_buf *frame_buf;

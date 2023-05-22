@@ -7,6 +7,8 @@
 /**
  * @file
  * @brief IEEE 802.15.4 MAC frame related functions implementation
+ *
+ * All references to the spec refer to IEEE 802.15.4-2020.
  */
 
 #include <zephyr/logging/log.h>
@@ -146,7 +148,7 @@ ieee802154_validate_aux_security_hdr(uint8_t *buf, uint8_t **p_buf, uint8_t *len
 		return NULL;
 	}
 
-	/* Explicit key must have a key index != 0x00, see section 7.6.2.4.2 */
+	/* Explicit key must have a key index != 0x00, see section 9.4.2.3 */
 	switch (ash->control.key_id_mode) {
 	case IEEE802154_KEY_ID_MODE_IMPLICIT:
 		break;
@@ -654,7 +656,7 @@ static uint8_t *generate_aux_security_hdr(struct ieee802154_security_ctx *sec_ct
 	}
 
 	if (sec_ctx->key_mode != IEEE802154_KEY_ID_MODE_IMPLICIT) {
-		/* TODO: it supports implicit mode only, for now */
+		/* TODO: Support other key ID modes. */
 		return NULL;
 	}
 
@@ -802,7 +804,7 @@ static inline bool cfi_to_fs_settings(enum ieee802154_cfi cfi, struct ieee802154
 		break;
 	case IEEE802154_CFI_DATA_REQUEST:
 		fs->fc.ar = 1U;
-		/* TODO: src/dst addr mode: see section 7.3.4 */
+		/* TODO: src/dst addr mode: see section 7.5.5 */
 
 		break;
 	case IEEE802154_CFI_ORPHAN_NOTIFICATION:
@@ -817,7 +819,7 @@ static inline bool cfi_to_fs_settings(enum ieee802154_cfi cfi, struct ieee802154
 		break;
 	case IEEE802154_CFI_COORDINATOR_REALIGNEMENT:
 		fs->fc.src_addr_mode = IEEE802154_ADDR_MODE_EXTENDED;
-		/* TODO: ar and dst addr mode: see section 7.3.8 */
+		/* TODO: ar and dst addr mode: see section 7.5.10 */
 
 		break;
 	case IEEE802154_CFI_GTS_REQUEST:
@@ -866,8 +868,9 @@ struct net_pkt *ieee802154_create_mac_cmd_frame(struct net_if *iface, enum ieee8
 
 	k_sem_take(&ctx->ctx_lock, K_FOREVER);
 
-	/* It would be costly to compute the size when actual frame are never
-	 * bigger than 125 bytes, so let's allocate that size as buffer.
+	/* It would be costly to compute the size when actual frames are never
+	 * bigger than IEEE802154_MTU bytes less the FCS size, so let's allocate that
+	 * size as buffer.
 	 */
 	pkt = net_pkt_alloc_with_buffer(iface, IEEE802154_MTU, AF_UNSPEC, 0, BUF_TIMEOUT);
 	if (!pkt) {
@@ -954,9 +957,12 @@ bool ieee802154_decipher_data_frame(struct net_if *iface, struct net_pkt *pkt,
 		goto out;
 	}
 
-	/* Section 7.2.3 (i) talks about "security level policy" conformance
-	 * but such policy does not seem to be detailed. So let's assume both
-	 * ends should have same security level.
+	/* Section 9.2.4: Incoming frame security procedure, Security Enabled field is set to one
+	 *
+	 * [...]
+	 *
+	 * a) Legacy security. If the Frame Version field of the frame to be unsecured is set to
+	 *    zero, the procedure shall return with a Status of UNSUPPORTED_LEGACY.
 	 */
 	if (mpdu->mhr.aux_sec->control.security_level != level) {
 		goto out;
