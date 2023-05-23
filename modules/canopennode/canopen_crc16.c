@@ -5,7 +5,7 @@
  */
 
 #include <CANopen.h>
-#include <303/crc16-ccitt.h>
+#include <301/crc16-ccitt.h>
 #include <canopennode.h>
 
 
