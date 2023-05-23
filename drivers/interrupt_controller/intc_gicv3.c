@@ -213,6 +213,25 @@ bool arm_gic_irq_is_enabled(unsigned int intid)
 	return (val & mask) != 0;
 }
 
+bool arm_gic_irq_is_pending(unsigned int intid)
+{
+	uint32_t mask = BIT(intid & (GIC_NUM_INTR_PER_REG - 1));
+	uint32_t idx = intid / GIC_NUM_INTR_PER_REG;
+	uint32_t val;
+
+	val = sys_read32(ISPENDR(GET_DIST_BASE(intid), idx));
+
+	return (val & mask) != 0;
+}
+
+void arm_gic_irq_clear_pending(unsigned int intid)
+{
+	uint32_t mask = BIT(intid & (GIC_NUM_INTR_PER_REG - 1));
+	uint32_t idx = intid / GIC_NUM_INTR_PER_REG;
+
+	sys_write32(mask, ICPENDR(GET_DIST_BASE(intid), idx));
+}
+
 unsigned int arm_gic_get_active(void)
 {
 	int intid;

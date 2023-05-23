@@ -57,6 +57,29 @@ bool arm_gic_irq_is_enabled(unsigned int irq)
 	return (enabler & (1 << int_off)) != 0;
 }
 
+bool arm_gic_irq_is_pending(unsigned int irq)
+{
+	int int_grp, int_off;
+	unsigned int enabler;
+
+	int_grp = irq / 32;
+	int_off = irq % 32;
+
+	enabler = sys_read32(GICD_ISPENDRn + int_grp * 4);
+
+	return (enabler & (1 << int_off)) != 0;
+}
+
+void arm_gic_irq_clear_pending(unsigned int irq)
+{
+	int int_grp, int_off;
+
+	int_grp = irq / 32;
+	int_off = irq % 32;
+
+	sys_write32((1 << int_off), (GICD_ICPENDRn + int_grp * 4));
+}
+
 void arm_gic_irq_set_priority(
 	unsigned int irq, unsigned int prio, uint32_t flags)
 {
