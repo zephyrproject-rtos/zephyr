@@ -3,4 +3,5 @@
 
 config BOARD_INTEL_SOCFPGA_AGILEX5_SOCDK
 	bool "Intel SoC FPGA Development Kit (Agilex5)"
+	select HAS_COVERAGE_SUPPORT
 	depends on SOC_AGILEX5
