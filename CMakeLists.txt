@@ -705,11 +705,12 @@ endif()
 if(CONFIG_ZTEST)
   list(APPEND SYSCALL_INCLUDE_DIRS ${ZEPHYR_BASE}/subsys/testsuite/ztest/include)
 
-  if(CONFIG_NO_OPTIMIZATIONS AND NOT CONFIG_ZTEST_ALLOW_NO_OPTIMIZATIONS)
-    message(FATAL_ERROR "Running tests with CONFIG_NO_OPTIMIZATIONS is not "
-    "supported and known to break many tests, please do not file issues about "
-    "it. If you really mean to do this also enable "
-    "CONFIG_ZTEST_ALLOW_NO_OPTIMIZATIONS.")
+  if(CONFIG_NO_OPTIMIZATIONS AND CONFIG_ZTEST_WARN_NO_OPTIMIZATIONS)
+    message(WARNING "Running tests with CONFIG_NO_OPTIMIZATIONS is generally "
+    "not supported and known to break in many cases due to stack overflow or "
+    "other problems. Please do not file issues about it unless the test is "
+    "specifically tuned to run in this configuration. To disable this warning "
+    "set CONFIG_ZTEST_WARN_NO_OPTIMIZATIONS=n.")
   endif()
 
 endif()
