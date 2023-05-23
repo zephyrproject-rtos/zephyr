@@ -38,13 +38,3 @@ config FLASH_LOAD_SIZE
 	depends on BOARD_LPCXPRESSO55S28 && TRUSTED_EXECUTION_SECURE
 
 endif # BOARD_LPCXPRESSO55S28
-
-if DMA_MCUX_LPC
-
-# Memory from the heap pool is used to allocate DMA descriptors for
-# channels that use multiple blocks for a DMA transfer.
-# Adjust HEAP_MEM_POOL_SIZE in case you need more memory.
-config HEAP_MEM_POOL_SIZE
-	default 4096
-
-endif # DMA_MCUX_LPC
