@@ -4,13 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/**
- * @file
- * @defgroup bt_mesh_priv_beacon_cli Bluetooth Mesh Private Beacon Client
- * @{
- * @brief
- */
-
 #ifndef ZEPHYR_INCLUDE_BLUETOOTH_MESH_PRIV_BEACON_CLI_H__
 #define ZEPHYR_INCLUDE_BLUETOOTH_MESH_PRIV_BEACON_CLI_H__
 
@@ -19,6 +12,12 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/**
+ * @defgroup bt_mesh_priv_beacon_cli Bluetooth Mesh Private Beacon Client
+ * @ingroup bt_mesh
+ * @{
+ */
 
 /**
  *
@@ -175,10 +174,10 @@ extern const struct bt_mesh_model_op bt_mesh_priv_beacon_cli_op[];
 extern const struct bt_mesh_model_cb bt_mesh_priv_beacon_cli_cb;
 /** @endcond */
 
+/** @} */
+
 #ifdef __cplusplus
 }
 #endif
 
 #endif /* ZEPHYR_INCLUDE_BLUETOOTH_MESH_PRIV_BEACON_CLI_H__ */
-
-/** @} */
