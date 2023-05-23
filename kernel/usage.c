@@ -35,22 +35,22 @@ static uint32_t usage_now(void)
 #ifdef CONFIG_SCHED_THREAD_USAGE_ALL
 static void sched_cpu_update_usage(struct _cpu *cpu, uint32_t cycles)
 {
-	if (!cpu->usage.track_usage) {
+	if (!cpu->usage->track_usage) {
 		return;
 	}
 
 	if (cpu->current != cpu->idle_thread) {
-		cpu->usage.total += cycles;
+		cpu->usage->total += cycles;
 
 #ifdef CONFIG_SCHED_THREAD_USAGE_ANALYSIS
-		cpu->usage.current += cycles;
+		cpu->usage->current += cycles;
 
-		if (cpu->usage.longest < cpu->usage.current) {
-			cpu->usage.longest = cpu->usage.current;
+		if (cpu->usage->longest < cpu->usage->current) {
+			cpu->usage->longest = cpu->usage->current;
 		}
 	} else {
-		cpu->usage.current = 0;
-		cpu->usage.num_windows++;
+		cpu->usage->current = 0;
+		cpu->usage->num_windows++;
 #endif
 	}
 }
@@ -148,16 +148,16 @@ void z_sched_cpu_usage(uint8_t cpu_id, struct k_thread_runtime_stats *stats)
 		cpu->usage0 = now;
 	}
 
-	stats->total_cycles     = cpu->usage.total;
+	stats->total_cycles     = cpu->usage->total;
 #ifdef CONFIG_SCHED_THREAD_USAGE_ANALYSIS
-	stats->current_cycles   = cpu->usage.current;
-	stats->peak_cycles      = cpu->usage.longest;
+	stats->current_cycles   = cpu->usage->current;
+	stats->peak_cycles      = cpu->usage->longest;
 
-	if (cpu->usage.num_windows == 0) {
+	if (cpu->usage->num_windows == 0) {
 		stats->average_cycles = 0;
 	} else {
 		stats->average_cycles = stats->total_cycles /
-					cpu->usage.num_windows;
+					cpu->usage->num_windows;
 	}
 #endif
 
@@ -282,7 +282,7 @@ void k_sys_runtime_stats_enable(void)
 
 	key = k_spin_lock(&usage_lock);
 
-	if (_current_cpu->usage.track_usage) {
+	if (_current_cpu->usage->track_usage) {
 
 		/*
 		 * Usage tracking is already enabled on the current CPU
@@ -299,10 +299,10 @@ void k_sys_runtime_stats_enable(void)
 	unsigned int num_cpus = arch_num_cpus();
 
 	for (uint8_t i = 0; i < num_cpus; i++) {
-		_kernel.cpus[i].usage.track_usage = true;
+		_kernel.cpus[i].usage->track_usage = true;
 #ifdef CONFIG_SCHED_THREAD_USAGE_ANALYSIS
-		_kernel.cpus[i].usage.num_windows++;
-		_kernel.cpus[i].usage.current = 0;
+		_kernel.cpus[i].usage->num_windows++;
+		_kernel.cpus[i].usage->current = 0;
 #endif
 	}
 
@@ -316,7 +316,7 @@ void k_sys_runtime_stats_disable(void)
 
 	key = k_spin_lock(&usage_lock);
 
-	if (!_current_cpu->usage.track_usage) {
+	if (!_current_cpu->usage->track_usage) {
 
 		/*
 		 * Usage tracking is already disabled on the current CPU
@@ -337,7 +337,7 @@ void k_sys_runtime_stats_disable(void)
 		if (cpu->usage0 != 0) {
 			sched_cpu_update_usage(cpu, now - cpu->usage0);
 		}
-		cpu->usage.track_usage = false;
+		cpu->usage->track_usage = false;
 	}
 
 	k_spin_unlock(&usage_lock, key);
