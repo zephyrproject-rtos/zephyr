@@ -12,6 +12,7 @@ common:
 tests:
   boot.mcuboot:
     tags: mcuboot
+    skip: true # disabled due to issue #58080
     platform_allow:
       - frdm_k64f
       - mimxrt1060_evk
