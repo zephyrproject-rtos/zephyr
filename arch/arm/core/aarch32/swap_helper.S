@@ -147,6 +147,9 @@ out_fp_endif:
     beq out_store_thread_context
 
     vstmia r0!, {s0-s15}
+#ifdef CONFIG_VFP_FEATURE_REGS_S64_D32
+    vstmia r0!, {d16-d31}
+#endif
     vmrs r3, fpscr
     stm r0, {r3, ip}
 
