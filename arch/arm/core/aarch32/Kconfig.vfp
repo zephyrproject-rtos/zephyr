@@ -154,6 +154,7 @@ config VFP_FEATURE_SINGLE_PRECISION
 
 config VFP_FEATURE_DOUBLE_PRECISION
 	bool
+	select CPU_HAS_FPU_DOUBLE_PRECISION
 	help
 	  This option signifies that the VFP coprocessor supports
 	  double-precision operations.
