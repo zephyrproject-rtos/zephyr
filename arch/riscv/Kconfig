@@ -261,6 +261,27 @@ config PMP_STACK_GUARD_MIN_SIZE
 	  wiggle room to accommodate the eventual overflow exception
 	  stack usage.
 
+# Implement the null pointer detection using the Physical Memory Protection
+# (PMP) Unit.
+config NULL_POINTER_EXCEPTION_DETECTION_PMP
+	bool "Use PMP for null pointer exception detection"
+	depends on RISCV_PMP
+	help
+	  Null pointer dereference detection implemented
+	  using PMP functionality.
+
+if NULL_POINTER_EXCEPTION_DETECTION_PMP
+
+config NULL_POINTER_EXCEPTION_REGION_SIZE
+	hex "Inaccessible region to implement null pointer detection"
+	default 0x10
+	help
+	  Use a PMP slot to make region (starting at address 0x0) inaccessible for
+	  detecting null pointer dereferencing (raising a CPU access fault).
+	  Minimum is 4 bytes.
+
+endif # NULL_POINTER_EXCEPTION_DETECTION_PMP
+
 endmenu
 
 config MAIN_STACK_SIZE
