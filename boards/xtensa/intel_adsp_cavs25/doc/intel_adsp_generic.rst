@@ -90,7 +90,8 @@ may desire to build with the proprietary Xtensa toolchain distributed by
 installed the toolchain(s) and core(s) for your board following their
 instructions.
 
-First, make sure to set ``XTENSAD_LICENSE_FILE`` as instructed by Cadence.
+First, make sure to set the ``$HOME/.flexlmrc`` file or
+``XTENSAD_LICENSE_FILE`` variable as instructed by Cadence.
 Next, set the following environment variables:
 
 .. code-block:: shell
