@@ -412,35 +412,93 @@ The available ``self`` keys and their usage are in the following table.
 Version
 =======
 
-The ``version`` subsection can be used to mark the lowest version of the
-manifest file schema that can parse this file's data:
+The ``version`` subsection declares that the manifest file uses features which
+were introduced in some version of west. Attempts to load the manifest with
+older versions of west will fail with an error message that explains the
+minimum required version of west which is needed.
+
+Here is an example:
 
 .. code-block:: yaml
 
    manifest:
-     version: "0.10"
-     # marks that this file uses version 0.10 of the west manifest
+     # Marks that this file uses version 0.10 of the west manifest
      # file format.
+     #
+     # An attempt to load this manifest file with west v0.8.0 will
+     # fail with an error message saying that west v0.10.0 or
+     # later is required.
+     version: "0.10"
 
-The pykwalify schema :file:`manifest-schema.yml` in the west source code
-repository is used to validate the manifest section. The current manifest
-``version`` is 0.13, which is supported by west version v0.13.x.
+The pykwalify schema :file:`manifest-schema.yml` in the `west source code
+repository`_ is used to validate the manifest section.
 
-The ``version`` value may be any one of these values: ``"0.7"``, ``"0.8"``,
-``"0.9"``, ``"0.10"``, ``"0.12"``, ``"0.13"``. West v0.11 did not include any
-new features which broke the previous schema, so ``"0.11"`` **is not** a valid
-schema version.
+.. _west source code repository:
+   https://github.com/zephyrproject-rtos/west
 
-West v0.10.x can load manifests with any of these ``version`` values, while
-west v0.9.x can only load versions up to ``"0.9"``, and so on.
+Here is a table with the valid ``version`` values, along with information
+about the manifest file features that were introduced in that version.
 
-West halts with an error if you ask it to load a manifest file written in a
-version it cannot handle.
+.. list-table::
+   :header-rows: 1
+   :widths: 1 4
 
-Quoting the ``version`` value as shown above forces the YAML parser to treat
-it as a string. Without quotes, ``0.10`` in YAML is just the floating point
-value ``0.1``. You can omit the quotes if the value is the same when cast to
-string, but it's best to include them. Always use quotes if you're not sure.
+   * - ``version``
+     - New features
+
+   * - ``"0.7"``
+     - Initial support for the ``version`` feature. All manifest file features
+       that are not otherwise mentioned in this table were introduced in
+       west v0.7.0 or earlier.
+
+   * - ``"0.8"``
+     - Support for ``import: path-prefix:`` (:ref:`west-manifest-import-map`)
+
+   * - ``"0.9"``
+     - **Use of west v0.9.x is discouraged**.
+
+       This schema version is provided to allow users to explicitly request
+       compatibility with west :ref:`west_0_9_0`. However, west
+       :ref:`west_0_10_0` and later have incompatible behavior for features
+       that were introduced in west v0.9.0. You should ignore version "0.9" if
+       possible.
+
+   * - ``"0.10"``
+
+     - Support for:
+
+       - ``submodules:`` in ``projects:`` (:ref:`west-manifest-submodules`)
+       - ``manifest: group-filter:``, and ``groups:`` in ``projects:``
+         (:ref:`west-manifest-groups`)
+       - The ``import:`` feature now supports ``allowlist:`` and
+         ``blocklist:``; these are respectively recommended as replacements for
+         older names as part of a general Zephyr-wide inclusive language
+         change. The older key names are still supported for backwards
+         compatibility. (:ref:`west-manifest-import`,
+         :ref:`west-manifest-import-map`)
+
+   * - ``"0.12"``
+     - Support for ``userdata:`` in ``projects:`` (:ref:`west-project-userdata`)
+
+   * - ``"0.13"``
+     - Support for ``self: userdata:`` (:ref:`west-project-userdata`)
+
+.. note::
+
+   Versions of west without any new features in the manifest file format do not
+   change the list of valid ``version`` values. For example, ``version:
+   "0.11"`` is **not** valid, because west v0.11.x did not introduce new
+   manifest file format features.
+
+Quoting the ``version`` value as shown above forces the YAML parser to treat it
+as a string. Without quotes, ``0.10`` in YAML is just the floating point value
+``0.1``. You can omit the quotes if the value is the same when cast to string,
+but it's best to include them. Always use quotes if you're not sure.
+
+If you do not include a ``version`` in your manifest, each new release of west
+assumes that it should try to load it using the features that were available in
+that release. This may result in error messages that are harder to understand
+if that version of west is too old to load the manifest.
 
 Group-filter
 ============
