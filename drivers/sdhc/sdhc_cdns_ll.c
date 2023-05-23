@@ -408,10 +408,13 @@ static int sdhc_cdns_set_ios(unsigned int clk, unsigned int width)
 		break;
 	}
 
-	ret = sdhc_cdns_host_set_clk(clk);
-	if (ret != 0) {
-		LOG_ERR("%s: Clock configuration failed", __func__);
-		return ret;
+	/* Perform clock configuration when SD clock is not gated */
+	if (clk != 0) {
+		ret = sdhc_cdns_host_set_clk(clk);
+		if (ret != 0) {
+			LOG_ERR("%s: Clock configuration failed", __func__);
+			return ret;
+		}
 	}
 
 	return 0;
