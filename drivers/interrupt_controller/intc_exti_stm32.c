@@ -16,6 +16,7 @@
 #include <soc.h>
 #include <stm32_ll_exti.h>
 #include <zephyr/sys/__assert.h>
+#include <zephyr/sys/util.h>
 #include <zephyr/drivers/interrupt_controller/exti_stm32.h>
 #include <zephyr/irq.h>
 
@@ -200,19 +201,16 @@ static void stm32_fill_irq_table(int8_t start, int8_t len, int32_t irqn)
 	}
 }
 
-/* This macro provides body for stm32_exti_range structure initialization. */
-#define STM32_EXTI_RANGE(idx)						    \
-	.start = DT_PROP_BY_IDX(DT_NODELABEL(exti), line_ranges, 2 * idx),  \
-	.len = DT_PROP_BY_IDX(DT_NODELABEL(exti), line_ranges, 2 * idx + 1)
-
 /* This macro:
  * - populates line_range_x from line_range dt property
  * - fill exti_irq_table through stm32_fill_irq_table()
  * - calls IRQ_CONNECT for each irq & matching line_range
  */
+
 #define STM32_EXTI_INIT(node_id, interrupts, idx)			\
 	static const struct stm32_exti_range line_range_##idx = {	\
-		STM32_EXTI_RANGE(idx)					\
+		DT_PROP_BY_IDX(node_id, line_ranges, UTIL_X2(idx)),	      \
+		DT_PROP_BY_IDX(node_id, line_ranges, UTIL_INC(UTIL_X2(idx))) \
 	};								\
 	stm32_fill_irq_table(line_range_##idx.start,			\
 			     line_range_##idx.len,			\
@@ -228,6 +226,7 @@ static void stm32_fill_irq_table(int8_t start, int8_t len, int32_t irqn)
 static int stm32_exti_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
+
 	DT_FOREACH_PROP_ELEM(DT_NODELABEL(exti),
 			     interrupt_names,
 			     STM32_EXTI_INIT);
