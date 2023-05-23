@@ -1133,6 +1133,7 @@ Release Notes:
     - include/zephyr/drivers/regulator.h
     - include/zephyr/dt-bindings/regulator/
     - tests/drivers/regulator/
+    - tests/drivers/build_all/regulator/
     - doc/hardware/peripherals/regulators.rst
   labels:
     - "area: Regulators"

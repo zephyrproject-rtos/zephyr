@@ -1,0 +1,16 @@
+/*
+ * Copyright (c) 2023 Nordic Semiconductor ASA
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+regulator-fixed {
+	compatible = "regulator-fixed";
+	regulator-name = "test";
+	enable-gpios = <&test_gpio 0 GPIO_ACTIVE_HIGH>;
+};
+
+npm1100 {
+	compatible = "nordic,npm1100";
+
+	BUCK {};
+};
