@@ -1,0 +1,13 @@
+identifier: qemu_x86_tss_pf
+name: QEMU Emulation for X86 (Lakemont) for unit test of CONFIG_X86_PF_USE_TSS
+type: qemu
+simulation: qemu
+arch: x86
+toolchain:
+  - zephyr
+  - xtools
+  - llvm
+testing:
+  default: true
+  only_tags:
+    - kernel
