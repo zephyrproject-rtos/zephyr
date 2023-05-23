@@ -60,13 +60,14 @@ static uint8_t cal_checksum(const uint8_t *const buffer, const uint16_t size)
 	return (uint8_t)(-checksum);
 }
 
-static void send_error_response(const struct ec_host_cmd_backend *backend,
-				struct ec_host_cmd_tx_buf *tx, const enum ec_host_cmd_status error)
+static void send_status_response(const struct ec_host_cmd_backend *backend,
+				 struct ec_host_cmd_tx_buf *tx,
+				 const enum ec_host_cmd_status status)
 {
 	struct ec_host_cmd_response_header *const tx_header = (void *)tx->buf;
 
 	tx_header->prtcl_ver = 3;
-	tx_header->result = error;
+	tx_header->result = status;
 	tx_header->data_len = 0;
 	tx_header->reserved = 0;
 	tx_header->checksum = 0;
@@ -153,6 +154,26 @@ static enum ec_host_cmd_status prepare_response(struct ec_host_cmd_tx_buf *tx, u
 	return EC_HOST_CMD_SUCCESS;
 }
 
+int ec_host_cmd_send_response(enum ec_host_cmd_status status,
+			      const struct ec_host_cmd_handler_args *args)
+{
+	struct ec_host_cmd *hc = &ec_host_cmd;
+	struct ec_host_cmd_tx_buf *tx = &hc->tx;
+
+	if (status != EC_HOST_CMD_SUCCESS) {
+		send_status_response(hc->backend, tx, status);
+		return status;
+	}
+
+	status = prepare_response(tx, args->output_buf_size);
+	if (status != EC_HOST_CMD_SUCCESS) {
+		send_status_response(hc->backend, tx, status);
+		return status;
+	}
+
+	return hc->backend->api->send(hc->backend);
+}
+
 FUNC_NORETURN static void ec_host_cmd_thread(void *hc_handle, void *arg2, void *arg3)
 {
 	ARG_UNUSED(arg2);
@@ -177,7 +198,7 @@ FUNC_NORETURN static void ec_host_cmd_thread(void *hc_handle, void *arg2, void *
 
 		status = verify_rx(rx);
 		if (status != EC_HOST_CMD_SUCCESS) {
-			send_error_response(hc->backend, tx, status);
+			send_status_response(hc->backend, tx, status);
 			continue;
 		}
 
@@ -192,7 +213,7 @@ FUNC_NORETURN static void ec_host_cmd_thread(void *hc_handle, void *arg2, void *
 
 		/* No handler in this image for requested command */
 		if (found_handler == NULL) {
-			send_error_response(hc->backend, tx, EC_HOST_CMD_INVALID_COMMAND);
+			send_status_response(hc->backend, tx, EC_HOST_CMD_INVALID_COMMAND);
 			continue;
 		}
 
@@ -203,23 +224,13 @@ FUNC_NORETURN static void ec_host_cmd_thread(void *hc_handle, void *arg2, void *
 
 		status = validate_handler(found_handler, &args);
 		if (status != EC_HOST_CMD_SUCCESS) {
-			send_error_response(hc->backend, tx, status);
+			send_status_response(hc->backend, tx, status);
 			continue;
 		}
 
 		status = found_handler->handler(&args);
-		if (status != EC_HOST_CMD_SUCCESS) {
-			send_error_response(hc->backend, tx, status);
-			continue;
-		}
 
-		status = prepare_response(tx, args.output_buf_size);
-		if (status != EC_HOST_CMD_SUCCESS) {
-			send_error_response(hc->backend, tx, status);
-			continue;
-		}
-
-		hc->backend->api->send(hc->backend);
+		ec_host_cmd_send_response(status, &args);
 	}
 }
 

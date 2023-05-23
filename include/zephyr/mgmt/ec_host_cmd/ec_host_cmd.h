@@ -247,6 +247,20 @@ enum ec_host_cmd_status {
 int ec_host_cmd_init(struct ec_host_cmd_backend *backend);
 
 /**
+ * @brief Send the host command response
+ *
+ * This routine sends the host command response. It should be used to send IN_PROGRESS status or
+ * if the host command handler doesn't return e.g. reboot command.
+ *
+ * @param[in] status        Host command status to be sent.
+ * @param[in] args          Pointer of a structure passed to the handler.
+ *
+ * @retval 0 if successful.
+ */
+int ec_host_cmd_send_response(enum ec_host_cmd_status status,
+		const struct ec_host_cmd_handler_args *args);
+
+/**
  * @brief Get the main ec host command structure
  *
  * This routine returns a pointer to the main host command structure.
