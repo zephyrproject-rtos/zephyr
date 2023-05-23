@@ -246,9 +246,6 @@ function(ExternalZephyrProject_Add)
       "ExternalZephyrProject_Add(... BOARD_REVISION ${ZBUILD_BOARD_REVISION})"
       " requires BOARD."
     )
-  elseif(DEFINED BOARD_REVISION)
-    # Include build revision for target image
-    set_target_properties(${ZBUILD_APPLICATION} PROPERTIES BOARD ${BOARD}@${BOARD_REVISION})
   endif()
 endfunction()
 
@@ -299,7 +296,7 @@ function(ExternalZephyrProject_Cmake)
 
   get_cmake_property(sysbuild_cache CACHE_VARIABLES)
   foreach(var_name ${sysbuild_cache})
-    if(NOT "${var_name}" MATCHES "^CMAKE_.*")
+    if(NOT ("${var_name}" MATCHES "^CMAKE_.*" OR "${var_name}" MATCHES "^BOARD"))
       # Perform a dummy read to prevent a false warning about unused variables
       # being emitted due to a cmake bug: https://gitlab.kitware.com/cmake/cmake/-/issues/24555
       set(unused_tmp_var ${${var_name}})
@@ -313,13 +310,18 @@ function(ExternalZephyrProject_Cmake)
       list(APPEND sysbuild_cache_strings "${cache_entry}\n")
     endif()
   endforeach()
+  if(DEFINED BOARD_REVISION)
+    list(APPEND sysbuild_cache_strings "BOARD:STRING=${BOARD}@${BOARD_REVISION}\n")
+  else()
+    list(APPEND sysbuild_cache_strings "BOARD:STRING=${BOARD}\n")
+  endif()
   list(APPEND sysbuild_cache_strings "SYSBUILD_NAME:STRING=${ZCMAKE_APPLICATION}\n")
 
   if(${ZCMAKE_APPLICATION}_MAIN_APP)
     list(APPEND sysbuild_cache_strings "SYSBUILD_MAIN_APP:BOOL=True\n")
   endif()
 
-  if(${ZCMAKE_APPLICATION}_BOARD)
+  if(${ZCMAKE_APPLICATION}_BOARD AND NOT DEFINED CACHE{${ZCMAKE_APPLICATION}_BOARD})
     # Only set image specific board if provided.
     # The sysbuild BOARD is exported through sysbuild cache, and will be used
     # unless <image>_BOARD is defined.
