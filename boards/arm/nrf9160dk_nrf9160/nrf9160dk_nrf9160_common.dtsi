@@ -264,4 +264,4 @@ arduino_spi: &spi3 {
 };
 
 /* Include partition configuration file */
-#include "nrf9160dk_nrf9160_partition_conf.dts"
+#include "nrf9160dk_nrf9160_partition_conf.dtsi"

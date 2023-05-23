@@ -354,4 +354,4 @@
 };
 
 /* Include partition configuration file */
-#include "bl5340_dvk_cpuapp_partition_conf.dts"
+#include "bl5340_dvk_cpuapp_partition_conf.dtsi"

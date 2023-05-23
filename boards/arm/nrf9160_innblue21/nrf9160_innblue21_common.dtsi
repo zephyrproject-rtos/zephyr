@@ -3,11 +3,11 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include "nrf9160_innblue22_common-pinctrl.dtsi"
+#include "nrf9160_innblue21_common-pinctrl.dtsi"
 
 / {
-	model = "innblue v22 Dev Kit";
-	compatible = "innblue,innblue22";
+	model = "innblue v21 Dev Kit";
+	compatible = "innblue,innblue21";
 
 	chosen {
 		zephyr,console = &uart0;
@@ -18,20 +18,20 @@
 	leds {
 		compatible = "gpio-leds";
 		red_led: led_1 {
-			gpios = <&gpio0 7 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio0 7 0>;
 			label = "RGB red channel";
 		};
 		green_led: led_2 {
-			gpios = <&gpio0 6 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio0 6 0>;
 			label = "RGB green channel";
 		};
 		blue_led: led_3 {
-			gpios = <&gpio0 5 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio0 5 0>;
 			label = "RGB blue channel";
 		};
 
 		mode_led: led_4 {
-			gpios = <&gpio0 4 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio0 4 0>;
 			label = "mode red channel";
 		};
 	};
@@ -40,9 +40,17 @@
 		compatible = "gpio-keys";
 
 		button0: button_0 {
-			gpios = <&gpio0 31 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			gpios = <&gpio0 31 GPIO_PULL_UP>;
 			label = "Button 0";
 		};
+	};
+
+	en_3v3_sensor: enable-3v3-sensor {
+		compatible = "regulator-fixed";
+		regulator-name = "en_3v3_sensor";
+		enable-gpios = <&gpio0 12 GPIO_ACTIVE_HIGH>;
+		startup-delay-us = <10000>;
+		regulator-boot-on;
 	};
 
 	en_5v0_boost: enable-5v0-boost {
@@ -78,7 +86,6 @@
 &uart0 {
 	status = "okay";
 	current-speed = <115200>;
-
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-1 = <&uart0_sleep>;
 	pinctrl-names = "default", "sleep";
@@ -99,7 +106,6 @@
 	pinctrl-names = "default", "sleep";
 };
 
-
 &i2c2 {
 	compatible = "nordic,nrf-twim";
 	status = "okay";
@@ -109,19 +115,10 @@
 	pinctrl-0 = <&i2c2_default>;
 	pinctrl-1 = <&i2c2_sleep>;
 	pinctrl-names = "default", "sleep";
-	bq27421@55 {
-		compatible = "ti,bq274xx";
-		reg = <0x55>;
-		design-voltage = <3700>;
-		design-capacity = <1800>;
-		taper-current = <45>;
-		terminate-voltage = <3000>;
-	};
-
 	lis2dh12_accel: lis2dh12-accel@19 {
 		compatible = "st,lis2dh";
 		reg = <0x19>;
-		irq-gpios = <&gpio0 0 GPIO_ACTIVE_HIGH>, <&gpio0 1 GPIO_ACTIVE_HIGH>;
+		irq-gpios = <&gpio0 0 0>, <&gpio0 1 0>;
 	};
 
 	hts221@5f {
@@ -207,4 +204,4 @@
 };
 
 /* Include partition configuration file */
-#include "nrf9160_innblue22_partition_conf.dts"
+#include "nrf9160_innblue21_partition_conf.dtsi"

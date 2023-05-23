@@ -6,7 +6,7 @@
 
 /dts-v1/;
 #include <nordic/nrf5340_cpuapp_qkaa.dtsi>
-#include "thingy53_nrf5340_common.dts"
+#include "thingy53_nrf5340_common.dtsi"
 
 / {
 	model = "Nordic Thingy53 NRF5340 Application";

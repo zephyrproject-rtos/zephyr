@@ -6,7 +6,7 @@
 
 /dts-v1/;
 #include <nordic/nrf5340_cpuappns_qkaa.dtsi>
-#include "bl5340_dvk_cpuapp_common.dts"
+#include "bl5340_dvk_cpuapp_common.dtsi"
 
 / {
 	model = "Laird Connectivity BL5340 (nRF5340) Application";
