@@ -680,6 +680,22 @@ struct _static_thread_data {
 	.init_name = STRINGIFY(tname),                           \
 	}
 
+/*
+ * Refer to K_THREAD_DEFINE() and K_KERNEL_THREAD_DEFINE() for
+ * information on arguments.
+ */
+#define Z_THREAD_COMMON_DEFINE(name, stack_size,			\
+			       entry, p1, p2, p3,			\
+			       prio, options, delay)			\
+	struct k_thread _k_thread_obj_##name;				\
+	STRUCT_SECTION_ITERABLE(_static_thread_data,			\
+				_k_thread_data_##name) =		\
+		Z_THREAD_INITIALIZER(&_k_thread_obj_##name,		\
+				     _k_thread_stack_##name, stack_size,\
+				     entry, p1, p2, p3, prio, options,	\
+				     delay, name);			\
+	const k_tid_t name = (k_tid_t)&_k_thread_obj_##name
+
 /**
  * INTERNAL_HIDDEN @endcond
  */
@@ -719,13 +735,8 @@ struct _static_thread_data {
 			entry, p1, p2, p3,                               \
 			prio, options, delay)                            \
 	K_THREAD_STACK_DEFINE(_k_thread_stack_##name, stack_size);	 \
-	struct k_thread _k_thread_obj_##name;				 \
-	STRUCT_SECTION_ITERABLE(_static_thread_data, _k_thread_data_##name) = \
-		Z_THREAD_INITIALIZER(&_k_thread_obj_##name,		 \
-				    _k_thread_stack_##name, stack_size,  \
-				entry, p1, p2, p3, prio, options, delay, \
-				name);					 \
-	const k_tid_t name = (k_tid_t)&_k_thread_obj_##name
+	Z_THREAD_COMMON_DEFINE(name, stack_size, entry, p1, p2, p3,	 \
+			       prio, options, delay)
 
 /**
  * @brief Statically define and initialize a thread intended to run only in kernel mode.
@@ -761,14 +772,8 @@ struct _static_thread_data {
 			       entry, p1, p2, p3,			\
 			       prio, options, delay)			\
 	K_KERNEL_STACK_DEFINE(_k_thread_stack_##name, stack_size);	\
-	struct k_thread _k_thread_obj_##name;				\
-	STRUCT_SECTION_ITERABLE(_static_thread_data,			\
-				_k_thread_data_##name) =		\
-		Z_THREAD_INITIALIZER(&_k_thread_obj_##name,		\
-				     _k_thread_stack_##name, stack_size,\
-				     entry, p1, p2, p3, prio, options,	\
-				     delay, name);			\
-	const k_tid_t name = (k_tid_t)&_k_thread_obj_##name
+	Z_THREAD_COMMON_DEFINE(name, stack_size, entry, p1, p2, p3,	\
+			       prio, options, delay)
 
 /**
  * @brief Get a thread's priority.
