@@ -330,6 +330,17 @@ void z_riscv_pmp_init(void)
 		      (size_t)__rom_region_size,
 		      pmp_addr, pmp_cfg, ARRAY_SIZE(pmp_addr));
 
+#ifdef CONFIG_NULL_POINTER_EXCEPTION_DETECTION_PMP
+	/*
+	 * Use a PMP slot to make region (starting at address 0x0) inaccessible
+	 * for detecting null pointer dereferencing.
+	 */
+	set_pmp_entry(&index, PMP_NONE | PMP_L,
+		      0,
+		      CONFIG_NULL_POINTER_EXCEPTION_REGION_SIZE,
+		      pmp_addr, pmp_cfg, ARRAY_SIZE(pmp_addr));
+#endif
+
 #ifdef CONFIG_PMP_STACK_GUARD
 	/*
 	 * Set the stack guard for this CPU's IRQ stack by making the bottom
