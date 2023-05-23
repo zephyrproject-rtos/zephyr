@@ -13,7 +13,7 @@ tests:
     filter: not CONFIG_TRUSTED_EXECUTION_NONSECURE
     extra_configs:
       - CONFIG_NO_OPTIMIZATIONS=y
-      - CONFIG_ZTEST_ALLOW_NO_OPTIMIZATIONS=y
+      - CONFIG_ZTEST_WARN_NO_OPTIMIZATIONS=n
       - CONFIG_IDLE_STACK_SIZE=512
       - CONFIG_MAIN_STACK_SIZE=2048
   arch.interrupt.extra_exception_info:
