@@ -20,6 +20,10 @@
 #include <em_emu.h>
 #include <soc.h>
 
+#ifdef CONFIG_PERSISTENT_GECKO_RTCC
+#include <em_rmu.h>
+#endif
+
 #ifdef CONFIG_SOC_GECKO_DEV_INIT
 #include <sl_device_init_dcdc.h>
 #include <sl_device_init_dpll.h>
@@ -199,6 +203,39 @@ static void swo_init(void)
 }
 #endif /* CONFIG_LOG_BACKEND_SWO */
 
+/*! \brief Pin bootloader definitions.
+ *
+ * The UART Bootloader (e.g. First Stage Bootloader) also uses the RTCC so it must
+ * be disabled if we are preserving the time in the RTCC.
+ *
+ * Here is a list of the devices supported by the UART Bootloader:
+ * See: https://www.silabs.com/documents/public/application-notes/an0003-efm32-uart-bootloader.pdf
+ * Note that the CONFIG symbols are artificial when they are terminated with a $.
+ */
+#if    (/* EFM32 Series 0: */ \
+	defined(CONFIG_SOC_SERIES_EFM32G$)	/*!< EFM32 Gecko */ ||	\
+	defined(CONFIG_SOC_SERIES_EFM32GG$)	/*!< EFM32 Giant Gecko */ || \
+	defined(CONFIG_SOC_SERIES_EFM32WG)	/*!< EFM32 Wonder Gecko */ || \
+	defined(CONFIG_SOC_SERIES_EFM32LG$)	/*!< EFM32 Leopard Gecko */ || \
+	defined(CONFIG_SOC_SERIES_EFM32TG$)	/*!< EFM32 Tiny Gecko */ || \
+	defined(CONFIG_SOC_SERIES_EFM32ZG$)	/*!< EFM32 Zero Gecko */ || \
+	defined(CONFIG_SOC_SERIES_EFM32HG$)	/*!< EFM32 Happy Gecko */ || \
+	/* EZR32 Series 0: */ \
+	defined(CONFIG_SOC_SERIES_EZR32WG$)	/*!< EZR32 Wonder Gecko */ || \
+	defined(CONFIG_SOC_SERIES_EZR32LG$)	/*!< EZR32 Leopard Gecko */ || \
+	defined(CONFIG_SOC_SERIES_EZR32HG$)	/*!< EZR32 Happy Gecko */ || \
+	/* EFM32 Series 1: */ \
+	defined(CONFIG_SOC_SERIES_EFM32PG1$)	/*!< EFM32 Pearl Gecko (Rev C onwards) */ || \
+	defined(CONFIG_SOC_SERIES_EFM32PG12B)	/*!< EFM32 Pearl Gecko (Rev C onwards) */ || \
+	defined(CONFIG_SOC_SERIES_EFM32JG1$)	/*!< EFM32 Jade Gecko (Rev C onwards) */ || \
+	defined(CONFIG_SOC_SERIES_EFM32JG12$)	/*!< EFM32 Jade Gecko (Rev C onwards) */ || \
+	defined(CONFIG_SOC_SERIES_EFM32GG11$)	/*!< EFM32 Giant Gecko GG11 */ || \
+	defined(CONFIG_SOC_SERIES_EFM32GG12$)	/*!< EFM32 Giant Gecko GG12 */ || \
+	defined(CONFIG_SOC_SERIES_EFM32TG11$)	/*!< EFM32 Tiny Gecko 11 */)
+#define LB_CLW0           (*((volatile uint32_t *)(LOCKBITS_BASE)+122))
+#define LB_CLW0_PINBOOTLOADER    (1 << 1)
+#endif /* EFM32, EZR32 SOC Series */
+
 /**
  * @brief Perform basic hardware initialization
  *
@@ -253,6 +290,19 @@ static int silabs_exx32_init(void)
 	swo_init();
 #endif
 #endif /* !CONFIG_SOC_GECKO_DEV_INIT */
+
+#ifdef LB_CLW0
+	/* Turn off the bootloader enable bit to prevent RTCC changes */
+	LB_CLW0 &= !LB_CLW0_PINBOOTLOADER;
+#endif /* LB_CLW0 */
+
+#ifdef CONFIG_PERSISTENT_GECKO_RTCC
+	/* Turn on reset limited mode to preserve RTCC counts */
+	RMU_ResetControl(rmuResetWdog, rmuResetModeLimited);
+	RMU_ResetControl(rmuResetCoreLockup, rmuResetModeLimited);
+	RMU_ResetControl(rmuResetSys, rmuResetModeLimited);
+	RMU_ResetControl(rmuResetPin, rmuResetModeLimited);
+#endif /* CONFIG_PERSISTENT_GECKO_RTCC */
 
 	/* restore interrupt state */
 	irq_unlock(oldLevel);
