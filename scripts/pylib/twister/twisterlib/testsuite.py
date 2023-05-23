@@ -10,7 +10,7 @@ import logging
 import contextlib
 import mmap
 import glob
-from typing import List
+from typing import List, Dict
 from twisterlib.mixins import DisablePyTestCollectionMixin
 from twisterlib.environment import canonical_zephyr_base
 from twisterlib.error import TwisterException, TwisterRuntimeError
@@ -52,13 +52,15 @@ class ScanPathResult:
                  has_registered_test_suites: bool = False,
                  has_run_registered_test_suites: bool = False,
                  has_test_main: bool = False,
-                 ztest_suite_names: List[str] = []):
+                 ztest_suite_names: List[str] = [],
+                 test_map: Dict[str, List[str]] = None):
         self.matches = matches
         self.warnings = warnings
         self.has_registered_test_suites = has_registered_test_suites
         self.has_run_registered_test_suites = has_run_registered_test_suites
         self.has_test_main = has_test_main
         self.ztest_suite_names = ztest_suite_names
+        self.test_map = test_map
 
     def __eq__(self, other):
         if not isinstance(other, ScanPathResult):
@@ -127,6 +129,7 @@ def scan_file(inf_name):
             new_suite_regex_matches = \
                 [m for m in new_suite_regex.finditer(main_c)]
 
+            tmap = {}
             if registered_suite_regex_matches:
                 has_registered_test_suites = True
             if registered_suite_run_regex.search(main_c):
@@ -137,18 +140,22 @@ def scan_file(inf_name):
             if regular_suite_regex_matches:
                 ztest_suite_names = \
                     _extract_ztest_suite_names(regular_suite_regex_matches)
-                testcase_names, warnings = \
+                tmap, testcase_names, warnings = \
                     _find_regular_ztest_testcases(main_c, regular_suite_regex_matches, has_registered_test_suites)
             elif registered_suite_regex_matches:
                 ztest_suite_names = \
                     _extract_ztest_suite_names(registered_suite_regex_matches)
-                testcase_names, warnings = \
+                tmap, testcase_names, warnings = \
                     _find_regular_ztest_testcases(main_c, registered_suite_regex_matches, has_registered_test_suites)
             elif new_suite_regex_matches or new_suite_testcase_regex_matches:
+                tmap, testcase_names, warnings = \
+                    _find_new_ztest_testcases(main_c)
                 ztest_suite_names = \
                     _extract_ztest_suite_names(new_suite_regex_matches)
-                testcase_names, warnings = \
-                    _find_new_ztest_testcases(main_c)
+                for zt in ztest_suite_names:
+                    if not tmap.get(zt):
+                        tmap[zt] = []
+
             else:
                 # can't find ztest_test_suite, maybe a client, because
                 # it includes ztest.h
@@ -161,7 +168,8 @@ def scan_file(inf_name):
                 has_registered_test_suites=has_registered_test_suites,
                 has_run_registered_test_suites=has_run_registered_test_suites,
                 has_test_main=has_test_main,
-                ztest_suite_names=ztest_suite_names)
+                ztest_suite_names=ztest_suite_names,
+                test_map=tmap)
 
 def _extract_ztest_suite_names(suite_regex_matches):
     ztest_suite_names = \
@@ -201,7 +209,7 @@ def _find_regular_ztest_testcases(search_area, suite_regex_matches, is_registere
     search_start, search_end = \
         _get_search_area_boundary(search_area, suite_regex_matches, is_registered_test_suite)
     limited_search_area = search_area[search_start:search_end]
-    testcase_names, warnings = \
+    tmap, testcase_names, warnings = \
         _find_ztest_testcases(limited_search_area, testcase_regex)
 
     achtung_matches = re.findall(achtung_regex, limited_search_area)
@@ -209,7 +217,7 @@ def _find_regular_ztest_testcases(search_area, suite_regex_matches, is_registere
         achtung = ", ".join(sorted({match.decode() for match in achtung_matches},reverse = True))
         warnings = f"found invalid {achtung} in ztest_test_suite()"
 
-    return testcase_names, warnings
+    return tmap, testcase_names, warnings
 
 
 def _get_search_area_boundary(search_area, suite_regex_matches, is_registered_test_suite):
@@ -255,6 +263,18 @@ def _find_ztest_testcases(search_area, testcase_regex):
     """
     testcase_regex_matches = \
         [m for m in testcase_regex.finditer(search_area)]
+
+    a = {}
+    for m in testcase_regex_matches:
+        try:
+            s = m.group("suite_name")
+        except IndexError:
+            continue
+        tc = m.group("testcase_name").decode("UTF-8").replace("test_", "", 1)
+        tests = a.get(s, [])
+        tests.append(tc)
+        a[s.decode("UTF-8")] = tests
+
     testcase_names = \
         [m.group("testcase_name") for m in testcase_regex_matches]
     testcase_names = [name.decode("UTF-8") for name in testcase_names]
@@ -265,7 +285,7 @@ def _find_ztest_testcases(search_area, testcase_regex):
     testcase_names = \
         [tc_name.replace("test_", "", 1) for tc_name in testcase_names]
 
-    return testcase_names, warnings
+    return a, testcase_names, warnings
 
 
 def scan_testsuite_path(testsuite_path):
@@ -276,6 +296,8 @@ def scan_testsuite_path(testsuite_path):
     ztest_suite_names = []
 
     src_dir_path = _find_src_dir_path(testsuite_path)
+
+    testsuites = {}
     for filename in glob.glob(os.path.join(src_dir_path, "*.c*")):
         try:
             result: ScanPathResult = scan_file(filename)
@@ -293,6 +315,14 @@ def scan_testsuite_path(testsuite_path):
                 has_test_main = True
             if result.ztest_suite_names:
                 ztest_suite_names += result.ztest_suite_names
+
+
+            if result.test_map:
+                for k in result.test_map:
+                    if not testsuites.get(k):
+                        testsuites[k] = result.test_map.get(k)
+                    else:
+                        testsuites[k] += result.test_map.get(k)
 
         except ValueError as e:
             logger.error("%s: can't find: %s" % (filename, e))
