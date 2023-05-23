@@ -152,7 +152,7 @@ static void canopen_tx_retry(struct k_work *item)
 				break;
 			} else if (err != 0) {
 				LOG_ERR("failed to send CAN frame (err %d)",
-                        err);
+					err);
 				CO_errorReport(CANmodule->em,
 					       CO_EM_GENERIC_SOFTWARE_ERROR,
 					       CO_EMC_COMMUNICATION, 0);
@@ -190,10 +190,10 @@ void CO_CANsetNormalMode(CO_CANmodule_t *CANmodule)
 	CANmodule->CANnormal = true;
 }
 
-CO_ReturnError_t CO_CANmodule_init( CO_CANmodule_t *CANmodule,
+CO_ReturnError_t CO_CANmodule_init(CO_CANmodule_t *CANmodule,
 				   void *CANdriverState,
-                   CO_CANrx_t rxArray[], uint16_t rxSize,
-                   CO_CANtx_t txArray[], uint16_t txSize,
+				   CO_CANrx_t rxArray[], uint16_t rxSize,
+				   CO_CANtx_t txArray[], uint16_t txSize,
 				   uint16_t CANbitRate)
 {
 	struct canopen_context *ctx = (struct canopen_context *)CANdriverState;
@@ -282,8 +282,8 @@ void CO_CANmodule_disable(CO_CANmodule_t *CANmodule)
 	}
 }
 
-CO_ReturnError_t CO_CANrxBufferInit( CO_CANmodule_t *CANmodule, uint16_t index,
-                uint16_t ident, uint16_t mask, bool_t rtr,
+CO_ReturnError_t CO_CANrxBufferInit(CO_CANmodule_t *CANmodule, uint16_t index,
+				uint16_t ident, uint16_t mask, bool_t rtr,
 				void *object,
 				CO_CANrxBufferCallback_t pFunct)
 {
