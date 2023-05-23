@@ -1926,14 +1926,18 @@ sections. The general case looks like this:
    manifest:
      projects:
        - name: foo
-         import: import-1
+         import:
+           ... # import-1
        - name: bar
-         import: import-2
+         import:
+           ... # import-2
        # ...
        - name: baz
-         import: import-N
+         import:
+           ... # import-N
      self:
-       import: self-import
+       import:
+         ... # self-import
 
 Import keys are optional. If any of ``import-1, ..., import-N`` are missing,
 west will not import additional manifest data from that project. If
@@ -1969,6 +1973,8 @@ processed in this order:
 This process recurses if necessary. E.g., if ``import-1`` produces a manifest
 file that contains an ``import`` key, it is resolved recursively using the same
 rules before its contents are processed further.
+
+The following sections describe these outcomes.
 
 Projects
 --------
