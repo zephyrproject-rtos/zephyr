@@ -2,7 +2,7 @@
 /*
  ****************************************************************************
  * (C) 2006 - Cambridge University
- * (C) 2021-2024 - EPAM Systems
+ * (C) 2021-2026 - EPAM Systems
  ****************************************************************************
  *
  *        File: gnttab.c
@@ -21,6 +21,7 @@
 #include <zephyr/xen/generic.h>
 #include <zephyr/xen/gnttab.h>
 #include <zephyr/xen/memory.h>
+#include <zephyr/xen/regions.h>
 #include <zephyr/xen/public/grant_table.h>
 #include <zephyr/xen/public/memory.h>
 #include <zephyr/xen/public/xen.h>
@@ -194,6 +195,25 @@ static void gop_eagain_retry(int cmd, struct gnttab_map_grant_ref *gref)
 	}
 }
 
+#if defined(CONFIG_XEN_REGIONS)
+void *gnttab_get_pages(unsigned int npages)
+{
+	void *page_addr;
+
+	page_addr = xen_region_get_pages(npages);
+	if (!page_addr) {
+		LOG_WRN("Failed to allocate memory for gnttab page!\n");
+		return NULL;
+	}
+
+	return page_addr;
+}
+
+int gnttab_put_pages(void *start_addr, unsigned int npages)
+{
+	return xen_region_put_pages(start_addr, npages);
+}
+#else
 void *gnttab_get_pages(unsigned int npages)
 {
 	int ret = 0;
@@ -282,6 +302,7 @@ int gnttab_put_pages(void *start_addr, unsigned int npages)
 
 	return 0;
 }
+#endif /* CONFIG_XEN_REGIONS */
 
 int gnttab_map_refs(struct gnttab_map_grant_ref *map_ops, unsigned int count)
 {
@@ -307,6 +328,12 @@ int gnttab_map_refs(struct gnttab_map_grant_ref *map_ops, unsigned int count)
 			break;
 
 		default:
+#ifdef CONFIG_XEN_REGIONS
+			ret = xen_region_map(xen_to_virt(map_ops[i].host_addr), 1);
+			if (ret) {
+				return ret;
+			}
+#endif
 			break;
 		}
 	}
@@ -316,6 +343,15 @@ int gnttab_map_refs(struct gnttab_map_grant_ref *map_ops, unsigned int count)
 
 int gnttab_unmap_refs(struct gnttab_unmap_grant_ref *unmap_ops, unsigned int count)
 {
+#ifdef CONFIG_XEN_REGIONS
+	int ret;
+	for (unsigned int i = 0; i < count; i++) {
+		ret = xen_region_unmap(xen_to_virt(unmap_ops[i].host_addr), 1);
+		if (ret) {
+			return ret;
+		}
+	}
+#endif
 	return HYPERVISOR_grant_table_op(GNTTABOP_unmap_grant_ref, unmap_ops, count);
 }
 
