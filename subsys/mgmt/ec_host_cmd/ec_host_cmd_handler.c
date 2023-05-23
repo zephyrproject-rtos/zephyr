@@ -269,7 +269,7 @@ int ec_host_cmd_init(struct ec_host_cmd_backend *backend)
 	if ((handler_tx_buf &&
 	     !((handler_tx_buf <= backend_tx_buf) && (handler_tx_buf_end > backend_tx_buf))) ||
 	    (handler_rx_buf &&
-	     !((handler_rx_buf <= backend_rx_buf) && (handler_rx_buf_end < backend_rx_buf)))) {
+	     !((handler_rx_buf <= backend_rx_buf) && (handler_rx_buf_end > backend_rx_buf)))) {
 		LOG_WRN("Host Command handler provided unused buffer");
 	}
 
