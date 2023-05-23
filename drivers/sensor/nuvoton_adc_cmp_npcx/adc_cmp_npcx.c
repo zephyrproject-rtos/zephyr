@@ -92,7 +92,7 @@ static int adc_cmp_npcx_init(const struct device *dev)
 	if (config->thr_mv != ADC_CMP_NPCX_UNDEFINED) {
 		param.type = ADC_NPCX_THRESHOLD_PARAM_THVAL;
 		/* Convert from millivolts to ADC raw register value */
-		ret = adc_npcx_threshold_mv_to_thrval(config->thr_mv,
+		ret = adc_npcx_threshold_mv_to_thrval(config->adc, config->thr_mv,
 						&param.val);
 		if (ret) {
 			goto init_error;
@@ -135,7 +135,7 @@ static int adc_cmp_npcx_set_threshold(const struct device *dev, bool is_upper,
 
 	param.type = ADC_NPCX_THRESHOLD_PARAM_THVAL;
 	if (is_mv) {
-		ret = adc_npcx_threshold_mv_to_thrval(value, &param.val);
+		ret = adc_npcx_threshold_mv_to_thrval(config->adc, value, &param.val);
 		if (ret) {
 			return ret;
 		}
