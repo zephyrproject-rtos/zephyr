@@ -279,4 +279,4 @@ zephyr_udc0: &usbd {
 };
 
 /* Include partition configuration file */
-#include "nrf5340_cpuapp_partition_conf.dts"
+#include "nrf5340_cpuapp_partition_conf.dtsi"

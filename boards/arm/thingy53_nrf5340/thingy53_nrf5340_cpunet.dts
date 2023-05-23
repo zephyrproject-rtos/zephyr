@@ -129,4 +129,4 @@
 };
 
 /* Include shared RAM configuration file */
-#include "thingy53_nrf5340_shared_sram_planning_conf.dts"
+#include "thingy53_nrf5340_shared_sram_planning_conf.dtsi"
