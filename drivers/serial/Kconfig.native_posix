@@ -32,8 +32,7 @@ config NATIVE_UART_0_ON_STDINOUT
 	  which invoked the native_posix executable. This is good enough for
 	  automated testing, or when feeding from a file/pipe.
 	  Note that other, non UART messages, will also be printed to the
-	  terminal. This option should NOT be used in conjunction with
-	  NATIVE_POSIX_STDIN_CONSOLE
+	  terminal.
 	  It is strongly discouraged to try to use this option with the new
 	  shell interactively, as the default terminal configuration is NOT
 	  appropriate for interactive use.
