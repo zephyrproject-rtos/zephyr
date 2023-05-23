@@ -16,6 +16,10 @@ properties:
     required: true
   pinctrl-names:
     required: true
+  vref-mv:
+    type: int
+    required: true
+    description: ADC reference voltage (Unit:mV)
   channel-count:
     type: int
     required: true
