@@ -34,32 +34,32 @@ K_MUTEX_DEFINE(canopen_send_mutex);
 K_MUTEX_DEFINE(canopen_emcy_mutex);
 K_MUTEX_DEFINE(canopen_co_mutex);
 
-void canopen_send_lock(void)
+inline void canopen_send_lock(void)
 {
 	k_mutex_lock(&canopen_send_mutex, K_FOREVER);
 }
 
-void canopen_send_unlock(void)
+inline void canopen_send_unlock(void)
 {
 	k_mutex_unlock(&canopen_send_mutex);
 }
 
-void canopen_emcy_lock(void)
+inline void canopen_emcy_lock(void)
 {
 	k_mutex_lock(&canopen_emcy_mutex, K_FOREVER);
 }
 
-void canopen_emcy_unlock(void)
+inline void canopen_emcy_unlock(void)
 {
 	k_mutex_unlock(&canopen_emcy_mutex);
 }
 
-void canopen_od_lock(void)
+inline void canopen_od_lock(void)
 {
 	k_mutex_lock(&canopen_co_mutex, K_FOREVER);
 }
 
-void canopen_od_unlock(void)
+inline void canopen_od_unlock(void)
 {
 	k_mutex_unlock(&canopen_co_mutex);
 }
