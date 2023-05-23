@@ -4,13 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/**
- * @file
- * @defgroup bt_mesh_od_priv_proxy_cli Bluetooth Mesh On-Demand Private GATT Proxy Client
- * @{
- * @brief
- */
-
 #ifndef BT_MESH_OD_PRIV_PROXY_CLI_H__
 #define BT_MESH_OD_PRIV_PROXY_CLI_H__
 
@@ -19,6 +12,12 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/**
+ * @defgroup bt_mesh_od_priv_proxy_cli Bluetooth Mesh On-Demand Private GATT Proxy Client
+ * @ingroup bt_mesh
+ * @{
+ */
 
 /** On-Demand Private Proxy Client Model Context */
 struct bt_mesh_od_priv_proxy_cli {
@@ -93,10 +92,10 @@ extern const struct bt_mesh_model_op _bt_mesh_od_priv_proxy_cli_op[];
 extern const struct bt_mesh_model_cb _bt_mesh_od_priv_proxy_cli_cb;
 /** @endcond */
 
+/** @} */
+
 #ifdef __cplusplus
 }
 #endif
 
 #endif /* BT_MESH_OD_PRIV_PROXY_CLI_H__ */
-
-/** @} */

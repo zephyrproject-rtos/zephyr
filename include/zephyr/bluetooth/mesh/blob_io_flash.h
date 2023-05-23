@@ -4,13 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/**
- * @file
- * @defgroup bt_mesh_blob_io_flash Bluetooth mesh BLOB flash stream
- * @{
- * @brief
- */
-
 #ifndef ZEPHYR_INCLUDE_BLUETOOTH_MESH_BLOB_IO_FLASH_H__
 #define ZEPHYR_INCLUDE_BLUETOOTH_MESH_BLOB_IO_FLASH_H__
 
@@ -19,6 +12,12 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/**
+ * @defgroup bt_mesh_blob_io_flash Bluetooth Mesh BLOB flash stream
+ * @ingroup bt_mesh
+ * @{
+ */
 
 /** BLOB flash stream. */
 struct bt_mesh_blob_io_flash {
@@ -47,10 +46,10 @@ struct bt_mesh_blob_io_flash {
 int bt_mesh_blob_io_flash_init(struct bt_mesh_blob_io_flash *flash,
 			       uint8_t area_id, off_t offset);
 
+/** @} */
+
 #ifdef __cplusplus
 }
 #endif
 
 #endif /* ZEPHYR_INCLUDE_BLUETOOTH_MESH_BLOB_IO_FLASH_H__ */
-
-/** @} */
