@@ -270,7 +270,7 @@ img_mgmt_state_read(struct smp_streamer *ctxt)
 			}
 		}
 
-		ok = zcbor_tstr_put_term(zse, "hash")						&&
+		ok = ok && zcbor_tstr_put_term(zse, "hash")					&&
 		     zcbor_bstr_encode(zse, &zhash)						&&
 		     ZCBOR_ENCODE_FLAG(zse, "bootable", !(flags & IMAGE_F_NON_BOOTABLE))	&&
 		     ZCBOR_ENCODE_FLAG(zse, "pending",
