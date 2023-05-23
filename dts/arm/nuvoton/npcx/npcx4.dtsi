@@ -263,6 +263,20 @@
 			threshold-count = <6>;
 		};
 
+		/* ADC1 which reference voltage is AVCC */
+		adc1: adc@400d5000 {
+			compatible = "nuvoton,npcx-adc";
+			#io-channel-cells = <1>;
+			reg = <0x400d5000 0x2000>;
+			interrupts = <22 3>;
+			clocks = <&pcc NPCX_CLOCK_BUS_APB1 NPCX_PWDWN_CTL4 3>;
+			vref-mv = <3300>;
+			channel-count = <26>;
+			threshold-reg-offset = <0x80>;
+			threshold-count = <6>;
+			status = "disabled";
+		};
+
 		/* FIU0 configuration in npcx4 series */
 		qspi_fiu0: quadspi@40020000 {
 			clocks = <&pcc NPCX_CLOCK_BUS_FIU0 NPCX_PWDWN_CTL8 5>;
