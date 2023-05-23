@@ -964,7 +964,7 @@ class ProjectBuilder(FilterBuilder):
 
     def count_testcase_states(self, instance, results):
         for t in instance.testcases:
-            if t.status == Status.NOTRUN and instance.status == Status.NOTRUN:
+            if t.status == Status.NOTRUN and instance.status in [Status.NOTRUN, Status.ERROR ]:
                 results.cases_notrun +=1
             elif t.status == Status.NOTRUN and instance.status == Status.FAIL:
                 results.cases_blocked +=1

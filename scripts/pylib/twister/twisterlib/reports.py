@@ -478,13 +478,14 @@ class Reporting:
 
         total_platforms = len(self.platforms)
         pass_rate = (float(results.cases_passed) / float(results.cases))
-        logger.info("{} of {} test cases passed ({:.2%}), {} failed, {} not run, {} blocked on {} out of total {} platforms ({:02.2f}%)".format(
+        logger.info("{} of {} test cases passed ({:.2%}), {} failed, {} not run, {} blocked, {} skipped on {} out of total {} platforms ({:02.2f}%)".format(
             results.cases_passed,
             results.cases,
             pass_rate,
             results.cases_failed,
             results.cases_notrun,
             results.cases_blocked,
+            results.cases_skipped,
             len(self.filtered_platforms),
             total_platforms,
             (100 * len(self.filtered_platforms) / len(self.platforms))

@@ -316,7 +316,6 @@ def scan_testsuite_path(testsuite_path):
             "call to 'ztest_run_registered_test_suites()'"
         logger.error(warning)
         raise TwisterRuntimeError(warning)
-
     return subcases, ztest_suite_names
 
 def _find_src_dir_path(test_dir_path):
