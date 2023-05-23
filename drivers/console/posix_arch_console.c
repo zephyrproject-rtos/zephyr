@@ -6,14 +6,13 @@
  */
 
 #include <zephyr/init.h>
-#include "bs_tracing.h"
-#include "posix_board_if.h"
+#include <zephyr/arch/posix/posix_trace.h>
 
 #define _STDOUT_BUF_SIZE 256
 static char stdout_buff[_STDOUT_BUF_SIZE];
 static int n_pend; /* Number of pending characters in buffer */
 
-int bsim_print_char(int c)
+static int print_char(int c)
 {
 	int printnow = 0;
 
@@ -29,8 +28,7 @@ int bsim_print_char(int c)
 	}
 
 	if (printnow) {
-		bs_trace_print(BS_TRACE_RAW, NULL, 0, 2, BS_TRACE_AUTOTIME, 0,
-				"%s\n", stdout_buff);
+		posix_print_trace("%s\n", stdout_buff);
 		n_pend = 0;
 		stdout_buff[0] = 0;
 	}
@@ -44,28 +42,24 @@ void posix_flush_stdout(void)
 {
 	if (n_pend) {
 		stdout_buff[n_pend] = 0;
-		bs_trace_print(BS_TRACE_RAW, NULL, 0, 2, BS_TRACE_AUTOTIME, 0,
-				"%s", stdout_buff);
+		posix_print_trace("%s", stdout_buff);
 		n_pend = 0;
 		stdout_buff[0] = 0;
-		fflush(stdout);
 	}
 }
 
-/*
- * @brief Initialize the driver that provides the printk output
- *
- * @return 0 if successful, otherwise failed.
- */
-static int bsim_console_init(void)
+static int posix_arch_console_init(void)
 {
-
 #ifdef CONFIG_PRINTK
 	extern void __printk_hook_install(int (*fn)(int));
-	__printk_hook_install(bsim_print_char);
+	__printk_hook_install(print_char);
 #endif
-
+#ifdef CONFIG_STDOUT_CONSOLE
+	extern void __stdout_hook_install(int (*fn)(int));
+	__stdout_hook_install(print_char);
+#endif
 	return 0;
 }
 
-SYS_INIT(bsim_console_init, PRE_KERNEL_1, CONFIG_BSIM_CONSOLE_INIT_PRIORITY);
+SYS_INIT(posix_arch_console_init, PRE_KERNEL_1,
+	CONFIG_POSIX_ARCH_CONSOLE_INIT_PRIORITY);
