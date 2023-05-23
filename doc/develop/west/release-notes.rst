@@ -293,6 +293,8 @@ New features:
   ``master`` to ``main`` without breaking scripts that do not provide this
   option.
 
+.. _west_0_10_0:
+
 v0.10.0
 *******
 
@@ -341,6 +343,8 @@ Other changes:
 - West now warns if you combine ``import`` with ``group-filter``. Semantics for
   this combination have changed starting with v0.10.x. See the v0.10.0 release
   notes above for more information.
+
+.. _west_0_9_0:
 
 v0.9.0
 ******
