@@ -227,4 +227,4 @@
 };
 
 /* Include partition configuration file */
-#include "sparkfun_thing_plus_nrf9160_partition_conf.dts"
+#include "sparkfun_thing_plus_nrf9160_partition_conf.dtsi"

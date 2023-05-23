@@ -237,4 +237,4 @@
 };
 
 /* Include partition configuration file */
-#include "circuitdojo_feather_nrf9160_partition_conf.dts"
+#include "circuitdojo_feather_nrf9160_partition_conf.dtsi"

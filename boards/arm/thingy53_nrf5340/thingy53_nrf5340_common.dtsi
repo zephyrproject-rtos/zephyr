@@ -340,4 +340,4 @@ zephyr_udc0: &usbd {
 };
 
 /* Include partition configuration file */
-#include "thingy53_nrf5340_partition_conf.dts"
+#include "thingy53_nrf5340_partition_conf.dtsi"
