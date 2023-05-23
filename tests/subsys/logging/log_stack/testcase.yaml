@@ -16,7 +16,7 @@ tests:
     extra_configs:
       - CONFIG_LOG_MODE_DEFERRED=y
       - CONFIG_NO_OPTIMIZATIONS=y
-      - CONFIG_ZTEST_ALLOW_NO_OPTIMIZATIONS=y
+      - CONFIG_ZTEST_WARN_NO_OPTIMIZATIONS=n
       - CONFIG_IDLE_STACK_SIZE=2048
   logging.log_stack_immediate:
     extra_configs:
@@ -26,7 +26,7 @@ tests:
     extra_configs:
       - CONFIG_LOG_MODE_IMMEDIATE=y
       - CONFIG_NO_OPTIMIZATIONS=y
-      - CONFIG_ZTEST_ALLOW_NO_OPTIMIZATIONS=y
+      - CONFIG_ZTEST_WARN_NO_OPTIMIZATIONS=n
       - CONFIG_IDLE_STACK_SIZE=2048
   logging.log_stack_deferred_cpp:
     extra_configs:
@@ -37,7 +37,7 @@ tests:
     extra_configs:
       - CONFIG_LOG_MODE_DEFERRED=y
       - CONFIG_NO_OPTIMIZATIONS=y
-      - CONFIG_ZTEST_ALLOW_NO_OPTIMIZATIONS=y
+      - CONFIG_ZTEST_WARN_NO_OPTIMIZATIONS=n
       - CONFIG_CPP=y
   logging.log_stack_immediate_cpp:
     extra_configs:
@@ -48,5 +48,5 @@ tests:
     extra_configs:
       - CONFIG_LOG_MODE_IMMEDIATE=y
       - CONFIG_NO_OPTIMIZATIONS=y
-      - CONFIG_ZTEST_ALLOW_NO_OPTIMIZATIONS=y
+      - CONFIG_ZTEST_WARN_NO_OPTIMIZATIONS=n
       - CONFIG_CPP=y
