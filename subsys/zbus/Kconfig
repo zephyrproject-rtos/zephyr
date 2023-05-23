@@ -10,7 +10,7 @@ if ZBUS
 
 config ZBUS_STRUCTS_ITERABLE_ACCESS
 	bool "Zbus iterable sections support."
-	depends on !XTENSA && !ARCH_POSIX
+	depends on !XTENSA
 	default y
 
 config ZBUS_CHANNEL_NAME
