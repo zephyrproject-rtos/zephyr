@@ -118,6 +118,28 @@ static void ipi_handler(const void *unused)
 #endif
 }
 
+#ifdef CONFIG_FPU_SHARING
+/*
+ * Make sure there is no pending FPU flush request for this CPU while
+ * waiting for a contended spinlock to become available. This prevents
+ * a deadlock when the lock we need is already taken by another CPU
+ * that also wants its FPU content to be reinstated while such content
+ * is still live in this CPU's FPU.
+ */
+void arch_spin_relax(void)
+{
+	atomic_val_t *pending_ipi = &cpu_pending_ipi[_current_cpu->id];
+
+	if (atomic_test_and_clear_bit(pending_ipi, IPI_FPU_FLUSH)) {
+		/*
+		 * We may not be in IRQ context here hence cannot use
+		 * z_riscv_flush_local_fpu() directly.
+		 */
+		arch_float_disable(_current_cpu->arch.fpu_owner);
+	}
+}
+#endif
+
 static int riscv_smp_init(void)
 {
 
