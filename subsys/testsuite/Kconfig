@@ -65,6 +65,13 @@ config COVERAGE_DUMP
 	help
 	  Dump collected coverage information to console on exit.
 
+config COVERAGE_SHELL
+	bool "Coverage shell"
+	default y
+	depends on SHELL && COVERAGE && !COVERAGE_DUMP
+	help
+	  Start coverage dump to console using the coverage shell command.
+
 config TEST_USERSPACE
 	bool "Indicate that this test exercises user mode"
 	help
