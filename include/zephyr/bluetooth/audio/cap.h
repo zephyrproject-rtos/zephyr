@@ -332,9 +332,25 @@ struct bt_cap_initiator_broadcast_create_param {
 };
 
 /**
- * @brief Create and start Common Audio Profile Common Audio Profile broadcast source.
+ * @brief Create a Common Audio Profile broadcast source.
  *
  * Create a new audio broadcast source with one or more audio streams.
+ * * *
+ * @note @kconfig{CONFIG_BT_CAP_INITIATOR} and
+ * @kconfig{CONFIG_BT_BAP_BROADCAST_SOURCE} must be enabled for this function
+ * to be enabled.
+ *
+ * @param[in]  param             Parameters to start the audio streams.
+ * @param[out] broadcast_source  Pointer to the broadcast source created.
+ *
+ * @return 0 on success or negative error value on failure.
+ */
+int bt_cap_initiator_broadcast_audio_create(
+	const struct bt_cap_initiator_broadcast_create_param *param,
+	struct bt_cap_broadcast_source **broadcast_source);
+
+/**
+ * @brief Start Common Audio Profile broadcast source.
  *
  * The broadcast source will be visible for scanners once this has been called,
  * and the device will advertise audio announcements.
@@ -346,16 +362,14 @@ struct bt_cap_initiator_broadcast_create_param {
  * @kconfig{CONFIG_BT_BAP_BROADCAST_SOURCE} must be enabled for this function
  * to be enabled.
  *
- * @param[in]  param             Parameters to start the audio streams.
- * @param[in]  adv               Pointer to an extended advertising set with
- *                               periodic advertising configured.
- * @param[out] broadcast_source  Pointer to the broadcast source created.
+ * @param broadcast_source  Pointer to the broadcast source.
+ * @param adv               Pointer to an extended advertising set with
+ *                          periodic advertising configured.
  *
  * @return 0 on success or negative error value on failure.
  */
-int bt_cap_initiator_broadcast_audio_start(struct bt_cap_initiator_broadcast_create_param *param,
-					   struct bt_le_ext_adv *adv,
-					   struct bt_cap_broadcast_source **broadcast_source);
+int bt_cap_initiator_broadcast_audio_start(struct bt_cap_broadcast_source *broadcast_source,
+					   struct bt_le_ext_adv *adv);
 /**
  * @brief Update broadcast audio streams for a Common Audio Profile broadcast source.
  *
@@ -416,12 +430,12 @@ int bt_cap_initiator_broadcast_audio_delete(struct bt_cap_broadcast_source *broa
  *
  * See table 3.14 in the Basic Audio Profile v1.0.1 for the structure.
  *
- * @param[in]  source        Pointer to the broadcast source.
- * @param[out] broadcast_id  Pointer to the 3-octet broadcast ID.
+ * @param[in]  broadcast_source  Pointer to the broadcast source.
+ * @param[out] broadcast_id      Pointer to the 3-octet broadcast ID.
  *
  * @return int		0 if on success, errno on error.
  */
-int bt_cap_initiator_broadcast_get_id(const struct bt_cap_broadcast_source *source,
+int bt_cap_initiator_broadcast_get_id(const struct bt_cap_broadcast_source *broadcast_source,
 				      uint32_t *const broadcast_id);
 
 /**
@@ -434,14 +448,13 @@ int bt_cap_initiator_broadcast_get_id(const struct bt_cap_broadcast_source *sour
  *
  * See table 3.15 in the Basic Audio Profile v1.0.1 for the structure.
  *
- * @param source        Pointer to the broadcast source.
- * @param base_buf      Pointer to a buffer where the BASE will be inserted.
+ * @param broadcast_source  Pointer to the broadcast source.
+ * @param base_buf          Pointer to a buffer where the BASE will be inserted.
  *
  * @return int		0 if on success, errno on error.
  */
-int bt_cap_initiator_broadcast_get_base(struct bt_cap_broadcast_source *source,
+int bt_cap_initiator_broadcast_get_base(struct bt_cap_broadcast_source *broadcast_source,
 					struct net_buf_simple *base_buf);
-
 
 struct bt_cap_unicast_to_broadcast_param {
 	/** The source unicast group with the streams. */

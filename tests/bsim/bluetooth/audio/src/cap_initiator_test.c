@@ -861,7 +861,7 @@ static void stop_and_delete_extended_adv(struct bt_le_ext_adv *adv)
 	}
 }
 
-static void test_broadcast_audio_start_inval(struct bt_le_ext_adv *adv)
+static void test_broadcast_audio_create_inval(void)
 {
 	struct bt_codec_data bis_codec_data =
 		BT_CODEC_DATA(BT_CODEC_CONFIG_LC3_FREQ, BT_CODEC_CONFIG_LC3_FREQ_16KHZ);
@@ -891,21 +891,15 @@ static void test_broadcast_audio_start_inval(struct bt_le_ext_adv *adv)
 	create_param.encryption = false;
 
 	/* Test NULL parameters */
-	err = bt_cap_initiator_broadcast_audio_start(NULL, adv, &broadcast_source);
+	err = bt_cap_initiator_broadcast_audio_create(NULL, &broadcast_source);
 	if (err == 0) {
-		FAIL("bt_cap_initiator_broadcast_audio_start with NULL param did not fail\n");
+		FAIL("bt_cap_initiator_broadcast_audio_create with NULL param did not fail\n");
 		return;
 	}
 
-	err = bt_cap_initiator_broadcast_audio_start(&create_param, NULL, &broadcast_source);
+	err = bt_cap_initiator_broadcast_audio_create(&create_param, NULL);
 	if (err == 0) {
-		FAIL("bt_cap_initiator_broadcast_audio_start with NULL adv did not fail\n");
-		return;
-	}
-
-	err = bt_cap_initiator_broadcast_audio_start(&create_param, adv, NULL);
-	if (err == 0) {
-		FAIL("bt_cap_initiator_broadcast_audio_start with NULL broadcast source did not "
+		FAIL("bt_cap_initiator_broadcast_audio_create with NULL broadcast source did not "
 		     "fail\n");
 		return;
 	}
@@ -913,9 +907,10 @@ static void test_broadcast_audio_start_inval(struct bt_le_ext_adv *adv)
 	/* Clear metadata so that it does not contain the mandatory stream context */
 	memset(&invalid_codec.meta, 0, sizeof(invalid_codec.meta));
 	subgroup_param.codec = &invalid_codec;
-	err = bt_cap_initiator_broadcast_audio_start(&create_param, adv, NULL);
+	err = bt_cap_initiator_broadcast_audio_create(&create_param, NULL);
 	if (err == 0) {
-		FAIL("bt_cap_initiator_broadcast_audio_start with invalid metadata did not fail\n");
+		FAIL("bt_cap_initiator_broadcast_audio_create with invalid metadata did not "
+		     "fail\n");
 		return;
 	}
 
@@ -924,8 +919,7 @@ static void test_broadcast_audio_start_inval(struct bt_le_ext_adv *adv)
 	 */
 }
 
-static void test_broadcast_audio_start(struct bt_le_ext_adv *adv,
-				       struct bt_cap_broadcast_source **broadcast_source)
+static void test_broadcast_audio_create(struct bt_cap_broadcast_source **broadcast_source)
 {
 	struct bt_codec_data bis_codec_data =
 		BT_CODEC_DATA(BT_CODEC_CONFIG_LC3_FREQ, BT_CODEC_CONFIG_LC3_FREQ_16KHZ);
@@ -954,7 +948,42 @@ static void test_broadcast_audio_start(struct bt_le_ext_adv *adv,
 	printk("Creating broadcast source with %zu broadcast_streams\n",
 	       ARRAY_SIZE(broadcast_streams));
 
-	err = bt_cap_initiator_broadcast_audio_start(&create_param, adv, broadcast_source);
+	err = bt_cap_initiator_broadcast_audio_create(&create_param, broadcast_source);
+	if (err != 0) {
+		FAIL("Unable to start broadcast source: %d\n", err);
+		return;
+	}
+
+	printk("Broadcast source created with %zu broadcast_streams\n",
+	       ARRAY_SIZE(broadcast_streams));
+}
+
+static void test_broadcast_audio_start_inval(struct bt_cap_broadcast_source *broadcast_source,
+					     struct bt_le_ext_adv *adv)
+{
+	int err;
+
+	/* Test NULL parameters */
+	err = bt_cap_initiator_broadcast_audio_start(NULL, adv);
+	if (err == 0) {
+		FAIL("bt_cap_initiator_broadcast_audio_start with NULL broadcast source did not "
+		     "fail\n");
+		return;
+	}
+
+	err = bt_cap_initiator_broadcast_audio_start(broadcast_source, NULL);
+	if (err == 0) {
+		FAIL("bt_cap_initiator_broadcast_audio_start with NULL adv did not fail\n");
+		return;
+	}
+}
+
+static void test_broadcast_audio_start(struct bt_cap_broadcast_source *broadcast_source,
+				       struct bt_le_ext_adv *adv)
+{
+	int err;
+
+	err = bt_cap_initiator_broadcast_audio_start(broadcast_source, adv);
 	if (err != 0) {
 		FAIL("Unable to start broadcast source: %d\n", err);
 		return;
@@ -1126,8 +1155,11 @@ static void test_cap_initiator_broadcast(void)
 
 	setup_extended_adv(&adv);
 
-	test_broadcast_audio_start_inval(adv);
-	test_broadcast_audio_start(adv, &broadcast_source);
+	test_broadcast_audio_create_inval();
+	test_broadcast_audio_create(&broadcast_source);
+
+	test_broadcast_audio_start_inval(broadcast_source, adv);
+	test_broadcast_audio_start(broadcast_source, adv);
 
 	setup_extended_adv_data(broadcast_source, adv);
 

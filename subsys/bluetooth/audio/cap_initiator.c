@@ -15,11 +15,6 @@
 
 #include <zephyr/logging/log.h>
 
-BUILD_ASSERT(sizeof(struct bt_bap_broadcast_source_create_param) ==
-		     sizeof(struct bt_cap_initiator_broadcast_create_param),
-	     "Size of struct bt_bap_broadcast_source_create_param must equal "
-	     "to struct bt_cap_initiator_broadcast_create_param");
-
 LOG_MODULE_REGISTER(bt_cap_initiator, CONFIG_BT_CAP_INITIATOR_LOG_LEVEL);
 
 #include "common/bt_str.h"
@@ -77,6 +72,9 @@ static bool cap_initiator_valid_metadata(const struct bt_codec_data meta[],
 }
 
 #if defined(CONFIG_BT_BAP_BROADCAST_SOURCE)
+static struct bt_cap_broadcast_source {
+	struct bt_bap_broadcast_source *bap_broadcast;
+} broadcast_sources[CONFIG_BT_BAP_BROADCAST_SRC_COUNT];
 
 static bool cap_initiator_broadcast_audio_start_valid_param(
 	const struct bt_cap_initiator_broadcast_create_param *param)
@@ -109,28 +107,68 @@ static bool cap_initiator_broadcast_audio_start_valid_param(
 	return true;
 }
 
-
-int bt_cap_initiator_broadcast_audio_start(struct bt_cap_initiator_broadcast_create_param *param,
-					   struct bt_le_ext_adv *adv,
-					   struct bt_cap_broadcast_source **broadcast_source)
+static void cap_initiator_broadcast_to_bap_broadcast_param(
+	const struct bt_cap_initiator_broadcast_create_param *cap_param,
+	struct bt_bap_broadcast_source_create_param *bap_param,
+	struct bt_bap_broadcast_source_subgroup_param
+		bap_subgroup_params[CONFIG_BT_BAP_BROADCAST_SRC_SUBGROUP_COUNT],
+	struct bt_bap_broadcast_source_stream_param
+		bap_stream_params[CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT])
 {
-	/* TODO: For now the create param and broadcast sources are
-	 * identical, so we can just cast them. This need to be updated and
-	 * made resistant to changes in either the CAP or BAP APIs at some point
-	 */
-	struct bt_bap_broadcast_source_create_param *bap_create_param =
-		(struct bt_bap_broadcast_source_create_param *)param;
-	struct bt_bap_broadcast_source **bap_broadcast_source =
-		(struct bt_bap_broadcast_source **)broadcast_source;
-	int err;
+	size_t stream_cnt = 0U;
+
+	bap_param->params_count = cap_param->subgroup_count;
+	bap_param->params = bap_subgroup_params;
+	bap_param->qos = cap_param->qos;
+	bap_param->packing = cap_param->packing;
+	bap_param->encryption = cap_param->encryption;
+	if (bap_param->encryption) {
+		memcpy(bap_param->broadcast_code, cap_param->broadcast_code,
+		       BT_AUDIO_BROADCAST_CODE_SIZE);
+	} else {
+		memset(bap_param->broadcast_code, 0, BT_AUDIO_BROADCAST_CODE_SIZE);
+	}
+
+	for (size_t i = 0U; i < bap_param->params_count; i++) {
+		const struct bt_cap_initiator_broadcast_subgroup_param *cap_subgroup_param =
+			&cap_param->subgroup_params[i];
+		struct bt_bap_broadcast_source_subgroup_param *bap_subgroup_param =
+			&bap_param->params[i];
+
+		bap_subgroup_param->codec = cap_subgroup_param->codec;
+		bap_subgroup_param->params_count = cap_subgroup_param->stream_count;
+		bap_subgroup_param->params = &bap_stream_params[stream_cnt];
+
+		for (size_t j = 0U; j < bap_subgroup_param->params_count; j++, stream_cnt++) {
+			const struct bt_cap_initiator_broadcast_stream_param *cap_stream_param =
+				&cap_subgroup_param->stream_params[j];
+			struct bt_bap_broadcast_source_stream_param *bap_stream_param =
+				&bap_subgroup_param->params[j];
+
+			bap_stream_param->stream = &cap_stream_param->stream->bap_stream;
+#if CONFIG_BT_CODEC_MAX_DATA_COUNT > 0
+			bap_stream_param->data_count = cap_stream_param->data_count;
+			/* We do not need to copy the data, as that is the same type of struct, so
+			 * we can just point to the CAP parameter data
+			 */
+			bap_stream_param->data = cap_stream_param->data;
+#endif /* CONFIG_BT_CODEC_MAX_DATA_COUNT > 0 */
+		}
+	}
+}
+
+int bt_cap_initiator_broadcast_audio_create(
+	const struct bt_cap_initiator_broadcast_create_param *param,
+	struct bt_cap_broadcast_source **broadcast_source)
+{
+	struct bt_bap_broadcast_source_subgroup_param
+		bap_subgroup_params[CONFIG_BT_BAP_BROADCAST_SRC_SUBGROUP_COUNT];
+	struct bt_bap_broadcast_source_stream_param
+		bap_stream_params[CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT];
+	struct bt_bap_broadcast_source_create_param bap_create_param;
 
 	CHECKIF(param == NULL) {
 		LOG_DBG("param is NULL");
-		return -EINVAL;
-	}
-
-	CHECKIF(adv == NULL) {
-		LOG_DBG("adv is NULL");
 		return -EINVAL;
 	}
 
@@ -143,32 +181,45 @@ int bt_cap_initiator_broadcast_audio_start(struct bt_cap_initiator_broadcast_cre
 		return -EINVAL;
 	}
 
-	err = bt_bap_broadcast_source_create(bap_create_param, bap_broadcast_source);
-	if (err != 0) {
-		LOG_DBG("Failed to create broadcast source: %d", err);
-		return err;
-	}
-
-	err = bt_bap_broadcast_source_start(*bap_broadcast_source, adv);
-	if (err != 0) {
-		int del_err;
-
-		LOG_DBG("Failed to start broadcast source: %d\n", err);
-
-		del_err = bt_bap_broadcast_source_delete(*bap_broadcast_source);
-		if (del_err) {
-			LOG_ERR("Failed to delete BAP broadcast source: %d",
-				del_err);
+	for (size_t i = 0; i < ARRAY_SIZE(broadcast_sources); i++) {
+		if (broadcast_sources[i].bap_broadcast == NULL) {
+			*broadcast_source = &broadcast_sources[i];
+			break;
 		}
 	}
 
-	return err;
+	cap_initiator_broadcast_to_bap_broadcast_param(param, &bap_create_param,
+						       bap_subgroup_params, bap_stream_params);
+
+	return bt_bap_broadcast_source_create(&bap_create_param,
+					      &(*broadcast_source)->bap_broadcast);
+}
+
+int bt_cap_initiator_broadcast_audio_start(struct bt_cap_broadcast_source *broadcast_source,
+					   struct bt_le_ext_adv *adv)
+{
+	CHECKIF(adv == NULL) {
+		LOG_DBG("adv is NULL");
+		return -EINVAL;
+	}
+
+	CHECKIF(broadcast_source == NULL) {
+		LOG_DBG("broadcast_source is NULL");
+		return -EINVAL;
+	}
+
+	return bt_bap_broadcast_source_start(broadcast_source->bap_broadcast, adv);
 }
 
 int bt_cap_initiator_broadcast_audio_update(struct bt_cap_broadcast_source *broadcast_source,
 					    const struct bt_codec_data meta[],
 					    size_t meta_count)
 {
+	CHECKIF(broadcast_source == NULL) {
+		LOG_DBG("broadcast_source is NULL");
+		return -EINVAL;
+	}
+
 	CHECKIF(meta == NULL) {
 		LOG_DBG("meta is NULL");
 		return -EINVAL;
@@ -179,31 +230,57 @@ int bt_cap_initiator_broadcast_audio_update(struct bt_cap_broadcast_source *broa
 		return -EINVAL;
 	}
 
-	return bt_bap_broadcast_source_update_metadata(
-		(struct bt_bap_broadcast_source *)broadcast_source, meta, meta_count);
+	return bt_bap_broadcast_source_update_metadata(broadcast_source->bap_broadcast, meta,
+						       meta_count);
 }
 
 int bt_cap_initiator_broadcast_audio_stop(struct bt_cap_broadcast_source *broadcast_source)
 {
-	return bt_bap_broadcast_source_stop((struct bt_bap_broadcast_source *)broadcast_source);
+	CHECKIF(broadcast_source == NULL) {
+		LOG_DBG("broadcast_source is NULL");
+		return -EINVAL;
+	}
+
+	return bt_bap_broadcast_source_stop(broadcast_source->bap_broadcast);
 }
 
 int bt_cap_initiator_broadcast_audio_delete(struct bt_cap_broadcast_source *broadcast_source)
 {
-	return bt_bap_broadcast_source_delete((struct bt_bap_broadcast_source *)broadcast_source);
+	int err;
+
+	CHECKIF(broadcast_source == NULL) {
+		LOG_DBG("broadcast_source is NULL");
+		return -EINVAL;
+	}
+
+	err = bt_bap_broadcast_source_delete(broadcast_source->bap_broadcast);
+	if (err == 0) {
+		broadcast_source->bap_broadcast = NULL;
+	}
+
+	return err;
 }
 
-int bt_cap_initiator_broadcast_get_id(const struct bt_cap_broadcast_source *source,
+int bt_cap_initiator_broadcast_get_id(const struct bt_cap_broadcast_source *broadcast_source,
 				      uint32_t *const broadcast_id)
 {
-	return bt_bap_broadcast_source_get_id((struct bt_bap_broadcast_source *)source,
-					      broadcast_id);
+	CHECKIF(broadcast_source == NULL) {
+		LOG_DBG("broadcast_source is NULL");
+		return -EINVAL;
+	}
+
+	return bt_bap_broadcast_source_get_id(broadcast_source->bap_broadcast, broadcast_id);
 }
 
-int bt_cap_initiator_broadcast_get_base(struct bt_cap_broadcast_source *source,
+int bt_cap_initiator_broadcast_get_base(struct bt_cap_broadcast_source *broadcast_source,
 					struct net_buf_simple *base_buf)
 {
-	return bt_bap_broadcast_source_get_base((struct bt_bap_broadcast_source *)source, base_buf);
+	CHECKIF(broadcast_source == NULL) {
+		LOG_DBG("broadcast_source is NULL");
+		return -EINVAL;
+	}
+
+	return bt_bap_broadcast_source_get_base(broadcast_source->bap_broadcast, base_buf);
 }
 
 #endif /* CONFIG_BT_BAP_BROADCAST_SOURCE */
