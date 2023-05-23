@@ -27,7 +27,7 @@ Intel open-sources firmware for its ADSP hardware under the Sound Open Firmware
 (`SOF`_) project. SOF can be built with either Zephyr or Cadence's proprietary
 Xtensa OS (XTOS) and run on a variety of Intel and non-Intel platforms.
 
-In general, the Intel `UP2`_ and `UP Xtreme`_ product lines are the publicly
+The Intel `UP Xtreme`_ product line has the publicly
 available reference boards for Zephyr's Intel ADSP support. This guide uses the
 `UP Xtreme i11-0001 series`_ (:ref:`intel_adsp_cavs25`) board as an example.
 However, the instructions are generic and will work on other boards unless
@@ -53,7 +53,7 @@ Note that if you plan to use SOF on your board, you will need to build and
 install the modified Linux SOF kernel instead of the default kernel. It is
 recommended you follow the `SOF instructions`_ to build and run SOF on Zephyr.
 
-UP2 and UP Xtreme users can refer to the `UP Community wiki`_ for help installing a
+UP Xtreme users can refer to the `UP Community wiki`_ for help installing a
 Linux operating system on their board.
 
 Signing Tool
@@ -326,8 +326,6 @@ exporting ``FLEXLM_DIAGNOSTICS=3``.
 .. _SOF: https://thesofproject.github.io/latest/index.html
 
 .. _Chromebooks: https://www.hp.com/us-en/shop/pdp/hp-chromebook-x360-14c-cc0047nr
-
-.. _UP2: https://up-board.org/upsquared/specifications/
 
 .. _UP Xtreme: https://up-board.org/up-xtreme/
 
