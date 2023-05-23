@@ -485,7 +485,7 @@ static int lsm6dso_shub_read_target_reg(const struct device *dev,
 	trgt_cfg.slv_subadd = trgt_reg;
 	trgt_cfg.slv_len = len;
 
-	lsm6dso_sh_slv0_cfg_read(ctx, &trgt_cfg);
+	lsm6dso_sh_slv_cfg_read(ctx, 0, &trgt_cfg);
 
 	/* turn SH on, wait for shub i2c read to finish */
 	lsm6dso_shub_enable(dev, 1);
@@ -565,12 +565,6 @@ static int lsm6dso_shub_set_data_channel(const struct device *dev)
 	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
 	uint8_t n;
 	struct lsm6dso_shub_slist *sp;
-	int32_t (*sh_chan_cfg[LSM6DSO_SHUB_MAX_NUM_TARGETS])
-			(stmdev_ctx_t *ctx, lsm6dso_sh_cfg_read_t *val) = {
-		lsm6dso_sh_slv1_cfg_read,
-		lsm6dso_sh_slv2_cfg_read,
-		lsm6dso_sh_slv3_cfg_read,
-	};
 	lsm6dso_sh_cfg_read_t trgt_cfg;
 
 	/* Configure shub data channels to access external targets */
@@ -581,7 +575,7 @@ static int lsm6dso_shub_set_data_channel(const struct device *dev)
 		trgt_cfg.slv_subadd = sp->out_data_addr;
 		trgt_cfg.slv_len = sp->out_data_len;
 
-		if (sh_chan_cfg[n](ctx, &trgt_cfg) < 0) {
+		if (lsm6dso_sh_slv_cfg_read(ctx, n + 1, &trgt_cfg) < 0) {
 			LOG_DBG("shub: error configuring shub for ext targets");
 			return -EIO;
 		}
