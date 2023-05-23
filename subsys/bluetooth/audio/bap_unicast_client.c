@@ -963,6 +963,7 @@ static void unicast_client_ep_set_status(struct bt_bap_ep *ep, struct net_buf_si
 
 	switch (status->state) {
 	case BT_BAP_EP_STATE_IDLE:
+		ep->receiver_ready = false;
 		(void)unicast_client_ep_idle_state(ep);
 		break;
 	case BT_BAP_EP_STATE_CODEC_CONFIGURED:
@@ -982,6 +983,8 @@ static void unicast_client_ep_set_status(struct bt_bap_ep *ep, struct net_buf_si
 				bt_bap_ep_state_str(ep->status.state));
 			return;
 		}
+
+		ep->receiver_ready = false;
 
 		unicast_client_ep_config_state(ep, buf);
 		break;
@@ -1020,6 +1023,8 @@ static void unicast_client_ep_set_status(struct bt_bap_ep *ep, struct net_buf_si
 				return;
 			}
 		}
+
+		ep->receiver_ready = false;
 
 		unicast_client_ep_qos_state(ep, buf, old_state);
 		break;
@@ -1077,6 +1082,8 @@ static void unicast_client_ep_set_status(struct bt_bap_ep *ep, struct net_buf_si
 			return;
 		}
 
+		ep->receiver_ready = false;
+
 		unicast_client_ep_disabling_state(ep, buf);
 		break;
 	case BT_BAP_EP_STATE_RELEASING:
@@ -1103,6 +1110,8 @@ static void unicast_client_ep_set_status(struct bt_bap_ep *ep, struct net_buf_si
 				bt_bap_ep_state_str(ep->status.state));
 			return;
 		}
+
+		ep->receiver_ready = false;
 
 		unicast_client_ep_releasing_state(ep, buf);
 		break;
