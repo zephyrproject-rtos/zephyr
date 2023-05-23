@@ -103,13 +103,14 @@ config ZTEST_NO_YIELD
 	  yielding to the idle thread may put the board into a low power state
 	  where a debugger cannot connect to it.
 
-config ZTEST_ALLOW_NO_OPTIMIZATIONS
-	bool "Allow running tests with CONFIG_NO_OPTIMIZATIONS"
+config ZTEST_WARN_NO_OPTIMIZATIONS
+	bool "Warn when running tests with CONFIG_NO_OPTIMIZATIONS"
+	default y if !(ARCH_POSIX || COVERAGE)
 	depends on NO_OPTIMIZATIONS
 	help
-	  Do not error out when building a test without compiler optimization.
-	  This is normally not supported, please don't file issues when running
-	  tests that are not explicitly tuned to work in this configuration.
+	  Print a CMake warning when building ztests with no compiler
+	  optimizations. Please don't file issues when running tests that are
+	  not explicitly tuned to work in this configuration.
 
 if ZTEST_NEW_API
 
