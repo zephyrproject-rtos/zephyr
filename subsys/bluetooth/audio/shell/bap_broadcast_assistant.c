@@ -600,7 +600,7 @@ static int cmd_bap_broadcast_assistant_add_broadcast_id(const struct shell *sh,
 		return -ENOEXEC;
 	}
 
-	broadcast_id = shell_strtoul(argv[0], 0, &err);
+	broadcast_id = shell_strtoul(argv[1], 0, &err);
 	if (err != 0) {
 		shell_error(sh, "failed to parse broadcast_id: %d", err);
 
@@ -611,7 +611,7 @@ static int cmd_bap_broadcast_assistant_add_broadcast_id(const struct shell *sh,
 		return -ENOEXEC;
 	}
 
-	pa_sync = shell_strtoul(argv[1], 0, &err);
+	pa_sync = shell_strtoul(argv[2], 0, &err);
 	if (err != 0) {
 		shell_error(sh, "failed to parse pa_sync: %d", err);
 
@@ -623,8 +623,8 @@ static int cmd_bap_broadcast_assistant_add_broadcast_id(const struct shell *sh,
 	}
 
 	/* TODO: Support multiple subgroups */
-	if (argc > 2) {
-		const unsigned long bis_sync = shell_strtoul(argv[2], 0, &err);
+	if (argc > 3) {
+		const unsigned long bis_sync = shell_strtoul(argv[3], 0, &err);
 
 		if (err != 0) {
 			shell_error(sh, "failed to parse bis_sync: %d", err);
@@ -639,9 +639,8 @@ static int cmd_bap_broadcast_assistant_add_broadcast_id(const struct shell *sh,
 		subgroup.bis_sync = bis_sync;
 	}
 
-	if (argc > 3) {
-		subgroup.metadata_len = hex2bin(argv[3], strlen(argv[3]),
-						subgroup.metadata,
+	if (argc > 4) {
+		subgroup.metadata_len = hex2bin(argv[4], strlen(argv[4]), subgroup.metadata,
 						sizeof(subgroup.metadata));
 
 		if (subgroup.metadata_len == 0U) {
