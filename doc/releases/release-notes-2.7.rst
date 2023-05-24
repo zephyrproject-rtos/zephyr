@@ -19,6 +19,23 @@ release:
    * :github:`issuenumber` - issue title
 
 
+mbedTLS
+*******
+
+Moving mbedTLS to 2.28.x series (2.28.3 precisely). This is a LTS release
+that will be supported with bug fixes and security fixes until the end of 2024.
+
+Detailed information can be found in:
+https://github.com/Mbed-TLS/mbedtls/releases/tag/v2.28.3
+https://github.com/zephyrproject-rtos/zephyr/issues/56071
+
+This version is incompatible with TF-M and because of this TF-M is no longer
+supported in Zephyr LTS. If TF-M is required it can be manually added back
+changing the mbedTLS revision on ``west.yaml`` to the previous one
+(5765cb7f75a9973ae9232d438e361a9d7bbc49e7). This should be carefully assessed
+by a security expert to ensure that the know vulnerabilities in that version
+don't affect the product.
+
 Security Vulnerability Related
 ******************************
 
