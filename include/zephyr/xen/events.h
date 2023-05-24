@@ -81,6 +81,12 @@ int get_missed_events(evtchn_port_t port);
 int mask_event_channel(evtchn_port_t port);
 int unmask_event_channel(evtchn_port_t port);
 
+/**
+ * Clear event channel from pending events
+ * @param port - event channel number
+ */
+void clear_event_channel(evtchn_port_t port);
+
 int xen_events_init(void);
 
 #endif /* __XEN_EVENTS_H__ */
