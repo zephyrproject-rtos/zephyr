@@ -142,6 +142,8 @@ add_subdirectory_ifdef(CONFIG_WSEN_PDUS wsen_pdus)
 add_subdirectory_ifdef(CONFIG_WSEN_TIDS wsen_tids)
 add_subdirectory_ifdef(CONFIG_XMC4XXX_TEMP xmc4xxx_temp)
 
+zephyr_syscall_header(${ZEPHYR_BASE}/include/zephyr/drivers/sensor.h)
+
 zephyr_library()
 zephyr_library_property(ALLOW_EMPTY TRUE)
 

@@ -1,5 +1,12 @@
 # SPDX-License-Identifier: Apache-2.0
 
+zephyr_syscall_header_ifdef(
+  CONFIG_COUNTER_MAXIM_DS3231
+  ${ZEPHYR_BASE}/include/zephyr/drivers/rtc/maxim_ds3231.h
+)
+
+zephyr_syscall_header(${ZEPHYR_BASE}/include/zephyr/drivers/counter.h)
+
 zephyr_library()
 
 zephyr_library_sources_ifdef(CONFIG_TIMER_TMR_CMSDK_APB         timer_tmr_cmsdk_apb.c)
