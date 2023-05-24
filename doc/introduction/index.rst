@@ -46,30 +46,6 @@ Zephyr offers a large and ever growing number of features including:
    Use of :ref:`devicetree <dt-guide>` to describe hardware.
    Information from devicetree is used to create the application image.
 
-**Virtual File System Interface with LittleFS and FATFS Support**
-   LittleFS and FATFS Support,
-   FCB (Flash Circular Buffer) for memory constrained applications, and
-   file system enhancements for logging and configuration.
-
-**Powerful multi-backend logging Framework**
-   Support for log filtering, object dumping, panic mode, multiple backends
-   (memory, networking, filesystem, console, ..) and integration with the shell
-   subsystem.
-
-**User friendly and full-featured Shell interface**
-   A multi-instance shell subsystem with user-friendly features such as
-   autocompletion, wildcards, coloring, metakeys (arrows, backspace, ctrl+u,
-   etc.) and history. Support for static commands and dynamic sub-commands.
-
-**Settings on non-volatile storage**
-   The settings subsystem gives modules a way to store persistent per-device
-   configuration and runtime state.  Settings items are stored as key-value pair
-   strings.
-
-**Non-volatile storage (NVS)**
-  NVS allows storage of binary blobs, strings, integers, longs, and any
-  combination of these.
-
 **Native POSIX port**
   Supports running Zephyr as a Linux application with support for various
   subsystems and networking.
@@ -210,6 +186,36 @@ Zephyr offers a large and ever growing number of features including:
     * Relay, Friend Node, Low-Power Node (LPN) and GATT Proxy features
     * Both Provisioning bearers supported (PB-ADV & PB-GATT)
     * Highly configurable, fitting in devices with at least 16k RAM
+
+  * *Virtual File System Interface with LittleFS and FATFS Support*
+
+    LittleFS and FATFS Support,
+    FCB (Flash Circular Buffer) for memory constrained applications, and
+    file system enhancements for logging and configuration.
+
+  * *Powerful multi-backend logging Framework*
+
+    Support for log filtering, object dumping, panic mode, multiple backends
+    (memory, networking, filesystem, console, ..) and integration with the shell
+    subsystem.
+
+  * *User friendly and full-featured Shell interface*
+
+    A multi-instance shell subsystem with user-friendly features such as
+    autocompletion, wildcards, coloring, metakeys (arrows, backspace, ctrl+u,
+    etc.) and history. Support for static commands and dynamic sub-commands.
+
+  * *Settings on non-volatile storage*
+
+    The settings subsystem gives modules a way to store persistent per-device
+    configuration and runtime state.  Settings items are stored as key-value pair
+    strings.
+
+  * *Non-volatile storage (NVS)*
+
+    NVS allows storage of binary blobs, strings, integers, longs, and any
+    combination of these.
+
 
 .. include:: ../../README.rst
    :start-after: start_include_here
