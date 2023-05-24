@@ -126,7 +126,7 @@ img_mgmt_state_flags(int query_slot)
 		int rca = img_mgmt_read_info(active_slot, &aver, NULL, NULL);
 
 		if (rcs == 0 && rca == 0 && img_mgmt_vercmp(&aver, &sver) < 0) {
-			flags = IMG_MGMT_STATE_F_PENDING;
+			flags = IMG_MGMT_STATE_F_PENDING | IMG_MGMT_STATE_F_PERMANENT;
 		}
 	}
 
