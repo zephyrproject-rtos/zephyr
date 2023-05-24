@@ -119,8 +119,10 @@ void intel_adsp_ipc_complete(const struct device *dev)
 bool intel_adsp_ipc_is_complete(const struct device *dev)
 {
 	const struct intel_adsp_ipc_config *config = dev->config;
+	const struct intel_adsp_ipc_data *devdata = dev->data;
+	bool not_busy = (config->regs->idr & INTEL_ADSP_IPC_BUSY) == 0;
 
-	return (config->regs->idr & INTEL_ADSP_IPC_BUSY) == 0;
+	return not_busy && !devdata->tx_ack_pending;
 }
 
 bool intel_adsp_ipc_send_message(const struct device *dev,

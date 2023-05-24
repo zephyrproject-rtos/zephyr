@@ -27,6 +27,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/rtio/rtio.h>
+#include <zephyr/stats/stats.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -421,6 +422,158 @@ struct spi_buf_set {
 	size_t count;
 };
 
+#if defined(CONFIG_SPI_STATS)
+STATS_SECT_START(spi)
+STATS_SECT_ENTRY32(rx_bytes)
+STATS_SECT_ENTRY32(tx_bytes)
+STATS_SECT_ENTRY32(transfer_error)
+STATS_SECT_END;
+
+STATS_NAME_START(spi)
+STATS_NAME(spi, rx_bytes)
+STATS_NAME(spi, tx_bytes)
+STATS_NAME(spi, transfer_error)
+STATS_NAME_END(spi);
+
+/**
+ * @brief SPI specific device state which allows for SPI device class specific additions
+ */
+struct spi_device_state {
+	struct device_state devstate;
+	struct stats_spi stats;
+};
+
+/**
+ * @brief Get pointer to SPI statistics structure
+ */
+#define Z_SPI_GET_STATS(dev_)				\
+	CONTAINER_OF(dev_->state, struct spi_device_state, devstate)->stats
+
+/**
+ * @brief Increment the rx bytes for a SPI device
+ *
+ * @param dev_ Pointer to the device structure for the driver instance.
+ */
+#define SPI_STATS_RX_BYTES_INCN(dev_, n)			\
+	STATS_INCN(Z_SPI_GET_STATS(dev_), rx_bytes, n)
+
+/**
+ * @brief Increment the tx bytes for a SPI device
+ *
+ * @param dev_ Pointer to the device structure for the driver instance.
+ */
+#define SPI_STATS_TX_BYTES_INCN(dev_, n)			\
+	STATS_INCN(Z_SPI_GET_STATS(dev_), tx_bytes, n)
+
+/**
+ * @brief Increment the transfer error counter for a SPI device
+ *
+ * The transfer error count is incremented when there occurred a transfer error
+ *
+ * @param dev_ Pointer to the device structure for the driver instance.
+ */
+#define SPI_STATS_TRANSFER_ERROR_INC(dev_)			\
+	STATS_INC(Z_SPI_GET_STATS(dev_), transfer_error)
+
+/**
+ * @brief Define a statically allocated and section assigned SPI device state
+ */
+#define Z_SPI_DEVICE_STATE_DEFINE(dev_id)	\
+	static struct spi_device_state Z_DEVICE_STATE_NAME(dev_id)	\
+	__attribute__((__section__(".z_devstate")));
+
+/**
+ * @brief Define an SPI device init wrapper function
+ *
+ * This does device instance specific initialization of common data (such as stats)
+ * and calls the given init_fn
+ */
+#define Z_SPI_INIT_FN(dev_id, init_fn)					\
+	static inline int UTIL_CAT(dev_id, _init)(const struct device *dev) \
+	{								\
+		struct spi_device_state *state =			\
+			CONTAINER_OF(dev->state, struct spi_device_state, devstate); \
+		stats_init(&state->stats.s_hdr, STATS_SIZE_32, 3,	\
+			   STATS_NAME_INIT_PARMS(spi));			\
+		stats_register(dev->name, &(state->stats.s_hdr));	\
+		return init_fn(dev);					\
+	}
+
+/**
+ * @brief Like DEVICE_DT_DEFINE() with SPI specifics.
+ *
+ * @details Defines a device which implements the SPI API. May
+ * generate a custom device_state container struct and init_fn
+ * wrapper when needed depending on SPI @kconfig{CONFIG_SPI_STATS}.
+ *
+ * @param node_id The devicetree node identifier.
+ * @param init_fn Name of the init function of the driver.
+ * @param pm_device PM device resources reference (NULL if device does not use PM).
+ * @param data_ptr Pointer to the device's private data.
+ * @param cfg_ptr The address to the structure containing the configuration
+ *                information for this instance of the driver.
+ * @param level The initialization level. See SYS_INIT() for details.
+ * @param prio Priority within the selected initialization level. See SYS_INIT()
+ *             for details.
+ * @param api_ptr Provides an initial pointer to the API function struct used by
+ *                the driver. Can be NULL.
+ */
+#define SPI_DEVICE_DT_DEFINE(node_id, init_fn, pm_device,		\
+			     data_ptr, cfg_ptr, level, prio,		\
+			     api_ptr, ...)				\
+	Z_SPI_DEVICE_STATE_DEFINE(Z_DEVICE_DT_DEV_ID(node_id));		\
+	Z_SPI_INIT_FN(Z_DEVICE_DT_DEV_ID(node_id), init_fn)		\
+	Z_DEVICE_DEFINE(node_id, Z_DEVICE_DT_DEV_ID(node_id),		\
+			DEVICE_DT_NAME(node_id),			\
+			&UTIL_CAT(Z_DEVICE_DT_DEV_ID(node_id), _init),	\
+			pm_device,					\
+			data_ptr, cfg_ptr, level, prio,			\
+			api_ptr,					\
+			&(Z_DEVICE_STATE_NAME(Z_DEVICE_DT_DEV_ID(node_id)).devstate), \
+			__VA_ARGS__)
+
+static inline void spi_transceive_stats(const struct device *dev, int error,
+					const struct spi_buf_set *tx_bufs,
+					const struct spi_buf_set *rx_bufs)
+{
+	uint32_t tx_bytes;
+	uint32_t rx_bytes;
+
+	if (error) {
+		SPI_STATS_TRANSFER_ERROR_INC(dev);
+	}
+
+	if (tx_bufs) {
+		tx_bytes = tx_bufs->count ? tx_bufs->buffers->len : 0;
+		SPI_STATS_TX_BYTES_INCN(dev, tx_bytes);
+	}
+
+	if (rx_bufs) {
+		rx_bytes = rx_bufs->count ? rx_bufs->buffers->len : 0;
+		SPI_STATS_RX_BYTES_INCN(dev, rx_bytes);
+	}
+}
+
+#else /*CONFIG_SPI_STATS*/
+
+#define SPI_DEVICE_DT_DEFINE(node_id, init_fn, pm,		\
+				data, config, level, prio,	\
+				api, ...)			\
+	Z_DEVICE_STATE_DEFINE(Z_DEVICE_DT_DEV_ID(node_id));			\
+	Z_DEVICE_DEFINE(node_id, Z_DEVICE_DT_DEV_ID(node_id),			\
+			DEVICE_DT_NAME(node_id), init_fn, pm, data, config,	\
+			level, prio, api,					\
+			&Z_DEVICE_STATE_NAME(Z_DEVICE_DT_DEV_ID(node_id)),	\
+			__VA_ARGS__)
+
+#define SPI_STATS_RX_BYTES_INC(dev_)
+#define SPI_STATS_TX_BYTES_INC(dev_)
+#define SPI_STATS_TRANSFER_ERROR_INC(dev_)
+
+#define spi_transceive_stats(dev, error, tx_bufs, rx_bufs)
+
+#endif /*CONFIG_SPI_STATS*/
+
 /**
  * @typedef spi_api_io
  * @brief Callback API for I/O
@@ -585,8 +738,12 @@ static inline int z_impl_spi_transceive(const struct device *dev,
 {
 	const struct spi_driver_api *api =
 		(const struct spi_driver_api *)dev->api;
+	int ret;
 
-	return api->transceive(dev, config, tx_bufs, rx_bufs);
+	ret = api->transceive(dev, config, tx_bufs, rx_bufs);
+	spi_transceive_stats(dev, ret, tx_bufs, rx_bufs);
+
+	return ret;
 }
 
 /**

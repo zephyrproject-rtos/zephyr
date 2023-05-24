@@ -547,6 +547,7 @@ config NET_UDP_CHECKSUM
 
 config NET_UDP_MISSING_CHECKSUM
 	bool "Accept missing checksum (IPv4 only)"
+	default y
 	depends on NET_UDP && NET_IPV4
 	help
 	  RFC 768 states the possibility to have a missing checksum, for

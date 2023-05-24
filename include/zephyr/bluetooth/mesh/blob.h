@@ -4,13 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/**
- * @file
- * @defgroup bt_mesh_blob Bluetooth mesh BLOB model API
- * @{
- * @brief API for the Bluetooth mesh Binary Large Object Transfer models.
- */
-
 #ifndef ZEPHYR_INCLUDE_BLUETOOTH_MESH_BLOB_H__
 #define ZEPHYR_INCLUDE_BLUETOOTH_MESH_BLOB_H__
 
@@ -21,6 +14,12 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/**
+ * @defgroup bt_mesh_blob Bluetooth Mesh BLOB model API
+ * @ingroup bt_mesh
+ * @{
+ */
 
 #ifndef CONFIG_BT_MESH_BLOB_CHUNK_COUNT_MAX
 #define CONFIG_BT_MESH_BLOB_CHUNK_COUNT_MAX 0
@@ -254,10 +253,10 @@ struct bt_mesh_blob_io {
 		  const struct bt_mesh_blob_chunk *chunk);
 };
 
+/** @} */
+
 #ifdef __cplusplus
 }
 #endif
 
 #endif /* ZEPHYR_INCLUDE_BLUETOOTH_MESH_BLOB_H__ */
-
-/** @} */
