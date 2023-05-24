@@ -676,10 +676,9 @@ class ProjectBuilder(FilterBuilder):
 
         logger.debug(f"Test instance {self.instance.name} already has {len(self.instance.testcases)} cases.")
         new_ztest_unit_test_regex = re.compile(r"z_ztest_unit_test__([^\s]*)__([^\s]*)")
+        detected_cases = []
         for section in elf.iter_sections():
             if isinstance(section, SymbolTableSection):
-                self.instance.testcases.clear()
-                self.instance.testsuite.testcases.clear()
                 for sym in section.iter_symbols():
                     # It is only meant for new ztest fx because only new ztest fx exposes test functions
                     # precisely.
@@ -692,11 +691,20 @@ class ProjectBuilder(FilterBuilder):
                             # new_ztest_suite = m[0] # not used for now
                             test_func_name = m[1].replace("test_", "")
                             testcase_id = f"{yaml_testsuite_name}.{test_func_name}"
-                            # When the old regex-based test case collection is fully deprecated,
-                            # this will be the sole place where test cases get added to the test instance.
-                            # Then we can further include the new_ztest_suite info in the testcase_id.
-                            self.instance.add_testcase(name=testcase_id)
-                            self.instance.testsuite.add_testcase(name=testcase_id)
+                            detected_cases.append(testcase_id)
+
+        if detected_cases:
+            self.instance.testcases.clear()
+            self.instance.testsuite.testcases.clear()
+
+            # When the old regex-based test case collection is fully deprecated,
+            # this will be the sole place where test cases get added to the test instance.
+            # Then we can further include the new_ztest_suite info in the testcase_id.
+
+            for testcase_id in detected_cases:
+                self.instance.add_testcase(name=testcase_id)
+                self.instance.testsuite.add_testcase(name=testcase_id)
+
 
     def cleanup_artifacts(self, additional_keep=[]):
         logger.debug("Cleaning up {}".format(self.instance.build_dir))
