@@ -42,42 +42,9 @@ Distinguishing Features
 
 Zephyr offers a large and ever growing number of features including:
 
-**Optimized Device Driver Model**
-   Provides a consistent device model for configuring the drivers that are part
-   of the platform/system and a consistent model for initializing all the
-   drivers configured into the system and Allows the reuse of drivers across
-   platforms that have common devices/IP blocks
-
 **Devicetree Support**
    Use of :ref:`devicetree <dt-guide>` to describe hardware.
    Information from devicetree is used to create the application image.
-
-**Native Networking Stack supporting multiple protocols**
-   Networking support is fully featured and optimized, including LwM2M and BSD
-   sockets compatible support.  OpenThread support (on Nordic chipsets) is also
-   provided - a mesh network designed to securely and reliably connect hundreds
-   of products around the home.
-
-**Bluetooth Low Energy 5.0 support**
-   Bluetooth 5.0 compliant (ESR10) and Bluetooth Low Energy Controller support
-   (LE Link Layer). Includes Bluetooth mesh and a Bluetooth qualification-ready
-   Bluetooth controller.
-
-   * Generic Access Profile (GAP) with all possible LE roles.
-   * GATT (Generic Attribute Profile)
-   * Pairing support, including the Secure Connections feature from Bluetooth
-     4.2
-   * Clean HCI driver abstraction
-   * Raw HCI interface to run Zephyr as a Controller instead of a full Host
-     stack
-   * Verified with multiple popular controllers
-   * Highly configurable
-
-   Mesh Support:
-
-   * Relay, Friend Node, Low-Power Node (LPN) and GATT Proxy features
-   * Both Provisioning bearers supported (PB-ADV & PB-GATT)
-   * Highly configurable, fitting in devices with at least 16k RAM
 
 **Virtual File System Interface with LittleFS and FATFS Support**
    LittleFS and FATFS Support,
@@ -207,6 +174,42 @@ Zephyr offers a large and ever growing number of features including:
        Both the application code and kernel code execute in a single
        shared address space.
 
+
+  * *Optimized Device Driver Model*
+
+    Provides a consistent device model for configuring the drivers that are part
+    of the platform/system and a consistent model for initializing all the
+    drivers configured into the system and Allows the reuse of drivers across
+    platforms that have common devices/IP blocks
+
+  * *Native Networking Stack supporting multiple protocols*
+
+    Networking support is fully featured and optimized, including LwM2M and BSD
+    sockets compatible support.  OpenThread support (on Nordic chipsets) is also
+    provided - a mesh network designed to securely and reliably connect hundreds
+    of products around the home.
+
+  * *Bluetooth Low Energy 5.0 support*
+
+    Bluetooth 5.0 compliant (ESR10) and Bluetooth Low Energy Controller support
+    (LE Link Layer). Includes Bluetooth mesh and a Bluetooth qualification-ready
+    Bluetooth controller.
+
+    * Generic Access Profile (GAP) with all possible LE roles.
+    * GATT (Generic Attribute Profile)
+    * Pairing support, including the Secure Connections feature from Bluetooth
+      4.2
+    * Clean HCI driver abstraction
+    * Raw HCI interface to run Zephyr as a Controller instead of a full Host
+      stack
+    * Verified with multiple popular controllers
+    * Highly configurable
+
+    Mesh Support:
+
+    * Relay, Friend Node, Low-Power Node (LPN) and GATT Proxy features
+    * Both Provisioning bearers supported (PB-ADV & PB-GATT)
+    * Highly configurable, fitting in devices with at least 16k RAM
 
 .. include:: ../../README.rst
    :start-after: start_include_here
