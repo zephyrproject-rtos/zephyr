@@ -42,55 +42,6 @@ Distinguishing Features
 
 Zephyr offers a large and ever growing number of features including:
 
-**Extensive suite of Kernel services**
-   Zephyr offers a number of familiar services for development:
-
-   * *Multi-threading Services* for cooperative, priority-based,
-     non-preemptive, and preemptive threads with optional round robin
-     time-slicing. Includes POSIX pthreads compatible API support.
-
-   * *Interrupt Services* for compile-time registration of interrupt handlers.
-
-   * *Memory Allocation Services* for dynamic allocation and freeing of
-     fixed-size or variable-size memory blocks.
-
-   * *Inter-thread Synchronization Services* for binary semaphores,
-     counting semaphores, and mutex semaphores.
-
-   * *Inter-thread Data Passing Services* for basic message queues, enhanced
-     message queues, and byte streams.
-
-   * *Power Management Services* such as overarching, application or
-     policy-defined, System Power Management and fine-grained, driver-defined,
-     Device Power Management.
-
-**Multiple Scheduling Algorithms**
-   Zephyr provides a comprehensive set of thread scheduling choices:
-
-   * Cooperative and Preemptive Scheduling
-   * Earliest Deadline First (EDF)
-   * Meta IRQ scheduling implementing "interrupt bottom half" or "tasklet"
-     behavior
-   * Timeslicing: Enables time slicing between preemptible threads of equal
-     priority
-   * Multiple queuing strategies:
-
-     * Simple linked-list ready queue
-     * Red/black tree ready queue
-     * Traditional multi-queue ready queue
-
-**Memory Protection**
-   Implements configurable architecture-specific stack-overflow protection,
-   kernel object and device driver permission tracking, and thread isolation
-   with thread-level memory protection on x86, ARC, and ARM architectures,
-   userspace, and memory domains.
-
-   For platforms without MMU/MPU and memory constrained devices, supports
-   combining application-specific code with a custom kernel to create a
-   monolithic image that gets loaded and executed on a system's hardware. Both
-   the application code and kernel code execute in a single shared address
-   space.
-
 **Optimized Device Driver Model**
    Provides a consistent device model for configuring the drivers that are part
    of the platform/system and a consistent model for initializing all the
@@ -193,6 +144,69 @@ Zephyr offers a large and ever growing number of features including:
 
 **Extensive reusable asset base**
   Zephyr offers a large and ever growing number of features including:
+
+  * *Extensive suite of Kernel services*
+
+    Zephyr offers a number of familiar services for development:
+
+    * *Multi-threading Services*
+
+      for cooperative, priority-based,
+      non-preemptive, and preemptive threads with optional round robin
+      time-slicing. Includes POSIX pthreads compatible API support.
+
+    * *Interrupt Services*
+
+      for compile-time registration of interrupt handlers.
+
+    * *Memory Allocation Services*
+
+      for dynamic allocation and freeing of fixed-size or
+      variable-size memory blocks.
+
+    * *Inter-thread Synchronization Services*
+
+      for binary semaphores, counting semaphores, and mutex semaphores.
+
+    * *Inter-thread Data Passing Services*
+
+      for basic message queues, enhanced message queues, and byte streams.
+
+    * *Power Management Services*
+
+      such as overarching, application or policy-defined,
+      System Power Management and fine-grained, driver-defined,
+      Device Power Management.
+
+    * *Multiple Scheduling Algorithms*
+
+      Zephyr provides a comprehensive set of thread scheduling choices:
+
+      * Cooperative and Preemptive Scheduling
+      * Earliest Deadline First (EDF)
+      * Meta IRQ scheduling implementing "interrupt bottom half" or "tasklet"
+        behavior
+      * Timeslicing: Enables time slicing between preemptible threads of equal
+        priority
+      * Multiple queuing strategies:
+
+        * Simple linked-list ready queue
+        * Red/black tree ready queue
+        * Traditional multi-queue ready queue
+
+    * *Memory Protection*
+
+       Implements configurable architecture-specific stack-overflow protection,
+       kernel object and device driver permission tracking, and thread isolation
+       with thread-level memory protection on x86, ARC, and ARM architectures,
+       userspace, and memory domains.
+
+       For platforms without MMU/MPU and memory constrained devices, supports
+       combining application-specific code with a custom kernel to create a
+       monolithic image that gets loaded and executed on a system's hardware.
+       Both the application code and kernel code execute in a single
+       shared address space.
+
 
 .. include:: ../../README.rst
    :start-after: start_include_here
