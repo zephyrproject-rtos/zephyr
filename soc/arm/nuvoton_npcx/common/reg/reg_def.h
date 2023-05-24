@@ -254,6 +254,7 @@ static inline uint32_t npcx_lv_gpio_ctl_offset(uint32_t ctl_no)
 }
 
 /* Macro functions for SCFG multi-registers */
+#define NPCX_DEV_CTL(base, n) (*(volatile uint8_t *)(base + n))
 #define NPCX_DEVALT(base, n) (*(volatile uint8_t *)(base + \
 						npcx_devalt_offset(n)))
 #define NPCX_DEVALT_LK(base, n) (*(volatile uint8_t *)(base + \
