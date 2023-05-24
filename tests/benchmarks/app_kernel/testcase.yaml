@@ -4,6 +4,9 @@ common:
 tests:
   benchmark.kernel.application:
     min_flash: 34
+    integration_platforms:
+      - mps2_an385
+      - qemu_x86
   benchmark.kernel.application.fp:
     extra_args: CONF_FILE=prj_fp.conf
     extra_configs:
@@ -19,6 +22,9 @@ tests:
     toolchain_exclude:
       - llvm
       - oneApi
+    integration_platforms:
+      - mps2_an385
+      - qemu_x86
   benchmark.kernel.application.fp.x86.no_sse:
     extra_args: CONF_FILE=prj_fp.conf
     extra_configs:
@@ -29,6 +35,8 @@ tests:
     min_flash: 34
     min_ram: 32
     slow: true
+    integration_platforms:
+      - qemu_x86
   benchmark.kernel.application.fp.x86.sse:
     extra_args: CONF_FILE=prj_fp.conf
     extra_configs:
@@ -39,3 +47,5 @@ tests:
     min_flash: 34
     min_ram: 32
     slow: true
+    integration_platforms:
+      - qemu_x86

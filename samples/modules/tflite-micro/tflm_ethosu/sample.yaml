@@ -6,3 +6,5 @@ tests:
     tags: NPU
     filter: dt_compat_enabled("arm,ethos-u")
     build_only: true
+    integration_platforms:
+      - mps3_an547
