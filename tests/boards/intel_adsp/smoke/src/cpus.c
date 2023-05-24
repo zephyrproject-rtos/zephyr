@@ -162,7 +162,7 @@ static void halt_and_restart(int cpu)
 	int ret;
 
 	/* On older hardware we need to get the host to turn the core
-	 * off.  Construct an ADSPCS with only this core disabled
+	 * off. Construct an ADSPCS with only this core disabled
 	 */
 	if (!IS_ENABLED(CONFIG_SOC_INTEL_CAVS_V25)) {
 		intel_adsp_ipc_send_message(INTEL_ADSP_IPC_HOST_DEV, IPCCMD_ADSPCS,
