@@ -132,9 +132,22 @@ bool intel_adsp_ipc_is_complete(const struct device *dev)
 	return not_busy && !devdata->tx_ack_pending;
 }
 
-bool intel_adsp_ipc_send_message(const struct device *dev,
+int intel_adsp_ipc_send_message(const struct device *dev,
 			   uint32_t data, uint32_t ext_data)
 {
+#ifdef CONFIG_PM_DEVICE
+	enum pm_device_state current_state;
+
+	if (pm_device_state_get(INTEL_ADSP_IPC_HOST_DEV, &current_state) != 0 ||
+		current_state != PM_DEVICE_STATE_ACTIVE) {
+		return -ESHUTDOWN;
+	}
+#endif
+
+	if (pm_device_state_is_locked(INTEL_ADSP_IPC_HOST_DEV)) {
+		return -EAGAIN;
+	}
+
 	pm_device_busy_set(dev);
 	const struct intel_adsp_ipc_config *config = dev->config;
 	struct intel_adsp_ipc_data *devdata = dev->data;
@@ -142,7 +155,7 @@ bool intel_adsp_ipc_send_message(const struct device *dev,
 
 	if ((config->regs->idr & INTEL_ADSP_IPC_BUSY) != 0 || devdata->tx_ack_pending) {
 		k_spin_unlock(&devdata->lock, key);
-		return false;
+		return -EBUSY;
 	}
 
 	k_sem_init(&devdata->sem, 0, 1);
@@ -150,18 +163,18 @@ bool intel_adsp_ipc_send_message(const struct device *dev,
 	config->regs->idd = ext_data;
 	config->regs->idr = data | INTEL_ADSP_IPC_BUSY;
 	k_spin_unlock(&devdata->lock, key);
-	return true;
+	return 0;
 }
 
-bool intel_adsp_ipc_send_message_sync(const struct device *dev,
+int intel_adsp_ipc_send_message_sync(const struct device *dev,
 				uint32_t data, uint32_t ext_data,
 				k_timeout_t timeout)
 {
 	struct intel_adsp_ipc_data *devdata = dev->data;
 
-	bool ret = intel_adsp_ipc_send_message(dev, data, ext_data);
+	int ret = intel_adsp_ipc_send_message(dev, data, ext_data);
 
-	if (ret) {
+	if (!ret) {
 		k_sem_take(&devdata->sem, timeout);
 	}
 	return ret;
