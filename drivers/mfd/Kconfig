@@ -18,4 +18,6 @@ config MFD_INIT_PRIORITY
 	help
 	  Multi-function devices initialization priority.
 
+source "drivers/mfd/Kconfig.npm6001"
+
 endif # MFD
