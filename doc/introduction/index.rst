@@ -175,6 +175,16 @@ Zephyr offers a large and ever growing number of features including:
   subsystems and networking.
 
 
+**Reusable, extensible framework**
+  Zephyr offers a number of familiar features for development:
+
+**Configurable, extensible domain architecture**
+  Zephyr supports efficiently retargeting functionality at a wide variety
+  of target architectures.
+
+**Extensive reusable asset base**
+  Zephyr offers a large and ever growing number of features including:
+
 .. include:: ../../README.rst
    :start-after: start_include_here
 
