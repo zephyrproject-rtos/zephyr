@@ -2623,6 +2623,52 @@ function(zephyr_get variable)
 endfunction(zephyr_get variable)
 
 # Usage:
+#   zephyr_create_scope(<scope>)
+#
+# Create a new scope for creation of scoped variables.
+#
+# <scope>: Name of new scope.
+#
+function(zephyr_create_scope scope)
+  if(TARGET ${scope}_scope)
+    message(FATAL_ERROR "zephyr_create_scope(${scope}) already exists.")
+  endif()
+
+  add_custom_target(${scope}_scope)
+endfunction()
+
+# Usage:
+#   zephyr_set(<variable> <value> SCOPE <scope> [APPEND])
+#
+# Zephyr extension of CMake set which allows a variable to be set in a specific
+# scope. The scope is used on later zephyr_get() invocation for precedence
+# handling when a variable it set in multiple scopes.
+#
+# <variable>   : Name of variable
+# <value>      : Value of variable, multiple values will create a list.
+#                The SCOPE argument identifies the end of value list.
+# SCOPE <scope>: Name of scope for the variable
+# APPEND       : Append values to the already existing variable in <scope>
+#
+function(zephyr_set variable)
+  cmake_parse_arguments(SET_VAR "APPEND" "SCOPE" "" ${ARGN})
+
+  zephyr_check_arguments_required_all(zephyr_set SET_VAR SCOPE)
+
+  if(NOT TARGET ${SET_VAR_SCOPE}_scope)
+    message(FATAL_ERROR "zephyr_set(... SCOPE ${SET_VAR_SCOPE}) doesn't exists.")
+  endif()
+
+  if(SET_VAR_APPEND)
+    set(property_args APPEND)
+  endif()
+
+  set_property(TARGET ${SET_VAR_SCOPE}_scope ${property_args}
+               PROPERTY ${variable} ${SET_VAR_UNPARSED_ARGUMENTS}
+  )
+endfunction()
+
+# Usage:
 #   zephyr_check_cache(<variable> [REQUIRED])
 #
 # Check the current CMake cache for <variable> and warn the user if the value
