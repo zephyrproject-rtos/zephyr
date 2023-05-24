@@ -258,17 +258,12 @@ static int reg_test_bit(uint8_t bit, uint32_t addr, uint32_t off)
 					 DW_SPI_IMR_TXOIM | \
 					 DW_SPI_IMR_RXUIM | \
 					 DW_SPI_IMR_RXOIM | \
-					 DW_SPI_IMR_RXFIM | \
-					 DW_SPI_IMR_MSTIM)
-#define DW_SPI_IMR_MASK_TX		(~(DW_SPI_IMR_RXUIM | \
-					   DW_SPI_IMR_TXOIM | \
+					 DW_SPI_IMR_RXFIM)
+#define DW_SPI_IMR_MASK_TX		(~(DW_SPI_IMR_TXEIM | \
+					   DW_SPI_IMR_TXOIM))
+#define DW_SPI_IMR_MASK_RX		(~(DW_SPI_IMR_RXUIM | \
 					   DW_SPI_IMR_RXOIM | \
-					   DW_SPI_IMR_MSTIM))
-#define DW_SPI_IMR_MASK_RX		(~(DW_SPI_IMR_TXEIM |\
-					   DW_SPI_IMR_RXUIM | \
-					   DW_SPI_IMR_TXOIM | \
-					   DW_SPI_IMR_RXOIM | \
-					   DW_SPI_IMR_MSTIM))
+					   DW_SPI_IMR_RXFIM))
 
 /*
  * Including the right register definition file
