@@ -9,6 +9,7 @@
  */
 
 #include <zephyr/kernel.h>
+#include <ksched.h>
 #include <kernel_internal.h>
 #include <zephyr/debug/thread_analyzer.h>
 #include <zephyr/debug/stack.h>
@@ -40,6 +41,16 @@ static void thread_print_cb(struct thread_analyzer_info *info)
 {
 	size_t pcnt = (info->stack_used * 100U) / info->stack_size;
 #ifdef CONFIG_THREAD_RUNTIME_STATS
+#ifdef CONFIG_THREAD_RUNTIME_STATS_BETWEEN_COLLECTIONS
+	THREAD_ANALYZER_PRINT(
+		THREAD_ANALYZER_FMT(
+			" %-20s: STACK: unused %zu usage %zu / %zu (%zu %%); CPU: %u %% (%u %%)"),
+		THREAD_ANALYZER_VSTR(info->name),
+		info->stack_size - info->stack_used, info->stack_used,
+		info->stack_size, pcnt,
+		info->utilization,
+		info->utilization_since_last_collection);
+#else
 	THREAD_ANALYZER_PRINT(
 		THREAD_ANALYZER_FMT(
 			" %-20s: STACK: unused %zu usage %zu / %zu (%zu %%); CPU: %u %%"),
@@ -47,11 +58,18 @@ static void thread_print_cb(struct thread_analyzer_info *info)
 		info->stack_size - info->stack_used, info->stack_used,
 		info->stack_size, pcnt,
 		info->utilization);
+#endif
 
 #ifdef CONFIG_SCHED_THREAD_USAGE
+#ifdef CONFIG_THREAD_RUNTIME_STATS_BETWEEN_COLLECTIONS
+	THREAD_ANALYZER_PRINT(
+		THREAD_ANALYZER_FMT("      : Total CPU cycles used: %llu (%llu)"),
+		info->usage.total_cycles, info->usage.total_cycles_since_last_collection);
+#else
 	THREAD_ANALYZER_PRINT(
 		THREAD_ANALYZER_FMT("      : Total CPU cycles used: %llu"),
 		info->usage.total_cycles);
+#endif
 
 #ifdef CONFIG_SCHED_THREAD_USAGE_ANALYSIS
 	THREAD_ANALYZER_PRINT(
@@ -121,6 +139,10 @@ static void thread_analyze_cb(const struct k_thread *cthread, void *user_data)
 	if (ret == 0) {
 		info.utilization = (info.usage.execution_cycles * 100U) /
 			rt_stats_all.execution_cycles;
+#ifdef CONFIG_THREAD_RUNTIME_STATS_BETWEEN_COLLECTIONS
+		info.utilization_since_last_collection = (info.usage.execution_cycles_since_last_collection * 100U) /
+			rt_stats_all.execution_cycles_since_last_collection;
+#endif
 	}
 #endif
 	cb(&info);
@@ -157,6 +179,10 @@ void thread_analyzer_run(thread_analyzer_cb cb)
 	} else {
 		k_thread_foreach(thread_analyze_cb, cb);
 	}
+
+#ifdef CONFIG_THREAD_RUNTIME_STATS_BETWEEN_COLLECTIONS
+	k_thread_runtime_stats_all_cleanup();
+#endif
 
 	if (IS_ENABLED(CONFIG_THREAD_ANALYZER_ISR_STACK_USAGE)) {
 		isr_stacks();

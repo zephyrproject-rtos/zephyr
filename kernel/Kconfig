@@ -395,6 +395,14 @@ config SCHED_THREAD_USAGE
 	help
 	  Collect thread runtime info at context switch time
 
+config THREAD_RUNTIME_STATS_BETWEEN_COLLECTIONS
+	bool "Keep track of thread runtime statistics between collections"
+	default n
+	depends on SCHED_THREAD_USAGE
+	help
+ 	  Enable collection of runtime statistics between metri collections.
+	  For example, Thread exection cycles since last time it got collected.
+
 config SCHED_THREAD_USAGE_ANALYSIS
 	bool "Analyze the collected thread runtime usage statistics"
 	default n

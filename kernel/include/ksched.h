@@ -423,10 +423,20 @@ void z_sched_usage_start(struct k_thread *thread);
 void z_sched_cpu_usage(uint8_t core_id, struct k_thread_runtime_stats *stats);
 
 /**
+* @brief Cleanup per-collection runtime statistics for all CPUs
+*/
+void z_sched_cpu_usage_cleanup();
+
+/**
  * @brief Retrieves thread cycle usage data for specified thread
  */
 void z_sched_thread_usage(struct k_thread *thread,
 			  struct k_thread_runtime_stats *stats);
+
+/**
+ * @brief Cleanup per-collection runtime statistics for specified thread
+ */
+void z_sched_thread_usage_cleanup(const struct k_thread *cthread, void *__unused);
 
 static inline void z_sched_usage_switch(struct k_thread *thread)
 {

@@ -17,6 +17,9 @@
 
 struct k_cycle_stats {
 	uint64_t  total;        /* total usage in cycles */
+#ifdef CONFIG_THREAD_RUNTIME_STATS_BETWEEN_COLLECTIONS
+	uint64_t  total_since_last_collection;  /* total usage in cycles since last collection */
+#endif
 #ifdef CONFIG_SCHED_THREAD_USAGE_ANALYSIS
 	uint64_t  current;      /* # of cycles in current usage window */
 	uint64_t  longest;      /* # of cycles in longest usage window */

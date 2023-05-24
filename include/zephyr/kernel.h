@@ -5901,6 +5901,12 @@ __syscall int k_float_enable(struct k_thread *thread, unsigned int options);
 int k_thread_runtime_stats_get(k_tid_t thread,
 			       k_thread_runtime_stats_t *stats);
 
+
+/*
+* @brief Cleanup per-collection statistics of all CPUs
+*/
+void k_thread_runtime_stats_all_cleanup();
+
 /**
  * @brief Get the runtime statistics of all threads
  *

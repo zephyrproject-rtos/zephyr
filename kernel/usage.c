@@ -41,6 +41,9 @@ static void sched_cpu_update_usage(struct _cpu *cpu, uint32_t cycles)
 
 	if (cpu->current != cpu->idle_thread) {
 		cpu->usage.total += cycles;
+#ifdef CONFIG_THREAD_RUNTIME_STATS_BETWEEN_COLLECTIONS
+		cpu->usage.total_since_last_collection += cycles;
+#endif
 
 #ifdef CONFIG_SCHED_THREAD_USAGE_ANALYSIS
 		cpu->usage.current += cycles;
@@ -61,6 +64,9 @@ static void sched_cpu_update_usage(struct _cpu *cpu, uint32_t cycles)
 static void sched_thread_update_usage(struct k_thread *thread, uint32_t cycles)
 {
 	thread->base.usage.total += cycles;
+#ifdef CONFIG_THREAD_RUNTIME_STATS_BETWEEN_COLLECTIONS
+	thread->base.usage.total_since_last_collection += cycles;
+#endif
 
 #ifdef CONFIG_SCHED_THREAD_USAGE_ANALYSIS
 	thread->base.usage.current += cycles;
@@ -118,6 +124,22 @@ void z_sched_usage_stop(void)
 	k_spin_unlock(&usage_lock, k);
 }
 
+#if defined(CONFIG_SCHED_THREAD_USAGE_ALL) && defined(CONFIG_THREAD_RUNTIME_STATS_BETWEEN_COLLECTIONS)
+void z_sched_cpu_usage_cleanup() {
+	k_spinlock_key_t  key;
+
+	key = k_spin_lock(&usage_lock);
+
+	for (uint8_t i = 0; i < CONFIG_MP_NUM_CPUS; i++) {
+		_kernel.cpus[i].usage.total_since_last_collection = 0;
+		_kernel.cpus[i].idle_thread->base.usage.total_since_last_collection = 0;
+
+	}
+
+	k_spin_unlock(&usage_lock, key);
+}
+#endif
+
 #ifdef CONFIG_SCHED_THREAD_USAGE_ALL
 void z_sched_cpu_usage(uint8_t cpu_id, struct k_thread_runtime_stats *stats)
 {
@@ -149,6 +171,9 @@ void z_sched_cpu_usage(uint8_t cpu_id, struct k_thread_runtime_stats *stats)
 	}
 
 	stats->total_cycles     = cpu->usage.total;
+#ifdef CONFIG_THREAD_RUNTIME_STATS_BETWEEN_COLLECTIONS
+	stats->total_cycles_since_last_collection = cpu->usage.total_since_last_collection;
+#endif
 #ifdef CONFIG_SCHED_THREAD_USAGE_ANALYSIS
 	stats->current_cycles   = cpu->usage.current;
 	stats->peak_cycles      = cpu->usage.longest;
@@ -166,7 +191,22 @@ void z_sched_cpu_usage(uint8_t cpu_id, struct k_thread_runtime_stats *stats)
 
 	stats->execution_cycles = stats->total_cycles + stats->idle_cycles;
 
+#ifdef CONFIG_THREAD_RUNTIME_STATS_BETWEEN_COLLECTIONS
+	stats->idle_cycles_since_last_collection =
+		_kernel.cpus[cpu_id].idle_thread->base.usage.total_since_last_collection;
+
+	stats->execution_cycles_since_last_collection = stats->total_cycles_since_last_collection
+		+ stats->idle_cycles_since_last_collection;
+#endif
+
 	k_spin_unlock(&usage_lock, key);
+}
+#endif
+
+#ifdef CONFIG_THREAD_RUNTIME_STATS_BETWEEN_COLLECTIONS
+void z_sched_thread_usage_cleanup(const struct k_thread *cthread, void *__unused) {
+	struct k_thread *thread = (struct k_thread *) cthread;
+	thread->base.usage.total_since_last_collection = 0;
 }
 #endif
 
@@ -202,6 +242,10 @@ void z_sched_thread_usage(struct k_thread *thread,
 
 	stats->execution_cycles = thread->base.usage.total;
 	stats->total_cycles     = thread->base.usage.total;
+#ifdef CONFIG_THREAD_RUNTIME_STATS_BETWEEN_COLLECTIONS
+	stats->execution_cycles_since_last_collection = thread->base.usage.total_since_last_collection;
+	stats->total_cycles_since_last_collection     = thread->base.usage.total_since_last_collection;
+#endif
 
 	/* Copy-out the thread's usage stats */
 

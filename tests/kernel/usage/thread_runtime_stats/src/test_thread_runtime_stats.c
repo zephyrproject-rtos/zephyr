@@ -380,6 +380,150 @@ void resume_main(struct k_timer *timer)
 }
 
 /**
+ *  @brief Test since-collection metrics per thread
+*/
+#ifdef CONFIG_THREAD_RUNTIME_STATS_BETWEEN_COLLECTIONS
+ZTEST(usage_api, test_thread_since_collection_metrics) {
+	k_tid_t  tid;
+	int  priority;
+	int  status;
+	k_thread_runtime_stats_t  stats1;
+	k_thread_runtime_stats_t  stats2;
+
+
+	priority = k_thread_priority_get(_current);
+
+	/* Create a low priority helper thread to start in 1 tick. */
+	tid = k_thread_create(&helper_thread, helper_stack,
+			      K_THREAD_STACK_SIZEOF(helper_stack),
+			      helper1, NULL, NULL, NULL,
+			      priority + 2, 0, K_TICKS(1));
+
+
+	// Let the task run
+	k_sleep(K_TICKS(100));
+
+	// Collect metrics stats1
+	status = k_thread_runtime_stats_get(tid, &stats1);
+	zassert_true(status == 0);
+	k_thread_runtime_stats_all_cleanup();
+
+	// Let it run again
+	k_sleep(K_TICKS(100));
+
+	// Collect metrics stats2
+	status = k_thread_runtime_stats_get(tid, &stats2);
+	zassert_true(status == 0);
+
+	zassert_true(stats1.execution_cycles > 0);
+	zassert_true(stats1.execution_cycles == stats1.execution_cycles_since_last_collection);
+	zassert_true(stats1.execution_cycles == stats1.total_cycles);
+	zassert_true(stats1.execution_cycles == stats1.total_cycles_since_last_collection);
+
+	zassert_true(stats2.execution_cycles > stats1.execution_cycles);
+	zassert_true(stats2.execution_cycles > stats2.execution_cycles_since_last_collection);
+	zassert_true(stats2.execution_cycles == stats2.total_cycles);
+	zassert_true(stats2.execution_cycles_since_last_collection == stats2.total_cycles_since_last_collection);
+
+	k_thread_abort(tid);
+}
+
+/**
+ *  @brief Test since-collection metrics per CPU
+*/
+#ifdef CONFIG_SCHED_THREAD_USAGE_ALL
+ZTEST(usage_api, test_cpu_since_collection_metrics) {
+	k_tid_t  tid;
+	int  priority;
+	k_thread_runtime_stats_t  stats1;
+	k_thread_runtime_stats_t  stats2;
+	k_thread_runtime_stats_t  stats3;
+
+	priority = k_thread_priority_get(_current);
+
+	/* Create a low priority helper thread to start in 1 tick. */
+	tid = k_thread_create(&helper_thread, helper_stack,
+			      K_THREAD_STACK_SIZEOF(helper_stack),
+			      helper1, NULL, NULL, NULL,
+			      priority + 2, 0, K_TICKS(1));
+
+
+	busy_loop(2);   /* Busy wait 2 ticks */
+
+	k_sleep(K_TICKS(2));  /* Helper runs for 2 ticks */
+
+	k_thread_abort(tid);
+
+	k_sleep(K_TICKS(2));  /* Idle for 2 ticks */
+
+	k_thread_runtime_stats_all_get(&stats1);
+
+	// Make sure we have some idle time and some computation time
+	zassert_true(stats1.execution_cycles > 0);
+	zassert_true(stats1.total_cycles > 0);
+	zassert_true(stats1.idle_cycles > 0);
+
+	zassert_true(stats1.execution_cycles_since_last_collection == stats1.execution_cycles);
+	zassert_true(stats1.total_cycles_since_last_collection == stats1.total_cycles);
+	zassert_true(stats1.idle_cycles_since_last_collection == stats1.idle_cycles);
+
+	// Do the cleanup. Make sure only per-compilation metrics are clean
+	k_thread_runtime_stats_all_cleanup();
+
+	k_thread_runtime_stats_all_get(&stats2);
+
+	zassert_true(stats2.execution_cycles > 0);
+	zassert_true(stats2.total_cycles > 0);
+	zassert_true(stats2.idle_cycles > 0);
+
+	zassert_true(stats2.execution_cycles_since_last_collection < stats2.execution_cycles);
+	zassert_true(stats2.total_cycles_since_last_collection < stats2.total_cycles);
+	zassert_true(stats2.idle_cycles_since_last_collection < stats2.idle_cycles);
+
+	// Do another round. Make sure per-collection metrics increase
+	tid = k_thread_create(&helper_thread, helper_stack,
+			      K_THREAD_STACK_SIZEOF(helper_stack),
+			      helper1, NULL, NULL, NULL,
+			      priority + 2, 0, K_TICKS(1));
+
+
+	busy_loop(2);   /* Busy wait 2 ticks */
+
+	k_sleep(K_TICKS(2));  /* Helper runs for 2 ticks */
+
+	k_thread_abort(tid);
+
+	k_sleep(K_TICKS(2));  /* Idle for 2 ticks */
+
+	k_thread_runtime_stats_all_get(&stats1);
+
+	k_thread_runtime_stats_all_get(&stats3);
+
+	zassert_true(stats3.execution_cycles > stats2.execution_cycles);
+	zassert_true(stats3.total_cycles > stats2.total_cycles);
+	zassert_true(stats3.idle_cycles > stats2.idle_cycles);
+
+	zassert_true(stats3.execution_cycles_since_last_collection > 0);
+	zassert_true(stats3.execution_cycles_since_last_collection < stats3.execution_cycles);
+
+	zassert_true(stats3.total_cycles_since_last_collection > 0);
+	zassert_true(stats3.total_cycles_since_last_collection < stats3.total_cycles);
+
+	zassert_true(stats3.idle_cycles_since_last_collection > 0);
+	zassert_true(stats3.idle_cycles_since_last_collection < stats3.idle_cycles);
+}
+#else 
+ZTEST(usage_api, test_cpu_since_collection_metrics) {
+}
+#endif
+#else 
+ZTEST(usage_api, test_thread_since_collection_metrics) {
+}
+ZTEST(usage_api, test_cpu_since_collection_metrics) {
+}
+#endif
+
+/**
  * @brief Test the k_thread_runtime_stats_get() API
  *
  * This routine tests the k_thread_runtime_stats_get() routine. It verifies

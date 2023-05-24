@@ -1112,14 +1112,32 @@ int k_thread_runtime_stats_all_get(k_thread_runtime_stats_t *stats)
 
 		stats->execution_cycles += tmp_stats.execution_cycles;
 		stats->total_cycles     += tmp_stats.total_cycles;
+#ifdef CONFIG_THREAD_RUNTIME_STATS_BETWEEN_COLLECTIONS
+		stats->execution_cycles_since_last_collection += tmp_stats.execution_cycles_since_last_collection;
+		stats->total_cycles_since_last_collection     += tmp_stats.total_cycles_since_last_collection;
+#endif
 #ifdef CONFIG_SCHED_THREAD_USAGE_ANALYSIS
 		stats->current_cycles   += tmp_stats.current_cycles;
 		stats->peak_cycles      += tmp_stats.peak_cycles;
 		stats->average_cycles   += tmp_stats.average_cycles;
 #endif
 		stats->idle_cycles      += tmp_stats.idle_cycles;
+#ifdef CONFIG_THREAD_RUNTIME_STATS_BETWEEN_COLLECTIONS
+		stats->idle_cycles_since_last_collection      += tmp_stats.idle_cycles_since_last_collection;
+#endif
 	}
 #endif
 
 	return 0;
+}
+
+void k_thread_runtime_stats_all_cleanup() {
+	if (IS_ENABLED(CONFIG_THREAD_ANALYZER_RUN_UNLOCKED)) {
+		k_thread_foreach_unlocked(z_sched_thread_usage_cleanup, NULL);
+	} else {
+		k_thread_foreach(z_sched_thread_usage_cleanup, NULL);
+	}
+#ifdef CONFIG_SCHED_THREAD_USAGE_ALL
+	z_sched_cpu_usage_cleanup();
+#endif
 }
