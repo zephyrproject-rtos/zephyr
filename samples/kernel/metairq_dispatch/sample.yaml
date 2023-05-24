@@ -3,6 +3,9 @@ sample:
     MetaIRQ thread
   name: MetaIRQ Dispatch
 common:
+  integration_platforms:
+    - mps2_an385
+    - qemu_x86
   harness: console
   harness_config:
     type: one_line

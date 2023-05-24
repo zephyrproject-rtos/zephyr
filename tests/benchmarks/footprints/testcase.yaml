@@ -2,12 +2,16 @@ tests:
   benchmark.kernel.footprints.default:
     tags: benchmark
     build_only: true
+    integration_platforms:
+      - mps2_an385
   benchmark.kernel.footprints.pm:
     tags:
       - benchmark
       - pm
     build_only: true
     extra_args: CONF_FILE=prj_pm.conf
+    integration_platforms:
+      - mps2_an385
   benchmark.kernel.footprints.userspace:
     filter: CONFIG_ARCH_HAS_USERSPACE
     extra_args: CONF_FILE=prj_userspace.conf
@@ -19,3 +23,5 @@ tests:
       - benchmark
       - userspace
     build_only: true
+    integration_platforms:
+      - mps2_an385

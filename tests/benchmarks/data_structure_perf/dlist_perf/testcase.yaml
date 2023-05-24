@@ -3,3 +3,5 @@ tests:
     tags:
       - benchmark
       - dlist
+    integration_platforms:
+      - native_posix

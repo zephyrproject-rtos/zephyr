@@ -7,6 +7,9 @@ tests:
     filter: CONFIG_PRINTK and not CONFIG_SOC_FAMILY_STM32
     tags: benchmark
     harness: console
+    integration_platforms:
+      - qemu_x86
+      - qemu_arc_em
     harness_config:
       type: one_line
       record:
