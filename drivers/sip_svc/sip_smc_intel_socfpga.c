@@ -39,6 +39,7 @@ static bool intel_sip_smc_plat_func_id_valid(const struct device *dev, uint32_t 
 		case SMC_FUNC_ID_REG_WRITE:
 		case SMC_FUNC_ID_REG_UPDATE:
 		case SMC_FUNC_ID_SET_HPS_BRIDGES:
+		case SMC_FUNC_ID_RSU_UPDATE_ADDR:
 			valid = true;
 			break;
 		default:
