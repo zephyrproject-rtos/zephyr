@@ -6,6 +6,5 @@ find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(sensor_shell)
 
 target_sources(app PRIVATE src/main.c)
-target_sources_ifdef(CONFIG_INIT_TRIG_DATA_READY app PRIVATE src/trigger.c)
 
 target_include_directories(app PRIVATE include)

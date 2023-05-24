@@ -14,6 +14,8 @@
 #include <zephyr/shell/shell.h>
 #include <zephyr/sys/iterable_sections.h>
 
+LOG_MODULE_REGISTER(sensor_shell);
+
 #define SENSOR_GET_HELP                                                                            \
 	"Get sensor data. Channel names are optional. All channels are read "                      \
 	"when no channels are provided. Syntax:\n"                                                 \
@@ -29,6 +31,10 @@
 	"<device_name> <channel_name> <attribute_name> <value>"
 
 #define SENSOR_INFO_HELP "Get sensor info, such as vendor and model name, for all sensors."
+
+#define SENSOR_TRIG_HELP                                                                           \
+	"Get or set the trigger type on a sensor. Currently only supports `data_ready`.\n"         \
+	"<device_name> <on/off> <trigger_name>"
 
 const char *sensor_channel_name[SENSOR_CHAN_ALL] = {
 	[SENSOR_CHAN_ACCEL_X] = "accel_x",
@@ -106,6 +112,38 @@ static const char *sensor_attribute_name[SENSOR_ATTR_COMMON_COUNT] = {
 	[SENSOR_ATTR_FEATURE_MASK] = "feature_mask",
 	[SENSOR_ATTR_ALERT] = "alert",
 	[SENSOR_ATTR_FF_DUR] = "ff_dur",
+};
+
+/* Forward declaration */
+static void data_ready_trigger_handler(const struct device *sensor,
+				       const struct sensor_trigger *trigger);
+
+#define TRIGGER_DATA_ENTRY(trig_enum, str_name, handler_func)                                      \
+	[(trig_enum)] = {.name = #str_name,                                                        \
+			 .handler = (handler_func),                                                \
+			 .trigger = {.chan = SENSOR_CHAN_ALL, .type = (trig_enum)}}
+
+/**
+ * @brief This table stores a mapping of string trigger names along with the sensor_trigger struct
+ * that gets passed to the driver to enable that trigger, plus a function pointer to a handler. If
+ * that pointer is NULL, this indicates there is not currently support for that trigger type in the
+ * sensor shell.
+ */
+static const struct {
+	const char *name;
+	sensor_trigger_handler_t handler;
+	struct sensor_trigger trigger;
+} sensor_trigger_table[SENSOR_TRIG_COMMON_COUNT] = {
+	TRIGGER_DATA_ENTRY(SENSOR_TRIG_TIMER, timer, NULL),
+	TRIGGER_DATA_ENTRY(SENSOR_TRIG_DATA_READY, data_ready, data_ready_trigger_handler),
+	TRIGGER_DATA_ENTRY(SENSOR_TRIG_DELTA, delta, NULL),
+	TRIGGER_DATA_ENTRY(SENSOR_TRIG_NEAR_FAR, near_far, NULL),
+	TRIGGER_DATA_ENTRY(SENSOR_TRIG_THRESHOLD, threshold, NULL),
+	TRIGGER_DATA_ENTRY(SENSOR_TRIG_TAP, tap, NULL),
+	TRIGGER_DATA_ENTRY(SENSOR_TRIG_DOUBLE_TAP, double_tap, NULL),
+	TRIGGER_DATA_ENTRY(SENSOR_TRIG_FREEFALL, freefall, NULL),
+	TRIGGER_DATA_ENTRY(SENSOR_TRIG_MOTION, motion, NULL),
+	TRIGGER_DATA_ENTRY(SENSOR_TRIG_STATIONARY, stationary, NULL),
 };
 
 enum dynamic_command_context {
@@ -502,6 +540,61 @@ static void device_name_get_for_attr(size_t idx, struct shell_static_entry *entr
 }
 SHELL_DYNAMIC_CMD_CREATE(dsub_device_name_for_attr, device_name_get_for_attr);
 
+static void trigger_name_get(size_t idx, struct shell_static_entry *entry)
+{
+	int cnt = 0;
+
+	entry->syntax = NULL;
+	entry->handler = NULL;
+	entry->help = NULL;
+	entry->subcmd = NULL;
+
+	for (int i = 0; i < SENSOR_TRIG_COMMON_COUNT; i++) {
+		if (sensor_trigger_table[i].name != NULL) {
+			if (cnt == idx) {
+				entry->syntax = sensor_trigger_table[i].name;
+				break;
+			}
+			cnt++;
+		}
+	}
+}
+
+SHELL_DYNAMIC_CMD_CREATE(dsub_trigger_name, trigger_name_get);
+
+static void trigger_on_off_get(size_t idx, struct shell_static_entry *entry)
+{
+	entry->handler = NULL;
+	entry->help = NULL;
+	entry->subcmd = &dsub_trigger_name;
+
+	switch (idx) {
+	case 0:
+		entry->syntax = "on";
+		break;
+	case 1:
+		entry->syntax = "off";
+		break;
+	default:
+		entry->syntax = NULL;
+		break;
+	}
+}
+
+SHELL_DYNAMIC_CMD_CREATE(dsub_trigger_onoff, trigger_on_off_get);
+
+static void device_name_get_for_trigger(size_t idx, struct shell_static_entry *entry)
+{
+	const struct device *dev = shell_device_lookup(idx, NULL);
+
+	entry->syntax = (dev != NULL) ? dev->name : NULL;
+	entry->handler = NULL;
+	entry->help = NULL;
+	entry->subcmd = &dsub_trigger_onoff;
+}
+
+SHELL_DYNAMIC_CMD_CREATE(dsub_trigger, device_name_get_for_trigger);
+
 static int cmd_get_sensor_info(const struct shell *sh, size_t argc, char **argv)
 {
 	ARG_UNUSED(argc);
@@ -525,6 +618,119 @@ static int cmd_get_sensor_info(const struct shell *sh, size_t argc, char **argv)
 #endif
 }
 
+enum sample_stats_state {
+	SAMPLE_STATS_STATE_UNINITIALIZED = 0,
+	SAMPLE_STATS_STATE_ENABLED,
+	SAMPLE_STATS_STATE_DISABLED,
+};
+
+struct sample_stats {
+	int64_t accumulator;
+	uint32_t count;
+	uint64_t sample_window_start;
+	enum sample_stats_state state;
+};
+
+static void data_ready_trigger_handler(const struct device *sensor,
+				       const struct sensor_trigger *trigger)
+{
+	static struct sample_stats stats[SENSOR_CHAN_ALL];
+	const int64_t now = k_uptime_get();
+	struct sensor_value value;
+
+	if (sensor_sample_fetch(sensor)) {
+		LOG_ERR("Failed to fetch samples on data ready handler");
+	}
+	for (int i = 0; i < SENSOR_CHAN_ALL; ++i) {
+		int rc;
+
+		/* Skip disabled channels */
+		if (stats[i].state == SAMPLE_STATS_STATE_DISABLED) {
+			continue;
+		}
+		/* Skip 3 axis channels */
+		if (i == SENSOR_CHAN_ACCEL_XYZ || i == SENSOR_CHAN_GYRO_XYZ ||
+		    i == SENSOR_CHAN_MAGN_XYZ) {
+			continue;
+		}
+
+		rc = sensor_channel_get(sensor, i, &value);
+		if (rc == -ENOTSUP && stats[i].state == SAMPLE_STATS_STATE_UNINITIALIZED) {
+			/* Stop reading this channel if the driver told us it's not supported. */
+			stats[i].state = SAMPLE_STATS_STATE_DISABLED;
+		}
+		if (rc != 0) {
+			/* Skip on any error. */
+			continue;
+		}
+		/* Do something with the data */
+		stats[i].accumulator += value.val1 * INT64_C(1000000) + value.val2;
+		if (stats[i].count++ == 0) {
+			stats[i].sample_window_start = now;
+		} else if (now > stats[i].sample_window_start +
+					 CONFIG_SENSOR_SHELL_TRIG_PRINT_TIMEOUT_MS) {
+			int64_t micro_value = stats[i].accumulator / stats[i].count;
+
+			value.val1 = micro_value / 1000000;
+			value.val2 = (int32_t)llabs(micro_value - (value.val1 * 1000000));
+			LOG_INF("chan=%d, num_samples=%u, data=%d.%06d", i, stats[i].count,
+				value.val1, value.val2);
+
+			stats[i].accumulator = 0;
+			stats[i].count = 0;
+		}
+	}
+}
+
+static int cmd_trig_sensor(const struct shell *sh, size_t argc, char **argv)
+{
+	const struct device *dev;
+	enum sensor_trigger_type trigger;
+	int err;
+
+	if (argc < 4) {
+		shell_error(sh, "Wrong number of args");
+		return -EINVAL;
+	}
+
+	/* Parse device name */
+	dev = device_get_binding(argv[1]);
+	if (dev == NULL) {
+		shell_error(sh, "Device unknown (%s)", argv[1]);
+		return -ENODEV;
+	}
+
+	/* Map the trigger string to an enum value */
+	for (trigger = 0; trigger < ARRAY_SIZE(sensor_trigger_table); trigger++) {
+		if (strcmp(argv[3], sensor_trigger_table[trigger].name) == 0) {
+			break;
+		}
+	}
+	if (trigger >= SENSOR_TRIG_COMMON_COUNT || sensor_trigger_table[trigger].handler == NULL) {
+		shell_error(sh, "Unsupported trigger type (%s)", argv[3]);
+		return -ENOTSUP;
+	}
+
+	/* Parse on/off */
+	if (strcmp(argv[2], "on") == 0) {
+		err = sensor_trigger_set(dev, &sensor_trigger_table[trigger].trigger,
+					 sensor_trigger_table[trigger].handler);
+	} else if (strcmp(argv[2], "off") == 0) {
+		/* Clear the handler for the given trigger on this device */
+		err = sensor_trigger_set(dev, &sensor_trigger_table[trigger].trigger, NULL);
+	} else {
+		shell_error(sh, "Pass 'on' or 'off' to enable/disable trigger");
+		return -EINVAL;
+	}
+
+	if (err) {
+		shell_error(sh, "Error while setting trigger %d on device %s (%d)", trigger,
+			    argv[1], err);
+	}
+
+	return err;
+}
+
 /* clang-format off */
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_sensor,
 	SHELL_CMD_ARG(get, &dsub_device_name, SENSOR_GET_HELP, cmd_get_sensor,
@@ -535,6 +741,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_sensor,
 			cmd_sensor_attr_get, 2, 255),
 	SHELL_COND_CMD(CONFIG_SENSOR_INFO, info, NULL, SENSOR_INFO_HELP,
 			cmd_get_sensor_info),
+	SHELL_CMD_ARG(trig, &dsub_trigger, SENSOR_TRIG_HELP, cmd_trig_sensor,
+			2, 255),
 	SHELL_SUBCMD_SET_END
 	);
 /* clang-format on */
