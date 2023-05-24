@@ -318,6 +318,8 @@ Boards & SoC Support
     older revision of the nRF9160 DK without external flash, specify that
     older board revision when building.
 
+  * Enabled external_flash_pins_routing switch in ``nrf9160dk_nrf52840`` by default.
+
 * Made these changes for ARM64 boards:
 
 * Made these changes for RISC-V boards:
