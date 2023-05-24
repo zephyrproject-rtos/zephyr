@@ -23,7 +23,6 @@
 
 #include <mgmt/mcumgr/util/zcbor_bulk.h>
 #include <mgmt/mcumgr/grp/img_mgmt/img_mgmt_priv.h>
-#include <mgmt/mcumgr/grp/img_mgmt/img_mgmt_impl.h>
 
 #ifdef CONFIG_MCUMGR_MGMT_NOTIFICATION_HOOKS
 #include <zephyr/mgmt/mcumgr/mgmt/callbacks.h>

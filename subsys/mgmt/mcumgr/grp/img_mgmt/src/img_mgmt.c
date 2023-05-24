@@ -24,7 +24,6 @@
 #include <zephyr/mgmt/mcumgr/grp/img_mgmt/image.h>
 
 #include <mgmt/mcumgr/util/zcbor_bulk.h>
-#include <mgmt/mcumgr/grp/img_mgmt/img_mgmt_impl.h>
 #include <mgmt/mcumgr/grp/img_mgmt/img_mgmt_priv.h>
 
 #ifdef CONFIG_IMG_ENABLE_IMAGE_CHECK
