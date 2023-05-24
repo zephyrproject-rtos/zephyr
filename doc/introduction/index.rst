@@ -42,17 +42,13 @@ Distinguishing Features
 
 Zephyr offers a large and ever growing number of features including:
 
-**Devicetree Support**
-   Use of :ref:`devicetree <dt-guide>` to describe hardware.
-   Information from devicetree is used to create the application image.
-
-**Native POSIX port**
-  Supports running Zephyr as a Linux application with support for various
-  subsystems and networking.
-
-
 **Reusable, extensible framework**
   Zephyr offers a number of familiar features for development:
+
+  * *Board-specific hardware descriptions*
+
+    built around :ref:`devicetree <dt-guide>` to describe hardware.
+    Information from devicetree is used to create the application image.
 
   * *Highly configurable / Modular for flexibility*
 
@@ -215,6 +211,11 @@ Zephyr offers a large and ever growing number of features including:
 
     NVS allows storage of binary blobs, strings, integers, longs, and any
     combination of these.
+
+  * *Native POSIX port*
+
+    Supports running Zephyr as a Linux application with support for various
+    subsystems and networking.
 
 
 .. include:: ../../README.rst
