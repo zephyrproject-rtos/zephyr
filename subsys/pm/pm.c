@@ -16,6 +16,7 @@
 #include <zephyr/pm/state.h>
 #include <zephyr/pm/policy.h>
 #include <zephyr/tracing/tracing.h>
+#include <zephyr/sys/arch_interface.h>
 
 #include "pm_stats.h"
 
@@ -45,8 +46,16 @@ static struct pm_state_info z_cpus_pm_forced_state[] = {
 static struct k_spinlock pm_forced_state_lock;
 
 #if defined(CONFIG_PM_DEVICE) && !defined(CONFIG_PM_DEVICE_RUNTIME_EXCLUSIVE)
+/* Devices will be suspended/resumed on core ID with matching CONFIG_PM_DEVICE_ACTION_CORE_ID */
+#ifdef CONFIG_PM_DEVICE_ACTION_CORE_ID
+#define DEVICE_PM_TRANSITION_COND if (id == CONFIG_PM_DEVICE_ACTION_CORE_ID)
+/* Devices will be suspended/resumed on random core which will be last to substract z_cpus_active */
+#else
 static atomic_t z_cpus_active = ATOMIC_INIT(CONFIG_MP_MAX_NUM_CPUS);
+#define DEVICE_PM_TRANSITION_COND if (atomic_sub(&z_cpus_active, 1) == 1)
 #endif
+#endif /* defined(CONFIG_PM_DEVICE) && !defined(CONFIG_PM_DEVICE_RUNTIME_EXCLUSIVE) */
+
 static struct k_spinlock pm_notifier_lock;
 
 
@@ -206,6 +215,19 @@ bool pm_state_force(uint8_t cpu, const struct pm_state_info *info)
 bool pm_system_suspend(int32_t ticks)
 {
 	uint8_t id = CURRENT_CPU;
+
+/* Proceed with suspend when all other cores are inactive */
+#if CONFIG_PM_DEVICE_ACTION_CORE_ID
+	if(id == CONFIG_PM_DEVICE_ACTION_CORE_ID) {
+		int i;
+
+		for (i = 0; i < CONFIG_MP_MAX_NUM_CPUS; i++) {
+			if (i != CONFIG_PM_DEVICE_ACTION_CORE_ID && arch_cpu_active(i))
+				return;
+		}
+	}
+#endif /* CONFIG_PM_DEVICE_ACTION_CORE_ID */
+
 	k_spinlock_key_t key;
 
 	SYS_PORT_TRACING_FUNC_ENTER(pm, system_suspend, ticks);
@@ -243,19 +265,21 @@ bool pm_system_suspend(int32_t ticks)
 	}
 
 #if defined(CONFIG_PM_DEVICE) && !defined(CONFIG_PM_DEVICE_RUNTIME_EXCLUSIVE)
-	if (atomic_sub(&z_cpus_active, 1) == 1) {
+	DEVICE_PM_TRANSITION_COND {
 		if (z_cpus_pm_state[id].state != PM_STATE_RUNTIME_IDLE) {
 			if (pm_suspend_devices()) {
 				pm_resume_devices();
 				z_cpus_pm_state[id].state = PM_STATE_ACTIVE;
+#ifndef CONFIG_PM_DEVICE_ACTION_CORE_ID
 				(void)atomic_add(&z_cpus_active, 1);
+#endif
 				SYS_PORT_TRACING_FUNC_EXIT(pm, system_suspend, ticks,
 							   z_cpus_pm_state[id].state);
 				return false;
 			}
 		}
 	}
-#endif
+#endif /* defined(CONFIG_PM_DEVICE) && !defined(CONFIG_PM_DEVICE_RUNTIME_EXCLUSIVE) */
 	/*
 	 * This function runs with interruptions locked but it is
 	 * expected the SoC to unlock them in
@@ -275,7 +299,7 @@ bool pm_system_suspend(int32_t ticks)
 
 	/* Wake up sequence starts here */
 #if defined(CONFIG_PM_DEVICE) && !defined(CONFIG_PM_DEVICE_RUNTIME_EXCLUSIVE)
-	if (atomic_add(&z_cpus_active, 1) == 0) {
+	DEVICE_PM_TRANSITION_COND {
 		pm_resume_devices();
 	}
 #endif

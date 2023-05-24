@@ -73,6 +73,19 @@ config PM_DEVICE
 	  like turning off device clocks and peripherals. The device drivers
 	  may also save and restore states in these hook functions.
 
+config PM_DEVICE_ACTION_CORE_ID
+	int "Core managing devices power transition"
+	depends on PM_DEVICE
+	depends on !CONFIG_PM_DEVICE_RUNTIME_EXCLUSIVE
+	default 0
+	help
+	  This option sets the ID of the Core that will perform power transition
+	  of the devices. Hook functions defined in for the Device Power Management
+	  interface will be called using core of matching ID. When multiple cores are
+	  available, all other cores must be inactive for power transition to occur.
+	  SoC must also define architecture specific arch_cpu_active(id) function
+	  implementation to determine whether core with give ID is active.
+
 if PM_DEVICE
 
 module = PM_DEVICE
