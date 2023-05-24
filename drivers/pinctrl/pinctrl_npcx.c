@@ -153,6 +153,16 @@ static void npcx_psl_input_detection_configure(const pinctrl_soc_pin_t *pin)
 	}
 }
 
+static void npcx_device_control_configure(const pinctrl_soc_pin_t *pin)
+{
+	const struct npcx_dev_ctl *ctrl = (const struct npcx_dev_ctl *)&pin->cfg.dev_ctl;
+	const uintptr_t scfg_base = npcx_pinctrl_cfg.base_scfg;
+
+	SET_FIELD(NPCX_DEV_CTL(scfg_base, ctrl->offest),
+			      FIELD(ctrl->field_offset, ctrl->field_size),
+			      ctrl->field_value);
+}
+
 /* Pinctrl API implementation */
 int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
 			   uintptr_t reg)
@@ -164,6 +174,9 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
 		if (pins[i].flags.type == NPCX_PINCTRL_TYPE_PERIPH) {
 			/* Configure peripheral device's pinmux functionality */
 			npcx_periph_configure(&pins[i], reg);
+		} else if (pins[i].flags.type == NPCX_PINCTRL_TYPE_DEVICE_CTRL) {
+			/* Configure device's io characteristics */
+			npcx_device_control_configure(&pins[i]);
 		} else if (pins[i].flags.type == NPCX_PINCTRL_TYPE_PSL_IN) {
 			/* Configure SPL input's detection mode */
 			npcx_psl_input_detection_configure(&pins[i]);
