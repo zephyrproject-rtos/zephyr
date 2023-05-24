@@ -1,3 +1,3 @@
 name: bar
 append:
-  DTC_OVERLAY_FILE: bar.overlay
+  EXTRA_DTC_OVERLAY_FILE: bar.overlay

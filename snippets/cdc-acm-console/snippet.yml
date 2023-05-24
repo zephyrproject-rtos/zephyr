@@ -1,4 +1,4 @@
 name: cdc-acm-console
 append:
-  OVERLAY_CONFIG: cdc-acm-console.conf
-  DTC_OVERLAY_FILE: cdc-acm-console.overlay
+  EXTRA_CONF_FILE: cdc-acm-console.conf
+  EXTRA_DTC_OVERLAY_FILE: cdc-acm-console.overlay
