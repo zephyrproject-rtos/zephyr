@@ -41,7 +41,7 @@ static int test_set_get_calibration(int32_t calibrate_set)
 	return 0;
 }
 
-ZTEST(rtc_api, set_get_calibration)
+ZTEST(rtc_api, test_set_get_calibration)
 {
 	int32_t calibrate_get;
 	int ret;
