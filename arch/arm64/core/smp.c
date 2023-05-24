@@ -225,6 +225,25 @@ void z_arm64_flush_fpu_ipi(unsigned int cpu)
 
 	gic_raise_sgi(SGI_FPU_IPI, mpidr, 1 << aff0);
 }
+
+/*
+ * Make sure there is no pending FPU flush request for this CPU while
+ * waiting for a contended spinlock to become available. This prevents
+ * a deadlock when the lock we need is already taken by another CPU
+ * that also wants its FPU content to be reinstated while such content
+ * is still live in this CPU's FPU.
+ */
+void arch_spin_relax(void)
+{
+	if (arm_gic_irq_is_pending(SGI_FPU_IPI)) {
+		arm_gic_irq_clear_pending(SGI_FPU_IPI);
+		/*
+		 * We may not be in IRQ context here hence cannot use
+		 * z_arm64_flush_local_fpu() directly.
+		 */
+		arch_float_disable(_current_cpu->arch.fpu_owner);
+	}
+}
 #endif
 
 static int arm64_smp_init(void)
