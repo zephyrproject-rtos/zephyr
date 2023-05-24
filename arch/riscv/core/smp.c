@@ -66,8 +66,8 @@ void z_riscv_secondary_cpu_init(int hartid)
 #define MSIP(hartid) ((volatile uint32_t *)RISCV_MSIP_BASE)[hartid]
 
 static atomic_val_t cpu_pending_ipi[CONFIG_MP_MAX_NUM_CPUS];
-#define IPI_SCHED	BIT(0)
-#define IPI_FPU_FLUSH	BIT(1)
+#define IPI_SCHED	0
+#define IPI_FPU_FLUSH	1
 
 void arch_sched_ipi(void)
 {
@@ -77,7 +77,7 @@ void arch_sched_ipi(void)
 
 	for (unsigned int i = 0; i < num_cpus; i++) {
 		if (i != id && _kernel.cpus[i].arch.online) {
-			atomic_or(&cpu_pending_ipi[i], IPI_SCHED);
+			atomic_set_bit(&cpu_pending_ipi[i], IPI_SCHED);
 			MSIP(_kernel.cpus[i].arch.hartid) = 1;
 		}
 	}
@@ -88,7 +88,7 @@ void arch_sched_ipi(void)
 #ifdef CONFIG_FPU_SHARING
 void z_riscv_flush_fpu_ipi(unsigned int cpu)
 {
-	atomic_or(&cpu_pending_ipi[cpu], IPI_FPU_FLUSH);
+	atomic_set_bit(&cpu_pending_ipi[cpu], IPI_FPU_FLUSH);
 	MSIP(_kernel.cpus[cpu].arch.hartid) = 1;
 }
 #endif
@@ -101,11 +101,11 @@ static void ipi_handler(const void *unused)
 
 	atomic_val_t pending_ipi = atomic_clear(&cpu_pending_ipi[_current_cpu->id]);
 
-	if (pending_ipi & IPI_SCHED) {
+	if (pending_ipi & ATOMIC_MASK(IPI_SCHED)) {
 		z_sched_ipi();
 	}
 #ifdef CONFIG_FPU_SHARING
-	if (pending_ipi & IPI_FPU_FLUSH) {
+	if (pending_ipi & ATOMIC_MASK(IPI_FPU_FLUSH)) {
 		/* disable IRQs */
 		csr_clear(mstatus, MSTATUS_IEN);
 		/* perform the flush */
