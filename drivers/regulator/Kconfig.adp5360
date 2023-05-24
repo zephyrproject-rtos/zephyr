@@ -9,20 +9,9 @@ config REGULATOR_ADP5360
 	help
 	  Enable the Analog Devices ADP5360 PMIC regulator driver
 
-if REGULATOR_ADP5360
-
-config REGULATOR_ADP5360_COMMON_INIT_PRIORITY
-	int "ADP5360 regulator driver init priority (common part)"
-	default 75
-	help
-	  Init priority for the Analog Devices ADP5360 regulator driver (common
-	  part). It must be greater than I2C init priority.
-
 config REGULATOR_ADP5360_INIT_PRIORITY
 	int "ADP5360 regulator driver init priority"
 	default 76
+	depends on REGULATOR_ADP5360
 	help
-	  Init priority for the Analog Devices ADP5360 regulator driver. It must
-	  be greater than REGULATOR_ADP5360_COMMON_INIT_PRIORITY.
-
-endif
+	  Init priority for the Analog Devices ADP5360 regulator driver.
