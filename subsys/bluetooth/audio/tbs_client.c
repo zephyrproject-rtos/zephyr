@@ -617,6 +617,12 @@ static uint8_t notify_handler(struct bt_conn *conn,
 	return BT_GATT_ITER_CONTINUE;
 }
 
+#if defined(CONFIG_BT_TBS_CLIENT_BEARER_PROVIDER_NAME) ||                                          \
+	defined(CONFIG_BT_TBS_CLIENT_BEARER_UCI) ||                                                \
+	defined(CONFIG_BT_TBS_CLIENT_BEARER_URI_SCHEMES_SUPPORTED_LIST) ||                         \
+	defined(CONFIG_BT_TBS_CLIENT_INCOMING_URI) ||                                              \
+	defined(CONFIG_BT_TBS_CLIENT_INCOMING_CALL) ||                                             \
+	defined(CONFIG_BT_TBS_CLIENT_CALL_FRIENDLY_NAME)
 /* Common function to read tbs_client strings which may require long reads */
 static uint8_t handle_string_long_read(struct bt_conn *conn, uint8_t err,
 				       struct bt_gatt_read_params *params,
@@ -717,6 +723,13 @@ static uint8_t handle_string_long_read(struct bt_conn *conn, uint8_t err,
 
 	return BT_GATT_ITER_STOP;
 }
+#endif /* CONFIG_BT_TBS_CLIENT_BEARER_PROVIDER_NAME ||                                             \
+	* CONFIG_BT_TBS_CLIENT_BEARER_UCI ||                                                       \
+	* CONFIG_BT_TBS_CLIENT_BEARER_URI_SCHEMES_SUPPORTED_LIST ||                                \
+	* CONFIG_BT_TBS_CLIENT_INCOMING_URI ||                                                     \
+	* CONFIG_BT_TBS_CLIENT_INCOMING_CALL ||                                                    \
+	* CONFIG_BT_TBS_CLIENT_CALL_FRIENDLY_NAME                                                  \
+	*/
 
 #if defined(CONFIG_BT_TBS_CLIENT_CP_PROCEDURES)
 static int tbs_client_common_call_control(struct bt_conn *conn,
