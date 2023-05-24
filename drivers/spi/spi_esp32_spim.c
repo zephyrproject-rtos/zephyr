@@ -265,6 +265,7 @@ static int IRAM_ATTR spi_esp32_configure(const struct device *dev,
 	struct spi_context *ctx = &data->ctx;
 	spi_hal_context_t *hal = &data->hal;
 	spi_hal_dev_config_t *hal_dev = &data->dev_config;
+	spi_dev_t *hw = hal->hw;
 	int freq;
 
 	if (spi_context_configured(ctx, spi_cfg)) {
@@ -346,6 +347,17 @@ static int IRAM_ATTR spi_esp32_configure(const struct device *dev,
 	}
 
 	spi_hal_setup_device(hal, hal_dev);
+
+	/* Workaround to handle default state of MISO and MOSI lines */
+#ifndef CONFIG_SOC_ESP32
+	if (cfg->line_idle_low) {
+		hw->ctrl.d_pol = 0;
+		hw->ctrl.q_pol = 0;
+	} else {
+		hw->ctrl.d_pol = 1;
+		hw->ctrl.q_pol = 1;
+	}
+#endif
 
 	/*
 	 * Workaround for ESP32S3 and ESP32C3 SoC. This dummy transaction is needed to sync CLK and
@@ -505,6 +517,7 @@ static const struct spi_driver_api spi_api = {
 		.dma_host = DT_INST_PROP(idx, dma_host),	\
 		.cs_setup = DT_INST_PROP_OR(idx, cs_setup_time, 0), \
 		.cs_hold = DT_INST_PROP_OR(idx, cs_hold_time, 0), \
+		.line_idle_low = DT_INST_PROP(idx, line_idle_low), \
 	};	\
 		\
 	DEVICE_DT_INST_DEFINE(idx, &spi_esp32_init,	\
