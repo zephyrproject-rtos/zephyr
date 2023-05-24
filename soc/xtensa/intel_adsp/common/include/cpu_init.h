@@ -58,6 +58,11 @@ static ALWAYS_INLINE void cpu_early_init(void)
 	__asm__ volatile("rsync");
 #endif
 
+#if XCHAL_HAVE_THREADPTR
+	reg = 0;
+	XTENSA_WUR("THREADPTR", reg);
+#endif
+
 	/* Likewise enable prefetching.  Sadly these values are not
 	 * architecturally defined by Xtensa (they're just documented
 	 * as priority hints), so this constant is just copied from
