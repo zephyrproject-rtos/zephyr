@@ -79,15 +79,6 @@ Zephyr offers a large and ever growing number of features including:
      * Red/black tree ready queue
      * Traditional multi-queue ready queue
 
-**Highly configurable / Modular for flexibility**
-   Allows an application to incorporate *only* the capabilities it needs as it
-   needs them, and to specify their quantity and size.
-
-**Cross Architecture**
-   Supports a wide variety of :ref:`supported boards<boards>` with different CPU
-   architectures and developer tools. Contributions have added support
-   for an increasing number of SoCs, platforms, and drivers.
-
 **Memory Protection**
    Implements configurable architecture-specific stack-overflow protection,
    kernel object and device driver permission tracking, and thread isolation
@@ -99,10 +90,6 @@ Zephyr offers a large and ever growing number of features including:
    monolithic image that gets loaded and executed on a system's hardware. Both
    the application code and kernel code execute in a single shared address
    space.
-
-**Compile-time resource definition**
-   Allows system resources to be defined at compile-time, which reduces code
-   size and increases performance for resource-limited systems.
 
 **Optimized Device Driver Model**
    Provides a consistent device model for configuring the drivers that are part
@@ -141,11 +128,6 @@ Zephyr offers a large and ever growing number of features including:
    * Both Provisioning bearers supported (PB-ADV & PB-GATT)
    * Highly configurable, fitting in devices with at least 16k RAM
 
-**Native Linux, macOS, and Windows Development**
-   A command-line CMake build environment runs on popular developer OS
-   systems. A native POSIX port, lets you build and run Zephyr as a native
-   application on Linux and other OSes, aiding development and testing.
-
 **Virtual File System Interface with LittleFS and FATFS Support**
    LittleFS and FATFS Support,
    FCB (Flash Circular Buffer) for memory constrained applications, and
@@ -178,9 +160,36 @@ Zephyr offers a large and ever growing number of features including:
 **Reusable, extensible framework**
   Zephyr offers a number of familiar features for development:
 
+  * *Highly configurable / Modular for flexibility*
+
+    that allows an application to incorporate *only* the capabilities
+    it needs as it needs them, and to specify their quantity and size.
+
+  * *Native Linux, macOS, and Windows Development*
+
+    to a command-line CMake build environment that runs on popular
+    developer host systems. A native POSIX port that lets you build
+    and run Zephyr as a native application on Linux and other OSes,
+    aiding development and testing.
+
+
 **Configurable, extensible domain architecture**
   Zephyr supports efficiently retargeting functionality at a wide variety
   of target architectures.
+
+  * *Cross CPU Architecture*
+
+    that supports a wide variety of :ref:`supported boards <boards>`
+    with different CPU architectures and developer tools. Contributions
+    have added support for an increasing number of SoCs, platforms,
+    and drivers.
+
+  * *Compile-time resource definition*
+
+    that allows system resources to be defined at compile-time,
+    which reduces code size and increases performance for
+    resource-limited systems.
+
 
 **Extensive reusable asset base**
   Zephyr offers a large and ever growing number of features including:
