@@ -1,0 +1,12 @@
+common:
+  tags: posix
+  min_ram: 64
+  arch_exclude:
+    - posix
+  integration_platforms:
+    - qemu_riscv64_smp
+  platform_exclude:
+    - qemu_cortex_a53
+    - qemu_cortex_a53_smp
+tests:
+  portability.posix.pthread_pressure: {}
