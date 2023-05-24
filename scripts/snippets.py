@@ -52,7 +52,7 @@ class Snippet:
         '''Process the data in a snippet.yml file, after it is loaded into a
         python object and validated by pykwalify.'''
         def append_value(variable, value):
-            if variable in ('DTC_OVERLAY_FILE', 'OVERLAY_CONFIG'):
+            if variable in ('EXTRA_DTC_OVERLAY_FILE', 'EXTRA_CONF_FILE'):
                 path = pathobj.parent / value
                 if not path.is_file():
                     _err(f'snippet file {pathobj}: {variable}: file not found: {path}')
