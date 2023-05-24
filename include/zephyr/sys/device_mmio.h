@@ -116,12 +116,12 @@ struct z_device_mmio_rom {
 
 #define Z_DEVICE_MMIO_ROM_INITIALIZER(node_id) \
 	{ \
-		.addr = DT_REG_ADDR(node_id) \
+		.addr = (mm_reg_t)DT_REG_ADDR_U64(node_id) \
 	}
 
 #define Z_DEVICE_MMIO_NAMED_ROM_INITIALIZER(name, node_id) \
 	{ \
-		.addr = DT_REG_ADDR_BY_NAME(node_id, name) \
+		.addr = (mm_reg_t)DT_REG_ADDR_BY_NAME_U64(node_id, name) \
 	}
 
 #endif /* DEVICE_MMIO_IS_IN_RAM */
