@@ -287,6 +287,8 @@ class Reporting:
                     suite["log"] = self.process_log(device_log)
                 else:
                     suite["log"] = self.process_log(build_log)
+            elif instance.status == Status.PASS:
+                suite["status"] = instance.status
             else:
                 suite["status"] = instance.status
                 suite["reason"] = instance.reason
