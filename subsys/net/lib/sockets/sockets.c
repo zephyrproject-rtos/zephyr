@@ -490,15 +490,12 @@ static void zsock_connected_cb(struct net_context *ctx, int status, void *user_d
 	if (status < 0) {
 		ctx->user_data = INT_TO_POINTER(-status);
 		sock_set_error(ctx);
-	} else if (status == 0) {
-		(void)net_context_recv(ctx, zsock_received_cb, K_NO_WAIT, ctx->user_data);
 	}
 }
 
 int zsock_connect_ctx(struct net_context *ctx, const struct sockaddr *addr,
 		      socklen_t addrlen)
 {
-	k_timeout_t timeout;
 
 #if defined(CONFIG_SOCKS)
 	if (net_context_is_proxy_enabled(ctx)) {
@@ -516,17 +513,19 @@ int zsock_connect_ctx(struct net_context *ctx, const struct sockaddr *addr,
 		} else {
 			SET_ERRNO(-EALREADY);
 		}
-	} else if (sock_is_nonblock(ctx)) {
-		timeout = K_NO_WAIT;
-		SET_ERRNO(net_context_connect(ctx, addr, addrlen,
-					      zsock_connected_cb, timeout,
-					      ctx->user_data));
 	} else {
-		timeout = K_MSEC(CONFIG_NET_SOCKETS_CONNECT_TIMEOUT);
-		SET_ERRNO(net_context_connect(ctx, addr, addrlen, NULL,
-					      timeout, NULL));
+		k_timeout_t timeout = K_MSEC(CONFIG_NET_SOCKETS_CONNECT_TIMEOUT);
+		net_context_connect_cb_t cb = NULL;
+
+		if (sock_is_nonblock(ctx)) {
+			timeout = K_NO_WAIT;
+			cb = zsock_connected_cb;
+		}
+
 		SET_ERRNO(net_context_recv(ctx, zsock_received_cb, K_NO_WAIT,
 					   ctx->user_data));
+		SET_ERRNO(net_context_connect(ctx, addr, addrlen, cb, timeout,
+					      ctx->user_data));
 	}
 
 	return 0;
