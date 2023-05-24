@@ -11,6 +11,7 @@ if SDHC
 source "drivers/sdhc/Kconfig.imx"
 source "drivers/sdhc/Kconfig.spi"
 source "drivers/sdhc/Kconfig.mcux_sdif"
+source "drivers/sdhc/Kconfig.sam_hsmci"
 
 config SDHC_INIT_PRIORITY
 	int "SDHC driver init priority"
