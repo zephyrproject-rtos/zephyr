@@ -68,17 +68,28 @@ you will also need to set up the SOF rimage signing tool and key.
    git clone https://github.com/thesofproject/rimage --recurse-submodules
    cd rimage
 
-Follow the instructions in the :file:`README.md` to build and install the tool
-globally on your system. You should be able to invoke the binary from the
-command line with the name "rimage". For example:
+Follow the instructions in the rimage :file:`README.md` to build the tool on
+your system. You can either copy the executable to a directory in your PATH or
+use ``west config rimage.path /path/to/rimage-build/rimage``; see more details
+in the output of ``west sign -h``. Running directly from the build directory
+makes you less likely to use an obsolete rimage version by mistake.
 
-.. code-block:: shell
+Until https://github.com/zephyrproject-rtos/zephyr/issues/58212 gets
+implemented, you must manually and regularly update and rebuild rimage.
 
-   which rimage
-   /usr/local/bin/rimage
+The SOF project does not require this manual step because its west manifest
+automatically downloads and builds a specific rimage version validated with
+matching SOF sources. An indirect Zephyr -> SOF -> rimage dependency chain is
+unfortunately not appropriate because unlike rimage, SOF is *not* required to
+run Zephyr on cAVS/ACE hardware.
 
-If you are unable to install it, you can also pass the path to the tool binary
-as an argument to ``west flash``, though this is not recommended.
+Until https://github.com/thesofproject/sof/issues/7270 is implemented,
+platform-specific configuration files are also located in the rimage
+repository, more specifically in the ``rimage/config/`` subdirectory; this is
+another reason to update rimage regularly. If you cloned rimage in a location
+different from above (not recommended) then you must also run ``west config
+build.cmake-args -- -DRIMAGE_CONFIG_PATH=/path/to/source/rimage/config``.
+
 
 Xtensa Toolchain (Optional)
 ---------------------------
@@ -121,13 +132,30 @@ Build as usual.
 Signing
 -------
 
-West automatically signs the binary as the first step of flashing, but if you
-need to sign the binary yourself without flashing, you can invoke the west sign
-command directly. Read the output of a ``west flash`` command to find the
-``west sign`` invocation. You can copy and modify it for your own purposes.
+``west build`` tries to sign the binary at the end of the build. If you need
+to sign the binary yourself, you can invoke ``west sign`` directly. Read the
+``west`` logs to find the ``west sign`` invocation; you can copy and modify
+the command logged for your own purposes. Run ``west sign -h`` for more
+details.
 
-As mentioned previously, if you're unable to install the rimage tool
-globally, you can pass it the path to the tool binary as an argument to
+The build tries to provide as many default rimage parameters are possible. If
+needed, there are several ways to override them depending on your specific
+situation and use case. They're often not mutually exclusive but to avoid
+undocumented rimage precedence rules it's best to use only one way at a time.
+
+- For local, interactive use prefer ``rimage.extra-args`` in west config, see
+  ``west sign -h``. The WEST_CONFIG_LOCAL environment variable can point at a
+  different west configuration file if needed.
+
+- You can add or overwrite a ``$platform.toml`` file(s) in your
+  ``rimage/config/`` directory
+
+- For board-specific needs you can define WEST_SIGN_OPTS in
+  ``boards/my/board/board.cmake``, see example in
+  ``soc/xtensa/intel_adsp/common/CMakeLists.txt``
+
+For backwards compatibility reasons, you can also pass rimage parameters like
+the path to the tool binary as arguments to
 ``west flash`` if the flash target exists for your board. To see a list
 of all arguments to the Intel ADSP runner, run the following after you have
 built the binary. There are multiple arguments related to signing, including a
