@@ -21,6 +21,7 @@
 		sw0 = &user_button;
 		wdog = &wdt;
 		watchdog0 = &wdt;
+		sdhc0 = &hsmci;
 	};
 
 	chosen {
@@ -209,6 +210,17 @@
 
 	pinctrl-0 = <&pwm0_default>;
 	pinctrl-names = "default";
+};
+
+&hsmci {
+	status = "okay";
+
+	pinctrl-0 = <&hsmci_default>;
+	pinctrl-names = "default";
+	mmc {
+		compatible = "zephyr,sdmmc-disk";
+		status = "okay";
+	};
 };
 
 &wdt {
