@@ -1336,7 +1336,7 @@ static uint8_t unicast_client_cp_notify(struct bt_conn *conn,
 		struct bt_bap_stream *stream;
 
 		if (buf.len < sizeof(*ase_rsp)) {
-			LOG_ERR("Control Point Notification too small");
+			LOG_ERR("Control Point Notification too small: %u", buf.len);
 			return BT_GATT_ITER_STOP;
 		}
 
@@ -1420,6 +1420,7 @@ static uint8_t unicast_client_ase_ntf_read_func(struct bt_conn *conn, uint8_t er
 						uint16_t length)
 {
 	uint16_t handle = read->single.handle;
+	struct net_buf_simple buf_clone;
 	struct unicast_client *client;
 	struct net_buf_simple *buf;
 	struct bt_bap_ep *ep;
@@ -1442,6 +1443,7 @@ static uint8_t unicast_client_ase_ntf_read_func(struct bt_conn *conn, uint8_t er
 			LOG_DBG("Buffer full, invalid server response of size %u",
 				length + client->net_buf.len);
 			client->busy = false;
+			reset_att_buf(client);
 
 			return BT_GATT_ITER_STOP;
 		}
@@ -1453,19 +1455,27 @@ static uint8_t unicast_client_ase_ntf_read_func(struct bt_conn *conn, uint8_t er
 	}
 
 	memset(read, 0, sizeof(*read));
-	client->busy = false;
 
 	if (buf->len < sizeof(struct bt_ascs_ase_status)) {
 		LOG_DBG("Read response too small (%u)", buf->len);
+		reset_att_buf(client);
+		client->busy = false;
 
 		return BT_GATT_ITER_STOP;
 	}
+
+	/* Clone the buffer so that we can reset it while still providing the data to the upper
+	 * layers
+	 */
+	net_buf_simple_clone(buf, &buf_clone);
+	reset_att_buf(client);
+	client->busy = false;
 
 	ep = unicast_client_ep_get(conn, client->dir, handle);
 	if (!ep) {
 		LOG_DBG("Unknown %s ep for handle 0x%04X", bt_audio_dir_str(client->dir), handle);
 	} else {
-		unicast_client_ep_set_status(ep, buf);
+		unicast_client_ep_set_status(ep, &buf_clone);
 	}
 
 	return BT_GATT_ITER_STOP;
@@ -1476,6 +1486,7 @@ static void long_ase_read(struct bt_bap_unicast_client_ep *client_ep)
 	/* Perform long read if notification is maximum size */
 	struct bt_conn *conn = client_ep->ep.stream->conn;
 	struct unicast_client *client = &uni_cli_insts[bt_conn_index(conn)];
+	struct net_buf_simple *long_read_buf = &client->net_buf;
 	int err;
 
 	LOG_DBG("conn %p ep %p 0x%04X busy %u", conn, &client_ep->ep, client_ep->handle,
@@ -1504,13 +1515,10 @@ static void long_ase_read(struct bt_bap_unicast_client_ep *client_ep)
 		return;
 	}
 
-	/* Reset buffer before using */
-	reset_att_buf(client);
-
 	client->read_params.func = unicast_client_ase_ntf_read_func;
 	client->read_params.handle_count = 1U;
 	client->read_params.single.handle = client_ep->handle;
-	client->read_params.single.offset = 0U;
+	client->read_params.single.offset = long_read_buf->len;
 
 	err = bt_gatt_read(conn, &client->read_params);
 	if (err != 0) {
@@ -1555,6 +1563,15 @@ static uint8_t unicast_client_ep_notify(struct bt_conn *conn,
 	}
 
 	if (length == max_ntf_size) {
+		struct unicast_client *client = &uni_cli_insts[bt_conn_index(conn)];
+
+		if (!client->busy) {
+			struct net_buf_simple *long_read_buf = &client->net_buf;
+
+			/* store data*/
+			net_buf_simple_add_mem(long_read_buf, data, length);
+		}
+
 		long_ase_read(client_ep);
 
 		return BT_GATT_ITER_CONTINUE;
@@ -1626,6 +1643,7 @@ static void discover_cb(struct bt_conn *conn, int err)
 
 	/* Discover complete - Reset discovery values */
 	client->dir = 0U;
+	reset_att_buf(client);
 	client->busy = false;
 
 	if (unicast_client_cbs != NULL && unicast_client_cbs->discover != NULL) {
@@ -1701,9 +1719,6 @@ struct net_buf_simple *bt_bap_unicast_client_ep_create_pdu(struct bt_conn *conn,
 	if (client->busy) {
 		return NULL;
 	}
-
-	/* Reset buffer before using */
-	reset_att_buf(client);
 
 	hdr = net_buf_simple_add(&client->net_buf, sizeof(*hdr));
 	hdr->op = op;
@@ -1969,6 +1984,7 @@ static void gatt_write_cb(struct bt_conn *conn, uint8_t err, struct bt_gatt_writ
 	LOG_DBG("conn %p err %u", conn, err);
 
 	memset(params, 0, sizeof(*params));
+	reset_att_buf(client);
 	client->busy = false;
 
 	/* TBD: Should we do anything in case of error here? */
@@ -2013,6 +2029,9 @@ int bt_bap_unicast_client_ep_send(struct bt_conn *conn, struct bt_bap_ep *ep,
 		if (err != 0) {
 			LOG_DBG("bt_gatt_write_without_response failed: %d", err);
 		}
+
+		/* No callback for writing without response, so reset the buffer here */
+		reset_att_buf(client);
 	}
 
 	return err;
@@ -2908,20 +2927,9 @@ int bt_bap_unicast_client_metadata(struct bt_bap_stream *stream, struct bt_codec
 int bt_bap_unicast_client_start(struct bt_bap_stream *stream)
 {
 	struct bt_bap_ep *ep = stream->ep;
-	struct net_buf_simple *buf;
-	struct bt_ascs_start_op *req;
 	int err;
 
 	LOG_DBG("stream %p", stream);
-
-	buf = bt_bap_unicast_client_ep_create_pdu(stream->conn, BT_ASCS_START_OP);
-	if (buf == NULL) {
-		LOG_DBG("Could not create PDU");
-		return -EBUSY;
-	}
-
-	req = net_buf_simple_add(buf, sizeof(*req));
-	req->num_ases = 0x00;
 
 	/* If an ASE is in the Enabling state, and if the Unicast Client has
 	 * not yet established a CIS for that ASE, the Unicast Client shall
@@ -2934,20 +2942,20 @@ int bt_bap_unicast_client_start(struct bt_bap_stream *stream)
 			/* Set bool and wait for ISO to be connected to send the
 			 * receiver start ready
 			 */
-			stream->ep->receiver_ready = true;
+			ep->receiver_ready = true;
 		}
 	} else if (err == -EALREADY) {
 		LOG_DBG("ISO %p already connected", bt_bap_stream_iso_chan_get(stream));
 
 		if (ep->dir == BT_AUDIO_DIR_SOURCE) {
-			stream->ep->receiver_ready = true;
+			ep->receiver_ready = true;
 
 			err = unicast_client_send_start(ep);
 			if (err != 0) {
 				LOG_DBG("Failed to send start: %d", err);
 
 				/* TBD: Should we release the stream then? */
-				stream->ep->receiver_ready = false;
+				ep->receiver_ready = false;
 
 				return err;
 			}
@@ -3171,6 +3179,7 @@ static uint8_t unicast_client_ase_read_func(struct bt_conn *conn, uint8_t err,
 
 	unicast_client_ep_set_status(ep, buf);
 	unicast_client_ep_subscribe(conn, ep);
+	reset_att_buf(client);
 
 	endpoint_cb(conn, ep);
 
@@ -3216,9 +3225,6 @@ static uint8_t unicast_client_ase_discover_cb(struct bt_conn *conn,
 
 	LOG_DBG("conn %p attr %p handle 0x%04x dir %s", conn, attr, value_handle,
 		bt_audio_dir_str(client->dir));
-
-	/* Reset to use for long read */
-	reset_att_buf(client);
 
 	client->read_params.func = unicast_client_ase_read_func;
 	client->read_params.handle_count = 1U;
@@ -3841,6 +3847,8 @@ static uint8_t unicast_client_read_func(struct bt_conn *conn, uint8_t err,
 
 		pac_record_cb(conn, &codec);
 	}
+
+	reset_att_buf(client);
 
 	if (i != rsp->num_pac) {
 		LOG_DBG("Failed to process all PAC records (%u/%u)", i, rsp->num_pac);
