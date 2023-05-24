@@ -26,7 +26,7 @@ typedef struct event_channel_handle evtchn_handle_t;
 int evtchn_status(evtchn_status_t *status);
 int evtchn_close(evtchn_port_t port);
 int evtchn_set_priority(evtchn_port_t port, uint32_t priority);
-void notify_evtchn(evtchn_port_t port);
+int notify_evtchn(evtchn_port_t port);
 
 /*
  * Allocate event-channel between caller and remote domain
