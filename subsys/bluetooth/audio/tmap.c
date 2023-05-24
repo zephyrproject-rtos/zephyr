@@ -96,7 +96,7 @@ static uint8_t discover_func(struct bt_conn *conn, const struct bt_gatt_attr *at
 	if (!bt_uuid_cmp(discover_params[conn_id].uuid, BT_UUID_TMAS)) {
 		LOG_DBG("Discovered TMAS\n");
 		tmas_found = true;
-		memcpy(&uuid[conn_id], BT_UUID_GATT_TMAPR, sizeof(uuid));
+		memcpy(&uuid[conn_id], BT_UUID_GATT_TMAPR, sizeof(uuid[conn_id]));
 		discover_params[conn_id].uuid = &uuid[conn_id].uuid;
 		discover_params[conn_id].start_handle = attr->handle + 1;
 		discover_params[conn_id].type = BT_GATT_DISCOVER_CHARACTERISTIC;
@@ -174,7 +174,7 @@ int bt_tmap_discover(struct bt_conn *conn, struct bt_tmap_cb *tmap_cb)
 
 	cb = tmap_cb;
 
-	memcpy(&uuid[conn_id], BT_UUID_TMAS, sizeof(uuid));
+	memcpy(&uuid[conn_id], BT_UUID_TMAS, sizeof(uuid[conn_id]));
 	discover_params[conn_id].uuid = &uuid[conn_id].uuid;
 	discover_params[conn_id].func = discover_func;
 	discover_params[conn_id].start_handle = BT_ATT_FIRST_ATTRIBUTE_HANDLE;
