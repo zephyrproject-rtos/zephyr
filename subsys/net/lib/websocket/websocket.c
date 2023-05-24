@@ -862,11 +862,69 @@ static int websocket_parse(struct websocket_context *ctx, struct websocket_buffe
 	return parsed_count;
 }
 
+#if !defined(CONFIG_NET_TEST)
+static int wait_rx(int sock, int timeout)
+{
+	struct zsock_pollfd fds = {
+		.fd = sock,
+		.events = ZSOCK_POLLIN,
+	};
+	int ret;
+
+	ret = zsock_poll(&fds, 1, timeout);
+	if (ret < 0) {
+		return ret;
+	}
+
+	if (ret == 0) {
+		/* Timeout */
+		return -EAGAIN;
+	}
+
+	if (fds.revents & ZSOCK_POLLNVAL) {
+		return -EBADF;
+	}
+
+	if (fds.revents & ZSOCK_POLLERR) {
+		return -EIO;
+	}
+
+	return 0;
+}
+
+static void timeout_recalc(uint64_t end, k_timeout_t *timeout)
+{
+	if (!K_TIMEOUT_EQ(*timeout, K_NO_WAIT) &&
+	    !K_TIMEOUT_EQ(*timeout, K_FOREVER)) {
+		int64_t remaining = end - sys_clock_tick_get();
+
+		if (remaining <= 0) {
+			*timeout = K_NO_WAIT;
+		} else {
+			*timeout = Z_TIMEOUT_TICKS(remaining);
+		}
+	}
+}
+
+static int timeout_to_ms(k_timeout_t *timeout)
+{
+	if (K_TIMEOUT_EQ(*timeout, K_NO_WAIT)) {
+		return 0;
+	} else if (K_TIMEOUT_EQ(*timeout, K_FOREVER)) {
+		return SYS_FOREVER_MS;
+	} else {
+		return k_ticks_to_ms_floor32(timeout->ticks);
+	}
+}
+
+#endif /* !defined(CONFIG_NET_TEST) */
+
 int websocket_recv_msg(int ws_sock, uint8_t *buf, size_t buf_len,
 		       uint32_t *message_type, uint64_t *remaining, int32_t timeout)
 {
 	struct websocket_context *ctx;
 	int ret;
+	uint64_t end;
 	k_timeout_t tout = K_FOREVER;
 	struct websocket_buffer payload = {.buf = buf, .size = buf_len, .count = 0};
 
@@ -877,6 +935,8 @@ int websocket_recv_msg(int ws_sock, uint8_t *buf, size_t buf_len,
 	if ((buf == NULL) || (buf_len == 0)) {
 		return -EINVAL;
 	}
+
+	end = sys_clock_timeout_end_calc(tout);
 
 #if defined(CONFIG_NET_TEST)
 	struct test_data *test_data = z_get_fd_obj(ws_sock, NULL, 0);
@@ -912,16 +972,22 @@ int websocket_recv_msg(int ws_sock, uint8_t *buf, size_t buf_len,
 				ret = input_len;
 			} else {
 				/* emulate timeout */
-				errno = EAGAIN;
-				ret = -1;
+				ret = -EAGAIN;
 			}
 #else
-			ret = recv(ctx->real_sock, ctx->recv_buf.buf, ctx->recv_buf.size,
-				   K_TIMEOUT_EQ(tout, K_NO_WAIT) ? MSG_DONTWAIT : 0);
+			timeout_recalc(end, &tout);
+
+			ret = wait_rx(ctx->real_sock, timeout_to_ms(&tout));
+			if (ret == 0) {
+				ret = recv(ctx->real_sock, ctx->recv_buf.buf,
+					   ctx->recv_buf.size, MSG_DONTWAIT);
+				if (ret < 0) {
+					ret = -errno;
+				}
+			}
 #endif /* CONFIG_NET_TEST */
 
 			if (ret < 0) {
-				ret = -errno;
 				if ((ret == -EAGAIN) && (payload.count > 0)) {
 					/* go to unmasking */
 					break;
