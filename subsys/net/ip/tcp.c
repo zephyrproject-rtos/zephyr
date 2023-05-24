@@ -497,9 +497,7 @@ static int tcp_conn_close(struct tcp *conn, int status)
 			/* Make sure the connect_cb is only called once. */
 			conn->connect_cb = NULL;
 		}
-	}
-
-	if (conn->context->recv_cb) {
+	} else if (conn->context->recv_cb) {
 		conn->context->recv_cb(conn->context, NULL, NULL, NULL,
 				       status, conn->recv_user_data);
 	}
