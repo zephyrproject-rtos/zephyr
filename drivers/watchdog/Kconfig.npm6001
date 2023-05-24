@@ -6,13 +6,13 @@ config WDT_NPM6001
 	default y
 	depends on DT_HAS_NORDIC_NPM6001_WDT_ENABLED
 	select I2C
+	select MFD
 	help
 	  Enable nPM6001 Watchdog driver
 
 config WDT_NPM6001_INIT_PRIORITY
 	int "nPM6001 Watchdog driver initialization priority"
 	depends on WDT_NPM6001
-	default 60
+	default 65
 	help
-	  Initialization priority for the nPM6001 Watchdog driver. It must be
-	  greater than the I2C controller init priority.
+	  Initialization priority for the nPM6001 Watchdog driver.
