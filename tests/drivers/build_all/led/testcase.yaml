@@ -5,3 +5,5 @@ tests:
     tags:
       - drivers
       - led
+    integration_platforms:
+      - native_posix

@@ -3,3 +3,5 @@ tests:
     tags:
       - benchmark
       - rbtree
+    integration_platforms:
+      - native_posix
