@@ -9,7 +9,6 @@ menu "L2CAP Options"
 config BT_L2CAP_TX_BUF_COUNT
 	int "Number of L2CAP TX buffers"
 	default NET_BUF_TX_COUNT if NET_L2_BT
-	default 10 if BT_MCS
 	default BT_BUF_ACL_TX_COUNT
 	range 2 255
 	help
