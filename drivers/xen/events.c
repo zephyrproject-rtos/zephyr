@@ -197,7 +197,7 @@ int unmask_event_channel(evtchn_port_t port)
 	return 0;
 }
 
-static void clear_event_channel(evtchn_port_t port)
+void clear_event_channel(evtchn_port_t port)
 {
 	shared_info_t *s = HYPERVISOR_shared_info;
 
