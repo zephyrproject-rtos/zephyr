@@ -45,10 +45,34 @@ Zephyr offers a large and ever growing number of features including:
 **Reusable, extensible framework**
   Zephyr offers a number of familiar features for development:
 
+  * *Project-specific feature-based configuration management*
+
+    built around Kconfig.  For describing which high-level features to build
+    into a specific product.
+
   * *Board-specific hardware descriptions*
 
     built around :ref:`devicetree <dt-guide>` to describe hardware.
     Information from devicetree is used to create the application image.
+
+  * *Test framework, test runner, and code coverage tools*
+
+    to verify only the specified functionality exists in the code-under-test.
+
+  * *Extenensible, modular workspace*
+
+    to support integration of non-child source repositories as well as
+    Git submodules into the ecosystem.
+
+  * *Extensible documentation*
+
+    to capture all the content in the workspace.
+
+  * *Generated linker directives and system interfaces*
+
+  * *Extensible build system*
+
+    for integration of modules using other tools to build libraries.
 
   * *Highly configurable / Modular for flexibility*
 
