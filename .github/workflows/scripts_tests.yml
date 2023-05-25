@@ -34,6 +34,17 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
 
+      - name: Rebase
+        continue-on-error: true
+        env:
+          BASE_REF: ${{ github.base_ref }}
+          PR_HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          git config --global user.email "actions@zephyrproject.org"
+          git config --global user.name "Github Actions"
+          git rebase origin/${BASE_REF}
+          git log --graph --oneline HEAD...${PR_HEAD}
+
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v4
         with:
