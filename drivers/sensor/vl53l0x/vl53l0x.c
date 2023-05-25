@@ -15,6 +15,7 @@
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/init.h>
 #include <zephyr/drivers/gpio.h>
+#include <zephyr/pm/device.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/types.h>
 #include <zephyr/device.h>
@@ -302,6 +303,36 @@ static const struct sensor_driver_api vl53l0x_api_funcs = {
 	.channel_get = vl53l0x_channel_get,
 };
 
+#ifdef CONFIG_PM_DEVICE
+static int vl53l0x_pm_action(const struct device *dev,
+			     enum pm_device_action action)
+{
+	const struct vl53l0x_config *const config = dev->config;
+	int ret;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		ret = gpio_pin_set_dt(&config->xshut, 0);
+		if (ret < 0) {
+			LOG_ERR("[%s] XSHUT pin inactive", dev->name);
+			return ret;
+		}
+		break;
+	case PM_DEVICE_ACTION_SUSPEND:
+		ret = gpio_pin_set_dt(&config->xshut, 1);
+		if (ret < 0) {
+			LOG_ERR("[%s] XSHUT pin active", dev->name);
+			return ret;
+		}
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+#endif
+
 static int vl53l0x_init(const struct device *dev)
 {
 	int r;
@@ -314,16 +345,9 @@ static int vl53l0x_init(const struct device *dev)
 	drv_data->vl53l0x.I2cDevAddr = VL53L0X_INITIAL_ADDR;
 	drv_data->vl53l0x.i2c = config->i2c.bus;
 
-#ifdef CONFIG_VL53L0X_RECONFIGURE_ADDRESS
-	if (!config->xshut.port) {
+#if defined(CONFIG_VL53L0X_RECONFIGURE_ADDRESS) || defined(CONFIG_PM_DEVICE)
+	if (config->xshut.port == NULL) {
 		LOG_ERR("[%s] Missing XSHUT gpio spec", dev->name);
-		return -ENOTSUP;
-	}
-#else
-	if (config->i2c.addr != VL53L0X_INITIAL_ADDR) {
-		LOG_ERR("[%s] Invalid device address (should be 0x%X or "
-			"CONFIG_VL53L0X_RECONFIGURE_ADDRESS should be enabled)",
-			dev->name, VL53L0X_INITIAL_ADDR);
 		return -ENOTSUP;
 	}
 #endif
@@ -340,6 +364,13 @@ static int vl53l0x_init(const struct device *dev)
 	}
 	LOG_DBG("[%s] Shutdown", dev->name);
 #else
+	if (config->i2c.addr != VL53L0X_INITIAL_ADDR) {
+		LOG_ERR("[%s] Invalid device address (should be 0x%X or "
+			"CONFIG_VL53L0X_RECONFIGURE_ADDRESS should be enabled)",
+			dev->name, VL53L0X_INITIAL_ADDR);
+		return -ENOTSUP;
+	}
+
 	r = vl53l0x_start(dev);
 	if (r) {
 		return r;
@@ -358,7 +389,10 @@ static int vl53l0x_init(const struct device *dev)
 									 \
 	static struct vl53l0x_data vl53l0x_##inst##_driver;		 \
 									 \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, vl53l0x_init, NULL,		 \
+	PM_DEVICE_DT_INST_DEFINE(inst, vl53l0x_pm_action);		 \
+									 \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, vl53l0x_init,		 \
+			      PM_DEVICE_DT_INST_GET(inst),		 \
 			      &vl53l0x_##inst##_driver,			 \
 			      &vl53l0x_##inst##_config,			 \
 			      POST_KERNEL,				 \
