@@ -714,11 +714,6 @@ struct _static_thread_data {
  * affect anything in the OS per se, but consider it bad practice.
  * Use a SYS_INIT() callback if you need to run code before entrance
  * to the application main().
- *
- * @internal It has been observed that the x86 compiler by default aligns
- * these _static_thread_data structures to 32-byte boundaries, thereby
- * wasting space. To work around this, force a 4-byte alignment.
- *
  */
 #define K_THREAD_DEFINE(name, stack_size,                                \
 			entry, p1, p2, p3,                               \
