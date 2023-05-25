@@ -20,9 +20,10 @@
 #elif defined(CONFIG_SOC_SERIES_STM32F3X)
 #include <zephyr/dt-bindings/clock/stm32f3_clock.h>
 #elif defined(CONFIG_SOC_SERIES_STM32F2X) || \
-	defined(CONFIG_SOC_SERIES_STM32F4X) || \
-	defined(CONFIG_SOC_SERIES_STM32F7X)
+	defined(CONFIG_SOC_SERIES_STM32F4X)
 #include <zephyr/dt-bindings/clock/stm32f4_clock.h>
+#elif defined(CONFIG_SOC_SERIES_STM32F7X)
+#include <zephyr/dt-bindings/clock/stm32f7_clock.h>
 #elif defined(CONFIG_SOC_SERIES_STM32G0X)
 #include <zephyr/dt-bindings/clock/stm32g0_clock.h>
 #elif defined(CONFIG_SOC_SERIES_STM32G4X)
