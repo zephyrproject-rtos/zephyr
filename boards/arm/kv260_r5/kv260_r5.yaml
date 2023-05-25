@@ -1,4 +1,4 @@
-identifier: xilinx_kv260_r5
+identifier: kv260_r5
 name: Xilinx KV260 Development board for Cortex-R5
 arch: arm
 toolchain:

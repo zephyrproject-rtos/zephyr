@@ -1,4 +1,4 @@
-.. _xilinx_kv260_starter_kit_r5:
+.. _kv260_r5:
 
 Xilinx KV260 Development Board RPU Cortex-R5
 ############################################
@@ -92,7 +92,7 @@ such as the hello world sample shown below:
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
    :host-os: unix
-   :board: xilinx_kv260_r5
+   :board: kv260_r5
    :goals: build
 
 Due to a hardware limitation, both Linux and Zephyr share the same UART
@@ -135,8 +135,8 @@ you should see the Zephyr application running:
 
 .. code-block:: console
 
-        *** Booting Zephyr OS build v2.2.0  ***
-        Hello World xilinx_kv260_r5!
+        *** Booting Zephyr OS build v3.4.0  ***
+        Hello World kv260_r5!
 
 References
 **********
