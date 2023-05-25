@@ -216,25 +216,28 @@ struct ll_conn_iso_stream *ll_conn_iso_stream_get_by_acl(struct ll_conn *conn, u
 
 		handle_iter = UINT16_MAX;
 
-		for (cis_idx = 0; cis_idx < cig->lll.num_cis; cis_idx++) {
+		/* Find next connected CIS in the group */
+		for (cis_idx = 0; cis_idx < CONFIG_BT_CTLR_CONN_ISO_STREAMS_PER_GROUP; cis_idx++) {
 			cis = ll_conn_iso_stream_get_by_group(cig, &handle_iter);
-			LL_ASSERT(cis);
+			if (cis) {
+				uint16_t cis_handle = cis->lll.handle;
 
-			uint16_t cis_handle = cis->lll.handle;
-
-			cis = ll_iso_stream_connected_get(cis_handle);
-			if (!cis) {
-				continue;
-			}
-
-			if (!cis_iter_start) {
-				/* Look for iterator start handle */
-				cis_iter_start = cis_handle == (*cis_iter);
-			} else if (cis->lll.acl_handle == conn->lll.handle) {
-				if (cis_iter) {
-					(*cis_iter) = cis_handle;
+				cis = ll_iso_stream_connected_get(cis_handle);
+				if (!cis) {
+					/* CIS is not connected */
+					continue;
 				}
-				return cis;
+
+				if (!cis_iter_start) {
+					/* Look for iterator start handle */
+					cis_iter_start = cis_handle == (*cis_iter);
+				} else if (cis->lll.acl_handle == conn->lll.handle) {
+					if (cis_iter) {
+						(*cis_iter) = cis_handle;
+					}
+
+					return cis;
+				}
 			}
 		}
 	}
