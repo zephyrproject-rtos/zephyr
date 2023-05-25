@@ -16,7 +16,6 @@
 #include <zephyr/bluetooth/audio/bap_lc3_preset.h>
 #include <zephyr/bluetooth/audio/cap.h>
 #include <zephyr/bluetooth/audio/bap.h>
-#include "common.h"
 
 static struct k_work_delayable audio_send_work;
 
@@ -207,84 +206,69 @@ static void print_codec_capabilities(const struct bt_codec *codec)
 	}
 }
 
-static void print_remote_codec(const struct bt_codec *codec_capabilities, int index,
-			       enum bt_audio_dir dir)
+static void print_remote_codec(const struct bt_codec *codec_capabilities, enum bt_audio_dir dir)
 {
-	printk("#%u: codec_capabilities %p dir 0x%02x\n", index, codec_capabilities, dir);
+	printk("codec_capabilities %p dir 0x%02x\n", codec_capabilities, dir);
 	print_codec_capabilities(codec_capabilities);
 }
 
-static void add_remote_sink(struct bt_bap_ep *ep, uint8_t index)
+static void add_remote_sink(struct bt_bap_ep *ep)
 {
-	printk("Sink #%u: ep %p\n", index, ep);
-
-	if (index > ARRAY_SIZE(unicast_sink_eps)) {
-		printk("Could not add sink ep[%u]\n", index);
-		return;
-	}
-
-	unicast_sink_eps[index] = ep;
-}
-
-static void add_remote_source(struct bt_bap_ep *ep, uint8_t index)
-{
-	printk("Source #%u: ep %p\n", index, ep);
-
-	if (index > ARRAY_SIZE(unicast_source_eps)) {
-		printk("Could not add source ep[%u]\n", index);
-		return;
-	}
-
-	unicast_source_eps[index] = ep;
-}
-
-static void discover_sink_cb(struct bt_conn *conn, struct bt_codec *codec, struct bt_bap_ep *ep,
-			     struct bt_bap_unicast_client_discover_params *params)
-{
-	static bool codec_found;
-	static bool endpoint_found;
-
-	if (params->err != 0) {
-		printk("Discovery failed: %d\n", params->err);
-		return;
-	}
-
-	if (codec != NULL) {
-		print_remote_codec(codec, params->num_caps, params->dir);
-		codec_found = true;
-		return;
-	}
-
-	if (ep != NULL) {
-		if (params->dir == BT_AUDIO_DIR_SINK) {
-			add_remote_sink(ep, params->num_eps);
-			endpoint_found = true;
-		} else {
-			printk("Invalid param dir: %u\n", params->dir);
+	for (size_t i = 0U; i < ARRAY_SIZE(unicast_sink_eps); i++) {
+		if (unicast_sink_eps[i] == NULL) {
+			printk("Sink #%zu: ep %p\n", i, ep);
+			unicast_sink_eps[i] = ep;
+			return;
 		}
+	}
+}
+
+static void add_remote_source(struct bt_bap_ep *ep)
+{
+	for (size_t i = 0U; i < ARRAY_SIZE(unicast_source_eps); i++) {
+		if (unicast_source_eps[i] == NULL) {
+			printk("Source #%zu: ep %p\n", i, ep);
+			unicast_source_eps[i] = ep;
+			return;
+		}
+	}
+}
+
+static void discover_cb(struct bt_conn *conn, int err, enum bt_audio_dir dir)
+{
+	if (err != 0) {
+		printk("Discovery failed: %d\n", err);
 		return;
 	}
 
-	printk("Sink discover complete\n");
-
-	(void)memset(params, 0, sizeof(*params));
-
-	if (endpoint_found && codec_found) {
+	if (dir == BT_AUDIO_DIR_SINK) {
+		printk("Sink discover complete\n");
 		k_sem_give(&sem_discover_sink);
-	} else {
-		printk("Did not discover endpoint and codec\n");
+	} else if (dir == BT_AUDIO_DIR_SOURCE) {
+		printk("Discover sources complete: err %d\n", err);
+		k_sem_give(&sem_discover_source);
+	}
+}
+
+static void pac_record_cb(struct bt_conn *conn, enum bt_audio_dir dir, const struct bt_codec *codec)
+{
+	print_remote_codec(codec, dir);
+}
+
+static void endpoint_cb(struct bt_conn *conn, enum bt_audio_dir dir, struct bt_bap_ep *ep)
+{
+	if (dir == BT_AUDIO_DIR_SOURCE) {
+		add_remote_source(ep);
+	} else if (dir == BT_AUDIO_DIR_SINK) {
+		add_remote_sink(ep);
 	}
 }
 
 static int discover_sinks(struct bt_conn *conn)
 {
-	int err = 0;
-	static struct bt_bap_unicast_client_discover_params params;
+	int err;
 
-	params.func = discover_sink_cb;
-	params.dir = BT_AUDIO_DIR_SINK;
-
-	err = bt_bap_unicast_client_discover(conn, &params);
+	err = bt_bap_unicast_client_discover(conn, BT_AUDIO_DIR_SINK);
 	if (err != 0) {
 		printk("Failed to discover sink: %d\n", err);
 		return err;
@@ -299,43 +283,11 @@ static int discover_sinks(struct bt_conn *conn)
 	return err;
 }
 
-static void discover_sources_cb(struct bt_conn *conn, struct bt_codec *codec, struct bt_bap_ep *ep,
-				struct bt_bap_unicast_client_discover_params *params)
-{
-	if (params->err != 0 && params->err != BT_ATT_ERR_ATTRIBUTE_NOT_FOUND) {
-		printk("Discovery failed: %d\n", params->err);
-		return;
-	}
-
-	if (codec != NULL) {
-		print_remote_codec(codec, params->num_caps, params->dir);
-		return;
-	}
-
-	if (ep != NULL) {
-		add_remote_source(ep, params->num_eps);
-		return;
-	}
-
-	if (params->err == BT_ATT_ERR_ATTRIBUTE_NOT_FOUND) {
-		printk("Discover sinks completed without finding any source ASEs\n");
-	} else {
-		printk("Discover sources complete: err %d\n", params->err);
-	}
-
-	(void)memset(params, 0, sizeof(*params));
-	k_sem_give(&sem_discover_source);
-}
-
 static int discover_sources(struct bt_conn *conn)
 {
-	static struct bt_bap_unicast_client_discover_params params;
 	int err;
 
-	params.func = discover_sources_cb;
-	params.dir = BT_AUDIO_DIR_SOURCE;
-
-	err = bt_bap_unicast_client_discover(conn, &params);
+	err = bt_bap_unicast_client_discover(conn, BT_AUDIO_DIR_SOURCE);
 	if (err != 0) {
 		printk("Failed to discover sources: %d\n", err);
 		return err;
@@ -349,6 +301,12 @@ static int discover_sources(struct bt_conn *conn)
 
 	return 0;
 }
+
+static struct bt_bap_unicast_client_cb unicast_client_cbs = {
+	.discover = discover_cb,
+	.pac_record = pac_record_cb,
+	.endpoint = endpoint_cb,
+};
 
 static int unicast_group_create(struct bt_bap_unicast_group **out_unicast_group)
 {
@@ -455,6 +413,12 @@ int cap_initiator_init(void)
 		err = bt_cap_initiator_register_cb(&cap_cb);
 		if (err != 0) {
 			printk("Failed to register CAP callbacks (err %d)\n", err);
+			return err;
+		}
+
+		err = bt_bap_unicast_client_register_cb(&unicast_client_cbs);
+		if (err != 0) {
+			printk("Failed to register BAP unicast client callbacks (err %d)\n", err);
 			return err;
 		}
 

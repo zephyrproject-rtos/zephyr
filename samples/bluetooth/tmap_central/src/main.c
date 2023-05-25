@@ -262,47 +262,47 @@ static int scan_and_connect(void)
 	return 0;
 }
 
-void main(void)
+int main(void)
 {
 	int err;
 
 	err = init();
 	if (err != 0) {
-		return;
+		return err;
 	}
 
 	printk("Initializing TMAP and setting role\n");
 	/* Initialize TMAP */
 	err = bt_tmap_register(BT_TMAP_ROLE_CG | BT_TMAP_ROLE_UMS);
 	if (err != 0) {
-		return;
+		return err;
 	}
 
 	/* Initialize CAP Initiator */
 	err = cap_initiator_init();
 	if (err != 0) {
-		return;
+		return err;
 	}
 	printk("CAP initialized\n");
 
 	/* Initialize VCP Volume Controller */
 	err = vcp_vol_ctlr_init();
 	if (err != 0) {
-		return;
+		return err;
 	}
 	printk("VCP initialized\n");
 
 	/* Initialize MCP Server */
 	err = mcp_server_init();
 	if (err != 0) {
-		return;
+		return err;
 	}
 	printk("MCP initialized\n");
 
 	/* Initialize CCP Server */
 	err = ccp_server_init();
 	if (err != 0) {
-		return;
+		return err;
 	}
 	printk("CCP initialized\n");
 
@@ -310,12 +310,12 @@ void main(void)
 	bt_le_scan_cb_register(&scan_callbacks);
 	err = scan_and_connect();
 	if (err != 0) {
-		return;
+		return err;
 	}
 
 	err = bt_tmap_discover(default_conn, &tmap_callbacks);
 	if (err != 0) {
-		return;
+		return err;
 	}
 
 	k_sem_take(&sem_discovery_done, K_FOREVER);
@@ -329,6 +329,8 @@ void main(void)
 	/* Discover and configure unicast streams */
 	err = cap_initiator_setup(default_conn);
 	if (err != 0) {
-		return;
+		return err;
 	}
+
+	return 0;
 }
