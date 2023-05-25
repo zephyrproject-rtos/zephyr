@@ -171,11 +171,10 @@ static int vl53l0x_start(const struct device *dev)
 
 	LOG_DBG("[%s] Starting", dev->name);
 
-	/* Pull XSHUT high to start the sensor */
 	if (config->xshut.port) {
-		r = gpio_pin_set_dt(&config->xshut, 1);
+		r = gpio_pin_configure_dt(&config->xshut, GPIO_OUTPUT_INACTIVE);
 		if (r < 0) {
-			LOG_ERR("[%s] Unable to set XSHUT gpio (error %d)",
+			LOG_ERR("[%s] Unable to inactivate XSHUT: %d",
 				dev->name, r);
 			return -EIO;
 		}
@@ -326,17 +325,12 @@ static int vl53l0x_init(const struct device *dev)
 	}
 #endif
 
-	if (config->xshut.port) {
-		r = gpio_pin_configure_dt(&config->xshut, GPIO_OUTPUT);
-		if (r < 0) {
-			LOG_ERR("[%s] Unable to configure GPIO as output",
-				dev->name);
-		}
-	}
-
 #ifdef CONFIG_VL53L0X_RECONFIGURE_ADDRESS
-	/* Pull XSHUT low to shut down the sensor for now */
-	r = gpio_pin_set_dt(&config->xshut, 0);
+	/*
+	 * Shutdown all vl53l0x sensors so at each sensor's 1st fetch call
+	 * they can be enabled one at a time and programmed with their address.
+	 */
+	r = gpio_pin_configure_dt(&config->xshut, GPIO_OUTPUT_ACTIVE);
 	if (r < 0) {
 		LOG_ERR("[%s] Unable to shutdown sensor", dev->name);
 		return -EIO;
