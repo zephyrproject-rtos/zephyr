@@ -20,7 +20,7 @@
 #define CALLER_ID "friend"
 
 static uint8_t new_call_index;
-static char *remote_uri;
+static char remote_uri[CONFIG_BT_TBS_MAX_URI_LENGTH];
 
 static K_SEM_DEFINE(sem_discovery_done, 0, 1);
 
@@ -77,7 +77,7 @@ static void terminate_call_cb(struct bt_conn *conn, int err,
 static void read_uri_schemes_string_cb(struct bt_conn *conn, int err,
 				       uint8_t inst_index, const char *value)
 {
-	char *str_aux;
+	size_t i;
 
 	if (inst_index != BT_TBS_GTBS_INDEX) {
 		printk("Unexpected %s for instance %u\n", __func__, inst_index);
@@ -89,9 +89,25 @@ static void read_uri_schemes_string_cb(struct bt_conn *conn, int err,
 		return;
 	}
 
-	/* Save first remote URI */
-	str_aux = (char *)value;
-	remote_uri = strtok(str_aux, ",");
+	/* Save first remote URI
+	 *
+	 * First search for the first comma (separator), and use that to determine the end of the
+	 * first (or only) URI. Then use that length to copy the URI to `remote_uri` for later use.
+	 */
+	for (i = 0U; i < strlen(value); i++) {
+		if (value[i] == ',') {
+			break;
+		}
+	}
+
+	if (i > sizeof(remote_uri)) {
+		printk("Cannot store URI of length %zu: %s\n", i, value);
+		return;
+	}
+
+	strncpy(remote_uri, value, i);
+	remote_uri[i] = '\0';
+
 	printk("CCP: Discovered remote URI: %s\n", remote_uri);
 	k_sem_give(&sem_discovery_done);
 }
