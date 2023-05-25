@@ -92,6 +92,11 @@ set(PARSE_SYSCALLS_TARGET      parse_syscalls_target)
 define_property(GLOBAL PROPERTY PROPERTY_OUTPUT_FORMAT BRIEF_DOCS " " FULL_DOCS " ")
 set_property(   GLOBAL PROPERTY PROPERTY_OUTPUT_FORMAT elf32-little${ARCH}) # BFD format
 
+# Contains the list of files with syscall function prototypes.
+add_library(syscalls_interface INTERFACE)
+set(syscalls_file_list_output
+    ${CMAKE_CURRENT_BINARY_DIR}/misc/generated/syscalls_file_list.txt)
+
 # "zephyr_interface" is a source-less library that encapsulates all the global
 # compiler options needed by all source files. All zephyr libraries,
 # including the library named "zephyr" link with this library to
@@ -728,13 +733,16 @@ add_custom_command(
   COMMAND
   ${PYTHON_EXECUTABLE}
   ${ZEPHYR_BASE}/scripts/build/parse_syscalls.py
-   --include          ${ZEPHYR_BASE}/include        # Read files from this dir
-   --include          ${ZEPHYR_BASE}/drivers        # For net sockets
-   --include          ${ZEPHYR_BASE}/subsys/net     # More net sockets
+  --scan             ${ZEPHYR_BASE}/include         # Read files from this dir
+  --scan             ${ZEPHYR_BASE}/drivers         # For net sockets
+  --scan             ${ZEPHYR_BASE}/subsys/net      # More net sockets
   ${parse_syscalls_include_args}                    # Read files from these dirs also
   --json-file        ${syscalls_json}               # Write this file
   --tag-struct-file  ${struct_tags_json}            # Write subsystem list to this file
+  --file-list        ${syscalls_file_list_output}
+  $<$<BOOL:${CONFIG_EMIT_ALL_SYSCALLS}>:--emit-all-syscalls>
   DEPENDS ${syscalls_subdirs_trigger} ${PARSE_SYSCALLS_HEADER_DEPENDS}
+          ${syscalls_file_list_output} ${syscalls_interface}
   )
 
 # Make sure Picolibc is built before the rest of the system; there's no explicit
@@ -849,6 +857,14 @@ add_custom_target(${OFFSETS_H_TARGET} DEPENDS ${OFFSETS_H_PATH})
 zephyr_get_include_directories_for_lang(C ZEPHYR_INCLUDES)
 
 add_subdirectory(kernel)
+
+get_property(
+  syscalls_file_list
+  TARGET syscalls_interface
+  PROPERTY INTERFACE_INCLUDE_DIRECTORIES
+)
+file(CONFIGURE OUTPUT ${syscalls_file_list_output}
+     CONTENT "@syscalls_file_list@" @ONLY)
 
 # Read list content
 get_property(ZEPHYR_LIBS_PROPERTY GLOBAL PROPERTY ZEPHYR_LIBS)
