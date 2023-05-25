@@ -5,3 +5,5 @@ tests:
       - hifive_unleashed
       - fvp_base_revc_2xaemv8a_smp_ns
     tags: zbus
+    integration_platforms:
+      - native_posix
