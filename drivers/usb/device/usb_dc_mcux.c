@@ -73,7 +73,7 @@ static void usb_isr_handler(void);
 /* We do not need a buffer for the write side on platforms that have USB RAM.
  * The SDK driver will copy the data buffer to be sent to USB RAM.
  */
-#ifdef FSL_FEATURE_USBHSD_USB_RAM_BASE_ADDRESS
+#ifdef CONFIG_USB_DC_NXP_LPCIP3511
 #define EP_BUF_NUMOF_BLOCKS	(NUM_OF_EP_MAX / 2)
 #else
 #define EP_BUF_NUMOF_BLOCKS	NUM_OF_EP_MAX
@@ -275,7 +275,7 @@ int usb_dc_ep_configure(const struct usb_dc_ep_cfg_data *const cfg)
 		LOG_WRN("Failed to un-initialize endpoint (status=%d)", (int)status);
 	}
 
-#ifdef FSL_FEATURE_USBHSD_USB_RAM_BASE_ADDRESS
+#ifdef CONFIG_USB_DC_NXP_LPCIP3511
 	/* Allocate buffers used during read operation */
 	if (USB_EP_DIR_IS_OUT(cfg->ep_addr)) {
 #endif
@@ -294,7 +294,7 @@ int usb_dc_ep_configure(const struct usb_dc_ep_cfg_data *const cfg)
 		}
 
 		memset(block->data, 0, cfg->ep_mps);
-#ifdef FSL_FEATURE_USBHSD_USB_RAM_BASE_ADDRESS
+#ifdef CONFIG_USB_DC_NXP_LPCIP3511
 	}
 #endif
 
@@ -520,7 +520,7 @@ int usb_dc_ep_write(const uint8_t ep, const uint8_t *const data,
 	 * as the SDK driver will copy the data into USB RAM,
 	 * if available.
 	 */
-#ifndef FSL_FEATURE_USBHSD_USB_RAM_BASE_ADDRESS
+#ifndef CONFIG_USB_DC_NXP_LPCIP3511
 	buffer = (uint8_t *)dev_state.eps[ep_abs_idx].block.data;
 
 	if (data_len > dev_state.eps[ep_abs_idx].ep_mps) {
