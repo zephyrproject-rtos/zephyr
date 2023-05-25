@@ -2,11 +2,11 @@
 
 .. _intel_adsp_generic:
 
-Intel ADSP CAVS and ACE
+Intel ADSP cAVS and ACE
 #######################
 
 Intel's Audio and Digital Signal Processing (ADSP) hardware offerings
-include the Converged Audio Video Sensing (CAVS) series and its successor,
+include the Converged Audio Voice Speech (cAVS) series and its successor,
 the Audio and Context Engine (ACE). These Xtensa-based ADSPs can be integrated
 into a variety of Intel products. The below table lists (some of) the Intel
 microprocessor(s) that each version of the Intel ADSP is compatible with.
@@ -14,11 +14,11 @@ microprocessor(s) that each version of the Intel ADSP is compatible with.
 +----------+-----------------------------+
 | ADSP     | Microprocessor              |
 +==========+=============================+
-| CAVS 1.5 | Apollo Lake                 |
+| cAVS 1.5 | Apollo Lake                 |
 +----------+-----------------------------+
-| CAVS 1.8 | Whiskey Lake                |
+| cAVS 1.8 | Whiskey Lake                |
 +----------+-----------------------------+
-| CAVS 2.5 | Tiger Lake                  |
+| cAVS 2.5 | Tiger Lake                  |
 +----------+-----------------------------+
 | ACE 1.5  | Meteor Lake                 |
 +----------+-----------------------------+
@@ -84,7 +84,7 @@ Xtensa Toolchain (Optional)
 ---------------------------
 
 The Zephyr SDK provides GCC-based toolchains necessary to build Zephyr for
-the CAVS and ACE boards. However, users seeking greater levels of optimization
+the cAVS and ACE boards. However, users seeking greater levels of optimization
 may desire to build with the proprietary Xtensa toolchain distributed by
 `Cadence`_ instead. The following instructions assume you have purchased and
 installed the toolchain(s) and core(s) for your board following their
@@ -101,7 +101,7 @@ Next, set the following environment variables:
    export TOOLCHAIN_VER=RG-2017.8-linux
    export XTENSA_CORE=cavs2x_LX6HiFi3_2017_8
 
-The bottom three variables are specific to each version of CAVS / ACE; refer to
+The bottom three variables are specific to each version of cAVS / ACE; refer to
 your board's documentation for their values.
 
 Programming and Debugging
@@ -136,20 +136,20 @@ key argument.
 
    west flash --context
 
-Remote Flashing to CAVS-based ADSP
+Remote Flashing to cAVS-based ADSP
 ----------------------------------
 
 As mentioned previously, the recommended way to run and monitor the output of
-Zephyr on CAVS boards is remotely. The Linux host on the main CPU may freeze up
+Zephyr on cAVS boards is remotely. The Linux host on the main CPU may freeze up
 and need to be restarted if a flash or runtime error occurs on the ADSP. From
 this point onward, we will refer to the board as the "remote host" and your
 development machine as the "local host".
 
-Copy the below scripts to the CAVS board.
+Copy the below scripts to the cAVS board.
 :zephyr_file:`soc/xtensa/intel_adsp/tools/remote-fw-service.py` will receive
 the binary sent over the network by West and invoke
 :zephyr_file:`soc/xtensa/intel_adsp/tools/cavstool.py` (referred to as the
-"CAVS tool"), which performs the flash and captures the log. Start
+"cAVS tool"), which performs the flash and captures the log. Start
 :file:`remote-fw-service.py`.
 
 .. code-block:: console
@@ -164,7 +164,7 @@ communicate. It forwards logs collected by :file:`cavstool.py` on port 9999
 (referred to as its "log port") and services requests on port 10000
 (its "requests port"). When you run West or Twister on your local host,
 it sends requests using the :zephyr_file:`soc/xtensa/intel_adsp/tools/cavstool_client.py`
-script (referred to as "CAVS tool client"). It also uses ports 9999 and 10000 on
+script (referred to as "cAVS tool client"). It also uses ports 9999 and 10000 on
 your local host, so be sure those ports are free.
 
 Flashing with West is simple.
@@ -216,10 +216,10 @@ arguments by passing the ``--context`` flag while flashing with West.
 
 Refer to :ref:`twister_script` for more information on hardware maps.
 
-Local Flashing to CAVS-based ADSP
+Local Flashing to cAVS-based ADSP
 ---------------------------------
 
-You can also directly flash the signed binary with the CAVS tool on the board.
+You can also directly flash the signed binary with the cAVS tool on the board.
 This may be useful for debugging.
 
 .. code-block:: console
