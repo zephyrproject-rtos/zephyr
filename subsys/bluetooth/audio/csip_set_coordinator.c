@@ -232,26 +232,26 @@ static void active_members_store_ordered(const struct bt_csip_set_coordinator_se
 		qsort(active.members, count, sizeof(members[0U]),
 		ascending ? member_rank_compare_asc : member_rank_compare_desc);
 
-		if (IS_ENABLED(CONFIG_ASSERT)) {
-			for (size_t i = 1U; i < count; i++) {
-				const struct bt_csip_set_coordinator_svc_inst *svc_inst_1 =
-					lookup_instance_by_set_info(active.members[i - 1U], info);
-				const struct bt_csip_set_coordinator_svc_inst *svc_inst_2 =
-					lookup_instance_by_set_info(active.members[i], info);
-				const uint8_t rank_1 = svc_inst_1->set_info->rank;
-				const uint8_t rank_2 = svc_inst_2->set_info->rank;
+#if defined(CONFIG_ASSERT)
+		for (size_t i = 1U; i < count; i++) {
+			const struct bt_csip_set_coordinator_svc_inst *svc_inst_1 =
+				lookup_instance_by_set_info(active.members[i - 1U], info);
+			const struct bt_csip_set_coordinator_svc_inst *svc_inst_2 =
+				lookup_instance_by_set_info(active.members[i], info);
+			const uint8_t rank_1 = svc_inst_1->set_info->rank;
+			const uint8_t rank_2 = svc_inst_2->set_info->rank;
 
-				if (ascending) {
-					__ASSERT(rank_1 <= rank_2,
-						"Members not sorted by ascending rank %u - %u",
-						rank_1, rank_2);
-				} else {
-					__ASSERT(rank_1 >= rank_2,
-						"Members not sorted by descending rank %u - %u",
-						rank_1, rank_2);
-				}
+			if (ascending) {
+				__ASSERT(rank_1 <= rank_2,
+					 "Members not sorted by ascending rank %u - %u", rank_1,
+					 rank_2);
+			} else {
+				__ASSERT(rank_1 >= rank_2,
+					 "Members not sorted by descending rank %u - %u", rank_1,
+					 rank_2);
 			}
 		}
+#endif /* CONFIG_ASSERT */
 	}
 }
 
