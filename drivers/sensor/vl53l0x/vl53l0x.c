@@ -40,6 +40,9 @@ LOG_MODULE_REGISTER(VL53L0X, CONFIG_SENSOR_LOG_LEVEL);
 #define VL53L0X_SETUP_PRE_RANGE_VCSEL_PERIOD    18
 #define VL53L0X_SETUP_FINAL_RANGE_VCSEL_PERIOD  14
 
+/* tBOOT (1.2ms max.) VL53L0X firmware boot period */
+#define T_BOOT K_USEC(1200)
+
 struct vl53l0x_config {
 	struct i2c_dt_spec i2c;
 	struct gpio_dt_spec xshut;
@@ -178,7 +181,7 @@ static int vl53l0x_start(const struct device *dev)
 				dev->name, r);
 			return -EIO;
 		}
-		k_sleep(K_MSEC(2));
+		k_sleep(T_BOOT);
 	}
 
 #ifdef CONFIG_VL53L0X_RECONFIGURE_ADDRESS
@@ -192,7 +195,7 @@ static int vl53l0x_start(const struct device *dev)
 
 		drv_data->vl53l0x.I2cDevAddr = config->i2c.addr;
 		LOG_DBG("[%s] I2C address reconfigured", dev->name);
-		k_sleep(K_MSEC(2));
+		k_sleep(T_BOOT);
 	}
 #endif
 
