@@ -193,7 +193,7 @@ static void media_play_timeout(struct k_work *work)
 	}
 }
 
-void main(void)
+int main(void)
 {
 	int err;
 	struct bt_le_ext_adv *adv;
@@ -201,7 +201,7 @@ void main(void)
 	err = bt_enable(NULL);
 	if (err != 0) {
 		printk("Bluetooth init failed (err %d)\n", err);
-		return;
+		return err;
 	}
 
 	printk("Bluetooth initialized\n");
@@ -212,51 +212,51 @@ void main(void)
 	printk("Initializing TMAP and setting role\n");
 	err = bt_tmap_register(BT_TMAP_ROLE_CT | BT_TMAP_ROLE_UMR);
 	if (err != 0) {
-		return;
+		return err;
 	}
 
 	if (IS_ENABLED(CONFIG_TMAP_PERIPHERAL_DUO)) {
 		err = csip_set_member_init();
 		if (err != 0) {
 			printk("CSIP Set Member init failed (err %d)\n", err);
-			return;
+			return err;
 		}
 
 		err = csip_generate_rsi(csis_rsi_addata);
 		if (err != 0) {
 			printk("Failed to generate RSI (err %d)\n", err);
-			return;
+			return err;
 		}
 	}
 
 	err = vcp_vol_renderer_init();
 	if (err != 0) {
-		return;
+		return err;
 	}
 	printk("VCP initialized\n");
 
 	err = bap_unicast_sr_init();
 	if (err != 0) {
-		return;
+		return err;
 	}
 	printk("BAP initialized\n");
 
 	err = bt_le_ext_adv_create(BT_LE_EXT_ADV_CONN_NAME, &adv_cb, &adv);
 	if (err) {
 		printk("Failed to create advertising set (err %d)\n", err);
-		return;
+		return err;
 	}
 
 	err = bt_le_ext_adv_set_data(adv, ad, ARRAY_SIZE(ad), NULL, 0);
 	if (err) {
 		printk("Failed to set advertising data (err %d)\n", err);
-		return;
+		return err;
 	}
 
 	err = bt_le_ext_adv_start(adv, BT_LE_EXT_ADV_START_DEFAULT);
 	if (err) {
 		printk("Failed to start advertising set (err %d)\n", err);
-		return;
+		return err;
 	}
 
 	printk("Advertising successfully started\n");
@@ -265,19 +265,19 @@ void main(void)
 
 	err = bt_tmap_discover(default_conn, &tmap_callbacks);
 	if (err != 0) {
-		return;
+		return err;
 	}
 	k_sem_take(&sem_discovery_done, K_FOREVER);
 
 	err = ccp_call_ctrl_init(default_conn);
 	if (err != 0) {
-		return;
+		return err;
 	}
 	printk("CCP initialized\n");
 
 	err = mcp_ctlr_init(default_conn);
 	if (err != 0) {
-		return;
+		return err;
 	}
 	printk("MCP initialized\n");
 
@@ -305,4 +305,6 @@ void main(void)
 			printk("failed to take sem_disconnected (err %d)\n", err);
 		}
 	}
+
+	return 0;
 }
