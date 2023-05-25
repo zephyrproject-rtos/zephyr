@@ -738,6 +738,13 @@ config CHECK_INIT_PRIORITIES_FAIL_ON_WARNING
 	  devices depending on each other but initialized with the same
 	  priority.
 
+config EMIT_ALL_SYSCALLS
+	bool "Emit all possible syscalls in the tree"
+	help
+	  This tells the build system to emit all possible syscalls found
+	  in the tree, instead of only those syscalls associated with enabled
+	  drivers and subsystems.
+
 endmenu
 
 config DEPRECATED

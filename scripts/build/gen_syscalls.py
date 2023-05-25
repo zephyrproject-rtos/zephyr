@@ -419,22 +419,29 @@ def main():
     invocations = {}
     mrsh_defs = {}
     mrsh_includes = {}
-    ids = []
+    ids_emit = []
+    ids_not_emit = []
     table_entries = []
     handlers = []
+    emit_list = []
 
-    for match_group, fn in syscalls:
+    for match_group, fn, to_emit in syscalls:
         handler, inv, mrsh, sys_id, entry = analyze_fn(match_group, fn)
 
         if fn not in invocations:
             invocations[fn] = []
 
         invocations[fn].append(inv)
-        ids.append(sys_id)
-        table_entries.append(entry)
         handlers.append(handler)
 
-        if mrsh:
+        if to_emit:
+            ids_emit.append(sys_id)
+            table_entries.append(entry)
+            emit_list.append(handler)
+        else:
+            ids_not_emit.append(sys_id)
+
+        if mrsh and to_emit:
             syscall = typename_split(match_group[0])[1]
             mrsh_defs[syscall] = mrsh
             mrsh_includes[syscall] = "#include <syscalls/%s>" % fn
@@ -444,7 +451,7 @@ def main():
 
         weak_defines = "".join([weak_template % name
                                 for name in handlers
-                                if not name in noweak])
+                                if not name in noweak and name in emit_list])
 
         # The "noweak" ones just get a regular declaration
         weak_defines += "\n".join(["extern uintptr_t %s(uintptr_t arg1, uintptr_t arg2, uintptr_t arg3, uintptr_t arg4, uintptr_t arg5, uintptr_t arg6, void *ssf);"
@@ -454,12 +461,22 @@ def main():
                                    ",\n\t".join(table_entries)))
 
     # Listing header emitted to stdout
-    ids.sort()
-    ids.extend(["K_SYSCALL_BAD", "K_SYSCALL_LIMIT"])
+    ids_emit.sort()
+    ids_emit.extend(["K_SYSCALL_BAD", "K_SYSCALL_LIMIT"])
 
     ids_as_defines = ""
-    for i, item in enumerate(ids):
+    for i, item in enumerate(ids_emit):
         ids_as_defines += "#define {} {}\n".format(item, i)
+
+    if ids_not_emit:
+        # There are syscalls that are not used in the image but
+        # their IDs are used in the generated stubs. So need to
+        # make them usable but outside the syscall ID range.
+        ids_as_defines += "\n\n/* Following syscalls are not used in image */\n"
+        ids_not_emit.sort()
+        num_emitted_ids = len(ids_emit)
+        for i, item in enumerate(ids_not_emit):
+            ids_as_defines += "#define {} {}\n".format(item, i + num_emitted_ids)
 
     with open(args.syscall_list, "w") as fp:
         fp.write(list_template % ids_as_defines)
