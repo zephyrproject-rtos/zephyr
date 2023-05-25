@@ -306,7 +306,7 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 			imr_layout->imr_state.header.imr_restore_vector =
 					(void *)boot_entry_d3_restore;
 			imr_layout->imr_state.header.imr_ram_storage = global_imr_ram_storage;
-			sys_cache_data_flush_range(imr_layout, sizeof(*imr_layout));
+			sys_cache_data_flush_range((void *)imr_layout, sizeof(*imr_layout));
 
 			/* save CPU context here
 			 * when _restore_core_context() is called, it will return directly to
@@ -337,7 +337,7 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 #else
 			imr_layout->imr_state.header.imr_restore_vector =
 					(void *)rom_entry;
-			sys_cache_data_flush_range(imr_layout, sizeof(*imr_layout));
+			sys_cache_data_flush_range((void *)imr_layout, sizeof(*imr_layout));
 #endif /* CONFIG_ADSP_IMR_CONTEXT_SAVE */
 			uint32_t hpsram_mask = 0;
 #ifdef CONFIG_ADSP_POWER_DOWN_HPSRAM
