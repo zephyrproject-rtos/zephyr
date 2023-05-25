@@ -6,6 +6,7 @@ common:
     - inroduction
     - kernel
   harness: console
+  min_ram: 16
   integration_platforms:
     - native_posix
   harness_config:
