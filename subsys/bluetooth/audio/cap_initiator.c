@@ -988,8 +988,8 @@ void bt_cap_initiator_qos_configured(struct bt_cap_stream *cap_stream)
 	cap_set_subproc(CAP_UNICAST_SUBPROC_TYPE_ENABLE);
 
 	for (size_t i = 0U; i < active_proc.stream_cnt; i++) {
-		struct bt_cap_stream *cap_stream = active_proc.streams[i];
-		struct bt_bap_stream *bap_stream = &cap_stream->bap_stream;
+		struct bt_cap_stream *cap_stream_active = active_proc.streams[i];
+		struct bt_bap_stream *bap_stream = &cap_stream_active->bap_stream;
 		int err;
 
 		/* TODO: Add metadata */
@@ -998,7 +998,7 @@ void bt_cap_initiator_qos_configured(struct bt_cap_stream *cap_stream)
 					     bap_stream->codec->meta_count);
 		if (err != 0) {
 			LOG_DBG("Failed to enable stream %p: %d",
-				cap_stream, err);
+				cap_stream_active, err);
 
 			/* End or mark procedure as aborted.
 			 * If we have sent any requests over air, we will abort
