@@ -11,6 +11,11 @@ LOG_MODULE_REGISTER(spi_atcspi200);
 #include <zephyr/device.h>
 #include <zephyr/drivers/spi.h>
 
+#ifdef CONFIG_ANDES_SPI_DMA_MODE
+#include <zephyr/dt-bindings/dma/andes_dma.h>
+#include <zephyr/drivers/dma.h>
+#endif
+
 #define REG_IDR         0x00
 #define REG_TFMAT       0x10
 #define REG_DIRIO       0x14
@@ -90,6 +95,8 @@ LOG_MODULE_REGISTER(spi_atcspi200);
 
 #define CTRL_RX_FIFO_RST_MSK		BIT(1)
 #define CTRL_TX_FIFO_RST_MSK		BIT(2)
+#define CTRL_RX_DMA_EN_MSK		BIT(3)
+#define CTRL_TX_DMA_EN_MSK		BIT(4)
 #define CTRL_RX_THRES_MSK		GENMASK(12, 8)
 #define CTRL_TX_THRES_MSK		GENMASK(20, 16)
 
