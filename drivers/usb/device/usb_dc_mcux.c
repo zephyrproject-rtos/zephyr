@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2019, NXP
+ * Copyright 2018-2023, NXP
  * Copyright (c) 2019 PHYTEC Messtechnik GmbH
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -14,6 +14,7 @@
 #include <soc.h>
 #include <zephyr/device.h>
 #include <zephyr/kernel.h>
+#include <zephyr/drivers/pinctrl.h>
 #include "usb.h"
 #include "usb_device.h"
 #include "usb_device_config.h"
@@ -915,12 +916,21 @@ static void usb_isr_handler(void)
 
 static int usb_mcux_init(void)
 {
+	int err;
 
 	k_thread_create(&dev_state.thread, dev_state.thread_stack,
 			CONFIG_USB_MCUX_THREAD_STACK_SIZE,
 			usb_mcux_thread_main, NULL, NULL, NULL,
 			K_PRIO_COOP(2), 0, K_NO_WAIT);
 	k_thread_name_set(&dev_state.thread, "usb_mcux");
+
+	PINCTRL_DT_INST_DEFINE(0);
+
+	/* Apply pinctrl state */
+	err = pinctrl_apply_state(PINCTRL_DT_INST_DEV_CONFIG_GET(0), PINCTRL_STATE_DEFAULT);
+	if (err) {
+		return err;
+	}
 
 	return 0;
 }
