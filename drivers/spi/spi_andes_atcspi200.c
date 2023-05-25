@@ -920,14 +920,8 @@ static void spi_atcspi200_irq_handler(void *arg)
 #define SPI_ROM_CFG_XIP(node_id) false
 #endif
 
-#define HAS_ANDES_QSPI_CHILD(n)                                         \
-	COND_CODE_1(CONFIG_FLASH_ANDES_QSPI, (HAS_FLASH_CHILD_NODE(n)), (0))
-#define HAS_FLASH_CHILD_NODE(node_id) COND_CODE_1(DT_NODE_EXISTS(DT_CHILD \
-	(DT_DRV_INST(node_id), qspi_nor_flash_0)), (1), (0))
-
 #define SPI_INIT(n)							\
-	COND_CODE_0(HAS_ANDES_QSPI_CHILD(n),				\
-	(static struct spi_atcspi200_data spi_atcspi200_dev_data_##n = {\
+	static struct spi_atcspi200_data spi_atcspi200_dev_data_##n = {\
 		.self_dev = DEVICE_DT_INST_GET(n),			\
 		SPI_CONTEXT_INIT_LOCK(spi_atcspi200_dev_data_##n, ctx),	\
 		SPI_CONTEXT_INIT_SYNC(spi_atcspi200_dev_data_##n, ctx),	\
@@ -961,6 +955,6 @@ static void spi_atcspi200_irq_handler(void *arg)
 				spi_atcspi200_irq_handler,		\
 				DEVICE_DT_INST_GET(n),			\
 				0);					\
-	};), ())
+	};
 
 DT_INST_FOREACH_STATUS_OKAY(SPI_INIT)
