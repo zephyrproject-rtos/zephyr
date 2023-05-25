@@ -31,11 +31,11 @@
 	leds {
 		compatible = "gpio-leds";
 		led0: led_0 {
-			gpios = <&gpiob GECKO_PIN(2) GPIO_ACTIVE_LOW>;
+			gpios = <&gpiob GECKO_PIN(2) GPIO_ACTIVE_HIGH>;
 			label = "LED 0";
 		};
 		led1: led_1 {
-			gpios = <&gpiob GECKO_PIN(4) GPIO_ACTIVE_LOW>;
+			gpios = <&gpiob GECKO_PIN(4) GPIO_ACTIVE_HIGH>;
 			label = "LED 1";
 		};
 	};
