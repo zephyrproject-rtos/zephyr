@@ -115,6 +115,7 @@ config RISCV
 	select USE_SWITCH_SUPPORTED
 	select USE_SWITCH
 	select SCHED_IPI_SUPPORTED if SMP
+	select BARRIER_OPERATIONS_BUILTIN
 	imply XIP
 	help
 	  RISCV architecture
