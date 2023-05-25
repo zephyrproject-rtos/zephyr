@@ -166,6 +166,7 @@ static int parse_recv_state(const void *data, uint16_t length,
 			LOG_DBG("Metadata too long: %u/%zu",
 			       subgroup->metadata_len,
 			       sizeof(subgroup->metadata));
+			return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
 		}
 
 		metadata = net_buf_simple_pull_mem(&buf,
