@@ -667,7 +667,8 @@ static uint8_t discover_func(struct bt_conn *conn,
 		LOG_DBG("Setup complete for %u / %u", cur_inst->idx + 1, client->inst_count);
 		(void)memset(params, 0, sizeof(*params));
 
-		if ((cur_inst->idx + 1) < client->inst_count) {
+		if (CONFIG_BT_CSIP_SET_COORDINATOR_MAX_CSIS_INSTANCES > 1 &&
+		    (cur_inst->idx + 1) < client->inst_count) {
 			int err;
 
 			cur_inst = &client->svc_insts[cur_inst->idx + 1];
