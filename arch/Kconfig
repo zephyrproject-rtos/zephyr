@@ -142,6 +142,7 @@ config ARCH_POSIX
 	select ARCH_HAS_THREAD_ABORT
 	select NATIVE_APPLICATION
 	select HAS_COVERAGE_SUPPORT
+	select BARRIER_OPERATIONS_BUILTIN
 	help
 	  POSIX (native) architecture
 
