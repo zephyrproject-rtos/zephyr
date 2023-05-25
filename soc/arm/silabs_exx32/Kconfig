@@ -130,6 +130,7 @@ if PM
 
 config SOC_GECKO_PM_BACKEND_PMGR
 	bool
+	depends on SOC_GECKO_DEV_INIT
 	default y if SOC_GECKO_SERIES2
 	help
 	  Implement PM using sl_power_manager service from Gecko SDK
