@@ -81,7 +81,7 @@ static int vl53l0x_setup_single_shot(const struct device *dev)
 	}
 
 	ret = VL53L0X_PerformRefSpadManagement(&drv_data->vl53l0x,
-					       (uint32_t *)&refSpadCount,
+					       &refSpadCount,
 					       &isApertureSpads);
 	if (ret) {
 		LOG_ERR("[%s] VL53L0X_PerformRefSpadManagement failed",
@@ -171,7 +171,7 @@ static int vl53l0x_start(const struct device *dev)
 	int r;
 	VL53L0X_Error ret;
 	uint16_t vl53l0x_id = 0U;
-	VL53L0X_DeviceInfo_t vl53l0x_dev_info;
+	VL53L0X_DeviceInfo_t vl53l0x_dev_info = { 0 };
 
 	LOG_DBG("[%s] Starting", dev->name);
 
@@ -200,9 +200,6 @@ static int vl53l0x_start(const struct device *dev)
 	}
 #endif
 
-	/* Get info from sensor */
-	(void)memset(&vl53l0x_dev_info, 0, sizeof(VL53L0X_DeviceInfo_t));
-
 	ret = VL53L0X_GetDeviceInfo(&drv_data->vl53l0x, &vl53l0x_dev_info);
 	if (ret < 0) {
 		LOG_ERR("[%s] Could not get info from device.", dev->name);
@@ -220,7 +217,7 @@ static int vl53l0x_start(const struct device *dev)
 
 	ret = VL53L0X_RdWord(&drv_data->vl53l0x,
 			     VL53L0X_REG_WHO_AM_I,
-			     (uint16_t *) &vl53l0x_id);
+			     &vl53l0x_id);
 	if ((ret < 0) || (vl53l0x_id != VL53L0X_CHIP_ID)) {
 		LOG_ERR("[%s] Issue on device identification", dev->name);
 		return -ENOTSUP;
