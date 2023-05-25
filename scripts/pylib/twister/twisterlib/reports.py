@@ -454,7 +454,7 @@ class Reporting:
             elif instance.status == Status.NOTRUN:
                 built_only += 1
 
-        if results.total and results.total != results.skipped_configs:
+        if results.total and results.total != results.skipped_runtime:
             pass_rate = (float(results.passed) / float(results.total - results.skipped_runtime))
         else:
             pass_rate = 0
@@ -479,7 +479,9 @@ class Reporting:
                 duration))
 
         total_platforms = len(self.platforms)
-        pass_rate = (float(results.cases_passed) / float(results.cases))
+        pass_rate = 0
+        if results.cases:
+            pass_rate = (float(results.cases_passed) / float(results.cases))
         logger.info("{} of {} test cases passed ({:.2%}), {} failed, {} not run, {} blocked, {} skipped on {} out of total {} platforms ({:02.2f}%)".format(
             results.cases_passed,
             results.cases,
