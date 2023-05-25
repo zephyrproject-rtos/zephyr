@@ -3,7 +3,8 @@ common:
     - base
     - kernel
     - userspace
-  min_flash: 33
+  min_flash: 32
+  min_ram: 32
   timeout: 120
 tests:
   kernel.common:
