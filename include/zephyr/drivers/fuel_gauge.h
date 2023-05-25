@@ -28,90 +28,94 @@ extern "C" {
 
 /* Keep these alphabetized wrt property name */
 
-/** Runtime Dynamic Battery Parameters */
-/**
- * Provide a 1 minute average of the current on the battery.
- * Does not check for flags or whether those values are bad readings.
- * See driver instance header for details on implementation and
- * how the average is calculated. Units in uA negative=discharging
- */
-#define FUEL_GAUGE_AVG_CURRENT 0
+enum fuel_gauge_property {
+	/** Runtime Dynamic Battery Parameters */
+	/**
+	 * Provide a 1 minute average of the current on the battery.
+	 * Does not check for flags or whether those values are bad readings.
+	 * See driver instance header for details on implementation and
+	 * how the average is calculated. Units in uA negative=discharging
+	 */
+	FUEL_GAUGE_AVG_CURRENT = 0,
 
-/** Battery current (uA); negative=discharging */
-#define FUEL_GAUGE_CURRENT			FUEL_GAUGE_AVG_CURRENT + 1
-/** Whether the battery underlying the fuel-gauge is cut off from charge */
-#define FUEL_GAUGE_CHARGE_CUTOFF		FUEL_GAUGE_CURRENT + 1
-/** Cycle count in 1/100ths (number of charge/discharge cycles) */
-#define FUEL_GAUGE_CYCLE_COUNT			FUEL_GAUGE_CHARGE_CUTOFF + 1
-/** Connect state of battery */
-#define FUEL_GAUGE_CONNECT_STATE		FUEL_GAUGE_CYCLE_COUNT + 1
-/** General Error/Runtime Flags */
-#define FUEL_GAUGE_FLAGS			FUEL_GAUGE_CONNECT_STATE + 1
-/** Full Charge Capacity in uAh (might change in some implementations to determine wear) */
-#define FUEL_GAUGE_FULL_CHARGE_CAPACITY		FUEL_GAUGE_FLAGS + 1
-/** Is the battery physically present */
-#define FUEL_GAUGE_PRESENT_STATE		FUEL_GAUGE_FULL_CHARGE_CAPACITY + 1
-/** Remaining capacity in uAh */
-#define FUEL_GAUGE_REMAINING_CAPACITY		FUEL_GAUGE_PRESENT_STATE + 1
-/** Remaining battery life time in minutes */
-#define FUEL_GAUGE_RUNTIME_TO_EMPTY		FUEL_GAUGE_REMAINING_CAPACITY + 1
-/** Remaining time in minutes until battery reaches full charge */
-#define FUEL_GAUGE_RUNTIME_TO_FULL		FUEL_GAUGE_RUNTIME_TO_EMPTY + 1
-/** Retrieve word from SBS1.1 ManufactuerAccess */
-#define FUEL_GAUGE_SBS_MFR_ACCESS		FUEL_GAUGE_RUNTIME_TO_FULL + 1
-/** Absolute state of charge (percent, 0-100) - expressed as % of design capacity */
-#define FUEL_GAUGE_ABSOLUTE_STATE_OF_CHARGE	    FUEL_GAUGE_SBS_MFR_ACCESS + 1
-/** Relative state of charge (percent, 0-100) - expressed as % of full charge capacity */
-#define FUEL_GAUGE_RELATIVE_STATE_OF_CHARGE		FUEL_GAUGE_ABSOLUTE_STATE_OF_CHARGE + 1
-/** Temperature in 0.1 K */
-#define FUEL_GAUGE_TEMPERATURE		    FUEL_GAUGE_RELATIVE_STATE_OF_CHARGE + 1
-/** Battery voltage (uV) */
-#define FUEL_GAUGE_VOLTAGE			FUEL_GAUGE_TEMPERATURE + 1
-/** Battery Mode (flags) */
-#define FUEL_GAUGE_SBS_MODE			FUEL_GAUGE_VOLTAGE + 1
-/** Battery desired Max Charging Current (mA) */
-#define FUEL_GAUGE_CHARGE_CURRENT		FUEL_GAUGE_SBS_MODE + 1
-/** Battery desired Max Charging Voltage (mV) */
-#define FUEL_GAUGE_CHARGE_VOLTAGE		FUEL_GAUGE_CHARGE_CURRENT + 1
-/** Alarm, Status and Error codes (flags) */
-#define FUEL_GAUGE_STATUS			FUEL_GAUGE_CHARGE_VOLTAGE + 1
-/** Design Capacity (mAh or 10mWh) */
-#define FUEL_GAUGE_DESIGN_CAPACITY		FUEL_GAUGE_STATUS + 1
-/** Design Voltage (mV) */
-#define FUEL_GAUGE_DESIGN_VOLTAGE		FUEL_GAUGE_DESIGN_CAPACITY + 1
-/** AtRate (mA or 10 mW) */
-#define FUEL_GAUGE_SBS_ATRATE			FUEL_GAUGE_DESIGN_VOLTAGE + 1
-/** AtRateTimeToFull (minutes) */
-#define FUEL_GAUGE_SBS_ATRATE_TIME_TO_FULL	FUEL_GAUGE_SBS_ATRATE + 1
-/** AtRateTimeToEmpty (minutes) */
-#define FUEL_GAUGE_SBS_ATRATE_TIME_TO_EMPTY	FUEL_GAUGE_SBS_ATRATE_TIME_TO_FULL + 1
-/** AtRateOK (boolean) */
-#define FUEL_GAUGE_SBS_ATRATE_OK		FUEL_GAUGE_SBS_ATRATE_TIME_TO_EMPTY + 1
-/** Remaining Capacity Alarm (mAh or 10mWh) */
-#define FUEL_GAUGE_SBS_REMAINING_CAPACITY_ALARM FUEL_GAUGE_SBS_ATRATE_OK + 1
-/** Remaining Time Alarm (minutes) */
-#define FUEL_GAUGE_SBS_REMAINING_TIME_ALARM	FUEL_GAUGE_SBS_REMAINING_CAPACITY_ALARM + 1
-/** Manufacturer of pack (1 byte length + 20 bytes data) */
-#define FUEL_GAUGE_MANUFACTURER_NAME		FUEL_GAUGE_SBS_REMAINING_TIME_ALARM + 1
-/** Name of pack (1 byte length + 20 bytes data) */
-#define FUEL_GAUGE_DEVICE_NAME			FUEL_GAUGE_MANUFACTURER_NAME + 1
-/** Chemistry (1 byte length + 4 bytes data) */
-#define FUEL_GAUGE_DEVICE_CHEMISTRY		FUEL_GAUGE_DEVICE_NAME + 1
+	/** Battery current (uA); negative=discharging */
+	FUEL_GAUGE_CURRENT,
+	/** Whether the battery underlying the fuel-gauge is cut off from charge */
+	FUEL_GAUGE_CHARGE_CUTOFF,
+	/** Cycle count in 1/100ths (number of charge/discharge cycles) */
+	FUEL_GAUGE_CYCLE_COUNT,
+	/** Connect state of battery */
+	FUEL_GAUGE_CONNECT_STATE,
+	/** General Error/Runtime Flags */
+	FUEL_GAUGE_FLAGS,
+	/** Full Charge Capacity in uAh (might change in some implementations to determine wear) */
+	FUEL_GAUGE_FULL_CHARGE_CAPACITY,
+	/** Is the battery physically present */
+	FUEL_GAUGE_PRESENT_STATE,
+	/** Remaining capacity in uAh */
+	FUEL_GAUGE_REMAINING_CAPACITY,
+	/** Remaining battery life time in minutes */
+	FUEL_GAUGE_RUNTIME_TO_EMPTY,
+	/** Remaining time in minutes until battery reaches full charge */
+	FUEL_GAUGE_RUNTIME_TO_FULL,
+	/** Retrieve word from SBS1.1 ManufactuerAccess */
+	FUEL_GAUGE_SBS_MFR_ACCESS,
+	/** Absolute state of charge (percent, 0-100) - expressed as % of design capacity */
+	FUEL_GAUGE_ABSOLUTE_STATE_OF_CHARGE,
+	/** Relative state of charge (percent, 0-100) - expressed as % of full charge capacity */
+	FUEL_GAUGE_RELATIVE_STATE_OF_CHARGE,
+	/** Temperature in 0.1 K */
+	FUEL_GAUGE_TEMPERATURE,
+	/** Battery voltage (uV) */
+	FUEL_GAUGE_VOLTAGE,
+	/** Battery Mode (flags) */
+	FUEL_GAUGE_SBS_MODE,
+	/** Battery desired Max Charging Current (mA) */
+	FUEL_GAUGE_CHARGE_CURRENT,
+	/** Battery desired Max Charging Voltage (mV) */
+	FUEL_GAUGE_CHARGE_VOLTAGE,
+	/** Alarm, Status and Error codes (flags) */
+	FUEL_GAUGE_STATUS,
+	/** Design Capacity (mAh or 10mWh) */
+	FUEL_GAUGE_DESIGN_CAPACITY,
+	/** Design Voltage (mV) */
+	FUEL_GAUGE_DESIGN_VOLTAGE,
+	/** AtRate (mA or 10 mW) */
+	FUEL_GAUGE_SBS_ATRATE,
+	/** AtRateTimeToFull (minutes) */
+	FUEL_GAUGE_SBS_ATRATE_TIME_TO_FULL,
+	/** AtRateTimeToEmpty (minutes) */
+	FUEL_GAUGE_SBS_ATRATE_TIME_TO_EMPTY,
+	/** AtRateOK (boolean) */
+	FUEL_GAUGE_SBS_ATRATE_OK,
+	/** Remaining Capacity Alarm (mAh or 10mWh) */
+	FUEL_GAUGE_SBS_REMAINING_CAPACITY_ALARM,
+	/** Remaining Time Alarm (minutes) */
+	FUEL_GAUGE_SBS_REMAINING_TIME_ALARM,
+	/** Manufacturer of pack (1 byte length + 20 bytes data) */
+	FUEL_GAUGE_MANUFACTURER_NAME,
+	/** Name of pack (1 byte length + 20 bytes data) */
+	FUEL_GAUGE_DEVICE_NAME,
+	/** Chemistry (1 byte length + 4 bytes data) */
+	FUEL_GAUGE_DEVICE_CHEMISTRY,
 
-/** Reserved to demark end of common fuel gauge properties */
-#define FUEL_GAUGE_COMMON_COUNT FUEL_GAUGE_DEVICE_CHEMISTRY + 1
-/**
- * Reserved to demark downstream custom properties - use this value as the actual value may change
- * over future versions of this API
- */
-#define FUEL_GAUGE_CUSTOM_BEGIN FUEL_GAUGE_COMMON_COUNT + 1
+	/** Reserved to demark end of common fuel gauge properties */
+	FUEL_GAUGE_COMMON_COUNT,
+	/**
+	 * Reserved to demark downstream custom properties - use this value as the actual value may
+	 * change over future versions of this API
+	 */
+	FUEL_GAUGE_CUSTOM_BEGIN,
 
-/** Reserved to demark end of valid enum properties */
-#define FUEL_GAUGE_PROP_MAX UINT16_MAX
+	/** Reserved to demark end of valid enum properties */
+	FUEL_GAUGE_PROP_MAX = UINT16_MAX,
+};
+
+typedef uint16_t fuel_gauge_prop_t;
 
 struct fuel_gauge_get_property {
 	/** Battery fuel gauge property to get */
-	uint16_t property_type;
+	fuel_gauge_prop_t property_type;
 
 	/** Negative error status set by callee e.g. -ENOTSUP for an unsupported property */
 	int status;
@@ -180,7 +184,7 @@ struct fuel_gauge_get_property {
 
 struct fuel_gauge_set_property {
 	/** Battery fuel gauge property to set */
-	uint16_t property_type;
+	fuel_gauge_prop_t property_type;
 
 	/** Negative error status set by callee e.g. -ENOTSUP for an unsupported property */
 	int status;
@@ -208,7 +212,7 @@ struct fuel_gauge_set_property {
 /** Buffer properties are separated due to size */
 struct fuel_gauge_get_buffer_property {
 	/** Battery fuel gauge property to get */
-	uint16_t property_type;
+	fuel_gauge_prop_t property_type;
 
 	/** Negative error status set by callee e.g. -ENOTSUP for an unsupported property */
 	int status;
