@@ -379,6 +379,10 @@ Build system and infrastructure
 
 * Twister now supports ``gtest`` harness for running tests written in gTest.
 
+* Added an option to validate device initialization priorities at build time.
+  To use it, enable :kconfig:option:`CONFIG_CHECK_INIT_PRIORITIES`, see
+  :ref:`check_init_priorities.py` for more details.
+
 Drivers and Sensors
 *******************
 
