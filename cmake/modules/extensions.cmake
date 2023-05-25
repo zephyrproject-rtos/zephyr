@@ -1488,14 +1488,37 @@ endfunction()
 
 # Function to add header file(s) to the list to be passed to syscall generator.
 function(zephyr_syscall_header)
-  # Empty function for now. Will implement later.
+  foreach(one_file ${ARGV})
+    if(EXISTS ${one_file})
+      set(header_file ${one_file})
+    elseif(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/${one_file})
+      set(header_file ${CMAKE_CURRENT_SOURCE_DIR}/${one_file})
+    else()
+      message(FATAL_ERROR "Syscall header file not found: ${one_file}")
+    endif()
+
+    target_sources(
+      syscalls_interface INTERFACE
+      ${header_file}
+    )
+    target_include_directories(
+      syscalls_interface INTERFACE
+      ${header_file}
+    )
+    add_dependencies(
+      syscalls_interface
+      ${header_file}
+    )
+
+    unset(header_file)
+  endforeach()
 endfunction()
 
 # Function to add header file(s) to the list to be passed to syscall generator
 # if condition is true.
 function(zephyr_syscall_header_ifdef feature_toggle)
   if(${${feature_toggle}})
-    # Empty function for now. Will implement later.
+    zephyr_syscall_header(${ARGN})
   endif()
 endfunction()
 
