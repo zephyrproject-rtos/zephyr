@@ -119,7 +119,6 @@ static int uart_rpi_init(const struct device *dev)
 	uart_inst_t * const uart_inst = config->uart_dev;
 	uart_hw_t * const uart_hw = config->uart_regs;
 	struct uart_rpi_data * const data = dev->data;
-	uint baudrate;
 	int ret;
 
 	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
@@ -131,9 +130,10 @@ static int uart_rpi_init(const struct device *dev)
 	 * uart_init() may be replaced by register based API once rpi-pico platform
 	 * has a clock controller driver
 	 */
-	baudrate = uart_init(uart_inst, data->uart_config.baudrate);
+	data->uart_config.baudrate = uart_init(uart_inst, data->uart_config.baudrate);
+
 	/* Check if baudrate adjustment returned by 'uart_init' function is a positive value */
-	if (baudrate == 0) {
+	if (data->uart_config.baudrate == 0) {
 		return -EINVAL;
 	}
 	/*
@@ -141,16 +141,16 @@ static int uart_rpi_init(const struct device *dev)
 	 * https://datasheets.raspberrypi.com/rp2040/rp2040-datasheet.pdf#tab-registerlist_uart page:431
 	 * data bits set default to 8 instaed of hardware reset 5 to increase compatibility.
 	 */
-	data->uart_config = (struct uart_config){
-		.baudrate = baudrate,
-		.data_bits = UART_CFG_DATA_BITS_8,
-		.flow_ctrl = UART_CFG_FLOW_CTRL_NONE,
-		.parity = UART_CFG_PARITY_NONE,
-		.stop_bits = UART_CFG_STOP_BITS_1
-	};
+	data->uart_config.data_bits = UART_CFG_DATA_BITS_8;
+	data->uart_config.parity = UART_CFG_PARITY_NONE;
+	data->uart_config.stop_bits = UART_CFG_STOP_BITS_1;
 	uart_rpi_set_format(dev, &data->uart_config);
 	hw_clear_bits(&uart_hw->lcr_h, UART_UARTLCR_H_FEN_BITS);
 	uart_hw->dr = 0U;
+
+	if (data->uart_config.flow_ctrl == UART_CFG_FLOW_CTRL_RTS_CTS) {
+		uart_set_hw_flow(uart_inst, true, true);
+	}
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	config->irq_config_func(dev);
@@ -411,6 +411,9 @@ static const struct uart_driver_api uart_rpi_driver_api = {
 										\
 	static struct uart_rpi_data uart##idx##_rpi_data = {			\
 		.uart_config.baudrate = DT_INST_PROP(idx, current_speed),	\
+		.uart_config.flow_ctrl = DT_INST_PROP(idx, hw_flow_control)	\
+				       ? UART_CFG_FLOW_CTRL_RTS_CTS		\
+				       : UART_CFG_FLOW_CTRL_NONE,		\
 	};									\
 										\
 	DEVICE_DT_INST_DEFINE(idx, &uart_rpi_init,				\
