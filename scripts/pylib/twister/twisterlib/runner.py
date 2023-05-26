@@ -40,6 +40,7 @@ if sys.platform == 'linux':
 from twisterlib.log_helper import log_command
 from twisterlib.testinstance import TestInstance
 from twisterlib.testplan import change_skip_to_error_if_integration
+from twisterlib.harness import HarnessImporter, Pytest
 
 logger = logging.getLogger('twister')
 logger.setLevel(logging.DEBUG)
@@ -1027,7 +1028,12 @@ class ProjectBuilder(FilterBuilder):
             if self.options.extra_test_args and instance.platform.arch == "posix":
                 instance.handler.extra_test_args = self.options.extra_test_args
 
-            instance.handler.handle()
+            harness = HarnessImporter.get_harness(instance.testsuite.harness.capitalize())
+            harness.configure(instance)
+            if isinstance(harness, Pytest):
+                harness.pytest_run()
+            else:
+                instance.handler.handle(harness)
 
         sys.stdout.flush()
 
