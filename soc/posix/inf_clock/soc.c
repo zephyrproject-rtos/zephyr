@@ -182,7 +182,7 @@ static void *zephyr_wrapper(void *a)
 			zephyr_thread);
 #endif
 
-	posix_init_multithreading();
+	posix_arch_init();
 
 	/* Start Zephyr: */
 	z_cstart();
@@ -235,7 +235,7 @@ void posix_soc_clean_up(void)
 	 */
 	if (cpu_halted) {
 
-		posix_core_clean_up();
+		posix_arch_clean_up();
 		run_native_tasks(_NATIVE_ON_EXIT_LEVEL);
 
 	} else if (soc_terminate == false) {
