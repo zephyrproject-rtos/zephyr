@@ -1,0 +1,70 @@
+/*
+ * Copyright 2023 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/armv7-m.dtsi>
+#include <mem.h>
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m7";
+			reg = <0>;
+		};
+
+		cpu@1 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m7";
+			reg = <1>;
+		};
+
+		mpu: mpu@e000ed90 {
+			compatible = "arm,armv7m-mpu";
+			reg = <0xe000ed90 0x40>;
+			arm,num-mpu-regions = <16>;
+		};
+	};
+
+	soc {
+		interrupt-parent = <&nvic>;
+
+		itcm: memory@0 {
+			compatible = "zephyr,memory-region", "arm,itcm";
+			reg = <0x00000000 DT_SIZE_K(64)>;
+			zephyr,memory-region = "ITCM";
+		};
+
+		dtcm: memory@20000000 {
+			compatible = "zephyr,memory-region", "arm,dtcm";
+			reg = <0x20000000 DT_SIZE_K(128)>;
+			zephyr,memory-region = "DTCM";
+		};
+
+		sram0_1: sram0_1@20400000 {
+			compatible = "mmio-sram";
+			reg = <0x20400000 DT_SIZE_K(320)>;
+		};
+
+		/*
+		 * Last 48Kb is reserved by Secure BAF, application core cannot access it.
+		 *
+		 * Do not assign the compatible for this now, when Flash API is implemented,
+		 * need to check if "soc-nv-flash" can be used or a new binding need to be
+		 * created, based on it.
+		 */
+		flash0: flash@400000 {
+			reg = <0x00400000 DT_SIZE_K(4048)>;
+			status = "disabled";
+		};
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <4>;
+};
