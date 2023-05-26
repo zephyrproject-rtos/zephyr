@@ -30,16 +30,30 @@ void z_smp_release_global_lock(struct k_thread *thread);
 /* context switching and scheduling-related routines */
 #ifdef CONFIG_USE_SWITCH
 
-/* There is an unavoidable SMP race when threads swap -- their thread
- * record is in the queue (and visible to other CPUs) before
- * arch_switch() finishes saving state.  We must spin for the switch
- * handle before entering a new thread.  See docs on arch_switch().
+/* Spin, with the scheduler lock held (!), on a thread that is known
+ * (!!) to have released the lock and be on a path where it will
+ * deterministically (!!!) reach arch_switch() in very small constant
+ * time.
+ *
+ * This exists to treat an unavoidable SMP race when threads swap --
+ * their thread record is in the queue (and visible to other CPUs)
+ * before arch_switch() finishes saving state.  We must spin for the
+ * switch handle before entering a new thread.  See docs on
+ * arch_switch().
+ *
+ * Stated differently: there's a chicken and egg bug with the question
+ * of "is a thread running or not?".  The thread needs to mark itself
+ * "not running" from its own context, but at that moment it obviously
+ * is still running until it reaches arch_switch()!  Locking can't
+ * treat this because the scheduler lock can't be released by the
+ * switched-to thread, which is going to (obviously) be running its
+ * own code and doesn't know it was switched out.
  *
  * Note: future SMP architectures may need a fence/barrier or cache
  * invalidation here.  Current ones don't, and sadly Zephyr doesn't
  * have a framework for that yet.
  */
-static inline void wait_for_switch(struct k_thread *thread)
+static inline void z_sched_switch_spin(struct k_thread *thread)
 {
 #ifdef CONFIG_SMP
 	volatile void **shp = (void *)&thread->switch_handle;
@@ -117,7 +131,7 @@ static ALWAYS_INLINE unsigned int do_swap(unsigned int key,
 		}
 #endif
 		z_thread_mark_switched_out();
-		wait_for_switch(new_thread);
+		z_sched_switch_spin(new_thread);
 		_current_cpu->current = new_thread;
 
 #ifdef CONFIG_TIMESLICING
@@ -131,10 +145,9 @@ static ALWAYS_INLINE unsigned int do_swap(unsigned int key,
 		arch_cohere_stacks(old_thread, NULL, new_thread);
 
 #ifdef CONFIG_SMP
-		/* Add _current back to the run queue HERE. After
-		 * wait_for_switch() we are guaranteed to reach the
-		 * context switch in finite time, avoiding a potential
-		 * deadlock.
+		/* Now add _current back to the run queue, once we are
+		 * guaranteed to reach the context switch in finite
+		 * time.  See z_sched_switch_spin().
 		 */
 		z_requeue_current(old_thread);
 #endif
@@ -177,6 +190,11 @@ static inline void z_swap_unlocked(void)
 #else /* !CONFIG_USE_SWITCH */
 
 extern int arch_swap(unsigned int key);
+
+static inline void z_sched_switch_spin(struct k_thread *thread)
+{
+	ARG_UNUSED(thread);
+}
 
 static inline int z_swap_irqlock(unsigned int key)
 {
