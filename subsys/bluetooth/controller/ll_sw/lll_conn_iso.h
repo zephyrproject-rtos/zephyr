@@ -4,6 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define LLL_CIS_FLUSH_NONE      0
+#define LLL_CIS_FLUSH_PENDING   1
+#define LLL_CIS_FLUSH_COMPLETE  2
+
 struct lll_conn_iso_stream_rxtx {
 	uint64_t payload_count:39; /* cisPayloadCounter */
 	uint64_t phy_flags:1;      /* S2 or S8 coding scheme */
@@ -42,7 +46,7 @@ struct lll_conn_iso_stream {
 	uint8_t nesn:1;             /* Next expected sequence number */
 	uint8_t cie:1;              /* Close isochronous event */
 	uint8_t npi:1;              /* 1 if CIS LLL has Tx-ed Null PDU Indicator */
-	uint8_t flushed:1;          /* 1 if CIS LLL has been flushed */
+	uint8_t flush:2;            /* See states LLL_CIS_FLUSH_XXX */
 	uint8_t active:1;           /* 1 if CIS LLL is active */
 	uint8_t datapath_ready_rx:1;/* 1 if datapath for RX is ready */
 
