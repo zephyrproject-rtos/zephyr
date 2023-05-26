@@ -445,6 +445,295 @@ struct peci_it8xxx2_regs {
 };
 #endif /* !__ASSEMBLER__ */
 
+/**
+ *
+ * (2Fxxh) USB Device Controller (USBDC) Registers
+ *
+ */
+#define EP_EXT_REGS_9X        1
+#define EP_EXT_REGS_BX        2
+#define EP_EXT_REGS_DX        3
+
+#ifndef __ASSEMBLER__
+
+/* EP0 to EP15 Enumeration */
+enum usb_dc_endpoints {
+	EP0,
+	EP1,
+	EP2,
+	EP3,
+	EP4,
+	EP5,
+	EP6,
+	EP7,
+	EP8,
+	EP9,
+	EP10,
+	EP11,
+	EP12,
+	EP13,
+	EP14,
+	EP15
+};
+
+struct it82xx2_usb_ep_regs {
+	volatile uint8_t ep_ctrl;
+	volatile uint8_t ep_status;
+	volatile uint8_t ep_transtype_sts;
+	volatile uint8_t ep_nak_transtype_sts;
+};
+
+/* Reserved EP Extended Registers */
+struct ep_ext_regs_7x {
+	/* 0x75 Reserved */
+	volatile uint8_t ep_ext_ctrl_75;
+	/* 0x76 Reserved */
+	volatile uint8_t ep_ext_ctrl_76;
+	/* 0x77 Reserved */
+	volatile uint8_t ep_ext_ctrl_77;
+	/* 0x78 Reserved */
+	volatile uint8_t ep_ext_ctrl_78;
+	/* 0x79 Reserved */
+	volatile uint8_t ep_ext_ctrl_79;
+	/* 0x7A Reserved */
+	volatile uint8_t ep_ext_ctrl_7a;
+	/* 0x7B Reserved */
+	volatile uint8_t ep_ext_ctrl_7b;
+	/* 0x7C Reserved */
+	volatile uint8_t ep_ext_ctrl_7c;
+	/* 0x7D Reserved */
+	volatile uint8_t ep_ext_ctrl_7d;
+	/* 0x7E Reserved */
+	volatile uint8_t ep_ext_ctrl_7e;
+	/* 0x7F Reserved */
+	volatile uint8_t ep_ext_ctrl_7f;
+};
+
+/* From 98h to 9Dh, the EP45/67/89/1011/1213/1415 Extended Control Registers
+ * are defined, and their bits definitions are as follows:
+ *
+ * Bit    Description
+ *  7     Reserved
+ *  6     EPPOINT5_ISO_ENABLE
+ *  5     EPPOINT5_SEND_STALL
+ *  4     EPPOINT5_OUT_DATA_SEQUENCE
+ *  3     Reserved
+ *  2     EPPOINT4_ISO_ENABLE
+ *  1     EPPOINT4_SEND_STALL
+ *  0     EPPOINT4_OUT_DATA_SEQUENCE
+ *
+ * Apparently, we can tell that the EP4 and EP5 share the same register, and
+ * the EP6 and EP7 share the same one, and the rest EPs are defined in the
+ * same way.
+ */
+struct ep_ext_regs_9x {
+	/* 0x95 Reserved */
+	volatile uint8_t ep_ext_ctrl_95;
+	/* 0x96 Reserved */
+	volatile uint8_t ep_ext_ctrl_96;
+	/* 0x97 Reserved */
+	volatile uint8_t ep_ext_ctrl_97;
+	/* 0x98 ~ 0x9D EP45/67/89/1011/1213/1415 Extended Control Registers */
+	volatile uint8_t epn0n1_ext_ctrl[6];
+	/* 0x9E Reserved */
+	volatile uint8_t ep_ext_ctrl_9e;
+	/* 0x9F Reserved */
+	volatile uint8_t ep_ext_ctrl_9f;
+};
+
+/* From BXh to BDh are EP FIFO 1-3 Control 0/1 Registers, and their
+ * definitions as as follows:
+ * B8h: EP_FIFO1_CONTROL0_REG
+ * B9h: EP_FIFO1_CONTROL1_REG
+ * BAh: EP_FIFO2_CONTROL0_REG
+ * BBh: EP_FIFO2_CONTROL1_REG
+ * BCh: EP_FIFO3_CONTROL0_REG
+ * BDh: EP_FIFO3_CONTROL1_REG
+ *
+ * For each one, its bits definitions are as follows:
+ * (take EP_FIFO1_CONTROL1_REG as example, which controls from EP8 to EP15)
+ *
+ * Bit  Description
+ *
+ *  7   EP15 select FIFO1 as data buffer
+ *  6   EP14 select FIFO1 as data buffer
+ *  5   EP13 select FIFO1 as data buffer
+ *  4   EP12 select FIFO1 as data buffer
+ *  3   EP11 select FIFO1 as data buffer
+ *  2   EP10 select FIFO1 as data buffer
+ *  1   EP9 select FIFO1 as data buffer
+ *  0   EP8 select FIFO1 as data buffer
+ *
+ *  1: Select
+ *  0: Not select
+ */
+struct ep_ext_regs_bx {
+	/* 0xB5 Reserved */
+	volatile uint8_t ep_ext_ctrl_b5;
+	/* 0xB6 Reserved */
+	volatile uint8_t ep_ext_ctrl_b6;
+	/* 0xB7 Reserved */
+	volatile uint8_t ep_ext_ctrl_b7;
+	/* 0xB8 ~ 0xBD EP FIFO 1-3 Control 0/1 Registers */
+	volatile uint8_t ep_fifo_ctrl[6];
+	/* 0xBE Reserved */
+	volatile uint8_t ep_ext_ctrl_be;
+	/* 0xBF Reserved */
+	volatile uint8_t ep_ext_ctrl_bf;
+};
+
+
+/* From D6h to DDh are EP Extended Control Registers, and their
+ * definitions as as follows:
+ * D6h: EP0_EXT_CTRL1
+ * D7h: EP0_EXT_CTRL2
+ * D8h: EP1_EXT_CTRL1
+ * D9h: EP1_EXT_CTRL2
+ * DAh: EP2_EXT_CTRL1
+ * DBh: EP2_EXT_CTRL2
+ * DCh: EP3_EXT_CTRL1
+ * DDh: EP3_EXT_CTRL2
+ *
+ * We classify them into 4 groups which each of them contains Control 1 and 2
+ * according to the EP number as follows:
+ */
+struct epn_ext_ctrl_regs {
+	/* 0xD6/0xD8/0xDA/0xDC EPN Extended Control1 Register */
+	volatile uint8_t epn_ext_ctrl1;
+	/* 0xD7/0xD9/0xDB/0xDD EPB Extended Control2 Register */
+	volatile uint8_t epn_ext_ctrl2;
+};
+
+struct ep_ext_regs_dx {
+	/* 0xD5 Reserved */
+	volatile uint8_t ep_ext_ctrl_d5;
+	/* 0xD6 ~ 0xDD EPN Extended Control 1/2 Registers */
+	struct epn_ext_ctrl_regs epn_ext_ctrl[4];
+	/* 0xDE Reserved */
+	volatile uint8_t ep_ext_ctrl_de;
+	/* 0xDF Reserved */
+	volatile uint8_t ep_ext_ctrl_df;
+};
+
+
+/* The USB EPx FIFO Registers Definitions
+ * EP0: 60h ~ 74h
+ * EP1: 80h ~ 94h
+ * EP2: A0h ~ B4h
+ * EP3: C0h ~ D4h (D6h to DDh will be defined as marcos for usage)
+ */
+struct it82xx2_usb_ep_fifo_regs {
+	/* 0x60 + ep * 0x20 : EP RX FIFO Data Register  */
+	volatile uint8_t ep_rx_fifo_data;
+	/* 0x61 + ep * 0x20 : EP RX FIFO DMA Count Register */
+	volatile uint8_t ep_rx_fifo_dma_count;
+	/* 0x62 + ep * 0x20 : EP RX FIFO Data Count MSB */
+	volatile uint8_t ep_rx_fifo_dcnt_msb;
+	/* 0x63 + ep * 0x20 : EP RX FIFO Data Count LSB */
+	volatile uint8_t ep_rx_fifo_dcnt_lsb;
+	/* 0x64 + ep * 0x20  : EP RX FIFO Control Register */
+	volatile uint8_t ep_rx_fifo_ctrl;
+	/* (0x65 ~ 0x6F) + ep * 0x20 */
+	volatile uint8_t reserved_65_6f_add_20[11];
+	/* 0x70 + ep * 0x20 : EP TX FIFO Data Register  */
+	volatile uint8_t ep_tx_fifo_data;
+	/* (0x71 ~ 0x73) + ep * 0x20 */
+	volatile uint8_t reserved_71_73_add_20[3];
+	/* 0x74 + ep * 0x20 : EP TX FIFO Control Register */
+	volatile uint8_t ep_tx_fifo_ctrl;
+	/* (0x75 ~ 0x7F) + ep * 0x20 */
+	union {
+		struct ep_ext_regs_7x ep_res;
+		struct ep_ext_regs_9x ext_4_15;
+		struct ep_ext_regs_bx fifo_ctrl;
+		struct ep_ext_regs_dx ext_0_3;
+	};
+
+};
+
+struct usb_it82xx2_regs {
+	/* 0x00:  Host TX Contrl Register */
+	volatile uint8_t host_tx_ctrl;
+	/* 0x01:  Host TX Transaction Type Register */
+	volatile uint8_t host_tx_trans_type;
+	/* 0x02:  Host TX Line Control Register */
+	volatile uint8_t host_tx_line_ctrl;
+	/* 0x03:  Host TX SOF Enable Register */
+	volatile uint8_t host_tx_sof_enable;
+	/* 0x04:  Host TX Address Register */
+	volatile uint8_t host_tx_addr;
+	/* 0x05:  Host TX EP Number Register */
+	volatile uint8_t host_tx_endp;
+	/* 0x06:  Host Frame Number MSP Register */
+	volatile uint8_t host_frame_num_msp;
+	/* 0x07:  Host Frame Number LSP Register */
+	volatile uint8_t host_frame_num_lsp;
+	/* 0x08:  Host Interrupt Status Register */
+	volatile uint8_t host_interrupt_status;
+	/* 0x09:  Host Interrupt Mask Register */
+	volatile uint8_t host_interrupt_mask;
+	/* 0x0A:  Host RX Status Register */
+	volatile uint8_t host_rx_status;
+	/* 0x0B:  Host RX PID Register */
+	volatile uint8_t host_rx_pid;
+	/* 0x0C:  MISC Control Register */
+	volatile uint8_t misc_control;
+	/* 0x0D:  MISC Status Register */
+	volatile uint8_t misc_status;
+	/* 0x0E:  Host RX Connect State Register */
+	volatile uint8_t host_rx_connect_state;
+	/* 0x0F:  Host SOF Timer MSB Register */
+	volatile uint8_t host_sof_timer_msb;
+	/* 0x10 ~ 0x1F:  Reserved Registers 10h - 1Fh */
+	volatile uint8_t reserved_10_1f[16];
+	/* 0x20:  Host RX FIFO Data Port Register */
+	volatile uint8_t host_rx_fifo_data;
+	/* 0x21:  Host RX FIFO DMA Input Data Count Register */
+	volatile uint8_t host_rx_fifo_dma_data_count;
+	/* 0x22:  Host TX FIFO Data Count MSB Register */
+	volatile uint8_t host_rx_fifo_data_count_msb;
+	/* 0x23:  Host TX FIFO Data Count LSB Register */
+	volatile uint8_t host_rx_fifo_data_count_lsb;
+	/* 0x24:  Host RX FIFO Data Port Register */
+	volatile uint8_t host_rx_fifo_control;
+	/* 0x25 ~ 0x2F:  Reserved Registers 25h - 2Fh */
+	volatile uint8_t reserved_25_2f[11];
+	/* 0x30:  Host TX FIFO Data Port Register */
+	volatile uint8_t host_tx_fifo_data;
+	/* 0x31 ~ 0x3F:  Reserved Registers 31h - 3Fh */
+	volatile uint8_t reserved_31_3f[15];
+	/* 0x40 ~ 0x4F: Endpoint Registers 40h - 4Fh */
+	struct it82xx2_usb_ep_regs usb_ep_regs[4];
+	/* 0x50:  Device Controller Control Register */
+	volatile uint8_t dc_control;
+	/* 0x51:  Device Controller LINE Status Register */
+	volatile uint8_t dc_line_status;
+	/* 0x52:  Device Controller Interrupt Status Register */
+	volatile uint8_t dc_interrupt_status;
+	/* 0x53:  Device Controller Interrupt Mask Register */
+	volatile uint8_t dc_interrupt_mask;
+	/* 0x54:  Device Controller Address Register */
+	volatile uint8_t dc_address;
+	/* 0x55:  Device Controller Frame Number MSP Register */
+	volatile uint8_t dc_frame_num_msp;
+	/* 0x56:  Device Controller Frame Number LSP Register */
+	volatile uint8_t dc_frame_num_lsp;
+	/* 0x57 ~ 0x5F:  Reserved Registers 57h - 5Fh */
+	volatile uint8_t reserved_57_5f[9];
+	/* 0x60 ~ 0xDF: EP FIFO Registers 60h - DFh */
+	struct it82xx2_usb_ep_fifo_regs fifo_regs[4];
+	/* 0xE0:  Host/Device Control Register */
+	volatile uint8_t host_device_control;
+	/* 0xE1 ~ 0xE3:  Reserved Registers E1h - E3h */
+	volatile uint8_t reserved_e1_e3[3];
+	/* 0xE4:  Port0 MISC Control Register */
+	volatile uint8_t port0_misc_control;
+	/* 0xE5 ~ 0xE7:  Reserved Registers E5h - E7h */
+	volatile uint8_t reserved_e5_e7[3];
+	/* 0xE8:  Port1 MISC Control Register */
+	volatile uint8_t port1_misc_control;
+};
+#endif /* #ifndef __ASSEMBLER__ */
 
 /**
  *
@@ -1123,70 +1412,74 @@ enum chip_pll_mode {
 
 #ifndef __ASSEMBLER__
 struct gctrl_it8xxx2_regs {
-	/* 0x00-0x01: Reserved1 */
-	volatile uint8_t reserved1[2];
+	/* 0x00-0x01: Reserved_00_01 */
+	volatile uint8_t reserved_00_01[2];
 	/* 0x02: Chip Version */
 	volatile uint8_t GCTRL_ECHIPVER;
-	/* 0x03-0x05: Reserved2 */
-	volatile uint8_t reserved2[3];
+	/* 0x03-0x05: Reserved_03_05 */
+	volatile uint8_t reserved_03_05[3];
 	/* 0x06: Reset Status */
 	volatile uint8_t GCTRL_RSTS;
-	/* 0x07-0x09: Reserved3 */
-	volatile uint8_t reserved3[3];
+	/* 0x07-0x09: Reserved_07_09 */
+	volatile uint8_t reserved_07_09[3];
 	/* 0x0A: Base Address Select */
 	volatile uint8_t GCTRL_BADRSEL;
 	/* 0x0B: Wait Next Clock Rising */
 	volatile uint8_t GCTRL_WNCKR;
-	/* 0x0C: Reserved4 */
-	volatile uint8_t reserved4;
+	/* 0x0C: reserved_0c */
+	volatile uint8_t reserved_0c;
 	/* 0x0D: Special Control 1 */
 	volatile uint8_t GCTRL_SPCTRL1;
-	/* 0x0E-0x0F: Reserved5 */
-	volatile uint8_t reserved5[2];
+	/* 0x0E-0x0F: reserved_0e_0f */
+	volatile uint8_t reserved_0e_0f[2];
 	/* 0x10: Reset Control DMM */
 	volatile uint8_t GCTRL_RSTDMMC;
 	/* 0x11: Reset Control 4 */
 	volatile uint8_t GCTRL_RSTC4;
-	/* 0x12-0x1B: Reserved6 */
-	volatile uint8_t reserved6[10];
+	/* 0x12-0x1B: reserved_12_1b */
+	volatile uint8_t reserved_12_1b[10];
 	/* 0x1C: Special Control 4 */
 	volatile uint8_t GCTRL_SPCTRL4;
-	/* 0x1D-0x1F: Reserved7 */
-	volatile uint8_t reserved7[3];
+	/* 0x1D-0x1F: reserved_1d_1f */
+	volatile uint8_t reserved_1d_1f[3];
 	/* 0x20: Memory Controller Configuration 3 */
 	volatile uint8_t GCTRL_MCCR3;
 	/* 0x21: Reset Control 5 */
 	volatile uint8_t GCTRL_RSTC5;
-	/* 0x22-0x2F: Reserved8 */
-	volatile uint8_t reserved8[14];
+	/* 0x22-0x2F: reserved_22_2f */
+	volatile uint8_t reserved_22_2f[14];
 	/* 0x30: Memory Controller Configuration */
 	volatile uint8_t GCTRL_MCCR;
 	/* 0x31: Externel ILM/DLM Size */
 	volatile uint8_t GCTRL_EIDSR;
-	/* 0x32-0x36: Reserved9 */
-	volatile uint8_t reserved9[5];
+	/* 0x32: Reserved_32 */
+	volatile uint8_t reserved_32;
+	/* 0x33: Pin Multi-function Enable 2 */
+	volatile uint8_t gctrl_pmer2;
+	/* 0x34-0x36: Reserved_34_36 */
+	volatile uint8_t reserved_34_36[3];
 	/* 0x37: Eflash Protect Lock */
 	volatile uint8_t GCTRL_EPLR;
-	/* 0x38-0x40: Reserved10 */
-	volatile uint8_t reserved10[9];
+	/* 0x38-0x40: Reserved_38_40 */
+	volatile uint8_t reserved_38_40[9];
 	/* 0x41: Interrupt Vector Table Base Address */
 	volatile uint8_t GCTRL_IVTBAR;
-	/* 0x42-0x43: Reserved11 */
-	volatile uint8_t reserved11[2];
+	/* 0x42-0x43: Reserved_42_43 */
+	volatile uint8_t reserved_42_43[2];
 	/* 0x44: Memory Controller Configuration 2 */
 	volatile uint8_t GCTRL_MCCR2;
-	/* 0x45: Reserved12 */
-	volatile uint8_t reserved12;
+	/* 0x45: Reserved_45 */
+	volatile uint8_t reserved_45;
 	/* 0x46: Pin Multi-function Enable 3 */
 	volatile uint8_t GCTRL_PMER3;
-	/* 0x47-0x4A: Reserved13 */
-	volatile uint8_t reserved13[4];
+	/* 0x47-0x4A: reserved_47_4a */
+	volatile uint8_t reserved_47_4a[4];
 	/* 0x4B: ETWD and UART Control */
 	volatile uint8_t GCTRL_ETWDUARTCR;
 	/* 0x4C: Wakeup MCU Control */
 	volatile uint8_t GCTRL_WMCR;
-	/* 0x4D-0x4F: Reserved14 */
-	volatile uint8_t reserved14[3];
+	/* 0x4D-0x4F: reserved_4d_4f */
+	volatile uint8_t reserved_4d_4f[3];
 	/* 0x50: Port 80h/81h Status Register */
 	volatile uint8_t GCTRL_P80H81HSR;
 	/* 0x51: Port 80h Data Register */
@@ -1195,12 +1488,12 @@ struct gctrl_it8xxx2_regs {
 	volatile uint8_t GCTRL_P81HDR;
 	/* 0x53: H2RAM Offset Register */
 	volatile uint8_t GCTRL_H2ROFSR;
-	/* 0x54-0x5C: Reserved15 */
-	volatile uint8_t reserved15[9];
+	/* 0x54-0x5C: reserved_54_5c */
+	volatile uint8_t reserved_54_5c[9];
 	/* 0x5D: RISCV ILM Configuration 0 */
 	volatile uint8_t GCTRL_RVILMCR0;
-	/* 0x5E-0x84: Reserved16 */
-	volatile uint8_t reserved16[39];
+	/* 0x5E-0x84: reserved_5e_84 */
+	volatile uint8_t reserved_5e_84[39];
 	/* 0x85: Chip ID Byte 1 */
 	volatile uint8_t GCTRL_ECHIPID1;
 	/* 0x86: Chip ID Byte 2 */
@@ -1239,6 +1532,10 @@ struct gctrl_it8xxx2_regs {
 #define IT8XXX2_GCTRL_ILM0_ENABLE	BIT(0)
 /* Accept Port 80h Cycle */
 #define IT8XXX2_GCTRL_ACP80		BIT(6)
+/* USB Debug Enable */
+#define IT8XXX2_GCTRL_MCCR_USB_EN	BIT(7)
+/* USB Pad Power-On Enable */
+#define IT8XXX2_GCTRL_PMER2_USB_PAD_EN	BIT(7)
 
 /*
  * VCC Detector Option.
