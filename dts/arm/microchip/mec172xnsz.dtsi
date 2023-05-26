@@ -823,6 +823,28 @@
 			pcrs = <2 12>;
 			status = "disabled";
 		};
+		uart0: uart@400f2400 {
+			compatible = "microchip,xec-uart";
+			reg = <0x400f2400 0x400>;
+			interrupts = <40 1>;
+			clock-frequency = <1843200>;
+			current-speed = <38400>;
+			girqs = <15 0>;
+			pcrs = <2 1>;
+			ldn = <9>;
+			status = "disabled";
+		};
+		uart1: uart@400f2800 {
+			compatible = "microchip,xec-uart";
+			reg = <0x400f2800 0x400>;
+			interrupts = <41 1>;
+			clock-frequency = <1843200>;
+			current-speed = <38400>;
+			girqs = <15 1>;
+			pcrs = <2 2>;
+			ldn = <10>;
+			status = "disabled";
+		};
 		espi0: espi@400f3400 {
 			compatible = "microchip,xec-espi-v2";
 			/* reg tuple contains one 32-bit address cell and one
@@ -948,28 +970,6 @@
 				compatible = "microchip,xec-espi-host-dev";
 				reg = <0x400f2000 0x400>;
 				ldn = <8>;
-				status = "disabled";
-			};
-			uart0: uart@400f2400 {
-				compatible = "microchip,xec-uart";
-				reg = <0x400f2400 0x400>;
-				interrupts = <40 1>;
-				clock-frequency = <1843200>;
-				current-speed = <38400>;
-				girqs = <15 0>;
-				pcrs = <2 1>;
-				ldn = <9>;
-				status = "disabled";
-			};
-			uart1: uart@400f2800 {
-				compatible = "microchip,xec-uart";
-				reg = <0x400f2800 0x400>;
-				interrupts = <41 1>;
-				clock-frequency = <1843200>;
-				current-speed = <38400>;
-				girqs = <15 1>;
-				pcrs = <2 2>;
-				ldn = <10>;
 				status = "disabled";
 			};
 			emi0: emi@400f4000 {
