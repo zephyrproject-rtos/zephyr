@@ -158,6 +158,7 @@ void stm32_exti_trigger(int line, int trigger)
 		break;
 	default:
 		__ASSERT_NO_MSG(trigger);
+		break;
 	}
 	z_stm32_hsem_unlock(CFG_HW_EXTI_SEMID);
 }
