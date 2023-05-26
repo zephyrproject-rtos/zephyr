@@ -62,6 +62,18 @@
 			reg = <0x00400000 DT_SIZE_K(4048)>;
 			status = "disabled";
 		};
+
+		clock: clock-controller@402c8000 {
+			compatible = "nxp,s32-clock";
+			reg = <0x402c8000 0x4000>,
+				<0x402cc000 0x4000>,
+				<0x402d0000 0x4000>,
+				<0x402d4000 0x4000>,
+				<0x402d8000 0x4000>,
+				<0x402e0000 0x4000>;
+			#clock-cells = <1>;
+			status = "okay";
+		};
 	};
 };
 
