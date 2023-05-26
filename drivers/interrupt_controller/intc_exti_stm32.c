@@ -250,7 +250,7 @@ int stm32_exti_set_callback(int line, stm32_exti_callback_t cb, void *arg)
 	const struct device *const dev = DEVICE_DT_GET(EXTI_NODE);
 	struct stm32_exti_data *data = dev->data;
 
-	if (data->cb[line].cb == cb && data->cb[line].data == arg) {
+	if ((data->cb[line].cb == cb) && (data->cb[line].data == arg)) {
 		return 0;
 	}
 
