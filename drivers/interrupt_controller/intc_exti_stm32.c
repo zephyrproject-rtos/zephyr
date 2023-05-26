@@ -181,7 +181,7 @@ static void stm32_exti_isr(const void *exti_range)
 	for (uint8_t i = 0; i <= range->len; i++) {
 		line = range->start + i;
 		/* check if interrupt is pending */
-		if (stm32_exti_is_pending(line)) {
+		if (stm32_exti_is_pending(line) != 0) {
 			/* clear pending interrupt */
 			stm32_exti_clear_pending(line);
 
