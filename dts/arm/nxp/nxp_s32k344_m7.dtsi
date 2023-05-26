@@ -80,6 +80,212 @@
 			#clock-cells = <1>;
 			status = "okay";
 		};
+
+		siul2: siul2@40290000 {
+			reg = <0x40290000 0x10000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			eirq0: eirq@40290010 {
+				compatible = "nxp,s32-siul2-eirq";
+				reg = <0x40290010 0x04>, <0x40290018 0x04>;
+				reg-names = "disr0", "direr0";
+				interrupts = <53 0>, <54 0>, <55 0>, <56 0>;
+				interrupt-names = "0_7", "8_15", "16_23", "24_31";
+				interrupt-controller;
+				#interrupt-cells = <2>;
+				status = "disabled";
+			};
+
+			gpioa_l: gpio@40291702 {
+				compatible = "nxp,s32-gpio";
+				reg = <0x40291702 0x02>, <0x40290240 0x40>;
+				reg-names = "pgpdo", "mscr";
+				interrupt-parent = <&eirq0>;
+				interrupts = <0 0>, <1 1>, <2 2>, <3 3>, <4 4>,
+					<5 5>, <6 6>, <7 7>, <8 16>, <9 17>,
+					<10 18>, <11 19>, <12 20>, <13 21>,
+					<14 22>, <15 23>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <16>;
+				status = "disabled";
+			};
+
+			gpioa_h: gpio@40291700 {
+				compatible = "nxp,s32-gpio";
+				reg = <0x40291700 0x02>, <0x40290280 0x40>;
+				reg-names = "pgpdo", "mscr";
+				interrupt-parent = <&eirq0>;
+				interrupts = <0 4>, <2 0>, <3 1>, <4 2>,
+					<5 3>, <9 5>, <12 6>, <14 7>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <16>;
+				status = "disabled";
+			};
+
+			gpiob_l: gpio@40291706 {
+				compatible = "nxp,s32-gpio";
+				reg = <0x40291706 0x02>, <0x402902c0 0x40>;
+				reg-names = "pgpdo", "mscr";
+				interrupt-parent = <&eirq0>;
+				interrupts = <0 8>, <1 9>, <2 10>, <3 11>, <4 12>,
+					<5 13>, <8 14>, <9 15>, <10 24>, <11 25>,
+					<12 26>, <13 27>, <14 28>, <15 29>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <16>;
+				gpio-reserved-ranges = <6 2>;
+				status = "disabled";
+			};
+
+			gpiob_h: gpio@40291704 {
+				compatible = "nxp,s32-gpio";
+				reg = <0x40291704 0x02>, <0x40290300 0x40>;
+				reg-names = "pgpdo", "mscr";
+				interrupt-parent = <&eirq0>;
+				interrupts = <0 30>, <1 31>, <5 8>, <6 9>, <7 10>,
+					<8 11>, <9 12>, <10 13>, <12 14>, <15 15>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <16>;
+				status = "disabled";
+			};
+
+			gpioc_l: gpio@4029170a {
+				compatible = "nxp,s32-gpio";
+				reg = <0x4029170a 0x02>, <0x40290340 0x40>;
+				reg-names = "pgpdo", "mscr";
+				interrupt-parent = <&eirq0>;
+				interrupts = <0 1>, <1 1>, <2 2>, <3 3>, <4 4>,
+					<5 5>, <6 6>, <7 7>, <8 16>, <9 17>,
+					<10 18>, <11 19>, <12 20>, <13 21>,
+					<14 22>, <15 23>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <16>;
+				status = "disabled";
+			};
+
+			gpioc_h: gpio@40291708 {
+				compatible = "nxp,s32-gpio";
+				reg = <0x40291708 0x02>, <0x40290380 0x40>;
+				reg-names = "pgpdo", "mscr";
+				interrupt-parent = <&eirq0>;
+				interrupts = <4 16>, <5 17>, <7 18>, <8 19>,
+					<9 20>, <10 21>, <11 22>, <13 23>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <16>;
+				status = "disabled";
+			};
+
+			gpiod_l: gpio@4029170e {
+				compatible = "nxp,s32-gpio";
+				reg = <0x4029170e 0x02>, <0x402903c0 0x40>;
+				reg-names = "pgpdo", "mscr";
+				interrupt-parent = <&eirq0>;
+				interrupts = <0 8>, <1 9>, <2 10>, <3 11>, <4 12>,
+					<5 13>, <6 14>, <7 15>, <8 24>,
+					<9 25>, <10 26>, <11 27>, <12 28>,
+					<13 29>, <14 30>, <15 31>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <16>;
+				status = "disabled";
+			};
+
+			gpiod_h: gpio@4029170c {
+				compatible = "nxp,s32-gpio";
+				reg = <0x4029170c 0x02>, <0x40290400 0x40>;
+				reg-names = "pgpdo", "mscr";
+				interrupt-parent = <&eirq0>;
+				interrupts = <1 24>, <4 25>, <5 26>, <6 27>,
+					<7 28>, <8 29>, <11 30>, <12 31>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <16>;
+				status = "disabled";
+			};
+
+			gpioe_l: gpio@40291712 {
+				compatible = "nxp,s32-gpio";
+				reg = <0x40291712 0x02>, <0x40290440 0x40>;
+				reg-names = "pgpdo", "mscr";
+				interrupt-parent = <&eirq0>;
+				interrupts = <0 0>, <1 1>, <2 2>, <3 3>,
+					<4 4>, <5 5>, <6 6>, <8 7>,
+					<9 8>, <10 9>, <11 10>, <12 11>,
+					<13 12>, <14 13>, <15 14>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <16>;
+				status = "disabled";
+			};
+
+			gpioe_h: gpio@40291710 {
+				compatible = "nxp,s32-gpio";
+				reg = <0x40291710 0x02>, <0x40290480 0x40>;
+				reg-names = "pgpdo", "mscr";
+				interrupt-parent = <&eirq0>;
+				interrupts = <0 15>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <16>;
+				status = "disabled";
+			};
+
+			gpiof_l: gpio@40291716 {
+				compatible = "nxp,s32-gpio";
+				reg = <0x40291716 0x02>, <0x402904c0 0x40>;
+				reg-names = "pgpdo", "mscr";
+				interrupt-parent = <&eirq0>;
+				interrupts = <0 0>, <1 1>, <2 2>, <3 3>,
+					<4 4>, <5 5>, <6 6>, <7 7>,
+					<8 16>, <9 17>, <10 18>, <11 19>,
+					<12 20>, <13 21>, <14 22>, <15 23>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <16>;
+				status = "disabled";
+			};
+
+			gpiof_h: gpio@40291714 {
+				compatible = "nxp,s32-gpio";
+				reg = <0x40291714 0x02>, <0x40290500 0x40>;
+				reg-names = "pgpdo", "mscr";
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <16>;
+				status = "disabled";
+			};
+
+			gpiog_l: gpio@4029171a {
+				compatible = "nxp,s32-gpio";
+				reg = <0x4029171a 0x02>, <0x40290540 0x40>;
+				reg-names = "pgpdo", "mscr";
+				interrupt-parent = <&eirq0>;
+				interrupts = <0 8>, <1 9>, <2 10>, <3 11>,
+					<4 12>, <5 13>, <6 14>, <7 15>,
+					<8 24>, <9 25>, <10 26>, <11 27>,
+					<12 28>, <13 29>, <14 30>, <15 31>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <16>;
+				status = "disabled";
+			};
+
+			gpiog_h: gpio@40291718 {
+				compatible = "nxp,s32-gpio";
+				reg = <0x40291718 0x02>, <0x40290580 0x40>;
+				reg-names = "pgpdo", "mscr";
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <16>;
+				status = "disabled";
+			};
+		};
 	};
 };
 
