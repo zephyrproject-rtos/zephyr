@@ -45,6 +45,9 @@ LOG_MODULE_REGISTER(tcs3400, CONFIG_SENSOR_LOG_LEVEL);
 #define TCS3400_BDATAL_REG 0x9A
 #define TCS3400_BDATAH_REG 0x9B
 
+#define TCS3400_IR_REG 0xc0
+#define TCS3400_IR_IR 0x80
+
 #define TCS3400_AICLEAR_REG 0xe7
 
 /* Default values */
@@ -53,6 +56,7 @@ LOG_MODULE_REGISTER(tcs3400, CONFIG_SENSOR_LOG_LEVEL);
 #define TCS3400_DEFAULT_PERS 0x00
 #define TCS3400_DEFAULT_CONFIG 0x00
 #define TCS3400_DEFAULT_CONTROL 0x00
+#define TCS3400_DEFAULT_IR 0x00
 #define TCS3400_AICLEAR_RESET 0x00
 
 struct tcs3400_config {
@@ -179,7 +183,7 @@ static int tcs3400_attr_set(const struct device *dev,
 	int ret;
 	uint8_t reg_val;
 
-	switch (attr) {
+	switch ((enum sensor_attribute_tcs3400)attr) {
 	case SENSOR_ATTR_TCS3400_INTEGRATION_CYCLES:
 		if (!IN_RANGE(val->val1, 1, 256)) {
 			return -EINVAL;
@@ -187,6 +191,14 @@ static int tcs3400_attr_set(const struct device *dev,
 		reg_val = UINT8_MAX - val->val1 + 1;
 		ret = i2c_reg_write_byte_dt(&cfg->i2c,
 					    TCS3400_ATIME_REG, reg_val);
+		if (ret) {
+			return ret;
+		}
+		break;
+	case SENSOR_ATTR_TCS3400_IR_ENABLE:
+		reg_val = val->val1 != 0 ? TCS3400_IR_IR : 0;
+
+		ret = i2c_reg_write_byte_dt(&cfg->i2c, TCS3400_IR_REG, reg_val);
 		if (ret) {
 			return ret;
 		}
@@ -213,6 +225,7 @@ static int tcs3400_sensor_setup(const struct device *dev)
 		{TCS3400_PERS_REG, TCS3400_DEFAULT_PERS},
 		{TCS3400_CONFIG_REG, TCS3400_DEFAULT_CONFIG},
 		{TCS3400_CONTROL_REG, TCS3400_DEFAULT_CONTROL},
+		{TCS3400_IR_REG, TCS3400_DEFAULT_IR},
 	};
 
 	ret = i2c_reg_read_byte_dt(&cfg->i2c, TCS3400_ID_REG, &chip_id);
