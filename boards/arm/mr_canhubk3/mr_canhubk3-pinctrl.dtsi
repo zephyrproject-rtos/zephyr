@@ -1,0 +1,17 @@
+/*
+ * Copyright 2023 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <nxp/s32/S32K344-172MQFP-pinctrl.h>
+
+&pinctrl {
+
+	eirq0_default: eirq0_default {
+		group1 {
+			pinmux = <PTD15_EIRQ31>;
+			input-enable;
+		};
+	};
+};
