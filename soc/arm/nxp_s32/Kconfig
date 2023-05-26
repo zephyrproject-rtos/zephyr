@@ -14,5 +14,6 @@ source "soc/arm/nxp_s32/*/Kconfig.soc"
 
 config SOC_PART_NUMBER
 	default SOC_PART_NUMBER_S32ZE_R52 if SOC_SERIES_S32ZE_R52
+	default SOC_PART_NUMBER_S32K3 if SOC_SERIES_S32K3_M7
 
 endif # SOC_FAMILY_S32
