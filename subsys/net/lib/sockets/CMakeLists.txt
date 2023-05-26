@@ -1,5 +1,10 @@
 # SPDX-License-Identifier: Apache-2.0
 
+zephyr_syscall_header(
+  ${ZEPHYR_BASE}/include/zephyr/net/socket.h
+  ${ZEPHYR_BASE}/include/zephyr/net/socket_select.h
+)
+
 zephyr_include_directories(.)
 
 zephyr_sources(
