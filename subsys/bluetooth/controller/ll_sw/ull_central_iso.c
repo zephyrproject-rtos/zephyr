@@ -672,7 +672,7 @@ void ll_cis_create(uint16_t cis_handle, uint16_t acl_handle)
 	cis->lll.sn = 0;
 	cis->lll.nesn = 0;
 	cis->lll.cie = 0;
-	cis->lll.flushed = 0;
+	cis->lll.flush = LLL_CIS_FLUSH_NONE;
 	cis->lll.active = 0;
 	cis->lll.datapath_ready_rx = 0;
 	cis->lll.tx.bn_curr = 1U;
@@ -851,7 +851,7 @@ uint8_t ull_central_iso_setup(uint16_t cis_handle,
 	cis->lll.nesn = 0U;
 	cis->lll.cie = 0U;
 	cis->lll.npi = 0U;
-	cis->lll.flushed = 0U;
+	cis->lll.flush = LLL_CIS_FLUSH_NONE;
 	cis->lll.active = 0U;
 	cis->lll.datapath_ready_rx = 0U;
 	cis->lll.tx.payload_count = 0U;
