@@ -7,6 +7,7 @@
 #define ZEPHYR_KERNEL_INCLUDE_KSWAP_H_
 
 #include <ksched.h>
+#include <sys/atomic.h>
 #include <spinlock.h>
 #include <kernel_arch_func.h>
 
@@ -48,10 +49,6 @@ void z_smp_release_global_lock(struct k_thread *thread);
  * treat this because the scheduler lock can't be released by the
  * switched-to thread, which is going to (obviously) be running its
  * own code and doesn't know it was switched out.
- *
- * Note: future SMP architectures may need a fence/barrier or cache
- * invalidation here.  Current ones don't, and sadly Zephyr doesn't
- * have a framework for that yet.
  */
 static inline void z_sched_switch_spin(struct k_thread *thread)
 {
@@ -59,8 +56,18 @@ static inline void z_sched_switch_spin(struct k_thread *thread)
 	volatile void **shp = (void *)&thread->switch_handle;
 
 	while (*shp == NULL) {
-		k_busy_wait(1);
+		__asm__ __volatile__ (""::: "memory");
 	}
+	/* Read barrier: don't allow any subsequent loads in the
+	 * calling code to reorder before we saw switch_handle go
+	 * non-null.
+	 */
+#if defined(__GNUC__)
+			/* GCC-ism */
+			__atomic_thread_fence(__ATOMIC_SEQ_CST);
+#else
+			atomic_thread_fence(memory_order_seq_cst);
+#endif
 #endif
 }
 
@@ -152,8 +159,17 @@ static ALWAYS_INLINE unsigned int do_swap(unsigned int key,
 		void *newsh = new_thread->switch_handle;
 
 		if (IS_ENABLED(CONFIG_SMP)) {
-			/* Active threads MUST have a null here */
+			/* Active threads must have a null here.  And
+			 * it must be seen before the scheduler lock
+			 * is released!
+			 */
 			new_thread->switch_handle = NULL;
+#if defined(__GNUC__)
+			/* GCC-ism */
+			__atomic_thread_fence(__ATOMIC_SEQ_CST);
+#else
+			atomic_thread_fence(memory_order_seq_cst);
+#endif
 		}
 		k_spin_release(&sched_spinlock);
 		arch_switch(newsh, &old_thread->switch_handle);
