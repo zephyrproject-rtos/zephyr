@@ -854,7 +854,7 @@ static inline bool z_impl_device_is_ready(const struct device *dev)
  * The maximum length is set so that device_get_binding() can be used from
  * userspace.
  */
-#define Z_DEVICE_MAX_NAME_LEN 48
+#define Z_DEVICE_MAX_NAME_LEN 48U
 
 /**
  * @brief Compile time check for device name length
