@@ -118,8 +118,101 @@ def c_handle_array(dev, handles, dynamic_deps, extra_support_handles=0):
         '{:s}[] = {{ {:s} }};'.format(dev.ordinals.sym.name, ', '.join(handles)),
     ]
 
+def create_device_dt_list_each(devl, lines, log, log_level, fp):
+    if devl.init is None:
+        return
+    lines.append('/* {:s} */'.format(parsed_elf.dev_path_str(devl)))
+    lines.append('&{:s},'.format(devl.init))
+    log.append('{:<16s}'.format(parsed_elf.dev_path_str(devl).split("/")[-1]))
+    log.append('{:<16s}'.format(log_level))
+
+    if len(devl.devs_depends_on) != 0:
+        lines.append('/*parent nodes:')
+        for parent_dev in devl.devs_depends_on:
+            lines.append('{:s} '.format(parsed_elf.dev_path_str(parent_dev)))
+            log.append('{:<16s} '.format(parsed_elf.dev_path_str(parent_dev).split("/")[-1]))
+        lines.append('*/ \n')
+    else :
+        lines.append('/*No parent nodes*/ \n')
+        log.append('{:<16s} '.format(':None'))
+    log.append('\n')
+
+def dump_dev_init_order(pre_k, post_k, app):
+    with open(os.path.abspath('dts_nodes_init.log'), "w") as log_file:
+        log_heading = ['\n DTS based device initializtion in accesnding order \n\n']
+        log_heading.append('{:<16}'.format('Node Name:'))
+        log_heading.append('{:<16}'.format('Init Level:'))
+        log_heading.append('{:<16}'.format('Dep Node:'))
+        log_heading.append('\n---------------------------------------------------\n')
+        print(''.join(log_heading))
+        log_file.write(''.join(log_heading))
+
+        print(''.join(pre_k))
+        log_file.write(''.join(pre_k))
+        print(''.join(post_k))
+        log_file.write(''.join(post_k))
+        print(''.join(app))
+        log_file.write(''.join(app))
+
+def create_dt_init_func(fp):
+    file_dr = os.path.join(sys.path[0])
+    file = os.path.join(file_dr, '../build/dev_dt_init.txt')
+
+    # Dump device init code into generated dev_handles.c
+    with open(os.path.abspath(file), "r") as fpc:
+        fp.write(fpc.read())
+
+def create_device_dt_list(parsed_elf):
+    def get_parent_init_level(parent_dev, level):
+        for dev in parent_dev:
+            if dev.init_level > level:
+                level = dev.init_level
+        return level
+
+    # Create static array of device init_entry for each initializtion level
+    dev_list = parsed_elf.dt_devices
+    with open(args.output_source, "a") as fp:
+        pre_k_lines = ['\nconst struct init_entry *__pre_k_device_dt_list[] = {']
+        post_k_lines = ['const struct init_entry *__post_k_device_dt_list[] = {']
+        app_lines = ['const struct init_entry *__app_device_dt_list[] = {']
+        pre_k_log = []
+        post_k_log = []
+        app_k_log = []
+
+        header_line = ['\n']
+        for devl in dev_list:
+            if devl.init is None:
+                continue
+            header_line.append('extern const Z_DECL_ALIGN(struct init_entry) {:s};'.format(devl.init))
+
+        for devl in dev_list:
+            if devl.init is None:
+                continue
+
+            # Create static array also based on parent initializtion level
+            level = get_parent_init_level(devl.devs_depends_on, devl.init_level)
+            if level == (1,) :
+                create_device_dt_list_each(devl, pre_k_lines, pre_k_log, 'PRE-KERNEL', fp)
+            elif level == (2,):
+                create_device_dt_list_each(devl, post_k_lines, post_k_log, 'POST-KERNEL', fp)
+            elif level == (3,):
+                create_device_dt_list_each(devl, app_lines, app_k_log, 'APP-LEVEL', fp)
+
+        pre_k_lines.append('};\n')
+        post_k_lines.append('};\n')
+        app_lines.append('};\n')
+
+        fp.write('\n'.join(header_line))
+        fp.write('\n'.join(pre_k_lines))
+        fp.write('\n'.join(post_k_lines))
+        fp.write('\n'.join(app_lines))
+
+        create_dt_init_func(fp)
+        dump_dev_init_order(pre_k_log, post_k_log, app_k_log)
+
 def main():
     parse_args()
+    global parsed_elf
 
     edtser = os.path.join(os.path.split(args.kernel)[0], "edt.pickle")
     with open(edtser, 'rb') as f:
@@ -163,6 +256,8 @@ def main():
             )
             lines.extend([''])
             fp.write('\n'.join(lines))
+
+    create_device_dt_list(parsed_elf)
 
 if __name__ == "__main__":
     main()

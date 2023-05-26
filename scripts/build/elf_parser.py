@@ -92,6 +92,10 @@ class Device(_Symbol):
         self.ordinals = None
         self.pm = None
 
+        #init entry and level
+        self.init = None
+        self.init_level = None
+
         # Devicetree dependencies, injected dependencies, supported devices
         self.devs_depends_on = set()
         self.devs_depends_on_injected = set()
@@ -120,6 +124,7 @@ class ZephyrElf:
         self.relocatable = self.elf['e_type'] == 'ET_REL'
         self.edt = edt
         self.devices = []
+        self.dt_devices = []
         self.ld_consts = self._symbols_find_value(set([device_start_symbol, *Device.required_ld_consts, *DevicePM.required_ld_consts]))
         self._device_parse_and_link()
 
@@ -179,6 +184,18 @@ class ZephyrElf:
                     if sym.name.startswith(prefix):
                         cb(sym)
 
+    def _object_find_named_varg(self, prefix, cb, *arg):
+        for section in self.elf.iter_sections():
+            if isinstance(section, SymbolTableSection):
+                for sym in section.iter_symbols():
+                    if sym.entry.st_info.type != 'STT_OBJECT':
+                        continue
+                    if sym.name.startswith(prefix):
+                        cb(sym, arg)
+
+    def dev_path_str(self, dev):
+        return dev.edt_node and dev.edt_node.path or dev.sym.name
+
     def _link_devices(self, devices):
         # Compute the dependency graph induced from the full graph restricted to the
         # the nodes that exist in the application.  Note that the edges in the
@@ -187,7 +204,6 @@ class ZephyrElf:
 
         for ord, dev in devices.items():
             n = self.edt.dep_ord2node[ord]
-
             deps = set(n.depends_on)
             while len(deps) > 0:
                 dn = deps.pop()
@@ -217,6 +233,18 @@ class ZephyrElf:
                     dev.devs_depends_on_injected.add(devices[inj])
                     devices[inj].devs_supports.add(dev)
 
+    def _link_dev_init(self, dev):
+
+        def _on_init_level(sym ,level):
+            dev.init_level = level
+            dev.init = sym.name
+
+        # Retrieve device init_entry of each device node
+        self._object_find_named_varg('__devdt_PRE_KERNEL_1__device_dts_ord_{:d}'.format(dev.ordinal), _on_init_level, 1)
+        self._object_find_named_varg('__devdt_PRE_KERNEL_2__device_dts_ord_{:d}'.format(dev.ordinal), _on_init_level, 1)
+        self._object_find_named_varg('__devdt_POST_KERNEL__device_dts_ord_{:d}'.format(dev.ordinal), _on_init_level, 2)
+        self._object_find_named_varg('__devdt_APPLICATION__device_dts_ord_{:d}'.format(dev.ordinal), _on_init_level, 3)
+
     def _device_parse_and_link(self):
         # Find all PM structs
         pm_structs = {}
@@ -233,6 +261,7 @@ class ZephyrElf:
         # Find all device structs
         def _on_device(sym):
             self.devices.append(Device(self, sym))
+
         self._object_find_named('__device_', _on_device)
 
         # Sort the device array by address for handle calculation
@@ -250,6 +279,7 @@ class ZephyrElf:
                 dev.ordinals = ordinal_arrays[dev.obj_ordinals]
                 if dev.ordinal != DeviceOrdinals.DEVICE_HANDLE_NULL:
                     dev.edt_node = self.edt.dep_ord2node[dev.ordinal]
+                    self._link_dev_init(dev)
 
         # Create mapping of ordinals to devices
         devices_by_ord = {d.ordinal: d for d in self.devices if d.edt_node}
@@ -259,6 +289,12 @@ class ZephyrElf:
 
         # Link injected devices to each other
         self._link_injected(devices_by_ord)
+
+        for index in range(len(self.edt.nodes)):
+            for ord, dev in devices_by_ord.items():
+                if index == ord:
+                    self.dt_devices.append(dev)
+                    break
 
     def device_dependency_graph(self, title, comment):
         """

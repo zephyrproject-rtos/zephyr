@@ -1,0 +1,33 @@
+#if defined (CONFIG_DTS_BOOT_PRIORITY)
+extern int device_status_update(const struct device *dev, int status);
+
+void device_dt_init(int level)
+{
+	const struct init_entry **entry;
+	int num_entry, status;
+
+	switch (level) {
+	case Z_INIT_ORD_PRE_KERNEL_2:
+		entry = __pre_k_device_dt_list;
+		num_entry = ARRAY_SIZE(__pre_k_device_dt_list);
+		break;
+	case Z_INIT_ORD_POST_KERNEL:
+		entry = __post_k_device_dt_list;
+		num_entry = ARRAY_SIZE(__post_k_device_dt_list);
+		break;
+	case Z_INIT_ORD_APPLICATION:
+		entry = __app_device_dt_list;
+		num_entry = ARRAY_SIZE(__app_device_dt_list);
+		break;
+	default:
+		return;
+	}
+
+	for (int i = 0; i < num_entry; i++) {
+		if (entry[i]->init_fn.dev != NULL) {
+			status = entry[i]->init_fn.dev(entry[i]->dev);
+			device_status_update(entry[i]->dev, status);
+		}
+	}
+}
+#endif

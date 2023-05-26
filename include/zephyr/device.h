@@ -177,7 +177,7 @@ typedef int16_t device_handle_t;
 #define DEVICE_DT_DEFINE(node_id, init_fn, pm, data, config, level, prio, api, \
 			 ...)                                                  \
 	Z_DEVICE_STATE_DEFINE(Z_DEVICE_DT_DEV_ID(node_id));                    \
-	Z_DEVICE_DEFINE(node_id, Z_DEVICE_DT_DEV_ID(node_id),                  \
+	Z_DEVICE_DT_DEFINE(node_id, Z_DEVICE_DT_DEV_ID(node_id),               \
 			DEVICE_DT_NAME(node_id), init_fn, pm, data, config,    \
 			level, prio, api,                                      \
 			&Z_DEVICE_STATE_NAME(Z_DEVICE_DT_DEV_ID(node_id)),     \
@@ -334,6 +334,16 @@ typedef int16_t device_handle_t;
 	(&Z_INIT_ENTRY_NAME(DEVICE_DT_NAME_GET(node_id)))
 
 /**
+ * @brief Get a @ref init_entry reference from a devicetree node and based one init level.
+ *
+ * @param node_id A devicetree node identifier
+ *
+ * @return A pointer to the @ref init_entry object created for that node
+ */
+#define DEVICE_INIT_LEVEL_DT_GET(level, node_id)                              \
+	(&Z_INIT_ENTRY_NAME_LEVEL(level, DEVICE_DT_NAME_GET(node_id)))
+
+/**
  * @brief Get a @ref init_entry reference from a device identifier.
  *
  * @param dev_id Device identifier.
@@ -419,6 +429,7 @@ struct device {
 static inline device_handle_t device_handle_get(const struct device *dev)
 {
 	device_handle_t ret = DEVICE_HANDLE_NULL;
+
 	STRUCT_SECTION_START_EXTERN(device);
 
 	/* TODO: If/when devices can be constructed that are not part of the
@@ -936,6 +947,26 @@ static inline bool z_impl_device_is_ready(const struct device *dev)
 			.dev = &DEVICE_NAME_GET(dev_id),                       \
 	}
 
+#if defined(CONFIG_DTS_BOOT_PRIORITY)
+/**
+ * @brief Define the init entry for a device.
+ *
+ * @param dev_id Device identifier.
+ * @param init_fn_ Device init function.
+ * @param level Initialization level.
+ * @param prio don't care if CONFIG_DTS_BOOT_PRIORITY enabled.
+ */
+#define Z_DEVICE_DT_INIT_ENTRY_DEFINE(dev_id, init_fn_, level, prio)		\
+	const Z_DECL_ALIGN(struct init_entry)					\
+		Z_DEVICE_INIT_ENTRY_SECTION(DEVICE_BOOT, 0) __used __noasan	\
+		Z_INIT_ENTRY_NAME_LEVEL(level, DEVICE_NAME_GET(dev_id)) = {	\
+			.init_fn = {.dev = (init_fn_)},				\
+			.dev = &DEVICE_NAME_GET(dev_id),			\
+	}
+#else
+#define Z_DEVICE_DT_INIT_ENTRY_DEFINE Z_DEVICE_INIT_ENTRY_DEFINE
+#endif
+
 /**
  * @brief Define a @ref device and all other required objects.
  *
@@ -969,6 +1000,24 @@ static inline bool z_impl_device_is_ready(const struct device *dev)
                                                                                \
 	Z_DEVICE_INIT_ENTRY_DEFINE(dev_id, init_fn, level, prio)
 
+
+/**
+ * @brief Like Z_DEVICE_DEFINE(), but uses device tree based device enumeration.
+ *
+ */
+
+#define Z_DEVICE_DT_DEFINE(node_id, dev_id, name, init_fn, pm, data, config,	\
+			level, prio, api, state, ...)				\
+	Z_DEVICE_NAME_CHECK(name);						\
+										\
+	IF_ENABLED(CONFIG_DEVICE_DEPS,						\
+			(Z_DEVICE_DEPS_DEFINE(node_id, dev_id, __VA_ARGS__);))	\
+										\
+	Z_DEVICE_BASE_DEFINE(node_id, dev_id, name, pm, data, config, level,	\
+			     prio, api, state, Z_DEVICE_DEPS_NAME(dev_id));	\
+										\
+	Z_DEVICE_DT_INIT_ENTRY_DEFINE(dev_id, init_fn, level, prio)
+
 #if defined(CONFIG_HAS_DTS) || defined(__DOXYGEN__)
 /**
  * @brief Declare a device for each status "okay" devicetree node.
@@ -984,6 +1033,7 @@ static inline bool z_impl_device_is_ready(const struct device *dev)
 	extern const struct device DEVICE_DT_NAME_GET(node_id);
 
 DT_FOREACH_STATUS_OKAY_NODE(Z_MAYBE_DEVICE_DECLARE_INTERNAL)
+
 #endif /* CONFIG_HAS_DTS */
 
 /** @endcond */

@@ -20,6 +20,18 @@
 		__init_end = .;
 	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
+	SECTION_PROLOGUE(devices,,)
+	{
+		/* Link in devices objects, which are tied to the init ones;
+		 * the objects are thus sorted the same way as their init
+		 * object parent. See above and include/device.h.
+		 */
+		__device_start = .;
+		CREATE_OBJ_LEVEL(device, EARLY)
+		CREATE_OBJ_LEVEL(device, DEVICE_BOOT)
+		__device_end = .;
+	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+
 	ITERABLE_SECTION_ROM_NUMERIC(device, 4)
 
 #if defined(CONFIG_GEN_SW_ISR_TABLE) && !defined(CONFIG_DYNAMIC_INTERRUPTS)

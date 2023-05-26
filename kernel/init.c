@@ -225,6 +225,34 @@ extern volatile uintptr_t __stack_chk_guard;
 __pinned_bss
 bool z_sys_post_kernel;
 
+#ifdef CONFIG_DTS_BOOT_PRIORITY
+__attribute__((weak)) void device_dt_init(int level)
+{
+}
+#endif
+
+int device_status_update(const struct device *dev, int status)
+{
+	if (status != 0) {
+		if (status < 0) {
+			status = -status;
+		}
+		if (status > UINT8_MAX) {
+			status = UINT8_MAX;
+		}
+		dev->state->init_res = status;
+	}
+
+	dev->state->initialized = true;
+
+	if (!status) {
+		/* Run automatic device runtime enablement */
+		(void)pm_device_runtime_auto_enable(dev);
+	}
+
+	return 0;
+}
+
 /**
  * @brief Execute all the init entry initialization functions at a given level
  *
@@ -252,6 +280,10 @@ static void z_sys_init_run_level(enum init_level level)
 	};
 	const struct init_entry *entry;
 
+#ifdef CONFIG_DTS_BOOT_PRIORITY
+	device_dt_init(level);
+#endif
+
 	for (entry = levels[level]; entry < levels[level+1]; entry++) {
 		const struct device *dev = entry->dev;
 
@@ -260,26 +292,8 @@ static void z_sys_init_run_level(enum init_level level)
 
 			if (entry->init_fn.dev != NULL) {
 				rc = entry->init_fn.dev(dev);
-				/* Mark device initialized. If initialization
-				 * failed, record the error condition.
-				 */
-				if (rc != 0) {
-					if (rc < 0) {
-						rc = -rc;
-					}
-					if (rc > UINT8_MAX) {
-						rc = UINT8_MAX;
-					}
-					dev->state->init_res = rc;
-				}
 			}
-
-			dev->state->initialized = true;
-
-			if (rc == 0) {
-				/* Run automatic device runtime enablement */
-				(void)pm_device_runtime_auto_enable(dev);
-			}
+			device_status_update(dev, rc);
 		} else {
 			(void)entry->init_fn.sys();
 		}
@@ -366,6 +380,7 @@ static void init_idle_thread(int i)
 
 #if CONFIG_MP_MAX_NUM_CPUS > 1
 	char tname[8];
+
 	snprintk(tname, 8, "idle %02d", i);
 #else
 	char *tname = "idle";

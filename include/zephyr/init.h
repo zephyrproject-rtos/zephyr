@@ -125,6 +125,13 @@ struct init_entry {
 #define Z_INIT_ENTRY_NAME(init_id) _CONCAT(__init_, init_id)
 
 /**
+ * @brief Obtain init entry name for a given level.
+ *
+ * @param init_id Init entry unique identifier.
+ */
+#define Z_INIT_ENTRY_NAME_LEVEL(level, init_id)\
+	_CONCAT(_CONCAT(__devdt_, level), init_id)
+/**
  * @brief Init entry section.
  *
  * Each init entry is placed in a section with a name crafted so that it allows
@@ -132,6 +139,15 @@ struct init_entry {
  */
 #define Z_INIT_ENTRY_SECTION(level, prio)                                      \
 	__attribute__((__section__(".z_init_" #level STRINGIFY(prio)"_")))
+
+/**
+ * @brief Device init entry section.
+ *
+ * Each device init entry is placed in a section with a name crafted so that it allows
+ * linker scripts to sort them according to the specified level/priority.
+ */
+#define Z_DEVICE_INIT_ENTRY_SECTION(level, prio)                                      \
+	__attribute__((__section__(".z_device_" #level STRINGIFY(prio)"_")))
 
 /** @endcond */
 

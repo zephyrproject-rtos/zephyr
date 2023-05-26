@@ -8,6 +8,9 @@ zephyr_linker_section_obj_level(SECTION init LEVEL POST_KERNEL)
 zephyr_linker_section_obj_level(SECTION init LEVEL APPLICATION)
 zephyr_linker_section_obj_level(SECTION init LEVEL SMP)
 
+zephyr_linker_section(NAME device KVMA RAM_REGION GROUP RODATA_REGION)
+zephyr_linker_section_obj_level(SECTION device LEVEL DEVICE_BOOT)
+
 zephyr_iterable_section(NAME device NUMERIC KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN 4)
 
 if(CONFIG_GEN_SW_ISR_TABLE AND NOT CONFIG_DYNAMIC_INTERRUPTS)

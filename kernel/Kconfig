@@ -984,6 +984,23 @@ config DEVICE_DEPS_DYNAMIC
 	  Option that makes it possible to manipulate device dependencies at
 	  runtime.
 
+config DTS_BOOT_PRIORITY
+	bool "DTS based device initialization priority"
+	depends on HAS_DTS
+	select DEVICE_DEPS
+	default n
+	help
+		DTS based device initialization priority. The priority is completely depend on the
+		position of nodes in the device tree and also depend on bus/parent driver initialization priority.
+		The initialization level expected to be remain same for a specific driver and will not change from
+		platform to platform. All other inter driver dependency and initialization priority will be take
+		care based on your device position in the device tree such as order of device node, parent
+		node up on which the child node located etc. The kernel will ensure the parent node init
+		will be invoked before the child node init call. Similarly device init will be called in
+		the ascending order of nodes in the device tree. This will help a platform integrator or
+		application writer to configure the driver initialization order based on his requirement
+		such as inter driver dependency using device tree.
+
 endmenu
 
 rsource "Kconfig.vm"
