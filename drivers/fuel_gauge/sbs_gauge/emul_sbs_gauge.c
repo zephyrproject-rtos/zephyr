@@ -253,6 +253,33 @@ static const struct i2c_emul_api sbs_gauge_emul_api_i2c = {
 	.transfer = sbs_gauge_emul_transfer_i2c,
 };
 
+static void sbs_gauge_emul_reset(const struct emul *target)
+{
+	struct sbs_gauge_emul_data *data = target->data;
+
+	memset(data, 0, sizeof(*data));
+}
+
+#ifdef CONFIG_ZTEST
+#include <zephyr/ztest.h>
+
+/* Add test reset handlers in when using emulators with tests */
+#define SBS_GAUGE_EMUL_RESET_RULE_BEFORE(inst)                                                     \
+	sbs_gauge_emul_reset(EMUL_DT_GET(DT_DRV_INST(inst)));
+
+static void emul_sbs_gauge_reset_rule_after(const struct ztest_unit_test *test, void *data)
+{
+	ARG_UNUSED(test);
+	ARG_UNUSED(data);
+
+	DT_INST_FOREACH_STATUS_OKAY(SBS_GAUGE_EMUL_RESET_RULE_BEFORE)
+}
+ZTEST_RULE(emul_sbs_gauge_reset, NULL, emul_sbs_gauge_reset_rule_after);
+#else /* !CONFIG_ZTEST */
+/* Stub ZTEST_DMEM in case emulator is not used in a testing environment. */
+#define ZTEST_DMEM
+#endif /* CONFIG_ZTEST */
+
 /**
  * Set up a new SBS_GAUGE emulator (I2C)
  *
@@ -262,8 +289,9 @@ static const struct i2c_emul_api sbs_gauge_emul_api_i2c = {
  */
 static int emul_sbs_sbs_gauge_init(const struct emul *target, const struct device *parent)
 {
-	ARG_UNUSED(target);
 	ARG_UNUSED(parent);
+
+	sbs_gauge_emul_reset(target);
 
 	return 0;
 }
@@ -272,7 +300,7 @@ static int emul_sbs_sbs_gauge_init(const struct emul *target, const struct devic
  * Main instantiation macro. SBS Gauge Emulator only implemented for I2C
  */
 #define SBS_GAUGE_EMUL(n)                                                                          \
-	static struct sbs_gauge_emul_data sbs_gauge_emul_data_##n;                      \
+	static struct sbs_gauge_emul_data sbs_gauge_emul_data_##n;                                 \
 	static const struct sbs_gauge_emul_cfg sbs_gauge_emul_cfg_##n = {                          \
 		.addr = DT_INST_REG_ADDR(n),                                                       \
 	};                                                                                         \
