@@ -1,0 +1,5 @@
+tests:
+
+  libraries.devicetree.boot_order:
+    platform_allow: native_posix
+    tags: devicetree

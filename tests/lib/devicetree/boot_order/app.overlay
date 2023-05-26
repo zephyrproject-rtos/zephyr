@@ -1,0 +1,92 @@
+/*
+ * Copyright (c) 2020 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Application overlay for testing the devicetree.h API.
+ *
+ * Names in this file should be chosen in a way that won't conflict
+ * with real-world devicetree nodes, to allow these tests to run on
+ * (and be extended to test) real hardware.
+ */
+
+/ {
+	test {
+		#address-cells = <0x1>;
+		#size-cells = <0x1>;
+
+		test_gpio_0: gpio@ffff {
+			gpio-controller;
+			#gpio-cells = <0x2>;
+			compatible = "vnd,gpio-device";
+			status = "okay";
+			reg = <0xffff 0x1000>;
+		};
+
+		i2c: i2c@11112222 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "vnd,i2c";
+			status = "okay";
+			reg = <0x11112222 0x1000>;
+
+			test_i2c_dev_a: test-i2c-dev@10 {
+				compatible = "vnd,i2c-device";
+				status = "okay";
+				reg = <0x10>;
+				supply-gpios = <&test_gpio_0 1 0>;
+			};
+
+			test_i2c_dev_b: test-i2c-dev@12 {
+				#address-cells = <1>;
+				#size-cells = <0>;
+				compatible = "vnd,i2c-device";
+				status = "okay";
+				reg = <0x12>;
+			};
+
+			test_i2c_dev_c: test-i2c-dev@13 {
+				compatible = "vnd,i2c-device";
+				reg = <0x13>;
+				status = "okay";
+			};
+
+			test-i2c-dev@14 {
+				compatible = "vnd,i2c-device";
+				status = "okay";
+				reg = <0x14>;
+			};
+		};
+
+		spi: spi@44442222 {
+			compatible = "vnd,spi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x44442222 0x1000>;
+			status = "okay";
+
+			test_spi_dev_a: test-spi-dev@1 {
+				compatible = "vnd,spi-device";
+				status = "okay";
+				reg = <0x1>;
+				spi-max-frequency = <50000000>;
+				supply-gpios = <&test_gpio_0 1 0>;
+			};
+
+			test_spi_dev_b: test-spi-dev@2 {
+				compatible = "vnd,spi-device";
+				status = "okay";
+				spi-max-frequency = <50000000>;
+				reg = <0x2>;
+			};
+
+			test_spi_dev_c: test-spi-dev@3 {
+				compatible = "vnd,spi-device";
+				reg = <0x3>;
+				spi-max-frequency = <50000000>;
+				status = "okay";
+			};
+
+		};
+	};
+};
