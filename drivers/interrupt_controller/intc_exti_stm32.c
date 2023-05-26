@@ -62,9 +62,9 @@ void stm32_exti_enable(int line)
 
 	/* Enable requested line interrupt */
 #if defined(CONFIG_SOC_SERIES_STM32H7X) && defined(CONFIG_CPU_CORTEX_M4)
-	LL_C2_EXTI_EnableIT_0_31(1 << line);
+	LL_C2_EXTI_EnableIT_0_31(BIT((uint32_t)line));
 #else
-	LL_EXTI_EnableIT_0_31(1 << line);
+	LL_EXTI_EnableIT_0_31(BIT((uint32_t)line));
 #endif
 
 	/* Enable exti irq interrupt */
@@ -77,9 +77,9 @@ void stm32_exti_disable(int line)
 
 	if (line < 32) {
 #if defined(CONFIG_SOC_SERIES_STM32H7X) && defined(CONFIG_CPU_CORTEX_M4)
-		LL_C2_EXTI_DisableIT_0_31(1 << line);
+		LL_C2_EXTI_DisableIT_0_31(BIT((uint32_t)line));
 #else
-		LL_EXTI_DisableIT_0_31(1 << line);
+		LL_EXTI_DisableIT_0_31(BIT((uint32_t)line));
 #endif
 	} else {
 		__ASSERT_NO_MSG(line);
@@ -96,12 +96,12 @@ static inline int stm32_exti_is_pending(int line)
 {
 	if (line < 32) {
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32g0_exti)
-		return (LL_EXTI_IsActiveRisingFlag_0_31(1 << line) ||
-			LL_EXTI_IsActiveFallingFlag_0_31(1 << line));
+		return (LL_EXTI_IsActiveRisingFlag_0_31(BIT((uint32_t)line)) ||
+			LL_EXTI_IsActiveFallingFlag_0_31(BIT((uint32_t)line)));
 #elif defined(CONFIG_SOC_SERIES_STM32H7X) && defined(CONFIG_CPU_CORTEX_M4)
-		return LL_C2_EXTI_IsActiveFlag_0_31(1 << line);
+		return LL_C2_EXTI_IsActiveFlag_0_31(BIT((uint32_t)line));
 #else
-		return LL_EXTI_IsActiveFlag_0_31(1 << line);
+		return LL_EXTI_IsActiveFlag_0_31(BIT((uint32_t)line));
 #endif
 	} else {
 		__ASSERT_NO_MSG(line);
@@ -118,12 +118,12 @@ static inline void stm32_exti_clear_pending(int line)
 {
 	if (line < 32) {
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32g0_exti)
-		LL_EXTI_ClearRisingFlag_0_31(1 << line);
-		LL_EXTI_ClearFallingFlag_0_31(1 << line);
+		LL_EXTI_ClearRisingFlag_0_31(BIT((uint32_t)line));
+		LL_EXTI_ClearFallingFlag_0_31(BIT((uint32_t)line));
 #elif defined(CONFIG_SOC_SERIES_STM32H7X) && defined(CONFIG_CPU_CORTEX_M4)
-		LL_C2_EXTI_ClearFlag_0_31(1 << line);
+		LL_C2_EXTI_ClearFlag_0_31(BIT((uint32_t)line));
 #else
-		LL_EXTI_ClearFlag_0_31(1 << line);
+		LL_EXTI_ClearFlag_0_31(BIT((uint32_t)line));
 #endif
 	} else {
 		__ASSERT_NO_MSG(line);
@@ -141,20 +141,20 @@ void stm32_exti_trigger(int line, int trigger)
 
 	switch (trigger) {
 	case STM32_EXTI_TRIG_NONE:
-		LL_EXTI_DisableRisingTrig_0_31(1 << line);
-		LL_EXTI_DisableFallingTrig_0_31(1 << line);
+		LL_EXTI_DisableRisingTrig_0_31(BIT((uint32_t)line));
+		LL_EXTI_DisableFallingTrig_0_31(BIT((uint32_t)line));
 		break;
 	case STM32_EXTI_TRIG_RISING:
-		LL_EXTI_EnableRisingTrig_0_31(1 << line);
-		LL_EXTI_DisableFallingTrig_0_31(1 << line);
+		LL_EXTI_EnableRisingTrig_0_31(BIT((uint32_t)line));
+		LL_EXTI_DisableFallingTrig_0_31(BIT((uint32_t)line));
 		break;
 	case STM32_EXTI_TRIG_FALLING:
-		LL_EXTI_EnableFallingTrig_0_31(1 << line);
-		LL_EXTI_DisableRisingTrig_0_31(1 << line);
+		LL_EXTI_EnableFallingTrig_0_31(BIT((uint32_t)line));
+		LL_EXTI_DisableRisingTrig_0_31(BIT((uint32_t)line));
 		break;
 	case STM32_EXTI_TRIG_BOTH:
-		LL_EXTI_EnableRisingTrig_0_31(1 << line);
-		LL_EXTI_EnableFallingTrig_0_31(1 << line);
+		LL_EXTI_EnableRisingTrig_0_31(BIT((uint32_t)line));
+		LL_EXTI_EnableFallingTrig_0_31(BIT((uint32_t)line));
 		break;
 	default:
 		__ASSERT_NO_MSG(trigger);
