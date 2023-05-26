@@ -197,6 +197,13 @@
 	pinctrl-names = "default";
 };
 
+zephyr_udc0: &usb0 {
+	status = "okay";
+	pinctrl-0 = <&usb0_dm_gph5_default
+		     &usb0_dp_gph6_default>;
+	pinctrl-names = "default";
+};
+
 &flash0 {
 	partitions {
 		compatible = "fixed-partitions";
