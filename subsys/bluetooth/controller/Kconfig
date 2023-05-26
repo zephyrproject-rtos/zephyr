@@ -741,6 +741,7 @@ config BT_CTLR_ADV_ISO
 	depends on BT_BROADCASTER && BT_CTLR_ADV_ISO_SUPPORT
 	select BT_CTLR_ADV_PERIODIC
 	select BT_CTLR_SET_HOST_FEATURE
+	default y if BT_ISO_BROADCASTER
 	help
 	  Enable support for Bluetooth 5.2 LE Isochronous Advertising in the
 	  Controller.
@@ -754,6 +755,7 @@ config BT_CTLR_SYNC_ISO
 	depends on BT_OBSERVER && BT_CTLR_SYNC_ISO_SUPPORT
 	select BT_CTLR_SYNC_PERIODIC
 	select BT_CTLR_SET_HOST_FEATURE
+	default y if BT_ISO_SYNC_RECEIVER
 	help
 	  Enable support for Bluetooth 5.2 LE Isochronous Advertising sync in
 	  the Controller.
@@ -833,6 +835,7 @@ config BT_CTLR_SET_HOST_FEATURE
 config BT_CTLR_CENTRAL_ISO
 	bool "LE Connected Isochronous Stream Central" if !BT_LL_SW_SPLIT
 	depends on BT_CTLR_CENTRAL_ISO_SUPPORT && BT_CENTRAL
+	default y if BT_ISO_CENTRAL
 	help
 	  Enable support for Bluetooth 5.2 LE Connected Isochronous Stream
 	  Central role in the Controller.
@@ -845,6 +848,7 @@ config BT_CTLR_CENTRAL_ISO
 config BT_CTLR_PERIPHERAL_ISO
 	bool "LE Connected Isochronous Stream Peripheral" if !BT_LL_SW_SPLIT
 	depends on BT_CTLR_PERIPHERAL_ISO_SUPPORT && BT_PERIPHERAL
+	default y if BT_ISO_PERIPHERAL
 	help
 	  Enable support for Bluetooth 5.2 LE Connected Isochronous Stream
 	  Peripheral role in the Controller.
