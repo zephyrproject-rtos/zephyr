@@ -21,7 +21,13 @@
 #define HELP_DRAW_POINT "<x> <y0>"
 #define HELP_DRAW_LINE "<x0> <y0> <x1> <y1>"
 #define HELP_DRAW_RECT "<x0> <y0> <x1> <y1>"
+#ifdef CONFIG_CHARACTER_FRAMEBUFFER_USE_OFFSCREEN_BUFFER
 #define HELP_INVERT "[<x> <y> <width> <height>]"
+#define CMD_INVERT_ARG_NUMBER 5
+#else
+#define HELP_INVERT "[none]"
+#define CMD_INVERT_ARG_NUMBER 1
+#endif
 
 static const struct device *const dev =
 	DEVICE_DT_GET(DT_CHOSEN(zephyr_display));
@@ -46,11 +52,13 @@ static int cmd_clear(const struct shell *sh, size_t argc, char *argv[])
 		return err;
 	}
 
+#ifdef CONFIG_CHARACTER_FRAMEBUFFER_USE_OFFSCREEN_BUFFER
 	err = cfb_framebuffer_finalize(dev);
 	if (err) {
 		shell_error(sh, "Framebuffer finalize error=%d", err);
 		return err;
 	}
+#endif
 
 	shell_print(sh, "Display Cleared");
 
@@ -82,12 +90,14 @@ static int cmd_cfb_print(const struct shell *sh, int col, int row, char *str)
 		return err;
 	}
 
+#ifdef CONFIG_CHARACTER_FRAMEBUFFER_USE_OFFSCREEN_BUFFER
 	err = cfb_framebuffer_finalize(dev);
 	if (err) {
 		shell_error(sh,
 			    "Failed to finalize the Framebuffer error=%d", err);
 		return err;
 	}
+#endif
 
 	return err;
 }
@@ -146,6 +156,7 @@ static int cmd_draw_text(const struct shell *sh, size_t argc, char *argv[])
 	return err;
 }
 
+#ifdef CONFIG_CHARACTER_FRAMEBUFFER_USE_OFFSCREEN_BUFFER
 static int cmd_draw_point(const struct shell *sh, size_t argc, char *argv[])
 {
 	int err;
@@ -221,6 +232,7 @@ static int cmd_draw_rect(const struct shell *sh, size_t argc, char *argv[])
 
 	return err;
 }
+#endif
 
 static int cmd_scroll_vert(const struct shell *sh, size_t argc, char *argv[])
 {
@@ -380,7 +392,9 @@ static int cmd_invert(const struct shell *sh, size_t argc, char *argv[])
 			shell_error(sh, "Error inverting Framebuffer");
 			return err;
 		}
-	} else if (argc == 5) {
+	}
+#ifdef CONFIG_CHARACTER_FRAMEBUFFER_USE_OFFSCREEN_BUFFER
+	else if (argc == 5) {
 		int x, y, w, h;
 
 		x = strtol(argv[1], NULL, 10);
@@ -393,12 +407,21 @@ static int cmd_invert(const struct shell *sh, size_t argc, char *argv[])
 			shell_error(sh, "Error invert area");
 			return err;
 		}
-	} else {
+	}
+#endif
+	else {
 		shell_help(sh);
 		return 0;
 	}
 
-	cfb_framebuffer_finalize(dev);
+#ifdef CONFIG_CHARACTER_FRAMEBUFFER_USE_OFFSCREEN_BUFFER
+	err = cfb_framebuffer_finalize(dev);
+	if (err) {
+		shell_error(sh,
+			    "Failed to finalize the Framebuffer error=%d", err);
+		return err;
+	}
+#endif
 
 	shell_print(sh, "Framebuffer Inverted");
 
@@ -608,9 +631,12 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_cmd_scroll,
 
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_cmd_draw,
 	SHELL_CMD_ARG(text, NULL, HELP_PRINT, cmd_draw_text, 4, 0),
+
+#ifdef CONFIG_CHARACTER_FRAMEBUFFER_USE_OFFSCREEN_BUFFER
 	SHELL_CMD_ARG(point, NULL, HELP_DRAW_POINT, cmd_draw_point, 3, 0),
 	SHELL_CMD_ARG(line, NULL, HELP_DRAW_LINE, cmd_draw_line, 5, 0),
 	SHELL_CMD_ARG(rect, NULL, HELP_DRAW_RECT, cmd_draw_rect, 5, 0),
+#endif
 	SHELL_SUBCMD_SET_END
 );
 
@@ -622,7 +648,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(cfb_cmds,
 	SHELL_CMD_ARG(get_fonts, NULL, HELP_NONE, cmd_get_fonts, 1, 0),
 	SHELL_CMD_ARG(set_font, NULL, "<idx>", cmd_set_font, 2, 0),
 	SHELL_CMD_ARG(set_kerning, NULL, "<kerning>", cmd_set_kerning, 2, 0),
-	SHELL_CMD_ARG(invert, NULL, HELP_INVERT, cmd_invert, 1, 5),
+	SHELL_CMD_ARG(invert, NULL, HELP_INVERT, cmd_invert, 1, CMD_INVERT_ARG_NUMBER),
 	SHELL_CMD_ARG(print, NULL, HELP_PRINT, cmd_print, 4, 0),
 	SHELL_CMD(scroll, &sub_cmd_scroll, "scroll a text in vertical or "
 		  "horizontal direction", NULL),
