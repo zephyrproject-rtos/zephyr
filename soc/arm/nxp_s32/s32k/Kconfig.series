@@ -14,5 +14,7 @@ config SOC_SERIES_S32K3_M7
 	select PLATFORM_SPECIFIC_INIT if XIP
 	select USE_DT_CODE_PARTITION if XIP
 	select CLOCK_CONTROL
+	select HAS_MCUX
+	select HAS_MCUX_LPUART
 	help
 	  Enable support for NXP S32K3 MCUs family on Cortex-M7 cores

@@ -19,6 +19,8 @@
 		zephyr,itcm = &itcm;
 		zephyr,dtcm = &dtcm;
 		zephyr,code-partition = &code_partition;
+		zephyr,console = &lpuart2;
+		zephyr,shell-uart = &lpuart2;
 	};
 
 	aliases {
@@ -92,4 +94,41 @@
 	pinctrl-0 = <&eirq0_default>;
 	pinctrl-names = "default";
 	status = "okay";
+};
+
+&lpuart0 {
+	pinctrl-0 = <&lpuart0_default>;
+	pinctrl-names = "default";
+};
+
+&lpuart1 {
+	pinctrl-0 = <&lpuart1_default>;
+	pinctrl-names = "default";
+};
+
+&lpuart2 {
+	pinctrl-0 = <&lpuart2_default>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&lpuart9 {
+	pinctrl-0 = <&lpuart9_default>;
+	pinctrl-names = "default";
+};
+
+&lpuart10 {
+	pinctrl-0 = <&lpuart10_default>;
+	pinctrl-names = "default";
+};
+
+&lpuart13 {
+	pinctrl-0 = <&lpuart13_default>;
+	pinctrl-names = "default";
+};
+
+&lpuart14 {
+	pinctrl-0 = <&lpuart14_default>;
+	pinctrl-names = "default";
 };
