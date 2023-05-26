@@ -176,7 +176,7 @@ static void stm32_exti_isr(const void *exti_range)
 	int line;
 
 	/* see which bits are set */
-	for (int i = 0; i <= range->len; i++) {
+	for (uint8_t i = 0; i <= range->len; i++) {
 		line = range->start + i;
 		/* check if interrupt is pending */
 		if (stm32_exti_is_pending(line)) {
