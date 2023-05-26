@@ -1926,4 +1926,36 @@ ZTEST(net_socket_tcp, test_close_while_recv)
 	test_context_cleanup();
 }
 
+ZTEST(net_socket_tcp, test_close_while_accept)
+{
+	/* Blocking accept() should return an error after close() is
+	 * called from another thread.
+	 */
+	int s_sock;
+	int new_sock;
+	struct sockaddr_in6 s_saddr;
+	struct sockaddr addr;
+	socklen_t addrlen = sizeof(addr);
+	struct close_data close_work_data;
+
+	prepare_sock_tcp_v6(MY_IPV6_ADDR, SERVER_PORT, &s_sock, &s_saddr);
+
+	test_bind(s_sock, (struct sockaddr *)&s_saddr, sizeof(s_saddr));
+	test_listen(s_sock);
+
+	/* Schedule close() from workqueue */
+	k_work_init_delayable(&close_work_data.work, close_work);
+	close_work_data.fd = s_sock;
+	k_work_schedule(&close_work_data.work, K_MSEC(10));
+
+	/* Start blocking accept(), which should be unblocked by close() from
+	 * another thread and return an error.
+	 */
+	new_sock = accept(s_sock, &addr, &addrlen);
+	zassert_equal(new_sock, -1, "accept did not return error");
+	zassert_equal(errno, EINTR, "Unexpected errno value: %d", errno);
+
+	test_context_cleanup();
+}
+
 ZTEST_SUITE(net_socket_tcp, NULL, setup, NULL, NULL, NULL);
