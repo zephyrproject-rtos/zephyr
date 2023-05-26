@@ -1,0 +1,39 @@
+/*
+ * Copyright 2023 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <arm/nxp/nxp_s32k344_m7.dtsi>
+
+/ {
+	model = "NXP MR-CANHUBK3";
+	compatible = "nxp,mr_canhubk3";
+
+	chosen {
+		zephyr,sram = &sram0_1;
+		zephyr,flash = &flash0;
+		zephyr,itcm = &itcm;
+		zephyr,dtcm = &dtcm;
+		zephyr,code-partition = &code_partition;
+	};
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		ivt_header: partition@0 {
+			label = "ivt-header";
+			reg = <0x00000000 0x100>;
+		};
+
+		code_partition: partition@100 {
+			label = "code-partition";
+			reg = <0x00000100 (DT_SIZE_K(4048) - 0x100)>;
+		};
+	};
+};
