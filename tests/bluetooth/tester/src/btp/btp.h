@@ -24,6 +24,7 @@
 #include "btp_ascs.h"
 #include "btp_bap.h"
 #include "btp_has.h"
+#include "btp_csis.h"
 
 #define BTP_MTU 1024
 #define BTP_DATA_MAX_SIZE (BTP_MTU - sizeof(struct btp_hdr))
@@ -47,8 +48,9 @@
 #define BTP_SERVICE_ID_ASCS	13
 #define BTP_SERVICE_ID_BAP	14
 #define BTP_SERVICE_ID_HAS	15
+#define BTP_SERVICE_ID_CSIS	17
 
-#define BTP_SERVICE_ID_MAX	BTP_SERVICE_ID_HAS
+#define BTP_SERVICE_ID_MAX	BTP_SERVICE_ID_CSIS
 
 #define BTP_STATUS_SUCCESS	0x00
 #define BTP_STATUS_FAILED	0x01
