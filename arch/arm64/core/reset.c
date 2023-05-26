@@ -80,6 +80,10 @@ void z_arm64_el3_init(void)
 	reg = 0U;			/* Reset */
 #ifdef CONFIG_ARMV8_A_NS
 	reg |= SCR_NS_BIT;		/* EL2 / EL3 non-secure */
+#else
+	if (is_in_secure_state() && is_el2_sec_supported()) {
+		reg |= SCR_EEL2_BIT;    /* Enable EL2 secure */
+	}
 #endif
 	reg |= (SCR_RES1 |		/* RES1 */
 		SCR_RW_BIT |		/* EL2 execution state is AArch64 */
