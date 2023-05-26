@@ -328,7 +328,7 @@ uint8_t ull_peripheral_iso_setup(struct pdu_data_llctrl_cis_ind *ind,
 	cis->lll.nesn = 0U;
 	cis->lll.cie = 0U;
 	cis->lll.npi = 0U;
-	cis->lll.flushed = 0U;
+	cis->lll.flush = LLL_CIS_FLUSH_NONE;
 	cis->lll.active = 0U;
 	cis->lll.datapath_ready_rx = 0U;
 	cis->lll.tx.payload_count = 0U;
