@@ -1771,6 +1771,13 @@ void z_thread_abort(struct k_thread *thread)
 			k_spin_unlock(&sched_spinlock, key);
 			while (is_aborting(thread)) {
 			}
+
+			/* Now we know it's dying, but not necessarily
+			 * dead.  Wait for the switch to happen!
+			 */
+			key = k_spin_lock(&sched_spinlock);
+			z_sched_switch_spin(thread);
+			k_spin_unlock(&sched_spinlock, key);
 		} else if (active) {
 			/* Threads can join */
 			add_to_waitq_locked(_current, &thread->join_queue);
@@ -1806,6 +1813,7 @@ int z_impl_k_thread_join(struct k_thread *thread, k_timeout_t timeout)
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_thread, join, thread, timeout);
 
 	if ((thread->base.thread_state & _THREAD_DEAD) != 0U) {
+		z_sched_switch_spin(thread);
 		ret = 0;
 	} else if (K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
 		ret = -EBUSY;
