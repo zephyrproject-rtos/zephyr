@@ -104,6 +104,11 @@ jobs:
         cd ..
         west build -b tlsr9518adk80d_retention   -d build_retention_basic           zephyr/samples/boards/tlsr9518adk80d_retention/basic     -- -DCONFIG_BOARD_TLSR9518ADK80D_NON_RETENTION_RAM_CODE=y
 
+    - name: Build net/sockets/echo_client for OpenThread with PM deep-sleep
+      run: |
+        cd ..
+        west build -b tlsr9518adk80d_retention   -d build_ot_echo_client_pm_deep    zephyr/samples/net/sockets/echo_client                   -- -DOVERLAY_CONFIG=overlay-ot-sed.conf -DCONFIG_OPENTHREAD_NETWORKKEY=\"09:24:01:56:04:4a:45:0b:23:22:1e:0e:3b:0d:0e:61:2f:1b:2c:24\" -DCONFIG_PM=y -DCONFIG_BOARD_TLSR9518ADK80D_NON_RETENTION_RAM_CODE=y
+
     - name: Collect artifacts
       run: |
         mkdir telink_build_artifacts
@@ -120,6 +125,7 @@ jobs:
         cp ../build_usb_console/zephyr/zephyr.bin               telink_build_artifacts/usb_console.bin
         cp ../build_ot_coprocessor_rcp_usb/zephyr/zephyr.bin    telink_build_artifacts/ot_coprocessor_rcp_usb.bin
         cp ../build_retention_basic/zephyr/zephyr.bin           telink_build_artifacts/retention_basic.bin
+        cp ../build_ot_echo_client_pm_deep/zephyr/zephyr.bin    telink_build_artifacts/ot_echo_client_pm_retention.bin
 
     - name: Publish artifacts
       uses: actions/upload-artifact@v3

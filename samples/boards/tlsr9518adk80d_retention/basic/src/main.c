@@ -25,7 +25,7 @@ int main(void)
 	printk("ICEman guard finished\n");
 
 	while (1) {
-		printk("cnt: %u\n", cnt);
+		printk("cnt: %u %llu\n", cnt, sys_clock_cycle_get_64());
 		cnt++;
 		k_msleep(SLEEP_TIME_MS);
 	}

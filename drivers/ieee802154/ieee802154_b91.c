@@ -327,6 +327,9 @@ static void b91_disable_pm(const struct device *dev)
 	if (atomic_test_and_set_bit(&b91->current_pm_lock, 0) == 0) {
 		pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
 	}
+	if (atomic_test_and_set_bit(&b91->current_pm_lock, 1) == 0) {
+		pm_policy_state_lock_get(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
+	}
 #else
 	ARG_UNUSED(dev);
 #endif /* CONFIG_PM_DEVICE */
@@ -340,6 +343,9 @@ static void b91_enable_pm(const struct device *dev)
 
 	if (atomic_test_and_clear_bit(&b91->current_pm_lock, 0) == 1) {
 		pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+	}
+	if (atomic_test_and_clear_bit(&b91->current_pm_lock, 1) == 1) {
+		pm_policy_state_lock_put(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
 	}
 #else
 	ARG_UNUSED(dev);

@@ -127,9 +127,23 @@ __weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 			if (stimer_sleep_ticks > SYSTICKS_MAX_SLEEP) {
 				stimer_sleep_ticks = SYSTICKS_MAX_SLEEP;
 			}
+			/* We should restore MTIMER using stimer as it's done in suspend.
+			 * During deep-sleep driver functionality is responsible for it
+			 * Telink driver functions:
+			 * int cpu_sleep_wakeup_32k_rc(SleepMode_TypeDef sleep_mode,
+			 *     SleepWakeupSrc_TypeDef wakeup_src, unsigned int  wakeup_tick);
+			 * void sys_init(power_mode_e power_mode, vbat_type_e vbat_v);
+			 * These functions are called but for some reason stimer has wrong
+			 * value after retention. So for now just such ugly workaround.
+			 * This workaround provides very bad timing accuracy - seems due to
+			 * incomplete calibration.
+			 */
+			extern unsigned int clock_get_digital_32k_tick(void);
+			uint32_t tl_32k_tick = clock_get_digital_32k_tick();
+
+			current_time = get_mtime();
 			if (b91_deep_sleep(tl_sleep_tick + stimer_sleep_ticks)) {
-				current_time +=
-					systicks_to_mticks(stimer_get_tick() - tl_sleep_tick);
+				current_time += clock_get_digital_32k_tick() - tl_32k_tick;
 				set_mtime_compare(wakeup_time);
 				set_mtime(current_time);
 				b91_deep_sleep_retention = true;
