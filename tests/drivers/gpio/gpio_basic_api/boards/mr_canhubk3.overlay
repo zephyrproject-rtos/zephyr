@@ -1,0 +1,21 @@
+/*
+ * Copyright 2023 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	resources {
+		compatible = "test-gpio-basic-api";
+		/* Use LPSPI1 MISO/MOSI pins which are also used for spi_loopback test */
+		out-gpios = <&gpioa_h 13 0>;
+		in-gpios = <&gpioa_h 14 0>;
+	};
+};
+
+&eirq0_default {
+	group2 {
+		pinmux = <PTA30_EIRQ7>;
+		input-enable;
+	};
+};

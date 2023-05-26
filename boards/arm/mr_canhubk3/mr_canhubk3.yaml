@@ -9,3 +9,5 @@ ram: 1024
 flash: 1024
 toolchain:
   - zephyr
+supported:
+  - gpio
