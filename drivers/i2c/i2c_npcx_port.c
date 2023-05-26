@@ -226,7 +226,7 @@ static const struct i2c_driver_api i2c_port_npcx_driver_api = {
 			    i2c_npcx_port_init,                                \
 			    NULL, NULL,                                        \
 			    &i2c_npcx_port_cfg_##inst,                         \
-			    PRE_KERNEL_1, CONFIG_I2C_INIT_PRIORITY,            \
+			    PRE_KERNEL_1, CONFIG_I2C_NPCX_PORT_INIT_PRIORITY,  \
 			    &i2c_port_npcx_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(NPCX_I2C_PORT_INIT)
