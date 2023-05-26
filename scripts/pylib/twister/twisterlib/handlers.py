@@ -176,6 +176,8 @@ class BinaryHandler(Handler):
         self.line = proc.stdout.readline()
 
     def _output_handler(self, proc, harness):
+        suffix = '\\r\\n'
+
         with open(self.log, "wt") as log_out_fp:
             timeout_extended = False
             timeout_time = time.time() + self.timeout
@@ -188,7 +190,10 @@ class BinaryHandler(Handler):
                 reader_t.join(this_timeout)
                 if not reader_t.is_alive() and self.line != b"":
                     line_decoded = self.line.decode('utf-8', "replace")
-                    stripped_line = line_decoded.rstrip().removesuffix('\\r\\n')
+                    if line_decoded.endswith(suffix):
+                        stripped_line = line_decoded[:-len(suffix)].rstrip()
+                    else:
+                        stripped_line = line_decoded.rstrip()
                     logger.debug("OUTPUT: %s", stripped_line)
                     log_out_fp.write(line_decoded)
                     log_out_fp.flush()
