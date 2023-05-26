@@ -1953,7 +1953,10 @@ int ztls_accept_ctx(struct tls_context *parent, struct sockaddr *addr,
 		return -1;
 	}
 
+
+	k_mutex_unlock(parent->lock);
 	sock = zsock_accept(parent->sock, addr, addrlen);
+	k_mutex_lock(parent->lock, K_FOREVER);
 	if (sock < 0) {
 		ret = -errno;
 		goto error;
