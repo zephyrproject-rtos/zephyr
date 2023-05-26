@@ -1095,7 +1095,7 @@ void *z_get_next_switch_handle(void *interrupted)
 
 		if (old_thread != new_thread) {
 			update_metairq_preempt(new_thread);
-			wait_for_switch(new_thread);
+			z_sched_switch_spin(new_thread);
 			arch_cohere_stacks(old_thread, interrupted, new_thread);
 
 			_current_cpu->swap_ok = 0;
