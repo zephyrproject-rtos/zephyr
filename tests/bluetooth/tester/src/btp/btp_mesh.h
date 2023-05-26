@@ -747,6 +747,12 @@ struct btp_mesh_cfg_krp_set_rp {
 	uint8_t phase;
 } __packed;
 
+#define BTP_MESH_PROXY_CONNECT			0x77
+
+struct btp_proxy_connect_cmd {
+	uint16_t net_idx;
+} __packed;
+
 /* events */
 #define BTP_MESH_EV_OUT_NUMBER_ACTION		0x80
 struct btp_mesh_out_number_action_ev {
