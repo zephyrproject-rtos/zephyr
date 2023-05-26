@@ -170,7 +170,8 @@ static void usbd_thread(void)
 		k_msgq_get(&usbd_msgq, &event, K_FOREVER);
 
 		STRUCT_SECTION_FOREACH(usbd_contex, uds_ctx) {
-			if (uds_ctx->dev == event.dev) {
+			if (uds_ctx->dev == event.dev &&
+			    usbd_is_initialized(uds_ctx)) {
 				usbd_event_handler(uds_ctx, &event);
 			}
 		}
