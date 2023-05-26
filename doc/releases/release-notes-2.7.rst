@@ -18,6 +18,26 @@ release:
 .. comment  List derived from GitHub Issue query: ...
    * :github:`issuenumber` - issue title
 
+* :github:`41111` - utils: tmcvt: fix integer overflow after 6.4 days with ``gettimeofday()`` and ``z_tmcvt()``
+* :github:`51663` - tests: kernel: increase coverage for kernel and mmu tests
+* :github:`53124` - bmake: fix argument passing in ``zephyr_check_compiler_flag()`` cmake function
+* :github:`53315` - net: tcp: fix possible underflow in ``tcp_flags()``.
+* :github:`53981` - scripts: fixes for ``gen_syscalls`` and ``gen_app_partitions``
+* :github:`53983` - init: correct early init time calls to ``k_current_get()`` when TLS is enabled
+* :github:`54140` - net: fix BUS FAULT when running nmap towards echo_async sample
+* :github:`54325` - coredump: support out-of-tree coredump backend definition
+* :github:`54386` - kernel: correct SMP scheduling with more than 2 CPUs
+* :github:`54527` - tests: kernel: remove faulty test from tests/kernel/poll
+* :github:`55019` - bluetooth: initialize backport of #54905 failed
+* :github:`55068` - net: ipv6: validate arguments in ``net_if_ipv6_set_reachable_time()``
+* :github:`55069` - net: core: ``net pkt`` shell command missing input validation
+* :github:`55323` - logging: fix userspace runtime filtering
+* :github:`55490` - cxx: fix compile error in C++ project for bad flags ``-Wno-pointer-sign`` and ``-Werror=implicit-int``
+* :github:`56071` - security: MbedTLS: update to v2.28.3
+* :github:`56729` - posix: SCHED_RR valid thread priorities
+* :github:`57210` - drivers: pcie: endpoint: pcie_ep_iproc: correct use of optional devicetree binding
+* :github:`57419` - tests: dma: support 64-bit addressing in tests
+* :github:`57710` - posix: support building eventfd on arm-clang
 
 mbedTLS
 *******
