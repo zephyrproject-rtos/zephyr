@@ -474,7 +474,7 @@ static int dma_mcux_lpc_configure(const struct device *dev, uint32_t channel,
 static int dma_mcux_lpc_start(const struct device *dev, uint32_t channel)
 {
 	struct dma_mcux_lpc_dma_data *dev_data = dev->data;
-	uint32_t virtual_channel = dev_data->channel_index[channel];
+	int8_t virtual_channel = dev_data->channel_index[channel];
 	struct channel_data *data = DEV_CHANNEL_DATA(dev, virtual_channel);
 
 	LOG_DBG("START TRANSFER");
@@ -487,7 +487,7 @@ static int dma_mcux_lpc_start(const struct device *dev, uint32_t channel)
 static int dma_mcux_lpc_stop(const struct device *dev, uint32_t channel)
 {
 	struct dma_mcux_lpc_dma_data *dev_data = dev->data;
-	uint32_t virtual_channel = dev_data->channel_index[channel];
+	int8_t virtual_channel = dev_data->channel_index[channel];
 	struct channel_data *data = DEV_CHANNEL_DATA(dev, virtual_channel);
 
 	if (!data->busy) {
@@ -504,7 +504,7 @@ static int dma_mcux_lpc_reload(const struct device *dev, uint32_t channel,
 			       uint32_t src, uint32_t dst, size_t size)
 {
 	struct dma_mcux_lpc_dma_data *dev_data = dev->data;
-	uint32_t virtual_channel = dev_data->channel_index[channel];
+	int8_t virtual_channel = dev_data->channel_index[channel];
 	struct channel_data *data = DEV_CHANNEL_DATA(dev, virtual_channel);
 	uint8_t src_inc, dst_inc;
 	uint32_t xfer_config = 0U;
@@ -561,18 +561,15 @@ static int dma_mcux_lpc_get_status(const struct device *dev, uint32_t channel,
 {
 	const struct dma_mcux_lpc_config *config = dev->config;
 	struct dma_mcux_lpc_dma_data *dev_data = dev->data;
-	uint32_t virtual_channel = dev_data->channel_index[channel];
+	int8_t virtual_channel = dev_data->channel_index[channel];
 	struct channel_data *data = DEV_CHANNEL_DATA(dev, virtual_channel);
 
 	if (channel > config->num_of_channels) {
 		return -EINVAL;
 	}
 
-	if (virtual_channel > config->num_of_channels) {
-		return -EACCES;
-	}
-
-	if (data->busy) {
+	/* If channel is actually busy or the virtual channel is just not set up */
+	if (data->busy && (virtual_channel != -1)) {
 		status->busy = true;
 		status->pending_length = DMA_GetRemainingBytes(DEV_BASE(dev), channel);
 	} else {
