@@ -17,3 +17,6 @@ CONFIG_ARM_MPU=y
 
 # Use no-cached memory for HAL
 CONFIG_NOCACHE_MEMORY=y
+
+# Drivers
+CONFIG_PINCTRL=y

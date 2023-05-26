@@ -31,6 +31,12 @@
 		};
 	};
 
+	/* Dummy pinctrl node, filled with pin mux options at board level */
+	pinctrl: pinctrl {
+		compatible = "nxp,s32k3-pinctrl";
+		status = "okay";
+	};
+
 	soc {
 		interrupt-parent = <&nvic>;
 
