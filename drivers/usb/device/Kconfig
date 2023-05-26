@@ -188,6 +188,13 @@ config USB_MCUX_THREAD_STACK_SIZE
 
 endif # USB_MCUX
 
+config USB_DC_IT82XX2
+	bool "ITE IT82XX2 USB Device Controller Driver"
+	default y
+	depends on DT_HAS_ITE_IT82XX2_USB_ENABLED
+	help
+	  ITE IT82XX2 USB Device Controller Driver
+
 config USB_NATIVE_POSIX
 	bool "Native Posix USB Device Controller Driver"
 	help

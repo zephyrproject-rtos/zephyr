@@ -968,6 +968,19 @@
 			gpios = <&gpiof 0 0>;
 			uart-dev = <&uart2>;
 		};
+
+		usb0: usbd@f02f00 {
+			compatible = "ite,it82xx2-usb";
+			interrupts = <IT8XXX2_IRQ_USB IRQ_TYPE_LEVEL_HIGH
+				      IT8XXX2_IRQ_WU90 IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-parent = <&intc>;
+			wucctrl = <&wuc_wu90>;
+			reg = <0x00f02f00 256>;
+			status = "disabled";
+			num-bidir-endpoints = <1>;
+			num-in-endpoints = <10>;
+			num-out-endpoints = <5>;
+		};
 	};
 };
 
