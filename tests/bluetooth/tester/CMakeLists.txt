@@ -39,3 +39,7 @@ endif()
 if(CONFIG_BT_HAS)
     target_sources(app PRIVATE src/btp_has.c)
 endif()
+
+if (CONFIG_BT_CSIP_SET_MEMBER)
+    target_sources(app PRIVATE src/btp_csis.c)
+endif()
