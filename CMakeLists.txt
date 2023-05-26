@@ -346,7 +346,7 @@ toolchain_ld_force_undefined_symbols(
   _ConfigAbsSyms
 )
 
-if(NOT CONFIG_NATIVE_APPLICATION)
+if(NOT CONFIG_NATIVE_BUILD)
   # @Intent: Set linker specific flags for bare metal target
   toolchain_ld_baremetal()
 endif()
