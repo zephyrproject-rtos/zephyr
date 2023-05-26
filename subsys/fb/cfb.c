@@ -426,12 +426,11 @@ int cfb_framebuffer_clear(const struct device *dev, bool clear_display)
 	return 0;
 }
 
-
 int cfb_framebuffer_invert(const struct device *dev)
 {
 	struct char_framebuffer *fb = &char_fb;
 
-	if (!fb || !fb->buf) {
+	if (!fb) {
 		return -ENODEV;
 	}
 
