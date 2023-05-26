@@ -370,7 +370,10 @@ static void zsock_accepted_cb(struct net_context *new_ctx,
 		 * closing handshake for stack to perform.
 		 */
 		net_context_ref(new_ctx);
+
+		(void)k_condvar_signal(&parent->cond.recv);
 	}
+
 }
 
 static void zsock_received_cb(struct net_context *ctx,
@@ -576,38 +579,33 @@ static inline int z_vrfy_zsock_listen(int sock, int backlog)
 int zsock_accept_ctx(struct net_context *parent, struct sockaddr *addr,
 		     socklen_t *addrlen)
 {
-	k_timeout_t timeout = K_FOREVER;
 	struct net_context *ctx;
 	struct net_pkt *last_pkt;
-	int fd;
+	int fd, ret;
 
 	fd = z_reserve_fd();
 	if (fd < 0) {
 		return -1;
 	}
 
-	if (sock_is_nonblock(parent)) {
-		timeout = K_NO_WAIT;
+	if (!sock_is_nonblock(parent)) {
+		k_timeout_t timeout = K_FOREVER;
+
+		/* accept() can reuse zsock_wait_data(), as underneath it's
+		 * monitoring the same queue (accept_q is an alias for recv_q).
+		 */
+		ret = zsock_wait_data(parent, &timeout);
+		if (ret < 0) {
+			z_free_fd(fd);
+			errno = -ret;
+			return -1;
+		}
 	}
 
-	ctx = k_fifo_get(&parent->accept_q, timeout);
+	ctx = k_fifo_get(&parent->accept_q, K_NO_WAIT);
 	if (ctx == NULL) {
 		z_free_fd(fd);
-		if (K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
-			/* For non-blocking sockets return EAGAIN because it
-			 * just means the fifo is empty at this time
-			 */
-			errno = EAGAIN;
-		} else {
-			/* For blocking sockets return EINVAL because it means
-			 * the socket was closed while we were waiting for
-			 * connections. This is the same error code returned
-			 * under Linux when calling shutdown on a blocked accept
-			 * call
-			 */
-			errno = EINVAL;
-		}
-
+		errno = EAGAIN;
 		return -1;
 	}
 
