@@ -154,6 +154,9 @@ static void zsock_flush_queue(struct net_context *ctx)
 
 	/* Some threads might be waiting on recv, cancel the wait */
 	k_fifo_cancel_wait(&ctx->recv_q);
+
+	/* Wake reader if it was sleeping */
+	(void)k_condvar_signal(&ctx->cond.recv);
 }
 
 #if defined(CONFIG_NET_NATIVE)
@@ -261,6 +264,9 @@ int zsock_close_ctx(struct net_context *ctx)
 	} else {
 		(void)net_context_recv(ctx, NULL, K_NO_WAIT, NULL);
 	}
+
+	ctx->user_data = INT_TO_POINTER(EINTR);
+	sock_set_error(ctx);
 
 	zsock_flush_queue(ctx);
 
@@ -418,7 +424,7 @@ unlock:
 		(void)k_mutex_unlock(ctx->cond.lock);
 	}
 
-	/* Let reader to wake if it was sleeping */
+	/* Wake reader if it was sleeping */
 	(void)k_condvar_signal(&ctx->cond.recv);
 }
 
@@ -434,9 +440,6 @@ int zsock_shutdown_ctx(struct net_context *ctx, int how)
 		sock_set_eof(ctx);
 
 		zsock_flush_queue(ctx);
-
-		/* Let reader to wake if it was sleeping */
-		(void)k_condvar_signal(&ctx->cond.recv);
 	} else if (how == ZSOCK_SHUT_WR || how == ZSOCK_SHUT_RDWR) {
 		SET_ERRNO(-ENOTSUP);
 	} else {
@@ -1151,6 +1154,8 @@ void net_socket_update_tc_rx_time(struct net_pkt *pkt, uint32_t end_tick)
 
 int zsock_wait_data(struct net_context *ctx, k_timeout_t *timeout)
 {
+	int ret;
+
 	if (ctx->cond.lock == NULL) {
 		/* For some reason the lock pointer is not set properly
 		 * when called by fdtable.c:z_finalize_fd()
@@ -1163,8 +1168,15 @@ int zsock_wait_data(struct net_context *ctx, k_timeout_t *timeout)
 
 	if (k_fifo_is_empty(&ctx->recv_q)) {
 		/* Wait for the data to arrive but without holding a lock */
-		return k_condvar_wait(&ctx->cond.recv, ctx->cond.lock,
-				      *timeout);
+		ret = k_condvar_wait(&ctx->cond.recv, ctx->cond.lock,
+				     *timeout);
+		if (ret < 0) {
+			return ret;
+		}
+
+		if (sock_is_error(ctx)) {
+			return -POINTER_TO_INT(ctx->user_data);
+		}
 	}
 
 	return 0;
