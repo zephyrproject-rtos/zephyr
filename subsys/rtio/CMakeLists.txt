@@ -2,6 +2,8 @@
 # SPDX-License-Identifier: Apache-2.0
 
 if(CONFIG_RTIO)
+	zephyr_syscall_header(${ZEPHYR_BASE}/include/zephyr/rtio/rtio.h)
+
 	zephyr_library()
 
 	zephyr_include_directories(${ZEPHYR_BASE}/subsys/rtio)
