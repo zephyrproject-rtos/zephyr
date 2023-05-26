@@ -6,6 +6,7 @@
 
 #include <arm/armv7-m.dtsi>
 #include <mem.h>
+#include <zephyr/dt-bindings/clock/nxp_s32k344_clock.h>
 
 / {
 	cpus {
@@ -285,6 +286,134 @@
 				ngpios = <16>;
 				status = "disabled";
 			};
+		};
+
+		lpuart0: uart@40328000 {
+			compatible = "nxp,kinetis-lpuart";
+			reg = <0x40328000 0x4000>;
+			interrupts = <141 0>;
+			clocks = <&clock NXP_S32_LPUART0_CLK>;
+			status = "disabled";
+		};
+
+		lpuart1: uart@4032c000 {
+			compatible = "nxp,kinetis-lpuart";
+			reg = <0x4032c000 0x4000>;
+			interrupts = <142 0>;
+			clocks = <&clock NXP_S32_LPUART1_CLK>;
+			status = "disabled";
+		};
+
+		lpuart2: uart@40330000 {
+			compatible = "nxp,kinetis-lpuart";
+			reg = <0x40330000 0x4000>;
+			interrupts = <143 0>;
+			clocks = <&clock NXP_S32_LPUART2_CLK>;
+			status = "disabled";
+		};
+
+		lpuart3: uart@40334000 {
+			compatible = "nxp,kinetis-lpuart";
+			reg = <0x40334000 0x4000>;
+			interrupts = <144 0>;
+			clocks = <&clock NXP_S32_LPUART3_CLK>;
+			status = "disabled";
+		};
+
+		lpuart4: uart@40338000 {
+			compatible = "nxp,kinetis-lpuart";
+			reg = <0x40338000 0x4000>;
+			interrupts = <145 0>;
+			clocks = <&clock NXP_S32_LPUART4_CLK>;
+			status = "disabled";
+		};
+
+		lpuart5: uart@4033c000 {
+			compatible = "nxp,kinetis-lpuart";
+			reg = <0x4033c000 0x4000>;
+			interrupts = <146 0>;
+			clocks = <&clock NXP_S32_LPUART5_CLK>;
+			status = "disabled";
+		};
+
+		lpuart6: uart@40340000 {
+			compatible = "nxp,kinetis-lpuart";
+			reg = <0x40340000 0x4000>;
+			interrupts = <147 0>;
+			clocks = <&clock NXP_S32_LPUART6_CLK>;
+			status = "disabled";
+		};
+
+		lpuart7: uart@40344000 {
+			compatible = "nxp,kinetis-lpuart";
+			reg = <0x40344000 0x4000>;
+			interrupts = <148 0>;
+			clocks = <&clock NXP_S32_LPUART7_CLK>;
+			status = "disabled";
+		};
+
+		lpuart8: uart@4048c000 {
+			compatible = "nxp,kinetis-lpuart";
+			reg = <0x4048c000 0x4000>;
+			interrupts = <149 0>;
+			clocks = <&clock NXP_S32_LPUART8_CLK>;
+			status = "disabled";
+		};
+
+		lpuart9: uart@40490000 {
+			compatible = "nxp,kinetis-lpuart";
+			reg = <0x40490000 0x4000>;
+			interrupts = <150 0>;
+			clocks = <&clock NXP_S32_LPUART9_CLK>;
+			status = "disabled";
+		};
+
+		lpuart10: uart@40494000 {
+			compatible = "nxp,kinetis-lpuart";
+			reg = <0x40494000 0x4000>;
+			interrupts = <151 0>;
+			clocks = <&clock NXP_S32_LPUART10_CLK>;
+			status = "disabled";
+		};
+
+		lpuart11: uart@40498000 {
+			compatible = "nxp,kinetis-lpuart";
+			reg = <0x40498000 0x4000>;
+			interrupts = <152 0>;
+			clocks = <&clock NXP_S32_LPUART11_CLK>;
+			status = "disabled";
+		};
+
+		lpuart12: uart@4049c000 {
+			compatible = "nxp,kinetis-lpuart";
+			reg = <0x4049c000 0x4000>;
+			interrupts = <153 0>;
+			clocks = <&clock NXP_S32_LPUART12_CLK>;
+			status = "disabled";
+		};
+
+		lpuart13: uart@404a0000 {
+			compatible = "nxp,kinetis-lpuart";
+			reg = <0x404a0000 0x4000>;
+			interrupts = <154 0>;
+			clocks = <&clock NXP_S32_LPUART13_CLK>;
+			status = "disabled";
+		};
+
+		lpuart14: uart@404a4000 {
+			compatible = "nxp,kinetis-lpuart";
+			reg = <0x404a4000 0x4000>;
+			interrupts = <155 0>;
+			clocks = <&clock NXP_S32_LPUART14_CLK>;
+			status = "disabled";
+		};
+
+		lpuart15: uart@404a8000 {
+			compatible = "nxp,kinetis-lpuart";
+			reg = <0x404a8000 0x4000>;
+			interrupts = <156 0>;
+			clocks = <&clock NXP_S32_LPUART15_CLK>;
+			status = "disabled";
 		};
 	};
 };
