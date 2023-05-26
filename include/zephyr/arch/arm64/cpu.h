@@ -63,6 +63,7 @@
 #define SCR_HCE_BIT		BIT(8)
 #define SCR_RW_BIT		BIT(10)
 #define SCR_ST_BIT		BIT(11)
+#define SCR_EEL2_BIT		BIT(18)
 
 #define SCR_RES1		(BIT(4) | BIT(5))
 
