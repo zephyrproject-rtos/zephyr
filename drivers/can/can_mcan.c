@@ -944,31 +944,6 @@ unlock:
 	return err;
 }
 
-static int can_mcan_get_free_std(const struct device *dev)
-{
-	const struct can_mcan_config *config = dev->config;
-	const struct can_mcan_callbacks *cbs = config->callbacks;
-	struct can_mcan_std_filter filter;
-	int err;
-	int i;
-
-	for (i = 0; i < cbs->num_std; ++i) {
-		err = can_mcan_read_mram(dev, config->mram_offsets[CAN_MCAN_MRAM_CFG_STD_FILTER] +
-					 i * sizeof(struct can_mcan_std_filter), &filter,
-					 sizeof(struct can_mcan_std_filter));
-		if (err != 0) {
-			LOG_ERR("failed to read std filter (err %d)", err);
-			return err;
-		}
-
-		if (filter.sfce == CAN_MCAN_FCE_DISABLE) {
-			return i;
-		}
-	}
-
-	return -ENOSPC;
-}
-
 int can_mcan_get_max_filters(const struct device *dev, bool ide)
 {
 	const struct can_mcan_config *config = dev->config;
@@ -997,13 +972,20 @@ int can_mcan_add_rx_filter_std(const struct device *dev, can_rx_callback_t callb
 		.id2 = filter->mask,
 		.sft = CAN_MCAN_SFT_MASKED
 	};
-	int filter_id;
+	int filter_id = -ENOSPC;
 	int err;
+	int i;
 
 	k_mutex_lock(&data->lock, K_FOREVER);
-	filter_id = can_mcan_get_free_std(dev);
 
-	if (filter_id < 0) {
+	for (i = 0; i < cbs->num_std; i++) {
+		if (cbs->std[i].function == NULL) {
+			filter_id = i;
+			break;
+		}
+	}
+
+	if (filter_id == -ENOSPC) {
 		LOG_WRN("No free standard id filter left");
 		k_mutex_unlock(&data->lock);
 		return -ENOSPC;
@@ -1032,31 +1014,6 @@ int can_mcan_add_rx_filter_std(const struct device *dev, can_rx_callback_t callb
 	return filter_id;
 }
 
-static int can_mcan_get_free_ext(const struct device *dev)
-{
-	const struct can_mcan_config *config = dev->config;
-	const struct can_mcan_callbacks *cbs = config->callbacks;
-	struct can_mcan_ext_filter filter;
-	int err;
-	int i;
-
-	for (i = 0; i < cbs->num_ext; ++i) {
-		err = can_mcan_read_mram(dev, config->mram_offsets[CAN_MCAN_MRAM_CFG_EXT_FILTER] +
-					 i * sizeof(struct can_mcan_ext_filter), &filter,
-					 sizeof(struct can_mcan_ext_filter));
-		if (err != 0) {
-			LOG_ERR("failed to read ext filter (err %d)", err);
-			return err;
-		}
-
-		if (filter.efce == CAN_MCAN_FCE_DISABLE) {
-			return i;
-		}
-	}
-
-	return -ENOSPC;
-}
-
 static int can_mcan_add_rx_filter_ext(const struct device *dev, can_rx_callback_t callback,
 				      void *user_data, const struct can_filter *filter)
 {
@@ -1068,13 +1025,20 @@ static int can_mcan_add_rx_filter_ext(const struct device *dev, can_rx_callback_
 		.id1 = filter->id,
 		.eft = CAN_MCAN_EFT_MASKED
 	};
-	int filter_id;
+	int filter_id = -ENOSPC;
 	int err;
+	int i;
 
 	k_mutex_lock(&data->lock, K_FOREVER);
-	filter_id = can_mcan_get_free_ext(dev);
 
-	if (filter_id < 0) {
+	for (i = 0; i < cbs->num_ext; i++) {
+		if (cbs->ext[i].function == NULL) {
+			filter_id = i;
+			break;
+		}
+	}
+
+	if (filter_id == -ENOSPC) {
 		LOG_WRN("No free extended id filter left");
 		k_mutex_unlock(&data->lock);
 		return -ENOSPC;
@@ -1153,6 +1117,9 @@ void can_mcan_remove_rx_filter(const struct device *dev, int filter_id)
 			return;
 		}
 
+		cbs->ext[filter_id].function = NULL;
+		cbs->ext[filter_id].user_data = NULL;
+
 		err = can_mcan_clear_mram(dev, config->mram_offsets[CAN_MCAN_MRAM_CFG_EXT_FILTER] +
 					filter_id * sizeof(struct can_mcan_ext_filter),
 					sizeof(struct can_mcan_ext_filter));
@@ -1160,6 +1127,9 @@ void can_mcan_remove_rx_filter(const struct device *dev, int filter_id)
 			LOG_ERR("failed to clear ext filter element (err %d)", err);
 		}
 	} else {
+		cbs->std[filter_id].function = NULL;
+		cbs->std[filter_id].user_data = NULL;
+
 		err = can_mcan_clear_mram(dev, config->mram_offsets[CAN_MCAN_MRAM_CFG_STD_FILTER] +
 					filter_id * sizeof(struct can_mcan_std_filter),
 					sizeof(struct can_mcan_std_filter));
