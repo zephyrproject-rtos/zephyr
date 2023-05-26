@@ -10,7 +10,6 @@
 #include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
 
 #include <OsIf.h>
-#include <Clock_Ip.h>
 
 #ifdef CONFIG_XIP
 /* Image Vector Table structure definition for S32K3XX */
@@ -60,15 +59,6 @@ static int soc_init(void)
 	}
 
 	OsIf_Init(NULL);
-
-	/*
-	 * Clock for MSCM must be enabled first, before all clocks or peripherals
-	 * are initialized. Because for now, RTD critical sections need access MSCM
-	 * register to determine which core the code is running on.
-	 */
-	Clock_Ip_EnableModuleClock(MSCM_CLK);
-
-	Clock_Ip_Init(Clock_Ip_aClockConfig);
 
 	return 0;
 }
