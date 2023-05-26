@@ -254,7 +254,8 @@ int stm32_exti_set_callback(int line, stm32_exti_callback_t cb, void *arg)
 		return 0;
 	}
 
-	if (data->cb[line].cb) {
+	/* if callback already exists/maybe-running return busy */
+	if (data->cb[line].cb != NULL) {
 		return -EBUSY;
 	}
 
