@@ -316,13 +316,29 @@ config CODING_GUIDELINE_CHECK
 	  Use available compiler flags to check coding guideline rules during
 	  the build.
 
-config NATIVE_APPLICATION
-	bool "Build as a native host application"
+config NATIVE_BUILD
+	bool
 	select FULL_LIBC_SUPPORTED
 	select FULL_LIBCPP_SUPPORTED if CPP
 	help
+	  Zephyr will be built targeting the host system for debug and
+	  development purposes.
+
+config NATIVE_APPLICATION
+	bool
+	default y if ARCH_POSIX
+	depends on !NATIVE_LIBRARY
+	select NATIVE_BUILD
+	help
 	  Build as a native application that can run on the host and using
 	  resources and libraries provided by the host.
+
+config NATIVE_LIBRARY
+	bool
+	select NATIVE_BUILD
+	help
+	  Build as a prelinked library for the native host target.
+	  This library can later be built into an executable for the host.
 
 config COMPILER_FREESTANDING
 	bool "Build in a freestanding compiler mode"
