@@ -44,7 +44,7 @@ config COVERAGE_GCOV
 	bool "Create Coverage data from hardware platform"
 	default y
 	depends on COVERAGE
-	depends on !NATIVE_APPLICATION
+	depends on !NATIVE_BUILD
 	help
 	  This option will select the custom gcov library. The reports will
 	  be available over serial. This serial dump can be passed to

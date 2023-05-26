@@ -414,7 +414,7 @@ config COMPILER_COLOR_DIAGNOSTICS
 
 choice COMPILER_SECURITY_FORTIFY
 	prompt "Detect buffer overflows in libc calls"
-	default FORTIFY_SOURCE_NONE if NO_OPTIMIZATIONS || MINIMAL_LIBC || NATIVE_APPLICATION
+	default FORTIFY_SOURCE_NONE if NO_OPTIMIZATIONS || MINIMAL_LIBC || NATIVE_BUILD
 	default FORTIFY_SOURCE_COMPILE_TIME
 	help
 	  Buffer overflow checking in libc calls. Supported by Clang and
