@@ -1,0 +1,7 @@
+# Copyright 2023 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_MR_CANHUBK3
+	bool "mr_canhubk3"
+	depends on SOC_SERIES_S32K3_M7
+	select SOC_PART_NUMBER_S32K344
