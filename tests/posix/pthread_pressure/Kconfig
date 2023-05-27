@@ -1,0 +1,59 @@
+# Copyright (c) 2023, Meta
+#
+# SPDX-License-Identifier: Apache-2.0
+
+source "Kconfig.zephyr"
+
+config TEST_NUM_CPUS
+	int "Number of CPUs to use in parallel"
+	range 1 MP_NUM_CPUS
+	default MP_NUM_CPUS
+	help
+	  The number of parallel threads to run during the test. The test
+	  thread itself yields so that all cores have some probability of
+	  causing racey behaviour.
+
+config TEST_DURATION_S
+	int "Number of seconds to run the test"
+	range 1 21600
+	default 5
+	help
+	   Duration for the test, in seconds. The range has a reblatively high
+	   upper bound because we should expect that pthread_create() and
+	   pthread_join() are stable enough to run for an arbitrarily long
+	   period of time without encountering any race conditions.
+
+	   Some exceptions apply, notably Qemu SMP targets.
+
+config TEST_DELAY_US
+	int "Microseconds to delay between pthread join and create"
+	default 0
+	help
+	  If there is a race condition, a value of zero here should
+	  cause a crash.
+
+config TEST_STACK_SIZE
+	int "Size of each thread stack in this test"
+	default 512 if !64_BIT
+	default 1024 if 64_BIT
+	help
+	  The minimal stack size required to run a no-op thread.
+
+config TEST_KTHREADS
+	bool "Test k_threads"
+	default y
+	help
+	  Run tests for k_threads
+
+config TEST_PTHREADS
+	bool "Test pthreads"
+	default y
+	help
+	  Run tests for pthreads
+
+config TEST_EXTRA_ASSERTIONS
+	bool "Add extra assertions into the hot path"
+	default y
+	help
+	  On Qemu SMP targets, this can potentially lead to "scheduler noise"
+	  leaking in from the host system, which can cause the test to fail.
