@@ -117,6 +117,7 @@ class ZephyrElf:
     """
     def __init__(self, kernel, edt, device_start_symbol):
         self.elf = ELFFile(open(kernel, "rb"))
+        self.relocatable = self.elf['e_type'] == 'ET_REL'
         self.edt = edt
         self.devices = []
         self.ld_consts = self._symbols_find_value(set([device_start_symbol, *Device.required_ld_consts, *DevicePM.required_ld_consts]))
@@ -152,9 +153,13 @@ class ZephyrElf:
         length = sym.entry.st_size
         # Section associated with the symbol
         section = self.elf.get_section(sym.entry['st_shndx'])
-        offset = addr - section['sh_addr']
-        # Extract bytes
-        return bytes(section.data()[offset:offset + length])
+        data = section.data()
+        # Relocatable data does not appear to be shifted
+        offset = addr - (0 if self.relocatable else section['sh_addr'])
+        # Validate data extraction
+        assert offset + length <= len(data)
+        # Extract symbol bytes from section
+        return bytes(data[offset:offset + length])
 
     def _symbols_find_value(self, names):
         symbols = {}
