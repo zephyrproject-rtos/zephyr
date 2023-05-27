@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2018 Savoir-Faire Linux.
  * Copyright (c) 2020 Peter Bigot Consulting, LLC
+ * Copyright (c) 2023 Intercreate, Inc.
  *
  * This driver is heavily inspired from the spi_flash_w25qxxdv.c SPI NOR driver.
  *
@@ -63,6 +64,12 @@ LOG_MODULE_REGISTER(spi_nor, CONFIG_FLASH_LOG_LEVEL);
 #define T_DPDD_MS 0
 #endif /* DPD_WAKEUP_SEQUENCE */
 
+#define _INST_HAS_WP_OR(inst) DT_INST_NODE_HAS_PROP(inst, wp_gpios) ||
+#define ANY_INST_HAS_WP_GPIOS DT_INST_FOREACH_STATUS_OKAY(_INST_HAS_WP_OR) 0
+
+#define _INST_HAS_HOLD_OR(inst) DT_INST_NODE_HAS_PROP(inst, hold_gpios) ||
+#define ANY_INST_HAS_HOLD_GPIOS DT_INST_FOREACH_STATUS_OKAY(_INST_HAS_HOLD_OR) 0
+
 /* Build-time data associated with the device. */
 struct spi_nor_config {
 	/* Devicetree SPI configuration */
@@ -107,6 +114,15 @@ struct spi_nor_config {
 	 * This information cannot be derived from SFDP.
 	 */
 	uint8_t has_lock;
+
+#if ANY_INST_HAS_WP_GPIOS
+	/* The write-protect GPIO (wp-gpios) */
+	const struct gpio_dt_spec *wp;
+#endif
+#if ANY_INST_HAS_HOLD_GPIOS
+	/* The hold GPIO (hold-gpios) */
+	const struct gpio_dt_spec *hold;
+#endif
 };
 
 /**
@@ -827,7 +843,16 @@ static int spi_nor_erase(const struct device *dev, off_t addr, size_t size)
 static int spi_nor_write_protection_set(const struct device *dev,
 					bool write_protect)
 {
+#if ANY_INST_HAS_WP_GPIOS
+	const struct spi_nor_config *cfg = dev->config;
+#endif
 	int ret;
+
+#if ANY_INST_HAS_WP_GPIOS
+	if (cfg->wp) {
+		gpio_pin_set_dt(cfg->wp, write_protect);
+	}
+#endif
 
 	ret = spi_nor_cmd_write(dev, (write_protect) ?
 	      SPI_NOR_CMD_WRDI : SPI_NOR_CMD_WREN);
@@ -1320,11 +1345,36 @@ static int spi_nor_pm_control(const struct device *dev, enum pm_device_action ac
  */
 static int spi_nor_init(const struct device *dev)
 {
+#if (ANY_INST_HAS_WP_GPIOS || ANY_INST_HAS_HOLD_GPIOS)
+	const struct spi_nor_config *cfg = dev->config;
+#endif
+
 	if (IS_ENABLED(CONFIG_MULTITHREADING)) {
 		struct spi_nor_data *const driver_data = dev->data;
 
 		k_sem_init(&driver_data->sem, 1, K_SEM_MAX_LIMIT);
 	}
+
+#if ANY_INST_HAS_WP_GPIOS
+	if (cfg->wp) {
+		if (!device_is_ready(cfg->wp->port)) {
+			return -ENODEV;
+		}
+		if (gpio_pin_configure_dt(cfg->wp, GPIO_OUTPUT_ACTIVE)) {
+			return -ENODEV;
+		}
+	}
+#endif /* ANY_INST_HAS_WP_GPIOS */
+#if ANY_INST_HAS_HOLD_GPIOS
+	if (cfg->hold) {
+		if (!device_is_ready(cfg->hold->port)) {
+			return -ENODEV;
+		}
+		if (gpio_pin_configure_dt(cfg->hold, GPIO_OUTPUT_INACTIVE)) {
+			return -ENODEV;
+		}
+	}
+#endif /* ANY_INST_HAS_HOLD_GPIOS */
 
 	return spi_nor_configure(dev);
 }
@@ -1422,6 +1472,21 @@ BUILD_ASSERT(DT_INST_PROP(0, has_lock) == (DT_INST_PROP(0, has_lock) & 0xFF),
 	     "Need support for lock clear beyond SR1");
 #endif
 
+#define INST_HAS_WP_GPIO(idx) DT_INST_NODE_HAS_PROP(idx, wp_gpios)
+
+#define INST_WP_GPIO_SPEC(idx)                                                                     \
+	IF_ENABLED(INST_HAS_WP_GPIO(idx), (static const struct gpio_dt_spec wp_##idx =             \
+						   GPIO_DT_SPEC_INST_GET(idx, wp_gpios);))
+
+#define INST_HAS_HOLD_GPIO(idx) DT_INST_NODE_HAS_PROP(idx, hold_gpios)
+
+#define INST_HOLD_GPIO_SPEC(idx)                                                                   \
+	IF_ENABLED(INST_HAS_HOLD_GPIO(idx), (static const struct gpio_dt_spec hold_##idx =         \
+						     GPIO_DT_SPEC_INST_GET(idx, hold_gpios);))
+
+INST_WP_GPIO_SPEC(0)
+INST_HOLD_GPIO_SPEC(0)
+
 static const struct spi_nor_config spi_nor_config_0 = {
 	.spi = SPI_DT_SPEC_INST_GET(0, SPI_WORD_SET(8),
 				    CONFIG_SPI_NOR_CS_WAIT_DELAY),
@@ -1455,6 +1520,14 @@ static const struct spi_nor_config spi_nor_config_0 = {
 #endif /* CONFIG_SPI_NOR_SFDP_DEVICETREE */
 
 #endif /* CONFIG_SPI_NOR_SFDP_RUNTIME */
+
+#if DT_INST_NODE_HAS_PROP(0, wp_gpios)
+	.wp = &wp_0,
+#endif
+
+#if DT_INST_NODE_HAS_PROP(0, hold_gpios)
+	.hold = &hold_0,
+#endif
 };
 
 static struct spi_nor_data spi_nor_data_0;
