@@ -89,7 +89,7 @@ endfunction()
 
 # https://cmake.org/cmake/help/latest/command/target_include_directories.html
 function(zephyr_include_directories)
-  target_include_directories(zephyr_interface INTERFACE ${ARGV})
+  target_include_directories(zephyr_interface SYSTEM INTERFACE ${ARGV})
 endfunction()
 
 # https://cmake.org/cmake/help/latest/command/target_include_directories.html
