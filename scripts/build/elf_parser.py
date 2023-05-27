@@ -147,15 +147,14 @@ class ZephyrElf:
         """
         Retrieve the raw bytes associated with a symbol from the elf file.
         """
+        # Symbol data parameters
         addr = sym.entry.st_value
-        len = sym.entry.st_size
-        for section in self.elf.iter_sections():
-            start = section['sh_addr']
-            end = start + section['sh_size']
-
-            if (start <= addr) and (addr + len) <= end:
-                offset = addr - section['sh_addr']
-                return bytes(section.data()[offset:offset + len])
+        length = sym.entry.st_size
+        # Section associated with the symbol
+        section = self.elf.get_section(sym.entry['st_shndx'])
+        offset = addr - section['sh_addr']
+        # Extract bytes
+        return bytes(section.data()[offset:offset + length])
 
     def _symbols_find_value(self, names):
         symbols = {}
