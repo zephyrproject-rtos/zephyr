@@ -104,7 +104,7 @@ add_library(zephyr_interface INTERFACE)
 # flags that come with zephyr_interface.
 zephyr_library_named(zephyr)
 
-zephyr_include_directories(
+zephyr_system_include_directories(
   include
   ${PROJECT_BINARY_DIR}/include/generated
   ${USERINCLUDE}
@@ -123,7 +123,7 @@ foreach(optional_include_dir
   ${SOC_DIR}/${ARCH}/${SOC_FAMILY}/common/include
   )
   if(EXISTS ${optional_include_dir})
-    zephyr_include_directories(${optional_include_dir})
+    zephyr_system_include_directories(${optional_include_dir})
   endif()
 endforeach()
 
