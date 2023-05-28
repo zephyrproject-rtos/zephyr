@@ -31,6 +31,26 @@ config CHARACTER_FRAMEBUFFER_SHELL_DRIVER_NAME
 	help
 	  Character Framebuffer Display Driver Name
 
+config CHARACTER_FRAMEBUFFER_USE_OFFSCREEN_BUFFER
+	bool "Use offscreen buffer"
+	default y
+	help
+	  Allocate and use an offscreen buffer for rendering.
+	  If this option is disabled, some functions that depend on
+	  offscreen buffers are unsupported.
+
+if !CHARACTER_FRAMEBUFFER_USE_OFFSCREEN_BUFFER
+
+config CHARACTER_FRAMEBUFFER_TRANSFER_BUFFER_SIZE
+	int "Size of buffer for transferring"
+	default 0
+	help
+	  Buffer size for transferring to display
+	  If set to zero, it allocates a buffer of the same number
+	  of bytes as the width of the display.
+
+endif #!CHARACTER_FRAMEBUFFER_USE_OFFSCREEN_BUFFER
+
 module = CFB
 module-str = cfb
 source "subsys/logging/Kconfig.template.log_config"

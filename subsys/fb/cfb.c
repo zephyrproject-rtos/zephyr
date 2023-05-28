@@ -96,7 +96,7 @@ struct draw_text_params {
 	int16_t y;
 
 	/* Rquired height to render the text */
-	int16_t draw_height;
+	int16_t height;
 
 	/* Pointer to font to use for render */
 	const struct cfb_font *fptr;
@@ -111,7 +111,7 @@ struct draw_text_params {
 	uint16_t columns;
 
 	/* Draw background before render text */
-	bool draw_background;
+	bool background;
 };
 
 static struct char_framebuffer char_fb;
@@ -309,7 +309,7 @@ static uint8_t text_region_mask_at_pos(const struct draw_text_params *param, uin
 	const uint16_t offset = y % 8U;
 	const uint16_t line = ypos / param->fptr->height;
 	const bool firstrow = (ypos < param->fptr->height);
-	const bool out_of_range = (ypos >= param->draw_height);
+	const bool out_of_range = (ypos >= param->height);
 
 	uint16_t prev_left;
 	uint16_t prev_width;
@@ -421,7 +421,7 @@ static void draw_text_by_tile(const struct draw_text_params *param, uint16_t x, 
 			byte[0] |= (~BIT_MASK(offset - 1) & (byte[1] << (offset)));
 
 			/* Trim the overhanging rows */
-			if ((y + offset + 8) > param->draw_height + param->y) {
+			if ((y + offset + 8) > param->height + param->y) {
 				byte[0] &= BIT_MASK(offset + 1);
 			}
 		} else {
@@ -429,7 +429,7 @@ static void draw_text_by_tile(const struct draw_text_params *param, uint16_t x, 
 			byte[0] |= (byte[1] >> (8U - offset));
 
 			/* Trim the overhanging rows */
-			if ((y + offset) > param->draw_height + param->y) {
+			if ((y + offset) > param->height + param->y) {
 				byte[0] &= BIT_MASK(offset + 1);
 			}
 		}
@@ -439,7 +439,7 @@ static void draw_text_by_tile(const struct draw_text_params *param, uint16_t x, 
 		}
 
 #ifdef CONFIG_CHARACTER_FRAMEBUFFER_USE_OFFSCREEN_BUFFER
-		if (param->draw_background) {
+		if (param->background) {
 			buf[i] &= text_region_mask_at_pos(param, xpos, y);
 		}
 
@@ -456,7 +456,7 @@ static void draw_text_by_tile(const struct draw_text_params *param, uint16_t x, 
  */
 static int draw_text_vtmono(const struct draw_text_params *param, int16_t x, int16_t y)
 {
-	const int16_t y_end = ROUND_UP(param->draw_height + param->y, 8U);
+	const int16_t y_end = ROUND_UP(param->height + param->y, 8U);
 	const struct transfer_param *tr = &param->transfer;
 	uint8_t *buf = (uint8_t *)tr->buf;
 	uint16_t ystart = ROUND_DOWN(y, 8U);
@@ -538,6 +538,7 @@ static int draw_text_vtmono(const struct draw_text_params *param, int16_t x, int
 	return err;
 }
 
+#ifdef CONFIG_CHARACTER_FRAMEBUFFER_USE_OFFSCREEN_BUFFER
 static inline void draw_point(struct char_framebuffer *fb, int16_t x, int16_t y)
 {
 	const bool need_reverse = ((fb->screen_info & SCREEN_INFO_MONO_MSB_FIRST) != 0);
@@ -588,38 +589,70 @@ static void draw_line(struct char_framebuffer *fb, int16_t x0, int16_t y0, int16
 		}
 	}
 }
+#endif
+
+static inline uint16_t cfb_get_columns(const struct char_framebuffer *fb)
+{
+	const struct cfb_font *fptr = &(fb->fonts[fb->font_idx]);
+
+	return (fb->x_res + fb->kerning) / (fptr->width + fb->kerning);
+}
+
+static inline uint16_t cfb_get_need_reverse(const struct char_framebuffer *fb)
+{
+	const struct cfb_font *fptr = &(fb->fonts[fb->font_idx]);
+
+	return (((fb->screen_info & SCREEN_INFO_MONO_MSB_FIRST) != 0) !=
+		((fptr->caps & CFB_FONT_MSB_FIRST) != 0));
+}
+
+static inline uint16_t cfb_get_firstrow_columns(const struct char_framebuffer *fb, uint16_t x)
+{
+	const struct cfb_font *fptr = &(fb->fonts[fb->font_idx]);
+
+	return ((fb->x_res + fb->kerning) - x) / (fptr->width + fb->kerning);
+}
+
+static inline uint16_t cfb_get_draw_height(const struct char_framebuffer *fb,
+					   const char *const str, uint16_t x)
+{
+	const struct cfb_font *fptr = &(fb->fonts[fb->font_idx]);
+	const uint16_t columns = cfb_get_columns(fb);
+	const uint16_t firstrow_columns = cfb_get_firstrow_columns(fb, x);
+
+	return (((strlen(str) - firstrow_columns) + columns) / columns + 1) * fptr->height;
+}
 
 static int draw_text(const struct device *dev, const char *const str, int16_t x, int16_t y,
 		     bool print_cmd)
 {
 	const struct char_framebuffer *fb = &char_fb;
 	const struct cfb_font *fptr = &(fb->fonts[fb->font_idx]);
-	const uint16_t columns = (fb->x_res + fb->kerning) / (fptr->width + fb->kerning);
-	const uint16_t firstrow_columns =
-		((fb->x_res + fb->kerning) - x) / (fptr->width + fb->kerning);
-	const uint16_t draw_height =
-		(((strlen(str) - firstrow_columns) + columns) / columns + 1) * fptr->height;
-	const bool need_reverse = (((fb->screen_info & SCREEN_INFO_MONO_MSB_FIRST) != 0) !=
-				   ((fptr->caps & CFB_FONT_MSB_FIRST) != 0));
 
 	const struct draw_text_params param = {
 		.transfer = {
+#ifdef CONFIG_CHARACTER_FRAMEBUFFER_USE_OFFSCREEN_BUFFER
 			.buf = fb->buf + ((y < 0) ? 0 : (fb->x_res * (y / 8))),
-			.size = (draw_height / 8) * fb->x_res,
+			.size = (cfb_get_draw_height(fb, str, x) / 8) * fb->x_res,
 			.offscreen = true,
+#else
+			.buf = fb->buf,
+			.size = fb->size,
+			.offscreen = false,
+#endif
 			.fb = &char_fb,
 			.dev = dev,
 		},
-		.need_reverse = need_reverse,
+		.need_reverse = cfb_get_need_reverse(fb),
 		.x = x,
 		.y = y,
 		.text = str,
 		.length = strlen(str),
-		.draw_height = print_cmd ? draw_height : fptr->height,
+		.height = print_cmd ? cfb_get_draw_height(fb, str, x) : fptr->height,
 		.fptr = fptr,
-		.columns = columns,
-		.firstrow_columns = print_cmd ? firstrow_columns : UINT16_MAX,
-		.draw_background = print_cmd,
+		.columns = cfb_get_columns(fb),
+		.firstrow_columns = print_cmd ? cfb_get_firstrow_columns(fb, x) : UINT16_MAX,
+		.background = print_cmd,
 	};
 
 	if (param.fptr->height % 8U) {
@@ -645,26 +678,35 @@ static int draw_text(const struct device *dev, const char *const str, int16_t x,
 
 int cfb_draw_point(const struct device *dev, const struct cfb_position *pos)
 {
+#ifdef CONFIG_CHARACTER_FRAMEBUFFER_USE_OFFSCREEN_BUFFER
 	struct char_framebuffer *fb = &char_fb;
 
 	draw_point(fb, pos->x, pos->y);
 
 	return 0;
+#else
+	return -ENOTSUP;
+#endif
 }
 
 int cfb_draw_line(const struct device *dev, const struct cfb_position *start,
 		  const struct cfb_position *end)
 {
+#ifdef CONFIG_CHARACTER_FRAMEBUFFER_USE_OFFSCREEN_BUFFER
 	struct char_framebuffer *fb = &char_fb;
 
 	draw_line(fb, start->x, start->y, end->x, end->y);
 
 	return 0;
+#else
+	return -ENOTSUP;
+#endif
 }
 
 int cfb_draw_rect(const struct device *dev, const struct cfb_position *start,
 		  const struct cfb_position *end)
 {
+#ifdef CONFIG_CHARACTER_FRAMEBUFFER_USE_OFFSCREEN_BUFFER
 	struct char_framebuffer *fb = &char_fb;
 
 	draw_line(fb, start->x, start->y, end->x, start->y);
@@ -673,6 +715,9 @@ int cfb_draw_rect(const struct device *dev, const struct cfb_position *start,
 	draw_line(fb, start->x, end->y, start->x, start->y);
 
 	return 0;
+#else
+	return -ENOTSUP;
+#endif
 }
 
 int cfb_draw_text(const struct device *dev, const char *const str, int16_t x, int16_t y)
@@ -688,6 +733,7 @@ int cfb_print(const struct device *dev, const char *const str, uint16_t x, uint1
 int cfb_invert_area(const struct device *dev, uint16_t x, uint16_t y,
 		    uint16_t width, uint16_t height)
 {
+#ifdef CONFIG_CHARACTER_FRAMEBUFFER_USE_OFFSCREEN_BUFFER
 	const struct char_framebuffer *fb = &char_fb;
 	const bool need_reverse = ((fb->screen_info & SCREEN_INFO_MONO_MSB_FIRST) != 0);
 
@@ -770,8 +816,12 @@ int cfb_invert_area(const struct device *dev, uint16_t x, uint16_t y,
 
 	LOG_ERR("Unsupported framebuffer configuration");
 	return -EINVAL;
+#else
+	return -ENOTSUP;
+#endif
 }
 
+#ifdef CONFIG_CHARACTER_FRAMEBUFFER_USE_OFFSCREEN_BUFFER
 static int cfb_invert(const struct char_framebuffer *fb)
 {
 	for (size_t i = 0; i < fb->x_res * fb->y_res / 8U; i++) {
@@ -780,11 +830,13 @@ static int cfb_invert(const struct char_framebuffer *fb)
 
 	return 0;
 }
+#endif
 
 int cfb_framebuffer_clear(const struct device *dev, bool clear_display)
 {
 	const struct char_framebuffer *fb = &char_fb;
 
+#ifdef CONFIG_CHARACTER_FRAMEBUFFER_USE_OFFSCREEN_BUFFER
 	if (!fb || !fb->buf) {
 		return -ENODEV;
 	}
@@ -794,6 +846,49 @@ int cfb_framebuffer_clear(const struct device *dev, bool clear_display)
 	if (clear_display) {
 		cfb_framebuffer_finalize(dev);
 	}
+#else
+	int err = 0;
+	uint8_t *buf = fb->buf;
+	const size_t size = fb->size;
+	const struct draw_text_params param = {
+		.transfer = {
+			.fb = &char_fb,
+			.dev = dev,
+			.buf = buf,
+			.size = size,
+			.offscreen = false,
+		},
+		.text = NULL,
+		.x = 0,
+		.y = 0,
+		.fptr = NULL,
+	};
+
+	if (!fb->buf) {
+		return -ENODEV;
+	}
+	memset(buf, fb->inverted ? 0x00 : 0xFF, size);
+
+	if (fb->size < fb->x_res) {
+		for (int y = 0; y < fb->y_res; y += fb->ppt) {
+			for (int x = 0; x < (fb->x_res + size); x += size) {
+				err = transfer_buffer(&param.transfer, x, y, size, 8U);
+				if (err) {
+					return err;
+				}
+			}
+		}
+	} else {
+		for (int y = 0; y < fb->y_res; y += fb->ppt) {
+			const uint16_t buf_height = fb->size / fb->x_res * 8U;
+
+			err = transfer_buffer(&param.transfer, 0, y, size, buf_height);
+			if (err) {
+				return err;
+			}
+		}
+	}
+#endif
 
 	return 0;
 }
@@ -813,7 +908,7 @@ int cfb_framebuffer_invert(const struct device *dev)
 
 int cfb_framebuffer_finalize(const struct device *dev)
 {
-	const struct display_driver_api *api = dev->api;
+#ifdef CONFIG_CHARACTER_FRAMEBUFFER_USE_OFFSCREEN_BUFFER
 	const struct char_framebuffer *fb = &char_fb;
 	struct display_buffer_descriptor desc;
 	int err;
@@ -829,12 +924,15 @@ int cfb_framebuffer_finalize(const struct device *dev)
 
 	if (!(fb->pixel_format & PIXEL_FORMAT_MONO10) != !(fb->inverted)) {
 		cfb_invert(fb);
-		err = api->write(dev, 0, 0, &desc, fb->buf);
+		err = display_write(dev, 0, 0, &desc, fb->buf);
 		cfb_invert(fb);
 		return err;
 	}
 
-	return api->write(dev, 0, 0, &desc, fb->buf);
+	return display_write(dev, 0, 0, &desc, fb->buf);
+#else
+	return 0;
+#endif
 }
 
 int cfb_get_display_parameter(const struct device *dev,
@@ -912,11 +1010,10 @@ int cfb_get_numof_fonts(const struct device *dev)
 
 int cfb_framebuffer_init(const struct device *dev)
 {
-	const struct display_driver_api *api = dev->api;
 	struct char_framebuffer *fb = &char_fb;
 	struct display_capabilities cfg;
 
-	api->get_capabilities(dev, &cfg);
+	display_get_capabilities(dev, &cfg);
 
 	STRUCT_SECTION_COUNT(cfb_font, &fb->numof_fonts);
 
@@ -927,13 +1024,13 @@ int cfb_framebuffer_init(const struct device *dev)
 	fb->ppt = 8U;
 	fb->pixel_format = cfg.current_pixel_format;
 	fb->screen_info = cfg.screen_info;
-	fb->buf = NULL;
 	fb->kerning = 0;
 	fb->inverted = false;
 
 	fb->fonts = TYPE_SECTION_START(cfb_font);
 	fb->font_idx = 0U;
 
+#ifdef CONFIG_CHARACTER_FRAMEBUFFER_USE_OFFSCREEN_BUFFER
 	fb->size = fb->x_res * fb->y_res / fb->ppt;
 	fb->buf = k_malloc(fb->size);
 	if (!fb->buf) {
@@ -941,6 +1038,18 @@ int cfb_framebuffer_init(const struct device *dev)
 	}
 
 	memset(fb->buf, 0, fb->size);
+#else
+	fb->size = CONFIG_CHARACTER_FRAMEBUFFER_TRANSFER_BUFFER_SIZE;
+	if (fb->size == 0) {
+		fb->size = fb->x_res;
+	}
+
+	fb->buf = k_malloc(fb->size);
+	if (!fb->buf) {
+		return -ENOMEM;
+	}
+	memset(fb->buf, 0, fb->size);
+#endif
 
 	return 0;
 }
