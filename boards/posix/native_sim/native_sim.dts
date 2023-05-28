@@ -216,4 +216,10 @@
 		#io-channel-cells = <1>;
 		status = "okay";
 	};
+
+	dma: dma {
+		compatible = "zephyr,dma-emul";
+		#dma-cells = <1>;
+		stack-size = <4096>;
+	};
 };
