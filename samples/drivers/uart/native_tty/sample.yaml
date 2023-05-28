@@ -1,0 +1,9 @@
+sample:
+  name: Native TTY sample
+tests:
+  sample.drivers.uart.native_tty:
+    build_only: true
+    platform_allow: native_posix
+    tags:
+      - serial
+      - uart
