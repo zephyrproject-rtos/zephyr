@@ -7,6 +7,7 @@
 #include <zephyr/kernel.h>
 #include <string.h>
 #include <zephyr/display/cfb.h>
+#include <zephyr/sys/util.h>
 
 #define LOG_LEVEL CONFIG_CFB_LOG_LEVEL
 #include <zephyr/logging/log.h>
@@ -61,6 +62,58 @@ struct char_framebuffer {
 	bool inverted;
 };
 
+struct transfer_param {
+	/** Pointer to character framebuffer */
+	const struct char_framebuffer *fb;
+
+	/** Pointer to device */
+	const struct device *dev;
+
+	/** Pointer to buffer */
+	const uint8_t *buf;
+
+	/** Size of the buffer */
+	size_t size;
+
+	/** Flag to disable transferring. Set true for rendering to framebuffer. */
+	bool offscreen;
+};
+
+struct draw_text_params {
+	/* Parameter for buffer transfer */
+	struct transfer_param transfer;
+
+	/* Text to draw */
+	const char *const text;
+
+	/* Text length */
+	size_t length;
+
+	/* X position to draw */
+	int16_t x;
+
+	/* Y position to draw */
+	int16_t y;
+
+	/* Rquired height to render the text */
+	int16_t draw_height;
+
+	/* Pointer to font to use for render */
+	const struct cfb_font *fptr;
+
+	/* Indicate need to reverse significant bit */
+	bool need_reverse;
+
+	/* Number of characters in the first line */
+	uint16_t firstrow_columns;
+
+	/* Number of characters after the second line */
+	uint16_t columns;
+
+	/* Draw background before render text */
+	bool draw_background;
+};
+
 static struct char_framebuffer char_fb;
 
 static inline uint8_t *get_glyph_ptr(const struct cfb_font *fptr, char c)
@@ -84,103 +137,405 @@ static inline uint8_t get_glyph_byte(uint8_t *glyph_ptr, const struct cfb_font *
 }
 
 /*
- * Draw the monochrome character in the monochrome tiled framebuffer,
- * a byte is interpreted as 8 pixels ordered vertically among each other.
+ * Transferring buffer contents to display
+ *
+ * @param param buffer transfer param
+ * @param x X position
+ * @param y X position
+ * @param w width
+ * @param h height
+ *
+ * @return negative value if failed, otherwise 0
  */
-static uint8_t draw_char_vtmono(const struct char_framebuffer *fb,
-				char c, uint16_t x, uint16_t y,
-				bool draw_bg)
+static int transfer_buffer(const struct transfer_param *param, int16_t x, int16_t y, int16_t w,
+			   int16_t h)
 {
-	const struct cfb_font *fptr = &(fb->fonts[fb->font_idx]);
-	const bool need_reverse = (((fb->screen_info & SCREEN_INFO_MONO_MSB_FIRST) != 0)
-			     != ((fptr->caps & CFB_FONT_MSB_FIRST) != 0));
-	uint8_t *glyph_ptr;
+	struct display_buffer_descriptor desc;
+	int err = 0;
 
-	if (c < fptr->first_char || c > fptr->last_char) {
-		c = ' ';
-	}
-
-	glyph_ptr = get_glyph_ptr(fptr, c);
-	if (!glyph_ptr) {
+	if (param->offscreen) {
 		return 0;
 	}
 
-	for (size_t g_x = 0; g_x < fptr->width; g_x++) {
-		const int16_t fb_x = x + g_x;
+	if (x >= param->fb->x_res || y >= param->fb->y_res) {
+		return 0;
+	}
 
-		for (size_t g_y = 0; g_y < fptr->height; g_y++) {
-			/*
-			 * Process glyph rendering in the y direction
-			 * by separating per 8-line boundaries.
+	if ((y + h) < 0) {
+		return 0;
+	}
+
+	if (y < 0) {
+		h += y;
+		y = 0;
+	}
+
+	desc.buf_size = param->size;
+	desc.width = w;
+	desc.height = h;
+	desc.pitch = w;
+
+	if (desc.height + y >= param->fb->y_res) {
+		desc.height = param->fb->y_res - y;
+	}
+
+	if (desc.width + x >= param->fb->x_res) {
+		desc.width = param->fb->x_res - x;
+		desc.pitch = param->fb->x_res - x;
+	}
+
+	err = display_write(param->dev, x, y, &desc, param->buf);
+	if (err) {
+		LOG_DBG("write(%d %d %d %d) size: %d: err=%d", x, y, w, h, param->size, err);
+	}
+
+	return err;
+}
+
+/**
+ * Calculate start X position and width specified Y position.
+ *
+ * @param param draw parameter
+ * @param y Y position
+ * @param [out] start Start draw position of x
+ * @param [out] width Width to draw
+ */
+static void draw_text_width(const struct draw_text_params *param, int16_t y, int16_t *start,
+			    uint16_t *width)
+{
+	const int line = (y - param->y) / param->fptr->height;
+	const int last_line =
+		(param->length - param->firstrow_columns + param->columns - 1) / param->columns;
+	const int width_with_kerning = param->fptr->width + param->transfer.fb->kerning;
+
+	if (line < 0) {
+		*start = 0;
+		*width = 0;
+	} else if (line == 0) {
+		size_t len = param->length;
+
+		if (param->firstrow_columns < param->length) {
+			len = (param->transfer.fb->x_res - param->x + param->transfer.fb->kerning) /
+			      width_with_kerning;
+		}
+
+		*start = param->x;
+		*width = len * width_with_kerning - param->transfer.fb->kerning;
+	} else if (line == last_line) {
+		*start = 0;
+		*width =
+			((param->length - (param->firstrow_columns + (line - 1) * param->columns)) *
+			 width_with_kerning) -
+			param->transfer.fb->kerning;
+	} else if (line < last_line) {
+		*start = 0;
+		*width = param->transfer.fb->x_res;
+	} else {
+		*start = 0;
+		*width = 0;
+	}
+}
+
+/**
+ * Query what char is drawn at this position.
+ *
+ * @param param draw parameter
+ * @param x X position
+ * @param y Y position
+ * @param [out] index Index of character in param->text.
+ * @param [out] xoffset X direction offset in font data
+ * @param [out] yoffset X direction offset in font data
+ *
+ * @return true if character drawn at this position
+ */
+static bool char_to_draw_at_pos(const struct draw_text_params *param, int16_t x, int16_t y,
+				size_t *index, uint16_t *xoffset, uint16_t *yoffset)
+{
+	const int width_with_kerning = param->fptr->width + param->transfer.fb->kerning;
+	const int row = (y - param->y) / param->fptr->height;
+	uint16_t idx;
+	uint16_t off;
+
+	if (y < param->y) {
+		return false;
+	}
+
+	if (row == 0) {
+		if ((x - param->x) < 0) {
+			return false;
+		}
+		idx = (x - param->x) / width_with_kerning;
+		if (idx >= param->firstrow_columns) {
+			return false;
+		}
+		off = (x - param->x) % width_with_kerning;
+	} else {
+		const size_t col = x / width_with_kerning;
+
+		idx = (param->columns * row) + col - (param->columns - param->firstrow_columns);
+		off = x % width_with_kerning;
+	}
+
+	/* If x is on the kerning */
+	if (off >= param->fptr->width) {
+		return false;
+	}
+
+	if (idx >= param->length) {
+		return false;
+	}
+
+	*index = idx;
+	*xoffset = off;
+	*yoffset = ((y - param->y) % param->fptr->height) / 8U;
+
+	return true;
+}
+
+#ifdef CONFIG_CHARACTER_FRAMEBUFFER_USE_OFFSCREEN_BUFFER
+/**
+ * Query text region mask bits at this position.
+ *
+ * @param param draw parameter
+ * @param x X position
+ * @param y Y position
+ *
+ * @return bits of text region mask at this position
+ */
+static uint8_t text_region_mask_at_pos(const struct draw_text_params *param, uint16_t x, uint16_t y)
+{
+	const uint16_t xpos = x;
+	const uint16_t ypos = y - param->y;
+	const uint16_t offset = y % 8U;
+	const uint16_t line = ypos / param->fptr->height;
+	const bool firstrow = (ypos < param->fptr->height);
+	const bool out_of_range = (ypos >= param->draw_height);
+
+	uint16_t prev_left;
+	uint16_t prev_width;
+	uint16_t prev_right;
+	uint16_t left;
+	uint16_t width;
+	uint16_t right;
+
+	draw_text_width(param, y, &left, &width);
+	draw_text_width(param, y - 8, &prev_left, &prev_width);
+
+	prev_right = prev_left + prev_width;
+	right = left + width;
+
+	if (out_of_range) {
+		if (xpos < prev_right) {
+			/* Mask the overhanging of characters that rendered in previous row */
+			if (ypos < (param->fptr->height * line + 8U)) {
+				return BIT_MASK(8U - offset);
+			}
+		}
+	} else if (firstrow) {
+		if (IN_RANGE(xpos, left, right - 1)) {
+			/* Sets the offset mask for the top tile */
+			if (ypos < (param->fptr->height * line + 8U)) {
+				return ~BIT_MASK(8U - offset);
+			}
+			return 0x00;
+		}
+	} else {
+		if (IN_RANGE(xpos, left, right - 1U)) {
+			/* Set the offset mask to the part of the second line
+			 * where nothing is written in the first line.
 			 */
-
-			const int16_t fb_y = y + g_y;
-			const size_t fb_index = (fb_y / 8U) * fb->x_res + fb_x;
-			const size_t offset = y % 8;
-			uint8_t bg_mask;
-			uint8_t byte;
-
-			if (fb_x < 0 || fb->x_res <= fb_x || fb_y < 0 || fb->y_res <= fb_y) {
-				continue;
-			}
-
-			byte = get_glyph_byte(glyph_ptr, fptr, g_x, g_y / 8);
-
-			if (offset == 0) {
-				/*
-				 * The start row is on an 8-line boundary.
-				 * Therefore, it can set the value directly.
-				 */
-				bg_mask = 0;
-				g_y += 7;
-			} else if (g_y == 0) {
-				/*
-				 * If the starting row is not on the 8-line boundary,
-				 * shift the glyph to the starting line, and create a mask
-				 * from the 8-line boundary to the starting line.
-				 */
-				byte = byte << offset;
-				bg_mask = BIT_MASK(offset);
-				g_y += (7 - offset);
-			} else {
-				/*
-				 * After the starting row, read and concatenate the next 8-rows
-				 * glyph and clip to the 8-line boundary and write 8-lines
-				 * at the time.
-				 * Create a mask to prevent overwriting the drawing contents
-				 * after the end row.
-				 */
-				const size_t lines = ((fptr->height - g_y) < 8) ? offset : 8;
-
-				if (lines == 8) {
-					uint16_t byte2 = byte;
-
-					byte2 |= (get_glyph_byte(glyph_ptr, fptr, g_x,
-								 (g_y + 8) / 8))
-						  << 8;
-					byte = (byte2 >> (8 - offset)) & BIT_MASK(lines);
-				} else {
-					byte = (byte >> (8 - offset)) & BIT_MASK(lines);
+			if (!IN_RANGE(xpos, prev_left, prev_right - 1U)) {
+				if (ypos < (param->fptr->height * line + 8U)) {
+					return ~BIT_MASK(8U - offset);
 				}
-
-				bg_mask = (BIT_MASK(8 - lines) << (lines)) & 0xFF;
-				g_y += (lines - 1);
 			}
-
-			if (need_reverse) {
-				byte = byte_reverse(byte);
-				bg_mask = byte_reverse(bg_mask);
+			return 0x0;
+		} else if (xpos < prev_right) {
+			/* Mask the overhanging of characters that rendered in previous row */
+			if (ypos < (param->fptr->height * line + 8U)) {
+				return BIT_MASK(8U - offset);
 			}
-
-			if (draw_bg) {
-				fb->buf[fb_index] &= bg_mask;
-			}
-
-			fb->buf[fb_index] |= byte;
+			return 0x0;
 		}
 	}
 
-	return fptr->width;
+	return 0xFF;
+}
+#endif
+
+/**
+ * Draw the 8-rows specified by y pos
+ *
+ * @param param draw parameter
+ * @param x X-position
+ * @param y X-position
+ * @param buf Buffer to render
+ * @param buflen Size of the buffer
+ */
+static void draw_text_by_tile(const struct draw_text_params *param, uint16_t x, uint16_t y,
+			      uint8_t *buf, size_t buflen)
+{
+	const uint16_t offset = param->y % 8U;
+	uint8_t *glyph_ptr = NULL;
+	char c = 0;
+
+	for (size_t i = 0; i < buflen; i++) {
+		const int sign = (param->y < 0) ? -1 : 1;
+		const int16_t xpos = x + i;
+		uint8_t byte[2];
+		uint16_t xoff;
+		uint16_t yoff;
+		size_t idx;
+
+		/* Get glyphs that required to draw the 8-rows from specified y position. */
+		for (size_t j = 0; j < 2; j++) {
+			const int16_t ypos = y + (j * -8U * sign);
+
+			if (!char_to_draw_at_pos(param, xpos, ypos, &idx, &xoff, &yoff)) {
+				byte[j] = 0;
+				continue;
+			}
+
+			if (c != param->text[idx] || !glyph_ptr) {
+				c = param->text[idx];
+				if (c < param->fptr->first_char || c > param->fptr->last_char) {
+					c = 0;
+				}
+
+				glyph_ptr = get_glyph_ptr(param->fptr, c);
+				if (!glyph_ptr) {
+					c = 0;
+				}
+			}
+
+			if (c != 0) {
+				byte[j] = get_glyph_byte(glyph_ptr, param->fptr, xoff, yoff);
+			} else {
+				/* Write nothing if no suitable font is found */
+				byte[j] = 0;
+			}
+		}
+
+		if (param->y < 0) {
+			byte[0] >>= ((8 - offset) % 8);
+			byte[0] |= (~BIT_MASK(offset - 1) & (byte[1] << (offset)));
+
+			/* Trim the overhanging rows */
+			if ((y + offset + 8) > param->draw_height + param->y) {
+				byte[0] &= BIT_MASK(offset + 1);
+			}
+		} else {
+			byte[0] <<= offset;
+			byte[0] |= (byte[1] >> (8U - offset));
+
+			/* Trim the overhanging rows */
+			if ((y + offset) > param->draw_height + param->y) {
+				byte[0] &= BIT_MASK(offset + 1);
+			}
+		}
+
+		if (param->need_reverse) {
+			byte[0] = byte_reverse(byte[0]);
+		}
+
+#ifdef CONFIG_CHARACTER_FRAMEBUFFER_USE_OFFSCREEN_BUFFER
+		if (param->draw_background) {
+			buf[i] &= text_region_mask_at_pos(param, xpos, y);
+		}
+
+		buf[i] |= byte[0];
+#else
+		buf[i] = param->transfer.fb->inverted ? byte[0] : ~byte[0];
+#endif
+	}
+}
+
+/*
+ * Draw the monochrome character in the monochrome tiled framebuffer,
+ * a byte is interpreted as 8 pixels ordered vertically among each other.
+ */
+static int draw_text_vtmono(const struct draw_text_params *param, int16_t x, int16_t y)
+{
+	const int16_t y_end = ROUND_UP(param->draw_height + param->y, 8U);
+	const struct transfer_param *tr = &param->transfer;
+	uint8_t *buf = (uint8_t *)tr->buf;
+	uint16_t ystart = ROUND_DOWN(y, 8U);
+	int err = 0;
+
+	/* Draw row by row if the buffer is longer than the screen width */
+	if (tr->fb->x_res <= tr->size) {
+		const uint16_t buf_height = tr->size / tr->fb->x_res * 8U;
+		uint16_t drawn_lines;
+
+		for (; y < y_end; y += 8U) {
+			drawn_lines = ROUND_DOWN(y - ystart, 8U);
+
+			/* Flush when the buffer filled */
+			if ((y - ystart) > (buf_height - 8U) && !tr->offscreen) {
+				err = transfer_buffer(tr, 0, ystart, tr->fb->x_res, drawn_lines);
+				if (err) {
+					return err;
+				}
+				buf = (uint8_t *)tr->buf;
+
+				ystart = ROUND_DOWN(y, 8U);
+			}
+
+			buf += x;
+			draw_text_by_tile(param, x, y, buf, tr->fb->x_res - x);
+			buf += (tr->fb->x_res - x);
+
+			/* From the second line onwards, set the character start position to x=0 */
+			if ((y - ystart + 8U + (param->y % 8U)) >= param->fptr->height) {
+				x = 0;
+			}
+		}
+		drawn_lines = ROUND_DOWN(y - ystart, 8U);
+
+		/* Flush remaining buffers */
+		return transfer_buffer(tr, 0, ystart, tr->fb->x_res, drawn_lines);
+	}
+
+	/* Buffer shorter than screen width case. */
+	for (; y < y_end; y += 8U) {
+		int16_t left_end[2];
+		uint16_t row_width[2];
+
+		for (int i = 0; i < 2; i++) {
+			draw_text_width(param, y + (i * -8U), &left_end[i], &row_width[i]);
+		}
+
+		row_width[0] = MAX(left_end[0] + row_width[0], left_end[1] + row_width[1]);
+		left_end[0] = MIN(left_end[0], left_end[1]);
+		row_width[0] -= left_end[0];
+
+		if (left_end[0] < 0) {
+			row_width[0] += left_end[0];
+			left_end[0] = 0;
+		}
+
+		x = left_end[0];
+		ystart = ROUND_DOWN(y, 8U);
+
+		/* draw row with splitting by buffer size */
+		while (x < (row_width[0] + left_end[0] + tr->size)) {
+			draw_text_by_tile(param, x, y, buf, tr->size);
+			size_t len = tr->fb->x_res - x;
+
+			if (len >= tr->size) {
+				len = tr->size;
+			}
+
+			err = transfer_buffer(tr, x, ystart, len, 8U);
+			if (err) {
+				return err;
+			}
+
+			x += tr->size;
+		}
+	}
+
+	return err;
 }
 
 static inline void draw_point(struct char_framebuffer *fb, int16_t x, int16_t y)
@@ -235,35 +590,57 @@ static void draw_line(struct char_framebuffer *fb, int16_t x0, int16_t y0, int16
 }
 
 static int draw_text(const struct device *dev, const char *const str, int16_t x, int16_t y,
-		     bool wrap)
+		     bool print_cmd)
 {
 	const struct char_framebuffer *fb = &char_fb;
-	const struct cfb_font *fptr;
+	const struct cfb_font *fptr = &(fb->fonts[fb->font_idx]);
+	const uint16_t columns = (fb->x_res + fb->kerning) / (fptr->width + fb->kerning);
+	const uint16_t firstrow_columns =
+		((fb->x_res + fb->kerning) - x) / (fptr->width + fb->kerning);
+	const uint16_t draw_height =
+		(((strlen(str) - firstrow_columns) + columns) / columns + 1) * fptr->height;
+	const bool need_reverse = (((fb->screen_info & SCREEN_INFO_MONO_MSB_FIRST) != 0) !=
+				   ((fptr->caps & CFB_FONT_MSB_FIRST) != 0));
 
-	if (!fb->fonts || !fb->buf) {
-		return -ENODEV;
-	}
+	const struct draw_text_params param = {
+		.transfer = {
+			.buf = fb->buf + ((y < 0) ? 0 : (fb->x_res * (y / 8))),
+			.size = (draw_height / 8) * fb->x_res,
+			.offscreen = true,
+			.fb = &char_fb,
+			.dev = dev,
+		},
+		.need_reverse = need_reverse,
+		.x = x,
+		.y = y,
+		.text = str,
+		.length = strlen(str),
+		.draw_height = print_cmd ? draw_height : fptr->height,
+		.fptr = fptr,
+		.columns = columns,
+		.firstrow_columns = print_cmd ? firstrow_columns : UINT16_MAX,
+		.draw_background = print_cmd,
+	};
 
-	fptr = &(fb->fonts[fb->font_idx]);
-
-	if (fptr->height % 8) {
+	if (param.fptr->height % 8U) {
 		LOG_ERR("Wrong font size");
 		return -EINVAL;
 	}
 
-	if ((fb->screen_info & SCREEN_INFO_MONO_VTILED)) {
-		for (size_t i = 0; i < strlen(str); i++) {
-			if ((x + fptr->width > fb->x_res) && wrap) {
-				x = 0U;
-				y += fptr->height;
-			}
-			x += fb->kerning + draw_char_vtmono(fb, str[i], x, y, wrap);
-		}
-		return 0;
+	if ((x + param.fptr->width > param.transfer.fb->x_res) && print_cmd) {
+		x = 0U;
+		y += param.fptr->height;
 	}
 
-	LOG_ERR("Unsupported framebuffer configuration");
-	return -EINVAL;
+	if (x < 0) {
+		x = 0;
+	}
+
+	if (y < 0) {
+		y = 0;
+	}
+
+	return draw_text_vtmono(&param, x, y);
 }
 
 int cfb_draw_point(const struct device *dev, const struct cfb_position *pos)
