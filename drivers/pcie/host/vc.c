@@ -6,9 +6,7 @@
 
 #include <errno.h>
 
-#include <zephyr/kernel.h>
-
-#include <zephyr/drivers/pcie/pcie.h>
+#include <zephyr/drivers/pcie/vc.h>
 #include <zephyr/drivers/pcie/cap.h>
 
 #include "vc.h"
@@ -54,4 +52,121 @@ void pcie_vc_load_resources_regs(pcie_bdf_t bdf,
 				       PCIE_VC_RES_STATUS_REG_OFFSET(idx));
 		regs++;
 	}
+}
+
+static int get_vc_registers(pcie_bdf_t bdf,
+			    struct pcie_vc_regs *regs,
+			    struct pcie_vc_resource_regs *res_regs)
+{
+	uint32_t base;
+
+	base = pcie_vc_cap_lookup(bdf, regs);
+	if (base == 0) {
+		return -ENOTSUP;
+	}
+
+	if (regs->cap_reg_1.vc_count == 0) {
+		/* Having only VC0 is like having no real VC */
+		return -ENOTSUP;
+	}
+
+	pcie_vc_load_resources_regs(bdf, base, res_regs,
+			       regs->cap_reg_1.vc_count + 1);
+
+	return 0;
+}
+
+
+int pcie_vc_enable(pcie_bdf_t bdf)
+{
+	struct pcie_vc_regs regs;
+	struct pcie_vc_resource_regs res_regs[PCIE_VC_MAX_COUNT];
+	int idx;
+
+	if (get_vc_registers(bdf, &regs, res_regs) != 0) {
+		return -ENOTSUP;
+	}
+
+	/* We do not touch VC0: it is always on */
+	for (idx = 1; idx < regs.cap_reg_1.vc_count + 1; idx++) {
+		if (idx > 0 && res_regs[idx].ctrl_reg.vc_enable == 1) {
+			/*
+			 * VC has not been disabled properly, if at all?
+			 */
+			return -EALREADY;
+		}
+
+		res_regs[idx].ctrl_reg.vc_enable = 1;
+	}
+
+	return 0;
+}
+
+int pcie_vc_disable(pcie_bdf_t bdf)
+{
+	struct pcie_vc_regs regs;
+	struct pcie_vc_resource_regs res_regs[PCIE_VC_MAX_COUNT];
+	int idx;
+
+	if (get_vc_registers(bdf, &regs, res_regs) != 0) {
+		return -ENOTSUP;
+	}
+
+	/* We do not touch VC0: it is always on */
+	for (idx = 1; idx < regs.cap_reg_1.vc_count + 1; idx++) {
+		/* Let's wait for the pending negotiation to end */
+		while (res_regs[idx].status_reg.vc_negocation_pending == 1) {
+			k_msleep(10);
+		}
+
+		res_regs[idx].ctrl_reg.vc_enable = 0;
+	}
+
+	return 0;
+}
+
+int pcie_vc_map_tc(pcie_bdf_t bdf, struct pcie_vctc_map *map)
+{
+	struct pcie_vc_regs regs;
+	struct pcie_vc_resource_regs res_regs[PCIE_VC_MAX_COUNT];
+	int idx;
+	uint8_t tc_mapped = 0;
+
+	if (get_vc_registers(bdf, &regs, res_regs) != 0) {
+		return -ENOTSUP;
+	}
+
+	/* Map must relate to the actual VC count */
+	if (regs.cap_reg_1.vc_count != map->vc_count) {
+		return -EINVAL;
+	}
+
+	/* Veryfying that map is sane */
+	for (idx = 0; idx < map->vc_count; idx++) {
+		if (idx == 0 && !(map->vc_tc[idx] & PCIE_VC_SET_TC0)) {
+			/* TC0 is on VC0 and cannot be unset */
+			return -EINVAL;
+		}
+
+		/* Each TC must appear only once in the map */
+		if (tc_mapped & map->vc_tc[idx]) {
+			return -EINVAL;
+		}
+
+		tc_mapped |= map->vc_tc[idx];
+	}
+
+	for (idx = 0; idx < regs.cap_reg_1.vc_count + 1; idx++) {
+		/* Let's just set the VC ID to related index for now */
+		if (idx > 0) {
+			res_regs[idx].ctrl_reg.vc_id = idx;
+		}
+
+		/* Currently, only HW round robin is used */
+		res_regs[idx].ctrl_reg.pa_select = PCIE_VC_PA_RR;
+
+		res_regs[idx].ctrl_reg.tc_vc_map = map->vc_tc[idx];
+	}
+
+	return 0;
 }

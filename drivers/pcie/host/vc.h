@@ -7,8 +7,6 @@
 #ifndef ZEPHYR_DRIVERS_PCIE_HOST_VC_H_
 #define ZEPHYR_DRIVERS_PCIE_HOST_VC_H_
 
-#define PCIE_VC_MAX_COUNT 8
-
 #define PCIE_VC_CAP_REG_1_OFFSET	0x04U
 #define PCIE_VC_CAP_REG_2_OFFSET	0x08U
 #define PCIE_VC_CTRL_STATUS_REG_OFFSET	0x0CU
@@ -61,6 +59,13 @@ struct pcie_vc_regs {
 #define PCIE_VC_RES_CAP_REG_OFFSET(_vc)		(0x10U + _vc * 0X0CU)
 #define PCIE_VC_RES_CTRL_REG_OFFSET(_vc)	(0x14U + _vc * 0X0CU)
 #define PCIE_VC_RES_STATUS_REG_OFFSET(_vc)	(0x18U + _vc * 0X0CU)
+
+#define PCIE_VC_PA_RR		BIT(0)
+#define PCIE_VC_PA_WRR		BIT(1)
+#define PCIE_VC_PA_WRR64	BIT(2)
+#define PCIE_VC_PA_WRR128	BIT(3)
+#define PCIE_VC_PA_TMWRR128	BIT(4)
+#define PCIE_VC_PA_WRR256	BIT(5)
 
 /** Virtual Channel Resource Registers */
 struct pcie_vc_resource_regs {
