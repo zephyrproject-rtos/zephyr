@@ -4,4 +4,7 @@ tests:
     tags:
       - drivers
       - dma
+    integration_platforms:
+      - native_posix
+      - native_posix_64
     filter: dt_nodelabel_enabled("test_dma0")
