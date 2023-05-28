@@ -45,7 +45,6 @@ static int can_sam0_write_reg(const struct device *dev, uint16_t reg, uint32_t v
 {
 	const struct can_mcan_config *mcan_config = dev->config;
 	const struct can_sam0_config *sam_config = mcan_config->custom;
-	uint32_t bits = 0U;
 
 	switch (reg) {
 	case CAN_MCAN_ILS:
@@ -58,7 +57,6 @@ static int can_sam0_write_reg(const struct device *dev, uint16_t reg, uint32_t v
 		break;
 	default:
 		/* No field remap needed */
-		bits = val;
 		break;
 	};
 
