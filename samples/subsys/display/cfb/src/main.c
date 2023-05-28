@@ -26,8 +26,10 @@ int main(void)
 	}
 
 	if (display_set_pixel_format(dev, PIXEL_FORMAT_MONO10) != 0) {
-		printf("Failed to set required pixel format\n");
-		return 0;
+		if (display_set_pixel_format(dev, PIXEL_FORMAT_MONO01) != 0) {
+			printf("Failed to set required pixel format");
+			return 0;
+		}
 	}
 
 	printf("Initialized %s\n", dev->name);
