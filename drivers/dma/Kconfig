@@ -72,4 +72,6 @@ source "drivers/dma/Kconfig.smartbond"
 
 source "drivers/dma/Kconfig.nxp_sof_host_dma"
 
+source "drivers/dma/Kconfig.emul"
+
 endif # DMA
