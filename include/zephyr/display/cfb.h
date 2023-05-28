@@ -105,6 +105,8 @@ int cfb_draw_text(const struct device *dev, const char *const str, int16_t x, in
 /**
  * @brief Draw a point.
  *
+ * Not supported if set CONFIG_CHARACTER_FRAMEBUFFER_USE_OFFSCREEN_BUFFER
+ *
  * @param dev Pointer to device structure for driver instance
  * @param pos position of the point
  *
@@ -114,6 +116,8 @@ int cfb_draw_point(const struct device *dev, const struct cfb_position *pos);
 
 /**
  * @brief Draw a line.
+ *
+ * Not supported if set CONFIG_CHARACTER_FRAMEBUFFER_USE_OFFSCREEN_BUFFER
  *
  * @param dev Pointer to device structure for driver instance
  * @param start start position of the line
@@ -126,6 +130,8 @@ int cfb_draw_line(const struct device *dev, const struct cfb_position *start,
 
 /**
  * @brief Draw a rectangle.
+ *
+ * Not supported if set CONFIG_CHARACTER_FRAMEBUFFER_USE_OFFSCREEN_BUFFER
  *
  * @param dev Pointer to device structure for driver instance
  * @param start Top-Left position of the rectangle
@@ -141,6 +147,7 @@ int cfb_draw_rect(const struct device *dev, const struct cfb_position *start,
  *
  * @param dev Pointer to device structure for driver instance
  * @param clear_display Clear the display as well
+ *                      Always clear if set CONFIG_CHARACTER_FRAMEBUFFER_USE_OFFSCREEN_BUFFER.
  *
  * @return 0 on success, negative value otherwise
  */
@@ -158,6 +165,8 @@ int cfb_framebuffer_invert(const struct device *dev);
 /**
  * @brief Invert Pixels in selected area.
  *
+ * Not supported if set CONFIG_CHARACTER_FRAMEBUFFER_USE_OFFSCREEN_BUFFER
+ *
  * @param dev Pointer to device structure for driver instance
  * @param x Position in X direction of the beginning of area
  * @param y Position in Y direction of the beginning of area
@@ -172,6 +181,8 @@ int cfb_invert_area(const struct device *dev, uint16_t x, uint16_t y,
 /**
  * @brief Finalize framebuffer and write it to display RAM,
  * invert or reorder pixels if necessary.
+ *
+ * Not supported if set CONFIG_CHARACTER_FRAMEBUFFER_USE_OFFSCREEN_BUFFER
  *
  * @param dev Pointer to device structure for driver instance
  *
