@@ -335,8 +335,10 @@ static int fps_create_model(const struct device *dev)
 
 static int fps_store_model(const struct device *dev, uint16_t id)
 {
+	struct grow_r502a_data *drv_data = dev->data;
 	union r502a_packet rx_packet = {0};
 	char const store_model_len = 4;
+	int ret = 0;
 
 	struct led_params led_ctrl = {
 		.ctrl_code = LED_CTRL_BREATHING,
@@ -351,11 +353,14 @@ static int fps_store_model(const struct device *dev, uint16_t id)
 	};
 	sys_put_be16(id, &tx_packet.data[2]);
 
+	k_mutex_lock(&drv_data->lock, K_FOREVER);
+
 	transceive_packet(dev, &tx_packet, &rx_packet, store_model_len);
 
 	if (rx_packet.pid != R502A_ACK_PACKET) {
 		LOG_ERR("Error receiving ack packet 0x%X", rx_packet.pid);
-		return -EIO;
+		ret = -EIO;
+		goto unlock;
 	}
 
 	if (rx_packet.buf[R502A_CC_IDX] == R502A_OK) {
@@ -366,16 +371,19 @@ static int fps_store_model(const struct device *dev, uint16_t id)
 		LOG_INF("Fingerprint stored! at ID #%d", id);
 	} else {
 		LOG_ERR("Error storing model 0x%X", rx_packet.buf[R502A_CC_IDX]);
-		return -EIO;
+		ret = -EIO;
 	}
-
-	return 0;
+unlock:
+	k_mutex_unlock(&drv_data->lock);
+	return ret;
 }
 
 static int fps_delete_model(const struct device *dev, uint16_t id, uint16_t count)
 {
+	struct grow_r502a_data *drv_data = dev->data;
 	union r502a_packet rx_packet = {0};
 	char const delete_model_len = 5;
+	int ret = 0;
 
 	union r502a_packet tx_packet = {
 		.pid = R502A_COMMAND_PACKET,
@@ -384,21 +392,25 @@ static int fps_delete_model(const struct device *dev, uint16_t id, uint16_t coun
 	sys_put_be16(id, &tx_packet.data[1]);
 	sys_put_be16(count + R502A_DELETE_COUNT_OFFSET, &tx_packet.data[3]);
 
+	k_mutex_lock(&drv_data->lock, K_FOREVER);
+
 	transceive_packet(dev, &tx_packet, &rx_packet, delete_model_len);
 
 	if (rx_packet.pid != R502A_ACK_PACKET) {
 		LOG_ERR("Error receiving ack packet 0x%X", rx_packet.pid);
-		return -EIO;
+		ret = -EIO;
+		goto unlock;
 	}
 
 	if (rx_packet.buf[R502A_CC_IDX] == R502A_OK) {
 		LOG_INF("Fingerprint Deleted from ID #%d to #%d", id, (id + count));
 	} else {
 		LOG_ERR("Error deleting image 0x%X", rx_packet.buf[R502A_CC_IDX]);
-		return -EIO;
+		ret = -EIO;
 	}
-
-	return 0;
+unlock:
+	k_mutex_unlock(&drv_data->lock);
+	return ret;
 }
 
 static int fps_empty_db(const struct device *dev)
@@ -429,7 +441,6 @@ static int fps_empty_db(const struct device *dev)
 		LOG_ERR("Error emptying fingerprint library 0x%X",
 					rx_packet.buf[R502A_CC_IDX]);
 		ret = -EIO;
-		goto unlock;
 	}
 
 unlock:
@@ -437,11 +448,12 @@ unlock:
 	return ret;
 }
 
-static int fps_search(const struct device *dev, uint8_t char_buf_idx)
+static int fps_search(const struct device *dev, struct sensor_value *val)
 {
 	struct grow_r502a_data *drv_data = dev->data;
 	union r502a_packet rx_packet = {0};
 	char const search_len = 6;
+	int ret = 0;
 
 	struct led_params led_ctrl = {
 		.ctrl_code = LED_CTRL_BREATHING,
@@ -452,16 +464,19 @@ static int fps_search(const struct device *dev, uint8_t char_buf_idx)
 
 	union r502a_packet tx_packet = {
 		.pid = R502A_COMMAND_PACKET,
-		.data = {R502A_SEARCH, char_buf_idx}
+		.data = {R502A_SEARCH, R502A_CHAR_BUF_1}
 	};
 	sys_put_be16(R02A_LIBRARY_START_IDX, &tx_packet.data[2]);
 	sys_put_be16(R502A_DEFAULT_CAPACITY, &tx_packet.data[4]);
+
+	k_mutex_lock(&drv_data->lock, K_FOREVER);
 
 	transceive_packet(dev, &tx_packet, &rx_packet, search_len);
 
 	if (rx_packet.pid != R502A_ACK_PACKET) {
 		LOG_ERR("Error receiving ack packet 0x%X", rx_packet.pid);
-		return -EIO;
+		ret = -EIO;
+		goto unlock;
 	}
 
 	if (rx_packet.buf[R502A_CC_IDX] == R502A_OK) {
@@ -469,36 +484,119 @@ static int fps_search(const struct device *dev, uint8_t char_buf_idx)
 		led_ctrl.color_idx = LED_COLOR_PURPLE;
 		led_ctrl.cycle = 0x01;
 		fps_led_control(dev, &led_ctrl);
-		drv_data->finger_id = sys_get_be16(&rx_packet.data[1]);
-		drv_data->matching_score = sys_get_be16(&rx_packet.data[3]);
-		LOG_INF("Found a matching print! at ID #%d", drv_data->finger_id);
-	} else if (rx_packet.buf[R502A_CC_IDX] == R502A_NOT_FOUND) {
+		val->val1 = sys_get_be16(&rx_packet.data[1]);
+		val->val2 = sys_get_be16(&rx_packet.data[3]);
+		LOG_INF("Found a matching print! at ID #%d", val->val1);
+	} else if (rx_packet.buf[R502A_CC_IDX] == R502A_NOT_FOUND_CC) {
 		led_ctrl.ctrl_code = LED_CTRL_BREATHING;
 		led_ctrl.color_idx = LED_COLOR_RED;
 		led_ctrl.cycle = 0x02;
 		fps_led_control(dev, &led_ctrl);
 		LOG_ERR("Did not find a match");
-		return -ENOENT;
+		ret = -ENOENT;
 	} else {
 		led_ctrl.ctrl_code = LED_CTRL_ON_ALWAYS;
 		led_ctrl.color_idx = LED_COLOR_RED;
 		fps_led_control(dev, &led_ctrl);
 		LOG_ERR("Error searching for image 0x%X", rx_packet.buf[R502A_CC_IDX]);
-		return -EIO;
+		ret = -EIO;
 	}
-
-	return 0;
+unlock:
+	k_mutex_unlock(&drv_data->lock);
+	return ret;
 }
 
-static int fps_enroll(const struct device *dev, const struct sensor_value *val)
+static int fps_load_template(const struct device *dev, uint16_t id)
 {
 	struct grow_r502a_data *drv_data = dev->data;
-	int ret = -1;
+	union r502a_packet rx_packet = {0};
+	char const load_tmp_len = 4;
+	int ret = 0;
 
-	if (val->val1 < 0 || val->val1 > R502A_DEFAULT_CAPACITY) {
-		LOG_ERR("Invalid ID number");
-		return -EINVAL;
+	union r502a_packet tx_packet = {
+		.pid = R502A_COMMAND_PACKET,
+		.data = {R502A_LOAD, R502A_CHAR_BUF_1}
+	};
+	sys_put_be16(id, &tx_packet.data[2]);
+
+	k_mutex_lock(&drv_data->lock, K_FOREVER);
+
+	transceive_packet(dev, &tx_packet, &rx_packet, load_tmp_len);
+
+	if (rx_packet.pid != R502A_ACK_PACKET) {
+		LOG_ERR("Error receiving ack packet 0x%X", rx_packet.pid);
+		ret = -EIO;
+		goto unlock;
 	}
+
+	if (rx_packet.buf[R502A_CC_IDX] == R502A_OK) {
+		LOG_DBG("Load template data from id #%d to Char_buffer2", id);
+	} else {
+		LOG_ERR("Error Loading template 0x%X",
+					rx_packet.buf[R502A_CC_IDX]);
+		ret = -EIO;
+	}
+
+unlock:
+	k_mutex_unlock(&drv_data->lock);
+	return ret;
+}
+
+static int fps_match_templates(const struct device *dev, struct sensor_value *val)
+{
+	struct grow_r502a_data *drv_data = dev->data;
+	union r502a_packet rx_packet = {0};
+	char const match_templates_len = 1;
+	int ret = 0;
+
+	struct led_params led_ctrl = {
+		.ctrl_code = LED_CTRL_BREATHING,
+		.color_idx = LED_COLOR_BLUE,
+		.speed = LED_SPEED_HALF,
+		.cycle = 0x01,
+	};
+
+	union r502a_packet tx_packet = {
+		.pid = R502A_COMMAND_PACKET,
+		.data = {R502A_MATCH}
+	};
+
+	k_mutex_lock(&drv_data->lock, K_FOREVER);
+
+	transceive_packet(dev, &tx_packet, &rx_packet, match_templates_len);
+
+	if (rx_packet.pid != R502A_ACK_PACKET) {
+		LOG_ERR("Error receiving ack packet 0x%X", rx_packet.pid);
+		ret = -EIO;
+		goto unlock;
+	}
+
+	if (rx_packet.buf[R502A_CC_IDX] == R502A_OK) {
+		fps_led_control(dev, &led_ctrl);
+		val->val1 = R502A_FINGER_MATCH_FOUND;
+		val->val2 = sys_get_be16(&rx_packet.data[1]);
+		LOG_INF("Fingerprint matched with a score %d", val->val2);
+	} else if (rx_packet.buf[R502A_CC_IDX] == R502A_NOT_MATCH_CC) {
+		val->val1 = R502A_FINGER_MATCH_NOT_FOUND;
+		LOG_ERR("Fingerprint not matched");
+		ret = -ENOENT;
+	} else {
+		led_ctrl.ctrl_code = LED_CTRL_ON_ALWAYS;
+		led_ctrl.color_idx = LED_COLOR_RED;
+		fps_led_control(dev, &led_ctrl);
+		LOG_ERR("Error Matching templates 0x%X",
+					rx_packet.buf[R502A_CC_IDX]);
+		ret = -EIO;
+	}
+unlock:
+	k_mutex_unlock(&drv_data->lock);
+	return ret;
+}
+
+static int fps_capture(const struct device *dev)
+{
+	struct grow_r502a_data *drv_data = dev->data;
+	int ret;
 
 	k_mutex_lock(&drv_data->lock, K_FOREVER);
 
@@ -518,63 +616,6 @@ static int fps_enroll(const struct device *dev, const struct sensor_value *val)
 	}
 
 	ret = fps_image_to_char(dev, R502A_CHAR_BUF_2);
-	if (ret != 0) {
-		goto unlock;
-	}
-
-	ret = fps_create_model(dev);
-	if (ret != 0) {
-		goto unlock;
-	}
-
-	ret = fps_store_model(dev, val->val1);
-
-unlock:
-	k_mutex_unlock(&drv_data->lock);
-	return ret;
-}
-
-static int fps_delete(const struct device *dev, const struct sensor_value *val)
-{
-	struct grow_r502a_data *drv_data = dev->data;
-	int ret = -1;
-
-	k_mutex_lock(&drv_data->lock, K_FOREVER);
-
-	ret = fps_delete_model(dev, val->val1, val->val2);
-	if (ret != 0) {
-		goto unlock;
-	}
-
-	ret = fps_get_template_count(dev);
-
-unlock:
-	k_mutex_unlock(&drv_data->lock);
-	return ret;
-}
-
-static int fps_match(const struct device *dev, struct sensor_value *val)
-{
-	struct grow_r502a_data *drv_data = dev->data;
-	int ret = -1;
-
-	k_mutex_lock(&drv_data->lock, K_FOREVER);
-
-	ret = fps_get_image(dev);
-	if (ret != 0) {
-		goto unlock;
-	}
-
-	ret = fps_image_to_char(dev, R502A_CHAR_BUF_1);
-	if (ret != 0) {
-		goto unlock;
-	}
-
-	ret = fps_search(dev, R502A_CHAR_BUF_1);
-	if (ret == 0) {
-		val->val1 = drv_data->finger_id;
-		val->val2 = drv_data->matching_score;
-	}
 
 unlock:
 	k_mutex_unlock(&drv_data->lock);
@@ -643,12 +684,18 @@ static int grow_r502a_attr_set(const struct device *dev, enum sensor_channel cha
 	}
 
 	switch ((enum sensor_attribute_grow_r502a)attr) {
+	case SENSOR_ATTR_R502A_CAPTURE:
+		return fps_capture(dev);
+	case SENSOR_ATTR_R502A_TEMPLATE_CREATE:
+		return fps_create_model(dev);
 	case SENSOR_ATTR_R502A_RECORD_ADD:
-		return fps_enroll(dev, val);
+		return fps_store_model(dev, val->val1);
 	case SENSOR_ATTR_R502A_RECORD_DEL:
-		return fps_delete(dev, val);
+		return fps_delete_model(dev, val->val1, val->val2);
 	case SENSOR_ATTR_R502A_RECORD_EMPTY:
 		return fps_empty_db(dev);
+	case SENSOR_ATTR_R502A_RECORD_LOAD:
+		return fps_load_template(dev, val->val1);
 	default:
 		LOG_ERR("Sensor attribute not supported");
 		return -ENOTSUP;
@@ -660,7 +707,6 @@ static int grow_r502a_attr_get(const struct device *dev, enum sensor_channel cha
 			       enum sensor_attribute attr, struct sensor_value *val)
 {
 	int ret;
-	struct grow_r502a_data *drv_data = dev->data;
 
 	if ((enum sensor_channel_grow_r502a)chan != SENSOR_CHAN_FINGERPRINT) {
 		LOG_ERR("Channel not supported");
@@ -669,10 +715,13 @@ static int grow_r502a_attr_get(const struct device *dev, enum sensor_channel cha
 
 	switch ((enum sensor_attribute_grow_r502a)attr) {
 	case SENSOR_ATTR_R502A_RECORD_FIND:
-		ret = fps_match(dev, val);
+		ret = fps_search(dev, val);
 		break;
 	case SENSOR_ATTR_R502A_RECORD_FREE_IDX:
 		ret = fps_read_template_table(dev, &val->val1);
+		break;
+	case SENSOR_ATTR_R502A_COMPARE:
+		ret = fps_match_templates(dev, val);
 		break;
 	default:
 		LOG_ERR("Sensor attribute not supported");
