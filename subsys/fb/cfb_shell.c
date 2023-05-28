@@ -18,7 +18,8 @@
 #define HELP_NONE "[none]"
 #define HELP_INIT "call \"cfb init\" first"
 #define HELP_PRINT "<col: pos> <row: pos> \"<text>\""
-#define HELP_DRAW_POINT "<x> <y0>"
+#define HELP_DRAW_TEXT "<x> <y> \"<text>\""
+#define HELP_DRAW_POINT "<x> <y>"
 #define HELP_DRAW_LINE "<x0> <y0> <x1> <y1>"
 #define HELP_DRAW_RECT "<x0> <y0> <x1> <y1>"
 #ifdef CONFIG_CHARACTER_FRAMEBUFFER_USE_OFFSCREEN_BUFFER
@@ -630,7 +631,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_cmd_scroll,
 );
 
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_cmd_draw,
-	SHELL_CMD_ARG(text, NULL, HELP_PRINT, cmd_draw_text, 4, 0),
+	SHELL_CMD_ARG(text, NULL, HELP_DRAW_TEXT, cmd_draw_text, 4, 0),
 
 #ifdef CONFIG_CHARACTER_FRAMEBUFFER_USE_OFFSCREEN_BUFFER
 	SHELL_CMD_ARG(point, NULL, HELP_DRAW_POINT, cmd_draw_point, 3, 0),
@@ -652,7 +653,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(cfb_cmds,
 	SHELL_CMD_ARG(print, NULL, HELP_PRINT, cmd_print, 4, 0),
 	SHELL_CMD(scroll, &sub_cmd_scroll, "scroll a text in vertical or "
 		  "horizontal direction", NULL),
-	SHELL_CMD(draw, &sub_cmd_draw, "drawing text", NULL),
+	SHELL_CMD(draw, &sub_cmd_draw, "drawing text and shapes", NULL),
 	SHELL_CMD_ARG(clear, NULL, HELP_NONE, cmd_clear, 1, 0),
 	SHELL_SUBCMD_SET_END
 );
