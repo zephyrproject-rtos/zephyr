@@ -16,6 +16,7 @@
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/led.h>
 #include <zephyr/device.h>
+#include <zephyr/pm/device.h>
 #include <zephyr/kernel.h>
 
 #include <zephyr/logging/log.h>
@@ -72,7 +73,7 @@ static inline int lp5569_led_off(const struct device *dev, uint32_t led)
 	return lp5569_led_set_brightness(dev, led, 0);
 }
 
-static int lp5569_init(const struct device *dev)
+static int lp5569_enable(const struct device *dev)
 {
 	const struct lp5569_config *config = dev->config;
 	int ret;
@@ -99,6 +100,52 @@ static int lp5569_init(const struct device *dev)
 	return 0;
 }
 
+static int lp5569_init(const struct device *dev)
+{
+	/* If the device is behind a power domain, it will start in
+	 * PM_DEVICE_STATE_OFF.
+	 */
+	if (pm_device_on_power_domain(dev)) {
+		pm_device_init_off(dev);
+		LOG_INF("Init %s as PM_DEVICE_STATE_OFF", dev->name);
+		return 0;
+	}
+
+	return lp5569_enable(dev);
+}
+
+#ifdef CONFIG_PM_DEVICE
+static int lp5569_pm_action(const struct device *dev,
+			    enum pm_device_action action)
+{
+	const struct lp5569_config *config = dev->config;
+	int ret;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_TURN_ON:
+	case PM_DEVICE_ACTION_RESUME:
+		ret = lp5569_enable(dev);
+		if (ret < 0) {
+			LOG_ERR("Enable LP5569 failed");
+			return ret;
+		}
+		break;
+	case PM_DEVICE_ACTION_TURN_OFF:
+	case PM_DEVICE_ACTION_SUSPEND:
+		ret = i2c_reg_update_byte_dt(&config->bus, LP5569_CONFIG,
+					   LP5569_CHIP_EN, 0);
+		if (ret < 0) {
+			LOG_ERR("Disable LP5569 failed");
+			return ret;
+		}
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_PM_DEVICE */
 
 static const struct led_driver_api lp5569_led_api = {
 	.set_brightness = lp5569_led_set_brightness,
@@ -111,8 +158,10 @@ static const struct led_driver_api lp5569_led_api = {
 		.bus = I2C_DT_SPEC_INST_GET(id),			\
 	};								\
 									\
+	PM_DEVICE_DT_INST_DEFINE(id, lp5569_pm_action);			\
+									\
 	DEVICE_DT_INST_DEFINE(id, &lp5569_init,				\
-			      NULL,					\
+			      PM_DEVICE_DT_INST_GET(id),		\
 			      NULL,					\
 			      &lp5569_config_##id, POST_KERNEL,		\
 			      CONFIG_LED_INIT_PRIORITY,			\
