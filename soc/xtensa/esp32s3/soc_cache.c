@@ -6,99 +6,53 @@
 
 #include "soc.h"
 
-/*
- * Instruction Cache definitions
- */
-#if defined(CONFIG_ESP32S3_INSTRUCTION_CACHE_16KB)
-#define ESP32S3_ICACHE_SIZE ICACHE_SIZE_16KB
-#else
-#define ESP32S3_ICACHE_SIZE ICACHE_SIZE_32KB
-#endif
-
-#if defined(CONFIG_ESP32S3_INSTRUCTION_CACHE_LINE_16B)
-#define ESP32S3_ICACHE_LINE_SIZE CACHE_LINE_SIZE_16B
-#else
-#define ESP32S3_ICACHE_LINE_SIZE CACHE_LINE_SIZE_32B
-#endif
-
-/*
- * Data Cache definitions
- */
-#if defined(CONFIG_ESP32S3_DATA_CACHE_16KB) || defined(CONFIG_ESP32S3_DATA_CACHE_32KB)
-#define ESP32S3_DCACHE_SIZE DCACHE_SIZE_32KB
-#else
-#define ESP32S3_DCACHE_SIZE DCACHE_SIZE_64KB
-#endif
-
-#if defined(CONFIG_ESP32S3_DATA_CACHE_LINE_16B)
-#define ESP32S3_DCACHE_LINE_SIZE CACHE_LINE_SIZE_16B
-#elif defined(CONFIG_ESP32S3_DATA_CACHE_LINE_32B)
-#define ESP32S3_DCACHE_LINE_SIZE CACHE_LINE_SIZE_32B
-#else
-#define ESP32S3_DCACHE_LINE_SIZE CACHE_LINE_SIZE_32B
-#endif
-
-#define CACHE_MEMORY_ICACHE_LOW CACHE_ICACHE0
-
 #ifndef CONFIG_MCUBOOT
+extern int _rodata_reserved_start;
+extern int _rodata_reserved_end;
+extern void rom_config_data_cache_mode(uint32_t cfg_cache_size, uint8_t cfg_cache_ways,
+						uint8_t cfg_cache_line_size);
+extern void rom_config_instruction_cache_mode(uint32_t cfg_cache_size, uint8_t cfg_cache_ways,
+						uint8_t cfg_cache_line_size);
+extern uint32_t Cache_Set_IDROM_MMU_Size(uint32_t irom_size, uint32_t drom_size);
+extern void Cache_Set_IDROM_MMU_Info(uint32_t instr_page_num, uint32_t rodata_page_num,
+					uint32_t rodata_start, uint32_t rodata_end,
+					int i_off, int ro_off);
 extern void Cache_Enable_ICache(uint32_t autoload);
 
 void IRAM_ATTR esp_config_instruction_cache_mode(void)
 {
-	cache_size_t cache_size;
-	cache_ways_t cache_ways;
-	cache_line_size_t cache_line_size;
+	rom_config_instruction_cache_mode(CONFIG_ESP32S3_INSTRUCTION_CACHE_SIZE,
+					CONFIG_ESP32S3_ICACHE_ASSOCIATED_WAYS,
+					CONFIG_ESP32S3_INSTRUCTION_CACHE_LINE_SIZE);
 
-#if CONFIG_ESP32S3_INSTRUCTION_CACHE_16KB
-	Cache_Occupy_ICache_MEMORY(CACHE_MEMORY_IBANK0, CACHE_MEMORY_INVALID);
-	cache_size = CACHE_SIZE_HALF;
-#else
-	Cache_Occupy_ICache_MEMORY(CACHE_MEMORY_IBANK0, CACHE_MEMORY_IBANK1);
-	cache_size = CACHE_SIZE_FULL;
-#endif
-#if CONFIG_ESP32S3_INSTRUCTION_CACHE_4WAYS
-	cache_ways = CACHE_4WAYS_ASSOC;
-#else
-	cache_ways = CACHE_8WAYS_ASSOC;
-#endif
-#if CONFIG_ESP32S3_INSTRUCTION_CACHE_LINE_16B
-	cache_line_size = CACHE_LINE_SIZE_16B;
-#elif CONFIG_ESP32S3_INSTRUCTION_CACHE_LINE_32B
-	cache_line_size = CACHE_LINE_SIZE_32B;
-#else
-	cache_line_size = CACHE_LINE_SIZE_64B;
-#endif
-	Cache_Set_ICache_Mode(cache_size, cache_ways, cache_line_size);
-	Cache_Invalidate_ICache_All();
-	Cache_Enable_ICache(0);
+	Cache_Suspend_DCache();
 }
 
 void IRAM_ATTR esp_config_data_cache_mode(void)
 {
-	cache_size_t cache_size;
-	cache_ways_t cache_ways;
-	cache_line_size_t cache_line_size;
+	int s_instr_flash2spiram_off = 0;
+	int s_rodata_flash2spiram_off = 0;
 
-#if CONFIG_ESP32S3_DATA_CACHE_32KB
-	Cache_Occupy_DCache_MEMORY(CACHE_MEMORY_DBANK1, CACHE_MEMORY_INVALID);
-	cache_size = CACHE_SIZE_HALF;
-#else
-	Cache_Occupy_DCache_MEMORY(CACHE_MEMORY_DBANK0, CACHE_MEMORY_DBANK1);
-	cache_size = CACHE_SIZE_FULL;
-#endif
-#if CONFIG_ESP32S3_DATA_CACHE_4WAYS
-	cache_ways = CACHE_4WAYS_ASSOC;
-#else
-	cache_ways = CACHE_8WAYS_ASSOC;
-#endif
-#if CONFIG_ESP32S3_DATA_CACHE_LINE_16B
-	cache_line_size = CACHE_LINE_SIZE_16B;
-#elif CONFIG_ESP32S3_DATA_CACHE_LINE_32B
-	cache_line_size = CACHE_LINE_SIZE_32B;
-#else
-	cache_line_size = CACHE_LINE_SIZE_64B;
-#endif
-	Cache_Set_DCache_Mode(cache_size, cache_ways, cache_line_size);
-	Cache_Invalidate_DCache_All();
+	rom_config_data_cache_mode(CONFIG_ESP32S3_DATA_CACHE_SIZE,
+				CONFIG_ESP32S3_DCACHE_ASSOCIATED_WAYS,
+				CONFIG_ESP32S3_DATA_CACHE_LINE_SIZE);
+	Cache_Resume_DCache(0);
+
+	/* Configure the Cache MMU size for instruction and rodata in flash. */
+	uint32_t rodata_reserved_start_align =
+		(uint32_t)&_rodata_reserved_start & ~(MMU_PAGE_SIZE - 1);
+	uint32_t cache_mmu_irom_size =
+		((rodata_reserved_start_align - SOC_DROM_LOW) / MMU_PAGE_SIZE) * sizeof(uint32_t);
+	uint32_t cache_mmu_drom_size =
+		(((uint32_t)&_rodata_reserved_end - rodata_reserved_start_align + MMU_PAGE_SIZE - 1)
+		/ MMU_PAGE_SIZE) * sizeof(uint32_t);
+	Cache_Set_IDROM_MMU_Size(cache_mmu_irom_size, CACHE_DROM_MMU_MAX_END - cache_mmu_irom_size);
+
+	Cache_Set_IDROM_MMU_Info(cache_mmu_irom_size / sizeof(uint32_t),
+				cache_mmu_drom_size / sizeof(uint32_t),
+				(uint32_t)&_rodata_reserved_start,
+				(uint32_t)&_rodata_reserved_end,
+				s_instr_flash2spiram_off,
+				s_rodata_flash2spiram_off);
 }
 #endif /* CONFIG_MCUBOOT */

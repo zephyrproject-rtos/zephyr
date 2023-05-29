@@ -40,16 +40,29 @@
 #include <zephyr/sys/printk.h>
 
 extern void z_cstart(void);
-extern void rom_config_instruction_cache_mode(uint32_t cfg_cache_size, uint8_t cfg_cache_ways,
-					      uint8_t cfg_cache_line_size);
-extern void rom_config_data_cache_mode(uint32_t cfg_cache_size, uint8_t cfg_cache_ways,
-				       uint8_t cfg_cache_line_size);
-extern uint32_t Cache_Set_IDROM_MMU_Size(uint32_t irom_size, uint32_t drom_size);
-extern void Cache_Set_IDROM_MMU_Info(uint32_t instr_page_num, uint32_t rodata_page_num,
-				     uint32_t rodata_start, uint32_t rodata_end, int i_off,
-				     int ro_off);
-extern int _rodata_reserved_start;
-extern int _rodata_reserved_end;
+
+#ifndef CONFIG_MCUBOOT
+/*
+ * This function is a container for SoC patches
+ * that needs to be applied during the startup.
+ */
+static void IRAM_ATTR esp_errata(void)
+{
+	/* Handle the clock gating fix */
+	REG_CLR_BIT(SYSTEM_CORE_1_CONTROL_0_REG, SYSTEM_CONTROL_CORE_1_CLKGATE_EN);
+	/* The clock gating signal of the App core is invalid. We use RUNSTALL and RESETTING
+	 * signals to ensure that the App core stops running in single-core mode.
+	 */
+	REG_SET_BIT(SYSTEM_CORE_1_CONTROL_0_REG, SYSTEM_CONTROL_CORE_1_RUNSTALL);
+	REG_CLR_BIT(SYSTEM_CORE_1_CONTROL_0_REG, SYSTEM_CONTROL_CORE_1_RESETTING);
+
+	/* Handle the Dcache case following the IDF startup code */
+#if CONFIG_ESP32S3_DATA_CACHE_16KB
+	Cache_Invalidate_DCache_All();
+	Cache_Occupy_Addr(SOC_DROM_LOW, 0x4000);
+#endif
+}
+#endif /* CONFIG_MCUBOOT */
 
 /*
  * This is written in C rather than assembly since, during the port bring up,
@@ -58,7 +71,6 @@ extern int _rodata_reserved_end;
  */
 void IRAM_ATTR __esp_platform_start(void)
 {
-	volatile soc_reset_reason_t rst_reas[SOC_CPU_CORES_NUM];
 	extern uint32_t _init_start;
 
 	/* Move the exception vector table to IRAM. */
@@ -82,39 +94,15 @@ void IRAM_ATTR __esp_platform_start(void)
 	}
 #else
 	/* Configure the mode of instruction cache : cache size, cache line size. */
-	rom_config_instruction_cache_mode(CONFIG_ESP32S3_INSTRUCTION_CACHE_SIZE,
-					CONFIG_ESP32S3_ICACHE_ASSOCIATED_WAYS,
-					CONFIG_ESP32S3_INSTRUCTION_CACHE_LINE_SIZE);
+	esp_config_instruction_cache_mode();
 
 	/* If we need use SPIRAM, we should use data cache.
 	 * Configure the mode of data : cache size, cache line size.
 	 */
-	Cache_Suspend_DCache();
-	rom_config_data_cache_mode(CONFIG_ESP32S3_DATA_CACHE_SIZE,
-				CONFIG_ESP32S3_DCACHE_ASSOCIATED_WAYS,
-				CONFIG_ESP32S3_DATA_CACHE_LINE_SIZE);
-	Cache_Resume_DCache(0);
-	/* Configure the Cache MMU size for instruction and rodata in flash. */
-	uint32_t rodata_reserved_start_align =
-		(uint32_t)&_rodata_reserved_start & ~(MMU_PAGE_SIZE - 1);
-	uint32_t cache_mmu_irom_size =
-		((rodata_reserved_start_align - SOC_DROM_LOW) / MMU_PAGE_SIZE) * sizeof(uint32_t);
-	uint32_t cache_mmu_drom_size =
-		(((uint32_t)&_rodata_reserved_end - rodata_reserved_start_align + MMU_PAGE_SIZE - 1)
-		 / MMU_PAGE_SIZE) * sizeof(uint32_t);
-	Cache_Set_IDROM_MMU_Size(cache_mmu_irom_size, CACHE_DROM_MMU_MAX_END - cache_mmu_irom_size);
+	esp_config_data_cache_mode();
 
-	REG_CLR_BIT(SYSTEM_CORE_1_CONTROL_0_REG, SYSTEM_CONTROL_CORE_1_CLKGATE_EN);
-	/* The clock gating signal of the App core is invalid. We use RUNSTALL and RESETTING
-	 * signals to ensure that the App core stops running in single-core mode.
-	 */
-	REG_SET_BIT(SYSTEM_CORE_1_CONTROL_0_REG, SYSTEM_CONTROL_CORE_1_RUNSTALL);
-	REG_CLR_BIT(SYSTEM_CORE_1_CONTROL_0_REG, SYSTEM_CONTROL_CORE_1_RESETTING);
-
-#if CONFIG_ESP32S3_DATA_CACHE_16KB
-	Cache_Invalidate_DCache_All();
-	Cache_Occupy_Addr(SOC_DROM_LOW, 0x4000);
-#endif
+	/* Apply SoC patches */
+	esp_errata();
 
 	/* ESP-IDF/MCUboot 2nd stage bootloader enables RTC WDT to check on startup sequence
 	 * related issues in application. Hence disable that as we are about to start
