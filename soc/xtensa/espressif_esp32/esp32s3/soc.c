@@ -34,10 +34,17 @@
 #include "esp_app_format.h"
 #include "esp_clk_internal.h"
 
+#include "esp32s3/spiram.h"
+
 #ifdef CONFIG_MCUBOOT
 #include "bootloader_init.h"
 #endif /* CONFIG_MCUBOOT */
 #include <zephyr/sys/printk.h>
+
+#if CONFIG_ESP_SPIRAM
+extern int _ext_ram_bss_start;
+extern int _ext_ram_bss_end;
+#endif
 
 extern void z_cstart(void);
 
@@ -103,6 +110,30 @@ void IRAM_ATTR __esp_platform_start(void)
 
 	/* Apply SoC patches */
 	esp_errata();
+
+#if CONFIG_ESP_SPIRAM
+	esp_err_t err = esp_spiram_init();
+
+	if (err != ESP_OK) {
+		printk("Failed to Initialize external RAM, aborting.\n");
+		abort();
+	}
+
+	esp_spiram_init_cache();
+	if (esp_spiram_get_size() < CONFIG_ESP_SPIRAM_SIZE) {
+		printk("External RAM size is less than configured, aborting.\n");
+		abort();
+	}
+
+	if (!esp_spiram_test()) {
+		printk("External RAM failed memory test!\n");
+		abort();
+	}
+
+	memset(&_ext_ram_bss_start, 0,
+	       (&_ext_ram_bss_end - &_ext_ram_bss_start) * sizeof(_ext_ram_bss_start));
+
+#endif /* CONFIG_ESP_SPIRAM */
 
 	/* ESP-IDF/MCUboot 2nd stage bootloader enables RTC WDT to check on startup sequence
 	 * related issues in application. Hence disable that as we are about to start

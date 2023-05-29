@@ -293,4 +293,23 @@ config MAC_BB_PD
 
 endmenu  # Cache config
 
+menu "PSRAM Clock and CS IO for ESP32S3"
+	depends on ESP_SPIRAM
+
+config DEFAULT_PSRAM_CLK_IO
+	int "PSRAM CLK IO number"
+	range 0 33
+	default 30
+	help
+	  The PSRAM Clock IO can be any unused GPIO, please refer to your hardware design.
+
+config DEFAULT_PSRAM_CS_IO
+	int "PSRAM CS IO number"
+	range 0 33
+	default 26
+	help
+	  The PSRAM CS IO can be any unused GPIO, please refer to your hardware design.
+
+endmenu # PSRAM clock and cs IO for ESP32S3
+
 endif # SOC_SERIES_ESP32S3
