@@ -46,18 +46,14 @@
 #endif
 
 #ifdef CONFIG_BOOTLOADER_ESP_IDF
-
 #define IROM_SEG_ORG 0x42000020
 #define IROM_SEG_LEN FLASH_SIZE-0x20
-#define IROM_SEG_ALIGN 0x4
-
 #else
-
 #define IROM_SEG_ORG 0x42000000
 #define IROM_SEG_LEN FLASH_SIZE
-#define IROM_SEG_ALIGN 0x10000
-
 #endif
+
+#define IROM_SEG_ALIGN 0x10000
 
 MEMORY
 {
