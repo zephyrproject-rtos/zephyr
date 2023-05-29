@@ -1369,7 +1369,7 @@ ZTEST(devicetree_api, test_arrays)
 ZTEST(devicetree_api, test_foreach)
 {
 	/*
-	 * We don't know what plaform we are running on, so settle for
+	 * We don't know what platform we are running on, so settle for
 	 * some basic checks related to nodes we know are in our overlay.
 	 */
 #define IS_ALIASES(node_id) + DT_SAME_NODE(DT_PATH(aliases), node_id)
