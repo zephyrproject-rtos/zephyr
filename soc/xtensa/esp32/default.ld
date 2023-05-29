@@ -30,19 +30,19 @@
 #define ROMABLE_REGION ROM
 
 #ifdef CONFIG_FLASH_SIZE
-#define ROM_SIZE CONFIG_FLASH_SIZE
+#define FLASH_SIZE CONFIG_FLASH_SIZE
 #else
-#define ROM_SIZE 0x400000
+#define FLASH_SIZE 0x400000
 #endif
 
 #ifdef CONFIG_BOOTLOADER_ESP_IDF
 #define IROM_SEG_ORG 0x400D0020
-#define IROM_SEG_LEN 0x330000-0x20
+#define IROM_SEG_LEN FLASH_SIZE-0x20
 #define IROM_SEG_ALIGN 0x4
 #define IRAM_SEG_LEN 0x20000
 #else
 #define IROM_SEG_ORG 0x400D0000
-#define IROM_SEG_LEN 0x330000
+#define IROM_SEG_LEN FLASH_SIZE
 #define IROM_SEG_ALIGN 0x10000
 #define IRAM_SEG_LEN 0x13000
 #endif
@@ -51,7 +51,7 @@ MEMORY
 {
   mcuboot_hdr (RX): org = 0x0, len = 0x20
   metadata (RX): org = 0x20, len = 0x20
-  ROM (RX): org = 0x40, len = ROM_SIZE - 0x40
+  ROM (RX): org = 0x40, len = FLASH_SIZE - 0x40
 
   #ifdef CONFIG_ESP32_NETWORK_CORE
   iram0_0_seg(RX): org = 0x40080000, len = 0x08000
