@@ -39,6 +39,8 @@
 #define RAMABLE_REGION dram0_0_seg
 #define ROMABLE_REGION ROM
 
+#define EXT_RAM_ORG (0x3E000000 - CONFIG_ESP_SPIRAM_SIZE)
+
 #ifdef CONFIG_FLASH_SIZE
 #define FLASH_SIZE CONFIG_FLASH_SIZE
 #else
@@ -70,7 +72,13 @@ MEMORY
    * Hence, an offset of 0x40 is added to DROM segment origin.
    */
   drom0_0_seg(R): org = 0x3C000040, len = FLASH_SIZE - 0x40
-
+  /**
+   * `extern_ram_seg` and `drom0_0_seg` share the same bus and the address region.
+   * so we allocate `extern_ram_seg` at the end of the address region.
+   */
+#if defined(CONFIG_ESP_SPIRAM)
+  ext_ram_seg(RWX): org = EXT_RAM_ORG, len = CONFIG_ESP_SPIRAM_SIZE
+#endif
   /* RTC fast memory (executable). Persists over deep sleep.
    */
   rtc_iram_seg(RWX): org = 0x600fe000, len = 0x2000
@@ -219,6 +227,17 @@ SECTIONS
     _image_rodata_end = ABSOLUTE(.);
   } GROUP_DATA_LINK_IN(RODATA_REGION, ROMABLE_REGION)
 
+#if defined(CONFIG_ESP_SPIRAM)
+  /* This section holds .ext_ram.bss data, and will be put in PSRAM */
+  .ext_ram.bss (NOLOAD) :
+  {
+    _ext_ram_bss_start = ABSOLUTE(.);
+    *(.ext_ram.bss*)
+    . = ALIGN(4);
+    _ext_ram_bss_end = ABSOLUTE(.);
+  } > ext_ram_seg
+#endif
+
   /* Send .iram0 code to iram */
   .iram0.vectors : ALIGN(4)
   {
@@ -272,6 +291,9 @@ SECTIONS
     *libsoc.a:rtc_*.*(.literal .text .literal.* .text.*)
     *libsoc.a:cpu_util.*(.literal .text .literal.* .text.*)
     *libgcc.a:lib2funcs.*(.literal .text .literal.* .text.*)
+    *libzephyr.a:spiram*.*(.literal .text .literal.* .text.*)
+    *libzephyr.a:spi_timing*.*(.literal .text .literal.* .text.*)
+    *libzephyr.a:spi_flash*.*(.literal .text .literal.* .text.*)
     *libdrivers__flash.a:flash_esp32.*(.literal .text .literal.* .text.*)
     *libzephyr.a:windowspill_asm.*(.literal .text .literal.* .text.*)
     *libzephyr.a:log_noos.*(.literal .text .literal.* .text.*)
@@ -642,3 +664,8 @@ SECTIONS
 
 ASSERT(((_iram_end - ORIGIN(iram0_0_seg)) <= LENGTH(iram0_0_seg)),
           "IRAM0 segment data does not fit.")
+
+#if defined(CONFIG_ESP_SPIRAM)
+ASSERT(((ORIGIN(ext_ram_seg)) > _image_rodata_end),
+          "External RAM segment does not fit.")
+#endif
