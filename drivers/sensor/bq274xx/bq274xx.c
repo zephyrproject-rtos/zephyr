@@ -52,7 +52,7 @@ static int ctrl_reg_write(const struct device *dev, uint16_t subcommand)
 {
 	const struct bq274xx_config *config = dev->config;
 	uint8_t i2c_data, reg_addr;
-	int ret = 0;
+	int ret;
 
 	reg_addr = BQ274XX_CMD_CONTROL_LOW;
 	i2c_data = (uint8_t)((subcommand)&0x00FF);
@@ -81,7 +81,7 @@ static int cmd_reg_write(const struct device *dev, uint8_t command, uint8_t data
 {
 	const struct bq274xx_config *config = dev->config;
 	uint8_t i2c_data, reg_addr;
-	int ret = 0;
+	int ret;
 
 	reg_addr = command;
 	i2c_data = data;
@@ -100,7 +100,7 @@ static int read_data_block(const struct device *dev, uint8_t offset,
 {
 	const struct bq274xx_config *config = dev->config;
 	uint8_t i2c_data;
-	int ret = 0;
+	int ret;
 
 	i2c_data = BQ274XX_EXT_BLKDAT_START + offset;
 
@@ -138,6 +138,7 @@ static int get_device_type(const struct device *dev, uint16_t *val)
 /**
  * @brief sensor value get
  *
+ * @return 0 for success
  * @return -ENOTSUP for unsupported channels
  */
 static int channel_get(const struct device *dev, enum sensor_channel chan,
@@ -216,10 +217,10 @@ static int channel_get(const struct device *dev, enum sensor_channel chan,
 	return 0;
 }
 
-static int sample_fetch(const struct device *dev, enum sensor_channel chan)
+static int sample_fetch_one(const struct device *dev, enum sensor_channel chan)
 {
 	struct bq274xx_data *data = dev->data;
-	int ret = 0;
+	int ret;
 
 	if (!data->configured) {
 		ret = gauge_configure(dev);
@@ -344,6 +345,45 @@ static int sample_fetch(const struct device *dev, enum sensor_channel chan)
 	return 0;
 }
 
+static int sample_fetch_all(const struct device *dev)
+{
+	int status;
+
+	status = sample_fetch_one(dev, SENSOR_CHAN_GAUGE_VOLTAGE);
+	status |= sample_fetch_one(dev, SENSOR_CHAN_GAUGE_AVG_CURRENT);
+	status |= sample_fetch_one(dev, SENSOR_CHAN_GAUGE_TEMP);
+	status |= sample_fetch_one(dev, SENSOR_CHAN_GAUGE_STDBY_CURRENT);
+	status |= sample_fetch_one(dev, SENSOR_CHAN_GAUGE_MAX_LOAD_CURRENT);
+	status |= sample_fetch_one(dev, SENSOR_CHAN_GAUGE_STATE_OF_CHARGE);
+	status |= sample_fetch_one(dev, SENSOR_CHAN_GAUGE_FULL_CHARGE_CAPACITY);
+	status |= sample_fetch_one(dev, SENSOR_CHAN_GAUGE_REMAINING_CHARGE_CAPACITY);
+	status |= sample_fetch_one(dev, SENSOR_CHAN_GAUGE_NOM_AVAIL_CAPACITY);
+	status |= sample_fetch_one(dev, SENSOR_CHAN_GAUGE_FULL_AVAIL_CAPACITY);
+	status |= sample_fetch_one(dev, SENSOR_CHAN_GAUGE_AVG_POWER);
+	status |= sample_fetch_one(dev, SENSOR_CHAN_GAUGE_STATE_OF_HEALTH);
+
+	if (status < 0) {
+		return -EIO;
+	}
+
+	return 0;
+}
+
+/**
+ * @brief sensor value fetch
+ *
+ * @return 0 for success
+ * @return -EIO for errors in configuring sensor or reading channels
+ */
+static int sample_fetch(const struct device *dev, enum sensor_channel chan)
+{
+	if (chan == SENSOR_CHAN_ALL) {
+		return sample_fetch_all(dev);
+	}
+
+	return sample_fetch_one(dev, chan);
+}
+
 /**
  * @brief initialise the fuel gauge
  *
@@ -398,7 +438,7 @@ static int gauge_configure(const struct device *dev)
 	const struct bq274xx_config *const config = dev->config;
 	struct bq274xx_data *data = dev->data;
 
-	int ret = 0;
+	int ret;
 	uint8_t tmp_checksum = 0, checksum_old = 0, checksum_new = 0;
 	uint16_t flags = 0, designenergy_mwh = 0, taperrate = 0;
 	uint8_t designcap_msb, designcap_lsb, designenergy_msb, designenergy_lsb,
@@ -657,7 +697,7 @@ static int enter_shutdown_mode(const struct device *dev)
 static int exit_shutdown_mode(const struct device *dev)
 {
 	const struct bq274xx_config *const config = dev->config;
-	int ret = 0;
+	int ret;
 
 	ret = gpio_pin_configure_dt(&config->int_gpios, GPIO_OUTPUT | GPIO_OPEN_DRAIN);
 	if (ret < 0) {

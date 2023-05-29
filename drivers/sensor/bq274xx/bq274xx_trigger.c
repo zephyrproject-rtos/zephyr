@@ -69,7 +69,7 @@ int bq274xx_trigger_mode_init(const struct device *dev)
 {
 	const struct bq274xx_config *const config = dev->config;
 	struct bq274xx_data *data = dev->data;
-	int ret = 0;
+	int ret;
 
 	data->dev = dev;
 
