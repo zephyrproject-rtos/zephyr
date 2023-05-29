@@ -1244,10 +1244,13 @@ enum chip_pll_mode {
 #define IT8XXX2_I2C_DTR(base)         ECREG(base + 0x08)
 #define IT8XXX2_I2C_CTR(base)         ECREG(base + 0x09)
 #define IT8XXX2_I2C_CTR1(base)        ECREG(base + 0x0A)
+#define IT8XXX2_I2C_BYTE_CNT_H(base)  ECREG(base + 0x0B)
 #define IT8XXX2_I2C_BYTE_CNT_L(base)  ECREG(base + 0x0C)
 #define IT8XXX2_I2C_IRQ_ST(base)      ECREG(base + 0x0D)
 #define IT8XXX2_I2C_IDR(base)         ECREG(base + 0x06)
 #define IT8XXX2_I2C_TOS(base)         ECREG(base + 0x07)
+#define IT8XXX2_I2C_SLV_NUM_H(base)   ECREG(base + 0x10)
+#define IT8XXX2_I2C_SLV_NUM_L(base)   ECREG(base + 0x11)
 #define IT8XXX2_I2C_STR2(base)        ECREG(base + 0x12)
 #define IT8XXX2_I2C_NST(base)         ECREG(base + 0x13)
 #define IT8XXX2_I2C_TO_ARB_ST(base)   ECREG(base + 0x18)
@@ -1259,8 +1262,8 @@ enum chip_pll_mode {
 #define IT8XXX2_I2C_CTR2(base)        ECREG(base + 0x20)
 #define IT8XXX2_I2C_RAMHA(base)       ECREG(base + 0x23)
 #define IT8XXX2_I2C_RAMLA(base)       ECREG(base + 0x24)
-#define IT8XXX2_I2C_RAMHA2(base)      ECREG(base + 0x2B)
-#define IT8XXX2_I2C_RAMLA2(base)      ECREG(base + 0x2C)
+#define IT8XXX2_I2C_RAMHA2(base)      ECREG(base + 0x2C)
+#define IT8XXX2_I2C_RAMLA2(base)      ECREG(base + 0x2D)
 #define IT8XXX2_I2C_CMD_ADDH(base)    ECREG(base + 0x25)
 #define IT8XXX2_I2C_CMD_ADDL(base)    ECREG(base + 0x26)
 #define IT8XXX2_I2C_RAMH2A(base)      ECREG(base + 0x50)
@@ -1313,14 +1316,30 @@ enum chip_pll_mode {
 #define IT8XXX2_SMB_SMHEN             BIT(0)
 /* 0x55: Slave A FIFO Control */
 #define IT8XXX2_SMB_HSAPE             BIT(1)
+/* 0x03: Status Register */
+#define IT8XXX2_I2C_INT_PEND          BIT(1)
 /* 0x04: Data Hold Time */
 #define IT8XXX2_I2C_SOFT_RST          BIT(7)
 /* 0x07: Time Out Status */
+#define IT8XXX2_I2C_CLK_STRETCH       BIT(7)
 #define IT8XXX2_I2C_SCL_IN            BIT(2)
 #define IT8XXX2_I2C_SDA_IN            BIT(0)
+/* 0x09: Control Register */
+#define IT8XXX2_I2C_INT_EN            BIT(6)
+#define IT8XXX2_I2C_ACK               BIT(3)
+#define IT8XXX2_I2C_HALT              BIT(0)
 /* 0x0A: Control 1 */
 #define IT8XXX2_I2C_COMQ_EN           BIT(7)
 #define IT8XXX2_I2C_MDL_EN            BIT(1)
+/* 0x0C: Byte count */
+#define IT8XXX2_I2C_DMA_ADDR_RELOAD   BIT(5)
+#define IT8XXX2_I2C_BYTE_CNT_ENABLE   BIT(3)
+/* 0x0D: Interrupt Status */
+#define IT8XXX2_I2C_CNT_HOLD          BIT(4)
+#define IT8XXX2_I2C_IDW_CLR           BIT(3)
+#define IT8XXX2_I2C_IDR_CLR           BIT(2)
+#define IT8XXX2_I2C_SLVDATAFLG        BIT(1)
+#define IT8XXX2_I2C_P_CLR             BIT(0)
 /* 0x13: Nack Status */
 #define IT8XXX2_I2C_NST_CNS           BIT(7)
 #define IT8XXX2_I2C_NST_ID_NACK       BIT(3)
