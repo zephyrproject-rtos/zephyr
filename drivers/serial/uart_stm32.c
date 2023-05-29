@@ -188,7 +188,7 @@ static inline void uart_stm32_set_baudrate(const struct device *dev, uint32_t ba
 #endif
 				     baud_rate);
 		/* Check BRR is greater than or equal to 16d */
-		__ASSERT(LL_USART_ReadReg(config->usart, BRR) > 16,
+		__ASSERT(LL_USART_ReadReg(config->usart, BRR) >= 16,
 			 "BaudRateReg >= 16");
 
 #if HAS_LPUART_1
