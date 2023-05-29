@@ -90,6 +90,10 @@ struct i2c_dw_rom_config {
 	i2c_isr_cb_t	config_func;
 	uint32_t		bitrate;
 
+#ifdef CONFIG_I2C_DW_ARC_AUX_REGS
+	uint8_t fifo_depth;
+#endif
+
 #if defined(CONFIG_PINCTRL)
 	const struct pinctrl_dev_config *pcfg;
 #endif
@@ -120,11 +124,19 @@ struct i2c_dw_dev_config {
 	struct i2c_target_config *slave_cfg;
 };
 
+#ifdef CONFIG_I2C_DW_ARC_AUX_REGS
+#define Z_REG_READ(__sz) sys_in##__sz
+#define Z_REG_WRITE(__sz) sys_out##__sz
+#define Z_REG_SET_BIT sys_io_set_bit
+#define Z_REG_CLEAR_BIT sys_io_clear_bit
+#define Z_REG_TEST_BIT sys_io_test_bit
+#else
 #define Z_REG_READ(__sz) sys_read##__sz
 #define Z_REG_WRITE(__sz) sys_write##__sz
 #define Z_REG_SET_BIT sys_set_bit
 #define Z_REG_CLEAR_BIT sys_clear_bit
 #define Z_REG_TEST_BIT sys_test_bit
+#endif /* CONFIG_I2C_DW_ARC_AUX_REGS */
 
 #define DEFINE_MM_REG_READ(__reg, __off, __sz)				\
 	static inline uint32_t read_##__reg(uint32_t addr)			\

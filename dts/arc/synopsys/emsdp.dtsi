@@ -6,7 +6,7 @@
 
 #include "skeleton.dtsi"
 
-//#include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 
 #define DT_APB_CLK_HZ	100000000
@@ -151,6 +151,45 @@
 			interrupt-parent = <&intc>;
 			aux_reg;
 			fifo-depth = <16>;
+		};
+
+		i2c0: i2c@80012000 {
+			compatible = "snps,designware-i2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x80012000 0x100>;
+			interrupts = <38 2>, <39 2>, <40 2>, <41 2>;
+			interrupt-names = "err_int", "rx_avail", "tx_req", "stop_det";
+			interrupt-parent = <&intc>;
+			fifo-depth = <16>;
+			status = "okay";
+		};
+
+		i2c1: i2c@80012100 {
+			compatible = "snps,designware-i2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x80012100 0x100>;
+			interrupts = <42 2>, <43 2>, <44 2>, <45 2>;
+			interrupt-names = "err_int", "rx_avail", "tx_req", "stop_det";
+			interrupt-parent = <&intc>;
+			fifo-depth = <16>;
+			status = "okay";
+		};
+
+		i2c2: i2c@80012200 {
+			compatible = "snps,designware-i2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x80012200 0x100>;
+			interrupts = <46 2>, <47 2>, <48 2>, <49 2>;
+			interrupt-names = "err_int", "rx_avail", "tx_req", "stop_det";
+			interrupt-parent = <&intc>;
+			fifo-depth = <16>;
+			status = "okay";
 		};
 	};
 };

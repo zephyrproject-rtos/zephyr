@@ -45,10 +45,14 @@
 
 		spi@f0008000 {
 			interrupts = <83 1>;
+			pinctrl-0 = <&unmuxed_pin>;
+			pinctrl-names = "default";
 		};
 
 		spi@f1000000 {
 			interrupts = <84 1>;
+			pinctrl-0 = <&unmuxed_pin>;
+			pinctrl-names = "default";
 		};
 
 		spi@80010000 {
@@ -60,6 +64,24 @@
 		spi@80010100 {
 			interrupts = <67 2>, <68 2>, <69 2>;
 			pinctrl-0 = <&pmodA_spi1_cs0>;
+			pinctrl-names = "default";
+		};
+
+		i2c@80012000 {
+			interrupts = <38 2>, <39 2>, <40 2>, <41 2>;
+			pinctrl-0 = <&unmuxed_pin>;
+			pinctrl-names = "default";
+		};
+
+		i2c@80012100 {
+			interrupts = <42 2>, <43 2>, <44 2>, <45 2>;
+			pinctrl-0 = <&arduino_CFG6_i2c>;
+			pinctrl-names = "default";
+		};
+
+		i2c@80012200 {
+			interrupts = <46 2>, <47 2>, <48 2>, <49 2>;
+			pinctrl-0 = <&pmodB_i2c2>;
 			pinctrl-names = "default";
 		};
 	};

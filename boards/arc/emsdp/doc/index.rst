@@ -59,7 +59,7 @@ The table below shows which drivers are currently available in Zephyr.
 +-----------+------------+-------+-----------------------+
 | ADC       | 1 Pmod     |   N   | adc (via spi)         |
 +-----------+------------+-------+-----------------------+
-| I2C       | Arduino +  |   N   | i2c                   |
+| I2C       | Arduino +  |   Y   | i2c                   |
 |           | Pmod       |       |                       |
 +-----------+------------+-------+-----------------------+
 | GPIO      | Arduino +  |   Y   | gpio                  |
@@ -97,6 +97,10 @@ Note: DW SPI only available on SPI0 and SPI1.
 ``samples/drivers/spi_flash``: Verfiy DW SPI and SPI-FLASH on SPI1. First erase the
 whole flash then write 4 byte data to the flash. Read from the flash and compare the
 result with buffer to check functionality.
+
+``samples/sensor/mpu6050``: Verfiy DFSS I2C0 and MPU6050 sensor.
+Note: The sensor on EMSDP board is MPU9250, which consists of MPU6050 and AK8963 magnetic
+sensor. This sample only test MPU6050 part.
 
 Pinmux interface
 ================

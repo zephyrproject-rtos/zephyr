@@ -10,3 +10,11 @@ include: [i2c-controller.yaml, pinctrl-device.yaml, pcie-device.yaml]
 properties:
   interrupts:
     required: true
+
+  fifo-depth:
+    type: int
+    description: |
+      RX/TX FIFO depth. Corresponds to the SSI_TX_FIFO_DEPTH
+      and SSI_RX_FIFO_DEPTH of the DesignWare Synchronous
+      Serial Interface. Depth ranges from 2-256.
+      Only required when DFSS I2C is enabled.

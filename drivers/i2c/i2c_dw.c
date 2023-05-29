@@ -53,7 +53,11 @@ static inline void i2c_dw_data_ask(const struct device *dev)
 	int8_t rx_empty;
 	uint8_t cnt;
 	uint8_t rx_buffer_depth, tx_buffer_depth;
+#ifndef CONFIG_I2C_DW_ARC_AUX_REGS
 	union ic_comp_param_1_register ic_comp_param_1;
+#else
+	const struct i2c_dw_rom_config * const rom = dev->config;
+#endif
 	uint32_t reg_base = get_regs(dev);
 
 	/* No more bytes to request, so command queue is no longer needed */
@@ -63,10 +67,14 @@ static inline void i2c_dw_data_ask(const struct device *dev)
 	}
 
 	/* Get the FIFO depth that could be from 2 to 256 from HW spec */
+#ifdef CONFIG_I2C_DW_ARC_AUX_REGS
+	rx_buffer_depth = rom->fifo_depth;
+	tx_buffer_depth = rom->fifo_depth;
+#else
 	ic_comp_param_1.raw = read_comp_param_1(reg_base);
 	rx_buffer_depth = ic_comp_param_1.bits.rx_buffer_depth + 1;
 	tx_buffer_depth = ic_comp_param_1.bits.tx_buffer_depth + 1;
-
+#endif
 	/* How many bytes we can actually ask */
 	rx_empty = (rx_buffer_depth - read_rxflr(reg_base)) - dw->rx_pending;
 
@@ -691,7 +699,11 @@ static inline void i2c_dw_write_byte_non_blocking(const struct device *dev, uint
 
 static int i2c_dw_set_master_mode(const struct device *dev)
 {
+#ifndef CONFIG_I2C_DW_ARC_AUX_REGS
 	union ic_comp_param_1_register ic_comp_param_1;
+#else
+	const struct i2c_dw_rom_config * const rom = dev->config;
+#endif
 	uint32_t reg_base = get_regs(dev);
 	union ic_con_register ic_con;
 
@@ -703,12 +715,14 @@ static int i2c_dw_set_master_mode(const struct device *dev)
 	write_con(ic_con.raw, reg_base);
 
 	set_bit_enable_en(reg_base);
-
+#ifdef CONFIG_I2C_DW_ARC_AUX_REGS
+	write_tx_tl(rom->fifo_depth, reg_base);
+	write_tx_tl(rom->fifo_depth, reg_base);
+#else
 	ic_comp_param_1.raw = read_comp_param_1(reg_base);
-
 	write_tx_tl(ic_comp_param_1.bits.tx_buffer_depth + 1, reg_base);
 	write_rx_tl(ic_comp_param_1.bits.rx_buffer_depth + 1, reg_base);
-
+#endif
 	return 0;
 }
 
@@ -880,12 +894,13 @@ static int i2c_dw_initialize(const struct device *dev)
 	clear_bit_enable_en(reg_base);
 
 	/* verify that we have a valid DesignWare register first */
+#ifndef CONFIG_I2C_DW_ARC_AUX_REGS
 	if (read_comp_type(reg_base) != I2C_DW_MAGIC_KEY) {
 		LOG_DBG("I2C: DesignWare magic key not found, check base "
 			    "address. Stopping initialization");
 		return -EIO;
 	}
-
+#endif
 	/*
 	 * grab the default value on initialization.  This should be set to the
 	 * IC_MAX_SPEED_MODE in the hardware.  If it does support high speed we
@@ -922,6 +937,12 @@ static int i2c_dw_initialize(const struct device *dev)
 #define PINCTRL_DW_CONFIG(n)
 #endif
 
+#ifdef CONFIG_I2C_DW_ARC_AUX_REGS
+#define DFSS_FIFO_DEPTH_CONFIG(n) .fifo_depth = DT_INST_PROP(n, fifo_depth),
+#else
+#define DFSS_FIFO_DEPTH_CONFIG(n)
+#endif
+
 #define I2C_DW_INIT_PCIE0(n)
 #define I2C_DW_INIT_PCIE1(n) DEVICE_PCIE_INST_INIT(n, pcie),
 #define I2C_DW_INIT_PCIE(n) \
@@ -938,6 +959,33 @@ static int i2c_dw_initialize(const struct device *dev)
 	_CONCAT(I2C_DW_IRQ_FLAGS_SENSE, DT_INST_IRQ_HAS_CELL(n, sense))(n)
 
 /* not PCI(e) */
+#ifdef CONFIG_I2C_DW_ARC_AUX_REGS
+#define I2C_DFSS_IRQ_CONFIG(n)                                            \
+	static void i2c_config_##n(const struct device *port)                 \
+	{                                                                     \
+		ARG_UNUSED(port);                                             \
+		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(n, err_int, irq),               \
+				DT_INST_IRQ_BY_NAME(n, err_int, priority),              \
+				i2c_dw_isr, DEVICE_DT_INST_GET(n),                   \
+				0);                                                    \
+		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(n, rx_avail, irq),              \
+				DT_INST_IRQ_BY_NAME(n, rx_avail, priority),         \
+				i2c_dw_isr, DEVICE_DT_INST_GET(n),                  \
+				0);                                                 \
+		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(n, tx_req, irq),           \
+				DT_INST_IRQ_BY_NAME(n, tx_req, priority),            \
+				i2c_dw_isr, DEVICE_DT_INST_GET(n),                 \
+				0);                                                  \
+		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(n, stop_det, irq),             \
+				DT_INST_IRQ_BY_NAME(n, stop_det, priority),         \
+				i2c_dw_isr, DEVICE_DT_INST_GET(n),                 \
+				0);                                                \
+		irq_enable(DT_INST_IRQ_BY_NAME(n, err_int, irq));                \
+		irq_enable(DT_INST_IRQ_BY_NAME(n, rx_avail, irq));            \
+		irq_enable(DT_INST_IRQ_BY_NAME(n, tx_req, irq));            \
+		irq_enable(DT_INST_IRQ_BY_NAME(n, stop_det, irq));           \
+	}
+#else
 #define I2C_DW_IRQ_CONFIG_PCIE0(n)                                            \
 	static void i2c_config_##n(const struct device *port)                 \
 	{                                                                     \
@@ -947,6 +995,7 @@ static int i2c_dw_initialize(const struct device *dev)
 			    I2C_DW_IRQ_FLAGS(n));                             \
 		irq_enable(DT_INST_IRQN(n));                                  \
 	}
+#endif
 
 /* PCI(e) with auto IRQ detection */
 #define I2C_DW_IRQ_CONFIG_PCIE1(n)                                            \
@@ -969,8 +1018,12 @@ static int i2c_dw_initialize(const struct device *dev)
 		pcie_irq_enable(dev_cfg->pcie->bdf, irq);                     \
 	}
 
+#ifdef CONFIG_I2C_DW_ARC_AUX_REGS
+#define I2C_DW_IRQ_CONFIG(n) I2C_DFSS_IRQ_CONFIG(n)
+#else
 #define I2C_DW_IRQ_CONFIG(n) \
 	_CONCAT(I2C_DW_IRQ_CONFIG_PCIE, DT_INST_ON_BUS(n, pcie))(n)
+#endif
 
 #define I2C_CONFIG_REG_INIT_PCIE0(n) DEVICE_MMIO_ROM_INIT(DT_DRV_INST(n)),
 #define I2C_CONFIG_REG_INIT_PCIE1(n)
@@ -985,6 +1038,7 @@ static int i2c_dw_initialize(const struct device *dev)
 		I2C_CONFIG_REG_INIT(n)                                        \
 		.config_func = i2c_config_##n,                                \
 		.bitrate = DT_INST_PROP(n, clock_frequency),                  \
+		DFSS_FIFO_DEPTH_CONFIG(n)                                     \
 		PINCTRL_DW_CONFIG(n)                                          \
 		I2C_DW_INIT_PCIE(n)                                           \
 	};                                                                    \
