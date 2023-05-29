@@ -17,3 +17,10 @@ properties:
       The resulting SCL cycle time is given by the following formula:
       SCL cycle = 2 * (psr + prescale_tweak + 2) *
                   SMBus clock cycle
+
+  target-enable:
+    type: boolean
+    description: |
+      This option is used when the I2C target is enabled. It is
+      necessary to prevent the target port from being configured
+      with I2C host related initialization.
