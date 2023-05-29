@@ -107,6 +107,9 @@ static int counter_dw_timer_start(const struct device *dev)
 {
 	uintptr_t reg_base = DEVICE_MMIO_NAMED_GET(dev, timer_mmio);
 
+	/* disable timer before starting in free-running mode */
+	sys_clear_bit(reg_base + CONTROLREG_OFST, TIMER_CONTROL_ENABLE_BIT);
+
 	/* starting timer in free running mode */
 	sys_clear_bit(reg_base + CONTROLREG_OFST, TIMER_MODE_BIT);
 	sys_set_bit(reg_base + CONTROLREG_OFST, TIMER_INTR_MASK_BIT);
@@ -152,12 +155,17 @@ static int counter_dw_timer_set_top_value(const struct device *timer_dev,
 {
 	uintptr_t reg_base = DEVICE_MMIO_NAMED_GET(timer_dev, timer_mmio);
 	struct counter_dw_timer_drv_data *const data = DEV_DATA(timer_dev);
-	const struct counter_dw_timer_config *timer_config = DEV_CFG(timer_dev);
 	k_spinlock_key_t key;
 
 	if (top_cfg == NULL) {
 		LOG_ERR("Invalid top value configuration");
 		return -EINVAL;
+	}
+
+	/* top value cannot be updated without reset */
+	if (top_cfg->flags & COUNTER_TOP_CFG_DONT_RESET) {
+		LOG_ERR("Updating top value without reset is not supported");
+		return -ENOTSUP;
 	}
 
 	key = k_spin_lock(&data->lock);
@@ -167,12 +175,6 @@ static int counter_dw_timer_set_top_value(const struct device *timer_dev,
 		k_spin_unlock(&data->lock, key);
 		LOG_ERR("Top value cannot be updated, alarm is active!");
 		return -EBUSY;
-	}
-
-	if (top_cfg->flags & COUNTER_TOP_CFG_RESET_WHEN_LATE) {
-		k_spin_unlock(&data->lock, key);
-		LOG_ERR("Top reset when late is not supported");
-		return -ENOTSUP;
 	}
 
 	if (!top_cfg->callback) {
@@ -186,27 +188,11 @@ static int counter_dw_timer_set_top_value(const struct device *timer_dev,
 	data->top_cb = top_cfg->callback;
 	data->prv_data = top_cfg->user_data;
 
-	/* if flag COUNTER_TOP_CFG_DONT_RESET is set, The top value will be effective
-	 * from the next cycle
-	 *
-	 * if COUNTER_TOP_CFG_DONT_RESET is not set, then disable and re-enable the timer.
-	 * This is because, current value register is read only register and it can be
-	 * reloaded with top value only when timer is disabled and then enabled
-	 */
+	/* top value can be loaded only when timer is stopped and re-enabled */
+	sys_clear_bit(reg_base + CONTROLREG_OFST, TIMER_CONTROL_ENABLE_BIT);
 
-	if (!(top_cfg->flags & COUNTER_TOP_CFG_DONT_RESET)) {
-		sys_clear_bit(reg_base + CONTROLREG_OFST, TIMER_CONTROL_ENABLE_BIT);
-	}
-
+	/* configuring timer in user-defined mode */
 	sys_set_bit(reg_base + CONTROLREG_OFST, TIMER_MODE_BIT);
-
-	/* top value cannot be greater than max top value */
-	if (top_cfg->ticks > timer_config->info.max_top_value) {
-		k_spin_unlock(&data->lock, key);
-		LOG_ERR("Invalid tick:%u, exceeding max: %u", top_cfg->ticks,
-					timer_config->info.max_top_value);
-		return -EINVAL;
-	}
 
 	/* set new top value */
 	sys_write32(top_cfg->ticks, reg_base + LOADCOUNT_OFST);
@@ -236,12 +222,29 @@ static int counter_dw_timer_set_alarm(const struct device *timer_dev, uint8_t ch
 		return -EINVAL;
 	}
 
+	/* absolute alarm is not supported as interrupts are triggered
+	 * only when the counter reaches 0(downcounter)
+	 */
+	if (alarm_cfg->flags & COUNTER_ALARM_CFG_ABSOLUTE) {
+		LOG_ERR("Absolute alarm is not supported");
+		return -ENOTSUP;
+	}
+
 	key = k_spin_lock(&data->lock);
+
+	/* check if alarm is already active */
+	if (data->alarm_cb != NULL) {
+		LOG_ERR("Alarm is already active\n");
+		k_spin_unlock(&data->lock, key);
+		return -EBUSY;
+	}
 
 	data->alarm_cb = alarm_cfg->callback;
 	data->prv_data = alarm_cfg->user_data;
 
 	sys_clear_bit(reg_base + CONTROLREG_OFST, TIMER_CONTROL_ENABLE_BIT);
+
+	/* start timer in user-defined mode */
 	sys_set_bit(reg_base + CONTROLREG_OFST, TIMER_MODE_BIT);
 	sys_clear_bit(reg_base + CONTROLREG_OFST, TIMER_INTR_MASK_BIT);
 
