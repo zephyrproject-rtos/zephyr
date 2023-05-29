@@ -363,11 +363,11 @@ DMA_STM32_EXPORT_API int dma_stm32_configure(const struct device *dev,
 	stream->dst_size	= config->dest_data_size;
 
 	/* Check dest or source memory address, warn if 0 */
-	if ((config->head_block->source_address == 0)) {
+	if (config->head_block->source_address == 0) {
 		LOG_WRN("source_buffer address is null.");
 	}
 
-	if ((config->head_block->dest_address == 0)) {
+	if (config->head_block->dest_address == 0) {
 		LOG_WRN("dest_buffer address is null.");
 	}
 
