@@ -230,7 +230,7 @@ class TestInstance:
                 if cond_config[0] == "arch" and len(cond_config) == 3:
                     if self.platform.arch == cond_config[1]:
                         new_config_list.append(cond_config[2])
-                elif cond_config[0] == "plaform" and len(cond_config) == 3:
+                elif cond_config[0] == "platform" and len(cond_config) == 3:
                     if self.platform.name == cond_config[1]:
                         new_config_list.append(cond_config[2])
                 else:
