@@ -483,7 +483,7 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
                         """)
 
     parser.add_argument(
-        "-p", "--platform", action="append",
+        "-p", "--platform", action="append", default=[],
         help="Platform filter for testing. This option may be used multiple "
              "times. Test suites will only be built/run on the platforms "
              "specified. If this option is not used, then platforms marked "
