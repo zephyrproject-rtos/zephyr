@@ -200,6 +200,11 @@ static void stm32_fill_irq_table(int8_t start, int8_t len, int32_t irqn)
 	}
 }
 
+/* This macro provides body for stm32_exti_range structure initialization. */
+#define STM32_EXTI_RANGE(idx)						    \
+	.start = DT_PROP_BY_IDX(DT_NODELABEL(exti), line_ranges, 2 * idx),  \
+	.len = DT_PROP_BY_IDX(DT_NODELABEL(exti), line_ranges, 2 * idx + 1)
+
 /* This macro:
  * - populates line_range_x from line_range dt property
  * - fill exti_irq_table through stm32_fill_irq_table()
@@ -207,8 +212,7 @@ static void stm32_fill_irq_table(int8_t start, int8_t len, int32_t irqn)
  */
 #define STM32_EXTI_INIT(node_id, interrupts, idx)			\
 	static const struct stm32_exti_range line_range_##idx = {	\
-		range[2 * idx],						\
-		range[2 * idx + 1]					\
+		STM32_EXTI_RANGE(idx)					\
 	};								\
 	stm32_fill_irq_table(line_range_##idx.start,			\
 			     line_range_##idx.len,			\
@@ -224,8 +228,6 @@ static void stm32_fill_irq_table(int8_t start, int8_t len, int32_t irqn)
 static int stm32_exti_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
-	const uint8_t range[2*NUM_EXTI_LINES] =
-					DT_PROP(DT_NODELABEL(exti), line_ranges);
 	DT_FOREACH_PROP_ELEM(DT_NODELABEL(exti),
 			     interrupt_names,
 			     STM32_EXTI_INIT);
