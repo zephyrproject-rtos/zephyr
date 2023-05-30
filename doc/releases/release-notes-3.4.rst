@@ -399,6 +399,11 @@ Build system and infrastructure
 Drivers and Sensors
 *******************
 
+* Device model
+
+  * Devices that do not require an initialization routine can now pass ``NULL``
+    to the ``DEVICE_*_DEFINE()`` macros.
+
 * Auxiliary display
 
   * New auxiliary display (auxdisplay) peripheral has been added, this allows
