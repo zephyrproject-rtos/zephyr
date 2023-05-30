@@ -1279,3 +1279,17 @@ DoS: Invalid Initialization in le_read_buffer_size_complete()
 
 - `Zephyr project bug tracker GHSA-wc2h-h868-q7hj
   <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-wc2h-h868-q7hj>`_
+
+This has been fixed in main for v3.3.0
+
+- `PR 54905 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/54905>`_
+
+- `PR 47957 fix for v3.2.0
+  <https://github.com/zephyrproject-rtos/zephyr/pull/55024>`_
+
+- `PR 47958 fix for v3.1.0
+  <https://github.com/zephyrproject-rtos/zephyr/pull/55023>`_
+
+- `PR 47959 fix for v2.7.4
+  <https://github.com/zephyrproject-rtos/zephyr/pull/55022>`_
