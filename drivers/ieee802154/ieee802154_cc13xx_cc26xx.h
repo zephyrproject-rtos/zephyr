@@ -2,6 +2,8 @@
  * Copyright (c) 2019 Brett Witherspoon
  *
  * SPDX-License-Identifier: Apache-2.0
+ *
+ * References are to the IEEE 802.15.4-2020 standard.
  */
 
 #ifndef ZEPHYR_DRIVERS_IEEE802154_IEEE802154_CC13XX_CC26XX_H_
@@ -19,17 +21,18 @@
 #include <driverlib/rf_ieee_cmd.h>
 #include <driverlib/rf_mailbox.h>
 
-/* IEEE 802.15.4-2006 2450 MHz O-QPSK PHY symbol rate (6.5.3.2) */
 /* For O-QPSK the physical and MAC timing symbol rates are the same, see section 12.3.3. */
 #define IEEE802154_2450MHZ_OQPSK_SYMBOLS_PER_SECOND                                                \
 	IEEE802154_PHY_SYMBOLS_PER_SECOND(IEEE802154_PHY_OQPSK_2450MHZ_SYMBOL_PERIOD_US)
 
-/* IEEE 802.15.4-2006 PHY PIB attributes (6.4.2) */
+/* PHY PIB attribute phyCcaMode - CCA Mode 3: Carrier sense with energy above threshold, see
+ * section 11.3, table 11-2 and section 10.2.8
+ */
 #define IEEE802154_PHY_CCA_MODE 3
 
-#define IEEE802154_PHY_SHR_DURATION 10
+#define IEEE802154_PHY_SHR_DURATION 10 /* in symbols, 8 preamble and 2 SFD, see section 12.1.2 */
 
-#define IEEE802154_PHY_SYMBOLS_PER_OCTET 2
+#define IEEE802154_PHY_SYMBOLS_PER_OCTET 2 /* see section 12.2.1 */
 
 /* ACK is 2 bytes for PHY header + 2 bytes MAC header + 2 bytes MAC footer */
 #define IEEE802154_ACK_FRAME_OCTETS 6
