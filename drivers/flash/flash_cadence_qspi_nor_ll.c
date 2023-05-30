@@ -11,6 +11,9 @@
 
 #include <zephyr/kernel.h>
 
+#define SET_L(x) ((uint64_t)(x) & BIT64_MASK(32))
+#define SET_H(x) ((((uint64_t)x) & BIT64_MASK(32)) << 32)
+
 LOG_MODULE_REGISTER(flash_cadence_ll, CONFIG_FLASH_LOG_LEVEL);
 
 int cad_qspi_idle(struct cad_qspi_params *cad_params)
@@ -165,7 +168,7 @@ int cad_qspi_stig_cmd(struct cad_qspi_params *cad_params, uint32_t opcode, uint3
 }
 
 int cad_qspi_stig_read_cmd(struct cad_qspi_params *cad_params, uint32_t opcode, uint32_t dummy,
-			   uint32_t num_bytes, uint32_t *output)
+			   uint32_t num_bytes, uint64_t *output)
 {
 	if (dummy > ((1 << CAD_QSPI_FLASHCMD_NUM_DUMMYBYTES_MAX) - 1)) {
 		LOG_ERR("Faulty dummy byes\n");
@@ -191,10 +194,10 @@ int cad_qspi_stig_read_cmd(struct cad_qspi_params *cad_params, uint32_t opcode, 
 		return -1;
 	}
 
-	output[0] = sys_read32(cad_params->reg_base + CAD_QSPI_FLASHCMD_RDDATA0);
+	*output = SET_L(sys_read32(cad_params->reg_base + CAD_QSPI_FLASHCMD_RDDATA0));
 
 	if (num_bytes > 4) {
-		output[1] = sys_read32(cad_params->reg_base + CAD_QSPI_FLASHCMD_RDDATA1);
+		*output |= SET_H(sys_read32(cad_params->reg_base + CAD_QSPI_FLASHCMD_RDDATA1));
 	}
 
 	return 0;
@@ -276,7 +279,7 @@ int cad_qspi_device_bank_select(struct cad_qspi_params *cad_params, uint32_t ban
 	return cad_qspi_stig_cmd(cad_params, CAD_QSPI_STIG_OPCODE_WRDIS, 0);
 }
 
-int cad_qspi_device_status(struct cad_qspi_params *cad_params, uint32_t *status)
+int cad_qspi_device_status(struct cad_qspi_params *cad_params, uint64_t *status)
 {
 	return cad_qspi_stig_read_cmd(cad_params, CAD_QSPI_STIG_OPCODE_RDSR, 0, 1, status);
 }
@@ -293,12 +296,13 @@ int cad_qspi_n25q_enable(struct cad_qspi_params *cad_params)
 
 int cad_qspi_n25q_wait_for_program_and_erase(struct cad_qspi_params *cad_params, int program_only)
 {
-	uint32_t status, flag_sr;
+	uint64_t status, flag_sr;
 	int count = 0;
+	int ret = 0;
 
 	while (count < CAD_QSPI_COMMAND_TIMEOUT) {
-		status = cad_qspi_device_status(cad_params, &status);
-		if (status != 0) {
+		ret = cad_qspi_device_status(cad_params, &status);
+		if (ret != 0) {
 			LOG_ERR("Error getting device status\n");
 			return -1;
 		}
@@ -315,11 +319,11 @@ int cad_qspi_n25q_wait_for_program_and_erase(struct cad_qspi_params *cad_params,
 	count = 0;
 
 	while (count < CAD_QSPI_COMMAND_TIMEOUT) {
-		status = cad_qspi_stig_read_cmd(cad_params, CAD_QSPI_STIG_OPCODE_RDFLGSR, 0, 1,
+		ret = cad_qspi_stig_read_cmd(cad_params, CAD_QSPI_STIG_OPCODE_RDFLGSR, 0, 1,
 						&flag_sr);
-		if (status != 0) {
+		if (ret != 0) {
 			LOG_ERR("Error waiting program and erase.\n");
-			return status;
+			return ret;
 		}
 
 		if ((program_only && CAD_QSPI_STIG_FLAGSR_PROGRAMREADY(flag_sr)) ||
@@ -489,8 +493,8 @@ void cad_qspi_calibration(struct cad_qspi_params *cad_params, uint32_t dev_clk,
 	int status;
 	uint32_t dev_sclk_mhz = 27; /*min value to get biggest 0xF div factor*/
 	uint32_t data_cap_delay;
-	uint32_t sample_rdid;
-	uint32_t rdid;
+	uint64_t sample_rdid;
+	uint64_t rdid;
 	uint32_t div_actual;
 	uint32_t div_bits;
 	int first_pass, last_pass;
@@ -532,9 +536,6 @@ void cad_qspi_calibration(struct cad_qspi_params *cad_params, uint32_t dev_clk,
 	last_pass = -1;
 
 	do {
-		if (status != 0) {
-			break;
-		}
 
 		status = cad_qspi_stig_read_cmd(cad_params, CAD_QSPI_STIG_OPCODE_RDID, 0, 3, &rdid);
 		if (status != 0) {
@@ -603,7 +604,7 @@ int cad_qspi_init(struct cad_qspi_params *cad_params, uint32_t clk_phase, uint32
 {
 	int status = 0;
 	uint32_t qspi_desired_clk_freq;
-	uint32_t rdid = 0;
+	uint64_t rdid;
 	uint32_t cap_code;
 
 	LOG_INF("Initializing Qspi");
