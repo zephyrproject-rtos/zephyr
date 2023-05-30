@@ -1,0 +1,29 @@
+# Nuvoton Cortex-M4 Embedded Controller
+
+# Copyright (c) 2024 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_NPCM4
+
+config NUM_IRQS
+	default 82
+
+DT_CHOSEN_Z_FLASH := zephyr,flash
+
+config FLASH_SIZE
+	int "Flash Size in kB"
+	default $(dt_chosen_reg_size_int,$(DT_CHOSEN_Z_FLASH),0,K) if !XIP
+	help
+	  This option specifies the size of the flash in kB.  It is normally set by
+	  the board's defconfig file and the user should generally avoid modifying
+	  it via the menu configuration.
+
+config FLASH_BASE_ADDRESS
+	hex "Flash Base Address"
+	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_FLASH)) if !XIP
+	help
+	  This option specifies the base address of the flash on the board. It is
+	  normally set by the board's defconfig file and the user should generally
+	  avoid modifying it via the menu configuration.
+
+endif # SOC_SERIES_NPCM4
