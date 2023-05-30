@@ -337,6 +337,8 @@ int bt_hci_cmd_send_sync(uint16_t opcode, struct net_buf *buf,
 		switch (status) {
 		case BT_HCI_ERR_CONN_LIMIT_EXCEEDED:
 			return -ECONNREFUSED;
+		case BT_HCI_ERR_INSUFFICIENT_RESOURCES:
+			return -ENOMEM;
 		default:
 			return -EIO;
 		}
