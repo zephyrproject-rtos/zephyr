@@ -33,6 +33,10 @@ between major releases are available in the :ref:`zephyr_release_notes`.
      - Unstable
      - 3.3
 
+   * - :ref:`barriers_api`
+     - Experimental
+     - 3.4
+
    * - :ref:`bluetooth_api`
      - Stable
      - 1.0
