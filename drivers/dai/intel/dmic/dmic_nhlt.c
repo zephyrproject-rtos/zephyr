@@ -33,9 +33,62 @@ static inline void dai_dmic_write(const struct dai_intel_dmic *dmic,
 	sys_write32(val, dmic->reg_base + reg);
 }
 
+static inline uint32_t dai_dmic_read(const struct dai_intel_dmic *dmic, uint32_t reg)
+{
+	return sys_read32(dmic->reg_base + reg);
+}
+
 #ifdef CONFIG_SOC_SERIES_INTEL_ACE
+static int dai_nhlt_get_clock_div(const struct dai_intel_dmic *dmic, const int pdm)
+{
+	uint32_t val;
+	int p_mcic, p_clkdiv, p_mfir, rate_div;
+
+	val = dai_dmic_read(dmic, base[pdm] + CIC_CONFIG);
+	p_mcic = FIELD_GET(CIC_CONFIG_COMB_COUNT, val) + 1;
+
+	val = dai_dmic_read(dmic, base[pdm] + MIC_CONTROL);
+	p_clkdiv = FIELD_GET(MIC_CONTROL_PDM_CLKDIV, val) + 2;
+
+	val = dai_dmic_read(dmic, base[pdm] +
+			    (dmic->dai_config_params.dai_index ? FIR_CONFIG_B : FIR_CONFIG_A));
+	LOG_ERR("pdm = %d, FIR_CONFIG = 0x%08X", pdm, val);
+
+	p_mfir = FIELD_GET(FIR_CONFIG_FIR_DECIMATION, val) + 1;
+
+	rate_div = p_clkdiv * p_mcic * p_mfir;
+	LOG_ERR("dai_index = %d, rate_div = %d, p_clkdiv = %d, p_mcic = %d, p_mfir = %d",
+		dmic->dai_config_params.dai_index, rate_div, p_clkdiv, p_mcic, p_mfir);
+
+	if (!rate_div) {
+		LOG_ERR("zero clock divide or decimation factor");
+		return -EINVAL;
+	}
+
+	return rate_div;
+}
+
+static int dai_nhlt_update_rate(struct dai_intel_dmic *dmic, const int clock_source, const int pdm)
+{
+	int rate_div;
+
+	rate_div = dai_nhlt_get_clock_div(dmic, pdm);
+	if (rate_div < 0) {
+		return rate_div;
+	}
+
+	dmic->dai_config_params.rate = adsp_clock_source_frequency(clock_source) /
+		rate_div;
+
+	LOG_INF("rate = %d, channels = %d, format = %d",
+		dmic->dai_config_params.rate, dmic->dai_config_params.channels,
+		dmic->dai_config_params.format);
+
+	LOG_INF("io_clk %u, rate_div %d", adsp_clock_source_frequency(clock_source), rate_div);
+	return 0;
+}
+
 static int dai_ipm_source_to_enable(struct dai_intel_dmic *dmic,
-				    struct nhlt_pdm_ctrl_cfg **pdm_cfg,
 				    int *count, int pdm_count, int stereo,
 				    int source_pdm)
 {
@@ -46,7 +99,8 @@ static int dai_ipm_source_to_enable(struct dai_intel_dmic *dmic,
 
 	if (*count < pdm_count) {
 		(*count)++;
-		mic_swap = FIELD_GET(MIC_CONTROL_CLK_EDGE, pdm_cfg[source_pdm]->mic_control);
+		mic_swap = FIELD_GET(MIC_CONTROL_CLK_EDGE, dai_dmic_read(dmic, base[source_pdm] +
+									 MIC_CONTROL));
 		if (stereo)
 			dmic->enable[source_pdm] = 0x3; /* PDMi MIC A and B */
 		else
@@ -56,17 +110,16 @@ static int dai_ipm_source_to_enable(struct dai_intel_dmic *dmic,
 	return 0;
 }
 
-static int dai_nhlt_dmic_dai_params_get(struct dai_intel_dmic *dmic,
-					int32_t *outcontrol,
-					struct nhlt_pdm_ctrl_cfg **pdm_cfg,
-					struct nhlt_pdm_ctrl_fir_cfg **fir_cfg)
+static int dai_nhlt_dmic_dai_params_get(struct dai_intel_dmic *dmic, const int clock_source)
 {
-	uint32_t outcontrol_val = outcontrol[dmic->dai_config_params.dai_index];
-	int num_pdm;
+	bool stereo_pdm;
 	int source_pdm;
+	int first_pdm;
+	int num_pdm;
 	int ret;
 	int n;
-	bool stereo_pdm;
+	uint32_t outcontrol_val = dai_dmic_read(dmic, dmic->dai_config_params.dai_index *
+						PDM_CHANNEL_REGS_SIZE + OUTCONTROL);
 
 	switch (FIELD_GET(OUTCONTROL_OF, outcontrol_val)) {
 	case 0:
@@ -98,34 +151,35 @@ static int dai_nhlt_dmic_dai_params_get(struct dai_intel_dmic *dmic,
 
 	n = 0;
 	source_pdm = FIELD_GET(OUTCONTROL_IPM_SOURCE_1, outcontrol_val);
-	ret = dai_ipm_source_to_enable(dmic, pdm_cfg, &n, num_pdm, stereo_pdm, source_pdm);
+	first_pdm = source_pdm;
+	ret = dai_ipm_source_to_enable(dmic, &n, num_pdm, stereo_pdm, source_pdm);
 	if (ret) {
 		LOG_ERR("nhlt_dmic_dai_params_get(): Illegal IPM_SOURCE_1");
 		return -EINVAL;
 	}
 
 	source_pdm = FIELD_GET(OUTCONTROL_IPM_SOURCE_2, outcontrol_val);
-	ret = dai_ipm_source_to_enable(dmic, pdm_cfg, &n, num_pdm, stereo_pdm, source_pdm);
+	ret = dai_ipm_source_to_enable(dmic, &n, num_pdm, stereo_pdm, source_pdm);
 	if (ret) {
 		LOG_ERR("nhlt_dmic_dai_params_get(): Illegal IPM_SOURCE_2");
 		return -EINVAL;
 	}
 
 	source_pdm = FIELD_GET(OUTCONTROL_IPM_SOURCE_3, outcontrol_val);
-	ret = dai_ipm_source_to_enable(dmic, pdm_cfg, &n, num_pdm, stereo_pdm, source_pdm);
+	ret = dai_ipm_source_to_enable(dmic, &n, num_pdm, stereo_pdm, source_pdm);
 	if (ret) {
 		LOG_ERR("nhlt_dmic_dai_params_get(): Illegal IPM_SOURCE_3");
 		return -EINVAL;
 	}
 
 	source_pdm = FIELD_GET(OUTCONTROL_IPM_SOURCE_4, outcontrol_val);
-	ret = dai_ipm_source_to_enable(dmic, pdm_cfg, &n, num_pdm, stereo_pdm, source_pdm);
+	ret = dai_ipm_source_to_enable(dmic, &n, num_pdm, stereo_pdm, source_pdm);
 	if (ret) {
 		LOG_ERR("nhlt_dmic_dai_params_get(): Illegal IPM_SOURCE_4");
 		return -EINVAL;
 	}
 
-	return 0;
+	return dai_nhlt_update_rate(dmic, clock_source, first_pdm);
 }
 
 
@@ -470,7 +524,6 @@ int dai_dmic_set_config_nhlt(struct dai_intel_dmic *dmic, const void *bespoke_cf
 	int fir_length_b;
 	int n;
 	int i;
-	int rate_div;
 	int clk_div;
 	int comb_count;
 	int fir_decimation, fir_length;
@@ -706,14 +759,18 @@ int dai_dmic_set_config_nhlt(struct dai_intel_dmic *dmic, const void *bespoke_cf
 		}
 	}
 
+#ifdef CONFIG_SOC_SERIES_INTEL_ACE
+	ret = dai_nhlt_dmic_dai_params_get(dmic, dmic_cfg->clock_source);
+#else
 	if (dmic->dai_config_params.dai_index == 0)
 		ret = dai_nhlt_dmic_dai_params_get(dmic, out_control, pdm_cfg, fir_cfg_a);
 	else
 		ret = dai_nhlt_dmic_dai_params_get(dmic, out_control, pdm_cfg, fir_cfg_b);
-
+#endif
 	if (ret)
 		return ret;
 
+#ifndef CONFIG_SOC_SERIES_INTEL_ACE
 	if (dmic->dai_config_params.dai_index == 0)
 		rate_div = p_clkdiv * p_mcic * p_mfira;
 	else
@@ -732,6 +789,7 @@ int dai_dmic_set_config_nhlt(struct dai_intel_dmic *dmic, const void *bespoke_cf
 
 	LOG_INF("dmic_set_config_nhlt(): io_clk %u, rate_div %d",
 		adsp_clock_source_frequency(dmic_cfg->clock_source), rate_div);
+#endif
 
 	LOG_INF("dmic_set_config_nhlt(): enable0 %u, enable1 %u",
 		dmic->enable[0], dmic->enable[1]);
