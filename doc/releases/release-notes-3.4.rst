@@ -396,6 +396,11 @@ Build system and infrastructure
   To use it, enable :kconfig:option:`CONFIG_CHECK_INIT_PRIORITIES`, see
   :ref:`check_init_priorities.py` for more details.
 
+* Added a new option to disable tracking of macro expansion when compiling,
+  :kconfig:option:`CONFIG_COMPILER_TRACK_MACRO_EXPANSION`. This option may be
+  disabled to reduce compiler verbosity when errors occur during macro
+  expansions, e.g. in device definition macros.
+
 Drivers and Sensors
 *******************
 
