@@ -58,15 +58,15 @@
  *
  * @return 0
  */
-int soc_b91_init(void)
+static int soc_b91_init(void)
 {
 	unsigned int cclk = DT_PROP(DT_PATH(cpus, cpu_0), clock_frequency);
 
 
-#if (defined(CONFIG_PM) && defined(CONFIG_BT_B91))
+#ifdef CONFIG_PM
 	/* Select internal 32K for BLE PM, ASAP after boot */
 	blc_pm_select_internal_32k_crystal();
-#endif /* CONFIG_PM && CONFIG_BT_B91 */
+#endif /* CONFIG_PM */
 
 	/* system init */
 	sys_init(POWER_MODE, VBAT_TYPE);
@@ -117,6 +117,48 @@ void sys_arch_reboot(int type)
 	ARG_UNUSED(type);
 
 	reg_reset = SOFT_RESET;
+}
+
+/**
+ * @brief Restore SOC after deep-sleep.
+ */
+void soc_b91_restore(void)
+{
+	unsigned int cclk = DT_PROP(DT_PATH(cpus, cpu_0), clock_frequency);
+
+	/* system init */
+	sys_init(POWER_MODE, VBAT_TYPE);
+
+#if CONFIG_PM
+	gpio_shutdown(GPIO_ALL);
+#endif /* CONFIG_PM */
+
+	/* clocks init: CCLK, HCLK, PCLK */
+	switch (cclk) {
+	case CLK_16MHZ:
+		CCLK_16M_HCLK_16M_PCLK_16M;
+		break;
+
+	case CLK_24MHZ:
+		CCLK_24M_HCLK_24M_PCLK_24M;
+		break;
+
+	case CLK_32MHZ:
+		CCLK_32M_HCLK_32M_PCLK_16M;
+		break;
+
+	case CLK_48MHZ:
+		CCLK_48M_HCLK_48M_PCLK_24M;
+		break;
+
+	case CLK_60MHZ:
+		CCLK_60M_HCLK_30M_PCLK_15M;
+		break;
+
+	case CLK_96MHZ:
+		CCLK_96M_HCLK_48M_PCLK_24M;
+		break;
+	}
 }
 
 SYS_INIT(soc_b91_init, PRE_KERNEL_1, 0);
