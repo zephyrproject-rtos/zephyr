@@ -521,6 +521,10 @@ Drivers and Sensors
 
 * Pin control
 
+  * Added support for Infineon CAT1
+  * Added support for TI K3
+  * Added support for ARC emdsp
+
 * PWM
 
 * Power domain
