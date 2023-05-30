@@ -62,6 +62,11 @@ Security Vulnerability Related
 The following security vulnerabilities (CVEs) were addressed in this
 release:
 
+* CVE-2023-0397: `Zephyr project bug tracker GHSA-wc2h-h868-q7hj
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-wc2h-h868-q7hj>`_
+
+* CVE-2023-0779: `Zephyr project bug tracker GHSA-9xj8-6989-r549
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-9xj8-6989-r549>`_
 
 More detailed information can be found in:
 https://docs.zephyrproject.org/latest/security/vulnerabilities.html
