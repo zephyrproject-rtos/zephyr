@@ -275,6 +275,7 @@ static int qdec_nrfx_init(const struct device *dev)
 			.skip_psel_cfg = true,						     \
 			.ledpre  = QDEC_PROP(idx, led_pre),				     \
 			.ledpol  = NRF_QDEC_LEPOL_ACTIVE_HIGH,				     \
+			.reportper_inten = true,					     \
 		},									     \
 		.irq_connect = irq_connect##idx,					     \
 		.pcfg = PINCTRL_DT_DEV_CONFIG_GET(QDEC(idx)),				     \
