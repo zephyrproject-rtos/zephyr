@@ -6,7 +6,11 @@ rsource "fs_mgmt/Kconfig"
 
 rsource "img_mgmt/Kconfig"
 
+rsource "img_mgmt_client/Kconfig"
+
 rsource "os_mgmt/Kconfig"
+
+rsource "os_mgmt_client/Kconfig"
 
 rsource "shell_mgmt/Kconfig"
 
