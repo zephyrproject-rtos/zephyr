@@ -335,6 +335,7 @@ static enum ieee802154_hw_caps
 ieee802154_cc13xx_cc26xx_subg_get_capabilities(const struct device *dev)
 {
 	/* TODO: enable IEEE802154_HW_FILTER */
+	/* TODO: remove or actually implement IEEE802154_HW_CSMA */
 	return IEEE802154_HW_FCS | IEEE802154_HW_CSMA
 	       | IEEE802154_HW_SUB_GHZ;
 }
@@ -526,11 +527,14 @@ static int ieee802154_cc13xx_cc26xx_subg_tx(const struct device *dev,
 		if (drv_data->cmd_prop_cs.status != PROP_DONE_IDLE) {
 			LOG_DBG("Channel access failure (0x%x)",
 				drv_data->cmd_prop_cs.status);
-			/* Collision Avoidance is a WIP
-			 * Currently, we just wait a random amount of us in the
-			 * range [0,256) but k_busy_wait() is fairly inaccurate in
-			 * practice. Future revisions may attempt to use the RAdio
-			 * Timer (RAT) to measure this somewhat more precisely.
+			/* TODO: This is not a compliant CSMA/CA algorithm, use soft CSMA/CA
+			 *       instead as the SubGHz radio of this SoC has no HW CSMA/CA backoff
+			 *       algorithm support as required by IEEE 802.15.4, section 6.2.5.1.
+			 *       Alternatively construct compliant CSMA/CA with a combination
+			 *       of CMD_NOP, CMD_PROP_CS and CMD_COUNT_BRANCH commands, see
+			 *       SimpleLink SDK (rfListenBeforeTalk.c) or calculate proper backoff
+			 *       period as in the SimpleLink WiSUN stack's mac_tx.c.
+			 * Currently, we just wait a random amount of us in the range [0,256).
 			 */
 			k_busy_wait(sys_rand32_get() & 0xff);
 			continue;
@@ -863,8 +867,10 @@ static struct ieee802154_cc13xx_cc26xx_subg_data ieee802154_cc13xx_cc26xx_subg_d
 		},
 		.rssiThr = CONFIG_IEEE802154_CC13XX_CC26XX_SUB_GHZ_CS_THRESHOLD,
 		.csEndTrigger.triggerType = TRIG_REL_START,
-		/* 8 symbol periods. 802.15.4-2015 Table 11.1 */
-		.csEndTime = 5000,
+		/* see IEEE 802.15.4, section 11.3, table 11-1 and section 10.2.8 */
+		.csEndTime = RF_convertUsToRatTicks(
+			IEEE802154_PHY_A_CCA_TIME *
+				IEEE802154_PHY_SUN_FSK_863MHZ_915MHZ_SYMBOL_PERIOD_US),
 	},
 
 	.cmd_prop_tx_adv = {
