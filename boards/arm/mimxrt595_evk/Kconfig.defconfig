@@ -95,6 +95,8 @@ if PM
 # when transitioning the SoC to Deep Low Power modes.
 config PM_DEVICE
 	default y
+config REGULATOR
+	default y
 endif # PM
 
 endif # BOARD_MIMXRT595_EVK
