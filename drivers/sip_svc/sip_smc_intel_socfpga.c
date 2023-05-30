@@ -66,7 +66,7 @@ static uint32_t intel_sip_smc_plat_format_trans_id(const struct device *dev, uin
 {
 	ARG_UNUSED(dev);
 
-	/*combine the transaction id and client id to get the job id*/
+	/* Combine the transaction id and client id to get the job id*/
 	return (((client_idx & 0xF) << 4) | (trans_idx & 0xF));
 }
 
