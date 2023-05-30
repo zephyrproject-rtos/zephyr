@@ -815,6 +815,54 @@
 #define CAN_MCAN_DT_INST_MRAM_DEFINE(inst, _name) CAN_MCAN_DT_MRAM_DEFINE(DT_DRV_INST(inst), _name)
 
 /**
+ * @brief Bosch M_CAN specific static initializer for a minimum nominal @p can_timing struct
+ */
+#define CAN_MCAN_TIMING_MIN_INITIALIZER                                                            \
+	{                                                                                          \
+		.sjw = 1,                                                                          \
+		.prop_seg = 0,                                                                     \
+		.phase_seg1 = 2,                                                                   \
+		.phase_seg2 = 2,                                                                   \
+		.prescaler = 1                                                                     \
+	}
+
+/**
+ * @brief Bosch M_CAN specific static initializer for a maximum nominal @p can_timing struct
+ */
+#define CAN_MCAN_TIMING_MAX_INITIALIZER                                                            \
+	{                                                                                          \
+		.sjw = 128,                                                                        \
+		.prop_seg = 0,                                                                     \
+		.phase_seg1 = 256,                                                                 \
+		.phase_seg2 = 128,                                                                 \
+		.prescaler = 512                                                                   \
+	}
+
+/**
+ * @brief Bosch M_CAN specific static initializer for a minimum data phase @p can_timing struct
+ */
+#define CAN_MCAN_TIMING_DATA_MIN_INITIALIZER                                                       \
+	{                                                                                          \
+		.sjw = 1,                                                                          \
+		.prop_seg = 0,                                                                     \
+		.phase_seg1 = 1,                                                                   \
+		.phase_seg2 = 1,                                                                   \
+		.prescaler = 1                                                                     \
+	}
+
+/**
+ * @brief Bosch M_CAN specific static initializer for a maximum data phase @p can_timing struct
+ */
+#define CAN_MCAN_TIMING_DATA_MAX_INITIALIZER                                                       \
+	{                                                                                          \
+		.sjw = 16,                                                                         \
+		.prop_seg = 0,                                                                     \
+		.phase_seg1 = 32,                                                                  \
+		.phase_seg2 = 16,                                                                  \
+		.prescaler = 32                                                                    \
+	}
+
+/**
  * @brief Equivalent to CAN_MCAN_DT_BUILD_ASSERT_MRAM_CFG(DT_DRV_INST(inst))
  * @param inst DT_DRV_COMPAT instance number
  * @see CAN_MCAN_DT_BUILD_ASSERT_MRAM_CFG()
