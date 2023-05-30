@@ -711,6 +711,9 @@ static const struct dma_driver_api dma_mcux_lpc_api = {
 	.get_status = dma_mcux_lpc_get_status,
 };
 
+#define DMA_MCUX_LPC_IF_INST_HAS_OTRIGS(n, ACTIONS) \
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, nxp_dma_num_of_otrigs), (ACTIONS), ())
+
 #define DMA_MCUX_LPC_CONFIG_FUNC(n)					\
 	static void dma_mcux_lpc_config_func_##n(const struct device *dev)	\
 	{								\
@@ -726,13 +729,23 @@ static const struct dma_driver_api dma_mcux_lpc_api = {
 	DMA_MCUX_LPC_DECLARE_CFG(n,					\
 				 DMA_MCUX_LPC_IRQ_CFG_FUNC_INIT(n))
 
+#define DMA_CFG_INIT(n) \
+	DMA_MCUX_LPC_IF_INST_HAS_OTRIGS(n,						\
+		(									\
+			.num_of_otrigs =						\
+				DT_INST_PROP(n, nxp_dma_num_of_otrigs),			\
+			.otrig_base_address =						\
+				DT_INST_PROP_OR(n, nxp_dma_otrig_base_address, 0x0),	\
+			.itrig_base_address =						\
+				DT_INST_PROP_OR(n, nxp_dma_itrig_base_address, 0x0),	\
+		)									\
+	)
+
 #define DMA_MCUX_LPC_DECLARE_CFG(n, IRQ_FUNC_INIT)			\
 static const struct dma_mcux_lpc_config dma_##n##_config = {		\
 	.base = (DMA_Type *)DT_INST_REG_ADDR(n),			\
 	.num_of_channels = DT_INST_PROP(n, dma_channels),		\
-	.num_of_otrigs = DT_INST_PROP(n, nxp_dma_num_of_otrigs),			\
-	.otrig_base_address = DT_INST_PROP_OR(n, nxp_dma_otrig_base_address, 0x0),	\
-	.itrig_base_address = DT_INST_PROP_OR(n, nxp_dma_itrig_base_address, 0x0),	\
+	DMA_CFG_INIT(n)							\
 	IRQ_FUNC_INIT							\
 }
 
@@ -743,6 +756,21 @@ static const struct dma_mcux_lpc_config dma_##n##_config = {		\
 				((DMA_Type *)DT_INST_REG_ADDR(n))
 #endif
 
+#define DMA_INIT_OTRIG_ARR_DECL(n) \
+	DMA_MCUX_LPC_IF_INST_HAS_OTRIGS(n,						\
+		(									\
+			static struct dma_otrig dma_##n##_otrig_arr			\
+					[DT_INST_PROP(n, nxp_dma_num_of_otrigs)] = {0}	\
+		)									\
+	)
+
+#define DMA_INIT_OTRIG_ARR_INIT(n) \
+	DMA_MCUX_LPC_IF_INST_HAS_OTRIGS(n,			\
+		(						\
+			.otrig_array = dma_##n##_otrig_arr,	\
+		)						\
+	)
+
 #define DMA_INIT(n) \
 									\
 	static const struct dma_mcux_lpc_config dma_##n##_config;	\
@@ -750,8 +778,7 @@ static const struct dma_mcux_lpc_config dma_##n##_config = {		\
 	static struct channel_data dma_##n##_channel_data_arr		\
 				[DT_INST_PROP(n, dma_channels)] = {0};	\
 									\
-	static struct dma_otrig dma_##n##_otrig_arr			\
-			[DT_INST_PROP(n, nxp_dma_num_of_otrigs)] = {0};	\
+	DMA_INIT_OTRIG_ARR_DECL(n);					\
 									\
 	static int8_t							\
 		dma_##n##_channel_index_arr[TOTAL_DMA_CHANNELS] = {0};	\
@@ -759,7 +786,7 @@ static const struct dma_mcux_lpc_config dma_##n##_config = {		\
 	static struct dma_mcux_lpc_dma_data dma_data_##n = {		\
 		.channel_data = dma_##n##_channel_data_arr,		\
 		.channel_index = dma_##n##_channel_index_arr,		\
-		.otrig_array = dma_##n##_otrig_arr,			\
+		DMA_INIT_OTRIG_ARR_INIT(n)				\
 	};								\
 									\
 	DEVICE_DT_INST_DEFINE(n,					\
