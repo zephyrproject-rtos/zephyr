@@ -10,10 +10,9 @@ config KERNEL_ENTRY
 	default "__nuclei_start"
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
-	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency) if RISCV_MACHINE_TIMER
-
-config RISCV_MACHINE_TIMER_SYSTEM_CLOCK_DIVIDER
-	default $(dt_node_int_prop_int,/soc/timer@d1000000,clk-divider) if RISCV_MACHINE_TIMER
+	# This value should be the CPU frequency divided by 4.
+	# The CPU frequency is set to the maximum value of 108MHz by default.
+	default 27000000
 
 config RISCV_SOC_MCAUSE_EXCEPTION_MASK
 	default $(dt_node_int_prop_hex,/cpus/cpu@0,mcause-exception-mask)
