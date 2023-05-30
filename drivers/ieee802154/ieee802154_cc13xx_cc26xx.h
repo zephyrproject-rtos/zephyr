@@ -10,6 +10,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/ieee802154.h>
+#include <zephyr/net/ieee802154_radio.h>
 
 #include <ti/drivers/rf/RF.h>
 
@@ -19,18 +20,16 @@
 #include <driverlib/rf_mailbox.h>
 
 /* IEEE 802.15.4-2006 2450 MHz O-QPSK PHY symbol rate (6.5.3.2) */
-#define IEEE802154_2450MHZ_OQPSK_SYMBOLS_PER_SECOND 62500
-
-/* IEEE 802.15.4-2006 PHY constants (6.4.1) */
-#define IEEE802154_TURNAROUND_TIME 12
+/* For O-QPSK the physical and MAC timing symbol rates are the same, see section 12.3.3. */
+#define IEEE802154_2450MHZ_OQPSK_SYMBOLS_PER_SECOND                                                \
+	IEEE802154_PHY_SYMBOLS_PER_SECOND(IEEE802154_PHY_OQPSK_2450MHZ_SYMBOL_PERIOD_US)
 
 /* IEEE 802.15.4-2006 PHY PIB attributes (6.4.2) */
 #define IEEE802154_PHY_CCA_MODE 3
-#define IEEE802154_PHY_SHR_DURATION 10
-#define IEEE802154_PHY_SYMBOLS_PER_OCTET 2
 
-/* IEEE 802.15.4-2006 MAC constants (7.4.1) */
-#define IEEE802154_UNIT_BACKOFF_PERIOD 20
+#define IEEE802154_PHY_SHR_DURATION 10
+
+#define IEEE802154_PHY_SYMBOLS_PER_OCTET 2
 
 /* ACK is 2 bytes for PHY header + 2 bytes MAC header + 2 bytes MAC footer */
 #define IEEE802154_ACK_FRAME_OCTETS 6
@@ -40,8 +39,8 @@
  * The macAckWaitDuration attribute does not include aUnitBackoffPeriod for
  * non-beacon enabled PANs (See IEEE 802.15.4-2006 7.5.6.4.2)
  */
-#define IEEE802154_MAC_ACK_WAIT_DURATION                                       \
-	(IEEE802154_TURNAROUND_TIME + IEEE802154_PHY_SHR_DURATION +            \
+#define IEEE802154_MAC_ACK_WAIT_DURATION                                                           \
+	(IEEE802154_PHY_A_TURNAROUND_TIME_DEFAULT + IEEE802154_PHY_SHR_DURATION +                  \
 	 IEEE802154_ACK_FRAME_OCTETS * IEEE802154_PHY_SYMBOLS_PER_OCTET)
 
 #define CC13XX_CC26XX_RAT_CYCLES_PER_SECOND 4000000

@@ -489,13 +489,12 @@ static int ieee802154_cc13xx_cc26xx_subg_tx(const struct device *dev,
 	k_mutex_lock(&drv_data->tx_mutex, K_FOREVER);
 
 	/* Prepend data with the SUN FSK PHY header */
-	drv_data->tx_data[0] = frag->len + IEEE802154_SUN_PHY_FSK_PHR_LEN;
+	drv_data->tx_data[0] = frag->len + IEEE802154_PHY_SUN_FSK_PHR_LEN;
 	/* 20.2.2 PHR field format. 802.15.4-2015 */
 	drv_data->tx_data[1] = 0;
 	drv_data->tx_data[1] |= BIT(3); /* FCS Type: 2-octet FCS */
 	drv_data->tx_data[1] |= BIT(4); /* DW: Enable Data Whitening */
-	memcpy(&drv_data->tx_data[IEEE802154_SUN_PHY_FSK_PHR_LEN],
-		frag->data, frag->len);
+	memcpy(&drv_data->tx_data[IEEE802154_PHY_SUN_FSK_PHR_LEN], frag->data, frag->len);
 
 	/* Chain commands */
 	drv_data->cmd_prop_cs.pNextOp =
@@ -503,8 +502,7 @@ static int ieee802154_cc13xx_cc26xx_subg_tx(const struct device *dev,
 	drv_data->cmd_prop_cs.condition.rule = COND_STOP_ON_TRUE;
 
 	/* Set TX data */
-	drv_data->cmd_prop_tx_adv.pktLen = frag->len
-		+ IEEE802154_SUN_PHY_FSK_PHR_LEN;
+	drv_data->cmd_prop_tx_adv.pktLen = frag->len + IEEE802154_PHY_SUN_FSK_PHR_LEN;
 	drv_data->cmd_prop_tx_adv.pPkt = drv_data->tx_data;
 
 	/* Abort FG and BG processes */
