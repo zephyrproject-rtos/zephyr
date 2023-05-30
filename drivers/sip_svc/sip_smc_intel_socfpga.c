@@ -15,9 +15,9 @@
 
 #include <zephyr/logging/log.h>
 
-LOG_MODULE_REGISTER(intel_agilex_socfpga_sip_smc, CONFIG_ARM_SIP_SVC_DRIVER_LOG_LEVEL);
+LOG_MODULE_REGISTER(intel_socfpga_agilex_sip_smc, CONFIG_ARM_SIP_SVC_DRIVER_LOG_LEVEL);
 
-#define DT_DRV_COMPAT intel_agilex_socfpga_sip_smc
+#define DT_DRV_COMPAT intel_socfpga_agilex_sip_smc
 
 #define DT_SIP_SMC DT_COMPAT_GET_ANY_STATUS_OKAY(DT_DRV_COMPAT)
 

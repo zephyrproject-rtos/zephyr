@@ -4,7 +4,7 @@
 
 description: SiP SVC driver instance on Intel Agilex SOC FPGA for SMC call
 
-compatible: "intel,agilex-socfpga-sip-smc"
+compatible: "intel,socfpga-agilex-sip-smc"
 
 include: base.yaml
 
