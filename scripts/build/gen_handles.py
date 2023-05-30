@@ -121,6 +121,13 @@ def main():
         edt = pickle.load(f)
 
     parsed_elf = ZephyrElf(args.kernel, edt, args.start_symbol)
+    if parsed_elf.relocatable:
+        # While relocatable elf files will load cleanly, the pointers pulled from
+        # the symbol table are invalid (as expected, because the structures have not
+        # yet been allocated addresses). Fixing this will require iterating over
+        # the relocation sections to find the symbols those pointers will end up
+        # referring to.
+        sys.exit('Relocatable elf files are not yet supported')
 
     if args.output_graphviz:
         # Try and output the dependency tree
