@@ -646,6 +646,12 @@ Libraries / Subsystems
   * Added policy that every ``sqe`` will generate a ``cqe`` (previously an RTIO_SQE_TRANSACTION
     entry would only trigger a ``cqe`` on the last ``sqe`` in the transaction.
 
+* Power management
+
+  * Added a new policy event API that can be used to register expected events
+    that will wake the system up in the future. This can be used to influence
+    the system on which low power states can be used.
+
 HALs
 ****
 
