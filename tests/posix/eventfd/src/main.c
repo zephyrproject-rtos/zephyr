@@ -41,7 +41,7 @@ ZTEST(eventfd, test_eventfd)
 	close(fd);
 }
 
-ZTEST(eventfd, test_eventfd_read_nonblock)
+ZTEST(eventfd, test_read_nonblock)
 {
 	eventfd_t val = 0;
 	int fd, ret;
@@ -67,7 +67,7 @@ ZTEST(eventfd, test_eventfd_read_nonblock)
 	close(fd);
 }
 
-ZTEST(eventfd, test_eventfd_write_then_read)
+ZTEST(eventfd, test_write_then_read)
 {
 	eventfd_t val;
 	int fd, ret;
@@ -105,7 +105,7 @@ ZTEST(eventfd, test_eventfd_write_then_read)
 	close(fd);
 }
 
-ZTEST(eventfd, test_eventfd_poll_timeout)
+ZTEST(eventfd, test_poll_timeout)
 {
 	struct pollfd pfd;
 	int fd, ret;
@@ -154,7 +154,7 @@ static void eventfd_poll_unset_common(int fd)
 	zassert_equal(ret, 1, "eventfd not blocked after read");
 }
 
-ZTEST(eventfd, test_eventfd_unset_poll_event_block)
+ZTEST(eventfd, test_unset_poll_event_block)
 {
 	int fd;
 
@@ -166,7 +166,7 @@ ZTEST(eventfd, test_eventfd_unset_poll_event_block)
 	close(fd);
 }
 
-ZTEST(eventfd, test_eventfd_unset_poll_event_nonblock)
+ZTEST(eventfd, test_unset_poll_event_nonblock)
 {
 	int fd;
 
@@ -197,7 +197,7 @@ static void eventfd_poll_set_common(int fd)
 	zassert_equal(ret, 1, "eventfd is not blocked after read");
 }
 
-ZTEST(eventfd, test_eventfd_set_poll_event_block)
+ZTEST(eventfd, test_set_poll_event_block)
 {
 	int fd;
 
@@ -209,7 +209,7 @@ ZTEST(eventfd, test_eventfd_set_poll_event_block)
 	close(fd);
 }
 
-ZTEST(eventfd, test_eventfd_set_poll_event_nonblock)
+ZTEST(eventfd, test_set_poll_event_nonblock)
 {
 	int fd;
 
@@ -221,7 +221,7 @@ ZTEST(eventfd, test_eventfd_set_poll_event_nonblock)
 	close(fd);
 }
 
-ZTEST(eventfd, test_eventfd_overflow)
+ZTEST(eventfd, test_overflow)
 {
 	short event;
 	int fd, ret;
@@ -251,7 +251,7 @@ ZTEST(eventfd, test_eventfd_overflow)
 	close(fd);
 }
 
-ZTEST(eventfd, test_eventfd_zero_shall_not_unblock)
+ZTEST(eventfd, test_zero_shall_not_unblock)
 {
 	short event;
 	int fd, ret;
