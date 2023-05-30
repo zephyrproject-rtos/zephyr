@@ -142,7 +142,7 @@
 	};
 
 	sip_smc: smc{
-		compatible = "intel,agilex-socfpga-sip-smc";
+		compatible = "intel,socfpga-agilex-sip-smc";
 		method = "smc";
 		status = "disabled";
 		zephyr,num-clients = <2>;
