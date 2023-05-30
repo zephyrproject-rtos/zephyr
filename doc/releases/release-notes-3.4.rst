@@ -177,6 +177,8 @@ Changes in this release
   :zephyr_file:`zephyr/sys/iterable_sections.h`. LD linker snippets are
   available at :zephyr_file:`zephyr/linker/iterable_sections.h`.
 
+* Cache API functions are now fully inlined by compilers.
+
 Removed APIs in this release
 ============================
 
@@ -242,6 +244,8 @@ New APIs in this release
 
 * Introduced :ref:`auxdisplay_api` for auxiliary (alphanumeric-based) displays.
 
+* Introduced :ref:`barriers_api` for barrier operations.
+
 Kernel
 ******
 
@@ -263,6 +267,11 @@ Architectures
 
 * ARM64
   * Removed absolute symbol :c:macro:`___callee_saved_t_SIZEOF`
+  * Enabled FPU and FPU_SHARING for v8r aarch64
+  * Fixed the STACK_INIT logic during the reset
+  * Introduced and enabled safe exception stack
+  * Fixed possible deadlock on SMP with FPU sharing
+  * Added ISBs after SCTLR Modifications
 
 * NIOS2
   * Removed absolute symbol :c:macro:`_K_THREAD_NO_FLOAT_SIZEOF`
@@ -321,6 +330,9 @@ Boards & SoC Support
 
 * Added support for these ARM64 boards:
 
+  * PHYTEC phyCORE-AM62x A53
+  * MIMX93 EVK A53 (SOF)
+
 * Added support for these RISC-V boards:
 
 * Added support for these X86 boards:
@@ -341,6 +353,8 @@ Boards & SoC Support
 
 * Made these changes for ARM64 boards:
 
+  * FVP revc_2xaemv8a / aemv8r: Added ethernet, PHY and MDIO nodes
+
 * Made these changes for RISC-V boards:
 
 * Made these changes for X86 boards:
@@ -350,8 +364,6 @@ Boards & SoC Support
 * Removed support for these ARC boards:
 
 * Removed support for these ARM boards:
-
-* Removed support for these ARM64 boards:
 
 * Removed support for these RISC-V boards:
 
@@ -655,6 +667,10 @@ Libraries / Subsystems
 * IPC
 
   * :c:func:`ipc_service_close_instance` now only acts on bounded endpoints.
+  * ICMSG: removed race condition during bonding.
+  * ICMSG: removed internal API for clearing shared memory.
+  * ICMSG: added mutual exclusion access to SHMEM.
+  * Fixed CONFIG_OPENAMP_WITH_DCACHE.
 
 * Management
 
