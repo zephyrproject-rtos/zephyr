@@ -4,9 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifdef CONFIG_NEWLIB_LIBC
+/*
+ * strerror_r is not part of the Zephyr C API. Define this so that a C
+ * library which supports POSIX will declare it.
+ */
 #define _POSIX_C_SOURCE 200809
-#endif
 
 #include <errno.h>
 #include <string.h>
