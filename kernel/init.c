@@ -45,6 +45,9 @@ BUILD_ASSERT(CONFIG_MP_NUM_CPUS == CONFIG_MP_MAX_NUM_CPUS,
 __pinned_bss
 struct z_kernel _kernel;
 
+__pinned_bss
+atomic_t _cpus_active;
+
 /* init/main and idle threads */
 K_THREAD_PINNED_STACK_DEFINE(z_main_stack, CONFIG_MAIN_STACK_SIZE);
 struct k_thread z_main_thread;
@@ -395,6 +398,12 @@ void z_init_cpu(int id)
 	_kernel.cpus[id].usage.track_usage =
 		CONFIG_SCHED_THREAD_USAGE_AUTO_ENABLE;
 #endif
+
+	/*
+	 * Increment number of CPUs active. The pm subsystem
+	 * will keep track of this from here.
+	 */
+	atomic_inc(&_cpus_active);
 }
 
 /**
