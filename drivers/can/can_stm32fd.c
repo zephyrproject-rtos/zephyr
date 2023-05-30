@@ -594,36 +594,12 @@ static const struct can_driver_api can_stm32fd_driver_api = {
 	.get_max_bitrate = can_mcan_get_max_bitrate,
 	.get_max_filters = can_mcan_get_max_filters,
 	.set_state_change_callback = can_mcan_set_state_change_callback,
-	.timing_min = {
-		.sjw = 0x01,
-		.prop_seg = 0x00,
-		.phase_seg1 = 0x01,
-		.phase_seg2 = 0x01,
-		.prescaler = 0x01
-	},
-	.timing_max = {
-		.sjw = 0x80,
-		.prop_seg = 0x00,
-		.phase_seg1 = 0x100,
-		.phase_seg2 = 0x80,
-		.prescaler = 0x200
-	},
+	.timing_min = CAN_MCAN_TIMING_MIN_INITIALIZER,
+	.timing_max = CAN_MCAN_TIMING_MAX_INITIALIZER,
 #ifdef CONFIG_CAN_FD_MODE
 	.set_timing_data = can_mcan_set_timing_data,
-	.timing_data_min = {
-		.sjw = 0x01,
-		.prop_seg = 0x00,
-		.phase_seg1 = 0x01,
-		.phase_seg2 = 0x01,
-		.prescaler = 0x01
-	},
-	.timing_data_max = {
-		.sjw = 0x10,
-		.prop_seg = 0x00,
-		.phase_seg1 = 0x20,
-		.phase_seg2 = 0x10,
-		.prescaler = 0x20
-	}
+	.timing_data_min = CAN_MCAN_TIMING_DATA_MIN_INITIALIZER,
+	.timing_data_max = CAN_MCAN_TIMING_DATA_MAX_INITIALIZER,
 #endif /* CONFIG_CAN_FD_MODE */
 };
 
