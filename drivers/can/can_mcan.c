@@ -210,8 +210,8 @@ int can_mcan_set_timing(const struct device *dev, const struct can_timing *timin
 	}
 
 	__ASSERT_NO_MSG(timing->prop_seg == 0U);
-	__ASSERT_NO_MSG(timing->phase_seg1 <= 0x100 && timing->phase_seg1 > 0U);
-	__ASSERT_NO_MSG(timing->phase_seg2 <= 0x80 && timing->phase_seg2 > 0U);
+	__ASSERT_NO_MSG(timing->phase_seg1 <= 0x100 && timing->phase_seg1 > 1U);
+	__ASSERT_NO_MSG(timing->phase_seg2 <= 0x80 && timing->phase_seg2 > 1U);
 	__ASSERT_NO_MSG(timing->prescaler <= 0x200 && timing->prescaler > 0U);
 	__ASSERT_NO_MSG(timing->sjw == CAN_SJW_NO_CHANGE ||
 			(timing->sjw <= 0x80 && timing->sjw > 0U));
@@ -260,7 +260,7 @@ int can_mcan_set_timing_data(const struct device *dev, const struct can_timing *
 	__ASSERT_NO_MSG(timing_data->phase_seg2 <= 0x10 && timing_data->phase_seg2 > 0U);
 	__ASSERT_NO_MSG(timing_data->prescaler <= 0x20 && timing_data->prescaler > 0U);
 	__ASSERT_NO_MSG(timing_data->sjw == CAN_SJW_NO_CHANGE ||
-			(timing_data->sjw <= 0x80 && timing_data->sjw > 0U));
+			(timing_data->sjw <= 0x10 && timing_data->sjw > 0U));
 
 	k_mutex_lock(&data->lock, K_FOREVER);
 
