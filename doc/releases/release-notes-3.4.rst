@@ -531,6 +531,14 @@ Drivers and Sensors
 
 * Regulators
 
+  * The regulator API can now be built without thread-safe reference counting
+    by using :kconfig:option:`CONFIG_REGULATOR_THREAD_SAFE_REFCNT`. This
+    feature can be useful in applications that do not enable
+    :kconfig:option:`CONFIG_MULTITHREADING`.
+  * Added support for ADP5360 PMIC
+  * Added support for nPM1300 PMIC
+  * Added support for Raspberry Pi Pico core supply regulator
+
 * Reset
 
 * SDHC
