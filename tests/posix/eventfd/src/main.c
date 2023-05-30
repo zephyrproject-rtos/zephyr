@@ -4,13 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/ztest.h>
-#include <stdio.h>
-#include <unistd.h>
 #include <errno.h>
+#include <stdio.h>
+
 #include <zephyr/net/socket.h>
-#include <poll.h>
-#include <sys/eventfd.h>
+#include <zephyr/posix/poll.h>
+#include <zephyr/posix/sys/eventfd.h>
+#include <zephyr/posix/unistd.h>
+#include <zephyr/ztest.h>
 
 #define TESTVAL 10
 
