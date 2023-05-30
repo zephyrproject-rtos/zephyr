@@ -42,7 +42,7 @@ void get_voltage_callback(uint32_t c_token, struct sip_svc_response *response)
 	k_sem_give(&(priv->semaphore));
 }
 
-void main(void)
+int main(void)
 {
 	void *mb_smc_ctrl = NULL;
 	uint32_t mb_c_token = SIP_SVC_ID_INVALID;
