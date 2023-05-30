@@ -51,23 +51,7 @@ int eventfd(unsigned int initval, int flags);
  *
  * @return 0 on success, -1 on error
  */
-static inline int eventfd_read(int fd, eventfd_t *value)
-{
-	const struct fd_op_vtable *efd_vtable;
-	struct k_mutex *lock;
-	ssize_t ret;
-	void *obj;
-
-	obj = z_get_fd_obj_and_vtable(fd, &efd_vtable, &lock);
-
-	(void)k_mutex_lock(lock, K_FOREVER);
-
-	ret = efd_vtable->read(obj, value, sizeof(*value));
-
-	k_mutex_unlock(lock);
-
-	return ret == sizeof(eventfd_t) ? 0 : -1;
-}
+int eventfd_read(int fd, eventfd_t *value);
 
 /**
  * @brief Write to an eventfd
@@ -77,23 +61,7 @@ static inline int eventfd_read(int fd, eventfd_t *value)
  *
  * @return 0 on success, -1 on error
  */
-static inline int eventfd_write(int fd, eventfd_t value)
-{
-	const struct fd_op_vtable *efd_vtable;
-	struct k_mutex *lock;
-	ssize_t ret;
-	void *obj;
-
-	obj = z_get_fd_obj_and_vtable(fd, &efd_vtable, &lock);
-
-	(void)k_mutex_lock(lock, K_FOREVER);
-
-	ret = efd_vtable->write(obj, &value, sizeof(value));
-
-	k_mutex_unlock(lock);
-
-	return ret == sizeof(eventfd_t) ? 0 : -1;
-}
+int eventfd_write(int fd, eventfd_t value);
 
 #ifdef __cplusplus
 }
