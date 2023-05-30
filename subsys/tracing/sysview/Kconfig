@@ -17,6 +17,11 @@ config SEGGER_SYSVIEW_RTT_CHANNEL
 	depends on SEGGER_SYSTEMVIEW
 	default 0
 
+config SEGGER_SYSVIEW_APP_NAME
+	string "Application name to be displayed in SystemView"
+	depends on SEGGER_SYSTEMVIEW
+	default "ZephyrSysView"
+
 config SEGGER_SYSVIEW_POST_MORTEM_MODE
 	bool "Post-mortem mode for SystemView"
 	depends on SEGGER_SYSTEMVIEW
