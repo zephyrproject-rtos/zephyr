@@ -57,10 +57,13 @@ extern volatile rfc_CMD_PROP_RADIO_DIV_SETUP_t ieee802154_cc13xx_subg_radio_div_
 #elif defined(CONFIG_SOC_CC1352P)
 extern volatile rfc_CMD_PROP_RADIO_DIV_SETUP_PA_t ieee802154_cc13xx_subg_radio_div_setup;
 #endif /* CONFIG_SOC_CC1352x, extern RADIO_DIV_SETUP */
+#else
 
-#elif defined(CONFIG_SOC_CC1352R)
-/* Radio values for CC13x2R (note: CC26x2 does not support sub-GHz radio) */
-/* From SmartRF Studio (200kbps, 50kHz deviation, 2-GFSK, 311.8kHz Rx BW) */
+#if defined(CONFIG_SOC_CC1352R)
+/* Radio register overrides for CC13x2R (note: CC26x2 does not support sub-GHz radio)
+ * from SmartRF Studio (200kbps, 50kHz deviation, 2-GFSK, 311.8kHz Rx BW),
+ * approximates SUN FSK PHY, 915 MHz band, operating mode #3.
+ */
 static uint32_t ieee802154_cc13xx_overrides_sub_ghz[] = {
 	/* DC/DC regulator: In Tx, use DCDCCTL5[3:0]=0x7 (DITHER_EN=0 and IPEAK=7). */
 	(uint32_t)0x00F788D3,
@@ -83,28 +86,6 @@ static uint32_t ieee802154_cc13xx_overrides_sub_ghz[] = {
 	/* Tx: Set PA trim to max to maximize its output power (in ADI0, set PACTL0=0xF8) */
 	ADI_REG_OVERRIDE(0, 12, 0xF8),
 	(uint32_t)0xFFFFFFFF
-};
-
-/* Radio setup command for CC1312R / CC1352R */
-static volatile rfc_CMD_PROP_RADIO_DIV_SETUP_t ieee802154_cc13xx_subg_radio_div_setup = {
-	.commandNo = CMD_PROP_RADIO_DIV_SETUP,
-	.condition.rule = COND_NEVER,
-	.modulation.modType = 1, /* FSK */
-	.modulation.deviation = 200,
-	.symbolRate.preScale = 15,
-	.symbolRate.rateWord = 131072,
-	.rxBw = 0x59,                   /* 310.8 kHz */
-	.preamConf.nPreamBytes = 7,
-	.formatConf.nSwBits = 24,       /* 24-bit of syncword */
-	.formatConf.bMsbFirst = true,
-	.formatConf.whitenMode = 7,
-	.config.biasMode = true,
-	.formatConf.bMsbFirst = true,
-	.txPower = 0x013f, /* from Smart RF Studio */
-	.centerFreq = 915,
-	.intFreq = 0x0999,
-	.loDivider = 5,
-	.pRegOverride = ieee802154_cc13xx_overrides_sub_ghz,
 };
 
 /* Radio values for CC13X2P */
@@ -157,30 +138,49 @@ static uint32_t rf_prop_overrides_tx_20[] = {
 	(uint32_t)0xFFFFFFFF
 };
 
-/* Radio setup command for CC1312P / CC1352P */
+#else
+#error "unsupported CC13xx SoC"
+#endif /* CONFIG_SOC_CC1352x */
+
+/* Radio setup command for CC13xx */
+#if defined(CONFIG_SOC_CC1352R)
+static volatile rfc_CMD_PROP_RADIO_DIV_SETUP_t ieee802154_cc13xx_subg_radio_div_setup = {
+	.commandNo = CMD_PROP_RADIO_DIV_SETUP,
+#elif defined(CONFIG_SOC_CC1352P)
 static volatile rfc_CMD_PROP_RADIO_DIV_SETUP_PA_t ieee802154_cc13xx_subg_radio_div_setup = {
 	.commandNo = CMD_PROP_RADIO_DIV_SETUP_PA,
+#endif /* CONFIG_SOC_CC1352x */
 	.condition.rule = COND_NEVER,
-	.modulation.modType = 1, /* FSK */
-	.modulation.deviation = 200,
-	.symbolRate.preScale = 15,
-	.symbolRate.rateWord = 131072,
-	.rxBw = 0x59,                   /* 310.8 kHz */
-	.preamConf.nPreamBytes = 7,
-	.formatConf.nSwBits = 24,       /* 24-bit of syncword */
-	.formatConf.bMsbFirst = true,
-	.formatConf.whitenMode = 7,
-	.config.biasMode = true,
-	.formatConf.bMsbFirst = true,
-	.txPower = 0x013f, /* from Smart RF Studio */
-	.centerFreq = 915,
-	.intFreq = 0x0C00,
+	.modulation = {
+		.modType = 1, /* 2-GFSK - non-standard modulation */
+		.deviation = 200, /* +/- 200*250 = 50kHz deviation (modulation index 0.5) */
+	},
+	.symbolRate = {
+		.preScale = 15,
+		.rateWord = 131072, /* 200 kBit, see TRM, section 25.10.5.2, formula 15 */
+	},
+	.rxBw = 0x59, /* 310.8 kHz RX bandwidth, see TRM, section 25.10.5.2, table 25-183 */
+	.preamConf.nPreamBytes = 7, /* phyFskPreambleLength = 7 + 1, also see nSwBits below */
+	.formatConf = {
+		.nSwBits = 24, /* 24-bit (1 byte preamble + 16 bit SFD) */
+		.bMsbFirst = true,
+		.whitenMode = 7, /* Determine whitening and CRC from PHY header */
+	},
+	.config.biasMode = true, /* Rely on an external antenna biasing network. */
+	.txPower = 0x013f, /* 14 dBm, see TRM 25.3.3.2.16 */
+	.centerFreq = 906, /* Set channel page zero, channel 1 by default,
+			    * TODO: Use compliant SUN PHY frequencies from channel page 9.
+			    */
+	.intFreq = 0x8000, /* Use default intermediate frequency. */
 	.loDivider = 5,
 	.pRegOverride = ieee802154_cc13xx_overrides_sub_ghz,
+#if defined(CONFIG_SOC_CC1352P)
 	.pRegOverrideTxStd = rf_prop_overrides_tx_std,
 	.pRegOverrideTx20 = rf_prop_overrides_tx_20,
+#endif /* CONFIG_SOC_CC1352P */
 };
-#endif /* CONFIG_SOC_CC1352x, default CMD_PROP_RADIO_DIV_SETUP structures */
+
+#endif /* CONFIG_IEEE802154_CC13XX_CC26XX_SUB_GHZ_CUSTOM_RADIO_SETUP */
 
 /* Sub GHz power tables */
 #if defined(CONFIG_IEEE802154_CC13XX_CC26XX_SUB_GHZ_CUSTOM_POWER_TABLE)
@@ -842,7 +842,7 @@ static struct ieee802154_cc13xx_cc26xx_subg_data
 			.bAppendStatus = true,
 		},
 		/* Preamble & SFD for 2-FSK SUN PHY. 802.15.4-2015, 20.2.1 */
-		.syncWord0 = 0x0055904E,
+		.syncWord0 = 0x55904E,
 		.maxPktLen = IEEE802154_MAX_PHY_PACKET_SIZE,
 		.hdrConf = {
 			.numHdrBits = 16,
@@ -860,12 +860,13 @@ static struct ieee802154_cc13xx_cc26xx_subg_data
 		.commandNo = CMD_PROP_CS,
 		.startTrigger.pastTrig = true,
 		.condition.rule = COND_NEVER,
-		.csConf.bEnaRssi = true,
-		.csConf.busyOp = true,
-		.csConf.idleOp = true,
+		/* CCA Mode 1: Energy above threshold */
+		.csConf = {
+			.bEnaRssi = true,
+			.busyOp = true,
+			.idleOp = true,
+		},
 		.rssiThr = CONFIG_IEEE802154_CC13XX_CC26XX_SUB_GHZ_CS_THRESHOLD,
-		.corrPeriod = 640, /* Filler, used for correlation only */
-		.corrConfig.numCorrInv = 0x03,
 		.csEndTrigger.triggerType = TRIG_REL_START,
 		/* 8 symbol periods. 802.15.4-2015 Table 11.1 */
 		.csEndTime = 5000,
@@ -882,7 +883,7 @@ static struct ieee802154_cc13xx_cc26xx_subg_data
 		.preTrigger.triggerType = TRIG_REL_START,
 		.preTrigger.pastTrig = true,
 		/* Preamble & SFD for 2-FSK SUN PHY. 802.15.4-2015, 20.2.1 */
-		.syncWord = 0x0055904E,
+		.syncWord = 0x55904E,
 	},
 };
 
