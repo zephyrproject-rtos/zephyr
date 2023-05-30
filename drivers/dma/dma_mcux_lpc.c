@@ -730,7 +730,7 @@ static const struct dma_driver_api dma_mcux_lpc_api = {
 static const struct dma_mcux_lpc_config dma_##n##_config = {		\
 	.base = (DMA_Type *)DT_INST_REG_ADDR(n),			\
 	.num_of_channels = DT_INST_PROP(n, dma_channels),		\
-	.num_of_otrigs = DT_INST_PROP(n, nxp_dma_num_of_otrigs),			\
+	.num_of_otrigs = DT_INST_PROP_OR(n, nxp_dma_num_of_otrigs, 0),			\
 	.otrig_base_address = DT_INST_PROP_OR(n, nxp_dma_otrig_base_address, 0x0),	\
 	.itrig_base_address = DT_INST_PROP_OR(n, nxp_dma_itrig_base_address, 0x0),	\
 	IRQ_FUNC_INIT							\
@@ -751,7 +751,7 @@ static const struct dma_mcux_lpc_config dma_##n##_config = {		\
 				[DT_INST_PROP(n, dma_channels)] = {0};	\
 									\
 	static struct dma_otrig dma_##n##_otrig_arr			\
-			[DT_INST_PROP(n, nxp_dma_num_of_otrigs)] = {0};	\
+			[DT_INST_PROP_OR(n, nxp_dma_num_of_otrigs, 0)]; \
 									\
 	static int8_t							\
 		dma_##n##_channel_index_arr[TOTAL_DMA_CHANNELS] = {0};	\
