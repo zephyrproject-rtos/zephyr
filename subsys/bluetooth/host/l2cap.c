@@ -1088,10 +1088,6 @@ static uint16_t l2cap_chan_accept(struct bt_conn *conn,
 	/* Update state */
 	bt_l2cap_chan_set_state(*chan, BT_L2CAP_CONNECTED);
 
-	if ((*chan)->ops->connected) {
-		(*chan)->ops->connected(*chan);
-	}
-
 	return BT_L2CAP_LE_SUCCESS;
 }
 
@@ -1164,21 +1160,19 @@ static void le_conn_req(struct bt_l2cap *l2cap, uint8_t ident,
 	/* Check if there is a server registered */
 	server = bt_l2cap_server_lookup_psm(psm);
 	if (!server) {
-		rsp->result = sys_cpu_to_le16(BT_L2CAP_LE_ERR_PSM_NOT_SUPP);
+		result = BT_L2CAP_LE_ERR_PSM_NOT_SUPP;
 		goto rsp;
 	}
 
 	/* Check if connection has minimum required security level */
 	result = l2cap_check_security(conn, server);
 	if (result != BT_L2CAP_LE_SUCCESS) {
-		rsp->result = sys_cpu_to_le16(result);
 		goto rsp;
 	}
 
 	result = l2cap_chan_accept(conn, server, scid, mtu, mps, credits,
 				   &chan);
 	if (result != BT_L2CAP_LE_SUCCESS) {
-		rsp->result = sys_cpu_to_le16(result);
 		goto rsp;
 	}
 
@@ -1190,10 +1184,20 @@ static void le_conn_req(struct bt_l2cap *l2cap, uint8_t ident,
 	rsp->mtu = sys_cpu_to_le16(le_chan->rx.mtu);
 	rsp->credits = sys_cpu_to_le16(le_chan->rx.credits);
 
-	rsp->result = BT_L2CAP_LE_SUCCESS;
+	result = BT_L2CAP_LE_SUCCESS;
 
 rsp:
-	l2cap_send(conn, BT_L2CAP_CID_LE_SIG, buf);
+	rsp->result = sys_cpu_to_le16(result);
+
+	if (bt_l2cap_send(conn, BT_L2CAP_CID_LE_SIG, buf)) {
+		net_buf_unref(buf);
+		return;
+	}
+
+	/* Raise connected callback on success */
+	if ((result == BT_L2CAP_LE_SUCCESS) && (chan->ops->connected != NULL)) {
+		chan->ops->connected(chan);
+	}
 }
 
 #if defined(CONFIG_BT_L2CAP_ECRED)
@@ -1211,6 +1215,7 @@ static void le_ecred_conn_req(struct bt_l2cap *l2cap, uint8_t ident,
 	uint16_t scid, dcid[L2CAP_ECRED_CHAN_MAX_PER_REQ];
 	int i = 0;
 	uint8_t req_cid_count;
+	bool rsp_queued = false;
 
 	/* set dcid to zeros here, in case of all connections refused error */
 	memset(dcid, 0, sizeof(dcid));
@@ -1304,11 +1309,24 @@ response:
 
 	net_buf_add_mem(buf, dcid, sizeof(scid) * req_cid_count);
 
-	l2cap_send(conn, BT_L2CAP_CID_LE_SIG, buf);
+	if (bt_l2cap_send(conn, BT_L2CAP_CID_LE_SIG, buf)) {
+		net_buf_unref(buf);
+		goto callback;
+	}
+
+	rsp_queued = true;
 
 callback:
 	if (ecred_cb && ecred_cb->ecred_conn_req) {
 		ecred_cb->ecred_conn_req(conn, result, psm);
+	}
+	if (rsp_queued && result == BT_L2CAP_LE_SUCCESS) {
+		for (i = 0; i < req_cid_count; i++) {
+			/* Raise connected callback for established channels */
+			if ((dcid[i] != 0x00) && (chan[i]->ops->connected != NULL)) {
+				chan[i]->ops->connected(chan[i]);
+			}
+		}
 	}
 }
 
