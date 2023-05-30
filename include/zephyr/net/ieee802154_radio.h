@@ -7,15 +7,19 @@
 /**
  * @file
  * @brief Public IEEE 802.15.4 Radio API
+ *
+ * All references to the spec refer to IEEE 802.15.4-2020.
  */
 
 #ifndef ZEPHYR_INCLUDE_NET_IEEE802154_RADIO_H_
 #define ZEPHYR_INCLUDE_NET_IEEE802154_RADIO_H_
 
 #include <zephyr/device.h>
+#include <zephyr/sys_clock.h>
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/net/ieee802154.h>
+#include <zephyr/sys/util.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -26,6 +30,54 @@ extern "C" {
  * @{
  */
 
+/* See section 6.1: "Some of the timing parameters in definition of the MAC are in units of PHY
+ * symbols. For PHYs that have multiple symbol periods, the duration to be used for the MAC
+ * parameters is defined in that PHY clause."
+ */
+#define IEEE802154_PHY_SUN_FSK_863MHZ_915MHZ_SYMBOL_PERIOD_US 20U /* see section 19.1, table 19-1 */
+#define IEEE802154_PHY_OQPSK_2450MHZ_SYMBOL_PERIOD_US         16U /* see section 12.3.3 */
+
+/* TODO: Get PHY-specific symbol period from radio API. Requires an attribute getter, see
+ *       https://github.com/zephyrproject-rtos/zephyr/issues/50336#issuecomment-1251122582.
+ *       For now we assume PHYs that current drivers actually implement.
+ */
+#define IEEE802154_PHY_SYMBOL_PERIOD(is_subg_phy)                                                  \
+	((is_subg_phy) ? IEEE802154_PHY_SUN_FSK_863MHZ_915MHZ_SYMBOL_PERIOD_US                     \
+		       : IEEE802154_PHY_OQPSK_2450MHZ_SYMBOL_PERIOD_US)
+
+/* The inverse of the symbol period as defined in section 6.1. This is not necessarily the true
+ * physical symbol period, so take care to use this macro only when either the symbol period used
+ * for MAC timing is the same as the physical symbol period or if you actually mean the MAC timing
+ * symbol period.
+ */
+#define IEEE802154_PHY_SYMBOLS_PER_SECOND(symbol_period) (USEC_PER_SEC / symbol_period)
+
+/* see section 19.2.4 */
+#define IEEE802154_PHY_SUN_FSK_PHR_LEN 2
+
+/* Default PHY PIB attribute aTurnaroundTime, in PHY symbols, see section 11.3, table 11-1. */
+#define IEEE802154_PHY_A_TURNAROUND_TIME_DEFAULT 12U
+
+/* PHY PIB attribute aTurnaroundTime for SUN, RS-GFSK, TVWS, and LECIM FSK PHY,
+ * in PHY symbols, see section 11.3, table 11-1.
+ */
+#define IEEE802154_PHY_A_TURNAROUND_TIME_1MS(symbol_period)                                        \
+	DIV_ROUND_UP(USEC_PER_MSEC, symbol_period)
+
+/* TODO: Get PHY-specific turnaround time from radio API, see
+ *       https://github.com/zephyrproject-rtos/zephyr/issues/50336#issuecomment-1251122582.
+ *       For now we assume PHYs that current drivers actually implement.
+ */
+#define IEEE802154_PHY_A_TURNAROUND_TIME(is_subg_phy)                                              \
+	((is_subg_phy)                                                                             \
+		 ? IEEE802154_PHY_A_TURNAROUND_TIME_1MS(IEEE802154_PHY_SYMBOL_PERIOD(is_subg_phy)) \
+		 : IEEE802154_PHY_A_TURNAROUND_TIME_DEFAULT)
+
+/* PHY PIB attribute aCcaTime, in PHY symbols, all PHYs except for SUN O-QPSK,
+ * see section 11.3, table 11-1.
+ */
+#define IEEE802154_PHY_A_CCA_TIME 8U
+
 /**
  * @brief IEEE 802.15.4 Channel assignments
  *
@@ -35,7 +87,7 @@ extern "C" {
  * - Channels 1-10 are for 906 to 924 MHz with 2 MHz channel spacing.
  * - Channels 11-26 are for 2405 to 2530 MHz with 5 MHz channel spacing.
  *
- * For more information, please refer to 802.15.4-2015 Section 10.1.2.2.
+ * For more information, please refer to section 10.1.3.
  */
 enum ieee802154_channel {
 	IEEE802154_SUB_GHZ_CHANNEL_MIN = 0,
@@ -142,7 +194,7 @@ enum ieee802154_config_type {
 	 *  determine whether to set the bit or not based on the information
 	 *  provided with ``IEEE802154_CONFIG_ACK_FPB`` config and FPB address
 	 *  matching mode specified. Otherwise, Frame Pending bit should be set
-	 *  to ``1`` (see IEEE Std 802.15.4-2006, 7.2.2.3.1).
+	 *  to ``1`` (see section 6.7.3).
 	 */
 	IEEE802154_CONFIG_AUTO_ACK_FPB,
 
