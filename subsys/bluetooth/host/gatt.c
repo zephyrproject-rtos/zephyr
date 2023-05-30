@@ -1438,6 +1438,27 @@ static void gatt_delayed_store_enqueue(uint8_t id, const bt_addr_le_t *peer_addr
 	}
 }
 
+static void do_delayed_store(uint8_t id, const bt_addr_le_t *peer_addr)
+{
+	struct ds_peer *el = gatt_delayed_store_find(id, peer_addr);
+
+	if (bt_addr_le_is_bonded(id, peer_addr)) {
+		if (IS_ENABLED(CONFIG_BT_SETTINGS_CCC_STORE_ON_WRITE) &&
+		    atomic_test_and_clear_bit(el->flags, DELAYED_STORE_CCC)) {
+			bt_gatt_store_ccc(id, peer_addr);
+		}
+
+		if (IS_ENABLED(CONFIG_BT_SETTINGS_CF_STORE_ON_WRITE) &&
+		    atomic_test_and_clear_bit(el->flags, DELAYED_STORE_CF)) {
+			bt_gatt_store_cf(id, peer_addr);
+		}
+
+		if (atomic_get(el->flags) == 0) {
+			gatt_delayed_store_free(el);
+		}
+	}
+}
+
 static void delayed_store(struct k_work *work)
 {
 	struct ds_peer *el;
@@ -1448,21 +1469,7 @@ static void delayed_store(struct k_work *work)
 	for (size_t i = 0; i < ARRAY_SIZE(gatt_delayed_store.peer_list); i++) {
 		el = &store->peer_list[i];
 
-		if (bt_addr_le_is_bonded(el->id, &el->peer)) {
-			if (IS_ENABLED(CONFIG_BT_SETTINGS_CCC_STORE_ON_WRITE) &&
-			    atomic_test_and_clear_bit(el->flags, DELAYED_STORE_CCC)) {
-				bt_gatt_store_ccc(el->id, &el->peer);
-			}
-
-			if (IS_ENABLED(CONFIG_BT_SETTINGS_CF_STORE_ON_WRITE) &&
-			    atomic_test_and_clear_bit(el->flags, DELAYED_STORE_CF)) {
-				bt_gatt_store_cf(el->id, &el->peer);
-			}
-
-			if (atomic_get(el->flags) == 0) {
-				gatt_delayed_store_free(el);
-			}
-		}
+		do_delayed_store(el->id, &el->peer);
 	}
 }
 #endif	/* CONFIG_BT_SETTINGS_DELAYED_STORE */
@@ -6311,13 +6318,10 @@ void bt_gatt_disconnected(struct bt_conn *conn)
 #endif /* CONFIG_BT_GATT_NOTIFY_MULTIPLE */
 
 #if defined(CONFIG_BT_SETTINGS_DELAYED_STORE)
-	if (gatt_delayed_store_find(conn->id, &conn->le.dst)) {
-		int err = k_work_reschedule(&gatt_delayed_store.work, K_NO_WAIT);
+	struct ds_peer *el = gatt_delayed_store_find(conn->id, &conn->le.dst);
 
-		if (err < 0) {
-			LOG_ERR("Unable to reschedule settings storage (err %d)",
-				err);
-		}
+	if (el) {
+		do_delayed_store(el->id, &el->peer);
 	}
 #else
 	if (IS_ENABLED(CONFIG_BT_SETTINGS) &&
