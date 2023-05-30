@@ -206,7 +206,7 @@ static const RF_TxPowerTable_Entry ieee802154_cc13xx_subg_power_table[] = {
 	{ 11, RF_TxPowerTable_DEFAULT_PA_ENTRY(26, 2, 0, 51) },
 	{ 12, RF_TxPowerTable_DEFAULT_PA_ENTRY(16, 0, 0, 82) },
 	{ 13, RF_TxPowerTable_DEFAULT_PA_ENTRY(36, 0, 0, 89) },
-#ifdef CC13X2_CC26X2_BOOST_MODE
+#ifdef CONFIG_CC13X2_CC26X2_BOOST_MODE
 	{ 14, RF_TxPowerTable_DEFAULT_PA_ENTRY(63, 0, 1, 0) },
 #endif
 	RF_TxPowerTable_TERMINATION_ENTRY
@@ -232,7 +232,7 @@ static const RF_TxPowerTable_Entry ieee802154_cc13xx_subg_power_table[] = {
 	{ 11, RF_TxPowerTable_DEFAULT_PA_ENTRY(26, 2, 0, 51) },
 	{ 12, RF_TxPowerTable_DEFAULT_PA_ENTRY(16, 0, 0, 82) },
 	{ 13, RF_TxPowerTable_DEFAULT_PA_ENTRY(36, 0, 0, 89) },
-#ifdef CC13X2_CC26X2_BOOST_MODE
+#ifdef CONFIG_CC13X2_CC26X2_BOOST_MODE
 	{ 14, RF_TxPowerTable_DEFAULT_PA_ENTRY(63, 0, 1, 0) },
 #endif
 	{ 15, RF_TxPowerTable_HIGH_PA_ENTRY(18, 0, 0, 36, 0) },
