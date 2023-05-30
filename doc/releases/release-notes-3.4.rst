@@ -269,6 +269,15 @@ Architectures
 
 * RISC-V
 
+  * Added :kconfig:option:`CONFIG_PMP_NO_TOR`, :kconfig:option:`CONFIG_PMP_NO_NA4`, and
+    :kconfig:option:`CONFIG_PMP_NO_NAPOT` to allow disabling unsupported PMP range modes.
+  * Removed unused symbols: :c:macro:`_thread_offset_to_tp`,
+    :c:macro:`_thread_offset_to_priv_stack_start`, :c:macro:`_thread_offset_to_user_sp`.
+  * Added support for setting PMP granularity with :kconfig:option:`CONFIG_PMP_GRANULARITY`.
+  * Switched from accessing CSRs from inline assembly to using the :c:func:`csr_read` helper
+    function.
+  * Enabled single-threading support.
+
 * SPARC
   * Removed absolute symbol :c:macro:`_K_THREAD_NO_FLOAT_SIZEOF`
 
