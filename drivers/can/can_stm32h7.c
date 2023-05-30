@@ -168,41 +168,20 @@ static const struct can_driver_api can_stm32h7_driver_api = {
 	/* Timing limits are per the STM32H7 Reference Manual (RM0433 Rev 7),
 	 * section 56.5.7, FDCAN nominal bit timing and prescaler register
 	 * (FDCAN_NBTP).
+	 *
+	 * Beware that the reference manual contains a bug regarding the minimum
+	 * values for nominal phase segments. Valid register values are 1 and up.
 	 */
-	.timing_min = {
-		.sjw = 0x01,
-		.prop_seg = 0x00,
-		.phase_seg1 = 0x01,
-		.phase_seg2 = 0x01,
-		.prescaler = 0x01
-	},
-	.timing_max = {
-		.sjw = 0x80,
-		.prop_seg = 0x00,
-		.phase_seg1 = 0x100,
-		.phase_seg2 = 0x80,
-		.prescaler = 0x200
-	},
+	.timing_min = CAN_MCAN_TIMING_MIN_INITIALIZER,
+	.timing_max = CAN_MCAN_TIMING_MAX_INITIALIZER,
 #ifdef CONFIG_CAN_FD_MODE
 	.set_timing_data = can_mcan_set_timing_data,
 	/* Data timing limits are per the STM32H7 Reference Manual
 	 * (RM0433 Rev 7), section 56.5.3, FDCAN data bit timing and prescaler
 	 * register (FDCAN_DBTP).
 	 */
-	.timing_data_min = {
-		.sjw = 0x01,
-		.prop_seg = 0x00,
-		.phase_seg1 = 0x01,
-		.phase_seg2 = 0x01,
-		.prescaler = 0x01
-	},
-	.timing_data_max = {
-		.sjw = 0x10,
-		.prop_seg = 0x00,
-		.phase_seg1 = 0x20,
-		.phase_seg2 = 0x10,
-		.prescaler = 0x20
-	}
+	.timing_data_min = CAN_MCAN_TIMING_DATA_MIN_INITIALIZER,
+	.timing_data_max = CAN_MCAN_TIMING_DATA_MAX_INITIALIZER,
 #endif
 };
 
