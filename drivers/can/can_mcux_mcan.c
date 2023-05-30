@@ -148,21 +148,13 @@ static const struct can_driver_api mcux_mcan_driver_api = {
 	 * Note that the values here are the "physical" timing limits, whereas
 	 * the register field limits are physical values minus 1 (which is
 	 * handled by the register assignments in the common MCAN driver code).
+	 *
+	 * Beware that at least some SoC reference manuals contain a bug
+	 * regarding the minimum values for nominal phase segments. Valid
+	 * register values are 1 and up.
 	 */
-	.timing_min = {
-		.sjw = 1,
-		.prop_seg = 0,
-		.phase_seg1 = 1,
-		.phase_seg2 = 1,
-		.prescaler = 1
-	},
-	.timing_max = {
-		.sjw = 128,
-		.prop_seg = 0,
-		.phase_seg1 = 256,
-		.phase_seg2 = 128,
-		.prescaler = 512,
-	},
+	.timing_min = CAN_MCAN_TIMING_MIN_INITIALIZER,
+	.timing_max = CAN_MCAN_TIMING_MAX_INITIALIZER,
 #ifdef CONFIG_CAN_FD_MODE
 	.set_timing_data = can_mcan_set_timing_data,
 	/*
@@ -172,21 +164,13 @@ static const struct can_driver_api mcux_mcan_driver_api = {
 	 * Note that the values here are the "physical" timing limits, whereas
 	 * the register field limits are physical values minus 1 (which is
 	 * handled by the register assignments in the common MCAN driver code).
+	 *
+	 * Beware that at least some SoC reference manuals contain a bug
+	 * regarding the maximum value for data phase segment 2. Valid register
+	 * values are 0 to 31.
 	 */
-	.timing_data_min = {
-		.sjw = 1,
-		.prop_seg = 0,
-		.phase_seg1 = 1,
-		.phase_seg2 = 1,
-		.prescaler = 1,
-	},
-	.timing_data_max = {
-		.sjw = 16,
-		.prop_seg = 0,
-		.phase_seg1 = 16,
-		.phase_seg2 = 16,
-		.prescaler = 32,
-	}
+	.timing_data_min = CAN_MCAN_TIMING_DATA_MIN_INITIALIZER,
+	.timing_data_max = CAN_MCAN_TIMING_DATA_MAX_INITIALIZER,
 #endif /* CONFIG_CAN_FD_MODE */
 };
 
