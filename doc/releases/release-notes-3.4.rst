@@ -176,6 +176,9 @@ Changes in this release
 Removed APIs in this release
 ============================
 
+* Pinmux API has been removed. Pin control needs to be used as its replacement,
+  refer to :ref:`pinctrl-guide` for more details.
+
 Deprecated in this release
 ==========================
 
