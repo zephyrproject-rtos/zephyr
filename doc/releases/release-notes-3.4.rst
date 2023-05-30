@@ -173,6 +173,10 @@ Changes in this release
   has been replaced with an enum to indicate what function is used, see
   :c:struct:`fs_mgmt_file_access` for the new structure definition.
 
+* Iterable sections API is now available at
+  :zephyr_file:`zephyr/sys/iterable_sections.h`. LD linker snippets are
+  available at :zephyr_file:`zephyr/linker/iterable_sections.h`.
+
 Removed APIs in this release
 ============================
 
