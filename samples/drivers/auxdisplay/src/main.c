@@ -12,7 +12,7 @@
 
 LOG_MODULE_REGISTER(auxdisplay_sample, LOG_LEVEL_DBG);
 
-void main(void)
+int main(void)
 {
 	int rc;
 	const struct device *const dev = DEVICE_DT_GET(DT_NODELABEL(auxdisplay_0));
@@ -20,7 +20,7 @@ void main(void)
 
 	if (!device_is_ready(dev)) {
 		LOG_ERR("Auxdisplay device is not ready.");
-		return;
+		return 0;
 	}
 
 	rc = auxdisplay_cursor_set_enabled(dev, true);
@@ -35,4 +35,5 @@ void main(void)
 	if (rc != 0) {
 		LOG_ERR("Failed to write data: %d", rc);
 	}
+	return 0;
 }
