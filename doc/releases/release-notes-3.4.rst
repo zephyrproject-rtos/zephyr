@@ -401,6 +401,45 @@ Build system and infrastructure
   disabled to reduce compiler verbosity when errors occur during macro
   expansions, e.g. in device definition macros.
 
+* Twister now supports loading test configurations from alternative root
+  folder/s by using ``--alt-config-root``. When a test is found, Twister will
+  check if a test configuration file exist in any of the alternative test
+  configuration root folders. For example, given
+  ``$test_root/tests/foo/testcase.yaml``, Twister will use
+  ``$alt_config_root/tests/foo/testcase.yaml`` if it exists.
+
+* Twister now uses native YAML lists for fields that were previously defined
+  using space-separated strings. For example:
+
+  .. code-block:: yaml
+
+     platform_allow: foo bar
+
+  can now be written as:
+
+  .. code-block:: yaml
+
+     platform_allow:
+       - foo
+       - bar
+
+  This applies to the following properties:
+
+    - ``arch_exclude``
+    - ``arch_allow``
+    - ``depends_on``
+    - ``extra_args``
+    - ``extra_sections``
+    - ``platform_exclude``
+    - ``platform_allow``
+    - ``tags``
+    - ``toolchain_exclude``
+    - ``toolchain_allow``
+
+  Note that the old behavior is kept as deprecated. The
+  :zephyr_file:`scripts/utils/twister_to_list.py` script can be used to
+  automatically migrate Twister configuration files.
+
 Drivers and Sensors
 *******************
 
