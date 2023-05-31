@@ -23,6 +23,7 @@ config COMMON_LIBC_MALLOC_ARENA_SIZE
 	default 0 if MINIMAL_LIBC
 	default 16384 if MMU
 	default 2048 if USERSPACE && MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT
+	default 16384 if ARCH_POSIX
 	default -1
 	help
 	  Indicate the size in bytes of the memory arena used for
