@@ -1,0 +1,29 @@
+/* Copyright (C) 2023 BeagleBoard.org Foundation
+ * Copyright (C) 2023 S Prashanth
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <ti/j721e_r5.dtsi>
+#include <arm/ti/j721e-pinctrl.dtsi>
+#include <freq.h>
+
+/ {
+	chosen {
+		zephyr,sram = &atcm;
+		zephyr,console = &uart2;
+	};
+};
+
+&uart2 {
+	current-speed = <115200>;
+	status = "okay";
+	pinctrl-0 = <&uart2_tx_default &uart2_rx_default>;
+	pinctrl-names = "default";
+};
+
+&systick_timer {
+	status = "okay";
+};

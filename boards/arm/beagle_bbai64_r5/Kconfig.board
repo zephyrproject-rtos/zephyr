@@ -1,0 +1,9 @@
+# Copyright (C) 2023 BeagleBoard.org Foundation
+# Copyright (C) 2023 S Prashanth
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_BBAI64_R5
+	bool "BeagleBone AI-64"
+	depends on SOC_TI_J721E_R5
+	select CPU_CORTEX_R5

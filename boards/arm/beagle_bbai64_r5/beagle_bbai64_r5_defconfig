@@ -1,0 +1,20 @@
+# Copyright (C) 2023 BeagleBoard.org Foundation
+# Copyright (C) 2023 S Prashanth
+#
+# SPDX-License-Identifier: Apache-2.0
+
+CONFIG_SOC_SERIES_TI_J721E=y
+CONFIG_SOC_TI_J721E_R5=y
+
+# enable uart
+CONFIG_SERIAL=y
+
+# enable console
+CONFIG_CONSOLE=y
+CONFIG_UART_CONSOLE=y
+
+CONFIG_BUILD_OUTPUT_UF2=n
+
+CONFIG_XIP=n
+
+CONFIG_OPENAMP_RSC_TABLE=y

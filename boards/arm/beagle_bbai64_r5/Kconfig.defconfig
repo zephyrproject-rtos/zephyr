@@ -1,0 +1,11 @@
+# Copyright (C) 2023 BeagleBoard.org Foundation
+# Copyright (C) 2023 S Prashanth
+#
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_BBAI64_R5
+
+config BOARD
+	default "beagle_bbai64_r5"
+
+endif # BOARD_BBAI64_R5
