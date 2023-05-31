@@ -722,6 +722,7 @@ static void unicast_group_delete(struct bt_bap_unicast_group *unicast_group)
 static void test_cap_initiator_unicast(void)
 {
 	struct bt_bap_unicast_group *unicast_group;
+	const size_t iterations = 2;
 
 	init();
 
@@ -734,20 +735,24 @@ static void test_cap_initiator_unicast(void)
 
 	discover_sink();
 
-	unicast_group_create(&unicast_group);
+	for (size_t i = 0U; i < iterations; i++) {
+		unicast_group_create(&unicast_group);
 
-	unicast_audio_start_inval(unicast_group);
-	unicast_audio_start(unicast_group);
+		for (size_t j = 0U; j < iterations; j++) {
+			unicast_audio_start_inval(unicast_group);
+			unicast_audio_start(unicast_group);
 
-	unicast_audio_update_inval();
-	unicast_audio_update();
+			unicast_audio_update_inval();
+			unicast_audio_update();
 
-	unicast_audio_stop_inval();
-	unicast_audio_stop(unicast_group);
+			unicast_audio_stop_inval();
+			unicast_audio_stop(unicast_group);
+		}
 
-	unicast_group_delete_inval();
-	unicast_group_delete(unicast_group);
-	unicast_group = NULL;
+		unicast_group_delete_inval();
+		unicast_group_delete(unicast_group);
+		unicast_group = NULL;
+	}
 
 	PASS("CAP initiator unicast passed\n");
 }
