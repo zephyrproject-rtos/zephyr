@@ -2586,7 +2586,7 @@ struct k_fifo {
  * @param name Name of the FIFO queue.
  */
 #define K_FIFO_DEFINE(name) \
-	STRUCT_SECTION_ITERABLE_ALTERNATE(k_queue, k_fifo, name) = \
+	STRUCT_SECTION_ITERABLE(k_fifo, name) = \
 		Z_FIFO_INITIALIZER(name)
 
 /** @} */
@@ -2706,7 +2706,7 @@ struct k_lifo {
  * @param name Name of the fifo.
  */
 #define K_LIFO_DEFINE(name) \
-	STRUCT_SECTION_ITERABLE_ALTERNATE(k_queue, k_lifo, name) = \
+	STRUCT_SECTION_ITERABLE(k_lifo, name) = \
 		Z_LIFO_INITIALIZER(name)
 
 /** @} */
