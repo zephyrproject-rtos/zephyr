@@ -304,3 +304,24 @@ int xen_domctl_cacheflush(int domid,  struct xen_domctl_cacheflush *cacheflush)
 
 	return do_domctl(&domctl);
 }
+
+int xen_domctl_getvcpu(int domid, uint32_t vcpu, struct xen_domctl_getvcpuinfo *info)
+{
+	int ret;
+	xen_domctl_t domctl = {
+		.cmd = XEN_DOMCTL_getvcpuinfo,
+		.domain = domid,
+		.u.getvcpuinfo.vcpu = vcpu,
+	};
+
+	if (!info) {
+		return -EINVAL;
+	}
+
+	ret = do_domctl(&domctl);
+	if (!ret) {
+		*info = domctl.u.getvcpuinfo;
+	}
+
+	return ret;
+}
