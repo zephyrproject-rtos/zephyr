@@ -14,6 +14,7 @@ supported:
   - eeprom
   - watchdog
   - mbox
+  - flash
 testing:
   ignore_tags:
     - bluetooth
