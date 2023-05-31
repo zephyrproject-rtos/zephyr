@@ -17,11 +17,13 @@
 LOG_MODULE_REGISTER(coredump_error, CONFIG_KERNEL_LOG_LEVEL);
 
 static int error;
+static uint32_t mem_wptr;
 
 static void coredump_mem_window_backend_start(void)
 {
-	/* Reset error */
+	/* Reset error & mem write ptr */
 	error = 0;
+	mem_wptr = 0;
 	ADSP_DW->descs[1].type = ADSP_DW_SLOT_TELEMETRY;
 
 	while (LOG_PROCESS()) {
@@ -44,7 +46,7 @@ static void coredump_mem_window_backend_end(void)
 static void coredump_mem_window_backend_buffer_output(uint8_t *buf, size_t buflen)
 {
 	uint32_t *mem_window_separator = (uint32_t *)(ADSP_DW->slots[1]);
-	uint8_t *mem_window_sink = (uint8_t *)(ADSP_DW->slots[1]) + 4;
+	uint8_t *mem_window_sink = (uint8_t *)(ADSP_DW->slots[1]) + 4 + mem_wptr;
 	uint8_t *coredump_data = buf;
 	size_t data_left;
 	/* Default place for telemetry dump is in memory window. Each data is easily find using
@@ -52,12 +54,20 @@ static void coredump_mem_window_backend_buffer_output(uint8_t *buf, size_t bufle
 	 */
 	*mem_window_separator = 0x0DEC0DEB;
 
+	/* skip the overflow data. Don't wrap around to keep the most important data
+	 * such as registers and call stack in the beginning of mem window.
+	 */
+	if (mem_wptr >= ADSP_DW_SLOT_SIZE - 4)
+		return;
+
 	if (buf) {
 		for (data_left = buflen; data_left > 0; data_left--) {
 			*mem_window_sink = *coredump_data;
 			mem_window_sink++;
 			coredump_data++;
 		}
+
+		mem_wptr += buflen;
 	} else {
 		error = -EINVAL;
 	}
