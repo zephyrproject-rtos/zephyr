@@ -46,6 +46,7 @@ extern "C" {
 /**
  * @brief RTIO
  * @defgroup rtio RTIO
+ * @ingroup os_services
  * @{
  * @}
  */
