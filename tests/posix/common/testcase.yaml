@@ -1,5 +1,5 @@
 common:
-  arch_exclude: posix
+  filter: not (CONFIG_NATIVE_BUILD and CONFIG_EXTERNAL_LIBC)
   # FIXME: qemu_leon3 is excluded because of the alignment-related failure
   #        reported in the GitHub issue zephyrproject-rtos/zephyr#48992.
   platform_exclude: qemu_leon3

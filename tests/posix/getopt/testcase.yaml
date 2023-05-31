@@ -1,5 +1,5 @@
 common:
-  arch_exclude: posix
+  filter: not (CONFIG_NATIVE_BUILD and CONFIG_EXTERNAL_LIBC)
   tags:
     - posix
     - getopt
