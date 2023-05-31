@@ -15,6 +15,7 @@ if BT_MESH
 
 choice BT_MESH_CRYPTO_LIB
 	prompt "Crypto library selection for mesh security"
+	default BT_MESH_USES_TFM_PSA if BUILD_WITH_TFM
 	default BT_MESH_USES_TINYCRYPT
 
 config BT_MESH_USES_TINYCRYPT
@@ -53,9 +54,18 @@ config BT_MESH_USES_MBEDTLS_PSA
 	  on Zephyr's settings subsystem.
 	  Not possible to use for embedded devices yet.
 
+config BT_MESH_USES_TFM_PSA
+	bool "Use TF-M PSA [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	depends on BUILD_WITH_TFM
+	help
+	  Use TF-M that implements PSA security framework. Support of TF-M is
+	  experimental. It is only possible to use with platforms that TF-M supports.
+	  For more platform details see TF-M documentation.
+
 endchoice
 
-if BT_MESH_USES_MBEDTLS_PSA
+if BT_MESH_USES_MBEDTLS_PSA || BT_MESH_USES_TFM_PSA
 
 config BT_MESH_PSA_KEY_ID_USER_MIN_OFFSET
 	int "Offset of BLE Mesh key id range regarding PSA_KEY_ID_USER_MIN"
@@ -69,7 +79,7 @@ config BT_MESH_PSA_KEY_ID_USER_MIN_OFFSET
 	  for each application key, and two ids for the device key and device key candidate.
 	  It should consider the Mesh Configuration Database instances if database enabled.
 
-endif # BT_MESH_USES_MBEDTLS_PSA
+endif # BT_MESH_USES_MBEDTLS_PSA || BT_MESH_USES_TFM_PSA
 
 # Virtual option enabled whenever Generic Provisioning layer is needed
 config BT_MESH_PROV
