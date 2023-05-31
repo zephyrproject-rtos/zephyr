@@ -1090,11 +1090,13 @@ static void cis_disabled_cb(void *param)
 
 			if (IS_PERIPHERAL(cig)) {
 				/* Remove data path and ISOAL sink/source associated with this
-				 * CIS for both directions.
+				 * CIS for both directions. Disable them one at a time to make sure
+				 * both are removed, even if only one is set.
 				 */
 				ll_remove_iso_path(cis->lll.handle,
-						   BIT(BT_HCI_DATAPATH_DIR_CTLR_TO_HOST) |
 						   BIT(BT_HCI_DATAPATH_DIR_HOST_TO_CTLR));
+				ll_remove_iso_path(cis->lll.handle,
+						   BIT(BT_HCI_DATAPATH_DIR_CTLR_TO_HOST));
 
 				ll_conn_iso_stream_release(cis);
 
