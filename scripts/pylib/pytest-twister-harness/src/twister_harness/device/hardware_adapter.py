@@ -201,8 +201,7 @@ class HardwareAdapter(DeviceAbstract):
             if self.device_config.post_flash_script:
                 self.run_custom_script(self.device_config.post_flash_script, 30)
 
-    @property
-    def iter_stdout(self) -> Generator[str, None, None]:
+    def iter_stdout_lines(self) -> Generator[str, None, None]:
         """Return output from serial."""
         if not self.connection:
             return
@@ -212,6 +211,7 @@ class HardwareAdapter(DeviceAbstract):
             stream = self.connection.readline()
             self.handler_log_file.handle(data=stream)
             yield stream.decode(errors='ignore').strip()
+        self.iter_object = None
 
     def write(self, data: bytes) -> None:
         """Write data to serial"""

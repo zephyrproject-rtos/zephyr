@@ -166,8 +166,7 @@ class SimulatorAdapterBase(DeviceAbstract, abc.ABC):
         if self._exc:
             raise self._exc
 
-    @property
-    def iter_stdout(self) -> Generator[str, None, None]:
+    def iter_stdout_lines(self) -> Generator[str, None, None]:
         """Return output from serial."""
         while True:
             stream = self.queue.get()
@@ -177,6 +176,7 @@ class SimulatorAdapterBase(DeviceAbstract, abc.ABC):
             self.handler_log_file.handle(data=stream + '\n')
             yield stream
             self.queue.task_done()
+        self.iter_object = None
 
     def write(self, data: bytes) -> None:
         """Write data to serial"""
