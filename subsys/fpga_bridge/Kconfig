@@ -1,0 +1,29 @@
+# FPGA bridge configuration options
+
+# Copyright (c) 2023, Intel Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig FPGA_BRIDGE
+	bool "FPGA Bridge Subsystem"
+	help
+	  Enable support for FPGA Bridge Subsystem.
+
+if FPGA_BRIDGE
+
+module = FPGA_BRIDGE
+module-str = fpga_bridge
+source "subsys/logging/Kconfig.template.log_config"
+
+config FPGA_BRIDGE_INTEL
+	bool "Enable FPGA Bridge for Intel devices"
+	depends on ARM_SIP_SVC_SUBSYS
+	help
+	  Enable FPGA Bridges support for Intel devices.
+
+config FPGA_BRIDGE_SHELL
+	bool "FPGA Bridge commands"
+	depends on SHELL
+	help
+	  Enable FPGA bridge shell support.
+
+endif # FPGA_MANAGER

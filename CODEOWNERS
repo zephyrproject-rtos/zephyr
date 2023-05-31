@@ -878,6 +878,7 @@ scripts/build/gen_image_info.py           @tejlmand
 /subsys/usb/                              @jfischer-no
 /subsys/usb/host/class/                   @nareshrkumar
 /subsys/usb/usb_c/                        @sambhurst
+/subsys/fpga_bridge                       @hardeepsharma95
 /tests/                                   @nashif
 /tests/arch/arm/                          @ioannisg @stephanosio
 /tests/benchmarks/cmsis_dsp/              @stephanosio
