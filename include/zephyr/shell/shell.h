@@ -69,7 +69,7 @@ extern "C" {
 /**
  * @brief Shell API
  * @defgroup shell_api Shell API
- * @ingroup shell
+ * @ingroup os_services
  * @{
  */
 

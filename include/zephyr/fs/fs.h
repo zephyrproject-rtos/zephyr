@@ -20,6 +20,7 @@ extern "C" {
 /**
  * @brief File System APIs
  * @defgroup file_system_api File System APIs
+ * @ingroup os_services
  * @{
  */
 struct fs_file_system_t;
