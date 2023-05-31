@@ -11,6 +11,7 @@ tests:
       - posix
       - sparc
       - mips
+      - nios2
     # SMP is excluded as the test was only written for UP
     filter: not CONFIG_SMP
     integration_platforms:
