@@ -13,7 +13,7 @@ enum bt_mesh_key_type {
 	BT_MESH_KEY_TYPE_DEV
 };
 
-#if defined CONFIG_BT_MESH_USES_MBEDTLS_PSA
+#if defined CONFIG_BT_MESH_USES_MBEDTLS_PSA || defined CONFIG_BT_MESH_USES_TFM_PSA
 
 int bt_mesh_key_import(enum bt_mesh_key_type type, const uint8_t in[16], struct bt_mesh_key *out);
 int bt_mesh_key_export(uint8_t out[16], const struct bt_mesh_key *in);
