@@ -1,0 +1,23 @@
+/* Copyright (C) 2023 BeagleBoard.org Foundation
+ * Copyright (C) 2023 S Prashanth
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <freq.h>
+#include <arm/armv7-r.dtsi>
+
+/ {
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	uart0: uart@2800000 {
+		compatible = "ns16550";
+		reg = <0x02800000 0x100>;
+		clock-frequency = <48000000>;
+		current-speed = <115200>;
+		reg-shift = <2>;
+		status = "okay";
+	};
+};

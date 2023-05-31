@@ -1,0 +1,30 @@
+/* Copyright (C) 2023 BeagleBoard.org Foundation
+ * Copyright (C) 2023 S Prashanth
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/ti/j721e.dtsi>
+
+/ {
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-r5";
+			reg = <0>;
+		};
+	};
+
+	soc {
+		atcm: memory@0 {
+			compatible = "mmio-sram";
+			reg = <0x00000000 DT_SIZE_K(32)>;
+		};
+	};
+};
