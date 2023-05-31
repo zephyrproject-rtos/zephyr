@@ -167,6 +167,32 @@ static int eeprom_target_stop(struct i2c_target_config *config)
 	return 0;
 }
 
+#ifdef CONFIG_I2C_TARGET_BUFFER_MODE
+static void eeprom_target_buf_write_received(struct i2c_target_config *config,
+					     uint8_t *ptr, uint32_t len)
+{
+	struct i2c_eeprom_target_data *data = CONTAINER_OF(config,
+						struct i2c_eeprom_target_data,
+						config);
+	/* The first byte is offset */
+	data->buffer_idx = *ptr;
+	memcpy(&data->buffer[data->buffer_idx], ptr + 1, len - 1);
+}
+
+static int eeprom_target_buf_read_requested(struct i2c_target_config *config,
+					    uint8_t **ptr, uint32_t *len)
+{
+	struct i2c_eeprom_target_data *data = CONTAINER_OF(config,
+						struct i2c_eeprom_target_data,
+						config);
+
+	*ptr = &data->buffer[data->buffer_idx];
+	*len = data->buffer_size;
+
+	return 0;
+}
+#endif
+
 static int eeprom_target_register(const struct device *dev)
 {
 	const struct i2c_eeprom_target_config *cfg = dev->config;
@@ -193,6 +219,10 @@ static const struct i2c_target_callbacks eeprom_callbacks = {
 	.read_requested = eeprom_target_read_requested,
 	.write_received = eeprom_target_write_received,
 	.read_processed = eeprom_target_read_processed,
+#ifdef CONFIG_I2C_TARGET_BUFFER_MODE
+	.buf_write_received = eeprom_target_buf_write_received,
+	.buf_read_requested = eeprom_target_buf_read_requested,
+#endif
 	.stop = eeprom_target_stop,
 };
 
