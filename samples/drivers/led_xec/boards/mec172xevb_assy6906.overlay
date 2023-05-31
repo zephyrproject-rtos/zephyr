@@ -7,27 +7,31 @@
 &bbled0 {
 	compatible = "microchip,xec-bbled";
 	pinctrl-0 = <&led0_gpio156>;
-	pinctrl-names = "default";
+	pinctrl-1 = <&led0_gpio156_sleep>;
+	pinctrl-names = "default", "sleep";
 	status = "okay";
 };
 
 &bbled1 {
 	compatible = "microchip,xec-bbled";
 	pinctrl-0 = <&led1_gpio157>;
-	pinctrl-names = "default";
+	pinctrl-1 = <&led1_gpio157_sleep>;
+	pinctrl-names = "default", "sleep";
 	status = "okay";
 };
 
 &bbled2 {
 	compatible = "microchip,xec-bbled";
 	pinctrl-0 = <&led2_gpio153>;
-	pinctrl-names = "default";
+	pinctrl-1 = <&led2_gpio153_sleep>;
+	pinctrl-names = "default", "sleep";
 	status = "okay";
 };
 
 &bbled3 {
 	compatible = "microchip,xec-bbled";
 	pinctrl-0 = <&led3_gpio035>;
-	pinctrl-names = "default";
+	pinctrl-1 = <&led3_gpio035_sleep>;
+	pinctrl-names = "default", "sleep";
 	status = "okay";
 };
