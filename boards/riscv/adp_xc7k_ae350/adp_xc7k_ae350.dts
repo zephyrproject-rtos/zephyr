@@ -26,7 +26,8 @@
 		zephyr,console = &uart1;
 		zephyr,shell-uart = &uart1;
 		zephyr,sram = &dram;
-		zephyr,flash = &flash0;
+		zephyr,flash = &mx25u16;
+		zephyr,flash-controller = &mx25u16;
 	};
 
 	leds {
@@ -157,13 +158,27 @@
 
 &spi0 {
 	status = "okay";
-	flash0: flash@0 {
-		compatible = "jedec,spi-nor";
-		reg = <0>;
+	mx25u16: qspi-nor-flash@0 {
+		compatible = "jedec,spi-nor", "andestech,qspi-nor";
 		size = <16777216>;
-		spi-max-frequency = <1000000>;
+		spi-max-frequency = <10000000>;
 		jedec-id = [c2 25 35];
-		status = "disabled";
+		status = "okay";
+		reg = <0>;
+		sfdp-bfp = [
+			e5 20 f1 ff  ff ff ff 00  44 eb 08 6b  08 3b 04 bb
+			fe ff ff ff  ff ff 00 ff  ff ff 44 eb  0c 20 0f 52
+			10 d8 00 ff
+		];
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			storage_partition: partition@0 {
+				label = "storage";
+				reg = <0x0 DT_SIZE_K(1024)>;
+			};
+		};
 	};
 };
 
