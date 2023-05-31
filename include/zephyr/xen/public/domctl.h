@@ -195,6 +195,18 @@ struct xen_domctl_vcpucontext {
 	XEN_GUEST_HANDLE_64(vcpu_guest_context_t) ctxt; /* IN/OUT */
 };
 
+/* XEN_DOMCTL_getvcpuinfo */
+struct xen_domctl_getvcpuinfo {
+	/* IN variables. */
+	uint32_t vcpu;
+	/* OUT variables. */
+	uint8_t  online;                  /* currently online (not hotplugged)? */
+	uint8_t  blocked;                 /* blocked waiting for an event? */
+	uint8_t  running;                 /* currently scheduled on its CPU? */
+	uint64_aligned_t cpu_time;        /* total cpu time consumed (ns) */
+	uint32_t cpu;                     /* current mapping   */
+};
+
 /*
  * XEN_DOMCTL_max_vcpus:
  *
@@ -499,6 +511,7 @@ struct xen_domctl {
 		struct xen_domctl_getdomaininfo getdomaininfo;
 		struct xen_domctl_max_mem max_mem;
 		struct xen_domctl_vcpucontext vcpucontext;
+		struct xen_domctl_getvcpuinfo getvcpuinfo;
 		struct xen_domctl_max_vcpus max_vcpus;
 		struct xen_domctl_scheduler_op scheduler_op;
 		struct xen_domctl_iomem_permission iomem_permission;
