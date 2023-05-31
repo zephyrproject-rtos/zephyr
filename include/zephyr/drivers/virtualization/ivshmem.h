@@ -10,6 +10,7 @@
 /**
  * @brief ivshmem reference API
  * @defgroup ivshmem ivshmem reference API
+ * @ingroup io_interfaces
  * @{
  */
 
