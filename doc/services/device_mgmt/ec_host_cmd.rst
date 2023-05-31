@@ -69,6 +69,18 @@ buffers are useful for applications that use multiple backends. Defining separat
 backend would increase the memory usage. However, some buffers can be defined by a peripheral driver
 e.g. eSPI. These ones should be reused as much as possible.
 
+Logging
+*******
+
+The host command has an embedded logging system of the ongoing communication. The are a few logging
+levels:
+
+* `LOG_INF` is used to log a command id of a new command and not success responses. Repeats of the
+  same command are not logged
+* `LOG_DBG` logs every command, even repeats
+* `LOG_DBG` + :kconfig:option:`CONFIG_EC_HOST_CMD_LOG_DBG_BUFFERS` logs every command and responses
+  with the data buffers
+
 API Reference
 *************
 
