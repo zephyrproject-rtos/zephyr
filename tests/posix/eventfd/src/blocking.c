@@ -21,12 +21,8 @@ ZTEST_F(eventfd, test_write_then_read)
 	zassert_true(ret == 0, "read ret %d", ret);
 	zassert_true(val == 5, "val == %d", val);
 
-	close(fixture->fd);
-
 	/* Test EFD_SEMAPHORE */
-
-	fixture->fd = eventfd(0, EFD_SEMAPHORE);
-	zassert_true(fixture->fd >= 0, "fd == %d", fixture->fd);
+	reopen(&fixture->fd, 0, EFD_SEMAPHORE);
 
 	ret = eventfd_write(fixture->fd, 3);
 	zassert_true(ret == 0, "write ret %d", ret);
