@@ -56,6 +56,73 @@ changing the mbedTLS revision on ``west.yaml`` to the previous one
 by a security expert to ensure that the know vulnerabilities in that version
 don't affect the product.
 
+Vulnerabilities addressed in this update:
+
+* MBEDTLS_AESNI_C, which is enabled by default, was silently ignored on
+  builds that couldn't compile the GCC-style assembly implementation
+  (most notably builds with Visual Studio), leaving them vulnerable to
+  timing side-channel attacks. There is now an intrinsics-based AES-NI
+  implementation as a fallback for when the assembly one cannot be used.
+
+* Fix potential heap buffer overread and overwrite in DTLS if
+  MBEDTLS_SSL_DTLS_CONNECTION_ID is enabled and
+  MBEDTLS_SSL_CID_IN_LEN_MAX > 2 * MBEDTLS_SSL_CID_OUT_LEN_MAX.
+
+* An adversary with access to precise enough information about memory
+  accesses (typically, an untrusted operating system attacking a secure
+  enclave) could recover an RSA private key after observing the victim
+  performing a single private-key operation if the window size used for the
+  exponentiation was 3 or smaller. Found and reported by Zili KOU,
+  Wenjian HE, Sharad Sinha, and Wei ZHANG. See "Cache Side-channel Attacks
+  and Defenses of the Sliding Window Algorithm in TEEs" - Design, Automation
+  and Test in Europe 2023.
+
+* Zeroize dynamically-allocated buffers used by the PSA Crypto key storage
+  module before freeing them. These buffers contain secret key material, and
+  could thus potentially leak the key through freed heap.
+
+* Fix a potential heap buffer overread in TLS 1.2 server-side when
+  MBEDTLS_USE_PSA_CRYPTO is enabled, an opaque key (created with
+  mbedtls_pk_setup_opaque()) is provisioned, and a static ECDH ciphersuite
+  is selected. This may result in an application crash or potentially an
+  information leak.
+
+* Fix a buffer overread in DTLS ClientHello parsing in servers with
+  MBEDTLS_SSL_DTLS_CLIENT_PORT_REUSE enabled. An unauthenticated client
+  or a man-in-the-middle could cause a DTLS server to read up to 255 bytes
+  after the end of the SSL input buffer. The buffer overread only happens
+  when MBEDTLS_SSL_IN_CONTENT_LEN is less than a threshold that depends on
+  the exact configuration: 258 bytes if using mbedtls_ssl_cookie_check(),
+  and possibly up to 571 bytes with a custom cookie check function.
+  Reported by the Cybeats PSI Team.
+
+* Zeroize several intermediate variables used to calculate the expected
+  value when verifying a MAC or AEAD tag. This hardens the library in
+  case the value leaks through a memory disclosure vulnerability. For
+  example, a memory disclosure vulnerability could have allowed a
+  man-in-the-middle to inject fake ciphertext into a DTLS connection.
+
+* In psa_cipher_generate_iv() and psa_cipher_encrypt(), do not read back
+  from the output buffer. This fixes a potential policy bypass or decryption
+  oracle vulnerability if the output buffer is in memory that is shared with
+  an untrusted application.
+
+* Fix a double-free that happened after mbedtls_ssl_set_session() or
+  mbedtls_ssl_get_session() failed with MBEDTLS_ERR_SSL_ALLOC_FAILED
+  (out of memory). After that, calling mbedtls_ssl_session_free()
+  and mbedtls_ssl_free() would cause an internal session buffer to
+  be free()'d twice.
+
+* Fix a bias in the generation of finite-field Diffie-Hellman-Merkle (DHM)
+  private keys and of blinding values for DHM and elliptic curves (ECP)
+  computations. Reported by FlorianF89 in #4245.
+
+* Fix a potential side channel vulnerability in ECDSA ephemeral key generation.
+  An adversary who is capable of very precise timing measurements could
+  learn partial information about the leading bits of the nonce used for the
+  signature, allowing the recovery of the private key after observing a
+  large number of signature o
+
 Security Vulnerability Related
 ******************************
 
