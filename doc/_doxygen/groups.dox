@@ -16,4 +16,9 @@
 @{
 @}
 
+@brief Testing
+@defgroup testing Testing
+@{
+@}
+
 */
