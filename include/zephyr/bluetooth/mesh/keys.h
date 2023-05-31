@@ -12,7 +12,7 @@
 #define ZEPHYR_INCLUDE_BLUETOOTH_MESH_KEYS_H_
 
 #include <stdint.h>
-#if defined CONFIG_BT_MESH_USES_MBEDTLS_PSA
+#if defined CONFIG_BT_MESH_USES_MBEDTLS_PSA || defined CONFIG_BT_MESH_USES_TFM_PSA
 #include <psa/crypto.h>
 #endif
 
@@ -20,7 +20,7 @@
 extern "C" {
 #endif
 
-#if defined CONFIG_BT_MESH_USES_MBEDTLS_PSA
+#if defined CONFIG_BT_MESH_USES_MBEDTLS_PSA || defined CONFIG_BT_MESH_USES_TFM_PSA
 
 /** The structure that keeps representation of key. */
 struct bt_mesh_key {
