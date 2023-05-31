@@ -624,7 +624,7 @@ static int nrf5_tx(const struct device *dev,
 
 	LOG_DBG("Result: %d", nrf5_data.tx_result);
 
-#if defined(CONFIG_IEEE802154_2015)
+#if defined(CONFIG_NRF_802154_ENCRYPTION)
 	/*
 	 * When frame encryption by the radio driver is enabled, the frame stored in
 	 * the tx_psdu buffer is:
@@ -795,7 +795,7 @@ static void nrf5_iface_init(struct net_if *iface)
 	ieee802154_init(iface);
 }
 
-#if defined(CONFIG_IEEE802154_2015)
+#if defined(CONFIG_NRF_802154_ENCRYPTION)
 static void nrf5_config_mac_keys(struct ieee802154_key *mac_keys)
 {
 	static nrf_802154_key_id_t stored_key_ids[NRF_802154_SECURITY_KEY_STORAGE_SIZE];
@@ -830,7 +830,7 @@ static void nrf5_config_mac_keys(struct ieee802154_key *mac_keys)
 		stored_key_ids[i].p_key_id = &stored_ids[i];
 	};
 }
-#endif /* CONFIG_IEEE802154_2015 */
+#endif /* CONFIG_NRF_802154_ENCRYPTION */
 
 static int nrf5_configure(const struct device *dev,
 			  enum ieee802154_config_type type,
@@ -896,7 +896,7 @@ static int nrf5_configure(const struct device *dev,
 		nrf5_data.event_handler = config->event_handler;
 		break;
 
-#if defined(CONFIG_IEEE802154_2015)
+#if defined(CONFIG_NRF_802154_ENCRYPTION)
 	case IEEE802154_CONFIG_MAC_KEYS:
 		nrf5_config_mac_keys(config->mac_keys);
 		break;
@@ -908,7 +908,7 @@ static int nrf5_configure(const struct device *dev,
 	case IEEE802154_CONFIG_FRAME_COUNTER_IF_LARGER:
 		nrf_802154_security_global_frame_counter_set_if_larger(config->frame_counter);
 		break;
-#endif /* CONFIG_IEEE802154_2015 */
+#endif /* CONFIG_NRF_802154_ENCRYPTION */
 
 	case IEEE802154_CONFIG_ENH_ACK_HEADER_IE: {
 		uint8_t short_addr_le[SHORT_ADDRESS_SIZE];
