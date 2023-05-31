@@ -198,6 +198,14 @@ typedef struct k_thread_runtime_stats {
 #ifdef CONFIG_SCHED_THREAD_USAGE
 	uint64_t execution_cycles;
 	uint64_t total_cycles;        /* total # of non-idle cycles */
+
+#ifdef CONFIG_THREAD_RUNTIME_STATS_BETWEEN_COLLECTIONS
+	uint64_t execution_cycles_delta;
+	/*
+	 * total # of non-idle cycles since last collection
+	 */
+	uint64_t total_cycles_delta;
+#endif
 	/*
 	 * In the context of thread statistics, [execution_cycles] is the same
 	 * as the total # of non-idle cycles. In the context of CPU statistics,
@@ -226,6 +234,9 @@ typedef struct k_thread_runtime_stats {
 	 */
 
 	uint64_t idle_cycles;
+#ifdef CONFIG_THREAD_RUNTIME_STATS_BETWEEN_COLLECTIONS
+	uint64_t idle_cycles_delta;
+#endif
 #endif
 
 #if defined(__cplusplus) && !defined(CONFIG_SCHED_THREAD_USAGE) &&                                 \

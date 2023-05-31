@@ -17,6 +17,9 @@
 
 struct k_cycle_stats {
 	uint64_t  total;        /**< total usage in cycles */
+#ifdef CONFIG_THREAD_RUNTIME_STATS_BETWEEN_COLLECTIONS
+	uint64_t  total_delta;  /* total usage in cycles since last collection */
+#endif
 #if defined(CONFIG_SCHED_THREAD_USAGE_ANALYSIS) || defined(__DOXYGEN__)
 	/**
 	 * @name Fields available when CONFIG_SCHED_THREAD_USAGE_ANALYSIS is selected.

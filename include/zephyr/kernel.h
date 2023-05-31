@@ -6047,6 +6047,11 @@ int k_thread_runtime_stats_get(k_tid_t thread,
 			       k_thread_runtime_stats_t *stats);
 
 /**
+ * @brief Cleanup per-collection statistics of all CPUs
+ */
+void k_thread_runtime_stats_all_cleanup(void);
+
+/**
  * @brief Get the runtime statistics of all threads
  *
  * @param stats Pointer to struct to copy statistics into.
