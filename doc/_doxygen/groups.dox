@@ -1,7 +1,7 @@
 /**
 
-@defgroup subsys Subsystems
-@brief Zephyr Subsystems
+@defgroup os_services Operating System Services
+@brief Operating System Services
 @{
 @}
 
