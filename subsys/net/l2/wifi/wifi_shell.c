@@ -313,22 +313,19 @@ static void wifi_mgmt_event_handler(struct net_mgmt_event_callback *cb,
 	}
 }
 
-static int __wifi_args_to_params(size_t argc, char *argv[],
-				struct wifi_connect_req_params *params)
+static int __wifi_args_to_params(char *argv[],
+				 struct wifi_connect_req_params *params)
 {
 	char *endptr;
-	int idx = 1;
-
-	if (argc < 1) {
-		return -EINVAL;
-	}
+	int idx = 0;
 
 	/* SSID */
-	params->ssid = argv[0];
+	params->ssid = argv[idx];
 	params->ssid_length = strlen(params->ssid);
+	idx++;
 
 	/* Channel (optional) */
-	if ((idx < argc) && (strlen(argv[idx]) <= 3)) {
+	if ((argv[idx]) && (strlen(argv[idx]) <= 3)) {
 		params->channel = strtol(argv[idx], &endptr, 10);
 		if (*endptr != '\0') {
 			return -EINVAL;
@@ -344,7 +341,7 @@ static int __wifi_args_to_params(size_t argc, char *argv[],
 	}
 
 	/* PSK (optional) */
-	if (idx < argc) {
+	if (argv[idx]) {
 		params->psk = argv[idx];
 		params->psk_length = strlen(argv[idx]);
 		/* Defaults */
@@ -353,7 +350,7 @@ static int __wifi_args_to_params(size_t argc, char *argv[],
 		idx++;
 
 		/* Security type (optional) */
-		if (idx < argc) {
+		if (argv[idx]) {
 			unsigned int security = strtol(argv[idx], &endptr, 10);
 
 			if (security <= WIFI_SECURITY_TYPE_MAX) {
@@ -362,7 +359,7 @@ static int __wifi_args_to_params(size_t argc, char *argv[],
 			idx++;
 
 			/* MFP (optional) */
-			if (idx < argc) {
+			if (argv[idx]) {
 				unsigned int mfp = strtol(argv[idx], &endptr, 10);
 
 				if (mfp <= WIFI_MFP_REQUIRED) {
@@ -385,7 +382,12 @@ static int cmd_wifi_connect(const struct shell *sh, size_t argc,
 	struct net_if *iface = net_if_get_default();
 	struct wifi_connect_req_params cnx_params = { 0 };
 
-	if (__wifi_args_to_params(argc - 1, &argv[1], &cnx_params)) {
+	if (!argv[1]) {
+		shell_help(sh);
+		return -ENOEXEC;
+	}
+
+	if (__wifi_args_to_params(&argv[1], &cnx_params)) {
 		shell_help(sh);
 		return -ENOEXEC;
 	}
@@ -877,7 +879,12 @@ static int cmd_wifi_ap_enable(const struct shell *sh, size_t argc,
 	static struct wifi_connect_req_params cnx_params;
 	int ret;
 
-	if (__wifi_args_to_params(argc - 1, &argv[1], &cnx_params)) {
+	if (!argv[1]) {
+		shell_help(sh);
+		return -ENOEXEC;
+	}
+
+	if (__wifi_args_to_params(&argv[1], &cnx_params)) {
 		shell_help(sh);
 		return -ENOEXEC;
 	}
