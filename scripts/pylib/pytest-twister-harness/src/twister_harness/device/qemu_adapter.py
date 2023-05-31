@@ -145,12 +145,11 @@ class QemuAdapter(DeviceAbstract):
             logger.error(msg)
             raise TwisterHarnessException(msg)
 
-    @property
-    def iter_stdout(self) -> Generator[str, None, None]:
+    def iter_stdout_lines(self) -> Generator[str, None, None]:
         if not self.connection:
             return
-        # fifo file can be not create yet, so we need to wait for a while
-        self._wait_for_fifo()
+        if not self.connection.is_open:
+            self._wait_for_fifo()
 
         # create unblocking reading from fifo file
         q: Queue = Queue()
@@ -184,11 +183,15 @@ class QemuAdapter(DeviceAbstract):
             pass
         finally:
             t.join(1)
+            self.iter_object = None
 
     def write(self, data: bytes) -> None:
         """Write data to serial"""
-        if self.connection:
-            self.connection.write(data)
+        if not self.connection:
+            return
+        if not self.connection.is_open:
+            self._wait_for_fifo()
+        self.connection.write(data)
 
     def initialize_log_files(self):
         self.handler_log_file = HandlerLogFile.create(build_dir=self.device_config.build_dir)

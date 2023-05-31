@@ -4,16 +4,15 @@
 
 import time
 import logging
-import pytest  # noqa # pylint: disable=unused-import
 
 from twister_harness.device.device_abstract import DeviceAbstract
 
 logger = logging.getLogger(__name__)
 
 
-def wait_for_message(iter_stdout, message, timeout=60):
+def wait_for_message(dut: DeviceAbstract, message, timeout=20):
     time_started = time.time()
-    for line in iter_stdout:
+    for line in dut.iter_stdout:
         if line:
             logger.debug("#: " + line)
         if message in line:
@@ -22,15 +21,25 @@ def wait_for_message(iter_stdout, message, timeout=60):
             return False
 
 
-def test_shell_print_help(dut: DeviceAbstract):
-    time.sleep(1)  # wait for application initialization on DUT
+def wait_for_prompt(dut: DeviceAbstract, prompt='uart:~$', timeout=20):
+    time_started = time.time()
+    while True:
+        dut.write(b'\n')
+        for line in dut.iter_stdout:
+            if prompt in line:
+                logger.debug('Got prompt')
+                return True
+        if time.time() > time_started + timeout:
+            return False
 
+
+def test_shell_print_help(dut: DeviceAbstract):
+    wait_for_prompt(dut)
     dut.write(b'help\n')
-    assert wait_for_message(dut.iter_stdout, "Available commands")
+    assert wait_for_message(dut, "Available commands")
 
 
 def test_shell_print_version(dut: DeviceAbstract):
-    time.sleep(1)  # wait for application initialization on DUT
-
+    wait_for_prompt(dut)
     dut.write(b'kernel version\n')
-    assert wait_for_message(dut.iter_stdout, "Zephyr version")
+    assert wait_for_message(dut, "Zephyr version")

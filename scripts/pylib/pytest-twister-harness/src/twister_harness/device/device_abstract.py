@@ -25,6 +25,7 @@ class DeviceAbstract(abc.ABC):
         self.device_config: DeviceConfig = device_config
         self.handler_log_file: LogFile = NullLogFile.create()
         self.device_log_file: LogFile = NullLogFile.create()
+        self.iter_object: Generator[str, None, None] | None = None
 
     def __repr__(self) -> str:
         return f'{self.__class__.__name__}()'
@@ -55,11 +56,6 @@ class DeviceAbstract(abc.ABC):
         :param timeout: time out in seconds
         """
 
-    @property
-    @abc.abstractmethod
-    def iter_stdout(self) -> Generator[str, None, None]:
-        """Iterate stdout from a device."""
-
     @abc.abstractmethod
     def write(self, data: bytes) -> None:
         """Write data bytes to device"""
@@ -73,22 +69,17 @@ class DeviceAbstract(abc.ABC):
     def stop(self) -> None:
         """Stop device."""
 
-    # @abc.abstractmethod
-    # def read(self, size=1) -> None:
-    #     """Read size bytes from device"""
+    @abc.abstractmethod
+    def iter_stdout_lines(self) -> Generator[str, None, None]:
+        """A generator that yields lines read from device"""
 
-    # def read_until(self, expected, size=None):
-    #     """Read until an expected bytes sequence is found"""
-    #     lenterm = len(expected)
-    #     line = bytearray()
-    #     while True:
-    #         c = self.read(1)
-    #         if c:
-    #             line += c
-    #             if line[-lenterm:] == expected:
-    #                 break
-    #             if size is not None and len(line) >= size:
-    #                 break
-    #         else:
-    #             break
-    #     return bytes(line)
+    @property
+    def iter_stdout(self) -> Generator[str, None, None]:
+        """
+        Get generator object to iterate stdout from a device.
+        This wrapper method is added to avoid problems, when
+        user creates an instance of generator multiple times.
+        """
+        if not self.iter_object:
+            self.iter_object = self.iter_stdout_lines()
+        return self.iter_object
