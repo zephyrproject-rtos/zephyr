@@ -34,5 +34,6 @@ int xen_domctl_max_vcpus(int domid, int max_vcpus);
 int xen_domctl_createdomain(int domid, struct xen_domctl_createdomain *config);
 int xen_domctl_cacheflush(int domid,  struct xen_domctl_cacheflush *cacheflush);
 int xen_domctl_destroydomain(int domid);
+int xen_domctl_getvcpu(int domid, uint32_t vcpu, struct xen_domctl_getvcpuinfo *info);
 
 #endif /* __XEN_DOM0_DOMCTL_H__ */
