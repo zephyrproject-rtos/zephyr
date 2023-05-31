@@ -293,6 +293,13 @@ enum {
 	CAP_UNICAST_PROC_STATE_FLAG_NUM,
 } cap_unicast_proc_state;
 
+enum cap_unicast_proc_type {
+	CAP_UNICAST_PROC_TYPE_NONE,
+	CAP_UNICAST_PROC_TYPE_START,
+	CAP_UNICAST_PROC_TYPE_UPDATE,
+	CAP_UNICAST_PROC_TYPE_STOP,
+};
+
 enum cap_unicast_subproc_type {
 	CAP_UNICAST_SUBPROC_TYPE_NONE,
 	CAP_UNICAST_SUBPROC_TYPE_CODEC_CONFIG,
@@ -311,6 +318,7 @@ struct cap_unicast_proc {
 	size_t stream_initiated_cnt;
 	/* Number of streams done with the procedure */
 	size_t stream_done_cnt;
+	enum cap_unicast_proc_type proc_type;
 	enum cap_unicast_subproc_type subproc_type;
 	int err;
 	struct bt_conn *failed_conn;
@@ -809,22 +817,42 @@ static int cap_initiator_unicast_audio_configure(
 	return 0;
 }
 
-static void cap_initiator_unicast_audio_start_complete(void)
+static void cap_initiator_unicast_audio_proc_complete(void)
 {
 	struct bt_bap_unicast_group *unicast_group;
+	enum cap_unicast_proc_type proc_type;
 	struct bt_conn *failed_conn;
 	int err;
 
-	/* All streams in the procedure share the same unicast group, so we just
-	 * use the reference from the first stream
-	 */
-	unicast_group = (struct bt_bap_unicast_group *)active_proc.streams[0]->bap_stream.group;
+	unicast_group = active_proc.unicast_group;
 	failed_conn = active_proc.failed_conn;
 	err = active_proc.err;
-
+	proc_type = active_proc.proc_type;
 	(void)memset(&active_proc, 0, sizeof(active_proc));
-	if (cap_cb != NULL && cap_cb->unicast_start_complete != NULL) {
-		cap_cb->unicast_start_complete(unicast_group, err, failed_conn);
+
+	if (cap_cb == NULL) {
+		return;
+	}
+
+	switch (proc_type) {
+	case CAP_UNICAST_PROC_TYPE_START:
+		if (cap_cb->unicast_start_complete != NULL) {
+			cap_cb->unicast_start_complete(unicast_group, err, failed_conn);
+		}
+		break;
+	case CAP_UNICAST_PROC_TYPE_UPDATE:
+		if (cap_cb->unicast_update_complete != NULL) {
+			cap_cb->unicast_update_complete(err, failed_conn);
+		}
+		break;
+	case CAP_UNICAST_PROC_TYPE_STOP:
+		if (cap_cb->unicast_stop_complete != NULL) {
+			cap_cb->unicast_stop_complete(unicast_group, err, failed_conn);
+		}
+		break;
+	case CAP_UNICAST_PROC_TYPE_NONE:
+	default:
+		__ASSERT(false, "Invalid proc_type: %u", proc_type);
 	}
 }
 
@@ -847,6 +875,7 @@ int bt_cap_initiator_unicast_audio_start(const struct bt_cap_unicast_audio_start
 	}
 
 	active_proc.unicast_group = unicast_group;
+	active_proc.proc_type = CAP_UNICAST_PROC_TYPE_START;
 
 	return cap_initiator_unicast_audio_configure(param);
 }
@@ -886,7 +915,7 @@ void bt_cap_initiator_codec_configured(struct bt_cap_stream *cap_stream)
 
 	if (cap_proc_is_aborted()) {
 		if (cap_proc_all_streams_handled()) {
-			cap_initiator_unicast_audio_start_complete();
+			cap_initiator_unicast_audio_proc_complete();
 		}
 
 		return;
@@ -944,7 +973,7 @@ void bt_cap_initiator_codec_configured(struct bt_cap_stream *cap_stream)
 			 */
 			cap_abort_proc(conns[i], err);
 			if (i == 0U) {
-				cap_initiator_unicast_audio_start_complete();
+				cap_initiator_unicast_audio_proc_complete();
 			}
 
 			return;
@@ -979,7 +1008,7 @@ void bt_cap_initiator_qos_configured(struct bt_cap_stream *cap_stream)
 
 	if (cap_proc_is_aborted()) {
 		if (cap_proc_all_streams_handled()) {
-			cap_initiator_unicast_audio_start_complete();
+			cap_initiator_unicast_audio_proc_complete();
 		}
 
 		return;
@@ -1006,7 +1035,7 @@ void bt_cap_initiator_qos_configured(struct bt_cap_stream *cap_stream)
 			 */
 			cap_abort_proc(bap_stream->conn, err);
 			if (i == 0U) {
-				cap_initiator_unicast_audio_start_complete();
+				cap_initiator_unicast_audio_proc_complete();
 			}
 
 			return;
@@ -1042,7 +1071,7 @@ void bt_cap_initiator_enabled(struct bt_cap_stream *cap_stream)
 
 	if (cap_proc_is_aborted()) {
 		if (cap_proc_all_streams_handled()) {
-			cap_initiator_unicast_audio_start_complete();
+			cap_initiator_unicast_audio_proc_complete();
 		}
 
 		return;
@@ -1065,7 +1094,7 @@ void bt_cap_initiator_enabled(struct bt_cap_stream *cap_stream)
 		 * once all sent requests has completed
 		 */
 		cap_abort_proc(bap_stream->conn, err);
-		cap_initiator_unicast_audio_start_complete();
+		cap_initiator_unicast_audio_proc_complete();
 
 		return;
 	}
@@ -1108,24 +1137,10 @@ void bt_cap_initiator_started(struct bt_cap_stream *cap_stream)
 			 * once all sent requests has completed
 			 */
 			cap_abort_proc(bap_stream->conn, err);
-			cap_initiator_unicast_audio_start_complete();
+			cap_initiator_unicast_audio_proc_complete();
 		}
 	} else {
-		cap_initiator_unicast_audio_start_complete();
-	}
-}
-
-static void cap_initiator_unicast_audio_update_complete(void)
-{
-	struct bt_conn *failed_conn;
-	int err;
-
-	failed_conn = active_proc.failed_conn;
-	err = active_proc.err;
-
-	(void)memset(&active_proc, 0, sizeof(active_proc));
-	if (cap_cb != NULL && cap_cb->unicast_update_complete != NULL) {
-		cap_cb->unicast_update_complete(err, failed_conn);
+		cap_initiator_unicast_audio_proc_complete();
 	}
 }
 
@@ -1208,6 +1223,7 @@ int bt_cap_initiator_unicast_audio_update(const struct bt_cap_unicast_audio_upda
 	atomic_set_bit(active_proc.proc_state_flags,
 		       CAP_UNICAST_PROC_STATE_ACTIVE);
 	active_proc.stream_cnt = count;
+	active_proc.proc_type = CAP_UNICAST_PROC_TYPE_UPDATE;
 
 	cap_set_subproc(CAP_UNICAST_SUBPROC_TYPE_META_UPDATE);
 
@@ -1242,6 +1258,20 @@ int bt_cap_initiator_unicast_audio_update(const struct bt_cap_unicast_audio_upda
 	return 0;
 }
 
+int bt_cap_initiator_unicast_audio_cancel(void)
+{
+	if (!cap_proc_is_active() && !cap_proc_is_aborted()) {
+		LOG_DBG("No CAP procedure is in progress");
+
+		return -EALREADY;
+	}
+
+	cap_abort_proc(NULL, -ECANCELED);
+	cap_initiator_unicast_audio_proc_complete();
+
+	return 0;
+}
+
 void bt_cap_initiator_metadata_updated(struct bt_cap_stream *cap_stream)
 {
 	if (!cap_stream_in_active_proc(cap_stream)) {
@@ -1265,30 +1295,13 @@ void bt_cap_initiator_metadata_updated(struct bt_cap_stream *cap_stream)
 		return;
 	} else if (cap_proc_is_aborted()) {
 		if (cap_proc_all_streams_handled()) {
-			cap_initiator_unicast_audio_update_complete();
+			cap_initiator_unicast_audio_proc_complete();
 		}
 
 		return;
 	}
 
-	cap_initiator_unicast_audio_update_complete();
-}
-
-static void cap_initiator_unicast_audio_stop_complete(void)
-{
-	struct bt_bap_unicast_group *unicast_group;
-	struct bt_conn *failed_conn;
-	int err;
-
-	unicast_group = active_proc.unicast_group;
-	failed_conn = active_proc.failed_conn;
-	err = active_proc.err;
-
-	(void)memset(&active_proc, 0, sizeof(active_proc));
-
-	if (cap_cb != NULL && cap_cb->unicast_stop_complete != NULL) {
-		cap_cb->unicast_stop_complete(unicast_group, err, failed_conn);
-	}
+	cap_initiator_unicast_audio_proc_complete();
 }
 
 static bool can_release(const struct bt_bap_stream *bap_stream)
@@ -1343,6 +1356,7 @@ int bt_cap_initiator_unicast_audio_stop(struct bt_bap_unicast_group *unicast_gro
 		       CAP_UNICAST_PROC_STATE_ACTIVE);
 	active_proc.stream_cnt = stream_cnt;
 	active_proc.unicast_group = unicast_group;
+	active_proc.proc_type = CAP_UNICAST_PROC_TYPE_STOP;
 
 	cap_set_subproc(CAP_UNICAST_SUBPROC_TYPE_RELEASE);
 
@@ -1404,13 +1418,13 @@ void bt_cap_initiator_released(struct bt_cap_stream *cap_stream)
 		return;
 	} else if (cap_proc_is_aborted()) {
 		if (cap_proc_all_streams_handled()) {
-			cap_initiator_unicast_audio_stop_complete();
+			cap_initiator_unicast_audio_proc_complete();
 		}
 
 		return;
 	}
 
-	cap_initiator_unicast_audio_stop_complete();
+	cap_initiator_unicast_audio_proc_complete();
 }
 
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT */
