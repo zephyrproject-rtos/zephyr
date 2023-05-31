@@ -2,6 +2,8 @@
  * Copyright (c) 2016 Intel Corporation.
  *
  * SPDX-License-Identifier: Apache-2.0
+ *
+ * All references to the spec refer to IEEE 802.15.4-2020.
  */
 
 #include <zephyr/logging/log.h>
@@ -20,15 +22,27 @@ static inline int aloha_radio_send(struct net_if *iface,
 				   struct net_pkt *pkt,
 				   struct net_buf *frag)
 {
-	uint8_t retries = CONFIG_NET_L2_IEEE802154_RADIO_TX_RETRIES;
+	/* See section 6.7.4.4 - Retransmissions. */
+	uint8_t remaining_attempts = CONFIG_NET_L2_IEEE802154_RADIO_TX_RETRIES + 1;
 	struct ieee802154_context *ctx = net_if_l2_data(iface);
-	bool ack_required = prepare_for_ack(ctx, pkt, frag);
+	bool ack_required;
 	int ret = -EIO;
 
 	NET_DBG("frag %p", frag);
 
-	while (retries) {
-		retries--;
+	while (remaining_attempts) {
+		remaining_attempts--;
+
+		ack_required = prepare_for_ack(ctx, pkt, frag);
+
+		if (!ack_required) {
+			/* See section 6.7.4.4: "A device that sends a frame with the AR field set
+			 * to indicate no acknowledgment requested may assume that the transmission
+			 * was successfully received and shall not perform the retransmission
+			 * procedure."
+			 */
+			remaining_attempts = 0;
+		}
 
 		ret = ieee802154_tx(iface, IEEE802154_TX_MODE_DIRECT,
 				    pkt, frag);
