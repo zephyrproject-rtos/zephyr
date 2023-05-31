@@ -15,7 +15,7 @@
 /**
  * @brief Display Interface
  * @defgroup display_interface Display Interface
- * @ingroup display_interfaces
+ * @ingroup io_interfaces
  * @{
  */
 
