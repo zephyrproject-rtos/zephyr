@@ -156,4 +156,6 @@ source "drivers/flash/Kconfig.numaker"
 
 source "drivers/flash/Kconfig.nxp_s32"
 
+source "drivers/flash/Kconfig.andes"
+
 endif # FLASH
