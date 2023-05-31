@@ -27,4 +27,5 @@ HYPERCALL(xen_version);
 
 #ifdef CONFIG_XEN_DOM0
 HYPERCALL(domctl);
+HYPERCALL(sysctl);
 #endif

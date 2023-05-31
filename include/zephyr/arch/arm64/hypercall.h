@@ -17,6 +17,7 @@ int HYPERVISOR_xen_version(int op, void *param);
 
 #ifdef CONFIG_XEN_DOM0
 int HYPERVISOR_domctl(void *param);
+int HYPERVISOR_sysctl(void *param);
 #endif
 
 #endif /* ZEPHYR_INCLUDE_ARCH_ARM64_HYPERCALL_H_ */
