@@ -79,3 +79,13 @@ tests:
     platform_allow: mr_canhubk3
     extra_configs:
       - CONFIG_FLASH_NXP_S32_QSPI_NOR_SFDP_RUNTIME=y
+  drivers.flash.common.spi_nor:
+    platform_allow: nrf52840dk_nrf52840
+    extra_args:
+      - OVERLAY_CONFIG=boards/nrf52840dk_flash_spi.conf
+      - DTC_OVERLAY_FILE=boards/nrf52840dk_spi_nor.overlay
+  drivers.flash.common.spi_nor_wp_hold:
+    platform_allow: nrf52840dk_nrf52840
+    extra_args:
+      - OVERLAY_CONFIG=boards/nrf52840dk_flash_spi.conf
+      - DTC_OVERLAY_FILE=boards/nrf52840dk_spi_nor_wp_hold.overlay
