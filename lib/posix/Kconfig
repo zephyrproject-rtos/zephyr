@@ -12,7 +12,7 @@ config POSIX_MAX_FDS
 	  files, sockets, special devices, etc.
 
 config POSIX_API
-	depends on !ARCH_POSIX
+	depends on !NATIVE_APPLICATION
 	bool "POSIX APIs"
 	help
 	  Enable mostly-standards-compliant implementations of
@@ -160,7 +160,7 @@ config APP_LINK_WITH_POSIX_SUBSYS
 
 config EVENTFD
 	bool "Support for eventfd"
-	depends on !ARCH_POSIX
+	depends on !NATIVE_APPLICATION
 	select POLL
 	default y if POSIX_API
 	help
