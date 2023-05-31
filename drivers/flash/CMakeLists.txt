@@ -50,6 +50,7 @@ zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_SMARTBOND flash_smartbond.c)
 zephyr_library_sources_ifdef(CONFIG_FLASH_CAD_QSPI_NOR flash_cadence_qspi_nor.c flash_cadence_qspi_nor_ll.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_XMC4XXX soc_flash_xmc4xxx.c)
 zephyr_library_sources_ifdef(CONFIG_FLASH_RPI_PICO flash_rpi_pico.c)
+zephyr_library_sources_ifdef(CONFIG_FLASH_ANDES_QSPI flash_andes_qspi.c)
 
 if(CONFIG_FLASH_MCUX_FLEXSPI_XIP)
   dt_chosen(chosen_flash PROPERTY "zephyr,flash")
