@@ -1384,9 +1384,8 @@ static void bt_iso_remove_data_path(struct bt_conn *iso)
 		/* TODO: Check which has been setup first to avoid removing
 		 * data paths that are not setup
 		 */
-		(void)hci_le_remove_iso_data_path(iso,
-			BIT(BT_HCI_DATAPATH_DIR_CTLR_TO_HOST) |
-			BIT(BT_HCI_DATAPATH_DIR_HOST_TO_CTLR));
+		(void)hci_le_remove_iso_data_path(iso, BIT(BT_HCI_DATAPATH_DIR_HOST_TO_CTLR));
+		(void)hci_le_remove_iso_data_path(iso, BIT(BT_HCI_DATAPATH_DIR_CTLR_TO_HOST));
 	} else {
 		__ASSERT(false, "Invalid iso.type: %u", type);
 	}
