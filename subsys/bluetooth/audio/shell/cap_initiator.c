@@ -469,6 +469,19 @@ static int cmd_cap_initiator_unicast_stop(const struct shell *sh, size_t argc,
 	return err;
 }
 
+static int cmd_cap_initiator_unicast_cancel(const struct shell *sh, size_t argc, char *argv[])
+{
+	int err = 0;
+
+	err = bt_cap_initiator_unicast_audio_cancel();
+	if (err != 0) {
+		shell_print(sh, "Failed to cancel unicast audio procedure: %d", err);
+
+		return -ENOEXEC;
+	}
+
+	return 0;
+}
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT */
 
 static int cmd_cap_initiator(const struct shell *sh, size_t argc, char **argv)
@@ -499,6 +512,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(cap_initiator_cmds,
 		      CAP_UNICAST_CLIENT_STREAM_COUNT),
 	SHELL_CMD_ARG(unicast-stop, NULL, "Unicast stop all streams",
 		      cmd_cap_initiator_unicast_stop, 1, 0),
+	SHELL_CMD_ARG(unicast-cancel, NULL, "Unicast cancel current procedure",
+		      cmd_cap_initiator_unicast_cancel, 1, 0),
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT */
 	SHELL_SUBCMD_SET_END
 );
