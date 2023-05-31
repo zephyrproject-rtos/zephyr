@@ -1358,7 +1358,8 @@ static void clear_ccc_cfg(struct bt_gatt_ccc_cfg *cfg)
 	cfg->value = 0U;
 }
 
-#if defined(CONFIG_BT_SETTINGS_DELAYED_STORE)
+static void gatt_store_ccc_cf(uint8_t id, const bt_addr_le_t *peer_addr);
+
 struct ds_peer {
 	uint8_t id;
 	bt_addr_le_t peer;
@@ -1366,27 +1367,41 @@ struct ds_peer {
 	ATOMIC_DEFINE(flags, DELAYED_STORE_NUM_FLAGS);
 };
 
+IF_ENABLED(CONFIG_BT_SETTINGS_DELAYED_STORE, (
 static struct gatt_delayed_store {
 	struct ds_peer peer_list[CONFIG_BT_MAX_PAIRED + CONFIG_BT_MAX_CONN];
 	struct k_work_delayable work;
 } gatt_delayed_store;
+))
 
 static struct ds_peer *gatt_delayed_store_find(uint8_t id,
 					       const bt_addr_le_t *peer_addr)
 {
-	struct ds_peer *el;
+	IF_ENABLED(CONFIG_BT_SETTINGS_DELAYED_STORE, ({
+		struct ds_peer *el;
 
-	for (size_t i = 0; i < ARRAY_SIZE(gatt_delayed_store.peer_list); i++) {
-		el = &gatt_delayed_store.peer_list[i];
-		if (el->id == id &&
-		    bt_addr_le_eq(peer_addr, &el->peer)) {
-			return el;
+		for (size_t i = 0; i < ARRAY_SIZE(gatt_delayed_store.peer_list); i++) {
+			el = &gatt_delayed_store.peer_list[i];
+			if (el->id == id &&
+			bt_addr_le_eq(peer_addr, &el->peer)) {
+				return el;
+			}
 		}
-	}
+	}))
 
 	return NULL;
 }
 
+static void gatt_delayed_store_free(struct ds_peer *el)
+{
+	if (el) {
+		el->id = 0;
+		memset(&el->peer, 0, sizeof(el->peer));
+		atomic_set(el->flags, 0);
+	}
+}
+
+#if defined(CONFIG_BT_SETTINGS_DELAYED_STORE)
 static struct ds_peer *gatt_delayed_store_alloc(uint8_t id,
 						const bt_addr_le_t *peer_addr)
 {
@@ -1410,15 +1425,6 @@ static struct ds_peer *gatt_delayed_store_alloc(uint8_t id,
 	return NULL;
 }
 
-static void gatt_delayed_store_free(struct ds_peer *el)
-{
-	if (el) {
-		el->id = 0;
-		memset(&el->peer, 0, sizeof(el->peer));
-		atomic_set(el->flags, 0);
-	}
-}
-
 static void gatt_delayed_store_enqueue(uint8_t id, const bt_addr_le_t *peer_addr,
 				       enum delayed_store_flags flag)
 {
@@ -1438,27 +1444,6 @@ static void gatt_delayed_store_enqueue(uint8_t id, const bt_addr_le_t *peer_addr
 	}
 }
 
-static void do_delayed_store(uint8_t id, const bt_addr_le_t *peer_addr)
-{
-	struct ds_peer *el = gatt_delayed_store_find(id, peer_addr);
-
-	if (bt_addr_le_is_bonded(id, peer_addr)) {
-		if (IS_ENABLED(CONFIG_BT_SETTINGS_CCC_STORE_ON_WRITE) &&
-		    atomic_test_and_clear_bit(el->flags, DELAYED_STORE_CCC)) {
-			bt_gatt_store_ccc(id, peer_addr);
-		}
-
-		if (IS_ENABLED(CONFIG_BT_SETTINGS_CF_STORE_ON_WRITE) &&
-		    atomic_test_and_clear_bit(el->flags, DELAYED_STORE_CF)) {
-			bt_gatt_store_cf(id, peer_addr);
-		}
-
-		if (atomic_get(el->flags) == 0) {
-			gatt_delayed_store_free(el);
-		}
-	}
-}
-
 static void delayed_store(struct k_work *work)
 {
 	struct ds_peer *el;
@@ -1469,10 +1454,33 @@ static void delayed_store(struct k_work *work)
 	for (size_t i = 0; i < ARRAY_SIZE(gatt_delayed_store.peer_list); i++) {
 		el = &store->peer_list[i];
 
-		do_delayed_store(el->id, &el->peer);
+		gatt_store_ccc_cf(el->id, &el->peer);
 	}
 }
 #endif	/* CONFIG_BT_SETTINGS_DELAYED_STORE */
+
+static void gatt_store_ccc_cf(uint8_t id, const bt_addr_le_t *peer_addr)
+{
+	struct ds_peer *el = gatt_delayed_store_find(id, peer_addr);
+
+	if (bt_addr_le_is_bonded(id, peer_addr)) {
+		if (!IS_ENABLED(CONFIG_BT_SETTINGS_CCC_STORE_ON_WRITE) ||
+		    (IS_ENABLED(CONFIG_BT_SETTINGS_CCC_STORE_ON_WRITE) && el &&
+		     atomic_test_and_clear_bit(el->flags, DELAYED_STORE_CCC))) {
+			bt_gatt_store_ccc(id, peer_addr);
+		}
+
+		if (!IS_ENABLED(CONFIG_BT_SETTINGS_CF_STORE_ON_WRITE) ||
+		    (IS_ENABLED(CONFIG_BT_SETTINGS_CF_STORE_ON_WRITE) && el &&
+		     atomic_test_and_clear_bit(el->flags, DELAYED_STORE_CF))) {
+			bt_gatt_store_cf(id, peer_addr);
+		}
+
+		if (el && atomic_get(el->flags) == 0) {
+			gatt_delayed_store_free(el);
+		}
+	}
+}
 
 static void bt_gatt_service_init(void)
 {
@@ -6317,19 +6325,9 @@ void bt_gatt_disconnected(struct bt_conn *conn)
 	cleanup_notify(conn);
 #endif /* CONFIG_BT_GATT_NOTIFY_MULTIPLE */
 
-#if defined(CONFIG_BT_SETTINGS_DELAYED_STORE)
-	struct ds_peer *el = gatt_delayed_store_find(conn->id, &conn->le.dst);
-
-	if (el) {
-		do_delayed_store(el->id, &el->peer);
+	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
+		gatt_store_ccc_cf(conn->id, &conn->le.dst);
 	}
-#else
-	if (IS_ENABLED(CONFIG_BT_SETTINGS) &&
-	    bt_addr_le_is_bonded(conn->id, &conn->le.dst)) {
-		bt_gatt_store_ccc(conn->id, &conn->le.dst);
-		bt_gatt_store_cf(conn->id, &conn->le.dst);
-	}
-#endif	/* CONFIG_BT_SETTINGS_DELAYED_STORE */
 
 	/* Make sure to clear the CCC entry when using lazy loading */
 	if (IS_ENABLED(CONFIG_BT_SETTINGS_CCC_LAZY_LOADING) &&
