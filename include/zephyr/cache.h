@@ -30,6 +30,7 @@ extern "C" {
 
 /**
  * @defgroup cache_interface Cache Interface
+ * @ingroup os_services
  * @{
  */
 
