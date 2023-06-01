@@ -65,7 +65,6 @@ static int get(const struct device *dev, enum sensor_channel chan, struct sensor
 	__ASSERT_NO_MSG(val != NULL);
 
 	if (chan != SENSOR_CHAN_AMBIENT_TEMP) {
-		LOG_ERR("chan %d not supported", chan);
 		return -ENOTSUP;
 	}
 
@@ -84,7 +83,7 @@ static int get(const struct device *dev, enum sensor_channel chan, struct sensor
 	}
 
 	val->val1 = t / MC_PER_C;
-	val->val2 = t  % (1000000 / MC_PER_C);
+	val->val2 = 1000 * (t % MC_PER_C);
 
 	LOG_DBG("%d of %d, %dmV, %dmC", data->raw, (1 << data->sequence.resolution) - 1, raw_val,
 		t);
