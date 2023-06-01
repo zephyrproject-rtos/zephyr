@@ -3,7 +3,6 @@
 
 config MIPI_SYST_LIB
 	bool "MIPI SyS-T Library Support"
-	select REQUIRES_FULL_LIBC
 	help
 	  This option enables the MIPI SyS-T Library
 
