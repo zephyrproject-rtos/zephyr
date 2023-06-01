@@ -4,6 +4,7 @@
 zephyr_library()
 
 zephyr_library_sources(regulator_common.c)
+zephyr_library_sources_ifdef(CONFIG_REGULATOR_AXP192 regulator_axp192.c)
 zephyr_library_sources_ifdef(CONFIG_REGULATOR_ADP5360 regulator_adp5360.c)
 zephyr_library_sources_ifdef(CONFIG_REGULATOR_FAKE regulator_fake.c)
 zephyr_library_sources_ifdef(CONFIG_REGULATOR_FIXED regulator_fixed.c)
