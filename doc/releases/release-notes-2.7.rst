@@ -115,13 +115,14 @@ Vulnerabilities addressed in this update:
 
 * Fix a bias in the generation of finite-field Diffie-Hellman-Merkle (DHM)
   private keys and of blinding values for DHM and elliptic curves (ECP)
-  computations. Reported by FlorianF89 in #4245.
+  computations.
 
 * Fix a potential side channel vulnerability in ECDSA ephemeral key generation.
   An adversary who is capable of very precise timing measurements could
   learn partial information about the leading bits of the nonce used for the
   signature, allowing the recovery of the private key after observing a
-  large number of signature o
+  large number of signature operations. This completes a partial fix in
+  Mbed TLS 2.20.0.
 
 Security Vulnerability Related
 ******************************
