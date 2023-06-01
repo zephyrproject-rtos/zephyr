@@ -65,6 +65,12 @@ cmsis_dsp:
     # change to west.yml is updating something we need to re-test for.
     - west.yml
 
+mcumgr:
+  files:
+    - subsys/mcumgr/
+    - tests/subsys/mgmt/mcumgr/
+    - samples/subsys/mgmt/mcumgr/
+    - include/zephyr/mgmt/mcumgr/
 kernel:
   files:
     - kernel/
