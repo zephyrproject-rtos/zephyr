@@ -1,5 +1,5 @@
 sample:
-  name: Benchmark
+  name: Zbus Benchmark
 tests:
   sample.zbus.benchmark_async:
     tags: zbus
@@ -22,6 +22,8 @@ tests:
       - arch:nios2:CONFIG_SYS_CLOCK_TICKS_PER_SEC=1000
       - CONFIG_IDLE_STACK_SIZE=1024
     platform_exclude: nrf52_bsim
+    integration_platforms:
+      - qemu_x86
   sample.zbus.benchmark_sync:
     tags: zbus
     min_ram: 16
@@ -43,3 +45,5 @@ tests:
       - arch:nios2:CONFIG_SYS_CLOCK_TICKS_PER_SEC=1000
       - CONFIG_IDLE_STACK_SIZE=1024
     platform_exclude: nrf52_bsim
+    integration_platforms:
+      - qemu_x86

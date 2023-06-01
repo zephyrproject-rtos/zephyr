@@ -1,6 +1,9 @@
 common:
-  tags: clib
+  tags:
+    - clib
   arch_exclude: posix
+  integration_platforms:
+    - mps2_an385
 tests:
   libraries.libc:
     ignore_faults: true
@@ -11,10 +14,12 @@ tests:
     extra_configs:
       - CONFIG_PICOLIBC=y
   libraries.libc.minimal.strerror_table:
+    tags: minimal_libc
     extra_configs:
       - CONFIG_MINIMAL_LIBC=y
       - CONFIG_MINIMAL_LIBC_STRING_ERROR_TABLE=y
   libraries.libc.minimal.no_strerror_table:
+    tags: minimal_libc
     extra_configs:
       - CONFIG_MINIMAL_LIBC=y
       - CONFIG_MINIMAL_LIBC_STRING_ERROR_TABLE=n
