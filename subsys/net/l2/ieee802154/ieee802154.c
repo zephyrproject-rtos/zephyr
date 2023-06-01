@@ -87,6 +87,7 @@ static inline void ieee802154_acknowledge(struct net_if *iface, struct ieee80215
 	}
 
 	if (ieee802154_create_ack_frame(iface, pkt, mpdu->mhr.fs->sequence)) {
+		/* ACK frames must not use the CSMA/CA procedure, see section 6.2.5.1. */
 		ieee802154_tx(iface, IEEE802154_TX_MODE_DIRECT, pkt, pkt->buffer);
 	}
 

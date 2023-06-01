@@ -90,13 +90,10 @@ config IEEE802154_CC13XX_CC26XX_SUB_GHZ_INIT_PRIO
 	  Set the initialization priority number.
 
 config IEEE802154_CC13XX_CC26XX_SUB_GHZ_RADIO_TX_RETRIES
-	int "Radio Transmission attempts"
-	default NET_L2_IEEE802154_RADIO_TX_RETRIES if NET_L2_IEEE802154
-	default 3
-	range 1 7
+	bool
+	select DEPRECATED
 	help
-	  Number of transmission attempts radio driver should do, before
-	  replying it could not send the packet.
+	  DEPRECATED - use NET_L2_IEEE802154_RADIO_TX_RETRIES instead
 
 config IEEE802154_CC13XX_CC26XX_SUB_GHZ_CUSTOM_RADIO_SETUP
 	bool "Use custom radio setup structures (advanced)"
