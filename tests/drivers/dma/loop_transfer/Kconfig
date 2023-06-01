@@ -17,3 +17,7 @@ config DMA_LOOP_TRANSFER_SRAM_SECTION
 config DMA_LOOP_TRANSFER_NUMBER_OF_DMAS
 	int "Number of DMAs to test"
 	default 1
+
+config DMA_LOOP_TRANSFER_SIZE
+	int "Number of bytes to transfer"
+	default 8192

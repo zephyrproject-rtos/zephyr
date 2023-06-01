@@ -32,17 +32,16 @@
 #define SLEEPTIME 250
 
 #define TRANSFER_LOOPS (4)
-#define XFER_SIZE (8192)
 
 #if CONFIG_NOCACHE_MEMORY
-static __aligned(32) uint8_t tx_data[XFER_SIZE] __used
+static __aligned(32) uint8_t tx_data[CONFIG_DMA_LOOP_TRANSFER_SIZE] __used
 	__attribute__((__section__(CONFIG_DMA_LOOP_TRANSFER_SRAM_SECTION)));
-static __aligned(32) uint8_t rx_data[TRANSFER_LOOPS][XFER_SIZE] __used
+static __aligned(32) uint8_t rx_data[TRANSFER_LOOPS][CONFIG_DMA_LOOP_TRANSFER_SIZE] __used
 	__attribute__((__section__(CONFIG_DMA_LOOP_TRANSFER_SRAM_SECTION".dma")));
 #else
 /* this src memory shall be in RAM to support usingas a DMA source pointer.*/
-static uint8_t tx_data[XFER_SIZE];
-static __aligned(16) uint8_t rx_data[TRANSFER_LOOPS][XFER_SIZE] = { { 0 } };
+static uint8_t tx_data[CONFIG_DMA_LOOP_TRANSFER_SIZE];
+static __aligned(16) uint8_t rx_data[TRANSFER_LOOPS][CONFIG_DMA_LOOP_TRANSFER_SIZE] = { { 0 } };
 #endif
 
 volatile uint32_t transfer_count;
@@ -103,7 +102,7 @@ static int test_loop(const struct device *dma)
 
 	memset(tx_data, 0, sizeof(tx_data));
 
-	for (int i = 0; i < XFER_SIZE; i++) {
+	for (int i = 0; i < CONFIG_DMA_LOOP_TRANSFER_SIZE; i++) {
 		tx_data[i] = i;
 	}
 
@@ -175,7 +174,7 @@ static int test_loop(const struct device *dma)
 
 	for (int i = 0; i < TRANSFER_LOOPS; i++) {
 		TC_PRINT("RX data Loop %d\n", i);
-		if (memcmp(tx_data, rx_data[i], XFER_SIZE)) {
+		if (memcmp(tx_data, rx_data[i], CONFIG_DMA_LOOP_TRANSFER_SIZE)) {
 			return TC_FAIL;
 		}
 	}
@@ -194,7 +193,7 @@ static int test_loop_suspend_resume(const struct device *dma)
 
 	memset(tx_data, 0, sizeof(tx_data));
 
-	for (int i = 0; i < XFER_SIZE; i++) {
+	for (int i = 0; i < CONFIG_DMA_LOOP_TRANSFER_SIZE; i++) {
 		tx_data[i] = i;
 	}
 
@@ -319,7 +318,7 @@ static int test_loop_suspend_resume(const struct device *dma)
 
 	for (int i = 0; i < TRANSFER_LOOPS; i++) {
 		TC_PRINT("RX data Loop %d\n", i);
-		if (memcmp(tx_data, rx_data[i], XFER_SIZE)) {
+		if (memcmp(tx_data, rx_data[i], CONFIG_DMA_LOOP_TRANSFER_SIZE)) {
 			return TC_FAIL;
 		}
 	}
@@ -457,7 +456,7 @@ static int test_loop_repeated_start_stop(const struct device *dma)
 
 	for (int i = 0; i < TRANSFER_LOOPS; i++) {
 		TC_PRINT("RX data Loop %d\n", i);
-		if (memcmp(tx_data, rx_data[i], XFER_SIZE)) {
+		if (memcmp(tx_data, rx_data[i], CONFIG_DMA_LOOP_TRANSFER_SIZE)) {
 			return TC_FAIL;
 		}
 	}
