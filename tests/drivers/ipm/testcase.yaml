@@ -6,3 +6,5 @@ tests:
     tags:
       - drivers
       - ipc
+    integration_platforms:
+      - qemu_x86
