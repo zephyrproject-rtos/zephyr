@@ -202,7 +202,7 @@ static void block_report(struct bt_mesh_blob_srv *srv)
 		}
 	}
 
-	bt_mesh_model_send(srv->mod, &ctx, &buf, &report_cb, srv);
+	(void)bt_mesh_model_send(srv->mod, &ctx, &buf, &report_cb, srv);
 }
 
 static void phase_set(struct bt_mesh_blob_srv *srv,
@@ -314,7 +314,7 @@ static void xfer_status_rsp(struct bt_mesh_blob_srv *srv,
 
 send:
 	ctx->send_ttl = srv->state.ttl;
-	bt_mesh_model_send(srv->mod, ctx, &buf, NULL, NULL);
+	(void)bt_mesh_model_send(srv->mod, ctx, &buf, NULL, NULL);
 }
 
 static void block_status_rsp(struct bt_mesh_blob_srv *srv,
@@ -379,7 +379,7 @@ static void block_status_rsp(struct bt_mesh_blob_srv *srv,
 		ctx->send_ttl = srv->state.ttl;
 	}
 
-	bt_mesh_model_send(srv->mod, ctx, &buf, NULL, NULL);
+	(void)bt_mesh_model_send(srv->mod, ctx, &buf, NULL, NULL);
 }
 
 static int handle_xfer_get(struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
@@ -789,7 +789,7 @@ static int handle_info_get(struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ct
 		ctx->send_ttl = srv->state.ttl;
 	}
 
-	bt_mesh_model_send(srv->mod, ctx, &rsp, NULL, NULL);
+	(void)bt_mesh_model_send(srv->mod, ctx, &rsp, NULL, NULL);
 
 	return 0;
 }
