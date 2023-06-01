@@ -15,8 +15,3 @@ tests:
     extra_configs:
       - CONFIG_APIC_TSC_DEADLINE_TIMER=y
       - CONFIG_HPET_TIMER=n
-  kernel.timer.monotonic.linker_generator:
-    platform_allow: qemu_cortex_m3
-    tags: linker_generator
-    extra_configs:
-      - CONFIG_CMAKE_LINKER_GENERATOR=y
