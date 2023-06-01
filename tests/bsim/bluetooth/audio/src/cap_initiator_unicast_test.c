@@ -26,6 +26,7 @@ CREATE_FLAG(flag_discovered);
 CREATE_FLAG(flag_codec_found);
 CREATE_FLAG(flag_endpoint_found);
 CREATE_FLAG(flag_started);
+CREATE_FLAG(flag_start_timeout);
 CREATE_FLAG(flag_updated);
 CREATE_FLAG(flag_stopped);
 CREATE_FLAG(flag_mtu_exchanged);
@@ -114,13 +115,13 @@ static void cap_discovery_complete_cb(struct bt_conn *conn, int err,
 static void unicast_start_complete_cb(struct bt_bap_unicast_group *unicast_group, int err,
 				      struct bt_conn *conn)
 {
-	if (err != 0) {
+	if (err == -ECANCELED) {
+		SET_FLAG(flag_start_timeout);
+	} else if (err != 0) {
 		FAIL("Failed to start (failing conn %p): %d", conn, err);
-
-		return;
+	} else {
+		SET_FLAG(flag_started);
 	}
-
-	SET_FLAG(flag_started);
 }
 
 static void unicast_update_complete_cb(int err, struct bt_conn *conn)
@@ -469,7 +470,7 @@ static void unicast_audio_start_inval(struct bt_bap_unicast_group *unicast_group
 	}
 }
 
-static void unicast_audio_start(struct bt_bap_unicast_group *unicast_group)
+static void unicast_audio_start(struct bt_bap_unicast_group *unicast_group, bool wait)
 {
 	struct bt_cap_unicast_audio_start_stream_param stream_param[1];
 	struct bt_cap_unicast_audio_start_param param;
@@ -492,7 +493,9 @@ static void unicast_audio_start(struct bt_bap_unicast_group *unicast_group)
 		return;
 	}
 
-	WAIT_FOR_FLAG(flag_started);
+	if (wait) {
+		WAIT_FOR_FLAG(flag_started);
+	}
 }
 
 static void unicast_audio_update_inval(void)
@@ -584,6 +587,17 @@ static void unicast_audio_stop(struct bt_bap_unicast_group *unicast_group)
 	}
 }
 
+static void unicast_audio_cancel(void)
+{
+	int err;
+
+	err = bt_cap_initiator_unicast_audio_cancel();
+	if (err != 0) {
+		FAIL("Failed to cancel unicast audio: %d\n", err);
+		return;
+	}
+}
+
 static void unicast_group_delete_inval(void)
 {
 	int err;
@@ -635,7 +649,7 @@ static void test_main_cap_initiator_unicast(void)
 
 		for (size_t j = 0U; j < iterations; j++) {
 			unicast_audio_start_inval(unicast_group);
-			unicast_audio_start(unicast_group);
+			unicast_audio_start(unicast_group, true);
 
 			unicast_audio_update_inval();
 			unicast_audio_update();
@@ -652,12 +666,57 @@ static void test_main_cap_initiator_unicast(void)
 	PASS("CAP initiator unicast passed\n");
 }
 
+static void test_cap_initiator_unicast_timeout(void)
+{
+	struct bt_bap_unicast_group *unicast_group;
+	const k_timeout_t timeout = K_SECONDS(1);
+	const size_t iterations = 2;
+
+	init();
+
+	scan_and_connect();
+
+	WAIT_FOR_FLAG(flag_mtu_exchanged);
+
+	discover_cas();
+
+	discover_sink();
+
+	unicast_group_create(&unicast_group);
+
+	for (size_t j = 0U; j < iterations; j++) {
+		unicast_audio_start(unicast_group, false);
+
+		k_sleep(timeout);
+		if ((bool)atomic_get(&flag_started)) {
+			FAIL("Unexpected start complete\n");
+		} else {
+			unicast_audio_cancel();
+		}
+
+		WAIT_FOR_FLAG(flag_start_timeout);
+
+		unicast_audio_stop(unicast_group);
+	}
+
+	unicast_group_delete(unicast_group);
+	unicast_group = NULL;
+
+	PASS("CAP initiator unicast passed\n");
+}
+
 static const struct bst_test_instance test_cap_initiator_unicast[] = {
 	{
 		.test_id = "cap_initiator_unicast",
 		.test_post_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_main_cap_initiator_unicast,
+	},
+	{
+		.test_id = "cap_initiator_unicast_timeout",
+		.test_post_init_f = test_init,
+		.test_tick_f = test_tick,
+		.test_main_f = test_cap_initiator_unicast_timeout,
 	},
 	BSTEST_END_MARKER,
 };
