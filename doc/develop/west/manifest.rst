@@ -2099,8 +2099,8 @@ In other words, let:
 - the submanifests resolved from ``import-1`` through ``import-N`` have group
   filters ``filter-1`` through ``filter-N`` respectively
 
-The final resolved ``group-filter`` value is then ``filter1 + filter-2 + ... +
-filter-N + top-filter + self-filter``, where ``+`` here refers to list
+The final resolved ``group-filter`` value is then ``filterN + ... + filter-2 +
+filter-1 + top-filter + self-filter``, where ``+`` here refers to list
 concatenation.
 
 .. important::
