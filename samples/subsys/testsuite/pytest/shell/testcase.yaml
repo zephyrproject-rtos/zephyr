@@ -9,6 +9,6 @@ tests:
       - native_posix
       - qemu_cortex_m3
     tags:
-      - testing
+      - test_framework
       - pytest
       - shell

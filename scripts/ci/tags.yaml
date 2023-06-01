@@ -46,9 +46,12 @@ bluetooth:
     - subsys/bluetooth/
     - subsys/net/l2/bluetooth/
 
-testsuite:
+test_framework:
   files:
     - subsys/testsuite/
+    - samples/subsys/testsuite/
+    - tests/subsys/testsuite/
+    - tests/ztest/
 
 cmsis_dsp:
   files:
