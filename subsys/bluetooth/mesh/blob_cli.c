@@ -1531,8 +1531,12 @@ int bt_mesh_blob_cli_send(struct bt_mesh_blob_cli *cli,
 	cli->xfer = xfer;
 	cli->inputs = inputs;
 	cli->io = io;
-	cli->block_count = DIV_ROUND_UP(cli->xfer->size,
-					    (1U << cli->xfer->block_size_log));
+
+	if (cli->xfer->block_size_log == 0x20) {
+		cli->block_count = 1;
+	} else {
+		cli->block_count = DIV_ROUND_UP(cli->xfer->size, (1U << cli->xfer->block_size_log));
+	}
 
 	block_set(cli, 0);
 
