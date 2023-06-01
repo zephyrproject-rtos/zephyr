@@ -1,0 +1,14 @@
+tests:
+  net.lwm2m.interop:
+    harness: pytest
+    timeout: 300
+    slow: true
+    integration_platforms:
+      - native_posix
+    platform_allow:
+      - native_posix
+      - qemu_cortex_m3
+    tags:
+      - testing
+      - pytest
+      - shell
