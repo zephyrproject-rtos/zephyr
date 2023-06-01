@@ -13,6 +13,9 @@
 #include <zephyr/sys/fdtable.h>
 #include <zephyr/sys/math_extras.h>
 
+#define EFD_IN_USE_INTERNAL    0x1
+#define EFD_FLAGS_SET_INTERNAL (EFD_SEMAPHORE | EFD_NONBLOCK)
+
 struct eventfd {
 	struct k_spinlock lock;
 	eventfd_t cnt;
@@ -28,7 +31,7 @@ static const struct fd_op_vtable eventfd_fd_vtable;
 
 static inline bool eventfd_is_in_use(struct eventfd *efd)
 {
-	return (efd->flags & EFD_IN_USE) != 0;
+	return (efd->flags & EFD_IN_USE_INTERNAL) != 0;
 }
 
 static inline bool eventfd_is_semaphore(struct eventfd *efd)
@@ -201,7 +204,7 @@ static int eventfd_ioctl_op(void *obj, unsigned int request, va_list args)
 
 	switch (request) {
 	case F_GETFL:
-		ret = efd->flags & EFD_FLAGS_SET;
+		ret = efd->flags & EFD_FLAGS_SET_INTERNAL;
 		break;
 
 	case F_SETFL: {
@@ -209,7 +212,7 @@ static int eventfd_ioctl_op(void *obj, unsigned int request, va_list args)
 
 		flags = va_arg(args, int);
 
-		if (flags & ~EFD_FLAGS_SET) {
+		if (flags & ~EFD_FLAGS_SET_INTERNAL) {
 			errno = EINVAL;
 			ret = -1;
 		} else {
@@ -374,7 +377,7 @@ int eventfd(unsigned int initval, int flags)
 	size_t offset;
 	struct eventfd *efd = NULL;
 
-	if (flags & ~EFD_FLAGS_SET) {
+	if (flags & ~EFD_FLAGS_SET_INTERNAL) {
 		errno = EINVAL;
 		return -1;
 	}
@@ -392,7 +395,7 @@ int eventfd(unsigned int initval, int flags)
 		return -1;
 	}
 
-	efd->flags = EFD_IN_USE | flags;
+	efd->flags = EFD_IN_USE_INTERNAL | flags;
 	efd->cnt = initval;
 
 	z_finalize_fd(fd, efd, &eventfd_fd_vtable);
