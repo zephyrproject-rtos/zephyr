@@ -143,13 +143,14 @@ class testValidator(unittest.TestCase):
     def test_initialize(self, mock_pl, mock_fbo, mock_zof):
         mock_fbo.return_value = ["filepath"]
 
+        mock_log = mock.Mock()
         mock_prio = mock.Mock()
         mock_obj = mock.Mock()
         mock_obj.defined_devices = {123: mock_prio}
         mock_zof.return_value = mock_obj
 
         with mock.patch("builtins.open", mock.mock_open()) as mock_open:
-            validator = check_init_priorities.Validator("path", "pickle", None)
+            validator = check_init_priorities.Validator("path", "pickle", mock_log)
 
         self.assertListEqual(validator._objs, [mock_obj])
         self.assertDictEqual(validator._dev_priorities, {123: mock_prio})
@@ -160,7 +161,9 @@ class testValidator(unittest.TestCase):
     @mock.patch("pathlib.Path")
     @mock.patch("check_init_priorities.Validator.__init__", return_value=None)
     def test_find_build_objfiles(self, mock_vinit, mock_path):
-        validator = check_init_priorities.Validator("", "", None)
+        mock_log = mock.Mock()
+
+        validator = check_init_priorities.Validator("", "", mock_log)
 
         mock_file = mock.Mock()
         mock_file.is_file.return_value = True
