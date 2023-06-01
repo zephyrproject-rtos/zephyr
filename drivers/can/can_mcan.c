@@ -540,6 +540,11 @@ void can_mcan_line_0_isr(const struct device *dev)
 	}
 
 	while ((ir & events) != 0U) {
+		err = can_mcan_write_reg(dev, CAN_MCAN_IR, ir & events);
+		if (err != 0) {
+			return;
+		}
+
 		if ((ir & (CAN_MCAN_IR_BO | CAN_MCAN_IR_EP | CAN_MCAN_IR_EW)) != 0U) {
 			can_mcan_state_change_handler(dev);
 		}
@@ -560,11 +565,6 @@ void can_mcan_line_0_isr(const struct device *dev)
 
 		if (ir & CAN_MCAN_IR_MRAF) {
 			LOG_ERR("Message RAM access failure");
-		}
-
-		err = can_mcan_write_reg(dev, CAN_MCAN_IR, events);
-		if (err != 0) {
-			return;
 		}
 
 		err = can_mcan_read_reg(dev, CAN_MCAN_IR, &ir);
@@ -721,6 +721,11 @@ void can_mcan_line_1_isr(const struct device *dev)
 	}
 
 	while ((ir & events) != 0U) {
+		err = can_mcan_write_reg(dev, CAN_MCAN_IR, events & ir);
+		if (err != 0) {
+			return;
+		}
+
 		if ((ir & CAN_MCAN_IR_RF0N) != 0U) {
 			LOG_DBG("RX FIFO0 INT");
 			can_mcan_get_message(dev, config->mram_offsets[CAN_MCAN_MRAM_CFG_RX_FIFO0],
@@ -739,11 +744,6 @@ void can_mcan_line_1_isr(const struct device *dev)
 
 		if ((ir & CAN_MCAN_IR_RF1L) != 0U) {
 			LOG_ERR("Message lost on FIFO1");
-		}
-
-		err = can_mcan_write_reg(dev, CAN_MCAN_IR, events);
-		if (err != 0) {
-			return;
 		}
 
 		err = can_mcan_read_reg(dev, CAN_MCAN_IR, &ir);
