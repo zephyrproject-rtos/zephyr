@@ -19,7 +19,7 @@ source "subsys/logging/Kconfig.template.log_config"
 
 config CAN_INIT_PRIORITY
 	int "CAN driver init priority"
-	default KERNEL_INIT_PRIORITY_DEVICE
+	default 80
 	help
 	  CAN driver device initialization priority.
 
