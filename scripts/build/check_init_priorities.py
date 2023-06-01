@@ -194,6 +194,9 @@ class Validator():
             obj = ZephyrObjectFile(file)
             if obj.defined_devices:
                 self._objs.append(obj)
+                for dev in obj.defined_devices:
+                    dev_path = self._ord2node[dev].path
+                    self.log.debug(f"{file}: {dev_path}")
 
         self._dev_priorities = {}
         for obj in self._objs:
@@ -279,8 +282,9 @@ def _parse_args(argv):
 
     parser.add_argument("-d", "--build-dir", default="build",
                         help="build directory to use")
-    parser.add_argument("-v", "--verbose", action="store_true",
-                        help="enable verbose Output")
+    parser.add_argument("-v", "--verbose", action="count",
+                        help=("enable verbose output, can be used multiple times "
+                              "to increase verbosity level"))
     parser.add_argument("-w", "--fail-on-warning", action="store_true",
                         help="fail on both warnings and errors")
     parser.add_argument("--always-succeed", action="store_true",
@@ -306,7 +310,9 @@ def _init_log(verbose, output):
         file.setFormatter(logging.Formatter("%(levelname)s: %(message)s"))
         log.addHandler(file)
 
-    if verbose:
+    if verbose and verbose > 1:
+        log.setLevel(logging.DEBUG)
+    elif verbose and verbose > 0:
         log.setLevel(logging.INFO)
     else:
         log.setLevel(logging.WARNING)
