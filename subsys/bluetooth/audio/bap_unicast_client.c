@@ -40,7 +40,6 @@ BUILD_ASSERT(CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0 ||
 LOG_MODULE_REGISTER(bt_bap_unicast_client, CONFIG_BT_BAP_UNICAST_CLIENT_LOG_LEVEL);
 
 #define PAC_DIR_UNUSED(dir) ((dir) != BT_AUDIO_DIR_SINK && (dir) != BT_AUDIO_DIR_SOURCE)
-
 struct bt_bap_unicast_client_ep {
 	uint16_t handle;
 	uint16_t cp_handle;
@@ -161,44 +160,6 @@ static int unicast_client_send_start(struct bt_bap_ep *ep)
 }
 
 static int unicast_client_ep_idle_state(struct bt_bap_ep *ep);
-
-/** Checks if the stream can terminate the CIS
- *
- * If the CIS is used for another stream, or if the CIS is not in the connected
- * state it will return false.
- */
-static bool unicast_client_can_disconnect_stream(const struct bt_bap_stream *stream)
-{
-	const struct bt_bap_ep *stream_ep;
-	enum bt_iso_state iso_state;
-
-	if (stream == NULL) {
-		return false;
-	}
-
-	stream_ep = stream->ep;
-
-	if (stream_ep == NULL || stream_ep->iso == NULL) {
-		return false;
-	}
-
-	iso_state = stream_ep->iso->chan.state;
-
-	if (iso_state == BT_ISO_STATE_CONNECTED || iso_state == BT_ISO_STATE_CONNECTING) {
-		const struct bt_bap_ep *pair_ep;
-
-		pair_ep = bt_bap_iso_get_paired_ep(stream_ep);
-
-		/* If there are no paired endpoint, or the paired endpoint is
-		 * not in the streaming state, we can disconnect the CIS
-		 */
-		if (pair_ep == NULL || pair_ep->status.state != BT_BAP_EP_STATE_STREAMING) {
-			return true;
-		}
-	}
-
-	return false;
-}
 
 static struct bt_bap_stream *audio_stream_by_ep_id(const struct bt_conn *conn,
 						     uint8_t id)
@@ -581,7 +542,7 @@ static int unicast_client_ep_idle_state(struct bt_bap_ep *ep)
 	}
 
 	/* If CIS is connected, disconnect and wait for CIS disconnection */
-	if (unicast_client_can_disconnect_stream(stream)) {
+	if (bt_bap_stream_can_disconnect(stream)) {
 		int err;
 
 		LOG_DBG("Disconnecting stream");
@@ -652,10 +613,18 @@ static void unicast_client_ep_qos_update(struct bt_bap_ep *ep,
 
 static void unicast_client_ep_config_state(struct bt_bap_ep *ep, struct net_buf_simple *buf)
 {
+	struct bt_bap_unicast_client_ep *client_ep =
+		CONTAINER_OF(ep, struct bt_bap_unicast_client_ep, ep);
 	struct bt_ascs_ase_status_config *cfg;
 	struct bt_codec_qos_pref *pref;
 	struct bt_bap_stream *stream;
 	void *cc;
+
+	if (client_ep->release_requested) {
+		LOG_DBG("Released was requested, change local state to idle");
+		ep->status.state = BT_BAP_EP_STATE_IDLE;
+		unicast_client_ep_idle_state(ep);
+	}
 
 	if (buf->len < sizeof(*cfg)) {
 		LOG_ERR("Config status too short");
@@ -768,7 +737,7 @@ static void unicast_client_ep_qos_state(struct bt_bap_ep *ep, struct net_buf_sim
 		stream->qos->latency, stream->qos->pd);
 
 	/* Disconnect ISO if connected */
-	if (unicast_client_can_disconnect_stream(stream)) {
+	if (bt_bap_stream_can_disconnect(stream)) {
 		const int err = bt_bap_stream_disconnect(stream);
 
 		if (err != 0) {
@@ -931,7 +900,7 @@ static void unicast_client_ep_releasing_state(struct bt_bap_ep *ep, struct net_b
 
 	LOG_DBG("dir %s", bt_audio_dir_str(ep->dir));
 
-	if (unicast_client_can_disconnect_stream(stream)) {
+	if (bt_bap_stream_can_disconnect(stream)) {
 		/* The Unicast Client shall terminate any CIS established for
 		 * that ASE by following the Connected Isochronous Stream
 		 * Terminate procedure defined in Volume 3, Part C,
