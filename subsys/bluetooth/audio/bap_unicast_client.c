@@ -50,6 +50,7 @@ struct bt_bap_unicast_client_ep {
 
 	/* Bool to help handle different order of CP and ASE notification when releasing */
 	bool release_requested;
+	bool cp_ntf_pending;
 };
 
 static const struct bt_uuid *snk_uuid = BT_UUID_PACS_SNK;
@@ -562,15 +563,19 @@ static int unicast_client_ep_idle_state(struct bt_bap_ep *ep)
 
 	/* Notify upper layer */
 	if (client_ep->release_requested) {
-		/* In case that we get the idle state notification before the CP notification we
-		 * trigger the CP callback now, as after this we won't be able to find the stream
-		 * by the ASE ID
-		 */
 		client_ep->release_requested = false;
 
-		if (unicast_client_cbs != NULL && unicast_client_cbs->release != NULL) {
-			unicast_client_cbs->release(stream, BT_BAP_ASCS_RSP_CODE_SUCCESS,
-						    BT_BAP_ASCS_REASON_NONE);
+		if (client_ep->cp_ntf_pending) {
+			/* In case that we get the idle state notification before the CP
+			 * notification we trigger the CP callback now, as after this we won't be
+			 * able to find the stream by the ASE ID
+			 */
+			client_ep->cp_ntf_pending = false;
+
+			if (unicast_client_cbs != NULL && unicast_client_cbs->release != NULL) {
+				unicast_client_cbs->release(stream, BT_BAP_ASCS_RSP_CODE_SUCCESS,
+							    BT_BAP_ASCS_REASON_NONE);
+			}
 		}
 	}
 
@@ -1307,7 +1312,7 @@ static uint8_t unicast_client_cp_notify(struct bt_conn *conn,
 	}
 
 	for (uint8_t i = 0U; i < rsp->num_ase; i++) {
-		struct bt_bap_unicast_client_ep *client_ep;
+		struct bt_bap_unicast_client_ep *client_ep = NULL;
 		struct bt_ascs_cp_ase_rsp *ase_rsp;
 		struct bt_bap_stream *stream;
 
@@ -1331,6 +1336,9 @@ static uint8_t unicast_client_cp_notify(struct bt_conn *conn,
 		stream = audio_stream_by_ep_id(conn, ase_rsp->id);
 		if (stream == NULL) {
 			LOG_DBG("Could not find stream by id %u", ase_rsp->id);
+		} else {
+			client_ep = CONTAINER_OF(stream->ep, struct bt_bap_unicast_client_ep, ep);
+			client_ep->cp_ntf_pending = false;
 		}
 
 		switch (rsp->op) {
@@ -1371,18 +1379,20 @@ static uint8_t unicast_client_cp_notify(struct bt_conn *conn,
 			}
 			break;
 		case BT_ASCS_RELEASE_OP:
-			if (stream != NULL) {
-				client_ep = CONTAINER_OF(stream->ep,
-							 struct bt_bap_unicast_client_ep, ep);
-
-				if (client_ep->release_requested) {
-					/* Set to false to only handle the callback here */
+			/* client_ep->release_requested is set to false if handled by the
+			 * endpoint notification handler
+			 */
+			if (client_ep != NULL && client_ep->release_requested) {
+				/* If request was reject, do not expect endpoint notifications */
+				if (ase_rsp->code != BT_BAP_ASCS_RSP_CODE_SUCCESS) {
+					client_ep->cp_ntf_pending = false;
 					client_ep->release_requested = false;
 				}
-			}
 
-			if (unicast_client_cbs->release != NULL) {
-				unicast_client_cbs->release(stream, ase_rsp->code, ase_rsp->reason);
+				if (unicast_client_cbs->release != NULL) {
+					unicast_client_cbs->release(stream, ase_rsp->code,
+								    ase_rsp->reason);
+				}
 			}
 			break;
 		default:
@@ -2012,6 +2022,10 @@ int bt_bap_unicast_client_ep_send(struct bt_conn *conn, struct bt_bap_ep *ep,
 		reset_att_buf(client);
 	}
 
+	if (err == 0) {
+		client_ep->cp_ntf_pending = true;
+	}
+
 	return err;
 }
 
@@ -2041,6 +2055,8 @@ static void unicast_client_reset(struct bt_bap_ep *ep)
 	client_ep->cp_handle = 0U;
 	client_ep->handle = 0U;
 	(void)memset(&client_ep->discover, 0, sizeof(client_ep->discover));
+	client_ep->release_requested = false;
+	client_ep->cp_ntf_pending = false;
 	/* Need to keep the subscribe params intact for the callback */
 }
 
