@@ -351,6 +351,7 @@ enum wifi_twt_fail_reason {
 	WIFI_TWT_FAIL_PEER_NOT_TWT_CAPAB,
 	WIFI_TWT_FAIL_OPERATION_IN_PROGRESS,
 	WIFI_TWT_FAIL_INVALID_FLOW_ID,
+	WIFI_TWT_FAIL_IP_NOT_ASSIGNED,
 };
 
 static const char * const twt_err_code_tbl[] = {
@@ -368,6 +369,8 @@ static const char * const twt_err_code_tbl[] = {
 		"Operation already in progress",
 	[WIFI_TWT_FAIL_INVALID_FLOW_ID] =
 		"Invalid negotiated flow id",
+	[WIFI_TWT_FAIL_IP_NOT_ASSIGNED] =
+		"IP address not assigned",
 };
 
 static inline const char *get_twt_err_code_str(int16_t err_no)
