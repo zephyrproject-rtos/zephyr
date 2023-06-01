@@ -200,27 +200,44 @@ static void stm32_fill_irq_table(int8_t start, int8_t len, int32_t irqn)
 	}
 }
 
-/* This macro provides body for stm32_exti_range structure initialization. */
-#define STM32_EXTI_RANGE(idx)						    \
-	.start = DT_PROP_BY_IDX(DT_NODELABEL(exti), line_ranges, 2 * idx),  \
-	.len = DT_PROP_BY_IDX(DT_NODELABEL(exti), line_ranges, 2 * idx + 1)
+/* This macro provides value from line_ranges property at specified index.
+ * It's used by LISTIFY to prepare line ranges list.
+ */
+#define STM32_EXTI_LINE_RANGES_BY_IDX(idx, _)                                  \
+	DT_PROP_BY_IDX(DT_NODELABEL(exti), line_ranges, idx)
+
+/* This macro converts values in line_ranges property to list of arguments that
+ * can be passed to a macro.
+ */
+#define STM32_EXTI_LINE_RANGES_LIST                                            \
+	LISTIFY(DT_PROP_LEN(DT_NODELABEL(exti), line_ranges),                  \
+		STM32_EXTI_LINE_RANGES_BY_IDX, (,))
 
 /* This macro:
  * - populates line_range_x from line_range dt property
  * - fill exti_irq_table through stm32_fill_irq_table()
  * - calls IRQ_CONNECT for each irq & matching line_range
+ *
+ * First two arguments in __VA_ARGS__ represent range for current line.
  */
-#define STM32_EXTI_INIT(node_id, interrupts, idx)			\
-	static const struct stm32_exti_range line_range_##idx = {	\
-		STM32_EXTI_RANGE(idx)					\
-	};								\
-	stm32_fill_irq_table(line_range_##idx.start,			\
-			     line_range_##idx.len,			\
-			     DT_IRQ_BY_IDX(node_id, idx, irq));		\
-	IRQ_CONNECT(DT_IRQ_BY_IDX(node_id, idx, irq),			\
-		DT_IRQ_BY_IDX(node_id, idx, priority),			\
-		stm32_exti_isr, &line_range_##idx,			\
-		0);
+#define STM32_EXTI_INIT(node_id, interrupts, idx, ...)                         \
+	static const struct stm32_exti_range line_range_##idx = {              \
+		.start = GET_ARG_N(1, __VA_ARGS__),                            \
+		.len = GET_ARG_N(2, __VA_ARGS__)                               \
+	};                                                                     \
+	stm32_fill_irq_table(line_range_##idx.start, line_range_##idx.len,     \
+			     DT_IRQ_BY_IDX(node_id, idx, irq));                \
+	IRQ_CONNECT(DT_IRQ_BY_IDX(node_id, idx, irq),                          \
+		    DT_IRQ_BY_IDX(node_id, idx, priority), stm32_exti_isr,     \
+		    &line_range_##idx, 0);
+
+/* Skip first 2 * idx arguments from STM32_EXTI_LINE_RANGES_LIST (provided in
+ * __VA_ARGS__), so the first two arguments are proper range for this iteration.
+ */
+#define STM32_EXTI_INIT_SKIP_ARGS(node_id, prop, idx, ...)                     \
+	STM32_EXTI_INIT(                                                       \
+		node_id, prop, idx,                                            \
+		GET_ARGS_LESS_N(idx, GET_ARGS_LESS_N(idx, __VA_ARGS__)))
 
 /**
  * @brief initialize EXTI device driver
@@ -228,9 +245,9 @@ static void stm32_fill_irq_table(int8_t start, int8_t len, int32_t irqn)
 static int stm32_exti_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
-	DT_FOREACH_PROP_ELEM(DT_NODELABEL(exti),
-			     interrupt_names,
-			     STM32_EXTI_INIT);
+	DT_FOREACH_PROP_ELEM_VARGS(DT_NODELABEL(exti), interrupt_names,
+				   STM32_EXTI_INIT_SKIP_ARGS,
+				   STM32_EXTI_LINE_RANGES_LIST);
 
 	return 0;
 }
