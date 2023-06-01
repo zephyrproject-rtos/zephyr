@@ -19,6 +19,12 @@ extern "C" {
 #define NPCX_UMA_ACCESS_READ  BIT(1)
 #define NPCX_UMA_ACCESS_ADDR  BIT(2)
 
+/* Valid value of Dn_NADDRB that sets the number of address bytes in a transaction */
+#define NPCX_DEV_NUM_ADDR_1BYTE 1
+#define NPCX_DEV_NUM_ADDR_2BYTE 2
+#define NPCX_DEV_NUM_ADDR_3BYTE 3
+#define NPCX_DEV_NUM_ADDR_4BYTE 4
+
 /* UMA operation configuration for a SPI device */
 struct npcx_uma_cfg {
 	uint8_t opcode;
