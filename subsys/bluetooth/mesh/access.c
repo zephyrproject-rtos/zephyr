@@ -2105,10 +2105,11 @@ void bt_mesh_comp_data_clear(void)
 
 int bt_mesh_models_metadata_change_prepare(void)
 {
-#if !IS_ENABLED(CONFIG_BT_MESH_LARGE_COMP_DATA_SRV)
+#if IS_ENABLED(CONFIG_BT_MESH_LARGE_COMP_DATA_SRV)
+	return bt_mesh_models_metadata_store();
+#else
 	return -ENOTSUP;
 #endif
-	return bt_mesh_models_metadata_store();
 }
 
 static void commit_mod(struct bt_mesh_model *mod, struct bt_mesh_elem *elem,
