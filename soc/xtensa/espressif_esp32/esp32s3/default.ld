@@ -236,6 +236,17 @@ SECTIONS
     . = ALIGN(4);
     _ext_ram_bss_end = ABSOLUTE(.);
   } > ext_ram_seg
+
+  .ext_ram_noinit (NOLOAD) :
+  {
+#if defined(CONFIG_ESP32_WIFI_NET_ALLOC_SPIRAM)
+    *libdrivers__wifi.a:(.noinit .noinit.*)
+    *libsubsys__net__l2__ethernet.a:(.noinit .noinit.*)
+    *libsubsys__net__lib__config.a:(.noinit .noinit.*)
+    *libsubsys__net__ip.a:(.noinit .noinit.*)
+    *libsubsys__net.a:(.noinit .noinit.*)
+#endif
+  } > ext_ram_seg
 #endif
 
   /* Send .iram0 code to iram */
