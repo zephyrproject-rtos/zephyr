@@ -2,7 +2,9 @@ sample:
   name: Dining Philosophers
 common:
   extra_args: DEBUG_PRINTF=1
-  tags: introduction
+  tags:
+    - inroduction
+    - kernel
   harness: console
   integration_platforms:
     - native_posix
@@ -15,8 +17,7 @@ common:
       - ".*THINKING.*"
       - ".*EATING.*"
 tests:
-  sample.kernel.philosopher:
-    tags: introduction
+  sample.kernel.philosopher: {}
   sample.kernel.philosopher.same_prio:
     extra_args: SAME_PRIO=1
   sample.kernel.philosopher.static:

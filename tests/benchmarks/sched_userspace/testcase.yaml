@@ -2,6 +2,7 @@ tests:
   benchmark.kernel.scheduler_userspace:
     arch_allow: arm64
     tags:
+      - kernel
       - benchmark
       - userspace
     slow: true
