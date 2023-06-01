@@ -3,8 +3,6 @@
 
 tests:
   drivers.regulator.build:
-    tags:
-      - drivers
-      - regulator
+    tags: drivers regulator
     build_only: true
     platform_allow: native_posix
