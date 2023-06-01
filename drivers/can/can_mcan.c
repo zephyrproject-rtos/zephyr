@@ -475,7 +475,7 @@ static void can_mcan_state_change_handler(const struct device *dev)
 	}
 }
 
-static void can_mcan_tc_event_handler(const struct device *dev)
+static void can_mcan_tx_event_handler(const struct device *dev)
 {
 	const struct can_mcan_config *config = dev->config;
 	const struct can_mcan_callbacks *cbs = config->callbacks;
@@ -547,7 +547,7 @@ void can_mcan_line_0_isr(const struct device *dev)
 
 		/* TX event FIFO new entry */
 		if ((ir & CAN_MCAN_IR_TEFN) != 0U) {
-			can_mcan_tc_event_handler(dev);
+			can_mcan_tx_event_handler(dev);
 		}
 
 		if ((ir & CAN_MCAN_IR_TEFL) != 0U) {
@@ -968,9 +968,9 @@ int can_mcan_add_rx_filter_std(const struct device *dev, can_rx_callback_t callb
 	const struct can_mcan_callbacks *cbs = config->callbacks;
 	struct can_mcan_data *data = dev->data;
 	struct can_mcan_std_filter filter_element = {
-		.id1 = filter->id,
-		.id2 = filter->mask,
-		.sft = CAN_MCAN_SFT_MASKED
+		.sfid1 = filter->id,
+		.sfid2 = filter->mask,
+		.sft = CAN_MCAN_SFT_CLASSIC
 	};
 	int filter_id = -ENOSPC;
 	int err;
@@ -992,7 +992,7 @@ int can_mcan_add_rx_filter_std(const struct device *dev, can_rx_callback_t callb
 	}
 
 	/* TODO proper fifo balancing */
-	filter_element.sfce = filter_id & 0x01 ? CAN_MCAN_FCE_FIFO1 : CAN_MCAN_FCE_FIFO0;
+	filter_element.sfec = filter_id & 0x01 ? CAN_MCAN_XFEC_FIFO1 : CAN_MCAN_XFEC_FIFO0;
 
 	err = can_mcan_write_mram(dev, config->mram_offsets[CAN_MCAN_MRAM_CFG_STD_FILTER] +
 				  filter_id * sizeof(struct can_mcan_std_filter),
@@ -1021,9 +1021,9 @@ static int can_mcan_add_rx_filter_ext(const struct device *dev, can_rx_callback_
 	const struct can_mcan_callbacks *cbs = config->callbacks;
 	struct can_mcan_data *data = dev->data;
 	struct can_mcan_ext_filter filter_element = {
-		.id2 = filter->mask,
-		.id1 = filter->id,
-		.eft = CAN_MCAN_EFT_MASKED
+		.efid2 = filter->mask,
+		.efid1 = filter->id,
+		.eft = CAN_MCAN_EFT_CLASSIC
 	};
 	int filter_id = -ENOSPC;
 	int err;
@@ -1045,7 +1045,7 @@ static int can_mcan_add_rx_filter_ext(const struct device *dev, can_rx_callback_
 	}
 
 	/* TODO proper fifo balancing */
-	filter_element.efce = filter_id & 0x01 ? CAN_MCAN_FCE_FIFO1 : CAN_MCAN_FCE_FIFO0;
+	filter_element.efec = filter_id & 0x01 ? CAN_MCAN_XFEC_FIFO1 : CAN_MCAN_XFEC_FIFO0;
 
 	err = can_mcan_write_mram(dev, config->mram_offsets[CAN_MCAN_MRAM_CFG_EXT_FILTER] +
 				  filter_id * sizeof(struct can_mcan_ext_filter),
