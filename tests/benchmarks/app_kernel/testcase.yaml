@@ -1,5 +1,7 @@
 common:
-  tags: benchmark
+  tags:
+    - benchmark
+    - kernel
   timeout: 420
 tests:
   benchmark.kernel.application:

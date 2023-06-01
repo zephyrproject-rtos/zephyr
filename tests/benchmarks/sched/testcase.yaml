@@ -1,6 +1,8 @@
 tests:
   benchmark.kernel.scheduler:
-    tags: benchmark
+    tags:
+      - benchmark
+      - kernel
     integration_platforms:
       - mps2_an385
       - qemu_x86
