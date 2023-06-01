@@ -1533,10 +1533,24 @@ struct fiu_reg {
 	volatile uint8_t SPI1_DEV;
 	/* 0x03E-0x3F */
 	volatile uint8_t reserved9[2];
+#elif defined(CONFIG_SOC_SERIES_NPCX4)
+	/* 0x034: UMA address byte 0-3 */
+	volatile uint32_t UMA_AB0_3;
+	/* 0x038-0x3B */
+	volatile uint8_t reserved8[4];
+	/* 0x03C: SPI Device */
+	volatile uint8_t SPI_DEV;
+	/* 0x03D */
+	volatile uint8_t reserved9;
+	/* 0x03E */
+	volatile uint8_t SPI_DEV_SIZE;
+	/* 0x03F */
+	volatile uint8_t reserved10;
 #endif
 };
 
 /* FIU register fields */
+#define NPCX_BURST_CFG_SPI_DEV_SEL       FIELD(4, 2)
 #define NPCX_RESP_CFG_IAD_EN             0
 #define NPCX_RESP_CFG_DEV_SIZE_EX        2
 #define NPCX_RESP_CFG_QUAD_EN            3
@@ -1550,12 +1564,20 @@ struct fiu_reg {
 #define NPCX_UMA_ECTS_SW_CS1             1
 #define NPCX_UMA_ECTS_SEC_CS             2
 #define NPCX_UMA_ECTS_UMA_LOCK           3
+#define NPCX_UMA_ECTS_UMA_ADDR_SIZE      FIELD(4, 3)
 #define NPCX_SPI1_DEV_FOUR_BADDR_CS10    6
 #define NPCX_SPI1_DEV_FOUR_BADDR_CS11    7
 #define NPCX_SPI1_DEV_SPI1_LO_DEV_SIZE   FIELD(0, 4)
+#if defined(CONFIG_SOC_SERIES_NPCX9)
 #define NPCX_FIU_EXT_CFG_SPI1_2DEV       7
+#else
+#define NPCX_FIU_EXT_CFG_SPI1_2DEV       6
+#endif
 #define NPCX_FIU_EXT_CFG_SET_DMM_EN      2
 #define NPCX_FIU_EXT_CFG_SET_CMD_EN      1
+#define NPCX_SPI_DEV_NADDRB              FIELD(5, 3)
+
+#define NPCX_MSR_IE_CFG_UMA_BLOCK        3
 
 /* UMA fields selections */
 #define UMA_FLD_ADDR     BIT(NPCX_UMA_CTS_A_SIZE)  /* 3-bytes ADR field */
