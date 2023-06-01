@@ -347,6 +347,21 @@ config BT_MESH_LABEL_COUNT
 	help
 	  This option specifies how many Label UUIDs can be stored.
 
+config BT_MESH_LABEL_NO_RECOVER
+	bool "[DEPRECATED] Don't recover Label UUIDs from groups address subscription list"
+	select DEPRECATED
+	depends on BT_MESH_LABEL_COUNT > 0
+	help
+	  After adding support for virtual addresses with collision (where two Label UUIDs have the
+	  same virtual address), the format of the data in the persistent storage with the Label
+	  UUIDs which a model is subscribed to or publishes to has been changed. The recovery
+	  code is added and the Label UUIDs will be recovered by picking first Label UUID matching
+	  to the virtual address in the subscription list or model publication. This options can
+	  disable the recovery code and save some flash if the recovery is not required (e.g.
+	  virtual address support wasn't enabled before this option was added, or the devices were
+	  unprovisioned before upgrading to the version with this option). The option is marked as
+	  deprecated to remove the recovery code eventually.
+
 config BT_MESH_CRPL
 	int "Maximum capacity of the replay protection list"
 	default 10

@@ -1650,7 +1650,7 @@ static int mod_set_sub(struct bt_mesh_model *mod, size_t len_rd,
 
 	LOG_DBG("Decoded %zu subscribed group addresses for model", len / sizeof(mod->groups[0]));
 
-#if CONFIG_BT_MESH_LABEL_COUNT > 0
+#if !IS_ENABLED(CONFIG_BT_MESH_LABEL_NO_RECOVER) && (CONFIG_BT_MESH_LABEL_COUNT > 0)
 	/* If uuids[0] is NULL, then either the model is not subscribed to virtual addresses or
 	 * uuids are not yet recovered.
 	 */
@@ -1739,23 +1739,25 @@ static int mod_set_pub(struct bt_mesh_model *mod, size_t len_rd,
 		return 0;
 	}
 
-	err = bt_mesh_settings_set(read_cb, cb_arg, &pub, sizeof(pub.base));
-	if (!err) {
-		/* Recover from implementation where uuid was not stored for virtual address. It
-		 * is safe to pick first matched label because previously the stack wasn't able
-		 * to store virtual addresses with collisions.
-		 */
-		if (BT_MESH_ADDR_IS_VIRTUAL(pub.base.addr)) {
-			mod->pub->uuid = bt_mesh_va_uuid_get(pub.base.addr, NULL, NULL);
-		}
+	if (!IS_ENABLED(CONFIG_BT_MESH_LABEL_NO_RECOVER)) {
+		err = bt_mesh_settings_set(read_cb, cb_arg, &pub, sizeof(pub.base));
+		if (!err) {
+			/* Recover from implementation where uuid was not stored for virtual
+			 * address. It is safe to pick first matched label because previously the
+			 * stack wasn't able to store virtual addresses with collisions.
+			 */
+			if (BT_MESH_ADDR_IS_VIRTUAL(pub.base.addr)) {
+				mod->pub->uuid = bt_mesh_va_uuid_get(pub.base.addr, NULL, NULL);
+			}
 
-		goto pub_base_set;
-	} else {
-		err = bt_mesh_settings_set(read_cb, cb_arg, &pub, sizeof(pub));
-		if (err) {
-			LOG_ERR("Failed to set \'model-pub\'");
-			return err;
+			goto pub_base_set;
 		}
+	}
+
+	err = bt_mesh_settings_set(read_cb, cb_arg, &pub, sizeof(pub));
+	if (err) {
+		LOG_ERR("Failed to set \'model-pub\'");
+		return err;
 	}
 
 	if (BT_MESH_ADDR_IS_VIRTUAL(pub.base.addr)) {
@@ -2008,9 +2010,7 @@ static void store_pending_mod_pub(struct bt_mesh_model *mod, bool vnd)
 			(void)bt_mesh_va_get_idx_by_uuid(mod->pub->uuid, &pub.uuidx);
 		}
 
-		err = settings_save_one(path, &pub,
-					BT_MESH_ADDR_IS_VIRTUAL(mod->pub->addr) ? sizeof(pub) :
-										  sizeof(pub.base));
+		err = settings_save_one(path, &pub, sizeof(pub));
 	}
 
 	if (err) {
