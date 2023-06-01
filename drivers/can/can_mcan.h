@@ -870,30 +870,39 @@
 #define CAN_MCAN_DT_INST_BUILD_ASSERT_MRAM_CFG(inst)                                               \
 	CAN_MCAN_DT_BUILD_ASSERT_MRAM_CFG(DT_DRV_INST(inst))
 
+/**
+ * @brief Bosch M_CAN Rx Buffer and FIFO Element header
+ *
+ * See Bosch M_CAN Users Manual section 2.4.2 for details.
+ */
 struct can_mcan_rx_fifo_hdr {
 	union {
 		struct {
-			uint32_t ext_id: 29; /* Extended Identifier */
-			uint32_t rtr: 1;     /* Remote Transmission Request*/
-			uint32_t xtd: 1;     /* Extended identifier */
-			uint32_t esi: 1;     /* Error state indicator */
+			uint32_t ext_id: 29;
+			uint32_t rtr: 1;
+			uint32_t xtd: 1;
+			uint32_t esi: 1;
 		};
 		struct {
 			uint32_t pad1: 18;
-			uint32_t std_id: 11; /* Standard Identifier */
+			uint32_t std_id: 11;
 			uint32_t pad2: 3;
 		};
 	};
-
-	uint32_t rxts: 16; /* Rx timestamp */
-	uint32_t dlc: 4;   /* Data Length Code */
-	uint32_t brs: 1;   /* Bit Rate Switch */
-	uint32_t fdf: 1;   /* FD Format */
-	uint32_t res: 2;   /* Reserved */
-	uint32_t fidx: 7;  /* Filter Index */
-	uint32_t anmf: 1;  /* Accepted non-matching frame */
+	uint32_t rxts: 16;
+	uint32_t dlc: 4;
+	uint32_t brs: 1;
+	uint32_t fdf: 1;
+	uint32_t res: 2;
+	uint32_t fidx: 7;
+	uint32_t anmf: 1;
 } __packed __aligned(4);
 
+/**
+ * @brief Bosch M_CAN Rx Buffer and FIFO Element
+ *
+ * See Bosch M_CAN Users Manual section 2.4.2 for details.
+ */
 struct can_mcan_rx_fifo {
 	struct can_mcan_rx_fifo_hdr hdr;
 	union {
@@ -902,29 +911,39 @@ struct can_mcan_rx_fifo {
 	};
 } __packed __aligned(4);
 
+/**
+ * @brief Bosch M_CAN Tx Buffer Element header
+ *
+ * See Bosch M_CAN Users Manual section 2.4.3 for details.
+ */
 struct can_mcan_tx_buffer_hdr {
 	union {
 		struct {
-			uint32_t ext_id: 29; /* Identifier */
-			uint32_t rtr: 1;     /* Remote Transmission Request*/
-			uint32_t xtd: 1;     /* Extended identifier */
-			uint32_t esi: 1;     /* Error state indicator */
+			uint32_t ext_id: 29;
+			uint32_t rtr: 1;
+			uint32_t xtd: 1;
+			uint32_t esi: 1;
 		};
 		struct {
 			uint32_t pad1: 18;
-			uint32_t std_id: 11; /* Identifier */
+			uint32_t std_id: 11;
 			uint32_t pad2: 3;
 		};
 	};
-	uint16_t res1;   /* Reserved */
-	uint8_t dlc: 4;  /* Data Length Code */
-	uint8_t brs: 1;  /* Bit Rate Switch */
-	uint8_t fdf: 1;  /* FD Format */
-	uint8_t res2: 1; /* Reserved */
-	uint8_t efc: 1;  /* Event FIFO control (Store Tx events) */
-	uint8_t mm;      /* Message marker */
+	uint16_t res1;
+	uint8_t dlc: 4;
+	uint8_t brs: 1;
+	uint8_t fdf: 1;
+	uint8_t tsce: 1;
+	uint8_t efc: 1;
+	uint8_t mm;
 } __packed __aligned(4);
 
+/**
+ * @brief Bosch M_CAN Tx Buffer Element
+ *
+ * See Bosch M_CAN Users Manual section 2.4.3 for details.
+ */
 struct can_mcan_tx_buffer {
 	struct can_mcan_tx_buffer_hdr hdr;
 	union {
@@ -933,57 +952,83 @@ struct can_mcan_tx_buffer {
 	};
 } __packed __aligned(4);
 
-#define CAN_MCAN_TE_TX	0x1 /* TX event */
-#define CAN_MCAN_TE_TXC 0x2 /* TX event in spite of cancellation */
-
+/**
+ * @brief Bosch M_CAN Tx Event FIFO Element
+ *
+ * See Bosch M_CAN Users Manual section 2.4.4 for details.
+ */
 struct can_mcan_tx_event_fifo {
-	uint32_t id: 29; /* Identifier */
-	uint32_t rtr: 1; /* Remote Transmission Request*/
-	uint32_t xtd: 1; /* Extended identifier */
-	uint32_t esi: 1; /* Error state indicator */
-
-	uint16_t txts;  /* TX Timestamp */
-	uint8_t dlc: 4; /* Data Length Code */
-	uint8_t brs: 1; /* Bit Rate Switch */
-	uint8_t fdf: 1; /* FD Format */
-	uint8_t et: 2;	/* Event type */
-	uint8_t mm;	/* Message marker */
+	union {
+		struct {
+			uint32_t ext_id: 29;
+			uint32_t rtr: 1;
+			uint32_t xtd: 1;
+			uint32_t esi: 1;
+		};
+		struct {
+			uint32_t pad1: 18;
+			uint32_t std_id: 11;
+			uint32_t pad2: 3;
+		};
+	};
+	uint16_t txts;
+	uint8_t dlc: 4;
+	uint8_t brs: 1;
+	uint8_t fdf: 1;
+	uint8_t et: 2;
+	uint8_t mm;
 } __packed __aligned(4);
 
-#define CAN_MCAN_FCE_DISABLE	0x0
-#define CAN_MCAN_FCE_FIFO0	0x1
-#define CAN_MCAN_FCE_FIFO1	0x2
-#define CAN_MCAN_FCE_REJECT	0x3
-#define CAN_MCAN_FCE_PRIO	0x4
-#define CAN_MCAN_FCE_PRIO_FIFO0 0x5
-#define CAN_MCAN_FCE_PRIO_FIFO1 0x7
+/* Bosch M_CAN Standard/Extended Filter Element Configuration (SFEC/EFEC) */
+#define CAN_MCAN_XFEC_DISABLE    0x0
+#define CAN_MCAN_XFEC_FIFO0      0x1
+#define CAN_MCAN_XFEC_FIFO1      0x2
+#define CAN_MCAN_XFEC_REJECT     0x3
+#define CAN_MCAN_XFEC_PRIO       0x4
+#define CAN_MCAN_XFEC_PRIO_FIFO0 0x5
+#define CAN_MCAN_XFEC_PRIO_FIFO1 0x7
 
+/* Bosch M_CAN Standard Filter Type (SFT) */
 #define CAN_MCAN_SFT_RANGE    0x0
 #define CAN_MCAN_SFT_DUAL     0x1
-#define CAN_MCAN_SFT_MASKED   0x2
+#define CAN_MCAN_SFT_CLASSIC  0x2
 #define CAN_MCAN_SFT_DISABLED 0x3
 
+/**
+ * @brief Bosch M_CAN Standard Message ID Filter Element
+ *
+ * See Bosch M_CAN Users Manual section 2.4.5 for details.
+ */
 struct can_mcan_std_filter {
-	uint32_t id2: 11; /* ID2 for dual or range, mask otherwise */
+	uint32_t sfid2: 11;
 	uint32_t res: 5;
-	uint32_t id1: 11;
-	uint32_t sfce: 3; /* Filter config */
-	uint32_t sft: 2;  /* Filter type */
+	uint32_t sfid1: 11;
+	uint32_t sfec: 3;
+	uint32_t sft: 2;
 } __packed __aligned(4);
 
+/* Bosch M_CAN Extended Filter Type (EFT) */
 #define CAN_MCAN_EFT_RANGE_XIDAM 0x0
-#define CAN_MCAN_EFT_DUAL	 0x1
-#define CAN_MCAN_EFT_MASKED	 0x2
-#define CAN_MCAN_EFT_RANGE	 0x3
+#define CAN_MCAN_EFT_DUAL        0x1
+#define CAN_MCAN_EFT_CLASSIC     0x2
+#define CAN_MCAN_EFT_RANGE       0x3
 
+/**
+ * @brief Bosch M_CAN Extended Message ID Filter Element
+ *
+ * See Bosch M_CAN Users Manual section 2.4.6 for details.
+ */
 struct can_mcan_ext_filter {
-	uint32_t id1: 29;
-	uint32_t efce: 3; /* Filter config */
-	uint32_t id2: 29; /* ID2 for dual or range, mask otherwise */
-	uint32_t res: 1;
-	uint32_t eft: 2; /* Filter type */
+	uint32_t efid1: 29;
+	uint32_t efec: 3;
+	uint32_t efid2: 29;
+	uint32_t esync: 1;
+	uint32_t eft: 2;
 } __packed __aligned(4);
 
+/**
+ * @brief Bosch M_CAN driver internal data structure.
+ */
 struct can_mcan_data {
 	struct k_mutex lock;
 	struct k_sem tx_sem;
@@ -1157,6 +1202,9 @@ struct can_mcan_callbacks {
 #define CAN_MCAN_DT_INST_CALLBACKS_DEFINE(inst, _name)                                             \
 	CAN_MCAN_DT_CALLBACKS_DEFINE(DT_DRV_INST(inst), _name)
 
+/**
+ * @brief Bosch M_CAN driver internal configuration structure.
+ */
 struct can_mcan_config {
 	const struct can_mcan_ops *ops;
 	const struct can_mcan_callbacks *callbacks;
@@ -1545,44 +1593,114 @@ static inline int can_mcan_clear_mram(const struct device *dev, uint16_t offset,
  */
 int can_mcan_configure_mram(const struct device *dev, uintptr_t mrba, uintptr_t mram);
 
-int can_mcan_get_capabilities(const struct device *dev, can_mode_t *cap);
-
-int can_mcan_start(const struct device *dev);
-
-int can_mcan_stop(const struct device *dev);
-
-int can_mcan_set_mode(const struct device *dev, can_mode_t mode);
-
-int can_mcan_set_timing(const struct device *dev, const struct can_timing *timing);
-
-int can_mcan_set_timing_data(const struct device *dev, const struct can_timing *timing_data);
-
+/**
+ * @brief Bosch M_CAN driver initialization callback.
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ */
 int can_mcan_init(const struct device *dev);
 
+/**
+ * @brief Bosch M_CAN driver m_can_int0 IRQ handler.
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ */
 void can_mcan_line_0_isr(const struct device *dev);
 
+/**
+ * @brief Bosch M_CAN driver m_can_int1 IRQ handler.
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ */
 void can_mcan_line_1_isr(const struct device *dev);
 
+/**
+ * @brief Enable Bosch M_CAN configuration change.
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ */
+void can_mcan_enable_configuration_change(const struct device *dev);
+
+/**
+ * @brief Bosch M_CAN driver callback API upon getting CAN controller capabilities
+ * See @a can_get_capabilities() for argument description
+ */
+int can_mcan_get_capabilities(const struct device *dev, can_mode_t *cap);
+
+/**
+ * @brief Bosch M_CAN driver callback API upon starting CAN controller
+ * See @a can_start() for argument description
+ */
+int can_mcan_start(const struct device *dev);
+
+/**
+ * @brief Bosch M_CAN driver callback API upon stopping CAN controller
+ * See @a can_stop() for argument description
+ */
+int can_mcan_stop(const struct device *dev);
+
+/**
+ * @brief Bosch M_CAN driver callback API upon setting CAN controller mode
+ * See @a can_set_mode() for argument description
+ */
+int can_mcan_set_mode(const struct device *dev, can_mode_t mode);
+
+/**
+ * @brief Bosch M_CAN driver callback API upon setting CAN bus timing
+ * See @a can_set_timing() for argument description
+ */
+int can_mcan_set_timing(const struct device *dev, const struct can_timing *timing);
+
+/**
+ * @brief Bosch M_CAN driver callback API upon setting CAN bus data phase timing
+ * See @a can_set_timing_data() for argument description
+ */
+int can_mcan_set_timing_data(const struct device *dev, const struct can_timing *timing_data);
+
+#ifndef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
+/**
+ * @brief Bosch M_CAN driver callback API upon recovering the CAN bus
+ * See @a can_recover() for argument description
+ */
 int can_mcan_recover(const struct device *dev, k_timeout_t timeout);
+#endif /* !CONFIG_CAN_AUTO_BUS_OFF_RECOVERY */
 
 int can_mcan_send(const struct device *dev, const struct can_frame *frame, k_timeout_t timeout,
 		  can_tx_callback_t callback, void *user_data);
 
 int can_mcan_get_max_filters(const struct device *dev, bool ide);
 
+/**
+ * @brief Bosch M_CAN driver callback API upon adding an RX filter
+ * See @a can_add_rx_callback() for argument description
+ */
 int can_mcan_add_rx_filter(const struct device *dev, can_rx_callback_t callback, void *user_data,
 			   const struct can_filter *filter);
 
+/**
+ * @brief Bosch M_CAN driver callback API upon removing an RX filter
+ * See @a can_remove_rx_filter() for argument description
+ */
 void can_mcan_remove_rx_filter(const struct device *dev, int filter_id);
 
+/**
+ * @brief Bosch M_CAN driver callback API upon getting the CAN controller state
+ * See @a can_get_state() for argument description
+ */
 int can_mcan_get_state(const struct device *dev, enum can_state *state,
 		       struct can_bus_err_cnt *err_cnt);
 
+/**
+ * @brief Bosch M_CAN driver callback API upon setting a state change callback
+ * See @a can_set_state_change_callback() for argument description
+ */
 void can_mcan_set_state_change_callback(const struct device *dev,
 					can_state_change_callback_t callback, void *user_data);
 
+/**
+ * @brief Bosch M_CAN driver callback API upon getting the maximum supported bitrate
+ * See @a can_get_max_bitrate() for argument description
+ */
 int can_mcan_get_max_bitrate(const struct device *dev, uint32_t *max_bitrate);
-
-void can_mcan_enable_configuration_change(const struct device *dev);
 
 #endif /* ZEPHYR_DRIVERS_CAN_MCAN_H_ */
