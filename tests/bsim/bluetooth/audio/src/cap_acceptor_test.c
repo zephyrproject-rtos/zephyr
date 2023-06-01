@@ -39,6 +39,7 @@ static struct bt_bap_lc3_preset broadcast_preset_16_2_1 =
 static const struct bt_codec_qos_pref unicast_qos_pref =
 	BT_CODEC_QOS_PREF(true, BT_GAP_LE_PHY_2M, 0u, 60u, 20000u, 40000u, 20000u, 40000u);
 
+static bool auto_start_sink_streams;
 
 static K_SEM_DEFINE(sem_broadcast_started, 0U, ARRAY_SIZE(broadcast_sink_streams));
 static K_SEM_DEFINE(sem_broadcast_stopped, 0U, ARRAY_SIZE(broadcast_sink_streams));
@@ -210,7 +211,8 @@ static void unicast_stream_enabled_cb(struct bt_bap_stream *stream)
 	struct bt_bap_ep_info ep_info;
 	int err;
 
-	printk("Enabled: stream %p\n", stream);
+	printk("Enabled: stream %p (auto_start_sink_streams %d)\n", stream,
+	       auto_start_sink_streams);
 
 	err = bt_bap_ep_get_info(stream->ep, &ep_info);
 	if (err != 0) {
@@ -218,7 +220,7 @@ static void unicast_stream_enabled_cb(struct bt_bap_stream *stream)
 		return;
 	}
 
-	if (ep_info.dir == BT_AUDIO_DIR_SINK) {
+	if (auto_start_sink_streams && ep_info.dir == BT_AUDIO_DIR_SINK) {
 		/* Automatically do the receiver start ready operation */
 		err = bt_bap_stream_start(stream);
 
@@ -589,7 +591,22 @@ static void test_cap_acceptor_unicast(void)
 {
 	init();
 
-	/* TODO: When babblesim supports ISO, wait for audio stream to pass */
+	auto_start_sink_streams = true;
+
+	/* TODO: wait for audio stream to pass */
+
+	WAIT_FOR_FLAG(flag_connected);
+
+	PASS("CAP acceptor unicast passed\n");
+}
+
+static void test_cap_acceptor_unicast_timeout(void)
+{
+	init();
+
+	auto_start_sink_streams = false; /* Cause unicast_audio_start timeout */
+
+	/* TODO: wait for audio stream to pass */
 
 	WAIT_FOR_FLAG(flag_connected);
 
@@ -660,15 +677,21 @@ static const struct bst_test_instance test_cap_acceptor[] = {
 		.test_id = "cap_acceptor_unicast",
 		.test_post_init_f = test_init,
 		.test_tick_f = test_tick,
-		.test_main_f = test_cap_acceptor_unicast
+		.test_main_f = test_cap_acceptor_unicast,
+	},
+	{
+		.test_id = "cap_acceptor_unicast_timeout",
+		.test_post_init_f = test_init,
+		.test_tick_f = test_tick,
+		.test_main_f = test_cap_acceptor_unicast_timeout,
 	},
 	{
 		.test_id = "cap_acceptor_broadcast",
 		.test_post_init_f = test_init,
 		.test_tick_f = test_tick,
-		.test_main_f = test_cap_acceptor_broadcast
+		.test_main_f = test_cap_acceptor_broadcast,
 	},
-	BSTEST_END_MARKER
+	BSTEST_END_MARKER,
 };
 
 struct bst_test_list *test_cap_acceptor_install(struct bst_test_list *tests)
