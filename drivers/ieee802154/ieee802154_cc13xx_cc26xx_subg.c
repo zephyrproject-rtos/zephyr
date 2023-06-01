@@ -358,47 +358,62 @@ static enum ieee802154_hw_caps
 ieee802154_cc13xx_cc26xx_subg_get_capabilities(const struct device *dev)
 {
 	/* TODO: enable IEEE802154_HW_FILTER */
-	/* TODO: remove or actually implement IEEE802154_HW_CSMA */
-	return IEEE802154_HW_FCS | IEEE802154_HW_CSMA
-	       | IEEE802154_HW_SUB_GHZ;
+	return IEEE802154_HW_FCS | IEEE802154_HW_SUB_GHZ;
 }
 
 static int ieee802154_cc13xx_cc26xx_subg_cca(const struct device *dev)
 {
 	struct ieee802154_cc13xx_cc26xx_subg_data *drv_data = dev->data;
 	RF_EventMask events;
+	bool was_rx_on;
 	int ret;
 
 	drv_data->cmd_prop_cs.status = IDLE;
 	drv_data->cmd_prop_cs.pNextOp = NULL;
 	drv_data->cmd_prop_cs.condition.rule = COND_NEVER;
 
-	/* TODO: Check whether RX is actually enabled. */
+	was_rx_on = drv_data->cmd_prop_rx_adv.status == ACTIVE;
+
 	ret = ieee802154_cc13xx_cc26xx_subg_stop(dev);
 	if (ret < 0) {
-		return -EIO;
+		ret = -EIO;
+		goto out;
 	}
 
 	events = RF_runCmd(drv_data->rf_handle, (RF_Op *)&drv_data->cmd_prop_cs, RF_PriorityNormal,
 			   NULL, 0);
 	if (events != RF_EventLastCmdDone) {
 		LOG_DBG("Failed to request CCA: 0x%" PRIx64, events);
-		return -EIO;
+		ret = -EIO;
+		goto out;
 	}
-
-	/* TODO: Should we re-enable RX? Would not normally
-	 * be a sensible default when used before TX.
-	 */
 
 	switch (drv_data->cmd_prop_cs.status) {
 	case PROP_DONE_IDLE:
+		/* Do not re-enable RX when the channel is idle as
+		 * this usually means we want to TX directly after
+		 * and cannot afford any extra latency.
+		 */
 		return 0;
 	case PROP_DONE_BUSY:
 	case PROP_DONE_BUSYTIMEOUT:
-		return -EBUSY;
+		ret = -EBUSY;
+		break;
 	default:
-		return -EIO;
+		ret = -EIO;
 	}
+
+out:
+	/* Re-enable RX if we found it on initially
+	 * and the channel is busy (or another error
+	 * occurred) as this usually means we back off
+	 * and want to be able to receive packets in
+	 * the meantime.
+	 */
+	if (was_rx_on) {
+		ieee802154_cc13xx_cc26xx_subg_rx(dev);
+	}
+	return ret;
 }
 
 static int ieee802154_cc13xx_cc26xx_subg_rx(const struct device *dev)
@@ -509,13 +524,12 @@ static int ieee802154_cc13xx_cc26xx_subg_tx(const struct device *dev,
 					    struct net_buf *buf)
 {
 	struct ieee802154_cc13xx_cc26xx_subg_data *drv_data = dev->data;
-	int retry = CONFIG_IEEE802154_CC13XX_CC26XX_SUB_GHZ_RADIO_TX_RETRIES;
 	RF_EventMask events;
 	int ret;
 
-	if (mode != IEEE802154_TX_MODE_CSMA_CA) {
-		NET_ERR("TX mode %d not supported", mode);
-		return -ENOTSUP;
+	if (mode != IEEE802154_TX_MODE_DIRECT) {
+		/* For backwards compatibility we only log an error but do not bail. */
+		NET_ERR("TX mode %d not supported - sending directly instead.", mode);
 	}
 
 	k_mutex_lock(&drv_data->tx_mutex, K_FOREVER);
@@ -530,14 +544,13 @@ static int ieee802154_cc13xx_cc26xx_subg_tx(const struct device *dev,
 	/* TODO: Zero-copy TX, see discussion in #49775. */
 	memcpy(&drv_data->tx_data[IEEE802154_PHY_SUN_FSK_PHR_LEN], buf->data, buf->len);
 
-	/* Chain commands */
-	drv_data->cmd_prop_cs.pNextOp =
-		(rfc_radioOp_t *) &drv_data->cmd_prop_tx_adv;
-	drv_data->cmd_prop_cs.condition.rule = COND_STOP_ON_TRUE;
-
 	/* Set TX data */
 	drv_data->cmd_prop_tx_adv.pktLen = buf->len + IEEE802154_PHY_SUN_FSK_PHR_LEN;
 	drv_data->cmd_prop_tx_adv.pPkt = drv_data->tx_data;
+
+	/* Reset command status */
+	drv_data->cmd_prop_tx_adv.status = IDLE;
+	drv_data->cmd_prop_tx_adv.pNextOp = NULL;
 
 	/* Abort FG and BG processes */
 	ret = ieee802154_cc13xx_cc26xx_subg_stop(dev);
@@ -546,50 +559,19 @@ static int ieee802154_cc13xx_cc26xx_subg_tx(const struct device *dev,
 		goto out;
 	}
 
-	do {
-		/* Reset command status */
-		drv_data->cmd_prop_cs.status = IDLE;
-		drv_data->cmd_prop_tx_adv.status = IDLE;
-
-		events = RF_runCmd(drv_data->rf_handle,
-				   (RF_Op *)&drv_data->cmd_prop_cs,
-				   RF_PriorityNormal, cmd_prop_tx_adv_callback,
-				   RF_EventLastCmdDone);
-		if ((events & RF_EventLastCmdDone) == 0) {
-			LOG_DBG("Failed to run command (%" PRIx64 ")", events);
-			ret = -EIO;
-			goto out;
-		}
-
-		if (drv_data->cmd_prop_cs.status != PROP_DONE_IDLE) {
-			LOG_DBG("Channel access failure (0x%x)",
-				drv_data->cmd_prop_cs.status);
-			/* TODO: This is not a compliant CSMA/CA algorithm, use soft CSMA/CA
-			 *       instead as the SubGHz radio of this SoC has no HW CSMA/CA backoff
-			 *       algorithm support as required by IEEE 802.15.4, section 6.2.5.1.
-			 *       Alternatively construct compliant CSMA/CA with a combination
-			 *       of CMD_NOP, CMD_PROP_CS and CMD_COUNT_BRANCH commands, see
-			 *       SimpleLink SDK (rfListenBeforeTalk.c) or calculate proper backoff
-			 *       period as in the SimpleLink WiSUN stack's mac_tx.c.
-			 * Currently, we just wait a random amount of us in the range [0,256).
-			 */
-			k_busy_wait(sys_rand32_get() & 0xff);
-			continue;
-		}
-
-		if (drv_data->cmd_prop_tx_adv.status != PROP_DONE_OK) {
-			LOG_DBG("Transmit failed (0x%x)",
-				drv_data->cmd_prop_tx_adv.status);
-			continue;
-		}
-
-		ret = 0;
+	events = RF_runCmd(drv_data->rf_handle, (RF_Op *)&drv_data->cmd_prop_tx_adv,
+			   RF_PriorityNormal, cmd_prop_tx_adv_callback, RF_EventLastCmdDone);
+	if ((events & RF_EventLastCmdDone) == 0) {
+		LOG_DBG("Failed to run command (%" PRIx64 ")", events);
+		ret = -EIO;
 		goto out;
+	}
 
-	} while (retry-- > 0);
-
-	LOG_DBG("Failed to TX");
-	ret = -EIO;
+	if (drv_data->cmd_prop_tx_adv.status != PROP_DONE_OK) {
+		LOG_DBG("Transmit failed (0x%x)", drv_data->cmd_prop_tx_adv.status);
+		ret = -EIO;
+		goto out;
+	}
 
 out:
 	(void)ieee802154_cc13xx_cc26xx_subg_rx(dev);
