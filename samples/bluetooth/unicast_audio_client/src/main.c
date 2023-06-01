@@ -1101,8 +1101,10 @@ int main(void)
 		}
 		printk("Streams started\n");
 
-		/* Start send timer */
-		k_work_schedule(&audio_send_work, K_MSEC(0));
+		if (CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 0) {
+			/* Start send timer */
+			k_work_schedule(&audio_send_work, K_MSEC(0));
+		}
 
 		/* Wait for disconnect */
 		err = k_sem_take(&sem_disconnected, K_FOREVER);
