@@ -46,6 +46,11 @@ bluetooth:
     - subsys/bluetooth/
     - subsys/net/l2/bluetooth/
 
+net:
+  files:
+    - subsys/net/
+    - include/zephyr/net/
+
 test_framework:
   files:
     - subsys/testsuite/
