@@ -5,7 +5,7 @@ tests:
     harness_config:
       pytest_args: ["--custom-pytest-arg", "foo", "--cmdopt", "."]
     tags:
-      - testing
+      - test_framework
       - pytest
     integration_platforms:
       - native_posix
