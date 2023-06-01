@@ -12,7 +12,8 @@ tests:
   arch.interrupt.gen_isr_table.arm_baseline.linker_generator:
     platform_allow: qemu_cortex_m3
     filter: CONFIG_GEN_ISR_TABLES and CONFIG_ARMV6_M_ARMV8_M_BASELINE
-    tags: linker_generator
+    tags:
+      - linker_generator
     extra_configs:
       - CONFIG_NULL_POINTER_EXCEPTION_DETECTION_NONE=y
       - CONFIG_CMAKE_LINKER_GENERATOR=y

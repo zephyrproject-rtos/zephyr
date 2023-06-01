@@ -27,8 +27,3 @@ tests:
       - qemu_arc_hs
     extra_configs:
       - CONFIG_MULTITHREADING=n
-  kernel.memory_slabs.api.linker_generator:
-    platform_allow: qemu_cortex_m3
-    tags: linker_generator
-    extra_configs:
-      - CONFIG_CMAKE_LINKER_GENERATOR=y

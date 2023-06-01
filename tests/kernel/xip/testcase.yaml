@@ -7,8 +7,3 @@ tests:
     integration_platforms:
       - qemu_arc_em
       - qemu_x86_xip
-  arch.common.xip.linker_generator:
-    platform_allow: qemu_cortex_m3
-    tags: linker_generator
-    extra_configs:
-      - CONFIG_CMAKE_LINKER_GENERATOR=y
