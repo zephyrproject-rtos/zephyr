@@ -289,6 +289,22 @@ void z_paging_histogram_inc(struct k_mem_paging_histogram_t *hist,
 			    uint32_t cycles);
 #endif /* CONFIG_DEMAND_PAGING_TIMING_HISTOGRAM */
 
+#ifdef CONFIG_OBJ_CORE_STATS_THREAD
+int z_thread_stats_raw(struct k_obj_core *obj_core, void *stats);
+int z_thread_stats_query(struct k_obj_core *obj_core, void *stats);
+int z_thread_stats_reset(struct k_obj_core *obj_core);
+int z_thread_stats_disable(struct k_obj_core *obj_core);
+int z_thread_stats_enable(struct k_obj_core *obj_core);
+#endif
+
+#ifdef CONFIG_OBJ_CORE_STATS_SYSTEM
+int z_cpu_stats_raw(struct k_obj_core *obj_core, void *stats);
+int z_cpu_stats_query(struct k_obj_core *obj_core, void *stats);
+
+int z_kernel_stats_raw(struct k_obj_core *obj_core, void *stats);
+int z_kernel_stats_query(struct k_obj_core *obj_core, void *stats);
+#endif
+
 #ifdef __cplusplus
 }
 #endif

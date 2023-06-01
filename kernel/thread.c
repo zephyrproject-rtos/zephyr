@@ -36,6 +36,18 @@ LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 #ifdef CONFIG_OBJ_CORE_THREAD
 static struct k_obj_type  obj_type_thread;
 
+#ifdef CONFIG_OBJ_CORE_STATS_THREAD
+static struct k_obj_core_stats_desc  thread_stats_desc = {
+	.raw_size = sizeof(struct k_cycle_stats),
+	.query_size = sizeof(struct k_thread_runtime_stats),
+	.raw   = z_thread_stats_raw,
+	.query = z_thread_stats_query,
+	.reset = z_thread_stats_reset,
+	.disable = z_thread_stats_disable,
+	.enable  = z_thread_stats_enable,
+};
+#endif
+
 static int init_thread_obj_core_list(void)
 {
 	/* Initialize mem_slab object type */
@@ -43,6 +55,10 @@ static int init_thread_obj_core_list(void)
 #ifdef CONFIG_OBJ_CORE_THREAD
 	z_obj_type_init(&obj_type_thread, K_OBJ_TYPE_THREAD_ID,
 			offsetof(struct k_thread, obj_core));
+#endif
+
+#ifdef CONFIG_OBJ_CORE_STATS_THREAD
+	k_obj_type_stats_init(&obj_type_thread, &thread_stats_desc);
 #endif
 
 	return 0;
@@ -564,6 +580,11 @@ char *z_setup_new_thread(struct k_thread *new_thread,
 
 #ifdef CONFIG_OBJ_CORE_THREAD
 	k_obj_core_init_and_link(K_OBJ_CORE(new_thread), &obj_type_thread);
+#ifdef CONFIG_OBJ_CORE_STATS_THREAD
+	k_obj_core_stats_register(K_OBJ_CORE(new_thread),
+				  &new_thread->base.usage,
+				  sizeof(new_thread->base.usage));
+#endif
 #endif
 
 #ifdef CONFIG_USERSPACE

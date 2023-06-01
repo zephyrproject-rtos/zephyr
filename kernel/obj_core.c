@@ -125,11 +125,7 @@ int k_obj_type_walk_unlocked(struct k_obj_type *type,
 int k_obj_core_stats_register(struct k_obj_core *obj_core, void *stats,
 			      size_t stats_len)
 {
-	__ASSERT((obj_core != NULL) && (stats != NULL), "NULL parameter");
-
 	k_spinlock_key_t  key = k_spin_lock(&lock);
-
-	__ASSERT(obj_core->type != NULL, "Object core not initialized");
 
 	if (obj_core->type->stats_desc == NULL) {
 
@@ -155,11 +151,7 @@ int k_obj_core_stats_register(struct k_obj_core *obj_core, void *stats,
 
 int k_obj_core_stats_deregister(struct k_obj_core *obj_core)
 {
-	__ASSERT((obj_core != NULL), "NULL parameter");
-
 	k_spinlock_key_t  key = k_spin_lock(&lock);
-
-	__ASSERT(obj_core->type != NULL, "Object core not initialized");
 
 	if (obj_core->type->stats_desc == NULL) {
 
@@ -181,11 +173,7 @@ int k_obj_core_stats_raw(struct k_obj_core *obj_core, void *stats,
 	int  rv;
 	struct k_obj_core_stats_desc *desc;
 
-	__ASSERT((obj_core != NULL) && (stats != NULL), "NULL parameter");
-
 	k_spinlock_key_t  key = k_spin_lock(&lock);
-
-	__ASSERT(obj_core->type != NULL, "Object core not initialized");
 
 	desc = obj_core->type->stats_desc;
 	if ((desc == NULL) || (desc->raw == NULL)) {
@@ -219,11 +207,7 @@ int k_obj_core_stats_query(struct k_obj_core *obj_core, void *stats,
 	int  rv;
 	struct k_obj_core_stats_desc *desc;
 
-	__ASSERT((obj_core != NULL) && (stats != NULL), "NULL parameter");
-
 	k_spinlock_key_t  key = k_spin_lock(&lock);
-
-	__ASSERT(obj_core->type != NULL, "Object core not initialized");
 
 	desc = obj_core->type->stats_desc;
 	if ((desc == NULL) || (desc->query == NULL)) {
@@ -256,11 +240,7 @@ int k_obj_core_stats_reset(struct k_obj_core *obj_core)
 	int  rv;
 	struct k_obj_core_stats_desc *desc;
 
-	__ASSERT((obj_core != NULL), "NULL parameter");
-
 	k_spinlock_key_t  key = k_spin_lock(&lock);
-
-	__ASSERT(obj_core->type != NULL, "Object core not initialized");
 
 	desc = obj_core->type->stats_desc;
 	if ((desc == NULL) || (desc->reset == NULL)) {
@@ -290,11 +270,7 @@ int k_obj_core_stats_disable(struct k_obj_core *obj_core)
 	int  rv;
 	struct k_obj_core_stats_desc *desc;
 
-	__ASSERT((obj_core != NULL), "NULL parameter");
-
 	k_spinlock_key_t  key = k_spin_lock(&lock);
-
-	__ASSERT(obj_core->type != NULL, "Object core not initialized");
 
 	desc = obj_core->type->stats_desc;
 	if ((desc == NULL) || (desc->disable == NULL)) {
@@ -324,11 +300,7 @@ int k_obj_core_stats_enable(struct k_obj_core *obj_core)
 	int  rv;
 	struct k_obj_core_stats_desc *desc;
 
-	__ASSERT((obj_core != NULL), "NULL parameter");
-
 	k_spinlock_key_t  key = k_spin_lock(&lock);
-
-	__ASSERT(obj_core->type != NULL, "Object core not initialized");
 
 	desc = obj_core->type->stats_desc;
 	if ((desc == NULL) || (desc->enable == NULL)) {

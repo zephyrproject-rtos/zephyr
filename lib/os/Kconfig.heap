@@ -141,4 +141,13 @@ config OBJ_CORE_SYS_MEM_BLOCKS
 	  This option allows object cores to be integrated into memory block
 	  objects.
 
+config OBJ_CORE_STATS_SYS_MEM_BLOCKS
+	bool "Object core statistics for memory blocks"
+	depends on SYS_MEM_BLOCKS && OBJ_CORE_STATS
+	default y if SYS_MEM_BLOCKS && OBJ_CORE_STATS
+	select SYS_MEM_BLOCKS_RUNTIME_STATS
+	help
+	  This option integrates the object core statistics framework into
+	  the memory blocks.
+
 endmenu
