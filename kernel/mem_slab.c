@@ -13,12 +13,83 @@
 #include <zephyr/init.h>
 #include <zephyr/sys/check.h>
 #include <zephyr/sys/iterable_sections.h>
+#include <string.h>
 /* private kernel APIs */
 #include <ksched.h>
 #include <wait_q.h>
 
 #ifdef CONFIG_OBJ_CORE_MEM_SLAB
 static struct k_obj_type obj_type_mem_slab;
+
+#ifdef CONFIG_OBJ_CORE_STATS_MEM_SLAB
+
+static int k_mem_slab_stats_raw(struct k_obj_core *obj_core, void *stats)
+{
+	__ASSERT((obj_core != NULL) && (stats != NULL), "NULL parameter");
+
+	struct k_mem_slab *slab;
+	k_spinlock_key_t   key;
+
+	slab = CONTAINER_OF(obj_core, struct k_mem_slab, obj_core);
+	key = k_spin_lock(&slab->lock);
+	memcpy(stats, &slab->info, sizeof(slab->info));
+	k_spin_unlock(&slab->lock, key);
+
+	return 0;
+}
+
+static int k_mem_slab_stats_query(struct k_obj_core *obj_core, void *stats)
+{
+	__ASSERT((obj_core != NULL) && (stats != NULL), "NULL parameter");
+
+	struct k_mem_slab *slab;
+	k_spinlock_key_t   key;
+	struct sys_memory_stats *ptr = stats;
+
+	slab = CONTAINER_OF(obj_core, struct k_mem_slab, obj_core);
+	key = k_spin_lock(&slab->lock);
+	ptr->free_bytes = (slab->info.num_blocks - slab->info.num_used) *
+			  slab->info.block_size;
+	ptr->allocated_bytes = slab->info.num_used * slab->info.block_size;
+#ifdef CONFIG_MEM_SLAB_TRACE_MAX_UTILIZATION
+	ptr->max_allocated_bytes = slab->info.max_used * slab->info.block_size;
+#else
+	ptr->max_allocated_bytes = 0;
+#endif
+	k_spin_unlock(&slab->lock, key);
+
+	return 0;
+}
+
+static int k_mem_slab_stats_reset(struct k_obj_core *obj_core)
+{
+	__ASSERT(obj_core != NULL, "NULL parameter");
+
+	struct k_mem_slab *slab;
+	k_spinlock_key_t   key;
+
+	slab = CONTAINER_OF(obj_core, struct k_mem_slab, obj_core);
+	key = k_spin_lock(&slab->lock);
+
+#ifdef CONFIG_MEM_SLAB_TRACE_MAX_UTILIZATION
+	slab->info.max_used = slab->info.num_used;
+#endif
+
+	k_spin_unlock(&slab->lock, key);
+
+	return 0;
+}
+
+static struct k_obj_core_stats_desc mem_slab_stats_desc = {
+	.raw_size = sizeof(struct k_mem_slab_info),
+	.query_size = sizeof(struct sys_memory_stats),
+	.raw   = k_mem_slab_stats_raw,
+	.query = k_mem_slab_stats_query,
+	.reset = k_mem_slab_stats_reset,
+	.disable = NULL,
+	.enable = NULL,
+};
+#endif
 #endif
 
 /**
@@ -68,6 +139,9 @@ static int init_mem_slab_obj_core_list(void)
 #ifdef CONFIG_OBJ_CORE_MEM_SLAB
 	z_obj_type_init(&obj_type_mem_slab, K_OBJ_TYPE_MEM_SLAB_ID,
 			offsetof(struct k_mem_slab, obj_core));
+#ifdef CONFIG_OBJ_CORE_STATS_MEM_SLAB
+	k_obj_type_stats_init(&obj_type_mem_slab, &mem_slab_stats_desc);
+#endif
 #endif
 
 	/* Initialize statically defined mem_slabs */
@@ -81,6 +155,10 @@ static int init_mem_slab_obj_core_list(void)
 
 #ifdef CONFIG_OBJ_CORE_MEM_SLAB
 		k_obj_core_init_and_link(K_OBJ_CORE(slab), &obj_type_mem_slab);
+#ifdef CONFIG_OBJ_CORE_STATS_MEM_SLAB
+		k_obj_core_stats_register(K_OBJ_CORE(slab), &slab->info,
+					  sizeof(struct k_mem_slab_info));
+#endif
 #endif
 	}
 
@@ -113,6 +191,10 @@ int k_mem_slab_init(struct k_mem_slab *slab, void *buffer,
 
 #ifdef CONFIG_OBJ_CORE_MEM_SLAB
 	k_obj_core_init_and_link(K_OBJ_CORE(slab), &obj_type_mem_slab);
+#endif
+#ifdef CONFIG_OBJ_CORE_STATS_MEM_SLAB
+	k_obj_core_stats_register(K_OBJ_CORE(slab), &slab->info,
+				  sizeof(struct k_mem_slab_info));
 #endif
 
 	z_waitq_init(&slab->wait_q);

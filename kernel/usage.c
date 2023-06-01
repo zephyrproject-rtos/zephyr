@@ -343,3 +343,144 @@ void k_sys_runtime_stats_disable(void)
 	k_spin_unlock(&usage_lock, key);
 }
 #endif
+
+#ifdef CONFIG_OBJ_CORE_STATS_THREAD
+int z_thread_stats_raw(struct k_obj_core *obj_core, void *stats)
+{
+	k_spinlock_key_t  key;
+
+	key = k_spin_lock(&usage_lock);
+	memcpy(stats, obj_core->stats, sizeof(struct k_cycle_stats));
+	k_spin_unlock(&usage_lock, key);
+
+	return 0;
+}
+
+int z_thread_stats_query(struct k_obj_core *obj_core, void *stats)
+{
+	struct k_thread *thread;
+
+	thread = CONTAINER_OF(obj_core, struct k_thread, obj_core);
+
+	z_sched_thread_usage(thread, stats);
+
+	return 0;
+}
+
+int z_thread_stats_reset(struct k_obj_core *obj_core)
+{
+	k_spinlock_key_t  key;
+	struct k_cycle_stats  *stats;
+	struct k_thread *thread;
+
+	thread = CONTAINER_OF(obj_core, struct k_thread, obj_core);
+	key = k_spin_lock(&usage_lock);
+	stats = obj_core->stats;
+
+	stats->total = 0ULL;
+#ifdef CONFIG_SCHED_THREAD_USAGE_ANALYSIS
+	stats->current = 0ULL;
+	stats->longest = 0ULL;
+	stats->num_windows = (thread->base.usage.track_usage) ?  1U : 0U;
+#endif
+
+	if (thread != _current_cpu->current) {
+
+		/*
+		 * If the thread is not running, there is nothing else to do.
+		 * If the thread is running on another core, then it is not
+		 * safe to do anything else but unlock and return (and pretend
+		 * that its stats were reset at the start of its execution
+		 * window.
+		 */
+
+		k_spin_unlock(&usage_lock, key);
+
+		return 0;
+	}
+
+	/* Update the current CPU stats. */
+
+	uint32_t now = usage_now();
+	uint32_t cycles = now - _current_cpu->usage0;
+
+	sched_cpu_update_usage(_current_cpu, cycles);
+
+	_current_cpu->usage0 = now;
+
+	k_spin_unlock(&usage_lock, key);
+
+	return 0;
+}
+
+int z_thread_stats_disable(struct k_obj_core *obj_core)
+{
+#ifdef CONFIG_SCHED_THREAD_USAGE_ANALYSIS
+	struct k_thread *thread;
+
+	thread = CONTAINER_OF(obj_core, struct k_thread, obj_core);
+
+	return k_thread_runtime_stats_disable(thread);
+#else
+	return -ENOTSUP;
+#endif
+}
+
+int z_thread_stats_enable(struct k_obj_core *obj_core)
+{
+#ifdef CONFIG_SCHED_THREAD_USAGE_ANALYSIS
+	struct k_thread *thread;
+
+	thread = CONTAINER_OF(obj_core, struct k_thread, obj_core);
+
+	return k_thread_runtime_stats_enable(thread);
+#else
+	return -ENOTSUP;
+#endif
+}
+#endif
+
+#ifdef CONFIG_OBJ_CORE_STATS_SYSTEM
+int z_cpu_stats_raw(struct k_obj_core *obj_core, void *stats)
+{
+	k_spinlock_key_t  key;
+
+	key = k_spin_lock(&usage_lock);
+	memcpy(stats, obj_core->stats, sizeof(struct k_cycle_stats));
+	k_spin_unlock(&usage_lock, key);
+
+	return 0;
+}
+
+int z_cpu_stats_query(struct k_obj_core *obj_core, void *stats)
+{
+	struct _cpu  *cpu;
+
+	cpu = CONTAINER_OF(obj_core, struct _cpu, obj_core);
+
+	z_sched_cpu_usage(cpu->id, stats);
+
+	return 0;
+}
+#endif
+
+#ifdef CONFIG_OBJ_CORE_STATS_SYSTEM
+int z_kernel_stats_raw(struct k_obj_core *obj_core, void *stats)
+{
+	k_spinlock_key_t  key;
+
+	key = k_spin_lock(&usage_lock);
+	memcpy(stats, obj_core->stats,
+	       CONFIG_MP_MAX_NUM_CPUS * sizeof(struct k_cycle_stats));
+	k_spin_unlock(&usage_lock, key);
+
+	return 0;
+}
+
+int z_kernel_stats_query(struct k_obj_core *obj_core, void *stats)
+{
+	ARG_UNUSED(obj_core);
+
+	return k_thread_runtime_stats_all_get(stats);
+}
+#endif

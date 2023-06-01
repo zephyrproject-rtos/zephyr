@@ -1743,6 +1743,9 @@ static void end_thread(struct k_thread *thread)
 #endif
 
 #ifdef CONFIG_OBJ_CORE_THREAD
+#ifdef CONFIG_OBJ_CORE_STATS_THREAD
+		k_obj_core_stats_deregister(K_OBJ_CORE(thread));
+#endif
 		k_obj_core_unlink(K_OBJ_CORE(thread));
 #endif
 
