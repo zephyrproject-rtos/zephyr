@@ -366,23 +366,35 @@ ieee802154_cc13xx_cc26xx_subg_get_capabilities(const struct device *dev)
 static int ieee802154_cc13xx_cc26xx_subg_cca(const struct device *dev)
 {
 	struct ieee802154_cc13xx_cc26xx_subg_data *drv_data = dev->data;
-	RF_Stat status;
+	RF_EventMask events;
+	int ret;
 
 	drv_data->cmd_prop_cs.status = IDLE;
 	drv_data->cmd_prop_cs.pNextOp = NULL;
 	drv_data->cmd_prop_cs.condition.rule = COND_NEVER;
 
-	status = RF_runImmediateCmd(drv_data->rf_handle,
-				    (uint32_t *)&drv_data->cmd_prop_cs);
-	if (status != RF_StatSuccess) {
-		LOG_ERR("Failed to request CCA (0x%x)", status);
+	/* TODO: Check whether RX is actually enabled. */
+	ret = ieee802154_cc13xx_cc26xx_subg_stop(dev);
+	if (ret < 0) {
 		return -EIO;
 	}
 
+	events = RF_runCmd(drv_data->rf_handle, (RF_Op *)&drv_data->cmd_prop_cs, RF_PriorityNormal,
+			   NULL, 0);
+	if (events != RF_EventLastCmdDone) {
+		LOG_DBG("Failed to request CCA: 0x%" PRIx64, events);
+		return -EIO;
+	}
+
+	/* TODO: Should we re-enable RX? Would not normally
+	 * be a sensible default when used before TX.
+	 */
+
 	switch (drv_data->cmd_prop_cs.status) {
-	case PROP_DONE_OK:
+	case PROP_DONE_IDLE:
 		return 0;
 	case PROP_DONE_BUSY:
+	case PROP_DONE_BUSYTIMEOUT:
 		return -EBUSY;
 	default:
 		return -EIO;
@@ -887,13 +899,14 @@ static struct ieee802154_cc13xx_cc26xx_subg_data ieee802154_cc13xx_cc26xx_subg_d
 	/* TODO: Support correlation CCA modes, see section 10.2.8. */
 	.cmd_prop_cs = {
 		.commandNo = CMD_PROP_CS,
-		.startTrigger.pastTrig = true,
 		.condition.rule = COND_NEVER,
-		/* CCA Mode 1: Energy above threshold, see section 10.2.8 */
 		.csConf = {
+			/* CCA Mode 1: Energy above threshold, see section 10.2.8. */
 			.bEnaRssi = true,
+			/* Abort as soon as any energy above the ED threshold is detected. */
 			.busyOp = true,
-			.idleOp = true,
+			/* Continue sensing until the timeout is reached. */
+			.idleOp = false,
 		},
 		.rssiThr = CONFIG_IEEE802154_CC13XX_CC26XX_SUB_GHZ_CS_THRESHOLD,
 		.csEndTrigger.triggerType = TRIG_REL_START,
