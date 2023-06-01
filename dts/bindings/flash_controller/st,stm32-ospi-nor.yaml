@@ -25,13 +25,11 @@ on-bus: ospi
 properties:
   reg:
     required: true
+    description: Flash Memory base address and size in bytes
   ospi-max-frequency:
     type: int
     required: true
     description: Maximum clock frequency of device's OSPI interface in Hz
-  size:
-    required: true
-    description: Flash Memory size in bits
   reset-gpios:
     type: phandle-array
     description: RESETn pin
