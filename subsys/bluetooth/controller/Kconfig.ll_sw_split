@@ -377,6 +377,19 @@ config BT_CTLR_SCAN_ENABLE_STRICT
 	  Enforce returning HCI Error Command Disallowed on enabling/disabling
 	  already enabled/disabled scanning.
 
+config BT_CTLR_ISOAL_SN_STRICT
+	bool "Enforce Strict Tx ISO Data Sequence Number use"
+	depends on BT_CTLR_ADV_ISO || BT_CTLR_CONN_ISO
+	default y
+	help
+	  Enforce dropping stale Tx ISO Data SDUs from upper layer by checking
+	  the next expected Sequence Number maintained in ISOAL.
+
+	  This option may be used to relax the Tx ISO Data SDUs being dropped
+	  due to strict check of sequence numbers in ISOAL, i.e. dropped when
+	  HCI ISO Data packets are delayed from upper layer with respect to the
+	  current payload number in the ISO radio events.
+
 config BT_CTLR_ZLI
 	bool "Use Zero Latency IRQs"
 	depends on ZERO_LATENCY_IRQS
