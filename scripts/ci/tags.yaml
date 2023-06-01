@@ -46,6 +46,10 @@ bluetooth:
     - subsys/bluetooth/
     - subsys/net/l2/bluetooth/
 
+testsuite:
+  files:
+    - subsys/testsuite/
+
 cmsis_dsp:
   files:
     - modules/Kconfig.cmsis_dsp
