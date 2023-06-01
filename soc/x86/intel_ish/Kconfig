@@ -11,3 +11,4 @@ config SOC_FAMILY_INTEL_ISH
 	select IOAPIC
 	select LOAPIC
 	select CPU_HAS_FPU
+	select INTEL_HAL
