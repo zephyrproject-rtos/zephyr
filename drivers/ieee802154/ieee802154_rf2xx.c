@@ -902,7 +902,11 @@ static int power_on_and_setup(const struct device *dev)
 
 	gpio_init_callback(&ctx->irq_cb, trx_isr_handler,
 			   BIT(conf->irq_gpio.pin));
-	gpio_add_callback(conf->irq_gpio.port, &ctx->irq_cb);
+
+	if (gpio_add_callback(conf->irq_gpio.port, &ctx->irq_cb) < 0) {
+		LOG_ERR("Could not set IRQ callback.");
+		return -ENXIO;
+	}
 
 	return 0;
 }
