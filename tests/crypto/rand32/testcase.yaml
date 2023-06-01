@@ -1,34 +1,22 @@
+common:
+  tags:
+    - crypto
+    - random
+    - security
+  integration_platforms:
+    - qemu_x86
 tests:
   crypto.rand32:
-    tags:
-      - crypto
-      - random
-      - security
     min_ram: 16
   crypto.rand32.random_sw_systimer:
     extra_args: CONF_FILE=prj_sw_random_systimer.conf
-    tags:
-      - crypto
-      - random
-      - security
-    min_ram: 16
   crypto.rand32.random_hw_xoshiro:
     extra_args: CONF_FILE=prj_hw_random_xoshiro.conf
     filter: CONFIG_ENTROPY_HAS_DRIVER
-    tags:
-      - crypto
-      - entropy
-      - random
-      - security
     min_ram: 16
   crypto.rand32.random_ctr_drbg:
     extra_args: CONF_FILE=prj_ctr_drbg.conf
     filter: CONFIG_ENTROPY_HAS_DRIVER
-    tags:
-      - crypto
-      - entropy
-      - random
-      - security
     min_ram: 16
   drivers.rand32.random_psa_crypto:
     filter: CONFIG_BUILD_WITH_TFM
@@ -36,8 +24,4 @@ tests:
       - DTC_OVERLAY_FILE=./entropy_psa_crypto.overlay
       - CONF_FILE=prj_hw_random_psa_crypto.conf
     tags:
-      - crypto
-      - entropy
-      - random
-      - security
       - psa-crypto

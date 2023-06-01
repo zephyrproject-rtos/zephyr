@@ -3,3 +3,6 @@ tests:
     tags:
       - heap
       - heap_align
+    integration_platforms:
+      - native_posix
+      - mps2_an521

@@ -1,3 +1,5 @@
 tests:
   pm.device_runtime.api:
     tags: pm
+    integration_platforms:
+      - native_posix

@@ -12,7 +12,11 @@ common:
 
 tests:
   sample.smp.pktqueue:
-    tags: introduction
+    tags:
+      - introduction
+      - kernel
+    depends_on:
+      - smp
     filter: (CONFIG_MP_MAX_NUM_CPUS > 1)
     platform_exclude:
       - esp32
