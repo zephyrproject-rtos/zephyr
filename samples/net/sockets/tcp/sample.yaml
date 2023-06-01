@@ -8,6 +8,7 @@ tests:
     platform_allow: qemu_x86
     tags:
       - socket
+      - net
       - tcp
     integration_platforms:
       - qemu_x86
