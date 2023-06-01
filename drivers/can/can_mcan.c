@@ -6,13 +6,12 @@
  */
 
 #include <zephyr/drivers/can.h>
+#include <zephyr/drivers/can/can_mcan.h>
 #include <zephyr/drivers/can/transceiver.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/sys_io.h>
 #include <zephyr/sys/util.h>
-
-#include "can_mcan.h"
 
 LOG_MODULE_REGISTER(can_mcan, CONFIG_CAN_LOG_LEVEL);
 

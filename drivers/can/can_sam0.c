@@ -7,13 +7,12 @@
  */
 
 #include <zephyr/drivers/can.h>
+#include <zephyr/drivers/can/can_mcan.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/irq.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <soc.h>
-
-#include "can_mcan.h"
 
 LOG_MODULE_REGISTER(can_sam0, CONFIG_CAN_LOG_LEVEL);
 

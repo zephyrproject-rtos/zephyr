@@ -6,8 +6,8 @@
  *
  */
 
-#ifndef ZEPHYR_DRIVERS_CAN_MCAN_H_
-#define ZEPHYR_DRIVERS_CAN_MCAN_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_CAN_CAN_MCAN_H_
+#define ZEPHYR_INCLUDE_DRIVERS_CAN_CAN_MCAN_H_
 
 #include <zephyr/cache.h>
 #include <zephyr/devicetree.h>
@@ -1703,4 +1703,4 @@ void can_mcan_set_state_change_callback(const struct device *dev,
  */
 int can_mcan_get_max_bitrate(const struct device *dev, uint32_t *max_bitrate);
 
-#endif /* ZEPHYR_DRIVERS_CAN_MCAN_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_CAN_CAN_MCAN_H_ */
