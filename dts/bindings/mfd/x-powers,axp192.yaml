@@ -1,0 +1,12 @@
+# Copyright (c) 2023, Martin Kiepfer <mrmarteng@teleschirm.org>
+# SPDX-License-Identifier: Apache-2.0
+
+description: X-Powers AXP192
+
+compatible: "x-powers,axp192"
+
+include: i2c-device.yaml
+
+properties:
+  reg:
+    required: true
