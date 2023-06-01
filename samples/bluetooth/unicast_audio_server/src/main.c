@@ -782,7 +782,10 @@ int main(void)
 
 		printk("Advertising successfully started\n");
 
-		k_work_init_delayable(&audio_send_work, audio_timer_timeout);
+		if (CONFIG_BT_ASCS_ASE_SRC_COUNT > 0) {
+			/* Start send timer */
+			k_work_init_delayable(&audio_send_work, audio_timer_timeout);
+		}
 
 		err = k_sem_take(&sem_disconnected, K_FOREVER);
 		if (err != 0) {
