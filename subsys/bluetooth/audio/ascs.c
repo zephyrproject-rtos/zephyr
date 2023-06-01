@@ -436,10 +436,7 @@ void ascs_ep_set_state(struct bt_bap_ep *ep, uint8_t state)
 
 			ep->receiver_ready = false;
 
-			if (ep->iso == NULL ||
-			    ep->iso->chan.state == BT_ISO_STATE_DISCONNECTED) {
-				ascs_ep_set_state(ep, BT_BAP_EP_STATE_IDLE);
-			} else {
+			if (bt_bap_stream_can_disconnect(stream)) {
 				/* Either the client or the server may disconnect the
 				 * CISes when entering the releasing state.
 				 */
@@ -449,6 +446,8 @@ void ascs_ep_set_state(struct bt_bap_ep *ep, uint8_t state)
 					LOG_ERR("Failed to disconnect stream %p: %d",
 						stream, err);
 				}
+			} else {
+				ascs_ep_set_state(ep, BT_BAP_EP_STATE_IDLE);
 			}
 
 			break;
@@ -2480,9 +2479,7 @@ static void ase_stop(struct bt_ascs_ase *ase)
 	 * for that ASE by following the Connected Isochronous Stream Terminate
 	 * procedure defined in Volume 3, Part C, Section 9.3.15.
 	 */
-	if (ep->iso != NULL &&
-	    ep->iso->chan.state != BT_ISO_STATE_DISCONNECTED &&
-	    ep->iso->chan.state != BT_ISO_STATE_DISCONNECTING) {
+	if (bt_bap_stream_can_disconnect(stream)) {
 		err = ascs_disconnect_stream(stream);
 		if (err < 0) {
 			LOG_ERR("Failed to disconnect stream %p: %d", stream, err);
