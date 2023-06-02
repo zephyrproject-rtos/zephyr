@@ -227,7 +227,7 @@ static void b91_handle_ack(void)
 	net_pkt_cursor_init(ack_pkt);
 
 	/* handle ack */
-	if (ieee802154_radio_handle_ack(data.iface, ack_pkt) != NET_OK) {
+	if (ieee802154_handle_ack(data.iface, ack_pkt) != NET_OK) {
 		LOG_INF("ACK packet not handled - releasing.");
 	}
 

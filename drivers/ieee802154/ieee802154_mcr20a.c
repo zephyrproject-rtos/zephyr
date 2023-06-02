@@ -569,7 +569,7 @@ static inline void mcr20a_rx(const struct device *dev, uint8_t len)
 		goto out;
 	}
 
-	if (ieee802154_radio_handle_ack(mcr20a->iface, pkt) == NET_OK) {
+	if (ieee802154_handle_ack(mcr20a->iface, pkt) == NET_OK) {
 		LOG_DBG("ACK packet handled");
 		goto out;
 	}

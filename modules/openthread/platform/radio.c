@@ -154,8 +154,7 @@ void energy_detected(const struct device *dev, int16_t max_ed)
 	}
 }
 
-enum net_verdict ieee802154_radio_handle_ack(struct net_if *iface,
-					     struct net_pkt *pkt)
+enum net_verdict ieee802154_handle_ack(struct net_if *iface, struct net_pkt *pkt)
 {
 	ARG_UNUSED(iface);
 
