@@ -1178,8 +1178,12 @@ static void notify_app(struct bt_conn *conn, uint16_t len,
 		break;
 	case BT_TBS_CALL_OPCODE_TERMINATE:
 		if (tbs_cbs->terminate_call != NULL) {
-			const struct tbs_service_inst *inst =
-				lookup_inst_by_call_index(ccp->terminate.call_index);
+			const struct tbs_service_inst *inst = lookup_inst_by_call_index(call_index);
+
+			if (inst == NULL) {
+				LOG_DBG("Could not find instance by call index 0x%02X", call_index);
+				break;
+			}
 
 			tbs_cbs->terminate_call(conn, call_index,
 						inst->terminate_reason.reason);
