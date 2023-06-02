@@ -563,6 +563,29 @@ unsigned long shell_strtoul(const char *str, int base, int *err)
 	return val;
 }
 
+unsigned long long shell_strtoull(const char *str, int base, int *err)
+{
+	unsigned long val;
+	char *endptr = NULL;
+
+	if (*str == '-') {
+		*err = -EINVAL;
+		return 0;
+	}
+
+	errno = 0;
+	val = strtoull(str, &endptr, base);
+	if (errno == ERANGE) {
+		*err = -ERANGE;
+		return 0;
+	} else if (errno || endptr == str || *endptr) {
+		*err = -EINVAL;
+		return 0;
+	}
+
+	return val;
+}
+
 bool shell_strtobool(const char *str, int base, int *err)
 {
 	if (!strcmp(str, "on") || !strcmp(str, "enable") || !strcmp(str, "true")) {
