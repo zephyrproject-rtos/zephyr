@@ -176,6 +176,21 @@ config MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP
 	  means major.minor.patch triple, unless BOOT_VERSION_CMP_USE_BUILD_NUMBER
 	  is also selected that enables comparison of build number.
 
+config MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP_WITH_REVERT
+	bool "MCUboot has been configured for DirectXIP with revert"
+	select MCUBOOT_BOOTUTIL_LIB_FOR_DIRECT_XIP
+	help
+	  MCUboot expects slot0_partition and slot1_partition to exist in DT.
+	  In this mode MCUboot will boot the application with the higher version
+	  from either slot, as long as it has been marked to be boot
+	  next time for test or permanently. In case when application is marked
+	  for test it needs to confirm itself, on the first boot, or it will
+	  be removed and MCUboot will revert to booting previously approved
+	  application.
+	  This mode does not allow freely switching between application
+	  versions, as, once higher version application is approved, it is
+	  not possible to select lower version for boot.
+
 endchoice # MCUBOOT_BOOTLOADER_MODE
 
 endif # BOOTLOADER_MCUBOOT
@@ -207,5 +222,14 @@ config BOOT_IMAGE_ACCESS_HOOKS
 	  MCUboot's routines required for access the image data.
 	  It is up to the application project to add source file which
 	  implements hooks to the build.
+
+if MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP_WITH_REVERT
+
+config MCUBOOT_BOOTUTIL_LIB_FOR_DIRECT_XIP
+	bool
+	help
+	  Adds support for setting for test and confirming images
+	  when bootloader is in DirectXIP-revert mode.
+endif
 
 endif # MCUBOOT_BOOTUTIL_LIB
