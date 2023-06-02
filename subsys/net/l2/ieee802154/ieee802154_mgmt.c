@@ -25,9 +25,9 @@ LOG_MODULE_REGISTER(net_ieee802154_mgmt, CONFIG_NET_L2_IEEE802154_LOG_LEVEL);
 
 #include "ieee802154_frame.h"
 #include "ieee802154_mgmt_priv.h"
+#include "ieee802154_priv.h"
 #include "ieee802154_security.h"
 #include "ieee802154_utils.h"
-#include "ieee802154_radio_utils.h"
 
 /**
  * Implements (part of) the MLME-BEACON.notify primitive, see section 8.2.5.2.

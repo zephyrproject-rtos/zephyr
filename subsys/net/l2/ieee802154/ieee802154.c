@@ -36,11 +36,9 @@ LOG_MODULE_REGISTER(net_ieee802154, CONFIG_NET_L2_IEEE802154_LOG_LEVEL);
 
 #include "ieee802154_frame.h"
 #include "ieee802154_mgmt_priv.h"
-#include "ieee802154_radio_utils.h"
+#include "ieee802154_priv.h"
 #include "ieee802154_security.h"
 #include "ieee802154_utils.h"
-
-#include <zephyr/net/ieee802154_radio.h>
 
 #define BUF_TIMEOUT K_MSEC(50)
 
@@ -95,6 +93,126 @@ static inline void ieee802154_acknowledge(struct net_if *iface, struct ieee80215
 #else
 #define ieee802154_acknowledge(...)
 #endif /* CONFIG_NET_L2_IEEE802154_ACK_REPLY */
+
+inline bool ieee802154_prepare_for_ack(struct ieee802154_context *ctx, struct net_pkt *pkt,
+				       struct net_buf *frag)
+{
+	/* TODO: Only execute when the driver does not handle ACK itself. */
+	if (ieee802154_is_ar_flag_set(frag)) {
+		struct ieee802154_fcf_seq *fs;
+
+		fs = (struct ieee802154_fcf_seq *)frag->data;
+
+		ctx->ack_seq = fs->sequence;
+		ctx->ack_received = false;
+		k_sem_init(&ctx->ack_lock, 0, K_SEM_MAX_LIMIT);
+
+		return true;
+	}
+
+	return false;
+}
+
+enum net_verdict ieee802154_radio_handle_ack(struct net_if *iface, struct net_pkt *pkt)
+{
+	struct ieee802154_context *ctx = net_if_l2_data(iface);
+
+	/* TODO: Only execute when the driver does not handle ACK itself. */
+
+	/* TODO: ACK/Retransmission has nothing to do with CSMA/CA - this
+	 * is about retransmission.
+	 */
+	if (IS_ENABLED(CONFIG_NET_L2_IEEE802154_RADIO_CSMA_CA) &&
+	    ieee802154_get_hw_capabilities(iface) & IEEE802154_HW_CSMA) {
+		return NET_OK;
+	}
+
+	if (pkt->buffer->len == IEEE802154_ACK_PKT_LENGTH) {
+		uint8_t len = IEEE802154_ACK_PKT_LENGTH;
+		struct ieee802154_fcf_seq *fs;
+
+		fs = ieee802154_validate_fc_seq(net_pkt_data(pkt), NULL, &len);
+		if (!fs || fs->sequence != ctx->ack_seq) {
+			return NET_CONTINUE;
+		}
+
+		ctx->ack_received = true;
+		k_sem_give(&ctx->ack_lock);
+
+		/* TODO: Release packet in L2 as we're taking ownership. */
+		return NET_OK;
+	}
+
+	return NET_CONTINUE;
+}
+
+inline int ieee802154_wait_for_ack(struct net_if *iface, bool ack_required)
+{
+	struct ieee802154_context *ctx = net_if_l2_data(iface);
+
+	if (!ack_required || (ieee802154_get_hw_capabilities(iface) & IEEE802154_HW_TX_RX_ACK)) {
+		return 0;
+	}
+
+	if (k_sem_take(&ctx->ack_lock, K_MSEC(10)) == 0) {
+		/* We reinit the semaphore in case ieee802154_handle_ack()
+		 * got called multiple times.
+		 */
+		k_sem_init(&ctx->ack_lock, 0, K_SEM_MAX_LIMIT);
+	}
+
+	ctx->ack_seq = 0U;
+
+	return ctx->ack_received ? 0 : -ETIME;
+}
+
+int ieee802154_radio_send(struct net_if *iface, struct net_pkt *pkt, struct net_buf *frag)
+{
+	struct ieee802154_context *ctx = net_if_l2_data(iface);
+
+	bool ack_required;
+	int ret;
+
+	NET_DBG("frag %p", frag);
+
+	/* See section 6.7.4.4 - Retransmissions. */
+	for (uint8_t remaining_attempts = CONFIG_NET_L2_IEEE802154_RADIO_TX_RETRIES + 1;
+	     remaining_attempts > 0; remaining_attempts--) {
+		ret = ieee802154_wait_for_clear_channel(iface);
+		if (ret != 0) {
+			NET_WARN("Clear channel assessment failed: dropping fragment %p on "
+				 "interface %p.",
+				 frag, iface);
+			return ret;
+		}
+
+		ack_required = ieee802154_prepare_for_ack(ctx, pkt, frag);
+
+		ret = ieee802154_tx(iface, IEEE802154_TX_MODE_DIRECT, pkt, frag);
+		if (ret) {
+			/* Unknown transmission failure. */
+			return ret;
+		}
+
+		if (!ack_required) {
+			/* See section 6.7.4.4: "A device that sends a frame with the AR field set
+			 * to indicate no acknowledgment requested may assume that the transmission
+			 * was successfully received and shall not perform the retransmission
+			 * procedure."
+			 */
+			return 0;
+		}
+
+
+		ret = ieee802154_wait_for_ack(iface, ack_required);
+		if (ret == 0) {
+			/* ACK received - transmission is successful. */
+			return 0;
+		}
+	}
+
+	return -EIO;
+}
 
 static inline void swap_and_set_pkt_ll_addr(struct net_linkaddr *addr, bool comp,
 					    enum ieee802154_addressing_mode mode,

@@ -15,6 +15,7 @@ LOG_MODULE_REGISTER(net_ieee802154_test, LOG_LEVEL_DBG);
 #include <zephyr/net/ethernet.h>
 #include <zephyr/net/ieee802154.h>
 #include <zephyr/net/ieee802154_mgmt.h>
+#include <zephyr/net/ieee802154_radio.h>
 #include <zephyr/net/net_core.h>
 #include <zephyr/net/net_ip.h>
 #include <zephyr/net/net_pkt.h>
@@ -22,7 +23,7 @@ LOG_MODULE_REGISTER(net_ieee802154_test, LOG_LEVEL_DBG);
 
 #include "net_private.h"
 #include <ieee802154_frame.h>
-#include <ieee802154_radio_utils.h>
+#include <ieee802154_priv.h>
 #include <ipv6.h>
 
 struct ieee802154_pkt_test {
@@ -456,7 +457,7 @@ static bool test_wait_for_ack(struct ieee802154_pkt_test *t)
 		goto out;
 	}
 
-	ack_required = prepare_for_ack(ctx, tx_pkt, tx_pkt->frags);
+	ack_required = ieee802154_prepare_for_ack(ctx, tx_pkt, tx_pkt->frags);
 	if (!ack_required) {
 		NET_ERR("*** Expected AR flag to be set\n");
 		goto release_tx_pkt;
@@ -481,12 +482,12 @@ static bool test_wait_for_ack(struct ieee802154_pkt_test *t)
 
 	pkt_hexdump(net_pkt_data(ack_pkt), net_pkt_get_len(ack_pkt));
 
-	if (handle_ack(ctx, ack_pkt) != NET_OK) {
+	if (ieee802154_radio_handle_ack(iface, ack_pkt) != NET_OK) {
 		NET_ERR("*** Ack frame was not handled.\n");
 		goto release_ack_pkt;
 	}
 
-	if (wait_for_ack(iface, ack_required) != 0) {
+	if (ieee802154_wait_for_ack(iface, ack_required) != 0) {
 		NET_ERR("*** Ack frame was not recorded.\n");
 		goto release_ack_pkt;
 	}

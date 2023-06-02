@@ -20,24 +20,28 @@ config NET_L2_IEEE802154_RADIO_TX_RETRIES
 	  macMaxFrameRetries).
 
 choice
-	prompt "Radio protocol"
+	prompt "Radio channel access protocol"
 	default NET_L2_IEEE802154_RADIO_CSMA_CA
 	help
-	  Select which radio protocol to use.
+	  Select which medium access protocol to use.
 
 config NET_L2_IEEE802154_RADIO_CSMA_CA
-	bool "IEEE 802.15.4 CSMA-CA radio protocol"
+	bool "IEEE 802.15.4 unslotted CSMA-CA medium access protocol"
 	help
-	  Use CSMA-CA mechanism to transmit packets. This is the most common
-	  way of transmitting packets and fits most of all the usage.
-	  At least until the version 2011 of the specification.
+	  Use CSMA-CA mechanism (listen-before-talk with exponential backoff)
+	  to transmit packets. This is the most common way of mediating radio
+	  channel access and fits most usage scenarios (see IEEE 802.15.4-2020,
+	  sections 6.2.5.1 and 10.2.8).
 
 config NET_L2_IEEE802154_RADIO_ALOHA
-	bool "IEEE 802.15.4 Aloha radio protocol"
+	bool "IEEE 802.15.4 Aloha medium access protocol (CCA mode 4)"
 	help
-	  Use Aloha mechanism to transmit packets. This is a simplistic
-	  way of transmitting packets and fits contexts where radio spectrum
-	  is not too heavily loaded.
+	  Use Aloha mechanism (send without any clear channel assessment) to
+	  transmit packets. This is a simplistic way of transmitting packets
+	  and fits low duty-cycle contexts where the radio spectrum is not
+	  too heavily loaded (see IEEE 802.15.4-2020, section 10.2.8). The
+	  current implementation does not randomize channel access.
+
 endchoice
 
 if NET_L2_IEEE802154_RADIO_CSMA_CA
