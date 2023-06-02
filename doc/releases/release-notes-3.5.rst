@@ -26,6 +26,12 @@ Removed APIs in this release
 Deprecated in this release
 ==========================
 
+* Setting the GIC architecture version by selecting
+  :kconfig:option:`CONFIG_GIC_V1`, :kconfig:option:`CONFIG_GIC_V2` and
+  :kconfig:option:`CONFIG_GIC_V3` directly in Kconfig has been deprecated.
+  The GIC version should now be specified by adding the appropriate compatible, for
+  example :dtcompatible:`arm,gic-v2`, to the GIC node in the device tree.
+
 Stable API changes in this release
 ==================================
 
@@ -167,6 +173,8 @@ Drivers and Sensors
 * IEEE 802.15.4
 
 * Interrupt Controller
+
+  * GIC: Architecture version selection is now based on the device tree
 
 * IPM
 
