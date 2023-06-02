@@ -483,6 +483,10 @@ about the manifest file features that were introduced in that version.
    * - ``"0.13"``
      - Support for ``self: userdata:`` (:ref:`west-project-userdata`)
 
+   * - ``"1.0"``
+     - Identical to ``"0.13"``, but available for use by users that
+       do not wish to use a ``"0.x"`` version field.
+
 .. note::
 
    Versions of west without any new features in the manifest file format do not
@@ -505,14 +509,56 @@ Group-filter
 
 See :ref:`west-manifest-groups`.
 
+.. _west-active-inactive-projects:
+
+Active and Inactive Projects
+****************************
+
+Projects defined in the west manifest can be *inactive* or *active*. The
+difference is that an inactive project is generally ignored by west. For
+example, ``west update`` will not update inactive projects, and ``west list``
+will not print information about them by default. As another example, any
+:ref:`west-manifest-import` in an inactive project will be ignored by west.
+
+There are two ways to make a project inactive:
+
+1. Using the ``manifest.project-filter`` configuration option. If a project is
+   made active or inactive using this option, then the rules related to making
+   a project inactive using its ``groups:`` are ignored. That is, if a regular
+   expression in ``manifest.project-filter`` applies to a project, the
+   project's groups have no effect on whether it is active or inactive.
+
+   See the entry for this option in :ref:`west-config-index` for details.
+
+2. Otherwise, if a project has groups, and they are all disabled, then the
+   project is inactive.
+
+   See the following section for details.
+
 .. _west-manifest-groups:
 
-Project Groups and Active Projects
-**********************************
+Project Groups
+**************
 
 You can use the ``groups`` and ``group-filter`` keys briefly described
-:ref:`above <west-manifest-files>` to place projects into groups, and filter
-which groups are enabled. These keys appear in the manifest like this:
+:ref:`above <west-manifest-files>` to place projects into groups, and to
+enable or disable groups.
+
+For example, this lets you run a ``west forall`` command only on the projects
+in the group by using ``west forall --group``. This can also let you make
+projects inactive; see the previous section for more information on inactive
+projects.
+
+The next section introduces project groups. The following section describes
+:ref:`west-enabled-disabled-groups`. There are some basic examples in
+:ref:`west-project-group-examples`. Finally, :ref:`west-group-filter-imports`
+provides a simplified overview of how ``group-filter`` interacts with the
+:ref:`west-manifest-import` feature.
+
+Groups Basics
+=============
+
+The ``groups:`` and ``group-filter:`` keys appear in the manifest like this:
 
 .. code-block:: yaml
 
@@ -522,22 +568,11 @@ which groups are enabled. These keys appear in the manifest like this:
          groups: ...
      group-filter: ...
 
+The ``groups`` key's value is a list of group names. Group names are strings.
+
 You can enable or disable project groups using ``group-filter``. Projects whose
-groups are all disabled are *inactive*; west essentially ignores inactive
-projects unless explicitly requested not to.
-
-The next section introduces project groups; the following sections describe
-:ref:`west-enabled-disabled-groups` and :ref:`west-active-inactive-projects`.
-There are some basic examples in :ref:`west-project-group-examples`.
-
-Finally, :ref:`west-group-filter-imports` provides a simplified overview of how
-``group-filter`` interacts with the :ref:`west-manifest-import` feature.
-
-Project Groups
-==============
-
-Inside ``manifest: projects:``, you can add a project to one or more groups.
-The ``groups`` key is a list of group names. Group names are strings.
+groups are all disabled, and which are not otherwise made active by a
+``manifest.project-filter`` configuration option, are inactive.
 
 For example, in this manifest fragment:
 
@@ -569,7 +604,7 @@ contain these characters elsewhere in their names. For example, ``foo-bar`` and
 Group names are otherwise arbitrary strings. Group names are case sensitive.
 
 As a restriction, no project may use both ``import:`` and ``groups:``. (This
-avoids some edge cases whose semantics are difficult to specify.)
+is necessary to avoid some pathological edge cases.)
 
 .. _west-enabled-disabled-groups:
 
@@ -630,20 +665,6 @@ You can think of this as if the ``manifest.group-filter`` configuration option
 is appended to the ``manifest: group-filter:`` list from YAML, with "last entry
 wins" semantics.
 
-.. _west-active-inactive-projects:
-
-Active and Inactive Projects
-============================
-
-All projects are *active* by default. Projects with no groups are always
-active. A project is *inactive* if all of its groups are disabled. This is the
-only way to make a project inactive.
-
-Most west commands that operate on projects will ignore inactive projects by
-default. For example, :ref:`west-update` when run without arguments will not
-update inactive projects. As another example, running ``west list`` without
-arguments will not print information for inactive projects.
-
 .. _west-project-group-examples:
 
 Project Group Examples
@@ -655,6 +676,11 @@ projects. The examples use both ``manifest: group-filter:`` YAML lists and
 
 Note that the ``defaults`` and ``remotes`` data in the following manifests
 isn't relevant except to make the examples complete and self-contained.
+
+.. note::
+
+   In all of the examples that follow, the ``manifest.project-filter`` option
+   is assumed to be unset.
 
 Example 1: no disabled groups
 -----------------------------
