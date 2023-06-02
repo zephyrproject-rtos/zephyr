@@ -15,6 +15,8 @@
 #include <zephyr/sys/atomic.h>
 #include <zephyr/toolchain.h>
 
+#if DT_HAS_COMPAT_STATUS_OKAY(zephyr_power_state)
+
 #define DT_SUB_LOCK_INIT(node_id)				\
 	{ .state = PM_STATE_DT_INIT(node_id),			\
 	  .substate_id = DT_PROP_OR(node_id, substate_id, 0),	\
@@ -39,6 +41,8 @@ static struct {
 } substate_lock_t[] = {
 	DT_FOREACH_STATUS_OKAY(zephyr_power_state, DT_SUB_LOCK_INIT)
 };
+
+#endif
 
 /** Lock to synchronize access to the latency request list. */
 static struct k_spinlock latency_lock;
@@ -189,6 +193,7 @@ const struct pm_state_info *pm_policy_next_state(uint8_t cpu, int32_t ticks)
 
 void pm_policy_state_lock_get(enum pm_state state, uint8_t substate_id)
 {
+#if DT_HAS_COMPAT_STATUS_OKAY(zephyr_power_state)
 	for (size_t i = 0; i < ARRAY_SIZE(substate_lock_t); i++) {
 		if (substate_lock_t[i].state == state &&
 		   (substate_lock_t[i].substate_id == substate_id ||
@@ -196,10 +201,12 @@ void pm_policy_state_lock_get(enum pm_state state, uint8_t substate_id)
 			atomic_inc(&substate_lock_t[i].lock);
 		}
 	}
+#endif
 }
 
 void pm_policy_state_lock_put(enum pm_state state, uint8_t substate_id)
 {
+#if DT_HAS_COMPAT_STATUS_OKAY(zephyr_power_state)
 	for (size_t i = 0; i < ARRAY_SIZE(substate_lock_t); i++) {
 		if (substate_lock_t[i].state == state &&
 		   (substate_lock_t[i].substate_id == substate_id ||
@@ -211,10 +218,12 @@ void pm_policy_state_lock_put(enum pm_state state, uint8_t substate_id)
 			__ASSERT(cnt >= 1, "Unbalanced state lock get/put");
 		}
 	}
+#endif
 }
 
 bool pm_policy_state_lock_is_active(enum pm_state state, uint8_t substate_id)
 {
+#if DT_HAS_COMPAT_STATUS_OKAY(zephyr_power_state)
 	for (size_t i = 0; i < ARRAY_SIZE(substate_lock_t); i++) {
 		if (substate_lock_t[i].state == state &&
 		   (substate_lock_t[i].substate_id == substate_id ||
@@ -222,6 +231,7 @@ bool pm_policy_state_lock_is_active(enum pm_state state, uint8_t substate_id)
 			return (atomic_get(&substate_lock_t[i].lock) != 0);
 		}
 	}
+#endif
 
 	return false;
 }
