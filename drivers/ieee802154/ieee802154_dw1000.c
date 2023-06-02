@@ -491,7 +491,7 @@ static inline void dwt_irq_handle_rx(const struct device *dev, uint32_t sys_stat
 		flags_to_clear |= DWT_SYS_STATUS_AAT;
 	}
 
-	if (ieee802154_radio_handle_ack(ctx->iface, pkt) == NET_OK) {
+	if (ieee802154_handle_ack(ctx->iface, pkt) == NET_OK) {
 		LOG_INF("ACK packet handled");
 		goto rx_out_unref_pkt;
 	}

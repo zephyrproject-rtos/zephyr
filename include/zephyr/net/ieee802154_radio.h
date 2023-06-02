@@ -455,26 +455,45 @@ static inline bool ieee802154_is_ar_flag_set(struct net_buf *frag)
 }
 
 /**
- * @brief Radio driver ACK handling function that hw drivers should use
+ * @brief Radio driver ACK handling callback into L2 that radio
+ *        drivers must call when receiving an ACK package.
  *
- * @details ACK handling requires fast handling and thus such function
- *          helps to hook directly the hw drivers to the radio driver.
+ * @details The IEEE 802.15.4 standard prescribes generic procedures for ACK
+ *          handling on L2 (MAC) level. L2 stacks therefore have to provides a
+ *          fast and re-usable generic implementation of this callback for
+ *          radio drivers to call when receiving an ACK packet.
+ *
+ *          Note: This function is part of Zephyr's 802.15.4 stack L1 -> L2
+ *          "inversion-of-control" adaptation API and must be implemented by
+ *          all IEEE 802.15.4 L2 stacks.
  *
  * @param iface A valid pointer on a network interface that received the packet
  * @param pkt A valid pointer on a packet to check
  *
- * @return NET_OK if it was handled, NET_CONTINUE otherwise
+ * @return NET_OK if L2 handles the ACK package, NET_CONTINUE or NET_DROP otherwise.
+ *
+ *         Note: Deviating from other functions in the net stack returning net_verdict,
+ *               this function will not unref the package even if it returns NET_OK.
+ *
+ *         TODO: Fix this deviating behavior.
  */
-extern enum net_verdict ieee802154_radio_handle_ack(struct net_if *iface,
-						    struct net_pkt *pkt);
+extern enum net_verdict ieee802154_handle_ack(struct net_if *iface, struct net_pkt *pkt);
 
 /**
- * @brief Initialize L2 stack for a given interface
+ * @brief Radio driver initialization callback into L2 called by radio drivers
+ *        to initialize the active L2 stack for a given interface.
+ *
+ * @details Radio drivers must call this function as part of their own
+ *          initialization routine.
+ *
+ *          Note: This function is part of Zephyr's 802.15.4 stack L1 -> L2
+ *          "inversion-of-control" adaptation API and must be implemented by
+ *          all IEEE 802.15.4 L2 stacks.
  *
  * @param iface A valid pointer on a network interface
  */
 #ifndef CONFIG_IEEE802154_RAW_MODE
-void ieee802154_init(struct net_if *iface);
+extern void ieee802154_init(struct net_if *iface);
 #else
 #define ieee802154_init(_iface_)
 #endif /* CONFIG_IEEE802154_RAW_MODE */

@@ -245,7 +245,7 @@ static void create_ack_frame(void)
 
 	net_pkt_set_ieee802154_rssi_dbm(packet, rssi);
 	net_pkt_set_ieee802154_lqi(packet, lqi);
-	zassert_equal(ieee802154_radio_handle_ack(NULL, packet), NET_OK, "Handling ack failed.");
+	zassert_equal(ieee802154_handle_ack(NULL, packet), NET_OK, "Handling ack failed.");
 	net_pkt_unref(packet);
 }
 

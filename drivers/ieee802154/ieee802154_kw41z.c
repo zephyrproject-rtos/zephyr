@@ -606,7 +606,7 @@ static void handle_ack(struct kw41z_context *kw41z, uint8_t seq_number)
 
 	net_pkt_cursor_init(ack_pkt);
 
-	if (ieee802154_radio_handle_ack(kw41z->iface, ack_pkt) != NET_OK) {
+	if (ieee802154_handle_ack(kw41z->iface, ack_pkt) != NET_OK) {
 		LOG_INF("ACK packet not handled - releasing.");
 	}
 

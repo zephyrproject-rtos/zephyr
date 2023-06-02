@@ -113,7 +113,7 @@ inline bool ieee802154_prepare_for_ack(struct ieee802154_context *ctx, struct ne
 	return false;
 }
 
-enum net_verdict ieee802154_radio_handle_ack(struct net_if *iface, struct net_pkt *pkt)
+enum net_verdict ieee802154_handle_ack(struct net_if *iface, struct net_pkt *pkt)
 {
 	struct ieee802154_context *ctx = net_if_l2_data(iface);
 
