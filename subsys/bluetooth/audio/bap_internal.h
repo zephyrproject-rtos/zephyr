@@ -33,9 +33,7 @@
 #define BT_BAP_BASS_PA_REQ_SYNC_PAST          0x01
 #define BT_BAP_BASS_PA_REQ_SYNC               0x02
 
-#define BT_BAP_BASS_VALID_OPCODE(opcode) \
-	((opcode) >= BT_BAP_BASS_OP_SCAN_STOP && \
-	 (opcode) <= BT_BAP_BASS_OP_REM_SRC)
+#define BT_BAP_BASS_VALID_OPCODE(opcode) ((opcode) <= BT_BAP_BASS_OP_REM_SRC)
 
 struct bt_bap_bass_cp_scan_stop {
 	uint8_t opcode;
