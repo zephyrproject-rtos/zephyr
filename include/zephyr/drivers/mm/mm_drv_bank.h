@@ -21,6 +21,8 @@
 #include <zephyr/sys/mem_stats.h>
 #include <stdint.h>
 
+#define SRAM_BANK_PAGE_NUM   (SRAM_BANK_SIZE / CONFIG_MM_DRV_PAGE_SIZE)
+
 struct mem_drv_bank {
 	uint32_t  unmapped_pages;
 	uint32_t  mapped_pages;
@@ -32,7 +34,9 @@ struct mem_drv_bank {
  *
  * The driver may wish to track various information about the memory banks
  * that it uses. This routine will initialize a generic structure containing
- * that information.
+ * that information. Since at the power on all memory banks are switched on
+ * it will start with all pages mapped. In next phase of driver initialization
+ * unused pages will be unmapped.
  *
  * @param bank Pointer to the memory bank structure used for tracking
  * @param bank_pages Number of pages in the memory bank
