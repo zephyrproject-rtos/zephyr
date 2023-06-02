@@ -51,7 +51,7 @@ BUILD_ASSERT(CONFIG_MCUMGR_GRP_IMG_UPDATABLE_IMAGE_NUMBER == 1 ||
 #define ADD_SLOT_3_CONDITION 0
 #endif
 
-static int
+int
 img_mgmt_slot_to_image(int slot)
 {
 	switch (slot) {
