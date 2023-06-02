@@ -808,19 +808,8 @@ int bt_csip_set_member_register(const struct bt_csip_set_member_register_param *
 	inst->set_sirk.type = BT_CSIP_SIRK_TYPE_PLAIN;
 	inst->cb = param->cb;
 
-	if (IS_ENABLED(CONFIG_BT_CSIP_SET_MEMBER_TEST_SAMPLE_DATA)) {
-		uint8_t test_sirk[] = {
-			0xcd, 0xcc, 0x72, 0xdd, 0x86, 0x8c, 0xcd, 0xce,
-			0x22, 0xfd, 0xa1, 0x21, 0x09, 0x7d, 0x7d, 0x45,
-		};
-
-		(void)memcpy(inst->set_sirk.value, test_sirk,
-			     sizeof(test_sirk));
-		LOG_DBG("CSIP SIRK was overwritten by sample data SIRK");
-	} else {
-		(void)memcpy(inst->set_sirk.value, param->set_sirk,
-			     sizeof(inst->set_sirk.value));
-	}
+	(void)memcpy(inst->set_sirk.value, param->set_sirk,
+		     sizeof(inst->set_sirk.value));
 
 	*svc_inst = inst;
 	return 0;
