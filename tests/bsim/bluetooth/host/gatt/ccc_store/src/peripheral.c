@@ -197,12 +197,7 @@ static void connect_restore_sec_check_subscribtion(struct bt_le_ext_adv *adv)
 
 	/* check that subscribtion has been restored */
 	if (!is_peer_subscribed(default_conn)) {
-		if (!IS_ENABLED(CONFIG_BT_SETTINGS_CCC_STORE_ON_WRITE)) {
-			LOG_ERR("Expected failure: client is not subscribed. See issue #58471 for "
-				"more details.");
-		} else {
-			FAIL("Client is not subscribed\n");
-		}
+		FAIL("Client is not subscribed\n");
 	} else {
 		LOG_DBG("Client is subscribed");
 	}
