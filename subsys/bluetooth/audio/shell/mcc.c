@@ -826,10 +826,10 @@ static int cmd_mcc_read_current_track_obj_id(const struct shell *sh,
 static int cmd_mcc_set_current_track_obj_id(const struct shell *sh, size_t argc,
 					    char *argv[])
 {
-	unsigned long id;
+	unsigned long long id;
 	int result = 0;
 
-	id = shell_strtoul(argv[1], 0, &result);
+	id = shell_strtoull(argv[1], 0, &result);
 	if (result != 0) {
 		shell_error(sh, "Could not parse id: %d", result);
 
@@ -864,10 +864,10 @@ static int cmd_mcc_read_next_track_obj_id(const struct shell *sh, size_t argc,
 static int cmd_mcc_set_next_track_obj_id(const struct shell *sh, size_t argc,
 					 char *argv[])
 {
-	unsigned long id;
+	unsigned long long id;
 	int result = 0;
 
-	id = shell_strtoul(argv[1], 0, &result);
+	id = shell_strtoull(argv[1], 0, &result);
 	if (result != 0) {
 		shell_error(sh, "Could not parse id: %d", result);
 
@@ -914,10 +914,10 @@ static int cmd_mcc_read_current_group_obj_id(const struct shell *sh,
 static int cmd_mcc_set_current_group_obj_id(const struct shell *sh, size_t argc,
 					    char *argv[])
 {
-	unsigned long id;
+	unsigned long long id;
 	int result = 0;
 
-	id = shell_strtoul(argv[1], 0, &result);
+	id = shell_strtoull(argv[1], 0, &result);
 	if (result != 0) {
 		shell_error(sh, "Could not parse id: %d", result);
 
@@ -1680,10 +1680,10 @@ static int cmd_mcc_otc_read_metadata(const struct shell *sh, size_t argc,
 
 static int cmd_mcc_otc_select(const struct shell *sh, size_t argc, char *argv[])
 {
-	unsigned long id;
+	unsigned long long id;
 	int result = 0;
 
-	id = shell_strtoul(argv[1], 0, &result);
+	id = shell_strtoull(argv[1], 0, &result);
 	if (result != 0) {
 		shell_error(sh, "Could not parse id: %d", result);
 
