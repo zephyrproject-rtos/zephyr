@@ -156,6 +156,12 @@ enum img_mgmt_err_code_t {
 
 	/** The amount of data sent is larger than the provided image size. */
 	IMG_MGMT_ERR_INVALID_IMAGE_DATA_OVERRUN,
+
+	/** Confirmation of image has been denied */
+	IMG_MGMT_ERR_IMAGE_CONFIRMATION_DENIED,
+
+	/** Setting test to active slot is not allowed */
+	IMG_MGMT_ERR_IMAGE_SETTING_TEST_TO_ACTIVE_DENIED,
 };
 
 /**
