@@ -60,6 +60,7 @@ extern const struct bmm150_bus_io bmm150_bus_io_i2c;
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/sensor.h>
+#include <zephyr/pm/device.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/drivers/gpio.h>

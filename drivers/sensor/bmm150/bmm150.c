@@ -619,6 +619,40 @@ err_poweroff:
 	return -EIO;
 }
 
+#ifdef CONFIG_PM_DEVICE
+static int pm_action(const struct device *dev, enum pm_device_action action)
+{
+	int ret;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		/* Need to enter sleep mode before setting OpMode to normal */
+		ret = bmm150_power_control(dev, 1);
+		if (ret != 0) {
+			LOG_ERR("failed to enter sleep mode: %d", ret);
+		}
+
+		k_sleep(BMM150_START_UP_TIME);
+
+		ret |= bmm150_opmode(dev, BMM150_MODE_NORMAL);
+		if (ret != 0) {
+			LOG_ERR("failed to enter normal mode: %d", ret);
+		}
+		break;
+	case PM_DEVICE_ACTION_SUSPEND:
+		ret = bmm150_power_control(dev, 0); /* Suspend */
+		if (ret != 0) {
+			LOG_ERR("failed to enter suspend mode: %d", ret);
+		}
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	return ret;
+}
+#endif
+
 static int bmm150_init(const struct device *dev)
 {
 	int err = 0;
@@ -661,8 +695,12 @@ static int bmm150_init(const struct device *dev)
 	static const struct bmm150_config bmm150_config_##inst = {	\
 		BMM150_BUS_CFG(inst)					\
 	};								\
+									\
+	PM_DEVICE_DT_INST_DEFINE(inst, pm_action);			\
+									\
 	SENSOR_DEVICE_DT_INST_DEFINE(inst,				\
-				     bmm150_init, NULL,			\
+				     bmm150_init,			\
+				     PM_DEVICE_DT_INST_GET(inst),	\
 				     &bmm150_data_##inst,		\
 				     &bmm150_config_##inst,		\
 				     POST_KERNEL,			\
