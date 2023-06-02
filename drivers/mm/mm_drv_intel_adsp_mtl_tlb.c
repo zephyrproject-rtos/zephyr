@@ -378,7 +378,7 @@ int sys_mm_drv_unmap_page(void *virt)
 		sys_mm_drv_report_page_usage();
 #endif
 
-		if (sys_mm_drv_bank_page_unmapped(&hpsram_bank[bank_idx]) == 0) {
+		if (sys_mm_drv_bank_page_unmapped(&hpsram_bank[bank_idx]) == SRAM_BANK_PAGE_NUM) {
 			sys_mm_drv_hpsram_pwr(bank_idx, false, false);
 		}
 	}
@@ -649,7 +649,7 @@ static int sys_mm_drv_mm_init(const struct device *dev)
 	 */
 	for (int i = 0; i < L2_SRAM_BANK_NUM; i++) {
 		sys_mm_drv_bank_init(&hpsram_bank[i],
-				     SRAM_BANK_SIZE / CONFIG_MM_DRV_PAGE_SIZE);
+				     SRAM_BANK_PAGE_NUM);
 	}
 #ifdef CONFIG_SOC_INTEL_COMM_WIDGET
 	used_pages = L2_SRAM_BANK_NUM * SRAM_BANK_SIZE / CONFIG_MM_DRV_PAGE_SIZE;
