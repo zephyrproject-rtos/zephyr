@@ -432,6 +432,7 @@ static uint32_t prefix_print(const struct log_output *output,
 			     const char *source,
 			     uint8_t level)
 {
+	__ASSERT_NO_MSG(level <= LOG_LEVEL_DBG);
 	uint32_t length = 0U;
 
 	bool stamp = flags & LOG_OUTPUT_FLAG_TIMESTAMP;
