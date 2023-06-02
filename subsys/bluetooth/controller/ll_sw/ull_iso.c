@@ -176,9 +176,18 @@ uint8_t ll_read_iso_tx_sync(uint16_t handle, uint16_t *seq,
 		return BT_HCI_ERR_CMD_DISALLOWED;
 
 	} else if (IS_ADV_ISO_HANDLE(handle)) {
-		/* FIXME: Do something similar to connected */
+		const struct lll_adv_iso_stream *adv_stream;
+		uint16_t stream_handle;
 
-		return BT_HCI_ERR_CMD_DISALLOWED;
+		stream_handle = LL_BIS_ADV_IDX_FROM_HANDLE(handle);
+		adv_stream = ull_adv_iso_stream_get(stream_handle);
+		if (!adv_stream || !adv_stream->dp ||
+		    isoal_tx_get_sync_info(adv_stream->dp->source_hdl, seq,
+					   timestamp, offset) != ISOAL_STATUS_OK) {
+			return BT_HCI_ERR_CMD_DISALLOWED;
+		}
+
+		return BT_HCI_ERR_SUCCESS;
 	}
 
 	return BT_HCI_ERR_UNKNOWN_CONN_ID;
