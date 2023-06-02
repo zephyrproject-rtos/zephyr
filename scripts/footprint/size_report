@@ -12,6 +12,7 @@ Process an ELF file to generate size report on RAM and ROM.
 """
 
 import argparse
+import locale
 import os
 import sys
 import re
@@ -229,7 +230,7 @@ def get_die_filename(die, lineprog):
         directory = lineprog.header['include_directory'][dir_index - 1]
         filename = os.path.join(directory, file_entry.name)
 
-    path = Path(filename.decode())
+    path = Path(filename.decode(locale.getpreferredencoding()))
 
     # Prepend output path to relative path
     if not path.is_absolute():
