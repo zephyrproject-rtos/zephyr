@@ -34,10 +34,15 @@ ZTEST(sys_mm_bank_api, test_sys_mm_drv_bank)
 	struct sys_memory_stats stats;
 	struct sys_memory_stats expected;
 	uint32_t  count;
+	uint32_t index;
 
 	/* Verify that the initialization routine works as expected. */
-
+	/* It set mapped state for all pages                         */
 	sys_mm_drv_bank_init(&bank_data, BANK_PAGES);
+	/* Now unmap all pages */
+	for (index = 0; index < BANK_PAGES; index++) {
+		sys_mm_drv_bank_page_unmapped(&bank_data);
+	}
 
 	expected.free_bytes = EXPECTED(BANK_PAGES);
 	expected.allocated_bytes = EXPECTED(0);
