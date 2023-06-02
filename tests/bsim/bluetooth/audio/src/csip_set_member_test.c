@@ -12,6 +12,8 @@
 static struct bt_csip_set_member_svc_inst *svc_inst;
 extern enum bst_result_t bst_result;
 static volatile bool g_locked;
+static volatile bool g_sirk_read;
+CREATE_FLAG(disc);
 static uint8_t sirk_read_req_rsp = BT_CSIP_READ_SIRK_REQ_RSP_ACCEPT;
 struct bt_csip_set_member_register_param param = {
 	.set_size = 3,
@@ -20,6 +22,12 @@ struct bt_csip_set_member_register_param param = {
 	/* Using the CSIS test sample SIRK */
 	.set_sirk = { 0xcd, 0xcc, 0x72, 0xdd, 0x86, 0x8c, 0xcd, 0xce,
 		      0x22, 0xfd, 0xa1, 0x21, 0x09, 0x7d, 0x7d, 0x45 },
+};
+
+struct bt_csip_set_member_register_param param_no_sirk = {
+	.set_size = 3,
+	.rank = 1,
+	.lockable = true,
 };
 
 static void csip_disconnected(struct bt_conn *conn, uint8_t reason)
@@ -31,6 +39,8 @@ static void csip_disconnected(struct bt_conn *conn, uint8_t reason)
 	} else {
 		FAIL("Client disconnected unexpectedly (0x%02x)\n", reason);
 	}
+
+	SET_FLAG(disc);
 }
 
 static void csip_lock_changed_cb(struct bt_conn *conn,
@@ -44,6 +54,7 @@ static void csip_lock_changed_cb(struct bt_conn *conn,
 static uint8_t sirk_read_req_cb(struct bt_conn *conn,
 				struct bt_csip_set_member_svc_inst *svc_inst)
 {
+	g_sirk_read = true;
 	return sirk_read_req_rsp;
 }
 
@@ -96,7 +107,6 @@ static void test_main(void)
 	int err;
 
 	err = bt_enable(bt_ready);
-
 	if (err != 0) {
 		FAIL("Bluetooth init failed (err %d)\n", err);
 		return;
@@ -105,12 +115,83 @@ static void test_main(void)
 	bt_conn_cb_register(&conn_callbacks);
 }
 
+static void test_incomplete_set(void)
+{
+	int err;
+
+	err = bt_enable(bt_ready);
+	if (err != 0) {
+		FAIL("Bluetooth init failed (err %d)\n", err);
+		return;
+	}
+
+	bt_conn_cb_register(&conn_callbacks);
+
+	PASS("Set member incomplete set passed\n");
+}
+
+static void test_reconnect(void)
+{
+	int err;
+	uint8_t rsi[BT_CSIP_RSI_SIZE];
+	struct bt_data ad[] = {
+		BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
+		BT_CSIP_DATA_RSI(rsi),
+	};
+
+	err = bt_enable(bt_ready);
+	if (err != 0) {
+		FAIL("Bluetooth init failed (err %d)\n", err);
+		return;
+	}
+
+	bt_conn_cb_register(&conn_callbacks);
+
+	WAIT_FOR_COND(disc);
+
+	err = bt_le_adv_start(BT_LE_ADV_CONN_NAME, ad, ARRAY_SIZE(ad), NULL, 0);
+	if (err != 0) {
+		FAIL("Advertising failed to start (err %d)\n", err);
+	}
+
+	PASS("Set member test reconnect passed\n");
+}
+
+static void test_unranked(void)
+{
+	int err;
+
+	err = bt_enable(bt_ready);
+	if (err != 0) {
+		FAIL("Bluetooth init failed (err %d)\n", err);
+		return;
+	}
+
+	bt_conn_cb_register(&conn_callbacks);
+
+	PASS("Set member unranked passed\n");
+}
+
+static void test_sirk(void)
+{
+	int err;
+
+	err = bt_enable(bt_ready);
+	if (err != 0) {
+		FAIL("Bluetooth init failed (err %d)\n", err);
+		return;
+	}
+
+	bt_conn_cb_register(&conn_callbacks);
+
+	PASS("Set member invalid sirk test passed\n");
+}
+
 static void test_force_release(void)
 {
 	int err;
 
 	err = bt_enable(bt_ready);
-
 	if (err != 0) {
 		FAIL("Bluetooth init failed (err %d)\n", err);
 		return;
@@ -129,6 +210,61 @@ static void test_csip_enc(void)
 	sirk_read_req_rsp = BT_CSIP_READ_SIRK_REQ_RSP_ACCEPT_ENC;
 	test_main();
 }
+
+static void test_lock_invalid(void)
+{
+	int err;
+
+	err = bt_enable(bt_ready);
+	if (err != 0) {
+		FAIL("Bluetooth init failed (err %d)\n", err);
+		return;
+	}
+
+	bt_conn_cb_register(&conn_callbacks);
+
+	WAIT_FOR_COND(g_locked);
+
+	printk("Force locking set\n");
+	err = bt_csip_set_member_lock(svc_inst, true, true);
+	if (err == 0) {
+		FAIL("CSIP tried to lock already locked set");
+	}
+
+	PASS("Dismissed locking already locked set");
+}
+
+static void test_release_invalid(void)
+{
+	int err;
+
+	err = bt_enable(bt_ready);
+	if (err != 0) {
+		FAIL("Bluetooth init failed (err %d)\n", err);
+		return;
+	}
+
+	bt_conn_cb_register(&conn_callbacks);
+
+	WAIT_FOR_COND(g_locked);
+
+	printk("Force locking set\n");
+	err = bt_csip_set_member_lock(svc_inst, false, true);
+	if (err != 0) {
+		FAIL("Unable to force release set");
+	}
+
+	err = bt_csip_set_member_lock(svc_inst, false, true);
+	if (err == 0) {
+		FAIL("CSIP tried to release already released set");
+	}
+
+	PASS("Dismissed locking already locked set");
+}
+
+//static void bt_csip_gen_rsi_invalid(void)
+//{
+//}
 
 static void test_args(int argc, char *argv[])
 {
@@ -178,6 +314,48 @@ static const struct bst_test_instance test_connect[] = {
 		.test_post_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_csip_enc,
+		.test_args_f = test_args,
+	},
+	{
+		.test_id = "csip_set_member_incomplete_set",
+		.test_post_init_f = test_init,
+		.test_tick_f = test_tick,
+		.test_main_f = test_incomplete_set,
+		.test_args_f = test_args,
+	},
+	{
+		.test_id = "csip_set_member_sirk",
+		.test_post_init_f = test_init,
+		.test_tick_f = test_tick,
+		.test_main_f = test_sirk,
+		.test_args_f = test_args,
+	},
+	{
+		.test_id = "csip_set_member_unranked",
+		.test_post_init_f = test_init,
+		.test_tick_f = test_tick,
+		.test_main_f = test_unranked,
+		.test_args_f = test_args,
+	},
+	{
+		.test_id = "csip_set_member_reconnect",
+		.test_post_init_f = test_init,
+		.test_tick_f = test_tick,
+		.test_main_f = test_reconnect,
+		.test_args_f = test_args,
+	},
+	{
+		.test_id = "csip_set_member_lock_invalid",
+		.test_post_init_f = test_init,
+		.test_tick_f = test_tick,
+		.test_main_f = test_lock_invalid,
+		.test_args_f = test_args,
+	},
+	{
+		.test_id = "csip_set_member_release_invalid",
+		.test_post_init_f = test_init,
+		.test_tick_f = test_tick,
+		.test_main_f = test_release_invalid,
 		.test_args_f = test_args,
 	},
 
