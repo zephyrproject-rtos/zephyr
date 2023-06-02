@@ -2178,8 +2178,13 @@ static void audio_stream_qos_cleanup(const struct bt_conn *conn,
 	struct bt_bap_stream *stream;
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&group->streams, stream, _node) {
-		if (stream->conn != conn && stream->ep != NULL) {
+		if (stream->conn != conn) {
 			/* Channel not part of this ACL, skip */
+			continue;
+		}
+
+		if (stream->ep == NULL) {
+			/* Stream did not have a endpoint configured yet */
 			continue;
 		}
 
