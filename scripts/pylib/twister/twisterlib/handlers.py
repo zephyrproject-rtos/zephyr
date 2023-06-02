@@ -42,6 +42,26 @@ logger.setLevel(logging.DEBUG)
 SUPPORTED_SIMS = ["mdb-nsim", "nsim", "renode", "qemu", "tsim", "armfvp", "xt-sim", "native"]
 
 
+def terminate_process(proc):
+    """
+    encapsulate terminate functionality so we do it consistently where ever
+    we might want to terminate the proc.  We need try_kill_process_by_pid
+    because of both how newer ninja (1.6.0 or greater) and .NET / renode
+    work.  Newer ninja's don't seem to pass SIGTERM down to the children
+    so we need to use try_kill_process_by_pid.
+    """
+
+    for child in psutil.Process(proc.pid).children(recursive=True):
+        try:
+            os.kill(child.pid, signal.SIGTERM)
+        except ProcessLookupError:
+            pass
+    proc.terminate()
+    # sleep for a while before attempting to kill
+    time.sleep(0.5)
+    proc.kill()
+
+
 class Handler:
     def __init__(self, instance, type_str="build"):
         """Constructor
@@ -82,20 +102,7 @@ class Handler:
                     cw.writerow(instance)
 
     def terminate(self, proc):
-        # encapsulate terminate functionality so we do it consistently where ever
-        # we might want to terminate the proc.  We need try_kill_process_by_pid
-        # because of both how newer ninja (1.6.0 or greater) and .NET / renode
-        # work.  Newer ninja's don't seem to pass SIGTERM down to the children
-        # so we need to use try_kill_process_by_pid.
-        for child in psutil.Process(proc.pid).children(recursive=True):
-            try:
-                os.kill(child.pid, signal.SIGTERM)
-            except ProcessLookupError:
-                pass
-        proc.terminate()
-        # sleep for a while before attempting to kill
-        time.sleep(0.5)
-        proc.kill()
+        terminate_process(proc)
         self.terminated = True
 
     def _verify_ztest_suite_name(self, harness_state, detected_suite_names, handler_time):

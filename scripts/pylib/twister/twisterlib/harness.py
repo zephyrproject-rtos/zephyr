@@ -9,9 +9,11 @@ import shlex
 from collections import OrderedDict
 import xml.etree.ElementTree as ET
 import logging
+import threading
 import time
 
 from twisterlib.environment import ZEPHYR_BASE, PYTEST_PLUGIN_INSTALLED
+from twisterlib.handlers import terminate_process
 
 
 logger = logging.getLogger('twister')
@@ -229,13 +231,13 @@ class Pytest(Harness):
         self.report_file = os.path.join(self.running_dir, 'report.xml')
         self.reserved_serial = None
 
-    def pytest_run(self):
+    def pytest_run(self, timeout):
         try:
             cmd = self.generate_command()
             if not cmd:
                 logger.error('Pytest command not generated, check logs')
                 return
-            self.run_command(cmd)
+            self.run_command(cmd, timeout)
         except PytestHarnessException as pytest_exception:
             logger.error(str(pytest_exception))
         finally:
@@ -314,33 +316,36 @@ class Pytest(Harness):
 
         return command
 
-    def run_command(self, cmd):
+    def run_command(self, cmd, timeout):
         cmd, env = self._update_command_with_env_dependencies(cmd)
-
         with subprocess.Popen(cmd,
                               stdout=subprocess.PIPE,
                               stderr=subprocess.STDOUT,
                               env=env) as proc:
             try:
-                while proc.stdout.readable() and proc.poll() is None:
-                    line = proc.stdout.readline().decode().strip()
-                    if not line:
-                        continue
-                    logger.debug("PYTEST: %s", line)
-                proc.communicate()
-                tree = ET.parse(self.report_file)
-                root = tree.getroot()
-                for child in root:
-                    if child.tag == 'testsuite':
-                        if child.attrib['failures'] != '0':
-                            self.state = "failed"
-                        elif child.attrib['skipped'] != '0':
-                            self.state = "skipped"
-                        elif child.attrib['errors'] != '0':
-                            self.state = "error"
-                        else:
-                            self.state = "passed"
-                        self.instance.execution_time = float(child.attrib['time'])
+                reader_t = threading.Thread(target=self._output_reader, args=(proc,), daemon=True)
+                reader_t.start()
+                reader_t.join(timeout)
+                if reader_t.is_alive():
+                    terminate_process(proc)
+                    logger.warning('Timeout has occurred.')
+                    self.state = 'failed'
+                proc.wait(timeout)
+
+                if self.state != 'failed':
+                    tree = ET.parse(self.report_file)
+                    root = tree.getroot()
+                    for child in root:
+                        if child.tag == 'testsuite':
+                            if child.attrib['failures'] != '0':
+                                self.state = "failed"
+                            elif child.attrib['skipped'] != '0':
+                                self.state = "skipped"
+                            elif child.attrib['errors'] != '0':
+                                self.state = "error"
+                            else:
+                                self.state = "passed"
+                            self.instance.execution_time = float(child.attrib['time'])
             except subprocess.TimeoutExpired:
                 proc.kill()
                 self.state = "failed"
@@ -382,6 +387,15 @@ class Pytest(Harness):
         logger.debug('Running pytest command: %s', cmd_to_print)
 
         return cmd, env
+
+    @staticmethod
+    def _output_reader(proc):
+        while proc.stdout.readable() and proc.poll() is None:
+            line = proc.stdout.readline().decode().strip()
+            if not line:
+                continue
+            logger.debug('PYTEST: %s', line)
+        proc.communicate()
 
     def _apply_instance_status(self):
         if self.state:

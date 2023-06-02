@@ -1031,7 +1031,7 @@ class ProjectBuilder(FilterBuilder):
             harness = HarnessImporter.get_harness(instance.testsuite.harness.capitalize())
             harness.configure(instance)
             if isinstance(harness, Pytest):
-                harness.pytest_run()
+                harness.pytest_run(instance.handler.timeout)
             else:
                 instance.handler.handle(harness)
 
