@@ -382,13 +382,20 @@ config BT_CTLR_ISOAL_SN_STRICT
 	depends on BT_CTLR_ADV_ISO || BT_CTLR_CONN_ISO
 	default y
 	help
-	  Enforce dropping stale Tx ISO Data SDUs from upper layer by checking
-	  the next expected Sequence Number maintained in ISOAL.
+	  Enforce strict sequencing of released payloads based on the TX SDU's
+	  packet sequence number. This will be effective when fragmenting an
+	  SDU into unframed PDUs.
 
-	  This option may be used to relax the Tx ISO Data SDUs being dropped
-	  due to strict check of sequence numbers in ISOAL, i.e. dropped when
-	  HCI ISO Data packets are delayed from upper layer with respect to the
-	  current payload number in the ISO radio events.
+	  When enabled, this could result in an SDU being fragmented into
+	  payload numbers that are expired (will be dropped), if the TX SDU
+	  packet sequence numbers do not increment according to the SDU interval
+	  and delivery of SDUs to the ISO-AL do not strictly follow the SDU
+	  interval.
+
+	  When disabled, TX SDUs could be shifted from their stream aligned
+	  position and fragmented into payloads that are less likely to be
+	  dropped. This will result in better delivery of data to the receiver
+	  but at the cost of creating skews in the received stream of SDUs.
 
 config BT_CTLR_ZLI
 	bool "Use Zero Latency IRQs"
