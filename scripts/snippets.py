@@ -311,7 +311,7 @@ def write_cmake_out(snippets: Snippets, cmake_out: Path) -> None:
     detail and are not meant to be used outside of snippets.cmake.'''
     if not cmake_out.parent.exists():
         cmake_out.parent.mkdir()
-    with open(cmake_out, 'w') as f:
+    with open(cmake_out, 'w', encoding="utf-8") as f:
         SnippetToCMakePrinter(snippets, f).print_cmake()
 
 def main():
