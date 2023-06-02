@@ -412,7 +412,7 @@ static int handle_ack(struct nrf5_802154_data *nrf5_radio)
 
 	net_pkt_cursor_init(ack_pkt);
 
-	if (ieee802154_radio_handle_ack(nrf5_radio->iface, ack_pkt) != NET_OK) {
+	if (ieee802154_handle_ack(nrf5_radio->iface, ack_pkt) != NET_OK) {
 		LOG_INF("ACK packet not handled - releasing.");
 	}
 

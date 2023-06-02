@@ -482,7 +482,7 @@ static bool test_wait_for_ack(struct ieee802154_pkt_test *t)
 
 	pkt_hexdump(net_pkt_data(ack_pkt), net_pkt_get_len(ack_pkt));
 
-	if (ieee802154_radio_handle_ack(iface, ack_pkt) != NET_OK) {
+	if (ieee802154_handle_ack(iface, ack_pkt) != NET_OK) {
 		NET_ERR("*** Ack frame was not handled.\n");
 		goto release_ack_pkt;
 	}
