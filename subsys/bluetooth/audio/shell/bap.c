@@ -1086,7 +1086,7 @@ static int cmd_stream_qos(const struct shell *sh, size_t argc, char *argv[])
 			return -ENOEXEC;
 		}
 
-		if (!IN_RANGE(framing, BT_ISO_FRAMING_UNFRAMED, BT_ISO_FRAMING_FRAMED)) {
+		if (framing != BT_ISO_FRAMING_UNFRAMED && framing != BT_ISO_FRAMING_FRAMED) {
 			return -ENOEXEC;
 		}
 

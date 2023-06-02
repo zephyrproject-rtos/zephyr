@@ -453,7 +453,7 @@ static int cmd_bap_broadcast_assistant_add_src(const struct shell *sh,
 			return -ENOEXEC;
 		}
 
-		if (!IN_RANGE(bis_sync, 0, UINT32_MAX)) {
+		if (bis_sync > UINT32_MAX) {
 			shell_error(sh, "Invalid bis_sync: %lu", bis_sync);
 
 			return -ENOEXEC;
@@ -630,7 +630,7 @@ static int cmd_bap_broadcast_assistant_add_broadcast_id(const struct shell *sh,
 			shell_error(sh, "failed to parse bis_sync: %d", err);
 
 			return -ENOEXEC;
-		} else if (!IN_RANGE(bis_sync, 0, UINT32_MAX)) {
+		} else if (bis_sync > UINT32_MAX) {
 			shell_error(sh, "Invalid bis_sync: %lu", bis_sync);
 
 			return -ENOEXEC;
@@ -727,7 +727,7 @@ static int cmd_bap_broadcast_assistant_mod_src(const struct shell *sh,
 			return -ENOEXEC;
 		}
 
-		if (!IN_RANGE(bis_sync, 0, UINT32_MAX)) {
+		if (bis_sync > UINT32_MAX) {
 			shell_error(sh, "Invalid bis_sync: %lu", bis_sync);
 
 			return -ENOEXEC;
