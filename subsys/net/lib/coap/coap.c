@@ -748,6 +748,10 @@ uint8_t coap_header_get_token(const struct coap_packet *cpkt, uint8_t *token)
 	}
 
 	tkl = cpkt->data[0] & 0x0f;
+	if (tkl > COAP_TOKEN_MAX_LEN) {
+		return 0;
+	}
+
 	if (tkl) {
 		memcpy(token, cpkt->data + BASIC_HEADER_SIZE, tkl);
 	}
