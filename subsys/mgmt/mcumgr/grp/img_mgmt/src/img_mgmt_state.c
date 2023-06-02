@@ -9,6 +9,7 @@
 #include <zephyr/toolchain.h>
 #include <string.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/dfu/mcuboot.h>
 
 #include <zcbor_common.h>
 #include <zcbor_decode.h>
@@ -132,6 +133,78 @@ img_mgmt_state_flags(int query_slot)
 	return flags;
 }
 #endif
+
+#ifndef CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP
+int img_mgmt_get_next_boot_slot(int image, enum img_mgmt_next_boot_type *type)
+{
+	const int active_slot = img_mgmt_active_slot(image);
+	const int state = mcuboot_swap_type_multi(image);
+	/* All cases except BOOT_SWAP_TYPE_NONE return opposite slot */
+	int slot = img_mgmt_get_opposite_slot(active_slot);
+	enum img_mgmt_next_boot_type lt = NEXT_BOOT_TYPE_NORMAL;
+
+	switch (state) {
+	case BOOT_SWAP_TYPE_NONE:
+		/* Booting to the same slot, keeping type to NEXT_BOOT_TYPE_NORMAL */
+		slot = active_slot;
+		break;
+	case BOOT_SWAP_TYPE_PERM:
+		/* For BOOT_SWAP_TYPE_PERM reported type will be NEXT_BOOT_TYPE_NORMAL,
+		 * and only difference between this and BOOT_SWAP_TYPE_NONE is that
+		 * the later boots to the application in currently active slot while the former
+		 * to the application in the opposite to active slot.
+		 * Normal here means that it is ordinary boot and slot has not been marked
+		 * for revert or pending for test, and will change on reset.
+		 */
+		break;
+	case BOOT_SWAP_TYPE_REVERT:
+		/* Application is in test mode and has not yet been confirmed,
+		 * which means that on the next boot the application will revert to
+		 * the copy from reported slot.
+		 */
+		lt = NEXT_BOOT_TYPE_REVERT;
+		break;
+	case BOOT_SWAP_TYPE_TEST:
+		/* Reported next boot slot is set for one boot only and app needs to
+		 * confirm itself or it will be reverted.
+		 */
+		lt = NEXT_BOOT_TYPE_TEST;
+		break;
+	default:
+		/* Should never, ever happen */
+		LOG_DBG("Unexpected swap state %d", state);
+		return -1;
+	}
+	LOG_DBG("(%d, *) => slot = %d, type = %d", image, slot, lt);
+
+	if (type != NULL) {
+		*type = lt;
+	}
+	return slot;
+}
+#else
+int img_mgmt_get_next_boot_slot(int image, enum img_mgmt_next_boot_type *type)
+{
+	struct image_version aver;
+	struct image_version over;
+	int active_slot = img_mgmt_active_slot(image);
+	int other_slot = img_mgmt_get_opposite_slot(active_slot);
+
+	if (type != NULL) {
+		*type = NEXT_BOOT_TYPE_NORMAL;
+	}
+
+	int rcs = img_mgmt_read_info(other_slot, &over, NULL, NULL);
+	int rca = img_mgmt_read_info(active_slot, &aver, NULL, NULL);
+
+	if (rcs == 0 && rca == 0 && img_mgmt_vercmp(&aver, &over) < 0) {
+		return other_slot;
+	}
+
+	return active_slot;
+}
+#endif
+
 
 /**
  * Indicates whether any image slot is pending (i.e., whether a test swap will
