@@ -15,7 +15,8 @@
 	__ASSERT_NO_MSG(!(expr));   \
 	if (0)
 #elif defined(CONFIG_NO_RUNTIME_CHECKS)
-#define CHECKIF(...) \
+#define CHECKIF(expr) \
+	void(expr); \
 	if (0)
 #else
 #define CHECKIF(expr) \
