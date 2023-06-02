@@ -37,17 +37,9 @@ int mfd_npm1300_reg_read_burst(const struct device *dev, uint8_t base, uint8_t o
 			       size_t len)
 {
 	const struct mfd_npm1300_config *config = dev->config;
-	struct mfd_npm1300_data *mfd_data = dev->data;
 	uint8_t buff[] = {base, offset};
-	int ret;
 
-	k_mutex_lock(&mfd_data->mutex, K_FOREVER);
-
-	ret = i2c_write_read_dt(&config->i2c, buff, sizeof(buff), data, len);
-
-	k_mutex_unlock(&mfd_data->mutex);
-
-	return ret;
+	return i2c_write_read_dt(&config->i2c, buff, sizeof(buff), data, len);
 }
 
 int mfd_npm1300_reg_read(const struct device *dev, uint8_t base, uint8_t offset, uint8_t *data)
@@ -58,34 +50,18 @@ int mfd_npm1300_reg_read(const struct device *dev, uint8_t base, uint8_t offset,
 int mfd_npm1300_reg_write(const struct device *dev, uint8_t base, uint8_t offset, uint8_t data)
 {
 	const struct mfd_npm1300_config *config = dev->config;
-	struct mfd_npm1300_data *mfd_data = dev->data;
 	uint8_t buff[] = {base, offset, data};
-	int ret;
 
-	k_mutex_lock(&mfd_data->mutex, K_FOREVER);
-
-	ret = i2c_write_dt(&config->i2c, buff, sizeof(buff));
-
-	k_mutex_unlock(&mfd_data->mutex);
-
-	return ret;
+	return i2c_write_dt(&config->i2c, buff, sizeof(buff));
 }
 
 int mfd_npm1300_reg_write2(const struct device *dev, uint8_t base, uint8_t offset, uint8_t data1,
 			   uint8_t data2)
 {
 	const struct mfd_npm1300_config *config = dev->config;
-	struct mfd_npm1300_data *mfd_data = dev->data;
 	uint8_t buff[] = {base, offset, data1, data2};
-	int ret;
 
-	k_mutex_lock(&mfd_data->mutex, K_FOREVER);
-
-	ret = i2c_write_dt(&config->i2c, buff, sizeof(buff));
-
-	k_mutex_unlock(&mfd_data->mutex);
-
-	return ret;
+	return i2c_write_dt(&config->i2c, buff, sizeof(buff));
 }
 
 int mfd_npm1300_reg_update(const struct device *dev, uint8_t base, uint8_t offset, uint8_t data,

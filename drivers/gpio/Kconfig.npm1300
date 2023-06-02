@@ -6,6 +6,7 @@ config GPIO_NPM1300
 	default y
 	depends on DT_HAS_NORDIC_NPM1300_GPIO_ENABLED
 	select I2C
+	select MFD
 	help
 	  Enable the nPM1300 GPIO driver.
 
