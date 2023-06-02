@@ -14,7 +14,7 @@
 	leds {
 		compatible = "gpio-leds";
 		myled0: led_0 {
-			gpios = <&gpio1 4 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpio1 19 GPIO_ACTIVE_HIGH>;
 		};
 	};
 };
