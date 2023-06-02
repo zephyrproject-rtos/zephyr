@@ -132,8 +132,14 @@ static void ase_status_changed(struct bt_bap_ep *ep, uint8_t old_state, uint8_t 
 
 	if (conn != NULL) {
 		struct bt_conn_info conn_info;
+		int err;
 
-		bt_conn_get_info(conn, &conn_info);
+		err = bt_conn_get_info(conn, &conn_info);
+		if (err != 0) {
+			LOG_ERR("Failed to get conn %p info: %d", (void *)conn, err);
+
+			return;
+		}
 
 		if (conn_info.state == BT_CONN_STATE_CONNECTED) {
 			const uint8_t att_ntf_header_size = 3; /* opcode (1) + handle (2) */
