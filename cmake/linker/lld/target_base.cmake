@@ -5,7 +5,7 @@
 macro(toolchain_ld_base)
 
   if(NOT PROPERTY_LINKER_SCRIPT_DEFINES)
-    set_property(GLOBAL PROPERTY PROPERTY_LINKER_SCRIPT_DEFINES -D__GCC_LINKER_CMD__)
+    set_property(GLOBAL PROPERTY PROPERTY_LINKER_SCRIPT_DEFINES -D__LLD_LINKER_CMD__)
   endif()
 
   # TOOLCHAIN_LD_FLAGS comes from compiler/clang/target.cmake

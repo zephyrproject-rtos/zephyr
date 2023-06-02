@@ -44,7 +44,7 @@
 #include <zephyr/toolchain/mwdt.h>
 #elif defined(__ARMCOMPILER_VERSION)
 #include <zephyr/toolchain/armclang.h>
-#elif defined(__llvm__)
+#elif defined(__llvm__) || (defined(_LINKER) && defined(__LLD_LINKER_CMD__))
 #include <zephyr/toolchain/llvm.h>
 #elif defined(__GNUC__) || (defined(_LINKER) && defined(__GCC_LINKER_CMD__))
 #include <zephyr/toolchain/gcc.h>
