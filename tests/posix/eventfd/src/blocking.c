@@ -71,7 +71,7 @@ ZTEST_F(eventfd, test_unset_poll_event_block)
 	eventfd_poll_unset_common(fixture->fd);
 }
 
-K_THREAD_STACK_DEFINE(thread_stack, 2048);
+K_THREAD_STACK_DEFINE(thread_stack, CONFIG_TEST_STACK_SIZE);
 
 static void thread_fun(void *arg1, void *arg2, void *arg3)
 {
