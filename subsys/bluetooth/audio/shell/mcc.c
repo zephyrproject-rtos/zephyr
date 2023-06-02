@@ -731,7 +731,7 @@ static int cmd_mcc_set_track_position(const struct shell *sh, size_t argc,
 		return -ENOEXEC;
 	}
 
-	if (!IN_RANGE(pos, INT32_MIN, INT32_MAX)) {
+	if (sizeof(long) != sizeof(int32_t) && !IN_RANGE(pos, INT32_MIN, INT32_MAX)) {
 		shell_error(sh, "Invalid pos: %ld", pos);
 
 		return -ENOEXEC;
@@ -1105,7 +1105,7 @@ static int cmd_mcc_move_relative(const struct shell *sh, size_t argc,
 		return err;
 	}
 
-	if (!IN_RANGE(offset, INT32_MIN, INT32_MAX)) {
+	if (sizeof(long) != sizeof(int32_t) && !IN_RANGE(offset, INT32_MIN, INT32_MAX)) {
 		shell_error(sh, "Invalid offset: %ld", offset);
 
 		return -ENOEXEC;
@@ -1211,7 +1211,7 @@ static int cmd_mcc_goto_segment(const struct shell *sh, size_t argc,
 		return err;
 	}
 
-	if (!IN_RANGE(segment, INT32_MIN, INT32_MAX)) {
+	if (sizeof(long) != sizeof(int32_t) && !IN_RANGE(segment, INT32_MIN, INT32_MAX)) {
 		shell_error(sh, "Invalid segment: %ld", segment);
 
 		return -ENOEXEC;
@@ -1313,7 +1313,7 @@ static int cmd_mcc_goto_track(const struct shell *sh, size_t argc, char *argv[])
 		return err;
 	}
 
-	if (!IN_RANGE(track, INT32_MIN, INT32_MAX)) {
+	if (sizeof(long) != sizeof(int32_t) && !IN_RANGE(track, INT32_MIN, INT32_MAX)) {
 		shell_error(sh, "Invalid track: %ld", track);
 
 		return -ENOEXEC;
@@ -1415,7 +1415,7 @@ static int cmd_mcc_goto_group(const struct shell *sh, size_t argc, char *argv[])
 		return err;
 	}
 
-	if (!IN_RANGE(group, INT32_MIN, INT32_MAX)) {
+	if (sizeof(long) != sizeof(int32_t) && !IN_RANGE(group, INT32_MIN, INT32_MAX)) {
 		shell_error(sh, "Invalid group: %ld", group);
 
 		return -ENOEXEC;
