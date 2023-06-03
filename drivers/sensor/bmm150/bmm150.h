@@ -2,6 +2,7 @@
 
 /*
  * Copyright (c) 2017 Intel Corporation
+ * Copyright (c) 2023 FTP Technologies
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -116,7 +117,7 @@ extern const struct bmm150_bus_io bmm150_bus_io_i2c;
 #define BMM150_REG_INT_DRDY                0x4E
 #define BMM150_MASK_DRDY_EN                BIT(7)
 #define BMM150_SHIFT_DRDY_EN               7
-#define BMM150_DRDY_INT3              BIT(6)
+#define BMM150_DRDY_INT3                   BIT(6)
 #define BMM150_MASK_DRDY_Z_EN              BIT(5)
 #define BMM150_MASK_DRDY_Y_EN              BIT(4)
 #define BMM150_MASK_DRDY_X_EN              BIT(3)
@@ -164,12 +165,6 @@ struct bmm150_data {
 	int sample_x, sample_y, sample_z;
 };
 
-enum bmm150_power_modes {
-	BMM150_POWER_MODE_SUSPEND,
-	BMM150_POWER_MODE_SLEEP,
-	BMM150_POWER_MODE_NORMAL
-};
-
 enum bmm150_axis {
 	BMM150_AXIS_X,
 	BMM150_AXIS_Y,
@@ -195,6 +190,12 @@ enum bmm150_presets {
 #elif defined(CONFIG_BMM150_PRESET_HIGH_ACCURACY)
 	#define BMM150_DEFAULT_PRESET BMM150_HIGH_ACCURACY_PRESET
 #endif
+
+/* Power On Reset time - from OFF to Suspend (Max) */
+#define BMM150_POR_TIME K_MSEC(1)
+
+/* Start-Up Time - from suspend to sleep (Max) */
+#define BMM150_START_UP_TIME K_MSEC(3)
 
 int bmm150_reg_update_byte(const struct device *dev, uint8_t reg,
 			   uint8_t mask, uint8_t value);
