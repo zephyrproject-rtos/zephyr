@@ -122,9 +122,9 @@ static void client_event_callback(RF_Handle h, RF_ClientEvent event, void *arg)
 static enum ieee802154_hw_caps
 ieee802154_cc13xx_cc26xx_get_capabilities(const struct device *dev)
 {
-	return IEEE802154_HW_FCS | IEEE802154_HW_2_4_GHZ |
-	       IEEE802154_HW_FILTER | IEEE802154_HW_TX_RX_ACK |
-	       IEEE802154_HW_CSMA;
+	return IEEE802154_HW_FCS | IEEE802154_HW_2_4_GHZ | IEEE802154_HW_FILTER |
+	       IEEE802154_HW_RX_TX_ACK | IEEE802154_HW_TX_RX_ACK | IEEE802154_HW_CSMA |
+	       IEEE802154_HW_RETRANSMISSION;
 }
 
 static int ieee802154_cc13xx_cc26xx_cca(const struct device *dev)

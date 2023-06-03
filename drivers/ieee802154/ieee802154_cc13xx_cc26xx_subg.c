@@ -548,7 +548,6 @@ static int ieee802154_cc13xx_cc26xx_subg_tx(const struct device *dev,
 			continue;
 		}
 
-		/* TODO: handle RX acknowledgment */
 		r = 0;
 		goto out;
 
@@ -611,6 +610,11 @@ static void ieee802154_cc13xx_cc26xx_subg_rx_done(
 							rssi == CC13XX_CC26XX_INVALID_RSSI
 								? IEEE802154_MAC_RSSI_DBM_UNDEFINED
 								: rssi);
+
+			if (ieee802154_handle_ack(drv_data->iface, pkt) == NET_OK) {
+				net_pkt_unref(pkt);
+				continue;
+			}
 
 			if (net_recv_data(drv_data->iface, pkt)) {
 				LOG_WRN("Packet dropped");

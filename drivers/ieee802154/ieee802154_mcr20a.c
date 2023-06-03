@@ -581,6 +581,7 @@ static inline void mcr20a_rx(const struct device *dev, uint8_t len)
 		goto out;
 	}
 
+	/* TODO: ieee802154_handle_ack() expects an ACK package. */
 	if (ieee802154_handle_ack(mcr20a->iface, pkt) == NET_OK) {
 		LOG_DBG("ACK packet handled");
 		goto out;
@@ -853,10 +854,8 @@ static int mcr20a_set_cca_mode(const struct device *dev, uint8_t mode)
 
 static enum ieee802154_hw_caps mcr20a_get_capabilities(const struct device *dev)
 {
-	return IEEE802154_HW_FCS |
-		IEEE802154_HW_2_4_GHZ |
-		IEEE802154_HW_TX_RX_ACK |
-		IEEE802154_HW_FILTER;
+	return IEEE802154_HW_FCS | IEEE802154_HW_2_4_GHZ | IEEE802154_HW_TX_RX_ACK |
+	       IEEE802154_HW_RX_TX_ACK | IEEE802154_HW_FILTER;
 }
 
 /* Note: CCA before TX is enabled by default */
