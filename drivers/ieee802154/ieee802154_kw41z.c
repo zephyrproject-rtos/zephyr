@@ -359,10 +359,8 @@ static void kw41z_tmr3_disable(void)
 
 static enum ieee802154_hw_caps kw41z_get_capabilities(const struct device *dev)
 {
-	return IEEE802154_HW_FCS |
-		IEEE802154_HW_2_4_GHZ |
-		IEEE802154_HW_FILTER |
-		IEEE802154_HW_TX_RX_ACK;
+	return IEEE802154_HW_FCS | IEEE802154_HW_2_4_GHZ | IEEE802154_HW_FILTER |
+	       IEEE802154_HW_TX_RX_ACK | IEEE802154_HW_RX_TX_ACK;
 }
 
 static int kw41z_cca(const struct device *dev)
@@ -665,10 +663,6 @@ static int kw41z_tx(const struct device *dev, enum ieee802154_tx_mode mode,
 
 	/* Clear all IRQ flags */
 	ZLL->IRQSTS = ZLL->IRQSTS;
-
-	/*
-	 * Current Zephyr 802.15.4 stack doesn't support ACK offload
-	 */
 
 	/* Perform automatic reception of ACK frame, if required */
 	if (ieee802154_is_ar_flag_set(frag)) {

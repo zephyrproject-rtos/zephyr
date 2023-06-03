@@ -403,8 +403,8 @@ static enum ieee802154_hw_caps b91_get_capabilities(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	return IEEE802154_HW_FCS | IEEE802154_HW_2_4_GHZ |
-	       IEEE802154_HW_FILTER | IEEE802154_HW_TX_RX_ACK;
+	return IEEE802154_HW_FCS | IEEE802154_HW_2_4_GHZ | IEEE802154_HW_FILTER |
+	       IEEE802154_HW_TX_RX_ACK | IEEE802154_HW_RX_TX_ACK;
 }
 
 /* API implementation: cca */

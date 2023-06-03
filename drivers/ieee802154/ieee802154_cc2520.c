@@ -667,10 +667,9 @@ out:
  *******************/
 static enum ieee802154_hw_caps cc2520_get_capabilities(const struct device *dev)
 {
-	/* ToDo: Add support for IEEE802154_HW_PROMISC */
-	return IEEE802154_HW_FCS |
-		IEEE802154_HW_2_4_GHZ |
-		IEEE802154_HW_FILTER;
+	/* TODO: Add support for IEEE802154_HW_PROMISC */
+	return IEEE802154_HW_FCS | IEEE802154_HW_2_4_GHZ | IEEE802154_HW_FILTER |
+	       IEEE802154_HW_RX_TX_ACK;
 }
 
 static int cc2520_cca(const struct device *dev)

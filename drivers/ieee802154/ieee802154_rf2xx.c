@@ -365,7 +365,9 @@ static enum ieee802154_hw_caps rf2xx_get_capabilities(const struct device *dev)
 	       IEEE802154_HW_PROMISC |
 	       IEEE802154_HW_FILTER |
 	       IEEE802154_HW_CSMA |
+	       IEEE802154_HW_RETRANSMISSION |
 	       IEEE802154_HW_TX_RX_ACK |
+	       IEEE802154_HW_RX_TX_ACK |
 	       (ctx->trx_model == RF2XX_TRX_MODEL_212
 				? IEEE802154_HW_SUB_GHZ
 				: IEEE802154_HW_2_4_GHZ);
