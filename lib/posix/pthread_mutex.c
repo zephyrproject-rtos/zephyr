@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/init.h>
 #include <zephyr/kernel.h>
 #include <ksched.h>
 #include <zephyr/wait_q.h>
@@ -25,7 +26,8 @@ static const struct pthread_mutexattr def_attr = {
 	.type = PTHREAD_MUTEX_DEFAULT,
 };
 
-static struct posix_mutex posix_mutex_pool[CONFIG_MAX_PTHREAD_MUTEX_COUNT];
+static struct k_mutex posix_mutex_pool[CONFIG_MAX_PTHREAD_MUTEX_COUNT];
+static uint8_t posix_mutex_type[CONFIG_MAX_PTHREAD_MUTEX_COUNT];
 SYS_BITARRAY_DEFINE_STATIC(posix_mutex_bitarray, CONFIG_MAX_PTHREAD_MUTEX_COUNT);
 
 /*
@@ -36,7 +38,7 @@ SYS_BITARRAY_DEFINE_STATIC(posix_mutex_bitarray, CONFIG_MAX_PTHREAD_MUTEX_COUNT)
 BUILD_ASSERT(CONFIG_MAX_PTHREAD_MUTEX_COUNT < PTHREAD_OBJ_MASK_INIT,
 	"CONFIG_MAX_PTHREAD_MUTEX_COUNT is too high");
 
-static inline size_t posix_mutex_to_offset(struct posix_mutex *m)
+static inline size_t posix_mutex_to_offset(struct k_mutex *m)
 {
 	return m - posix_mutex_pool;
 }
@@ -46,7 +48,7 @@ static inline size_t to_posix_mutex_idx(pthread_mutex_t mut)
 	return mark_pthread_obj_uninitialized(mut);
 }
 
-struct posix_mutex *get_posix_mutex(pthread_mutex_t mu)
+struct k_mutex *get_posix_mutex(pthread_mutex_t mu)
 {
 	int actually_initialized;
 	size_t bit = to_posix_mutex_idx(mu);
@@ -69,10 +71,10 @@ struct posix_mutex *get_posix_mutex(pthread_mutex_t mu)
 	return &posix_mutex_pool[bit];
 }
 
-struct posix_mutex *to_posix_mutex(pthread_mutex_t *mu)
+struct k_mutex *to_posix_mutex(pthread_mutex_t *mu)
 {
 	size_t bit;
-	struct posix_mutex *m;
+	struct k_mutex *m;
 
 	if (*mu != PTHREAD_MUTEX_INITIALIZER) {
 		return get_posix_mutex(*mu);
@@ -100,9 +102,11 @@ struct posix_mutex *to_posix_mutex(pthread_mutex_t *mu)
 
 static int acquire_mutex(pthread_mutex_t *mu, k_timeout_t timeout)
 {
+	int type;
 	int rc = 0;
+	size_t bit;
 	k_spinlock_key_t key;
-	struct posix_mutex *m;
+	struct k_mutex *m;
 
 	key = k_spin_lock(&z_pthread_spinlock);
 
@@ -112,6 +116,7 @@ static int acquire_mutex(pthread_mutex_t *mu, k_timeout_t timeout)
 		return EINVAL;
 	}
 
+	bit = posix_mutex_to_offset(m);
 	if (m->lock_count == 0U && m->owner == NULL) {
 		m->lock_count++;
 		m->owner = k_current_get();
@@ -119,11 +124,12 @@ static int acquire_mutex(pthread_mutex_t *mu, k_timeout_t timeout)
 		k_spin_unlock(&z_pthread_spinlock, key);
 		return 0;
 	} else if (m->owner == k_current_get()) {
-		if (m->type == PTHREAD_MUTEX_RECURSIVE &&
+		type = posix_mutex_type[bit];
+		if (type == PTHREAD_MUTEX_RECURSIVE &&
 		    m->lock_count < MUTEX_MAX_REC_LOCK) {
 			m->lock_count++;
 			rc = 0;
-		} else if (m->type == PTHREAD_MUTEX_ERRORCHECK) {
+		} else if (type == PTHREAD_MUTEX_ERRORCHECK) {
 			rc = EDEADLK;
 		} else {
 			rc = EINVAL;
@@ -176,8 +182,9 @@ int pthread_mutex_timedlock(pthread_mutex_t *m,
  */
 int pthread_mutex_init(pthread_mutex_t *mu, const pthread_mutexattr_t *_attr)
 {
+	size_t bit;
+	struct k_mutex *m;
 	k_spinlock_key_t key;
-	struct posix_mutex *m;
 	const struct pthread_mutexattr *attr = (const struct pthread_mutexattr *)_attr;
 
 	*mu = PTHREAD_MUTEX_INITIALIZER;
@@ -189,7 +196,12 @@ int pthread_mutex_init(pthread_mutex_t *mu, const pthread_mutexattr_t *_attr)
 		return ENOMEM;
 	}
 
-	m->type = (attr == NULL) ? def_attr.type : attr->type;
+	bit = posix_mutex_to_offset(m);
+	if (attr == NULL) {
+		posix_mutex_type[bit] = def_attr.type;
+	} else {
+		posix_mutex_type[bit] = attr->type;
+	}
 
 	k_spin_unlock(&z_pthread_spinlock, key);
 
@@ -216,7 +228,7 @@ int pthread_mutex_unlock(pthread_mutex_t *mu)
 {
 	k_tid_t thread;
 	k_spinlock_key_t key;
-	struct posix_mutex *m;
+	struct k_mutex *m;
 	pthread_mutex_t mut = *mu;
 
 	key = k_spin_lock(&z_pthread_spinlock);
@@ -265,7 +277,7 @@ int pthread_mutex_destroy(pthread_mutex_t *mu)
 {
 	__unused int rc;
 	k_spinlock_key_t key;
-	struct posix_mutex *m;
+	struct k_mutex *m;
 	pthread_mutex_t mut = *mu;
 	size_t bit = to_posix_mutex_idx(mut);
 
@@ -327,3 +339,17 @@ int pthread_mutexattr_settype(pthread_mutexattr_t *_attr, int type)
 
 	return retc;
 }
+
+static int pthread_mutex_pool_init(void)
+{
+	int err;
+	size_t i;
+
+	for (i = 0; i < CONFIG_MAX_PTHREAD_MUTEX_COUNT; ++i) {
+		err = k_mutex_init(&posix_mutex_pool[i]);
+		__ASSERT_NO_MSG(err == 0);
+	}
+
+	return 0;
+}
+SYS_INIT(pthread_mutex_pool_init, PRE_KERNEL_1, 0);
