@@ -318,7 +318,7 @@ static bool ieeee802154_check_dst_addr(struct net_if *iface, struct ieee802154_m
 	 * macPanId or shall be the broadcast PAN ID.
 	 */
 	if (!(dst_plain->pan_id == IEEE802154_BROADCAST_PAN_ID ||
-	      dst_plain->pan_id == ctx->pan_id)) {
+	      dst_plain->pan_id == sys_cpu_to_le16(ctx->pan_id))) {
 		LOG_DBG("Frame PAN ID does not match!");
 		return false;
 	}
