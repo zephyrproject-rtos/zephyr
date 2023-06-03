@@ -625,9 +625,10 @@ static void dwt_gpio_callback(const struct device *dev,
 
 static enum ieee802154_hw_caps dwt_get_capabilities(const struct device *dev)
 {
-	return IEEE802154_HW_FCS |
-		IEEE802154_HW_2_4_GHZ | /* FIXME: add IEEE802154_HW_UWB_PHY */
-		IEEE802154_HW_FILTER;
+	/* TODO: Add channel page attribute with channel page four. */
+	/* TODO: Implement HW-supported AUTOACK + frame pending bit handling. */
+	return IEEE802154_HW_FCS | IEEE802154_HW_2_4_GHZ | IEEE802154_HW_FILTER |
+	       IEEE802154_HW_TXTIME;
 }
 
 static uint32_t dwt_get_pkt_duration_ns(struct dwt_context *ctx, uint8_t psdu_len)

@@ -548,7 +548,6 @@ static int ieee802154_cc13xx_cc26xx_subg_tx(const struct device *dev,
 			continue;
 		}
 
-		/* TODO: handle RX acknowledgment */
 		r = 0;
 		goto out;
 
@@ -625,6 +624,11 @@ static void ieee802154_cc13xx_cc26xx_subg_rx_done(
 			net_pkt_set_ieee802154_rssi(
 				pkt,
 				ieee802154_cc13xx_cc26xx_subg_convert_rssi(rssi));
+
+			if (ieee802154_handle_ack(drv_data->iface, pkt) == NET_OK) {
+				net_pkt_unref(pkt);
+				continue;
+			}
 
 			if (net_recv_data(drv_data->iface, pkt)) {
 				LOG_WRN("Packet dropped");

@@ -67,10 +67,13 @@ static inline void pkt_hexdump(const char *title, struct net_pkt *pkt, bool in)
 #define pkt_hexdump(...)
 #endif /* CONFIG_NET_DEBUG_L2_IEEE802154_DISPLAY_PACKET */
 
-#ifdef CONFIG_NET_L2_IEEE802154_ACK_REPLY
 static inline void ieee802154_acknowledge(struct net_if *iface, struct ieee802154_mpdu *mpdu)
 {
 	struct net_pkt *pkt;
+
+	if (ieee802154_get_hw_capabilities(iface) & IEEE802154_HW_RX_TX_ACK) {
+		return;
+	}
 
 	if (!mpdu->mhr.fs->fc.ar) {
 		return;
@@ -90,9 +93,6 @@ static inline void ieee802154_acknowledge(struct net_if *iface, struct ieee80215
 
 	return;
 }
-#else
-#define ieee802154_acknowledge(...)
-#endif /* CONFIG_NET_L2_IEEE802154_ACK_REPLY */
 
 inline bool ieee802154_prepare_for_ack(struct net_if *iface, struct net_pkt *pkt,
 				       struct net_buf *frag)
@@ -132,7 +132,8 @@ enum net_verdict ieee802154_handle_ack(struct net_if *iface, struct net_pkt *pkt
 		struct ieee802154_fcf_seq *fs;
 
 		fs = ieee802154_validate_fc_seq(net_pkt_data(pkt), NULL, &len);
-		if (!fs || fs->sequence != ctx->ack_seq) {
+		if (!fs || fs->fc.frame_type != IEEE802154_FRAME_TYPE_ACK ||
+		    fs->sequence != ctx->ack_seq) {
 			return NET_CONTINUE;
 		}
 
@@ -169,18 +170,26 @@ inline int ieee802154_wait_for_ack(struct net_if *iface, bool ack_required)
 
 int ieee802154_radio_send(struct net_if *iface, struct net_pkt *pkt, struct net_buf *frag)
 {
+	uint8_t remaining_attempts = CONFIG_NET_L2_IEEE802154_RADIO_TX_RETRIES + 1;
 	bool hw_csma, ack_required;
 	int ret;
 
 	NET_DBG("frag %p", frag);
 
+	if (ieee802154_get_hw_capabilities(iface) & IEEE802154_HW_RETRANSMISSION) {
+		/* A driver that claims retransmission capability must also be able
+		 * to wait for ACK frames otherwise it could not decide whether or
+		 * not retransmission is required in a standard conforming way.
+		 */
+		__ASSERT_NO_MSG(ieee802154_get_hw_capabilities(iface) & IEEE802154_HW_TX_RX_ACK);
+		remaining_attempts = 1;
+	}
+
 	hw_csma = IS_ENABLED(CONFIG_NET_L2_IEEE802154_RADIO_CSMA_CA) &&
 		  ieee802154_get_hw_capabilities(iface) & IEEE802154_HW_CSMA;
 
-
 	/* Media access (CSMA, ALOHA, ...) and retransmission, see section 6.7.4.4. */
-	for (uint8_t remaining_attempts = CONFIG_NET_L2_IEEE802154_RADIO_TX_RETRIES + 1;
-	     remaining_attempts > 0; remaining_attempts--) {
+	while (remaining_attempts) {
 		if (!hw_csma) {
 			ret = ieee802154_wait_for_clear_channel(iface);
 			if (ret != 0) {
@@ -196,7 +205,9 @@ int ieee802154_radio_send(struct net_if *iface, struct net_pkt *pkt, struct net_
 
 		/* TX including:
 		 *  - CSMA/CA in case the driver has IEEE802154_HW_CSMA capability,
-		 *  - waiting for ACK in case the driver has IEEE802154_HW_TX_RX_ACK capability.
+		 *  - waiting for ACK in case the driver has IEEE802154_HW_TX_RX_ACK capability,
+		 *  - retransmission on ACK timeout in case the driver has
+		 *    IEEE802154_HW_RETRANSMISSION capability.
 		 */
 		ret = ieee802154_tx(
 			iface, hw_csma ? IEEE802154_TX_MODE_CSMA_CA : IEEE802154_TX_MODE_DIRECT,
@@ -222,6 +233,8 @@ int ieee802154_radio_send(struct net_if *iface, struct net_pkt *pkt, struct net_
 			/* ACK received - transmission is successful. */
 			return 0;
 		}
+
+		remaining_attempts--;
 	}
 
 	return -EIO;
