@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/init.h>
 #include <zephyr/kernel.h>
 #include <ksched.h>
 #include <zephyr/wait_q.h>
@@ -12,11 +13,9 @@
 
 #include "posix_internal.h"
 
-extern struct k_spinlock z_pthread_spinlock;
-
 int64_t timespec_to_timeoutms(const struct timespec *abstime);
 
-static struct posix_cond posix_cond_pool[CONFIG_MAX_PTHREAD_COND_COUNT];
+static struct k_condvar posix_cond_pool[CONFIG_MAX_PTHREAD_COND_COUNT];
 SYS_BITARRAY_DEFINE_STATIC(posix_cond_bitarray, CONFIG_MAX_PTHREAD_COND_COUNT);
 
 /*
@@ -27,7 +26,7 @@ SYS_BITARRAY_DEFINE_STATIC(posix_cond_bitarray, CONFIG_MAX_PTHREAD_COND_COUNT);
 BUILD_ASSERT(CONFIG_MAX_PTHREAD_COND_COUNT < PTHREAD_OBJ_MASK_INIT,
 	     "CONFIG_MAX_PTHREAD_COND_COUNT is too high");
 
-static inline size_t posix_cond_to_offset(struct posix_cond *cv)
+static inline size_t posix_cond_to_offset(struct k_condvar *cv)
 {
 	return cv - posix_cond_pool;
 }
@@ -37,7 +36,7 @@ static inline size_t to_posix_cond_idx(pthread_cond_t cond)
 	return mark_pthread_obj_uninitialized(cond);
 }
 
-struct posix_cond *get_posix_cond(pthread_cond_t cond)
+struct k_condvar *get_posix_cond(pthread_cond_t cond)
 {
 	int actually_initialized;
 	size_t bit = to_posix_cond_idx(cond);
@@ -60,10 +59,10 @@ struct posix_cond *get_posix_cond(pthread_cond_t cond)
 	return &posix_cond_pool[bit];
 }
 
-struct posix_cond *to_posix_cond(pthread_cond_t *cvar)
+struct k_condvar *to_posix_cond(pthread_cond_t *cvar)
 {
 	size_t bit;
-	struct posix_cond *cv;
+	struct k_condvar *cv;
 
 	if (*cvar != PTHREAD_COND_INITIALIZER) {
 		return get_posix_cond(*cvar);
@@ -89,7 +88,7 @@ static int cond_wait(pthread_cond_t *cond, pthread_mutex_t *mu, k_timeout_t time
 {
 	int ret;
 	k_spinlock_key_t key;
-	struct posix_cond *cv;
+	struct k_condvar *cv;
 	struct k_mutex *m;
 
 	key = k_spin_lock(&z_pthread_spinlock);
@@ -127,7 +126,7 @@ static int cond_wait(pthread_cond_t *cond, pthread_mutex_t *mu, k_timeout_t time
 int pthread_cond_signal(pthread_cond_t *cvar)
 {
 	k_spinlock_key_t key;
-	struct posix_cond *cv;
+	struct k_condvar *cv;
 
 	key = k_spin_lock(&z_pthread_spinlock);
 
@@ -147,7 +146,7 @@ int pthread_cond_signal(pthread_cond_t *cvar)
 int pthread_cond_broadcast(pthread_cond_t *cvar)
 {
 	k_spinlock_key_t key;
-	struct posix_cond *cv;
+	struct k_condvar *cv;
 
 	key = k_spin_lock(&z_pthread_spinlock);
 
@@ -177,7 +176,7 @@ int pthread_cond_timedwait(pthread_cond_t *cv, pthread_mutex_t *mut, const struc
 int pthread_cond_init(pthread_cond_t *cvar, const pthread_condattr_t *att)
 {
 	k_spinlock_key_t key;
-	struct posix_cond *cv;
+	struct k_condvar *cv;
 
 	ARG_UNUSED(att);
 	*cvar = PTHREAD_COND_INITIALIZER;
@@ -199,7 +198,7 @@ int pthread_cond_destroy(pthread_cond_t *cvar)
 {
 	__unused int rc;
 	k_spinlock_key_t key;
-	struct posix_cond *cv;
+	struct k_condvar *cv;
 	pthread_cond_t c = *cvar;
 	size_t bit = to_posix_cond_idx(c);
 
@@ -218,3 +217,17 @@ int pthread_cond_destroy(pthread_cond_t *cvar)
 
 	return 0;
 }
+
+static int pthread_cond_pool_init(void)
+{
+	int err;
+	size_t i;
+
+	for (i = 0; i < CONFIG_MAX_PTHREAD_COND_COUNT; ++i) {
+		err = k_condvar_init(&posix_cond_pool[i]);
+		__ASSERT_NO_MSG(err == 0);
+	}
+
+	return 0;
+}
+SYS_INIT(pthread_cond_pool_init, PRE_KERNEL_1, 0);

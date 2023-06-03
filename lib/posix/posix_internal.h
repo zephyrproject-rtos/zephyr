@@ -15,10 +15,6 @@
  */
 #define PTHREAD_OBJ_MASK_INIT 0x80000000
 
-struct posix_cond {
-	_wait_q_t wait_q;
-};
-
 enum pthread_state {
 	/* The thread is running and detached. */
 	PTHREAD_DETACHED = PTHREAD_CREATE_DETACHED,
@@ -97,10 +93,10 @@ struct k_mutex *to_posix_mutex(pthread_mutex_t *mu);
 struct k_mutex *get_posix_mutex(pthread_mutex_t mut);
 
 /* get and possibly initialize a posix_cond */
-struct posix_cond *to_posix_cond(pthread_cond_t *cvar);
+struct k_condvar *to_posix_cond(pthread_cond_t *cvar);
 
 /* get a previously initialized posix_cond */
-struct posix_cond *get_posix_cond(pthread_cond_t cond);
+struct k_condvar *get_posix_cond(pthread_cond_t cond);
 
 /* get and possibly initialize a posix_key */
 pthread_key_obj *to_posix_key(pthread_key_t *keyp);
