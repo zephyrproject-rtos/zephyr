@@ -817,6 +817,7 @@ static int cc2520_tx(const struct device *dev,
 			goto error;
 		}
 
+		/* TODO: Implement standard conforming CSMA/CA or use the soft MAC's default. */
 		k_sem_take(&cc2520->tx_sync, K_MSEC(10));
 
 		retry--;

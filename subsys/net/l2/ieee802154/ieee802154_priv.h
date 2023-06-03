@@ -68,14 +68,13 @@ int ieee802154_wait_for_clear_channel(struct net_if *iface);
  *
  *        See sections 6.7.4.1 through 6.7.4.3.
  *
- * @param ctx A valid pointer to the IEEE 802.15.4 context
+ * @param iface A valid pointer on the network the packet will be transmitted to
  * @param pkt A valid pointer on a packet to send
  * @param frag The fragment that needs to be acknowledged
  *
  * @return true if the given packet requires acknowlegement, false otherwise.
  */
-bool ieee802154_prepare_for_ack(struct ieee802154_context *ctx, struct net_pkt *pkt,
-				struct net_buf *frag);
+bool ieee802154_prepare_for_ack(struct net_if *iface, struct net_pkt *pkt, struct net_buf *frag);
 
 /**
  * @brief Waits for ACK reception on the TX path with standard compliant timeout settings, i.e.
