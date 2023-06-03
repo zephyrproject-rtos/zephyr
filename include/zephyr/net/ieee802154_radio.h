@@ -165,13 +165,22 @@ enum ieee802154_tx_mode {
 	/** Perform CCA before packet transmission. */
 	IEEE802154_TX_MODE_CCA,
 
-	/** Perform full CSMA CA procedure before packet transmission. */
+	/**
+	 * Perform full CSMA CA procedure before packet transmission.
+	 * Requires IEEE802154_HW_CSMA capability.
+	 */
 	IEEE802154_TX_MODE_CSMA_CA,
 
-	/** Transmit packet in the future, at specified time, no CCA. */
+	/**
+	 * Transmit packet in the future, at specified time, no CCA.
+	 * Requires IEEE802154_HW_TXTIME capability.
+	 */
 	IEEE802154_TX_MODE_TXTIME,
 
-	/** Transmit packet in the future, perform CCA before transmission. */
+	/**
+	 * Transmit packet in the future, perform CCA before transmission.
+	 * Requires IEEE802154_HW_TXTIME capability.
+	 */
 	IEEE802154_TX_MODE_TXTIME_CCA,
 };
 
@@ -195,12 +204,14 @@ enum ieee802154_config_type {
 	 *  provided with ``IEEE802154_CONFIG_ACK_FPB`` config and FPB address
 	 *  matching mode specified. Otherwise, Frame Pending bit should be set
 	 *  to ``1`` (see section 6.7.3).
+	 *  Requires IEEE802154_HW_TX_RX_ACK capability.
 	 */
 	IEEE802154_CONFIG_AUTO_ACK_FPB,
 
 	/** Indicates whether to set ACK Frame Pending bit for specific address
 	 *  or not. Disabling the Frame Pending bit with no address provided
 	 *  (NULL pointer) should disable it for all enabled addresses.
+	 *  Requires IEEE802154_HW_TX_RX_ACK capability.
 	 */
 	IEEE802154_CONFIG_ACK_FPB,
 
@@ -227,8 +238,9 @@ enum ieee802154_config_type {
 
 	IEEE802154_CONFIG_FRAME_COUNTER_IF_LARGER,
 
-	/** Configure a radio reception slot. This can be used for any scheduler reception, e.g.:
+	/** Configure a radio reception slot. This can be used for any scheduled reception, e.g.:
 	 *  Zigbee GP device, CSL, TSCH, etc.
+	 *  Requires IEEE802154_HW_RXTIME capability.
 	 */
 	IEEE802154_CONFIG_RX_SLOT,
 
@@ -380,7 +392,7 @@ struct ieee802154_radio_api {
 	/** Set current channel, channel is in CPU byte order. */
 	int (*set_channel)(const struct device *dev, uint16_t channel);
 
-	/** Set/Unset filters (for IEEE802154_HW_FILTER ) */
+	/** Set/Unset filters. Requires IEEE802154_HW_FILTER capability. */
 	int (*filter)(const struct device *dev,
 		      bool set,
 		      enum ieee802154_filter_type type,
@@ -410,24 +422,31 @@ struct ieee802154_radio_api {
 			 enum ieee802154_config_type type,
 			 const struct ieee802154_config *config);
 
-	/** Get the available amount of Sub-GHz channels */
+	/**
+	 * Get the available amount of Sub-GHz channels
+	 * TODO: Replace with a combination of channel page and channel attributes.
+	 */
 	uint16_t (*get_subg_channel_count)(const struct device *dev);
 
 	/** Run an energy detection scan.
 	 *  Note: channel must be set prior to request this function.
 	 *  duration parameter is in ms.
+	 *  Requires IEEE802154_HW_ENERGY_SCAN capability.
 	 */
 	int (*ed_scan)(const struct device *dev,
 		       uint16_t duration,
 		       energy_scan_done_cb_t done_cb);
 
-	/** Get the current radio time in microseconds */
+	/** Get the current radio time in microseconds
+	 *  Requires IEEE802154_HW_TXTIME and/or IEEE802154_HW_RXTIME capabilities.
+	 */
 	uint64_t (*get_time)(const struct device *dev);
 
 	/** Get the current accuracy, in units of ± ppm, of the clock used for
 	 *  scheduling delayed receive or transmit radio operations.
 	 *  Note: Implementations may optimize this value based on operational
 	 *  conditions (i.e.: temperature).
+	 *  Requires IEEE802154_HW_TXTIME and/or IEEE802154_HW_RXTIME capabilities.
 	 */
 	uint8_t (*get_sch_acc)(const struct device *dev);
 };

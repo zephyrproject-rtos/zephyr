@@ -94,14 +94,18 @@ static inline void ieee802154_acknowledge(struct net_if *iface, struct ieee80215
 #define ieee802154_acknowledge(...)
 #endif /* CONFIG_NET_L2_IEEE802154_ACK_REPLY */
 
-inline bool ieee802154_prepare_for_ack(struct ieee802154_context *ctx, struct net_pkt *pkt,
+inline bool ieee802154_prepare_for_ack(struct net_if *iface, struct net_pkt *pkt,
 				       struct net_buf *frag)
 {
-	/* TODO: Only execute when the driver does not handle ACK itself. */
-	if (ieee802154_is_ar_flag_set(frag)) {
-		struct ieee802154_fcf_seq *fs;
+	bool ack_required = ieee802154_is_ar_flag_set(frag);
 
-		fs = (struct ieee802154_fcf_seq *)frag->data;
+	if (ieee802154_get_hw_capabilities(iface) & IEEE802154_HW_TX_RX_ACK) {
+		return ack_required;
+	}
+
+	if (ack_required) {
+		struct ieee802154_fcf_seq *fs = (struct ieee802154_fcf_seq *)frag->data;
+		struct ieee802154_context *ctx = net_if_l2_data(iface);
 
 		ctx->ack_seq = fs->sequence;
 		ctx->ack_received = false;
@@ -117,13 +121,9 @@ enum net_verdict ieee802154_handle_ack(struct net_if *iface, struct net_pkt *pkt
 {
 	struct ieee802154_context *ctx = net_if_l2_data(iface);
 
-	/* TODO: Only execute when the driver does not handle ACK itself. */
-
-	/* TODO: ACK/Retransmission has nothing to do with CSMA/CA - this
-	 * is about retransmission.
-	 */
-	if (IS_ENABLED(CONFIG_NET_L2_IEEE802154_RADIO_CSMA_CA) &&
-	    ieee802154_get_hw_capabilities(iface) & IEEE802154_HW_CSMA) {
+	if (ieee802154_get_hw_capabilities(iface) & IEEE802154_HW_TX_RX_ACK) {
+		__ASSERT_NO_MSG(ctx->ack_seq == 0U);
+		/* TODO: Release packet in L2 as we're taking ownership. */
 		return NET_OK;
 	}
 
@@ -151,6 +151,7 @@ inline int ieee802154_wait_for_ack(struct net_if *iface, bool ack_required)
 	struct ieee802154_context *ctx = net_if_l2_data(iface);
 
 	if (!ack_required || (ieee802154_get_hw_capabilities(iface) & IEEE802154_HW_TX_RX_ACK)) {
+		__ASSERT_NO_MSG(ctx->ack_seq == 0U);
 		return 0;
 	}
 
@@ -168,29 +169,40 @@ inline int ieee802154_wait_for_ack(struct net_if *iface, bool ack_required)
 
 int ieee802154_radio_send(struct net_if *iface, struct net_pkt *pkt, struct net_buf *frag)
 {
-	struct ieee802154_context *ctx = net_if_l2_data(iface);
-
-	bool ack_required;
+	bool hw_csma, ack_required;
 	int ret;
 
 	NET_DBG("frag %p", frag);
 
-	/* See section 6.7.4.4 - Retransmissions. */
+	hw_csma = IS_ENABLED(CONFIG_NET_L2_IEEE802154_RADIO_CSMA_CA) &&
+		  ieee802154_get_hw_capabilities(iface) & IEEE802154_HW_CSMA;
+
+
+	/* Media access (CSMA, ALOHA, ...) and retransmission, see section 6.7.4.4. */
 	for (uint8_t remaining_attempts = CONFIG_NET_L2_IEEE802154_RADIO_TX_RETRIES + 1;
 	     remaining_attempts > 0; remaining_attempts--) {
-		ret = ieee802154_wait_for_clear_channel(iface);
-		if (ret != 0) {
-			NET_WARN("Clear channel assessment failed: dropping fragment %p on "
-				 "interface %p.",
-				 frag, iface);
-			return ret;
+		if (!hw_csma) {
+			ret = ieee802154_wait_for_clear_channel(iface);
+			if (ret != 0) {
+				NET_WARN("Clear channel assessment failed: dropping fragment %p on "
+					 "interface %p.",
+					 frag, iface);
+				return ret;
+			}
 		}
 
-		ack_required = ieee802154_prepare_for_ack(ctx, pkt, frag);
+		/* No-op in case the driver has IEEE802154_HW_TX_RX_ACK capability. */
+		ack_required = ieee802154_prepare_for_ack(iface, pkt, frag);
 
-		ret = ieee802154_tx(iface, IEEE802154_TX_MODE_DIRECT, pkt, frag);
+		/* TX including:
+		 *  - CSMA/CA in case the driver has IEEE802154_HW_CSMA capability,
+		 *  - waiting for ACK in case the driver has IEEE802154_HW_TX_RX_ACK capability.
+		 */
+		ret = ieee802154_tx(
+			iface, hw_csma ? IEEE802154_TX_MODE_CSMA_CA : IEEE802154_TX_MODE_DIRECT,
+			pkt, frag);
 		if (ret) {
-			/* Unknown transmission failure. */
+			/* Transmission failure. */
 			return ret;
 		}
 
@@ -204,6 +216,7 @@ int ieee802154_radio_send(struct net_if *iface, struct net_pkt *pkt, struct net_
 		}
 
 
+		/* No-op in case the driver has IEEE802154_HW_TX_RX_ACK capability. */
 		ret = ieee802154_wait_for_ack(iface, ack_required);
 		if (ret == 0) {
 			/* ACK received - transmission is successful. */
@@ -517,15 +530,7 @@ static int ieee802154_send(struct net_if *iface, struct net_pkt *pkt)
 			return -EINVAL;
 		}
 
-		if (IS_ENABLED(CONFIG_NET_L2_IEEE802154_RADIO_CSMA_CA) &&
-		    ieee802154_get_hw_capabilities(iface) & IEEE802154_HW_CSMA) {
-			/* CSMA in hardware */
-			ret = ieee802154_tx(iface, IEEE802154_TX_MODE_CSMA_CA, pkt, frame_buf);
-		} else {
-			/* Media access (direct, CSMA, ALOHA, ...) in software */
-			ret = ieee802154_radio_send(iface, pkt, frame_buf);
-		}
-
+		ret = ieee802154_radio_send(iface, pkt, frame_buf);
 		if (ret) {
 			return ret;
 		}
