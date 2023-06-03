@@ -281,7 +281,7 @@ static int32_t calc_rx_latency_by_role(uint8_t role,
 	iso_interval = iso_interval_int * ISO_INT_UNIT_US;
 
 	switch (role) {
-	case BT_CONN_ROLE_PERIPHERAL:
+	case ISOAL_ROLE_PERIPHERAL:
 		if (framed) {
 			latency = stream_sync_delay + sdu_interval + (flush_timeout * iso_interval);
 		} else {
@@ -289,7 +289,7 @@ static int32_t calc_rx_latency_by_role(uint8_t role,
 		}
 		break;
 
-	case BT_CONN_ROLE_CENTRAL:
+	case ISOAL_ROLE_CENTRAL:
 		if (framed) {
 			latency = stream_sync_delay - group_sync_delay;
 		} else {
@@ -298,7 +298,7 @@ static int32_t calc_rx_latency_by_role(uint8_t role,
 		}
 		break;
 
-	case BT_ROLE_BROADCAST:
+	case ISOAL_ROLE_BROADCAST_SINK:
 		if (framed) {
 			latency = group_sync_delay + sdu_interval + iso_interval;
 		} else {
@@ -496,9 +496,9 @@ ZTEST(test_rx_basics, test_sink_isoal_test_create_destroy)
 			pdus_per_sdu = (burst_number * sdu_interval) / iso_interval;
 
 			switch (role) {
-			case BT_CONN_ROLE_PERIPHERAL:
-			case BT_CONN_ROLE_CENTRAL:
-			case BT_ROLE_BROADCAST:
+			case ISOAL_ROLE_PERIPHERAL:
+			case ISOAL_ROLE_CENTRAL:
+			case ISOAL_ROLE_BROADCAST_SINK:
 				latency = calc_rx_latency_by_role(role,
 								  framed,
 								  flush_timeout,
@@ -625,7 +625,7 @@ ZTEST(test_rx_basics, test_sink_isoal_test_create_err)
 	bool framed;
 
 	handle = 0x8000;
-	role = BT_CONN_ROLE_PERIPHERAL;
+	role = ISOAL_ROLE_PERIPHERAL;
 	burst_number = 1;
 	flush_timeout = 1;
 	framed = false;
@@ -711,7 +711,7 @@ ZTEST(test_rx_basics, test_sink_disable)
 	uint8_t FT;
 
 	/* Settings */
-	role = BT_CONN_ROLE_PERIPHERAL;
+	role = ISOAL_ROLE_PERIPHERAL;
 	iso_interval_int = 1;
 	sdu_interval = ISO_INT_UNIT_US;
 	BN = 1;
@@ -812,7 +812,7 @@ ZTEST(test_rx_unframed, test_rx_unframed_single_pdu)
 	uint8_t FT;
 
 	/* Settings */
-	role = BT_CONN_ROLE_PERIPHERAL;
+	role = ISOAL_ROLE_PERIPHERAL;
 	iso_interval_int = 1;
 	sdu_interval = ISO_INT_UNIT_US;
 	BN = 1;
@@ -979,7 +979,7 @@ ZTEST(test_rx_unframed, test_rx_unframed_single_pdu_ts_wrap1)
 	uint8_t FT;
 
 	/* Settings */
-	role = BT_CONN_ROLE_PERIPHERAL;
+	role = ISOAL_ROLE_PERIPHERAL;
 	iso_interval_int = 1;
 	sdu_interval = ISO_INT_UNIT_US;
 	BN = 1;
@@ -1114,7 +1114,7 @@ ZTEST(test_rx_unframed, test_rx_unframed_single_pdu_ts_wrap2)
 	uint8_t FT;
 
 	/* Settings */
-	role = BT_CONN_ROLE_CENTRAL;
+	role = ISOAL_ROLE_CENTRAL;
 	iso_interval_int = 1;
 	sdu_interval = ISO_INT_UNIT_US;
 	BN = 1;
@@ -1250,7 +1250,7 @@ ZTEST(test_rx_unframed, test_rx_unframed_dbl_pdu)
 	uint8_t FT;
 
 	/* Settings */
-	role = BT_CONN_ROLE_PERIPHERAL;
+	role = ISOAL_ROLE_PERIPHERAL;
 	iso_interval_int = 1;
 	sdu_interval = ISO_INT_UNIT_US;
 	BN = 2;
@@ -1433,7 +1433,7 @@ ZTEST(test_rx_unframed, test_rx_unframed_dbl_split)
 	uint8_t FT;
 
 	/* Settings */
-	role = BT_CONN_ROLE_PERIPHERAL;
+	role = ISOAL_ROLE_PERIPHERAL;
 	iso_interval_int = 1;
 	sdu_interval = ISO_INT_UNIT_US / 2;
 	BN = 4;
@@ -1774,7 +1774,7 @@ ZTEST(test_rx_unframed, test_rx_unframed_multi_split)
 	uint8_t FT;
 
 	/* Settings */
-	role = BT_CONN_ROLE_PERIPHERAL;
+	role = ISOAL_ROLE_PERIPHERAL;
 	iso_interval_int = 1;
 	sdu_interval = ISO_INT_UNIT_US;
 	BN = 5;
@@ -2078,7 +2078,7 @@ ZTEST(test_rx_unframed, test_rx_unframed_multi_split_on_border)
 	uint8_t FT;
 
 	/* Settings */
-	role = BT_CONN_ROLE_PERIPHERAL;
+	role = ISOAL_ROLE_PERIPHERAL;
 	iso_interval_int = 1;
 	sdu_interval = ISO_INT_UNIT_US;
 	BN = 5;
@@ -2403,7 +2403,7 @@ ZTEST(test_rx_unframed, test_rx_unframed_long_pdu_short_sdu)
 	uint8_t FT;
 
 	/* Settings */
-	role = BT_CONN_ROLE_PERIPHERAL;
+	role = ISOAL_ROLE_PERIPHERAL;
 	iso_interval_int = 1;
 	sdu_interval = ISO_INT_UNIT_US;
 	BN = 1;
@@ -2558,7 +2558,7 @@ ZTEST(test_rx_unframed, test_rx_unframed_dbl_pdu_prem)
 	uint8_t FT;
 
 	/* Settings */
-	role = BT_CONN_ROLE_PERIPHERAL;
+	role = ISOAL_ROLE_PERIPHERAL;
 	iso_interval_int = 1;
 	sdu_interval = ISO_INT_UNIT_US;
 	BN = 1;
@@ -2740,7 +2740,7 @@ ZTEST(test_rx_unframed, test_rx_unframed_single_pdu_err)
 	uint8_t FT;
 
 	/* Settings */
-	role = BT_CONN_ROLE_PERIPHERAL;
+	role = ISOAL_ROLE_PERIPHERAL;
 	iso_interval_int = 1;
 	sdu_interval = ISO_INT_UNIT_US;
 	BN = 1;
@@ -2924,7 +2924,7 @@ ZTEST(test_rx_unframed, test_rx_unframed_seq_err)
 	uint8_t FT;
 
 	/* Settings */
-	role = BT_CONN_ROLE_PERIPHERAL;
+	role = ISOAL_ROLE_PERIPHERAL;
 	iso_interval_int = 1;
 	sdu_interval = ISO_INT_UNIT_US;
 	BN = 3;
@@ -3153,7 +3153,7 @@ ZTEST(test_rx_unframed, test_rx_unframed_seq_pdu_err1)
 	uint8_t FT;
 
 	/* Settings */
-	role = BT_CONN_ROLE_PERIPHERAL;
+	role = ISOAL_ROLE_PERIPHERAL;
 	iso_interval_int = 1;
 	sdu_interval = ISO_INT_UNIT_US;
 	BN = 3;
@@ -3435,7 +3435,7 @@ ZTEST(test_rx_unframed, test_rx_unframed_seq_pdu_err2)
 	uint8_t FT;
 
 	/* Settings */
-	role = BT_CONN_ROLE_PERIPHERAL;
+	role = ISOAL_ROLE_PERIPHERAL;
 	iso_interval_int = 1;
 	sdu_interval = ISO_INT_UNIT_US;
 	BN = 3;
@@ -3734,7 +3734,7 @@ ZTEST(test_rx_unframed, test_rx_unframed_padding)
 	uint8_t FT;
 
 	/* Settings */
-	role = BT_CONN_ROLE_PERIPHERAL;
+	role = ISOAL_ROLE_PERIPHERAL;
 	iso_interval_int = 1;
 	sdu_interval = ISO_INT_UNIT_US;
 	BN = 4;
@@ -3962,7 +3962,7 @@ ZTEST(test_rx_unframed, test_rx_unframed_padding_no_end)
 	uint8_t FT;
 
 	/* Settings */
-	role = BT_CONN_ROLE_PERIPHERAL;
+	role = ISOAL_ROLE_PERIPHERAL;
 	iso_interval_int = 1;
 	sdu_interval = ISO_INT_UNIT_US;
 	BN = 3;
@@ -4542,7 +4542,7 @@ ZTEST(test_rx_unframed, test_rx_unframed_padding_error1)
 	uint8_t FT;
 
 	/* Settings */
-	role = BT_CONN_ROLE_PERIPHERAL;
+	role = ISOAL_ROLE_PERIPHERAL;
 	iso_interval_int = 1;
 	sdu_interval = ISO_INT_UNIT_US;
 	BN = 3;
@@ -4729,7 +4729,7 @@ ZTEST(test_rx_unframed, test_rx_unframed_padding_error2)
 	uint8_t FT;
 
 	/* Settings */
-	role = BT_CONN_ROLE_PERIPHERAL;
+	role = ISOAL_ROLE_PERIPHERAL;
 	iso_interval_int = 1;
 	sdu_interval = ISO_INT_UNIT_US;
 	BN = 3;
@@ -4917,7 +4917,7 @@ ZTEST(test_rx_unframed, test_rx_unframed_padding_error3)
 	uint8_t FT;
 
 	/* Settings */
-	role = BT_CONN_ROLE_PERIPHERAL;
+	role = ISOAL_ROLE_PERIPHERAL;
 	iso_interval_int = 1;
 	sdu_interval = ISO_INT_UNIT_US;
 	BN = 3;
@@ -5111,7 +5111,7 @@ ZTEST(test_rx_unframed, test_rx_unframed_zero_len_packet)
 	uint8_t FT;
 
 	/* Settings */
-	role = BT_CONN_ROLE_PERIPHERAL;
+	role = ISOAL_ROLE_PERIPHERAL;
 	iso_interval_int = 1;
 	sdu_interval = ISO_INT_UNIT_US;
 	BN = 1;
@@ -5231,7 +5231,7 @@ ZTEST(test_rx_unframed, test_rx_unframed_seq_err_zero_length)
 	uint8_t FT;
 
 	/* Settings */
-	role = BT_CONN_ROLE_PERIPHERAL;
+	role = ISOAL_ROLE_PERIPHERAL;
 	iso_interval_int = 1;
 	sdu_interval = ISO_INT_UNIT_US;
 	BN = 3;
@@ -5467,7 +5467,7 @@ ZTEST(test_rx_unframed, test_rx_unframed_dbl_pdu_no_end)
 	uint8_t FT;
 
 	/* Settings */
-	role = BT_CONN_ROLE_PERIPHERAL;
+	role = ISOAL_ROLE_PERIPHERAL;
 	iso_interval_int = 1;
 	sdu_interval = ISO_INT_UNIT_US;
 	BN = 2;
@@ -5628,7 +5628,7 @@ ZTEST(test_rx_unframed, test_rx_unframed_dbl_pdu_invalid_llid1)
 	uint8_t FT;
 
 	/* Settings */
-	role = BT_CONN_ROLE_PERIPHERAL;
+	role = ISOAL_ROLE_PERIPHERAL;
 	iso_interval_int = 1;
 	sdu_interval = ISO_INT_UNIT_US;
 	BN = 2;
@@ -5718,7 +5718,7 @@ ZTEST(test_rx_unframed, test_rx_unframed_dbl_pdu_invalid_llid2)
 	uint8_t FT;
 
 	/* Settings */
-	role = BT_CONN_ROLE_PERIPHERAL;
+	role = ISOAL_ROLE_PERIPHERAL;
 	iso_interval_int = 1;
 	sdu_interval = ISO_INT_UNIT_US;
 	BN = 2;
@@ -5854,7 +5854,7 @@ ZTEST(test_rx_unframed, test_rx_unframed_dbl_pdu_invalid_llid2_pdu_err)
 	uint8_t FT;
 
 	/* Settings */
-	role = BT_CONN_ROLE_PERIPHERAL;
+	role = ISOAL_ROLE_PERIPHERAL;
 	iso_interval_int = 1;
 	sdu_interval = ISO_INT_UNIT_US;
 	BN = 2;
@@ -6019,7 +6019,7 @@ ZTEST(test_rx_framed, test_rx_framed_single_pdu_single_sdu)
 	uint8_t FT;
 
 	/* Settings */
-	role = BT_CONN_ROLE_PERIPHERAL;
+	role = ISOAL_ROLE_PERIPHERAL;
 	iso_interval_int = 1;
 	sdu_interval = ((iso_interval_int * ISO_INT_UNIT_US) / 3) + 5;
 	BN = 3;
@@ -6150,7 +6150,7 @@ ZTEST(test_rx_framed, test_rx_framed_single_pdu_single_sdu_ts_wrap1)
 	uint8_t FT;
 
 	/* Settings */
-	role = BT_CONN_ROLE_PERIPHERAL;
+	role = ISOAL_ROLE_PERIPHERAL;
 	iso_interval_int = 1;
 	sdu_interval = ((iso_interval_int * ISO_INT_UNIT_US) / 3) + 5;
 	BN = 3;
@@ -6282,7 +6282,7 @@ ZTEST(test_rx_framed, test_rx_framed_single_pdu_single_sdu_ts_wrap2)
 	uint8_t FT;
 
 	/* Settings */
-	role = BT_CONN_ROLE_CENTRAL;
+	role = ISOAL_ROLE_CENTRAL;
 	iso_interval_int = 1;
 	sdu_interval = ((iso_interval_int * ISO_INT_UNIT_US) / 3) + 5;
 	BN = 3;
@@ -6413,7 +6413,7 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_single_sdu)
 	uint8_t FT;
 
 	/* Settings */
-	role = BT_CONN_ROLE_PERIPHERAL;
+	role = ISOAL_ROLE_PERIPHERAL;
 	iso_interval_int = 1;
 	sdu_interval = ((iso_interval_int * ISO_INT_UNIT_US) / 3) + 5;
 	BN = 3;
@@ -6626,7 +6626,7 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_dbl_sdu)
 	uint8_t FT;
 
 	/* Settings */
-	role = BT_CONN_ROLE_PERIPHERAL;
+	role = ISOAL_ROLE_PERIPHERAL;
 	iso_interval_int = 1;
 	iso_interval_us = (iso_interval_int * ISO_INT_UNIT_US);
 	sdu_interval = (iso_interval_us / 3) + 5;
@@ -6889,7 +6889,7 @@ ZTEST(test_rx_framed, test_rx_framed_zero_length_sdu)
 	uint8_t FT;
 
 	/* Settings */
-	role = BT_CONN_ROLE_PERIPHERAL;
+	role = ISOAL_ROLE_PERIPHERAL;
 	iso_interval_int = 1;
 	iso_interval_us = iso_interval_int * ISO_INT_UNIT_US;
 	sdu_interval = (iso_interval_us / 3) + 5;
@@ -7195,7 +7195,7 @@ ZTEST(test_rx_framed, test_rx_framed_dbl_pdu_dbl_sdu_padding)
 	uint8_t FT;
 
 	/* Settings */
-	role = BT_CONN_ROLE_PERIPHERAL;
+	role = ISOAL_ROLE_PERIPHERAL;
 	iso_interval_int = 1;
 	iso_interval_us = iso_interval_int * ISO_INT_UNIT_US;
 	sdu_interval = (iso_interval_us / 3) + 5;
@@ -8163,7 +8163,7 @@ ZTEST(test_rx_framed, test_rx_framed_dbl_pdu_dbl_sdu_pdu_err1)
 	uint8_t FT;
 
 	/* Settings */
-	role = BT_CONN_ROLE_PERIPHERAL;
+	role = ISOAL_ROLE_PERIPHERAL;
 	iso_interval_int = 1;
 	iso_interval_us = iso_interval_int * ISO_INT_UNIT_US;
 	sdu_interval = (iso_interval_us / 3) + 5;
@@ -8360,7 +8360,7 @@ ZTEST(test_rx_framed, test_rx_framed_dbl_pdu_dbl_sdu_pdu_err2)
 	uint8_t FT;
 
 	/* Settings */
-	role = BT_CONN_ROLE_PERIPHERAL;
+	role = ISOAL_ROLE_PERIPHERAL;
 	iso_interval_int = 1;
 	iso_interval_us = iso_interval_int * ISO_INT_UNIT_US;
 	sdu_interval = (iso_interval_us / 3) + 5;
@@ -8562,7 +8562,7 @@ ZTEST(test_rx_framed, test_rx_framed_dbl_pdu_dbl_sdu_pdu_err3)
 	uint8_t FT;
 
 	/* Settings */
-	role = BT_CONN_ROLE_PERIPHERAL;
+	role = ISOAL_ROLE_PERIPHERAL;
 	iso_interval_int = 1;
 	sdu_interval = ((iso_interval_int * ISO_INT_UNIT_US) / 3) + 5;
 	BN = 3;
@@ -8754,7 +8754,7 @@ ZTEST(test_rx_framed, test_rx_framed_dbl_pdu_dbl_sdu_seq_err1)
 	uint8_t FT;
 
 	/* Settings */
-	role = BT_CONN_ROLE_PERIPHERAL;
+	role = ISOAL_ROLE_PERIPHERAL;
 	iso_interval_int = 1;
 	iso_interval_us = iso_interval_int * ISO_INT_UNIT_US;
 	sdu_interval = (iso_interval_us / 3) + 5;
@@ -8998,7 +8998,7 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_single_sdu_pdu_err1)
 	uint8_t FT;
 
 	/* Settings */
-	role = BT_CONN_ROLE_PERIPHERAL;
+	role = ISOAL_ROLE_PERIPHERAL;
 	iso_interval_int = 1;
 	iso_interval_us = iso_interval_int * ISO_INT_UNIT_US;
 	sdu_interval = iso_interval_us + 5;
@@ -9263,7 +9263,7 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_single_sdu_pdu_err2)
 	uint8_t FT;
 
 	/* Settings */
-	role = BT_CONN_ROLE_PERIPHERAL;
+	role = ISOAL_ROLE_PERIPHERAL;
 	iso_interval_int = 1;
 	iso_interval_us = iso_interval_int * ISO_INT_UNIT_US;
 	sdu_interval = (iso_interval_us / 3) + 5;
@@ -9532,7 +9532,7 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_single_sdu_pdu_err3)
 	uint8_t FT;
 
 	/* Settings */
-	role = BT_CONN_ROLE_PERIPHERAL;
+	role = ISOAL_ROLE_PERIPHERAL;
 	iso_interval_int = 1;
 	iso_interval_us = iso_interval_int * ISO_INT_UNIT_US;
 	sdu_interval = (iso_interval_us / 3) + 5;
@@ -9810,7 +9810,7 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_single_sdu_seq_err1)
 	uint8_t FT;
 
 	/* Settings */
-	role = BT_CONN_ROLE_PERIPHERAL;
+	role = ISOAL_ROLE_PERIPHERAL;
 	iso_interval_int = 1;
 	iso_interval_us = iso_interval_int * ISO_INT_UNIT_US;
 	sdu_interval = (iso_interval_us / 3) + 5;
@@ -10055,7 +10055,7 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_single_sdu_pdu_seq_err1)
 	uint8_t FT;
 
 	/* Settings */
-	role = BT_CONN_ROLE_PERIPHERAL;
+	role = ISOAL_ROLE_PERIPHERAL;
 	iso_interval_int = 1;
 	iso_interval_us = iso_interval_int * ISO_INT_UNIT_US;
 	sdu_interval = (iso_interval_us / 3) + 5;
@@ -10300,7 +10300,7 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_dbl_sdu_pdu_err1)
 	uint8_t FT;
 
 	/* Settings */
-	role = BT_CONN_ROLE_PERIPHERAL;
+	role = ISOAL_ROLE_PERIPHERAL;
 	iso_interval_int = 1;
 	iso_interval_us = iso_interval_int * ISO_INT_UNIT_US;
 	sdu_interval = (iso_interval_us / 3) + 5;
@@ -10674,7 +10674,7 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_dbl_sdu_pdu_err2)
 	uint8_t FT;
 
 	/* Settings */
-	role = BT_CONN_ROLE_PERIPHERAL;
+	role = ISOAL_ROLE_PERIPHERAL;
 	iso_interval_int = 1;
 	iso_interval_us = iso_interval_int * ISO_INT_UNIT_US;
 	sdu_interval = (iso_interval_us / 3) + 5;
@@ -11044,7 +11044,7 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_dbl_sdu_pdu_err3)
 	uint8_t FT;
 
 	/* Settings */
-	role = BT_CONN_ROLE_PERIPHERAL;
+	role = ISOAL_ROLE_PERIPHERAL;
 	iso_interval_int = 1;
 	iso_interval_us = iso_interval_int * ISO_INT_UNIT_US;
 	sdu_interval = (iso_interval_us / 3) + 5;
@@ -11423,7 +11423,7 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_dbl_sdu_seq_err1)
 	uint8_t FT;
 
 	/* Settings */
-	role = BT_CONN_ROLE_PERIPHERAL;
+	role = ISOAL_ROLE_PERIPHERAL;
 	iso_interval_int = 1;
 	iso_interval_us = iso_interval_int * ISO_INT_UNIT_US;
 	sdu_interval = (iso_interval_us / 3) + 5;
@@ -11770,7 +11770,7 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_dbl_sdu_pdu_seq_err1)
 	uint8_t FT;
 
 	/* Settings */
-	role = BT_CONN_ROLE_PERIPHERAL;
+	role = ISOAL_ROLE_PERIPHERAL;
 	iso_interval_int = 1;
 	iso_interval_us = iso_interval_int * ISO_INT_UNIT_US;
 	sdu_interval = (iso_interval_us / 3) + 5;
@@ -12095,7 +12095,7 @@ ZTEST(test_rx_framed, test_rx_framed_single_invalid_pdu_single_sdu)
 	uint8_t FT;
 
 	/* Settings */
-	role = BT_CONN_ROLE_PERIPHERAL;
+	role = ISOAL_ROLE_PERIPHERAL;
 	iso_interval_int = 1;
 	sdu_interval = ((iso_interval_int * ISO_INT_UNIT_US) / 3) + 5;
 	BN = 3;
@@ -12256,7 +12256,7 @@ ZTEST(test_rx_framed, test_rx_framed_single_invalid_pdu_single_sdu_hdr_err)
 	uint8_t FT;
 
 	/* Settings */
-	role = BT_CONN_ROLE_PERIPHERAL;
+	role = ISOAL_ROLE_PERIPHERAL;
 	iso_interval_int = 1;
 	sdu_interval = ((iso_interval_int * ISO_INT_UNIT_US) / 3) + 5;
 	BN = 3;
@@ -12459,7 +12459,7 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_dbl_sdu_seg_err1)
 	uint8_t FT;
 
 	/* Settings */
-	role = BT_CONN_ROLE_PERIPHERAL;
+	role = ISOAL_ROLE_PERIPHERAL;
 	iso_interval_int = 1;
 	iso_interval_us = iso_interval_int * ISO_INT_UNIT_US;
 	sdu_interval = (iso_interval_us / 3) + 5;
@@ -12742,7 +12742,7 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_dbl_sdu_seg_err2)
 	uint8_t FT;
 
 	/* Settings */
-	role = BT_CONN_ROLE_PERIPHERAL;
+	role = ISOAL_ROLE_PERIPHERAL;
 	iso_interval_int = 1;
 	iso_interval_us = iso_interval_int * ISO_INT_UNIT_US;
 	sdu_interval = (iso_interval_us / 3) + 5;

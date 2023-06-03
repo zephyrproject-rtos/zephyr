@@ -24,7 +24,10 @@ typedef uint8_t isoal_status_t;
 #define ISOAL_STATUS_ERR_PDU_EMIT         ((isoal_status_t) 0x20) /* PDU emission */
 #define ISOAL_STATUS_ERR_UNSPECIFIED      ((isoal_status_t) 0x80) /* Unspecified error */
 
-#define BT_ROLE_BROADCAST (BT_CONN_ROLE_PERIPHERAL + 1)
+#define ISOAL_ROLE_CENTRAL                (BT_CONN_ROLE_CENTRAL)
+#define ISOAL_ROLE_PERIPHERAL             (BT_CONN_ROLE_PERIPHERAL)
+#define ISOAL_ROLE_BROADCAST_SOURCE       (BT_CONN_ROLE_PERIPHERAL + 1U)
+#define ISOAL_ROLE_BROADCAST_SINK         (BT_CONN_ROLE_PERIPHERAL + 2U)
 
 /** Handle to a registered ISO Sub-System sink */
 typedef uint8_t  isoal_sink_handle_t;
