@@ -95,7 +95,7 @@ struct ieee802154_context {
 	int16_t tx_power;
 	enum net_l2_flags flags;
 
-	uint8_t sequence;
+	uint8_t sequence; /* see section 8.4.3.1, table 8-94, macDsn */
 
 	uint8_t _unused : 6;
 

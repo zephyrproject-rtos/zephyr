@@ -22,6 +22,7 @@ LOG_MODULE_REGISTER(net_ieee802154, CONFIG_NET_L2_IEEE802154_LOG_LEVEL);
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/net_l2.h>
 #include <zephyr/net/net_linkaddr.h>
+#include <zephyr/random/rand32.h>
 
 #ifdef CONFIG_NET_6LO
 #include "ieee802154_6lo.h"
@@ -362,8 +363,10 @@ out:
 static enum net_verdict ieee802154_recv(struct net_if *iface, struct net_pkt *pkt)
 {
 	const struct ieee802154_radio_api *radio = net_if_get_device(iface)->api;
+	enum net_verdict verdict = NET_DROP;
+	struct ieee802154_fcf_seq *fs;
 	struct ieee802154_mpdu mpdu;
-	enum net_verdict verdict;
+	bool is_broadcast;
 	size_t hdr_len;
 
 	/* The IEEE 802.15.4 stack assumes that drivers provide a single-fragment package. */
@@ -379,15 +382,18 @@ static enum net_verdict ieee802154_recv(struct net_if *iface, struct net_pkt *pk
 		return NET_DROP;
 	}
 
-	if (mpdu.mhr.fs->fc.frame_type == IEEE802154_FRAME_TYPE_ACK) {
+	fs = mpdu.mhr.fs;
+
+	if (fs->fc.frame_type == IEEE802154_FRAME_TYPE_ACK) {
 		return NET_DROP;
 	}
 
-	if (mpdu.mhr.fs->fc.frame_type == IEEE802154_FRAME_TYPE_BEACON) {
+	if (fs->fc.frame_type == IEEE802154_FRAME_TYPE_BEACON) {
 		verdict = ieee802154_handle_beacon(iface, &mpdu, net_pkt_ieee802154_lqi(pkt));
 		if (verdict == NET_OK) {
 			net_pkt_unref(pkt);
 		}
+		/* Beacons must not be acknowledged, see section 6.7.4.1. */
 		return verdict;
 	}
 
@@ -395,17 +401,37 @@ static enum net_verdict ieee802154_recv(struct net_if *iface, struct net_pkt *pk
 		return NET_DROP;
 	}
 
-	if (mpdu.mhr.fs->fc.frame_type == IEEE802154_FRAME_TYPE_MAC_COMMAND) {
+	if (fs->fc.frame_type == IEEE802154_FRAME_TYPE_MAC_COMMAND) {
 		verdict = ieee802154_handle_mac_command(iface, &mpdu);
-		if (verdict == NET_OK) {
-			net_pkt_unref(pkt);
+		if (verdict != NET_OK) {
+			return verdict;
 		}
-		return verdict;
 	}
 
-	/* At this point the frame has to be a data frame. */
+	/* At this point the frame is either a MAC command or a data frame
+	 * which may have to be acknowledged, see section 6.7.4.1.
+	 */
 
-	ieee802154_acknowledge(iface, &mpdu);
+	is_broadcast = false;
+
+	if (fs->fc.dst_addr_mode == IEEE802154_ADDR_MODE_SHORT) {
+		struct ieee802154_address_field *dst_addr = mpdu.mhr.dst_addr;
+		uint16_t short_dst_addr;
+
+		short_dst_addr = fs->fc.pan_id_comp ? dst_addr->comp.addr.short_addr
+						    : dst_addr->plain.addr.short_addr;
+		is_broadcast = short_dst_addr == IEEE802154_BROADCAST_ADDRESS;
+	}
+
+	/* Frames that are broadcast must not be acknowledged, see section 6.7.2. */
+	if (!is_broadcast) {
+		ieee802154_acknowledge(iface, &mpdu);
+	}
+
+	if (fs->fc.frame_type == IEEE802154_FRAME_TYPE_MAC_COMMAND) {
+		net_pkt_unref(pkt);
+		return verdict;
+	}
 
 	if (!ieee802154_decipher_data_frame(iface, pkt, &mpdu)) {
 		return NET_DROP;
@@ -415,10 +441,10 @@ static enum net_verdict ieee802154_recv(struct net_if *iface, struct net_pkt *pk
 	 * packet handling as it will mangle the package header to comply with upper
 	 * network layers' (POSIX) requirement to represent network addresses in big endian.
 	 */
-	swap_and_set_pkt_ll_addr(net_pkt_lladdr_src(pkt), mpdu.mhr.fs->fc.pan_id_comp,
-				 mpdu.mhr.fs->fc.src_addr_mode, mpdu.mhr.src_addr);
+	swap_and_set_pkt_ll_addr(net_pkt_lladdr_src(pkt), fs->fc.pan_id_comp, fs->fc.src_addr_mode,
+				 mpdu.mhr.src_addr);
 
-	swap_and_set_pkt_ll_addr(net_pkt_lladdr_dst(pkt), false, mpdu.mhr.fs->fc.dst_addr_mode,
+	swap_and_set_pkt_ll_addr(net_pkt_lladdr_dst(pkt), false, fs->fc.dst_addr_mode,
 				 mpdu.mhr.dst_addr);
 
 	net_pkt_set_ll_proto_type(pkt, ETH_P_IEEE802154);
@@ -603,6 +629,13 @@ void ieee802154_init(struct net_if *iface)
 	/* no need to lock the context here as it has
 	 * not been published yet.
 	 */
+
+	/* See section 6.7.1 - Transmission: "Each device shall initialize its data sequence number
+	 * (DSN) to a random value and store its current DSN value in the MAC PIB attribute macDsn
+	 * [...]."
+	 */
+	ctx->sequence = sys_rand32_get() & 0xFF;
+
 	ctx->channel = IEEE802154_NO_CHANNEL;
 	ctx->flags = NET_L2_MULTICAST;
 	if (ieee802154_get_hw_capabilities(iface) & IEEE802154_HW_PROMISC) {
