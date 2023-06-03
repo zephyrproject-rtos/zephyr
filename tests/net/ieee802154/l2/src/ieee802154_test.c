@@ -241,7 +241,7 @@ static struct net_pkt *get_data_pkt_with_ar(void)
 		0x61, 0xd8,					/* FCF with AR bit set */
 		0x16,						/* Sequence */
 		0xcd, 0xab,					/* Destination PAN */
-		0xff, 0xff,					/* Destination Address */
+		0x78, 0x56,					/* Destination Address */
 		0xc2, 0xa3, 0x9e, 0x00, 0x00, 0x4b, 0x12, 0x00, /* Source Address */
 		/* IEEE 802.15.4 MAC Payload */
 		0x7b, 0x39, /* IPHC header, SAM: compressed, DAM: 48-bits inline */
@@ -1047,9 +1047,13 @@ static bool test_recv_and_send_ack_reply(struct ieee802154_pkt_test *t)
 		goto release_fd;
 	}
 
+	if (set_up_short_addr(iface, ctx)) {
+		goto release_fd;
+	}
+
 	rx_pkt = get_data_pkt_with_ar();
 	if (!rx_pkt) {
-		goto release_fd;
+		goto reset_short_addr;
 	}
 
 	if (net_recv_data(iface, rx_pkt) < 0) {
@@ -1118,6 +1122,8 @@ release_tx_frag:
 	current_pkt->frags = NULL;
 release_rx_pkt:
 	net_pkt_unref(rx_pkt);
+reset_short_addr:
+	tear_down_short_addr(iface, ctx);
 release_fd:
 	close(fd);
 out:
