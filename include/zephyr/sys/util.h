@@ -225,19 +225,17 @@ extern "C" {
 	((type *)(((char *)(ptr)) - offsetof(type, field)))
 
 /**
- * @brief Value of @p x rounded up to the next multiple of @p align,
- *        which must be a power of 2.
+ * @brief Value of @p x rounded up to the next multiple of @p align.
  */
 #define ROUND_UP(x, align)                                   \
-	(((unsigned long)(x) + ((unsigned long)(align) - 1)) & \
-	 ~((unsigned long)(align) - 1))
+	((((unsigned long)(x) + ((unsigned long)(align) - 1)) / \
+	  (unsigned long)(align)) * (unsigned long)(align))
 
 /**
- * @brief Value of @p x rounded down to the previous multiple of @p
- *        align, which must be a power of 2.
+ * @brief Value of @p x rounded down to the previous multiple of @p align.
  */
 #define ROUND_DOWN(x, align)                                 \
-	((unsigned long)(x) & ~((unsigned long)(align) - 1))
+	(((unsigned long)(x) / (unsigned long)(align)) * (unsigned long)(align))
 
 /** @brief Value of @p x rounded up to the next word boundary. */
 #define WB_UP(x) ROUND_UP(x, sizeof(void *))
