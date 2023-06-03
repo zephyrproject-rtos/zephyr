@@ -361,12 +361,20 @@ static int ieee802154_cc13xx_cc26xx_tx(const struct device *dev,
 		}
 
 		if (drv_data->cmd_ieee_csma.status != IEEE_DONE_OK) {
+			/* TODO: According to IEEE 802.15.4 CSMA/CA failure
+			 *       fails TX immediately and should not trigger
+			 *       attempt (which is reserved for ACK timeouts).
+			 */
 			LOG_DBG("Channel access failure (0x%x)",
 				drv_data->cmd_ieee_csma.status);
 			continue;
 		}
 
 		if (drv_data->cmd_ieee_tx.status != IEEE_DONE_OK) {
+			/* TODO: According to IEEE 802.15.4 transmission failure
+			 *       fails TX immediately and should not trigger
+			 *       attempt (which is reserved for ACK timeouts).
+			 */
 			LOG_DBG("Transmit failed (0x%x)",
 				drv_data->cmd_ieee_tx.status);
 			continue;

@@ -443,7 +443,6 @@ out:
 
 static bool test_wait_for_ack(struct ieee802154_pkt_test *t)
 {
-	struct ieee802154_context *ctx = net_if_l2_data(iface);
 	struct ieee802154_mpdu mpdu;
 	struct net_pkt *ack_pkt;
 	struct net_pkt *tx_pkt;
@@ -457,7 +456,7 @@ static bool test_wait_for_ack(struct ieee802154_pkt_test *t)
 		goto out;
 	}
 
-	ack_required = ieee802154_prepare_for_ack(ctx, tx_pkt, tx_pkt->frags);
+	ack_required = ieee802154_prepare_for_ack(iface, tx_pkt, tx_pkt->frags);
 	if (!ack_required) {
 		NET_ERR("*** Expected AR flag to be set\n");
 		goto release_tx_pkt;
