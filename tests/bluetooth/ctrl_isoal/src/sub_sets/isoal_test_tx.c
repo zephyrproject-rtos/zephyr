@@ -648,7 +648,7 @@ ZTEST(test_tx_basics, test_source_isoal_test_create_err)
 	bool framed;
 
 	handle = 0x8000;
-	role = BT_CONN_ROLE_PERIPHERAL;
+	role = ISOAL_ROLE_PERIPHERAL;
 	burst_number = 1;
 	max_octets = 40;
 	flush_timeout = 1;
@@ -745,7 +745,7 @@ ZTEST(test_tx_unframed, test_tx_unframed_1_sdu_1_frag_1_pdu_maxPDU)
 	uint8_t FT;
 
 	/* Settings */
-	role = BT_CONN_ROLE_PERIPHERAL;
+	role = ISOAL_ROLE_PERIPHERAL;
 	iso_interval_int = 1;
 	sdu_interval = CONN_INT_UNIT_US;
 	max_octets = TEST_TX_PDU_PAYLOAD_MAX - 5;
@@ -873,7 +873,7 @@ ZTEST(test_tx_unframed, test_tx_unframed_1_sdu_1_frag_1_pdu_bufSize)
 	uint8_t FT;
 
 	/* Settings */
-	role = BT_CONN_ROLE_PERIPHERAL;
+	role = ISOAL_ROLE_PERIPHERAL;
 	iso_interval_int = 1;
 	sdu_interval = CONN_INT_UNIT_US;
 	max_octets = TEST_TX_PDU_PAYLOAD_MAX + 5;
@@ -991,7 +991,7 @@ ZTEST(test_tx_unframed, test_tx_unframed_1_sdu_1_frag_3_pdu)
 	uint8_t FT;
 
 	/* Settings */
-	role = BT_CONN_ROLE_PERIPHERAL;
+	role = ISOAL_ROLE_PERIPHERAL;
 	iso_interval_int = 1;
 	sdu_interval = CONN_INT_UNIT_US;
 	max_octets = TEST_TX_PDU_PAYLOAD_MAX - 5;
@@ -1150,7 +1150,7 @@ ZTEST(test_tx_unframed, test_tx_unframed_1_sdu_3_frag_1_pdu)
 	uint8_t FT;
 
 	/* Settings */
-	role = BT_CONN_ROLE_PERIPHERAL;
+	role = ISOAL_ROLE_PERIPHERAL;
 	iso_interval_int = 1;
 	sdu_interval = CONN_INT_UNIT_US;
 	max_octets = TEST_TX_PDU_PAYLOAD_MAX + 5;
@@ -1355,7 +1355,7 @@ ZTEST(test_tx_unframed, test_tx_unframed_1_sdu_3_frag_2_pdu)
 	uint8_t FT;
 
 	/* Settings */
-	role = BT_CONN_ROLE_PERIPHERAL;
+	role = ISOAL_ROLE_PERIPHERAL;
 	iso_interval_int = 1;
 	sdu_interval = CONN_INT_UNIT_US;
 	max_octets = TEST_TX_PDU_PAYLOAD_MAX + 5;
@@ -1687,7 +1687,7 @@ ZTEST(test_tx_unframed, test_tx_unframed_2_sdu_1_frag_2_pdu_ts_wrap1)
 	uint8_t FT;
 
 	/* Settings */
-	role = BT_CONN_ROLE_PERIPHERAL;
+	role = ISOAL_ROLE_PERIPHERAL;
 	iso_interval_int = 1;
 	sdu_interval = CONN_INT_UNIT_US;
 	max_octets = TEST_TX_PDU_PAYLOAD_MAX - 5;
@@ -1868,7 +1868,7 @@ ZTEST(test_tx_unframed, test_tx_unframed_2_sdu_3_frag_4_pdu)
 	uint8_t FT;
 
 	/* Settings */
-	role = BT_CONN_ROLE_PERIPHERAL;
+	role = ISOAL_ROLE_PERIPHERAL;
 	iso_interval_int = 2;
 	sdu_interval = CONN_INT_UNIT_US;
 	max_octets = TEST_TX_PDU_PAYLOAD_MAX + 5;
@@ -2262,7 +2262,7 @@ ZTEST(test_tx_unframed, test_tx_unframed_2_sdu_3_frag_4_pdu_padding)
 	uint8_t FT;
 
 	/* Settings */
-	role = BT_CONN_ROLE_PERIPHERAL;
+	role = ISOAL_ROLE_PERIPHERAL;
 	iso_interval_int = 2;
 	sdu_interval = CONN_INT_UNIT_US;
 	max_octets = TEST_TX_PDU_PAYLOAD_MAX + 5;
@@ -2737,7 +2737,7 @@ ZTEST(test_tx_unframed, test_tx_unframed_1_zero_sdu_1_frag_1_pdu_maxPDU_padding)
 	uint8_t FT;
 
 	/* Settings */
-	role = BT_CONN_ROLE_PERIPHERAL;
+	role = ISOAL_ROLE_PERIPHERAL;
 	iso_interval_int = 1;
 	sdu_interval = CONN_INT_UNIT_US;
 	max_octets = TEST_TX_PDU_PAYLOAD_MAX - 5;
@@ -2905,7 +2905,7 @@ ZTEST(test_tx_unframed, test_tx_unframed_1_sdu_1_frag_pdu_alloc_err)
 	uint8_t FT;
 
 	/* Settings */
-	role = BT_CONN_ROLE_PERIPHERAL;
+	role = ISOAL_ROLE_PERIPHERAL;
 	iso_interval_int = 1;
 	sdu_interval = CONN_INT_UNIT_US;
 	max_octets = TEST_TX_PDU_PAYLOAD_MAX - 5;
@@ -3022,7 +3022,7 @@ ZTEST(test_tx_unframed, test_tx_unframed_1_sdu_1_frag_pdu_emit_err)
 	uint8_t FT;
 
 	/* Settings */
-	role = BT_CONN_ROLE_PERIPHERAL;
+	role = ISOAL_ROLE_PERIPHERAL;
 	iso_interval_int = 1;
 	sdu_interval = CONN_INT_UNIT_US;
 	max_octets = TEST_TX_PDU_PAYLOAD_MAX - 5;
@@ -3151,7 +3151,7 @@ ZTEST(test_tx_unframed, test_tx_unframed_4_sdu_1_frag_4_pdu_stream_loc)
 	uint8_t FT;
 
 	/* Settings */
-	role = BT_CONN_ROLE_PERIPHERAL;
+	role = ISOAL_ROLE_PERIPHERAL;
 	iso_interval_int = 1;
 	sdu_interval = CONN_INT_UNIT_US / 2;
 	max_octets = TEST_TX_PDU_PAYLOAD_MAX - 5;
@@ -3488,7 +3488,7 @@ ZTEST(test_tx_framed, test_tx_framed_1_sdu_1_frag_1_pdu_maxPDU)
 	uint8_t FT;
 
 	/* Settings */
-	role = BT_CONN_ROLE_PERIPHERAL;
+	role = ISOAL_ROLE_PERIPHERAL;
 	iso_interval_int = 1;
 	sdu_interval = CONN_INT_UNIT_US + 50;
 	max_octets = TEST_TX_PDU_PAYLOAD_MAX - 5;
@@ -3643,7 +3643,7 @@ ZTEST(test_tx_framed, test_tx_framed_1_sdu_1_frag_1_pdu_bufSize)
 	uint8_t FT;
 
 	/* Settings */
-	role = BT_CONN_ROLE_PERIPHERAL;
+	role = ISOAL_ROLE_PERIPHERAL;
 	iso_interval_int = 1;
 	sdu_interval = CONN_INT_UNIT_US + 50;
 	max_octets = TEST_TX_PDU_PAYLOAD_MAX + 5;
@@ -3789,7 +3789,7 @@ ZTEST(test_tx_framed, test_tx_framed_1_sdu_1_frag_3_pdu)
 	uint8_t FT;
 
 	/* Settings */
-	role = BT_CONN_ROLE_PERIPHERAL;
+	role = ISOAL_ROLE_PERIPHERAL;
 	iso_interval_int = 1;
 	sdu_interval = CONN_INT_UNIT_US + 50;
 	max_octets = TEST_TX_PDU_PAYLOAD_MAX - 5;
@@ -4020,7 +4020,7 @@ ZTEST(test_tx_framed, test_tx_framed_1_sdu_3_frag_1_pdu)
 	uint8_t FT;
 
 	/* Settings */
-	role = BT_CONN_ROLE_PERIPHERAL;
+	role = ISOAL_ROLE_PERIPHERAL;
 	iso_interval_int = 1;
 	sdu_interval = CONN_INT_UNIT_US + 50;
 	max_octets = TEST_TX_PDU_PAYLOAD_MAX + 5;
@@ -4279,7 +4279,7 @@ ZTEST(test_tx_framed, test_tx_framed_1_sdu_3_frag_2_pdu)
 	uint8_t FT;
 
 	/* Settings */
-	role = BT_CONN_ROLE_PERIPHERAL;
+	role = ISOAL_ROLE_PERIPHERAL;
 	iso_interval_int = 1;
 	sdu_interval = CONN_INT_UNIT_US + 50;
 	max_octets = TEST_TX_PDU_PAYLOAD_MAX + 5;
@@ -4581,7 +4581,7 @@ ZTEST(test_tx_framed, test_tx_framed_2_sdu_3_frag_4_pdu)
 	uint8_t FT;
 
 	/* Settings */
-	role = BT_CONN_ROLE_PERIPHERAL;
+	role = ISOAL_ROLE_PERIPHERAL;
 	iso_interval_int = 2;
 	sdu_interval = CONN_INT_UNIT_US + 50;
 	max_octets = TEST_TX_PDU_PAYLOAD_MAX + 5;
@@ -5113,7 +5113,7 @@ ZTEST(test_tx_framed, test_tx_framed_2_sdu_3_frag_4_pdu_padding)
 	uint8_t FT;
 
 	/* Settings */
-	role = BT_CONN_ROLE_PERIPHERAL;
+	role = ISOAL_ROLE_PERIPHERAL;
 	iso_interval_int = 2;
 	sdu_interval = CONN_INT_UNIT_US + 50;
 	max_octets = TEST_TX_PDU_PAYLOAD_MAX + 5;
@@ -5659,7 +5659,7 @@ ZTEST(test_tx_framed, test_tx_framed_2_sdu_1_frag_2_pdu_refPoint2)
 	uint8_t FT;
 
 	/* Settings */
-	role = BT_CONN_ROLE_PERIPHERAL;
+	role = ISOAL_ROLE_PERIPHERAL;
 	iso_interval_int = 1;
 	sdu_interval = CONN_INT_UNIT_US + 50;
 	max_octets = TEST_TX_PDU_PAYLOAD_MAX + 5;
@@ -5888,7 +5888,7 @@ ZTEST(test_tx_framed, test_tx_framed_1_sdu_1_frag_1_pdu_refPoint3)
 	uint8_t FT;
 
 	/* Settings */
-	role = BT_CONN_ROLE_PERIPHERAL;
+	role = ISOAL_ROLE_PERIPHERAL;
 	iso_interval_int = 1;
 	sdu_interval = CONN_INT_UNIT_US + 50;
 	max_octets = TEST_TX_PDU_PAYLOAD_MAX + 5;
@@ -6044,7 +6044,7 @@ ZTEST(test_tx_framed, test_tx_framed_2_sdu_1_frag_2_pdu_ts_wrap1)
 	uint8_t FT;
 
 	/* Settings */
-	role = BT_CONN_ROLE_PERIPHERAL;
+	role = ISOAL_ROLE_PERIPHERAL;
 	iso_interval_int = 1;
 	sdu_interval = CONN_INT_UNIT_US + 50;
 	max_octets = TEST_TX_PDU_PAYLOAD_MAX + 5;
@@ -6268,7 +6268,7 @@ ZTEST(test_tx_framed, test_tx_framed_1_zero_sdu_1_frag_1_pdu_maxPDU)
 	uint8_t FT;
 
 	/* Settings */
-	role = BT_CONN_ROLE_PERIPHERAL;
+	role = ISOAL_ROLE_PERIPHERAL;
 	iso_interval_int = 1;
 	sdu_interval = CONN_INT_UNIT_US + 50;
 	max_octets = TEST_TX_PDU_PAYLOAD_MAX - 5;
@@ -6411,7 +6411,7 @@ ZTEST(test_tx_framed, test_tx_framed_1_zero_sdu_1_frag_1_pdu_padding)
 	uint8_t FT;
 
 	/* Settings */
-	role = BT_CONN_ROLE_PERIPHERAL;
+	role = ISOAL_ROLE_PERIPHERAL;
 	iso_interval_int = 1;
 	sdu_interval = CONN_INT_UNIT_US + 50;
 	max_octets = TEST_TX_PDU_PAYLOAD_MAX - 5;
@@ -6596,7 +6596,7 @@ ZTEST(test_tx_framed, test_tx_framed_1_sdu_1_frag_pdu_alloc_err)
 	uint8_t FT;
 
 	/* Settings */
-	role = BT_CONN_ROLE_PERIPHERAL;
+	role = ISOAL_ROLE_PERIPHERAL;
 	iso_interval_int = 1;
 	sdu_interval = CONN_INT_UNIT_US + 50;
 	max_octets = TEST_TX_PDU_PAYLOAD_MAX - 5;
@@ -6724,7 +6724,7 @@ ZTEST(test_tx_framed, test_tx_framed_1_sdu_1_frag_pdu_emit_err)
 	uint8_t FT;
 
 	/* Settings */
-	role = BT_CONN_ROLE_PERIPHERAL;
+	role = ISOAL_ROLE_PERIPHERAL;
 	iso_interval_int = 1;
 	sdu_interval = CONN_INT_UNIT_US + 50;
 	max_octets = TEST_TX_PDU_PAYLOAD_MAX - 5;
@@ -6873,7 +6873,7 @@ ZTEST(test_tx_framed, test_tx_framed_2_sdu_1_frag_pdu_timeout)
 	uint8_t FT;
 
 	/* Settings */
-	role = BT_CONN_ROLE_PERIPHERAL;
+	role = ISOAL_ROLE_PERIPHERAL;
 	iso_interval_int = 800;
 	sdu_interval = 500000;
 	max_octets = TEST_TX_PDU_PAYLOAD_MAX + 5;
@@ -7167,7 +7167,7 @@ ZTEST(test_tx_framed_ebq, test_tx_framed_cis_fra_per_bv07c)
 	uint8_t FT;
 
 	/* Settings */
-	role = BT_CONN_ROLE_PERIPHERAL;
+	role = ISOAL_ROLE_PERIPHERAL;
 	iso_interval_int = 800;
 	sdu_interval = 500000;
 	max_octets = TEST_TX_PDU_PAYLOAD_MAX + 5;

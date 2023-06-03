@@ -315,7 +315,7 @@ isoal_status_t isoal_sink_create(
 	 *   BIG reference anchor point +
 	 *   BIG_Sync_Delay + SDU_interval + ISO_Interval - Time_Offset.
 	 */
-	if (role == BT_CONN_ROLE_PERIPHERAL) {
+	if (role == ISOAL_ROLE_PERIPHERAL) {
 		if (framed) {
 			session->sdu_sync_const = stream_sync_delay + sdu_interval +
 							(flush_timeout * iso_interval_us);
@@ -323,7 +323,7 @@ isoal_status_t isoal_sink_create(
 			session->sdu_sync_const = stream_sync_delay +
 							((flush_timeout - 1UL) * iso_interval_us);
 		}
-	} else if (role == BT_CONN_ROLE_CENTRAL) {
+	} else if (role == ISOAL_ROLE_CENTRAL) {
 		if (framed) {
 			session->sdu_sync_const = stream_sync_delay - group_sync_delay;
 		} else {
@@ -331,7 +331,7 @@ isoal_status_t isoal_sink_create(
 							(((iso_interval_us / sdu_interval) - 1UL) *
 								iso_interval_us);
 		}
-	} else if (role == BT_ROLE_BROADCAST) {
+	} else if (role == ISOAL_ROLE_BROADCAST_SINK) {
 		if (framed) {
 			session->sdu_sync_const = group_sync_delay + sdu_interval + iso_interval_us;
 		} else {
