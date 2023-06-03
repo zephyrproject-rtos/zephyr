@@ -303,7 +303,7 @@ uint8_t ll_setup_iso_path(uint16_t handle, uint8_t path_dir, uint8_t path_id,
 		adv_iso = ull_adv_iso_by_stream_get(stream_handle);
 		lll_iso = &adv_iso->lll;
 
-		role = 0U; /* FIXME: Set role from LLL struct */
+		role = ISOAL_ROLE_BROADCAST_SOURCE;
 		iso_interval = lll_iso->iso_interval;
 		sdu_interval = lll_iso->sdu_interval;
 		burst_number = lll_iso->bn;
@@ -329,7 +329,7 @@ uint8_t ll_setup_iso_path(uint16_t handle, uint8_t path_dir, uint8_t path_id,
 		sync_iso = ull_sync_iso_by_stream_get(stream_handle);
 		lll_iso = &sync_iso->lll;
 
-		role = 1U; /* FIXME: Is this correct role value? */
+		role = ISOAL_ROLE_BROADCAST_SINK;
 		iso_interval = lll_iso->iso_interval;
 		sdu_interval = lll_iso->sdu_interval;
 		burst_number = lll_iso->bn;
