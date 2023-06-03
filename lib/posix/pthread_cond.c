@@ -90,7 +90,7 @@ static int cond_wait(pthread_cond_t *cond, pthread_mutex_t *mu, k_timeout_t time
 	int ret;
 	k_spinlock_key_t key;
 	struct posix_cond *cv;
-	struct posix_mutex *m;
+	struct k_mutex *m;
 
 	key = k_spin_lock(&z_pthread_spinlock);
 	m = to_posix_mutex(mu);
