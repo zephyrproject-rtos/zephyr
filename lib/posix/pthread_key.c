@@ -3,12 +3,17 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include "posix_internal.h"
+
 #include <zephyr/kernel.h>
 #include <zephyr/posix/pthread.h>
 #include <zephyr/posix/pthread_key.h>
 #include <zephyr/sys/bitarray.h>
 
-#include "posix_internal.h"
+struct pthread_key_data {
+	sys_snode_t node;
+	pthread_thread_data thread_data;
+};
 
 static struct k_spinlock pthread_key_lock;
 
@@ -36,7 +41,7 @@ static inline size_t to_posix_key_idx(pthread_key_t key)
 	return mark_pthread_obj_uninitialized(key);
 }
 
-pthread_key_obj *get_posix_key(pthread_key_t key)
+static pthread_key_obj *get_posix_key(pthread_key_t key)
 {
 	int actually_initialized;
 	size_t bit = to_posix_key_idx(key);
@@ -59,7 +64,7 @@ pthread_key_obj *get_posix_key(pthread_key_t key)
 	return &posix_key_pool[bit];
 }
 
-pthread_key_obj *to_posix_key(pthread_key_t *key)
+static pthread_key_obj *to_posix_key(pthread_key_t *key)
 {
 	size_t bit;
 	pthread_key_obj *k;
@@ -115,7 +120,7 @@ int pthread_key_create(pthread_key_t *key,
 int pthread_key_delete(pthread_key_t key)
 {
 	pthread_key_obj *key_obj;
-	pthread_key_data *key_data;
+	struct pthread_key_data *key_data;
 	sys_snode_t *node_l, *next_node_l;
 	k_spinlock_key_t key_key;
 
@@ -132,7 +137,7 @@ int pthread_key_delete(pthread_key_t key)
 			node_l, next_node_l) {
 
 		/* Remove the object from the list key_data_l */
-		key_data = (pthread_key_data *)
+		key_data = (struct pthread_key_data *)
 			sys_slist_get(&(key_obj->key_data_l));
 
 		/* Deallocate the object's memory */
@@ -155,7 +160,7 @@ int pthread_setspecific(pthread_key_t key, const void *value)
 {
 	pthread_key_obj *key_obj;
 	struct posix_thread *thread = to_posix_thread(pthread_self());
-	pthread_key_data *key_data;
+	struct pthread_key_data *key_data;
 	pthread_thread_data *thread_spec_data;
 	k_spinlock_key_t key_key;
 	sys_snode_t *node_l;
@@ -188,7 +193,7 @@ int pthread_setspecific(pthread_key_t key, const void *value)
 	}
 
 	if (node_l == NULL) {
-		key_data = k_malloc(sizeof(pthread_key_data));
+		key_data = k_malloc(sizeof(struct pthread_key_data));
 
 		if (key_data == NULL) {
 			retval = ENOMEM;

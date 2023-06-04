@@ -4,14 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "posix_internal.h"
+
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
-#include <ksched.h>
-#include <zephyr/wait_q.h>
 #include <zephyr/posix/pthread.h>
 #include <zephyr/sys/bitarray.h>
-
-#include "posix_internal.h"
 
 int64_t timespec_to_timeoutms(const struct timespec *abstime);
 
@@ -36,7 +34,7 @@ static inline size_t to_posix_cond_idx(pthread_cond_t cond)
 	return mark_pthread_obj_uninitialized(cond);
 }
 
-struct k_condvar *get_posix_cond(pthread_cond_t cond)
+static struct k_condvar *get_posix_cond(pthread_cond_t cond)
 {
 	int actually_initialized;
 	size_t bit = to_posix_cond_idx(cond);
@@ -59,7 +57,7 @@ struct k_condvar *get_posix_cond(pthread_cond_t cond)
 	return &posix_cond_pool[bit];
 }
 
-struct k_condvar *to_posix_cond(pthread_cond_t *cvar)
+static struct k_condvar *to_posix_cond(pthread_cond_t *cvar)
 {
 	size_t bit;
 	struct k_condvar *cv;

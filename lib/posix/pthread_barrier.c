@@ -4,12 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "posix_internal.h"
+
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
 #include <zephyr/posix/pthread.h>
 #include <zephyr/sys/bitarray.h>
-
-#include "posix_internal.h"
 
 struct posix_barrier {
 	struct k_mutex mutex;
