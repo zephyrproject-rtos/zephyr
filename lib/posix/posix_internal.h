@@ -62,11 +62,6 @@ typedef struct pthread_thread_data {
 	void *spec_data;
 } pthread_thread_data;
 
-typedef struct pthread_key_data {
-	sys_snode_t node;
-	pthread_thread_data thread_data;
-} pthread_key_data;
-
 static inline bool is_pthread_obj_initialized(uint32_t obj)
 {
 	return (obj & PTHREAD_OBJ_MASK_INIT) != 0;
@@ -86,20 +81,5 @@ struct posix_thread *to_posix_thread(pthread_t pth);
 
 /* get and possibly initialize a posix_mutex */
 struct k_mutex *to_posix_mutex(pthread_mutex_t *mu);
-
-/* get a previously initialized posix_mutex */
-struct k_mutex *get_posix_mutex(pthread_mutex_t mut);
-
-/* get and possibly initialize a posix_cond */
-struct k_condvar *to_posix_cond(pthread_cond_t *cvar);
-
-/* get a previously initialized posix_cond */
-struct k_condvar *get_posix_cond(pthread_cond_t cond);
-
-/* get and possibly initialize a posix_key */
-pthread_key_obj *to_posix_key(pthread_key_t *keyp);
-
-/* get a previously initialized posix_key */
-pthread_key_obj *get_posix_key(pthread_key_t key);
 
 #endif

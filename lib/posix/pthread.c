@@ -4,20 +4,19 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/init.h>
-#include <zephyr/kernel.h>
-#include <stdio.h>
-#include <zephyr/sys/atomic.h>
-#include <ksched.h>
-#include <zephyr/wait_q.h>
-#include <zephyr/posix/pthread.h>
-#include <zephyr/sys/slist.h>
-
 #include "posix_internal.h"
 #include "pthread_sched.h"
 
-#define PTHREAD_INIT_FLAGS PTHREAD_CANCEL_ENABLE
-#define PTHREAD_CANCELED   ((void *)-1)
+#include <stdio.h>
+
+#include <zephyr/init.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/atomic.h>
+#include <zephyr/posix/pthread.h>
+#include <zephyr/sys/slist.h>
+
+#define PTHREAD_INIT_FLAGS	PTHREAD_CANCEL_ENABLE
+#define PTHREAD_CANCELED	((void *) -1)
 
 enum posix_thread_qid {
 	/* ready to be started via pthread_create() */
