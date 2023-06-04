@@ -46,7 +46,7 @@ static inline size_t to_posix_mutex_idx(pthread_mutex_t mut)
 	return mark_pthread_obj_uninitialized(mut);
 }
 
-struct k_mutex *get_posix_mutex(pthread_mutex_t mu)
+static struct k_mutex *get_posix_mutex(pthread_mutex_t mu)
 {
 	int actually_initialized;
 	size_t bit = to_posix_mutex_idx(mu);
