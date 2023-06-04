@@ -56,6 +56,13 @@ config MAX_PTHREAD_KEY_COUNT
 	help
 	  Maximum number of simultaneously active keys in a POSIX application.
 
+config MAX_PTHREAD_BARRIER_COUNT
+	int "Maximum simultaneously active barriers in a POSIX application"
+	default 5
+	range 0 255
+	help
+	  Maximum number of simultaneously active keys in a POSIX application.
+
 config SEM_VALUE_MAX
 	int "Maximum semaphore limit"
 	default 32767

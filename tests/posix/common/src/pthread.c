@@ -40,7 +40,7 @@ PTHREAD_COND_DEFINE(cvar0);
 
 PTHREAD_COND_DEFINE(cvar1);
 
-PTHREAD_BARRIER_DEFINE(barrier, N_THR_E);
+static pthread_barrier_t barrier;
 
 sem_t main_sem;
 
@@ -243,6 +243,12 @@ ZTEST(posix_apis, test_posix_pthread_execution)
 	int serial_threads = 0;
 	static const char thr_name[] = "thread name";
 	char thr_name_buf[CONFIG_THREAD_MAX_NAME_LEN];
+
+	/*
+	 * initialize barriers the standard way after deprecating
+	 * PTHREAD_BARRIER_DEFINE().
+	 */
+	zassert_ok(pthread_barrier_init(&barrier, NULL, N_THR_E));
 
 	sem_init(&main_sem, 0, 1);
 	schedparam.sched_priority = CONFIG_NUM_COOP_PRIORITIES - 1;

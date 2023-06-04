@@ -80,11 +80,7 @@ typedef struct pthread_condattr pthread_condattr_t;
 BUILD_ASSERT(sizeof(pthread_condattr_t) >= sizeof(struct pthread_condattr));
 
 /* Barrier */
-typedef struct pthread_barrier {
-	_wait_q_t wait_q;
-	int max;
-	int count;
-} pthread_barrier_t;
+typedef uint32_t pthread_barrier_t;
 
 typedef struct pthread_barrierattr {
 } pthread_barrierattr_t;
