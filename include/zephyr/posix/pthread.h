@@ -277,24 +277,6 @@ static inline int pthread_mutexattr_destroy(pthread_mutexattr_t *m)
 	return 0;
 }
 
-/* FIXME: these are going to be tricky to implement.  Zephyr has (for
- * good reason) deprecated its own "initializer" macros in favor of a
- * static "declaration" macros instead.  Using such a macro inside a
- * gcc compound expression to declare and object then reference it
- * would work, but gcc limits such expressions to function context
- * (because they may need to generate code that runs at assignment
- * time) and much real-world use of these initializers is for static
- * variables.  The best trick I can think of would be to declare it in
- * a special section and then initialize that section at runtime
- * startup, which sort of defeats the purpose of having these be
- * static...
- *
- * Instead, see the nonstandard PTHREAD_*_DEFINE macros instead, which
- * work similarly but conform to Zephyr's paradigms.
- */
-/* #define PTHREAD_MUTEX_INITIALIZER */
-/* #define PTHREAD_COND_INITIALIZER */
-
 /**
  * @brief Declare a pthread barrier
  *
