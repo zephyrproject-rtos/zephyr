@@ -407,6 +407,34 @@
 #define Z_IS_254_EQ_254(...) \,
 #define Z_IS_255_EQ_255(...) \,
 
+/*
+ * Generic sparse list of odd numbers (check the implementation of
+ * GPIO_DT_RESERVED_RANGES_NGPIOS as a usage example)
+ */
+#define Z_SPARSE_LIST_ODD_NUMBERS		\
+	EMPTY,  1, EMPTY,  3, EMPTY,  5, EMPTY,  7, \
+	EMPTY,  9, EMPTY, 11, EMPTY, 13, EMPTY, 15, \
+	EMPTY, 17, EMPTY, 19, EMPTY, 21, EMPTY, 23, \
+	EMPTY, 25, EMPTY, 27, EMPTY, 29, EMPTY, 31, \
+	EMPTY, 33, EMPTY, 35, EMPTY, 37, EMPTY, 39, \
+	EMPTY, 41, EMPTY, 43, EMPTY, 45, EMPTY, 47, \
+	EMPTY, 49, EMPTY, 51, EMPTY, 53, EMPTY, 55, \
+	EMPTY, 57, EMPTY, 59, EMPTY, 61, EMPTY, 63
+
+/*
+ * Generic sparse list of even numbers (check the implementation of
+ * GPIO_DT_RESERVED_RANGES_NGPIOS as a usage example)
+ */
+#define Z_SPARSE_LIST_EVEN_NUMBERS		\
+	 0, EMPTY,  2, EMPTY,  4, EMPTY,  6, EMPTY, \
+	 8, EMPTY, 10, EMPTY, 12, EMPTY, 14, EMPTY, \
+	16, EMPTY, 18, EMPTY, 20, EMPTY, 22, EMPTY, \
+	24, EMPTY, 26, EMPTY, 28, EMPTY, 30, EMPTY, \
+	32, EMPTY, 34, EMPTY, 36, EMPTY, 38, EMPTY, \
+	40, EMPTY, 42, EMPTY, 44, EMPTY, 46, EMPTY, \
+	48, EMPTY, 50, EMPTY, 52, EMPTY, 54, EMPTY, \
+	56, EMPTY, 58, EMPTY, 60, EMPTY, 62, EMPTY
+
 #define UTIL_INC_0 1
 #define UTIL_INC_1 2
 #define UTIL_INC_2 3
