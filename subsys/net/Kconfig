@@ -17,7 +17,7 @@ config NET_BUF_USER_DATA_SIZE
 	int "Size of user_data available in every network buffer"
 	default 24 if MCUMGR_SMP_UDP && MCUMGR_SMP_UDP_IPV6
 	default 8 if MCUMGR_SMP_UDP && MCUMGR_SMP_UDP_IPV4
-	default 8 if ((BT || NET_TCP2) && 64BIT) || BT_ISO || MCUMGR_SMP_BT
+	default 8 if ((BT || NET_TCP2) && 64BIT) || BT_CONN || BT_ISO
 	default 4
 	range 4 65535 if BT || NET_TCP2
 	range 0 65535
