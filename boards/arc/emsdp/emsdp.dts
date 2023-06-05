@@ -49,6 +49,8 @@
 
 		spi@f1000000 {
 			interrupts = <84 1>;
+			pinctrl-0 = <&unmuxed_pin>;
+			pinctrl-names = "default";
 		};
 
 		spi@80010000 {

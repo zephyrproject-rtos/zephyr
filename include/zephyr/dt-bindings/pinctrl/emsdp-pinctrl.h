@@ -37,6 +37,7 @@
 #define ARDUINO_PIN_AD3     20
 #define ARDUINO_PIN_AD4     21
 #define ARDUINO_PIN_AD5     22
+#define INNER_CONNECT       23
 
 #define PMOD_GPIO           0
 #define PMOD_UARTA          1
@@ -52,6 +53,7 @@
 #define ARDUINO_I2C         11
 #define ARDUINO_PWM         12
 #define ARDUINO_ADC         13
+#define NOT_PINMUX          14
 
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_EMSDP_PINCTRL_H_ */

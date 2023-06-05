@@ -103,6 +103,10 @@ static int pinctrl_emsdp_set(uint32_t pin, uint32_t type)
 	const uint32_t mux_regs = (EMSDP_CREG_BASE + EMSDP_CREG_PMOD_MUX_OFFSET);
 	uint32_t reg;
 
+	if (pin == INNER_CONNECT) {
+		return 0;
+	}
+
 	if (pin <= PMOD_C) {
 		reg = sys_read32(mux_regs + PMOD_MUX_CTRL);
 	} else {
