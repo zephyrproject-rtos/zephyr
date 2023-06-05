@@ -188,9 +188,9 @@ static struct has_client {
 #if defined(CONFIG_BT_HAS_PRESET_SUPPORT)
 	union {
 		struct bt_gatt_indicate_params ind;
-#if defined(CONFIG_BT_EATT)
+#if defined(CONFIG_BT_HAS_PRESET_CONTROL_POINT_NOTIFIABLE)
 		struct bt_gatt_notify_params ntf;
-#endif /* CONFIG_BT_EATT */
+#endif /* CONFIG_BT_HAS_PRESET_CONTROL_POINT_NOTIFIABLE */
 	} params;
 
 	uint8_t preset_changed_index_next;
@@ -468,7 +468,7 @@ static void control_point_ind_complete(struct bt_conn *conn,
 
 static int control_point_send(struct has_client *client, struct net_buf_simple *buf)
 {
-#if defined(BT_HAS_PRESET_CONTROL_POINT_NOTIFIABLE)
+#if defined(CONFIG_BT_HAS_PRESET_CONTROL_POINT_NOTIFIABLE)
 	if (bt_eatt_count(client->conn) > 0 &&
 	    bt_gatt_is_subscribed(client->conn, PRESET_CONTROL_POINT_ATTR, BT_GATT_CCC_NOTIFY)) {
 		client->params.ntf.attr = PRESET_CONTROL_POINT_ATTR;
@@ -478,7 +478,7 @@ static int control_point_send(struct has_client *client, struct net_buf_simple *
 
 		return bt_gatt_notify_cb(client->conn, &client->params.ntf);
 	}
-#endif /* CONFIG_BT_EATT */
+#endif /* CONFIG_BT_HAS_PRESET_CONTROL_POINT_NOTIFIABLE */
 
 	if (bt_gatt_is_subscribed(client->conn, PRESET_CONTROL_POINT_ATTR, BT_GATT_CCC_INDICATE)) {
 		client->params.ind.attr = PRESET_CONTROL_POINT_ATTR;
