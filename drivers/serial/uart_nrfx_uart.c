@@ -581,7 +581,8 @@ static void rx_isr(const struct device *dev)
 		/* Byte received when receiving is disabled - data lost. */
 		nrf_uart_rxd_get(uart0_addr);
 	} else {
-		if (uart0_cb.rx_counter == 0) {
+		if (uart0_cb.rx_counter == 0 &&
+		    uart0_cb.rx_secondary_buffer_length == 0) {
 			event.type = UART_RX_BUF_REQUEST;
 			user_callback(dev, &event);
 		}
