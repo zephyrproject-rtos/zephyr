@@ -33,6 +33,7 @@ struct cfg_val {
 #if defined(CONFIG_BT_MESH_PRIV_BEACONS)
 	uint8_t priv_beacon;
 	uint8_t priv_beacon_int;
+	uint8_t priv_gatt_proxy;
 #endif
 #if defined(CONFIG_BT_MESH_OD_PRIV_PROXY_SRV)
 	uint8_t on_demand_state;
@@ -442,6 +443,7 @@ static int cfg_set(const char *name, size_t len_rd,
 #if defined(CONFIG_BT_MESH_PRIV_BEACONS)
 	bt_mesh_priv_beacon_set(cfg.priv_beacon);
 	bt_mesh_priv_beacon_update_interval_set(cfg.priv_beacon_int);
+	bt_mesh_priv_gatt_proxy_set(cfg.priv_gatt_proxy);
 #endif
 #if defined(CONFIG_BT_MESH_OD_PRIV_PROXY_SRV)
 	bt_mesh_od_priv_proxy_set(cfg.on_demand_state);
@@ -481,6 +483,7 @@ static void store_pending_cfg(void)
 #if defined(CONFIG_BT_MESH_PRIV_BEACONS)
 	val.priv_beacon = bt_mesh_priv_beacon_get();
 	val.priv_beacon_int = bt_mesh_priv_beacon_update_interval_get();
+	val.priv_gatt_proxy = bt_mesh_priv_gatt_proxy_get();
 #endif
 #if defined(CONFIG_BT_MESH_OD_PRIV_PROXY_SRV)
 	val.on_demand_state = bt_mesh_od_priv_proxy_get();
