@@ -27,7 +27,8 @@ extern "C" {
 
 /**
  * @brief USB HOST Core Layer API
- * @defgroup _usb_host_core_api USB Host Core API
+ * @defgroup usb_host_core_api USB Host Core API
+ * @ingroup usb
  * @{
  */
 
