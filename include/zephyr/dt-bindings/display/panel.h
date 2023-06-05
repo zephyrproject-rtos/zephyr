@@ -9,7 +9,7 @@
 /**
  * @brief LCD Interface
  * @defgroup lcd_interface LCD Interface
- * @ingroup display_interfaces
+ * @ingroup display_interface
  * @{
  */
 
