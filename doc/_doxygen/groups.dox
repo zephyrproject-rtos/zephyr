@@ -24,6 +24,12 @@
 @brief Connectivity
 @defgroup connectivity Connectivity
 @{
+
+@brief USB
+@defgroup usb USB
+@{
+@}
+
 @}
 
 */
