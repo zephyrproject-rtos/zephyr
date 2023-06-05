@@ -891,7 +891,7 @@ static void ascs_cp_rsp_add(uint8_t id, uint8_t code, uint8_t reason)
 	 */
 	case BT_BAP_ASCS_RSP_CODE_NOT_SUPPORTED:
 	case BT_BAP_ASCS_RSP_CODE_INVALID_LENGTH:
-		rsp->num_ase = 0xff;
+		rsp->num_ase = BT_ASCS_UNSUPP_OR_LENGTH_ERR_NUM_ASE;
 		break;
 	default:
 		rsp->num_ase++;
