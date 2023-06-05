@@ -16,6 +16,7 @@
 /**
  * @brief Memory Management
  * @defgroup memory_management Memory Management
+ * @ingroup os_services
  * @{
  * @}
  */

@@ -26,7 +26,7 @@ extern "C" {
 /**
  * @brief Retention API
  * @defgroup retention_api Retention API
- * @ingroup retention
+ * @ingroup os_services
  * @{
  */
 
