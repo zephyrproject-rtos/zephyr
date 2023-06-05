@@ -2526,6 +2526,16 @@ int net_if_resume(struct net_if *iface);
 bool net_if_is_suspended(struct net_if *iface);
 #endif /* CONFIG_NET_POWER_MANAGEMENT */
 
+/**
+ * @brief Check if the network interface supports Wi-Fi.
+ *
+ * @param iface Pointer to network interface
+ *
+ * @return True if interface supports Wi-Fi, False otherwise.
+ */
+bool net_if_is_wifi(struct net_if *iface);
+
+
 /** @cond INTERNAL_HIDDEN */
 struct net_if_api {
 	void (*init)(struct net_if *iface);
