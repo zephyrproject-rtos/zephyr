@@ -1505,6 +1505,8 @@ static void discover_next_instance(struct bt_conn *conn, uint8_t index)
 	struct bt_tbs_server_inst *srv_inst = &srv_insts[conn_index];
 
 	srv_inst->current_inst = tbs_inst_by_index(conn, index);
+	__ASSERT(srv_inst->current_inst != NULL,
+		 "srv_inst->current_inst was NULL for conn %p and index %u", conn, index);
 
 	(void)memset(&srv_inst->discover_params, 0, sizeof(srv_inst->discover_params));
 	srv_inst->discover_params.uuid = NULL;
