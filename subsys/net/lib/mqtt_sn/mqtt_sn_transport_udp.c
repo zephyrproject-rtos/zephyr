@@ -61,7 +61,7 @@ static int tp_udp_init(struct mqtt_sn_transport *transport)
 	out = get_ip_str((struct sockaddr *)&udp->gwaddr, ip, sizeof(ip));
 	if (out != NULL) {
 		LOG_DBG("Connecting to IP %s:%u", out,
-			((struct sockaddr_in *)&udp->gwaddr)->sin_port);
+			ntohs(((struct sockaddr_in *)&udp->gwaddr)->sin_port));
 	}
 #endif
 
