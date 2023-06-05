@@ -17,6 +17,7 @@
 /**
  * @brief Storage APIs
  * @defgroup storage_apis Storage APIs
+ * @ingroup os_services
  * @{
  * @}
  */

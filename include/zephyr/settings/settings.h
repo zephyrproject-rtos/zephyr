@@ -21,6 +21,7 @@ extern "C" {
 
 /**
  * @defgroup file_system_storage File System Storage
+ * @ingroup os_services
  * @{
  * @}
  */

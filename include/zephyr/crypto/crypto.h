@@ -27,6 +27,7 @@
 /**
  * @brief Crypto APIs
  * @defgroup crypto Crypto
+ * @ingroup os_services
  * @{
  */
 
