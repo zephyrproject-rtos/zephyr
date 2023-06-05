@@ -8,7 +8,7 @@
 #define SOCFPGA_SYSTEMMANAGER_H
 
 /* System Manager Register Map */
-#define SOCFPGA_SYSMGR_REG_BASE			0xffd12000
+#define SOCFPGA_SYSMGR_REG_BASE                 DT_REG_ADDR(DT_NODELABEL(sysmgr))
 
 #define SOCFPGA_SYSMGR_SDMMC			0x28
 
