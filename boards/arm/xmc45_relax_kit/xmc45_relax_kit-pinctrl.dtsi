@@ -15,3 +15,15 @@
 	drive-strength = "strong-soft-edge";
 	hwctrl = "disabled";
 };
+
+&pwm_out_p1_0_ccu40_ch3 {
+	drive-strength = "strong-medium-edge";
+	drive-push-pull;
+	hwctrl = "disabled";
+};
+
+&pwm_out_p1_1_ccu40_ch2 {
+	drive-strength = "strong-medium-edge";
+	drive-push-pull;
+	hwctrl = "disabled";
+};

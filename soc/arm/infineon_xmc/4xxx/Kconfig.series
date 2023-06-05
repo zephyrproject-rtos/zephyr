@@ -19,5 +19,6 @@ config SOC_SERIES_XMC_4XXX
 	select HAS_XMCLIB_DMA
 	select HAS_XMCLIB_SPI
 	select HAS_XMCLIB_I2C
+	select HAS_XMCLIB_CCU
 	help
 	  Enable support for XMC 4xxx MCU series
