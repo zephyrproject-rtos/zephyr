@@ -465,6 +465,11 @@ Build system and infrastructure
   :zephyr_file:`scripts/utils/twister_to_list.py` script can be used to
   automatically migrate Twister configuration files.
 
+* When MCUboot image signing is enabled, a warning will now be emitted by cmake
+  if no signing key is set in the project, this warning can be safely ignored
+  if signing is performed manually or outside of zephyr. This warning informs
+  the user that the generated image will not be bootable by MCUboot as-is.
+
 Drivers and Sensors
 *******************
 
@@ -700,6 +705,41 @@ Libraries / Subsystems
     for details.
 
   * MCUmgr has now been marked as a stable Zephyr API.
+
+  * The MCUmgr UDP transport has been refactored to resolve some concurrency
+    issues and fixes a potential issue whereby an application might call the
+    open transport function whilst it is already open, causing an endless log
+    output loop.
+
+  * The MCUmgr fs_mgmt group Kconfig ``Insecure`` text has been replaced with
+    a CMake warning which triggers if fs_mgmt hooks are not enabled, as these
+    hooks can be used to ensure security of file access allowed by MCUmgr
+    clients.
+
+  * Fixed an issue with MCUmgr fs_mgmt file download not checking if the
+    offset parameter was provided.
+
+  * Fixed an issue with MCUmgr fs_mgmt file upload notification hook not
+    setting upload to true.
+
+  * Fixed an issue with MCUmgr img_mgmt image upload ``upgrade`` field wrongly
+    checking if the new image was the same version of the application and
+    allowing it to be uploaded if it was.
+
+  * MCUmgr img_mgmt group will only verify the SHA256 hash provided by the
+    client against the uploaded image (if support is enabled) if a full SHA256
+    hash was provided.
+
+  * MCUmgr Kconfig options have changed from ``select`` to ``depends on`` which
+    means that some additional Kconfig options may now need to be selected by
+    applications. :kconfig:option:`CONFIG_NET_BUF`,
+    :kconfig:option:`CONFIG_ZCBOR` and :kconfig:option:`CONFIG_CRC` are needed
+    to enable MCUmgr support, :kconfig:option:`CONFIG_BASE64` is needed to
+    enable shell/UART/dummy MCUmgr transports,
+    :kconfig:option:`CONFIG_NET_SOCKETS` is needed to enable the UDP MCUmgr
+    transport, :kconfig:option:`CONFIG_FLASH` is needed to enable MCUmgr
+    fs_mgmt, :kconfig:option:`CONFIG_FLASH` and
+    :kconfig:option:`CONFIG_IMG_MANAGER` are needed to enable MCUmgr img_mgmt.
 
 * Retention
 
