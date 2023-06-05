@@ -82,8 +82,8 @@ extern const struct bmm150_bus_io bmm150_bus_io_i2c;
 
 #define BMM150_REG_POWER           0x4B
 #define BMM150_MASK_POWER_CTL      BIT(0)
-#define BMM150_MASK_SOFT_RESET     (BIT(1) | BIT(7))
-#define BMM150_SOFT_RESET          0x81
+#define BMM150_MASK_SOFT_RESET     (BIT(7) | BIT(1))
+#define BMM150_SOFT_RESET          BMM150_MASK_SOFT_RESET
 
 #define BMM150_REG_OPMODE_ODR      0x4C
 #define BMM150_MASK_OPMODE         (BIT(2) | BIT(1))
