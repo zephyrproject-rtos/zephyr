@@ -18,14 +18,8 @@ extern "C" {
 #endif
 
 /**
- * @brief Structured Data
- * @defgroup structured_data Structured Data
- */
-
-
-/**
  * @defgroup json JSON
- * @ingroup structured_data
+ * @ingroup utilities
  * @{
  */
 
