@@ -21,4 +21,9 @@
 @{
 @}
 
+@brief Connectivity
+@defgroup connectivity Connectivity
+@{
+@}
+
 */
