@@ -1162,9 +1162,8 @@ static uint8_t join_calls(struct tbs_service_inst *inst,
 	return BT_TBS_RESULT_CODE_SUCCESS;
 }
 
-static void notify_app(struct bt_conn *conn, uint16_t len,
-		       const union bt_tbs_call_cp_t *ccp, uint8_t status,
-		       uint8_t call_index)
+static void notify_app(struct bt_conn *conn, struct tbs_service_inst *inst, uint16_t len,
+		       const union bt_tbs_call_cp_t *ccp, uint8_t status, uint8_t call_index)
 {
 	if (tbs_cbs == NULL) {
 		return;
@@ -1178,13 +1177,6 @@ static void notify_app(struct bt_conn *conn, uint16_t len,
 		break;
 	case BT_TBS_CALL_OPCODE_TERMINATE:
 		if (tbs_cbs->terminate_call != NULL) {
-			const struct tbs_service_inst *inst = lookup_inst_by_call_index(call_index);
-
-			if (inst == NULL) {
-				LOG_DBG("Could not find instance by call index 0x%02X", call_index);
-				break;
-			}
-
 			tbs_cbs->terminate_call(conn, call_index,
 						inst->terminate_reason.reason);
 		}
@@ -1205,14 +1197,6 @@ static void notify_app(struct bt_conn *conn, uint16_t len,
 		const uint16_t uri_len = len - sizeof(ccp->originate);
 		bool remote_party_alerted = false;
 		struct bt_tbs_call *call;
-		struct tbs_service_inst *inst;
-
-		inst = lookup_inst_by_call_index(call_index);
-
-		if (inst == NULL) {
-			LOG_DBG("Could not find instance by call index 0x%02X", call_index);
-			break;
-		}
 
 		call = lookup_call_in_inst(inst, call_index);
 
@@ -1458,9 +1442,9 @@ static ssize_t write_call_cp(struct bt_conn *conn,
 		notify_ccp(conn, attr, call_index, ccp->opcode, status);
 	} /* else local operation; don't notify */
 
-	if (status == BT_TBS_RESULT_CODE_SUCCESS) {
+	if (inst != NULL && status == BT_TBS_RESULT_CODE_SUCCESS) {
 		notify_calls(inst);
-		notify_app(conn, len, ccp, status, call_index);
+		notify_app(conn, inst, len, ccp, status, call_index);
 	}
 
 	return len;
