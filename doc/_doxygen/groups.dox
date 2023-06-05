@@ -41,6 +41,12 @@
 @brief Utilities
 @defgroup utilities Utilities
 @{
+
+@brief Data Structure APIs
+@defgroup datastructure_apis Data Structure APIs
+@{
+@}
+
 @}
 
 @brief APIs to interact with third-party services or applications
