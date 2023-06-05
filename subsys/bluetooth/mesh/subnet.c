@@ -541,6 +541,19 @@ uint8_t bt_mesh_subnet_node_id_set(uint16_t net_idx,
 		return STATUS_FEAT_NOT_SUPP;
 	}
 
+#if defined(CONFIG_BT_MESH_PRIV_BEACONS)
+	/* Implements binding from section 4.2.46.1 of MshPRTv1.1. When enabling non-private node
+	 * identity state, disable its private counterpart.
+	 */
+	for (int i = 0; i < ARRAY_SIZE(subnets); i++) {
+		if (subnets[i].net_idx != BT_MESH_KEY_UNUSED &&
+		    subnets[i].node_id == BT_MESH_FEATURE_ENABLED &&
+		    subnets[i].priv_beacon_ctx.node_id) {
+			bt_mesh_proxy_identity_stop(&subnets[i]);
+		}
+	}
+#endif
+
 	if (node_id) {
 		bt_mesh_proxy_identity_start(sub, false);
 	} else {
@@ -564,6 +577,9 @@ uint8_t bt_mesh_subnet_node_id_get(uint16_t net_idx,
 	}
 
 	*node_id = sub->node_id;
+#if defined(CONFIG_BT_MESH_PRIV_BEACONS)
+	*node_id &= !sub->priv_beacon_ctx.node_id;
+#endif
 
 	return STATUS_SUCCESS;
 }
@@ -587,6 +603,19 @@ uint8_t bt_mesh_subnet_priv_node_id_set(uint16_t net_idx,
 	    !IS_ENABLED(CONFIG_BT_MESH_PRIV_BEACONS)) {
 		return STATUS_FEAT_NOT_SUPP;
 	}
+
+#if defined(CONFIG_BT_MESH_PRIV_BEACONS)
+	/* Reverse binding from section 4.2.46.1 doesn't allow to set private state if non-private
+	 * state is enabled.
+	 */
+	for (int i = 0; i < ARRAY_SIZE(subnets); i++) {
+		if (subnets[i].net_idx != BT_MESH_KEY_UNUSED &&
+		    subnets[i].node_id == BT_MESH_FEATURE_ENABLED &&
+		    !subnets[i].priv_beacon_ctx.node_id) {
+			return STATUS_CANNOT_SET;
+		}
+	}
+#endif
 
 	if (priv_node_id) {
 		bt_mesh_proxy_identity_start(sub, true);

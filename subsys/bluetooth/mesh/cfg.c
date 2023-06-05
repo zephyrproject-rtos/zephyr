@@ -187,6 +187,13 @@ int bt_mesh_gatt_proxy_set(enum bt_mesh_feat_state gatt_proxy)
 		return err;
 	}
 
+	/* The binding from section 4.2.45.1 disables Private GATT Proxy state when non-private
+	 * state is enabled.
+	 */
+	if (gatt_proxy == BT_MESH_FEATURE_ENABLED) {
+		feature_set(BT_MESH_PRIV_GATT_PROXY, BT_MESH_FEATURE_DISABLED);
+	}
+
 	if ((gatt_proxy == BT_MESH_FEATURE_ENABLED) ||
 	    (gatt_proxy == BT_MESH_FEATURE_DISABLED &&
 	     !bt_mesh_subnet_find(node_id_is_running, NULL))) {
@@ -218,6 +225,13 @@ int bt_mesh_priv_gatt_proxy_set(enum bt_mesh_feat_state priv_gatt_proxy)
 
 	if (!IS_ENABLED(CONFIG_BT_MESH_GATT_PROXY) || !IS_ENABLED(CONFIG_BT_MESH_PRIV_BEACONS)) {
 		return BT_MESH_FEATURE_NOT_SUPPORTED;
+	}
+
+	/* Reverse binding from section 4.2.45.1 doesn't allow to enable private state if
+	 * non-private state is enabled.
+	 */
+	if (bt_mesh_gatt_proxy_get() == BT_MESH_FEATURE_ENABLED) {
+		return BT_MESH_FEATURE_DISABLED;
 	}
 
 	err = feature_set(BT_MESH_PRIV_GATT_PROXY, priv_gatt_proxy);
