@@ -187,6 +187,34 @@
 			compatible = "infineon,xmc4xxx-temp";
 			status = "disabled";
 		};
+
+		pwm_ccu40: ccu40@4000c000 {
+			compatible = "infineon,xmc4xxx-ccu4-pwm";
+			reg = <0x4000c000 0x4000>;
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
+
+		pwm_ccu41: ccu41@40010000 {
+			compatible = "infineon,xmc4xxx-ccu4-pwm";
+			reg = <0x40010000 0x4000>;
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
+
+		pwm_ccu42: ccu42@40014000 {
+			compatible = "infineon,xmc4xxx-ccu4-pwm";
+			reg = <0x40014000 0x4000>;
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
+
+		pwm_ccu43: ccu43@48004000 {
+			compatible = "infineon,xmc4xxx-ccu4-pwm";
+			reg = <0x48004000 0x4000>;
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
 	};
 };
 
