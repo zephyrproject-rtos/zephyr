@@ -34,6 +34,21 @@
 		};
 	};
 
+	i2c0_default: i2c0_default {
+		group1 {
+			psels = <NRF_PSEL(TWIM_SCL, 0, 4)>,
+				<NRF_PSEL(TWIM_SDA, 0, 5)>;
+		};
+	};
+
+	i2c0_sleep: i2c0_sleep {
+		group1 {
+			psels = <NRF_PSEL(TWIM_SCL, 0, 4)>,
+				<NRF_PSEL(TWIM_SDA, 0, 5)>;
+			low-power-enable;
+		};
+	};
+
 	i2c1_default: i2c1_default {
 		group1 {
 			psels = <NRF_PSEL(TWIM_SDA, 1, 2)>,
