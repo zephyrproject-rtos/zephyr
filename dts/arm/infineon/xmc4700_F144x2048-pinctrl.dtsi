@@ -714,4 +714,101 @@
 	/omit-if-no-ref/ i2c_target_sda_p3_5_u2c1: i2c_target_sda_p3_5_u2c1 {
 		pinmux = <XMC4XXX_PINMUX_SET(3, 5, 0x19)>;
 	};
+
+	/omit-if-no-ref/ pwm_out_p0_12_ccu40_ch3: pwm_out_p0_12_ccu40_ch3 {
+		pinmux = <XMC4XXX_PINMUX_SET(0, 12, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p0_13_ccu40_ch2: pwm_out_p0_13_ccu40_ch2 {
+		pinmux = <XMC4XXX_PINMUX_SET(0, 13, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p0_14_ccu40_ch1: pwm_out_p0_14_ccu40_ch1 {
+		pinmux = <XMC4XXX_PINMUX_SET(0, 14, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p0_15_ccu40_ch0: pwm_out_p0_15_ccu40_ch0 {
+		pinmux = <XMC4XXX_PINMUX_SET(0, 15, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p1_0_ccu40_ch3: pwm_out_p1_0_ccu40_ch3 {
+		pinmux = <XMC4XXX_PINMUX_SET(1, 0, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p1_1_ccu40_ch2: pwm_out_p1_1_ccu40_ch2 {
+		pinmux = <XMC4XXX_PINMUX_SET(1, 1, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p1_2_ccu40_ch1: pwm_out_p1_2_ccu40_ch1 {
+		pinmux = <XMC4XXX_PINMUX_SET(1, 2, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p1_3_ccu40_ch0: pwm_out_p1_3_ccu40_ch0 {
+		pinmux = <XMC4XXX_PINMUX_SET(1, 3, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p2_2_ccu41_ch3: pwm_out_p2_2_ccu41_ch3 {
+		pinmux = <XMC4XXX_PINMUX_SET(2, 2, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p2_3_ccu41_ch2: pwm_out_p2_3_ccu41_ch2 {
+		pinmux = <XMC4XXX_PINMUX_SET(2, 3, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p2_4_ccu41_ch1: pwm_out_p2_4_ccu41_ch1 {
+		pinmux = <XMC4XXX_PINMUX_SET(2, 4, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p2_5_ccu41_ch0: pwm_out_p2_5_ccu41_ch0 {
+		pinmux = <XMC4XXX_PINMUX_SET(2, 5, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p3_0_ccu42_ch0: pwm_out_p3_0_ccu42_ch0 {
+		pinmux = <XMC4XXX_PINMUX_SET(3, 0, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p3_3_ccu42_ch3: pwm_out_p3_3_ccu42_ch3 {
+		pinmux = <XMC4XXX_PINMUX_SET(3, 3, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p3_4_ccu42_ch2: pwm_out_p3_4_ccu42_ch2 {
+		pinmux = <XMC4XXX_PINMUX_SET(3, 4, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p3_5_ccu42_ch1: pwm_out_p3_5_ccu42_ch1 {
+		pinmux = <XMC4XXX_PINMUX_SET(3, 5, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p3_6_ccu42_ch0: pwm_out_p3_6_ccu42_ch0 {
+		pinmux = <XMC4XXX_PINMUX_SET(3, 6, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p3_7_ccu41_ch3: pwm_out_p3_7_ccu41_ch3 {
+		pinmux = <XMC4XXX_PINMUX_SET(3, 7, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p3_8_ccu41_ch2: pwm_out_p3_8_ccu41_ch2 {
+		pinmux = <XMC4XXX_PINMUX_SET(3, 8, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p3_9_ccu41_ch1: pwm_out_p3_9_ccu41_ch1 {
+		pinmux = <XMC4XXX_PINMUX_SET(3, 9, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p3_10_ccu41_ch0: pwm_out_p3_10_ccu41_ch0 {
+		pinmux = <XMC4XXX_PINMUX_SET(3, 10, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p3_11_ccu42_ch3: pwm_out_p3_11_ccu42_ch3 {
+		pinmux = <XMC4XXX_PINMUX_SET(3, 11, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p3_12_ccu42_ch2: pwm_out_p3_12_ccu42_ch2 {
+		pinmux = <XMC4XXX_PINMUX_SET(3, 12, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p3_13_ccu42_ch1: pwm_out_p3_13_ccu42_ch1 {
+		pinmux = <XMC4XXX_PINMUX_SET(3, 13, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p4_3_ccu43_ch3: pwm_out_p4_3_ccu43_ch3 {
+		pinmux = <XMC4XXX_PINMUX_SET(4, 3, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p4_4_ccu43_ch2: pwm_out_p4_4_ccu43_ch2 {
+		pinmux = <XMC4XXX_PINMUX_SET(4, 4, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p4_5_ccu43_ch1: pwm_out_p4_5_ccu43_ch1 {
+		pinmux = <XMC4XXX_PINMUX_SET(4, 5, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p4_6_ccu43_ch0: pwm_out_p4_6_ccu43_ch0 {
+		pinmux = <XMC4XXX_PINMUX_SET(4, 6, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p6_2_ccu43_ch3: pwm_out_p6_2_ccu43_ch3 {
+		pinmux = <XMC4XXX_PINMUX_SET(6, 2, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p6_3_ccu43_ch2: pwm_out_p6_3_ccu43_ch2 {
+		pinmux = <XMC4XXX_PINMUX_SET(6, 3, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p6_4_ccu43_ch1: pwm_out_p6_4_ccu43_ch1 {
+		pinmux = <XMC4XXX_PINMUX_SET(6, 4, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p6_5_ccu43_ch0: pwm_out_p6_5_ccu43_ch0 {
+		pinmux = <XMC4XXX_PINMUX_SET(6, 5, 3)>;
+	};
 };

@@ -45,4 +45,9 @@ config HAS_XMCLIB_I2C
 	help
 	  Enable XMCLIB I2C
 
+config HAS_XMCLIB_CCU
+	bool
+	help
+	  Enable XMCLIB CCU4/CCU8
+
 endif # HAS_XMCLIB
