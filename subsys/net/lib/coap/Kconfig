@@ -133,6 +133,18 @@ config COAP_CLIENT_STACK_SIZE
 	int "Stack size of the CoAP client thread"
 	default 1024
 
+config COAP_CLIENT_MAX_INSTANCES
+	int "Maximum number of CoAP clients"
+	default 2
+	help
+	  Maximum number of CoAP clients
+
+config COAP_CLIENT_MAX_REQUESTS
+	int "Maximum number of simultaneous requests per client"
+	default 2
+	help
+	  Maximum number of CoAP requests a single client can handle at a time
+
 endif # COAP_CLIENT
 
 module = COAP
