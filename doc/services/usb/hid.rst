@@ -40,11 +40,6 @@ HID items reference
 
 .. doxygengroup:: usb_hid_items
 
-HID types reference
-*******************
-
-.. doxygengroup:: usb_hid_types
-
 HID Mouse and Keyboard report descriptors
 *****************************************
 

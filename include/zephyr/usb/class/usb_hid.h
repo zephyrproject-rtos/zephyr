@@ -22,13 +22,12 @@ extern "C" {
 /**
  * @brief usb_hid.h API
  * @defgroup usb_hid_class USB HID class API
+ * @ingroup usb
  * @{
- * @}
  */
 
 /**
  * @defgroup usb_hid_device_api HID class USB specific definitions
- * @ingroup usb_hid_class
  * @{
  */
 
@@ -124,6 +123,10 @@ int usb_hid_set_proto_code(const struct device *dev, uint8_t proto_code);
  * @return 0 on success, negative errno code on fail.
  */
 int usb_hid_init(const struct device *dev);
+
+/**
+ * @}
+ */
 
 /**
  * @}
