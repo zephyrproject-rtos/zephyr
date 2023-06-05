@@ -234,6 +234,7 @@ int coredump_cmd(enum coredump_cmd_id query_id, void *arg)
 
 /**
  * @defgroup coredump_apis Coredump APIs
+ * @ingroup os_services
  * @brief Coredump APIs
  * @{
  */
