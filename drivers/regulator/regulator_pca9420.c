@@ -104,6 +104,10 @@ struct regulator_pca9420_common_config {
 	bool enable_modesel_pins;
 };
 
+struct regulator_pca9420_common_data {
+	regulator_dvs_state_t dvs_state;
+};
+
 struct regulator_pca9420_config {
 	struct regulator_common_config common;
 	bool enable_inverted;
@@ -212,6 +216,7 @@ static int regulator_pca9420_set_voltage(const struct device *dev,
 {
 	const struct regulator_pca9420_config *config = dev->config;
 	const struct regulator_pca9420_common_config *cconfig = config->parent->config;
+	struct regulator_pca9420_common_data *cdata = config->parent->data;
 	uint16_t idx;
 	int ret;
 
@@ -224,7 +229,8 @@ static int regulator_pca9420_set_voltage(const struct device *dev,
 
 	idx <<= config->desc->vsel_pos;
 
-	return i2c_reg_update_byte_dt(&cconfig->i2c, config->desc->vsel_reg,
+	return i2c_reg_update_byte_dt(&cconfig->i2c, config->desc->vsel_reg +
+				      PCA9420_MODECFG_OFFSET(cdata->dvs_state),
 				      config->desc->vsel_mask, (uint8_t)idx);
 }
 
@@ -233,10 +239,12 @@ static int regulator_pca9420_get_voltage(const struct device *dev,
 {
 	const struct regulator_pca9420_config *config = dev->config;
 	const struct regulator_pca9420_common_config *cconfig = config->parent->config;
+	struct regulator_pca9420_common_data *cdata = config->parent->data;
 	int ret;
 	uint8_t raw_reg;
 
-	ret = i2c_reg_read_byte_dt(&cconfig->i2c, config->desc->vsel_reg,
+	ret = i2c_reg_read_byte_dt(&cconfig->i2c, config->desc->vsel_reg +
+				   PCA9420_MODECFG_OFFSET(cdata->dvs_state),
 				   &raw_reg);
 	if (ret < 0) {
 		return ret;
@@ -268,10 +276,12 @@ static int regulator_pca9420_enable(const struct device *dev)
 {
 	const struct regulator_pca9420_config *config = dev->config;
 	const struct regulator_pca9420_common_config *cconfig = config->parent->config;
+	struct regulator_pca9420_common_data *cdata = config->parent->data;
 	uint8_t en_val;
 
 	en_val = config->enable_inverted ? 0 : config->desc->enable_val;
-	return i2c_reg_update_byte_dt(&cconfig->i2c, config->desc->enable_reg,
+	return i2c_reg_update_byte_dt(&cconfig->i2c, config->desc->enable_reg
+				      + PCA9420_MODECFG_OFFSET(cdata->dvs_state),
 				      config->desc->enable_mask, en_val);
 }
 
@@ -279,10 +289,12 @@ static int regulator_pca9420_disable(const struct device *dev)
 {
 	const struct regulator_pca9420_config *config = dev->config;
 	const struct regulator_pca9420_common_config *cconfig = config->parent->config;
+	struct regulator_pca9420_common_data *cdata = config->parent->data;
 	uint8_t dis_val;
 
 	dis_val = config->enable_inverted ? config->desc->enable_val : 0;
-	return i2c_reg_update_byte_dt(&cconfig->i2c, config->desc->enable_reg,
+	return i2c_reg_update_byte_dt(&cconfig->i2c, config->desc->enable_reg
+				      + PCA9420_MODECFG_OFFSET(cdata->dvs_state),
 				      config->desc->enable_mask, dis_val);
 }
 
@@ -350,18 +362,34 @@ int regulator_pca9420_dvs_state_set(const struct device *dev,
 				    regulator_dvs_state_t state)
 {
 	const struct regulator_pca9420_common_config *config = dev->config;
+	struct regulator_pca9420_common_data *data = dev->data;
+	int ret;
 
 	if (state >= PCA9420_NUM_MODES) {
 		return -ENOTSUP;
 	}
 
 	if (config->enable_modesel_pins) {
+		/*
+		 * The user cannot set DVS state via this API,
+		 * but they may want to query/set voltages for another mode.
+		 * Return -EPERM to indicate change failed, but change the
+		 * dvs_state variable so the user can access the alternative
+		 * dvs mode settings.
+		 */
+		data->dvs_state = state;
 		return -EPERM;
 	}
 
-	return i2c_reg_update_byte_dt(&config->i2c, PCA9420_TOP_CNTL3,
-				      state << PCA9420_TOP_CNTL3_MODE_I2C_POS,
-				      PCA9420_TOP_CNTL3_MODE_I2C_MASK);
+	ret = i2c_reg_update_byte_dt(&config->i2c, PCA9420_TOP_CNTL3,
+				      PCA9420_TOP_CNTL3_MODE_I2C_MASK,
+				      state << PCA9420_TOP_CNTL3_MODE_I2C_POS);
+	if (ret < 0) {
+		return ret;
+	}
+	/* Record new DVS state */
+	data->dvs_state = state;
+	return 0;
 }
 
 static const struct regulator_parent_driver_api parent_api = {
@@ -439,7 +467,10 @@ static int regulator_pca9420_common_init(const struct device *dev)
 			DT_INST_PROP(inst, nxp_enable_modesel_pins),           \
 	};                                                                     \
                                                                                \
-	DEVICE_DT_INST_DEFINE(inst, regulator_pca9420_common_init, NULL, NULL, \
+	static struct regulator_pca9420_common_data data_##inst;               \
+                                                                               \
+	DEVICE_DT_INST_DEFINE(inst, regulator_pca9420_common_init, NULL,       \
+			      &data_##inst,                                    \
 			      &config_##inst, POST_KERNEL,                     \
 			      CONFIG_REGULATOR_PCA9420_COMMON_INIT_PRIORITY,   \
 			      &parent_api);                                    \
