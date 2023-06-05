@@ -4,7 +4,6 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <stdint.h>
 
 void cntr_init(void);
 uint32_t cntr_start(void);
