@@ -96,5 +96,9 @@ int has_server_init(void)
 		return err;
 	}
 
-	return has_server_preset_init();
+	if (IS_ENABLED(CONFIG_BT_HAS_PRESET_SUPPORT)) {
+		return has_server_preset_init();
+	}
+
+	return 0;
 }
