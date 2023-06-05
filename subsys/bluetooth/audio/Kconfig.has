@@ -41,7 +41,7 @@ config BT_HAS_PRESET_NAME_DYNAMIC
 
 config BT_HAS_PRESET_CONTROL_POINT_NOTIFIABLE
 	bool "Preset Control Point Notifiable support"
-	depends on BT_HAS_PRESET_SUPPORT && BT_EATT
+	depends on BT_EATT
 	help
 	  This option enables support for clients to subscribe for notifications
 	  on the Hearing Aid Preset Control Point characteristic.
