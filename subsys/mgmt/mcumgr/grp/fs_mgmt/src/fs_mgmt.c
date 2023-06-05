@@ -869,9 +869,12 @@ fs_mgmt_supported_hash_checksum(struct smp_streamer *ctxt)
 		.zse = zse,
 	};
 
-	itr_ctx.ok = zcbor_tstr_put_lit(zse, "types");
+	itr_ctx.ok = zcbor_tstr_put_lit(zse, "types") &&
+	    zcbor_map_start_encode(zse, CONFIG_MCUMGR_GRP_FS_CHECKSUM_HASH_SUPPORTED_MAX_TYPES);
 
-	zcbor_map_start_encode(zse, CONFIG_MCUMGR_GRP_FS_CHECKSUM_HASH_SUPPORTED_MAX_TYPES);
+	if (!itr_ctx.ok) {
+		return MGMT_ERR_EMSGSIZE;
+	}
 
 	fs_mgmt_hash_checksum_find_handlers(fs_mgmt_supported_hash_checksum_callback, &itr_ctx);
 
