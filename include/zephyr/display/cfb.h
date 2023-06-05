@@ -21,16 +21,9 @@ extern "C" {
 #endif
 
 /**
- * @brief Display Drivers
- * @addtogroup display_interfaces Display Drivers
- * @{
- * @}
- */
-
-/**
  * @brief Public Monochrome Character Framebuffer API
  * @defgroup monochrome_character_framebuffer Monochrome Character Framebuffer
- * @ingroup display_interfaces
+ * @ingroup utilities
  * @{
  */
 
