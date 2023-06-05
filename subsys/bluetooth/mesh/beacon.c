@@ -227,11 +227,10 @@ static int private_beacon_create(struct bt_mesh_subnet *sub,
 }
 #endif
 
-int bt_mesh_beacon_create(struct bt_mesh_subnet *sub,
-			  struct net_buf_simple *buf)
+int bt_mesh_beacon_create(struct bt_mesh_subnet *sub, struct net_buf_simple *buf, bool priv)
 {
 #if defined(CONFIG_BT_MESH_PRIV_BEACONS)
-	if (bt_mesh_priv_beacon_get() == BT_MESH_FEATURE_ENABLED) {
+	if (priv) {
 		return private_beacon_create(sub, buf);
 	}
 #endif
