@@ -807,7 +807,6 @@ static int cmd_node_id(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	if (argc <= 2) {
-		printk("ANders\n");
 		err = bt_mesh_cfg_cli_node_identity_get(bt_mesh_shell_target_ctx.net_idx,
 						    bt_mesh_shell_target_ctx.dst, net_idx, &status,
 						    &identify);
