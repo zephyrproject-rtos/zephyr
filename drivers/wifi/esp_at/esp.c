@@ -1215,8 +1215,13 @@ static void esp_iface_init(struct net_if *iface)
 	esp_offload_init(iface);
 }
 
+static enum offloaded_net_if_types esp_offload_get_type(void)
+{
+	return L2_OFFLOADED_NET_IF_TYPE_WIFI;
+}
 static const struct net_wifi_mgmt_offload esp_api = {
 	.wifi_iface.iface_api.init = esp_iface_init,
+	.wifi_iface.get_type	   = esp_offload_get_type,
 	.scan			   = esp_mgmt_scan,
 	.connect		   = esp_mgmt_connect,
 	.disconnect		   = esp_mgmt_disconnect,

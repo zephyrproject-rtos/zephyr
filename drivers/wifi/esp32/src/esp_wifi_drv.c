@@ -547,7 +547,9 @@ static void esp32_wifi_init(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
 	struct esp32_wifi_runtime *dev_data = dev->data;
+	struct ethernet_context *eth_ctx = net_if_l2_data(iface);
 
+	eth_ctx->eth_if_type = L2_ETH_IF_TYPE_WIFI;
 	esp32_wifi_iface = iface;
 	dev_data->state = ESP32_STA_STOPPED;
 

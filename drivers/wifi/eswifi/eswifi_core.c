@@ -777,8 +777,14 @@ static int eswifi_init(const struct device *dev)
 	return 0;
 }
 
+static enum offloaded_net_if_types eswifi_get_type(void)
+{
+	return L2_OFFLOADED_NET_IF_TYPE_WIFI;
+}
+
 static const struct net_wifi_mgmt_offload eswifi_offload_api = {
 	.wifi_iface.iface_api.init = eswifi_iface_init,
+	.wifi_iface.get_type	   = eswifi_get_type,
 	.scan			   = eswifi_mgmt_scan,
 	.connect		   = eswifi_mgmt_connect,
 	.disconnect		   = eswifi_mgmt_disconnect,
