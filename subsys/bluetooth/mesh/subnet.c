@@ -652,6 +652,24 @@ uint8_t bt_mesh_subnet_priv_node_id_get(uint16_t net_idx,
 	return STATUS_SUCCESS;
 }
 
+enum bt_mesh_subnets_node_id_state bt_mesh_subnets_node_id_state_get(void)
+{
+	for (int i = 0; i < ARRAY_SIZE(subnets); i++) {
+		bool priv_node_id = false;
+
+#if CONFIG_BT_MESH_PRIV_BEACONS
+		priv_node_id = subnets[i].priv_beacon_ctx.node_id;
+#endif
+
+		if (subnets[i].node_id || priv_node_id) {
+			return priv_node_id ? BT_MESH_SUBNETS_NODE_ID_STATE_ENABLED_PRIVATE :
+					      BT_MESH_SUBNETS_NODE_ID_STATE_ENABLED;
+		}
+	}
+
+	return BT_MESH_SUBNETS_NODE_ID_STATE_NONE;
+}
+
 ssize_t bt_mesh_subnets_get(uint16_t net_idxs[], size_t max, off_t skip)
 {
 	size_t count = 0;

@@ -224,6 +224,24 @@ bt_mesh_subnet_has_new_key(const struct bt_mesh_subnet *sub)
 	return sub->kr_phase != BT_MESH_KR_NORMAL;
 }
 
+/** Kind of currently enabled Node Identity state on one or more subnets. */
+enum bt_mesh_subnets_node_id_state {
+	/* None node identity states are enabled on any subnets. */
+	BT_MESH_SUBNETS_NODE_ID_STATE_NONE,
+	/* Node Identity state is enabled on one or more subnets. */
+	BT_MESH_SUBNETS_NODE_ID_STATE_ENABLED,
+	/* Private Node Identity state is enabled on one or more subnets. */
+	BT_MESH_SUBNETS_NODE_ID_STATE_ENABLED_PRIVATE,
+};
+
+/** @brief Returns what kind of node identity state is currently enabled on one or more subnets.
+ *
+ * Only one kind (either non-private or private) can be enabled at the same time on all subnets.
+ *
+ * @returns Kind of node identity state that is currently enabled.
+ */
+enum bt_mesh_subnets_node_id_state bt_mesh_subnets_node_id_state_get(void);
+
 /** @brief Store the Subnet information in persistent storage.
  *
  * @param net_idx Network index to store.
