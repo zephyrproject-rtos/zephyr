@@ -3176,6 +3176,7 @@ _BindingLoader.add_constructor("!include", _binding_include)
 _DEFAULT_PROP_TYPES: Dict[str, str] = {
     "compatible": "string-array",
     "status": "string",
+    "ranges": "compound",  # NUMS or EMPTY
     "reg": "array",
     "reg-names": "string-array",
     "label": "string",
