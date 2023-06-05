@@ -52,10 +52,6 @@ static inline void ring_buf_internal_reset(struct ring_buf *buf, int32_t value)
 }
 
 /**
- * @brief Data Structure APIs
- * @defgroup datastructure_apis Data Structure APIs
- */
-/**
  * @defgroup ring_buffer_apis Ring Buffer APIs
  * @ingroup datastructure_apis
  * @{
