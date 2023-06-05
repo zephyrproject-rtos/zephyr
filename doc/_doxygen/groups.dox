@@ -3,6 +3,12 @@
 @defgroup os_services Operating System Services
 @brief Operating System Services
 @{
+
+@brief MCUmgr
+@defgroup mcumgr MCUmgr
+@{
+@}
+
 @}
 
 @brief Device Driver APIs
