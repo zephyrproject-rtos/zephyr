@@ -53,6 +53,8 @@ The Relax Kit development board configuration supports the following hardware fe
 +-----------+------------+-----------------------+
 | DMA       | on-chip    | dma                   |
 +-----------+------------+-----------------------+
+| PWM       | on-chip    | pwm                   |
++-----------+------------+-----------------------+
 
 More details about the supported peripherals are available in `XMC4500 TRM`_
 Other hardware features are not currently supported by the Zephyr kernel.
