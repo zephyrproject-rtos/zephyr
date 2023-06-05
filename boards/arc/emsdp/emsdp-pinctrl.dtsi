@@ -133,6 +133,6 @@
 
 	/* INNER_CONNECT, DUMMY MUX */
 	unmuxed_pin: unmuxed_pin {
-		pinmux = <INNER_CONNECT NOT_PINMUX>;
+		pinmux = <UNMUXED_PIN NOT_PINMUX>;
 	};
 };
