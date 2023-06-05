@@ -198,7 +198,7 @@ FUNC_NORETURN static void ec_host_cmd_thread(void *hc_handle, void *arg2, void *
 
 		status = verify_rx(rx);
 		if (status != EC_HOST_CMD_SUCCESS) {
-			send_status_response(hc->backend, tx, status);
+			ec_host_cmd_send_response(status, &args);
 			continue;
 		}
 
@@ -213,7 +213,7 @@ FUNC_NORETURN static void ec_host_cmd_thread(void *hc_handle, void *arg2, void *
 
 		/* No handler in this image for requested command */
 		if (found_handler == NULL) {
-			send_status_response(hc->backend, tx, EC_HOST_CMD_INVALID_COMMAND);
+			ec_host_cmd_send_response(EC_HOST_CMD_INVALID_COMMAND, &args);
 			continue;
 		}
 
@@ -224,7 +224,7 @@ FUNC_NORETURN static void ec_host_cmd_thread(void *hc_handle, void *arg2, void *
 
 		status = validate_handler(found_handler, &args);
 		if (status != EC_HOST_CMD_SUCCESS) {
-			send_status_response(hc->backend, tx, status);
+			ec_host_cmd_send_response(status, &args);
 			continue;
 		}
 
