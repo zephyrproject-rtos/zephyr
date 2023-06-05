@@ -43,4 +43,9 @@
 @{
 @}
 
+@brief APIs to interact with third-party services or applications
+@defgroup third_party Third-party
+@{
+@}
+
 */
