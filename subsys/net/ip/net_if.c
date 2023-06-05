@@ -20,6 +20,7 @@ LOG_MODULE_REGISTER(net_if, CONFIG_NET_IF_LOG_LEVEL);
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/net_mgmt.h>
 #include <zephyr/net/ethernet.h>
+#include <zephyr/net/offloaded_netdev.h>
 #include <zephyr/net/virtual.h>
 #include <zephyr/sys/iterable_sections.h>
 
@@ -4591,6 +4592,18 @@ void net_if_add_tx_timestamp(struct net_pkt *pkt)
 	k_fifo_put(&tx_ts_queue, pkt);
 }
 #endif /* CONFIG_NET_PKT_TIMESTAMP_THREAD */
+
+bool net_if_is_wifi(struct net_if *iface)
+{
+	if (is_iface_offloaded(iface)) {
+		return net_off_is_wifi_offloaded(iface);
+	}
+#if defined(CONFIG_NET_L2_ETHERNET)
+	return net_eth_type_is_wifi(iface);
+#else
+	return false;
+#endif
+}
 
 void net_if_init(void)
 {
