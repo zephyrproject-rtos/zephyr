@@ -59,6 +59,25 @@ int eeprom_target_read(const struct device *dev, uint8_t *eeprom_data,
 	return 0;
 }
 
+#ifdef CONFIG_I2C_EEPROM_TARGET_RUNTIME_ADDR
+int eeprom_target_set_addr(const struct device *dev, uint8_t addr)
+{
+	const struct i2c_eeprom_target_config *cfg = dev->config;
+	struct i2c_eeprom_target_data *data = dev->data;
+	int ret;
+
+	ret = i2c_target_unregister(cfg->bus.bus, &data->config);
+	if (ret) {
+		LOG_DBG("eeprom target failed to unregister");
+		return ret;
+	}
+
+	data->config.address = addr;
+
+	return i2c_target_register(cfg->bus.bus, &data->config);
+}
+#endif /* CONFIG_I2C_EEPROM_TARGET_RUNTIME_ADDR */
+
 static int eeprom_target_write_requested(struct i2c_target_config *config)
 {
 	struct i2c_eeprom_target_data *data = CONTAINER_OF(config,
