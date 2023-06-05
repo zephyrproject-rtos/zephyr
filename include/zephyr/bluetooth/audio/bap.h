@@ -1126,7 +1126,8 @@ struct bt_bap_unicast_client_cb {
 	 * This will be called for each stream in the group that was being QoS
 	 * configured.
 	 *
-	 * @param stream   Stream the operation was performed on.
+	 * @param stream   Stream the operation was performed on. May be NULL if there is no stream
+	 *                 associated with the ASE ID sent by the server.
 	 * @param rsp_code Response code.
 	 * @param reason   Reason code.
 	 */
@@ -1138,7 +1139,8 @@ struct bt_bap_unicast_client_cb {
 	 *
 	 * Called when the enable operation is completed on the server.
 	 *
-	 * @param stream   Stream the operation was performed on.
+	 * @param stream   Stream the operation was performed on. May be NULL if there is no stream
+	 *                 associated with the ASE ID sent by the server.
 	 * @param rsp_code Response code.
 	 * @param reason   Reason code.
 	 */
@@ -1152,7 +1154,8 @@ struct bt_bap_unicast_client_cb {
 	 * only be called if the stream supplied to bt_bap_stream_start() is
 	 * for a @ref BT_AUDIO_DIR_SOURCE endpoint.
 	 *
-	 * @param stream   Stream the operation was performed on.
+	 * @param stream   Stream the operation was performed on. May be NULL if there is no stream
+	 *                 associated with the ASE ID sent by the server.
 	 * @param rsp_code Response code.
 	 * @param reason   Reason code.
 	 */
@@ -1166,7 +1169,8 @@ struct bt_bap_unicast_client_cb {
 	 * only be called if the stream supplied to bt_bap_stream_stop() is
 	 * for a @ref BT_AUDIO_DIR_SOURCE endpoint.
 	 *
-	 * @param stream   Stream the operation was performed on.
+	 * @param stream   Stream the operation was performed on. May be NULL if there is no stream
+	 *                 associated with the ASE ID sent by the server.
 	 * @param rsp_code Response code.
 	 * @param reason   Reason code.
 	 */
@@ -1178,7 +1182,8 @@ struct bt_bap_unicast_client_cb {
 	 *
 	 * Called when the disable operation is completed on the server.
 	 *
-	 * @param stream   Stream the operation was performed on.
+	 * @param stream   Stream the operation was performed on. May be NULL if there is no stream
+	 *                 associated with the ASE ID sent by the server.
 	 * @param rsp_code Response code.
 	 * @param reason   Reason code.
 	 */
@@ -1190,7 +1195,8 @@ struct bt_bap_unicast_client_cb {
 	 *
 	 * Called when the metadata operation is completed on the server.
 	 *
-	 * @param stream   Stream the operation was performed on.
+	 * @param stream   Stream the operation was performed on. May be NULL if there is no stream
+	 *                 associated with the ASE ID sent by the server.
 	 * @param rsp_code Response code.
 	 * @param reason   Reason code.
 	 */
@@ -1202,7 +1208,8 @@ struct bt_bap_unicast_client_cb {
 	 *
 	 * Called when the release operation is completed on the server.
 	 *
-	 * @param stream   Stream the operation was performed on.
+	 * @param stream   Stream the operation was performed on. May be NULL if there is no stream
+	 *                 associated with the ASE ID sent by the server.
 	 * @param rsp_code Response code.
 	 * @param reason   Reason code.
 	 */
