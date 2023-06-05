@@ -2126,7 +2126,7 @@ int bt_tbs_remote_incoming(uint8_t bearer_index, const char *to,
 
 	if (friendly_name) {
 		inst->friendly_name.call_index = call->index;
-		(void)strcpy(inst->friendly_name.uri, friendly_name);
+		utf8_lcpy(inst->friendly_name.uri, friendly_name, sizeof(inst->friendly_name.uri));
 		friend_name_ind_len = strlen(from) + 1;
 
 		bt_gatt_notify_uuid(NULL, BT_UUID_TBS_FRIENDLY_NAME,
@@ -2156,7 +2156,8 @@ int bt_tbs_remote_incoming(uint8_t bearer_index, const char *to,
 
 		if (friendly_name) {
 			gtbs_inst.friendly_name.call_index = call->index;
-			(void)strcpy(gtbs_inst.friendly_name.uri, friendly_name);
+			utf8_lcpy(inst->friendly_name.uri, friendly_name,
+				  sizeof(inst->friendly_name.uri));
 			friend_name_ind_len = strlen(from) + 1;
 
 			bt_gatt_notify_uuid(NULL, BT_UUID_TBS_FRIENDLY_NAME,
