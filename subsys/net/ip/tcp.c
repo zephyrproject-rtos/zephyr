@@ -1762,16 +1762,12 @@ static struct tcp *tcp_conn_new(struct net_pkt *pkt)
 
 	if (IS_ENABLED(CONFIG_NET_IPV6) &&
 	    net_context_get_family(context) == AF_INET6) {
-		if (net_sin6_ptr(&context->local)->sin6_addr) {
-			net_ipaddr_copy(&net_sin6(&local_addr)->sin6_addr,
-				     net_sin6_ptr(&context->local)->sin6_addr);
-		}
+		net_ipaddr_copy(&net_sin6(&local_addr)->sin6_addr,
+				&conn->src.sin6.sin6_addr);
 	} else if (IS_ENABLED(CONFIG_NET_IPV4) &&
 		   net_context_get_family(context) == AF_INET) {
-		if (net_sin_ptr(&context->local)->sin_addr) {
-			net_ipaddr_copy(&net_sin(&local_addr)->sin_addr,
-				      net_sin_ptr(&context->local)->sin_addr);
-		}
+		net_ipaddr_copy(&net_sin(&local_addr)->sin_addr,
+				&conn->src.sin.sin_addr);
 	}
 
 	ret = net_context_bind(context, &local_addr, sizeof(local_addr));
