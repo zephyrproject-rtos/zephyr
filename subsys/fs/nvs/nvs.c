@@ -548,6 +548,7 @@ static int nvs_sector_close(struct nvs_fs *fs)
 	close_ate.id = 0xFFFF;
 	close_ate.len = 0U;
 	close_ate.offset = (uint16_t)((fs->ate_wra + ate_size) & ADDR_OFFS_MASK);
+	close_ate.part = 0xff;
 
 	fs->ate_wra &= ADDR_SECT_MASK;
 	fs->ate_wra += (fs->sector_size - ate_size);
