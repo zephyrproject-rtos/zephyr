@@ -67,6 +67,8 @@ vulnerability and flash wear out.
    the RPL between reboots, will make the device vulnerable to replay attacks
    and not perform the replay protection required by the spec.
 
+.. _bluetooth_mesh_persistent_storage:
+
 Persistent storage
 ******************
 
