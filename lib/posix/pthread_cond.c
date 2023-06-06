@@ -78,87 +78,70 @@ struct k_condvar *to_posix_cond(pthread_cond_t *cvar)
 	*cvar = mark_pthread_obj_initialized(bit);
 	cv = &posix_cond_pool[bit];
 
-	/* Initialize the condition variable here */
-	z_waitq_init(&cv->wait_q);
-
 	return cv;
 }
 
 static int cond_wait(pthread_cond_t *cond, pthread_mutex_t *mu, k_timeout_t timeout)
 {
 	int ret;
-	k_spinlock_key_t key;
-	struct k_condvar *cv;
 	struct k_mutex *m;
+	struct k_condvar *cv;
 
-	key = k_spin_lock(&z_pthread_spinlock);
 	m = to_posix_mutex(mu);
-	if (m == NULL) {
-		k_spin_unlock(&z_pthread_spinlock, key);
-		return EINVAL;
-	}
-
 	cv = to_posix_cond(cond);
-	if (cv == NULL) {
-		k_spin_unlock(&z_pthread_spinlock, key);
+	if (cv == NULL || m == NULL) {
 		return EINVAL;
 	}
 
-	__ASSERT_NO_MSG(m->lock_count == 1U);
-	m->lock_count = 0U;
-	m->owner = NULL;
-	_ready_one_thread(&m->wait_q);
-	ret = z_sched_wait(&z_pthread_spinlock, key, &cv->wait_q, timeout, NULL);
+	ret = k_condvar_wait(cv, m, timeout);
+	if (ret == -EAGAIN) {
+		ret = ETIMEDOUT;
+	} else if (ret < 0) {
+		ret = -ret;
+	} else {
+		__ASSERT_NO_MSG(ret == 0);
+	}
 
-	/* FIXME: this extra lock (and the potential context switch it
-	 * can cause) could be optimized out.  At the point of the
-	 * signal/broadcast, it's possible to detect whether or not we
-	 * will be swapping back to this particular thread and lock it
-	 * (i.e. leave the lock variable unchanged) on our behalf.
-	 * But that requires putting scheduler intelligence into this
-	 * higher level abstraction and is probably not worth it.
-	 */
-	pthread_mutex_lock(mu);
-
-	return ret == -EAGAIN ? ETIMEDOUT : ret;
+	return ret;
 }
 
 int pthread_cond_signal(pthread_cond_t *cvar)
 {
-	k_spinlock_key_t key;
+	int ret;
 	struct k_condvar *cv;
-
-	key = k_spin_lock(&z_pthread_spinlock);
 
 	cv = to_posix_cond(cvar);
 	if (cv == NULL) {
-		k_spin_unlock(&z_pthread_spinlock, key);
 		return EINVAL;
 	}
 
-	k_spin_unlock(&z_pthread_spinlock, key);
+	ret = k_condvar_signal(cv);
+	if (ret < 0) {
+		return -ret;
+	}
 
-	z_sched_wake(&cv->wait_q, 0, NULL);
+	__ASSERT_NO_MSG(ret == 0);
 
 	return 0;
 }
 
 int pthread_cond_broadcast(pthread_cond_t *cvar)
 {
-	k_spinlock_key_t key;
+	int ret;
 	struct k_condvar *cv;
 
-	key = k_spin_lock(&z_pthread_spinlock);
-
-	cv = to_posix_cond(cvar);
+	cv = get_posix_cond(*cvar);
 	if (cv == NULL) {
-		k_spin_unlock(&z_pthread_spinlock, key);
 		return EINVAL;
 	}
 
-	k_spin_unlock(&z_pthread_spinlock, key);
+	ret = k_condvar_broadcast(cv);
+	if (ret < 0) {
+		return -ret;
+	}
 
-	z_sched_wake_all(&cv->wait_q, 0, NULL);
+	__ASSERT_NO_MSG(ret >= 0);
+
 	return 0;
 }
 
@@ -169,51 +152,41 @@ int pthread_cond_wait(pthread_cond_t *cv, pthread_mutex_t *mut)
 
 int pthread_cond_timedwait(pthread_cond_t *cv, pthread_mutex_t *mut, const struct timespec *abstime)
 {
-	int32_t timeout = (int32_t)timespec_to_timeoutms(abstime);
-	return cond_wait(cv, mut, K_MSEC(timeout));
+	return cond_wait(cv, mut, K_MSEC((int32_t)timespec_to_timeoutms(abstime)));
 }
 
 int pthread_cond_init(pthread_cond_t *cvar, const pthread_condattr_t *att)
 {
-	k_spinlock_key_t key;
 	struct k_condvar *cv;
 
 	ARG_UNUSED(att);
 	*cvar = PTHREAD_COND_INITIALIZER;
 
-	key = k_spin_lock(&z_pthread_spinlock);
-
+	/* calls k_condvar_init() */
 	cv = to_posix_cond(cvar);
 	if (cv == NULL) {
-		k_spin_unlock(&z_pthread_spinlock, key);
-		return EINVAL;
+		return ENOMEM;
 	}
-
-	k_spin_unlock(&z_pthread_spinlock, key);
 
 	return 0;
 }
 
 int pthread_cond_destroy(pthread_cond_t *cvar)
 {
-	__unused int rc;
-	k_spinlock_key_t key;
+	int err;
+	size_t bit;
 	struct k_condvar *cv;
-	pthread_cond_t c = *cvar;
-	size_t bit = to_posix_cond_idx(c);
 
-	key = k_spin_lock(&z_pthread_spinlock);
-
-	cv = get_posix_cond(c);
+	cv = get_posix_cond(*cvar);
 	if (cv == NULL) {
-		k_spin_unlock(&z_pthread_spinlock, key);
 		return EINVAL;
 	}
 
-	rc = sys_bitarray_free(&posix_cond_bitarray, 1, bit);
-	__ASSERT(rc == 0, "failed to free bit %zu", bit);
+	bit = posix_cond_to_offset(cv);
+	err = sys_bitarray_free(&posix_cond_bitarray, 1, bit);
+	__ASSERT_NO_MSG(err == 0);
 
-	k_spin_unlock(&z_pthread_spinlock, key);
+	*cvar = -1;
 
 	return 0;
 }
