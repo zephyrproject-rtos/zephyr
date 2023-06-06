@@ -7,6 +7,7 @@
 #include <xtensa/xtensa.dtsi>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/clock/esp32s3_clock.h>
 #include <zephyr/dt-bindings/interrupt-controller/esp32s3-xtensa-intmux.h>
 #include <dt-bindings/pinctrl/esp32s3-pinctrl.h>
@@ -321,6 +322,24 @@
 			clocks = <&rtc ESP32_GDMA_MODULE>;
 			dma-channels = <10>;
 			dma-buf-addr-alignment = <4>;
+			status = "disabled";
+		};
+
+		adc0: adc@60040000 {
+			compatible = "espressif,esp32-adc";
+			reg = <0x60040000 4>;
+			unit = <1>;
+			channel-count = <10>;
+			#io-channel-cells = <1>;
+			status = "disabled";
+		};
+
+		adc1: adc@60040004 {
+			compatible = "espressif,esp32-adc";
+			reg = <0x60040004 4>;
+			unit = <2>;
+			channel-count = <10>;
+			#io-channel-cells = <1>;
 			status = "disabled";
 		};
 
