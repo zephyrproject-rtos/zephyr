@@ -76,4 +76,4 @@ And on OS X via:
 
 For Windows-based systems, please make sure you have a copy of the utility
 available on your system path. See, for example:
-`SRecord for Windows <http://srecord.sourceforge.net/windows.html>`_
+`SRecord for Windows <https://sourceforge.net/projects/srecord/files/srecord-win32>`_
