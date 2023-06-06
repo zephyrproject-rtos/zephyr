@@ -19,6 +19,6 @@ Requirements
 Building and Running
 ********************
 This sample can be found under
-:zephyr_file:`samples/bluetooth/audio_unicast_client` in the Zephyr tree.
+:zephyr_file:`samples/bluetooth/unicast_audio_client` in the Zephyr tree.
 
 See :ref:`bluetooth samples section <bluetooth-samples>` for details.
