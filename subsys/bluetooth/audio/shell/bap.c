@@ -337,7 +337,7 @@ void sdu_sent_cb(struct bt_bap_stream *stream)
 }
 #endif /* CONFIG_LIBLC3 && CONFIG_BT_AUDIO_TX */
 
-static const struct named_lc3_preset *get_named_preset(bool is_unicast, const char *preset_arg)
+const struct named_lc3_preset *bap_get_named_preset(bool is_unicast, const char *preset_arg)
 {
 	if (is_unicast) {
 		for (size_t i = 0U; i < ARRAY_SIZE(lc3_unicast_presets); i++) {
@@ -644,6 +644,71 @@ static int set_metadata(struct bt_codec *codec, const char *meta_str)
 }
 
 #if defined(CONFIG_BT_BAP_UNICAST_CLIENT)
+int bap_ac_create_unicast_group(const struct bap_unicast_ac_param *param,
+				struct unicast_stream *snk_uni_streams[], size_t snk_cnt,
+				struct unicast_stream *src_uni_streams[], size_t src_cnt)
+{
+	struct bt_bap_unicast_group_stream_param snk_group_stream_params[BAP_UNICAST_AC_MAX_SNK] = {
+		0};
+	struct bt_bap_unicast_group_stream_param src_group_stream_params[BAP_UNICAST_AC_MAX_SRC] = {
+		0};
+	struct bt_bap_unicast_group_stream_pair_param pair_params[BAP_UNICAST_AC_MAX_PAIR] = {0};
+	struct bt_bap_unicast_group_param group_param = {0};
+	struct bt_codec_qos *snk_qos[BAP_UNICAST_AC_MAX_SNK];
+	struct bt_codec_qos *src_qos[BAP_UNICAST_AC_MAX_SRC];
+	size_t snk_stream_cnt = 0U;
+	size_t src_stream_cnt = 0U;
+	size_t pair_cnt = 0U;
+
+	for (size_t i = 0U; i < snk_cnt; i++) {
+		snk_qos[i] = &snk_uni_streams[i]->qos;
+	}
+
+	for (size_t i = 0U; i < src_cnt; i++) {
+		src_qos[i] = &src_uni_streams[i]->qos;
+	}
+
+	/* Create Group
+	 *
+	 * First setup the individual stream parameters and then match them in pairs by connection
+	 * and direction
+	 */
+	for (size_t i = 0U; i < snk_cnt; i++) {
+		snk_group_stream_params[i].qos = snk_qos[i];
+		snk_group_stream_params[i].stream = &snk_uni_streams[i]->stream.bap_stream;
+	}
+	for (size_t i = 0U; i < src_cnt; i++) {
+		src_group_stream_params[i].qos = src_qos[i];
+		src_group_stream_params[i].stream = &src_uni_streams[i]->stream.bap_stream;
+	}
+
+	for (size_t i = 0U; i < param->conn_cnt; i++) {
+		for (size_t j = 0; j < MAX(param->snk_cnt[i], param->src_cnt[i]); j++) {
+			if (param->snk_cnt[i] > j) {
+				pair_params[pair_cnt].tx_param =
+					&snk_group_stream_params[snk_stream_cnt++];
+			} else {
+				pair_params[pair_cnt].tx_param = NULL;
+			}
+
+			if (param->src_cnt[i] > j) {
+				pair_params[pair_cnt].rx_param =
+					&src_group_stream_params[src_stream_cnt++];
+			} else {
+				pair_params[pair_cnt].rx_param = NULL;
+			}
+
+			pair_cnt++;
+		}
+	}
+
+	group_param.packing = BT_ISO_PACKING_SEQUENTIAL;
+	group_param.params = pair_params;
+	group_param.params_count = pair_cnt;
+
+	return bt_bap_unicast_group_create(&group_param, &default_unicast_group);
+}
+
 static uint8_t stream_dir(const struct bt_bap_stream *stream)
 {
 	if (stream->conn) {
@@ -993,7 +1058,7 @@ static int cmd_config(const struct shell *sh, size_t argc, char *argv[])
 			if (argc > i) {
 				arg = argv[++i];
 
-				named_preset = get_named_preset(true, arg);
+				named_preset = bap_get_named_preset(true, arg);
 				if (named_preset == NULL) {
 					shell_error(sh, "Unable to parse named_preset %s", arg);
 					return -ENOEXEC;
@@ -1329,7 +1394,7 @@ static int cmd_preset(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	if (argc > 2) {
-		named_preset = get_named_preset(unicast, argv[2]);
+		named_preset = bap_get_named_preset(unicast, argv[2]);
 		if (named_preset == NULL) {
 			shell_error(sh, "Unable to parse named_preset %s", argv[2]);
 			return -ENOEXEC;
@@ -1867,7 +1932,7 @@ static int cmd_create_broadcast(const struct shell *sh, size_t argc,
 				i++;
 				arg = argv[i];
 
-				named_preset = get_named_preset(false, arg);
+				named_preset = bap_get_named_preset(false, arg);
 				if (named_preset == NULL) {
 					shell_error(sh, "Unable to parse named_preset %s",
 						    arg);
