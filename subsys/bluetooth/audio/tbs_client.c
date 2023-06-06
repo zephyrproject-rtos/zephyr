@@ -1509,6 +1509,7 @@ static uint8_t discover_func(struct bt_conn *conn,
 				sub_params->ccc_handle = 0;
 				sub_params->end_handle = current_inst->end_handle;
 				sub_params->notify = notify_handler;
+				atomic_set_bit(sub_params->flags, BT_GATT_SUBSCRIBE_FLAG_VOLATILE);
 				err = bt_gatt_subscribe(conn, sub_params);
 				if (err != 0) {
 					LOG_DBG("Could not subscribe to "
