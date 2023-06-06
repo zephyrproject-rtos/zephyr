@@ -260,15 +260,18 @@ Architectures
 *************
 
 * ARC
+
   * Removed absolute symbols :c:macro:`___callee_saved_t_SIZEOF` and
-  :c:macro:`_K_THREAD_NO_FLOAT_SIZEOF`
+    :c:macro:`_K_THREAD_NO_FLOAT_SIZEOF`
 
 * ARM
+
   * Removed absolute symbols :c:macro:`___basic_sf_t_SIZEOF`,
-  :c:macro:`_K_THREAD_NO_FLOAT_SIZEOF`, :c:macro:`___cpu_context_t_SIZEOF`
-  and :c:macro:`___thread_stack_info_t_SIZEOF`
+    :c:macro:`_K_THREAD_NO_FLOAT_SIZEOF`, :c:macro:`___cpu_context_t_SIZEOF`
+    and :c:macro:`___thread_stack_info_t_SIZEOF`
 
 * ARM64
+
   * Removed absolute symbol :c:macro:`___callee_saved_t_SIZEOF`
   * Enabled FPU and FPU_SHARING for v8r aarch64
   * Fixed the STACK_INIT logic during the reset
@@ -277,6 +280,7 @@ Architectures
   * Added ISBs after SCTLR Modifications
 
 * NIOS2
+
   * Removed absolute symbol :c:macro:`_K_THREAD_NO_FLOAT_SIZEOF`
 
 * POSIX:
@@ -296,6 +300,7 @@ Architectures
   * Enabled single-threading support.
 
 * SPARC
+
   * Removed absolute symbol :c:macro:`_K_THREAD_NO_FLOAT_SIZEOF`
 
 * X86
