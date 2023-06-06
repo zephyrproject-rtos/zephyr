@@ -13,3 +13,5 @@ testing:
   only_tags:
     - kernel
     - userspace
+  ignore_tags:
+    - benchmark
