@@ -58,8 +58,7 @@ struct npm1300_charger_data {
 #define ADC_OFFSET_IBAT_EN   0x24U
 
 /* nPM1300 VBUS register offsets */
-#define VBUS_OFFSET_TASK_UPDATE 0x00U
-#define VBUS_OFFSET_ILIM	0x01U
+#define VBUS_OFFSET_ILIMSTARTUP	0x02U
 #define VBUS_OFFSET_STATUS	0x07U
 
 /* Ibat status */
@@ -198,7 +197,6 @@ int npm1300_charger_sample_fetch(const struct device *dev, enum sensor_channel c
 	const struct npm1300_charger_config *const config = dev->config;
 	struct npm1300_charger_data *data = dev->data;
 	struct adc_results_t results;
-	bool last_vbus;
 	int ret;
 
 	/* Read charge status and error reason */
@@ -236,19 +234,10 @@ int npm1300_charger_sample_fetch(const struct device *dev, enum sensor_channel c
 		return ret;
 	}
 
-	/* Read vbus status, and set SW current limit on new vbus detection */
-	last_vbus = (data->vbus_stat & 1U) != 0U;
+	/* Read vbus status */
 	ret = mfd_npm1300_reg_read(config->mfd, VBUS_BASE, VBUS_OFFSET_STATUS, &data->vbus_stat);
 	if (ret != 0) {
 		return ret;
-	}
-
-	if (!last_vbus && ((data->vbus_stat & 1U) != 0U)) {
-		ret = mfd_npm1300_reg_write(config->mfd, VBUS_BASE, VBUS_OFFSET_TASK_UPDATE, 1U);
-
-		if (ret != 0) {
-			return ret;
-		}
 	}
 
 	return ret;
@@ -329,7 +318,7 @@ int npm1300_charger_init(const struct device *dev)
 	if (ret == -EINVAL) {
 		return ret;
 	}
-	ret = mfd_npm1300_reg_write(config->mfd, VBUS_BASE, VBUS_OFFSET_ILIM, idx);
+	ret = mfd_npm1300_reg_write(config->mfd, VBUS_BASE, VBUS_OFFSET_ILIMSTARTUP, idx);
 	if (ret != 0) {
 		return ret;
 	}
