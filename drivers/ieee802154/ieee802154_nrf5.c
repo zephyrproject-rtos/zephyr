@@ -1019,7 +1019,15 @@ void nrf_802154_receive_failed(nrf_802154_rx_error_t error, uint32_t id)
 #if defined(CONFIG_IEEE802154_CSL_ENDPOINT)
 	if (id == DRX_SLOT_RX) {
 		__ASSERT_NO_MSG(nrf5_data.event_handler);
+#if !defined(CONFIG_IEEE802154_CSL_DEBUG)
+		/* When CSL debug option is used we intentionally avoid notifying the higher layer
+		 * about the finalization of a DRX slot, so that the radio stays in receive state
+		 * for receiving "out of slot" frames.
+		 * As a side effect, regular failure notifications would be reported with the
+		 * incorrect ID.
+		 */
 		nrf5_data.event_handler(dev, IEEE802154_EVENT_SLEEP, NULL);
+#endif
 		if (error == NRF_802154_RX_ERROR_DELAYED_TIMEOUT) {
 			return;
 		}
