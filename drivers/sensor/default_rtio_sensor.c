@@ -22,8 +22,10 @@ static void sensor_iodev_submit(struct rtio_iodev_sqe *iodev_sqe)
 
 	if (api->submit != NULL) {
 		api->submit(dev, iodev_sqe);
-	} else {
+	} else if (!cfg->is_streaming) {
 		sensor_submit_fallback(dev, iodev_sqe);
+	} else {
+		rtio_iodev_sqe_err(iodev_sqe, -ENOTSUP);
 	}
 }
 

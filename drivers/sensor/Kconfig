@@ -36,6 +36,15 @@ config SENSOR_SHELL
 	help
 	  This shell provides access to basic sensor data.
 
+config SENSOR_SHELL_THREAD_STACK_SIZE
+	int "Stack size for the sensor shell data processing thread"
+	depends on SENSOR_SHELL
+	default 1024
+	help
+	  The sensor shell uses a dedicated thread to process data coming from the
+	  sensors in either one-shot or streaming mode. Use this config to control
+	  the size of that thread's stack.
+
 config SENSOR_SHELL_BATTERY
 	bool "Sensor shell 'battery' command"
 	depends on SHELL
