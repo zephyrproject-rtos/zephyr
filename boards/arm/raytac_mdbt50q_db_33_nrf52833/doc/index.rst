@@ -208,6 +208,6 @@ References
 .. _MDBT50Q-DB-33 Specification:
 	https://www.raytac.com/download/index.php?index_id=46
 .. _MDBT50Q-DB-33 Schematic:
-	https://www.raytac.com/upload/catalog_b/da53e5bd46d899e68bd4c323716dfa82.jpg
+	https://www.raytac.com/upload/catalog_b/407c1150fa33511a47e8a2f85d106ff3.jpg
 .. _J-Link Software and documentation pack:
 	https://www.segger.com/jlink-software.html
