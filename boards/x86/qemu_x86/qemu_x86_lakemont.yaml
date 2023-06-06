@@ -11,3 +11,5 @@ testing:
   default: true
   only_tags:
     - kernel
+  ignore_tags:
+    - benchmark
