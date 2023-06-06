@@ -86,6 +86,7 @@
 
 #define TEST_RANGES_PCIE  DT_NODELABEL(test_ranges_pcie)
 #define TEST_RANGES_OTHER DT_NODELABEL(test_ranges_other)
+#define TEST_RANGES_EMPTY DT_NODELABEL(test_ranges_empty)
 
 #define ZEPHYR_USER DT_PATH(zephyr_user)
 
@@ -2208,6 +2209,22 @@ ZTEST(devicetree_api, test_ranges_other)
 #undef CHILD_BUS_ADDR
 #undef PARENT_BUS_ADDR
 #undef LENGTH
+}
+
+ZTEST(devicetree_api, test_ranges_empty)
+{
+	zassert_equal(DT_NODE_HAS_PROP(TEST_RANGES_EMPTY, ranges), 1, "");
+
+	zassert_equal(DT_NUM_RANGES(TEST_RANGES_EMPTY), 0, "");
+
+	zassert_equal(DT_RANGES_HAS_IDX(TEST_RANGES_EMPTY, 0), 0, "");
+	zassert_equal(DT_RANGES_HAS_IDX(TEST_RANGES_EMPTY, 1), 0, "");
+
+#define FAIL(node_id, idx) ztest_test_fail();
+
+	DT_FOREACH_RANGE(TEST_RANGES_EMPTY, FAIL);
+
+#undef FAIL
 }
 
 ZTEST(devicetree_api, test_compat_get_any_status_okay)
