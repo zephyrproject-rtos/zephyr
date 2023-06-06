@@ -25,7 +25,7 @@ SECTION_FUNC(vectors, __start)
 
 	.option norvc;
 
-#if defined(CONFIG_RISCV_MTVEC_VECTORED_MODE)
+#if defined(CONFIG_RISCV_VECTORED_MODE)
 	/*
 	 * Set mtvec (Machine Trap-Vector Base-Address Register)
 	 * to _irq_vector_table (interrupt vector table). Add 1 to base
@@ -39,7 +39,7 @@ SECTION_FUNC(vectors, __start)
 	la t0, _irq_vector_table /* Load address of interrupt vector table */
 	addi t0, t0, 1 /* Enable vectored mode by setting LSB */
 
-/* MTVEC_DIRECT_MODE */
+/* DIRECT_MODE */
 #else
 	/*
 	 * Set mtvec (Machine Trap-Vector Base-Address Register)
