@@ -92,6 +92,12 @@ config IEEE802154_CSL_ENDPOINT
 	  Make this device a CSL (coordinated sampled listening) endpoint with delayed
 	  reception handling and CSL IE injection.
 
+config IEEE802154_CSL_DEBUG
+	bool "Support for CSL debugging"
+	depends on IEEE802154_CSL_ENDPOINT
+	help
+	  Enable support for CSL debugging by avoiding sleep state in favor of receive state.
+
 config IEEE802154_SELECTIVE_TXPOWER
 	bool "Support selective TX power setting"
 	help
