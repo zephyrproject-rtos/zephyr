@@ -72,7 +72,7 @@ documentation`_ for more details.
 The ``storage_partition`` node is defined for use by a file system or other
 nonvolatile storage API.
 
-.. _MCUboot documentation: https://mcuboot.com/
+.. _MCUboot documentation: https://docs.mcuboot.com
 
 Numeric flash area ID is obtained by passing DTS node label to
 :c:macro:`FIXED_PARTITION_ID()`; for example to obtain ID number
