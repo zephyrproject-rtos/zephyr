@@ -147,7 +147,7 @@ Check the :ref:`bluetooth_direction_finding_connectionless_rx` and the :ref:`blu
 Using a USB CDC ACM UART
 ========================
 
-The sample can be configured to use a USB UART instead. See :zephyr_file:`samples/bluetooth/hci_uart/nrf52840dongle_nrf52840.conf` and :zephyr_file:`samples/bluetooth/hci_uart/nrf52840dongle_nrf52840.overlay`.
+The sample can be configured to use a USB UART instead. See :zephyr_file:`samples/bluetooth/hci_uart/boards/nrf52840dongle_nrf52840.conf` and :zephyr_file:`samples/bluetooth/hci_uart/boards/nrf52840dongle_nrf52840.overlay`.
 
 Using the controller with the Zephyr host
 =========================================
