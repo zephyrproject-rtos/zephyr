@@ -26,7 +26,7 @@ LOG_MODULE_REGISTER(bt_tmap, CONFIG_BT_TMAP_LOG_LEVEL);
 #define TMAP_ALL_ROLES		0x3F
 
 static uint16_t tmap_role;
-static struct bt_tmap_cb *cb;
+static const struct bt_tmap_cb *cb;
 static bool tmas_found;
 
 static struct bt_uuid_16 uuid[CONFIG_BT_MAX_CONN] = {BT_UUID_INIT_16(0)};
@@ -167,7 +167,7 @@ int bt_tmap_register(enum bt_tmap_role role)
 	return 0;
 }
 
-int bt_tmap_discover(struct bt_conn *conn, struct bt_tmap_cb *tmap_cb)
+int bt_tmap_discover(struct bt_conn *conn, const struct bt_tmap_cb *tmap_cb)
 {
 	int err = 0;
 	uint8_t conn_id = bt_conn_index(conn);
