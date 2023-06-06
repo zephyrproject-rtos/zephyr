@@ -899,9 +899,13 @@ out:
 	dev->scan_cb = NULL;
 }
 
-static int esp_mgmt_scan(const struct device *dev, scan_result_cb_t cb)
+static int esp_mgmt_scan(const struct device *dev,
+			 struct wifi_scan_params *params,
+			 scan_result_cb_t cb)
 {
 	struct esp_data *data = dev->data;
+
+	ARG_UNUSED(params);
 
 	if (data->scan_cb != NULL) {
 		return -EINPROGRESS;

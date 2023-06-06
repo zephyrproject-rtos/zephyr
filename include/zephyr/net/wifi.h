@@ -264,6 +264,11 @@ static inline const char *wifi_link_mode_txt(enum wifi_link_mode link_mode)
 	}
 }
 
+enum wifi_scan_type {
+	WIFI_SCAN_TYPE_ACTIVE = 0,
+	WIFI_SCAN_TYPE_PASSIVE,
+};
+
 enum wifi_ps {
 	WIFI_PS_DISABLED = 0,
 	WIFI_PS_ENABLED,

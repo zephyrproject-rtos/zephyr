@@ -388,7 +388,9 @@ static int esp32_wifi_connect(const struct device *dev,
 	return 0;
 }
 
-static int esp32_wifi_scan(const struct device *dev, scan_result_cb_t cb)
+static int esp32_wifi_scan(const struct device *dev,
+			   struct wifi_scan_params *params,
+			   scan_result_cb_t cb)
 {
 	struct esp32_wifi_runtime *data = dev->data;
 	int ret = 0;
@@ -401,6 +403,11 @@ static int esp32_wifi_scan(const struct device *dev, scan_result_cb_t cb)
 	data->scan_cb = cb;
 
 	wifi_scan_config_t scan_config = { 0 };
+
+	if (params) {
+		/* The enum values are same, so, no conversion needed */
+		scan_config->scan_type = params->scan_type;
+	}
 
 	ret = esp_wifi_set_mode(ESP32_WIFI_MODE_STA);
 	ret |= esp_wifi_scan_start(&scan_config, false);

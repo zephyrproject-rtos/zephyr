@@ -520,9 +520,13 @@ int eswifi_mgmt_iface_status(const struct device *dev,
 	return 0;
 }
 
-static int eswifi_mgmt_scan(const struct device *dev, scan_result_cb_t cb)
+static int eswifi_mgmt_scan(const struct device *dev,
+			    struct wifi_scan_params *params,
+			    scan_result_cb_t cb)
 {
 	struct eswifi_dev *eswifi = dev->data;
+
+	ARG_UNUSED(params);
 
 	LOG_DBG("");
 
