@@ -273,5 +273,5 @@ from the Zephyr mount log messages:
 If any of the parameters are inconsistent between the Zephyr and Linux
 specification the file system will not mount correctly.
 
-.. _littlefs: https://github.com/ARMmbed/littlefs
-.. _littlefs-FUSE: https://github.com/ARMmbed/littlefs-fuse
+.. _littlefs: https://github.com/littlefs-project/littlefs
+.. _littlefs-FUSE: https://github.com/littlefs-project/littlefs-fuse
