@@ -447,10 +447,29 @@ static int cmd_wifi_disconnect(const struct shell *sh, size_t argc,
 static int cmd_wifi_scan(const struct shell *sh, size_t argc, char *argv[])
 {
 	struct net_if *iface = net_if_get_first_wifi();
+	struct wifi_scan_params params = { 0 };
 
 	context.sh = sh;
 
-	if (net_mgmt(NET_REQUEST_WIFI_SCAN, iface, NULL, 0)) {
+	if (argc > 2) {
+		shell_fprintf(sh, SHELL_WARNING, "Invalid number of arguments\n");
+		return -ENOEXEC;
+	}
+
+	if (argc == 2) {
+		if (!strcmp(argv[1], "passive")) {
+			params.scan_type = WIFI_SCAN_TYPE_PASSIVE;
+		} else if (!strcmp(argv[1], "active")) {
+			params.scan_type = WIFI_SCAN_TYPE_ACTIVE;
+		} else {
+			shell_fprintf(sh, SHELL_WARNING, "Invalid argument\n");
+			shell_fprintf(sh, SHELL_INFO,
+				      "Valid argument : <active> / <passive>\n");
+			return -ENOEXEC;
+		}
+	}
+
+	if (net_mgmt(NET_REQUEST_WIFI_SCAN, iface, &params, sizeof(params))) {
 		shell_fprintf(sh, SHELL_WARNING, "Scan request failed\n");
 
 		return -ENOEXEC;
@@ -1114,7 +1133,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_commands,
 		      cmd_wifi_ps_mode,
 		      2,
 		      0),
-	SHELL_CMD(scan, NULL, "Scan for Wi-Fi APs", cmd_wifi_scan),
+	SHELL_CMD(scan, NULL,
+		  "Scan for Wi-Fi APs\n"
+		  "<scan type (optional): <active> : <passive>>\n",
+		  cmd_wifi_scan),
 	SHELL_CMD(statistics, NULL, "Wi-Fi interface statistics", cmd_wifi_stats),
 	SHELL_CMD(status, NULL, "Status of the Wi-Fi interface", cmd_wifi_status),
 	SHELL_CMD(twt, &wifi_twt_ops, "Manage TWT flows", NULL),

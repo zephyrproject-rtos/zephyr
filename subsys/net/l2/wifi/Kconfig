@@ -38,3 +38,11 @@ config WIFI_MGMT_TWT_CHECK_IP
 	  being unreachable (IP Level) or unable to receive down link traffic
 	  even when it is awake intervals. Rejecting TWT setup till Wi-Fi
 	  interface has a valid IP address might be desirable in most scenarios.
+
+config WIFI_MGMT_FORCED_PASSIVE_SCAN
+	bool "Force Passive scan"
+	help
+	  Force passive scan (typically used to reduce power consumption),
+	  the scan type is always sent as passive.
+	  This doesn't guarantee that passive scan will be used, it depends
+	  on the underlying chip implementation to support and honour scan type.

@@ -976,8 +976,12 @@ static void winc1500_thread(void)
 	}
 }
 
-static int winc1500_mgmt_scan(const struct device *dev, scan_result_cb_t cb)
+static int winc1500_mgmt_scan(const struct device *dev,
+			      struct wifi_scan_params *params,
+			      scan_result_cb_t cb)
 {
+	ARG_UNUSED(params);
+
 	if (w1500_data.scan_cb) {
 		return -EALREADY;
 	}

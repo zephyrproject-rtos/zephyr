@@ -136,10 +136,14 @@ static void simplelink_scan_work_handler(struct k_work *work)
 	}
 }
 
-static int simplelink_mgmt_scan(const struct device *dev, scan_result_cb_t cb)
+static int simplelink_mgmt_scan(const struct device *dev,
+				struct wifi_scan_params *params,
+				scan_result_cb_t cb)
 {
 	int err;
 	int status;
+
+	ARG_UNUSED(params);
 
 	/* Cancel any previous scan processing in progress: */
 	k_work_cancel_delayable(&simplelink_data.work);
