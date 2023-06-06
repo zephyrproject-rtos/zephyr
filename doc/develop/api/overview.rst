@@ -298,7 +298,7 @@ between major releases are available in the :ref:`zephyr_release_notes`.
      - 3.1
 
    * - :ref:`task_wdt_api`
-     - Experimental
+     - Unstable
      - 2.5
 
    * - :ref:`tcpc_api`
