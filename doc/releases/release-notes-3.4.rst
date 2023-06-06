@@ -174,8 +174,8 @@ Changes in this release
   :c:struct:`fs_mgmt_file_access` for the new structure definition.
 
 * Iterable sections API is now available at
-  :zephyr_file:`zephyr/sys/iterable_sections.h`. LD linker snippets are
-  available at :zephyr_file:`zephyr/linker/iterable_sections.h`.
+  :zephyr_file:`include/zephyr/sys/iterable_sections.h`. LD linker snippets are
+  available at :zephyr_file:`include/zephyr/linker/iterable_sections.h`.
 
 * Cache API functions are now fully inlined by compilers.
 
