@@ -505,6 +505,9 @@ Build system and infrastructure
   if signing is performed manually or outside of zephyr. This warning informs
   the user that the generated image will not be bootable by MCUboot as-is.
 
+* Babblesim is now included in the west manifest. Users can fetch it by enabling
+  the ``babblesim`` group with west config.
+
 Drivers and Sensors
 *******************
 
@@ -895,6 +898,9 @@ Documentation
 
 Tests and Samples
 *****************
+
+* Two Babblesim based networking (802.15.4) tests have been added, which are run in Zephyr's CI
+  system. One of them including the OpenThread stack.
 
 * For native_posix and the nrf52_bsim: Many tests have been fixed and enabled.
 
