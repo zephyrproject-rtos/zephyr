@@ -10,8 +10,82 @@
 
 #ifdef CONFIG_PCIE_MSI
 #include <zephyr/drivers/pcie/msi.h>
-#include <zephyr/drivers/pcie/cap.h>
 #endif
+
+#include <zephyr/drivers/pcie/cap.h>
+
+struct pcie_cap_id_to_str {
+	uint32_t id;
+	char *str;
+};
+
+static struct pcie_cap_id_to_str pcie_cap_list[] = {
+	{ PCI_CAP_ID_PM,     "Power Management" },
+	{ PCI_CAP_ID_AGP,    "Accelerated Graphics Port" },
+	{ PCI_CAP_ID_VPD,    "Vital Product Data" },
+	{ PCI_CAP_ID_SLOTID, "Slot Identification" },
+	{ PCI_CAP_ID_MSI,    "Message Signalled Interrupts" },
+	{ PCI_CAP_ID_CHSWP,  "CompactPCI HotSwap" },
+	{ PCI_CAP_ID_PCIX,   "PCI-X" },
+	{ PCI_CAP_ID_HT,     "HyperTransport" },
+	{ PCI_CAP_ID_VNDR,   "Vendor-Specific" },
+	{ PCI_CAP_ID_DBG,    "Debug port" },
+	{ PCI_CAP_ID_CCRC,   "CompactPCI Central Resource Control" },
+	{ PCI_CAP_ID_SHPC,   "PCI Standard Hot-Plug Controller" },
+	{ PCI_CAP_ID_SSVID,  "Bridge subsystem vendor/device ID" },
+	{ PCI_CAP_ID_AGP3,   "AGP 8x" },
+	{ PCI_CAP_ID_SECDEV, "Secure Device" },
+	{ PCI_CAP_ID_EXP,    "PCI Express" },
+	{ PCI_CAP_ID_MSIX,   "MSI-X" },
+	{ PCI_CAP_ID_SATA,   "Serial ATA Data/Index Configuration" },
+	{ PCI_CAP_ID_AF,     "PCI Advanced Features" },
+	{ PCI_CAP_ID_EA,     "PCI Enhanced Allocation" },
+	{ PCI_CAP_ID_FPB,    "Flattening Portal Bridge" },
+	{ PCI_CAP_ID_NULL,   NULL },
+};
+
+static struct pcie_cap_id_to_str pcie_ext_cap_list[] = {
+	{ PCIE_EXT_CAP_ID_ERR,     "Advanced Error Reporting" },
+	{ PCIE_EXT_CAP_ID_VC,      "Virtual Channel when no MFVC" },
+	{ PCIE_EXT_CAP_ID_DSN,     "Device Serial Number" },
+	{ PCIE_EXT_CAP_ID_PWR,     "Power Budgeting" },
+	{ PCIE_EXT_CAP_ID_RCLD,    "Root Complex Link Declaration" },
+	{ PCIE_EXT_CAP_ID_RCILC,   "Root Complex Internal Link Control" },
+	{ PCIE_EXT_CAP_ID_RCEC,    "Root Complex Event Collector Endpoint Association" },
+	{ PCIE_EXT_CAP_ID_MFVC,    "Multi-Function VC Capability" },
+	{ PCIE_EXT_CAP_ID_MFVC_VC, "Virtual Channel used with MFVC" },
+	{ PCIE_EXT_CAP_ID_RCRB,    "Root Complex Register Block" },
+	{ PCIE_EXT_CAP_ID_VNDR,    "Vendor-Specific Extended Capability" },
+	{ PCIE_EXT_CAP_ID_CAC,     "Config Access Correlation - obsolete" },
+	{ PCIE_EXT_CAP_ID_ACS,     "Access Control Services" },
+	{ PCIE_EXT_CAP_ID_ARI,     "Alternate Routing-ID Interpretation" },
+	{ PCIE_EXT_CAP_ID_ATS,     "Address Translation Services" },
+	{ PCIE_EXT_CAP_ID_SRIOV,   "Single Root I/O Virtualization" },
+	{ PCIE_EXT_CAP_ID_MRIOV,   "Multi Root I/O Virtualization" },
+	{ PCIE_EXT_CAP_ID_MCAST,   "Multicast" },
+	{ PCIE_EXT_CAP_ID_PRI,     "Page Request Interface" },
+	{ PCIE_EXT_CAP_ID_AMD_XXX, "Reserved for AMD" },
+	{ PCIE_EXT_CAP_ID_REBAR,   "Resizable BAR" },
+	{ PCIE_EXT_CAP_ID_DPA,     "Dynamic Power Allocation" },
+	{ PCIE_EXT_CAP_ID_TPH,     "TPH Requester" },
+	{ PCIE_EXT_CAP_ID_LTR,     "Latency Tolerance Reporting" },
+	{ PCIE_EXT_CAP_ID_SECPCI,  "Secondary PCIe Capability" },
+	{ PCIE_EXT_CAP_ID_PMUX,    "Protocol Multiplexing" },
+	{ PCIE_EXT_CAP_ID_PASID,   "Process Address Space ID" },
+	{ PCIE_EXT_CAP_ID_DPC,     "Downstream Port Containment" },
+	{ PCIE_EXT_CAP_ID_L1SS,    "L1 PM Substates" },
+	{ PCIE_EXT_CAP_ID_PTM,     "Precision Time Measurement" },
+	{ PCIE_EXT_CAP_ID_DVSEC,   "Designated Vendor-Specific Extended Capability" },
+	{ PCIE_EXT_CAP_ID_DLF,     "Data Link Feature" },
+	{ PCIE_EXT_CAP_ID_PL_16GT, "Physical Layer 16.0 GT/s" },
+	{ PCIE_EXT_CAP_ID_LMR,     "Lane Margining at the Receiver" },
+	{ PCIE_EXT_CAP_ID_HID,     "Hierarchy ID" },
+	{ PCIE_EXT_CAP_ID_NPEM,    "Native PCIe Enclosure Management" },
+	{ PCIE_EXT_CAP_ID_PL_32GT, "Physical Layer 32.0 GT/s" },
+	{ PCIE_EXT_CAP_ID_AP,      "Alternate Protocol" },
+	{ PCIE_EXT_CAP_ID_SFI,     "System Firmware Intermediary" },
+	{ PCIE_EXT_CAP_ID_NULL,    NULL },
+};
 
 static void show_msi(const struct shell *sh, pcie_bdf_t bdf)
 {
@@ -94,6 +168,38 @@ static void show_bars(const struct shell *sh, pcie_bdf_t bdf)
 	}
 }
 
+static void show_capabilities(const struct shell *sh, pcie_bdf_t bdf)
+{
+	struct pcie_cap_id_to_str *cap_id2str;
+	uint32_t base;
+
+	shell_fprintf(sh, SHELL_NORMAL, "    PCI capabilities:\n");
+
+	cap_id2str = pcie_cap_list;
+	while (cap_id2str->str != NULL) {
+		base = pcie_get_cap(bdf, cap_id2str->id);
+		if (base != 0) {
+			shell_fprintf(sh, SHELL_NORMAL,
+				      "        %s\n", cap_id2str->str);
+		}
+
+		cap_id2str++;
+	}
+
+	shell_fprintf(sh, SHELL_NORMAL, "    PCIe capabilities:\n");
+
+	cap_id2str = pcie_ext_cap_list;
+	while (cap_id2str->str != NULL) {
+		base = pcie_get_ext_cap(bdf, cap_id2str->id);
+		if (base != 0) {
+			shell_fprintf(sh, SHELL_NORMAL,
+				      "        %s\n", cap_id2str->str);
+		}
+
+		cap_id2str++;
+	}
+}
+
 static void pcie_dump(const struct shell *sh, pcie_bdf_t bdf)
 {
 	for (int i = 0; i < 16; i++) {
@@ -140,7 +246,7 @@ static pcie_bdf_t get_bdf(char *str)
 	return PCIE_BDF(bus, dev, func);
 }
 
-static void show(const struct shell *sh, pcie_bdf_t bdf, bool dump)
+static void show(const struct shell *sh, pcie_bdf_t bdf, bool details, bool dump)
 {
 	uint32_t data;
 	unsigned int irq;
@@ -181,6 +287,10 @@ static void show(const struct shell *sh, pcie_bdf_t bdf, bool dump)
 		}
 	}
 
+	if (details) {
+		show_capabilities(sh, bdf);
+	}
+
 	if (dump) {
 		pcie_dump(sh, bdf);
 	}
@@ -195,7 +305,7 @@ static bool scan_cb(pcie_bdf_t bdf, pcie_id_t id, void *cb_data)
 {
 	struct scan_cb_data *data = cb_data;
 
-	show(data->sh, bdf, data->dump);
+	show(data->sh, bdf, false, data->dump);
 
 	return true;
 }
@@ -233,7 +343,7 @@ static int cmd_pcie_ls(const struct shell *sh, size_t argc, char **argv)
 
 	/* Show only specified device */
 	if (bdf != PCIE_BDF_NONE) {
-		show(sh, bdf, data.dump);
+		show(sh, bdf, true, data.dump);
 		return 0;
 	}
 
