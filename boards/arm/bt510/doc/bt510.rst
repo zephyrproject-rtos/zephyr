@@ -254,7 +254,7 @@ References
 
 .. _Sentrius BT510 website: https://www.lairdconnect.com/iot-devices/iot-sensors/bt510-bluetooth-5-long-range-ip67-multi-sensor
 .. _TagConnect TC2050 product page: https://www.tag-connect.com/product/tc2050-idc-050
-.. _USB SWD Programmer product page: https://www.lairdconnect.com/usb-swd-programmer/
+.. _USB SWD Programmer product page: https://www.lairdconnect.com/wireless-modules/programming-kits/usb-swd-programming-kit
 .. _MAX3232 datasheet: https://www.ti.com/lit/ds/symlink/max3232.pdf
 .. _Silabs 7055 datasheet: https://www.silabs.com/documents/public/data-sheets/Si7050-1-3-4-5-A20.pdf
 .. _ST Microelectronics LIS2DH datasheet: https://www.st.com/resource/en/datasheet/lis2dh.pdf

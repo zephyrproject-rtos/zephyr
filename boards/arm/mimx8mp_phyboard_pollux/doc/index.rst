@@ -75,7 +75,7 @@ features:
 +-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
-:zephyr_file:`boards/arm/mimx8mp_phyboard_polis/mimx8mm_phyboard_polis_defconfig`.
+:zephyr_file:`boards/arm/mimx8mp_phyboard_pollux/mimx8mp_phyboard_pollux_defconfig`.
 
 It's recommended to disable peripherals used by the M7-Core on the host running
 on the Linux host.
