@@ -122,7 +122,7 @@ extern "C" {
 /** @} */
 
 /**
- * @name SPI MISO lines (if @kconfig{CONFIG_SPI_EXTENDED_MODES} is enabled)
+ * @name SPI MISO lines
  * @{
  *
  * Some controllers support dual, quad or octal MISO lines connected to slaves.
