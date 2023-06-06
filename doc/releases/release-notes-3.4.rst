@@ -284,6 +284,11 @@ Architectures
 * NIOS2
   * Removed absolute symbol :c:macro:`_K_THREAD_NO_FLOAT_SIZEOF`
 
+* POSIX:
+
+  * Added :c:macro:`Z_SPIN_DELAY` to allow to conditionally compile a k_busy_wait() for this arch
+    in tests and samples.
+
 * RISC-V
 
   * Added :kconfig:option:`CONFIG_PMP_NO_TOR`, :kconfig:option:`CONFIG_PMP_NO_NA4`, and
@@ -371,6 +376,17 @@ Boards & SoC Support
 * Made these changes for ARM64 boards:
 
   * FVP revc_2xaemv8a / aemv8r: Added ethernet, PHY and MDIO nodes
+
+* Made these changes to POSIX boards:
+
+   * nrf52_bsim now includes support and models for:
+
+     * 802.15.4 in the RADIO.
+     * EGU.
+     * FLASH (NVMC & UICR).
+     * TEMP.
+     * UART connected to a host ptty.
+     * Many more minor CMSIS API and nRF APIs and drivers.
 
 * Made these changes for RISC-V boards:
 
@@ -530,6 +546,11 @@ Drivers and Sensors
 
   * Atmel SAM/SAM0: Introduce peripheral clock control.
   * Atmel SAM0: Improved ``samd20``/``samd21``/``samr21`` clocking mechanism.
+
+* Console:
+
+  * The native_posix and bsim console drivers have been merged into one generic
+    driver usable by all POSIX arch based boards.
 
 * Counter
 
@@ -868,6 +889,8 @@ Documentation
 
 Tests and Samples
 *****************
+
+* For native_posix and the nrf52_bsim: Many tests have been fixed and enabled.
 
 Issue Related Items
 *******************
