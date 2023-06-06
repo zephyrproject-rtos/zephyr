@@ -77,14 +77,27 @@ Programming and Debugging
 
 Currently the best way to run this sample is by loading it through remoteproc
 from the APU, running Linux, to the RPU, assuming the target board has a compatible
-Linux kernel (Versions 5.15 from Xilinx, 6.0 and 6.2 are supported). Users can make use of
-Xilinx's pre-built Petalinux reference images as a starting point to enable
-remoteproc support, as described here:
+Linux kernel.
+Users can make use of Xilinx's pre-built Petalinux reference images as a starting point to enable
+remoteproc support, it is based around 5.15 Xilinx maintained kernel, as described here:
 
 https://xilinx-wiki.atlassian.net/wiki/spaces/A/pages/1641152513/Kria+K26+SOM#PetaLinux
 
-The above link includes instructions on how to prepare a SD-Card to run this image on
-the target board.
+The other option is to use the reference image from the openAMP project, the link
+below points, betweem the options, to the kv260 target:
+
+https://github.com/OpenAMP/openamp-ci-builds/releases/tag/v2022.12
+
+Select the option ``xilinx-kv260.tar.gz``, and just decompress it to the target rootfs
+partition of user's SD card:
+
+.. code-block:: console
+
+        $ sudo mount /dev/<user-sd> /media/rootfs
+        $ sudo tar -C /media/rootfs -xzf xilinx-kv260.tar.gz
+        $ sudo umount /media/rootfs
+
+Your SD file may be ready for use, just plug it to the slot located in the board.
 
 After getting the Linux image running on the target board, build a Zephyr application,
 such as the hello world sample shown below:
