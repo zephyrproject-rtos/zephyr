@@ -589,9 +589,15 @@ Drivers and Sensors
     with ``nrf_qspi_nor_xip_enable`` which apart from forcing the clock divider
     prevents the driver from deactivating the QSPI peripheral so that the XIP
     operation is actually possible.
-  * flash_simulator: A memory region can now be used as the storage area for the
-    flash simulator. Using the memory region allows the flash simulator to keep
-    its contents over a device reboot.
+  * flash_simulator:
+
+    * A memory region can now be used as the storage area for the
+      flash simulator. Using the memory region allows the flash simulator to keep
+      its contents over a device reboot.
+    * When building in native_posix, command line options have been added to select
+      if the flash should be cleared at boot, the flash content kept in RAM,
+      or the flash content file be deleted on exit.
+
   * spi_flash_at45: Fixed erase procedure to properly handle chips that have
     their initial sector split into two parts (usually marked as 0a and 0b).
 
