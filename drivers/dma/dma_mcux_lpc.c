@@ -259,24 +259,30 @@ static int dma_mcux_lpc_queue_descriptors(struct channel_data *data,
 static int dma_mcux_lpc_configure(const struct device *dev, uint32_t channel,
 				  struct dma_config *config)
 {
-	const struct dma_mcux_lpc_config *dev_config = dev->config;
+	const struct dma_mcux_lpc_config *dev_config;
 	dma_handle_t *p_handle;
 	uint32_t xfer_config = 0U;
 	struct channel_data *data;
-	struct dma_mcux_lpc_dma_data *dma_data = dev->data;
-	struct dma_block_config *block_config = config->head_block;
+	struct dma_mcux_lpc_dma_data *dma_data;
+	struct dma_block_config *block_config;
 	uint32_t virtual_channel;
 	uint32_t total_dma_channels;
 	uint8_t otrig_index;
 	uint8_t src_inc, dst_inc;
 	bool is_periph = true;
-	uint8_t width = MIN(config->source_data_size, config->dest_data_size);
-	uint32_t max_xfer = NXP_LPC_DMA_MAX_XFER * width;
+	uint8_t width;
+	uint32_t max_xfer;
 	uint8_t reload = 0;
 
 	if (NULL == dev || NULL == config) {
 		return -EINVAL;
 	}
+
+	dev_config = dev->config;
+	dma_data = dev->data;
+	block_config = config->head_block;
+	width = MIN(config->source_data_size, config->dest_data_size);
+	max_xfer = NXP_LPC_DMA_MAX_XFER * width;
 
 	/*
 	 * Check if circular mode is requested.
