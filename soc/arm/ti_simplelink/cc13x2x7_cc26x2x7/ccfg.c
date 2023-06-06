@@ -22,5 +22,10 @@
 #define SET_CCFG_BL_CONFIG_BL_ENABLE 0x00
 #endif /* CONFIG_CC13X2_CC26X2_BOOTLOADER_BACKDOOR_ENABLE */
 
+#ifdef CONFIG_CC13X2_CC26X2_XOSC_CAPARRAY_DELTA
+#define SET_CCFG_MODE_CONF_XOSC_CAP_MOD 0x0
+#define SET_CCFG_MODE_CONF_XOSC_CAPARRAY_DELTA CONFIG_CC13X2_CC26X2_XOSC_CAPARRAY_DELTA
+#endif
+
 /* TI recommends setting CCFG values and then including the TI provided ccfg.c */
 #include <startup_files/ccfg.c>
