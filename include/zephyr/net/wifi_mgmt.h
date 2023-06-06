@@ -143,6 +143,16 @@ enum net_event_wifi_cmd {
 
 #define NET_EVENT_WIFI_DISCONNECT_COMPLETE			\
 	(_NET_WIFI_EVENT | NET_EVENT_WIFI_CMD_DISCONNECT_COMPLETE)
+
+struct wifi_scan_params {
+	/* The scan_type is only a hint to the underlying Wi-Fi chip for the
+	 * preferred mode of scan. The actual mode of scan can depend on factors
+	 * such as the Wi-Fi chip implementation support, regulatory domain
+	 * restrictions etc.
+	 */
+	enum wifi_scan_type scan_type;
+};
+
 /* Each result is provided to the net_mgmt_event_callback
  * via its info attribute (see net_mgmt.h)
  */
@@ -321,7 +331,9 @@ struct net_wifi_mgmt_offload {
 	 * result by the driver. The wifi mgmt part will take care of
 	 * raising the necessary event etc...
 	 */
-	int (*scan)(const struct device *dev, scan_result_cb_t cb);
+	int (*scan)(const struct device *dev,
+		    struct wifi_scan_params *params,
+		    scan_result_cb_t cb);
 	int (*connect)(const struct device *dev,
 		       struct wifi_connect_req_params *params);
 	int (*disconnect)(const struct device *dev);
