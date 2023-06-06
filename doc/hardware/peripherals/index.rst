@@ -40,6 +40,7 @@ Peripherals
    mdio.rst
    mipi_dsi.rst
    mbox.rst
+   pcie.rst
    peci.rst
    ps2.rst
    pwm.rst
