@@ -502,4 +502,4 @@ Dynamic pin control
 Other reference material
 ************************
 
-- `Introduction to pin muxing and GPIO control under Linux <https://static.sched.com/hosted_files/osselc21/b6/ELC-2021_Introduction_to_pin_muxing_and_GPIO_control_under_Linux.pdf>`_
+- `Introduction to pin muxing and GPIO control under Linux <https://elinux.org/images/a/a7/ELC-2021_Introduction_to_pin_muxing_and_GPIO_control_under_Linux.pdf>`_
