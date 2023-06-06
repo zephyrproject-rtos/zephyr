@@ -198,7 +198,7 @@ where:
 .. note::
     For more information on how does image/slots function, please refer to
     the MCUBoot documentation
-    https://www.mcuboot.com/documentation/design/#image-slots
+    https://docs.mcuboot.com/design.html#image-slots
     For information on MCUboot image format, please reset to the MCUboot
     documentation https://docs.mcuboot.com/design.html#image-format
 
