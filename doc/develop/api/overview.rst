@@ -62,7 +62,7 @@ between major releases are available in the :ref:`zephyr_release_notes`.
      - 1.7
 
    * - :ref:`dac_api`
-     - Experimental
+     - Unstable
      - 2.3
 
    * - :ref:`dai_api`
