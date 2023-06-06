@@ -556,6 +556,14 @@
 				ranges = <0x0 0x0 0x0 0x3eff0000 0x10000>,
 				         <0x0 0x10000000 0x0 0x10000000 0x2eff0000>;
 			};
+
+			test_ranges_empty: empty@2 {
+				reg = <0 2 1>;
+				#address-cells = <2>;
+				#size-cells = <1>;
+
+				ranges;
+			};
 		};
 
 		device-with-props-0 {
