@@ -49,11 +49,11 @@ static void work_handler(struct k_work *work)
 }
 #endif
 
-static void ready_callback_handler(const struct device *port,
-					   struct gpio_callback *cb,
-					   gpio_port_pins_t pins)
+static void ready_callback_handler(const struct device *port, struct gpio_callback *cb,
+				   gpio_port_pins_t pins)
 {
-	struct bq274xx_data *data = CONTAINER_OF(cb, struct bq274xx_data, ready_callback);
+	struct bq274xx_data *data = CONTAINER_OF(cb, struct bq274xx_data,
+						 ready_callback);
 
 	ARG_UNUSED(port);
 	ARG_UNUSED(pins);
@@ -88,7 +88,7 @@ int bq274xx_trigger_mode_init(const struct device *dev)
 
 	ret = gpio_pin_configure_dt(&config->int_gpios, GPIO_INPUT);
 	if (ret < 0) {
-		LOG_ERR("Unable to configure interrupt pin to input");
+		LOG_ERR("Unable to configure interrupt pin");
 		return ret;
 	}
 	gpio_init_callback(&data->ready_callback,
@@ -120,7 +120,7 @@ int bq274xx_trigger_set(const struct device *dev,
 	}
 
 	if (!device_is_ready(config->int_gpios.port)) {
-		LOG_ERR("GPIO device pointer is not ready to be used");
+		LOG_ERR("GPIO device is not ready");
 		return -ENODEV;
 	}
 
@@ -130,32 +130,34 @@ int bq274xx_trigger_set(const struct device *dev,
 	if (handler) {
 		ret = gpio_pin_configure_dt(&config->int_gpios, GPIO_INPUT);
 		if (ret < 0) {
-			LOG_ERR("Unable to configure interrupt pin to input (%d)", ret);
+			LOG_ERR("Unable to configure interrupt pin: %d", ret);
 			return ret;
 		}
 
-		ret = gpio_add_callback(config->int_gpios.port, &data->ready_callback);
+		ret = gpio_add_callback(config->int_gpios.port,
+					&data->ready_callback);
 		if (ret < 0) {
-			LOG_ERR("Unable to add interrupt callback (%d)", ret);
+			LOG_ERR("Unable to add interrupt callback: %d", ret);
 			return ret;
 		}
 
 		ret = gpio_pin_interrupt_configure_dt(&config->int_gpios,
-							 GPIO_INT_EDGE_TO_ACTIVE);
+						      GPIO_INT_EDGE_TO_ACTIVE);
 		if (ret < 0) {
-			LOG_ERR("Unable to configure interrupt (%d)", ret);
+			LOG_ERR("Unable to configure interrupt: %d", ret);
 			return ret;
 		}
 	} else {
-		ret = gpio_remove_callback(config->int_gpios.port, &data->ready_callback);
+		ret = gpio_remove_callback(config->int_gpios.port,
+					   &data->ready_callback);
 		if (ret < 0) {
-			LOG_ERR("Unable to remove interrupt callback (%d)", ret);
+			LOG_ERR("Unable to remove interrupt callback: %d", ret);
 			return ret;
 		}
 
 		ret = gpio_pin_interrupt_configure_dt(&config->int_gpios, GPIO_INT_DISABLE);
 		if (ret < 0) {
-			LOG_ERR("Unable to configure interrupt (%d)", ret);
+			LOG_ERR("Unable to disable interrupt: %d", ret);
 			return ret;
 		}
 	}
