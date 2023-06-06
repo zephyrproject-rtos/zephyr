@@ -58,7 +58,7 @@ The build system looks for snippets in these places:
 
 #. In directories configured by the :makevar:`SNIPPET_ROOT` CMake variable.
    This always includes the zephyr repository (so
-   :zephyr_file:`zephyr/snippets` is always a source of snippets) and the
+   :zephyr_file:`snippets/` is always a source of snippets) and the
    application source directory (so :file:`<app>/snippets` is also).
 
    Additional directories can be added manually at CMake time.
