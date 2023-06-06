@@ -631,7 +631,7 @@ part of the sysbuild build invocation, but ``west flash`` or ``west debug``
 will not be aware of the application. Instead, you must manually flash and
 debug the application.
 
-.. _MCUboot with Zephyr: https://mcuboot.com/documentation/readme-zephyr/
+.. _MCUboot with Zephyr: https://docs.mcuboot.com/readme-zephyr
 .. _ExternalProject: https://cmake.org/cmake/help/latest/module/ExternalProject.html
 
 Extending sysbuild

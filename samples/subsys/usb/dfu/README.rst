@@ -153,4 +153,4 @@ Note the ``Swap type: perm``.
 
 
 .. _MCUboot GitHub repo: https://github.com/zephyrproject-rtos/mcuboot
-.. _Using MCUboot with Zephyr: https://mcuboot.com/documentation/readme-zephyr/
+.. _Using MCUboot with Zephyr: https://docs.mcuboot.com/readme-zephyr
