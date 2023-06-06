@@ -7,7 +7,13 @@
 #ifndef ZEPHYR_LIB_POSIX_POSIX_INTERNAL_H_
 #define ZEPHYR_LIB_POSIX_POSIX_INTERNAL_H_
 
+#include <stdbool.h>
+#include <stdint.h>
+
 #include <zephyr/kernel.h>
+#include <zephyr/posix/pthread.h>
+#include <zephyr/sys/dlist.h>
+#include <zephyr/sys/slist.h>
 
 /*
  * Bit used to mark a pthread object as initialized. Initialization status is
@@ -15,19 +21,11 @@
  */
 #define PTHREAD_OBJ_MASK_INIT 0x80000000
 
-enum pthread_state {
-	/* The thread is running and detached. */
-	PTHREAD_DETACHED = PTHREAD_CREATE_DETACHED,
-	/* The thread is running and joinable. */
-	PTHREAD_JOINABLE = PTHREAD_CREATE_JOINABLE,
-	/* The thread structure is unallocated and available for reuse. */
-	PTHREAD_TERMINATED,
-	/* A joinable thread exited and its return code is available. */
-	PTHREAD_EXITED
-};
-
 struct posix_thread {
 	struct k_thread thread;
+
+	/* List node for ready_q, run_q, or done_q */
+	sys_dnode_t q_node;
 
 	/* List of keys that thread has called pthread_setspecific() on */
 	sys_slist_t key_list;
@@ -36,14 +34,14 @@ struct posix_thread {
 	void *retval;
 
 	/* Pthread cancellation */
-	int cancel_state;
-	int cancel_pending;
-	struct k_spinlock cancel_lock;
+	uint8_t cancel_state;
+	bool cancel_pending;
 
-	/* Pthread State */
-	enum pthread_state state;
-	pthread_mutex_t state_lock;
-	pthread_cond_t state_cond;
+	/* Detach state */
+	uint8_t detachstate;
+
+	/* Queue ID (internal-only) */
+	uint8_t qid;
 };
 
 typedef struct pthread_key_obj {
@@ -84,7 +82,7 @@ static inline uint32_t mark_pthread_obj_uninitialized(uint32_t obj)
 	return obj & ~PTHREAD_OBJ_MASK_INIT;
 }
 
-struct posix_thread *to_posix_thread(pthread_t pthread);
+struct posix_thread *to_posix_thread(pthread_t pth);
 
 /* get and possibly initialize a posix_mutex */
 struct k_mutex *to_posix_mutex(pthread_mutex_t *mu);
