@@ -28,6 +28,10 @@ struct btp_bap_send_cmd {
 	uint8_t data[0];
 } __packed;
 
+struct btp_bap_send_rp {
+	uint8_t data_len;
+} __packed;
+
 /* BAP events */
 #define BTP_BAP_EV_DISCOVERY_COMPLETED	0x80
 struct btp_bap_discovery_completed_ev {
@@ -43,6 +47,7 @@ struct btp_bap_codec_cap_found_ev {
 	uint16_t frequencies;
 	uint8_t frame_durations;
 	uint32_t octets_per_frame;
+	uint8_t channel_counts;
 } __packed;
 
 #define BTP_BAP_EV_ASE_FOUND	0x82
