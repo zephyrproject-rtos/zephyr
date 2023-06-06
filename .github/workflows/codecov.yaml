@@ -78,6 +78,7 @@ jobs:
 
       - name: ccache stats initial
         run: |
+          mkdir -p /github/home/.cache
           test -d github/home/.cache/ccache && mv github/home/.cache/ccache /github/home/.cache/ccache
           ccache -M 10G -s
 
