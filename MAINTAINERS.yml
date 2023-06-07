@@ -2619,7 +2619,7 @@ USB:
     - subsys/usb/
     - tests/subsys/usb/
     - tests/drivers/udc/
-    - doc/services/usb/
+    - doc/connectivity/usb/
   labels:
     - "area: USB"
 
