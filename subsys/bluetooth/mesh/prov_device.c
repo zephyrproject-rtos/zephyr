@@ -674,7 +674,7 @@ int bt_mesh_prov_enable(bt_mesh_prov_bearer_t bearers)
 	if (CONFIG_BT_MESH_PROV_DEVICE_LOG_LEVEL > 2) {
 		struct bt_uuid_128 uuid = { .uuid = { BT_UUID_TYPE_128 } };
 
-		memcpy(uuid.val, bt_mesh_prov->uuid, 16);
+		sys_memcpy_swap(uuid.val, bt_mesh_prov->uuid, 16);
 		LOG_INF("Device UUID: %s", bt_uuid_str(&uuid.uuid));
 	}
 #endif
