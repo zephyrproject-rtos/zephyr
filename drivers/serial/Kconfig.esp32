@@ -7,7 +7,7 @@ config UART_ESP32
 	depends on DT_HAS_ESPRESSIF_ESP32_UART_ENABLED
 	select SERIAL_HAS_DRIVER
 	select SERIAL_SUPPORT_INTERRUPT
-	select SERIAL_SUPPORT_ASYNC if (SOC_SERIES_ESP32C3 || SOC_SERIES_ESP32S3)
+	select SERIAL_SUPPORT_ASYNC if (SOC_SERIES_ESP32C3 || SOC_SERIES_ESP32C6 || SOC_SERIES_ESP32S3)
 	select GPIO_ESP32
 	help
 	  Enable the ESP32 UART.
@@ -20,7 +20,7 @@ config SERIAL_ESP32_USB
 	select SERIAL_SUPPORT_INTERRUPT
 	help
 	  Enable the built-in USB serial interface present in some Espressif
-	  MCUs like the ESP32-C3.
+	  MCUs like ESP32-Cx.
 
 	  This driver uses the peripheral called USB Serial/JTAG Controller
 	  (USB_SERIAL_JTAG), which acts as a CDC-ACM interface towards the
