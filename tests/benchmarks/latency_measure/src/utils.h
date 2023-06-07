@@ -21,19 +21,30 @@
 
 extern int error_count;
 
-#define PRINT_OVERFLOW_ERROR()			\
-	printk(" Error: tick occurred\n")
+#define TICK_OCCURRENCE_ERROR  "Error: Tick Occurred"
 
 #ifdef CSV_FORMAT_OUTPUT
-#define FORMAT_STR   "%-60s,%s,%s\n"
+#define FORMAT_STR   "%-52s,%s,%s,%s\n"
 #define CYCLE_FORMAT "%8u"
 #define NSEC_FORMAT  "%8u"
 #else
-#define FORMAT_STR   "%-60s:%s , %s\n"
+#define FORMAT_STR   "%-52s:%s , %s : %s\n"
 #define CYCLE_FORMAT "%8u cycles"
 #define NSEC_FORMAT  "%8u ns"
 #endif
 
+/**
+ * @brief Display a line of statistics
+ *
+ * This macro displays the following:
+ *  1. Test description summary
+ *  2. Number of cycles - See Note
+ *  3. Number of nanoseconds - See Note
+ *  4. Additional notes describing the nature of any errors
+ *
+ * Note - If the @a error parameter is not false, then the test has no
+ * numerical information to print and it will instead print "FAILED".
+ */
 #define PRINT_F(summary, cycles, nsec, error, notes)                     \
 	do {                                                             \
 		char cycle_str[32];                                      \
@@ -49,11 +60,15 @@ extern int error_count;
 		printk(FORMAT_STR, summary, cycle_str, nsec_str, notes); \
 	} while (0)
 
-#define PRINT_STATS(summary, value) \
-	PRINT_F(summary, value, (uint32_t)timing_cycles_to_ns(value))
+#define PRINT_STATS(summary, value, error, notes)     \
+	PRINT_F(summary, value,                       \
+		(uint32_t)timing_cycles_to_ns(value), \
+		error, notes)
 
-#define PRINT_STATS_AVG(summary, value, counter)	\
-	PRINT_F(summary, value / counter, (uint32_t)timing_cycles_to_ns_avg(value, counter));
+#define PRINT_STATS_AVG(summary, value, counter, error, notes)      \
+	PRINT_F(summary, value / counter,                           \
+		(uint32_t)timing_cycles_to_ns_avg(value, counter),  \
+		error, notes);
 
 
 #endif
