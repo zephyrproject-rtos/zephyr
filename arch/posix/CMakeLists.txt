@@ -16,8 +16,13 @@ endif()
 
 zephyr_compile_options(
   ${ARCH_FLAG}
-  -include ${ZEPHYR_BASE}/arch/posix/include/posix_cheats.h
   )
+
+if (CONFIG_NATIVE_APPLICATION)
+  zephyr_compile_options(
+    -include ${ZEPHYR_BASE}/arch/posix/include/posix_cheats.h
+  )
+endif()
 
 # @Intent: Obtain compiler specific flags for no freestanding compilation
 zephyr_compile_options($<TARGET_PROPERTY:compiler,hosted>)
