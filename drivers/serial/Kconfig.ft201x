@@ -1,0 +1,11 @@
+# Copyright (c) 2023 Bjarki Arge Andreasen
+# SPDX-License-Identifier: Apache-2.0
+
+config SERIAL_FT201X
+	bool "FTDI FT201X I2C to USB bridge"
+	default y
+	depends on DT_HAS_FTDI_FT201X_ENABLED
+	depends on I2C
+	select SERIAL_HAS_DRIVER
+	help
+	  This option enables the FTDI I2C to USB bridge driver

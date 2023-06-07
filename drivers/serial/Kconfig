@@ -218,4 +218,6 @@ source "drivers/serial/Kconfig.hostlink"
 
 source "drivers/serial/Kconfig.emul"
 
+source "drivers/serial/Kconfig.ft201x"
+
 endif # SERIAL

@@ -1,0 +1,21 @@
+# Copyright (c) 2023 Bjarki Arge Andreasen
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  FTDI FT201X I2C to USB bridge
+
+  example:
+
+    &i2c0 {
+      ft201x@22 {
+        reg = <0x22>;
+        compatible = "ftdi,ft201x";
+        status = "okay";
+      };
+    };
+
+compatible: "ftdi,ft201x"
+
+include:
+  - uart-controller.yaml
+  - i2c-device.yaml

@@ -59,6 +59,7 @@ zephyr_library_sources_ifdef(CONFIG_UART_CDNS uart_cdns.c)
 zephyr_library_sources_ifdef(CONFIG_UART_OPENTITAN uart_opentitan.c)
 zephyr_library_sources_ifdef(CONFIG_UART_HOSTLINK uart_hostlink.c)
 zephyr_library_sources_ifdef(CONFIG_UART_EMUL uart_emul.c)
+zephyr_library_sources_ifdef(CONFIG_SERIAL_FT201X serial_ft201x.c)
 
 zephyr_library_sources_ifdef(CONFIG_USERSPACE   uart_handlers.c)
 
