@@ -2239,5 +2239,38 @@ int lwm2m_engine_enable_cache(char const *resource_path, struct lwm2m_time_serie
 int lwm2m_enable_cache(const struct lwm2m_obj_path *path, struct lwm2m_time_series_elem *data_cache,
 		       size_t cache_len);
 
+/**
+ * @brief Security modes as defined in LwM2M Security object.
+ */
+enum lwm2m_security_mode_e {
+	LWM2M_SECURITY_PSK = 0,      /**< Pre-Shared Key mode */
+	LWM2M_SECURITY_RAW_PK = 1,   /**< Raw Public Key mode */
+	LWM2M_SECURITY_CERT = 2,     /**< Certificate mode */
+	LWM2M_SECURITY_NOSEC = 3,    /**< NoSec mode */
+	LWM2M_SECURITY_CERT_EST = 4, /**< Certificate mode with EST */
+};
+
+/**
+ * @brief Read security mode from selected security object instance.
+ *
+ * This data is only valid if RD client is running.
+ *
+ * @param ctx Pointer to client context.
+ * @return int Positive values are @ref lwm2m_security_mode_e, negative error codes otherwise.
+ */
+int lwm2m_security_mode(struct lwm2m_ctx *ctx);
+
+/**
+ * @brief Set default socket options for DTLS connections.
+ *
+ * Engine calls this when @ref lwm2m_ctx::set_socketoptions is not overwritten.
+ * You may call this from overwritten callback to set extra options after or
+ * before defaults.
+ *
+ * @param ctx Client context
+ * @return 0 for success or negative in case of error.
+ */
+int lwm2m_set_default_sockopt(struct lwm2m_ctx *ctx);
+
 #endif	/* ZEPHYR_INCLUDE_NET_LWM2M_H_ */
 /**@}  */
