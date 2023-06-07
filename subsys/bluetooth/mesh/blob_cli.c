@@ -1550,9 +1550,9 @@ int bt_mesh_blob_cli_send(struct bt_mesh_blob_cli *cli,
 		return -ENODEV;
 	}
 
-	LOG_DBG("\n\tblock size: %u\n\tchunk size: %u\n"
+	LOG_DBG("\n\tblock size log: %u\n\tchunk size: %u\n"
 		"\tblob size: %u\n\tmode: %x",
-		(1 << cli->xfer->block_size_log), cli->xfer->chunk_size,
+		cli->xfer->block_size_log, cli->xfer->chunk_size,
 		cli->xfer->size, cli->xfer->mode);
 
 	return xfer_start(cli);
