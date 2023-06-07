@@ -309,6 +309,15 @@ static int littlefs_mount(struct fs_mount_t *mp)
 #endif /* CONFIG_APP_LITTLEFS_STORAGE_FLASH */
 
 #ifdef CONFIG_APP_LITTLEFS_STORAGE_BLK_SDMMC
+
+#if defined(CONFIG_DISK_DRIVER_SDMMC)
+#define DISK_NAME CONFIG_SDMMC_VOLUME_NAME
+#elif IS_ENABLED(CONFIG_DISK_DRIVER_MMC)
+#define DISK_NAME CONFIG_MMC_VOLUME_NAME
+#else
+#error "No disk device defined, is your board supported?"
+#endif
+
 struct fs_littlefs lfsfs;
 static struct fs_mount_t __mp = {
 	.type = FS_LITTLEFS,
@@ -319,8 +328,8 @@ struct fs_mount_t *mp = &__mp;
 
 static int littlefs_mount(struct fs_mount_t *mp)
 {
-	static const char *disk_mount_pt = "/"CONFIG_SDMMC_VOLUME_NAME":";
-	static const char *disk_pdrv = CONFIG_SDMMC_VOLUME_NAME;
+	static const char *disk_mount_pt = "/"DISK_NAME":";
+	static const char *disk_pdrv = DISK_NAME;
 
 	mp->storage_dev = (void *)disk_pdrv;
 	mp->mnt_point = disk_mount_pt;
