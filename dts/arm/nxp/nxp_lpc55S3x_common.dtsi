@@ -9,6 +9,7 @@
 #include <zephyr/dt-bindings/clock/mcux_lpc_syscon_clock.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/inputmux/inputmux_trigger_ports.h>
 #include <mem.h>
 
 / {
@@ -142,6 +143,30 @@
 		port = <2>;
 	};
 
+	dma0: dma-controller@82000 {
+		compatible = "nxp,lpc-dma";
+		reg = <0x82000 0x1000>;
+		interrupts = <1 0>;
+		dma-channels = <52>;
+		nxp,dma-num-of-otrigs = <4>;
+		nxp,dma-otrig-base-address = <LPC55S36_DMA0_OTRIG_BASE>;
+		nxp,dma-itrig-base-address = <LPC55S36_DMA0_ITRIG_BASE>;
+		status = "disabled";
+		#dma-cells = <1>;
+	};
+
+	dma1: dma-controller@a7000 {
+		compatible = "nxp,lpc-dma";
+		reg = <0xa7000 0x1000>;
+		interrupts = <58 0>;
+		dma-channels = <16>;
+		nxp,dma-num-of-otrigs = <4>;
+		nxp,dma-otrig-base-address = <LPC55S36_DMA1_OTRIG_BASE>;
+		nxp,dma-itrig-base-address = <LPC55S36_DMA1_ITRIG_BASE>;
+		status = "disabled";
+		#dma-cells = <1>;
+	};
+
 	pint: pint@4000 {
 		compatible = "nxp,pint";
 		reg = <0x4000 0x1000>;
@@ -159,6 +184,8 @@
 		reg = <0x86000 0x1000>;
 		interrupts = <14 0>;
 		clocks = <&syscon MCUX_FLEXCOMM0_CLK>;
+		dmas = <&dma0 4>, <&dma0 5>;
+		dma-names = "rx", "tx";
 		status = "disabled";
 	};
 
@@ -167,6 +194,8 @@
 		reg = <0x87000 0x1000>;
 		interrupts = <15 0>;
 		clocks = <&syscon MCUX_FLEXCOMM1_CLK>;
+		dmas = <&dma0 6>, <&dma0 7>;
+		dma-names = "rx", "tx";
 		status = "disabled";
 	};
 
@@ -175,6 +204,8 @@
 		reg = <0x88000 0x1000>;
 		interrupts = <16 0>;
 		clocks = <&syscon MCUX_FLEXCOMM2_CLK>;
+		dmas = <&dma0 10>, <&dma0 11>;
+		dma-names = "rx", "tx";
 		status = "disabled";
 	};
 
@@ -183,6 +214,8 @@
 		reg = <0x89000 0x1000>;
 		interrupts = <17 0>;
 		clocks = <&syscon MCUX_FLEXCOMM3_CLK>;
+		dmas = <&dma0 8>, <&dma0 9>;
+		dma-names = "rx", "tx";
 		status = "disabled";
 	};
 
@@ -191,6 +224,8 @@
 		reg = <0x8a000 0x1000>;
 		interrupts = <18 0>;
 		clocks = <&syscon MCUX_FLEXCOMM4_CLK>;
+		dmas = <&dma0 12>, <&dma0 13>;
+		dma-names = "rx", "tx";
 		status = "disabled";
 	};
 
@@ -199,6 +234,8 @@
 		reg = <0x96000 0x1000>;
 		interrupts = <19 0>;
 		clocks = <&syscon MCUX_FLEXCOMM5_CLK>;
+		dmas = <&dma0 14>, <&dma0 15>;
+		dma-names = "rx", "tx";
 		status = "disabled";
 	};
 
@@ -207,6 +244,8 @@
 		reg = <0x97000 0x1000>;
 		interrupts = <20 0>;
 		clocks = <&syscon MCUX_FLEXCOMM6_CLK>;
+		dmas = <&dma0 16>, <&dma0 17>;
+		dma-names = "rx", "tx";
 		status = "disabled";
 	};
 
@@ -215,6 +254,8 @@
 		reg = <0x98000 0x1000>;
 		interrupts = <21 0>;
 		clocks = <&syscon MCUX_FLEXCOMM7_CLK>;
+		dmas = <&dma0 18>, <&dma0 19>;
+		dma-names = "rx", "tx";
 		status = "disabled";
 	};
 
@@ -223,6 +264,8 @@
 		reg = <0x9f000 0x1000>;
 		interrupts = <59 0>;
 		clocks = <&syscon MCUX_HS_SPI_CLK>;
+		dmas = <&dma0 2>, <&dma0 3>;
+		dma-names = "rx", "tx";
 		status = "disabled";
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -247,6 +290,8 @@
 		offset-value-a = <10>;
 		offset-value-b = <10>;
 		#io-channel-cells = <1>;
+		dmas = <&dma0 21>, <&dma0 22>;
+		dma-names = "adc0-dma0", "adc0-dma1";
 	};
 
 	can0: can@4009d000 {
