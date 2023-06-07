@@ -316,7 +316,6 @@ config LWM2M_SECURITY_INSTANCE_COUNT
 config LWM2M_SECURITY_KEY_SIZE
 	int "Buffer size of the security key resources"
 	default 16
-	range 16 256
 	help
 	  This setting establishes the size of the key (pre-shared / public)
 	  resources in the security object instances.
