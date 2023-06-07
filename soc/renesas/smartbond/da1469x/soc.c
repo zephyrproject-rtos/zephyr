@@ -149,6 +149,11 @@ static int renesas_da1469x_init(void)
 	/* PDC should take care of PD_SYS */
 	CRG_TOP->PMU_CTRL_REG &= ~CRG_TOP_PMU_CTRL_REG_SYS_SLEEP_Msk;
 
+#if defined(CONFIG_PM)
+	/* Enable cache retainability */
+	CRG_TOP->PMU_CTRL_REG |= CRG_TOP_PMU_CTRL_REG_RETAIN_CACHE_Msk;
+#endif
+
 	/*
 	 *	Due to crosstalk issues any power rail can potentially
 	 *	issue a fake event. This is typically observed upon
