@@ -55,6 +55,7 @@ SECTION_DATA_PROLOGUE(_DATA_SECTION_NAME,,)
 #include <snippets-ram-sections.ld>
 
 #include <zephyr/arch/posix/native_tasks.ld>
+#include <zephyr/arch/posix/native_sim_interface.ld>
 
 /* Located in generated directory. This file is populated by the
  * zephyr_linker_sources() Cmake function.
