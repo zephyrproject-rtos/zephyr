@@ -441,6 +441,7 @@
 /drivers/disk/sdmmc_stm32.c               @anthonybrandon
 /drivers/disk/sdmmc_dw.c                  @ngboonkhai
 /drivers/disk/mmc_*ll.*                   @ngboonkhai
+/drivers/disk/usb2_host_disk.c            @nareshrkumar
 /drivers/net/                             @rlubos @tbursztyka
 /drivers/ptp_clock/                       @tbursztyka
 /drivers/spi/                             @tbursztyka
@@ -472,6 +473,8 @@
 /drivers/timer/*hpet*                     @dcpleung
 /drivers/usb/                             @jfischer-no
 /drivers/usb/device/usb_dc_stm32.c        @ydamigos @loicpoulain
+/drivers/usb/uhc/Kconfig.dwc              @nareshrkumar
+/drivers/usb/uhc/uhc_dwc_hs.c             @nareshrkumar
 /drivers/usb_c/                           @sambhurst
 /drivers/video/                           @loicpoulain
 /drivers/i2c/*b91*                        @andy-liu-telink
@@ -594,6 +597,7 @@
 /dts/bindings/sip_svc/                    @maheshraotm
 /dts/bindings/cpu/intel,niosv.yaml        @sweeaun
 /dts/bindings/reset/intel,socfpga-reset.yaml    @nbalabak
+/dts/bindings/usb/snps,designware_usbh.yaml      @nareshrkumar
 /dts/common/                              @galak
 /include/                                 @nashif @carlescufi @galak @MaureenHelm
 /include/zephyr/drivers/*/*litex*                @mateusz-holenko @kgugala @pgielda
@@ -698,6 +702,7 @@
 /include/zephyr/sys/kobject.h                    @dcpleung @nashif
 /include/zephyr/toolchain.h                      @dcpleung @andyross @nashif
 /include/zephyr/toolchain/                       @dcpleung @nashif @andyross
+/include/zephyr/usb/class/usbh_msc.h             @nareshrkumar
 /include/zephyr/zephyr.h                         @dcpleung @nashif @andyross
 /kernel/                                  @dcpleung @nashif @andyross
 /lib/cpp/                                 @stephanosio
@@ -865,6 +870,7 @@ scripts/build/gen_image_info.py           @tejlmand
 /subsys/testsuite/ztest/*/ztress*         @nordic-krch
 /subsys/timing/                           @nashif @dcpleung
 /subsys/usb/                              @jfischer-no
+/subsys/usb/host/class/                   @nareshrkumar
 /subsys/usb/usb_c/                        @sambhurst
 /tests/                                   @nashif
 /tests/arch/arm/                          @ioannisg @stephanosio
