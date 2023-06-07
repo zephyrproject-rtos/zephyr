@@ -65,6 +65,8 @@ static struct bt_conn_auth_info_cb auth_info_cb;
 
 #define KEY_STR_LEN 33
 
+#define ADV_DATA_DELIMITER ", "
+
 /*
  * Based on the maximum number of parameters for HCI_LE_Generate_DHKey
  * See BT Core Spec V5.2 Vol. 4, Part E, section 7.8.37
@@ -193,64 +195,133 @@ static bool data_cb(struct bt_data *data, void *user_data)
 	}
 }
 
-static void print_data_set(uint8_t type, uint8_t set_value_len,
+static void print_data_hex(const uint8_t *data, uint8_t len, enum shell_vt100_color color)
+{
+	if (len == 0)
+		return;
+
+	shell_fprintf(ctx_shell, color, "0x");
+	/* Reverse the byte order when printing as advertising data is LE
+	 * and the MSB should be first in the printed output.
+	 */
+	for (int16_t i = len - 1; i >= 0; i--) {
+		shell_fprintf(ctx_shell, color, "%02x", data[i]);
+	}
+}
+
+static void print_data_set(uint8_t set_value_len,
 			   const uint8_t *scan_data, uint8_t scan_data_len)
 {
-	uint8_t min_value_len = MIN(set_value_len, scan_data_len);
+	uint8_t idx = 0;
 
-	shell_fprintf(ctx_shell, SHELL_INFO, "%*sType 0x%02x: ",
-		      strlen(scan_response_label), "",
-		      type);
-	for (uint8_t i = 0U; i < (scan_data_len / min_value_len); i++) {
-		if (i > 0L) {
-			shell_fprintf(ctx_shell, SHELL_INFO, ", ");
-		}
-
-		shell_fprintf(ctx_shell, SHELL_INFO, "0x");
-		for (uint8_t j = 0U; j < min_value_len; j++) {
-			shell_fprintf(ctx_shell, SHELL_INFO, "%02x",
-				      scan_data[i * min_value_len + j]);
-		}
+	if (scan_data_len == 0 || set_value_len > scan_data_len) {
+		return;
 	}
 
-	shell_fprintf(ctx_shell, SHELL_INFO, "\n");
+	do {
+		if (idx > 0) {
+			shell_fprintf(ctx_shell, SHELL_INFO, ADV_DATA_DELIMITER);
+		}
+
+		print_data_hex(&scan_data[idx], set_value_len, SHELL_INFO);
+		idx += set_value_len;
+	} while (idx + set_value_len <= scan_data_len);
+
+	if (idx < scan_data_len) {
+		shell_fprintf(ctx_shell, SHELL_WARNING, " Excess data: ");
+		print_data_hex(&scan_data[idx], scan_data_len - idx, SHELL_WARNING);
+	}
 }
 
 static bool data_verbose_cb(struct bt_data *data, void *user_data)
 {
+	shell_fprintf(ctx_shell, SHELL_INFO, "%*sType 0x%02x: ",
+		      strlen(scan_response_label), "", data->type);
+
 	switch (data->type) {
 	case BT_DATA_UUID16_SOME:
 	case BT_DATA_UUID16_ALL:
 	case BT_DATA_SOLICIT16:
+		print_data_set(BT_UUID_SIZE_16, data->data, data->data_len);
+		break;
 	case BT_DATA_SVC_DATA16:
-		print_data_set(data->type, 2, data->data, data->data_len);
+		/* Data starts with a UUID16 (2 bytes),
+		 * the rest is unknown and printed as single bytes
+		 */
+		if (data->data_len < BT_UUID_SIZE_16) {
+			shell_fprintf(ctx_shell, SHELL_WARNING,
+				      "BT_DATA_SVC_DATA16 data length too short (%u)",
+				      data->data_len);
+			break;
+		}
+		print_data_set(BT_UUID_SIZE_16, data->data, BT_UUID_SIZE_16);
+		if (data->data_len > BT_UUID_SIZE_16) {
+			shell_fprintf(ctx_shell, SHELL_INFO, ADV_DATA_DELIMITER);
+			print_data_set(1, data->data + BT_UUID_SIZE_16,
+				       data->data_len - BT_UUID_SIZE_16);
+		}
 		break;
 	case BT_DATA_UUID32_SOME:
 	case BT_DATA_UUID32_ALL:
+		print_data_set(BT_UUID_SIZE_32, data->data, data->data_len);
+		break;
 	case BT_DATA_SVC_DATA32:
-		print_data_set(data->type, 4, data->data, data->data_len);
+		/* Data starts with a UUID32 (4 bytes),
+		 * the rest is unknown and printed as single bytes
+		 */
+		if (data->data_len < BT_UUID_SIZE_32) {
+			shell_fprintf(ctx_shell, SHELL_WARNING,
+				      "BT_DATA_SVC_DATA32 data length too short (%u)",
+				      data->data_len);
+			break;
+		}
+		print_data_set(BT_UUID_SIZE_32, data->data, BT_UUID_SIZE_32);
+		if (data->data_len > BT_UUID_SIZE_32) {
+			shell_fprintf(ctx_shell, SHELL_INFO, ADV_DATA_DELIMITER);
+			print_data_set(1, data->data + BT_UUID_SIZE_32,
+				       data->data_len - BT_UUID_SIZE_32);
+		}
 		break;
 	case BT_DATA_UUID128_SOME:
 	case BT_DATA_UUID128_ALL:
 	case BT_DATA_SOLICIT128:
+		print_data_set(BT_UUID_SIZE_128, data->data, data->data_len);
+		break;
 	case BT_DATA_SVC_DATA128:
-		print_data_set(data->type, 16, data->data, data->data_len);
+		/* Data starts with a UUID128 (16 bytes),
+		 * the rest is unknown and printed as single bytes
+		 */
+		if (data->data_len < BT_UUID_SIZE_128) {
+			shell_fprintf(ctx_shell, SHELL_WARNING,
+				      "BT_DATA_SVC_DATA128 data length too short (%u)",
+				      data->data_len);
+			break;
+		}
+		print_data_set(BT_UUID_SIZE_128, data->data, BT_UUID_SIZE_128);
+		if (data->data_len > BT_UUID_SIZE_128) {
+			shell_fprintf(ctx_shell, SHELL_INFO, ADV_DATA_DELIMITER);
+			print_data_set(1, data->data + BT_UUID_SIZE_128,
+				       data->data_len - BT_UUID_SIZE_128);
+		}
 		break;
 	case BT_DATA_NAME_SHORTENED:
 	case BT_DATA_NAME_COMPLETE:
 	case BT_DATA_BROADCAST_NAME:
-		shell_info(ctx_shell, "%*sType 0x%02x: %.*s",
-			   strlen(scan_response_label), "",
-			   data->type,  data->data_len, data->data);
+		shell_fprintf(ctx_shell, SHELL_INFO, "%.*s", data->data_len, data->data);
 		break;
 	case BT_DATA_PUB_TARGET_ADDR:
 	case BT_DATA_RAND_TARGET_ADDR:
 	case BT_DATA_LE_BT_DEVICE_ADDRESS:
-		print_data_set(data->type, BT_ADDR_SIZE, data->data, data->data_len);
+		print_data_set(BT_ADDR_SIZE, data->data, data->data_len);
+		break;
+	case BT_DATA_CSIS_RSI:
+		print_data_set(3, data->data, data->data_len);
 		break;
 	default:
-		print_data_set(data->type, 1, data->data, data->data_len);
+		print_data_set(1, data->data, data->data_len);
 	}
+
+	shell_fprintf(ctx_shell, SHELL_INFO, "\n");
 
 	return true;
 }
