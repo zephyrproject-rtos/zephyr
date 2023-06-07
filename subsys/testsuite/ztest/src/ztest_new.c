@@ -30,6 +30,8 @@ static bool failed_expectation;
 #define NUM_ITER_PER_TEST  1
 #endif
 
+#include <zephyr/arch/common/semihost.h>
+
 /* ZTEST_DMEM and ZTEST_BMEM are used for the application shared memory test  */
 
 /**
@@ -1078,6 +1080,7 @@ int main(void)
 	z_init_mock();
 	test_main();
 	end_report();
+	semihost_exit();
 	flush_log();
 	LOG_PANIC();
 	if (IS_ENABLED(CONFIG_ZTEST_RETEST_IF_PASSED)) {
