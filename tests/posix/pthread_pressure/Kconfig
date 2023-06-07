@@ -9,21 +9,13 @@ config TEST_NUM_CPUS
 	range 1 MP_NUM_CPUS
 	default MP_NUM_CPUS
 	help
-	  The number of parallel threads to run during the test. The test
-	  thread itself yields so that all cores have some probability of
-	  causing racey behaviour.
+	  The number of parallel threads to run during the test.
 
 config TEST_DURATION_S
 	int "Number of seconds to run the test"
-	range 1 21600
 	default 5
 	help
-	   Duration for the test, in seconds. The range has a reblatively high
-	   upper bound because we should expect that pthread_create() and
-	   pthread_join() are stable enough to run for an arbitrarily long
-	   period of time without encountering any race conditions.
-
-	   Some exceptions apply, notably Qemu SMP targets.
+	   Duration for the test, in seconds.
 
 config TEST_DELAY_US
 	int "Microseconds to delay between pthread join and create"
@@ -37,7 +29,7 @@ config TEST_STACK_SIZE
 	default 512 if !64_BIT
 	default 1024 if 64_BIT
 	help
-	  The minimal stack size required to run a no-op thread.
+	  The minimal stack size required to run a minimal thread.
 
 config TEST_KTHREADS
 	bool "Test k_threads"
@@ -55,5 +47,4 @@ config TEST_EXTRA_ASSERTIONS
 	bool "Add extra assertions into the hot path"
 	default y
 	help
-	  On Qemu SMP targets, this can potentially lead to "scheduler noise"
-	  leaking in from the host system, which can cause the test to fail.
+	  This can be disabled for benchmarking.
