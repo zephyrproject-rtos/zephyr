@@ -388,9 +388,14 @@ static int handle_poll(struct coap_client *client)
 		} else if (ret == 0) {
 			if (client->pending.timeout != 0 && coap_pending_cycle(&client->pending)) {
 				LOG_ERR("Timeout in poll, retrying send");
-				send_request(client->fd, client->request.data,
-					     client->request.offset, 0, &client->address,
-					     client->socklen);
+				ret = send_request(client->fd, client->request.data,
+						   client->request.offset, 0, &client->address,
+						   client->socklen);
+				if (ret < 0) {
+					LOG_ERR("Transmission failed: %d", errno);
+					ret = -errno;
+					break;
+				}
 			} else {
 				/* No more retries left, don't retry */
 				LOG_ERR("Timeout in poll, no more retries");
