@@ -19,6 +19,10 @@
  * @{
  */
 
+#ifdef __cplusplus
+extern "C" {
+	#endif
+
 #ifndef ZEPHYR_INCLUDE_ARCH_COMMON_SEMIHOST_H_
 #define ZEPHYR_INCLUDE_ARCH_COMMON_SEMIHOST_H_
 
@@ -48,6 +52,8 @@ enum semihost_instr {
 	SEMIHOST_REMOVE = 0x0E,
 	/** Rename a file on the host system. Possibly insecure! */
 	SEMIHOST_RENAME = 0x0F,
+	/** Exit semihosting */
+	SEMIHOST_EXIT = 0x18,
 
 	/*
 	 * Terminal I/O operations
@@ -193,8 +199,14 @@ long semihost_read(long fd, void *buf, long len);
  */
 long semihost_write(long fd, const void *buf, long len);
 
+void semihost_exit(void);
+
 /**
  * @}
  */
 
 #endif /* ZEPHYR_INCLUDE_ARCH_COMMON_SEMIHOST_H_ */
+
+#ifdef __cplusplus
+}
+#endif

@@ -129,3 +129,9 @@ long semihost_write(long fd, const void *buf, long len)
 
 	return semihost_exec(SEMIHOST_WRITE, &args);
 }
+
+void semihost_exit(void)
+{
+	semihost_exec(SEMIHOST_EXIT, 0);
+	// return semihost_exec(SEMIHOST_EXIT, 0);
+}
