@@ -14,7 +14,6 @@
 #include "soc_espi.h"
 #include <zephyr/dt-bindings/interrupt-controller/ite-intc.h>
 
-
 uint32_t chip_get_pll_freq(void)
 {
 	uint32_t pllfreq;

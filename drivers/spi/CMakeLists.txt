@@ -40,4 +40,5 @@ zephyr_library_sources_ifdef(CONFIG_SPI_OPENTITAN	spi_opentitan.c)
 
 zephyr_library_sources_ifdef(CONFIG_SPI_RTIO spi_rtio.c)
 zephyr_library_sources_ifdef(CONFIG_SPI_ASYNC spi_signal.c)
+zephyr_library_sources_ifdef(CONFIG_SPI_ITE_IT8XXX2	spi_ite_it8xxx2.c)
 zephyr_library_sources_ifdef(CONFIG_USERSPACE		spi_handlers.c)

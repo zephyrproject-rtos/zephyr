@@ -38,6 +38,9 @@ config VCMP_IT8XXX2_INIT_PRIORITY
 
 config PINCTRL
 	default y
+config SPI_ITE_IT8XXX2
+	default y
+	depends on SPI
 
 config NUM_IRQS
 	default 185

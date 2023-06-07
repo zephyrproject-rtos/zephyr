@@ -1,0 +1,63 @@
+# Copyright (c) 2022 ITE Corporation. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+description: ITE it8xxx2 SSPI
+
+compatible: "ite,it8xxx2-spi"
+
+include: spi-controller.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  sckfreq:
+    type: int
+    required: true
+    description:
+      Clock frequency the SPI peripheral is being driven at, in MHz
+      0   SSPI_SCKFREQ_24MHZ
+      1   SSPI_SCKFREQ_12MHZ
+      2   SSPI_SCKFREQ_8MHZ
+      3   SSPI_SCKFREQ_6MHZ
+      5   SSPI_SCKFREQ_4MHZ
+      7   SSPI_SCKFREQ_3MHZ
+      Fill the SSPI_SCKFREQ_24MHZ in the sckfreq field,
+      it can be found in the project spi dts file.
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
+      - 5
+      - 7
+
+  spi-cpol:
+    type: int
+    required: true
+    description:
+      CPOL
+      0 SSCK low in the idle mode
+      1 SSCK high in the idle mode
+    enum:
+      - 0
+      - 1
+
+  spi-cpha:
+    type: int
+    required: true
+    description:
+      CPHA
+      0 Latch data on the first SSCK edge
+      1 Latch data on the second SSCK edge
+    enum:
+      - 0
+      - 1
+
+  pinctrl-0:
+    type: phandles
+    required: true
+    description: Configuration of the SPI pins which are mapped to the GPIOs

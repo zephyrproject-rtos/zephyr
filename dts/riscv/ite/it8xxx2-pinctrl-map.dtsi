@@ -398,4 +398,17 @@
 		pinmuxs = <&pinctrlh 6 IT8XXX2_ALT_DEFAULT>;
 	};
 
+	/* SPI alternate function */
+	spi_ssce0_default: spi_ssce0_default {
+		pinmuxs = <&pinctrlg 2 IT8XXX2_ALT_FUNC_3>;
+	};
+	spi_ssck_default: spi_ssck_default {
+		pinmuxs = <&pinctrla 6 IT8XXX2_ALT_FUNC_3>;
+	};
+	spi_smosi_default: spi_smosi_default {
+		pinmuxs = <&pinctrlc 3 IT8XXX2_ALT_FUNC_3>;
+	};
+	spi_smiso_default: spi_smiso_default {
+		pinmuxs = <&pinctrlc 5 IT8XXX2_ALT_FUNC_3>;
+	};
 };

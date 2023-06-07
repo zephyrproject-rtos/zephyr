@@ -20,6 +20,7 @@
 		kscan0 = &kscan0;
 		watchdog0 = &twd0;
 		pwm-0 = &pwm0;
+		spi-0 = &spi0;
 	};
 
 	chosen {
@@ -177,6 +178,17 @@
 &peci0 {
 	status = "okay";
 	pinctrl-0 = <&peci_gpf6_default>;
+	pinctrl-names = "default";
+};
+&spi0 {
+	status = "okay";
+	sckfreq = <SSPI_SCKFREQ_24MHZ>;
+	spi-cpol = <0>;
+	spi-cpha = <0>;
+	pinctrl-0 = <&spi_ssce0_default
+			&spi_ssck_default
+			&spi_smosi_default
+			&spi_smiso_default>;
 	pinctrl-names = "default";
 };
 &flash0 {

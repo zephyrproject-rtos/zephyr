@@ -406,6 +406,120 @@ enum ext_timer_idx {
 
 
 /*
+ * (26xxh) Serial Peripheral Interface (SSPI)
+ */
+#ifndef __ASSEMBLER__
+struct spi_it8xxx2_regs {
+	/* 0x00: SPI Data */
+	volatile uint8_t SPIDATA;
+	/* 0x01: SPI Data Register */
+	volatile uint8_t SPICTRL1;
+	/* 0x02: SPI Control Register 1 */
+	volatile uint8_t SPICTRL2;
+	/* 0x03: SPI Control Register 2 */
+	volatile uint8_t SPISTS;
+	/* 0x04: SPI Control Register 3 */
+	volatile uint8_t SPICTRL3;
+	/* 0x05: Channel 0 Command Address Low Byte Register */
+	volatile uint8_t CH0CMDADDRLB;
+	/* 0x06: Channel 0 Command Address High Byte Register */
+	volatile uint8_t CH0CMDADDRHB;
+	/* 0x07: DMA Transfer Count Low Byte Register */
+	volatile uint8_t DMATCNTLB;
+	/* 0x08: DMA Transfer Count High Byte Register */
+	volatile uint8_t DMATCNTHB;
+	/* 0x09: SPI Write Command Length Register */
+	volatile uint8_t SPIWRCMDL;
+	/* 0x0A: Channel 0 DMA Ring Depth Low Byte Register */
+	volatile uint8_t CH0DMARDLB;
+	/* 0x0B: Channel 0 DMA Ring Depth High Byte Register */
+	volatile uint8_t CH0DMARDHB;
+	/* 0x0C: Interrupt Status Register */
+	volatile uint8_t INTSTS;
+	/* 0x0D: SPI Control Register 5 */
+	volatile uint8_t SPICTRL5;
+	/* 0x0E: Channel 0 Write Memory Address Low Byte Register */
+	volatile uint8_t CH0WRMEMADDRLB;
+	/* 0x0F: Channel 0 Write Memory Address High Byte Register */
+	volatile uint8_t CH0WRMEMADDRHB;
+	/* 0x10: CMDQ Interval Time Prescale Register */
+	volatile uint8_t CMDQINVPR;
+	/* 0x11: Channel 0 Wait Time Scale Register for CMDQ */
+	volatile uint8_t CH0WTSR;
+	/* 0x12: Channel 1 Command Address Low Byte Register */
+	volatile uint8_t CH1CMDADDRLB;
+	/* 0x13: Channel 1 Command Address High Byte Register */
+	volatile uint8_t CH1CMDADDRHB;
+	/* 0x14: Channel 1 Write Memory Address Low Byte Register */
+	volatile uint8_t CH1WRMEMADDRLB;
+	/* 0x15: Channel 1 Write Memory Address Low Byte Register */
+	volatile uint8_t CH1WRMEMADDRHB;
+	/* 0x16: Channel 1 Wait Time Scale Register for CMDQ */
+	volatile uint8_t CH1WTSR;
+	/* 0x17: Channel 1 DMA Ring Depth Low Byte Register */
+	volatile uint8_t CH1DMARDLB;
+	/* 0x18: Channel 1 DMA Ring Depth High Byte Register */
+	volatile uint8_t CH1DMARDHB;
+	/* 0x19: Reserved */
+	volatile uint8_t SPI_RESERVED_019;
+	/* 0x1A: Reserved */
+	volatile uint8_t SPI_RESERVED_01A;
+	/* 0x1B: Reserved */
+	volatile uint8_t SPI_RESERVED_01B;
+	/* 0x1C: Reserved */
+	volatile uint8_t SPI_RESERVED_01C;
+	/* 0x1D: Reserved */
+	volatile uint8_t SPI_RESERVED_01D;
+	/* 0x1E: Reserved */
+	volatile uint8_t SPI_RESERVED_01E;
+	/* 0x1F: Reserved */
+	volatile uint8_t SPI_RESERVED_01F;
+	/* 0x20: Reserved */
+	volatile uint8_t SPI_RESERVED_020;
+	/* 0x21: Channel 0 Command Address High Byte 2 Register */
+	volatile uint8_t CH0CMDADDRHB2;
+	/* 0x22: Reserved */
+	volatile uint8_t SPI_RESERVED_022;
+	/* 0x23: Channel 0 Write Memory Address High Byte 2 Register */
+	volatile uint8_t CH0WRMEMADDRHB2;
+	/* 0x24: Reserved */
+	volatile uint8_t SPI_RESERVED_024;
+	/* 0x25: Channel 1 Command Address High Byte 2 Register */
+	volatile uint8_t CH1CMDADDRHB2;
+	/* 0x26: Reserved */
+	volatile uint8_t SPI_RESERVED_026;
+	/* 0x27: Channel 1 Write Memory Address High Byte 2 Register */
+	volatile uint8_t CH1WRMEMADDRHB2;
+	/* 0x28: Reserved */
+	volatile uint8_t SPI_RESERVED_028;
+	/* 0x29: Reserved */
+	volatile uint8_t SPI_RESERVED_029;
+	/* 0x2A: Reserved */
+	volatile uint8_t SPI_RESERVED_02A;
+	/* 0x2B: Reserved */
+	volatile uint8_t SPI_RESERVED_02B;
+	/* 0x2C: Reserved */
+	volatile uint8_t SPI_RESERVED_02C;
+	/* 0x2D: Delay Select for SSPI Feedback Clock Register */
+	volatile uint8_t DSFBCR;
+	/* 0x2E: SPI Receive data for Dual/DTR Mode Register */
+	volatile uint8_t SPIRDATA;
+	/* 0x2F: Reserved */
+	volatile uint8_t SPI_RESERVED_02F;
+	/* 0x30: Reserved */
+	volatile uint8_t SPI_RESERVED_030;
+	/* 0x31: Reserved */
+	volatile uint8_t SPI_RESERVED_031;
+	/* 0x32: Reserved */
+	volatile uint8_t SPI_RESERVED_032;
+	/* 0x33: SPI Control Register 6 */
+	volatile uint8_t SPICTRL6;
+
+};
+#endif /* !__ASSEMBLER__ */
+
+
+/*
  *
  * (2Cxxh) Platform Environment Control Interface (PECI)
  *

@@ -18,6 +18,7 @@
 #include <zephyr/dt-bindings/sensor/it8xxx2_vcmp.h>
 #include <zephyr/dt-bindings/sensor/it8xxx2_tach.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/spi/it8xxx2-spi.h>
 #include "ite/it8xxx2-wuc-map.dtsi"
 
 / {
@@ -439,24 +440,19 @@
 			status = "disabled";
 		};
 
-		spi0: spi@f02600  {
-			#address-cells = <1>;
+		spi0: spi@f02600 {
+			compatible = "ite,it8xxx2-spi";
+			reg = <0x00f02600 0x34>;
+			sckfreq = <SSPI_SCKFREQ_24MHZ>;
+			spi-cpol = <0>;
+			spi-cpha = <0>;
+			#address-cells=<1>;
 			#size-cells = <0>;
-			compatible = "ite,it8xxx2-sspi";
-			reg = <0x00f02600 0x40>;
 			interrupt-parent = <&intc>;
 			interrupts = <37 IRQ_TYPE_EDGE_RISING>;
-			clock-frequency = <115200>;
+			status = "disabled";
 		};
-		spi1: spi@f02640  {
-			#address-cells = <1>;
-			#size-cells = <0>;
-			compatible = "ite,it8xxx2-sspi";
-			reg = <0x00f02640 0x40>;
-			interrupts = <37 IRQ_TYPE_EDGE_RISING>;
-			interrupt-parent = <&intc>;
-			status = "okay";
-		};
+
 		shi0: shi@f03a00 {
 			compatible = "ite,it8xxx2-shi";
 			reg = <0x00f03a00 0x30>;
@@ -466,6 +462,7 @@
 			buffer-rx-size = <256>;
 			buffer-tx-size = <256>;
 		};
+
 		adc0: adc@f01900 {
 			compatible = "ite,it8xxx2-adc";
 			reg = <0xf01900 0x45>;

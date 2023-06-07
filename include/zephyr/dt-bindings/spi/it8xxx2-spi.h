@@ -1,0 +1,16 @@
+/*
+ * Copyright (c) 2022 ITE Technology Corporation.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_IT8XXX2_SPI_H_
+#define ZEPHYR_INCLUDE_DT_BINDINGS_IT8XXX2_SPI_H_
+
+#define SSPI_SCKFREQ_24MHZ	0x00
+#define SSPI_SCKFREQ_12MHZ	0x01
+#define SSPI_SCKFREQ_8MHZ	0x02
+#define SSPI_SCKFREQ_6MHZ	0x03
+#define SSPI_SCKFREQ_4MHZ	0x05
+#define SSPI_SCKFREQ_3MHZ	0x07
+
+#endif	/* ZEPHYR_INCLUDE_DT_BINDINGS_IT8XXX2_SPI_H_ */
