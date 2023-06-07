@@ -15,6 +15,7 @@ supported:
   - watchdog
   - mbox
   - flash
+  - dma
 testing:
   ignore_tags:
     - bluetooth
