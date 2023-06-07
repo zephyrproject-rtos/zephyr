@@ -741,6 +741,21 @@ Libraries / Subsystems
     fs_mgmt, :kconfig:option:`CONFIG_FLASH` and
     :kconfig:option:`CONFIG_IMG_MANAGER` are needed to enable MCUmgr img_mgmt.
 
+* POSIX API
+
+  * Improved the locking strategy for :c:func:`eventfd_read()` and
+    :c:func:`eventfd_write()`. This eliminated a deadlock scenario that was
+    present since the initial contribution and increased performance by a
+    factor of 10x.
+
+  * Reimplemented :ref:`POSIX <posix_support>` threads, mutexes, condition
+    variables, and barriers using native Zephyr counterparts. POSIX
+    synchronization primitives in Zephyr were originally implemented
+    separately and received less maintenance as a result. Unfortunately, this
+    opened POSIX up to unique bugs and race conditions. Going forward, POSIX
+    will benefit from all improvements to Zephyr's synchronization and
+    threading API and race conditions have been mitigated.
+
 * Retention
 
   * Retention subsystem has been added which adds enhanced features over
