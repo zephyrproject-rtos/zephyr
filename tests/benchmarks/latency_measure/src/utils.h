@@ -25,17 +25,29 @@ extern int error_count;
 	printk(" Error: tick occurred\n")
 
 #ifdef CSV_FORMAT_OUTPUT
-#define FORMAT "%-60s,%8u,%8u\n"
+#define FORMAT_STR   "%-60s,%s,%s\n"
+#define CYCLE_FORMAT "%8u"
+#define NSEC_FORMAT  "%8u"
 #else
-#define FORMAT "%-60s:%8u cycles , %8u ns\n"
+#define FORMAT_STR   "%-60s:%s , %s\n"
+#define CYCLE_FORMAT "%8u cycles"
+#define NSEC_FORMAT  "%8u ns"
 #endif
 
-#define PRINT_F(...)						\
-	{							\
-		char sline[256]; 				\
-		snprintk(sline, 254, FORMAT, ##__VA_ARGS__); 	\
-		printk("%s", sline);			     	\
-	}
+#define PRINT_F(summary, cycles, nsec, error, notes)                     \
+	do {                                                             \
+		char cycle_str[32];                                      \
+		char nsec_str[32];                                       \
+									 \
+		if (!error) {                                            \
+			snprintk(cycle_str, 30, CYCLE_FORMAT, cycles);   \
+			snprintk(nsec_str, 30, NSEC_FORMAT, nsec);       \
+		} else {                                                 \
+			snprintk(cycle_str, 30, "%15s", "FAILED");       \
+			snprintk(nsec_str, 30, "%15s", "FAILED");        \
+		}                                                        \
+		printk(FORMAT_STR, summary, cycle_str, nsec_str, notes); \
+	} while (0)
 
 #define PRINT_STATS(summary, value) \
 	PRINT_F(summary, value, (uint32_t)timing_cycles_to_ns(value))
