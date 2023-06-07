@@ -1,0 +1,14 @@
+identifier: esp32c6_devkitc
+name: ESP32-C6
+vendor: espressif
+type: mcu
+arch: riscv
+toolchain:
+  - zephyr
+supported:
+  - gpio
+  - uart
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
