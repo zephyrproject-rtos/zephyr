@@ -1,0 +1,9 @@
+tests:
+  # section.subsection
+  http_server_rest.ztest:
+    build_only: true
+    platform_allow: native_posix_64
+    arch_allow: posix
+    integration_platforms:
+      - native_posix_64
+    tags: http_server
