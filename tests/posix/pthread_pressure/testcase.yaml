@@ -6,7 +6,6 @@ common:
   integration_platforms:
     - qemu_riscv64_smp
   platform_exclude:
-    - qemu_cortex_a53
-    - qemu_cortex_a53_smp
+    - qemu_leon3
 tests:
   portability.posix.pthread_pressure: {}
