@@ -87,7 +87,8 @@
 
 static const struct dac_channel_cfg dac_ch_cfg = {
 	.channel_id  = DAC_CHANNEL_ID,
-	.resolution  = DAC_RESOLUTION
+	.resolution  = DAC_RESOLUTION,
+	.buffered = true
 };
 
 const struct device *get_dac_device(void)
