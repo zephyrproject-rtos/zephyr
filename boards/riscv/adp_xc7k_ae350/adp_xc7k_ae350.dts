@@ -211,3 +211,7 @@
 &wdt {
 	status = "okay";
 };
+
+&dma0 {
+	status = "okay";
+};
