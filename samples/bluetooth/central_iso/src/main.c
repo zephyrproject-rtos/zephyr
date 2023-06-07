@@ -67,6 +67,7 @@ static void iso_timer_timeout(struct k_work *work)
 
 	if (ret < 0) {
 		printk("Failed to send ISO data (%d)\n", ret);
+		net_buf_unref(buf);
 	}
 
 	k_work_schedule(&iso_send_work, K_USEC(interval_us));
