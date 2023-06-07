@@ -1,0 +1,125 @@
+/*
+ * Copyright (c) 2023 Espressif Systems (Shanghai) Co., Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+#include <mem.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/interrupt-controller/esp-esp32c6-intmux.h>
+#include <zephyr/dt-bindings/clock/esp32c6_clock.h>
+#include <dt-bindings/pinctrl/esp32c6-pinctrl.h>
+
+/ {
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	chosen {
+		zephyr,flash-controller = &flash;
+	};
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			device_type = "cpu";
+			compatible = "espressif,riscv";
+			riscv,isa = "rv32imc_zicsr";
+			reg = <0>;
+		};
+	};
+
+	pinctrl: pin-controller {
+		compatible = "espressif,esp32-pinctrl";
+		status = "okay";
+	};
+
+	soc {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "simple-bus";
+		ranges;
+
+		sram0: memory@40800000 {
+			compatible = "mmio-sram";
+			reg = <0x40800000 0x50000>;
+		};
+
+		intc: interrupt-controller@60010000 {
+			compatible = "espressif,esp32-intc";
+			#address-cells = <0>;
+			#interrupt-cells = <1>;
+			interrupt-controller;
+			reg = <0x60010000 DT_SIZE_K(4)>;
+			status = "okay";
+		};
+
+		systimer0: systimer@6000a000 {
+			compatible = "espressif,esp32-systimer";
+			reg = <0x6000A000 DT_SIZE_K(4)>;
+			interrupts = <SYSTIMER_TARGET0_EDGE_INTR_SOURCE>;
+			interrupt-parent = <&intc>;
+			status = "okay";
+		};
+
+		rtc: rtc@600b000 {
+			compatible = "espressif,esp32-rtc";
+			reg = <0x600B000 DT_SIZE_K(1)>;
+			xtal-freq = <ESP32_CLK_XTAL_40M>;
+			#clock-cells = <1>;
+			status = "okay";
+
+			rtc_timer: rtc_timer {
+				compatible = "espressif,esp32-rtc-timer";
+				slow-clk-freq = <ESP32_RTC_SLOW_CLK_FREQ_90K>;
+				interrupts = <LP_RTC_TIMER_INTR_SOURCE>;
+				interrupt-parent = <&intc>;
+				status = "okay";
+			};
+		};
+
+		flash: flash-controller@60002000 {
+			compatible = "espressif,esp32-flash-controller";
+			reg = <0x60002000 0x1000>;
+
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			flash0: flash@0 {
+				compatible = "soc-nv-flash";
+				erase-block-size = <4096>;
+				write-block-size = <4>;
+			};
+		};
+
+		gpio0: gpio@60091000 {
+			compatible = "espressif,esp32-gpio";
+			gpio-controller;
+			#gpio-cells = <2>;
+			reg = <0x60091000 DT_SIZE_K(4)>;
+			interrupts = <GPIO_INTR_SOURCE>;
+			interrupt-parent = <&intc>;
+			ngpios = <30>;   /* 0..29 */
+		};
+
+		uart0: uart@60000000 {
+			compatible = "espressif,esp32-uart";
+			reg = <0x60000000 DT_SIZE_K(4)>;
+			status = "disabled";
+			interrupts = <UART0_INTR_SOURCE>;
+			interrupt-parent = <&intc>;
+			clocks = <&rtc ESP32_UART0_MODULE>;
+		};
+
+		uart1: uart@60010000 {
+			compatible = "espressif,esp32-uart";
+			reg = <0x60010000 DT_SIZE_K(4)>;
+			status = "disabled";
+			interrupts = <UART1_INTR_SOURCE>;
+			interrupt-parent = <&intc>;
+			clocks = <&rtc ESP32_UART1_MODULE>;
+			current-speed = <115200>;
+		};
+	};
+
+};
