@@ -36,6 +36,7 @@ Important limitations
 This board inherits
 :ref:`the limitations of its architecture<posix_arch_limitations>`
 
+.. _native_posix_how_to_use:
 
 How to use it
 *************
@@ -173,6 +174,7 @@ should be considered.
 Check the :ref:`POSIX architecture comparison <posix_arch_compare>`
 with other development and test options for more insights.
 
+.. _native_posix_architecture:
 
 Architecture
 ************
@@ -245,6 +247,8 @@ Where ``last_rt`` and ``last_st`` are respectively the real time and the
 simulated time when the last clock ratio adjustment took place.
 
 All times are kept in microseconds.
+
+.. _native_posix_peripherals:
 
 Peripherals
 ***********

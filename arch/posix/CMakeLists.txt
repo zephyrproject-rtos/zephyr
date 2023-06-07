@@ -1,5 +1,21 @@
 # SPDX-License-Identifier: Apache-2.0
 
+# This native_simulator library is used to pass options to the
+# native_simulator runner build. Currently the following are used:
+#  INTERFACE_COMPILE_OPTIONS:
+#      Extra compile options to be used during the build of the runner files
+#      For ex. target_compile_options(native_simulator INTERFACE "-m64")
+#  INTERFACE_LINK_OPTIONS:
+#      Extra link options to be passed during the *final* link of the runner
+#      with the embedded SW.
+#      For ex. target_link_options(native_simulator INTERFACE "-lstdc++")
+#  INTERFACE_SOURCES:
+#      Extra sources to be built in the native simulator runner context
+#      For ex. target_sources(native_simulator INTERFACE silly.c)
+#      Note that these are built with the host libC and the include directories
+#      the runner is built with.
+add_library(native_simulator INTERFACE)
+
 if(EXISTS ${CMAKE_CURRENT_LIST_DIR}/${CMAKE_HOST_SYSTEM_NAME}.${CMAKE_HOST_SYSTEM_PROCESSOR}.cmake)
   # @Intent: Set necessary compiler & linker options for this specific host architecture & OS
   include(${CMAKE_HOST_SYSTEM_NAME}.${CMAKE_HOST_SYSTEM_PROCESSOR}.cmake)
@@ -8,9 +24,15 @@ else()
     # some gcc versions fail to build without -fPIC
     zephyr_compile_options(-m64 -fPIC)
     zephyr_link_libraries(-m64)
+
+    target_link_options(native_simulator INTERFACE "-m64")
+    target_compile_options(native_simulator INTERFACE "-m64")
   else ()
     zephyr_compile_options(-m32)
     zephyr_link_libraries(-m32)
+
+    target_link_options(native_simulator INTERFACE "-m32")
+    target_compile_options(native_simulator INTERFACE "-m32")
   endif ()
 endif()
 
@@ -22,24 +44,72 @@ if (CONFIG_NATIVE_APPLICATION)
   zephyr_compile_options(
     -include ${ZEPHYR_BASE}/arch/posix/include/posix_cheats.h
   )
+elseif (CONFIG_NATIVE_LIBRARY)
+  zephyr_compile_options(
+    -fvisibility=hidden
+  )
+
+  # While doing the partial linking of the native library, some symbols will be missing
+  # which are provided by the native simulator runner
+  zephyr_ld_options(
+    -Wl,--unresolved-symbols=ignore-all
+  )
+
+  if (NOT CONFIG_EXTERNAL_LIBC)
+    # Get the *compiler* include path, that is where the *compiler* provided headers are (not the
+    # default libC ones). This includes basic headers like stdint.h, stddef.h or float.h
+    # We expect something like
+    #  /usr/lib/gcc/x86_64-linux-gnu/12/include or /usr/lib/llvm-14/lib/clang/14.0.0/include
+    execute_process(
+      COMMAND ${CMAKE_C_COMPILER} --print-file-name=include/stddef.h
+      OUTPUT_VARIABLE _OUTPUT
+      COMMAND_ERROR_IS_FATAL ANY
+    )
+    get_filename_component(COMPILER_OWN_INCLUDE_PATH "${_OUTPUT}" DIRECTORY)
+
+    # Do not use the C library from this compiler/host,
+    # but still use the basic compiler headers
+    # -fno-builtin to avoid the compiler using builtin replacements for std library functions
+    zephyr_compile_options(
+      -nostdinc
+      -isystem ${COMPILER_OWN_INCLUDE_PATH}
+      $<TARGET_PROPERTY:compiler,freestanding>
+      -fno-builtin
+    )
+  endif()
 endif()
 
-# @Intent: Obtain compiler specific flags for no freestanding compilation
-zephyr_compile_options($<TARGET_PROPERTY:compiler,hosted>)
+if(CONFIG_EXTERNAL_LIBC)
+  # @Intent: Obtain compiler specific flags for no freestanding compilation
+  zephyr_compile_options($<TARGET_PROPERTY:compiler,hosted>)
+endif()
+
+if(CONFIG_EXTERNAL_LIBCPP)
+  target_link_options(native_simulator INTERFACE "-lstdc++")
+endif()
 
 zephyr_include_directories(${BOARD_DIR})
+
+if(CONFIG_COVERAGE)
+  target_compile_options(native_simulator INTERFACE $<TARGET_PROPERTY:compiler,coverage>)
+  target_link_options(native_simulator INTERFACE $<TARGET_PROPERTY:linker,coverage>)
+endif()
 
 if (CONFIG_GPROF)
   zephyr_compile_options($<TARGET_PROPERTY:compiler,gprof>)
   zephyr_link_libraries($<TARGET_PROPERTY:linker,gprof>)
+
+  target_link_options(native_simulator INTERFACE "-pg")
 endif()
 
 zephyr_compile_definitions(_POSIX_C_SOURCE=200809 _XOPEN_SOURCE=600 _XOPEN_SOURCE_EXTENDED)
 
-zephyr_ld_options(
-  -ldl
-  -pthread
-)
+if (CONFIG_NATIVE_APPLICATION)
+  zephyr_ld_options(
+    -ldl
+    -pthread
+  )
+endif()
 
 # About the -include directive: The reason to do it this way, is because in this
 # manner it is transparent to the application. Otherwise posix_cheats.h needs to
@@ -85,6 +155,9 @@ if(NOT ${LLVM_SANITIZERS_ARG} STREQUAL "")
   set(LLVM_SANITIZERS_ARG "-fsanitize=${LLVM_SANITIZERS_ARG}")
   zephyr_compile_options("${LLVM_SANITIZERS_ARG}")
   zephyr_link_libraries("${LLVM_SANITIZERS_ARG}")
+
+  target_link_options(native_simulator INTERFACE ${LLVM_SANITIZERS_ARG})
+  target_compile_options(native_simulator INTERFACE ${LLVM_SANITIZERS_ARG})
 endif()
 
 # Override the C standard used for compilation to C 2011
