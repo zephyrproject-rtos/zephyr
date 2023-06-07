@@ -6,13 +6,21 @@ zephyr_library_sources(
 	cpuhalt.c
 	fatal.c
 	irq.c
-	nsi_compat/nsi_compat.c
-	nsi_compat/nce.c
-	posix_core.c
 	swap.c
 	thread.c
 	)
 
-zephyr_include_directories(
-	nsi_compat/
-)
+if(CONFIG_NATIVE_APPLICATION)
+	zephyr_include_directories(
+		nsi_compat/
+	)
+	zephyr_library_sources(
+		posix_core.c
+		nsi_compat/nsi_compat.c
+		nsi_compat/nce.c
+	)
+else()
+	zephyr_library_sources(
+		posix_core_nsi.c
+	)
+endif()
