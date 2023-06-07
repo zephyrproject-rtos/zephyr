@@ -140,10 +140,7 @@ int usb_dc_reset(void)
 	if (dev_state.dev_struct.controllerHandle != NULL) {
 		dev_state.dev_struct.controllerInterface->deviceControl(
 						dev_state.dev_struct.controllerHandle,
-						kUSB_DeviceControlStop, NULL);
-		dev_state.dev_struct.controllerInterface->deviceDeinit(
-						dev_state.dev_struct.controllerHandle);
-		dev_state.dev_struct.controllerHandle = NULL;
+						kUSB_DeviceControlSetDefaultStatus, NULL);
 	}
 
 	return 0;
@@ -470,12 +467,14 @@ int usb_dc_ep_disable(const uint8_t ep)
 		return -EINVAL;
 	}
 
-	status = dev_state.dev_struct.controllerInterface->deviceCancel(
-						  dev_state.dev_struct.controllerHandle,
-						  ep);
-	if (kStatus_USB_Success != status) {
-		LOG_ERR("Failed to disable ep 0x%02x", ep);
-		return -EIO;
+	if (dev_state.dev_struct.controllerHandle != NULL) {
+		status = dev_state.dev_struct.controllerInterface->deviceCancel(
+							dev_state.dev_struct.controllerHandle,
+							ep);
+		if (kStatus_USB_Success != status) {
+			LOG_ERR("Failed to disable ep 0x%02x", ep);
+			return -EIO;
+		}
 	}
 
 	dev_state.eps[ep_abs_idx].ep_enabled = false;
