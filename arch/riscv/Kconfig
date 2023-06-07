@@ -169,6 +169,19 @@ config GEN_ISR_TABLES
 config GEN_IRQ_VECTOR_TABLE
 	default n
 
+config RISCV_RESERVED_IRQ_ISR_TABLES_OFFSET
+	int
+	default 0
+	depends on GEN_ISR_TABLES
+	help
+	  On some RISCV platform the first interrupt vectors are primarly
+	  intended for inter-hart interrupt signaling and so retained for that
+	  purpose and not available. When this option is set, all the IRQ
+	  vectors are shifted by this offset value when installed into the
+	  software ISR table and the IRQ vector table. CONFIG_NUM_IRQS must be
+	  properly sized to take into account this offset. This is a hidden
+	  option which needs to be set per architecture and left alone.
+
 config NUM_IRQS
 	int
 
