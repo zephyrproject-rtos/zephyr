@@ -907,13 +907,13 @@ static void mfy_cig_offset_get(void *param)
 	LL_ASSERT(!err);
 
 	offset_min_us = HAL_TICKER_TICKS_TO_US(ticks_to_expire) +
-			(EVENT_TICKER_RES_MARGIN_US << 1U);
+			(EVENT_TICKER_RES_MARGIN_US << 2U);
 	offset_min_us += cig->sync_delay - cis->sync_delay;
 
 	conn = ll_conn_get(cis->lll.acl_handle);
 
 	conn_interval_us = (uint32_t)conn->lll.interval * CONN_INT_UNIT_US;
-	while (offset_min_us > conn_interval_us) {
+	while (offset_min_us > (conn_interval_us + PDU_CIS_OFFSET_MIN_US)) {
 		offset_min_us -= conn_interval_us;
 	}
 
