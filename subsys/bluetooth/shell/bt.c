@@ -515,6 +515,30 @@ done:
 	}
 }
 
+static void disconencted_set_new_default_conn_cb(struct bt_conn *conn, void *user_data)
+{
+	struct bt_conn_info info;
+
+	if (default_conn != NULL) {
+		/* nop */
+		return;
+	}
+
+	if (bt_conn_get_info(conn, &info) != 0) {
+		shell_error(ctx_shell, "Unable to get info: conn %p", conn);
+		return;
+	}
+
+	if (info.state == BT_CONN_STATE_CONNECTED) {
+		char addr_str[BT_ADDR_LE_STR_LEN];
+
+		default_conn = bt_conn_ref(conn);
+
+		bt_addr_le_to_str(info.le.dst, addr_str, sizeof(addr_str));
+		shell_print(ctx_shell, "Selected conn is now: %s", addr_str);
+	}
+}
+
 static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
 	char addr[BT_ADDR_LE_STR_LEN];
@@ -525,6 +549,9 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 	if (default_conn == conn) {
 		bt_conn_unref(default_conn);
 		default_conn = NULL;
+
+		/* If we are connected to other devices, set one of them as default */
+		bt_conn_foreach(BT_CONN_TYPE_LE, disconencted_set_new_default_conn_cb, NULL);
 	}
 }
 
@@ -2623,6 +2650,7 @@ static int cmd_disconnect(const struct shell *sh, size_t argc, char *argv[])
 
 static int cmd_select(const struct shell *sh, size_t argc, char *argv[])
 {
+	char addr_str[BT_ADDR_LE_STR_LEN];
 	struct bt_conn *conn;
 	bt_addr_le_t addr;
 	int err;
@@ -2644,6 +2672,9 @@ static int cmd_select(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	default_conn = conn;
+
+	bt_addr_le_to_str(&addr, addr_str, sizeof(addr_str));
+	shell_print(sh, "Selected conn is now: %s", addr_str);
 
 	return 0;
 }
