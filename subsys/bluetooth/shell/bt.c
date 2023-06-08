@@ -503,9 +503,11 @@ static void connected(struct bt_conn *conn, uint8_t err)
 
 	shell_print(ctx_shell, "Connected: %s", addr);
 
-	if (!default_conn) {
-		default_conn = bt_conn_ref(conn);
+	if (default_conn != NULL) {
+		bt_conn_unref(default_conn);
 	}
+
+	default_conn = bt_conn_ref(conn);
 
 done:
 	/* clear connection reference for sec mode 3 pairing */
