@@ -427,7 +427,7 @@ void stm32_i2c_error_isr(void *arg)
 }
 #endif
 
-int stm32_i2c_msg_write(const struct device *dev, struct i2c_msg *msg,
+static int stm32_i2c_msg_write(const struct device *dev, struct i2c_msg *msg,
 			uint8_t *next_msg_flags, uint16_t slave)
 {
 	const struct i2c_stm32_config *cfg = dev->config;
@@ -485,7 +485,7 @@ error:
 	return -EIO;
 }
 
-int stm32_i2c_msg_read(const struct device *dev, struct i2c_msg *msg,
+static int stm32_i2c_msg_read(const struct device *dev, struct i2c_msg *msg,
 		       uint8_t *next_msg_flags, uint16_t slave)
 {
 	const struct i2c_stm32_config *cfg = dev->config;
@@ -607,7 +607,7 @@ static inline int msg_done(const struct device *dev,
 	return 0;
 }
 
-int stm32_i2c_msg_write(const struct device *dev, struct i2c_msg *msg,
+static int stm32_i2c_msg_write(const struct device *dev, struct i2c_msg *msg,
 			uint8_t *next_msg_flags, uint16_t slave)
 {
 	const struct i2c_stm32_config *cfg = dev->config;
@@ -637,7 +637,7 @@ int stm32_i2c_msg_write(const struct device *dev, struct i2c_msg *msg,
 	return msg_done(dev, msg->flags);
 }
 
-int stm32_i2c_msg_read(const struct device *dev, struct i2c_msg *msg,
+static int stm32_i2c_msg_read(const struct device *dev, struct i2c_msg *msg,
 		       uint8_t *next_msg_flags, uint16_t slave)
 {
 	const struct i2c_stm32_config *cfg = dev->config;
@@ -737,4 +737,53 @@ int stm32_i2c_configure_timing(const struct device *dev, uint32_t clock)
 	LL_I2C_SetTiming(i2c, timing);
 
 	return 0;
+}
+
+int stm32_i2c_transaction(const struct device *dev,
+						  struct i2c_msg msg, uint8_t *next_msg_flags,
+						  uint16_t periph)
+{
+	/*
+	 * Perform a I2C transaction, while taking into account the STM32 I2C V2
+	 * peripheral has a limited maximum chunk size. Take appropriate action
+	 * if the message to send exceeds that limit.
+	 *
+	 * The last chunk of a transmission uses this function's next_msg_flags
+	 * parameter for its backend calls (_write/_read). Any previous chunks
+	 * use a copy of the current message's flags, with the STOP and RESTART
+	 * bits turned off. This will cause the backend to use reload-mode,
+	 * which will make the combination of all chunks to look like one big
+	 * transaction on the wire.
+	 */
+	const uint32_t i2c_stm32_maxchunk = 255U;
+	const uint8_t saved_flags = msg.flags;
+	uint8_t combine_flags =
+		saved_flags & ~(I2C_MSG_STOP | I2C_MSG_RESTART);
+	uint8_t *flagsp = NULL;
+	uint32_t rest = msg.len;
+	int ret = 0;
+
+	do { /* do ... while to allow zero-length transactions */
+		if (msg.len > i2c_stm32_maxchunk) {
+			msg.len = i2c_stm32_maxchunk;
+			msg.flags &= ~I2C_MSG_STOP;
+			flagsp = &combine_flags;
+		} else {
+			msg.flags = saved_flags;
+			flagsp = next_msg_flags;
+		}
+		if ((msg.flags & I2C_MSG_RW_MASK) == I2C_MSG_WRITE) {
+			ret = stm32_i2c_msg_write(dev, &msg, flagsp, periph);
+		} else {
+			ret = stm32_i2c_msg_read(dev, &msg, flagsp, periph);
+		}
+		if (ret < 0) {
+			break;
+		}
+		rest -= msg.len;
+		msg.buf += msg.len;
+		msg.len = rest;
+	} while (rest > 0U);
+
+	return ret;
 }
