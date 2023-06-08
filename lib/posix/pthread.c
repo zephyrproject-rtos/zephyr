@@ -266,8 +266,17 @@ static void posix_thread_finalize(struct posix_thread *t, void *retval)
 FUNC_NORETURN
 static void zephyr_thread_wrapper(void *arg1, void *arg2, void *arg3)
 {
+	int err;
+	int barrier;
 	void *(*fun_ptr)(void *arg) = arg2;
 	struct posix_thread *t = CONTAINER_OF(k_current_get(), struct posix_thread, thread);
+
+	if (IS_ENABLED(CONFIG_PTHREAD_CREATE_BARRIER)) {
+		/* cross the barrier so that pthread_create() can continue */
+		barrier = POINTER_TO_UINT(arg3);
+		err = pthread_barrier_wait(&barrier);
+		__ASSERT_NO_MSG(err == 0 || err == PTHREAD_BARRIER_SERIAL_THREAD);
+	}
 
 	posix_thread_finalize(t, fun_ptr(arg1));
 
@@ -285,7 +294,9 @@ static void zephyr_thread_wrapper(void *arg1, void *arg2, void *arg3)
 int pthread_create(pthread_t *th, const pthread_attr_t *_attr, void *(*threadroutine)(void *),
 		   void *arg)
 {
+	int err;
 	k_spinlock_key_t key;
+	pthread_barrier_t barrier;
 	struct posix_thread *safe_t;
 	struct posix_thread *t = NULL;
 	const struct pthread_attr *attr = (const struct pthread_attr *)_attr;
@@ -324,6 +335,19 @@ int pthread_create(pthread_t *th, const pthread_attr_t *_attr, void *(*threadrou
 	}
 	k_spin_unlock(&pthread_pool_lock, key);
 
+	if (IS_ENABLED(CONFIG_PTHREAD_CREATE_BARRIER)) {
+		err = pthread_barrier_init(&barrier, NULL, 2);
+		if (err != 0) {
+			/* cannot allocate barrier. move thread back to ready_q */
+			key = k_spin_lock(&pthread_pool_lock);
+			sys_dlist_remove(&t->q_node);
+			sys_dlist_append(&ready_q, &t->q_node);
+			t->qid = POSIX_THREAD_READY_Q;
+			k_spin_unlock(&pthread_pool_lock, key);
+			t = NULL;
+		}
+	}
+
 	if (t == NULL) {
 		/* no threads are ready */
 		return EAGAIN;
@@ -331,9 +355,19 @@ int pthread_create(pthread_t *th, const pthread_attr_t *_attr, void *(*threadrou
 
 	/* spawn the thread */
 	k_thread_create(&t->thread, attr->stack, attr->stacksize, zephyr_thread_wrapper,
-			(void *)arg, threadroutine, NULL,
+			(void *)arg, threadroutine,
+			IS_ENABLED(CONFIG_PTHREAD_CREATE_BARRIER) ? UINT_TO_POINTER(barrier)
+								       : NULL,
 			posix_to_zephyr_priority(attr->priority, attr->schedpolicy), attr->flags,
 			K_MSEC(attr->delayedstart));
+
+	if (IS_ENABLED(CONFIG_PTHREAD_CREATE_BARRIER)) {
+		/* wait for the spawned thread to cross our barrier */
+		err = pthread_barrier_wait(&barrier);
+		__ASSERT_NO_MSG(err == 0 || err == PTHREAD_BARRIER_SERIAL_THREAD);
+		err = pthread_barrier_destroy(&barrier);
+		__ASSERT_NO_MSG(err == 0);
+	}
 
 	/* finally provide the initialized thread to the caller */
 	*th = mark_pthread_obj_initialized(posix_thread_to_offset(t));
