@@ -608,7 +608,11 @@ flagged.
         "BOOT_SERIAL_CDC_ACM",       # Used in (sysbuild-based) test
         "BOOT_SERIAL_ENTRANCE_GPIO", # Used in (sysbuild-based) test
         "BOOT_SERIAL_IMG_GRP_HASH",  # Used in documentation
-        "BOOT_SIGNATURE_KEY_FILE",   # MCUboot idefined setting used by sysbuild.
+        "BOOT_SIGNATURE_KEY_FILE", # MCUboot setting used by sysbuild
+        "BOOT_SIGNATURE_TYPE_ECDSA_P256", # MCUboot setting used by sysbuild
+        "BOOT_SIGNATURE_TYPE_ED25519", # MCUboot setting used by sysbuild
+        "BOOT_SIGNATURE_TYPE_NONE", # MCUboot setting used by sysbuild
+        "BOOT_SIGNATURE_TYPE_RSA", # MCUboot setting used by sysbuild
         "BOOT_VALIDATE_SLOT0",       # Used in (sysbuild-based) test
         "BOOT_WATCHDOG_FEED",        # Used in (sysbuild-based) test
         "BTTESTER_LOG_LEVEL",  # Used in tests/bluetooth/tester
