@@ -368,6 +368,25 @@ int flash_stm32_write_range(const struct device *dev, unsigned int offset,
 	const uint8_t ndwords = FLASH_NB_32BITWORD_IN_FLASHWORD / 2;
 	const uint8_t nbytes = FLASH_NB_32BITWORD_IN_FLASHWORD * 4;
 	uint8_t unaligned_datas[nbytes];
+	uint8_t unaligned_bytes = (uintptr_t)data % nbytes;
+
+	/* First check if *data is nbytes aligned */
+	if (unaligned_bytes != 0) {
+		/* *data is not nbytes byte aligned */
+		memset(unaligned_datas, 0xff, nbytes);
+		for (j = unaligned_bytes; j < nbytes ; ++j) {
+			unaligned_datas[j] = ((uint8_t *)data)[j - unaligned_bytes];
+		}
+		rc = write_ndwords(dev, offset,
+				   (const uint64_t *)unaligned_datas,
+				   ndwords);
+		if (rc < 0) {
+			return rc;
+		}
+		data = (uint8_t *) data + (nbytes - unaligned_bytes);
+		len -= nbytes;
+		offset += nbytes;
+	}
 
 	for (i = 0; i < len && i + nbytes <= len; i += nbytes, offset += nbytes) {
 		rc = write_ndwords(dev, offset,
@@ -381,6 +400,7 @@ int flash_stm32_write_range(const struct device *dev, unsigned int offset,
 	/* Handle the remaining bytes if length is not aligned on
 	 * FLASH_NB_32BITWORD_IN_FLASHWORD
 	 */
+	len += unaligned_bytes; /* Initial unalignment need to be taken into account */
 	if (i < len) {
 		memset(unaligned_datas, 0xff, sizeof(unaligned_datas));
 		for (j = 0; j < len - i; ++j) {
