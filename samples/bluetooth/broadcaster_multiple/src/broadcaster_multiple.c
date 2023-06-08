@@ -75,7 +75,6 @@ int broadcaster_multiple(void)
 		printk("Bluetooth init failed (err %d)\n", err);
 		return err;
 	}
-
 	for (int index = 0; index < CONFIG_BT_EXT_ADV_MAX_ADV_SET; index++) {
 		/* Use advertising set instance index as SID */
 		adv_param.sid = index;
