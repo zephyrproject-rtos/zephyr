@@ -329,6 +329,7 @@ static int bt_iso_setup_data_path(struct bt_iso_chan *chan)
 			dir = BT_HCI_DATAPATH_DIR_HOST_TO_CTLR;
 			err = hci_le_setup_iso_data_path(iso, dir, in_path);
 			if (err) {
+				LOG_DBG("Failed to setup host-to-ctrl path: %d", err);
 				return err;
 			}
 		}
@@ -338,6 +339,7 @@ static int bt_iso_setup_data_path(struct bt_iso_chan *chan)
 			dir = BT_HCI_DATAPATH_DIR_CTLR_TO_HOST;
 			err = hci_le_setup_iso_data_path(iso, dir, out_path);
 			if (err) {
+				LOG_DBG("Failed to setup ctlr-to-host path: %d", err);
 				return err;
 			}
 		}
