@@ -452,6 +452,7 @@ Boards & SoC Support
   * ST Nucleo C031C6
   * ST Nucleo H563ZI
   * ST STM32H573I-DK Discovery
+  * Raspberry Pi Pico W
 
 * Added support for these ARM64 boards:
 
@@ -740,6 +741,7 @@ Drivers and Sensors
   * STM32C0: Added support for DMA
   * STM32H5: Added support for GPDMA
   * STM32H7: Added support for BDMA
+   * Added DMA support for the RP2040 SoC
 
 * EEPROM
 
@@ -788,6 +790,7 @@ Drivers and Sensors
 * GPIO
 
   * Converted the ``gpio_keys`` driver to the input subsystem.
+  * Added single-ended IO support for the RP2040 SoC
 
   * STM32: Supports newly introduced experimental API to enable/disable interrupts
     without re-config
@@ -828,6 +831,10 @@ Drivers and Sensors
 * MIPI-DSI
 
   * Added support on STM32H7
+
+* Misc
+
+   * Added PIO support for the RP2040 SoC
 
 * PCIE
 
@@ -897,6 +904,7 @@ Drivers and Sensors
     Programmable Input/Output (PIO) on Raspberry Pi Pico.
   * uart_xmc4xxx: added support for asynchronous operations.
   * uart_stm32: Now support driver enable mode
+  * Added hardware flow control support for the RP2040 SoC
 
 * SPI
 
@@ -913,6 +921,8 @@ Drivers and Sensors
     To be used with caution.
 
 * USB
+
+   * Added remote wakeup support for the RP2040 SoC
 
 * W1
 
@@ -1076,6 +1086,10 @@ HALs
   * stm32cube: updated STM32L0 to cube version V1.12.2
   * stm32cube: updated STM32U5 to cube version V1.2.0
   * stm32cube: updated STM32WB to cube version V1.16.0
+
+* Raspberry Pi Pico
+
+  * Updated hal_rpi_pico to version 1.5.0
 
 MCUboot
 *******
