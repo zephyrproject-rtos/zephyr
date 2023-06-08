@@ -1,0 +1,16 @@
+# Copyright (c) 2023 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config UART_INTEL_LW
+	bool "Intel Lightweight UART driver"
+	depends on DT_HAS_INTEL_LW_UART_ENABLED
+	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
+	help
+	  Enable the Intel Lightweight UART driver, that can be built into Intel NiosV CPU designs.
+
+config UART_INTEL_LW_EOP
+	bool "Include end of packet register"
+	depends on UART_INTEL_LW && UART_DRV_CMD && UART_INTERRUPT_DRIVEN
+	help
+	  Use driver command CMD_ENABLE_EOP and CMD_DISABLE_EOP to use the feature.
