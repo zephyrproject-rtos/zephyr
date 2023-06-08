@@ -47,6 +47,10 @@ struct ll_conn_iso_stream {
 				    */
 	uint8_t  terminate_reason;
 	uint8_t  cis_id;
+
+#if defined(CONFIG_BT_CTLR_ISOAL_PSN_IGNORE)
+	uint64_t pkt_seq_num:39;
+#endif /* CONFIG_BT_CTLR_ISOAL_PSN_IGNORE */
 };
 
 struct ll_conn_iso_group {

@@ -371,7 +371,8 @@ config BT_CTLR_SCAN_ENABLE_STRICT
 
 config BT_CTLR_ISOAL_SN_STRICT
 	bool "Enforce Strict Tx ISO Data Sequence Number use"
-	depends on BT_CTLR_ADV_ISO || BT_CTLR_CONN_ISO
+	depends on !BT_CTLR_ISOAL_PSN_IGNORE && (BT_CTLR_ADV_ISO || \
+						 BT_CTLR_CONN_ISO)
 	default y
 	help
 	  Enforce strict sequencing of released payloads based on the TX SDU's
@@ -385,6 +386,21 @@ config BT_CTLR_ISOAL_SN_STRICT
 	  interval.
 
 	  When disabled, TX SDUs could be shifted from their stream aligned
+	  position and fragmented into payloads that are less likely to be
+	  dropped. This will result in better delivery of data to the receiver
+	  but at the cost of creating skews in the received stream of SDUs.
+
+config BT_CTLR_ISOAL_PSN_IGNORE
+	bool "Ignore Tx ISO Data Packet Sequence Number use"
+	depends on BT_CTLR_ADV_ISO || BT_CTLR_CONN_ISO
+	help
+	  Ignore the use of Tx ISO Data Packet Sequence Number.
+
+	  Use this option to turn off ISO Data Packet Sequence Number use to
+	  place the ISO Data in the correct radio event, instead simply buffer
+	  it to next radio event.
+
+	  When enabled, TX SDUs could be shifted from their stream aligned
 	  position and fragmented into payloads that are less likely to be
 	  dropped. This will result in better delivery of data to the receiver
 	  but at the cost of creating skews in the received stream of SDUs.

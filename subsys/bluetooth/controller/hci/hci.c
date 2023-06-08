@@ -5637,8 +5637,6 @@ int hci_iso_handle(struct net_buf *buf, struct net_buf **evt)
 	struct bt_hci_iso_data_hdr *iso_data_hdr;
 	struct isoal_sdu_tx sdu_frag_tx;
 	struct bt_hci_iso_hdr *iso_hdr;
-	struct ll_iso_datapath *dp_in;
-	struct ll_iso_stream_hdr *hdr;
 	uint32_t *time_stamp;
 	uint16_t handle;
 	uint8_t pb_flag;
@@ -5648,8 +5646,6 @@ int hci_iso_handle(struct net_buf *buf, struct net_buf **evt)
 
 	iso_data_hdr = NULL;
 	*evt  = NULL;
-	hdr   = NULL;
-	dp_in = NULL;
 
 	if (buf->len < sizeof(*iso_hdr)) {
 		LOG_ERR("No HCI ISO header");
@@ -5722,16 +5718,46 @@ int hci_iso_handle(struct net_buf *buf, struct net_buf **evt)
 	 * data path
 	 */
 	} else if (IS_CIS_HANDLE(handle)) {
-		struct ll_conn_iso_stream *cis =
-			ll_iso_stream_connected_get(handle);
+		struct ll_conn_iso_stream *cis;
+		struct ll_conn_iso_group *cig;
+		struct ll_iso_stream_hdr *hdr;
+		struct ll_iso_datapath *dp_in;
+
+		cis = ll_iso_stream_connected_get(handle);
 		if (!cis) {
 			return -EINVAL;
 		}
 
-		struct ll_conn_iso_group *cig = cis->group;
-		uint8_t event_offset;
+		cig = cis->group;
 
-		hdr = &(cis->hdr);
+#if defined(CONFIG_BT_CTLR_ISOAL_PSN_IGNORE)
+		uint64_t event_count;
+		uint64_t pkt_seq_num;
+
+		/* Catch up local pkt_seq_num with internal pkt_seq_num */
+		event_count = cis->lll.event_count;
+		pkt_seq_num = event_count + 1U;
+		if (((pkt_seq_num - cis->pkt_seq_num) &
+		     BIT64_MASK(39)) <= BIT64_MASK(38)) {
+			cis->pkt_seq_num = pkt_seq_num;
+		} else {
+			pkt_seq_num = cis->pkt_seq_num;
+		}
+
+		/* Pre-increment, for next ISO data packet seq num comparison */
+		cis->pkt_seq_num++;
+
+		/* Target next event to avoid overlapping with current event */
+		pkt_seq_num++;
+		sdu_frag_tx.target_event = pkt_seq_num;
+		sdu_frag_tx.grp_ref_point =
+			isoal_get_wrapped_time_us(cig->cig_ref_point,
+						  ((pkt_seq_num - event_count) *
+						   cig->iso_interval *
+						   ISO_INT_UNIT_US));
+
+#else /* !CONFIG_BT_CTLR_ISOAL_PSN_IGNORE */
+		uint8_t event_offset;
 
 		/* We must ensure sufficient time for ISO-AL to fragment SDU and
 		 * deliver PDUs to the TX queue. By checking ull_ref_get, we
@@ -5755,11 +5781,15 @@ int hci_iso_handle(struct net_buf *buf, struct net_buf **evt)
 		}
 
 		sdu_frag_tx.target_event = cis->lll.event_count + event_offset;
-		sdu_frag_tx.grp_ref_point = isoal_get_wrapped_time_us(cig->cig_ref_point,
-						(event_offset * cig->iso_interval *
-							ISO_INT_UNIT_US));
+		sdu_frag_tx.grp_ref_point =
+			isoal_get_wrapped_time_us(cig->cig_ref_point,
+						  (event_offset *
+						   cig->iso_interval *
+						   ISO_INT_UNIT_US));
+#endif /* !CONFIG_BT_CTLR_ISOAL_PSN_IGNORE */
 
 		/* Get controller's input data path for CIS */
+		hdr = &(cis->hdr);
 		dp_in = hdr->datapath_in;
 		if (!dp_in || dp_in->path_id != BT_HCI_DATAPATH_ID_HCI) {
 			LOG_ERR("Input data path not set for HCI");
@@ -5792,8 +5822,6 @@ int hci_iso_handle(struct net_buf *buf, struct net_buf **evt)
 		struct ll_adv_iso_set *adv_iso;
 		struct lll_adv_iso *lll_iso;
 		uint16_t stream_handle;
-		uint8_t target_event;
-		uint8_t event_offset;
 		uint16_t slen;
 
 		/* FIXME: Code only expects header present */
@@ -5819,6 +5847,50 @@ int hci_iso_handle(struct net_buf *buf, struct net_buf **evt)
 			return -EINVAL;
 		}
 
+		lll_iso = &adv_iso->lll;
+
+#if defined(CONFIG_BT_CTLR_ISOAL_PSN_IGNORE)
+		uint64_t event_count;
+		uint64_t pkt_seq_num;
+
+		/* Catch up local pkt_seq_num with internal pkt_seq_num */
+		event_count = lll_iso->payload_count / lll_iso->bn;
+		pkt_seq_num = event_count;
+		if (((pkt_seq_num - stream->pkt_seq_num) &
+		     BIT64_MASK(39)) <= BIT64_MASK(38)) {
+			stream->pkt_seq_num = pkt_seq_num;
+		} else {
+			pkt_seq_num = stream->pkt_seq_num;
+		}
+
+		/* Pre-increment, for next ISO data packet seq num comparison */
+		stream->pkt_seq_num++;
+
+		/* Target next event to avoid overlapping with current event */
+		/* FIXME: Implement ISO Tx ack generation early in done compared
+		 *        to currently only in prepare. I.e. to ensure upper
+		 *        layer has the number of completed packet before the
+		 *        next BIG event, so as to supply new ISO data packets.
+		 *        Without which upper layers need extra buffers to
+		 *        buffer next ISO data packet.
+		 *
+		 *        Enable below increment once early Tx ack is
+		 *        implemented.
+		 *
+		 * pkt_seq_num++;
+		 */
+		sdu_frag_tx.target_event = pkt_seq_num;
+		sdu_frag_tx.grp_ref_point =
+			isoal_get_wrapped_time_us(adv_iso->big_ref_point,
+						  (((pkt_seq_num + 1U) -
+						    event_count) *
+						   lll_iso->iso_interval *
+						   ISO_INT_UNIT_US));
+
+#else /* !CONFIG_BT_CTLR_ISOAL_PSN_IGNORE */
+		uint8_t target_event;
+		uint8_t event_offset;
+
 		/* Determine the target event and the first event offset after
 		 * datapath setup.
 		 * event_offset mitigates the possibility of first SDU being
@@ -5836,7 +5908,6 @@ int hci_iso_handle(struct net_buf *buf, struct net_buf **evt)
 		 * BIG event by incrementing the previous elapsed big_ref_point
 		 * by one additional ISO interval.
 		 */
-		lll_iso = &adv_iso->lll;
 		target_event = lll_iso->payload_count / lll_iso->bn;
 		event_offset = ull_ref_get(&adv_iso->ull) ? 0U : 1U;
 		event_offset += lll_iso->latency_prepare;
@@ -5847,6 +5918,7 @@ int hci_iso_handle(struct net_buf *buf, struct net_buf **evt)
 						  ((event_offset + 1U) *
 						   lll_iso->iso_interval *
 						   ISO_INT_UNIT_US));
+#endif /* !CONFIG_BT_CTLR_ISOAL_PSN_IGNORE */
 
 		/* Start Fragmentation */
 		/* FIXME: need to ensure ISO-AL returns proper isoal_status.
