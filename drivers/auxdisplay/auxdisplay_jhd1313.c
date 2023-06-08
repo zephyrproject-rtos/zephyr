@@ -26,10 +26,9 @@ LOG_MODULE_REGISTER(auxdisplay_jhd1313, CONFIG_AUXDISPLAY_LOG_LEVEL);
 #define JHD1313_CS_RIGHT_SHIFT		(1 << 2)
 
 /* Defines for the JHD1313_CMD_INPUT_SET to change text direction */
-#define JHD1313_IS_SHIFT_INCREMENT	(1 << 1)
-#define JHD1313_IS_SHIFT_DECREMENT	(0 << 1)
-#define JHD1313_IS_ENTRY_LEFT		(1 << 0)
-#define JHD1313_IS_ENTRY_RIGHT		(0 << 0)
+#define JHD1313_IS_INCREMENT		(1 << 1)
+#define JHD1313_IS_DECREMENT		(0 << 1)
+#define JHD1313_IS_SHIFT		(1 << 0)
 
 /* Defines for the JHD1313_CMD_FUNCTION_SET */
 #define JHD1313_FS_8BIT_MODE		(1 << 4)
@@ -287,8 +286,11 @@ static int auxdisplay_jhd1313_initialize(const struct device *dev)
 	/* Clear the screen */
 	auxdisplay_jhd1313_clear(dev);
 
-	/* Initialize to the default text direction for romance languages */
-	cmd = JHD1313_IS_ENTRY_LEFT | JHD1313_IS_SHIFT_DECREMENT;
+	/*
+	 * Initialize to the default text direction for romance languages
+	 * (increment, no shift)
+	 */
+	cmd = JHD1313_IS_INCREMENT;
 
 	auxdisplay_jhd1313_input_state_set(dev, cmd);
 
