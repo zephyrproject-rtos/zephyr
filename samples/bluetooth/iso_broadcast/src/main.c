@@ -19,6 +19,8 @@ NET_BUF_POOL_FIXED_DEFINE(bis_tx_pool, BIS_ISO_CHAN_COUNT,
 
 static K_SEM_DEFINE(sem_big_cmplt, 0, BIS_ISO_CHAN_COUNT);
 static K_SEM_DEFINE(sem_big_term, 0, BIS_ISO_CHAN_COUNT);
+static K_SEM_DEFINE(sem_iso_data, CONFIG_BT_ISO_TX_BUF_COUNT,
+				   CONFIG_BT_ISO_TX_BUF_COUNT);
 
 #define INITIAL_TIMEOUT_COUNTER (BIG_TERMINATE_TIMEOUT_US / BIG_SDU_INTERVAL_US)
 
@@ -40,9 +42,15 @@ static void iso_disconnected(struct bt_iso_chan *chan, uint8_t reason)
 	k_sem_give(&sem_big_term);
 }
 
+static void iso_sent(struct bt_iso_chan *chan)
+{
+	k_sem_give(&sem_iso_data);
+}
+
 static struct bt_iso_chan_ops iso_ops = {
 	.connected	= iso_connected,
 	.disconnected	= iso_disconnected,
+	.sent           = iso_sent,
 };
 
 static struct bt_iso_chan_io_qos iso_tx_qos = {
@@ -140,12 +148,9 @@ int main(void)
 	}
 
 	while (true) {
-		int ret;
-
-		k_sleep(K_USEC(big_create_param.interval));
-
 		for (uint8_t chan = 0U; chan < BIS_ISO_CHAN_COUNT; chan++) {
 			struct net_buf *buf;
+			int ret;
 
 			buf = net_buf_alloc(&bis_tx_pool,
 					    K_MSEC(BUF_ALLOC_TIMEOUT));
@@ -154,6 +159,15 @@ int main(void)
 				       " %u\n", chan);
 				return 0;
 			}
+
+			ret = k_sem_take(&sem_iso_data,
+					 K_MSEC(BUF_ALLOC_TIMEOUT));
+			if (ret) {
+				printk("k_sem_take for ISO data sent failed\n");
+				net_buf_unref(buf);
+				return 0;
+			}
+
 			net_buf_reserve(buf, BT_ISO_CHAN_SEND_RESERVE);
 			sys_put_le32(iso_send_count, iso_data);
 			net_buf_add_mem(buf, iso_data, sizeof(iso_data));
