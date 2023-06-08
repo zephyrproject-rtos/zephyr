@@ -594,6 +594,8 @@ static void print_le_oob(const struct shell *sh, struct bt_le_oob *oob)
 static void connected(struct bt_conn *conn, uint8_t err)
 {
 	char addr[BT_ADDR_LE_STR_LEN];
+	struct bt_conn_info info;
+	int info_err;
 
 	conn_addr_str(conn, addr, sizeof(addr));
 
@@ -605,8 +607,22 @@ static void connected(struct bt_conn *conn, uint8_t err)
 
 	shell_print(ctx_shell, "Connected: %s", addr);
 
-	if (!default_conn) {
+	info_err = bt_conn_get_info(conn, &info);
+	if (info_err != 0) {
+		shell_error(ctx_shell, "Failed to connection information: %d", info_err);
+		goto done;
+	}
+
+	if (info.role == BT_CONN_ROLE_CENTRAL) {
+		if (default_conn != NULL) {
+			bt_conn_unref(default_conn);
+		}
+
 		default_conn = bt_conn_ref(conn);
+	} else if (info.role == BT_CONN_ROLE_PERIPHERAL) {
+		if (default_conn == NULL) {
+			default_conn = bt_conn_ref(conn);
+		}
 	}
 
 done:
