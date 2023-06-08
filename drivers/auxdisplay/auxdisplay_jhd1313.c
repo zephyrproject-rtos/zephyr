@@ -110,6 +110,7 @@ static int auxdisplay_jhd1313_cursor_position_set(const struct device *dev,
 						  enum auxdisplay_position type, int16_t x,
 						  int16_t y)
 {
+	const struct auxdisplay_jhd1313_config *config = dev->config;
 	unsigned char data[2];
 
 	if (type != AUXDISPLAY_POSITION_ABSOLUTE) {
@@ -306,6 +307,7 @@ static int auxdisplay_jhd1313_initialize(const struct device *dev)
 
 static int auxdisplay_jhd1313_display_on(const struct device *dev)
 {
+	const struct auxdisplay_jhd1313_config *config = dev->config;
 	struct auxdisplay_jhd1313_data *data = dev->data;
 
 	data->power = true;
@@ -314,6 +316,7 @@ static int auxdisplay_jhd1313_display_on(const struct device *dev)
 
 static int auxdisplay_jhd1313_display_off(const struct device *dev)
 {
+	const struct auxdisplay_jhd1313_config *config = dev->config;
 	struct auxdisplay_jhd1313_data *data = dev->data;
 
 	data->power = false;
