@@ -149,6 +149,7 @@ struct b91_data {
 	uint8_t filter_ieee_addr[IEEE802154_FRAME_LENGTH_ADDR_EXT];
 	volatile bool is_started;
 	volatile bool ack_handler_en;
+	volatile uint8_t ack_sn;
 	uint16_t current_channel;
 	int16_t current_dbm;
 	volatile bool ack_sending;
