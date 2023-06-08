@@ -1581,7 +1581,6 @@ if(CONFIG_BUILD_OUTPUT_HEX OR BOARD_FLASH_RUNNER STREQUAL openocd)
     list(APPEND
       post_build_byproducts
       ${KERNEL_HEX_NAME}
-      # ${out_hex_byprod} # Is this needed ?
       )
   endif()
 endif()
@@ -1603,7 +1602,6 @@ if(CONFIG_BUILD_OUTPUT_BIN)
     list(APPEND
       post_build_byproducts
       ${KERNEL_BIN_NAME}
-      # ${out_hex_byprod} # Is this needed ?
       )
   endif()
 endif()
@@ -1685,8 +1683,6 @@ if(CONFIG_BUILD_OUTPUT_S19)
     list(APPEND
       post_build_byproducts
       ${KERNEL_S19_NAME}
-      # ${out_S19_byprod} # Is this needed ?
-
       )
   endif()
 endif()
@@ -1709,7 +1705,6 @@ if(CONFIG_OUTPUT_DISASSEMBLE_ALL)
   list(APPEND
     post_build_byproducts
     ${KERNEL_LST_NAME}
-#    ${out_disassembly_byprod} # Needed ??
     )
 endif()
 
@@ -1729,7 +1724,6 @@ if(CONFIG_OUTPUT_SYMBOLS)
 endif()
 
 if(CONFIG_OUTPUT_STAT)
-#  zephyr_post_build(TOOLS bintools COMMAND readelf FLAGS headers INFILE file OUTFILE outfile)
   list(APPEND
     post_build_commands
     COMMAND $<TARGET_PROPERTY:bintools,readelf_command>
