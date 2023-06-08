@@ -565,7 +565,7 @@ unsigned long shell_strtoul(const char *str, int base, int *err)
 
 unsigned long long shell_strtoull(const char *str, int base, int *err)
 {
-	unsigned long val;
+	unsigned long long val;
 	char *endptr = NULL;
 
 	if (*str == '-') {
