@@ -6,6 +6,8 @@
 
 dir_path=$(dirname "$0")
 
+$dir_path/cap_unicast_inval.sh
+
 $dir_path/cap_unicast.sh
 
 $dir_path/cap_broadcast.sh
