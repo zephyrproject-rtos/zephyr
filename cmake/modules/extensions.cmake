@@ -4495,7 +4495,7 @@ endfunction()
 #     zephyr_linker_symbol(SYMBOL bar EXPR "(@foo@ + 1024)")
 #
 function(zephyr_linker_symbol)
-  set(single_args "EXPR;SYMBOL;OBJECT")
+  set(single_args "EXPR;SYMBOL")
   cmake_parse_arguments(SYMBOL "" "${single_args}" "" ${ARGN})
 
   if(SECTION_UNPARSED_ARGUMENTS)
