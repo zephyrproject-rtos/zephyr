@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020-2022 Nordic Semiconductor ASA
+ * Copyright (c) 2020-2023 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -25,7 +25,8 @@ extern struct bst_test_list *test_scan_delegator_install(struct bst_test_list *t
 extern struct bst_test_list *test_bap_broadcast_assistant_install(struct bst_test_list *tests);
 extern struct bst_test_list *test_bass_broadcaster_install(struct bst_test_list *tests);
 extern struct bst_test_list *test_cap_acceptor_install(struct bst_test_list *tests);
-extern struct bst_test_list *test_cap_initiator_install(struct bst_test_list *tests);
+extern struct bst_test_list *test_cap_initiator_broadcast_install(struct bst_test_list *tests);
+extern struct bst_test_list *test_cap_initiator_unicast_install(struct bst_test_list *tests);
 extern struct bst_test_list *test_has_install(struct bst_test_list *tests);
 extern struct bst_test_list *test_has_client_install(struct bst_test_list *tests);
 extern struct bst_test_list *test_ias_install(struct bst_test_list *tests);
@@ -53,7 +54,8 @@ bst_test_install_t test_installers[] = {
 	test_bap_broadcast_assistant_install,
 	test_bass_broadcaster_install,
 	test_cap_acceptor_install,
-	test_cap_initiator_install,
+	test_cap_initiator_broadcast_install,
+	test_cap_initiator_unicast_install,
 	test_has_install,
 	test_has_client_install,
 	test_ias_install,
