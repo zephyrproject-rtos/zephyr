@@ -131,7 +131,7 @@ Follow the steps below to begin the submission process:
    detail, so that you are informed of the criteria used by the TSC and board in
    order to approve or reject a request
 #. Use the :github:`New External Source Code Issue
-   <new?assignees=&labels=RFC&template=ext-source.md&title=>` to open an issue
+   <new?assignees=&labels=RFC&template=007_ext-source.md&title=>` to open an issue
 #. Fill out all required sections, making sure you provide enough detail for the
    TSC to assess the merit of the request. Optionally you can also create a Pull
    Request that demonstrates the integration of the external source code and

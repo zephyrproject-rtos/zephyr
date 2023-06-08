@@ -994,7 +994,7 @@ Requirements for Treewide Changes
   pull requests that are treewide changes
 
 - The person proposing a treewide change must create an `RFC issue
-  <https://github.com/zephyrproject-rtos/zephyr/issues/new?assignees=&labels=RFC&template=rfc-proposal.md&title=>`_
+  <https://github.com/zephyrproject-rtos/zephyr/issues/new?assignees=&labels=RFC&template=003_rfc-proposal.md&title=>`_
   describing the change, its rationale and impact, etc. before any pull
   requests related to the change can be merged
 

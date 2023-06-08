@@ -237,7 +237,7 @@ Follow the steps below to begin the submission process:
    detail, so that you are informed of the criteria used by the TSC in order to
    approve or reject a request
 #. Use the :github:`New Binary Blobs Issue
-   <new?assignees=&labels=RFC&template=bin-blobs.md&title=>` to open an issue
+   <new?assignees=&labels=RFC&template=008_bin-blobs.md&title=>` to open an issue
 #. Fill out all required sections, making sure you provide enough detail for the
    TSC to assess the merit of the request. Additionally you must also create a Pull
    Request that demonstrates the integration of the binary blobs and then
