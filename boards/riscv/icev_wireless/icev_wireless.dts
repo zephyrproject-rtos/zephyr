@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include <espressif/esp32c3.dtsi>
+#include <espressif/esp32c3/esp32c3_fx4.dtsi>
 #include "icev_wireless-pinctrl.dtsi"
 
 / {
