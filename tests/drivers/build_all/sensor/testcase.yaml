@@ -13,6 +13,8 @@ tests:
     extra_args: OVERLAY_CONFIG=sensors_trigger_global.conf
   sensors.build.trigger.none:
     extra_args: OVERLAY_CONFIG=sensors_trigger_none.conf
+  sensors.build.no_default:
+    extra_args: OVERLAY_CONFIG=sensors_no_default.conf
   sensors.build:
     tags: sensors
   sensors.build.pm:
