@@ -185,6 +185,10 @@ static int i2c_atciic100_transfer(const struct device *dev,
 			ret = i2c_atciic100_controller_receive(dev,
 				addr, msgs[i].buf, msgs[i].len, msgs[i].flags);
 		}
+
+		if (ret < 0) {
+			goto exit;
+		}
 	}
 
 exit:
@@ -296,6 +300,11 @@ static int i2c_atciic100_controller_send(const struct device *dev,
 	sys_write32(reg, I2C_CMD(dev));
 
 	k_sem_take(&dev_data->device_sync_sem, K_FOREVER);
+
+	if (dev_data->status.target_ack != 1) {
+		return -EIO;
+	}
+	dev_data->status.target_ack = 0;
 	return 0;
 }
 
@@ -388,6 +397,10 @@ static int i2c_atciic100_controller_receive(const struct device *dev,
 	sys_write32(reg, I2C_CMD(dev));
 
 	k_sem_take(&dev_data->device_sync_sem, K_FOREVER);
+	if (dev_data->status.target_ack != 1) {
+		return -EIO;
+	}
+	dev_data->status.target_ack = 0;
 	return 0;
 }
 
