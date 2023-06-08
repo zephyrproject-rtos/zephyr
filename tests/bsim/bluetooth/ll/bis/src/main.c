@@ -148,6 +148,53 @@ bool ll_data_path_sink_create(uint16_t handle, struct ll_iso_datapath *datapath,
 }
 #endif /* CONFIG_BT_CTLR_ISO_VENDOR_DATA_PATH */
 
+#define BUF_ALLOC_TIMEOUT_MS (30) /* milliseconds */
+NET_BUF_POOL_FIXED_DEFINE(tx_pool, CONFIG_BT_ISO_TX_BUF_COUNT,
+			  BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU), 8, NULL);
+
+static struct k_work_delayable iso_send_work;
+
+BUILD_ASSERT(sizeof(seq_num) <= CONFIG_BT_ISO_TX_MTU);
+
+static void iso_send(struct k_work *work)
+{
+	static uint8_t iso_data[CONFIG_BT_ISO_TX_MTU];
+	static bool data_initialized;
+	struct net_buf *buf;
+	size_t iso_data_len;
+	int ret;
+
+	if (!data_initialized) {
+		data_initialized = true;
+
+		for (size_t i = 0; i < ARRAY_SIZE(iso_data); i++) {
+			iso_data[i] = (uint8_t)i;
+		}
+	}
+
+	buf = net_buf_alloc(&tx_pool, K_MSEC(BUF_ALLOC_TIMEOUT_MS));
+	if (!buf) {
+		FAIL("Data buffer allocate timeout on channel\n");
+		return;
+	}
+
+	net_buf_reserve(buf, BT_ISO_CHAN_SEND_RESERVE);
+	sys_put_le16(seq_num, iso_data);
+	iso_data_len = MAX(sizeof(seq_num), ((seq_num % CONFIG_BT_ISO_TX_MTU) + 1));
+	net_buf_add_mem(buf, iso_data, iso_data_len);
+
+	printk("ISO send: seq_num %u\n", seq_num);
+	ret = bt_iso_chan_send(&bis_iso_chan, buf, seq_num++,
+			       BT_ISO_TIMESTAMP_NONE);
+	if (ret < 0) {
+		FAIL("Unable to broadcast data on channel (%d)\n", ret);
+		net_buf_unref(buf);
+		return;
+	}
+
+	k_work_schedule(&iso_send_work, K_USEC(9970));
+}
+
 static void setup_ext_adv(struct bt_le_ext_adv **adv)
 {
 	int err;
@@ -272,7 +319,7 @@ static void create_big(struct bt_le_ext_adv *adv, struct bt_iso_big **big)
 	big_create_param.latency = 10; /* milliseconds */
 	big_create_param.packing = 0; /* 0 - sequential; 1 - interleaved */
 	big_create_param.framing = 0; /* 0 - unframed; 1 - framed */
-	iso_tx_qos.sdu = 502; /* bytes */
+	iso_tx_qos.sdu = CONFIG_BT_ISO_TX_MTU; /* bytes */
 	iso_tx_qos.rtn = 2;
 	iso_tx_qos.phy = BT_GAP_LE_PHY_2M;
 	bis_iso_qos.tx = &iso_tx_qos;
@@ -351,26 +398,6 @@ static void terminate_big(struct bt_iso_big *big)
 	printk("ISO disconnected\n");
 }
 
-static void send_iso_data(void)
-{
-	uint32_t iso_send_count = 0;
-	uint8_t iso_data[sizeof(iso_send_count)] = { 0 };
-	struct net_buf *buf;
-	int err;
-
-	buf = net_buf_alloc(&bis_tx_pool, K_FOREVER);
-	net_buf_reserve(buf, BT_ISO_CHAN_SEND_RESERVE);
-	sys_put_le32(++iso_send_count, iso_data);
-	net_buf_add_mem(buf, iso_data, sizeof(iso_data));
-	err = bt_iso_chan_send(&bis_iso_chan, buf, seq_num++, BT_ISO_TIMESTAMP_NONE);
-	if (err < 0) {
-		net_buf_unref(buf);
-		FAIL("Unable to broadcast data (%d)", err);
-		return;
-	}
-	printk("Sending value %u\n", iso_send_count);
-}
-
 static void test_iso_main(void)
 {
 	struct bt_le_ext_adv *adv;
@@ -397,7 +424,8 @@ static void test_iso_main(void)
 
 	create_big(adv, &big);
 
-	send_iso_data();
+	k_work_init_delayable(&iso_send_work, iso_send);
+	k_work_schedule(&iso_send_work, K_NO_WAIT);
 
 	k_sleep(K_MSEC(5000));
 
@@ -431,6 +459,8 @@ static void test_iso_main(void)
 	printk("success.\n");
 
 	k_sleep(K_MSEC(5000));
+
+	k_work_cancel_delayable(&iso_send_work);
 
 #if TEST_LL_INTERFACE
 	terminate_ll_big(big_handle);
@@ -470,11 +500,76 @@ static const char *phy2str(uint8_t phy)
 	}
 }
 
+/** Print data as d_0 d_1 d_2 ... d_(n-2) d_(n-1) d_(n) to show the 3 first and 3 last octets
+ *
+ * Examples:
+ * 01
+ * 0102
+ * 010203
+ * 01020304
+ * 0102030405
+ * 010203040506
+ * 010203...050607
+ * 010203...060708
+ * etc.
+ */
+static void iso_print_data(uint8_t *data, size_t data_len)
+{
+	/* Maximum number of octets from each end of the data */
+	const uint8_t max_octets = 3;
+	char data_str[35];
+	size_t str_len;
+
+	str_len = bin2hex(data, MIN(max_octets, data_len), data_str, sizeof(data_str));
+	if (data_len > max_octets) {
+		if (data_len > (max_octets * 2)) {
+			static const char dots[] = "...";
+
+			strcat(&data_str[str_len], dots);
+			str_len += strlen(dots);
+		}
+
+		str_len += bin2hex(data + (data_len - MIN(max_octets, data_len - max_octets)),
+				   MIN(max_octets, data_len - max_octets),
+				   data_str + str_len,
+				   sizeof(data_str) - str_len);
+	}
+
+	printk("\t %s\n", data_str);
+}
+
+#define SEQ_NUM_MAX 1000U
+static uint16_t expected_seq_num[CONFIG_BT_ISO_MAX_CHAN];
+
 static void iso_recv(struct bt_iso_chan *chan,
 		     const struct bt_iso_recv_info *info, struct net_buf *buf)
 {
-	printk("Incoming data channel %p len %u, flags %u, seq_num %u, ts %u\n",
-		chan, buf->len, info->flags, info->seq_num, info->ts);
+	uint16_t seq_num;
+	uint8_t index;
+
+	index = bt_conn_index(chan->iso);
+
+	printk("Incoming data channel %p (%u) flags 0x%x seq_num %u ts %u len %u:\n",
+	       chan, index, info->flags, info->seq_num, info->ts, buf->len);
+	iso_print_data(buf->data, buf->len);
+
+	seq_num = sys_get_le16(buf->data);
+	if (info->flags & BT_ISO_FLAGS_VALID) {
+		if (seq_num != expected_seq_num[index]) {
+			if (expected_seq_num[index]) {
+				FAIL("ISO data miss match, expected %u actual %u\n",
+				     expected_seq_num[index], seq_num);
+			}
+			expected_seq_num[index] = seq_num;
+		}
+
+		expected_seq_num[index]++;
+
+	} else if (expected_seq_num[index] &&
+		   expected_seq_num[index] < SEQ_NUM_MAX) {
+		FAIL("%s: Invalid ISO data after valid ISO data reception.\n"
+		     "Expected %u\n", __func__, expected_seq_num[index]);
+	}
 }
 
 static void iso_connected(struct bt_iso_chan *chan)
@@ -842,6 +937,7 @@ static void test_iso_recv_main(void)
 	printk("ISO BIG create sync (test remote disconnect)...");
 	is_iso_connected = false;
 	is_iso_disconnected = 0U;
+	memset(expected_seq_num, 0U, sizeof(expected_seq_num));
 	err = bt_iso_big_sync(sync, &big_param, &big);
 	if (err) {
 		FAIL("Could not create BIG sync: %d\n", err);
@@ -904,6 +1000,14 @@ static void test_iso_recv_main(void)
 	}
 	printk("success.\n");
 #endif
+
+	for (int chan = 0; chan < CONFIG_BT_ISO_MAX_CHAN; chan++) {
+		if (expected_seq_num[chan] < SEQ_NUM_MAX) {
+			FAIL("ISO Data reception incomplete %u (%u).\n",
+			     expected_seq_num[chan], SEQ_NUM_MAX);
+			return;
+		}
+	}
 
 	PASS("ISO recv test Passed\n");
 
