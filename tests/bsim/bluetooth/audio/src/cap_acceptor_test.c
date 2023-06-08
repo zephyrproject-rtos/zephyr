@@ -15,10 +15,10 @@
 
 extern enum bst_result_t bst_result;
 
-#define SINK_CONTEXT BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED | \
-		     BT_AUDIO_CONTEXT_TYPE_MEDIA | \
-		     BT_AUDIO_CONTEXT_TYPE_CONVERSATIONAL
-#define SOURCE_CONTEXT BT_AUDIO_CONTEXT_TYPE_NOTIFICATIONS
+#define SINK_CONTEXT                                                                               \
+	(BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED | BT_AUDIO_CONTEXT_TYPE_MEDIA |                         \
+	 BT_AUDIO_CONTEXT_TYPE_CONVERSATIONAL)
+#define SOURCE_CONTEXT (BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED | BT_AUDIO_CONTEXT_TYPE_NOTIFICATIONS)
 
 CREATE_FLAG(flag_broadcaster_found);
 CREATE_FLAG(flag_base_received);
@@ -531,6 +531,13 @@ static void init(void)
 		if (err != 0) {
 			FAIL("Broadcast capability register failed (err %d)\n",
 			     err);
+
+			return;
+		}
+
+		err = bt_pacs_cap_register(BT_AUDIO_DIR_SOURCE, &unicast_cap);
+		if (err != 0) {
+			FAIL("Broadcast capability register failed (err %d)\n", err);
 
 			return;
 		}
