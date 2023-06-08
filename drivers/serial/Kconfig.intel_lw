@@ -1,0 +1,30 @@
+# Copyright (c) 2023 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig UART_INTEL_LW
+	bool "Intel Lightweight UART driver"
+	depends on DT_HAS_INTEL_LW_UART_ENABLED
+	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
+	help
+	  Enable the Intel Lightweight UART driver, that can be built into Intel NiosV CPU designs.
+
+if UART_INTEL_LW
+
+config UART_INTEL_LW_EOP
+	bool "Include end of packet register"
+	depends on UART_DRV_CMD && UART_INTERRUPT_DRIVEN
+	help
+	  Use driver command CMD_ENABLE_EOP and CMD_DISABLE_EOP to use the feature.
+
+config UART_INTEL_LW_AUTO_LINE_CTRL_POLL
+	bool "Auto set RTS signal during poll out"
+	depends on UART_LINE_CTRL
+	help
+	  Assert RTS before polling out a character,
+	  and deassert RTS after the character is polled out.
+	  Please note that this is not suitable, when polling out several characters.
+	  Please use uart_drv_cmd with CMD_POLL_ASSERT_RTS before polling out.
+	  Then use CMD_POLL_DEASSERT_RTS to resume normal operation after polling.
+
+endif # UART_INTEL_LW
