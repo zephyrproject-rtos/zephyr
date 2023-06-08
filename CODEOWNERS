@@ -451,6 +451,7 @@
 /drivers/serial/uart_hvc_xen_consoleio.c  @lorc @firscity
 /drivers/serial/Kconfig.it8xxx2           @GTLin08
 /drivers/serial/uart_ite_it8xxx2.c        @GTLin08
+/drivers/serial/*intel_lw*                @shilinte
 /drivers/smbus/                           @finikorg
 /drivers/sip_svc/                         @maheshraotm
 /drivers/disk/                            @jfischer-no
