@@ -640,7 +640,6 @@ static void test_main_cap_initiator_unicast(void)
 
 	WAIT_FOR_FLAG(flag_mtu_exchanged);
 
-	discover_cas_inval();
 	discover_cas();
 
 	discover_sink();
@@ -649,22 +648,51 @@ static void test_main_cap_initiator_unicast(void)
 		unicast_group_create(&unicast_group);
 
 		for (size_t j = 0U; j < iterations; j++) {
-			unicast_audio_start_inval(unicast_group);
 			unicast_audio_start(unicast_group, true);
 
-			unicast_audio_update_inval();
 			unicast_audio_update();
 
-			unicast_audio_stop_inval();
 			unicast_audio_stop(unicast_group);
 		}
 
-		unicast_group_delete_inval();
 		unicast_group_delete(unicast_group);
 		unicast_group = NULL;
 	}
 
 	PASS("CAP initiator unicast passed\n");
+}
+
+static void test_main_cap_initiator_unicast_inval(void)
+{
+	struct bt_bap_unicast_group *unicast_group;
+
+	init();
+
+	scan_and_connect();
+
+	WAIT_FOR_FLAG(flag_mtu_exchanged);
+
+	discover_cas_inval();
+	discover_cas();
+
+	discover_sink();
+
+	unicast_group_create(&unicast_group);
+
+	unicast_audio_start_inval(unicast_group);
+	unicast_audio_start(unicast_group, true);
+
+	unicast_audio_update_inval();
+	unicast_audio_update();
+
+	unicast_audio_stop_inval();
+	unicast_audio_stop(unicast_group);
+
+	unicast_group_delete_inval();
+	unicast_group_delete(unicast_group);
+	unicast_group = NULL;
+
+	PASS("CAP initiator unicast inval passed\n");
 }
 
 static void test_cap_initiator_unicast_timeout(void)
@@ -703,7 +731,7 @@ static void test_cap_initiator_unicast_timeout(void)
 	unicast_group_delete(unicast_group);
 	unicast_group = NULL;
 
-	PASS("CAP initiator unicast passed\n");
+	PASS("CAP initiator unicast timeout passed\n");
 }
 
 static const struct bst_test_instance test_cap_initiator_unicast[] = {
@@ -718,6 +746,12 @@ static const struct bst_test_instance test_cap_initiator_unicast[] = {
 		.test_post_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_cap_initiator_unicast_timeout,
+	},
+	{
+		.test_id = "cap_initiator_unicast_inval",
+		.test_post_init_f = test_init,
+		.test_tick_f = test_tick,
+		.test_main_f = test_main_cap_initiator_unicast_inval,
 	},
 	BSTEST_END_MARKER,
 };
