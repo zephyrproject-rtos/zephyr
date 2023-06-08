@@ -34,6 +34,11 @@
 			interrupts = <61 0>;
 			status = "disabled";
 			#io-channel-cells = <1>;
+			resolutions = <STM32_ADC_RES(12, 0x00)
+				       STM32_ADC_RES(10, 0x01)
+				       STM32_ADC_RES(8, 0x02)
+				       STM32_ADC_RES(6, 0x03)>;
+			sampling-times = <3 7 13 25 48 93 248 641>;
 		};
 
 		adc5: adc@50000600 {
@@ -44,6 +49,11 @@
 			status = "disabled";
 			#io-channel-cells = <1>;
 			temp-channel = <4>;
+			resolutions = <STM32_ADC_RES(12, 0x00)
+				       STM32_ADC_RES(10, 0x01)
+				       STM32_ADC_RES(8, 0x02)
+				       STM32_ADC_RES(6, 0x03)>;
+			sampling-times = <3 7 13 25 48 93 248 641>;
 		};
 
 		spi4: spi@40013c00 {
