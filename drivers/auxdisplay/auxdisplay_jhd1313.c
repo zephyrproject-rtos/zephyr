@@ -300,7 +300,7 @@ static int auxdisplay_jhd1313_initialize(const struct device *dev)
 	auxdisplay_jhd1313_reg_set(config->bus.bus, 0x01, 0x05);
 	auxdisplay_jhd1313_reg_set(config->bus.bus, 0x08, 0xAA);
 
-	/* Now set the background colour to white */
+	/* Now set the background colour to black */
 	LOG_DBG("Background set to off");
 	auxdisplay_jhd1313_backlight_set(dev, 0);
 
