@@ -94,7 +94,7 @@ between major releases are available in the :ref:`zephyr_release_notes`.
      - 2.4
 
    * - :ref:`edac_api`
-     - Experimental
+     - Unstable
      - 2.5
 
    * - :ref:`eeprom_api`
