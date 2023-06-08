@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include <espressif/esp32c3.dtsi>
+#include <espressif/esp32c3/esp32c3_mini_n4.dtsi>
 #include "esp32c3_devkitm-pinctrl.dtsi"
 
 / {

@@ -129,7 +129,12 @@
 			reg = <0x60004000 0x800>;
 			interrupts = <GPIO_INTR_SOURCE>;
 			interrupt-parent = <&intc>;
-			ngpios = <32>;   /* 0..31 */
+			/* Maximum available pins (per port)
+			 * Actual occupied pins are specified
+			 * on part number dtsi level, using
+			 * the `gpio-reserved-ranges` property.
+			 */
+			ngpios = <26>;   /* 0..25 */
 		};
 
 		i2c0: i2c@60013000 {
