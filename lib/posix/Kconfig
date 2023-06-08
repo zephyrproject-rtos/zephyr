@@ -35,6 +35,17 @@ config MAX_PTHREAD_COUNT
 	help
 	  Maximum number of simultaneously active threads in a POSIX application.
 
+config PTHREAD_CREATE_BARRIER
+	bool "Use a pthread_barrier_t to serialize pthread_create()"
+	help
+	  When running several SMP applications in parallel instances of Qemu,
+	  e.g. via twister, explicit serialization may be required between
+	  pthread_create() and zephyr_thread_wrapper() when spawning and joining
+	  many pthreads concurrently.
+
+	  On such systems, say Y here to introduce explicit serialization
+	  via pthread_barrier_wait().
+
 config MAX_PTHREAD_MUTEX_COUNT
 	int "Maximum simultaneously active mutex count in POSIX application"
 	default 5
