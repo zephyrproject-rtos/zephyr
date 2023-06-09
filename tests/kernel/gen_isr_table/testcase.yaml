@@ -51,7 +51,7 @@ tests:
       - riscv32
       - riscv64
     platform_exclude: m2gl025_miv
-    filter: CONFIG_SOC_FAMILY_RISCV_PRIVILEGE
+    filter: CONFIG_SOC_FAMILY_RISCV_PRIVILEGED
     extra_configs:
       - CONFIG_GEN_IRQ_VECTOR_TABLE=y
   arch.interrupt.gen_isr_table.riscv_no_direct:
@@ -59,6 +59,6 @@ tests:
     arch_allow:
       - riscv32
       - riscv64
-    filter: CONFIG_SOC_FAMILY_RISCV_PRIVILEGE
+    filter: CONFIG_SOC_FAMILY_RISCV_PRIVILEGED
     extra_configs:
       - CONFIG_GEN_IRQ_VECTOR_TABLE=n
