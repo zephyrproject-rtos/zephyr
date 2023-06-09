@@ -6,7 +6,7 @@
 config SOC_SERIES_GD32VF103
 	bool "GigaDevice GD32VF103 series SoC implementation"
 	select RISCV
-	select SOC_FAMILY_RISCV_PRIVILEGE
+	select SOC_FAMILY_RISCV_PRIVILEGED
 	select ATOMIC_OPERATIONS_C
 	select INCLUDE_RESET_VECTOR
 	select BUILD_OUTPUT_HEX
