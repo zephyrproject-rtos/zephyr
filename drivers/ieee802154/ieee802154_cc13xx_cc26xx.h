@@ -76,9 +76,7 @@ struct ieee802154_cc13xx_cc26xx_data {
 
 	volatile rfc_CMD_FS_t cmd_fs;
 	volatile rfc_CMD_IEEE_CCA_REQ_t cmd_ieee_cca_req;
-	volatile rfc_CMD_CLEAR_RX_t cmd_clear_rx;
 	volatile rfc_CMD_IEEE_RX_t cmd_ieee_rx;
-	volatile rfc_CMD_SET_TX_POWER_t cmd_set_tx_power;
 	volatile rfc_CMD_IEEE_CSMA_t cmd_ieee_csma;
 	volatile rfc_CMD_IEEE_TX_t cmd_ieee_tx;
 	volatile rfc_CMD_IEEE_RX_ACK_t cmd_ieee_rx_ack;

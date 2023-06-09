@@ -637,11 +637,6 @@ static struct ieee802154_cc13xx_cc26xx_data ieee802154_cc13xx_cc26xx_data = {
 		.commandNo = CMD_IEEE_CCA_REQ,
 	},
 
-	.cmd_clear_rx = {
-		.commandNo = CMD_CLEAR_RX,
-		.pQueue = &ieee802154_cc13xx_cc26xx_data.rx_queue,
-	},
-
 	.cmd_ieee_rx = {
 		.commandNo = CMD_IEEE_RX,
 		.status = IDLE,
@@ -713,10 +708,6 @@ static struct ieee802154_cc13xx_cc26xx_data ieee802154_cc13xx_cc26xx_data = {
 		.localShortAddr = 0x0000,
 		.localPanID = 0x0000,
 		.endTrigger.triggerType = TRIG_NEVER
-	},
-
-	.cmd_set_tx_power = {
-		.commandNo = CMD_SET_TX_POWER
 	},
 
 	.cmd_ieee_csma = {

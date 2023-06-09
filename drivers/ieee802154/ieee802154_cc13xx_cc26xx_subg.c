@@ -830,16 +830,7 @@ static int ieee802154_cc13xx_cc26xx_subg_init(const struct device *dev)
 }
 
 static struct ieee802154_cc13xx_cc26xx_subg_data ieee802154_cc13xx_cc26xx_subg_data = {
-	.cmd_set_tx_power = {
-		.commandNo = CMD_SET_TX_POWER
-	},
-
 	/* Common Radio Commands */
-	.cmd_clear_rx = {
-		.commandNo = CMD_CLEAR_RX,
-		.pQueue = &ieee802154_cc13xx_cc26xx_subg_data.rx_queue,
-	},
-
 	.cmd_fs = {
 		.commandNo = CMD_FS,
 		.condition.rule = COND_NEVER,
