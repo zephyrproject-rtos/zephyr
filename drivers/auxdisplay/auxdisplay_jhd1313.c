@@ -351,8 +351,8 @@ static const struct auxdisplay_driver_api auxdisplay_jhd1313_auxdisplay_api = {
 #define AUXDISPLAY_JHD1313_DEVICE(inst)								\
 	static const struct auxdisplay_jhd1313_config auxdisplay_jhd1313_config_##inst = {	\
 		.capabilities = {								\
-			.columns = 2,								\
-			.rows = 16,								\
+			.columns = 16,								\
+			.rows = 2,								\
 			.mode = 0,								\
 			.brightness.minimum = AUXDISPLAY_LIGHT_NOT_SUPPORTED,			\
 			.brightness.maximum = AUXDISPLAY_LIGHT_NOT_SUPPORTED,			\
