@@ -339,7 +339,7 @@ static void scan_recv(const struct bt_le_scan_recv_info *info,
 	bt_addr_le_copy(&auto_connect.addr, info->addr);
 
 	/* Use the above auto_connect.addr address to automatically connect */
-	if (auto_connect.connect_name) {
+	if ((info->adv_props & BT_GAP_ADV_PROP_CONNECTABLE) != 0U && auto_connect.connect_name) {
 		auto_connect.connect_name = false;
 
 		cmd_scan_off(ctx_shell);
