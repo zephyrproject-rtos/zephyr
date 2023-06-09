@@ -5,6 +5,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stdint.h>
+#include <stdbool.h>
+
+#include <zephyr/kernel.h>
+
 int ll_init(struct k_sem *sem_rx);
 int ll_deinit(void);
 void ll_reset(void);

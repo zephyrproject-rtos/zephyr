@@ -9,7 +9,8 @@
 #include <zephyr/types.h>
 #include <zephyr/ztest.h>
 
-#include "hci_err.h"
+#include <zephyr/bluetooth/hci_types.h>
+
 #include "util/mem.h"
 #include "util/memq.h"
 #include "pdu_df.h"

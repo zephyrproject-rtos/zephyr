@@ -21,7 +21,7 @@
 #include <stdint.h>
 
 #include <zephyr/bluetooth/bluetooth.h>
-#include <zephyr/bluetooth/hci_err.h>
+#include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/gap.h>
 #include <zephyr/bluetooth/direction.h>

@@ -11,7 +11,7 @@
 #include <zephyr/device.h>
 #include <zephyr/init.h>
 #include <zephyr/sys/__assert.h>
-#include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/hci_types.h>
 
 #include "hal/ticker.h"
 #include "ticker/ticker.h"

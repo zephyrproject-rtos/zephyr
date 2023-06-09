@@ -14,7 +14,7 @@
 #include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/bluetooth/audio/pacs.h>
 #include <zephyr/bluetooth/conn.h>
-#include <zephyr/bluetooth/hci_err.h>
+#include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/sys/util_macro.h>
