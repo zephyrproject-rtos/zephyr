@@ -343,6 +343,8 @@ Boards & SoC Support
 
 * Made these changes for ARM boards:
 
+  * ``atsamc21n_xpro``: Enable support to CAN.
+  * ``atsame54_xpro``: Read Ethernet MAC from I2C.
   * Changed the default board revision to 0.14.0 for the Nordic boards
     ``nrf9160dk_nrf9160`` and ``nrf9160dk_nrf52840``. To build for an
     older revision of the nRF9160 DK without external flash, specify that
@@ -508,6 +510,9 @@ Drivers and Sensors
 * CAN
 
 * Clock control
+
+  * Atmel SAM/SAM0: Introduce peripheral clock control.
+  * Atmel SAM0: Improved ``samd20``/``samd21``/``samr21`` clocking mechanism.
 
 * Counter
 
