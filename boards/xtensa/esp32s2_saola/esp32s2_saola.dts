@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include <espressif/esp32s2.dtsi>
+#include <espressif/esp32s2/esp32s2_wrover_n4r2.dtsi>
 #include "esp32s2_saola-pinctrl.dtsi"
 
 / {
@@ -103,8 +103,10 @@
 	pinctrl-names = "default";
 };
 
+
 &flash0 {
 	status = "okay";
+
 	partitions {
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
