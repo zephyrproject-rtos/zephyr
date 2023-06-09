@@ -65,10 +65,6 @@
 			label = "Key in";
 		};
 	};
-	key_out {
-		compatible = "pine64,pinetime-key-out";
-		gpios = <&gpio0 15 GPIO_ACTIVE_HIGH>;
-	};
 
 	vbatt {
 		compatible = "voltage-divider";
@@ -88,6 +84,12 @@
 
 &gpio0 {
 	status = "okay";
+
+	key-out {
+		gpio-hog;
+		gpios = <15 GPIO_ACTIVE_HIGH>;
+		output-high;
+	};
 };
 
 &uart0 {
