@@ -637,6 +637,11 @@ Drivers and Sensors
 
 * W1
 
+  * Added DS2482-800 1-Wire master driver. See the :dtcompatible:`maxim,ds2482-800`
+    devicetree binding for more information.
+  * Added :kconfig:option:`CONFIG_W1_NET_FORCE_MULTIDROP_ADDRESSING` which can be
+    enabled force the 1-Wire network layer to use multidrop addressing.
+
 * Watchdog
 
 * WiFi
