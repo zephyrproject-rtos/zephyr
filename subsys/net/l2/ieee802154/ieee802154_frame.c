@@ -101,7 +101,7 @@ static inline bool validate_addr(uint8_t *buf, uint8_t **p_buf, uint8_t *length,
 
 	*p_buf = buf;
 
-	NET_DBG("Buf %p - mode %d - pan id comp %d", buf, mode, pan_id_compression);
+	NET_DBG("Buf %p - mode %d - pan id comp %d", (void *)buf, mode, pan_id_compression);
 
 	if (mode == IEEE802154_ADDR_MODE_NONE) {
 		*addr = NULL;
