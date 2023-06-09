@@ -9,3 +9,5 @@ tests:
       - net
       - statistics
     depends_on: netif
+    integration_platforms:
+      - qemu_x86

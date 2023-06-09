@@ -6,5 +6,7 @@ tests:
     platform_allow: litex_vexriscv
     build_only: true
     tags: tensorflow
+    integration_platforms:
+      - litex_vexriscv
     modules:
       - tflite-micro

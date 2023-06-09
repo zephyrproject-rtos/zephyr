@@ -1,6 +1,5 @@
 common:
   integration_platforms:
-    - native_posix
     - qemu_x86
   harness: console
   harness_config:

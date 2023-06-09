@@ -3,6 +3,7 @@ tests:
     tags: kernel
     extra_configs:
       - CONFIG_TEST_EXTRA_STACK_SIZE=1024
+    min_ram: 16
   kernel.context.linker_generator:
     platform_allow: qemu_cortex_m3
     tags:

@@ -5,3 +5,5 @@ tests:
   sample.drivers.auxdisplay:
     tags: auxdisplay
     platform_allow: nucleo_f746zg
+    integration_platforms:
+      - nucleo_f746zg

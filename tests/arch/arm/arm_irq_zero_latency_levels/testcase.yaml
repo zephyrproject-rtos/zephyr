@@ -8,5 +8,9 @@ common:
 tests:
   arch.arm.irq_zero_latency_levels:
     filter: not CONFIG_TRUSTED_EXECUTION_NONSECURE
+    integration_platforms:
+      - mps2_an521_remote
   arch.arm.irq_zero_latency_levels.secure_fw:
     filter: CONFIG_TRUSTED_EXECUTION_SECURE
+    integration_platforms:
+      - mps2_an521

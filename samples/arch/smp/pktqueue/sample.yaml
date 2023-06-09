@@ -26,3 +26,5 @@ tests:
       - m5stickc_plus
       - odroid_go
       - olimex_esp32_evb
+    integration_platforms:
+      - qemu_x86_64
