@@ -117,7 +117,7 @@ rsource "picolibc/Kconfig"
 config STDOUT_CONSOLE
 	bool "Send stdout to console"
 	depends on CONSOLE_HAS_DRIVER
-	depends on !NATIVE_APPLICATION
+	depends on !(NATIVE_APPLICATION || (NATIVE_LIBRARY && EXTERNAL_LIBC))
 	default y
 	help
 	  This option directs standard output (e.g. printf) to the console
