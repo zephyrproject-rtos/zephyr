@@ -73,13 +73,15 @@ static uint32_t ieee802154_cc13xx_overrides_sub_ghz[] = {
 	(uint32_t)0x08141131,
 	/* Tx: Configure PA ramp time, PACTL2.RC=0x3 (in ADI0, set PACTL2[4:3]=0x3) */
 	ADI_2HALFREG_OVERRIDE(0, 16, 0x8, 0x8, 17, 0x1, 0x1),
-	/* Tx: Configure PA ramping, set wait time before turning off */
-	/* (0x1A ticks of 16/24 us = 17.3 us). */
+	/* Tx: Configure PA ramping, set wait time before turning off
+	 * (0x1A ticks of 16/24 us = 17.3 us).
+	 */
 	HW_REG_OVERRIDE(0x6028, 0x001A),
 	/* Rx: Set AGC reference level to 0x16 (default: 0x2E) */
 	HW_REG_OVERRIDE(0x609C, 0x0016),
-	/* Rx: Set RSSI offset to adjust reported RSSI by -1 dB (default: -2), */
-	/* trimmed for external bias and differential configuration */
+	/* Rx: Set RSSI offset to adjust reported RSSI by -1 dB (default: -2),
+	 * trimmed for external bias and differential configuration
+	 */
 	(uint32_t)0x000188A3,
 	/* Rx: Set anti-aliasing filter bandwidth to 0x8 (in ADI0, set IFAMPCTL3[7:4]=0x8) */
 	ADI_HALFREG_OVERRIDE(0, 61, 0xF, 0x8),
@@ -96,8 +98,9 @@ static uint32_t ieee802154_cc13xx_overrides_sub_ghz[] = {
 	ADI_2HALFREG_OVERRIDE(0, 16, 0x8, 0x8, 17, 0x1, 0x0),
 	/* Rx: Set AGC reference level to 0x16 (default: 0x2E) */
 	HW_REG_OVERRIDE(0x609C, 0x0016),
-	/* Rx: Set RSSI offset to adjust reported RSSI by -1 dB (default: -2), trimmed */
-	/* for external bias and differential configuration */
+	/* Rx: Set RSSI offset to adjust reported RSSI by -1 dB (default: -2),
+	 * trimmed for external bias and differential configuration.
+	 */
 	(uint32_t)0x000188A3,
 	/* Rx: Set anti-aliasing filter bandwidth to 0x6 (in ADI0, set IFAMPCTL3[7:4]=0x8) */
 	ADI_HALFREG_OVERRIDE(0, 61, 0xF, 0x8),
@@ -110,20 +113,19 @@ static uint32_t ieee802154_cc13xx_overrides_sub_ghz[] = {
 	/* DC/DC regulator: In Tx with 14 dBm PA setting, use DCDCCTL5[3:0]=0xF */
 	/* (DITHER_EN=1 and IPEAK=7). In Rx, use default settings. */
 	(uint32_t)0x00F788D3,
-	/* TX power override */
-	/* Tx: Set PA trim to max to maximize its output power (in ADI0, set PACTL0=0xF8) */
-	ADI_REG_OVERRIDE(0, 12, 0xF8),
 	(uint32_t)0xFFFFFFFF
 };
 static uint32_t rf_prop_overrides_tx_std[] = {
 	/* The TX Power element should always be the first in the list */
-	TX_STD_POWER_OVERRIDE(0xB224),
+	TX_STD_POWER_OVERRIDE(0x013F),
 	/* The ANADIV radio parameter based on the LO divider (0) and front-end (0) settings */
 	(uint32_t)0x11310703,
 	/* override_phy_tx_pa_ramp_genfsk_std.xml */
 	/* Tx: Configure PA ramping, set wait time before turning off */
 	/* (0x1A ticks of 16/24 us = 17.3 us). */
 	HW_REG_OVERRIDE(0x6028, 0x001A),
+	/* Set TXRX pin to 0 in RX and high impedance in idle/TX. */
+	HW_REG_OVERRIDE(0x60A8, 0x0401),
 	(uint32_t)0xFFFFFFFF
 };
 static uint32_t rf_prop_overrides_tx_20[] = {
@@ -135,6 +137,8 @@ static uint32_t rf_prop_overrides_tx_20[] = {
 	/* Tx: Configure PA ramping, set wait time before turning off */
 	/* (0x1F ticks of 16/24 us = 20.3 us). */
 	HW_REG_OVERRIDE(0x6028, 0x001F),
+	/* Set TXRX pin to 0 in RX/TX and high impedance in idle. */
+	HW_REG_OVERRIDE(0x60A8, 0x0001),
 	(uint32_t)0xFFFFFFFF
 };
 
