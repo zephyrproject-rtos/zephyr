@@ -12,7 +12,7 @@
 #include <soc.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/entropy.h>
-#include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/hci_types.h>
 
 #include "hal/cpu.h"
 #include "hal/ccm.h"

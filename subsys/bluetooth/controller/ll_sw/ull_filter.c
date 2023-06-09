@@ -8,7 +8,7 @@
 
 #include <zephyr/kernel.h>
 #include <soc.h>
-#include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/sys/byteorder.h>
 
 #include "hal/cpu.h"

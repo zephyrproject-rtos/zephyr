@@ -46,7 +46,7 @@
 #include "ull_conn_iso_internal.h"
 #include "ull_llcp_internal.h"
 
-#include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/hci_types.h>
 
 #include "hal/debug.h"
 

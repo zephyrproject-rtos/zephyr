@@ -179,6 +179,11 @@ Changes in this release
 
 * Cache API functions are now fully inlined by compilers.
 
+* The Bluetooth HCI headers have been reworked, with ``hci.h`` now containing
+  only the function prototypes and the new ``hci_types.h`` defining all
+  HCI-related macros and structs. The previous ``hci_err.h`` has been merged
+  into ``hci_types.h``.
+
 Removed APIs in this release
 ============================
 
