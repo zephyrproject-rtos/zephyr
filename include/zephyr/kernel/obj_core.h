@@ -88,18 +88,42 @@ struct k_obj_core;
  */
 extern sys_slist_t z_obj_type_list;
 
+/** Object core statistics descriptor */
+struct k_obj_core_stats_desc {
+	size_t  raw_size;   /**< Internal representation stats buffer size */
+	size_t  query_size; /**< Stats buffer size used for reporting */
+
+	/** Function pointer to retrieve internal representation of stats */
+	int (*raw)(struct k_obj_core *obj_core, void *stats);
+	/** Function pointer to retrieve reported statistics */
+	int (*query)(struct k_obj_core *obj_core, void *stats);
+	/** Function pointer to reset object's statistics */
+	int (*reset)(struct k_obj_core *obj_core);
+	/** Function pointer to disable object's statistics gathering */
+	int (*disable)(struct k_obj_core *obj_core);
+	/** Function pointer to enable object's statistics gathering */
+	int (*enable)(struct k_obj_core *obj_core);
+};
+
 /** Object type structure */
 struct k_obj_type {
 	sys_snode_t    node;   /**< Node within list of object types */
 	sys_slist_t    list;   /**< List of objects of this object type */
 	uint32_t       id;     /**< Unique type ID */
 	size_t         obj_core_offset;  /**< Offset to obj_core field */
+#ifdef CONFIG_OBJ_CORE_STATS
+	/** Pointer to object core statistics descriptor */
+	struct k_obj_core_stats_desc *stats_desc;
+#endif
 };
 
 /** Object core structure */
 struct k_obj_core {
 	sys_snode_t        node;   /**< Object node within object type's list */
 	struct k_obj_type *type;   /**< Object type to which object belongs */
+#ifdef CONFIG_OBJ_CORE_STATS
+	void  *stats;              /**< Pointer to kernel object's stats */
+#endif
 };
 
 /**
@@ -218,6 +242,153 @@ void k_obj_core_init_and_link(struct k_obj_core *obj_core,
  * @param obj_core Pointer to the kernel object
  */
 void k_obj_core_unlink(struct k_obj_core *obj_core);
+
+/** @} */
+
+/**
+ * @defgroup obj_core_stats_apis Object Core Statistics APIs
+ * @ingroup kernel_apis
+ * @{
+ */
+
+#ifdef CONFIG_OBJ_CORE_STATS
+/**
+ * @brief Initialize the object type's stats descriptor
+ *
+ * This routine initializes the object type's stats descriptor.
+ *
+ * @param type Pointer to the object type
+ * @param stats_desc Pointer to the object core statistics descriptor
+ */
+static inline void k_obj_type_stats_init(struct k_obj_type *type,
+					 struct k_obj_core_stats_desc *stats_desc)
+{
+	type->stats_desc = stats_desc;
+}
+
+/**
+ * @brief Initialize the object core for statistics
+ *
+ * This routine initializes the object core to operate within the object core
+ * statistics framework.
+ *
+ * @param obj_core Pointer to the object core
+ * @param stats Pointer to the object's raw statistics
+ */
+static inline void k_obj_core_stats_init(struct k_obj_core *obj_core,
+					 void *stats)
+{
+	obj_core->stats = stats;
+}
+#endif
+
+/**
+ * @brief Register kernel object for gathering statistics
+ *
+ * Before a kernel object can gather statistics, it must be registered to do
+ * so. Registering will also automatically enable the kernel object to gather
+ * its statistics.
+ *
+ * @param obj_core Pointer to kernel object core
+ * @param stats Pointer to raw kernel statistics
+ * @param stats_len Size of raw kernel statistics buffer
+ *
+ * @retval 0 on success
+ * @retval -errno on failure
+ */
+int k_obj_core_stats_register(struct k_obj_core *obj_core, void *stats,
+			      size_t stats_len);
+
+/**
+ * @brief Deregister kernel object from gathering statistics
+ *
+ * Deregistering a kernel object core from gathering statistics prevents it
+ * from gathering any more statistics. It is expected to be invoked at the end
+ * of a kernel object's life cycle.
+ *
+ * @param obj_core Pointer to kernel object core
+ *
+ * @retval 0 on success
+ * @retval -errno on failure
+ */
+int k_obj_core_stats_deregister(struct k_obj_core *obj_core);
+
+/**
+ * @brief Retrieve the raw statistics associated with the kernel object
+ *
+ * This function copies the raw statistics associated with the kernel object
+ * core specified by @a obj_core into the buffer @a stats. Note that the size
+ * of the buffer (@a stats_len) must match the size specified by the kernel
+ * object type's statistics descriptor.
+ *
+ * @param obj_core Pointer to kernel object core
+ * @param stats Pointer to memory buffer into which to copy raw stats
+ * @param stats_len Length of the memory buffer
+ *
+ * @retval 0 on success
+ * @retval -errno on failure
+ */
+int k_obj_core_stats_raw(struct k_obj_core *obj_core, void *stats,
+			 size_t stats_len);
+
+/**
+ * @brief Retrieve the statistics associated with the kernel object
+ *
+ * This function copies the statistics associated with the kernel object core
+ * specified by @a obj_core into the buffer @a stats. Unlike the raw statistics
+ * this may report calculated values such as averages.  Note that the size of
+ * the buffer (@a stats_len) must match the size specified by the kernel object
+ * type's statistics descriptor.
+ *
+ * @param obj_core Pointer to kernel object core
+ * @param stats Pointer to memory buffer into which to copy the queried stats
+ * @param stats_len Length of the memory buffer
+ *
+ * @retval 0 on success
+ * @retval -errno on failure
+ */
+int k_obj_core_stats_query(struct k_obj_core *obj_core, void *stats,
+			   size_t stats_len);
+
+/**
+ * @brief Reset the stats associated with the kernel object
+ *
+ * This function resets the statistics associated with the kernel object core
+ * specified by @a obj_core.
+ *
+ * @param obj_core Pointer to kernel object core
+ *
+ * @retval 0 on success
+ * @retval -errno on failure
+ */
+int k_obj_core_stats_reset(struct k_obj_core *obj_core);
+
+/**
+ * @brief Stop gathering the stats associated with the kernel object
+ *
+ * This function temporarily stops the gathering of statistics associated with
+ * the kernel object core specified by @a obj_core. The gathering of statistics
+ * can be resumed by invoking :c:func :`k_obj_core_stats_enable`.
+ *
+ * @param obj_core Pointer to kernel object core
+ *
+ * @retval 0 on success
+ * @retval -errno on failure
+ */
+int k_obj_core_stats_disable(struct k_obj_core *obj_core);
+
+/**
+ * @brief Reset the stats associated with the kernel object
+ *
+ * This function resumes the gathering of statistics associated with the kernel
+ * object core specified by @a obj_core.
+ *
+ * @param obj_core Pointer to kernel object core
+ *
+ * @retval 0 on success
+ * @retval -errno on failure
+ */
+int k_obj_core_stats_enable(struct k_obj_core *obj_core);
 
 /** @} */
 #endif /* __KERNEL_OBJ_CORE_H__ */
