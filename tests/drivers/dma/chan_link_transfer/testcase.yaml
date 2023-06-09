@@ -7,6 +7,7 @@ tests:
       - dma
     platform_allow:
       - frdm_k64f
+      - mimxrt1050_evk
       - mimxrt1060_evk
       - mimxrt1064_evk
       - mimxrt1160_evk_cm7
