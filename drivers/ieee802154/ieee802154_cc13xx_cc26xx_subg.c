@@ -442,21 +442,25 @@ static int ieee802154_cc13xx_cc26xx_subg_set_channel(
 	struct ieee802154_cc13xx_cc26xx_subg_data *drv_data = dev->data;
 	RF_EventMask events;
 	uint16_t freq, fract;
+	bool was_rx_on;
 	int ret;
 
 	if (!is_subghz(channel)) {
 		return -EINVAL;
 	}
 
-	ret = ieee802154_cc13xx_cc26xx_subg_channel_to_frequency(
-		channel, &freq, &fract);
+	ret = ieee802154_cc13xx_cc26xx_subg_channel_to_frequency(channel, &freq, &fract);
 	if (ret < 0) {
 		return -EINVAL;
 	}
 
+	was_rx_on = drv_data->cmd_prop_rx_adv.status == ACTIVE;
+
 	/* Abort FG and BG processes */
-	if (ieee802154_cc13xx_cc26xx_subg_stop(dev) < 0) {
-		return -EIO;
+	ret = ieee802154_cc13xx_cc26xx_subg_stop(dev);
+	if (ret) {
+		ret = -EIO;
+		goto out;
 	}
 
 	/* Block TX while changing channel */
@@ -471,14 +475,15 @@ static int ieee802154_cc13xx_cc26xx_subg_set_channel(
 	if (events != RF_EventLastCmdDone) {
 		LOG_DBG("Failed to set frequency: 0x%" PRIx64, events);
 		ret = -EIO;
-		goto out;
 	}
 
-	/* Run BG receive process on requested channel */
-	ret = ieee802154_cc13xx_cc26xx_subg_rx(dev);
+	k_mutex_unlock(&drv_data->tx_mutex);
 
 out:
-	k_mutex_unlock(&drv_data->tx_mutex);
+	/* Re-enable RX if we found it on initially. */
+	if (was_rx_on) {
+		ieee802154_cc13xx_cc26xx_subg_rx(dev);
+	}
 	return ret;
 }
 
