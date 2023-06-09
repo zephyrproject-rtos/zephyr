@@ -35,7 +35,7 @@ config NEWLIB_LIBC_SUPPORTED
 config PICOLIBC_SUPPORTED
 	bool
 	depends on !NATIVE_APPLICATION
-	depends on "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "zephyr"
+	depends on ("$(ZEPHYR_TOOLCHAIN_VARIANT)" = "zephyr") || (NATIVE_LIBRARY)
 	depends on !(CPP && "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "zephyr")
 	# picolibc text is outside .pinned.text on this board. #54148
 	default y
