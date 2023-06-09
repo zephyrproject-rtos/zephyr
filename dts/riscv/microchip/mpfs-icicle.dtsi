@@ -233,5 +233,27 @@
 			ngpios = <32>;
 			status = "disabled";
 		};
+
+		i2c0: i2c@2010a000 {
+			compatible = "microchip,mpfs-i2c";
+			reg = <0x2010a000 0x1000>;
+			interrupt-parent = <&plic>;
+			interrupts = <58 1>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clock-frequency = <100000>;
+			status = "disabled";
+		};
+
+		i2c1: i2c@2010b000 {
+			compatible = "microchip,mpfs-i2c";
+			reg = <0x2010b000 0x1000>;
+			interrupt-parent = <&plic>;
+			interrupts = <61 1>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clock-frequency = <100000>;
+			status = "disabled";
+		};
 	};
 };
