@@ -15,8 +15,6 @@ tests:
     integration_platforms:
       - mps2_an385
       - qemu_x86
-      - sam_e70_xplained
-      - qemu_cortex_a53
     extra_args: OVERLAY_CONFIG=overlay_deferred.conf
     # "CONFIG_FULL_LIBC_SUPPORTED" filter was applied
     # because of following chain of dependencies:
@@ -32,8 +30,6 @@ tests:
     integration_platforms:
       - mps2_an385
       - qemu_x86
-      - sam_e70_xplained
-      - qemu_cortex_a53
     filter: CONFIG_FULL_LIBC_SUPPORTED
     extra_configs:
       - CONFIG_REQUIRES_FULL_LIBC=y
@@ -42,8 +38,6 @@ tests:
     integration_platforms:
       - mps2_an385
       - qemu_x86
-      - sam_e70_xplained
-      - qemu_cortex_a53
     filter: CONFIG_FULL_LIBC_SUPPORTED
     extra_configs:
       - CONFIG_REQUIRES_FULL_LIBC=y

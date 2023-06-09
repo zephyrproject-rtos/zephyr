@@ -4,3 +4,5 @@ tests:
       - kernel
       - smp
     filter: CONFIG_MP_MAX_NUM_CPUS > 1
+    depends_on:
+      - smp
