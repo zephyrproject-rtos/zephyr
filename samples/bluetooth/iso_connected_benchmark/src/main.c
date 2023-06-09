@@ -30,7 +30,7 @@ enum benchmark_role {
 
 #define DEFAULT_CIS_RTN         2
 #define DEFAULT_CIS_INTERVAL_US 7500
-#define DEFAULT_CIS_LATENCY_MS  10
+#define DEFAULT_CIS_LATENCY_MS  40
 #define DEFAULT_CIS_PHY         BT_GAP_LE_PHY_2M
 #define DEFAULT_CIS_SDU_SIZE    CONFIG_BT_ISO_TX_MTU
 #define DEFAULT_CIS_PACKING     0
