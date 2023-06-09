@@ -5,7 +5,7 @@
  */
 /dts-v1/;
 
-#include <espressif/esp32.dtsi>
+#include <espressif/esp32/esp32_d0wd_v3.dtsi>
 #include "heltec_wifi_lora32_v2-pinctrl.dtsi"
 
 / {
@@ -111,6 +111,11 @@
 };
 
 &flash0 {
+	/* the board is using plain d0wd SoC part without the flash
+	 * so any additional flash size should be defined at the board level
+	 */
+	reg = <0x0 DT_SIZE_M(8)>;
+
 	status = "okay";
 	partitions {
 		compatible = "fixed-partitions";

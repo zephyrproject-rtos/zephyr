@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include <espressif/esp32.dtsi>
+#include <espressif/esp32/esp32_wrover_e_n4r2.dtsi>
 #include "olimex_esp32_evb-pinctrl.dtsi"
 
 / {

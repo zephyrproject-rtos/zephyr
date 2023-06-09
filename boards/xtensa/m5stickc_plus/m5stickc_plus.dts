@@ -5,7 +5,7 @@
  */
 /dts-v1/;
 
-#include <espressif/esp32.dtsi>
+#include <espressif/esp32/esp32_pico_d4.dtsi>
 #include "m5stickc_plus-pinctrl.dtsi"
 
 / {

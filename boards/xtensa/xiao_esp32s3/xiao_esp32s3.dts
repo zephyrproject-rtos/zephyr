@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include <espressif/esp32s3.dtsi>
+#include <espressif/esp32s3/esp32s3_wroom_n8r8.dtsi>
 #include "xiao_esp32s3-pinctrl.dtsi"
 #include "seeed_xiao_connector.dtsi"
 

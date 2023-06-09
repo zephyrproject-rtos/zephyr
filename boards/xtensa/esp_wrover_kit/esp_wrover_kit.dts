@@ -5,7 +5,7 @@
  */
 /dts-v1/;
 
-#include <espressif/esp32.dtsi>
+#include <espressif/esp32/esp32_wrover_e_n4r8.dtsi>
 #include "esp_wrover_kit-pinctrl.dtsi"
 
 / {
