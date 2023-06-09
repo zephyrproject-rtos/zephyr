@@ -598,6 +598,8 @@ Drivers and Sensors
 
 * PCIE
 
+  * Enable filtering PCIe devices by class/revision.
+
 * PECI
 
 * Retained memory
