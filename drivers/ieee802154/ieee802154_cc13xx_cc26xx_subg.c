@@ -542,11 +542,13 @@ static int ieee802154_cc13xx_cc26xx_subg_tx(const struct device *dev,
 	/* Prepend data with the SUN FSK PHY header,
 	 * see IEEE 802.15.4, section 19.2.4.
 	 */
-	drv_data->tx_data[0] = buf->len + IEEE802154_PHY_SUN_FSK_PHR_LEN;
+	drv_data->tx_data[0] = buf->len + IEEE802154_FCS_LENGTH;
 	drv_data->tx_data[1] = 0;
 	drv_data->tx_data[1] |= BIT(3); /* FCS Type: 2-octet FCS */
 	drv_data->tx_data[1] |= BIT(4); /* DW: Enable Data Whitening */
+
 	/* TODO: Zero-copy TX, see discussion in #49775. */
+	__ASSERT_NO_MSG(buf->len + IEEE802154_PHY_SUN_FSK_PHR_LEN <= CC13XX_CC26XX_TX_BUF_SIZE);
 	memcpy(&drv_data->tx_data[IEEE802154_PHY_SUN_FSK_PHR_LEN], buf->data, buf->len);
 
 	/* Set TX data */
