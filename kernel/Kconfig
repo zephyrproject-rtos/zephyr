@@ -612,6 +612,16 @@ config OBJ_CORE_SYSTEM
 	  structures, this option is hidden by default and only available to
 	  advanced users.
 
+menuconfig OBJ_CORE_STATS
+	bool "Object core statistics"
+	default n
+	help
+	  This option integrates statistics gathering into the object core
+	  framework.
+
+if OBJ_CORE_STATS
+endif  # OBJ_CORE_STATS
+
 endif  # OBJ_CORE
 
 menu "Work Queue Options"
