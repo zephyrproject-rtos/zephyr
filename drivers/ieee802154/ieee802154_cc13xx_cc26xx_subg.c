@@ -657,8 +657,7 @@ static void ieee802154_cc13xx_cc26xx_subg_rx_done(
 static int ieee802154_cc13xx_cc26xx_subg_start(const struct device *dev)
 {
 	/* Start RX */
-	(void)ieee802154_cc13xx_cc26xx_subg_rx(dev);
-	return 0;
+	return ieee802154_cc13xx_cc26xx_subg_rx(dev);
 }
 
 /**
