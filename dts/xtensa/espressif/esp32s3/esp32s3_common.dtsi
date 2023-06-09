@@ -94,7 +94,16 @@
 				reg = <0 0x800000>;
 				erase-block-size = <4096>;
 				write-block-size = <4>;
+				/* Flash size is specified in SOC/SIP dtsi */
 			};
+		};
+
+		psram0: psram@3c000000 {
+			device_type = "memory";
+			compatible = "mmio-sram";
+			/* PSRAM size is specified in SOC/SIP dtsi */
+			reg = <0x3c000000 DT_SIZE_M(2)>;
+			status = "disabled";
 		};
 
 		uart0: uart@60000000 {
@@ -144,7 +153,12 @@
 				reg = <0x60004000 0x800>;
 				interrupts = <GPIO_INTR_SOURCE>;
 				interrupt-parent = <&intc>;
-				ngpios = <32>;
+				/* Maximum available pins (per port)
+				 * Actual occupied pins are specified
+				 * on part number dtsi level, using
+				 * the `gpio-reserved-ranges` property.
+				 */
+				ngpios = <32>;  /* 0..31 */
 			};
 
 			gpio1: gpio@60004800 {
@@ -154,7 +168,7 @@
 				reg = <0x60004800 0x800>;
 				interrupts = <GPIO_INTR_SOURCE>;
 				interrupt-parent = <&intc>;
-				ngpios = <13>;
+				ngpios = <22>; /* 32..53 */
 			};
 		};
 
