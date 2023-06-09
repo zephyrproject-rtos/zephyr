@@ -106,6 +106,8 @@ uint8_t ll_adv_enable(uint8_t handle, uint8_t enable,
 uint8_t ll_adv_enable(uint8_t enable);
 #endif /* !CONFIG_BT_CTLR_ADV_EXT || !CONFIG_BT_HCI_MESH_EXT */
 
+uint8_t ll_adv_disable_all(void);
+
 uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 		      uint32_t sdu_interval, uint16_t max_sdu,
 		      uint16_t max_latency, uint8_t rtn, uint8_t phy,
