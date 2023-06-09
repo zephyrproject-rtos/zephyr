@@ -359,6 +359,8 @@ Boards & SoC Support
 
 * Made these changes for RISC-V boards:
 
+  * ``gd32vf103``: No longer requires special OpenOCD version.
+
 * Made these changes for X86 boards:
 
 * Made these changes for Xtensa boards:
@@ -630,6 +632,8 @@ Drivers and Sensors
 * Sensor
 
 * Serial
+
+  * Add UART3 and UART4 configuration for ``gd32vf103`` SoCs.
 
 * SPI
 
