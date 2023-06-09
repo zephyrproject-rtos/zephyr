@@ -6,6 +6,6 @@
 config SOC_SERIES_RISCV_SIFIVE_FREEDOM
 	bool "SiFive Freedom SOC implementation"
 	select RISCV
-	select SOC_FAMILY_RISCV_PRIVILEGE
+	select SOC_FAMILY_RISCV_PRIVILEGED
 	help
 	  Enable support for SiFive Freedom SOC

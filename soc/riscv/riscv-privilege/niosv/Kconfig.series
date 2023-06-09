@@ -4,6 +4,6 @@
 config SOC_SERIES_NIOSV
 	bool "INTEL FPGA NIOSV"
 	select RISCV
-	select SOC_FAMILY_RISCV_PRIVILEGE
+	select SOC_FAMILY_RISCV_PRIVILEGED
 	help
 	  Enable support for the INTEL FPGA NIOSV.
