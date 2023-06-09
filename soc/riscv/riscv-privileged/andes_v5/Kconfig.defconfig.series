@@ -6,7 +6,7 @@ if SOC_SERIES_RISCV_ANDES_V5
 # Kconfig picks the first default with a satisfied condition.
 # SoC defaults should be parsed before SoC Series defaults, because SoCs usually
 # overrides SoC Series values.
-source "soc/riscv/riscv-privilege/andes_v5/Kconfig.defconfig.ae*"
+source "soc/riscv/riscv-privileged/andes_v5/Kconfig.defconfig.ae*"
 
 config SOC_SERIES
 	default "andes_v5"

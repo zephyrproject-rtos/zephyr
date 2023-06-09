@@ -13,7 +13,7 @@ config SOC_FAMILY_RISCV_PRIVILEGED
 
 config SOC_FAMILY
 	string
-	default "riscv-privilege"
+	default "riscv-privileged"
 	depends on SOC_FAMILY_RISCV_PRIVILEGED
 
 config RISCV_HAS_PLIC
@@ -34,4 +34,4 @@ config RISCV_MTVEC_VECTORED_MODE
 	help
 	  Should the SOC use mtvec in vectored mode
 
-source "soc/riscv/riscv-privilege/*/Kconfig.soc"
+source "soc/riscv/riscv-privileged/*/Kconfig.soc"
