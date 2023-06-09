@@ -46,8 +46,6 @@ struct ieee802154_cc13xx_cc26xx_subg_data {
 	uint8_t tx_data[CC13XX_CC26XX_TX_BUF_SIZE];
 
 	/* Common Radio Commands */
-	volatile rfc_CMD_CLEAR_RX_t cmd_clear_rx;
-	volatile rfc_CMD_SET_TX_POWER_t cmd_set_tx_power;
 	volatile rfc_CMD_FS_t cmd_fs;
 
 	/* Sub-GHz Radio Commands */
