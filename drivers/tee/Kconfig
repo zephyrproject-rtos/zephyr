@@ -13,4 +13,6 @@ module-str = tee
 
 comment "Device Drivers"
 
+source "drivers/tee/optee/Kconfig"
+
 endif # TEE
