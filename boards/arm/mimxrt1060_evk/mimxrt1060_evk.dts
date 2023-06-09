@@ -237,7 +237,17 @@ zephyr_udc0: &usb1 {
 
 &flexpwm2_pwm3 {
 	status = "okay";
-	pinctrl-0 = <&pinmux_flexpwm2>;
+	pinctrl-0 = <&pinmux_flexpwm2_3>;
+	pinctrl-names = "default";
+};
+
+&flexpwm1_pwm0 {
+	pinctrl-0 = <&pinmux_flexpwm1_0>;
+	pinctrl-names = "default";
+};
+
+&flexpwm1_pwm3 {
+	pinctrl-0 = <&pinmux_flexpwm1>;
 	pinctrl-names = "default";
 };
 
