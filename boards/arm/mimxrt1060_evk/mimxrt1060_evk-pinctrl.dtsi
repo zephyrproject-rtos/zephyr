@@ -98,9 +98,32 @@
 	};
 
 	/* flexpwm output for board LED */
-	pinmux_flexpwm2: pinmux_flexpwm2 {
+	pinmux_flexpwm2_3: pinmux_flexpwm2_3 {
 		group0 {
 			pinmux = <&iomuxc_gpio_ad_b0_09_flexpwm2_pwma3>;
+			drive-strength = "r0-4";
+			bias-pull-up;
+			bias-pull-up-value = "47k";
+			slew-rate = "slow";
+			nxp,speed = "100-mhz";
+		};
+	};
+
+	/* Conflicts with SD and SPI pins. Requires R281/R356 be populated */
+	pinmux_flexpwm1_0: pinmux_flexpwm1_0 {
+		group0 {
+			pinmux = <&iomuxc_gpio_sd_b0_01_flexpwm1_pwmb0>;
+			drive-strength = "r0-4";
+			bias-pull-up;
+			bias-pull-up-value = "47k";
+			slew-rate = "slow";
+			nxp,speed = "100-mhz";
+		};
+	};
+
+	pinmux_flexpwm1: pinmux_flexpwm1 {
+		group0 {
+			pinmux = <&iomuxc_gpio_ad_b0_10_flexpwm1_pwma3>;
 			drive-strength = "r0-4";
 			bias-pull-up;
 			bias-pull-up-value = "47k";
