@@ -979,7 +979,7 @@ void hci_le_cis_established(struct net_buf *buf)
 	uint16_t handle = sys_le16_to_cpu(evt->conn_handle);
 	struct bt_conn *iso;
 
-	LOG_DBG("status %u handle %u", evt->status, handle);
+	LOG_DBG("status 0x%02x handle %u", evt->status, handle);
 
 	/* ISO connection handles are already assigned at this point */
 	iso = bt_conn_lookup_handle(handle);
@@ -2473,7 +2473,7 @@ void hci_le_big_complete(struct net_buf *buf)
 	big = lookup_big_by_handle(evt->big_handle);
 	atomic_clear_bit(big->flags, BT_BIG_PENDING);
 
-	LOG_DBG("BIG[%u] %p completed, status %u", big->handle, big, evt->status);
+	LOG_DBG("BIG[%u] %p completed, status 0x%02x", big->handle, big, evt->status);
 
 	if (evt->status || evt->num_bis != big->num_bis) {
 		if (evt->status == BT_HCI_ERR_SUCCESS && evt->num_bis != big->num_bis) {
@@ -2647,7 +2647,7 @@ void hci_le_big_sync_established(struct net_buf *buf)
 	big = lookup_big_by_handle(evt->big_handle);
 	atomic_clear_bit(big->flags, BT_BIG_SYNCING);
 
-	LOG_DBG("BIG[%u] %p sync established, status %u", big->handle, big, evt->status);
+	LOG_DBG("BIG[%u] %p sync established, status 0x%02x", big->handle, big, evt->status);
 
 	if (evt->status || evt->num_bis != big->num_bis) {
 		if (evt->status == BT_HCI_ERR_SUCCESS && evt->num_bis != big->num_bis) {
