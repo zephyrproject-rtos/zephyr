@@ -1012,7 +1012,12 @@ static int run_peripheral(void)
 	}
 
 	LOG_INF("Starting advertising");
-	err = bt_le_adv_start(BT_LE_ADV_CONN_NAME, NULL, 0, NULL, 0);
+	err = bt_le_adv_start(
+		BT_LE_ADV_PARAM(BT_LE_ADV_OPT_ONE_TIME | BT_LE_ADV_OPT_CONNECTABLE |
+					BT_LE_ADV_OPT_USE_NAME |
+					BT_LE_ADV_OPT_FORCE_NAME_IN_AD,
+				BT_GAP_ADV_FAST_INT_MIN_2, BT_GAP_ADV_FAST_INT_MAX_2, NULL),
+		NULL, 0, NULL, 0);
 	if (err != 0) {
 		LOG_ERR("Advertising failed to start: %d", err);
 		return err;
