@@ -1002,6 +1002,22 @@ void hci_le_cis_established(struct net_buf *buf)
 		struct bt_conn_iso *iso_conn;
 		struct bt_iso_chan *chan;
 
+		LOG_DBG("conn_handle %u", sys_le16_to_cpu(evt->conn_handle));
+		LOG_DBG("cig_sync_delay %u", sys_get_le24(evt->cig_sync_delay));
+		LOG_DBG("cis_sync_delay %u", sys_get_le24(evt->cis_sync_delay));
+		LOG_DBG("c_latency %u", sys_get_le24(evt->c_latency));
+		LOG_DBG("p_latency %u", sys_get_le24(evt->p_latency));
+		LOG_DBG("c_phy %u", evt->c_phy);
+		LOG_DBG("p_phy %u", evt->p_phy);
+		LOG_DBG("nse %u", evt->nse);
+		LOG_DBG("c_bn %u", evt->c_bn);
+		LOG_DBG("p_bn %u", evt->p_bn);
+		LOG_DBG("c_ft %u", evt->c_ft);
+		LOG_DBG("p_ft %u", evt->p_ft);
+		LOG_DBG("c_max_pdu %u", sys_le16_to_cpu(evt->c_max_pdu));
+		LOG_DBG("p_max_pdu %u", sys_le16_to_cpu(evt->p_max_pdu));
+		LOG_DBG("interval %u", sys_le16_to_cpu(evt->interval));
+
 		iso_conn = &iso->iso;
 		chan = iso_conn->chan;
 
@@ -1289,6 +1305,13 @@ void hci_le_cis_req(struct net_buf *buf)
 	iso->handle = cis_handle;
 	iso->role = BT_HCI_ROLE_PERIPHERAL;
 	bt_conn_set_state(iso, BT_CONN_CONNECTING);
+
+	/* TODO: In case that CIS is not connected, there is not a disconnected event,
+	 * and we need to clear the CIS on ACL disconnect
+	 *
+	 * What if the ACL does not disconnect and the remote side tries again?
+	 * Should the host get a disconnect event from controller?
+	 */
 
 	err = hci_le_accept_cis(cis_handle);
 	if (err) {

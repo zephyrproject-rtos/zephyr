@@ -133,7 +133,7 @@ static void bap_broadcast_assistant_recv_state_cb(
 		    "sid %u, sync_state %u, encrypt_state %u%s%s",
 		    state->src_id, le_addr, state->adv_sid,
 		    state->pa_sync_state, state->encrypt_state,
-		    is_bad_code ? ", bad code" : "", bad_code);
+		    is_bad_code ? ", bad code" : "", is_bad_code ? bad_code : "");
 
 	for (int i = 0; i < state->num_subgroups; i++) {
 		const struct bt_bap_scan_delegator_subgroup *subgroup = &state->subgroups[i];
@@ -495,6 +495,7 @@ static bool broadcast_source_found(struct bt_data *data, void *user_data)
 {
 	struct bt_bap_broadcast_assistant_add_src_param param = { 0 };
 	const struct bt_le_scan_recv_info *info = user_data;
+	char addr_str[BT_ADDR_LE_STR_LEN];
 	struct bt_uuid_16 adv_uuid;
 	uint32_t broadcast_id;
 	int err;
@@ -524,9 +525,10 @@ static bool broadcast_source_found(struct bt_data *data, void *user_data)
 		return false;
 	}
 
+	bt_addr_le_to_str(info->addr, addr_str, sizeof(addr_str));
 	shell_print(ctx_shell,
-		    "Found BAP broadcast source with addressand ID 0x%06X\n",
-		    broadcast_id);
+		    "Found BAP broadcast source with address %s and ID 0x%06X\n",
+		    addr_str, broadcast_id);
 
 	bt_addr_le_copy(&param.addr, info->addr);
 	param.adv_sid = info->sid;
@@ -544,6 +546,11 @@ static bool broadcast_source_found(struct bt_data *data, void *user_data)
 	memset(&auto_scan, 0, sizeof(auto_scan));
 	auto_scan.broadcast_id = INVALID_BROADCAST_ID;
 
+	err = bt_le_scan_stop();
+	if (err) {
+		shell_print(ctx_shell, "Failed to stop scan: %d", err);
+	}
+
 	return false;
 }
 
@@ -560,6 +567,9 @@ static void scan_recv_cb(const struct bt_le_scan_recv_info *info,
 	    info->interval == 0) {
 		return;
 	}
+
+	/* TODO: Get name */
+	/* TODO: We should reuse the scan filter here. Add a "passes_scan_filter" function*/
 
 	bt_data_parse(ad, broadcast_source_found, (void *)info);
 }
@@ -685,6 +695,7 @@ static int cmd_bap_broadcast_assistant_mod_src(const struct shell *sh,
 
 		return -ENOEXEC;
 	}
+	param.src_id = src_id;
 
 	param.pa_sync = shell_strtobool(argv[2], 0, &result);
 	if (result != 0) {
@@ -905,15 +916,18 @@ static int cmd_bap_broadcast_assistant_broadcast_code(const struct shell *sh,
 		return -ENOEXEC;
 	}
 
-	broadcast_code_len = hex2bin(argv[2], strlen(argv[2]),
-				     broadcast_code,
-				     sizeof(broadcast_code));
+	broadcast_code_len = strlen(argv[2]);
 
 	if (broadcast_code_len == 0U) {
 		shell_error(sh, "Could not parse broadcast code");
 
 		return -ENOEXEC;
 	}
+
+	memcpy(broadcast_code, argv[2], broadcast_code_len);
+	// broadcast_code_len = hex2bin(argv[2], strlen(argv[2]),
+	// 			     broadcast_code,
+	// 			     sizeof(broadcast_code));
 
 	shell_info(sh, "Sending broadcast code:");
 	shell_hexdump(sh, broadcast_code, sizeof(broadcast_code));
@@ -1027,7 +1041,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bap_broadcast_assistant_cmds,
 	SHELL_CMD_ARG(broadcast_code, NULL,
 		      "Send a space separated broadcast code of up to 16 bytes "
 		      "<src_id> [broadcast code]",
-		      cmd_bap_broadcast_assistant_broadcast_code, 2, 16),
+		      cmd_bap_broadcast_assistant_broadcast_code, 2, 1),
 	SHELL_CMD_ARG(rem_src, NULL,
 		      "Remove a source <src_id>",
 		      cmd_bap_broadcast_assistant_rem_src, 2, 0),

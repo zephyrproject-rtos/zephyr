@@ -175,7 +175,7 @@ static struct net_buf *bt_rpmsg_iso_recv(const uint8_t *data, size_t remaining)
 
 		net_buf_add_mem(buf, &hdr, sizeof(hdr));
 	} else {
-		LOG_ERR("No available ISO buffers!");
+		LOG_DBG("No available ISO buffers!");
 		return NULL;
 	}
 

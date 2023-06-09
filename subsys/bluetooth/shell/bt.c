@@ -186,6 +186,7 @@ static bool data_cb(struct bt_data *data, void *user_data)
 	switch (data->type) {
 	case BT_DATA_NAME_SHORTENED:
 	case BT_DATA_NAME_COMPLETE:
+	case BT_DATA_BROADCAST_NAME:
 		memcpy(name, data->data, MIN(data->data_len, NAME_LEN - 1));
 		return false;
 	default:
@@ -800,30 +801,40 @@ static void per_adv_sync_recv_cb(
 	struct net_buf_simple *buf)
 {
 	char le_addr[BT_ADDR_LE_STR_LEN];
+	static uint8_t last_data[100];
 
-	bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
-	shell_print(ctx_shell, "PER_ADV_SYNC[%u]: [DEVICE]: %s, tx_power %i, "
-		    "RSSI %i, CTE %u, data length %u",
-		    bt_le_per_adv_sync_get_index(sync), le_addr, info->tx_power,
-		    info->rssi, info->cte_type, buf->len);
+	if (memcmp(last_data, buf->data, MIN(ARRAY_SIZE(last_data), buf->len)) != 0) {
+		memcpy(last_data, buf->data, MIN(ARRAY_SIZE(last_data), buf->len));
+
+		bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
+		shell_print(ctx_shell, "PER_ADV_SYNC[%u]: [DEVICE]: %s, tx_power %i, "
+			"RSSI %i, CTE %u, data length %u",
+			bt_le_per_adv_sync_get_index(sync), le_addr, info->tx_power,
+			info->rssi, info->cte_type, buf->len);
+	}
 }
 
 static void per_adv_sync_biginfo_cb(struct bt_le_per_adv_sync *sync,
 				    const struct bt_iso_biginfo *biginfo)
 {
+	static struct bt_iso_biginfo last_biginfo;
 	char le_addr[BT_ADDR_LE_STR_LEN];
 
-	bt_addr_le_to_str(biginfo->addr, le_addr, sizeof(le_addr));
-	shell_print(ctx_shell, "BIG_INFO PER_ADV_SYNC[%u]: [DEVICE]: %s, sid 0x%02x, num_bis %u, "
-		    "nse 0x%02x, interval 0x%04x (%u us), bn 0x%02x, pto 0x%02x, irc 0x%02x, "
-		    "max_pdu 0x%04x, sdu_interval 0x%04x, max_sdu 0x%04x, phy %s, framing 0x%02x, "
-		    "%sencrypted",
-		    bt_le_per_adv_sync_get_index(sync), le_addr, biginfo->sid, biginfo->num_bis,
-		    biginfo->sub_evt_count, biginfo->iso_interval,
-		    BT_CONN_INTERVAL_TO_US(biginfo->iso_interval), biginfo->burst_number,
-		    biginfo->offset, biginfo->rep_count, biginfo->max_pdu, biginfo->sdu_interval,
-		    biginfo->max_sdu, phy2str(biginfo->phy), biginfo->framing,
-		    biginfo->encryption ? "" : "not ");
+	if (memcmp(&last_biginfo, biginfo, sizeof(*biginfo))) {
+		memcpy(&last_biginfo, biginfo, sizeof(*biginfo));
+
+		bt_addr_le_to_str(biginfo->addr, le_addr, sizeof(le_addr));
+		shell_print(ctx_shell, "BIG_INFO PER_ADV_SYNC[%u]: [DEVICE]: %s, sid 0x%02x, num_bis %u, "
+			"nse 0x%02x, interval 0x%04x (%u us), bn 0x%02x, pto 0x%02x, irc 0x%02x, "
+			"max_pdu 0x%04x, sdu_interval 0x%04x, max_sdu 0x%04x, phy %s, framing 0x%02x, "
+			"%sencrypted",
+			bt_le_per_adv_sync_get_index(sync), le_addr, biginfo->sid, biginfo->num_bis,
+			biginfo->sub_evt_count, biginfo->iso_interval,
+			BT_CONN_INTERVAL_TO_US(biginfo->iso_interval), biginfo->burst_number,
+			biginfo->offset, biginfo->rep_count, biginfo->max_pdu, biginfo->sdu_interval,
+			biginfo->max_sdu, phy2str(biginfo->phy), biginfo->framing,
+			biginfo->encryption ? "" : "not ");
+	}
 }
 
 static struct bt_le_per_adv_sync_cb per_adv_sync_cb = {
@@ -2528,8 +2539,10 @@ static int cmd_connect_le(const struct shell *sh, size_t argc, char *argv[])
 					BT_GAP_SCAN_FAST_INTERVAL,
 					BT_GAP_SCAN_FAST_INTERVAL);
 
-	err = bt_conn_le_create(&addr, create_params, BT_LE_CONN_PARAM_DEFAULT,
-				&conn);
+	err = bt_conn_le_create(
+		&addr, create_params,
+		BT_LE_CONN_PARAM(BT_GAP_INIT_CONN_INT_MIN, BT_GAP_INIT_CONN_INT_MIN, 0, 400),
+		&conn);
 	if (err) {
 		shell_error(sh, "Connection failed (%d)", err);
 		return -ENOEXEC;

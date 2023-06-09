@@ -30,7 +30,7 @@
 #include "audio.h"
 
 #define LOCATION BT_AUDIO_LOCATION_FRONT_LEFT
-#define CONTEXT BT_AUDIO_CONTEXT_TYPE_CONVERSATIONAL | BT_AUDIO_CONTEXT_TYPE_MEDIA
+#define CONTEXT BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED //BT_AUDIO_CONTEXT_TYPE_CONVERSATIONAL | BT_AUDIO_CONTEXT_TYPE_MEDIA
 
 #if defined(CONFIG_BT_BAP_UNICAST)
 
@@ -322,7 +322,6 @@ static void lc3_audio_send_data(struct k_work *work)
 				lc3_sdu_cnt, tx_sdu_len);
 	}
 	lc3_sdu_cnt++;
-	seq_num++;
 }
 
 static K_WORK_DEFINE(audio_send_work, lc3_audio_send_data);
@@ -1526,7 +1525,7 @@ static int cmd_list(const struct shell *sh, size_t argc, char *argv[])
 	for (size_t i = 0U; i < ARRAY_SIZE(unicast_streams); i++) {
 		struct bt_bap_stream *stream = &unicast_streams[i].stream.bap_stream;
 
-		if (stream->conn != NULL) {
+		if (stream != NULL && stream->conn != NULL) {
 			shell_print(sh, "  %s#%u: stream %p dir 0x%02x group %p",
 				    stream == default_stream ? "*" : " ", i, stream,
 				    stream_dir(stream), stream->group);
@@ -1710,6 +1709,8 @@ static void audio_recv(struct bt_bap_stream *stream,
 	static size_t rx_cnt;
 
 	/* TODO: Make it possible to only print every X packets, and make X settable by the shell */
+
+	/* TODO Change to print stats every 100 RX (num of dup ts, num of error and num of lost )*/
 	if ((rx_cnt % 100) == 0) {
 		shell_print(ctx_shell,
 			    "[%zu]: Incoming audio on stream %p len %u ts %u seq_num %u flags %u",
@@ -1725,6 +1726,12 @@ static void audio_recv(struct bt_bap_stream *stream,
 	if (info->seq_num == last_info.seq_num) {
 		shell_error(ctx_shell, "[%zu]: Duplicate seq_num: %u",
 			    rx_cnt, info->seq_num);
+	}
+
+	if (info->flags & BT_ISO_FLAGS_ERROR) {
+		shell_error(ctx_shell, "ISO packet has error");
+	} else if (info->flags & BT_ISO_FLAGS_LOST) {
+		shell_error(ctx_shell, "ISO packet was lost");
 	}
 
 	(void)memcpy(&last_info, info, sizeof(last_info));
@@ -2340,6 +2347,8 @@ static int cmd_init(const struct shell *sh, size_t argc, char *argv[])
 #if defined(CONFIG_BT_BAP_UNICAST)
 	for (i = 0; i < ARRAY_SIZE(unicast_streams); i++) {
 		bt_bap_stream_cb_register(&unicast_streams[i].stream.bap_stream, &stream_ops);
+
+		bt_cap_stream_ops_register(&unicast_streams[i].stream, &stream_ops);
 	}
 #endif /* CONFIG_BT_BAP_UNICAST */
 

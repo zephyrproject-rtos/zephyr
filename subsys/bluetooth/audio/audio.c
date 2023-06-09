@@ -376,6 +376,7 @@ int bt_bap_decode_base(struct bt_data *data, struct bt_bap_base *base)
 	}
 
 	if (data->data_len < BT_BAP_BASE_MIN_SIZE) {
+		LOG_DBG("Len %u too small", data->data_len);
 		return -EMSGSIZE;
 	}
 
