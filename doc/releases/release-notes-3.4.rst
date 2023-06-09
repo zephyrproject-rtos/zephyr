@@ -634,6 +634,22 @@ Drivers and Sensors
 * Serial
 
   * Add UART3 and UART4 configuration for ``gd32vf103`` SoCs.
+  * uart_altera: added new driver for Altera Avalon UART.
+  * uart_emul: added new driver for emulated UART.
+  * uart_esp32:
+    * Added support for ESP32S3 SoC.
+    * Added support for RS-485 half duplex mode.
+  * uart_hostlink: added new driver for virtual UART via Synopsys ARC hostlink channels.
+  * uart_ifx_cat1: added new driver for Infineon CAT1 UART.
+  * uart_mcux: added power management support.
+  * uart_mcux_flexcomm: added support for asynchronous operations.
+  * uart_mcux_lpuart: added support for parity.
+  * uart_ns16550: now supports per instance hardware access mode instead of
+    one access mode for all instances.
+  * uart_pl011: fixed interrupt support.
+  * uart_rpi_pico_pio: added new driver to support UART via
+    Programmable Input/Output (PIO) on Raspberry Pi Pico.
+  * uart_xmc4xxx: added support for asynchronous operations.
 
 * SPI
 
