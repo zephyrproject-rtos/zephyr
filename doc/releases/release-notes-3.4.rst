@@ -302,6 +302,13 @@ Architectures
 
 * Xtensa
 
+  * Fixed the cross stack call mechanism during nested interrupts where stack would be
+    corrupted under certain conditions.
+  * Added initial support for MMU on Xtensa.
+  * Now supports building with :kconfig:option:`CONFIG_MULTITHREADING` disabled so
+    target can run in single thread only operations.
+  * Added C structs to represent interrupt frames to help with debugging.
+
 Bluetooth
 *********
 
