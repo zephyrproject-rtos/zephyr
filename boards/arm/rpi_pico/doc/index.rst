@@ -169,13 +169,13 @@ Create a file in /etc/udev.rules.d with any name, and write the line below.
 
 .. code-block:: bash
 
-   ATTRS{idVendor}=="2e8a", ATTRS{idProduct}=="0004", MODE="660", GROUP="plugdev", TAG+="uaccess"
+   ATTRS{idVendor}=="2e8a", ATTRS{idProduct}=="000c", MODE="660", GROUP="plugdev", TAG+="uaccess"
 
 This example is valid for the case that the user joins to `plugdev` groups.
 
 The Raspberry Pi Pico has an SWD interface that can be used to program
 and debug the on board RP2040. This interface can be utilized by OpenOCD.
-However, to use it with the RP2040, a `fork of OpenOCD supporting RP2040`_ is needed.
+To use it with the RP2040, OpenOCD version 0.12.0 or later is needed.
 
 If you are using a Debian based system (including RaspberryPi OS, Ubuntu. and more),
 using the `pico_setup.sh`_ script is a convenient way to set up the forked version of OpenOCD.
@@ -244,10 +244,6 @@ Using OpenOCD
 
 Install OpenOCD as described for flashing the board.
 
-.. note::
-  `fork of OpenOCD supporting RP2040`_ does not provide ZephyrRTOS enhancement.
-  (No RTOS awareness. Thus, can't recognize threads.)
-
 Here is an example for debugging the :ref:`blinky-sample` application.
 
 .. zephyr-app-commands::
@@ -283,9 +279,6 @@ Inside gdb, run:
 You can then start debugging the board.
 
 .. target-notes::
-
-.. _fork of OpenOCD supporting RP2040:
-   https://github.com/raspberrypi/openocd
 
 .. _pico_setup.sh:
    https://raw.githubusercontent.com/raspberrypi/pico-setup/master/pico_setup.sh
