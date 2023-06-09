@@ -80,10 +80,10 @@
 /soc/posix/                               @aescolar @daor-oti
 /soc/riscv/                               @kgugala @pgielda
 /soc/riscv/openisa*/                      @dleach02
-/soc/riscv/riscv-privilege/andes_v5/      @cwshu @kevinwang821020 @jimmyzhe
-/soc/riscv/riscv-privilege/neorv32/       @henrikbrixandersen
-/soc/riscv/riscv-privilege/gd32vf103/     @soburi
-/soc/riscv/riscv-privilege/niosv/         @sweeaun
+/soc/riscv/riscv-privileged/andes_v5/      @cwshu @kevinwang821020 @jimmyzhe
+/soc/riscv/riscv-privileged/neorv32/       @henrikbrixandersen
+/soc/riscv/riscv-privileged/gd32vf103/     @soburi
+/soc/riscv/riscv-privileged/niosv/         @sweeaun
 /soc/x86/                                 @dcpleung @nashif @aasthagr
 /arch/xtensa/                             @dcpleung @andyross @nashif
 /soc/xtensa/                              @dcpleung @andyross @nashif
