@@ -7,3 +7,5 @@ tests:
     filter: dt_compat_enabled("worldsemi,ws2812-spi")
     harness_config:
       fixture: fixture_led_ws2812
+    integration_platforms:
+      - mimxrt1050_evk

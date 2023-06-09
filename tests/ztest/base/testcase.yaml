@@ -19,7 +19,7 @@ tests:
     extra_configs:
       - CONFIG_TEST_USERSPACE=y
     integration_platforms:
-      - native_posix
+      - qemu_x86
   testing.ztest.base.verbose_1:
     extra_args: CONF_FILE=prj_verbose_1.conf
     integration_platforms:

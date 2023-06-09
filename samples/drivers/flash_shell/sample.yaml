@@ -15,3 +15,5 @@ tests:
       - arduino_giga_r1_m4
     harness: keyboard
     min_ram: 12
+    integration_platforms:
+      - qemu_x86

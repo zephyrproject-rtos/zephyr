@@ -11,6 +11,8 @@ common:
 tests:
   sample.tracing.user:
     extra_args: CONF_FILE="prj_user.conf"
+    integration_platforms:
+      - qemu_x86
   sample.tracing.format.sysview:
     platform_allow:
       - nrf52840dk_nrf52840

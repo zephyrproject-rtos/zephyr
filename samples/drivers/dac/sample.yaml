@@ -42,6 +42,8 @@ tests:
       - stm32l562e_dk
       - twr_ke18f
     depends_on: dac
+    integration_platforms:
+      - nucleo_l152re
     harness: console
     harness_config:
       type: one_line
