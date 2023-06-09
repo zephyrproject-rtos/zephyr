@@ -221,7 +221,6 @@ bool bt_audio_valid_codec(const struct bt_codec *codec)
 	}
 
 	for (size_t i = 0U; i < codec->meta_count; i++) {
-		LOG_ERR("META %zu", i);
 		if (!bt_audio_valid_codec_data(&codec->meta[i])) {
 			LOG_DBG("codec->meta[%zu] invalid", i);
 			return false;
