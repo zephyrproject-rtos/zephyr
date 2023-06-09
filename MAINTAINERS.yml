@@ -2106,7 +2106,7 @@ GD32 Platforms:
     - dts/*/gigadevice/
     - dts/bindings/*/*gd32*
     - soc/arm/gigadevice/
-    - soc/riscv/riscv-privilege/gd32vf103/
+    - soc/riscv/riscv-privileged/gd32vf103/
     - scripts/west_commands/*/*gd32*
   labels:
     - "platform: GD32"
