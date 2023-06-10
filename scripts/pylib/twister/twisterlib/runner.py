@@ -635,6 +635,14 @@ class ProjectBuilder(FilterBuilder):
             self.log_info("{}".format(b_log), inline_logs)
 
 
+    def change_filtered_to_error_if_integration(self):
+        ''' If integration mode is on all skips on integration_platforms are treated as errors.'''
+        if self.options.integration and self.instance.platform.name in self.instance.testsuite.integration_platforms \
+                and "quarantine" not in self.instance.reason.lower():
+                    # Do not treat this as error if filter type is command line
+            self.instance.status = Status.ERROR
+            self.instance.reason += " but is one of the integration platforms"
+
     def process(self, pipeline, done, message, lock, results):
         op = message.get('op')
 
@@ -652,6 +660,7 @@ class ProjectBuilder(FilterBuilder):
                     self.instance.reason = "runtime filter"
                     results.skipped_runtime += 1
                     self.instance.add_missing_case_status(Status.SKIP)
+                    self.change_filtered_to_error_if_integration()
                     pipeline.put({"op": "report", "test": self.instance})
                 else:
                     pipeline.put({"op": "cmake", "test": self.instance})
