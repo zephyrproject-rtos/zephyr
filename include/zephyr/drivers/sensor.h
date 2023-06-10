@@ -1211,7 +1211,7 @@ struct sensor_info {
  * @param val A pointer to a sensor_value struct.
  * @return The converted value.
  */
-static inline int64_t sensor_value_to_milli(struct sensor_value *val)
+static inline int64_t sensor_value_to_milli(const struct sensor_value *val)
 {
 	return ((int64_t)val->val1 * 1000) + val->val2 / 1000;
 }
@@ -1222,7 +1222,7 @@ static inline int64_t sensor_value_to_milli(struct sensor_value *val)
  * @param val A pointer to a sensor_value struct.
  * @return The converted value.
  */
-static inline int64_t sensor_value_to_micro(struct sensor_value *val)
+static inline int64_t sensor_value_to_micro(const struct sensor_value *val)
 {
 	return ((int64_t)val->val1 * 1000000) + val->val2;
 }
