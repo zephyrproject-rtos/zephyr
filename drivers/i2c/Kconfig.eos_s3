@@ -1,0 +1,9 @@
+# Copyright (c) 2023 Jakub Duchniewicz
+# SPDX-License-Identifier: Apache-2.0
+
+config I2C_EOS_S3
+	bool "EOS S3 SoC I2C driver"
+	default y
+	depends on DT_HAS_EOS_S3_ENABLED
+	help
+	  Enables EOS S3 I2C via Wishbone bus driver.
