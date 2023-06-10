@@ -202,6 +202,9 @@ Deprecated in this release
   functionality, enable
   :kconfig:option:`CONFIG_NRF_STORE_REBOOT_TYPE_GPREGRET`.
 
+* Deprecated :c:macro:`PTHREAD_BARRIER_DEFINE` in favor of the standardized
+  :c:func:`pthread_barrier_init`
+
 Stable API changes in this release
 ==================================
 
