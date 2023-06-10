@@ -36,6 +36,8 @@ class Platform:
         self.supported = set()
 
         self.arch = ""
+        self.vendor = ""
+        self.tier = -1
         self.type = "na"
         self.simulation = "na"
         self.simulation_exec = None
@@ -67,6 +69,8 @@ class Platform:
                 self.supported.add(item)
 
         self.arch = data['arch']
+        self.vendor = data.get('vendor', '')
+        self.tier = data.get("tier", -1)
         self.type = data.get('type', "na")
         self.simulation = data.get('simulation', "na")
         self.simulation_exec = data.get('simulation_exec')
