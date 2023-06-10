@@ -1362,8 +1362,7 @@ class TwisterRunner:
 
         processes = []
 
-        for job in range(self.jobs):
-            logger.debug(f"Launch process {job}")
+        for _ in range(self.jobs):
             p = Process(target=self.pipeline_mgr, args=(pipeline, done, lock, self.results, ))
             processes.append(p)
             p.start()
