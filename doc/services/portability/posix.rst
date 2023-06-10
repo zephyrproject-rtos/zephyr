@@ -83,6 +83,7 @@ Zephyr.
    :header: Requirements, Supported
    :widths: 50,10
 
+    _POSIX_BARRIERS,yes
     _POSIX_CLOCK_SELECTION,
     _POSIX_FSYNC,
     _POSIX_MEMLOCK,
@@ -93,8 +94,8 @@ Zephyr.
     _POSIX_SEMAPHORES,yes
     _POSIX_SHARED_MEMORY_OBJECTS,
     _POSIX_SYNCHRONIZED_IO,
-    _POSIX_THREAD_ATTR_STACKADDR,
-    _POSIX_THREAD_ATTR_STACKSIZE,
+    _POSIX_THREAD_ATTR_STACKADDR,yes
+    _POSIX_THREAD_ATTR_STACKSIZE,yes
     _POSIX_THREAD_CPUTIME,
     _POSIX_THREAD_PRIO_INHERIT,yes
     _POSIX_THREAD_PRIO_PROTECT,
@@ -134,11 +135,18 @@ multiple processes.
     pthread_attr_init(),yes
     pthread_attr_setdetachstate(),yes
     pthread_attr_setschedparam(),yes
+    pthread_barrier_destroy(),yes
+    pthread_barrier_init(),yes
+    pthread_barrier_wait(),yes
+    pthread_barrierattr_destroy(),
+    pthread_barrierattr_getpshared(),
+    pthread_barrierattr_init(),
+    pthread_barrierattr_setpshared(),
     pthread_cancel(),yes
     pthread_cleanup_pop(),
     pthread_cleanup_push(),
     pthread_cond_broadcast(),yes
-    pthread_cond_destroy(),
+    pthread_cond_destroy(),yes
     pthread_cond_init(),yes
     pthread_cond_signal(),yes
     pthread_cond_timedwait(),yes
@@ -163,7 +171,7 @@ multiple processes.
     pthread_mutexattr_init(),
     pthread_once(),yes
     pthread_self(),yes
-    pthread_setcalcelstate(),
+    pthread_setcancelstate(),yes
     pthread_setcanceltype(),
     pthread_setspecific(),yes
     pthread_sigmask(),
