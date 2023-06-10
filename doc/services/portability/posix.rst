@@ -262,7 +262,7 @@ This is implemented as part of the minimal C library available in Zephyr.
     isalnum(),yes
     isalpha(),yes
     isblank(),
-    iscntrl(),
+    iscntrl(),yes
     isdigit(),yes
     isgraph(),yes
     islower(),
@@ -285,9 +285,9 @@ This is implemented as part of the minimal C library available in Zephyr.
     memmove(),yes
     memset(),yes
     mktime(),yes
-    qsort(),
+    qsort(),yes
     rand(),yes
-    rand_r(),
+    rand_r(),yes
     realloc(),yes
     setlocale(),
     snprintf(),yes
@@ -299,7 +299,7 @@ This is implemented as part of the minimal C library available in Zephyr.
     strcmp(),yes
     strcoll(),
     strcpy(),yes
-    strcspn(),
+    strcspn(),yes
     strerror(),yes
     strerror_r(),yes
     strftime(),
@@ -309,12 +309,12 @@ This is implemented as part of the minimal C library available in Zephyr.
     strncpy(),yes
     strpbrk(),
     strrchr(),yes
-    strspn(),
+    strspn(),yes
     strstr(),yes
     strtod(),
     strtof(),
     strtoimax(),
-    strtok(),
+    strtok(),yes
     strtok_r(),yes
     strtol(),yes
     strtold(),
@@ -328,10 +328,10 @@ This is implemented as part of the minimal C library available in Zephyr.
     toupper(),yes
     tzname(),
     tzset(),
-    va_arg(),
-    va_copy(),
-    va_end(),
-    va_start(),
+    va_arg(),yes
+    va_copy(),yes
+    va_end(),yes
+    va_start(),yes
     vsnprintf(),yes
     vsprintf(),yes
     vsscanf(),
@@ -349,7 +349,7 @@ process applications.
 
     confstr(),
     environ,
-    errno,
+    errno,yes
     getenv(),
     setenv(),
     sysconf(),
@@ -397,11 +397,11 @@ POSIX_DEVICE_IO
     ftrylockfile(),
     funlockfile(),
     getc_unlocked(),
-    getchar_unlocked(),
+    getchar_unlocked(),yes
     putc_unlocked(),
     putchar_unlocked()
     clearerr(),
-    close(),
+    close(),yes
     fclose(),
     fdopen(),
     feof(),
@@ -425,18 +425,18 @@ POSIX_DEVICE_IO
     perror(),yes
     printf(),yes
     putc(),yes
-    putchar(),
+    putchar(),yes
     puts(),yes
     read(),yes
     scanf(),
     setbuf(),
     etvbuf(),
-    stderr,
-    stdin,
-    stdout,
+    stderr,yes
+    stdin,yes
+    stdout,yes
     ungetc(),
     vfprintf(),yes
     vfscanf(),
     vprintf(),yes
     vscanf(),
-    write(),
+    write(),yes
