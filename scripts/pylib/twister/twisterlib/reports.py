@@ -244,6 +244,9 @@ class Reporting:
         suites = []
 
         for instance in self.instances.values():
+            # do not capture filtered tests
+            if instance.status == Status.FILTER and not self.env.options.report_filtered:
+                continue
             suite = {}
             handler_log = os.path.join(instance.build_dir, "handler.log")
             build_log = os.path.join(instance.build_dir, "build.log")
