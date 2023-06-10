@@ -25,5 +25,6 @@ config SENSING_MAX_SENSITIVITY_COUNT
 	  Typical values are 6
 
 source "subsys/sensing/sensor/phy_3d_sensor/Kconfig"
+source "subsys/sensing/sensor/hinge_angle/Kconfig"
 
 endif # SENSING

@@ -24,6 +24,15 @@ static void acc_data_event_callback(sensing_sensor_handle_t handle, const void *
 		sample->readings[0].z);
 }
 
+
+static void hinge_angle_data_event_callback(sensing_sensor_handle_t handle, const void *buf)
+{
+	const struct sensing_sensor_info *info = sensing_get_sensor_info(handle);
+	struct sensing_sensor_value_q31 *sample = (struct sensing_sensor_value_q31 *)buf;
+
+	LOG_INF("handle:%p, Sensor:%s data:(v:%d)", handle, info->name, sample->readings[0].v);
+}
+
 void main(void)
 {
 	const struct sensing_callback_list base_acc_cb_list = {
@@ -32,9 +41,13 @@ void main(void)
 	const struct sensing_callback_list lid_acc_cb_list = {
 		.on_data_event = &acc_data_event_callback,
 	};
+	const struct sensing_callback_list hinge_angle_cb_list = {
+		.on_data_event = &hinge_angle_data_event_callback,
+	};
 	const struct sensing_sensor_info *info;
 	sensing_sensor_handle_t base_acc;
 	sensing_sensor_handle_t lid_acc;
+	sensing_sensor_handle_t hinge_angle;
 	int ret, i, num = 0;
 
 	ret = sensing_get_sensors(&num, &info);
@@ -63,17 +76,17 @@ void main(void)
 					&lid_acc_cb_list,
 					&lid_acc);
 	if (ret) {
-		LOG_ERR("sensing_open_sensor, type:0x%x index:1 error:%d",
+		LOG_ERR("sensing_open_sensor_by_dt, type:0x%x index:1 error:%d",
 			SENSING_SENSOR_TYPE_MOTION_ACCELEROMETER_3D, ret);
 	}
 
-	ret = sensing_close_sensor(&base_acc);
+	ret = sensing_open_sensor_by_dt(DEVICE_DT_GET(DT_NODELABEL(lid_accel)),
+					&hinge_angle_cb_list,
+					&hinge_angle);
 	if (ret) {
-		LOG_ERR("sensing_close_sensor:%p error:%d", base_acc, ret);
+		LOG_ERR("sensing_open_sensor_by_dt, type:0x%x error",
+			SENSING_SENSOR_TYPE_MOTION_HINGE_ANGLE);
 	}
 
-	ret = sensing_close_sensor(&lid_acc);
-	if (ret) {
-		LOG_ERR("sensing_close_sensor:%p error:%d", lid_acc, ret);
-	}
+	k_sleep(K_MSEC(10));
 }

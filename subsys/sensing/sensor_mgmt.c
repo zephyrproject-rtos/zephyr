@@ -200,12 +200,13 @@ static int sensing_init(void)
 		return 0;
 	}
 
-	STRUCT_SECTION_FOREACH(sensing_sensor, tmp_sensor) {
-		ret = pre_init_sensor(tmp_sensor);
+	for (i = 0; i < ctx->sensor_num; i++) {
+		STRUCT_SECTION_GET(sensing_sensor, i, &sensor);
+		ret = pre_init_sensor(sensor);
 		if (ret) {
 			LOG_ERR("sensing init, pre init sensor error");
 		}
-		ctx->sensors[i++] = tmp_sensor;
+		ctx->sensors[i] = sensor;
 	}
 
 	for_each_sensor(ctx, i, sensor) {
