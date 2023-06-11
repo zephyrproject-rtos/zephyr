@@ -317,7 +317,7 @@ function(ExternalZephyrProject_Cmake)
 
   get_cmake_property(sysbuild_cache CACHE_VARIABLES)
   foreach(var_name ${sysbuild_cache})
-    if(NOT ("${var_name}" MATCHES "^CMAKE_.*" OR "${var_name}" MATCHES "^BOARD"))
+    if(NOT "${var_name}" MATCHES "^(CMAKE_.*|BOARD)$")
       # Perform a dummy read to prevent a false warning about unused variables
       # being emitted due to a cmake bug: https://gitlab.kitware.com/cmake/cmake/-/issues/24555
       set(unused_tmp_var ${${var_name}})
