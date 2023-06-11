@@ -631,9 +631,9 @@ static lfs_size_t get_block_size(const struct flash_area *fa)
 	return ctx.max_size;
 }
 
-static int littlefs_flash_init(struct fs_littlefs *fs, uintptr_t dev_id)
+static int littlefs_flash_init(struct fs_littlefs *fs, void *dev_id)
 {
-	unsigned int area_id = (uintptr_t)dev_id;
+	unsigned int area_id = POINTER_TO_UINT(dev_id);
 	const struct flash_area **fap = (const struct flash_area **)&fs->backend;
 	const struct device *dev;
 	int ret;
@@ -660,7 +660,7 @@ static int littlefs_flash_init(struct fs_littlefs *fs, uintptr_t dev_id)
 }
 #endif /* CONFIG_FS_LITTLEFS_FMP_DEV */
 
-static int littlefs_init_backend(struct fs_littlefs *fs, uintptr_t dev_id, int flags)
+static int littlefs_init_backend(struct fs_littlefs *fs, void *dev_id, int flags)
 {
 	int ret = 0;
 
@@ -672,7 +672,7 @@ static int littlefs_init_backend(struct fs_littlefs *fs, uintptr_t dev_id, int f
 
 #ifdef CONFIG_FS_LITTLEFS_BLK_DEV
 	if (littlefs_on_blkdev(flags)) {
-		fs->backend = (void *) dev_id;
+		fs->backend = dev_id;
 		ret = disk_access_init((char *) fs->backend);
 		if (ret < 0) {
 			LOG_ERR("Storage init ERROR!");
@@ -856,7 +856,7 @@ static int littlefs_init_cfg(struct fs_littlefs *fs, int flags)
 	return 0;
 }
 
-static int littlefs_init_fs(struct fs_littlefs *fs, int dev_id, int flags)
+static int littlefs_init_fs(struct fs_littlefs *fs, void *dev_id, int flags)
 {
 	int ret = 0;
 
@@ -889,7 +889,7 @@ static int littlefs_mount(struct fs_mount_t *mountp)
 	k_mutex_init(&fs->mutex);
 	fs_lock(fs);
 
-	ret = littlefs_init_fs(fs, (uintptr_t)mountp->storage_dev, mountp->flags);
+	ret = littlefs_init_fs(fs, mountp->storage_dev, mountp->flags);
 	if (ret < 0) {
 		goto out;
 	}
@@ -954,7 +954,7 @@ static int littlefs_mkfs(uintptr_t dev_id, void *cfg, int flags)
 	k_mutex_init(&fs->mutex);
 	fs_lock(fs);
 
-	ret = littlefs_init_fs(fs, dev_id, flags);
+	ret = littlefs_init_fs(fs, UINT_TO_POINTER(dev_id), flags);
 	if (ret < 0) {
 		goto out;
 	}
