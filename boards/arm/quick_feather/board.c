@@ -14,6 +14,8 @@ static int eos_s3_board_init(void)
 	/* IO MUX setup for UART */
 	eos_s3_io_mux(UART_TX_PAD, UART_TX_PAD_CFG);
 	eos_s3_io_mux(UART_RX_PAD, UART_RX_PAD_CFG);
+    /* NOTE: this already is set in the qorc bootloader */
+	eos_s3_io_mux(BUTTON_PAD, BUTTON_PAD_CFG);
 
 	IO_MUX->UART_rxd_SEL = UART_RX_SEL;
 
