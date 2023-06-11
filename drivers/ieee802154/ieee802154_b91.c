@@ -169,7 +169,7 @@ static void b91_update_rssi_and_lqi(struct net_pkt *pkt)
 	lqi = b91_convert_rssi_to_lqi(rssi);
 
 	net_pkt_set_ieee802154_lqi(pkt, lqi);
-	net_pkt_set_ieee802154_rssi(pkt, rssi);
+	net_pkt_set_ieee802154_rssi_dbm(pkt, rssi);
 }
 
 /* Prepare TX buffer */

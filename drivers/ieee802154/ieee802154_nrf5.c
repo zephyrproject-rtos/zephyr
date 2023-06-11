@@ -173,7 +173,7 @@ static void nrf5_rx_thread(void *arg1, void *arg2, void *arg3)
 		}
 
 		net_pkt_set_ieee802154_lqi(pkt, rx_frame->lqi);
-		net_pkt_set_ieee802154_rssi(pkt, rx_frame->rssi);
+		net_pkt_set_ieee802154_rssi_dbm(pkt, rx_frame->rssi);
 		net_pkt_set_ieee802154_ack_fpb(pkt, rx_frame->ack_fpb);
 
 #if defined(CONFIG_NET_PKT_TIMESTAMP)
@@ -399,7 +399,7 @@ static int handle_ack(struct nrf5_802154_data *nrf5_radio)
 	}
 
 	net_pkt_set_ieee802154_lqi(ack_pkt, nrf5_radio->ack_frame.lqi);
-	net_pkt_set_ieee802154_rssi(ack_pkt, nrf5_radio->ack_frame.rssi);
+	net_pkt_set_ieee802154_rssi_dbm(ack_pkt, nrf5_radio->ack_frame.rssi);
 
 #if defined(CONFIG_NET_PKT_TIMESTAMP)
 	struct net_ptp_time timestamp = {

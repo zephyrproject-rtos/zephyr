@@ -478,7 +478,7 @@ static inline void dwt_irq_handle_rx(const struct device *dev, uint32_t sys_stat
 #endif
 	}
 
-	net_pkt_set_ieee802154_rssi(pkt, rx_level);
+	net_pkt_set_ieee802154_rssi_dbm(pkt, rx_level);
 
 	/*
 	 * Workaround for AAT status bit issue,
@@ -497,8 +497,7 @@ static inline void dwt_irq_handle_rx(const struct device *dev, uint32_t sys_stat
 	}
 
 	/* LQI not implemented */
-	LOG_DBG("Caught a packet (%u) (RSSI: %d)",
-		pkt_len, (int8_t)net_pkt_ieee802154_rssi(pkt));
+	LOG_DBG("Caught a packet (%u) (RSSI: %d)", pkt_len, rx_level);
 	LOG_HEXDUMP_DBG(pkt->buffer->data, pkt_len, "RX buffer:");
 
 	if (net_recv_data(ctx->iface, pkt) == NET_OK) {

@@ -390,20 +390,6 @@ out:
 	return r;
 }
 
-static inline uint8_t ieee802154_cc13xx_cc26xx_convert_rssi(int8_t rssi)
-{
-	if (rssi > CC13XX_CC26XX_RECEIVER_SENSITIVITY +
-			   CC13XX_CC26XX_RSSI_DYNAMIC_RANGE) {
-		rssi = CC13XX_CC26XX_RECEIVER_SENSITIVITY +
-		       CC13XX_CC26XX_RSSI_DYNAMIC_RANGE;
-	} else if (rssi < CC13XX_CC26XX_RECEIVER_SENSITIVITY) {
-		rssi = CC13XX_CC26XX_RECEIVER_SENSITIVITY;
-	}
-
-	return (255 * (rssi - CC13XX_CC26XX_RECEIVER_SENSITIVITY)) /
-	       CC13XX_CC26XX_RSSI_DYNAMIC_RANGE;
-}
-
 static void ieee802154_cc13xx_cc26xx_rx_done(
 	struct ieee802154_cc13xx_cc26xx_data *drv_data)
 {
@@ -450,9 +436,10 @@ static void ieee802154_cc13xx_cc26xx_rx_done(
 			drv_data->rx_entry[i].status = DATA_ENTRY_PENDING;
 
 			net_pkt_set_ieee802154_lqi(pkt, lqi);
-			net_pkt_set_ieee802154_rssi(
-				pkt,
-				ieee802154_cc13xx_cc26xx_convert_rssi(rssi));
+			net_pkt_set_ieee802154_rssi_dbm(pkt,
+							rssi == CC13XX_CC26XX_INVALID_RSSI
+								? IEEE802154_MAC_RSSI_DBM_UNDEFINED
+								: rssi);
 
 			if (net_recv_data(drv_data->iface, pkt)) {
 				LOG_WRN("Packet dropped");
