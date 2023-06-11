@@ -427,18 +427,21 @@ static inline bool read_rxfifo_content(const struct device *dev,
 
 static inline bool verify_crc(const struct device *dev, struct net_pkt *pkt)
 {
-	uint8_t fcs[2];
+	uint8_t status[2];
+	int8_t rssi;
 
-	if (!read_rxfifo(dev, fcs, 2)) {
+	if (!read_rxfifo(dev, status, 2)) {
 		return false;
 	}
 
-	if (!(fcs[1] & CC1200_FCS_CRC_OK)) {
+	if (!(status[1] & CC1200_FCS_CRC_OK)) {
 		return false;
 	}
 
-	net_pkt_set_ieee802154_rssi(pkt, fcs[0]);
-	net_pkt_set_ieee802154_lqi(pkt, fcs[1] & CC1200_FCS_LQI_MASK);
+	rssi = (int8_t) status[0];
+	net_pkt_set_ieee802154_rssi_dbm(
+		pkt, rssi == CC1200_INVALID_RSSI ? IEEE802154_MAC_RSSI_DBM_UNDEFINED : rssi);
+	net_pkt_set_ieee802154_lqi(pkt, status[1] & CC1200_FCS_LQI_MASK);
 
 	return true;
 }

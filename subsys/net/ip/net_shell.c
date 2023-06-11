@@ -4334,7 +4334,7 @@ static enum net_verdict handle_ipv6_echo_reply(struct net_pkt *pkt,
 		 ntohs(icmp_echo->sequence),
 		 ip_hdr->hop_limit,
 #ifdef CONFIG_IEEE802154
-		 net_pkt_ieee802154_rssi(pkt),
+		 net_pkt_ieee802154_rssi_dbm(pkt),
 #endif
 		 time_buf);
 

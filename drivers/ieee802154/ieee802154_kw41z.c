@@ -602,7 +602,7 @@ static void handle_ack(struct kw41z_context *kw41z, uint8_t seq_number)
 
 	/* Use some fake values for LQI and RSSI. */
 	(void)net_pkt_set_ieee802154_lqi(ack_pkt, 80);
-	(void)net_pkt_set_ieee802154_rssi(ack_pkt, -40);
+	(void)net_pkt_set_ieee802154_rssi_dbm(ack_pkt, -40);
 
 	net_pkt_cursor_init(ack_pkt);
 

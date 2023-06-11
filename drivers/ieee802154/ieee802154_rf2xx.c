@@ -217,7 +217,7 @@ static void rf2xx_trx_rx(const struct device *dev)
 	memcpy(pkt->buffer->data, rx_buf + RX2XX_FRAME_HEADER_SIZE, pkt_len);
 	net_buf_add(pkt->buffer, pkt_len);
 	net_pkt_set_ieee802154_lqi(pkt, ctx->pkt_lqi);
-	net_pkt_set_ieee802154_rssi(pkt, ctx->pkt_ed + ctx->trx_rssi_base);
+	net_pkt_set_ieee802154_rssi_dbm(pkt, ctx->pkt_ed + ctx->trx_rssi_base);
 
 	LOG_DBG("Caught a packet (%02X) (LQI: %02X, RSSI: %d, ED: %02X)",
 		pkt_len, ctx->pkt_lqi, ctx->trx_rssi_base + ctx->pkt_ed,
