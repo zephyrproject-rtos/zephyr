@@ -458,6 +458,10 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
              "The '--clobber-output' option controls what cleaning does.")
 
     parser.add_argument(
+        "--report-summary", action="store_true",
+        help="Show failed/error report from latest run")
+
+    parser.add_argument(
         "-o", "--report-dir",
         help="""Output reports containing results of the test run into the
         specified directory.

@@ -204,7 +204,7 @@ class TestPlan:
         else:
             last_run = os.path.join(self.options.outdir, "twister.json")
 
-        if self.options.only_failed:
+        if self.options.only_failed or self.options.report_summary:
             self.load_from_file(last_run)
             self.selected_platforms = set(p.platform.name for p in self.instances.values())
         elif self.options.load_tests:
@@ -580,8 +580,8 @@ class TestPlan:
 
                 status = ts.get('status', None)
                 reason = ts.get("reason", "Unknown")
-                if status in [Status.ERROR, Status.FAIL]:
-                    instance.status = None
+                if status in [Status.ERROR, Status.FAIL] and False:
+                    instance.status = Status.NOTRUN
                     instance.reason = None
                     instance.retries += 1
                 # test marked as passed (built only) but can run when

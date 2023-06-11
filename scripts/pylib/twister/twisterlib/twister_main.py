@@ -74,7 +74,7 @@ def main(options):
 
     previous_results = None
     # Cleanup
-    if options.no_clean or options.only_failed or options.test_only:
+    if options.no_clean or options.only_failed or options.test_only or options.report_summary:
         if os.path.exists(options.outdir):
             print("Keeping artifacts untouched")
     elif options.last_metrics:
@@ -181,6 +181,10 @@ def main(options):
 
     if options.short_build_path:
         tplan.create_build_dir_links()
+
+    if options.report_summary:
+        report.synopsis(0)
+        return 0
 
     runner = TwisterRunner(tplan.instances, tplan.testsuites, env)
     runner.duts = hwm.duts

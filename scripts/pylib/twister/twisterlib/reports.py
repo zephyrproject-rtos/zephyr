@@ -418,7 +418,7 @@ class Reporting:
             logger.warning("Deltas based on metrics from last %s" %
                            ("release" if not last_metrics else "run"))
 
-    def synopsis(self):
+    def synopsis(self, count=10):
         cnt = 0
         example_instance = None
         for instance in self.instances.values():
@@ -430,7 +430,7 @@ class Reporting:
 
                 logger.info(f"{cnt}) {instance.testsuite.name} on {instance.platform.name} {instance.status} ({instance.reason})")
                 example_instance = instance
-            if cnt == 10:
+            if count != 0 and cnt == count:
                 break
 
         if cnt and example_instance:
