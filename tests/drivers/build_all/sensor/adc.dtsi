@@ -14,6 +14,16 @@ test_adc_mcp9700a: mcp9700a {
 	io-channels = <&test_adc 0>;
 };
 
+test_voltage: voltage {
+	status = "okay";
+	compatible = "voltage-divider";
+	io-channels = <&test_adc 1>;
+	io-channel-names = "VOLTAGE";
+	output-ohms = <47000>; /* R1 */
+	full-ohms = <(100000 + 47000)>; /* R2 + R1 */
+	power-gpios = <&test_gpio 0 0>;
+};
+
 test_current: current_amp {
 	status = "okay";
 	compatible = "current-sense-amplifier";
