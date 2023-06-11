@@ -283,8 +283,8 @@ int ism330dhcx_init_interrupt(const struct device *dev)
 	}
 
 	/* enable interrupt on int1/int2 in pulse mode */
-	if (ism330dhcx_int_notification_set(ism330dhcx->ctx,
-					    ISM330DHCX_ALL_INT_PULSED) < 0) {
+	if (ism330dhcx_data_ready_mode_set(ism330dhcx->ctx,
+					   ISM330DHCX_DRDY_PULSED) < 0) {
 		LOG_ERR("Could not set pulse mode");
 		return -EIO;
 	}
