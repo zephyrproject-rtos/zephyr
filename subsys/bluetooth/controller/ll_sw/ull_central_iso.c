@@ -913,7 +913,7 @@ static void mfy_cig_offset_get(void *param)
 	conn = ll_conn_get(cis->lll.acl_handle);
 
 	conn_interval_us = (uint32_t)conn->lll.interval * CONN_INT_UNIT_US;
-	while (offset_min_us > (conn_interval_us + PDU_CIS_OFFSET_MIN_US)) {
+	while (offset_min_us >= (conn_interval_us + PDU_CIS_OFFSET_MIN_US)) {
 		offset_min_us -= conn_interval_us;
 	}
 
@@ -1044,7 +1044,7 @@ static void mfy_cis_offset_get(void *param)
 
 	/* Compensate for the difference between ACL elapsed vs CIG elapsed */
 	offset_min_us += elapsed_cig_us - elapsed_acl_us;
-	while (offset_min_us > (cig_interval_us + PDU_CIS_OFFSET_MIN_US)) {
+	while (offset_min_us >= (cig_interval_us + PDU_CIS_OFFSET_MIN_US)) {
 		offset_min_us -= cig_interval_us;
 	}
 
