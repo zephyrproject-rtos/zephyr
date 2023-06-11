@@ -84,4 +84,6 @@ source "drivers/clock_control/Kconfig.ra"
 
 source "drivers/clock_control/Kconfig.ambiq"
 
+source "drivers/clock_control/Kconfig.pwm"
+
 endif # CLOCK_CONTROL
