@@ -12,6 +12,7 @@ Kernel
    memory_management/index.rst
    data_structures/index.rst
    timing_functions/index.rst
+   object_cores/index.rst
    timeutil.rst
    util/index.rst
    iterable_sections/index.rst
