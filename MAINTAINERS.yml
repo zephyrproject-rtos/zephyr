@@ -1015,6 +1015,8 @@ Release Notes:
   collaborators:
     - rlubos
     - jciupis
+    - cfriedt
+    - fgrandel
   files:
     - drivers/ieee802154/
   labels:
