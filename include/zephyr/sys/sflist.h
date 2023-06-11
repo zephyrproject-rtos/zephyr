@@ -477,6 +477,17 @@ static inline bool sys_sflist_find_and_remove(sys_sflist_t *list,
 
 Z_GENLIST_FIND_AND_REMOVE(sflist, sfnode)
 
+/**
+ * @brief Compute the size of the given list in O(n) time
+ *
+ * @param list A pointer on the list
+ *
+ * @return an integer equal to the size of the list, or 0 if empty
+ */
+static inline size_t sys_sflist_len(sys_sflist_t *list);
+
+Z_GENLIST_LEN(sflist, sfnode)
+
 /** @} */
 
 #ifdef __cplusplus
