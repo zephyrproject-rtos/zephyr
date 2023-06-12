@@ -35,6 +35,7 @@ zephyr_library_sources_ifdef(CONFIG_PWM_RPI_PICO	pwm_rpi_pico.c)
 zephyr_library_sources_ifdef(CONFIG_PWM_BBLED_XEC	pwm_mchp_xec_bbled.c)
 zephyr_library_sources_ifdef(CONFIG_PWM_INTEL_BLINKY	pwm_intel_blinky.c)
 zephyr_library_sources_ifdef(CONFIG_PWM_XMC4XXX_CCU4	pwm_xmc4xxx_ccu4.c)
+zephyr_library_sources_ifdef(CONFIG_PWM_XMC4XXX_CCU8	pwm_xmc4xxx_ccu8.c)
 
 zephyr_library_sources_ifdef(CONFIG_USERSPACE   pwm_handlers.c)
 zephyr_library_sources_ifdef(CONFIG_PWM_CAPTURE pwm_capture.c)
