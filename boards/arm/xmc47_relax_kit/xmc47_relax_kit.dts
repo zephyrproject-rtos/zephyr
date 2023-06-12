@@ -9,6 +9,7 @@
 
 #include <infineon/xmc4700_F144x2048.dtsi>
 #include <infineon/xmc4700_F144x2048-intc.dtsi>
+#include <zephyr/dt-bindings/pwm/pwm.h>
 #include "xmc47_relax_kit-pinctrl.dtsi"
 #include "arduino_r3_connector.dtsi"
 
@@ -19,6 +20,7 @@
 	aliases {
 		led0 = &led1;
 		die-temp0 = &die_temp;
+		pwm-led0 = &pwm_led1;
 	};
 
 	leds {
@@ -29,6 +31,18 @@
 		};
 		led2: led2 {
 			gpios = <&gpio5 8 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+		pwm_led1: pwm_led1 {
+			pwms = <&pwm_ccu80 4 PWM_SEC(1) PWM_POLARITY_NORMAL>;
+			label = "PWM LED1";
+		};
+		pwm_led2: pwm_led2 {
+			pwms = <&pwm_ccu80 0 PWM_SEC(1) PWM_POLARITY_NORMAL>;
+			label = "PWM LED2";
 		};
 	};
 
@@ -134,4 +148,15 @@
 
 &gpio5 {
 	status = "okay";
+};
+
+/* this example is not using the high-side/low-side signals of the same channel */
+/* the PWM signals are only used for the blink led example */
+&pwm_ccu80 {
+	slice-prescaler = <15 15 15 15>;
+	slice-deadtime-prescaler = <3 3 3 3>;
+	channel-deadtime-high = <0 0 0 0 0 0 0 0>;
+	channel-deadtime-low = <0 0 0 0 0 0 0 0>;
+	pinctrl-0 = <&pwm_out_p5_9_ccu80_ch4_high &pwm_out_p5_8_ccu80_ch0_low>;
+	pinctrl-names = "default";
 };
