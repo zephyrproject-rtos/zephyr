@@ -254,6 +254,8 @@ New APIs in this release
 
 * Introduced :ref:`barriers_api` for barrier operations.
 
+* Added :c:macro:`CAN_FRAME_ESI` CAN-FD Error State Indicator flag.
+
 Kernel
 ******
 
@@ -549,6 +551,23 @@ Drivers and Sensors
   * Added MCP7940N battery-backed RTC SRAM driver.
 
 * CAN
+
+  * The CAN statistics are now reset when calling :c:func:`can_start`.
+
+  * Renamed the NXP FlexCAN devicetree binding compatible from ``nxp,kinetis-flexcan`` to
+    :dtcompatible:`nxp,flexcan`.
+
+  * Added support for the CAN-FD variant of the NXP FlexCAN controller using devicetree binding
+    :dtcompatible:`nxp,flexcan-fd`.
+
+  * Added support for the NXP NXP S32 CANEXCEL controller using devicetree binding
+    :dtcompatible:`nxp,s32-canxl`.
+
+  * Added support for the Atmel SAM0 CAN controller using devicetree binding
+    :dtcompatible:`atmel,sam0-can`.
+
+  * Refactored the Bosch M_CAN controller driver backend to allow for per-instance configuration via
+    devicetree.
 
 * Clock control
 
