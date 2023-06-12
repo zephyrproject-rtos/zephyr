@@ -13,8 +13,8 @@
 
 #include <zephyr/kernel.h>
 
-#include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/hci_types.h>
+#include <zephyr/bluetooth/conn.h>
 
 #include "util/memq.h"
 
