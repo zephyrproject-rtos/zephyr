@@ -331,7 +331,7 @@ uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window,
 	/* NOTE: use allocated link for generating dedicated
 	 * terminate ind rx node
 	 */
-	conn->llcp_terminate.node_rx.hdr.link = link;
+	conn->llcp_terminate.node_rx.rx.hdr.link = link;
 
 #if defined(CONFIG_BT_CTLR_RX_ENQUEUE_HOLD)
 	conn->llcp_rx_hold = NULL;
