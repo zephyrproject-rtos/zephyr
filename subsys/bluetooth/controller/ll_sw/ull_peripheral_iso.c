@@ -5,8 +5,10 @@
  */
 
 #include <zephyr/kernel.h>
-#include <zephyr/bluetooth/buf.h>
 #include <zephyr/sys/byteorder.h>
+
+#include <zephyr/bluetooth/hci_types.h>
+#include <zephyr/bluetooth/conn.h>
 
 #include "util/util.h"
 #include "util/memq.h"
@@ -45,8 +47,6 @@
 #include "ull_conn_internal.h"
 #include "ull_conn_iso_internal.h"
 #include "ull_llcp_internal.h"
-
-#include <zephyr/bluetooth/hci_types.h>
 
 #include "hal/debug.h"
 

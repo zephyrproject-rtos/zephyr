@@ -20,7 +20,6 @@
 #include <zephyr/debug/stack.h>
 #include <zephyr/sys/byteorder.h>
 
-#include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/drivers/bluetooth/hci_driver.h>
 

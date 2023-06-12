@@ -20,7 +20,6 @@
 #include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/bluetooth/hci_vs.h>
 #include <zephyr/bluetooth/buf.h>
-#include <zephyr/bluetooth/bluetooth.h>
 
 #include "../host/hci_ecc.h"
 
