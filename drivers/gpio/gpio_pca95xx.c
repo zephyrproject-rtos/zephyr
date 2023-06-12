@@ -830,7 +830,13 @@ static int gpio_pca95xx_init(const struct device *dev)
 		gpio_init_callback(&drv_data->gpio_callback,
 				   gpio_pca95xx_interrupt_callback,
 				   BIT(config->int_gpio.pin));
-		gpio_add_callback(config->int_gpio.port, &drv_data->gpio_callback);
+		ret = gpio_add_callback(config->int_gpio.port, &drv_data->gpio_callback);
+		if (ret != 0) {
+			LOG_ERR("PCA95XX[0x%X]: failed to add interrupt callback for"
+				" pin %d (%d)", config->bus.addr,
+				config->int_gpio.pin, ret);
+			return ret;
+		}
 	}
 #endif
 
