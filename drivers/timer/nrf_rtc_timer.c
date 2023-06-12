@@ -341,10 +341,11 @@ int sys_clock_driver_init(const struct device *dev)
 		alloc_mask = BIT_MASK(EXT_CHAN_COUNT) << 1;
 	}
 
-	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
-		compare_set(0, counter() + CYC_PER_TICK,
-			    sys_clock_timeout_handler, NULL);
-	}
+	uint32_t initial_timeout = IS_ENABLED(CONFIG_TICKLESS_KERNEL) ?
+		MAX_CYCLES : CYC_PER_TICK;
+
+	compare_set(0, counter() + initial_timeout,
+		    sys_clock_timeout_handler, NULL);
 
 	z_nrf_clock_control_lf_on(mode);
 
