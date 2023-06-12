@@ -242,4 +242,104 @@
 	/omit-if-no-ref/ pwm_out_p3_6_ccu42_ch0: pwm_out_p3_6_ccu42_ch0 {
 		pinmux = <XMC4XXX_PINMUX_SET(3, 6, 3)>;
 	};
+
+	/omit-if-no-ref/ pwm_out_p0_0_ccu80_ch2_low: pwm_out_p0_0_ccu80_ch2_low {
+		pinmux = <XMC4XXX_PINMUX_SET(0, 0, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p0_1_ccu80_ch1_low: pwm_out_p0_1_ccu80_ch1_low {
+		pinmux = <XMC4XXX_PINMUX_SET(0, 1, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p0_2_ccu80_ch0_low: pwm_out_p0_2_ccu80_ch0_low {
+		pinmux = <XMC4XXX_PINMUX_SET(0, 2, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p0_3_ccu80_ch2_high: pwm_out_p0_3_ccu80_ch2_high {
+		pinmux = <XMC4XXX_PINMUX_SET(0, 3, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p0_4_ccu80_ch1_high: pwm_out_p0_4_ccu80_ch1_high {
+		pinmux = <XMC4XXX_PINMUX_SET(0, 4, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p0_5_ccu80_ch0_high: pwm_out_p0_5_ccu80_ch0_high {
+		pinmux = <XMC4XXX_PINMUX_SET(0, 5, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p0_6_ccu80_ch3_high: pwm_out_p0_6_ccu80_ch3_high {
+		pinmux = <XMC4XXX_PINMUX_SET(0, 6, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p0_9_ccu80_ch1_high: pwm_out_p0_9_ccu80_ch1_high {
+		pinmux = <XMC4XXX_PINMUX_SET(0, 9, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p0_10_ccu80_ch0_high: pwm_out_p0_10_ccu80_ch0_high {
+		pinmux = <XMC4XXX_PINMUX_SET(0, 10, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p0_11_ccu80_ch3_low: pwm_out_p0_11_ccu80_ch3_low {
+		pinmux = <XMC4XXX_PINMUX_SET(0, 11, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p1_4_ccu80_ch3_low: pwm_out_p1_4_ccu80_ch3_low {
+		pinmux = <XMC4XXX_PINMUX_SET(1, 4, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p1_4_ccu81_ch2_high: pwm_out_p1_4_ccu81_ch2_high {
+		pinmux = <XMC4XXX_PINMUX_SET(1, 4, 4)>;
+	};
+	/omit-if-no-ref/ pwm_out_p1_5_ccu80_ch2_low: pwm_out_p1_5_ccu80_ch2_low {
+		pinmux = <XMC4XXX_PINMUX_SET(1, 5, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p1_5_ccu81_ch1_high: pwm_out_p1_5_ccu81_ch1_high {
+		pinmux = <XMC4XXX_PINMUX_SET(1, 5, 4)>;
+	};
+	/omit-if-no-ref/ pwm_out_p1_10_ccu81_ch2_low: pwm_out_p1_10_ccu81_ch2_low {
+		pinmux = <XMC4XXX_PINMUX_SET(1, 10, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p1_11_ccu81_ch1_low: pwm_out_p1_11_ccu81_ch1_low {
+		pinmux = <XMC4XXX_PINMUX_SET(1, 11, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p1_12_ccu81_ch0_low: pwm_out_p1_12_ccu81_ch0_low {
+		pinmux = <XMC4XXX_PINMUX_SET(1, 12, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p1_13_ccu81_ch2_high: pwm_out_p1_13_ccu81_ch2_high {
+		pinmux = <XMC4XXX_PINMUX_SET(1, 13, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p1_14_ccu81_ch1_high: pwm_out_p1_14_ccu81_ch1_high {
+		pinmux = <XMC4XXX_PINMUX_SET(1, 14, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p1_15_ccu81_ch0_high: pwm_out_p1_15_ccu81_ch0_high {
+		pinmux = <XMC4XXX_PINMUX_SET(1, 15, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p2_0_ccu81_ch2_low: pwm_out_p2_0_ccu81_ch2_low {
+		pinmux = <XMC4XXX_PINMUX_SET(2, 0, 2)>;
+	};
+	/omit-if-no-ref/ pwm_out_p2_1_ccu81_ch1_low: pwm_out_p2_1_ccu81_ch1_low {
+		pinmux = <XMC4XXX_PINMUX_SET(2, 1, 2)>;
+	};
+	/omit-if-no-ref/ pwm_out_p2_2_ccu81_ch0_low: pwm_out_p2_2_ccu81_ch0_low {
+		pinmux = <XMC4XXX_PINMUX_SET(2, 2, 2)>;
+	};
+	/omit-if-no-ref/ pwm_out_p2_6_ccu80_ch1_low: pwm_out_p2_6_ccu80_ch1_low {
+		pinmux = <XMC4XXX_PINMUX_SET(2, 6, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p2_7_ccu80_ch0_low: pwm_out_p2_7_ccu80_ch0_low {
+		pinmux = <XMC4XXX_PINMUX_SET(2, 7, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p2_8_ccu80_ch3_high: pwm_out_p2_8_ccu80_ch3_high {
+		pinmux = <XMC4XXX_PINMUX_SET(2, 8, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p2_9_ccu80_ch2_high: pwm_out_p2_9_ccu80_ch2_high {
+		pinmux = <XMC4XXX_PINMUX_SET(2, 9, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p2_14_ccu80_ch2_low: pwm_out_p2_14_ccu80_ch2_low {
+		pinmux = <XMC4XXX_PINMUX_SET(2, 14, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p2_15_ccu80_ch1_low: pwm_out_p2_15_ccu80_ch1_low {
+		pinmux = <XMC4XXX_PINMUX_SET(2, 15, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p5_0_ccu81_ch3_low: pwm_out_p5_0_ccu81_ch3_low {
+		pinmux = <XMC4XXX_PINMUX_SET(5, 0, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p5_1_ccu81_ch3_high: pwm_out_p5_1_ccu81_ch3_high {
+		pinmux = <XMC4XXX_PINMUX_SET(5, 1, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p5_2_ccu81_ch2_low: pwm_out_p5_2_ccu81_ch2_low {
+		pinmux = <XMC4XXX_PINMUX_SET(5, 2, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p5_7_ccu81_ch0_high: pwm_out_p5_7_ccu81_ch0_high {
+		pinmux = <XMC4XXX_PINMUX_SET(5, 7, 3)>;
+	};
 };

@@ -215,6 +215,20 @@
 			#pwm-cells = <3>;
 			status = "disabled";
 		};
+
+		pwm_ccu80: ccu80@40020000 {
+			compatible = "infineon,xmc4xxx-ccu8-pwm";
+			reg = <0x40020000 0x4000>;
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
+
+		pwm_ccu81: ccu81@40024000 {
+			compatible = "infineon,xmc4xxx-ccu8-pwm";
+			reg = <0x40024000 0x4000>;
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
 	};
 };
 

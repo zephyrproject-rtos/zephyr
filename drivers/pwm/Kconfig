@@ -91,4 +91,6 @@ source "drivers/pwm/Kconfig.intel_blinky"
 
 source "drivers/pwm/Kconfig.xmc4xxx_ccu4"
 
+source "drivers/pwm/Kconfig.xmc4xxx_ccu8"
+
 endif # PWM
