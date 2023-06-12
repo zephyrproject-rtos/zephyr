@@ -35,6 +35,9 @@ void z_arm_platform_init(void)
 #ifdef CONFIG_PWM_XMC4XXX_CCU4
 				     | XMC_SCU_CLOCK_SLEEP_MODE_CONFIG_ENABLE_CCU
 #endif
+#ifdef CONFIG_PWM_XMC4XXX_CCU8
+				     | XMC_SCU_CLOCK_SLEEP_MODE_CONFIG_ENABLE_CCU
+#endif
 	);
 
 	/* configure PLL & system clock */

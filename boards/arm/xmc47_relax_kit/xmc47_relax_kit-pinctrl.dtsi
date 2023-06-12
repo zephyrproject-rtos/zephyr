@@ -43,3 +43,15 @@
 	drive-push-pull;
 	hwctrl = "disabled";
 };
+
+&pwm_out_p5_9_ccu80_ch4_high {
+	drive-strength = "strong-medium-edge";
+	drive-push-pull;
+	hwctrl = "disabled";
+};
+
+&pwm_out_p5_8_ccu80_ch0_low {
+	drive-strength = "strong-medium-edge";
+	drive-push-pull;
+	hwctrl = "disabled";
+};
