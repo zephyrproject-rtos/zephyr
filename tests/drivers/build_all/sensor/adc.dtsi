@@ -14,6 +14,16 @@ test_adc_mcp9700a: mcp9700a {
 	io-channels = <&test_adc 0>;
 };
 
+test_current: current_amp {
+	status = "okay";
+	compatible = "current-sense-amplifier";
+	io-channels = <&test_adc 2>;
+	io-channel-names = "CURRENT_AMP";
+	sense-resistor-micro-ohms = <10>;
+	sense-gain-mult = <1>;
+	sense-gain-div = <1>;
+};
+
 test_adc_emul: adc {
 	compatible = "zephyr,adc-emul";
 	nchannels = <2>;
