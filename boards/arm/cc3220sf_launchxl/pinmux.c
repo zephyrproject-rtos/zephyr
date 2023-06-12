@@ -95,39 +95,9 @@ int pinmux_initialize(void)
 #ifdef CONFIG_UART_CC32XX
 	/* Configure PIN_55 for UART0 UART0_TX */
 	MAP_PinTypeUART(PIN_55, PIN_MODE_3);
-
 	/* Configure PIN_57 for UART0 UART0_RX */
 	MAP_PinTypeUART(PIN_57, PIN_MODE_3);
 #endif
-
-	/* Enable Peripheral Clocks */
-	MAP_PRCMPeripheralClkEnable(PRCM_GPIOA1, PRCM_RUN_MODE_CLK);
-
-	/* The following enables the 3 LEDs for the blinking samples */
-
-	/* Configure PIN_64 for GPIOOutput */
-	MAP_PinTypeGPIO(PIN_64, PIN_MODE_0, false);
-	MAP_GPIODirModeSet(GPIOA1_BASE, 0x2, GPIO_DIR_MODE_OUT);
-
-	/* Configure PIN_01 for GPIOOutput */
-	MAP_PinTypeGPIO(PIN_01, PIN_MODE_0, false);
-	MAP_GPIODirModeSet(GPIOA1_BASE, 0x4, GPIO_DIR_MODE_OUT);
-
-	/* Configure PIN_02 for GPIOOutput */
-	MAP_PinTypeGPIO(PIN_02, PIN_MODE_0, false);
-	MAP_GPIODirModeSet(GPIOA1_BASE, 0x8, GPIO_DIR_MODE_OUT);
-
-	/* SW3: Configure PIN_04 (GPIO13) for GPIOInput */
-	MAP_PinTypeGPIO(PIN_04, PIN_MODE_0, false);
-	MAP_GPIODirModeSet(GPIOA1_BASE, 0x20, GPIO_DIR_MODE_IN);
-
-	MAP_PRCMPeripheralClkEnable(PRCM_GPIOA2, PRCM_RUN_MODE_CLK);
-
-	/* SW2: Configure PIN_15 (GPIO22) for GPIOInput */
-	MAP_PinTypeGPIO(PIN_15, PIN_MODE_0, false);
-	MAP_GPIODirModeSet(GPIOA2_BASE, 0x40, GPIO_DIR_MODE_IN);
-
-	MAP_PRCMPeripheralClkEnable(PRCM_GPIOA3, PRCM_RUN_MODE_CLK);
 
 #ifdef CONFIG_I2C_CC32XX
 	{
