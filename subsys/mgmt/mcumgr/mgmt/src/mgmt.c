@@ -5,6 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <assert.h>
 #include <zephyr/sys/slist.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/device.h>
@@ -142,6 +143,28 @@ enum mgmt_cb_return mgmt_callback_notify(uint32_t event, void *data, size_t data
 	}
 
 	return return_status;
+}
+
+uint8_t mgmt_evt_get_index(uint32_t event)
+{
+	uint8_t index = 0;
+
+	event &= MGMT_EVT_OP_ID_ALL;
+	__ASSERT((event != 0), "Event cannot be 0.");
+
+	while (index < 16) {
+		if (event & 0x1) {
+			break;
+		}
+
+		++index;
+		event = event >> 1;
+	}
+
+	event = event >> 1;
+	__ASSERT((event == 0), "Event cannot contain multiple values.");
+
+	return index;
 }
 #endif
 

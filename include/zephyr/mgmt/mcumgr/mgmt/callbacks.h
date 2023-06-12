@@ -228,6 +228,15 @@ struct mgmt_evt_op_cmd_arg {
 };
 
 /**
+ * @brief Get event ID index from event.
+ *
+ * @param event		Event to get ID index from.
+ *
+ * @return		Event index.
+ */
+uint8_t mgmt_evt_get_index(uint32_t event);
+
+/**
  * @brief This function is called to notify registered callbacks about mcumgr notifications/events.
  *
  * @param event		#mcumgr_op_t.
