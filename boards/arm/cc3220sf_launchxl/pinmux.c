@@ -134,13 +134,6 @@ int pinmux_initialize(void)
 		unsigned long pin;
 		unsigned long mode;
 
-		/* Enable the I2C module clocks and wait for completion:*/
-		MAP_PRCMPeripheralClkEnable(PRCM_I2CA0,
-					    PRCM_RUN_MODE_CLK |
-					    PRCM_SLP_MODE_CLK);
-		while (!MAP_PRCMPeripheralStatusGet(PRCM_I2CA0)) {
-		}
-
 		pin = I2C_CC32XX_PIN_01_I2C_SCL & 0xff;
 		mode = (I2C_CC32XX_PIN_01_I2C_SCL >> 8) & 0xff;
 		MAP_PinTypeI2C(pin, mode);
