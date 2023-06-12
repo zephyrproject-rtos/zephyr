@@ -834,12 +834,18 @@ static int handle_encapsulated_rsp(uint8_t **data, uint32_t *len)
 		return -ENODATA;
 	}
 
+	*len = buf->len;
+	if (*len > CONFIG_USB_REQUEST_BUFFER_SIZE) {
+		LOG_ERR("Response too long %u, truncating to %u", buf->len,
+			CONFIG_USB_REQUEST_BUFFER_SIZE);
+		*len = CONFIG_USB_REQUEST_BUFFER_SIZE;
+	}
+
 	if (VERBOSE_DEBUG) {
 		net_hexdump("RSP <", buf->data, buf->len);
 	}
 
-	memcpy(*data, buf->data, buf->len);
-	*len = buf->len;
+	memcpy(*data, buf->data, *len);
 
 	net_buf_unref(buf);
 
