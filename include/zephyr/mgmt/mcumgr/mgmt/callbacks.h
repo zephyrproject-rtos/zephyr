@@ -151,22 +151,25 @@ enum fs_mgmt_group_events {
  */
 enum img_mgmt_group_events {
 	/** Callback when a client sends a file upload chunk, data is img_mgmt_upload_check(). */
-	MGMT_EVT_OP_IMG_MGMT_DFU_CHUNK		= MGMT_DEF_EVT_OP_ID(MGMT_EVT_GRP_IMG, 0),
+	MGMT_EVT_OP_IMG_MGMT_DFU_CHUNK			= MGMT_DEF_EVT_OP_ID(MGMT_EVT_GRP_IMG, 0),
 
 	/** Callback when a DFU operation is stopped. */
-	MGMT_EVT_OP_IMG_MGMT_DFU_STOPPED	= MGMT_DEF_EVT_OP_ID(MGMT_EVT_GRP_IMG, 1),
+	MGMT_EVT_OP_IMG_MGMT_DFU_STOPPED		= MGMT_DEF_EVT_OP_ID(MGMT_EVT_GRP_IMG, 1),
 
 	/** Callback when a DFU operation is started. */
-	MGMT_EVT_OP_IMG_MGMT_DFU_STARTED	= MGMT_DEF_EVT_OP_ID(MGMT_EVT_GRP_IMG, 2),
+	MGMT_EVT_OP_IMG_MGMT_DFU_STARTED		= MGMT_DEF_EVT_OP_ID(MGMT_EVT_GRP_IMG, 2),
 
 	/** Callback when a DFU operation has finished being transferred. */
-	MGMT_EVT_OP_IMG_MGMT_DFU_PENDING	= MGMT_DEF_EVT_OP_ID(MGMT_EVT_GRP_IMG, 3),
+	MGMT_EVT_OP_IMG_MGMT_DFU_PENDING		= MGMT_DEF_EVT_OP_ID(MGMT_EVT_GRP_IMG, 3),
 
 	/** Callback when an image has been confirmed. */
-	MGMT_EVT_OP_IMG_MGMT_DFU_CONFIRMED	= MGMT_DEF_EVT_OP_ID(MGMT_EVT_GRP_IMG, 4),
+	MGMT_EVT_OP_IMG_MGMT_DFU_CONFIRMED		= MGMT_DEF_EVT_OP_ID(MGMT_EVT_GRP_IMG, 4),
+
+	/** Callback when an image write command has finished writing to flash. */
+	MGMT_EVT_OP_IMG_MGMT_DFU_CHUNK_WRITE_COMPLETE	= MGMT_DEF_EVT_OP_ID(MGMT_EVT_GRP_IMG, 5),
 
 	/** Used to enable all img_mgmt_group events. */
-	MGMT_EVT_OP_IMG_MGMT_ALL		= MGMT_DEF_EVT_OP_ALL(MGMT_EVT_GRP_IMG),
+	MGMT_EVT_OP_IMG_MGMT_ALL			= MGMT_DEF_EVT_OP_ALL(MGMT_EVT_GRP_IMG),
 };
 
 /**
