@@ -701,6 +701,10 @@ defined(CONFIG_MCUMGR_SMP_COMMAND_STATUS_HOOKS)
 #if defined(CONFIG_MCUMGR_GRP_IMG_STATUS_HOOKS)
 			(void)mgmt_callback_notify(MGMT_EVT_OP_IMG_MGMT_DFU_PENDING, NULL, 0,
 						   &ret_rc, &ret_group);
+		} else {
+			/* Notify that the write has completed */
+			(void)mgmt_callback_notify(MGMT_EVT_OP_IMG_MGMT_DFU_CHUNK_WRITE_COMPLETE,
+						   NULL, 0, &ret_rc, &ret_group);
 #endif
 		}
 	}
