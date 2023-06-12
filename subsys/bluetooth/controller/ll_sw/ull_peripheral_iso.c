@@ -128,7 +128,7 @@ uint8_t ll_cis_accept(uint16_t handle)
 		}
 
 #if defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
-		acl_conn->llcp_cis.req++;
+		conn->llcp_cis.req++;
 #else
 		/* Accept request */
 		ull_cp_cc_accept(conn, cis_offset_min);
