@@ -59,7 +59,7 @@ config LV_Z_DOUBLE_VDB
 config LV_Z_FULL_REFRESH
 	default y
 
-config LV_Z_DPI
+config LV_DPI_DEF
 	default 128
 
 config LV_Z_BITS_PER_PIXEL
@@ -80,7 +80,7 @@ config LV_Z_POINTER_KSCAN
 config LV_Z_VDB_SIZE
 	default 16
 
-config LV_Z_DPI
+config LV_DPI_DEF
 	default 128
 
 choice LV_COLOR_DEPTH
