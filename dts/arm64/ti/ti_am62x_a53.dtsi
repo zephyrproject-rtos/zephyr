@@ -51,7 +51,7 @@
 		status = "okay";
 	};
 
-	pinctrl: pinctrl@f4000 {
+	main_pmx0: pinctrl@f4000 {
 		compatible = "pinctrl-single";
 		reg = <0x000f4000 0x2ac>;
 		#pinctrl-cells = <1>;
@@ -137,7 +137,7 @@
 		status = "disabled";
 	};
 
-	mcu_pinctrl: pinctrl@4084000 {
+	mcu_pmx0: pinctrl@4084000 {
 		compatible = "pinctrl-single";
 		reg = <0x04084000 0x88>;
 		#pinctrl-cells = <1>;

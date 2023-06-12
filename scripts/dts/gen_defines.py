@@ -357,6 +357,7 @@ def write_special_props(node):
     # Macros that are special to bindings inherited from Linux, which
     # we can't capture with the current bindings language.
     write_pinctrls(node)
+    write_pinctrl_cells(node)
     write_fixed_partitions(node)
     write_gpio_hogs(node)
 
@@ -595,6 +596,36 @@ def write_pinctrls(node):
         for idx, ph in enumerate(pinctrl.conf_nodes):
             out_dt_define(f"{node.z_path_id}_PINCTRL_NAME_{name}_IDX_{idx}_PH",
                           f"DT_{ph.z_path_id}")
+
+def write_pinctrl_cells(node):
+    # Write special macros for pinctrl cells node properties.
+
+    pinctrl_cells = node.pinctrl_cells
+    if pinctrl_cells is None:
+        return
+
+    prop_name, groups = pinctrl_cells
+
+    num_groups = len(groups)
+    group_size = len(groups[0])
+    # Convert the pinctrl group values to their indexes
+    group_idxs = [range(i, i + group_size)
+                  for i in range(0, num_groups * group_size, group_size)]
+
+    macro2val = {}
+    prop_id = str2ident(prop_name)
+    macro = f"{node.z_path_id}_P_{prop_id}_PINCTRL_CELLS"
+    macro2val[f"{macro}_FOREACH_GROUP(fn)"] = \
+        ' \\\n\t'.join(
+            f'fn(DT_{node.z_path_id}, {prop_id}, {", ".join(map(str, group))})'
+            for group in group_idxs)
+    macro2val[f"{macro}_EXISTS"] = 1
+    macro2val[f"{macro}_LEN"] = num_groups
+    macro2val[f"{macro}_GROUP_SIZE"] = group_size
+
+    out_comment("Special pinctrl macros:")
+    for macro, val in macro2val.items():
+        out_dt_define(macro, val)
 
 
 def write_fixed_partitions(node):

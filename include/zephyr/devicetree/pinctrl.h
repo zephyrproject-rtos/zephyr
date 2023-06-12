@@ -447,6 +447,74 @@
 #define DT_INST_PINCTRL_HAS_NAME(inst, name) \
 	DT_PINCTRL_HAS_NAME(DT_DRV_INST(inst), name)
 
+/**
+ * @brief Invokes @p fn for each pinctrl cell group in the value of
+ *        property @p prop.
+ *
+ * This macro is only usable if the pinctrl device contains a "#pinctrl-cells"
+ * property. The number of parameters macro @p fn takes depends on the value
+ * of the "#pinctrl-cells" property.
+ * #pinctrl-cells = <1>:
+ *     fn(node_id, prop, idx0, idx1)
+ * #pinctrl-cells = <2>:
+ *     fn(node_id, prop, idx0, idx1, idx2)
+ * @p node_id and @p prop are the same as what is passed to
+ * DT_FOREACH_PINCTRL_CELLS_GROUP(), and @p idx0 ... @p idx{n} are the current
+ * indexes into the array.
+ * The @p idx values are integer literals starting from 0.
+ *
+ * Example devicetree fragment:
+ *
+ * @code{.dts}
+ *     pinctrl-single,pins = <
+ *             0x1c8 0x50000
+ *             0x1cc 0x10000
+ *     >;
+ * @endcode
+ *
+ * Example usage:
+ *
+ * @code{.c}
+ *
+ *     #define SOC_DT_PIN(node_id, prop, idx0, idx1)          \
+ *     {                                                      \
+ *             .offset = DT_PROP_BY_IDX(node_id, prop, idx0), \
+ *             .value = DT_PROP_BY_IDX(node_id, prop, idx1)   \
+ *     },
+ *
+ *     struct pinctrl_soc_pin pins[] = {
+ *             DT_FOREACH_PINCTRL_CELLS_GROUP(
+ *                     node_id, pinctrl_single_pins, SOC_DT_PIN)
+ *     };
+ * @endcode
+ *
+ * This expands to:
+ *
+ * @code{.c}
+ *     struct pinctrl_soc_pin pins[] = {
+ *             { 0x1c8, 0x50000 },
+ *             { 0x1cc, 0x10000 },
+ *     };
+ * @endcode
+ *
+ * In general, this macro expands to:
+ * #pinctrl-cells = <1>:
+ *     fn(node_id, prop, 0, 1) fn(node_id, prop, 2, 3) \
+ *             [...] fn(node_id, prop, n-2, n-1)
+ *
+ * #pinctrl-cells = <2>:
+ *     fn(node_id, prop, 0, 1, 2) fn(node_id, prop, 3, 4, 5) \
+ *             [...] fn(node_id, prop, n-3, n-2, n-1)
+ *
+ * where `n` is the number of elements in @p prop, as it would be
+ * returned by `DT_PROP_LEN(node_id, prop)`.
+ *
+ * @param node_id node identifier
+ * @param prop lowercase-and-underscores property name
+ * @param fn macro to invoke
+ */
+#define DT_FOREACH_PINCTRL_CELLS_GROUP(node_id, prop, fn) \
+	DT_CAT4(node_id, _P_, prop, _PINCTRL_CELLS_FOREACH_GROUP)(fn)
 
 /**
  * @}

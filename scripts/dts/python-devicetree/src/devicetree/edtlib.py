@@ -676,6 +676,10 @@ class Node:
       A list of ControllerAndData objects for the GPIOs hogged by the node. The
       list is empty if the node does not hog any GPIOs. Only relevant for GPIO hog
       nodes.
+
+    pinctrl_cells:
+      A tuple of property name and pinctrl cells split into groups.
+      None if the pinctrl parent has no "#pinctrl-cells" property.
     """
     @property
     def name(self):
@@ -870,6 +874,29 @@ class Node:
             res.append(entry)
 
         return res
+
+    @property
+    def pinctrl_cells(self):
+        "See the class docstring"
+        parent = self._node.parent
+        if not parent or '#pinctrl-cells' not in parent.props:
+            return None
+
+        supported_properties = ('pinctrl-single,pins', 'pinctrl-single,bits')
+        pinctrl_cells = parent.props['#pinctrl-cells'].to_num()
+        group_size = pinctrl_cells + 1
+
+        for prop_name in supported_properties:
+            if prop_name not in self._node.props:
+                continue
+            raw_groups = _slice(self._node, prop_name, 4*group_size,
+                                f'4*(<#pinctrl-cells> (= {pinctrl_cells}) + 1)')
+            groups = [to_nums(g) for g in raw_groups]
+            return prop_name, groups
+
+        _LOG.warning(f'Warning: {self.path} has no \'pinctrl-cells\''
+                     f' supported properties {supported_properties}')
+        return None
 
     def __repr__(self):
         if self.binding_path:
