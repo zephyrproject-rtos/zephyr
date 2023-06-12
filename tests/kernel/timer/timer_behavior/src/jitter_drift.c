@@ -145,6 +145,15 @@ static void do_test_using(void (*sample_collection_fn)(void))
 		}
 	}
 
+#ifndef CONFIG_TIMER_HAS_64BIT_CYCLE_COUNTER
+	/*
+	 * Account for rollovers if any, and only when k_cycle_get_32()
+	 * is used. This should not happen with k_cycle_get_64() and will
+	 * be trapped later otherwise.
+	 */
+	periodic_end += (1ULL << 32) * periodic_rollovers;
+#endif
+
 	double min_us = cycles_to_us(min_cyc);
 	double max_us = cycles_to_us(max_cyc);
 
@@ -249,14 +258,9 @@ static void do_test_using(void (*sample_collection_fn)(void))
 	zassert_true(stddev_us < (double)CONFIG_TIMER_TEST_MAX_STDDEV,
 		     "Standard deviation (in microseconds) outside expected bound");
 
-	if (periodic_rollovers != 0) {
-		TC_PRINT("WARNING: the total time is bogus due to timer "
-			 "rollovers and canot be validated\n");
-	} else {
-		/* Validate the timer drift (accuracy over time) is within a configurable bound */
-		zassert_true(abs(time_diff_us) < CONFIG_TIMER_TEST_MAX_DRIFT,
-			     "Drift (in microseconds) outside expected bound");
-	}
+	/* Validate the timer drift (accuracy over time) is within a configurable bound */
+	zassert_true(abs(time_diff_us) < CONFIG_TIMER_TEST_MAX_DRIFT,
+		     "Drift (in microseconds) outside expected bound");
 }
 
 ZTEST(timer_jitter_drift, test_jitter_drift_timer_period)
