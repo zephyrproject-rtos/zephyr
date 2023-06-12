@@ -207,11 +207,8 @@ struct ll_conn {
 		 * struct node_rx_pdu.
 		 */
 		struct {
-			struct node_rx_hdr hdr;
-			union {
-				uint8_t    pdu[0] __aligned(4);
-				uint8_t    reason;
-			};
+			struct node_rx_pdu rx;
+			uint8_t            reason;
 		} node_rx;
 	} llcp_terminate;
 

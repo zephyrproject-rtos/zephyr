@@ -3459,7 +3459,8 @@ static inline int event_conn_upd_prep(struct ll_conn *conn, uint16_t lazy,
 				CONTAINER_OF(conn->llcp.conn_upd.pdu_win_offset,
 					     struct pdu_data,
 					     llctrl.conn_update_ind.win_offset);
-			tx = CONTAINER_OF(pdu_ctrl_tx, struct node_tx, pdu);
+			tx = CONTAINER_OF((void *)pdu_ctrl_tx, struct node_tx,
+					  pdu);
 			ctrl_tx_enqueue(conn, tx);
 
 			/* Acquire the reserved Rx node */
@@ -3500,7 +3501,7 @@ static inline int event_conn_upd_prep(struct ll_conn *conn, uint16_t lazy,
 			conn->llcp_cu.pause_tx = 1U;
 
 			/* enqueue control PDU */
-			tx = CONTAINER_OF(pdu_ctrl_tx, struct node_tx, pdu);
+			tx = CONTAINER_OF((void *)pdu_ctrl_tx, struct node_tx, pdu);
 			ctrl_tx_enqueue(conn, tx);
 			return -EINPROGRESS;
 
@@ -4555,7 +4556,7 @@ static inline void event_conn_param_prep(struct ll_conn *conn,
 		/* move to wait for conn_update_rsp/rej */
 		conn->llcp_conn_param.state = LLCP_CPR_STATE_RSP_WAIT;
 		/* enqueue control PDU */
-		tx = CONTAINER_OF(pdu_ctrl_tx, struct node_tx, pdu);
+		tx = CONTAINER_OF((void *)pdu_ctrl_tx, struct node_tx, pdu);
 		ctrl_tx_enqueue(conn, tx);
 	}
 	break;
