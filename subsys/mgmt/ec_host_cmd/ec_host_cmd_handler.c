@@ -51,6 +51,14 @@ static struct ec_host_cmd ec_host_cmd = {
 		},
 };
 
+#ifdef CONFIG_EC_HOST_CMD_IN_PROGRESS_STATUS
+/* Indicates that a command has sent EC_HOST_CMD_IN_PROGRESS but hasn't sent a final status */
+static bool cmd_in_progress;
+
+/* The final result of the last command that has sent EC_HOST_CMD_IN_PROGRESS */
+static enum ec_host_cmd_status saved_status = EC_HOST_CMD_UNAVAILABLE;
+#endif
+
 static uint8_t cal_checksum(const uint8_t *const buffer, const uint16_t size)
 {
 	uint8_t checksum = 0;
@@ -60,6 +68,22 @@ static uint8_t cal_checksum(const uint8_t *const buffer, const uint16_t size)
 	}
 	return (uint8_t)(-checksum);
 }
+
+#ifdef CONFIG_EC_HOST_CMD_IN_PROGRESS_STATUS
+bool ec_host_cmd_send_in_progress_ended(void)
+{
+	return !cmd_in_progress;
+}
+
+enum ec_host_cmd_status ec_host_cmd_send_in_progress_status(void)
+{
+	enum ec_host_cmd_status ret = saved_status;
+
+	saved_status = EC_HOST_CMD_UNAVAILABLE;
+
+	return ret;
+}
+#endif /* CONFIG_EC_HOST_CMD_IN_PROGRESS_STATUS */
 
 static void send_status_response(const struct ec_host_cmd_backend *backend,
 				 struct ec_host_cmd_tx_buf *tx,
@@ -160,6 +184,36 @@ int ec_host_cmd_send_response(enum ec_host_cmd_status status,
 {
 	struct ec_host_cmd *hc = &ec_host_cmd;
 	struct ec_host_cmd_tx_buf *tx = &hc->tx;
+
+#ifdef CONFIG_EC_HOST_CMD_IN_PROGRESS_STATUS
+	if (cmd_in_progress) {
+		/* We previously got EC_HOST_CMD_IN_PROGRESS. This must be the completion
+		 * of that command, so save the result code.
+		 */
+		LOG_INF("HC pending done, size=%d, result=%d",
+			args->output_buf_size, status);
+
+		/* Don't support saving response data, so mark the response as unavailable
+		 * in that case.
+		 */
+		if (args->output_buf_size != 0) {
+			saved_status = EC_HOST_CMD_UNAVAILABLE;
+		} else {
+			saved_status = status;
+		}
+
+		/* We can't send the response back to the host now since we already sent
+		 * the in-progress response and the host is on to other things now.
+		 */
+		cmd_in_progress = false;
+
+		return EC_HOST_CMD_SUCCESS;
+
+	} else if (status == EC_HOST_CMD_IN_PROGRESS) {
+		cmd_in_progress = true;
+		LOG_INF("HC pending");
+	}
+#endif /* CONFIG_EC_HOST_CMD_IN_PROGRESS_STATUS */
 
 	if (status != EC_HOST_CMD_SUCCESS) {
 		const struct ec_host_cmd_request_header *const rx_header =
