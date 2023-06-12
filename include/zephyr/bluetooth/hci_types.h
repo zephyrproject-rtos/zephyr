@@ -2997,7 +2997,7 @@ struct bt_hci_evt_le_biginfo_adv_report {
 #define BT_EVT_MASK_LE_PER_ADV_RESPONSE_REPORT     BT_EVT_BIT(39)
 #define BT_EVT_MASK_LE_ENH_CONN_COMPLETE_V2        BT_EVT_BIT(40)
 
-/** HCI Error Codes, BT Core Spec v5.2 [Vol 1, Part F]. */
+/** HCI Error Codes, BT Core Spec v5.4 [Vol 1, Part F]. */
 #define BT_HCI_ERR_SUCCESS                      0x00
 #define BT_HCI_ERR_UNKNOWN_CMD                  0x01
 #define BT_HCI_ERR_UNKNOWN_CONN_ID              0x02
@@ -3065,6 +3065,8 @@ struct bt_hci_evt_le_biginfo_adv_report {
 #define BT_HCI_ERR_LIMIT_REACHED                0x43
 #define BT_HCI_ERR_OP_CANCELLED_BY_HOST         0x44
 #define BT_HCI_ERR_PACKET_TOO_LONG              0x45
+#define BT_HCI_ERR_TOO_LATE                     0x46
+#define BT_HCI_ERR_TOO_EARLY                    0x47
 
 #ifdef __cplusplus
 }
