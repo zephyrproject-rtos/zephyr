@@ -312,10 +312,11 @@ static ALWAYS_INLINE void arch_icache_disable(void)
 }
 
 #endif /* CONFIG_ICACHE */
-#endif /* ZEPHYR_INCLUDE_ARCH_ARM64_CACHE_H_ */
 
 #ifdef __cplusplus
 }
 #endif
 
 #endif /* _ASMLANGUAGE */
+
+#endif /* ZEPHYR_INCLUDE_ARCH_ARM64_CACHE_H_ */
