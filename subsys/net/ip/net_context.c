@@ -1112,6 +1112,8 @@ int net_context_connect(struct net_context *context,
 		ret = 0;
 	} else if (IS_ENABLED(CONFIG_NET_TCP) &&
 		   net_context_get_type(context) == SOCK_STREAM) {
+		NET_ASSERT(laddr != NULL);
+
 		ret = net_tcp_connect(context, addr, laddr, rport, lport,
 				      timeout, cb, user_data);
 	} else {
