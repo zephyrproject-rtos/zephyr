@@ -54,6 +54,7 @@ struct npm1300_charger_data {
 #define ADC_OFFSET_TASK_TEMP 0x01U
 #define ADC_OFFSET_CONFIG    0x09U
 #define ADC_OFFSET_NTCR_SEL  0x0AU
+#define ADC_OFFSET_TASK_AUTO 0x0CU
 #define ADC_OFFSET_RESULTS   0x10U
 #define ADC_OFFSET_IBAT_EN   0x24U
 
@@ -337,6 +338,12 @@ int npm1300_charger_init(const struct device *dev)
 
 	/* Trigger temperature measurement */
 	ret = mfd_npm1300_reg_write(config->mfd, ADC_BASE, ADC_OFFSET_TASK_TEMP, 1U);
+	if (ret != 0) {
+		return ret;
+	}
+
+	/* Enable automatic temperature measurements during charging */
+	ret = mfd_npm1300_reg_write(config->mfd, ADC_BASE, ADC_OFFSET_TASK_AUTO, 1U);
 	if (ret != 0) {
 		return ret;
 	}
