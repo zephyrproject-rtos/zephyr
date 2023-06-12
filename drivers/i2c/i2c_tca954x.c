@@ -156,6 +156,9 @@ const struct i2c_driver_api tca954x_api_funcs = {
 	.transfer = tca954x_transfer,
 };
 
+BUILD_ASSERT(CONFIG_I2C_TCA954X_CHANNEL_INIT_PRIO > CONFIG_I2C_TCA954X_ROOT_INIT_PRIO,
+	     "I2C multiplexer channels must be initialized after their root");
+
 #define TCA954x_CHILD_DEFINE(node_id, n)				    \
 	static const struct tca954x_channel_config			    \
 		tca##n##a_down_config_##node_id = {			    \
