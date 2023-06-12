@@ -162,7 +162,8 @@ static inline void event_send_cis_rsp(struct ll_conn *conn,
 				      uint16_t event_counter);
 static inline void event_peripheral_iso_prep(struct ll_conn *conn,
 					     uint16_t event_counter,
-					     uint32_t ticks_at_expire);
+					     uint32_t ticks_at_expire,
+					     uint32_t remainder);
 #endif /* CONFIG_BT_CTLR_PERIPHERAL_ISO */
 
 static inline void ctrl_tx_pre_ack(struct ll_conn *conn,
@@ -1539,8 +1540,8 @@ int ull_conn_llcp(struct ll_conn *conn, uint32_t ticks_at_expire,
 		event_counter = lll->event_counter +
 				lll->latency_prepare + lazy;
 
-		event_peripheral_iso_prep(conn, event_counter,
-					  ticks_at_expire);
+		event_peripheral_iso_prep(conn, event_counter, ticks_at_expire,
+					  remainder);
 
 	}
 #endif /* CONFIG_BT_CTLR_PERIPHERAL_ISO */
@@ -6601,8 +6602,10 @@ void event_send_cis_rsp(struct ll_conn *conn, uint16_t event_counter)
 	}
 }
 
-void event_peripheral_iso_prep(struct ll_conn *conn, uint16_t event_counter,
-			       uint32_t ticks_at_expire)
+static inline void event_peripheral_iso_prep(struct ll_conn *conn,
+					     uint16_t event_counter,
+					     uint32_t ticks_at_expire,
+					     uint32_t remainder)
 {
 	struct ll_conn_iso_group *cig;
 	uint16_t start_event_count;
@@ -6627,9 +6630,8 @@ void event_peripheral_iso_prep(struct ll_conn *conn, uint16_t event_counter,
 	instant_latency = (event_counter - start_event_count) & 0xffff;
 	if (instant_latency <= 0x7fff) {
 		/* Start CIS peripheral */
-		ull_conn_iso_start(conn, ticks_at_expire,
-				   conn->llcp_cis.cis_handle,
-				   instant_latency);
+		ull_conn_iso_start(conn, conn->llcp_cis.cis_handle,
+				   ticks_at_expire, remainder, instant_latency);
 
 		conn->llcp_cis.state = LLCP_CIS_STATE_REQ;
 		conn->llcp_cis.ack = conn->llcp_cis.req;
@@ -6724,7 +6726,8 @@ static uint8_t cis_ind_recv(struct ll_conn *conn, memq_link_t *link,
 	/* Setup CIS connection */
 	err = ull_peripheral_iso_setup(&pdu->llctrl.cis_ind,
 				       conn->llcp_cis.cig_id,
-				       conn->llcp_cis.cis_handle);
+				       conn->llcp_cis.cis_handle,
+				       &conn->llcp_cis.conn_event_count);
 
 	conn->llcp_cis.state = LLCP_CIS_STATE_INST_WAIT;
 
