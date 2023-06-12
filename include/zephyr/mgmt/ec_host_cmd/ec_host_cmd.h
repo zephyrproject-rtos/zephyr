@@ -282,6 +282,31 @@ const struct ec_host_cmd *ec_host_cmd_get_hc(void);
 FUNC_NORETURN void ec_host_cmd_task(void);
 #endif
 
+#ifdef CONFIG_EC_HOST_CMD_IN_PROGRESS_STATUS
+/**
+ * @brief Check if a Host Command that sent EC_HOST_CMD_IN_PROGRESS status has ended.
+ *
+ * A Host Command that sends EC_HOST_CMD_IN_PROGRESS status doesn't send a final result.
+ * The final result can be get with the ec_host_cmd_send_in_progress_status function.
+ *
+ * @retval true if the Host Command endded
+ */
+bool ec_host_cmd_send_in_progress_ended(void);
+
+/**
+ * @brief Get final result of a last Host Command that has sent EC_HOST_CMD_IN_PROGRESS status.
+ *
+ * A Host Command that sends EC_HOST_CMD_IN_PROGRESS status doesn't send a final result.
+ * Get the saved status with this function. The status can be get only once. Futher calls return
+ * EC_HOST_CMD_UNAVAILABLE.
+ *
+ * Saving status of Host Commands that send response data is not supported.
+ *
+ * @retval The final status or EC_HOST_CMD_UNAVAILABLE if not available.
+ */
+enum ec_host_cmd_status ec_host_cmd_send_in_progress_status(void);
+#endif /* CONFIG_EC_HOST_CMD_IN_PROGRESS_STATUS */
+
 /**
  * @}
  */
