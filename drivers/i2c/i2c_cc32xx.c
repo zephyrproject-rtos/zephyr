@@ -331,6 +331,13 @@ static int i2c_cc32xx_init(const struct device *dev)
 	int error;
 	uint32_t regval;
 
+	/* Enable the I2C module clocks and wait for completion:*/
+	MAP_PRCMPeripheralClkEnable(PRCM_I2CA0,
+					PRCM_RUN_MODE_CLK |
+					PRCM_SLP_MODE_CLK);
+	while (!MAP_PRCMPeripheralStatusGet(PRCM_I2CA0)) {
+	}
+
 	error = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 	if (error < 0) {
 		return error;
