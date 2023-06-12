@@ -24,6 +24,29 @@ config SENSING_MAX_SENSITIVITY_COUNT
 	  So, maximum sensitivity count is needed for sensors
 	  Typical values are 6
 
+config SENSING_RUNTIME_THREAD_STACK_SIZE
+	int "stack size for sensing subsystem runtime thread"
+	depends on SENSING
+	default 4096
+	help
+	  This is the stack size for sensing subsystem runtime thread
+	  Typical values are 4096
+
+config SENSING_RUNTIME_THREAD_PRIORITY
+	int "priority for sensing subsystem runtime thread"
+	depends on SENSING
+	default 9
+	help
+	  This is the thread priority for sensor subsystem runtime thread
+	  Ring buffer data is stored by runtime thread, and then give semaphore
+	  to notify dispatch thread, runtime thread priority should lower than
+	  dispatch thread priority to ensure dispatch thread could fetch data as
+	  soon as runtime thread give semaphore. Take for example, if runtime
+	  priority is higher than dispatch thread, and runtime running in full
+	  loading with no sleep, then dispatch thread has no change to fetch
+	  data, then ring buf will always be put into data until overflow.
+	  Typical values are 9
+
 source "subsys/sensing/sensor/phy_3d_sensor/Kconfig"
 source "subsys/sensing/sensor/hinge_angle/Kconfig"
 

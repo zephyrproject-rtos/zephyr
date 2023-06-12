@@ -11,6 +11,7 @@
 #include <zephyr/sensing/sensing_sensor.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/slist.h>
+#include <string.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -57,9 +58,26 @@ extern "C" {
 #define for_each_sensor(ctx, i, sensor)						\
 	for (i = 0; i < ctx->sensor_num && (sensor = ctx->sensors[i]) != NULL; i++)
 
+#define for_each_sensor_reverse(ctx, i, sensor)				\
+	for (i = ctx->sensor_num - 1; i >= 0 && (sensor = ctx->sensors[i]) != NULL; i--)
+
+#define for_each_client_conn(sensor, client)				\
+	SYS_SLIST_FOR_EACH_CONTAINER(&sensor->client_list, client, snode)
+
+#define EXEC_TIME_INIT 0
+#define EXEC_TIME_OFF UINT64_MAX
+
 enum sensor_trigger_mode {
 	SENSOR_TRIGGER_MODE_POLLING = 1,
 	SENSOR_TRIGGER_MODE_DATA_READY = 2,
+};
+
+enum {
+	EVENT_CONFIG_READY,
+};
+
+enum {
+	SENSOR_LATER_CFG_BIT,
 };
 
 /**
@@ -101,6 +119,8 @@ struct sensing_sensor {
 	enum sensing_sensor_state state;
 	enum sensor_trigger_mode mode;
 	/* runtime info */
+	atomic_t flag;
+	uint64_t next_exec_time;
 	uint16_t sample_size;
 	void *data_buf;
 	struct sensing_connection *conns;
@@ -152,6 +172,12 @@ static inline const struct sensing_sensor_info *get_sensor_info(struct sensing_c
 	__ASSERT(conn->source, "get sensor info, sensing_sensor is NULL");
 
 	return conn->source->info;
+}
+
+/* check if client has requested data from reporter */
+static inline bool is_client_request_data(struct sensing_connection *conn)
+{
+	return conn->interval != 0;
 }
 
 /**

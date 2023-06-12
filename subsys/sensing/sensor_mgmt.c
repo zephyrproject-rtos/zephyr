@@ -26,6 +26,7 @@ LOG_MODULE_REGISTER(sensing, CONFIG_SENSING_LOG_LEVEL);
 DT_FOREACH_CHILD_STATUS_OKAY(DT_DRV_INST(0), SENSING_SENSOR_INFO_DEFINE)
 DT_FOREACH_CHILD_STATUS_OKAY(DT_DRV_INST(0), SENSING_SENSOR_DEFINE)
 
+K_THREAD_STACK_DEFINE(runtime_stack, CONFIG_SENSING_RUNTIME_THREAD_STACK_SIZE);
 
 /**
  * @struct sensing_context
@@ -35,12 +36,224 @@ struct sensing_context {
 	bool sensing_initialized;
 	int sensor_num;
 	struct sensing_sensor *sensors[SENSING_SENSOR_NUM];
+	struct k_thread runtime_thread;
+	k_tid_t runtime_id;
+	struct k_sem runtime_event_sem;
+	atomic_t runtime_event_flag;
 };
 
 static struct sensing_context sensing_ctx = {
 	.sensor_num = SENSING_SENSOR_NUM,
 };
 
+
+
+/* sensor_later_config including arbitrate/set interval/sensitivity
+ */
+static uint32_t arbitrate_interval(struct sensing_sensor *sensor)
+{
+	struct sensing_connection *conn;
+	uint32_t min_interval = UINT32_MAX;
+	uint32_t interval;
+
+	/* search from all clients, arbitrate the interval */
+	for_each_client_conn(sensor, conn) {
+		LOG_DBG("arbitrate interval, sensor:%s for each conn:%p, interval:%d(us)",
+			sensor->dev->name, conn, conn->interval);
+		if (!is_client_request_data(conn)) {
+			continue;
+		}
+		if (conn->interval < min_interval) {
+			min_interval = conn->interval;
+		}
+	}
+	/* min_interval == UINT32_MAX means sensor is not opened by any clients,
+	 * then interval should be 0
+	 */
+	interval = (min_interval == UINT32_MAX ? 0 : min_interval);
+
+	if (interval == 0) {
+		/* sensor is closed by all clients, reset next_exec_time as EXEC_TIME_OFF
+		 * open -> close: next_exec_time = EXEC_TIME_OFF
+		 */
+		sensor->next_exec_time = EXEC_TIME_OFF;
+	} else {
+		/* sensor is still closed last time, set next_exec_time as EXEC_TIME_INIT
+		 * close -> open: next_exec_time = EXEC_TIME_INIT
+		 */
+		if (sensor->next_exec_time == EXEC_TIME_OFF) {
+			sensor->next_exec_time = EXEC_TIME_INIT;
+		}
+	}
+	LOG_DBG("arbitrate interval, sensor:%s, interval:%d(us), next_exec_time:%lld",
+		sensor->dev->name, interval, sensor->next_exec_time);
+
+	return interval;
+}
+
+static int set_arbitrate_interval(struct sensing_sensor *sensor, uint32_t interval)
+{
+	const struct sensing_sensor_api *sensor_api;
+
+	__ASSERT(sensor && sensor->dev, "set arbitrate interval, sensor or sensor device is NULL");
+	sensor_api = sensor->dev->api;
+	__ASSERT(sensor_api, "set arbitrate interval, sensor device sensor_api is NULL");
+
+	sensor->interval = interval;
+	/* reset sensor next_exec_time and sample timestamp as soon as sensor interval is changed */
+	sensor->next_exec_time = interval > 0 ? EXEC_TIME_INIT : EXEC_TIME_OFF;
+
+	LOG_DBG("set arbitrate interval:%d, sensor:%s, next_exec_time:%lld",
+		interval, sensor->dev->name, sensor->next_exec_time);
+
+	((struct sensing_sensor_value_header *)sensor->data_buf)->base_timestamp = 0;
+
+	if (!sensor_api->set_interval) {
+		LOG_ERR("sensor:%s set_interval callback is not set yet", sensor->dev->name);
+		return -ENODEV;
+	}
+
+	return sensor_api->set_interval(sensor->dev, interval);
+}
+
+static int config_interval(struct sensing_sensor *sensor)
+{
+	uint32_t interval = arbitrate_interval(sensor);
+
+	LOG_INF("config interval, sensor:%s, interval:%d", sensor->dev->name, interval);
+
+	return set_arbitrate_interval(sensor, interval);
+}
+
+static uint32_t arbitrate_sensitivity(struct sensing_sensor *sensor, int index)
+{
+	struct sensing_connection *conn;
+	uint32_t min_sensitivity = UINT32_MAX;
+
+	/* search from all clients, arbitrate the sensitivity */
+	for_each_client_conn(sensor, conn) {
+		LOG_DBG("arbitrate sensitivity, sensor:%s for each conn:%p, idx:%d, sens:%d",
+				sensor->dev->name, conn, index,
+				conn->sensitivity[index]);
+		if (!is_client_request_data(conn)) {
+			continue;
+		}
+		if (conn->sensitivity[index] < min_sensitivity) {
+			min_sensitivity = conn->sensitivity[index];
+		}
+	}
+	LOG_DBG("arbitrate sensitivity, sensor:%s, min_sensitivity:%d",
+		sensor->dev->name, min_sensitivity);
+
+	/* min_sensitivity == UINT32_MAX means no client is requesting to open sensor,
+	 * by any client, in this case, return sensitivity 0
+	 */
+	return (min_sensitivity == UINT32_MAX ? 0 : min_sensitivity);
+}
+
+static int set_arbitrate_sensitivity(struct sensing_sensor *sensor, int index, uint32_t sensitivity)
+{
+	const struct sensing_sensor_api *sensor_api;
+
+	__ASSERT(sensor && sensor->dev, "arbitrate sensitivity, sensor or sensor device is NULL");
+	sensor_api = sensor->dev->api;
+	__ASSERT(sensor_api, "arbitrate sensitivity, sensor device sensor_api is NULL");
+
+	/* update sensor sensitivity */
+	sensor->sensitivity[index] = sensitivity;
+
+	if (!sensor_api->set_sensitivity) {
+		LOG_WRN("sensor:%s set_sensitivity callback is not set", sensor->dev->name);
+		/* sensor driver may not set sensitivity callback, no need to return error here */
+		return 0;
+	}
+
+	return sensor_api->set_sensitivity(sensor->dev, index, sensitivity);
+}
+
+static int config_sensitivity(struct sensing_sensor *sensor, int index)
+{
+	uint32_t sensitivity = arbitrate_sensitivity(sensor, index);
+
+	LOG_INF("config sensitivity, sensor:%s, index:%d, sensitivity:%d",
+		sensor->dev->name, index, sensitivity);
+
+	return set_arbitrate_sensitivity(sensor, index, sensitivity);
+}
+
+static int config_sensor(struct sensing_sensor *sensor)
+{
+	int ret;
+	int i = 0;
+
+	ret = config_interval(sensor);
+	if (ret) {
+		LOG_WRN("sensor:%s config interval error", sensor->dev->name);
+	}
+
+	for (i = 0; i < sensor->sensitivity_count; i++) {
+		ret = config_sensitivity(sensor, i);
+		if (ret) {
+			LOG_WRN("sensor:%s config sensitivity index:%d error",
+					sensor->dev->name, i);
+		}
+	}
+
+	return ret;
+}
+
+static void sensor_later_config(struct sensing_context *ctx)
+{
+	struct sensing_sensor *sensor;
+	int i = 0;
+
+	LOG_INF("sensor later config begin...");
+
+	for_each_sensor_reverse(ctx, i, sensor) {
+		if (atomic_test_and_clear_bit(&sensor->flag, SENSOR_LATER_CFG_BIT)) {
+			LOG_INF("sensor later config, index:%d, sensor:%s",
+				i, sensor->dev->name);
+			config_sensor(sensor);
+		}
+	}
+}
+
+static void sensing_runtime_thread(void *p1, void *p2, void *p3)
+{
+	struct sensing_context *ctx = p1;
+	int sleep_time = UINT32_MAX;
+	k_timeout_t timeout;
+	int ret;
+
+	/* TBD: will later implemented in PR3 */
+	/* sleep_time = loop_sensors() */
+	timeout = (sleep_time == UINT32_MAX ? K_FOREVER : K_MSEC(sleep_time));
+
+	ret = k_sem_take(&ctx->runtime_event_sem, timeout);
+	if (!ret) {
+		if (atomic_test_and_clear_bit(&ctx->runtime_event_flag, EVENT_CONFIG_READY)) {
+			LOG_INF("runtime thread triggered by event_config ready");
+			sensor_later_config(ctx);
+		}
+	}
+}
+
+static void save_config_and_notify(struct sensing_sensor *sensor)
+{
+	struct sensing_context *ctx = &sensing_ctx;
+
+	__ASSERT(sensor, "save config and notify, sensing_sensor not be NULL");
+
+	LOG_INF("save config and notify, sensor:%s", sensor->dev->name);
+
+	/* remember sensor_later_config bit to sensor */
+	atomic_set_bit(&sensor->flag, SENSOR_LATER_CFG_BIT);
+
+	/*remember event config ready and notify sensing_runtime_thread */
+	atomic_set_bit(&ctx->runtime_event_flag, EVENT_CONFIG_READY);
+
+	k_sem_give(&ctx->runtime_event_sem);
+}
 
 static int set_sensor_state(struct sensing_sensor *sensor, enum sensing_sensor_state state)
 {
@@ -222,6 +435,22 @@ static int sensing_init(void)
 		LOG_INF("sensing init, sensor:%s, state:%d", sensor->dev->name, sensor->state);
 	}
 
+	k_sem_init(&ctx->runtime_event_sem, 0, 1);
+
+	ctx->sensing_initialized = true;
+
+	/* sensing subsystem runtime thread: sensor scheduling and sensor data processing */
+	ctx->runtime_id = k_thread_create(&ctx->runtime_thread, runtime_stack,
+			CONFIG_SENSING_RUNTIME_THREAD_STACK_SIZE,
+			(k_thread_entry_t) sensing_runtime_thread, ctx, NULL, NULL,
+			CONFIG_SENSING_RUNTIME_THREAD_PRIORITY, 0, K_NO_WAIT);
+	if (!ctx->runtime_id) {
+		LOG_ERR("create sensing runtime thread error");
+		return -EAGAIN;
+	}
+
+	LOG_INF("%s(%d), runtime_id:%p", __func__, __LINE__, ctx->runtime_id);
+
 	return ret;
 }
 
@@ -259,10 +488,14 @@ int close_sensor(struct sensing_connection **conn)
 
 	__ASSERT(!tmp_conn->sink, "sensor derived from device tree cannot be closed");
 
+	__ASSERT(tmp_conn->source, "reporter should not be NULL");
+
 	sys_slist_find_and_remove(&tmp_conn->source->client_list, &tmp_conn->snode);
 
 	*conn = NULL;
 	free(*conn);
+
+	save_config_and_notify(tmp_conn->source);
 
 	return 0;
 }
@@ -299,6 +532,8 @@ int set_interval(struct sensing_connection *conn, uint32_t interval)
 	}
 
 	conn->interval = interval;
+
+	save_config_and_notify(conn->source);
 
 	return 0;
 }
