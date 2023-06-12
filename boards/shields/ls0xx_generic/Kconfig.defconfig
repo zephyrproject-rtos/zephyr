@@ -10,7 +10,7 @@ if LVGL
 config LV_Z_VDB_SIZE
 	default 16
 
-config LV_Z_DPI
+config LV_DPI_DEF
 	default 150
 
 config LV_Z_BITS_PER_PIXEL
