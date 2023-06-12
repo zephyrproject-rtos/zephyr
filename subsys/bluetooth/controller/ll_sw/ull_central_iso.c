@@ -228,6 +228,7 @@ uint8_t ll_cig_parameters_commit(uint8_t cig_id, uint16_t *handles)
 	/* Create all configurable CISes */
 	for (uint8_t i = 0U; i < ll_iso_setup.cis_count; i++) {
 		memq_link_t *link_tx_free;
+		memq_link_t link_tx;
 
 		cis = ll_conn_iso_stream_get_by_id(ll_iso_setup.stream[i].cis_id);
 		if (cis) {
@@ -254,8 +255,9 @@ uint8_t ll_cig_parameters_commit(uint8_t cig_id, uint16_t *handles)
 			cig->lll.num_cis++;
 		}
 
-		/* Store TX free link before transfer */
+		/* Store TX link and free link before transfer */
 		link_tx_free = cis->lll.link_tx_free;
+		link_tx = cis->lll.link_tx;
 
 		/* Transfer parameters from configuration cache */
 		memcpy(cis, &ll_iso_setup.stream[i], sizeof(struct ll_conn_iso_stream));
@@ -264,6 +266,7 @@ uint8_t ll_cig_parameters_commit(uint8_t cig_id, uint16_t *handles)
 		cis->framed = cig->central.framing || force_framed;
 
 		cis->lll.link_tx_free = link_tx_free;
+		cis->lll.link_tx = link_tx;
 		cis->lll.handle = ll_conn_iso_stream_handle_get(cis);
 		handles[i] = cis->lll.handle;
 	}
