@@ -4,6 +4,7 @@
 
 #include <ti/cc3220sf.dtsi>
 #include "boosterpack_connector.dtsi"
+#include "cc3220sf_launchxl-pinctrl.dtsi"
 
 / {
 	model = "TI CC3220SF LaunchXL";
@@ -87,6 +88,8 @@
 &i2c0 {
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-names = "default";
 };
 
 &wdt0 {
