@@ -25,8 +25,6 @@ int can_mcan_read_reg(const struct device *dev, uint16_t reg, uint32_t *val)
 	err = config->ops->read_reg(dev, reg, val);
 	if (err != 0) {
 		LOG_ERR("failed to read reg 0x%03x (err %d)", reg, err);
-	} else {
-		LOG_DBG("read reg 0x%03x = 0x%08x", reg, *val);
 	}
 
 	return err;
@@ -40,8 +38,6 @@ int can_mcan_write_reg(const struct device *dev, uint16_t reg, uint32_t val)
 	err = config->ops->write_reg(dev, reg, val);
 	if (err != 0) {
 		LOG_ERR("failed to write reg 0x%03x (err %d)", reg, err);
-	} else {
-		LOG_DBG("write reg 0x%03x = 0x%08x", reg, val);
 	}
 
 	return err;
