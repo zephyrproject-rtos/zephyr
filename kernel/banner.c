@@ -25,8 +25,8 @@
 void boot_banner(void)
 {
 #if defined(CONFIG_BOOT_DELAY) && (CONFIG_BOOT_DELAY > 0)
-	printk("***** delaying boot " DELAY_STR "ms (per build configuration) *****\n");
 	k_busy_wait(CONFIG_BOOT_DELAY * USEC_PER_MSEC);
+	printk("***** delaying boot " DELAY_STR "ms (per build configuration) *****\n");
 #endif /* defined(CONFIG_BOOT_DELAY) && (CONFIG_BOOT_DELAY > 0) */
 
 #if CONFIG_BOOT_BANNER
