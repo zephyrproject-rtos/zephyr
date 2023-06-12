@@ -324,19 +324,103 @@ Architectures
 Bluetooth
 *********
 
+* General
+
+  * Moved all logging symbols together in a new ``Kconfig.logging`` file.
+  * Deprecated the ``BT_DEBUG_LOG`` option. Instead ``BT_LOG`` should be used.
+  * Made the ``BT_LOG`` and ``BT_LOG_LEGACY`` options hidden.
+  * Removed ``BT_DEBUG`` entirely.
+
+
 * Audio
+
+  * Implemented the CAP initiator broadcast audio start, stop and metadata
+    update procedures.
+  * Implemented the CAP unicast audio start, stop and metadata update procedures.
+  * Implemented the Telephony and Media Audio Service (TMAS).
+  * Added additional validation for MCC and MCS, including opcodes, values, etc.
+  * Refactored and extended the scan delegator implementation, including
+    integration with broadcast sink.
+  * Added support for creating a broadcast sink from a PA sink.
+  * Added support for optional characteristics in CSIP.
+  * Implemented discovery by UUID instead of reading by UUID for multiple
+    characteristics.
+  * Added support for long reads and writes for multiple profiles.
+  * Added support for long BAP ASE notifications and optimized long notify
+    reads.
+  * Offloaded MCS notifications to the system workqueue.
+  * Added the CAP initiator cancel procedure.
 
 * Direction Finding
 
 * Host
 
+  * Updated the Host to the v5.4 specification.
+  * The GATT DB Hash is now recalculated upon loading settings.
+  * Added experimental support for SMP keypress notifications.
+  * Downgraded the severity of select log messages to avoid log flooding.
+  * Separated the handling of LE SC OOB pairing from the legacy OOB logic.
+  * Implemented the Encrypted Advertising Data feature.
+  * Added support for the new Periodic Advertising with Responses (PAwR), both
+    as an advertiser and as a scanner.
+  * Added support for initiating connections from PAwR, as well as receiving
+    connections while synced.
+  * Clarified the behavior that is enabled by the ``BT_PRIVACY`` Kconfig option.
+  * Introduced a new ``seg_recv`` L2CAP API for an application to receive
+    segments directly and manage credits explicitly.
+
 * Mesh
 
-  * Added experimental support for Mesh Protocol d1.1r18 specification.
+  * Added experimental support for Mesh Protocol d1.1r18 specification, gated
+    by a new configuration option. This includes:
+
+    * Enhanced Provisioning Authentication support.
+    * Mesh Remote Provisioning support including:
+      * Remote Provisioning Server and Client models.
+      * Composition Data Page 128 and Models Metadata Page 128 support.
+    * Large Composition Data support including:
+      * Large Composition Data Server and Client models.
+      * Models Metadata Page 0 support.
+    * New Transport Segmentation and Reassembly (SAR) implementation including:
+      * SAR Configuration Server and Client models.
+    * Mesh Private Beacons support including:
+      * Mesh Private Beacon Server and Client models.
+    * Opcodes Aggregator support including:
+      * Opcodes Aggregator Server and Client models.
+    * Proxy Solicitation support including:
+      * Solicitation PDU RPL Configuration Server and Client models.
+      * On-Demand Private Proxy Server and Client models.
+    * Composition Data Page 1 support.
+    * Other Mesh Profile Enhancements.
   * Added experimental support for Mesh Binary Large Object Transfer Model d1.0r04_PRr00 specification.
   * Added experimental support for Mesh Device Firmware Update Model d1.0r04_PRr00 specification.
+  * Fixed multiple profile errata.
+  * Added experimental support for the PSA crypto APIs.
+  * Added a new work queue to store mesh settings, including a new API for
+    storing user data.
+  * Disabled the models initialization macros for C++ as they use the compound
+    literal feature from C99.
+  * Deprecated Health Client and Configuration Client API have been removed.
 
 * Controller
+
+  * Implemented support for the central with multiple CIS usecase.
+  * Implemented support for multiple peripheral CIS establishment.
+  * Updated the Controller to the v5.4 specification.
+  * Added support for coexistence with other transceivers.
+  * Added support for multiple CIS/CIG setup/connect and teardown procedures in
+    sequence.
+  * Extended the ticker API to return expiration info.
+  * Re-implemented Extended and Periodic Advertising, as well as and Broadcast
+    ISO, using the new ticket expiration info feature.
+  * Modified the ticker implementation to reschedule unreserved tickers that use
+    ``ticks_slot_window``. Implement continuous scanning with it.
+  * Added support for considering the SDU interval, along with the packet
+    sequence number and time stamps, in SDU fragmentation.
+  * Added a new ``BT_CTRL_TX_PWR_DBM`` option to set the TX power directly in
+    dBm.
+  * Optimized the RX path with support for piggy-backing notifications on
+    already-allocated RX nodes.
 
 * HCI Driver
 
