@@ -16,8 +16,6 @@ struct lll_conn_iso_stream_rxtx {
 	uint8_t ft_cntr_se;            /* Nr. of subevents for flush point */
 	uint8_t bn_curr:4;        /* Current burst number */
 
-
-
 #if defined(CONFIG_BT_CTLR_LE_ENC)
 	struct ccm ccm;
 #endif /* CONFIG_BT_CTLR_LE_ENC */
