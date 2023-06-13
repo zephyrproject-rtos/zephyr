@@ -179,6 +179,14 @@ static enum ec_host_cmd_status prepare_response(struct ec_host_cmd_tx_buf *tx, u
 	return EC_HOST_CMD_SUCCESS;
 }
 
+void ec_host_cmd_set_user_cb(ec_host_cmd_user_cb_t cb, void *user_data)
+{
+	struct ec_host_cmd *hc = &ec_host_cmd;
+
+	hc->user_cb = cb;
+	hc->user_data = user_data;
+}
+
 int ec_host_cmd_send_response(enum ec_host_cmd_status status,
 			      const struct ec_host_cmd_handler_args *args)
 {
@@ -245,6 +253,10 @@ void ec_host_cmd_rx_notify(void)
 	struct ec_host_cmd_rx_ctx *rx = &hc->rx_ctx;
 
 	hc->rx_status = verify_rx(rx);
+
+	if (!hc->rx_status && hc->user_cb) {
+		hc->user_cb(rx, hc->user_data);
+	}
 
 	k_sem_give(&hc->rx_ready);
 }
