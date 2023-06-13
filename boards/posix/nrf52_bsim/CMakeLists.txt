@@ -42,9 +42,3 @@ zephyr_library_import(bsim_libUtilv1      ${libpath}/libUtilv1.32.a)
 zephyr_library_import(bsim_libPhyComv1    ${libpath}/libPhyComv1.32.a)
 zephyr_library_import(bsim_lib2G4PhyComv1 ${libpath}/lib2G4PhyComv1.32.a)
 zephyr_library_import(bsim_libRandv2      ${libpath}/libRandv2.32.a)
-
-# This is due to some tests using _Static_assert which is a 2011 feature, but
-# otherwise relying on compilers supporting it also when set to C99.
-# This was in general ok, but with some host compilers and C library versions
-# it led to problems. So we override it to 2011 for native applications.
-set_property(GLOBAL PROPERTY CSTD c11)
