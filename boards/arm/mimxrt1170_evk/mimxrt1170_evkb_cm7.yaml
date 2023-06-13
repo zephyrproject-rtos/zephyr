@@ -18,6 +18,7 @@ supported:
   - adc
   - counter
   - can
+  - dma
   - gpio
   - hwinfo
   - usb_device
