@@ -314,19 +314,7 @@ typedef void (*scan_result_cb_t)(struct net_if *iface, int status,
 typedef void (*raw_scan_result_cb_t)(struct net_if *iface, int status,
 				     struct wifi_raw_scan_result *entry);
 #endif /* CONFIG_WIFI_MGMT_RAW_SCAN_RESULTS */
-struct net_wifi_mgmt_offload {
-	/**
-	 * Mandatory to get in first position.
-	 * A network device should indeed provide a pointer on such
-	 * net_if_api structure. So we make current structure pointer
-	 * that can be casted to a net_if_api structure pointer.
-	 */
-#ifdef CONFIG_WIFI_USE_NATIVE_NETWORKING
-	struct ethernet_api wifi_iface;
-#else
-	struct offloaded_if_api wifi_iface;
-#endif
-
+struct wifi_mgmt_ops {
 	/* cb parameter is the cb that should be called for each
 	 * result by the driver. The wifi mgmt part will take care of
 	 * raising the necessary event etc...
@@ -348,6 +336,21 @@ struct net_wifi_mgmt_offload {
 	int (*set_twt)(const struct device *dev, struct wifi_twt_params *params);
 	int (*get_power_save_config)(const struct device *dev, struct wifi_ps_config *config);
 	int (*reg_domain)(const struct device *dev, struct wifi_reg_domain *reg_domain);
+};
+
+struct net_wifi_mgmt_offload {
+	/**
+	 * Mandatory to get in first position.
+	 * A network device should indeed provide a pointer on such
+	 * net_if_api structure. So we make current structure pointer
+	 * that can be casted to a net_if_api structure pointer.
+	 */
+#ifdef CONFIG_WIFI_USE_NATIVE_NETWORKING
+	struct ethernet_api wifi_iface;
+#else
+	struct offloaded_if_api wifi_iface;
+#endif
+	const struct wifi_mgmt_ops *const wifi_mgmt_api;
 };
 
 /* Make sure that the network interface API is properly setup inside
