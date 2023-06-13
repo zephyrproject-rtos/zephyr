@@ -104,7 +104,8 @@ uint8_t ll_cis_accept(uint16_t handle)
 	if (conn) {
 		uint32_t cis_offset_min;
 
-		if (IS_ENABLED(CONFIG_BT_CTLR_PERIPHERAL_ISO_EARLY_CIG_START)) {
+		if (IS_ENABLED(CONFIG_BT_CTLR_PERIPHERAL_ISO_EARLY_CIG_START) ||
+		    !IS_ENABLED(CONFIG_BT_CTLR_CIS_ACCEPT_MIN_OFFSET_STRICT)) {
 			/* Early start allows offset down to spec defined minimum */
 			cis_offset_min = CIS_MIN_OFFSET_MIN;
 		} else {
