@@ -388,7 +388,6 @@ static inline int hash_begin_session(const struct device *dev,
 
 	api = (struct crypto_driver_api *) dev->api;
 	ctx->device = dev;
-	ctx->device = dev;
 
 	flags = (ctx->flags & (CAP_INPLACE_OPS | CAP_SEPARATE_IO_BUFS));
 	__ASSERT(flags != 0U, "IO buffer type missing");
