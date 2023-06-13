@@ -9,11 +9,13 @@
 #include <errno.h>
 #include <zephyr/drivers/uart.h>
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/pm/device.h>
 #include <zephyr/kernel.h>
 #include <zephyr/spinlock.h>
 #include <zephyr/sys/byteorder.h>
 #include <DA1469xAB.h>
 #include <zephyr/irq.h>
+#include <da1469x_pd.h>
 
 #define IIR_NO_INTR		1
 #define IIR_THR_EMPTY		2
@@ -77,8 +79,14 @@ struct uart_smartbond_cfg {
 #endif
 };
 
+struct uart_smartbond_runtime_cfg {
+	uint32_t baudrate_cfg;
+	uint32_t lcr_reg_val;
+};
+
 struct uart_smartbond_data {
 	struct uart_config current_config;
+	struct uart_smartbond_runtime_cfg runtime_cfg;
 	struct k_spinlock lock;
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	uart_irq_callback_user_data_t callback;
@@ -122,14 +130,46 @@ static void uart_smartbond_poll_out(const struct device *dev, unsigned char out_
 	k_spin_unlock(&data->lock, key);
 }
 
+static void apply_runtime_config(const struct device *dev)
+{
+	const struct uart_smartbond_cfg *config = dev->config;
+	struct uart_smartbond_data *data = dev->data;
+	k_spinlock_key_t key;
+
+	key = k_spin_lock(&data->lock);
+
+	CRG_COM->SET_CLK_COM_REG = config->periph_clock_config;
+
+	config->regs->UART2_SRR_REG = UART2_UART2_SRR_REG_UART_UR_Msk |
+				      UART2_UART2_SRR_REG_UART_RFR_Msk |
+				      UART2_UART2_SRR_REG_UART_XFR_Msk;
+
+	/* Configure baudrate */
+	config->regs->UART2_LCR_REG |= UART2_UART2_LCR_REG_UART_DLAB_Msk;
+	config->regs->UART2_IER_DLH_REG = BAUDRATE_CFG_DLH(data->runtime_cfg.baudrate_cfg);
+	config->regs->UART2_RBR_THR_DLL_REG = BAUDRATE_CFG_DLL(data->runtime_cfg.baudrate_cfg);
+	config->regs->UART2_DLF_REG = BAUDRATE_CFG_DLF(data->runtime_cfg.baudrate_cfg);
+	config->regs->UART2_LCR_REG &= ~UART2_UART2_LCR_REG_UART_DLAB_Msk;
+
+	/* Configure frame */
+	config->regs->UART2_LCR_REG = data->runtime_cfg.lcr_reg_val;
+
+	/* Enable hardware FIFO */
+	config->regs->UART2_SFE_REG = UART2_UART2_SFE_REG_UART_SHADOW_FIFO_ENABLE_Msk;
+
+	config->regs->UART2_SRT_REG = RX_FIFO_TRIG_1_CHAR;
+	config->regs->UART2_STET_REG = TX_FIFO_TRIG_1_2_FULL;
+
+	k_spin_unlock(&data->lock, key);
+}
+
 static int uart_smartbond_configure(const struct device *dev,
-				  const struct uart_config *cfg)
+				    const struct uart_config *cfg)
 {
 	const struct uart_smartbond_cfg *config = dev->config;
 	struct uart_smartbond_data *data = dev->data;
 	uint32_t baudrate_cfg = 0;
-	k_spinlock_key_t key;
-	uint32_t reg_val;
+	uint32_t lcr_reg_val;
 	int err;
 	int i;
 
@@ -161,62 +201,42 @@ static int uart_smartbond_configure(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	key = k_spin_lock(&data->lock);
-
-	CRG_COM->SET_CLK_COM_REG = config->periph_clock_config;
-
-	config->regs->UART2_SRR_REG = UART2_UART2_SRR_REG_UART_UR_Msk |
-				      UART2_UART2_SRR_REG_UART_RFR_Msk |
-				      UART2_UART2_SRR_REG_UART_XFR_Msk;
-
-	config->regs->UART2_LCR_REG |= UART2_UART2_LCR_REG_UART_DLAB_Msk;
-	config->regs->UART2_IER_DLH_REG = BAUDRATE_CFG_DLH(baudrate_cfg);
-	config->regs->UART2_RBR_THR_DLL_REG = BAUDRATE_CFG_DLL(baudrate_cfg);
-	config->regs->UART2_DLF_REG = BAUDRATE_CFG_DLF(baudrate_cfg);
-	config->regs->UART2_LCR_REG &= ~UART2_UART2_LCR_REG_UART_DLAB_Msk;
-
-	/* Configure frame */
-
-	reg_val = 0;
+	/* Calculate frame configuration register value */
+	lcr_reg_val = 0;
 
 	switch (cfg->parity) {
 	case UART_CFG_PARITY_NONE:
 		break;
 	case UART_CFG_PARITY_EVEN:
-		reg_val |= UART2_UART2_LCR_REG_UART_EPS_Msk;
+		lcr_reg_val |= UART2_UART2_LCR_REG_UART_EPS_Msk;
 		/* no break */
 	case UART_CFG_PARITY_ODD:
-		reg_val |= UART2_UART2_LCR_REG_UART_PEN_Msk;
+		lcr_reg_val |= UART2_UART2_LCR_REG_UART_PEN_Msk;
 		break;
 	}
 
 	if (cfg->stop_bits == UART_CFG_STOP_BITS_2)  {
-		reg_val |= STOP_BITS_2 << UART2_UART2_LCR_REG_UART_STOP_Pos;
+		lcr_reg_val |= STOP_BITS_2 << UART2_UART2_LCR_REG_UART_STOP_Pos;
 	}
 
 	switch (cfg->data_bits) {
 	case UART_CFG_DATA_BITS_6:
-		reg_val |= DATA_BITS_6 << UART2_UART2_LCR_REG_UART_DLS_Pos;
+		lcr_reg_val |= DATA_BITS_6 << UART2_UART2_LCR_REG_UART_DLS_Pos;
 		break;
 	case UART_CFG_DATA_BITS_7:
-		reg_val |= DATA_BITS_7 << UART2_UART2_LCR_REG_UART_DLS_Pos;
+		lcr_reg_val |= DATA_BITS_7 << UART2_UART2_LCR_REG_UART_DLS_Pos;
 		break;
 	case UART_CFG_DATA_BITS_8:
-		reg_val |= DATA_BITS_8 << UART2_UART2_LCR_REG_UART_DLS_Pos;
+		lcr_reg_val |= DATA_BITS_8 << UART2_UART2_LCR_REG_UART_DLS_Pos;
 		break;
 	}
 
-	config->regs->UART2_LCR_REG = reg_val;
+	data->runtime_cfg.baudrate_cfg = baudrate_cfg;
+	data->runtime_cfg.lcr_reg_val = lcr_reg_val;
 
-	/* Enable hardware FIFO */
-	config->regs->UART2_SFE_REG = UART2_UART2_SFE_REG_UART_SHADOW_FIFO_ENABLE_Msk;
-
-	config->regs->UART2_SRT_REG = RX_FIFO_TRIG_1_CHAR;
-	config->regs->UART2_STET_REG = TX_FIFO_TRIG_1_2_FULL;
+	apply_runtime_config(dev);
 
 	data->current_config = *cfg;
-
-	k_spin_unlock(&data->lock, key);
 
 	err = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 	if (err < 0) {
@@ -241,8 +261,16 @@ static int uart_smartbond_config_get(const struct device *dev,
 static int uart_smartbond_init(const struct device *dev)
 {
 	struct uart_smartbond_data *data = dev->data;
+	int ret;
 
-	return uart_smartbond_configure(dev, &data->current_config);
+	da1469x_pd_acquire(MCU_PD_DOMAIN_COM);
+
+	ret = uart_smartbond_configure(dev, &data->current_config);
+	if (ret < 0) {
+		da1469x_pd_release(MCU_PD_DOMAIN_COM);
+	}
+
+	return ret;
 }
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
@@ -455,6 +483,39 @@ static void uart_smartbond_isr(const struct device *dev)
 }
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
+#ifdef CONFIG_PM_DEVICE
+static void uart_disable(const struct device *dev)
+{
+	const struct uart_smartbond_cfg *config = dev->config;
+
+	while (!(config->regs->UART2_USR_REG & UART2_UART2_USR_REG_UART_TFE_Msk) ||
+	       (config->regs->UART2_USR_REG & UART2_UART2_USR_REG_UART_BUSY_Msk)) {
+		/* Wait until FIFO is empty and UART finished tx */
+	}
+
+	CRG_COM->RESET_CLK_COM_REG = config->periph_clock_config;
+	da1469x_pd_release(MCU_PD_DOMAIN_COM);
+}
+
+static int uart_smartbond_pm_action(const struct device *dev,
+				enum pm_device_action action)
+{
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		da1469x_pd_acquire(MCU_PD_DOMAIN_COM);
+		apply_runtime_config(dev);
+		break;
+	case PM_DEVICE_ACTION_SUSPEND:
+		uart_disable(dev);
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_PM_DEVICE */
+
 static const struct uart_driver_api uart_smartbond_driver_api = {
 	.poll_in = uart_smartbond_poll_in,
 	.poll_out = uart_smartbond_poll_out,
@@ -516,9 +577,10 @@ static const struct uart_driver_api uart_smartbond_driver_api = {
 		UART_SMARTBOND_CONFIGURE(id);							\
 		return uart_smartbond_init(dev);						\
 	}											\
+	PM_DEVICE_DT_INST_DEFINE(id, uart_smartbond_pm_action);					\
 	DEVICE_DT_INST_DEFINE(id,								\
 			      uart_smartbond_##id##_init,					\
-			      NULL,								\
+			      PM_DEVICE_DT_INST_GET(id),					\
 			      &uart_smartbond_##id##_data,					\
 			      &uart_smartbond_##id##_cfg,					\
 			      PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY,			\
