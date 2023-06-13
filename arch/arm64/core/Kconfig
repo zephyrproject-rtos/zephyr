@@ -197,6 +197,8 @@ config ARMV8_A
 	  so that it can support some features included in the AArch64 state.
 	  It supports the T32 and A32 instruction sets.
 
+rsource "xen/Kconfig"
+
 endif # CPU_CORTEX_A
 
 if CPU_AARCH64_CORTEX_R
