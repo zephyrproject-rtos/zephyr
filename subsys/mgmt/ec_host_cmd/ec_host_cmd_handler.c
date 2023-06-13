@@ -239,6 +239,13 @@ int ec_host_cmd_send_response(enum ec_host_cmd_status status,
 	return hc->backend->api->send(hc->backend);
 }
 
+void ec_host_cmd_rx_notify(void)
+{
+	struct ec_host_cmd *hc = &ec_host_cmd;
+
+	k_sem_give(&hc->rx_ready);
+}
+
 static void ec_host_cmd_log_request(const uint8_t *rx_buf)
 {
 	static uint16_t prev_cmd;
@@ -293,7 +300,7 @@ FUNC_NORETURN static void ec_host_cmd_thread(void *hc_handle, void *arg2, void *
 
 	while (1) {
 		/* Wait until RX messages is received on host interface */
-		k_sem_take(&rx->handler_owns, K_FOREVER);
+		k_sem_take(&hc->rx_ready, K_FOREVER);
 
 		ec_host_cmd_log_request(rx->buf);
 		status = verify_rx(rx);
@@ -358,7 +365,7 @@ int ec_host_cmd_init(struct ec_host_cmd_backend *backend)
 	hc->backend = backend;
 
 	/* Allow writing to rx buff at startup */
-	k_sem_init(&hc->rx_ctx.handler_owns, 0, 1);
+	k_sem_init(&hc->rx_ready, 0, 1);
 
 	handler_tx_buf = hc->tx.buf;
 	handler_rx_buf = hc->rx_ctx.buf;

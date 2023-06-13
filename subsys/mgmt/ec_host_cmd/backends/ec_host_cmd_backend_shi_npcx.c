@@ -349,7 +349,7 @@ static void shi_npcx_handle_host_package(const struct device *dev)
 	data->out_msg[0] = EC_SHI_FRAME_START;
 
 	/* Wake-up the HC handler thread */
-	k_sem_give(&data->rx_ctx->handler_owns);
+	ec_host_cmd_rx_notify();
 }
 
 static int shi_npcx_host_request_expected_size(const struct ec_host_cmd_request_header *r)

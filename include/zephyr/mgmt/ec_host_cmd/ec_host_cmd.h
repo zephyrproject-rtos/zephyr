@@ -24,6 +24,11 @@ struct ec_host_cmd {
 	struct ec_host_cmd_rx_ctx rx_ctx;
 	struct ec_host_cmd_tx_buf tx;
 	struct ec_host_cmd_backend *backend;
+	/**
+	 * The backend gives rx_ready (by calling the ec_host_cmd_send_receive function),
+	 * when data in rx_ctx are ready. The handler takes rx_ready to read data in rx_ctx.
+	 */
+	struct k_sem rx_ready;
 #ifdef CONFIG_EC_HOST_CMD_DEDICATED_THREAD
 	struct k_thread thread;
 #endif /* CONFIG_EC_HOST_CMD_DEDICATED_THREAD */
@@ -259,6 +264,14 @@ int ec_host_cmd_init(struct ec_host_cmd_backend *backend);
  */
 int ec_host_cmd_send_response(enum ec_host_cmd_status status,
 		const struct ec_host_cmd_handler_args *args);
+
+/**
+ * @brief Signal a new host command
+ *
+ * Signal that a new host command has been received. The function should be called by a backend
+ * after copying data to the rx buffer and setting the length.
+ */
+void ec_host_cmd_rx_notify(void);
 
 /**
  * @brief Get the main ec host command structure
