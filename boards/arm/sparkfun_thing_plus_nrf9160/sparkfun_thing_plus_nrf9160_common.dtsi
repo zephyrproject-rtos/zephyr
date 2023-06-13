@@ -39,6 +39,14 @@
 		};
 	};
 
+	/* TPS63031 Buck/Boost converter (provides 3.3V) */
+	pwr-3v3 {
+		compatible = "regulator-fixed";
+		regulator-name = "pwr-3v3";
+		enable-gpios = <&gpio0 31 GPIO_ACTIVE_HIGH>;
+		regulator-always-on;
+	};
+
 	/* These aliases are provided for compatibility with samples */
 	aliases {
 		led0 = &blue_led;
