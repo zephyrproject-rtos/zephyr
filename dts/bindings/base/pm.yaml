@@ -30,3 +30,12 @@ properties:
     description: |
       Automatically configure the device for runtime power management after the
       init function runs.
+
+  reinit-power-states:
+    type: phandles
+    description: |
+      Specifies special power states where a peripheral requires
+      reinitialization due to configuration loss.
+
+      While states at or beyond S2RAM are naturally assumed to need
+      reinitialization, this property highlights the exceptions to that rule.
