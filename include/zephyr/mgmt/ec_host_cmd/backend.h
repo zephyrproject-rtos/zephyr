@@ -47,11 +47,6 @@ struct ec_host_cmd_rx_ctx {
 	uint8_t *buf;
 	/** Number of bytes written to @a buf by backend. */
 	size_t len;
-	/**
-	 * The backend gives @a handler_owns, when data in @a buf are ready.
-	 * The handler takes @a handler_owns to read data in @a buf.
-	 */
-	struct k_sem handler_owns;
 };
 
 /**
