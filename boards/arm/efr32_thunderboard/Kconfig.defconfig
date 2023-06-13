@@ -18,7 +18,7 @@ config BOARD
 endif # BOARD_EFR32BG27_BRD2602A
 
 config CMU_HFXO_FREQ
-	default 40000000
+	default 38400000
 
 config CMU_LFXO_FREQ
 	default 32768
