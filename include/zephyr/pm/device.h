@@ -353,6 +353,7 @@ const char *pm_device_state_str(enum pm_device_state state);
 int pm_device_action_run(const struct device *dev,
 		enum pm_device_action action);
 
+#if defined(CONFIG_DEVICE_HANDLES) || defined(__DOXYGEN__)
 /**
  * @brief Run a pm action on all children of a device.
  *
@@ -366,6 +367,7 @@ int pm_device_action_run(const struct device *dev,
 void pm_device_children_action_run(const struct device *dev,
 		enum pm_device_action action,
 		pm_device_action_failed_cb_t failure_cb);
+#endif /* CONFIG_DEVICE_HANDLES */
 
 #if defined(CONFIG_PM_DEVICE) || defined(__DOXYGEN__)
 /**

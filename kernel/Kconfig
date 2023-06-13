@@ -969,8 +969,17 @@ endmenu
 
 menu "Device Options"
 
+config DEVICE_HANDLES
+	bool "Generate device handles"
+	help
+	  When enabled, each device will be assigned a unique numeric
+	  identifier named device handle. Device handles can be used to
+	  retrieve a device object, and vice-versa. As part of this feature,
+	  device dependencies are also stored.
+
 config HAS_DYNAMIC_DEVICE_HANDLES
 	bool
+	depends on DEVICE_HANDLES
 	help
 	  Hidden option that makes possible to manipulate device handles at
 	  runtime.

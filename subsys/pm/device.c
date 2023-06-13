@@ -179,6 +179,7 @@ struct pm_visitor_context {
 	enum pm_device_action action;
 };
 
+#ifdef CONFIG_DEVICE_HANDLES
 static int pm_device_children_visitor(const struct device *dev, void *context)
 {
 	struct pm_visitor_context *visitor_context = context;
@@ -205,6 +206,7 @@ void pm_device_children_action_run(const struct device *dev,
 
 	(void)device_supported_foreach(dev, pm_device_children_visitor, &visitor_context);
 }
+#endif /* CONFIG_DEVICE_HANDLES */
 
 int pm_device_state_get(const struct device *dev,
 			enum pm_device_state *state)

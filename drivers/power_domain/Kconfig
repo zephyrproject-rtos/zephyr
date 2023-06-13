@@ -3,6 +3,7 @@
 
 menuconfig POWER_DOMAIN
 	bool "Power domain drivers"
+	select DEVICE_HANDLES
 	help
 	  Include drivers for power domains in system config
 

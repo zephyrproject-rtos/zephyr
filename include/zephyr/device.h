@@ -27,6 +27,7 @@ extern "C" {
  * @{
  */
 
+#if defined(CONFIG_DEVICE_HANDLES) || defined(__DOXYGEN__)
 /**
  * @brief Type used to represent a "handle" for a device.
  *
@@ -62,6 +63,8 @@ typedef int16_t device_handle_t;
 
 /** @brief Flag value used to identify an unknown device. */
 #define DEVICE_HANDLE_NULL 0
+
+#endif /* CONFIG_DEVICE_HANDLES */
 
 /**
  * @brief Expands to the name of a global device object.
@@ -388,15 +391,17 @@ struct device {
 	struct device_state *state;
 	/** Address of the device instance private data */
 	void *data;
+#if defined(CONFIG_DEVICE_HANDLES) || defined(__DOXYGEN__)
 	/**
 	 * Optional pointer to handles associated with the device.
 	 *
 	 * This encodes a sequence of sets of device handles that have some
 	 * relationship to this node. The individual sets are extracted with
-	 * dedicated API, such as device_required_handles_get().
+	 * dedicated API, such as device_required_handles_get(). Only available
+	 * if @kconfig{CONFIG_DEVICE_HANDLES} is enabled.
 	 */
 	Z_DEVICE_HANDLES_CONST device_handle_t *handles;
-
+#endif
 #if defined(CONFIG_PM_DEVICE) || defined(__DOXYGEN__)
 	/**
 	 * Reference to the device PM resources (only available if
@@ -406,6 +411,7 @@ struct device {
 #endif
 };
 
+#if defined(CONFIG_DEVICE_HANDLES) || defined(__DOXYGEN__)
 /**
  * @brief Get the handle for a given device
  *
@@ -668,6 +674,8 @@ int device_supported_foreach(const struct device *dev,
 			     device_visitor_callback_t visitor_cb,
 			     void *context);
 
+#endif /* CONFIG_DEVICE_HANDLES */
+
 /**
  * @brief Get a @ref device reference from its @ref device.name field.
  *
@@ -760,6 +768,7 @@ static inline bool z_impl_device_is_ready(const struct device *dev)
 	static Z_DECL_ALIGN(struct device_state) Z_DEVICE_STATE_NAME(dev_id)   \
 		__attribute__((__section__(".z_devstate")))
 
+#if defined(CONFIG_DEVICE_HANDLES) || defined(__DOXYGEN__)
 /**
  * @brief Synthesize the name of the object that holds device ordinal and
  * dependency data.
@@ -838,6 +847,8 @@ static inline bool z_impl_device_is_ready(const struct device *dev)
 			    (DT_SUPPORTS_DEP_ORDS(node_id)), ()) /**/          \
 	}
 
+#endif /* CONFIG_DEVICE_HANDLES */
+
 /**
  * @brief Maximum device name length.
  *
@@ -873,7 +884,7 @@ static inline bool z_impl_device_is_ready(const struct device *dev)
 		.api = (api_),                                                 \
 		.state = (state_),                                             \
 		.data = (data_),                                               \
-		.handles = (handles_),                                         \
+		IF_ENABLED(CONFIG_DEVICE_HANDLES, (.handles = (handles_),))    \
 		IF_ENABLED(CONFIG_PM_DEVICE, (.pm = (pm_),)) /**/              \
 	}
 
@@ -951,7 +962,8 @@ static inline bool z_impl_device_is_ready(const struct device *dev)
 			level, prio, api, state, ...)                          \
 	Z_DEVICE_NAME_CHECK(name);                                             \
                                                                                \
-	Z_DEVICE_HANDLES_DEFINE(node_id, dev_id, __VA_ARGS__);                 \
+	IF_ENABLED(CONFIG_DEVICE_HANDLES,                                      \
+		   (Z_DEVICE_HANDLES_DEFINE(node_id, dev_id, __VA_ARGS__);))   \
                                                                                \
 	Z_DEVICE_BASE_DEFINE(node_id, dev_id, name, pm, data, config, level,   \
 			     prio, api, state, Z_DEVICE_HANDLES_NAME(dev_id)); \
