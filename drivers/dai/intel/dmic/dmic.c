@@ -177,9 +177,12 @@ static inline void dai_dmic_set_sync_period(uint32_t period, const struct dai_in
 		    base + DMICSYNC_OFFSET);
 	sys_write32(sys_read32(base + DMICSYNC_OFFSET) | DMICSYNC_SYNCPU,
 		    base + DMICSYNC_OFFSET);
-	while (sys_read32(base + DMICSYNC_OFFSET) & DMICSYNC_SYNCPU) {
-		k_sleep(K_USEC(100));
+
+	if (!WAIT_FOR((sys_read32(base + DMICSYNC_OFFSET) & DMICSYNC_SYNCPU) == 0, 1000,
+		      k_sleep(K_USEC(100)))) {
+		LOG_ERR("poll timeout");
 	}
+
 	sys_write32(sys_read32(base + DMICSYNC_OFFSET) | DMICSYNC_CMDSYNC,
 		    base + DMICSYNC_OFFSET);
 #else /* All other CAVS and ACE platforms */
@@ -218,9 +221,11 @@ static void dmic_sync_trigger(const struct dai_intel_dmic *dmic)
 
 	sys_write32(sys_read32(base + DMICSYNC_OFFSET) |
 		    DMICSYNC_SYNCGO, base + DMICSYNC_OFFSET);
+
 	/* waiting for CMDSYNC bit clearing */
-	while (sys_read32(base + DMICSYNC_OFFSET) & DMICSYNC_CMDSYNC) {
-		k_sleep(K_USEC(100));
+	if (!WAIT_FOR((sys_read32(base + DMICSYNC_OFFSET) & DMICSYNC_CMDSYNC) == 0,
+		      1000, k_sleep(K_USEC(100)))) {
+		LOG_ERR("poll timeout");
 	}
 }
 
