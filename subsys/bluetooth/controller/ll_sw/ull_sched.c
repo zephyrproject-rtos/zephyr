@@ -656,7 +656,7 @@ static struct ull_hdr *ull_hdr_get_cb(uint8_t ticker_id, uint32_t *ticks_slot)
 
 				time_us = ull_adv_aux_time_get(aux, PDU_AC_PAYLOAD_SIZE_MAX,
 							       PDU_AC_PAYLOAD_SIZE_MAX);
-				*ticks_slot = HAL_TICKER_US_TO_TICKS(time_us);
+				*ticks_slot = HAL_TICKER_US_TO_TICKS_CEIL(time_us);
 			} else {
 				*ticks_slot = aux->ull.ticks_slot;
 
@@ -686,7 +686,7 @@ static struct ull_hdr *ull_hdr_get_cb(uint8_t ticker_id, uint32_t *ticks_slot)
 				uint32_t time_us;
 
 				time_us = ull_adv_sync_time_get(sync, PDU_AC_PAYLOAD_SIZE_MAX);
-				*ticks_slot = HAL_TICKER_US_TO_TICKS(time_us);
+				*ticks_slot = HAL_TICKER_US_TO_TICKS_CEIL(time_us);
 			} else {
 				*ticks_slot = sync->ull.ticks_slot;
 			}
@@ -745,9 +745,11 @@ static struct ull_hdr *ull_hdr_get_cb(uint8_t ticker_id, uint32_t *ticks_slot)
 #endif /* !CONFIG_BT_CTLR_PHY_CODED */
 
 				time_us = EVENT_OVERHEAD_START_US +
+					  EVENT_OVERHEAD_END_US +
 					  ready_delay_us +  max_rx_time +
-					  EVENT_IFS_US + max_tx_time;
-				*ticks_slot = HAL_TICKER_US_TO_TICKS(time_us);
+					  EVENT_IFS_US + max_tx_time +
+					  (EVENT_CLOCK_JITTER_US << 1);
+				*ticks_slot = HAL_TICKER_US_TO_TICKS_CEIL(time_us);
 			} else {
 				*ticks_slot = conn->ull.ticks_slot;
 			}

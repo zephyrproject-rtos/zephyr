@@ -2454,7 +2454,7 @@ uint32_t ull_adv_aux_evt_init(struct ll_adv_aux_set *aux,
 		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US);
 	aux->ull.ticks_preempt_to_start =
 		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_PREEMPT_MIN_US);
-	aux->ull.ticks_slot = HAL_TICKER_US_TO_TICKS(time_us);
+	aux->ull.ticks_slot = HAL_TICKER_US_TO_TICKS_CEIL(time_us);
 
 	if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT)) {
 		ticks_slot_overhead = MAX(aux->ull.ticks_active_to_start,
@@ -2471,7 +2471,7 @@ uint32_t ull_adv_aux_evt_init(struct ll_adv_aux_set *aux,
 #if defined(CONFIG_BT_CTLR_ADV_RESERVE_MAX)
 	time_us = ull_adv_aux_time_get(aux, PDU_AC_PAYLOAD_SIZE_MAX,
 				       PDU_AC_PAYLOAD_SIZE_MAX);
-	ticks_slot = HAL_TICKER_US_TO_TICKS(time_us);
+	ticks_slot = HAL_TICKER_US_TO_TICKS_CEIL(time_us);
 #else
 	ticks_slot = aux->ull.ticks_slot;
 #endif
@@ -2997,7 +2997,7 @@ static uint8_t aux_time_update(struct ll_adv_aux_set *aux, struct pdu_adv *pdu,
 	uint32_t time_us;
 
 	time_us = aux_time_min_get(aux);
-	time_ticks = HAL_TICKER_US_TO_TICKS(time_us);
+	time_ticks = HAL_TICKER_US_TO_TICKS_CEIL(time_us);
 
 #if !defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
 	uint32_t volatile ret_cb;
