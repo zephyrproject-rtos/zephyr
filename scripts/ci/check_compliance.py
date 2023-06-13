@@ -268,7 +268,9 @@ class KconfigCheck(ComplianceTest):
     doc = "See https://docs.zephyrproject.org/latest/guides/kconfig/index.html for more details."
     path_hint = "<zephyr-base>"
 
-    def run(self, full=True):
+    def run(self, full=True, no_modules=False):
+        self.no_modules = no_modules
+
         kconf = self.parse_kconfig()
 
         self.check_top_menu_not_too_long(kconf)
@@ -287,6 +289,11 @@ class KconfigCheck(ComplianceTest):
         This is needed to complete Kconfig sanity tests.
 
         """
+        if self.no_modules:
+            with open(modules_file, 'w') as fp_module_file:
+                fp_module_file.write("# Empty\n")
+            return
+
         # Invoke the script directly using the Python executable since this is
         # not a module nor a pip-installed Python utility
         zephyr_module_path = os.path.join(ZEPHYR_BASE, "scripts",
@@ -710,6 +717,18 @@ class KconfigBasicCheck(KconfigCheck):
 
     def run(self):
         super().run(full=False)
+
+class KconfigBasicNoModulesCheck(KconfigCheck):
+    """
+    Checks if we are introducing any new warnings/errors with Kconfig when no
+    modules are available. Catches symbols used in the main repository but
+    defined only in a module.
+    """
+    name = "KconfigBasicNoModules"
+    doc = "See https://docs.zephyrproject.org/latest/guides/kconfig/index.html for more details."
+    path_hint = "<zephyr-base>"
+    def run(self):
+        super().run(full=False, no_modules=True)
 
 
 class Nits(ComplianceTest):
