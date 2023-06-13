@@ -238,6 +238,15 @@ static void dmic_sync_trigger(const struct dai_intel_dmic *dmic) {}
 
 #endif /* CONFIG_DAI_DMIC_HAS_MULTIPLE_LINE_SYNC */
 
+static void dai_dmic_start_fifo_packers(struct dai_intel_dmic *dmic, int fifo_index)
+{
+
+	/* Start FIFO packers and clear FIFO initialize bits */
+	dai_dmic_update_bits(dmic, fifo_index * PDM_CHANNEL_REGS_SIZE + OUTCONTROL,
+			     OUTCONTROL_SIP | OUTCONTROL_FINIT,
+			     OUTCONTROL_SIP);
+}
+
 static void dai_dmic_stop_fifo_packers(struct dai_intel_dmic *dmic,
 					int fifo_index)
 {
@@ -563,13 +572,7 @@ static void dai_dmic_start(struct dai_intel_dmic *dmic)
 
 	dai_dmic_sync_prepare(dmic);
 
-	/* Clear FIFO initialize, Enable interrupts to DSP,
-	 * Start FIFO  packer.
-	 */
-	dai_dmic_update_bits(dmic,
-			     dmic->dai_config_params.dai_index * PDM_CHANNEL_REGS_SIZE + OUTCONTROL,
-			     OUTCONTROL_FINIT | OUTCONTROL_SIP,
-			     OUTCONTROL_SIP);
+	dai_dmic_start_fifo_packers(dmic, dmic->dai_config_params.dai_index);
 
 	for (i = 0; i < CONFIG_DAI_DMIC_HW_CONTROLLERS; i++) {
 #ifdef CONFIG_SOC_SERIES_INTEL_ACE
