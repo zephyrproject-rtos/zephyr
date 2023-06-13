@@ -741,7 +741,7 @@ Drivers and Sensors
   * STM32C0: Added support for DMA
   * STM32H5: Added support for GPDMA
   * STM32H7: Added support for BDMA
-   * Added DMA support for the RP2040 SoC
+  * Added DMA support for the RP2040 SoC
 
 * EEPROM
 
