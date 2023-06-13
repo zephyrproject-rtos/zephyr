@@ -242,6 +242,9 @@ int ec_host_cmd_send_response(enum ec_host_cmd_status status,
 void ec_host_cmd_rx_notify(void)
 {
 	struct ec_host_cmd *hc = &ec_host_cmd;
+	struct ec_host_cmd_rx_ctx *rx = &hc->rx_ctx;
+
+	hc->rx_status = verify_rx(rx);
 
 	k_sem_give(&hc->rx_ready);
 }
@@ -304,9 +307,12 @@ FUNC_NORETURN static void ec_host_cmd_thread(void *hc_handle, void *arg2, void *
 		k_sem_take(&hc->rx_ready, K_FOREVER);
 
 		ec_host_cmd_log_request(rx->buf);
-		status = verify_rx(rx);
-		if (status != EC_HOST_CMD_SUCCESS) {
-			ec_host_cmd_send_response(status, &args);
+
+		/* Check status of the rx data, that has been verified in
+		 * ec_host_cmd_send_received.
+		 */
+		if (hc->rx_status != EC_HOST_CMD_SUCCESS) {
+			ec_host_cmd_send_response(hc->rx_status, &args);
 			continue;
 		}
 
