@@ -210,6 +210,11 @@ Deprecated in this release
 * Deprecated :c:macro:`PTHREAD_BARRIER_DEFINE` in favor of the standardized
   :c:func:`pthread_barrier_init`
 
+* On all STM32 targets except STM32F2 series, ethernet drivers implementation
+  based on STM32Cube Ethernet API V1 (:kconfig:option:`CONFIG_ETH_STM32_HAL_API_V1`)
+  is now deprecated in favor of implementation based on more reliable and performant
+  STM32Cube Ethernet API V2.
+
 Stable API changes in this release
 ==================================
 
@@ -429,6 +434,10 @@ Boards & SoC Support
 
 * Added support for these SoC series:
 
+  * STM32C0 series are now supported (with introduction of STM32C031 SoC).
+  * STM32H5 series are now supported (with introduction of STM32H503 and STM32H573 SoCs).
+  * Added support for STM32U599 SoC variants
+
 * Removed support for these SoC series:
 
 * Made these changes in other SoC series:
@@ -437,7 +446,12 @@ Boards & SoC Support
 
 * Added support for these ARM boards:
 
+  * Alientek STM32L475 Pandora
+  * MXChip AZ3166 IoT DevKit
   * Seeed Studio Wio Terminal
+  * ST Nucleo C031C6
+  * ST Nucleo H563ZI
+  * ST STM32H573I-DK Discovery
 
 * Added support for these ARM64 boards:
 
@@ -463,6 +477,7 @@ Boards & SoC Support
   * ``nrf9160dk_nrf52840``: Enabled external_flash_pins_routing switch by default.
   * ``nrf9160dk_nrf9160``: Changed the order of buttons and switches on the GPIO
     expander to match the order when using GPIO directly on the nRF9160 SoC.
+  * ``STM32H747i_disco``: Enabled support for ST B-LCD40-DSI1 display extension
 
 * Made these changes for ARM64 boards:
 
@@ -630,6 +645,14 @@ Drivers and Sensors
    were shifted to match the hardware as described in reference manual instead
    of matching the NXP SDK enum identifers.
 
+ * Added support for STM32C0 and STM32H5.
+
+ * Added DMA support for STM32H7.
+
+ * STM32: Resolutions are now listed in the device tree for each ADC instance
+
+ * STM32: Sampling times are now listed in the device tree for each ADC instance
+
 * Battery-backed RAM
 
   * Added MCP7940N battery-backed RTC SRAM driver.
@@ -653,10 +676,13 @@ Drivers and Sensors
   * Refactored the Bosch M_CAN controller driver backend to allow for per-instance configuration via
     devicetree.
 
+  * Now supports STM32H5 series.
+
 * Clock control
 
   * Atmel SAM/SAM0: Introduce peripheral clock control.
   * Atmel SAM0: Improved ``samd20``/``samd21``/``samr21`` clocking mechanism.
+  * STM32F4: Added support for PLL I2S
 
 * Console:
 
@@ -665,23 +691,38 @@ Drivers and Sensors
 
 * Counter
 
+  * Added support on timer based counter on STM32H7 and STM32H5
+  * Added support on RTC based counter on STM32C0 and STM32H5
+
 * Crypto
 
+  * Added support for STM32H5 AES
+
 * DAC
+
+  * Added support on STM32H5 series.
 
 * DFU
 
 * Disk
 
+  * SDMMC STM32L4+: Now compatible with internal DMA
+
 * Display
 
 * DMA
+
+  * STM32C0: Added support for DMA
+  * STM32H5: Added support for GPDMA
+  * STM32H7: Added support for BDMA
 
 * EEPROM
 
   * Switched from :dtcompatible:`atmel,at24` to dedicated :dtcompatible:`zephyr,i2c-target-eeprom` for I2C EEPROM target driver.
 
 * Entropy
+
+  * Added support for STM32H5 series.
 
 * ESPI
 
@@ -696,6 +737,8 @@ Drivers and Sensors
     selected by the driver to indicate that extra operations are supported.
     To enable extra operations user should select
     :kconfig:option:`CONFIG_FLASH_EX_OP_ENABLED`.
+  * STM32F4: Now supports write protection and readout protection through
+    new flash API call :c:func:`flash_ex_op`.
   * nrf_qspi_nor: Replaced custom API function ``nrf_qspi_nor_base_clock_div_force``
     with ``nrf_qspi_nor_xip_enable`` which apart from forcing the clock divider
     prevents the driver from deactivating the QSPI peripheral so that the XIP
@@ -711,6 +754,7 @@ Drivers and Sensors
 
   * spi_flash_at45: Fixed erase procedure to properly handle chips that have
     their initial sector split into two parts (usually marked as 0a and 0b).
+  * STM32H5 now supports OSPI
 
 * FPGA
 
@@ -720,11 +764,18 @@ Drivers and Sensors
 
   * Converted the ``gpio_keys`` driver to the input subsystem.
 
+  * STM32: Supports newly introduced experimental API to enable/disable interrupts
+    without re-config
+
 * hwinfo
 
 * I2C
 
+  * Added support for STM32C0 and STM32H5 series
+
 * I2S
+
+  * STM32: Domain clock should now be configured by device tree.
 
 * I3C
 
@@ -749,6 +800,10 @@ Drivers and Sensors
 
 * MEMC
 
+* MIPI-DSI
+
+  * Added support on STM32H7
+
 * PCIE
 
   * Enable filtering PCIe devices by class/revision.
@@ -768,6 +823,9 @@ Drivers and Sensors
 
 * PWM
 
+  * Added support for STM32C0.
+  * STM32: Now supports 6-PWM channels
+
 * Power domain
 
 * Regulators
@@ -785,6 +843,14 @@ Drivers and Sensors
 * SDHC
 
 * Sensor
+
+  * Added generic voltage measurement sample
+  * Removed STM32 Vbat measurement sample (replaced by a generic one)
+  * Added STM32 Vref sensor driver
+  * Added STM32 Vref/Vbat measurement through the new generic voltage measurement sample
+  * Added temperature measurement driver for STM32C0 and STM32F0x0
+  * Removed STM32 temperature measurement sample (replaced by a generic one)
+  * Added STM32 temperature measurement through the generic temperature measurement sample
 
 * Serial
 
@@ -805,13 +871,21 @@ Drivers and Sensors
   * uart_rpi_pico_pio: added new driver to support UART via
     Programmable Input/Output (PIO) on Raspberry Pi Pico.
   * uart_xmc4xxx: added support for asynchronous operations.
+  * uart_stm32: Now support driver enable mode
 
 * SPI
+
+  * Added support on STM32H5 series.
 
 * Timer
 
   * Support added for stopping Nordic nRF RTC system timer, which fixes an
     issue when booting applications built in prior version of Zephyr.
+
+  * STM32: Now supports a prescaler at the input of clock (default not divided).
+    Prescaler allows to achieve higher LPTIM timeout (up to 256s when lptim clocked by LSE)
+    and consequently higher core sleep durations but impacts the tick precision.
+    To be used with caution.
 
 * USB
 
@@ -823,6 +897,8 @@ Drivers and Sensors
     enabled force the 1-Wire network layer to use multidrop addressing.
 
 * Watchdog
+
+  * Added support for STM32C0 and STM32H5 series
 
 * WiFi
 
@@ -967,6 +1043,14 @@ Libraries / Subsystems
 
 HALs
 ****
+
+* STM32
+
+  * stm32cube: updated STM32F0 to cube version V1.11.4.
+  * stm32cube: updated STM32F3 to cube version V1.11.4
+  * stm32cube: updated STM32L0 to cube version V1.12.2
+  * stm32cube: updated STM32U5 to cube version V1.2.0
+  * stm32cube: updated STM32WB to cube version V1.16.0
 
 MCUboot
 *******
