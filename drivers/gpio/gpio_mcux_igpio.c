@@ -123,9 +123,9 @@ static int mcux_igpio_configure(const struct device *dev,
 		if (((flags & GPIO_PULL_UP) != 0) || ((flags & GPIO_PULL_DOWN) != 0)) {
 			reg &= ~IOMUXC_SW_PAD_CTL_PAD_PULL_MASK;
 			if (((flags & GPIO_PULL_UP) != 0)) {
-				reg |= IOMUXC_SW_PAD_CTL_PAD_PULL(0x1U);
+				reg |= IOMUXC_SW_PAD_CTL_PAD_PULL(0x3U);
 			} else {
-				reg |= IOMUXC_SW_PAD_CTL_PAD_PULL(0x2U);
+				reg |= IOMUXC_SW_PAD_CTL_PAD_PULL(0x1U);
 			}
 		} else {
 			/* Set pin to no pull */
