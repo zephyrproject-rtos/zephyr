@@ -518,6 +518,11 @@ Boards & SoC Support
 
 * Added support for these following shields:
 
+  * Adafruit Data Logger Shield
+  * nPM1300 EK (Power Management Integrated Circuit (PMIC))
+  * Panasonic Grid-EYE Shields
+  * ST B_LCD40_DSI1_MB1166
+
 Build system and infrastructure
 *******************************
 
