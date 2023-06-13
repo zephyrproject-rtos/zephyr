@@ -8,11 +8,11 @@
 #include "i3c_renesas_imx3112_regs.h"
 
 #include <zephyr/device.h>
+#include <zephyr/kernel.h>
+#include <zephyr/types.h>
 #include <zephyr/drivers/i3c.h>
 #include <zephyr/drivers/i3c/ccc.h>
 #include <zephyr/drivers/i3c/devicetree.h>
-#include <zephyr/kernel.h>
-#include <zephyr/types.h>
 
 #define LOG_LEVEL CONFIG_I3C_LOG_LEVEL
 #include <zephyr/logging/log.h>
@@ -22,6 +22,15 @@ LOG_MODULE_REGISTER(i3c_renesas_imx3112);
 #define NUM_CHANNELS      2
 /* Timeout for locking in a channel - 5 seconds is more than sufficient */
 #define CHAN_LOCK_TIMEOUT K_MSEC(5000)
+
+/*
+ * Different transmission modes. These are determined at compile time based on devicetree
+ * configuration
+ */
+enum transmission_mode {
+	MODE_I3C = 0,
+	MODE_I2C = 1,
+};
 
 /*
  * Resistor values for SCL/SDA lines.
@@ -48,6 +57,12 @@ struct mux_hw_configuration {
 	struct channel_resistance ch_resistance[NUM_CHANNELS];
 };
 
+/* Operations for reading and writing to the mux */
+struct bus_operations {
+	int (*read_reg)(const struct device *mux_dev, uint8_t *val, uint8_t addr);
+	int (*write_reg)(const struct device *mux_dev, uint8_t addr, uint8_t val);
+};
+
 /*
  * I3C device configuration at initialization phase
  *
@@ -58,10 +73,19 @@ struct i3c_renesas_imx3112_mux_config {
 	const struct device *bus;
 
 	/* Device id of the mux in the  bus */
-	const struct i3c_device_id dev_id;
+	union {
+		const struct i3c_device_id dev_id_i3c;
+		const uint16_t dev_id_i2c;
+	};
 
 	/* Hw config for the mux */
 	struct mux_hw_configuration hw_config;
+
+	/* Indicates if the mux is meant to run in i2c or i3c mode */
+	const enum transmission_mode transmission_mode;
+
+	/* transmission mode specific read/write operations */
+	const struct bus_operations bus_ops;
 };
 
 /*
@@ -79,7 +103,7 @@ struct i3c_renesas_imx3112_mux_data {
 	 * I3C device description, updated after controller init. Runtime equivalent of
 	 * i2c_dt_spec
 	 */
-	struct i3c_device_desc *mux_desc;
+	struct i3c_device_desc *mux_desc_i3c;
 
 	/* mutex for imx3112 accesses */
 	struct k_mutex lock;
@@ -91,6 +115,7 @@ struct i3c_renesas_imx3112_channel_config {
 	/* Will be written directly to MR64/MR65 */
 	uint8_t channel_mask;
 	/* List of devices attached to this channel */
+	/* Includes both I3C and I2C devices */
 	struct i3c_dev_list device_list;
 };
 
@@ -110,48 +135,88 @@ get_mux_config_from_channel(const struct device *dev)
 	return channel_config->mux->config;
 }
 
-static inline int i3c_renesas_imx3112_read_reg(const struct device *mux_dev, uint8_t *val,
-					       uint8_t addr)
+static inline int i3c_renesas_imx3112_i2c_read_reg(const struct device *mux_dev, uint8_t *val,
+						   uint8_t addr)
 {
-	LOG_DBG("Reading from %s : address 0x%X", mux_dev->name, addr);
+	const struct i3c_renesas_imx3112_mux_config *config = mux_dev->config;
+	uint8_t write_buf[1];
+
+	write_buf[0] = FIELD_GET(GENMASK(7, 0), addr);
+
+	return i2c_write_read(config->bus, config->dev_id_i2c, write_buf, sizeof(write_buf), val,
+			      sizeof(uint8_t));
+}
+
+static inline int i3c_renesas_imx3112_i3c_read_reg(const struct device *mux_dev, uint8_t *val,
+						   uint8_t addr)
+{
 	struct i3c_renesas_imx3112_mux_data *data = mux_dev->data;
-	struct i3c_device_desc *mux_desc = data->mux_desc;
+	struct i3c_device_desc *mux_desc_i3c = data->mux_desc_i3c;
 	uint8_t write_buf[2];
-	int err = 0;
 
 	/* Prepare message - address is split into two bytes */
 	write_buf[0] = FIELD_GET(GENMASK(6, 0), addr);
 	write_buf[1] = FIELD_GET(BIT(7), addr);
 
-	err = i3c_write_read(mux_desc, write_buf, sizeof(write_buf), val, sizeof(uint8_t));
+	return i3c_write_read(mux_desc_i3c, write_buf, sizeof(write_buf), val, sizeof(uint8_t));
+}
+
+static int i3c_renesas_imx3112_read_reg(const struct device *mux_dev, uint8_t *val, uint8_t addr)
+{
+
+	LOG_DBG("Reading from %s : address 0x%X", mux_dev->name, addr);
+	const struct i3c_renesas_imx3112_mux_config *config = mux_dev->config;
+	int err;
+
+	err = config->bus_ops.read_reg(mux_dev, val, addr);
 
 	if (err) {
 		LOG_ERR("Failed to read from %s : address 0x%X", mux_dev->name, addr);
-		return err;
 	}
-	return 0;
+	return err;
 }
 
-static inline int i3c_renesas_imx3112_write_reg(const struct device *mux_dev, uint8_t addr,
-						uint8_t val)
+static inline int i3c_renesas_imx3112_i2c_write_reg(const struct device *mux_dev, uint8_t addr,
+						    uint8_t val)
 {
-	LOG_DBG("Writing 0x%X to %s : address 0x%X", val, mux_dev->name, addr);
+	const struct i3c_renesas_imx3112_mux_config *config = mux_dev->config;
+	uint8_t write_buf[2];
+
+	write_buf[0] = FIELD_GET(GENMASK(7, 0), addr);
+	write_buf[1] = val;
+
+	return i2c_write(config->bus, write_buf, sizeof(write_buf), config->dev_id_i2c);
+}
+
+static inline int i3c_renesas_imx3112_i3c_write_reg(const struct device *mux_dev, uint8_t addr,
+						    uint8_t val)
+{
 	struct i3c_renesas_imx3112_mux_data *data = mux_dev->data;
-	struct i3c_device_desc *mux_desc = data->mux_desc;
+	struct i3c_device_desc *mux_desc_i3c = data->mux_desc_i3c;
 	uint8_t write_buf[3];
-	uint8_t actual_val;
-	int err = 0;
 
 	/* Prepare message - address is split into two bytes */
 	write_buf[0] = FIELD_GET(GENMASK(6, 0), addr);
 	write_buf[1] = FIELD_GET(BIT(7), addr);
 	write_buf[2] = val;
 
-	err = i3c_write(mux_desc, write_buf, sizeof(write_buf));
+	return i3c_write(mux_desc_i3c, write_buf, sizeof(write_buf));
+}
+
+static int i3c_renesas_imx3112_write_reg(const struct device *mux_dev, uint8_t addr, uint8_t val)
+{
+	LOG_DBG("Writing 0x%X to %s : address 0x%X", val, mux_dev->name, addr);
+	const struct i3c_renesas_imx3112_mux_config *config = mux_dev->config;
+	uint8_t actual_val;
+	int err;
+
+	err = config->bus_ops.write_reg(mux_dev, addr, val);
+
 	if (err) {
 		LOG_ERR("Failed to write to %s : address 0x%X", mux_dev->name, addr);
 		return err;
 	}
+
 	if (IS_ENABLED(CONFIG_I3C_LOG_LEVEL_DBG)) {
 		/* Check that the correct value was written to the correct address */
 		err = i3c_renesas_imx3112_read_reg(mux_dev, &actual_val, addr);
@@ -161,14 +226,13 @@ static inline int i3c_renesas_imx3112_write_reg(const struct device *mux_dev, ui
 		if (val != actual_val) {
 			LOG_ERR("Read value from %s : address 0x%X was 0x%X, expected 0x%X",
 				mux_dev->name, addr, actual_val, val);
-			return -EIO;
 		}
 	}
 
 	return 0;
 }
 
-static inline int i3c_renesas_imx3112_set_channel(const struct device *mux_dev, uint8_t select_mask)
+static int i3c_renesas_imx3112_set_channel(const struct device *mux_dev, uint8_t select_mask)
 {
 	struct i3c_renesas_imx3112_mux_data *data = mux_dev->data;
 	uint8_t select_mask_reg;
@@ -212,6 +276,37 @@ static inline int i3c_renesas_imx3112_set_channel(const struct device *mux_dev, 
 		data->mux_state.channel_mask = select_mask;
 	}
 	return 0;
+}
+
+static int i3c_renesas_imx3112_i2c_transfer(const struct device *channel_dev, struct i2c_msg *msgs,
+					    uint8_t num_msgs, uint16_t addr)
+{
+
+	struct i3c_renesas_imx3112_mux_data *data = get_mux_data_from_channel(channel_dev);
+	const struct i3c_renesas_imx3112_mux_config *config =
+		get_mux_config_from_channel(channel_dev);
+	const struct i3c_renesas_imx3112_channel_config *channel_config = channel_dev->config;
+	const struct device *bus_dev = config->bus;
+	int err;
+
+	err = k_mutex_lock(&data->lock, CHAN_LOCK_TIMEOUT);
+	if (err) {
+		return err;
+	}
+
+	err = i3c_renesas_imx3112_set_channel(channel_config->mux, channel_config->channel_mask);
+	if (err) {
+		goto end_trans;
+	}
+
+	err = i2c_transfer(bus_dev, msgs, num_msgs, addr);
+
+end_trans:
+	k_mutex_unlock(&data->lock);
+	if (err) {
+		LOG_ERR("Mux dev %s transfer failed with error %d", channel_dev->name, err);
+	}
+	return err;
 }
 
 static int i3c_renesas_imx3112_transfer(const struct device *channel_dev,
@@ -258,6 +353,11 @@ static int i3c_renesas_imx3112_configure(const struct device *dev, enum i3c_conf
 	return -ENOSYS;
 }
 
+static int i3c_renesas_imx3112_i2c_configure(const struct device *dev, uint32_t dev_config)
+{
+	return -ENOSYS;
+}
+
 static struct i3c_device_desc *i3c_renesas_imx3112_device_find(const struct device *channel_dev,
 							       const struct i3c_device_id *id)
 {
@@ -289,11 +389,29 @@ static int i3c_renesas_imx3112_channel_initialize(const struct device *channel_d
 	return 0;
 }
 
+/* Additional initialization steps needed to set the mux to I3C mode */
+static int i3c_renesas_imx3112_mux_configure_i3c_mode(const struct device *dev)
+{
+	const struct i3c_renesas_imx3112_mux_config *cfg = dev->config;
+	struct i3c_renesas_imx3112_mux_data *data = dev->data;
+
+	/*
+	 * Need to grab the pointer to the I3C device descriptor or I2C device descriptor
+	 * before we can configure the mux
+	 */
+	data->mux_desc_i3c = i3c_device_find(cfg->bus, &cfg->dev_id_i3c);
+	if (data->mux_desc_i3c == NULL) {
+		LOG_ERR("Cannot find I3C device descriptor");
+		return -ENODEV;
+	}
+
+	return 0;
+}
+
 static int i3c_renesas_imx3112_mux_initialize(const struct device *dev)
 {
 	LOG_DBG("Initalizing mux %s", dev->name);
 	const struct i3c_renesas_imx3112_mux_config *cfg = dev->config;
-	struct i3c_renesas_imx3112_mux_data *data = dev->data;
 	uint8_t intf_cfg_val = 0;
 	uint8_t res_cfg_val = 0;
 	int err;
@@ -303,14 +421,12 @@ static int i3c_renesas_imx3112_mux_initialize(const struct device *dev)
 		return -ENODEV;
 	}
 
-	/*
-	 * Need to grab the pointer to the I3C device descriptor
-	 * before we can configure the mux
-	 */
-	data->mux_desc = i3c_device_find(cfg->bus, &cfg->dev_id);
-	if (data->mux_desc == NULL) {
-		LOG_ERR("Cannot find I3C device descriptor");
-		return -ENODEV;
+	if (cfg->transmission_mode == MODE_I3C) {
+		err = i3c_renesas_imx3112_mux_configure_i3c_mode(dev);
+		if (err) {
+			LOG_ERR("Couldn't set mux to I3C mode");
+			return err;
+		}
 	}
 
 	/* Perform HW configuration for the mux based on devicetree defaults */
@@ -346,6 +462,9 @@ static const struct i3c_driver_api imx3112_api_funcs = {
 	.i3c_xfers = i3c_renesas_imx3112_transfer,
 	.i3c_device_find = i3c_renesas_imx3112_device_find,
 	.configure = i3c_renesas_imx3112_configure,
+	/* I2C API */
+	.i2c_api.configure = i3c_renesas_imx3112_i2c_configure,
+	.i2c_api.transfer = i3c_renesas_imx3112_i2c_transfer,
 };
 
 BUILD_ASSERT(CONFIG_I3C_RENESAS_CHANNEL_INIT_PRIORITY > CONFIG_I3C_RENESAS_MUX_INIT_PRIORITY,
@@ -370,18 +489,55 @@ BUILD_ASSERT(CONFIG_I3C_RENESAS_CHANNEL_INIT_PRIORITY > CONFIG_I3C_RENESAS_MUX_I
 			DT_ENUM_IDX_OR(DT_INST_CHILD(n, mux_i2c_1), sda_resistance, 0),            \
 	}
 
+#define I3C_BUS_OPS                                                                                \
+	{                                                                                          \
+		.read_reg = i3c_renesas_imx3112_i3c_read_reg,                                      \
+		.write_reg = i3c_renesas_imx3112_i3c_write_reg                                     \
+	}
+
+#define I3C_MODE_CONFIG(node_id)                                                                   \
+	.dev_id_i3c = I3C_DEVICE_ID_DT_INST(node_id), .transmission_mode = MODE_I3C,               \
+	.bus_ops = I3C_BUS_OPS,
+
+#define I2C_BUS_OPS                                                                                \
+	{                                                                                          \
+		.read_reg = i3c_renesas_imx3112_i2c_read_reg,                                      \
+		.write_reg = i3c_renesas_imx3112_i2c_write_reg                                     \
+	}
+
+#define I2C_MODE_CONFIG(node_id)                                                                   \
+	.dev_id_i2c = DT_INST_PROP_BY_IDX(node_id, reg, 0), .transmission_mode = MODE_I2C,         \
+	.bus_ops = I2C_BUS_OPS,
+
+/*
+ * Select I3C or I2C configuration based on the presence on the provisioned ID
+ * See i3c-device.yaml for details
+ */
+#define SELECT_TX_MODE_CONFIG(node_id)                                                             \
+	COND_CODE_0(DT_INST_PROP_BY_IDX(node_id, reg, 1), (I2C_MODE_CONFIG(node_id)),              \
+		    (I3C_MODE_CONFIG(node_id)))
+
+/* Devicetree initialization macros for muxes on an I3C bus (with an I3C controller) */
 #define DT_DRV_COMPAT renesas_imx3112_i3c
 #define IMX3112_CHANNEL_INIT(parent_inst, node_id, ch_num)                                         \
 	BUILD_ASSERT(DT_REG_ADDR(node_id) < NUM_CHANNELS);                                         \
-	static struct i3c_device_desc i3c_renesas_imx3112_dev_arr_##parent_inst##_##ch_num[] =     \
+	static struct i3c_device_desc i3c_renesas_imx3112_i3c_dev_arr_##parent_inst##_##ch_num[] = \
 		I3C_DEVICE_ARRAY_DT(node_id);                                                      \
-	static const struct i3c_renesas_imx3112_channel_config                                     \
+	static struct i3c_i2c_device_desc                                                          \
+		i3c_renesas_imx3112_i2c_dev_arr_##parent_inst##_##ch_num[] =                       \
+			I3C_I2C_DEVICE_ARRAY_DT(node_id);                                          \
+	const struct i3c_renesas_imx3112_channel_config                                            \
 		imx3112_channel_##parent_inst##_##ch_num##_config = {                              \
 			.channel_mask = BIT(DT_REG_ADDR(node_id)),                                 \
 			.mux = DEVICE_DT_GET(DT_PARENT(node_id)),                                  \
-			.device_list.i3c = i3c_renesas_imx3112_dev_arr_##parent_inst##_##ch_num,   \
-			.device_list.num_i3c =                                                     \
-				ARRAY_SIZE(i3c_renesas_imx3112_dev_arr_##parent_inst##_##ch_num),  \
+			.device_list.i3c =                                                         \
+				i3c_renesas_imx3112_i3c_dev_arr_##parent_inst##_##ch_num,          \
+			.device_list.num_i3c = ARRAY_SIZE(                                         \
+				i3c_renesas_imx3112_i3c_dev_arr_##parent_inst##_##ch_num),         \
+			.device_list.i2c =                                                         \
+				i3c_renesas_imx3112_i2c_dev_arr_##parent_inst##_##ch_num,          \
+			.device_list.num_i2c = ARRAY_SIZE(                                         \
+				i3c_renesas_imx3112_i2c_dev_arr_##parent_inst##_##ch_num),         \
 	};                                                                                         \
 	DEVICE_DT_DEFINE(node_id, i3c_renesas_imx3112_channel_initialize, NULL, NULL,              \
 			 &imx3112_channel_##parent_inst##_##ch_num##_config, POST_KERNEL,          \
@@ -392,9 +548,8 @@ BUILD_ASSERT(CONFIG_I3C_RENESAS_CHANNEL_INIT_PRIORITY > CONFIG_I3C_RENESAS_MUX_I
 	CHECK_MUX_CONFIG(n)                                                                        \
 	static const struct i3c_renesas_imx3112_mux_config i3c_renesas_imx3112_mux_config_##n = {  \
 		.bus = DEVICE_DT_GET(DT_INST_BUS(n)),                                              \
-		.dev_id = I3C_DEVICE_ID_DT_INST(n),                                                \
 		.hw_config = MUX_HW_CONFIG(n),                                                     \
-	};                                                                                         \
+		SELECT_TX_MODE_CONFIG(n)};                                                         \
 	static struct i3c_renesas_imx3112_mux_data i3c_renesas_imx3112_mux_data_##n = {            \
 		.lock = Z_MUTEX_INITIALIZER(i3c_renesas_imx3112_mux_data_##n.lock),                \
 		.mux_state = {.enabled = false, .channel_mask = 0},                                \
@@ -409,3 +564,40 @@ BUILD_ASSERT(CONFIG_I3C_RENESAS_CHANNEL_INIT_PRIORITY > CONFIG_I3C_RENESAS_MUX_I
 		    (IMX3112_CHANNEL_INIT(n, DT_INST_CHILD(n, mux_i3c_1), 1)), ())
 
 DT_INST_FOREACH_STATUS_OKAY(I3C_DEVICE_INIT_RENESAS_IMX3112)
+
+/* Devicetree initialization macros for muxes on an I2C bus (with an I2C controller) */
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT renesas_imx3112_i2c
+
+#define IMX3112_I2C_CHANNEL_INIT(parent_inst, node_id, ch_num)                                     \
+	BUILD_ASSERT(DT_REG_ADDR(node_id) < NUM_CHANNELS);                                         \
+	const struct i3c_renesas_imx3112_channel_config                                            \
+		imx3112_channel_##parent_inst##_##ch_num##_config = {                              \
+			.channel_mask = BIT(DT_REG_ADDR(node_id)),                                 \
+			.mux = DEVICE_DT_GET(DT_PARENT(node_id)),                                  \
+	};                                                                                         \
+	DEVICE_DT_DEFINE(node_id, i3c_renesas_imx3112_channel_initialize, NULL, NULL,              \
+			 &imx3112_channel_##parent_inst##_##ch_num##_config, POST_KERNEL,          \
+			 CONFIG_I3C_RENESAS_CHANNEL_PRIORITY, &imx3112_api_funcs);
+
+#define I2C_DEVICE_INIT_RENESAS_IMX3112(n)                                                         \
+	/* Internal resistors only regulate up to the VDD supply */                                \
+	CHECK_MUX_CONFIG(n)                                                                        \
+	static const struct i3c_renesas_imx3112_mux_config i2c_renesas_imx3112_mux_config_##n = {  \
+		.bus = DEVICE_DT_GET(DT_INST_BUS(n)),                                              \
+		.hw_config = MUX_HW_CONFIG(n),                                                     \
+		I2C_MODE_CONFIG(n)};                                                               \
+	static struct i3c_renesas_imx3112_mux_data i2c_renesas_imx3112_mux_data_##n = {            \
+		.lock = Z_MUTEX_INITIALIZER(i2c_renesas_imx3112_mux_data_##n.lock),                \
+		.mux_state = {.enabled = false, .channel_mask = 0},                                \
+	};                                                                                         \
+	DEVICE_DT_INST_DEFINE(n, i3c_renesas_imx3112_mux_initialize, NULL,                         \
+			      &i2c_renesas_imx3112_mux_data_##n,                                   \
+			      &i2c_renesas_imx3112_mux_config_##n, POST_KERNEL,                    \
+			      CONFIG_I3C_RENESAS_MUX_PRIORITY, NULL);                              \
+	COND_CODE_1(DT_NODE_HAS_STATUS(DT_INST_CHILD(n, mux_i2c_0), okay),                         \
+		    (IMX3112_CHANNEL_INIT(n, DT_INST_CHILD(n, mux_i2c_0), 0)), ())                 \
+	COND_CODE_1(DT_NODE_HAS_STATUS(DT_INST_CHILD(n, mux_i2c_1), okay),                         \
+		    (IMX3112_CHANNEL_INIT(n, DT_INST_CHILD(n, mux_i2c_1), 1)), ())
+
+DT_INST_FOREACH_STATUS_OKAY(I2C_DEVICE_INIT_RENESAS_IMX3112)

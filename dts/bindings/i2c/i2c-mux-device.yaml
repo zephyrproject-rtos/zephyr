@@ -1,0 +1,49 @@
+# Copyright (c) 2023 Google LLC.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Generic I2C mux
+
+  Each channel is represented by a separate devicetree child node.
+  The channel node can then be used as a standard i2c bus controller
+  like in the following simplified example:
+
+      /* The imx3112 node must be a child of an i2c controller */
+      mux: imx3112@77 {
+          compatible = "renesas,imx3112-i2c";
+          reg = <0x77 0x0000 0x00000000>;
+          status = "okay";
+          #address-cells = <1>;
+          #size-cells = <0>;
+
+          mux_i2c@0 {
+              compatible: "renesas,imx3112-channel"
+              reg = <0>;
+              #address-cells = <3>;
+              #size-cells = <0>;
+              lps22hh0: lps22hh@10 {
+                      compatible = "st,lps22hh";
+                      reg = <0x10 0x0000 0x00000000>;
+              };
+          };
+
+          mux_i2c@1 {
+            compatible: "renesas,imx3112-channel"
+              reg = <1>;
+              #address-cells = <3>;
+              #size-cells = <0>;
+              lps22hh1: lps22hh@10 {
+                      compatible = "st,lps22hh";
+                      reg = <0x10 0x0000 0x00000000>;
+              };
+          };
+      };
+
+on-bus: i2c
+
+include: [i2c-device.yaml]
+
+child-binding:
+  description: Generic switch channel node
+  include: [i2c-controller.yaml]
+  on-bus: i2c
