@@ -110,7 +110,7 @@ RT1170 EVKB (`mimxrt1170_evkb_cm7/cm4`)
 +-----------+------------+-------------------------------------+-----------------+-----------------+
 | PWM       | on-chip    | pwm                                 | Supported       | Supported       |
 +-----------+------------+-------------------------------------+-----------------+-----------------+
-| ADC       | on-chip    | adc                                 | Supported (M7)  | No support      |
+| ADC       | on-chip    | adc                                 | Supported (M7)  | Supported (M7)  |
 +-----------+------------+-------------------------------------+-----------------+-----------------+
 | UART      | on-chip    | serial port-polling;                | Supported       | Supported       |
 |           |            | serial port-interrupt;              |                 |                 |

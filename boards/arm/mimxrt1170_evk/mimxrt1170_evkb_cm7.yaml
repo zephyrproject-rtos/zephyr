@@ -15,6 +15,7 @@ toolchain:
 ram: 65536
 flash: 65536
 supported:
+  - adc
   - counter
   - can
   - gpio
