@@ -104,7 +104,8 @@ uint8_t ll_cis_accept(uint16_t handle)
 	if (conn) {
 		uint32_t cis_offset_min;
 
-		if (IS_ENABLED(CONFIG_BT_CTLR_JIT_SCHEDULING)) {
+		if (IS_ENABLED(CONFIG_BT_CTLR_JIT_SCHEDULING) ||
+		    !IS_ENABLED(CONFIG_BT_CTLR_CIS_ACCEPT_MIN_OFFSET_STRICT)) {
 			cis_offset_min = MAX(400, EVENT_OVERHEAD_CIS_SETUP_US);
 		} else {
 			cis_offset_min = HAL_TICKER_TICKS_TO_US(conn->ull.ticks_slot) +
