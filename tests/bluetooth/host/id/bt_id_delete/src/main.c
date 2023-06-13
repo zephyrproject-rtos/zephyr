@@ -64,7 +64,8 @@ ZTEST(bt_id_delete, test_delete_non_default_no_last_item)
 
 	err = bt_id_delete(id);
 
-	expect_not_called_bt_settings_save_id();
+	expect_not_called_bt_settings_store_id();
+	expect_not_called_bt_settings_store_irk();
 
 	zassert_ok(err, "Unexpected error code '%d' was returned", err);
 	zassert_true(bt_dev.id_count == id_count, "Incorrect ID count %d was set", bt_dev.id_count);
@@ -109,7 +110,8 @@ ZTEST(bt_id_delete, test_delete_last_id)
 
 	err = bt_id_delete(id);
 
-	expect_not_called_bt_settings_save_id();
+	expect_not_called_bt_settings_store_id();
+	expect_not_called_bt_settings_store_irk();
 
 	zassert_ok(err, "Unexpected error code '%d' was returned", err);
 
