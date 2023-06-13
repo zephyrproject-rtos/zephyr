@@ -30,7 +30,8 @@ LOG_MODULE_REGISTER(dma_mcux_edma, CONFIG_DMA_LOG_LEVEL);
 
 struct dma_mcux_edma_config {
 	DMA_Type *base;
-	DMAMUX_Type *dmamux_base;
+	DMAMUX_Type **dmamux_base;
+	uint8_t channels_per_mux;
 	int dma_channels; /* number of channels */
 	void (*irq_config_func)(const struct device *dev);
 };
@@ -102,13 +103,15 @@ struct dma_mcux_edma_data {
 #define DEV_DATA(dev) ((struct dma_mcux_edma_data *)dev->data)
 #define DEV_BASE(dev) ((DMA_Type *)DEV_CFG(dev)->base)
 
-#define DEV_DMAMUX_BASE(dev) ((DMAMUX_Type *)DEV_CFG(dev)->dmamux_base)
-
 #define DEV_CHANNEL_DATA(dev, ch) \
 	((struct call_back *)(&(DEV_DATA(dev)->data_cb[ch])))
 
 #define DEV_EDMA_HANDLE(dev, ch) \
 	((edma_handle_t *)(&(DEV_CHANNEL_DATA(dev, ch)->edma_handle)))
+
+#define DEV_DMAMUX_BASE(dev, idx) ((DMAMUX_Type *)DEV_CFG(dev)->dmamux_base[idx])
+#define DEV_DMAMUX_IDX(dev, ch) (ch / DEV_CFG(dev)->channels_per_mux)
+#define DEV_DMAMUX_CHANNEL(dev, ch) (ch % DEV_CFG(dev)->channels_per_mux)
 
 static bool data_size_valid(const size_t data_size)
 {
@@ -188,6 +191,7 @@ static int dma_mcux_edma_configure(const struct device *dev, uint32_t channel,
 	struct call_back *data = DEV_CHANNEL_DATA(dev, channel);
 	struct dma_block_config *block_config = config->head_block;
 	uint32_t slot = config->dma_slot;
+	uint8_t dmamux_idx, dmamux_channel;
 	edma_transfer_type_t transfer_type;
 	unsigned int key;
 	int ret = 0;
@@ -202,6 +206,8 @@ static int dma_mcux_edma_configure(const struct device *dev, uint32_t channel,
 		return -EINVAL;
 	}
 
+	dmamux_idx = DEV_DMAMUX_IDX(dev, channel);
+	dmamux_channel = DEV_DMAMUX_CHANNEL(dev, channel);
 	data->transfer_settings.valid = false;
 
 	switch (config->channel_direction) {
@@ -256,16 +262,16 @@ static int dma_mcux_edma_configure(const struct device *dev, uint32_t channel,
 	    transfer_type == kEDMA_MemoryToMemory) {
 		/*software trigger make the channel always on*/
 		LOG_DBG("ALWAYS ON");
-		DMAMUX_EnableAlwaysOn(DEV_DMAMUX_BASE(dev), channel, true);
+		DMAMUX_EnableAlwaysOn(DEV_DMAMUX_BASE(dev, dmamux_idx), dmamux_channel, true);
 	} else {
-		DMAMUX_SetSource(DEV_DMAMUX_BASE(dev), channel, slot);
+		DMAMUX_SetSource(DEV_DMAMUX_BASE(dev, dmamux_idx), dmamux_channel, slot);
 	}
 #else
-	DMAMUX_SetSource(DEV_DMAMUX_BASE(dev), channel, slot);
+	DMAMUX_SetSource(DEV_DMAMUX_BASE(dev, dmamux_idx), dmamux_channel, slot);
 #endif
 
 	/* dam_imx_rt_set_channel_priority(dev, channel, config); */
-	DMAMUX_EnableChannel(DEV_DMAMUX_BASE(dev), channel);
+	DMAMUX_EnableChannel(DEV_DMAMUX_BASE(dev, dmamux_idx), dmamux_channel);
 
 	if (data->busy) {
 		EDMA_AbortTransfer(p_handle);
@@ -345,9 +351,11 @@ static int dma_mcux_edma_configure(const struct device *dev, uint32_t channel,
 static int dma_mcux_edma_start(const struct device *dev, uint32_t channel)
 {
 	struct call_back *data = DEV_CHANNEL_DATA(dev, channel);
+	uint8_t dmamux_idx = DEV_DMAMUX_IDX(dev, channel);
+	uint8_t dmamux_channel = DEV_DMAMUX_CHANNEL(dev, channel);
 
 	LOG_DBG("START TRANSFER");
-	LOG_DBG("DMAMUX CHCFG 0x%x", DEV_DMAMUX_BASE(dev)->CHCFG[channel]);
+	LOG_DBG("DMAMUX CHCFG 0x%x", DEV_DMAMUX_BASE(dev, dmamux_idx)->CHCFG[dmamux_channel]);
 	LOG_DBG("DMA CR 0x%x", DEV_BASE(dev)->CR);
 	data->busy = true;
 	EDMA_StartTransfer(DEV_EDMA_HANDLE(dev, channel));
@@ -444,6 +452,8 @@ static int dma_mcux_edma_get_status(const struct device *dev, uint32_t channel,
 				    struct dma_status *status)
 {
 	edma_tcd_t *tcdRegs;
+	uint8_t dmamux_idx = DEV_DMAMUX_IDX(dev, channel);
+	uint8_t dmamux_channel = DEV_DMAMUX_CHANNEL(dev, channel);
 
 	if (DEV_CHANNEL_DATA(dev, channel)->busy) {
 		status->busy = true;
@@ -454,7 +464,7 @@ static int dma_mcux_edma_get_status(const struct device *dev, uint32_t channel,
 		status->pending_length = 0;
 	}
 	status->dir = DEV_CHANNEL_DATA(dev, channel)->transfer_settings.direction;
-	LOG_DBG("DMAMUX CHCFG 0x%x", DEV_DMAMUX_BASE(dev)->CHCFG[channel]);
+	LOG_DBG("DMAMUX CHCFG 0x%x", DEV_DMAMUX_BASE(dev, dmamux_idx)->CHCFG[dmamux_channel]);
 	LOG_DBG("DMA CR 0x%x", DEV_BASE(dev)->CR);
 	LOG_DBG("DMA INT 0x%x", DEV_BASE(dev)->INT);
 	LOG_DBG("DMA ERQ 0x%x", DEV_BASE(dev)->ERQ);
@@ -496,9 +506,14 @@ static int dma_mcux_edma_init(const struct device *dev)
 	struct dma_mcux_edma_data *data = dev->data;
 
 	edma_config_t userConfig = { 0 };
+	uint8_t i;
 
 	LOG_DBG("INIT NXP EDMA");
-	DMAMUX_Init(DEV_DMAMUX_BASE(dev));
+
+	for (i = 0; i < config->dma_channels / config->channels_per_mux; i++) {
+		DMAMUX_Init(DEV_DMAMUX_BASE(dev, i));
+	}
+
 	EDMA_GetDefaultConfig(&userConfig);
 	EDMA_Init(DEV_BASE(dev), &userConfig);
 	config->irq_config_func(dev);
@@ -546,27 +561,35 @@ static int dma_mcux_edma_init(const struct device *dev)
 		LOG_DBG("install irq done");			      \
 	}
 
+#define DMA_MCUX_EDMA_MUX(idx, n)						\
+	(DMAMUX_Type *)DT_INST_REG_ADDR_BY_IDX(n, UTIL_INC(idx))
+
 /*
  * define the dma
  */
-#define DMA_INIT(n)						       \
-	static void dma_imx_config_func_##n(const struct device *dev); \
-	static const struct dma_mcux_edma_config dma_config_##n = {    \
-		.base = (DMA_Type *)DT_INST_REG_ADDR(n),	       \
-		.dmamux_base =					       \
-			(DMAMUX_Type *)DT_INST_REG_ADDR_BY_IDX(n, 1),  \
-		.dma_channels = DT_INST_PROP(n, dma_channels),	       \
-		.irq_config_func = dma_imx_config_func_##n,	       \
-	};							       \
-								       \
-	struct dma_mcux_edma_data dma_data_##n;			       \
-								       \
-	DEVICE_DT_INST_DEFINE(n,				       \
-			      &dma_mcux_edma_init, NULL,	       \
-			      &dma_data_##n, &dma_config_##n,	       \
-			      PRE_KERNEL_1, CONFIG_DMA_INIT_PRIORITY,   \
-			      &dma_mcux_edma_api);		       \
-								       \
+#define DMA_INIT(n)								\
+	static void dma_imx_config_func_##n(const struct device *dev);		\
+	static DMAMUX_Type *dmamux_base_##n[] = {				\
+		LISTIFY(UTIL_DEC(DT_NUM_REGS(DT_DRV_INST(n))),			\
+			DMA_MCUX_EDMA_MUX, (,), n)				\
+	};									\
+	static const struct dma_mcux_edma_config dma_config_##n = {		\
+		.base = (DMA_Type *)DT_INST_REG_ADDR(n),			\
+		.dmamux_base =	&dmamux_base_##n[0],				\
+		.dma_channels = DT_INST_PROP(n, dma_channels),			\
+		.channels_per_mux = DT_INST_PROP(n, dma_channels) /		\
+				    ARRAY_SIZE(dmamux_base_##n),		\
+		.irq_config_func = dma_imx_config_func_##n,			\
+	};									\
+										\
+	struct dma_mcux_edma_data dma_data_##n;					\
+										\
+	DEVICE_DT_INST_DEFINE(n,						\
+			      &dma_mcux_edma_init, NULL,			\
+			      &dma_data_##n, &dma_config_##n,			\
+			      PRE_KERNEL_1, CONFIG_DMA_INIT_PRIORITY,		\
+			      &dma_mcux_edma_api);				\
+										\
 	DMA_MCUX_EDMA_CONFIG_FUNC(n);
 
 DT_INST_FOREACH_STATUS_OKAY(DMA_INIT)
