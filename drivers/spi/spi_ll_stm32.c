@@ -13,7 +13,6 @@ LOG_MODULE_REGISTER(spi_ll_stm32);
 #include <zephyr/sys/util.h>
 #include <zephyr/kernel.h>
 #include <soc.h>
-#include <stm32_ll_spi.h>
 #include <errno.h>
 #include <zephyr/drivers/spi.h>
 #include <zephyr/drivers/pinctrl.h>
@@ -983,10 +982,8 @@ static inline bool spi_stm32_is_subghzspi(const struct device *dev)
 #endif
 }
 
-static int spi_stm32_init(const struct device *dev)
+static int spi_stm32_clock_configure(const struct spi_stm32_config *cfg)
 {
-	struct spi_stm32_data *data __attribute__((unused)) = dev->data;
-	const struct spi_stm32_config *cfg = dev->config;
 	int err;
 
 	if (!device_is_ready(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE))) {
@@ -1009,6 +1006,20 @@ static int spi_stm32_init(const struct device *dev)
 			LOG_ERR("Could not select SPI domain clock");
 			return err;
 		}
+	}
+
+	return 0;
+}
+
+static int spi_stm32_init(const struct device *dev)
+{
+	struct spi_stm32_data *data __attribute__((unused)) = dev->data;
+	const struct spi_stm32_config *cfg = dev->config;
+	int err;
+
+	err = spi_stm32_clock_configure(cfg);
+	if (err < 0) {
+		return err;
 	}
 
 	if (!spi_stm32_is_subghzspi(dev)) {
@@ -1118,8 +1129,6 @@ static void spi_stm32_irq_config_func_##id(const struct device *dev)		\
 #else
 #define STM32_SPI_USE_SUBGHZSPI_NSS_CONFIG(id)
 #endif
-
-
 
 #define STM32_SPI_INIT(id)						\
 STM32_SPI_IRQ_HANDLER_DECL(id);						\
