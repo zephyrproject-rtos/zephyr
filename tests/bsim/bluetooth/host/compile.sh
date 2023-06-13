@@ -61,6 +61,7 @@ app=tests/bsim/bluetooth/host/misc/disable compile
 app=tests/bsim/bluetooth/host/privacy/central compile
 app=tests/bsim/bluetooth/host/privacy/peripheral compile
 app=tests/bsim/bluetooth/host/privacy/device compile
+app=tests/bsim/bluetooth/host/privacy/legacy compile
 
 app=tests/bsim/bluetooth/host/security/bond_overwrite_allowed compile
 app=tests/bsim/bluetooth/host/security/bond_overwrite_denied compile
