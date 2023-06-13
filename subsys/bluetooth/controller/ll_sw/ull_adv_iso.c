@@ -977,7 +977,7 @@ static uint32_t adv_iso_start(struct ll_adv_iso_set *adv_iso,
 		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US);
 	adv_iso->ull.ticks_preempt_to_start =
 		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_PREEMPT_MIN_US);
-	adv_iso->ull.ticks_slot = HAL_TICKER_US_TO_TICKS(slot_us);
+	adv_iso->ull.ticks_slot = HAL_TICKER_US_TO_TICKS_CEIL(slot_us);
 
 	ticks_slot_offset = MAX(adv_iso->ull.ticks_active_to_start,
 				adv_iso->ull.ticks_prepare_to_start);
