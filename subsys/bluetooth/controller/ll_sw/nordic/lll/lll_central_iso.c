@@ -120,13 +120,15 @@ static int init_reset(void)
 
 static inline void lll_flush_tx(struct lll_conn_iso_stream *cis_lll)
 {
-	/* sn and nesn are 1-bit, only Least Significant bit is needed */
-	uint8_t sn_update = cis_lll->tx.bn + 1U - cis_lll->tx.bn_curr;
+	uint8_t se_remaining = cis_lll->nse + 1U - se_curr;
 
-	cis_lll->sn += sn_update;
-	if (cis_lll->tx.ft_cntr_se > sn_update) {
-		cis_lll->tx.ft_cntr_se -= sn_update;
+	if (cis_lll->tx.ft_cntr_se > se_remaining) {
+		cis_lll->tx.ft_cntr_se -= se_remaining;
 	} else {
+		/* sn and nesn are 1-bit, only Least Significant bit is needed */
+		uint8_t sn_update = cis_lll->tx.bn + 1U - cis_lll->tx.bn_curr;
+
+		cis_lll->sn += sn_update;
 		if (cis_lll->tx.bn != 0) {
 			cis_lll->tx.ft_cntr_se =  cis_lll->tx.ft *
 				DIV_ROUND_UP(cis_lll->nse, cis_lll->tx.bn);
@@ -136,13 +138,15 @@ static inline void lll_flush_tx(struct lll_conn_iso_stream *cis_lll)
 
 static inline void lll_flush_rx(struct lll_conn_iso_stream *cis_lll)
 {
-	/* sn and nesn are 1-bit, only Least Significant bit is needed */
-	uint8_t nesn_update = cis_lll->rx.bn + 1U - cis_lll->rx.bn_curr;
+	uint8_t se_remaining = cis_lll->nse + 1U - se_curr;
 
-	cis_lll->nesn += nesn_update;
-	if (cis_lll->rx.ft_cntr_se > nesn_update) {
-		cis_lll->rx.ft_cntr_se -= nesn_update;
+	if (cis_lll->rx.ft_cntr_se > se_remaining) {
+		cis_lll->rx.ft_cntr_se -= se_remaining;
 	} else {
+		/* sn and nesn are 1-bit, only Least Significant bit is needed */
+		uint8_t nesn_update = cis_lll->rx.bn + 1U - cis_lll->rx.bn_curr;
+
+		cis_lll->nesn += nesn_update;
 		if (cis_lll->rx.bn != 0) {
 			cis_lll->rx.ft_cntr_se =  cis_lll->rx.ft *
 				DIV_ROUND_UP(cis_lll->nse, cis_lll->rx.bn);
