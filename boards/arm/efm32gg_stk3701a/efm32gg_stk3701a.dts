@@ -116,6 +116,12 @@
 
 &gpioe {
 	status = "okay";
+
+	board-controller-enable {
+		gpio-hog;
+		gpios = <1 GPIO_ACTIVE_HIGH>;
+		output-high;
+	};
 };
 
 &gpiof {
