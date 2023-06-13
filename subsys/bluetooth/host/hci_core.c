@@ -4093,7 +4093,7 @@ int bt_set_name(const char *name)
 	bt_dev.name[len] = '\0';
 
 	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
-		err = settings_save_one("bt/name", bt_dev.name, len);
+		err = bt_settings_store_name(bt_dev.name, len);
 		if (err) {
 			LOG_WRN("Unable to store name");
 		}
@@ -4128,9 +4128,7 @@ int bt_set_appearance(uint16_t appearance)
 {
 	if (bt_dev.appearance != appearance) {
 		if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
-			int err = settings_save_one("bt/appearance", &appearance,
-					sizeof(appearance));
-
+			int err = bt_settings_store_appearance(&appearance, sizeof(appearance));
 			if (err) {
 				LOG_ERR("Unable to save setting 'bt/appearance' (err %d).", err);
 				return err;
