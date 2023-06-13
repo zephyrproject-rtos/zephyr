@@ -1,0 +1,12 @@
+# Infineon CAT1 SPI configuration options
+
+# Copyright (c) 2022 Cypress Semiconductor Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+config SPI_INFINEON_CAT1
+	bool "Infineon CAT1 SPI driver"
+	default y
+	depends on DT_HAS_INFINEON_CAT1_SPI_ENABLED
+	select USE_INFINEON_SPI
+	help
+	  This option enables the SPI driver for Infineon CAT1 family.
