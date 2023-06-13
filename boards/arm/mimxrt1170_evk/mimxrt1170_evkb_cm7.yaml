@@ -22,5 +22,6 @@ supported:
   - gpio
   - hwinfo
   - i2c
+  - spi
   - usb_device
   - watchdog
