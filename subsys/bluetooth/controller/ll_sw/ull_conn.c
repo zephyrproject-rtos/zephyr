@@ -1257,12 +1257,10 @@ void ull_conn_done(struct node_rx_event_done *done)
 		tx_time = PDU_DC_MAX_US(lll->dle.eff.max_tx_octets, 0);
 		rx_time = PDU_DC_MAX_US(lll->dle.eff.max_rx_octets, 0);
 #endif /* CONFIG_BT_CTLR_PHY */
-		ticks_slot = HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US +
-						    ready_delay +
-						    EVENT_IFS_US +
-						    rx_time +
-						    tx_time +
-						    4);
+		ticks_slot = HAL_TICKER_US_TO_TICKS_CEIL(
+			EVENT_OVERHEAD_START_US + EVENT_OVERHEAD_END_US +
+			ready_delay + EVENT_IFS_US + rx_time + tx_time +
+			(EVENT_CLOCK_JITTER_US << 1));
 		if (ticks_slot > conn->ull.ticks_slot) {
 			ticks_slot_plus = ticks_slot - conn->ull.ticks_slot;
 		} else {

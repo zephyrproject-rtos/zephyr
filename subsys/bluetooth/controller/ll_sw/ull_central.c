@@ -360,13 +360,10 @@ conn_is_valid:
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 
-	conn->ull.ticks_slot =
-		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US +
-				       EVENT_OVERHEAD_END_US +
-				       ready_delay_us +
-				       max_tx_time +
-				       EVENT_IFS_US +
-				       max_rx_time);
+	conn->ull.ticks_slot = HAL_TICKER_US_TO_TICKS_CEIL(
+		EVENT_OVERHEAD_START_US + EVENT_OVERHEAD_END_US +
+		ready_delay_us + max_tx_time + EVENT_IFS_US + max_rx_time +
+		(EVENT_CLOCK_JITTER_US << 1));
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 	ull_filter_scan_update(filter_policy);
