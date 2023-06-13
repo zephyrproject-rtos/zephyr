@@ -22,6 +22,8 @@ supported:
   - gpio
   - hwinfo
   - i2c
+  - kscan:touch
+  - mipi_dsi
   - spi
   - usb_device
   - watchdog
