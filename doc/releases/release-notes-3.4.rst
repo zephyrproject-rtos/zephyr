@@ -939,9 +939,203 @@ Drivers and Sensors
 
 Networking
 **********
-* Wi-Fi
 
-  * TWT intervals are changed from milli-seconds to micro-seconds, interval variables are also renamed.
+* CoAP:
+
+  * Added :c:func:`coap_append_descriptive_block_option` and
+    :c:func:`coap_get_block1_option` APIs to facilitate block transfer handling.
+  * Added a :ref:`coap_client_interface` helper library, based on the existing CoAP APIs.
+  * Fixed missing token length validation in :c:func:`coap_header_get_token`.
+  * Fixed missing response check in :c:func:`coap_response_received`.
+
+* Connection Manger:
+
+  * Extended the library with a generic L2 connectivity API.
+  * Refactored library internals significantly.
+  * Improved thread safety in the library.
+  * Reworked how Connection Manager events are notified - they are no longer
+    raised for each interface individually, but instead:
+
+    * ``NET_EVENT_L4_CONNECTED`` is called only once after the first
+      interface gains connectivity.
+    * ``NET_EVENT_L4_DISCONNECTED`` is called only after connectivity is
+      lost on all interfaces.
+
+  * Improved Connection Manager test coverage.
+
+* DHCPv4:
+
+  * Fixed a potential packet leak in DHCPv4 input handler.
+  * Fixed a potential NULL pointer dereference in ``dhcpv4_create_message()``.
+  * Added a mechanism to register a callback for handling DHCPv4 options.
+  * Modified ``dhcpv4_client`` sample to trigger DHCP on all network interfaces
+    in the system.
+
+* DNS:
+
+  * Fixed a possible crash on NULL pointer as a query callback.
+  * Added a check on existing DNS servers before reconfigure.
+  * Improved debug logging in DNS SD.
+  * Fixed IPv4/IPv6 address handling in mDNS responder, if both are IPv4 and IPv6 are enabled.
+  * Removed dead code in DNS SD query parsing.
+
+* Ethernet:
+
+  * Fixed double packet dereference in case of ARP request transmission errors.
+  * Fixed a possible slist corruption in case Ethernet interface went up before
+    LLDP initialization.
+
+* HTTP:
+
+  * Added HTTP service and resource iterable sections.
+
+* ICMPv6:
+
+  * Implemented IPv6 RA Recursive DNS Server option handling.
+
+* IEEE802154:
+
+  * Fixed a corner case with 6LoWPAN IP Header Compression and fragmentation, where
+    for a short range of packet sizes, fragmentation did not work correctly after IPHC.
+  * Added new radio API function to start continuous carrier wave transmission.
+  * Several improvements/fixes in IEEE802154 L2 security.
+  * Fixed a packet leak when handling beacon/command frames.
+  * Deprecated :kconfig:option:`CONFIG_IEEE802154_2015` Kconfig option.
+  * Added simple Babblesim echo test over IEEE802154 L2.
+  * Improved IEEE802154 L2 test coverage.
+  * Multiple other minor IEEE802154 L2 and documentation improvements/fixes.
+
+* IPv4:
+
+  * Implemented a fallback to IPv4 Link Local address if no other address is available.
+  * Fixed :c:func:`net_ipv4_is_ll_addr` helper function to correctly identify LL address.
+  * Fixed possible NULL pointer dereference in IPv4 fragmentation.
+
+* LwM2M:
+
+  * Added new :c:macro:`LWM2M_RD_CLIENT_EVENT_REG_UPDATE` event.
+  * Added missing ``const`` qualifier in the APIs, where applicable.
+  * Fixed socket error handling on packet transmission.
+  * Improved LwM2M context cleanup when falling back to regular Registration.
+  * Added possibility to register a callback function for FW update cancel action.
+  * Added possibility to register a callback function for LwM2M send operation.
+  * Added ISPO voltage sensor object support.
+  * Fixed stopping of the LwM2M client when it's suspended.
+  * Fixed a minor CoAP RFC incompatibility, where it should not be assumed that
+    consecutive data blocks in block transfer will carry the same token.
+  * Added block transfer support on TX.
+  * Fixed a possible out-of-bounds memory access when creating FW update object.
+  * Added possibility to override default socket option configuration with a
+    dedicated callback function (``set_socketoptions``).
+  * Improved LwM2M test coverage.
+  * Several other minor improvements and cleanups.
+
+* Misc:
+
+  * Added generic ``OFFLOADED_NETDEV_L2`` for offloaded devices to allow
+    offloaded implementations to detect when interface is brought up/down.
+  * Factored out ``net_buf_simple`` routines to a separate source file.
+  * Fixed possible NULL pointer dereference in ``net_pkt_cursor_operate()``.
+  * Reimplemented ``net_mgmt`` to use message queue internally. This also fixed
+    a possible event loss with the old implementation.
+  * Fixed error handling in ``net ping`` shell command to avoid shell freeze.
+  * Improved Ethernet error statistics logging in ``net stats`` shell command.
+  * Moved SLIP TAP implementation into a separate file, to prevent build warnings
+    about missing sources for Ethernet drivers.
+  * Fixed crashes in ``echo_server`` and ``echo_client`` samples, when
+    userspace is enabled.
+  * Fixed IPv6 support in ``mqtt_sn_publisher`` sample.
+  * Fixed build issues with arm-clang in the networking stack.
+  * Added new ``NET_IF_IPV6_NO_ND`` and ``NET_IF_IPV6_NO_MLD`` interface flags,
+    which allow to disable ND/MLD respectively on an interface.
+  * Reworked network interface mutex protection, to use individual mutex for
+    each interface, instead of a global one.
+  * Added new :ref:`aws-iot-mqtt-sample`.
+  * Added a few missing NULL pointer checks in network interface functions.
+
+* OpenThread:
+
+  * Implemented the following OpenThread platform APIs:
+
+    * ``otPlatRadioSetMacFrameCounterIfLarger()``,
+    * ``otPlatCryptoEcdsaGenerateAndImportKey()``,
+    * ``otPlatCryptoEcdsaExportPublicKey()``,
+    * ``otPlatCryptoEcdsaVerifyUsingKeyRef()``,
+    * ``otPlatCryptoEcdsaSignUsingKeyRef()``.
+
+  * Added :kconfig:option:`CONFIG_OPENTHREAD_CSL_TIMEOUT` option.
+  * Removed no longer needed ``CONFIG_OPENTHREAD_EXCLUDE_TCPLP_LIB``.
+  * Added simple Babblesim echo test over OpenThread.
+
+* SNTP:
+
+  * Switched to use ``zsock_*`` functions internally.
+
+* Sockets:
+
+  * Fixed ``SO_RCVBUF`` and ``SO_SNDBUF`` socket options handling, so that they
+    configure TCP window sizes correctly.
+  * Fixed ``SO_SNDTIMEO`` socket option handling - the timeout value was ignored
+    and socket behaved as in non-blocking mode when used.
+  * Reworked TLS sockets implementation, to allow parallel TX/RX from
+    different threads.
+  * Implemented TLS handshake timeout.
+  * Added support for asynchronous connect for TCP sockets.
+  * Fixed blocking :c:func:`recv` not being interrupted on socket close.
+  * Fixed blocking :c:func:`accept` not being interrupted on socket close.
+  * Improved sockets test coverage.
+
+* TCP:
+
+  * Fixed incorrect TCP stats by improving packet processing result reporting.
+  * Added :kconfig:option:`CONFIG_NET_TCP_PKT_ALLOC_TIMEOUT` to allow to configure
+    packet allocation timeout.
+  * Improved TCP test coverage.
+  * Fixed TCP MSS calculation for IPv6.
+  * Fixed possible double acknowledgment of retransmitted data.
+  * Fixed local address setting for incoming connections.
+  * Fixed double TCP context dereferencing in certain corner cases.
+
+* TFTP:
+
+  * Added ``tftp_put()`` API to support TFTP write request.
+  * Introduced ``tftp_callback_t`` callback to allow to read large files.
+  * Reworked ``struct tftpc`` client context structure, to allow for parallel
+    communication from several contexts.
+
+* UDP:
+
+  * :kconfig:option:`CONFIG_NET_UDP_MISSING_CHECKSUM` is now enabled by default.
+
+* Websockets:
+
+  * Implemented proper timeout handling in :c:func:`websocket_recv_msg`.
+  * Fixed implicit type conversion when parsing length field, which could lead
+    to data loss.
+
+* Wi-Fi:
+
+  * Display TWT (Target Wake Time) configuration response status in Wi-Fi shell.
+  * Added more detailed TWT response parameters printout in Wi-Fi shell.
+  * Added new ``NET_EVENT_WIFI_TWT_SLEEP_STATE`` event to notify TWT sleep status.
+  * Fixed an issue where not all security modes were displayed correctly on scan.
+  * Added connection status and AP capabilities verification before initiating
+    TWT operation.
+  * TWT intervals are changed from milliseconds to microseconds, interval
+    variables are also renamed.
+  * Extended Power Saving configuration parameters with listening interval and
+    wake up mode.
+  * Added :kconfig:option:`CONFIG_WIFI_MGMT_RAW_SCAN_RESULTS` option, which
+    enables providing of RAW (unprocessed) scan results to the application with
+    ``NET_EVENT_WIFI_CMD_RAW_SCAN_RESULT`` event.
+  * Several other minor fixes/cleanups in the Wi-Fi management/shell modules.
+
+* zperf
+
+  * Added an extra parameter to disable Nagle's algorithm with TCP benchmarks.
+  * Added support for handling multiple incoming TCP sessions.
+  * Made zperf thread priority and stack size configurable.
+  * Several minor cleanups in the module.
 
 USB
 ***
