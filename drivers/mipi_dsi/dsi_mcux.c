@@ -17,16 +17,27 @@ LOG_MODULE_REGISTER(dsi_mcux, CONFIG_MIPI_DSI_LOG_LEVEL);
 
 #define MIPI_DPHY_REF_CLK DT_INST_PROP(0, dphy_ref_frequency)
 
-/*
- * The DPHY bit clock must be fast enough to send out the pixels, it should be
- * larger than:
- *
- *         (Pixel clock * bit per output pixel) / number of MIPI data lane
- *
- * Here the desired DPHY bit clock multiplied by ( 9 / 8 = 1.125) to ensure
- * it is fast enough.
- */
-#define MIPI_DPHY_BIT_CLK_ENLARGE(origin) (((origin) / 8) * 9)
+/* Max output frequency of DPHY bit clock */
+#define MIPI_DPHY_MAX_FREQ MHZ(800)
+
+/* PLL CN should be in the range of 1 to 32. */
+#define DSI_DPHY_PLL_CN_MIN 1U
+#define DSI_DPHY_PLL_CN_MAX 32U
+
+/* PLL refClk / CN should be in the range of 24M to 30M. */
+#define DSI_DPHY_PLL_REFCLK_CN_MIN MHZ(24)
+#define DSI_DPHY_PLL_REFCLK_CN_MAX MHZ(30)
+
+/* PLL CM should be in the range of 16 to 255. */
+#define DSI_DPHY_PLL_CM_MIN 16U
+#define DSI_DPHY_PLL_CM_MAX 255U
+
+/* PLL VCO output frequency max value is 1.5GHz, VCO output is (ref_clk / CN ) * CM. */
+#define DSI_DPHY_PLL_VCO_MAX MHZ(1500)
+#define DSI_DPHY_PLL_VCO_MIN (DSI_DPHY_PLL_REFCLK_CN_MIN * DSI_DPHY_PLL_CM_MIN)
+
+#define DSI_DPHY_PLL_CO_MIN 0
+#define DSI_DPHY_PLL_CO_MAX 3
 
 struct display_mcux_mipi_dsi_config {
 	MIPI_DSI_Type base;
@@ -38,6 +49,111 @@ struct display_mcux_mipi_dsi_config {
 struct display_mcux_mipi_dsi_data {
 	const struct device *dev;
 };
+
+static uint32_t dsi_mcux_best_clock(uint32_t ref_clk, uint32_t target_freq)
+{
+	/*
+	 * This function is intended to find the closest realizable DPHY
+	 * bit clock for a given target frequency, such that the DPHY clock
+	 * is faster than the target frequency. MCUX SDK implements a similar
+	 * function with DSI_DphyGetPllDivider, but this function will
+	 * configure the DPHY to output the closest realizable clock frequency
+	 * to the requested value. This can cause dropped pixels if
+	 * the output frequency is less than the requested one.
+	 */
+	uint32_t co_shift, cn, cm;
+	uint32_t cand_freq, vco_freq, refclk_cn_freq;
+	uint32_t best_pll_freq = 0U;
+	uint32_t best_diff = UINT32_MAX;
+
+	/*
+	 * The formula for the DPHY output frequency is:
+	 * ref_clk * (CM / (CN * (1 << CO)))
+	 */
+
+	/* Test all available CO shifts (1x, 2x, 4x, 8x) */
+	for (co_shift = DSI_DPHY_PLL_CO_MIN; co_shift <= DSI_DPHY_PLL_CO_MAX; co_shift++) {
+		/* Determine VCO output frequency before CO divider */
+		vco_freq = target_freq << co_shift;
+
+		/* If desired VCO output frequency is too low, try next CO shift */
+		if (vco_freq < DSI_DPHY_PLL_VCO_MIN) {
+			continue;
+		}
+
+		/* If desired VCO output frequency is too high, no point in
+		 * searching further
+		 */
+		if (vco_freq > DSI_DPHY_PLL_VCO_MAX) {
+			break;
+		}
+
+		/* Search the best CN and CM values for desired VCO frequency */
+		for (cn = DSI_DPHY_PLL_CN_MIN; cn <= DSI_DPHY_PLL_CN_MAX; cn++) {
+			refclk_cn_freq = ref_clk / cn;
+
+			/* If the frequency after input divider is too high,
+			 * try next CN value
+			 */
+			if (refclk_cn_freq > DSI_DPHY_PLL_REFCLK_CN_MAX) {
+				continue;
+			}
+
+			/* If the frequency after input divider is too low,
+			 * no point in trying higher dividers.
+			 */
+			if (refclk_cn_freq < DSI_DPHY_PLL_REFCLK_CN_MIN) {
+				break;
+			}
+
+			/* Get the closest CM value for this vco frequency
+			 * and input divider. Round up, to bias towards higher
+			 * frequencies
+			 * NOTE: we differ from the SDK algorithm here, which
+			 * would round cm to the closest integer
+			 */
+			cm = (vco_freq + (refclk_cn_freq - 1)) / refclk_cn_freq;
+
+			/* If CM was rounded up to one over valid range,
+			 * round down
+			 */
+			if (cm == (DSI_DPHY_PLL_CM_MAX + 1)) {
+				cm = DSI_DPHY_PLL_CM_MAX;
+			}
+
+			/* If CM value is still out of range, CN/CO setting won't work */
+			if ((cm < DSI_DPHY_PLL_CM_MIN) || (cm > DSI_DPHY_PLL_CM_MAX)) {
+				continue;
+			}
+
+			/* Calculate candidate frequency */
+			cand_freq = (refclk_cn_freq * cm) >> co_shift;
+
+			if (cand_freq < target_freq) {
+				/* SKIP frequencies less than target frequency.
+				 * this is where the algorithm differs from the
+				 * SDK.
+				 */
+				continue;
+			} else {
+				if ((cand_freq - target_freq) < best_diff) {
+					/* New best CN, CM, and CO found */
+					best_diff = (cand_freq - target_freq);
+					best_pll_freq = cand_freq;
+				}
+			}
+
+			if (best_diff == 0U) {
+				/* We have found exact match for CN, CM, CO.
+				 * return now.
+				 */
+				return best_pll_freq;
+			}
+		}
+	}
+	return best_pll_freq;
+}
+
 
 static int dsi_mcux_attach(const struct device *dev,
 			   uint8_t channel,
@@ -63,16 +179,17 @@ static int dsi_mcux_attach(const struct device *dev,
 	 * larger than:
 	 *
 	 *         (Pixel clock * bit per output pixel) / number of MIPI data lane
-	 *
-	 * Here the desired DPHY bit clock multiplied by ( 9 / 8 = 1.125) to ensure
-	 * it is fast enough.
-	 *
-	 * Note that the DSI output pixel is 24bit per pixel.
 	 */
 	uint32_t mipi_dsi_dpi_clk_hz = CLOCK_GetRootClockFreq(kCLOCK_Root_Lcdif);
-	uint32_t mipi_dsi_dphy_bit_clk_hz = config->phy_clock;
-
-	mipi_dsi_dphy_bit_clk_hz = MIPI_DPHY_BIT_CLK_ENLARGE(mipi_dsi_dphy_bit_clk_hz);
+	/* Find the best realizable clock value for the MIPI DSI */
+	uint32_t mipi_dsi_dphy_bit_clk_hz =
+		dsi_mcux_best_clock(mipi_dsi_dphy_ref_clk_hz, config->phy_clock);
+	if (mipi_dsi_dphy_bit_clk_hz == 0) {
+		LOG_ERR("DPHY cannot support requested PHY clock");
+		return -ENOTSUP;
+	}
+	/* Cap clock value to max frequency */
+	mipi_dsi_dphy_bit_clk_hz = MIN(mipi_dsi_dphy_bit_clk_hz, MIPI_DPHY_MAX_FREQ);
 
 	mipi_dsi_esc_clk_hz = CLOCK_GetRootClockFreq(kCLOCK_Root_Mipi_Esc);
 	mipi_dsi_tx_esc_clk_hz = mipi_dsi_esc_clk_hz / 3;
@@ -81,6 +198,7 @@ static int dsi_mcux_attach(const struct device *dev,
 
 	mipi_dsi_dphy_bit_clk_hz = DSI_InitDphy((MIPI_DSI_Type *)&config->base,
 						&dphy_config, mipi_dsi_dphy_ref_clk_hz);
+	LOG_DBG("DPHY clock set to %u", mipi_dsi_dphy_bit_clk_hz);
 	/* Init DPI interface. */
 	DSI_SetDpiConfig((MIPI_DSI_Type *)&config->base, &config->dpi_config, mdev->data_lanes,
 					mipi_dsi_dpi_clk_hz, mipi_dsi_dphy_bit_clk_hz);
