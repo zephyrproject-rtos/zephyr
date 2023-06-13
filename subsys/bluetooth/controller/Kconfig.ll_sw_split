@@ -536,6 +536,16 @@ config BT_CTLR_SCAN_ENABLE_STRICT
 	  Enforce returning HCI Error Command Disallowed on enabling/disabling
 	  already enabled/disabled scanning.
 
+config BT_CTLR_CIS_ACCEPT_MIN_OFFSET_STRICT
+	bool "Enforce Strict CIS Minimum Offset Check"
+	depends on BT_CTLR_PERIPHERAL_ISO
+	help
+	  Enforce strict check of CIS minimum offset accepted by the peripheral
+	  considering that there will be no overlap of ACL connection with the
+	  CIG events. Radio and CPU overheads for an ACL connection event is
+	  considered and checks the CIS minimum offset is greater than the time
+	  reservation for the ACL connection.
+
 config BT_CTLR_ISOAL_SN_STRICT
 	bool "Enforce Strict Tx ISO Data Sequence Number use"
 	depends on !BT_CTLR_ISOAL_PSN_IGNORE && (BT_CTLR_ADV_ISO || \
