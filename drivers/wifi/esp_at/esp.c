@@ -1246,15 +1246,20 @@ static enum offloaded_net_if_types esp_offload_get_type(void)
 {
 	return L2_OFFLOADED_NET_IF_TYPE_WIFI;
 }
+
+static const struct wifi_mgmt_ops esp_mgmt_ops = {
+	.scan		   = esp_mgmt_scan,
+	.connect	   = esp_mgmt_connect,
+	.disconnect	   = esp_mgmt_disconnect,
+	.ap_enable	   = esp_mgmt_ap_enable,
+	.ap_disable	   = esp_mgmt_ap_disable,
+	.iface_status	   = esp_mgmt_iface_status,
+};
+
 static const struct net_wifi_mgmt_offload esp_api = {
 	.wifi_iface.iface_api.init = esp_iface_init,
-	.wifi_iface.get_type	   = esp_offload_get_type,
-	.scan			   = esp_mgmt_scan,
-	.connect		   = esp_mgmt_connect,
-	.disconnect		   = esp_mgmt_disconnect,
-	.ap_enable		   = esp_mgmt_ap_enable,
-	.ap_disable		   = esp_mgmt_ap_disable,
-	.iface_status		   = esp_mgmt_iface_status,
+	.wifi_iface.get_type = esp_offload_get_type,
+	.wifi_mgmt_api = &esp_mgmt_ops,
 };
 
 static int esp_init(const struct device *dev);

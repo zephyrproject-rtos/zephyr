@@ -624,18 +624,22 @@ static int esp32_wifi_dev_init(const struct device *dev)
 	return 0;
 }
 
-static const struct net_wifi_mgmt_offload esp32_api = {
-	.wifi_iface.iface_api.init = esp32_wifi_init,
-	.wifi_iface.send = esp32_wifi_send,
+static const struct wifi_mgmt_ops esp32_wifi_mgmt = {
+	.scan		   = esp32_wifi_scan,
+	.connect	   = esp32_wifi_connect,
+	.disconnect	   = esp32_wifi_disconnect,
+	.ap_enable	   = esp32_wifi_ap_enable,
+	.ap_disable	   = esp32_wifi_ap_disable,
+	.iface_status	   = esp32_wifi_status,
 #if defined(CONFIG_NET_STATISTICS_WIFI)
-	.get_stats			 = esp32_wifi_stats,
- #endif
-	.scan			   = esp32_wifi_scan,
-	.connect		   = esp32_wifi_connect,
-	.disconnect		   = esp32_wifi_disconnect,
-	.ap_enable		   = esp32_wifi_ap_enable,
-	.ap_disable		   = esp32_wifi_ap_disable,
-	.iface_status		   = esp32_wifi_status,
+	.get_stats	   = esp32_wifi_stats,
+#endif
+};
+
+static const struct net_wifi_mgmt_offload esp32_api = {
+	.wifi_iface.iface_api.init	  = esp32_wifi_init,
+	.wifi_iface.send = esp32_wifi_send,
+	.wifi_mgmt_api = &esp32_wifi_mgmt,
 };
 
 NET_DEVICE_DT_INST_DEFINE(0,
