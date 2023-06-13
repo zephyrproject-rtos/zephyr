@@ -70,6 +70,10 @@
 	};
 };
 
+&lpspi1 {
+	status = "okay";
+};
+
 &lpi2c5 {
 	/* FXOS accelerometer is not present in this board */
 	/delete-node/ fxos8700@1f;
