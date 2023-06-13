@@ -29,6 +29,8 @@ struct ec_host_cmd {
 	 * when data in rx_ctx are ready. The handler takes rx_ready to read data in rx_ctx.
 	 */
 	struct k_sem rx_ready;
+	/** Status of the rx data checked in the ec_host_cmd_send_received function. */
+	enum ec_host_cmd_status rx_status;
 #ifdef CONFIG_EC_HOST_CMD_DEDICATED_THREAD
 	struct k_thread thread;
 #endif /* CONFIG_EC_HOST_CMD_DEDICATED_THREAD */
