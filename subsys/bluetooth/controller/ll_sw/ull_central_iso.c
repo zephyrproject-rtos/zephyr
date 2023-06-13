@@ -559,7 +559,7 @@ uint8_t ll_cig_parameters_commit(uint8_t cig_id, uint16_t *handles)
 		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US);
 	cig->ull.ticks_preempt_to_start =
 		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_PREEMPT_MIN_US);
-	cig->ull.ticks_slot = HAL_TICKER_US_TO_TICKS(slot_us);
+	cig->ull.ticks_slot = HAL_TICKER_US_TO_TICKS_CEIL(slot_us);
 #endif /* !CONFIG_BT_CTLR_JIT_SCHEDULING */
 
 	/* Reset params cache */

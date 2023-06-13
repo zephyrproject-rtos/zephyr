@@ -371,13 +371,10 @@ void ull_periph_setup(struct node_rx_hdr *rx, struct node_rx_ftr *ftr,
 		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US);
 	conn->ull.ticks_preempt_to_start =
 		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_PREEMPT_MIN_US);
-	conn->ull.ticks_slot =
-		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US +
-				       EVENT_OVERHEAD_END_US +
-				       ready_delay_us +
-				       max_rx_time +
-				       EVENT_IFS_US +
-				       max_tx_time);
+	conn->ull.ticks_slot = HAL_TICKER_US_TO_TICKS_CEIL(
+		EVENT_OVERHEAD_START_US + EVENT_OVERHEAD_END_US +
+		ready_delay_us + max_rx_time + EVENT_IFS_US + max_tx_time +
+		(EVENT_CLOCK_JITTER_US << 1));
 
 	ticks_slot_offset = MAX(conn->ull.ticks_active_to_start,
 				conn->ull.ticks_prepare_to_start);

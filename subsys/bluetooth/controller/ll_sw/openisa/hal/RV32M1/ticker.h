@@ -35,6 +35,17 @@
 		HAL_TICKER_CNTR_MASK \
 	)
 
+/* Macro to translate microseconds to tick units.
+ * NOTE: This returns the ceil value.
+ */
+#define HAL_TICKER_US_TO_TICKS_CEIL(x) \
+	( \
+		((uint32_t)(((((uint64_t) (x) * 1000000000UL) + \
+			      HAL_TICKER_CNTR_CLK_UNIT_FS - 1U)) / \
+			    HAL_TICKER_CNTR_CLK_UNIT_FS)) & \
+		HAL_TICKER_CNTR_MASK \
+	)
+
 /* Macro to translate tick units to microseconds. */
 #define HAL_TICKER_TICKS_TO_US(x) \
 	( \

@@ -509,11 +509,11 @@ void ull_sync_iso_setup(struct ll_sync_iso_set *sync_iso,
 		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US);
 	sync_iso->ull.ticks_preempt_to_start =
 		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_PREEMPT_MIN_US);
-	sync_iso->ull.ticks_slot = HAL_TICKER_US_TO_TICKS(
-			EVENT_OVERHEAD_START_US + ready_delay_us +
-			PDU_BIS_MAX_US(PDU_AC_EXT_PAYLOAD_SIZE_MAX, lll->enc,
-				       lll->phy) +
-			EVENT_OVERHEAD_END_US);
+	sync_iso->ull.ticks_slot = HAL_TICKER_US_TO_TICKS_CEIL(
+		EVENT_OVERHEAD_START_US + ready_delay_us +
+		PDU_BIS_MAX_US(PDU_AC_EXT_PAYLOAD_SIZE_MAX, lll->enc,
+			       lll->phy) +
+		EVENT_OVERHEAD_END_US);
 
 	ticks_slot_offset = MAX(sync_iso->ull.ticks_active_to_start,
 				sync_iso->ull.ticks_prepare_to_start);
