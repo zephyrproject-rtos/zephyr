@@ -758,6 +758,7 @@ Drivers and Sensors
 * Disk
 
   * SDMMC STM32L4+: Now compatible with internal DMA
+  * NVME disks are now supported using FATFS, with a single I/O queue enabled
 
 * Display
 
@@ -898,6 +899,9 @@ Drivers and Sensors
 * Reset
 
 * SDHC
+
+  * Support was added for using CPOL/CPHA SPI clock modes with SD cards, as
+    some cards require the SPI clock switch to low when not active
 
 * Sensor
 
