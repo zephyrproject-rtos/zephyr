@@ -973,7 +973,7 @@ Networking
   * Fixed missing token length validation in :c:func:`coap_header_get_token`.
   * Fixed missing response check in :c:func:`coap_response_received`.
 
-* Connection Manger:
+* Connection Manager:
 
   * Extended the library with a generic L2 connectivity API.
   * Refactored library internals significantly.
