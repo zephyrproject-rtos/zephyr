@@ -110,8 +110,8 @@ CBOR data of successful response:
     {
         (str)"images" : [
             {
-                (str,opt)"image"        : (int)
-                (str)"slot"             : (int)
+                (str,opt)"image"        : (uint)
+                (str)"slot"             : (uint)
                 (str)"version"          : (str)
                 (str,opt*)"hash"        : (byte str)
                 (str,opt)"bootable"     : (bool)
