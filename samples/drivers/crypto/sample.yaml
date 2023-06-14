@@ -7,10 +7,10 @@ common:
   min_ram: 20
   arch_exclude: xtensa
 tests:
-  sample.drivers.crypto.mbedtls:
+  sample.drivers.crypto.tinycrypt:
     min_flash: 34
     harness: console
-    extra_args: CONF_FILE=prj_mtls_shim.conf
+    extra_args: EXTRA_CONF_FILE=prj_tinycrypt_shim.conf
     integration_platforms:
       - native_posix
     harness_config:
@@ -21,9 +21,10 @@ tests:
         - ".*: CTR Mode"
         - ".*: CCM Mode"
         - ".*: GCM Mode"
-  sample.drivers.crypto.mbedtls.micro:
-    tags: crypto
+  sample.drivers.crypto.mbedtls:
+    min_flash: 34
     harness: console
+    extra_args: EXTRA_CONF_FILE=prj_mtls_shim.conf
     integration_platforms:
       - native_posix
     harness_config:
@@ -37,7 +38,6 @@ tests:
   sample.drivers.crypto.stm32:
     tags: crypto
     filter: dt_compat_enabled("st,stm32-aes") or dt_compat_enabled("st,stm32-cryp")
-    extra_args: CONF_FILE=prj_stm32.conf
     integration_platforms:
       - stm32l562e_dk
     harness: console
