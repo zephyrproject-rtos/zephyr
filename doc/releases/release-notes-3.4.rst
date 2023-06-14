@@ -1256,6 +1256,10 @@ Libraries / Subsystems
     fs_mgmt, :kconfig:option:`CONFIG_FLASH` and
     :kconfig:option:`CONFIG_IMG_MANAGER` are needed to enable MCUmgr img_mgmt.
 
+  * MCUmgr img_mgmt group now uses unsigned integer values for image and slot
+    numbers, these numbers would never have been negative and should have been
+    unsigned.
+
 * POSIX API
 
   * Improved the locking strategy for :c:func:`eventfd_read()` and
