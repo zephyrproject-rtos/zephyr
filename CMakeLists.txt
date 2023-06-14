@@ -942,8 +942,8 @@ if(CONFIG_HAS_DTS)
     )
   set_property(GLOBAL APPEND PROPERTY GENERATED_APP_SOURCE_FILES device_deps.c)
 
-  # gen_device_deps runs on `__device_handles_pass1` so pass this info to the linker script generator
-  list(APPEND LINKER_PASS_${ZEPHYR_CURRENT_LINKER_PASS}_DEFINE "LINKER_DEVICE_HANDLES_PASS1")
+  # gen_device_deps runs on `__device_deps_pass1` so pass this info to the linker script generator
+  list(APPEND LINKER_PASS_${ZEPHYR_CURRENT_LINKER_PASS}_DEFINE "LINKER_DEVICE_DEPS_PASS1")
 endif()
 
 if(CONFIG_CODE_DATA_RELOCATION)

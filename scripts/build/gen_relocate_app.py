@@ -74,7 +74,7 @@ class SectionKind(Enum):
 
         >>> SectionKind.for_section_with_name(".rodata.str1.4")
         <SectionKind.RODATA: 'rodata'>
-        >>> SectionKind.for_section_with_name(".device_handles")
+        >>> SectionKind.for_section_with_name(".device_deps")
         None
         """
         if ".text." in name:

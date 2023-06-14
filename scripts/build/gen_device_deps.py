@@ -107,7 +107,7 @@ def c_handle_array(dev, handles, dynamic_handles, extra_support_handles=0):
     ]
     ctype = (
         '{:s}Z_DECL_ALIGN(device_handle_t) '
-        '__attribute__((__section__(".__device_handles_pass2")))'
+        '__attribute__((__section__(".__device_deps_pass2")))'
     ).format('const ' if not dynamic_handles else '')
     return [
         # The `extern` line pretends this was first declared in some .h
