@@ -31,6 +31,13 @@ properties:
     type: boolean
     description: If the DMA controller supports always on
 
+  irq-shared-offset:
+    type: int
+    default: 0
+    description: |
+      Describes an offset between two channels share the same interrupt entry.
+      Default value means each channel has separate interrupt entry.
+
   "#dma-cells":
     type: int
     required: true
