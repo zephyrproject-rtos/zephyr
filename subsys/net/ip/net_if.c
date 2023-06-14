@@ -617,7 +617,9 @@ struct net_if *net_if_get_default(void)
 #if defined(CONFIG_NET_DEFAULT_IF_UP)
 	iface = net_if_get_first_up();
 #endif
-
+#if defined(CONFIG_NET_DEFAULT_IF_WIFI)
+	iface = net_if_get_first_wifi();
+#endif
 	return iface ? iface : _net_if_list_start;
 }
 
@@ -4603,9 +4605,18 @@ bool net_if_is_wifi(struct net_if *iface)
 #if defined(CONFIG_NET_L2_ETHERNET)
 	return net_if_l2(iface) == &NET_L2_GET_NAME(ETHERNET) &&
 		net_eth_type_is_wifi(iface);
-#else
-	return false;
 #endif
+	return false;
+}
+
+struct net_if *net_if_get_first_wifi(void)
+{
+	STRUCT_SECTION_FOREACH(net_if, iface) {
+		if (net_if_is_wifi(iface)) {
+			return iface;
+		}
+	}
+	return NULL;
 }
 
 void net_if_init(void)
