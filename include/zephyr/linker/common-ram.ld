@@ -43,9 +43,9 @@
 #endif
 
 #if defined(CONFIG_HAS_DYNAMIC_DEVICE_HANDLES)
-	SECTION_DATA_PROLOGUE(device_handles,,)
+	SECTION_DATA_PROLOGUE(device_deps,,)
 	{
-#include "device-handles.ld"
+#include "device-deps.ld"
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 #endif 	/* CONFIG_HAS_DYNAMIC_DEVICE_HANDLES */
 
