@@ -174,6 +174,7 @@ int pm_device_power_domain_add(const struct device *dev,
 	return power_domain_add_or_remove(dev, domain, true);
 }
 
+#ifdef CONFIG_DEVICE_DEPS
 struct pm_visitor_context {
 	pm_device_action_failed_cb_t failure_cb;
 	enum pm_device_action action;
@@ -205,6 +206,7 @@ void pm_device_children_action_run(const struct device *dev,
 
 	(void)device_supported_foreach(dev, pm_device_children_visitor, &visitor_context);
 }
+#endif
 
 int pm_device_state_get(const struct device *dev,
 			enum pm_device_state *state)
