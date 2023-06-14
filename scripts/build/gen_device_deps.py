@@ -46,8 +46,8 @@ def parse_args():
 
     parser.add_argument("-k", "--kernel", required=True,
                         help="Input zephyr ELF binary")
-    parser.add_argument("--dynamic-handles", action="store_true",
-                        help="Indicates if device handles are dynamic")
+    parser.add_argument("--dynamic-deps", action="store_true",
+                        help="Indicates if device dependencies are dynamic")
     parser.add_argument("-d", "--num-dynamic-devices", required=False, default=0,
                         type=int, help="Input number of dynamic devices allowed")
     parser.add_argument("-o", "--output-source", required=True,
@@ -95,7 +95,7 @@ def c_handle_comment(dev, handles):
     lines.append(' */')
     return lines
 
-def c_handle_array(dev, handles, dynamic_handles, extra_support_handles=0):
+def c_handle_array(dev, handles, dynamic_deps, extra_support_handles=0):
     handles = [
         *[str(d.handle) for d in handles["depends"]],
         'Z_DEVICE_DEPS_SEP',
@@ -108,7 +108,7 @@ def c_handle_array(dev, handles, dynamic_handles, extra_support_handles=0):
     ctype = (
         '{:s}Z_DECL_ALIGN(device_handle_t) '
         '__attribute__((__section__(".__device_deps_pass2")))'
-    ).format('const ' if not dynamic_handles else '')
+    ).format('const ' if not dynamic_deps else '')
     return [
         # The `extern` line pretends this was first declared in some .h
         # file to silence "should it be static?" warnings in some
@@ -159,7 +159,7 @@ def main():
             extra_sups = args.num_dynamic_devices if dev.pm and dev.pm.is_power_domain else 0
             lines = c_handle_comment(dev, sorted_handles)
             lines.extend(
-                c_handle_array(dev, sorted_handles, args.dynamic_handles, extra_sups)
+                c_handle_array(dev, sorted_handles, args.dynamic_deps, extra_sups)
             )
             lines.extend([''])
             fp.write('\n'.join(lines))
