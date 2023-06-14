@@ -12,3 +12,4 @@ toolchain:
 supported:
   - gpio
   - uart
+  - can
