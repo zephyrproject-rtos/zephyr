@@ -595,6 +595,26 @@
 			compatible = "nxp,s32-gmac";
 			interrupts = <105 0>, <106 0>, <107 0>, <108 0>;
 			interrupt-names = "common", "tx", "rx", "safety";
+		};
+
+		edma0: dma-controller@4020c000 {
+			compatible = "nxp,mcux-edma-v3";
+			reg = <0x4020c000 0x3000>, <0x40280000 0x4000>, <0x40284000 0x4000>;
+			dma-channels = <32>;
+			dma-requests = <64>;
+			dmamux-reg-offset = <3>;
+			channel-gap = <12 127>;
+			#dma-cells = <2>;
+			nxp,mem2mem;
+			interrupts = <4 0>, <5 0>, <6 0>, <7 0>,
+				     <8 0>, <9 0>, <10 0>, <11 0>,
+				     <12 0>, <13 0>, <14 0>, <15 0>,
+				     <16 0>, <17 0>, <18 0>, <19 0>,
+				     <20 0>, <21 0>, <22 0>, <23 0>,
+				     <24 0>, <25 0>, <26 0>, <27 0>,
+				     <28 0>, <29 0>, <30 0>, <31 0>,
+				     <32 0>, <33 0>, <34 0>, <35 0>;
+			no-error-irq;
 			status = "disabled";
 		};
 
