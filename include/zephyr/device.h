@@ -27,6 +27,26 @@ extern "C" {
  * @{
  */
 
+/** @cond INTERNAL_HIDDEN */
+
+/**
+ * @brief Flag value used in lists of device handles to separate distinct
+ * groups.
+ *
+ * This is the minimum value for the device_handle_t type.
+ */
+#define Z_DEVICE_HANDLE_SEP INT16_MIN
+
+/**
+ * @brief Flag value used in lists of device handles to indicate the end of the
+ * list.
+ *
+ * This is the maximum value for the device_handle_t type.
+ */
+#define Z_DEVICE_HANDLE_ENDS INT16_MAX
+
+/** @endcond */
+
 /**
  * @brief Type used to represent a "handle" for a device.
  *
@@ -43,22 +63,6 @@ extern "C" {
  * @see device_from_handle()
  */
 typedef int16_t device_handle_t;
-
-/**
- * @brief Flag value used in lists of device handles to separate distinct
- * groups.
- *
- * This is the minimum value for the device_handle_t type.
- */
-#define DEVICE_HANDLE_SEP INT16_MIN
-
-/**
- * @brief Flag value used in lists of device handles to indicate the end of the
- * list.
- *
- * This is the maximum value for the device_handle_t type.
- */
-#define DEVICE_HANDLE_ENDS INT16_MAX
 
 /** @brief Flag value used to identify an unknown device. */
 #define DEVICE_HANDLE_NULL 0
@@ -500,8 +504,8 @@ device_required_handles_get(const struct device *dev, size_t *count)
 	if (rv != NULL) {
 		size_t i = 0;
 
-		while ((rv[i] != DEVICE_HANDLE_ENDS) &&
-		       (rv[i] != DEVICE_HANDLE_SEP)) {
+		while ((rv[i] != Z_DEVICE_HANDLE_ENDS) &&
+		       (rv[i] != Z_DEVICE_HANDLE_SEP)) {
 			++i;
 		}
 		*count = i;
@@ -538,13 +542,13 @@ device_injected_handles_get(const struct device *dev, size_t *count)
 	if (rv != NULL) {
 		/* Fast forward to injected devices */
 		while (region != 1) {
-			if (*rv == DEVICE_HANDLE_SEP) {
+			if (*rv == Z_DEVICE_HANDLE_SEP) {
 				region++;
 			}
 			rv++;
 		}
-		while ((rv[i] != DEVICE_HANDLE_ENDS) &&
-		       (rv[i] != DEVICE_HANDLE_SEP)) {
+		while ((rv[i] != Z_DEVICE_HANDLE_ENDS) &&
+		       (rv[i] != Z_DEVICE_HANDLE_SEP)) {
 			++i;
 		}
 		*count = i;
@@ -582,7 +586,7 @@ device_supported_handles_get(const struct device *dev, size_t *count)
 	if (rv != NULL) {
 		/* Fast forward to supporting devices */
 		while (region != 2) {
-			if (*rv == DEVICE_HANDLE_SEP) {
+			if (*rv == Z_DEVICE_HANDLE_SEP) {
 				region++;
 			}
 			rv++;
@@ -591,7 +595,7 @@ device_supported_handles_get(const struct device *dev, size_t *count)
 		 * Trailing NULL's can be injected by gen_device_deps.py due to
 		 * CONFIG_PM_DEVICE_POWER_DOMAIN_DYNAMIC_NUM
 		 */
-		while ((rv[i] != DEVICE_HANDLE_ENDS) &&
+		while ((rv[i] != Z_DEVICE_HANDLE_ENDS) &&
 		       (rv[i] != DEVICE_HANDLE_NULL)) {
 			++i;
 		}
@@ -799,18 +803,18 @@ static inline bool z_impl_device_is_ready(const struct device *dev)
  * {
  *     DEVICE_ORDINAL (or DEVICE_HANDLE_NULL if not a devicetree node),
  *     List of devicetree dependency ordinals (if any),
- *     DEVICE_HANDLE_SEP,
+ *     Z_DEVICE_HANDLE_SEP,
  *     List of injected dependency ordinals (if any),
- *     DEVICE_HANDLE_SEP,
+ *     Z_DEVICE_HANDLE_SEP,
  *     List of devicetree supporting ordinals (if any),
  * }
  *
  * After processing in gen_device_deps.py, the format is updated to:
  * {
  *     List of existing devicetree dependency handles (if any),
- *     DEVICE_HANDLE_SEP,
+ *     Z_DEVICE_HANDLE_SEP,
  *     List of injected devicetree dependency handles (if any),
- *     DEVICE_HANDLE_SEP,
+ *     Z_DEVICE_HANDLE_SEP,
  *     List of existing devicetree support handles (if any),
  *     DEVICE_HANDLE_NULL
  * }
@@ -831,9 +835,9 @@ static inline bool z_impl_device_is_ready(const struct device *dev)
 			DT_NODE_EXISTS(node_id),                               \
 			(DT_DEP_ORD(node_id), DT_REQUIRES_DEP_ORDS(node_id)),  \
 			(DEVICE_HANDLE_NULL,)) /**/                            \
-		DEVICE_HANDLE_SEP,                                             \
+		Z_DEVICE_HANDLE_SEP,                                           \
 		Z_DEVICE_EXTRA_HANDLES(__VA_ARGS__) /**/                       \
-		DEVICE_HANDLE_SEP,                                             \
+		Z_DEVICE_HANDLE_SEP,                                           \
 		COND_CODE_1(DT_NODE_EXISTS(node_id),                           \
 			    (DT_SUPPORTS_DEP_ORDS(node_id)), ()) /**/          \
 	}
