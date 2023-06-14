@@ -25,6 +25,8 @@ LOG_MODULE_REGISTER(main);
 #define CRYPTO_DEV_COMPAT st_stm32_cryp
 #elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_aes)
 #define CRYPTO_DEV_COMPAT st_stm32_aes
+#elif DT_HAS_COMPAT_STATUS_OKAY(nxp_mcux_dcp)
+#define CRYPTO_DEV_COMPAT nxp_mcux_dcp
 #elif CONFIG_CRYPTO_NRF_ECB
 #define CRYPTO_DEV_COMPAT nordic_nrf_ecb
 #else
