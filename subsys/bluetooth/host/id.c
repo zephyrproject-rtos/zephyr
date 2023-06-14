@@ -1273,12 +1273,11 @@ int bt_id_create(bt_addr_le_t *addr, uint8_t *irk)
 		}
 	}
 
-	new_id = bt_dev.id_count;
+	new_id = bt_dev.id_count++;
 	err = id_create(new_id, addr, irk);
 	if (err) {
+		bt_dev.id_count--;
 		return err;
-	} else {
-		bt_dev.id_count++;
 	}
 
 	return new_id;
