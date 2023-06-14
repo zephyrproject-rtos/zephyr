@@ -65,4 +65,6 @@ app=tests/bsim/bluetooth/host/security/bond_overwrite_denied compile
 app=tests/bsim/bluetooth/host/security/ccc_update compile
 app=tests/bsim/bluetooth/host/security/ccc_update conf_file=prj_2.conf compile
 
+app=tests/bsim/bluetooth/host/id/settings compile
+
 wait_for_background_jobs
