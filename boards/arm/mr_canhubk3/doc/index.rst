@@ -50,6 +50,7 @@ SIUL2         on-chip     | pinctrl
                           | external interrupt controller
 LPUART        on-chip     serial
 QSPI          on-chip     flash
+FLEXCAN       on-chip     can
 ============  ==========  ================================
 
 The default configuration can be found in the Kconfig file
@@ -106,6 +107,73 @@ Connector  Pin    Pin Function
 P6.2       PTA9   LPUART2_TX
 P6.3       PTA8   LPUART2_RX
 =========  =====  ============
+
+CAN
+===
+
+CAN is provided through FLEXCAN interface with 6 instances.
+
+===============  =======  ===============  =============
+Devicetree node  Pin      Pin Function     Bus Connector
+===============  =======  ===============  =============
+flexcan0         | PTA6   | PTA6_CAN0_RX   P12/P13
+                 | PTA7   | PTA7_CAN0_TX
+flexcan1         | PTC9   | PTC9_CAN0_RX   P14/P15
+                 | PTC8   | PTC8_CAN0_TX
+flexcan2         | PTE25  | PTE25_CAN0_RX  P16/P17
+                 | PTE24  | PTE24_CAN0_TX
+flexcan3         | PTC29  | PTC29_CAN0_RX  P18/019
+                 | PTC28  | PTC28_CAN0_TX
+flexcan4         | PTC31  | PTC31_CAN0_RX  P20/P21
+                 | PTC30  | PTC30_CAN0_TX
+flexcan5         | PTC11  | PTC11_CAN0_RX  P22/P23
+                 | PTC10  | PTC10_CAN0_TX
+===============  =======  ===============  =============
+
+.. note::
+   There is limitation by HAL SDK, so CAN only has support maximum 64 message buffers (MBs)
+   and support maximum 32 message buffers for concurrent active instances with 8 bytes
+   payload. We need to pay attention to configuration options:
+
+   1. :kconfig:option:`CONFIG_CAN_MAX_MB` must be less or equal than the
+      maximum number of message buffers that is according to the table below.
+
+   2. :kconfig:option:`CONFIG_CAN_MAX_FILTER` must be less or equal than
+      :kconfig:option:`CONFIG_CAN_MAX_MB`.
+
+===============  ==========  ================  ================
+Devicetree node  Payload     Hardware support  Software support
+===============  ==========  ================  ================
+flexcan0         | 8 bytes   | 96 MBs          | 64 MBs
+                 | 16 bytes  | 63 MBs          | 42 MBs
+                 | 32 bytes  | 36 MBs          | 24 MBs
+                 | 64 bytes  | 21 MBs          | 14 MBs
+flexcan1         | 8 bytes   | 64 MBs          | 64 MBs
+                 | 16 bytes  | 42 MBs          | 42 MBs
+                 | 32 bytes  | 24 MBs          | 24 MBs
+                 | 64 bytes  | 14 MBs          | 14 MBs
+flexcan2         | 8 bytes   | 64 MBs          | 64 MBs
+                 | 16 bytes  | 42 MBs          | 42 MBs
+                 | 32 bytes  | 24 MBs          | 24 MBs
+                 | 64 bytes  | 14 MBs          | 14 MBs
+flexcan3         | 8 bytes   | 32 MBs          | 32 MBs
+                 | 16 bytes  | 21 MBs          | 21 MBs
+                 | 32 bytes  | 12 MBs          | 12 MBs
+                 | 64 bytes  | 7 MBs           | 7 MBs
+flexcan4         | 8 bytes   | 32 MBs          | 32 MBs
+                 | 16 bytes  | 21 MBs          | 21 MBs
+                 | 32 bytes  | 12 MBs          | 12 MBs
+                 | 64 bytes  | 7 MBs           | 7 MBs
+flexcan5         | 8 bytes   | 32 MBs          | 32 MBs
+                 | 16 bytes  | 21 MBs          | 21 MBs
+                 | 32 bytes  | 12 MBs          | 12 MBs
+                 | 64 bytes  | 7 MBs           | 7 MBs
+===============  ==========  ================  ================
+
+.. note::
+   A CAN bus usually requires 60 Ohm termination at both ends of the bus. This may be
+   accomplished using one of the included CAN termination boards. For more details, refer
+   to the section ``6.3 CAN Connectors`` in the Hardware User Manual of `NXP MR-CANHUBK3`_.
 
 FS26 SBC Watchdog
 =================

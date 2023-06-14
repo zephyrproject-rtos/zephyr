@@ -22,6 +22,7 @@
 		zephyr,console = &lpuart2;
 		zephyr,shell-uart = &lpuart2;
 		zephyr,flash-controller = &mx25l6433f;
+		zephyr,canbus = &flexcan0;
 	};
 
 	aliases {
@@ -59,6 +60,54 @@
 			gpios = <&gpioa_h 9 GPIO_ACTIVE_HIGH>;
 		};
 	};
+
+	can_phy0: can-phy0 {
+		compatible = "nxp,tja1443", "can-transceiver-gpio";
+		enable-gpios = <&gpioc_h 8 GPIO_ACTIVE_HIGH>;
+		standby-gpios = <&gpioc_h 5 GPIO_ACTIVE_LOW>;
+		max-bitrate = <5000000>;
+		#phy-cells = <0>;
+	};
+
+	can_phy1: can-phy1 {
+		compatible = "nxp,tja1443", "can-transceiver-gpio";
+		enable-gpios = <&gpiod_l 2 GPIO_ACTIVE_HIGH>;
+		standby-gpios = <&gpiod_h 7 GPIO_ACTIVE_LOW>;
+		max-bitrate = <5000000>;
+		#phy-cells = <0>;
+	};
+
+	can_phy2: can-phy2 {
+		compatible = "nxp,tja1463", "can-transceiver-gpio";
+		enable-gpios = <&gpiod_l 4 GPIO_ACTIVE_HIGH>;
+		standby-gpios = <&gpiod_h 6 GPIO_ACTIVE_LOW>;
+		max-bitrate = <8000000>;
+		#phy-cells = <0>;
+	};
+
+	can_phy3: can-phy3 {
+		compatible = "nxp,tja1463", "can-transceiver-gpio";
+		enable-gpios = <&gpiob_l 0 GPIO_ACTIVE_HIGH>;
+		standby-gpios = <&gpiob_l 1 GPIO_ACTIVE_LOW>;
+		max-bitrate = <8000000>;
+		#phy-cells = <0>;
+	};
+
+	can_phy4: can-phy4 {
+		compatible = "nxp,tja1153", "can-transceiver-gpio";
+		enable-gpios = <&gpioc_h 10 GPIO_ACTIVE_HIGH>;
+		standby-gpios = <&gpioc_h 9 GPIO_ACTIVE_LOW>;
+		max-bitrate = <2000000>;
+		#phy-cells = <0>;
+	};
+
+	can_phy5: can-phy5 {
+		compatible = "nxp,tja1153", "can-transceiver-gpio";
+		enable-gpios = <&gpioe_h 1 GPIO_ACTIVE_HIGH>;
+		standby-gpios = <&gpiod_h 14 GPIO_ACTIVE_LOW>;
+		max-bitrate = <2000000>;
+		#phy-cells = <0>;
+	};
 };
 
 &flash0 {
@@ -87,7 +136,25 @@
 	status = "okay";
 };
 
+/* Enable gpio to control the CAN transceivers */
+
+&gpioc_h {
+	status = "okay";
+};
+
 &gpiod_l {
+	status = "okay";
+};
+
+&gpiod_h {
+	status = "okay";
+};
+
+&gpiob_l {
+	status = "okay";
+};
+
+&gpioe_h {
 	status = "okay";
 };
 
@@ -167,4 +234,77 @@
 			};
 		};
 	};
+};
+
+&flexcan0 {
+	pinctrl-0 = <&flexcan0_default>;
+	pinctrl-names = "default";
+	phys = <&can_phy0>;
+	bus-speed = <125000>;
+	sample-point = <875>;
+	sjw = <1>;
+	bus-speed-data = <1000000>;
+	sample-point-data = <875>;
+	sjw-data = <1>;
+	status = "okay";
+};
+
+&flexcan1 {
+	pinctrl-0 = <&flexcan1_default>;
+	pinctrl-names = "default";
+	phys = <&can_phy1>;
+	bus-speed = <125000>;
+	sample-point = <875>;
+	sjw = <1>;
+	bus-speed-data = <1000000>;
+	sample-point-data = <875>;
+	sjw-data = <1>;
+};
+
+&flexcan2 {
+	pinctrl-0 = <&flexcan2_default>;
+	pinctrl-names = "default";
+	phys = <&can_phy2>;
+	bus-speed = <125000>;
+	sample-point = <875>;
+	sjw = <1>;
+	bus-speed-data = <1000000>;
+	sample-point-data = <875>;
+	sjw-data = <1>;
+};
+
+&flexcan3 {
+	pinctrl-0 = <&flexcan3_default>;
+	pinctrl-names = "default";
+	phys = <&can_phy3>;
+	bus-speed = <125000>;
+	sample-point = <875>;
+	sjw = <1>;
+	bus-speed-data = <1000000>;
+	sample-point-data = <875>;
+	sjw-data = <1>;
+};
+
+&flexcan4 {
+	pinctrl-0 = <&flexcan4_default>;
+	pinctrl-names = "default";
+	phys = <&can_phy4>;
+	bus-speed = <125000>;
+	sample-point = <875>;
+	sjw = <1>;
+	bus-speed-data = <1000000>;
+	sample-point-data = <875>;
+	sjw-data = <1>;
+};
+
+&flexcan5 {
+	pinctrl-0 = <&flexcan5_default>;
+	pinctrl-names = "default";
+	phys = <&can_phy5>;
+	bus-speed = <125000>;
+	sample-point = <875>;
+	sjw = <1>;
+	bus-speed-data = <1000000>;
+	sample-point-data = <875>;
+	sjw-data = <1>;
 };
