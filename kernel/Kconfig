@@ -970,9 +970,9 @@ endmenu
 menu "Device Options"
 
 config DEVICE_DEPS_DYNAMIC
-	bool
+	bool "Dynamic device dependencies"
 	help
-	  Hidden option that makes possible to manipulate device dependencies at
+	  Option that makes it possible to manipulate device dependencies at
 	  runtime.
 
 endmenu
