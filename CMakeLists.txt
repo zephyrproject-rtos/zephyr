@@ -896,13 +896,13 @@ zephyr_get_include_directories_for_lang(C
   STRIP_PREFIX # Don't use a -I prefix
   )
 
-if(CONFIG_PM_DEVICE_POWER_DOMAIN_DYNAMIC)
-  set(number_of_dynamic_devices ${CONFIG_PM_DEVICE_POWER_DOMAIN_DYNAMIC_NUM})
-else()
-  set(number_of_dynamic_devices 0)
-endif()
-
 if(CONFIG_HAS_DTS)
+  if(CONFIG_PM_DEVICE_POWER_DOMAIN_DYNAMIC)
+    set(number_of_dynamic_devices ${CONFIG_PM_DEVICE_POWER_DOMAIN_DYNAMIC_NUM})
+  else()
+    set(number_of_dynamic_devices 0)
+  endif()
+
   # dev_handles.c is generated from ${ZEPHYR_LINK_STAGE_EXECUTABLE} by
   # gen_handles.py
   add_custom_command(
