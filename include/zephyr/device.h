@@ -766,7 +766,7 @@ static inline bool z_impl_device_is_ready(const struct device *dev)
  *
  * @param dev_id Device identifier.
  */
-#define Z_DEVICE_DEPS_NAME(dev_id) _CONCAT(__devicehdl_, dev_id)
+#define Z_DEVICE_DEPS_NAME(dev_id) _CONCAT(__devicedeps_, dev_id)
 
 /**
  * @brief Expand extra dependencies with a comma in between.
