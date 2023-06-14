@@ -74,7 +74,7 @@ GEN_ABSOLUTE_SYM(__z_interrupt_stack_SIZEOF, sizeof(z_interrupt_stacks[0]));
 
 /* member offsets in the device structure. Used in image post-processing */
 GEN_ABSOLUTE_SYM(_DEVICE_STRUCT_HANDLES_OFFSET,
-		 offsetof(struct device, handles));
+		 offsetof(struct device, deps));
 
 #ifdef CONFIG_PM_DEVICE
 GEN_ABSOLUTE_SYM(_DEVICE_STRUCT_PM_OFFSET,

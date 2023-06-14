@@ -104,7 +104,7 @@ static int power_domain_add_or_remove(const struct device *dev,
 				      bool add)
 {
 #if defined(CONFIG_HAS_DYNAMIC_DEVICE_HANDLES)
-	device_handle_t *rv = domain->handles;
+	device_handle_t *rv = domain->deps;
 	device_handle_t dev_handle = -1;
 	size_t i = 0, region = 0;
 

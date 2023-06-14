@@ -389,13 +389,13 @@ struct device {
 	/** Address of the device instance private data */
 	void *data;
 	/**
-	 * Optional pointer to handles associated with the device.
+	 * Optional pointer to dependencies associated with the device.
 	 *
 	 * This encodes a sequence of sets of device handles that have some
 	 * relationship to this node. The individual sets are extracted with
 	 * dedicated API, such as device_required_handles_get().
 	 */
-	Z_DEVICE_DEPS_CONST device_handle_t *handles;
+	Z_DEVICE_DEPS_CONST device_handle_t *deps;
 
 #if defined(CONFIG_PM_DEVICE) || defined(__DOXYGEN__)
 	/**
@@ -495,7 +495,7 @@ typedef int (*device_visitor_callback_t)(const struct device *dev,
 static inline const device_handle_t *
 device_required_handles_get(const struct device *dev, size_t *count)
 {
-	const device_handle_t *rv = dev->handles;
+	const device_handle_t *rv = dev->deps;
 
 	if (rv != NULL) {
 		size_t i = 0;
@@ -531,7 +531,7 @@ device_required_handles_get(const struct device *dev, size_t *count)
 static inline const device_handle_t *
 device_injected_handles_get(const struct device *dev, size_t *count)
 {
-	const device_handle_t *rv = dev->handles;
+	const device_handle_t *rv = dev->deps;
 	size_t region = 0;
 	size_t i = 0;
 
@@ -575,7 +575,7 @@ device_injected_handles_get(const struct device *dev, size_t *count)
 static inline const device_handle_t *
 device_supported_handles_get(const struct device *dev, size_t *count)
 {
-	const device_handle_t *rv = dev->handles;
+	const device_handle_t *rv = dev->deps;
 	size_t region = 0;
 	size_t i = 0;
 
@@ -864,16 +864,16 @@ static inline bool z_impl_device_is_ready(const struct device *dev)
  * @param config_ Reference to device config.
  * @param api_ Reference to device API ops.
  * @param state_ Reference to device state.
- * @param handles_ Reference to device handles.
+ * @param deps_ Reference to device dependencies.
  */
-#define Z_DEVICE_INIT(name_, pm_, data_, config_, api_, state_, handles_)      \
+#define Z_DEVICE_INIT(name_, pm_, data_, config_, api_, state_, deps_)         \
 	{                                                                      \
 		.name = name_,                                                 \
 		.config = (config_),                                           \
 		.api = (api_),                                                 \
 		.state = (state_),                                             \
 		.data = (data_),                                               \
-		.handles = (handles_),                                         \
+		.deps = (deps_),                                               \
 		IF_ENABLED(CONFIG_PM_DEVICE, (.pm = (pm_),)) /**/              \
 	}
 
@@ -903,12 +903,12 @@ static inline bool z_impl_device_is_ready(const struct device *dev)
  * @param ... Optional dependencies, manually specified.
  */
 #define Z_DEVICE_BASE_DEFINE(node_id, dev_id, name, pm, data, config, level,   \
-			     prio, api, state, handles)                        \
+			     prio, api, state, deps)                           \
 	COND_CODE_1(DT_NODE_EXISTS(node_id), (), (static))                     \
 	const STRUCT_SECTION_ITERABLE_NAMED(device,                            \
 		Z_DEVICE_SECTION_NAME(level, prio),                            \
 		DEVICE_NAME_GET(dev_id)) =                                     \
-		Z_DEVICE_INIT(name, pm, data, config, api, state, handles)
+		Z_DEVICE_INIT(name, pm, data, config, api, state, deps)
 
 /**
  * @brief Define the init entry for a device.
