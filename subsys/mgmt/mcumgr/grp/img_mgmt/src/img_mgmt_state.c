@@ -237,7 +237,7 @@ img_mgmt_state_read(struct smp_streamer *ctxt)
 	struct image_version ver;
 	uint32_t flags;
 	uint8_t state_flags;
-	int i;
+	uint32_t i;
 	zcbor_state_t *zse = ctxt->writer->zs;
 	bool ok;
 	struct zcbor_string zhash = { .value = hash, .len = IMAGE_HASH_LEN };
@@ -256,9 +256,9 @@ img_mgmt_state_read(struct smp_streamer *ctxt)
 		ok = zcbor_map_start_encode(zse, MAX_IMG_CHARACTERISTICS)	&&
 		     (CONFIG_MCUMGR_GRP_IMG_UPDATABLE_IMAGE_NUMBER == 1	||
 		      (zcbor_tstr_put_lit(zse, "image")			&&
-		       zcbor_int32_put(zse, i >> 1)))				&&
+		       zcbor_uint32_put(zse, i >> 1)))				&&
 		     zcbor_tstr_put_lit(zse, "slot")				&&
-		     zcbor_int32_put(zse, i % 2)				&&
+		     zcbor_uint32_put(zse, i % 2)				&&
 		     zcbor_tstr_put_lit(zse, "version");
 
 		if (ok) {
