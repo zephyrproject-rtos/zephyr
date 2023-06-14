@@ -19,9 +19,6 @@ config MCUBOOT_GENERATE_CONFIRMED_IMAGE
 config ROM_START_OFFSET
 	default 0x20
 
-config HAS_DYNAMIC_DEVICE_HANDLES
-	default y
-
 endif
 
 config SOC
