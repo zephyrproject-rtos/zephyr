@@ -20,6 +20,13 @@ USB
    device_next/api/index.rst
    host/api/index.rst
 
+**USB Power Delivery support**
+
+.. toctree::
+   :maxdepth: 1
+
+   pd/ucds.rst
+
 **Common sections related to USB support**
 
 .. toctree::

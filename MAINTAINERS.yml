@@ -2636,7 +2636,7 @@ USB-C:
     - include/zephyr/usb_c/
     - samples/subsys/usb_c/
     - subsys/usb/usb_c/
-    - doc/connectivity/usb_c/
+    - doc/connectivity/usb/pd/
   labels:
     - "area: USB-C"
 
