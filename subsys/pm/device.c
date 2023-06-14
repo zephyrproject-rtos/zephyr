@@ -128,14 +128,14 @@ static int power_domain_add_or_remove(const struct device *dev,
 	 * with the device handle.
 	 */
 	while (region != 2) {
-		if (*rv == Z_DEVICE_HANDLE_SEP) {
+		if (*rv == Z_DEVICE_DEPS_SEP) {
 			region++;
 		}
 		rv++;
 	}
 
 	i = 0;
-	while (rv[i] != Z_DEVICE_HANDLE_ENDS) {
+	while (rv[i] != Z_DEVICE_DEPS_ENDS) {
 		if (add == false) {
 			if (rv[i] == dev_handle) {
 				dev->pm->domain = NULL;
