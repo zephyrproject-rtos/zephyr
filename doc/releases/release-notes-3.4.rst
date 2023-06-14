@@ -306,6 +306,11 @@ Architectures
   * Removed absolute symbols :c:macro:`___basic_sf_t_SIZEOF`,
     :c:macro:`_K_THREAD_NO_FLOAT_SIZEOF`, :c:macro:`___cpu_context_t_SIZEOF`
     and :c:macro:`___thread_stack_info_t_SIZEOF`
+  * Enabled fp16 for Cortex-M55
+  * Fixed a compilation issue with arm-clang and TrustZone
+  * Implemented a new cache-management API
+  * Added support for generating zImage headers
+  * Introduced a new :c:func:`z_arm_on_enter_cpu_idle` hook on CPU idle
 
 * ARM64
 
@@ -478,6 +483,7 @@ Boards & SoC Support
   * ST Nucleo H563ZI
   * ST STM32H573I-DK Discovery
   * Raspberry Pi Pico W
+  * Xilinx KV260 (Cortex-R5)
 
 * Added support for these ARM64 boards:
 
@@ -1339,6 +1345,11 @@ Storage
 
 Trusted Firmware-M
 ******************
+
+* Enable routing of PSA Crypto API calls from NS to S, thanks to separating MbedTLS into three
+  distinct libraries at build time (crypto, TLS, X.509). This also resolves header conflicts with
+  earlier integrations of TF-M and MbedTLS.
+* Added psa_crypto sample back.
 
 zcbor
 *****
