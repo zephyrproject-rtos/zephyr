@@ -671,6 +671,11 @@ Build system and infrastructure
      | "image-1"                       | slot1_partition           |
      +---------------------------------+---------------------------+
 
+* Fixed an issue whereby relative paths supplied for the ``BOARD_ROOT`` value
+  might wrongly emit a warning about a ``boards`` directory not being found.
+
+* Fixed an issue whereby relative paths did not work for sysbuild images.
+
 Drivers and Sensors
 *******************
 
