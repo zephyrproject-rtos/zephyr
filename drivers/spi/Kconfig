@@ -142,5 +142,6 @@ source "drivers/spi/Kconfig.npcx"
 source "drivers/spi/Kconfig.mchp_mss"
 
 source "drivers/spi/Kconfig.grlib_spimctrl"
+source "drivers/spi/Kconfig.xec_gpspi"
 
 endif # SPI

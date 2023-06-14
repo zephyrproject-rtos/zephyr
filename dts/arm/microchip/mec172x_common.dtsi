@@ -686,17 +686,25 @@ spi0: spi@40070000 {
 	status = "disabled";
 };
 spi1: spi@40009400 {
+	compatible="microchip,xec-gpspi";
 	reg = <0x40009400 0x80>;
 	interrupts = <92 2>, <93 2>;
+	interrupt-names = "tx", "rx";
 	girqs = <18 2>, <18 3>;
 	pcrs = <3 9>;
+	#address-cells = <1>;
+	#size-cells = <0>;
 	status = "disabled";
 };
 spi2: spi@40009480 {
+	compatible="microchip,xec-gpspi";
 	reg = <0x40009480 0x80>;
 	interrupts = <94 2>, <95 2>;
+	interrupt-names = "tx", "rx";
 	girqs = <18 4>, <18 5>;
 	pcrs = <4 22>;
+	#address-cells = <1>;
+	#size-cells = <0>;
 	status = "disabled";
 };
 prochot0: prochot@40003400 {

@@ -1,0 +1,34 @@
+# Copyright (c) 2022, Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Microchip XEC GP-SPI controller
+
+compatible: "microchip,xec-gpspi"
+
+include: [spi-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  girqs:
+    type: array
+    required: true
+    description: |
+      An array of integers encoding each interrupt signal connection.
+      This information includes the aggregated GIRQ number, GIRQ bit
+      position, aggregated GIRQ NVIC connection, and direct NVIC
+      connection of the GIRQ bit.
+
+  pcrs:
+    type: array
+    required: true
+    description: |
+      A two entry integer array containing the QMSPI PCR sleep register
+      index and bit position.
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true

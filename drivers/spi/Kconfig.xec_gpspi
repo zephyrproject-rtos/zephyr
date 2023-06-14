@@ -1,0 +1,25 @@
+# Microchip XEC GPSPI
+
+# Copyright (c) 2022 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config SPI_XEC_GPSPI
+	bool "Microchip MEC15x/MEC172x XEC GPSPI driver"
+	default y
+	depends on DT_HAS_MICROCHIP_XEC_GPSPI_ENABLED
+	help
+	  Enable support for Microchip MEC15xx/MEC172x XEC GPSPI driver.
+	  The GPSPI controller is a simple, byte-by-byte GPI controller
+	  using GPIO's as chip select.
+
+if SPI_XEC_GPSPI
+
+config SPI_XEC_GPSPI_DMA
+	bool "Microchip XEC GPSPI DMA Support"
+	select DMA
+	help
+	  Enable the SPI DMA mode for GPSPI instances
+	  that enable dma channels in their device tree node.
+	  Enables Microchip XEC DMA driver.
+
+endif # SPI_XEC_GPSPI
