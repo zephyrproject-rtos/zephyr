@@ -16,5 +16,6 @@ config SOC_SERIES_S32K3_M7
 	select CLOCK_CONTROL
 	select HAS_MCUX
 	select HAS_MCUX_LPUART
+	select HAS_MCUX_FLEXCAN
 	help
 	  Enable support for NXP S32K3 MCUs family on Cortex-M7 cores

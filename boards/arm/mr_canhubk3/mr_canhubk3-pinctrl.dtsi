@@ -110,4 +110,70 @@
 			bias-pull-up;
 		};
 	};
+
+	flexcan0_default: flexcan0_default {
+		group1 {
+			pinmux = <PTA6_CAN0_RX>;
+			input-enable;
+		};
+		group2 {
+			pinmux = <PTA7_CAN0_TX>;
+			output-enable;
+		};
+	};
+
+	flexcan1_default: flexcan1_default {
+		group1 {
+			pinmux = <PTC9_CAN1_RX>;
+			input-enable;
+		};
+		group2 {
+			pinmux = <PTC8_CAN1_TX>;
+			output-enable;
+		};
+	};
+
+	flexcan2_default: flexcan2_default {
+		group1 {
+			pinmux = <PTE25_CAN2_RX>;
+			input-enable;
+		};
+		group2 {
+			pinmux = <PTE24_CAN2_TX>;
+			output-enable;
+		};
+	};
+
+	flexcan3_default: flexcan3_default {
+		group1 {
+			pinmux = <PTC29_CAN3_RX>;
+			input-enable;
+		};
+		group2 {
+			pinmux = <PTC28_CAN3_TX>;
+			output-enable;
+		};
+	};
+
+	flexcan4_default: flexcan4_default {
+		group1 {
+			pinmux = <PTC31_CAN4_RX>;
+			input-enable;
+		};
+		group2 {
+			pinmux = <PTC30_CAN4_TX>;
+			output-enable;
+		};
+	};
+
+	flexcan5_default: flexcan5_default {
+		group1 {
+			pinmux = <PTC11_CAN5_RX>;
+			input-enable;
+		};
+		group2 {
+			pinmux = <PTC10_CAN5_TX>;
+			output-enable;
+		};
+	};
 };
