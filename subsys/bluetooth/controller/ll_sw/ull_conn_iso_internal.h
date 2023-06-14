@@ -12,6 +12,9 @@
 	(IS_ENABLED(CONFIG_BT_CTLR_CENTRAL_ISO) && \
 	 (cig->lll.role == BT_HCI_ROLE_CENTRAL))
 
+/* BT Core 5.4, Vol 6, Part B, section 2.4.2.29 */
+#define CIS_MIN_OFFSET_MIN 500U
+
 /* Helper functions to initialize and reset ull_conn_iso module */
 int ull_conn_iso_init(void);
 int ull_conn_iso_reset(void);
