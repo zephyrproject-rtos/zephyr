@@ -24,7 +24,11 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
 
+#ifdef CONFIG_DMA_MCUX_EDMA
 #define DT_DRV_COMPAT nxp_mcux_edma
+#elif CONFIG_DMA_MCUX_EDMA_V3
+#define DT_DRV_COMPAT nxp_mcux_edma_v3
+#endif
 
 LOG_MODULE_REGISTER(dma_mcux_edma, CONFIG_DMA_LOG_LEVEL);
 
@@ -117,8 +121,11 @@ static bool data_size_valid(const size_t data_size)
 {
 	return (data_size == 4U || data_size == 2U ||
 		data_size == 1U || data_size == 8U ||
-		data_size == 16U ||
-		data_size == 32U);
+		data_size == 16U || data_size == 32U
+#ifdef CONFIG_DMA_MCUX_EDMA_V3
+		|| data_size == 64U
+#endif
+		);
 }
 
 static void nxp_edma_callback(edma_handle_t *handle, void *param, bool transferDone,
@@ -147,8 +154,19 @@ static void dma_mcux_edma_irq_handler(const struct device *dev, uint32_t channel
 		EDMA_HandleIRQ(DEV_EDMA_HANDLE(dev, channel));
 		LOG_DBG("IRQ DONE");
 	}
+
+#if DT_INST_PROP(0, no_error_irq)
+	/* Channel shares the same irq for error and transfer complete */
+	else if (flag & kEDMA_ErrorFlag) {
+		EDMA_ClearChannelStatusFlags(DEV_BASE(dev), channel, 0xFFFFFFFF);
+		EDMA_AbortTransfer(DEV_EDMA_HANDLE(dev, channel));
+		DEV_CHANNEL_DATA(dev, channel)->busy = false;
+		LOG_INF("channel %d error status is 0x%x", channel, flag);
+	}
+#endif
 }
 
+#if !DT_INST_PROP(0, no_error_irq)
 static void dma_mcux_edma_error_irq_handler(const struct device *dev)
 {
 	int i = 0;
@@ -168,6 +186,7 @@ static void dma_mcux_edma_error_irq_handler(const struct device *dev)
 	barrier_dsync_fence_full();
 #endif
 }
+#endif
 
 /* Configure a channel */
 static int dma_mcux_edma_configure(const struct device *dev, uint32_t channel,
@@ -311,8 +330,11 @@ static int dma_mcux_edma_configure(const struct device *dev, uint32_t channel,
 			LOG_ERR("Error submitting EDMA Transfer: 0x%x", submit_status);
 			ret = -EFAULT;
 		}
-		edma_tcd_t *tcdRegs = (edma_tcd_t *)(uint32_t)&p_handle->base->TCD[channel];
-		LOG_DBG("data csr is 0x%x", tcdRegs->CSR);
+#ifdef CONFIG_DMA_MCUX_EDMA_V3
+		LOG_DBG("DMA TCD_CSR 0x%x", DEV_BASE(dev)->CH[channel].TCD_CSR);
+#else
+		LOG_DBG("data csr is 0x%x", DEV_BASE(dev)->TCD[channel].CSR);
+#endif
 	}
 
 	if (config->dest_chaining_en) {
@@ -347,7 +369,10 @@ static int dma_mcux_edma_start(const struct device *dev, uint32_t channel)
 
 	LOG_DBG("START TRANSFER");
 	LOG_DBG("DMAMUX CHCFG 0x%x", DEV_DMAMUX_BASE(dev, dmamux_idx)->CHCFG[dmamux_channel]);
+
+#ifndef CONFIG_DMA_MCUX_EDMA_V3
 	LOG_DBG("DMA CR 0x%x", DEV_BASE(dev)->CR);
+#endif
 	data->busy = true;
 	EDMA_StartTransfer(DEV_EDMA_HANDLE(dev, channel));
 	return 0;
@@ -442,7 +467,6 @@ cleanup:
 static int dma_mcux_edma_get_status(const struct device *dev, uint32_t channel,
 				    struct dma_status *status)
 {
-	edma_tcd_t *tcdRegs;
 	uint8_t dmamux_idx = DEV_DMAMUX_IDX(dev, channel);
 	uint8_t dmamux_channel = DEV_DMAMUX_CHANNEL(dev, channel);
 
@@ -456,14 +480,24 @@ static int dma_mcux_edma_get_status(const struct device *dev, uint32_t channel,
 	}
 	status->dir = DEV_CHANNEL_DATA(dev, channel)->transfer_settings.direction;
 	LOG_DBG("DMAMUX CHCFG 0x%x", DEV_DMAMUX_BASE(dev, dmamux_idx)->CHCFG[dmamux_channel]);
+
+#ifdef CONFIG_DMA_MCUX_EDMA_V3
+	LOG_DBG("DMA MP_CSR 0x%x",  DEV_BASE(dev)->MP_CSR);
+	LOG_DBG("DMA MP_ES 0x%x",   DEV_BASE(dev)->MP_ES);
+	LOG_DBG("DMA CHx_ES 0x%x",  DEV_BASE(dev)->CH[channel].CH_ES);
+	LOG_DBG("DMA CHx_CSR 0x%x", DEV_BASE(dev)->CH[channel].CH_CSR);
+	LOG_DBG("DMA CHx_ES 0x%x",  DEV_BASE(dev)->CH[channel].CH_ES);
+	LOG_DBG("DMA CHx_INT 0x%x", DEV_BASE(dev)->CH[channel].CH_INT);
+	LOG_DBG("DMA TCD_CSR 0x%x", DEV_BASE(dev)->CH[channel].TCD_CSR);
+#else
 	LOG_DBG("DMA CR 0x%x", DEV_BASE(dev)->CR);
 	LOG_DBG("DMA INT 0x%x", DEV_BASE(dev)->INT);
 	LOG_DBG("DMA ERQ 0x%x", DEV_BASE(dev)->ERQ);
 	LOG_DBG("DMA ES 0x%x", DEV_BASE(dev)->ES);
 	LOG_DBG("DMA ERR 0x%x", DEV_BASE(dev)->ERR);
 	LOG_DBG("DMA HRS 0x%x", DEV_BASE(dev)->HRS);
-	tcdRegs = (edma_tcd_t *)((uint32_t)&DEV_BASE(dev)->TCD[channel]);
-	LOG_DBG("data csr is 0x%x", tcdRegs->CSR);
+	LOG_DBG("data csr is 0x%x", DEV_BASE(dev)->TCD[channel].CSR);
+#endif
 	return 0;
 }
 
@@ -507,6 +541,10 @@ static int dma_mcux_edma_init(const struct device *dev)
 
 	EDMA_GetDefaultConfig(&userConfig);
 	EDMA_Init(DEV_BASE(dev), &userConfig);
+#ifdef CONFIG_DMA_MCUX_EDMA_V3
+	/* Channel linking available and will be controlled by each channel's link settings */
+	EDMA_EnableAllChannelLink(DEV_BASE(dev), true);
+#endif
 	config->irq_config_func(dev);
 	memset(dev->data, 0, sizeof(struct dma_mcux_edma_data));
 	memset(tcdpool, 0, sizeof(tcdpool));
@@ -517,7 +555,11 @@ static int dma_mcux_edma_init(const struct device *dev)
 }
 
 /* The shared error interrupt (if have) must be declared as the last element in devicetree */
+#if !DT_INST_PROP(0, no_error_irq)
 #define NUM_IRQS_WITHOUT_ERROR_IRQ(n)	UTIL_DEC(DT_NUM_IRQS(DT_DRV_INST(n)))
+#else
+#define NUM_IRQS_WITHOUT_ERROR_IRQ(n)	DT_NUM_IRQS(DT_DRV_INST(n))
+#endif
 
 #define IRQ_CONFIG(n, idx, fn)							\
 	{									\
@@ -552,8 +594,9 @@ static int dma_mcux_edma_init(const struct device *dev)
 		LISTIFY(NUM_IRQS_WITHOUT_ERROR_IRQ(n),				\
 			DMA_MCUX_EDMA_IRQ_CONFIG, (;), n)			\
 										\
-		IRQ_CONFIG(n, NUM_IRQS_WITHOUT_ERROR_IRQ(n),			\
-			   dma_mcux_edma_error_irq_handler);			\
+		IF_ENABLED(UTIL_NOT(DT_INST_NODE_HAS_PROP(n, no_error_irq)),	\
+			   (IRQ_CONFIG(n, NUM_IRQS_WITHOUT_ERROR_IRQ(n),	\
+			    dma_mcux_edma_error_irq_handler)))			\
 										\
 		LOG_DBG("install irq done");					\
 	}
