@@ -175,7 +175,6 @@ static int renesas_da1469x_init(void)
 	da1469x_pd_init();
 	da1469x_pd_acquire(MCU_PD_DOMAIN_SYS);
 	da1469x_pd_acquire(MCU_PD_DOMAIN_TIM);
-	da1469x_pd_acquire(MCU_PD_DOMAIN_COM);
 
 	return 0;
 }
