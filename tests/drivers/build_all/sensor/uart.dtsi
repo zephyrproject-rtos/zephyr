@@ -26,3 +26,13 @@ test_uart_grow_r502a {
 		int-gpios = <&test_gpio 0 0>;
 	};
 };
+
+test_hilink_ld2410 {
+	compatible = "hilink,ld2410";
+	engineering-mode;
+	distance-resolution = <1>;
+	motion-sensitivity = <51 12 43 64 15 66 27 18 19>;
+	stationary-sensitivity = <11 22 33 44 55 66 77 88 99>;
+	presence-timeout = <20>;
+	int-gpios = <&test_gpio 0 0>;
+};
