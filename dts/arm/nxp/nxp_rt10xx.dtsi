@@ -1066,6 +1066,13 @@
 			reg = <0x403c4000 0x4000>;
 			status = "disabled";
 		};
+
+		dcp: dcp@402fc000 {
+			compatible = "nxp,mcux-dcp";
+			reg = <0x402fc000 0x4000>;
+			interrupts = <50 0>, <51 0>;
+			status = "okay";
+		};
 	};
 };
 
