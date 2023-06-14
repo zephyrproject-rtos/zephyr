@@ -66,6 +66,7 @@ int lwm2m_get_bool_fake_default(const struct lwm2m_obj_path *path, bool *value)
 DEFINE_FAKE_VALUE_FUNC(int, lwm2m_socket_start, struct lwm2m_ctx *);
 DEFINE_FAKE_VALUE_FUNC(int, lwm2m_socket_close, struct lwm2m_ctx *);
 DEFINE_FAKE_VALUE_FUNC(int, lwm2m_close_socket, struct lwm2m_ctx *);
+DEFINE_FAKE_VALUE_FUNC(int, lwm2m_socket_suspend, struct lwm2m_ctx *);
 DEFINE_FAKE_VALUE_FUNC(int, lwm2m_security_inst_id_to_index, uint16_t);
 DEFINE_FAKE_VALUE_FUNC(int, lwm2m_engine_connection_resume, struct lwm2m_ctx *);
 DEFINE_FAKE_VALUE_FUNC(int, lwm2m_push_queued_buffers, struct lwm2m_ctx *);
