@@ -9,6 +9,31 @@ We are pleased to announce the release of Zephyr version 3.4.0.
 
 Major enhancements with this release include:
 
+* Input subsystem: handles input events from various types of input devices and
+  distribute them to other threads in the application.
+* Barrierr API: add architecture agnostic API for data memory barriers.
+* USB Device support:
+
+  * USB device controller API (UDC API)
+  * USB device controller API and nRF USBD controller driver.
+  * USB device stack implementation using new UDC API
+
+* Added Power Delivery Source Support to the USB-C Stack
+* Bluetooth: Added support for Periodic Advertising with Responses (PAwR)
+* Cache API functions are now fully inlined by compilers.
+* Added an API for real-time clocks (RTC).
+* Added Retention subsystem
+* Added initial support for MMU on Xtensa
+* SMBus (System Management Bus) API
+* Various improvements to the testing framework and twister:
+
+  - Introduction of 3 new test harnesses into twister supporting pyTest,
+    GoogleTest and RobotFramework
+  - Transitioning to new Ztest API was completed and legacy Ztest was deprecated.
+
+* Added Snippets: Support common configuration settings that can be used across
+  platforms.
+
 The following sections provide detailed lists of changes by component.
 
 Security Vulnerability Related
