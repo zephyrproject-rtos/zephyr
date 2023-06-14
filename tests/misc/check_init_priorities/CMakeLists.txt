@@ -17,7 +17,9 @@ add_custom_target(
 	  ${output_file}
 	DEPENDS zephyr_pre0
 )
-add_dependencies(zephyr_pre1 check_init_priorities_output)
+if (TARGET zephyr_pre1)
+  add_dependencies(zephyr_pre1 check_init_priorities_output)
+endif()
 
 project(check_init_priorities)
 
