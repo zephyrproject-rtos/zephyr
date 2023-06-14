@@ -897,6 +897,10 @@ zephyr_get_include_directories_for_lang(C
   )
 
 if(CONFIG_HAS_DTS)
+  if(CONFIG_HAS_DYNAMIC_DEVICE_HANDLES)
+    set(dynamic_handles --dynamic-handles)
+  endif()
+
   if(CONFIG_PM_DEVICE_POWER_DOMAIN_DYNAMIC)
     set(number_of_dynamic_devices ${CONFIG_PM_DEVICE_POWER_DOMAIN_DYNAMIC_NUM})
   else()
@@ -912,6 +916,7 @@ if(CONFIG_HAS_DTS)
     ${ZEPHYR_BASE}/scripts/build/gen_handles.py
     --output-source dev_handles.c
     --output-graphviz dev_graph.dot
+    ${dynamic_handles}
     --num-dynamic-devices ${number_of_dynamic_devices}
     --kernel $<TARGET_FILE:${ZEPHYR_LINK_STAGE_EXECUTABLE}>
     --zephyr-base ${ZEPHYR_BASE}
