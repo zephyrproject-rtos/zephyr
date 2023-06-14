@@ -949,6 +949,1435 @@ USB
 Devicetree
 **********
 
+Bindings
+========
+
+* Generic or vendor-independent:
+
+  * New bindings:
+
+    * :dtcompatible:`gpio-radio-coex`
+    * :dtcompatible:`grove-header`
+    * :dtcompatible:`niosv-machine-timer`
+    * :dtcompatible:`nordic-thingy53-edge-connector`
+    * :dtcompatible:`ntc-thermistor-generic`
+    * :dtcompatible:`nvme-controller`
+    * :dtcompatible:`raspberrypi-40pins-header`
+    * :dtcompatible:`st-morpho-header`
+    * :dtcompatible:`test-gpio-enable-disable-interrupt`
+
+  * Modified bindings:
+
+    * :dtcompatible:`neorv32-uart`:
+
+          * new property: ``stop-bits``
+          * new property: ``data-bits``
+
+    * :dtcompatible:`ns16550`:
+
+          * new property: ``io-mapped``
+          * new property: ``stop-bits``
+          * new property: ``data-bits``
+          * new property: ``class-rev``
+          * new property: ``class-rev-mask``
+          * new property: ``pinctrl-0``
+          * new property: ``pinctrl-1``
+          * new property: ``pinctrl-2``
+          * new property: ``pinctrl-3``
+          * new property: ``pinctrl-4``
+          * new property: ``pinctrl-names``
+
+    * Generic pm base properties:
+
+          * new property:: ``zephyr,pm-device-runtime-auto``
+
+* Analog Devices, Inc. (adi):
+
+  * New bindings:
+
+    * :dtcompatible:`adi,adin2111`
+    * :dtcompatible:`adi,adin2111-mdio`
+    * :dtcompatible:`adi,adin2111-phy`
+    * :dtcompatible:`adi,adp5360`
+    * :dtcompatible:`adi,adp5360-regulator`
+    * :dtcompatible:`adi,adt7310`
+
+* Altera Corp. (altr):
+
+  * New bindings:
+
+    * :dtcompatible:`altr,uart`
+
+  * Modified bindings:
+
+    * :dtcompatible:`altr,jtag-uart`:
+
+          * new property: ``stop-bits``
+          * new property: ``data-bits``
+
+* AMS AG (ams):
+
+  * New bindings:
+
+    * :dtcompatible:`ams,tcs3400`
+    * :dtcompatible:`ams,tmd2620`
+
+* ARM Ltd. (arm):
+
+  * New bindings:
+
+    * :dtcompatible:`arm,sbsa-uart`
+
+  * Modified bindings:
+
+    * :dtcompatible:`arm,pl011`:
+
+          * new property: ``stop-bits``
+          * new property: ``data-bits``
+
+    * :dtcompatible:`arm,cmsdk-uart`:
+
+          * new property: ``stop-bits``
+          * new property: ``data-bits``
+
+* Asahi Kasei Corp. (asahi-kasei):
+
+  * New bindings:
+
+    * :dtcompatible:`asahi-kasei,akm09918c`
+
+* Atmel Corporation (atmel):
+
+  * New bindings:
+
+    * :dtcompatible:`atmel,sam-adc`
+    * :dtcompatible:`atmel,sam-pmc`
+    * :dtcompatible:`atmel,sam0-can`
+
+  * Modified bindings:
+
+    * :dtcompatible:`atmel,sam-i2c-twi`:
+
+          * removed property: ``peripheral-id``
+          * property ``clocks`` is now required
+
+    * :dtcompatible:`atmel,sam-i2c-twim`:
+
+          * removed property: ``peripheral-id``
+          * property ``clocks`` is now required
+
+    * :dtcompatible:`atmel,sam-i2c-twihs`:
+
+          * removed property: ``peripheral-id``
+          * property ``clocks`` is now required
+
+    * :dtcompatible:`atmel,sam-flash-controller`:
+
+          * removed property: ``peripheral-id``
+          * property ``clocks`` is now required
+
+    * :dtcompatible:`atmel,sam-rstc`:
+
+          * removed property: ``peripheral-id``
+          * property ``clocks`` is now required
+
+    * :dtcompatible:`atmel,sam-watchdog`:
+
+          * removed property: ``peripheral-id``
+          * property ``clocks`` is now required
+
+    * :dtcompatible:`atmel,sam-afec`:
+
+          * removed property: ``peripheral-id``
+          * property ``clocks`` is now required
+
+    * :dtcompatible:`atmel,sam-spi`:
+
+          * removed property: ``peripheral-id``
+          * property ``clocks`` is now required
+
+    * :dtcompatible:`atmel,sam4l-gpio`:
+
+          * removed property: ``peripheral-id``
+          * property ``clocks`` is now required
+
+    * :dtcompatible:`atmel,sam-gpio`:
+
+          * removed property: ``peripheral-id``
+          * property ``clocks`` is now required
+
+    * :dtcompatible:`atmel,sam-usbhs`:
+
+          * removed property: ``peripheral-id``
+          * property ``clocks`` is now required
+
+    * :dtcompatible:`atmel,sam-usbc`:
+
+          * removed property: ``peripheral-id``
+          * property ``clocks`` is now required
+
+    * :dtcompatible:`atmel,sam-pwm`:
+
+          * removed property: ``peripheral-id``
+          * property ``clocks`` is now required
+
+    * :dtcompatible:`atmel,sam-dac`:
+
+          * removed property: ``peripheral-id``
+          * property ``clocks`` is now required
+
+    * :dtcompatible:`atmel,sam0-uart`:
+
+          * new property: ``stop-bits``
+          * new property: ``data-bits``
+
+    * :dtcompatible:`atmel,sam-usart`:
+
+          * new property: ``stop-bits``
+          * new property: ``data-bits``
+          * removed property: ``peripheral-id``
+          * property ``clocks`` is now required
+
+    * :dtcompatible:`atmel,sam-uart`:
+
+          * new property: ``stop-bits``
+          * new property: ``data-bits``
+          * removed property: ``peripheral-id``
+          * property ``clocks`` is now required
+
+    * :dtcompatible:`atmel,sam-can`:
+
+          * new property: ``bosch,mram-cfg``
+          * removed property: ``peripheral-id``
+          * property ``clocks`` is now required
+
+    * :dtcompatible:`atmel,sam-smc`:
+
+          * removed property: ``peripheral-id``
+          * property ``clocks`` is now required
+
+    * :dtcompatible:`atmel,at45` (on spi bus):
+
+          * new property: ``sector-0a-pages``
+          * new property: ``no-chip-erase``
+          * new property: ``no-sector-erase``
+
+    * :dtcompatible:`atmel,sam-ssc`:
+
+          * removed property: ``peripheral-id``
+          * property ``clocks`` is now required
+
+    * :dtcompatible:`atmel,sam-xdmac`:
+
+          * removed property: ``peripheral-id``
+          * property ``clocks`` is now required
+
+    * :dtcompatible:`atmel,sam-trng`:
+
+          * removed property: ``peripheral-id``
+
+    * :dtcompatible:`atmel,sam-tc-qdec`:
+
+          * removed property: ``peripheral-id``
+          * property ``clocks`` is now required
+
+    * :dtcompatible:`atmel,sam-gmac`:
+
+          * removed property: ``peripheral-id``
+          * property ``clocks`` is now required
+
+    * :dtcompatible:`atmel,sam-tc`:
+
+          * removed property: ``peripheral-id``
+          * property ``clocks`` is now required
+
+* Bosch Sensortec GmbH (bosch):
+
+  * New bindings:
+
+    * :dtcompatible:`bosch,bmi323`
+    * :dtcompatible:`bosch,bmm150`
+
+  * Removed bindings:
+
+    * ``bosch,m_can-base``
+
+  * Modified bindings:
+
+    * :dtcompatible:`bosch,bmi270` (on i2c bus):
+
+          * new property: ``irq-gpios``
+
+* Cadence Design Systems Inc. (cdns):
+
+  * Modified bindings:
+
+    * :dtcompatible:`cdns,uart`:
+
+          * new property: ``stop-bits``
+          * new property: ``data-bits``
+
+* Cirrus Logic, Inc. (cirrus):
+
+  * New bindings:
+
+    * :dtcompatible:`cirrus,cs47l63`
+
+* Cypress Semiconductor Corporation (cypress):
+
+  * Modified bindings:
+
+    * :dtcompatible:`cypress,psoc6-uart`:
+
+          * new property: ``stop-bits``
+          * new property: ``data-bits``
+
+* Diglent, Inc. (digilent):
+
+  * New bindings:
+
+    * :dtcompatible:`digilent,pmod`
+
+* Diodes Incorporated (diodes):
+
+  * New bindings:
+
+    * :dtcompatible:`diodes,pi3usb9201`
+
+* EPCOS AG (epcos):
+
+  * New bindings:
+
+    * :dtcompatible:`epcos,b57861s0103a039`
+
+* Espressif Systems (espressif):
+
+  * Modified bindings:
+
+    * :dtcompatible:`espressif,esp32-spi`:
+
+          * new property: ``cs-setup-time``
+          * new property: ``cs-hold-time``
+
+    * :dtcompatible:`espressif,esp32-uart`:
+
+          * new property: ``hw-rs485-hd-mode``
+          * new property: ``stop-bits``
+          * new property: ``data-bits``
+
+    * :dtcompatible:`espressif,esp32-usb-serial`:
+
+          * new property: ``stop-bits``
+          * new property: ``data-bits``
+
+* FocalTech Systems Co.,Ltd (focaltech):
+
+  * Modified bindings:
+
+    * :dtcompatible:`focaltech,ft5336` (on i2c bus):
+
+          * bus list changed from ['kscan'] to []
+
+* Gaisler (gaisler):
+
+  * Modified bindings:
+
+    * :dtcompatible:`gaisler,apbuart`:
+
+          * new property: ``stop-bits``
+          * new property: ``data-bits``
+
+* GigaDevice Semiconductor (gd):
+
+  * Modified bindings:
+
+    * :dtcompatible:`gd,gd32-usart`:
+
+          * new property: ``stop-bits``
+          * new property: ``data-bits``
+
+* Hamamatsu Photonics K.K. (hamamatsu):
+
+  * New bindings:
+
+    * :dtcompatible:`hamamatsu,s11059`
+
+* Hitachi Ltd. (hit):
+
+  * New bindings:
+
+    * :dtcompatible:`hit,hd44780`
+
+* ILI Technology Corporation (ILITEK) (ilitek):
+
+  * New bindings:
+
+    * :dtcompatible:`ilitek,ili9342c`
+
+* Infineon Technologies (infineon):
+
+  * New bindings:
+
+    * :dtcompatible:`infineon,cat1-adc`
+    * :dtcompatible:`infineon,cat1-bless-hci`
+    * :dtcompatible:`infineon,cat1-flash-controller`
+    * :dtcompatible:`infineon,cat1-gpio`
+    * :dtcompatible:`infineon,cat1-i2c`
+    * :dtcompatible:`infineon,cat1-pinctrl`
+    * :dtcompatible:`infineon,cat1-scb`
+    * :dtcompatible:`infineon,cat1-uart`
+    * :dtcompatible:`infineon,cat1-watchdog`
+    * :dtcompatible:`infineon,cyw43xxx-bt-hci`
+    * :dtcompatible:`infineon,xmc4xxx-dma`
+    * :dtcompatible:`infineon,xmc4xxx-spi`
+    * :dtcompatible:`infineon,xmc4xxx-temp`
+
+  * Modified bindings:
+
+    * :dtcompatible:`infineon,xmc4xxx-uart`:
+
+          * new property: ``stop-bits``
+          * new property: ``data-bits``
+
+* Intel Corporation (intel):
+
+  * New bindings:
+
+    * :dtcompatible:`intel,adsp-dmic-vss`
+    * :dtcompatible:`intel,adsp-hda-dmic-cap`
+    * :dtcompatible:`intel,adsp-hda-ssp-cap`
+    * :dtcompatible:`intel,adsp-watchdog`
+    * :dtcompatible:`intel,agilex-socfpga-sip-smc`
+    * :dtcompatible:`intel,lpss`
+    * :dtcompatible:`intel,niosv`
+    * :dtcompatible:`intel,pch-smbus`
+    * :dtcompatible:`intel,penwell-spi`
+    * :dtcompatible:`intel,tco-wdt`
+
+  * Modified bindings:
+
+    * :dtcompatible:`intel,adsp-imr`:
+
+          * property ``zephyr,memory-region-mpu`` enum value changed from ['RAM', 'RAM_NOCACHE', 'FLASH', 'PPB', 'IO'] to ['RAM', 'RAM_NOCACHE', 'FLASH', 'PPB', 'IO', 'EXTMEM']
+
+    * :dtcompatible:`intel,adsp-hda-link-out`:
+
+          * specifier cells for space "dma" are now named: ['channel'] (old value: None)
+
+    * :dtcompatible:`intel,adsp-hda-host-in`:
+
+          * specifier cells for space "dma" are now named: ['channel'] (old value: None)
+
+    * :dtcompatible:`intel,adsp-hda-link-in`:
+
+          * specifier cells for space "dma" are now named: ['channel'] (old value: None)
+
+    * :dtcompatible:`intel,adsp-hda-host-out`:
+
+          * specifier cells for space "dma" are now named: ['channel'] (old value: None)
+
+    * :dtcompatible:`intel,ssp-dai`:
+
+          * new property: ``i2svss``
+
+    * :dtcompatible:`intel,e1000`:
+
+          * new property: ``class-rev``
+          * new property: ``class-rev-mask``
+
+* ITE Tech. Inc. (ite):
+
+  * New bindings:
+
+    * :dtcompatible:`ite,it82xx2-usb`
+    * :dtcompatible:`ite,it8xxx2-gpio-v2`
+    * :dtcompatible:`ite,it8xxx2-intc-v2`
+
+  * Modified bindings:
+
+    * :dtcompatible:`ite,it8xxx2-uart`:
+
+          * new property: ``stop-bits``
+          * new property: ``data-bits``
+
+* Shenzhen Jinghua Displays Electronics Co., Ltd. (jhd):
+
+  * New bindings:
+
+    * :dtcompatible:`jhd,jhd1313`
+
+* Kvaser (kvaser):
+
+  * Modified bindings:
+
+    * :dtcompatible:`kvaser,pcican`:
+
+          * new property: ``class-rev``
+          * new property: ``class-rev-mask``
+
+* Lattice Semiconductor (lattice):
+
+  * Modified bindings:
+
+    * :dtcompatible:`lattice,ice40-fpga` (on spi bus):
+
+          * new property: ``creset-delay-us``
+          * removed property: ``creset-delay-ns``
+
+* LiteX SoC builder (litex):
+
+  * Modified bindings:
+
+    * :dtcompatible:`litex,uart0`:
+
+          * new property: ``stop-bits``
+          * new property: ``data-bits``
+
+* Linear Technology Corporation (lltc):
+
+  * New bindings:
+
+    * :dtcompatible:`lltc,ltc1660`
+    * :dtcompatible:`lltc,ltc1665`
+
+* lowRISC Community Interest Company (lowrisc):
+
+  * New bindings:
+
+    * :dtcompatible:`lowrisc,opentitan-aontimer`
+    * :dtcompatible:`lowrisc,opentitan-pwrmgr`
+    * :dtcompatible:`lowrisc,opentitan-spi`
+
+  * Modified bindings:
+
+    * :dtcompatible:`lowrisc,opentitan-uart`:
+
+          * new property: ``stop-bits``
+          * new property: ``data-bits``
+
+* Maxim Integrated Products (maxim):
+
+  * New bindings:
+
+    * :dtcompatible:`maxim,ds2482-800`
+    * :dtcompatible:`maxim,ds2482-800-channel`
+    * :dtcompatible:`maxim,max17048`
+    * :dtcompatible:`maxim,max31855`
+    * :dtcompatible:`maxim,max31865`
+
+* Microchip Technology Inc. (microchip):
+
+  * New bindings:
+
+    * :dtcompatible:`microchip,coreuart`
+    * :dtcompatible:`microchip,mcp9600`
+    * :dtcompatible:`microchip,mcp970x`
+    * :dtcompatible:`microchip,xec-dmac`
+    * :dtcompatible:`microchip,xec-pwmbbled`
+    * :dtcompatible:`microchip,xec-symcr`
+
+  * Removed bindings:
+
+    * ``microchip,xec-adc-v2``
+    * ``microchip,xec-pinmux``
+    * ``microchip,xec-qmspi-full-duplex``
+
+  * Modified bindings:
+
+    * :dtcompatible:`microchip,xec-i2c`:
+
+          * new property: ``pcrs``
+
+    * :dtcompatible:`microchip,xec-adc`:
+
+          * new property: ``girqs``
+          * new property: ``pcrs``
+
+    * :dtcompatible:`microchip,xec-qmspi-ldma`:
+
+          * removed property: ``pcrs``
+          * removed property: ``port-sel``
+          * property ``clocks`` is now required
+          * property ``interrupts`` is now required
+
+    * :dtcompatible:`microchip,mcp23sxx` (on spi bus):
+
+          * new property: ``int-gpios``
+          * new property: ``reset-gpios``
+
+    * :dtcompatible:`microchip,mcp230xx` (on i2c bus):
+
+          * new property: ``int-gpios``
+          * new property: ``reset-gpios``
+          * property ``#gpio-cells`` const value changed from None to 2
+
+    * :dtcompatible:`microchip,xec-pcr`:
+
+          * specifier cells for space "clock" are now named: ['regidx', 'bitpos', 'domain'] (old value: ['regidx', 'bitpos'])
+          * property ``#clock-cells`` const value changed from 2 to 3
+
+    * :dtcompatible:`microchip,xec-pwm`:
+
+          * specifier cells for space "pwm" are now named: ['channel', 'period', 'flags'] (old value: ['channel', 'period'])
+          * property ``#pwm-cells`` const value changed from 2 to 3
+
+    * :dtcompatible:`microchip,xec-uart`:
+
+          * new property: ``stop-bits``
+          * new property: ``data-bits``
+
+    * :dtcompatible:`microchip,xec-espi-vw-routing`:
+
+          * new property: ``status``
+          * new property: ``compatible``
+          * new property: ``reg``
+          * new property: ``reg-names``
+          * new property: ``interrupts``
+          * new property: ``interrupts-extended``
+          * new property: ``interrupt-names``
+          * new property: ``interrupt-parent``
+          * new property: ``label``
+          * new property: ``clocks``
+          * new property: ``clock-names``
+          * new property: ``#address-cells``
+          * new property: ``#size-cells``
+          * new property: ``dmas``
+          * new property: ``dma-names``
+          * new property: ``io-channels``
+          * new property: ``io-channel-names``
+          * new property: ``mboxes``
+          * new property: ``mbox-names``
+          * new property: ``wakeup-source``
+          * new property: ``power-domain``
+
+    * :dtcompatible:`microchip,enc28j60` (on spi bus):
+
+          * new property: ``full-duplex``
+
+* Microchip Technology Inc. (microsemi):
+
+  * Removed bindings:
+
+    * ``microsemi,coreuart``
+
+* Motorola, Inc. (motorola):
+
+  * Modified bindings:
+
+    * :dtcompatible:`motorola,mc146818`:
+
+          * new property: ``alarms-count``
+
+* Nordic Semiconductor (nordic):
+
+  * New bindings:
+
+    * :dtcompatible:`nordic,npm1300`
+    * :dtcompatible:`nordic,npm1300-charger`
+    * :dtcompatible:`nordic,npm1300-gpio`
+    * :dtcompatible:`nordic,npm1300-regulator`
+    * :dtcompatible:`nordic,nrf-gpregret`
+
+  * Modified bindings:
+
+    * :dtcompatible:`nordic,nrf-twis`:
+
+          * removed property: ``sda-pin``
+          * removed property: ``scl-pin``
+          * property ``pinctrl-0`` is now required
+
+    * :dtcompatible:`nordic,nrf-twi`:
+
+          * removed property: ``sda-pin``
+          * removed property: ``scl-pin``
+          * property ``pinctrl-0`` is now required
+
+    * :dtcompatible:`nordic,nrf-twim`:
+
+          * removed property: ``sda-pin``
+          * removed property: ``scl-pin``
+          * property ``pinctrl-0`` is now required
+
+    * :dtcompatible:`nordic,nrf-qspi`:
+
+          * removed property: ``sck-pin``
+          * removed property: ``io-pins``
+          * removed property: ``csn-pins``
+          * property ``pinctrl-0`` is now required
+
+    * :dtcompatible:`nordic,npm6001-regulator`:
+
+          * removed property: ``nordic,ready-high-drive``
+          * removed property: ``nordic,nint-high-drive``
+          * removed property: ``nordic,sda-high-drive``
+          * removed property: ``nordic,buck-mode0-input-type``
+          * removed property: ``nordic,buck-mode0-pull-down``
+          * removed property: ``nordic,buck-mode1-input-type``
+          * removed property: ``nordic,buck-mode1-pull-down``
+          * removed property: ``nordic,buck-mode2-input-type``
+          * removed property: ``nordic,buck-mode2-pull-down``
+
+    * :dtcompatible:`nordic,nrf-spi`:
+
+          * new property: ``easydma-maxcnt-bits``
+          * removed property: ``miso-pull-up``
+          * removed property: ``miso-pull-down``
+          * removed property: ``sck-pin``
+          * removed property: ``mosi-pin``
+          * removed property: ``miso-pin``
+          * property ``pinctrl-0`` is now required
+
+    * :dtcompatible:`nordic,nrf-spis`:
+
+          * new property: ``easydma-maxcnt-bits``
+          * removed property: ``csn-pin``
+          * removed property: ``sck-pin``
+          * removed property: ``mosi-pin``
+          * removed property: ``miso-pin``
+          * property ``pinctrl-0`` is now required
+
+    * :dtcompatible:`nordic,nrf-spim`:
+
+          * new property: ``easydma-maxcnt-bits``
+          * removed property: ``miso-pull-up``
+          * removed property: ``miso-pull-down``
+          * removed property: ``sck-pin``
+          * removed property: ``mosi-pin``
+          * removed property: ``miso-pin``
+          * property ``pinctrl-0`` is now required
+
+    * :dtcompatible:`nordic,nrf-pdm`:
+
+          * removed property: ``clk-pin``
+          * removed property: ``din-pin``
+          * property ``pinctrl-0`` is now required
+
+    * :dtcompatible:`nordic,nrf-pwm`:
+
+          * removed property: ``ch0-pin``
+          * removed property: ``ch0-inverted``
+          * removed property: ``ch1-pin``
+          * removed property: ``ch1-inverted``
+          * removed property: ``ch2-pin``
+          * removed property: ``ch2-inverted``
+          * removed property: ``ch3-pin``
+          * removed property: ``ch3-inverted``
+          * property ``pinctrl-0`` is now required
+
+    * :dtcompatible:`nordic,nrf-uart`:
+
+          * new property: ``stop-bits``
+          * new property: ``data-bits``
+          * removed property: ``tx-pin``
+          * removed property: ``rx-pin``
+          * removed property: ``rts-pin``
+          * removed property: ``cts-pin``
+          * removed property: ``rx-pull-up``
+          * removed property: ``cts-pull-up``
+          * property ``pinctrl-0`` is now required
+
+    * :dtcompatible:`nordic,nrf-uarte`:
+
+          * new property: ``stop-bits``
+          * new property: ``data-bits``
+          * removed property: ``tx-pin``
+          * removed property: ``rx-pin``
+          * removed property: ``rts-pin``
+          * removed property: ``cts-pin``
+          * removed property: ``rx-pull-up``
+          * removed property: ``cts-pull-up``
+          * property ``pinctrl-0`` is now required
+
+    * :dtcompatible:`nordic,nrf-rtc`:
+
+          * new property: ``zli``
+
+    * :dtcompatible:`nordic,npm6001` (on i2c bus):
+
+          * new property: ``nordic,ready-high-drive``
+          * new property: ``nordic,nint-high-drive``
+          * new property: ``nordic,sda-high-drive``
+          * new property: ``nordic,buck-mode0-input-type``
+          * new property: ``nordic,buck-mode0-pull-down``
+          * new property: ``nordic,buck-mode1-input-type``
+          * new property: ``nordic,buck-mode1-pull-down``
+          * new property: ``nordic,buck-mode2-input-type``
+          * new property: ``nordic,buck-mode2-pull-down``
+
+    * :dtcompatible:`nordic,nrf-qdec`:
+
+          * removed property: ``a-pin``
+          * removed property: ``b-pin``
+          * removed property: ``led-pin``
+          * property ``pinctrl-0`` is now required
+
+    * :dtcompatible:`nordic,nrf-i2s`:
+
+          * removed property: ``sck-pin``
+          * removed property: ``lrck-pin``
+          * removed property: ``sdout-pin``
+          * removed property: ``sdin-pin``
+          * removed property: ``mck-pin``
+          * property ``pinctrl-0`` is now required
+
+    * :dtcompatible:`nordic,nrf-timer`:
+
+          * new property: ``max-bit-width``
+          * new property: ``zli``
+
+* Noritake Co., Inc. Electronics Division (noritake):
+
+  * New bindings:
+
+    * :dtcompatible:`noritake,itron`
+
+* Nuvoton Technology Corporation (nuvoton):
+
+  * New bindings:
+
+    * :dtcompatible:`nuvoton,npcx-kbd`
+
+  * Removed bindings:
+
+    * ``nuvoton,npcx-kscan``
+
+  * Modified bindings:
+
+    * :dtcompatible:`nuvoton,numicro-uart`:
+
+          * new property: ``stop-bits``
+          * new property: ``data-bits``
+
+    * :dtcompatible:`nuvoton,npcx-uart`:
+
+          * new property: ``stop-bits``
+          * new property: ``data-bits``
+
+* NXP Semiconductors (nxp):
+
+  * New bindings:
+
+    * :dtcompatible:`nxp,dcnano-lcdif`
+    * :dtcompatible:`nxp,flexcan`
+    * :dtcompatible:`nxp,flexcan-fd`
+    * :dtcompatible:`nxp,mipi-dsi-2l`
+    * :dtcompatible:`nxp,pcal6416a`
+    * :dtcompatible:`nxp,pcf8523`
+    * :dtcompatible:`nxp,pint`
+    * :dtcompatible:`nxp,s32-canxl`
+    * :dtcompatible:`nxp,sc18im704`
+    * :dtcompatible:`nxp,sc18im704-gpio`
+    * :dtcompatible:`nxp,sc18im704-i2c`
+    * :dtcompatible:`nxp,vf610-adc`
+
+  * Removed bindings:
+
+    * ``nxp,kinetis-flexcan``
+    * ``nxp,lpc11u6x-pinmux``
+
+  * Modified bindings:
+
+    * :dtcompatible:`nxp,lpc-lpadc`:
+
+          * property ``power-level`` enum value changed from None to [0, 1, 2, 3]
+          * property ``voltage-ref`` enum value changed from None to [0, 1, 2, 3]
+          * property ``calibration-average`` enum value changed from None to [1, 2, 4, 8, 16, 32, 64, 128]
+          * property ``calibration-average`` is no longer required
+
+    * :dtcompatible:`nxp,imx-flexspi`:
+
+          * new property: ``rx-buffer-config``
+
+    * :dtcompatible:`nxp,lpc-gpio`:
+
+          * new property: ``int-source``
+
+    * :dtcompatible:`nxp,imx-elcdif`:
+
+          * new property: ``data-bus-width``
+          * removed property: ``hsync``
+          * removed property: ``hfp``
+          * removed property: ``hbp``
+          * removed property: ``vsync``
+          * removed property: ``vfp``
+          * removed property: ``vbp``
+          * removed property: ``polarity``
+          * removed property: ``data-buswidth``
+          * property ``pixel-format`` type changed from string to int
+          * property ``pixel-format`` enum value changed from ['rgb-888', 'bgr-565'] to None
+
+    * :dtcompatible:`nxp,mcux-usbd`:
+
+          * new property: ``pinctrl-0``
+          * new property: ``pinctrl-1``
+          * new property: ``pinctrl-2``
+          * new property: ``pinctrl-3``
+          * new property: ``pinctrl-4``
+          * new property: ``pinctrl-names``
+
+    * :dtcompatible:`nxp,imx-mipi-dsi`:
+
+          * new property: ``phy-clock``
+
+    * :dtcompatible:`nxp,imx-iuart`:
+
+          * new property: ``stop-bits``
+          * new property: ``data-bits``
+
+    * :dtcompatible:`nxp,kinetis-lpsci`:
+
+          * new property: ``stop-bits``
+          * new property: ``data-bits``
+
+    * :dtcompatible:`nxp,imx-uart`:
+
+          * new property: ``stop-bits``
+          * new property: ``data-bits``
+
+    * :dtcompatible:`nxp,kinetis-lpuart`:
+
+          * new property: ``stop-bits``
+          * new property: ``data-bits``
+
+    * :dtcompatible:`nxp,lpc-usart`:
+
+          * new property: ``stop-bits``
+          * new property: ``data-bits``
+
+    * :dtcompatible:`nxp,kinetis-uart`:
+
+          * new property: ``stop-bits``
+          * new property: ``data-bits``
+
+    * :dtcompatible:`nxp,s32-linflexd`:
+
+          * new property: ``stop-bits``
+          * new property: ``data-bits``
+
+    * :dtcompatible:`nxp,lpc11u6x-uart`:
+
+          * new property: ``stop-bits``
+          * new property: ``data-bits``
+
+    * :dtcompatible:`nxp,lpc-mcan`:
+
+          * new property: ``bosch,mram-cfg``
+          * removed property: ``std-filter-elements``
+          * removed property: ``ext-filter-elements``
+          * removed property: ``rx-fifo0-elements``
+          * removed property: ``rx-fifo1-elements``
+          * removed property: ``rx-buffer-elements``
+          * removed property: ``tx-buffer-elements``
+
+    * :dtcompatible:`nxp,lpc-dma`:
+
+          * new property: ``nxp,dma-num-of-otrigs``
+          * new property: ``nxp,dma-otrig-base-address``
+          * new property: ``nxp,dma-itrig-base-address``
+
+    * :dtcompatible:`nxp,mcux-qdec`:
+
+          * new property: ``single-phase-mode``
+          * new property: ``filter-count``
+          * new property: ``filter-sample-period``
+
+* open-isa.org (openisa):
+
+  * Modified bindings:
+
+    * :dtcompatible:`openisa,rv32m1-lpuart`:
+
+          * new property: ``stop-bits``
+          * new property: ``data-bits``
+
+* Orise Technology (orisetech):
+
+  * New bindings:
+
+    * :dtcompatible:`orisetech,otm8009a`
+
+* QEMU, a generic and open source machine emulator and virtualizer (qemu):
+
+  * Modified bindings:
+
+    * :dtcompatible:`qemu,ivshmem`:
+
+          * new property: ``ivshmem-v2``
+          * new property: ``class-rev``
+          * new property: ``class-rev-mask``
+
+* Quectel Wireless Solutions Co., Ltd. (quectel):
+
+  * Modified bindings:
+
+    * :dtcompatible:`quectel,bg9x` (on uart bus):
+
+          * property ``mdm-reset-gpios`` is no longer required
+
+* QuickLogic Corp. (quicklogic):
+
+  * Modified bindings:
+
+    * :dtcompatible:`quicklogic,usbserialport-s3b`:
+
+          * new property: ``stop-bits``
+          * new property: ``data-bits``
+
+* Raspberry Pi Foundation (raspberrypi):
+
+  * New bindings:
+
+    * :dtcompatible:`raspberrypi,core-supply-regulator`
+    * :dtcompatible:`raspberrypi,pico-dma`
+    * :dtcompatible:`raspberrypi,pico-pio`
+    * :dtcompatible:`raspberrypi,pico-pio-device`
+    * :dtcompatible:`raspberrypi,pico-uart-pio`
+
+  * Modified bindings:
+
+    * :dtcompatible:`raspberrypi,pico-uart`:
+
+          * new property: ``stop-bits``
+          * new property: ``data-bits``
+
+* Renesas Electronics Corporation (renesas):
+
+  * New bindings:
+
+    * :dtcompatible:`renesas,smartbond-adc`
+    * :dtcompatible:`renesas,smartbond-i2c`
+    * :dtcompatible:`renesas,smartbond-lp-clk`
+    * :dtcompatible:`renesas,smartbond-sdadc`
+    * :dtcompatible:`renesas,smartbond-spi`
+    * :dtcompatible:`renesas,smartbond-sys-clk`
+    * :dtcompatible:`renesas,smartbond-trng`
+    * :dtcompatible:`renesas,smartbond-usbd`
+    * :dtcompatible:`renesas,smartbond-watchdog`
+
+  * Modified bindings:
+
+    * :dtcompatible:`renesas,rcar-scif`:
+
+          * new property: ``stop-bits``
+          * new property: ``data-bits``
+
+    * :dtcompatible:`renesas,smartbond-uart`:
+
+          * new property: ``stop-bits``
+          * new property: ``data-bits``
+
+* ROHM Semiconductor Co., Ltd (rohm):
+
+  * New bindings:
+
+    * :dtcompatible:`rohm,bd8lb600fs`
+    * :dtcompatible:`rohm,bh1750`
+
+* SEGGER Microcontroller GmbH (segger):
+
+  * Modified bindings:
+
+    * :dtcompatible:`segger,rtt-uart`:
+
+          * new property: ``stop-bits``
+          * new property: ``data-bits``
+
+* Siemens AG (siemens):
+
+  * New bindings:
+
+    * :dtcompatible:`siemens,ivshmem-eth`
+
+* SiFive, Inc. (sifive):
+
+  * New bindings:
+
+    * :dtcompatible:`sifive,fu740-c000-ddr`
+
+  * Modified bindings:
+
+    * :dtcompatible:`sifive,uart0`:
+
+          * new property: ``stop-bits``
+          * new property: ``data-bits``
+
+    * :dtcompatible:`sifive,e24`:
+
+          * property ``riscv,isa`` enum value changed from ['rv32imac', 'rv32imafc', 'rv32imafcb', 'rv64imac', 'rv64imafdc'] to ['rv32emc', 'rv32imac', 'rv32imafc', 'rv32imafcb', 'rv64imac', 'rv64imafdc']
+
+    * :dtcompatible:`sifive,e51`:
+
+          * property ``riscv,isa`` enum value changed from ['rv32imac', 'rv32imafc', 'rv32imafcb', 'rv64imac', 'rv64imafdc'] to ['rv32emc', 'rv32imac', 'rv32imafc', 'rv32imafcb', 'rv64imac', 'rv64imafdc']
+
+    * :dtcompatible:`sifive,e31`:
+
+          * property ``riscv,isa`` enum value changed from ['rv32imac', 'rv32imafc', 'rv32imafcb', 'rv64imac', 'rv64imafdc'] to ['rv32emc', 'rv32imac', 'rv32imafc', 'rv32imafcb', 'rv64imac', 'rv64imafdc']
+
+    * :dtcompatible:`sifive,s7`:
+
+          * property ``riscv,isa`` enum value changed from ['rv32imac', 'rv32imafc', 'rv32imafcb', 'rv64imac', 'rv64imafdc'] to ['rv32emc', 'rv32imac', 'rv32imafc', 'rv32imafcb', 'rv64imac', 'rv64imafdc']
+
+* Silicon Laboratories (silabs):
+
+  * New bindings:
+
+    * :dtcompatible:`silabs,gecko-burtc`
+    * :dtcompatible:`silabs,gecko-iadc`
+
+  * Modified bindings:
+
+    * :dtcompatible:`silabs,gecko-usart`:
+
+          * new property: ``stop-bits``
+          * new property: ``data-bits``
+
+    * :dtcompatible:`silabs,gecko-leuart`:
+
+          * new property: ``stop-bits``
+          * new property: ``data-bits``
+
+    * :dtcompatible:`silabs,gecko-uart`:
+
+          * new property: ``stop-bits``
+          * new property: ``data-bits``
+
+* Standard Microsystems Corporation (smsc):
+
+  * New bindings:
+
+    * :dtcompatible:`smsc,lan91c111`
+    * :dtcompatible:`smsc,lan91c111-mdio`
+
+* Synopsys, Inc. (snps):
+
+  * New bindings:
+
+    * :dtcompatible:`snps,designware-watchdog`
+    * :dtcompatible:`snps,dwc2`
+    * :dtcompatible:`snps,emsdp-pinctrl`
+    * :dtcompatible:`snps,hostlink-uart`
+
+  * Modified bindings:
+
+    * :dtcompatible:`snps,designware-i2c`:
+
+          * new property: ``class-rev``
+          * new property: ``class-rev-mask``
+
+    * :dtcompatible:`snps,designware-spi`:
+
+          * new property: ``aux_reg``
+          * new property: ``fifo-depth``
+          * new property: ``pinctrl-0``
+          * new property: ``pinctrl-1``
+          * new property: ``pinctrl-2``
+          * new property: ``pinctrl-3``
+          * new property: ``pinctrl-4``
+          * new property: ``pinctrl-names``
+
+    * :dtcompatible:`snps,nsim-uart`:
+
+          * new property: ``stop-bits``
+          * new property: ``data-bits``
+
+* Solomon Systech Limited (solomon):
+
+  * New bindings:
+
+    * :dtcompatible:`solomon,ssd1608`
+    * :dtcompatible:`solomon,ssd1673`
+    * :dtcompatible:`solomon,ssd1675a`
+    * :dtcompatible:`solomon,ssd1680`
+    * :dtcompatible:`solomon,ssd1681`
+
+  * Removed bindings:
+
+    * ``solomon,ssd16xxfb``
+
+* STMicroelectronics (st):
+
+  * New bindings:
+
+    * :dtcompatible:`st,dsi-lcd-qsh-030`
+    * :dtcompatible:`st,lsm6dso16is`
+    * :dtcompatible:`st,lsm6dso16is`
+    * :dtcompatible:`st,lsm6dsv16x`
+    * :dtcompatible:`st,lsm6dsv16x`
+    * :dtcompatible:`st,stm32-bdma`
+    * :dtcompatible:`st,stm32-mipi-dsi`
+    * :dtcompatible:`st,stm32-vref`
+    * :dtcompatible:`st,stm32c0-hsi-clock`
+    * :dtcompatible:`st,stm32c0-temp-cal`
+    * :dtcompatible:`st,stm32f1-adc`
+    * :dtcompatible:`st,stm32f4-adc`
+    * :dtcompatible:`st,stm32f4-fsotg`
+    * :dtcompatible:`st,stm32f4-plli2s-clock`
+    * :dtcompatible:`st,stm32f412-plli2s-clock`
+    * :dtcompatible:`st,stm32g0-exti`
+    * :dtcompatible:`st,vl53l1x`
+
+  * Modified bindings:
+
+    * :dtcompatible:`st,stm32-i2c-v2`:
+
+          * new property: ``scl-gpios``
+          * new property: ``sda-gpios``
+
+    * :dtcompatible:`st,stm32-i2c-v1`:
+
+          * new property: ``scl-gpios``
+          * new property: ``sda-gpios``
+
+    * :dtcompatible:`st,stm32-flash-controller`:
+
+          * new property: ``st,rdp1-enable-byte``
+
+    * :dtcompatible:`st,stm32-adc`:
+
+          * new property: ``resolutions``
+          * new property: ``sampling-times``
+          * new property: ``num-sampling-time-common-channels``
+
+    * :dtcompatible:`st,stm32-ltdc`:
+
+          * new property: ``window0-x0``
+          * new property: ``window0-x1``
+          * new property: ``window0-y0``
+          * new property: ``window0-y1``
+          * new property: ``pixel-format``
+          * removed property: ``hsync-pol``
+          * removed property: ``vsync-pol``
+          * removed property: ``de-pol``
+          * removed property: ``pclk-pol``
+          * removed property: ``hsync-duration``
+          * removed property: ``vsync-duration``
+          * removed property: ``hbp-duration``
+          * removed property: ``vbp-duration``
+          * removed property: ``hfp-duration``
+          * removed property: ``vfp-duration``
+          * property ``pinctrl-0`` is no longer required
+
+    * :dtcompatible:`st,stm32-ospi`:
+
+          * new property: ``dlyb-bypass``
+          * new property: ``ssht-enable``
+
+    * :dtcompatible:`st,stm32-uart`:
+
+          * new property: ``de-enable``
+          * new property: ``de-assert-time``
+          * new property: ``de-deassert-time``
+          * new property: ``de-invert``
+          * new property: ``stop-bits``
+          * new property: ``data-bits``
+
+    * :dtcompatible:`st,stm32-lpuart`:
+
+          * new property: ``de-enable``
+          * new property: ``de-assert-time``
+          * new property: ``de-deassert-time``
+          * new property: ``de-invert``
+          * new property: ``stop-bits``
+          * new property: ``data-bits``
+
+    * :dtcompatible:`st,stm32-usart`:
+
+          * new property: ``de-enable``
+          * new property: ``de-assert-time``
+          * new property: ``de-deassert-time``
+          * new property: ``de-invert``
+          * new property: ``stop-bits``
+          * new property: ``data-bits``
+
+    * :dtcompatible:`st,stm32wl-subghz-radio` (on spi bus):
+
+          * new property: ``power-amplifier-output``
+          * new property: ``rfo-lp-max-power``
+          * new property: ``rfo-hp-max-power``
+
+    * :dtcompatible:`st,stm32h7-fdcan`:
+
+          * new property: ``bosch,mram-cfg``
+
+    * :dtcompatible:`st,stm32-fdcan`:
+
+          * new property: ``bosch,mram-cfg``
+
+    * :dtcompatible:`st,stm32-i2s`:
+
+          * new property: ``mck-enabled``
+
+    * :dtcompatible:`st,stm32-sdmmc`:
+
+          * new property: ``clk-div``
+          * new property: ``idma``
+
+    * :dtcompatible:`st,stm32-lptim`:
+
+          * new property: ``st,prescaler``
+
+* Telink Semiconductor (telink):
+
+  * Modified bindings:
+
+    * :dtcompatible:`telink,b91-uart`:
+
+          * new property: ``stop-bits``
+          * new property: ``data-bits``
+
+* Texas Instruments (ti):
+
+  * New bindings:
+
+    * :dtcompatible:`ti,ads114s08`
+    * :dtcompatible:`ti,ads114s0x-gpio`
+    * :dtcompatible:`ti,ads7052`
+    * :dtcompatible:`ti,ina3221`
+    * :dtcompatible:`ti,k3-pinctrl`
+    * :dtcompatible:`ti,tps382x`
+
+  * Modified bindings:
+
+    * :dtcompatible:`ti,cc13xx-cc26xx-uart`:
+
+          * new property: ``stop-bits``
+          * new property: ``data-bits``
+
+    * :dtcompatible:`ti,cc32xx-uart`:
+
+          * new property: ``stop-bits``
+          * new property: ``data-bits``
+
+    * :dtcompatible:`ti,stellaris-uart`:
+
+          * new property: ``stop-bits``
+          * new property: ``data-bits``
+
+    * :dtcompatible:`ti,msp432p4xx-uart`:
+
+          * new property: ``stop-bits``
+          * new property: ``data-bits``
+
+* Vishay Intertechnology, Inc (vishay):
+
+  * New bindings:
+
+    * :dtcompatible:`vishay,veml7700`
+
+* A stand-in for a real vendor which can be used in examples and tests (vnd):
+
+  * New bindings:
+
+    * :dtcompatible:`vnd,device-with-props`
+    * :dtcompatible:`vnd,input-device`
+    * :dtcompatible:`vnd,string-array-unquoted`
+    * :dtcompatible:`vnd,string-unquoted`
+
+  * Modified bindings:
+
+    * :dtcompatible:`vnd,serial`:
+
+          * new property: ``stop-bits``
+          * new property: ``data-bits``
+
+* Würth Elektronik GmbH. (we):
+
+  * New bindings:
+
+    * :dtcompatible:`we,wsen-pads`
+    * :dtcompatible:`we,wsen-pads`
+    * :dtcompatible:`we,wsen-pdus`
+    * :dtcompatible:`we,wsen-tids`
+
+* Worldsemi Co., Limited (worldsemi):
+
+  * New bindings:
+
+    * :dtcompatible:`worldsemi,ws2812-i2s`
+
+* Xen Hypervisor (xen):
+
+  * Modified bindings:
+
+    * :dtcompatible:`xen,hvc-uart`:
+
+          * new property: ``stop-bits``
+          * new property: ``data-bits``
+
+* Xilinx (xlnx):
+
+  * New bindings:
+
+    * :dtcompatible:`xlnx,xps-iic-2.00.a`
+    * :dtcompatible:`xlnx,xps-iic-2.1`
+    * :dtcompatible:`xlnx,xps-timebase-wdt-1.00.a`
+
+  * Modified bindings:
+
+    * :dtcompatible:`xlnx,xps-uartlite-1.00.a`:
+
+          * new property: ``stop-bits``
+          * new property: ``data-bits``
+
+    * :dtcompatible:`xlnx,xuartps`:
+
+          * new property: ``stop-bits``
+          * new property: ``data-bits``
+
+* Shenzhen Xptek Technology Co., Ltd (xptek):
+
+  * New bindings:
+
+    * :dtcompatible:`xptek,xpt2046`
+
+* Zephyr-specific binding (zephyr):
+
+  * New bindings:
+
+    * :dtcompatible:`zephyr,cdc-ecm-ethernet`
+    * :dtcompatible:`zephyr,i2c-target-eeprom`
+    * :dtcompatible:`zephyr,input-longpress`
+    * :dtcompatible:`zephyr,input-sdl-touch`
+    * :dtcompatible:`zephyr,kscan-input`
+    * :dtcompatible:`zephyr,panel-timing`
+    * :dtcompatible:`zephyr,retained-ram`
+    * :dtcompatible:`zephyr,retention`
+    * :dtcompatible:`zephyr,rtc-emul`
+    * :dtcompatible:`zephyr,uart-emul`
+    * :dtcompatible:`zephyr,udc-skeleton`
+
+  * Removed bindings:
+
+    * ``zephyr,ec-host-cmd-periph-espi``
+    * ``zephyr,sdl-kscan``
+    * ``zephyr,sim-ec-host-cmd-periph``
+
+  * Modified bindings:
+
+    * :dtcompatible:`zephyr,sim-flash`:
+
+          * new property: ``memory-region``
+
+    * :dtcompatible:`zephyr,cdc-acm-uart` (on usb bus):
+
+          * new property: ``stop-bits``
+          * new property: ``data-bits``
+
+    * :dtcompatible:`zephyr,native-posix-uart`:
+
+          * new property: ``stop-bits``
+          * new property: ``data-bits``
+
+    * :dtcompatible:`zephyr,memory-region`:
+
+          * property ``zephyr,memory-region-mpu`` enum value changed from ['RAM', 'RAM_NOCACHE', 'FLASH', 'PPB', 'IO'] to ['RAM', 'RAM_NOCACHE', 'FLASH', 'PPB', 'IO', 'EXTMEM']
+
+    * :dtcompatible:`zephyr,sdhc-spi-slot` (on spi bus):
+
+          * new property: ``power-delay-ms``
+          * new property: ``spi-clock-mode-cpol``
+          * new property: ``spi-clock-mode-cpha``
+
 Libraries / Subsystems
 **********************
 
