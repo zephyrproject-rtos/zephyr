@@ -21,12 +21,21 @@ config CAN_MCUX_FLEXCAN_FD
 	help
 	  Enable support for CAN-FD capable NXP FlexCAN devices.
 
+config CAN_MAX_MB
+	int "Maximum number of message buffers for concurrent active instances"
+	default 16
+	depends on SOC_SERIES_S32K3_M7
+	range 1 96
+	help
+	  Defines maximum number of message buffers for concurrent active instances.
+
 config CAN_MAX_FILTER
 	int "Maximum number of concurrent active RX filters"
 	default 5
 	range 1 15 if SOC_SERIES_KINETIS_KE1XF || SOC_SERIES_KINETIS_K6X
 	range 1 13 if SOC_SERIES_IMX_RT && CAN_MCUX_FLEXCAN_FD
 	range 1 63 if SOC_SERIES_IMX_RT
+	range 1 96 if SOC_SERIES_S32K3_M7
 	help
 	  Defines maximum number of concurrent active RX filters
 
