@@ -10,25 +10,24 @@ We are pleased to announce the release of Zephyr version 3.4.0.
 Major enhancements with this release include:
 
 * Input subsystem: handles input events from various types of input devices and
-  distribute them to other threads in the application.
-* Barrierr API: add architecture agnostic API for data memory barriers.
+  distributes them to other threads in the application.
+* Barrier API: add architecture agnostic API for data memory barriers.
 * USB Device support:
 
-  * USB device controller API (UDC API)
-  * USB device controller API and nRF USBD controller driver.
-  * USB device stack implementation using new UDC API
+  * USB device controller API (UDC API) and nRF USBD controller driver.
+  * USB device stack implementation using new UDC API.
 
-* Added Power Delivery Source Support to the USB-C Stack
-* Bluetooth: Added support for Periodic Advertising with Responses (PAwR)
-* Cache API functions are now fully inlined by compilers.
+* Added Power Delivery Source Support to the USB-C Stack.
+* Bluetooth: Added support for Periodic Advertising with Responses (PAwR).
+* Cache API functions are now fully in-lined by compilers.
 * Added an API for real-time clocks (RTC).
-* Added Retention subsystem
-* Added initial support for MMU on Xtensa
-* SMBus (System Management Bus) API
+* Added Retention subsystem.
+* Added initial support for MMU on Xtensa.
+* SMBus (System Management Bus) API.
 * Various improvements to the testing framework and twister:
 
   - Introduction of 3 new test harnesses into twister supporting pyTest,
-    GoogleTest and RobotFramework
+    GoogleTest and Robot Framework.
   - Transitioning to new Ztest API was completed and legacy Ztest was deprecated.
 
 * Added Snippets: Support common configuration settings that can be used across
@@ -155,7 +154,7 @@ Changes in this release
     names from ``KSCAN_NPCX_...`` to ``INPUT_NPCX_KBD...`` and the compatible
     from ``nuvoton,npcx-kscan`` to :dtcompatible:`nuvoton,npcx-kbd`.
   * Touchscreen drivers converted to use the input APIs can use the
-    :dtcompatible:`zephyr,kscan-input` driver to maintain Kscan compatilibity.
+    :dtcompatible:`zephyr,kscan-input` driver to maintain Kscan compatibility.
 
 * The declaration of :c:func:`main` has been changed from ``void
   main(void)`` to ``int main(void)``. The main function is required to
@@ -223,7 +222,7 @@ Deprecated in this release
   board-specific configuration in board Kconfig fragments in the ``boards``
   folder of the application.
 
-* On nRF51 and nRF52-based boards, the behaviour of the reset reason being
+* On nRF51 and nRF52-based boards, the behavior of the reset reason being
   provided to :c:func:`sys_reboot` and being set in the GPREGRET register has
   been dropped. This function will now just reboot the device without changing
   the register contents. The new method for setting this register uses the boot
@@ -235,10 +234,12 @@ Deprecated in this release
 * Deprecated :c:macro:`PTHREAD_BARRIER_DEFINE` in favor of the standardized
   :c:func:`pthread_barrier_init`
 
-* On all STM32 targets except STM32F2 series, ethernet drivers implementation
+* On all STM32 targets except STM32F2 series, Ethernet drivers implementation
   based on STM32Cube Ethernet API V1 (:kconfig:option:`CONFIG_ETH_STM32_HAL_API_V1`)
   is now deprecated in favor of implementation based on more reliable and performant
   STM32Cube Ethernet API V2.
+
+* Legacy Ztest API was deprecated. All new tests shall use the new Ztest API.
 
 Stable API changes in this release
 ==================================
