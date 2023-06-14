@@ -2535,6 +2535,13 @@ bool net_if_is_suspended(struct net_if *iface);
  */
 bool net_if_is_wifi(struct net_if *iface);
 
+/**
+ * @brief Get first Wi-Fi network interface.
+ *
+ * @return Pointer to network interface, NULL if not found.
+ */
+struct net_if *net_if_get_first_wifi(void);
+
 
 /** @cond INTERNAL_HIDDEN */
 struct net_if_api {
