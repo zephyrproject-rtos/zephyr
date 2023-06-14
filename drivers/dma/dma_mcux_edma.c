@@ -137,23 +137,15 @@ static void nxp_edma_callback(edma_handle_t *handle, void *param, bool transferD
 	data->dma_callback(data->dev, data->user_data, channel, ret);
 }
 
-
-static void dma_mcux_edma_irq_handler(const struct device *dev)
+static void dma_mcux_edma_irq_handler(const struct device *dev, uint32_t channel)
 {
-	int i = 0;
+	uint32_t flag = EDMA_GetChannelStatusFlags(DEV_BASE(dev), channel);
 
-	LOG_DBG("IRQ CALLED");
-	for (i = 0; i < DT_INST_PROP(0, dma_channels); i++) {
-		uint32_t flag = EDMA_GetChannelStatusFlags(DEV_BASE(dev), i);
-
-		if ((flag & (uint32_t)kEDMA_InterruptFlag) != 0U) {
-			LOG_DBG("IRQ OCCURRED");
-			EDMA_HandleIRQ(DEV_EDMA_HANDLE(dev, i));
-			LOG_DBG("IRQ DONE");
-#if defined __CORTEX_M && (__CORTEX_M == 4U)
-			barrier_dsync_fence_full();
-#endif
-		}
+	if (flag & kEDMA_InterruptFlag) {
+		LOG_DBG("IRQ OCCURRED");
+		/* EDMA interrupt flag is cleared here */
+		EDMA_HandleIRQ(DEV_EDMA_HANDLE(dev, channel));
+		LOG_DBG("IRQ DONE");
 	}
 }
 
@@ -162,18 +154,17 @@ static void dma_mcux_edma_error_irq_handler(const struct device *dev)
 	int i = 0;
 	uint32_t flag = 0;
 
-	for (i = 0; i < DT_INST_PROP(0, dma_channels); i++) {
+	for (i = 0; i < DEV_CFG(dev)->dma_channels; i++) {
 		if (DEV_CHANNEL_DATA(dev, i)->busy) {
 			flag = EDMA_GetChannelStatusFlags(DEV_BASE(dev), i);
-			LOG_INF("channel %d error status is 0x%x", i, flag);
-			EDMA_ClearChannelStatusFlags(DEV_BASE(dev), i,
-						     0xFFFFFFFF);
+			EDMA_ClearChannelStatusFlags(DEV_BASE(dev), i, 0xFFFFFFFF);
 			EDMA_AbortTransfer(DEV_EDMA_HANDLE(dev, i));
 			DEV_CHANNEL_DATA(dev, i)->busy = false;
+			LOG_INF("channel %d error status is 0x%x", i, flag);
 		}
 	}
 
-#if defined __CORTEX_M && (__CORTEX_M == 4U)
+#if defined(CONFIG_CPU_CORTEX_M4)
 	barrier_dsync_fence_full();
 #endif
 }
@@ -525,40 +516,46 @@ static int dma_mcux_edma_init(const struct device *dev)
 	return 0;
 }
 
-#define IRQ_CONFIG(n, idx, fn)						     \
-	IF_ENABLED(DT_INST_IRQ_HAS_IDX(n, idx), (			     \
-			   IRQ_CONNECT(DT_INST_IRQ_BY_IDX(n, idx, irq),	     \
-				       DT_INST_IRQ_BY_IDX(n, idx, priority), \
-				       fn,				     \
-				       DEVICE_DT_INST_GET(n), 0);	     \
-			   irq_enable(DT_INST_IRQ_BY_IDX(n, idx, irq));	     \
-			   ))
+/* The shared error interrupt (if have) must be declared as the last element in devicetree */
+#define NUM_IRQS_WITHOUT_ERROR_IRQ(n)	UTIL_DEC(DT_NUM_IRQS(DT_DRV_INST(n)))
 
-#define DMA_MCUX_EDMA_CONFIG_FUNC(n)				      \
-	static void dma_imx_config_func_##n(const struct device *dev) \
-	{							      \
-		ARG_UNUSED(dev);				      \
-								      \
-		IRQ_CONFIG(n, 0, dma_mcux_edma_irq_handler);	      \
-		IRQ_CONFIG(n, 1, dma_mcux_edma_irq_handler);	      \
-		IRQ_CONFIG(n, 2, dma_mcux_edma_irq_handler);	      \
-		IRQ_CONFIG(n, 3, dma_mcux_edma_irq_handler);	      \
-		IRQ_CONFIG(n, 4, dma_mcux_edma_irq_handler);	      \
-		IRQ_CONFIG(n, 5, dma_mcux_edma_irq_handler);	      \
-		IRQ_CONFIG(n, 6, dma_mcux_edma_irq_handler);	      \
-		IRQ_CONFIG(n, 7, dma_mcux_edma_irq_handler);	      \
-		IRQ_CONFIG(n, 8, dma_mcux_edma_irq_handler);	      \
-		IRQ_CONFIG(n, 9, dma_mcux_edma_irq_handler);	      \
-		IRQ_CONFIG(n, 10, dma_mcux_edma_irq_handler);	      \
-		IRQ_CONFIG(n, 11, dma_mcux_edma_irq_handler);	      \
-		IRQ_CONFIG(n, 12, dma_mcux_edma_irq_handler);	      \
-		IRQ_CONFIG(n, 13, dma_mcux_edma_irq_handler);	      \
-		IRQ_CONFIG(n, 14, dma_mcux_edma_irq_handler);	      \
-		IRQ_CONFIG(n, 15, dma_mcux_edma_irq_handler);	      \
-								      \
-		IRQ_CONFIG(n, 16, dma_mcux_edma_error_irq_handler);   \
-								      \
-		LOG_DBG("install irq done");			      \
+#define IRQ_CONFIG(n, idx, fn)							\
+	{									\
+		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(n, idx, irq),			\
+			    DT_INST_IRQ_BY_IDX(n, idx, priority),		\
+			    fn,							\
+			    DEVICE_DT_INST_GET(n), 0);				\
+			    irq_enable(DT_INST_IRQ_BY_IDX(n, idx, irq));	\
+	}
+
+#define DMA_MCUX_EDMA_IRQ_DEFINE(idx, n)					\
+	static void dma_mcux_edma_##n##_irq_##idx(const struct device *dev)	\
+	{									\
+		dma_mcux_edma_irq_handler(dev, idx);				\
+										\
+		IF_ENABLED(UTIL_BOOL(DT_INST_PROP(n, irq_shared_offset)),	\
+			  (dma_mcux_edma_irq_handler(dev,			\
+			   idx + DT_INST_PROP(n, irq_shared_offset));))		\
+										\
+		IF_ENABLED(CONFIG_CPU_CORTEX_M4, (barrier_dsync_fence_full();))	\
+	}
+
+#define DMA_MCUX_EDMA_IRQ_CONFIG(idx, n)					\
+	IRQ_CONFIG(n, idx, dma_mcux_edma_##n##_irq_##idx)
+
+#define DMA_MCUX_EDMA_CONFIG_FUNC(n)						\
+	LISTIFY(NUM_IRQS_WITHOUT_ERROR_IRQ(n), DMA_MCUX_EDMA_IRQ_DEFINE, (), n) \
+	static void dma_imx_config_func_##n(const struct device *dev)		\
+	{									\
+		ARG_UNUSED(dev);						\
+										\
+		LISTIFY(NUM_IRQS_WITHOUT_ERROR_IRQ(n),				\
+			DMA_MCUX_EDMA_IRQ_CONFIG, (;), n)			\
+										\
+		IRQ_CONFIG(n, NUM_IRQS_WITHOUT_ERROR_IRQ(n),			\
+			   dma_mcux_edma_error_irq_handler);			\
+										\
+		LOG_DBG("install irq done");					\
 	}
 
 #define DMA_MCUX_EDMA_MUX(idx, n)						\
