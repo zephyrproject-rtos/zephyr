@@ -10,4 +10,3 @@ Connectivity
    networking/index.rst
    lora_lorawan/index.rst
    usb/index.rst
-   usb_c/index.rst
