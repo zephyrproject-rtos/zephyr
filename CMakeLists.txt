@@ -913,7 +913,7 @@ zephyr_get_include_directories_for_lang(C
   )
 
 if(CONFIG_HAS_DTS)
-  if(CONFIG_HAS_DYNAMIC_DEVICE_HANDLES)
+  if(CONFIG_DEVICE_DEPS_DYNAMIC)
     set(dynamic_handles --dynamic-handles)
   endif()
 

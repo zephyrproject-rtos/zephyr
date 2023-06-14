@@ -368,7 +368,7 @@ struct device_state {
 
 struct pm_device;
 
-#ifdef CONFIG_HAS_DYNAMIC_DEVICE_HANDLES
+#ifdef CONFIG_DEVICE_DEPS_DYNAMIC
 #define Z_DEVICE_DEPS_CONST
 #else
 #define Z_DEVICE_DEPS_CONST const

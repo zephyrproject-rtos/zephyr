@@ -969,10 +969,10 @@ endmenu
 
 menu "Device Options"
 
-config HAS_DYNAMIC_DEVICE_HANDLES
+config DEVICE_DEPS_DYNAMIC
 	bool
 	help
-	  Hidden option that makes possible to manipulate device handles at
+	  Hidden option that makes possible to manipulate device dependencies at
 	  runtime.
 
 endmenu
