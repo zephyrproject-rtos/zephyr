@@ -588,7 +588,7 @@ device_supported_handles_get(const struct device *dev, size_t *count)
 			rv++;
 		}
 		/* Count supporting devices.
-		 * Trailing NULL's can be injected by gen_handles.py due to
+		 * Trailing NULL's can be injected by gen_device_deps.py due to
 		 * CONFIG_PM_DEVICE_POWER_DOMAIN_DYNAMIC_NUM
 		 */
 		while ((rv[i] != DEVICE_HANDLE_ENDS) &&
@@ -795,7 +795,7 @@ static inline bool z_impl_device_is_ready(const struct device *dev)
  * original object file is compiled), and in a distinct pass1 section (which
  * will be replaced by postprocessing).
  *
- * Before processing in gen_handles.py, the array format is:
+ * Before processing in gen_device_deps.py, the array format is:
  * {
  *     DEVICE_ORDINAL (or DEVICE_HANDLE_NULL if not a devicetree node),
  *     List of devicetree dependency ordinals (if any),
@@ -805,7 +805,7 @@ static inline bool z_impl_device_is_ready(const struct device *dev)
  *     List of devicetree supporting ordinals (if any),
  * }
  *
- * After processing in gen_handles.py, the format is updated to:
+ * After processing in gen_device_deps.py, the format is updated to:
  * {
  *     List of existing devicetree dependency handles (if any),
  *     DEVICE_HANDLE_SEP,
