@@ -382,7 +382,7 @@ static int __wifi_args_to_params(size_t argc, char *argv[],
 static int cmd_wifi_connect(const struct shell *sh, size_t argc,
 			    char *argv[])
 {
-	struct net_if *iface = net_if_get_default();
+	struct net_if *iface = net_if_get_first_wifi();
 	struct wifi_connect_req_params cnx_params = { 0 };
 
 	if (__wifi_args_to_params(argc - 1, &argv[1], &cnx_params)) {
@@ -410,7 +410,7 @@ static int cmd_wifi_connect(const struct shell *sh, size_t argc,
 static int cmd_wifi_disconnect(const struct shell *sh, size_t argc,
 			       char *argv[])
 {
-	struct net_if *iface = net_if_get_default();
+	struct net_if *iface = net_if_get_first_wifi();
 	int status;
 
 	context.disconnecting = true;
@@ -439,7 +439,7 @@ static int cmd_wifi_disconnect(const struct shell *sh, size_t argc,
 
 static int cmd_wifi_scan(const struct shell *sh, size_t argc, char *argv[])
 {
-	struct net_if *iface = net_if_get_default();
+	struct net_if *iface = net_if_get_first_wifi();
 
 	context.sh = sh;
 
@@ -456,7 +456,7 @@ static int cmd_wifi_scan(const struct shell *sh, size_t argc, char *argv[])
 
 static int cmd_wifi_status(const struct shell *sh, size_t argc, char *argv[])
 {
-	struct net_if *iface = net_if_get_default();
+	struct net_if *iface = net_if_get_first_wifi();
 	struct wifi_iface_status status = { 0 };
 
 	context.sh = sh;
@@ -531,7 +531,7 @@ static int cmd_wifi_stats(const struct shell *sh, size_t argc, char *argv[])
 {
 #if defined(CONFIG_NET_STATISTICS_WIFI) && \
 					defined(CONFIG_NET_STATISTICS_USER_API)
-	struct net_if *iface = net_if_get_default();
+	struct net_if *iface = net_if_get_first_wifi();
 	struct net_stats_wifi stats = { 0 };
 	int ret;
 
@@ -554,7 +554,7 @@ static int cmd_wifi_stats(const struct shell *sh, size_t argc, char *argv[])
 
 static int cmd_wifi_ps(const struct shell *sh, size_t argc, char *argv[])
 {
-	struct net_if *iface = net_if_get_default();
+	struct net_if *iface = net_if_get_first_wifi();
 	struct wifi_ps_params params = { 0 };
 
 	context.sh = sh;
@@ -634,7 +634,7 @@ static int cmd_wifi_ps(const struct shell *sh, size_t argc, char *argv[])
 
 static int cmd_wifi_ps_mode(const struct shell *sh, size_t argc, char *argv[])
 {
-	struct net_if *iface = net_if_get_default();
+	struct net_if *iface = net_if_get_first_wifi();
 	struct wifi_ps_params params = { 0 };
 
 	context.sh = sh;
@@ -664,7 +664,7 @@ static int cmd_wifi_ps_mode(const struct shell *sh, size_t argc, char *argv[])
 
 static int cmd_wifi_ps_timeout(const struct shell *sh, size_t argc, char *argv[])
 {
-	struct net_if *iface = net_if_get_default();
+	struct net_if *iface = net_if_get_first_wifi();
 	struct wifi_ps_params params = { 0 };
 	long timeout_ms = 0;
 	int err = 0;
@@ -697,7 +697,7 @@ static int cmd_wifi_ps_timeout(const struct shell *sh, size_t argc, char *argv[]
 static int cmd_wifi_twt_setup_quick(const struct shell *sh, size_t argc,
 			      char *argv[])
 {
-	struct net_if *iface = net_if_get_default();
+	struct net_if *iface = net_if_get_first_wifi();
 	struct wifi_twt_params params = { 0 };
 	int idx = 1;
 
@@ -746,7 +746,7 @@ static int cmd_wifi_twt_setup_quick(const struct shell *sh, size_t argc,
 static int cmd_wifi_twt_setup(const struct shell *sh, size_t argc,
 			      char *argv[])
 {
-	struct net_if *iface = net_if_get_default();
+	struct net_if *iface = net_if_get_first_wifi();
 	struct wifi_twt_params params = { 0 };
 	int idx = 1;
 	long neg_type;
@@ -801,7 +801,7 @@ static int cmd_wifi_twt_setup(const struct shell *sh, size_t argc,
 static int cmd_wifi_twt_teardown(const struct shell *sh, size_t argc,
 			      char *argv[])
 {
-	struct net_if *iface = net_if_get_default();
+	struct net_if *iface = net_if_get_first_wifi();
 	struct wifi_twt_params params = { 0 };
 	long neg_type = 0;
 	long setup_cmd = 0;
@@ -847,7 +847,7 @@ static int cmd_wifi_twt_teardown(const struct shell *sh, size_t argc,
 static int cmd_wifi_twt_teardown_all(const struct shell *sh, size_t argc,
 			      char *argv[])
 {
-	struct net_if *iface = net_if_get_default();
+	struct net_if *iface = net_if_get_first_wifi();
 	struct wifi_twt_params params = { 0 };
 
 	context.sh = sh;
@@ -873,7 +873,7 @@ static int cmd_wifi_twt_teardown_all(const struct shell *sh, size_t argc,
 static int cmd_wifi_ap_enable(const struct shell *sh, size_t argc,
 			      char *argv[])
 {
-	struct net_if *iface = net_if_get_default();
+	struct net_if *iface = net_if_get_first_wifi();
 	static struct wifi_connect_req_params cnx_params;
 	int ret;
 
@@ -899,7 +899,7 @@ static int cmd_wifi_ap_enable(const struct shell *sh, size_t argc,
 static int cmd_wifi_ap_disable(const struct shell *sh, size_t argc,
 			       char *argv[])
 {
-	struct net_if *iface = net_if_get_default();
+	struct net_if *iface = net_if_get_first_wifi();
 	int ret;
 
 	ret = net_mgmt(NET_REQUEST_WIFI_AP_DISABLE, iface, NULL, 0);
@@ -917,7 +917,7 @@ static int cmd_wifi_ap_disable(const struct shell *sh, size_t argc,
 static int cmd_wifi_reg_domain(const struct shell *sh, size_t argc,
 			       char *argv[])
 {
-	struct net_if *iface = net_if_get_default();
+	struct net_if *iface = net_if_get_first_wifi();
 	struct wifi_reg_domain regd = {0};
 	int ret;
 
@@ -976,7 +976,7 @@ static int cmd_wifi_reg_domain(const struct shell *sh, size_t argc,
 
 static int cmd_wifi_listen_interval(const struct shell *sh, size_t argc, char *argv[])
 {
-	struct net_if *iface = net_if_get_default();
+	struct net_if *iface = net_if_get_first_wifi();
 	struct wifi_ps_params params = { 0 };
 	long interval = 0;
 
@@ -1015,7 +1015,7 @@ static int cmd_wifi_listen_interval(const struct shell *sh, size_t argc, char *a
 
 static int cmd_wifi_ps_wakeup_mode(const struct shell *sh, size_t argc, char *argv[])
 {
-	struct net_if *iface = net_if_get_default();
+	struct net_if *iface = net_if_get_first_wifi();
 	struct wifi_ps_params params = { 0 };
 
 	context.sh = sh;
