@@ -1415,15 +1415,22 @@ int lwm2m_rd_client_pause(void)
 		k_mutex_unlock(&client.mutex);
 		LOG_ERR("Cannot pause. No context");
 		return -EPERM;
-	} else if (client.engine_state == ENGINE_SUSPENDED) {
+	} else if (sm_is_suspended()) {
 		k_mutex_unlock(&client.mutex);
 		LOG_ERR("LwM2M client already suspended");
 		return 0;
 	}
 
 	LOG_INF("Suspend client");
-	if (!client.ctx->connection_suspended && client.ctx->event_cb) {
+	if (client.ctx->event_cb) {
 		client.ctx->event_cb(client.ctx, event);
+	}
+
+	/* Suspend or close the socket */
+	if (IS_ENABLED(CONFIG_LWM2M_RD_CLIENT_CLOSE_SOCKET_AT_IDLE)) {
+		lwm2m_close_socket(client.ctx);
+	} else {
+		lwm2m_socket_suspend(client.ctx);
 	}
 
 	suspended_client_state = get_sm_state();
@@ -1436,26 +1443,18 @@ int lwm2m_rd_client_pause(void)
 
 int lwm2m_rd_client_resume(void)
 {
-	int ret;
-
 	k_mutex_lock(&client.mutex, K_FOREVER);
 
-	if (!client.ctx) {
+	if (!lwm2m_rd_client_is_suspended(client.ctx)) {
 		k_mutex_unlock(&client.mutex);
-		LOG_WRN("Cannot resume. No context");
-		return -EPERM;
-	}
-
-	if (client.engine_state != ENGINE_SUSPENDED) {
-		k_mutex_unlock(&client.mutex);
-		LOG_WRN("Cannot resume state is not Suspended");
+		LOG_WRN("Cannot resume, state is not suspended");
 		return -EPERM;
 	}
 
 	LOG_INF("Resume Client state");
-	lwm2m_close_socket(client.ctx);
+
 	if (suspended_client_state == ENGINE_UPDATE_SENT) {
-		/* Set back to Registration done for enable trigger Update */
+		/* Set back to Registration done and trigger an update */
 		suspended_client_state = ENGINE_REGISTRATION_DONE;
 	}
 	/* Clear Possible pending RD Client message */
@@ -1463,18 +1462,24 @@ int lwm2m_rd_client_resume(void)
 
 	client.engine_state = suspended_client_state;
 
-	if (!client.last_update ||
-	    (client.lifetime <= (k_uptime_get() - client.last_update) / 1000)) {
-		client.engine_state = ENGINE_DO_REGISTRATION;
-	} else {
-		lwm2m_rd_client_connection_resume(client.ctx);
-		client.trigger_update = true;
+	/* Do we need to resume the bootstrap? */
+#if defined(CONFIG_LWM2M_RD_CLIENT_SUPPORT_BOOTSTRAP)
+	if (sm_is_bootstrap()) {
+		client.engine_state = ENGINE_DO_BOOTSTRAP_REG;
 	}
-
-	ret = lwm2m_open_socket(client.ctx);
-	if (ret) {
-		LOG_ERR("Socket Open Fail");
-		client.engine_state = ENGINE_INIT;
+#endif
+	/* Or do we resume into registration state */
+	if (client.engine_state >= ENGINE_DO_REGISTRATION &&
+		client.engine_state <= ENGINE_SUSPENDED) {
+		if (!client.last_update ||
+			(client.lifetime <= (k_uptime_get() - client.last_update) / 1000)) {
+			/* No lifetime left, register again */
+			client.engine_state = ENGINE_DO_REGISTRATION;
+		} else {
+			/* Resume similarly like from QUEUE mode */
+			client.engine_state = ENGINE_REGISTRATION_DONE_RX_OFF;
+			lwm2m_rd_client_connection_resume(client.ctx);
+		}
 	}
 
 	k_mutex_unlock(&client.mutex);
@@ -1499,22 +1504,21 @@ int lwm2m_rd_client_connection_resume(struct lwm2m_ctx *client_ctx)
 	}
 
 	if (client.engine_state == ENGINE_REGISTRATION_DONE_RX_OFF) {
-#ifdef CONFIG_LWM2M_DTLS_SUPPORT
 		/*
-		 * Switch state for triggering a proper registration message
-		 * if CONFIG_LWM2M_TLS_SESSION_CACHING is false we force full
-		 * registration after Fully DTLS handshake
+		 * Switch state to triggering a proper registration message
+		 * If the socket stays open (Connection ID or no-sec), or we have TLS session cache,
+		 * we can trigger the update, otherwise fall back to full registration.
 		 */
-		if (IS_ENABLED(CONFIG_LWM2M_TLS_SESSION_CACHING)) {
+		if ((IS_ENABLED(CONFIG_LWM2M_RD_CLIENT_SUSPEND_SOCKET_AT_IDLE) &&
+		     IS_ENABLED(CONFIG_LWM2M_TLS_SESSION_CACHING)) ||
+		    (IS_ENABLED(CONFIG_LWM2M_RD_CLIENT_STOP_POLLING_AT_IDLE) ||
+		     IS_ENABLED(CONFIG_LWM2M_RD_CLIENT_LISTEN_AT_IDLE)) ||
+		    !IS_ENABLED(CONFIG_LWM2M_DTLS_SUPPORT)) {
 			client.engine_state = ENGINE_REGISTRATION_DONE;
 			client.trigger_update = true;
 		} else {
 			client.engine_state = ENGINE_DO_REGISTRATION;
 		}
-#else
-		client.engine_state = ENGINE_REGISTRATION_DONE;
-		client.trigger_update = true;
-#endif
 	}
 
 	return 0;
