@@ -32,11 +32,18 @@
 
 LOG_MODULE_REGISTER(dma_mcux_edma, CONFIG_DMA_LOG_LEVEL);
 
+#define HAS_CHANNEL_GAP(n)		DT_INST_NODE_HAS_PROP(n, channel_gap) ||
+#define DMA_MCUX_HAS_CHANNEL_GAP	(DT_INST_FOREACH_STATUS_OKAY(HAS_CHANNEL_GAP) 0)
+
 struct dma_mcux_edma_config {
 	DMA_Type *base;
 	DMAMUX_Type **dmamux_base;
 	uint8_t channels_per_mux;
+	uint8_t dmamux_reg_offset;
 	int dma_channels; /* number of channels */
+#if DMA_MCUX_HAS_CHANNEL_GAP
+	uint32_t channel_gap[2];
+#endif
 	void (*irq_config_func)(const struct device *dev);
 };
 
@@ -114,8 +121,42 @@ struct dma_mcux_edma_data {
 	((edma_handle_t *)(&(DEV_CHANNEL_DATA(dev, ch)->edma_handle)))
 
 #define DEV_DMAMUX_BASE(dev, idx) ((DMAMUX_Type *)DEV_CFG(dev)->dmamux_base[idx])
-#define DEV_DMAMUX_IDX(dev, ch) (ch / DEV_CFG(dev)->channels_per_mux)
-#define DEV_DMAMUX_CHANNEL(dev, ch) (ch % DEV_CFG(dev)->channels_per_mux)
+#define DEV_DMAMUX_IDX(dev, ch)	(ch / DEV_CFG(dev)->channels_per_mux)
+
+#define DEV_DMAMUX_CHANNEL(dev, ch) \
+	(ch % DEV_CFG(dev)->channels_per_mux) ^ (DEV_CFG(dev)->dmamux_reg_offset)
+
+/*
+ * The hardware channel (takes the gap into account) is used when access DMA registers.
+ * For data structures in the shim driver still use the primitive channel.
+ */
+static ALWAYS_INLINE uint32_t dma_mcux_edma_add_channel_gap(const struct device *dev,
+							    uint32_t channel)
+{
+#if DMA_MCUX_HAS_CHANNEL_GAP
+	const struct dma_mcux_edma_config *config = DEV_CFG(dev);
+
+	return (channel < config->channel_gap[0]) ? channel :
+		(channel + 1 + config->channel_gap[1] - config->channel_gap[0]);
+#else
+	ARG_UNUSED(dev);
+	return channel;
+#endif
+}
+
+static ALWAYS_INLINE uint32_t dma_mcux_edma_remove_channel_gap(const struct device *dev,
+								uint32_t channel)
+{
+#if DMA_MCUX_HAS_CHANNEL_GAP
+	const struct dma_mcux_edma_config *config = DEV_CFG(dev);
+
+	return (channel < config->channel_gap[0]) ? channel :
+		(channel + config->channel_gap[0] - config->channel_gap[1] - 1);
+#else
+	ARG_UNUSED(dev);
+	return channel;
+#endif
+}
 
 static bool data_size_valid(const size_t data_size)
 {
@@ -133,7 +174,8 @@ static void nxp_edma_callback(edma_handle_t *handle, void *param, bool transferD
 {
 	int ret = -EIO;
 	struct call_back *data = (struct call_back *)param;
-	uint32_t channel = handle->channel;
+
+	uint32_t channel = dma_mcux_edma_remove_channel_gap(data->dev, handle->channel);
 
 	if (transferDone) {
 		/* DMA is no longer busy when there are no remaining TCDs to transfer */
@@ -146,7 +188,8 @@ static void nxp_edma_callback(edma_handle_t *handle, void *param, bool transferD
 
 static void dma_mcux_edma_irq_handler(const struct device *dev, uint32_t channel)
 {
-	uint32_t flag = EDMA_GetChannelStatusFlags(DEV_BASE(dev), channel);
+	uint32_t hw_channel = dma_mcux_edma_add_channel_gap(dev, channel);
+	uint32_t flag = EDMA_GetChannelStatusFlags(DEV_BASE(dev), hw_channel);
 
 	if (flag & kEDMA_InterruptFlag) {
 		LOG_DBG("IRQ OCCURRED");
@@ -171,14 +214,16 @@ static void dma_mcux_edma_error_irq_handler(const struct device *dev)
 {
 	int i = 0;
 	uint32_t flag = 0;
+	uint32_t hw_channel;
 
 	for (i = 0; i < DEV_CFG(dev)->dma_channels; i++) {
 		if (DEV_CHANNEL_DATA(dev, i)->busy) {
-			flag = EDMA_GetChannelStatusFlags(DEV_BASE(dev), i);
-			EDMA_ClearChannelStatusFlags(DEV_BASE(dev), i, 0xFFFFFFFF);
+			hw_channel = dma_mcux_edma_add_channel_gap(dev, i);
+			flag = EDMA_GetChannelStatusFlags(DEV_BASE(dev), hw_channel);
+			EDMA_ClearChannelStatusFlags(DEV_BASE(dev), hw_channel, 0xFFFFFFFF);
 			EDMA_AbortTransfer(DEV_EDMA_HANDLE(dev, i));
 			DEV_CHANNEL_DATA(dev, i)->busy = false;
-			LOG_INF("channel %d error status is 0x%x", i, flag);
+			LOG_INF("channel %d error status is 0x%x", hw_channel, flag);
 		}
 	}
 
@@ -202,6 +247,7 @@ static int dma_mcux_edma_configure(const struct device *dev, uint32_t channel,
 	struct dma_block_config *block_config = config->head_block;
 	uint32_t slot = config->dma_slot;
 	uint8_t dmamux_idx, dmamux_channel;
+	uint32_t hw_channel;
 	edma_transfer_type_t transfer_type;
 	unsigned int key;
 	int ret = 0;
@@ -216,6 +262,7 @@ static int dma_mcux_edma_configure(const struct device *dev, uint32_t channel,
 		return -EINVAL;
 	}
 
+	hw_channel = dma_mcux_edma_add_channel_gap(dev, channel);
 	dmamux_idx = DEV_DMAMUX_IDX(dev, channel);
 	dmamux_channel = DEV_DMAMUX_CHANNEL(dev, channel);
 	data->transfer_settings.valid = false;
@@ -286,12 +333,12 @@ static int dma_mcux_edma_configure(const struct device *dev, uint32_t channel,
 	if (data->busy) {
 		EDMA_AbortTransfer(p_handle);
 	}
-	EDMA_ResetChannel(DEV_BASE(dev), channel);
-	EDMA_CreateHandle(p_handle, DEV_BASE(dev), channel);
+	EDMA_ResetChannel(DEV_BASE(dev), hw_channel);
+	EDMA_CreateHandle(p_handle, DEV_BASE(dev), hw_channel);
 	EDMA_SetCallback(p_handle, nxp_edma_callback, (void *)data);
 
-	LOG_DBG("channel is %d", p_handle->channel);
-	EDMA_EnableChannelInterrupts(DEV_BASE(dev), channel, kEDMA_ErrorInterruptEnable);
+	LOG_DBG("channel is %d", channel);
+	EDMA_EnableChannelInterrupts(DEV_BASE(dev), hw_channel, kEDMA_ErrorInterruptEnable);
 
 	if (block_config->source_gather_en || block_config->dest_scatter_en) {
 		EDMA_InstallTCDMemory(p_handle, tcdpool[channel], CONFIG_DMA_TCD_QUEUE_SIZE);
@@ -331,9 +378,9 @@ static int dma_mcux_edma_configure(const struct device *dev, uint32_t channel,
 			ret = -EFAULT;
 		}
 #ifdef CONFIG_DMA_MCUX_EDMA_V3
-		LOG_DBG("DMA TCD_CSR 0x%x", DEV_BASE(dev)->CH[channel].TCD_CSR);
+		LOG_DBG("DMA TCD_CSR 0x%x", DEV_BASE(dev)->CH[hw_channel].TCD_CSR);
 #else
-		LOG_DBG("data csr is 0x%x", DEV_BASE(dev)->TCD[channel].CSR);
+		LOG_DBG("data csr is 0x%x", DEV_BASE(dev)->TCD[hw_channel].CSR);
 #endif
 	}
 
@@ -381,17 +428,21 @@ static int dma_mcux_edma_start(const struct device *dev, uint32_t channel)
 static int dma_mcux_edma_stop(const struct device *dev, uint32_t channel)
 {
 	struct dma_mcux_edma_data *data = DEV_DATA(dev);
+	uint32_t hw_channel;
+
+	hw_channel = dma_mcux_edma_add_channel_gap(dev, channel);
 
 	data->data_cb[channel].transfer_settings.valid = false;
 
 	if (!data->data_cb[channel].busy) {
 		return 0;
 	}
+
 	EDMA_AbortTransfer(DEV_EDMA_HANDLE(dev, channel));
-	EDMA_ClearChannelStatusFlags(DEV_BASE(dev), channel,
+	EDMA_ClearChannelStatusFlags(DEV_BASE(dev), hw_channel,
 				     kEDMA_DoneFlag | kEDMA_ErrorFlag |
 				     kEDMA_InterruptFlag);
-	EDMA_ResetChannel(DEV_BASE(dev), channel);
+	EDMA_ResetChannel(DEV_BASE(dev), hw_channel);
 	data->data_cb[channel].busy = false;
 	return 0;
 }
@@ -470,10 +521,12 @@ static int dma_mcux_edma_get_status(const struct device *dev, uint32_t channel,
 	uint8_t dmamux_idx = DEV_DMAMUX_IDX(dev, channel);
 	uint8_t dmamux_channel = DEV_DMAMUX_CHANNEL(dev, channel);
 
+	uint32_t hw_channel = dma_mcux_edma_add_channel_gap(dev, channel);
+
 	if (DEV_CHANNEL_DATA(dev, channel)->busy) {
 		status->busy = true;
 		status->pending_length =
-			EDMA_GetRemainingMajorLoopCount(DEV_BASE(dev), channel);
+			EDMA_GetRemainingMajorLoopCount(DEV_BASE(dev), hw_channel);
 	} else {
 		status->busy = false;
 		status->pending_length = 0;
@@ -484,11 +537,11 @@ static int dma_mcux_edma_get_status(const struct device *dev, uint32_t channel,
 #ifdef CONFIG_DMA_MCUX_EDMA_V3
 	LOG_DBG("DMA MP_CSR 0x%x",  DEV_BASE(dev)->MP_CSR);
 	LOG_DBG("DMA MP_ES 0x%x",   DEV_BASE(dev)->MP_ES);
-	LOG_DBG("DMA CHx_ES 0x%x",  DEV_BASE(dev)->CH[channel].CH_ES);
-	LOG_DBG("DMA CHx_CSR 0x%x", DEV_BASE(dev)->CH[channel].CH_CSR);
-	LOG_DBG("DMA CHx_ES 0x%x",  DEV_BASE(dev)->CH[channel].CH_ES);
-	LOG_DBG("DMA CHx_INT 0x%x", DEV_BASE(dev)->CH[channel].CH_INT);
-	LOG_DBG("DMA TCD_CSR 0x%x", DEV_BASE(dev)->CH[channel].TCD_CSR);
+	LOG_DBG("DMA CHx_ES 0x%x",  DEV_BASE(dev)->CH[hw_channel].CH_ES);
+	LOG_DBG("DMA CHx_CSR 0x%x", DEV_BASE(dev)->CH[hw_channel].CH_CSR);
+	LOG_DBG("DMA CHx_ES 0x%x",  DEV_BASE(dev)->CH[hw_channel].CH_ES);
+	LOG_DBG("DMA CHx_INT 0x%x", DEV_BASE(dev)->CH[hw_channel].CH_INT);
+	LOG_DBG("DMA TCD_CSR 0x%x", DEV_BASE(dev)->CH[hw_channel].TCD_CSR);
 #else
 	LOG_DBG("DMA CR 0x%x", DEV_BASE(dev)->CR);
 	LOG_DBG("DMA INT 0x%x", DEV_BASE(dev)->INT);
@@ -496,7 +549,7 @@ static int dma_mcux_edma_get_status(const struct device *dev, uint32_t channel,
 	LOG_DBG("DMA ES 0x%x", DEV_BASE(dev)->ES);
 	LOG_DBG("DMA ERR 0x%x", DEV_BASE(dev)->ERR);
 	LOG_DBG("DMA HRS 0x%x", DEV_BASE(dev)->HRS);
-	LOG_DBG("data csr is 0x%x", DEV_BASE(dev)->TCD[channel].CSR);
+	LOG_DBG("data csr is 0x%x", DEV_BASE(dev)->TCD[hw_channel].CSR);
 #endif
 	return 0;
 }
@@ -604,6 +657,14 @@ static int dma_mcux_edma_init(const struct device *dev)
 #define DMA_MCUX_EDMA_MUX(idx, n)						\
 	(DMAMUX_Type *)DT_INST_REG_ADDR_BY_IDX(n, UTIL_INC(idx))
 
+#if DMA_MCUX_HAS_CHANNEL_GAP
+#define DMA_MCUX_EDMA_CHANNEL_GAP(n)						\
+	.channel_gap = DT_INST_PROP_OR(n, channel_gap,				\
+				{[0 ... 1] = DT_INST_PROP(n, dma_channels)}),
+#else
+#define DMA_MCUX_EDMA_CHANNEL_GAP(n)
+#endif
+
 /*
  * define the dma
  */
@@ -620,6 +681,8 @@ static int dma_mcux_edma_init(const struct device *dev)
 		.channels_per_mux = DT_INST_PROP(n, dma_channels) /		\
 				    ARRAY_SIZE(dmamux_base_##n),		\
 		.irq_config_func = dma_imx_config_func_##n,			\
+		.dmamux_reg_offset = DT_INST_PROP(n, dmamux_reg_offset),	\
+		DMA_MCUX_EDMA_CHANNEL_GAP(n)					\
 	};									\
 										\
 	struct dma_mcux_edma_data dma_data_##n;					\
