@@ -34,10 +34,29 @@
 extern "C" {
 #endif
 
+#if defined(__XT_CLANG__) && defined(CONFIG_NEWLIB_LIBC)
+/*
+ * Xtensa xt-clang is based on old newlib which does not have _timespec.h.
+ * And some of the typedefs below have already been defined, but there
+ * are no corresponding *_DECLARED macros, so we need to define them
+ * manually to avoid them being re-declared.
+ */
+#define _TOOLCHAIN_HAS__TIMESPEC_H 0
+#define _DEV_T_DECLARED
+#define _INO_T_DECLARED
+#else
+#define _TOOLCHAIN_HAS__TIMESPEC_H 1
+#endif
+
 #include <time.h>
 #include <sys/cdefs.h>
 #include <sys/types.h>
+
+#if _TOOLCHAIN_HAS__TIMESPEC_H
 #include <sys/_timespec.h>
+#endif
+
+#undef _TOOLCHAIN_HAS__TIMESPEC_H
 
 #ifndef _DEV_T_DECLARED
 typedef int dev_t;
