@@ -96,8 +96,14 @@ struct net_eth_addr {
 
 #define NET_ETH_MINIMAL_FRAME_SIZE	60
 #define NET_ETH_MTU			1500
-#define _NET_ETH_MAX_FRAME_SIZE	(NET_ETH_MTU + sizeof(struct net_eth_hdr))
+
+#if defined(CONFIG_NET_VLAN)
+#define _NET_ETH_MAX_HDR_SIZE		(sizeof(struct net_eth_vlan_hdr))
+#else
 #define _NET_ETH_MAX_HDR_SIZE		(sizeof(struct net_eth_hdr))
+#endif
+
+#define _NET_ETH_MAX_FRAME_SIZE	(NET_ETH_MTU + _NET_ETH_MAX_HDR_SIZE)
 /*
  * Extend the max frame size for DSA (KSZ8794) by one byte (to 1519) to
  * store tail tag.
