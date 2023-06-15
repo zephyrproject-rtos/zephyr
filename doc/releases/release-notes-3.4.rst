@@ -509,7 +509,7 @@ Boards & SoC Support
 * Added support for these ARM64 boards:
 
   * PHYTEC phyCORE-AM62x A53
-  * MIMX93 EVK A53 (SOF)
+  * NXP i.MX93 EVK A55 (SOF variant)
 
 * Added support for these RISC-V boards:
 
