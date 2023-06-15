@@ -23,6 +23,8 @@
 #include <zephyr/sys/mem_manage.h>
 #include <sys/time.h>
 
+#include <newlib.h>
+
 #define LIBC_BSS	K_APP_BMEM(z_libc_partition)
 #define LIBC_DATA	K_APP_DMEM(z_libc_partition)
 
@@ -303,10 +305,8 @@ void *_sbrk(intptr_t count)
 }
 __weak FUNC_ALIAS(_sbrk, sbrk, void *);
 
-#ifdef CONFIG_MULTITHREADING
-
-/* Make sure _RETARGETABLE_LOCKING is enabled in toolchain */
-BUILD_ASSERT(IS_ENABLED(_RETARGETABLE_LOCKING), "Retargetable locking must be enabled");
+#if defined(CONFIG_MULTITHREADING) && \
+    defined(_RETARGETABLE_LOCKING) && (_RETARGETABLE_LOCKING == 1)
 
 /*
  * Newlib Retargetable Locking Interface Implementation
@@ -450,7 +450,21 @@ void __retarget_lock_release_recursive(_LOCK_T lock)
 	__ASSERT_NO_MSG(lock != NULL);
 	k_mutex_unlock((struct k_mutex *)lock);
 }
-#endif /* CONFIG_MULTITHREADING */
+#else /* CONFIG_MULTITHREADING && _RETARGETABLE_LOCKING */
+
+static LIBC_DATA SYS_MUTEX_DEFINE(heap_mutex);
+
+void __malloc_lock(struct _reent *reent)
+{
+	sys_mutex_lock(&heap_mutex, K_FOREVER);
+}
+
+void __malloc_unlock(struct _reent *reent)
+{
+	sys_mutex_unlock(&heap_mutex);
+}
+
+#endif /* CONFIG_MULTITHREADING && _RETARGETABLE_LOCKING */
 
 __weak int *__errno(void)
 {
