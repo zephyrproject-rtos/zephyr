@@ -20,6 +20,10 @@
 #include <malloc.h>
 #include <envlock.h>
 
+#include <newlib.h>
+
+#if defined(_RETARGETABLE_LOCKING) && (_RETARGETABLE_LOCKING == 1)
+
 #define STACK_SIZE	(512 + CONFIG_TEST_EXTRA_STACK_SIZE)
 
 #ifdef CONFIG_USERSPACE
@@ -463,3 +467,5 @@ void *newlib_thread_safety_locks_setup(void)
 	return NULL;
 }
 ZTEST_SUITE(newlib_thread_safety_locks, NULL, newlib_thread_safety_locks_setup, NULL, NULL, NULL);
+
+#endif /* defined(_RETARGETABLE_LOCKING) && (_RETARGETABLE_LOCKING == 1) */

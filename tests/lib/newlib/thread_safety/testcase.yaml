@@ -9,6 +9,7 @@ common:
 tests:
   libraries.libc.newlib.thread_safety:
     min_ram: 64
+    toolchain_exclude: xt-clang
   libraries.libc.newlib.thread_safety.stress:
     extra_configs:
       - CONFIG_NEWLIB_THREAD_SAFETY_TEST_STRESS=y
@@ -20,6 +21,7 @@ tests:
     tags:
       - userspace
     min_ram: 64
+    toolchain_exclude: xt-clang
   libraries.libc.newlib.thread_safety.userspace.stress:
     extra_args: CONF_FILE=prj_userspace.conf
     extra_configs:
@@ -36,6 +38,7 @@ tests:
       - CONFIG_NEWLIB_LIBC_NANO=y
     filter: CONFIG_HAS_NEWLIB_LIBC_NANO
     min_ram: 64
+    toolchain_exclude: xt-clang
   libraries.libc.newlib_nano.thread_safety.stress:
     extra_configs:
       - CONFIG_NEWLIB_THREAD_SAFETY_TEST_STRESS=y
@@ -43,6 +46,7 @@ tests:
     filter: CONFIG_HAS_NEWLIB_LIBC_NANO
     slow: true
     min_ram: 192
+    toolchain_exclude: xt-clang
   libraries.libc.newlib_nano.thread_safety.userspace:
     extra_args: CONF_FILE=prj_userspace.conf
     extra_configs:
@@ -51,6 +55,7 @@ tests:
     tags:
       - userspace
     min_ram: 64
+    toolchain_exclude: xt-clang
   libraries.libc.newlib_nano.thread_safety.userspace.stress:
     extra_args: CONF_FILE=prj_userspace.conf
     extra_configs:
@@ -63,3 +68,4 @@ tests:
       - userspace
     min_ram: 192
     timeout: 120
+    toolchain_exclude: xt-clang
