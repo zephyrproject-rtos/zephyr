@@ -21,5 +21,3 @@ set(SYSROOT_DIR    ${TOOLCHAIN_HOME}/${SYSROOT_TARGET})
 set(NOSYSDEF_CFLAG "")
 
 list(APPEND TOOLCHAIN_C_FLAGS -fms-extensions)
-
-set(TOOLCHAIN_HAS_NEWLIB OFF CACHE BOOL "True if toolchain supports newlib")

@@ -1,0 +1,8 @@
+# Copyright (c) 2023 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config TOOLCHAIN_XT_CLANG
+	def_bool y
+	select COMMON_LIBC_STRNLEN if NEWLIB_LIBC
+	select NEWLIB_LIBC_IN_TOOLCHAIN_IS_ANCIENT if NEWLIB_LIBC
