@@ -472,7 +472,7 @@ out:
 	return ret;
 }
 
-#else
+#endif
 
 static int transceive(const struct device *dev,
 		      const struct spi_config *spi_cfg,
@@ -505,7 +505,6 @@ out:
 	return ret;
 }
 
-#endif /*CONFIG_SPI_MCUX_LPSPI_DMA */
 
 static int spi_mcux_transceive(const struct device *dev,
 			       const struct spi_config *spi_cfg,
@@ -513,10 +512,14 @@ static int spi_mcux_transceive(const struct device *dev,
 			       const struct spi_buf_set *rx_bufs)
 {
 #ifdef CONFIG_SPI_MCUX_LPSPI_DMA
-	return transceive_dma(dev, spi_cfg, tx_bufs, rx_bufs, false, NULL, NULL);
-#else
-	return transceive(dev, spi_cfg, tx_bufs, rx_bufs, false, NULL, NULL);
+	const struct spi_mcux_data *data = dev->data;
+
+	if (data->dma_rx.dma_dev && data->dma_tx.dma_dev) {
+		return transceive_dma(dev, spi_cfg, tx_bufs, rx_bufs, false, NULL, NULL);
+	}
 #endif /* CONFIG_SPI_MCUX_LPSPI_DMA */
+
+	return transceive(dev, spi_cfg, tx_bufs, rx_bufs, false, NULL, NULL);
 }
 
 #ifdef CONFIG_SPI_ASYNC
@@ -559,14 +562,16 @@ static int spi_mcux_init(const struct device *dev)
 	data->dev = dev;
 
 #ifdef CONFIG_SPI_MCUX_LPSPI_DMA
-	if (!device_is_ready(data->dma_tx.dma_dev)) {
-		LOG_ERR("%s device is not ready", data->dma_tx.dma_dev->name);
-		return -ENODEV;
-	}
+	if (data->dma_tx.dma_dev && data->dma_rx.dma_dev) {
+		if (!device_is_ready(data->dma_tx.dma_dev)) {
+			LOG_ERR("%s device is not ready", data->dma_tx.dma_dev->name);
+			return -ENODEV;
+		}
 
-	if (!device_is_ready(data->dma_rx.dma_dev)) {
-		LOG_ERR("%s device is not ready", data->dma_rx.dma_dev->name);
-		return -ENODEV;
+		if (!device_is_ready(data->dma_rx.dma_dev)) {
+			LOG_ERR("%s device is not ready", data->dma_rx.dma_dev->name);
+			return -ENODEV;
+		}
 	}
 #endif /* CONFIG_SPI_MCUX_LPSPI_DMA */
 
@@ -589,33 +594,39 @@ static const struct spi_driver_api spi_mcux_driver_api = {
 };
 
 #ifdef CONFIG_SPI_MCUX_LPSPI_DMA
-#define SPI_DMA_CHANNELS(n)		\
-	.dma_tx = {						\
-		.dma_dev = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_NAME(n, tx)), \
-		.channel =					\
-			DT_INST_DMAS_CELL_BY_NAME(n, tx, mux),	\
-		.dma_cfg = {					\
-			.channel_direction = MEMORY_TO_PERIPHERAL,	\
-			.dma_callback = spi_mcux_dma_callback,		\
-			.source_data_size = 1,				\
-			.dest_data_size = 1,				\
-			.block_count = 1,		\
-			.dma_slot = DT_INST_DMAS_CELL_BY_NAME(n, tx, source) \
-		}							\
-	},								\
-	.dma_rx = {						\
-		.dma_dev = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_NAME(n, rx)), \
-		.channel =					\
-			DT_INST_DMAS_CELL_BY_NAME(n, rx, mux),	\
-		.dma_cfg = {				\
-			.channel_direction = PERIPHERAL_TO_MEMORY,	\
-			.dma_callback = spi_mcux_dma_callback,		\
-			.source_data_size = 1,				\
-			.dest_data_size = 1,				\
-			.block_count = 1,		\
-			.dma_slot = DT_INST_DMAS_CELL_BY_NAME(n, rx, source) \
-		}							\
-	}
+#define SPI_DMA_CHANNELS(n)								\
+	IF_ENABLED(DT_INST_DMAS_HAS_NAME(n, tx),					\
+	(										\
+		.dma_tx = {								\
+			.dma_dev = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_NAME(n, tx)),	\
+			.channel =							\
+				DT_INST_DMAS_CELL_BY_NAME(n, tx, mux),			\
+			.dma_cfg = {							\
+				.channel_direction = MEMORY_TO_PERIPHERAL,		\
+				.dma_callback = spi_mcux_dma_callback,			\
+				.source_data_size = 1,					\
+				.dest_data_size = 1,					\
+				.block_count = 1,					\
+				.dma_slot = DT_INST_DMAS_CELL_BY_NAME(n, tx, source)	\
+			}								\
+		},									\
+	))										\
+	IF_ENABLED(DT_INST_DMAS_HAS_NAME(n, rx),					\
+	(										\
+		.dma_rx = {								\
+			.dma_dev = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_NAME(n, rx)),	\
+			.channel =							\
+				DT_INST_DMAS_CELL_BY_NAME(n, rx, mux),			\
+			.dma_cfg = {							\
+				.channel_direction = PERIPHERAL_TO_MEMORY,		\
+				.dma_callback = spi_mcux_dma_callback,			\
+				.source_data_size = 1,					\
+				.dest_data_size = 1,					\
+				.block_count = 1,					\
+				.dma_slot = DT_INST_DMAS_CELL_BY_NAME(n, rx, source)	\
+			}								\
+		}									\
+	))
 #else
 #define SPI_DMA_CHANNELS(n)
 #endif /* CONFIG_SPI_MCUX_LPSPI_DMA */
