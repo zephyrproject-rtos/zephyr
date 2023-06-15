@@ -1312,3 +1312,13 @@ This has been fixed in main for v3.3.0
 
 - `PR 54381 fix for v2.7.4
   <https://github.com/zephyrproject-rtos/zephyr/pull/54381>`_
+
+CVE-2023-1901
+-------------
+
+Under embargo until 2023/07/04
+
+CVE-2023-1902
+-------------
+
+Under embargo until 2023/07/04
