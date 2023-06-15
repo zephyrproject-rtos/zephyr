@@ -38,6 +38,15 @@ The following sections provide detailed lists of changes by component.
 Security Vulnerability Related
 ******************************
 
+The following CVEs are addressed by this release:
+
+More detailed information can be found in:
+https://docs.zephyrproject.org/latest/security/vulnerabilities.html
+
+* CVE-2023-1901: Under embargo until 2023-07-04
+
+* CVE-2023-1902: Under embargo until 2023-07-04
+
 API Changes
 ***********
 
