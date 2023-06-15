@@ -355,14 +355,6 @@ config BT_CTLR_SCAN_AUX_SET
 	help
 	  Maximum supported auxiliary channel scan sets.
 
-config BT_CTLR_SCAN_SYNC_ISO_SET
-	int "LE ISO Broadcast Isochronous Groups Sync Sets"
-	depends on BT_CTLR_SYNC_ISO
-	range 1 64
-	default 1
-	help
-	  Maximum supported broadcast isochronous groups (BIGs) sync sets.
-
 config BT_CTLR_ADV_ENABLE_STRICT
 	bool "Enforce Strict Advertising Enable/Disable"
 	depends on BT_BROADCASTER
