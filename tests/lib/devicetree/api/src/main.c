@@ -292,6 +292,7 @@ ZTEST(devicetree_api, test_has_compat)
 	zassert_true(DT_HAS_COMPAT_STATUS_OKAY(vnd_gpio_device), "");
 	zassert_true(DT_HAS_COMPAT_STATUS_OKAY(vnd_gpio_device), "");
 	zassert_false(DT_HAS_COMPAT_STATUS_OKAY(vnd_disabled_compat), "");
+	zassert_false(DT_HAS_COMPAT_STATUS_OKAY(vnd_reserved_compat), "");
 
 	zassert_equal(TA_HAS_COMPAT(vnd_array_holder), 1, "");
 	zassert_equal(TA_HAS_COMPAT(vnd_undefined_compat), 1, "");
@@ -308,15 +309,28 @@ ZTEST(devicetree_api, test_has_status)
 		      1, "");
 	zassert_equal(DT_NODE_HAS_STATUS(DT_NODELABEL(test_gpio_1), disabled),
 		      0, "");
+	zassert_equal(DT_NODE_HAS_STATUS(DT_NODELABEL(test_gpio_1), reserved),
+		      0, "");
 
 	zassert_equal(DT_NODE_HAS_STATUS(DT_NODELABEL(test_no_status), okay),
 		      1, "");
 	zassert_equal(DT_NODE_HAS_STATUS(DT_NODELABEL(test_no_status), disabled),
 		      0, "");
+	zassert_equal(DT_NODE_HAS_STATUS(DT_NODELABEL(test_no_status), reserved),
+		      0, "");
 
 	zassert_equal(DT_NODE_HAS_STATUS(DT_NODELABEL(disabled_gpio), disabled),
 		      1, "");
 	zassert_equal(DT_NODE_HAS_STATUS(DT_NODELABEL(disabled_gpio), okay),
+		      0, "");
+	zassert_equal(DT_NODE_HAS_STATUS(DT_NODELABEL(disabled_gpio), reserved),
+		      0, "");
+
+	zassert_equal(DT_NODE_HAS_STATUS(DT_NODELABEL(reserved_gpio), reserved),
+		      1, "");
+	zassert_equal(DT_NODE_HAS_STATUS(DT_NODELABEL(reserved_gpio), disabled),
+		      0, "");
+	zassert_equal(DT_NODE_HAS_STATUS(DT_NODELABEL(reserved_gpio), okay),
 		      0, "");
 }
 
