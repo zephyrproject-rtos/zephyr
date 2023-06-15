@@ -98,6 +98,10 @@
 #define WDT_NODE DT_INST(0, gd_gd32_fwdgt)
 #elif DT_HAS_COMPAT_STATUS_OKAY(zephyr_counter_watchdog)
 #define WDT_NODE DT_COMPAT_GET_ANY_STATUS_OKAY(zephyr_counter_watchdog)
+#elif DT_HAS_COMPAT_STATUS_OKAY(andestech_atcwdt200)
+#define WDT_NODE DT_INST(0, andestech_atcwdt200)
+#define TIMEOUTS 0
+#define WDT_TEST_MAX_WINDOW 200U
 #endif
 #if DT_HAS_COMPAT_STATUS_OKAY(raspberrypi_pico_watchdog)
 #define WDT_TEST_MAX_WINDOW 20000U
