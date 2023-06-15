@@ -23,6 +23,15 @@ config I2C_SHELL
 	  The I2C shell supports scanning, bus recovery, I2C read and write
 	  operations.
 
+config I2C_SMBUS_SUPPORTED
+	bool "I2C SMBUS"
+	default y
+	help
+	  Enable this flag to support SMBus functionalities along with I2C.
+
+	  With I2C functionality, SMBus can supports quick command,
+	  timeout and abort routine.
+
 config I2C_STATS
 	bool "I2C device Stats"
 	depends on STATS
