@@ -587,11 +587,10 @@ static int i2c_dw_runtime_configure(const struct device *dev, uint32_t config)
 	int		ret = 0;
 	uint32_t reg_base = get_regs(dev);
 
-	dw->app_config = config;
 
 	/* Make sure we have a supported speed for the DesignWare model */
 	/* and have setup the clock frequency and speed mode */
-	switch (I2C_SPEED_GET(dw->app_config)) {
+	switch (I2C_SPEED_GET(config)) {
 	case I2C_SPEED_STANDARD:
 		/* Following the directions on DW spec page 59, IC_SS_SCL_LCNT
 		 * must have register values larger than IC_FS_SPKLEN + 7
@@ -668,6 +667,9 @@ static int i2c_dw_runtime_configure(const struct device *dev, uint32_t config)
 		ret = -EINVAL;
 	}
 
+	if (ret == 0) {
+		dw->app_config = config;
+	}
 	/*
 	 * Clear any interrupts currently waiting in the controller
 	 */
