@@ -1361,6 +1361,10 @@ Libraries / Subsystems
     that will wake the system up in the future. This can be used to influence
     the system on which low power states can be used.
 
+  * Added a new device tree property ``zephyr,pm-device-runtime-auto`` to
+    automatically enable device runtime power management on a device after its
+    initialization.
+
 HALs
 ****
 
