@@ -63,17 +63,48 @@ Following import is required to include in .py sources:
 
    from twister_harness import Device
 
-It is important for type checking and enabling IDE hints for ``dut``s (objects representing
+It is important for type checking and enabling IDE hints for ``dut`` s (objects representing
 Devices Under Test). The ``dut`` fixture is the core of pytest harness plugin. When used as an
 argument of a test function it gives access to a DeviceAbstract type object. The fixture yields a
 device prepared according to the requested type (native posix, qemu, hardware, etc.). All types of
 devices share the same API. This allows for writing tests which are device-type-agnostic.
 
+Helpers & fixtures
+==================
+
+mcumgr
+------
+
+Sample fixture to wrap ``mcumgr`` command-line tool used to manage remote devices.
+More information about MCUmgr can be found here :ref:`mcu_mgr`.
+
+.. note::
+   This fixture requires the ``mcumgr`` available in the system PATH
+
+Only selected functionality of MCUmgr is wrapped by this fixture.
+
+For example, here is a test with a fixture ``mcumgr``
+
+.. code-block:: python
+
+   from twister_harness import Device, McuMgr
+
+   def test_upgrade(dut: Device, mcumgr: McuMgr):
+      # wait for dut is up
+      time.sleep(2)
+      # upload the signed image
+      mcumgr.image_upload('path/to/zephyr.signed.bin')
+      # obtain the hash of uploaded image from the device
+      second_hash = mcumgr.get_hash_to_test()
+      # test a new upgrade image
+      mcumgr.image_test(second_hash)
+      # reset the device remotely
+      mcumgr.reset_device()
+      # continue test scenario, check version etc.
 
 Limitations
 ***********
 
-* The whole pytest call is reported as one test in the final twister report (xml or json).
 * Device adapters in pytest plugin provide `iter_stdout` method to read from devices. In some
   cases, it is not the most convenient way, and it will be considered how to improve this
   (for example replace it with a simple read function with a given byte size and timeout arguments).
