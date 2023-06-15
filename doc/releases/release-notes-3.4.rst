@@ -799,6 +799,10 @@ Drivers and Sensors
 
 * Display
 
+  * Improved MCUX ELCDIF and SSD16XX display controller drivers
+  * Added support for ILI9342C display controller
+  * Added support for OTM8009A panel
+
 * DMA
 
   * STM32C0: Added support for DMA
@@ -989,6 +993,11 @@ Drivers and Sensors
 * USB
 
    * Added remote wakeup support for the RP2040 SoC
+   * Added Battery Charging (BC12) API and PI3USB9201 driver implementation.
+   * Added new USB device controller drivers (using usb_dc API) for ITE IT82xx2
+     and smartbond platforms.
+   * Added USB device controller driver skeleton for UDC API.
+   * Reworked DWC2 driver and added support for STM32F4 SoC family
 
 * W1
 
@@ -1205,6 +1214,17 @@ Networking
 
 USB
 ***
+
+* USB device support
+
+  * Fixed control endpoint handling with MPS of 8 bytes.
+
+* New experimental USB support
+
+  * Various improvements for new device support, better string descriptor support,
+    implemented usbd_class_shutdown API.
+  * Added USB Mass Storage class and CDC ECM class implementations for the new
+    device support.
 
 Devicetree
 **********
