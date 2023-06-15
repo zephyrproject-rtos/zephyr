@@ -9,7 +9,7 @@
 
 #include "stmemsc.h"
 
-#define SPI_READ		(1 << 7)
+#define SPI_READ		BIT(7)
 
 /*
  * SPI read
