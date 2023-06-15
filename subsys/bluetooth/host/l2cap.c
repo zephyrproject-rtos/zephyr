@@ -2320,6 +2320,32 @@ static int l2cap_chan_send_credits_pdu(struct bt_conn *conn, uint16_t cid, uint1
 	return 0;
 }
 
+int bt_l2cap_chan_clear(struct bt_l2cap_chan *chan)
+{
+	struct bt_l2cap_le_chan *le_chan = BT_L2CAP_LE_CHAN(chan);
+
+	memset(&le_chan->rx, 0, sizeof(le_chan->rx));
+
+	return 0;
+}
+
+int bt_l2cap_chan_seg_init(struct bt_l2cap_chan *chan,
+			   uint16_t mtu,
+			   uint16_t mps,
+			   uint16_t initial_credits)
+{
+	struct bt_l2cap_le_chan *le_chan = BT_L2CAP_LE_CHAN(chan);
+
+	bt_l2cap_chan_clear(chan);
+
+	le_chan->rx.mtu = mtu;
+	le_chan->rx.mps = mps;
+
+	bt_l2cap_chan_give_credits(chan, initial_credits);
+
+	return 0;
+}
+
 /**
  * Combination of @ref atomic_add and @ref u16_add_overflow. Leaves @p
  * target unchanged if an overflow would occur. Assumes the current

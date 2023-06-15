@@ -603,8 +603,8 @@ int bt_l2cap_chan_send(struct bt_l2cap_chan *chan, struct net_buf *buf);
  *  Each credit given allows the peer to send one segment.
  *
  *  This function depends on a valid @p chan object. Make sure to
- *  default-initialize or memset @p chan when allocating or reusing it for new
- *  connections.
+ *  default-initialize @p chan when allocating or reusing it for new
+ *  connections. This can be achieved with @ref bt_l2cap_chan_clear.
  *
  *  Adding zero credits is not allowed.
  *
@@ -616,6 +616,35 @@ int bt_l2cap_chan_send(struct bt_l2cap_chan *chan, struct net_buf *buf);
  *  @return 0 in case of success or negative value in case of error.
  */
 int bt_l2cap_chan_give_credits(struct bt_l2cap_chan *chan, uint16_t additional_credits);
+
+/** @brief Clear the channel struct so it can be re-used.
+ *
+ *  Only available for channels using @ref bt_l2cap_chan_ops.seg_recv.
+ *  @kconfig{CONFIG_BT_L2CAP_SEG_RECV} must be enabled to make this function
+ *  available.
+ *
+ *  Should only be called in the accept callback.
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ */
+int bt_l2cap_chan_seg_clear(struct bt_l2cap_chan *chan);
+
+/** @brief Clear and initialize a channel before usage.
+ *
+ *  Only available for channels using @ref bt_l2cap_chan_ops.seg_recv.
+ *  @kconfig{CONFIG_BT_L2CAP_SEG_RECV} must be enabled to make this function
+ *  available.
+ *
+ *  Convenient helper to clear the channel, set up the MTU and MPS and give an
+ *  initial amount of credits.
+ *  Should be called in the .accept callback.
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ */
+int bt_l2cap_chan_seg_init(struct bt_l2cap_chan *chan,
+			   uint16_t mtu,
+			   uint16_t mps,
+			   uint16_t initial_credits);
 
 /** @brief Complete receiving L2CAP channel data
  *
