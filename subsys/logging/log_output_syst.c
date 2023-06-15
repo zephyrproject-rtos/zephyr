@@ -751,11 +751,11 @@ static int mipi_catalog_formatter(cbprintf_cb out, void *ctx,
 		}
 
 		if (arg_sz == sizeof(mipi_syst_u64)) {
-			*((mipi_syst_u64 *)argp) =
-				(mipi_syst_u64)MIPI_SYST_HTOLE64(val.v64);
+			val.v64 = MIPI_SYST_HTOLE64(val.v64);
+			memcpy(argp, &val.v64, sizeof(val.v64));
 		} else {
-			*((mipi_syst_u32 *)argp) =
-				(mipi_syst_u32)MIPI_SYST_HTOLE32(val.v32);
+			val.v32 = MIPI_SYST_HTOLE32(val.v32);
+			memcpy(argp, &val.v32, sizeof(val.v32));
 		}
 		argp += arg_sz;
 	}
