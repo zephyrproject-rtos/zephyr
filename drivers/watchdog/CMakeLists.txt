@@ -38,5 +38,6 @@ zephyr_library_sources_ifdef(CONFIG_WDT_OPENTITAN wdt_opentitan.c)
 
 zephyr_library_sources_ifdef(CONFIG_WDT_DW wdt_dw.c wdt_dw_common.c)
 zephyr_library_sources_ifdef(CONFIG_WDT_INTEL_ADSP wdt_intel_adsp.c wdt_dw_common.c)
+zephyr_library_sources_ifdef(CONFIG_WDT_ANDES_ATCWDT200 wdt_andes_atcwdt200.c)
 
 zephyr_library_sources_ifdef(CONFIG_USERSPACE wdt_handlers.c)

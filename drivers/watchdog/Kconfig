@@ -110,4 +110,6 @@ source "drivers/watchdog/Kconfig.ifx_cat1"
 
 source "drivers/watchdog/Kconfig.opentitan"
 
+source "drivers/watchdog/Kconfig.andes_atcwdt200"
+
 endif # WATCHDOG

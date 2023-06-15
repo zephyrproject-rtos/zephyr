@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Andes Technology Corporation
+ * Copyright (c) 2023 Andes Technology Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -179,4 +179,8 @@
 &spi1 {
 	status = "okay";
 	cs-gpios = <&gpio0 7 GPIO_ACTIVE_LOW>;
+};
+
+&wdt {
+	status = "okay";
 };
