@@ -29,6 +29,7 @@
 	};
 
 	aliases {
+		dma0 = &edma0;
 		led0 = &user_led1_red;
 		led1 = &user_led1_green;
 		led2 = &user_led1_blue;
@@ -553,4 +554,8 @@
 			polarity = "ACTIVE_LOW";
 		};
 	};
+};
+
+&edma0 {
+	status = "okay";
 };
