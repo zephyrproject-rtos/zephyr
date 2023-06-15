@@ -453,7 +453,7 @@ static int i2c_dw_transfer(const struct device *dev,
 {
 	struct i2c_dw_dev_config * const dw = dev->data;
 	struct i2c_msg *cur_msg = msgs;
-	uint8_t msg_left = num_msgs;
+	uint8_t msg_left;
 	uint8_t pflags;
 	int ret;
 	uint32_t reg_base = get_regs(dev);
@@ -467,6 +467,21 @@ static int i2c_dw_transfer(const struct device *dev,
 	if (ret != 0) {
 		return ret;
 	}
+
+	/*
+	 * I2C transfer with 0 length are invalid but
+	 * SMbus quick commands uses 0 length transfer.
+	 * And in order to support SMbus quick commands, the driver
+	 * has to be enhanced.
+	 */
+	for (msg_left = 0; msg_left < num_msgs; msg_left++) {
+		if (msgs[msg_left].len == 0) {
+			LOG_ERR("Invalid transfer length 0 for msgs[%d]", msg_left);
+			return -EINVAL;
+		}
+	}
+
+	msg_left = num_msgs;
 
 	/* First step, check if there is current activity */
 	if (test_bit_status_activity(reg_base) || (dw->state & I2C_DW_BUSY)) {
