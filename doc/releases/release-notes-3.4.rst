@@ -492,6 +492,7 @@ Boards & SoC Support
   * NXP MIMXRT1062 FMURT6
   * PHYTEC PhyBOARD Polis (NXP i.MX8M Mini)
   * PHYTEC PhyBOARD Pollux (NXP i.MX8M Plus)
+  * Raspberry Pi Pico W
   * Raytac MDBT50Q-DB-33
   * Raytac MDBT50Q-DB-40
   * Seeed Studio Wio Terminal
@@ -503,7 +504,6 @@ Boards & SoC Support
   * ST Nucleo F042K6
   * ST Nucleo H563ZI
   * ST STM32H573I-DK Discovery
-  * Raspberry Pi Pico W
   * Xilinx KV260 (Cortex-R5)
 
 * Added support for these ARM64 boards:
