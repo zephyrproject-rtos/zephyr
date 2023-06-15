@@ -103,6 +103,10 @@ can be disabled if not needed.
   manage the interface, in example to connect to Wi-Fi network and to scan
   available Wi-Fi networks.
 
+* **Wi-Fi Network Manager API.** Wi-Fi Network Managers can now register
+  themselves to the Wi-Fi stack. The Network Managers can then implement
+  the Wi-Fi Management API and manage the Wi-Fi interface.
+
 * **Multiple Network Technologies.** The Zephyr OS can be configured to
   support multiple network technologies at the same time simply by enabling
   them in Kconfig: for example, Ethernet, Wi-Fi and 802.15.4 support. Note
