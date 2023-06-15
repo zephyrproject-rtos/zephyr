@@ -18,20 +18,42 @@ int stmemsc_spi_read(const struct spi_dt_spec *stmemsc,
 		     uint8_t reg_addr, uint8_t *value, uint8_t len)
 {
 	uint8_t buffer_tx[2] = { reg_addr | SPI_READ, 0 };
+	bool half_duplex = (stmemsc->config.operation & SPI_HALF_DUPLEX);
 
-	/*  write 1 byte with reg addr (msb at 1) + 1 dummy byte */
-	const struct spi_buf tx_buf = { .buf = buffer_tx, .len = 2, };
+	/*
+	 * write 1 byte with reg addr (msb at 1)
+	 * + 1 dummy byte in full duplex, none in half duplex
+	 */
+	const struct spi_buf tx_buf = {
+		.buf = buffer_tx,
+		.len = half_duplex ? 1 : 2,
+	};
 	const struct spi_buf_set tx = { .buffers = &tx_buf, .count = 1 };
 
 	/*
-	 *   transaction #1: dummy read to skip first byte
-	 *   transaction #2: read "len" byte of data
+	 * Full duplex RX buffers:
+	 *   - dummy read to skip first byte
+	 *   - read "len" byte of data
 	 */
-	const struct spi_buf rx_buf[2] = {
+	const struct spi_buf rx_buf_full[2] = {
 		{ .buf = NULL, .len = 1, },
 		{ .buf = value, .len = len, }
 	};
-	const struct spi_buf_set rx = { .buffers = rx_buf, .count = 2 };
+	/*
+	 * Half duplex RX buffer:
+	 *   - read "len" byte of data
+	 */
+	const struct spi_buf rx_buf_half[1] = {
+		{ .buf = value, .len = len, }
+	};
+
+	/*
+	 * Using the right RX buffer whether half or full duplex is used
+	 */
+	const struct spi_buf_set rx = {
+		.buffers = half_duplex ? rx_buf_half : rx_buf_full,
+		.count = half_duplex ? 1 : 2,
+	};
 
 	return spi_transceive_dt(stmemsc, &tx, &rx);
 }
