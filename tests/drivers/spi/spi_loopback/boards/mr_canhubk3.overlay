@@ -6,6 +6,9 @@
 
 &lpspi1 {
 	status = "okay";
+	/* DMA channels 10 and 12, muxed to LPSPI1 TX and RX */
+	dmas = <&edma0 10 45>, <&edma0 12 46>;
+	dma-names = "tx", "rx";
 
 	slow@0 {
 		compatible = "test-spi-loopback-slow";
