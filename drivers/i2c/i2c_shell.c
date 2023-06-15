@@ -291,6 +291,12 @@ static int cmd_i2c_speed(const struct shell *shell_ctx, size_t argc, char **argv
 	}
 
 	speed = strtol(argv[ARGV_DEV + 1], NULL, 10);
+
+	if (speed > I2C_SPEED_DT) {
+		shell_error(shell_ctx, "Invalid speed parameter");
+		return -EINVAL;
+	}
+
 	ret = i2c_get_config(dev, &dev_config);
 	if (ret == 0) {
 		dev_config &= ~I2C_SPEED_MASK;
