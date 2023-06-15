@@ -145,7 +145,7 @@ struct lwm2m_ctx {
 	 */
 	void *processed_req;
 
-#if defined(CONFIG_LWM2M_DTLS_SUPPORT)
+#if defined(CONFIG_LWM2M_DTLS_SUPPORT) || defined(__DOXYGEN__)
 	/** TLS tag is set by client as a reference used when the
 	 *  LwM2M engine calls tls_credential_(add|delete)
 	 */
@@ -182,7 +182,7 @@ struct lwm2m_ctx {
 	 */
 	bool connection_suspended;
 
-#if defined(CONFIG_LWM2M_QUEUE_MODE_ENABLED)
+#if defined(CONFIG_LWM2M_QUEUE_MODE_ENABLED) || defined(__DOXYGEN__)
 	/**
 	 * Flag to indicate that the client is buffering Notifications and Send messages.
 	 * True value buffer Notifications and Send messages.
@@ -416,7 +416,7 @@ int lwm2m_device_add_err(uint8_t error_code);
 #define RESULT_UPDATE_FAILED	8
 #define RESULT_UNSUP_PROTO	9
 
-#if defined(CONFIG_LWM2M_FIRMWARE_UPDATE_OBJ_SUPPORT)
+#if defined(CONFIG_LWM2M_FIRMWARE_UPDATE_OBJ_SUPPORT) || defined(__DOXYGEN__)
 /**
  * @brief Set data callback for firmware block transfer.
  *
@@ -489,7 +489,7 @@ void lwm2m_firmware_set_cancel_cb_inst(uint16_t obj_inst_id, lwm2m_engine_user_c
  */
 lwm2m_engine_user_cb_t lwm2m_firmware_get_cancel_cb_inst(uint16_t obj_inst_id);
 
-#if defined(CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_SUPPORT)
+#if defined(CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_SUPPORT) || defined(__DOXYGEN__)
 /**
  * @brief Set data callback to handle firmware update execute events.
  *
@@ -529,7 +529,7 @@ lwm2m_engine_execute_cb_t lwm2m_firmware_get_update_cb_inst(uint16_t obj_inst_id
 #endif
 
 
-#if defined(CONFIG_LWM2M_SWMGMT_OBJ_SUPPORT)
+#if defined(CONFIG_LWM2M_SWMGMT_OBJ_SUPPORT) || defined(__DOXYGEN__)
 
 /**
  * @brief Set callback to handle software activation requests
@@ -623,7 +623,7 @@ int lwm2m_swmgmt_install_completed(uint16_t obj_inst_id, int error_code);
 
 #endif
 
-#if defined(CONFIG_LWM2M_EVENT_LOG_OBJ_SUPPORT)
+#if defined(CONFIG_LWM2M_EVENT_LOG_OBJ_SUPPORT) || defined(__DOXYGEN__)
 
 /**
  * @brief Set callback to read log data
@@ -2253,7 +2253,7 @@ enum lwm2m_security_mode_e {
 /**
  * @brief Read security mode from selected security object instance.
  *
- * This data is only valid if RD client is running.
+ * This data is valid only if RD client is running.
  *
  * @param ctx Pointer to client context.
  * @return int Positive values are @ref lwm2m_security_mode_e, negative error codes otherwise.
@@ -2263,8 +2263,8 @@ int lwm2m_security_mode(struct lwm2m_ctx *ctx);
 /**
  * @brief Set default socket options for DTLS connections.
  *
- * Engine calls this when @ref lwm2m_ctx::set_socketoptions is not overwritten.
- * You may call this from overwritten callback to set extra options after or
+ * The engine calls this when @ref lwm2m_ctx::set_socketoptions is not overwritten.
+ * You can call this from the overwritten callback to set extra options after or
  * before defaults.
  *
  * @param ctx Client context
