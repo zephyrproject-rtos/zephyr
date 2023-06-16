@@ -49,8 +49,9 @@ static void isr_prepare_subevent(void *param);
 static void isr_prepare_subevent_next_cis(void *param);
 static void isr_prepare_subevent_common(void *param);
 static void isr_done(void *param);
-static inline void lll_flush_tx(struct lll_conn_iso_stream *cis_lll);
-static inline void lll_flush_rx(struct lll_conn_iso_stream *cis_lll);
+static void payload_count_flush(struct lll_conn_iso_stream *cis_lll);
+static void payload_count_rx_flush_or_txrx_inc(struct lll_conn_iso_stream *cis_lll);
+static void payload_count_lazy(struct lll_conn_iso_stream *cis_lll, uint16_t lazy);
 
 static uint8_t next_chan_use;
 static uint16_t data_chan_id;
@@ -61,7 +62,6 @@ static uint32_t trx_performed_bitmask;
 static uint16_t cis_offset_first;
 static uint16_t cis_handle_curr;
 static uint8_t se_curr;
-static uint8_t has_tx;
 
 #if defined(CONFIG_BT_CTLR_LE_ENC)
 static uint8_t mic_state;
@@ -133,24 +133,6 @@ void lll_peripheral_iso_flush(uint16_t handle, struct lll_conn_iso_stream *lll)
 static int init_reset(void)
 {
 	return 0;
-}
-
-static inline void lll_flush_tx(struct lll_conn_iso_stream *cis_lll)
-{
-	/* sn and nesn are 1-bit, only Least Significant bit is needed */
-	uint8_t sn_update = cis_lll->tx.bn + 1U - cis_lll->tx.bn_curr;
-
-	/* TODO we'll re-use sn_update when implementing flush timeout */
-	cis_lll->sn += sn_update;
-}
-
-static inline void lll_flush_rx(struct lll_conn_iso_stream *cis_lll)
-{
-	/* sn and nesn are 1-bit, only Least Significant bit is needed */
-	uint8_t nesn_update = cis_lll->rx.bn + 1U - cis_lll->rx.bn_curr;
-
-	/* TODO we'll re-use nesn_update when implementing flush timeout */
-	cis_lll->nesn += nesn_update;
 }
 
 static int prepare_cb(struct lll_prepare_param *p)
@@ -225,14 +207,10 @@ static int prepare_cb(struct lll_prepare_param *p)
 			EVENT_US_TO_US_FRAC(cig_lll->window_widening_max_us);
 	}
 
-	/* Adjust sn and nesn for skipped CIG events */
-	/* sn and nesn are 1-bit, only Least Significant bit is needed */
-	cis_lll->sn += (cis_lll->tx.bn * lazy);
-	cis_lll->nesn += cis_lll->rx.bn * lazy;
-
 	se_curr = 1U;
-	cis_lll->rx.bn_curr = 1U;
-	has_tx = 0U;
+
+	/* Adjust sn and nesn for skipped CIG events */
+	payload_count_lazy(cis_lll, lazy);
 
 	/* Start setting up of Radio h/w */
 	radio_reset();
@@ -260,8 +238,9 @@ static int prepare_cb(struct lll_prepare_param *p)
 		uint64_t payload_cnt;
 		uint8_t pkt_flags;
 
-		payload_cnt = (cis_lll->event_count * cis_lll->rx.bn) +
-			      (cis_lll->rx.bn_curr - 1U);
+		payload_cnt = cis_lll->rx.payload_count +
+				cis_lll->rx.bn_curr - 1U;
+
 		cis_lll->rx.ccm.counter = payload_cnt;
 
 		pkt_flags = RADIO_PKT_CONF_FLAGS(RADIO_PKT_CONF_PDU_TYPE_CIS,
@@ -372,9 +351,10 @@ static int prepare_cb(struct lll_prepare_param *p)
 	/* Adjust the SN and NESN for skipped CIG events */
 	uint16_t cis_handle = cis_handle_curr;
 
-	while (true) {
-		/* FIXME: Update below implementation when supporting  Flush Timeout */
-		payload_count = cis_lll->event_count * cis_lll->tx.bn;
+	do {
+		payload_count = cis_lll->tx.payload_count +
+				cis_lll->tx.bn_curr - 1U;
+
 		do {
 			link = memq_peek(cis_lll->memq_tx.head,
 					 cis_lll->memq_tx.tail, (void **)&tx);
@@ -392,26 +372,22 @@ static int prepare_cb(struct lll_prepare_param *p)
 			}
 		} while (link);
 
-		cis_lll = ull_conn_iso_lll_stream_get_by_group(cig_lll, &cis_handle);
+		do {
+			cis_lll = ull_conn_iso_lll_stream_get_by_group(cig_lll, &cis_handle);
+		} while (cis_lll && !cis_lll->active);
+
 		if (!cis_lll) {
 			break;
 		}
 
-		if (cis_lll->active) {
-			/* sn and nesn are 1-bit, only Least Significant bit is needed */
-			cis_lll->sn += cis_lll->tx.bn * lazy;
-			cis_lll->nesn += cis_lll->rx.bn * lazy;
+		/* Adjust sn and nesn for skipped CIG events */
+		payload_count_lazy(cis_lll, lazy);
 
-			/* Adjust sn and nesn for canceled events */
-			if (err) {
-				/* Adjust nesn when flushing Rx */
-				/* FIXME: When Flush Timeout is implemented */
-				if (cis_lll->rx.bn_curr <= cis_lll->rx.bn) {
-					lll_flush_rx(cis_lll);
-				}
-			}
+		/* Adjust sn and nesn for canceled events */
+		if (err) {
+			payload_count_rx_flush_or_txrx_inc(cis_lll);
 		}
-	};
+	} while (cis_lll);
 
 	/* Return if prepare callback cancelled */
 	if (err) {
@@ -433,24 +409,21 @@ static void abort_cb(struct lll_prepare_param *prepare_param, void *param)
 
 	/* NOTE: This is not a prepare being cancelled */
 	if (!prepare_param) {
-		struct lll_conn_iso_group *cig_lll = param;
+		struct lll_conn_iso_stream *next_cis_lll;
 		struct lll_conn_iso_stream *cis_lll;
+		struct lll_conn_iso_group *cig_lll;
 
-		cis_lll = ull_conn_iso_lll_stream_get_by_group(cig_lll, NULL);
+		cis_lll = ull_conn_iso_lll_stream_get(cis_handle_curr);
+		cig_lll = param;
 
-		/* FIXME: Consider Flush Timeout when resetting current burst number */
-		if (!has_tx) {
-			has_tx = 1U;
-
-			/* Adjust nesn when flushing Tx */
-			/* FIXME: When Flush Timeout is implemented */
-			if (cis_lll->tx.bn_curr <= cis_lll->tx.bn) {
-				lll_flush_tx(cis_lll);
+		/* Adjust the SN, NESN and payload_count on abort for CISes  */
+		do {
+			next_cis_lll = ull_conn_iso_lll_stream_get_by_group(cig_lll,
+									    &cis_handle_curr);
+			if (next_cis_lll && next_cis_lll->active) {
+				payload_count_rx_flush_or_txrx_inc(next_cis_lll);
 			}
-
-			/* Set to last burst number in previous event */
-			cis_lll->tx.bn_curr = cis_lll->tx.bn;
-		}
+		} while (next_cis_lll);
 
 		/* Perform event abort here.
 		 * After event has been cleanly aborted, clean up resources
@@ -500,20 +473,9 @@ static void isr_rx(void *param)
 
 	/* No Rx */
 	if (!trx_done) {
-		/* FIXME: Consider Flush Timeout when resetting current burst number */
-		if (!has_tx) {
-			has_tx = 1U;
+		payload_count_flush(cis_lll);
 
-			/* Adjust nesn when flushing Tx */
-			/* FIXME: When Flush Timeout is implemented */
-			if (cis_lll->tx.bn_curr <= cis_lll->tx.bn) {
-				lll_flush_tx(cis_lll);
-			}
-
-			/* Start transmitting new burst */
-			cis_lll->tx.bn_curr = cis_lll->tx.bn;
-		}
-
+		/* Next subevent or next CIS */
 		if (se_curr < cis_lll->nse) {
 			radio_isr_set(isr_prepare_subevent, param);
 		} else {
@@ -562,17 +524,20 @@ static void isr_rx(void *param)
 		pdu_rx = (void *)node_rx->pdu;
 
 		/* Tx ACK */
-		if (pdu_rx->nesn != cis_lll->sn) {
-			/* Increment sequence number */
+		if ((pdu_rx->nesn != cis_lll->sn) && (cis_lll->tx.bn_curr <= cis_lll->tx.bn)) {
 			cis_lll->sn++;
-
-			/* Increment burst number */
-			if (cis_lll->tx.bn_curr <= cis_lll->tx.bn) {
-				cis_lll->tx.bn_curr++;
+			cis_lll->tx.bn_curr++;
+			if ((cis_lll->tx.bn_curr > cis_lll->tx.bn) &&
+			    ((cis_lll->tx.payload_count / cis_lll->tx.bn) <
+			     cis_lll->event_count)) {
+				cis_lll->tx.payload_count += cis_lll->tx.bn;
+				cis_lll->tx.bn_curr = 1U;
 			}
 
-			/* TODO: Tx Ack */
-
+			/* TODO: Implement early Tx Ack. Currently Tx Ack
+			 *       generated as stale Tx Ack when payload count
+			 *       has elapsed.
+			 */
 		}
 
 		/* Handle valid ISO data Rx */
@@ -582,7 +547,6 @@ static void isr_rx(void *param)
 		    ull_iso_pdu_rx_alloc_peek(2U)) {
 			struct node_rx_iso_meta *iso_meta;
 
-			/* Increment next expected sequence number */
 			cis_lll->nesn++;
 
 #if defined(CONFIG_BT_CTLR_LE_ENC)
@@ -614,9 +578,8 @@ static void isr_rx(void *param)
 			node_rx->hdr.type = NODE_RX_TYPE_ISO_PDU;
 			node_rx->hdr.handle = cis_lll->handle;
 			iso_meta = &node_rx->hdr.rx_iso_meta;
-			iso_meta->payload_number = (cis_lll->event_count *
-						    cis_lll->rx.bn) +
-						   (cis_lll->rx.bn_curr - 1U);
+			iso_meta->payload_number = cis_lll->rx.payload_count +
+						   cis_lll->rx.bn_curr - 1U;
 			iso_meta->timestamp = cis_lll->offset +
 				HAL_TICKER_TICKS_TO_US(radio_tmr_start_get()) +
 				radio_tmr_aa_restore() - cis_offset_first -
@@ -632,46 +595,19 @@ static void isr_rx(void *param)
 			iso_rx_sched();
 #endif /* CONFIG_BT_CTLR_LOW_LAT_ULL */
 
-			/* Increment burst number */
 			cis_lll->rx.bn_curr++;
-
-		/* Handle NULL PDU indication received */
-		} else if (pdu_rx->npi) {
-			/* Source could not send ISO data, increment NESN as if
-			 * we received and expect to receive the next PDU in the
-			 * burst.
-			 */
-			if (cis_lll->rx.bn_curr <= cis_lll->rx.bn) {
-				/* Increment next expected serial number */
-				cis_lll->nesn++;
-
-				/* Increment burst number */
-				cis_lll->rx.bn_curr++;
+			if ((cis_lll->rx.bn_curr > cis_lll->rx.bn) &&
+			    ((cis_lll->rx.payload_count / cis_lll->rx.bn) < cis_lll->event_count)) {
+				cis_lll->rx.payload_count += cis_lll->rx.bn;
+				cis_lll->rx.bn_curr = 1U;
 			}
-
-		/* Not NPI, or more than the BN, or no free Rx ISO PDU buffers.
-		 */
-		} else {
-			/* Do nothing, ignore the Rx buffer */
 		}
 
 		/* Close Isochronous Event */
 		cie = cie || pdu_rx->cie;
 	}
 
-	/* FIXME: Consider Flush Timeout when resetting current burst number */
-	if (!has_tx) {
-		has_tx = 1U;
-
-		/* Adjust nesn when flushing Tx */
-		/* FIXME: When Flush Timeout is implemented */
-		if (cis_lll->tx.bn_curr <= cis_lll->tx.bn) {
-			lll_flush_tx(cis_lll);
-		}
-
-		/* Start transmitting new burst */
-		cis_lll->tx.bn_curr = 1U;
-	}
+	payload_count_flush(cis_lll);
 
 	/* Close Isochronous Event */
 	cie = cie || ((cis_lll->rx.bn_curr > cis_lll->rx.bn) &&
@@ -696,8 +632,7 @@ static void isr_rx(void *param)
 		memq_link_t *link;
 
 		payload_index = cis_lll->tx.bn_curr - 1U;
-		payload_count = cis_lll->event_count * cis_lll->tx.bn +
-				payload_index;
+		payload_count = cis_lll->tx.payload_count + payload_index;
 
 		link = memq_peek_n(cis_lll->memq_tx.head, cis_lll->memq_tx.tail,
 				   payload_index, (void **)&tx);
@@ -801,6 +736,7 @@ static void isr_rx(void *param)
 						      &data_chan_prn_s,
 						      &data_chan_remap_idx);
 	} else {
+		struct lll_conn_iso_stream *next_cis_lll;
 		struct lll_conn_iso_group *cig_lll;
 		uint16_t event_counter;
 		uint16_t cis_handle;
@@ -809,34 +745,34 @@ static void isr_rx(void *param)
 		cig_lll = ull_conn_iso_lll_group_get_by_stream(cis_lll);
 		cis_handle = cis_handle_curr;
 		do {
-			cis_lll = ull_conn_iso_lll_stream_get_by_group(cig_lll, &cis_handle);
-		} while (cis_lll && !cis_lll->active);
+			next_cis_lll = ull_conn_iso_lll_stream_get_by_group(cig_lll, &cis_handle);
+		} while (next_cis_lll && !next_cis_lll->active);
 
-		if (!cis_lll) {
+		if (!next_cis_lll) {
 			/* ISO Event Done */
 			radio_isr_set(isr_done, param);
 
 			return;
 		}
 
+		payload_count_rx_flush_or_txrx_inc(cis_lll);
+
 		cis_handle_curr = cis_handle;
 
 		/* Event counter value,  0-15 bit of cisEventCounter */
-		event_counter = cis_lll->event_count;
+		event_counter = next_cis_lll->event_count;
 
 		/* Calculate the radio channel to use for next CIS ISO event */
-		data_chan_id = lll_chan_id(cis_lll->access_addr);
+		data_chan_id = lll_chan_id(next_cis_lll->access_addr);
 		next_chan_use = lll_chan_iso_event(event_counter, data_chan_id,
 						   conn_lll->data_chan_map,
 						   conn_lll->data_chan_count,
 						   &data_chan_prn_s,
 						   &data_chan_remap_idx);
 
-		/* Reset indices for the next CIS */
-		se_curr = 0U; /* isr_tx() will increase se_curr */
-		cis_lll->tx.bn_curr = 1U; /* FIXME: may be this should be previous event value? */
-		cis_lll->rx.bn_curr = 1U;
-		has_tx = 0U;
+		/* Next CIS, se_curr is incremented in isr_tx() */
+		cis_lll = next_cis_lll;
+		se_curr = 0U;
 	}
 
 	/* Schedule next subevent reception */
@@ -894,8 +830,9 @@ static void isr_tx(void *param)
 		uint64_t payload_count;
 		uint8_t pkt_flags;
 
-		payload_count = (cis_lll->event_count * cis_lll->rx.bn) +
-				(cis_lll->rx.bn_curr - 1U);
+		payload_count = cis_lll->rx.payload_count +
+				cis_lll->rx.bn_curr - 1U;
+
 		cis_lll->rx.ccm.counter = payload_count;
 
 		pkt_flags = RADIO_PKT_CONF_FLAGS(RADIO_PKT_CONF_PDU_TYPE_CIS,
@@ -996,6 +933,7 @@ static void isr_tx(void *param)
 
 static void next_cis_prepare(void *param)
 {
+	struct lll_conn_iso_stream *next_cis_lll;
 	struct lll_conn_iso_stream *cis_lll;
 	struct lll_conn_iso_group *cig_lll;
 	uint16_t cis_handle;
@@ -1005,12 +943,13 @@ static void next_cis_prepare(void *param)
 
 	/* Check for next active CIS */
 	cig_lll = ull_conn_iso_lll_group_get_by_stream(cis_lll);
+	next_cis_lll = cis_lll;
 	cis_handle = cis_handle_curr;
 	do {
-		cis_lll = ull_conn_iso_lll_stream_get_by_group(cig_lll, &cis_handle);
-	} while (cis_lll && !cis_lll->active);
+		next_cis_lll = ull_conn_iso_lll_stream_get_by_group(cig_lll, &cis_handle);
+	} while (next_cis_lll && !next_cis_lll->active);
 
-	if (!cis_lll) {
+	if (!next_cis_lll) {
 		/* ISO Event Done */
 		radio_isr_set(isr_done, param);
 
@@ -1019,7 +958,7 @@ static void next_cis_prepare(void *param)
 
 	cis_handle_curr = cis_handle;
 
-	radio_isr_set(isr_prepare_subevent_next_cis, cis_lll);
+	radio_isr_set(isr_prepare_subevent_next_cis, next_cis_lll);
 }
 
 static void isr_prepare_subevent(void *param)
@@ -1071,11 +1010,8 @@ static void isr_prepare_subevent_next_cis(void *param)
 					   &data_chan_prn_s,
 					   &data_chan_remap_idx);
 
-	/* Reset indices for the next CIS */
-	se_curr = 0U; /* isr_prepare_subevent_common() will increase se_curr */
-	cis_lll->tx.bn_curr = 1U; /* FIXME: may be this should be previous event value? */
-	cis_lll->rx.bn_curr = 1U;
-	has_tx = 0U;
+	/* se_curr is incremented in isr_prepare_subevent_common() */
+	se_curr = 0U;
 
 	isr_prepare_subevent_common(param);
 }
@@ -1111,8 +1047,9 @@ static void isr_prepare_subevent_common(void *param)
 		uint64_t payload_count;
 		uint8_t pkt_flags;
 
-		payload_count = (cis_lll->event_count * cis_lll->rx.bn) +
-				(cis_lll->rx.bn_curr - 1U);
+		payload_count = cis_lll->rx.payload_count +
+				cis_lll->rx.bn_curr - 1U;
+
 		cis_lll->rx.ccm.counter = payload_count;
 
 		pkt_flags = RADIO_PKT_CONF_FLAGS(RADIO_PKT_CONF_PDU_TYPE_CIS,
@@ -1235,11 +1172,7 @@ static void isr_done(void *param)
 	/* Get reference to CIS LLL context */
 	cis_lll = param;
 
-	/* Adjust nesn when flushing Rx */
-	/* FIXME: When Flush Timeout is implemented */
-	if (cis_lll->rx.bn_curr <= cis_lll->rx.bn) {
-		lll_flush_rx(cis_lll);
-	}
+	payload_count_rx_flush_or_txrx_inc(cis_lll);
 
 	e = ull_event_done_extra_get();
 	LL_ASSERT(e);
@@ -1274,4 +1207,178 @@ static void isr_done(void *param)
 	}
 
 	lll_isr_cleanup(param);
+}
+
+static void payload_count_flush(struct lll_conn_iso_stream *cis_lll)
+{
+	if (cis_lll->tx.bn) {
+		uint64_t payload_count;
+		uint8_t u;
+
+		payload_count = cis_lll->tx.payload_count + cis_lll->tx.bn_curr - 1U;
+		u = cis_lll->nse - ((cis_lll->nse / cis_lll->tx.bn) *
+				    (cis_lll->tx.bn - 1U -
+				     (payload_count % cis_lll->tx.bn)));
+		while (((((cis_lll->tx.payload_count / cis_lll->tx.bn) + cis_lll->tx.ft) <
+			 (cis_lll->event_count + 1U)) ||
+			((((cis_lll->tx.payload_count / cis_lll->tx.bn) + cis_lll->tx.ft) ==
+			 (cis_lll->event_count + 1U)) && (u < se_curr))) &&
+		       (((cis_lll->tx.bn_curr < cis_lll->tx.bn) &&
+			 ((cis_lll->tx.payload_count / cis_lll->tx.bn) <= cis_lll->event_count)) ||
+			((cis_lll->tx.bn_curr == cis_lll->tx.bn) &&
+			 ((cis_lll->tx.payload_count / cis_lll->tx.bn) < cis_lll->event_count)))) {
+			/* sn and nesn are 1-bit, only Least Significant bit is needed */
+			cis_lll->sn++;
+			cis_lll->tx.bn_curr++;
+			if (cis_lll->tx.bn_curr > cis_lll->tx.bn) {
+				cis_lll->tx.payload_count += cis_lll->tx.bn;
+				cis_lll->tx.bn_curr = 1U;
+			}
+
+			payload_count = cis_lll->tx.payload_count + cis_lll->tx.bn_curr - 1U;
+			u = cis_lll->nse - ((cis_lll->nse / cis_lll->tx.bn) *
+					    (cis_lll->tx.bn - 1U -
+					     (payload_count % cis_lll->tx.bn)));
+		}
+	}
+
+	if (cis_lll->rx.bn) {
+		uint64_t payload_count;
+		uint8_t u;
+
+		payload_count = cis_lll->rx.payload_count + cis_lll->rx.bn_curr - 1U;
+		u = cis_lll->nse - ((cis_lll->nse / cis_lll->rx.bn) *
+				    (cis_lll->rx.bn - 1U -
+				     (payload_count % cis_lll->rx.bn)));
+		if ((((cis_lll->rx.payload_count / cis_lll->rx.bn) + cis_lll->rx.ft) ==
+		     (cis_lll->event_count + 1U)) && (u <= se_curr) &&
+		    (((cis_lll->rx.bn_curr < cis_lll->rx.bn) &&
+		      ((cis_lll->rx.payload_count / cis_lll->rx.bn) <= cis_lll->event_count)) ||
+		     ((cis_lll->rx.bn_curr == cis_lll->rx.bn) &&
+		      ((cis_lll->rx.payload_count / cis_lll->rx.bn) < cis_lll->event_count)))) {
+			/* sn and nesn are 1-bit, only Least Significant bit is needed */
+			cis_lll->nesn++;
+			cis_lll->rx.bn_curr++;
+			if (cis_lll->rx.bn_curr > cis_lll->rx.bn) {
+				cis_lll->rx.payload_count += cis_lll->rx.bn;
+				cis_lll->rx.bn_curr = 1U;
+			}
+		}
+	}
+}
+
+static void payload_count_rx_flush_or_txrx_inc(struct lll_conn_iso_stream *cis_lll)
+{
+	if (cis_lll->tx.bn) {
+		if (((cis_lll->tx.payload_count / cis_lll->tx.bn) + cis_lll->tx.bn_curr) >
+		    (cis_lll->event_count + cis_lll->tx.bn)) {
+			cis_lll->tx.payload_count += cis_lll->tx.bn;
+			cis_lll->tx.bn_curr = 1U;
+		}
+	}
+
+	if (cis_lll->rx.bn) {
+		uint64_t payload_count;
+		uint8_t u;
+
+		if (((cis_lll->rx.payload_count / cis_lll->rx.bn) + cis_lll->rx.bn_curr) >
+		    (cis_lll->event_count + cis_lll->rx.bn)) {
+			cis_lll->rx.payload_count += cis_lll->rx.bn;
+			cis_lll->rx.bn_curr = 1U;
+
+			return;
+		}
+
+		payload_count = cis_lll->rx.payload_count + cis_lll->rx.bn_curr - 1U;
+		u = cis_lll->nse - ((cis_lll->nse / cis_lll->rx.bn) *
+				    (cis_lll->rx.bn - 1U -
+				     (payload_count % cis_lll->rx.bn)));
+		while ((((cis_lll->rx.payload_count / cis_lll->rx.bn) + cis_lll->rx.ft) <
+			(cis_lll->event_count + 1U)) ||
+		       ((((cis_lll->rx.payload_count / cis_lll->rx.bn) + cis_lll->rx.ft) ==
+			 (cis_lll->event_count + 1U)) && (u <= (cis_lll->nse + 1U)))) {
+			/* sn and nesn are 1-bit, only Least Significant bit is needed */
+			cis_lll->nesn++;
+			cis_lll->rx.bn_curr++;
+			if (cis_lll->rx.bn_curr > cis_lll->rx.bn) {
+				cis_lll->rx.payload_count += cis_lll->rx.bn;
+				cis_lll->rx.bn_curr = 1U;
+			}
+
+			payload_count = cis_lll->rx.payload_count + cis_lll->rx.bn_curr - 1U;
+			u = cis_lll->nse - ((cis_lll->nse / cis_lll->rx.bn) *
+					    (cis_lll->rx.bn - 1U -
+					     (payload_count % cis_lll->rx.bn)));
+		}
+	}
+}
+
+static void payload_count_lazy(struct lll_conn_iso_stream *cis_lll, uint16_t lazy)
+{
+	if (cis_lll->tx.bn && lazy) {
+		uint16_t tx_lazy;
+
+		tx_lazy = lazy;
+		while (tx_lazy--) {
+			uint64_t payload_count;
+			uint8_t u;
+
+			payload_count = cis_lll->tx.payload_count + cis_lll->tx.bn_curr - 1U;
+			u = cis_lll->nse - ((cis_lll->nse / cis_lll->tx.bn) *
+					    (cis_lll->tx.bn - 1U -
+					     (payload_count % cis_lll->tx.bn)));
+			while (((((cis_lll->tx.payload_count / cis_lll->tx.bn) + cis_lll->tx.ft) <
+				 (cis_lll->event_count + 1U)) ||
+				((((cis_lll->tx.payload_count / cis_lll->tx.bn) + cis_lll->tx.ft) ==
+				 (cis_lll->event_count + 1U)) && (u < (cis_lll->nse + 1U)))) &&
+			       ((cis_lll->tx.payload_count / cis_lll->tx.bn) <
+				cis_lll->event_count)) {
+				/* sn and nesn are 1-bit, only Least Significant bit is needed */
+				cis_lll->sn++;
+				cis_lll->tx.bn_curr++;
+				if (cis_lll->tx.bn_curr > cis_lll->tx.bn) {
+					cis_lll->tx.payload_count += cis_lll->tx.bn;
+					cis_lll->tx.bn_curr = 1U;
+				}
+
+				payload_count = cis_lll->tx.payload_count +
+						cis_lll->tx.bn_curr - 1U;
+				u = cis_lll->nse - ((cis_lll->nse / cis_lll->tx.bn) *
+						    (cis_lll->tx.bn - 1U -
+						     (payload_count % cis_lll->tx.bn)));
+			}
+		}
+	}
+
+	if (cis_lll->rx.bn) {
+		while (lazy--) {
+			uint64_t payload_count;
+			uint8_t u;
+
+			payload_count = cis_lll->rx.payload_count + cis_lll->rx.bn_curr - 1U;
+			u = cis_lll->nse - ((cis_lll->nse / cis_lll->rx.bn) *
+					    (cis_lll->rx.bn - 1U -
+					     (payload_count % cis_lll->rx.bn)));
+			while (((((cis_lll->rx.payload_count / cis_lll->rx.bn) + cis_lll->rx.ft) <
+				 (cis_lll->event_count + 1U)) ||
+				((((cis_lll->rx.payload_count / cis_lll->rx.bn) + cis_lll->rx.ft) ==
+				 (cis_lll->event_count + 1U)) && (u <= (cis_lll->nse + 1U)))) &&
+			       ((cis_lll->rx.payload_count / cis_lll->rx.bn) <
+				cis_lll->event_count)) {
+				/* sn and nesn are 1-bit, only Least Significant bit is needed */
+				cis_lll->nesn++;
+				cis_lll->rx.bn_curr++;
+				if (cis_lll->rx.bn_curr > cis_lll->rx.bn) {
+					cis_lll->rx.payload_count += cis_lll->rx.bn;
+					cis_lll->rx.bn_curr = 1U;
+				}
+
+				payload_count = cis_lll->rx.payload_count +
+						cis_lll->rx.bn_curr - 1U;
+				u = cis_lll->nse - ((cis_lll->nse / cis_lll->rx.bn) *
+						    (cis_lll->rx.bn - 1U -
+						     (payload_count % cis_lll->rx.bn)));
+			}
+		}
+	}
 }
