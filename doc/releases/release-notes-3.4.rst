@@ -372,8 +372,6 @@ Architectures
 
   * Removed absolute symbol :c:macro:`_K_THREAD_NO_FLOAT_SIZEOF`
 
-* X86
-
 * Xtensa
 
   * Fixed the cross stack call mechanism during nested interrupts where stack would be
@@ -839,8 +837,6 @@ Drivers and Sensors
 
   * Added support on STM32H5 series.
 
-* DFU
-
 * Disk
 
   * SDMMC STM32L4+: Now compatible with internal DMA
@@ -866,10 +862,6 @@ Drivers and Sensors
 * Entropy
 
   * Added support for STM32H5 series.
-
-* ESPI
-
-* Ethernet
 
 * Flash
 
@@ -899,10 +891,6 @@ Drivers and Sensors
     their initial sector split into two parts (usually marked as 0a and 0b).
   * STM32H5 now supports OSPI
 
-* FPGA
-
-* Fuel Gauge
-
 * GPIO
 
   * Converted the ``gpio_keys`` driver to the input subsystem.
@@ -910,8 +898,6 @@ Drivers and Sensors
 
   * STM32: Supports newly introduced experimental API to enable/disable interrupts
     without re-config
-
-* hwinfo
 
 * I2C
 
@@ -921,28 +907,14 @@ Drivers and Sensors
 
   * STM32: Domain clock should now be configured by device tree.
 
-* I3C
-
-* IEEE 802.15.4
-
 * Input
 
   * Introduced the :ref:`input` subsystem.
-
-* Interrupt Controller
-
-* IPM
 
 * KSCAN
 
   * Added a :dtcompatible:`zephyr,kscan-input` input to kscan compatibility driver.
   * Converted the ``ft5336`` and ``kscan_sdl`` drivers to the input subsystem.
-
-* LED
-
-* MBOX
-
-* MEMC
 
 * MIPI-DSI
 
@@ -986,8 +958,6 @@ Drivers and Sensors
   * Added support for ADP5360 PMIC
   * Added support for nPM1300 PMIC
   * Added support for Raspberry Pi Pico core supply regulator
-
-* Reset
 
 * SDHC
 
@@ -1059,8 +1029,6 @@ Drivers and Sensors
 * Watchdog
 
   * Added support for STM32C0 and STM32H5 series
-
-* WiFi
 
 Networking
 **********
@@ -1276,9 +1244,6 @@ USB
   * Added USB Mass Storage class and CDC ECM class implementations for the new
     device support.
 
-Devicetree
-**********
-
 Libraries / Subsystems
 **********************
 
@@ -1471,9 +1436,6 @@ Among other things, this update brings:
 * Improved docs
 * -Wall and -Wconversion compliance
 
-Documentation
-*************
-
 Tests and Samples
 *****************
 
@@ -1481,12 +1443,3 @@ Tests and Samples
   system. One of them including the OpenThread stack.
 * For native_posix and the nrf52_bsim: Many tests have been fixed and enabled.
 * LittleFS sample has been given SPI example configuration for nrf52840dk_nrf52840.
-
-Issue Related Items
-*******************
-
-Known Issues
-============
-
-Addressed issues
-================
