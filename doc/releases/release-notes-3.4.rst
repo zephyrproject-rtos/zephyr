@@ -438,20 +438,32 @@ Bluetooth
 
     * Enhanced Provisioning Authentication support.
     * Mesh Remote Provisioning support including:
+
       * Remote Provisioning Server and Client models.
       * Composition Data Page 128 and Models Metadata Page 128 support.
+
     * Large Composition Data support including:
+
       * Large Composition Data Server and Client models.
       * Models Metadata Page 0 support.
+
     * New Transport Segmentation and Reassembly (SAR) implementation including:
+
       * SAR Configuration Server and Client models.
+
     * Mesh Private Beacons support including:
+
       * Mesh Private Beacon Server and Client models.
+
     * Opcodes Aggregator support including:
+
       * Opcodes Aggregator Server and Client models.
+
     * Proxy Solicitation support including:
+
       * Solicitation PDU RPL Configuration Server and Client models.
       * On-Demand Private Proxy Server and Client models.
+
     * Composition Data Page 1 support.
     * Other Mesh Profile Enhancements.
   * Added experimental support for Mesh Binary Large Object Transfer Model d1.0r04_PRr00 specification.
