@@ -1443,3 +1443,4 @@ Tests and Samples
   system. One of them including the OpenThread stack.
 * For native_posix and the nrf52_bsim: Many tests have been fixed and enabled.
 * LittleFS sample has been given SPI example configuration for nrf52840dk_nrf52840.
+* Migrated all tests to new Ztest API and deprecated legacy Ztest.
