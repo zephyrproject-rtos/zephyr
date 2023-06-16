@@ -487,10 +487,12 @@ static int enc_id_adv(struct bt_mesh_subnet *sub, uint8_t type,
 		      uint8_t hash[16], int32_t duration)
 {
 	struct bt_le_adv_param slow_adv_param = {
+		.id = BT_ID_DEFAULT,
 		.options = ADV_OPT_PROXY,
 		ADV_SLOW_INT,
 	};
 	struct bt_le_adv_param fast_adv_param = {
+		.id = BT_ID_DEFAULT,
 		.options = ADV_OPT_PROXY,
 		ADV_FAST_INT,
 	};
@@ -587,6 +589,7 @@ static int priv_net_id_adv(struct bt_mesh_subnet *sub, int32_t duration)
 static int net_id_adv(struct bt_mesh_subnet *sub, int32_t duration)
 {
 	struct bt_le_adv_param slow_adv_param = {
+		.id = BT_ID_DEFAULT,
 		.options = ADV_OPT_PROXY,
 		ADV_SLOW_INT,
 	};
