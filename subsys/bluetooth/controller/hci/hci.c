@@ -6385,7 +6385,7 @@ static void le_ext_adv_legacy_report(struct pdu_data *pdu_data,
 	sep->num_reports = 1U;
 	adv_info = (void *)(((uint8_t *)sep) + sizeof(*sep));
 
-	adv_info->evt_type = evt_type_lookup[adv->type];
+	adv_info->evt_type = sys_cpu_to_le16((uint16_t)evt_type_lookup[adv->type]);
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 	if (rl_idx < ll_rl_size_get()) {
@@ -6576,7 +6576,7 @@ static void ext_adv_info_fill(uint8_t evt_type, uint8_t phy, uint8_t sec_phy,
 	sep->num_reports = 1U;
 	adv_info = (void *)(((uint8_t *)sep) + sizeof(*sep));
 
-	adv_info->evt_type = evt_type;
+	adv_info->evt_type = sys_cpu_to_le16((uint16_t)evt_type);
 
 	if (0) {
 #if defined(CONFIG_BT_CTLR_PRIVACY)
