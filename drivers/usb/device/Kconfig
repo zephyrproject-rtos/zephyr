@@ -199,6 +199,7 @@ config USB_DC_IT82XX2
 
 config USB_NATIVE_POSIX
 	bool "Native Posix USB Device Controller Driver"
+	depends on ARCH_POSIX && EXTERNAL_LIBC
 	help
 	  Native Posix USB Device Controller Driver.
 
