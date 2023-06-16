@@ -13,6 +13,8 @@
 #include <zephyr/drivers/interrupt_controller/loapic.h>
 #include <zephyr/arch/x86/acpi.h>
 
+BUILD_ASSERT(CONFIG_MP_MAX_NUM_CPUS <= 4, "Only supports max 4 CPUs");
+
 /*
  * Map of CPU logical IDs to CPU local APIC IDs. By default,
  * we assume this simple identity mapping, as found in QEMU.
