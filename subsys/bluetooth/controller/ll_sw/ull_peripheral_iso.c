@@ -259,15 +259,11 @@ uint8_t ull_peripheral_iso_acquire(struct ll_conn *acl,
 	cis->lll.rx.bn = req->c_bn;
 	cis->lll.rx.ft = req->c_ft;
 	cis->lll.rx.max_pdu = sys_le16_to_cpu(req->c_max_pdu);
-	cis->lll.rx.payload_count = 0;
-	cis->lll.rx.bn_curr = 1U;
 
 	cis->lll.tx.phy = req->p_phy;
 	cis->lll.tx.bn = req->p_bn;
 	cis->lll.tx.ft = req->p_ft;
 	cis->lll.tx.max_pdu = sys_le16_to_cpu(req->p_max_pdu);
-	cis->lll.tx.payload_count = 0;
-	cis->lll.tx.bn_curr = 1U;
 
 	if (!cis->lll.link_tx_free) {
 		cis->lll.link_tx_free = &cis->lll.link_tx;
