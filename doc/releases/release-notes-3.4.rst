@@ -308,6 +308,23 @@ Architectures
 
 * ARC
 
+  * Added MPUv8 support
+  * Add support of virtual UART over ARC hostlink channel
+  * Improved ARCv2 HS4x processors handling - added proper Kconfig options, provided default mcpu
+  * Improved ARCMWDT toolchain handling:
+
+    * added rollback to check METAWARE_ROOT if ARCMWDT_TOOLCHAIN_PATH missing
+    * reworked extra warnings options handling in twister so it can be used with ARCMWDT
+    * used 64bit MDB binary by default
+
+  * Fixed excessive ROM memory consumption if MPU is enabled and ROM & RAM are located in different
+    memory regions
+  * Fixed DSP registers handling in case of ARCMWDT
+  * Improved SMP handling:
+
+    * Fixed potential livelock in thread abort due to exception
+    * Fixed IDU mask setup
+
   * Removed absolute symbols :c:macro:`___callee_saved_t_SIZEOF` and
     :c:macro:`_K_THREAD_NO_FLOAT_SIZEOF`
 
@@ -485,8 +502,8 @@ Boards & SoC Support
 
 * Added support for these ARC boards:
 
-  * DesignWare ARC HS4x/HS4xD Development Kit
-  * DesignWare ARC nSIM and HAPS FPGA
+  * DesignWare ARC HS4x/HS4xD Development Kit (HSDK4xD) - ARCv2 HS47D, SMP 4 cores
+  * nsim_hs3x_hostlink - simulation (nSIM-based) platform with hostlink UART
 
 * Added support for these ARM boards:
 
@@ -534,6 +551,12 @@ Boards & SoC Support
   * ESP32S3-DevKitM
 
 * Made these changes for ARC boards:
+
+  * Added ARC MWDT toolchain support inforto qemu_arc_hs
+  * Improved emsdp platform support:
+
+    * Added DFSS driver support
+    * Added pinctrl support
 
 * Made these changes for ARM boards:
 
