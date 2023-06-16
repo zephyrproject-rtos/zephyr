@@ -53,6 +53,10 @@ LOG_MODULE_REGISTER(mcumgr_img_grp, CONFIG_MCUMGR_GRP_IMG_LOG_LEVEL);
 
 struct img_mgmt_state g_img_mgmt_state;
 
+#ifdef CONFIG_MCUMGR_GRP_IMG_MUTEX
+static K_MUTEX_DEFINE(img_mgmt_mutex);
+#endif
+
 #ifdef CONFIG_MCUMGR_GRP_IMG_VERBOSE_ERR
 const char *img_mgmt_err_str_app_reject = "app reject";
 const char *img_mgmt_err_str_hdr_malformed = "header malformed";
@@ -64,6 +68,20 @@ const char *img_mgmt_err_str_flash_write_failed = "fa write fail";
 const char *img_mgmt_err_str_downgrade = "downgrade";
 const char *img_mgmt_err_str_image_bad_flash_addr = "img addr mismatch";
 #endif
+
+void img_mgmt_take_lock(void)
+{
+#ifdef CONFIG_MCUMGR_GRP_IMG_MUTEX
+	k_mutex_lock(&img_mgmt_mutex, K_FOREVER);
+#endif
+}
+
+void img_mgmt_release_lock(void)
+{
+#ifdef CONFIG_MCUMGR_GRP_IMG_MUTEX
+	k_mutex_unlock(&img_mgmt_mutex);
+#endif
+}
 
 /**
  * Finds the TLVs in the specified image slot, if any.
@@ -115,6 +133,7 @@ int img_mgmt_active_image(void)
 #endif
 	return 0;
 }
+
 /*
  * Reads the version and build hash from the specified image slot.
  */
@@ -263,10 +282,16 @@ img_mgmt_find_by_hash(uint8_t *find, struct image_version *ver)
 /*
  * Resets upload status to defaults (no upload in progress)
  */
+#ifdef CONFIG_MCUMGR_GRP_IMG_MUTEX
 void img_mgmt_reset_upload(void)
+#else
+static void img_mgmt_reset_upload(void)
+#endif
 {
+	img_mgmt_take_lock();
 	memset(&g_img_mgmt_state, 0, sizeof(g_img_mgmt_state));
 	g_img_mgmt_state.area_id = -1;
+	img_mgmt_release_lock();
 }
 
 static int
@@ -312,6 +337,8 @@ img_mgmt_erase(struct smp_streamer *ctxt)
 		return MGMT_ERR_EINVAL;
 	}
 
+	img_mgmt_take_lock();
+
 	/*
 	 * First check if image info is valid.
 	 * This check is done incase the flash area has a corrupted image.
@@ -345,11 +372,14 @@ img_mgmt_erase(struct smp_streamer *ctxt)
 
 	if (IS_ENABLED(CONFIG_MCUMGR_SMP_LEGACY_RC_BEHAVIOUR)) {
 		if (!zcbor_tstr_put_lit(zse, "rc") || !zcbor_int32_put(zse, 0)) {
+			img_mgmt_release_lock();
 			return MGMT_ERR_EMSGSIZE;
 		}
 	}
 
 end:
+	img_mgmt_release_lock();
+
 	return MGMT_ERR_EOK;
 }
 
@@ -466,6 +496,8 @@ defined(CONFIG_MCUMGR_SMP_COMMAND_STATUS_HOOKS)
 		return MGMT_ERR_EINVAL;
 	}
 
+	img_mgmt_take_lock();
+
 	/* Determine what actions to take as a result of this request. */
 	rc = img_mgmt_upload_inspect(&req, &action);
 	if (rc != 0) {
@@ -484,7 +516,9 @@ defined(CONFIG_MCUMGR_SMP_COMMAND_STATUS_HOOKS)
 		/* Request specifies incorrect offset.  Respond with a success code and
 		 * the correct offset.
 		 */
-		return img_mgmt_upload_good_rsp(ctxt);
+		rc = img_mgmt_upload_good_rsp(ctxt);
+		img_mgmt_release_lock();
+		return rc;
 	}
 
 #if defined(CONFIG_MCUMGR_GRP_IMG_UPLOAD_CHECK_HOOK)
@@ -679,6 +713,8 @@ end:
 			img_mgmt_reset_upload();
 		}
 	}
+
+	img_mgmt_release_lock();
 
 	if (!ok) {
 		return MGMT_ERR_EMSGSIZE;
