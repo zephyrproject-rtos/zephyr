@@ -2,8 +2,8 @@
 
 .. _zephyr_3.4:
 
-Zephyr 3.4.0 (Working Draft)
-############################
+Zephyr 3.4.0
+############
 
 We are pleased to announce the release of Zephyr version 3.4.0.
 
