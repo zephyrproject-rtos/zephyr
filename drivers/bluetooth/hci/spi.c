@@ -56,6 +56,8 @@ LOG_MODULE_REGISTER(bt_driver);
  */
 #define SPI_MAX_MSG_LEN		255 /* As defined by X-NUCLEO-IDB04A1 BSP */
 
+#define DATA_DELAY_US DT_INST_PROP(0, controller_data_delay_us)
+
 static uint8_t rxmsg[SPI_MAX_MSG_LEN];
 static uint8_t txmsg[SPI_MAX_MSG_LEN];
 
@@ -326,11 +328,20 @@ static void bt_spi_rx_thread(void)
 				    header_slave[STATUS_HEADER_TOREAD] == 0xFF) &&
 				   !ret)) && exit_irq_high_loop());
 
+			/* Delay here is rounded up to next tick */
+			k_sleep(K_USEC(DATA_DELAY_US));
 			size = header_slave[STATUS_HEADER_TOREAD];
 			if (ret == 0 && size != 0) {
 				do {
 					ret = bt_spi_transceive(&txmsg, size,
 								&rxmsg, size);
+					if (rxmsg[0] == 0U) {
+						/* Consider increasing controller-data-delay-us
+						 * if this message is extremely common.
+						 */
+						LOG_DBG("Controller not ready for SPI transaction "
+							"of %d bytes", size);
+					}
 				} while (rxmsg[0] == 0U && ret == 0);
 			}
 
