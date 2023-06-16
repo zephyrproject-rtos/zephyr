@@ -184,6 +184,18 @@
 		};
 	};
 
+	pinmux_fmu_ppm_rc: pinmux_fmu_ppm_rc {
+		group0 {
+			pinmux = <&iomuxc_gpio_b1_06_gpt1_capture2>;
+
+			drive-strength = "disabled";
+			bias-pull-up;
+			bias-pull-up-value = "47k";
+			slew-rate = "fast";
+			input-enable;
+		};
+	};
+
 	pinmux_flexspi1: pinmux_flexspi1 {
 		group0 {
 			pinmux = <&iomuxc_gpio_sd_b1_05_flexspi_a_dqs>;
