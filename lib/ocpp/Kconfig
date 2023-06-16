@@ -1,0 +1,74 @@
+# Copyright (c) 2023 Linumiz
+# SPDX-License-Identifier: Apache-2.0
+
+config OCPP
+	bool "Open Charge Point Protocol"
+	depends on JSONC
+	help
+	  This option enables the open charge poin protocol library
+
+if OCPP
+
+config OCPP_INT_THREAD_STACKSIZE
+	int "OCPP internal thread stacksize"
+	default 4096
+	help
+	   OCPP internal thread stacksize
+
+config OCPP_WSREADER_THREAD_STACKSIZE
+	int "OCPP websocket reader thread stacksize"
+	default 4096
+	help
+	   OCPP websocket reader thread stacksize
+
+config OCPP_RECV_BUFFER_SIZE
+	int "OCPP websocket recive buffer size"
+	default 2048
+	help
+	   OCPP websocket recive buffer size
+
+config OCPP_INTERNAL_MSGQ_CNT
+	int "OCPP internal message queue count"
+	default 10
+	help
+	   Messages communication between websocket reader and internal
+	   process thread
+
+config OCPP_MSG_JSON
+	bool "PDU message format as JSON"
+	default y
+	help
+	   If y, then the Charge Point and Central System PDU message format
+	   as JSON
+
+config OCPP_PROFILE_SMART_CHARGE
+	bool "OCPP profile smart charging"
+	default n
+	help
+	  choose to y to enable smart charging profile
+
+config OCPP_PROFILE_REMOTE_TRIG
+	bool "OCPP profile remote trigger"
+	default n
+	help
+	  choose to y to enable remote trigger profile
+
+config OCPP_PROFILE_RESERVATION
+	bool "OCPP profile reservation"
+	default n
+	help
+	  choose to y to enable reservation profile
+
+config OCPP_PROFILE_LOCAL_AUTH_LIST
+	bool "OCPP profile local authorization list"
+	default n
+	help
+	  choose to y to enable local authorization list profile
+
+config OCPP_PROFILE_FIRMWARE_MGNT
+	bool "OCPP profile firmware management"
+	default n
+	help
+	  choose to y to enable firmware management profile
+
+endif # OCPP
