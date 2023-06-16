@@ -477,6 +477,7 @@ Boards & SoC Support
   * STM32C0 series are now supported (with introduction of STM32C031 SoC).
   * STM32H5 series are now supported (with introduction of STM32H503 and STM32H573 SoCs).
   * Added support for STM32U599 SoC variants
+  * Nordic Semiconductor nRF9161
 
 * Removed support for these SoC series:
 
@@ -546,6 +547,8 @@ Boards & SoC Support
   * ``nrf9160dk_nrf9160``: Changed the order of buttons and switches on the GPIO
     expander to match the order when using GPIO directly on the nRF9160 SoC.
   * ``STM32H747i_disco``: Enabled support for ST B-LCD40-DSI1 display extension
+  * ``qemu_cortex_m0``: Fixed prescaler of the system timer so that its frequency
+    is actually 1 MHz, not 2 MHz.
 
 * Made these changes for ARM64 boards:
 
@@ -734,22 +737,23 @@ Drivers and Sensors
 
 * ADC
 
- * MCUX LPADC driver now uses the channel parameter to select a software channel
-   configuration buffer. Use ``zephyr,input-positive`` and
-   ``zephyr,input-negative`` devicetree properties to select the hardware
-   channel(s) to link a software channel configuration to.
-
- * MCUX LPADC driver ``voltage-ref`` and ``power-level`` devicetree properties
-   were shifted to match the hardware as described in reference manual instead
-   of matching the NXP SDK enum identifers.
-
- * Added support for STM32C0 and STM32H5.
-
- * Added DMA support for STM32H7.
-
- * STM32: Resolutions are now listed in the device tree for each ADC instance
-
- * STM32: Sampling times are now listed in the device tree for each ADC instance
+  * MCUX LPADC driver now uses the channel parameter to select a software channel
+    configuration buffer. Use ``zephyr,input-positive`` and
+    ``zephyr,input-negative`` devicetree properties to select the hardware
+    channel(s) to link a software channel configuration to.
+  * MCUX LPADC driver ``voltage-ref`` and ``power-level`` devicetree properties
+    were shifted to match the hardware as described in reference manual instead
+    of matching the NXP SDK enum identifers.
+  * Added support for STM32C0 and STM32H5.
+  * Added DMA support for STM32H7.
+  * STM32: Resolutions are now listed in the device tree for each ADC instance
+  * STM32: Sampling times are now listed in the device tree for each ADC instance
+  * Added driver for Atmel SAM family ADC.
+  * Added driver for Gecko Incremental ADC.
+  * Added driver for Infineon CAT1 ADC.
+  * Added driver for TI ADS7052.
+  * Added driver for TI ADS114S0x family.
+  * Added drivers for Renesas SmartBond GPADC and SDADC.
 
 * Battery-backed RAM
 
@@ -934,6 +938,7 @@ Drivers and Sensors
 
   * Added support for STM32C0.
   * STM32: Now supports 6-PWM channels
+  * Added PWM driver for Microchip XEC BBLED.
 
 * Power domain
 
@@ -1376,6 +1381,10 @@ Libraries / Subsystems
 
 HALs
 ****
+
+* Nordic
+
+  * Updated nrfx to version 3.0.0.
 
 * STM32
 
