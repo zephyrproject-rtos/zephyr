@@ -332,6 +332,15 @@ int img_mgmt_state_confirm(void);
  */
 int img_mgmt_vercmp(const struct image_version *a, const struct image_version *b);
 
+#if IS_ENABLED(CONFIG_MCUMGR_GRP_IMG_MUTEX)
+/*
+ * @brief	Will reset the image management state back to default (no ongoing upload),
+ *		requires that CONFIG_MCUMGR_GRP_IMG_MUTEX be enabled to allow for mutex
+ *		locking of the image management state object.
+ */
+void img_mgmt_reset_upload(void);
+#endif
+
 #ifdef CONFIG_MCUMGR_SMP_SUPPORT_ORIGINAL_PROTOCOL
 /*
  * @brief	Translate IMG mgmt group error code into MCUmgr error code
