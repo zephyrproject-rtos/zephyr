@@ -7,3 +7,5 @@ tests:
   drivers.adc:
     depends_on: adc
     min_flash: 40
+    integration_platforms:
+      - native_posix
