@@ -12,16 +12,30 @@
  #include "em_cmu.h"
 
 #if defined(CONFIG_CRYPTO_ACC_GECKO_TRNG)
+
+/*
+ * Select the correct Crypto ACC FIFO memory base address.
+ *
+ * Problem: Gecko SDK doesn't provide macros that check if SL_TRUSTZONE is used or not for Crypto
+ * ACC RNGOUT FIFO memory base address, like it does for register address definitions.
+ *
+ * Solution: Check which register base address is used for the Crypto ACC peripheral and select an
+ * appropriate FIFO memory base address.
+ */
+#if (CRYPTOACC_BASE == CRYPTOACC_S_BASE)
+#define S2_FIFO_BASE CRYPTOACC_RNGOUT_FIFO_S_MEM_BASE
+#else
+#define S2_FIFO_BASE CRYPTOACC_RNGOUT_FIFO_MEM_BASE
+#endif
+
 /**
  * Series 2 SoCs have different TRNG register definitions
  */
 #if defined(_SILICON_LABS_32B_SERIES_2_CONFIG_2)	/* xG22 */
-#define S2_FIFO_BASE	(CRYPTOACC_RNGOUT_FIFO_S_MEM_BASE)
 #define S2_FIFO_LEVEL	(CRYPTOACC_RNGCTRL->FIFOLEVEL)
 #define S2_CTRL		(CRYPTOACC_RNGCTRL->RNGCTRL)
 #define S2_CTRL_ENABLE	(CRYPTOACC_RNGCTRL_ENABLE)
 #elif defined(_SILICON_LABS_32B_SERIES_2_CONFIG_7)	/* xG27 */
-#define S2_FIFO_BASE	(CRYPTOACC_RNGOUT_FIFO_S_MEM_BASE)
 #define S2_FIFO_LEVEL	(CRYPTOACC->NDRNG_FIFOLEVEL)
 #define S2_CTRL		(CRYPTOACC->NDRNG_CONTROL)
 #define S2_CTRL_ENABLE	(CRYPTOACC_NDRNG_CONTROL_ENABLE)
