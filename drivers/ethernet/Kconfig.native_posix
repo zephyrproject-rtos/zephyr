@@ -5,7 +5,7 @@
 
 menuconfig ETH_NATIVE_POSIX
 	bool "Native Posix Ethernet driver"
-	depends on ARCH_POSIX
+	depends on ARCH_POSIX && EXTERNAL_LIBC
 	help
 	  Enable native posix ethernet driver. Note, this driver is run inside
 	  a process in your host system.
