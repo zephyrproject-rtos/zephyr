@@ -220,7 +220,7 @@ int spsc_pbuf_read(struct spsc_pbuf *pb, char *buf, uint16_t len);
  * @brief Claim packet from the buffer.
  *
  * It claims a single packet from the buffer in the order of the commitment
- * by the @ref spsc_pbuf_commit function. The first commited packet will be claimed first.
+ * by the @ref spsc_pbuf_commit function. The first committed packet will be claimed first.
  * The returned buffer is 32 bit word aligned and points to the continuous memory.
  * Claimed packet must be freed using the @ref spsc_pbuf_free function.
  *
