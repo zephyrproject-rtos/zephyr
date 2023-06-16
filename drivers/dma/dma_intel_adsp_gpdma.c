@@ -292,7 +292,7 @@ static void intel_adsp_gpdma_release_ownership(const struct device *dev)
 #ifdef CONFIG_SOC_SERIES_INTEL_ACE
 	const struct intel_adsp_gpdma_cfg *const dev_cfg = dev->config;
 	uint32_t reg = dev_cfg->shim + GPDMA_CTL_OFFSET;
-	uint32_t val = sys_read32(reg) & ~GPDMA_OSEL(0x0);
+	uint32_t val = sys_read32(reg) & ~GPDMA_OSEL(0x3);
 
 	sys_write32(val, reg);
 	/* CHECKME: Do CAVS platforms set ownership over DMA,
