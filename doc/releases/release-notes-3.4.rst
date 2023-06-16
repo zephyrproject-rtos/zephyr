@@ -11,7 +11,7 @@ Major enhancements with this release include:
 
 * Input subsystem: handles input events from various types of input devices and
   distributes them to other threads in the application.
-* Barrier API: add architecture agnostic API for data memory barriers.
+* Barrier API: added architecture agnostic API for data memory barriers.
 * USB Device support:
 
   * USB device controller API (UDC API) and nRF USBD controller driver.
@@ -778,7 +778,7 @@ Drivers and Sensors
 
 * Clock control
 
-  * Atmel SAM/SAM0: Introduce peripheral clock control.
+  * Atmel SAM/SAM0: Introduced peripheral clock control.
   * Atmel SAM0: Improved ``samd20``/``samd21``/``samr21`` clocking mechanism.
   * STM32F4: Added support for PLL I2S
 
@@ -966,7 +966,7 @@ Drivers and Sensors
 
 * Serial
 
-  * Add UART3 and UART4 configuration for ``gd32vf103`` SoCs.
+  * Added UART3 and UART4 configuration for ``gd32vf103`` SoCs.
   * uart_altera: added new driver for Altera Avalon UART.
   * uart_emul: added new driver for emulated UART.
   * uart_esp32:
