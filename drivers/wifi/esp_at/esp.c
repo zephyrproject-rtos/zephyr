@@ -1170,11 +1170,14 @@ static void esp_init_work(struct k_work *work)
 	LOG_INF("ESP Wi-Fi ready");
 
 	net_if_carrier_on(dev->net_iface);
+
+	k_sem_give(&dev->sem_if_up);
 }
 
 static int esp_reset(const struct device *dev)
 {
 	struct esp_data *data = dev->data;
+	int ret;
 
 	if (net_if_is_carrier_ok(data->net_iface)) {
 		net_if_carrier_off(data->net_iface);
@@ -1193,7 +1196,6 @@ static int esp_reset(const struct device *dev)
 	k_sleep(K_MSEC(100));
 	gpio_pin_set_dt(&config->reset, 0);
 #else
-	int ret;
 	int retries = 3;
 
 	while (retries--) {
@@ -1210,7 +1212,14 @@ static int esp_reset(const struct device *dev)
 		return -EAGAIN;
 	}
 #endif
-	return 0;
+	LOG_INF("Waiting for interface to come up");
+
+	ret = k_sem_take(&data->sem_if_up, ESP_INIT_TIMEOUT);
+	if (ret == -EAGAIN) {
+		LOG_ERR("Timeout waiting for interface");
+	}
+
+	return ret;
 }
 
 static void esp_iface_init(struct net_if *iface)
@@ -1256,6 +1265,7 @@ static int esp_init(const struct device *dev)
 	k_sem_init(&data->sem_tx_ready, 0, 1);
 	k_sem_init(&data->sem_response, 0, 1);
 	k_sem_init(&data->sem_if_ready, 0, 1);
+	k_sem_init(&data->sem_if_up, 0, 1);
 
 	k_work_init(&data->init_work, esp_init_work);
 	k_work_init_delayable(&data->ip_addr_work, esp_ip_addr_work);
