@@ -138,7 +138,7 @@
  * will result in:
  *
  * @code{.unparsed}
- *    FOOBAR 0x20010000 (NOLOAD) :
+ *    FOOBAR (NOLOAD) :
  *    {
  *        __FOOBAR_start = .;
  *        KEEP(*(FOOBAR))
@@ -152,7 +152,7 @@
  * @param node_id devicetree node identifier
  */
 #define _SECTION_DECLARE(node_id)								\
-	LINKER_DT_NODE_REGION_NAME_TOKEN(node_id) DT_REG_ADDR(node_id) (NOLOAD) :		\
+	LINKER_DT_NODE_REGION_NAME_TOKEN(node_id) (NOLOAD) :					\
 	{											\
 		_DT_SECTION_START(node_id) = .;							\
 		KEEP(*(LINKER_DT_NODE_REGION_NAME_TOKEN(node_id)))				\
