@@ -1220,7 +1220,6 @@ static int esp_reset(const struct device *dev)
 
 static void esp_iface_init(struct net_if *iface)
 {
-	net_if_carrier_off(iface);
 	esp_offload_init(iface);
 }
 
