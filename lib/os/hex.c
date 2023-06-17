@@ -65,7 +65,7 @@ size_t hex2bin(const char *hex, size_t hexlen, uint8_t *buf, size_t buflen)
 	}
 
 	/* if hexlen is uneven, insert leading zero nibble */
-	if (hexlen % 2U) {
+	if ((hexlen % 2U) != 0) {
 		if (char2hex(hex[0], &dec) < 0) {
 			return 0;
 		}
