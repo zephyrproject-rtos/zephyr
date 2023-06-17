@@ -431,8 +431,16 @@ int main(void)
 		close(websock4);
 	}
 
+	if (sock4 >= 0) {
+		close(sock4);
+	}
+
 	if (websock6 >= 0) {
 		close(websock6);
+	}
+
+	if (sock6 >= 0) {
+		close(sock6);
 	}
 
 	k_sleep(K_FOREVER);
