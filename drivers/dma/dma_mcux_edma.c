@@ -192,12 +192,12 @@ static int dma_mcux_edma_configure(const struct device *dev, uint32_t channel,
 	unsigned int key;
 	int ret = 0;
 
-	if (slot > DT_INST_PROP(0, dma_requests)) {
-		LOG_ERR("source number is outof scope %d", slot);
+	if (slot >= DT_INST_PROP(0, dma_requests)) {
+		LOG_ERR("source number is out of scope %d", slot);
 		return -ENOTSUP;
 	}
 
-	if (channel > DT_INST_PROP(0, dma_channels)) {
+	if (channel >= DT_INST_PROP(0, dma_channels)) {
 		LOG_ERR("out of DMA channel %d", channel);
 		return -EINVAL;
 	}
