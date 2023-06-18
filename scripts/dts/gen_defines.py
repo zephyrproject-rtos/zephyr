@@ -454,7 +454,7 @@ def write_interrupts(node):
         err(f"Invalid interrupt type specified for {irq!r}")
 
     def encode_zephyr_multi_level_irq(irq, irq_num):
-        # See doc/reference/kernel/other/interrupts.rst for details
+        # See doc/kernel/services/interrupts.rst for details
         # on how this encoding works
 
         irq_ctrl = irq.controller
