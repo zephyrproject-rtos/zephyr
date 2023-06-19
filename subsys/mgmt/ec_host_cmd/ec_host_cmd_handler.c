@@ -274,6 +274,12 @@ FUNC_NORETURN static void ec_host_cmd_thread(void *hc_handle, void *arg2, void *
 			continue;
 		}
 
+		/*
+		 * Pre-emptively clear the entire response buffer so we do not
+		 * have any left over contents from previous host commands.
+		 */
+		memset(args.output_buf, 0, args.output_buf_max);
+
 		status = found_handler->handler(&args);
 
 		ec_host_cmd_send_response(status, &args);
