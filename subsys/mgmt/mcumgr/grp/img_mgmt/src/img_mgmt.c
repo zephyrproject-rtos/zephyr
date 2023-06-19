@@ -426,7 +426,9 @@ img_mgmt_upload(struct smp_streamer *ctxt)
 	bool data_match = false;
 #endif
 
-#if defined(CONFIG_MCUMGR_GRP_IMG_UPLOAD_CHECK_HOOK) || defined(CONFIG_MCUMGR_GRP_IMG_STATUS_HOOKS)
+#if defined(CONFIG_MCUMGR_GRP_IMG_UPLOAD_CHECK_HOOK) ||	\
+defined(CONFIG_MCUMGR_GRP_IMG_STATUS_HOOKS) ||		\
+defined(CONFIG_MCUMGR_SMP_COMMAND_STATUS_HOOKS)
 	enum mgmt_cb_return status;
 	int32_t ret_rc;
 	uint16_t ret_group;
