@@ -232,6 +232,11 @@ Devicetree
 Libraries / Subsystems
 **********************
 
+* Management
+
+  * Added response checking to MCUmgr's :c:enumerator:`MGMT_EVT_OP_CMD_RECV`
+    notification callback to allow applications to reject MCUmgr commands.
+
 HALs
 ****
 
