@@ -695,7 +695,7 @@ board_check_revision() details
 .. code-block:: cmake
 
    board_check_revision(FORMAT <LETTER | NUMBER | MAJOR.MINOR.PATCH>
-                        [EXACT]
+                        [OPTIONAL EXACT]
                         [DEFAULT_REVISION <revision>]
                         [HIGHEST_REVISION <revision>]
                         [VALID_REVISIONS <revision> [<revision> ...]]
@@ -711,6 +711,12 @@ This function supports the following arguments:
   Kconfig fragment and devicetree overlay files must use full numbering to avoid
   ambiguity, so only :file:`<board>_1_0_0.conf` and
   :file:`<board>_1_0_0.overlay` are allowed.
+
+* ``OPTIONAL``: if given, a revision is not required to be specified.
+  If the revision is not supplied, the base board is used with no overlays.
+  Can be combined with ``EXACT``, in which case providing the revision is
+  optional, but if given the ``EXACT`` rules apply. Mutually exclusive with
+  ``DEFAULT_REVISION``.
 
 * ``EXACT``: if given, the revision is required to be an exact match.
   Otherwise, the closest matching revision not greater than the user's choice
