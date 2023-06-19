@@ -1,16 +1,11 @@
 common:
-  depends_on: netif
+  platform_key:
+    - simulation
   tags:
-    - net
     - lwm2m
-  platform_allow:
-    - native_posix
-    - qemu_x86
-    - qemu_x86_64
+    - net
   integration_platforms:
     - native_posix
-    - qemu_x86
-
 tests:
   net.lwm2m.lwm2m_rd_client:
     extra_args: EXTRA_CFLAGS=""
