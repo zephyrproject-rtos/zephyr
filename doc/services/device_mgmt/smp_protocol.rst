@@ -123,8 +123,7 @@ groups. The following table presents a list of common groups:
     +---------------+-----------------------------------------------+
     | ``2``         | :ref:`mcumgr_smp_group_2`                     |
     +---------------+-----------------------------------------------+
-    | ``3``         | Application/system configuration              |
-    |               | (currently not used by Zephyr)                |
+    | ``3``         | :ref:`mcumgr_smp_group_3`                     |
     +---------------+-----------------------------------------------+
     | ``4``         | Application/system log management             |
     |               | (currently not used by Zephyr)                |
@@ -190,5 +189,6 @@ Specifications of management groups supported by Zephyr
     smp_groups/smp_group_0.rst
     smp_groups/smp_group_1.rst
     smp_groups/smp_group_2.rst
+    smp_groups/smp_group_3.rst
     smp_groups/smp_group_8.rst
     smp_groups/smp_group_9.rst
