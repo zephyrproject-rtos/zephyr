@@ -380,8 +380,15 @@ static struct bt_le_per_adv_sync_cb pa_sync_cb =  {
 static int cmd_bap_scan_delegator_init(const struct shell *sh, size_t argc,
 				       char **argv)
 {
-	bt_le_per_adv_sync_cb_register(&pa_sync_cb);
-	bt_bap_scan_delegator_register_cb(&scan_delegator_cb);
+	static bool registered;
+
+	if (!registered) {
+		bt_le_per_adv_sync_cb_register(&pa_sync_cb);
+		bt_bap_scan_delegator_register_cb(&scan_delegator_cb);
+
+		registered = true;
+	}
+
 	return 0;
 }
 static int cmd_bap_scan_delegator_set_past_pref(const struct shell *sh,
