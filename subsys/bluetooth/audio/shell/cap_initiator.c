@@ -462,7 +462,7 @@ static int cmd_cap_initiator_unicast_stop(const struct shell *sh, size_t argc,
 		shell_error(sh, "Not connected");
 		return -ENOEXEC;
 	} else if (default_unicast_group == NULL) {
-		shell_error(sh, "No unicast group starteds");
+		shell_error(sh, "No unicast group started");
 		return -ENOEXEC;
 	}
 
