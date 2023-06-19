@@ -41,6 +41,13 @@
 			#pwrcfg-cells = <2>;
 		};
 
+		stimer0: stimer@40008800 {
+			compatible = "ambiq,stimer";
+			reg = <0x40008800 0x80>;
+			interrupts = <32 0>;
+			status = "okay";
+		};
+
 		uart0: uart@4001c000 {
 			compatible = "ambiq,uart", "arm,pl011";
 			reg = <0x4001c000 0x1000>;
