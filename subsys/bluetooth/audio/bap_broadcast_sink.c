@@ -832,8 +832,8 @@ static uint16_t interval_to_sync_timeout(uint16_t interval)
 static void sync_broadcast_pa(const struct bt_le_scan_recv_info *info,
 			      uint32_t broadcast_id)
 {
+	struct bt_le_per_adv_sync_param param = {0};
 	struct bt_bap_broadcast_sink_cb *listener;
-	struct bt_le_per_adv_sync_param param;
 	struct bt_bap_broadcast_sink *sink;
 	int err;
 
@@ -853,7 +853,7 @@ static void sync_broadcast_pa(const struct bt_le_scan_recv_info *info,
 	}
 
 	bt_addr_le_copy(&param.addr, info->addr);
-	param.options = 0;
+	param.options = BT_LE_PER_ADV_SYNC_OPT_FILTER_DUPLICATE;
 	param.sid = info->sid;
 	param.skip = PA_SYNC_SKIP;
 	param.timeout = interval_to_sync_timeout(info->interval);
