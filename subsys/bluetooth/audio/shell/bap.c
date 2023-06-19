@@ -1649,34 +1649,46 @@ static struct bt_bap_broadcast_sink_cb sink_cbs = {
 #endif /* CONFIG_BT_BAP_BROADCAST_SINK */
 
 #if defined(CONFIG_BT_AUDIO_RX)
+static size_t lost_pkts;
+static size_t err_pkts;
+static size_t dup_psn;
+static size_t rx_cnt;
+static size_t dup_ts;
+
 static void audio_recv(struct bt_bap_stream *stream,
 		       const struct bt_iso_recv_info *info,
 		       struct net_buf *buf)
 {
 	static struct bt_iso_recv_info last_info;
-	static size_t rx_cnt;
+
+	rx_cnt++;
+
+	if (info->ts == last_info.ts) {
+		dup_ts++;
+	}
+
+	if (info->seq_num == last_info.seq_num) {
+		dup_psn++;
+	}
+
+	if (info->flags & BT_ISO_FLAGS_ERROR) {
+		err_pkts++;
+	}
+
+	if (info->flags & BT_ISO_FLAGS_LOST) {
+		lost_pkts++;
+	}
 
 	/* TODO: Make it possible to only print every X packets, and make X settable by the shell */
 	if ((rx_cnt % 100) == 0) {
 		shell_print(ctx_shell,
-			    "[%zu]: Incoming audio on stream %p len %u ts %u seq_num %u flags %u",
-			    rx_cnt, stream, buf->len, info->ts, info->seq_num,
-			    info->flags);
-	}
-
-	if (info->ts == last_info.ts) {
-		shell_error(ctx_shell, "[%zu]: Duplicate TS: %u",
-			    rx_cnt, info->ts);
-	}
-
-	if (info->seq_num == last_info.seq_num) {
-		shell_error(ctx_shell, "[%zu]: Duplicate seq_num: %u",
-			    rx_cnt, info->seq_num);
+			    "[%zu]: Incoming audio on stream %p len %u ts %u seq_num %u flags %u "
+			    "(dup ts %zu; dup psn %zu, err_pkts %zu, lost_pkts %zu)",
+			    rx_cnt, stream, buf->len, info->ts, info->seq_num, info->flags, dup_ts,
+			    dup_psn, err_pkts, lost_pkts);
 	}
 
 	(void)memcpy(&last_info, info, sizeof(last_info));
-
-	rx_cnt++;
 }
 #endif /* CONFIG_BT_AUDIO_RX */
 
@@ -1720,6 +1732,14 @@ static void stream_enabled_cb(struct bt_bap_stream *stream)
 static void stream_started_cb(struct bt_bap_stream *stream)
 {
 	printk("Stream %p started\n", stream);
+
+#if defined(CONFIG_BT_AUDIO_RX)
+	lost_pkts = 0U;
+	err_pkts = 0U;
+	dup_psn = 0U;
+	rx_cnt = 0U;
+	dup_ts = 0U;
+#endif
 }
 
 static void stream_stopped_cb(struct bt_bap_stream *stream, uint8_t reason)
