@@ -16,7 +16,7 @@ licensing in this document.
 .. _GPLv2 License:
    https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/COPYING
 
-*scripts/{checkpatch.pl,checkstack.pl,get_maintainers.pl,spelling.txt}*
+*scripts/{checkpatch.pl,checkstack.pl,spelling.txt}*
   *Origin:* Linux Kernel
 
   *Licensing:* `GPLv2 License`_
