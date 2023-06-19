@@ -439,6 +439,7 @@ opalkelly	Opal Kelly Incorporated
 opencores	OpenCores.org
 openisa	open-isa.org
 openrisc	OpenRISC.io
+openthread	OpenThread.io
 option	Option NV
 oranth	Shenzhen Oranth Technology Co., Ltd.
 ORCL	Oracle Corporation
