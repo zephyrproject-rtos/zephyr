@@ -1,0 +1,15 @@
+# Copyright (c) 2023 Laczen
+# SPDX-License-Identifier: Apache-2.0
+
+description: Boot information area stored on bbram
+
+compatible: "zephyr,boot-info-bbram"
+
+include: base.yaml
+
+properties:
+  backend:
+    type: phandle
+    required: true
+    description: |
+      Battery backend-up ram used to store the bootinfo.

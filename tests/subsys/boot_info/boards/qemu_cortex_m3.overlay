@@ -1,0 +1,28 @@
+/*
+ * Copyright (c) 2023 Laczen
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <common/mem.h>
+
+/ {
+	bi_region: sram@2000FFE0 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x2000FFE0 0x20>;
+                zephyr,memory-region = "BI_REGION";
+        };
+
+        boot_info: boot_info {
+                compatible = "zephyr,boot-info-ram";
+                backend = <&bi_region>;
+        };
+
+        aliases {
+                bi = &boot_info;
+        };
+
+};
+
+&sram0 {
+	reg = <0x20000000 0xFFE0>;
+};

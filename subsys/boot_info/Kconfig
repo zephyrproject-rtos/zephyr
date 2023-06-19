@@ -1,0 +1,16 @@
+# Copyright (c) 2023 Laczen
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig BOOT_INFO
+	bool "Boot Information Area"
+	help
+	  Enable boot information area access with different backend solutions.
+	  The boot information area can be stored on bbram, ram, ...
+
+if BOOT_INFO
+
+module = BOOT_INFO
+module-str = boot_info
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # BOOT_INFO

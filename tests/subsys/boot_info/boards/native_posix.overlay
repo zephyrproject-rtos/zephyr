@@ -1,0 +1,21 @@
+/*
+ * Copyright (c) 2023 Laczen
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	bbram_emu: bbram_emu {
+		compatible = "zephyr,bbram-emul";
+		size = <0x20>;
+        };
+
+        boot_info: boot_info {
+                compatible = "zephyr,boot-info-bbram";
+                backend = <&bbram_emu>;
+        };
+
+        aliases {
+                bi = &boot_info;
+        };
+
+};

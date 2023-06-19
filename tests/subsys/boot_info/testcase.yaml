@@ -1,0 +1,15 @@
+common:
+  depends_on: boot_info
+  tags: boot_info
+  platform_allow:
+    - qemu_cortex_m3
+    - qemu_x86
+    - native_posix
+    - nucleo_f411re
+tests:
+  boot_info.cortex_m3.api:
+    platform_allow: qemu_cortex_m3
+    timeout: 60
+  boot_info.qemu_x86.api:
+    platform_allow: qemu_x86
+    timeout: 60
