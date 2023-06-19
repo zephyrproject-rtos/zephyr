@@ -201,11 +201,13 @@
 			compatible = "andestech,machine-timer";
 			reg = <0xe6000000 0x10>;
 			interrupts-extended = <&CPU0_intc 7 &CPU1_intc 7
-					       &CPU2_intc 7 &CPU3_intc 7>;
+					       &CPU2_intc 7 &CPU3_intc 7
+					       &CPU4_intc 7 &CPU5_intc 7
+					       &CPU6_intc 7 &CPU7_intc 7>;
 		};
 
 		syscon: syscon@f0100000 {
-			compatible = "syscon";
+			compatible = "syscon", "andestech,atcsmu100";
 			reg = <0xf0100000 0x1000>;
 			status = "disabled";
 		};
