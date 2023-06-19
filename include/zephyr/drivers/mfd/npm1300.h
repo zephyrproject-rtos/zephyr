@@ -32,8 +32,8 @@ extern "C" {
  * @retval 0 If successful
  * @retval -errno In case of any bus error (see i2c_write_read_dt())
  */
-int mfd_npm1300_reg_read_burst(const struct device *dev, uint8_t base, uint8_t offset,
-			       void *data, size_t len);
+int mfd_npm1300_reg_read_burst(const struct device *dev, uint8_t base, uint8_t offset, void *data,
+			       size_t len);
 
 /**
  * @brief Read single register from npm1300
@@ -86,6 +86,17 @@ int mfd_npm1300_reg_write2(const struct device *dev, uint8_t base, uint8_t offse
  */
 int mfd_npm1300_reg_update(const struct device *dev, uint8_t base, uint8_t offset, uint8_t data,
 			   uint8_t mask);
+
+/**
+ * @brief Write npm1300 timer register
+ *
+ * @param dev npm1300 mfd device
+ * @param time_ms timer value in ms
+ * @retval 0 If successful
+ * @retval -EINVAL if time value is too large
+ * @retval -errno In case of any bus error (see i2c_write_dt())
+ */
+int mfd_npm1300_set_timer(const struct device *dev, uint32_t time_ms);
 
 /** @} */
 
