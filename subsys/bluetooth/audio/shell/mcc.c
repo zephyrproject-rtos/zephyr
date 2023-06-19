@@ -837,7 +837,7 @@ static int cmd_mcc_set_current_track_obj_id(const struct shell *sh, size_t argc,
 	}
 
 	if (!IN_RANGE(id, BT_OTS_OBJ_ID_MIN, BT_OTS_OBJ_ID_MAX)) {
-		shell_error(sh, "Invalid id: %lu", id);
+		shell_error(sh, "Invalid id: %llu", id);
 
 		return -ENOEXEC;
 	}
@@ -875,7 +875,7 @@ static int cmd_mcc_set_next_track_obj_id(const struct shell *sh, size_t argc,
 	}
 
 	if (!IN_RANGE(id, BT_OTS_OBJ_ID_MIN, BT_OTS_OBJ_ID_MAX)) {
-		shell_error(sh, "Invalid id: %lu", id);
+		shell_error(sh, "Invalid id: %llu", id);
 
 		return -ENOEXEC;
 	}
@@ -925,7 +925,7 @@ static int cmd_mcc_set_current_group_obj_id(const struct shell *sh, size_t argc,
 	}
 
 	if (!IN_RANGE(id, BT_OTS_OBJ_ID_MIN, BT_OTS_OBJ_ID_MAX)) {
-		shell_error(sh, "Invalid id: %lu", id);
+		shell_error(sh, "Invalid id: %llu", id);
 
 		return -ENOEXEC;
 	}
@@ -1691,7 +1691,7 @@ static int cmd_mcc_otc_select(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	if (!IN_RANGE(id, BT_OTS_OBJ_ID_MIN, BT_OTS_OBJ_ID_MAX)) {
-		shell_error(sh, "Invalid id: %lu", id);
+		shell_error(sh, "Invalid id: %llu", id);
 
 		return -ENOEXEC;
 	}
