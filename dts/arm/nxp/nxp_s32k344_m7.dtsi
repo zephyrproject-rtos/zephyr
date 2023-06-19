@@ -642,6 +642,12 @@
 					status = "disabled";
 				};
 			};
+
+			pwm {
+				compatible = "nxp,s32-emios-pwm";
+				#pwm-cells = <2>;
+				status = "disabled";
+			};
 		};
 
 		emios1: emios@4008c000 {
@@ -688,6 +694,12 @@
 					status = "disabled";
 				};
 			};
+
+			pwm {
+				compatible = "nxp,s32-emios-pwm";
+				#pwm-cells = <2>;
+				status = "disabled";
+			};
 		};
 
 		emios2: emios@40090000 {
@@ -733,6 +745,12 @@
 					channel-mask = <0x0BFFFFF>;
 					status = "disabled";
 				};
+			};
+
+			pwm {
+				compatible = "nxp,s32-emios-pwm";
+				#pwm-cells = <2>;
+				status = "disabled";
 			};
 		};
 	};
