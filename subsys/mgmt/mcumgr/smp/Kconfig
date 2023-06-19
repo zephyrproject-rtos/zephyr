@@ -35,6 +35,8 @@ config MCUMGR_SMP_CBOR_MIN_DECODING_LEVELS
 	  A group or command that adds additional maps/lists above the
 	  base map, which is already taken into account, should
 	  select one of the MCUMGR_SMP_CBOR_MIN_DECODING_LEVEL_?.
+	default 7 if MCUMGR_SMP_CBOR_MIN_DECODING_LEVEL_7
+	default 6 if MCUMGR_SMP_CBOR_MIN_DECODING_LEVEL_6
 	default 5 if MCUMGR_SMP_CBOR_MIN_DECODING_LEVEL_5
 	default 4 if MCUMGR_SMP_CBOR_MIN_DECODING_LEVEL_4
 	default 3 if MCUMGR_SMP_CBOR_MIN_DECODING_LEVEL_3
@@ -57,8 +59,14 @@ config MCUMGR_SMP_CBOR_MIN_DECODING_LEVEL_4
 config MCUMGR_SMP_CBOR_MIN_DECODING_LEVEL_5
 	bool
 
+config MCUMGR_SMP_CBOR_MIN_DECODING_LEVEL_6
+	bool
+
+config MCUMGR_SMP_CBOR_MIN_DECODING_LEVEL_7
+	bool
+
 config MCUMGR_SMP_CBOR_MAX_DECODING_LEVELS
-	int "Number of map/list encapsulations allowed by SMP encoding"
+	int "Number of map/list encapsulations allowed for SMP decoding"
 	range MCUMGR_SMP_CBOR_MIN_DECODING_LEVELS 15
 	default MCUMGR_SMP_CBOR_MIN_DECODING_LEVELS
 	help
@@ -72,6 +80,56 @@ config MCUMGR_SMP_CBOR_MAX_DECODING_LEVELS
 	  it will need 2 levels.
 	  This number translates to zcbor backup states, it increases
 	  size of cbor_nb_reader structure by zcbor_state_t size per
+	  one unit selected here.
+
+config MCUMGR_SMP_CBOR_MIN_ENCODING_LEVELS
+	int
+	help
+	  Minimal encoding levels, map/list encapsulation, required
+	  to be supported by zcbor encoding of SMP responses
+	  is auto genereated from MCUMGR_SMP_CBOR_MIN_ENCODING_LEVEL_? options.
+	  A group or command that adds additional maps/lists above the
+	  base map, which is already taken into account, should
+	  select one of the MCUMGR_SMP_CBOR_MIN_ENCODING_LEVEL_?.
+	default 7 if MCUMGR_SMP_CBOR_MIN_ENCODING_LEVEL_7
+	default 6 if MCUMGR_SMP_CBOR_MIN_ENCODING_LEVEL_6
+	default 5 if MCUMGR_SMP_CBOR_MIN_ENCODING_LEVEL_5
+	default 4 if MCUMGR_SMP_CBOR_MIN_ENCODING_LEVEL_4
+	default 3 if MCUMGR_SMP_CBOR_MIN_ENCODING_LEVEL_3
+	default 2 if MCUMGR_SMP_CBOR_MIN_ENCODING_LEVEL_2
+	default 1 if MCUMGR_SMP_CBOR_MIN_ENCODING_LEVEL_1 || ZCBOR_CANONICAL
+	default 0
+
+config MCUMGR_SMP_CBOR_MIN_ENCODING_LEVEL_1
+	bool
+
+config MCUMGR_SMP_CBOR_MIN_ENCODING_LEVEL_2
+	bool
+
+config MCUMGR_SMP_CBOR_MIN_ENCODING_LEVEL_3
+	bool
+
+config MCUMGR_SMP_CBOR_MIN_ENCODING_LEVEL_4
+	bool
+
+config MCUMGR_SMP_CBOR_MIN_ENCODING_LEVEL_5
+	bool
+
+config MCUMGR_SMP_CBOR_MIN_ENCODING_LEVEL_6
+	bool
+
+config MCUMGR_SMP_CBOR_MIN_ENCODING_LEVEL_7
+	bool
+
+config MCUMGR_SMP_CBOR_MAX_ENCODING_LEVELS
+	int "Number of map/list encapsulations allowed for SMP encoding"
+	range MCUMGR_SMP_CBOR_MIN_ENCODING_LEVELS 15
+	default MCUMGR_SMP_CBOR_MIN_ENCODING_LEVELS
+	help
+	  This is a maximum number of levels of maps/lists that will
+	  be encoded within different comm&& groups.
+	  This number translates to zcbor backup states, it increases
+	  size of cbor_nb_writer structure by zcbor_state_t size per
 	  one unit selected here.
 
 config MCUMGR_SMP_COMMAND_STATUS_HOOKS
