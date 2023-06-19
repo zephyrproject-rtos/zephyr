@@ -29,6 +29,7 @@ import re
 import argparse
 import os
 import json
+from pathlib import PurePath
 
 regex_flags = re.MULTILINE | re.VERBOSE
 
@@ -100,6 +101,8 @@ def analyze_headers(include_dir, scan_dir, file_list):
                         path.endswith(os.path.join(os.sep, 'toolchain',
                                                    'common.h'))):
                     continue
+
+                path = PurePath(os.path.normpath(path)).as_posix()
 
                 if path not in syscall_files:
                     if include_dir and base_path in include_dir:
