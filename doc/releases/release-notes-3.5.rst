@@ -347,6 +347,10 @@ Libraries / Subsystems
   * Added optional mutex locking support to MCUmgr img_mgmt group, which can
     be enabled with :kconfig:option:`CONFIG_MCUMGR_GRP_IMG_MUTEX`.
 
+  * Added MCUmgr settings management group, which allows for manipulation of
+    zephyr settings from a remote device, see :ref:`mcumgr_smp_group_3` for
+    details.
+
 * File systems
 
   * Added support for ext2 file system.
