@@ -119,44 +119,26 @@
 
 /* FIR config */
 
-/* Control for the FIR decimator (channel A) */
-#define FIR_CONTROL_A		0x020
+/* Control for the FIR decimator */
+#define FIR_CONTROL		0x020
 
-/* Configuration of FIR decimator parameters (channel A) */
-#define FIR_CONFIG_A		0x024
-
-/* DC offset for left channel */
-#define DC_OFFSET_LEFT_A	0x028
-
-/* DC offset for right channel */
-#define DC_OFFSET_RIGHT_A	0x02c
-
-/* Gain for left channel */
-#define OUT_GAIN_LEFT_A		0x030
-
-/* Gain for right channel */
-#define OUT_GAIN_RIGHT_A	0x034
-
-/* Control for the FIR decimator (channel B) */
-#define FIR_CONTROL_B		0x040
-
-/* Configuration of FIR decimator parameters (channel B) */
-#define FIR_CONFIG_B		0x044
+/* Configuration of FIR decimator parameters */
+#define FIR_CONFIG		0x024
 
 /* DC offset for left channel */
-#define DC_OFFSET_LEFT_B	0x048
+#define DC_OFFSET_LEFT		0x028
 
 /* DC offset for right channel */
-#define DC_OFFSET_RIGHT_B	0x04c
+#define DC_OFFSET_RIGHT		0x02c
 
 /* Gain for left channel */
-#define OUT_GAIN_LEFT_B		0x050
+#define OUT_GAIN_LEFT		0x030
 
 /* Gain for right channel */
-#define OUT_GAIN_RIGHT_B	0x054
+#define OUT_GAIN_RIGHT		0x034
 
-#define PDM_COEFFICIENT_A	0x400
-#define PDM_COEFFICIENT_B	0x800
+/* Offset to secondary FIR */
+#define FIR_CHANNEL_REGS_SIZE	0x20
 
 
 /* Digital Mic Shim Registers */

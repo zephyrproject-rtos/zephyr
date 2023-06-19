@@ -51,7 +51,7 @@ static int dai_nhlt_get_clock_div(const struct dai_intel_dmic *dmic, const int p
 	p_clkdiv = FIELD_GET(MIC_CONTROL_PDM_CLKDIV, val) + 2;
 
 	val = dai_dmic_read(dmic, base[pdm] +
-			    (dmic->dai_config_params.dai_index ? FIR_CONFIG_B : FIR_CONFIG_A));
+			    FIR_CHANNEL_REGS_SIZE * dmic->dai_config_params.dai_index + FIR_CONFIG);
 	LOG_ERR("pdm = %d, FIR_CONFIG = 0x%08X", pdm, val);
 
 	p_mfir = FIELD_GET(FIR_CONFIG_FIR_DECIMATION, val) + 1;
@@ -503,6 +503,32 @@ static void print_fir_config(const struct nhlt_pdm_ctrl_fir_cfg *fir_cfg)
 	LOG_DBG("OUT_GAIN_RIGHT = %08x", fir_cfg->out_gain_right);
 }
 
+static void configure_fir(struct dai_intel_dmic *dmic, const uint32_t base,
+			  const struct nhlt_pdm_ctrl_fir_cfg *fir_cfg)
+{
+	uint32_t val;
+
+	print_fir_config(fir_cfg);
+
+	/* Use FIR_CONFIG as such */
+	val = fir_cfg->fir_config;
+	dai_dmic_write(dmic, base + FIR_CONFIG, val);
+
+	val = fir_cfg->fir_control;
+	print_fir_control(val);
+
+	/* Clear START, set MUTE */
+	val = (val & ~FIR_CONTROL_START) | FIR_CONTROL_MUTE;
+	dai_dmic_write(dmic, base + FIR_CONTROL, val);
+	LOG_DBG("FIR_CONTROL = %08x", val);
+
+	/* Use DC_OFFSET and GAIN as such */
+	dai_dmic_write(dmic, base + DC_OFFSET_LEFT, fir_cfg->dc_offset_left);
+	dai_dmic_write(dmic, base + DC_OFFSET_RIGHT, fir_cfg->dc_offset_right);
+	dai_dmic_write(dmic, base + OUT_GAIN_LEFT, fir_cfg->out_gain_left);
+	dai_dmic_write(dmic, base + OUT_GAIN_RIGHT, fir_cfg->out_gain_right);
+}
+
 int dai_dmic_set_config_nhlt(struct dai_intel_dmic *dmic, const void *bespoke_cfg)
 {
 	struct nhlt_pdm_ctrl_cfg *pdm_cfg[DMIC_HW_CONTROLLERS_MAX];
@@ -514,7 +540,6 @@ int dai_dmic_set_config_nhlt(struct dai_intel_dmic *dmic, const void *bespoke_cf
 
 	uint32_t out_control[DMIC_HW_FIFOS_MAX] = {0};
 	uint32_t channel_ctrl_mask;
-	uint32_t fir_control;
 	uint32_t pdm_ctrl_mask;
 	uint32_t val;
 	const uint8_t *p = bespoke_cfg;
@@ -650,6 +675,10 @@ int dai_dmic_set_config_nhlt(struct dai_intel_dmic *dmic, const void *bespoke_cf
 			LOG_DBG("dmic_set_config_nhlt(): MIC_CONTROL = %08x", val);
 		}
 
+		configure_fir(dmic, base[n] +
+			      FIR_CHANNEL_REGS_SIZE * dmic->dai_config_params.dai_index,
+			      &pdm_cfg[n]->fir_config[dmic->dai_config_params.dai_index]);
+
 		/* FIR A */
 		fir_cfg_a[n] = &pdm_cfg[n]->fir_config[0];
 		val = fir_cfg_a[n]->fir_config;
@@ -657,32 +686,6 @@ int dai_dmic_set_config_nhlt(struct dai_intel_dmic *dmic, const void *bespoke_cf
 		fir_length_a = fir_length + 1; /* Need for parsing */
 		fir_decimation = FIELD_GET(FIR_CONFIG_FIR_DECIMATION, val);
 		p_mfira = fir_decimation + 1;
-		if (dmic->dai_config_params.dai_index == 0) {
-			print_fir_config(fir_cfg_a[n]);
-
-			/* Use FIR_CONFIG_A as such */
-			dai_dmic_write(dmic, base[n] + FIR_CONFIG_A, val);
-
-			val = fir_cfg_a[n]->fir_control;
-
-			/* Clear START, set MUTE */
-			fir_control = (val & ~FIR_CONTROL_START) | FIR_CONTROL_MUTE;
-			dai_dmic_write(dmic, base[n] + FIR_CONTROL_A, fir_control);
-			LOG_DBG("dmic_set_config_nhlt(): FIR_CONTROL_A = %08x", fir_control);
-
-			/* Use DC_OFFSET and GAIN as such */
-			val = fir_cfg_a[n]->dc_offset_left;
-			dai_dmic_write(dmic, base[n] + DC_OFFSET_LEFT_A, val);
-
-			val = fir_cfg_a[n]->dc_offset_right;
-			dai_dmic_write(dmic, base[n] + DC_OFFSET_RIGHT_A, val);
-
-			val = fir_cfg_a[n]->out_gain_left;
-			dai_dmic_write(dmic, base[n] + OUT_GAIN_LEFT_A, val);
-
-			val = fir_cfg_a[n]->out_gain_right;
-			dai_dmic_write(dmic, base[n] + OUT_GAIN_RIGHT_A, val);
-		}
 
 		/* FIR B */
 		fir_cfg_b[n] = &pdm_cfg[n]->fir_config[1];
@@ -691,32 +694,6 @@ int dai_dmic_set_config_nhlt(struct dai_intel_dmic *dmic, const void *bespoke_cf
 		fir_length_b = fir_length + 1; /* Need for parsing */
 		fir_decimation = FIELD_GET(FIR_CONFIG_FIR_DECIMATION, val);
 		p_mfirb = fir_decimation + 1;
-		if (dmic->dai_config_params.dai_index == 1) {
-			print_fir_config(fir_cfg_b[n]);
-
-			/* Use FIR_CONFIG_B as such */
-			dai_dmic_write(dmic, base[n] + FIR_CONFIG_B, val);
-
-			val = fir_cfg_b[n]->fir_control;
-
-			/* Clear START, set MUTE */
-			fir_control = (val & ~FIR_CONTROL_START) | FIR_CONTROL_MUTE;
-			dai_dmic_write(dmic, base[n] + FIR_CONTROL_B, fir_control);
-			LOG_DBG("dmic_set_config_nhlt(): FIR_CONTROL_B = %08x", fir_control);
-
-			/* Use DC_OFFSET and GAIN as such */
-			val = fir_cfg_b[n]->dc_offset_left;
-			dai_dmic_write(dmic, base[n] + DC_OFFSET_LEFT_B, val);
-
-			val = fir_cfg_b[n]->dc_offset_right;
-			dai_dmic_write(dmic, base[n] + DC_OFFSET_RIGHT_B, val);
-
-			val = fir_cfg_b[n]->out_gain_left;
-			dai_dmic_write(dmic, base[n] + OUT_GAIN_LEFT_B, val);
-
-			val = fir_cfg_b[n]->out_gain_right;
-			dai_dmic_write(dmic, base[n] + OUT_GAIN_RIGHT_B, val);
-		}
 
 		/* Set up FIR coefficients RAM */
 		val = pdm_cfg[n]->reuse_fir_from_pdm;
