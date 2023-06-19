@@ -465,6 +465,7 @@ static int uart_stm32_configure(const struct device *dev,
 {
 	const struct uart_stm32_config *config = dev->config;
 	struct uart_stm32_data *data = dev->data;
+	struct uart_config *uart_cfg = data->uart_cfg;
 	const uint32_t parity = uart_stm32_cfg2ll_parity(cfg->parity);
 	const uint32_t stopbits = uart_stm32_cfg2ll_stopbits(config, cfg->stop_bits);
 	const uint32_t databits = uart_stm32_cfg2ll_databits(cfg->data_bits,
@@ -536,9 +537,9 @@ static int uart_stm32_configure(const struct device *dev,
 	}
 #endif
 
-	if (cfg->baudrate != data->baud_rate) {
+	if (cfg->baudrate != uart_cfg->baudrate) {
 		uart_stm32_set_baudrate(dev, cfg->baudrate);
-		data->baud_rate = cfg->baudrate;
+		uart_cfg->baudrate = cfg->baudrate;
 	}
 
 	LL_USART_Enable(config->usart);
@@ -549,8 +550,9 @@ static int uart_stm32_config_get(const struct device *dev,
 				 struct uart_config *cfg)
 {
 	struct uart_stm32_data *data = dev->data;
+	struct uart_config *uart_cfg = data->uart_cfg;
 
-	cfg->baudrate = data->baud_rate;
+	cfg->baudrate = uart_cfg->baudrate;
 	cfg->parity = uart_stm32_ll2cfg_parity(uart_stm32_get_parity(dev));
 	cfg->stop_bits = uart_stm32_ll2cfg_stopbits(
 		uart_stm32_get_stopbits(dev));
@@ -1817,6 +1819,7 @@ static int uart_stm32_init(const struct device *dev)
 {
 	const struct uart_stm32_config *config = dev->config;
 	struct uart_stm32_data *data = dev->data;
+	struct uart_config *uart_cfg = data->uart_cfg;
 	uint32_t ll_parity;
 	uint32_t ll_datawidth;
 	int err;
@@ -1868,18 +1871,18 @@ static int uart_stm32_init(const struct device *dev)
 	/* Determine the datawidth and parity. If we use other parity than
 	 * 'none' we must use datawidth = 9 (to get 8 databit + 1 parity bit).
 	 */
-	if (config->parity == 2) {
+	if (uart_cfg->parity == 2) {
 		/* 8 databit, 1 parity bit, parity even */
 		ll_parity = LL_USART_PARITY_EVEN;
 		ll_datawidth = LL_USART_DATAWIDTH_9B;
-	} else if (config->parity == 1) {
+	} else if (uart_cfg->parity == 1) {
 		/* 8 databit, 1 parity bit, parity odd */
 		ll_parity = LL_USART_PARITY_ODD;
 		ll_datawidth = LL_USART_DATAWIDTH_9B;
 	} else {  /* Default to 8N0, but show warning if invalid value */
-		if (config->parity != 0) {
+		if (uart_cfg->parity != 0) {
 			LOG_WRN("Invalid parity setting '%d'."
-				"Defaulting to 'none'.", config->parity);
+				"Defaulting to 'none'.", uart_cfg->parity);
 		}
 		/* 8 databit, parity none */
 		ll_parity = LL_USART_PARITY_NONE;
@@ -1892,12 +1895,12 @@ static int uart_stm32_init(const struct device *dev)
 				 ll_parity,
 				 LL_USART_STOPBITS_1);
 
-	if (config->hw_flow_control) {
+	if (uart_cfg->flow_ctrl) {
 		uart_stm32_set_hwctrl(dev, LL_USART_HWCONTROL_RTS_CTS);
 	}
 
 	/* Set the default baudrate */
-	uart_stm32_set_baudrate(dev, data->baud_rate);
+	uart_stm32_set_baudrate(dev, uart_cfg->baudrate);
 
 	/* Enable the single wire / half-duplex mode */
 	if (config->single_wire) {
@@ -2141,13 +2144,25 @@ PINCTRL_DT_INST_DEFINE(index);						\
 static const struct stm32_pclken pclken_##index[] =			\
 					    STM32_DT_INST_CLOCKS(index);\
 									\
+static struct uart_config uart_cfg_##index = {				\
+	.baudrate  = DT_INST_PROP_OR(index, current_speed,		\
+				     STM32_UART_DEFAULT_BAUDRATE),	\
+	.parity    = DT_INST_ENUM_IDX_OR(index, parity,			\
+					 STM32_UART_DEFAULT_PARITY),	\
+	.stop_bits = DT_INST_ENUM_IDX_OR(index, stop_bits,		\
+					 STM32_UART_DEFAULT_STOP_BITS),	\
+	.data_bits = DT_INST_ENUM_IDX_OR(index, data_bits,		\
+					 STM32_UART_DEFAULT_DATA_BITS),	\
+	.flow_ctrl = DT_INST_PROP(index, hw_flow_control)		\
+					? UART_CFG_FLOW_CTRL_RTS_CTS	\
+					: UART_CFG_FLOW_CTRL_NONE,	\
+};									\
+									\
 static const struct uart_stm32_config uart_stm32_cfg_##index = {	\
 	.usart = (USART_TypeDef *)DT_INST_REG_ADDR(index),		\
 	.reset = RESET_DT_SPEC_GET(DT_DRV_INST(index)),			\
 	.pclken = pclken_##index,					\
 	.pclk_len = DT_INST_NUM_CLOCKS(index),				\
-	.hw_flow_control = DT_INST_PROP(index, hw_flow_control),	\
-	.parity = DT_INST_ENUM_IDX_OR(index, parity, UART_CFG_PARITY_NONE),	\
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),			\
 	.single_wire = DT_INST_PROP_OR(index, single_wire, false),	\
 	.tx_rx_swap = DT_INST_PROP_OR(index, tx_rx_swap, false),	\
@@ -2162,7 +2177,7 @@ static const struct uart_stm32_config uart_stm32_cfg_##index = {	\
 };									\
 									\
 static struct uart_stm32_data uart_stm32_data_##index = {		\
-	.baud_rate = DT_INST_PROP(index, current_speed),		\
+	.uart_cfg = &uart_cfg_##index,					\
 	UART_DMA_CHANNEL(index, rx, RX, PERIPHERAL, MEMORY)		\
 	UART_DMA_CHANNEL(index, tx, TX, MEMORY, PERIPHERAL)		\
 };									\
