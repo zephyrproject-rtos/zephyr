@@ -1149,23 +1149,23 @@ int lwm2m_get_opaque(const struct lwm2m_obj_path *path, void *buf, uint16_t bufl
  *
  * @param[in] pathstr LwM2M path string "obj/obj-inst/res(/res-inst)"
  * @param[out] str String buffer to copy data into
- * @param[in] strlen Length of buffer
+ * @param[in] buflen Length of buffer
  *
  * @return 0 for success or negative in case of error.
  */
 __deprecated
-int lwm2m_engine_get_string(const char *pathstr, void *str, uint16_t strlen);
+int lwm2m_engine_get_string(const char *pathstr, void *str, uint16_t buflen);
 
 /**
  * @brief Get resource (instance) value (string)
  *
  * @param[in] path LwM2M path as a struct
  * @param[out] str String buffer to copy data into
- * @param[in] strlen Length of buffer
+ * @param[in] buflen Length of buffer
  *
  * @return 0 for success or negative in case of error.
  */
-int lwm2m_get_string(const struct lwm2m_obj_path *path, void *str, uint16_t strlen);
+int lwm2m_get_string(const struct lwm2m_obj_path *path, void *str, uint16_t buflen);
 
 /**
  * @brief Get resource (instance) value (u8)
