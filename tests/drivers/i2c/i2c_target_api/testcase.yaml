@@ -14,6 +14,7 @@ tests:
       - stm32f072b_disco
       - nucleo_g071rb
       - nucleo_f207zg
+      - nucleo_f429zi
       - rpi_pico
     integration_platforms:
       - nucleo_f091rc
