@@ -1,0 +1,68 @@
+# Copyright Nordic Semiconductor ASA 2023. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig MCUMGR_GRP_SETTINGS
+	bool "MCUmgr handlers for settings management"
+	depends on SETTINGS
+	depends on SETTINGS_RUNTIME
+	select MCUMGR_SMP_CBOR_MIN_DECODING_LEVEL_2
+	select MCUMGR_SMP_CBOR_MIN_ENCODING_LEVEL_2 if ZCBOR_CANONICAL
+	select MCUMGR_SMP_CBOR_MIN_ENCODING_LEVEL_1
+	help
+	  Enables MCUmgr handlers for settings manipulation.
+
+if MCUMGR_GRP_SETTINGS
+
+choice MCUMGR_GRP_SETTINGS_BUFFER_TYPE
+	prompt "Buffer type"
+	default MCUMGR_GRP_SETTINGS_BUFFER_TYPE_STACK
+	help
+	  Selects if the stack or heap will be used for variables that are
+	  needed when processing requests.
+
+config MCUMGR_GRP_SETTINGS_BUFFER_TYPE_STACK
+	bool "Stack (fixed size)"
+	help
+	  Use a fixed size stack buffer, any user-supplied values longer than
+	  this will be rejected.
+
+	  Note that stack usage for parameter storage alone will be
+	  MCUMGR_GRP_SETTINGS_NAME_LEN + MCUMGR_GRP_SETTINGS_VALUE_LEN,
+	  therefore the MCUmgr stack should be appropriately sized.
+
+config MCUMGR_GRP_SETTINGS_BUFFER_TYPE_HEAP
+	bool "Heap (dynamic size)"
+	depends on COMMON_LIBC_MALLOC_ARENA_SIZE > 0
+	help
+	  Use dynamic heap memory allocation through malloc, if there is
+	  insufficient heap memory for the allocation then the request will be
+	  rejected.
+
+endchoice
+
+config MCUMGR_GRP_SETTINGS_NAME_LEN
+	int "Maximum setting name length"
+	default 32
+	help
+	  Maximum length of a key to lookup, this will be the size of the
+	  variable if placed on the stack or the maximum allocated size of the
+	  variable if placed on the heap.
+
+config MCUMGR_GRP_SETTINGS_VALUE_LEN
+	int "Maximum setting value length"
+	default 32
+	help
+	  Maximum length of a value to read, this will be the size of the
+	  variable if placed on the stack or the allocated size of the
+	  variable if placed on the heap (settings does not support getting
+	  the size of a value prior to looking it up).
+
+config MCUMGR_GRP_SETTINGS_ACCESS_HOOK
+	bool "Settings access hook"
+	depends on MCUMGR_MGMT_NOTIFICATION_HOOKS
+	help
+	  Allows applications to control settings management access by
+	  registering for a callback which is then triggered whenever a
+	  settings read or write attempt is made.
+
+endif

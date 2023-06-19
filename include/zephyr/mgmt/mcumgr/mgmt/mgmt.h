@@ -23,6 +23,12 @@ extern "C" {
  * @{
  */
 
+/**
+ * Used at end of MCUmgr handlers to return an error if the message size limit was reached,
+ * or OK if it was not
+ */
+#define MGMT_RETURN_CHECK(ok) ok ? MGMT_ERR_EOK : MGMT_ERR_EMSGSIZE
+
 /** Opcodes; encoded in first byte of header. */
 enum mcumgr_op_t {
 	/** Read op-code */
@@ -52,8 +58,8 @@ enum mcumgr_group_t {
 	/** Statistic management group, used for retieving statistics */
 	MGMT_GROUP_ID_STAT,
 
-	/** System configuration group (unused) */
-	MGMT_GROUP_ID_CONFIG,
+	/** Settings management (config) group, used for reading/writing settings */
+	MGMT_GROUP_ID_SETTINGS,
 
 	/** Log management group (unused) */
 	MGMT_GROUP_ID_LOG,
