@@ -1805,23 +1805,10 @@ static const struct uart_driver_api uart_stm32_driver_api = {
 #endif /* CONFIG_UART_ASYNC_API */
 };
 
-/**
- * @brief Initialize UART channel
- *
- * This routine is called to reset the chip in a quiescent state.
- * It is assumed that this function is called only once per UART.
- *
- * @param dev UART device struct
- *
- * @return 0
- */
-static int uart_stm32_init(const struct device *dev)
+static int uart_stm32_clocks_enable(const struct device *dev)
 {
 	const struct uart_stm32_config *config = dev->config;
 	struct uart_stm32_data *data = dev->data;
-	struct uart_config *uart_cfg = data->uart_cfg;
-	uint32_t ll_parity;
-	uint32_t ll_datawidth;
 	int err;
 
 	__uart_stm32_get_clock(dev);
@@ -1848,11 +1835,16 @@ static int uart_stm32_init(const struct device *dev)
 		}
 	}
 
-	/* Configure dt provided device signals when available */
-	err = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
-	if (err < 0) {
-		return err;
-	}
+	return 0;
+}
+
+static int uart_stm32_registers_configure(const struct device *dev)
+{
+	const struct uart_stm32_config *config = dev->config;
+	struct uart_stm32_data *data = dev->data;
+	struct uart_config *uart_cfg = data->uart_cfg;
+	uint32_t ll_parity;
+	uint32_t ll_datawidth;
 
 	LL_USART_Disable(config->usart);
 
@@ -1955,6 +1947,40 @@ static int uart_stm32_init(const struct device *dev)
 	while (!(LL_USART_IsActiveFlag_REACK(config->usart))) {
 	}
 #endif /* !USART_ISR_REACK */
+
+	return 0;
+}
+
+/**
+ * @brief Initialize UART channel
+ *
+ * This routine is called to reset the chip in a quiescent state.
+ * It is assumed that this function is called only once per UART.
+ *
+ * @param dev UART device struct
+ *
+ * @return 0
+ */
+static int uart_stm32_init(const struct device *dev)
+{
+	const struct uart_stm32_config *config = dev->config;
+	int err;
+
+	err = uart_stm32_clocks_enable(dev);
+	if (err < 0) {
+		return err;
+	}
+
+	/* Configure dt provided device signals when available */
+	err = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
+	if (err < 0) {
+		return err;
+	}
+
+	err = uart_stm32_registers_configure(dev);
+	if (err < 0) {
+		return err;
+	}
 
 #if defined(CONFIG_PM) || \
 	defined(CONFIG_UART_INTERRUPT_DRIVEN) || \
