@@ -1504,6 +1504,10 @@ static bool broadcast_scan_recv(const struct bt_le_scan_recv_info *info,
 {
 	char le_addr[BT_ADDR_LE_STR_LEN];
 
+	if (!passes_scan_filter(info, ad)) {
+		return false;
+	}
+
 	bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
 
 	shell_print(ctx_shell, "Found broadcaster with ID 0x%06X and addr %s",

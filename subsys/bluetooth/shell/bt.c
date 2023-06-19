@@ -346,20 +346,56 @@ static const char *scan_response_type_txt(uint8_t type)
 	}
 }
 
-static void scan_recv(const struct bt_le_scan_recv_info *info,
-		      struct net_buf_simple *buf)
+bool passes_scan_filter(const struct bt_le_scan_recv_info *info, const struct net_buf_simple *buf)
+{
+
+	if (scan_filter.rssi_set && (scan_filter.rssi > info->rssi)) {
+		return false;
+	}
+
+	if (scan_filter.pa_interval_set &&
+	    (scan_filter.pa_interval > BT_CONN_INTERVAL_TO_MS(info->interval))) {
+		return false;
+	}
+
+	if (scan_filter.addr_set) {
+		char le_addr[BT_ADDR_LE_STR_LEN] = {0};
+		int err;
+
+		err = bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
+		if (err != 0) {
+			shell_error(ctx_shell, "Failed to convert addr to string: %d", err);
+			return false;
+		}
+
+		if (!is_substring(scan_filter.addr, le_addr)) {
+			return false;
+		}
+	}
+
+	if (scan_filter.name_set) {
+		struct net_buf_simple buf_copy;
+		char name[NAME_LEN] = {0};
+
+		/* call to bt_data_parse consumes netbufs so shallow clone for verbose output */
+		net_buf_simple_clone(buf, &buf_copy);
+		bt_data_parse(&buf_copy, data_cb, name);
+
+		if (!is_substring(scan_filter.name, name)) {
+			return false;
+		}
+	}
+
+	return true;
+}
+
+static void scan_recv(const struct bt_le_scan_recv_info *info, struct net_buf_simple *buf)
 {
 	char le_addr[BT_ADDR_LE_STR_LEN];
 	char name[NAME_LEN];
 	struct net_buf_simple buf_copy;
 
-	if (scan_filter.rssi_set && (scan_filter.rssi > info->rssi)) {
-		return;
-	}
-
-	bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
-
-	if (scan_filter.addr_set && !is_substring(scan_filter.addr, le_addr)) {
+	if (!passes_scan_filter(info, buf)) {
 		return;
 	}
 
@@ -371,15 +407,6 @@ static void scan_recv(const struct bt_le_scan_recv_info *info,
 	(void)memset(name, 0, sizeof(name));
 
 	bt_data_parse(buf, data_cb, name);
-
-	if (scan_filter.name_set && !is_substring(scan_filter.name, name)) {
-		return;
-	}
-
-	if (scan_filter.pa_interval_set &&
-	    (scan_filter.pa_interval > BT_CONN_INTERVAL_TO_MS(info->interval))) {
-		return;
-	}
 
 	shell_print(ctx_shell, "%s%s, AD evt type %u, RSSI %i %s "
 		    "C:%u S:%u D:%d SR:%u E:%u Prim: %s, Secn: %s, "
