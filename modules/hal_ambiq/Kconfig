@@ -1,0 +1,23 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2023 Antmicro <www.antmicro.com>
+
+config AMBIQ_HAL
+	bool "Ambiq HAL drivers support"
+	depends on SOC_SERIES_APOLLO4X
+	help
+	  Use the Ambiq HAL
+
+if AMBIQ_HAL
+
+config AMBIQ_HAL_USE_GPIO
+	bool
+	help
+	  Use the GPIO driver from Ambiq HAL
+
+config AMBIQ_HAL_USE_STIMER
+	bool
+	help
+	  Use the STIMER driver from Ambiq HAL
+
+endif # AMBIQ_HAL
