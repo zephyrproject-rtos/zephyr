@@ -16,6 +16,7 @@ menuconfig MCUMGR_GRP_STAT
 	bool "Mcumgr handlers for statistics management"
 	depends on STATS
 	select MCUMGR_SMP_CBOR_MIN_DECODING_LEVEL_2
+	select MCUMGR_SMP_CBOR_MIN_ENCODING_LEVEL_3 if ZCBOR_CANONICAL
 	help
 	  Enables MCUmgr handlers for statistics management.
 

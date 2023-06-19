@@ -61,7 +61,7 @@ static void cbor_nb_writer_init(struct cbor_nb_writer *cnw, struct net_buf *nb)
 	net_buf_reset(nb);
 	cnw->nb = nb;
 	cnw->nb->len = sizeof(struct smp_hdr);
-	zcbor_new_encode_state(cnw->zs, 2, nb->data + sizeof(struct smp_hdr),
+	zcbor_new_encode_state(cnw->zs, ARRAY_SIZE(cnw->zs), nb->data + sizeof(struct smp_hdr),
 			       net_buf_tailroom(nb), 0);
 }
 
