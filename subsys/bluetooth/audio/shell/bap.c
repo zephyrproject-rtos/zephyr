@@ -2306,6 +2306,15 @@ static int cmd_init(const struct shell *sh, size_t argc, char *argv[])
 #if defined(CONFIG_BT_BAP_UNICAST)
 	for (i = 0; i < ARRAY_SIZE(unicast_streams); i++) {
 		bt_bap_stream_cb_register(&unicast_streams[i].stream.bap_stream, &stream_ops);
+
+		if (IS_ENABLED(CONFIG_BT_BAP_UNICAST_CLIENT) &&
+		    IS_ENABLED(CONFIG_BT_CAP_INITIATOR)) {
+			/* If we use the cap initiator, we need to register the callbacks for CAP
+			 * as well, as CAP will override and use the BAP callbacks if doing a CAP
+			 * procedure
+			 */
+			bt_cap_stream_ops_register(&unicast_streams[i].stream, &stream_ops);
+		}
 	}
 #endif /* CONFIG_BT_BAP_UNICAST */
 
