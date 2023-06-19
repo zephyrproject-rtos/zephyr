@@ -129,11 +129,11 @@ static void bap_broadcast_assistant_recv_state_cb(
 		bad_code, sizeof(bad_code));
 
 	is_bad_code = state->encrypt_state == BT_BAP_BIG_ENC_STATE_BAD_CODE;
-	shell_print(ctx_shell, "BASS recv state: src_id %u, addr %s, "
-		    "sid %u, sync_state %u, encrypt_state %u%s%s",
-		    state->src_id, le_addr, state->adv_sid,
-		    state->pa_sync_state, state->encrypt_state,
-		    is_bad_code ? ", bad code" : "", bad_code);
+	shell_print(
+		ctx_shell,
+		"BASS recv state: src_id %u, addr %s, sid %u, sync_state %u, encrypt_state %u%s%s",
+		state->src_id, le_addr, state->adv_sid, state->pa_sync_state, state->encrypt_state,
+		is_bad_code ? ", bad code" : "", is_bad_code ? bad_code : "");
 
 	for (int i = 0; i < state->num_subgroups; i++) {
 		const struct bt_bap_scan_delegator_subgroup *subgroup = &state->subgroups[i];
