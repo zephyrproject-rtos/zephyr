@@ -87,7 +87,8 @@ automatically implies that the imported source code becomes part of the
 - The code is subject to the same checks and verification requirements as the
   rest of the code in the main tree, including static analysis
 - All files contain an SPDX tag if not already present
-- An entry is added to the `licensing page <zephyr_licensing>`
+- If the source is not Apache 2.0 licensed,
+  an entry is added to the :ref:`licensing page <zephyr_licensing>`.
 
 This mode of integration can be applicable to both small and large external
 codebases, but it is typically used more commonly with the former.
