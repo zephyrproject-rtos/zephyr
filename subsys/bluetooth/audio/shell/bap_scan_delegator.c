@@ -294,6 +294,7 @@ static void broadcast_code_cb(struct bt_conn *conn,
 	struct sync_state *state;
 
 	shell_info(ctx_shell, "Broadcast code received for %p", recv_state);
+	shell_hexdump(ctx_shell, broadcast_code, BT_AUDIO_BROADCAST_CODE_SIZE);
 
 	state = sync_state_get(recv_state);
 	if (state == NULL) {
