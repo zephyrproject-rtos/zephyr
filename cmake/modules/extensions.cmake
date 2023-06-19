@@ -863,6 +863,11 @@ endfunction()
 #                             command line, which means:
 #                             1.0.0 == 1.0 == 1
 #
+# OPTIONAL: Revision specifier is optional. If revision is not provided the base
+#           board will be used. If both `EXACT` and `OPTIONAL` are given, then
+#           specifying the revision is optional, but if it is given then the
+#           `EXACT` requirements apply. Mutually exclusive with `DEFAULT_REVISION`.
+#
 # EXACT: Revision is required to be an exact match. As example, available revisions are:
 #        0.1.0 and 0.3.0, and user provides 0.2.0, then an error is reported
 #        when `EXACT` is given.
@@ -890,15 +895,21 @@ endfunction()
 #                   will be used as a valid revision for the board.
 #
 function(board_check_revision)
-  set(options EXACT)
+  set(options OPTIONAL EXACT)
   set(single_args FORMAT DEFAULT_REVISION HIGHEST_REVISION)
   set(multi_args  VALID_REVISIONS)
   cmake_parse_arguments(BOARD_REV "${options}" "${single_args}" "${multi_args}" ${ARGN})
 
   string(TOUPPER ${BOARD_REV_FORMAT} BOARD_REV_FORMAT)
 
+  if(DEFINED BOARD_REV_DEFAULT_REVISION AND BOARD_REV_OPTIONAL)
+    message(FATAL_ERROR "Arguments BOARD_REVISION and OPTIONAL are mutually exclusive")
+  endif()
+
   if(NOT DEFINED BOARD_REVISION)
-    if(DEFINED BOARD_REV_DEFAULT_REVISION)
+    if(BOARD_REV_OPTIONAL)
+      return()
+    elseif(DEFINED BOARD_REV_DEFAULT_REVISION)
       set(BOARD_REVISION ${BOARD_REV_DEFAULT_REVISION})
       set(BOARD_REVISION ${BOARD_REVISION} PARENT_SCOPE)
     else()
