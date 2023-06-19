@@ -233,7 +233,6 @@ FUNC_NORETURN static void ec_host_cmd_thread(void *hc_handle, void *arg2, void *
 	/* The pointer to rx buffer is constant during communication */
 	struct ec_host_cmd_handler_args args = {
 		.output_buf = (uint8_t *)tx->buf + TX_HEADER_SIZE,
-		.output_buf_max = tx->len_max - TX_HEADER_SIZE,
 		.input_buf = rx->buf + RX_HEADER_SIZE,
 		.reserved = NULL,
 	};
@@ -266,6 +265,7 @@ FUNC_NORETURN static void ec_host_cmd_thread(void *hc_handle, void *arg2, void *
 		args.command = rx_header->cmd_id;
 		args.version = rx_header->cmd_ver;
 		args.input_buf_size = rx_header->data_len;
+		args.output_buf_max = tx->len_max - TX_HEADER_SIZE,
 		args.output_buf_size = 0;
 
 		status = validate_handler(found_handler, &args);
