@@ -522,29 +522,16 @@ static void dai_dmic_gain_ramp(struct dai_intel_dmic *dmic)
 					     CIC_CONTROL_MIC_MUTE, 0);
 
 		if (dmic->startcount == DMIC_UNMUTE_FIR) {
-			switch (dmic->dai_config_params.dai_index) {
-			case 0:
-				dai_dmic_update_bits(dmic, dmic_base[i] + FIR_CONTROL_A,
-						     FIR_CONTROL_MUTE, 0);
-				break;
-			case 1:
-				dai_dmic_update_bits(dmic, dmic_base[i] + FIR_CONTROL_B,
-						     FIR_CONTROL_MUTE, 0);
-				break;
-			}
+			dai_dmic_update_bits(dmic, dmic_base[i] + FIR_CHANNEL_REGS_SIZE *
+					     dmic->dai_config_params.dai_index + FIR_CONTROL,
+					     FIR_CONTROL_MUTE, 0);
 		}
-		switch (dmic->dai_config_params.dai_index) {
-		case 0:
-			val = FIELD_PREP(OUT_GAIN, gval);
-			dai_dmic_write(dmic, dmic_base[i] + OUT_GAIN_LEFT_A, val);
-			dai_dmic_write(dmic, dmic_base[i] + OUT_GAIN_RIGHT_A, val);
-			break;
-		case 1:
-			val = FIELD_PREP(OUT_GAIN, gval);
-			dai_dmic_write(dmic, dmic_base[i] + OUT_GAIN_LEFT_B, val);
-			dai_dmic_write(dmic, dmic_base[i] + OUT_GAIN_RIGHT_B, val);
-			break;
-		}
+
+		val = FIELD_PREP(OUT_GAIN, gval);
+		dai_dmic_write(dmic, dmic_base[i] + FIR_CHANNEL_REGS_SIZE *
+			       dmic->dai_config_params.dai_index + OUT_GAIN_LEFT, val);
+		dai_dmic_write(dmic, dmic_base[i] + FIR_CHANNEL_REGS_SIZE *
+			       dmic->dai_config_params.dai_index + OUT_GAIN_RIGHT, val);
 	}
 
 	k_spin_unlock(&dmic->lock, key);
@@ -556,8 +543,7 @@ static void dai_dmic_start(struct dai_intel_dmic *dmic)
 	int i;
 	int mic_a;
 	int mic_b;
-	int fir_a;
-	int fir_b;
+	int start_fir;
 
 	/* enable port */
 	key = k_spin_lock(&dmic->lock);
@@ -585,8 +571,7 @@ static void dai_dmic_start(struct dai_intel_dmic *dmic)
 
 		mic_a = dmic->enable[i] & 1;
 		mic_b = (dmic->enable[i] & 2) >> 1;
-		fir_a = (dmic->enable[i] > 0) ? 1 : 0;
-		fir_b = (dmic->enable[i] > 0) ? 1 : 0;
+		start_fir = dmic->enable[i] > 0;
 		LOG_INF("dmic_start(), pdm%d mic_a = %u, mic_b = %u", i, mic_a, mic_b);
 
 		/* If both microphones are needed start them simultaneously
@@ -621,18 +606,10 @@ static void dai_dmic_start(struct dai_intel_dmic *dmic)
 					     FIELD_PREP(MIC_CONTROL_PDM_EN_B, 1));
 		}
 
-		switch (dmic->dai_config_params.dai_index) {
-		case 0:
-			dai_dmic_update_bits(dmic, dmic_base[i] + FIR_CONTROL_A,
-					     FIR_CONTROL_START,
-					     FIELD_PREP(FIR_CONTROL_START, fir_a));
-			break;
-		case 1:
-			dai_dmic_update_bits(dmic, dmic_base[i] + FIR_CONTROL_B,
-					     FIR_CONTROL_START,
-					     FIELD_PREP(FIR_CONTROL_START, fir_b));
-			break;
-		}
+		dai_dmic_update_bits(dmic, dmic_base[i] + FIR_CHANNEL_REGS_SIZE *
+				     dmic->dai_config_params.dai_index + FIR_CONTROL,
+				     FIR_CONTROL_START,
+				     FIELD_PREP(FIR_CONTROL_START, start_fir));
 	}
 
 #ifndef CONFIG_SOC_SERIES_INTEL_ACE
@@ -694,18 +671,10 @@ static void dai_dmic_stop(struct dai_intel_dmic *dmic, bool stop_is_pause)
 					     CIC_CONTROL_SOFT_RESET |
 					     CIC_CONTROL_MIC_MUTE);
 		}
-		switch (dmic->dai_config_params.dai_index) {
-		case 0:
-			dai_dmic_update_bits(dmic, dmic_base[i] + FIR_CONTROL_A,
-					     FIR_CONTROL_MUTE,
-					     FIR_CONTROL_MUTE);
-			break;
-		case 1:
-			dai_dmic_update_bits(dmic, dmic_base[i] + FIR_CONTROL_B,
-					     FIR_CONTROL_MUTE,
-					     FIR_CONTROL_MUTE);
-			break;
-		}
+		dai_dmic_update_bits(dmic, dmic_base[i] + FIR_CHANNEL_REGS_SIZE *
+				     dmic->dai_config_params.dai_index + FIR_CONTROL,
+				     FIR_CONTROL_MUTE,
+				     FIR_CONTROL_MUTE);
 	}
 
 	k_spin_unlock(&dmic->lock, key);
