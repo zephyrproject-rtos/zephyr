@@ -561,6 +561,10 @@ static void scan_recv_cb(const struct bt_le_scan_recv_info *info,
 		return;
 	}
 
+	if (!passes_scan_filter(info, ad)) {
+		return;
+	}
+
 	bt_data_parse(ad, broadcast_source_found, (void *)info);
 }
 
