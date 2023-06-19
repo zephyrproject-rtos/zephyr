@@ -495,6 +495,7 @@ static bool broadcast_source_found(struct bt_data *data, void *user_data)
 {
 	struct bt_bap_broadcast_assistant_add_src_param param = { 0 };
 	const struct bt_le_scan_recv_info *info = user_data;
+	char addr_str[BT_ADDR_LE_STR_LEN];
 	struct bt_uuid_16 adv_uuid;
 	uint32_t broadcast_id;
 	int err;
@@ -524,9 +525,9 @@ static bool broadcast_source_found(struct bt_data *data, void *user_data)
 		return false;
 	}
 
-	shell_print(ctx_shell,
-		    "Found BAP broadcast source with addressand ID 0x%06X\n",
-		    broadcast_id);
+	bt_addr_le_to_str(info->addr, addr_str, sizeof(addr_str));
+	shell_print(ctx_shell, "Found BAP broadcast source with address %s and ID 0x%06X\n",
+		    addr_str, broadcast_id);
 
 	bt_addr_le_copy(&param.addr, info->addr);
 	param.adv_sid = info->sid;
