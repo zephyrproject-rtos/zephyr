@@ -200,8 +200,7 @@ folder, here are the commands to generate the html content locally:
 
 Depending on your development system, it will take up to 15 minutes to
 collect and generate the HTML content.  When done, you can view the HTML
-output with your browser started at ``doc/_build/html/index.html`` and
-if generated, the PDF file is available at ``doc/_build/pdf/zephyr.pdf``.
+output with your browser started at ``doc/_build/html/index.html``.
 
 If you want to build the documentation from scratch just delete the contents
 of the build folder and run ``cmake`` and then ``ninja`` again.

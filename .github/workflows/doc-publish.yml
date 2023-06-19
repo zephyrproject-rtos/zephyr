@@ -52,4 +52,3 @@ jobs:
 
         aws s3 sync --quiet html-output/html s3://docs.zephyrproject.org/${VERSION} --delete
         aws s3 sync --quiet html-output/html/doxygen/html s3://docs.zephyrproject.org/apidoc/${VERSION} --delete
-        aws s3 cp --quiet pdf-output/zephyr.pdf s3://docs.zephyrproject.org/${VERSION}/zephyr.pdf
