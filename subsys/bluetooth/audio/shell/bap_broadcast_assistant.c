@@ -529,6 +529,11 @@ static bool broadcast_source_found(struct bt_data *data, void *user_data)
 	shell_print(ctx_shell, "Found BAP broadcast source with address %s and ID 0x%06X\n",
 		    addr_str, broadcast_id);
 
+	err = bt_le_scan_stop();
+	if (err) {
+		shell_error(ctx_shell, "Failed to stop scan: %d", err);
+	}
+
 	bt_addr_le_copy(&param.addr, info->addr);
 	param.adv_sid = info->sid;
 	param.pa_interval = info->interval;
