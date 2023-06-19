@@ -459,9 +459,8 @@ static inline enum uart_config_flow_control uart_stm32_ll2cfg_hwctrl(uint32_t fc
 	return UART_CFG_FLOW_CTRL_NONE;
 }
 
-#ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
-static int uart_stm32_configure(const struct device *dev,
-				const struct uart_config *cfg)
+static void uart_stm32_parameters_set(const struct device *dev,
+				      const struct uart_config *cfg)
 {
 	const struct uart_stm32_config *config = dev->config;
 	struct uart_stm32_data *data = dev->data;
@@ -474,6 +473,60 @@ static int uart_stm32_configure(const struct device *dev,
 #if HAS_DRIVER_ENABLE
 	bool driver_enable = cfg->flow_ctrl == UART_CFG_FLOW_CTRL_RS485;
 #endif
+
+	if (cfg == uart_cfg) {
+		/* Called via (re-)init function, so the SoC either just booted,
+		 * or is returning from a low-power state where it lost register
+		 * contents
+		 */
+		LL_USART_ConfigCharacter(config->usart,
+					 databits,
+					 parity,
+					 stopbits);
+		uart_stm32_set_hwctrl(dev, flowctrl);
+		uart_stm32_set_baudrate(dev, cfg->baudrate);
+	} else {
+		/* Called from application/subsys via uart_configure syscall */
+		if (parity != uart_stm32_get_parity(dev)) {
+			uart_stm32_set_parity(dev, parity);
+		}
+
+		if (stopbits != uart_stm32_get_stopbits(dev)) {
+			uart_stm32_set_stopbits(dev, stopbits);
+		}
+
+		if (databits != uart_stm32_get_databits(dev)) {
+			uart_stm32_set_databits(dev, databits);
+		}
+
+		if (flowctrl != uart_stm32_get_hwctrl(dev)) {
+			uart_stm32_set_hwctrl(dev, flowctrl);
+		}
+
+#if HAS_DRIVER_ENABLE
+		if (driver_enable != uart_stm32_get_driver_enable(dev)) {
+			uart_stm32_set_driver_enable(dev, driver_enable);
+		}
+#endif
+
+		if (cfg->baudrate != uart_cfg->baudrate) {
+			uart_stm32_set_baudrate(dev, cfg->baudrate);
+			uart_cfg->baudrate = cfg->baudrate;
+		}
+	}
+}
+
+#ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
+static int uart_stm32_configure(const struct device *dev,
+				const struct uart_config *cfg)
+{
+	const struct uart_stm32_config *config = dev->config;
+	struct uart_stm32_data *data = dev->data;
+	struct uart_config *uart_cfg = data->uart_cfg;
+	const uint32_t parity = uart_stm32_cfg2ll_parity(cfg->parity);
+	const uint32_t stopbits = uart_stm32_cfg2ll_stopbits(config, cfg->stop_bits);
+	const uint32_t databits = uart_stm32_cfg2ll_databits(cfg->data_bits,
+							     cfg->parity);
 
 	/* Hardware doesn't support mark or space parity */
 	if ((cfg->parity == UART_CFG_PARITY_MARK) ||
@@ -515,34 +568,18 @@ static int uart_stm32_configure(const struct device *dev,
 
 	LL_USART_Disable(config->usart);
 
-	if (parity != uart_stm32_get_parity(dev)) {
-		uart_stm32_set_parity(dev, parity);
-	}
-
-	if (stopbits != uart_stm32_get_stopbits(dev)) {
-		uart_stm32_set_stopbits(dev, stopbits);
-	}
-
-	if (databits != uart_stm32_get_databits(dev)) {
-		uart_stm32_set_databits(dev, databits);
-	}
-
-	if (flowctrl != uart_stm32_get_hwctrl(dev)) {
-		uart_stm32_set_hwctrl(dev, flowctrl);
-	}
-
-#if HAS_DRIVER_ENABLE
-	if (driver_enable != uart_stm32_get_driver_enable(dev)) {
-		uart_stm32_set_driver_enable(dev, driver_enable);
-	}
-#endif
-
-	if (cfg->baudrate != uart_cfg->baudrate) {
-		uart_stm32_set_baudrate(dev, cfg->baudrate);
-		uart_cfg->baudrate = cfg->baudrate;
-	}
+	/* Set basic parmeters, such as data-/stop-bit, parity, and baudrate */
+	uart_stm32_parameters_set(dev, cfg);
 
 	LL_USART_Enable(config->usart);
+
+	/* Upon successful configuration, persist the syscall-passed
+	 * uart_config.
+	 * This allows restoring it, should the device return from a low-power
+	 * mode in which register contents are lost.
+	 */
+	*uart_cfg = *cfg;
+
 	return 0;
 };
 
@@ -1843,8 +1880,6 @@ static int uart_stm32_registers_configure(const struct device *dev)
 	const struct uart_stm32_config *config = dev->config;
 	struct uart_stm32_data *data = dev->data;
 	struct uart_config *uart_cfg = data->uart_cfg;
-	uint32_t ll_parity;
-	uint32_t ll_datawidth;
 
 	LL_USART_Disable(config->usart);
 
@@ -1860,39 +1895,8 @@ static int uart_stm32_registers_configure(const struct device *dev)
 	LL_USART_SetTransferDirection(config->usart,
 				      LL_USART_DIRECTION_TX_RX);
 
-	/* Determine the datawidth and parity. If we use other parity than
-	 * 'none' we must use datawidth = 9 (to get 8 databit + 1 parity bit).
-	 */
-	if (uart_cfg->parity == 2) {
-		/* 8 databit, 1 parity bit, parity even */
-		ll_parity = LL_USART_PARITY_EVEN;
-		ll_datawidth = LL_USART_DATAWIDTH_9B;
-	} else if (uart_cfg->parity == 1) {
-		/* 8 databit, 1 parity bit, parity odd */
-		ll_parity = LL_USART_PARITY_ODD;
-		ll_datawidth = LL_USART_DATAWIDTH_9B;
-	} else {  /* Default to 8N0, but show warning if invalid value */
-		if (uart_cfg->parity != 0) {
-			LOG_WRN("Invalid parity setting '%d'."
-				"Defaulting to 'none'.", uart_cfg->parity);
-		}
-		/* 8 databit, parity none */
-		ll_parity = LL_USART_PARITY_NONE;
-		ll_datawidth = LL_USART_DATAWIDTH_8B;
-	}
-
-	/* Set datawidth and parity, 1 start bit, 1 stop bit  */
-	LL_USART_ConfigCharacter(config->usart,
-				 ll_datawidth,
-				 ll_parity,
-				 LL_USART_STOPBITS_1);
-
-	if (uart_cfg->flow_ctrl) {
-		uart_stm32_set_hwctrl(dev, LL_USART_HWCONTROL_RTS_CTS);
-	}
-
-	/* Set the default baudrate */
-	uart_stm32_set_baudrate(dev, uart_cfg->baudrate);
+	/* Set basic parmeters, such as data-/stop-bit, parity, and baudrate */
+	uart_stm32_parameters_set(dev, uart_cfg);
 
 	/* Enable the single wire / half-duplex mode */
 	if (config->single_wire) {
