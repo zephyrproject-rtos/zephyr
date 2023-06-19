@@ -123,7 +123,7 @@ static enum ec_host_cmd_status validate_handler(const struct ec_host_cmd_handler
 		return EC_HOST_CMD_INVALID_RESPONSE;
 	}
 
-	if (args->version > sizeof(handler->version_mask) ||
+	if (args->version >= NUM_BITS(handler->version_mask) ||
 	    !(handler->version_mask & BIT(args->version))) {
 		return EC_HOST_CMD_INVALID_VERSION;
 	}
