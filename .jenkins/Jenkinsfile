@@ -208,11 +208,8 @@ pipeline {
                         try {
                             sh """#!/bin/bash -x
                             cd $WORKSPACE
-                            git config --add remote.origin.fetch +refs/heads/$targetBranch:refs/remotes/origin/$targetBranch
-                            git fetch --force origin
-                            git format-patch origin/$targetBranch >patch.txt
-                            sh .jenkins/test_checkpatch.sh patch.txt
-
+                            chmod 755 .jenkins/check_compliance.sh
+                            .jenkins/check_compliance.sh ${buildNumber} ${targetBranch} ${branchName}
                             """
                         }
                         catch (Exception e) {
