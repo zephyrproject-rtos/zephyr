@@ -1,0 +1,13 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2023 Antmicro <www.antmicro.com>
+
+config AMBIQ_STIMER_TIMER
+	bool "Ambiq STIMER system clock driver"
+	default y
+	depends on DT_HAS_AMBIQ_STIMER_ENABLED
+	select AMBIQ_HAL
+	select TICKLESS_CAPABLE
+	select AMBIQ_HAL_USE_STIMER
+	help
+	  Ambiq Apollo4 stimer driver
