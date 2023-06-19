@@ -123,6 +123,8 @@ Events can be selected by enabling their corresponding Kconfig option:
     :c:enumerator:`MGMT_EVT_OP_IMG_MGMT_DFU_CONFIRMED`)
  - :kconfig:option:`CONFIG_MCUMGR_GRP_OS_RESET_HOOK`
     os_mgmt reset check (:c:enumerator:`MGMT_EVT_OP_OS_MGMT_RESET`)
+ - :kconfig:option:`CONFIG_MCUMGR_GRP_SETTINGS_ACCESS_HOOK`
+    settings_mgmt access (:c:enumerator:`MGMT_EVT_OP_SETTINGS_MGMT_ACCESS`)
 
 Actions
 =======
