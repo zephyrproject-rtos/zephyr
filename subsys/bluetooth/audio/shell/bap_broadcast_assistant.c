@@ -689,6 +689,7 @@ static int cmd_bap_broadcast_assistant_mod_src(const struct shell *sh,
 
 		return -ENOEXEC;
 	}
+	param.src_id = src_id;
 
 	param.pa_sync = shell_strtobool(argv[2], 0, &result);
 	if (result != 0) {
