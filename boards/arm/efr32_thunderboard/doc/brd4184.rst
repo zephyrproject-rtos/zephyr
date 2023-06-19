@@ -7,9 +7,6 @@ BRD4184 is a board based on EFR32BG22 SoC and is one of
 :ref:`efr32_thunderboard`. It comes in two revisions, which differ from each
 other slightly: BRD4184A and BRD4184B.
 
-.. note::
-   Currently only the "A" revision is fully supported and tested.
-
 .. image:: ./efr32bg_sltb010a.jpg
    :align: center
    :alt: EFR32BG-SLTB010A
@@ -22,9 +19,11 @@ Hardware
 - Macronix ultra low power 8-Mbit SPI flash (MX25R8035F)
 - 2.4 GHz ceramic antenna for wireless transmission
 - Silicon Labs Si7021 relative humidity and temperature sensor
-- Silicon Labs Si1133 UV index and ambient light sensor
+- Silicon Labs Si1133 UV index and ambient light sensor (EFR32BG22-BRD4184A)
+- Vishay VEML6035 ambient light sensor (EFR32BG22-BRD4184B)
 - Silicon Labs Si7210 hall effect sensor
 - TDK InvenSense ICM-20648 6-axis inertial sensor
+- Two Knowles SPK0641HT4H-1 MEMS microphones with PDM output (EFR32BG22-BRD4184B)
 - One LED and one push button
 - Power enable signals and isolation switches for ultra low power operation
 - On-board SEGGER J-Link debugger for easy programming and debugging, which
@@ -42,14 +41,15 @@ For more information about the EFR32BG SoC and Thunderboard EFR32BG22 board:
 - `EFR32BG22 Datasheet`_
 - `EFR32xG22 Reference Manual`_
 - `Thunderboard EFR32BG22 Website`_
-- `EFR32BG22-BRD4184 User Guide`_
+- `EFR32BG22-BRD4184A User Guide`_
+- `EFR32BG22-BRD4184B User Guide`_
 - `EFR32BG22-BRD4184A Schematics`_
 - `EFR32BG22-BRD4184B Schematics`_
 
 Supported Features
 ==================
 
-The efr32bg22_brd4184a board configuration supports the following hardware features:
+The efr32bg22_brd4184a/b board configuration supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |
@@ -79,8 +79,9 @@ The efr32bg22_brd4184a board configuration supports the following hardware featu
 | RADIO     | on-chip    | bluetooth                           |
 +-----------+------------+-------------------------------------+
 
-The default configuration can be found in the defconfig file:
-``boards/arm/efr32_thunderboard/efr32bg22_brd4184a_defconfig``.
+The default configuration can be found in the defconfig files:
+- ``boards/arm/efr32_thunderboard/efr32bg22_brd4184a_defconfig``
+- ``boards/arm/efr32_thunderboard/efr32bg22_brd4184b_defconfig``
 
 Connections and IOs
 ===================
@@ -139,9 +140,18 @@ Connect your device to your host computer using the USB port.
 The sample application :ref:`hello_world` is used for this example.
 Build the Zephyr kernel and application, then flash it to the device:
 
+BRD4184A:
+
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
    :board: efr32bg22_brd4184a
+   :goals: flash
+
+BRD4184B:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: efr32bg22_brd4184b
    :goals: flash
 
 .. note::
@@ -158,9 +168,17 @@ Open a serial terminal (minicom, putty, etc.) with the following settings:
 Reset the board and you should be able to see on the corresponding Serial Port
 the following message:
 
+BRD4184A:
+
 .. code-block:: console
 
    Hello World! efr32bg22_brd4184a
+
+BRD4184B:
+
+.. code-block:: console
+
+   Hello World! efr32bg22_brd4184b
 
 Bluetooth
 =========
@@ -176,17 +194,29 @@ Then build the Zephyr kernel and a Bluetooth sample with the following
 command. The :ref:`bluetooth-observer-sample` sample application is used in
 this example.
 
+BRD4184A:
+
 .. zephyr-app-commands::
    :zephyr-app: samples/bluetooth/observer
    :board: efr32bg22_brd4184a
+   :goals: build
+
+BRD4184B:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/bluetooth/observer
+   :board: efr32bg22_brd4184b
    :goals: build
 
 
 .. _Thunderboard EFR32BG22 Website:
    https://www.silabs.com/development-tools/thunderboard/thunderboard-bg22-kit
 
-.. _EFR32BG22-BRD4184 User Guide:
+.. _EFR32BG22-BRD4184A User Guide:
    https://www.silabs.com/documents/public/user-guides/ug415-sltb010a-user-guide.pdf
+
+.. _EFR32BG22-BRD4184B User Guide:
+   https://www.silabs.com/documents/public/user-guides/ug464-brd4184b-user-guide.pdf
 
 .. _EFR32BG22-BRD4184A Schematics:
    https://www.silabs.com/documents/public/schematic-files/BRD4184A-A01-schematic.pdf
