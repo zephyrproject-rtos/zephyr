@@ -1,0 +1,58 @@
+/*
+ * Copyright (c) 2021 Sateesh Kotapati
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "thunderboard.dtsi"
+
+/ {
+	/* These aliases are provided for compatibility with samples */
+	aliases {
+		led0 = &led0;
+		sw0 = &button0;
+		spi-flash0 = &mx25r80;
+		spi0 = &usart0;
+		watchdog0 = &wdog0;
+		/* If enabled, MCUboot uses this for recovery mode entrance */
+		mcuboot-led0 = &led0;
+		mcuboot-button0 = &button0;
+	};
+
+	chosen {
+		zephyr,code-partition = &slot0_partition;
+	};
+};
+
+&flash0 {
+	partitions {
+		/* Reserve 48 KiB for the bootloader */
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 0x0000c000>;
+			read-only;
+		};
+
+		/* Reserve 224 KiB for the application in slot 0 */
+		slot0_partition: partition@c000 {
+			label = "image-0";
+			reg = <0x0000c000 0x00038000>;
+		};
+
+		/* Reserve 224 KiB for the application in slot 1 */
+		slot1_partition: partition@44000 {
+			label = "image-1";
+			reg = <0x00044000 0x00038000>;
+		};
+
+		/* Set 16 KiB of storage at the end of the 512 KiB of flash */
+		storage_partition: partition@7c000 {
+			label = "storage";
+			reg = <0x0007c000 0x00004000>;
+		};
+	};
+};
+
+&sw_imu_enable {
+	enable-gpios = <&gpiob GECKO_PIN(4) GPIO_ACTIVE_HIGH>;
+};
