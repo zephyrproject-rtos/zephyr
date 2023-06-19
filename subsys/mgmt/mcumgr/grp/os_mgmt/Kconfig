@@ -48,6 +48,7 @@ endif
 
 config MCUMGR_GRP_OS_TASKSTAT
 	bool "Support for taskstat command"
+	select MCUMGR_SMP_CBOR_MIN_ENCODING_LEVEL_3 if ZCBOR_CANONICAL
 	depends on THREAD_MONITOR
 
 if MCUMGR_GRP_OS_TASKSTAT

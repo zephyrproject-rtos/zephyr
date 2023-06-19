@@ -54,7 +54,7 @@ struct cbor_nb_reader {
 
 struct cbor_nb_writer {
 	struct net_buf *nb;
-	zcbor_state_t zs[2];
+	zcbor_state_t zs[CONFIG_MCUMGR_SMP_CBOR_MAX_ENCODING_LEVELS + 2];
 
 #if IS_ENABLED(CONFIG_MCUMGR_SMP_SUPPORT_ORIGINAL_PROTOCOL)
 	uint16_t error_group;
