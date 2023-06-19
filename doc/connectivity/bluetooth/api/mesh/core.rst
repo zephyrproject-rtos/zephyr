@@ -108,6 +108,8 @@ This means that the system workqueue is blocked for the time it takes to store
 the stack's configuration. It is not recommended to disable this option as this
 will make the device non-responsive for a noticeable amount of time.
 
+.. _bluetooth_mesh_adv_identity:
+
 Advertisement identity
 **********************
 
