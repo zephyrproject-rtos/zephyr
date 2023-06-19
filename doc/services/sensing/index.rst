@@ -52,7 +52,7 @@ The diagram below illustrates how the Sensing Subsystem integrates with up-layer
    :alt: Unified Zephyr sensing architecture.
 
 Configurability
-===============
+***************
 
 * Reusable and configurable standalone subsystem.
 * Based on Zephyr existing low-level Sensor API (reuse 100+ existing sensor device drivers)
@@ -62,7 +62,7 @@ Configurability
   protocols (MQTT, HID or Private, all configurable)
 
 Main Features
-=============
+*************
 
 * Scope
     * Focus on framework for sensor fusion, multiple clients, arbitration, data sampling, timing
@@ -84,28 +84,6 @@ Main Features
 
 * Configurable Via Device Tree
 
-API Design
-**********
-
-API Organization
-================
-
-* Sensing Subsystem
-    * Sensor Types
-
-    .. doxygengroup:: sensing_sensor_types
-
-    * Data Types
-
-    .. doxygengroup:: sensing_datatypes
-
-    * Sensing Subsystem API
-
-    .. doxygengroup:: sensing_api
-
-    * Sensing Sensor API
-
-    .. doxygengroup:: sensing_sensor
 
 Below diagram shows the API position and scope:
 
@@ -118,7 +96,7 @@ Below diagram shows the API position and scope:
 
 
 Major Flows
-=========================
+***********
 
 * Sensor Configuration Flow
 
@@ -133,7 +111,7 @@ Major Flows
    :alt: Sensor Data Flow (App receive hinge angel data through data event callback example).
 
 Sensor Types And Instance
-=========================
+*************************
 
 The ``Sensing Subsystem`` supports multiple instances of the same sensor type,
 there're two methods for Applications to identify and open an unique sensor instance:
@@ -171,7 +149,7 @@ sensor(s).
 See :zephyr_file:`include/zephyr/sensing/sensing_sensor_types.h`
 
 Sensor Instance Handler
-=========================
+***********************
 
 Clients using a :c:type:`sensing_sensor_handle_t` type handler to handle a opened sensor
 instance, and all subsequent operations on this sensor instance need use this handler,
@@ -201,7 +179,7 @@ to it's reporter sensors.
    Application(s) need to call :c:func:`sensing_open_sensor` to explicitly open the sensor instance.
 
 Sensor Sample Value
-==================================
+*******************
 
 * Data Structure
 
@@ -268,7 +246,7 @@ See the example :zephyr_file:`samples/subsys/sensing/simple/boards/native_posix.
 API Reference
 *************
 
-Sensing
-========
-
-.. doxygengroup:: sensing
+.. doxygengroup:: sensing_sensor_types
+.. doxygengroup:: sensing_datatypes
+.. doxygengroup:: sensing_api
+.. doxygengroup:: sensing_sensor
