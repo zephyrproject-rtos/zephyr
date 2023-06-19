@@ -1,0 +1,12 @@
+# Copyright (c) 2023, Telink Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+description: Telink B91 watchdog node
+
+compatible: "telink,b91-watchdog"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true

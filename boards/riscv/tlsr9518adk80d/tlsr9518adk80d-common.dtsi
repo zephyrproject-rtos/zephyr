@@ -21,6 +21,7 @@
 		sw2 = &key_3;
 		pwm-led0 = &pwm_led_blue;
 		pwm-0 = &pwm0;
+		watchdog0 = &wdt;
 	};
 
 	leds {
@@ -186,5 +187,9 @@
 
 zephyr_udc0: &usbd {
 	compatible = "telink,b91-usbd";
+	status = "okay";
+};
+
+&wdt {
 	status = "okay";
 };

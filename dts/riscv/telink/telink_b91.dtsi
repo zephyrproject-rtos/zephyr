@@ -240,5 +240,11 @@
 						"pull_up_en";
 			status = "okay";
 		};
+
+		wdt: watchdog@140140 {
+			compatible = "telink,b91-watchdog";
+			reg = <0x140140 0x10>;
+			status = "disabled";
+		};
 	};
 };
