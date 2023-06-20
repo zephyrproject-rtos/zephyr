@@ -141,10 +141,10 @@ static ssize_t read_role(struct bt_conn *conn,
 /* Telephony and Media Audio Service attributes */
 #define BT_TMAS_SERVICE_DEFINITION \
 	BT_GATT_PRIMARY_SERVICE(BT_UUID_TMAS), \
-	BT_AUDIO_CHRC(BT_UUID_GATT_TMAPR, \
-		      BT_GATT_CHRC_READ, \
-		      BT_GATT_PERM_READ_ENCRYPT, \
-		      read_role, NULL, NULL)
+	BT_GATT_CHARACTERISTIC(BT_UUID_GATT_TMAPR, \
+			       BT_GATT_CHRC_READ, \
+			       BT_GATT_PERM_READ, \
+			       read_role, NULL, NULL)
 
 static struct bt_gatt_attr svc_attrs[] = { BT_TMAS_SERVICE_DEFINITION };
 static struct bt_gatt_service tmas;
