@@ -63,6 +63,20 @@
 		supply-voltage-mv = <3000>;
 	};
 
+	edge_connector: connector {
+		compatible = "nordic-thingy53-edge-connector";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <8 0 &gpio0 5 0>,	/* P8, P0.05/AIN1 */
+			   <9 0 &gpio0 4 0>,	/* P9, P0.04/AIN0 */
+			   <15 0 &gpio0 8 0>,	/* P15, P0.08/TRACEDATA3 */
+			   <16 0 &gpio0 9 0>,	/* P16, P0.09/TRACEDATA2 */
+			   <17 0 &gpio0 10 0>,	/* P17, P0.10/TRACEDATA1 */
+			   <18 0 &gpio0 11 0>,	/* P18, P0.11/TRACEDATA0 */
+			   <19 0 &gpio0 12 0>;	/* P19, P0.12/TRACECLK */
+	};
+
 	aliases {
 		sw0 = &button0;
 		sw1 = &button1;
