@@ -127,13 +127,13 @@ static int vq_setup(struct ipc_static_vrings *vr, unsigned int role)
 	vr->rvrings[RPMSG_VQ_0].io = vr->shm_io;
 	vr->rvrings[RPMSG_VQ_0].info.vaddr = (void *) vr->tx_addr;
 	vr->rvrings[RPMSG_VQ_0].info.num_descs = vr->vring_size;
-	vr->rvrings[RPMSG_VQ_0].info.align = VRING_ALIGNMENT;
+	vr->rvrings[RPMSG_VQ_0].info.align = MEM_ALIGNMENT;
 	vr->rvrings[RPMSG_VQ_0].vq = vr->vq[RPMSG_VQ_0];
 
 	vr->rvrings[RPMSG_VQ_1].io = vr->shm_io;
 	vr->rvrings[RPMSG_VQ_1].info.vaddr = (void *) vr->rx_addr;
 	vr->rvrings[RPMSG_VQ_1].info.num_descs = vr->vring_size;
-	vr->rvrings[RPMSG_VQ_1].info.align = VRING_ALIGNMENT;
+	vr->rvrings[RPMSG_VQ_1].info.align = MEM_ALIGNMENT;
 	vr->rvrings[RPMSG_VQ_1].vq = vr->vq[RPMSG_VQ_1];
 
 	vr->vdev.role = role;
