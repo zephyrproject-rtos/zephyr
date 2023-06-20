@@ -1591,7 +1591,8 @@ static uint8_t primary_discover_tbs(struct bt_conn *conn, const struct bt_gatt_a
 		srv_inst->current_inst->start_handle = attr->handle + 1;
 		srv_inst->current_inst->end_handle = prim_service->end_handle;
 
-		if (srv_inst->inst_cnt < CONFIG_BT_TBS_CLIENT_MAX_TBS_INSTANCES) {
+		if (CONFIG_BT_TBS_CLIENT_MAX_TBS_INSTANCES > 1 &&
+		    srv_inst->inst_cnt < CONFIG_BT_TBS_CLIENT_MAX_TBS_INSTANCES) {
 			return BT_GATT_ITER_CONTINUE;
 		}
 	}
