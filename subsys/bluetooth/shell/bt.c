@@ -586,7 +586,7 @@ done:
 	}
 }
 
-static void disconencted_set_new_default_conn_cb(struct bt_conn *conn, void *user_data)
+static void disconnected_set_new_default_conn_cb(struct bt_conn *conn, void *user_data)
 {
 	struct bt_conn_info info;
 
@@ -622,7 +622,7 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 		default_conn = NULL;
 
 		/* If we are connected to other devices, set one of them as default */
-		bt_conn_foreach(BT_CONN_TYPE_LE, disconencted_set_new_default_conn_cb, NULL);
+		bt_conn_foreach(BT_CONN_TYPE_LE, disconnected_set_new_default_conn_cb, NULL);
 	}
 }
 
