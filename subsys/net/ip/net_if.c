@@ -425,8 +425,6 @@ static inline void init_iface(struct net_if *iface)
 	net_if_flag_set(iface, NET_IF_IPV6);
 #endif
 
-	net_if_flag_test_and_set(iface, NET_IF_LOWER_UP);
-
 	net_virtual_init(iface);
 
 	NET_DBG("On iface %p", iface);
