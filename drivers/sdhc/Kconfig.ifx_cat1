@@ -1,0 +1,22 @@
+# Infineon CAT1 SDHC configuration options
+
+# Copyright (c) 2023 Cypress Semiconductor Corporation (an Infineon company) or
+# an affiliate of Cypress Semiconductor Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config SDHC_INFINEON_CAT1
+	bool "Infineon CAT1 SDHC driver"
+	default y
+	depends on DT_HAS_INFINEON_CAT1_SDHC_SDIO_ENABLED
+	select USE_INFINEON_SDIO
+	select SDHC_SUPPORTS_NATIVE_MODE
+	help
+	  This option enables the SDHC driver for Infineon CAT1 family.
+
+if SDHC_INFINEON_CAT1
+
+config SDHC_INIT_PRIORITY
+	default 70
+
+endif
