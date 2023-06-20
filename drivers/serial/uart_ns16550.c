@@ -1248,6 +1248,15 @@ static const struct uart_driver_api uart_ns16550_driver_api = {
 #define DEV_DATA_DLF_INIT(n) \
 	_CONCAT(DEV_DATA_DLF, DT_INST_NODE_HAS_PROP(n, dlf))(n)
 
+#ifdef CONFIG_UART_NS16550_PARENT_INIT_LEVEL
+#define NS16550_BOOT_LEVEL0 PRE_KERNEL_1
+#define NS16550_BOOT_LEVEL1 POST_KERNEL
+#define BOOT_LEVEL(n) \
+	_CONCAT(NS16550_BOOT_LEVEL, DT_INST_ON_BUS(n, pcie))
+#else
+#define BOOT_LEVEL(n) PRE_KERNEL_1
+#endif
+
 #define UART_NS16550_DEVICE_INIT(n)                                                  \
 	UART_NS16550_IRQ_FUNC_DECLARE(n);                                            \
 	DEV_PCIE_DECLARE(n);                                                         \
@@ -1283,7 +1292,7 @@ static const struct uart_driver_api uart_ns16550_driver_api = {
 	};                                                                           \
 	DEVICE_DT_INST_DEFINE(n, &uart_ns16550_init, NULL,                           \
 			      &uart_ns16550_dev_data_##n, &uart_ns16550_dev_cfg_##n, \
-			      PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY,             \
+			      BOOT_LEVEL(n), CONFIG_SERIAL_INIT_PRIORITY,             \
 			      &uart_ns16550_driver_api);                             \
 	UART_NS16550_IRQ_FUNC_DEFINE(n)
 
