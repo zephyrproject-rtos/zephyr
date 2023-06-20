@@ -72,6 +72,16 @@ config UART_NS16550_SIMULT_ACCESS
 	  When enabled, NS16550 supports IO, MMIO, PCIe UART devices simultaneously.
 	  For io-mapped instances, io-mapped DTS property need to be added in dtsi.
 
+config UART_NS16550_PARENT_INIT_LEVEL
+	bool "Boot level based on parent node"
+	default y if ACPI
+	help
+	  Boot level based on parent node (PCI or no PCI device). Some platforms the
+	  PCI bus driver depends on ACPI sub system to retrieve platform information
+	  such as interrupt routing information. But ACPI sub system currently support
+	  only post kernel and hence such platforms the UART driver instance init
+	  should be invoked only post kernel in case parent node is PCI.
+
 menu "NS16550 Workarounds"
 
 config UART_NS16550_WA_ISR_REENABLE_INTERRUPT
