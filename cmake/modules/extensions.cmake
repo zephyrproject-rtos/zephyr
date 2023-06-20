@@ -2934,7 +2934,7 @@ function(target_byproducts)
   endif()
 
   add_custom_command(TARGET ${TB_TARGET}
-                     POST_BUILD COMMAND ${CMAKE_COMMAND} -E echo ""
+                     POST_BUILD COMMAND ${CMAKE_COMMAND} -E true
                      BYPRODUCTS ${TB_BYPRODUCTS}
                      COMMENT "Logical command for additional byproducts on target: ${TB_TARGET}"
   )
