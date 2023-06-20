@@ -2015,7 +2015,7 @@ static int ascs_ep_set_metadata(struct bt_bap_ep *ep, uint8_t *data, uint8_t len
 
 static void ase_metadata(struct bt_ascs_ase *ase, struct bt_ascs_metadata *meta)
 {
-	struct bt_codec_data metadata_backup[CONFIG_BT_CODEC_MAX_DATA_COUNT];
+	struct bt_codec_data metadata_backup[CONFIG_BT_CODEC_MAX_METADATA_COUNT];
 	struct bt_bap_stream *stream;
 	struct bt_bap_ep *ep;
 	struct bt_bap_ascs_rsp rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_SUCCESS,
