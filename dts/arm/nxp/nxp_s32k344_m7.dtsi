@@ -505,6 +505,30 @@
 			interrupts = <162 0>;
 			status = "disabled";
 		};
+
+		adc0: adc@400a0000 {
+			compatible = "nxp,s32-adc-sar";
+			reg = <0x400a0000 0x1000>;
+			interrupts = <180 0>;
+			#io-channel-cells = <1>;
+			status = "disabled";
+		};
+
+		adc1: adc@400a4000 {
+			compatible = "nxp,s32-adc-sar";
+			reg = <0x400a4000 0x1000>;
+			interrupts = <181 0>;
+			#io-channel-cells = <1>;
+			status = "disabled";
+		};
+
+		adc2: adc@400a8000 {
+			compatible = "nxp,s32-adc-sar";
+			reg = <0x400a8000 0x1000>;
+			interrupts = <182 0>;
+			#io-channel-cells = <1>;
+			status = "disabled";
+		};
 	};
 };
 
