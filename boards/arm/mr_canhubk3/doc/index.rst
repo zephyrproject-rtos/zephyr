@@ -52,6 +52,7 @@ LPUART        on-chip     serial
 QSPI          on-chip     flash
 FLEXCAN       on-chip     can
 LPI2C         on-chip     i2c
+ADC SAR       on-chip     adc
 ============  ==========  ================================
 
 The default configuration can be found in the Kconfig file
@@ -190,6 +191,15 @@ P3.3       PTD8   LPI2C1_SDA
 P4.3       PTD14  LPI2C0_SCL
 P4.4       PTD13  LPI2C0_SDA
 =========  =====  ============
+
+ADC
+===
+
+ADC is provided through ADC SAR controller with 3 instances. ADC channels are divided into
+3 groups (precision, standard and external).
+
+.. note::
+   All channels of an instance only run on 1 group channel at the same time.
 
 FS26 SBC Watchdog
 =================

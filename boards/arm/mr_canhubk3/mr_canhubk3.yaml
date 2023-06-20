@@ -14,3 +14,4 @@ supported:
   - uart
   - can
   - i2c
+  - adc
