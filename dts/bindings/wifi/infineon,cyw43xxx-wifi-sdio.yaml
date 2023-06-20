@@ -1,0 +1,64 @@
+# Copyright (c) 2023 Cypress Semiconductor Corporation (an Infineon company) or
+# an affiliate of Cypress Semiconductor Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    CYW43xxx WIFI Connectivity.
+
+    Example of enabling CYW43xxx device:
+      wifi-sdio {
+        status = "okay";
+        compatible = "infineon,cyw43xxx-wifi-sdio";
+
+        /* SDIO pins */
+        sdio-cmd-gpios  = <&gpio_prt2 4 0>;
+        sdio-clk-gpios  = <&gpio_prt2 5 0>;
+        sdio-data-gpios = <&gpio_prt2 0 0>,
+                          <&gpio_prt2 1 0>,
+                          <&gpio_prt2 2 0>,
+                          <&gpio_prt2 3 0>;
+
+        /* WIFI control gpios */
+        wifi-reg-on-gpios    = <&gpio_prt2 6 0>;
+        wifi-host-wake-gpios = <&gpio_prt0 4 0>;
+      };
+
+
+compatible: "infineon,cyw43xxx-wifi-sdio"
+
+include: [base.yaml, pinctrl-device.yaml]
+
+properties:
+  wifi-reg-on-gpios:
+    description: |
+      Power-up/down gpio to control the internal regulators used
+      by the WiFi section of CYW43xx device.
+    type: phandle-array
+
+  wifi-host-wake-gpios:
+    description: |
+      Host wake-up gpio. Signal from the CYW43xx to the host
+      indicating that the CYW43xx requires attention.
+    type: phandle-array
+
+  wifi-dev-wake-gpios:
+    description: |
+      WiFi device wake-up gpio. Signal from the host to the
+      CYW43xx indicating that the host requires attention.
+    type: phandle-array
+
+  sdio-cmd-gpios:
+    description: WiFi SDIO command gpio.
+    type: phandle-array
+    required: true
+
+  sdio-clk-gpios:
+    description: WiFi SDIO clock gpio.
+    type: phandle-array
+    required: true
+
+  sdio-data-gpios:
+    description: Array of WiFi SDIO data gpios (D0, D1, D2, D3).
+    type: phandle-array
+    required: true

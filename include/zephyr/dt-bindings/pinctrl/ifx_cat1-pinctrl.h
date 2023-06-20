@@ -98,10 +98,13 @@
  * port_number = ((REG ADDR of node) - (REG ADDR of gpio_prt0)) / (REG SIZE of gpio_prt0)
  * pin_number  = DT_PHA_BY_IDX(node, gpios_prop, 0, pin)
  */
-#define DT_GET_CYHAL_GPIO_FROM_DT_GPIOS(node, gpios_prop)			   \
+#define DT_GET_CYHAL_GPIO_FROM_DT_GPIOS_IDX(node, gpios_prop, idx)		   \
 	CYHAL_GET_GPIO(								   \
 		(DT_REG_ADDR_BY_IDX(DT_GPIO_CTLR_BY_IDX(node, gpios_prop, 0), 0) - \
 		 DT_REG_ADDR_BY_IDX(DT_NODELABEL(gpio_prt0), 0)) /		   \
 		DT_REG_ADDR_BY_IDX(DT_NODELABEL(gpio_prt0), 1),			   \
-		DT_PHA_BY_IDX(node, gpios_prop, 0, pin)				   \
+		DT_PHA_BY_IDX(node, gpios_prop, idx, pin)			   \
 		)
+
+#define DT_GET_CYHAL_GPIO_FROM_DT_GPIOS(node, gpios_prop)			   \
+	DT_GET_CYHAL_GPIO_FROM_DT_GPIOS_IDX(node, gpios_prop, 0)

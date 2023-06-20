@@ -63,7 +63,9 @@ tests:
       - CONFIG_UART_MUX=y
   drivers.modem.esp_at.build:
     extra_args: CONF_FILE=modem_esp_at.conf
-    platform_exclude: ip_k66f
+    platform_exclude:
+      - ip_k66f
+      - cy8cproto_062_4343w
     filter: CONFIG_SERIAL
     min_ram: 36
   drivers.modem.esp_at.async.build:

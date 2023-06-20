@@ -66,9 +66,8 @@ config USE_INFINEON_WDT
 	  Enable WATCHDOG TIMER (WDT) HAL module
 	  driver for Infineon devices
 
-config ABSTRACTION_RTOS_COMPONENT_ZEPHYR
+config USE_INFINEON_ABSTRACTION_RTOS
 	bool "Abstraction RTOS component (Zephyr support)"
-	default n
 	help
 	  Enable Abstraction RTOS component with Zephyr support
 
@@ -76,5 +75,7 @@ config USE_INFINEON_FLASH
 	bool
 	help
 	  Enable Flash HAL module driver for Infineon devices
+
+rsource "whd-zephyr-integration/Kconfig.cyw43xxx"
 
 endif # SOC_FAMILY_PSOC6
