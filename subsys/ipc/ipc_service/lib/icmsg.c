@@ -20,9 +20,9 @@ enum rx_buffer_state {
 	RX_BUFFER_STATE_HELD
 };
 
-enum send_buffer_state {
-	SEND_BUFFER_STATE_UNUSED,
-	SEND_BUFFER_STATE_RESERVED
+enum tx_buffer_state {
+	TX_BUFFER_STATE_UNUSED,
+	TX_BUFFER_STATE_RESERVED
 };
 
 static const uint8_t magic[] = {0x45, 0x6d, 0x31, 0x6c, 0x31, 0x4b,
@@ -73,39 +73,39 @@ static bool is_endpoint_ready(struct icmsg_data_t *dev_data)
 	return atomic_get(&dev_data->state) == ICMSG_STATE_READY;
 }
 
-static bool is_send_buffer_reserved(struct icmsg_data_t *dev_data)
+static bool is_tx_buffer_reserved(struct icmsg_data_t *dev_data)
 {
-	return atomic_get(&dev_data->send_buffer_state) ==
-			SEND_BUFFER_STATE_RESERVED;
+	return atomic_get(&dev_data->tx_buffer_state) ==
+			TX_BUFFER_STATE_RESERVED;
 }
 
-static int reserve_send_buffer_if_unused(struct icmsg_data_t *dev_data)
+static int reserve_tx_buffer_if_unused(struct icmsg_data_t *dev_data)
 {
 #ifdef CONFIG_IPC_SERVICE_ICMSG_SHMEM_ACCESS_SYNC
-	int ret = k_mutex_lock(&dev_data->send, SHMEM_ACCESS_TO);
+	int ret = k_mutex_lock(&dev_data->tx_lock, SHMEM_ACCESS_TO);
 
 	if (ret < 0) {
 		return ret;
 	}
 #endif
 
-	bool was_unused = atomic_cas(&dev_data->send_buffer_state,
-				  SEND_BUFFER_STATE_UNUSED, SEND_BUFFER_STATE_RESERVED);
+	bool was_unused = atomic_cas(&dev_data->tx_buffer_state,
+				  TX_BUFFER_STATE_UNUSED, TX_BUFFER_STATE_RESERVED);
 
 	return was_unused ? 0 : -EALREADY;
 }
 
-static int release_send_buffer(struct icmsg_data_t *dev_data)
+static int release_tx_buffer(struct icmsg_data_t *dev_data)
 {
-	bool was_reserved = atomic_cas(&dev_data->send_buffer_state,
-					SEND_BUFFER_STATE_RESERVED, SEND_BUFFER_STATE_UNUSED);
+	bool was_reserved = atomic_cas(&dev_data->tx_buffer_state,
+					TX_BUFFER_STATE_RESERVED, TX_BUFFER_STATE_UNUSED);
 
 	if (!was_reserved) {
 		return -EALREADY;
 	}
 
 #ifdef CONFIG_IPC_SERVICE_ICMSG_SHMEM_ACCESS_SYNC
-	return k_mutex_unlock(&dev_data->send);
+	return k_mutex_unlock(&dev_data->tx_lock);
 #else
 	return 0;
 #endif
@@ -265,7 +265,7 @@ int icmsg_open(const struct icmsg_config_t *conf,
 	dev_data->cfg = conf;
 
 #ifdef CONFIG_IPC_SERVICE_ICMSG_SHMEM_ACCESS_SYNC
-	k_mutex_init(&dev_data->send);
+	k_mutex_init(&dev_data->tx_lock);
 #endif
 
 	dev_data->tx_ib = spsc_pbuf_init((void *)conf->tx_shm_addr,
@@ -331,13 +331,13 @@ int icmsg_send(const struct icmsg_config_t *conf,
 		return -ENODATA;
 	}
 
-	ret = reserve_send_buffer_if_unused(dev_data);
+	ret = reserve_tx_buffer_if_unused(dev_data);
 	if (ret < 0) {
 		return -ENOBUFS;
 	}
 
 	write_ret = spsc_pbuf_write(dev_data->tx_ib, msg, len);
-	release_ret = release_send_buffer(dev_data);
+	release_ret = release_tx_buffer(dev_data);
 	__ASSERT_NO_MSG(!release_ret);
 
 	if (write_ret < 0) {
@@ -377,14 +377,14 @@ int icmsg_get_tx_buffer(const struct icmsg_config_t *conf,
 		requested_size = *size;
 	}
 
-	ret = reserve_send_buffer_if_unused(dev_data);
+	ret = reserve_tx_buffer_if_unused(dev_data);
 	if (ret < 0) {
 		return -ENOBUFS;
 	}
 
 	ret = spsc_pbuf_alloc(dev_data->tx_ib, requested_size, &allocated_buf);
 	if (ret < 0) {
-		release_ret = release_send_buffer(dev_data);
+		release_ret = release_tx_buffer(dev_data);
 		__ASSERT_NO_MSG(!release_ret);
 		return ret;
 	}
@@ -408,7 +408,7 @@ int icmsg_get_tx_buffer(const struct icmsg_config_t *conf,
 	/* Allocated smaller buffer than requested.
 	 * Silently stop using the allocated buffer what is allowed by SPSC API
 	 */
-	release_send_buffer(dev_data);
+	release_tx_buffer(dev_data);
 	*size = allocated_len;
 	return -ENOMEM;
 }
@@ -419,7 +419,7 @@ int icmsg_drop_tx_buffer(const struct icmsg_config_t *conf,
 {
 	/* Silently stop using the allocated buffer what is allowed by SPSC API
 	 */
-	return release_send_buffer(dev_data);
+	return release_tx_buffer(dev_data);
 }
 
 int icmsg_send_nocopy(const struct icmsg_config_t *conf,
@@ -438,14 +438,14 @@ int icmsg_send_nocopy(const struct icmsg_config_t *conf,
 		return -ENODATA;
 	}
 
-	if (!is_send_buffer_reserved(dev_data)) {
+	if (!is_tx_buffer_reserved(dev_data)) {
 		return -ENXIO;
 	}
 
 	spsc_pbuf_commit(dev_data->tx_ib, len);
 	sent_bytes = len;
 
-	ret = release_send_buffer(dev_data);
+	ret = release_tx_buffer(dev_data);
 	__ASSERT_NO_MSG(!ret);
 
 	__ASSERT_NO_MSG(conf->mbox_tx.dev != NULL);
