@@ -57,16 +57,14 @@ Pytest scans the given folder looking for tests, following its default
 One can also pass some extra arguments to the pytest from yaml file using ``pytest_args`` keyword
 under ``harness_config``, e.g.: ``pytest_args: [‘-k=test_method’, ‘--log-level=DEBUG’]``.
 
-Two imports are important to include in .py sources:
+Following import is required to include in .py sources:
 
 .. code-block:: python
 
-   import pytest  # noqa # pylint: disable=unused-import
-   from pytest_twister_harness.device.device_abstract import DeviceAbstract
+   from twister_harness import Device
 
-The first enables pytest-twister-harness plugin indirectly, as it is added with pytest.
-It also gives access to ``dut`` fixture. The second is important for type checking and enabling
-IDE hints for duts. The ``dut`` fixture is the core of pytest harness plugin. When used as an
+It is important for type checking and enabling IDE hints for ``dut``s (objects representing
+Devices Under Test). The ``dut`` fixture is the core of pytest harness plugin. When used as an
 argument of a test function it gives access to a DeviceAbstract type object. The fixture yields a
 device prepared according to the requested type (native posix, qemu, hardware, etc.). All types of
 devices share the same API. This allows for writing tests which are device-type-agnostic.
