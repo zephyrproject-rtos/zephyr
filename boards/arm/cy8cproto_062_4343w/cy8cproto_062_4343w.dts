@@ -68,6 +68,28 @@ uart2: &scb2 {
 	};
 };
 
+&sdhc0{
+	status = "okay";
+
+	/* Wifi configuration */
+	wifi-sdio {
+		status = "okay";
+		compatible = "infineon,cyw43xxx-wifi-sdio";
+
+		/* SDIO pins */
+		sdio-cmd-gpios  = <&gpio_prt2 4 0>;
+		sdio-clk-gpios  = <&gpio_prt2 5 0>;
+		sdio-data-gpios = <&gpio_prt2 0 0>, /* D0 */
+				  <&gpio_prt2 1 0>, /* D1 */
+				  <&gpio_prt2 2 0>, /* D2 */
+				  <&gpio_prt2 3 0>; /* D3 */
+
+		/* WIFI control gpios */
+		wifi-reg-on-gpios    = <&gpio_prt2 6 0>;
+		wifi-host-wake-gpios = <&gpio_prt0 4 0>;
+	};
+};
+
 /* System clock configuration */
 &fll0 {
 	status = "okay";
