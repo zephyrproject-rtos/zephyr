@@ -944,8 +944,11 @@ void bt_cap_initiator_codec_configured(struct bt_cap_stream *cap_stream)
 			continue;
 		}
 
-		__ASSERT(free_conn, "No free conns");
-		*free_conn = stream_conn;
+		if (free_conn != NULL) {
+			*free_conn = stream_conn;
+		} else {
+			__ASSERT_PRINT("No free conns");
+		}
 	}
 
 	/* All streams in the procedure share the same unicast group, so we just
