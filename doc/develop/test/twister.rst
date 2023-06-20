@@ -643,6 +643,42 @@ integration keyword in the testcase definition file (testcase.yaml and
 sample.yaml).
 
 
+Running tests on custom emulator
+********************************
+
+Apart from the already supported QEMU and other simulated environments, Twister
+supports running any out-of-tree custom emulator defined in the board's :file:`board.cmake`.
+To use this type of simulation, add the following properties to
+:file:`custom_board/custom_board.yaml`:
+
+::
+
+   simulation: custom
+   simulation_exec: <name_of_emu_binary>
+
+This tells Twister that the board is using a custom emulator called ``<name_of_emu_binary>``,
+make sure this binary exists in the PATH.
+
+Then, in :file:`custom_board/board.cmake`, set the supported emulation platforms to ``custom``:
+
+::
+
+   set(SUPPORTED_EMU_PLATFORMS custom)
+
+Finally, implement the ``run_custom`` target in :file:`custom_board/board.cmake`.
+It should look something like this:
+
+::
+
+   add_custom_target(run_custom
+     COMMAND
+     <name_of_emu_binary to invoke during 'run'>
+     <any args to be passed to the command, i.e. ${BOARD}, ${APPLICATION_BINARY_DIR}/zephyr/zephyr.elf>
+     WORKING_DIRECTORY ${APPLICATION_BINARY_DIR}
+     DEPENDS ${logical_target_for_zephyr_elf}
+     USES_TERMINAL
+     )
+
 Running Tests on Hardware
 *************************
 
