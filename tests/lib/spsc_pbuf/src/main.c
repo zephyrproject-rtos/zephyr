@@ -52,14 +52,14 @@ static void test_spsc_pbuf_flags(uint32_t flags)
 	zassert_equal(rlen, -ENOMEM);
 
 	/* Read empty buffer. */
-	rlen = spsc_pbuf_read(ib, rbuf, sizeof(rbuf));
+	rlen = spsc_pbuf_read(ib, rbuf, sizeof(rbuf), NULL);
 	zassert_equal(rlen, 0);
 
 	/* Single write and read. */
 	wlen = spsc_pbuf_write(ib, message, sizeof(message));
 	zassert_equal(wlen, sizeof(message));
 
-	rlen = spsc_pbuf_read(ib, rbuf, sizeof(rbuf));
+	rlen = spsc_pbuf_read(ib, rbuf, sizeof(rbuf), NULL);
 	zassert_equal(rlen, sizeof(message));
 
 	ib = spsc_pbuf_init(memory_area, sizeof(memory_area), flags);
@@ -76,21 +76,21 @@ static void test_spsc_pbuf_flags(uint32_t flags)
 	zassert_equal(wlen, -ENOMEM);
 
 	/* Test reading with buf == NULL, should return len of the next message to read. */
-	rlen = spsc_pbuf_read(ib, NULL, 0);
+	rlen = spsc_pbuf_read(ib, NULL, 0, NULL);
 	zassert_equal(rlen, sizeof(message));
 
 	/* Read with len == 0 and correct buf pointer. */
-	rlen = spsc_pbuf_read(ib, rbuf, 0);
+	rlen = spsc_pbuf_read(ib, rbuf, 0, NULL);
 	zassert_equal(rlen, -ENOMEM);
 
 	/* Read whole data from the buffer. */
 	for (size_t i = 0; i < repeat; i++) {
-		wlen = spsc_pbuf_read(ib, rbuf, sizeof(rbuf));
+		wlen = spsc_pbuf_read(ib, rbuf, sizeof(rbuf), NULL);
 		zassert_equal(wlen, sizeof(message));
 	}
 
 	/* Buffer is empty */
-	rlen = spsc_pbuf_read(ib, NULL, 0);
+	rlen = spsc_pbuf_read(ib, NULL, 0, NULL);
 	zassert_equal(rlen, 0);
 
 	/* Write message that would be wrapped around. */
@@ -98,7 +98,7 @@ static void test_spsc_pbuf_flags(uint32_t flags)
 	zassert_equal(wlen, sizeof(message));
 
 	/* Read wrapped message. */
-	rlen = spsc_pbuf_read(ib, rbuf, sizeof(rbuf));
+	rlen = spsc_pbuf_read(ib, rbuf, sizeof(rbuf), NULL);
 	zassert_equal(rlen, sizeof(message));
 	zassert_equal(message[0], 'a');
 }
@@ -168,11 +168,12 @@ static void packet_consume(struct spsc_pbuf *pb,
 	}
 
 	for (int i = 0; i < rv; i++) {
-		zassert_equal(buf[i], exp_id + i, "%d: Unexpected value %d (exp:%d) at %d",
+		zassert_equal((uint8_t)buf[i], (uint8_t)(exp_id + i),
+				"%d: Unexpected value %d (exp:%d) at %d",
 				line, buf[i], exp_id + i, i);
 	}
 
-	spsc_pbuf_free(pb, rv);
+	(void)spsc_pbuf_free(pb, buf);
 }
 
 #define PACKET_CONSUME(_pb, _exp_rv, _exp_id) packet_consume(_pb, _exp_rv, _exp_id, __LINE__)
@@ -286,13 +287,13 @@ ZTEST(test_spsc_pbuf, test_0cpy_corner1)
 
 	len = spsc_pbuf_claim(pb, &buf);
 	zassert_equal(len1, len);
-	spsc_pbuf_free(pb, len);
+	(void)spsc_pbuf_free(pb, buf);
 
 	spsc_pbuf_commit(pb, len2);
 
 	len = spsc_pbuf_claim(pb, &buf);
 	zassert_equal(len2, len);
-	spsc_pbuf_free(pb, len);
+	(void)spsc_pbuf_free(pb, buf);
 }
 
 ZTEST(test_spsc_pbuf, test_0cpy_corner2)
@@ -370,6 +371,47 @@ ZTEST(test_spsc_pbuf, test_largest_alloc)
 	PACKET_WRITE(pb, SPSC_PBUF_MAX_LEN - 1, 0, 1, 12);
 }
 
+static void _larget_packets(bool max_packets)
+{
+	static uint8_t buffer[1024] __aligned(MAX(Z_SPSC_PBUF_DCACHE_LINE, 4));
+	uint32_t flags = max_packets ? SPSC_PBUF_MAX_PACKET : 0;
+	struct spsc_pbuf *pb;
+	uint32_t capacity;
+	uint32_t max_len;
+	uint32_t exp_max_len;
+	uint32_t len;
+	uint8_t v = 0;
+
+	pb = spsc_pbuf_init(buffer, sizeof(buffer), flags);
+	capacity = spsc_pbuf_capacity(pb);
+	max_len = spsc_pbuf_max_packet_size(pb);
+
+	if (max_packets) {
+		exp_max_len = capacity - sizeof(uint32_t);
+	} else {
+		exp_max_len = ROUND_DOWN((capacity - sizeof(uint32_t)) / 2, sizeof(uint32_t));
+	}
+	zassert_equal(max_len, exp_max_len);
+
+	len = max_len / 2;
+
+	while (len <= max_len) {
+		PACKET_WRITE(pb, len, len, v, len);
+		PACKET_CONSUME(pb, len, v);
+		v++;
+		PACKET_WRITE(pb, len, len, v, len);
+		PACKET_CONSUME(pb, len, v);
+		v++;
+		len++;
+	}
+}
+
+ZTEST(test_spsc_pbuf, test_large_packets)
+{
+	_larget_packets(true);
+	_larget_packets(false);
+}
+
 ZTEST(test_spsc_pbuf, test_utilization)
 {
 	static uint8_t buffer[128] __aligned(MAX(Z_SPSC_PBUF_DCACHE_LINE, 4));
@@ -417,6 +459,7 @@ struct stress_data {
 	uint32_t write_cnt;
 	uint32_t read_cnt;
 	uint32_t wr_err;
+	atomic_t new_data;
 };
 
 bool stress_read(void *user_data, uint32_t cnt, bool last, int prio)
@@ -427,7 +470,7 @@ bool stress_read(void *user_data, uint32_t cnt, bool last, int prio)
 	int rpt = (sys_rand32_get() & 3) + 1;
 
 	for (int i = 0; i < rpt; i++) {
-		len = spsc_pbuf_read(ctx->pbuf, buf, (uint16_t)sizeof(buf));
+		len = spsc_pbuf_read(ctx->pbuf, buf, (uint16_t)sizeof(buf), NULL);
 		if (len == 0) {
 			return true;
 		}
@@ -501,7 +544,7 @@ bool stress_claim_free(void *user_data, uint32_t cnt, bool last, int prio)
 
 		zassert_ok(check_buffer(buf, len, ctx->read_cnt));
 
-		spsc_pbuf_free(ctx->pbuf, len);
+		(void)spsc_pbuf_free(ctx->pbuf, buf);
 
 		ctx->read_cnt++;
 	}
@@ -551,6 +594,84 @@ ZTEST(test_spsc_pbuf, test_stress_0cpy)
 
 	ZTRESS_EXECUTE(ZTRESS_THREAD(stress_alloc_commit, &ctx, repeat, 0, Z_TIMEOUT_TICKS(4)),
 		       ZTRESS_THREAD(stress_claim_free, &ctx, repeat, 1000, Z_TIMEOUT_TICKS(4)));
+}
+
+bool stress_claim_free_max_packet(void *user_data, uint32_t cnt, bool last, int prio)
+{
+	struct stress_data *ctx = (struct stress_data *)user_data;
+	char *buf;
+	uint16_t len;
+
+
+	while (1) {
+		/* If no new data return. */
+		if (atomic_cas(&ctx->new_data, 1, 0) == false) {
+			return true;
+		}
+
+		len = spsc_pbuf_claim(ctx->pbuf, &buf);
+
+		zassert_true(len != 0);
+
+		zassert_ok(check_buffer(buf, len, ctx->read_cnt));
+
+		ctx->read_cnt++;
+
+		if (spsc_pbuf_free(ctx->pbuf, buf) == 1) {
+			break;
+		}
+	}
+
+	return true;
+}
+
+bool stress_alloc_commit_max_packet(void *user_data, uint32_t cnt, bool last, int prio)
+{
+	struct stress_data *ctx = (struct stress_data *)user_data;
+	uint32_t max_len = spsc_pbuf_max_packet_size(ctx->pbuf);
+	uint32_t rnd = sys_rand32_get();
+	uint16_t len = 1 + (rnd % max_len);
+	int rpt = rnd % 0x3;
+	char *buf;
+	int err;
+
+	for (int i = 0; i < rpt; i++) {
+		err = spsc_pbuf_alloc(ctx->pbuf, len, &buf);
+		zassert_true(err >= 0);
+		if (err != len) {
+			return true;
+		}
+
+		memset(buf, (uint8_t)ctx->write_cnt, len);
+
+		spsc_pbuf_commit(ctx->pbuf, len);
+		ctx->write_cnt++;
+		atomic_set(&ctx->new_data, 1);
+	}
+
+	return true;
+}
+
+ZTEST(test_spsc_pbuf, test_stress_0cpy_max_packet)
+{
+	static uint8_t buffer[128] __aligned(MAX(Z_SPSC_PBUF_DCACHE_LINE, 4));
+	static struct stress_data ctx;
+	uint32_t repeat = 0;
+
+	ctx.write_cnt = 0;
+	ctx.read_cnt = 0;
+	ctx.pbuf = spsc_pbuf_init(buffer, sizeof(buffer), SPSC_PBUF_MAX_PACKET);
+
+	ztress_set_timeout(K_MSEC(STRESS_TIMEOUT_MS));
+	ZTRESS_EXECUTE(ZTRESS_THREAD(stress_claim_free_max_packet, &ctx,
+				     repeat, 0, Z_TIMEOUT_TICKS(4)),
+		       ZTRESS_THREAD(stress_alloc_commit_max_packet, &ctx,
+				     repeat, 1000, Z_TIMEOUT_TICKS(4)));
+
+	ZTRESS_EXECUTE(ZTRESS_THREAD(stress_alloc_commit_max_packet, &ctx,
+				     repeat, 0, Z_TIMEOUT_TICKS(4)),
+		       ZTRESS_THREAD(stress_claim_free_max_packet, &ctx,
+				     repeat, 1000, Z_TIMEOUT_TICKS(4)));
 }
 
 ZTEST_SUITE(test_spsc_pbuf, NULL, NULL, NULL, NULL, NULL);

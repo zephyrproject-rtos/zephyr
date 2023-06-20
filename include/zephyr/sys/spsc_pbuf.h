@@ -20,12 +20,33 @@ extern "C" {
  * @{
  */
 
-/**@defgroup SPSC_PBUF_FLAGS MPSC packet buffer flags
+/**@defgroup SPSC_PBUF_FLAGS SPSC packet buffer flags
  * @{
  */
 
 /** @brief Flag indicating that cache shall be handled. */
 #define SPSC_PBUF_CACHE BIT(0)
+
+/** @brief When used, an empty packet buffer can hold a packet of a full capacity
+ * size.
+ *
+ * When flag is not set, a largest packet that can be stored is around half of
+ * the buffer capacity. Exact maximum packet size can be read using
+ * @ref spsc_pbuf_max_packet_size.
+ *
+ * When a packet buffer is configured with this flag then producer resets read
+ * and write indexes during allocation if indexes are equal.
+ *
+ * This option increases maximum packet size that can be stored in the empty buffer
+ * to the buffer capacity but violates the rule that producer modifies only the
+ * write index. However, producer will modify the read index only if buffer is
+ * empty. To ensure proper operation, consumer must not poll for a new data once
+ * @ref spsc_pbuf_free or @ref spsc_pbuf_read returns with the information that
+ * there is no more packets in the buffer. A packet buffer can be polled again once
+ * consumer is notified by the producer that a new packet is added. Notification
+ * method is outside of a scope of the packet buffer.
+ */
+#define SPSC_PBUF_MAX_PACKET BIT(1)
 
 /** @brief Size of the field which stores maximum utilization. */
 #define SPSC_PBUF_UTILIZATION_BITS 24
@@ -107,9 +128,10 @@ struct spsc_pbuf {
 
 /** @brief Get buffer capacity.
  *
- * This value is the amount of data that is dedicated for storing packets. Since
- * each packet is prefixed with 2 byte length header, longest possible packet is
- * less than that.
+ * This value is the amount of data that is dedicated for storing packets. There
+ * is one word obligatory gap to distinguish between emptya and full state. Each
+ * packet has 32 bit word header (with length), so actual data that can be stored
+ * in the buffer is the capacity decremented by space dedicated to packet headers.
  *
  * @param pb	A buffer.
  *
@@ -118,6 +140,33 @@ struct spsc_pbuf {
 static inline uint32_t spsc_pbuf_capacity(struct spsc_pbuf *pb)
 {
 	return pb->common.len - sizeof(uint32_t);
+}
+
+/** @brief Get biggest packet that can always fit into empty packet buffer.
+ *
+ * It may sound counterintuitive, but if packet is empty it still may not be
+ * able to store a packet of any size smaller than the buffer capacity. That is
+ * because of even when empty, read and write indexes may not point to the
+ * beginning of the buffer and as rule, producer can only modify write index and
+ * consumer read index.
+ *
+ * A packet buffer can be configured, so that a full capacity is utilized when
+ * buffer is empty but it imposes certain limitations (see @ref SPSC_PBUF_MAX_PACKET flag).
+ *
+ * @param pb	A buffer.
+ *
+ * @return A size of the biggest packet that can be added to the buffer if buffer
+ * is empty.
+ */
+static inline uint32_t spsc_pbuf_max_packet_size(struct spsc_pbuf *pb)
+{
+	uint32_t capacity = spsc_pbuf_capacity(pb);
+
+	if (pb->common.flags & SPSC_PBUF_MAX_PACKET) {
+		return capacity - sizeof(uint32_t);
+	}
+
+	return ROUND_DOWN((capacity - sizeof(uint32_t)) / 2, sizeof(uint32_t));
 }
 
 /**
@@ -205,16 +254,22 @@ void spsc_pbuf_commit(struct spsc_pbuf *pb, uint16_t len);
  *
  * It combines @ref spsc_pbuf_claim and @ref spsc_pbuf_free into a single call.
  *
- * @param pb		A buffer from which data will be read.
- * @param buf		Data pointer to which read data will be written.
+ * @param[in]  pb	A buffer from which data will be read.
+ * @param[in]  buf	Data pointer to which read data will be written.
  *			If NULL, len of stored message is returned.
- * @param len		Number of bytes to be read from the buffer.
+ * @param[in]  len	Number of bytes to be read from the buffer.
+ * @param[out] more     Valid only if the buffer is configured with
+ *			@ref SPSC_PBUF_MAX_PACKET flag and it is set to true if
+ *			it may still contain more packets and set to false if
+ *			there is not more packets and the buffer must not be read
+ *			until notified by the producer about new data. Can be null.
+ *
  * @retval int		Bytes read, negative error code on fail.
  *			Bytes to be read, if buf == NULL.
  *			-ENOMEM, if message can not fit in provided buf.
  *			-EAGAIN, if not whole message is ready yet.
  */
-int spsc_pbuf_read(struct spsc_pbuf *pb, char *buf, uint16_t len);
+int spsc_pbuf_read(struct spsc_pbuf *pb, char *buf, uint16_t len, bool *more);
 
 /**
  * @brief Claim packet from the buffer.
@@ -228,7 +283,7 @@ int spsc_pbuf_read(struct spsc_pbuf *pb, char *buf, uint16_t len);
  *
  * @param[in] pb	A buffer from which packet will be claimed.
  * @param[in,out] buf	A location where claimed packet address is written.
- *                      It is 32 bit word aligned and points to the continuous memory.
+ *			It is 32 bit word aligned and points to the continuous memory.
  *
  * @retval 0 No packets in the buffer.
  * @retval positive packet length.
@@ -241,9 +296,17 @@ uint16_t spsc_pbuf_claim(struct spsc_pbuf *pb, char **buf);
  * Packet must be claimed (@ref spsc_pbuf_claim) before it can be freed.
  *
  * @param pb	A packet buffer from which packet was claimed.
- * @param len	Claimed packet length.
+ * @param buf	Claimed packet.
+ *
+ * @retval 0 successful freeing, the buffer may contain more packets.
+ * @retval 1 successful freeing, buffer is empty after current freeing. It may
+ *	     only be returned if the buffer is configured with flag
+ *	     @ref SPSC_PBUF_MAX_PACKET and once false is returned the consumer
+ *	     must not attempt to claim new packet until the producer notifies
+ *	     that there is a new data.
+ * @retval -EINVAL if @p buf does not equal the claimed one.
  */
-void spsc_pbuf_free(struct spsc_pbuf *pb, uint16_t len);
+int spsc_pbuf_free(struct spsc_pbuf *pb, const char *buf);
 
 /**
  * @brief Get maximum utilization of the packet buffer.

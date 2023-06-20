@@ -8,6 +8,7 @@
 #include <string.h>
 #include <errno.h>
 #include <zephyr/cache.h>
+#include <zephyr/sys/barrier.h>
 #include <zephyr/sys/spsc_pbuf.h>
 #include <zephyr/sys/byteorder.h>
 
@@ -126,7 +127,7 @@ struct spsc_pbuf *spsc_pbuf_init(void *buf, size_t blen, uint32_t flags)
 	pb->common.flags = flags;
 	*wr_idx_loc = 0;
 
-	__sync_synchronize();
+	barrier_dmem_fence_full();
 	cache_wb(&pb->common, sizeof(pb->common), flags);
 	cache_wb(wr_idx_loc, sizeof(*wr_idx_loc), flags);
 
@@ -150,10 +151,25 @@ int spsc_pbuf_alloc(struct spsc_pbuf *pb, uint16_t len, char **buf)
 	}
 
 	cache_inv(rd_idx_loc, sizeof(*rd_idx_loc), flags);
-	__sync_synchronize();
+	barrier_dmem_fence_full();
 
 	uint32_t wr_idx = *wr_idx_loc;
 	uint32_t rd_idx = *rd_idx_loc;
+
+	if ((wr_idx == rd_idx) && (flags & SPSC_PBUF_MAX_PACKET)) {
+		/* If a buffer is empty we can reset indexes to allow packets of
+		 * the maximum capacity. However, producer needs to modify read index
+		 * for that. Consumer must take special approach to ensure proper
+		 * operation (no polling on empty buffer).
+		 */
+		wr_idx = 0;
+		rd_idx = 0;
+		*rd_idx_loc = 0;
+		*wr_idx_loc = 0;
+		cache_wb(rd_idx_loc, sizeof(*rd_idx_loc), flags);
+		barrier_dmem_fence_full();
+	}
+
 	int32_t free_space;
 
 	if (wr_idx >= rd_idx) {
@@ -178,7 +194,7 @@ int spsc_pbuf_alloc(struct spsc_pbuf *pb, uint16_t len, char **buf)
 		} else {
 			/* Padding must be added. */
 			data_loc[wr_idx] = PADDING_MARK;
-			__sync_synchronize();
+			barrier_dmem_fence_full();
 			cache_wb(&data_loc[wr_idx], sizeof(uint8_t), flags);
 
 			wr_idx = 0;
@@ -213,7 +229,7 @@ void spsc_pbuf_commit(struct spsc_pbuf *pb, uint16_t len)
 	uint32_t wr_idx = *wr_idx_loc;
 
 	sys_put_be16(len, &data_loc[wr_idx]);
-	__sync_synchronize();
+	barrier_dmem_fence_full();
 	cache_wb(&data_loc[wr_idx], len + LEN_SZ, flags);
 
 	wr_idx += len + LEN_SZ;
@@ -221,7 +237,7 @@ void spsc_pbuf_commit(struct spsc_pbuf *pb, uint16_t len)
 	wr_idx = wr_idx == pblen ? 0 : wr_idx;
 
 	*wr_idx_loc = wr_idx;
-	__sync_synchronize();
+	barrier_dmem_fence_full();
 	cache_wb(wr_idx_loc, sizeof(*wr_idx_loc), flags);
 }
 
@@ -255,8 +271,15 @@ uint16_t spsc_pbuf_claim(struct spsc_pbuf *pb, char **buf)
 	uint32_t *wr_idx_loc = get_wr_idx_loc(pb, flags);
 	uint8_t *data_loc = get_data_loc(pb, flags);
 
+	if (flags & SPSC_PBUF_MAX_PACKET) {
+		/* If maximum packet is used then it is possible that producer
+		 * will modify read index thus we must perform cache invalidation
+		 * on it.
+		 */
+		cache_inv(rd_idx_loc, sizeof(*rd_idx_loc), flags);
+	}
 	cache_inv(wr_idx_loc, sizeof(*wr_idx_loc), flags);
-	__sync_synchronize();
+	barrier_dmem_fence_full();
 
 	uint32_t wr_idx = *wr_idx_loc;
 	uint32_t rd_idx = *rd_idx_loc;
@@ -274,7 +297,7 @@ uint16_t spsc_pbuf_claim(struct spsc_pbuf *pb, char **buf)
 	if (IS_ENABLED(CONFIG_SPSC_PBUF_UTILIZATION) && (bytes_stored > GET_UTILIZATION(flags))) {
 		__ASSERT_NO_MSG(bytes_stored <= BIT_MASK(SPSC_PBUF_UTILIZATION_BITS));
 		pb->common.flags = SET_UTILIZATION(flags, bytes_stored);
-		__sync_synchronize();
+		barrier_dmem_fence_full();
 		cache_wb(&pb->common.flags, sizeof(pb->common.flags), flags);
 	}
 
@@ -295,7 +318,7 @@ uint16_t spsc_pbuf_claim(struct spsc_pbuf *pb, char **buf)
 		}
 
 		*rd_idx_loc = rd_idx = 0;
-		__sync_synchronize();
+		barrier_dmem_fence_full();
 		cache_wb(rd_idx_loc, sizeof(*rd_idx_loc), flags);
 		/* After reading padding we may find out that buffer is empty. */
 		if (rd_idx == wr_idx) {
@@ -316,40 +339,63 @@ uint16_t spsc_pbuf_claim(struct spsc_pbuf *pb, char **buf)
 	return len;
 }
 
-void spsc_pbuf_free(struct spsc_pbuf *pb, uint16_t len)
+int spsc_pbuf_free(struct spsc_pbuf *pb, const char *buf)
 {
 	/* Length of the buffer and flags are immutable - avoid reloading. */
 	const uint32_t pblen = pb->common.len;
 	const uint32_t flags = pb->common.flags;
 	uint32_t *rd_idx_loc = get_rd_idx_loc(pb, flags);
 	uint32_t *wr_idx_loc = get_wr_idx_loc(pb, flags);
-	uint16_t rd_idx = *rd_idx_loc + len + LEN_SZ;
+	uint16_t prev_rd_idx = *rd_idx_loc;
 	uint8_t *data_loc = get_data_loc(pb, flags);
+	int ret = 0;
 
-	rd_idx = ROUND_UP(rd_idx, sizeof(uint32_t));
-	cache_inv(&data_loc[rd_idx], sizeof(uint8_t), flags);
+	if (buf != (char *)&data_loc[prev_rd_idx + LEN_SZ]) {
+		return -EINVAL;
+	}
+
+	cache_inv(&data_loc[prev_rd_idx], sizeof(uint32_t), flags);
+
+	uint16_t len = sys_get_be16(&data_loc[prev_rd_idx]);
+	uint32_t new_rd_idx = prev_rd_idx + len + LEN_SZ;
+
+	new_rd_idx = ROUND_UP(new_rd_idx, sizeof(uint32_t));
+	cache_inv(&data_loc[new_rd_idx], sizeof(uint8_t), flags);
 	/* Handle wrapping or the fact that next packet is a padding. */
-	if (rd_idx == pblen) {
-		rd_idx = 0;
-	} else if (data_loc[rd_idx] == PADDING_MARK) {
+	if (new_rd_idx == pblen) {
+		new_rd_idx = 0;
+	} else if (data_loc[new_rd_idx] == PADDING_MARK) {
 		cache_inv(wr_idx_loc, sizeof(*wr_idx_loc), flags);
 		/* We may hit the case when producer is in the middle of adding
 		 * a padding (which happens in 2 steps: writing padding, resetting
 		 * write index) and in that case we cannot consume this padding.
 		 */
-		if (rd_idx != *wr_idx_loc) {
-			rd_idx = 0;
+		if (new_rd_idx != *wr_idx_loc) {
+			new_rd_idx = 0;
 		}
 	} else {
 		/* empty */
 	}
 
-	*rd_idx_loc = rd_idx;
-	__sync_synchronize();
+	if (flags & SPSC_PBUF_MAX_PACKET) {
+		/* Fetch the information if this was the last packet by checking
+		 * if the read index reached the write index. Even if the producer
+		 * writes new data just after we check, the consumer will be
+		 * notified.
+		 */
+		cache_inv(wr_idx_loc, sizeof(*wr_idx_loc), flags);
+		barrier_dmem_fence_full();
+		ret = *wr_idx_loc == new_rd_idx ? 1 : 0;
+	}
+
+	*rd_idx_loc = new_rd_idx;
+	barrier_dmem_fence_full();
 	cache_wb(rd_idx_loc, sizeof(*rd_idx_loc), flags);
+
+	return ret;
 }
 
-int spsc_pbuf_read(struct spsc_pbuf *pb, char *buf, uint16_t len)
+int spsc_pbuf_read(struct spsc_pbuf *pb, char *buf, uint16_t len, bool *more)
 {
 	char *pkt;
 	uint16_t plen = spsc_pbuf_claim(pb, &pkt);
@@ -368,7 +414,11 @@ int spsc_pbuf_read(struct spsc_pbuf *pb, char *buf, uint16_t len)
 
 	memcpy(buf, pkt, plen);
 
-	spsc_pbuf_free(pb, plen);
+	int err = spsc_pbuf_free(pb, pkt);
+
+	if (more) {
+		*more = err == 0;
+	}
 
 	return plen;
 }
@@ -380,7 +430,7 @@ int spsc_pbuf_get_utilization(struct spsc_pbuf *pb)
 	}
 
 	cache_inv(&pb->common.flags, sizeof(pb->common.flags), pb->common.flags);
-	__sync_synchronize();
+	barrier_dmem_fence_full();
 
 	return GET_UTILIZATION(pb->common.flags);
 }

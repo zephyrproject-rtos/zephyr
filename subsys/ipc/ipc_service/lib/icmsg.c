@@ -131,7 +131,7 @@ static bool is_rx_buffer_held(struct icmsg_data_t *dev_data)
 
 static bool is_rx_data_available(struct icmsg_data_t *dev_data)
 {
-	int len = spsc_pbuf_read(dev_data->rx_ib, NULL, 0);
+	int len = spsc_pbuf_read(dev_data->rx_ib, NULL, 0, NULL);
 
 	return len > 0;
 }
@@ -184,11 +184,6 @@ static void mbox_callback_process(struct k_work *item)
 
 	if (state == ICMSG_STATE_READY) {
 		if (dev_data->cb->received) {
-#if CONFIG_IPC_SERVICE_ICMSG_NOCOPY_RX
-			dev_data->rx_buffer = rx_buffer;
-			dev_data->rx_len = len;
-#endif
-
 			dev_data->cb->received(rx_buffer, len,
 					       dev_data->ctx);
 
@@ -196,12 +191,7 @@ static void mbox_callback_process(struct k_work *item)
 			 * to hold it.
 			 */
 			if (!is_rx_buffer_held(dev_data)) {
-				spsc_pbuf_free(dev_data->rx_ib, len);
-
-#if CONFIG_IPC_SERVICE_ICMSG_NOCOPY_RX
-				dev_data->rx_buffer = NULL;
-				dev_data->rx_len = 0;
-#endif
+				(void)spsc_pbuf_free(dev_data->rx_ib, rx_buffer);
 			}
 		}
 	} else {
@@ -209,7 +199,7 @@ static void mbox_callback_process(struct k_work *item)
 
 		bool endpoint_invalid = (len != sizeof(magic) || memcmp(magic, rx_buffer, len));
 
-		spsc_pbuf_free(dev_data->rx_ib, len);
+		spsc_pbuf_free(dev_data->rx_ib, rx_buffer);
 
 		if (endpoint_invalid) {
 			__ASSERT_NO_MSG(false);
@@ -469,10 +459,6 @@ int icmsg_hold_rx_buffer(const struct icmsg_config_t *conf,
 		return -EBUSY;
 	}
 
-	if (data != dev_data->rx_buffer) {
-		return -EINVAL;
-	}
-
 	was_released = atomic_cas(&dev_data->rx_buffer_state,
 				  RX_BUFFER_STATE_RELEASED, RX_BUFFER_STATE_HELD);
 	if (!was_released) {
@@ -487,13 +473,10 @@ int icmsg_release_rx_buffer(const struct icmsg_config_t *conf,
 			    const void *data)
 {
 	bool was_held;
+	int err;
 
 	if (!is_endpoint_ready(dev_data)) {
 		return -EBUSY;
-	}
-
-	if (data != dev_data->rx_buffer) {
-		return -EINVAL;
 	}
 
 	/* Do not schedule new packet processing until buffer will be released.
@@ -505,12 +488,10 @@ int icmsg_release_rx_buffer(const struct icmsg_config_t *conf,
 		return -EALREADY;
 	}
 
-	spsc_pbuf_free(dev_data->rx_ib, dev_data->rx_len);
-
-#if CONFIG_IPC_SERVICE_ICMSG_NOCOPY_RX
-	dev_data->rx_buffer = NULL;
-	dev_data->rx_len = 0;
-#endif
+	err = spsc_pbuf_free(dev_data->rx_ib, (const char *)data);
+	if (err < 0) {
+		return err;
+	}
 
 	atomic_set(&dev_data->rx_buffer_state, RX_BUFFER_STATE_RELEASED);
 

@@ -37,6 +37,6 @@ tests:
     platform_allow: qemu_x86
     timeout: 120
     extra_configs:
-      - CONFIG_SYS_CLOCK_TICKS_PER_SEC=100000
+      - CONFIG_SYS_CLOCK_TICKS_PER_SEC=10000
     integration_platforms:
       - qemu_x86

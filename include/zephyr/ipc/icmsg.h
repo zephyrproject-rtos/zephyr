@@ -62,8 +62,6 @@ struct icmsg_data_t {
 	/* No-copy */
 #ifdef CONFIG_IPC_SERVICE_ICMSG_NOCOPY_RX
 	atomic_t rx_buffer_state;
-	const void *rx_buffer;
-	uint16_t rx_len;
 #endif
 };
 
