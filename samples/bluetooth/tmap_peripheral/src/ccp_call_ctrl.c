@@ -100,7 +100,7 @@ static void read_uri_schemes_string_cb(struct bt_conn *conn, int err,
 		}
 	}
 
-	if (i > sizeof(remote_uri)) {
+	if (i >= sizeof(remote_uri)) {
 		printk("Cannot store URI of length %zu: %s\n", i, value);
 		return;
 	}
