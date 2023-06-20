@@ -233,5 +233,13 @@ uint8_t bst_delete(void)
 		test_list_top = tmp;
 	}
 
+	if (bst_result == In_progress) {
+		bs_trace_raw_time(2, "TESTCASE NOT PASSED at exit (test return "
+				  "(%u) indicates it was still in progress)\n", bst_result);
+	} else if (bst_result != Passed) {
+		bs_trace_raw_time(2, "The TESTCASE FAILED (test return code %u)\n",
+				  bst_result);
+	}
+
 	return bst_result;
 }
