@@ -71,6 +71,7 @@ jobs:
         west init -l .
 
     - name: build-docs
+      shell: bash
       run: |
         if [[ "$GITHUB_REF" =~ "refs/tags/v" ]]; then
           DOC_TAG="release"
@@ -156,6 +157,7 @@ jobs:
         west init -l .
 
     - name: build-docs
+      shell: bash
       continue-on-error: true
       run: |
         if [[ "$GITHUB_REF" =~ "refs/tags/v" ]]; then
