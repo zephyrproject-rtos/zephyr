@@ -320,9 +320,8 @@ config PSA_WANT_ALG_HKDF_EXPAND
 
 config PSA_WANT_ALG_PBKDF2_HMAC
 	bool
+	prompt "PSA PBKDF2 HMAC support" if !PSA_PROMPTLESS
 	depends on PSA_WANT_ALG_HMAC
-	help
-	  PBKDF2-HMAC is not yet supported via the PSA APIs in Mbed TLS.
 
 config PSA_WANT_ALG_TLS12_PRF
 	bool
