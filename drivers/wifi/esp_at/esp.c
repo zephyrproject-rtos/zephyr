@@ -414,6 +414,7 @@ MODEM_CMD_DEFINE(on_cmd_wifi_connected)
 
 	esp_flags_set(dev, EDF_STA_CONNECTED);
 	wifi_mgmt_raise_connect_result_event(dev->net_iface, 0);
+	net_if_dormant_off(dev->net_iface);
 
 	return 0;
 }
@@ -438,6 +439,7 @@ static void esp_mgmt_disconnect_work(struct k_work *work)
 	esp_mode_switch_submit_if_needed(dev);
 
 	net_if_ipv4_addr_rm(dev->net_iface, &dev->ip);
+	net_if_dormant_on(dev->net_iface);
 	wifi_mgmt_raise_disconnect_result_event(dev->net_iface, 0);
 }
 
@@ -740,6 +742,7 @@ MODEM_CMD_DEFINE(on_cmd_ready)
 
 
 	if (net_if_is_carrier_ok(dev->net_iface)) {
+		net_if_dormant_on(dev->net_iface);
 		net_if_carrier_off(dev->net_iface);
 		LOG_ERR("Unexpected reset");
 	}
@@ -911,7 +914,7 @@ static int esp_mgmt_scan(const struct device *dev,
 		return -EINPROGRESS;
 	}
 
-	if (!net_if_is_up(data->net_iface)) {
+	if (!net_if_is_carrier_ok(data->net_iface)) {
 		return -EIO;
 	}
 
@@ -954,6 +957,7 @@ static void esp_mgmt_connect_work(struct k_work *work)
 	memset(dev->conn_cmd, 0, sizeof(dev->conn_cmd));
 
 	if (ret < 0) {
+		net_if_dormant_on(dev->net_iface);
 		if (esp_flags_are_set(dev, EDF_STA_CONNECTED)) {
 			esp_flags_clear(dev, EDF_STA_CONNECTED);
 			wifi_mgmt_raise_disconnect_result_event(dev->net_iface,
@@ -965,6 +969,7 @@ static void esp_mgmt_connect_work(struct k_work *work)
 	} else if (!esp_flags_are_set(dev, EDF_STA_CONNECTED)) {
 		esp_flags_set(dev, EDF_STA_CONNECTED);
 		wifi_mgmt_raise_connect_result_event(dev->net_iface, 0);
+		net_if_dormant_off(dev->net_iface);
 	}
 
 	esp_mode_flags_clear(dev, EDF_STA_LOCK);
@@ -979,7 +984,8 @@ static int esp_mgmt_connect(const struct device *dev,
 	struct esp_data *data = dev->data;
 	int len;
 
-	if (!net_if_is_up(data->net_iface)) {
+	if (!net_if_is_carrier_ok(data->net_iface) ||
+	    !net_if_is_admin_up(data->net_iface)) {
 		return -EIO;
 	}
 
@@ -1169,6 +1175,7 @@ static void esp_init_work(struct k_work *work)
 
 	LOG_INF("ESP Wi-Fi ready");
 
+	/* L1 network layer (physical layer) is up */
 	net_if_carrier_on(dev->net_iface);
 
 	k_sem_give(&dev->sem_if_up);
@@ -1230,6 +1237,9 @@ static int esp_reset(const struct device *dev)
 static void esp_iface_init(struct net_if *iface)
 {
 	esp_offload_init(iface);
+
+	/* Not currently connected to a network */
+	net_if_dormant_on(iface);
 }
 
 static enum offloaded_net_if_types esp_offload_get_type(void)
