@@ -9,4 +9,7 @@ config BUILD_OUTPUT_BIN
 config BOARD
 	default "qemu_cortex_a53"
 
+config MAX_THREAD_BYTES
+	default 3
+
 endif # BOARD_QEMU_CORTEX_A53
