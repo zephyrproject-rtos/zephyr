@@ -178,6 +178,22 @@ MIPS arch:
   labels:
     - "area: MIPS"
 
+Ambiq Platforms:
+  status: maintained
+  maintainers:
+    - fkokosinski
+  collaborators:
+    - tgorochowik
+    - msobkowski
+  files:
+    - soc/arm/ambiq/
+    - boards/arm/apollo*/
+    - dts/arm/ambiq/
+    - dts/bindings/*/ambiq*
+    - drivers/*/*_ambiq*
+  labels:
+    - "platform: Ambiq"
+
 Bluetooth:
   status: maintained
   maintainers:
@@ -2849,6 +2865,17 @@ West:
     - modules/Kconfig.altera
   labels:
     - manifest-hal_altera
+
+"West project: hal_ambiq":
+  status: maintained
+  maintainers:
+    - fkokosinski
+  collaborators:
+    - tgorochowik
+    - msobkowski
+  files: []
+  labels:
+    - manifest-hal_ambiq
 
 "West project: hal_atmel":
   status: maintained
