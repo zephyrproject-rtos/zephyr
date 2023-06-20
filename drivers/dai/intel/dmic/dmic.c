@@ -256,7 +256,7 @@ static void dai_dmic_stop_fifo_packers(struct dai_intel_dmic *dmic,
  */
 static void dai_dmic_irq_handler(const void *data)
 {
-	struct dai_intel_dmic *dmic = (struct dai_intel_dmic *) data;
+	struct dai_intel_dmic *dmic = ((struct device *)data)->data;
 	uint32_t val0;
 	uint32_t val1;
 
