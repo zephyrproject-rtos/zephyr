@@ -9,6 +9,7 @@
 /* Macros for device tree declarations of npcx soc family */
 #include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/clock/npcx_clock.h>
+#include <zephyr/dt-bindings/flash_controller/npcx_fiu_qspi.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/pinctrl/npcx-pinctrl.h>
@@ -510,9 +511,9 @@
 			};
 		};
 
-		/* Dedicated SPI interface to access SPI flashes */
-		spi_fiu0: spi@40020000 {
-			compatible = "nuvoton,npcx-spi-fiu";
+		/* Dedicated Quad-SPI interface to access SPI flashes */
+		qspi_fiu0: quadspi@40020000 {
+			compatible = "nuvoton,npcx-fiu-qspi";
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40020000 0x2000>;
