@@ -12,6 +12,8 @@
 # 'ARMCLANG_VERSION'
 # The version of the arm clang toolchain.
 
+include(FindPackageHandleStandardArgs)
+
 if(CMAKE_C_COMPILER)
   # Parse the 'clang --version' output to find the installed version.
   execute_process(COMMAND ${CMAKE_C_COMPILER} --target=${triple} --version OUTPUT_VARIABLE ARMCLANG_VERSION)
