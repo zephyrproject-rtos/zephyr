@@ -1337,10 +1337,6 @@ void net_if_ipv6_dad_failed(struct net_if *iface, const struct in6_addr *addr)
 	}
 
 
-	k_mutex_lock(&lock, K_FOREVER);
-	sys_slist_find_and_remove(&active_dad_timers, &ifaddr->dad_node);
-	k_mutex_unlock(&lock);
-
 	net_mgmt_event_notify_with_info(NET_EVENT_IPV6_DAD_FAILED, iface,
 					&ifaddr->address.in6_addr,
 					sizeof(struct in6_addr));
@@ -1849,6 +1845,14 @@ bool net_if_ipv6_addr_rm(struct net_if *iface, const struct in6_addr *addr)
 
 			k_mutex_unlock(&lock);
 		}
+
+#if defined(CONFIG_NET_IPV6_DAD)
+		if (!net_if_flag_is_set(iface, NET_IF_IPV6_NO_ND)) {
+			k_mutex_lock(&lock, K_FOREVER);
+			sys_slist_find_and_remove(&active_dad_timers, &ipv6->unicast[i].dad_node);
+			k_mutex_unlock(&lock);
+		}
+#endif
 
 		ipv6->unicast[i].is_used = false;
 
