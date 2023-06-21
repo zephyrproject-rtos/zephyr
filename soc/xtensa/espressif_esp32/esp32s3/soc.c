@@ -101,7 +101,7 @@ static void IRAM_ATTR esp_errata(void)
 	 * signals to ensure that the App core stops running in single-core mode.
 	 */
 	REG_SET_BIT(SYSTEM_CORE_1_CONTROL_0_REG, SYSTEM_CONTROL_CORE_1_RUNSTALL);
-	REG_CLR_BIT(SYSTEM_CORE_1_CONTROL_0_REG, SYSTEM_CONTROL_CORE_1_RESETING);
+	REG_CLR_BIT(SYSTEM_CORE_1_CONTROL_0_REG, SYSTEM_CONTROL_CORE_1_RESETTING);
 
 	/* Handle the Dcache case following the IDF startup code */
 #if CONFIG_ESP32S3_DATA_CACHE_16KB
