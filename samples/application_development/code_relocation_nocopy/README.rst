@@ -16,7 +16,10 @@ nRF5340 DK platform instructions
 ********************************
 
 The nRF5340 DK has a 64 Mb external flash memory supporting Quad SPI. It is
-possible to do XIP from the external flash memory.
+possible to do XIP from the external flash memory. But care should be taken
+by informing the flash driver that XIP is being used to avoid putting the
+external flash memory in low power mode. Once the XIP access is done, again the
+flash driver should be informed to put the external flash memory in low power mode.
 
 The external flash memory is mapped to 0x10000000.
 

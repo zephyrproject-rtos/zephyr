@@ -7,7 +7,12 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/sys/printk.h>
+#include <zephyr/drivers/flash.h>
+#include <zephyr/drivers/flash/nrf_qspi_nor.h>
 
+#ifdef CONFIG_NORDIC_QSPI_NOR
+#define FLASH_NODE DT_INST(0, nordic_qspi_nor)
+#endif
 /*
  * This function will allow execute from sram region.  This is needed only for
  * this sample because by default all soc will disable the execute from SRAM.
@@ -44,13 +49,22 @@ extern void function_in_sram(void);
 
 int main(void)
 {
+#ifdef CONFIG_NORDIC_QSPI_NOR
+	const struct device *flash_dev = DEVICE_DT_GET(FLASH_NODE);
+#endif
+
 #ifdef CONFIG_ARM_MPU
 	disable_mpu_rasr_xn();
 #endif	/* CONFIG_ARM_MPU */
 
 	printk("Address of %s function %p\n", __func__, &main);
-
+#ifdef CONFIG_NORDIC_QSPI_NOR
+	nrf_qspi_nor_xip_enable(flash_dev, true);
+#endif /* CONFIG_NORDIC_QSPI_NOR */
 	function_in_ext_flash();
+#ifdef CONFIG_NORDIC_QSPI_NOR
+	nrf_qspi_nor_xip_enable(flash_dev, false);
+#endif /* CONFIG_NORDIC_QSPI_NOR */
 	function_in_sram();
 
 	printk("Hello World! %s\n", CONFIG_BOARD);
