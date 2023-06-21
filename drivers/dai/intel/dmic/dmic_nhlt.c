@@ -474,9 +474,8 @@ int dai_dmic_set_config_nhlt(struct dai_intel_dmic *dmic, const void *bespoke_cf
 				;
 			LOG_DBG("  stereo_mode=%d", bf7);
 			if (ref != val) {
-				LOG_ERR("dmic_set_config_nhlt(): illegal CIC_CONTROL = 0x%08x",
+				LOG_WRN("dmic_set_config_nhlt(): illegal CIC_CONTROL = 0x%08x",
 					val);
-				return -EINVAL;
 			}
 
 			/* Clear CIC_START_A and CIC_START_B */
