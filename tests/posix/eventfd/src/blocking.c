@@ -73,7 +73,7 @@ ZTEST_F(eventfd, test_unset_poll_event_block)
 
 K_THREAD_STACK_DEFINE(thread_stack, CONFIG_TEST_STACK_SIZE);
 
-static void thread_fun(void *arg1, void *arg2, void *arg3)
+static void thread_eventfd_read_42(void *arg1, void *arg2, void *arg3)
 {
 	eventfd_t value;
 	struct eventfd_fixture *fixture = arg1;
@@ -86,8 +86,8 @@ ZTEST_F(eventfd, test_read_then_write_block)
 {
 	struct k_thread thread;
 
-	k_thread_create(&thread, thread_stack, K_THREAD_STACK_SIZEOF(thread_stack), thread_fun,
-			fixture, NULL, NULL, 0, 0, K_NO_WAIT);
+	k_thread_create(&thread, thread_stack, K_THREAD_STACK_SIZEOF(thread_stack),
+			thread_eventfd_read_42, fixture, NULL, NULL, 0, 0, K_NO_WAIT);
 
 	k_msleep(100);
 
@@ -96,4 +96,72 @@ ZTEST_F(eventfd, test_read_then_write_block)
 
 	/* unreachable code */
 	k_thread_join(&thread, K_FOREVER);
+}
+
+static void thread_eventfd_write(void *arg1, void *arg2, void *arg3)
+{
+	struct eventfd_fixture *fixture = arg1;
+
+	zassert_ok(eventfd_write(fixture->fd, 71));
+}
+
+ZTEST_F(eventfd, test_write_while_pollin)
+{
+	struct k_thread thread;
+	struct zsock_pollfd fds[] = {
+		{
+			.fd = fixture->fd,
+			.events = ZSOCK_POLLIN,
+		},
+	};
+	eventfd_t value;
+	int ret;
+
+	k_thread_create(&thread, thread_stack, K_THREAD_STACK_SIZEOF(thread_stack),
+			thread_eventfd_write, fixture, NULL, NULL, 0, 0, K_MSEC(100));
+
+	/* Expect 1 event */
+	ret = zsock_poll(fds, ARRAY_SIZE(fds), 200);
+	zassert_equal(ret, 1);
+
+	zassert_equal(fds[0].revents, ZSOCK_POLLIN);
+
+	/* Check value */
+	zassert_ok(eventfd_read(fixture->fd, &value));
+	zassert_equal(value, 71);
+
+	zassert_ok(k_thread_join(&thread, K_FOREVER));
+}
+
+static void thread_eventfd_read(void *arg1, void *arg2, void *arg3)
+{
+	eventfd_t value;
+	struct eventfd_fixture *fixture = arg1;
+
+	zassert_ok(eventfd_read(fixture->fd, &value));
+}
+
+ZTEST_F(eventfd, test_read_while_pollout)
+{
+	struct k_thread thread;
+	struct zsock_pollfd fds[] = {
+		{
+			.fd = fixture->fd,
+			.events = ZSOCK_POLLOUT,
+		},
+	};
+	int ret;
+
+	zassert_ok(eventfd_write(fixture->fd, UINT64_MAX - 1));
+
+	k_thread_create(&thread, thread_stack, K_THREAD_STACK_SIZEOF(thread_stack),
+			thread_eventfd_read, fixture, NULL, NULL, 0, 0, K_MSEC(100));
+
+	/* Expect 1 event */
+	ret = zsock_poll(fds, ARRAY_SIZE(fds), 200);
+	zassert_equal(ret, 1);
+
+	zassert_equal(fds[0].revents, ZSOCK_POLLOUT);
+
+	zassert_ok(k_thread_join(&thread, K_FOREVER));
 }
