@@ -4,14 +4,11 @@
  */
 
 / {
-	bbram_emu: bbram_emu {
-		compatible = "zephyr,bbram-emul";
-		size = <0x20>;
-        };
-
         boot_info: boot_info {
-                compatible = "zephyr,boot-info-bbram";
-                backend = <&bbram_emu>;
+                compatible = "zephyr,boot-info-eeprom";
+                backend = <&eeprom0>;
+                size = <256>;
+                eeprom-offset = <256>;
         };
 
         aliases {
