@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018-2021 mcumgr authors
- * Copyright (c) 2022 Nordic Semiconductor ASA
+ * Copyright (c) 2022-2023 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -25,62 +25,26 @@
 #include <zephyr/mgmt/mcumgr/mgmt/callbacks.h>
 #endif
 
-#ifdef CONFIG_MCUMGR_GRP_FS
-#include <zephyr/mgmt/mcumgr/grp/fs_mgmt/fs_mgmt.h>
-#endif
-#ifdef CONFIG_MCUMGR_GRP_IMG
-#include <zephyr/mgmt/mcumgr/grp/img_mgmt/img_mgmt.h>
-#endif
-#ifdef CONFIG_MCUMGR_GRP_OS
-#include <zephyr/mgmt/mcumgr/grp/os_mgmt/os_mgmt.h>
-#endif
-#ifdef CONFIG_MCUMGR_GRP_SHELL
-#include <zephyr/mgmt/mcumgr/grp/shell_mgmt/shell_mgmt.h>
-#endif
-#ifdef CONFIG_MCUMGR_GRP_STAT
-#include <zephyr/mgmt/mcumgr/grp/stat_mgmt/stat_mgmt.h>
-#endif
-#ifdef CONFIG_MCUMGR_GRP_ZBASIC
-#include <zephyr/mgmt/mcumgr/grp/zephyr/zephyr_basic.h>
-#endif
-
 #ifdef CONFIG_MCUMGR_SMP_SUPPORT_ORIGINAL_PROTOCOL
+/*
+ * @brief	Translate SMP version 2 error code to legacy SMP version 1 MCUmgr error code.
+ *
+ * @param group	#mcumgr_group_t group ID
+ * @param ret	Group-specific error code
+ *
+ * @return	#mcumgr_err_t error code
+ */
 static int smp_translate_error_code(uint16_t group, uint16_t ret)
 {
-	switch (group) {
-#ifdef CONFIG_MCUMGR_GRP_OS
-	case MGMT_GROUP_ID_OS:
-	return os_mgmt_translate_error_code(ret);
-#endif
+	smp_translate_error_fn translate_error_function = NULL;
 
-#ifdef CONFIG_MCUMGR_GRP_IMG
-	case MGMT_GROUP_ID_IMAGE:
-	return img_mgmt_translate_error_code(ret);
-#endif
+	translate_error_function = mgmt_find_error_translation_function(group);
 
-#ifdef CONFIG_MCUMGR_GRP_STAT
-	case MGMT_GROUP_ID_STAT:
-	return stat_mgmt_translate_error_code(ret);
-#endif
-
-#ifdef CONFIG_MCUMGR_GRP_FS
-	case MGMT_GROUP_ID_FS:
-	return fs_mgmt_translate_error_code(ret);
-#endif
-
-#ifdef CONFIG_MCUMGR_GRP_SHELL
-	case MGMT_GROUP_ID_SHELL:
-	return shell_mgmt_translate_error_code(ret);
-#endif
-
-#ifdef CONFIG_MCUMGR_GRP_ZBASIC
-	case ZEPHYR_MGMT_GRP_BASIC:
-	return zephyr_basic_group_translate_error_code(ret);
-#endif
-
-	default:
-	return MGMT_ERR_EUNKNOWN;
+	if (translate_error_function == NULL) {
+		return MGMT_ERR_EUNKNOWN;
 	}
+
+	return translate_error_function(ret);
 }
 #endif
 
