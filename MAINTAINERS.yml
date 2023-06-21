@@ -1549,6 +1549,7 @@ Input:
     - include/zephyr/input/
     - samples/subsys/input/
     - subsys/input/
+    - tests/drivers/build_all/input/
     - tests/subsys/input/
   description: >-
     Input subsystem and drivers
