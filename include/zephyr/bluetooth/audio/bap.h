@@ -1844,20 +1844,17 @@ int bt_bap_scan_delegator_mod_src(const struct bt_bap_scan_delegator_mod_src_par
  */
 int bt_bap_scan_delegator_rem_src(uint8_t src_id);
 
-enum bt_bap_scan_delegator_iter {
-	BT_BAP_SCAN_DELEGATOR_ITER_STOP = 0,
-	BT_BAP_SCAN_DELEGATOR_ITER_CONTINUE,
-};
-
 /** Callback function for Scan Delegator receive state search functions
  *
  * @param recv_state The receive state.
  * @param user_data  User data.
  *
- * @return @ref BT_BAP_SCAN_DELEGATOR_ITER_STOP to stop iterating or
- *         @ref BT_BAP_SCAN_DELEGATOR_ITER_CONTINUE to continue.
+ * @retval true to stop iterating. If this is used in the context of
+ *         bt_bap_scan_delegator_find_state(), the recv_state will be returned by
+ *         bt_bap_scan_delegator_find_state()
+ * @retval false to continue iterating
  */
-typedef enum bt_bap_scan_delegator_iter (*bt_bap_scan_delegator_state_func_t)(
+typedef bool (*bt_bap_scan_delegator_state_func_t)(
 	const struct bt_bap_scan_delegator_recv_state *recv_state, void *user_data);
 
 /** @brief Iterate through all existing receive states
