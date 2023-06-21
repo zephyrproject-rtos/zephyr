@@ -57,22 +57,6 @@
 #define RAM_BASE CONFIG_SRAM_BASE_ADDRESS
 #define RAM_SIZE KB(CONFIG_SRAM_SIZE)
 
-/* Make linker section alignment comply with PMA granularity. */
-#if defined(CONFIG_SOC_ANDES_V5_PMA_REGION_MIN_ALIGN_AND_SIZE)
-_region_min_align = CONFIG_SOC_ANDES_V5_PMA_REGION_MIN_ALIGN_AND_SIZE;
-#else
-_region_min_align = 4;
-#endif
-
-#if defined(CONFIG_SOC_ANDES_V5_PMA)
-/*
- * Andes-V5 PMA needs power-of-2 alignment.
- */
-#define MPU_MIN_SIZE_ALIGN . = ALIGN(_region_min_align);
-#define MPU_ALIGN(region_size) \
-    . = ALIGN(_region_min_align); \
-    . = ALIGN( 1 << LOG2CEIL(region_size))
-#else
 #ifdef CONFIG_RISCV_PMP
 	#define MPU_MIN_SIZE CONFIG_PMP_GRANULARITY
 	#define MPU_MIN_SIZE_ALIGN . = ALIGN(MPU_MIN_SIZE);
@@ -87,7 +71,6 @@ _region_min_align = 4;
 #else
 	#define MPU_MIN_SIZE_ALIGN
 	#define MPU_ALIGN(region_size) . = ALIGN(4)
-#endif
 #endif
 
 MEMORY
@@ -214,10 +197,24 @@ SECTIONS
 
 	. = RAM_BASE;
 	_image_ram_start = .;
+
+#ifdef CONFIG_SOC_ANDES_V5_PMA
+#pragma push_macro("MPU_ALIGN")
+#undef MPU_ALIGN
+/* Make linker section alignment comply with PMA granularity. */
+#define MPU_ALIGN(region_size) \
+    . = ALIGN(CONFIG_SOC_ANDES_V5_PMA_REGION_MIN_ALIGN_AND_SIZE); \
+    . = ALIGN( 1 << LOG2CEIL(region_size))
+#endif
+
 /* Located in generated directory. This file is populated by the
  * zephyr_linker_sources() Cmake function.
  */
 #include <snippets-ram-sections.ld>
+
+#ifdef CONFIG_SOC_ANDES_V5_PMA
+#pragma pop_macro("MPU_ALIGN")
+#endif
 
 #if defined(CONFIG_USERSPACE)
 #define APP_SHARED_ALIGN MPU_MIN_SIZE_ALIGN
