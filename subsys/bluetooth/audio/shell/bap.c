@@ -322,7 +322,6 @@ static void lc3_audio_send_data(struct k_work *work)
 				lc3_sdu_cnt, tx_sdu_len);
 	}
 	lc3_sdu_cnt++;
-	seq_num++;
 }
 
 static K_WORK_DEFINE(audio_send_work, lc3_audio_send_data);
