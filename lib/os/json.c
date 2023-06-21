@@ -277,11 +277,11 @@ static int obj_init(struct json_obj *json, char *data, size_t len)
 		return -EINVAL;
 	}
 
-	if (tok.type != JSON_TOK_OBJECT_START) {
+	if (tok.type != JSON_TOK_OBJECT_START && tok.type != JSON_TOK_NULL) {
 		return -EINVAL;
 	}
 
-	return 0;
+	return tok.type;
 }
 
 static int arr_init(struct json_obj *json, char *data, size_t len)
@@ -313,6 +313,7 @@ static int element_token(enum json_tokens token)
 	case JSON_TOK_OBJ_ARRAY:
 	case JSON_TOK_TRUE:
 	case JSON_TOK_FALSE:
+	case JSON_TOK_NULL:
 		return 0;
 	default:
 		return -EINVAL;
@@ -435,12 +436,16 @@ static bool equivalent_types(enum json_tokens type1, enum json_tokens type2)
 		return true;
 	}
 
+	if (type1 == JSON_TOK_NULL && type2 == JSON_TOK_OBJECT_START) {
+		return true;
+	}
+
 	return type1 == type2;
 }
 
 static int64_t obj_parse(struct json_obj *obj,
 			 const struct json_obj_descr *descr, size_t descr_len,
-			 void *val);
+			 void *val, bool is_null);
 static int arr_parse(struct json_obj *obj,
 		     const struct json_obj_descr *elem_descr,
 		     size_t max_elements, void *field, void *val);
@@ -460,7 +465,7 @@ static int64_t decode_value(struct json_obj *obj,
 	case JSON_TOK_OBJECT_START:
 		return obj_parse(obj, descr->object.sub_descr,
 				 descr->object.sub_descr_len,
-				 field);
+				 field, value->type == JSON_TOK_NULL);
 	case JSON_TOK_ARRAY_START:
 		return arr_parse(obj, descr->array.element_descr,
 				 descr->array.n_elements, field, val);
@@ -527,12 +532,17 @@ static ptrdiff_t get_elem_size(const struct json_obj_descr *descr)
 
 		for (i = 0; i < descr->object.sub_descr_len; i++) {
 			ptrdiff_t s = get_elem_size(&descr->object.sub_descr[i]);
+			if (s < 0) {
+				return s;
+			}
 
 			total += ROUND_UP(s, 1 << descr->align_shift);
 		}
 
 		return total;
 	}
+	case JSON_TOK_MASK:
+		return sizeof(uint64_t);
 	default:
 		return -EINVAL;
 	}
@@ -621,15 +631,41 @@ static int arr_data_parse(struct json_obj *obj, struct json_obj_token *val)
 }
 
 static int64_t obj_parse(struct json_obj *obj, const struct json_obj_descr *descr,
-			 size_t descr_len, void *val)
+			 size_t descr_len, void *val, bool is_null)
 {
 	struct json_obj_key_value kv;
 	int64_t decoded_fields = 0;
 	size_t i;
 	int ret;
+	uint64_t *mask_field = NULL;
+
+	/* Find non-nested mask field if provided */
+	for (i = 0; i < descr_len && mask_field == NULL; i++) {
+		if (descr[i].type == JSON_TOK_MASK) {
+			mask_field = (uint64_t *)((char *)val + descr[i].offset);
+
+			/* Return empty mask for null object */
+			if (is_null) {
+				*mask_field = 0ULL;
+				return 0LL;
+			}
+
+			/* Set bit for object itself */
+			*mask_field = BIT64(i);
+			decoded_fields = (int64_t)*mask_field;
+		}
+	}
+
+	/* No way to let caller know */
+	if (is_null) {
+		return -EINVAL;
+	}
 
 	while (!obj_next(obj, &kv)) {
 		if (kv.value.type == JSON_TOK_OBJECT_END) {
+			if (mask_field != NULL) {
+				*mask_field |= (uint64_t)decoded_fields;
+			}
 			return decoded_fields;
 		}
 
@@ -638,6 +674,11 @@ static int64_t obj_parse(struct json_obj *obj, const struct json_obj_descr *desc
 
 			/* Field has been decoded already, skip */
 			if (decoded_fields & ((int64_t)1 << i)) {
+				continue;
+			}
+
+			/* Skip metadata fields */
+			if (descr[i].field_name == NULL) {
 				continue;
 			}
 
@@ -680,7 +721,7 @@ int64_t json_obj_parse(char *payload, size_t len,
 		return ret;
 	}
 
-	return obj_parse(&obj, descr, descr_len, val);
+	return obj_parse(&obj, descr, descr_len, val, ret == JSON_TOK_NULL);
 }
 
 int json_arr_parse(char *payload, size_t len,
@@ -723,11 +764,11 @@ int json_arr_separate_parse_object(struct json_obj *json, const struct json_obj_
 		}
 	}
 
-	if (tok.type != JSON_TOK_OBJECT_START) {
+	if (tok.type != JSON_TOK_OBJECT_START || tok.type != JSON_TOK_NULL) {
 		return -EINVAL;
 	}
 
-	return obj_parse(json, descr, descr_len, val);
+	return obj_parse(json, descr, descr_len, val, tok.type == JSON_TOK_NULL);
 }
 
 static char escape_as(char chr)
@@ -956,6 +997,11 @@ static int bool_encode(const bool *value, json_append_bytes_t append_bytes,
 	return append_bytes("false", 5, data);
 }
 
+static inline int null_encode(json_append_bytes_t append_bytes, void *data)
+{
+	return append_bytes("null", 4, data);
+}
+
 static int encode(const struct json_obj_descr *descr, const void *val,
 		  json_append_bytes_t append_bytes, void *data)
 {
@@ -980,6 +1026,8 @@ static int encode(const struct json_obj_descr *descr, const void *val,
 		return float_ascii_encode(ptr, append_bytes, data);
 	case JSON_TOK_OPAQUE:
 		return opaque_string_encode(ptr, append_bytes, data);
+	case JSON_TOK_NULL:
+		return null_encode(append_bytes, data);
 	default:
 		return -EINVAL;
 	}
@@ -991,6 +1039,19 @@ int json_obj_encode(const struct json_obj_descr *descr, size_t descr_len,
 {
 	size_t i;
 	int ret;
+	uint64_t *mask_field = NULL;
+
+	/* Find mask field if provided */
+	for (i = 0; i < descr_len && mask_field == NULL; i++) {
+		if (descr[i].type == JSON_TOK_MASK) {
+			mask_field = (uint64_t *)((char *)val + descr[i].offset);
+
+			/* Check for null object */
+			if ((*mask_field & BIT64(i)) == 0ULL) {
+				return null_encode(append_bytes, data);
+			}
+		}
+	}
 
 	ret = append_bytes("{", 1, data);
 	if (ret < 0) {
@@ -998,6 +1059,16 @@ int json_obj_encode(const struct json_obj_descr *descr, size_t descr_len,
 	}
 
 	for (i = 0; i < descr_len; i++) {
+		/* Skip metadata fields */
+		if (descr[i].field_name == NULL) {
+			continue;
+		}
+
+		/* Check mask if provided */
+		if (mask_field != NULL && (*mask_field & BIT64(i)) == 0ULL) {
+			continue;
+		}
+
 		ret = str_encode((const char **)&descr[i].field_name,
 				 append_bytes, data);
 		if (ret < 0) {

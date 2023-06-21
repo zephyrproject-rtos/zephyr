@@ -49,6 +49,7 @@ enum json_tokens {
 	JSON_TOK_FALSE = 'f',
 	JSON_TOK_NULL = 'n',
 	JSON_TOK_ERROR = '!',
+	JSON_TOK_MASK = '#',
 	JSON_TOK_EOF = '\0',
 };
 
@@ -130,6 +131,43 @@ typedef int (*json_append_bytes_t)(const char *bytes, size_t len,
 #define Z_ALIGN_SHIFT(type)	(__alignof__(type) == 1 ? 0 : \
 				 __alignof__(type) == 2 ? 1 : \
 				 __alignof__(type) == 4 ? 2 : 3)
+
+/**
+ * @brief Helper macro to declare a descriptor for an object field mask.
+ *
+ * @param struct_ Struct packing the values
+ * @param field_name_ Field name in the struct
+ *
+ * @note Only the first declared JSON_OBJ_META_MASK will be taken into
+ * account, and also uses a bit itself. This bit is used to encode the
+ * object if set, or null otherwise. For parsing the same bit can be
+ * used to verify if the object was null or not.
+ *
+ * Here's an example of use:
+ *
+ *      struct bar {
+ *          uint64_t mask;
+ *          { ... other fields starting with bit index 1 ... }
+ *      };
+ *      struct foo {
+ *          struct nested bar;
+ *      };
+ *
+ *      struct json_obj_descr bar_descr[] = {
+ *          JSON_OBJ_META_MASK(struct bar, mask),
+ *          { ... declare struct bar descriptors ... },
+ *      };
+ *      struct json_obj_descr foo_descr[] = {
+ *          JSON_OBJ_DESCR_OBJECT(struct foo, bar, bar_descr),
+ *      };
+ */
+#define JSON_OBJ_META_MASK(struct_, field_name_) \
+	{ \
+		.field_name = NULL, \
+		.align_shift = Z_ALIGN_SHIFT(struct_), \
+		.type = JSON_TOK_MASK, \
+		.offset = offsetof(struct_, field_name_), \
+	}
 
 /**
  * @brief Helper macro to declare a descriptor for supported primitive
