@@ -4195,6 +4195,52 @@
 	COND_CODE_1(IS_EMPTY(DT_ANY_INST_HAS_PROP_STATUS_OKAY_(prop)), (0), (1))
 
 /**
+ * @brief Check if any device node with status `okay` has a given
+ *        property.
+ *
+ * @param prop lowercase-and-underscores property name
+ *
+ * Example devicetree overlay:
+ *
+ * @code{.dts}
+ *     &i2c0 {
+ *         sensor0: sensor@0 {
+ *             compatible = "vnd,some-sensor";
+ *             status = "okay";
+ *             reg = <0>;
+ *             foo = <1>;
+ *             bar = <2>;
+ *         };
+ *
+ *         sensor1: sensor@1 {
+ *             compatible = "vnd,some-sensor";
+ *             status = "okay";
+ *             reg = <1>;
+ *             foo = <2>;
+ *         };
+ *
+ *         sensor2: sensor@2 {
+ *             compatible = "vnd,some-sensor";
+ *             status = "disabled";
+ *             reg = <2>;
+ *             baz = <1>;
+ *         };
+ *     };
+ * @endcode
+ *
+ * Example usage:
+ *
+ * @code{.c}
+ *
+ *     DT_ANY_COMPAT_HAS_PROP_STATUS_OKAY(vnd_some_sensor, foo) // 1
+ *     DT_ANY_COMPAT_HAS_PROP_STATUS_OKAY(vnd_some_sensor, bar) // 1
+ *     DT_ANY_COMPAT_HAS_PROP_STATUS_OKAY(vnd_some_sensor, baz) // 0
+ * @endcode
+ */
+#define DT_ANY_COMPAT_HAS_PROP_STATUS_OKAY(compat, prop) \
+	(DT_COMPAT_FOREACH_STATUS_OKAY_VARGS(compat, DT_COMPAT_NODE_HAS_PROP_AND_OR, prop) 0)
+
+/**
  * @brief Call @p fn on all nodes with compatible `DT_DRV_COMPAT`
  *        and status `okay`
  *
@@ -4275,11 +4321,29 @@
  * @param ... variable number of arguments to pass to @p fn
  *
  * @see DT_INST_FOREACH_STATUS_OKAY
+ * @see DT_COMPAT_FOREACH_STATUS_OKAY_VARGS
  */
 #define DT_INST_FOREACH_STATUS_OKAY_VARGS(fn, ...) \
-	COND_CODE_1(DT_HAS_COMPAT_STATUS_OKAY(DT_DRV_COMPAT),	\
-		    (UTIL_CAT(DT_FOREACH_OKAY_INST_VARGS_,	\
-			      DT_DRV_COMPAT)(fn, __VA_ARGS__)),	\
+	COND_CODE_1(DT_HAS_COMPAT_STATUS_OKAY(DT_DRV_COMPAT),   \
+		    (UTIL_CAT(DT_FOREACH_OKAY_INST_VARGS_,      \
+			      DT_DRV_COMPAT)(fn, __VA_ARGS__)), \
+		    ())
+
+/**
+ * @brief Call @p fn on all nodes with compatible `compat`
+ *        and status `okay` with multiple arguments
+ *
+ *
+ * @param fn Macro to call for each enabled node. Must accept a
+ *           devicetree compatible and instance number as its only parameters.
+ * @param ... variable number of arguments to pass to @p fn
+ *
+ * @see DT_INST_FOREACH_STATUS_OKAY_VARGS
+ */
+#define DT_COMPAT_FOREACH_STATUS_OKAY_VARGS(compat, fn, ...)     \
+	COND_CODE_1(DT_HAS_COMPAT_STATUS_OKAY(compat),           \
+		    (UTIL_CAT(DT_FOREACH_OKAY_INST_VARGS_,       \
+			      compat)(fn, compat, __VA_ARGS__)), \
 		    ())
 
 /**
@@ -4509,6 +4573,12 @@
 /** @brief Helper macro to OR multiple has property checks in a loop macro */
 #define DT_INST_NODE_HAS_PROP_AND_OR(inst, prop) \
 	DT_INST_NODE_HAS_PROP(inst, prop) ||
+
+/** @brief Helper macro to OR multiple has property checks in a loop macro
+ *         (for the specified device)
+ */
+#define DT_COMPAT_NODE_HAS_PROP_AND_OR(inst, compat, prop) \
+	DT_NODE_HAS_PROP(DT_INST(inst, compat), prop) ||
 
 /**
  * @def DT_U64_C
