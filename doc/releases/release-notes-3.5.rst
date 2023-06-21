@@ -249,6 +249,11 @@ Storage
 Trusted Firmware-M
 ******************
 
+Trusted Firmware-A
+******************
+
+* Updated to TF-A 2.9.0.
+
 zcbor
 *****
 
