@@ -213,12 +213,15 @@ doxyrunner_outdir_var = "DOXY_OUT"
 
 # -- Options for Docleaf plugin -------------------------------------------
 
-docleaf_projects = {"Zephyr": str(doxyrunner_outdir / "xml")}
+docleaf_projects = {"Zephyr": {"xml": str(doxyrunner_outdir / "xml"), "root": "../"}}
 docleaf_default_project = "Zephyr"
 docleaf_domain_by_extension = {
     "h": "c",
     "c": "c",
 }
+# Filters out any 'function' or 'variable' members that have 'all caps' names as
+# they are likely unprocessed macro calls
+docleaf_doxygen_skip = ["members:all_caps"]
 
 cpp_id_attributes = [
     "__syscall",
