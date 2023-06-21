@@ -298,6 +298,7 @@
     };
 
     aliases {
+
         slot3en = &slot3en;
         slot4en = &slot4en;
         magswintn = &magswintn;
@@ -344,6 +345,7 @@
         flashpwren = &flashpwren;
         wakeupintn = &wakeupintn;
         usbd0 = &usbd;
+        wdt0 = &wdt0;
 
         resetall   = &resetall;
         slot3reset = &slot3reset;
@@ -530,4 +532,8 @@
 &usbd {
     compatible = "nordic,nrf-usbd";
     status = "okay";
+};
+
+&wdt0 {
+	status = "okay";
 };
