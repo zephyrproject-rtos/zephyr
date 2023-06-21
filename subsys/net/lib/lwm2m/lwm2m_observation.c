@@ -913,7 +913,7 @@ static int lwm2m_engine_observer_timestamp_update(sys_slist_t *observer,
 
 	/* update observe_node accordingly */
 	SYS_SLIST_FOR_EACH_CONTAINER(observer, obs, node) {
-		if (!obs->resource_update) {
+		if (obs->resource_update) {
 			/* Resource Update on going skip this*/
 			continue;
 		}
