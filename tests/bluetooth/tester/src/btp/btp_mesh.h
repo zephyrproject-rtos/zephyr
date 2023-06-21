@@ -747,6 +747,19 @@ struct btp_mesh_cfg_krp_set_rp {
 	uint8_t phase;
 } __packed;
 
+#define BTP_MESH_VA_ADD				0x4D
+struct btp_mesh_va_add_cmd {
+	uint8_t label_uuid[16];
+} __packed;
+struct btp_mesh_va_add_rp {
+	uint16_t addr;
+} __packed;
+
+#define BTP_MESH_VA_DEL				0x4E
+struct btp_mesh_va_del_cmd {
+	uint8_t label_uuid[16];
+} __packed;
+
 #define BTP_MESH_PROXY_CONNECT			0x77
 
 struct btp_proxy_connect_cmd {

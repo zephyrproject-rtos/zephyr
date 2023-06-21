@@ -13,6 +13,7 @@
 #include <zephyr/bluetooth/mesh/cfg.h>
 #include <zephyr/sys/byteorder.h>
 #include <app_keys.h>
+#include <va.h>
 
 #include <zephyr/logging/log.h>
 #define LOG_MODULE_NAME bttester_mesh
@@ -172,6 +173,8 @@ static uint8_t supported_commands(const void *cmd, uint16_t cmd_len,
 	tester_set_bit(rp->data, BTP_MESH_PROVISION_ADV);
 	tester_set_bit(rp->data, BTP_MESH_CFG_KRP_GET);
 	tester_set_bit(rp->data, BTP_MESH_CFG_KRP_SET);
+	tester_set_bit(rp->data, BTP_MESH_VA_ADD);
+	tester_set_bit(rp->data, BTP_MESH_VA_DEL);
 
 	*rsp_len = sizeof(*rp) + 10;
 
@@ -736,6 +739,10 @@ static uint8_t net_send(const void *cmd, uint16_t cmd_len,
 		.send_ttl = cp->ttl,
 	};
 
+	if (BT_MESH_ADDR_IS_VIRTUAL(ctx.addr)) {
+		ctx.uuid = bt_mesh_va_uuid_get(ctx.addr, NULL, NULL);
+	}
+
 	LOG_DBG("ttl 0x%02x dst 0x%04x payload_len %d", ctx.send_ttl,
 		ctx.addr, cp->payload_len);
 
@@ -750,6 +757,48 @@ static uint8_t net_send(const void *cmd, uint16_t cmd_len,
 	err = bt_mesh_model_send(&vnd_models[0], &ctx, &msg, NULL, NULL);
 	if (err) {
 		LOG_ERR("Failed to send (err %d)", err);
+		return BTP_STATUS_FAILED;
+	}
+
+	return BTP_STATUS_SUCCESS;
+}
+
+static uint8_t va_add(const void *cmd, uint16_t cmd_len,
+		      void *rsp, uint16_t *rsp_len)
+{
+	const struct btp_mesh_va_add_cmd *cp = cmd;
+	struct btp_mesh_va_add_rp *rp = rsp;
+	const struct bt_mesh_va *va;
+	int err;
+
+	err = bt_mesh_va_add(cp->label_uuid, &va);
+	if (err) {
+		LOG_ERR("Failed to add Label UUID (err %d)", err);
+		return BTP_STATUS_FAILED;
+	}
+
+	rp->addr = sys_cpu_to_le16(va->addr);
+	*rsp_len = sizeof(*rp);
+
+	return BTP_STATUS_SUCCESS;
+}
+
+static uint8_t va_del(const void *cmd, uint16_t cmd_len,
+		      void *rsp, uint16_t *rsp_len)
+{
+	const struct btp_mesh_va_del_cmd *cp = cmd;
+	const struct bt_mesh_va *va;
+	int err;
+
+	va = bt_mesh_va_find(cp->label_uuid);
+	if (!va) {
+		LOG_ERR("Failed to find Label UUID");
+		return BTP_STATUS_FAILED;
+	}
+
+	err = bt_mesh_va_del(va->uuid);
+	if (err) {
+		LOG_ERR("Failed to delete Label UUID (err %d)", err);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -814,6 +863,10 @@ static uint8_t model_send(const void *cmd, uint16_t cmd_len,
 		.addr = sys_le16_to_cpu(cp->dst),
 		.send_ttl = BT_MESH_TTL_DEFAULT,
 	};
+
+	if (BT_MESH_ADDR_IS_VIRTUAL(ctx.addr)) {
+		ctx.uuid = bt_mesh_va_uuid_get(ctx.addr, NULL, NULL);
+	}
 
 	src = sys_le16_to_cpu(cp->src);
 
@@ -2843,6 +2896,16 @@ static const struct btp_handler handlers[] = {
 		.opcode = BTP_MESH_CFG_KRP_SET,
 		.expect_len = sizeof(struct btp_mesh_cfg_krp_set_cmd),
 		.func = config_krp_set,
+	},
+	{
+		.opcode = BTP_MESH_VA_ADD,
+		.expect_len = sizeof(struct btp_mesh_va_add_cmd),
+		.func = va_add,
+	},
+	{
+		.opcode = BTP_MESH_VA_DEL,
+		.expect_len = sizeof(struct btp_mesh_va_del_cmd),
+		.func = va_del,
 	},
 #if defined(CONFIG_BT_TESTING)
 	{
