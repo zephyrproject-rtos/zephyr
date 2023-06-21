@@ -23,4 +23,3 @@ API reference
 
 .. doxygengroup:: bt_mesh_dfd_srv
    :project: Zephyr
-   :members:
