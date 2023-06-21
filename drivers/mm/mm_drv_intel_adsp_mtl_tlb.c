@@ -678,6 +678,11 @@ static int sys_mm_drv_mm_init(const struct device *dev)
 
 	ret = sys_mm_drv_unmap_region(UINT_TO_POINTER(UNUSED_L2_START_ALIGNED),
 				      unused_size);
+
+	/* Need to reset max pages statistics after unmap */
+	for (int i = 0; i < L2_SRAM_BANK_NUM; i++) {
+		sys_mm_drv_bank_stats_reset_max(&hpsram_bank[i]);
+	}
 #endif
 
 	/*
