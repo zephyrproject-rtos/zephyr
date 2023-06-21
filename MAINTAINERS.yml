@@ -1778,26 +1778,29 @@ hawkBit:
   description: >-
     UpdateHub embedded Firmware Over-The-Air (FOTA) upgrade agent
 
-Native POSIX and POSIX arch:
+Native POSIX/Sim and POSIX arch:
   status: maintained
   maintainers:
     - aescolar
   files:
     - arch/posix/
-    - boards/posix/native_posix/
+    - boards/posix/native_*/
     - boards/posix/doc/
     - boards/posix/*.rst
-    - drivers/*/*native_posix*
-    - drivers/*/*/*native_posix*
+    - drivers/*/*posix*
+    - drivers/*/*native*
+    - drivers/*/*/*posix*
+    - drivers/*/*/*native*
     - dts/posix/
     - include/zephyr/arch/posix/
+    - scripts/native_simulator/*
     - scripts/valgrind.supp
     - soc/posix/
     - tests/boards/native_posix/
   labels:
     - "area: native port"
   description: >-
-    POSIX architecture and SOC, native_posix board, and related drivers
+    POSIX architecture and SOC, native_posix & native_sim boards, and related drivers
 
 Networking:
   status: maintained
