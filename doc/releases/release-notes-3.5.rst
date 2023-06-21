@@ -237,6 +237,11 @@ Libraries / Subsystems
   * Added response checking to MCUmgr's :c:enumerator:`MGMT_EVT_OP_CMD_RECV`
     notification callback to allow applications to reject MCUmgr commands.
 
+  * MCUmgr SMP version 2 error translation (to legacy MCUmgr error code) is now
+    supported in function handlers by setting ``mg_translate_error`` of
+    :c:struct:`mgmt_group` when registering a transport. See
+    :c:type:`smp_translate_error_fn` for function details.
+
 HALs
 ****
 
