@@ -192,6 +192,15 @@ static int octets_per_frame;
 static int64_t lc3_start_time;
 static int32_t lc3_sdu_cnt;
 
+static void clear_lc3_sine_data(void)
+{
+	lc3_start_time = 0;
+	lc3_sdu_cnt = 0;
+	txing_stream = NULL;
+
+	(void)k_work_cancel(&audio_send_work);
+}
+
 /**
  * Use the math lib to generate a sine-wave using 16 bit samples into a buffer.
  *
@@ -1716,10 +1725,7 @@ static void stream_stopped_cb(struct bt_bap_stream *stream, uint8_t reason)
 
 #if defined(CONFIG_LIBLC3)
 	if (stream == default_stream) {
-		lc3_start_time = 0;
-		lc3_sdu_cnt = 0;
-
-		k_work_cancel(&audio_send_work);
+		clear_lc3_sine_data();
 	}
 #endif /* CONFIG_LIBLC3 */
 }
@@ -1768,10 +1774,7 @@ static void stream_released_cb(struct bt_bap_stream *stream)
 #if defined(CONFIG_LIBLC3)
 	/* stop sending */
 	if (stream == default_stream) {
-		lc3_start_time = 0;
-		lc3_sdu_cnt = 0;
-
-		k_work_cancel(&audio_send_work);
+		clear_lc3_sine_data();
 	}
 #endif /* CONFIG_LIBLC3 */
 }
@@ -2403,12 +2406,7 @@ static int cmd_start_sine(const struct shell *sh, size_t argc, char *argv[])
 
 static int cmd_stop_sine(const struct shell *sh, size_t argc, char *argv[])
 {
-	lc3_start_time = 0;
-	lc3_sdu_cnt = 0;
-
-	k_work_cancel(&audio_send_work);
-
-	txing_stream = NULL;
+	clear_lc3_sine_data();
 
 	return 0;
 }
