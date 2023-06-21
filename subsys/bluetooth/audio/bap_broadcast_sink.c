@@ -55,23 +55,21 @@ static sys_slist_t sink_cbs = SYS_SLIST_STATIC_INIT(&sink_cbs);
 
 static void broadcast_sink_cleanup(struct bt_bap_broadcast_sink *sink);
 
-static enum bt_bap_scan_delegator_iter
-find_recv_state_by_sink_cb(const struct bt_bap_scan_delegator_recv_state *recv_state,
-			   void *user_data)
+static bool find_recv_state_by_sink_cb(const struct bt_bap_scan_delegator_recv_state *recv_state,
+				       void *user_data)
 {
 	const struct bt_bap_broadcast_sink *sink = user_data;
 
 	if (atomic_test_bit(sink->flags, BT_BAP_BROADCAST_SINK_FLAG_SRC_ID_VALID) &&
 	    sink->bass_src_id == recv_state->src_id) {
-		return BT_BAP_SCAN_DELEGATOR_ITER_STOP;
+		return true;
 	}
 
-	return BT_BAP_SCAN_DELEGATOR_ITER_CONTINUE;
+	return false;
 }
 
-static enum bt_bap_scan_delegator_iter
-find_recv_state_by_pa_sync_cb(const struct bt_bap_scan_delegator_recv_state *recv_state,
-			      void *user_data)
+static bool find_recv_state_by_pa_sync_cb(const struct bt_bap_scan_delegator_recv_state *recv_state,
+					  void *user_data)
 {
 	struct bt_le_per_adv_sync *sync = user_data;
 	struct bt_le_per_adv_sync_info sync_info;
@@ -81,15 +79,15 @@ find_recv_state_by_pa_sync_cb(const struct bt_bap_scan_delegator_recv_state *rec
 	if (err != 0) {
 		LOG_DBG("Failed to get sync info: %d", err);
 
-		return BT_BAP_SCAN_DELEGATOR_ITER_CONTINUE;
+		return false;
 	}
 
 	if (bt_addr_le_eq(&recv_state->addr, &sync_info.addr) &&
 	    recv_state->adv_sid == sync_info.sid) {
-		return BT_BAP_SCAN_DELEGATOR_ITER_STOP;
+		return true;
 	}
 
-	return BT_BAP_SCAN_DELEGATOR_ITER_CONTINUE;
+	return false;
 };
 
 static void update_recv_state_big_synced(const struct bt_bap_broadcast_sink *sink)
