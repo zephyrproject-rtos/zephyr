@@ -178,6 +178,55 @@ out:
 	k_mutex_unlock(&wpa_supplicant_mutex);
 }
 
+static struct hostapd_hw_modes *get_mode_by_band(struct wpa_supplicant *wpa_s, uint8_t band)
+{
+	enum hostapd_hw_mode hw_mode;
+	bool is_6ghz = (band == WIFI_FREQ_BAND_6_GHZ) ? true : false;
+
+	if (band == WIFI_FREQ_BAND_2_4_GHZ) {
+		hw_mode = HOSTAPD_MODE_IEEE80211G;
+	} else if ((band == WIFI_FREQ_BAND_5_GHZ) ||
+		   (band == WIFI_FREQ_BAND_6_GHZ)) {
+		hw_mode = HOSTAPD_MODE_IEEE80211A;
+	} else {
+		return NULL;
+	}
+
+	return get_mode(wpa_s->hw.modes, wpa_s->hw.num_modes, hw_mode, is_6ghz);
+}
+
+static int wpa_supp_supported_channels(struct wpa_supplicant *wpa_s, uint8_t band, char **chan_list)
+{
+	struct hostapd_hw_modes *mode = NULL;
+	int i;
+	int offset, retval;
+	int size;
+	char *_chan_list;
+
+	mode = get_mode_by_band(wpa_s, band);
+	if (!mode) {
+		return -EINVAL;
+	}
+
+	size = ((mode->num_channels) * CHAN_NUM_LEN) + 1;
+	_chan_list = k_malloc(size);
+	if (!_chan_list) {
+		wpa_printf(MSG_ERROR, "Mem alloc failed for channel list");
+		return -ENOMEM;
+	}
+
+	retval = 0;
+	offset = 0;
+	for (i = 0; i < mode->num_channels; i++) {
+		retval = snprintf(_chan_list + offset, CHAN_NUM_LEN, " %d",
+				  mode->channels[i].freq);
+		offset += retval;
+	}
+	*chan_list = _chan_list;
+
+	return 0;
+}
+
 static inline void wpa_supp_restart_status_work(void)
 {
 	/* Terminate synchronously */
@@ -242,6 +291,7 @@ static inline enum wifi_security_type wpas_key_mgmt_to_zephyr(int key_mgmt)
 int supplicant_connect(const struct device *dev, struct wifi_connect_req_params *params)
 {
 	struct add_network_resp resp = {0};
+	char *chan_list = NULL;
 	struct wpa_supplicant *wpa_s;
 	int ret = 0;
 
@@ -288,6 +338,24 @@ int supplicant_connect(const struct device *dev, struct wifi_connect_req_params 
 
 	if (!wpa_cli_cmd_v("set_network %d ieee80211w 0", resp.network_id)) {
 		goto out;
+
+	if (params->band) {
+		ret = wpa_supp_supported_channels(wpa_s, params->band, &chan_list);
+		if (ret < 0) {
+			if (!wpa_cli_cmd_v("remove_network %d", resp.network_id)) {
+				goto out;
+			}
+		}
+
+		if (chan_list) {
+			if (!wpa_cli_cmd_v("set_network %d freq_list%s", resp.network_id,
+					   chan_list)) {
+				k_free(chan_list);
+				goto out;
+			}
+
+			k_free(chan_list);
+		}
 	}
 
 	if (params->security != WIFI_SECURITY_TYPE_NONE) {

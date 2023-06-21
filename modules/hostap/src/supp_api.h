@@ -16,6 +16,8 @@
 #define MAC_ADDR_LEN 6
 #endif
 
+#define CHAN_NUM_LEN 6 /* for space-separated channel numbers string */
+
 /**
  * @brief Request a connection
  *
