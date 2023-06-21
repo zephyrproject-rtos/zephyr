@@ -1,0 +1,62 @@
+/*
+ * Copyright 2023 Google LLC
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	test {
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		test_gpio: gpio@0 {
+			compatible = "vnd,gpio";
+			gpio-controller;
+			reg = <00 0x1000>;
+			#gpio-cells = <0x2>;
+			status = "okay";
+		};
+
+		gpio-keys {
+			compatible = "zephyr,gpio-keys";
+			debounce-interval-ms = <30>;
+			button_0 {
+				gpios = <&test_gpio 0 0>;
+				zephyr,code = <0>;
+			};
+		};
+
+		qdec-gpio {
+			compatible = "gpio-qdec";
+			gpios = <&test_gpio 0 0>, <&test_gpio 1 0>;
+			steps-per-period = <4>;
+			zephyr,axis = <0>;
+			sample-time-us = <2000>;
+			idle-timeout-ms = <200>;
+		};
+
+		longpress: longpress {
+			input = <&longpress>;
+			compatible = "zephyr,input-longpress";
+			input-codes = <0>;
+			short-codes = <0>;
+			long-codes = <0>;
+			long-delay-ms = <100>;
+		};
+
+		i2c@1 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "vnd,i2c";
+			reg = <0x1 0x1000>;
+			status = "okay";
+			clock-frequency = <100000>;
+
+			ft5336@0 {
+				compatible = "focaltech,ft5336";
+				reg = <0x0>;
+				int-gpios = <&test_gpio 0 0>;
+			};
+		};
+	};
+};
