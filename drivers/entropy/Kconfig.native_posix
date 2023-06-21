@@ -4,7 +4,6 @@ config FAKE_ENTROPY_NATIVE_POSIX
 	bool "Native posix entropy driver"
 	default y
 	depends on DT_HAS_ZEPHYR_NATIVE_POSIX_RNG_ENABLED
-	depends on EXTERNAL_LIBC
 	select ENTROPY_HAS_DRIVER
 	help
 	  This option enables the test random number generator for the
