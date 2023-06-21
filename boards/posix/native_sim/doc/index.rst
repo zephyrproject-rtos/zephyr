@@ -109,7 +109,7 @@ host libC (:kconfig:option:`CONFIG_EXTERNAL_LIBC`).
      can, can native posix, :kconfig:option:`CONFIG_CAN_NATIVE_POSIX_LINUX`, host libC
      console backend, POSIX arch console, :kconfig:option:`CONFIG_POSIX_ARCH_CONSOLE`, all
      display, display SDL, :kconfig:option:`CONFIG_SDL_DISPLAY`, host libC
-     entropy, native posix entropy, :kconfig:option:`CONFIG_FAKE_ENTROPY_NATIVE_POSIX`, host libC
+     entropy, native posix entropy, :kconfig:option:`CONFIG_FAKE_ENTROPY_NATIVE_POSIX`, all
      eprom, eprom emulator, :kconfig:option:`CONFIG_EEPROM_EMULATOR`, host libC
      ethernet, eth native_posix, :kconfig:option:`CONFIG_ETH_NATIVE_POSIX`, host libC
      flash, flash simulator, :kconfig:option:`CONFIG_FLASH_SIMULATOR`, host libC

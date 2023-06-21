@@ -23,6 +23,15 @@
 #include "soc.h"
 #include "cmdline.h" /* native_posix command line options header */
 
+#if defined(CONFIG_NATIVE_LIBRARY)
+#include "nsi_host_trampolines.h"
+#define host_random() nsi_host_random()
+#define host_srandom(x) nsi_host_srandom(x)
+#else
+#define host_random() random()
+#define host_srandom(x) srandom(x)
+#endif /* defined(CONFIG_NATIVE_LIBRARY) */
+
 static unsigned int seed = 0x5678;
 
 static int entropy_native_posix_get_entropy(const struct device *dev,
@@ -36,7 +45,7 @@ static int entropy_native_posix_get_entropy(const struct device *dev,
 		 * Note that only 1 thread (Zephyr thread or HW models), runs at
 		 * a time, therefore there is no need to use random_r()
 		 */
-		long int value = random();
+		long value = host_random();
 
 		size_t to_copy = MIN(length, sizeof(long int));
 
@@ -64,7 +73,7 @@ static int entropy_native_posix_get_entropy_isr(const struct device *dev,
 static int entropy_native_posix_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
-	srandom(seed);
+	host_srandom(seed);
 	posix_print_warning("WARNING: "
 			    "Using a test - not safe - entropy source\n");
 	return 0;
