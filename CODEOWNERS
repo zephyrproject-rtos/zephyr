@@ -755,6 +755,7 @@
 /scripts/footprint/                       @nashif
 /scripts/kconfig/                         @ulfalizer
 /scripts/logging/dictionary/              @dcpleung
+/scripts/native_simulator/                @aescolar
 /scripts/pylib/twister/expr_parser.py     @nashif
 /scripts/schemas/twister/                 @nashif
 /scripts/build/gen_app_partitions.py            @dcpleung @nashif
