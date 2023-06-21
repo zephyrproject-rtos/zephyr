@@ -191,8 +191,8 @@ static int rtc_mc146818_set_time(const struct device *dev, const struct rtc_time
 	value = rtc_read(RTC_DATA);
 	rtc_write(RTC_DATA, value | RTC_UCI_BIT);
 
-	year = (1970 + timeptr->tm_year) % 100;
-	cent = (1970 + timeptr->tm_year) / 100;
+	year = (1900 + timeptr->tm_year) % 100;
+	cent = (1900 + timeptr->tm_year) / 100;
 
 	if (!(rtc_read(RTC_DATA) & RTC_DMODE_BIT)) {
 		rtc_write(RTC_SEC, (uint8_t)bin2bcd(timeptr->tm_sec));
@@ -271,7 +271,7 @@ static int rtc_mc146818_get_time(const struct device *dev, struct rtc_time  *tim
 		timeptr->tm_sec = bcd2bin(timeptr->tm_sec);
 	}
 
-	timeptr->tm_year = 100 * (int)cent + year - 1970;
+	timeptr->tm_year = 100 * (int)cent + year - 1900;
 
 	timeptr->tm_nsec = 0;
 	timeptr->tm_yday = 0;
