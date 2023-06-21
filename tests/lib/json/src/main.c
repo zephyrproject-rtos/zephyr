@@ -45,6 +45,25 @@ struct test_int_limits {
 	int int_min;
 };
 
+struct test_nested_mask {
+	uint64_t nested_mask;
+	int nested_skipped;
+	int nested_used;
+};
+
+struct test_mask {
+	uint64_t mask;
+	struct test_nested_mask nested;
+	struct test_nested_mask nested_null;
+	int skipped;
+	int used;
+};
+
+struct test_mask_array {
+	struct test_nested_mask elements[3];
+	size_t num_elements;
+};
+
 static const struct json_obj_descr nested_descr[] = {
 	JSON_OBJ_DESCR_PRIM(struct test_nested, nested_int, JSON_TOK_NUMBER),
 	JSON_OBJ_DESCR_PRIM(struct test_nested, nested_bool, JSON_TOK_TRUE),
@@ -85,6 +104,25 @@ static const struct json_obj_descr obj_limits_descr[] = {
 	JSON_OBJ_DESCR_PRIM(struct test_int_limits, int_max, JSON_TOK_NUMBER),
 	JSON_OBJ_DESCR_PRIM(struct test_int_limits, int_cero, JSON_TOK_NUMBER),
 	JSON_OBJ_DESCR_PRIM(struct test_int_limits, int_min, JSON_TOK_NUMBER),
+};
+
+static const struct json_obj_descr test_nested_mask_descr[] = {
+	JSON_OBJ_META_MASK(struct test_nested_mask, nested_mask),
+	JSON_OBJ_DESCR_PRIM(struct test_nested_mask, nested_skipped, JSON_TOK_NUMBER),
+	JSON_OBJ_DESCR_PRIM(struct test_nested_mask, nested_used, JSON_TOK_NUMBER),
+};
+
+static const struct json_obj_descr test_mask_descr[] = {
+	JSON_OBJ_META_MASK(struct test_mask, mask),
+	JSON_OBJ_DESCR_OBJECT(struct test_mask, nested, test_nested_mask_descr),
+	JSON_OBJ_DESCR_OBJECT(struct test_mask, nested_null, test_nested_mask_descr),
+	JSON_OBJ_DESCR_PRIM(struct test_mask, skipped, JSON_TOK_NUMBER),
+	JSON_OBJ_DESCR_PRIM(struct test_mask, used, JSON_TOK_NUMBER),
+};
+
+static const struct json_obj_descr test_mask_array_descr[] = {
+	JSON_OBJ_DESCR_OBJ_ARRAY(struct test_mask_array, elements, 3, num_elements,
+				 test_nested_mask_descr, ARRAY_SIZE(test_nested_mask_descr)),
 };
 
 struct array {
@@ -772,6 +810,134 @@ ZTEST(lib_json_test, test_large_descriptor)
 	zassert_true(ret & ((int64_t)1 << 21), "Field int21 not decoded");
 	zassert_true(ret & ((int64_t)1 << 31), "Field int31 not decoded");
 	zassert_true(ret & ((int64_t)1 << 39), "Field int39 not decoded");
+}
+
+ZTEST(lib_json_test, test_json_masked_obj_encoding)
+{
+	struct test_mask obj = {
+		.mask = BIT64(0) | BIT64(1) | BIT64(2) | BIT64(4),
+		.nested = {
+			.nested_mask = BIT64(0) | BIT64(2),
+			.nested_skipped = 1234,
+			.nested_used = 4321,
+		},
+		.nested_null = {
+			.nested_mask = 0ULL, /* Bit 0 to indicate object is null */
+			.nested_skipped = 1111,
+			.nested_used = 2222,
+		},
+		.skipped = 5678,
+		.used = 8765,
+	};
+
+	char encoded[] = "{"
+		"\"nested\":{\"nested_used\":4321},"
+		"\"nested_null\":null,"
+		"\"used\":8765"
+		"}";
+	char buffer[sizeof(encoded)];
+	int ret;
+	ssize_t len;
+
+	len = json_calc_encoded_len(test_mask_descr, ARRAY_SIZE(test_mask_descr), &obj);
+	zassert_equal(len, strlen(encoded), "encoded size mismatch");
+
+	ret = json_obj_encode_buf(test_mask_descr, ARRAY_SIZE(test_mask_descr),
+				  &obj, buffer, sizeof(buffer));
+	zassert_equal(ret, 0, "Encoding function failed");
+
+	ret = strncmp(buffer, encoded, sizeof(encoded) - 1);
+	zassert_equal(ret, 0, "Encoded contents not consistent");
+}
+
+ZTEST(lib_json_test, test_json_masked_obj_decoding)
+{
+	struct test_mask obj = {0};
+	char encoded[] = "{"
+		"\"nested\":{\"nested_used\":1234},"
+		"\"nested_null\":null,"
+		"\"used\":5678"
+		"}";
+	int ret;
+
+	ret = json_obj_parse(encoded, sizeof(encoded) - 1, test_mask_descr,
+			     ARRAY_SIZE(test_mask_descr), &obj);
+	zassert_false(ret < 0, "json_obj_parse returned error %d", ret);
+	zassert_equal(obj.mask, BIT64(0) | BIT64(1) | BIT64(2) | BIT64(4),
+		      "Wrong field mask decoded");
+	zassert_equal(obj.used, 5678, "Wrong decoded used value");
+	zassert_equal(obj.nested.nested_mask, BIT64(0) | BIT64(2),
+		      "Wrong nested field mask decoded");
+	zassert_equal(obj.nested.nested_used, 1234, "Wrong decoded nested used value");
+	zassert_equal(obj.nested_null.nested_mask, 0ULL,
+		      "Wrong nested null field mask decoded");
+}
+
+ZTEST(lib_json_test, test_json_masked_obj_arr_encoding)
+{
+	struct test_mask_array oa = {
+		.elements = {
+			[0] = { .nested_mask = BIT64(0) | BIT64(2), .nested_used = 123 },
+			[1] = { .nested_mask = 0ULL                                    },
+			[2] = { .nested_mask = BIT64(0) | BIT64(2), .nested_used = 456 },
+		},
+		.num_elements = 3,
+	};
+	char encoded[] = "{\"elements\":["
+		"{\"nested_used\":123},"
+		"null,"
+		"{\"nested_used\":456}"
+		"]}";
+	char buffer[sizeof(encoded)];
+	int ret;
+
+	ret = json_obj_encode_buf(test_mask_array_descr, ARRAY_SIZE(test_mask_array_descr),
+				  &oa, buffer, sizeof(buffer));
+	zassert_equal(ret, 0, "Encoding array of masked object returned error");
+	zassert_true(!strcmp(buffer, encoded),
+		     "Encoded array of masked objects is not consistent");
+}
+
+ZTEST(lib_json_test, test_json_masked_obj_arr_decoding)
+{
+	struct test_mask_array oa;
+	char encoded[] = "{\"elements\":["
+		"{\"nested_used\":123},"
+		"null,"
+		"{\"nested_used\":456}"
+		"]}";
+	const struct test_mask_array expected = {
+		.elements = {
+			[0] = { .nested_mask = BIT64(0) | BIT64(2), .nested_used = 123 },
+			[1] = { .nested_mask = 0ULL                                    },
+			[2] = { .nested_mask = BIT64(0) | BIT64(2), .nested_used = 456 },
+		},
+		.num_elements = 3,
+	};
+	int ret;
+
+	ret = json_obj_parse(encoded, sizeof(encoded) - 1, test_mask_array_descr,
+			     ARRAY_SIZE(test_mask_array_descr), &oa);
+
+	zassert_equal(ret, (1 << ARRAY_SIZE(test_mask_array_descr)) - 1,
+		      "Array of masked object fields not decoded correctly");
+	zassert_equal(oa.num_elements, 3,
+		      "Number of masked object fields not decoded correctly");
+
+	for (int i = 0; i < expected.num_elements; i++) {
+		zassert_equal(oa.elements[i].nested_mask,
+			      expected.elements[i].nested_mask,
+			      "Element %d nested_mask not decoded correctly", i);
+
+		/* Skip processing null objects */
+		if (expected.elements[i].nested_mask == 0ULL) {
+			continue;
+		}
+
+		zassert_equal(oa.elements[i].nested_used,
+			      expected.elements[i].nested_used,
+			      "Element %d nested_used not decoded correctly", i);
+	}
 }
 
 ZTEST_SUITE(lib_json_test, NULL, NULL, NULL, NULL, NULL);
