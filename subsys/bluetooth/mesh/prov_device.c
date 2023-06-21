@@ -359,6 +359,13 @@ static void prov_pub_key(const uint8_t *data)
 			return;
 		}
 
+		if (!memcmp(bt_mesh_prov->public_key_be,
+			    bt_mesh_prov_link.conf_inputs.pub_key_provisioner, PDU_LEN_PUB_KEY)) {
+			LOG_ERR("Public keys are identical");
+			prov_fail(PROV_ERR_NVAL_FMT);
+			return;
+		}
+
 		/* No swap needed since user provides public key in big-endian */
 		memcpy(bt_mesh_prov_link.conf_inputs.pub_key_device, bt_mesh_prov->public_key_be,
 		       PDU_LEN_PUB_KEY);
