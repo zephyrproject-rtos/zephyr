@@ -785,6 +785,10 @@ static void config_cb(struct bt_bap_stream *stream, enum bt_bap_ascs_rsp_code rs
 {
 	shell_print(ctx_shell, "stream %p config operation rsp_code %u reason %u",
 		    stream, rsp_code, reason);
+
+	if (default_stream == NULL) {
+		default_stream = stream;
+	}
 }
 
 static void qos_cb(struct bt_bap_stream *stream, enum bt_bap_ascs_rsp_code rsp_code,
@@ -916,6 +920,7 @@ static int cmd_config(const struct shell *sh, size_t argc, char *argv[])
 	enum bt_audio_location location = BT_AUDIO_LOCATION_PROHIBITED;
 	const struct named_lc3_preset *named_preset;
 	struct unicast_stream *uni_stream;
+	struct bt_bap_stream *bap_stream;
 	struct bt_bap_ep *ep = NULL;
 	unsigned long index;
 	uint8_t conn_index;
@@ -928,7 +933,9 @@ static int cmd_config(const struct shell *sh, size_t argc, char *argv[])
 	conn_index = bt_conn_index(default_conn);
 
 	if (default_stream == NULL) {
-		default_stream = &unicast_streams[0].stream.bap_stream;
+		bap_stream = &unicast_streams[0].stream.bap_stream;
+	} else {
+		bap_stream = default_stream;
 	}
 
 	index = shell_strtoul(argv[2], 0, &err);
@@ -1019,7 +1026,7 @@ static int cmd_config(const struct shell *sh, size_t argc, char *argv[])
 		}
 	}
 
-	uni_stream = CONTAINER_OF(default_stream, struct unicast_stream, stream);
+	uni_stream = CONTAINER_OF(bap_stream, struct unicast_stream, stream);
 	copy_unicast_stream_preset(uni_stream, named_preset);
 
 	/* If location has been modifed, we update the location in the codec configuration */
@@ -1039,14 +1046,14 @@ static int cmd_config(const struct shell *sh, size_t argc, char *argv[])
 		}
 	}
 
-	if (default_stream->ep == ep) {
-		err = bt_bap_stream_reconfig(default_stream, &uni_stream->codec);
+	if (bap_stream->ep == ep) {
+		err = bt_bap_stream_reconfig(bap_stream, &uni_stream->codec);
 		if (err != 0) {
 			shell_error(sh, "Unable reconfig stream: %d", err);
 			return -ENOEXEC;
 		}
 	} else {
-		err = bt_bap_stream_config(default_conn, default_stream, ep, &uni_stream->codec);
+		err = bt_bap_stream_config(default_conn, bap_stream, ep, &uni_stream->codec);
 		if (err != 0) {
 			shell_error(sh, "Unable to config stream: %d", err);
 			return err;
