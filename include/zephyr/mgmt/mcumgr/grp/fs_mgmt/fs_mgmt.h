@@ -75,17 +75,6 @@ enum fs_mgmt_ret_code_t {
 	FS_MGMT_RET_RC_CHECKSUM_HASH_NOT_FOUND,
 };
 
-#ifdef CONFIG_MCUMGR_SMP_SUPPORT_ORIGINAL_PROTOCOL
-/*
- * @brief	Translate FS mgmt group error code into MCUmgr error code
- *
- * @param ret	#fs_mgmt_ret_code_t error code
- *
- * @return	#mcumgr_err_t error code
- */
-int fs_mgmt_translate_error_code(uint16_t ret);
-#endif
-
 #ifdef __cplusplus
 }
 #endif
