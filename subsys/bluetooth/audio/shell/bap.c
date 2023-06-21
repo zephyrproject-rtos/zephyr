@@ -2621,9 +2621,7 @@ static ssize_t nonconnectable_ad_data_add(struct bt_data *data_array,
 			return -1;
 		}
 
-		ad_bap_broadcast_announcement[2] = (uint8_t)(broadcast_id >> 16);
-		ad_bap_broadcast_announcement[3] = (uint8_t)(broadcast_id >> 8);
-		ad_bap_broadcast_announcement[4] = (uint8_t)(broadcast_id >> 0);
+		sys_put_le24(broadcast_id, &ad_bap_broadcast_announcement[2]);
 		data_array[ad_len].type = BT_DATA_SVC_DATA16;
 		data_array[ad_len].data_len = ARRAY_SIZE(ad_bap_broadcast_announcement);
 		data_array[ad_len].data = ad_bap_broadcast_announcement;
