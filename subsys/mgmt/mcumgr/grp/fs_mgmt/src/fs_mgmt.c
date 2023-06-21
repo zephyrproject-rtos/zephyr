@@ -896,6 +896,46 @@ static int fs_mgmt_close_opened_file(struct smp_streamer *ctxt)
 	return MGMT_ERR_EOK;
 }
 
+#ifdef CONFIG_MCUMGR_SMP_SUPPORT_ORIGINAL_PROTOCOL
+/*
+ * @brief	Translate FS mgmt group error code into MCUmgr error code
+ *
+ * @param ret	#fs_mgmt_ret_code_t error code
+ *
+ * @return	#mcumgr_err_t error code
+ */
+static int fs_mgmt_translate_error_code(uint16_t ret)
+{
+	int rc;
+
+	switch (ret) {
+	case FS_MGMT_RET_RC_FILE_INVALID_NAME:
+	case FS_MGMT_RET_RC_CHECKSUM_HASH_NOT_FOUND:
+	rc = MGMT_ERR_EINVAL;
+	break;
+
+	case FS_MGMT_RET_RC_FILE_NOT_FOUND:
+	case FS_MGMT_RET_RC_FILE_IS_DIRECTORY:
+	rc = MGMT_ERR_ENOENT;
+	break;
+
+	case FS_MGMT_RET_RC_UNKNOWN:
+	case FS_MGMT_RET_RC_FILE_OPEN_FAILED:
+	case FS_MGMT_RET_RC_FILE_SEEK_FAILED:
+	case FS_MGMT_RET_RC_FILE_READ_FAILED:
+	case FS_MGMT_RET_RC_FILE_TRUNCATE_FAILED:
+	case FS_MGMT_RET_RC_FILE_DELETE_FAILED:
+	case FS_MGMT_RET_RC_FILE_WRITE_FAILED:
+	case FS_MGMT_RET_RC_FILE_OFFSET_NOT_VALID:
+	case FS_MGMT_RET_RC_FILE_OFFSET_LARGER_THAN_FILE:
+	default:
+	rc = MGMT_ERR_EUNKNOWN;
+	}
+
+	return rc;
+}
+#endif
+
 static const struct mgmt_handler fs_mgmt_handlers[] = {
 	[FS_MGMT_ID_FILE] = {
 		.mh_read = fs_mgmt_file_download,
@@ -931,6 +971,9 @@ static struct mgmt_group fs_mgmt_group = {
 	.mg_handlers = fs_mgmt_handlers,
 	.mg_handlers_count = FS_MGMT_HANDLER_CNT,
 	.mg_group_id = MGMT_GROUP_ID_FS,
+#ifdef CONFIG_MCUMGR_SMP_SUPPORT_ORIGINAL_PROTOCOL
+	.mg_translate_error = fs_mgmt_translate_error_code,
+#endif
 };
 
 static void fs_mgmt_register_group(void)
@@ -953,38 +996,5 @@ static void fs_mgmt_register_group(void)
 #endif
 #endif
 }
-
-#ifdef CONFIG_MCUMGR_SMP_SUPPORT_ORIGINAL_PROTOCOL
-int fs_mgmt_translate_error_code(uint16_t ret)
-{
-	int rc;
-
-	switch (ret) {
-	case FS_MGMT_RET_RC_FILE_INVALID_NAME:
-	case FS_MGMT_RET_RC_CHECKSUM_HASH_NOT_FOUND:
-	rc = MGMT_ERR_EINVAL;
-	break;
-
-	case FS_MGMT_RET_RC_FILE_NOT_FOUND:
-	case FS_MGMT_RET_RC_FILE_IS_DIRECTORY:
-	rc = MGMT_ERR_ENOENT;
-	break;
-
-	case FS_MGMT_RET_RC_UNKNOWN:
-	case FS_MGMT_RET_RC_FILE_OPEN_FAILED:
-	case FS_MGMT_RET_RC_FILE_SEEK_FAILED:
-	case FS_MGMT_RET_RC_FILE_READ_FAILED:
-	case FS_MGMT_RET_RC_FILE_TRUNCATE_FAILED:
-	case FS_MGMT_RET_RC_FILE_DELETE_FAILED:
-	case FS_MGMT_RET_RC_FILE_WRITE_FAILED:
-	case FS_MGMT_RET_RC_FILE_OFFSET_NOT_VALID:
-	case FS_MGMT_RET_RC_FILE_OFFSET_LARGER_THAN_FILE:
-	default:
-	rc = MGMT_ERR_EUNKNOWN;
-	}
-
-	return rc;
-}
-#endif
 
 MCUMGR_HANDLER_DEFINE(fs_mgmt, fs_mgmt_register_group);
