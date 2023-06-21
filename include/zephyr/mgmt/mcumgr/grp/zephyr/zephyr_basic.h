@@ -35,17 +35,6 @@ enum zephyr_basic_group_ret_code_t {
 	ZEPHYR_MGMT_GRP_CMD_RC_FLASH_ERASE_FAILED,
 };
 
-#ifdef CONFIG_MCUMGR_SMP_SUPPORT_ORIGINAL_PROTOCOL
-/*
- * @brief	Translate zephyr basic group error code into MCUmgr error code
- *
- * @param ret	#zephyr_basic_group_ret_code_t error code
- *
- * @return	#mcumgr_err_t error code
- */
-int zephyr_basic_group_translate_error_code(uint16_t ret);
-#endif
-
 #ifdef __cplusplus
 }
 #endif

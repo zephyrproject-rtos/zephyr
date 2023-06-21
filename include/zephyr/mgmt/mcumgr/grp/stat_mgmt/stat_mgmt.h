@@ -49,17 +49,6 @@ struct stat_mgmt_entry {
 	uint64_t value;
 };
 
-#ifdef CONFIG_MCUMGR_SMP_SUPPORT_ORIGINAL_PROTOCOL
-/*
- * @brief	Translate stat mgmt group error code into MCUmgr error code
- *
- * @param ret	#stat_mgmt_ret_code_t error code
- *
- * @return	#mcumgr_err_t error code
- */
-int stat_mgmt_translate_error_code(uint16_t ret);
-#endif
-
 #ifdef __cplusplus
 }
 #endif

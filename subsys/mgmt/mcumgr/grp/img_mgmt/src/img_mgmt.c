@@ -729,42 +729,15 @@ int img_mgmt_my_version(struct image_version *ver)
 				  ver, NULL, NULL);
 }
 
-static const struct mgmt_handler img_mgmt_handlers[] = {
-	[IMG_MGMT_ID_STATE] = {
-		.mh_read = img_mgmt_state_read,
-#ifdef CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP
-		.mh_write = NULL
-#else
-		.mh_write = img_mgmt_state_write,
-#endif
-	},
-	[IMG_MGMT_ID_UPLOAD] = {
-		.mh_read = NULL,
-		.mh_write = img_mgmt_upload
-	},
-	[IMG_MGMT_ID_ERASE] = {
-		.mh_read = NULL,
-		.mh_write = img_mgmt_erase
-	},
-};
-
-static const struct mgmt_handler img_mgmt_handlers[];
-
-#define IMG_MGMT_HANDLER_CNT ARRAY_SIZE(img_mgmt_handlers)
-
-static struct mgmt_group img_mgmt_group = {
-	.mg_handlers = (struct mgmt_handler *)img_mgmt_handlers,
-	.mg_handlers_count = IMG_MGMT_HANDLER_CNT,
-	.mg_group_id = MGMT_GROUP_ID_IMAGE,
-};
-
-static void img_mgmt_register_group(void)
-{
-	mgmt_register_group(&img_mgmt_group);
-}
-
 #ifdef CONFIG_MCUMGR_SMP_SUPPORT_ORIGINAL_PROTOCOL
-int img_mgmt_translate_error_code(uint16_t ret)
+/*
+ * @brief	Translate IMG mgmt group error code into MCUmgr error code
+ *
+ * @param ret	#img_mgmt_ret_code_t error code
+ *
+ * @return	#mcumgr_err_t error code
+ */
+static int img_mgmt_translate_error_code(uint16_t ret)
 {
 	int rc;
 
@@ -817,5 +790,42 @@ int img_mgmt_translate_error_code(uint16_t ret)
 	return rc;
 }
 #endif
+
+static const struct mgmt_handler img_mgmt_handlers[] = {
+	[IMG_MGMT_ID_STATE] = {
+		.mh_read = img_mgmt_state_read,
+#ifdef CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP
+		.mh_write = NULL
+#else
+		.mh_write = img_mgmt_state_write,
+#endif
+	},
+	[IMG_MGMT_ID_UPLOAD] = {
+		.mh_read = NULL,
+		.mh_write = img_mgmt_upload
+	},
+	[IMG_MGMT_ID_ERASE] = {
+		.mh_read = NULL,
+		.mh_write = img_mgmt_erase
+	},
+};
+
+static const struct mgmt_handler img_mgmt_handlers[];
+
+#define IMG_MGMT_HANDLER_CNT ARRAY_SIZE(img_mgmt_handlers)
+
+static struct mgmt_group img_mgmt_group = {
+	.mg_handlers = (struct mgmt_handler *)img_mgmt_handlers,
+	.mg_handlers_count = IMG_MGMT_HANDLER_CNT,
+	.mg_group_id = MGMT_GROUP_ID_IMAGE,
+#ifdef CONFIG_MCUMGR_SMP_SUPPORT_ORIGINAL_PROTOCOL
+	.mg_translate_error = img_mgmt_translate_error_code,
+#endif
+};
+
+static void img_mgmt_register_group(void)
+{
+	mgmt_register_group(&img_mgmt_group);
+}
 
 MCUMGR_HANDLER_DEFINE(img_mgmt, img_mgmt_register_group);

@@ -674,6 +674,32 @@ fail:
 }
 #endif
 
+#ifdef CONFIG_MCUMGR_SMP_SUPPORT_ORIGINAL_PROTOCOL
+/*
+ * @brief	Translate OS mgmt group error code into MCUmgr error code
+ *
+ * @param ret	#os_mgmt_ret_code_t error code
+ *
+ * @return	#mcumgr_err_t error code
+ */
+static int os_mgmt_translate_error_code(uint16_t ret)
+{
+	int rc;
+
+	switch (ret) {
+	case OS_MGMT_RET_RC_INVALID_FORMAT:
+	rc = MGMT_ERR_EINVAL;
+	break;
+
+	case OS_MGMT_RET_RC_UNKNOWN:
+	default:
+	rc = MGMT_ERR_EUNKNOWN;
+	}
+
+	return rc;
+}
+#endif
+
 static const struct mgmt_handler os_mgmt_group_handlers[] = {
 #ifdef CONFIG_MCUMGR_GRP_OS_ECHO
 	[OS_MGMT_ID_ECHO] = {
@@ -708,30 +734,14 @@ static struct mgmt_group os_mgmt_group = {
 	.mg_handlers = os_mgmt_group_handlers,
 	.mg_handlers_count = OS_MGMT_GROUP_SZ,
 	.mg_group_id = MGMT_GROUP_ID_OS,
+#ifdef CONFIG_MCUMGR_SMP_SUPPORT_ORIGINAL_PROTOCOL
+	.mg_translate_error = os_mgmt_translate_error_code,
+#endif
 };
 
 static void os_mgmt_register_group(void)
 {
 	mgmt_register_group(&os_mgmt_group);
 }
-
-#ifdef CONFIG_MCUMGR_SMP_SUPPORT_ORIGINAL_PROTOCOL
-int os_mgmt_translate_error_code(uint16_t ret)
-{
-	int rc;
-
-	switch (ret) {
-	case OS_MGMT_RET_RC_INVALID_FORMAT:
-	rc = MGMT_ERR_EINVAL;
-	break;
-
-	case OS_MGMT_RET_RC_UNKNOWN:
-	default:
-	rc = MGMT_ERR_EUNKNOWN;
-	}
-
-	return rc;
-}
-#endif
 
 MCUMGR_HANDLER_DEFINE(os_mgmt, os_mgmt_register_group);

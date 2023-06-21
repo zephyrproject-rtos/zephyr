@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018-2021 mcumgr authors
- * Copyright (c) 2022 Nordic Semiconductor ASA
+ * Copyright (c) 2022-2023 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -195,8 +195,15 @@ struct mgmt_group {
 	const struct mgmt_handler *mg_handlers;
 	uint16_t mg_handlers_count;
 
-	/* The numeric ID of this group. */
+	/** The numeric ID of this group. */
 	uint16_t mg_group_id;
+
+#if IS_ENABLED(CONFIG_MCUMGR_SMP_SUPPORT_ORIGINAL_PROTOCOL)
+	/** A function handler for translating version 2 SMP error codes to version 1 SMP error
+	 * codes (optional)
+	 */
+	smp_translate_error_fn mg_translate_error;
+#endif
 };
 
 /**
@@ -223,6 +230,19 @@ void mgmt_unregister_group(struct mgmt_group *group);
  *		NULL on failure.
  */
 const struct mgmt_handler *mgmt_find_handler(uint16_t group_id, uint16_t command_id);
+
+#if IS_ENABLED(CONFIG_MCUMGR_SMP_SUPPORT_ORIGINAL_PROTOCOL)
+/**
+ * @brief		Finds a registered error translation function for converting from SMP
+ *			version 2 error codes to legacy SMP version 1 error codes.
+ *
+ * @param group_id	The group of the translation function to find.
+ *
+ * @return		Requested lookup function on success.
+ * @return		NULL on failure.
+ */
+smp_translate_error_fn mgmt_find_error_translation_function(uint16_t group_id);
+#endif
 
 /**
  * @}

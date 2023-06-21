@@ -34,17 +34,6 @@ enum shell_mgmt_ret_code_t {
 	SHELL_MGMT_RET_RC_EMPTY_COMMAND,
 };
 
-#ifdef CONFIG_MCUMGR_SMP_SUPPORT_ORIGINAL_PROTOCOL
-/*
- * @brief	Translate shell mgmt group error code into MCUmgr error code
- *
- * @param ret	#shell_mgmt_ret_code_t error code
- *
- * @return	#mcumgr_err_t error code
- */
-int shell_mgmt_translate_error_code(uint16_t ret);
-#endif
-
 #ifdef __cplusplus
 }
 #endif

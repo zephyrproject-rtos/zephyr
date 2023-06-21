@@ -64,26 +64,15 @@ static int storage_erase_handler(struct smp_streamer *ctxt)
 	return MGMT_ERR_EOK;
 }
 
-static const struct mgmt_handler zephyr_mgmt_basic_handlers[] = {
-	[ZEPHYR_MGMT_GRP_BASIC_CMD_ERASE_STORAGE] = {
-		.mh_read  = NULL,
-		.mh_write = storage_erase_handler,
-	},
-};
-
-static struct mgmt_group zephyr_basic_mgmt_group = {
-	.mg_handlers = (struct mgmt_handler *)zephyr_mgmt_basic_handlers,
-	.mg_handlers_count = ARRAY_SIZE(zephyr_mgmt_basic_handlers),
-	.mg_group_id = (ZEPHYR_MGMT_GRP_BASIC),
-};
-
-static void zephyr_basic_mgmt_init(void)
-{
-	mgmt_register_group(&zephyr_basic_mgmt_group);
-}
-
 #ifdef CONFIG_MCUMGR_SMP_SUPPORT_ORIGINAL_PROTOCOL
-int zephyr_basic_group_translate_error_code(uint16_t ret)
+/*
+ * @brief	Translate zephyr basic group error code into MCUmgr error code
+ *
+ * @param ret	#zephyr_basic_group_ret_code_t error code
+ *
+ * @return	#mcumgr_err_t error code
+ */
+static int zephyr_basic_group_translate_error_code(uint16_t ret)
 {
 	int rc;
 
@@ -104,5 +93,26 @@ int zephyr_basic_group_translate_error_code(uint16_t ret)
 	return rc;
 }
 #endif
+
+static const struct mgmt_handler zephyr_mgmt_basic_handlers[] = {
+	[ZEPHYR_MGMT_GRP_BASIC_CMD_ERASE_STORAGE] = {
+		.mh_read  = NULL,
+		.mh_write = storage_erase_handler,
+	},
+};
+
+static struct mgmt_group zephyr_basic_mgmt_group = {
+	.mg_handlers = (struct mgmt_handler *)zephyr_mgmt_basic_handlers,
+	.mg_handlers_count = ARRAY_SIZE(zephyr_mgmt_basic_handlers),
+	.mg_group_id = (ZEPHYR_MGMT_GRP_BASIC),
+#ifdef CONFIG_MCUMGR_SMP_SUPPORT_ORIGINAL_PROTOCOL
+	.mg_translate_error = zephyr_basic_group_translate_error_code,
+#endif
+};
+
+static void zephyr_basic_mgmt_init(void)
+{
+	mgmt_register_group(&zephyr_basic_mgmt_group);
+}
 
 MCUMGR_HANDLER_DEFINE(zephyr_basic_mgmt, zephyr_basic_mgmt_init);

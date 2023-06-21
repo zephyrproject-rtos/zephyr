@@ -341,17 +341,6 @@ int img_mgmt_vercmp(const struct image_version *a, const struct image_version *b
 void img_mgmt_reset_upload(void);
 #endif
 
-#ifdef CONFIG_MCUMGR_SMP_SUPPORT_ORIGINAL_PROTOCOL
-/*
- * @brief	Translate IMG mgmt group error code into MCUmgr error code
- *
- * @param ret	#img_mgmt_ret_code_t error code
- *
- * @return	#mcumgr_err_t error code
- */
-int img_mgmt_translate_error_code(uint16_t ret);
-#endif
-
 #ifdef CONFIG_MCUMGR_GRP_IMG_VERBOSE_ERR
 #define IMG_MGMT_UPLOAD_ACTION_SET_RC_RSN(action, rsn) ((action)->rc_rsn = (rsn))
 #define IMG_MGMT_UPLOAD_ACTION_RC_RSN(action) ((action)->rc_rsn)
