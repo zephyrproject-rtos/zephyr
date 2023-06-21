@@ -252,6 +252,8 @@ static void smsc_miibus_writereg(struct smsc_data *sc, int phy, int reg, uint16_
 	irq_disable(sc->irq);
 	SMSC_LOCK(sc);
 
+	smsc_select_bank(sc, 3);
+
 	smsc_miibus_sync(sc);
 
 	smsc_miibus_sendbits(sc, MII_COMMAND_START, 2);
