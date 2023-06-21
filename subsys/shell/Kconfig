@@ -105,6 +105,14 @@ config SHELL_TAB_AUTOCOMPLETION
 	  Enable commands and subcommands autocompletion with the Tab
 	  key. This function can be deactivated to save some flash.
 
+config SHELL_ASCII_FILTER
+	bool "Filter incoming ASCII characters"
+	default y
+	help
+	  Shell will not collect characters that are not in
+	  ASCII range: <0, 127>. As a result filtered characters will not be
+	  printed on the terminal and passed to the command handler.
+
 config SHELL_WILDCARD
 	bool "Wildcard support in shell"
 	select FNMATCH
