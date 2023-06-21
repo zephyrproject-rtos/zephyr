@@ -118,6 +118,19 @@ static int modbus_ascii_rx_adu(struct modbus_context *ctx)
 		return -EMSGSIZE;
 	}
 
+	if (IS_ENABLED(CONFIG_MODBUS_EMULATED_7E1)) {
+		uint8_t parity;
+
+		for (int i = 0; i < rx_size; i++) {
+			parity = (cfg->uart_buf[i] & BIT(7)) >> 7;
+			cfg->uart_buf[i] = cfg->uart_buf[i] & ~BIT(7);
+			if (__builtin_parity(cfg->uart_buf_ptr[i]) != parity) {
+				LOG_ERR("Parity error!");
+				return -EBADMSG;
+			}
+		}
+	}
+
 	if ((cfg->uart_buf[0] != MODBUS_ASCII_START_FRAME_CHAR) ||
 	    (cfg->uart_buf[rx_size - 2] != MODBUS_ASCII_END_FRAME_CHAR1) ||
 	    (cfg->uart_buf[rx_size - 1] != MODBUS_ASCII_END_FRAME_CHAR2)) {
@@ -223,6 +236,15 @@ static void modbus_ascii_tx_adu(struct modbus_context *ctx)
 	/* Update the total number of bytes to send */
 	cfg->uart_buf_ctr = tx_bytes;
 	cfg->uart_buf_ptr = &cfg->uart_buf[0];
+
+	if (IS_ENABLED(CONFIG_MODBUS_EMULATED_7E1)) {
+		uint8_t parity;
+
+		for (int i = 0; i < tx_bytes; i++) {
+			parity = __builtin_parity(cfg->uart_buf_ptr[i]);
+			cfg->uart_buf_ptr[i] |= (parity << 7);
+		}
+	}
 
 	LOG_DBG("Start frame transmission");
 	modbus_serial_rx_off(ctx);
@@ -557,6 +579,20 @@ int modbus_serial_init(struct modbus_context *ctx,
 		default:
 			return -EINVAL;
 		}
+	}
+
+	/* If the UART driver lacks support for 7E1, we can emulate it by
+	 * shifting in the parity at BIT(0)
+	 */
+	if (IS_ENABLED(CONFIG_MODBUS_EMULATED_7E1) &&
+	    ctx->mode == MODBUS_MODE_ASCII) {
+		LOG_WRN("Faking parity...");
+		uart_cfg = (struct uart_config) {
+			.data_bits = UART_CFG_DATA_BITS_8,
+			.parity = UART_CFG_PARITY_NONE,
+			.stop_bits = UART_CFG_STOP_BITS_1,
+			.baudrate = param.serial.baud,
+		};
 	}
 
 	if (uart_configure(cfg->dev, &uart_cfg) != 0) {

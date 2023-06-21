@@ -53,6 +53,12 @@ config MODBUS_ASCII_MODE
 	help
 	  Enable ASCII transmission mode.
 
+config MODBUS_EMULATED_7E1
+	depends on MODBUS_ASCII_MODE
+	bool "Emulate UART 7E1 using software"
+	help
+	  For use with UARTs that do not support 7 data bits.
+
 config MODBUS_RAW_ADU
 	bool "Modbus raw ADU support"
 	help
