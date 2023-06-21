@@ -52,7 +52,8 @@ class WarningsFilter(logging.Filter):
             return True
 
         for expression in self._expressions:
-            if re.match(expression, record.msg):
+            # The message isn't always a string so we convert it before regexing as we can only regex strings
+            if re.match(expression, str(record.msg)):
                 if self._silent:
                     return False
                 else:
