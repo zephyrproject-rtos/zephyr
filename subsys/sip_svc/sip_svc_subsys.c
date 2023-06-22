@@ -878,6 +878,8 @@ static int sip_svc_subsys_init(void)
 			return -ENOMEM;
 		}
 
+		memset(ctrl->clients, 0, ctrl->num_clients * sizeof(struct sip_svc_client));
+
 		/* Initialize request msgq */
 		k_msgq_init(&ctrl->req_msgq, msgq_buf, sizeof(struct sip_svc_request),
 			    CONFIG_ARM_SIP_SVC_SUBSYS_MSGQ_DEPTH);
