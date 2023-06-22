@@ -14,3 +14,4 @@ supported:
   - spi
 ram: 192
 flash: 512
+vendor: st

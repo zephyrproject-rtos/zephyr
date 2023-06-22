@@ -11,3 +11,4 @@ supported:
   - i2c
   - usb_device
   - ble
+vendor: electronutlabs

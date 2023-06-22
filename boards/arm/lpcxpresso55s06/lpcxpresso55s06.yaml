@@ -16,3 +16,4 @@ toolchain:
 supported:
   - gpio
   - can
+vendor: nxp

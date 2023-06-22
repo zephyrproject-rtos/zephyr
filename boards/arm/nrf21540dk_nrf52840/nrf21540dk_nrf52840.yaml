@@ -22,3 +22,4 @@ supported:
   - usb_device
   - watchdog
   - netif:openthread
+vendor: nordic

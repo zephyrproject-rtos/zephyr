@@ -13,3 +13,4 @@ supported:
   - eeprom
 ram: 8
 flash: 32
+vendor: st

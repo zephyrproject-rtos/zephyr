@@ -12,3 +12,4 @@ supported:
   - gpio
   - i2c
   - hts221
+vendor: nordic

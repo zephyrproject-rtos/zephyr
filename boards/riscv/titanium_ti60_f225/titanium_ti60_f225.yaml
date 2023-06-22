@@ -8,3 +8,4 @@ ram: 196608
 supported:
   - gpio
   - uart
+vendor: efinix

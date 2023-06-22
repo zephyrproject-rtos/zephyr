@@ -21,3 +21,4 @@ supported:
   - spi
   - uart
   - watchdog
+vendor: gd
