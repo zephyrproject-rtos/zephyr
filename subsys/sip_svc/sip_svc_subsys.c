@@ -839,12 +839,6 @@ static int sip_svc_subsys_init(void)
 		}
 		dev = (struct device *)(ctrl->dev);
 
-		if (ctrl->num_clients > CONFIG_ARM_SIP_SVC_SUBSYS_MAX_CLIENT_COUNT) {
-			LOG_ERR("number of clients cannot be greater than the "
-				"CONFIG_ARM_SIP_SVC_SUBSYS_MAX_CLIENT_COUNT");
-			return -EPROTO;
-		}
-
 		LOG_INF("Got registered conduit %.*s", (int)sizeof(ctrl->method), ctrl->method);
 
 		ctrl->async_resp_data = k_malloc(ctrl->resp_size);
