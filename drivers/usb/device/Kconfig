@@ -160,7 +160,7 @@ choice USB_MCUX_CONTROLLER_TYPE
 
 config USB_DC_NXP_EHCI
 	bool "MXRT EHCI USB Device Controller"
-	select NOCACHE_MEMORY if HAS_MCUX_CACHE
+	select NOCACHE_MEMORY if ARCH_HAS_NOCACHE_MEMORY_SUPPORT
 	select USB_DC_HAS_HS_SUPPORT
 	help
 	  Kinetis and RT EHCI USB Device Controller Driver.
