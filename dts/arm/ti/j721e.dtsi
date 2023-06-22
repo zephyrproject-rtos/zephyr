@@ -7,17 +7,35 @@
 #include <mem.h>
 #include <freq.h>
 #include <arm/armv7-r.dtsi>
+#include <zephyr/dt-bindings/interrupt-controller/ti-vim.h>
 
 / {
 	#address-cells = <1>;
 	#size-cells = <1>;
 
-	uart0: uart@2800000 {
+	pinctrl: pinctrl@11c000 {
+		compatible = "ti,k3-pinctrl";
+		reg = <0x0011c000 0x2b4>;
+		status = "okay";
+	};
+
+	uart2: uart@2820000 {
 		compatible = "ns16550";
-		reg = <0x02800000 0x100>;
+		reg = <0x02820000 0x100>;
 		clock-frequency = <48000000>;
 		current-speed = <115200>;
+		interrupts = <0 160 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-parent = <&vim>;
 		reg-shift = <2>;
-		status = "okay";
+		status = "disabled";
+	};
+
+	systick_timer: timer@24c0000 {
+		compatible = "ti,am654-dmtimer";
+		reg = <0x24c0000 0x70>;
+		reg-shift = <2>;
+		interrupts = <0 168 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-parent = <&vim>;
+		status = "disabled";
 	};
 };

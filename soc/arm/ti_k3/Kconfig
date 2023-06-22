@@ -9,7 +9,6 @@ config SOC_FAMILY_TI_K3
 	bool
 
 if SOC_FAMILY_TI_K3
-
 config SOC_FAMILY
 	string
 	default "ti_k3"

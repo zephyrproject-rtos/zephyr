@@ -1,0 +1,11 @@
+# Copyright (C) 2023 BeagleBoard.org Foundation
+# Copyright (C) 2023 S Prashanth
+#
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_TI_J721E_R5
+
+config SOC
+	default "j721e_r5"
+
+endif

@@ -26,5 +26,13 @@
 			compatible = "mmio-sram";
 			reg = <0x00000000 DT_SIZE_K(32)>;
 		};
+
+		vim: interrupt-controller@ff80000 {
+			compatible = "ti,vim";
+			reg = <0x0ff80000 0x2800>;
+			interrupt-controller;
+			#interrupt-cells = <4>; /* {IRQ/FIQ, IRQ_NUM, IRQ_TYPE, IRQ_PRIO} */
+			status = "okay";
+		};
 	};
 };

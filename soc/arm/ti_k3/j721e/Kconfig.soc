@@ -1,0 +1,13 @@
+# Copyright (C) 2023 BeagleBoard.org Foundation
+# Copyright (C) 2023 S Prashanth
+#
+# SPDX-License-Identifier: Apache-2.0
+
+choice
+	prompt "TI J721E SoC Selection"
+	depends on SOC_SERIES_TI_J721E
+
+config SOC_TI_J721E_R5
+	bool "TI J721E R5"
+
+endchoice

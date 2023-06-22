@@ -1,0 +1,15 @@
+# Copyright (C) 2023 BeagleBoard.org Foundation
+# Copyright (C) 2023 S Prashanth
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_TI_J721E
+	bool "TI Jacinto J721E SoC series"
+	select ARM
+	select SOC_FAMILY_TI_K3
+	select CPU_CORTEX_R5
+	select ARM_CUSTOM_INTERRUPT_CONTROLLER
+	select VIM
+	select OMAP_DM_TIMER
+	help
+	  Enable support for the TI Jacinto J721E SoC series
