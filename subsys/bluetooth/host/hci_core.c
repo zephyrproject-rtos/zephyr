@@ -3934,6 +3934,16 @@ static void rx_work_handler(struct k_work *work)
 }
 #endif /* !CONFIG_BT_RECV_BLOCKING */
 
+bool bt_is_wq(void)
+{
+#if defined(CONFIG_BT_RECV_WORKQ_BT)
+	return ((k_current_get() == &k_sys_work_q.thread) ||
+		(k_current_get() == &bt_workq.thread));
+#else
+	return (k_current_get() == &k_sys_work_q.thread);
+#endif
+}
+
 int bt_enable(bt_ready_cb_t cb)
 {
 	int err;
