@@ -284,7 +284,7 @@ int sip_svc_open(void *ct, uint32_t c_token, k_timeout_t k_timeout)
 	 * transactions are complete.
 	 */
 	for (bool first_iteration = false; get_timer_status(&first_iteration, &timer, k_timeout);
-	     k_msleep(CONFIG_ARM_SIP_SVC_SUBSYS_ASYNC_POLLING_DELAY)) {
+	     k_usleep(CONFIG_ARM_SIP_SVC_SUBSYS_ASYNC_POLLING_DELAY)) {
 
 		ret = k_mutex_lock(&ctrl->data_mutex, K_NO_WAIT);
 		if (ret != 0) {
@@ -331,7 +331,7 @@ int sip_svc_open(void *ct, uint32_t c_token, k_timeout_t k_timeout)
 
 		/* Make the client state to be open and stop timer*/
 		ctrl->clients[c_idx].state = SIP_SVC_CLIENT_ST_OPEN;
-		LOG_INF("%x successfully opened a connection with sip_svc", c_token);
+		LOG_INF("0x%x successfully opened a connection with sip_svc", c_token);
 		k_mutex_unlock(&ctrl->data_mutex);
 		k_timer_stop(&timer);
 		return 0;
@@ -661,7 +661,7 @@ static void sip_svc_thread(void *ctrl_ptr, void *arg2, void *arg3)
 
 			/* sleep only when waiting for ASYNC responses*/
 			if (ret_msgq == 0 && ret_resp != 0) {
-				k_msleep(CONFIG_ARM_SIP_SVC_SUBSYS_ASYNC_POLLING_DELAY);
+				k_usleep(CONFIG_ARM_SIP_SVC_SUBSYS_ASYNC_POLLING_DELAY);
 			}
 		}
 		LOG_INF("Suspend thread, all transactions are completed");
