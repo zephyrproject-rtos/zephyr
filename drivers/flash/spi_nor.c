@@ -19,6 +19,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/sys_clock.h>
 #include <zephyr/pm/device.h>
+#include <zephyr/pm/device_runtime.h>
 
 #include "spi_nor.h"
 #include "jesd216.h"
@@ -500,11 +501,23 @@ static int exit_dpd(const struct device *const dev)
 
 /* Everything necessary to acquire owning access to the device.
  *
- * This means taking the lock and, if necessary, waking the device
- * from deep power-down mode.
+ * This means powering up the SPI bus, taking the lock and, if necessary,
+ * waking the device from deep power-down mode.
  */
 static int acquire_device(const struct device *dev)
 {
+	const struct spi_nor_config *cfg = dev->config;
+	int ret;
+
+	/* Request bus to be on. If k_sem_take blocks, the bus is powered
+	 * up anyway, so running this early has no power implications.
+	 */
+	ret = pm_device_runtime_get(cfg->spi.bus);
+	if (ret < 0) {
+		LOG_ERR("Failed to acquire SPI bus");
+		return ret;
+	}
+
 	if (IS_ENABLED(CONFIG_MULTITHREADING)) {
 		struct spi_nor_data *const driver_data = dev->data;
 
@@ -512,18 +525,20 @@ static int acquire_device(const struct device *dev)
 	}
 
 	if (IS_ENABLED(CONFIG_SPI_NOR_IDLE_IN_DPD)) {
-		return exit_dpd(dev);
+		ret = exit_dpd(dev);
 	}
-	return 0;
+	return ret;
 }
 
 /* Everything necessary to release access to the device.
  *
  * This means (optionally) putting the device into deep power-down
- * mode, and releasing the lock.
+ * mode, releasing the lock, and powering down the SPI bus.
  */
 static void release_device(const struct device *dev)
 {
+	const struct spi_nor_config *cfg = dev->config;
+
 	if (IS_ENABLED(CONFIG_SPI_NOR_IDLE_IN_DPD)) {
 		enter_dpd(dev);
 	}
@@ -533,6 +548,9 @@ static void release_device(const struct device *dev)
 
 		k_sem_give(&driver_data->sem);
 	}
+
+	/* Release bus request */
+	pm_device_runtime_put(cfg->spi.bus);
 }
 
 /**
