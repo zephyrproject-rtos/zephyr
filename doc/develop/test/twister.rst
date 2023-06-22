@@ -290,10 +290,10 @@ skip: <True|False> (default False)
     skip testcase unconditionally. This can be used for broken tests.
 
 slow: <True|False> (default False)
-    Don't run this test case unless --enable-slow was passed in on the
-    command line. Intended for time-consuming test cases that are only
-    run under certain circumstances, like daily builds. These test cases
-    are still compiled.
+    Don't run this test case unless --enable-slow or --enable-slow-only was
+    passed in on the command line. Intended for time-consuming test cases that
+    are only run under certain circumstances, like daily builds. These test
+    cases are still compiled.
 
 extra_args: <list of extra arguments>
     Extra arguments to pass to Make when building or running the
