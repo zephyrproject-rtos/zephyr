@@ -1004,11 +1004,6 @@ void ull_conn_done(struct node_rx_event_done *done)
 			}
 #endif /* CONFIG_BT_PERIPHERAL */
 
-#if defined(CONFIG_BT_CENTRAL)
-		} else if (reason_final) {
-			conn->central.terminate_ack = 1;
-#endif /* CONFIG_BT_CENTRAL */
-
 		}
 
 		/* Reset connection failed to establish countdown */

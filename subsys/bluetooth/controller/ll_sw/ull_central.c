@@ -290,8 +290,6 @@ uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window,
 	/* Setup the PRT reload */
 	ull_cp_prt_reload_set(conn, conn_interval_us);
 
-	conn->central.terminate_ack = 0U;
-
 	conn->llcp_terminate.reason_final = 0U;
 	/* NOTE: use allocated link for generating dedicated
 	 * terminate ind rx node
