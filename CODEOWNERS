@@ -683,6 +683,7 @@
 /include/zephyr/sip_svc/                         @maheshraotm
 /include/zephyr/sys_clock.h                      @dcpleung @nashif @andyross
 /include/zephyr/sys/sys_io.h                     @dcpleung @nashif @andyross
+/include/zephyr/sys/spsc_pbuf.h                  @nordic-krch
 /include/zephyr/sys/kobject.h                    @dcpleung @nashif
 /include/zephyr/toolchain.h                      @dcpleung @andyross @nashif
 /include/zephyr/toolchain/                       @dcpleung @nashif @andyross
@@ -694,6 +695,7 @@
 /lib/util/fnmatch/                        @carlescufi @jakub-uC
 /lib/open-amp/                            @arnopo
 /lib/os/                                  @dcpleung @nashif @andyross
+/lib/os/spsc_pbuf.c                       @nordic-krch
 /lib/os/cbprintf_packaged.c               @npitre
 /lib/posix/                               @cfriedt
 /lib/posix/getopt/                        @jakub-uC
@@ -881,6 +883,7 @@ scripts/build/gen_image_info.py           @tejlmand
 /tests/kernel/                            @dcpleung @andyross @nashif
 /tests/lib/                               @nashif
 /tests/lib/cmsis_dsp/                     @stephanosio
+/tests/lib/spsc_pbuf/                     @nordic-krch
 /tests/net/                               @rlubos @tbursztyka
 /tests/net/buf/                           @jhedberg @tbursztyka
 /tests/net/lib/                           @rlubos @tbursztyka
