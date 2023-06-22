@@ -226,11 +226,17 @@ static int smp_handle_single_payload(struct smp_streamer *cbuf, const struct smp
 	}
 
 	if (handler_fn) {
+		bool ok;
+
 		*handler_found = true;
-		zcbor_map_start_encode(cbuf->writer->zs,
-				       CONFIG_MCUMGR_SMP_CBOR_MAX_MAIN_MAP_ENTRIES);
+		ok = zcbor_map_start_encode(cbuf->writer->zs,
+					    CONFIG_MCUMGR_SMP_CBOR_MAX_MAIN_MAP_ENTRIES);
 
 		MGMT_CTXT_SET_RC_RSN(cbuf, NULL);
+
+		if (!ok) {
+			return MGMT_ERR_EMSGSIZE;
+		}
 
 #if defined(CONFIG_MCUMGR_SMP_COMMAND_STATUS_HOOKS)
 		cmd_recv.group = req_hdr->nh_group;
@@ -248,8 +254,8 @@ static int smp_handle_single_payload(struct smp_streamer *cbuf, const struct smp
 			if (status == MGMT_CB_ERROR_RC) {
 				rc = ret_rc;
 			} else {
-				bool ok = smp_add_cmd_ret(cbuf->writer->zs, ret_group,
-							  (uint16_t)ret_rc);
+				ok = smp_add_cmd_ret(cbuf->writer->zs, ret_group,
+						     (uint16_t)ret_rc);
 
 				rc = (ok ? MGMT_ERR_EOK : MGMT_ERR_EMSGSIZE);
 			}
