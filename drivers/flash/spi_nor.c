@@ -1148,6 +1148,13 @@ static int spi_nor_configure(const struct device *dev)
 	 * Exit DPD and wait until flash is ready.
 	 */
 	acquire_device(dev);
+
+	rc = exit_dpd(dev);
+	if (rc < 0) {
+		LOG_ERR("Failed to exit DPD (%d)", rc);
+		return -ENODEV;
+	}
+
 	rc = spi_nor_rdsr(dev);
 	if (rc > 0 && (rc & SPI_NOR_WIP_BIT)) {
 		LOG_WRN("Waiting until flash is ready");
