@@ -652,7 +652,7 @@ void counter_stm32_irq_handler(const struct device *dev)
 			    DEVICE_DT_INST_GET(idx),				  \
 			    0);							  \
 		irq_enable(DT_IRQN(TIMER(idx)));				  \
-	}									  \
+	};									  \
 										  \
 	static const struct counter_stm32_config counter##idx##_config = {	  \
 		.info = {							  \
