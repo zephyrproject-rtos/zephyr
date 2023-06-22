@@ -660,6 +660,9 @@ flagged.
         "MCUBOOT_CLEANUP_ARM_CORE", # Used in (sysbuild-based) test
         "MCUBOOT_SERIAL",           # Used in (sysbuild-based) test/
                                     # documentation
+        "MCUMGR_GRP_EXAMPLE", # Used in documentation
+        "MCUMGR_GRP_EXAMPLE_LOG_LEVEL", # Used in documentation
+        "MCUMGR_GRP_EXAMPLE_OTHER_HOOK", # Used in documentation
         "MISSING",
         "MODULES",
         "MYFEATURE",
