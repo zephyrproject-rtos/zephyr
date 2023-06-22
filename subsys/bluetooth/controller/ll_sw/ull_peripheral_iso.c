@@ -191,6 +191,7 @@ uint8_t ull_peripheral_iso_acquire(struct ll_conn *acl,
 
 		cig->iso_interval = sys_le16_to_cpu(req->iso_interval);
 		iso_interval_us = cig->iso_interval * CONN_INT_UNIT_US;
+		cig->lll.iso_interval_us = iso_interval_us;
 
 		cig->cig_id = req->cig_id;
 		cig->lll.handle = LLL_HANDLE_INVALID;
