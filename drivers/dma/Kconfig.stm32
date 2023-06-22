@@ -67,4 +67,12 @@ config DMA_STM32_BDMA
 	help
 	  BDMA driver for STM32H7 series SoCs.
 
+config DMAMUX_STM32_INIT_PRIORITY
+	int "STM32 DMAMUX init priority"
+	depends on DT_HAS_ST_STM32_DMAMUX_ENABLED
+	default 41
+	help
+	  DMAMUX driver device must be init'd after the DMA (CONFIG_DMA_INIT_PRIORITY)
+	  DMAMUX driver device initialization priority is greater than DMA one's
+
 endif # DMA_STM32
