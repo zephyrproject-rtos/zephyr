@@ -553,8 +553,14 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
 
     parser.add_argument(
         "-S", "--enable-slow", action="store_true",
+        default="--enable-slow-only" in sys.argv,
         help="Execute time-consuming test cases that have been marked "
              "as 'slow' in testcase.yaml. Normally these are only built.")
+
+    parser.add_argument(
+        "--enable-slow-only", action="store_true",
+        help="Execute time-consuming test cases that have been marked "
+             "as 'slow' in testcase.yaml only. This also set the option --enable-slow")
 
     parser.add_argument(
         "--seed", type=int,
