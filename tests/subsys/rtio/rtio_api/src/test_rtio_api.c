@@ -77,6 +77,27 @@ ZTEST(rtio_api, test_rtio_simple)
 	}
 }
 
+ZTEST(rtio_api, test_rtio_no_response)
+{
+	int res;
+	uintptr_t userdata[2] = {0, 1};
+	struct rtio_sqe *sqe;
+	struct rtio_cqe cqe;
+
+	rtio_iodev_test_init(&iodev_test_simple);
+
+	sqe = rtio_sqe_acquire(&r_simple);
+	zassert_not_null(sqe, "Expected a valid sqe");
+	rtio_sqe_prep_nop(sqe, (struct rtio_iodev *)&iodev_test_simple, &userdata[0]);
+	sqe->flags |= RTIO_SQE_NO_RESPONSE;
+
+	res = rtio_submit(&r_simple, 0);
+	zassert_ok(res, "Should return ok from rtio_execute");
+
+	res = rtio_cqe_copy_out(&r_simple, &cqe, 1, K_MSEC(500));
+	zassert_equal(0, res, "Expected no CQEs");
+}
+
 RTIO_DEFINE(r_chain, SQE_POOL_SIZE, CQE_POOL_SIZE);
 
 RTIO_IODEV_TEST_DEFINE(iodev_test_chain0);
