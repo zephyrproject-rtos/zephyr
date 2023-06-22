@@ -13,7 +13,7 @@ config GPIO_NPM1300
 config GPIO_NPM1300_INIT_PRIORITY
 	int "nPM1300 GPIO driver initialization priority"
 	depends on GPIO_NPM1300
-	default 80
+	default 70
 	help
 	  Initialization priority for the nPM1300 GPIO driver. It must be
 	  greater than the I2C controller init priority.
