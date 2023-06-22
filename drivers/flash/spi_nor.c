@@ -70,6 +70,8 @@ LOG_MODULE_REGISTER(spi_nor, CONFIG_FLASH_LOG_LEVEL);
 #define _INST_HAS_HOLD_OR(inst) DT_INST_NODE_HAS_PROP(inst, hold_gpios) ||
 #define ANY_INST_HAS_HOLD_GPIOS DT_INST_FOREACH_STATUS_OKAY(_INST_HAS_HOLD_OR) 0
 
+#define DEV_CFG(_dev_) ((const struct spi_nor_config * const) (_dev_)->config)
+
 /* Build-time data associated with the device. */
 struct spi_nor_config {
 	/* Devicetree SPI configuration */
@@ -843,14 +845,11 @@ static int spi_nor_erase(const struct device *dev, off_t addr, size_t size)
 static int spi_nor_write_protection_set(const struct device *dev,
 					bool write_protect)
 {
-#if ANY_INST_HAS_WP_GPIOS
-	const struct spi_nor_config *cfg = dev->config;
-#endif
 	int ret;
 
 #if ANY_INST_HAS_WP_GPIOS
-	if (cfg->wp) {
-		gpio_pin_set_dt(cfg->wp, write_protect);
+	if (DEV_CFG(dev)->wp) {
+		gpio_pin_set_dt(DEV_CFG(dev)->wp, write_protect);
 	}
 #endif
 
@@ -1345,10 +1344,6 @@ static int spi_nor_pm_control(const struct device *dev, enum pm_device_action ac
  */
 static int spi_nor_init(const struct device *dev)
 {
-#if (ANY_INST_HAS_WP_GPIOS || ANY_INST_HAS_HOLD_GPIOS)
-	const struct spi_nor_config *cfg = dev->config;
-#endif
-
 	if (IS_ENABLED(CONFIG_MULTITHREADING)) {
 		struct spi_nor_data *const driver_data = dev->data;
 
@@ -1356,25 +1351,25 @@ static int spi_nor_init(const struct device *dev)
 	}
 
 #if ANY_INST_HAS_WP_GPIOS
-	if (cfg->wp) {
-		if (!device_is_ready(cfg->wp->port)) {
+	if (DEV_CFG(dev)->wp) {
+		if (!device_is_ready(DEV_CFG(dev)->wp->port)) {
 			LOG_ERR("Write-protect pin not ready");
 			return -ENODEV;
 		}
-		if (gpio_pin_configure_dt(cfg->wp, GPIO_OUTPUT_ACTIVE)) {
-			LOG_ERR("Write-protect pin failed to set active")
+		if (gpio_pin_configure_dt(DEV_CFG(dev)->wp, GPIO_OUTPUT_ACTIVE)) {
+			LOG_ERR("Write-protect pin failed to set active");
 			return -ENODEV;
 		}
 	}
 #endif /* ANY_INST_HAS_WP_GPIOS */
 #if ANY_INST_HAS_HOLD_GPIOS
-	if (cfg->hold) {
-		if (!device_is_ready(cfg->hold->port)) {
+	if (DEV_CFG(dev)->hold) {
+		if (!device_is_ready(DEV_CFG(dev)->hold->port)) {
 			LOG_ERR("Hold pin not ready");
 			return -ENODEV;
 		}
-		if (gpio_pin_configure_dt(cfg->hold, GPIO_OUTPUT_INACTIVE)) {
-			LOG_ERR("Hold pin failed to set inactive")
+		if (gpio_pin_configure_dt(DEV_CFG(dev)->hold, GPIO_OUTPUT_INACTIVE)) {
+			LOG_ERR("Hold pin failed to set inactive");
 			return -ENODEV;
 		}
 	}
