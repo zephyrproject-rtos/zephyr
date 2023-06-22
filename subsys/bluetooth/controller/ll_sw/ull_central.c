@@ -859,7 +859,7 @@ void ull_central_setup(struct node_rx_hdr *rx, struct node_rx_ftr *ftr,
 	 * Deferred attempt to stop can fail as it would have
 	 * expired, hence ignore failure.
 	 */
-	ticker_stop(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_ULL_HIGH,
+	(void)ticker_stop(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_ULL_HIGH,
 		    TICKER_ID_SCAN_STOP, NULL, NULL);
 
 	/* Start central */
