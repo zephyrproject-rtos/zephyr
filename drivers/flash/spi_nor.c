@@ -1352,8 +1352,6 @@ static int spi_nor_configure(const struct device *dev)
 	return 0;
 }
 
-#ifdef CONFIG_PM_DEVICE
-
 static int spi_nor_pm_control(const struct device *dev, enum pm_device_action action)
 {
 	int rc = 0;
@@ -1398,8 +1396,6 @@ static int spi_nor_pm_control(const struct device *dev, enum pm_device_action ac
 	return rc;
 }
 
-#endif /* CONFIG_PM_DEVICE */
-
 /**
  * @brief Initialize and configure the flash
  *
@@ -1439,7 +1435,7 @@ static int spi_nor_init(const struct device *dev)
 	}
 #endif /* ANY_INST_HAS_HOLD_GPIOS */
 
-	return spi_nor_configure(dev);
+	return pm_device_driver_init(dev, spi_nor_pm_control);
 }
 
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
