@@ -93,7 +93,7 @@ config BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT
 
 config BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT
 	int "Basic Audio Profile ASE Source count"
-	default 1
+	default 2
 	range 0 255
 	help
 	  This option enables caching a number of Audio Stream Endpoint Source
