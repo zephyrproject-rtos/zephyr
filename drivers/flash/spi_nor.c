@@ -1358,9 +1358,11 @@ static int spi_nor_init(const struct device *dev)
 #if ANY_INST_HAS_WP_GPIOS
 	if (cfg->wp) {
 		if (!device_is_ready(cfg->wp->port)) {
+			LOG_ERR("Write-protect pin not ready");
 			return -ENODEV;
 		}
 		if (gpio_pin_configure_dt(cfg->wp, GPIO_OUTPUT_ACTIVE)) {
+			LOG_ERR("Write-protect pin failed to set active")
 			return -ENODEV;
 		}
 	}
@@ -1368,9 +1370,11 @@ static int spi_nor_init(const struct device *dev)
 #if ANY_INST_HAS_HOLD_GPIOS
 	if (cfg->hold) {
 		if (!device_is_ready(cfg->hold->port)) {
+			LOG_ERR("Hold pin not ready");
 			return -ENODEV;
 		}
 		if (gpio_pin_configure_dt(cfg->hold, GPIO_OUTPUT_INACTIVE)) {
+			LOG_ERR("Hold pin failed to set inactive")
 			return -ENODEV;
 		}
 	}
