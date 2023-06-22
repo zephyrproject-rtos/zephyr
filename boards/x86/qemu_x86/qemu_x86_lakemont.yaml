@@ -13,3 +13,4 @@ testing:
     - kernel
   ignore_tags:
     - benchmark
+vendor: qemu

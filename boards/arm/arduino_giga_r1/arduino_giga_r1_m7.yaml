@@ -16,3 +16,4 @@ supported:
   - memc
   - usb_cdc
   - usb_device
+vendor: arduino

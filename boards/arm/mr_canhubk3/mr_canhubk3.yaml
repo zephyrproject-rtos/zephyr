@@ -19,3 +19,4 @@ supported:
   - watchdog
   - netif:eth
   - pwm
+vendor: nxp

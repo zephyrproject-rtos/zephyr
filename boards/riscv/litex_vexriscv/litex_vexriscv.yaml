@@ -18,3 +18,4 @@ testing:
   ignore_tags:
     - bluetooth
     - xip
+vendor: litex

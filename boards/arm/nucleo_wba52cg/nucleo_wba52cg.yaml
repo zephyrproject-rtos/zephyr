@@ -17,3 +17,4 @@ supported:
   - arduino_spi
 ram: 128
 flash: 1024
+vendor: st

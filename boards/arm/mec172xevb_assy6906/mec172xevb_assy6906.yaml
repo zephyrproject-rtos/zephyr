@@ -25,3 +25,4 @@ testing:
   ignore_tags:
     - bluetooth
     - net
+vendor: microchip

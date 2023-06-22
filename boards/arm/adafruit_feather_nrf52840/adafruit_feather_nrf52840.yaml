@@ -16,3 +16,4 @@ supported:
   - feather_serial
   - feather_i2c
   - feather_spi
+vendor: adafruit

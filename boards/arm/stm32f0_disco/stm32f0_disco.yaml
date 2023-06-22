@@ -9,3 +9,4 @@ toolchain:
 ram: 8
 supported:
   - watchdog
+vendor: st

@@ -22,3 +22,4 @@ supported:
   - watchdog
   - dma
   - spi
+vendor: gd

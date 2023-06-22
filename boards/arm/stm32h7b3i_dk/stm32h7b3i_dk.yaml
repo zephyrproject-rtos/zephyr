@@ -17,3 +17,4 @@ supported:
   - backup_sram
   - display
   - can
+vendor: st

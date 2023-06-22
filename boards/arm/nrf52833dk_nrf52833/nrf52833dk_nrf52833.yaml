@@ -20,3 +20,4 @@ supported:
   - watchdog
   - counter
   - netif:openthread
+vendor: nordic

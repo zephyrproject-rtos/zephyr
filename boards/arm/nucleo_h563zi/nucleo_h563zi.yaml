@@ -22,3 +22,4 @@ supported:
   - usb_device
   - usb
   - rtc
+vendor: st

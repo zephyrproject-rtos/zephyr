@@ -19,3 +19,4 @@ supported:
   - i2c
   - watchdog
   - spi
+vendor: cypress

@@ -11,3 +11,4 @@ testing:
   only_tags:
     - kernel
     - userspace
+vendor: qemu

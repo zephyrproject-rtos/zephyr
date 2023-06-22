@@ -28,3 +28,4 @@ supported:
   - sdhc
   - pwm
   - i2s
+vendor: nxp

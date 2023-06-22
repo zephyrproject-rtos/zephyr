@@ -5,3 +5,4 @@ arch: arm64
 toolchain:
   - zephyr
   - cross-compile
+vendor: brcm

@@ -10,3 +10,4 @@ ram: 768
 flash: 1024
 supported:
   - serial
+vendor: aspeed

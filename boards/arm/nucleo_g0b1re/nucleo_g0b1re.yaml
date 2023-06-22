@@ -21,3 +21,4 @@ supported:
   - dma
   - usb_device
   - lptim
+vendor: st

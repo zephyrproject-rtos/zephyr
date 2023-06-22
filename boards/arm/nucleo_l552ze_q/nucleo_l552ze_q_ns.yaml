@@ -10,3 +10,4 @@ supported:
   - dac
 ram: 192
 flash: 328
+vendor: st

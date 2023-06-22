@@ -21,3 +21,4 @@ supported:
   - adc
   - spi
   - i2c
+vendor: nxp

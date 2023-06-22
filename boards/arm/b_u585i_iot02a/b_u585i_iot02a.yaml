@@ -22,3 +22,4 @@ supported:
   - backup_sram
   - pwm
   - counter
+vendor: st

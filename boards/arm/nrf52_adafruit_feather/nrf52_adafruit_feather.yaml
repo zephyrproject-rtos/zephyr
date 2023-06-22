@@ -11,3 +11,4 @@ flash: 512
 supported:
   - feather_serial
   - feather_i2c
+vendor: adafruit

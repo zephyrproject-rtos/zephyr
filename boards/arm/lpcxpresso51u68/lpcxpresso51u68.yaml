@@ -19,3 +19,4 @@ supported:
   - gpio
   - i2c
   - spi
+vendor: nxp

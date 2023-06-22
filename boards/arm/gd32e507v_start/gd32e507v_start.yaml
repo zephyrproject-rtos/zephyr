@@ -17,3 +17,4 @@ supported:
   - watchdog
   - counter
   - dma
+vendor: gd

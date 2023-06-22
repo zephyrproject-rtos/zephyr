@@ -11,3 +11,4 @@ toolchain:
   - zephyr
   - gnuarmemb
   - xtools
+vendor: gd

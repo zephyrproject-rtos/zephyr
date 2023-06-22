@@ -16,3 +16,4 @@ testing:
     - mpu
     - nfc
     - net
+vendor: st

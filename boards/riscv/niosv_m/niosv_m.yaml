@@ -5,3 +5,4 @@ arch: riscv32
 toolchain:
   - zephyr
 ram: 256
+vendor: intel

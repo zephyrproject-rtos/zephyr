@@ -13,3 +13,4 @@ supported:
   - pwm
   - counter
   - usb
+vendor: st

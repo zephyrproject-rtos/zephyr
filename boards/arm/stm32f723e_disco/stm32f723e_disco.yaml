@@ -16,3 +16,4 @@ supported:
   - spi
   - arduino_spi
   - usb_device
+vendor: st

@@ -16,3 +16,4 @@ supported:
   - dma
 ram: 12
 flash: 32
+vendor: st

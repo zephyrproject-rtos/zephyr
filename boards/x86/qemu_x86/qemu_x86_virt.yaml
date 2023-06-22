@@ -13,3 +13,4 @@ testing:
     - userspace
   ignore_tags:
     - benchmark
+vendor: qemu

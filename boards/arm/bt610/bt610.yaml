@@ -19,3 +19,4 @@ supported:
   - counter
   - sm351lt
   - qspi
+vendor: lairdconnect

@@ -667,6 +667,7 @@ class TestPlan:
             platforms = list(filter(lambda p: p.simulation != 'na', self.platforms))
         elif vendor_filter:
             platforms = list(filter(lambda p: p.vendor in vendor_filter, self.platforms))
+            logger.info(f"Selecting platforms by vendors: {','.join(vendor_filter)}")
         elif arch_filter:
             platforms = list(filter(lambda p: p.arch in arch_filter, self.platforms))
         elif default_platforms:

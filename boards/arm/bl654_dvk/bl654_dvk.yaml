@@ -12,3 +12,4 @@ supported:
   - ble
   - pwm
   - watchdog
+vendor: lairdconnect

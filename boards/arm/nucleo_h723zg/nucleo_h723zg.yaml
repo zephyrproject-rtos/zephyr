@@ -21,3 +21,4 @@ supported:
   - netif:eth
   - backup_sram
   - usb_device
+vendor: st

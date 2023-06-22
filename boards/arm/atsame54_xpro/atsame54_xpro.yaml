@@ -19,3 +19,4 @@ supported:
   - uart
   - usb_device
   - netif:eth
+vendor: atmel

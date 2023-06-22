@@ -17,3 +17,4 @@ supported:
   - nvs
   - pwm
   - watchdog
+vendor: arduino

@@ -10,3 +10,4 @@ testing:
   ignore_tags:
     - net
     - bluetooth
+vendor: snps

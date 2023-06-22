@@ -14,3 +14,4 @@ testing:
     - net
     - bluetooth
     - isotp
+vendor: renesas

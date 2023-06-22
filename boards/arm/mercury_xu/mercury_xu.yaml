@@ -6,3 +6,4 @@ arch: arm
 toolchain:
   - zephyr
   - gnuarmemb
+vendor: xlnx

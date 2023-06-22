@@ -16,3 +16,4 @@ supported:
   - watchdog
   - adc
   - usb_device
+vendor: waveshare

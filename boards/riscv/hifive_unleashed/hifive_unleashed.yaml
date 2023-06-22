@@ -17,3 +17,4 @@ testing:
 supported:
   - gpio
   - spi
+vendor: sifive

@@ -11,3 +11,4 @@ supported:
   - ble
   - netif:openthread
   - gpio
+vendor: nordic

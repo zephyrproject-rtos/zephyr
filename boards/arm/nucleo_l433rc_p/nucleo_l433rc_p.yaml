@@ -17,3 +17,4 @@ supported:
   - i2c
   - arduino_i2c
   - arduino_spi
+vendor: st

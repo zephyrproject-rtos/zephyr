@@ -25,3 +25,4 @@ supported:
   - dma
   - lptim
   - nvs
+vendor: st

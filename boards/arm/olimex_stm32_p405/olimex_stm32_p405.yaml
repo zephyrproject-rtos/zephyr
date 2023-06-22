@@ -11,3 +11,4 @@ flash: 1024
 supported:
   - counter
   - can
+vendor: olimex
