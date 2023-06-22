@@ -19,3 +19,4 @@ supported:
   - gpio
   - i2c
   - pwm
+vendor: nxp

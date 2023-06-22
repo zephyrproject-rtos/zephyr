@@ -23,3 +23,4 @@ supported:
   - watchdog
   - kscan
   - tach
+vendor: microchip

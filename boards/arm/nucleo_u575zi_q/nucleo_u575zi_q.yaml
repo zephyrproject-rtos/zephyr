@@ -22,3 +22,4 @@ supported:
   - dma
 ram: 786
 flash: 2048
+vendor: st

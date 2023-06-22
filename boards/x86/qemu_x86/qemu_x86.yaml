@@ -17,3 +17,4 @@ supported:
   - rtc
 testing:
   default: true
+vendor: qemu

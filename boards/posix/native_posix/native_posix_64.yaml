@@ -16,3 +16,4 @@ supported:
   - adc
   - gpio
   - rtc
+vendor: zephyr

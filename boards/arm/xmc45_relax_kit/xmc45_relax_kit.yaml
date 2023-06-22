@@ -14,3 +14,4 @@ supported:
   - uart
 ram: 160
 flash: 1024
+vendor: infineon

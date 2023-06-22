@@ -17,3 +17,4 @@ supported:
   - pwm
   - watchdog
   - netif:openthread
+vendor: lairdconnect

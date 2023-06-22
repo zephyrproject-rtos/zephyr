@@ -8,3 +8,6 @@ toolchain:
   - xtools
 ram: 64
 flash: 512
+supported:
+  - kscan:touch
+vendor: pine64
