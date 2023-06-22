@@ -254,6 +254,7 @@ uint8_t ll_cig_parameters_commit(uint8_t cig_id, uint16_t *handles)
 	}
 
 	iso_interval_us = cig->iso_interval * ISO_INT_UNIT_US;
+	cig->lll.iso_interval_us = iso_interval_us;
 
 	lll_hdr_init(&cig->lll, cig);
 	max_se_length = 0U;
