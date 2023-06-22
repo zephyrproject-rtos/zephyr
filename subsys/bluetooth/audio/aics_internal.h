@@ -64,7 +64,6 @@ struct bt_aics_client {
 	struct bt_gatt_subscribe_params state_sub_params;
 	struct bt_gatt_subscribe_params status_sub_params;
 	struct bt_gatt_subscribe_params desc_sub_params;
-	uint8_t subscribe_cnt;
 	bool cp_retried;
 
 	bool busy;
