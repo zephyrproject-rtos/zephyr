@@ -297,6 +297,10 @@ static int wifi_set_twt(uint32_t mgmt_request, struct net_if *iface,
 		return -ENOTSUP;
 	}
 
+	if (twt_params->operation == WIFI_TWT_TEARDOWN) {
+		return off_api->set_twt(dev, twt_params);
+	}
+
 	if (net_mgmt(NET_REQUEST_WIFI_IFACE_STATUS, iface, &info,
 			sizeof(struct wifi_iface_status))) {
 		twt_params->fail_reason =
