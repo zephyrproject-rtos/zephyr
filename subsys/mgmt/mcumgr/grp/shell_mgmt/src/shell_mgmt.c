@@ -83,9 +83,6 @@ shell_mgmt_exec(struct smp_streamer *ctxt)
 
 		ok = zcbor_tstr_decode(zsd, &value);
 		if (ok) {
-			/* TODO: This is original error when failed to collect command line
-			 * to buffer, but should be rather MGMT_ERR_ENOMEM.
-			 */
 			if ((len + value.len) >= (ARRAY_SIZE(line) - 1)) {
 				ok = smp_add_cmd_ret(zse, MGMT_GROUP_ID_SHELL,
 						     SHELL_MGMT_RET_RC_COMMAND_TOO_LONG);
@@ -95,7 +92,7 @@ shell_mgmt_exec(struct smp_streamer *ctxt)
 			memcpy(&line[len], value.value, value.len);
 			len += value.len + 1;
 			line[len - 1] = ' ';
-		} else {
+		} else if (len > 0) {
 			line[len - 1] = 0;
 			/* Implicit break by while condition */
 		}
