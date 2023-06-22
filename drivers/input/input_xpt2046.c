@@ -6,12 +6,12 @@
 
 #define DT_DRV_COMPAT xptek_xpt2046
 
-#include <zephyr/kernel.h>
 #include <zephyr/drivers/spi.h>
-#include <zephyr/drivers/kscan.h>
+#include <zephyr/input/input.h>
+#include <zephyr/kernel.h>
 
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(xpt2046, CONFIG_KSCAN_LOG_LEVEL);
+LOG_MODULE_REGISTER(xpt2046, CONFIG_INPUT_LOG_LEVEL);
 
 struct xpt2046_config {
 	const struct spi_dt_spec bus;
@@ -27,9 +27,7 @@ struct xpt2046_config {
 };
 struct xpt2046_data {
 	const struct device *dev;
-	kscan_callback_t callback;
 	struct gpio_callback int_gpio_cb;
-	bool enabled;
 	struct k_work work;
 	struct k_work_delayable dwork;
 	uint8_t rbuf[9];
@@ -109,14 +107,14 @@ static void xpt2046_release_handler(struct k_work *kw)
 	struct xpt2046_data *data = CONTAINER_OF(dw, struct xpt2046_data, dwork);
 	struct xpt2046_config *config = (struct xpt2046_config *)data->dev->config;
 
-	if (!data->pressed || !data->enabled) {
+	if (!data->pressed) {
 		return;
 	}
 
 	/* Check if touch is still pressed */
 	if (gpio_pin_get_dt(&config->int_gpio) == 0) {
 		data->pressed = false;
-		data->callback(data->dev, data->last_y, data->last_y, false);
+		input_report_key(data->dev, INPUT_BTN_TOUCH, 0, true, K_FOREVER);
 	} else {
 		/* Re-check later */
 		k_work_reschedule(&data->dwork, K_MSEC(10));
@@ -168,56 +166,21 @@ static void xpt2046_work_handler(struct k_work *kw)
 	/* Don't send any other than "pressed" events.
 	 * releasing seem to cause just random noise
 	 */
-	if (data->enabled && pressed) {
+	if (pressed) {
 		LOG_DBG("raw: x=%4u y=%4u ==> x=%4d y=%4d", meas.x, meas.y, x, y);
+
+		input_report_abs(data->dev, INPUT_ABS_X, x, false, K_FOREVER);
+		input_report_abs(data->dev, INPUT_ABS_Y, y, false, K_FOREVER);
+		input_report_key(data->dev, INPUT_BTN_TOUCH, 1, true, K_FOREVER);
+
 		data->last_x = x;
 		data->last_y = y;
 		data->pressed = pressed;
-		data->callback(data->dev, (uint32_t)y, (uint32_t)x, pressed);
+
 		/* Ensure that we send released event */
 		k_work_reschedule(&data->dwork, K_MSEC(100));
 	}
 	gpio_add_callback(config->int_gpio.port, &data->int_gpio_cb);
-}
-
-static int xpt2046_configure(const struct device *dev, kscan_callback_t callback)
-{
-	struct xpt2046_data *data = dev->data;
-
-	if (!callback) {
-		LOG_ERR("Callback is null");
-		return -EINVAL;
-	}
-	LOG_DBG("%s: set callback", dev->name);
-
-	data->callback = callback;
-
-	return 0;
-}
-
-static int xpt2046_enable_callback(const struct device *dev)
-{
-	struct xpt2046_data *data = dev->data;
-	const struct xpt2046_config *config = dev->config;
-
-	LOG_DBG("%s: enable cb", dev->name);
-	data->enabled = true;
-	gpio_add_callback(config->int_gpio.port, &data->int_gpio_cb);
-
-	return 0;
-}
-
-static int xpt2046_disable_callback(const struct device *dev)
-{
-	struct xpt2046_data *data = dev->data;
-	const struct xpt2046_config *config = dev->config;
-
-	gpio_remove_callback(config->int_gpio.port, &data->int_gpio_cb);
-	data->enabled = false;
-
-	LOG_DBG("%s: disable cb", dev->name);
-
-	return 0;
 }
 
 static int xpt2046_init(const struct device *dev)
@@ -254,16 +217,16 @@ static int xpt2046_init(const struct device *dev)
 
 	gpio_init_callback(&data->int_gpio_cb, xpt2046_isr_handler, BIT(config->int_gpio.pin));
 
+	r = gpio_add_callback(config->int_gpio.port, &data->int_gpio_cb);
+	if (r < 0) {
+		LOG_ERR("Could not set gpio callback");
+		return r;
+	}
+
 	LOG_INF("Init '%s' device", dev->name);
 
 	return 0;
 }
-
-static const struct kscan_driver_api xpt2046_driver_api = {
-	.config = xpt2046_configure,
-	.enable_callback = xpt2046_enable_callback,
-	.disable_callback = xpt2046_disable_callback,
-};
 
 #define XPT2046_INIT(index)                                                                        \
 	static const struct xpt2046_config xpt2046_config_##index = {                              \
@@ -281,8 +244,8 @@ static const struct kscan_driver_api xpt2046_driver_api = {
 	};                                                                                         \
 	static struct xpt2046_data xpt2046_data_##index;                                           \
 	DEVICE_DT_INST_DEFINE(index, xpt2046_init, NULL, &xpt2046_data_##index,                    \
-			      &xpt2046_config_##index, POST_KERNEL, CONFIG_KSCAN_INIT_PRIORITY,    \
-			      &xpt2046_driver_api);                                                \
+			      &xpt2046_config_##index, POST_KERNEL, CONFIG_INPUT_INIT_PRIORITY,    \
+			      NULL);                                                               \
 	BUILD_ASSERT(DT_INST_PROP(index, min_x) < DT_INST_PROP(index, max_x),                      \
 		     "min_x must be less than max_x");                                             \
 	BUILD_ASSERT(DT_INST_PROP(index, min_y) < DT_INST_PROP(index, max_y),                      \
