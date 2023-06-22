@@ -355,7 +355,7 @@ enum wifi_twt_fail_reason {
 };
 
 static const char * const twt_err_code_tbl[] = {
-	[WIFI_TWT_FAIL_UNSPECIFIED] = "Unspecfied",
+	[WIFI_TWT_FAIL_UNSPECIFIED] = "Unspecified",
 	[WIFI_TWT_FAIL_CMD_EXEC_FAIL] = "Command Execution failed",
 	[WIFI_TWT_FAIL_OPERATION_NOT_SUPPORTED] =
 		"Operation not supported",
