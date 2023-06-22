@@ -65,3 +65,9 @@ static inline void *z_vrfy_k_object_alloc(enum k_objects otype)
 	return z_impl_k_object_alloc(otype);
 }
 #include <syscalls/k_object_alloc_mrsh.c>
+
+static inline void *z_vrfy_k_object_alloc_size(enum k_objects otype, size_t size)
+{
+	return z_impl_k_object_alloc_size(otype, size);
+}
+#include <syscalls/k_object_alloc_size_mrsh.c>
