@@ -168,6 +168,7 @@
         led2 = &led2;
 
         usbd0 = &usbd;
+        wdt0 = &wdt0;
     };
 };
 
@@ -308,5 +309,9 @@
 
 &usbd {
     compatible = "nordic,nrf-usbd";
+    status = "okay";
+};
+
+&wdt0 {
     status = "okay";
 };

@@ -535,5 +535,5 @@
 };
 
 &wdt0 {
-	status = "okay";
+    status = "okay";
 };
