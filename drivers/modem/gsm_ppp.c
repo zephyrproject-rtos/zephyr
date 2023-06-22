@@ -615,14 +615,15 @@ static struct net_if *ppp_net_if(void)
 static void set_ppp_carrier_on(struct gsm_modem *gsm)
 {
 	const struct device *ppp_dev = device_get_binding(CONFIG_NET_PPP_DRV_NAME);
-	const struct ppp_api *api;
-	struct net_if *iface = gsm->iface;
-	int ret;
 
 	if (ppp_dev == NULL) {
 		LOG_ERR("Cannot find PPP %s!", CONFIG_NET_PPP_DRV_NAME);
 		return;
 	}
+
+	const struct ppp_api *api;
+	struct net_if *iface = gsm->iface;
+	int ret;
 
 	api = (const struct ppp_api *)ppp_dev->api;
 
