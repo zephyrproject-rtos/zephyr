@@ -15,6 +15,7 @@ tests:
       - nucleo_g071rb
       - nucleo_f207zg
       - nucleo_f429zi
+      - nucleo_wl55jc
       - rpi_pico
     integration_platforms:
       - nucleo_f091rc
