@@ -12,7 +12,7 @@
 		test_gpio: gpio@0 {
 			compatible = "vnd,gpio";
 			gpio-controller;
-			reg = <00 0x1000>;
+			reg = <0x0 0x1000>;
 			#gpio-cells = <0x2>;
 			status = "okay";
 		};
@@ -56,6 +56,31 @@
 				compatible = "focaltech,ft5336";
 				reg = <0x0>;
 				int-gpios = <&test_gpio 0 0>;
+			};
+		};
+
+		spi@2 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "vnd,spi";
+			reg = <0x2 0x1000>;
+			status = "okay";
+			clock-frequency = <2000000>;
+
+			/* one entry for every devices */
+			cs-gpios = <&test_gpio 0 0>;
+
+			xpt2046@0 {
+				compatible = "xptek,xpt2046";
+				spi-max-frequency = <0>;
+				reg = <0x0>;
+				int-gpios = <&test_gpio 0 0>;
+				touchscreen-size-x = <10>;
+				touchscreen-size-y = <10>;
+				min-x = <0>;
+				min-y = <0>;
+				max-x = <1>;
+				max-y = <1>;
 			};
 		};
 	};
