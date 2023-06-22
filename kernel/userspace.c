@@ -328,7 +328,7 @@ struct z_object *z_dynamic_object_aligned_create(size_t align, size_t size)
 	return &dyn->kobj;
 }
 
-void *z_impl_k_object_alloc(enum k_objects otype)
+static void *z_object_alloc(enum k_objects otype, size_t object_size)
 {
 	struct z_object *zo;
 	uintptr_t tidx = 0;
@@ -348,7 +348,8 @@ void *z_impl_k_object_alloc(enum k_objects otype)
 	/* The following are currently not allowed at all */
 	case K_OBJ_FUTEX:			/* Lives in user memory */
 	case K_OBJ_SYS_MUTEX:			/* Lives in user memory */
-	case K_OBJ_THREAD_STACK_ELEMENT:	/* No aligned allocator */
+	case K_OBJ_THREAD_STACK_ELEMENT:
+		break;
 	case K_OBJ_NET_SOCKET:			/* Indeterminate size */
 		LOG_ERR("forbidden object type '%s' requested",
 			otype_to_str(otype));
@@ -359,7 +360,7 @@ void *z_impl_k_object_alloc(enum k_objects otype)
 	}
 
 	zo = z_dynamic_object_aligned_create(obj_align_get(otype),
-					     obj_size_get(otype));
+					     object_size);
 	if (zo == NULL) {
 		if (otype == K_OBJ_THREAD) {
 			thread_idx_free(tidx);
@@ -383,6 +384,16 @@ void *z_impl_k_object_alloc(enum k_objects otype)
 	zo->flags |= K_OBJ_FLAG_ALLOC;
 
 	return zo->name;
+}
+
+void *z_impl_k_object_alloc(enum k_objects otype)
+{
+	return z_object_alloc(otype, obj_size_get(otype));
+}
+
+void *z_impl_k_object_alloc_size(enum k_objects otype, size_t size)
+{
+	return z_object_alloc(otype, size);
 }
 
 void k_object_free(void *obj)
