@@ -548,9 +548,6 @@ static uint8_t notify_handler(struct bt_conn *conn,
 	if (data == NULL) {
 		LOG_DBG("[UNSUBSCRIBED] 0x%04X", params->value_handle);
 		params->value_handle = 0U;
-		if (tbs_inst != NULL) {
-			tbs_inst->subscribe_cnt--;
-		}
 
 		return BT_GATT_ITER_STOP;
 	}
