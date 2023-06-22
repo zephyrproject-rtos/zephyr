@@ -109,8 +109,9 @@ struct cdc_acm_dev_data_t {
 	bool tx_irq_ena;			/* Tx interrupt enable status */
 	bool rx_irq_ena;			/* Rx interrupt enable status */
 	uint8_t rx_buf[CDC_ACM_BUFFER_SIZE];	/* Internal RX buffer */
-	struct ring_buf *rx_ringbuf;
-	struct ring_buf *tx_ringbuf;
+	uint8_t tx_buf[CDC_ACM_BUFFER_SIZE];	/* Internal TX buffer */
+	struct k_pipe *rx_pipe;
+	struct k_pipe *tx_pipe;
 	/* Interface data buffer */
 	/* CDC ACM line coding properties. LE order */
 	struct cdc_acm_line_coding line_coding;
@@ -219,8 +220,8 @@ static void cdc_acm_write_cb(uint8_t ep, int size, void *priv)
 		k_work_submit_to_queue(&USB_WORK_Q, &dev_data->cb_work);
 	}
 
-	if (ring_buf_is_empty(dev_data->tx_ringbuf)) {
-		LOG_DBG("tx_ringbuf is empty");
+	if (k_pipe_read_avail(dev_data->tx_pipe) == 0) {
+		LOG_DBG("tx_pipe is empty");
 		return;
 	}
 
@@ -235,7 +236,6 @@ static void tx_work_handler(struct k_work *work)
 	const struct device *dev = dev_data->common.dev;
 	struct usb_cfg_data *cfg = (void *)dev->config;
 	uint8_t ep = cfg->endpoint[ACM_IN_EP_IDX].ep_addr;
-	uint8_t *data;
 	size_t len;
 
 	if (usb_transfer_is_busy(ep)) {
@@ -243,8 +243,16 @@ static void tx_work_handler(struct k_work *work)
 		return;
 	}
 
-	len = ring_buf_get_claim(dev_data->tx_ringbuf, &data,
-				 CONFIG_USB_CDC_ACM_RINGBUF_SIZE);
+	/*
+	 * Ensure we never transfer an exact multiple of the bulk packet size to avoid zero-length
+	 * packets. The application running on the host may conclude that there is no more data to
+	 * be received (i.e. the transaction has completed), hence not triggering another I/O
+	 * Request Packet (IRP).
+	 */
+	BUILD_ASSERT((sizeof(dev_data->tx_buf) - 1) % CONFIG_CDC_ACM_BULK_EP_MPS != 0);
+	k_pipe_get(dev_data->tx_pipe,
+		   dev_data->tx_buf, sizeof(dev_data->tx_buf) - 1,
+		   &len, 1, K_NO_WAIT);
 
 	if (!len) {
 		LOG_DBG("Nothing to send");
@@ -253,22 +261,10 @@ static void tx_work_handler(struct k_work *work)
 
 	dev_data->tx_ready = false;
 
-	/*
-	 * Transfer less data to avoid zero-length packet. The application
-	 * running on the host may conclude that there is no more data to be
-	 * received (i.e. the transaction has completed), hence not triggering
-	 * another I/O Request Packet (IRP).
-	 */
-	if (!(len % CONFIG_CDC_ACM_BULK_EP_MPS)) {
-		len -= 1;
-	}
+	LOG_DBG("Got %zd bytes from pipe send to ep %x", len, ep);
 
-	LOG_DBG("Got %zd bytes from ringbuffer send to ep %x", len, ep);
-
-	usb_transfer(ep, data, len, USB_TRANS_WRITE,
+	usb_transfer(ep, dev_data->tx_buf, len, USB_TRANS_WRITE,
 		     cdc_acm_write_cb, dev_data);
-
-	ring_buf_get_finish(dev_data->tx_ringbuf, len);
 }
 
 static void cdc_acm_read_cb(uint8_t ep, int size, void *priv)
@@ -276,14 +272,14 @@ static void cdc_acm_read_cb(uint8_t ep, int size, void *priv)
 	struct cdc_acm_dev_data_t *dev_data = priv;
 	size_t wrote;
 
-	LOG_DBG("ep %x size %d dev_data %p rx_ringbuf space %u",
-		ep, size, dev_data, ring_buf_space_get(dev_data->rx_ringbuf));
+	LOG_DBG("ep %x size %d dev_data %p rx_pipe space %u",
+		ep, size, dev_data, k_pipe_write_avail(dev_data->rx_pipe));
 
 	if (size <= 0) {
 		goto done;
 	}
 
-	wrote = ring_buf_put(dev_data->rx_ringbuf, dev_data->rx_buf, size);
+	k_pipe_put(dev_data->rx_pipe, dev_data->rx_buf, size, &wrote, 0, K_NO_WAIT);
 	if (wrote < size) {
 		LOG_ERR("Ring buffer full, drop %zd bytes", size - wrote);
 	}
@@ -295,7 +291,7 @@ static void cdc_acm_read_cb(uint8_t ep, int size, void *priv)
 		k_work_submit_to_queue(&USB_WORK_Q, &dev_data->cb_work);
 	}
 
-	if (ring_buf_space_get(dev_data->rx_ringbuf) < sizeof(dev_data->rx_buf)) {
+	if (k_pipe_write_avail(dev_data->rx_pipe) < sizeof(dev_data->rx_buf)) {
 		dev_data->rx_paused = true;
 		return;
 	}
@@ -498,8 +494,8 @@ static int cdc_acm_fifo_fill(const struct device *dev,
 	struct cdc_acm_dev_data_t * const dev_data = dev->data;
 	size_t wrote;
 
-	LOG_DBG("dev_data %p len %d tx_ringbuf space %u",
-		dev_data, len, ring_buf_space_get(dev_data->tx_ringbuf));
+	LOG_DBG("dev_data %p len %d tx_pipe space %u",
+		dev_data, len, k_pipe_write_avail(dev_data->tx_pipe));
 
 	if (!dev_data->configured || dev_data->suspended) {
 		LOG_WRN("Device not configured or suspended, drop %d bytes",
@@ -509,14 +505,14 @@ static int cdc_acm_fifo_fill(const struct device *dev,
 
 	dev_data->tx_ready = false;
 
-	wrote = ring_buf_put(dev_data->tx_ringbuf, tx_data, len);
+	k_pipe_put(dev_data->tx_pipe, (uint8_t *)tx_data, len, &wrote, 0, K_NO_WAIT);
 	if (wrote < len) {
 		LOG_WRN("Ring buffer full, drop %zd bytes", len - wrote);
 	}
 
 	k_work_schedule_for_queue(&USB_WORK_Q, &dev_data->tx_work, K_NO_WAIT);
 
-	/* Return written to ringbuf data len */
+	/* Return length of data written to pipe */
 	return wrote;
 }
 
@@ -533,19 +529,19 @@ static int cdc_acm_fifo_read(const struct device *dev, uint8_t *rx_data,
 			     const int size)
 {
 	struct cdc_acm_dev_data_t * const dev_data = dev->data;
-	uint32_t len;
+	size_t len;
 
-	LOG_DBG("dev %p size %d rx_ringbuf space %u",
-		dev, size, ring_buf_space_get(dev_data->rx_ringbuf));
+	LOG_DBG("dev %p size %d rx_pipe space %u",
+		dev, size, k_pipe_write_avail(dev_data->rx_pipe));
 
-	len = ring_buf_get(dev_data->rx_ringbuf, rx_data, size);
+	k_pipe_get(dev_data->rx_pipe, rx_data, size, &len, 0, K_NO_WAIT);
 
-	if (ring_buf_is_empty(dev_data->rx_ringbuf)) {
+	if (k_pipe_read_avail(dev_data->rx_pipe) == 0) {
 		dev_data->rx_ready = false;
 	}
 
 	if (dev_data->rx_paused == true) {
-		if (ring_buf_space_get(dev_data->rx_ringbuf) >= CDC_ACM_BUFFER_SIZE) {
+		if (k_pipe_write_avail(dev_data->rx_pipe) >= CDC_ACM_BUFFER_SIZE) {
 			struct usb_cfg_data *cfg = (void *)dev->config;
 
 			if (dev_data->configured) {
@@ -995,7 +991,7 @@ static int cdc_acm_poll_in(const struct device *dev, unsigned char *c)
  * This function does not block, if the USB subsystem
  * is not ready, no data is transferred to the buffer, that is, c is dropped.
  * If the USB subsystem is ready and the buffer is full, the first character
- * from the tx_ringbuf is removed to make room for the new character.
+ * from the tx_pipe is removed to make room for the new character.
  */
 static void cdc_acm_poll_out(const struct device *dev, unsigned char c)
 {
@@ -1008,10 +1004,13 @@ static void cdc_acm_poll_out(const struct device *dev, unsigned char c)
 
 	dev_data->tx_ready = false;
 
-	if (!ring_buf_put(dev_data->tx_ringbuf, &c, 1)) {
+	size_t dummy_len;
+	uint8_t dummy_data;
+
+	if (k_pipe_put(dev_data->tx_pipe, &c, 1, &dummy_len, 1, K_NO_WAIT) != 0) {
 		LOG_INF("Ring buffer full, drain buffer");
-		if (!ring_buf_get(dev_data->tx_ringbuf, NULL, 1) ||
-		    !ring_buf_put(dev_data->tx_ringbuf, &c, 1)) {
+		if (k_pipe_get(dev_data->tx_pipe, &dummy_data, 1, &dummy_len, 1, K_NO_WAIT) != 0 ||
+		    k_pipe_put(dev_data->tx_pipe, &c, 1, &dummy_len, 1, K_NO_WAIT) != 0) {
 			LOG_ERR("Failed to drain buffer");
 			return;
 		}
@@ -1173,14 +1172,16 @@ static const struct uart_driver_api cdc_acm_driver_api = {
 		.endpoint = cdc_acm_ep_data_##x,			\
 	};								\
 									\
-	RING_BUF_DECLARE(cdc_acm_rx_rb_##x,				\
-			 CONFIG_USB_CDC_ACM_RINGBUF_SIZE);		\
-	RING_BUF_DECLARE(cdc_acm_tx_rb_##x,				\
-			 CONFIG_USB_CDC_ACM_RINGBUF_SIZE);		\
+	K_PIPE_DEFINE(cdc_acm_rx_pipe_##x,				\
+		      CONFIG_USB_CDC_ACM_PIPE_SIZE,			\
+		      1);						\
+	K_PIPE_DEFINE(cdc_acm_tx_pipe_##x,				\
+		      CONFIG_USB_CDC_ACM_PIPE_SIZE,			\
+		      1);						\
 	static struct cdc_acm_dev_data_t cdc_acm_dev_data_##x = {	\
 		.line_coding = CDC_ACM_DEFAULT_BAUDRATE,		\
-		.rx_ringbuf = &cdc_acm_rx_rb_##x,			\
-		.tx_ringbuf = &cdc_acm_tx_rb_##x,			\
+		.rx_pipe = &cdc_acm_rx_pipe_##x,			\
+		.tx_pipe = &cdc_acm_tx_pipe_##x,			\
 	};
 
 #define DT_DRV_COMPAT zephyr_cdc_acm_uart

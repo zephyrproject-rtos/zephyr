@@ -11,18 +11,18 @@ config USB_CDC_ACM
 	depends on DT_HAS_ZEPHYR_CDC_ACM_UART_ENABLED
 	select SERIAL_HAS_DRIVER
 	select SERIAL_SUPPORT_INTERRUPT
-	select RING_BUFFER
+	select PIPES
 	select UART_INTERRUPT_DRIVEN
 	help
 	  USB CDC ACM class support.
 
 if USB_CDC_ACM
 
-config USB_CDC_ACM_RINGBUF_SIZE
-	int "USB CDC ACM ring buffer size"
+config USB_CDC_ACM_PIPE_SIZE
+	int "Size of USB CDC ACM transmit/receive pipes"
 	default 1024
 	help
-	  USB CDC ACM ring buffer size
+	  Size of USB CDC ACM transmit/receive pipes
 
 config CDC_ACM_INTERRUPT_EP_MPS
 	int
