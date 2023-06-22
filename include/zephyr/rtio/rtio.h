@@ -115,25 +115,6 @@ extern "C" {
 
 
 /**
- * @brief Equivalent to the I2C_MSG_STOP flag
- */
-#define RTIO_IODEV_I2C_STOP BIT(0)
-
-/**
- * @brief Equivalent to the I2C_MSG_RESTART flag
- */
-#define RTIO_IODEV_I2C_RESTART BIT(1)
-
-/**
- * @brief Equivalent to the I2C_MSG_10_BITS
- */
-#define RTIO_IODEV_I2C_10_BITS BIT(2)
-
-/**
- * @brief Equivalent to the I2C_MSG_ADDR_10_BITS
- */
-
-/**
  * @brief The buffer should be allocated by the RTIO mempool
  *
  * This flag can only exist if the CONFIG_RTIO_SYS_MEM_BLOCKS Kconfig was
@@ -159,6 +140,11 @@ extern "C" {
  * complete. It should be placed back in queue until canceled.
  */
 #define RTIO_SQE_MULTISHOT BIT(4)
+
+/**
+ * @brief The SQE does not produce a CQE.
+ */
+#define RTIO_SQE_NO_RESPONSE BIT(5)
 
 /**
  * @}
@@ -211,6 +197,21 @@ extern "C" {
 /**
  * @}
  */
+
+/**
+ * @brief Equivalent to the I2C_MSG_STOP flag
+ */
+#define RTIO_IODEV_I2C_STOP BIT(0)
+
+/**
+ * @brief Equivalent to the I2C_MSG_RESTART flag
+ */
+#define RTIO_IODEV_I2C_RESTART BIT(1)
+
+/**
+ * @brief Equivalent to the I2C_MSG_ADDR_10_BITS
+ */
+#define RTIO_IODEV_I2C_10_BITS BIT(2)
 
 /** @cond ignore */
 struct rtio;
