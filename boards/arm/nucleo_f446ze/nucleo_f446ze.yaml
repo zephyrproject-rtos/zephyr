@@ -21,3 +21,4 @@ supported:
   - quadspi
 ram: 128
 flash: 512
+vendor: st

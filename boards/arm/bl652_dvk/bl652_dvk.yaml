@@ -15,3 +15,4 @@ supported:
   - pwm
   - spi
   - watchdog
+vendor: lairdconnect

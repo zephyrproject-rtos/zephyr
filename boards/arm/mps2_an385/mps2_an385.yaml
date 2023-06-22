@@ -13,3 +13,4 @@ supported:
   - gpio
 testing:
   default: true
+vendor: arm

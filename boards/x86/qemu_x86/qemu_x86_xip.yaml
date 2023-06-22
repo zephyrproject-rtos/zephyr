@@ -10,3 +10,4 @@ testing:
   default: true
   only_tags:
     - xip
+vendor: qemu

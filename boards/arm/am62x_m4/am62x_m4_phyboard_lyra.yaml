@@ -5,3 +5,4 @@ arch: arm
 toolchain:
   - zephyr
 ram: 192
+vendor: phytec

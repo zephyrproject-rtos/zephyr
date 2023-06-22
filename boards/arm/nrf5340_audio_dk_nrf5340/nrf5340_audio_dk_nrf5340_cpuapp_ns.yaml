@@ -16,3 +16,4 @@ supported:
   - watchdog
   - usb_cdc
   - usb_device
+vendor: nordic

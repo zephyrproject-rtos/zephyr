@@ -11,3 +11,4 @@ testing:
     - bluetooth
 supported:
   - watchdog
+vendor: lowrisc

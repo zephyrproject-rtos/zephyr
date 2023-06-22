@@ -28,3 +28,4 @@ supported:
   - usb_device
   - watchdog
   - adc
+vendor: nxp
