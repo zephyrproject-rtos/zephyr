@@ -545,6 +545,7 @@ static void isr_rx(void *param)
 		    (cis_lll->rx.bn_curr <= cis_lll->rx.bn) &&
 		    (pdu_rx->sn == cis_lll->nesn) &&
 		    ull_iso_pdu_rx_alloc_peek(2U)) {
+			struct lll_conn_iso_group *cig_lll;
 			struct node_rx_iso_meta *iso_meta;
 
 			cis_lll->nesn++;
@@ -584,6 +585,10 @@ static void isr_rx(void *param)
 				HAL_TICKER_TICKS_TO_US(radio_tmr_start_get()) +
 				radio_tmr_aa_restore() - cis_offset_first -
 				addr_us_get(cis_lll->rx.phy);
+			cig_lll = ull_conn_iso_lll_group_get_by_stream(cis_lll);
+			iso_meta->timestamp -= (cis_lll->event_count -
+						(cis_lll->rx.payload_count / cis_lll->rx.bn)) *
+					       cig_lll->iso_interval_us;
 			iso_meta->timestamp %=
 				HAL_TICKER_TICKS_TO_US(BIT(HAL_TICKER_CNTR_MSBIT + 1U));
 			iso_meta->status = 0U;
