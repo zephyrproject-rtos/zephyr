@@ -891,7 +891,7 @@ dark-mode-toggle::part(toggleLabel){
     list-style-type: none !important;
     display: -webkit-box;
     display: -ms-flexbox;
-    display: flex;
+    display: flex !important;
     -ms-flex-wrap: wrap;
         flex-wrap: wrap;
     -webkit-box-pack: center;

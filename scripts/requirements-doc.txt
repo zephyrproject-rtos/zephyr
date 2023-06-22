@@ -11,5 +11,4 @@ sphinx-notfound-page
 PyYAML>=5.1
 pykwalify
 
---extra-index-url https://test.pypi.org/simple/
-sphinx-immaterial==0.11.3.post1.dev14 
+sphinx-immaterial==0.11.4
