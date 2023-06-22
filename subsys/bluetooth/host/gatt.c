@@ -2068,7 +2068,7 @@ static struct bt_conn *bt_gatt_ccc_cfg_conn_lookup(const struct bt_gatt_ccc_cfg 
 
 	conn = bt_conn_lookup_addr_le(cfg->id, &cfg->peer);
 
-	if (bt_gatt_ccc_cfg_is_matching_conn(conn, cfg)) {
+	if (conn && bt_gatt_ccc_cfg_is_matching_conn(conn, cfg)) {
 		return conn;
 	}
 
