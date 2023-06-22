@@ -93,6 +93,10 @@ struct sip_svc_controller {
  */
 #define SIP_SVC_CONTROLLER_DEFINE(inst, conduit_name, sip_dev, sip_num_clients,                    \
 				  sip_max_transactions, sip_resp_size)                             \
+	BUILD_ASSERT(                                                                              \
+		((sip_num_clients <= CONFIG_ARM_SIP_SVC_SUBSYS_MAX_CLIENT_COUNT) &&                \
+		 (sip_num_clients > 0)),                                                           \
+		"Number of client should be within 1 and ARM_SIP_SVC_SUBSYS_MAX_CLIENT_COUNT");    \
 	static STRUCT_SECTION_ITERABLE(sip_svc_controller, sip_svc_##inst) = {                     \
 		.method = conduit_name,                                                            \
 		.dev = sip_dev,                                                                    \
