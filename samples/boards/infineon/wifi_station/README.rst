@@ -50,7 +50,7 @@ Connected to AP [WIFI_SSID] BSSID : 3C:37:86:FC:07:3E , RSSI -36
 Sample console interaction
 ==========================
 
-If the :kconfig:`CONFIG_NET_SHELL` option is set, network shell functions
+If the :kconfig:option:`CONFIG_NET_SHELL` option is set, network shell functions
 can be used to check internet connection.
 
 .. code-block:: console
