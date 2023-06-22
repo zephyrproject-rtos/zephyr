@@ -10,6 +10,8 @@
 #include <zephyr/kernel/thread_stack.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/bitarray.h>
+#include <zephyr/sys/kobject.h>
+#include <zephyr/syscall_handler.h>
 
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
@@ -39,6 +41,8 @@ static k_thread_stack_t *z_thread_stack_alloc_pool(size_t size)
 	size_t offset;
 	k_thread_stack_t *stack;
 
+	size = Z_KERNEL_STACK_SIZE_ADJUST(size);
+
 	if (size > CONFIG_DYNAMIC_THREAD_STACK_SIZE) {
 		LOG_DBG("stack size %zu is > pool stack size %d", size,
 			CONFIG_DYNAMIC_THREAD_STACK_SIZE);
@@ -58,25 +62,29 @@ static k_thread_stack_t *z_thread_stack_alloc_pool(size_t size)
 	return stack;
 }
 
-k_thread_stack_t *z_impl_k_thread_stack_alloc(size_t size, int flags)
+static k_thread_stack_t *stack_alloc_dyn(size_t size, int flags)
 {
-	size_t align = 0;
-	size_t obj_size = 0;
-	k_thread_stack_t *stack = NULL;
-
-#ifdef CONFIG_USERSPACE
-	if ((flags & K_USER) != 0) {
-		align = Z_THREAD_STACK_OBJ_ALIGN(size);
-		obj_size = Z_THREAD_STACK_SIZE_ADJUST(size);
-	} else
+	if ((flags & K_USER) == K_USER) {
+#ifdef CONFIG_DYNAMIC_OBJECTS
+		return k_object_alloc_size(K_OBJ_THREAD_STACK_ELEMENT, size);
+#else
+		/* Dynamic user stack needs a kobject, so if this option is not
+		 * enabled we can't proceed.
+		 */
+		return NULL;
 #endif
-	{
-		align = Z_KERNEL_STACK_OBJ_ALIGN;
-		obj_size = Z_KERNEL_STACK_SIZE_ADJUST(size);
 	}
 
+	return z_thread_stack_alloc_dyn(Z_KERNEL_STACK_OBJ_ALIGN,
+			Z_KERNEL_STACK_SIZE_ADJUST(size));
+}
+
+k_thread_stack_t *z_impl_k_thread_stack_alloc(size_t size, int flags)
+{
+	k_thread_stack_t *stack = NULL;
+
 	if (IS_ENABLED(CONFIG_DYNAMIC_THREAD_PREFER_ALLOC)) {
-		stack = z_thread_stack_alloc_dyn(align, obj_size);
+		stack = stack_alloc_dyn(size, flags);
 		if (stack == NULL && CONFIG_DYNAMIC_THREAD_POOL_SIZE > 0) {
 			stack = z_thread_stack_alloc_pool(size);
 		}
@@ -84,7 +92,7 @@ k_thread_stack_t *z_impl_k_thread_stack_alloc(size_t size, int flags)
 		   CONFIG_DYNAMIC_THREAD_POOL_SIZE > 0) {
 		stack = z_thread_stack_alloc_pool(size);
 		if (stack == NULL && IS_ENABLED(CONFIG_DYNAMIC_THREAD_ALLOC)) {
-			stack = z_thread_stack_alloc_dyn(align, obj_size);
+			stack = stack_alloc_dyn(size, flags);
 		}
 	} else {
 		return NULL;
@@ -144,7 +152,15 @@ int z_impl_k_thread_stack_free(k_thread_stack_t *stack)
 	}
 
 	if (IS_ENABLED(CONFIG_DYNAMIC_THREAD_ALLOC)) {
+#ifdef CONFIG_USERSPACE
+		if (z_object_find(stack)) {
+			k_object_free(stack);
+		} else {
+			k_free(stack);
+		}
+#else
 		k_free(stack);
+#endif
 	} else {
 		LOG_ERR("Invalid stack %p", stack);
 		return -EINVAL;
