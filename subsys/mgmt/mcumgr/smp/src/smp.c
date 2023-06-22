@@ -225,9 +225,15 @@ static int smp_handle_single_payload(struct smp_streamer *cbuf, const struct smp
 	}
 
 	if (handler_fn) {
+		bool ok;
+
 		*handler_found = true;
-		zcbor_map_start_encode(cbuf->writer->zs,
-				       CONFIG_MCUMGR_SMP_CBOR_MAX_MAIN_MAP_ENTRIES);
+		ok = zcbor_map_start_encode(cbuf->writer->zs,
+					    CONFIG_MCUMGR_SMP_CBOR_MAX_MAIN_MAP_ENTRIES);
+
+		if (!ok) {
+			return MGMT_ERR_EMSGSIZE;
+		}
 
 #if defined(CONFIG_MCUMGR_SMP_COMMAND_STATUS_HOOKS)
 		cmd_recv.group = req_hdr->nh_group;
