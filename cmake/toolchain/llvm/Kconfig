@@ -17,3 +17,15 @@ config LLVM_USE_LLD
 	  Use LLVM built-in lld linker with llvm/clang.
 
 endchoice
+
+config LLVM_PROFILE
+	bool "Enable profiling output"
+	depends on ARCH_POSIX
+	help
+	  Builds the (posix) app with profiling and instruction
+	  instrumentation arguments such that it can be used with
+	  external coverage tools.  Note that this is not the same
+	  feature as the gprof-based coverage tools used elsewhere in
+	  Zephyr!  Requires ARCH_POSIX currently, as there is no
+	  infrastructure for retrieving the resulting .profraw data on
+	  embedded builds.

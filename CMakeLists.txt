@@ -2003,6 +2003,11 @@ if(CONFIG_MINIMAL_LIBCPP)
   zephyr_compile_options($<$<COMPILE_LANGUAGE:CXX>:$<TARGET_PROPERTY:compiler-cpp,nostdincxx>>)
 endif()
 
+if(CONFIG_LLVM_PROFILE)
+  zephyr_compile_options(-fprofile-instr-generate -fcoverage-mapping)
+  zephyr_link_libraries(-fprofile-instr-generate -fcoverage-mapping)
+endif()
+
 # Finally export all build flags from Zephyr
 add_subdirectory_ifdef(
   CONFIG_MAKEFILE_EXPORTS
