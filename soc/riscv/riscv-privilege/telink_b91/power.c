@@ -27,7 +27,6 @@ LOG_MODULE_DECLARE(soc, CONFIG_SOC_LOG_LEVEL);
 #else
 #define SYSTICKS_MAX_SLEEP 0xe0000000
 #endif /* CONFIG_BT */
-#define SYSTICKS_MIN_SLEEP 18352
 
 /**
  * @brief This define converts Machine Timer ticks to B91 System Timer ticks.
@@ -106,34 +105,26 @@ __weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 
 	switch (state) {
 	case PM_STATE_SUSPEND_TO_IDLE:
-		if (stimer_sleep_ticks < SYSTICKS_MIN_SLEEP) {
-			k_cpu_idle();
-		} else {
-			if (stimer_sleep_ticks > SYSTICKS_MAX_SLEEP) {
-				stimer_sleep_ticks = SYSTICKS_MAX_SLEEP;
-			}
-			if (b91_suspend(tl_sleep_tick + stimer_sleep_ticks)) {
-				current_time +=
-					systicks_to_mticks(stimer_get_tick() - tl_sleep_tick);
-				set_mtime(current_time);
-			}
+		if (stimer_sleep_ticks > SYSTICKS_MAX_SLEEP) {
+			stimer_sleep_ticks = SYSTICKS_MAX_SLEEP;
+		}
+		if (b91_suspend(tl_sleep_tick + stimer_sleep_ticks)) {
+			current_time +=
+				systicks_to_mticks(stimer_get_tick() - tl_sleep_tick);
+			set_mtime(current_time);
 		}
 		break;
 #ifdef CONFIG_BOARD_TLSR9518ADK80D_RETENTION
 	case PM_STATE_STANDBY:
-		if (stimer_sleep_ticks < SYSTICKS_MIN_SLEEP) {
-			k_cpu_idle();
-		} else {
-			if (stimer_sleep_ticks > SYSTICKS_MAX_SLEEP) {
-				stimer_sleep_ticks = SYSTICKS_MAX_SLEEP;
-			}
-			if (b91_deep_sleep(tl_sleep_tick + stimer_sleep_ticks)) {
-				current_time +=
-					systicks_to_mticks(stimer_get_tick() - tl_sleep_tick);
-				set_mtime_compare(wakeup_time);
-				set_mtime(current_time);
-				b91_deep_sleep_retention = true;
-			}
+		if (stimer_sleep_ticks > SYSTICKS_MAX_SLEEP) {
+			stimer_sleep_ticks = SYSTICKS_MAX_SLEEP;
+		}
+		if (b91_deep_sleep(tl_sleep_tick + stimer_sleep_ticks)) {
+			current_time +=
+				systicks_to_mticks(stimer_get_tick() - tl_sleep_tick);
+			set_mtime_compare(wakeup_time);
+			set_mtime(current_time);
+			b91_deep_sleep_retention = true;
 		}
 		break;
 #endif /* CONFIG_BOARD_TLSR9518ADK80D_RETENTION */

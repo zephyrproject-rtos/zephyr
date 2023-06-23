@@ -107,7 +107,7 @@ jobs:
     - name: Build net/sockets/echo_client for OpenThread with PM deep-sleep
       run: |
         cd ..
-        west build -b tlsr9518adk80d_retention   -d build_ot_echo_client_pm_deep    zephyr/samples/net/sockets/echo_client                   -- -DOVERLAY_CONFIG=overlay-ot-sed.conf -DCONFIG_OPENTHREAD_NETWORKKEY=\"09:24:01:56:04:4a:45:0b:23:22:1e:0e:3b:0d:0e:61:2f:1b:2c:24\" -DCONFIG_PM=y -DCONFIG_BOARD_TLSR9518ADK80D_NON_RETENTION_RAM_CODE=y
+        west build -b tlsr9518adk80d_retention   -d build_ot_echo_client_pm_deep    zephyr/samples/net/sockets/echo_client                   -- -DOVERLAY_CONFIG=overlay-ot-sed.conf -DCONFIG_OPENTHREAD_NETWORKKEY=\"09:24:01:56:04:4a:45:0b:23:22:1e:0e:3b:0d:0e:61:2f:1b:2c:24\" -DCONFIG_PM=y -DCONFIG_BOARD_TLSR9518ADK80D_NON_RETENTION_RAM_CODE=y -DCONFIG_TELINK_B91_2_WIRE_SPI_ENABLE=y
 
     - name: Collect artifacts
       run: |
