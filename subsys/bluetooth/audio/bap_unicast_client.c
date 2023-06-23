@@ -227,10 +227,12 @@ static void unicast_client_ep_iso_recv(struct bt_iso_chan *chan,
 		return;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_BAP_DEBUG_STREAM_DATA) &&
-	    ep->status.state != BT_BAP_EP_STATE_STREAMING) {
-		LOG_DBG("ep %p is not in the streaming state: %s", ep,
-			bt_bap_ep_state_str(ep->status.state));
+	if (ep->status.state != BT_BAP_EP_STATE_STREAMING) {
+		if (IS_ENABLED(CONFIG_BT_BAP_DEBUG_STREAM_DATA)) {
+			LOG_DBG("ep %p is not in the streaming state: %s", ep,
+				bt_bap_ep_state_str(ep->status.state));
+		}
+
 		return;
 	}
 
