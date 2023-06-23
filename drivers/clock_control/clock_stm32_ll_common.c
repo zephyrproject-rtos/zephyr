@@ -138,6 +138,13 @@ static int enabled_clock(uint32_t src_clk)
 		}
 		break;
 #endif /* STM32_SRC_LSI */
+#if defined(STM32_SRC_HSI14)
+	case STM32_SRC_HSI14:
+		if (!IS_ENABLED(STM32_HSI14_ENABLED)) {
+			r = -ENOTSUP;
+		}
+		break;
+#endif /* STM32_SRC_HSI14 */
 #if defined(STM32_SRC_HSI48)
 	case STM32_SRC_HSI48:
 		if (!IS_ENABLED(STM32_HSI48_ENABLED)) {
@@ -687,6 +694,15 @@ static void set_up_fixed_clock_sources(void)
 
 		z_stm32_hsem_unlock(CFG_HW_RCC_SEMID);
 	}
+
+#if defined(STM32_HSI14_ENABLED)
+	/* For all series with HSI 14 clock support */
+	if (IS_ENABLED(STM32_HSI14_ENABLED)) {
+		LL_RCC_HSI14_Enable();
+		while (LL_RCC_HSI14_IsReady() != 1) {
+		}
+	}
+#endif /* STM32_HSI48_ENABLED */
 
 #if defined(STM32_HSI48_ENABLED)
 	/* For all series with HSI 48 clock support */
