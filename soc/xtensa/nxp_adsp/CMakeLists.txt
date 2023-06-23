@@ -8,6 +8,11 @@ add_subdirectory(common)
 #  west sign
 
 # See detailed comments in soc/xtensa/intel_adsp/common/CMakeLists.txt
+# where most of this code is for now duplicated.
+
+# sign.py supports `zephyr.elf` only.
+if(CONFIG_KERNEL_BIN_NAME STREQUAL "zephyr")
+
 add_custom_target(zephyr.ri ALL
   DEPENDS ${CMAKE_BINARY_DIR}/zephyr/zephyr.ri
 )
@@ -18,3 +23,5 @@ add_custom_command(
   COMMAND  west sign --if-tool-available --tool rimage --build-dir ${CMAKE_BINARY_DIR}
   DEPENDS ${CMAKE_BINARY_DIR}/zephyr/zephyr.elf
 )
+
+endif() # CONFIG_KERNEL_BIN_NAME == "zephyr"

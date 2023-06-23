@@ -117,6 +117,16 @@ endif()
 
 
 #  west sign
+
+# Warning: most of this code is for now duplicated in
+# soc/xtensa/nxp_adsp/CMakeLists.txt
+
+# zephyr.elf is not used by sign.py when a boot.mod bootloader is used
+# BUT others do expect a zephyr.elf file: smex, debuggers, CI and other
+# automation, etc. (Ab)using Kconfig to merely rename a file seems like
+# a bad idea because it breaks build directory expectations.
+if(CONFIG_KERNEL_BIN_NAME STREQUAL "zephyr")
+
 add_custom_target(zephyr.ri ALL
   DEPENDS ${CMAKE_BINARY_DIR}/zephyr/zephyr.ri
 )
@@ -147,3 +157,5 @@ add_custom_command(
   DEPENDS gen_modules
           ${CMAKE_BINARY_DIR}/zephyr/boot.mod ${CMAKE_BINARY_DIR}/zephyr/main.mod
 )
+
+endif() # CONFIG_KERNEL_BIN_NAME == "zephyr"
