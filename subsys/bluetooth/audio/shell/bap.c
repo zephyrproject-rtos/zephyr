@@ -1566,13 +1566,14 @@ static void base_recv(struct bt_bap_broadcast_sink *sink, const struct bt_bap_ba
 	}
 
 	shell_print(ctx_shell, "Received BASE from sink %p:", sink);
+	shell_print(ctx_shell, "Presentation delay: %u", base->pd);
 
 	for (int i = 0; i < base->subgroup_count; i++) {
 		const struct bt_bap_base_subgroup *subgroup;
 
 		subgroup = &base->subgroups[i];
 
-		shell_print(ctx_shell, "Subgroup[%d]:", i);
+		shell_print(ctx_shell, "%2sSubgroup[%d]:", "", i);
 		print_codec(ctx_shell, &subgroup->codec);
 
 		for (int j = 0; j < subgroup->bis_count; j++) {
@@ -1580,8 +1581,7 @@ static void base_recv(struct bt_bap_broadcast_sink *sink, const struct bt_bap_ba
 
 			bis_data = &subgroup->bis_data[j];
 
-			shell_print(ctx_shell, "BIS[%d] index 0x%02x",
-				    i, bis_data->index);
+			shell_print(ctx_shell, "%4sBIS[%d] index 0x%02x", "", i, bis_data->index);
 			bis_indexes[index_count++] = bis_data->index;
 
 			for (int k = 0; k < bis_data->data_count; k++) {
@@ -1589,10 +1589,8 @@ static void base_recv(struct bt_bap_broadcast_sink *sink, const struct bt_bap_ba
 
 				codec_data = &bis_data->data[k];
 
-				shell_print(ctx_shell,
-					    "data #%u: type 0x%02x len %u",
-					    i, codec_data->data.type,
-					    codec_data->data.data_len);
+				shell_print(ctx_shell, "%6sdata #%u: type 0x%02x len %u", "", i,
+					    codec_data->data.type, codec_data->data.data_len);
 				shell_hexdump(ctx_shell, codec_data->data.data,
 					      codec_data->data.data_len -
 						sizeof(codec_data->data.type));
