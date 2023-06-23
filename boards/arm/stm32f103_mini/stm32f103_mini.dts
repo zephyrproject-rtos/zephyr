@@ -10,7 +10,7 @@
 
 / {
 	model = "stm32f103_mini board";
-	compatible = "st,stm32f103";
+	compatible = "stm32f103";
 
 	chosen {
 		zephyr,console = &usart1;
