@@ -1217,6 +1217,37 @@ static int adc_stm32_channel_setup(const struct device *dev,
 	return 0;
 }
 
+static int adc_stm32_set_clock(const struct device *dev)
+{
+	const struct adc_stm32_cfg *config = dev->config;
+	ADC_TypeDef *adc = (ADC_TypeDef *)config->base;
+
+	ARG_UNUSED(adc); /* Necessary to avoid warnings on some series */
+
+#if defined(CONFIG_SOC_SERIES_STM32F0X)
+	LL_ADC_SetClock(adc, config->clk_prescaler);
+#elif defined(CONFIG_SOC_SERIES_STM32C0X) || \
+	defined(CONFIG_SOC_SERIES_STM32G0X) || \
+	defined(CONFIG_SOC_SERIES_STM32L0X) || \
+	(defined(CONFIG_SOC_SERIES_STM32WBX) && defined(ADC_SUPPORT_2_5_MSPS)) || \
+	defined(CONFIG_SOC_SERIES_STM32WLX)
+	if ((config->clk_prescaler == LL_ADC_CLOCK_SYNC_PCLK_DIV1) ||
+		(config->clk_prescaler == LL_ADC_CLOCK_SYNC_PCLK_DIV2) ||
+		(config->clk_prescaler == LL_ADC_CLOCK_SYNC_PCLK_DIV4)) {
+		LL_ADC_SetClock(adc, config->clk_prescaler);
+	} else {
+		LL_ADC_SetCommonClock(__LL_ADC_COMMON_INSTANCE(adc),
+				      config->clk_prescaler);
+		LL_ADC_SetClock(adc, LL_ADC_CLOCK_ASYNC);
+	}
+#elif !DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc)
+	LL_ADC_SetCommonClock(__LL_ADC_COMMON_INSTANCE(adc),
+			      config->clk_prescaler);
+#endif
+
+	return 0;
+}
+
 static int adc_stm32_init(const struct device *dev)
 {
 	struct adc_stm32_data *data = dev->data;
@@ -1249,6 +1280,8 @@ static int adc_stm32_init(const struct device *dev)
 		(clock_control_subsys_t) &config->pclken) != 0) {
 		return -EIO;
 	}
+
+	adc_stm32_set_clock(dev);
 
 	/* Configure dt provided device signals when available */
 	err = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
@@ -1296,38 +1329,6 @@ static int adc_stm32_init(const struct device *dev)
 	!DT_HAS_COMPAT_STATUS_OKAY(st_stm32f4_adc)
 	LL_ADC_EnableInternalRegulator(adc);
 	k_busy_wait(LL_ADC_DELAY_INTERNAL_REGUL_STAB_US);
-#endif
-
-#if defined(CONFIG_SOC_SERIES_STM32F0X) || \
-	defined(CONFIG_SOC_SERIES_STM32L0X) || \
-	defined(CONFIG_SOC_SERIES_STM32WLX)
-	LL_ADC_SetClock(adc, LL_ADC_CLOCK_SYNC_PCLK_DIV4);
-#elif defined(CONFIG_SOC_SERIES_STM32C0X) || \
-	defined(CONFIG_SOC_SERIES_STM32L4X) || \
-	defined(CONFIG_SOC_SERIES_STM32L5X) || \
-	defined(CONFIG_SOC_SERIES_STM32WBX) || \
-	defined(CONFIG_SOC_SERIES_STM32G0X) || \
-	defined(CONFIG_SOC_SERIES_STM32G4X) || \
-	defined(CONFIG_SOC_SERIES_STM32H7X)
-	LL_ADC_SetCommonClock(__LL_ADC_COMMON_INSTANCE(adc),
-			      LL_ADC_CLOCK_SYNC_PCLK_DIV4);
-#elif defined(CONFIG_SOC_SERIES_STM32H5X)
-	LL_ADC_SetCommonClock(__LL_ADC_COMMON_INSTANCE(adc),
-			      LL_ADC_CLOCK_ASYNC_DIV6);
-#elif defined(STM32F3X_ADC_V1_1)
-	/*
-	 * Set the synchronous clock mode to HCLK/1 (DIV1) or HCLK/2 (DIV2)
-	 * Both are valid common clock setting values.
-	 * The HCLK/1(DIV1) is possible only if
-	 * the ahb-prescaler = <1> in the RCC_CFGR.
-	 */
-	LL_ADC_SetCommonClock(__LL_ADC_COMMON_INSTANCE(adc),
-			      LL_ADC_CLOCK_SYNC_PCLK_DIV2);
-#elif defined(CONFIG_SOC_SERIES_STM32L1X) || \
-	defined(CONFIG_SOC_SERIES_STM32U5X) || \
-	defined(CONFIG_SOC_SERIES_STM32WBAX)
-	LL_ADC_SetCommonClock(__LL_ADC_COMMON_INSTANCE(adc),
-			LL_ADC_CLOCK_ASYNC_DIV4);
 #endif
 
 #if defined(HAS_CALIBRATION) && !DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc)
