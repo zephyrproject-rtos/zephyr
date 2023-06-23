@@ -23,6 +23,13 @@ config CMU_HFXO_FREQ
 config CMU_LFXO_FREQ
 	default 32768
 
+if SOC_GECKO_USE_RAIL
+
+config FPU
+	default y
+
+endif # SOC_GECKO_USE_RAIL
+
 if BT
 
 config FPU

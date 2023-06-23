@@ -29,6 +29,13 @@ config LOG_BACKEND_SWO_FREQ_HZ
 	default 875000
 	depends on LOG_BACKEND_SWO
 
+if SOC_GECKO_USE_RAIL
+
+config FPU
+	default y
+
+endif # SOC_GECKO_USE_RAIL
+
 if BT
 
 config FPU
