@@ -10,11 +10,13 @@ config SOC_NRF5340_CPUAPP
 	select CPU_HAS_FPU
 	select ARMV8_M_DSP
 	select HAS_POWEROFF
+	imply SOC_NRF53_RTC_PRETICK
 
 config SOC_NRF5340_CPUNET
 	bool
 	select ARM_ON_EXIT_CPU_IDLE
 	imply SOC_NRF53_ANOMALY_160_WORKAROUND_NEEDED
+	imply SOC_NRF53_RTC_PRETICK
 
 choice
 	prompt "nRF53x MCU Selection"
@@ -46,6 +48,25 @@ config SOC_NRF53_ANOMALY_160_WORKAROUND
 	bool
 	depends on SYS_CLOCK_EXISTS
 	select ARM_ON_ENTER_CPU_IDLE_HOOK
+
+config SOC_NRF53_RTC_PRETICK
+	bool
+	depends on !NRF_802154_RADIO_DRIVER
+	select NRFX_DPPI
+
+if SOC_NRF53_RTC_PRETICK
+
+config SOC_NRF53_RTC_PRETICK_IPC_CH_FROM_NET
+	int "IPC 0 channel for RTC pretick"
+	range 0 15
+	default 10
+
+config SOC_NRF53_RTC_PRETICK_IPC_CH_TO_NET
+	int "IPC 1 channel for RTC pretick"
+	range 0 15
+	default 11
+
+endif
 
 if SOC_NRF5340_CPUAPP
 
