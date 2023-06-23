@@ -94,7 +94,7 @@
 		};
 
 		rcc: rcc@40021000 {
-			compatible = "st,stm32-rcc";
+			compatible = "st,stm32f3-rcc";
 			#clock-cells = <2>;
 			reg = <0x40021000 0x400>;
 
