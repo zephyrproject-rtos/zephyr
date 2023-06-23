@@ -271,6 +271,11 @@ function(ExternalZephyrProject_Add)
     set_target_properties(${ZBUILD_APPLICATION} PROPERTIES MAIN_APP True)
   endif()
 
+  if(DEFINED ZBUILD_APP_TYPE)
+    set(image_default "${CMAKE_SOURCE_DIR}/image_configurations/${ZBUILD_APP_TYPE}_image_default.cmake")
+    set_target_properties(${ZBUILD_APPLICATION} PROPERTIES IMAGE_CONF_SCRIPT ${image_default})
+  endif()
+
   if(DEFINED ZBUILD_BOARD)
     # Only set image specific board if provided.
     # The sysbuild BOARD is exported through sysbuild cache, and will be used
@@ -349,6 +354,10 @@ function(ExternalZephyrProject_Cmake)
   get_target_property(${ZCMAKE_APPLICATION}_BOARD      ${ZCMAKE_APPLICATION} BOARD)
   get_target_property(${ZCMAKE_APPLICATION}_MAIN_APP   ${ZCMAKE_APPLICATION} MAIN_APP)
 
+  get_property(${ZCMAKE_APPLICATION}_CONF_SCRIPT TARGET ${ZCMAKE_APPLICATION}
+               PROPERTY IMAGE_CONF_SCRIPT
+  )
+
   # Update ROOT variables with relative paths to use absolute paths based on
   # the source application directory.
   foreach(type MODULE_EXT BOARD SOC ARCH SCA)
@@ -399,6 +408,10 @@ function(ExternalZephyrProject_Cmake)
   zephyr_file_copy(${${ZCMAKE_APPLICATION}_CACHE_FILE}.tmp
                    ${${ZCMAKE_APPLICATION}_CACHE_FILE} ONLY_IF_DIFFERENT
   )
+
+  foreach(script ${${ZCMAKE_APPLICATION}_CONF_SCRIPT})
+    include(${script})
+  endforeach()
 
   set(dotconfigsysbuild ${BINARY_DIR}/zephyr/.config.sysbuild)
   get_target_property(config_content ${ZCMAKE_APPLICATION} CONFIG)
