@@ -1,0 +1,11 @@
+/*
+ * Copyright 2023 NXP Semiconductor
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		dma0 = &dma0;
+	};
+};
