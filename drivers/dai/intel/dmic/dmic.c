@@ -22,7 +22,7 @@ LOG_MODULE_REGISTER(LOG_DOMAIN);
 #include <zephyr/irq.h>
 
 #include "dmic.h"
-#include "dmic_regs.h"
+#include <dmic_regs.h>
 
 /* Base addresses (in PDM scope) of 2ch PDM controllers and coefficient RAM. */
 static const uint32_t base[4] = {PDM0, PDM1, PDM2, PDM3};
