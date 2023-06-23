@@ -192,6 +192,9 @@ static int octets_per_frame;
 static int64_t lc3_start_time;
 static int32_t lc3_sdu_cnt;
 
+static void lc3_audio_send_data(struct k_work *work);
+static K_WORK_DEFINE(audio_send_work, lc3_audio_send_data);
+
 static void clear_lc3_sine_data(void)
 {
 	lc3_start_time = 0;
@@ -332,8 +335,6 @@ static void lc3_audio_send_data(struct k_work *work)
 	}
 	lc3_sdu_cnt++;
 }
-
-static K_WORK_DEFINE(audio_send_work, lc3_audio_send_data);
 
 void sdu_sent_cb(struct bt_bap_stream *stream)
 {
