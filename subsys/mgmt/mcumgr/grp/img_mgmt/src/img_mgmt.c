@@ -41,42 +41,37 @@
 #define FIXED_PARTITION_IS_RUNNING_APP_PARTITION(label)	\
 	 (FIXED_PARTITION_OFFSET(label) == CONFIG_FLASH_LOAD_OFFSET)
 
-#if FIXED_PARTITION_EXISTS(slot0_partition)
-#if FIXED_PARTITION_IS_RUNNING_APP_PARTITION(slot0_partition)
-#define NUMBER_OF_ACTIVE_IMAGE 0
-#endif
-#endif
+BUILD_ASSERT(sizeof(struct image_header) == IMAGE_HEADER_SIZE,
+	     "struct image_header not required size");
 
-#if !defined(NUMBER_OF_ACTIVE_IMAGE) && FIXED_PARTITION_EXISTS(slot0_ns_partition)
-#if FIXED_PARTITION_IS_RUNNING_APP_PARTITION(slot0_ns_partition)
-#define NUMBER_OF_ACTIVE_IMAGE 0
+#if CONFIG_MCUMGR_GRP_IMG_UPDATABLE_IMAGE_NUMBER >= 2
+#if FIXED_PARTITION_EXISTS(slot0_ns_partition) &&			\
+	FIXED_PARTITION_IS_RUNNING_APP_PARTITION(slot0_ns_partition)
+#define ACTIVE_IMAGE_IS 0
+#elif FIXED_PARTITION_EXISTS(slot0_partition) &&			\
+	FIXED_PARTITION_IS_RUNNING_APP_PARTITION(slot0_partition)
+#define ACTIVE_IMAGE_IS 0
+#elif FIXED_PARTITION_EXISTS(slot1_partition) &&			\
+	FIXED_PARTITION_IS_RUNNING_APP_PARTITION(slot1_partition)
+#define ACTIVE_IMAGE_IS 0
+#elif FIXED_PARTITION_EXISTS(slot2_partition) &&			\
+	FIXED_PARTITION_IS_RUNNING_APP_PARTITION(slot2_partition)
+#define ACTIVE_IMAGE_IS 1
+#elif FIXED_PARTITION_EXISTS(slot3_partition) &&			\
+	FIXED_PARTITION_IS_RUNNING_APP_PARTITION(slot3_partition)
+#define ACTIVE_IMAGE_IS 1
+#elif FIXED_PARTITION_EXISTS(slot4_partition) &&			\
+	FIXED_PARTITION_IS_RUNNING_APP_PARTITION(slot4_partition)
+#define ACTIVE_IMAGE_IS 2
+#elif FIXED_PARTITION_EXISTS(slot5_partition) &&			\
+	FIXED_PARTITION_IS_RUNNING_APP_PARTITION(slot5_partition)
+#define ACTIVE_IMAGE_IS 2
+#else
+#define ACTIVE_IMAGE_IS 0
 #endif
+#else
+#define ACTIVE_IMAGE_IS 0
 #endif
-
-#if !defined(NUMBER_OF_ACTIVE_IMAGE) && FIXED_PARTITION_EXISTS(slot1_partition)
-#if FIXED_PARTITION_IS_RUNNING_APP_PARTITION(slot1_partition)
-#define NUMBER_OF_ACTIVE_IMAGE 0
-#endif
-#endif
-
-#if !defined(NUMBER_OF_ACTIVE_IMAGE) && FIXED_PARTITION_EXISTS(slot2_partition)
-#if FIXED_PARTITION_IS_RUNNING_APP_PARTITION(slot2_partition)
-#define NUMBER_OF_ACTIVE_IMAGE 1
-#endif
-#endif
-
-#if !defined(NUMBER_OF_ACTIVE_IMAGE) && FIXED_PARTITION_EXISTS(slot3_partition)
-#if FIXED_PARTITION_IS_RUNNING_APP_PARTITION(slot3_partition)
-#define NUMBER_OF_ACTIVE_IMAGE 1
-#endif
-#endif
-
-#ifndef NUMBER_OF_ACTIVE_IMAGE
-#error "Unsupported code parition is set as active application partition"
-#endif
-
-_Static_assert(sizeof(struct image_header) == IMAGE_HEADER_SIZE,
-		"struct image_header not required size");
 
 LOG_MODULE_REGISTER(mcumgr_img_grp, CONFIG_MCUMGR_GRP_IMG_LOG_LEVEL);
 
@@ -159,7 +154,7 @@ int img_mgmt_active_slot(int image)
 
 int img_mgmt_active_image(void)
 {
-	return NUMBER_OF_ACTIVE_IMAGE;
+	return ACTIVE_IMAGE_IS;
 }
 
 /*

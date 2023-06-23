@@ -25,12 +25,26 @@ LOG_MODULE_DECLARE(mcumgr_img_grp, CONFIG_MCUMGR_GRP_IMG_LOG_LEVEL);
 #define SLOT1_PARTITION		slot1_partition
 #define SLOT2_PARTITION		slot2_partition
 #define SLOT3_PARTITION		slot3_partition
+#define SLOT4_PARTITION		slot4_partition
+#define SLOT5_PARTITION		slot5_partition
 
-BUILD_ASSERT(CONFIG_MCUMGR_GRP_IMG_UPDATABLE_IMAGE_NUMBER == 1 ||
-	     (CONFIG_MCUMGR_GRP_IMG_UPDATABLE_IMAGE_NUMBER == 2 &&
-	      FIXED_PARTITION_EXISTS(SLOT2_PARTITION) &&
-	      FIXED_PARTITION_EXISTS(SLOT3_PARTITION)),
+/* SLOT0_PARTITION and SLOT1_PARTITION are not checked because
+ * there is not conditional code that depends on them. If they do
+ * not exist compilation will fail, but in case if some of other
+ * partitions do not exist, code will compile and will not work
+ * properly.
+ */
+#if CONFIG_MCUMGR_GRP_IMG_UPDATABLE_IMAGE_NUMBER >= 2
+BUILD_ASSERT(FIXED_PARTITION_EXISTS(SLOT2_PARTITION) &&
+	     FIXED_PARTITION_EXISTS(SLOT3_PARTITION),
 	     "Missing partitions?");
+#endif
+
+#if CONFIG_MCUMGR_GRP_IMG_UPDATABLE_IMAGE_NUMBER == 3
+BUILD_ASSERT(FIXED_PARTITION_EXISTS(SLOT4_PARTITION) &&
+	     FIXED_PARTITION_EXISTS(SLOT5_PARTITION),
+	     "Missing partitions?");
+#endif
 
 /**
  * Determines if the specified area of flash is completely unwritten.
@@ -137,6 +151,18 @@ img_mgmt_flash_area_id(int slot)
 		break;
 #endif
 
+#if FIXED_PARTITION_EXISTS(SLOT4_PARTITION)
+	case 4:
+		fa_id = FIXED_PARTITION_ID(SLOT4_PARTITION);
+		break;
+#endif
+
+#if FIXED_PARTITION_EXISTS(SLOT5_PARTITION)
+	case 5:
+		fa_id = FIXED_PARTITION_ID(SLOT5_PARTITION);
+		break;
+#endif
+
 	default:
 		fa_id = -1;
 		break;
@@ -194,7 +220,7 @@ static int img_mgmt_get_unused_slot_area_id(int slot)
 	return slot != -1  ? img_mgmt_flash_area_id(slot) : -1;
 #endif
 }
-#elif CONFIG_MCUMGR_GRP_IMG_UPDATABLE_IMAGE_NUMBER == 2
+#elif CONFIG_MCUMGR_GRP_IMG_UPDATABLE_IMAGE_NUMBER >= 2
 static int img_mgmt_get_unused_slot_area_id(int image)
 {
 	int area_id = -1;
