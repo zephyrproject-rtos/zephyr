@@ -33,6 +33,14 @@
 	};
 
 	soc {
+		interrupt-parent = <&irqsteer>;
+
+		irqsteer: interrupt-controller {
+			compatible = "nxp,irqsteer-intc";
+			interrupt-controller;
+			#interrupt-cells = <2>;
+		};
+
 		ccm: ccm@30380000 {
 			compatible = "nxp,imx-ccm";
 			reg = <0x30380000 DT_SIZE_K(64)>;
@@ -57,6 +65,14 @@
 			compatible = "nxp,imx-iuart";
 			reg = <0x30a60000 0x10000>;
 			clocks = <&ccm IMX_CCM_UART4_CLK 0x6c 24>;
+			status = "disabled";
+		};
+
+		mailbox0: mailbox@30e70000 {
+			compatible = "nxp,imx-mu-rev2";
+			reg = <0x30e70000 0x10000>;
+			interrupts = <7 0>;
+			rdc = <0>;
 			status = "disabled";
 		};
 	};
