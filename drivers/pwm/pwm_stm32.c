@@ -14,6 +14,7 @@
 #include <stm32_ll_tim.h>
 #include <zephyr/drivers/pwm.h>
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/drivers/reset.h>
 #include <zephyr/device.h>
 #include <zephyr/kernel.h>
 #include <zephyr/init.h>
@@ -53,6 +54,8 @@ struct pwm_stm32_capture_data {
 struct pwm_stm32_data {
 	/** Timer clock (Hz). */
 	uint32_t tim_clk;
+	/* Reset controller device configuration */
+	const struct reset_dt_spec reset;
 #ifdef CONFIG_PWM_CAPTURE
 	struct pwm_stm32_capture_data capture;
 #endif /* CONFIG_PWM_CAPTURE */
@@ -686,6 +689,9 @@ static int pwm_stm32_init(const struct device *dev)
 		return r;
 	}
 
+	/* Reset timer to default state using RCC */
+	(void)reset_line_toggle_dt(&data->reset);
+
 	/* configure pinmux */
 	r = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
 	if (r < 0) {
@@ -764,7 +770,10 @@ static void pwm_stm32_irq_config_func_##index(const struct device *dev)		\
 
 
 #define PWM_DEVICE_INIT(index)                                                 \
-	static struct pwm_stm32_data pwm_stm32_data_##index;                   \
+	static struct pwm_stm32_data pwm_stm32_data_##index = {		       \
+		.reset = RESET_DT_SPEC_GET(PWM(index)),			       \
+	};								       \
+									       \
 	IRQ_CONFIG_FUNC(index)						       \
 									       \
 	PINCTRL_DT_INST_DEFINE(index);					       \
