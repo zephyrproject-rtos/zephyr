@@ -725,7 +725,10 @@ int lsm6dsv16x_shub_fetch_external_devs(const struct device *dev)
 	struct lsm6dsv16x_shub_slist *sp;
 
 	/* read data from external target */
-	lsm6dsv16x_mem_bank_set(ctx, LSM6DSV16X_SENSOR_HUB_MEM_BANK);
+	if (lsm6dsv16x_mem_bank_set(ctx, LSM6DSV16X_SENSOR_HUB_MEM_BANK) < 0) {
+		LOG_DBG("failed to enter SENSOR_HUB bank");
+		return -EIO;
+	}
 
 	for (n = 0; n < data->num_ext_dev; n++) {
 		sp = &lsm6dsv16x_shub_slist[data->shub_ext[n]];
@@ -733,14 +736,12 @@ int lsm6dsv16x_shub_fetch_external_devs(const struct device *dev)
 		if (lsm6dsv16x_read_reg(ctx, sp->sh_out_reg,
 				     data->ext_data[n], sp->out_data_len) < 0) {
 			LOG_DBG("shub: failed to read sample");
-			lsm6dsv16x_mem_bank_set(ctx, LSM6DSV16X_MAIN_MEM_BANK);
+			(void) lsm6dsv16x_mem_bank_set(ctx, LSM6DSV16X_MAIN_MEM_BANK);
 			return -EIO;
 		}
 	}
 
-	lsm6dsv16x_mem_bank_set(ctx, LSM6DSV16X_MAIN_MEM_BANK);
-
-	return 0;
+	return lsm6dsv16x_mem_bank_set(ctx, LSM6DSV16X_MAIN_MEM_BANK);
 }
 
 int lsm6dsv16x_shub_config(const struct device *dev, enum sensor_channel chan,
