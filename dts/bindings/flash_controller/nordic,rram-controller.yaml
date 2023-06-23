@@ -1,0 +1,16 @@
+#
+# Copyright (c) 2023 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: LicenseRef-Nordic-4-Clause
+#
+
+description: |
+  Nordic RRAMC (Resistive random access memory controller)
+
+  The resistive random access memory controller (RRAMC) is used for writing
+  the internal RRAM memory, the secure information configuration registers (SICR),
+  and the user information configuration registers (UICR).
+
+compatible: "nordic,rram-controller"
+
+include: base.yaml
