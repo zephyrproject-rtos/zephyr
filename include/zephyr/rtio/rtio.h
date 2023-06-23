@@ -354,6 +354,9 @@ struct rtio {
 	struct k_sem *consume_sem;
 #endif
 
+	/* Total number of completions */
+	atomic_t cq_count;
+
 	/* Number of completions that were unable to be submitted with results
 	 * due to the cq spsc being full
 	 */
@@ -761,6 +764,7 @@ static inline void rtio_block_pool_free(struct rtio_block_pool *pool, void *buf,
 		IF_ENABLED(CONFIG_RTIO_SUBMIT_SEM, (.submit_sem = &_submit_sem_##name,))           \
 		IF_ENABLED(CONFIG_RTIO_SUBMIT_SEM, (.submit_count = 0,))                           \
 		IF_ENABLED(CONFIG_RTIO_CONSUME_SEM, (.consume_sem = &_consume_sem_##name,))        \
+		.cq_count = ATOMIC_INIT(0),                                                        \
 		.xcqcnt = ATOMIC_INIT(0),                                                          \
 		.sqe_pool = _sqe_pool,                                                             \
 		.cqe_pool = _cqe_pool,                                                             \
@@ -811,18 +815,6 @@ static inline void rtio_block_pool_free(struct rtio_block_pool *pool, void *buf,
 static inline uint32_t rtio_sqe_acquirable(struct rtio *r)
 {
 	return r->sqe_pool->pool_free;
-}
-
-/**
- * @brief Count of likely, but not gauranteed, consumable completion queue events
- *
- * @param r RTIO context
- *
- * @return Likely count of consumable completion queue events
- */
-static inline uint32_t rtio_cqe_consumable(struct rtio *r)
-{
-	return (r->cqe_pool->pool_size - r->cqe_pool->pool_free);
 }
 
 /**
@@ -1148,6 +1140,8 @@ static inline void rtio_cqe_submit(struct rtio *r, int result, void *userdata, u
 		cqe->flags = flags;
 		rtio_cqe_produce(r, cqe);
 	}
+
+	atomic_inc(&r->cq_count);
 #ifdef CONFIG_RTIO_SUBMIT_SEM
 	if (r->submit_count > 0) {
 		r->submit_count--;
@@ -1425,6 +1419,8 @@ static inline int z_impl_rtio_submit(struct rtio *r, uint32_t wait_count)
 		k_sem_reset(r->submit_sem);
 		r->submit_count = wait_count;
 	}
+#else
+	uintptr_t cq_count = atomic_get(&r->cq_count) + wait_count;
 #endif
 
 	/* Submit the queue to the executor which consumes submissions
@@ -1444,7 +1440,7 @@ static inline int z_impl_rtio_submit(struct rtio *r, uint32_t wait_count)
 			 "semaphore was reset or timed out while waiting on completions!");
 	}
 #else
-	while (rtio_cqe_consumable(r) < wait_count) {
+	while (atomic_get(&r->cq_count) < cq_count) {
 		Z_SPIN_DELAY(10);
 		k_yield();
 	}
