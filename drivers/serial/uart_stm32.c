@@ -1853,13 +1853,13 @@ static int uart_stm32_init(const struct device *dev)
 
 	LL_USART_Disable(config->usart);
 
-	if (!device_is_ready(data->reset.dev)) {
+	if (!device_is_ready(config->reset.dev)) {
 		LOG_ERR("reset controller not ready");
 		return -ENODEV;
 	}
 
 	/* Reset UART to default state using RCC */
-	(void)reset_line_toggle_dt(&data->reset);
+	(void)reset_line_toggle_dt(&config->reset);
 
 	/* TX/RX direction */
 	LL_USART_SetTransferDirection(config->usart,
@@ -2143,6 +2143,7 @@ static const struct stm32_pclken pclken_##index[] =			\
 									\
 static const struct uart_stm32_config uart_stm32_cfg_##index = {	\
 	.usart = (USART_TypeDef *)DT_INST_REG_ADDR(index),		\
+	.reset = RESET_DT_SPEC_GET(DT_DRV_INST(index)),			\
 	.pclken = pclken_##index,					\
 	.pclk_len = DT_INST_NUM_CLOCKS(index),				\
 	.hw_flow_control = DT_INST_PROP(index, hw_flow_control),	\
@@ -2162,7 +2163,6 @@ static const struct uart_stm32_config uart_stm32_cfg_##index = {	\
 									\
 static struct uart_stm32_data uart_stm32_data_##index = {		\
 	.baud_rate = DT_INST_PROP(index, current_speed),		\
-	.reset = RESET_DT_SPEC_GET(DT_DRV_INST(index)),			\
 	UART_DMA_CHANNEL(index, rx, RX, PERIPHERAL, MEMORY)		\
 	UART_DMA_CHANNEL(index, tx, TX, MEMORY, PERIPHERAL)		\
 };									\
