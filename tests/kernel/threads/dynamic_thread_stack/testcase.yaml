@@ -33,6 +33,7 @@ tests:
       # 010
       - CONFIG_DYNAMIC_THREAD_POOL_SIZE=0
       - CONFIG_DYNAMIC_THREAD_ALLOC=y
+      - CONFIG_DYNAMIC_THREAD_PREFER_ALLOC=y
       - CONFIG_USERSPACE=n
   kernel.threads.dynamic_thread.stack.no_pool.alloc.user:
     tags: userspace
@@ -40,6 +41,7 @@ tests:
       # 011
       - CONFIG_DYNAMIC_THREAD_POOL_SIZE=0
       - CONFIG_DYNAMIC_THREAD_ALLOC=y
+      - CONFIG_DYNAMIC_THREAD_PREFER_ALLOC=y
       - CONFIG_USERSPACE=y
   kernel.threads.dynamic_thread.stack.pool.no_alloc.no_user:
     extra_configs:
@@ -57,6 +59,7 @@ tests:
   kernel.threads.dynamic_thread.stack.pool.alloc.no_user:
     extra_configs:
       # 110
+      - CONFIG_DYNAMIC_THREAD_PREFER_ALLOC=y
       - CONFIG_DYNAMIC_THREAD_POOL_SIZE=2
       - CONFIG_DYNAMIC_THREAD_ALLOC=y
       - CONFIG_USERSPACE=n
@@ -64,6 +67,7 @@ tests:
     tags: userspace
     extra_configs:
       # 111
+      - CONFIG_DYNAMIC_THREAD_PREFER_ALLOC=y
       - CONFIG_DYNAMIC_THREAD_POOL_SIZE=2
       - CONFIG_DYNAMIC_THREAD_ALLOC=y
       - CONFIG_USERSPACE=y
