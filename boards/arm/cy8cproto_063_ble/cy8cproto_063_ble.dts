@@ -13,7 +13,7 @@
 
 / {
 	model = "CY8CPROTO-063-BLE PSoC™ 6 BLE Prototyping Kit";
-	compatible = "cy8cproto_063_ble", "PSoC6";
+	compatible = "cypress,cy8cproto_063_ble", "cypress,PSoC6";
 
 	aliases {
 		uart-5 = &uart5;
