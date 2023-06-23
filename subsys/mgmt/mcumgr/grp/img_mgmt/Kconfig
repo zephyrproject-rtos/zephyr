@@ -46,7 +46,7 @@ endif
 config MCUMGR_GRP_IMG_UPDATABLE_IMAGE_NUMBER
 	int "Number of supported images"
 	default UPDATEABLE_IMAGE_NUMBER
-	range 1 2
+	range 1 3
 	help
 	  Sets how many application images are supported (pairs of secondary and primary slots).
 	  Setting this to 2 requires MCUMGR_TRANSPORT_NETBUF_SIZE to be at least 512b.
