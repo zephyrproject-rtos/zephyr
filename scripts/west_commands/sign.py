@@ -430,7 +430,9 @@ class RimageSigner(Signer):
         if not target:
             log.die('rimage target not defined')
 
+        # TODO: make this a new sign.py --bootloader option.
         if target in ('imx8', 'imx8m'):
+            bootloader = None
             kernel = str(b / 'zephyr' / 'zephyr.elf')
             out_bin = str(b / 'zephyr' / 'zephyr.ri')
             out_xman = str(b / 'zephyr' / 'zephyr.ri.xman')
@@ -516,7 +518,7 @@ class RimageSigner(Signer):
         if not args.quiet and args.verbose:
             sign_base += ['-v'] * args.verbose
 
-        components = [ ] if (target in ('imx8', 'imx8m')) else [ bootloader ]
+        components = [ ] if bootloader is None else [ bootloader ]
         components += [ kernel ]
 
         sign_config_extra_args = config_get_words(command.config, 'rimage.extra-args', [])
