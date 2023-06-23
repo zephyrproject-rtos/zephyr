@@ -319,4 +319,11 @@ config SOC_GECKO_HAS_HFRCO_FREQRANGE
 	  If disabled, indicates that configuration of HFRCO frequency for corresponding SOC
 	  is not supported via this field. This is the case for e.g. efm32hg, efm32wg series.
 
+config SOC_GECKO_USE_RAIL
+	bool "Use RAIL (Radio Abstraction Interface Layer)"
+	help
+	  RAIL (Radio Abstraction Interface Layer) is a library needed to use the EFR radio
+	  hardware. This option enable the proper set of features to allow to properly compile
+	  with the RAIL blob.
+
 endif # SOC_FAMILY_EXX32
