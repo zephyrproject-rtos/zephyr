@@ -25,6 +25,13 @@
 		compatible = "mmio-sram";
 		reg = <0x10000000 0x2C0000>;
 	};
+
+	soc {
+		pinctrl: pin-controller@40010000 {
+			compatible = "ambiq,apollo4-pinctrl";
+			reg = <0x40010000 0x800>;
+		};
+	};
 };
 
 &nvic {
