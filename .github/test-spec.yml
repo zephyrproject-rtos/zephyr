@@ -60,6 +60,9 @@
 "CI-crypto-test":
   - "**/*"
 
+"CI-fem-test":
+  - "**/*"
+
 "CI-rs-test":
   - "**/*"
 
