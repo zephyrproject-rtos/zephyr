@@ -17,7 +17,7 @@ if(CONFIG_NATIVE_APPLICATION)
 	zephyr_library_sources(
 		posix_core.c
 		nsi_compat/nsi_compat.c
-		nsi_compat/nce.c
+		${ZEPHYR_BASE}/scripts/native_simulator/common/src/nce.c
 	)
 else()
 	zephyr_library_sources(
