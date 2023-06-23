@@ -302,13 +302,13 @@ img_mgmt_get_other_slot(void)
 	switch (slot) {
 	case 1:
 		return 0;
-#if CONFIG_MCUMGR_GRP_IMG_UPDATABLE_IMAGE_NUMBER
+#if CONFIG_MCUMGR_GRP_IMG_UPDATABLE_IMAGE_NUMBER > 2
 	case 2:
 		return 3;
 	case 3:
 		return 2;
-	}
 #endif
+	}
 	return 1;
 }
 
