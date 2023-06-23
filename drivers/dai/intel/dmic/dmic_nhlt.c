@@ -15,7 +15,7 @@ LOG_MODULE_REGISTER(LOG_DOMAIN);
 #include <zephyr/drivers/dai.h>
 #include <adsp_clk.h>
 #include "dmic.h"
-#include "dmic_regs.h"
+#include <dmic_regs.h>
 
 extern struct dai_dmic_global_shared dai_dmic_global;
 

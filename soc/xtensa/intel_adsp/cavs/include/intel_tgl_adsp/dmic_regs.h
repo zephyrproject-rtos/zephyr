@@ -36,18 +36,8 @@
 /* Interrupt on New Timestamp Enable */
 #define TS_LOCAL_TSCTRL_IONTE		BIT(30)
 
-#ifdef CONFIG_SOC_SERIES_INTEL_ACE
-/* DMA Type Select */
-#define TS_LOCAL_TSCTRL_DMATS		GENMASK(13, 12)
-
-/* Capture Link Select - select which link wall clock to time stamp. */
-#define TS_LOCAL_TSCTRL_CLNKS		GENMASK(11, 10)
-#else	/* CONFIG_SOC_SERIES_INTEL_ACE */
-
 /* Automatically capture the local timestamp when the stream is started. */
 #define TS_LOCAL_TSCTRL_SIP		BIT(8)
-
-#endif	/* CONFIG_SOC_SERIES_INTEL_ACE */
 
 /* Hammock Harbor Time Stamp Enable */
 #define TS_LOCAL_TSCTRL_HHTSE		BIT(7)
@@ -217,11 +207,7 @@
 
 
 /* This field decides the packer mode */
-#ifdef CONFIG_SOC_SERIES_INTEL_ACE
-#define OUTCONTROL_IPM				GENMASK(17, 15)
-#else
 #define OUTCONTROL_IPM				GENMASK(17, 16)
-#endif
 
 /* Source decimator for 1st stereo/mono data placeholder. */
 #define OUTCONTROL_IPM_SOURCE_1			GENMASK(14, 13)
@@ -257,12 +243,7 @@
 #define OUTSTAT_ROR				BIT(27)
 
  /* FIFO Level (FL): Current FIFO Level in the Asynchronous FIFO. */
-#ifdef CONFIG_SOC_SERIES_INTEL_ACE
-#define OUTSTAT_FL_MASK				GENMASK(8, 0)
-#else
 #define OUTSTAT_FL_MASK				GENMASK(6, 0)
-#endif
-
 
 /* CIC_CONTROL bits */
 
@@ -284,10 +265,8 @@
 /* Mute currently active microphones */
 #define CIC_CONTROL_MIC_MUTE			BIT(1)
 
-#ifndef CONFIG_SOC_SERIES_INTEL_ACE
 /* When set, the microphone input operates in the stereo mode */
 #define CIC_CONTROL_STEREO_MODE			BIT(0)
-#endif
 
 
 /* CIC_CONFIG masks */
@@ -308,21 +287,10 @@
  */
 #define MIC_CONTROL_PDM_CLKDIV			GENMASK(15, 8)
 
-#ifndef CONFIG_SOC_SERIES_INTEL_ACE
-/* Selects the delay of the clocks output for microphones to align the sampling point of the data
- * and clock edge.
- */
 #define MIC_CONTROL_PDM_SKEW			GENMASK(7, 4)
-#endif
+
 /* Inverts the clock edge that will be used to sample microphone data stream. */
 #define MIC_CONTROL_CLK_EDGE			BIT(3)
-
-#ifdef CONFIG_SOC_SERIES_INTEL_ACE
-/* Indicates the PDM DMIC clock for the decimator will be sourced from external component instead
- * of using the PDM DMIC clock generator output
- */
-#define MIC_CONTROL_SLAVE_MODE			BIT(2)
-#endif
 
 /* Enable clock on microphone B (Right) */
 #define MIC_CONTROL_PDM_EN_B			BIT(1)
@@ -330,30 +298,11 @@
 /* Enable clock on microphone A (left) */
 #define MIC_CONTROL_PDM_EN_A			BIT(0)
 
-
-/* FIR_CONTROL_A bits */
-
-#ifdef CONFIG_SOC_SERIES_INTEL_ACE
-/* Enable the power gating capability of the coefficient. */
-#define FIR_CONTROL_CRFPGE			BIT(28)
-
-/* Power gating capability of the left channel */
-#define FIR_CONTROL_LDRFPGE			BIT(29)
-
-/* Enable the power gating capability of the right channel */
-#define FIR_CONTROL_RDRFPGE			BIT(30)
-#endif
-
 /* FIR decimation filter is started. */
 #define FIR_CONTROL_START			BIT(7)
 
 /* Array microphone control bit for synchronous start of multiple interfaces. */
 #define FIR_CONTROL_ARRAY_START_EN		BIT(6)
-
-#ifdef CONFIG_SOC_SERIES_INTEL_ACE
-/* Periodic synchronous start control of multiple PDM */
-#define FIR_CONTROL_PERIODIC_START_EN		BIT(5)
-#endif
 
 /* Automatic DC compensation enable */
 #define FIR_CONTROL_DCCOMP			BIT(4)
@@ -418,10 +367,6 @@
 #define GLOBAL_CAP_FIR_B_RF_DEPTH		GENMASK(31, 24)
 
 
-/* Digital Mic Shim Registers */
-#ifdef CONFIG_SOC_INTEL_ACE20_LNL
-#include "dmic_regs_ace2x.h"
-#else /* All other CAVS and ACE platforms */
 /* DMIC Link Control
  *
  * This register controls the specific link.
@@ -434,28 +379,10 @@
 /* Current Power Active */
 #define DMICLCTL_CPA				BIT(8)
 
-#ifdef CONFIG_SOC_SERIES_INTEL_ACE
-/* Owner Select */
-#define DMICLCTL_OSEL				GENMASK(25, 24)
-
-/* Force Clock Gating */
-#define DMICLCTL_FCG				BIT(26)
-
-/* Master Link Clock Select */
-#define DMICLCTL_MLCS				GENMASK(29, 27)
-#endif	/* CONFIG_SOC_SERIES_INTEL_ACE */
-
 /* Dynamic Clock Gating Disable */
 #define DMICLCTL_DCGD				BIT(30)
 
 /* Idle Clock Gating Disable */
 #define DMICLCTL_ICGD				BIT(31)
-
-
-#ifdef CONFIG_SOC_SERIES_INTEL_ACE
-#include "dmic_regs_ace1x.h"
-#endif	/* CONFIG_SOC_SERIES_INTEL_ACE */
-
-#endif	/* !CONFIG_SOC_INTEL_ACE20_LNL */
 
 #endif /* !__INTEL_DAI_DRIVER_DMIC_REGS_H__ */

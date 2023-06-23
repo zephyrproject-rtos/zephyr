@@ -127,4 +127,31 @@
 /* Stereo */
 #define DMICPyPDMSM_STR				BIT(5)
 
+/* DMIC Link Control
+ *
+ * This register controls the specific link.
+ */
+#define DMICLCTL_OFFSET		0x04
+
+/* Set Power Active */
+#define DMICLCTL_SPA				BIT(0)
+
+/* Current Power Active */
+#define DMICLCTL_CPA				BIT(8)
+
+/* Owner Select */
+#define DMICLCTL_OSEL				GENMASK(25, 24)
+
+/* Force Clock Gating */
+#define DMICLCTL_FCG				BIT(26)
+
+/* Master Link Clock Select */
+#define DMICLCTL_MLCS				GENMASK(29, 27)
+
+/* Dynamic Clock Gating Disable */
+#define DMICLCTL_DCGD				BIT(30)
+
+/* Idle Clock Gating Disable */
+#define DMICLCTL_ICGD				BIT(31)
+
 #endif /* ! __INTEL_DAI_DRIVER_DMIC_REGS_ACE1X_H__ */
