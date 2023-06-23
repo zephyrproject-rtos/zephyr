@@ -160,6 +160,7 @@ struct adc_stm32_cfg {
 	ADC_TypeDef *base;
 	void (*irq_cfg_func)(void);
 	struct stm32_pclken pclken;
+	uint32_t clk_prescaler;
 	const struct pinctrl_dev_config *pcfg;
 	const uint16_t sampling_time_table[STM32_NB_SAMPLING_TIME];
 	int8_t num_sampling_time_common_channels;
@@ -1388,6 +1389,29 @@ static const struct adc_driver_api api_stm32_driver_api = {
 	.ref_internal = STM32_ADC_VREF_MV, /* VREF is usually connected to VDD */
 };
 
+#if defined(CONFIG_SOC_SERIES_STM32F0X)
+/* LL_ADC_CLOCK_ASYNC_DIV1 doesn't exist in F0 LL. Define it here. */
+#define LL_ADC_CLOCK_ASYNC_DIV1 LL_ADC_CLOCK_ASYNC
+#endif
+
+/* st_prescaler property requires 2 elements : clock ASYNC/SYNC and DIV */
+#define ADC_STM32_CLOCK(x)	DT_INST_PROP(x, st_adc_clock_source)
+#define ADC_STM32_DIV(x)	DT_INST_PROP(x, st_adc_prescaler)
+
+/* Macro to set the prefix depending on the 1st element: check if it is SYNC or ASYNC */
+#define ADC_STM32_CLOCK_PREFIX(x)			\
+	COND_CODE_1(IS_EQ(ADC_STM32_CLOCK(x), SYNC),	\
+		(LL_ADC_CLOCK_SYNC_PCLK_DIV),		\
+		(LL_ADC_CLOCK_ASYNC_DIV))
+
+/* Concat prefix (1st element) and DIV value (2nd element) of st,adc-prescaler */
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc)
+#define ADC_STM32_DT_PRESC(x)	0
+#else
+#define ADC_STM32_DT_PRESC(x)	\
+	_CONCAT(ADC_STM32_CLOCK_PREFIX(x), ADC_STM32_DIV(x))
+#endif
+
 #ifdef CONFIG_ADC_STM32_SHARED_IRQS
 
 bool adc_stm32_is_irq_active(ADC_TypeDef *adc)
@@ -1500,6 +1524,7 @@ static const struct adc_stm32_cfg adc_stm32_cfg_##index = {		\
 		.enr = DT_INST_CLOCKS_CELL(index, bits),		\
 		.bus = DT_INST_CLOCKS_CELL(index, bus),			\
 	},								\
+	.clk_prescaler = ADC_STM32_DT_PRESC(index),			\
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),			\
 	.temp_channel = DT_INST_PROP_OR(index, temp_channel, 0xFF),	\
 	.vref_channel = DT_INST_PROP_OR(index, vref_channel, 0xFF),	\
