@@ -142,6 +142,50 @@ typedef uint8_t i2s_fmt_t;
  */
 #define I2S_FMT_DATA_FORMAT_RIGHT_JUSTIFIED (4 << I2S_FMT_DATA_FORMAT_SHIFT)
 
+/**
+ * @brief Time Division Multiplexed (TDM) mode A Data Format.
+ *
+ * Serial data is transmitted with the MSB first. Both Frame Synchronization
+ * (WS) and Serial Data (SD) signals are sampled on the rising edge of the
+ * clock (SCK) signal. The bits within the data word are left justified.
+ * The frame sync is one clock cycle long.
+ *
+ * Mode A: the beginning of the channel data is delayed one period of SCK
+ * following the rising edge of the WS signal.
+ *
+ *          .-. .-. .-. .-. .-. .-. .-. .-. .-. .-. .-. .-. .-. .-. .-. .-. .-.
+ *     SCK -' '-' '-' '-' '-' '-' '-' '-' '-' '-' '-' '-' '-' '-' '-' '-' '-' '-
+ *            .---.                                                           .-
+ *     WS  ---'   '-----------------------------------------------------------'
+ *         ---.---.---.---.---.---.---.---.---.---.---.---.---.---.---.---.---.-
+ *     SD     |   |MSB|   |...|   |LSB|MSB|   |...|   |LSB|MSB|   |...|   |LSB|
+ *         ---'---'---'---'---'---'---'---'---'---'---'---'---'---'---'---'---'-
+ *                | Channel 1         | Channel 2         | Ch 3    | Ch n    |
+ */
+#define I2S_FMT_DATA_FORMAT_TDM_MODE_A (5 << I2S_FMT_DATA_FORMAT_SHIFT)
+
+/**
+ * @brief Time Division Multiplexed (TDM) mode B Data Format.
+ *
+ * Serial data is transmitted with the MSB first. Both Frame Synchronization
+ * (WS) and Serial Data (SD) signals are sampled on the rising edge of the
+ * clock (SCK) signal. The bits within the data word are left justified.
+ * The frame sync is one clock cycle long.
+ *
+ * Mode B: the beginning of the channel data is aligned with the rising edge
+ * of the WS signal.
+ *
+ *          .-. .-. .-. .-. .-. .-. .-. .-. .-. .-. .-. .-. .-. .-. .-. .-. .-.
+ *     SCK -' '-' '-' '-' '-' '-' '-' '-' '-' '-' '-' '-' '-' '-' '-' '-' '-' '-
+ *            .---.                                                       .---.
+ *     WS  ---'   '-------------------------------------------------------'   '-
+ *         ---.---.---.---.---.---.---.---.---.---.---.---.---.---.---.---.---.-
+ *     SD     |MSB|   |...|   |LSB|MSB|   |...|   |LSB|MSB|   |...|   |LSB|   |
+ *         ---'---'---'---'---'---'---'---'---'---'---'---'---'---'---'---'---'-
+ *            | Channel 1         | Channel 2         | Ch 3    | Ch n    |
+ */
+#define I2S_FMT_DATA_FORMAT_TDM_MODE_B (6 << I2S_FMT_DATA_FORMAT_SHIFT)
+
 /** Send MSB first */
 #define I2S_FMT_DATA_ORDER_MSB              (0 << 3)
 /** Send LSB first */
