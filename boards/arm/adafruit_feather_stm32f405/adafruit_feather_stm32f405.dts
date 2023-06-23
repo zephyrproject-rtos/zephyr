@@ -11,7 +11,7 @@
 
 / {
 	model = "Adafruit Feather STM32F405 Express";
-	compatible = "st,adafruit_feather_stm32f405", "st,stm32f405";
+	compatible = "adafruit,adafruit_feather_stm32f405", "st,stm32f405";
 
 	chosen {
 		zephyr,console = &usart3;
