@@ -25,6 +25,11 @@
 #define RTC_LABEL rtc1
 #define RTC_CH_COUNT RTC1_CC_NUM
 
+#define RTC_PRETICK (IS_ENABLED(CONFIG_SOC_NRF53_RTC_PRETICK) && \
+		     IS_ENABLED(CONFIG_SOC_NRF5340_CPUNET))
+
+BUILD_ASSERT(!RTC_PRETICK || !(RTC_PRETICK && (CONFIG_NRF_RTC_TIMER_USER_CHAN_COUNT > 0)),
+		"Cannot use user channels when RTC pretick is used");
 BUILD_ASSERT(CHAN_COUNT <= RTC_CH_COUNT, "Not enough compare channels");
 /* Ensure that counter driver for RTC1 is not enabled. */
 BUILD_ASSERT(DT_NODE_HAS_STATUS(DT_NODELABEL(RTC_LABEL), disabled),
@@ -43,6 +48,9 @@ BUILD_ASSERT(DT_NODE_HAS_STATUS(DT_NODELABEL(RTC_LABEL), disabled),
 #define ANCHOR_RANGE_START (COUNTER_SPAN / 8)
 #define ANCHOR_RANGE_END (7 * COUNTER_SPAN / 8)
 #define TARGET_TIME_INVALID (UINT64_MAX)
+
+extern void rtc_pretick_rtc1_cc0_set_hook(uint32_t val);
+extern void rtc_pretick_rtc1_isr_hook(void);
 
 static volatile uint32_t overflow_cnt;
 static volatile uint64_t anchor;
@@ -260,7 +268,7 @@ static int set_alarm(int32_t chan, uint32_t req_cc, bool exact)
 	 * This never happens when the written value is N+3. Use 3 cycles as
 	 * the nearest possible scheduling then.
 	 */
-	enum { MIN_CYCLES_FROM_NOW = 3 };
+	enum { MIN_CYCLES_FROM_NOW = RTC_PRETICK ? 4 : 3 };
 	uint32_t cc_val = req_cc;
 	uint32_t cc_inc = MIN_CYCLES_FROM_NOW;
 
@@ -277,6 +285,9 @@ static int set_alarm(int32_t chan, uint32_t req_cc, bool exact)
 	for (;;) {
 		uint32_t now;
 
+		if (RTC_PRETICK) {
+			rtc_pretick_rtc1_cc0_set_hook(cc_val);
+		}
 		set_comparator(chan, cc_val);
 		/* Enable event routing after the required CC value was set.
 		 * Even though the above operation may get repeated (see below),
@@ -558,6 +569,10 @@ static void process_channel(int32_t chan)
 void rtc_nrf_isr(const void *arg)
 {
 	ARG_UNUSED(arg);
+
+	if (RTC_PRETICK) {
+		rtc_pretick_rtc1_isr_hook();
+	}
 
 	if (nrf_rtc_int_enable_check(RTC, NRF_RTC_INT_OVERFLOW_MASK) &&
 	    nrf_rtc_event_check(RTC, NRF_RTC_EVENT_OVERFLOW)) {
