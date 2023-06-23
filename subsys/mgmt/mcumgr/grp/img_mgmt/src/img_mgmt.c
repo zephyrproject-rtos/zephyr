@@ -40,13 +40,40 @@
 #endif
 
 #define FIXED_PARTITION_IS_RUNNING_APP_PARTITION(label)	\
-	(FIXED_PARTITION_OFFSET(label) == CONFIG_FLASH_LOAD_OFFSET)
+	 (FIXED_PARTITION_OFFSET(label) == CONFIG_FLASH_LOAD_OFFSET)
 
-#if !(FIXED_PARTITION_IS_RUNNING_APP_PARTITION(slot0_partition) ||	\
-	FIXED_PARTITION_IS_RUNNING_APP_PARTITION(slot0_ns_partition) ||	\
-	FIXED_PARTITION_IS_RUNNING_APP_PARTITION(slot1_partition) ||	\
-	FIXED_PARTITION_IS_RUNNING_APP_PARTITION(slot2_partition))
-#error "Unsupported chosen zephyr,code-partition for boot application."
+#if FIXED_PARTITION_EXISTS(slot0_partition)
+#if FIXED_PARTITION_IS_RUNNING_APP_PARTITION(slot0_partition)
+#define NUMBER_OF_ACTIVE_IMAGE 0
+#endif
+#endif
+
+#if !defined(NUMBER_OF_ACTIVE_IMAGE) && FIXED_PARTITION_EXISTS(slot0_ns_partition)
+#if FIXED_PARTITION_IS_RUNNING_APP_PARTITION(slot0_ns_partition)
+#define NUMBER_OF_ACTIVE_IMAGE 0
+#endif
+#endif
+
+#if !defined(NUMBER_OF_ACTIVE_IMAGE) && FIXED_PARTITION_EXISTS(slot1_partition)
+#if FIXED_PARTITION_IS_RUNNING_APP_PARTITION(slot1_partition)
+#define NUMBER_OF_ACTIVE_IMAGE 0
+#endif
+#endif
+
+#if !defined(NUMBER_OF_ACTIVE_IMAGE) && FIXED_PARTITION_EXISTS(slot2_partition)
+#if FIXED_PARTITION_IS_RUNNING_APP_PARTITION(slot2_partition)
+#define NUMBER_OF_ACTIVE_IMAGE 1
+#endif
+#endif
+
+#if !defined(NUMBER_OF_ACTIVE_IMAGE) && FIXED_PARTITION_EXISTS(slot3_partition)
+#if FIXED_PARTITION_IS_RUNNING_APP_PARTITION(slot3_partition)
+#define NUMBER_OF_ACTIVE_IMAGE 1
+#endif
+#endif
+
+#ifndef NUMBER_OF_ACTIVE_IMAGE
+#error "Unsupported code parition is set as active application partition"
 #endif
 
 LOG_MODULE_REGISTER(mcumgr_img_grp, CONFIG_MCUMGR_GRP_IMG_LOG_LEVEL);
@@ -124,14 +151,7 @@ int img_mgmt_active_slot(int image)
 
 int img_mgmt_active_image(void)
 {
-#if CONFIG_MCUMGR_GRP_IMG_UPDATABLE_IMAGE_NUMBER == 2
-	if (!(FIXED_PARTITION_IS_RUNNING_APP_PARTITION(slot0_partition) ||
-	      FIXED_PARTITION_IS_RUNNING_APP_PARTITION(slot0_ns_partition) ||
-	      FIXED_PARTITION_IS_RUNNING_APP_PARTITION(slot1_partition))) {
-		return 1;
-	}
-#endif
-	return 0;
+	return NUMBER_OF_ACTIVE_IMAGE;
 }
 
 /*
