@@ -1,0 +1,11 @@
+# Copyright (c) 2023 Centralp
+# SPDX-License-Identifier: Apache-2.0
+
+config AUDIO_TAS6422DAC
+	bool "TAS6422 audio amplifier support"
+	default y
+	depends on DT_HAS_TI_TAS6422DAC_ENABLED
+	select I2C
+	depends on GPIO
+	help
+	  Enable TAS6422 support on the selected board
