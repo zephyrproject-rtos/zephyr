@@ -777,7 +777,6 @@ static const struct dma_mcux_lpc_config dma_##n##_config = {		\
 			    &dma_mcux_lpc_api);				\
 									\
 	DMA_MCUX_LPC_CONFIG_FUNC(n)					\
-									\
 	DMA_MCUX_LPC_INIT_CFG(n);
 
 DT_INST_FOREACH_STATUS_OKAY(DMA_INIT)
