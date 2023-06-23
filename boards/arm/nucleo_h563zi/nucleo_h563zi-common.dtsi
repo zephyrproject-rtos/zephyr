@@ -141,6 +141,8 @@
 &adc1 {
 	pinctrl-0 = <&adc1_inp3_pa6 &adc1_inp15_pa3>; /* Zio A0, Zio D35 */
 	pinctrl-names = "default";
+	st,adc-clock-source = <ASYNC>;
+	st,adc-prescaler = <6>;
 	status = "okay";
 };
 
