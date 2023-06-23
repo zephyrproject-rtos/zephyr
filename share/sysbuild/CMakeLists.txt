@@ -86,7 +86,6 @@ endwhile()
 
 sysbuild_module_call(PRE_CMAKE MODULES ${SYSBUILD_MODULE_NAMES} IMAGES ${IMAGES})
 foreach(image ${IMAGES})
-  include(image_config.cmake)
   ExternalZephyrProject_Cmake(APPLICATION ${image})
 endforeach()
 sysbuild_module_call(POST_CMAKE MODULES ${SYSBUILD_MODULE_NAMES} IMAGES ${IMAGES})
