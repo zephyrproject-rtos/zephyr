@@ -64,4 +64,14 @@
 	STM32_ADC(resolution, reg_val, STM32_ADC_RES_MASK, STM32_ADC_RES_SHIFT, \
 		  STM32_ADC_RES_REG)
 
+/**
+ * @name STM32 ADC clock source
+ * This value is to set <st,adc-clock-source>
+ * One or both values may not apply to all series. Refer to the RefMan
+ * @{
+ */
+#define SYNC  1
+#define ASYNC 2
+/** @} */
+
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_STM32_ADC_H_ */
