@@ -22,6 +22,8 @@
 struct uart_stm32_config {
 	/* USART instance */
 	USART_TypeDef *usart;
+	/* Reset controller device configuration */
+	const struct reset_dt_spec reset;
 	/* clock subsystem driving this peripheral */
 	const struct stm32_pclken *pclken;
 	/* number of clock subsystems */
@@ -84,8 +86,6 @@ struct uart_stm32_data {
 	uint32_t baud_rate;
 	/* clock device */
 	const struct device *clock;
-	/* Reset controller device configuration */
-	const struct reset_dt_spec reset;
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	uart_irq_callback_user_data_t user_cb;
 	void *user_data;
