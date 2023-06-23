@@ -161,4 +161,6 @@ source "drivers/flash/Kconfig.andes"
 
 source "drivers/flash/Kconfig.ambiq"
 
+source "drivers/flash/Kconfig.nrf_rram"
+
 endif # FLASH
