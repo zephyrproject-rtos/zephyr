@@ -82,6 +82,10 @@
 #define STM32_FLASH_PRESCALER	STM32_CORE_PRESCALER
 #endif
 
+#define STM32_ADC_PRESCALER	DT_PROP(DT_NODELABEL(rcc), adc_prescaler)
+#define STM32_ADC12_PRESCALER	DT_PROP(DT_NODELABEL(rcc), adc12_prescaler)
+#define STM32_ADC34_PRESCALER	DT_PROP(DT_NODELABEL(rcc), adc34_prescaler)
+
 /** STM2H7 specifics RCC dividers */
 #define STM32_D1CPRE	DT_PROP(DT_NODELABEL(rcc), d1cpre)
 #define STM32_HPRE	DT_PROP(DT_NODELABEL(rcc), hpre)
