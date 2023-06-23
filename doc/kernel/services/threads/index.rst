@@ -263,9 +263,6 @@ ranges:
 * cooperative threads: (-:kconfig:option:`CONFIG_NUM_COOP_PRIORITIES`) to -1
 * preemptive threads: 0 to (:kconfig:option:`CONFIG_NUM_PREEMPT_PRIORITIES` - 1)
 
-.. image:: priorities.svg
-   :align: center
-
 For example, configuring 5 cooperative priorities and 10 preemptive priorities
 results in the ranges -5 to -1 and 0 to 9, respectively.
 
