@@ -10,7 +10,7 @@
 
 / {
 	model = "intel_adsp_ace15_mtpm";
-	compatible = "intel";
+	compatible = "intel,intel_adsp_ace20_lnl";
 
 	aliases {
 		dma0 = &lpgpdma0;
