@@ -11,7 +11,7 @@
 
 / {
 	model = "cy8cproto_062_4343w with an Cypress PSoC™ 6 SoC";
-	compatible = "cy8cproto_062_4343w", "PSoC6";
+	compatible = "cypress,cy8cproto_062_4343w", "cypress,PSoC6";
 
 	aliases {
 		uart-5 = &uart5;
