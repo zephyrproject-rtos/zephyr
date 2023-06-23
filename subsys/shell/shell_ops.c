@@ -367,7 +367,29 @@ static void print_prompt(const struct shell *sh)
 
 void z_shell_print_cmd(const struct shell *sh)
 {
-	z_shell_raw_fprintf(sh->fprintf_ctx, "%s", sh->ctx->cmd_buff);
+	int beg_offset = 0;
+	int end_offset = 0;
+	int cmd_width = z_shell_strlen(sh->ctx->cmd_buff);
+	int adjust = sh->ctx->vt100_ctx.cons.name_len;
+	char ch;
+
+	while (cmd_width > sh->ctx->vt100_ctx.cons.terminal_wid - adjust) {
+		end_offset += sh->ctx->vt100_ctx.cons.terminal_wid - adjust;
+		ch = sh->ctx->cmd_buff[end_offset];
+		sh->ctx->cmd_buff[end_offset] = '\0';
+
+		z_shell_raw_fprintf(sh->fprintf_ctx, "%s\n",
+				&sh->ctx->cmd_buff[beg_offset]);
+
+		sh->ctx->cmd_buff[end_offset] = ch;
+		cmd_width -= (sh->ctx->vt100_ctx.cons.terminal_wid - adjust);
+		beg_offset = end_offset;
+		adjust = 0;
+	}
+	if (cmd_width > 0) {
+		z_shell_raw_fprintf(sh->fprintf_ctx, "%s",
+				&sh->ctx->cmd_buff[beg_offset]);
+	}
 }
 
 void z_shell_print_prompt_and_cmd(const struct shell *sh)
