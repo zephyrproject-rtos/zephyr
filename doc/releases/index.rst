@@ -52,6 +52,8 @@ Supported Releases
 +=================+================+===============+
 | `Zephyr 2.7.5`_ | 2023-06-01     | 2024-08-31    |
 +-----------------+----------------+---------------+
+| `Zephyr 3.4.0`_ | 2023-06-16     | 2024-02-29    |
++-----------------+----------------+---------------+
 | `Zephyr 3.3.0`_ | 2023-02-19     | 2023-10-31    |
 +-----------------+----------------+---------------+
 | `Zephyr 3.2.0`_ | 2022-09-30     | 2023-06-30    |
@@ -95,3 +97,4 @@ specific release and can be found at https://docs.zephyrproject.org/.
 .. _`Zephyr 2.7.5`: https://docs.zephyrproject.org/2.7.5/
 .. _`Zephyr 3.2.0`: https://docs.zephyrproject.org/3.2.0/
 .. _`Zephyr 3.3.0`: https://docs.zephyrproject.org/3.3.0/
+.. _`Zephyr 3.4.0`: https://docs.zephyrproject.org/3.4.0/
