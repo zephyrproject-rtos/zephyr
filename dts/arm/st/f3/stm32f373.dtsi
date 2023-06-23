@@ -11,6 +11,14 @@
 	soc {
 		compatible = "st,stm32f373", "st,stm32f3", "simple-bus";
 
+		rcc: rcc@40021000 {
+			/*
+			 * Use the STM32F1 compatible that define the same ADC
+			 * prescaler in the RCC register
+			 */
+			compatible = "st,stm32f1-rcc";
+		};
+
 		pinctrl: pin-controller@48000000 {
 			gpioe: gpio@48001000 {
 				compatible = "st,stm32-gpio";
