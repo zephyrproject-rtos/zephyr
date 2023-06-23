@@ -117,9 +117,29 @@ endif()
 
 
 #  west sign
+
+# Warning: most of this code is for now duplicated in
+# soc/xtensa/nxp_adsp/CMakeLists.txt
+
 add_custom_target(zephyr.ri ALL
   DEPENDS ${CMAKE_BINARY_DIR}/zephyr/zephyr.ri
 )
+
+# Copy/normalize any weird ${CONFIG_KERNEL_BIN_NAME}.elf to zephyr.elf
+# if different.
+#
+# zephyr.elf is not used by sign.py when a boot.mod bootloader is used
+# BUT others do expect a zephyr.elf file: smex, debuggers, CI and other
+# automation, etc. (Ab)using Kconfig to merely rename a file seems like
+# a bad idea because it breaks build directory expectations.
+if(NOT CONFIG_KERNEL_BIN_NAME STREQUAL "zephyr")
+  add_custom_command(OUTPUT  ${CMAKE_BINARY_DIR}/zephyr/zephyr.elf
+    DEPENDS ${CMAKE_BINARY_DIR}/zephyr/${KERNEL_ELF_NAME}
+    COMMAND ${CMAKE_COMMAND} -E copy
+    ${CMAKE_BINARY_DIR}/zephyr/${KERNEL_ELF_NAME}
+    ${CMAKE_BINARY_DIR}/zephyr/zephyr.elf
+)
+endif()
 
 # If some of your board(s) need to override default rimage parameters
 # then you can define WEST_SIGN_OPTS in  boards/my/board/board.cmake.
@@ -146,4 +166,6 @@ add_custom_command(
   COMMAND  west sign --if-tool-available --tool rimage --build-dir ${CMAKE_BINARY_DIR} ${WEST_SIGN_OPTS}
   DEPENDS gen_modules
           ${CMAKE_BINARY_DIR}/zephyr/boot.mod ${CMAKE_BINARY_DIR}/zephyr/main.mod
+          # Not necessary but see above
+          ${CMAKE_BINARY_DIR}/zephyr/zephyr.elf
 )
