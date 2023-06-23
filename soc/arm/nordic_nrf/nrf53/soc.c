@@ -18,6 +18,8 @@
 #include <zephyr/logging/log.h>
 #include <nrf_erratas.h>
 #include <hal/nrf_power.h>
+#include <hal/nrf_ipc.h>
+#include <helpers/nrfx_gppi.h>
 #if defined(CONFIG_SOC_NRF5340_CPUAPP)
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/devicetree.h>
@@ -31,12 +33,17 @@
 #if defined(CONFIG_PM_S2RAM)
 #include <hal/nrf_vmc.h>
 #endif
+#include <hal/nrf_wdt.h>
+#include <hal/nrf_rtc.h>
 #include <soc_secure.h>
 
 #include <cmsis_core.h>
 
 #define PIN_XL1 0
 #define PIN_XL2 1
+
+#define RTC1_PRETICK_CC_CHAN 1
+#define RTC1_PRETICK_OVERFLOW_CHAN 2
 
 #if defined(CONFIG_SOC_NRF_GPIO_FORWARDER_FOR_NRF5340)
 #define GPIOS_PSEL_BY_IDX(node_id, prop, idx) \
@@ -137,10 +144,163 @@ bool z_arm_on_enter_cpu_idle(void)
 		suppress_message = true;
 	}
 #endif
+#if defined(CONFIG_SOC_NRF53_RTC_PRETICK) && defined(CONFIG_SOC_NRF5340_CPUNET)
+	if (ok_to_sleep) {
+		NRF_IPC->PUBLISH_RECEIVE[CONFIG_SOC_NRF53_RTC_PRETICK_IPC_CH_TO_NET] |=
+			IPC_PUBLISH_RECEIVE_EN_Msk;
+		if (!nrf_rtc_event_check(NRF_RTC0, NRF_RTC_CHANNEL_EVENT_ADDR(3)) &&
+		    !nrf_rtc_event_check(NRF_RTC1, NRF_RTC_CHANNEL_EVENT_ADDR(RTC1_PRETICK_CC_CHAN)) &&
+		    !nrf_rtc_event_check(NRF_RTC1, NRF_RTC_CHANNEL_EVENT_ADDR(RTC1_PRETICK_OVERFLOW_CHAN))) {
+			NRF_WDT->TASKS_STOP = 1;
+			/* Check if any event did not occur after we checked for
+			 * stopping condition. If yes, we might have stopped WDT
+			 * when it should be running. Restart it.
+			 */
+			if (nrf_rtc_event_check(NRF_RTC0, NRF_RTC_CHANNEL_EVENT_ADDR(3)) ||
+			    nrf_rtc_event_check(NRF_RTC1, NRF_RTC_CHANNEL_EVENT_ADDR(RTC1_PRETICK_CC_CHAN)) ||
+			    nrf_rtc_event_check(NRF_RTC1, NRF_RTC_CHANNEL_EVENT_ADDR(RTC1_PRETICK_OVERFLOW_CHAN))) {
+				NRF_WDT->TASKS_START = 1;
+			}
+		}
+	}
+#endif
 
 	return ok_to_sleep;
 }
 #endif /* CONFIG_SOC_NRF53_ANOMALY_160_WORKAROUND */
+
+#if CONFIG_SOC_NRF53_RTC_PRETICK
+#ifdef CONFIG_SOC_NRF5340_CPUAPP
+/* RTC pretick - application core part. */
+static int rtc_pretick_cpuapp_init(void)
+{
+	uint8_t ch;
+	nrfx_err_t err;
+	nrf_ipc_event_t ipc_event =
+		nrf_ipc_receive_event_get(CONFIG_SOC_NRF53_RTC_PRETICK_IPC_CH_FROM_NET);
+	nrf_ipc_task_t ipc_task =
+		nrf_ipc_send_task_get(CONFIG_SOC_NRF53_RTC_PRETICK_IPC_CH_TO_NET);
+	uint32_t task_ipc = nrf_ipc_task_address_get(NRF_IPC, ipc_task);
+	uint32_t evt_ipc = nrf_ipc_event_address_get(NRF_IPC, ipc_event);
+
+	err = nrfx_gppi_channel_alloc(&ch);
+	if (err != NRFX_SUCCESS) {
+		return -ENOMEM;
+	}
+
+	nrf_ipc_receive_config_set(NRF_IPC, CONFIG_SOC_NRF53_RTC_PRETICK_IPC_CH_FROM_NET,
+				   BIT(CONFIG_SOC_NRF53_RTC_PRETICK_IPC_CH_FROM_NET));
+	nrf_ipc_send_config_set(NRF_IPC, CONFIG_SOC_NRF53_RTC_PRETICK_IPC_CH_TO_NET,
+				   BIT(CONFIG_SOC_NRF53_RTC_PRETICK_IPC_CH_TO_NET));
+
+	nrfx_gppi_task_endpoint_setup(ch, task_ipc);
+	nrfx_gppi_event_endpoint_setup(ch, evt_ipc);
+	nrfx_gppi_channels_enable(BIT(ch));
+
+	return 0;
+}
+#else /* CONFIG_SOC_NRF5340_CPUNET */
+
+static void rtc_pretick_rtc_isr_hook(void)
+{
+	NRF_IPC->PUBLISH_RECEIVE[CONFIG_SOC_NRF53_RTC_PRETICK_IPC_CH_TO_NET] &=
+			~IPC_PUBLISH_RECEIVE_EN_Msk;
+}
+
+void rtc_pretick_rtc0_isr_hook(void)
+{
+	rtc_pretick_rtc_isr_hook();
+}
+
+void rtc_pretick_rtc1_cc0_set_hook(uint32_t val)
+{
+	nrf_rtc_cc_set(NRF_RTC1, RTC1_PRETICK_CC_CHAN, val - 1);
+}
+
+void rtc_pretick_rtc1_isr_hook(void)
+{
+	rtc_pretick_rtc_isr_hook();
+
+	if (nrf_rtc_event_check(NRF_RTC1, NRF_RTC_EVENT_OVERFLOW)) {
+		if (IS_ENABLED(CONFIG_SOC_NRF53_RTC_PRETICK)) {
+			nrf_rtc_event_clear(NRF_RTC1,
+					    NRF_RTC_CHANNEL_EVENT_ADDR(RTC1_PRETICK_OVERFLOW_CHAN));
+		}
+	}
+	if (nrf_rtc_event_check(NRF_RTC1, NRF_RTC_EVENT_COMPARE_0)) {
+		if (IS_ENABLED(CONFIG_SOC_NRF53_RTC_PRETICK)) {
+			nrf_rtc_event_clear(NRF_RTC1, NRF_RTC_CHANNEL_EVENT_ADDR(RTC1_PRETICK_CC_CHAN));
+		}
+	}
+}
+
+static int rtc_pretick_cpunet_init(void)
+{
+	uint8_t ppi_ch;
+	nrf_ipc_task_t ipc_task =
+		nrf_ipc_send_task_get(CONFIG_SOC_NRF53_RTC_PRETICK_IPC_CH_FROM_NET);
+	nrf_ipc_event_t ipc_event =
+		nrf_ipc_receive_event_get(CONFIG_SOC_NRF53_RTC_PRETICK_IPC_CH_TO_NET);
+	uint32_t task_ipc = nrf_ipc_task_address_get(NRF_IPC, ipc_task);
+	uint32_t evt_ipc = nrf_ipc_event_address_get(NRF_IPC, ipc_event);
+	uint32_t task_wdt = nrf_wdt_task_address_get(NRF_WDT, NRF_WDT_TASK_START);
+	uint32_t evt_mpsl_cc = nrf_rtc_event_address_get(NRF_RTC0, NRF_RTC_EVENT_COMPARE_3);
+	uint32_t evt_cc = nrf_rtc_event_address_get(NRF_RTC1,
+				NRF_RTC_CHANNEL_EVENT_ADDR(RTC1_PRETICK_CC_CHAN));
+	uint32_t evt_overflow = nrf_rtc_event_address_get(NRF_RTC1,
+				NRF_RTC_CHANNEL_EVENT_ADDR(RTC1_PRETICK_OVERFLOW_CHAN));
+
+	/* Configure Watchdog to allow stopping. */
+	nrf_wdt_behaviour_set(NRF_WDT, WDT_CONFIG_STOPEN_Msk | BIT(4));
+	*((volatile uint32_t *)0x41203120) = 0x14;
+
+	/* Configure IPC */
+	nrf_ipc_receive_config_set(NRF_IPC, CONFIG_SOC_NRF53_RTC_PRETICK_IPC_CH_TO_NET,
+				   BIT(CONFIG_SOC_NRF53_RTC_PRETICK_IPC_CH_TO_NET));
+	nrf_ipc_send_config_set(NRF_IPC, CONFIG_SOC_NRF53_RTC_PRETICK_IPC_CH_FROM_NET,
+				   BIT(CONFIG_SOC_NRF53_RTC_PRETICK_IPC_CH_FROM_NET));
+
+	/* Allocate PPI channel for RTC Compare event publishers that starts WDT. */
+	nrfx_err_t err = nrfx_gppi_channel_alloc(&ppi_ch);
+
+	if (err != NRFX_SUCCESS) {
+		return -ENOMEM;
+	}
+
+	/* Setup a PPI connection between RTC "pretick" events and IPC task. */
+	if (IS_ENABLED(CONFIG_BT_LL_SOFTDEVICE)) {
+		nrfx_gppi_event_endpoint_setup(ppi_ch, evt_mpsl_cc);
+	}
+	nrfx_gppi_event_endpoint_setup(ppi_ch, evt_cc);
+	nrfx_gppi_event_endpoint_setup(ppi_ch, evt_overflow);
+	nrfx_gppi_task_endpoint_setup(ppi_ch, task_ipc);
+	nrfx_gppi_event_endpoint_setup(ppi_ch, evt_ipc);
+	nrfx_gppi_task_endpoint_setup(ppi_ch, task_wdt);
+	nrfx_gppi_channels_enable(BIT(ppi_ch));
+
+	nrf_rtc_event_enable(NRF_RTC1, NRF_RTC_CHANNEL_INT_MASK(RTC1_PRETICK_CC_CHAN));
+	nrf_rtc_event_enable(NRF_RTC1, NRF_RTC_CHANNEL_INT_MASK(RTC1_PRETICK_OVERFLOW_CHAN));
+
+	nrf_rtc_event_clear(NRF_RTC1, NRF_RTC_CHANNEL_EVENT_ADDR(RTC1_PRETICK_CC_CHAN));
+	nrf_rtc_event_clear(NRF_RTC1, NRF_RTC_CHANNEL_EVENT_ADDR(RTC1_PRETICK_OVERFLOW_CHAN));
+	/* Set event 1 tick before overflow. */
+	nrf_rtc_cc_set(NRF_RTC1, RTC1_PRETICK_OVERFLOW_CHAN, 0x00FFFFFF);
+
+	return 0;
+}
+#endif /* CONFIG_SOC_NRF5340_CPUNET */
+
+static int rtc_pretick_init(void)
+{
+	ARG_UNUSED(unused);
+#ifdef CONFIG_SOC_NRF5340_CPUAPP
+	return rtc_pretick_cpuapp_init();
+#else
+	return rtc_pretick_cpunet_init();
+#endif
+}
+#endif /* CONFIG_SOC_NRF53_RTC_PRETICK */
+
 
 static int nordicsemi_nrf53_init(void)
 {
@@ -242,3 +402,7 @@ void arch_busy_wait(uint32_t time_us)
 }
 
 SYS_INIT(nordicsemi_nrf53_init, PRE_KERNEL_1, 0);
+
+#ifdef CONFIG_SOC_NRF53_RTC_PRETICK
+SYS_INIT(rtc_pretick_init, POST_KERNEL, 0);
+#endif
