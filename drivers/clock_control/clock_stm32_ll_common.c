@@ -842,6 +842,15 @@ int stm32_clock_control_init(const struct device *dev)
 #if DT_NODE_HAS_PROP(DT_NODELABEL(rcc), ahb4_prescaler)
 	LL_RCC_SetAHB4Prescaler(ahb_prescaler(STM32_AHB4_PRESCALER));
 #endif
+#if DT_NODE_HAS_PROP(DT_NODELABEL(rcc), adc_prescaler)
+	LL_RCC_SetADCClockSource(adc_prescaler(STM32_ADC_PRESCALER));
+#endif
+#if DT_NODE_HAS_PROP(DT_NODELABEL(rcc), adc12_prescaler)
+	LL_RCC_SetADCClockSource(adc_prescaler(STM32_ADC12_PRESCALER));
+#endif
+#if DT_NODE_HAS_PROP(DT_NODELABEL(rcc), adc34_prescaler)
+	LL_RCC_SetADCClockSource(adc_prescaler(STM32_ADC34_PRESCALER));
+#endif
 
 	/* configure MCO1/MCO2 based on Kconfig */
 	stm32_clock_control_mco_init();
