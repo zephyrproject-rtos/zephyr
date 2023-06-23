@@ -583,6 +583,18 @@ static int i2s_mcux_config(const struct device *dev, enum i2s_dir dir,
 				 word_size_bits, num_words,
 				 dev_cfg->tx_channel);
 		break;
+	case I2S_FMT_DATA_FORMAT_TDM_MODE_A:
+		SAI_GetTDMConfig(&config, kSAI_FrameSyncLenOneBitClk,
+				 word_size_bits, num_words,
+				 dev_cfg->tx_channel);
+		config.frameSync.frameSyncEarly = true;
+		break;
+	case I2S_FMT_DATA_FORMAT_TDM_MODE_B:
+		SAI_GetTDMConfig(&config, kSAI_FrameSyncLenOneBitClk,
+				 word_size_bits, num_words,
+				 dev_cfg->tx_channel);
+		config.frameSync.frameSyncEarly = false;
+		break;
 	default:
 		LOG_ERR("Unsupported I2S data format");
 		if (dir == I2S_DIR_TX) {
@@ -654,6 +666,10 @@ static int i2s_mcux_config(const struct device *dev, enum i2s_dir dir,
 	}
 
 	config.frameSync.frameSyncWidth = (uint8_t)word_size_bits;
+	if (((i2s_cfg->format & I2S_FMT_DATA_FORMAT_MASK) == I2S_FMT_DATA_FORMAT_TDM_MODE_A) ||
+	    ((i2s_cfg->format & I2S_FMT_DATA_FORMAT_MASK) == I2S_FMT_DATA_FORMAT_TDM_MODE_B)) {
+		config.frameSync.frameSyncWidth = 1;
+	}
 
 	if (dir == I2S_DIR_TX) {
 		memcpy(&dev_data->tx.cfg, i2s_cfg, sizeof(struct i2s_config));
