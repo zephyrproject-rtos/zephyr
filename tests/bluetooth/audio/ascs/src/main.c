@@ -421,3 +421,61 @@ ZTEST_F(ascs_test_suite, test_release_stream_pair_on_acl_disconnection_server_te
 
 	bt_bap_unicast_server_unregister_cb(&mock_bap_unicast_server_cb);
 }
+
+ZTEST_F(ascs_test_suite, test_recv_in_streaming_state)
+{
+	struct bt_bap_stream *stream = &fixture->stream;
+	struct bt_conn *conn = &fixture->conn;
+	uint8_t ase_id = fixture->ase_snk.id;
+	struct bt_iso_recv_info info = {
+		.seq_num = 1,
+		.flags = BT_ISO_FLAGS_VALID,
+	};
+	struct bt_iso_chan *chan;
+	struct net_buf buf;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_BT_ASCS_ASE_SNK);
+
+	bt_bap_unicast_server_register_cb(&mock_bap_unicast_server_cb);
+
+	test_preamble_state_streaming(conn, ase_id, stream, &chan, false);
+
+	chan->ops->recv(chan, &info, &buf);
+
+	/* Verification */
+	expect_bt_bap_stream_ops_recv_called_once(stream, &info, &buf);
+
+	bt_bap_unicast_server_unregister_cb(&mock_bap_unicast_server_cb);
+}
+
+ZTEST_F(ascs_test_suite, test_recv_in_enabling_state)
+{
+	struct bt_bap_stream *stream = &fixture->stream;
+	struct bt_conn *conn = &fixture->conn;
+	uint8_t ase_id = fixture->ase_snk.id;
+	struct bt_iso_recv_info info = {
+		.seq_num = 1,
+		.flags = BT_ISO_FLAGS_VALID,
+	};
+	struct bt_iso_chan *chan;
+	struct net_buf buf;
+	int err;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_BT_ASCS_ASE_SNK);
+
+	bt_bap_unicast_server_register_cb(&mock_bap_unicast_server_cb);
+
+	test_preamble_state_enabling(conn, ase_id, stream);
+
+	err = mock_bt_iso_accept(conn, 0x01, 0x01, &chan);
+	zassert_equal(0, err, "Failed to connect iso: err %d", err);
+
+	test_mocks_reset();
+
+	chan->ops->recv(chan, &info, &buf);
+
+	/* Verification */
+	expect_bt_bap_stream_ops_recv_not_called();
+
+	bt_bap_unicast_server_unregister_cb(&mock_bap_unicast_server_cb);
+}
