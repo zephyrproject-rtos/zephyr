@@ -151,8 +151,8 @@ multiple processes.
     pthread_cond_signal(),yes
     pthread_cond_timedwait(),yes
     pthread_cond_wait(),yes
-    pthread_condattr_destroy(),
-    pthread_condattr_init(),
+    pthread_condattr_destroy(),yes
+    pthread_condattr_init(),yes
     pthread_create(),yes
     pthread_detach(),yes
     pthread_equal(),
