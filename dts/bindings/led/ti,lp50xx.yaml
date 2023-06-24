@@ -1,10 +1,6 @@
 # Copyright (c) 2020 Seagate Technology LLC
 # SPDX-License-Identifier: Apache-2.0
 
-description: TI LP503x LED controller node
-
-compatible: "ti,lp503x"
-
 include: ["i2c-device.yaml", "led-controller.yaml"]
 
 properties:
