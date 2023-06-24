@@ -481,6 +481,7 @@ powervr	PowerVR (deprecated, use img)
 primux	Primux Trading, S.L.
 probox2	PROBOX2 (by W2COMP Co., Ltd.)
 prt	Protonic Holland
+ptc	Princeton Technology Corp.
 pulsedlight	PulsedLight, Inc
 purism	Purism, SPC
 qca	Qualcomm Atheros, Inc.
