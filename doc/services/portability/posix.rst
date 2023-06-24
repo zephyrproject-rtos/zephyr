@@ -167,8 +167,8 @@ multiple processes.
     pthread_mutex_lock(),yes
     pthread_mutex_trylock(),yes
     pthread_mutex_unlock(),yes
-    pthread_mutexattr_destroy(),
-    pthread_mutexattr_init(),
+    pthread_mutexattr_destroy(),yes
+    pthread_mutexattr_init(),yes
     pthread_once(),yes
     pthread_self(),yes
     pthread_setcancelstate(),yes
