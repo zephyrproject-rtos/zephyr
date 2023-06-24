@@ -78,7 +78,7 @@
 
 	/* TI LP5030 LED controller connected to I2C1. */
 	led_controller_0: lp5030@30 {
-		compatible = "ti,lp5030", "ti,lp503x";
+		compatible = "ti,lp5030";
 		reg = <0x30>;
 
 		led0: led_0 {
