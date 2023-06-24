@@ -671,6 +671,8 @@ Release Notes:
   status: maintained
   maintainers:
     - thedjnK
+  collaborators:
+    - xingrz
   files:
     - include/zephyr/drivers/auxdisplay.h
     - drivers/auxdisplay/*
