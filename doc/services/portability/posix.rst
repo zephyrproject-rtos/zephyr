@@ -430,7 +430,7 @@ POSIX_DEVICE_IO
     read(),yes
     scanf(),
     setbuf(),
-    etvbuf(),
+    setvbuf(),
     stderr,yes
     stdin,yes
     stdout,yes
