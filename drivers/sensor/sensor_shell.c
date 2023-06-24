@@ -10,6 +10,7 @@
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/sensor.h>
+#include <zephyr/kernel.h>
 #include <zephyr/rtio/rtio.h>
 #include <zephyr/shell/shell.h>
 #include <zephyr/sys/iterable_sections.h>
@@ -153,6 +154,9 @@ enum dynamic_command_context {
 };
 
 static enum dynamic_command_context current_cmd_ctx = NONE;
+
+/* Mutex for accessing shared RTIO/IODEV data structures */
+K_MUTEX_DEFINE(cmd_get_mutex);
 
 /* Crate a single common config for one-shot reading */
 static enum sensor_channel iodev_sensor_shell_channels[SENSOR_CHAN_ALL];
@@ -299,28 +303,32 @@ static void sensor_shell_processing_callback(int result, uint8_t *buf, uint32_t 
 static int cmd_get_sensor(const struct shell *sh, size_t argc, char *argv[])
 {
 	const struct device *dev;
+	int count = 0;
 	int err;
+
+	err = k_mutex_lock(&cmd_get_mutex, K_NO_WAIT);
+	if (err < 0) {
+		shell_error(sh, "Another sensor reading in progress");
+		return err;
+	}
 
 	dev = device_get_binding(argv[1]);
 	if (dev == NULL) {
 		shell_error(sh, "Device unknown (%s)", argv[1]);
+		k_mutex_unlock(&cmd_get_mutex);
 		return -ENODEV;
 	}
 
 	if (argc == 2) {
 		/* read all channels */
-		int count = 0;
-
 		for (int i = 0; i < ARRAY_SIZE(iodev_sensor_shell_channels); ++i) {
 			if (SENSOR_CHANNEL_3_AXIS(i)) {
 				continue;
 			}
 			iodev_sensor_shell_channels[count++] = i;
 		}
-		iodev_sensor_shell_read_config.count = count;
 	} else {
 		/* read specific channels */
-		iodev_sensor_shell_read_config.count = 0;
 		for (int i = 2; i < argc; ++i) {
 			int chan = parse_named_int(argv[i], sensor_channel_name,
 						   ARRAY_SIZE(sensor_channel_name));
@@ -329,16 +337,17 @@ static int cmd_get_sensor(const struct shell *sh, size_t argc, char *argv[])
 				shell_error(sh, "Failed to read channel (%s)", argv[i]);
 				continue;
 			}
-			iodev_sensor_shell_channels[iodev_sensor_shell_read_config.count++] =
-				chan;
+			iodev_sensor_shell_channels[count++] = chan;
 		}
 	}
 
-	if (iodev_sensor_shell_read_config.count == 0) {
+	if (count == 0) {
 		shell_error(sh, "No channels to read, bailing");
+		k_mutex_unlock(&cmd_get_mutex);
 		return -EINVAL;
 	}
 	iodev_sensor_shell_read_config.sensor = dev;
+	iodev_sensor_shell_read_config.count = count;
 
 	struct sensor_shell_processing_context ctx = {
 		.dev = dev,
@@ -349,6 +358,8 @@ static int cmd_get_sensor(const struct shell *sh, size_t argc, char *argv[])
 		shell_error(sh, "Failed to read sensor: %d", err);
 	}
 	sensor_processing_with_callback(&sensor_read_rtio, sensor_shell_processing_callback);
+
+	k_mutex_unlock(&cmd_get_mutex);
 
 	return 0;
 }
