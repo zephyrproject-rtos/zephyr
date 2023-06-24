@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2020 Seagate Technology LLC
+ * Copyright (c) 2022 Grinn
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,7 +10,7 @@
 &i2c0 {
 	/* TI LP5030 LED controller connected to I2C0. */
 	lp5030@30 {
-		compatible = "ti,lp5030", "ti,lp503x";
+		compatible = "ti,lp5030";
 		reg = <0x30>;
 
 		led_0 {

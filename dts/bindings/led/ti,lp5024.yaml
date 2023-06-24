@@ -1,0 +1,5 @@
+description: Texas Instruments LP5024 I2C LED controller node
+
+compatible: ti,lp5024
+
+include: ti,lp50xx.yaml
