@@ -270,6 +270,7 @@ static void handle_wifi_twt_event(struct net_mgmt_event_callback *cb)
 	if (resp->resp_status == WIFI_TWT_RESP_RECEIVED) {
 		print(context.sh, SHELL_NORMAL, "TWT response: %s\n",
 		      wifi_twt_setup_cmd2str[resp->setup_cmd]);
+		print(context.sh, SHELL_NORMAL, "== TWT negotiated parameters ==\n");
 		print_twt_params(resp->dialog_token,
 				 resp->flow_id,
 				 resp->negotiation_type,
