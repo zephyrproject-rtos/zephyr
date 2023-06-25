@@ -1,0 +1,19 @@
+# Copyright 2023 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: i.MX CCM (Clock Controller Module) Rev 3 IP node
+
+compatible: "nxp,imx-ccm-rev3"
+
+include: [clock-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: false
+
+  "#clock-cells":
+    const: 2
+
+clock-cells:
+  - name
+  - freq

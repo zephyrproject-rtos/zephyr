@@ -74,4 +74,6 @@ source "drivers/clock_control/Kconfig.smartbond"
 
 source "drivers/clock_control/Kconfig.numaker"
 
+source "drivers/clock_control/Kconfig.mcux_ccm_rev3"
+
 endif # CLOCK_CONTROL
