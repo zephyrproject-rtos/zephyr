@@ -267,6 +267,12 @@ static void handle_wifi_twt_event(struct net_mgmt_event_callback *cb)
 	const struct wifi_twt_params *resp =
 		(const struct wifi_twt_params *)cb->info;
 
+	if (resp->operation == WIFI_TWT_TEARDOWN) {
+		print(context.sh, SHELL_NORMAL, "TWT teardown received for flow ID %d\n",
+		      resp->flow_id);
+		return;
+	}
+
 	if (resp->resp_status == WIFI_TWT_RESP_RECEIVED) {
 		print(context.sh, SHELL_NORMAL, "TWT response: %s\n",
 		      wifi_twt_setup_cmd2str[resp->setup_cmd]);
