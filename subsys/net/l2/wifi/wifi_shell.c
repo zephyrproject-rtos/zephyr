@@ -837,7 +837,7 @@ static int cmd_wifi_twt_teardown(const struct shell *sh, size_t argc,
 		return -ENOEXEC;
 	}
 
-	shell_fprintf(sh, SHELL_NORMAL, "TWT operation %s with dg: %d, flow_id: %d requested\n",
+	shell_fprintf(sh, SHELL_NORMAL, "TWT operation %s with dg: %d, flow_id: %d success\n",
 		wifi_twt_operation2str[params.operation],
 		params.dialog_token, params.flow_id);
 
@@ -864,7 +864,7 @@ static int cmd_wifi_twt_teardown_all(const struct shell *sh, size_t argc,
 		return -ENOEXEC;
 	}
 
-	shell_fprintf(sh, SHELL_NORMAL, "TWT operation %s all flows\n",
+	shell_fprintf(sh, SHELL_NORMAL, "TWT operation %s all flows success\n",
 		wifi_twt_operation2str[params.operation]);
 
 	return 0;
