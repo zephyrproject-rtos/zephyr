@@ -203,6 +203,8 @@ SWD transport, but it is also possible to use JTAG with the Olimex ARM-USB-OCD-H
 probe, for instance. For the latter, you should replace the file ``openocd.cfg``
 by ``openocd_olimex_jtag.cfg``, located in the board's support directory.
 
+The ``blackmagicprobe`` can also be used to program the device.
+
 Flashing
 ========
 
