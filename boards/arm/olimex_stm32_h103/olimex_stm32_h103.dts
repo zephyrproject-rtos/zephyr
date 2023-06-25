@@ -65,7 +65,7 @@
 	pinctrl-0 = <&usart1_tx_pa9 &usart1_rx_pa10>;
 	pinctrl-names = "default";
 	current-speed = <115200>;
-	status = "okay";
+	status = "disabled";
 };
 
 &usart2 {
@@ -79,19 +79,20 @@
 	pinctrl-0 = <&usart3_tx_remap1_pc10 &usart3_rx_remap1_pc11>;
 	pinctrl-names = "default";
 	current-speed = <115200>;
+	status = "disabled";
 };
 
 &i2c1 {
 	pinctrl-0 = <&i2c1_scl_pb6 &i2c1_sda_pb7>;
 	pinctrl-names = "default";
-	status = "okay";
+	status = "disabled";
 	clock-frequency = <I2C_BITRATE_FAST>;
 };
 
 &i2c2 {
 	pinctrl-0 = <&i2c2_scl_pb10 &i2c2_sda_pb11>;
 	pinctrl-names = "default";
-	status = "okay";
+	status = "disabled";
 	clock-frequency = <I2C_BITRATE_FAST>;
 };
 
@@ -99,35 +100,17 @@
 	pinctrl-0 = <&spi1_nss_master_pa4 &spi1_sck_master_pa5
 		      &spi1_miso_master_pa6 &spi1_mosi_master_pa7>;
 	pinctrl-names = "default";
-	status = "okay";
+	status = "disabled";
 };
 
 &spi2 {
 	pinctrl-0 = <&spi2_nss_master_pb12 &spi2_sck_master_pb13
 		     &spi2_miso_master_pb14 &spi2_mosi_master_pb15>;
 	pinctrl-names = "default";
-	status = "okay";
-};
-
-&timers1 {
-	st,prescaler = <10000>;
-	status = "okay";
-
-	pwm1: pwm {
-		status = "okay";
-		pinctrl-0 = <&tim1_ch1_pwm_out_pa8>;
-		pinctrl-names = "default";
-	};
+	status = "disabled";
 };
 
 &iwdg {
-	status = "okay";
-};
-
-&adc1 {
-	/* adc1_in14_pc4 is used to sense the USB voltage */
-	pinctrl-0 = <&adc1_in1_pa1 &adc1_in14_pc4>;
-	pinctrl-names = "default";
 	status = "okay";
 };
 
