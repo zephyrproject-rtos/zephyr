@@ -195,6 +195,17 @@
 			clock-frequency = <150000000>;
 		};
 
+		spi1: spi@20109000 {
+			compatible = "microchip,mpfs-spi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x20109000 0x1000>;
+			interrupt-parent = <&plic>;
+			interrupts = <55 1>;
+			status = "disabled";
+			clock-frequency = <150000000>;
+		};
+
 		gpio0: gpio@20120000 {
 			compatible = "microchip,mpfs-gpio";
 			reg = <0x20120000 0x1000>;
