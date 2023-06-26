@@ -28,4 +28,11 @@ config POWER_DOMAIN_INTEL_ADSP
 	help
 	  Include Intel ADSP power domain control mechanisms
 
+config POWER_DOMAIN_REGULATOR
+	bool "Regulator controlled power domain"
+	default y
+	depends on DT_HAS_POWER_DOMAIN_REGULATOR_ENABLED
+	depends on REGULATOR
+	depends on TIMEOUT_64BIT
+
 endif

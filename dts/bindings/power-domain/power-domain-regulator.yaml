@@ -1,0 +1,25 @@
+# Copyright (c) 2023 T-Mobile USA, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Regulator controlled power domain
+
+compatible: "power-domain-regulator"
+
+include: power-domain.yaml
+
+properties:
+  regulator:
+    type: phandle
+    required: true
+    description: |
+      Regulator node name.
+
+  startup-delay-us:
+    type: int
+    default: 0
+    description: Startup time, in microseconds
+
+  off-on-delay-us:
+    type: int
+    default: 0
+    description: Off delay time, in microseconds
