@@ -15,6 +15,9 @@ config MAIN_STACK_SIZE
 config IDLE_STACK_SIZE
 	default 1536
 
+config PRIVILEGED_STACK_SIZE
+	default 2048 if 64BIT
+
 config TEST_EXTRA_STACK_SIZE
 	default 1024
 
