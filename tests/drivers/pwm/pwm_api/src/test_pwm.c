@@ -47,6 +47,9 @@
 #elif DT_HAS_COMPAT_STATUS_OKAY(nxp_kinetis_ftm_pwm)
 #define PWM_DEV_NODE DT_INST(0, nxp_kinetis_ftm_pwm)
 
+#elif DT_HAS_COMPAT_STATUS_OKAY(intel_blinky_pwm)
+#define PWM_DEV_NODE DT_INST(0, intel_blinky_pwm)
+
 #else
 #error "Define a PWM device"
 #endif
@@ -56,6 +59,11 @@
 	defined(CONFIG_SOC_ESP32S3) || defined(CONFIG_SOC_ESP32C3)
 #define DEFAULT_PERIOD_CYCLE 1024
 #define DEFAULT_PULSE_CYCLE 512
+#define DEFAULT_PERIOD_NSEC 2000000
+#define DEFAULT_PULSE_NSEC 500000
+#elif DT_HAS_COMPAT_STATUS_OKAY(intel_blinky_pwm)
+#define DEFAULT_PERIOD_CYCLE 32768
+#define DEFAULT_PULSE_CYCLE 16384
 #define DEFAULT_PERIOD_NSEC 2000000
 #define DEFAULT_PULSE_NSEC 500000
 #else
