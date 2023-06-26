@@ -11,7 +11,7 @@
 
 / {
 	model = "IT82XX2 EV-Board";
-	compatible = "riscv,it82xx2-evb";
+	compatible = "ite,it82xx2-evb";
 
 	aliases {
 		i2c-0 = &i2c0;
