@@ -70,4 +70,6 @@ app=tests/bsim/bluetooth/host/security/ccc_update conf_file=prj_2.conf compile
 
 app=tests/bsim/bluetooth/host/id/settings compile
 
+app=tests/bsim/bluetooth/host/settings/cleanup compile
+
 wait_for_background_jobs
