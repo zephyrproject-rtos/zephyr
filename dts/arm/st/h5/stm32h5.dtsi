@@ -461,6 +461,17 @@
 			status = "disabled";
 		};
 
+		mac: ethernet@40028000 {
+			compatible = "st,stm32-ethernet";
+			reg = <0x40028000 0x8000>;
+			interrupts = <106 0>;
+			clock-names = "stmmaceth", "mac-clk-tx", "mac-clk-rx";
+			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x00080000>,
+				 <&rcc STM32_CLOCK_BUS_AHB1 0x00100000>,
+				 <&rcc STM32_CLOCK_BUS_AHB1 0x00200000>;
+			status = "disabled";
+		};
+
 		gpdma1: dma@40020000 {
 			compatible = "st,stm32u5-dma";
 			#dma-cells = <3>;
