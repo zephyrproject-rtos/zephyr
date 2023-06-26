@@ -8,6 +8,7 @@
 #include <st/f3/stm32f303Xe.dtsi>
 #include <st/f3/stm32f303r(d-e)tx-pinctrl.dtsi>
 #include "arduino_r3_connector.dtsi"
+#include "st_morpho_connector.dtsi"
 
 / {
 	model = "STMicroelectronics STM32F303RE-NUCLEO board";
