@@ -15,10 +15,10 @@ SECTION_FUNC(init, entry)
 	.option push
 	.option norelax
 
-#ifdef __nds_execit
+#ifdef CONFIG_SOC_ANDES_V5_EXECIT
 	/* Initialize EXECIT table */
 	la t0, _ITB_BASE_
-	csrw uitb, t0
+	csrw NDS_UITB, t0
 #endif
 
 #ifdef CONFIG_CACHE_ENABLE
