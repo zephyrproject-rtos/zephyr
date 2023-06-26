@@ -108,11 +108,12 @@ SECTIONS
 	}
 
     GROUP_START(ROMABLE_REGION)
-    __rom_region_start = ROM_BASE;
 
     SECTION_PROLOGUE(rom_start,,)
     {
 		. = ALIGN(16);
+		MPU_ALIGN(__rom_region_size);
+		__rom_region_start = .;
 /* Located in generated directory. This file is populated by calling
  * zephyr_linker_sources(ROM_START ...).
  */
@@ -405,9 +406,17 @@ SECTION_PROLOGUE(.last_section,,)
 #endif
 } GROUP_LINK_IN(ROMABLE_REGION)
 
+#ifndef CONFIG_RISCV_PMP
 /* To provide the image size as a const expression,
  * calculate this value here. */
 __rom_region_end = LOADADDR(.last_section) + SIZEOF(.last_section);
+#else
+SECTION_PROLOGUE(rom_mpu_padding,(NOLOAD),)
+{
+	MPU_ALIGN(__rom_region_size);
+	__rom_region_end = .;
+} GROUP_LINK_IN(ROMABLE_REGION)
+#endif /* !CONFIG_RISCV_PMP */
 __rom_region_size = __rom_region_end - __rom_region_start;
 #endif
 
