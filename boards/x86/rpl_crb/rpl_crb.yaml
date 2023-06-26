@@ -10,6 +10,7 @@ supported:
   - smbus
   - watchdog
   - rtc
+  - pwm
 testing:
   ignore_tags:
     - net
