@@ -51,9 +51,9 @@ ZTEST(lvgl_screen, test_add_delete_screen)
 
 	zassert_equal_ptr(act_screen, new_screen, "New screen not active");
 
-	lv_obj_del(new_screen);
-
 	lv_scr_load(default_screen);
+
+	lv_obj_del(new_screen);
 
 	lv_task_handler();
 
