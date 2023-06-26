@@ -1810,6 +1810,7 @@ bool net_if_ipv6_addr_rm(struct net_if *iface, const struct in6_addr *addr)
 {
 	bool ret = false;
 	struct net_if_ipv6 *ipv6;
+	struct in6_addr maddr;
 	int i;
 
 	NET_ASSERT(addr);
@@ -1821,9 +1822,9 @@ bool net_if_ipv6_addr_rm(struct net_if *iface, const struct in6_addr *addr)
 		goto out;
 	}
 
-	for (i = 0; i < NET_IF_MAX_IPV6_ADDR; i++) {
-		struct in6_addr maddr;
+	net_ipv6_addr_create_solicited_node(addr, &maddr);
 
+	for (i = 0; i < NET_IF_MAX_IPV6_ADDR; i++) {
 		if (!ipv6->unicast[i].is_used) {
 			continue;
 		}
@@ -1858,8 +1859,6 @@ bool net_if_ipv6_addr_rm(struct net_if *iface, const struct in6_addr *addr)
 #endif
 
 		ipv6->unicast[i].is_used = false;
-
-		net_ipv6_addr_create_solicited_node(addr, &maddr);
 
 		net_if_ipv6_maddr_rm(iface, &maddr);
 
