@@ -212,10 +212,10 @@ static void ascs_disconnect_stream_work_handler(struct k_work *work)
 		(void)k_work_cancel_delayable(&pair_ase->disconnect_work);
 	}
 
-
 	if (stream != NULL &&
 	    ep->iso != NULL &&
-	    ep->iso->chan.state == BT_ISO_STATE_CONNECTED) {
+	    (ep->iso->chan.state == BT_ISO_STATE_CONNECTED ||
+	     ep->iso->chan.state == BT_ISO_STATE_CONNECTING)) {
 		const int err = bt_bap_stream_disconnect(stream);
 
 		if (err != 0) {
