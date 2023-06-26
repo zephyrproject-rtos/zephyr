@@ -351,3 +351,37 @@ ZTEST(lwm2m_registry, test_strings)
 	ret = lwm2m_get_string(&path, buf, len);
 	zassert_equal(ret, -ENOMEM);
 }
+
+ZTEST(lwm2m_registry, test_null_strings)
+{
+	int ret;
+	char buf[256] = {0};
+	struct lwm2m_obj_path path = LWM2M_OBJ(0, 0, 0);
+
+	ret = lwm2m_register_post_write_callback(&path, post_write_cb);
+	zassert_equal(ret, 0);
+
+	callback_checker = 0;
+	ret = lwm2m_set_string(&path, "string");
+	zassert_equal(ret, 0);
+	zassert_equal(callback_checker, 0x02);
+	ret = lwm2m_get_string(&path, buf, sizeof(buf));
+	zassert_equal(ret, 0);
+	zassert_equal(strlen(buf), strlen("string"));
+
+	callback_checker = 0;
+	ret = lwm2m_set_string(&path, "");
+	zassert_equal(ret, 0);
+	zassert_equal(callback_checker, 0x02);
+	ret = lwm2m_get_string(&path, buf, sizeof(buf));
+	zassert_equal(ret, 0);
+	zassert_equal(strlen(buf), 0);
+
+	callback_checker = 0;
+	ret = lwm2m_set_opaque(&path, NULL, 0);
+	zassert_equal(ret, 0);
+	zassert_equal(callback_checker, 0x02);
+	ret = lwm2m_get_string(&path, buf, sizeof(buf));
+	zassert_equal(ret, 0);
+	zassert_equal(strlen(buf), 0);
+}
