@@ -545,23 +545,17 @@ static void ascs_ep_get_status_enable(struct bt_bap_ep *ep, struct net_buf_simpl
 		bt_audio_dir_str(ep->dir), ep->cig_id, ep->cis_id);
 }
 
-static int ascs_ep_get_status_idle(uint8_t ase_id, struct net_buf_simple *buf)
+static ssize_t ascs_ase_read_status_idle(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+					 void *buf, uint16_t len, uint16_t offset)
 {
-	struct bt_ascs_ase_status *status;
+	struct bt_ascs_ase_status status = {
+		.id = POINTER_TO_UINT(BT_AUDIO_CHRC_USER_DATA(attr)),
+		.state = BT_BAP_EP_STATE_IDLE,
+	};
 
-	if (!buf || ase_id > ASE_COUNT) {
-		return -EINVAL;
-	}
+	LOG_DBG("conn %p id 0x%02x", (void *)conn, status.id);
 
-	net_buf_simple_reset(buf);
-
-	status = net_buf_simple_add(buf, sizeof(*status));
-	status->id = ase_id;
-	status->state = BT_BAP_EP_STATE_IDLE;
-
-	LOG_DBG("id 0x%02x state %s", ase_id, bt_bap_ep_state_str(status->state));
-
-	return 0;
+	return bt_gatt_attr_read(conn, attr, buf, len, offset, &status, sizeof(status));
 }
 
 static int ascs_ep_get_status(struct bt_bap_ep *ep, struct net_buf_simple *buf)
@@ -1169,6 +1163,11 @@ static ssize_t ascs_ase_read(struct bt_conn *conn,
 		ase = ase_find(conn, ase_id);
 	}
 
+	/* If NULL, we haven't assigned an ASE, this also means that we are currently in IDLE */
+	if (ase == NULL) {
+		return ascs_ase_read_status_idle(conn, attr, buf, len, offset);
+	}
+
 	err = k_sem_take(&ase_buf_sem, ASE_BUF_SEM_TIMEOUT);
 	if (err != 0) {
 		LOG_DBG("Failed to take ase_buf_sem: %d", err);
@@ -1176,12 +1175,7 @@ static ssize_t ascs_ase_read(struct bt_conn *conn,
 		return BT_GATT_ERR(BT_ATT_ERR_INSUFFICIENT_RESOURCES);
 	}
 
-	/* If NULL, we haven't assigned an ASE, this also means that we are currently in IDLE */
-	if (!ase) {
-		ascs_ep_get_status_idle(ase_id, &ase_buf);
-	} else {
-		ascs_ep_get_status(&ase->ep, &ase_buf);
-	}
+	ascs_ep_get_status(&ase->ep, &ase_buf);
 
 	ret_val = bt_gatt_attr_read(conn, attr, buf, len, offset, ase_buf.data, ase_buf.len);
 
