@@ -1,0 +1,11 @@
+# Intel Blinky PWM configuration options
+
+# Copyright (c) 2023 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config PWM_INTEL_BLINKY
+	bool "Blinky PWM driver"
+	default y
+	depends on DT_HAS_INTEL_BLINKY_PWM_ENABLED
+	help
+	  Enable the INTEL PCH PWM driver found on Intel SoCs
