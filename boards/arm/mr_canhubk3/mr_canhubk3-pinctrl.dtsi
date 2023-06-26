@@ -267,6 +267,24 @@
 			pinmux = <PTB5_EMAC_MII_RMII_TXD0>,
 				<PTB4_EMAC_MII_RMII_TXD1>,
 				<PTE9_EMAC_MII_RMII_TX_EN>;
+		};
+	};
+
+	emios0_default: emios0_default {
+		group1 {
+			pinmux = <PTB12_EMIOS_0_CH0_X_O>, <PTB13_EMIOS_0_CH1_G_O>,
+				<PTB14_EMIOS_0_CH2_G_O>, <PTB15_EMIOS_0_CH3_G_O>,
+				<PTB16_EMIOS_0_CH4_G_O>, <PTB17_EMIOS_0_CH5_G_O>,
+				<PTA17_EMIOS_0_CH6_G_O>, <PTE7_EMIOS_0_CH7_G_O>,
+				<PTE14_EMIOS_0_CH19_Y_O>;
+			output-enable;
+		};
+	};
+
+	emios1_default: emios1_default {
+		group1 {
+			pinmux = <PTA27_EMIOS_1_CH10_H_O>,
+					<PTE12_EMIOS_1_CH5_H_O>;
 			output-enable;
 		};
 	};
