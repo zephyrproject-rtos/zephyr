@@ -8,6 +8,7 @@
 #include <st/f0/stm32f070Xb.dtsi>
 #include <st/f0/stm32f070rbtx-pinctrl.dtsi>
 #include "arduino_r3_connector.dtsi"
+#include "st_morpho_connector.dtsi"
 
 / {
 	model = "STMicroelectronics NUCLEO-F070RB board";
