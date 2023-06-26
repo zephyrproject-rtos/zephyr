@@ -143,7 +143,12 @@ void sys_clock_isr(void *arg)
 		 * We can assess if this is the case by inspecting COUNTFLAG.
 		 */
 
-		dticks = (cycle_count - announced_cycles) / CYC_PER_TICK;
+		if (cycle_count < announced_cycles) {
+			dticks = ((UINT32_MAX - announced_cycles) + cycle_count) / CYC_PER_TICK;
+		} else {
+			dticks = (cycle_count - announced_cycles) / CYC_PER_TICK;
+		}
+
 		announced_cycles += dticks * CYC_PER_TICK;
 		sys_clock_announce(dticks);
 	} else {
@@ -240,7 +245,13 @@ uint32_t sys_clock_elapsed(void)
 	}
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
-	uint32_t cyc = elapsed() + cycle_count - announced_cycles;
+	uint32_t cyc = elapsed();
+
+	if (cycle_count < announced_cycles) {
+		cyc += ((UINT32_MAX - announced_cycles) + cycle_count);
+	} else {
+		cyc += (cycle_count - announced_cycles);
+	}
 
 	k_spin_unlock(&lock, key);
 	return cyc / CYC_PER_TICK;
