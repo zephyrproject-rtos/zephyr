@@ -1,0 +1,14 @@
+# ST Microelectronics STM32L451XX MCU
+
+# Copyright (c) 2023 SILA Embedded Solutions GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_STM32L451XX
+
+config SOC
+	default "stm32l451xx"
+
+config NUM_IRQS
+	default 85
+
+endif # SOC_STM32L451XX
