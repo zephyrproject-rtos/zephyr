@@ -48,3 +48,6 @@ CONFIG_CACHE_ENABLE=y
 # Nocache memory options
 #CONFIG_SOC_ANDES_V5_PMA=y
 #CONFIG_NOCACHE_MEMORY=y
+
+# I/O Coherence Port options
+#CONFIG_SOC_ANDES_V5_IOCP=y
