@@ -114,4 +114,13 @@ config SOC_ANDES_V5_L2C
 	bool
 	default $(dt_compat_enabled,$(DT_ANDESTECH_L2C))
 
+config SOC_ANDES_V5_IOCP
+	bool "Andes V5 I/O Coherence Port (IOCP)"
+	depends on SOC_ANDES_V5_L2C
+	depends on CACHE_ENABLE
+	help
+		Support Andes V5 I/O Coherence Port to handle cache coherency
+		between cache and external non-caching master, such as DMA
+		controller.
+
 endif # SOC_SERIES_RISCV_ANDES_V5
