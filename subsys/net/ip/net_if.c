@@ -1811,7 +1811,7 @@ bool net_if_ipv6_addr_rm(struct net_if *iface, const struct in6_addr *addr)
 	bool ret = false;
 	struct net_if_ipv6 *ipv6;
 	struct in6_addr maddr;
-	int i;
+	int found = -1;
 
 	NET_ASSERT(addr);
 
@@ -1824,7 +1824,7 @@ bool net_if_ipv6_addr_rm(struct net_if *iface, const struct in6_addr *addr)
 
 	net_ipv6_addr_create_solicited_node(addr, &maddr);
 
-	for (i = 0; i < NET_IF_MAX_IPV6_ADDR; i++) {
+	for (int i = 0; i < NET_IF_MAX_IPV6_ADDR; i++) {
 		if (!ipv6->unicast[i].is_used) {
 			continue;
 		}
@@ -1834,12 +1834,17 @@ bool net_if_ipv6_addr_rm(struct net_if *iface, const struct in6_addr *addr)
 			continue;
 		}
 
-		if (!ipv6->unicast[i].is_infinite) {
+		found = i;
+		break;
+	}
+
+	if (found >= 0) {
+		if (!ipv6->unicast[found].is_infinite) {
 			k_mutex_lock(&lock, K_FOREVER);
 
 			sys_slist_find_and_remove(
 				&active_address_lifetime_timers,
-				&ipv6->unicast[i].lifetime.node);
+				&ipv6->unicast[found].lifetime.node);
 
 			if (sys_slist_is_empty(
 				    &active_address_lifetime_timers)) {
@@ -1853,18 +1858,19 @@ bool net_if_ipv6_addr_rm(struct net_if *iface, const struct in6_addr *addr)
 #if defined(CONFIG_NET_IPV6_DAD)
 		if (!net_if_flag_is_set(iface, NET_IF_IPV6_NO_ND)) {
 			k_mutex_lock(&lock, K_FOREVER);
-			sys_slist_find_and_remove(&active_dad_timers, &ipv6->unicast[i].dad_node);
+			sys_slist_find_and_remove(&active_dad_timers,
+						  &ipv6->unicast[found].dad_node);
 			k_mutex_unlock(&lock);
 		}
 #endif
 
-		ipv6->unicast[i].is_used = false;
+		ipv6->unicast[found].is_used = false;
 
 		net_if_ipv6_maddr_rm(iface, &maddr);
 
 		NET_DBG("[%d] interface %p address %s type %s removed",
-			i, iface, net_sprint_ipv6_addr(addr),
-			net_addr_type2str(ipv6->unicast[i].addr_type));
+			found, iface, net_sprint_ipv6_addr(addr),
+			net_addr_type2str(ipv6->unicast[found].addr_type));
 
 		/* Using the IPv6 address pointer here can give false
 		 * info if someone adds a new IP address into this position
@@ -1873,7 +1879,7 @@ bool net_if_ipv6_addr_rm(struct net_if *iface, const struct in6_addr *addr)
 		net_mgmt_event_notify_with_info(
 			NET_EVENT_IPV6_ADDR_DEL,
 			iface,
-			&ipv6->unicast[i].address.in6_addr,
+			&ipv6->unicast[found].address.in6_addr,
 			sizeof(struct in6_addr));
 
 		ret = true;
