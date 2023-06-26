@@ -104,9 +104,9 @@ void soc_start_core(int cpu_num)
 #endif
 
 		sys_cache_data_flush_range(rom_jump_vector, sizeof(*rom_jump_vector));
-		ACE_PWRCTL->wpdsphpxpg |= BIT(cpu_num);
+		soc_cpu_power_up(cpu_num);
 
-		while ((ACE_PWRSTS->dsphpxpgs & BIT(cpu_num)) == 0) {
+		while (!soc_cpu_is_powered(cpu_num)) {
 			k_busy_wait(HW_STATE_CHECK_DELAY);
 		}
 
@@ -194,7 +194,7 @@ int soc_adsp_halt_cpu(int id)
 		return -EINVAL;
 	}
 
-	ACE_PWRCTL->wpdsphpxpg &= ~BIT(id);
+	soc_cpu_power_down(id);
 	return 0;
 }
 #endif

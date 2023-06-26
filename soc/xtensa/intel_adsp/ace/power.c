@@ -286,7 +286,7 @@ __weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 	} else if (state == PM_STATE_RUNTIME_IDLE) {
 		DSPCS.bootctl[cpu].bctl &= ~DSPBR_BCTL_WAITIPPG;
 		DSPCS.bootctl[cpu].bctl &= ~DSPBR_BCTL_WAITIPCG;
-		ACE_PWRCTL->wpdsphpxpg &= ~BIT(cpu);
+		soc_cpu_power_down(cpu);
 		if (cpu == 0) {
 			uint32_t battr = DSPCS.bootctl[cpu].battr & (~LPSCTL_BATTR_MASK);
 
@@ -337,9 +337,9 @@ __weak void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 			return;
 		}
 
-		ACE_PWRCTL->wpdsphpxpg |= BIT(cpu);
+		soc_cpu_power_up(cpu);
 
-		while ((ACE_PWRSTS->dsphpxpgs & BIT(cpu)) == 0) {
+		while (!soc_cpu_is_powered(cpu)) {
 			k_busy_wait(HW_STATE_CHECK_DELAY);
 		}
 
