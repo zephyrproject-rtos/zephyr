@@ -307,6 +307,11 @@ static int cmd_get_sensor(const struct shell *sh, size_t argc, char *argv[])
 		return -ENODEV;
 	}
 
+	if (!DEVICE_TYPE_COMP(dev, K_OBJ_DRIVER_SENSOR)) {
+		shell_error(sh, "Device %s is not of type K_OBJ_DRIVER_SENSOR", argv[1]);
+		return -EINVAL;
+	}
+
 	if (argc == 2) {
 		/* read all channels */
 		int count = 0;
@@ -362,6 +367,11 @@ static int cmd_sensor_attr_set(const struct shell *shell_ptr, size_t argc, char 
 	if (dev == NULL) {
 		shell_error(shell_ptr, "Device unknown (%s)", argv[1]);
 		return -ENODEV;
+	}
+
+	if (!DEVICE_TYPE_COMP(dev, K_OBJ_DRIVER_SENSOR)) {
+		shell_error(sh, "Device %s is not of type K_OBJ_DRIVER_SENSOR", argv[1]);
+		return -EINVAL;
 	}
 
 	for (size_t i = 2; i < argc; i += 3) {
@@ -440,6 +450,11 @@ static int cmd_sensor_attr_get(const struct shell *shell_ptr, size_t argc, char 
 	if (dev == NULL) {
 		shell_error(shell_ptr, "Device unknown (%s)", argv[1]);
 		return -ENODEV;
+	}
+
+	if (!DEVICE_TYPE_COMP(dev, K_OBJ_DRIVER_SENSOR)) {
+		shell_error(sh, "Device %s is not of type K_OBJ_DRIVER_SENSOR", argv[1]);
+		return -EINVAL;
 	}
 
 	if (argc > 2) {
@@ -521,6 +536,10 @@ static void device_name_get(size_t idx, struct shell_static_entry *entry)
 {
 	const struct device *dev = shell_device_lookup(idx, NULL);
 
+	if (!DEVICE_TYPE_COMP(dev, K_OBJ_DRIVER_SENSOR)) {
+		return;
+	}
+
 	current_cmd_ctx = CTX_GET;
 	entry->syntax = (dev != NULL) ? dev->name : NULL;
 	entry->handler = NULL;
@@ -531,6 +550,10 @@ static void device_name_get(size_t idx, struct shell_static_entry *entry)
 static void device_name_get_for_attr(size_t idx, struct shell_static_entry *entry)
 {
 	const struct device *dev = shell_device_lookup(idx, NULL);
+
+	if (!DEVICE_TYPE_COMP(dev, K_OBJ_DRIVER_SENSOR)) {
+		return;
+	}
 
 	current_cmd_ctx = CTX_ATTR_GET_SET;
 	entry->syntax = (dev != NULL) ? dev->name : NULL;
@@ -586,6 +609,10 @@ SHELL_DYNAMIC_CMD_CREATE(dsub_trigger_onoff, trigger_on_off_get);
 static void device_name_get_for_trigger(size_t idx, struct shell_static_entry *entry)
 {
 	const struct device *dev = shell_device_lookup(idx, NULL);
+
+	if (!DEVICE_TYPE_COMP(dev, K_OBJ_DRIVER_SENSOR)) {
+		return;
+	}
 
 	entry->syntax = (dev != NULL) ? dev->name : NULL;
 	entry->handler = NULL;
@@ -698,6 +725,11 @@ static int cmd_trig_sensor(const struct shell *sh, size_t argc, char **argv)
 	if (dev == NULL) {
 		shell_error(sh, "Device unknown (%s)", argv[1]);
 		return -ENODEV;
+	}
+
+	if (!DEVICE_TYPE_COMP(dev, K_OBJ_DRIVER_SENSOR)) {
+		shell_error(sh, "Device %s is not of type K_OBJ_DRIVER_SENSOR", argv[1]);
+		return -EINVAL;
 	}
 
 	/* Map the trigger string to an enum value */
