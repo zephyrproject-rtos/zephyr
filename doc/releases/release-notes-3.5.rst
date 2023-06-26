@@ -223,6 +223,10 @@ Trusted Firmware-M
 Networking
 **********
 
+* Wi-Fi
+  * Added Passive scan support.
+  * The Wi-Fi scan API updated with Wi-Fi scan parameter to allow scan mode selection.
+
 USB
 ***
 
