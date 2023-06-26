@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2016-2019 Intel Corporation
+ * Copyright (c) 2023 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,33 +21,51 @@ LOG_MODULE_REGISTER(main);
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/usb/usb_device.h>
 #include <zephyr/usb/bos.h>
+#include <zephyr/usb/msos_desc.h>
 
 #include "webusb.h"
 
-/* Predefined response to control commands related to MS OS 2.0 descriptors */
-static const uint8_t msos2_descriptor[] = {
-	/* MS OS 2.0 set header descriptor   */
-	0x0A, 0x00,             /* Descriptor size (10 bytes)                 */
-	0x00, 0x00,             /* MS_OS_20_SET_HEADER_DESCRIPTOR             */
-	0x00, 0x00, 0x03, 0x06, /* Windows version (8.1) (0x06030000)         */
-	(0x0A + 0x14 + 0x08), 0x00, /* Length of the MS OS 2.0 descriptor set */
+/* random GUID {FA611CC3-7057-42EE-9D82-4919639562B3} */
+#define WEBUSB_DEVICE_INTERFACE_GUID \
+	'{', 0x00, 'F', 0x00, 'A', 0x00, '6', 0x00, '1', 0x00, '1', 0x00, \
+	'C', 0x00, 'C', 0x00, '3', 0x00, '-', 0x00, '7', 0x00, '0', 0x00, \
+	'5', 0x00, '7', 0x00, '-', 0x00, '4', 0x00, '2', 0x00, 'E', 0x00, \
+	'E', 0x00, '-', 0x00, '9', 0x00, 'D', 0x00, '8', 0x00, '2', 0x00, \
+	'-', 0x00, '4', 0x00, '9', 0x00, '1', 0x00, '9', 0x00, '6', 0x00, \
+	'3', 0x00, '9', 0x00, '5', 0x00, '6', 0x00, '2', 0x00, 'B', 0x00, \
+	'3', 0x00, '}', 0x00, 0x00, 0x00, 0x00, 0x00
 
-	/* MS OS 2.0 function subset ID descriptor
-	 * This means that the descriptors below will only apply to one
-	 * set of interfaces
+#define COMPATIBLE_ID_WINUSB \
+	'W', 'I', 'N', 'U', 'S', 'B', 0x00, 0x00
+
+static struct msosv2_descriptor_t {
+	struct msosv2_descriptor_set_header header;
+	struct msosv2_compatible_id webusb_compatible_id;
+	struct msosv2_guids_property webusb_guids_property;
+} __packed msosv2_descriptor = {
+	/* Microsoft OS 2.0 descriptor set
+	 * This tells Windows what kind of device this is and to install the WinUSB driver.
 	 */
-	0x08, 0x00, /* Descriptor size (8 bytes) */
-	0x02, 0x00, /* MS_OS_20_SUBSET_HEADER_FUNCTION */
-	0x02,       /* Index of first interface this subset applies to. */
-	0x00,       /* reserved */
-	(0x08 + 0x14), 0x00, /* Length of the MS OS 2.0 descriptor subset */
-
-	/* MS OS 2.0 compatible ID descriptor */
-	0x14, 0x00, /* Descriptor size                */
-	0x03, 0x00, /* MS_OS_20_FEATURE_COMPATIBLE_ID */
-	/* 8-byte compatible ID string, then 8-byte sub-compatible ID string */
-	'W',  'I',  'N',  'U',  'S',  'B',  0x00, 0x00,
-	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+	.header = {
+		.wLength = sizeof(struct msosv2_descriptor_set_header),
+		.wDescriptorType = MS_OS_20_SET_HEADER_DESCRIPTOR,
+		.dwWindowsVersion = 0x06030000,
+		.wTotalLength = sizeof(struct msosv2_descriptor_t),
+	},
+	.webusb_compatible_id = {
+		.wLength = sizeof(struct msosv2_compatible_id),
+		.wDescriptorType = MS_OS_20_FEATURE_COMPATIBLE_ID,
+		.CompatibleID = {COMPATIBLE_ID_WINUSB},
+	},
+	.webusb_guids_property = {
+		.wLength = sizeof(struct msosv2_guids_property),
+		.wDescriptorType = MS_OS_20_FEATURE_REG_PROPERTY,
+		.wPropertyDataType = MS_OS_20_PROPERTY_DATA_REG_MULTI_SZ,
+		.wPropertyNameLength = 42,
+		.PropertyName = {DEVICE_INTERFACE_GUIDS_PROPERTY_NAME},
+		.wPropertyDataLength = 80,
+		.bPropertyData = {WEBUSB_DEVICE_INTERFACE_GUID},
+	},
 };
 
 USB_DEVICE_BOS_DESC_DEFINE_CAP struct usb_bos_webusb_desc {
@@ -113,7 +132,8 @@ USB_DEVICE_BOS_DESC_DEFINE_CAP struct usb_bos_msosv2_desc {
 		/* Windows version (8.1) (0x06030000) */
 		.dwWindowsVersion = sys_cpu_to_le32(0x06030000),
 		.wMSOSDescriptorSetTotalLength =
-			sys_cpu_to_le16(sizeof(msos2_descriptor)),
+			sys_cpu_to_le16(sizeof(msosv2_descriptor)),
+		/* Arbitrary code that is used as bRequest for vendor command */
 		.bMS_VendorCode = 0x02,
 		.bAltEnumCode = 0x00
 	},
@@ -268,11 +288,11 @@ int vendor_handle_req(struct usb_setup_packet *pSetup,
 		LOG_DBG("Get webusb_origin_url");
 
 		return 0;
-	} else if (pSetup->bRequest == 0x02 && pSetup->wIndex == 0x07) {
+	} else if (pSetup->bRequest == bos_cap_msosv2.cap.bMS_VendorCode &&
+		   pSetup->wIndex == MS_OS_20_DESCRIPTOR_INDEX) {
 		/* Get MS OS 2.0 Descriptors request */
-		/* 0x07 means "MS_OS_20_DESCRIPTOR_INDEX" */
-		*data = (uint8_t *)(&msos2_descriptor);
-		*len = sizeof(msos2_descriptor);
+		*data = (uint8_t *)(&msosv2_descriptor);
+		*len = sizeof(msosv2_descriptor);
 
 		LOG_DBG("Get MS OS Descriptors v2");
 
