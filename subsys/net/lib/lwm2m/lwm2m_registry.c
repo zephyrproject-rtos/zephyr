@@ -626,7 +626,7 @@ static int lwm2m_engine_set(const struct lwm2m_obj_path *path, const void *value
 		return ret;
 	}
 
-	if (memcmp(data_ptr, value, len) != 0) {
+	if (memcmp(data_ptr, value, len) != 0 || res_inst->data_len != len) {
 		changed = true;
 	}
 
@@ -644,12 +644,18 @@ static int lwm2m_engine_set(const struct lwm2m_obj_path *path, const void *value
 	switch (obj_field->data_type) {
 
 	case LWM2M_RES_TYPE_OPAQUE:
-		memcpy((uint8_t *)data_ptr, value, len);
+		if (len) {
+			memcpy((uint8_t *)data_ptr, value, len);
+		}
 		break;
 
 	case LWM2M_RES_TYPE_STRING:
-		strncpy(data_ptr, value, len - 1);
-		((char *)data_ptr)[len - 1] = '\0';
+		if (len) {
+			strncpy(data_ptr, value, len - 1);
+			((char *)data_ptr)[len - 1] = '\0';
+		} else {
+			((char *)data_ptr)[0] = '\0';
+		}
 		break;
 
 	case LWM2M_RES_TYPE_U32:
