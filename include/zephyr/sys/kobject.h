@@ -196,6 +196,13 @@ void k_object_access_all_grant(const void *object);
 /* LCOV_EXCL_START */
 #define K_THREAD_ACCESS_GRANT(thread, ...)
 
+/** @cond
+ *  Doxygen should ignore this build-time generated include file
+ *  when generating API documentation.  Mapping for driver types
+ *  are generated during build by gen_kobject_list.py.
+ */
+#include <kobj-map-to-types.h>
+
 /**
  * @internal
  */

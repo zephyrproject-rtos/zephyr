@@ -13,6 +13,9 @@
 #include <zephyr/init.h>
 #include <zephyr/linker/sections.h>
 #include <zephyr/sys/device_mmio.h>
+#ifdef CONFIG_DEVICE_RUNTIME_TYPES
+#include <zephyr/sys/kobject.h>
+#endif
 #include <zephyr/sys/iterable_sections.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/toolchain.h>
@@ -343,6 +346,21 @@ typedef int16_t device_handle_t;
 #define DEVICE_INIT_GET(dev_id) (&Z_INIT_ENTRY_NAME(DEVICE_NAME_GET(dev_id)))
 
 /**
+ * @brief Check if a given device is of a specific type
+ *
+ * @param dev Device pointer
+ * @param type driver type constant enum
+ *
+ * @return true if device's type and type match
+ * @return false otherwise
+ */
+#ifdef CONFIG_DEVICE_RUNTIME_TYPES
+#define DEVICE_TYPE_COMP(dev, type) (dev->type == (enum k_objects)type)
+#else
+#define DEVICE_TYPE_COMP(dev, type) true
+#endif
+
+/**
  * @brief Runtime device dynamic structure (in RAM) per driver instance
  *
  * Fields in this are expected to be default-initialized to zero. The
@@ -405,6 +423,13 @@ struct device {
 	 * @kconfig{CONFIG_PM_DEVICE} is enabled).
 	 */
 	struct pm_device *pm;
+#endif
+#if defined(CONFIG_DEVICE_RUNTIME_TYPES) || defined(__DOXYGEN__)
+	/**
+	 * Reference to the device type (only available if
+	 * @kconfig{CONFIG_DEVICE_RUNTIME_TYPES} is enabled).
+	 */
+	enum k_objects type;
 #endif
 };
 
@@ -885,6 +910,7 @@ static inline bool z_impl_device_is_ready(const struct device *dev)
 		.data = (data_),                                               \
 		IF_ENABLED(CONFIG_DEVICE_DEPS, (.deps = (deps_),)) /**/        \
 		IF_ENABLED(CONFIG_PM_DEVICE, (.pm = (pm_),)) /**/              \
+		IF_ENABLED(CONFIG_DEVICE_RUNTIME_TYPES, (.type = K_OBJ_MAP_TO_TYPE(api_),)) \
 	}
 
 /**

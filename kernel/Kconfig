@@ -984,6 +984,12 @@ config DEVICE_DEPS_DYNAMIC
 	  Option that makes it possible to manipulate device dependencies at
 	  runtime.
 
+config DEVICE_RUNTIME_TYPES
+	bool "Keep record of device type at runtime"
+	depends on !USERSPACE
+	help
+	  Option that makes it possible to check device type at runtime.
+
 endmenu
 
 rsource "Kconfig.vm"

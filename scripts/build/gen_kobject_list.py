@@ -930,6 +930,19 @@ def write_kobj_types_output(fp):
         fp.write("K_OBJ_DRIVER_%s,\n" % subsystem)
 
 
+def write_kobj_map_types_output(fp):
+    fp.write("/* Mapping driver subsystem types to enum constants */\n")
+    fp.write("#define K_OBJ_MAP_TO_TYPE(api_)    \\\n")
+    for subsystem in subsystems:
+        fp.write("COND_CODE_1(UTIL_BOOL(typeof(api_) == typeof(struct %s *)), " % subsystem)
+        subsystem = subsystem.replace("_driver_api", "").upper()
+        fp.write("(K_OBJ_DRIVER_%s), \\\n" % subsystem)
+    fp.write("            (K_OBJ_ANY)    \\\n")
+    for subsystem in subsystems:
+        fp.write(")")
+    fp.write("\n")
+
+
 def write_kobj_otype_output(fp):
     fp.write("/* Core kernel objects */\n")
     for kobj, obj_info in kobjects.items():
@@ -996,6 +1009,9 @@ def parse_args():
         "-K", "--kobj-types-output", required=False,
         help="Output k_object enum constants")
     parser.add_argument(
+        "-M", "--kobj-map-types-output", required=False,
+        help="Output mapping of devices' k_object types to enum constants")
+    parser.add_argument(
         "-S", "--kobj-otype-output", required=False,
         help="Output case statements for otype_to_str()")
     parser.add_argument(
@@ -1047,6 +1063,10 @@ def main():
     if args.kobj_types_output:
         with open(args.kobj_types_output, "w") as fp:
             write_kobj_types_output(fp)
+
+    if args.kobj_map_types_output:
+        with open(args.kobj_map_types_output, "w") as fp:
+            write_kobj_map_types_output(fp)
 
     if args.kobj_otype_output:
         with open(args.kobj_otype_output, "w") as fp:
