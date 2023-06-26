@@ -8,6 +8,7 @@
 #include <st/f1/stm32f103Xb.dtsi>
 #include <st/f1/stm32f103r(8-b)tx-pinctrl.dtsi>
 #include "arduino_r3_connector.dtsi"
+#include "st_morpho_connector.dtsi"
 
 / {
 	model = "STMicroelectronics STM32F103RB-NUCLEO board";
