@@ -39,15 +39,11 @@ legend,
     font-weight: 500;
 }
 
-.rst-content div.figure p.caption {
+.rst-content div.figure p.caption, figcaption {
     /* Tweak caption styling to be closer to typical captions */
     text-align: center;
     margin-top: 8px;
     opacity: 0.75;
-}
-
-.rst-content div.figure.figure-w480 {
-    max-width: 480px;
 }
 
 p,
