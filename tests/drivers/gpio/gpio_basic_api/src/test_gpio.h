@@ -46,6 +46,7 @@
 #define MAX_INT_CNT 3
 struct drv_data {
 	struct gpio_callback gpio_cb;
+	struct gpio_callback gpio_cb_2th;
 	gpio_flags_t mode;
 	int index;
 	int aux;

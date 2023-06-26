@@ -66,7 +66,7 @@ static inline int gpio_manage_callback(sys_slist_t *callbacks,
  * @param port A pointer on the gpio driver instance
  * @param pins The actual pin mask that triggered the interrupt
  */
-static inline void gpio_fire_callbacks(sys_slist_t *list,
+static inline void gpio_fire_callbacks_general(sys_slist_t *list,
 					const struct device *port,
 					uint32_t pins)
 {
@@ -78,6 +78,82 @@ static inline void gpio_fire_callbacks(sys_slist_t *list,
 			cb->handler(port, cb, cb->pin_mask & pins);
 		}
 	}
+}
+
+#if CONFIG_GPIO_INTERNAL_INTERRUPT
+
+/**
+ * @brief Generic function to go through and fire callback from a callback list(but prefer internal callback)
+ *
+ * @param list A pointer on the gpio callback list
+ * @param port A pointer on the gpio driver instance
+ * @param pins The actual pin mask that triggered the interrupt
+ *
+ * @note if has internal callback, only fire internal callback
+ */
+static inline void gpio_fire_callbacks_prefer_internal(sys_slist_t *list,
+					const struct device *port,
+					uint32_t pins)
+{
+	struct gpio_callback *cb, *tmp;
+	bool has_internal = false;
+
+	// check if has any internal callback for this pins
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(list, cb, tmp, node) {
+		if (cb->pin_mask & pins && cb->is_internal) {
+			has_internal = true;
+			break;
+		}
+	}
+
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(list, cb, tmp, node) {
+		if (cb->pin_mask & pins && (!has_internal || cb->is_internal)) {
+			__ASSERT(cb->handler, "No callback handler!");
+			cb->handler(port, cb, cb->pin_mask & pins);
+		}
+	}
+}
+
+/**
+ * @brief Generic function for fire external callbacks
+ *
+ * @param list A pointer on the gpio callback list
+ * @param port A pointer on the gpio driver instance
+ * @param pins The actual pin mask that triggered the interrupt
+ *
+ * @note this function will called in the internal callback when want to fire external callback
+ */
+static inline void gpio_fire_callbacks_force_external(sys_slist_t *list,
+					const struct device *port,
+					uint32_t pins)
+{
+	struct gpio_callback *cb, *tmp;
+
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(list, cb, tmp, node) {
+		if (cb->pin_mask & pins && !cb->is_internal) {
+			__ASSERT(cb->handler, "No callback handler!");
+			cb->handler(port, cb, cb->pin_mask & pins);
+		}
+	}
+}
+#endif
+
+/**
+ * @brief Generic function to go through and fire callback from a callback list
+ *
+ * @param list A pointer on the gpio callback list
+ * @param port A pointer on the gpio driver instance
+ * @param pins The actual pin mask that triggered the interrupt
+ */
+static inline void gpio_fire_callbacks(sys_slist_t *list,
+					const struct device *port,
+					uint32_t pins)
+{
+#if CONFIG_GPIO_INTERNAL_INTERRUPT
+	gpio_fire_callbacks_prefer_internal(list, port, pins);
+#else
+	gpio_fire_callbacks_general(list, port, pins);
+#endif
 }
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_GPIO_GPIO_UTILS_H_ */

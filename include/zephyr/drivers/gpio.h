@@ -508,6 +508,10 @@ struct gpio_callback {
 	 * an interrupt.
 	 */
 	gpio_port_pins_t pin_mask;
+
+#if CONFIG_GPIO_INTERNAL_INTERRUPT
+	bool is_internal;
+#endif
 };
 
 /**
@@ -1446,6 +1450,7 @@ static inline void gpio_init_callback(struct gpio_callback *callback,
 
 	callback->handler = handler;
 	callback->pin_mask = pin_mask;
+	callback->is_internal = false;
 }
 
 /**
@@ -1471,6 +1476,25 @@ static inline int gpio_add_callback(const struct device *port,
 	}
 
 	return api->manage_callback(port, callback, true);
+}
+
+/**
+ * @brief Add an internal callback.
+ *
+ * @param port Pointer to the device structure for the driver instance.
+ * @param callback A valid Application's callback structure pointer.
+ * @return 0 if successful, negative errno code on failure.
+ * 
+ */
+static inline int gpio_add_internal_callback(const struct device *port,
+					struct gpio_callback *callback)
+{
+#if CONFIG_GPIO_INTERNAL_INTERRUPT
+	callback->is_internal = true;
+	return gpio_add_callback(port, callback);
+#else
+	return -ENOTSUP;
+#endif
 }
 
 /**

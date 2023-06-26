@@ -31,7 +31,13 @@ static void callback(const struct device *dev,
 	}
 }
 
-static int test_callback(int mode)
+static void callback_external_dummy(const struct device *dev,
+			struct gpio_callback *gpio_cb, uint32_t pins)
+{
+	zassert_false(true, "external callback should not be called");
+}
+
+static int test_callback(int mode, bool internal)
 {
 	const struct device *const dev = DEVICE_DT_GET(DEV);
 	struct drv_data *drv_data = &data;
@@ -62,13 +68,33 @@ static int test_callback(int mode)
 
 	drv_data->mode = mode;
 	gpio_init_callback(&drv_data->gpio_cb, callback, BIT(PIN_IN));
-	rc = gpio_add_callback(dev, &drv_data->gpio_cb);
+
+	if (!internal) {
+		rc = gpio_add_callback(dev, &drv_data->gpio_cb);
+	} else {
+		rc = gpio_add_internal_callback(dev, &drv_data->gpio_cb);
+	}
+
 	if (rc == -ENOTSUP) {
 		TC_PRINT("interrupts not supported\n");
 		return TC_PASS;
 	} else if (rc != 0) {
 		TC_ERROR("set PIN_IN callback fail: %d\n", rc);
 		return TC_FAIL;
+	}
+
+	if (internal) {
+		gpio_init_callback(&drv_data->gpio_cb_2th, callback_external_dummy, BIT(PIN_IN));
+		rc = gpio_add_callback(dev, &drv_data->gpio_cb_2th);
+		if (rc == -ENOTSUP) {
+			TC_PRINT("interrupts not supported\n");
+			gpio_remove_callback(dev, &drv_data->gpio_cb);	
+			return TC_PASS;
+		} else if (rc != 0) {
+			TC_ERROR("set PIN_IN callback fail: %d\n", rc);
+			gpio_remove_callback(dev, &drv_data->gpio_cb);	
+			return TC_FAIL;
+		}
 	}
 
 	/* 3. enable callback, trigger PIN_IN interrupt by operate PIN_OUT */
@@ -110,32 +136,60 @@ static int test_callback(int mode)
 
 pass_exit:
 	gpio_remove_callback(dev, &drv_data->gpio_cb);
+	if (internal) {
+		gpio_remove_callback(dev, &drv_data->gpio_cb_2th);
+	}
 	return TC_PASS;
 
 err_exit:
 	gpio_remove_callback(dev, &drv_data->gpio_cb);
+	if (internal) {
+		gpio_remove_callback(dev, &drv_data->gpio_cb_2th);
+	}
 	return TC_FAIL;
 }
 
 /* export test cases */
 ZTEST(gpio_port_cb_vari, test_gpio_callback_variants)
 {
-	zassert_equal(test_callback(GPIO_INT_EDGE_FALLING), TC_PASS,
+	zassert_equal(test_callback(GPIO_INT_EDGE_FALLING, false), TC_PASS,
 		      "falling edge failed");
-	zassert_equal(test_callback(GPIO_INT_EDGE_RISING), TC_PASS,
+	zassert_equal(test_callback(GPIO_INT_EDGE_RISING, false), TC_PASS,
 		      "rising edge failed");
-	zassert_equal(test_callback(GPIO_INT_EDGE_TO_ACTIVE), TC_PASS,
+	zassert_equal(test_callback(GPIO_INT_EDGE_TO_ACTIVE, false), TC_PASS,
 		      "edge active failed");
-	zassert_equal(test_callback(GPIO_INT_EDGE_TO_INACTIVE), TC_PASS,
+	zassert_equal(test_callback(GPIO_INT_EDGE_TO_INACTIVE, false), TC_PASS,
 		      "edge inactive failed");
-	zassert_equal(test_callback(GPIO_INT_LEVEL_HIGH), TC_PASS,
+	zassert_equal(test_callback(GPIO_INT_LEVEL_HIGH, false), TC_PASS,
 		      "level high failed");
-	zassert_equal(test_callback(GPIO_INT_LEVEL_LOW), TC_PASS,
+	zassert_equal(test_callback(GPIO_INT_LEVEL_LOW, false), TC_PASS,
 		      "level low failed");
-	zassert_equal(test_callback(GPIO_INT_LEVEL_ACTIVE), TC_PASS,
+	zassert_equal(test_callback(GPIO_INT_LEVEL_ACTIVE, false), TC_PASS,
 		      "level active failed");
-	zassert_equal(test_callback(GPIO_INT_LEVEL_INACTIVE), TC_PASS,
+	zassert_equal(test_callback(GPIO_INT_LEVEL_INACTIVE, false), TC_PASS,
 		      "level inactive failed");
-	zassert_equal(test_callback(GPIO_INT_EDGE_BOTH), TC_PASS,
+	zassert_equal(test_callback(GPIO_INT_EDGE_BOTH, false), TC_PASS,
+		      "edge both failed");
+}
+
+ZTEST(gpio_port_cb_vari, test_gpio_callback_variants_internal)
+{
+	zassert_equal(test_callback(GPIO_INT_EDGE_FALLING, true), TC_PASS,
+		      "falling edge failed");
+	zassert_equal(test_callback(GPIO_INT_EDGE_RISING, true), TC_PASS,
+		      "rising edge failed");
+	zassert_equal(test_callback(GPIO_INT_EDGE_TO_ACTIVE, true), TC_PASS,
+		      "edge active failed");
+	zassert_equal(test_callback(GPIO_INT_EDGE_TO_INACTIVE, true), TC_PASS,
+		      "edge inactive failed");
+	zassert_equal(test_callback(GPIO_INT_LEVEL_HIGH, true), TC_PASS,
+		      "level high failed");
+	zassert_equal(test_callback(GPIO_INT_LEVEL_LOW, true), TC_PASS,
+		      "level low failed");
+	zassert_equal(test_callback(GPIO_INT_LEVEL_ACTIVE, true), TC_PASS,
+		      "level active failed");
+	zassert_equal(test_callback(GPIO_INT_LEVEL_INACTIVE, true), TC_PASS,
+		      "level inactive failed");
+	zassert_equal(test_callback(GPIO_INT_EDGE_BOTH, true), TC_PASS,
 		      "edge both failed");
 }
