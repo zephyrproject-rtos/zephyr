@@ -22,3 +22,16 @@ ZTEST(server_function_tests, test_on_url)
 
 	zassert_mem_equal(url, "/test", 5, "URL was not stored correctly");
 }
+
+ZTEST(server_function_tests, test_create_server_socket)
+{
+	struct sockaddr_in address;
+
+	/* Test the create_server_socket function */
+	int server_fd = create_server_socket(&address);
+
+	/* Check that the function returned a valid file descriptor */
+	zassert_true(server_fd >= 0, "Failed to create server socket");
+
+	close(server_fd);
+}
