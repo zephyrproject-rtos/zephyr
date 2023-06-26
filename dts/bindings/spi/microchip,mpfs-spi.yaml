@@ -1,0 +1,15 @@
+# Copyright (c) 2022 Microchip Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Microchip Polarfire SOC SPI IP node
+
+compatible: "microchip,mpfs-spi"
+
+include: spi-controller.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
