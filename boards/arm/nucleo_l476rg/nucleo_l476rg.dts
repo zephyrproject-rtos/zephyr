@@ -8,6 +8,7 @@
 #include <st/l4/stm32l476Xg.dtsi>
 #include <st/l4/stm32l476r(c-e-g)tx-pinctrl.dtsi>
 #include "arduino_r3_connector.dtsi"
+#include "st_morpho_connector.dtsi"
 
 / {
 	model = "STMicroelectronics STM32L476RG-NUCLEO board";
