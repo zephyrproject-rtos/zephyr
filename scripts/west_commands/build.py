@@ -290,6 +290,7 @@ class Build(Forceable):
                     self.args.cmake_opts.extend(args)
                 else:
                     self.args.cmake_opts = args
+            self.args.sysbuild = item.get('sysbuild')
         return found_test_metadata
 
     def _sanity_precheck(self):
