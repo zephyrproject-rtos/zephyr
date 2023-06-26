@@ -12,6 +12,7 @@
 #define NDS_MCACHE_CTL               0x7CA
 #define NDS_MMSC_CFG                 0xFC2
 #define NDS_MXSTATUS                 0x7C4
+#define NDS_UITB                     0x800
 #define NDS_UCODE                    0x801
 
 /* Control and Status Registers (CSRs) available for Andes V5 PMA */

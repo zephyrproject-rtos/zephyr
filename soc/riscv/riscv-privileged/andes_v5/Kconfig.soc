@@ -80,6 +80,16 @@ config SOC_ANDES_V5_PFT
 		The PowerBrake extension throttles performance by reducing instruction
 		executing rate.
 
+config SOC_ANDES_V5_EXECIT
+	bool "Andes V5 EXEC.IT extension"
+	depends on RISCV_ISA_EXT_C
+	depends on !RISCV_GENERIC_TOOLCHAIN
+	depends on !LINKER_USE_NO_RELAX
+	help
+		The EXEC.IT extension (Execution on Instruction Table) generate
+		a look-up table and replaces suitable 32-bit instructions with
+		the 16-bit "exec.it <INDEX>".
+
 config SOC_ANDES_V5_PMA
 	bool "Andes V5 Physical Memory Attribute (PMA)"
 	select ARCH_HAS_NOCACHE_MEMORY_SUPPORT
