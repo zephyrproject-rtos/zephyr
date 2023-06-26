@@ -8,6 +8,7 @@
 #include <st/l1/stm32l152Xe.dtsi>
 #include <st/l1/stm32l152retx-pinctrl.dtsi>
 #include "arduino_r3_connector.dtsi"
+#include "st_morpho_connector.dtsi"
 
 / {
 	model = "STMicroelectronics STM32L152RE-NUCLEO board";
