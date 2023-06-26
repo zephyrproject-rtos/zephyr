@@ -866,6 +866,10 @@ kbd, .kbd,
     text-align: center;
 }
 
+.rst-content figure img {
+    background-color: var(--figure-image-background-color);
+}
+
 .wy-alert.wy-alert-danger {
     background-color: var(--admonition-danger-background-color);
 }
