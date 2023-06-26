@@ -8,6 +8,7 @@
 #include <st/l0/stm32l073Xz.dtsi>
 #include <st/l0/stm32l073r(b-z)tx-pinctrl.dtsi>
 #include "arduino_r3_connector.dtsi"
+#include "st_morpho_connector.dtsi"
 
 / {
 	model = "STMicroelectronics STM32L073RZ-NUCLEO board";
