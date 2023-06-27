@@ -142,6 +142,7 @@
 	pinctrl-0 = <&pinmux_flexcan3>;
 	pinctrl-names = "default";
 	bus-speed = <125000>;
+	bus-speed-data = <1000000>;
 	can-transceiver {
 		max-bitrate = <5000000>;
 	};
