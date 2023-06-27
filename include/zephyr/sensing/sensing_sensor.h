@@ -313,7 +313,7 @@ typedef int (*sensing_sensor_read_sample_t)(
  *
  * @param dev The sensor instance device structure.
  *
- * @param reporter The reporter handle who delivered this sensor data
+ * @param reporter_handle The reporter handle who delivered this sensor data
  *
  * @param buf The buffer stored the reporter's sensor data.
  *
@@ -324,7 +324,7 @@ typedef int (*sensing_sensor_read_sample_t)(
  */
 typedef int (*sensing_sensor_process_t)(
 		const struct device *dev,
-		int reporter,
+		const sensing_sensor_handle_t reporter_handle,
 		void *buf, int size);
 
 /**
