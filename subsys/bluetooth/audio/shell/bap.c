@@ -1654,6 +1654,7 @@ static struct bt_bap_broadcast_sink_cb sink_cbs = {
 #endif /* CONFIG_BT_BAP_BROADCAST_SINK */
 
 #if defined(CONFIG_BT_AUDIO_RX)
+static unsigned long recv_stats_interval = 100U;
 static size_t lost_pkts;
 static size_t err_pkts;
 static size_t dup_psn;
@@ -1684,8 +1685,7 @@ static void audio_recv(struct bt_bap_stream *stream,
 		lost_pkts++;
 	}
 
-	/* TODO: Make it possible to only print every X packets, and make X settable by the shell */
-	if ((rx_cnt % 100) == 0) {
+	if ((rx_cnt % recv_stats_interval) == 0) {
 		shell_print(ctx_shell,
 			    "[%zu]: Incoming audio on stream %p len %u ts %u seq_num %u flags %u "
 			    "(dup ts %zu; dup psn %zu, err_pkts %zu, lost_pkts %zu)",
@@ -2441,6 +2441,35 @@ static int cmd_stop_sine(const struct shell *sh, size_t argc, char *argv[])
 #endif /* CONFIG_LIBLC3 */
 #endif /* CONFIG_BT_AUDIO_TX */
 
+#if defined(CONFIG_BT_AUDIO_RX)
+static int cmd_recv_stats(const struct shell *sh, size_t argc, char *argv[])
+{
+	if (argc == 1) {
+		shell_info(sh, "Current receive stats interval: %lu", recv_stats_interval);
+	} else {
+		int err = 0;
+		unsigned long interval;
+
+		interval = shell_strtoul(argv[1], 0, &err);
+		if (err != 0) {
+			shell_error(sh, "Could not parse interval: %d", err);
+
+			return -ENOEXEC;
+		}
+
+		if (interval == 0U) {
+			shell_error(sh, "Interval cannot be 0");
+
+			return -ENOEXEC;
+		}
+
+		recv_stats_interval = interval;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_BT_AUDIO_RX */
+
 #if defined(CONFIG_BT_BAP_UNICAST_SERVER)
 static void print_ase_info(struct bt_bap_ep *ep, void *user_data)
 {
@@ -2515,6 +2544,11 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	SHELL_CMD_ARG(stop_sine, NULL, "Stop sending a LC3 encoded sine wave", cmd_stop_sine, 1, 0),
 #endif /* CONFIG_LIBLC3 */
 #endif /* CONFIG_BT_AUDIO_TX */
+#if defined(CONFIG_BT_AUDIO_RX)
+	SHELL_CMD_ARG(recv_stats, NULL,
+		      "Sets or gets the receive statistics reporting interval in # of packets",
+		      cmd_recv_stats, 1, 1),
+#endif /* CONFIG_BT_AUDIO_RX */
 	SHELL_COND_CMD_ARG(CONFIG_BT_PACS, set_location, NULL,
 			   "<direction: sink, source> <location bitmask>", cmd_set_loc, 3, 0),
 	SHELL_COND_CMD_ARG(CONFIG_BT_PACS, set_context, NULL,
