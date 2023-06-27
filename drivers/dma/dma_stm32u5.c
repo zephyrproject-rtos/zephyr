@@ -494,13 +494,7 @@ static int dma_stm32_configure(const struct device *dev,
 	index = find_lsb_set(config->dest_data_size) - 1;
 	DMA_InitStruct.DestDataWidth = table_dst_size[index];
 
-	if (stream->source_periph) {
-		DMA_InitStruct.BlkDataLength = config->head_block->block_size /
-					config->source_data_size;
-	} else {
-		DMA_InitStruct.BlkDataLength = config->head_block->block_size /
-					config->dest_data_size;
-	}
+	DMA_InitStruct.BlkDataLength = config->head_block->block_size;
 
 	/* The request ID is stored in the dma_slot */
 	DMA_InitStruct.Request = config->dma_slot;
