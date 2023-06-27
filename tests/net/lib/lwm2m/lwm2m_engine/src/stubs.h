@@ -55,6 +55,7 @@ DECLARE_FAKE_VALUE_FUNC(int, lwm2m_delete_obj_inst, uint16_t, uint16_t);
 DECLARE_FAKE_VOID_FUNC(lwm2m_clear_block_contexts);
 DECLARE_FAKE_VALUE_FUNC(int, z_impl_zsock_connect, int, const struct sockaddr *, socklen_t);
 DECLARE_FAKE_VALUE_FUNC(int, lwm2m_security_mode, struct lwm2m_ctx *);
+DECLARE_FAKE_VALUE_FUNC(int, z_impl_zsock_setsockopt, int, int, int, const void *, socklen_t);
 
 #define DO_FOREACH_FAKE(FUNC)                                                                      \
 	do {                                                                                       \
@@ -83,6 +84,7 @@ DECLARE_FAKE_VALUE_FUNC(int, lwm2m_security_mode, struct lwm2m_ctx *);
 		FUNC(lwm2m_clear_block_contexts)                                                   \
 		FUNC(z_impl_zsock_connect)                                                         \
 		FUNC(lwm2m_security_mode)                                                          \
+		FUNC(z_impl_zsock_setsockopt)                                                      \
 	} while (0)
 
 #endif /* STUBS_H */
