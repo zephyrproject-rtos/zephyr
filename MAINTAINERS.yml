@@ -2406,6 +2406,20 @@ Renesas R-Car Platforms:
     Renesas R-Car SOCs, dts files and related drivers. Renesas boards based
     on R-Car SOCs.
 
+Renesas R-Car ARM64 Platforms:
+  status: maintained
+  maintainers:
+    - lorc
+  files:
+    - boards/arm64/rcar_*/
+    - dts/arm64/renesas/
+    - soc/arm64/renesas_rcar/
+  labels:
+    - "platform: Renesas R-Car ARM64"
+  description: >-
+    Renesas R-Car SOCs and dts files, ARMv8 side. Zephyr running on ARMv8 CPUs on Renesas
+    boards based on R-Car SOCs.
+
 STM32 Platforms:
   status: maintained
   maintainers:
