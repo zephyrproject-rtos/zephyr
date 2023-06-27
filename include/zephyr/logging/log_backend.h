@@ -8,6 +8,7 @@
 
 #include <zephyr/logging/log_msg.h>
 #include <stdarg.h>
+#include <zephyr/spinlock.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/logging/log_output.h>
@@ -86,6 +87,9 @@ struct log_backend_control_block {
 
 	/* Initialization level. */
 	uint8_t level;
+
+	/* Lock for backend with SMP in use */
+	COND_CODE_1(CONFIG_SMP, (struct k_spinlock lock;), ());
 };
 
 /**
@@ -177,7 +181,16 @@ static inline void log_backend_msg_process(const struct log_backend *const backe
 {
 	__ASSERT_NO_MSG(backend != NULL);
 	__ASSERT_NO_MSG(msg != NULL);
+
+#ifdef CONFIG_SMP
+	k_spinlock_key_t key = k_spin_lock(&backend->cb->lock);
+#endif
+
 	backend->api->process(backend, msg);
+
+#ifdef CONFIG_SMP
+	k_spin_unlock(&backend->cb->lock, key);
+#endif
 }
 
 /**
