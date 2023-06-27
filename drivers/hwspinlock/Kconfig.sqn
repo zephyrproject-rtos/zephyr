@@ -1,0 +1,20 @@
+# Sequans HW spinlock configuration
+
+# Copyright (c) 2023 Sequans Communications.
+# SPDX-License-Identifier: Apache-2.0
+
+config SQN_HWSPINLOCK
+	bool "Sequans HW spinlock Driver"
+	default y
+	depends on DT_HAS_SQN_HWSPINLOCK_ENABLED
+	help
+	  Enable HW spinlock for SQN
+
+if SQN_HWSPINLOCK
+config SQN_HWSPINLOCK_RELAX_TIME
+	int "Sequans HW spinlock relax time"
+	default 50
+	help
+	  Default HW spinlock relax time in microseconds.
+
+endif #SQN_HWSPINLOCK
