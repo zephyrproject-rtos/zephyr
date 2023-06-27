@@ -75,6 +75,14 @@ uint8_t *global_imr_ram_storage;
  * @biref a d3 restore boot entry point
  */
 extern void boot_entry_d3_restore(void);
+
+/*
+ * @brief re-enables IDC interrupt for all cores after exiting D3 state
+ *
+ * Called once from core 0
+ */
+extern void soc_mp_on_d3_exit(void);
+
 #else
 
 /*
@@ -321,6 +329,7 @@ __weak void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 			imr_layout->imr_state.header.imr_ram_storage = NULL;
 			sys_clock_idle_exit();
 			mem_window_idle_exit();
+			soc_mp_on_d3_exit();
 		}
 #endif /* CONFIG_ADSP_IMR_CONTEXT_SAVE */
 		soc_cpus_active[cpu] = true;
