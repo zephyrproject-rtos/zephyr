@@ -15,7 +15,7 @@ module-str = fpga_bridge
 source "subsys/logging/Kconfig.template.log_config"
 
 config FPGA_BRIDGE_INTEL
-	bool "Enable FPGA Bridge for Intel devices"
+	bool "FPGA Bridge enable for Intel devices"
 	depends on ARM_SIP_SVC_SUBSYS
 	help
 	  Enable FPGA Bridges support for Intel devices.
