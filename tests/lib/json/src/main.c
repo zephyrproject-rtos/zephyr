@@ -11,6 +11,7 @@
 
 struct test_nested {
 	int nested_int;
+	uint32_t _unused_member;
 	bool nested_bool;
 	const char *nested_string;
 };
@@ -19,6 +20,7 @@ struct test_struct {
 	const char *some_string;
 	int some_int;
 	bool some_bool;
+	uint32_t _unused_member;
 	struct test_nested some_nested_struct;
 	int some_array[16];
 	size_t some_array_len;
@@ -32,17 +34,21 @@ struct test_struct {
 };
 
 struct elt {
+	uint32_t _unused_member;
 	const char *name;
 	int height;
 };
 
 struct obj_array {
+	uint32_t _unused_member1;
 	struct elt elements[10];
+	uint32_t _unused_member2;
 	size_t num_elements;
 };
 
 struct test_int_limits {
 	int int_max;
+	uint32_t _unused_member;
 	int int_cero;
 	int int_min;
 };
@@ -92,11 +98,15 @@ static const struct json_obj_descr obj_limits_descr[] = {
 };
 
 struct array {
+	/* uint32_t _unused_member1; // TODO test fails if this is uncommented */
 	struct elt objects;
+	uint32_t _unused_member2;
 };
 
 struct obj_array_array {
+	uint32_t _unused_member1;
 	struct array objects_array[4];
+	uint32_t _unused_member2;
 	size_t objects_array_len;
 };
 
@@ -111,7 +121,9 @@ static const struct json_obj_descr array_array_descr[] = {
 };
 
 struct obj_array_2dim {
+	uint32_t _unused_member1;
 	struct obj_array objects_array_array[3];
+	uint32_t _unused_member2;
 	size_t objects_array_array_len;
 };
 
@@ -173,8 +185,8 @@ ZTEST(lib_json_test, test_json_encoding)
 			.nested_string = "no escape necessary",
 		},
 		.nested_obj_array = {
-			{1, true, "true"},
-			{0, false, "false"}
+			{.nested_int = 1, .nested_bool = true, .nested_string = "true"},
+			{.nested_int = 0, .nested_bool = false, .nested_string = "false"}
 		},
 		.obj_array_len = 2
 	};
@@ -324,10 +336,11 @@ ZTEST(lib_json_test, test_json_encoding_array_array)
 {
 	struct obj_array_array obj_array_array_ts = {
 		.objects_array = {
-			[0] = { { .name = "Sim\303\263n Bol\303\255var", .height = 168 } },
-			[1] = { { .name = "Pel\303\251",                 .height = 173 } },
-			[2] = { { .name = "Usain Bolt",                  .height = 195 } },
-		},
+				[0] = {.objects = {.name = "Sim\303\263n Bol\303\255var",
+						   .height = 168}},
+				[1] = {.objects = {.name = "Pel\303\251", .height = 173}},
+				[2] = {.objects = {.name = "Usain Bolt", .height = 195}},
+			},
 		.objects_array_len = 3,
 	};
 	char encoded[] = "{\"objects_array\":["
