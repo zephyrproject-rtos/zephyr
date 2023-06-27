@@ -260,8 +260,8 @@ ZTEST(lib_json_test, test_json_decoding_array_array)
 	int ret;
 	struct obj_array_array obj_array_array_ts;
 	char encoded[] = "{\"objects_array\":["
-			  "[{\"height\":168,\"name\":\"Simón Bolívar\"}],"
-			  "[{\"height\":173,\"name\":\"Pelé\"}],"
+			  "[{\"height\":168,\"name\":\"Sim\303\263n Bol\303\255var\"}],"
+			  "[{\"height\":173,\"name\":\"Pel\303\251\"}],"
 			  "[{\"height\":195,\"name\":\"Usain Bolt\"}]]"
 			  "}";
 
@@ -275,14 +275,14 @@ ZTEST(lib_json_test, test_json_decoding_array_array)
 		      "Array doesn't have correct number of items");
 
 	zassert_true(!strcmp(obj_array_array_ts.objects_array[0].objects.name,
-			 "Simón Bolívar"), "String not decoded correctly");
+			 "Sim\303\263n Bol\303\255var"), "String not decoded correctly");
 	zassert_equal(obj_array_array_ts.objects_array[0].objects.height, 168,
-		      "Simón Bolívar height not decoded correctly");
+		      "Sim\303\263n Bol\303\255var height not decoded correctly");
 
 	zassert_true(!strcmp(obj_array_array_ts.objects_array[1].objects.name,
-			 "Pelé"), "String not decoded correctly");
+			 "Pel\303\251"), "String not decoded correctly");
 	zassert_equal(obj_array_array_ts.objects_array[1].objects.height, 173,
-		      "Pelé height not decoded correctly");
+		      "Pel\303\251 height not decoded correctly");
 
 	zassert_true(!strcmp(obj_array_array_ts.objects_array[2].objects.name,
 			 "Usain Bolt"), "String not decoded correctly");
@@ -294,23 +294,23 @@ ZTEST(lib_json_test, test_json_obj_arr_encoding)
 {
 	struct obj_array oa = {
 		.elements = {
-			[0] = { .name = "Simón Bolívar",   .height = 168 },
-			[1] = { .name = "Muggsy Bogues",   .height = 160 },
-			[2] = { .name = "Pelé",            .height = 173 },
-			[3] = { .name = "Hakeem Olajuwon", .height = 213 },
-			[4] = { .name = "Alex Honnold",    .height = 180 },
-			[5] = { .name = "Hazel Findlay",   .height = 157 },
-			[6] = { .name = "Daila Ojeda",     .height = 158 },
-			[7] = { .name = "Albert Einstein", .height = 172 },
-			[8] = { .name = "Usain Bolt",      .height = 195 },
-			[9] = { .name = "Paavo Nurmi",     .height = 174 },
+			[0] = { .name = "Sim\303\263n Bol\303\255var", .height = 168 },
+			[1] = { .name = "Muggsy Bogues",               .height = 160 },
+			[2] = { .name = "Pel\303\251",                 .height = 173 },
+			[3] = { .name = "Hakeem Olajuwon",             .height = 213 },
+			[4] = { .name = "Alex Honnold",                .height = 180 },
+			[5] = { .name = "Hazel Findlay",               .height = 157 },
+			[6] = { .name = "Daila Ojeda",                 .height = 158 },
+			[7] = { .name = "Albert Einstein",             .height = 172 },
+			[8] = { .name = "Usain Bolt",                  .height = 195 },
+			[9] = { .name = "Paavo Nurmi",                 .height = 174 },
 		},
 		.num_elements = 10,
 	};
 	const char encoded[] = "{\"elements\":["
-		"{\"name\":\"Simón Bolívar\",\"height\":168},"
+		"{\"name\":\"Sim\303\263n Bol\303\255var\",\"height\":168},"
 		"{\"name\":\"Muggsy Bogues\",\"height\":160},"
-		"{\"name\":\"Pelé\",\"height\":173},"
+		"{\"name\":\"Pel\303\251\",\"height\":173},"
 		"{\"name\":\"Hakeem Olajuwon\",\"height\":213},"
 		"{\"name\":\"Alex Honnold\",\"height\":180},"
 		"{\"name\":\"Hazel Findlay\",\"height\":157},"
@@ -333,8 +333,8 @@ ZTEST(lib_json_test, test_json_arr_obj_decoding)
 {
 	int ret;
 	struct obj_array obj_array_array_ts;
-	char encoded[] = "[{\"height\":168,\"name\":\"Simón Bolívar\"},"
-					"{\"height\":173,\"name\":\"Pelé\"},"
+	char encoded[] = "[{\"height\":168,\"name\":\"Sim\303\263n Bol\303\255var\"},"
+					"{\"height\":173,\"name\":\"Pel\303\251\"},"
 					"{\"height\":195,\"name\":\"Usain Bolt\"}"
 					"]";
 
@@ -347,14 +347,14 @@ ZTEST(lib_json_test, test_json_arr_obj_decoding)
 		      "Array doesn't have correct number of items");
 
 	zassert_true(!strcmp(obj_array_array_ts.elements[0].name,
-			 "Simón Bolívar"), "String not decoded correctly");
+			 "Sim\303\263n Bol\303\255var"), "String not decoded correctly");
 	zassert_equal(obj_array_array_ts.elements[0].height, 168,
-		      "Simón Bolívar height not decoded correctly");
+		      "Sim\303\263n Bol\303\255var height not decoded correctly");
 
 	zassert_true(!strcmp(obj_array_array_ts.elements[1].name,
-			 "Pelé"), "String not decoded correctly");
+			 "Pel\303\251"), "String not decoded correctly");
 	zassert_equal(obj_array_array_ts.elements[1].height, 173,
-		      "Pelé height not decoded correctly");
+		      "Pel\303\251 height not decoded correctly");
 
 	zassert_true(!strcmp(obj_array_array_ts.elements[2].name,
 			 "Usain Bolt"), "String not decoded correctly");
@@ -366,23 +366,23 @@ ZTEST(lib_json_test, test_json_arr_obj_encoding)
 {
 	struct obj_array oa = {
 		.elements = {
-			[0] = { .name = "Simón Bolívar",   .height = 168 },
-			[1] = { .name = "Muggsy Bogues",   .height = 160 },
-			[2] = { .name = "Pelé",            .height = 173 },
-			[3] = { .name = "Hakeem Olajuwon", .height = 213 },
-			[4] = { .name = "Alex Honnold",    .height = 180 },
-			[5] = { .name = "Hazel Findlay",   .height = 157 },
-			[6] = { .name = "Daila Ojeda",     .height = 158 },
-			[7] = { .name = "Albert Einstein", .height = 172 },
-			[8] = { .name = "Usain Bolt",      .height = 195 },
-			[9] = { .name = "Paavo Nurmi",     .height = 174 },
+			[0] = { .name = "Sim\303\263n Bol\303\255var", .height = 168 },
+			[1] = { .name = "Muggsy Bogues",               .height = 160 },
+			[2] = { .name = "Pel\303\251",                 .height = 173 },
+			[3] = { .name = "Hakeem Olajuwon",             .height = 213 },
+			[4] = { .name = "Alex Honnold",                .height = 180 },
+			[5] = { .name = "Hazel Findlay",               .height = 157 },
+			[6] = { .name = "Daila Ojeda",                 .height = 158 },
+			[7] = { .name = "Albert Einstein",             .height = 172 },
+			[8] = { .name = "Usain Bolt",                  .height = 195 },
+			[9] = { .name = "Paavo Nurmi",                 .height = 174 },
 		},
 		.num_elements = 10,
 	};
 	char encoded[] = "["
-		"{\"name\":\"Simón Bolívar\",\"height\":168},"
+		"{\"name\":\"Sim\303\263n Bol\303\255var\",\"height\":168},"
 		"{\"name\":\"Muggsy Bogues\",\"height\":160},"
-		"{\"name\":\"Pelé\",\"height\":173},"
+		"{\"name\":\"Pel\303\251\",\"height\":173},"
 		"{\"name\":\"Hakeem Olajuwon\",\"height\":213},"
 		"{\"name\":\"Alex Honnold\",\"height\":180},"
 		"{\"name\":\"Hazel Findlay\",\"height\":157},"
@@ -408,9 +408,9 @@ ZTEST(lib_json_test, test_json_obj_arr_decoding)
 {
 	struct obj_array oa;
 	char encoded[] = "{\"elements\":["
-		"{\"name\":\"Simón Bolívar\",\"height\":168},"
+		"{\"name\":\"Sim\303\263n Bol\303\255var\",\"height\":168},"
 		"{\"name\":\"Muggsy Bogues\",\"height\":160},"
-		"{\"name\":\"Pelé\",\"height\":173},"
+		"{\"name\":\"Pel\303\251\",\"height\":173},"
 		"{\"name\":\"Hakeem Olajuwon\",\"height\":213},"
 		"{\"name\":\"Alex Honnold\",\"height\":180},"
 		"{\"name\":\"Hazel Findlay\",\"height\":157},"
@@ -421,16 +421,16 @@ ZTEST(lib_json_test, test_json_obj_arr_decoding)
 		"]}";
 	const struct obj_array expected = {
 		.elements = {
-			[0] = { .name = "Simón Bolívar",   .height = 168 },
-			[1] = { .name = "Muggsy Bogues",   .height = 160 },
-			[2] = { .name = "Pelé",            .height = 173 },
-			[3] = { .name = "Hakeem Olajuwon", .height = 213 },
-			[4] = { .name = "Alex Honnold",    .height = 180 },
-			[5] = { .name = "Hazel Findlay",   .height = 157 },
-			[6] = { .name = "Daila Ojeda",     .height = 158 },
-			[7] = { .name = "Albert Einstein", .height = 172 },
-			[8] = { .name = "Usain Bolt",      .height = 195 },
-			[9] = { .name = "Paavo Nurmi",     .height = 174 },
+			[0] = { .name = "Sim\303\263n Bol\303\255var", .height = 168 },
+			[1] = { .name = "Muggsy Bogues",               .height = 160 },
+			[2] = { .name = "Pel\303\251",                 .height = 173 },
+			[3] = { .name = "Hakeem Olajuwon",             .height = 213 },
+			[4] = { .name = "Alex Honnold",                .height = 180 },
+			[5] = { .name = "Hazel Findlay",               .height = 157 },
+			[6] = { .name = "Daila Ojeda",                 .height = 158 },
+			[7] = { .name = "Albert Einstein",             .height = 172 },
+			[8] = { .name = "Usain Bolt",                  .height = 195 },
+			[9] = { .name = "Paavo Nurmi",                 .height = 174 },
 		},
 		.num_elements = 10,
 	};
