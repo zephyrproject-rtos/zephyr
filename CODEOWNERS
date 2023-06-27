@@ -249,6 +249,7 @@
 /drivers/clock_control/*nrf*              @nordic-krch
 /drivers/clock_control/*esp32*            @extremegtx @sylvioalves
 /drivers/clock_control/*cpg_mssr*         @aaillet
+/drivers/clock_control/clock_control_mcux_ccm_rev3.c @LaurentiuM1234
 /drivers/counter/                         @nordic-krch
 /drivers/console/ipm_console.c            @finikorg
 /drivers/console/semihost_console.c       @luozhongyao
