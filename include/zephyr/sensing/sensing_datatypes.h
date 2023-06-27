@@ -99,8 +99,8 @@ struct sensing_sensor_value_uint32 {
  * q31 version
  */
 struct sensing_sensor_value_q31 {
-	int8_t shift;
 	struct sensing_sensor_value_header header;
+	int8_t shift;
 	struct {
 		uint32_t timestamp_delta;
 		q31_t v;

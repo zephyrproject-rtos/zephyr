@@ -72,6 +72,11 @@ struct sensing_sensor_version {
  */
 #define SENSING_SENSOR_FLAG_REPORT_ON_CHANGE			BIT(1)
 
+/**
+ * @brief SENSING_SENSITIVITY_INDEX_ALL indicating sensitivity of each data field should be set
+ *
+ */
+#define SENSING_SENSITIVITY_INDEX_ALL -1
 
 /**
  * @brief Sensing subsystem sensor state.
@@ -110,7 +115,8 @@ typedef void *sensing_sensor_handle_t;
  */
 typedef void (*sensing_data_event_t)(
 		sensing_sensor_handle_t handle,
-		const void *buf);
+		const void *buf,
+		void *context);
 
 /**
  * @struct sensing_sensor_info
@@ -144,6 +150,7 @@ struct sensing_sensor_info {
  */
 struct sensing_callback_list {
 	sensing_data_event_t on_data_event;
+	void *context;
 };
 /**
  * @struct sensing_sensor_config
@@ -152,7 +159,10 @@ struct sensing_callback_list {
  */
 struct sensing_sensor_config {
 	enum sensing_sensor_attribute attri;
+
+	/** \ref SENSING_SENSITIVITY_INDEX_ALL */
 	int8_t data_field;
+
 	union {
 		uint32_t interval;
 		uint32_t sensitivity;
