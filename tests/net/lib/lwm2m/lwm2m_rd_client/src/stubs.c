@@ -20,6 +20,14 @@ uint8_t coap_header_get_code_fake_deleted(const struct coap_packet *cpkt)
 {
 	return COAP_RESPONSE_CODE_DELETED;
 }
+uint8_t coap_header_get_code_fake_changed(const struct coap_packet *cpkt)
+{
+	return COAP_RESPONSE_CODE_CHANGED;
+}
+uint8_t coap_header_get_code_fake_bad_request(const struct coap_packet *cpkt)
+{
+	return COAP_RESPONSE_CODE_BAD_REQUEST;
+}
 
 DEFINE_FAKE_VALUE_FUNC(int, coap_append_option_int, struct coap_packet *, uint16_t, unsigned int);
 DEFINE_FAKE_VALUE_FUNC(int, coap_packet_append_option, struct coap_packet *, uint16_t,
@@ -61,6 +69,20 @@ int lwm2m_get_bool_fake_default(const struct lwm2m_obj_path *path, bool *value)
 	*value = false;
 	return 0;
 }
+int lwm2m_get_bool_fake_true(const struct lwm2m_obj_path *path, bool *value)
+{
+	*value = true;
+	return 0;
+}
+
+uint32_t get_u32_val;
+
+int lwm2m_get_u32_val(const struct lwm2m_obj_path *path, uint32_t *val)
+{
+	*val = get_u32_val;
+	return 0;
+}
+
 
 /* subsys/net/lib/lwm2m/lwm2m_engine.h */
 DEFINE_FAKE_VALUE_FUNC(int, lwm2m_socket_start, struct lwm2m_ctx *);

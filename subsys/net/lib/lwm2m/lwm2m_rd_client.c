@@ -1488,7 +1488,7 @@ int lwm2m_rd_client_resume(void)
 {
 	k_mutex_lock(&client.mutex, K_FOREVER);
 
-	if (!lwm2m_rd_client_is_suspended(client.ctx)) {
+	if (!client.ctx || !lwm2m_rd_client_is_suspended(client.ctx)) {
 		k_mutex_unlock(&client.mutex);
 		LOG_WRN("Cannot resume, state is not suspended");
 		return -EPERM;
