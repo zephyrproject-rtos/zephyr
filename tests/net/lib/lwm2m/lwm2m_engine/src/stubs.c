@@ -40,6 +40,7 @@ DEFINE_FAKE_VALUE_FUNC(int, lwm2m_get_bool, const struct lwm2m_obj_path *, bool 
 DEFINE_FAKE_VALUE_FUNC(int, lwm2m_delete_obj_inst, uint16_t, uint16_t);
 DEFINE_FAKE_VOID_FUNC(lwm2m_clear_block_contexts);
 DEFINE_FAKE_VALUE_FUNC(int, lwm2m_security_mode, struct lwm2m_ctx *);
+DEFINE_FAKE_VALUE_FUNC(int, z_impl_zsock_setsockopt, int, int, int, const void *, socklen_t);
 
 static sys_slist_t obs_obj_path_list = SYS_SLIST_STATIC_INIT(&obs_obj_path_list);
 sys_slist_t *lwm2m_obs_obj_path_list(void)
@@ -123,11 +124,6 @@ int z_impl_zsock_poll(struct zsock_pollfd *fds, int nfds, int poll_timeout)
 {
 	k_sleep(K_MSEC(1));
 	fds->revents = my_events;
-	return 0;
-}
-
-int z_impl_zsock_setsockopt(int sock, int level, int optname, const void *optval, socklen_t optlen)
-{
 	return 0;
 }
 
