@@ -1210,7 +1210,7 @@ struct sensor_info {
 	}
 
 #define SENSOR_INFO_DEFINE(name, ...)					\
-	static const STRUCT_SECTION_ITERABLE(sensor_info, name) =	\
+	const STRUCT_SECTION_ITERABLE(sensor_info, name) =	        \
 		SENSOR_INFO_INITIALIZER(__VA_ARGS__)
 
 #define SENSOR_INFO_DT_NAME(node_id)					\
@@ -1221,7 +1221,14 @@ struct sensor_info {
 			   DEVICE_DT_GET(node_id),			\
 			   DT_NODE_VENDOR_OR(node_id, NULL),		\
 			   DT_NODE_MODEL_OR(node_id, NULL),		\
-			   DT_PROP_OR(node_id, friendly_name, NULL))	\
+			   DT_PROP_OR(node_id, friendly_name, NULL))
+
+#if defined(CONFIG_HAS_DTS) || defined(__DOXYGEN__)
+#define Z_MAYBE_SENSOR_INFO_DECLARE_INTERNAL(node_id)                                              \
+	extern const struct sensor_info SENSOR_INFO_DT_NAME(node_id);
+
+DT_FOREACH_STATUS_OKAY_NODE(Z_MAYBE_SENSOR_INFO_DECLARE_INTERNAL);
+#endif /* CONFIG_HAS_DTS || __DOXYGEN__ */
 
 #else
 

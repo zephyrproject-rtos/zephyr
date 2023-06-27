@@ -17,9 +17,10 @@
  * @ingroup sensing
  */
 
-#include <zephyr/sensing/sensing_datatypes.h>
-#include <zephyr/sensing/sensing_sensor_types.h>
 #include <zephyr/device.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/sensing/datatypes.h>
+#include <zephyr/sensing/sensor_types.h>
 
 /**
  * @brief Sensing Subsystem API
@@ -82,17 +83,6 @@ enum sensing_sensor_state {
 	SENSING_SENSOR_STATE_OFFLINE = 1,
 };
 
-/**
- * @brief Sensing subsystem sensor config attribute
- *
- */
-enum sensing_sensor_attribute {
-	SENSING_SENSOR_ATTRIBUTE_INTERVAL = 0,
-	SENSING_SENSOR_ATTRIBUTE_SENSITIVITY = 1,
-	SENSING_SENSOR_ATTRIBUTE_LATENCY = 2,
-	SENSING_SENSOR_ATTRIBUTE_MAX,
-};
-
 
 /**
  * @brief Define Sensing subsystem sensor handle
@@ -118,23 +108,10 @@ typedef void (*sensing_data_event_t)(
  *
  */
 struct sensing_sensor_info {
-	/** Name of the sensor instance */
-	const char *name;
-
-	/** Friendly name of the sensor instance */
-	const char *friendly_name;
-
-	/** Vendor name of the sensor instance */
-	const char *vendor;
-
-	/** Model name of the sensor instance */
-	const char *model;
+	const struct sensor_info * info;
 
 	/** Sensor type */
-	const int32_t type;
-
-	/** Minimal report interval in micro seconds */
-	const uint32_t minimal_interval;
+	int32_t type;
 };
 
 /**
@@ -144,20 +121,6 @@ struct sensing_sensor_info {
  */
 struct sensing_callback_list {
 	sensing_data_event_t on_data_event;
-};
-/**
- * @struct sensing_sensor_config
- * @brief Sensing subsystem sensor configure, including interval, sensitivity, latency
- *
- */
-struct sensing_sensor_config {
-	enum sensing_sensor_attribute attri;
-	int8_t data_field;
-	union {
-		uint32_t interval;
-		uint32_t sensitivity;
-		uint64_t latency;
-	};
 };
 
 
@@ -226,36 +189,6 @@ int sensing_open_sensor_by_dt(
  */
 int sensing_close_sensor(
 		sensing_sensor_handle_t *handle);
-
-/**
- * @brief Set current config items to Sensing subsystem.
- *
- * @param handle The sensor instance handle.
- *
- * @param configs The configs to be set according to config attribute.
- *
- * @param count count of configs.
- *
- * @return 0 on success or negative error value on failure, not support etc.
- */
-int sensing_set_config(
-		sensing_sensor_handle_t handle,
-		struct sensing_sensor_config *configs, int count);
-
-/**
- * @brief Get current config items from Sensing subsystem.
- *
- * @param handle The sensor instance handle.
- *
- * @param configs The configs to be get according to config attribute.
- *
- * @param count count of configs.
- *
- * @return 0 on success or negative error value on failure, not support etc.
- */
-int sensing_get_config(
-		sensing_sensor_handle_t handle,
-		struct sensing_sensor_config *configs, int count);
 
 /**
  * @brief Get sensor information from sensor instance handle.

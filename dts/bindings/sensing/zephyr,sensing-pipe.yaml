@@ -1,0 +1,43 @@
+# Copyright (c) 2023 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+description: Passthrough sensor type which enables the sensing subsystem to communicate with physical devices
+
+compatible: "zephyr,sensing-pipe"
+
+include: [sensor-device.yaml, base.yaml]
+
+properties:
+  dev:
+    type: phandle
+    required: true
+    description: Physical device which provides the data
+
+  sensor-types:
+    type: array
+    required: true
+    description: |
+      One or more sensor data types that are provided by this device. For
+      example, a 'dev' pointing to a bmi160 may report accel/gyro/die_temp or
+      any subset of those types.
+
+  rotation-matrix:
+    type: array
+    description: |
+      3x3 matrix to rotation x, y, and z axes.
+      In order to make application logic agnostic to how the device was placed
+      on the board, it's possible to enter the rotation matrix which will be
+      applied to every sample produced by this sensor. The final orientation
+      will be:
+      * X-axis is horizontal and positive toward the right
+      * Y-axis is vertical and positive toward the top
+      * Z-axis is depth and positive toward the user
+      
+      If not provided, the rotation matrix will be the identity matrix.
+      Otherwise, the following will be used:
+      
+      +-        -+   +-        -+   +- -+
+      | v1 v2 v3 |   | sensor_X | = | X |
+      | v4 v5 v6 | * | sensor_Y | = | Y |
+      | v7 v8 v9 |   | sensor_Z | = | Z |
+      +-        -+   +-        -+   +- -+

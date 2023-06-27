@@ -1,0 +1,9 @@
+# Copyright (c) 2023 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  subsys.sensing.list:
+    tags:
+      - sensor
+      - subsys
+    platform_allow: native_posix

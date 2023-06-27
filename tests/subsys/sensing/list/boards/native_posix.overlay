@@ -1,0 +1,23 @@
+/* Copyright (c) 2023 Google LLC
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+ #include <zephyr/sensing/sensor_types.h>
+
+/ {
+	accelgyro: accelgyro {
+		compatible = "zephyr,sensing-pipe";
+		status = "okay";
+		dev = <&icm42688>;
+		sensor-types = <SENSING_SENSOR_TYPE_MOTION_ACCELEROMETER_3D SENSING_SENSOR_TYPE_MOTION_GYROMETER_3D>;
+	};
+};
+
+&spi0 {
+	icm42688: icm42688@3 {
+		compatible = "invensense,icm42688";
+		int-gpios = <&gpio0 1 GPIO_ACTIVE_HIGH>;
+		spi-max-frequency = <50000000>;
+		reg = <3>;
+	};
+};
