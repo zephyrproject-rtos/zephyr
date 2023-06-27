@@ -98,6 +98,24 @@ void dma_stm32_clear_tc(DMA_TypeDef *DMAx, uint32_t id)
 	LL_DMA_ClearFlag_TC(DMAx, dma_stm32_id_to_stream(id));
 }
 
+/* data transfer error */
+static inline bool dma_stm32_is_dte_active(DMA_TypeDef *dma, uint32_t id)
+{
+	return LL_DMA_IsActiveFlag_DTE(dma, dma_stm32_id_to_stream(id));
+}
+
+/* link transfer error */
+static inline bool dma_stm32_is_ule_active(DMA_TypeDef *dma, uint32_t id)
+{
+	return LL_DMA_IsActiveFlag_ULE(dma, dma_stm32_id_to_stream(id));
+}
+
+/* user setting error */
+static inline bool dma_stm32_is_use_active(DMA_TypeDef *dma, uint32_t id)
+{
+	return LL_DMA_IsActiveFlag_USE(dma, dma_stm32_id_to_stream(id));
+}
+
 /* transfer error either a data or user or link error */
 bool dma_stm32_is_te_active(DMA_TypeDef *DMAx, uint32_t id)
 {
@@ -127,10 +145,13 @@ void dma_stm32_clear_ht(DMA_TypeDef *DMAx, uint32_t id)
 
 void stm32_dma_dump_stream_irq(DMA_TypeDef *dma, uint32_t id)
 {
-	LOG_INF("tc: %d, ht: %d, te: %d",
+	LOG_INF("tc: %d, ht: %d, dte: %d, ule: %d, use: %d",
 		dma_stm32_is_tc_active(dma, id),
 		dma_stm32_is_ht_active(dma, id),
-		dma_stm32_is_te_active(dma, id));
+		dma_stm32_is_dte_active(dma, id),
+		dma_stm32_is_ule_active(dma, id),
+		dma_stm32_is_use_active(dma, id)
+	);
 }
 
 /* Check if nsecure masked interrupt is active on channel */
@@ -487,6 +508,9 @@ static int dma_stm32_configure(const struct device *dev,
 	LL_DMA_Init(dma, dma_stm32_id_to_stream(id), &DMA_InitStruct);
 
 	LL_DMA_EnableIT_TC(dma, dma_stm32_id_to_stream(id));
+	LL_DMA_EnableIT_USE(dma, dma_stm32_id_to_stream(id));
+	LL_DMA_EnableIT_ULE(dma, dma_stm32_id_to_stream(id));
+	LL_DMA_EnableIT_DTE(dma, dma_stm32_id_to_stream(id));
 
 	/* Enable Half-Transfer irq if circular mode is enabled */
 	if (config->head_block->source_reload_en) {
@@ -631,6 +655,9 @@ static int dma_stm32_stop(const struct device *dev, uint32_t id)
 	}
 
 	LL_DMA_DisableIT_TC(dma, dma_stm32_id_to_stream(id));
+	LL_DMA_DisableIT_USE(dma, dma_stm32_id_to_stream(id));
+	LL_DMA_DisableIT_ULE(dma, dma_stm32_id_to_stream(id));
+	LL_DMA_DisableIT_DTE(dma, dma_stm32_id_to_stream(id));
 
 	dma_stm32_clear_stream_irq(dev, id);
 	dma_stm32_disable_stream(dma, id);
