@@ -55,8 +55,7 @@ static struct in6_addr ll_addr = { { { 0xfe, 0x80, 0x43, 0xb8, 0, 0, 0, 0,
 				       0, 0, 0, 0xf2, 0xaa, 0x29, 0x02,
 				       0x04 } } };
 
-static struct in6_addr in6addr_mcast = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
-					     0, 0, 0, 0, 0, 0, 0, 0x1 } } };
+static struct in6_addr in6addr_mcast;
 
 static struct net_if *iface1;
 static struct net_if *iface2;
