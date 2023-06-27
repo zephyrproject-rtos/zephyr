@@ -12,6 +12,7 @@
 #include <errno.h>
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
+#include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/led.h>
 #include <zephyr/drivers/led/lp50xx.h>
@@ -41,6 +42,9 @@ LOG_MODULE_REGISTER(lp50xx, CONFIG_LED_LOG_LEVEL);
 /* Maximum number of channels */
 #define LP50XX_MAX_CHANNELS(nmodules)	\
 	((LP50XX_COLORS_PER_LED + 1) * ((nmodules) + 1))
+
+#define LP50XX_DISABLE_DELAY_US		3
+#define LP50XX_ENABLE_DELAY_US		500
 
 /* Base registers */
 #define LP50XX_DEVICE_CONFIG0		0x00
@@ -73,6 +77,7 @@ LOG_MODULE_REGISTER(lp50xx, CONFIG_LED_LOG_LEVEL);
 
 struct lp50xx_config {
 	struct i2c_dt_spec bus;
+	const struct gpio_dt_spec gpio_enable;
 	uint8_t num_modules;
 	uint8_t max_leds;
 	uint8_t num_leds;
@@ -233,10 +238,41 @@ static int lp50xx_reset(const struct device *dev)
 	return i2c_write_dt(&config->bus, buf, 2);
 }
 
+static int lp50xx_hw_enable(const struct device *dev, bool enable)
+{
+	const struct lp50xx_config *config = dev->config;
+	int err;
+
+	if (config->gpio_enable.port == NULL) {
+		/* Nothing to do */
+		return 0;
+	}
+
+	err = gpio_pin_set_dt(&config->gpio_enable, enable);
+	if (err < 0) {
+		LOG_ERR("%s: failed to set enable gpio", dev->name);
+		return err;
+	}
+
+	k_usleep(enable ? LP50XX_ENABLE_DELAY_US : LP50XX_DISABLE_DELAY_US);
+
+	return 0;
+}
+
+static int lp50xx_enable(const struct device *dev, bool enable)
+{
+	const struct lp50xx_config *config = dev->config;
+	uint8_t value = enable ? CONFIG0_CHIP_EN : 0;
+
+	return i2c_reg_update_byte_dt(&config->bus,
+				      LP50XX_DEVICE_CONFIG0,
+				      CONFIG0_CHIP_EN,
+				      value);
+}
+
 static int lp50xx_init(const struct device *dev)
 {
 	const struct lp50xx_config *config = dev->config;
-	uint8_t buf[3];
 	int err;
 
 	if (!i2c_is_ready_dt(&config->bus)) {
@@ -252,6 +288,29 @@ static int lp50xx_init(const struct device *dev)
 		return -EINVAL;
 	}
 
+	/* Configure GPIO if present */
+	if (config->gpio_enable.port != NULL) {
+		if (!gpio_is_ready_dt(&config->gpio_enable)) {
+			LOG_ERR("%s: enable gpio is not ready", dev->name);
+			return -ENODEV;
+		}
+
+		err = gpio_pin_configure_dt(&config->gpio_enable,
+					    GPIO_OUTPUT_INACTIVE);
+		if (err < 0) {
+			LOG_ERR("%s: failed to initialize enable gpio",
+				dev->name);
+			return err;
+		}
+	}
+
+	/* Enable hardware */
+	err = lp50xx_hw_enable(dev, true);
+	if (err < 0) {
+		LOG_ERR("%s: failed to enable hardware", dev->name);
+		return err;
+	}
+
 	/* Reset device */
 	err = lp50xx_reset(dev);
 	if (err < 0) {
@@ -259,11 +318,10 @@ static int lp50xx_init(const struct device *dev)
 		return err;
 	}
 
-	/* Enable LED controller. */
-	buf[0] = LP50XX_DEVICE_CONFIG0;
-	buf[1] = CONFIG0_CHIP_EN;
-	err = i2c_write_dt(&config->bus, buf, 2);
+	/* Enable device */
+	err = lp50xx_enable(dev, true);
 	if (err < 0) {
+		LOG_ERR("%s: failed to enable", dev->name);
 		return err;
 	}
 
@@ -301,6 +359,8 @@ static const struct led_driver_api lp50xx_led_api = {
 										\
 	static const struct lp50xx_config lp##id##_config_##n = {		\
 		.bus			= I2C_DT_SPEC_INST_GET(n),		\
+		.gpio_enable		=					\
+			GPIO_DT_SPEC_INST_GET_OR(n, enable_gpios, {0}),		\
 		.num_modules		= nmodules,				\
 		.max_leds		= LP##id##_MAX_LEDS,			\
 		.num_leds		= ARRAY_SIZE(lp##id##_leds_##n),	\
