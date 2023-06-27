@@ -707,7 +707,7 @@ static void dma_callback(const struct device *dev, void *user_data,
 {
 	/* user_data directly holds the adc device */
 	struct adc_stm32_data *data = user_data;
-	const struct adc_stm32_cfg *config = dev->config;
+	const struct adc_stm32_cfg *config = data->dev->config;
 	ADC_TypeDef *adc = (ADC_TypeDef *)config->base;
 
 	LOG_DBG("dma callback");
