@@ -82,5 +82,6 @@ source "drivers/watchdog/Kconfig"
 source "drivers/wifi/Kconfig"
 source "drivers/xen/Kconfig"
 source "drivers/sip_svc/Kconfig"
+source "drivers/hwspinlock/Kconfig"
 
 endmenu
