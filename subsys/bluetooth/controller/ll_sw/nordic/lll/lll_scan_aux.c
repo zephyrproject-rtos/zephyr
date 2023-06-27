@@ -566,8 +566,8 @@ sync_aux_prepare_done:
 					  ull_scan_aux_lll_handle_get(lll_aux)), ticks_at_event);
 	/* check if preempt to start has changed */
 	if (overhead) {
-		LL_ASSERT_MSG(false, "%s: Actual EVENT_OVERHEAD_START_US = %u",
-			      __func__, HAL_TICKER_TICKS_TO_US(overhead));
+		LL_ASSERT_OVERHEAD(overhead);
+
 		radio_isr_set(isr_done, lll_aux);
 		radio_disable();
 

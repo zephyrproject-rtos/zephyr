@@ -514,8 +514,8 @@ static int prepare_cb_common(struct lll_prepare_param *p, uint8_t chan_idx)
 				    ticks_at_event);
 	/* check if preempt to start has changed */
 	if (overhead) {
-		LL_ASSERT_MSG(false, "%s: Actual EVENT_OVERHEAD_START_US = %u",
-			      __func__, HAL_TICKER_TICKS_TO_US(overhead));
+		LL_ASSERT_OVERHEAD(overhead);
+
 		radio_isr_set(isr_done, lll);
 		radio_disable();
 
