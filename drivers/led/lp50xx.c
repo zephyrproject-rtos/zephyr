@@ -56,6 +56,9 @@ LOG_MODULE_REGISTER(lp50xx, CONFIG_LED_LOG_LEVEL);
 #define LP50XX_OUT0_COLOR(nmodules)		\
 	(LP50XX_LED0_BRIGHTNESS(nmodules) + (nmodules))
 
+#define LP50XX_RESET(nmodules)			\
+	(LP50XX_OUT0_COLOR(nmodules) + LP50XX_COLORS_PER_LED * (nmodules))
+
 /* Register values */
 #define CONFIG0_CHIP_EN			BIT(6)
 
@@ -65,6 +68,8 @@ LOG_MODULE_REGISTER(lp50xx, CONFIG_LED_LOG_LEVEL);
 #define CONFIG1_AUTO_INCR_EN		BIT(3)
 #define CONFIG1_POWER_SAVE_EN		BIT(4)
 #define CONFIG1_LOG_SCALE_EN		BIT(5)
+
+#define RESET_SW			0xFF
 
 struct lp50xx_config {
 	struct i2c_dt_spec bus;
@@ -200,6 +205,34 @@ static int lp50xx_write_channels(const struct device *dev,
 	return i2c_write_dt(&config->bus, data->chan_buf, num_channels + 1);
 }
 
+static int lp50xx_reset(const struct device *dev)
+{
+	const struct lp50xx_config *config = dev->config;
+	uint8_t buf[2];
+	int err;
+
+	/* Software reset */
+	buf[0] = LP50XX_RESET(config->num_modules);
+	buf[1] = RESET_SW;
+	err = i2c_write_dt(&config->bus, buf, 2);
+	if (err < 0) {
+		return err;
+	}
+
+	/* After reset, apply configuration since all registers are reset. */
+	buf[0] = LP50XX_DEVICE_CONFIG1;
+	buf[1] = CONFIG1_PWM_DITHERING_EN | CONFIG1_AUTO_INCR_EN
+		| CONFIG1_POWER_SAVE_EN;
+	if (config->max_curr_opt) {
+		buf[1] |= CONFIG1_MAX_CURRENT_OPT;
+	}
+	if (config->log_scale_en) {
+		buf[1] |= CONFIG1_LOG_SCALE_EN;
+	}
+
+	return i2c_write_dt(&config->bus, buf, 2);
+}
+
 static int lp50xx_init(const struct device *dev)
 {
 	const struct lp50xx_config *config = dev->config;
@@ -219,22 +252,10 @@ static int lp50xx_init(const struct device *dev)
 		return -EINVAL;
 	}
 
-	/*
-	 * Since the status of the LP503x controller is unknown when entering
-	 * this function, and since there is no way to reset it, then the whole
-	 * configuration must be applied.
-	 */
-
-	/* Disable bank control for all LEDs. */
-	buf[0] = LP50XX_LED_CONFIG0;
-	buf[1] = 0;
-	buf[2] = 0;
-	if (config->chip == LP5009 || config->chip == LP5012) {
-		err = i2c_write_dt(&config->bus, buf, 2);
-	} else {
-		err = i2c_write_dt(&config->bus, buf, 3);
-	}
+	/* Reset device */
+	err = lp50xx_reset(dev);
 	if (err < 0) {
+		LOG_ERR("%s: failed to reset", dev->name);
 		return err;
 	}
 
@@ -246,18 +267,7 @@ static int lp50xx_init(const struct device *dev)
 		return err;
 	}
 
-	/* Apply configuration. */
-	buf[0] = LP50XX_DEVICE_CONFIG1;
-	buf[1] = CONFIG1_PWM_DITHERING_EN | CONFIG1_AUTO_INCR_EN
-		| CONFIG1_POWER_SAVE_EN;
-	if (config->max_curr_opt) {
-		buf[1] |= CONFIG1_MAX_CURRENT_OPT;
-	}
-	if (config->log_scale_en) {
-		buf[1] |= CONFIG1_LOG_SCALE_EN;
-	}
-
-	return i2c_write_dt(&config->bus, buf, 2);
+	return 0;
 }
 
 static const struct led_driver_api lp50xx_led_api = {
