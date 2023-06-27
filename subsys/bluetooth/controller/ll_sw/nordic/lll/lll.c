@@ -755,6 +755,11 @@ int lll_prepare_resolve(lll_is_abort_cb_t is_abort_cb, lll_abort_cb_t abort_cb,
 
 	err = prepare_cb(prepare_param);
 
+	if (!IS_ENABLED(CONFIG_BT_CTLR_ASSERT_OVERHEAD_START) &&
+	    (err == -ECANCELED)) {
+		err = 0;
+	}
+
 #if !defined(CONFIG_BT_CTLR_LOW_LAT)
 	uint32_t ret;
 
