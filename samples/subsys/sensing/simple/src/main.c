@@ -12,10 +12,12 @@
 
 LOG_MODULE_REGISTER(main, LOG_LEVEL_INF);
 
-static void acc_data_event_callback(sensing_sensor_handle_t handle, const void *buf)
+static void acc_data_event_callback(sensing_sensor_handle_t handle, const void *buf,
+				    void *context)
 {
 	const struct sensing_sensor_info *info = sensing_get_sensor_info(handle);
 	struct sensing_sensor_value_3d_q31 *sample = (struct sensing_sensor_value_3d_q31 *)buf;
+	ARG_UNUSED(context);
 
 	LOG_INF("%s(%d), handle:%p, Sensor:%s data:(x:%d, y:%d, z:%d)",
 		__func__, __LINE__, handle, info->name,
