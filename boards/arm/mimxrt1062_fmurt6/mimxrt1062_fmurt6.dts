@@ -20,7 +20,6 @@
 		led1 = &red_led;
 		watchdog0 = &wdog0;
 		sdhc0 = &usdhc1;
-		pwm-0 = &flexpwm2_pwm0;
 		gps1 = &lpuart2;
 		telem1 = &lpuart3;
 		telem4-gps2 = &lpuart5;
@@ -350,48 +349,56 @@
 	status = "okay";
 	pinctrl-0 = <&pinmux_flexpwm_fmu_ch1>;
 	pinctrl-names = "default";
+	nxp,prescaler = <64>;
 };
 
 &flexpwm2_pwm1 {
 	status = "okay";
 	pinctrl-0 = <&pinmux_flexpwm_fmu_ch2>;
 	pinctrl-names = "default";
+	nxp,prescaler = <64>;
 };
 
 &flexpwm2_pwm2	{
 	status = "okay";
 	pinctrl-0 = <&pinmux_flexpwm_fmu_ch3>;
 	pinctrl-names = "default";
+	nxp,prescaler = <64>;
 };
 
 &flexpwm2_pwm3	{
 	status = "okay";
 	pinctrl-0 = <&pinmux_flexpwm_fmu_ch4>;
 	pinctrl-names = "default";
+	nxp,prescaler = <64>;
 };
 
 &flexpwm3_pwm2	{
 	status = "okay";
 	pinctrl-0 = <&pinmux_flexpwm_fmu_ch5>;
 	pinctrl-names = "default";
+	nxp,prescaler = <64>;
 };
 
 &flexpwm3_pwm0	{
 	status = "okay";
 	pinctrl-0 = <&pinmux_flexpwm_fmu_ch6>;
 	pinctrl-names = "default";
+	nxp,prescaler = <64>;
 };
 
 &flexpwm4_pwm2	{
 	status = "okay";
 	pinctrl-0 = <&pinmux_flexpwm_fmu_ch7>;
 	pinctrl-names = "default";
+	nxp,prescaler = <64>;
 };
 
 &flexpwm4_pwm0	{
 	status = "okay";
 	pinctrl-0 = <&pinmux_flexpwm_fmu_ch8>;
 	pinctrl-names = "default";
+	nxp,prescaler = <64>;
 };
 
 &enet2 {
