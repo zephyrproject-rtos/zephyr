@@ -225,6 +225,26 @@ extern "C" {
 	((type *)(((char *)(ptr)) - offsetof(type, field)))
 
 /**
+ * @brief Get the size of a field in a structure type
+ *
+ * Example:
+ *
+ *	struct foo {
+ *		int bar;
+ *		char baz;
+ *	};
+ *
+ *	size_t size_of_baz = SIZEOF_FIELD(struct foo, baz);
+ *
+ * Above, @p size_of_baz is equal to sizeof(char).
+ *
+ * @param type the type of the structure containing the field
+ * @param member the name of the field in the structure
+ * @return the size of the field in bytes
+ */
+#define SIZEOF_FIELD(type, member) sizeof(((type *)0)->member)
+
+/**
  * @brief Value of @p x rounded up to the next multiple of @p align.
  */
 #define ROUND_UP(x, align)                                   \
