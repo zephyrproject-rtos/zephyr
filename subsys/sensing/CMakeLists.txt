@@ -4,4 +4,5 @@ zephyr_library()
 zephyr_library_sources(
     src/sensor_info.c
     src/sensor_pipe.c
+    src/sensor_connections.c
 )

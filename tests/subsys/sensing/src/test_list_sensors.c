@@ -8,10 +8,6 @@
 #include <zephyr/sensing/sensor.h>
 #include <zephyr/ztest.h>
 
-#include <string.h>
-
-ZTEST_SUITE(sensing, NULL, NULL, NULL, NULL, NULL);
-
 ZTEST(sensing, test_list_sensors)
 {
 	int num_sensors;

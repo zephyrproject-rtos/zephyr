@@ -161,26 +161,6 @@ int sensing_open_sensor(
 		sensing_sensor_handle_t *handle);
 
 /**
- * @brief Open sensor instance by device.
- *
- * Application clients use it to open a sensor instance and get its handle.
- * Support multiple Application clients for open same sensor instance,
- * in this case, the returned handle will different for different clients.
- * meanwhile, also register sensing callback list.
- *
- * @param dev pointer device get from device tree.
- *
- * @param cb_list callback list to be registered to sensing.
- *
- * @param *handle The opened instance handle, if failed will be set to NULL.
- *
- * @return 0 on success or negative error value on failure.
- */
-int sensing_open_sensor_by_dt(
-		const struct device *dev, const struct sensing_callback_list *cb_list,
-		sensing_sensor_handle_t *handle);
-
-/**
  * @brief Close sensor instance.
  *
  * @param handle The sensor instance handle need to close.
@@ -188,7 +168,7 @@ int sensing_open_sensor_by_dt(
  * @return 0 on success or negative error value on failure.
  */
 int sensing_close_sensor(
-		sensing_sensor_handle_t *handle);
+		sensing_sensor_handle_t handle);
 
 /**
  * @brief Get sensor information from sensor instance handle.
@@ -199,6 +179,8 @@ int sensing_close_sensor(
  */
 const struct sensing_sensor_info *sensing_get_sensor_info(
 		sensing_sensor_handle_t handle);
+
+__test_only void sensing_reset_connections(void);
 
 #ifdef __cplusplus
 }

@@ -58,6 +58,24 @@ extern "C" {
 /** Number of bits in a long long int. */
 #define BITS_PER_LONG_LONG	(__CHAR_BIT__ * __SIZEOF_LONG_LONG__)
 
+/*
+ * Attribute for generating an error if a function is used.
+ *
+ * Clang does not have a function attribute to do this. Rely on linker
+ * errors. :(
+ */
+#ifdef __clang__
+#define __error(msg) __attribute__((section("/DISCARD/")))
+#else
+#define __error(msg) __attribute__((error(msg)))
+#endif
+
+#ifdef CONFIG_TEST
+#define __test_only
+#else
+#define __test_only __error("This function should only be used by tests")
+#endif
+
 /**
  * @brief Create a contiguous bitmask starting at bit position @p l
  *        and ending at position @p h.

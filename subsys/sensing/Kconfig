@@ -5,6 +5,7 @@ config SENSING
 	bool "Sensing Subsystem"
 	select DSP
 	select SENSOR_INFO
+	select SYS_MEM_BLOCKS
 	help
 	  Enable Sensing Subsystem.
 
@@ -13,5 +14,15 @@ if SENSING
 module = SENSING
 module-str = sensing
 source "subsys/logging/Kconfig.template.log_config"
+
+config SENSING_MAX_CONNECTIONS
+	int "Maximum number of simultaneous open connections"
+	default 10
+	help
+	  Every client of the subsystem is required to open a connection to each
+	  sensor that they want to get data for. This value controls the maximum
+	  number of concurrent connections (note that a connection can be to the
+	  same sensor by different clients or the same client to different
+	  sensors).
 
 endif # SENSING
