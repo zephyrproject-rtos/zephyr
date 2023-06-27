@@ -1804,6 +1804,7 @@ Networking:
     - rlubos
   collaborators:
     - tbursztyka
+    - ssharks
   files:
     - drivers/net/
     - include/zephyr/net/
