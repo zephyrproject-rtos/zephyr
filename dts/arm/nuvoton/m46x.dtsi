@@ -165,9 +165,11 @@
 			status = "disabled";
 		};
 
-		pinctrl: pin-controller@40000500 {
+		pinctrl: pin-controller@40000080 {
 			compatible = "nuvoton,numaker-pinctrl";
-			reg = <0x40000500 0xa0>;
+			reg = <0x40000080 0x28
+			       0x40000500 0xa0>;
+			reg-names = "mfos", "mfp";
 			status = "okay";
 		};
 
