@@ -50,6 +50,17 @@
 #define ALIGNMENT 32
 #define BUFFER_MEM_REGION __attribute__((__section__("SRAM4.dma")))
 
+#elif defined(CONFIG_BOARD_NUCLEO_U575ZI_Q)
+
+#define ADC_DEVICE_NODE DT_INST(0, st_stm32_adc)
+#define ADC_RESOLUTION 12
+#define ADC_GAIN ADC_GAIN_1
+#define ADC_REFERENCE ADC_REF_INTERNAL
+#define ADC_ACQUISITION_TIME ADC_ACQ_TIME_DEFAULT
+#define ADC_1ST_CHANNEL_ID 1
+#define ADC_2ND_CHANNEL_ID 7
+#define ALIGNMENT 32
+
 #endif
 
 /* Invalid value that is not supposed to be written by the driver. It is used
