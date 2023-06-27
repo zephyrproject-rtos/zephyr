@@ -159,7 +159,8 @@ struct adc_stm32_data {
 struct adc_stm32_cfg {
 	ADC_TypeDef *base;
 	void (*irq_cfg_func)(void);
-	struct stm32_pclken pclken;
+	const struct stm32_pclken *pclken;
+	size_t pclk_len;
 	uint32_t clk_prescaler;
 	const struct pinctrl_dev_config *pcfg;
 	const uint16_t sampling_time_table[STM32_NB_SAMPLING_TIME];
@@ -345,7 +346,7 @@ static void adc_stm32_calib_delay(const struct device *dev)
 	uint32_t adc_rate, wait_cycles;
 
 	if (clock_control_get_rate(clk,
-		(clock_control_subsys_t) &config->pclken, &adc_rate) < 0) {
+		(clock_control_subsys_t) &config->pclken[0], &adc_rate) < 0) {
 		LOG_ERR("ADC clock rate get error.");
 	}
 
@@ -1217,12 +1218,35 @@ static int adc_stm32_channel_setup(const struct device *dev,
 	return 0;
 }
 
+/* This symbol takes the value 1 if one of the device instances */
+/* is configured in dts with a domain clock */
+#if STM32_DT_INST_DEV_DOMAIN_CLOCK_SUPPORT
+#define STM32_ADC_DOMAIN_CLOCK_SUPPORT 1
+#else
+#define STM32_ADC_DOMAIN_CLOCK_SUPPORT 0
+#endif
+
 static int adc_stm32_set_clock(const struct device *dev)
 {
 	const struct adc_stm32_cfg *config = dev->config;
+	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 	ADC_TypeDef *adc = (ADC_TypeDef *)config->base;
 
 	ARG_UNUSED(adc); /* Necessary to avoid warnings on some series */
+
+	if (clock_control_on(clk,
+		(clock_control_subsys_t) &config->pclken[0]) != 0) {
+		return -EIO;
+	}
+
+	if (IS_ENABLED(STM32_ADC_DOMAIN_CLOCK_SUPPORT) && (config->pclk_len > 1)) {
+		/* Enable ADC clock source */
+		if (clock_control_configure(clk,
+					    (clock_control_subsys_t) &config->pclken[1],
+					    NULL) != 0) {
+			return -EIO;
+		}
+	}
 
 #if defined(CONFIG_SOC_SERIES_STM32F0X)
 	LL_ADC_SetClock(adc, config->clk_prescaler);
@@ -1275,11 +1299,6 @@ static int adc_stm32_init(const struct device *dev)
 	 * selection of all channels on one ADC instance is the same.
 	 */
 	data->acq_time_index = -1;
-
-	if (clock_control_on(clk,
-		(clock_control_subsys_t) &config->pclken) != 0) {
-		return -EIO;
-	}
 
 	adc_stm32_set_clock(dev);
 
@@ -1518,13 +1537,14 @@ PINCTRL_DT_INST_DEFINE(index);						\
 									\
 ADC_STM32_IRQ_CONFIG(index)						\
 									\
+static const struct stm32_pclken pclken_##index[] =			\
+				 STM32_DT_INST_CLOCKS(index);		\
+									\
 static const struct adc_stm32_cfg adc_stm32_cfg_##index = {		\
 	.base = (ADC_TypeDef *)DT_INST_REG_ADDR(index),			\
 	ADC_STM32_IRQ_FUNC(index)					\
-	.pclken = {							\
-		.enr = DT_INST_CLOCKS_CELL(index, bits),		\
-		.bus = DT_INST_CLOCKS_CELL(index, bus),			\
-	},								\
+	.pclken = pclken_##index,					\
+	.pclk_len = DT_INST_NUM_CLOCKS(index),				\
 	.clk_prescaler = ADC_STM32_DT_PRESC(index),			\
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),			\
 	.temp_channel = DT_INST_PROP_OR(index, temp_channel, 0xFF),	\
