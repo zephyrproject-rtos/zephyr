@@ -38,9 +38,9 @@ static int send_request(int sock, const void *buf, size_t len, int flags,
 			const struct sockaddr *dest_addr, socklen_t addrlen)
 {
 	if (addrlen == 0) {
-		return sendto(sock, buf, len, flags, NULL, 0);
+		return zsock_sendto(sock, buf, len, flags, NULL, 0);
 	} else {
-		return sendto(sock, buf, len, flags, dest_addr, addrlen);
+		return zsock_sendto(sock, buf, len, flags, dest_addr, addrlen);
 	}
 }
 
@@ -48,9 +48,9 @@ static int receive(int sock, void *buf, size_t max_len, int flags,
 		   struct sockaddr *src_addr, socklen_t *addrlen)
 {
 	if (*addrlen == 0) {
-		return recvfrom(sock, buf, max_len, flags, NULL, NULL);
+		return zsock_recvfrom(sock, buf, max_len, flags, NULL, NULL);
 	} else {
-		return recvfrom(sock, buf, max_len, flags, src_addr, addrlen);
+		return zsock_recvfrom(sock, buf, max_len, flags, src_addr, addrlen);
 	}
 }
 
@@ -369,16 +369,16 @@ static int handle_poll(struct coap_client *client)
 	int ret = 0;
 
 	while (1) {
-		struct pollfd fds;
+		struct zsock_pollfd fds;
 
 		fds.fd = client->fd;
-		fds.events = POLLIN;
+		fds.events = ZSOCK_POLLIN;
 		fds.revents = 0;
 		/* rfc7252#section-5.2.2, use separate timeout value for a separate response */
 		if (client->pending.timeout != 0) {
-			ret = poll(&fds, 1, client->pending.timeout);
+			ret = zsock_poll(&fds, 1, client->pending.timeout);
 		} else {
-			ret = poll(&fds, 1, COAP_SEPARATE_TIMEOUT);
+			ret = zsock_poll(&fds, 1, COAP_SEPARATE_TIMEOUT);
 		}
 
 		if (ret < 0) {
@@ -403,25 +403,25 @@ static int handle_poll(struct coap_client *client)
 				break;
 			}
 		} else {
-			if (fds.revents & POLLERR) {
+			if (fds.revents & ZSOCK_POLLERR) {
 				LOG_ERR("Error in poll");
 				ret = -EIO;
 				break;
 			}
 
-			if (fds.revents & POLLHUP) {
+			if (fds.revents & ZSOCK_POLLHUP) {
 				LOG_ERR("Error in poll: POLLHUP");
 				ret = -ECONNRESET;
 				break;
 			}
 
-			if (fds.revents & POLLNVAL) {
+			if (fds.revents & ZSOCK_POLLNVAL) {
 				LOG_ERR("Error in poll: POLLNVAL - fd not open");
 				ret = -EINVAL;
 				break;
 			}
 
-			if (!(fds.revents & POLLIN)) {
+			if (!(fds.revents & ZSOCK_POLLIN)) {
 				LOG_ERR("Unknown poll error");
 				ret = -EINVAL;
 				break;
@@ -455,7 +455,7 @@ static int recv_response(struct coap_client *client, struct coap_packet *respons
 	int ret;
 
 	memset(client->recv_buf, 0, sizeof(client->recv_buf));
-	len = receive(client->fd, client->recv_buf, sizeof(client->recv_buf), MSG_DONTWAIT,
+	len = receive(client->fd, client->recv_buf, sizeof(client->recv_buf), ZSOCK_MSG_DONTWAIT,
 		      &client->address, &client->socklen);
 
 	if (len < 0) {
