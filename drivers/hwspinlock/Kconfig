@@ -16,4 +16,6 @@ config HWSPINLOCK_INIT_PRIORITY
 	help
 	  HW spinlock driver device initialization priority.
 
+source "drivers/hwspinlock/Kconfig.sqn"
+
 endif
