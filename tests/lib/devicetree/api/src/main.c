@@ -2714,6 +2714,158 @@ ZTEST(devicetree_api, test_string_token)
 }
 
 #undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT vnd_enum_holder
+ZTEST(devicetree_api, test_string_prefix)
+{
+	enum token_string_value {
+		token_zero,
+		token_one,
+		token_two,
+		token_ZERO,
+		token_ONE,
+		token_TWO,
+		zero_value,
+		one_value,
+		two_value,
+		ZERO_value,
+		ONE_value,
+		TWO_value,
+		token_zero_value,
+		token_one_value,
+		token_two_value,
+		token_ZERO_value,
+		token_ONE_value,
+		token_TWO_value,
+	};
+
+	zassert_equal(
+		DT_STRING_TOKEN_PREFIX(DT_NODELABEL(test_enum_0), val, token_),
+		token_zero,
+		""
+	);
+	zassert_equal(
+		DT_STRING_TOKEN_PREFIX(DT_NODELABEL(test_enum_1), val, token_),
+		token_two,
+		""
+	);
+	zassert_equal(
+		DT_STRING_TOKEN_POSTFIX(DT_NODELABEL(test_enum_0), val, _value),
+		zero_value,
+		""
+	);
+	zassert_equal(
+		DT_STRING_TOKEN_POSTFIX(DT_NODELABEL(test_enum_1), val, _value),
+		two_value,
+		""
+	);
+	zassert_equal(
+		DT_STRING_TOKEN_PREFIX_POSTFIX(DT_NODELABEL(test_enum_0), val, token_, _value),
+		token_zero_value,
+		""
+	);
+	zassert_equal(
+		DT_STRING_TOKEN_PREFIX_POSTFIX(DT_NODELABEL(test_enum_1), val, token_, _value),
+		token_two_value,
+		""
+	);
+
+	zassert_equal(
+		DT_STRING_UPPER_TOKEN_PREFIX(DT_NODELABEL(test_enum_0), val, token_),
+		token_ZERO,
+		""
+	);
+	zassert_equal(
+		DT_STRING_UPPER_TOKEN_PREFIX(DT_NODELABEL(test_enum_1), val, token_),
+		token_TWO,
+		""
+	);
+	zassert_equal(
+		DT_STRING_UPPER_TOKEN_POSTFIX(DT_NODELABEL(test_enum_0), val, _value),
+		ZERO_value,
+		""
+	);
+	zassert_equal(
+		DT_STRING_UPPER_TOKEN_POSTFIX(DT_NODELABEL(test_enum_1), val, _value),
+		TWO_value,
+		""
+	);
+	zassert_equal(
+		DT_STRING_UPPER_TOKEN_PREFIX_POSTFIX(
+			DT_NODELABEL(test_enum_0), val, token_, _value),
+		token_ZERO_value,
+		""
+	);
+	zassert_equal(
+		DT_STRING_UPPER_TOKEN_PREFIX_POSTFIX(
+			DT_NODELABEL(test_enum_1), val, token_, _value),
+		token_TWO_value,
+		""
+	);
+
+	zassert_equal(
+		DT_INST_STRING_TOKEN_PREFIX(0, val, token_),
+		token_zero,
+		""
+	);
+	zassert_equal(
+		DT_INST_STRING_TOKEN_PREFIX(1, val, token_),
+		token_two,
+		""
+	);
+	zassert_equal(
+		DT_INST_STRING_TOKEN_POSTFIX(0, val, _value),
+		zero_value,
+		""
+	);
+	zassert_equal(
+		DT_INST_STRING_TOKEN_POSTFIX(1, val, _value),
+		two_value,
+		""
+	);
+	zassert_equal(
+		DT_INST_STRING_TOKEN_PREFIX_POSTFIX(0, val, token_, _value),
+		token_zero_value,
+		""
+	);
+	zassert_equal(
+		DT_INST_STRING_TOKEN_PREFIX_POSTFIX(1, val, token_, _value),
+		token_two_value,
+		""
+	);
+
+	zassert_equal(
+		DT_INST_STRING_UPPER_TOKEN_PREFIX(0, val, token_),
+		token_ZERO,
+		""
+	);
+	zassert_equal(
+		DT_INST_STRING_UPPER_TOKEN_PREFIX(1, val, token_),
+		token_TWO,
+		""
+	);
+	zassert_equal(
+		DT_INST_STRING_UPPER_TOKEN_POSTFIX(0, val, _value),
+		ZERO_value,
+		""
+	);
+	zassert_equal(
+		DT_INST_STRING_UPPER_TOKEN_POSTFIX(1, val, _value),
+		TWO_value,
+		""
+	);
+	zassert_equal(
+		DT_INST_STRING_UPPER_TOKEN_PREFIX_POSTFIX(0, val, token_, _value),
+		token_ZERO_value,
+		""
+	);
+	zassert_equal(
+		DT_INST_STRING_UPPER_TOKEN_PREFIX_POSTFIX(1, val, token_, _value),
+		token_TWO_value,
+		""
+	);
+}
+
+#undef DT_DRV_COMPAT
 #define DT_DRV_COMPAT vnd_string_array_token
 ZTEST(devicetree_api, test_string_idx_token)
 {

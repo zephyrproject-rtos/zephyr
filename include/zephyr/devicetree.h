@@ -918,6 +918,226 @@
 	DT_CAT4(node_id, _P_, prop, _STRING_TOKEN)
 
 /**
+ * @brief Get a string property's value as a token.
+ *
+ * This removes "the quotes" from a string property's value,
+ * converting any non-alphanumeric characters to underscores. This can
+ * be useful, for example, when programmatically using the value to
+ * form a C variable or code.
+ *
+ * DT_STRING_TOKEN_PREFIX() can only be used for properties with string type.
+ *
+ * It is an error to use DT_STRING_TOKEN_PREFIX() in other circumstances.
+ *
+ * Example devicetree fragment:
+ *
+ * @code{.dts}
+ *     n1: node-1 {
+ *             prop = "foo";
+ *     };
+ *     n2: node-2 {
+ *             prop = "BAR";
+ *     }
+ *     n3: node-3 {
+ *             prop = "foo BAR";
+ *     };
+ * @endcode
+ *
+ * Example bindings fragment:
+ *
+ * @code{.yaml}
+ *     properties:
+ *       prop:
+ *         type: string
+ *         enum:
+ *           - "foo"
+ *           - "BAR"
+ *           - "foo BAR"
+ * @endcode
+ *
+ * Example enumeration
+ *
+ * @code{.c}
+ *     enum prop_value {
+ *         PROP_VAL_foo = 0x10,
+ *         PROP_VAL_BAR = 0x20,
+ *         PROP_VAL_foo_BAR = 0x40,
+ *     };
+ * @endcode
+ *
+ * Example usage:
+ *
+ * @code{.c}
+ *     DT_STRING_TOKEN_PREFIX(DT_NODELABEL(n1), prop, PROP_VAL_) // PROP_VAL_foo
+ *     DT_STRING_TOKEN_PREFIX(DT_NODELABEL(n2), prop, PROP_VAL_) // PROP_VAL_BAR
+ *     DT_STRING_TOKEN_PREFIX(DT_NODELABEL(n3), prop, PROP_VAL_) // PROP_VAL_foo_BAR
+ * @endcode
+ *
+ * Notice how:
+ *
+ * - The uppercased `"FOO"` in the DTS remains `FOO` as a token. It is
+ *   *not* converted to `foo`.
+ *
+ * - The whitespace in the DTS `"123 foo"` string is converted to
+ *   `123_foo` as a token.
+ *
+ * @param node_id node identifier
+ * @param prop lowercase-and-underscores property name
+ * @param prefix Prefix prepended to the string token
+ * @return the value of @p prop as a token, i.e. without any quotes
+ *         and with special characters converted to underscores
+ */
+#define DT_STRING_TOKEN_PREFIX(node_id, prop, prefix) \
+	UTIL_CAT(prefix, DT_STRING_TOKEN(node_id, prop))
+
+/**
+ * @brief Get a string property's value as a token.
+ *
+ * This removes "the quotes" from a string property's value,
+ * converting any non-alphanumeric characters to underscores. This can
+ * be useful, for example, when programmatically using the value to
+ * form a C variable or code.
+ *
+ * DT_STRING_TOKEN_PREFIX() can only be used for properties with string type.
+ *
+ * It is an error to use DT_STRING_TOKEN_PREFIX() in other circumstances.
+ *
+ * Example devicetree fragment:
+ *
+ * @code{.dts}
+ *     n1: node-1 {
+ *             prop = "foo";
+ *     };
+ *     n2: node-2 {
+ *             prop = "BAR";
+ *     }
+ *     n3: node-3 {
+ *             prop = "foo BAR";
+ *     };
+ * @endcode
+ *
+ * Example bindings fragment:
+ *
+ * @code{.yaml}
+ *     properties:
+ *       prop:
+ *         type: string
+ *         enum:
+ *          - "foo"
+ *          - "BAR"
+ *          - "foo BAR"
+ * @endcode
+ *
+ * Example enumeration
+ *
+ * @code{.c}
+ *     enum prop_value {
+ *         foo_PROP = 0x10,
+ *         BAR_PROP = 0x20,
+ *         foo_BAR_PROP = 0x40,
+ *     };
+ * @endcode
+ *
+ * Example usage:
+ *
+ * @code{.c}
+ *     DT_STRING_TOKEN_POSTFIX(DT_NODELABEL(n1), prop, _PROP) // foo_PROP
+ *     DT_STRING_TOKEN_POSTFIX(DT_NODELABEL(n2), prop, _PROP) // BAR_PROP
+ *     DT_STRING_TOKEN_POSTFIX(DT_NODELABEL(n3), prop, _PROP) // foo_BAR_PROP
+ * @endcode
+ *
+ * Notice how:
+ *
+ * - The uppercased `"BAR"` in the DTS remains `BAR` as a token. It is
+ *   *not* converted to `BAR`.
+ *
+ * - The whitespace in the DTS `"foo BAR"` string is converted to
+ *   `foo_BAR` as a token.
+ *
+ * @param node_id node identifier
+ * @param prop lowercase-and-underscores property name
+ * @param postfix Appended to the token
+ * @return the value of @p prop as a token, i.e. without any quotes
+ *         and with special characters converted to underscores
+ */
+#define DT_STRING_TOKEN_POSTFIX(node_id, prop, postfix) \
+	UTIL_CAT(DT_STRING_TOKEN(node_id, prop), postfix)
+
+/**
+ * @brief Get a string property's value as a token.
+ *
+ * This removes "the quotes" from a string property's value,
+ * converting any non-alphanumeric characters to underscores. This can
+ * be useful, for example, when programmatically using the value to
+ * form a C variable or code.
+ *
+ * DT_STRING_TOKEN_PREFIX() can only be used for properties with string type.
+ *
+ * It is an error to use DT_STRING_TOKEN_PREFIX() in other circumstances.
+ *
+ * Example devicetree fragment:
+ *
+ * @code{.dts}
+ *     n1: node-1 {
+ *             prop = "foo";
+ *     };
+ *     n2: node-2 {
+ *             prop = "BAR";
+ *     }
+ *     n3: node-3 {
+ *             prop = "foo BAR";
+ *     };
+ * @endcode
+ *
+ * Example bindings fragment:
+ *
+ * @code{.yaml}
+ *     properties:
+ *       prop:
+ *         type: string
+ *         enum:
+ *           - "foo"
+ *           - "BAR"
+ *           - "foo BAR"
+ * @endcode
+ *
+ * Example enumeration
+ *
+ * @code{.c}
+ *     enum prop_value {
+ *         PROP_foo_VAL = 0x10,
+ *         PROP_BAR_VAL = 0x20,
+ *         PROP_foo_BAR_VAL = 0x40,
+ *     };
+ * @endcode
+ *
+ * Example usage:
+ *
+ * @code{.c}
+ *     DT_STRING_TOKEN_PREFIX_POSTFIX(DT_NODELABEL(n1), prop, PROP_, _VAL) // PROP_VAL_foo
+ *     DT_STRING_TOKEN_PREFIX_POSTFIX(DT_NODELABEL(n2), prop, PROP_, _VAL) // PROP_VAL_BAR
+ *     DT_STRING_TOKEN_PREFIX_POSTFIX(DT_NODELABEL(n3), prop, PROP_, _VAL) // PROP_VAL_foo_BAR
+ * @endcode
+ *
+ * Notice how:
+ *
+ * - The uppercased `"FOO"` in the DTS remains `FOO` as a token. It is
+ *   *not* converted to `foo`.
+ *
+ * - The whitespace in the DTS `"123 foo"` string is converted to
+ *   `123_foo` as a token.
+ *
+ * @param node_id node identifier
+ * @param prop lowercase-and-underscores property name
+ * @param prefix Prepended to the token
+ * @param postfix Appended to the token
+ * @return the value of @p prop as a token, i.e. without any quotes
+ *         and with special characters converted to underscores
+ */
+#define DT_STRING_TOKEN_PREFIX_POSTFIX(node_id, prop, prefix, postfix) \
+	UTIL_CAT(UTIL_CAT(prefix, DT_STRING_TOKEN(node_id, prop)), postfix)
+
+/**
  * @brief Like DT_STRING_TOKEN(), but with a fallback to @p default_value
  *
  * If the value exists, this expands to DT_STRING_TOKEN(node_id, prop).
@@ -932,7 +1152,66 @@
  */
 #define DT_STRING_TOKEN_OR(node_id, prop, default_value) \
 	COND_CODE_1(DT_NODE_HAS_PROP(node_id, prop), \
-		(DT_STRING_TOKEN(node_id, prop)), (default_value))
+		(DT_STRING_TOKEN(node_id, prop)), \
+		(default_value))
+
+/**
+ * @brief Like DT_STRING_TOKEN_PREFIX(), but with a fallback to @p default_value
+ *
+ * If the value exists, this expands to DT_STRING_TOKEN(node_id, prop).
+ * The @p default_value parameter is not expanded in this case.
+ *
+ * Otherwise, this expands to @p default_value.
+ *
+ * @param node_id node identifier
+ * @param prop lowercase-and-underscores property name
+ * @param prefix Prefix prepended to the token
+ * @param default_value a fallback value to expand to
+ * @return the property's value as a token, or @p default_value
+ */
+#define DT_STRING_TOKEN_PREFIX_OR(node_id, prop, prefix, default_value) \
+	COND_CODE_1(DT_NODE_HAS_PROP(node_id, prop), \
+		(DT_STRING_TOKEN_PREFIX(node_id, prop, prefix)), \
+		(default_value))
+
+/**
+ * @brief Like DT_STRING_TOKEN_POSTFIX(), but with a fallback to @p default_value
+ *
+ * If the value exists, this expands to DT_STRING_TOKEN(node_id, prop).
+ * The @p default_value parameter is not expanded in this case.
+ *
+ * Otherwise, this expands to @p default_value.
+ *
+ * @param node_id node identifier
+ * @param prop lowercase-and-underscores property name
+ * @param postfix Postfix appended to the token
+ * @param default_value a fallback value to expand to
+ * @return the property's value as a token, or @p default_value
+ */
+#define DT_STRING_TOKEN_POSTFIX_OR(node_id, prop, postfix, default_value) \
+	COND_CODE_1(DT_NODE_HAS_PROP(node_id, prop), \
+		(DT_STRING_TOKEN_POSTFIX(node_id, prop, postfix)), \
+		(default_value))
+
+/**
+ * @brief Like DT_STRING_TOKEN_PREFIX_POSTFIX(), but with a fallback to @p default_value
+ *
+ * If the value exists, this expands to DT_STRING_TOKEN(node_id, prop).
+ * The @p default_value parameter is not expanded in this case.
+ *
+ * Otherwise, this expands to @p default_value.
+ *
+ * @param node_id node identifier
+ * @param prop lowercase-and-underscores property name
+ * @param prefix Prefix prepended to the token
+ * @param postfix Postfix appended to the token
+ * @param default_value a fallback value to expand to
+ * @return the property's value as a token, or @p default_value
+ */
+#define DT_STRING_TOKEN_PREFIX_POSTFIX_OR(node_id, prop, prefix, postfix, default_value) \
+	COND_CODE_1(DT_NODE_HAS_PROP(node_id, prop), \
+		(DT_STRING_TOKEN_PREFIX_POSTFIX(node_id, prop, prefix, postfix)), \
+		(default_value))
 
 /**
  * @brief Like DT_STRING_TOKEN(), but uppercased.
@@ -995,6 +1274,123 @@
 	DT_CAT4(node_id, _P_, prop, _STRING_UPPER_TOKEN)
 
 /**
+ * @brief Like DT_STRING_TOKEN_PREFIX(), but uppercased.
+ *
+ * This removes "the quotes" from a string property's value,
+ * converting any non-alphanumeric characters to underscores, and
+ * capitalizing the result. This can be useful, for example, when
+ * programmatically using the value to form a C variable or code.
+ *
+ * DT_STRING_UPPER_TOKEN_PREFIX() can only be used for properties with string type.
+ *
+ * It is an error to use DT_STRING_UPPER_TOKEN_PREFIX() in other circumstances.
+ *
+ * Example devicetree fragment:
+ *
+ * @code{.dts}
+ *     n1: node-1 {
+ *             prop = "foo";
+ *     };
+ *     n2: node-2 {
+ *             prop = "foo BAR";
+ *     };
+ * @endcode
+ *
+ * Example bindings fragment:
+ *
+ * @code{.yaml}
+ *     properties:
+ *       prop:
+ *         type: string
+ *         enum:
+ *           - "foo"
+ *           - "BAR"
+ *           - "foo BAR"
+ * @endcode
+ *
+ * Example enumeration
+ *
+ * @code{.c}
+ *     enum prop_value {
+ *         PROP_VAL_FOO = 0x10,
+ *         PROP_VAL_BAR = 0x20,
+ *         PROP_VAL_FOO_BAR = 0x40,
+ *     };
+ * @endcode
+ *
+ * Example usage:
+ *
+ * @code{.c}
+ *     DT_STRING_UPPER_TOKEN_PREFIX(DT_NODELABEL(n1), prop, PROP_VAL_) // PROP_VAL_FOO
+ *     DT_STRING_UPPER_TOKEN_PREFIX(DT_NODELABEL(n2), prop, PROP_VAL_) // PROP_VAL_FOO_BAR
+ * @endcode
+ *
+ * Notice how:
+ *
+ * - The lowercased `"foo"` in the DTS becomes `FOO` as a token, i.e.
+ *   it is uppercased.
+ *
+ * - The whitespace in the DTS `"foo BAR"` string is converted to
+ *   `FOO_BAR` as a token, i.e. it is uppercased and whitespace becomes
+ *   an underscore.
+ *
+ * @param node_id node identifier
+ * @param prop lowercase-and-underscores property name
+ * @param prefix Prepended to the token
+ * @return the value of @p prop as an uppercased token, i.e. without
+ *         any quotes and with special characters converted to underscores
+ */
+#define DT_STRING_UPPER_TOKEN_PREFIX(node_id, prop, prefix) \
+	UTIL_CAT(prefix, DT_STRING_UPPER_TOKEN(node_id, prop))
+
+/**
+ * @brief Like DT_STRING_TOKEN_POSTFIX(), but with an uppercased token.
+ *
+ * This removes "the quotes" from a string property's value,
+ * converting any non-alphanumeric characters to underscores, and
+ * capitalizing the result. This can be useful, for example, when
+ * programmatically using the value to form a C variable or code.
+ *
+ * DT_STRING_UPPER_TOKEN_POSTFIX() can only be used for properties with string type.
+ *
+ * It is an error to use DT_STRING_UPPER_TOKEN_POSTFIX() in other circumstances.
+ *
+ * For examples check, DT_STRING_UPPER_TOKEN_PREFIX() and DT_STRING_TOKEN_POSTFIX()
+ *
+ * @param node_id node identifier
+ * @param prop lowercase-and-underscores property name
+ * @param postfix Appended to the token
+ * @return the value of @p prop as an uppercased token, i.e. without
+ *         any quotes and with special characters converted to underscores
+ */
+#define DT_STRING_UPPER_TOKEN_POSTFIX(node_id, prop, postfix) \
+	UTIL_CAT(DT_STRING_UPPER_TOKEN(node_id, prop), postfix)
+
+/**
+ * @brief Like DT_STRING_TOKEN_PREFIX_POSTFIX(), but with an uppercased token.
+ *
+ * This removes "the quotes" from a string property's value,
+ * converting any non-alphanumeric characters to underscores, and
+ * capitalizing the result. This can be useful, for example, when
+ * programmatically using the value to form a C variable or code.
+ *
+ * DT_STRING_UPPER_TOKEN_PREFIX_POSTFIX() can only be used for properties with string type.
+ *
+ * It is an error to use DT_STRING_UPPER_TOKEN_PREFIX_POSTFIX() in other circumstances.
+ *
+ * For examples check, DT_STRING_UPPER_TOKEN_PREFIX() and DT_STRING_TOKEN_PREFIX_POSTFIX()
+ *
+ * @param node_id node identifier
+ * @param prop lowercase-and-underscores property name
+ * @param prefix Prepended to the token
+ * @param postfix Appended to the token
+ * @return the value of @p prop as an uppercased token, i.e. without
+ *         any quotes and with special characters converted to underscores
+ */
+#define DT_STRING_UPPER_TOKEN_PREFIX_POSTFIX(node_id, prop, prefix, postfix) \
+	UTIL_CAT(UTIL_CAT(prefix, DT_STRING_UPPER_TOKEN(node_id, prop)), postfix)
+
+/**
  * @brief Like DT_STRING_UPPER_TOKEN(), but with a fallback to @p default_value
  *
  * If the value exists, this expands to DT_STRING_UPPER_TOKEN(node_id, prop).
@@ -1011,6 +1407,70 @@
 #define DT_STRING_UPPER_TOKEN_OR(node_id, prop, default_value) \
 	COND_CODE_1(DT_NODE_HAS_PROP(node_id, prop), \
 		(DT_STRING_UPPER_TOKEN(node_id, prop)), (default_value))
+
+/**
+ * @brief Like DT_STRING_UPPER_TOKEN_PREFIX(), but with a fallback
+ *        to @p default_value
+ *
+ * If the value exists, this expands to DT_STRING_UPPER_TOKEN_PREFIX(node_id, prop).
+ * The @p default_value parameter is not expanded in this case.
+ *
+ * Otherwise, this expands to @p default_value.
+ *
+ * @param node_id node identifier
+ * @param prop lowercase-and-underscores property name
+ * @param prefix Prepended to the token
+ * @param default_value a fallback value to expand to
+ * @return the property's value as an uppercased token,
+ *         or @p default_value
+ */
+#define DT_STRING_UPPER_TOKEN_PREFIX_OR(node_id, prop, prefix, default_value) \
+	COND_CODE_1(DT_NODE_HAS_PROP(node_id, prop), \
+		(DT_STRING_UPPER_TOKEN_PREFIX(node_id, prop, prefix)), \
+		(default_value))
+
+/**
+ * @brief Like DT_STRING_UPPER_TOKEN_POSTFIX(), but with a fallback
+ *        to @p default_value
+ *
+ * If the value exists, this expands to DT_STRING_UPPER_TOKEN_POSTFIX(node_id, prop).
+ * The @p default_value parameter is not expanded in this case.
+ *
+ * Otherwise, this expands to @p default_value.
+ *
+ * @param node_id node identifier
+ * @param prop lowercase-and-underscores property name
+ * @param postfix Appended to the token
+ * @param default_value a fallback value to expand to
+ * @return the property's value as an uppercased token,
+ *         or @p default_value
+ */
+#define DT_STRING_UPPER_TOKEN_POSTFIX_OR(node_id, prop, postfix, default_value) \
+	COND_CODE_1(DT_NODE_HAS_PROP(node_id, prop), \
+		(DT_STRING_UPPER_TOKEN_POSTFIX(node_id, prop, postfix)), \
+		(default_value))
+
+/**
+ * @brief Like DT_STRING_UPPER_TOKEN_PREFIX_POSTFIX(), but with a fallback
+ *        to @p default_value
+ *
+ * If the value exists, this expands to
+ * DT_STRING_UPPER_TOKEN_PREFIX_POSTFIX(node_id, prop). The @p default_value
+ * parameter is not expanded in this case.
+ *
+ * Otherwise, this expands to @p default_value.
+ *
+ * @param node_id node identifier
+ * @param prop lowercase-and-underscores property name
+ * @param postfix Appended to the token
+ * @param default_value a fallback value to expand to
+ * @return the property's value as an uppercased token,
+ *         or @p default_value
+ */
+#define DT_STRING_UPPER_TOKEN_PREFIX_POSTFIX_OR(node_id, prop, prefix, postfix, default_value) \
+	COND_CODE_1(DT_NODE_HAS_PROP(node_id, prop), \
+		(DT_STRING_UPPER_TOKEN_PREFIX_POSTFIX(node_id, prop, prefix, postfix)), \
+		(default_value))
 
 /**
  * @brief Get a string property's value as an unquoted sequence of tokens
@@ -3470,6 +3930,46 @@
 	DT_STRING_TOKEN(DT_DRV_INST(inst), prop)
 
 /**
+ * @brief Get a `DT_DRV_COMPAT` instance's string property's value prepended
+ *        with prefix as a token.
+ *
+ * @param inst instance number
+ * @param prop lowercase-and-underscores property name
+ * @param prefix Prefix prepended to the string
+ * @return the value of @p prop as a token, i.e. without any quotes
+ *         and with special characters converted to underscores
+ */
+#define DT_INST_STRING_TOKEN_PREFIX(inst, prop, prefix) \
+	DT_STRING_TOKEN_PREFIX(DT_DRV_INST(inst), prop, prefix)
+
+/**
+ * @brief Get a `DT_DRV_COMPAT` instance's string property's value appened
+ *		  with postfix as a token.
+ *
+ * @param inst instance number
+ * @param prop lowercase-and-underscores property name
+ * @param postfix Postfix appended to the string
+ * @return the value of @p prop as a token, i.e. without any quotes
+ *         and with special characters converted to underscores
+ */
+#define DT_INST_STRING_TOKEN_POSTFIX(inst, prop, postfix) \
+	DT_STRING_TOKEN_POSTFIX(DT_DRV_INST(inst), prop, postfix)
+
+/**
+ * @brief Get a `DT_DRV_COMPAT` instance's string property's value prepended
+ *        with prefix and appened with postfix as a token.
+ *
+ * @param inst instance number
+ * @param prop lowercase-and-underscores property name
+ * @param prefix Prefix prepended to the string
+ * @param postfix Postfix appended to the string
+ * @return the value of @p prop as a token, i.e. without any quotes
+ *         and with special characters converted to underscores
+ */
+#define DT_INST_STRING_TOKEN_PREFIX_POSTFIX(inst, prop, prefix, postfix) \
+	DT_STRING_TOKEN_PREFIX_POSTFIX(DT_DRV_INST(inst), prop, prefix, postfix)
+
+/**
  * @brief Like DT_INST_STRING_TOKEN(), but uppercased.
  * @param inst instance number
  * @param prop lowercase-and-underscores property name
@@ -3478,6 +3978,40 @@
  */
 #define DT_INST_STRING_UPPER_TOKEN(inst, prop) \
 	DT_STRING_UPPER_TOKEN(DT_DRV_INST(inst), prop)
+
+/**
+ * @brief Like DT_INST_STRING_TOKEN_PREFIX(), but with uppercased string.
+ * @param inst instance number
+ * @param prop lowercase-and-underscores property name
+ * @param prefix Prefix prepended to the string
+ * @return the value of @p prop as an uppercased token, i.e. without
+ *         any quotes and with special characters converted to underscores
+ */
+#define DT_INST_STRING_UPPER_TOKEN_PREFIX(inst, prop, prefix) \
+	DT_STRING_UPPER_TOKEN_PREFIX(DT_DRV_INST(inst), prop, prefix)
+
+/**
+ * @brief Like DT_INST_STRING_TOKEN_POSTFIX(), but with uppercased string.
+ * @param inst instance number
+ * @param prop lowercase-and-underscores property name
+ * @param postfix Postfix appended to the string
+ * @return the value of @p prop as an uppercased token, i.e. without
+ *         any quotes and with special characters converted to underscores
+ */
+#define DT_INST_STRING_UPPER_TOKEN_POSTFIX(inst, prop, postfix) \
+	DT_STRING_UPPER_TOKEN_POSTFIX(DT_DRV_INST(inst), prop, postfix)
+
+/**
+ * @brief Like DT_INST_STRING_TOKEN_PREFIX_POSTFIX(), but with uppercased string.
+ * @param inst instance number
+ * @param prop lowercase-and-underscores property name
+ * @param prefix Prefix prepended to the string
+ * @param postfix Postfix appended to the string
+ * @return the value of @p prop as an uppercased token, i.e. without
+ *         any quotes and with special characters converted to underscores
+ */
+#define DT_INST_STRING_UPPER_TOKEN_PREFIX_POSTFIX(inst, prop, prefix, postfix) \
+	DT_STRING_UPPER_TOKEN_PREFIX_POSTFIX(DT_DRV_INST(inst), prop, prefix, postfix)
 
 /**
  * @brief Get a `DT_DRV_COMPAT` instance's string property's value as
@@ -3778,6 +4312,46 @@
 	DT_STRING_TOKEN_OR(DT_DRV_INST(inst), name, default_value)
 
 /**
+ * @brief Like DT_INST_STRING_TOKEN_PREFIX(), but with a fallback to @p default_value
+ * @param inst instance number
+ * @param name lowercase-and-underscores property name
+ * @param prefix Prefix prepended to the string
+ * @param default_value a fallback value to expand to
+ * @return if @p prop exists, its value as a token, i.e. without any quotes and
+ *         with special characters converted to underscores. Othewise
+ *         @p default_value
+ */
+#define DT_INST_STRING_TOKEN_PREFIX_OR(inst, name, prefix, default_value) \
+	DT_STRING_TOKEN_PREFIX_OR(DT_DRV_INST(inst), name, prefix, default_value)
+
+/**
+ * @brief Like DT_INST_STRING_TOKEN_POSTFIX(), but with a fallback to @p default_value
+ * @param inst instance number
+ * @param name lowercase-and-underscores property name
+ * @param postfix Postfix appended to the string
+ * @param default_value a fallback value to expand to
+ * @return if @p prop exists, its value as a token, i.e. without any quotes and
+ *         with special characters converted to underscores. Othewise
+ *         @p default_value
+ */
+#define DT_INST_STRING_TOKEN_POSTFIX_OR(inst, name, postfix, default_value) \
+	DT_STRING_TOKEN_POSTFIX_OR(DT_DRV_INST(inst), name, postfix, default_value)
+
+/**
+ * @brief Like DT_INST_STRING_TOKEN_PREFIX_POSTFIX(), but with a fallback to @p default_value
+ * @param inst instance number
+ * @param name lowercase-and-underscores property name
+ * @param prefix Prefix prepended to the string
+ * @param postfix Postfix appended to the string
+ * @param default_value a fallback value to expand to
+ * @return if @p prop exists, its value as a token, i.e. without any quotes and
+ *         with special characters converted to underscores. Othewise
+ *         @p default_value
+ */
+#define DT_INST_STRING_TOKEN_PREFIX_POSTFIX_OR(inst, name, prefix, postfix, default_value) \
+	DT_STRING_TOKEN_PREFIX_POSTFIX_OR(DT_DRV_INST(inst), name, prefix, postfix, default_value)
+
+/**
  * @brief Like DT_INST_STRING_UPPER_TOKEN(), but with a fallback to
  *        @p default_value
  * @param inst instance number
@@ -3787,6 +4361,46 @@
  */
 #define DT_INST_STRING_UPPER_TOKEN_OR(inst, name, default_value) \
 	DT_STRING_UPPER_TOKEN_OR(DT_DRV_INST(inst), name, default_value)
+
+/**
+ * @brief Like DT_INST_STRING_UPPER_TOKEN_PREFIX(), but with a fallback to
+ *        @p default_value
+ * @param inst instance number
+ * @param name lowercase-and-underscores property name
+ * @param prefix Prefix prepended to the string
+ * @param default_value a fallback value to expand to
+ * @return the property's value as an uppercased token, or @p default_value
+ */
+#define DT_INST_STRING_UPPER_TOKEN_PREFIX_OR(inst, name, prefix, default_value) \
+	DT_STRING_UPPER_TOKEN_PREFIX_OR(DT_DRV_INST(inst), name, prefix, default_value)
+
+/**
+ * @brief Like DT_INST_STRING_UPPER_TOKEN_POSTFIX(), but with a fallback to
+ *        @p default_value
+ * @param inst instance number
+ * @param name lowercase-and-underscores property name
+ * @param postfix Postfix appended to the string
+ * @param default_value a fallback value to expand to
+ * @return the property's value as an uppercased token, or @p default_value
+ */
+#define DT_INST_STRING_UPPER_TOKEN_POSTFIX_OR(inst, name, postfix, default_value) \
+	DT_STRING_UPPER_TOKEN_POSTFIX_OR(DT_DRV_INST(inst), name, postfix, default_value)
+
+/**
+ * @brief Like DT_INST_STRING_UPPER_TOKEN_PREFIX_POSTFIX(), but with a fallback to
+ *        @p default_value
+ * @param inst instance number
+ * @param name lowercase-and-underscores property name
+ * @param prefix Prefix prepended to the string
+ * @param postfix Postfix appended to the string
+ * @param default_value a fallback value to expand to
+ * @return the property's value as an uppercased token, or @p default_value
+ */
+#define DT_INST_STRING_UPPER_TOKEN_PREFIX_POSTFIX_OR(inst, name, prefix, postfix, default_value) \
+	DT_STRING_UPPER_TOKEN_PREFIX_POSTFIX_OR( \
+		DT_DRV_INST(inst), \
+		name, prefix, postfix, default_value \
+	)
 
 /**
  * @brief Like DT_INST_STRING_UNQUOTED(), but with a fallback to
