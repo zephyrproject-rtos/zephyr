@@ -24,13 +24,13 @@ LOG_MODULE_REGISTER(dma_stm32, CONFIG_DMA_LOG_LEVEL);
 
 #define DT_DRV_COMPAT st_stm32u5_dma
 
-static const uint32_t table_m_size[] = {
+static const uint32_t table_src_size[] = {
 	LL_DMA_SRC_DATAWIDTH_BYTE,
 	LL_DMA_SRC_DATAWIDTH_HALFWORD,
 	LL_DMA_SRC_DATAWIDTH_WORD,
 };
 
-static const uint32_t table_p_size[] = {
+static const uint32_t table_dst_size[] = {
 	LL_DMA_DEST_DATAWIDTH_BYTE,
 	LL_DMA_DEST_DATAWIDTH_HALFWORD,
 	LL_DMA_DEST_DATAWIDTH_WORD,
@@ -489,10 +489,10 @@ static int dma_stm32_configure(const struct device *dev,
 	/* Set the data width, when source_data_size equals dest_data_size */
 	int index = find_lsb_set(config->source_data_size) - 1;
 
-	DMA_InitStruct.SrcDataWidth = table_p_size[index];
+	DMA_InitStruct.SrcDataWidth = table_src_size[index];
 
 	index = find_lsb_set(config->dest_data_size) - 1;
-	DMA_InitStruct.DestDataWidth = table_m_size[index];
+	DMA_InitStruct.DestDataWidth = table_dst_size[index];
 
 	if (stream->source_periph) {
 		DMA_InitStruct.BlkDataLength = config->head_block->block_size /
