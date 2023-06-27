@@ -181,6 +181,31 @@ int intel_adsp_hda_dma_host_reload(const struct device *dev, uint32_t channel,
 
 	__ASSERT(channel < cfg->dma_channels, "Channel does not exist");
 
+#if CONFIG_DMA_INTEL_ADSP_HDA_TIMING_L1_EXIT
+	ACE_DfPMCCH.svcfg |= ADSP_FORCE_DECOUPLED_HDMA_L1_EXIT_BIT;
+	switch (cfg->direction) {
+	case HOST_TO_MEMORY:
+		uint32_t rp = *DGBRP(cfg->base, cfg->regblock_size, channel);
+		uint32_t next_rp = (rp + INTEL_HDA_MIN_FPI_INCREMENT_FOR_INTERRUPT) %
+			intel_adsp_hda_get_buffer_size(cfg->base, cfg->regblock_size, channel);
+
+		intel_adsp_hda_set_buffer_segment_ptr(cfg->base, cfg->regblock_size,
+						      channel, next_rp);
+		intel_adsp_hda_enable_buffer_interrupt(cfg->base, cfg->regblock_size, channel);
+		break;
+	case MEMORY_TO_HOST:
+		uint32_t wp = *DGBWP(cfg->base, cfg->regblock_size, channel);
+		uint32_t next_wp = (wp + INTEL_HDA_MIN_FPI_INCREMENT_FOR_INTERRUPT) %
+			intel_adsp_hda_get_buffer_size(cfg->base, cfg->regblock_size, channel);
+
+		intel_adsp_hda_set_buffer_segment_ptr(cfg->base, cfg->regblock_size,
+						      channel, next_wp);
+		intel_adsp_hda_enable_buffer_interrupt(cfg->base, cfg->regblock_size, channel);
+		break;
+	default:
+		break;
+	}
+#endif
 	intel_adsp_hda_host_commit(cfg->base, cfg->regblock_size, channel, size);
 
 	return 0;
@@ -311,6 +336,12 @@ static void intel_adsp_hda_channels_init(const struct device *dev)
 	for (uint32_t i = 0; i < cfg->dma_channels; i++) {
 		intel_adsp_hda_init(cfg->base, cfg->regblock_size, i);
 	}
+#if CONFIG_DMA_INTEL_ADSP_HDA_TIMING_L1_EXIT
+	/* Configure interrupts */
+	if (cfg->irq_config) {
+		cfg->irq_config();
+	}
+#endif
 }
 
 int intel_adsp_hda_dma_init(const struct device *dev)
@@ -378,3 +409,44 @@ int intel_adsp_hda_dma_pm_action(const struct device *dev, enum pm_device_action
 	return 0;
 }
 #endif
+
+#define DEVICE_DT_GET_AND_COMMA(node_id) DEVICE_DT_GET(node_id),
+
+void intel_adsp_hda_dma_isr(void)
+{
+#if CONFIG_DMA_INTEL_ADSP_HDA_TIMING_L1_EXIT
+	struct dma_context *dma_ctx;
+	const struct intel_adsp_hda_dma_cfg *cfg;
+	bool clear_l1_exit = false;
+	int i, j;
+	const struct device *host_dev[] = {
+#if CONFIG_DMA_INTEL_ADSP_HDA_HOST_OUT
+		DT_FOREACH_STATUS_OKAY(intel_adsp_hda_host_out, DEVICE_DT_GET_AND_COMMA)
+#endif
+#if CONFIG_DMA_INTEL_ADSP_HDA_HOST_IN
+		DT_FOREACH_STATUS_OKAY(intel_adsp_hda_host_in, DEVICE_DT_GET_AND_COMMA)
+#endif
+	};
+
+	for (i = 0; i < ARRAY_SIZE(host_dev); i++) {
+		dma_ctx = (struct dma_context *)host_dev[i]->data;
+		cfg = host_dev[i]->config;
+
+		for (j = 0; j < dma_ctx->dma_channels; j++) {
+			if (atomic_test_bit(dma_ctx->atomic, j)) {
+				clear_l1_exit |=
+					intel_adsp_hda_check_buffer_interrupt(cfg->base,
+									      cfg->regblock_size, j);
+				intel_adsp_hda_disable_buffer_interrupt(cfg->base,
+									cfg->regblock_size, j);
+				intel_adsp_hda_clear_buffer_interrupt(cfg->base,
+								      cfg->regblock_size, j);
+			}
+		}
+	}
+
+	if (clear_l1_exit) {
+		ACE_DfPMCCH.svcfg &= ~(ADSP_FORCE_DECOUPLED_HDMA_L1_EXIT_BIT);
+	}
+#endif
+}
