@@ -37,6 +37,7 @@ struct mcux_lpuart_config {
 	const struct device *clock_dev;
 	const struct pinctrl_dev_config *pincfg;
 	clock_control_subsys_t clock_subsys;
+	clock_control_subsys_rate_t clock_freq;
 	uint32_t baud_rate;
 	uint8_t flow_ctrl;
 	uint8_t parity;
@@ -885,15 +886,31 @@ static int mcux_lpuart_configure_init(const struct device *dev, const struct uar
 	const struct mcux_lpuart_config *config = dev->config;
 	struct mcux_lpuart_data *data = dev->data;
 	uint32_t clock_freq;
+	int ret;
 
 	if (!device_is_ready(config->clock_dev)) {
 		return -ENODEV;
 	}
 
-	if (clock_control_get_rate(config->clock_dev, config->clock_subsys,
-				   &clock_freq)) {
+	ret = clock_control_off(config->clock_dev, config->clock_subsys);
+	if (ret < 0)
 		return -EINVAL;
+
+	if (config->clock_freq) {
+		ret = clock_control_set_rate(config->clock_dev,
+				config->clock_subsys, config->clock_freq);
+		if (ret < 0 && ret != -EALREADY)
+			return ret;
 	}
+
+	ret = clock_control_get_rate(config->clock_dev, config->clock_subsys, &clock_freq);
+	if (ret < 0)
+		return -EINVAL;
+
+	ret = clock_control_on(config->clock_dev, config->clock_subsys);
+	if (ret < 0)
+		return -EINVAL;
+
 
 	lpuart_config_t uart_config;
 	LPUART_GetDefaultConfig(&uart_config);
@@ -1185,11 +1202,18 @@ static const struct uart_driver_api mcux_lpuart_driver_api = {
 				? UART_CFG_FLOW_CTRL_RS485   \
 				: UART_CFG_FLOW_CTRL_NONE
 
+#ifdef CONFIG_CLOCK_CONTROL_MCUX_CCM_REV3
+#define CLOCK_FREQ(inst) DT_INST_CLOCKS_CELL(inst, freq)
+#else
+#define CLOCK_FREQ(inst) 0
+#endif /* CONFIG_CLOCK_CONTROL_MCUX_CCM_REV3 */
+
 #define LPUART_MCUX_DECLARE_CFG(n)                                      \
 static const struct mcux_lpuart_config mcux_lpuart_##n##_config = {     \
 	.base = (LPUART_Type *) DT_INST_REG_ADDR(n),                          \
 	.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                   \
 	.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),	\
+	.clock_freq = (clock_control_subsys_rate_t)CLOCK_FREQ(n),             \
 	.baud_rate = DT_INST_PROP(n, current_speed),                          \
 	.flow_ctrl = FLOW_CONTROL(n),                                         \
 	.parity = DT_INST_ENUM_IDX_OR(n, parity, UART_CFG_PARITY_NONE),       \
