@@ -615,4 +615,9 @@ int sensing_get_sensors(int *sensor_nums, const struct sensing_sensor_info **inf
 }
 
 
+struct sensing_context *get_sensing_ctx(void)
+{
+	return &sensing_ctx;
+}
+
 SYS_INIT(sensing_init, APPLICATION, CONFIG_APPLICATION_INIT_PRIORITY);

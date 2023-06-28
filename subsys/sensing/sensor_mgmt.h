@@ -74,10 +74,12 @@ enum sensor_trigger_mode {
 
 enum {
 	EVENT_CONFIG_READY,
+	EVENT_DATA_READY,
 };
 
 enum {
 	SENSOR_LATER_CFG_BIT,
+	SENSOR_DATA_READY_BIT,
 };
 
 /**
@@ -93,6 +95,9 @@ struct sensing_connection {
 	/* copy sensor data to connection data buf from reporter */
 	void *data;
 	/* client(sink) next consume time */
+	uint64_t next_consume_time;
+	/* when new data arrive, set flag to true, after data processing, clear the flag */
+	bool new_data_arrive;
 	sys_snode_t snode;
 	/* post data to application */
 	sensing_data_event_t data_evt_cb;
@@ -139,6 +144,7 @@ struct sensing_context {
 	k_tid_t runtime_id;
 	struct k_sem runtime_event_sem;
 	atomic_t runtime_event_flag;
+	bool data_to_ring_buf;
 };
 
 int open_sensor(struct sensing_sensor *sensor, struct sensing_connection **conn);
@@ -150,6 +156,7 @@ int get_interval(struct sensing_connection *con, uint32_t *sensitivity);
 int set_sensitivity(struct sensing_connection *conn, int8_t index, uint32_t interval);
 int get_sensitivity(struct sensing_connection *con, int8_t index, uint32_t *sensitivity);
 int loop_sensors(struct sensing_context *ctx);
+struct sensing_context *get_sensing_ctx(void);
 
 
 static inline bool is_phy_sensor(struct sensing_sensor *sensor)
@@ -203,6 +210,45 @@ static inline uint64_t get_us(void)
 static inline bool is_sensor_opened(struct sensing_sensor *sensor)
 {
 	return sensor->interval != 0;
+}
+
+/* sensor not in polling mode, meanwhile data ready arrived from physical sensor */
+static inline bool is_sensor_data_ready(struct sensing_sensor *sensor)
+{
+	return is_phy_sensor(sensor) &&
+	       sensor->mode == SENSOR_TRIGGER_MODE_DATA_READY &&
+	       atomic_test_and_clear_bit(&sensor->flag, SENSOR_DATA_READY_BIT);
+}
+
+/* when reporter post data to its client, new_data_arrive flag will be set,
+ * indicates sensor has new data arriving
+ */
+static inline bool sensor_has_new_data(const struct sensing_sensor *sensor)
+{
+	for (int i = 0; i < sensor->reporter_num; i++) {
+		if (sensor->conns[i].new_data_arrive)
+			return true;
+	}
+
+	return false;
+}
+
+/* this function is used to decide whether filtering sensitivity checking
+ * for example: filter sensitivity checking if sensitivity value is 0.
+ */
+static inline bool is_filtering_sensitivity(int *sensitivity)
+{
+	bool filtering = false;
+
+	__ASSERT(sensitivity, "sensitivity should not be NULL");
+	for (int i = 0; i < CONFIG_SENSING_MAX_SENSITIVITY_COUNT; i++) {
+		if (sensitivity[i] != 0) {
+			filtering = true;
+			break;
+		}
+	}
+
+	return filtering;
 }
 
 /**
