@@ -72,21 +72,9 @@ else()
   ${PYTHON_EXECUTABLE_OUT_OF_SYNC}\n")
   endif()
 
-  # Set WEST to a COMMAND prefix as if it were a find_program()
-  # result.
-  #
-  # From west 0.8 forward, you can run 'python -m west' to run
-  # the command line application.
-  set(WEST_MODULE west)
-  if(${west_version} VERSION_LESS 0.8)
-    # In west 0.7.x, this wasn't supported yet, but it happens to be
-    # possible to run 'python -m west.app.main'.
-    string(APPEND WEST_MODULE .app.main)
-  endif()
-
-  # Need to cache this so the Zephyr Eclipse plugin knows
-  # how to invoke West.
-  set(WEST ${PYTHON_EXECUTABLE} -m ${WEST_MODULE} CACHE INTERNAL "West")
+  # Set WEST to a COMMAND prefix as if it were a find_program() result, and
+  # cache the value so the Zephyr Eclipse plugin knows how to invoke West.
+  set(WEST ${PYTHON_EXECUTABLE} -m west CACHE INTERNAL "West")
 
   # Print information about the west module we're relying on. This
   # will still work even after output is one line.
