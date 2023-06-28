@@ -11,6 +11,7 @@
 #include <zephyr/sensing/sensing_sensor.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/slist.h>
+#include <zephyr/sys/ring_buffer.h>
 #include <string.h>
 
 #ifdef __cplusplus
@@ -141,10 +142,15 @@ struct sensing_context {
 	int sensor_num;
 	struct sensing_sensor **sensors;
 	struct k_thread runtime_thread;
+	struct k_thread dispatch_thread;
 	k_tid_t runtime_id;
+	k_tid_t dispatch_id;
 	struct k_sem event_sem;
+	struct k_sem dispatch_sem;
 	atomic_t event_flag;
 	bool data_to_ring_buf;
+	struct ring_buf sensor_ring_buf;
+	uint8_t buf[CONFIG_SENSING_RING_BUF_SIZE];
 };
 
 int open_sensor(struct sensing_sensor *sensor, struct sensing_connection **conn);
@@ -156,6 +162,7 @@ int get_interval(struct sensing_connection *con, uint32_t *sensitivity);
 int set_sensitivity(struct sensing_connection *conn, int8_t index, uint32_t interval);
 int get_sensitivity(struct sensing_connection *con, int8_t index, uint32_t *sensitivity);
 int loop_sensors(struct sensing_context *ctx);
+void sensing_dispatch_thread(void *p1, void *p2, void *p3);
 struct sensing_context *get_sensing_ctx(void);
 
 

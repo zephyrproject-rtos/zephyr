@@ -12,6 +12,86 @@
 LOG_MODULE_DECLARE(sensing, CONFIG_SENSING_LOG_LEVEL);
 
 
+static int fetch_data_and_dispatch(struct sensing_context *ctx)
+{
+	struct sensing_connection *conn = NULL;
+	uint8_t buf[CONFIG_SENSING_MAX_SENSOR_DATA_SIZE];
+	uint32_t wanted_size = sizeof(sensing_sensor_handle_t);
+	uint32_t ret_size, rd_size = 0;
+	uint16_t sample_size = 0;
+	int ret = 0;
+
+	while ((ret_size = ring_buf_get(&ctx->sensor_ring_buf, buf + rd_size, wanted_size)) > 0) {
+		rd_size += ret_size;
+
+		if (rd_size == sizeof(sensing_sensor_handle_t)) {
+			/* read sensing_sensor_handle_t handle first */
+			conn = (struct sensing_connection *)(*(int32_t *)buf);
+			if (!conn || !conn->source) {
+				LOG_ERR("fetch data and dispatch, connection or reporter is NULL");
+				ret = -EINVAL;
+				break;
+			}
+			sample_size = conn->source->sample_size;
+
+			__ASSERT(sample_size + sizeof(sensing_sensor_handle_t)
+				 <= CONFIG_SENSING_MAX_SENSOR_DATA_SIZE,
+				"invalid sample size:%d", sample_size);
+			/* get sample_size from connection, then read sensor data from ring buf */
+			wanted_size = sample_size;
+		} else if (rd_size == sizeof(sensing_sensor_handle_t) + wanted_size) {
+			/* read next sample header */
+			wanted_size = sizeof(sensing_sensor_handle_t);
+			rd_size = 0;
+			if (!conn->data_evt_cb) {
+				LOG_WRN("sensor:%s event callback not registered",
+					conn->source->dev->name);
+				continue;
+			}
+			conn->data_evt_cb(conn,
+					  (const void *)(buf + sizeof(sensing_sensor_handle_t)));
+		} else {
+			LOG_ERR("fetch data and dispatch, invalid ret_size:%d, rd_size:%d",
+				ret_size, rd_size);
+			ret = -EINVAL;
+		}
+	}
+
+	if (ret_size == 0 && wanted_size != sizeof(sensing_sensor_handle_t)) {
+		LOG_ERR("fetch data and dispatch, ret_size:%d, wanted_size:%d not expected:%d",
+			ret_size, wanted_size, sizeof(sensing_sensor_handle_t));
+		ret = -EINVAL;
+		__ASSERT(wanted_size, "wanted_size:%d", wanted_size);
+	}
+
+	return ret;
+}
+
+
+static void add_data_to_sensor_ring_buf(struct sensing_context *ctx,
+					struct sensing_sensor *sensor,
+					sensing_sensor_handle_t handle)
+{
+	uint8_t data[CONFIG_SENSING_MAX_SENSOR_DATA_SIZE];
+	uint32_t size;
+
+	if (ring_buf_space_get(&ctx->sensor_ring_buf) < sizeof(void *) + sensor->sample_size) {
+		LOG_WRN("ring buffer will overflow, ignore the coming data");
+		return;
+	}
+	__ASSERT(sizeof(struct sensing_connection *) + sensor->sample_size
+		 <= CONFIG_SENSING_MAX_SENSOR_DATA_SIZE,
+		"sample_size:%d is too large, should enlarge SENSING_MAX_SENSOR_DATA_SIZE:%d",
+		 sensor->sample_size, CONFIG_SENSING_MAX_SENSOR_DATA_SIZE);
+
+	memcpy(data, &handle, sizeof(sensing_sensor_handle_t));
+	memcpy(data + sizeof(handle), sensor->data_buf, sensor->sample_size);
+	size = ring_buf_put(&ctx->sensor_ring_buf, data, sizeof(handle) + sensor->sample_size);
+	__ASSERT(size == sizeof(handle) + sensor->sample_size,
+		"sample size:%d put to ring buf is not expected: %d",
+		size, sizeof(handle) + sensor->sample_size);
+}
+
 /* check whether sensor need to poll data or not, if polling data is needed, update execute time
  * when time arriving
  */
@@ -43,7 +123,7 @@ static bool sensor_need_poll(struct sensing_sensor *sensor, uint64_t cur_us)
 		sensor->next_exec_time += sensor->interval;
 	}
 
-	LOG_INF("sensor:%s, need_poll:%u, cur:%llu, next_exec_time:%llu, mode:%d",
+	LOG_DBG("sensor:%s need poll:%d, cur:%llu, next_exec_time:%llu, mode:%d",
 		sensor->dev->name, poll, cur_us, sensor->next_exec_time, sensor->mode);
 
 	return poll;
@@ -85,7 +165,7 @@ static int virtual_sensor_process_data(struct sensing_sensor *sensor)
 		if (!conn->new_data_arrive) {
 			continue;
 		}
-		LOG_INF("virtual sensor proc data, index:%d, sensor:%s, sample_size:%d",
+		LOG_DBG("virtual sensor proc data, index:%d, sensor:%s, sample_size:%d",
 			i, sensor->dev->name, sensor->sample_size);
 
 		ret |= sensor_api->process(sensor->dev, conn, conn->data, sensor->sample_size);
@@ -110,7 +190,7 @@ static int process_streaming_data(struct sensing_sensor *sensor, uint64_t cur_us
 	 */
 	next_time = (*sample_time == 0 ? cur_us : MIN(cur_us, *sample_time + sensor->interval));
 
-	LOG_INF("proc stream data, sensor:%s, cur:%lld, sample:%lld, ri:%d(us), next:%lld",
+	LOG_DBG("proc stream data, sensor:%s, cur:%lld, sample_time:%lld, ri:%d(us), next:%lld",
 		sensor->dev->name, cur_us, *sample_time, sensor->interval, next_time);
 
 	sensor_api = sensor->dev->api;
@@ -157,13 +237,13 @@ static bool sensor_test_consume_time(struct sensing_sensor *sensor,
 {
 	uint64_t ts = ((struct sensing_sensor_value_header *)sensor->data_buf)->base_timestamp;
 
-	LOG_INF("sensor:%s next_consume_time:%lld sample_time:%lld, cur_time:%lld",
+	LOG_DBG("sensor:%s next_consume_time:%lld sample_time:%lld, cur_time:%lld",
 			sensor->dev->name, conn->next_consume_time, ts, cur_time);
 
 	if (conn->next_consume_time <= ts)
 		return true;
 
-	LOG_INF("sensor:%s data not ready, next_consume_time:%lld sample_time:%lld, cur_time:%lld",
+	LOG_DBG("sensor:%s data not ready, next_consume_time:%lld sample_time:%lld, cur_time:%lld",
 			sensor->dev->name, conn->next_consume_time, ts, cur_time);
 
 	return false;
@@ -211,6 +291,7 @@ static int sensor_sensitivity_test(struct sensing_sensor *sensor,
 		ret |= sensor_api->sensitivity_test(sensor->dev, i, sensor->sensitivity[i],
 				last_sample, sensor->sample_size, cur_sample, sensor->sample_size);
 	}
+	LOG_INF("sensor:%s sensitivity test, ret:%d", sensor->dev->name, ret);
 
 	return ret;
 }
@@ -254,7 +335,8 @@ static int send_data_to_clients(struct sensing_context *ctx,
 
 	for_each_client_conn(sensor, conn) {
 		client = conn->sink;
-		LOG_INF("sensor:%s send data to client", conn->source->dev->name);
+		LOG_DBG("sensor:%s send data to client:%p", conn->source->dev->name, conn);
+
 		if (!is_client_request_data(conn)) {
 			continue;
 		}
@@ -294,13 +376,14 @@ static int send_data_to_clients(struct sensing_context *ctx,
 				client->next_exec_time = EXEC_TIME_INIT;
 			}
 		} else {
-			// add_data_to_sensor_ring_buf(ctx, sensor, conn);
+			add_data_to_sensor_ring_buf(ctx, sensor, conn);
 			ctx->data_to_ring_buf = true;
 		}
 	}
 
 	/* notify dispatch thread to dispatch data to application */
 	if (ctx->data_to_ring_buf) {
+		k_sem_give(&ctx->dispatch_sem);
 		ctx->data_to_ring_buf = false;
 	}
 
@@ -334,9 +417,10 @@ static int calc_sleep_time(struct sensing_context *ctx, uint64_t cur_us)
 
 	next_poll_time = calc_next_poll_time(ctx);
 	if (next_poll_time == EXEC_TIME_OFF) {
-		/* no sampling request. sleep forever */
+		/* no sampling requested, sleep forever */
 		sleep_time = UINT32_MAX;
 	} else if (next_poll_time <= cur_us) {
+		/* next polling time is no more than current time, no sleep at all */
 		sleep_time = 0;
 	} else {
 		sleep_time = (uint32_t)((next_poll_time - cur_us) / USEC_PER_MSEC);
@@ -355,7 +439,7 @@ int loop_sensors(struct sensing_context *ctx)
 	int i = 0, ret = 0;
 
 	cur_us = get_us();
-	LOG_INF("loop sensors, cur_us:%lld(us)", cur_us);
+	LOG_DBG("loop sensors, cur_us:%lld(us)", cur_us);
 
 	for_each_sensor(ctx, i, sensor) {
 		if (!sensor_need_exec(sensor, cur_us)) {
@@ -372,4 +456,18 @@ int loop_sensors(struct sensing_context *ctx)
 	}
 
 	return calc_sleep_time(ctx, cur_us);
+}
+
+
+void sensing_dispatch_thread(void *p1, void *p2, void *p3)
+{
+	struct sensing_context *ctx = p1;
+
+	LOG_INF("sensing dispatch thread start...");
+
+	do {
+		k_sem_take(&ctx->dispatch_sem, K_FOREVER);
+
+		fetch_data_and_dispatch(ctx);
+	} while (1);
 }

@@ -5,6 +5,7 @@ config SENSING
 	bool "Sensing Subsystem"
 	default y
 	depends on DT_HAS_ZEPHYR_SENSING_ENABLED
+	select RING_BUFFER
 	help
 	  Enable Sensing Subsystem.
 
@@ -24,6 +25,25 @@ config SENSING_MAX_SENSITIVITY_COUNT
 	  So, maximum sensitivity count is needed for sensors
 	  Typical values are 6
 
+config SENSING_RING_BUF_SIZE
+	int "ring buf size to store sensor data"
+	depends on SENSING
+	default 16384
+	help
+	  This is the ring buffer to store sensor data that
+	  will be posted to application
+	  Typical values are 16 * 1024
+
+config SENSING_MAX_SENSOR_DATA_SIZE
+	int "maximum sensor data size"
+	depends on SENSING
+	default 64
+	help
+	  This is the maximum sensor data size sensing subsystem could support
+	  when sensor is posting data to client, sensing subsystem would
+	  get no more than SENSING_MAX_SENSOR_DATA_SIZE sensor count from ring buffer
+	  Typical values are 64
+
 config SENSING_RUNTIME_THREAD_STACK_SIZE
 	int "stack size for sensing subsystem runtime thread"
 	depends on SENSING
@@ -31,6 +51,14 @@ config SENSING_RUNTIME_THREAD_STACK_SIZE
 	help
 	  This is the stack size for sensing subsystem runtime thread
 	  Typical values are 4096
+
+config SENSING_DISPATCH_THREAD_STACK_SIZE
+	int "stack size for sensor dispatch thread"
+	depends on SENSING
+	default 1024
+	help
+	  This is the stack size for sensor dispatch thread
+	  Typical values are 1024
 
 config SENSING_RUNTIME_THREAD_PRIORITY
 	int "priority for sensing subsystem runtime thread"
@@ -46,6 +74,16 @@ config SENSING_RUNTIME_THREAD_PRIORITY
 	  loading with no sleep, then dispatch thread has no change to fetch
 	  data, then ring buf will always be put into data until overflow.
 	  Typical values are 9
+
+config SENSING_DISPATCH_THREAD_PRIORITY
+	  int "priority for sensor dispatch thread"
+	  depends on SENSING
+	  default 8
+	  help
+	    This is the thread priority for sensing subsystem dispatch thread
+	    Ring buffer data should be fetched ASAP, so Dispatch
+	    thread priority should be higher than runtime thread
+	    Typical values are 8
 
 source "subsys/sensing/sensor/phy_3d_sensor/Kconfig"
 source "subsys/sensing/sensor/hinge_angle/Kconfig"

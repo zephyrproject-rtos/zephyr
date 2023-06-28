@@ -25,6 +25,7 @@ DT_FOREACH_CHILD_STATUS_OKAY(DT_DRV_INST(0), SENSING_SENSOR_INFO_DEFINE)
 DT_FOREACH_CHILD_STATUS_OKAY(DT_DRV_INST(0), SENSING_SENSOR_DEFINE)
 
 K_THREAD_STACK_DEFINE(runtime_stack, CONFIG_SENSING_RUNTIME_THREAD_STACK_SIZE);
+K_THREAD_STACK_DEFINE(dispatch_stack, CONFIG_SENSING_DISPATCH_THREAD_STACK_SIZE);
 
 
 struct sensing_sensor *sensors[SENSING_SENSOR_NUM];
@@ -44,7 +45,7 @@ static uint32_t arbitrate_interval(struct sensing_sensor *sensor)
 
 	/* search from all clients, arbitrate the interval */
 	for_each_client_conn(sensor, conn) {
-		LOG_DBG("arbitrate interval, sensor:%s for each conn:%p, interval:%d(us)",
+		LOG_INF("arbitrate interval, sensor:%s for each conn:%p, interval:%d(us)",
 			sensor->dev->name, conn, conn->interval);
 		if (!is_client_request_data(conn)) {
 			continue;
@@ -215,14 +216,16 @@ static void sensing_runtime_thread(void *p1, void *p2, void *p3)
 	do {
 		sleep_time = loop_sensors(ctx);
 
+		LOG_INF("sensing runtime thread, sleep_time:%d(ms)", sleep_time);
+
 		ret = k_sem_take(&ctx->event_sem, calc_timeout(sleep_time));
 		if (!ret) {
 			if (atomic_test_and_clear_bit(&ctx->event_flag, EVENT_CONFIG_READY)) {
-				LOG_INF("runtime thread triggered by event_config ready");
+				LOG_INF("runtime thread triggered by EVENT_CONFIG_READY");
 				sensor_later_config(ctx);
 			}
 			if (atomic_test_and_clear_bit(&ctx->event_flag, EVENT_DATA_READY)) {
-				LOG_INF("runtime thread, event_data ready");
+				LOG_INF("runtime thread triggered by EVENT_DATA_READY");
 			}
 		}
 	} while (1);
@@ -296,8 +299,8 @@ static int init_sensor(struct sensing_sensor *sensor, int conns_num)
 
 		init_connection(conn, reporter, sensor);
 
-		LOG_DBG("init sensor, reporter:%s, client:%s, connection:%d",
-			reporter->dev->name, sensor->dev->name, i);
+		LOG_INF("init sensor, reporter:%s, client:%s, connection:%d(%p)",
+			reporter->dev->name, sensor->dev->name, i, conn);
 
 		tmp_conns[i] = conn;
 	}
@@ -427,8 +430,7 @@ static int sensing_init(void)
 	}
 
 	k_sem_init(&ctx->event_sem, 0, 1);
-
-	ctx->sensing_initialized = true;
+	k_sem_init(&ctx->dispatch_sem, 0, 1);
 
 	/* sensing subsystem runtime thread: sensor scheduling and sensor data processing */
 	ctx->runtime_id = k_thread_create(&ctx->runtime_thread, runtime_stack,
@@ -439,6 +441,20 @@ static int sensing_init(void)
 		LOG_ERR("create sensing runtime thread error");
 		return -EAGAIN;
 	}
+
+	/* sensor dispatch thread: get sensor data from senss and dispatch data */
+	ctx->dispatch_id = k_thread_create(&ctx->dispatch_thread, dispatch_stack,
+			CONFIG_SENSING_DISPATCH_THREAD_STACK_SIZE,
+			(k_thread_entry_t) sensing_dispatch_thread, ctx, NULL, NULL,
+			CONFIG_SENSING_DISPATCH_THREAD_PRIORITY, 0, K_NO_WAIT);
+	if (!ctx->dispatch_id) {
+		LOG_ERR("create dispatch thread error");
+		return -EAGAIN;
+	}
+
+	ring_buf_init(&ctx->sensor_ring_buf, sizeof(ctx->buf), ctx->buf);
+
+	ctx->sensing_initialized = true;
 
 	return ret;
 }
@@ -521,6 +537,10 @@ int set_interval(struct sensing_connection *conn, uint32_t interval)
 	}
 
 	conn->interval = interval;
+	conn->next_consume_time = EXEC_TIME_INIT;
+
+	LOG_INF("set interval, sensor:%s, conn:%p, interval:%d",
+		conn->source->dev->name, conn, interval);
 
 	save_config_and_notify(conn->source);
 
