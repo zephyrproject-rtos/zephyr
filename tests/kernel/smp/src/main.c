@@ -1118,6 +1118,19 @@ ZTEST(smp, test_smp_switch_torture)
 {
 	unsigned int num_threads = arch_num_cpus();
 
+	if (CONFIG_SMP_TEST_RUN_FACTOR == 0) {
+		/* If CONFIG_SMP_TEST_RUN_FACTOR is zero,
+		 * the switch torture test is effectively
+		 * not doing anything as the k_sleep()
+		 * below is not going to sleep at all,
+		 * and all created threads are being
+		 * terminated (almost) immediately after
+		 * creation. So if run factor is zero,
+		 * mark the test as skipped.
+		 */
+		ztest_test_skip();
+	}
+
 	for (uintptr_t i = 0; i < num_threads; i++) {
 		k_poll_signal_init(&tsignal[i]);
 		k_poll_event_init(&tevent[i], K_POLL_TYPE_SIGNAL,
