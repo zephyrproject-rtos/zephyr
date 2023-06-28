@@ -396,8 +396,13 @@ void transmit_message(struct k_work *tx_job)
 
 	channel = sTransmitFrame.mChannel;
 
-	radio_api->set_channel(radio_dev, channel);
 	radio_api->set_txpower(radio_dev, get_transmit_power_for_channel(channel));
+
+#if defined(CONFIG_IEEE802154_SELECTIVE_TXCHANNEL)
+	net_pkt_set_ieee802154_txchannel(tx_pkt, channel);
+#else
+	radio_api->set_channel(radio_dev, channel);
+#endif /* CONFIG_IEEE802154_SELECTIVE_TXCHANNEL */
 
 #if defined(CONFIG_OPENTHREAD_TIME_SYNC)
 	if (sTransmitFrame.mInfo.mTxInfo.mIeInfo->mTimeIeOffset != 0) {
