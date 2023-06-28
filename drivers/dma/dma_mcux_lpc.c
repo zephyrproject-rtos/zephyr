@@ -117,7 +117,7 @@ static int dma_mcux_lpc_queue_descriptors(struct channel_data *data,
 	uint32_t xfer_config = 0U;
 	dma_descriptor_t *next_descriptor = NULL;
 	uint32_t width = data->width;
-	uint32_t max_xfer = NXP_LPC_DMA_MAX_XFER * width;
+	uint32_t max_xfer_bytes = NXP_LPC_DMA_MAX_XFER * width;
 	bool setup_extra_descriptor = false;
 	uint8_t enable_interrupt;
 	uint8_t reload;
@@ -137,7 +137,7 @@ static int dma_mcux_lpc_queue_descriptors(struct channel_data *data,
 				return -ENOMEM;
 			}
 			/* Do we need to queue additional DMA descriptors for this block */
-			if ((local_block.block_size / width > NXP_LPC_DMA_MAX_XFER) ||
+			if ((local_block.block_size > max_xfer_bytes) ||
 			    (local_block.next_block != NULL)) {
 				/* Allocate DMA descriptors */
 				next_descriptor =
@@ -185,7 +185,7 @@ static int dma_mcux_lpc_queue_descriptors(struct channel_data *data,
 		}
 
 		/* Fire an interrupt after the whole block has been transferred */
-		if (local_block.block_size / width > NXP_LPC_DMA_MAX_XFER) {
+		if (local_block.block_size > max_xfer_bytes) {
 			enable_interrupt = 0;
 		} else {
 			enable_interrupt = 1;
@@ -203,7 +203,7 @@ static int dma_mcux_lpc_queue_descriptors(struct channel_data *data,
 					width,
 					src_inc,
 					dest_inc,
-					MIN(local_block.block_size, max_xfer));
+					MIN(local_block.block_size, max_xfer_bytes));
 
 		DMA_SetupDescriptor(data->curr_descriptor,
 				xfer_config,
@@ -213,13 +213,13 @@ static int dma_mcux_lpc_queue_descriptors(struct channel_data *data,
 
 		data->curr_descriptor = next_descriptor;
 
-		if (local_block.block_size / width > NXP_LPC_DMA_MAX_XFER) {
-			local_block.block_size -= max_xfer;
+		if (local_block.block_size > max_xfer_bytes) {
+			local_block.block_size -= max_xfer_bytes;
 			if (src_inc) {
-				local_block.source_address += max_xfer;
+				local_block.source_address += max_xfer_bytes;
 			}
 			if (dest_inc) {
-				local_block.dest_address += max_xfer;
+				local_block.dest_address += max_xfer_bytes;
 			}
 		} else {
 			local_block.block_size = 0;
@@ -243,7 +243,7 @@ static int dma_mcux_lpc_queue_descriptors(struct channel_data *data,
 					width,
 					src_inc,
 					dest_inc,
-					MIN(local_block.block_size, max_xfer));
+					MIN(local_block.block_size, max_xfer_bytes));
 		/* Mark this as invalid */
 		xfer_config &= ~DMA_CHANNEL_XFERCFG_CFGVALID_MASK;
 		DMA_SetupDescriptor(data->curr_descriptor,
@@ -272,7 +272,7 @@ static int dma_mcux_lpc_configure(const struct device *dev, uint32_t channel,
 	uint8_t src_inc, dst_inc;
 	bool is_periph = true;
 	uint8_t width;
-	uint32_t max_xfer;
+	uint32_t max_xfer_bytes;
 	uint8_t reload = 0;
 
 	if (NULL == dev || NULL == config) {
@@ -282,8 +282,14 @@ static int dma_mcux_lpc_configure(const struct device *dev, uint32_t channel,
 	dev_config = dev->config;
 	dma_data = dev->data;
 	block_config = config->head_block;
-	width = MIN(config->source_data_size, config->dest_data_size);
-	max_xfer = NXP_LPC_DMA_MAX_XFER * width;
+	/* The DMA controller deals with just one transfer
+	 * size, though the API provides separate sizes
+	 * for source and dest. So assert that the source
+	 * and dest sizes are the same.
+	 */
+	assert(config->dest_data_size == config->source_data_size);
+	width = config->dest_data_size;
+	max_xfer_bytes = NXP_LPC_DMA_MAX_XFER * width;
 
 	/*
 	 * Check if circular mode is requested.
@@ -456,12 +462,12 @@ static int dma_mcux_lpc_configure(const struct device *dev, uint32_t channel,
 	k_spin_unlock(&configuring_otrigs, otrigs_key);
 
 	/* Check if we need to queue DMA descriptors */
-	if ((block_config->block_size / width > NXP_LPC_DMA_MAX_XFER) ||
+	if ((block_config->block_size > max_xfer_bytes) ||
 		(block_config->next_block != NULL)) {
 		/* Allocate a DMA descriptor */
 		data->curr_descriptor = data->dma_descriptor_table;
 
-		if (block_config->block_size / width > NXP_LPC_DMA_MAX_XFER) {
+		if (block_config->block_size > max_xfer_bytes) {
 			/* Disable interrupt as this is not the entire data.
 			 * Reload for the descriptor
 			 */
@@ -469,7 +475,7 @@ static int dma_mcux_lpc_configure(const struct device *dev, uint32_t channel,
 					width,
 					src_inc,
 					dst_inc,
-					MIN(block_config->block_size, max_xfer));
+					max_xfer_bytes);
 		} else {
 			/* Enable interrupt and reload for the descriptor
 			 */
@@ -477,7 +483,7 @@ static int dma_mcux_lpc_configure(const struct device *dev, uint32_t channel,
 					width,
 					src_inc,
 					dst_inc,
-					MIN(block_config->block_size, max_xfer));
+					block_config->block_size);
 		}
 	} else {
 		/* Enable interrupt for the descriptor */
@@ -487,6 +493,9 @@ static int dma_mcux_lpc_configure(const struct device *dev, uint32_t channel,
 				dst_inc,
 				block_config->block_size);
 	}
+	/* DMA controller requires that the address be aligned to transfer size */
+	assert(block_config->source_address == ROUND_UP(block_config->source_address, width));
+	assert(block_config->dest_address == ROUND_UP(block_config->dest_address, width));
 
 	DMA_SubmitChannelTransferParameter(p_handle,
 					xfer_config,
@@ -496,7 +505,7 @@ static int dma_mcux_lpc_configure(const struct device *dev, uint32_t channel,
 
 	/* Start queuing DMA descriptors */
 	if (data->curr_descriptor) {
-		if ((block_config->block_size / width > NXP_LPC_DMA_MAX_XFER)) {
+		if (block_config->block_size > max_xfer_bytes) {
 			/* Queue additional DMA descriptors because the amount of data to
 			 * be transferred is greater that the DMA descriptors max XFERCOUNT.
 			 */
@@ -504,16 +513,17 @@ static int dma_mcux_lpc_configure(const struct device *dev, uint32_t channel,
 
 			if (src_inc) {
 				local_block.source_address = block_config->source_address
-							     + max_xfer;
+							     + max_xfer_bytes;
 			} else {
 				local_block.source_address = block_config->source_address;
 			}
 			if (dst_inc) {
-				local_block.dest_address = block_config->dest_address + max_xfer;
+				local_block.dest_address = block_config->dest_address
+							     + max_xfer_bytes;
 			} else {
 				local_block.dest_address = block_config->dest_address;
 			}
-			local_block.block_size = block_config->block_size - max_xfer;
+			local_block.block_size = block_config->block_size - max_xfer_bytes;
 			local_block.next_block = block_config->next_block;
 			local_block.source_reload_en = reload;
 
@@ -526,6 +536,12 @@ static int dma_mcux_lpc_configure(const struct device *dev, uint32_t channel,
 
 		while (block_config != NULL) {
 			block_config->source_reload_en = reload;
+
+			/* DMA controller requires that the address be aligned to transfer size */
+			assert(block_config->source_address ==
+			       ROUND_UP(block_config->source_address, width));
+			assert(block_config->dest_address ==
+			       ROUND_UP(block_config->dest_address, width));
 
 			if (dma_mcux_lpc_queue_descriptors(data, block_config, src_inc, dst_inc)) {
 				return -ENOMEM;
