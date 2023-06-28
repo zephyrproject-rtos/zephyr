@@ -1,6 +1,7 @@
 # Modem configuration options
 
 # Copyright (c) 2018 Foundries.io
+# Copyright (c) 2023 T-Mobile USA, Inc.
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig MODEM
@@ -192,6 +193,7 @@ source "drivers/modem/Kconfig.ublox-sara-r4"
 source "drivers/modem/Kconfig.quectel-bg9x"
 source "drivers/modem/Kconfig.wncm14a2a"
 source "drivers/modem/Kconfig.gsm"
+source "drivers/modem/Kconfig.sms"
 
 source "drivers/modem/Kconfig.hl7800"
 source "drivers/modem/Kconfig.simcom-sim7080"

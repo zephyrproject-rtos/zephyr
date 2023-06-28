@@ -1,0 +1,43 @@
+# Modem SMS options
+
+# Copyright (c) 2023 T-Moblie
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig MODEM_SMS
+		bool "Modem SMS handler"
+		default y
+		depends on MODEM_CONTEXT
+		help
+		  Choose this setting to enable SMS functionality for
+		  modems.
+
+if MODEM_SMS
+
+config MODEM_SMS_IN_MSG_MAX_LEN
+		int "Maximum length of inbound SMS messages"
+		default 160
+		help
+		  This is the maximum length of inbound (received) SMS messages.
+		  Inbound SMS messages longer than this will be truncated.
+		  The absolute maximum value may be network- and/or modem-dependent,
+		  but a smaller value may be preferred in order to conserve memory.
+
+config MODEM_SMS_OUT_MSG_MAX_LEN
+		int "Maximum length of outbound SMS messages"
+		default MODEM_SMS_IN_MSG_MAX_LEN
+		help
+		  This is the maximum length of outbound SMS messages (being sent).
+		  SMS message send requests longer than this are not possible.
+		  The absolute maximum value may be network- and/or modem-dependent,
+		  but a smaller value may be preferred in order to conserve memory.
+
+config MODEM_SMS_CALLBACK
+		bool "Use SMS Receive callbacks"
+		default n
+		help
+			This option allows a callback to be registered for SMS receive
+			events. SMS messages reported via the callback will not be
+			buffered, and therefore client code must handle buffering if
+			required.
+
+endif # MODEM_SMS
