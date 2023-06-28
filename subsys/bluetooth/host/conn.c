@@ -1207,7 +1207,7 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 	}
 }
 
-struct bt_conn *bt_conn_lookup_handle(uint16_t handle, int type)
+struct bt_conn *bt_conn_lookup_handle(uint16_t handle, enum bt_conn_type type)
 {
 	struct bt_conn *conn;
 
@@ -1243,7 +1243,8 @@ found:
 	return NULL;
 }
 
-void bt_conn_foreach(int type, void (*func)(struct bt_conn *conn, void *data),
+void bt_conn_foreach(enum bt_conn_type type,
+		     void (*func)(struct bt_conn *conn, void *data),
 		     void *data)
 {
 	int i;
@@ -2557,6 +2558,8 @@ int bt_conn_get_info(const struct bt_conn *conn, struct bt_conn_info *info)
 		}
 		return 0;
 #endif
+	default:
+		break;
 	}
 
 	return -EINVAL;
