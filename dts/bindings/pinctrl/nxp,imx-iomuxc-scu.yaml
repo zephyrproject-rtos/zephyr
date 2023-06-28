@@ -1,0 +1,36 @@
+# Copyright 2023 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Use this compatible for i.MX boards on which the IOMUXC is managed
+  by the SCU.
+
+compatible: "nxp,imx-iomuxc-scu"
+
+include:
+  - name: base.yaml
+
+properties:
+  reg:
+    required: false
+
+child-binding:
+  description: SCFW-based IOMUXC pin mux.
+  properties:
+    pinmux:
+      required: true
+      type: array
+      description: |
+        This is an array of values defining the pin mux selection with the following format:
+        <pad, mux, sw_config, lp_config, drive_strength, pull_selection>
+
+        pad: Which pad to configure.
+        mux: The MUX value => selects which signal to route.
+        sw_config: I/O configuration.
+        lp_config: Low power configuration.
+        drive_strength: Pad drive strength. (optional)
+        pull_selection: Pull configuration. (optional)
+
+        Please note that, as mentioned above, "drive_strength" and "pull_selection" fields
+        are optional. If one wants to configure those fields, one needs to specify both of
+        them. This is enforced by the pinctrl driver.
