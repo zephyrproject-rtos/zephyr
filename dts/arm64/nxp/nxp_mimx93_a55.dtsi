@@ -7,7 +7,7 @@
 #include <mem.h>
 #include <freq.h>
 #include <arm64/armv8-a.dtsi>
-#include <zephyr/dt-bindings/clock/imx_ccm.h>
+#include <zephyr/dt-bindings/clock/imx93_ccm.h>
 #include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
 
 / {
@@ -70,15 +70,11 @@
 		};
 	};
 
-	ana_pll: ana_pll@44480000 {
-		compatible = "nxp,imx-ana";
-		reg = <0x44480000 DT_SIZE_K(64)>;
-	};
-
 	ccm: ccm@44450000 {
-		compatible = "nxp,imx-ccm";
-		reg = <0x44450000 DT_SIZE_K(64)>;
-		#clock-cells = <3>;
+		compatible = "nxp,imx-ccm-rev3";
+		reg = <0x44450000 DT_SIZE_K(64)>, // CCM base
+			<0x44480000 DT_SIZE_K(64)>; // PLL base
+		#clock-cells = <2>;
 	};
 
 	lpuart1: serial@44380000 {
@@ -87,7 +83,7 @@
 		interrupts = <GIC_SPI 19 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 		interrupt-names = "irq_0";
 		interrupt-parent = <&gic>;
-		clocks = <&ccm IMX_CCM_LPUART_CLK 0x6c 24>;
+		clocks = <&ccm IMX93_CCM_LPUART1_CLOCK 24000000>;
 		status = "disabled";
 	};
 
@@ -97,7 +93,7 @@
 		interrupts = <GIC_SPI 20 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 		interrupt-names = "irq_0";
 		interrupt-parent = <&gic>;
-		clocks = <&ccm IMX_CCM_LPUART_CLK 0x6c 24>;
+		clocks = <&ccm IMX93_CCM_LPUART2_CLOCK 24000000>;
 		status = "disabled";
 	};
 };
