@@ -127,6 +127,20 @@ struct sensing_sensor {
 	const struct device *reporters[];
 };
 
+/**
+ * @struct sensing_context
+ * @brief sensing subsystem context to include global variables
+ */
+struct sensing_context {
+	bool sensing_initialized;
+	int sensor_num;
+	struct sensing_sensor **sensors;
+	struct k_thread runtime_thread;
+	k_tid_t runtime_id;
+	struct k_sem runtime_event_sem;
+	atomic_t runtime_event_flag;
+};
+
 int open_sensor(struct sensing_sensor *sensor, struct sensing_connection **conn);
 int close_sensor(struct sensing_connection **conn);
 int sensing_register_callback(struct sensing_connection *conn,
@@ -135,6 +149,7 @@ int set_interval(struct sensing_connection *conn, uint32_t interval);
 int get_interval(struct sensing_connection *con, uint32_t *sensitivity);
 int set_sensitivity(struct sensing_connection *conn, int8_t index, uint32_t interval);
 int get_sensitivity(struct sensing_connection *con, int8_t index, uint32_t *sensitivity);
+int loop_sensors(struct sensing_context *ctx);
 
 
 static inline bool is_phy_sensor(struct sensing_sensor *sensor)
@@ -178,6 +193,16 @@ static inline const struct sensing_sensor_info *get_sensor_info(struct sensing_c
 static inline bool is_client_request_data(struct sensing_connection *conn)
 {
 	return conn->interval != 0;
+}
+
+static inline uint64_t get_us(void)
+{
+	return k_cycle_get_64() * USEC_PER_SEC / CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC;
+}
+
+static inline bool is_sensor_opened(struct sensing_sensor *sensor)
+{
+	return sensor->interval != 0;
 }
 
 /**

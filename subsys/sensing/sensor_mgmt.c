@@ -6,9 +6,7 @@
 #include <zephyr/sys/__assert.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/device.h>
-#include <zephyr/kernel.h>
 #include <zephyr/sensing/sensing.h>
-#include <zephyr/sensing/sensing_sensor.h>
 #include <zephyr/logging/log.h>
 #include <stdlib.h>
 #include "sensor_mgmt.h"
@@ -28,24 +26,12 @@ DT_FOREACH_CHILD_STATUS_OKAY(DT_DRV_INST(0), SENSING_SENSOR_DEFINE)
 
 K_THREAD_STACK_DEFINE(runtime_stack, CONFIG_SENSING_RUNTIME_THREAD_STACK_SIZE);
 
-/**
- * @struct sensing_context
- * @brief sensing subsystem context to include global variables
- */
-struct sensing_context {
-	bool sensing_initialized;
-	int sensor_num;
-	struct sensing_sensor *sensors[SENSING_SENSOR_NUM];
-	struct k_thread runtime_thread;
-	k_tid_t runtime_id;
-	struct k_sem runtime_event_sem;
-	atomic_t runtime_event_flag;
-};
+
+struct sensing_sensor *sensors[SENSING_SENSOR_NUM];
 
 static struct sensing_context sensing_ctx = {
 	.sensor_num = SENSING_SENSOR_NUM,
 };
-
 
 
 /* sensor_later_config including arbitrate/set interval/sensitivity
@@ -221,21 +207,26 @@ static void sensor_later_config(struct sensing_context *ctx)
 static void sensing_runtime_thread(void *p1, void *p2, void *p3)
 {
 	struct sensing_context *ctx = p1;
-	int sleep_time = UINT32_MAX;
+	int sleep_time = 100;
 	k_timeout_t timeout;
 	int ret;
 
-	/* TBD: will later implemented in PR3 */
-	/* sleep_time = loop_sensors() */
-	timeout = (sleep_time == UINT32_MAX ? K_FOREVER : K_MSEC(sleep_time));
+	LOG_INF("sensing runtime thread start...");
 
-	ret = k_sem_take(&ctx->runtime_event_sem, timeout);
-	if (!ret) {
-		if (atomic_test_and_clear_bit(&ctx->runtime_event_flag, EVENT_CONFIG_READY)) {
-			LOG_INF("runtime thread triggered by event_config ready");
-			sensor_later_config(ctx);
+	do {
+		loop_sensors(ctx);
+
+		timeout = (sleep_time == UINT32_MAX ? K_FOREVER : K_MSEC(sleep_time));
+
+		ret = k_sem_take(&ctx->runtime_event_sem, timeout);
+		if (!ret) {
+			if (atomic_test_and_clear_bit(&ctx->runtime_event_flag, EVENT_CONFIG_READY)) {
+				LOG_INF("runtime thread triggered by event_config ready");
+				sensor_later_config(ctx);
+			}
 		}
-	}
+	} while (1);
+
 }
 
 static void save_config_and_notify(struct sensing_sensor *sensor)
@@ -419,8 +410,9 @@ static int sensing_init(void)
 		if (ret) {
 			LOG_ERR("sensing init, pre init sensor error");
 		}
-		ctx->sensors[i] = sensor;
+		sensors[i] = sensor;
 	}
+	ctx->sensors = sensors;
 
 	for_each_sensor(ctx, i, sensor) {
 		ret = init_sensor(sensor, sensor->reporter_num);
