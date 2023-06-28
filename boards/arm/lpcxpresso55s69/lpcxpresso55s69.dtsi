@@ -191,7 +191,6 @@ mikrobus_spi: &hs_lspi {
 	 * memory.
 	 */
 	dma-channels = <20>;
-	nxp,dma-num-of-otrigs = <4>;
 	status = "okay";
 };
 
