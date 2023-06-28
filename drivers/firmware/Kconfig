@@ -1,0 +1,21 @@
+# Copyright 2023 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+
+menuconfig FIRMWARE
+	bool "Drivers used to interact with firmware."
+	help
+		Enable support for firmware drivers.
+
+if FIRMWARE
+
+config FIRMWARE_INIT_PRIORITY
+	int "Init priority"
+	default 20 if FIRMWARE_IMX_SCU
+	default 60
+	help
+		Device driver initialization priority.
+
+source "drivers/firmware/imx/Kconfig.imx"
+
+endif # FIRMWARE

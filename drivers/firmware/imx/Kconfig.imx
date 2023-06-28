@@ -1,0 +1,9 @@
+# Copyright 2023 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config FIRMWARE_IMX_SCU
+	bool "NXP i.MX driver for interacting with SCFW."
+	default y
+	depends on DT_HAS_NXP_IMX_SCU_ENABLED
+	help
+		Select this to enable SCU driver.

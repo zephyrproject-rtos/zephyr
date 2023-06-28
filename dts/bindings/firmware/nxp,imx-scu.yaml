@@ -1,0 +1,13 @@
+# Copyright 2023 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP System Controller Unit (SCU)
+
+compatible: "nxp,imx-scu"
+
+include: base.yaml
+
+properties:
+  mbox:
+    required: true
+    type: array
