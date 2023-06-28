@@ -11,15 +11,16 @@
 
 #include "gatt.h"
 
+#define LOG_LEVEL CONFIG_BT_GATT_LOG_LEVEL
+#include <zephyr/logging/log.h>
+LOG_MODULE_REGISTER(bt_gatt);
+
 /* List of fakes used by this unit tester */
 #define FFF_FAKES_LIST(FAKE)                                                                       \
 	FAKE(mock_bt_gatt_notify_cb)                                                               \
-	FAKE(bt_gatt_attr_read)                                                                    \
 
 DEFINE_FAKE_VALUE_FUNC(int, mock_bt_gatt_notify_cb, struct bt_conn *,
 		       struct bt_gatt_notify_params *);
-DEFINE_FAKE_VALUE_FUNC(ssize_t, bt_gatt_attr_read, struct bt_conn *, const struct bt_gatt_attr *,
-		       void *, uint16_t, uint16_t, const void *, uint16_t);
 
 ssize_t bt_gatt_attr_read_service(struct bt_conn *conn, const struct bt_gatt_attr *attr, void *buf,
 				  uint16_t len, uint16_t offset)
@@ -219,6 +220,26 @@ void bt_gatt_foreach_attr_type(uint16_t start_handle, uint16_t end_handle,
 	/* Iterate over dynamic db */
 	foreach_attr_type_dyndb(start_handle, end_handle, uuid, attr_data,
 				num_matches, func, user_data);
+}
+
+/* Exact copy of subsys/bluetooth/host/gatt.c:bt_gatt_attr_read() */
+ssize_t bt_gatt_attr_read(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+			  void *buf, uint16_t buf_len, uint16_t offset,
+			  const void *value, uint16_t value_len)
+{
+	uint16_t len;
+
+	if (offset > value_len) {
+		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
+	}
+
+	len = MIN(buf_len, value_len - offset);
+
+	LOG_DBG("handle 0x%04x offset %u length %u", attr->handle, offset, len);
+
+	memcpy(buf, (uint8_t *)value + offset, len);
+
+	return len;
 }
 
 uint16_t bt_gatt_get_mtu(struct bt_conn *conn)

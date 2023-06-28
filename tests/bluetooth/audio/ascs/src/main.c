@@ -125,19 +125,15 @@ ZTEST_F(ascs_test_suite, test_sink_ase_read_state_idle)
 {
 	const struct bt_gatt_attr *ase = fixture->ase_snk.attr;
 	struct bt_conn *conn = &fixture->conn;
-	struct test_ase_chrc_value_hdr *hdr;
+	struct test_ase_chrc_value_hdr hdr = { 0xff };
 	ssize_t ret;
 
 	Z_TEST_SKIP_IFNDEF(CONFIG_BT_ASCS_ASE_SNK);
 	zexpect_not_null(fixture->ase_snk.attr);
 
-	ret = ase->read(conn, ase, NULL, 0, 0);
+	ret = ase->read(conn, ase, &hdr, sizeof(hdr), 0);
 	zassert_false(ret < 0, "attr->read returned unexpected (err 0x%02x)", BT_GATT_ERR(ret));
-
-	expect_bt_gatt_attr_read_called_once(conn, ase, EMPTY, EMPTY, 0x0000, EMPTY, sizeof(*hdr));
-
-	hdr = (void *)bt_gatt_attr_read_fake.arg5_val;
-	zassert_equal(0x00, hdr->ase_state, "unexpected ASE_State 0x%02x", hdr->ase_state);
+	zassert_equal(0x00, hdr.ase_state, "unexpected ASE_State 0x%02x", hdr.ase_state);
 }
 
 ZTEST_F(ascs_test_suite, test_release_ase_on_callback_unregister)
