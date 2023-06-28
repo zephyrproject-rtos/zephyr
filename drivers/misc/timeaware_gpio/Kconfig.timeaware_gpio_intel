@@ -1,0 +1,11 @@
+# INTEL PMC TGPIO configuration options
+#
+# Copyright (c) 2023 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config TIMEAWARE_GPIO_INTEL
+	bool "Intel Time aware GPIO driver"
+	default y
+	depends on DT_HAS_INTEL_TIMEAWARE_GPIO_ENABLED
+	help
+	  Intel time aware GPIO driver found on Intel PCH subsystem
