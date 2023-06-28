@@ -1632,7 +1632,15 @@ static void smp_pairing_complete(struct bt_smp *smp, uint8_t status)
 {
 	struct bt_conn *conn = smp->chan.chan.conn;
 
-	LOG_DBG("status 0x%x", status);
+	LOG_DBG("got status 0x%x", status);
+
+	if (conn->state != BT_CONN_CONNECTED) {
+		/* If disconnection has been triggered in between the security update
+		 * and the call to this function we need to abort the pairing.
+		 */
+		LOG_WRN("Not connected!");
+		status = BT_SMP_ERR_UNSPECIFIED;
+	}
 
 	if (!status) {
 #if defined(CONFIG_BT_BREDR)
@@ -1701,7 +1709,7 @@ static void smp_pairing_complete(struct bt_smp *smp, uint8_t status)
 
 	smp_reset(smp);
 
-	if (conn->sec_level != conn->required_sec_level) {
+	if (conn->state == BT_CONN_CONNECTED && conn->sec_level != conn->required_sec_level) {
 		bt_smp_start_security(conn);
 	}
 }
