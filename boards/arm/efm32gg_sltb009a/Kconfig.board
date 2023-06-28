@@ -1,0 +1,8 @@
+# EFM32GG SLTB009A board configuration
+# Copyright (c) 2023 Antmicro <www.antmicro.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_EFM32GG_SLTB009A
+	bool "SiLabs EFM32GG-SLTB009A (Giant Gecko 12)"
+	depends on SOC_SERIES_EFM32GG12B
+	select SOC_PART_NUMBER_EFM32GG12B810F1024GM64
