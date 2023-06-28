@@ -3,3 +3,6 @@
 
 zephyr_sources_ifdef(CONFIG_SOC_MIMX93_A55 imx93_ccm.c)
 zephyr_sources_ifdef(CONFIG_SOC_MIMX93_A55 imx93_ccm_clock_tree.c)
+
+zephyr_sources_ifdef(CONFIG_SOC_MIMX8QM_A53 imx8qm_ccm.c)
+zephyr_sources_ifdef(CONFIG_SOC_MIMX8QM_A53 imx8qm_ccm_clock_tree.c)
