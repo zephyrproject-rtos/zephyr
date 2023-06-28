@@ -12,6 +12,7 @@
 #include <zephyr/sys/byteorder.h>
 
 #include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/byteorder.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/bap.h>
@@ -36,9 +37,13 @@ static struct k_work_delayable media_pause_set_work;
 static uint8_t unicast_server_addata[] = {
 	BT_UUID_16_ENCODE(BT_UUID_ASCS_VAL), /* ASCS UUID */
 	BT_AUDIO_UNICAST_ANNOUNCEMENT_TARGETED, /* Target Announcement */
-	(((AVAILABLE_SINK_CONTEXT) >>  0) & 0xFF),
-	(((AVAILABLE_SINK_CONTEXT) >>  8) & 0xFF),
+	BT_BYTES_LIST_LE16(AVAILABLE_SINK_CONTEXT),
 	0x00, /* Metadata length */
+};
+
+static const uint8_t cap_addata[] = {
+	BT_UUID_16_ENCODE(BT_UUID_CAS_VAL),
+	BT_AUDIO_UNICAST_ANNOUNCEMENT_TARGETED,
 };
 
 static uint8_t tmap_addata[] = {
@@ -50,15 +55,16 @@ static uint8_t csis_rsi_addata[BT_CSIP_RSI_SIZE];
 static bool peer_is_cg;
 static bool peer_is_ums;
 
-/* TODO: Expand with BAP data */
 static const struct bt_data ad[] = {
 	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
 	BT_DATA_BYTES(BT_DATA_GAP_APPEARANCE, 0x09, 0x41), /* Appearance - Earbud */
-	BT_DATA_BYTES(BT_DATA_UUID16_SOME, BT_UUID_16_ENCODE(BT_UUID_ASCS_VAL)),
+	BT_DATA_BYTES(BT_DATA_UUID16_SOME, BT_UUID_16_ENCODE(BT_UUID_ASCS_VAL),
+		      BT_UUID_16_ENCODE(BT_UUID_CAS_VAL), BT_UUID_16_ENCODE(BT_UUID_TMAS_VAL)),
 #if defined(CONFIG_BT_CSIP_SET_MEMBER)
 	BT_DATA(BT_DATA_CSIS_RSI, csis_rsi_addata, ARRAY_SIZE(csis_rsi_addata)),
 #endif /* CONFIG_BT_CSIP_SET_MEMBER */
 	BT_DATA(BT_DATA_SVC_DATA16, tmap_addata, ARRAY_SIZE(tmap_addata)),
+	BT_DATA(BT_DATA_SVC_DATA16, cap_addata, ARRAY_SIZE(cap_addata)),
 	BT_DATA(BT_DATA_SVC_DATA16, unicast_server_addata, ARRAY_SIZE(unicast_server_addata)),
 };
 
