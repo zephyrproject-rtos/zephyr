@@ -570,6 +570,8 @@ void conn_addr_str(struct bt_conn *conn, char *addr, size_t len)
 	case BT_CONN_TYPE_LE:
 		bt_addr_le_to_str(info.le.dst, addr, len);
 		break;
+	default:
+		break;
 	}
 }
 
@@ -3277,6 +3279,8 @@ static void connection_info(struct bt_conn *conn, void *user_data)
 		shell_print(ctx_shell, " #%u [ISO][%s] %s", info.id, role_str(info.role), addr);
 		break;
 #endif
+	default:
+		break;
 	}
 
 	(*conn_count)++;
