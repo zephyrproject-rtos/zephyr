@@ -50,7 +50,9 @@ tests:
     arch_allow:
       - riscv32
       - riscv64
-    platform_exclude: m2gl025_miv
+    platform_exclude:
+      - m2gl025_miv
+      - adp_xc7k_ae350
     filter: CONFIG_SOC_FAMILY_RISCV_PRIVILEGED
     extra_configs:
       - CONFIG_GEN_IRQ_VECTOR_TABLE=y
