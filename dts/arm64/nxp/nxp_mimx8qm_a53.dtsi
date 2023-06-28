@@ -8,6 +8,7 @@
 #include <freq.h>
 #include <arm64/armv8-a.dtsi>
 #include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
+#include <zephyr/dt-bindings/clock/imx8qm_ccm.h>
 
 / {
 	#address-cells = <1>;
@@ -56,16 +57,23 @@
 		status = "okay";
 	};
 
+	/* WARNING - LPUART2 TX/RX signals are routed to the BB. */
 	lpuart2: serial@5a080000 {
 		compatible = "nxp,imx-lpuart", "nxp,kinetis-lpuart";
 		reg = <0x5a080000 DT_SIZE_K(4)>;
 		interrupts = <GIC_SPI 347 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 		interrupt-parent = <&gic>;
+		clocks = <&ccm IMX8QM_CCM_ADMA_LPUART2_CLOCK 80000000>;
 		status = "disabled";
 	};
 
 	scu: system-controller {
 		compatible = "nxp,imx-scu";
 		mbox = <0x5d1d0000 DT_SIZE_K(64)>; // LSIO MU2
+
+		ccm: clock-controller {
+			compatible = "nxp,imx-ccm-rev3";
+			#clock-cells = <2>;
+		};
 	};
 };
