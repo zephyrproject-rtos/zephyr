@@ -21,7 +21,7 @@ static struct k_spinlock timeout_lock;
 #define MAX_WAIT (IS_ENABLED(CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE) \
 		  ? K_TICKS_FOREVER : INT_MAX)
 
-/* Cycles left to process in the currently-executing sys_clock_announce() */
+/* Ticks left to process in the currently-executing sys_clock_announce() */
 static int announce_remaining;
 
 #if defined(CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME)
@@ -61,6 +61,22 @@ static void remove_timeout(struct _timeout *t)
 
 static int32_t elapsed(void)
 {
+	/* While sys_clock_announce() is executing, new relative timeouts will be
+	 * scheduled relatively to the currently firing timeout's original tick
+	 * value (=curr_tick) rather than relative to the current
+	 * sys_clock_elapsed().
+	 *
+	 * This means that timeouts being scheduled from within timeout callbacks
+	 * will be scheduled at well-defined offsets from the currently firing
+	 * timeout.
+	 *
+	 * As a side effect, the same will happen if an ISR with higher priority
+	 * preempts a timeout callback and schedules a timeout.
+	 *
+	 * The distinction is implemented by looking at announce_remaining which
+	 * will be non-zero while sys_clock_announce() is executing and zero
+	 * otherwise.
+	 */
 	return announce_remaining == 0 ? sys_clock_elapsed() : 0U;
 }
 
