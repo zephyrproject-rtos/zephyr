@@ -116,20 +116,13 @@ uint8_t test_ase_get(const struct bt_uuid *uuid, int num_ase, ...)
 
 uint8_t test_ase_id_get(const struct bt_gatt_attr *ase)
 {
-	const struct test_ase_chrc_value_hdr *hdr;
+	struct test_ase_chrc_value_hdr hdr = { 0 };
 	ssize_t ret;
 
-	ret = ase->read(NULL, ase, NULL, 0, 0);
+	ret = ase->read(NULL, ase, &hdr, sizeof(hdr), 0);
 	zassert_false(ret < 0, "ase->read returned unexpected (err 0x%02x)", BT_GATT_ERR(ret));
 
-	expect_bt_gatt_attr_read_called_once(NULL, ase, EMPTY, EMPTY, 0, EMPTY, sizeof(*hdr));
-
-	hdr = bt_gatt_attr_read_fake.arg5_val;
-
-	/* Reset the mock state */
-	bt_gatt_attr_read_reset();
-
-	return hdr->ase_id;
+	return hdr.ase_id;
 }
 
 static struct bt_bap_stream *stream_allocated;
