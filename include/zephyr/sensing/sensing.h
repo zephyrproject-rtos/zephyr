@@ -32,7 +32,6 @@
 extern "C" {
 #endif
 
-
 /**
  * @struct sensing_sensor_version
  * @brief Sensor Version
@@ -49,12 +48,9 @@ struct sensing_sensor_version {
 	};
 };
 
-#define SENSING_SENSOR_VERSION(_major, _minor, _hotfix, _build)         \
-				(FIELD_PREP(GENMASK(31, 24), _major) |  \
-				 FIELD_PREP(GENMASK(23, 16), _minor) |  \
-				 FIELD_PREP(GENMASK(15, 8), _hotfix) |  \
-				 FIELD_PREP(GENMASK(7, 0), _build))
-
+#define SENSING_SENSOR_VERSION(_major, _minor, _hotfix, _build)                                    \
+	(FIELD_PREP(GENMASK(31, 24), _major) | FIELD_PREP(GENMASK(23, 16), _minor) |               \
+	 FIELD_PREP(GENMASK(15, 8), _hotfix) | FIELD_PREP(GENMASK(7, 0), _build))
 
 /**
  * @brief Sensor flag indicating if this sensor is on event reporting data.
@@ -62,7 +58,7 @@ struct sensing_sensor_version {
  * Reporting sensor data when the sensor event occurs, such as a motion detect sensor reporting
  * a motion or motionless detected event.
  */
-#define SENSING_SENSOR_FLAG_REPORT_ON_EVENT			BIT(0)
+#define SENSING_SENSOR_FLAG_REPORT_ON_EVENT BIT(0)
 
 /**
  * @brief Sensor flag indicating if this sensor is on change reporting data.
@@ -71,8 +67,7 @@ struct sensing_sensor_version {
  *
  * Exclusive with \ref SENSING_SENSOR_FLAG_REPORT_ON_EVENT
  */
-#define SENSING_SENSOR_FLAG_REPORT_ON_CHANGE			BIT(1)
-
+#define SENSING_SENSOR_FLAG_REPORT_ON_CHANGE BIT(1)
 
 /**
  * @brief Sensing subsystem sensor state.
@@ -83,13 +78,11 @@ enum sensing_sensor_state {
 	SENSING_SENSOR_STATE_OFFLINE = 1,
 };
 
-
 /**
  * @brief Define Sensing subsystem sensor handle
  *
  */
 typedef void *sensing_sensor_handle_t;
-
 
 /**
  * @brief Sensor data event receive callback.
@@ -98,9 +91,7 @@ typedef void *sensing_sensor_handle_t;
  *
  * @param buf The data buffer with sensor data.
  */
-typedef void (*sensing_data_event_t)(
-		sensing_sensor_handle_t handle,
-		const void *buf);
+typedef void (*sensing_data_event_t)(sensing_sensor_handle_t handle, const void *buf);
 
 /**
  * @struct sensing_sensor_info
@@ -108,7 +99,9 @@ typedef void (*sensing_data_event_t)(
  *
  */
 struct sensing_sensor_info {
-	const struct sensor_info * info;
+	const struct sensor_info *info;
+
+	const struct device *dev;
 
 	/** Sensor type */
 	int32_t type;
@@ -123,20 +116,19 @@ struct sensing_callback_list {
 	sensing_data_event_t on_data_event;
 };
 
-
- /**
-  * @brief Get all supported sensor instances' information.
-  *
-  * This API just returns read only information of sensor instances, pointer info will
-  * directly point to internal buffer, no need for caller to allocate buffer,
-  * no side effect to sensor instances.
-  *
-  * @param num_sensors Get number of sensor instances.
-  *
-  * @param info For receiving sensor instances' information array pointer.
-  *
-  * @return 0 on success or negative error value on failure.
-  */
+/**
+ * @brief Get all supported sensor instances' information.
+ *
+ * This API just returns read only information of sensor instances, pointer info will
+ * directly point to internal buffer, no need for caller to allocate buffer,
+ * no side effect to sensor instances.
+ *
+ * @param num_sensors Get number of sensor instances.
+ *
+ * @param info For receiving sensor instances' information array pointer.
+ *
+ * @return 0 on success or negative error value on failure.
+ */
 int sensing_get_sensors(int *num_sensors, const struct sensing_sensor_info **info);
 
 /**
@@ -155,10 +147,9 @@ int sensing_get_sensors(int *num_sensors, const struct sensing_sensor_info **inf
  *
  * @return 0 on success or negative error value on failure.
  */
-int sensing_open_sensor(
-		const struct sensing_sensor_info *info,
-		const struct sensing_callback_list *cb_list,
-		sensing_sensor_handle_t *handle);
+int sensing_open_sensor(const struct sensing_sensor_info *info,
+			const struct sensing_callback_list *cb_list,
+			sensing_sensor_handle_t *handle);
 
 /**
  * @brief Close sensor instance.
@@ -167,8 +158,16 @@ int sensing_open_sensor(
  *
  * @return 0 on success or negative error value on failure.
  */
-int sensing_close_sensor(
-		sensing_sensor_handle_t handle);
+int sensing_close_sensor(sensing_sensor_handle_t handle);
+
+struct sensing_sensor_attribute {
+	enum sensor_attribute attribute;
+	q31_t value;
+	int8_t shift;
+};
+
+int sensing_set_attributes(sensing_sensor_handle_t handle,
+			   struct sensing_sensor_attribute *attributes, size_t count);
 
 /**
  * @brief Get sensor information from sensor instance handle.
@@ -177,8 +176,7 @@ int sensing_close_sensor(
  *
  * @return a const pointer to \ref sensing_sensor_info on success or NULL on failure.
  */
-const struct sensing_sensor_info *sensing_get_sensor_info(
-		sensing_sensor_handle_t handle);
+const struct sensing_sensor_info *sensing_get_sensor_info(sensing_sensor_handle_t handle);
 
 __test_only void sensing_reset_connections(void);
 
@@ -189,6 +187,5 @@ __test_only void sensing_reset_connections(void);
 /**
  * @}
  */
-
 
 #endif /*ZEPHYR_INCLUDE_SENSING_H_*/

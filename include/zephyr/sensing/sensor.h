@@ -19,6 +19,7 @@
 		sensing_sensor_info,                                                               \
 		SENSING_SENSOR_INFO_DT_NAME(node_id, DT_PROP_BY_IDX(node_id, prop, idx))) = {      \
 		.info = &SENSOR_INFO_DT_NAME(DT_PHANDLE(node_id, dev)),                            \
+		.dev = DEVICE_DT_GET(node_id),                                                     \
 		.type = DT_PROP_BY_IDX(node_id, prop, idx),                                        \
 	};
 

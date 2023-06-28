@@ -5,6 +5,9 @@
 
 #include <zephyr/sensing/sensing.h>
 #include <zephyr/sensing/sensor.h>
+#include <zephyr/logging/log.h>
+
+LOG_MODULE_REGISTER(sensing, CONFIG_SENSING_LOG_LEVEL);
 
 int sensing_get_sensors(int *num_sensors, const struct sensing_sensor_info **info)
 {

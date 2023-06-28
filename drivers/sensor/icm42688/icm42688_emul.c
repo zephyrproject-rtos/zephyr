@@ -56,6 +56,9 @@ static void icm42688_emul_handle_write(const struct emul *target, uint8_t regn, 
 			data->reg[REG_INT_STATUS] |= BIT_INT_STATUS_RESET_DONE;
 		}
 		break;
+	default:
+		data->reg[regn] = value;
+		break;
 	}
 }
 
