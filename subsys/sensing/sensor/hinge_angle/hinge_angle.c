@@ -12,6 +12,8 @@
 
 LOG_MODULE_REGISTER(hinge_angle, CONFIG_SENSING_LOG_LEVEL);
 
+#define HINGE_ANGLE_ACC_INTERVAL_US          100000
+
 static struct sensing_sensor_register_info hinge_reg = {
 	.flags = SENSING_SENSOR_FLAG_REPORT_ON_CHANGE,
 	.sample_size = sizeof(struct sensing_sensor_value_q31),
@@ -22,8 +24,8 @@ static struct sensing_sensor_register_info hinge_reg = {
 struct hinge_angle_context {
 	uint32_t interval;
 	uint32_t sensitivity;
-	int32_t base_acc_handle;
-	int32_t lid_acc_handle;
+	sensing_sensor_handle_t base_acc_handle;
+	sensing_sensor_handle_t lid_acc_handle;
 	void *algo_handle;
 };
 
@@ -31,11 +33,69 @@ static int hinge_init(const struct device *dev,
 	const struct sensing_sensor_info *info, const sensing_sensor_handle_t *reporter_handles,
 	int32_t reporters_count)
 {
+
+	int32_t i;
+	struct hinge_angle_context *ctx = sensing_sensor_get_ctx_data(dev);
+	const struct sensing_sensor_info *rpt_info = NULL;
+
+	LOG_INF("[%s] name: %s", __func__, dev->name);
+
+	ctx->base_acc_handle = NULL;
+	ctx->lid_acc_handle = NULL;
+
+	for (i = 0; i < reporters_count; i++) {
+		rpt_info = sensing_get_sensor_info(reporter_handles[i]);
+
+		LOG_INF("[%s] reporter_handles[%d] %p, type 0x%x",
+			__func__, i, reporter_handles[i], rpt_info->type);
+
+		if (rpt_info->type ==
+			SENSING_SENSOR_TYPE_MOTION_ACCELEROMETER_3D) {
+			if (strcmp(rpt_info->name, "base-accel") == 0) {
+				ctx->base_acc_handle = reporter_handles[i];
+				continue;
+			} else if (strcmp(rpt_info->name, "lid-accel") == 0) {
+				ctx->lid_acc_handle = reporter_handles[i];
+				continue;
+			}
+		}
+
+		LOG_WRN("[%s] unused reporter_handles[%d] %d, type 0x%x",
+			__func__, i, reporter_handles[i], rpt_info->type);
+	}
+
 	return 0;
 }
 
 static int hinge_set_interval(const struct device *dev, uint32_t value)
 {
+
+	int ret;
+
+	struct sensing_sensor_config base_acc_config;
+	struct sensing_sensor_config lid_acc_config;
+	struct hinge_angle_context *ctx = sensing_sensor_get_ctx_data(dev);
+	uint32_t acc_interval = value ? HINGE_ANGLE_ACC_INTERVAL_US : 0;
+
+	base_acc_config.attri = SENSING_SENSOR_ATTRIBUTE_INTERVAL;
+	base_acc_config.interval = HINGE_ANGLE_ACC_INTERVAL_US;
+	ret = sensing_set_config(ctx->base_acc_handle, &base_acc_config, 1);
+	if (ret) {
+		LOG_ERR("base_acc sensing_set_interval error:%d\n", ret);
+	}
+
+	lid_acc_config.attri = SENSING_SENSOR_ATTRIBUTE_INTERVAL;
+	lid_acc_config.interval = HINGE_ANGLE_ACC_INTERVAL_US;
+	ret = sensing_set_config(ctx->lid_acc_handle, &lid_acc_config, 1);
+	if (ret) {
+		LOG_ERR("lid_acc sensing_set_interval error:%d\n", ret);
+	}
+
+	ctx->interval = value;
+	LOG_INF("[%s] name: %s, value %d acc_interval %d", __func__, dev->name,
+		value, acc_interval);
+
+
 	return 0;
 }
 
