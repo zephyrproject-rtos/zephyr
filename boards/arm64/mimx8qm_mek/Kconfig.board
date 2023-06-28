@@ -1,0 +1,7 @@
+# Copyright 2023 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_MIMX8QM_MEK_A53
+	bool "NXP i.MX8QM MEK A53"
+	depends on SOC_SERIES_MIMX8QM_A53
+	select SOC_PART_NUMBER_MIMX8QM6AVUFF

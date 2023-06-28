@@ -1,0 +1,37 @@
+/*
+ * Copyright 2023 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nxp/nxp_mimx8qm_a53.dtsi>
+
+/ {
+	model = "NXP i.MX8QM A53";
+	compatible = "fsl,mimx8qm";
+
+	chosen {
+		zephyr,sram = &sram0;
+	};
+
+	cpus {
+		cpu@0 {
+			status = "disabled";
+		};
+
+		cpu@1 {
+			status = "disabled";
+		};
+
+		cpu@2 {
+			status = "disabled";
+		};
+	};
+
+	sram0: memory@df700000 {
+		reg = <0xdf700000 DT_SIZE_M(1)>;
+	};
+};
+

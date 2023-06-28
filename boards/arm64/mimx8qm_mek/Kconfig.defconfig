@@ -1,0 +1,9 @@
+# Copyright 2023 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_MIMX8QM_MEK_A53
+
+config BOARD
+	default "mimx8qm_mek_a53"
+
+endif # BOARD_MIMX8QM_MEK_A53
