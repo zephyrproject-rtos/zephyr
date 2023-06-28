@@ -29,8 +29,8 @@ int sensing_sensor_notify_data_ready(const struct device *dev)
 
 	atomic_set_bit(&sensor->flag, SENSOR_DATA_READY_BIT);
 
-	atomic_set_bit(&ctx->runtime_event_flag, EVENT_DATA_READY);
-	k_sem_give(&ctx->runtime_event_sem);
+	atomic_set_bit(&ctx->event_flag, EVENT_DATA_READY);
+	k_sem_give(&ctx->event_sem);
 
 	return 0;
 }

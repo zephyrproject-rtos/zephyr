@@ -207,26 +207,25 @@ static void sensor_later_config(struct sensing_context *ctx)
 static void sensing_runtime_thread(void *p1, void *p2, void *p3)
 {
 	struct sensing_context *ctx = p1;
-	int sleep_time = 100;
-	k_timeout_t timeout;
+	int sleep_time = UINT32_MAX;
 	int ret;
 
 	LOG_INF("sensing runtime thread start...");
 
 	do {
-		loop_sensors(ctx);
+		sleep_time = loop_sensors(ctx);
 
-		timeout = (sleep_time == UINT32_MAX ? K_FOREVER : K_MSEC(sleep_time));
-
-		ret = k_sem_take(&ctx->runtime_event_sem, timeout);
+		ret = k_sem_take(&ctx->event_sem, calc_timeout(sleep_time));
 		if (!ret) {
-			if (atomic_test_and_clear_bit(&ctx->runtime_event_flag, EVENT_CONFIG_READY)) {
+			if (atomic_test_and_clear_bit(&ctx->event_flag, EVENT_CONFIG_READY)) {
 				LOG_INF("runtime thread triggered by event_config ready");
 				sensor_later_config(ctx);
 			}
+			if (atomic_test_and_clear_bit(&ctx->event_flag, EVENT_DATA_READY)) {
+				LOG_INF("runtime thread, event_data ready");
+			}
 		}
 	} while (1);
-
 }
 
 static void save_config_and_notify(struct sensing_sensor *sensor)
@@ -241,9 +240,9 @@ static void save_config_and_notify(struct sensing_sensor *sensor)
 	atomic_set_bit(&sensor->flag, SENSOR_LATER_CFG_BIT);
 
 	/*remember event config ready and notify sensing_runtime_thread */
-	atomic_set_bit(&ctx->runtime_event_flag, EVENT_CONFIG_READY);
+	atomic_set_bit(&ctx->event_flag, EVENT_CONFIG_READY);
 
-	k_sem_give(&ctx->runtime_event_sem);
+	k_sem_give(&ctx->event_sem);
 }
 
 static int set_sensor_state(struct sensing_sensor *sensor, enum sensing_sensor_state state)
@@ -427,7 +426,7 @@ static int sensing_init(void)
 		LOG_INF("sensing init, sensor:%s, state:%d", sensor->dev->name, sensor->state);
 	}
 
-	k_sem_init(&ctx->runtime_event_sem, 0, 1);
+	k_sem_init(&ctx->event_sem, 0, 1);
 
 	ctx->sensing_initialized = true;
 
@@ -440,8 +439,6 @@ static int sensing_init(void)
 		LOG_ERR("create sensing runtime thread error");
 		return -EAGAIN;
 	}
-
-	LOG_INF("%s(%d), runtime_id:%p", __func__, __LINE__, ctx->runtime_id);
 
 	return ret;
 }
@@ -613,7 +610,6 @@ int sensing_get_sensors(int *sensor_nums, const struct sensing_sensor_info **inf
 
 	return 0;
 }
-
 
 struct sensing_context *get_sensing_ctx(void)
 {

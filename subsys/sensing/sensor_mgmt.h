@@ -142,8 +142,8 @@ struct sensing_context {
 	struct sensing_sensor **sensors;
 	struct k_thread runtime_thread;
 	k_tid_t runtime_id;
-	struct k_sem runtime_event_sem;
-	atomic_t runtime_event_flag;
+	struct k_sem event_sem;
+	atomic_t event_flag;
 	bool data_to_ring_buf;
 };
 
@@ -212,6 +212,11 @@ static inline bool is_sensor_opened(struct sensing_sensor *sensor)
 	return sensor->interval != 0;
 }
 
+static inline bool is_sensor_state_ready(struct sensing_sensor *sensor)
+{
+	return (sensor->state == SENSING_SENSOR_STATE_READY);
+}
+
 /* sensor not in polling mode, meanwhile data ready arrived from physical sensor */
 static inline bool is_sensor_data_ready(struct sensing_sensor *sensor)
 {
@@ -249,6 +254,11 @@ static inline bool is_filtering_sensitivity(int *sensitivity)
 	}
 
 	return filtering;
+}
+
+static inline k_timeout_t calc_timeout(int sleep_time)
+{
+	return (sleep_time == UINT32_MAX ? K_FOREVER : K_MSEC(sleep_time));
 }
 
 /**

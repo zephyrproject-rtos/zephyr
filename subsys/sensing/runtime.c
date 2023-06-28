@@ -307,6 +307,47 @@ static int send_data_to_clients(struct sensing_context *ctx,
 	return 0;
 }
 
+static uint64_t calc_next_poll_time(struct sensing_context *ctx)
+{
+	struct sensing_sensor *sensor;
+	uint64_t next_poll = EXEC_TIME_OFF;
+	int i;
+
+	for_each_sensor(ctx, i, sensor) {
+		if (!is_sensor_state_ready(sensor))
+			continue;
+		if (!is_sensor_opened(sensor))
+			continue;
+		if (sensor->next_exec_time == EXEC_TIME_OFF) {
+			continue;
+		}
+		next_poll = MIN(next_poll, sensor->next_exec_time);
+	}
+
+	return next_poll;
+}
+
+static int calc_sleep_time(struct sensing_context *ctx, uint64_t cur_us)
+{
+	uint64_t next_poll_time;
+	uint32_t sleep_time;
+
+	next_poll_time = calc_next_poll_time(ctx);
+	if (next_poll_time == EXEC_TIME_OFF) {
+		/* no sampling request. sleep forever */
+		sleep_time = UINT32_MAX;
+	} else if (next_poll_time <= cur_us) {
+		sleep_time = 0;
+	} else {
+		sleep_time = (uint32_t)((next_poll_time - cur_us) / USEC_PER_MSEC);
+	}
+
+	LOG_DBG("calc sleep time, next:%lld, cur:%lld, sleep_time:%d(ms)",
+		next_poll_time, cur_us, sleep_time);
+
+	return sleep_time;
+}
+
 int loop_sensors(struct sensing_context *ctx)
 {
 	struct sensing_sensor *sensor;
@@ -330,5 +371,5 @@ int loop_sensors(struct sensing_context *ctx)
 		}
 	}
 
-	return ret;
+	return calc_sleep_time(ctx, cur_us);
 }
