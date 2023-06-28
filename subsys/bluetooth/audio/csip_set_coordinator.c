@@ -1375,8 +1375,21 @@ BT_CONN_CB_DEFINE(conn_callbacks) = {
 struct bt_csip_set_coordinator_csis_inst *bt_csip_set_coordinator_csis_inst_by_handle(
 	struct bt_conn *conn, uint16_t start_handle)
 {
-	const struct bt_csip_set_coordinator_svc_inst *svc_inst =
-		lookup_instance_by_handle(conn, start_handle);
+	const struct bt_csip_set_coordinator_svc_inst *svc_inst;
+
+	CHECKIF(conn == NULL) {
+		LOG_DBG("conn is NULL");
+
+		return NULL;
+	}
+
+	CHECKIF(start_handle == 0) {
+		LOG_DBG("start_handle is 0");
+
+		return NULL;
+	}
+
+	svc_inst = lookup_instance_by_handle(conn, start_handle);
 
 	if (svc_inst != NULL) {
 		struct bt_csip_set_coordinator_inst *client;
