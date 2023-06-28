@@ -155,6 +155,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 	uint16_t lazy;
 	uint32_t ret;
 	uint8_t phy;
+	int err = 0;
 
 	DEBUG_RADIO_START_M(1);
 
@@ -385,10 +386,11 @@ static int prepare_cb(struct lll_prepare_param *p)
 	if (overhead) {
 		LL_ASSERT_MSG(false, "%s: Actual EVENT_OVERHEAD_START_US = %u",
 			      __func__, HAL_TICKER_TICKS_TO_US(overhead));
-		radio_isr_set(lll_isr_abort, cig_lll);
+
+		radio_isr_set(isr_done, cis_lll);
 		radio_disable();
 
-		return -ECANCELED;
+		err = -ECANCELED;
 	}
 #endif /* CONFIG_BT_CTLR_XTAL_ADVANCED */
 
@@ -409,9 +411,29 @@ static int prepare_cb(struct lll_prepare_param *p)
 				/* sn and nesn are 1-bit, only Least Significant bit is needed */
 				cis_lll->sn += cis_lll->tx.bn * cis_lazy;
 				cis_lll->nesn += cis_lll->rx.bn * cis_lazy;
+
+				/* Adjust sn and nesn for canceled events */
+				if (err) {
+					/* Adjust sn when flushing Tx */
+					/* FIXME: When Flush Timeout is implemented */
+					if (cis_lll->tx.bn_curr <= cis_lll->tx.bn) {
+						lll_flush_tx(cis_lll);
+					}
+
+					/* Adjust nesn when flushing Rx */
+					/* FIXME: When Flush Timeout is implemented */
+					if (cis_lll->rx.bn_curr <= cis_lll->rx.bn) {
+						lll_flush_rx(cis_lll);
+					}
+				}
 			}
 		}
 	} while (cis_lll);
+
+	/* Return if prepare callback cancelled */
+	if (err) {
+		return err;
+	}
 
 	/* Prepare is done */
 	ret = lll_prepare_done(cig_lll);
