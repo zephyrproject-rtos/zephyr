@@ -1,0 +1,71 @@
+/*
+ * Copyright 2023 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <freq.h>
+#include <arm64/armv8-a.dtsi>
+#include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
+
+/ {
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			compatible = "arm,cortex-a53";
+			reg = <0>;
+		};
+
+		cpu@1 {
+			compatible = "arm,cortex-a53";
+			reg = <1>;
+		};
+
+		cpu@2 {
+			compatible = "arm,cortex-a53";
+			reg = <2>;
+		};
+
+		cpu@3 {
+			compatible = "arm,cortex-a53";
+			reg = <3>;
+		};
+	};
+
+	arch_timer: timer {
+		compatible = "arm,armv8-timer";
+		interrupts = <GIC_PPI 13 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+			<GIC_PPI 14 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+			<GIC_PPI 11 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+			<GIC_PPI 10 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-parent = <&gic>;
+	};
+
+	gic: interrupt-controller@51a00000 {
+		compatible = "arm,gic";
+		reg = <0x51a00000 0x10000>, // GICD
+			<0x51b00000 0xc0000>; // GICR
+		interrupt-controller;
+		#interrupt-cells = <4>;
+		status = "okay";
+	};
+
+	lpuart2: serial@5a080000 {
+		compatible = "nxp,imx-lpuart", "nxp,kinetis-lpuart";
+		reg = <0x5a080000 DT_SIZE_K(4)>;
+		interrupts = <GIC_SPI 347 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-parent = <&gic>;
+		status = "disabled";
+	};
+
+	scu: system-controller {
+		compatible = "nxp,imx-scu";
+		mbox = <0x5d1d0000 DT_SIZE_K(64)>; // LSIO MU2
+	};
+};

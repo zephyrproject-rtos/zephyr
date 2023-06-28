@@ -1,0 +1,11 @@
+# Copyright 2023 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_MIMX8QM_A53
+
+config SOC_SERIES
+	default "mimx8qm"
+
+source "soc/arm64/nxp_imx/mimx8qm/Kconfig.defconfig.mimx8qm*"
+
+endif # SOC_SERIES_MIMX8QM_A53
