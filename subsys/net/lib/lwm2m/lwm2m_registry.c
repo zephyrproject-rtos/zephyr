@@ -1156,8 +1156,8 @@ static int lwm2m_engine_get(const struct lwm2m_obj_path *path, void *buf, uint16
 			break;
 
 		case LWM2M_RES_TYPE_STRING:
-			strncpy(buf, data_ptr, buflen - 1);
-			((char *)buf)[buflen - 1] = '\0';
+			strncpy(buf, data_ptr, data_len - 1);
+			((char *)buf)[data_len - 1] = '\0';
 			break;
 
 		case LWM2M_RES_TYPE_U32:
@@ -1230,6 +1230,9 @@ static int lwm2m_engine_get(const struct lwm2m_obj_path *path, void *buf, uint16
 			k_mutex_unlock(&registry_lock);
 			return -EINVAL;
 		}
+	} else if (obj_field->data_type == LWM2M_RES_TYPE_STRING) {
+		/* Ensure empty string when there is no data */
+		((char *)buf)[0] = '\0';
 	}
 	k_mutex_unlock(&registry_lock);
 	return 0;
