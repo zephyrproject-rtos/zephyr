@@ -127,7 +127,6 @@ static void service_work_fn(struct k_work *work)
 		}
 
 		if (next && next < k_uptime_get()) {
-			printk("Event!\n");
 			next = 0;
 			service(NULL);
 		}
