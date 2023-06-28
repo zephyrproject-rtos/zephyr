@@ -2482,7 +2482,6 @@ static void ase_stop(struct bt_ascs_ase *ase)
 		err = ascs_disconnect_stream(stream);
 		if (err < 0) {
 			LOG_ERR("Failed to disconnect stream %p: %d", stream, err);
-			return;
 		}
 	}
 
