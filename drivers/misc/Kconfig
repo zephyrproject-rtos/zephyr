@@ -9,5 +9,6 @@ source "drivers/misc/ft8xx/Kconfig"
 source "drivers/misc/grove_lcd_rgb/Kconfig"
 source "drivers/misc/pio_rpi_pico/Kconfig"
 source "drivers/misc/nxp_s32_emios/Kconfig"
+source "drivers/misc/timeaware_gpio/Kconfig"
 
 endmenu
