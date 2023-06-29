@@ -882,7 +882,7 @@ foreach(zephyr_lib ${ZEPHYR_LIBS_PROPERTY})
        AND NOT ${lib_imported}
     )
       get_property(allow_empty TARGET ${zephyr_lib} PROPERTY ALLOW_EMPTY)
-      if(NOT "${allow_empty}")
+      if(NOT ${allow_empty})
         message(WARNING
           "No SOURCES given to Zephyr library: ${zephyr_lib}\nExcluding target from build."
         )
