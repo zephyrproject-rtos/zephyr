@@ -421,7 +421,7 @@ CMSIS-DSP integration:
   collaborators:
     - galak
   files:
-    - modules/Kconfig.cmsis_dsp
+    - modules/cmsis/Kconfig.cmsis_dsp
     - tests/benchmarks/cmsis_dsp/
     - tests/lib/cmsis_dsp/
   labels:
@@ -434,7 +434,7 @@ CMSIS-NN integration:
   collaborators:
     - stephanosio
   files:
-    - modules/Kconfig.cmsis_nn
+    - modules/cmsis/Kconfig.cmsis_nn
     - tests/lib/cmsis_nn/
   labels:
     - "area: CMSIS-NN"
@@ -2854,9 +2854,9 @@ West:
     - microbuilder
     - povergoing
   files:
-    - modules/Kconfig.cmsis
-    - modules/Kconfig.cmsis_dsp
-    - modules/Kconfig.cmsis_nn
+    - modules/cmsis/Kconfig
+    - modules/cmsis/Kconfig.cmsis_dsp
+    - modules/cmsis/Kconfig.cmsis_nn
   labels:
     - manifest-cmsis
 
