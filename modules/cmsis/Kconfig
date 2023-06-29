@@ -25,7 +25,7 @@ menuconfig CMSIS_DSP
 	select REQUIRES_FULL_LIBC if !ARCH_POSIX
 
 if CMSIS_DSP
-source "modules/Kconfig.cmsis_dsp"
+source "modules/cmsis/Kconfig.cmsis_dsp"
 endif
 
 menuconfig CMSIS_NN
@@ -34,5 +34,5 @@ menuconfig CMSIS_NN
 	select CMSIS_DSP
 
 if CMSIS_NN
-source "modules/Kconfig.cmsis_nn"
+source "modules/cmsis/Kconfig.cmsis_nn"
 endif
