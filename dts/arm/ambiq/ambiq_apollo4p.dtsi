@@ -3,6 +3,7 @@
 #include <arm/armv7-m.dtsi>
 #include <mem.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
 
 / {
 	clocks {
@@ -206,6 +207,44 @@
 		pinctrl: pin-controller@40010000 {
 			compatible = "ambiq,apollo4-pinctrl";
 			reg = <0x40010000 0x800>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			gpio0_31: gpio0_31@0 {
+				compatible = "ambiq,gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0>;
+				interrupts = <56 0>;
+				status = "disabled";
+			};
+
+			gpio32_63: gpio32_63@20 {
+				compatible = "ambiq,gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <32>;
+				interrupts = <57 0>;
+				status = "disabled";
+			};
+
+			gpio64_95: gpio64_95@40 {
+				compatible = "ambiq,gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <64>;
+				interrupts = <58 0>;
+				status = "disabled";
+			};
+
+			gpio96_127: gpio96_127@60 {
+				compatible = "ambiq,gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <96>;
+				interrupts = <59 0>;
+				status = "disabled";
+			};
 		};
 
 		wdt0: watchdog@40024000 {
