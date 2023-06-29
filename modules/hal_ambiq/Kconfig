@@ -30,4 +30,9 @@ config AMBIQ_HAL_USE_WDT
 	help
 	  Use the WDT driver from Ambiq HAL
 
+config AMBIQ_HAL_USE_I2C
+	bool
+	help
+	  Use the I2C driver from Ambiq HAL
+
 endif # AMBIQ_HAL
