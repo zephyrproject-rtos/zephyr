@@ -6878,7 +6878,14 @@ static void le_ext_adv_report(struct pdu_data *pdu_data,
 			uint8_t aux_phy;
 
 			aux_ptr = (void *)ptr;
-			if (PDU_ADV_AUX_PTR_PHY_GET(aux_ptr) > EXT_ADV_AUX_PHY_LE_CODED) {
+
+			/* Don't report if invalid phy or AUX_ADV_IND was not received
+			 * See BT Core 5.4, Vol 6, Part B, Section 4.4.3.5:
+			 * If the Controller does not listen for or does not receive the
+			 * AUX_ADV_IND PDU, no report shall be generated
+			 */
+			if ((node_rx_curr == node_rx && !node_rx_next) ||
+			    PDU_ADV_AUX_PTR_PHY_GET(aux_ptr) > EXT_ADV_AUX_PHY_LE_CODED) {
 				struct node_rx_ftr *ftr;
 
 				ftr = &node_rx->hdr.rx_ftr;
