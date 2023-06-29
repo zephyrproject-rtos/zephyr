@@ -237,6 +237,7 @@ config BT_CTLR_ISO_TX_BUFFER_SIZE
 	int "Isochronous Tx buffer size"
 	depends on BT_CTLR_ADV_ISO || BT_CTLR_CONN_ISO
 	range 1 4095
+	default BT_ISO_TX_MTU if BT_ISO
 	default 1
 	help
 	  Size of the Isochronous Tx buffers and the value returned in HCI LE
