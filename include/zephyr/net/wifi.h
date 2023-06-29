@@ -19,9 +19,6 @@
 #define WIFI_LISTEN_INTERVAL_MIN 0
 #define WIFI_LISTEN_INTERVAL_MAX 65535
 
-/* Not having support for legacy types is deliberate to enforce
- * higher security.
- */
 enum wifi_security_type {
 	WIFI_SECURITY_TYPE_NONE = 0,
 	WIFI_SECURITY_TYPE_PSK,
