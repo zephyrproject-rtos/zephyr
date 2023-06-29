@@ -88,14 +88,14 @@ k_thread_stack_t *z_impl_k_thread_stack_alloc(size_t size, int flags)
 		if (stack == NULL && CONFIG_DYNAMIC_THREAD_POOL_SIZE > 0) {
 			stack = z_thread_stack_alloc_pool(size);
 		}
-	} else if (IS_ENABLED(CONFIG_DYNAMIC_THREAD_PREFER_POOL) &&
-		   CONFIG_DYNAMIC_THREAD_POOL_SIZE > 0) {
-		stack = z_thread_stack_alloc_pool(size);
-		if (stack == NULL && IS_ENABLED(CONFIG_DYNAMIC_THREAD_ALLOC)) {
+	} else if (IS_ENABLED(CONFIG_DYNAMIC_THREAD_PREFER_POOL)) {
+		if (CONFIG_DYNAMIC_THREAD_POOL_SIZE > 0) {
+			stack = z_thread_stack_alloc_pool(size);
+		}
+
+		if ((stack == NULL) && IS_ENABLED(CONFIG_DYNAMIC_THREAD_ALLOC)) {
 			stack = stack_alloc_dyn(size, flags);
 		}
-	} else {
-		return NULL;
 	}
 
 	return stack;
