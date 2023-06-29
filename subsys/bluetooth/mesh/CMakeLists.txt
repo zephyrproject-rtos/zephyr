@@ -120,6 +120,8 @@ zephyr_library_sources_ifdef(CONFIG_BT_MESH_OD_PRIV_PROXY_SRV sol_pdu_rpl_srv.c)
 
 zephyr_library_sources_ifdef(CONFIG_BT_MESH_SOLICITATION solicitation.c)
 
+zephyr_library_sources_ifdef(CONFIG_BT_MESH_STATISTIC statistic.c)
+
 if (CONFIG_BT_MESH_USES_TINYCRYPT)
     zephyr_library_sources(crypto_tc.c)
 else()
