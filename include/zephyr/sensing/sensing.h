@@ -32,6 +32,14 @@
 extern "C" {
 #endif
 
+#ifdef CONFIG_USERSPACE
+#define SENSING_DMEM K_APP_DMEM(sensing_mem_partition)
+#define SENSING_BMEM K_APP_BMEM(sensing_mem_partition)
+#else
+#define SENSING_DMEM
+#define SENSING_BMEM
+#endif
+
 /**
  * @struct sensing_sensor_version
  * @brief Sensor Version

@@ -80,6 +80,8 @@ int sensing_close_sensor(sensing_sensor_handle_t handle)
 
 	if (rc != 0) {
 		connection->flags.in_use = true;
+	} else {
+		__sensing_arbitrate();
 	}
 	__unlock;
 	return rc;
@@ -120,5 +122,6 @@ void sensing_reset_connections(void)
 	sys_bitarray_clear_region(__sensing_connection_pool.bitarray,
 				  __sensing_connection_pool.bitarray->num_bits, 0);
 	memset(__sensing_connection_pool.pool, 0, sizeof(__sensing_connection_pool.pool));
+	__sensing_arbitrate();
 	__unlock;
 }

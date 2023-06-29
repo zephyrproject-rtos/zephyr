@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 tests:
-  subsys.sensing.list:
+  subsys.sensing:
     tags:
       - sensor
       - subsys

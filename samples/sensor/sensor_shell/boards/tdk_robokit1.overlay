@@ -1,0 +1,14 @@
+/* Copyright (c) 2023 Google LLC
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+ #include <zephyr/sensing/sensor_types.h>
+
+/ {
+	accelgyro: accelgyro {
+		compatible = "zephyr,sensing-pipe";
+		status = "okay";
+		dev = <&icm42688>;
+		sensor-types = <SENSING_SENSOR_TYPE_MOTION_ACCELEROMETER_3D SENSING_SENSOR_TYPE_MOTION_GYROMETER_3D>;
+	};
+};

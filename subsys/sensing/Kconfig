@@ -25,4 +25,7 @@ config SENSING_MAX_CONNECTIONS
 	  same sensor by different clients or the same client to different
 	  sensors).
 
+config SENSING_SHELL
+	bool "Shell commands for sensing subsystem"
+
 endif # SENSING

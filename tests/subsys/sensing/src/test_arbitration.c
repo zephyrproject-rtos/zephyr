@@ -46,6 +46,7 @@ ZTEST(sensing, test_double_connection_arbitration)
 		DT_NODELABEL(accelgyro), SENSING_SENSOR_TYPE_MOTION_ACCELEROMETER_3D);
 	const struct sensing_callback_list cb_list;
 	sensing_sensor_handle_t handles[2];
+	uint8_t reg_val;
 
 	zassert_not_null(sensor);
 
@@ -63,9 +64,13 @@ ZTEST(sensing, test_double_connection_arbitration)
 	attribute.value = FIELD_PREP(GENMASK(31, 23), 200);
 	zassert_ok(sensing_set_attributes(handles[1], &attribute, 1));
 
-	uint8_t reg_val;
 	icm42688_emul_get_reg(icm42688, REG_ACCEL_CONFIG0, &reg_val, 1);
-
 	zassert_equal(0b0111, FIELD_GET(MASK_ACCEL_ODR, reg_val), "ACCEL_CONFIG0=0x%02x",
+		      FIELD_GET(MASK_ACCEL_ODR, reg_val));
+
+	/* Close the second connection and check that we're back to 100Hz */
+	zassert_ok(sensing_close_sensor(handles[1]));
+	icm42688_emul_get_reg(icm42688, REG_ACCEL_CONFIG0, &reg_val, 1);
+	zassert_equal(0b1000, FIELD_GET(MASK_ACCEL_ODR, reg_val), "ACCEL_CONFIG0=0x%02x",
 		      FIELD_GET(MASK_ACCEL_ODR, reg_val));
 }
