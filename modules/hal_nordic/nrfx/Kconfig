@@ -400,6 +400,71 @@ config NRFX_TWIM3
 	depends on $(dt_nodelabel_has_compat,i2c3,$(DT_COMPAT_NORDIC_NRF_TWIM))
 	select NRFX_TWIM
 
+config NRFX_TWIM20
+	bool "TWIM20 driver instance"
+	depends on $(dt_nodelabel_has_compat,i2c20,$(DT_COMPAT_NORDIC_NRF_TWIM))
+	select NRFX_TWIM
+
+config NRFX_TWIM21
+	bool "TWIM21 driver instance"
+	depends on $(dt_nodelabel_has_compat,i2c21,$(DT_COMPAT_NORDIC_NRF_TWIM))
+	select NRFX_TWIM
+
+config NRFX_TWIM22
+	bool "TWIM22 driver instance"
+	depends on $(dt_nodelabel_has_compat,i2c22,$(DT_COMPAT_NORDIC_NRF_TWIM))
+	select NRFX_TWIM
+
+config NRFX_TWIM30
+	bool "TWIM30 driver instance"
+	depends on $(dt_nodelabel_has_compat,i2c30,$(DT_COMPAT_NORDIC_NRF_TWIM))
+	select NRFX_TWIM
+
+config NRFX_TWIM120
+	bool "TWIM120 driver instance"
+	depends on $(dt_nodelabel_has_compat,i2c120,$(DT_COMPAT_NORDIC_NRF_TWIM))
+	select NRFX_TWIM
+
+config NRFX_TWIM130
+	bool "TWIM130 driver instance"
+	depends on $(dt_nodelabel_has_compat,i2c130,$(DT_COMPAT_NORDIC_NRF_TWIM))
+	select NRFX_TWIM
+
+config NRFX_TWIM131
+	bool "TWIM131 driver instance"
+	depends on $(dt_nodelabel_has_compat,i2c131,$(DT_COMPAT_NORDIC_NRF_TWIM))
+	select NRFX_TWIM
+
+config NRFX_TWIM132
+	bool "TWIM132 driver instance"
+	depends on $(dt_nodelabel_has_compat,i2c132,$(DT_COMPAT_NORDIC_NRF_TWIM))
+	select NRFX_TWIM
+
+config NRFX_TWIM133
+	bool "TWIM133 driver instance"
+	depends on $(dt_nodelabel_has_compat,i2c133,$(DT_COMPAT_NORDIC_NRF_TWIM))
+	select NRFX_TWIM
+
+config NRFX_TWIM134
+	bool "TWIM134 driver instance"
+	depends on $(dt_nodelabel_has_compat,i2c134,$(DT_COMPAT_NORDIC_NRF_TWIM))
+	select NRFX_TWIM
+
+config NRFX_TWIM135
+	bool "TWIM135 driver instance"
+	depends on $(dt_nodelabel_has_compat,i2c135,$(DT_COMPAT_NORDIC_NRF_TWIM))
+	select NRFX_TWIM
+
+config NRFX_TWIM136
+	bool "TWIM136 driver instance"
+	depends on $(dt_nodelabel_has_compat,i2c136,$(DT_COMPAT_NORDIC_NRF_TWIM))
+	select NRFX_TWIM
+
+config NRFX_TWIM137
+	bool "TWIM137 driver instance"
+	depends on $(dt_nodelabel_has_compat,i2c137,$(DT_COMPAT_NORDIC_NRF_TWIM))
+	select NRFX_TWIM
+
 config NRFX_TWIS
 	bool
 
