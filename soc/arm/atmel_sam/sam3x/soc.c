@@ -19,8 +19,6 @@
 #include <zephyr/init.h>
 #include <soc.h>
 
-#include <cmsis_core.h>
-
 /*
  * PLL clock = Main * (MULA + 1) / DIVA
  *
