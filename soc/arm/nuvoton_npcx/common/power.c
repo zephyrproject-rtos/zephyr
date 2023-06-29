@@ -45,7 +45,7 @@
  * INCLUDE FILES: soc_clock.h
  */
 
-#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
+#include <cmsis_core.h>
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/espi.h>

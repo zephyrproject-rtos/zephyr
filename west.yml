@@ -122,7 +122,7 @@ manifest:
       revision: b7955c27e50485b7dafdc3888d7d6afdc2ac6d96
       path: modules/lib/chre
     - name: cmsis
-      revision: 74981bf893e8b10931464b9945e2143d99a3f0a3
+      revision: 1abf29132e608826752e2edd1f4799a065db4031
       path: modules/hal/cmsis
       groups:
         - hal
@@ -281,7 +281,7 @@ manifest:
       groups:
         - crypto
     - name: mcuboot
-      revision: fc658eb5a22b7b1721c3b7d0853a7115fae08939
+      revision: 010019e0f934d0d1288ad522c86600cd066920ae
       path: bootloader/mcuboot
     - name: mipi-sys-t
       path: modules/debug/mipi-sys-t

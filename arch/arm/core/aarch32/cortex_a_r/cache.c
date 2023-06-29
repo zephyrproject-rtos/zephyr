@@ -14,7 +14,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/cache.h>
-#include <zephyr/arch/arm/aarch32/cortex_a_r/cmsis.h>
+#include <cmsis_core.h>
 #include <zephyr/sys/barrier.h>
 
 /* Cache Type Register */

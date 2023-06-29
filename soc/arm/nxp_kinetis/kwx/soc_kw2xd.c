@@ -13,7 +13,8 @@
 #include <zephyr/drivers/uart.h>
 #include <fsl_common.h>
 #include <fsl_clock.h>
-#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
+
+#include <cmsis_core.h>
 
 #define PLLFLLSEL_MCGFLLCLK	(0)
 #define PLLFLLSEL_MCGPLLCLK	(1)

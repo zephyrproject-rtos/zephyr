@@ -13,7 +13,7 @@
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/pinctrl/mchp-xec-pinctrl.h>
 #include <soc.h>
-#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
+#include <cmsis_core.h>
 #include <zephyr/irq.h>
 
 #include <zephyr/drivers/gpio/gpio_utils.h>

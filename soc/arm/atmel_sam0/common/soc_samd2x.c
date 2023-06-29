@@ -22,12 +22,12 @@
  * GCLK Gen 3 -> ADC @ 8 MHz
  */
 
-#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
 #include <zephyr/device.h>
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
 
 #include <soc.h>
+#include <cmsis_core.h>
 
 /**
  * Fix different naming conventions for SAMD20

@@ -15,7 +15,7 @@
  * to configure the region appropriately in arm_mpu_regions.c.
  */
 #ifdef CONFIG_ARM_MPU
-#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
+#include <cmsis_core.h>
 void disable_mpu_rasr_xn(void)
 {
 	uint32_t index;

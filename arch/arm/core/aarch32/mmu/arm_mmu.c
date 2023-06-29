@@ -29,7 +29,7 @@
 #include <zephyr/sys/mem_manage.h>
 #include <zephyr/sys/barrier.h>
 
-#include <zephyr/arch/arm/aarch32/cortex_a_r/cmsis.h>
+#include <cmsis_core.h>
 
 #include <zephyr/arch/arm/aarch32/mmu/arm_mmu.h>
 #include "arm_mmu_priv.h"

@@ -32,7 +32,7 @@
 #define MPU_RLAR_AttrIndx_Msk   (0x7UL << MPU_RLAR_AttrIndx_Pos)
 #define MPU_RLAR_EN_Msk         (0x1UL)
 #else
-#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
+#include <cmsis_core.h>
 #endif
 
 /* Privileged No Access, Unprivileged No Access */
