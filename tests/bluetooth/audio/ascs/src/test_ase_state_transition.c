@@ -280,6 +280,7 @@ ZTEST_F(test_sink_ase_state_transition, test_client_streaming_to_releasing)
 
 	/* Verification */
 	expect_bt_bap_unicast_server_cb_release_called_once(stream);
+	expect_bt_bap_stream_ops_stopped_called_once(stream, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
 	expect_bt_bap_stream_ops_released_called_once(stream);
 }
 
@@ -316,6 +317,7 @@ ZTEST_F(test_sink_ase_state_transition, test_client_streaming_to_qos_configured)
 
 	/* Verification */
 	expect_bt_bap_unicast_server_cb_disable_called_once(stream);
+	expect_bt_bap_stream_ops_stopped_called_once(stream, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
 	expect_bt_bap_stream_ops_qos_set_called_once(stream);
 }
 
@@ -544,6 +546,7 @@ ZTEST_F(test_sink_ase_state_transition, test_server_streaming_to_qos_configured)
 
 	/* Verification */
 	expect_bt_bap_unicast_server_cb_disable_called_once(stream);
+	expect_bt_bap_stream_ops_stopped_called_once(stream, BT_HCI_ERR_LOCALHOST_TERM_CONN);
 	expect_bt_bap_stream_ops_qos_set_called_once(stream);
 }
 
@@ -567,6 +570,7 @@ ZTEST_F(test_sink_ase_state_transition, test_server_streaming_to_releasing)
 
 	/* Verification */
 	expect_bt_bap_unicast_server_cb_release_called_once(stream);
+	expect_bt_bap_stream_ops_stopped_called_once(stream, BT_HCI_ERR_LOCALHOST_TERM_CONN);
 	expect_bt_bap_stream_ops_released_called_once(stream);
 }
 
@@ -815,7 +819,7 @@ ZTEST_F(test_source_ase_state_transition, test_client_streaming_to_releasing)
 
 	/* Verification */
 	expect_bt_bap_unicast_server_cb_release_called_once(stream);
-	expect_bt_bap_stream_ops_stopped_called_once(stream, EMPTY);
+	expect_bt_bap_stream_ops_stopped_called_once(stream, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
 	expect_bt_bap_stream_ops_released_called_once(stream);
 }
 
@@ -852,6 +856,7 @@ ZTEST_F(test_source_ase_state_transition, test_client_streaming_to_disabling)
 
 	/* Verification */
 	expect_bt_bap_unicast_server_cb_disable_called_once(stream);
+	expect_bt_bap_stream_ops_stopped_called_once(stream, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
 	expect_bt_bap_stream_ops_disabled_called_once(stream);
 }
 
@@ -885,6 +890,10 @@ ZTEST_F(test_source_ase_state_transition, test_client_streaming_to_disabling_to_
 
 	test_preamble_state_streaming(conn, ase_id, stream, &chan, true);
 	test_ase_control_client_disable(conn, ase_id);
+
+	/* Verify that stopped callback was called by disable */
+	expect_bt_bap_stream_ops_stopped_called_once(stream, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+
 	test_mocks_reset();
 
 	test_ase_control_client_receiver_stop_ready(conn, ase_id);
@@ -1096,6 +1105,7 @@ ZTEST_F(test_source_ase_state_transition, test_server_streaming_to_disabling)
 
 	/* Verification */
 	expect_bt_bap_unicast_server_cb_disable_called_once(stream);
+	expect_bt_bap_stream_ops_stopped_called_once(stream, BT_HCI_ERR_LOCALHOST_TERM_CONN);
 	expect_bt_bap_stream_ops_disabled_called_once(stream);
 }
 
@@ -1119,6 +1129,6 @@ ZTEST_F(test_source_ase_state_transition, test_server_streaming_to_releasing)
 
 	/* Verification */
 	expect_bt_bap_unicast_server_cb_release_called_once(stream);
-	expect_bt_bap_stream_ops_stopped_called_once(stream, EMPTY);
+	expect_bt_bap_stream_ops_stopped_called_once(stream, BT_HCI_ERR_LOCALHOST_TERM_CONN);
 	expect_bt_bap_stream_ops_released_called_once(stream);
 }
