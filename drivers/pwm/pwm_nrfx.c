@@ -198,13 +198,7 @@ static int pwm_nrfx_set_cycles(const struct device *dev, uint32_t channel,
 			 * and till that moment, it ignores any start requests,
 			 * so ensure here that it is stopped.
 			 */
-			/* TODO: Remove nrfy_pwm_events_process() that is temporarly
-			 * added as a workaround for missing functionality in
-			 * nrfx_pwm_stopped_check()
-			 */
-			while (!nrfx_pwm_stopped_check(&config->pwm) &&
-			       !nrfy_pwm_events_process(config->pwm.p_reg,
-					NRFY_EVENT_TO_INT_BITMASK(NRF_PWM_EVENT_STOPPED))) {
+			while (!nrfx_pwm_stopped_check(&config->pwm)) {
 			}
 		}
 
