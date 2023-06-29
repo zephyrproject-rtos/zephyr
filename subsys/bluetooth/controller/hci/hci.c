@@ -3499,7 +3499,6 @@ static void le_set_ext_adv_enable(struct net_buf *buf, struct net_buf **evt)
 	struct bt_hci_cp_le_set_ext_adv_enable *cmd = (void *)buf->data;
 	struct bt_hci_ext_adv_set *s;
 	uint8_t set_num;
-	uint8_t enable;
 	uint8_t status;
 	uint8_t handle;
 
@@ -3522,7 +3521,6 @@ static void le_set_ext_adv_enable(struct net_buf *buf, struct net_buf **evt)
 	}
 
 	s = (void *) cmd->s;
-	enable = cmd->enable;
 	do {
 		status = ll_adv_set_by_hci_handle_get(s->handle, &handle);
 		if (status) {
