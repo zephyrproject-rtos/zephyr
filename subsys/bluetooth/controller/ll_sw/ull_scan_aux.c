@@ -149,6 +149,7 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 				      ull_scan_handle_get(scan);
 		break;
 
+#if defined(CONFIG_BT_CTLR_PHY_CODED)
 	case NODE_RX_TYPE_EXT_CODED_REPORT:
 		lll_aux = NULL;
 		aux = NULL;
@@ -166,6 +167,7 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 		ticker_yield_handle = TICKER_ID_SCAN_BASE +
 				      ull_scan_handle_get(scan);
 		break;
+#endif /* CONFIG_BT_CTLR_PHY_CODED */
 
 	case NODE_RX_TYPE_EXT_AUX_REPORT:
 		sync_iso = NULL;
@@ -246,9 +248,11 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 			case PHY_2M:
 				rx->type = NODE_RX_TYPE_EXT_2M_REPORT;
 				break;
+#if defined(CONFIG_BT_CTLR_PHY_CODED)
 			case PHY_CODED:
 				rx->type = NODE_RX_TYPE_EXT_CODED_REPORT;
 				break;
+#endif /* CONFIG_BT_CTLR_PHY_CODED */
 			default:
 				LL_ASSERT(0);
 				return;
@@ -456,10 +460,12 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 
 	/* Do not ULL schedule auxiliary PDU reception if no aux pointer
 	 * or aux pointer is zero or scannable advertising has erroneous aux
-	 * pointer being present or PHY in the aux pointer is invalid.
+	 * pointer being present or PHY in the aux pointer is invalid or unsupported.
 	 */
 	if (!aux_ptr || !PDU_ADV_AUX_PTR_OFFSET_GET(aux_ptr) || is_scan_req ||
-	    (PDU_ADV_AUX_PTR_PHY_GET(aux_ptr) > EXT_ADV_AUX_PHY_LE_CODED)) {
+	    (PDU_ADV_AUX_PTR_PHY_GET(aux_ptr) > EXT_ADV_AUX_PHY_LE_CODED) ||
+		(!IS_ENABLED(CONFIG_BT_CTLR_PHY_CODED) &&
+		  PDU_ADV_AUX_PTR_PHY_GET(aux_ptr) == EXT_ADV_AUX_PHY_LE_CODED)) {
 		if (IS_ENABLED(CONFIG_BT_CTLR_SYNC_PERIODIC) && sync_lll) {
 			struct ll_sync_set *sync;
 
