@@ -7,9 +7,7 @@
 
 #ifndef _ASMLANGUAGE
 
-#if defined(CONFIG_CPU_CORTEX_M)
 #include <cmsis_core.h>
-#endif
 
 /* Convenience macros to represent the ARMv7-M-specific
  * configuration for memory access permission and
