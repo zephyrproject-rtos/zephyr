@@ -199,8 +199,13 @@ static ALWAYS_INLINE void clock_init(void)
 
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(enet), okay) && CONFIG_NET_L2_ETHERNET
+#if CONFIG_ETH_MCUX_RMII_EXT_CLK
+	/* Enable clock input for ENET1 */
+	IOMUXC_EnableMode(IOMUXC_GPR, kIOMUXC_GPR_ENET1TxClkOutputDir, false);
+#else
 	/* Enable clock output for ENET1 */
 	IOMUXC_EnableMode(IOMUXC_GPR, kIOMUXC_GPR_ENET1TxClkOutputDir, true);
+#endif
 #endif
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(enet2), okay) && CONFIG_NET_L2_ETHERNET
