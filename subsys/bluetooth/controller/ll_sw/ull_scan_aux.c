@@ -50,8 +50,10 @@ static inline struct ll_scan_aux_set *aux_acquire(void);
 static inline void aux_release(struct ll_scan_aux_set *aux);
 static inline uint8_t aux_handle_get(struct ll_scan_aux_set *aux);
 static inline struct ll_sync_set *sync_create_get(struct ll_scan_set *scan);
+#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
 static inline struct ll_sync_iso_set *
 	sync_iso_create_get(struct ll_sync_set *sync);
+#endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
 static void done_disabled_cb(void *param);
 static void flush_safe(void *param);
 static void flush(void *param);
@@ -1082,6 +1084,7 @@ static inline struct ll_sync_set *sync_create_get(struct ll_scan_set *scan)
 #endif /* !CONFIG_BT_CTLR_SYNC_PERIODIC */
 }
 
+#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
 static inline struct ll_sync_iso_set *
 	sync_iso_create_get(struct ll_sync_set *sync)
 {
@@ -1091,6 +1094,7 @@ static inline struct ll_sync_iso_set *
 	return NULL;
 #endif /* !CONFIG_BT_CTLR_SYNC_ISO */
 }
+#endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
 
 static void done_disabled_cb(void *param)
 {
