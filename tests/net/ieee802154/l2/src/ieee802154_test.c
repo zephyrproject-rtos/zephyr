@@ -15,6 +15,7 @@ LOG_MODULE_REGISTER(net_ieee802154_test, LOG_LEVEL_DBG);
 #include <zephyr/net/ethernet.h>
 #include <zephyr/net/ieee802154.h>
 #include <zephyr/net/ieee802154_mgmt.h>
+#include <zephyr/net/ieee802154_radio.h>
 #include <zephyr/net/net_core.h>
 #include <zephyr/net/net_ip.h>
 #include <zephyr/net/net_pkt.h>
@@ -22,7 +23,7 @@ LOG_MODULE_REGISTER(net_ieee802154_test, LOG_LEVEL_DBG);
 
 #include "net_private.h"
 #include <ieee802154_frame.h>
-#include <ieee802154_radio_utils.h>
+#include <ieee802154_priv.h>
 #include <ipv6.h>
 
 struct ieee802154_pkt_test {
@@ -240,7 +241,7 @@ static struct net_pkt *get_data_pkt_with_ar(void)
 		0x61, 0xd8,					/* FCF with AR bit set */
 		0x16,						/* Sequence */
 		0xcd, 0xab,					/* Destination PAN */
-		0xff, 0xff,					/* Destination Address */
+		0x78, 0x56,					/* Destination Address */
 		0xc2, 0xa3, 0x9e, 0x00, 0x00, 0x4b, 0x12, 0x00, /* Source Address */
 		/* IEEE 802.15.4 MAC Payload */
 		0x7b, 0x39, /* IPHC header, SAM: compressed, DAM: 48-bits inline */
@@ -442,7 +443,6 @@ out:
 
 static bool test_wait_for_ack(struct ieee802154_pkt_test *t)
 {
-	struct ieee802154_context *ctx = net_if_l2_data(iface);
 	struct ieee802154_mpdu mpdu;
 	struct net_pkt *ack_pkt;
 	struct net_pkt *tx_pkt;
@@ -456,7 +456,7 @@ static bool test_wait_for_ack(struct ieee802154_pkt_test *t)
 		goto out;
 	}
 
-	ack_required = prepare_for_ack(ctx, tx_pkt, tx_pkt->frags);
+	ack_required = ieee802154_prepare_for_ack(iface, tx_pkt, tx_pkt->frags);
 	if (!ack_required) {
 		NET_ERR("*** Expected AR flag to be set\n");
 		goto release_tx_pkt;
@@ -481,12 +481,12 @@ static bool test_wait_for_ack(struct ieee802154_pkt_test *t)
 
 	pkt_hexdump(net_pkt_data(ack_pkt), net_pkt_get_len(ack_pkt));
 
-	if (handle_ack(ctx, ack_pkt) != NET_OK) {
+	if (ieee802154_handle_ack(iface, ack_pkt) != NET_OK) {
 		NET_ERR("*** Ack frame was not handled.\n");
 		goto release_ack_pkt;
 	}
 
-	if (wait_for_ack(iface, ack_required) != 0) {
+	if (ieee802154_wait_for_ack(iface, ack_required) != 0) {
 		NET_ERR("*** Ack frame was not recorded.\n");
 		goto release_ack_pkt;
 	}
@@ -532,6 +532,68 @@ static bool test_packet_cloning_with_cb(void)
 	net_pkt_unref(pkt);
 	net_pkt_unref(cloned_pkt);
 
+	return true;
+}
+
+static bool test_packet_rssi_conversion(void)
+{
+	uint8_t raw_signed_rssi_dbm;
+	int8_t signed_rssi_dbm;
+	struct net_pkt *pkt;
+
+	NET_INFO("- RSSI conversion between unsigned and signed representation\n");
+
+	pkt = net_pkt_rx_alloc_on_iface(iface, K_NO_WAIT);
+	if (!pkt) {
+		NET_ERR("*** No pkt to allocate\n");
+		return false;
+	}
+
+	/* Test setting/getting of unsigned RSSI. */
+	net_pkt_set_ieee802154_rssi(pkt, 50U);
+	zassert_equal(net_pkt_ieee802154_rssi(pkt), 50U);
+
+	/* Test setting/getting of signed RSSI (in range). */
+	net_pkt_set_ieee802154_rssi_dbm(pkt, IEEE802154_MAC_RSSI_DBM_MIN);
+	zassert_equal(net_pkt_ieee802154_rssi(pkt), IEEE802154_MAC_RSSI_MIN);
+	zassert_equal(net_pkt_ieee802154_rssi_dbm(pkt), IEEE802154_MAC_RSSI_DBM_MIN);
+	net_pkt_set_ieee802154_rssi_dbm(pkt, IEEE802154_MAC_RSSI_DBM_MAX);
+	zassert_equal(net_pkt_ieee802154_rssi(pkt), IEEE802154_MAC_RSSI_MAX);
+	zassert_equal(net_pkt_ieee802154_rssi_dbm(pkt), IEEE802154_MAC_RSSI_DBM_MAX);
+	net_pkt_set_ieee802154_rssi_dbm(pkt, 0);
+	zassert_equal(net_pkt_ieee802154_rssi(pkt), 174U);
+	zassert_equal(net_pkt_ieee802154_rssi_dbm(pkt), 0);
+
+	/* Test setting/getting of signed RSSI (outside range). */
+	net_pkt_set_ieee802154_rssi_dbm(pkt, INT16_MIN + 1);
+	zassert_equal(net_pkt_ieee802154_rssi(pkt), IEEE802154_MAC_RSSI_MIN);
+	zassert_equal(net_pkt_ieee802154_rssi_dbm(pkt), IEEE802154_MAC_RSSI_DBM_MIN);
+	net_pkt_set_ieee802154_rssi_dbm(pkt, INT16_MAX);
+	zassert_equal(net_pkt_ieee802154_rssi(pkt), IEEE802154_MAC_RSSI_MAX);
+	zassert_equal(net_pkt_ieee802154_rssi_dbm(pkt), IEEE802154_MAC_RSSI_DBM_MAX);
+
+	/* Test setting/getting of signed RSSI (special value - "no RSSI available"). */
+	net_pkt_set_ieee802154_rssi_dbm(pkt, IEEE802154_MAC_RSSI_DBM_UNDEFINED);
+	zassert_equal(net_pkt_ieee802154_rssi(pkt), IEEE802154_MAC_RSSI_UNDEFINED);
+	zassert_equal(net_pkt_ieee802154_rssi_dbm(pkt), IEEE802154_MAC_RSSI_DBM_UNDEFINED);
+
+	/* Demonstrate setting/getting of signed RSSI represented as a raw
+	 * two-complements value in uint8_t (explicit cast required).
+	 */
+	raw_signed_rssi_dbm = (uint8_t)-2;
+	net_pkt_set_ieee802154_rssi_dbm(pkt, (int8_t) raw_signed_rssi_dbm);
+	zassert_equal(net_pkt_ieee802154_rssi(pkt), 172U);
+	zassert_equal(net_pkt_ieee802154_rssi_dbm(pkt), -2);
+
+	/* Demonstrate setting/getting of signed RSSI represented as int8_t
+	 * (no explicit cast required)
+	 */
+	signed_rssi_dbm = -2;
+	net_pkt_set_ieee802154_rssi_dbm(pkt, signed_rssi_dbm);
+	zassert_equal(net_pkt_ieee802154_rssi(pkt), 172U);
+	zassert_equal(net_pkt_ieee802154_rssi_dbm(pkt), -2);
+
+	net_pkt_unref(pkt);
 	return true;
 }
 
@@ -985,9 +1047,13 @@ static bool test_recv_and_send_ack_reply(struct ieee802154_pkt_test *t)
 		goto release_fd;
 	}
 
+	if (set_up_short_addr(iface, ctx)) {
+		goto release_fd;
+	}
+
 	rx_pkt = get_data_pkt_with_ar();
 	if (!rx_pkt) {
-		goto release_fd;
+		goto reset_short_addr;
 	}
 
 	if (net_recv_data(iface, rx_pkt) < 0) {
@@ -1056,6 +1122,8 @@ release_tx_frag:
 	current_pkt->frags = NULL;
 release_rx_pkt:
 	net_pkt_unref(rx_pkt);
+reset_short_addr:
+	tear_down_short_addr(iface, ctx);
 release_fd:
 	close(fd);
 out:
@@ -1187,6 +1255,16 @@ ZTEST(ieee802154_l2, test_clone_cb)
 	ret = test_packet_cloning_with_cb();
 
 	zassert_true(ret, "IEEE 802.15.4 net_pkt control block correctly cloned.");
+}
+
+ZTEST(ieee802154_l2, test_convert_rssi)
+{
+	bool ret;
+
+	ret = test_packet_rssi_conversion();
+
+	zassert_true(ret, "IEEE 802.15.4 net_pkt RSSI value correctly converted between dBm and "
+			  "normalized value.");
 }
 
 ZTEST_SUITE(ieee802154_l2, NULL, test_setup, NULL, NULL, test_teardown);

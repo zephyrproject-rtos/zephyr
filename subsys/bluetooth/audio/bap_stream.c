@@ -221,7 +221,6 @@ bool bt_audio_valid_codec(const struct bt_codec *codec)
 	}
 
 	for (size_t i = 0U; i < codec->meta_count; i++) {
-		LOG_ERR("META %zu", i);
 		if (!bt_audio_valid_codec_data(&codec->meta[i])) {
 			LOG_DBG("codec->meta[%zu] invalid", i);
 			return false;
@@ -258,6 +257,45 @@ int bt_bap_stream_send(struct bt_bap_stream *stream, struct net_buf *buf,
 #endif /* CONFIG_BT_AUDIO_TX */
 
 #if defined(CONFIG_BT_BAP_UNICAST)
+
+/** Checks if the stream can terminate the CIS
+ *
+ * If the CIS is used for another stream, or if the CIS is not in the connected
+ * state it will return false.
+ */
+bool bt_bap_stream_can_disconnect(const struct bt_bap_stream *stream)
+{
+	const struct bt_bap_ep *stream_ep;
+	enum bt_iso_state iso_state;
+
+	if (stream == NULL) {
+		return false;
+	}
+
+	stream_ep = stream->ep;
+
+	if (stream_ep == NULL || stream_ep->iso == NULL) {
+		return false;
+	}
+
+	iso_state = stream_ep->iso->chan.state;
+
+	if (iso_state == BT_ISO_STATE_CONNECTED || iso_state == BT_ISO_STATE_CONNECTING) {
+		const struct bt_bap_ep *pair_ep;
+
+		pair_ep = bt_bap_iso_get_paired_ep(stream_ep);
+
+		/* If there are no paired endpoint, or the paired endpoint is
+		 * not in the streaming state, we can disconnect the CIS
+		 */
+		if (pair_ep == NULL || pair_ep->status.state != BT_BAP_EP_STATE_STREAMING) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
 static bool bt_bap_stream_is_broadcast(const struct bt_bap_stream *stream)
 {
 	return (IS_ENABLED(CONFIG_BT_BAP_BROADCAST_SOURCE) &&

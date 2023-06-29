@@ -565,7 +565,7 @@
 			compatible = "microchip,xec-ps2";
 			reg = <0x40009000 0x40>;
 			interrupts = <100 1>;
-			girqs = <18 10>;
+			girqs = <18 10>, <21 18>;
 			pcrs = <3 5>;
 			#address-cells = <1>;
 			#size-cells = <0>;

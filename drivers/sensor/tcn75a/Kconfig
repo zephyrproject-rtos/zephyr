@@ -1,0 +1,50 @@
+# Copyright 2023 Daniel DeGrasse <daniel@degrasse.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config TCN75A
+	bool "TCN75A Ambient Temperature Sensor"
+	default y
+	depends on DT_HAS_MICROCHIP_TCN75A_ENABLED
+	select I2C
+	help
+	  Enable TCN75A ambient temperature to digital converter
+
+if TCN75A
+
+choice
+	prompt "TCN75A Trigger mode"
+	default TCN75A_TRIGGER_NONE
+
+config TCN75A_TRIGGER_NONE
+	bool "No trigger"
+
+config TCN75A_TRIGGER_OWN_THREAD
+	bool "Use own thread"
+	select TCN75A_TRIGGER
+
+config TCN75A_TRIGGER_GLOBAL_THREAD
+	bool "Use global thread"
+	select TCN75A_TRIGGER
+
+endchoice
+
+config TCN75A_TRIGGER
+	bool
+	help
+	  Enable interrupt based trigger support for TCN75A. Requires that
+	  the sensor be set to continuous sample mode.
+
+if TCN75A_TRIGGER_OWN_THREAD
+
+config TCN75A_THREAD_PRIORITY
+	int "Own thread priority"
+	default 10
+
+config TCN75A_THREAD_STACK_SIZE
+	int "Own thread stack size"
+	default 1024
+
+endif # TCN75A_TRIGGER_OWN_THREAD
+
+
+endif # TCN75A

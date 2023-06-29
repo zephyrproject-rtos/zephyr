@@ -16,6 +16,7 @@
 #include <zephyr/net/net_l2.h>
 #include <zephyr/net/net_mgmt.h>
 #include <zephyr/crypto/cipher.h>
+#include <zephyr/net/ieee802154_radio.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -49,6 +50,14 @@ extern "C" {
 
 /* See IEEE 802.15.4-2020, section 7.3.5 */
 #define IEEE802154_SHORT_ADDRESS_NOT_ASSOCIATED IEEE802154_BROADCAST_ADDRESS
+
+/* MAC PIB attribute aUnitBackoffPeriod, see section 8.4.2, table 8-93, in symbol periods, valid for
+ * all PHYs except SUN PHY in the 920 MHz band.
+ */
+#define IEEE802154_A_UNIT_BACKOFF_PERIOD(turnaround_time)                                          \
+	(turnaround_time + IEEE802154_PHY_A_CCA_TIME)
+#define IEEE802154_A_UNIT_BACKOFF_PERIOD_US(turnaround_time, symbol_period)                        \
+	(IEEE802154_A_UNIT_BACKOFF_PERIOD(turnaround_time) * symbol_period)
 
 struct ieee802154_security_ctx {
 	uint32_t frame_counter;
@@ -86,7 +95,7 @@ struct ieee802154_context {
 	int16_t tx_power;
 	enum net_l2_flags flags;
 
-	uint8_t sequence;
+	uint8_t sequence; /* see section 8.4.3.1, table 8-94, macDsn */
 
 	uint8_t _unused : 6;
 

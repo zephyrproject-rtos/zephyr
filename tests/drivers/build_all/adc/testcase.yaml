@@ -12,6 +12,7 @@ tests:
       - adc_lmp90xxx
       - adc_ads1x1x
       - adc_ads1119
+      - adc_ads1112
       - adc_ads114s08
       - adc_emul
     extra_args: "CONFIG_GPIO=y"

@@ -40,7 +40,7 @@
 
 #include "ll_feat.h"
 
-#include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/hci_types.h>
 
 #include <soc.h>
 #include "hal/debug.h"

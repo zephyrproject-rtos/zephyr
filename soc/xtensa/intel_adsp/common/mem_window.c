@@ -37,6 +37,14 @@ __imr int mem_win_init(const struct device *dev)
 	return 0;
 }
 
+void mem_window_idle_exit(void)
+{
+	mem_win_init(DEVICE_DT_GET(MEM_WINDOW_NODE(0)));
+	mem_win_init(DEVICE_DT_GET(MEM_WINDOW_NODE(1)));
+	mem_win_init(DEVICE_DT_GET(MEM_WINDOW_NODE(2)));
+	mem_win_init(DEVICE_DT_GET(MEM_WINDOW_NODE(3)));
+}
+
 #define MEM_WINDOW_DEFINE(n)                                                                       \
 	static const struct mem_win_config mem_win_config_##n = {                                  \
 		.base_addr = DT_REG_ADDR(MEM_WINDOW_NODE(n)),                                      \

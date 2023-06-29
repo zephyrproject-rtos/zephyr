@@ -913,6 +913,12 @@ static int method_from_code(const struct coap_resource *resource,
 	}
 }
 
+
+static inline bool is_empty_message(const struct coap_packet *cpkt)
+{
+	return __coap_header_get_code(cpkt) == COAP_CODE_EMPTY;
+}
+
 static bool is_request(const struct coap_packet *cpkt)
 {
 	uint8_t code = coap_header_get_code(cpkt);
@@ -1464,6 +1470,11 @@ struct coap_reply *coap_response_received(
 	uint16_t id;
 	uint8_t tkl;
 	size_t i;
+
+	if (!is_empty_message(response) && is_request(response)) {
+		/* Request can't be response */
+		return NULL;
+	}
 
 	id = coap_header_get_id(response);
 	tkl = coap_header_get_token(response, token);

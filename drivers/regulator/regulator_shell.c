@@ -364,6 +364,33 @@ static int cmd_errors(const struct shell *sh, size_t argc, char **argv)
 	return 0;
 }
 
+static int cmd_dvsset(const struct shell *sh, size_t argc, char **argv)
+{
+	const struct device *dev;
+	int ret = 0;
+	regulator_dvs_state_t state;
+
+	dev = device_get_binding(argv[1]);
+	if (dev == NULL) {
+		shell_error(sh, "Regulator device %s not available", argv[1]);
+		return -ENODEV;
+	}
+
+	state = shell_strtoul(argv[2], 10, &ret);
+	if (ret < 0) {
+		shell_error(sh, "Could not parse state (%d)", ret);
+		return ret;
+	}
+
+	ret = regulator_parent_dvs_state_set(dev, state);
+	if (ret < 0) {
+		shell_error(sh, "Could not set DVS state (%d)", ret);
+		return ret;
+	}
+
+	return 0;
+}
+
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	sub_regulator_cmds,
 	SHELL_CMD_ARG(enable, NULL,
@@ -410,6 +437,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		      "Get errors\n"
 		      "Usage: errors <device>",
 		      cmd_errors, 2, 0),
+	SHELL_CMD_ARG(dvsset, NULL,
+		      "Set regulator dynamic voltage scaling state\n"
+		      "Usage: dvsset <device> <state identifier>",
+		      cmd_dvsset, 3, 0),
 	SHELL_SUBCMD_SET_END);
 
 SHELL_CMD_REGISTER(regulator, &sub_regulator_cmds, "Regulator playground",

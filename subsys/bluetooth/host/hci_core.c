@@ -12,6 +12,7 @@
 #include <stdio.h>
 #include <errno.h>
 #include <zephyr/sys/atomic.h>
+#include <zephyr/sys/check.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/slist.h>
 #include <zephyr/sys/byteorder.h>
@@ -1949,13 +1950,21 @@ int bt_unpair(uint8_t id, const bt_addr_le_t *addr)
 		return -EINVAL;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_SMP) &&
-	    (!addr || bt_addr_le_eq(addr, BT_ADDR_LE_ANY))) {
-		bt_foreach_bond(id, unpair_remote, &id);
-		return 0;
+	if (IS_ENABLED(CONFIG_BT_SMP)) {
+		if (!addr || bt_addr_le_eq(addr, BT_ADDR_LE_ANY)) {
+			bt_foreach_bond(id, unpair_remote, &id);
+		} else {
+			unpair(id, addr);
+		}
+	} else {
+		CHECKIF(addr == NULL) {
+			LOG_DBG("addr is NULL");
+			return -EINVAL;
+		}
+
+		unpair(id, addr);
 	}
 
-	unpair(id, addr);
 	return 0;
 }
 
@@ -4093,7 +4102,7 @@ int bt_set_name(const char *name)
 	bt_dev.name[len] = '\0';
 
 	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
-		err = settings_save_one("bt/name", bt_dev.name, len);
+		err = bt_settings_store_name(bt_dev.name, len);
 		if (err) {
 			LOG_WRN("Unable to store name");
 		}
@@ -4128,9 +4137,7 @@ int bt_set_appearance(uint16_t appearance)
 {
 	if (bt_dev.appearance != appearance) {
 		if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
-			int err = settings_save_one("bt/appearance", &appearance,
-					sizeof(appearance));
-
+			int err = bt_settings_store_appearance(&appearance, sizeof(appearance));
 			if (err) {
 				LOG_ERR("Unable to save setting 'bt/appearance' (err %d).", err);
 				return err;

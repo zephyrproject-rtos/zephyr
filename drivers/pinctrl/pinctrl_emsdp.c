@@ -11,6 +11,12 @@
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/dt-bindings/pinctrl/emsdp-pinctrl.h>
 
+/**
+ * Mux Control Register Index
+ */
+#define PMOD_MUX_CTRL 0 /*!< 32-bits, offset 0x0 */
+#define ARDUINO_MUX_CTRL 4 /*!< 32-bits, offset 0x4 */
+
 #define EMSDP_CREG_BASE            DT_INST_REG_ADDR(0)
 #define EMSDP_CREG_PMOD_MUX_OFFSET (0x0030)
 
@@ -102,6 +108,10 @@ static int pinctrl_emsdp_set(uint32_t pin, uint32_t type)
 {
 	const uint32_t mux_regs = (EMSDP_CREG_BASE + EMSDP_CREG_PMOD_MUX_OFFSET);
 	uint32_t reg;
+
+	if (pin == UNMUXED_PIN) {
+		return 0;
+	}
 
 	if (pin <= PMOD_C) {
 		reg = sys_read32(mux_regs + PMOD_MUX_CTRL);

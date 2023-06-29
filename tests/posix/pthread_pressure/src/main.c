@@ -36,13 +36,16 @@ static bool alive[NUM_THREADS];
 static K_THREAD_STACK_ARRAY_DEFINE(thread_stacks, NUM_THREADS, STACK_SIZE);
 
 static struct k_thread k_threads[NUM_THREADS];
-static size_t counters[NUM_THREADS];
+static uint64_t counters[NUM_THREADS];
+static uint64_t prev_counters[NUM_THREADS];
 
 static void print_stats(uint64_t now, uint64_t end)
 {
 	printk("now (ms): %llu end (ms): %llu\n", now, end);
 	for (int i = 0; i < NUM_THREADS; ++i) {
-		printk("Thread %d created and joined %zu times\n", i, counters[i]);
+		printk("Thread %d created and joined %llu times (%llu joins/s)\n", i, counters[i],
+		       (counters[i] - prev_counters[i]) / UPDATE_INTERVAL_S);
+		prev_counters[i] = counters[i];
 	}
 }
 
@@ -55,6 +58,7 @@ static void test_create_join_common(const char *tag, create_fn create, join_fn j
 	uint64_t update_ms = now_ms + MSEC_PER_SEC * UPDATE_INTERVAL_S;
 
 	printk("BOARD: %s\n", CONFIG_BOARD);
+	printk("CONFIG_SMP: %s\n", IS_ENABLED(CONFIG_SMP) ? "y" : "n");
 	printk("NUM_THREADS: %u\n", NUM_THREADS);
 	printk("TEST_NUM_CPUS: %u\n", CONFIG_TEST_NUM_CPUS);
 	printk("TEST_DURATION_S: %u\n", CONFIG_TEST_DURATION_S);
@@ -62,6 +66,7 @@ static void test_create_join_common(const char *tag, create_fn create, join_fn j
 
 	for (i = 0; i < NUM_THREADS; ++i) {
 		/* spawn thread i */
+		prev_counters[i] = 0;
 		ret = create(i);
 		if (IS_ENABLED(CONFIG_TEST_EXTRA_ASSERTIONS)) {
 			zassert_ok(ret, "%s_create(%d)[%zu] failed: %d", tag, i, counters[i], ret);

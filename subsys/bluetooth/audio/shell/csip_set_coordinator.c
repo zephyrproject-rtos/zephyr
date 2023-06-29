@@ -165,6 +165,10 @@ static void csip_set_coordinator_scan_recv(const struct bt_le_scan_recv_info *in
 {
 	/* We're only interested in connectable events */
 	if (info->adv_props & BT_GAP_ADV_PROP_CONNECTABLE) {
+		if (!passes_scan_filter(info, ad)) {
+			return;
+		}
+
 		if (cur_inst != NULL) {
 			bt_data_parse(ad, csip_found, (void *)info->addr);
 		}

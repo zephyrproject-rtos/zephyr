@@ -472,7 +472,7 @@ static int cmd_ieee802154_get_ext_addr(const struct shell *sh,
 
 		for (i = 0; i < IEEE802154_EXT_ADDR_LENGTH; i++) {
 			pos += snprintk(ext_addr + pos,
-					IEEE802154_EXT_ADDR_LENGTH - pos,
+					EXT_ADDR_STR_LEN - pos,
 					"%02X:", addr[i]);
 		}
 

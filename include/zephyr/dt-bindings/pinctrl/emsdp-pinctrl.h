@@ -7,13 +7,6 @@
 #ifndef ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_EMSDP_PINCTRL_H_
 #define ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_EMSDP_PINCTRL_H_
 
-/**
- * Mux Control Register Index
- */
-#define PMOD_MUX_CTRL 0 /*!< 32-bits, offset 0x0 */
-
-#define ARDUINO_MUX_CTRL 4 /*!< 32-bits, offset 0x4 */
-
 #define PMOD_A              0
 #define PMOD_B              1
 #define PMOD_C              2
@@ -37,6 +30,7 @@
 #define ARDUINO_PIN_AD3     20
 #define ARDUINO_PIN_AD4     21
 #define ARDUINO_PIN_AD5     22
+#define UNMUXED_PIN       23
 
 #define PMOD_GPIO           0
 #define PMOD_UARTA          1
@@ -52,6 +46,7 @@
 #define ARDUINO_I2C         11
 #define ARDUINO_PWM         12
 #define ARDUINO_ADC         13
+#define NOT_PINMUX          14
 
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_EMSDP_PINCTRL_H_ */

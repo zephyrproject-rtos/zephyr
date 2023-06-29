@@ -461,13 +461,14 @@ config GEN_SW_ISR_TABLE
 
 config ARCH_SW_ISR_TABLE_ALIGN
 	int "Alignment size of a software ISR table"
+	default 64 if RISCV_HAS_CLIC
 	default 4
 	depends on GEN_SW_ISR_TABLE
 	help
 	  This option controls alignment size of generated
 	  _sw_isr_table.  Some architecture needs a software ISR table
 	  to be aligned to architecture specific size.  The default
-	  size is 0 for no alignment.
+	  size is 4.
 
 config GEN_IRQ_START_VECTOR
 	int

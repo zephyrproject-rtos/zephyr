@@ -217,7 +217,7 @@ static void rf2xx_trx_rx(const struct device *dev)
 	memcpy(pkt->buffer->data, rx_buf + RX2XX_FRAME_HEADER_SIZE, pkt_len);
 	net_buf_add(pkt->buffer, pkt_len);
 	net_pkt_set_ieee802154_lqi(pkt, ctx->pkt_lqi);
-	net_pkt_set_ieee802154_rssi(pkt, ctx->pkt_ed + ctx->trx_rssi_base);
+	net_pkt_set_ieee802154_rssi_dbm(pkt, ctx->pkt_ed + ctx->trx_rssi_base);
 
 	LOG_DBG("Caught a packet (%02X) (LQI: %02X, RSSI: %d, ED: %02X)",
 		pkt_len, ctx->pkt_lqi, ctx->trx_rssi_base + ctx->pkt_ed,
@@ -365,7 +365,9 @@ static enum ieee802154_hw_caps rf2xx_get_capabilities(const struct device *dev)
 	       IEEE802154_HW_PROMISC |
 	       IEEE802154_HW_FILTER |
 	       IEEE802154_HW_CSMA |
+	       IEEE802154_HW_RETRANSMISSION |
 	       IEEE802154_HW_TX_RX_ACK |
+	       IEEE802154_HW_RX_TX_ACK |
 	       (ctx->trx_model == RF2XX_TRX_MODEL_212
 				? IEEE802154_HW_SUB_GHZ
 				: IEEE802154_HW_2_4_GHZ);
@@ -629,7 +631,7 @@ static void rf2xx_handle_ack(struct rf2xx_context *ctx, struct net_buf *frag)
 
 	net_pkt_cursor_init(&rf2xx_ack_pkt);
 
-	if (ieee802154_radio_handle_ack(ctx->iface, &rf2xx_ack_pkt) != NET_OK) {
+	if (ieee802154_handle_ack(ctx->iface, &rf2xx_ack_pkt) != NET_OK) {
 		LOG_INF("ACK packet not handled.");
 	}
 }

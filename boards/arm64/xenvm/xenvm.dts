@@ -52,7 +52,7 @@
 	};
 
 	gic: interrupt-controller@3001000 {
-		compatible = "arm,gic";
+		compatible = "arm,gic-v2", "arm,gic";
 		#interrupt-cells = <0x04>;
 		#address-cells = <0x00>;
 		interrupt-controller;

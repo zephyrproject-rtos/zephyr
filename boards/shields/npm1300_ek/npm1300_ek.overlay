@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <dt-bindings/regulator/npm1300.h>
+
 &arduino_i2c {
 	npm1300_ek_pmic: pmic@6b {
 		compatible = "nordic,npm1300";
@@ -37,12 +39,14 @@
 			npm1300_ek_ldo1: LDO1 {
 				regulator-min-microvolt = <1000000>;
 				regulator-max-microvolt = <3300000>;
+				regulator-initial-mode = <NPM1300_LDSW_MODE_LDO>;
 				enable-gpios = <&npm1300_ek_gpio 2 GPIO_ACTIVE_LOW>;
 			};
 
 			npm1300_ek_ldo2: LDO2 {
 				regulator-min-microvolt = <1000000>;
 				regulator-max-microvolt = <3300000>;
+				regulator-initial-mode = <NPM1300_LDSW_MODE_LDSW>;
 				enable-gpios = <&npm1300_ek_gpio 2 GPIO_ACTIVE_LOW>;
 			};
 		};
@@ -65,6 +69,13 @@
 				gpios = < &npm1300_ek_gpio 0 GPIO_ACTIVE_HIGH>;
 				label = "Pmic button switch 0";
 			};
+		};
+
+		npm1300_ek_leds: leds {
+			compatible = "nordic,npm1300-led";
+			nordic,led0-mode = "error";
+			nordic,led1-mode = "charging";
+			nordic,led2-mode = "host";
 		};
 	};
 };

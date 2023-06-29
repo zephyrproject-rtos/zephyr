@@ -17,10 +17,9 @@
 
 #include <zephyr/drivers/bluetooth/hci_driver.h>
 
-#include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/bluetooth/hci_vs.h>
 #include <zephyr/bluetooth/buf.h>
-#include <zephyr/bluetooth/bluetooth.h>
 
 #include "../host/hci_ecc.h"
 
@@ -3515,8 +3514,9 @@ static void le_set_ext_adv_enable(struct net_buf *buf, struct net_buf **evt)
 			return;
 		}
 
-		/* FIXME: Implement disable of all advertising sets */
-		*evt = cmd_complete_status(BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL);
+		status = ll_adv_disable_all();
+
+		*evt = cmd_complete_status(status);
 
 		return;
 	}
@@ -5458,6 +5458,12 @@ int hci_vendor_cmd_handle_common(uint16_t ocf, struct net_buf *cmd,
 		vs_read_tx_power_level(cmd, evt);
 		break;
 #endif /* CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL */
+
+#if defined(CONFIG_BT_CTLR_MIN_USED_CHAN) && defined(CONFIG_BT_PERIPHERAL)
+	case BT_OCF(BT_HCI_OP_VS_SET_MIN_NUM_USED_CHANS):
+		vs_set_min_used_chans(cmd, evt);
+		break;
+#endif /* CONFIG_BT_CTLR_MIN_USED_CHAN && CONFIG_BT_PERIPHERAL */
 #endif /* CONFIG_BT_HCI_VS_EXT */
 
 #if defined(CONFIG_BT_HCI_MESH_EXT)
@@ -5465,12 +5471,6 @@ int hci_vendor_cmd_handle_common(uint16_t ocf, struct net_buf *cmd,
 		mesh_cmd_handle(cmd, evt);
 		break;
 #endif /* CONFIG_BT_HCI_MESH_EXT */
-
-#if defined(CONFIG_BT_CTLR_MIN_USED_CHAN) && defined(CONFIG_BT_PERIPHERAL)
-	case BT_OCF(BT_HCI_OP_VS_SET_MIN_NUM_USED_CHANS):
-		vs_set_min_used_chans(cmd, evt);
-		break;
-#endif /* CONFIG_BT_CTLR_MIN_USED_CHAN && CONFIG_BT_PERIPHERAL */
 
 	default:
 		return -EINVAL;
@@ -6385,7 +6385,7 @@ static void le_ext_adv_legacy_report(struct pdu_data *pdu_data,
 	sep->num_reports = 1U;
 	adv_info = (void *)(((uint8_t *)sep) + sizeof(*sep));
 
-	adv_info->evt_type = evt_type_lookup[adv->type];
+	adv_info->evt_type = sys_cpu_to_le16((uint16_t)evt_type_lookup[adv->type]);
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 	if (rl_idx < ll_rl_size_get()) {
@@ -6576,7 +6576,7 @@ static void ext_adv_info_fill(uint8_t evt_type, uint8_t phy, uint8_t sec_phy,
 	sep->num_reports = 1U;
 	adv_info = (void *)(((uint8_t *)sep) + sizeof(*sep));
 
-	adv_info->evt_type = evt_type;
+	adv_info->evt_type = sys_cpu_to_le16((uint16_t)evt_type);
 
 	if (0) {
 #if defined(CONFIG_BT_CTLR_PRIVACY)

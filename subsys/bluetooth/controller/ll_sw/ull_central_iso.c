@@ -5,8 +5,9 @@
  */
 
 #include <zephyr/kernel.h>
-#include <zephyr/bluetooth/buf.h>
 #include <zephyr/sys/byteorder.h>
+
+#include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/iso.h>
 
 #include "util/util.h"
@@ -49,7 +50,7 @@
 #include "ll.h"
 #include "ll_feat.h"
 
-#include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/hci_types.h>
 
 #include "hal/debug.h"
 
@@ -853,8 +854,7 @@ int ull_central_iso_cis_offset_get(uint16_t cis_handle,
 			  cig->sync_delay;
 
 	if (IS_ENABLED(CONFIG_BT_CTLR_JIT_SCHEDULING)) {
-		*cis_offset_min = MAX(400, EVENT_OVERHEAD_CIS_SETUP_US);
-
+		*cis_offset_min = MAX(CIS_MIN_OFFSET_MIN, EVENT_OVERHEAD_CIS_SETUP_US);
 		return 0;
 	}
 

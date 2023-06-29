@@ -153,15 +153,11 @@ static int private_random_update(void)
 	uint64_t uptime = k_uptime_get();
 	int err;
 
-	/* If private beacon will not be sent there is no point in generating new random */
-	if (bt_mesh_priv_beacon_get() != BT_MESH_FEATURE_ENABLED) {
-		return 0;
-	}
-
 	/* The Private beacon random value should change every N seconds to maintain privacy.
 	 * N = (10 * interval) seconds, or on every beacon creation, if the interval is 0.
 	 */
-	if (interval &&
+	if (bt_mesh_priv_beacon_get() == BT_MESH_FEATURE_ENABLED &&
+	    interval &&
 	    uptime - priv_random.timestamp < (10 * interval * MSEC_PER_SEC) &&
 	    priv_random.timestamp != 0) {
 		/* Not time yet */
@@ -188,10 +184,11 @@ static int private_beacon_update(struct bt_mesh_subnet *sub)
 	uint8_t flags = bt_mesh_net_flags(sub);
 	int err;
 
-	err = bt_mesh_beacon_encrypt(keys->priv_beacon, flags, bt_mesh.iv_index,
+	err = bt_mesh_beacon_encrypt(&keys->priv_beacon, flags, bt_mesh.iv_index,
 				     priv_random.val, sub->priv_beacon_ctx.data,
 				     sub->priv_beacon.auth);
 	if (err) {
+		LOG_ERR("Can't encrypt private beacon");
 		return err;
 	}
 
@@ -227,11 +224,10 @@ static int private_beacon_create(struct bt_mesh_subnet *sub,
 }
 #endif
 
-int bt_mesh_beacon_create(struct bt_mesh_subnet *sub,
-			  struct net_buf_simple *buf)
+int bt_mesh_beacon_create(struct bt_mesh_subnet *sub, struct net_buf_simple *buf, bool priv)
 {
 #if defined(CONFIG_BT_MESH_PRIV_BEACONS)
-	if (bt_mesh_priv_beacon_get() == BT_MESH_FEATURE_ENABLED) {
+	if (priv) {
 		return private_beacon_create(sub, buf);
 	}
 #endif
@@ -488,12 +484,14 @@ static bool auth_match(struct bt_mesh_subnet_keys *keys,
 		return false;
 	}
 
-	bt_mesh_beacon_auth(keys->beacon, params->flags, keys->net_id,
-			    params->iv_index, net_auth);
+	if (bt_mesh_beacon_auth(&keys->beacon, params->flags, keys->net_id, params->iv_index,
+				net_auth)) {
+		return false;
+	}
 
 	if (memcmp(params->auth, net_auth, 8)) {
-		LOG_WRN("Authentication Value %s != %s", bt_hex(params->auth, 8),
-			bt_hex(net_auth, 8));
+		LOG_WRN("Invalid auth value. Received auth: %s", bt_hex(params->auth, 8));
+		LOG_WRN("Calculated auth: %s", bt_hex(net_auth, 8));
 		return false;
 	}
 
@@ -541,7 +539,7 @@ static bool priv_beacon_decrypt(struct bt_mesh_subnet *sub, void *cb_data)
 			continue;
 		}
 
-		err = bt_mesh_beacon_decrypt(sub->keys[i].priv_beacon, params->random,
+		err = bt_mesh_beacon_decrypt(&sub->keys[i].priv_beacon, params->random,
 					     params->data, params->auth, out);
 		if (!err) {
 			params->new_key = (i > 0);
@@ -727,7 +725,7 @@ void bt_mesh_beacon_update(struct bt_mesh_subnet *sub)
 	priv_random.timestamp = 0;
 #endif
 
-	bt_mesh_beacon_auth(keys->beacon, flags, keys->net_id, bt_mesh.iv_index,
+	bt_mesh_beacon_auth(&keys->beacon, flags, keys->net_id, bt_mesh.iv_index,
 			    sub->secure_beacon.auth);
 }
 

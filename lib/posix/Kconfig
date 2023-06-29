@@ -12,7 +12,7 @@ config POSIX_MAX_FDS
 	  files, sockets, special devices, etc.
 
 config POSIX_API
-	depends on !ARCH_POSIX
+	depends on !NATIVE_APPLICATION
 	bool "POSIX APIs"
 	help
 	  Enable mostly-standards-compliant implementations of
@@ -35,6 +35,17 @@ config MAX_PTHREAD_COUNT
 	help
 	  Maximum number of simultaneously active threads in a POSIX application.
 
+config PTHREAD_CREATE_BARRIER
+	bool "Use a pthread_barrier_t to serialize pthread_create()"
+	help
+	  When running several SMP applications in parallel instances of Qemu,
+	  e.g. via twister, explicit serialization may be required between
+	  pthread_create() and zephyr_thread_wrapper() when spawning and joining
+	  many pthreads concurrently.
+
+	  On such systems, say Y here to introduce explicit serialization
+	  via pthread_barrier_wait().
+
 config MAX_PTHREAD_MUTEX_COUNT
 	int "Maximum simultaneously active mutex count in POSIX application"
 	default 5
@@ -51,6 +62,13 @@ config MAX_PTHREAD_COND_COUNT
 
 config MAX_PTHREAD_KEY_COUNT
 	int "Maximum simultaneously active keys in a POSIX application"
+	default 5
+	range 0 255
+	help
+	  Maximum number of simultaneously active keys in a POSIX application.
+
+config MAX_PTHREAD_BARRIER_COUNT
+	int "Maximum simultaneously active barriers in a POSIX application"
 	default 5
 	range 0 255
 	help
@@ -142,7 +160,7 @@ config APP_LINK_WITH_POSIX_SUBSYS
 
 config EVENTFD
 	bool "Support for eventfd"
-	depends on !ARCH_POSIX
+	depends on !NATIVE_APPLICATION
 	select POLL
 	default y if POSIX_API
 	help

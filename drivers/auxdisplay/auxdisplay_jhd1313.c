@@ -26,10 +26,9 @@ LOG_MODULE_REGISTER(auxdisplay_jhd1313, CONFIG_AUXDISPLAY_LOG_LEVEL);
 #define JHD1313_CS_RIGHT_SHIFT		(1 << 2)
 
 /* Defines for the JHD1313_CMD_INPUT_SET to change text direction */
-#define JHD1313_IS_SHIFT_INCREMENT	(1 << 1)
-#define JHD1313_IS_SHIFT_DECREMENT	(0 << 1)
-#define JHD1313_IS_ENTRY_LEFT		(1 << 0)
-#define JHD1313_IS_ENTRY_RIGHT		(0 << 0)
+#define JHD1313_IS_INCREMENT		(1 << 1)
+#define JHD1313_IS_DECREMENT		(0 << 1)
+#define JHD1313_IS_SHIFT		(1 << 0)
 
 /* Defines for the JHD1313_CMD_FUNCTION_SET */
 #define JHD1313_FS_8BIT_MODE		(1 << 4)
@@ -110,6 +109,7 @@ static int auxdisplay_jhd1313_cursor_position_set(const struct device *dev,
 						  enum auxdisplay_position type, int16_t x,
 						  int16_t y)
 {
+	const struct auxdisplay_jhd1313_config *config = dev->config;
 	unsigned char data[2];
 
 	if (type != AUXDISPLAY_POSITION_ABSOLUTE) {
@@ -286,8 +286,11 @@ static int auxdisplay_jhd1313_initialize(const struct device *dev)
 	/* Clear the screen */
 	auxdisplay_jhd1313_clear(dev);
 
-	/* Initialize to the default text direction for romance languages */
-	cmd = JHD1313_IS_ENTRY_LEFT | JHD1313_IS_SHIFT_DECREMENT;
+	/*
+	 * Initialize to the default text direction for romance languages
+	 * (increment, no shift)
+	 */
+	cmd = JHD1313_IS_INCREMENT;
 
 	auxdisplay_jhd1313_input_state_set(dev, cmd);
 
@@ -297,7 +300,7 @@ static int auxdisplay_jhd1313_initialize(const struct device *dev)
 	auxdisplay_jhd1313_reg_set(config->bus.bus, 0x01, 0x05);
 	auxdisplay_jhd1313_reg_set(config->bus.bus, 0x08, 0xAA);
 
-	/* Now set the background colour to white */
+	/* Now set the background colour to black */
 	LOG_DBG("Background set to off");
 	auxdisplay_jhd1313_backlight_set(dev, 0);
 
@@ -306,6 +309,7 @@ static int auxdisplay_jhd1313_initialize(const struct device *dev)
 
 static int auxdisplay_jhd1313_display_on(const struct device *dev)
 {
+	const struct auxdisplay_jhd1313_config *config = dev->config;
 	struct auxdisplay_jhd1313_data *data = dev->data;
 
 	data->power = true;
@@ -314,6 +318,7 @@ static int auxdisplay_jhd1313_display_on(const struct device *dev)
 
 static int auxdisplay_jhd1313_display_off(const struct device *dev)
 {
+	const struct auxdisplay_jhd1313_config *config = dev->config;
 	struct auxdisplay_jhd1313_data *data = dev->data;
 
 	data->power = false;
@@ -346,8 +351,8 @@ static const struct auxdisplay_driver_api auxdisplay_jhd1313_auxdisplay_api = {
 #define AUXDISPLAY_JHD1313_DEVICE(inst)								\
 	static const struct auxdisplay_jhd1313_config auxdisplay_jhd1313_config_##inst = {	\
 		.capabilities = {								\
-			.columns = 2,								\
-			.rows = 16,								\
+			.columns = 16,								\
+			.rows = 2,								\
 			.mode = 0,								\
 			.brightness.minimum = AUXDISPLAY_LIGHT_NOT_SUPPORTED,			\
 			.brightness.maximum = AUXDISPLAY_LIGHT_NOT_SUPPORTED,			\

@@ -115,25 +115,6 @@ extern "C" {
 
 
 /**
- * @brief Equivalent to the I2C_MSG_STOP flag
- */
-#define RTIO_IODEV_I2C_STOP BIT(0)
-
-/**
- * @brief Equivalent to the I2C_MSG_RESTART flag
- */
-#define RTIO_IODEV_I2C_RESTART BIT(1)
-
-/**
- * @brief Equivalent to the I2C_MSG_10_BITS
- */
-#define RTIO_IODEV_I2C_10_BITS BIT(2)
-
-/**
- * @brief Equivalent to the I2C_MSG_ADDR_10_BITS
- */
-
-/**
  * @brief The buffer should be allocated by the RTIO mempool
  *
  * This flag can only exist if the CONFIG_RTIO_SYS_MEM_BLOCKS Kconfig was
@@ -159,6 +140,11 @@ extern "C" {
  * complete. It should be placed back in queue until canceled.
  */
 #define RTIO_SQE_MULTISHOT BIT(4)
+
+/**
+ * @brief The SQE does not produce a CQE.
+ */
+#define RTIO_SQE_NO_RESPONSE BIT(5)
 
 /**
  * @}
@@ -211,6 +197,21 @@ extern "C" {
 /**
  * @}
  */
+
+/**
+ * @brief Equivalent to the I2C_MSG_STOP flag
+ */
+#define RTIO_IODEV_I2C_STOP BIT(0)
+
+/**
+ * @brief Equivalent to the I2C_MSG_RESTART flag
+ */
+#define RTIO_IODEV_I2C_RESTART BIT(1)
+
+/**
+ * @brief Equivalent to the I2C_MSG_ADDR_10_BITS
+ */
+#define RTIO_IODEV_I2C_10_BITS BIT(2)
 
 /** @cond ignore */
 struct rtio;
@@ -1014,8 +1015,6 @@ static inline uint32_t rtio_cqe_compute_flags(struct rtio_iodev_sqe *iodev_sqe)
 {
 	uint32_t flags = 0;
 
-	ARG_UNUSED(iodev_sqe);
-
 #ifdef CONFIG_RTIO_SYS_MEM_BLOCKS
 	if (iodev_sqe->sqe.op == RTIO_OP_RX && iodev_sqe->sqe.flags & RTIO_SQE_MEMPOOL_BUFFER) {
 		struct rtio *r = iodev_sqe->r;
@@ -1026,6 +1025,8 @@ static inline uint32_t rtio_cqe_compute_flags(struct rtio_iodev_sqe *iodev_sqe)
 
 		flags = RTIO_CQE_FLAG_PREP_MEMPOOL(blk_index, blk_count);
 	}
+#else
+	ARG_UNUSED(iodev_sqe);
 #endif
 
 	return flags;
@@ -1202,7 +1203,10 @@ static inline int rtio_sqe_rx_buf(const struct rtio_iodev_sqe *iodev_sqe, uint32
 
 		return -ENOMEM;
 	}
+#else
+	ARG_UNUSED(max_buf_len);
 #endif
+
 	if (sqe->buf_len < min_buf_len) {
 		return -ENOMEM;
 	}
@@ -1236,6 +1240,10 @@ static inline void z_impl_rtio_release_buffer(struct rtio *r, void *buff, uint32
 	}
 
 	rtio_block_pool_free(r->block_pool, buff, buff_len);
+#else
+	ARG_UNUSED(r);
+	ARG_UNUSED(buff);
+	ARG_UNUSED(buff_len);
 #endif
 }
 

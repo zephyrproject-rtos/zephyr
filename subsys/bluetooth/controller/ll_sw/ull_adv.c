@@ -9,7 +9,7 @@
 
 #include <zephyr/kernel.h>
 #include <soc.h>
-#include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/sys/byteorder.h>
 
 #include "hal/cpu.h"
@@ -1620,13 +1620,20 @@ int ull_adv_init(void)
 	return 0;
 }
 
-int ull_adv_reset(void)
+uint8_t ll_adv_disable_all(void)
 {
 	uint8_t handle;
 
 	for (handle = 0U; handle < BT_CTLR_ADV_SET; handle++) {
 		(void)disable(handle);
 	}
+
+	return 0U;
+}
+
+int ull_adv_reset(void)
+{
+	(void)ll_adv_disable_all();
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 #if defined(CONFIG_BT_HCI_RAW)

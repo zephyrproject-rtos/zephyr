@@ -4,10 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <stdint.h>
-#include <zephyr/types.h>
-#include <zephyr/toolchain.h>
-
 #if defined(CONFIG_BT_CTLR_ISO_RX_SDU_BUFFERS) && (CONFIG_BT_CTLR_ISO_RX_SDU_BUFFERS > 0)
 #define ISOAL_BUFFER_RX_SDUS_ENABLE
 #endif /* CONFIG_BT_CTLR_ISO_RX_SDU_BUFFERS > 0 */

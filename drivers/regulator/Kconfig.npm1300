@@ -6,6 +6,7 @@ config REGULATOR_NPM1300
 	default y
 	depends on DT_HAS_NORDIC_NPM1300_REGULATOR_ENABLED
 	select I2C
+	select MFD
 	help
 	  Enable the Nordic nPM1300 PMIC regulator driver
 

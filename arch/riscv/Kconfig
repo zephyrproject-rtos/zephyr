@@ -169,6 +169,19 @@ config GEN_ISR_TABLES
 config GEN_IRQ_VECTOR_TABLE
 	default n
 
+config RISCV_RESERVED_IRQ_ISR_TABLES_OFFSET
+	int
+	default 0
+	depends on GEN_ISR_TABLES
+	help
+	  On some RISCV platform the first interrupt vectors are primarly
+	  intended for inter-hart interrupt signaling and so retained for that
+	  purpose and not available. When this option is set, all the IRQ
+	  vectors are shifted by this offset value when installed into the
+	  software ISR table and the IRQ vector table. CONFIG_NUM_IRQS must be
+	  properly sized to take into account this offset. This is a hidden
+	  option which needs to be set per architecture and left alone.
+
 config NUM_IRQS
 	int
 
@@ -261,6 +274,27 @@ config PMP_STACK_GUARD_MIN_SIZE
 	  wiggle room to accommodate the eventual overflow exception
 	  stack usage.
 
+# Implement the null pointer detection using the Physical Memory Protection
+# (PMP) Unit.
+config NULL_POINTER_EXCEPTION_DETECTION_PMP
+	bool "Use PMP for null pointer exception detection"
+	depends on RISCV_PMP
+	help
+	  Null pointer dereference detection implemented
+	  using PMP functionality.
+
+if NULL_POINTER_EXCEPTION_DETECTION_PMP
+
+config NULL_POINTER_EXCEPTION_REGION_SIZE
+	hex "Inaccessible region to implement null pointer detection"
+	default 0x10
+	help
+	  Use a PMP slot to make region (starting at address 0x0) inaccessible for
+	  detecting null pointer dereferencing (raising a CPU access fault).
+	  Minimum is 4 bytes.
+
+endif # NULL_POINTER_EXCEPTION_DETECTION_PMP
+
 endmenu
 
 config MAIN_STACK_SIZE
@@ -280,7 +314,7 @@ config ARCH_IRQ_VECTOR_TABLE_ALIGN
 	default 256
 
 config GEN_IRQ_VECTOR_TABLE
-	select RISCV_MTVEC_VECTORED_MODE if SOC_FAMILY_RISCV_PRIVILEGE
+	select RISCV_VECTORED_MODE if SOC_FAMILY_RISCV_PRIVILEGED
 
 config ARCH_HAS_SINGLE_THREAD_SUPPORT
 	default y if !SMP

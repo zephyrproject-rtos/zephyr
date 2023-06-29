@@ -36,9 +36,10 @@ static void cap_discover_cb(struct bt_conn *conn, int err,
 static void cap_unicast_start_complete_cb(struct bt_bap_unicast_group *unicast_group,
 					  int err, struct bt_conn *conn)
 {
-	if (err != 0) {
-		shell_error(ctx_shell, "Unicast start failed for conn %p (%d)",
-			    conn, err);
+	if (err == -ECANCELED) {
+		shell_print(ctx_shell, "Unicast start was cancelled for conn %p", conn);
+	} else if (err != 0) {
+		shell_error(ctx_shell, "Unicast start failed for conn %p (%d)", conn, err);
 	} else {
 		shell_print(ctx_shell, "Unicast start completed");
 	}
@@ -46,7 +47,9 @@ static void cap_unicast_start_complete_cb(struct bt_bap_unicast_group *unicast_g
 
 static void unicast_update_complete_cb(int err, struct bt_conn *conn)
 {
-	if (err != 0) {
+	if (err == -ECANCELED) {
+		shell_print(ctx_shell, "Unicast update was cancelled for conn %p", conn);
+	} else if (err != 0) {
 		shell_error(ctx_shell, "Unicast update failed for conn %p (%d)",
 			    conn, err);
 	} else {
@@ -62,7 +65,9 @@ static void unicast_stop_complete_cb(struct bt_bap_unicast_group *unicast_group,
 		return;
 	}
 
-	if (err != 0) {
+	if (err == -ECANCELED) {
+		shell_print(ctx_shell, "Unicast stop was cancelled for conn %p", conn);
+	} else if (err != 0) {
 		shell_error(ctx_shell,
 			    "Unicast stop failed for group %p and conn %p (%d)",
 			    unicast_group, conn, err);
@@ -457,7 +462,7 @@ static int cmd_cap_initiator_unicast_stop(const struct shell *sh, size_t argc,
 		shell_error(sh, "Not connected");
 		return -ENOEXEC;
 	} else if (default_unicast_group == NULL) {
-		shell_error(sh, "No unicast group starteds");
+		shell_error(sh, "No unicast group started");
 		return -ENOEXEC;
 	}
 
@@ -469,6 +474,19 @@ static int cmd_cap_initiator_unicast_stop(const struct shell *sh, size_t argc,
 	return err;
 }
 
+static int cmd_cap_initiator_unicast_cancel(const struct shell *sh, size_t argc, char *argv[])
+{
+	int err = 0;
+
+	err = bt_cap_initiator_unicast_audio_cancel();
+	if (err != 0) {
+		shell_print(sh, "Failed to cancel unicast audio procedure: %d", err);
+
+		return -ENOEXEC;
+	}
+
+	return 0;
+}
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT */
 
 static int cmd_cap_initiator(const struct shell *sh, size_t argc, char **argv)
@@ -499,6 +517,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(cap_initiator_cmds,
 		      CAP_UNICAST_CLIENT_STREAM_COUNT),
 	SHELL_CMD_ARG(unicast-stop, NULL, "Unicast stop all streams",
 		      cmd_cap_initiator_unicast_stop, 1, 0),
+	SHELL_CMD_ARG(unicast-cancel, NULL, "Unicast cancel current procedure",
+		      cmd_cap_initiator_unicast_cancel, 1, 0),
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT */
 	SHELL_SUBCMD_SET_END
 );

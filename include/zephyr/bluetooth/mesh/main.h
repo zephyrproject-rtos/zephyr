@@ -854,6 +854,23 @@ int bt_mesh_friend_terminate(uint16_t lpn_addr);
  */
 void bt_mesh_rpl_pending_store(uint16_t addr);
 
+/** @brief Iterate stored Label UUIDs.
+ *
+ * When @c addr is @ref BT_MESH_ADDR_UNASSIGNED, this function iterates over all available addresses
+ * starting with @c uuid. In this case, use @c retaddr to get virtual address representation of
+ * the returned Label UUID. When @c addr is a virtual address, this function returns next Label
+ * UUID corresponding to the @c addr. When @c uuid is NULL, this function returns the first
+ * available UUID. If @c uuid is previously returned uuid, this function returns following uuid.
+ *
+ * @param addr    Virtual address to search for, or @ref BT_MESH_ADDR_UNASSIGNED.
+ * @param uuid    Pointer to the previously returned Label UUID or NULL.
+ * @param retaddr Pointer to a memory where virtual address representation of the returning UUID is
+ *                to be stored to.
+ *
+ * @return Pointer to Label UUID, or NULL if no more entries found.
+ */
+const uint8_t *bt_mesh_va_uuid_get(uint16_t addr, const uint8_t *uuid, uint16_t *retaddr);
+
 #ifdef __cplusplus
 }
 #endif

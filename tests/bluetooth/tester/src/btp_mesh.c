@@ -916,6 +916,23 @@ static uint8_t proxy_identity_enable(const void *cmd, uint16_t cmd_len,
 	return BTP_STATUS_SUCCESS;
 }
 
+#if defined(CONFIG_BT_MESH_PROXY_CLIENT)
+static uint8_t proxy_connect(const void *cmd, uint16_t cmd_len,
+			     void *rsp, uint16_t *rsp_len)
+{
+	const struct btp_proxy_connect_cmd *cp = cmd;
+	int err;
+
+	err = bt_mesh_proxy_connect(cp->net_idx);
+	if (err) {
+		LOG_ERR("Failed to connect to GATT Proxy (err %d)", err);
+		return BTP_STATUS_FAILED;
+	}
+
+	return BTP_STATUS_SUCCESS;
+}
+#endif
+
 static uint8_t composition_data_get(const void *cmd, uint16_t cmd_len,
 				    void *rsp, uint16_t *rsp_len)
 {
@@ -2849,6 +2866,13 @@ static const struct btp_handler handlers[] = {
 		.expect_len = 0,
 		.func = proxy_identity_enable,
 	},
+#if defined(CONFIG_BT_MESH_PROXY_CLIENT)
+	{
+		.opcode = BTP_MESH_PROXY_CONNECT,
+		.expect_len = sizeof(struct btp_proxy_connect_cmd),
+		.func = proxy_connect
+	},
+#endif
 };
 
 void net_recv_ev(uint8_t ttl, uint8_t ctl, uint16_t src, uint16_t dst, const void *payload,

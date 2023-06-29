@@ -182,6 +182,17 @@ function(ExternalZephyrProject_Add)
       )
     endif()
   endif()
+
+  # Update ROOT variables with relative paths to use absolute paths based on
+  # the source application directory.
+  foreach(type MODULE_EXT BOARD SOC ARCH SCA)
+    if(DEFINED CACHE{${ZBUILD_APPLICATION}_${type}_ROOT} AND NOT IS_ABSOLUTE $CACHE{${ZBUILD_APPLICATION}_${type}_ROOT})
+      set(rel_path $CACHE{${ZBUILD_APPLICATION}_${type}_ROOT})
+      cmake_path(ABSOLUTE_PATH rel_path BASE_DIRECTORY "${ZBUILD_SOURCE_DIR}" NORMALIZE OUTPUT_VARIABLE abs_path)
+      set(${ZBUILD_APPLICATION}_${type}_ROOT ${abs_path} CACHE PATH "Sysbuild adjusted absolute path" FORCE)
+    endif()
+  endforeach()
+
   # CMake variables which must be known by all Zephyr CMake build systems
   # Those are settings which controls the build and must be known to CMake at
   # invocation time, and thus cannot be passed though the sysbuild cache file.
@@ -315,9 +326,19 @@ function(ExternalZephyrProject_Cmake)
   get_target_property(${ZCMAKE_APPLICATION}_BOARD      ${ZCMAKE_APPLICATION} BOARD)
   get_target_property(${ZCMAKE_APPLICATION}_MAIN_APP   ${ZCMAKE_APPLICATION} MAIN_APP)
 
+  # Update ROOT variables with relative paths to use absolute paths based on
+  # the source application directory.
+  foreach(type MODULE_EXT BOARD SOC ARCH SCA)
+    if(DEFINED CACHE{${type}_ROOT} AND NOT IS_ABSOLUTE $CACHE{${type}_ROOT})
+      set(rel_path $CACHE{${type}_ROOT})
+      cmake_path(ABSOLUTE_PATH rel_path BASE_DIRECTORY "${APP_DIR}" NORMALIZE OUTPUT_VARIABLE abs_path)
+      set(${type}_ROOT ${abs_path} CACHE PATH "Sysbuild adjusted absolute path" FORCE)
+    endif()
+  endforeach()
+
   get_cmake_property(sysbuild_cache CACHE_VARIABLES)
   foreach(var_name ${sysbuild_cache})
-    if(NOT ("${var_name}" MATCHES "^CMAKE_.*" OR "${var_name}" MATCHES "^BOARD"))
+    if(NOT "${var_name}" MATCHES "^(CMAKE_.*|BOARD)$")
       # Perform a dummy read to prevent a false warning about unused variables
       # being emitted due to a cmake bug: https://gitlab.kitware.com/cmake/cmake/-/issues/24555
       set(unused_tmp_var ${${var_name}})

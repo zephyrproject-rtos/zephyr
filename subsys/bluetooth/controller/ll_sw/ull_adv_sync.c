@@ -6,7 +6,7 @@
 
 #include <zephyr/kernel.h>
 #include <soc.h>
-#include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/sys/byteorder.h>
 
 #include "hal/cpu.h"
@@ -1308,7 +1308,7 @@ void ull_adv_sync_chm_complete(struct node_rx_hdr *rx)
 		ad_len = ad[PDU_ADV_DATA_HEADER_LEN_OFFSET];
 		if (ad_len &&
 		    (ad[PDU_ADV_DATA_HEADER_TYPE_OFFSET] ==
-		     BT_DATA_CHANNEL_MAP_UPDATE_IND)) {
+		     PDU_ADV_DATA_TYPE_CHANNEL_MAP_UPDATE_IND)) {
 			break;
 		}
 
@@ -2132,7 +2132,8 @@ static uint8_t sync_chm_update(uint8_t handle)
 		     sizeof(acad));
 	acad += acad_len_prev;
 	acad[PDU_ADV_DATA_HEADER_LEN_OFFSET] = sizeof(*chm_upd_ind) + 1U;
-	acad[PDU_ADV_DATA_HEADER_TYPE_OFFSET] = BT_DATA_CHANNEL_MAP_UPDATE_IND;
+	acad[PDU_ADV_DATA_HEADER_TYPE_OFFSET] =
+		PDU_ADV_DATA_TYPE_CHANNEL_MAP_UPDATE_IND;
 
 	/* Populate the Channel Map Indication structure */
 	chm_upd_ind = (void *)&acad[PDU_ADV_DATA_HEADER_DATA_OFFSET];

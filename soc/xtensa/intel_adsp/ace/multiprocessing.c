@@ -79,6 +79,17 @@ void soc_mp_init(void)
 	soc_cpus_active[0] = true;
 }
 
+#ifdef CONFIG_ADSP_IMR_CONTEXT_SAVE
+/*
+ * Called after exiting D3 state when context restore is enabled.
+ * Re-enables IDC interrupt again for all cores. Called once from core 0.
+ */
+void soc_mp_on_d3_exit(void)
+{
+	soc_mp_init();
+}
+#endif
+
 void soc_start_core(int cpu_num)
 {
 	int retry = CORE_POWER_CHECK_NUM;

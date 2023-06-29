@@ -40,6 +40,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #if defined(CONFIG_LWM2M_DTLS_SUPPORT)
 #include <zephyr/net/tls_credentials.h>
+#include <mbedtls/ssl_ciphersuites.h>
 #endif
 #if defined(CONFIG_DNS_RESOLVER)
 #include <zephyr/net/dns_resolve.h>
@@ -154,28 +155,26 @@ int lwm2m_open_socket(struct lwm2m_ctx *client_ctx)
 
 int lwm2m_close_socket(struct lwm2m_ctx *client_ctx)
 {
-	int ret = 0;
-
 	if (client_ctx->sock_fd >= 0) {
-		ret = zsock_close(client_ctx->sock_fd);
+		int ret = zsock_close(client_ctx->sock_fd);
+
 		if (ret) {
 			LOG_ERR("Failed to close socket: %d", errno);
 			ret = -errno;
 			return ret;
 		}
-
-		client_ctx->sock_fd = -1;
-		client_ctx->connection_suspended = true;
-#if defined(CONFIG_LWM2M_QUEUE_MODE_ENABLED)
-		/* Enable Queue mode buffer store */
-		client_ctx->buffer_client_messages = true;
-#endif
-		lwm2m_socket_update(client_ctx);
 	}
 
-	return ret;
-}
+	client_ctx->sock_fd = -1;
+	client_ctx->connection_suspended = true;
+#if defined(CONFIG_LWM2M_QUEUE_MODE_ENABLED)
+	/* Enable Queue mode buffer store */
+	client_ctx->buffer_client_messages = true;
+#endif
+	lwm2m_socket_update(client_ctx);
 
+	return 0;
+}
 
 int lwm2m_socket_suspend(struct lwm2m_ctx *client_ctx)
 {
@@ -184,13 +183,11 @@ int lwm2m_socket_suspend(struct lwm2m_ctx *client_ctx)
 	if (client_ctx->sock_fd >= 0 && !client_ctx->connection_suspended) {
 		int socket_temp_id = client_ctx->sock_fd;
 
+		/* Prevent closing */
 		client_ctx->sock_fd = -1;
-		client_ctx->connection_suspended = true;
-#if defined(CONFIG_LWM2M_QUEUE_MODE_ENABLED)
-		/* Enable Queue mode buffer store */
-		client_ctx->buffer_client_messages = true;
-#endif
-		lwm2m_socket_update(client_ctx);
+		/* Just mark as suspended */
+		lwm2m_close_socket(client_ctx);
+		/* store back the socket handle */
 		client_ctx->sock_fd = socket_temp_id;
 	}
 
@@ -202,16 +199,19 @@ int lwm2m_engine_connection_resume(struct lwm2m_ctx *client_ctx)
 	int ret;
 
 	if (client_ctx->connection_suspended) {
-		if (IS_ENABLED(CONFIG_LWM2M_RD_CLIENT_STOP_POLLING_AT_IDLE)) {
+		if (IS_ENABLED(CONFIG_LWM2M_RD_CLIENT_STOP_POLLING_AT_IDLE) ||
+		    IS_ENABLED(CONFIG_LWM2M_RD_CLIENT_LISTEN_AT_IDLE)) {
+			LOG_DBG("Resume suspended connection");
 			lwm2m_socket_update(client_ctx);
-		} else {
-			lwm2m_close_socket(client_ctx);
 			client_ctx->connection_suspended = false;
+		} else {
+			LOG_DBG("Close and resume a new connection");
+			lwm2m_close_socket(client_ctx);
 			ret = lwm2m_open_socket(client_ctx);
 			if (ret) {
 				return ret;
 			}
-			LOG_DBG("Resume suspended connection");
+			client_ctx->connection_suspended = false;
 			return lwm2m_socket_start(client_ctx);
 		}
 	}
@@ -753,20 +753,40 @@ static void socket_loop(void)
 	}
 }
 
-#if defined(CONFIG_LWM2M_DTLS_SUPPORT) && defined(CONFIG_TLS_CREDENTIALS)
-static int load_tls_credential(struct lwm2m_ctx *client_ctx, uint16_t res_id,
+#if defined(CONFIG_LWM2M_DTLS_SUPPORT)
+#if defined(CONFIG_TLS_CREDENTIALS)
+static void delete_tls_credentials(sec_tag_t tag)
+{
+	tls_credential_delete(tag, TLS_CREDENTIAL_PSK_ID);
+	tls_credential_delete(tag, TLS_CREDENTIAL_PSK);
+	tls_credential_delete(tag, TLS_CREDENTIAL_SERVER_CERTIFICATE);
+	tls_credential_delete(tag, TLS_CREDENTIAL_PRIVATE_KEY);
+	tls_credential_delete(tag, TLS_CREDENTIAL_CA_CERTIFICATE);
+}
+
+static bool is_pem(const void *buf, size_t len)
+{
+	static const char pem_start[] = "-----BEGIN";
+
+	if (len < sizeof(pem_start)) {
+		return false;
+	}
+	if (strncmp(pem_start, (const char *) buf, sizeof(pem_start) - 1) == 0) {
+		return true;
+	}
+	return false;
+}
+
+static int load_tls_type(struct lwm2m_ctx *client_ctx, uint16_t res_id,
 			       enum tls_credential_type type)
 {
 	int ret = 0;
 	void *cred = NULL;
 	uint16_t cred_len;
-	uint8_t cred_flags;
+	uint16_t max_len;
 
-	/* ignore error value */
-	tls_credential_delete(client_ctx->tls_tag, type);
-
-	ret = lwm2m_get_res_buf(&LWM2M_OBJ(0, client_ctx->sec_obj_inst, res_id), &cred, NULL,
-				&cred_len, &cred_flags);
+	ret = lwm2m_get_res_buf(&LWM2M_OBJ(0, client_ctx->sec_obj_inst, res_id), &cred, &max_len,
+				&cred_len, NULL);
 	if (ret < 0) {
 		LOG_ERR("Unable to get resource data for %d/%d/%d", 0,  client_ctx->sec_obj_inst,
 			res_id);
@@ -778,6 +798,18 @@ static int load_tls_credential(struct lwm2m_ctx *client_ctx, uint16_t res_id,
 		return -EINVAL;
 	}
 
+	/* LwM2M registry stores strings without NULL-terminator, so we need to ensure that
+	 * string based PEM credentials are terminated properly.
+	 */
+	if (is_pem(cred, cred_len)) {
+		if (cred_len >= max_len) {
+			LOG_ERR("No space for string terminator, cannot handle PEM");
+			return -EINVAL;
+		}
+		((uint8_t *) cred)[cred_len] = 0;
+		cred_len += 1;
+	}
+
 	ret = tls_credential_add(client_ctx->tls_tag, type, cred, cred_len);
 	if (ret < 0) {
 		LOG_ERR("Error setting cred tag %d type %d: Error %d", client_ctx->tls_tag, type,
@@ -786,7 +818,178 @@ static int load_tls_credential(struct lwm2m_ctx *client_ctx, uint16_t res_id,
 
 	return ret;
 }
-#endif /* CONFIG_LWM2M_DTLS_SUPPORT && CONFIG_TLS_CREDENTIALS*/
+
+static int lwm2m_load_psk_credentials(struct lwm2m_ctx *ctx)
+{
+	int ret;
+
+	delete_tls_credentials(ctx->tls_tag);
+
+	ret = load_tls_type(ctx, 3, TLS_CREDENTIAL_PSK_ID);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = load_tls_type(ctx, 5, TLS_CREDENTIAL_PSK);
+	return ret;
+}
+
+static int lwm2m_load_x509_credentials(struct lwm2m_ctx *ctx)
+{
+	int ret;
+
+	delete_tls_credentials(ctx->tls_tag);
+
+	ret = load_tls_type(ctx, 3, TLS_CREDENTIAL_SERVER_CERTIFICATE);
+	if (ret < 0) {
+		return ret;
+	}
+	ret = load_tls_type(ctx, 5, TLS_CREDENTIAL_PRIVATE_KEY);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = load_tls_type(ctx, 4, TLS_CREDENTIAL_CA_CERTIFICATE);
+	if (ret < 0) {
+		return ret;
+	}
+	return ret;
+}
+#else
+
+int lwm2m_load_psk_credentials(struct lwm2m_ctx *ctx)
+{
+	return -EOPNOTSUPP;
+}
+
+int lwm2m_load_x509_credentials(struct lwm2m_ctx *ctx)
+{
+	return -EOPNOTSUPP;
+}
+#endif /* CONFIG_TLS_CREDENTIALS*/
+
+static int lwm2m_load_tls_credentials(struct lwm2m_ctx *ctx)
+{
+	switch (lwm2m_security_mode(ctx)) {
+	case LWM2M_SECURITY_NOSEC:
+		if (ctx->use_dtls) {
+			return -EINVAL;
+		}
+		return 0;
+	case LWM2M_SECURITY_PSK:
+		return lwm2m_load_psk_credentials(ctx);
+	case LWM2M_SECURITY_CERT:
+		return lwm2m_load_x509_credentials(ctx);
+	default:
+		return -EOPNOTSUPP;
+	}
+}
+
+static const int cipher_list_psk[] = {
+	MBEDTLS_TLS_PSK_WITH_AES_128_CCM_8,
+};
+
+static const int cipher_list_cert[] = {
+	MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
+};
+
+#endif /* CONFIG_LWM2M_DTLS_SUPPORT */
+
+int lwm2m_set_default_sockopt(struct lwm2m_ctx *ctx)
+{
+#if defined(CONFIG_LWM2M_DTLS_SUPPORT)
+	if (ctx->use_dtls) {
+		int ret;
+		uint8_t tmp;
+		sec_tag_t tls_tag_list[] = {
+			ctx->tls_tag,
+		};
+
+		ret = zsock_setsockopt(ctx->sock_fd, SOL_TLS, TLS_SEC_TAG_LIST, tls_tag_list,
+				       sizeof(tls_tag_list));
+		if (ret < 0) {
+			ret = -errno;
+			LOG_ERR("Failed to set TLS_SEC_TAG_LIST option: %d", ret);
+			return ret;
+		}
+
+		if (IS_ENABLED(CONFIG_LWM2M_TLS_SESSION_CACHING)) {
+			int session_cache = TLS_SESSION_CACHE_ENABLED;
+
+			ret = zsock_setsockopt(ctx->sock_fd, SOL_TLS, TLS_SESSION_CACHE,
+					       &session_cache, sizeof(session_cache));
+			if (ret < 0) {
+				ret = -errno;
+				LOG_ERR("Failed to set TLS_SESSION_CACHE option: %d", errno);
+				return ret;
+			}
+		}
+
+		if (ctx->hostname_verify && (ctx->desthostname != NULL)) {
+			/** store character at len position */
+			tmp = ctx->desthostname[ctx->desthostnamelen];
+
+			/** change it to '\0' to pass to socket*/
+			ctx->desthostname[ctx->desthostnamelen] = '\0';
+
+			/** mbedtls ignores length */
+			ret = zsock_setsockopt(ctx->sock_fd, SOL_TLS, TLS_HOSTNAME,
+					       ctx->desthostname, ctx->desthostnamelen);
+
+			/** restore character */
+			ctx->desthostname[ctx->desthostnamelen] = tmp;
+			if (ret < 0) {
+				ret = -errno;
+				LOG_ERR("Failed to set TLS_HOSTNAME option: %d", ret);
+				return ret;
+			}
+
+			int verify = TLS_PEER_VERIFY_REQUIRED;
+
+			ret = zsock_setsockopt(ctx->sock_fd, SOL_TLS, TLS_PEER_VERIFY, &verify,
+					       sizeof(verify));
+			if (ret) {
+				LOG_ERR("Failed to set TLS_PEER_VERIFY");
+			}
+
+		} else {
+			/* By default, Mbed TLS tries to verify peer hostname, disable it */
+			int verify = TLS_PEER_VERIFY_NONE;
+
+			ret = zsock_setsockopt(ctx->sock_fd, SOL_TLS, TLS_PEER_VERIFY, &verify,
+					       sizeof(verify));
+			if (ret) {
+				LOG_ERR("Failed to set TLS_PEER_VERIFY");
+			}
+		}
+
+		switch (lwm2m_security_mode(ctx)) {
+		case LWM2M_SECURITY_PSK:
+			ret = zsock_setsockopt(ctx->sock_fd, SOL_TLS, TLS_CIPHERSUITE_LIST,
+					       cipher_list_psk, sizeof(cipher_list_psk));
+			if (ret) {
+				LOG_ERR("Failed to set TLS_CIPHERSUITE_LIST");
+			}
+			break;
+		case LWM2M_SECURITY_CERT:
+			ret = zsock_setsockopt(ctx->sock_fd, SOL_TLS, TLS_CIPHERSUITE_LIST,
+					       cipher_list_cert, sizeof(cipher_list_cert));
+			if (ret) {
+				LOG_ERR("Failed to set TLS_CIPHERSUITE_LIST (rc %d, errno %d)", ret,
+					errno);
+			}
+			break;
+		default:
+			return -EOPNOTSUPP;
+		}
+	}
+#else
+	if (!IS_ENABLED(CONFIG_LWM2M_DTLS_SUPPORT) && ctx->use_dtls) {
+		return -EOPNOTSUPP;
+	}
+#endif /* CONFIG_LWM2M_DTLS_SUPPORT */
+	return 0;
+}
 
 int lwm2m_socket_start(struct lwm2m_ctx *client_ctx)
 {
@@ -795,27 +998,14 @@ int lwm2m_socket_start(struct lwm2m_ctx *client_ctx)
 	int ret;
 
 #if defined(CONFIG_LWM2M_DTLS_SUPPORT)
-	uint8_t tmp;
-
 	if (client_ctx->load_credentials) {
 		ret = client_ctx->load_credentials(client_ctx);
-		if (ret < 0) {
-			return ret;
-		}
+	} else {
+		ret = lwm2m_load_tls_credentials(client_ctx);
 	}
-#if defined(CONFIG_TLS_CREDENTIALS)
-	else {
-		ret = load_tls_credential(client_ctx, 3, TLS_CREDENTIAL_PSK_ID);
-		if (ret < 0) {
-			return ret;
-		}
-
-		ret = load_tls_credential(client_ctx, 5, TLS_CREDENTIAL_PSK);
-		if (ret < 0) {
-			return ret;
-		}
+	if (ret < 0) {
+		return ret;
 	}
-#endif /* CONFIG_TLS_CREDENTIALS */
 #endif /* CONFIG_LWM2M_DTLS_SUPPORT */
 
 	if (client_ctx->sock_fd < 0) {
@@ -827,58 +1017,13 @@ int lwm2m_socket_start(struct lwm2m_ctx *client_ctx)
 
 	if (client_ctx->set_socketoptions) {
 		ret = client_ctx->set_socketoptions(client_ctx);
-		if (ret) {
-			return ret;
-		}
+	} else {
+		ret = lwm2m_set_default_sockopt(client_ctx);
 	}
-#if defined(CONFIG_LWM2M_DTLS_SUPPORT)
-	else if (client_ctx->use_dtls) {
-		sec_tag_t tls_tag_list[] = {
-			client_ctx->tls_tag,
-		};
-
-		ret = zsock_setsockopt(client_ctx->sock_fd, SOL_TLS, TLS_SEC_TAG_LIST, tls_tag_list,
-				       sizeof(tls_tag_list));
-		if (ret < 0) {
-			ret = -errno;
-			LOG_ERR("Failed to set TLS_SEC_TAG_LIST option: %d", ret);
-			goto error;
-		}
-
-		if (IS_ENABLED(CONFIG_LWM2M_TLS_SESSION_CACHING)) {
-			int session_cache = TLS_SESSION_CACHE_ENABLED;
-
-			ret = zsock_setsockopt(client_ctx->sock_fd, SOL_TLS, TLS_SESSION_CACHE,
-					       &session_cache, sizeof(session_cache));
-			if (ret < 0) {
-				ret = -errno;
-				LOG_ERR("Failed to set TLS_SESSION_CACHE option: %d", errno);
-				goto error;
-			}
-		}
-
-		if (client_ctx->hostname_verify && (client_ctx->desthostname != NULL)) {
-			/** store character at len position */
-			tmp = client_ctx->desthostname[client_ctx->desthostnamelen];
-
-			/** change it to '\0' to pass to socket*/
-			client_ctx->desthostname[client_ctx->desthostnamelen] = '\0';
-
-			/** mbedtls ignores length */
-			ret = zsock_setsockopt(client_ctx->sock_fd, SOL_TLS, TLS_HOSTNAME,
-					       client_ctx->desthostname,
-					       client_ctx->desthostnamelen);
-
-			/** restore character */
-			client_ctx->desthostname[client_ctx->desthostnamelen] = tmp;
-			if (ret < 0) {
-				ret = -errno;
-				LOG_ERR("Failed to set TLS_HOSTNAME option: %d", ret);
-				goto error;
-			}
-		}
+	if (ret) {
+		goto error;
 	}
-#endif /* CONFIG_LWM2M_DTLS_SUPPORT */
+
 	if ((client_ctx->remote_addr).sa_family == AF_INET) {
 		addr_len = sizeof(struct sockaddr_in);
 	} else if ((client_ctx->remote_addr).sa_family == AF_INET6) {

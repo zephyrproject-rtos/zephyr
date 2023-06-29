@@ -82,3 +82,10 @@ tests:
     platform_allow: nrf5340dk_nrf5340_cpunet
     integration_platforms:
       - nrf5340dk_nrf5340_cpunet
+  sample.bluetooth.hci_rpmsg.mesh.bt_ll_sw_split:
+    harness: bluetooth
+    tags: bluetooth
+    extra_args: CONF_FILE="nrf5340_cpunet_bt_mesh-bt_ll_sw_split.conf"
+    platform_allow: nrf5340dk_nrf5340_cpunet
+    integration_platforms:
+      - nrf5340dk_nrf5340_cpunet

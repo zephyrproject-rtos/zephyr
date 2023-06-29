@@ -1,5 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
+zephyr_syscall_header(${ZEPHYR_BASE}/include/zephyr/drivers/adc.h)
+
 zephyr_library()
 
 zephyr_library_sources_ifdef(CONFIG_ADC			adc_common.c)
@@ -28,6 +30,7 @@ zephyr_library_sources_ifdef(CONFIG_ADC_EMUL		adc_emul.c)
 zephyr_library_sources_ifdef(CONFIG_ADC_TEST		adc_test.c)
 zephyr_library_sources_ifdef(CONFIG_ADC_ADS1X1X		adc_ads1x1x.c)
 zephyr_library_sources_ifdef(CONFIG_ADC_GD32		adc_gd32.c)
+zephyr_library_sources_ifdef(CONFIG_ADC_ADS1112		adc_ads1112.c)
 zephyr_library_sources_ifdef(CONFIG_ADC_ADS1119		adc_ads1119.c)
 zephyr_library_sources_ifdef(CONFIG_ADC_ADS7052		adc_ads7052.c)
 zephyr_library_sources_ifdef(CONFIG_ADC_ADS114S0X		adc_ads114s0x.c)

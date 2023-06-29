@@ -422,11 +422,13 @@ static int mcux_flexcomm_uart_tx(const struct device *dev, const uint8_t *buf,
 	ret = dma_get_status(config->tx_dma.dev, config->tx_dma.channel, &status);
 
 	if (ret < 0) {
+		irq_unlock(key);
 		return ret;
 	}
 
 	/* There is an ongoing transfer */
 	if (status.busy) {
+		irq_unlock(key);
 		return -EBUSY;
 	}
 
@@ -444,6 +446,7 @@ static int mcux_flexcomm_uart_tx(const struct device *dev, const uint8_t *buf,
 	ret = dma_config(config->tx_dma.dev, config->tx_dma.channel,
 				(struct dma_config *) &config->tx_dma.cfg);
 	if (ret) {
+		irq_unlock(key);
 		return ret;
 	}
 
@@ -456,6 +459,7 @@ static int mcux_flexcomm_uart_tx(const struct device *dev, const uint8_t *buf,
 	/* Trigger the DMA to start transfer */
 	ret = dma_start(config->tx_dma.dev, config->tx_dma.channel);
 	if (ret) {
+		irq_unlock(key);
 		return ret;
 	}
 

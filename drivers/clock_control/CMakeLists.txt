@@ -23,6 +23,7 @@ zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_RV32M1_PCC          clock_cont
 zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_INFINEON_CAT1       clock_control_ifx_cat1.c)
 zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_SAM                 clock_control_sam_pmc.c)
 zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_SMARTBOND           clock_control_smartbond.c)
+zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_NUMAKER_SCC         clock_control_numaker_scc.c)
 
 
 if(CONFIG_CLOCK_CONTROL_STM32_CUBE)

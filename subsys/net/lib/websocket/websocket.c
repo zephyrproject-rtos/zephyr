@@ -425,8 +425,6 @@ static int websocket_interal_disconnect(struct websocket_context *ctx)
 		NET_ERR("[%p] Failed to send close message (err %d).", ctx, ret);
 	}
 
-	ret = close(ctx->real_sock);
-
 	websocket_context_unref(ctx);
 
 	return ret;

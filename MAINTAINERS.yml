@@ -1015,6 +1015,8 @@ Release Notes:
   collaborators:
     - rlubos
     - jciupis
+    - cfriedt
+    - fgrandel
   files:
     - drivers/ieee802154/
   labels:
@@ -1547,6 +1549,7 @@ Input:
     - include/zephyr/input/
     - samples/subsys/input/
     - subsys/input/
+    - tests/drivers/build_all/input/
     - tests/subsys/input/
   description: >-
     Input subsystem and drivers
@@ -1801,6 +1804,7 @@ Networking:
     - rlubos
   collaborators:
     - tbursztyka
+    - ssharks
   files:
     - drivers/net/
     - include/zephyr/net/
@@ -2002,6 +2006,24 @@ Retention:
   labels:
     - "area: Retention"
 
+Sensor Subsystem:
+  status: maintained
+  maintainers:
+    - lixuzha
+    - ghu0510
+    - yperess
+  collaborators:
+    - qianruh
+  files:
+    - dts/bindings/sensor/zephyr,sensing.yaml
+    - dts/bindings/sensor/zephyr,sensing*.yaml
+    - include/zephyr/sensing/
+    - doc/services/sensing/
+    - subsys/sensing/
+    - samples/subsys/sensing/
+  labels:
+    - "area: Sensor Subsystem"
+
 Twister:
   status: maintained
   maintainers:
@@ -2012,11 +2034,14 @@ Twister:
     - hakehuang
     - gopiotr
     - golowanow
+    - gchwier
   files:
     - scripts/twister
     - scripts/pylib/twister/
     - scripts/tests/twister/
     - doc/develop/test/twister.rst
+    - scripts/pylib/pytest-twister-harness/
+    - doc/develop/test/pytest.rst
   labels:
     - "area: Twister"
 
@@ -2106,7 +2131,7 @@ GD32 Platforms:
     - dts/*/gigadevice/
     - dts/bindings/*/*gd32*
     - soc/arm/gigadevice/
-    - soc/riscv/riscv-privilege/gd32vf103/
+    - soc/riscv/riscv-privileged/gd32vf103/
     - scripts/west_commands/*/*gd32*
   labels:
     - "platform: GD32"
@@ -2418,15 +2443,12 @@ ITE Platforms:
     - GTLin08
     - RuibinChang
   collaborators:
-    - Dino-Li
-    - GTLin08
-    - RuibinChang
     - jackrosenthal
     - keith-zephyr
     - brockus-zephyr
     - sjg20
   files:
-    - boards/riscv/it8xxx2_evb/
+    - boards/riscv/it8*_evb/
     - drivers/*/*/*it8xxx2*.c
     - drivers/*/*it8xxx2*.c
     - dts/bindings/*/*ite*
@@ -2619,7 +2641,7 @@ USB:
     - subsys/usb/
     - tests/subsys/usb/
     - tests/drivers/udc/
-    - doc/services/usb/
+    - doc/connectivity/usb/
   labels:
     - "area: USB"
 
@@ -2636,7 +2658,7 @@ USB-C:
     - include/zephyr/usb_c/
     - samples/subsys/usb_c/
     - subsys/usb/usb_c/
-    - doc/connectivity/usb_c/
+    - doc/connectivity/usb/pd/
   labels:
     - "area: USB-C"
 

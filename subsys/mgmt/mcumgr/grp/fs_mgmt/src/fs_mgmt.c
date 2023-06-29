@@ -254,8 +254,6 @@ static int fs_mgmt_file_download(struct smp_streamer *ctxt)
 					      sizeof(file_access_data), &ret_rc, &ret_group);
 
 		if (status != MGMT_CB_OK) {
-			bool ok;
-
 			if (status == MGMT_CB_ERROR_RC) {
 				return ret_rc;
 			}
@@ -405,8 +403,6 @@ static int fs_mgmt_file_upload(struct smp_streamer *ctxt)
 					      sizeof(file_access_data), &ret_rc, &ret_group);
 
 		if (status != MGMT_CB_OK) {
-			bool ok;
-
 			if (status == MGMT_CB_ERROR_RC) {
 				return ret_rc;
 			}
@@ -609,8 +605,6 @@ static int fs_mgmt_file_status(struct smp_streamer *ctxt)
 				      sizeof(file_access_data), &ret_rc, &ret_group);
 
 	if (status != MGMT_CB_OK) {
-		bool ok;
-
 		if (status == MGMT_CB_ERROR_RC) {
 			return ret_rc;
 		}
@@ -718,8 +712,6 @@ static int fs_mgmt_file_hash_checksum(struct smp_streamer *ctxt)
 				      sizeof(file_access_data), &ret_rc, &ret_group);
 
 	if (status != MGMT_CB_OK) {
-		bool ok;
-
 		if (status == MGMT_CB_ERROR_RC) {
 			return ret_rc;
 		}

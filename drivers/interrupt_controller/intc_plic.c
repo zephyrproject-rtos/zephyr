@@ -22,9 +22,9 @@
 #include <zephyr/irq.h>
 
 #define PLIC_MAX_PRIO	DT_INST_PROP(0, riscv_max_priority)
-#define PLIC_PRIO	DT_INST_REG_ADDR_BY_NAME(0, prio)
-#define PLIC_IRQ_EN	DT_INST_REG_ADDR_BY_NAME(0, irq_en)
-#define PLIC_REG	DT_INST_REG_ADDR_BY_NAME(0, reg)
+#define PLIC_PRIO	DT_INST_REG_ADDR_BY_NAME_U64(0, prio)
+#define PLIC_IRQ_EN	DT_INST_REG_ADDR_BY_NAME_U64(0, irq_en)
+#define PLIC_REG	DT_INST_REG_ADDR_BY_NAME_U64(0, reg)
 
 #define PLIC_IRQS        (CONFIG_NUM_IRQS - CONFIG_2ND_LVL_ISR_TBL_OFFSET)
 #define PLIC_EN_SIZE     ((PLIC_IRQS >> 5) + 1)
@@ -40,7 +40,7 @@ static int save_irq;
  * @brief Enable a riscv PLIC-specific interrupt line
  *
  * This routine enables a RISCV PLIC-specific interrupt line.
- * riscv_plic_irq_enable is called by SOC_FAMILY_RISCV_PRIVILEGE
+ * riscv_plic_irq_enable is called by SOC_FAMILY_RISCV_PRIVILEGED
  * arch_irq_enable function to enable external interrupts for
  * IRQS level == 2, whenever CONFIG_RISCV_HAS_PLIC variable is set.
  *
@@ -61,7 +61,7 @@ void riscv_plic_irq_enable(uint32_t irq)
  * @brief Disable a riscv PLIC-specific interrupt line
  *
  * This routine disables a RISCV PLIC-specific interrupt line.
- * riscv_plic_irq_disable is called by SOC_FAMILY_RISCV_PRIVILEGE
+ * riscv_plic_irq_disable is called by SOC_FAMILY_RISCV_PRIVILEGED
  * arch_irq_disable function to disable external interrupts, for
  * IRQS level == 2, whenever CONFIG_RISCV_HAS_PLIC variable is set.
  *

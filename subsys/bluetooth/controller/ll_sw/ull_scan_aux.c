@@ -40,7 +40,7 @@
 #include "ull_sync_iso_internal.h"
 #include "ull_df_internal.h"
 
-#include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/hci_types.h>
 
 #include <soc.h>
 #include "hal/debug.h"

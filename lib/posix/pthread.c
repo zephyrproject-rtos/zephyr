@@ -4,22 +4,42 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/init.h>
-#include <zephyr/kernel.h>
-#include <stdio.h>
-#include <zephyr/sys/atomic.h>
-#include <ksched.h>
-#include <zephyr/wait_q.h>
-#include <zephyr/posix/pthread.h>
-#include <zephyr/sys/slist.h>
-
 #include "posix_internal.h"
 #include "pthread_sched.h"
+
+#include <stdio.h>
+
+#include <zephyr/init.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/atomic.h>
+#include <zephyr/posix/pthread.h>
+#include <zephyr/sys/slist.h>
 
 #define PTHREAD_INIT_FLAGS	PTHREAD_CANCEL_ENABLE
 #define PTHREAD_CANCELED	((void *) -1)
 
-K_MUTEX_DEFINE(pthread_once_lock);
+enum posix_thread_qid {
+	/* ready to be started via pthread_create() */
+	POSIX_THREAD_READY_Q,
+	/* running */
+	POSIX_THREAD_RUN_Q,
+	/* exited (either joinable or detached) */
+	POSIX_THREAD_DONE_Q,
+};
+
+BUILD_ASSERT((PTHREAD_CREATE_DETACHED == 0 || PTHREAD_CREATE_JOINABLE == 0) &&
+	     (PTHREAD_CREATE_DETACHED == 1 || PTHREAD_CREATE_JOINABLE == 1));
+
+BUILD_ASSERT((PTHREAD_CANCEL_ENABLE == 0 || PTHREAD_CANCEL_DISABLE == 0) &&
+	     (PTHREAD_CANCEL_ENABLE == 1 || PTHREAD_CANCEL_DISABLE == 1));
+
+static sys_dlist_t ready_q = SYS_DLIST_STATIC_INIT(&ready_q);
+static sys_dlist_t run_q = SYS_DLIST_STATIC_INIT(&run_q);
+static sys_dlist_t done_q = SYS_DLIST_STATIC_INIT(&done_q);
+static struct posix_thread posix_thread_pool[CONFIG_MAX_PTHREAD_COUNT];
+static struct k_spinlock pthread_pool_lock;
+
+static K_MUTEX_DEFINE(pthread_once_lock);
 
 static const struct pthread_attr init_pthread_attrs = {
 	.priority = 0,
@@ -36,23 +56,70 @@ static const struct pthread_attr init_pthread_attrs = {
 	.initialized = true,
 };
 
-static struct posix_thread posix_thread_pool[CONFIG_MAX_PTHREAD_COUNT];
-static struct k_spinlock pthread_pool_lock;
+/*
+ * We reserve the MSB to mark a pthread_t as initialized (from the
+ * perspective of the application). With a linear space, this means that
+ * the theoretical pthread_t range is [0,2147483647].
+ */
+BUILD_ASSERT(CONFIG_MAX_PTHREAD_COUNT < PTHREAD_OBJ_MASK_INIT,
+	     "CONFIG_MAX_PTHREAD_COUNT is too high");
 
-pthread_t pthread_self(void)
+static inline size_t posix_thread_to_offset(struct posix_thread *t)
 {
-	return (struct posix_thread *)
-		CONTAINER_OF(k_current_get(), struct posix_thread, thread)
-		- posix_thread_pool;
+	return t - posix_thread_pool;
+}
+
+static inline size_t get_posix_thread_idx(pthread_t pth)
+{
+	return mark_pthread_obj_uninitialized(pth);
 }
 
 struct posix_thread *to_posix_thread(pthread_t pthread)
 {
-	if (pthread >= CONFIG_MAX_PTHREAD_COUNT) {
+	k_spinlock_key_t key;
+	struct posix_thread *t;
+	bool actually_initialized;
+	size_t bit = get_posix_thread_idx(pthread);
+
+	/* if the provided thread does not claim to be initialized, its invalid */
+	if (!is_pthread_obj_initialized(pthread)) {
 		return NULL;
 	}
 
-	return &posix_thread_pool[pthread];
+	if (bit >= CONFIG_MAX_PTHREAD_COUNT) {
+		return NULL;
+	}
+
+	t = &posix_thread_pool[bit];
+
+	key = k_spin_lock(&pthread_pool_lock);
+	/*
+	 * Denote a pthread as "initialized" (i.e. allocated) if it is not in ready_q.
+	 * This differs from other posix object allocation strategies because they use
+	 * a bitarray to indicate whether an object has been allocated.
+	 */
+	actually_initialized =
+		!(t->qid == POSIX_THREAD_READY_Q ||
+		  (t->qid == POSIX_THREAD_DONE_Q && t->detachstate == PTHREAD_CREATE_DETACHED));
+	k_spin_unlock(&pthread_pool_lock, key);
+
+	if (!actually_initialized) {
+		/* The thread claims to be initialized but is actually not */
+		return NULL;
+	}
+
+	return &posix_thread_pool[bit];
+}
+
+pthread_t pthread_self(void)
+{
+	size_t bit;
+	struct posix_thread *t;
+
+	t = (struct posix_thread *)CONTAINER_OF(k_current_get(), struct posix_thread, thread);
+	bit = posix_thread_to_offset(t);
+
+	return mark_pthread_obj_initialized(bit);
 }
 
 static bool is_posix_policy_prio_valid(uint32_t priority, int policy)
@@ -89,7 +156,7 @@ static int32_t posix_to_zephyr_priority(uint32_t priority, int policy)
 	if (policy == SCHED_FIFO) {
 		/* Zephyr COOP priority starts from -1 */
 		__ASSERT_NO_MSG(priority < CONFIG_NUM_COOP_PRIORITIES);
-		prio =  -1 * (priority + 1);
+		prio = -1 * (priority + 1);
 	} else {
 		__ASSERT_NO_MSG(priority < CONFIG_NUM_PREEMPT_PRIORITIES);
 		prio = (CONFIG_NUM_PREEMPT_PRIORITIES - priority - 1);
@@ -135,12 +202,84 @@ int pthread_attr_setstack(pthread_attr_t *_attr, void *stackaddr, size_t stacksi
 	return 0;
 }
 
+static bool pthread_attr_is_valid(const struct pthread_attr *attr)
+{
+	/*
+	 * FIXME: Pthread attribute must be non-null and it provides stack
+	 * pointer and stack size. So even though POSIX 1003.1 spec accepts
+	 * attrib as NULL but zephyr needs it initialized with valid stack.
+	 */
+	if (attr == NULL || attr->initialized == 0U || attr->stack == NULL ||
+	    attr->stacksize == 0) {
+		return false;
+	}
+
+	/* require a valid scheduler policy */
+	if (!valid_posix_policy(attr->schedpolicy)) {
+		return false;
+	}
+
+	/* require a valid detachstate */
+	if (!(attr->detachstate == PTHREAD_CREATE_JOINABLE ||
+	      attr->detachstate == PTHREAD_CREATE_DETACHED)) {
+		return false;
+	}
+
+	/* we cannot create an essential thread (i.e. one that may not abort) */
+	if ((attr->flags & K_ESSENTIAL) != 0) {
+		return false;
+	}
+
+	return true;
+}
+
+static void posix_thread_finalize(struct posix_thread *t, void *retval)
+{
+	sys_snode_t *node_l;
+	k_spinlock_key_t key;
+	pthread_key_obj *key_obj;
+	pthread_thread_data *thread_spec_data;
+
+	SYS_SLIST_FOR_EACH_NODE(&t->key_list, node_l) {
+		thread_spec_data = (pthread_thread_data *)node_l;
+		if (thread_spec_data != NULL) {
+			key_obj = thread_spec_data->key;
+			if (key_obj->destructor != NULL) {
+				(key_obj->destructor)(thread_spec_data->spec_data);
+			}
+		}
+	}
+
+	/* move thread from run_q to done_q */
+	key = k_spin_lock(&pthread_pool_lock);
+	sys_dlist_remove(&t->q_node);
+	sys_dlist_append(&done_q, &t->q_node);
+	t->qid = POSIX_THREAD_DONE_Q;
+	t->retval = retval;
+	k_spin_unlock(&pthread_pool_lock, key);
+
+	/* abort the underlying k_thread */
+	k_thread_abort(&t->thread);
+}
+
+FUNC_NORETURN
 static void zephyr_thread_wrapper(void *arg1, void *arg2, void *arg3)
 {
-	void * (*fun_ptr)(void *) = arg3;
+	int err;
+	int barrier;
+	void *(*fun_ptr)(void *arg) = arg2;
+	struct posix_thread *t = CONTAINER_OF(k_current_get(), struct posix_thread, thread);
 
-	fun_ptr(arg1);
-	pthread_exit(NULL);
+	if (IS_ENABLED(CONFIG_PTHREAD_CREATE_BARRIER)) {
+		/* cross the barrier so that pthread_create() can continue */
+		barrier = POINTER_TO_UINT(arg3);
+		err = pthread_barrier_wait(&barrier);
+		__ASSERT_NO_MSG(err == 0 || err == PTHREAD_BARRIER_SERIAL_THREAD);
+	}
+
+	posix_thread_finalize(t, fun_ptr(arg1));
+
+	CODE_UNREACHABLE;
 }
 
 /**
@@ -151,72 +290,89 @@ static void zephyr_thread_wrapper(void *arg1, void *arg2, void *arg3)
  *
  * See IEEE 1003.1
  */
-int pthread_create(pthread_t *newthread, const pthread_attr_t *_attr,
-		   void *(*threadroutine)(void *), void *arg)
+int pthread_create(pthread_t *th, const pthread_attr_t *_attr, void *(*threadroutine)(void *),
+		   void *arg)
 {
-	int rv;
-	int32_t prio;
+	int err;
 	k_spinlock_key_t key;
-	uint32_t pthread_num;
-	k_spinlock_key_t cancel_key;
-	pthread_condattr_t cond_attr;
-	struct posix_thread *thread;
+	pthread_barrier_t barrier;
+	struct posix_thread *safe_t;
+	struct posix_thread *t = NULL;
 	const struct pthread_attr *attr = (const struct pthread_attr *)_attr;
 
-	/*
-	 * FIXME: Pthread attribute must be non-null and it provides stack
-	 * pointer and stack size. So even though POSIX 1003.1 spec accepts
-	 * attrib as NULL but zephyr needs it initialized with valid stack.
-	 */
-	if ((attr == NULL) || (attr->initialized == 0U)
-	    || (attr->stack == NULL) || (attr->stacksize == 0)) {
+	if (!pthread_attr_is_valid(attr)) {
 		return EINVAL;
 	}
 
 	key = k_spin_lock(&pthread_pool_lock);
-	for (pthread_num = 0;
-	    pthread_num < CONFIG_MAX_PTHREAD_COUNT; pthread_num++) {
-		thread = &posix_thread_pool[pthread_num];
-		if (thread->state == PTHREAD_EXITED || thread->state == PTHREAD_TERMINATED) {
-			thread->state = PTHREAD_JOINABLE;
+	if (!sys_dlist_is_empty(&ready_q)) {
+		/* spawn thread 't' directly from ready_q */
+		t = CONTAINER_OF(sys_dlist_get(&ready_q), struct posix_thread, q_node);
+	} else {
+		SYS_DLIST_FOR_EACH_CONTAINER_SAFE(&done_q, t, safe_t, q_node) {
+			if (t->detachstate == PTHREAD_CREATE_JOINABLE) {
+				/* thread has not been joined yet */
+				continue;
+			}
+
+			/* spawn thread 't' from done_q */
+			sys_dlist_remove(&t->q_node);
 			break;
 		}
 	}
+
+	if (t != NULL) {
+		/* initialize thread state */
+		sys_dlist_append(&run_q, &t->q_node);
+		t->qid = POSIX_THREAD_RUN_Q;
+		t->detachstate = attr->detachstate;
+		if ((BIT(_PTHREAD_CANCEL_POS) & attr->flags) != 0) {
+			t->cancel_state = PTHREAD_CANCEL_ENABLE;
+		}
+		t->cancel_pending = false;
+		sys_slist_init(&t->key_list);
+	}
 	k_spin_unlock(&pthread_pool_lock, key);
 
-	if (pthread_num >= CONFIG_MAX_PTHREAD_COUNT) {
+	if (IS_ENABLED(CONFIG_PTHREAD_CREATE_BARRIER)) {
+		err = pthread_barrier_init(&barrier, NULL, 2);
+		if (err != 0) {
+			/* cannot allocate barrier. move thread back to ready_q */
+			key = k_spin_lock(&pthread_pool_lock);
+			sys_dlist_remove(&t->q_node);
+			sys_dlist_append(&ready_q, &t->q_node);
+			t->qid = POSIX_THREAD_READY_Q;
+			k_spin_unlock(&pthread_pool_lock, key);
+			t = NULL;
+		}
+	}
+
+	if (t == NULL) {
+		/* no threads are ready */
 		return EAGAIN;
 	}
 
-	rv = pthread_mutex_init(&thread->state_lock, NULL);
-	if (rv != 0) {
-		key = k_spin_lock(&pthread_pool_lock);
-		thread->state = PTHREAD_EXITED;
-		k_spin_unlock(&pthread_pool_lock, key);
-		return rv;
+	/* spawn the thread */
+	k_thread_create(&t->thread, attr->stack, attr->stacksize, zephyr_thread_wrapper,
+			(void *)arg, threadroutine,
+			IS_ENABLED(CONFIG_PTHREAD_CREATE_BARRIER) ? UINT_TO_POINTER(barrier)
+								       : NULL,
+			posix_to_zephyr_priority(attr->priority, attr->schedpolicy), attr->flags,
+			K_MSEC(attr->delayedstart));
+
+	if (IS_ENABLED(CONFIG_PTHREAD_CREATE_BARRIER)) {
+		/* wait for the spawned thread to cross our barrier */
+		err = pthread_barrier_wait(&barrier);
+		__ASSERT_NO_MSG(err == 0 || err == PTHREAD_BARRIER_SERIAL_THREAD);
+		err = pthread_barrier_destroy(&barrier);
+		__ASSERT_NO_MSG(err == 0);
 	}
 
-	prio = posix_to_zephyr_priority(attr->priority, attr->schedpolicy);
+	/* finally provide the initialized thread to the caller */
+	*th = mark_pthread_obj_initialized(posix_thread_to_offset(t));
 
-	cancel_key = k_spin_lock(&thread->cancel_lock);
-	thread->cancel_state = (1 << _PTHREAD_CANCEL_POS) & attr->flags;
-	thread->cancel_pending = 0;
-	k_spin_unlock(&thread->cancel_lock, cancel_key);
-
-	pthread_mutex_lock(&thread->state_lock);
-	thread->state = attr->detachstate;
-	pthread_mutex_unlock(&thread->state_lock);
-
-	pthread_cond_init(&thread->state_cond, &cond_attr);
-	sys_slist_init(&thread->key_list);
-
-	*newthread = pthread_num;
-	k_thread_create(&thread->thread, attr->stack, attr->stacksize,
-			(k_thread_entry_t)zephyr_thread_wrapper, (void *)arg, NULL, threadroutine,
-			prio, (~K_ESSENTIAL & attr->flags), K_MSEC(attr->delayedstart));
 	return 0;
 }
-
 
 /**
  * @brief Set cancelability State.
@@ -226,22 +382,26 @@ int pthread_create(pthread_t *newthread, const pthread_attr_t *_attr,
 int pthread_setcancelstate(int state, int *oldstate)
 {
 	bool cancel_pending;
-	k_spinlock_key_t cancel_key;
-	struct posix_thread *pthread = to_posix_thread(pthread_self());
+	k_spinlock_key_t key;
+	struct posix_thread *t;
 
-	if (state != PTHREAD_CANCEL_ENABLE &&
-	    state != PTHREAD_CANCEL_DISABLE) {
+	if (state != PTHREAD_CANCEL_ENABLE && state != PTHREAD_CANCEL_DISABLE) {
 		return EINVAL;
 	}
 
-	cancel_key = k_spin_lock(&pthread->cancel_lock);
-	*oldstate = pthread->cancel_state;
-	pthread->cancel_state = state;
-	cancel_pending = pthread->cancel_pending;
-	k_spin_unlock(&pthread->cancel_lock, cancel_key);
+	t = to_posix_thread(pthread_self());
+	if (t == NULL) {
+		return EINVAL;
+	}
+
+	key = k_spin_lock(&pthread_pool_lock);
+	*oldstate = t->cancel_state;
+	t->cancel_state = state;
+	cancel_pending = t->cancel_pending;
+	k_spin_unlock(&pthread_pool_lock, key);
 
 	if (state == PTHREAD_CANCEL_ENABLE && cancel_pending) {
-		pthread_exit((void *)PTHREAD_CANCELED);
+		posix_thread_finalize(t, PTHREAD_CANCELED);
 	}
 
 	return 0;
@@ -254,31 +414,22 @@ int pthread_setcancelstate(int state, int *oldstate)
  */
 int pthread_cancel(pthread_t pthread)
 {
-	struct posix_thread *thread = to_posix_thread(pthread);
 	int cancel_state;
-	k_spinlock_key_t cancel_key;
+	k_spinlock_key_t key;
+	struct posix_thread *t;
 
-	if ((thread == NULL) || (thread->state == PTHREAD_TERMINATED)) {
+	t = to_posix_thread(pthread);
+	if (t == NULL) {
 		return ESRCH;
 	}
 
-	cancel_key = k_spin_lock(&thread->cancel_lock);
-	thread->cancel_pending = 1;
-	cancel_state = thread->cancel_state;
-	k_spin_unlock(&thread->cancel_lock, cancel_key);
+	key = k_spin_lock(&pthread_pool_lock);
+	t->cancel_pending = true;
+	cancel_state = t->cancel_state;
+	k_spin_unlock(&pthread_pool_lock, key);
 
 	if (cancel_state == PTHREAD_CANCEL_ENABLE) {
-		pthread_mutex_lock(&thread->state_lock);
-		if (thread->state == PTHREAD_DETACHED) {
-			thread->state = PTHREAD_TERMINATED;
-		} else {
-			thread->retval = PTHREAD_CANCELED;
-			thread->state = PTHREAD_EXITED;
-			pthread_cond_broadcast(&thread->state_cond);
-		}
-		pthread_mutex_unlock(&thread->state_lock);
-
-		k_thread_abort(&thread->thread);
+		posix_thread_finalize(t, PTHREAD_CANCELED);
 	}
 
 	return 0;
@@ -289,13 +440,12 @@ int pthread_cancel(pthread_t pthread)
  *
  * See IEEE 1003.1
  */
-int pthread_setschedparam(pthread_t pthread, int policy,
-			  const struct sched_param *param)
+int pthread_setschedparam(pthread_t pthread, int policy, const struct sched_param *param)
 {
-	struct posix_thread *thread = to_posix_thread(pthread);
+	struct posix_thread *t = to_posix_thread(pthread);
 	int new_prio;
 
-	if (thread == NULL) {
+	if (t == NULL) {
 		return ESRCH;
 	}
 
@@ -309,7 +459,7 @@ int pthread_setschedparam(pthread_t pthread, int policy,
 
 	new_prio = posix_to_zephyr_priority(param->sched_priority, policy);
 
-	k_thread_priority_set(&thread->thread, new_prio);
+	k_thread_priority_set(&t->thread, new_prio);
 	return 0;
 }
 
@@ -335,17 +485,17 @@ int pthread_attr_init(pthread_attr_t *attr)
  *
  * See IEEE 1003.1
  */
-int pthread_getschedparam(pthread_t pthread, int *policy,
-			  struct sched_param *param)
+int pthread_getschedparam(pthread_t pthread, int *policy, struct sched_param *param)
 {
-	struct posix_thread *thread = to_posix_thread(pthread);
 	uint32_t priority;
+	struct posix_thread *t;
 
-	if ((thread == NULL) || (thread->state == PTHREAD_TERMINATED)) {
+	t = to_posix_thread(pthread);
+	if (t == NULL) {
 		return ESRCH;
 	}
 
-	priority = k_thread_priority_get(&thread->thread);
+	priority = k_thread_priority_get(&t->thread);
 
 	param->sched_priority = zephyr_to_posix_priority(priority, policy);
 	return 0;
@@ -375,47 +525,26 @@ int pthread_once(pthread_once_t *once, void (*init_func)(void))
  *
  * See IEEE 1003.1
  */
+FUNC_NORETURN
 void pthread_exit(void *retval)
 {
-	k_spinlock_key_t cancel_key;
-	struct posix_thread *self = to_posix_thread(pthread_self());
-	pthread_key_obj *key_obj;
-	pthread_thread_data *thread_spec_data;
-	sys_snode_t *node_l;
+	k_spinlock_key_t key;
+	struct posix_thread *self;
+
+	self = to_posix_thread(pthread_self());
+	if (self == NULL) {
+		/* not a valid posix_thread */
+		__ASSERT_NO_MSG(self != NULL);
+		k_thread_abort(k_current_get());
+	}
 
 	/* Make a thread as cancelable before exiting */
-	cancel_key = k_spin_lock(&self->cancel_lock);
-	if (self->cancel_state == PTHREAD_CANCEL_DISABLE) {
-		self->cancel_state = PTHREAD_CANCEL_ENABLE;
-	}
+	key = k_spin_lock(&pthread_pool_lock);
+	self->cancel_state = PTHREAD_CANCEL_ENABLE;
+	k_spin_unlock(&pthread_pool_lock, key);
 
-	k_spin_unlock(&self->cancel_lock, cancel_key);
-
-	pthread_mutex_lock(&self->state_lock);
-	if (self->state == PTHREAD_JOINABLE) {
-		self->state = PTHREAD_EXITED;
-		self->retval = retval;
-		pthread_cond_broadcast(&self->state_cond);
-	} else {
-		self->state = PTHREAD_TERMINATED;
-	}
-
-	SYS_SLIST_FOR_EACH_NODE(&self->key_list, node_l) {
-		thread_spec_data = (pthread_thread_data *)node_l;
-		if (thread_spec_data != NULL) {
-			key_obj = thread_spec_data->key;
-			if (key_obj->destructor != NULL) {
-				(key_obj->destructor)(thread_spec_data->spec_data);
-			}
-		}
-	}
-
-	pthread_mutex_unlock(&self->state_lock);
-	pthread_mutex_destroy(&self->state_lock);
-
-	pthread_cond_destroy(&self->state_cond);
-
-	k_thread_abort((k_tid_t)self);
+	posix_thread_finalize(self, retval);
+	CODE_UNREACHABLE;
 }
 
 /**
@@ -423,41 +552,46 @@ void pthread_exit(void *retval)
  *
  * See IEEE 1003.1
  */
-int pthread_join(pthread_t thread, void **status)
+int pthread_join(pthread_t pthread, void **status)
 {
-	struct posix_thread *pthread = to_posix_thread(thread);
-	int ret = 0;
+	int err;
+	int ret;
+	k_spinlock_key_t key;
+	struct posix_thread *t;
 
-	if (thread == pthread_self()) {
+	if (pthread == pthread_self()) {
 		return EDEADLK;
 	}
 
-	if (pthread == NULL) {
+	t = to_posix_thread(pthread);
+	if (t == NULL) {
 		return ESRCH;
 	}
 
-	pthread_mutex_lock(&pthread->state_lock);
-
-	if (pthread->state == PTHREAD_JOINABLE) {
-		pthread_cond_wait(&pthread->state_cond, &pthread->state_lock);
-	}
-
-	if (pthread->state == PTHREAD_EXITED) {
-		if (status != NULL) {
-			*status = pthread->retval;
-		}
-	} else if (pthread->state == PTHREAD_DETACHED) {
+	ret = 0;
+	key = k_spin_lock(&pthread_pool_lock);
+	if (t->detachstate != PTHREAD_CREATE_JOINABLE) {
 		ret = EINVAL;
-	} else {
+	} else if (t->qid == POSIX_THREAD_READY_Q) {
+		/* marginal chance thread has moved to ready_q between to_posix_thread() and here */
 		ret = ESRCH;
+	} else {
+		/*
+		 * thread is joinable and is in run_q or done_q.
+		 * let's ensure that the thread cannot be joined again after this point.
+		 */
+		t->detachstate = PTHREAD_CREATE_DETACHED;
+		ret = 0;
+	}
+	k_spin_unlock(&pthread_pool_lock, key);
+
+	if (ret == 0) {
+		err = k_thread_join(&t->thread, K_FOREVER);
+		/* other possibilities? */
+		__ASSERT_NO_MSG(err == 0);
 	}
 
-	pthread_mutex_unlock(&pthread->state_lock);
-	if (pthread->state == PTHREAD_EXITED) {
-		pthread_mutex_destroy(&pthread->state_lock);
-	}
-
-	return ret;
+	return 0;
 }
 
 /**
@@ -465,40 +599,28 @@ int pthread_join(pthread_t thread, void **status)
  *
  * See IEEE 1003.1
  */
-int pthread_detach(pthread_t thread)
+int pthread_detach(pthread_t pthread)
 {
-	struct posix_thread *pthread = to_posix_thread(thread);
-	int ret = 0;
+	int ret;
+	k_spinlock_key_t key;
+	struct posix_thread *t;
+	enum posix_thread_qid qid;
 
-	if (pthread == NULL) {
+	t = to_posix_thread(pthread);
+	if (t == NULL) {
 		return ESRCH;
 	}
 
-	pthread_mutex_lock(&pthread->state_lock);
-
-	switch (pthread->state) {
-	case PTHREAD_JOINABLE:
-		pthread->state = PTHREAD_DETACHED;
-		/* Broadcast the condition.
-		 * This will make threads waiting to join this thread continue.
-		 */
-		pthread_cond_broadcast(&pthread->state_cond);
-		break;
-	case PTHREAD_EXITED:
-		pthread->state = PTHREAD_TERMINATED;
-		/* THREAD has already exited.
-		 * Pthread remained to provide exit status.
-		 */
-		break;
-	case PTHREAD_TERMINATED:
-		ret = ESRCH;
-		break;
-	default:
+	key = k_spin_lock(&pthread_pool_lock);
+	qid = t->qid;
+	if (qid == POSIX_THREAD_READY_Q || t->detachstate != PTHREAD_CREATE_JOINABLE) {
 		ret = EINVAL;
-		break;
+	} else {
+		ret = 0;
+		t->detachstate = PTHREAD_CREATE_DETACHED;
 	}
+	k_spin_unlock(&pthread_pool_lock, key);
 
-	pthread_mutex_unlock(&pthread->state_lock);
 	return ret;
 }
 
@@ -529,15 +651,13 @@ int pthread_attr_setdetachstate(pthread_attr_t *_attr, int detachstate)
 	struct pthread_attr *attr = (struct pthread_attr *)_attr;
 
 	if ((attr == NULL) || (attr->initialized == 0U) ||
-	    (detachstate != PTHREAD_CREATE_DETACHED &&
-	     detachstate != PTHREAD_CREATE_JOINABLE)) {
+	    (detachstate != PTHREAD_CREATE_DETACHED && detachstate != PTHREAD_CREATE_JOINABLE)) {
 		return EINVAL;
 	}
 
 	attr->detachstate = detachstate;
 	return 0;
 }
-
 
 /**
  * @brief Get scheduling policy attribute in Thread attributes.
@@ -555,7 +675,6 @@ int pthread_attr_getschedpolicy(const pthread_attr_t *_attr, int *policy)
 	*policy = attr->schedpolicy;
 	return 0;
 }
-
 
 /**
  * @brief Set scheduling policy attribute in Thread attributes object.
@@ -589,7 +708,6 @@ int pthread_attr_getstacksize(const pthread_attr_t *_attr, size_t *stacksize)
 
 	*stacksize = attr->stacksize;
 	return 0;
-
 }
 
 /**
@@ -670,6 +788,7 @@ int pthread_setname_np(pthread_t thread, const char *name)
 #ifdef CONFIG_THREAD_NAME
 	k_tid_t kthread;
 
+	thread = get_posix_thread_idx(thread);
 	if (thread >= CONFIG_MAX_PTHREAD_COUNT) {
 		return ESRCH;
 	}
@@ -693,6 +812,7 @@ int pthread_getname_np(pthread_t thread, char *name, size_t len)
 #ifdef CONFIG_THREAD_NAME
 	k_tid_t kthread;
 
+	thread = get_posix_thread_idx(thread);
 	if (thread >= CONFIG_MAX_PTHREAD_COUNT) {
 		return ESRCH;
 	}
@@ -703,7 +823,7 @@ int pthread_getname_np(pthread_t thread, char *name, size_t len)
 
 	memset(name, '\0', len);
 	kthread = &posix_thread_pool[thread].thread;
-	return k_thread_name_copy(kthread, name, len-1);
+	return k_thread_name_copy(kthread, name, len - 1);
 #else
 	ARG_UNUSED(thread);
 	ARG_UNUSED(name);
@@ -716,9 +836,8 @@ static int posix_thread_pool_init(void)
 {
 	size_t i;
 
-
 	for (i = 0; i < CONFIG_MAX_PTHREAD_COUNT; ++i) {
-		posix_thread_pool[i].state = PTHREAD_EXITED;
+		sys_dlist_append(&ready_q, &posix_thread_pool[i].q_node);
 	}
 
 	return 0;

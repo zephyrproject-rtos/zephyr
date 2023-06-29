@@ -294,3 +294,94 @@ ZTEST(lwm2m_registry, test_callbacks)
 	zassert_equal(ret, 0);
 	zassert_equal(callback_checker, 0x7F);
 }
+
+ZTEST(lwm2m_registry, test_strings)
+{
+	int ret;
+	char buf[256] = {0};
+	struct lwm2m_obj_path path = LWM2M_OBJ(0, 0, 0);
+	static const char uri[] = "coap://127.0.0.1";
+	uint16_t len;
+	uint8_t *p;
+
+	ret = lwm2m_get_res_buf(&path, (void **)&p, &len, NULL, NULL);
+	zassert_equal(ret, 0);
+	memset(p, 0xff, len); /* Pre-fill buffer to check */
+
+	/* Handle strings in string resources */
+	ret = lwm2m_set_string(&path, uri);
+	zassert_equal(ret, 0);
+	ret = lwm2m_get_res_buf(&path, (void **)&p, NULL, &len, NULL);
+	zassert_equal(ret, 0);
+	zassert_equal(len, sizeof(uri));
+	zassert_equal(p[len - 1], '\0'); /* string terminator in buffer */
+	zassert_equal(p[len], 0xff);
+
+	ret = lwm2m_get_string(&path, buf, sizeof(buf));
+	zassert_equal(ret, 0);
+	zassert_equal(memcmp(uri, buf, sizeof(uri)), 0);
+	ret = lwm2m_get_string(&path, buf, sizeof(uri));
+	zassert_equal(ret, 0);
+	ret = lwm2m_get_string(&path, buf, strlen(uri));
+	zassert_equal(ret, -ENOMEM);
+
+	/* Handle strings in opaque resources (no terminator) */
+	path = LWM2M_OBJ(0, 0, 3);
+	ret = lwm2m_get_res_buf(&path, (void **)&p, &len, NULL, NULL);
+	zassert_equal(ret, 0);
+	memset(p, 0xff, len); /* Pre-fill buffer to check */
+
+	ret = lwm2m_set_string(&path, uri);
+	zassert_equal(ret, 0);
+	ret = lwm2m_get_res_buf(&path, (void **)&p, NULL, &len, NULL);
+	zassert_equal(ret, 0);
+	zassert_equal(len, strlen(uri)); /* No terminator counted in data length */
+	zassert_equal(p[len - 1], '1'); /* Last character in buffer is not terminator */
+	zassert_equal(p[len], 0xff);
+	memset(buf, 0xff, sizeof(buf));
+	ret = lwm2m_get_string(&path, buf, sizeof(buf)); /* get_string ensures termination */
+	zassert_equal(ret, 0);
+	zassert_equal(memcmp(uri, buf, sizeof(uri)), 0);
+	ret = lwm2m_get_string(&path, buf, sizeof(uri));
+	zassert_equal(ret, 0);
+	ret = lwm2m_get_string(&path, buf, strlen(uri));
+	zassert_equal(ret, -ENOMEM);
+	/* Corner case: we request exactly as much is stored in opaque resource, */
+	/* but because we request as a string, it must have room for terminator. */
+	ret = lwm2m_get_string(&path, buf, len);
+	zassert_equal(ret, -ENOMEM);
+}
+
+ZTEST(lwm2m_registry, test_null_strings)
+{
+	int ret;
+	char buf[256] = {0};
+	struct lwm2m_obj_path path = LWM2M_OBJ(0, 0, 0);
+
+	ret = lwm2m_register_post_write_callback(&path, post_write_cb);
+	zassert_equal(ret, 0);
+
+	callback_checker = 0;
+	ret = lwm2m_set_string(&path, "string");
+	zassert_equal(ret, 0);
+	zassert_equal(callback_checker, 0x02);
+	ret = lwm2m_get_string(&path, buf, sizeof(buf));
+	zassert_equal(ret, 0);
+	zassert_equal(strlen(buf), strlen("string"));
+
+	callback_checker = 0;
+	ret = lwm2m_set_string(&path, "");
+	zassert_equal(ret, 0);
+	zassert_equal(callback_checker, 0x02);
+	ret = lwm2m_get_string(&path, buf, sizeof(buf));
+	zassert_equal(ret, 0);
+	zassert_equal(strlen(buf), 0);
+
+	callback_checker = 0;
+	ret = lwm2m_set_opaque(&path, NULL, 0);
+	zassert_equal(ret, 0);
+	zassert_equal(callback_checker, 0x02);
+	ret = lwm2m_get_string(&path, buf, sizeof(buf));
+	zassert_equal(ret, 0);
+	zassert_equal(strlen(buf), 0);
+}

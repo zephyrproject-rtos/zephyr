@@ -35,3 +35,7 @@ endif()
 if(CONFIG_BT_BAP_UNICAST)
     target_sources(app PRIVATE src/btp_bap.c)
 endif()
+
+if(CONFIG_BT_HAS)
+    target_sources(app PRIVATE src/btp_has.c)
+endif()

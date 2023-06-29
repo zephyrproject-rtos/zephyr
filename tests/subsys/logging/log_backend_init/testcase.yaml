@@ -1,7 +1,7 @@
 tests:
   logging.log_backend_initialization:
     integration_platforms:
-      - native_posix
+      - qemu_x86
     tags:
       - log_core
       - logging

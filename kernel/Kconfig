@@ -969,10 +969,19 @@ endmenu
 
 menu "Device Options"
 
-config HAS_DYNAMIC_DEVICE_HANDLES
-	bool
+config DEVICE_DEPS
+	bool "Store device dependencies"
 	help
-	  Hidden option that makes possible to manipulate device handles at
+	  When enabled, device dependencies will be stored so that they can be
+	  queried at runtime. Device dependencies are typically inferred from
+	  devicetree. Enabling this option will increase ROM usage (or RAM if
+	  dynamic device dependencies are enabled).
+
+config DEVICE_DEPS_DYNAMIC
+	bool "Dynamic device dependencies"
+	depends on DEVICE_DEPS
+	help
+	  Option that makes it possible to manipulate device dependencies at
 	  runtime.
 
 endmenu

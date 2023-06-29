@@ -258,6 +258,8 @@ static const struct display_driver_api mcux_dcnano_lcdif_api = {
 
 #define MCUX_DCNANO_LCDIF_PIXEL_BYTES(n)					\
 	(DISPLAY_BITS_PER_PIXEL(DT_INST_PROP(n, pixel_format)) / 8)
+#define MCUX_DCNANO_LCDIF_FB_SIZE(n) DT_INST_PROP(n, width) *			\
+	DT_INST_PROP(n, height) * MCUX_DCNANO_LCDIF_PIXEL_BYTES(n)
 
 /* When using external framebuffer mem, we should not allocate framebuffers
  * in SRAM. Instead, we use external framebuffer address and size
@@ -265,8 +267,6 @@ static const struct display_driver_api mcux_dcnano_lcdif_api = {
  */
 #ifdef CONFIG_MCUX_DCNANO_LCDIF_EXTERNAL_FB_MEM
 #define MCUX_DCNANO_LCDIF_FRAMEBUFFER_DECL(n)
-#define MCUX_DCNANO_LCDIF_FB_SIZE(n) DT_INST_PROP(n, width) *			\
-	DT_INST_PROP(n, height) * MCUX_DCNANO_LCDIF_PIXEL_BYTES(n)
 #define MCUX_DCNANO_LCDIF_FRAMEBUFFER(n)					\
 	(uint8_t *)CONFIG_MCUX_DCNANO_LCDIF_EXTERNAL_FB_ADDR
 #else
@@ -275,8 +275,6 @@ static const struct display_driver_api mcux_dcnano_lcdif_api = {
 					 DT_INST_PROP(n, height) *		\
 					 MCUX_DCNANO_LCDIF_PIXEL_BYTES(n) *	\
 					 CONFIG_MCUX_DCNANO_LCDIF_FB_NUM]
-#define MCUX_DCNANO_LCDIF_FB_SIZE(n)						\
-	sizeof(mcux_dcnano_lcdif_frame_buffer_##n) / CONFIG_MCUX_DCNANO_LCDIF_FB_NUM
 #define MCUX_DCNANO_LCDIF_FRAMEBUFFER(n) mcux_dcnano_lcdif_frame_buffer_##n
 #endif
 

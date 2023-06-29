@@ -351,10 +351,12 @@ enum wifi_twt_fail_reason {
 	WIFI_TWT_FAIL_PEER_NOT_TWT_CAPAB,
 	WIFI_TWT_FAIL_OPERATION_IN_PROGRESS,
 	WIFI_TWT_FAIL_INVALID_FLOW_ID,
+	WIFI_TWT_FAIL_IP_NOT_ASSIGNED,
+	WIFI_TWT_FAIL_FLOW_ALREADY_EXISTS,
 };
 
 static const char * const twt_err_code_tbl[] = {
-	[WIFI_TWT_FAIL_UNSPECIFIED] = "Unspecfied",
+	[WIFI_TWT_FAIL_UNSPECIFIED] = "Unspecified",
 	[WIFI_TWT_FAIL_CMD_EXEC_FAIL] = "Command Execution failed",
 	[WIFI_TWT_FAIL_OPERATION_NOT_SUPPORTED] =
 		"Operation not supported",
@@ -368,6 +370,10 @@ static const char * const twt_err_code_tbl[] = {
 		"Operation already in progress",
 	[WIFI_TWT_FAIL_INVALID_FLOW_ID] =
 		"Invalid negotiated flow id",
+	[WIFI_TWT_FAIL_IP_NOT_ASSIGNED] =
+		"IP address not assigned",
+	[WIFI_TWT_FAIL_FLOW_ALREADY_EXISTS] =
+		"Flow already exists",
 };
 
 static inline const char *get_twt_err_code_str(int16_t err_no)

@@ -17,13 +17,16 @@
 #ifdef CONFIG_HARVARD
 	#define ROMABLE_REGION ICCM
 	#define RAMABLE_REGION DCCM
+	#define ROM_RAM_IN_SAME_REGION 0
 #else
 	#if defined(CONFIG_XIP) && (FLASH_SIZE != 0)
 		#define ROMABLE_REGION FLASH
 		#define RAMABLE_REGION SRAM
+		#define ROM_RAM_IN_SAME_REGION 0
 	#else
 		#define ROMABLE_REGION SRAM
 		#define RAMABLE_REGION SRAM
+		#define ROM_RAM_IN_SAME_REGION 1
 	#endif
 #endif
 
@@ -138,7 +141,13 @@ SECTIONS {
 		_ectors = .;
 #endif /* CONFIG_CPP && !CONFIG_CPP_STATIC_INIT_GNU && __MWDT_LINKER_CMD__ */
 
+/* This extra MPU alignment of RAMABLE_REGION is only required if we put ROMABLE_REGION and
+ * RAMABLE_REGION into the same (continuous) memory - otherwise we can get beginning of the
+ * RAMABLE_REGION in the end of ROMABLE_REGION MPU aperture.
+ */
+#if ROM_RAM_IN_SAME_REGION
 		MPU_ALIGN(ABSOLUTE(.) - __rom_region_start);
+#endif
 	} GROUP_LINK_IN(ROMABLE_REGION)
 
 	__rodata_region_end = .;
@@ -237,8 +246,6 @@ SECTIONS {
 
 	MPU_MIN_SIZE_ALIGN
 	/* Define linker symbols */
-	_image_ram_end = .;
-	_end = .; /* end of image */
 
 	__kernel_ram_end = .;
 	__kernel_ram_size = __kernel_ram_end - __kernel_ram_start;
@@ -269,12 +276,14 @@ SECTIONS {
 	} GROUP_DATA_LINK_IN(YCCM, RAMABLE_REGION)
 #endif
 
-	GROUP_END(RAMABLE_REGION)
-
 /* Located in generated directory. This file is populated by the
  * zephyr_linker_sources() Cmake function.
  */
 #include <snippets-sections.ld>
+
+#include <zephyr/linker/ram-end.ld>
+
+    GROUP_END(RAMABLE_REGION)
 
 #include <zephyr/linker/debug-sections.ld>
 

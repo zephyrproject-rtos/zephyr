@@ -149,7 +149,7 @@ static inline void rtio_executor_done(struct rtio_iodev_sqe *iodev_sqe, int resu
 			/* SQE is no longer needed, release it */
 			rtio_sqe_pool_free(r->sqe_pool, curr);
 		}
-		if (!is_canceled) {
+		if (!is_canceled && FIELD_GET(RTIO_SQE_NO_RESPONSE, sqe_flags) == 0) {
 			/* Request was not canceled, generate a CQE */
 			rtio_cqe_submit(r, result, userdata, cqe_flags);
 		}

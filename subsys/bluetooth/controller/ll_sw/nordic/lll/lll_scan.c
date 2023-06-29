@@ -5,13 +5,11 @@
  */
 
 #include <stdint.h>
-
-#include <zephyr/toolchain.h>
-
-#include <soc.h>
+#include <stdbool.h>
+#include <stddef.h>
 
 #include <zephyr/sys/byteorder.h>
-#include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/hci_types.h>
 
 #include "hal/cpu.h"
 #include "hal/ccm.h"

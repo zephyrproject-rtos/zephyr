@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config MDIO_ADIN2111
-	bool "NXP S32 NETC External MDIO driver"
+	bool "ADIN2111 MDIO driver"
 	default y
 	depends on DT_HAS_ADI_ADIN2111_MDIO_ENABLED
 	depends on ETH_ADIN2111

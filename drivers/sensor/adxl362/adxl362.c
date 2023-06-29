@@ -716,7 +716,7 @@ static int adxl362_init(const struct device *dev)
 	err = adxl362_software_reset(dev);
 
 	if (err) {
-		LOG_ERR("adxl362_software_reset failed, error %d\n", err);
+		LOG_ERR("adxl362_software_reset failed, error %d", err);
 		return -ENODEV;
 	}
 
@@ -724,7 +724,7 @@ static int adxl362_init(const struct device *dev)
 
 	adxl362_get_reg(dev, &value, ADXL362_REG_PARTID, 1);
 	if (value != ADXL362_PART_ID) {
-		LOG_ERR("wrong part_id: %d\n", value);
+		LOG_ERR("wrong part_id: %d", value);
 		return -ENODEV;
 	}
 

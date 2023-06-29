@@ -17,6 +17,18 @@ if(NOT EXISTS ${ARCMWDT_TOOLCHAIN_PATH})
   message(FATAL_ERROR "Nothing found at ARCMWDT_TOOLCHAIN_PATH: '${ARCMWDT_TOOLCHAIN_PATH}'")
 endif()
 
+# arcmwdt relies on Zephyr SDK for the use of C preprocessor (devicetree) and objcopy
+find_package(Zephyr-sdk 0.15 REQUIRED)
+# Handling to be improved in Zephyr SDK, we can drop setting TOOLCHAIN_HOME after
+# https://github.com/zephyrproject-rtos/sdk-ng/pull/682 got merged and we switch to proper SDK
+# version.
+set(TOOLCHAIN_HOME ${ZEPHYR_SDK_INSTALL_DIR})
+include(${ZEPHYR_SDK_INSTALL_DIR}/cmake/zephyr/target.cmake)
+set(ZEPHYR_SDK_CROSS_COMPILE ${CROSS_COMPILE})
+# Handling to be improved in Zephyr SDK, to avoid overriding ZEPHYR_TOOLCHAIN_VARIANT by
+# find_package(Zephyr-sdk) if it's already set
+set(ZEPHYR_TOOLCHAIN_VARIANT arcmwdt)
+
 set(TOOLCHAIN_HOME ${ARCMWDT_TOOLCHAIN_PATH}/MetaWare)
 
 set(COMPILER arcmwdt)

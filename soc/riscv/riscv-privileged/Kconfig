@@ -1,0 +1,37 @@
+# Configuration options for riscv SOCs supporting the riscv privileged
+# architecture specification
+
+# Copyright (c) 2017 Jean-Paul Etienne <fractalclone@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_FAMILY_RISCV_PRIVILEGE
+	bool
+	select DEPRECATED
+
+config SOC_FAMILY_RISCV_PRIVILEGED
+	bool
+
+config SOC_FAMILY
+	string
+	default "riscv-privileged"
+	depends on SOC_FAMILY_RISCV_PRIVILEGED
+
+config RISCV_HAS_PLIC
+	bool "Does the SOC provide support for a Platform Level Interrupt Controller (PLIC)"
+	depends on SOC_FAMILY_RISCV_PRIVILEGED
+	help
+	  Does the SOC provide support for a Platform Level Interrupt Controller (PLIC).
+
+config RISCV_HAS_CLIC
+	bool "Does the SOC provide support for a Core-Local Interrupt Controller (CLIC)"
+	depends on SOC_FAMILY_RISCV_PRIVILEGED
+	help
+	  Does the SOC provide support for a Core-Local Interrupt Controller (CLIC).
+
+config RISCV_VECTORED_MODE
+	bool "Should the SOC use vectored mode"
+	depends on SOC_FAMILY_RISCV_PRIVILEGED
+	help
+	  Should the SOC use vectored mode.
+
+source "soc/riscv/riscv-privileged/*/Kconfig.soc"

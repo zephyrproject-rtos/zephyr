@@ -71,6 +71,12 @@
 
 &gpiof {
 	status = "okay";
+
+	board-controller-enable {
+		gpio-hog;
+		gpios = <7 GPIO_ACTIVE_HIGH>;
+		output-high;
+	};
 };
 
 &uart0 {

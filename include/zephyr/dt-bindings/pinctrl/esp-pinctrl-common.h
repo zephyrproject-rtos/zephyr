@@ -39,6 +39,8 @@
 #define ESP32_PIN_DRV_MASK       0x3U
 #define ESP32_PIN_OUT_SHIFT      4U
 #define ESP32_PIN_OUT_MASK       0x3U
+#define ESP32_PIN_EN_DIR_SHIFT   6U
+#define ESP32_PIN_EN_DIR_MASK    0x3U
 
 /* Bias definitions */
 #define ESP32_NO_PULL            0x1
@@ -57,6 +59,13 @@
 #define ESP32_PIN_OUT_LOW        0x2
 
 /*
+ * Enable input or output on pin
+ * regardless of its direction
+ */
+#define ESP32_PIN_OUT_EN       0x1
+#define ESP32_PIN_IN_EN        0x2
+
+/*
  * These flags are used by the pinctrl
  * driver, based on the DTS properties
  * assigned to a specific pin state
@@ -70,5 +79,7 @@
 #define ESP32_DIR_OUT_FLAG       BIT(6)
 #define ESP32_PIN_OUT_HIGH_FLAG  BIT(7)
 #define ESP32_PIN_OUT_LOW_FLAG   BIT(8)
+#define ESP32_PIN_OUT_EN_FLAG    BIT(9)
+#define ESP32_PIN_IN_EN_FLAG     BIT(10)
 
 #endif	/* ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_ESP_PINCTRL_COMMON_H_ */

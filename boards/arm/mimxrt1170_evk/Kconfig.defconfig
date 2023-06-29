@@ -97,7 +97,7 @@ config LV_Z_FULL_REFRESH
 config LV_Z_BITS_PER_PIXEL
 	default 16
 
-config LV_Z_DPI
+config LV_DPI_DEF
 	default 128
 
 choice LV_COLOR_DEPTH

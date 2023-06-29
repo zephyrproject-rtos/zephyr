@@ -1,12 +1,13 @@
 common:
   tags:
     - clib
-  arch_exclude: posix
+  filter: not CONFIG_NATIVE_APPLICATION
   integration_platforms:
     - mps2_an385
 tests:
   libraries.libc:
     ignore_faults: true
+    filter: not (CONFIG_ARCH_POSIX and CONFIG_EXTERNAL_LIBC)
   libraries.libc.picolibc:
     filter: CONFIG_PICOLIBC_SUPPORTED
     tags: picolibc

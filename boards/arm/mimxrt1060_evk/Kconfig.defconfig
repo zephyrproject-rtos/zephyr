@@ -69,7 +69,7 @@ config LV_Z_DOUBLE_VDB
 config LV_Z_FULL_REFRESH
 	default y
 
-config LV_Z_DPI
+config LV_DPI_DEF
 	default 128
 
 config LV_Z_BITS_PER_PIXEL

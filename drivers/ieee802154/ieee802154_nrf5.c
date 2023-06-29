@@ -173,7 +173,7 @@ static void nrf5_rx_thread(void *arg1, void *arg2, void *arg3)
 		}
 
 		net_pkt_set_ieee802154_lqi(pkt, rx_frame->lqi);
-		net_pkt_set_ieee802154_rssi(pkt, rx_frame->rssi);
+		net_pkt_set_ieee802154_rssi_dbm(pkt, rx_frame->rssi);
 		net_pkt_set_ieee802154_ack_fpb(pkt, rx_frame->ack_fpb);
 
 #if defined(CONFIG_NET_PKT_TIMESTAMP)
@@ -224,6 +224,7 @@ static void nrf5_get_capabilities_at_boot(void)
 		((caps & NRF_802154_CAPABILITY_CSMA) ? IEEE802154_HW_CSMA : 0UL) |
 		IEEE802154_HW_2_4_GHZ |
 		IEEE802154_HW_TX_RX_ACK |
+		IEEE802154_HW_RX_TX_ACK |
 		IEEE802154_HW_ENERGY_SCAN |
 		((caps & NRF_802154_CAPABILITY_DELAYED_TX) ? IEEE802154_HW_TXTIME : 0UL) |
 		((caps & NRF_802154_CAPABILITY_DELAYED_RX) ? IEEE802154_HW_RXTIME : 0UL) |
@@ -399,7 +400,7 @@ static int handle_ack(struct nrf5_802154_data *nrf5_radio)
 	}
 
 	net_pkt_set_ieee802154_lqi(ack_pkt, nrf5_radio->ack_frame.lqi);
-	net_pkt_set_ieee802154_rssi(ack_pkt, nrf5_radio->ack_frame.rssi);
+	net_pkt_set_ieee802154_rssi_dbm(ack_pkt, nrf5_radio->ack_frame.rssi);
 
 #if defined(CONFIG_NET_PKT_TIMESTAMP)
 	struct net_ptp_time timestamp = {
@@ -412,7 +413,7 @@ static int handle_ack(struct nrf5_802154_data *nrf5_radio)
 
 	net_pkt_cursor_init(ack_pkt);
 
-	if (ieee802154_radio_handle_ack(nrf5_radio->iface, ack_pkt) != NET_OK) {
+	if (ieee802154_handle_ack(nrf5_radio->iface, ack_pkt) != NET_OK) {
 		LOG_INF("ACK packet not handled - releasing.");
 	}
 
@@ -1019,7 +1020,15 @@ void nrf_802154_receive_failed(nrf_802154_rx_error_t error, uint32_t id)
 #if defined(CONFIG_IEEE802154_CSL_ENDPOINT)
 	if (id == DRX_SLOT_RX) {
 		__ASSERT_NO_MSG(nrf5_data.event_handler);
+#if !defined(CONFIG_IEEE802154_CSL_DEBUG)
+		/* When CSL debug option is used we intentionally avoid notifying the higher layer
+		 * about the finalization of a DRX slot, so that the radio stays in receive state
+		 * for receiving "out of slot" frames.
+		 * As a side effect, regular failure notifications would be reported with the
+		 * incorrect ID.
+		 */
 		nrf5_data.event_handler(dev, IEEE802154_EVENT_SLEEP, NULL);
+#endif
 		if (error == NRF_802154_RX_ERROR_DELAYED_TIMEOUT) {
 			return;
 		}

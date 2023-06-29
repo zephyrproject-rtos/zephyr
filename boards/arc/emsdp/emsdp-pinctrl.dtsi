@@ -130,4 +130,9 @@
 	arduino_CFG6_i2c: arduino_CFG6_i2c {
 		pinmux = <ARDUINO_PIN_AD5 ARDUINO_I2C>;
 	};
+
+	/* INNER_CONNECT, DUMMY MUX */
+	unmuxed_pin: unmuxed_pin {
+		pinmux = <UNMUXED_PIN NOT_PINMUX>;
+	};
 };
