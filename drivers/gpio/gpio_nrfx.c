@@ -406,7 +406,7 @@ static const struct gpio_driver_api gpio_nrfx_drv_api_funcs = {
 			.port_pin_mask =				\
 			GPIO_PORT_PIN_MASK_FROM_DT_INST(id),		\
 		},							\
-		.port = (NRF_GPIO_Type *)DT_INST_REG_ADDR(id),		\
+		.port = _CONCAT(NRF_P, DT_INST_PROP(id, port)),		\
 		.port_num = DT_INST_PROP(id, port),			\
 		.edge_sense = DT_INST_PROP_OR(id, sense_edge_mask, 0)	\
 	};								\
