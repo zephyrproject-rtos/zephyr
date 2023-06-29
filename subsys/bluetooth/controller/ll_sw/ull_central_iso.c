@@ -234,6 +234,15 @@ uint8_t ll_cig_parameters_commit(uint8_t cig_id, uint16_t *handles)
 			cig->iso_interval = BT_HCI_ISO_INTERVAL_MIN;
 		}
 
+#if defined(CONFIG_BT_CTLR_CONN_ISO_AVOID_SEGMENTATION)
+		/* Check if this is a HAP usecase which requires higher link bandwidth to ensure
+		 * segmentation is not invoked in ISO-AL.
+		 */
+		if (cig->central.framing && cig->c_sdu_interval == 10000U) {
+			cig->iso_interval = 6; /* 7500 us */
+		}
+#endif
+
 		if (!cig->central.framing && (cig->c_sdu_interval % ISO_INT_UNIT_US)) {
 			/* Framing not requested but requirement for unframed is not met. Force
 			 * CIG into framed mode.
@@ -1131,29 +1140,51 @@ static void set_bn_max_pdu(bool framed, uint32_t iso_interval,
 			   uint8_t *max_pdu)
 {
 	if (framed) {
-		uint32_t ceil_f_x_max_sdu;
-		uint16_t max_pdu_bn1;
-		uint32_t max_drift;
+		uint32_t max_drift_us;
 		uint32_t ceil_f;
 
-		/* Framed (From ES-18002):
+		/* BT Core 5.4 Vol 6, Part G, Section 2.2:
 		 *   Max_PDU >= ((ceil(F) x 5 + ceil(F x Max_SDU)) / BN) + 2
 		 *   F = (1 + MaxDrift) x ISO_Interval / SDU_Interval
 		 *   SegmentationHeader + TimeOffset = 5 bytes
 		 *   Continuation header = 2 bytes
 		 *   MaxDrift (Max. allowed SDU delivery timing drift) = 100 ppm
 		 */
-		max_drift = DIV_ROUND_UP(SDU_MAX_DRIFT_PPM * sdu_interval, 1000000U);
-		ceil_f = DIV_ROUND_UP(iso_interval + max_drift, sdu_interval);
-		ceil_f_x_max_sdu = DIV_ROUND_UP(max_sdu * (iso_interval + max_drift),
-						    sdu_interval);
-
-		/* Strategy: Keep lowest possible BN.
-		 * TODO: Implement other strategies, possibly as policies.
+		max_drift_us = DIV_ROUND_UP(SDU_MAX_DRIFT_PPM * sdu_interval, USEC_PER_SEC);
+		ceil_f = DIV_ROUND_UP((USEC_PER_SEC + max_drift_us) * (uint64_t)iso_interval,
+				       USEC_PER_SEC * (uint64_t)sdu_interval);
+		if (false) {
+#if defined(CONFIG_BT_CTLR_CONN_ISO_AVOID_SEGMENTATION)
+		/* To avoid segmentation according to HAP, if the ISO_Interval is less than
+		 * the SDU_Interval, we assume BN=1 and calculate the Max_PDU as:
+		 *     Max_PDU = celi(F / BN) x (5 / Max_SDU)
+		 *
+		 * This is in accordance with the "Core enhancement for ISOAL CR".
+		 *
+		 * This ensures that the drift can be contained in the difference between
+		 * SDU_Interval and link bandwidth. For BN=1, ceil(F) == ceil(F/BN).
 		 */
-		max_pdu_bn1 = ceil_f * 5 + ceil_f_x_max_sdu;
-		*bn = DIV_ROUND_UP(max_pdu_bn1, LL_CIS_OCTETS_TX_MAX);
-		*max_pdu = DIV_ROUND_UP(max_pdu_bn1, *bn) + 2;
+		} else if (iso_interval < sdu_interval) {
+			*bn = 1;
+			*max_pdu = ceil_f * (PDU_ISO_SEG_HDR_SIZE + PDU_ISO_SEG_TIMEOFFSET_SIZE +
+					     max_sdu);
+#endif
+		} else {
+			uint32_t ceil_f_x_max_sdu;
+			uint16_t max_pdu_bn1;
+
+			ceil_f_x_max_sdu = DIV_ROUND_UP(max_sdu * ((USEC_PER_SEC + max_drift_us) *
+								   (uint64_t)iso_interval),
+							USEC_PER_SEC * (uint64_t)sdu_interval);
+
+			/* Strategy: Keep lowest possible BN.
+			 * TODO: Implement other strategies, possibly as policies.
+			 */
+			max_pdu_bn1 = ceil_f * (PDU_ISO_SEG_HDR_SIZE +
+						PDU_ISO_SEG_TIMEOFFSET_SIZE) + ceil_f_x_max_sdu;
+			*bn = DIV_ROUND_UP(max_pdu_bn1, LL_CIS_OCTETS_TX_MAX);
+			*max_pdu = DIV_ROUND_UP(max_pdu_bn1, *bn) + PDU_ISO_SEG_HDR_SIZE;
+		}
 	} else {
 		/* For unframed, ISO_Interval must be N x SDU_Interval */
 		LL_ASSERT(iso_interval % sdu_interval == 0);
