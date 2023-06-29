@@ -9,10 +9,11 @@
 /* Include esp-idf headers first to avoid redefining BIT() macro */
 #include <soc/rtc_cntl_reg.h>
 #include <soc/timer_group_reg.h>
-#include <driver/periph_ctrl.h>
+#include <periph_ctrl.h>
+#include <driver/timer_types_legacy.h>
 #include <soc/periph_defs.h>
-#include <hal/timer_types.h>
 #include <hal/timer_hal.h>
+#include <hal/timer_ll.h>
 #include <string.h>
 #include <zephyr/drivers/counter.h>
 #include <zephyr/spinlock.h>
@@ -80,22 +81,18 @@ static int counter_esp32_init(const struct device *dev)
 
 	timer_hal_init(&data->hal_ctx, cfg->group, cfg->index);
 	data->alarm_cfg.callback = NULL;
-	timer_hal_intr_disable(&data->hal_ctx);
-	timer_hal_clear_intr_status(&data->hal_ctx);
-	timer_hal_set_auto_reload(&data->hal_ctx, cfg->config.auto_reload);
-	timer_hal_set_divider(&data->hal_ctx, cfg->config.divider);
-	timer_hal_set_counter_increase(&data->hal_ctx, cfg->config.counter_dir);
-	timer_hal_set_alarm_enable(&data->hal_ctx, cfg->config.alarm_en);
-	if (cfg->config.intr_type == TIMER_INTR_LEVEL) {
-		timer_hal_set_level_int_enable(&data->hal_ctx, true);
-	}
-	timer_hal_set_counter_value(&data->hal_ctx, 0);
-	timer_hal_set_counter_enable(&data->hal_ctx, cfg->config.counter_en);
-	esp_intr_alloc(cfg->irq_source,
-			0,
-			(ISR_HANDLER)counter_esp32_isr,
-			(void *)dev,
-			NULL);
+	timer_ll_enable_intr(data->hal_ctx.dev, TIMER_LL_EVENT_ALARM(data->hal_ctx.timer_id),
+			     false);
+	timer_ll_clear_intr_status(data->hal_ctx.dev, TIMER_LL_EVENT_ALARM(data->hal_ctx.timer_id));
+	timer_ll_enable_auto_reload(data->hal_ctx.dev, data->hal_ctx.timer_id,
+				    cfg->config.auto_reload);
+	timer_ll_set_clock_prescale(data->hal_ctx.dev, data->hal_ctx.timer_id, cfg->config.divider);
+	timer_ll_set_count_direction(data->hal_ctx.dev, data->hal_ctx.timer_id,
+				     cfg->config.counter_dir);
+	timer_ll_enable_alarm(data->hal_ctx.dev, data->hal_ctx.timer_id, cfg->config.alarm_en);
+	timer_ll_set_reload_value(data->hal_ctx.dev, data->hal_ctx.timer_id, 0);
+	timer_ll_enable_counter(data->hal_ctx.dev, data->hal_ctx.timer_id, cfg->config.counter_en);
+	esp_intr_alloc(cfg->irq_source, 0, (ISR_HANDLER)counter_esp32_isr, (void *)dev, NULL);
 	k_spin_unlock(&lock, key);
 
 	return 0;
@@ -106,7 +103,7 @@ static int counter_esp32_start(const struct device *dev)
 	struct counter_esp32_data *data = dev->data;
 	k_spinlock_key_t key = k_spin_lock(&lock);
 
-	timer_hal_set_counter_enable(&data->hal_ctx, TIMER_START);
+	timer_ll_enable_counter(data->hal_ctx.dev, data->hal_ctx.timer_id, TIMER_START);
 	k_spin_unlock(&lock, key);
 
 	return 0;
@@ -117,7 +114,7 @@ static int counter_esp32_stop(const struct device *dev)
 	struct counter_esp32_data *data = dev->data;
 	k_spinlock_key_t key = k_spin_lock(&lock);
 
-	timer_hal_set_counter_enable(&data->hal_ctx, TIMER_PAUSE);
+	timer_ll_enable_counter(data->hal_ctx.dev, data->hal_ctx.timer_id, TIMER_PAUSE);
 	k_spin_unlock(&lock, key);
 
 	return 0;
@@ -128,7 +125,7 @@ static int counter_esp32_get_value(const struct device *dev, uint32_t *ticks)
 	struct counter_esp32_data *data = dev->data;
 	k_spinlock_key_t key = k_spin_lock(&lock);
 
-	timer_hal_get_counter_value(&data->hal_ctx, (uint64_t *)ticks);
+	*ticks = timer_ll_get_counter_value(data->hal_ctx.dev, data->hal_ctx.timer_id);
 	k_spin_unlock(&lock, key);
 
 	return 0;
@@ -146,13 +143,15 @@ static int counter_esp32_set_alarm(const struct device *dev, uint8_t chan_id,
 	k_spinlock_key_t key = k_spin_lock(&lock);
 
 	if ((alarm_cfg->flags & COUNTER_ALARM_CFG_ABSOLUTE) == 0) {
-		timer_hal_set_alarm_value(&data->hal_ctx, (now + alarm_cfg->ticks));
+		timer_ll_set_alarm_value(data->hal_ctx.dev, data->hal_ctx.timer_id,
+					 (now + alarm_cfg->ticks));
 	} else {
-		timer_hal_set_alarm_value(&data->hal_ctx, alarm_cfg->ticks);
+		timer_ll_set_alarm_value(data->hal_ctx.dev, data->hal_ctx.timer_id,
+					 alarm_cfg->ticks);
 	}
 
-	timer_hal_intr_enable(&data->hal_ctx);
-	timer_hal_set_alarm_enable(&data->hal_ctx, TIMER_ALARM_EN);
+	timer_ll_enable_intr(data->hal_ctx.dev, TIMER_LL_EVENT_ALARM(data->hal_ctx.timer_id), true);
+	timer_ll_enable_alarm(data->hal_ctx.dev, data->hal_ctx.timer_id, TIMER_ALARM_EN);
 	data->alarm_cfg.callback = alarm_cfg->callback;
 	data->alarm_cfg.user_data = alarm_cfg->user_data;
 	k_spin_unlock(&lock, key);
@@ -167,8 +166,9 @@ static int counter_esp32_cancel_alarm(const struct device *dev, uint8_t chan_id)
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
 
-	timer_hal_intr_disable(&data->hal_ctx);
-	timer_hal_set_alarm_enable(&data->hal_ctx, TIMER_ALARM_DIS);
+	timer_ll_enable_intr(data->hal_ctx.dev, TIMER_LL_EVENT_ALARM(data->hal_ctx.timer_id),
+			     false);
+	timer_ll_enable_alarm(data->hal_ctx.dev, data->hal_ctx.timer_id, TIMER_ALARM_DIS);
 	k_spin_unlock(&lock, key);
 
 	return 0;
@@ -190,9 +190,7 @@ static uint32_t counter_esp32_get_pending_int(const struct device *dev)
 {
 	struct counter_esp32_data *data = dev->data;
 
-	timer_hal_get_intr_status_reg(&data->hal_ctx);
-
-	return 0;
+	return timer_ll_get_intr_status(data->hal_ctx.dev);
 }
 
 static uint32_t counter_esp32_get_top_value(const struct device *dev)
@@ -226,7 +224,7 @@ static void counter_esp32_isr(void *arg)
 		data->alarm_cfg.callback(dev, 0, now, data->alarm_cfg.user_data);
 	}
 
-	timer_hal_clear_intr_status(&data->hal_ctx);
+	timer_ll_clear_intr_status(data->hal_ctx.dev, TIMER_LL_EVENT_ALARM(data->hal_ctx.timer_id));
 }
 
 #define ESP32_COUNTER_GET_CLK_DIV(idx)						 \
