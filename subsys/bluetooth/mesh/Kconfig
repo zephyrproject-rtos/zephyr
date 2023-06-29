@@ -1666,4 +1666,12 @@ config BT_MESH_DEBUG_USE_ID_ADDR
 
 endif # BT_MESH_LOG_LEVEL_DBG
 
+config BT_MESH_STATISTIC
+	bool "The frame handling statistics [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  The module gathers statistics of received, relayed, and transmitted
+	  frames. This helps to estimate the quality of the communication and
+	  the sufficiency of configured advertiser instances.
+
 endif # BT_MESH
