@@ -6,7 +6,7 @@
 
 #include <zephyr/ztest.h>
 #include <zephyr/arch/cpu.h>
-#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
+#include <cmsis_core.h>
 #include <zephyr/kernel_structs.h>
 #include <zephyr/sys/barrier.h>
 #include <offsets_short_arch.h>

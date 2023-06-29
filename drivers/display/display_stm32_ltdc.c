@@ -55,7 +55,7 @@ LOG_MODULE_REGISTER(display_stm32_ltdc, CONFIG_DISPLAY_LOG_LEVEL);
 #endif
 
 #if defined(CONFIG_HAS_CMSIS_CORE_M)
-#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
+#include <cmsis_core.h>
 
 #if __DCACHE_PRESENT == 1
 #define CACHE_INVALIDATE(addr, size)	SCB_InvalidateDCache_by_Addr((addr), (size))

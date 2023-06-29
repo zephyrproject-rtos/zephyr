@@ -11,9 +11,9 @@
 #endif
 
 #if defined(CONFIG_CPU_CORTEX_M)
-#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
+#include <cmsis_core.h>
 #else
-#include <zephyr/arch/arm/aarch32/cortex_a_r/cmsis.h>
+#include <cmsis_core.h>
 #endif
 
 #ifdef __cplusplus

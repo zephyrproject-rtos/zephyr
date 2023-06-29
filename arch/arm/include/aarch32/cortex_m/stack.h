@@ -20,7 +20,7 @@
 
 #else
 
-#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
+#include <cmsis_core.h>
 
 #ifdef __cplusplus
 extern "C" {
