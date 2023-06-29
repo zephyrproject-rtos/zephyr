@@ -6,7 +6,12 @@
 
 /**
  * @file
- * @brief General WiFi Definitions
+ * @brief IEEE 802.11 protocol and general Wi-Fi definitions.
+ */
+
+/**
+ * @addtogroup wifi_mgmt
+ * @{
  */
 
 #ifndef ZEPHYR_INCLUDE_NET_WIFI_H_
@@ -19,14 +24,23 @@
 #define WIFI_LISTEN_INTERVAL_MIN 0
 #define WIFI_LISTEN_INTERVAL_MAX 65535
 
+/** IEEE 802.11 security types. */
 enum wifi_security_type {
+	/** No security. */
 	WIFI_SECURITY_TYPE_NONE = 0,
+	/** WPA2-PSK security. */
 	WIFI_SECURITY_TYPE_PSK,
+	/** WPA2-PSK-SHA256 security. */
 	WIFI_SECURITY_TYPE_PSK_SHA256,
+	/** WPA3-SAE security. */
 	WIFI_SECURITY_TYPE_SAE,
+	/** GB 15629.11-2003 WAPI security. */
 	WIFI_SECURITY_TYPE_WAPI,
+	/** EAP security - Enterprise. */
 	WIFI_SECURITY_TYPE_EAP,
+	/** WEP security. */
 	WIFI_SECURITY_TYPE_WEP,
+	/** WPA-PSK security. */
 	WIFI_SECURITY_TYPE_WPA_PSK,
 
 	__WIFI_SECURITY_TYPE_AFTER_LAST,
@@ -34,9 +48,7 @@ enum wifi_security_type {
 	WIFI_SECURITY_TYPE_UNKNOWN
 };
 
-/**
- * wifi_security_txt - Get the security type as a text string
- */
+/** Helper function to get user-friendly security type name. */
 static inline const char *wifi_security_txt(enum wifi_security_type security)
 {
 	switch (security) {
@@ -62,10 +74,13 @@ static inline const char *wifi_security_txt(enum wifi_security_type security)
 	}
 }
 
-/* Management frame protection (IEEE 802.11w) options */
+/** IEEE 802.11w - Management frame protection. */
 enum wifi_mfp_options {
+	/** MFP disabled. */
 	WIFI_MFP_DISABLE = 0,
+	/** MFP optional. */
 	WIFI_MFP_OPTIONAL,
+	/** MFP required. */
 	WIFI_MFP_REQUIRED,
 
 	__WIFI_MFP_AFTER_LAST,
@@ -73,9 +88,7 @@ enum wifi_mfp_options {
 	WIFI_MFP_UNKNOWN
 };
 
-/**
- * wifi_mfp_txt - Get the MFP as a text string
- */
+/** Helper function to get user-friendly MFP name.*/
 static inline const char *wifi_mfp_txt(enum wifi_mfp_options mfp)
 {
 	switch (mfp) {
@@ -91,9 +104,13 @@ static inline const char *wifi_mfp_txt(enum wifi_mfp_options mfp)
 	}
 }
 
+/** IEEE 802.11 operational frequency bands (not exhaustive). */
 enum wifi_frequency_bands {
+	/** 2.4GHz band. */
 	WIFI_FREQ_BAND_2_4_GHZ = 0,
+	/** 5GHz band. */
 	WIFI_FREQ_BAND_5_GHZ,
+	/** 6GHz band (Wi-Fi 6E, also extends to 7GHz). */
 	WIFI_FREQ_BAND_6_GHZ,
 
 	__WIFI_FREQ_BAND_AFTER_LAST,
@@ -101,9 +118,7 @@ enum wifi_frequency_bands {
 	WIFI_FREQ_BAND_UNKNOWN
 };
 
-/**
- * wifi_mode_txt - Get the interface mode type as a text string
- */
+/** Helper function to get user-friendly frequency band name. */
 static inline const char *wifi_band_txt(enum wifi_frequency_bands band)
 {
 	switch (band) {
@@ -126,17 +141,30 @@ static inline const char *wifi_band_txt(enum wifi_frequency_bands band)
 #define WIFI_CHANNEL_MAX 233
 #define WIFI_CHANNEL_ANY 255
 
-/* Based on https://w1.fi/wpa_supplicant/devel/defs_8h.html#a4aeb27c1e4abd046df3064ea9756f0bc */
+/** Wi-Fi interface states.
+ *
+ * Based on https://w1.fi/wpa_supplicant/devel/defs_8h.html#a4aeb27c1e4abd046df3064ea9756f0bc
+ */
 enum wifi_iface_state {
+	/** Interface is disconnected. */
 	WIFI_STATE_DISCONNECTED = 0,
+	/** Interface is disabled (administratively). */
 	WIFI_STATE_INTERFACE_DISABLED,
+	/** No enabled networks in the configuration. */
 	WIFI_STATE_INACTIVE,
+	/** Interface is scanning for networks. */
 	WIFI_STATE_SCANNING,
+	/** Authentication with a network is in progress. */
 	WIFI_STATE_AUTHENTICATING,
+	/** Association with a network is in progress. */
 	WIFI_STATE_ASSOCIATING,
+	/** Association with a network completed. */
 	WIFI_STATE_ASSOCIATED,
+	/** 4-way handshake with a network is in progress. */
 	WIFI_STATE_4WAY_HANDSHAKE,
+	/** Group Key exchange with a network is in progress. */
 	WIFI_STATE_GROUP_HANDSHAKE,
+	/** All authentication completed, ready to pass data. */
 	WIFI_STATE_COMPLETED,
 
 	__WIFI_STATE_AFTER_LAST,
@@ -144,9 +172,7 @@ enum wifi_iface_state {
 	WIFI_STATE_UNKNOWN
 };
 
-/**
- * wifi_state_txt - Get the connection state name as a text string
- */
+/** Helper function to get user-friendly interface state name. */
 static inline const char *wifi_state_txt(enum wifi_iface_state state)
 {
 	switch (state) {
@@ -176,13 +202,22 @@ static inline const char *wifi_state_txt(enum wifi_iface_state state)
 	}
 }
 
-/* Based on https://w1.fi/wpa_supplicant/devel/structwpa__ssid.html#a625821e2acfc9014f3b3de6e6593ffb7 */
+/** Wi-Fi interface modes.
+ *
+ * Based on https://w1.fi/wpa_supplicant/devel/defs_8h.html#a4aeb27c1e4abd046df3064ea9756f0bc
+ */
 enum wifi_iface_mode {
+	/** Infrastructure station mode. */
 	WIFI_MODE_INFRA = 0,
+	/** IBSS (ad-hoc) station mode. */
 	WIFI_MODE_IBSS = 1,
+	/** AP mode. */
 	WIFI_MODE_AP = 2,
+	/** P2P group owner mode. */
 	WIFI_MODE_P2P_GO = 3,
+	/** P2P group formation mode. */
 	WIFI_MODE_P2P_GROUP_FORMATION = 4,
+	/** 802.11s Mesh mode. */
 	WIFI_MODE_MESH = 5,
 
 	__WIFI_MODE_AFTER_LAST,
@@ -190,9 +225,7 @@ enum wifi_iface_mode {
 	WIFI_MODE_UNKNOWN
 };
 
-/**
- * wifi_mode_txt - Get the interface mode type as a text string
- */
+/** Helper function to get user-friendly interface mode name. */
 static inline const char *wifi_mode_txt(enum wifi_iface_mode mode)
 {
 	switch (mode) {
@@ -214,16 +247,28 @@ static inline const char *wifi_mode_txt(enum wifi_iface_mode mode)
 	}
 }
 
-/* As per https://en.wikipedia.org/wiki/Wi-Fi#Versions_and_generations */
+/** Wi-Fi link operating modes
+ *
+ * As per https://en.wikipedia.org/wiki/Wi-Fi#Versions_and_generations.
+ */
 enum wifi_link_mode {
+	/** 802.11 (legacy). */
 	WIFI_0 = 0,
+	/** 802.11b. */
 	WIFI_1,
+	/** 802.11a. */
 	WIFI_2,
+	/** 802.11g. */
 	WIFI_3,
+	/** 802.11n. */
 	WIFI_4,
+	/** 802.11ac. */
 	WIFI_5,
+	/** 802.11ax. */
 	WIFI_6,
+	/** 802.11ax 6GHz. */
 	WIFI_6E,
+	/** 802.11be. */
 	WIFI_7,
 
 	__WIFI_LINK_MODE_AFTER_LAST,
@@ -231,9 +276,7 @@ enum wifi_link_mode {
 	WIFI_LINK_MODE_UNKNOWN
 };
 
-/**
- * wifi_link_mode_txt - Get the link mode type as a text string
- */
+/** Helper function to get user-friendly link mode name. */
 static inline const char *wifi_link_mode_txt(enum wifi_link_mode link_mode)
 {
 	switch (link_mode) {
@@ -261,13 +304,19 @@ static inline const char *wifi_link_mode_txt(enum wifi_link_mode link_mode)
 	}
 }
 
+/** Wi-Fi scanning types. */
 enum wifi_scan_type {
+	/** Active scanning (default). */
 	WIFI_SCAN_TYPE_ACTIVE = 0,
+	/** Passive scanning. */
 	WIFI_SCAN_TYPE_PASSIVE,
 };
 
+/** Wi-Fi power save states. */
 enum wifi_ps {
+	/** Power save disabled. */
 	WIFI_PS_DISABLED = 0,
+	/** Power save enabled. */
 	WIFI_PS_ENABLED,
 };
 
@@ -276,11 +325,14 @@ static const char * const wifi_ps2str[] = {
 	[WIFI_PS_ENABLED] = "Power save enabled",
 };
 
+/** Wi-Fi power save modes. */
 enum wifi_ps_mode {
+	/** Legacy power save mode. */
 	WIFI_PS_MODE_LEGACY = 0,
 	/* This has to be configured before connecting to the AP,
 	 * as support for ADDTS action frames is not available.
 	 */
+	/** WMM power save mode. */
 	WIFI_PS_MODE_WMM,
 };
 
@@ -289,8 +341,11 @@ static const char * const wifi_ps_mode2str[] = {
 	[WIFI_PS_MODE_WMM] = "WMM power save",
 };
 
+/** Wi-Fi Target Wake Time (TWT) operations. */
 enum wifi_twt_operation {
+	/* TWT setup operation */
 	WIFI_TWT_SETUP = 0,
+	/* TWT teardown operation */
 	WIFI_TWT_TEARDOWN,
 };
 
@@ -299,9 +354,13 @@ static const char * const wifi_twt_operation2str[] = {
 	[WIFI_TWT_TEARDOWN] = "TWT teardown",
 };
 
+/** Wi-Fi Target Wake Time (TWT) negotiation types. */
 enum wifi_twt_negotiation_type {
+	/* TWT individual negotiation */
 	WIFI_TWT_INDIVIDUAL = 0,
+	/* TWT broadcast negotiation */
 	WIFI_TWT_BROADCAST,
+	/* TWT wake TBTT negotiation */
 	WIFI_TWT_WAKE_TBTT
 };
 
@@ -311,25 +370,32 @@ static const char * const wifi_twt_negotiation_type2str[] = {
 	[WIFI_TWT_WAKE_TBTT] = "TWT wake TBTT negotiation",
 };
 
+/** Wi-Fi Target Wake Time (TWT) setup commands. */
 enum wifi_twt_setup_cmd {
-	/* TWT Requests */
+	/** TWT Requests */
+	/* TWT setup request */
 	WIFI_TWT_SETUP_CMD_REQUEST = 0,
+	/* TWT setup suggest (parameters can be changed by AP) */
 	WIFI_TWT_SETUP_CMD_SUGGEST,
+	/* TWT setup demand (parameters can not be changed by AP) */
 	WIFI_TWT_SETUP_CMD_DEMAND,
-	/* TWT Responses */
+	/** TWT Responses */
+	/* TWT setup grouping (grouping of TWT flows) */
 	WIFI_TWT_SETUP_CMD_GROUPING,
+	/* TWT setup accept (parameters accepted by AP) */
 	WIFI_TWT_SETUP_CMD_ACCEPT,
+	/* TWT setup alternate (alternate parameters suggested by AP) */
 	WIFI_TWT_SETUP_CMD_ALTERNATE,
+	/* TWT setup dictate (parameters dictated by AP) */
 	WIFI_TWT_SETUP_CMD_DICTATE,
+	/* TWT setup reject (parameters rejected by AP) */
 	WIFI_TWT_SETUP_CMD_REJECT,
 };
 
 static const char * const wifi_twt_setup_cmd2str[] = {
-	/* TWT Requests */
 	[WIFI_TWT_SETUP_CMD_REQUEST] = "TWT request",
 	[WIFI_TWT_SETUP_CMD_SUGGEST] = "TWT suggest",
 	[WIFI_TWT_SETUP_CMD_DEMAND] = "TWT demand",
-	/* TWT Responses */
 	[WIFI_TWT_SETUP_CMD_GROUPING] = "TWT grouping",
 	[WIFI_TWT_SETUP_CMD_ACCEPT] = "TWT accept",
 	[WIFI_TWT_SETUP_CMD_ALTERNATE] = "TWT alternate",
@@ -337,23 +403,37 @@ static const char * const wifi_twt_setup_cmd2str[] = {
 	[WIFI_TWT_SETUP_CMD_REJECT] = "TWT reject",
 };
 
+/** Wi-Fi Target Wake Time (TWT) negotiation status. */
 enum wifi_twt_setup_resp_status {
-	/* TWT Setup response status */
+	/** TWT response received for TWT request */
 	WIFI_TWT_RESP_RECEIVED = 0,
+	/** TWT response not received for TWT request */
 	WIFI_TWT_RESP_NOT_RECEIVED,
 };
 
+/** Target Wake Time (TWT) error codes. */
 enum wifi_twt_fail_reason {
+	/** Unspecified error */
 	WIFI_TWT_FAIL_UNSPECIFIED,
+	/** Command execution failed */
 	WIFI_TWT_FAIL_CMD_EXEC_FAIL,
+	/** Operation not supported */
 	WIFI_TWT_FAIL_OPERATION_NOT_SUPPORTED,
+	/** Unable to get interface status */
 	WIFI_TWT_FAIL_UNABLE_TO_GET_IFACE_STATUS,
+	/** Device not connected to AP */
 	WIFI_TWT_FAIL_DEVICE_NOT_CONNECTED,
+	/** Peer not HE (802.11ax/Wi-Fi 6) capable */
 	WIFI_TWT_FAIL_PEER_NOT_HE_CAPAB,
+	/** Peer not TWT capable */
 	WIFI_TWT_FAIL_PEER_NOT_TWT_CAPAB,
+	/** A TWT flow is already in progress */
 	WIFI_TWT_FAIL_OPERATION_IN_PROGRESS,
+	/** Invalid negotiated flow id */
 	WIFI_TWT_FAIL_INVALID_FLOW_ID,
+	/** IP address not assigned or configured */
 	WIFI_TWT_FAIL_IP_NOT_ASSIGNED,
+	/** Flow already exists */
 	WIFI_TWT_FAIL_FLOW_ALREADY_EXISTS,
 };
 
@@ -378,6 +458,7 @@ static const char * const twt_err_code_tbl[] = {
 		"Flow already exists",
 };
 
+/** Helper function to get user-friendly TWT error code name. */
 static inline const char *get_twt_err_code_str(int16_t err_no)
 {
 	if ((err_no) < (int16_t)ARRAY_SIZE(twt_err_code_tbl)) {
@@ -387,16 +468,25 @@ static inline const char *get_twt_err_code_str(int16_t err_no)
 	return "<unknown>";
 }
 
+/** Wi-Fi power save parameters. */
 enum ps_param_type {
+	/** Power save state. */
 	WIFI_PS_PARAM_STATE,
+	/** Power save listen interval. */
 	WIFI_PS_PARAM_LISTEN_INTERVAL,
+	/** Power save wakeup mode. */
 	WIFI_PS_PARAM_WAKEUP_MODE,
+	/** Power save mode. */
 	WIFI_PS_PARAM_MODE,
+	/** Power save timeout. */
 	WIFI_PS_PARAM_TIMEOUT,
 };
 
+/** Wi-Fi power save modes. */
 enum wifi_ps_wakeup_mode {
+	/** DTIM based wakeup. */
 	WIFI_PS_WAKEUP_MODE_DTIM = 0,
+	/** Listen interval based wakeup. */
 	WIFI_PS_WAKEUP_MODE_LISTEN_INTERVAL,
 };
 
@@ -405,31 +495,40 @@ static const char * const wifi_ps_wakeup_mode2str[] = {
 	[WIFI_PS_WAKEUP_MODE_LISTEN_INTERVAL] = "PS wakeup mode listen interval",
 };
 
+/** Wi-Fi power save error codes. */
 enum wifi_config_ps_param_fail_reason {
+	/** Unspecified error */
 	WIFI_PS_PARAM_FAIL_UNSPECIFIED,
+	/** Command execution failed */
 	WIFI_PS_PARAM_FAIL_CMD_EXEC_FAIL,
+	/** Parameter not supported */
 	WIFI_PS_PARAM_FAIL_OPERATION_NOT_SUPPORTED,
+	/** Unable to get interface status */
 	WIFI_PS_PARAM_FAIL_UNABLE_TO_GET_IFACE_STATUS,
+	/** Device not connected to AP */
 	WIFI_PS_PARAM_FAIL_DEVICE_NOT_CONNECTED,
+	/** Device already connected to AP */
 	WIFI_PS_PARAM_FAIL_DEVICE_CONNECTED,
+	/** Listen interval out of range */
 	WIFI_PS_PARAM_LISTEN_INTERVAL_RANGE_INVALID,
 };
 
 static const char * const ps_param_config_err_code_tbl[] = {
-	[WIFI_PS_PARAM_FAIL_UNSPECIFIED] = "Unspecfied",
+	[WIFI_PS_PARAM_FAIL_UNSPECIFIED] = "Unspecified",
 	[WIFI_PS_PARAM_FAIL_CMD_EXEC_FAIL] = "Command Execution failed",
 	[WIFI_PS_PARAM_FAIL_OPERATION_NOT_SUPPORTED] =
 		"Operation not supported",
 	[WIFI_PS_PARAM_FAIL_UNABLE_TO_GET_IFACE_STATUS] =
 		"Unable to get iface status",
 	[WIFI_PS_PARAM_FAIL_DEVICE_NOT_CONNECTED] =
-		"Can not set while device not connected",
+		"Cannot set parameters while device not connected",
 	[WIFI_PS_PARAM_FAIL_DEVICE_CONNECTED] =
-		"Can not set while device already connected",
+		"Cannot set parameters while device connected",
 	[WIFI_PS_PARAM_LISTEN_INTERVAL_RANGE_INVALID] =
-		"Can not set due to invalid range",
+		"Parameter out of range",
 };
 
+/** Helper function to get user-friendly power save error code name. */
 static inline const char *get_ps_config_err_code_str(int16_t err_no)
 {
 	if ((err_no) < (int16_t)ARRAY_SIZE(ps_param_config_err_code_tbl)) {
@@ -438,4 +537,8 @@ static inline const char *get_ps_config_err_code_str(int16_t err_no)
 
 	return "<unknown>";
 }
+
+/**
+ * @}
+ */
 #endif /* ZEPHYR_INCLUDE_NET_WIFI_H_ */
