@@ -1,0 +1,14 @@
+# Kconfig Andes mbox configuration options
+#
+# Copyright (c) 2022 Andes Technology Corporation.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config MBOX_ANDES_PLIC_SW
+	bool "MBOX Andes PLIC-SW driver"
+	default y
+	depends on DT_HAS_ANDESTECH_PLIC_SW_ENABLED
+	help
+	  Enable driver for the Andes IPM mailbox controller.
+	  Says n if not sure.
