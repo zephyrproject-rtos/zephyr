@@ -19,8 +19,6 @@
 #include <zephyr/init.h>
 #include <soc.h>
 
-#include <cmsis_core.h>
-
 /**
  * @brief Setup various clock on SoC at boot time.
  *

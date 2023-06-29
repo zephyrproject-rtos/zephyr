@@ -16,7 +16,6 @@
 
 #include <zephyr/types.h>
 #include <zephyr/sys/sys_io.h>
-#include <cmsis_core.h>
 #include <zephyr/sys/barrier.h>
 
 #ifdef __cplusplus

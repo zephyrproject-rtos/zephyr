@@ -5,7 +5,6 @@
  */
 
 #include <zephyr/kernel.h>
-#include <cmsis_core.h>
 #include <zephyr/drivers/syscon.h>
 #include <zephyr/sys/barrier.h>
 
