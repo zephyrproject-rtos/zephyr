@@ -80,7 +80,7 @@ Our documentation processing has been tested to run with:
 * Graphviz 2.43
 * Latexmk version 4.56
 * All Python dependencies listed in the repository file
-  ``scripts/requirements-doc.txt``
+  ``doc/requirements.txt``
 
 In order to install the documentation tools, first install Zephyr as
 described in :ref:`getting_started`. Then install additional tools
