@@ -2,7 +2,7 @@ sample:
   name: MBOX IPC sample
 tests:
   sample.drivers.mbox:
-    platform_allow: nrf5340dk_nrf5340_cpuapp
+    platform_allow: nrf5340dk_nrf5340_cpuapp adp_xc7k_ae350
     integration_platforms:
       - nrf5340dk_nrf5340_cpuapp
     tags: mbox
