@@ -10,11 +10,7 @@
 #error Please include <zephyr/sys/barrier.h>
 #endif
 
-#if defined(CONFIG_CPU_CORTEX_M)
 #include <cmsis_core.h>
-#else
-#include <cmsis_core.h>
-#endif
 
 #ifdef __cplusplus
 extern "C" {
