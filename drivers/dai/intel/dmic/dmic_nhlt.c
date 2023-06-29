@@ -22,10 +22,6 @@ extern struct dai_dmic_global_shared dai_dmic_global;
 
 /* Base addresses (in PDM scope) of 2ch PDM controllers and coefficient RAM. */
 static const uint32_t base[4] = {PDM0, PDM1, PDM2, PDM3};
-static const uint32_t coef_base_a[4] = {PDM0_COEFFICIENT_A, PDM1_COEFFICIENT_A,
-					PDM2_COEFFICIENT_A, PDM3_COEFFICIENT_A};
-static const uint32_t coef_base_b[4] = {PDM0_COEFFICIENT_B, PDM1_COEFFICIENT_B,
-					PDM2_COEFFICIENT_B, PDM3_COEFFICIENT_B};
 
 static inline void dai_dmic_write(const struct dai_intel_dmic *dmic,
 				  uint32_t reg, uint32_t val)
@@ -36,6 +32,98 @@ static inline void dai_dmic_write(const struct dai_intel_dmic *dmic,
 static inline uint32_t dai_dmic_read(const struct dai_intel_dmic *dmic, uint32_t reg)
 {
 	return sys_read32(dmic->reg_base + reg);
+}
+
+/*
+ * @brief Move pointer to next coefficient data
+ *
+ * @return Returns pointer right after coefficient data
+ */
+static const uint32_t *dai_dmic_skip_coeff(const uint32_t *coeff, const int length,
+					   const bool packed)
+{
+	if (!packed) {
+		coeff += length;
+	} else {
+		coeff += ROUND_UP(3 * length, sizeof(uint32_t)) / sizeof(uint32_t);
+	}
+
+	return coeff;
+}
+
+/*
+ * @brief Write the fir coefficients in the PDMs' RAM
+ */
+static void dai_dmic_write_coeff(const struct dai_intel_dmic *dmic, uint32_t base,
+				 const uint32_t *coeff, int length, const bool packed)
+{
+	const uint8_t *coeff_in_bytes;
+	uint32_t coeff_val;
+
+	if (!packed) {
+		while (length--) {
+			dai_dmic_write(dmic, base, *coeff++);
+			base += sizeof(uint32_t);
+		}
+	} else {
+		coeff_in_bytes = (const uint8_t *)coeff;
+
+		while (length--) {
+			coeff_val = coeff_in_bytes[0] +
+				(coeff_in_bytes[1] << 8) +
+				(coeff_in_bytes[2] << 16);
+
+			dai_dmic_write(dmic, base, coeff_val);
+			base += sizeof(uint32_t);
+
+			coeff_in_bytes += 3;
+		}
+	}
+}
+
+/*
+ * @brief Configures the fir coefficients in the PDMs' RAM
+ *
+ * @return Returns pointer right after coefficients data
+ */
+static const uint32_t *dai_dmic_configure_coeff(const struct dai_intel_dmic *dmic,
+						const struct nhlt_pdm_ctrl_cfg * const pdm_cfg,
+						const uint32_t pdm_base,
+						const uint32_t *coeffs)
+{
+	int fir_length_a, fir_length_b;
+	bool packed = false;
+	const uint32_t *coeffs_b;
+
+	fir_length_a = FIELD_GET(FIR_CONFIG_FIR_LENGTH, pdm_cfg->fir_config[0].fir_config) + 1;
+	fir_length_b = FIELD_GET(FIR_CONFIG_FIR_LENGTH, pdm_cfg->fir_config[1].fir_config) + 1;
+
+	if (fir_length_a > 256 || fir_length_b > 256) {
+		LOG_ERR("invalid coeff length! %d %d", fir_length_a, fir_length_b);
+		return NULL;
+	}
+
+	if (*coeffs == FIR_COEFFS_PACKED_TO_24_BITS) {
+		packed = true;
+
+		/* First dword is not included into length_0 and length_1 - skip it. */
+		coeffs++;
+	}
+
+	coeffs_b = dai_dmic_skip_coeff(coeffs, fir_length_a, packed);
+
+	LOG_INF("fir_length_a = %d, fir_length_b = %d, packed = %d", fir_length_a, fir_length_b,
+		packed);
+
+	if (dmic->dai_config_params.dai_index == 0) {
+		dai_dmic_write_coeff(dmic, pdm_base + PDM_COEFFICIENT_A, coeffs, fir_length_a,
+				     packed);
+	} else {
+		dai_dmic_write_coeff(dmic, pdm_base + PDM_COEFFICIENT_B, coeffs_b, fir_length_b,
+				     packed);
+	}
+
+	return dai_dmic_skip_coeff(coeffs_b, fir_length_b, packed);
 }
 
 static int dai_nhlt_get_clock_div(const struct dai_intel_dmic *dmic, const int pdm)
@@ -538,10 +626,6 @@ static void configure_fir(struct dai_intel_dmic *dmic, const uint32_t base,
 int dai_dmic_set_config_nhlt(struct dai_intel_dmic *dmic, const void *bespoke_cfg)
 {
 	const struct nhlt_pdm_ctrl_cfg *pdm_cfg;
-	const struct nhlt_pdm_ctrl_fir_cfg *fir_cfg_a[DMIC_HW_CONTROLLERS_MAX];
-	const struct nhlt_pdm_ctrl_fir_cfg *fir_cfg_b[DMIC_HW_CONTROLLERS_MAX];
-	const uint32_t *fir_a[DMIC_HW_CONTROLLERS_MAX] = {NULL};
-	const uint32_t *fir_b[DMIC_HW_CONTROLLERS_MAX];
 	struct nhlt_dmic_channel_ctrl_mask *dmic_cfg;
 
 	uint32_t channel_ctrl_mask;
@@ -553,12 +637,13 @@ int dai_dmic_set_config_nhlt(struct dai_intel_dmic *dmic, const void *bespoke_cf
 	const uint8_t *p = bespoke_cfg;
 	int num_fifos;
 	int num_pdm;
-	int fir_length_a;
-	int fir_length_b;
 	int n;
-	int i;
-	int fir_decimation, fir_length;
 	int ret;
+
+	const uint32_t *fir_coeffs;
+
+	/* Array of pointers to pdm coefficient data. Used to reuse coefficient from another pdm. */
+	const uint32_t *pdm_coeff_ptr[DMIC_HW_CONTROLLERS_MAX] = { 0 };
 
 	if (dmic->dai_config_params.dai_index >= DMIC_HW_FIFOS_MAX) {
 		LOG_ERR("dmic_set_config_nhlt(): illegal DAI index %d",
@@ -633,6 +718,8 @@ int dai_dmic_set_config_nhlt(struct dai_intel_dmic *dmic, const void *bespoke_cf
 		return -EINVAL;
 	}
 
+	pdm_cfg = (const struct nhlt_pdm_ctrl_cfg *)p;
+
 	for (pdm_idx = 0; pdm_idx < CONFIG_DAI_DMIC_HW_CONTROLLERS; pdm_idx++) {
 		pdm_base = base[pdm_idx];
 
@@ -645,9 +732,6 @@ int dai_dmic_set_config_nhlt(struct dai_intel_dmic *dmic, const void *bespoke_cf
 		LOG_DBG("PDM%d", pdm_idx);
 
 		/* Get CIC configuration */
-		pdm_cfg = (const struct nhlt_pdm_ctrl_cfg *)p;
-		p += sizeof(struct nhlt_pdm_ctrl_cfg);
-
 		if (dai_dmic_global.active_fifos_mask == 0) {
 			print_pdm_ctrl(pdm_cfg);
 
@@ -674,53 +758,39 @@ int dai_dmic_set_config_nhlt(struct dai_intel_dmic *dmic, const void *bespoke_cf
 			      FIR_CHANNEL_REGS_SIZE * dmic->dai_config_params.dai_index,
 			      &pdm_cfg->fir_config[dmic->dai_config_params.dai_index]);
 
-		/* FIR A */
-		fir_cfg_a[pdm_idx] = &pdm_cfg->fir_config[0];
-		val = fir_cfg_a[pdm_idx]->fir_config;
-		fir_length = FIELD_GET(FIR_CONFIG_FIR_LENGTH, val);
-		fir_length_a = fir_length + 1; /* Need for parsing */
-		fir_decimation = FIELD_GET(FIR_CONFIG_FIR_DECIMATION, val);
 
-		/* FIR B */
-		fir_cfg_b[pdm_idx] = &pdm_cfg->fir_config[1];
-		val = fir_cfg_b[pdm_idx]->fir_config;
-		fir_length = FIELD_GET(FIR_CONFIG_FIR_LENGTH, val);
-		fir_length_b = fir_length + 1; /* Need for parsing */
-		fir_decimation = FIELD_GET(FIR_CONFIG_FIR_DECIMATION, val);
+		/* Configure fir coefficients */
 
-		/* Set up FIR coefficients RAM */
-		val = pdm_cfg->reuse_fir_from_pdm;
-		if (val == 0) {
-			fir_a[pdm_idx] = (uint32_t *)p;
-			p += sizeof(int32_t) * fir_length_a;
-			fir_b[pdm_idx] = (uint32_t *)p;
-			p += sizeof(int32_t) * fir_length_b;
+		/* Check if FIR coeffs should be reused */
+		if (pdm_cfg->reuse_fir_from_pdm == 0) {
+			/* get ptr, where FIR coeffs starts */
+			fir_coeffs = pdm_cfg->fir_coeffs;
+
+			/* and save it for future pdms reference */
+			pdm_coeff_ptr[pdm_idx] = fir_coeffs;
 		} else {
-			val--;
-			if (val >= pdm_idx) {
-				LOG_ERR("Illegal FIR reuse 0x%x", val);
+			if (pdm_cfg->reuse_fir_from_pdm > pdm_idx) {
+				LOG_ERR("invalid reuse fir index %u", pdm_cfg->reuse_fir_from_pdm);
 				return -EINVAL;
 			}
 
-			if (!fir_a[val]) {
-				LOG_ERR("PDM%d FIR reuse from %d fail", pdm_idx, val);
+			/* get FIR coeffs from another pdm */
+			fir_coeffs = pdm_coeff_ptr[pdm_cfg->reuse_fir_from_pdm - 1];
+
+			if (!fir_coeffs) {
+				LOG_ERR("unable to reuse fir from %u", pdm_cfg->reuse_fir_from_pdm);
 				return -EINVAL;
 			}
-
-			fir_a[pdm_idx] = fir_a[val];
-			fir_b[pdm_idx] = fir_b[val];
 		}
 
-		if (dmic->dai_config_params.dai_index == 0) {
-			LOG_INF("len = %d", fir_length_a);
-			for (i = 0; i < fir_length_a; i++)
-				dai_dmic_write(dmic,
-					       coef_base_a[pdm_idx] + (i << 2), fir_a[pdm_idx][i]);
+		fir_coeffs = dai_dmic_configure_coeff(dmic, pdm_cfg, pdm_base, fir_coeffs);
+
+		/* Update pdm_cfg ptr for next PDM Ctrl. */
+		if (pdm_cfg->reuse_fir_from_pdm) {
+			/* fir_coeffs array is empty if reusing previous coeffs */
+			pdm_cfg = (const struct nhlt_pdm_ctrl_cfg *)&pdm_cfg->fir_coeffs;
 		} else {
-			LOG_INF("len = %d", fir_length_b);
-			for (i = 0; i < fir_length_b; i++)
-				dai_dmic_write(dmic,
-					       coef_base_b[pdm_idx] + (i << 2), fir_b[pdm_idx][i]);
+			pdm_cfg = (const struct nhlt_pdm_ctrl_cfg *)fir_coeffs;
 		}
 	}
 
