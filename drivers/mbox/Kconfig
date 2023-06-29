@@ -13,6 +13,7 @@ if MBOX
 # overridden (by defining symbols in multiple locations)
 source "drivers/mbox/Kconfig.nrfx"
 source "drivers/mbox/Kconfig.nxp_s32"
+source "drivers/mbox/Kconfig.andes"
 
 config MBOX_INIT_PRIORITY
 	int "MBOX init priority"
