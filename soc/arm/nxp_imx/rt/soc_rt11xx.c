@@ -14,7 +14,6 @@
 #include <fsl_gpc.h>
 #include <fsl_pmu.h>
 #include <fsl_dcdc.h>
-#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
 #ifdef CONFIG_NXP_IMX_RT_BOOT_HEADER
 #include <fsl_flexspi_nor_boot.h>
 #endif
@@ -34,6 +33,8 @@
 #include "usb_phy.h"
 #include "usb.h"
 #endif
+
+#include <cmsis_core.h>
 
 #define DUAL_CORE_MU_ENABLED \
 	(CONFIG_SECOND_CORE_MCUX && CONFIG_IPM && CONFIG_IPM_IMX_REV2)

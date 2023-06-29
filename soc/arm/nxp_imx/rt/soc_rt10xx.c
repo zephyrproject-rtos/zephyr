@@ -11,7 +11,6 @@
 #include <zephyr/linker/sections.h>
 #include <zephyr/linker/linker-defs.h>
 #include <fsl_clock.h>
-#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
 #ifdef CONFIG_NXP_IMX_RT_BOOT_HEADER
 #include <fsl_flexspi_nor_boot.h>
 #endif
@@ -21,6 +20,8 @@
 #include "usb_phy.h"
 #include "usb.h"
 #endif
+
+#include <cmsis_core.h>
 
 #define CCM_NODE	DT_INST(0, nxp_imx_ccm)
 

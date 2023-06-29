@@ -9,7 +9,7 @@
 #include <zephyr/syscall_handler.h>
 #include <zephyr/toolchain.h>
 
-#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
+#include <cmsis_core.h>
 
 extern uint32_t _vector_table;
 extern uint32_t __vector_relay_handler;

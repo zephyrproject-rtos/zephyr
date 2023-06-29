@@ -17,7 +17,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/arch/cpu.h>
 #if defined(CONFIG_CPU_CORTEX_M)
-#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
+#include <cmsis_core.h>
 #elif defined(CONFIG_CPU_AARCH32_CORTEX_A) \
 	|| defined(CONFIG_CPU_AARCH32_CORTEX_R)
 #include <zephyr/drivers/interrupt_controller/gic.h>

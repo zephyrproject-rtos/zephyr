@@ -11,8 +11,8 @@
  * This header contains the interface to the ARM CMSIS Core headers.
  */
 
-#ifndef ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_CORTEX_A_R_CMSIS_H_
-#define ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_CORTEX_A_R_CMSIS_H_
+#ifndef ZEPHYR_MODULES_CMSIS_CMSIS_A_R_H_
+#define ZEPHYR_MODULES_CMSIS_CMSIS_A_R_H_
 
 #include <soc.h>
 
@@ -61,6 +61,6 @@ extern "C" {
 #error "Unknown device"
 #endif
 
-#include <zephyr/arch/arm/aarch32/cortex_a_r/cmsis_ext.h>
+#include "cmsis_core_a_r_ext.h"
 
-#endif /* ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_CORTEX_A_R_CMSIS_H_ */
+#endif /* ZEPHYR_MODULES_CMSIS_CMSIS_A_R_H_ */

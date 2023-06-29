@@ -12,9 +12,10 @@
 #include <zephyr/device.h>
 #include <zephyr/init.h>
 #include <stm32_ll_system.h>
-#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
 #include <zephyr/linker/linker-defs.h>
 #include <string.h>
+
+#include <cmsis_core.h>
 
 #if defined(CONFIG_SW_VECTOR_RELAY) || defined(CONFIG_SW_VECTOR_RELAY_CLIENT)
 extern void *_vector_table_pointer;

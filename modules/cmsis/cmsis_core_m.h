@@ -11,8 +11,8 @@
  * This header contains the interface to the ARM CMSIS Core headers.
  */
 
-#ifndef ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_CORTEX_M_CMSIS_H_
-#define ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_CORTEX_M_CMSIS_H_
+#ifndef ZEPHYR_MODULES_CMSIS_CMSIS_M_H_
+#define ZEPHYR_MODULES_CMSIS_CMSIS_M_H_
 
 #include <zephyr/arch/arm/aarch32/cortex_m/nvic.h>
 
@@ -105,4 +105,4 @@ typedef enum {
 #error "Unknown Cortex-M device"
 #endif
 
-#endif /* ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_CORTEX_M_CMSIS_H_ */
+#endif /* ZEPHYR_MODULES_CMSIS_CMSIS_M_H_ */

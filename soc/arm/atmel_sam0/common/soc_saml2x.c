@@ -10,11 +10,11 @@
  * @brief Atmel SAML MCU series initialization code
  */
 
-#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
 #include <zephyr/device.h>
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
 #include <soc.h>
+#include <cmsis_core.h>
 
 /* the SAML21 currently operates only in Performance Level 2... sleep
  * and low-power operation are not currently supported by the BSP

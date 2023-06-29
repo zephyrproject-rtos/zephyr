@@ -11,12 +11,13 @@
 
 #include <zephyr/device.h>
 #include <zephyr/init.h>
-#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
 #include <zephyr/linker/linker-defs.h>
 #include <string.h>
 #include <stm32_ll_bus.h>
 #include <stm32_ll_pwr.h>
 #include <stm32_ll_bus.h>
+
+#include <cmsis_core.h>
 
 /**
  * @brief Perform basic hardware initialization at boot.

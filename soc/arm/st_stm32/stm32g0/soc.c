@@ -12,9 +12,10 @@
 
 #include <zephyr/device.h>
 #include <zephyr/init.h>
-#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
 #include <zephyr/linker/linker-defs.h>
 #include <string.h>
+
+#include <cmsis_core.h>
 #if defined(SYSCFG_CFGR1_UCPD1_STROBE) || defined(SYSCFG_CFGR1_UCPD2_STROBE)
 #include <stm32_ll_system.h>
 #include <stm32_ll_bus.h>

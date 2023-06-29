@@ -8,8 +8,9 @@
 #include <zephyr/sys/barrier.h>
 #include <soc.h>
 #include <zephyr/dt-bindings/rdc/imx_rdc.h>
-#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
 #include "wdog_imx.h"
+
+#include <cmsis_core.h>
 
 /* Initialize Resource Domain Controller. */
 static void SOC_RdcInit(void)
