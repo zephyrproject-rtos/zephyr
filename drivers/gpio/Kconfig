@@ -214,4 +214,6 @@ source "drivers/gpio/Kconfig.bcm2711"
 
 source "drivers/gpio/Kconfig.ra"
 
+source "drivers/gpio/Kconfig.ambiq"
+
 endif # GPIO
