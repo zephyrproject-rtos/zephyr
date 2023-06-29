@@ -8,7 +8,6 @@
 #include <zephyr/device.h>
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
-#include <cmsis_core.h>
 #include <zephyr/arch/arm/aarch32/cortex_m/fpu.h>
 
 #include <tfm_ns_interface.h>
