@@ -902,6 +902,17 @@ config BT_CTLR_CONN_ISO_STREAMS_MAX_FT
 	help
 	  Maximum number of CIS flush timeout events.
 
+config BT_CTLR_CONN_ISO_AVOID_SEGMENTATION
+	bool "Avoid SDU fragmentation for framed mode"
+	depends on BT_CTLR_CENTRAL_ISO
+	help
+	  When creating a CIG, the Max_PDU size is calculated according to BT
+	  Core 5.4 Vol 6, Part G, Section 2.2. However, HAP specifies a need for
+	  avoiding segmentation by forcing the Max_PDU to the appropriate value.
+	  Since there is no way to control the Max_PDU using the non-test
+	  interface, the config provides a way to force the Max_PDU to Max_SDU +
+	  5 (header + offset).
+
 config BT_CTLR_ISO
 	bool
 	default BT_CTLR_BROADCAST_ISO || BT_CTLR_CONN_ISO
