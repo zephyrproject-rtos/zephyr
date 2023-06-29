@@ -43,6 +43,9 @@ struct bt_bap_ep {
 	struct bt_audio_codec_qos_pref qos_pref;
 	struct bt_bap_iso *iso;
 
+	/* unicast stopped reason */
+	uint8_t reason;
+
 	/* Used by the unicast server and client */
 	bool receiver_ready;
 
