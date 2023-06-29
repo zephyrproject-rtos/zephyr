@@ -1,0 +1,9 @@
+# Copyright (c) 2023, ithinx GmbH
+# Copyright (c) 2023, Tonies GmbH
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config USBC_TCPC_TPS25750
+	bool "USB-C TCPC device controller driver"
+	default y
+	depends on DT_HAS_TI_TPS25750_ENABLED

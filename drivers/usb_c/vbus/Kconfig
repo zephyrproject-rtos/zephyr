@@ -11,6 +11,7 @@ menuconfig USBC_VBUS_DRIVER
 if USBC_VBUS_DRIVER
 
 source "drivers/usb_c/vbus/Kconfig.usbc_vbus_adc"
+source "drivers/usb_c/vbus/Kconfig.usbc_vbus_i2c"
 
 endif # USBC_VBUS_DRIVER
 

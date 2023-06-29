@@ -1,0 +1,11 @@
+# USB-C VBUS device configuration options
+
+# Copyright 2022 The Chromium OS Authors
+# SPDX-License-Identifier: Apache-2.0
+
+config USBC_VBUS_I2C
+	bool "USB-C VBUS I2C"
+	default y
+	depends on DT_HAS_ZEPHYR_USB_C_VBUS_I2C_ENABLED
+	help
+	  Measure VBUS with an I2C through a voltage divider
