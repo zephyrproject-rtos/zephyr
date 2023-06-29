@@ -205,7 +205,6 @@ static int parse_sensor_value(const struct shell *sh, const char *val_str, q31_t
 	micro_value += value;
 end:
 	*q = ((micro_value * (INT64_C(1) << 31)) / 1000000) >> *shift;
-	shell_info(sh, "micro_value=%" PRIi64, micro_value);
 	*shift += 1;
 	return 0;
 }
@@ -240,7 +239,6 @@ static int cmd_config(const struct shell *sh, size_t argc, char **argv)
 		return -EINVAL;
 	}
 
-	shell_info(sh, "Configuring q=0x%08x, shift=%d", config.value, config.shift);
 	rc = sensing_set_attributes(open_connections[connection_index].handle, &config, 1);
 	if (rc != 0) {
 		shell_error(sh, "Failed to set attribute '%s' to '%s'", argv[2], argv[3]);

@@ -52,12 +52,10 @@ static int arbitrate_sensor_attribute(const struct sensing_sensor_info *info,
 	q31_t value;
 
 	for (int i = 0; i < CONFIG_SENSING_MAX_CONNECTIONS; ++i) {
-		if (connections[i].info != info || !connections[i].flags.in_use) {
-//			LOG_DBG("Skipping connection %p, info mismatch", (void*)&connections[i]);
+		if (!__sensing_is_connected(info, &connections[i])) {
 			continue;
 		}
 		if (FIELD_GET(BIT(attribute), connections[i].attribute_mask) == 0) {
-//			LOG_DBG("Skipping connection %p, attribute not set", (void*)&connections[i]);
 			continue;
 		}
 		if (connection_count == 0) {
@@ -65,11 +63,11 @@ static int arbitrate_sensor_attribute(const struct sensing_sensor_info *info,
 			value = connections[i].attributes[attribute];
 			LOG_DBG("Arbitrating '%s'@%p type=%d attribute=%d", info->info->dev->name,
 				info->info->dev, info->type, attribute);
-			LOG_DBG("    First connection %p, value=0x%08x", (void*)&connections[i], value);
+			LOG_DBG("    First connection %d/%p, value=0x%08x", i, (void*)&connections[i], value);
 		} else {
 			value = arbitrate_attribute_value(attribute, value,
 							  connections[i].attributes[attribute]);
-			LOG_DBG("    Updating         %p, value=0x%08x", (void*)&connections[i], value);
+			LOG_DBG("    Updating         %d/%p, value=0x%08x", i, (void*)&connections[i], value);
 		}
 		connection_count++;
 	}
@@ -83,9 +81,12 @@ static int arbitrate_sensor_attribute(const struct sensing_sensor_info *info,
 
 static void arbitrate_sensor_instance(const struct sensing_sensor_info *info)
 {
+	int count = 0;
+
 	for (int i = 0; i < SENSOR_ATTR_COMMON_COUNT; ++i) {
-		arbitrate_sensor_attribute(info, i);
+		count += arbitrate_sensor_attribute(info, i);
 	}
+	LOG_DBG("Arbitrated %p with %d connections", (void*)info, count);
 }
 
 void __sensing_arbitrate(void)

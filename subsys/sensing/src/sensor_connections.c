@@ -15,22 +15,22 @@ LOG_MODULE_REGISTER(sensing_connect, CONFIG_SENSING_LOG_LEVEL);
 	__ASSERT_NO_MSG((uintptr_t)name < (uintptr_t)__sensing_connection_pool.pool +              \
 						  sizeof(__sensing_connection_pool.pool));
 
-K_MUTEX_DEFINE(connection_lock);
+SENSING_DMEM SYS_MUTEX_DEFINE(connection_lock);
 
-static uint32_t bitarray_bundles[__SENSING_POOL_MASK_BUNDLE_COUNT];
-static sys_bitarray_t bitarray = {
+SENSING_DMEM static uint32_t bitarray_bundles[__SENSING_POOL_MASK_BUNDLE_COUNT] = {0};
+SENSING_DMEM static sys_bitarray_t bitarray = {
 	.num_bits = CONFIG_SENSING_MAX_CONNECTIONS,
 	.num_bundles = __SENSING_POOL_MASK_BUNDLE_COUNT,
 	.bundles = bitarray_bundles,
 };
 
-struct sensing_connection_pool __sensing_connection_pool = {
+SENSING_DMEM struct sensing_connection_pool __sensing_connection_pool = {
 	.bitarray = &bitarray,
 	.lock = &connection_lock,
 };
 
-#define __lock   k_mutex_lock(__sensing_connection_pool.lock, K_FOREVER)
-#define __unlock k_mutex_unlock(__sensing_connection_pool.lock)
+#define __lock   sys_mutex_lock(__sensing_connection_pool.lock, K_FOREVER)
+#define __unlock sys_mutex_unlock(__sensing_connection_pool.lock)
 
 int sensing_open_sensor(const struct sensing_sensor_info *info,
 			const struct sensing_callback_list *cb_list,
@@ -53,10 +53,9 @@ int sensing_open_sensor(const struct sensing_sensor_info *info,
 
 	connection = &__sensing_connection_pool.pool[offset];
 
-	__ASSERT_NO_MSG(!connection->flags.in_use);
 	LOG_DBG("Connection opened @ %p (size=%d) for info @ %p", connection,
 		(int)sizeof(struct sensing_connection), info);
-	connection->flags.in_use = true;
+	memset(connection, 0, sizeof(struct sensing_connection));
 	connection->info = info;
 	connection->cb_list = cb_list;
 	*handle = connection;
@@ -67,21 +66,19 @@ int sensing_open_sensor(const struct sensing_sensor_info *info,
 int sensing_close_sensor(sensing_sensor_handle_t handle)
 {
 	__HANDLE_TO_CONNECTION(connection, handle);
-
-	if (!connection->flags.in_use) {
-		return -EINVAL;
-	}
-	connection->flags.in_use = false;
+	int rc = -EINVAL;
 
 	__lock;
-	LOG_DBG("Releasing connection at %p", handle);
-	int rc = sys_bitarray_free(__sensing_connection_pool.bitarray, 1,
-				   connection - __sensing_connection_pool.pool);
-
-	if (rc != 0) {
-		connection->flags.in_use = true;
-	} else {
-		__sensing_arbitrate();
+	if (__sensing_is_connected(NULL, connection)) {
+		LOG_DBG("Releasing connection at %p/%d", handle,
+			connection - __sensing_connection_pool.pool);
+		rc = sys_bitarray_free(__sensing_connection_pool.bitarray, 1,
+				       connection - __sensing_connection_pool.pool);
+		if (rc == 0) {
+			__sensing_arbitrate();
+		} else {
+			LOG_WRN("Failed to release connection");
+		}
 	}
 	__unlock;
 	return rc;

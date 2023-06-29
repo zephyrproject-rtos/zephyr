@@ -41,6 +41,73 @@ extern "C" {
 #endif
 
 /**
+ * @addtogroup sensiong_sensor_modes
+ * @{
+ */
+
+enum sensing_sensor_mode {
+	/**
+	 * @brief Get events from the sensor.
+	 *
+	 * Power: Turn on if not already on.
+	 * Reporting: Continuous. Send each new event as it comes (subject to batching and latency).
+	 */
+	SENSING_SENSOR_MODE_CONTINUOUS,
+
+	/**
+	 * @brief Get a single event from the sensor and then become DONE.
+	 *
+	 * Once the event is sent, the sensor automatically changes to
+	 * :c:enum:`SENSING_SENSOR_MODE_DONE`.
+	 *
+	 * Power: Turn on if not already on.
+	 * Reporting: One shot. Send the next event and then be DONE.
+	 */
+	SENSING_SENSOR_MODE_ONE_SHOT,
+
+	/**
+	 * @brief Get events from a sensor that are generated for any client in the system.
+	 *
+	 * This is considered passive because the sensor will not be powered on for the sake of the
+	 * client. If and only if another client in the system has requested this sensor power on
+	 * will we get events.
+	 *
+	 * This can be useful for something which is interested in seeing data, but not interested
+	 * enough to be responsible for powering on the sensor.
+	 *
+	 * Power: Do not power the sensor on our behalf.
+	 * Reporting: Continuous. Send each event as it comes.
+	 */
+	SENSING_SENSOR_MODE_PASSIVE_CONTINUOUS,
+
+	/**
+	 * @brief Get a single event from a sensor that is generated for any client in the system.
+	 *
+	 * See :c:enum:`SENSING_SENSOR_MODE_PASSIVE_CONTINUOUS` for more details on what the
+	 * "passive" means.
+	 *
+	 * Power: Do not power the sensor on our behalf.
+	 * Reporting: One shot. Send only the next event and then be DONE.
+	 */
+	SENSING_SENSOR_MODE_PASSIVE_ONE_SHOT,
+
+	/**
+	 * @brief Indicate we are done using this sensor and no longer interested in it.
+	 *
+	 * See :c:func:`sensing_configure` for more details on expressing interest or lack of
+	 * interest in a sensor.
+	 *
+	 * Power: Do not power the sensor on our behalf.
+	 * Reporting: None.
+	 */
+	SENSING_SENSOR_MODE_DONE,
+};
+
+/**
+ * @}
+ */
+
+/**
  * @struct sensing_sensor_version
  * @brief Sensor Version
  */
