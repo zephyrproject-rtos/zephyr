@@ -8,6 +8,8 @@ cmake_minimum_required(VERSION 3.20.0)
 
 if("${BOARD}" STREQUAL "nrf5340dk_nrf5340_cpunet")
   message(STATUS "${BOARD} compile as remote in this sample")
+elseif("${BOARD}" STREQUAL "adp_xc7k_ae350")
+  message(STATUS "${BOARD} compile as remote in this sample")
 else()
   message(FATAL_ERROR "${BOARD} is not supported for this sample")
 endif()

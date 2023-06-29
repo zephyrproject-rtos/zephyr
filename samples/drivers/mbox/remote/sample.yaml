@@ -2,7 +2,7 @@ sample:
   name: MBOX IPC sample (remote)
 tests:
   sample.drivers.mbox_remote:
-    platform_allow: nrf5340dk_nrf5340_cpunet
+    platform_allow: nrf5340dk_nrf5340_cpunet adp_xc7k_ae350
     integration_platforms:
       - nrf5340dk_nrf5340_cpunet
     tags: mbox
