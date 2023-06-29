@@ -13,6 +13,7 @@ supported:
   - spi
   - eeprom
   - watchdog
+  - mbox
 testing:
   ignore_tags:
     - bluetooth
