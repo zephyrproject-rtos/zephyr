@@ -124,9 +124,10 @@ static int unicast_client_ep_start(struct bt_bap_ep *ep,
 
 static int unicast_client_ase_discover(struct bt_conn *conn, uint16_t start_handle);
 
-static void unicast_client_reset(struct bt_bap_ep *ep);
+static void unicast_client_reset(struct bt_bap_ep *ep, uint8_t reason);
 
 static void delayed_ase_read_handler(struct k_work *work);
+static void unicast_client_ep_set_status(struct bt_bap_ep *ep, struct net_buf_simple *buf);
 
 static int unicast_client_send_start(struct bt_bap_ep *ep)
 {
@@ -168,7 +169,7 @@ static int unicast_client_send_start(struct bt_bap_ep *ep)
 	return 0;
 }
 
-static int unicast_client_ep_idle_state(struct bt_bap_ep *ep);
+static void unicast_client_ep_idle_state(struct bt_bap_ep *ep);
 
 static struct bt_bap_stream *audio_stream_by_ep_id(const struct bt_conn *conn,
 						     uint8_t id)
@@ -350,6 +351,7 @@ static void unicast_client_ep_iso_disconnected(struct bt_bap_ep *ep, uint8_t rea
 	}
 
 	LOG_DBG("stream %p ep %p reason 0x%02x", stream, ep, reason);
+	ep->reason = reason;
 
 	/* If we were in the idle state when we started the ISO disconnection
 	 * then we need to call unicast_client_ep_idle_state again when
@@ -357,7 +359,7 @@ static void unicast_client_ep_iso_disconnected(struct bt_bap_ep *ep, uint8_t rea
 	 */
 	if (ep->status.state == BT_BAP_EP_STATE_IDLE) {
 
-		(void)unicast_client_ep_idle_state(ep);
+		unicast_client_ep_idle_state(ep);
 
 		if (stream->conn != NULL) {
 			struct bt_conn_info conn_info;
@@ -368,14 +370,8 @@ static void unicast_client_ep_iso_disconnected(struct bt_bap_ep *ep, uint8_t rea
 				/* Retrigger the reset of the EP if the ACL is disconnected before
 				 * the ISO is disconnected
 				 */
-				unicast_client_reset(ep);
+				unicast_client_reset(ep, reason);
 			}
-		}
-	} else {
-		if (stream->ops != NULL && stream->ops->stopped != NULL) {
-			stream->ops->stopped(stream, reason);
-		} else {
-			LOG_WRN("No callback for stopped set");
 		}
 	}
 }
@@ -440,6 +436,7 @@ static void unicast_client_ep_init(struct bt_bap_ep *ep, uint16_t handle, uint8_
 	client_ep->handle = handle;
 	ep->status.id = 0U;
 	ep->dir = dir;
+	ep->reason = BT_HCI_ERR_SUCCESS;
 	k_work_init_delayable(&client_ep->ase_read_work, delayed_ase_read_handler);
 }
 
@@ -539,7 +536,20 @@ static struct bt_bap_ep *unicast_client_ep_get(struct bt_conn *conn, enum bt_aud
 	return unicast_client_ep_new(conn, dir, handle);
 }
 
-static int unicast_client_ep_idle_state(struct bt_bap_ep *ep)
+static void unicast_client_ep_set_local_idle_state(struct bt_bap_ep *ep)
+{
+	struct bt_ascs_ase_status status = {
+		.id = ep->status.id,
+		.state = BT_BAP_EP_STATE_IDLE,
+	};
+	struct net_buf_simple buf;
+
+	net_buf_simple_init_with_data(&buf, &status, sizeof(status));
+
+	unicast_client_ep_set_status(ep, &buf);
+}
+
+static void unicast_client_ep_idle_state(struct bt_bap_ep *ep)
 {
 	struct bt_bap_unicast_client_ep *client_ep =
 		CONTAINER_OF(ep, struct bt_bap_unicast_client_ep, ep);
@@ -547,7 +557,7 @@ static int unicast_client_ep_idle_state(struct bt_bap_ep *ep)
 	const struct bt_bap_stream_ops *ops;
 
 	if (stream == NULL) {
-		return -EINVAL;
+		return;
 	}
 
 	/* If CIS is connected, disconnect and wait for CIS disconnection */
@@ -561,10 +571,10 @@ static int unicast_client_ep_idle_state(struct bt_bap_ep *ep)
 			LOG_ERR("Failed to disconnect stream: %d", err);
 		}
 
-		return err;
+		return;
 	} else if (ep->iso != NULL && ep->iso->chan.state == BT_ISO_STATE_DISCONNECTING) {
-		/* Wait */
-		return -EBUSY;
+		/* Wait for disconnection */
+		return;
 	}
 
 	bt_bap_stream_reset(stream);
@@ -593,8 +603,6 @@ static int unicast_client_ep_idle_state(struct bt_bap_ep *ep)
 	} else {
 		LOG_WRN("No callback for released set");
 	}
-
-	return 0;
 }
 
 static void unicast_client_ep_qos_update(struct bt_bap_ep *ep,
@@ -635,8 +643,9 @@ static void unicast_client_ep_config_state(struct bt_bap_ep *ep, struct net_buf_
 
 	if (client_ep->release_requested) {
 		LOG_DBG("Released was requested, change local state to idle");
-		ep->status.state = BT_BAP_EP_STATE_IDLE;
-		unicast_client_ep_idle_state(ep);
+		ep->reason = BT_HCI_ERR_LOCALHOST_TERM_CONN;
+		unicast_client_ep_set_local_idle_state(ep);
+		return;
 	}
 
 	if (buf->len < sizeof(*cfg)) {
@@ -947,6 +956,31 @@ static void unicast_client_ep_set_status(struct bt_bap_ep *ep, struct net_buf_si
 	ep->status = *status;
 	state_changed = old_state != ep->status.state;
 
+	if (state_changed && old_state == BT_BAP_EP_STATE_STREAMING) {
+		/* We left the streaming state, let the upper layers know that the stream is stopped
+		 */
+		struct bt_bap_stream *stream = ep->stream;
+
+		if (stream != NULL) {
+			struct bt_bap_stream_ops *ops = stream->ops;
+			uint8_t reason = ep->reason;
+
+			if (reason == BT_HCI_ERR_SUCCESS) {
+				/* Default to BT_HCI_ERR_UNSPECIFIED if no other reason is set */
+				reason = BT_HCI_ERR_UNSPECIFIED;
+			} else {
+				/* Reset reason */
+				ep->reason = BT_HCI_ERR_SUCCESS;
+			}
+
+			if (ops != NULL && ops->stopped != NULL) {
+				ops->stopped(stream, reason);
+			} else {
+				LOG_WRN("No callback for stopped set");
+			}
+		}
+	}
+
 	LOG_DBG("ep %p handle 0x%04x id 0x%02x dir %s state %s -> %s", ep, client_ep->handle,
 		status->id, bt_audio_dir_str(ep->dir), bt_bap_ep_state_str(old_state),
 		bt_bap_ep_state_str(status->state));
@@ -954,7 +988,7 @@ static void unicast_client_ep_set_status(struct bt_bap_ep *ep, struct net_buf_si
 	switch (status->state) {
 	case BT_BAP_EP_STATE_IDLE:
 		ep->receiver_ready = false;
-		(void)unicast_client_ep_idle_state(ep);
+		unicast_client_ep_idle_state(ep);
 		break;
 	case BT_BAP_EP_STATE_CODEC_CONFIGURED:
 		switch (old_state) {
@@ -1471,6 +1505,11 @@ static uint8_t unicast_client_ase_ntf_read_func(struct bt_conn *conn, uint8_t er
 	if (!ep) {
 		LOG_DBG("Unknown %s ep for handle 0x%04X", bt_audio_dir_str(client->dir), handle);
 	} else {
+		/* Set reason in case this exits the streaming state, unless already set */
+		if (ep->reason == BT_HCI_ERR_SUCCESS) {
+			ep->reason = BT_HCI_ERR_REMOTE_USER_TERM_CONN;
+		}
+
 		unicast_client_ep_set_status(ep, &buf_clone);
 	}
 
@@ -1544,10 +1583,12 @@ static uint8_t unicast_client_ep_notify(struct bt_conn *conn,
 	struct bt_bap_unicast_client_ep *client_ep;
 	const uint8_t att_ntf_header_size = 3; /* opcode (1) + handle (2) */
 	const uint16_t max_ntf_size = bt_gatt_get_mtu(conn) - att_ntf_header_size;
+	struct bt_bap_ep *ep;
 
 	client_ep = CONTAINER_OF(params, struct bt_bap_unicast_client_ep, subscribe);
+	ep = &client_ep->ep;
 
-	LOG_DBG("conn %p ep %p len %u", conn, &client_ep->ep, length);
+	LOG_DBG("conn %p ep %p len %u", conn, ep, length);
 
 	/* Cancel any pending long reads for the endpoint */
 	(void)k_work_cancel_delayable(&client_ep->ase_read_work);
@@ -1580,7 +1621,12 @@ static uint8_t unicast_client_ep_notify(struct bt_conn *conn,
 		return BT_GATT_ITER_STOP;
 	}
 
-	unicast_client_ep_set_status(&client_ep->ep, &buf);
+	/* Set reason in case this exits the streaming state, unless already set */
+	if (ep->reason == BT_HCI_ERR_SUCCESS) {
+		ep->reason = BT_HCI_ERR_REMOTE_USER_TERM_CONN;
+	}
+
+	unicast_client_ep_set_status(ep, &buf);
 
 	return BT_GATT_ITER_CONTINUE;
 }
@@ -2037,24 +2083,20 @@ int bt_bap_unicast_client_ep_send(struct bt_conn *conn, struct bt_bap_ep *ep,
 	return err;
 }
 
-static void unicast_client_reset(struct bt_bap_ep *ep)
+static void unicast_client_reset(struct bt_bap_ep *ep, uint8_t reason)
 {
 	struct bt_bap_unicast_client_ep *client_ep =
 		CONTAINER_OF(ep, struct bt_bap_unicast_client_ep, ep);
-	int err;
 
 	LOG_DBG("ep %p", ep);
+	ep->reason = reason;
 
 	/* Pretend we received an idle state notification from the server to trigger all cleanup */
-	ep->status.state = BT_BAP_EP_STATE_IDLE;
-	err = unicast_client_ep_idle_state(ep);
-	if (err != 0) {
-		LOG_DBG("unicast_client_ep_idle_state returned %d", err);
+	unicast_client_ep_set_local_idle_state(ep);
 
-		if (err == -EBUSY) {
-			/* Wait for ISO disconnected event */
-			return;
-		}
+	if (ep->iso != NULL && ep->iso->chan.state == BT_ISO_STATE_DISCONNECTING) {
+		/* Wait for ISO disconnected event */
+		return;
 	}
 
 	(void)k_work_cancel_delayable(&client_ep->ase_read_work);
@@ -2068,7 +2110,7 @@ static void unicast_client_reset(struct bt_bap_ep *ep)
 	/* Need to keep the subscribe params intact for the callback */
 }
 
-static void unicast_client_ep_reset(struct bt_conn *conn)
+static void unicast_client_ep_reset(struct bt_conn *conn, uint8_t reason)
 {
 	uint8_t index;
 
@@ -2080,7 +2122,7 @@ static void unicast_client_ep_reset(struct bt_conn *conn)
 	for (size_t i = 0U; i < ARRAY_SIZE(uni_cli_insts[index].snks); i++) {
 		struct bt_bap_ep *ep = &uni_cli_insts[index].snks[i].ep;
 
-		unicast_client_reset(ep);
+		unicast_client_reset(ep, reason);
 	}
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0 */
 
@@ -2088,7 +2130,7 @@ static void unicast_client_ep_reset(struct bt_conn *conn)
 	for (size_t i = 0U; i < ARRAY_SIZE(uni_cli_insts[index].srcs); i++) {
 		struct bt_bap_ep *ep = &uni_cli_insts[index].srcs[i].ep;
 
-		unicast_client_reset(ep);
+		unicast_client_reset(ep, reason);
 	}
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 0 */
 }
@@ -3971,7 +4013,7 @@ static void unicast_client_disconnected(struct bt_conn *conn, uint8_t reason)
 {
 	LOG_DBG("conn %p reason 0x%02x", conn, reason);
 
-	unicast_client_ep_reset(conn);
+	unicast_client_ep_reset(conn, reason);
 }
 
 static struct bt_conn_cb conn_cbs = {

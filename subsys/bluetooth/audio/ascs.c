@@ -264,6 +264,27 @@ void ascs_ep_set_state(struct bt_bap_ep *ep, uint8_t state)
 
 	stream = ep->stream;
 
+	if (state_changed && old_state == BT_BAP_EP_STATE_STREAMING) {
+		/* We left the streaming state, let the upper layers know that the stream is stopped
+		 */
+		struct bt_bap_stream_ops *ops = stream->ops;
+		uint8_t reason = ep->reason;
+
+		if (reason == BT_HCI_ERR_SUCCESS) {
+			/* Default to BT_HCI_ERR_UNSPECIFIED if no other reason is set */
+			reason = BT_HCI_ERR_UNSPECIFIED;
+		} else {
+			/* Reset reason */
+			ep->reason = BT_HCI_ERR_SUCCESS;
+		}
+
+		if (ops != NULL && ops->stopped != NULL) {
+			ops->stopped(stream, reason);
+		} else {
+			LOG_WRN("No callback for stopped set");
+		}
+	}
+
 	if (stream->ops != NULL) {
 		const struct bt_bap_stream_ops *ops = stream->ops;
 
@@ -799,12 +820,7 @@ static void ascs_ep_iso_disconnected(struct bt_bap_ep *ep, uint8_t reason)
 
 	/* Cancel ASE disconnect work if pending */
 	(void)k_work_cancel_delayable(&ase->disconnect_work);
-
-	if (ops != NULL && ops->stopped != NULL) {
-		ops->stopped(stream, reason);
-	} else {
-		LOG_WRN("No callback for stopped set");
-	}
+	ep->reason = reason;
 
 	if (ep->status.state == BT_BAP_EP_STATE_RELEASING) {
 		ascs_ep_set_state(ep, BT_BAP_EP_STATE_IDLE);
@@ -941,6 +957,9 @@ static void ase_release(struct bt_ascs_ase *ase)
 		return;
 	}
 
+	/* Set reason in case this exits the streaming state */
+	ase->ep.reason = BT_HCI_ERR_REMOTE_USER_TERM_CONN;
+
 	ascs_ep_set_state(&ase->ep, BT_BAP_EP_STATE_RELEASING);
 	/* At this point, `ase` object might have been free'd if automously went to Idle */
 
@@ -993,6 +1012,9 @@ static void ase_disable(struct bt_ascs_ase *ase)
 		return;
 	}
 
+	/* Set reason in case this exits the streaming state */
+	ep->reason = BT_HCI_ERR_REMOTE_USER_TERM_CONN;
+
 	/* The ASE state machine goes into different states from this operation
 	 * based on whether it is a source or a sink ASE.
 	 */
@@ -1015,6 +1037,7 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 		}
 
 		if (ase->ep.status.state != BT_BAP_EP_STATE_IDLE) {
+			ase->ep.reason = reason;
 			ase_release(ase);
 			/* At this point, `ase` object have been free'd */
 		}
@@ -1096,6 +1119,7 @@ void ascs_ep_init(struct bt_bap_ep *ep, uint8_t id)
 	(void)memset(ep, 0, sizeof(*ep));
 	ep->status.id = id;
 	ep->dir = ASE_DIR(id);
+	ep->reason = BT_HCI_ERR_SUCCESS;
 }
 
 static void ase_init(struct bt_ascs_ase *ase, struct bt_conn *conn, uint8_t id)
