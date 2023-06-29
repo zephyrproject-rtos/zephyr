@@ -85,7 +85,7 @@ jobs:
           DOC_TARGET="html"
         fi
 
-        DOC_TAG=${DOC_TAG} SPHINXOPTS="-q -W --keep-going -t publish" make -C doc ${DOC_TARGET}
+        DOC_TAG=${DOC_TAG} SPHINXOPTS_EXTRA="-q -t publish" make -C doc ${DOC_TARGET}
 
     - name: compress-docs
       run: |
