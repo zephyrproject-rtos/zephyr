@@ -48,5 +48,6 @@
 #include <zephyr/bluetooth/mesh/od_priv_proxy_cli.h>
 #include <zephyr/bluetooth/mesh/sol_pdu_rpl_srv.h>
 #include <zephyr/bluetooth/mesh/sol_pdu_rpl_cli.h>
+#include <zephyr/bluetooth/mesh/statistic.h>
 
 #endif /* ZEPHYR_INCLUDE_BLUETOOTH_MESH_H_ */
