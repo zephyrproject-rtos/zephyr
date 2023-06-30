@@ -10,6 +10,7 @@ tests:
       - frdm_k64f
       - nrf52840dk_nrf52840
       - nucleo_g474re
+      - nrf52_bsim
     integration_platforms:
       - native_posix
       - native_posix_64
