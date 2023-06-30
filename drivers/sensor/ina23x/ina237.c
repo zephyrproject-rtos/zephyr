@@ -244,8 +244,8 @@ static int ina237_calibrate(const struct device *dev)
 	int ret;
 
 	/* see datasheet "Current and Power calculations" section */
-	val = (INA237_CAL_SCALING * config->current_lsb * config->rshunt) /
-	       10000000U;
+	val = (INA237_CAL_SCALING * ((config->current_lsb * config->rshunt) /
+	       1000U)) / 10000000U;
 
 	ret = ina23x_reg_write(&config->bus, INA237_REG_CALIB, val);
 	if (ret < 0) {
@@ -379,7 +379,7 @@ static const struct sensor_driver_api ina237_driver_api = {
 		.config = DT_INST_PROP(inst, config),				\
 		.adc_config = DT_INST_PROP(inst, adc_config),			\
 		.current_lsb = DT_INST_PROP(inst, current_lsb_microamps),	\
-		.rshunt = DT_INST_PROP(inst, rshunt_milliohms),			\
+		.rshunt = DT_INST_PROP(inst, rshunt_micro_ohms),			\
 		.alert_config = DT_INST_PROP_OR(inst, alert_config, 0x01),	\
 		.alert_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, alert_gpios, {0}),	\
 	};							    \

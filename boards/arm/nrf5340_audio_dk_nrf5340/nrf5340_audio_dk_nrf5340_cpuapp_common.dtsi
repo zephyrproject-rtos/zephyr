@@ -156,7 +156,7 @@
 					INA230_CONV_TIME_4156,
 					INA230_AVG_MODE_1024)>;
 		current-lsb-microamps = <1>;
-		rshunt-milliohms = <510>;
+		rshunt-micro-ohms = <510000>;
 	};
 
 	vdd1_codec_sensor: ina231@45 {
@@ -167,7 +167,7 @@
 					INA230_CONV_TIME_4156,
 					INA230_AVG_MODE_1024)>;
 		current-lsb-microamps = <1>;
-		rshunt-milliohms = <2200>;
+		rshunt-micro-ohms = <2200000>;
 	};
 
 	vdd2_codec_sensor: ina231@41 {
@@ -178,7 +178,7 @@
 					INA230_CONV_TIME_4156,
 					INA230_AVG_MODE_1024)>;
 		current-lsb-microamps = <1>;
-		rshunt-milliohms = <2200>;
+		rshunt-micro-ohms = <2200000>;
 	};
 
 	vdd2_nrf_sensor: ina231@40 {
@@ -189,7 +189,7 @@
 					INA230_CONV_TIME_4156,
 					INA230_AVG_MODE_1024)>;
 		current-lsb-microamps = <1>;
-		rshunt-milliohms = <1000>;
+		rshunt-micro-ohms = <1000000>;
 	};
 };
 
