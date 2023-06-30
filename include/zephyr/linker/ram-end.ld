@@ -3,7 +3,7 @@
  * end-of-used-memory symbols
  */
 
-    SECTION_PROLOGUE(.last_ram_section,,)
+    SECTION_PROLOGUE(.last_ram_section, (NOLOAD),)
     {
 #ifdef LAST_RAM_ALIGN
 	LAST_RAM_ALIGN
