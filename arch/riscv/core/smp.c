@@ -76,24 +76,55 @@ void z_riscv_secondary_cpu_init(int hartid)
 
 #define MSIP(hartid) ((volatile uint32_t *)RISCV_MSIP_BASE)[hartid]
 
-static atomic_val_t cpu_pending_ipi[CONFIG_MP_MAX_NUM_CPUS];
-#define IPI_SCHED	0
-#define IPI_FPU_FLUSH	1
+enum ipi_msg_type {
+	IPI_SCHED = 0,
+	IPI_FPU_FLUSH,
+	IPI_CPU_STOP,
+	IPI_MAX
+};
 
-void arch_sched_ipi(void)
+static atomic_val_t cpu_pending_ipi[CONFIG_MP_MAX_NUM_CPUS];
+
+static void riscv_send_ipi(enum ipi_msg_type ipi)
 {
 	unsigned int key = arch_irq_lock();
 	unsigned int id = _current_cpu->id;
 	unsigned int num_cpus = arch_num_cpus();
 
+	if (ipi >= IPI_MAX) {
+		arch_irq_unlock(key);
+		return;
+	}
+
 	for (unsigned int i = 0; i < num_cpus; i++) {
 		if (i != id && _kernel.cpus[i].arch.online) {
-			atomic_set_bit(&cpu_pending_ipi[i], IPI_SCHED);
+			atomic_set_bit(&cpu_pending_ipi[i], ipi);
 			MSIP(_kernel.cpus[i].arch.hartid) = 1;
 		}
 	}
 
 	arch_irq_unlock(key);
+}
+
+void arch_sched_ipi(void)
+{
+	riscv_send_ipi(IPI_SCHED);
+}
+
+void arch_cpu_stop_async(void)
+{
+	riscv_send_ipi(IPI_CPU_STOP);
+}
+
+static void arch_cpu_stop_current(void)
+{
+	arch_irq_lock();
+	printk("Stopping CPU: %d\n", _current_cpu->id);
+
+	while (1) {
+		/* Power savings..*/
+		arch_cpu_idle();
+	}
 }
 
 #ifdef CONFIG_FPU_SHARING
@@ -108,25 +139,35 @@ static void ipi_handler(const void *unused)
 {
 	ARG_UNUSED(unused);
 
-	MSIP(csr_read(mhartid)) = 0;
+	while (true) {
+		atomic_val_t pending_ipi = atomic_clear(&cpu_pending_ipi[_current_cpu->id]);
 
-	atomic_val_t pending_ipi = atomic_clear(&cpu_pending_ipi[_current_cpu->id]);
+		MSIP(csr_read(mhartid)) = 0;
 
-	if (pending_ipi & ATOMIC_MASK(IPI_SCHED)) {
-		z_sched_ipi();
-	}
+		if (!pending_ipi) {
+			break;
+		}
+
+		if (pending_ipi & ATOMIC_MASK(IPI_SCHED)) {
+			z_sched_ipi();
+		}
+
 #ifdef CONFIG_FPU_SHARING
-	if (pending_ipi & ATOMIC_MASK(IPI_FPU_FLUSH)) {
-		/* disable IRQs */
-		csr_clear(mstatus, MSTATUS_IEN);
-		/* perform the flush */
-		z_riscv_flush_local_fpu();
-		/*
-		 * No need to re-enable IRQs here as long as
-		 * this remains the last case.
-		 */
-	}
+		if (pending_ipi & ATOMIC_MASK(IPI_FPU_FLUSH)) {
+			/* disable IRQs */
+			csr_clear(mstatus, MSTATUS_IEN);
+			/* perform the flush */
+			z_riscv_flush_local_fpu();
+			/*
+			 * No need to re-enable IRQs here as long as
+			 * this remains the last case.
+			 */
+		}
 #endif
+		if (pending_ipi & ATOMIC_MASK(IPI_CPU_STOP)) {
+			arch_cpu_stop_current();
+		}
+	}
 }
 
 #ifdef CONFIG_FPU_SHARING
