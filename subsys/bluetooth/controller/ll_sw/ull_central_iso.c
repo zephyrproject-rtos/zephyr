@@ -167,7 +167,6 @@ uint8_t ll_cig_parameters_commit(uint8_t cig_id, uint16_t *handles)
 			/* No space for new CIG */
 			return BT_HCI_ERR_INSUFFICIENT_RESOURCES;
 		}
-		cig->state = CIG_STATE_CONFIGURABLE;
 		cig->lll.num_cis = 0U;
 
 	} else if (cig->state != CIG_STATE_CONFIGURABLE) {
@@ -180,6 +179,8 @@ uint8_t ll_cig_parameters_commit(uint8_t cig_id, uint16_t *handles)
 
 	/* Transfer parameters from configuration cache and clear LLL fields */
 	memcpy(cig, &ll_iso_setup.group, sizeof(struct ll_conn_iso_group));
+
+	cig->state = CIG_STATE_CONFIGURABLE;
 
 	/* Setup LLL parameters */
 	cig->lll.handle = ll_conn_iso_group_handle_get(cig);
