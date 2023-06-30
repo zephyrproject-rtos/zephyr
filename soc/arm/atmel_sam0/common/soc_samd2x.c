@@ -21,7 +21,6 @@
  * GCLK Gen 3 -> ADC @ 8 MHz
  */
 
-#include <zephyr/arch/cpu.h>
 #include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
 #include <zephyr/device.h>
 #include <zephyr/init.h>
@@ -257,11 +256,6 @@ static inline void osc8m_disable(void)
 
 static int atmel_samd_init(void)
 {
-	uint32_t key;
-
-
-	key = irq_lock();
-
 	osc8m_init();
 	osc32k_init();
 	xosc_init();
@@ -271,13 +265,6 @@ static int atmel_samd_init(void)
 	gclk_main_configure();
 	gclk_adc_configure();
 	osc8m_disable();
-
-	/* Install default handler that simply resets the CPU
-	 * if configured in the kernel, NOP otherwise
-	 */
-	NMI_INIT();
-
-	irq_unlock(key);
 
 	return 0;
 }

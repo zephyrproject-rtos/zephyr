@@ -14,10 +14,7 @@
 #include <stm32_ll_bus.h>
 #include <stm32_ll_pwr.h>
 #include <stm32_ll_icache.h>
-#include <zephyr/arch/cpu.h>
 #include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
-#include <zephyr/arch/arm/aarch32/nmi.h>
-#include <zephyr/irq.h>
 #include <zephyr/logging/log.h>
 
 #define LOG_LEVEL CONFIG_SOC_LOG_LEVEL
@@ -33,18 +30,6 @@ LOG_MODULE_REGISTER(soc);
  */
 static int stm32h5_init(void)
 {
-	uint32_t key;
-
-
-	key = irq_lock();
-
-	/* Install default handler that simply resets the CPU
-	 * if configured in the kernel, NOP otherwise
-	 */
-	NMI_INIT();
-
-	irq_unlock(key);
-
 	/* Enable instruction cache in 1-way (direct mapped cache) */
 	LL_ICACHE_SetMode(LL_ICACHE_1WAY);
 	LL_ICACHE_Enable();

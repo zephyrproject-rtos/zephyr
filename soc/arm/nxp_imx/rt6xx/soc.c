@@ -352,28 +352,12 @@ void imxrt_usdhc_dat3_pull(bool pullup)
 
 static int nxp_rt600_init(void)
 {
-
-	/* old interrupt lock level */
-	unsigned int oldLevel;
-
-	/* disable interrupts */
-	oldLevel = irq_lock();
-
 	/* Initialize clock */
 	clock_init();
-
-	/*
-	 * install default handler that simply resets the CPU if configured in
-	 * the kernel, NOP otherwise
-	 */
-	NMI_INIT();
 
 #ifndef CONFIG_IMXRT6XX_CODE_CACHE
 	CACHE64_DisableCache(CACHE64);
 #endif
-
-	/* restore interrupt state */
-	irq_unlock(oldLevel);
 
 	return 0;
 }

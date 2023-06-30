@@ -45,12 +45,6 @@ void z_arm_platform_init(void)
 
 static int soc_init(void)
 {
-
-	/* Install default handler that simply resets the CPU if configured in the
-	 * kernel, NOP otherwise
-	 */
-	NMI_INIT();
-
 	OsIf_Init(NULL);
 
 #ifdef CONFIG_INIT_CLOCK_AT_BOOT_TIME

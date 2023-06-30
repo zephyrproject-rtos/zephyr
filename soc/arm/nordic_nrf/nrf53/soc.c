@@ -15,7 +15,6 @@
 #include <zephyr/kernel.h>
 #include <zephyr/init.h>
 #include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
-#include <zephyr/arch/arm/aarch32/nmi.h>
 #include <soc/nrfx_coredep.h>
 #include <zephyr/logging/log.h>
 #include <nrf_erratas.h>
@@ -144,10 +143,6 @@ bool z_arm_on_enter_cpu_idle(void)
 
 static int nordicsemi_nrf53_init(void)
 {
-	uint32_t key;
-
-	key = irq_lock();
-
 #if defined(CONFIG_SOC_NRF5340_CPUAPP) && defined(CONFIG_NRF_ENABLE_CACHE)
 #if !defined(CONFIG_BUILD_WITH_TFM)
 	/* Enable the instruction & data cache.
@@ -236,13 +231,6 @@ static int nordicsemi_nrf53_init(void)
 #if defined(CONFIG_PM_S2RAM)
 	enable_ram_retention();
 #endif /* CONFIG_PM_S2RAM */
-
-	/* Install default handler that simply resets the CPU
-	 * if configured in the kernel, NOP otherwise
-	 */
-	NMI_INIT();
-
-	irq_unlock(key);
 
 	return 0;
 }
