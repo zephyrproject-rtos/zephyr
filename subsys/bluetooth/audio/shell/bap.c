@@ -189,19 +189,17 @@ static int frame_duration_us;
 static int frame_duration_100us;
 static int frames_per_sdu;
 static int octets_per_frame;
-static int64_t lc3_start_time;
 static int32_t lc3_sdu_cnt;
 
 static void lc3_audio_send_data(struct k_work *work);
-static K_WORK_DEFINE(audio_send_work, lc3_audio_send_data);
+static K_WORK_DELAYABLE_DEFINE(audio_send_work, lc3_audio_send_data);
 
 static void clear_lc3_sine_data(void)
 {
-	lc3_start_time = 0;
 	lc3_sdu_cnt = 0;
 	txing_stream = NULL;
 
-	(void)k_work_cancel(&audio_send_work);
+	(void)k_work_cancel_delayable(&audio_send_work);
 }
 
 /**
@@ -288,8 +286,6 @@ static void lc3_audio_send_data(struct k_work *work)
 		return;
 	}
 
-	seq_num = get_next_seq_num(txing_stream->qos->interval);
-
 	const uint16_t tx_sdu_len = frames_per_sdu * octets_per_frame;
 	struct net_buf *buf;
 	uint8_t *net_buffer;
@@ -315,34 +311,45 @@ static void lc3_audio_send_data(struct k_work *work)
 					"LC3 encoder failed - wrong parameters?: %d",
 					lc3_ret);
 			net_buf_unref(buf);
+
+			/* Reschedule for next interval */
+			k_work_reschedule(k_work_delayable_from_work(work),
+					  K_USEC(txing_stream->qos->interval));
 			return;
 		}
 	}
 
+	seq_num = get_next_seq_num(txing_stream->qos->interval);
 	err = bt_bap_stream_send(txing_stream, buf, seq_num,
 					BT_ISO_TIMESTAMP_NONE);
 	if (err < 0) {
-		shell_error(ctx_shell,
-				"Failed to send LC3 audio data (%d)\n",
-				err);
+		shell_error(ctx_shell, "Failed to send LC3 audio data (%d)", err);
 		net_buf_unref(buf);
+
+		/* Reschedule for next interval */
+		k_work_reschedule(k_work_delayable_from_work(work),
+				  K_USEC(txing_stream->qos->interval));
 		return;
 	}
 
 	if ((lc3_sdu_cnt % 100) == 0) {
-		shell_info(ctx_shell, "[%zu]: TX LC3: %zu\n",
-				lc3_sdu_cnt, tx_sdu_len);
+		shell_info(ctx_shell, "[%zu]: TX LC3: %zu", lc3_sdu_cnt, tx_sdu_len);
 	}
 	lc3_sdu_cnt++;
 }
 
 void sdu_sent_cb(struct bt_bap_stream *stream)
 {
+	int err;
+
 	if (txing_stream == NULL || txing_stream->qos == NULL) {
 		return;
 	}
 
-	k_work_submit(&audio_send_work);
+	err = k_work_schedule(&audio_send_work, K_NO_WAIT);
+	if (err < 0) {
+		shell_error(ctx_shell, "Failed to schedule TX: %d", err);
+	}
 }
 #endif /* CONFIG_LIBLC3 && CONFIG_BT_AUDIO_TX */
 
@@ -2435,7 +2442,10 @@ static int cmd_start_sine(const struct shell *sh, size_t argc, char *argv[])
 	init_lc3(txing_stream);
 
 	for (size_t i = 0U; i < prime_count; i++) {
-		k_work_submit(&audio_send_work);
+		/* Call callback directly as submitted the work item multiple times won't do any
+		 * good
+		 */
+		lc3_audio_send_data(&audio_send_work.work);
 	}
 
 	return 0;
