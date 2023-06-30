@@ -275,9 +275,14 @@ static void init_lc3(const struct bt_bap_stream *stream)
 
 static void lc3_audio_send_data(struct k_work *work)
 {
+	const uint16_t tx_sdu_len = frames_per_sdu * octets_per_frame;
+	struct net_buf *buf;
+	uint8_t *net_buffer;
+	off_t offset = 0;
+	int err;
+
 	if (lc3_encoder == NULL) {
-		shell_error(ctx_shell,
-			    "LC3 encoder not setup, cannot encode data");
+		shell_error(ctx_shell, "LC3 encoder not setup, cannot encode data");
 		return;
 	}
 
@@ -285,12 +290,6 @@ static void lc3_audio_send_data(struct k_work *work)
 		shell_error(ctx_shell, "invalid stream, aborting");
 		return;
 	}
-
-	const uint16_t tx_sdu_len = frames_per_sdu * octets_per_frame;
-	struct net_buf *buf;
-	uint8_t *net_buffer;
-	off_t offset = 0;
-	int err;
 
 	buf = net_buf_alloc(&sine_tx_pool, K_FOREVER);
 	net_buf_reserve(buf, BT_ISO_CHAN_SEND_RESERVE);
@@ -301,15 +300,13 @@ static void lc3_audio_send_data(struct k_work *work)
 	for (int i = 0; i < frames_per_sdu; i++) {
 		int lc3_ret;
 
-		lc3_ret = lc3_encode(lc3_encoder, LC3_PCM_FORMAT_S16,
-						audio_buf, 1, octets_per_frame,
-						net_buffer + offset);
+		lc3_ret = lc3_encode(lc3_encoder, LC3_PCM_FORMAT_S16, audio_buf, 1,
+				     octets_per_frame, net_buffer + offset);
 		offset += octets_per_frame;
 
 		if (lc3_ret == -1) {
-			shell_error(ctx_shell,
-					"LC3 encoder failed - wrong parameters?: %d",
-					lc3_ret);
+			shell_error(ctx_shell, "LC3 encoder failed - wrong parameters?: %d",
+				    lc3_ret);
 			net_buf_unref(buf);
 
 			/* Reschedule for next interval */
@@ -320,8 +317,7 @@ static void lc3_audio_send_data(struct k_work *work)
 	}
 
 	seq_num = get_next_seq_num(txing_stream->qos->interval);
-	err = bt_bap_stream_send(txing_stream, buf, seq_num,
-					BT_ISO_TIMESTAMP_NONE);
+	err = bt_bap_stream_send(txing_stream, buf, seq_num, BT_ISO_TIMESTAMP_NONE);
 	if (err < 0) {
 		shell_error(ctx_shell, "Failed to send LC3 audio data (%d)", err);
 		net_buf_unref(buf);
@@ -335,6 +331,7 @@ static void lc3_audio_send_data(struct k_work *work)
 	if ((lc3_sdu_cnt % 100) == 0) {
 		shell_info(ctx_shell, "[%zu]: TX LC3: %zu", lc3_sdu_cnt, tx_sdu_len);
 	}
+
 	lc3_sdu_cnt++;
 }
 
