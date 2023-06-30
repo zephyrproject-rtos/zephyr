@@ -17,6 +17,4 @@
 extern void z_arm_nmi_set_handler(void (*pHandler)(void));
 #endif
 
-#define NMI_INIT()
-
 #endif /* ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_NMI_H_ */
