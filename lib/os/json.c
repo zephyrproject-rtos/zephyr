@@ -546,27 +546,9 @@ static ptrdiff_t get_elem_size(const struct json_obj_descr *descr)
 	case JSON_TOK_TRUE:
 	case JSON_TOK_FALSE:
 		return sizeof(bool);
-	case JSON_TOK_ARRAY_START: {
-		ptrdiff_t size;
-
-		size = descr->array.n_elements * get_elem_size(descr->array.element_descr);
-		/* Consider additional item count field for array objects */
-		if (descr->field_name_len > 0) {
-			size = size + sizeof(size_t);
-		}
-
-		return size;
-	}
-	case JSON_TOK_OBJECT_START: {
-		ptrdiff_t total = 0;
-		size_t i;
-
-		for (i = 0; i < descr->object.sub_descr_len; i++) {
-			total += get_elem_size(&descr->object.sub_descr[i]);
-		}
-
-		return ROUND_UP(total, 1 << descr->align_shift);
-	}
+	case JSON_TOK_ARRAY_START:
+	case JSON_TOK_OBJECT_START:
+		return descr->struct_size;
 	default:
 		return -EINVAL;
 	}
