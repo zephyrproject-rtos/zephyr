@@ -42,7 +42,7 @@
 /* Worst-case time margin needed after event end-time in the air
  * (done/preempt race margin + power-down/chain delay)
  */
-#define EVENT_OVERHEAD_END_US         100
+#define EVENT_OVERHEAD_END_US         40
 
 /* Sleep Clock Accuracy */
 #define EVENT_JITTER_US               16
