@@ -6,7 +6,6 @@
 
 #include <zephyr/init.h>
 #include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
-#include <zephyr/arch/arm/aarch32/nmi.h>
 #include <zephyr/linker/linker-defs.h>
 #include <string.h>
 
@@ -110,9 +109,6 @@ void z_arm_platform_init(void)
 
 static int renesas_da14699_init(void)
 {
-
-	NMI_INIT();
-
 	/* Freeze watchdog until configured */
 	GPREG->SET_FREEZE_REG = GPREG_SET_FREEZE_REG_FRZ_SYS_WDOG_Msk;
 	/* Reset clock dividers to 0 */

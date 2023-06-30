@@ -297,13 +297,6 @@ DT_FOREACH_STATUS_OKAY(nxp_lpc_ctimer, CTIMER_CLOCK_SETUP)
 
 static int nxp_lpc55xxx_init(void)
 {
-
-	/* old interrupt lock level */
-	unsigned int oldLevel;
-
-	/* disable interrupts */
-	oldLevel = irq_lock();
-
 	z_arm_clear_faults();
 
 	/* Initialize FRO/system clock to 96 MHz */
@@ -313,15 +306,6 @@ static int nxp_lpc55xxx_init(void)
 	/* Turn on PINT device*/
 	PINT_Init(PINT);
 #endif
-
-	/*
-	 * install default handler that simply resets the CPU if configured in
-	 * the kernel, NOP otherwise
-	 */
-	NMI_INIT();
-
-	/* restore interrupt state */
-	irq_unlock(oldLevel);
 
 	return 0;
 }

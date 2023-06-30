@@ -11,7 +11,6 @@
 #include <zephyr/linker/sections.h>
 #include <zephyr/linker/linker-defs.h>
 #include <fsl_clock.h>
-#include <zephyr/arch/cpu.h>
 #include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
 #ifdef CONFIG_NXP_IMX_RT_BOOT_HEADER
 #include <fsl_flexspi_nor_boot.h>
@@ -294,12 +293,6 @@ void imxrt_audio_codec_pll_init(uint32_t clock_name, uint32_t clk_src,
 
 static int imxrt_init(void)
 {
-
-	unsigned int oldLevel; /* old interrupt lock level */
-
-	/* disable interrupts */
-	oldLevel = irq_lock();
-
 #ifndef CONFIG_IMXRT1XXX_CODE_CACHE
 	/* SystemInit enables code cache, disable it here */
 	SCB_DisableICache();
@@ -321,14 +314,6 @@ static int imxrt_init(void)
 	/* Initialize system clock */
 	clock_init();
 
-	/*
-	 * install default handler that simply resets the CPU
-	 * if configured in the kernel, NOP otherwise
-	 */
-	NMI_INIT();
-
-	/* restore interrupt state */
-	irq_unlock(oldLevel);
 	return 0;
 }
 

@@ -18,7 +18,6 @@
 #include <soc.h>
 #include <zephyr/drivers/uart.h>
 #include <zephyr/linker/sections.h>
-#include <zephyr/arch/cpu.h>
 #include <aarch32/cortex_m/exc.h>
 #include <fsl_power.h>
 #include <fsl_clock.h>
@@ -109,13 +108,6 @@ static ALWAYS_INLINE void clock_init(void)
 
 static int nxp_lpc54114_init(void)
 {
-
-	/* old interrupt lock level */
-	unsigned int oldLevel;
-
-	/* disable interrupts */
-	oldLevel = irq_lock();
-
 	/* Initialize FRO/system clock to 48 MHz */
 	clock_init();
 
@@ -123,15 +115,6 @@ static int nxp_lpc54114_init(void)
 	/* Turn on PINT device*/
 	PINT_Init(PINT);
 #endif
-
-	/*
-	 * install default handler that simply resets the CPU if configured in
-	 * the kernel, NOP otherwise
-	 */
-	NMI_INIT();
-
-	/* restore interrupt state */
-	irq_unlock(oldLevel);
 
 	return 0;
 }
