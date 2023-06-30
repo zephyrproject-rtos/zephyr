@@ -12,6 +12,8 @@ config SOC_RISCV_ANDES_AE350
 	select RISCV_ISA_EXT_M
 	select RISCV_ISA_EXT_A
 	select RISCV_ISA_EXT_C
+	select CPU_HAS_DCACHE
+	select CPU_HAS_ICACHE
 	select RISCV_PMP
 
 endchoice
@@ -59,10 +61,6 @@ config DOUBLE_PRECISION_FPU
 	select CPU_HAS_FPU_DOUBLE_PRECISION
 
 endchoice
-
-config CACHE_ENABLE
-	bool "Cache"
-	default n
 
 config SOC_ANDES_V5_HWDSP
 	bool "AndeStar V5 DSP ISA"
@@ -117,7 +115,7 @@ config SOC_ANDES_V5_L2C
 config SOC_ANDES_V5_IOCP
 	bool "Andes V5 I/O Coherence Port (IOCP)"
 	depends on SOC_ANDES_V5_L2C
-	depends on CACHE_ENABLE
+	depends on DCACHE
 	help
 		Support Andes V5 I/O Coherence Port to handle cache coherency
 		between cache and external non-caching master, such as DMA

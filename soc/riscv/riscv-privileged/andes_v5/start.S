@@ -21,15 +21,20 @@ SECTION_FUNC(init, entry)
 	csrw NDS_UITB, t0
 #endif
 
-#ifdef CONFIG_CACHE_ENABLE
+#ifdef CONFIG_ICACHE
+	/* Enable I cache with HW prefetcher. */
+	li t0, (1 << 9) | (1 << 0)
+	csrs NDS_MCACHE_CTL, t0
+#endif
+
+#ifdef CONFIG_DCACHE
 	/*
-	 * Enable I/D cache with HW prefetcher,
-	 * D-cache write-around (threshold: 4 cache lines),
-	 * and CM (Coherence Manager).
+	 * Enable D cache with HW prefetcher, D-cache write-around
+	 * (threshold: 4 cache lines), and CM (Coherence Manager).
 	 */
 	li t0, (0x3 << 13)
 	csrc NDS_MCACHE_CTL, t0
-	li t0, (1 << 19) | (1 << 13) | (1 << 10) | (1 << 9) | (0x3)
+	li t0, (1 << 19) | (1 << 13) | (1 << 10) | (1 << 1)
 	csrs NDS_MCACHE_CTL, t0
 
 	/* Check if CPU support CM or not. */
