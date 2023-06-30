@@ -118,26 +118,12 @@ static ALWAYS_INLINE void clock_init(void)
 
 static int fsl_frdm_k22f_init(void)
 {
-
-	unsigned int oldLevel; /* old interrupt lock level */
-
-	/* disable interrupts */
-	oldLevel = irq_lock();
-
 	/* release I/O power hold to allow normal run state */
 	PMC->REGSC |= PMC_REGSC_ACKISO_MASK;
 
 	/* Initialize PLL/system clock to 120 MHz */
 	clock_init();
 
-	/*
-	 * install default handler that simply resets the CPU
-	 * if configured in the kernel, NOP otherwise
-	 */
-	NMI_INIT();
-
-	/* restore interrupt state */
-	irq_unlock(oldLevel);
 	return 0;
 }
 

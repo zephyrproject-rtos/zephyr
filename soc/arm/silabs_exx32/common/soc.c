@@ -10,7 +10,6 @@
  */
 
 #include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
-#include <zephyr/arch/cpu.h>
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
@@ -209,12 +208,6 @@ static void swo_init(void)
  */
 static int silabs_exx32_init(void)
 {
-
-	unsigned int oldLevel; /* old interrupt lock level */
-
-	/* disable interrupts */
-	oldLevel = irq_lock();
-
 	/* handle chip errata */
 	CHIP_Init();
 
@@ -242,20 +235,12 @@ static int silabs_exx32_init(void)
 	/* Initialize system clock according to CONFIG_CMU settings */
 	clock_init();
 
-	/*
-	 * install default handler that simply resets the CPU
-	 * if configured in the kernel, NOP otherwise
-	 */
-	NMI_INIT();
-
 #ifdef CONFIG_LOG_BACKEND_SWO
 	/* Configure SWO debug output */
 	swo_init();
 #endif
 #endif /* !CONFIG_SOC_GECKO_DEV_INIT */
 
-	/* restore interrupt state */
-	irq_unlock(oldLevel);
 	return 0;
 }
 

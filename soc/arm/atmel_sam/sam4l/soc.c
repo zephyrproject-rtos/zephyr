@@ -14,8 +14,6 @@
 #include <zephyr/device.h>
 #include <zephyr/init.h>
 #include <soc.h>
-#include <zephyr/arch/cpu.h>
-#include <zephyr/irq.h>
 #include <zephyr/sys/util.h>
 
 /** Watchdog control register first write keys */
@@ -265,11 +263,6 @@ static ALWAYS_INLINE void clock_init(void)
  */
 static int atmel_sam4l_init(void)
 {
-	uint32_t key;
-
-
-	key = irq_lock();
-
 #if defined(CONFIG_WDT_DISABLE_AT_BOOT)
 	wdt_set_ctrl(WDT->CTRL & ~WDT_CTRL_EN);
 	while (WDT->CTRL & WDT_CTRL_EN) {
@@ -279,14 +272,6 @@ static int atmel_sam4l_init(void)
 
 	/* Setup system clocks. */
 	clock_init();
-
-	/*
-	 * Install default handler that simply resets the CPU
-	 * if configured in the kernel, NOP otherwise.
-	 */
-	NMI_INIT();
-
-	irq_unlock(key);
 
 	return 0;
 }

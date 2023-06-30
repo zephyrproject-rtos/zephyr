@@ -15,7 +15,6 @@
 #include <zephyr/kernel.h>
 #include <zephyr/init.h>
 #include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
-#include <zephyr/arch/arm/aarch32/nmi.h>
 #include <hal/nrf_power.h>
 #include <soc/nrfx_coredep.h>
 #include <zephyr/logging/log.h>
@@ -38,11 +37,6 @@ void sys_arch_reboot(int type)
 
 static int nordicsemi_nrf52_init(void)
 {
-	uint32_t key;
-
-
-	key = irq_lock();
-
 #ifdef CONFIG_NRF_ENABLE_ICACHE
 	/* Enable the instruction cache */
 	NRF_NVMC->ICACHECNF = NVMC_ICACHECNF_CACHEEN_Msk;
@@ -54,13 +48,6 @@ static int nordicsemi_nrf52_init(void)
 #if NRF_POWER_HAS_DCDCEN_VDDH && defined(CONFIG_SOC_DCDC_NRF52X_HV)
 	nrf_power_dcdcen_vddh_set(NRF_POWER, true);
 #endif
-
-	/* Install default handler that simply resets the CPU
-	* if configured in the kernel, NOP otherwise
-	*/
-	NMI_INIT();
-
-	irq_unlock(key);
 
 	return 0;
 }

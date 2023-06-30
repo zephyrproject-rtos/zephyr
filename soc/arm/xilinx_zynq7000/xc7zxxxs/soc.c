@@ -6,13 +6,11 @@
 #include <zephyr/arch/cpu.h>
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
-#include <zephyr/init.h>
 #include <zephyr/sys/sys_io.h>
 #include <zephyr/sys/util.h>
 
 #include <zephyr/arch/arm/aarch32/cortex_a_r/cmsis.h>
 #include <zephyr/arch/arm/aarch32/mmu/arm_mmu.h>
-#include <zephyr/arch/arm/aarch32/nmi.h>
 #include "soc.h"
 
 /* System Level Configuration Registers */
@@ -70,23 +68,6 @@ const struct arm_mmu_config mmu_config = {
 	.num_regions = ARRAY_SIZE(mmu_regions),
 	.mmu_regions = mmu_regions,
 };
-
-/**
- * @brief Basic hardware initialization of the Zynq-7000 SoC
- *
- * Performs the basic initialization of the Zynq-7000 SoC.
- *
- * @return 0
- */
-static int soc_xlnx_zynq7000s_init(void)
-{
-	NMI_INIT();
-
-	return 0;
-}
-
-SYS_INIT(soc_xlnx_zynq7000s_init, PRE_KERNEL_1,
-	CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 
 /* Platform-specific early initialization */
 
