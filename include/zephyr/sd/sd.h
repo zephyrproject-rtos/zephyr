@@ -64,6 +64,7 @@ struct sd_card {
 	enum card_status status; /*!< Card status */
 	enum card_type type; /*!< Card type */
 	uint16_t flags; /*!< Card flags */
+	uint8_t bus_width; /*!< Desired bus width */
 	uint8_t card_buffer[CONFIG_SD_BUFFER_SIZE]
 		__aligned(CONFIG_SDHC_BUFFER_ALIGNMENT); /* Card internal buffer */
 };
