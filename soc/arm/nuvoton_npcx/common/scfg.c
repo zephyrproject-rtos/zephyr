@@ -19,6 +19,7 @@ LOG_MODULE_REGISTER(pimux_npcx, LOG_LEVEL_ERR);
 struct npcx_scfg_config {
 	/* scfg device base address */
 	uintptr_t base_scfg;
+	uintptr_t base_dbg;
 	uintptr_t base_glue;
 };
 
@@ -45,6 +46,7 @@ static const struct npcx_alt def_alts[] = {
 
 static const struct npcx_scfg_config npcx_scfg_cfg = {
 	.base_scfg = DT_REG_ADDR_BY_NAME(DT_NODELABEL(scfg), scfg),
+	.base_dbg = DT_REG_ADDR_BY_NAME(DT_NODELABEL(scfg), dbg),
 	.base_glue = DT_REG_ADDR_BY_NAME(DT_NODELABEL(scfg), glue),
 };
 
@@ -127,6 +129,17 @@ void npcx_host_interface_sel(enum npcx_hif_type hif_type)
 	struct scfg_reg *inst_scfg = HAL_SFCG_INST();
 
 	SET_FIELD(inst_scfg->DEVCNT, NPCX_DEVCNT_HIF_TYP_SEL_FIELD, hif_type);
+}
+
+void npcx_dbg_freeze_enable(bool enable)
+{
+	const uintptr_t dbg_base = npcx_scfg_cfg.base_dbg;
+
+	if (enable) {
+		NPCX_DBGFRZEN3(dbg_base) &= ~BIT(NPCX_DBGFRZEN3_GLBL_FRZ_DIS);
+	} else {
+		NPCX_DBGFRZEN3(dbg_base) |= BIT(NPCX_DBGFRZEN3_GLBL_FRZ_DIS);
+	}
 }
 
 /* Pin-control driver registration */

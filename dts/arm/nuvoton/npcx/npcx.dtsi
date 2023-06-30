@@ -83,10 +83,12 @@
 		scfg: scfg@400c3000 {
 			compatible = "nuvoton,npcx-scfg";
 			/* First reg region is System Configuration Device */
-			/* Second reg region is System Glue Device */
+			/* Second reg region is Debugger Interface Device */
+			/* Third reg region is System Glue Device */
 			reg = <0x400c3000 0x70
+			       0x400c3070 0x30
 			       0x400a5000 0x2000>;
-			reg-names = "scfg", "glue";
+			reg-names = "scfg", "dbg", "glue";
 			#alt-cells = <3>;
 			#lvol-cells = <2>;
 		};
