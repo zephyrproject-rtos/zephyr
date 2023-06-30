@@ -35,7 +35,7 @@ struct current_sense_amplifier_dt_spec {
 	}
 
 /**
- * @brief Calculates the actual voltage from the measured voltage
+ * @brief Calculates the actual amperage from the measured voltage
  *
  * @param[in] spec current sensor specification from Devicetree.
  * @param[in,out] v_to_i Pointer to the measured voltage in millivolts on input, and the
