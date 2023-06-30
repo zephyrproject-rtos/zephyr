@@ -281,6 +281,59 @@ static ALWAYS_INLINE void k_spin_release(struct k_spinlock *l)
  * INTERNAL_HIDDEN @endcond
  */
 
+/**
+ * @brief Leaves a code block guarded with @ref K_SPINLOCK after releasing the
+ * lock.
+ *
+ * See @ref K_SPINLOCK for details.
+ */
+#define K_SPINLOCK_BREAK continue
+
+/**
+ * @brief Guards a code block with the given spinlock, automatically acquiring
+ * the lock before executing the code block. The lock will be released either
+ * when reaching the end of the code block or when leaving the block with
+ * @ref K_SPINLOCK_BREAK.
+ *
+ * @details Example usage:
+ *
+ * @code{.c}
+ * K_SPINLOCK(&mylock) {
+ *
+ *   ...execute statements with the lock held...
+ *
+ *   if (some_condition) {
+ *     ...release the lock and leave the guarded section prematurely:
+ *     K_SPINLOCK_BREAK;
+ *   }
+ *
+ *   ...execute statements with the lock held...
+ *
+ * }
+ * @endcode
+ *
+ * Behind the scenes this pattern expands to a for-loop whose body is executed
+ * exactly once:
+ *
+ * @code{.c}
+ * for (k_spinlock_key_t key = k_spin_lock(&mylock); ...; k_spin_unlock(&mylock, key)) {
+ *     ...
+ * }
+ * @endcode
+ *
+ * @warning The code block must execute to its end or be left by calling
+ * @ref K_SPINLOCK_BREAK. Otherwise, e.g. if exiting the block with a break,
+ * goto or return statement, the spinlock will not be released on exit.
+ *
+ * @note In user mode the spinlock must be placed in memory accessible to the
+ * application, see @ref K_APP_DMEM and @ref K_APP_BMEM macros for details.
+ *
+ * @param lck Spinlock used to guard the enclosed code block.
+ */
+#define K_SPINLOCK(lck)                                                                            \
+	for (k_spinlock_key_t __i = {}, __key = k_spin_lock(lck); !__i.key;                        \
+	     k_spin_unlock(lck, __key), __i.key = 1)
+
 /** @} */
 
 #ifdef __cplusplus

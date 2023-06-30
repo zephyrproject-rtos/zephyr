@@ -227,10 +227,8 @@ void z_mem_manage_init(void);
  */
 void z_mem_manage_boot_finish(void);
 
-#define LOCKED(lck) for (k_spinlock_key_t __i = {},			\
-					  __key = k_spin_lock(lck);	\
-			!__i.key;					\
-			k_spin_unlock(lck, __key), __i.key = 1)
+/* Alias of K_SPINLOCK to keep kernel code concise. */
+#define LOCKED K_SPINLOCK
 
 #ifdef CONFIG_PM
 
