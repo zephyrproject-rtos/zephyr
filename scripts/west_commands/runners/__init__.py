@@ -39,6 +39,7 @@ _names = [
     'jlink',
     'mdb',
     'misc',
+    'native_gdb',
     'nios2',
     'nrfjprog',
     'nrfutil',
