@@ -28,3 +28,7 @@ properties:
     type: int
     default: 0
     description: Off delay time, in microseconds
+
+  boot-on:
+    type: boolean
+    description: If set, enable power at boot time

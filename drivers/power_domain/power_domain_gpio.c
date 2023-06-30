@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2022, Commonwealth Scientific and Industrial Research
  * Organisation (CSIRO) ABN 41 687 119 230.
+ * Copyright (c) 2023 T-Mobile USA, Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,6 +20,7 @@ struct pd_gpio_config {
 	struct gpio_dt_spec enable;
 	uint32_t startup_delay_us;
 	uint32_t off_on_delay_us;
+	bool boot_on;
 };
 
 struct pd_gpio_data {
@@ -112,11 +114,15 @@ static int pd_gpio_init(const struct device *dev)
 	/* We can't know how long the domain has been off for before boot */
 	data->next_boot = K_TIMEOUT_ABS_US(cfg->off_on_delay_us);
 
-	if (pm_device_on_power_domain(dev)) {
-		/* Device is unpowered */
+	if (!pm_device_is_powered(dev)) {
+		/* Device is unpowered (we cannot respect boot_on) */
 		pm_device_init_off(dev);
 		rc = gpio_pin_configure_dt(&cfg->enable, GPIO_DISCONNECTED);
+	} else if (cfg->boot_on) {
+		/* Device is powered and set to stay on at boot */
+		rc = gpio_pin_configure_dt(&cfg->enable, GPIO_OUTPUT_ACTIVE);
 	} else {
+		/* Device is powered */
 		pm_device_init_suspended(dev);
 		rc = gpio_pin_configure_dt(&cfg->enable, GPIO_OUTPUT_INACTIVE);
 	}
@@ -129,6 +135,7 @@ static int pd_gpio_init(const struct device *dev)
 		.enable = GPIO_DT_SPEC_INST_GET(id, enable_gpios),	   \
 		.startup_delay_us = DT_INST_PROP(id, startup_delay_us),	   \
 		.off_on_delay_us = DT_INST_PROP(id, off_on_delay_us),	   \
+		.boot_on = DT_INST_PROP(id, boot_on),			   \
 	};								   \
 	static struct pd_gpio_data pd_gpio_##id##_data;			   \
 	PM_DEVICE_DT_INST_DEFINE(id, pd_gpio_pm_action);		   \
