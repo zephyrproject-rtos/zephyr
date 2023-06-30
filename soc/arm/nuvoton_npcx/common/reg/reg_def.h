@@ -158,6 +158,48 @@ static inline uint32_t npcx_pwdwn_ctl_offset(uint32_t ctl_no)
 #define NPCX_ENIDL_CTL_PECI_ENI               2
 #define NPCX_ENIDL_CTL_ADC_ACC_DIS            1
 
+/* Macro functions for Development and Debugger Interface (DDI) registers */
+#define NPCX_DBGCTRL(base)   (*(volatile uint8_t *)(base + 0x004))
+#define NPCX_DBGFRZEN1(base) (*(volatile uint8_t *)(base + 0x006))
+#define NPCX_DBGFRZEN2(base) (*(volatile uint8_t *)(base + 0x007))
+#define NPCX_DBGFRZEN3(base) (*(volatile uint8_t *)(base + 0x008))
+#define NPCX_DBGFRZEN4(base) (*(volatile uint8_t *)(base + 0x009))
+
+/* DDI register fields */
+#define NPCX_DBGCTRL_CCDEV_SEL		FIELD(6, 2)
+#define NPCX_DBGCTRL_CCDEV_DIR		5
+#define NPCX_DBGCTRL_SEQ_WK_EN		4
+#define NPCX_DBGCTRL_FRCLK_SEL_DIS	3
+#define NPCX_DBGFRZEN1_SPIFEN		7
+#define NPCX_DBGFRZEN1_HIFEN		6
+#define NPCX_DBGFRZEN1_ESPISEN		5
+#define NPCX_DBGFRZEN1_UART1FEN		4
+#define NPCX_DBGFRZEN1_SMB3FEN		3
+#define NPCX_DBGFRZEN1_SMB2FEN		2
+#define NPCX_DBGFRZEN1_MFT2FEN		1
+#define NPCX_DBGFRZEN1_MFT1FEN		0
+#define NPCX_DBGFRZEN2_ITIM6FEN		7
+#define NPCX_DBGFRZEN2_ITIM5FEN		6
+#define NPCX_DBGFRZEN2_ITIM4FEN		5
+#define NPCX_DBGFRZEN2_ITIM64FEN	3
+#define NPCX_DBGFRZEN2_SMB1FEN		2
+#define NPCX_DBGFRZEN2_SMB0FEN		1
+#define NPCX_DBGFRZEN2_MFT3FEN		0
+#define NPCX_DBGFRZEN3_GLBL_FRZ_DIS	7
+#define NPCX_DBGFRZEN3_ITIM3FEN		6
+#define NPCX_DBGFRZEN3_ITIM2FEN		5
+#define NPCX_DBGFRZEN3_ITIM1FEN		4
+#define NPCX_DBGFRZEN3_I3CFEN		2
+#define NPCX_DBGFRZEN3_SMB4FEN		1
+#define NPCX_DBGFRZEN3_SHMFEN		0
+#define NPCX_DBGFRZEN4_UART2FEN		6
+#define NPCX_DBGFRZEN4_UART3FEN		5
+#define NPCX_DBGFRZEN4_UART4FEN		4
+#define NPCX_DBGFRZEN4_LCTFEN		3
+#define NPCX_DBGFRZEN4_SMB7FEN		2
+#define NPCX_DBGFRZEN4_SMB6FEN		1
+#define NPCX_DBGFRZEN4_SMB5FEN		0
+
 /*
  * System Configuration (SCFG) device registers
  */
