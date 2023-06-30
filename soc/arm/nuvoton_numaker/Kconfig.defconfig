@@ -4,5 +4,9 @@
 
 source "soc/arm/nuvoton_numaker/*/Kconfig.defconfig.series"
 
+if SOC_FAMILY_NUMAKER
+
 config RESET
 	default y
+
+endif
