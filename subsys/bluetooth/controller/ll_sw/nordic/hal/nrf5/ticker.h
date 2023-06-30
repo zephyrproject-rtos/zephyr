@@ -26,7 +26,8 @@
 #define HAL_TICKER_US_TO_TICKS(x) \
 	( \
 		((uint32_t)(((uint64_t) (x) * 1000000000UL) / \
-		 HAL_TICKER_CNTR_CLK_UNIT_FS)) & HAL_TICKER_CNTR_MASK \
+			    HAL_TICKER_CNTR_CLK_UNIT_FS)) & \
+		HAL_TICKER_CNTR_MASK \
 	)
 
 /* Macro to translate tick units to microseconds. */
