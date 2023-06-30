@@ -1331,11 +1331,16 @@ function(zephyr_code_relocate)
     message(FATAL_ERROR "zephyr_code_relocate() requires a LOCATION argument")
   endif()
   if(CODE_REL_LIBRARY)
-    # Use cmake generator expression to convert library to file list
+    # Use cmake generator expression to convert library to file list,
+    # supporting relative and absolute paths
     set(genex_src_dir "$<TARGET_PROPERTY:${CODE_REL_LIBRARY},SOURCE_DIR>")
     set(genex_src_list "$<TARGET_PROPERTY:${CODE_REL_LIBRARY},SOURCES>")
-    set(file_list
-      "${genex_src_dir}/$<JOIN:${genex_src_list},$<SEMICOLON>${genex_src_dir}/>")
+    set(src_list_abs "$<FILTER:${genex_src_list},INCLUDE,^/>")
+    set(src_list_rel "$<FILTER:${genex_src_list},EXCLUDE,^/>")
+    set(src_list "${genex_src_dir}/$<JOIN:${src_list_rel},$<SEMICOLON>${genex_src_dir}/>")
+    set(nonempty_src_list "$<$<BOOL:${src_list_rel}>:${src_list}>")
+    set(sep_list "$<$<AND:$<BOOL:${src_list_abs}>,$<BOOL:${src_list_rel}>>:$<SEMICOLON>>")
+    set(file_list "${src_list_abs}${sep_list}${nonempty_src_list}")
   else()
     # Check if CODE_REL_FILES is a generator expression, if so leave it
     # untouched.
