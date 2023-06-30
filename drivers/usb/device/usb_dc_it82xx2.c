@@ -177,6 +177,7 @@ struct it82xx2_endpoint_data {
 };
 
 struct usb_it82xx2_data {
+	const struct device *dev;
 	struct it82xx2_endpoint_data ep_data[MAX_NUM_ENDPOINTS];
 	enum it82xx2_setup_stage st_state; /* Setup State */
 
@@ -196,6 +197,8 @@ struct usb_it82xx2_data {
 	bool ep_ready[3];
 
 	struct k_sem ep_sem[3];
+	struct k_sem suspended_sem;
+	struct k_work_delayable check_suspended_work;
 };
 
 /* Mapped to the bit definitions in the EPN_EXTEND_CONTROL1 Register
@@ -238,24 +241,48 @@ static struct usb_it82xx2_regs *it82xx2_get_usb_regs(void)
 	return usb_regs;
 }
 
+static void it82xx2_enable_sof_int(bool enable)
+{
+	struct usb_it82xx2_regs *const usb_regs =
+		(struct usb_it82xx2_regs *)it82xx2_get_usb_regs();
+
+	usb_regs->dc_interrupt_status = DC_SOF_RECEIVED;
+	if (enable) {
+		usb_regs->dc_interrupt_mask |= DC_SOF_RECEIVED;
+	} else {
+		usb_regs->dc_interrupt_mask &= ~DC_SOF_RECEIVED;
+	}
+}
+
+/* Standby(deep doze) mode enable/disable */
+static void it82xx2_enable_standby_state(bool enable)
+{
+	if (enable) {
+		pm_policy_state_lock_put(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
+	} else {
+		pm_policy_state_lock_get(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
+	}
+}
+
 /* WU90 (USB D+) Enable/Disable */
 static void it82xx2_enable_wu90_irq(const struct device *dev, bool enable)
 {
 	const struct usb_it82xx2_config *cfg = dev->config;
 
+	/* Clear pending interrupt */
+	it8xxx2_wuc_clear_status(cfg->wuc_list[0].wucs, cfg->wuc_list[0].mask);
+
 	if (enable) {
 		irq_enable(IT8XXX2_WU90_IRQ);
 	} else {
 		irq_disable(IT8XXX2_WU90_IRQ);
-		/* Clear pending interrupt */
-		it8xxx2_wuc_clear_status(cfg->wuc_list[0].wucs,
-					cfg->wuc_list[0].mask);
 	}
 }
 
 static void it82xx2_wu90_isr(const struct device *dev)
 {
 	it82xx2_enable_wu90_irq(dev, false);
+	it82xx2_enable_standby_state(false);
 	LOG_DBG("USB D+ (WU90) Triggered");
 }
 
@@ -276,8 +303,6 @@ static void it8xxx2_usb_dc_wuc_init(const struct device *dev)
 
 	/* Connect WU90 (USB D+) interrupt but make it disabled initally */
 	IRQ_CONNECT(IT8XXX2_WU90_IRQ, 0, it82xx2_wu90_isr, 0, 0);
-	irq_disable(IT8XXX2_WU90_IRQ);
-
 }
 
 /* Function it82xx2_get_ep_fifo_ctrl_reg_idx(uint8_t ep_idx):
@@ -460,16 +485,12 @@ static int it82xx2_usb_dc_ip_init(uint8_t p_action)
 		usb_regs->host_device_control = 0;
 	}
 
-	usb_regs->dc_control =
-		DC_GLOBAL_ENABLE | DC_FULL_SPEED_LINE_POLARITY |
-		DC_FULL_SPEED_LINE_RATE | DC_CONNECT_TO_HOST;
-
 	usb_regs->dc_interrupt_status =
 		DC_TRANS_DONE | DC_RESET_EVENT | DC_SOF_RECEIVED;
 
 	usb_regs->dc_interrupt_mask = 0x00;
 	usb_regs->dc_interrupt_mask =
-		DC_TRANS_DONE | DC_RESET_EVENT;
+		DC_TRANS_DONE | DC_RESET_EVENT | DC_SOF_RECEIVED;
 
 	usb_regs->dc_address = DC_ADDR_NULL;
 
@@ -485,9 +506,6 @@ static int it82xx2_usb_dc_attach_init(void)
 	 */
 	gctrl_regs->GCTRL_MCCR &= ~(IT8XXX2_GCTRL_MCCR_USB_EN);
 	gctrl_regs->gctrl_pmer2 |= IT8XXX2_GCTRL_PMER2_USB_PAD_EN;
-
-	/* Disabling WU90 (USB D+) of WUI */
-	irq_disable(IT8XXX2_WU90_IRQ);
 
 	return it82xx2_usb_dc_ip_init(0);
 }
@@ -786,16 +804,10 @@ static void it82xx2_usb_dc_isr(void)
 			usb_regs->dc_interrupt_status = DC_RESET_EVENT;
 		}
 	}
-	/* resume,not test */
-	if (status & DC_RESUME_INT) {
-		udata0.suspended = false;
-		usb_regs->dc_interrupt_mask &= ~DC_RESUME_INT;
-		usb_regs->dc_interrupt_status = DC_RESUME_INT;
-		if (udata0.usb_status_cb) {
-			(*(udata0.usb_status_cb))(USB_DC_RESUME, NULL);
-		}
-
-		return;
+	/* sof received */
+	if (status & DC_SOF_RECEIVED) {
+		it82xx2_enable_sof_int(false);
+		k_work_reschedule(&udata0.check_suspended_work, K_MSEC(5));
 	}
 	/* transaction done */
 	if (status & DC_TRANS_DONE) {
@@ -807,14 +819,49 @@ static void it82xx2_usb_dc_isr(void)
 
 }
 
+static void suspended_check_handler(struct k_work *item)
+{
+	struct usb_it82xx2_data *udata =
+		CONTAINER_OF(item, struct usb_it82xx2_data, check_suspended_work);
+
+	struct usb_it82xx2_regs *const usb_regs =
+		(struct usb_it82xx2_regs *)it82xx2_get_usb_regs();
+
+	if (usb_regs->dc_interrupt_status & DC_SOF_RECEIVED) {
+		usb_regs->dc_interrupt_status = DC_SOF_RECEIVED;
+		if (udata->suspended) {
+			if (udata->usb_status_cb) {
+				(*(udata->usb_status_cb))(USB_DC_RESUME, NULL);
+			}
+			udata->suspended = false;
+			k_sem_give(&udata->suspended_sem);
+		}
+		k_work_reschedule(&udata->check_suspended_work, K_MSEC(5));
+		return;
+	}
+
+	it82xx2_enable_sof_int(true);
+
+	if (!udata->suspended) {
+		if (udata->usb_status_cb) {
+			(*(udata->usb_status_cb))(USB_DC_SUSPEND, NULL);
+		}
+		udata->suspended = true;
+		it82xx2_enable_wu90_irq(udata->dev, true);
+		it82xx2_enable_standby_state(true);
+
+		k_sem_reset(&udata->suspended_sem);
+	}
+}
+
 /*
  * USB Device Controller API
  */
 int usb_dc_attach(void)
 {
 	int ret;
-
-	pm_policy_state_lock_get(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
+	struct usb_it82xx2_regs *const usb_regs =
+		(struct usb_it82xx2_regs *)it82xx2_get_usb_regs();
 
 	if (udata0.attached) {
 		LOG_DBG("Already Attached");
@@ -842,9 +889,19 @@ int usb_dc_attach(void)
 	k_sem_init(&udata0.ep_sem[0], 1, 1);
 	k_sem_init(&udata0.ep_sem[1], 1, 1);
 	k_sem_init(&udata0.ep_sem[2], 1, 1);
+	k_sem_init(&udata0.suspended_sem, 0, 1);
 
-	/* Connect and enable USB interrupt */
+	k_work_init_delayable(&udata0.check_suspended_work, suspended_check_handler);
+
+	/* Connect USB interrupt */
 	IRQ_CONNECT(IT8XXX2_USB_IRQ, 0, it82xx2_usb_dc_isr, 0, 0);
+
+	usb_regs->dc_control =
+		DC_GLOBAL_ENABLE | DC_FULL_SPEED_LINE_POLARITY |
+		DC_FULL_SPEED_LINE_RATE | DC_CONNECT_TO_HOST;
+
+	/* Enable USB D+ and USB interrupts */
+	it82xx2_enable_wu90_irq(udata0.dev, true);
 	irq_enable(IT8XXX2_USB_IRQ);
 
 	return 0;
@@ -854,8 +911,6 @@ int usb_dc_detach(void)
 {
 	struct usb_it82xx2_regs *const usb_regs =
 		(struct usb_it82xx2_regs *)it82xx2_get_usb_regs();
-
-	pm_policy_state_lock_put(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
 
 	if (!udata0.attached) {
 		LOG_DBG("Already Detached");
@@ -868,9 +923,6 @@ int usb_dc_detach(void)
 	/* stop pull-up D+ D-*/
 	usb_regs->dc_control &= ~DC_CONNECT_TO_HOST;
 	udata0.attached = 0U;
-
-	/* Enabling WU90 (USB D+) of WUI */
-	irq_enable(IT8XXX2_WU90_IRQ);
 
 	return 0;
 }
@@ -1591,39 +1643,13 @@ int usb_dc_ep_mps(const uint8_t ep)
 	return udata0.ep_data[ep_idx].mps;
 }
 
-static bool it82xx2_check_suspend(void)
-{
-	struct usb_it82xx2_regs *const usb_regs =
-		(struct usb_it82xx2_regs *)it82xx2_get_usb_regs();
-
-	if (usb_regs->dc_interrupt_status & DC_SOF_RECEIVED) {
-		usb_regs->dc_interrupt_status =
-			usb_regs->dc_interrupt_status;
-	}
-	/* Check suspend, no SOF in last 3ms */
-	k_msleep(4);
-
-	if (usb_regs->dc_interrupt_status & DC_SOF_RECEIVED) {
-		return false;
-	}
-
-	usb_regs->dc_interrupt_status = DC_SOF_RECEIVED | DC_RESUME_INT;
-	usb_regs->dc_interrupt_mask |= DC_RESUME_INT;
-	udata0.suspended = true;
-
-	if (udata0.usb_status_cb) {
-		(*(udata0.usb_status_cb))(USB_DC_SUSPEND, NULL);
-	}
-
-	return true;
-}
-
 int usb_dc_wakeup_request(void)
 {
+	int ret;
 	struct usb_it82xx2_regs *const usb_regs =
 		(struct usb_it82xx2_regs *)it82xx2_get_usb_regs();
 
-	if (udata0.suspended || it82xx2_check_suspend()) {
+	if (udata0.suspended) {
 
 		usb_regs->dc_control =
 			DC_GLOBAL_ENABLE | DC_FULL_SPEED_LINE_POLARITY |
@@ -1638,9 +1664,9 @@ int usb_dc_wakeup_request(void)
 			DC_GLOBAL_ENABLE | DC_FULL_SPEED_LINE_POLARITY |
 			DC_FULL_SPEED_LINE_RATE | DC_CONNECT_TO_HOST;
 
-		if (udata0.suspended) {
-			udata0.suspended = false;
-			irq_disable(IT8XXX2_WU90_IRQ);
+		ret = k_sem_take(&udata0.suspended_sem, K_MSEC(500));
+		if (ret < 0) {
+			LOG_ERR("failed to wake up host");
 		}
 	}
 	return 0;
@@ -1659,6 +1685,8 @@ static int it82xx2_usb_dc_init(const struct device *dev)
 
 	/* Initializing WU90 (USB D+) */
 	it8xxx2_usb_dc_wuc_init(dev);
+
+	udata0.dev = dev;
 
 	return 0;
 }
