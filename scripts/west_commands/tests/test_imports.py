@@ -30,6 +30,7 @@ def test_runner_imports():
                     'mdb-nsim',
                     'mdb-hw',
                     'misc-flasher',
+                    'native_gdb',
                     'nios2',
                     'nrfjprog',
                     'nrfutil',
