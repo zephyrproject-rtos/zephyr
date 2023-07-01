@@ -235,7 +235,7 @@ uint8_t ll_setup_iso_path(uint16_t handle, uint8_t path_dir, uint8_t path_id,
 		 * Identifier (0x02)
 		 */
 		cis = ll_conn_iso_stream_get(handle);
-		if (!cis->group) {
+		if (!cis || !cis->group) {
 			/* CIS does not belong to a CIG */
 			return BT_HCI_ERR_UNKNOWN_CONN_ID;
 		}
