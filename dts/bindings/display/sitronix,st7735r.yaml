@@ -10,7 +10,6 @@ include: [spi-device.yaml, display-controller.yaml]
 properties:
   reset-gpios:
     type: phandle-array
-    required: true
     description: RESET pin.
 
       The RESET pin of ST7735R is active low.
