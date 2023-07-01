@@ -863,7 +863,7 @@ isr_rx_next_subevent:
 
 		/* Adjust nesn when flushing Rx */
 		/* FIXME: When Flush Timeout is implemented */
-		if (cis_lll->tx.bn_curr <= cis_lll->rx.bn) {
+		if (cis_lll->rx.bn_curr <= cis_lll->rx.bn) {
 			lll_flush_rx(cis_lll);
 		}
 
