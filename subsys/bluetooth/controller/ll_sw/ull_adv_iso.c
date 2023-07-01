@@ -1172,8 +1172,8 @@ static void mfy_iso_offset_get(void *param)
 		LL_ASSERT(id != TICKER_NULL);
 	} while (id != ticker_id);
 
-	payload_count = lll_iso->payload_count + ((lll_iso->latency_prepare +
-						   lazy) * lll_iso->bn);
+	payload_count = lll_iso->payload_count +
+			(((uint64_t)lll_iso->latency_prepare + lazy) * lll_iso->bn);
 
 	pdu = lll_adv_sync_data_latest_peek(lll_sync);
 	bi = big_info_get(pdu);
