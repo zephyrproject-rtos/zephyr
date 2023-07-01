@@ -12,11 +12,13 @@
 #ifndef ZEPHYR_INCLUDE_SPINLOCK_H_
 #define ZEPHYR_INCLUDE_SPINLOCK_H_
 
+#include <errno.h>
+#include <stdbool.h>
+
+#include <zephyr/arch/cpu.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/time_units.h>
-#include <stdbool.h>
-#include <zephyr/arch/cpu.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -105,6 +107,28 @@ bool z_spin_lock_mem_coherent(struct k_spinlock *l);
  */
 typedef struct z_spinlock_key k_spinlock_key_t;
 
+static ALWAYS_INLINE void z_spinlock_validate_pre(struct k_spinlock *l)
+{
+	ARG_UNUSED(l);
+#ifdef CONFIG_SPIN_VALIDATE
+	__ASSERT(z_spin_lock_valid(l), "Invalid spinlock %p", l);
+#ifdef CONFIG_KERNEL_COHERENCE
+	__ASSERT_NO_MSG(z_spin_lock_mem_coherent(l));
+#endif
+#endif
+}
+
+static ALWAYS_INLINE void z_spinlock_validate_post(struct k_spinlock *l)
+{
+	ARG_UNUSED(l);
+#ifdef CONFIG_SPIN_VALIDATE
+	z_spin_lock_set_owner(l);
+#if defined(CONFIG_SPIN_LOCK_TIME_LIMIT) && (CONFIG_SPIN_LOCK_TIME_LIMIT != 0)
+	l->lock_time = sys_clock_cycle_get_32();
+#endif /* CONFIG_SPIN_LOCK_TIME_LIMIT */
+#endif /* CONFIG_SPIN_VALIDATE */
+}
+
 /**
  * @brief Lock a spinlock
  *
@@ -144,26 +168,47 @@ static ALWAYS_INLINE k_spinlock_key_t k_spin_lock(struct k_spinlock *l)
 	 */
 	k.key = arch_irq_lock();
 
-#ifdef CONFIG_SPIN_VALIDATE
-	__ASSERT(z_spin_lock_valid(l), "Recursive spinlock %p", l);
-# ifdef CONFIG_KERNEL_COHERENCE
-	__ASSERT_NO_MSG(z_spin_lock_mem_coherent(l));
-# endif
-#endif
-
+	z_spinlock_validate_pre(l);
 #ifdef CONFIG_SMP
 	while (!atomic_cas(&l->locked, 0, 1)) {
 		arch_spin_relax();
 	}
 #endif
+	z_spinlock_validate_post(l);
 
-#ifdef CONFIG_SPIN_VALIDATE
-	z_spin_lock_set_owner(l);
-#if defined(CONFIG_SPIN_LOCK_TIME_LIMIT) && (CONFIG_SPIN_LOCK_TIME_LIMIT != 0)
-	l->lock_time = sys_clock_cycle_get_32();
-#endif /* CONFIG_SPIN_LOCK_TIME_LIMIT */
-#endif/* CONFIG_SPIN_VALIDATE */
 	return k;
+}
+
+/**
+ * @brief Attempt to lock a spinlock
+ *
+ * This routine makes one attempt to lock @p l. If it is successful, then
+ * it will store the key into @p k.
+ *
+ * @param[in] l A pointer to the spinlock to lock
+ * @param[out] k A pointer to the spinlock key
+ * @retval 0 on success
+ * @retval -EBUSY if another thread holds the lock
+ *
+ * @see k_spin_lock
+ * @see k_spin_unlock
+ */
+static ALWAYS_INLINE int k_spin_trylock(struct k_spinlock *l, k_spinlock_key_t *k)
+{
+	int key = arch_irq_lock();
+
+	z_spinlock_validate_pre(l);
+#ifdef CONFIG_SMP
+	if (!atomic_cas(&l->locked, 0, 1)) {
+		arch_irq_unlock(key);
+		return -EBUSY;
+	}
+#endif
+	z_spinlock_validate_post(l);
+
+	k->key = key;
+
+	return 0;
 }
 
 /**
