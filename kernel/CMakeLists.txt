@@ -41,6 +41,7 @@ else()
 list(APPEND kernel_files
   main_weak.c
   banner.c
+  busy_wait.c
   device.c
   errno.c
   fatal.c
