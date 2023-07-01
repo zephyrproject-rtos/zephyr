@@ -644,8 +644,27 @@ static void btp_send_discovery_completed_ev(struct bt_conn *conn, uint8_t status
 	tester_event(BTP_SERVICE_ID_BAP, BTP_BAP_EV_DISCOVERY_COMPLETED, &ev, sizeof(ev));
 }
 
+static bool codec_cap_get_val(const struct bt_audio_codec_cap *codec_cap, uint8_t type,
+			      const struct bt_audio_codec_data **data)
+{
+	if (codec_cap == NULL) {
+		LOG_DBG("codec is NULL");
+		return false;
+	}
+
+	for (size_t i = 0; i < codec_cap->data_count; i++) {
+		if (codec_cap->data[i].data.type == type) {
+			*data = &codec_cap->data[i];
+
+			return true;
+		}
+	}
+
+	return false;
+}
+
 static void btp_send_pac_codec_found_ev(struct bt_conn *conn,
-					const struct bt_audio_codec_cfg *codec_cfg,
+					const struct bt_audio_codec_cap *codec_cap,
 					enum bt_audio_dir dir)
 {
 	struct btp_bap_codec_cap_found_ev ev;
@@ -656,18 +675,18 @@ static void btp_send_pac_codec_found_ev(struct bt_conn *conn,
 	bt_addr_le_copy(&ev.address, info.le.dst);
 
 	ev.dir = dir;
-	ev.coding_format = codec_cfg->id;
+	ev.coding_format = codec_cap->id;
 
-	bt_audio_codec_cfg_get_val(codec_cfg, BT_AUDIO_CODEC_LC3_FREQ, &data);
+	codec_cap_get_val(codec_cap, BT_AUDIO_CODEC_LC3_FREQ, &data);
 	memcpy(&ev.frequencies, data->data.data, sizeof(ev.frequencies));
 
-	bt_audio_codec_cfg_get_val(codec_cfg, BT_AUDIO_CODEC_LC3_DURATION, &data);
+	codec_cap_get_val(codec_cap, BT_AUDIO_CODEC_LC3_DURATION, &data);
 	memcpy(&ev.frame_durations, data->data.data, sizeof(ev.frame_durations));
 
-	bt_audio_codec_cfg_get_val(codec_cfg, BT_AUDIO_CODEC_LC3_FRAME_LEN, &data);
+	codec_cap_get_val(codec_cap, BT_AUDIO_CODEC_LC3_FRAME_LEN, &data);
 	memcpy(&ev.octets_per_frame, data->data.data, sizeof(ev.octets_per_frame));
 
-	bt_codec_get_val(codec, BT_CODEC_LC3_CHAN_COUNT, &data);
+	codec_cap_get_val(codec_cap, BT_AUDIO_CODEC_LC3_CHAN_COUNT, &data);
 	memcpy(&ev.channel_counts, data->data.data, sizeof(ev.channel_counts));
 
 	tester_event(BTP_SERVICE_ID_BAP, BTP_BAP_EV_CODEC_CAP_FOUND, &ev, sizeof(ev));
@@ -1068,7 +1087,7 @@ static int server_stream_config(struct bt_conn *conn, struct bt_bap_stream *stre
 		return err;
 	}
 
-	print_codec_cfg(&codec_cfg);
+	print_codec_cfg(codec_cfg);
 
 	ep = stream->ep;
 	LOG_DBG("ASE Codec Config: ase_id %u dir %u", ep->status.id, ep->dir);
