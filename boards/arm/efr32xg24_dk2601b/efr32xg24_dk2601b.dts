@@ -82,6 +82,24 @@
 	location-sda = <GECKO_LOCATION(5) GECKO_PORT_C GECKO_PIN(5)>;
 	location-scl = <GECKO_LOCATION(5) GECKO_PORT_C GECKO_PIN(4)>;
 	status = "okay";
+
+	veml6035: veml6035@29 {
+		compatible = "vishay,veml7700";
+		reg = <0x29>;
+		status = "okay";
+	};
+
+	si7210: si7210@30 {
+		compatible = "silabs,si7210";
+		reg = <0x30>;
+		status = "okay";
+	};
+
+	si7021: si7021@40 {
+		compatible = "silabs,si7006";
+		reg = <0x40>;
+		status = "okay";
+	};
 };
 
 &gpio {
