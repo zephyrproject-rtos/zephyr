@@ -139,7 +139,6 @@ uint8_t ll_cis_parameters_set(uint8_t cis_id,
  */
 uint8_t ll_cig_parameters_commit(uint8_t cig_id, uint16_t *handles)
 {
-	struct ll_conn_iso_stream *cis;
 	struct ll_conn_iso_group *cig;
 	uint32_t iso_interval_us;
 	uint32_t cig_sync_delay;
@@ -227,6 +226,7 @@ uint8_t ll_cig_parameters_commit(uint8_t cig_id, uint16_t *handles)
 
 	/* Create all configurable CISes */
 	for (uint8_t i = 0U; i < ll_iso_setup.cis_count; i++) {
+		struct ll_conn_iso_stream *cis;
 		memq_link_t *link_tx_free;
 
 		cis = ll_conn_iso_stream_get_by_id(ll_iso_setup.stream[i].cis_id);
@@ -286,6 +286,7 @@ uint8_t ll_cig_parameters_commit(uint8_t cig_id, uint16_t *handles)
 	 * ISO_Interval      |.................|..     |.................|..
 	 */
 	for (uint8_t i = 0U; i < num_cis; i++) {
+		struct ll_conn_iso_stream *cis;
 		uint32_t mpt_c;
 		uint32_t mpt_p;
 		bool tx;
@@ -368,7 +369,6 @@ uint8_t ll_cig_parameters_commit(uint8_t cig_id, uint16_t *handles)
 	if (cig->central.packing == BT_ISO_PACKING_SEQUENTIAL) {
 		/* Sequential CISes - add up the total duration */
 		for (uint8_t i = 0U; i < num_cis; i++) {
-			cis = ll_conn_iso_stream_get_by_group(cig, &handle_iter);
 			total_time += se[i].total_count * se[i].length;
 		}
 	}
@@ -387,6 +387,8 @@ uint8_t ll_cig_parameters_commit(uint8_t cig_id, uint16_t *handles)
 	 * 4) Calculate CIG_Sync_Delay
 	 */
 	for (uint8_t i = 0U; i < num_cis; i++) {
+		struct ll_conn_iso_stream *cis;
+
 		cis = ll_conn_iso_stream_get_by_group(cig, &handle_iter);
 
 		if (!cig->central.test) {
@@ -452,6 +454,7 @@ uint8_t ll_cig_parameters_commit(uint8_t cig_id, uint16_t *handles)
 	 * 2) Lay out CISes by updating CIS_Sync_Delay, distributing according to the packing.
 	 */
 	for (uint8_t i = 0U; i < num_cis; i++) {
+		struct ll_conn_iso_stream *cis;
 		uint32_t c_latency;
 		uint32_t p_latency;
 
