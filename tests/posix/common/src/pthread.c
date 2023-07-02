@@ -230,7 +230,7 @@ void *thread_top_term(void *p1)
 	return NULL;
 }
 
-ZTEST(posix_apis, test_posix_pthread_execution)
+ZTEST(posix_apis, test_pthread_execution)
 {
 	int i, ret, min_prio, max_prio;
 	int dstate, policy;
@@ -411,7 +411,7 @@ ZTEST(posix_apis, test_posix_pthread_execution)
 	printk("Barrier test OK\n");
 }
 
-ZTEST(posix_apis, test_posix_pthread_error_condition)
+ZTEST(posix_apis, test_pthread_error_condition)
 {
 	pthread_attr_t attr;
 	struct sched_param param;
@@ -473,7 +473,7 @@ ZTEST(posix_apis, test_posix_pthread_error_condition)
 		      "get detach state error");
 }
 
-ZTEST(posix_apis, test_posix_pthread_termination)
+ZTEST(posix_apis, test_pthread_termination)
 {
 	int32_t i, ret;
 	int oldstate, policy;
@@ -536,7 +536,7 @@ ZTEST(posix_apis, test_posix_pthread_termination)
 	zassert_equal(ret, ESRCH, "got attr from terminated thread!");
 }
 
-ZTEST(posix_apis, test_posix_thread_attr_stacksize)
+ZTEST(posix_apis, test_pthread_attr_stacksize)
 {
 	size_t act_size;
 	pthread_attr_t attr;
@@ -564,7 +564,7 @@ static void *create_thread1(void *p1)
 	return NULL;
 }
 
-ZTEST(posix_apis, test_posix_pthread_create_negative)
+ZTEST(posix_apis, test_pthread_create_negative)
 {
 	int ret;
 	pthread_t pthread1;
