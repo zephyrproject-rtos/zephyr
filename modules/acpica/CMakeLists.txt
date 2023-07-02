@@ -29,6 +29,7 @@ if (CONFIG_ACPI)
 
 	get_filename_component(libname "${SRC_DIR}/common/" NAME)
 
+if (CONFIG_ACPI_DSDT_SUPPORT)
 	zephyr_library_sources(
 		${COMP_DIR}/dispatcher/dsargs.c
 		${COMP_DIR}/dispatcher/dscontrol.c
@@ -46,7 +47,6 @@ if (CONFIG_ACPI)
 		${COMP_DIR}/dispatcher/dswload2.c
 		${COMP_DIR}/dispatcher/dswscope.c
 		${COMP_DIR}/dispatcher/dswstate.c
-
 		${COMP_DIR}/events/evhandler.c
 		${COMP_DIR}/events/evmisc.c
 		${COMP_DIR}/events/evregion.c
@@ -113,6 +113,22 @@ if (CONFIG_ACPI)
 		${COMP_DIR}/parser/psutils.c
 		${COMP_DIR}/parser/pswalk.c
 		${COMP_DIR}/parser/psxface.c
+		${COMP_DIR}/resources/rsxface.c
+		${COMP_DIR}/resources/rsutils.c
+		${COMP_DIR}/resources/rsaddr.c
+		${COMP_DIR}/resources/rscalc.c
+		${COMP_DIR}/resources/rscreate.c
+		${COMP_DIR}/resources/rsdumpinfo.c
+		${COMP_DIR}/resources/rsinfo.c
+		${COMP_DIR}/resources/rsio.c
+		${COMP_DIR}/resources/rsirq.c
+		${COMP_DIR}/resources/rslist.c
+		${COMP_DIR}/resources/rsmemory.c
+		${COMP_DIR}/resources/rsmisc.c
+		${COMP_DIR}/resources/rsserial.c
+	)
+endif (CONFIG_ACPI_DSDT_SUPPORT)
+	zephyr_library_sources(
 		${COMP_DIR}/tables/tbdata.c
 		${COMP_DIR}/tables/tbfadt.c
 		${COMP_DIR}/tables/tbfind.c
@@ -158,20 +174,6 @@ if (CONFIG_ACPI)
 		${COMP_DIR}/utilities/utxfinit.c
 		${COMP_DIR}/utilities/utresdecode.c
 		${COMP_DIR}/hardware/hwvalid.c
-		${COMP_DIR}/resources/rsxface.c
-		${COMP_DIR}/resources/rsutils.c
-		${COMP_DIR}/resources/rsaddr.c
-		${COMP_DIR}/resources/rscalc.c
-		${COMP_DIR}/resources/rscreate.c
-		${COMP_DIR}/resources/rsdumpinfo.c
-		${COMP_DIR}/resources/rsinfo.c
-		${COMP_DIR}/resources/rsio.c
-		${COMP_DIR}/resources/rsirq.c
-		${COMP_DIR}/resources/rslist.c
-		${COMP_DIR}/resources/rsmemory.c
-		${COMP_DIR}/resources/rsmisc.c
-		${COMP_DIR}/resources/rsserial.c
-
 		${SRC_DIR}/os_specific/service_layers/oszephyr.c
 	)
 endif (CONFIG_ACPI)

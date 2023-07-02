@@ -10,6 +10,11 @@
 
 #define ACPI_RES_INVALID ACPI_RESOURCE_TYPE_MAX
 
+#define ACPI_DRHD_FLAG_INCLUDE_PCI_ALL			BIT(0)
+#define ACPI_DMAR_FLAG_INTR_REMAP				BIT(0)
+#define ACPI_DMAR_FLAG_X2APIC_OPT_OUT			BIT(1)
+#define ACPI_DMAR_FLAG_DMA_CTRL_PLATFORM_OPT_IN	BIT(2)
+
 struct acpi_dev {
 	ACPI_HANDLE handle;
 	char *path;
@@ -18,6 +23,22 @@ struct acpi_dev {
 	int res_type;
 	ACPI_DEVICE_INFO *dev_info;
 };
+
+union acpi_dmar_id {
+	struct {
+		uint16_t function: 3;
+		uint16_t device: 5;
+		uint16_t bus: 8;
+	} bits;
+
+	uint16_t raw;
+};
+
+struct acpi_mcfg {
+	struct acpi_table_header header;
+	uint64_t _reserved;
+	struct acpi_mcfg_allocation pci_segs[];
+} __packed;
 
 /**
  * @brief Retrieve a legacy interrupt number for a PCI device.
@@ -62,8 +83,7 @@ int acpi_current_resource_free(ACPI_RESOURCE *res);
  * @param rt_size the the size of IRQ routing table
  * @return return 0 on success or error code
  */
-int acpi_get_irq_routing_table(char *bus_name,
-			       ACPI_PCI_ROUTING_TABLE *rt_table, size_t rt_size);
+int acpi_get_irq_routing_table(char *bus_name, ACPI_PCI_ROUTING_TABLE *rt_table, size_t rt_size);
 
 /**
  * @brief Parse resource table for a given resource type.
@@ -117,9 +137,48 @@ int acpi_device_type_get(ACPI_RESOURCE *res);
  *
  * @param signature pointer to the 4-character ACPI signature for the requested table
  * @param inst instance number for the requested table
- * @param acpi_table pointer to the acpi table
+ * @return acpi_table pointer to the acpi table on success else return NULL
+ */
+void *acpi_table_get(char *signature, int inst);
+
+/**
+ * @brief retrieve acpi MAD table for the given type.
+ *
+ * @param type type of requested MAD table
+ * @param tables pointer to the MAD table
+ * @param num_inst number of instance for the requested table
  * @return return 0 on success or error code
  */
-int acpi_table_get(char *signature, int inst, void **acpi_table);
+int acpi_madt_entry_get(int type, struct acpi_subtable_header **tables, int *num_inst);
 
+/**
+ * @brief retrieve DMA remapping structure for the given type.
+ *
+ * @param type type of remapping structure
+ * @param tables pointer to the dmar id structure
+ * @return return 0 on success or error code
+ */
+int acpi_dmar_entry_get(enum AcpiDmarType type,
+	struct acpi_subtable_header **tables);
+
+/**
+ * @brief retrieve acpi DRHD info for the given scope.
+ *
+ * @param scope scope of requested DHRD table
+ * @param dev_scope pointer to the sub table (optional)
+ * @param dmar_id pointer to the DHRD info
+ * @param num_inst number of instance for the requested table
+ * @param max_inst maximum number of entry for the given dmar_id buffer
+ * @return return 0 on success or error code
+ */
+int acpi_drhd_get(enum AcpiDmarScopeType scope, struct acpi_dmar_device_scope *dev_scope,
+	union acpi_dmar_id *dmar_id, int *num_inst, int max_inst);
+
+/**
+ * @brief Retrieve lapic info for a specific cpu.
+ *
+ * @param cpu_num the cpu number
+ * @return lapic info on success or NULL
+ */
+struct acpi_madt_local_apic *acpi_local_apic_get(uint32_t cpu_num);
 #endif
