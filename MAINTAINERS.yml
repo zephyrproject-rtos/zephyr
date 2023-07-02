@@ -1899,6 +1899,24 @@ Networking:
   labels:
     - "area: Networking"
 
+"Networking: Native IEEE 802.15.4":
+  status: maintained
+  maintainers:
+    - tbursztyka
+  collaborators:
+    - rlubos
+    - fgrandel
+  files:
+    - doc/connectivity/networking/api/ieee802154.rst
+    - include/zephyr/net/ieee802154.h
+    - include/zephyr/net/ieee802154_pkt.h
+    - include/zephyr/net/ieee802154_mgmt.h
+    - subsys/net/l2/ieee802154/
+    - subsys/net/lib/config/ieee802154_*
+    - tests/net/ieee802154/
+  labels:
+    - "area: IEEE 802.15.4"
+
 "Networking: OpenThread":
   status: maintained
   maintainers:
