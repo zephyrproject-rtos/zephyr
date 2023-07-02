@@ -1,0 +1,24 @@
+&mikrobus_spi {
+	cs-gpios = <&mikrobus_header 2 GPIO_ACTIVE_LOW>;
+
+	mcp2518fd_mikroe_mcp2518fd_click: mcp2518fd@0 {
+		compatible = "microchip,mcp251xfd";
+		status = "okay";
+
+		spi-max-frequency = <18000000>;
+		int-gpios = <&mikrobus_header 7 GPIO_ACTIVE_LOW>;
+		reg = <0x0>;
+		osc-freq = <40000000>;
+
+		bus-speed = <125000>;
+		sample-point = <875>;
+		bus-speed-data = <1000000>;
+		sample-point-data = <875>;
+	};
+};
+
+/ {
+	chosen {
+		zephyr,canbus = &mcp2518fd_mikroe_mcp2518fd_click;
+	};
+};
