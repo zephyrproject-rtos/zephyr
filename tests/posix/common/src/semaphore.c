@@ -44,7 +44,7 @@ void initialize_thread_attr(pthread_attr_t *attr)
 	pthread_attr_setschedparam(attr, &schedparam);
 }
 
-ZTEST(posix_apis, test_posix_semaphore)
+ZTEST(posix_apis, test_semaphore)
 {
 	pthread_t thread1, thread2;
 	pthread_attr_t attr1, attr2;
