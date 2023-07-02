@@ -55,6 +55,7 @@ typedef struct pthread_attr pthread_attr_t;
 BUILD_ASSERT(sizeof(pthread_attr_t) >= sizeof(struct pthread_attr));
 
 typedef uint32_t pthread_t;
+typedef uint32_t pthread_spinlock_t;
 
 /* Semaphore */
 typedef struct k_sem sem_t;

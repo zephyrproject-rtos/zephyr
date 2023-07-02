@@ -25,6 +25,10 @@ extern "C" {
 #define PTHREAD_CREATE_DETACHED 0
 #define PTHREAD_CREATE_JOINABLE 1
 
+/* Pthread resource visibility */
+#define PTHREAD_PROCESS_PRIVATE 0
+#define PTHREAD_PROCESS_SHARED  1
+
 /* Pthread cancellation */
 #define _PTHREAD_CANCEL_POS	0
 #define PTHREAD_CANCEL_ENABLE	(0U << _PTHREAD_CANCEL_POS)
@@ -494,6 +498,45 @@ int pthread_setname_np(pthread_t thread, const char *name);
  * @retval Negative value if kernel function error
  */
 int pthread_getname_np(pthread_t thread, char *name, size_t len);
+
+#ifdef CONFIG_PTHREAD_IPC
+
+/**
+ * @brief Destroy a pthread_spinlock_t.
+ *
+ * See IEEE 1003.1
+ */
+int pthread_spin_destroy(pthread_spinlock_t *lock);
+
+/**
+ * @brief Initialize a thread_spinlock_t.
+ *
+ * See IEEE 1003.1
+ */
+int pthread_spin_init(pthread_spinlock_t *lock, int pshared);
+
+/**
+ * @brief Lock a previously initialized thread_spinlock_t.
+ *
+ * See IEEE 1003.1
+ */
+int pthread_spin_lock(pthread_spinlock_t *lock);
+
+/**
+ * @brief Attempt to lock a previously initialized thread_spinlock_t.
+ *
+ * See IEEE 1003.1
+ */
+int pthread_spin_trylock(pthread_spinlock_t *lock);
+
+/**
+ * @brief Unlock a previously locked thread_spinlock_t.
+ *
+ * See IEEE 1003.1
+ */
+int pthread_spin_unlock(pthread_spinlock_t *lock);
+
+#endif
 
 #ifdef __cplusplus
 }
