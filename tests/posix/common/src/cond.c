@@ -13,7 +13,7 @@
  *
  * @details Exactly CONFIG_MAX_PTHREAD_COND_COUNT can be in use at once.
  */
-ZTEST(posix_apis, test_posix_cond_resource_exhausted)
+ZTEST(posix_apis, test_cond_resource_exhausted)
 {
 	size_t i;
 	pthread_cond_t m[CONFIG_MAX_PTHREAD_COND_COUNT + 1];
@@ -37,7 +37,7 @@ ZTEST(posix_apis, test_posix_cond_resource_exhausted)
  *
  * @details Demonstrate that condition variables may be used over and over again.
  */
-ZTEST(posix_apis, test_posix_cond_resource_leak)
+ZTEST(posix_apis, test_cond_resource_leak)
 {
 	pthread_cond_t m;
 
