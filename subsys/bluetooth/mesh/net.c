@@ -58,13 +58,6 @@ LOG_MODULE_REGISTER(bt_mesh_net);
 #define SRC(pdu)           (sys_get_be16(&(pdu)[5]))
 #define DST(pdu)           (sys_get_be16(&(pdu)[7]))
 
-/** Define CONFIG_BT_MESH_SEQ_STORE_RATE even if settings are disabled to
- * compile the code.
- */
-#ifndef CONFIG_BT_SETTINGS
-#define CONFIG_BT_MESH_SEQ_STORE_RATE 1
-#endif
-
 /* Mesh network information for persistent storage. */
 struct net_val {
 	uint16_t primary_addr;
