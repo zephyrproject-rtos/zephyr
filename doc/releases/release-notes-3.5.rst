@@ -297,6 +297,8 @@ Devicetree
   :c:macro:`DT_FOREACH_STATUS_OKAY_NODE_VARGS`
   :c:macro:`DT_MEMORY_ATTR_FOREACH_NODE`
   :c:macro:`DT_MEMORY_ATTR_APPLY`
+  :c:macro:`DT_MEM_FROM_FIXED_PARTITION`
+  :c:macro:`DT_FIXED_PARTITION_ADDR`
 
 Libraries / Subsystems
 **********************
