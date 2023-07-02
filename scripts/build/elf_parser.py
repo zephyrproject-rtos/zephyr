@@ -228,7 +228,7 @@ class ZephyrElf:
         ordinal_arrays = {}
         def _on_ordinal(sym):
             ordinal_arrays[sym.entry.st_value] = DeviceOrdinals(self, sym)
-        self._object_find_named('__devicehdl_', _on_ordinal)
+        self._object_find_named('__devicedeps_', _on_ordinal)
 
         # Find all device structs
         def _on_device(sym):

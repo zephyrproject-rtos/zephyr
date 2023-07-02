@@ -56,7 +56,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define MAX_INSTANCE_COUNT		CONFIG_LWM2M_SECURITY_INSTANCE_COUNT
 
 #define SECURITY_URI_LEN		255
-#define IDENTITY_LEN			128
+#define IDENTITY_LEN			CONFIG_LWM2M_SECURITY_KEY_SIZE
 #define KEY_LEN				CONFIG_LWM2M_SECURITY_KEY_SIZE
 
 /*
@@ -211,6 +211,21 @@ int lwm2m_security_index_to_inst_id(int index)
 
 	return inst[index].obj_inst_id;
 }
+
+int lwm2m_security_mode(struct lwm2m_ctx *ctx)
+{
+	int ret;
+	uint8_t mode;
+	struct lwm2m_obj_path path =
+		LWM2M_OBJ(LWM2M_OBJECT_SECURITY_ID, ctx->sec_obj_inst, SECURITY_MODE_ID);
+
+	ret = lwm2m_get_u8(&path, &mode);
+	if (ret) {
+		return ret;
+	}
+	return (int)mode;
+}
+
 
 static int lwm2m_security_init(void)
 {

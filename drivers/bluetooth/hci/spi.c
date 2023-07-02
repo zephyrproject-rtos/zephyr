@@ -495,6 +495,7 @@ static int bt_spi_open(void)
 	/* Configure IRQ pin and the IRQ call-back/handler */
 	gpio_pin_configure_dt(&irq_gpio, GPIO_INPUT);
 
+	gpio_init_callback(&gpio_cb, bt_to_active_isr, BIT(irq_gpio.pin));
 	if (gpio_add_callback(irq_gpio.port, &gpio_cb)) {
 		return -EINVAL;
 	}

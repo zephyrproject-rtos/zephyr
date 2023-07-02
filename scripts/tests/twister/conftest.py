@@ -9,6 +9,8 @@ import os
 import sys
 import pytest
 
+pytest_plugins = ["pytester"]
+
 ZEPHYR_BASE = os.getenv("ZEPHYR_BASE")
 sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/pylib/twister"))
 sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts"))

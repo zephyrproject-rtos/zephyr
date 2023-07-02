@@ -183,7 +183,7 @@ uint8_t tester_init_has(void)
 	tester_register_command_handlers(BTP_SERVICE_ID_HAS, has_handlers,
 					 ARRAY_SIZE(has_handlers));
 
-	struct bt_has_register_param params = {
+	struct bt_has_features_param params = {
 		BT_HAS_HEARING_AID_TYPE_BINAURAL, false, true
 	};
 	int err = bt_has_register(&params);

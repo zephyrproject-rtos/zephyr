@@ -33,7 +33,7 @@ CREATE_FLAG(flag_mtu_exchanged);
 CREATE_FLAG(flag_sink_discovered);
 
 static void unicast_stream_configured(struct bt_bap_stream *stream,
-				      const struct bt_codec_qos_pref *pref)
+				      const struct bt_audio_codec_qos_pref *pref)
 {
 	printk("Configured stream %p\n", stream);
 
@@ -167,16 +167,17 @@ static void add_remote_sink(struct bt_bap_ep *ep)
 	FAIL("Could not add source ep\n");
 }
 
-static void print_remote_codec(const struct bt_codec *codec, enum bt_audio_dir dir)
+static void print_remote_codec(const struct bt_audio_codec_cap *codec_cap, enum bt_audio_dir dir)
 {
-	printk("codec %p dir 0x%02x\n", codec, dir);
+	printk("codec_cap %p dir 0x%02x\n", codec_cap, dir);
 
-	print_codec(codec);
+	print_codec_cap(codec_cap);
 }
 
-static void pac_record_cb(struct bt_conn *conn, enum bt_audio_dir dir, const struct bt_codec *codec)
+static void pac_record_cb(struct bt_conn *conn, enum bt_audio_dir dir,
+			  const struct bt_audio_codec_cap *codec_cap)
 {
-	print_remote_codec(codec, dir);
+	print_remote_codec(codec_cap, dir);
 	SET_FLAG(flag_codec_found);
 }
 
@@ -351,8 +352,8 @@ static void unicast_group_create(struct bt_bap_unicast_group **out_unicast_group
 
 static void unicast_audio_start_inval(struct bt_bap_unicast_group *unicast_group)
 {
-	struct bt_codec invalid_codec =
-		BT_CODEC_LC3_CONFIG_16_2(BT_AUDIO_LOCATION_FRONT_LEFT, BT_AUDIO_CONTEXT_TYPE_MEDIA);
+	struct bt_audio_codec_cfg invalid_codec = BT_AUDIO_CODEC_LC3_CONFIG_16_2(
+		BT_AUDIO_LOCATION_FRONT_LEFT, BT_AUDIO_CONTEXT_TYPE_MEDIA);
 	struct bt_cap_unicast_audio_start_stream_param invalid_stream_param;
 	struct bt_cap_unicast_audio_start_stream_param valid_stream_param;
 	struct bt_cap_unicast_audio_start_param invalid_start_param;
@@ -366,7 +367,7 @@ static void unicast_audio_start_inval(struct bt_bap_unicast_group *unicast_group
 	valid_stream_param.member.member = default_conn;
 	valid_stream_param.stream = &unicast_client_streams[0];
 	valid_stream_param.ep = unicast_sink_eps[0];
-	valid_stream_param.codec = &unicast_preset_16_2_1.codec;
+	valid_stream_param.codec_cfg = &unicast_preset_16_2_1.codec_cfg;
 	valid_stream_param.qos = &unicast_preset_16_2_1.qos;
 
 	/* Test NULL parameters */
@@ -439,7 +440,7 @@ static void unicast_audio_start_inval(struct bt_bap_unicast_group *unicast_group
 
 	memcpy(&invalid_stream_param, &valid_stream_param, sizeof(valid_stream_param));
 
-	invalid_stream_param.codec = NULL;
+	invalid_stream_param.codec_cfg = NULL;
 	err = bt_cap_initiator_unicast_audio_start(&invalid_start_param, unicast_group);
 	if (err == 0) {
 		FAIL("bt_cap_initiator_unicast_audio_start with NULL stream params codec did not "
@@ -461,7 +462,7 @@ static void unicast_audio_start_inval(struct bt_bap_unicast_group *unicast_group
 	memcpy(&invalid_stream_param, &valid_stream_param, sizeof(valid_stream_param));
 	memset(&invalid_codec.meta, 0, sizeof(invalid_codec.meta));
 
-	invalid_stream_param.codec = &invalid_codec;
+	invalid_stream_param.codec_cfg = &invalid_codec;
 	err = bt_cap_initiator_unicast_audio_start(&invalid_start_param, unicast_group);
 	if (err == 0) {
 		FAIL("bt_cap_initiator_unicast_audio_start with invalid Codec metadata did not "
@@ -482,7 +483,7 @@ static void unicast_audio_start(struct bt_bap_unicast_group *unicast_group, bool
 	stream_param[0].member.member = default_conn;
 	stream_param[0].stream = &unicast_client_streams[0];
 	stream_param[0].ep = unicast_sink_eps[0];
-	stream_param[0].codec = &unicast_preset_16_2_1.codec;
+	stream_param[0].codec_cfg = &unicast_preset_16_2_1.codec_cfg;
 	stream_param[0].qos = &unicast_preset_16_2_1.qos;
 
 	UNSET_FLAG(flag_started);
@@ -500,14 +501,14 @@ static void unicast_audio_start(struct bt_bap_unicast_group *unicast_group, bool
 
 static void unicast_audio_update_inval(void)
 {
-	struct bt_codec invalid_codec =
-		BT_CODEC_LC3_CONFIG_16_2(BT_AUDIO_LOCATION_FRONT_LEFT, BT_AUDIO_CONTEXT_TYPE_MEDIA);
+	struct bt_audio_codec_cfg invalid_codec = BT_AUDIO_CODEC_LC3_CONFIG_16_2(
+		BT_AUDIO_LOCATION_FRONT_LEFT, BT_AUDIO_CONTEXT_TYPE_MEDIA);
 	struct bt_cap_unicast_audio_update_param param;
 	int err;
 
 	param.stream = &unicast_client_streams[0];
-	param.meta = unicast_preset_16_2_1.codec.meta;
-	param.meta_count = unicast_preset_16_2_1.codec.meta_count;
+	param.meta = unicast_preset_16_2_1.codec_cfg.meta;
+	param.meta_count = unicast_preset_16_2_1.codec_cfg.meta_count;
 
 	err = bt_cap_initiator_unicast_audio_update(NULL, 1);
 	if (err == 0) {
@@ -539,8 +540,8 @@ static void unicast_audio_update(void)
 	int err;
 
 	param.stream = &unicast_client_streams[0];
-	param.meta = unicast_preset_16_2_1.codec.meta;
-	param.meta_count = unicast_preset_16_2_1.codec.meta_count;
+	param.meta = unicast_preset_16_2_1.codec_cfg.meta;
+	param.meta_count = unicast_preset_16_2_1.codec_cfg.meta_count;
 
 	UNSET_FLAG(flag_updated);
 
@@ -639,7 +640,6 @@ static void test_main_cap_initiator_unicast(void)
 
 	WAIT_FOR_FLAG(flag_mtu_exchanged);
 
-	discover_cas_inval();
 	discover_cas();
 
 	discover_sink();
@@ -648,22 +648,51 @@ static void test_main_cap_initiator_unicast(void)
 		unicast_group_create(&unicast_group);
 
 		for (size_t j = 0U; j < iterations; j++) {
-			unicast_audio_start_inval(unicast_group);
 			unicast_audio_start(unicast_group, true);
 
-			unicast_audio_update_inval();
 			unicast_audio_update();
 
-			unicast_audio_stop_inval();
 			unicast_audio_stop(unicast_group);
 		}
 
-		unicast_group_delete_inval();
 		unicast_group_delete(unicast_group);
 		unicast_group = NULL;
 	}
 
 	PASS("CAP initiator unicast passed\n");
+}
+
+static void test_main_cap_initiator_unicast_inval(void)
+{
+	struct bt_bap_unicast_group *unicast_group;
+
+	init();
+
+	scan_and_connect();
+
+	WAIT_FOR_FLAG(flag_mtu_exchanged);
+
+	discover_cas_inval();
+	discover_cas();
+
+	discover_sink();
+
+	unicast_group_create(&unicast_group);
+
+	unicast_audio_start_inval(unicast_group);
+	unicast_audio_start(unicast_group, true);
+
+	unicast_audio_update_inval();
+	unicast_audio_update();
+
+	unicast_audio_stop_inval();
+	unicast_audio_stop(unicast_group);
+
+	unicast_group_delete_inval();
+	unicast_group_delete(unicast_group);
+	unicast_group = NULL;
+
+	PASS("CAP initiator unicast inval passed\n");
 }
 
 static void test_cap_initiator_unicast_timeout(void)
@@ -702,7 +731,7 @@ static void test_cap_initiator_unicast_timeout(void)
 	unicast_group_delete(unicast_group);
 	unicast_group = NULL;
 
-	PASS("CAP initiator unicast passed\n");
+	PASS("CAP initiator unicast timeout passed\n");
 }
 
 static const struct bst_test_instance test_cap_initiator_unicast[] = {
@@ -717,6 +746,12 @@ static const struct bst_test_instance test_cap_initiator_unicast[] = {
 		.test_post_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_cap_initiator_unicast_timeout,
+	},
+	{
+		.test_id = "cap_initiator_unicast_inval",
+		.test_post_init_f = test_init,
+		.test_tick_f = test_tick,
+		.test_main_f = test_main_cap_initiator_unicast_inval,
 	},
 	BSTEST_END_MARKER,
 };

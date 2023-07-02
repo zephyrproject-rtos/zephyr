@@ -411,6 +411,8 @@ struct icm42688_dev_data {
 	const struct sensor_trigger *data_ready_trigger;
 	struct k_mutex mutex;
 #endif /* CONFIG_ICM42688_TRIGGER */
+
+	int16_t readings[7];
 };
 
 /**
@@ -515,7 +517,7 @@ static inline void icm42688_accel_g(struct icm42688_cfg *cfg, int32_t in, int32_
  * @param out_dps whole deg/s output in int32_t
  * @param out_udps micro (1/1000000) deg/s as uint32_t
  */
-static inline void icm42688_gyro_dps(struct icm42688_cfg *cfg, int32_t in, int32_t *out_dps,
+static inline void icm42688_gyro_dps(const struct icm42688_cfg *cfg, int32_t in, int32_t *out_dps,
 				     uint32_t *out_udps)
 {
 	int64_t sensitivity = 0; /* value equivalent for 10x gyro reading deg/s */
@@ -565,8 +567,8 @@ static inline void icm42688_gyro_dps(struct icm42688_cfg *cfg, int32_t in, int32
  * @param out_ms meters/s^2 (whole) output in int32_t
  * @param out_ums micrometers/s^2 output as uint32_t
  */
-static inline void icm42688_accel_ms(struct icm42688_cfg *cfg, int32_t in, int32_t *out_ms,
-				     uint32_t *out_ums)
+static inline void icm42688_accel_ms(const struct icm42688_cfg *cfg, int32_t in, int32_t *out_ms,
+				     int32_t *out_ums)
 {
 	int64_t sensitivity = 0; /* value equivalent for 1g */
 
@@ -603,8 +605,8 @@ static inline void icm42688_accel_ms(struct icm42688_cfg *cfg, int32_t in, int32
  * @param out_rads whole rad/s output in int32_t
  * @param out_urads microrad/s as uint32_t
  */
-static inline void icm42688_gyro_rads(struct icm42688_cfg *cfg, int32_t in, int32_t *out_rads,
-				      uint32_t *out_urads)
+static inline void icm42688_gyro_rads(const struct icm42688_cfg *cfg, int32_t in, int32_t *out_rads,
+				      int32_t *out_urads)
 {
 	int64_t sensitivity = 0; /* value equivalent for 10x gyro reading deg/s */
 

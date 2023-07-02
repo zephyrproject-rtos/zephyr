@@ -51,6 +51,9 @@ config OPENTHREAD_BORDER_ROUTING
 config OPENTHREAD_BORDER_ROUTING_COUNTERS
 	bool "Border routing counters support"
 
+config OPENTHREAD_BORDER_ROUTING_DHCP6_PD
+	bool "DHCPv6-PD support in border routing"
+
 config OPENTHREAD_CHANNEL_MONITOR
 	bool "Channel monitor support"
 
@@ -246,6 +249,9 @@ config OPENTHREAD_POWER_SUPPLY
 	default "EXTERNAL_STABLE" if OPENTHREAD_POWER_SUPPLY_EXTERNAL_STABLE
 	default "EXTERNAL_UNSTABLE" if OPENTHREAD_POWER_SUPPLY_EXTERNAL_UNSTABLE
 	default ""
+
+config OPENTHREAD_RADIO_STATS
+	bool "Support for Radio Statistics"
 
 config OPENTHREAD_RAW
 	bool "Raw Link support"

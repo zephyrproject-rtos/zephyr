@@ -188,6 +188,7 @@ static bool data_cb(struct bt_data *data, void *user_data)
 	switch (data->type) {
 	case BT_DATA_NAME_SHORTENED:
 	case BT_DATA_NAME_COMPLETE:
+	case BT_DATA_BROADCAST_NAME:
 		memcpy(name, data->data, MIN(data->data_len, NAME_LEN - 1));
 		return false;
 	default:
@@ -346,20 +347,56 @@ static const char *scan_response_type_txt(uint8_t type)
 	}
 }
 
-static void scan_recv(const struct bt_le_scan_recv_info *info,
-		      struct net_buf_simple *buf)
+bool passes_scan_filter(const struct bt_le_scan_recv_info *info, const struct net_buf_simple *buf)
+{
+
+	if (scan_filter.rssi_set && (scan_filter.rssi > info->rssi)) {
+		return false;
+	}
+
+	if (scan_filter.pa_interval_set &&
+	    (scan_filter.pa_interval > BT_CONN_INTERVAL_TO_MS(info->interval))) {
+		return false;
+	}
+
+	if (scan_filter.addr_set) {
+		char le_addr[BT_ADDR_LE_STR_LEN] = {0};
+		int err;
+
+		err = bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
+		if (err != 0) {
+			shell_error(ctx_shell, "Failed to convert addr to string: %d", err);
+			return false;
+		}
+
+		if (!is_substring(scan_filter.addr, le_addr)) {
+			return false;
+		}
+	}
+
+	if (scan_filter.name_set) {
+		struct net_buf_simple buf_copy;
+		char name[NAME_LEN] = {0};
+
+		/* call to bt_data_parse consumes netbufs so shallow clone for verbose output */
+		net_buf_simple_clone(buf, &buf_copy);
+		bt_data_parse(&buf_copy, data_cb, name);
+
+		if (!is_substring(scan_filter.name, name)) {
+			return false;
+		}
+	}
+
+	return true;
+}
+
+static void scan_recv(const struct bt_le_scan_recv_info *info, struct net_buf_simple *buf)
 {
 	char le_addr[BT_ADDR_LE_STR_LEN];
 	char name[NAME_LEN];
 	struct net_buf_simple buf_copy;
 
-	if (scan_filter.rssi_set && (scan_filter.rssi > info->rssi)) {
-		return;
-	}
-
-	bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
-
-	if (scan_filter.addr_set && !is_substring(scan_filter.addr, le_addr)) {
+	if (!passes_scan_filter(info, buf)) {
 		return;
 	}
 
@@ -371,15 +408,7 @@ static void scan_recv(const struct bt_le_scan_recv_info *info,
 	(void)memset(name, 0, sizeof(name));
 
 	bt_data_parse(buf, data_cb, name);
-
-	if (scan_filter.name_set && !is_substring(scan_filter.name, name)) {
-		return;
-	}
-
-	if (scan_filter.pa_interval_set &&
-	    (scan_filter.pa_interval > BT_CONN_INTERVAL_TO_MS(info->interval))) {
-		return;
-	}
+	bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
 
 	shell_print(ctx_shell, "%s%s, AD evt type %u, RSSI %i %s "
 		    "C:%u S:%u D:%d SR:%u E:%u Prim: %s, Secn: %s, "
@@ -586,7 +615,7 @@ done:
 	}
 }
 
-static void disconencted_set_new_default_conn_cb(struct bt_conn *conn, void *user_data)
+static void disconnected_set_new_default_conn_cb(struct bt_conn *conn, void *user_data)
 {
 	struct bt_conn_info info;
 
@@ -622,7 +651,7 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 		default_conn = NULL;
 
 		/* If we are connected to other devices, set one of them as default */
-		bt_conn_foreach(BT_CONN_TYPE_LE, disconencted_set_new_default_conn_cb, NULL);
+		bt_conn_foreach(BT_CONN_TYPE_LE, disconnected_set_new_default_conn_cb, NULL);
 	}
 }
 
@@ -818,22 +847,22 @@ struct bt_le_per_adv_sync *per_adv_syncs[CONFIG_BT_PER_ADV_SYNC_MAX];
 static void per_adv_sync_sync_cb(struct bt_le_per_adv_sync *sync,
 				 struct bt_le_per_adv_sync_synced_info *info)
 {
+	const bool is_past_peer = info->conn != NULL;
 	char le_addr[BT_ADDR_LE_STR_LEN];
 	char past_peer[BT_ADDR_LE_STR_LEN];
 
 	bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
 
-	if (info->conn) {
+	if (is_past_peer) {
 		conn_addr_str(info->conn, past_peer, sizeof(past_peer));
-	} else {
-		memset(past_peer, 0, sizeof(past_peer));
 	}
 
 	shell_print(ctx_shell, "PER_ADV_SYNC[%u]: [DEVICE]: %s synced, "
 		    "Interval 0x%04x (%u us), PHY %s, SD 0x%04X, PAST peer %s",
 		    bt_le_per_adv_sync_get_index(sync), le_addr,
 		    info->interval, BT_CONN_INTERVAL_TO_US(info->interval),
-		    phy2str(info->phy), info->service_data, past_peer);
+		    phy2str(info->phy), info->service_data,
+		    is_past_peer ? past_peer : "not present");
 
 	if (info->conn) { /* if from PAST */
 		for (int i = 0; i < ARRAY_SIZE(per_adv_syncs); i++) {

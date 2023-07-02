@@ -26,7 +26,7 @@ LOG_MODULE_REGISTER(bt_tmap, CONFIG_BT_TMAP_LOG_LEVEL);
 #define TMAP_ALL_ROLES		0x3F
 
 static uint16_t tmap_role;
-static struct bt_tmap_cb *cb;
+static const struct bt_tmap_cb *cb;
 static bool tmas_found;
 
 static struct bt_uuid_16 uuid[CONFIG_BT_MAX_CONN] = {BT_UUID_INIT_16(0)};
@@ -141,10 +141,10 @@ static ssize_t read_role(struct bt_conn *conn,
 /* Telephony and Media Audio Service attributes */
 #define BT_TMAS_SERVICE_DEFINITION \
 	BT_GATT_PRIMARY_SERVICE(BT_UUID_TMAS), \
-	BT_AUDIO_CHRC(BT_UUID_GATT_TMAPR, \
-		      BT_GATT_CHRC_READ, \
-		      BT_GATT_PERM_READ_ENCRYPT, \
-		      read_role, NULL, NULL)
+	BT_GATT_CHARACTERISTIC(BT_UUID_GATT_TMAPR, \
+			       BT_GATT_CHRC_READ, \
+			       BT_GATT_PERM_READ, \
+			       read_role, NULL, NULL)
 
 static struct bt_gatt_attr svc_attrs[] = { BT_TMAS_SERVICE_DEFINITION };
 static struct bt_gatt_service tmas;
@@ -167,7 +167,7 @@ int bt_tmap_register(enum bt_tmap_role role)
 	return 0;
 }
 
-int bt_tmap_discover(struct bt_conn *conn, struct bt_tmap_cb *tmap_cb)
+int bt_tmap_discover(struct bt_conn *conn, const struct bt_tmap_cb *tmap_cb)
 {
 	int err = 0;
 	uint8_t conn_id = bt_conn_index(conn);

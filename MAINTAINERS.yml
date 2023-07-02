@@ -1549,6 +1549,7 @@ Input:
     - include/zephyr/input/
     - samples/subsys/input/
     - subsys/input/
+    - tests/drivers/build_all/input/
     - tests/subsys/input/
   description: >-
     Input subsystem and drivers
@@ -1803,6 +1804,7 @@ Networking:
     - rlubos
   collaborators:
     - tbursztyka
+    - ssharks
   files:
     - drivers/net/
     - include/zephyr/net/
@@ -2032,11 +2034,14 @@ Twister:
     - hakehuang
     - gopiotr
     - golowanow
+    - gchwier
   files:
     - scripts/twister
     - scripts/pylib/twister/
     - scripts/tests/twister/
     - doc/develop/test/twister.rst
+    - scripts/pylib/pytest-twister-harness/
+    - doc/develop/test/pytest.rst
   labels:
     - "area: Twister"
 
@@ -2438,15 +2443,12 @@ ITE Platforms:
     - GTLin08
     - RuibinChang
   collaborators:
-    - Dino-Li
-    - GTLin08
-    - RuibinChang
     - jackrosenthal
     - keith-zephyr
     - brockus-zephyr
     - sjg20
   files:
-    - boards/riscv/it8xxx2_evb/
+    - boards/riscv/it8*_evb/
     - drivers/*/*/*it8xxx2*.c
     - drivers/*/*it8xxx2*.c
     - dts/bindings/*/*ite*

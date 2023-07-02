@@ -440,6 +440,7 @@ static int prepare_cb_common(struct lll_prepare_param *p, uint8_t chan_idx)
 	struct ull_hdr *ull;
 	uint32_t remainder;
 	uint32_t hcto;
+	uint32_t ret;
 
 	lll = p->param;
 
@@ -507,22 +508,23 @@ static int prepare_cb_common(struct lll_prepare_param *p, uint8_t chan_idx)
 
 #if defined(CONFIG_BT_CTLR_XTAL_ADVANCED) && \
 	(EVENT_OVERHEAD_PREEMPT_US <= EVENT_OVERHEAD_PREEMPT_MIN_US)
+	uint32_t overhead;
+
+	overhead = lll_preempt_calc(ull, (TICKER_ID_SCAN_SYNC_BASE + ull_sync_lll_handle_get(lll)),
+				    ticks_at_event);
 	/* check if preempt to start has changed */
-	if (lll_preempt_calc(ull, (TICKER_ID_SCAN_SYNC_BASE +
-				   ull_sync_lll_handle_get(lll)),
-			     ticks_at_event)) {
+	if (overhead) {
+		LL_ASSERT_OVERHEAD(overhead);
+
 		radio_isr_set(isr_done, lll);
 		radio_disable();
 
 		return -ECANCELED;
-	} else
-#endif /* CONFIG_BT_CTLR_XTAL_ADVANCED */
-	{
-		uint32_t ret;
-
-		ret = lll_prepare_done(lll);
-		LL_ASSERT(!ret);
 	}
+#endif /* CONFIG_BT_CTLR_XTAL_ADVANCED */
+
+	ret = lll_prepare_done(lll);
+	LL_ASSERT(!ret);
 
 	DEBUG_RADIO_START_O(1);
 

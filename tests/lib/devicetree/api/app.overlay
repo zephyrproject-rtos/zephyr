@@ -105,13 +105,19 @@
 		};
 
 		/*
-		 * This should be the only node with this
+		 * disabled/reserved should be the only nodes with their
 		 * compatible in the tree.
 		 */
 		disabled-node@0 {
 			compatible = "vnd,disabled-compat";
 			reg = < 0x0 0x1000 >;
 			status = "disabled";
+		};
+
+		reserved-node@0 {
+			compatible = "vnd,reserved-node";
+			reg = < 0x0 0x1000 >;
+			status = "reserved";
 		};
 
 		disabled_gpio: gpio@0 {
@@ -122,6 +128,16 @@
 			#gpio-cells = < 0x2 >;
 			label = "TEST_GPIO_0";
 			status = "disabled";
+		};
+
+		reserved_gpio: gpio@1 {
+			compatible = "vnd,gpio-device";
+			gpio-controller;
+			reg = < 0x1 0x1000 >;
+			interrupts = <3 1>;
+			#gpio-cells = < 0x2 >;
+			label = "TEST_GPIO_1";
+			status = "reserved";
 		};
 
 		test_no_status: intc_no_status@0 {
@@ -619,6 +635,18 @@
 		test_stra_unquoted_t: string-array-unquoted-t {
 			compatible = "vnd,string-array-unquoted";
 			val = "XA XPLUS XB", "XC XPLUS XD", "XA XMINUS XB", "XC XMINUS XD";
+		};
+	};
+
+	test_64 {
+		#address-cells = < 2 >;
+		#size-cells = < 0 >;
+
+		test_reg_64: reg-holder-64@ffffffff11223344 {
+			compatible = "vnd,reg-holder-64";
+			reg = < 0xffffffff 0x11223344>;
+			status = "okay";
+			reg-names = "test_name";
 		};
 	};
 };

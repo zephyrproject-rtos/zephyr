@@ -3,10 +3,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <zephyr/sys/util.h>
-#include "radio_nrf5_fem.h"
 
-#if defined(CONFIG_BT_CTLR_TIFS_HW) || !defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
+#if (EVENT_TIMER_ID == 0)
 
 /* PPI channel 20 is pre-programmed with the following fixed settings:
  *   EEP: TIMER0->EVENTS_COMPARE[0]
@@ -37,7 +35,7 @@
  */
 #define HAL_RADIO_END_TIME_CAPTURE_PPI 27
 
-#else /* CONFIG_BT_CTLR_TIFS_HW || !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
+#else /* EVENT_TIMER_ID != 0 */
 
 #define HAL_RADIO_ENABLE_TX_ON_TICK_PPI 2
 #define HAL_RADIO_ENABLE_RX_ON_TICK_PPI 2
@@ -45,7 +43,7 @@
 #define HAL_RADIO_DISABLE_ON_HCTO_PPI 4
 #define HAL_RADIO_END_TIME_CAPTURE_PPI 5
 
-#endif /* CONFIG_BT_CTLR_TIFS_HW || !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
+#endif /* EVENT_TIMER_ID != 0 */
 
 /* Start event timer on RTC tick wire the RTC0 EVENTS_COMPARE[2] event to
  * EVENT_TIMER  TASKS_START task.
@@ -91,7 +89,7 @@
 #if !defined(CONFIG_BT_CTLR_TIFS_HW)
 /* PPI setup used for SW-based auto-switching during TIFS. */
 
-#if !defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
+#if (EVENT_TIMER_ID == 0)
 
 /* Clear SW-switch timer on packet end:
  * wire the RADIO EVENTS_END event to SW_SWITCH_TIMER TASKS_CLEAR task.
@@ -100,7 +98,7 @@
  */
 #define HAL_SW_SWITCH_TIMER_CLEAR_PPI 8
 
-#else /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
+#else /* EVENT_TIMER_ID != 0  */
 
 /* Clear event timer (sw-switch timer) on Radio end:
  * wire the RADIO EVENTS_END event to the
@@ -111,7 +109,7 @@
  */
 #define HAL_SW_SWITCH_TIMER_CLEAR_PPI HAL_RADIO_END_TIME_CAPTURE_PPI
 
-#endif /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
+#endif /* EVENT_TIMER_ID != 0  */
 
 /* Wire a SW SWITCH TIMER EVENTS_COMPARE[<cc_offset>] event
  * to a PPI GROUP TASK DISABLE task (PPI group with index <index>).

@@ -99,6 +99,7 @@ config CPU_CORTEX_R52
 	select AARCH32_ARMV8_R
 	select CPU_HAS_ICACHE
 	select CPU_HAS_DCACHE
+	select VFP_SP_D16
 	help
 	  This option signifies the use of a Cortex-R52 CPU
 

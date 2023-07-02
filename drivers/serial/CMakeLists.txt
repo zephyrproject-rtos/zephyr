@@ -61,12 +61,19 @@ zephyr_library_sources_ifdef(CONFIG_UART_CDNS uart_cdns.c)
 zephyr_library_sources_ifdef(CONFIG_UART_OPENTITAN uart_opentitan.c)
 zephyr_library_sources_ifdef(CONFIG_UART_HOSTLINK uart_hostlink.c)
 zephyr_library_sources_ifdef(CONFIG_UART_EMUL uart_emul.c)
+zephyr_library_sources_ifdef(CONFIG_UART_NUMAKER uart_numaker.c)
+zephyr_library_sources_ifdef(CONFIG_UART_EFINIX_SAPPIHIRE uart_efinix_sapphire.c)
 
 zephyr_library_sources_ifdef(CONFIG_USERSPACE   uart_handlers.c)
 
 if(CONFIG_UART_NATIVE_POSIX)
   zephyr_library_compile_definitions(NO_POSIX_CHEATS)
   zephyr_library_sources(uart_native_posix.c)
+endif()
+
+if(CONFIG_UART_NATIVE_TTY)
+  zephyr_library_compile_definitions(NO_POSIX_CHEATS)
+  zephyr_library_sources(uart_native_tty.c)
 endif()
 
 zephyr_library_sources_ifdef(CONFIG_SERIAL_TEST		serial_test.c)

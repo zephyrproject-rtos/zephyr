@@ -147,13 +147,17 @@ static int esp32_pin_apply_config(uint32_t pin, uint32_t flags)
 		gpio_ll_output_enable(&GPIO, io_pin);
 		esp_rom_gpio_matrix_out(io_pin, SIG_GPIO_OUT_IDX, false, false);
 	} else {
-		gpio_ll_output_disable(&GPIO, io_pin);
+		if (!(flags & ESP32_PIN_OUT_EN_FLAG)) {
+			gpio_ll_output_disable(&GPIO, io_pin);
+		}
 	}
 
 	if (flags & ESP32_DIR_INP_FLAG) {
 		gpio_ll_input_enable(&GPIO, io_pin);
 	} else {
-		gpio_ll_input_disable(&GPIO, io_pin);
+		if (!(flags & ESP32_PIN_IN_EN_FLAG)) {
+			gpio_ll_input_disable(&GPIO, io_pin);
+		}
 	}
 
 end:
@@ -218,6 +222,17 @@ static int esp32_pin_configure(const uint32_t pin_mux, const uint32_t pin_cfg)
 		break;
 	case ESP32_PIN_OUT_LOW:
 		flags |= ESP32_PIN_OUT_LOW_FLAG;
+		break;
+	default:
+		break;
+	}
+
+	switch (ESP32_PIN_EN_DIR(pin_cfg)) {
+	case ESP32_PIN_OUT_EN:
+		flags |= ESP32_PIN_OUT_EN_FLAG;
+		break;
+	case ESP32_PIN_IN_EN:
+		flags |= ESP32_PIN_IN_EN_FLAG;
 		break;
 	default:
 		break;

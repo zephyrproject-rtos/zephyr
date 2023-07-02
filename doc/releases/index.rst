@@ -50,15 +50,17 @@ Supported Releases
 +-----------------+----------------+---------------+
 | Release         | Release date   | EOL           |
 +=================+================+===============+
-| `Zephyr 2.7.5`_ | 01/06/2023     | 31/08/2024    |
+| `Zephyr 2.7.5`_ | 2023-06-01     | 2024-08-31    |
 +-----------------+----------------+---------------+
-| `Zephyr 3.3.0`_ | 19/02/2023     | 31/10/2023    |
+| `Zephyr 3.4.0`_ | 2023-06-16     | 2024-02-29    |
 +-----------------+----------------+---------------+
-| `Zephyr 3.2.0`_ | 30/09/2022     | 31/06/2023    |
+| `Zephyr 3.3.0`_ | 2023-02-19     | 2023-10-31    |
++-----------------+----------------+---------------+
+| `Zephyr 3.2.0`_ | 2022-09-30     | 2023-06-30    |
 +-----------------+----------------+---------------+
 
 
-As of 01/01/2022, LTS1 (1.14.x) is not supported and has reached end of life (EOL).
+As of 2022-01-01, LTS1 (1.14.x) is not supported and has reached end of life (EOL).
 
 Release Notes
 *************
@@ -95,3 +97,4 @@ specific release and can be found at https://docs.zephyrproject.org/.
 .. _`Zephyr 2.7.5`: https://docs.zephyrproject.org/2.7.5/
 .. _`Zephyr 3.2.0`: https://docs.zephyrproject.org/3.2.0/
 .. _`Zephyr 3.3.0`: https://docs.zephyrproject.org/3.3.0/
+.. _`Zephyr 3.4.0`: https://docs.zephyrproject.org/3.4.0/

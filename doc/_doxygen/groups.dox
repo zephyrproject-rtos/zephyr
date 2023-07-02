@@ -22,6 +22,12 @@
 @{
 @}
 
+@brief Multi Function Device Drivers APIs
+@defgroup mfd_interfaces Multi Function Device Drivers APIs
+@ingroup io_interfaces
+@{
+@}
+
 @brief Testing
 @defgroup testing Testing
 @{

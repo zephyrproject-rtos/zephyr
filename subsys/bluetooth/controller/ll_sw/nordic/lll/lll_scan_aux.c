@@ -427,6 +427,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 	uint8_t is_lll_scan;
 	uint32_t remainder;
 	uint32_t hcto;
+	uint32_t ret;
 	uint32_t aa;
 
 	DEBUG_RADIO_START_O(1);
@@ -559,43 +560,44 @@ sync_aux_prepare_done:
 
 #if defined(CONFIG_BT_CTLR_XTAL_ADVANCED) && \
 	(EVENT_OVERHEAD_PREEMPT_US <= EVENT_OVERHEAD_PREEMPT_MIN_US)
+	uint32_t overhead;
+
+	overhead = lll_preempt_calc(ull, (TICKER_ID_SCAN_AUX_BASE +
+					  ull_scan_aux_lll_handle_get(lll_aux)), ticks_at_event);
 	/* check if preempt to start has changed */
-	if (lll_preempt_calc(ull, (TICKER_ID_SCAN_AUX_BASE +
-				   ull_scan_aux_lll_handle_get(lll_aux)),
-				   ticks_at_event)) {
+	if (overhead) {
+		LL_ASSERT_OVERHEAD(overhead);
+
 		radio_isr_set(isr_done, lll_aux);
 		radio_disable();
-	} else
-#endif /* CONFIG_BT_CTLR_XTAL_ADVANCED */
-	{
-		uint32_t ret;
+
+		return -ECANCELED;
+	}
+#endif /* !CONFIG_BT_CTLR_XTAL_ADVANCED */
 
 #if defined(CONFIG_BT_CENTRAL) && defined(CONFIG_BT_CTLR_SCHED_ADVANCED)
-		/* calc end of group in us for the anchor where next connection
-		 * event to be placed.
+	/* calc end of group in us for the anchor where next connection
+	 * event to be placed.
+	 */
+	if (lll && lll->conn) {
+		static memq_link_t link;
+		static struct mayfly mfy_after_cen_offset_get = {
+			0U, 0U, &link, NULL, ull_sched_mfy_after_cen_offset_get};
+
+		/* NOTE: LLL scan instance passed, as done when
+		 *       establishing legacy connections.
 		 */
-		if (lll && lll->conn) {
-			static memq_link_t link;
-			static struct mayfly mfy_after_cen_offset_get = {
-				0, 0, &link, NULL,
-				ull_sched_mfy_after_cen_offset_get};
+		p->param = lll;
+		mfy_after_cen_offset_get.param = p;
 
-			/* NOTE: LLL scan instance passed, as done when
-			 *       establishing legacy connections.
-			 */
-			p->param = lll;
-			mfy_after_cen_offset_get.param = p;
-
-			ret = mayfly_enqueue(TICKER_USER_ID_LLL,
-					     TICKER_USER_ID_ULL_LOW, 1,
-					     &mfy_after_cen_offset_get);
-			LL_ASSERT(!ret);
-		}
-#endif /* CONFIG_BT_CENTRAL && CONFIG_BT_CTLR_SCHED_ADVANCED */
-
-		ret = lll_prepare_done(lll_aux);
+		ret = mayfly_enqueue(TICKER_USER_ID_LLL, TICKER_USER_ID_ULL_LOW, 1U,
+				     &mfy_after_cen_offset_get);
 		LL_ASSERT(!ret);
 	}
+#endif /* CONFIG_BT_CENTRAL && CONFIG_BT_CTLR_SCHED_ADVANCED */
+
+	ret = lll_prepare_done(lll_aux);
+	LL_ASSERT(!ret);
 
 	DEBUG_RADIO_START_O(1);
 

@@ -522,7 +522,8 @@ class RimageSigner(Signer):
         sign_config_extra_args = config_get_words(command.config, 'rimage.extra-args', [])
 
         if '-k' not in sign_config_extra_args + args.tool_args:
-            cmake_default_key = cache.get('RIMAGE_SIGN_KEY')
+            # rimage requires a key argument even when it does not sign
+            cmake_default_key = cache.get('RIMAGE_SIGN_KEY', 'key placeholder from sign.py')
             extra_ri_args += [ '-k', str(sof_src_dir / 'keys' / cmake_default_key) ]
 
         if '-c' not in sign_config_extra_args + args.tool_args:

@@ -11,7 +11,7 @@
 
 #define GPDMA_CTL_OFFSET 0x0004
 #define GPDMA_CTL_FDCGB BIT(0)
-#define GPDMA_CTL_DGCD BIT(30)
+#define GPDMA_CTL_DCGD BIT(30)
 
 /* TODO make device tree defined? */
 #define GPDMA_CHLLPC_OFFSET(channel) (0x0010 + channel*0x10)
@@ -247,7 +247,7 @@ static void intel_adsp_gpdma_clock_enable(const struct device *dev)
 	uint32_t val;
 
 	if (IS_ENABLED(CONFIG_SOC_SERIES_INTEL_ACE)) {
-		val = sys_read32(reg) | GPDMA_CTL_DGCD;
+		val = sys_read32(reg) | GPDMA_CTL_DCGD;
 	} else {
 		val = GPDMA_CTL_FDCGB;
 	}
@@ -261,7 +261,7 @@ static void intel_adsp_gpdma_clock_disable(const struct device *dev)
 #ifdef CONFIG_SOC_SERIES_INTEL_ACE
 	const struct intel_adsp_gpdma_cfg *const dev_cfg = dev->config;
 	uint32_t reg = dev_cfg->shim + GPDMA_CTL_OFFSET;
-	uint32_t val = sys_read32(reg) & ~GPDMA_CTL_DGCD;
+	uint32_t val = sys_read32(reg) & ~GPDMA_CTL_DCGD;
 
 	sys_write32(val, reg);
 #endif

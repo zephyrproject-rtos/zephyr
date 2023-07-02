@@ -264,6 +264,11 @@ static inline const char *wifi_link_mode_txt(enum wifi_link_mode link_mode)
 	}
 }
 
+enum wifi_scan_type {
+	WIFI_SCAN_TYPE_ACTIVE = 0,
+	WIFI_SCAN_TYPE_PASSIVE,
+};
+
 enum wifi_ps {
 	WIFI_PS_DISABLED = 0,
 	WIFI_PS_ENABLED,
@@ -352,10 +357,11 @@ enum wifi_twt_fail_reason {
 	WIFI_TWT_FAIL_OPERATION_IN_PROGRESS,
 	WIFI_TWT_FAIL_INVALID_FLOW_ID,
 	WIFI_TWT_FAIL_IP_NOT_ASSIGNED,
+	WIFI_TWT_FAIL_FLOW_ALREADY_EXISTS,
 };
 
 static const char * const twt_err_code_tbl[] = {
-	[WIFI_TWT_FAIL_UNSPECIFIED] = "Unspecfied",
+	[WIFI_TWT_FAIL_UNSPECIFIED] = "Unspecified",
 	[WIFI_TWT_FAIL_CMD_EXEC_FAIL] = "Command Execution failed",
 	[WIFI_TWT_FAIL_OPERATION_NOT_SUPPORTED] =
 		"Operation not supported",
@@ -371,6 +377,8 @@ static const char * const twt_err_code_tbl[] = {
 		"Invalid negotiated flow id",
 	[WIFI_TWT_FAIL_IP_NOT_ASSIGNED] =
 		"IP address not assigned",
+	[WIFI_TWT_FAIL_FLOW_ALREADY_EXISTS] =
+		"Flow already exists",
 };
 
 static inline const char *get_twt_err_code_str(int16_t err_no)

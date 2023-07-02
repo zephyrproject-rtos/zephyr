@@ -10,6 +10,7 @@
 #include <zephyr/mgmt/ec_host_cmd/ec_host_cmd.h>
 #include <zephyr/mgmt/ec_host_cmd/backend.h>
 #include <zephyr/sys/iterable_sections.h>
+#include <stdio.h>
 #include <string.h>
 
 LOG_MODULE_REGISTER(host_cmd_handler, CONFIG_EC_HC_LOG_LEVEL);
@@ -161,9 +162,19 @@ int ec_host_cmd_send_response(enum ec_host_cmd_status status,
 	struct ec_host_cmd_tx_buf *tx = &hc->tx;
 
 	if (status != EC_HOST_CMD_SUCCESS) {
+		const struct ec_host_cmd_request_header *const rx_header =
+			(const struct ec_host_cmd_request_header *const)hc->rx_ctx.buf;
+
+		LOG_INF("HC 0x%04x err %d", rx_header->cmd_id, status);
 		send_status_response(hc->backend, tx, status);
 		return status;
 	}
+
+#ifdef CONFIG_EC_HOST_CMD_LOG_DBG_BUFFERS
+	if (args->output_buf_size) {
+		LOG_HEXDUMP_DBG(args->output_buf, args->output_buf_size, "HC resp:");
+	}
+#endif
 
 	status = prepare_response(tx, args->output_buf_size);
 	if (status != EC_HOST_CMD_SUCCESS) {
@@ -172,6 +183,41 @@ int ec_host_cmd_send_response(enum ec_host_cmd_status status,
 	}
 
 	return hc->backend->api->send(hc->backend);
+}
+
+static void ec_host_cmd_log_request(const uint8_t *rx_buf)
+{
+	static uint16_t prev_cmd;
+	const struct ec_host_cmd_request_header *const rx_header =
+		(const struct ec_host_cmd_request_header *const)rx_buf;
+
+	if (IS_ENABLED(CONFIG_EC_HOST_CMD_LOG_DBG_BUFFERS)) {
+		if (rx_header->data_len) {
+			const uint8_t *rx_data = rx_buf + RX_HEADER_SIZE;
+			static const char dbg_fmt[] = "HC 0x%04x.%d:";
+			/* Use sizeof because "%04x" needs 4 bytes for command id, and
+			 * %d needs 2 bytes for version, so no additional buffer is required.
+			 */
+			char dbg_raw[sizeof(dbg_fmt)];
+
+			snprintf(dbg_raw, sizeof(dbg_raw), dbg_fmt, rx_header->cmd_id,
+				 rx_header->cmd_ver);
+			LOG_HEXDUMP_DBG(rx_data, rx_header->data_len, dbg_raw);
+
+			return;
+		}
+	}
+
+	/* In normal output mode, skip printing repeats of the same command
+	 * that occur in rapid succession - such as flash commands during
+	 * software sync.
+	 */
+	if (rx_header->cmd_id != prev_cmd) {
+		prev_cmd = rx_header->cmd_id;
+		LOG_INF("HC 0x%04x", rx_header->cmd_id);
+	} else {
+		LOG_DBG("HC 0x%04x", rx_header->cmd_id);
+	}
 }
 
 FUNC_NORETURN static void ec_host_cmd_thread(void *hc_handle, void *arg2, void *arg3)
@@ -196,15 +242,15 @@ FUNC_NORETURN static void ec_host_cmd_thread(void *hc_handle, void *arg2, void *
 		/* Wait until RX messages is received on host interface */
 		k_sem_take(&rx->handler_owns, K_FOREVER);
 
+		ec_host_cmd_log_request(rx->buf);
 		status = verify_rx(rx);
 		if (status != EC_HOST_CMD_SUCCESS) {
-			send_status_response(hc->backend, tx, status);
+			ec_host_cmd_send_response(status, &args);
 			continue;
 		}
 
 		found_handler = NULL;
-		STRUCT_SECTION_FOREACH(ec_host_cmd_handler, handler)
-		{
+		STRUCT_SECTION_FOREACH(ec_host_cmd_handler, handler) {
 			if (handler->id == rx_header->cmd_id) {
 				found_handler = handler;
 				break;
@@ -213,7 +259,7 @@ FUNC_NORETURN static void ec_host_cmd_thread(void *hc_handle, void *arg2, void *
 
 		/* No handler in this image for requested command */
 		if (found_handler == NULL) {
-			send_status_response(hc->backend, tx, EC_HOST_CMD_INVALID_COMMAND);
+			ec_host_cmd_send_response(EC_HOST_CMD_INVALID_COMMAND, &args);
 			continue;
 		}
 
@@ -224,7 +270,7 @@ FUNC_NORETURN static void ec_host_cmd_thread(void *hc_handle, void *arg2, void *
 
 		status = validate_handler(found_handler, &args);
 		if (status != EC_HOST_CMD_SUCCESS) {
-			send_status_response(hc->backend, tx, status);
+			ec_host_cmd_send_response(status, &args);
 			continue;
 		}
 

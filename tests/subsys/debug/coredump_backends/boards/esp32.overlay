@@ -1,0 +1,25 @@
+/*
+ * Copyright (c) 2023 Espressif Systems (Shanghai) Co., Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&flash0 {
+	partitions {
+		/*
+		 * Reduce storage_partition to make space for
+		 * coredump_partition
+		 */
+
+		storage_partition: partition@250000 {
+			label = "storage";
+			reg = <0x00250000 0x00005000>;
+		};
+
+		coredump_partition: partition@255000 {
+			label = "coredump-partition";
+			reg = <0x255000 DT_SIZE_K(4)>;
+		};
+
+	};
+};

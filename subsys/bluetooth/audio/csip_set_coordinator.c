@@ -1375,8 +1375,21 @@ BT_CONN_CB_DEFINE(conn_callbacks) = {
 struct bt_csip_set_coordinator_csis_inst *bt_csip_set_coordinator_csis_inst_by_handle(
 	struct bt_conn *conn, uint16_t start_handle)
 {
-	const struct bt_csip_set_coordinator_svc_inst *svc_inst =
-		lookup_instance_by_handle(conn, start_handle);
+	const struct bt_csip_set_coordinator_svc_inst *svc_inst;
+
+	CHECKIF(conn == NULL) {
+		LOG_DBG("conn is NULL");
+
+		return NULL;
+	}
+
+	CHECKIF(start_handle == 0) {
+		LOG_DBG("start_handle is 0");
+
+		return NULL;
+	}
+
+	svc_inst = lookup_instance_by_handle(conn, start_handle);
 
 	if (svc_inst != NULL) {
 		struct bt_csip_set_coordinator_inst *client;
@@ -1494,9 +1507,12 @@ static int verify_members(const struct bt_csip_set_coordinator_set_member **memb
 			LOG_DBG("Found mix of 0 and non-0 ranks");
 			return -EINVAL;
 		}
+	}
 
-		if (!zero_rank) {
-			for (size_t j = 0U; j < i; j++) {
+	if (CONFIG_BT_MAX_CONN > 1 && !zero_rank && count > 1U) {
+		/* Search for duplicate ranks */
+		for (uint8_t i = 0U; i < count - 1; i++) {
+			for (uint8_t j = i + 1; j < count; j++) {
 				if (ranks[j] == ranks[i]) {
 					/* duplicate rank */
 					LOG_DBG("Duplicate rank (%u) for members[%zu] "

@@ -33,7 +33,7 @@ static K_SEM_DEFINE(sem_discover_source, 0, 1);
 static K_SEM_DEFINE(sem_audio_start, 0, 1);
 
 static void unicast_stream_configured(struct bt_bap_stream *stream,
-				      const struct bt_codec_qos_pref *pref)
+				      const struct bt_audio_codec_qos_pref *pref)
 {
 	printk("Configured stream %p\n", stream);
 
@@ -180,36 +180,32 @@ static void print_hex(const uint8_t *ptr, size_t len)
 	}
 }
 
-static void print_codec_capabilities(const struct bt_codec *codec)
+static void print_codec_capabilities(const struct bt_audio_codec_cap *codec_cap)
 {
-	printk("codec 0x%02x cid 0x%04x vid 0x%04x count %u\n",
-	       codec->id, codec->cid, codec->vid, codec->data_count);
+	printk("codec_cap 0x%02x cid 0x%04x vid 0x%04x count %u\n", codec_cap->id, codec_cap->cid,
+	       codec_cap->vid, codec_cap->data_count);
 
-	for (size_t i = 0; i < codec->data_count; i++) {
-		printk("data #%zu: type 0x%02x len %u\n",
-		       i, codec->data[i].data.type,
-		       codec->data[i].data.data_len);
-		print_hex(codec->data[i].data.data,
-			  codec->data[i].data.data_len -
-			  sizeof(codec->data[i].data.type));
+	for (size_t i = 0; i < codec_cap->data_count; i++) {
+		printk("data #%zu: type 0x%02x len %u\n", i, codec_cap->data[i].data.type,
+		       codec_cap->data[i].data.data_len);
+		print_hex(codec_cap->data[i].data.data,
+			  codec_cap->data[i].data.data_len - sizeof(codec_cap->data[i].data.type));
 		printk("\n");
 	}
 
-	for (size_t i = 0; i < codec->meta_count; i++) {
-		printk("meta #%zu: type 0x%02x len %u\n",
-			i, codec->meta[i].data.type,
-			codec->meta[i].data.data_len);
-		print_hex(codec->meta[i].data.data,
-			  codec->meta[i].data.data_len -
-			  sizeof(codec->meta[i].data.type));
+	for (size_t i = 0; i < codec_cap->meta_count; i++) {
+		printk("meta #%zu: type 0x%02x len %u\n", i, codec_cap->meta[i].data.type,
+		       codec_cap->meta[i].data.data_len);
+		print_hex(codec_cap->meta[i].data.data,
+			  codec_cap->meta[i].data.data_len - sizeof(codec_cap->meta[i].data.type));
 		printk("\n");
 	}
 }
 
-static void print_remote_codec(const struct bt_codec *codec_capabilities, enum bt_audio_dir dir)
+static void print_remote_codec(const struct bt_audio_codec_cap *codec_cap, enum bt_audio_dir dir)
 {
-	printk("codec_capabilities %p dir 0x%02x\n", codec_capabilities, dir);
-	print_codec_capabilities(codec_capabilities);
+	printk("codec_cap %p dir 0x%02x\n", codec_cap, dir);
+	print_codec_capabilities(codec_cap);
 }
 
 static void add_remote_sink(struct bt_bap_ep *ep)
@@ -250,9 +246,10 @@ static void discover_cb(struct bt_conn *conn, int err, enum bt_audio_dir dir)
 	}
 }
 
-static void pac_record_cb(struct bt_conn *conn, enum bt_audio_dir dir, const struct bt_codec *codec)
+static void pac_record_cb(struct bt_conn *conn, enum bt_audio_dir dir,
+			  const struct bt_audio_codec_cap *codec_cap)
 {
-	print_remote_codec(codec, dir);
+	print_remote_codec(codec_cap, dir);
 }
 
 static void endpoint_cb(struct bt_conn *conn, enum bt_audio_dir dir, struct bt_bap_ep *ep)
@@ -347,7 +344,7 @@ static int unicast_audio_start(struct bt_conn *conn, struct bt_bap_unicast_group
 	stream_param.member.member = conn;
 	stream_param.stream = &unicast_streams[0];
 	stream_param.ep = unicast_sink_eps[0];
-	stream_param.codec = &unicast_preset_48_2_1.codec;
+	stream_param.codec_cfg = &unicast_preset_48_2_1.codec_cfg;
 	stream_param.qos = &unicast_preset_48_2_1.qos;
 
 	err = bt_cap_initiator_unicast_audio_start(&param, unicast_group);

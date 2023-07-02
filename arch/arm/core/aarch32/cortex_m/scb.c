@@ -41,6 +41,7 @@ void __weak sys_arch_reboot(int type)
 	NVIC_SystemReset();
 }
 
+#if defined(CONFIG_ARM_MPU)
 #if defined(CONFIG_CPU_HAS_ARM_MPU)
 /**
  *
@@ -75,6 +76,7 @@ void z_arm_clear_arm_mpu_config(void)
 	}
 }
 #endif /* CONFIG_CPU_HAS_NXP_MPU */
+#endif /* CONFIG_ARM_MPU */
 
 #if defined(CONFIG_INIT_ARCH_HW_AT_BOOT)
 /**
@@ -96,10 +98,10 @@ void z_arm_init_arch_hw_at_boot(void)
 
 	/* Initialize System Control Block components */
 
-#if defined(CONFIG_CPU_HAS_ARM_MPU) || defined(CONFIG_CPU_HAS_NXP_MPU)
+#if defined(CONFIG_ARM_MPU)
 	/* Clear MPU region configuration */
 	z_arm_clear_arm_mpu_config();
-#endif /* CONFIG_CPU_HAS_ARM_MPU */
+#endif /* CONFIG_ARM_MPU */
 
 	/* Disable NVIC interrupts */
 	for (uint8_t i = 0; i < ARRAY_SIZE(NVIC->ICER); i++) {

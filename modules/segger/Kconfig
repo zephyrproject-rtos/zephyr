@@ -38,6 +38,7 @@ config SEGGER_RTT_BUFFER_SIZE_UP
 
 config SEGGER_RTT_BUFFER_SIZE_DOWN
 	int "Size of the buffer for terminal input of target, from host"
+	default 32 if SHELL_BACKEND_RTT
 	default 16
 
 config SEGGER_RTT_PRINTF_BUFFER_SIZE

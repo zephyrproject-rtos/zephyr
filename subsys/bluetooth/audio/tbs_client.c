@@ -543,18 +543,16 @@ static uint8_t notify_handler(struct bt_conn *conn,
 			      const void *data, uint16_t length)
 {
 	uint16_t handle = params->value_handle;
-	struct bt_tbs_instance *tbs_inst = lookup_inst_by_handle(conn, handle);
+	struct bt_tbs_instance *tbs_inst;
 
-	if (data == NULL) {
+	if (data == NULL || conn == NULL) {
 		LOG_DBG("[UNSUBSCRIBED] 0x%04X", params->value_handle);
 		params->value_handle = 0U;
-		if (tbs_inst != NULL) {
-			tbs_inst->subscribe_cnt--;
-		}
 
 		return BT_GATT_ITER_STOP;
 	}
 
+	tbs_inst = lookup_inst_by_handle(conn, handle);
 	if (tbs_inst != NULL) {
 		uint8_t inst_index = tbs_index(conn, tbs_inst);
 
@@ -1591,7 +1589,8 @@ static uint8_t primary_discover_tbs(struct bt_conn *conn, const struct bt_gatt_a
 		srv_inst->current_inst->start_handle = attr->handle + 1;
 		srv_inst->current_inst->end_handle = prim_service->end_handle;
 
-		if (srv_inst->inst_cnt < CONFIG_BT_TBS_CLIENT_MAX_TBS_INSTANCES) {
+		if (CONFIG_BT_TBS_CLIENT_MAX_TBS_INSTANCES > 1 &&
+		    srv_inst->inst_cnt < CONFIG_BT_TBS_CLIENT_MAX_TBS_INSTANCES) {
 			return BT_GATT_ITER_CONTINUE;
 		}
 	}

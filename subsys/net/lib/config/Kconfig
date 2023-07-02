@@ -71,6 +71,13 @@ menuconfig NET_CONFIG_SETTINGS
 
 if NET_CONFIG_SETTINGS
 
+config NET_CONFIG_MY_VLAN_ID
+	int "My VLAN identifier"
+	default 0
+	depends on NET_VLAN
+	help
+	  Use 0 here if uncertain.
+
 if NET_IPV6
 
 config NET_CONFIG_MY_IPV6_ADDR

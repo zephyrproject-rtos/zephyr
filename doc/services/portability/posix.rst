@@ -97,7 +97,7 @@ Zephyr.
     _POSIX_THREAD_ATTR_STACKADDR,yes
     _POSIX_THREAD_ATTR_STACKSIZE,yes
     _POSIX_THREAD_CPUTIME,
-    _POSIX_THREAD_PRIO_INHERIT,yes
+    _POSIX_THREAD_PRIO_INHERIT,
     _POSIX_THREAD_PRIO_PROTECT,
     _POSIX_THREAD_PRIORITY_SCHEDULING,yes
     _POSIX_THREAD_SPORADIC_SERVER,
@@ -151,8 +151,8 @@ multiple processes.
     pthread_cond_signal(),yes
     pthread_cond_timedwait(),yes
     pthread_cond_wait(),yes
-    pthread_condattr_destroy(),
-    pthread_condattr_init(),
+    pthread_condattr_destroy(),yes
+    pthread_condattr_init(),yes
     pthread_create(),yes
     pthread_detach(),yes
     pthread_equal(),
@@ -167,8 +167,8 @@ multiple processes.
     pthread_mutex_lock(),yes
     pthread_mutex_trylock(),yes
     pthread_mutex_unlock(),yes
-    pthread_mutexattr_destroy(),
-    pthread_mutexattr_init(),
+    pthread_mutexattr_destroy(),yes
+    pthread_mutexattr_init(),yes
     pthread_once(),yes
     pthread_self(),yes
     pthread_setcancelstate(),yes
@@ -430,7 +430,7 @@ POSIX_DEVICE_IO
     read(),yes
     scanf(),
     setbuf(),
-    etvbuf(),
+    setvbuf(),
     stderr,yes
     stdin,yes
     stdout,yes

@@ -15,6 +15,7 @@ target_sources(app PRIVATE ${ZEPHYR_BASE}/subsys/net/lib/lwm2m/lwm2m_engine.c)
 target_include_directories(app PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
 target_include_directories(app PRIVATE ${ZEPHYR_BASE}/include/)
 target_include_directories(app PRIVATE ${ZEPHYR_BASE}/subsys/net/lib/lwm2m/)
+target_include_directories(app PRIVATE ${ZEPHYR_BASE}/../modules/crypto/mbedtls/include/)
 
 add_compile_definitions(CONFIG_LWM2M_ENGINE_MAX_PENDING=2)
 add_compile_definitions(CONFIG_LWM2M_ENGINE_MAX_REPLIES=2)

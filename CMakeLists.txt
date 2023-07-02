@@ -54,7 +54,7 @@ set(CMAKE_EXECUTABLE_SUFFIX .elf)
 # into the `zephyr_final` target.
 #
 # Multiple linking stages are required in the following cases:
-# - device handles structs must be generated (CONFIG_HAS_DTS=y)
+# - device dependencies structs must be generated (CONFIG_DEVICE_DEPS=y)
 # - ISR tables must be generated (CONFIG_GEN_ISR_TABLES=y)
 # - Kernel objects hash tables (CONFIG_USERSPACE=y)
 # - Application memory partitions (CONFIG_USERSPACE=y)
@@ -75,7 +75,7 @@ set(ZEPHYR_LINK_STAGE_EXECUTABLE zephyr_pre${ZEPHYR_CURRENT_LINKER_PASS})
 # existing variable to allow slowly cleanup of linking stage handling.
 # Three stage linking active: pre0 -> pre1 -> final, this will correspond to `pre1`
 # Two stage linking active:   pre0 -> final, this will correspond to `pre0`
-if(CONFIG_USERSPACE OR CONFIG_HAS_DTS)
+if(CONFIG_USERSPACE OR CONFIG_DEVICE_DEPS)
   set(ZEPHYR_PREBUILT_EXECUTABLE zephyr_pre1)
 else()
   set(ZEPHYR_PREBUILT_EXECUTABLE zephyr_pre0)
@@ -912,9 +912,9 @@ zephyr_get_include_directories_for_lang(C
   STRIP_PREFIX # Don't use a -I prefix
   )
 
-if(CONFIG_HAS_DTS)
-  if(CONFIG_HAS_DYNAMIC_DEVICE_HANDLES)
-    set(dynamic_handles --dynamic-handles)
+if(CONFIG_DEVICE_DEPS)
+  if(CONFIG_DEVICE_DEPS_DYNAMIC)
+    set(dynamic_deps --dynamic-deps)
   endif()
 
   if(CONFIG_PM_DEVICE_POWER_DOMAIN_DYNAMIC)
@@ -923,16 +923,16 @@ if(CONFIG_HAS_DTS)
     set(number_of_dynamic_devices 0)
   endif()
 
-  # dev_handles.c is generated from ${ZEPHYR_LINK_STAGE_EXECUTABLE} by
-  # gen_handles.py
+  # device_deps.c is generated from ${ZEPHYR_LINK_STAGE_EXECUTABLE} by
+  # gen_device_deps.py
   add_custom_command(
-    OUTPUT dev_handles.c
+    OUTPUT device_deps.c
     COMMAND
     ${PYTHON_EXECUTABLE}
-    ${ZEPHYR_BASE}/scripts/build/gen_handles.py
-    --output-source dev_handles.c
+    ${ZEPHYR_BASE}/scripts/build/gen_device_deps.py
+    --output-source device_deps.c
     --output-graphviz dev_graph.dot
-    ${dynamic_handles}
+    ${dynamic_deps}
     --num-dynamic-devices ${number_of_dynamic_devices}
     --kernel $<TARGET_FILE:${ZEPHYR_LINK_STAGE_EXECUTABLE}>
     --zephyr-base ${ZEPHYR_BASE}
@@ -940,10 +940,10 @@ if(CONFIG_HAS_DTS)
     VERBATIM
     DEPENDS ${ZEPHYR_LINK_STAGE_EXECUTABLE}
     )
-  set_property(GLOBAL APPEND PROPERTY GENERATED_APP_SOURCE_FILES dev_handles.c)
+  set_property(GLOBAL APPEND PROPERTY GENERATED_APP_SOURCE_FILES device_deps.c)
 
-  # gen_handles runs on `__device_handles_pass1` so pass this info to the linker script generator
-  list(APPEND LINKER_PASS_${ZEPHYR_CURRENT_LINKER_PASS}_DEFINE "LINKER_DEVICE_HANDLES_PASS1")
+  # gen_device_deps runs on `__device_deps_pass1` so pass this info to the linker script generator
+  list(APPEND LINKER_PASS_${ZEPHYR_CURRENT_LINKER_PASS}_DEFINE "LINKER_DEVICE_DEPS_PASS1")
 endif()
 
 if(CONFIG_CODE_DATA_RELOCATION)
@@ -1177,7 +1177,7 @@ if(CONFIG_USERSPACE)
   )
 endif()
 
-if(CONFIG_USERSPACE OR CONFIG_HAS_DTS)
+if(CONFIG_USERSPACE OR CONFIG_DEVICE_DEPS)
   configure_linker_script(
     ${ZEPHYR_CURRENT_LINKER_CMD}
     "${LINKER_PASS_${ZEPHYR_CURRENT_LINKER_PASS}_DEFINE}"

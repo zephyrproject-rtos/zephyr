@@ -29,9 +29,12 @@ manifest:
   #
   # Please add items below based on alphabetical order
   projects:
+    - name: acpica
+      revision: f16a0b4d0f0edd7b78a332fcf507be2187fac21e
+      path: modules/lib/acpica
     - name: bsim
       repo-path: babblesim-manifest
-      revision: 908ffde6298a937c6549dbfa843a62caab26bfc5
+      revision: 384a091445c57b44ac8cbd18ebd245b47c71db94
       path: tools/bsim
       groups:
         - babblesim
@@ -39,7 +42,7 @@ manifest:
       remote: babblesim
       repo-path: base.git
       path: tools/bsim/components
-      revision: 02838ca04c4562e68dc876196828d8121679e537
+      revision: 19d62424c0802c6c9fc15528febe666e40f372a1
       groups:
         - babblesim
     - name: babblesim_ext_2G4_libPhyComv1
@@ -53,7 +56,7 @@ manifest:
       remote: babblesim
       repo-path: ext_2G4_phy_v1.git
       path: tools/bsim/components/ext_2G4_phy_v1
-      revision: cf2d86e736efac4f12fad5093ed2da2c5b406156
+      revision: d47c6dd90035b41b14f6921785ccb7b8484868e2
       groups:
         - babblesim
     - name: babblesim_ext_2G4_channel_NtNcable
@@ -67,7 +70,7 @@ manifest:
       remote: babblesim
       repo-path: ext_2G4_channel_multiatt.git
       path: tools/bsim/components/ext_2G4_channel_multiatt
-      revision: e09bc2d14b1975f969ad19c6ed23eb20e5dc3d09
+      revision: bde72a57384dde7a4310bcf3843469401be93074
       groups:
         - babblesim
     - name: babblesim_ext_2G4_modem_magic
@@ -81,7 +84,7 @@ manifest:
       remote: babblesim
       repo-path: ext_2G4_modem_BLE_simple.git
       path: tools/bsim/components/ext_2G4_modem_BLE_simple
-      revision: ce975a3259fd0dd761d371b60435242d54794bad
+      revision: 809ab073159c9ab6686c2fea5749b0702e0909f7
       groups:
         - babblesim
     - name: babblesim_ext_2G4_device_burst_interferer
@@ -144,7 +147,7 @@ manifest:
       groups:
         - hal
     - name: hal_espressif
-      revision: abe299333411cb37a1cb1dd0aa2ea35c27382604
+      revision: 9531c1c17873aa4935f85864ebafd20c02062a8f
       path: modules/hal/espressif
       west-commands: west/west-commands.yml
       groups:
@@ -175,7 +178,7 @@ manifest:
       groups:
         - hal
     - name: hal_nuvoton
-      revision: 0a1f153c433f5f637a4490651bdda6d966de3b99
+      revision: 8a2b5de1670b59fcacd20d7495cb1c0f26fbe7bd
       path: modules/hal/nuvoton
       groups:
         - hal
@@ -290,7 +293,7 @@ manifest:
       revision: c904a01d4a882bcbb39987e0e2ce5308f49ac7ad
       path: modules/lib/open-amp
     - name: openthread
-      revision: d9abe3071c0131a4adb5d7e7451319b735e6d855
+      revision: 6d557383e8bc8654f813674e8631c2e56b8e70d0
       path: modules/lib/openthread
     - name: picolibc
       path: modules/lib/picolibc
@@ -323,7 +326,7 @@ manifest:
       groups:
         - tee
     - name: trusted-firmware-a
-      revision: 28f5e137837f1c1a7a7b2af2dd8bb778c0a27532
+      revision: 421dc050278287839f5c70019bd6aec617f2bbdb
       path: modules/tee/tf-a/trusted-firmware-a
       groups:
         - tee

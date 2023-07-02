@@ -27,7 +27,7 @@
 /* Configuration flags */
 #define CONN_MGR_IF_IGNORED		BIT(7)
 
-/* Internal state flags*/
+/* Internal state flags */
 #define CONN_MGR_IF_READY		BIT(14)
 
 /* Event flags */
@@ -36,6 +36,12 @@
 /* NET_MGMT event masks */
 #define CONN_MGR_IFACE_EVENTS_MASK	(NET_EVENT_IF_DOWN		| \
 					 NET_EVENT_IF_UP)
+
+#define CONN_MGR_CONN_IFACE_EVENTS_MASK	(NET_EVENT_IF_ADMIN_UP		|\
+					 NET_EVENT_IF_DOWN)
+
+#define CONN_MGR_CONN_SELF_EVENTS_MASK	(NET_EVENT_CONN_IF_TIMEOUT	| \
+					 NET_EVENT_CONN_IF_FATAL_ERROR)
 
 #define CONN_MGR_IPV6_EVENTS_MASK	(NET_EVENT_IPV6_ADDR_ADD	| \
 					 NET_EVENT_IPV6_ADDR_DEL	| \

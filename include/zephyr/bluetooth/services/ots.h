@@ -749,7 +749,7 @@ struct bt_ots_cb {
 };
 
 /** @brief Descriptor for OTS initialization. */
-struct bt_ots_init {
+struct bt_ots_init_param {
 	/* OTS features */
 	struct bt_ots_feat features;
 
@@ -803,7 +803,7 @@ void *bt_ots_svc_decl_get(struct bt_ots *ots);
  *
  *  @return 0 in case of success or negative value in case of error.
  */
-int bt_ots_init(struct bt_ots *ots, struct bt_ots_init *ots_init);
+int bt_ots_init(struct bt_ots *ots, struct bt_ots_init_param *ots_init);
 
 /** @brief Get a free instance of OTS from the pool.
  *

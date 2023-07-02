@@ -173,6 +173,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 	uint16_t lazy;
 	uint32_t ret;
 	uint8_t phy;
+	int err = 0;
 
 	DEBUG_RADIO_START_S(1);
 
@@ -350,21 +351,22 @@ static int prepare_cb(struct lll_prepare_param *p)
 #endif /* !CONFIG_BT_CTLR_PHY */
 #endif /* HAL_RADIO_GPIO_HAVE_LNA_PIN */
 
-	if (false) {
-
 #if defined(CONFIG_BT_CTLR_XTAL_ADVANCED) && \
 	(EVENT_OVERHEAD_PREEMPT_US <= EVENT_OVERHEAD_PREEMPT_MIN_US)
+	uint32_t overhead;
+
+	overhead = lll_preempt_calc(ull, (TICKER_ID_CONN_ISO_BASE + cig_lll->handle),
+				    ticks_at_event);
 	/* check if preempt to start has changed */
-	} else if (lll_preempt_calc(ull,
-				    (TICKER_ID_CONN_ISO_BASE + cig_lll->handle),
-				    ticks_at_event)) {
-		radio_isr_set(lll_isr_abort, cig_lll);
+	if (overhead) {
+		LL_ASSERT_OVERHEAD(overhead);
+
+		radio_isr_set(isr_done, cis_lll);
 		radio_disable();
 
-		return -ECANCELED;
-#endif /* CONFIG_BT_CTLR_XTAL_ADVANCED */
-
+		err = -ECANCELED;
 	}
+#endif /* CONFIG_BT_CTLR_XTAL_ADVANCED */
 
 	/* Adjust the SN and NESN for skipped CIG events */
 	uint16_t cis_handle = cis_handle_curr;
@@ -398,8 +400,22 @@ static int prepare_cb(struct lll_prepare_param *p)
 			/* sn and nesn are 1-bit, only Least Significant bit is needed */
 			cis_lll->sn += cis_lll->tx.bn * lazy;
 			cis_lll->nesn += cis_lll->rx.bn * lazy;
+
+			/* Adjust sn and nesn for canceled events */
+			if (err) {
+				/* Adjust nesn when flushing Rx */
+				/* FIXME: When Flush Timeout is implemented */
+				if (cis_lll->rx.bn_curr <= cis_lll->rx.bn) {
+					lll_flush_rx(cis_lll);
+				}
+			}
 		}
 	};
+
+	/* Return if prepare callback cancelled */
+	if (err) {
+		return err;
+	}
 
 	/* Prepare is done */
 	ret = lll_prepare_done(cig_lll);

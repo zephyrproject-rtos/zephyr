@@ -103,8 +103,8 @@ static int power_domain_add_or_remove(const struct device *dev,
 				      const struct device *domain,
 				      bool add)
 {
-#if defined(CONFIG_HAS_DYNAMIC_DEVICE_HANDLES)
-	device_handle_t *rv = domain->handles;
+#if defined(CONFIG_DEVICE_DEPS_DYNAMIC)
+	device_handle_t *rv = domain->deps;
 	device_handle_t dev_handle = -1;
 	size_t i = 0, region = 0;
 
@@ -128,14 +128,14 @@ static int power_domain_add_or_remove(const struct device *dev,
 	 * with the device handle.
 	 */
 	while (region != 2) {
-		if (*rv == DEVICE_HANDLE_SEP) {
+		if (*rv == Z_DEVICE_DEPS_SEP) {
 			region++;
 		}
 		rv++;
 	}
 
 	i = 0;
-	while (rv[i] != DEVICE_HANDLE_ENDS) {
+	while (rv[i] != Z_DEVICE_DEPS_ENDS) {
 		if (add == false) {
 			if (rv[i] == dev_handle) {
 				dev->pm->domain = NULL;
@@ -174,6 +174,7 @@ int pm_device_power_domain_add(const struct device *dev,
 	return power_domain_add_or_remove(dev, domain, true);
 }
 
+#ifdef CONFIG_DEVICE_DEPS
 struct pm_visitor_context {
 	pm_device_action_failed_cb_t failure_cb;
 	enum pm_device_action action;
@@ -205,6 +206,7 @@ void pm_device_children_action_run(const struct device *dev,
 
 	(void)device_supported_foreach(dev, pm_device_children_visitor, &visitor_context);
 }
+#endif
 
 int pm_device_state_get(const struct device *dev,
 			enum pm_device_state *state)

@@ -90,7 +90,11 @@ vfp_restore\@:
 
 	vmsr fpexc, r2
 	vmsr fpscr, r1
-	vldmia sp, {s0-s15}
+	mov r3, sp
+	vldmia r3!, {s0-s15}
+#ifdef CONFIG_VFP_FEATURE_REGS_S64_D32
+	vldmia r3!, {d16-d31}
+#endif
 
 vfp_exit\@:
 	/* Leave the VFP disabled when leaving */

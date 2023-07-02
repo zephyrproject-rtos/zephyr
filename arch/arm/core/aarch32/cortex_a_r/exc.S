@@ -60,6 +60,9 @@ GTEXT(z_arm_data_abort)
 
 	mov r2, sp
 	vstmia r2!, {s0-s15}
+#ifdef CONFIG_VFP_FEATURE_REGS_S64_D32
+	vstmia r2!, {d16-d31}
+#endif
 	stm r2, {r0, r1}
 #endif
 
@@ -144,6 +147,9 @@ SECTION_SUBSEC_FUNC(TEXT, __exc, z_arm_undef_instruction)
 
 	mov r2, sp
 	vstmia r2!, {s0-s15}
+#ifdef CONFIG_VFP_FEATURE_REGS_S64_D32
+	vstmia r2!, {d16-d31}
+#endif
 	stm r2, {r0, r1}
 #endif
 

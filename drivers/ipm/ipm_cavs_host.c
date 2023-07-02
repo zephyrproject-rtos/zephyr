@@ -78,7 +78,7 @@ static int send(const struct device *dev, int wait, uint32_t id,
 
 	memcpy(buf, data, size);
 
-	bool ok = intel_adsp_ipc_send_message(INTEL_ADSP_IPC_HOST_DEV, id, ext_data);
+	int ret = intel_adsp_ipc_send_message(INTEL_ADSP_IPC_HOST_DEV, id, ext_data);
 
 	/* The IPM docs call for "busy waiting" here, but in fact
 	 * there's a blocking synchronous call available that might be
@@ -87,13 +87,13 @@ static int send(const struct device *dev, int wait, uint32_t id,
 	 * benefit anyway as all its usage is async. This is OK for
 	 * now.
 	 */
-	if (ok && wait) {
+	if (ret == -EBUSY && wait) {
 		while (!intel_adsp_ipc_is_complete(INTEL_ADSP_IPC_HOST_DEV)) {
 			k_busy_wait(1);
 		}
 	}
 
-	return ok ? 0 : -EBUSY;
+	return ret;
 }
 
 static bool ipc_handler(const struct device *dev, void *arg,

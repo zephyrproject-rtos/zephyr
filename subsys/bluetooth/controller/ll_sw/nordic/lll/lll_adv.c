@@ -936,6 +936,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 	struct lll_adv *lll;
 	uint32_t remainder;
 	uint32_t start_us;
+	uint32_t ret;
 	uint32_t aa;
 
 	DEBUG_RADIO_START_A(1);
@@ -1034,34 +1035,37 @@ static int prepare_cb(struct lll_prepare_param *p)
 
 #if defined(CONFIG_BT_CTLR_XTAL_ADVANCED) && \
 	(EVENT_OVERHEAD_PREEMPT_US <= EVENT_OVERHEAD_PREEMPT_MIN_US)
+	uint32_t overhead;
+
+	overhead = lll_preempt_calc(ull, (TICKER_ID_ADV_BASE + ull_adv_lll_handle_get(lll)),
+				    ticks_at_event);
 	/* check if preempt to start has changed */
-	if (lll_preempt_calc(ull, (TICKER_ID_ADV_BASE +
-				   ull_adv_lll_handle_get(lll)),
-			     ticks_at_event)) {
+	if (overhead) {
+		LL_ASSERT_OVERHEAD(overhead);
+
 		radio_isr_set(isr_abort, lll);
 		radio_disable();
-	} else
+
+		return -ECANCELED;
+	}
 #endif /* CONFIG_BT_CTLR_XTAL_ADVANCED */
-	{
-		uint32_t ret;
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT) && defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
-		if (lll->aux) {
-			/* fill in aux ptr in pdu */
-			ull_adv_aux_lll_auxptr_fill(pdu, lll);
+	if (lll->aux) {
+		/* fill in aux ptr in pdu */
+		ull_adv_aux_lll_auxptr_fill(pdu, lll);
 
-			/* NOTE: as first primary channel PDU does not use remainder, the packet
-			 * timer is started one tick in advance to start the radio with
-			 * microsecond precision, hence compensate for the higher start_us value
-			 * captured at radio start of the first primary channel PDU.
-			 */
-			lll->aux->ticks_pri_pdu_offset += 1U;
-		}
+		/* NOTE: as first primary channel PDU does not use remainder, the packet
+		 * timer is started one tick in advance to start the radio with
+		 * microsecond precision, hence compensate for the higher start_us value
+		 * captured at radio start of the first primary channel PDU.
+		 */
+		lll->aux->ticks_pri_pdu_offset += 1U;
+	}
 #endif
 
-		ret = lll_prepare_done(lll);
-		LL_ASSERT(!ret);
-	}
+	ret = lll_prepare_done(lll);
+	LL_ASSERT(!ret);
 
 	DEBUG_RADIO_START_A(1);
 

@@ -455,10 +455,10 @@ struct bt_bap_stream {
 	struct bt_bap_ep *ep;
 
 	/** Codec Configuration */
-	struct bt_codec *codec;
+	struct bt_audio_codec_cfg *codec_cfg;
 
 	/** QoS Configuration */
-	struct bt_codec_qos *qos;
+	struct bt_audio_codec_qos *qos;
 
 	/** Audio stream operations */
 	struct bt_bap_stream_ops *ops;
@@ -493,7 +493,8 @@ struct bt_bap_stream_ops {
 	 * @param stream Stream object that has been configured.
 	 * @param pref   Remote QoS preferences.
 	 */
-	void (*configured)(struct bt_bap_stream *stream, const struct bt_codec_qos_pref *pref);
+	void (*configured)(struct bt_bap_stream *stream,
+			   const struct bt_audio_codec_qos_pref *pref);
 
 	/**
 	 * @brief Stream QoS set callback
@@ -614,12 +615,12 @@ void bt_bap_stream_cb_register(struct bt_bap_stream *stream, struct bt_bap_strea
  * @param conn Connection object
  * @param stream Stream object being configured
  * @param ep Remote Audio Endpoint being configured
- * @param codec Codec configuration
+ * @param codec_cfg Codec configuration
  *
  * @return Allocated Audio Stream object or NULL in case of error.
  */
 int bt_bap_stream_config(struct bt_conn *conn, struct bt_bap_stream *stream, struct bt_bap_ep *ep,
-			 struct bt_codec *codec);
+			 struct bt_audio_codec_cfg *codec_cfg);
 
 /**
  * @brief Reconfigure Audio Stream
@@ -630,11 +631,11 @@ int bt_bap_stream_config(struct bt_conn *conn, struct bt_bap_stream *stream, str
  * This can only be done for unicast streams.
  *
  * @param stream Stream object being reconfigured
- * @param codec Codec configuration
+ * @param codec_cfg Codec configuration
  *
  * @return 0 in case of success or negative value in case of error.
  */
-int bt_bap_stream_reconfig(struct bt_bap_stream *stream, struct bt_codec *codec);
+int bt_bap_stream_reconfig(struct bt_bap_stream *stream, struct bt_audio_codec_cfg *codec_cfg);
 
 /**
  * @brief Configure Audio Stream QoS
@@ -664,7 +665,7 @@ int bt_bap_stream_qos(struct bt_conn *conn, struct bt_bap_unicast_group *group);
  *
  * @return 0 in case of success or negative value in case of error.
  */
-int bt_bap_stream_enable(struct bt_bap_stream *stream, struct bt_codec_data *meta,
+int bt_bap_stream_enable(struct bt_bap_stream *stream, struct bt_audio_codec_data *meta,
 			 size_t meta_count);
 
 /**
@@ -678,7 +679,7 @@ int bt_bap_stream_enable(struct bt_bap_stream *stream, struct bt_codec_data *met
  *
  * @return 0 in case of success or negative value in case of error.
  */
-int bt_bap_stream_metadata(struct bt_bap_stream *stream, struct bt_codec_data *meta,
+int bt_bap_stream_metadata(struct bt_bap_stream *stream, struct bt_audio_codec_data *meta,
 			   size_t meta_count);
 
 /**
@@ -787,21 +788,21 @@ struct bt_bap_unicast_server_cb {
 	 * Config callback is called whenever an endpoint is requested to be
 	 * configured
 	 *
-	 * @param[in]  conn    Connection object.
-	 * @param[in]  ep      Local Audio Endpoint being configured.
-	 * @param[in]  dir     Direction of the endpoint.
-	 * @param[in]  codec   Codec configuration.
-	 * @param[out] stream  Pointer to stream that will be configured for the endpoint.
-	 * @param[out] pref    Pointer to a QoS preference object that shall be populated with
-	 *                     values. Invalid values will reject the codec configuration request.
-	 * @param[out] rsp     Object for the ASE operation response. Only used if the return
-	 *                     value is non-zero.
+	 * @param[in]  conn      Connection object.
+	 * @param[in]  ep        Local Audio Endpoint being configured.
+	 * @param[in]  dir       Direction of the endpoint.
+	 * @param[in]  codec_cfg Codec configuration.
+	 * @param[out] stream    Pointer to stream that will be configured for the endpoint.
+	 * @param[out] pref      Pointer to a QoS preference object that shall be populated with
+	 *                       values. Invalid values will reject the codec configuration request.
+	 * @param[out] rsp       Object for the ASE operation response. Only used if the return
+	 *                       value is non-zero.
 	 *
 	 * @return 0 in case of success or negative value in case of error.
 	 */
 	int (*config)(struct bt_conn *conn, const struct bt_bap_ep *ep, enum bt_audio_dir dir,
-		      const struct bt_codec *codec, struct bt_bap_stream **stream,
-		      struct bt_codec_qos_pref *const pref, struct bt_bap_ascs_rsp *rsp);
+		      const struct bt_audio_codec_cfg *codec_cfg, struct bt_bap_stream **stream,
+		      struct bt_audio_codec_qos_pref *const pref, struct bt_bap_ascs_rsp *rsp);
 
 	/**
 	 * @brief Stream reconfig request callback
@@ -809,19 +810,19 @@ struct bt_bap_unicast_server_cb {
 	 * Reconfig callback is called whenever an Audio Stream needs to be
 	 * reconfigured with different codec configuration.
 	 *
-	 * @param[in]  stream  Stream object being reconfigured.
-	 * @param[in]  dir     Direction of the endpoint.
-	 * @param[in]  codec   Codec configuration.
-	 * @param[out] pref    Pointer to a QoS preference object that shall be populated with
-	 *                     values. Invalid values will reject the codec configuration request.
-	 * @param[out] rsp     Object for the ASE operation response. Only used if the return
-	 *                     value is non-zero.
+	 * @param[in]  stream    Stream object being reconfigured.
+	 * @param[in]  dir       Direction of the endpoint.
+	 * @param[in]  codec_cfg Codec configuration.
+	 * @param[out] pref      Pointer to a QoS preference object that shall be populated with
+	 *                       values. Invalid values will reject the codec configuration request.
+	 * @param[out] rsp       Object for the ASE operation response. Only used if the return
+	 *                       value is non-zero.
 	 *
 	 * @return 0 in case of success or negative value in case of error.
 	 */
 	int (*reconfig)(struct bt_bap_stream *stream, enum bt_audio_dir dir,
-			const struct bt_codec *codec, struct bt_codec_qos_pref *const pref,
-			struct bt_bap_ascs_rsp *rsp);
+			const struct bt_audio_codec_cfg *codec_cfg,
+			struct bt_audio_codec_qos_pref *const pref, struct bt_bap_ascs_rsp *rsp);
 
 	/**
 	 * @brief Stream QoS request callback
@@ -836,7 +837,7 @@ struct bt_bap_unicast_server_cb {
 	 *
 	 * @return 0 in case of success or negative value in case of error.
 	 */
-	int (*qos)(struct bt_bap_stream *stream, const struct bt_codec_qos *qos,
+	int (*qos)(struct bt_bap_stream *stream, const struct bt_audio_codec_qos *qos,
 		   struct bt_bap_ascs_rsp *rsp);
 
 	/**
@@ -852,7 +853,7 @@ struct bt_bap_unicast_server_cb {
 	 *
 	 * @return 0 in case of success or negative value in case of error.
 	 */
-	int (*enable)(struct bt_bap_stream *stream, const struct bt_codec_data *meta,
+	int (*enable)(struct bt_bap_stream *stream, const struct bt_audio_codec_data *meta,
 		      size_t meta_count, struct bt_bap_ascs_rsp *rsp);
 
 	/**
@@ -881,7 +882,7 @@ struct bt_bap_unicast_server_cb {
 	 *
 	 * @return 0 in case of success or negative value in case of error.
 	 */
-	int (*metadata)(struct bt_bap_stream *stream, const struct bt_codec_data *meta,
+	int (*metadata)(struct bt_bap_stream *stream, const struct bt_audio_codec_data *meta,
 			size_t meta_count, struct bt_bap_ascs_rsp *rsp);
 
 	/**
@@ -972,14 +973,14 @@ void bt_bap_unicast_server_foreach_ep(struct bt_conn *conn, bt_bap_ep_func_t fun
  *
  * @param conn Connection object
  * @param stream Configured stream object to be attached to the ASE
- * @param codec Codec configuration
+ * @param codec_cfg Codec configuration
  * @param qos_pref Audio Stream Quality of Service Preference
  *
  * @return 0 in case of success or negative value in case of error.
  */
 int bt_bap_unicast_server_config_ase(struct bt_conn *conn, struct bt_bap_stream *stream,
-				     struct bt_codec *codec,
-				     const struct bt_codec_qos_pref *qos_pref);
+				     struct bt_audio_codec_cfg *codec_cfg,
+				     const struct bt_audio_codec_qos_pref *qos_pref);
 
 /** @} */ /* End of group bt_bap_unicast_server */
 
@@ -995,7 +996,7 @@ struct bt_bap_unicast_group_stream_param {
 	struct bt_bap_stream *stream;
 
 	/** The QoS settings for the stream object. */
-	struct bt_codec_qos *qos;
+	struct bt_audio_codec_qos *qos;
 };
 
 /** @brief Parameter struct for the unicast group functions
@@ -1031,7 +1032,7 @@ struct bt_bap_unicast_group_param {
  * @brief Create audio unicast group.
  *
  * Create a new audio unicast group with one or more audio streams as a unicast client. Streams in
- * a unicast group shall share the same interval, framing and latency (see @ref bt_codec_qos).
+ * a unicast group shall share the same interval, framing and latency (see @ref bt_audio_codec_qos).
  *
  * @param[in]  param          The unicast group create parameters.
  * @param[out] unicast_group  Pointer to the unicast group created.
@@ -1224,14 +1225,14 @@ struct bt_bap_unicast_client_cb {
 	 * The @p codec is only valid while in the callback, so the values must be stored by the
 	 * receiver if future use is wanted.
 	 *
-	 * @param conn     Connection to the remote unicast server.
-	 * @param dir      The type of remote endpoints and capabilities discovered.
-	 * @param codec    Remote capabilities.
+	 * @param conn      Connection to the remote unicast server.
+	 * @param dir       The type of remote endpoints and capabilities discovered.
+	 * @param codec_cap Remote capabilities.
 	 *
 	 * If discovery procedure has complete both @p codec and @p ep are set to NULL.
 	 */
 	void (*pac_record)(struct bt_conn *conn, enum bt_audio_dir dir,
-			   const struct bt_codec *codec);
+			   const struct bt_audio_codec_cap *codec_cap);
 
 	/**
 	 * @brief Remote Audio Stream Endoint (ASE) discovered
@@ -1295,18 +1296,18 @@ int bt_bap_unicast_client_discover(struct bt_conn *conn, enum bt_audio_dir dir);
 struct bt_bap_base_bis_data {
 	/* Unique index of the BIS */
 	uint8_t index;
-#if defined(CONFIG_BT_CODEC_MAX_DATA_COUNT)
+#if defined(CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_COUNT)
 	/** Codec Specific Data count.
 	 *
-	 *  Only valid if the data_count of struct bt_codec in the subgroup is 0
+	 *  Only valid if the data_count of struct bt_audio_codec_cfg in the subgroup is 0
 	 */
 	size_t data_count;
 	/** Codec Specific Data
 	 *
-	 *  Only valid if the data_count of struct bt_codec in the subgroup is 0
+	 *  Only valid if the data_count of struct bt_audio_codec_cfg in the subgroup is 0
 	 */
-	struct bt_codec_data data[CONFIG_BT_CODEC_MAX_DATA_COUNT];
-#endif /* CONFIG_BT_CODEC_MAX_DATA_COUNT */
+	struct bt_audio_codec_data data[CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_COUNT];
+#endif /* CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_COUNT */
 };
 
 struct bt_bap_base_subgroup {
@@ -1317,7 +1318,7 @@ struct bt_bap_base_subgroup {
 	 *  If the data_count of the codec is 0, then codec specific data may be
 	 *  found for each BIS in the bis_data.
 	 */
-	struct bt_codec codec;
+	struct bt_audio_codec_cfg codec_cfg;
 	/* Array of BIS specific data for each BIS in the subgroup */
 	struct bt_bap_base_bis_data bis_data[BROADCAST_SNK_STREAM_CNT];
 };
@@ -1362,7 +1363,7 @@ struct bt_bap_broadcast_source_stream_param {
 	/** Audio stream */
 	struct bt_bap_stream *stream;
 
-#if CONFIG_BT_CODEC_MAX_DATA_COUNT > 0
+#if CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_COUNT > 0
 	/**
 	 * @brief The number of elements in the @p data array.
 	 *
@@ -1371,8 +1372,8 @@ struct bt_bap_broadcast_source_stream_param {
 	size_t data_count;
 
 	/** BIS Codec Specific Configuration */
-	struct bt_codec_data *data;
-#endif /* CONFIG_BT_CODEC_MAX_DATA_COUNT > 0 */
+	struct bt_audio_codec_data *data;
+#endif /* CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_COUNT > 0 */
 };
 
 /** Broadcast Source subgroup parameters*/
@@ -1384,7 +1385,7 @@ struct bt_bap_broadcast_source_subgroup_param {
 	struct bt_bap_broadcast_source_stream_param *params;
 
 	/** Subgroup Codec configuration. */
-	struct bt_codec *codec;
+	struct bt_audio_codec_cfg *codec_cfg;
 };
 
 /** Broadcast Source create parameters */
@@ -1396,7 +1397,7 @@ struct bt_bap_broadcast_source_create_param {
 	struct bt_bap_broadcast_source_subgroup_param *params;
 
 	/** Quality of Service configuration. */
-	struct bt_codec_qos *qos;
+	struct bt_audio_codec_qos *qos;
 
 	/**
 	 * @brief Broadcast Source packing mode.
@@ -1449,13 +1450,14 @@ int bt_bap_broadcast_source_create(struct bt_bap_broadcast_source_create_param *
  * service parameters. This can only be done when the source is stopped.
  *
  * @param source      Pointer to the broadcast source
- * @param codec       Codec configuration.
+ * @param codec_cfg   Codec configuration.
  * @param qos         Quality of Service configuration
  *
  * @return Zero on success or (negative) error code otherwise.
  */
-int bt_bap_broadcast_source_reconfig(struct bt_bap_broadcast_source *source, struct bt_codec *codec,
-				     struct bt_codec_qos *qos);
+int bt_bap_broadcast_source_reconfig(struct bt_bap_broadcast_source *source,
+				     struct bt_audio_codec_cfg *codec_cfg,
+				     struct bt_audio_codec_qos *qos);
 
 /**
  * @brief Modify the metadata of an audio broadcast source.
@@ -1470,7 +1472,8 @@ int bt_bap_broadcast_source_reconfig(struct bt_bap_broadcast_source *source, str
  * @return Zero on success or (negative) error code otherwise.
  */
 int bt_bap_broadcast_source_update_metadata(struct bt_bap_broadcast_source *source,
-					    const struct bt_codec_data meta[], size_t meta_count);
+					    const struct bt_audio_codec_data meta[],
+					    size_t meta_count);
 
 /**
  * @brief Start audio broadcast source.
@@ -1844,20 +1847,17 @@ int bt_bap_scan_delegator_mod_src(const struct bt_bap_scan_delegator_mod_src_par
  */
 int bt_bap_scan_delegator_rem_src(uint8_t src_id);
 
-enum bt_bap_scan_delegator_iter {
-	BT_BAP_SCAN_DELEGATOR_ITER_STOP = 0,
-	BT_BAP_SCAN_DELEGATOR_ITER_CONTINUE,
-};
-
 /** Callback function for Scan Delegator receive state search functions
  *
  * @param recv_state The receive state.
  * @param user_data  User data.
  *
- * @return @ref BT_BAP_SCAN_DELEGATOR_ITER_STOP to stop iterating or
- *         @ref BT_BAP_SCAN_DELEGATOR_ITER_CONTINUE to continue.
+ * @retval true to stop iterating. If this is used in the context of
+ *         bt_bap_scan_delegator_find_state(), the recv_state will be returned by
+ *         bt_bap_scan_delegator_find_state()
+ * @retval false to continue iterating
  */
-typedef enum bt_bap_scan_delegator_iter (*bt_bap_scan_delegator_state_func_t)(
+typedef bool (*bt_bap_scan_delegator_state_func_t)(
 	const struct bt_bap_scan_delegator_recv_state *recv_state, void *user_data);
 
 /** @brief Iterate through all existing receive states

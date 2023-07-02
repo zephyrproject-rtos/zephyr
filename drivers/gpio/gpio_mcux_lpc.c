@@ -21,7 +21,9 @@
 #include <soc.h>
 #include <fsl_common.h>
 #include <zephyr/drivers/gpio/gpio_utils.h>
+#ifdef CONFIG_NXP_PINT
 #include <zephyr/drivers/interrupt_controller/nxp_pint.h>
+#endif
 #include <fsl_gpio.h>
 #include <fsl_device_registers.h>
 
@@ -197,6 +199,7 @@ static int gpio_mcux_lpc_port_toggle_bits(const struct device *dev,
 }
 
 
+#ifdef CONFIG_NXP_PINT
 /* Called by PINT when pin interrupt fires */
 static void gpio_mcux_lpc_pint_cb(uint8_t pin, void *user)
 {
@@ -261,6 +264,7 @@ static int gpio_mcux_lpc_pint_interrupt_cfg(const struct device *dev,
 					  gpio_mcux_lpc_pint_cb,
 					  (struct device *)dev);
 }
+#endif /* CONFIG_NXP_PINT */
 
 
 #if (defined(FSL_FEATURE_GPIO_HAS_INTERRUPT) && FSL_FEATURE_GPIO_HAS_INTERRUPT)
@@ -348,9 +352,11 @@ static int gpio_mcux_lpc_pin_interrupt_configure(const struct device *dev,
 		((gpio_base->DIR[port] & BIT(pin)) != 0)) {
 		return -ENOTSUP;
 	}
+#if defined(CONFIG_NXP_PINT)
 	if (config->int_source == INT_SOURCE_PINT) {
 		return gpio_mcux_lpc_pint_interrupt_cfg(dev, pin, mode, trig);
 	}
+#endif /* CONFIG_NXP_PINT */
 #if (defined(FSL_FEATURE_GPIO_HAS_INTERRUPT) && FSL_FEATURE_GPIO_HAS_INTERRUPT)
 	return gpio_mcux_lpc_module_interrupt_cfg(dev, pin, mode, trig);
 #else

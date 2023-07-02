@@ -57,7 +57,7 @@ static void simulate_event(struct net_if *target, int event)
 
 	simulated_event = event;
 	simulated_event_iface = target;
-	k_work_reschedule(&simulate_event_work, K_SECONDS(SIMULATED_EVENT_DELAY_SECONDS));
+	k_work_reschedule(&simulate_event_work, SIMULATED_EVENT_DELAY_TIME);
 
 	k_mutex_unlock(&simulated_event_mutex);
 }
@@ -67,9 +67,14 @@ static void simulate_timeout(struct net_if *target)
 	simulate_event(target, 0);
 }
 
-static void simulate_fatal_error(struct net_if *target, int reason)
+void simulate_fatal_error(struct net_if *target, int reason)
 {
 	simulate_event(target, reason);
+}
+
+void simulate_connection_loss(struct net_if *target)
+{
+	net_if_dormant_on(target);
 }
 
 /* Connectivity implementations */

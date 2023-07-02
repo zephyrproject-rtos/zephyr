@@ -84,12 +84,19 @@ static int wifi_scan(uint32_t mgmt_request, struct net_if *iface,
 	const struct device *dev = net_if_get_device(iface);
 	struct net_wifi_mgmt_offload *off_api =
 		(struct net_wifi_mgmt_offload *) dev->api;
+	struct wifi_scan_params *params = data;
 
 	if (off_api == NULL || off_api->scan == NULL) {
 		return -ENOTSUP;
 	}
 
-	return off_api->scan(dev, scan_result_cb);
+	if (data && (len == sizeof(*params))) {
+#ifdef CONFIG_WIFI_MGMT_FORCED_PASSIVE_SCAN
+		params->scan_type = WIFI_SCAN_TYPE_PASSIVE;
+#endif
+	}
+
+	return off_api->scan(dev, params, scan_result_cb);
 }
 
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_SCAN, wifi_scan);
@@ -295,6 +302,10 @@ static int wifi_set_twt(uint32_t mgmt_request, struct net_if *iface,
 		twt_params->fail_reason =
 			WIFI_TWT_FAIL_OPERATION_NOT_SUPPORTED;
 		return -ENOTSUP;
+	}
+
+	if (twt_params->operation == WIFI_TWT_TEARDOWN) {
+		return off_api->set_twt(dev, twt_params);
 	}
 
 	if (net_mgmt(NET_REQUEST_WIFI_IFACE_STATUS, iface, &info,

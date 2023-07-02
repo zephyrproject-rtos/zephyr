@@ -85,7 +85,9 @@ static inline FUNC_NORETURN void smp_init_top(void *arg)
 
 	wait_for_start_signal(arg);
 	z_dummy_thread_init(&dummy_thread);
+#ifdef CONFIG_SYS_CLOCK_EXISTS
 	smp_timer_init();
+#endif
 
 	z_swap_unlocked();
 

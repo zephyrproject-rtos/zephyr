@@ -142,7 +142,7 @@ void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 	uint8_t vector = ((unsigned long) x86_ap_start) >> 12;
 	uint8_t apic_id;
 
-	if (IS_ENABLED(CONFIG_ACPI)) {
+	if (IS_ENABLED(CONFIG_X86_ACPI)) {
 		struct acpi_cpu *cpu;
 
 		cpu = z_acpi_get_cpu(cpu_num);

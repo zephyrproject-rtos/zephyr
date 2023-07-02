@@ -403,6 +403,8 @@ SECTIONS {
     _unused_ram_start_marker = .;
     *(.unused_ram_start_marker)
     *(.unused_ram_start_marker.*)
+    _end = .;
+    z_mapped_end = .;
   } >ram
 
   . = L2_SRAM_BASE + L2_SRAM_SIZE;

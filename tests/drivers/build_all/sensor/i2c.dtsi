@@ -90,12 +90,6 @@ test_i2c_bmm150: bmm150@d {
 	reg = <0xd>;
 };
 
-test_i2c_ft5336: ft5336@e {
-	compatible = "focaltech,ft5336";
-	reg = <0xe>;
-	int-gpios = <&test_gpio 0 0>;
-};
-
 test_i2c_ht16k33: ht16k33@f {
 	compatible = "holtek,ht16k33";
 	reg = <0xf>;

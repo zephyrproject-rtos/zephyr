@@ -129,11 +129,11 @@ static void bap_broadcast_assistant_recv_state_cb(
 		bad_code, sizeof(bad_code));
 
 	is_bad_code = state->encrypt_state == BT_BAP_BIG_ENC_STATE_BAD_CODE;
-	shell_print(ctx_shell, "BASS recv state: src_id %u, addr %s, "
-		    "sid %u, sync_state %u, encrypt_state %u%s%s",
-		    state->src_id, le_addr, state->adv_sid,
-		    state->pa_sync_state, state->encrypt_state,
-		    is_bad_code ? ", bad code" : "", bad_code);
+	shell_print(
+		ctx_shell,
+		"BASS recv state: src_id %u, addr %s, sid %u, sync_state %u, encrypt_state %u%s%s",
+		state->src_id, le_addr, state->adv_sid, state->pa_sync_state, state->encrypt_state,
+		is_bad_code ? ", bad code" : "", is_bad_code ? bad_code : "");
 
 	for (int i = 0; i < state->num_subgroups; i++) {
 		const struct bt_bap_scan_delegator_subgroup *subgroup = &state->subgroups[i];
@@ -495,6 +495,7 @@ static bool broadcast_source_found(struct bt_data *data, void *user_data)
 {
 	struct bt_bap_broadcast_assistant_add_src_param param = { 0 };
 	const struct bt_le_scan_recv_info *info = user_data;
+	char addr_str[BT_ADDR_LE_STR_LEN];
 	struct bt_uuid_16 adv_uuid;
 	uint32_t broadcast_id;
 	int err;
@@ -524,9 +525,14 @@ static bool broadcast_source_found(struct bt_data *data, void *user_data)
 		return false;
 	}
 
-	shell_print(ctx_shell,
-		    "Found BAP broadcast source with addressand ID 0x%06X\n",
-		    broadcast_id);
+	bt_addr_le_to_str(info->addr, addr_str, sizeof(addr_str));
+	shell_print(ctx_shell, "Found BAP broadcast source with address %s and ID 0x%06X\n",
+		    addr_str, broadcast_id);
+
+	err = bt_le_scan_stop();
+	if (err) {
+		shell_error(ctx_shell, "Failed to stop scan: %d", err);
+	}
 
 	bt_addr_le_copy(&param.addr, info->addr);
 	param.adv_sid = info->sid;
@@ -558,6 +564,10 @@ static void scan_recv_cb(const struct bt_le_scan_recv_info *info,
 	/* We are only interested in non-connectable periodic advertisers */
 	if ((info->adv_props & BT_GAP_ADV_PROP_CONNECTABLE) != 0 ||
 	    info->interval == 0) {
+		return;
+	}
+
+	if (!passes_scan_filter(info, ad)) {
 		return;
 	}
 
@@ -685,6 +695,7 @@ static int cmd_bap_broadcast_assistant_mod_src(const struct shell *sh,
 
 		return -ENOEXEC;
 	}
+	param.src_id = src_id;
 
 	param.pa_sync = shell_strtobool(argv[2], 0, &result);
 	if (result != 0) {
@@ -860,9 +871,9 @@ static int cmd_bap_broadcast_assistant_add_pa_sync(const struct shell *sh,
 
 		subgroup_param->bis_sync = subgroup_bis_indexes & bis_bitfield_req;
 
-#if CONFIG_BT_CODEC_MAX_METADATA_COUNT > 0
-		metadata_len = bt_audio_codec_data_to_buf(subgroup->codec.meta,
-							  subgroup->codec.meta_count,
+#if CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_COUNT > 0
+		metadata_len = bt_audio_codec_data_to_buf(subgroup->codec_cfg.meta,
+							  subgroup->codec_cfg.meta_count,
 							  subgroup_param->metadata,
 							  sizeof(subgroup_param->metadata));
 		if (metadata_len < 0) {
@@ -870,7 +881,7 @@ static int cmd_bap_broadcast_assistant_add_pa_sync(const struct shell *sh,
 		}
 #else
 		metadata_len = 0U;
-#endif /* CONFIG_BT_CODEC_MAX_METADATA_COUNT > 0 */
+#endif /* CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_COUNT > 0 */
 		subgroup_param->metadata_len = metadata_len;
 	}
 
@@ -905,15 +916,14 @@ static int cmd_bap_broadcast_assistant_broadcast_code(const struct shell *sh,
 		return -ENOEXEC;
 	}
 
-	broadcast_code_len = hex2bin(argv[2], strlen(argv[2]),
-				     broadcast_code,
-				     sizeof(broadcast_code));
-
-	if (broadcast_code_len == 0U) {
-		shell_error(sh, "Could not parse broadcast code");
+	broadcast_code_len = strlen(argv[2]);
+	if (!IN_RANGE(broadcast_code_len, 1, BT_AUDIO_BROADCAST_CODE_SIZE)) {
+		shell_error(sh, "Invalid broadcast code length: %zu", broadcast_code_len);
 
 		return -ENOEXEC;
 	}
+
+	memcpy(broadcast_code, argv[2], broadcast_code_len);
 
 	shell_info(sh, "Sending broadcast code:");
 	shell_hexdump(sh, broadcast_code, sizeof(broadcast_code));
@@ -995,15 +1005,13 @@ static int cmd_bap_broadcast_assistant(const struct shell *sh, size_t argc,
 	return -ENOEXEC;
 }
 
-SHELL_STATIC_SUBCMD_SET_CREATE(bap_broadcast_assistant_cmds,
-	SHELL_CMD_ARG(discover, NULL,
-		      "Discover BASS on the server",
+SHELL_STATIC_SUBCMD_SET_CREATE(
+	bap_broadcast_assistant_cmds,
+	SHELL_CMD_ARG(discover, NULL, "Discover BASS on the server",
 		      cmd_bap_broadcast_assistant_discover, 1, 0),
-	SHELL_CMD_ARG(scan_start, NULL,
-		      "Start scanning for broadcasters",
+	SHELL_CMD_ARG(scan_start, NULL, "Start scanning for broadcasters",
 		      cmd_bap_broadcast_assistant_scan_start, 1, 1),
-	SHELL_CMD_ARG(scan_stop, NULL,
-		      "Stop scanning for BISs",
+	SHELL_CMD_ARG(scan_stop, NULL, "Stop scanning for BISs",
 		      cmd_bap_broadcast_assistant_scan_stop, 1, 0),
 	SHELL_CMD_ARG(add_src, NULL,
 		      "Add a source <address: XX:XX:XX:XX:XX:XX> "
@@ -1018,24 +1026,20 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bap_broadcast_assistant_cmds,
 	SHELL_CMD_ARG(add_pa_sync, NULL,
 		      "Add a PA sync as a source <sync_pa> <broadcast_id> "
 		      "[bis_index [bis_index [bix_index [...]]]]>",
-		      cmd_bap_broadcast_assistant_add_pa_sync, 3,
-		      BT_ISO_MAX_GROUP_ISO_COUNT),
+		      cmd_bap_broadcast_assistant_add_pa_sync, 3, BT_ISO_MAX_GROUP_ISO_COUNT),
 	SHELL_CMD_ARG(mod_src, NULL,
 		      "Set sync <src_id> <sync_pa> [<pa_interval>] "
 		      "[<sync_bis>] [<metadata>]",
 		      cmd_bap_broadcast_assistant_mod_src, 3, 2),
 	SHELL_CMD_ARG(broadcast_code, NULL,
 		      "Send a space separated broadcast code of up to 16 bytes "
-		      "<src_id> [broadcast code]",
-		      cmd_bap_broadcast_assistant_broadcast_code, 2, 16),
-	SHELL_CMD_ARG(rem_src, NULL,
-		      "Remove a source <src_id>",
+		      "<src_id> <broadcast code>",
+		      cmd_bap_broadcast_assistant_broadcast_code, 3, 0),
+	SHELL_CMD_ARG(rem_src, NULL, "Remove a source <src_id>",
 		      cmd_bap_broadcast_assistant_rem_src, 2, 0),
-	SHELL_CMD_ARG(read_state, NULL,
-		      "Remove a source <index>",
+	SHELL_CMD_ARG(read_state, NULL, "Remove a source <index>",
 		      cmd_bap_broadcast_assistant_read_recv_state, 2, 0),
-	SHELL_SUBCMD_SET_END
-);
+	SHELL_SUBCMD_SET_END);
 
 SHELL_CMD_ARG_REGISTER(bap_broadcast_assistant, &bap_broadcast_assistant_cmds,
 		       "Bluetooth BAP broadcast assistant client shell commands",

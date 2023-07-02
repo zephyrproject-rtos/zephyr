@@ -355,14 +355,6 @@ config BT_CTLR_SCAN_AUX_SET
 	help
 	  Maximum supported auxiliary channel scan sets.
 
-config BT_CTLR_SCAN_SYNC_ISO_SET
-	int "LE ISO Broadcast Isochronous Groups Sync Sets"
-	depends on BT_CTLR_SYNC_ISO
-	range 1 64
-	default 1
-	help
-	  Maximum supported broadcast isochronous groups (BIGs) sync sets.
-
 config BT_CTLR_ADV_ENABLE_STRICT
 	bool "Enforce Strict Advertising Enable/Disable"
 	depends on BT_BROADCASTER
@@ -465,6 +457,19 @@ config BT_CTLR_SCHED_ADVANCED
 
 	  Disabling this feature will lead to overlapping role in timespace
 	  leading to skipped events amongst active roles.
+
+config BT_CTLR_ASSERT_OVERHEAD_START
+	bool "Assert on Prepare Latency"
+	default y
+	help
+	  Assert on increased Radio Event Prepare callback latencies due to
+	  CPU usage overheads in the Controller implementation.
+
+	  Disabling this option permits the Controller to gracefully skip radio
+	  events that are delayed due to CPU usage latencies; as long as the
+	  radio event skips are not for every consecutive radio event interval,
+	  otherwise leading to remote supervision timeout and possible missing
+	  local disconnect events.
 
 config BT_CTLR_CENTRAL_SPACING
 	int "Central Connection Spacing"

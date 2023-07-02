@@ -98,11 +98,16 @@ isr_system_thread:
 	 */
 	vmrs r0, fpexc
 	str r0, [sp, #___fpu_t_SIZEOF - 4]
+	tst r0, #FPEXC_EN
+	beq _vfp_not_enabled
+	vmrs r0, fpscr
+	str r0, [sp, #___fpu_t_SIZEOF - 8]
 
 	/* Disable VFP */
 	mov r0, #0
 	vmsr fpexc, r0
 
+_vfp_not_enabled:
 	/*
 	 * Mark where to store the floating context for the undefined
 	 * instruction handler
