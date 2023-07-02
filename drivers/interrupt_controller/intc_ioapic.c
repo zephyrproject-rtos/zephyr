@@ -120,7 +120,7 @@ static void IoApicRedUpdateLo(unsigned int irq, uint32_t value,
 	!defined(CONFIG_INTEL_VTD_ICTL_XAPIC_PASSTHROUGH)
 
 #include <zephyr/drivers/interrupt_controller/intel_vtd.h>
-#include <zephyr/arch/x86/acpi.h>
+#include <zephyr/acpi/acpi.h>
 
 static const struct device *const vtd =
 	DEVICE_DT_GET_OR_NULL(DT_INST(0, intel_vt_d));
@@ -129,11 +129,19 @@ static uint16_t ioapic_id;
 
 static bool get_vtd(void)
 {
+	union acpi_dmar_id *dmar_id;
+	int inst_cnt;
+
 	if (vtd != NULL) {
 		return true;
 	}
 
-	ioapic_id = z_acpi_get_dev_id_from_dmar(ACPI_DRHD_DEV_SCOPE_IOAPIC);
+	/* Assume only one PCH in system (say client platform). */
+	if (!acpi_drhd_get(ACPI_DMAR_SCOPE_TYPE_IOAPIC, NULL, &dmar_id, &inst_cnt, 1u)) {
+		return false;
+	}
+
+	ioapic_id = dmar_id->raw;
 
 	return vtd == NULL ? false : true;
 }
