@@ -28,12 +28,12 @@ static int test_set_get_calibration(int32_t calibrate_set)
 	}
 
 	/* Validate calibration was set */
-	zassert_true(ret == 0, "Failed to set calibration");
+	zassert_ok(ret, "Failed to set calibration");
 
 	ret = rtc_get_calibration(rtc, &calibrate_get);
 
 	/* Validate calibration was gotten */
-	zassert_true(ret == 0, "Failed to get calibration");
+	zassert_ok(ret, "Failed to get calibration");
 
 	/* Print comparison between set and get values */
 	printk("Calibrate (set,get): %i, %i\n", calibrate_set, calibrate_get);
@@ -51,12 +51,12 @@ ZTEST(rtc_api, test_set_get_calibration)
 	ret = rtc_set_calibration(rtc, 0);
 
 	/* Validate calibration was set */
-	zassert_true(ret == 0, "Failed to set calibration");
+	zassert_ok(ret, "Failed to set calibration");
 
 	ret = rtc_get_calibration(rtc, &calibrate_get);
 
 	/* Validate calibration was gotten */
-	zassert_true(ret == 0, "Failed to get calibration");
+	zassert_ok(ret, "Failed to get calibration");
 
 	/* Validate edge values (0 already tested) */
 	test_set_get_calibration(1);
