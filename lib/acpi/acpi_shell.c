@@ -5,6 +5,7 @@
  */
 
 #include <zephyr/kernel.h>
+#include <zephyr/arch/cpu.h>
 #include <zephyr/device.h>
 #include <stdbool.h>
 #include <zephyr/drivers/pcie/pcie.h>
@@ -91,7 +92,7 @@ static void dump_dev_res(const struct shell *sh, ACPI_RESOURCE *res_lst)
 
 			shell_print(sh, "\nACPI_RESOURCE_TYPE_ADDRESS32\n\n");
 			shell_print(sh, "Minimum:%x, Maximum:%x\n", add_res->Address.Minimum,
-			       add_res->Address.Maximum);
+				add_res->Address.Maximum);
 			break;
 		case ACPI_RESOURCE_TYPE_ADDRESS64:
 			ACPI_RESOURCE_ADDRESS64 * add_res64 = &res->Data.Address64;
@@ -237,7 +238,6 @@ static int enum_dev(const struct shell *sh, size_t argc, char **argv)
 
 static int read_table(const struct shell *sh, size_t argc, char **argv)
 {
-	int status;
 	ACPI_TABLE_HEADER *table;
 
 	if (argc < 2) {
@@ -246,10 +246,10 @@ static int read_table(const struct shell *sh, size_t argc, char **argv)
 
 	shell_print(sh, "ACPI Table Name: %s\n", argv[1]);
 
-	status = acpi_table_get(argv[1], 0, (void **)&table);
-	if (status) {
-		shell_error(sh, "ACPI get table failed: %d\n", status);
-		return status;
+	table = acpi_table_get(argv[1], 0);
+	if (!table) {
+		shell_error(sh, "ACPI get table failed\n");
+		return -EIO;
 	}
 
 	shell_print(sh, "ACPI Table Info:\n");

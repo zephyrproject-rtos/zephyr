@@ -39,7 +39,6 @@ static int check_init_status(void)
 	}
 
 	if (bus_ctx.status == AE_NOT_CONFIGURED) {
-		LOG_DBG("ACPI init\n");
 		ret = acpi_init();
 	} else {
 		LOG_ERR("ACPI init was not success\n");
@@ -252,8 +251,10 @@ static int acpi_get_irq_table(struct acpi *bus, char *bus_name,
 		if (!bus->pci_prt_table[i].SourceIndex) {
 			break;
 		}
-		/* mark the PRT irq numbers as reserved. */
-		arch_irq_set_used(bus->pci_prt_table[i].SourceIndex);
+		if (IS_ENABLED(CONFIG_X86_64)) {
+			/* mark the PRT irq numbers as reserved. */
+			arch_irq_set_used(bus->pci_prt_table[i].SourceIndex);
+		}
 	}
 
 	return 0;
@@ -624,7 +625,7 @@ struct acpi_dev *acpi_device_by_index_get(int index)
 	return index < bus_ctx.num_dev ? &bus_ctx.child_dev[index] : NULL;
 }
 
-int acpi_table_get(char *signature, int inst, void **acpi_table)
+void *acpi_table_get(char *signature, int inst)
 {
 	int status;
 	ACPI_TABLE_HEADER *table;
@@ -632,18 +633,179 @@ int acpi_table_get(char *signature, int inst, void **acpi_table)
 	if (!bus_ctx.early_init) {
 		status = acpi_early_init();
 		if (status) {
-			LOG_ERR("ACPI early int failed");
-			return status;
+			LOG_ERR("ACPI early init failed");
+			return NULL;
 		}
 	}
 
 	status = AcpiGetTable(signature, inst, &table);
 	if (ACPI_FAILURE(status)) {
 		LOG_ERR("ACPI get table failed: %d", status);
+		return NULL;
+	}
+
+	return (void *)table;
+}
+
+static uint32_t acpi_get_subtable_entry_num(int type, struct acpi_subtable_header *subtable,
+					    uintptr_t offset, uintptr_t base, uint32_t madt_len)
+{
+	uint32_t subtable_cnt = 0;
+
+	while (offset < madt_len) {
+		if (type == subtable->Type) {
+			subtable_cnt++;
+		}
+		offset += subtable->Length;
+		subtable = ACPI_ADD_PTR(ACPI_SUBTABLE_HEADER, base, offset);
+
+		if (!subtable->Length) {
+			break;
+		}
+	}
+
+	return subtable_cnt;
+}
+
+int acpi_madt_entry_get(int type, struct acpi_subtable_header **tables, int *num_inst)
+{
+	struct acpi_table_header *madt = acpi_table_get("APIC", 0);
+	uintptr_t base = POINTER_TO_UINT(madt);
+	uintptr_t offset = sizeof(ACPI_TABLE_MADT);
+	struct acpi_subtable_header *subtable;
+
+	if (!madt) {
 		return -EIO;
 	}
 
-	*acpi_table = table;
+	subtable = ACPI_ADD_PTR(ACPI_SUBTABLE_HEADER, base, offset);
+	while (offset < madt->Length) {
+
+		if (type == subtable->Type) {
+			*tables = subtable;
+			*num_inst = acpi_get_subtable_entry_num(type, subtable, offset, base,
+								madt->Length);
+			return 0;
+		}
+
+		offset += subtable->Length;
+		subtable = ACPI_ADD_PTR(ACPI_SUBTABLE_HEADER, base, offset);
+	}
+
+	return -ENODEV;
+}
+
+int acpi_dmar_entry_get(enum AcpiDmarType type, struct acpi_subtable_header **tables)
+{
+	struct acpi_table_dmar *dmar = acpi_table_get("DMAR", 0);
+	uintptr_t base = POINTER_TO_UINT(dmar);
+	uintptr_t offset = sizeof(ACPI_TABLE_DMAR);
+	struct acpi_dmar_header *subtable;
+
+	if (!dmar) {
+		LOG_ERR("error on get DMAR table\n");
+		return -EIO;
+	}
+
+	subtable = ACPI_ADD_PTR(ACPI_DMAR_HEADER, base, offset);
+	while (offset < dmar->Header.Length) {
+		if (type == subtable->Type) {
+			*tables = (struct acpi_subtable_header *)subtable;
+			return 0;
+		}
+		offset += subtable->Length;
+		subtable = ACPI_ADD_PTR(ACPI_DMAR_HEADER, base, offset);
+	}
+
+	return -ENODEV;
+}
+
+int acpi_drhd_get(enum AcpiDmarScopeType scope, struct acpi_dmar_device_scope *dev_scope,
+	union acpi_dmar_id *dmar_id, int *num_inst, int max_inst)
+{
+	uintptr_t offset = sizeof(ACPI_DMAR_HARDWARE_UNIT);
+	uint32_t i = 0;
+	struct acpi_dmar_header *drdh;
+	struct acpi_dmar_device_scope *subtable;
+	struct acpi_dmar_pci_path *dev_path;
+	int ret;
+	uintptr_t base;
+	int scope_size;
+
+	ret = acpi_dmar_entry_get(ACPI_DMAR_TYPE_HARDWARE_UNIT,
+				  (struct acpi_subtable_header **)&drdh);
+	if (ret) {
+		LOG_ERR("Error on retrieve DMAR table\n");
+		return ret;
+	}
+
+	scope_size = drdh->Length - sizeof(ACPI_DMAR_HARDWARE_UNIT);
+	base = (uintptr_t)((uintptr_t)drdh + offset);
+
+	offset = 0;
+
+	while (scope_size) {
+		int num_path;
+
+		subtable = ACPI_ADD_PTR(ACPI_DMAR_DEVICE_SCOPE, base, offset);
+		if (!subtable->Length) {
+			break;
+		}
+
+		if (scope == subtable->EntryType) {
+			num_path = (subtable->Length - 6u) / 2u;
+			dev_path = ACPI_ADD_PTR(ACPI_DMAR_PCI_PATH, subtable,
+				sizeof(ACPI_DMAR_DEVICE_SCOPE));
+
+			while (num_path--) {
+				if (i >= max_inst) {
+					LOG_ERR("DHRD not enough buffer size\n");
+					return -ENOBUFS;
+				}
+				dmar_id[i].bits.bus = subtable->Bus;
+				dmar_id[i].bits.device = dev_path[i].Device;
+				dmar_id[i].bits.function = dev_path[i].Function;
+				i++;
+			}
+			break;
+		}
+
+		offset += subtable->Length;
+
+		if (scope_size < subtable->Length) {
+			break;
+		}
+		scope_size -= subtable->Length;
+	}
+
+	*num_inst = i;
+	if (!i) {
+		LOG_ERR("Error on retrieve DRHD Info\n");
+		return -ENODEV;
+	}
+
+	if (dev_scope && subtable) {
+		memcpy(dev_scope, subtable, sizeof(struct acpi_dmar_device_scope));
+	}
 
 	return 0;
+}
+
+struct acpi_madt_local_apic *acpi_local_apic_get(uint32_t cpu_num)
+{
+	struct acpi_madt_local_apic *lapic;
+	int cpu_cnt;
+
+	if (acpi_madt_entry_get(ACPI_MADT_TYPE_LOCAL_APIC, (ACPI_SUBTABLE_HEADER **)&lapic,
+				&cpu_cnt)) {
+		/* Error on MAD table. */
+		return NULL;
+	}
+
+	if ((cpu_num >= cpu_cnt) || !(lapic[cpu_num].LapicFlags & 1u)) {
+		/* Proccessor not enabled. */
+		return NULL;
+	}
+
+	return &lapic[cpu_num];
 }
