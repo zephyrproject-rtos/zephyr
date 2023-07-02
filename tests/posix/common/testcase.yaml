@@ -75,3 +75,8 @@ tests:
       - qemu_x86
     extra_configs:
       - CONFIG_PICOLIBC=y
+  portability.posix.common.no_spin_validate:
+    extra_configs:
+      - CONFIG_SPIN_VALIDATE=n
+    integration_platforms:
+      - mps2_an385
