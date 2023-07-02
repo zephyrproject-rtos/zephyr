@@ -6,4 +6,10 @@ config ACPI
 
 menu "ACPI driver support"
 
+config ACPI_DSDT_SUPPORT
+	bool  "Build source code for DSDT ACPICA support"
+	default y if PCIE
+	help
+	  Build source code for DSDT support
+
 endmenu
