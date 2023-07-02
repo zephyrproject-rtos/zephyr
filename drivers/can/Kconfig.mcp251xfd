@@ -1,0 +1,61 @@
+# MCP25XXFD CAN configuration options
+
+# Copyright (c) 2020 Abram Early
+# Copyright (c) 2023 Andriy Gelman
+# SPDX-License-Identifier: Apache-2.0
+
+config CAN_MCP251XFD
+	bool "MCP25XXFD CAN Driver"
+	default y
+	depends on DT_HAS_MICROCHIP_MCP251XFD_ENABLED
+	select CRC
+	select SPI
+	help
+	  Enable MCP25XXFD CAN Driver
+
+if CAN_MCP251XFD
+
+config CAN_MCP251XFD_MAX_TX_QUEUE
+	int "Maximum number of queued messages"
+	default 8
+	range 1 32
+	help
+	  Defines the array size of transmit callback pointers and semaphores,
+	  as well as the number of messages in the TX queue.
+
+config CAN_MCP251XFD_RX_FIFO_ITEMS
+	int "Number of CAN messages in the RX fifo"
+	default 16
+	range 1 32
+	help
+	  Defines the number of CAN messages in the RX fifo.
+
+config CAN_MCP251XFD_INT_THREAD_STACK_SIZE
+	int "Stack size for interrupt handler"
+	default 768
+	help
+	  Size of the stack used for internal thread which is ran for
+	  interrupt handling and incoming packets.
+
+config CAN_MCP251XFD_INT_THREAD_PRIO
+	int "Priority for interrupt handler"
+	default 2
+	help
+	  Thread priority of the interrupt handler. A higher number implies a
+	  higher priority. The thread is cooperative and will not be interrupted by
+	  another thread until execution is released.
+
+config CAN_MCP251XFD_READ_CRC_RETRIES
+	int "Number of retries during SFR register read"
+	default 5
+	help
+	  Number of retries during SFR register read if CRC fails.
+
+config CAN_MAX_FILTER
+	int "Maximum number of concurrent active filters"
+	default 5
+	range 1 31
+	help
+	  Maximum number of filters supported by the can_add_rx_callback() API call.
+
+endif # CAN_MCP251XFD
