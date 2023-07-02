@@ -98,6 +98,42 @@ extern "C" {
 		    (DT_PARENT(DT_MEM_FROM_FIXED_PARTITION(node_id))), (DT_GPARENT(node_id)))
 
 /**
+ * @brief Get the absolute address of a fixed partition
+ *
+ * Example devicetree fragment:
+ *
+ *     &flash_controller {
+ *             flash@1000000 {
+ *                     compatible = "soc-nv-flash";
+ *                     partitions {
+ *                             compatible = "fixed-partitions";
+ *                             storage_partition: partition@3a000 {
+ *                                     label = "storage";
+ *                             };
+ *                     };
+ *             };
+ *     };
+ *
+ * Here, the "storage" partition is seen to belong to flash memory
+ * starting at address 0x1000000. The partition's unit address of
+ * 0x3a000 represents an offset inside that flash memory.
+ *
+ * Example usage:
+ *
+ *     DT_FIXED_PARTITION_ADDR(DT_NODELABEL(storage_partition)) // 0x103a000
+ *
+ * This macro can only be used with partitions of internal memory
+ * addressable by the CPU. Otherwise, it may produce a compile-time
+ * error, such as: `'__REG_IDX_0_VAL_ADDRESS' undeclared`.
+ *
+ * @param node_id node identifier for a fixed-partitions child node
+ * @return the partition's offset plus the base address of the flash
+ * node containing it.
+ */
+#define DT_FIXED_PARTITION_ADDR(node_id)                                                           \
+	(DT_REG_ADDR(DT_MEM_FROM_FIXED_PARTITION(node_id)) + DT_REG_ADDR(node_id))
+
+/**
  * @}
  */
 
