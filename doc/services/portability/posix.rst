@@ -59,6 +59,7 @@ as POSIX.1-2017).
     POSIX_FILE_LOCKING,
     POSIX_SIGNALS,
     POSIX_SINGLE_PROCESS,
+    POSIX_SPIN_LOCKS,yes
     POSIX_THREADS_BASE,yes
     XSI_THREAD_MUTEX_EXT,yes
     XSI_THREADS_EXT,yes
@@ -93,6 +94,7 @@ Zephyr.
     _POSIX_REALTIME_SIGNALS,
     _POSIX_SEMAPHORES,yes
     _POSIX_SHARED_MEMORY_OBJECTS,
+    _POSIX_SPIN_LOCKS,yes
     _POSIX_SYNCHRONIZED_IO,
     _POSIX_THREAD_ATTR_STACKADDR,yes
     _POSIX_THREAD_ATTR_STACKSIZE,yes
@@ -384,6 +386,16 @@ required for error and event handling.
     sigprocmask(),
     igsuspend(),
     sigwait()
+
+.. csv-table:: POSIX_SPIN_LOCKS
+   :header: API, Supported
+   :widths: 50,10
+
+    pthread_spin_destroy(),yes
+    pthread_spin_init(),yes
+    pthread_spin_lock(),yes
+    pthread_spin_trylock(),yes
+    pthread_spin_unlock(),yes
 
 
 POSIX_DEVICE_IO
