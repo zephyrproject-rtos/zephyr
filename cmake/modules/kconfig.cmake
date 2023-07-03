@@ -210,19 +210,15 @@ if(SYSBUILD)
   endforeach()
 else()
   get_cmake_property(cache_variable_names CACHE_VARIABLES)
+  list(FILTER cache_variable_names INCLUDE REGEX "^(CLI_)?${KCONFIG_NAMESPACE}_")
+  list(TRANSFORM cache_variable_names REPLACE "^CLI_" "")
+  list(REMOVE_DUPLICATES cache_variable_names)
 endif()
 
+# Sorting the variable names will make checksum calculation more stable.
+list(SORT cache_variable_names)
 foreach (name ${cache_variable_names})
-  if("${name}" MATCHES "^CLI_${KCONFIG_NAMESPACE}_")
-    # Variable was set by user in earlier invocation, let's append to extra
-    # config unless a new value has been given.
-    string(REGEX REPLACE "^CLI_" "" org_name ${name})
-    if(NOT DEFINED ${org_name})
-      set(EXTRA_KCONFIG_OPTIONS
-        "${EXTRA_KCONFIG_OPTIONS}\n${org_name}=${${name}}"
-      )
-    endif()
-  elseif("${name}" MATCHES "^${KCONFIG_NAMESPACE}_")
+  if(DEFINED ${name})
     # When a cache variable starts with the 'KCONFIG_NAMESPACE' value, it is
     # assumed to be a Kconfig symbol assignment from the CMake command line.
     set(EXTRA_KCONFIG_OPTIONS
@@ -230,6 +226,13 @@ foreach (name ${cache_variable_names})
       )
     set(CLI_${name} "${${name}}")
     list(APPEND cli_config_list ${name})
+  elseif(DEFINED CLI_${name})
+    # An additional 'CLI_' prefix means that the value was set by the user in
+    # an earlier invocation. Append it to extra config only if no new value was
+    # assigned above.
+    set(EXTRA_KCONFIG_OPTIONS
+      "${EXTRA_KCONFIG_OPTIONS}\n${name}=${CLI_${name}}"
+      )
   endif()
 endforeach()
 
