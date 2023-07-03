@@ -9,6 +9,7 @@ simulation: qemu
 supported:
   - can
   - smp
+  - rtc
 testing:
   default: true
   ignore_tags:

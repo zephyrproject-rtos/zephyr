@@ -116,6 +116,11 @@
 		compatible = "zephyr,ieee802154-uart-pipe";
 	};
 
+	rtc: rtc {
+		status = "okay";
+		compatible = "zephyr,rtc-emul";
+		alarms-count = <2>;
+	};
 };
 
 &uart0 {
