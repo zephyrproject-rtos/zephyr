@@ -4,11 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/ztest.h>
 #include <errno.h>
-#include <zephyr/posix/time.h>
 #include <stdint.h>
+#include <time.h>
+
 #include <zephyr/sys_clock.h>
+#include <zephyr/ztest.h>
 
 /** req and rem are both NULL */
 ZTEST(posix_apis, test_nanosleep_NULL_NULL)
