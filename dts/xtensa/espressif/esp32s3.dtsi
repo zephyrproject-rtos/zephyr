@@ -13,6 +13,7 @@
 
 / {
 	chosen {
+		zephyr,canbus = &twai;
 		zephyr,entropy = &trng0;
 		zephyr,flash-controller = &flash;
 	};
@@ -198,6 +199,17 @@
 			clocks = <&rtc ESP32_SPI3_MODULE>;
 			dma-clk = <ESP32_GDMA_MODULE>;
 			dma-host = <1>;
+			status = "disabled";
+		};
+
+		twai: can@6002b000 {
+			compatible = "espressif,esp32-twai";
+			reg = <0x6002b000 DT_SIZE_K(4)>;
+			interrupts = <TWAI_INTR_SOURCE>;
+			interrupt-parent = <&intc>;
+			clocks = <&rtc ESP32_TWAI_MODULE>;
+			sjw = <1>;
+			sample-point = <875>;
 			status = "disabled";
 		};
 
