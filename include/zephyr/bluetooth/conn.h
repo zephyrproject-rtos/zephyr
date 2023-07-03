@@ -1081,6 +1081,26 @@ void bt_conn_cb_register(struct bt_conn_cb *cb);
  */
 void bt_set_bondable(bool enable);
 
+/** @brief Set/clear the bonding flag for a given connection.
+ *
+ *  Set/clear the Bonding flag in the Authentication Requirements of
+ *  SMP Pairing Request/Response data for a given connection.
+ *
+ *  The bonding flag for a given connection cannot be set/cleared if
+ *  security procedures in the SMP module have already started.
+ *  This function can be called only once per connection.
+ *
+ *  If the bonding flag is not set/cleared for a given connection,
+ *  the value will depend on global configuration which is set using
+ *  bt_set_bondable.
+ *  The default value of the global configuration is defined using
+ *  CONFIG_BT_BONDABLE Kconfig option.
+ *
+ *  @param conn Connection object.
+ *  @param enable Value allowing/disallowing to be bondable.
+ */
+int bt_conn_set_bondable(struct bt_conn *conn, bool enable);
+
 /** @brief Allow/disallow remote LE SC OOB data to be used for pairing.
  *
  *  Set/clear the OOB data flag for LE SC SMP Pairing Request/Response data.

@@ -600,6 +600,13 @@ config BT_BONDING_REQUIRED
 	  set the bondable flag in their pairing request. Any other kind of
 	  requests will be rejected.
 
+config BT_BONDABLE_PER_CONNECTION
+	bool "Set/clear the bonding flag per-connection [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  Enable support for the bt_conn_set_bondable API function that is
+	  used to set/clear the bonding flag on a per-connection basis.
+
 config BT_STORE_DEBUG_KEYS
 	bool "Store Debug Mode bonds"
 	help
