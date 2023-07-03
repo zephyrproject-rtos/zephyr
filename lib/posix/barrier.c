@@ -161,6 +161,40 @@ int pthread_barrier_destroy(pthread_barrier_t *b)
 	return 0;
 }
 
+int pthread_barrierattr_init(pthread_barrierattr_t *attr)
+{
+	__ASSERT_NO_MSG(attr != NULL);
+
+	attr->pshared = PTHREAD_PROCESS_PRIVATE;
+
+	return 0;
+}
+
+int pthread_barrierattr_setpshared(pthread_barrierattr_t *attr, int pshared)
+{
+	if (pshared != PTHREAD_PROCESS_PRIVATE && pshared != PTHREAD_PROCESS_PUBLIC) {
+		return -EINVAL;
+	}
+
+	attr->pshared = pshared;
+	return 0;
+}
+
+int pthread_barrierattr_getpshared(const pthread_barrierattr_t *restrict attr,
+				   int *restrict pshared)
+{
+	*pshared = attr->pshared;
+
+	return 0;
+}
+
+int pthread_barrierattr_destroy(pthread_barrierattr_t *attr)
+{
+	ARG_UNUSED(attr);
+
+	return 0;
+}
+
 static int pthread_barrier_pool_init(void)
 {
 	int err;

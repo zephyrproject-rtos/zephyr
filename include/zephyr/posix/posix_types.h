@@ -88,6 +88,7 @@ BUILD_ASSERT(sizeof(pthread_condattr_t) >= sizeof(struct pthread_condattr));
 typedef uint32_t pthread_barrier_t;
 
 typedef struct pthread_barrierattr {
+	int pshared;
 } pthread_barrierattr_t;
 
 typedef uint32_t pthread_rwlockattr_t;
