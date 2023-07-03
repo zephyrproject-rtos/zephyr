@@ -2,10 +2,23 @@
 # SPDX-License-Identifier: Apache-2.0
 
 tests:
-  drivers.rtc.rtc_api:
+  drivers.rtc.rtc_api.emul:
     tags:
       - drivers
       - rtc
       - api
     filter: dt_alias_exists("rtc")
     depends_on: rtc
+    platform_allow:
+      - native_posix
+      - native_posix_64
+      - qemu_x86
+      - qemu_x86_64
+    integration_platforms:
+      - native_posix
+      - native_posix_64
+      - qemu_x86
+    extra_configs:
+      - CONFIG_RTC_ALARM=y
+      - CONFIG_RTC_UPDATE=y
+      - CONFIG_RTC_CALIBRATION=y
