@@ -25,6 +25,7 @@
 		zephyr,shell-uart = &usart3;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
 		zephyr,dtcm = &dtcm;
 	};
 
@@ -148,4 +149,41 @@ zephyr_udc0: &usbotg_fs {
 		     &eth_txd0_pg13
 		     &eth_txd1_pb13>;
 	pinctrl-names = "default";
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/*
+		 * 256KB for bootloader. This is too large but
+		 * there is no way to make the part smaller.
+		 */
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 DT_SIZE_K(256)>;
+			read-only;
+		};
+
+		/* application image slot: 256KB */
+		slot0_partition: partition@40000 {
+			label = "image-0";
+			reg = <0x00040000 DT_SIZE_K(256)>;
+		};
+
+		/* backup slot: 256KB */
+		slot1_partition: partition@80000 {
+			label = "image-1";
+			reg = <0x00080000 DT_SIZE_K(256)>;
+		};
+
+		/* scratch slot: 256KB */
+		scratch_partition: partition@C0000 {
+			label = "image-scratch";
+			reg = <0x000C0000 DT_SIZE_K(256)>;
+		};
+
+	};
 };
