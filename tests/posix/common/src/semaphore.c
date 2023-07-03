@@ -4,10 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/ztest.h>
 #include <errno.h>
 #include <pthread.h>
 #include <semaphore.h>
+
+#include <zephyr/ztest.h>
 
 #define STACK_SIZE 1024
 

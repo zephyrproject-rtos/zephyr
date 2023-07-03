@@ -4,11 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/ztest.h>
-#include <zephyr/kernel.h>
 #include <pthread.h>
 #include <semaphore.h>
+
 #include <zephyr/sys/util.h>
+#include <zephyr/ztest.h>
 
 #ifndef min
 #define min(a, b) ((a) < (b)) ? (a) : (b)
@@ -411,7 +411,7 @@ ZTEST(posix_apis, test_pthread_execution)
 	printk("Barrier test OK\n");
 }
 
-ZTEST(posix_apis, test_pthread_error_condition)
+ZTEST(posix_apis, test_pthread_errors_errno)
 {
 	pthread_attr_t attr;
 	struct sched_param param;
