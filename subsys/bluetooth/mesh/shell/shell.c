@@ -1595,6 +1595,35 @@ static int cmd_appidx(const struct shell *sh, size_t argc, char *argv[])
 	return 0;
 }
 
+#if defined(CONFIG_BT_MESH_STATISTIC)
+static int cmd_stat_get(const struct shell *sh, size_t argc, char *argv[])
+{
+	struct bt_mesh_statistic st;
+
+	bt_mesh_stat_get(&st);
+
+	shell_print(sh, "Received frames over:");
+	shell_print(sh, "adv:       %d", st.rx_adv);
+	shell_print(sh, "loopback:  %d", st.rx_loopback);
+	shell_print(sh, "proxy:     %d", st.rx_proxy);
+	shell_print(sh, "unknown:   %d", st.rx_uknown);
+
+	shell_print(sh, "Transmitted frames: <planned> - <succeeded>");
+	shell_print(sh, "relay adv:   %d - %d", st.tx_adv_relay_planned, st.tx_adv_relay_succeeded);
+	shell_print(sh, "local adv:   %d - %d", st.tx_local_planned, st.tx_local_succeeded);
+	shell_print(sh, "friend:      %d - %d", st.tx_friend_planned, st.tx_friend_succeeded);
+
+	return 0;
+}
+
+static int cmd_stat_clear(const struct shell *sh, size_t argc, char *argv[])
+{
+	bt_mesh_stat_reset();
+
+	return 0;
+}
+#endif
+
 #if defined(CONFIG_BT_MESH_SHELL_CDB)
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	cdb_cmds,
@@ -1723,6 +1752,13 @@ SHELL_STATIC_SUBCMD_SET_CREATE(target_cmds,
 	SHELL_CMD_ARG(app, NULL, "[AppKeyIdx]", cmd_appidx, 1, 1),
 	SHELL_SUBCMD_SET_END);
 
+#if defined(CONFIG_BT_MESH_STATISTIC)
+SHELL_STATIC_SUBCMD_SET_CREATE(stat_cmds,
+	SHELL_CMD_ARG(get, NULL, NULL, cmd_stat_get, 1, 0),
+	SHELL_CMD_ARG(clear, NULL, NULL, cmd_stat_clear, 1, 0),
+	SHELL_SUBCMD_SET_END);
+#endif
+
 /* Placeholder for model shell modules that is configured in the application */
 SHELL_SUBCMD_SET_CREATE(model_cmds, (mesh, models));
 
@@ -1759,6 +1795,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(mesh_cmds,
 	SHELL_CMD(test, &test_cmds, "Test commands", bt_mesh_shell_mdl_cmds_help),
 #endif
 	SHELL_CMD(target, &target_cmds, "Target commands", bt_mesh_shell_mdl_cmds_help),
+
+#if defined(CONFIG_BT_MESH_STATISTIC)
+	SHELL_CMD(stat, &stat_cmds, "Statistic commands", bt_mesh_shell_mdl_cmds_help),
+#endif
 
 	SHELL_SUBCMD_SET_END
 );
