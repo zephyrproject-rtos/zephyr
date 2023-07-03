@@ -24,6 +24,14 @@ properties:
       while keeping a good measurement resolution. The units are in uA/LSB
       so that low maximum currents can be measured with enough resolution.
 
+  voltage-lsb-microvolts:
+    type: int
+    default: 1250
+    description: |
+      Voltage input resolution in microvolts.
+      The default value matches ina230 and ina231.
+      Some parts with higher voltage capability (e.g. ina236) need this set.
+
   rshunt-micro-ohms:
     type: int
     required: true
