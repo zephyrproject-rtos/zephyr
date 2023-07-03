@@ -95,19 +95,20 @@ static int ieee802154_scan(uint32_t mgmt_request, struct net_if *iface,
 			   void *data, size_t len)
 {
 	struct ieee802154_context *ctx = net_if_l2_data(iface);
-	struct ieee802154_req_params *scan =
-		(struct ieee802154_req_params *)data;
+	struct ieee802154_req_params *scan;
 	struct net_pkt *pkt = NULL;
 	uint8_t channel;
 	int ret;
 
+	if (len != sizeof(struct ieee802154_req_params) || !data) {
+		return -EINVAL;
+	}
+
+	scan = (struct ieee802154_req_params *)data;
+
 	NET_DBG("%s scan requested",
 		mgmt_request == NET_REQUEST_IEEE802154_ACTIVE_SCAN ?
 		"Active" : "Passive");
-
-	if (scan == NULL) {
-		return -EINVAL;
-	}
 
 	k_sem_take(&ctx->scan_ctx_lock, K_FOREVER);
 
@@ -117,8 +118,9 @@ static int ieee802154_scan(uint32_t mgmt_request, struct net_if *iface,
 	}
 
 	if (mgmt_request == NET_REQUEST_IEEE802154_ACTIVE_SCAN) {
-		struct ieee802154_frame_params params;
+		struct ieee802154_frame_params params = {0};
 
+		params.dst.len = IEEE802154_SHORT_ADDR_LENGTH;
 		params.dst.short_addr = IEEE802154_BROADCAST_ADDRESS;
 		params.dst.pan_id = IEEE802154_BROADCAST_PAN_ID;
 
@@ -346,12 +348,17 @@ static int ieee802154_associate(uint32_t mgmt_request, struct net_if *iface,
 				void *data, size_t len)
 {
 	struct ieee802154_context *ctx = net_if_l2_data(iface);
-	struct ieee802154_req_params *req =
-		(struct ieee802154_req_params *)data;
 	struct ieee802154_frame_params params;
+	struct ieee802154_req_params *req;
 	struct ieee802154_command *cmd;
 	struct net_pkt *pkt;
 	int ret = 0;
+
+	if (len != sizeof(struct ieee802154_req_params) || !data) {
+		return -EINVAL;
+	}
+
+	req = (struct ieee802154_req_params *)data;
 
 	params.dst.len = req->len;
 	if (params.dst.len == IEEE802154_SHORT_ADDR_LENGTH) {
@@ -464,6 +471,9 @@ static int ieee802154_disassociate(uint32_t mgmt_request, struct net_if *iface,
 	struct net_pkt *pkt;
 	int ret = 0;
 
+	ARG_UNUSED(data);
+	ARG_UNUSED(len);
+
 	k_sem_take(&ctx->ctx_lock, K_FOREVER);
 
 	if (!is_associated(ctx)) {
@@ -552,9 +562,18 @@ static int ieee802154_set_parameters(uint32_t mgmt_request,
 	uint16_t value;
 	int ret = 0;
 
-	if (mgmt_request != NET_REQUEST_IEEE802154_SET_EXT_ADDR &&
-	    (len != sizeof(uint16_t) || !data)) {
+	if (!data) {
 		return -EINVAL;
+	}
+
+	if (mgmt_request == NET_REQUEST_IEEE802154_SET_EXT_ADDR) {
+		if (len != IEEE802154_EXT_ADDR_LENGTH) {
+			return -EINVAL;
+		}
+	} else {
+		if (len != sizeof(uint16_t)) {
+			return -EINVAL;
+		}
 	}
 
 	value = *((uint16_t *) data);
@@ -585,11 +604,6 @@ static int ieee802154_set_parameters(uint32_t mgmt_request,
 			ieee802154_radio_filter_pan_id(iface, ctx->pan_id);
 		}
 	} else if (mgmt_request == NET_REQUEST_IEEE802154_SET_EXT_ADDR) {
-		if (len != IEEE802154_EXT_ADDR_LENGTH) {
-			ret = -EINVAL;
-			goto out;
-		}
-
 		uint8_t ext_addr_le[IEEE802154_EXT_ADDR_LENGTH];
 
 		sys_memcpy_swap(ext_addr_le, data, IEEE802154_EXT_ADDR_LENGTH);
@@ -648,9 +662,18 @@ static int ieee802154_get_parameters(uint32_t mgmt_request,
 	uint16_t *value;
 	int ret = 0;
 
-	if (mgmt_request != NET_REQUEST_IEEE802154_GET_EXT_ADDR &&
-	    (len != sizeof(uint16_t) || !data)) {
+	if (!data) {
 		return -EINVAL;
+	}
+
+	if (mgmt_request == NET_REQUEST_IEEE802154_GET_EXT_ADDR) {
+		if (len != IEEE802154_EXT_ADDR_LENGTH) {
+			return -EINVAL;
+		}
+	} else {
+		if (len != sizeof(uint16_t)) {
+			return -EINVAL;
+		}
 	}
 
 	value = (uint16_t *)data;
@@ -662,11 +685,6 @@ static int ieee802154_get_parameters(uint32_t mgmt_request,
 	} else if (mgmt_request == NET_REQUEST_IEEE802154_GET_PAN_ID) {
 		*value = ctx->pan_id;
 	} else if (mgmt_request == NET_REQUEST_IEEE802154_GET_EXT_ADDR) {
-		if (len != IEEE802154_EXT_ADDR_LENGTH) {
-			ret = -EINVAL;
-			goto out;
-		}
-
 		sys_memcpy_swap(data, ctx->ext_addr, IEEE802154_EXT_ADDR_LENGTH);
 	} else if (mgmt_request == NET_REQUEST_IEEE802154_GET_SHORT_ADDR) {
 		*value = ctx->short_addr;
@@ -676,7 +694,6 @@ static int ieee802154_get_parameters(uint32_t mgmt_request,
 		*s_value = ctx->tx_power;
 	}
 
-out:
 	k_sem_give(&ctx->ctx_lock);
 	return ret;
 }
@@ -706,6 +723,12 @@ static int ieee802154_set_security_settings(uint32_t mgmt_request,
 	struct ieee802154_security_params *params;
 	int ret = 0;
 
+	if (len != sizeof(struct ieee802154_security_params) || !data) {
+		return -EINVAL;
+	}
+
+	params = (struct ieee802154_security_params *)data;
+
 	k_sem_take(&ctx->ctx_lock, K_FOREVER);
 
 	if (is_associated(ctx)) {
@@ -713,14 +736,7 @@ static int ieee802154_set_security_settings(uint32_t mgmt_request,
 		goto out;
 	}
 
-	if (len != sizeof(struct ieee802154_security_params) || !data) {
-		ret = -EINVAL;
-		goto out;
-	}
-
 	ieee802154_security_teardown_session(&ctx->sec_ctx);
-
-	params = (struct ieee802154_security_params *)data;
 
 	if (ieee802154_security_setup_session(&ctx->sec_ctx, params->level,
 					      params->key_mode, params->key,
