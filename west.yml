@@ -287,7 +287,7 @@ manifest:
       groups:
         - tools
     - name: nrf_hw_models
-      revision: 37c571ef7c4a86dad852566fc43eb36f42534e9f
+      revision: 33b999d50093da88cf935383da2bdac70ffd9456
       path: modules/bsim_hw_models/nrf_hw_models
     - name: open-amp
       revision: c904a01d4a882bcbb39987e0e2ce5308f49ac7ad
