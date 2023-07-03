@@ -1693,3 +1693,18 @@ The Solicitation PDU RPL Client model is an optional mesh subsystem that can be 
 	* ``RngStart``: Start address of the SSRC range.
 	* ``Ackd``: This argument decides on whether an acknowledged or unacknowledged message will be sent.
 	* ``RngLen``: Range length for the SSRC addresses to be cleared from the solicitiation RPL list. This parameter is optional; if absent, only a single SSRC address will be cleared.
+
+
+Frame statistic
+===============
+
+``mesh stat get``
+-----------------
+
+	Get the frame statistic. The command prints numbers of received frames, as well as numbers of planned and succeeded transmission attempts.
+
+
+``mesh stat clear``
+-------------------
+
+	Clear all statistics collected before.
