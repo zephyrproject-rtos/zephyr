@@ -613,6 +613,7 @@ topeet	Topeet
 toppoly	TPO (deprecated, use tpo)
 topwise	Topwise Communication Co., Ltd.
 toradex	Toradex AG
+torex	Torex Semiconductor Ltd.
 toshiba	Toshiba Corporation
 toumaz	Toumaz
 tpk	TPK U.S.A. LLC
