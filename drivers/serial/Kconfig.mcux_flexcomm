@@ -14,3 +14,10 @@ config UART_MCUX_FLEXCOMM
 	select PINCTRL
 	help
 	  Enable the MCUX USART driver.
+
+config UART_MCUX_FLEXCOMM_ISR_SUPPORT
+	bool
+	depends on UART_MCUX_FLEXCOMM
+	default y if UART_INTERRUPT_DRIVEN || UART_ASYNC_API
+	help
+	  Enable UART interrupt service routine.
