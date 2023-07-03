@@ -9,6 +9,7 @@ supported:
   - uart
   - i2c
   - spi
+  - can
   - counter
   - watchdog
   - entropy
