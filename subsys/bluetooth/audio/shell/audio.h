@@ -58,11 +58,19 @@ struct unicast_stream {
 	struct bt_cap_stream stream;
 	struct bt_audio_codec_cfg codec_cfg;
 	struct bt_audio_codec_qos qos;
+#if defined(CONFIG_BT_AUDIO_TX)
+	int64_t connected_at_ticks;      /* The uptime tick measured when stream was connected */
+	uint16_t last_allocated_seq_num; /* The last packet sequence number allocated */
+#endif /* defined(CONFIG_BT_AUDIO_TX) */
 };
 
 struct broadcast_stream {
 	struct bt_cap_stream stream;
 	struct bt_audio_codec_data data;
+#if defined(CONFIG_BT_AUDIO_TX)
+	int64_t connected_at_ticks;      /* The uptime tick measured when stream was connected */
+	uint16_t last_allocated_seq_num; /* The last packet sequence number allocated */
+#endif /* defined(CONFIG_BT_AUDIO_TX) */
 };
 
 struct broadcast_source {
