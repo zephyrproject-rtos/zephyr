@@ -775,9 +775,6 @@ static inline int uart_fifo_fill_u16(const struct device *dev,
  * available data in the FIFO (i.e. until it returns less data
  * than was requested).
  *
- * Note that the calling context only applies to physical UARTs and
- * no to the virtual ones found in USB CDC ACM code.
- *
  * @param dev UART device instance.
  * @param rx_data Data container.
  * @param size Container size.
@@ -818,9 +815,6 @@ static inline int uart_fifo_read(const struct device *dev, uint8_t *rx_data,
  * detected, uart_fifo_read() must be called until it reads all
  * available data in the FIFO (i.e. until it returns less data
  * than was requested).
- *
- * Note that the calling context only applies to physical UARTs and
- * no to the virtual ones found in USB CDC ACM code.
  *
  * @param dev UART device instance.
  * @param rx_data Wide data container.
