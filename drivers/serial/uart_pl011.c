@@ -26,6 +26,7 @@
 #endif
 
 #include "uart_pl011_registers.h"
+#include "uart_pl011_ambiq.h"
 
 struct pl011_config {
 	DEVICE_MMIO_ROM;
@@ -36,6 +37,8 @@ struct pl011_config {
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	uart_irq_config_func_t irq_config_func;
 #endif
+	int (*clk_enable_func)(const struct device *dev, uint32_t clk);
+	int (*pwr_on_func)(void);
 };
 
 /* Device data structure */
@@ -304,9 +307,22 @@ static int pl011_init(const struct device *dev)
 			return ret;
 		}
 #endif
+		/* Call vendor-specific function to power on the peripheral */
+		if (config->pwr_on_func != NULL) {
+			ret = config->pwr_on_func();
+		}
+
 		/* disable the uart */
 		pl011_disable(dev);
 		pl011_disable_fifo(dev);
+
+		/* Call vendor-specific function to enable clock for the peripheral */
+		if (config->clk_enable_func != NULL) {
+			ret = config->clk_enable_func(dev, config->sys_clk_freq);
+			if (ret) {
+				return ret;
+			}
+		}
 
 		/* Set baud rate */
 		ret = pl011_set_baudrate(dev, config->sys_clk_freq,
@@ -358,6 +374,18 @@ static int pl011_init(const struct device *dev)
 #define PINCTRL_INIT(n)
 #endif /* CONFIG_PINCTRL */
 
+#define PL011_GET_COMPAT_QUIRK_NONE(n)	NULL
+
+#define PL011_GET_COMPAT_CLK_QUIRK_0(n)					\
+	COND_CODE_1(DT_NODE_HAS_COMPAT(DT_DRV_INST(n), ambiq_uart),	\
+		    (clk_enable_ambiq_uart),				\
+		    PL011_GET_COMPAT_QUIRK_NONE(n))
+
+#define PL011_GET_COMPAT_PWR_QUIRK_0(n)					\
+	COND_CODE_1(DT_NODE_HAS_COMPAT(DT_DRV_INST(n), ambiq_uart),	\
+		    (pwr_on_ambiq_uart_##n),				\
+		    PL011_GET_COMPAT_QUIRK_NONE(n))
+
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 void pl011_isr(const struct device *dev)
 {
@@ -393,6 +421,8 @@ void pl011_isr(const struct device *dev)
 		.sys_clk_freq = DT_INST_PROP_BY_PHANDLE(n, clocks, clock_frequency),	\
 		PINCTRL_INIT(n)	\
 		.irq_config_func = pl011_irq_config_func_##n,				\
+		.clk_enable_func = PL011_GET_COMPAT_CLK_QUIRK_0(n),			\
+		.pwr_on_func = PL011_GET_COMPAT_PWR_QUIRK_0(n),				\
 	};
 #else
 #define PL011_CONFIG_PORT(n)								\
@@ -404,7 +434,8 @@ void pl011_isr(const struct device *dev)
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
 #define PL011_INIT(n)						\
-	PINCTRL_DEFINE(n)							\
+	PINCTRL_DEFINE(n)					\
+	PL011_QUIRK_AMBIQ_UART_DEFINE(n)			\
 	PL011_CONFIG_PORT(n)					\
 								\
 	static struct pl011_data pl011_data_port_##n = {	\
