@@ -59,9 +59,23 @@ struct shell_stream {
 	struct bt_audio_codec_cfg codec_cfg;
 	struct bt_audio_codec_qos qos;
 #if defined(CONFIG_BT_AUDIO_TX)
-	int64_t connected_at_ticks;      /* The uptime tick measured when stream was connected */
-	uint16_t last_allocated_seq_num; /* The last packet sequence number allocated */
+	int64_t connected_at_ticks; /* The uptime tick measured when stream was connected */
+	uint16_t seq_num;
+	struct k_work_delayable audio_send_work;
+	bool tx_active;
+#if defined(CONFIG_LIBLC3)
+	atomic_t lc3_enqueue_cnt;
+	size_t lc3_sdu_cnt;
+#endif /* CONFIG_LIBLC3 */
 #endif /* CONFIG_BT_AUDIO_TX */
+#if defined(CONFIG_BT_AUDIO_RX)
+	struct bt_iso_recv_info last_info;
+	size_t lost_pkts;
+	size_t err_pkts;
+	size_t dup_psn;
+	size_t rx_cnt;
+	size_t dup_ts;
+#endif /* CONFIG_BT_AUDIO_RX */
 };
 
 struct broadcast_source {
