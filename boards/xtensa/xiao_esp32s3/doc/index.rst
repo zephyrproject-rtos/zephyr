@@ -49,6 +49,8 @@ Current Zephyr's XIAO ESP32S3 board supports the following features:
 +------------+------------+-------------------------------------+
 | SPI Master | on-chip    | spi                                 |
 +------------+------------+-------------------------------------+
+| TWAI/CAN   | on-chip    | can                                 |
++------------+------------+-------------------------------------+
 | Timers     | on-chip    | counter                             |
 +------------+------------+-------------------------------------+
 | Watchdog   | on-chip    | watchdog                            |
