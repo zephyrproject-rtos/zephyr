@@ -142,34 +142,70 @@ static bool initialized;
 
 #if defined(CONFIG_BT_AUDIO_TX)
 static struct bt_bap_stream *txing_stream;
-static uint16_t seq_num;
 
-static uint16_t get_next_seq_num(uint32_t interval_us)
+static uint16_t get_next_seq_num(struct bt_bap_stream *stream)
 {
-	static int64_t last_ticks;
-	int64_t uptime_ticks, delta_ticks;
+	const uint32_t interval_us = stream->qos->interval;
+	uint16_t *last_allocated_seq_num_ptr = NULL;
+	int64_t connected_at_ticks;
+	int64_t uptime_ticks;
+	int64_t delta_ticks;
 	uint64_t delta_us;
-	uint64_t seq_num_incr;
-	uint64_t next_seq_num;
+	uint16_t seq_num;
 
-	/* Note: This does not handle wrapping of ticks when they go above
-	 * 2^(62-1)
-	 */
+#if defined(CONFIG_BT_BAP_UNICAST)
+	if (stream->conn != NULL) { /* if unicast */
+		struct unicast_stream *uni_stream =
+			CONTAINER_OF(stream, struct unicast_stream, stream);
+
+		last_allocated_seq_num_ptr = &uni_stream->last_allocated_seq_num;
+		connected_at_ticks = uni_stream->connected_at_ticks;
+	}
+#endif /* CONFIG_BT_BAP_UNICAST */
+
+#if defined(CONFIG_BT_BAP_BROADCAST_SOURCE)
+	if (stream->conn == NULL) { /* if broadcast */
+		struct broadcast_stream *bro_stream =
+			CONTAINER_OF(stream, struct broadcast_stream, stream);
+
+		last_allocated_seq_num_ptr = &bro_stream->last_allocated_seq_num;
+		connected_at_ticks = bro_stream->connected_at_ticks;
+	}
+#endif /* CONFIG_BT_BAP_BROADCAST_SOURCE */
+
+	/* Note: This does not handle wrapping of ticks when they go above 2^(62-1) */
 	uptime_ticks = k_uptime_ticks();
-	delta_ticks = uptime_ticks - last_ticks;
-	last_ticks = uptime_ticks;
+	delta_ticks = uptime_ticks - connected_at_ticks;
 
 	delta_us = k_ticks_to_us_near64((uint64_t)delta_ticks);
-	seq_num_incr = delta_us / interval_us;
-	next_seq_num = (seq_num_incr + seq_num);
+	/* Calculate the sequence number by dividing the stream uptime by the SDU interval */
+	seq_num = (uint16_t)(delta_us / interval_us);
 
-	return (uint16_t)next_seq_num;
+	/* In the case that we call this multiple times, we need to account for any sequence numbers
+	 * already allocated and send to the controller. Ensuring that the next PSN is 1 higher than
+	 * the last we allocated (assuming that we it was actually sent to the controller).
+	 *
+	 * The additional condition that checks that the difference is smaller than a specific value
+	 * is used to handle the case where seq_num has wrapped.
+	 */
+	if (seq_num <= *last_allocated_seq_num_ptr && *last_allocated_seq_num_ptr - seq_num < 100) {
+		seq_num = *last_allocated_seq_num_ptr + 1;
+	}
+
+	if (last_allocated_seq_num_ptr != NULL) {
+		*last_allocated_seq_num_ptr = seq_num;
+	}
+
+	return seq_num;
 }
 #endif /* CONFIG_BT_AUDIO_TX */
 
 #if defined(CONFIG_LIBLC3) && defined(CONFIG_BT_AUDIO_TX)
-NET_BUF_POOL_FIXED_DEFINE(sine_tx_pool, CONFIG_BT_ISO_TX_BUF_COUNT,
-			  BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU),
+/* For the first call-back we push multiple audio frames to the buffer to use the
+ * controller ISO buffer to handle jitter.
+ */
+#define PRIME_COUNT 2U
+NET_BUF_POOL_FIXED_DEFINE(sine_tx_pool, PRIME_COUNT, BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU),
 			  CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
 
 #include "lc3.h"
@@ -279,6 +315,7 @@ static void lc3_audio_send_data(struct k_work *work)
 	struct net_buf *buf;
 	uint8_t *net_buffer;
 	off_t offset = 0;
+	uint16_t seq_num;
 	int err;
 
 	if (lc3_encoder == NULL) {
@@ -316,7 +353,7 @@ static void lc3_audio_send_data(struct k_work *work)
 		}
 	}
 
-	seq_num = get_next_seq_num(txing_stream->qos->interval);
+	seq_num = get_next_seq_num(txing_stream);
 	err = bt_bap_stream_send(txing_stream, buf, seq_num, BT_ISO_TIMESTAMP_NONE);
 	if (err < 0) {
 		shell_error(ctx_shell, "Failed to send LC3 audio data (%d)", err);
@@ -329,10 +366,20 @@ static void lc3_audio_send_data(struct k_work *work)
 	}
 
 	if ((lc3_sdu_cnt % 100) == 0) {
-		shell_info(ctx_shell, "[%zu]: TX LC3: %zu", lc3_sdu_cnt, tx_sdu_len);
+		shell_info(ctx_shell, "[%zu]: TX LC3: %zu (seq_num %u)", lc3_sdu_cnt, tx_sdu_len,
+			   seq_num);
 	}
 
 	lc3_sdu_cnt++;
+
+	/* If we have more buffers available, we reschedule the workqueue item immediately to
+	 * trigger antother encode + TX, but without blocking this call for too long
+	 */
+	buf = net_buf_alloc(&sine_tx_pool, K_NO_WAIT);
+	if (buf != NULL) {
+		net_buf_unref(buf);
+		k_work_reschedule(k_work_delayable_from_work(work), K_NO_WAIT);
+	}
 }
 
 void sdu_sent_cb(struct bt_bap_stream *stream)
@@ -484,10 +531,6 @@ static int lc3_enable(struct bt_bap_stream *stream, const struct bt_audio_codec_
 static int lc3_start(struct bt_bap_stream *stream, struct bt_bap_ascs_rsp *rsp)
 {
 	shell_print(ctx_shell, "Start: stream %p", stream);
-
-#if defined(CONFIG_BT_AUDIO_TX)
-	seq_num = 0;
-#endif /* CONFIG_BT_AUDIO_TX */
 
 	return 0;
 }
@@ -1740,6 +1783,40 @@ static void stream_enabled_cb(struct bt_bap_stream *stream)
 
 static void stream_started_cb(struct bt_bap_stream *stream)
 {
+#if defined(CONFIG_BT_AUDIO_TX)
+	int64_t *connected_at_ticks_ptr = NULL;
+	uint16_t *last_allocated_seq_num_ptr = NULL;
+
+#if defined(CONFIG_BT_BAP_UNICAST)
+	if (stream->conn != NULL) { /* if unicast */
+		struct unicast_stream *uni_stream =
+			CONTAINER_OF(stream, struct unicast_stream, stream);
+
+		connected_at_ticks_ptr = &uni_stream->connected_at_ticks;
+		last_allocated_seq_num_ptr = &uni_stream->last_allocated_seq_num;
+	}
+#endif /* CONFIG_BT_BAP_UNICAST */
+
+#if defined(CONFIG_BT_BAP_BROADCAST_SOURCE)
+	if (stream == NULL) { /* if broadcast */
+		struct broadcast_stream *bro_stream =
+			CONTAINER_OF(stream, struct broadcast_stream, stream);
+
+		connected_at_ticks_ptr = &bro_stream->connected_at_ticks;
+		last_allocated_seq_num_ptr = &bro_stream->last_allocated_seq_num;
+	}
+#endif /* CONFIG_BT_BAP_BROADCAST_SOURCE */
+
+	if (connected_at_ticks_ptr != NULL) {
+		*connected_at_ticks_ptr = k_uptime_ticks();
+	}
+
+	if (last_allocated_seq_num_ptr != NULL) {
+		/* Set to max value to support sending the first packet with PSN = 0*/
+		*last_allocated_seq_num_ptr = UINT16_MAX;
+	}
+#endif /* CONFIG_BT_AUDIO_TX */
+
 	printk("Stream %p started\n", stream);
 
 #if defined(CONFIG_BT_AUDIO_RX)
@@ -2389,9 +2466,7 @@ static int cmd_send(const struct shell *sh, size_t argc, char *argv[])
 
 	net_buf_add_mem(buf, data, len);
 
-	seq_num = get_next_seq_num(default_stream->qos->interval);
-
-	ret = bt_bap_stream_send(default_stream, buf, seq_num,
+	ret = bt_bap_stream_send(default_stream, buf, get_next_seq_num(txing_stream),
 				 BT_ISO_TIMESTAMP_NONE);
 	if (ret < 0) {
 		shell_print(sh, "Unable to send: %d", -ret);
@@ -2409,10 +2484,7 @@ static int cmd_send(const struct shell *sh, size_t argc, char *argv[])
 #if defined(CONFIG_LIBLC3)
 static int cmd_start_sine(const struct shell *sh, size_t argc, char *argv[])
 {
-	/* For the first call-back we push multiple audio frames to the buffer to use the
-	 * controller ISO buffer to handle jitter.
-	 */
-	const size_t prime_count = 2U;
+	int err;
 
 	if (default_stream == NULL) {
 		shell_error(sh, "Invalid (NULL) stream");
@@ -2438,11 +2510,9 @@ static int cmd_start_sine(const struct shell *sh, size_t argc, char *argv[])
 
 	init_lc3(txing_stream);
 
-	for (size_t i = 0U; i < prime_count; i++) {
-		/* Call callback directly as submitted the work item multiple times won't do any
-		 * good
-		 */
-		lc3_audio_send_data(&audio_send_work.work);
+	err = k_work_schedule(&audio_send_work, K_NO_WAIT);
+	if (err < 0) {
+		shell_error(ctx_shell, "Failed to schedule TX: %d", err);
 	}
 
 	return 0;
