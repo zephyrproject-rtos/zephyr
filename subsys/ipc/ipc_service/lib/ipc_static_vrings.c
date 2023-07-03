@@ -12,7 +12,7 @@
 #define RPMSG_VQ_0		(0) /* TX virtqueue queue index */
 #define RPMSG_VQ_1		(1) /* RX virtqueue queue index */
 
-static void virtio_notify(struct virtqueue *vq)
+static void ipc_virtio_notify(struct virtqueue *vq)
 {
 	struct ipc_static_vrings *vr;
 
@@ -23,12 +23,12 @@ static void virtio_notify(struct virtqueue *vq)
 	}
 }
 
-static void virtio_set_features(struct virtio_device *vdev, uint32_t features)
+static void ipc_virtio_set_features(struct virtio_device *vdev, uint32_t features)
 {
 	/* No need for implementation */
 }
 
-static void virtio_set_status(struct virtio_device *p_vdev, unsigned char status)
+static void ipc_virtio_set_status(struct virtio_device *p_vdev, unsigned char status)
 {
 	struct ipc_static_vrings *vr;
 
@@ -42,12 +42,12 @@ static void virtio_set_status(struct virtio_device *p_vdev, unsigned char status
 	sys_cache_data_flush_range((void *) vr->status_reg_addr, sizeof(status));
 }
 
-static uint32_t virtio_get_features(struct virtio_device *vdev)
+static uint32_t ipc_virtio_get_features(struct virtio_device *vdev)
 {
 	return BIT(VIRTIO_RPMSG_F_NS);
 }
 
-static unsigned char virtio_get_status(struct virtio_device *p_vdev)
+static unsigned char ipc_virtio_get_status(struct virtio_device *p_vdev)
 {
 	struct ipc_static_vrings *vr;
 	uint8_t ret;
@@ -65,11 +65,11 @@ static unsigned char virtio_get_status(struct virtio_device *p_vdev)
 }
 
 const static struct virtio_dispatch dispatch = {
-	.get_status = virtio_get_status,
-	.get_features = virtio_get_features,
-	.set_status = virtio_set_status,
-	.set_features = virtio_set_features,
-	.notify = virtio_notify,
+	.get_status = ipc_virtio_get_status,
+	.get_features = ipc_virtio_get_features,
+	.set_status = ipc_virtio_set_status,
+	.set_features = ipc_virtio_set_features,
+	.notify = ipc_virtio_notify,
 };
 
 static int libmetal_setup(struct ipc_static_vrings *vr)
