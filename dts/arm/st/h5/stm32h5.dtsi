@@ -495,6 +495,19 @@
 			dma-offset = <8>;
 			status = "disabled";
 		};
+
+		usb: usb@40016000 {
+			compatible = "st,stm32-usb";
+			reg = <0x40016000 0x400>;
+			interrupts = <74 0>;
+			interrupt-names = "usb";
+			num-bidir-endpoints = <8>;
+			ram-size = <2048>;
+			phys = <&usb_fs_phy>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x01000000>,
+				 <&rcc STM32_SRC_HSI48 USB_SEL(3)>;
+			status = "disabled";
+		};
 	};
 
 	die_temp: dietemp {
@@ -522,6 +535,11 @@
 		ratio = <4>;
 		io-channels = <&adc1 2>;
 		status = "disabled";
+	};
+
+	usb_fs_phy: usbphy {
+		compatible = "usb-nop-xceiv";
+		#phy-cells = <0>;
 	};
 };
 
