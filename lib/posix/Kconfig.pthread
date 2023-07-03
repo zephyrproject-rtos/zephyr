@@ -1,0 +1,9 @@
+# Copyright (c) 2017 Intel Corporation
+# Copyright (c) 2023 Meta
+#
+# SPDX-License-Identifier: Apache-2.0
+
+TYPE = PTHREAD
+type = pthread_t
+type-function = pthread_create
+source "lib/posix/Kconfig.template.pooled_ipc_type"

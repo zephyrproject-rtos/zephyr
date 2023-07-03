@@ -1,0 +1,8 @@
+# Copyright (c) 2023 Meta
+#
+# SPDX-License-Identifier: Apache-2.0
+
+TYPE = PTHREAD_SPINLOCK
+type = pthread_spinlock_t
+type-function = pthread_spin_lock
+source "lib/posix/Kconfig.template.pooled_ipc_type"
