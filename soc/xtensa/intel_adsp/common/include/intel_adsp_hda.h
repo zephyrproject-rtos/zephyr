@@ -37,7 +37,7 @@
 #define DGCS_SCS BIT(31) /* Sample container size */
 #define DGCS_GEN BIT(26) /* Gateway Enable */
 #define DGCS_L1ETP BIT(25) /* L1 Enter Prevent */
-#define DGCS_L1EXP BIT(25) /* L1 Exit Prevent */
+#define DGCS_L1EXP BIT(24) /* L1 Exit Prevent */
 #define DGCS_FWCB BIT(23) /* Firmware Control Buffer */
 #define DGCS_GBUSY BIT(15) /* Gateway Busy */
 #define DGCS_TE BIT(14) /* Transfer Error */

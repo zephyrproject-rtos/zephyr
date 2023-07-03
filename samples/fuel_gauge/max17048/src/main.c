@@ -46,7 +46,7 @@ int main(void)
 				.property_type = FUEL_GAUGE_RUNTIME_TO_FULL,
 			},
 			{
-				.property_type = FUEL_GAUGE_STATE_OF_CHARGE,
+				.property_type = FUEL_GAUGE_RELATIVE_STATE_OF_CHARGE,
 			},
 			{
 				.property_type = FUEL_GAUGE_VOLTAGE,
@@ -80,7 +80,7 @@ int main(void)
 			}
 
 			if (props[2].status == 0) {
-				printk("Charge %d%%\n", props[2].value.state_of_charge);
+				printk("Charge %d%%\n", props[2].value.relative_state_of_charge);
 			} else {
 				printk(
 				"Property FUEL_GAUGE_STATE_OF_CHARGE failed with error %d\n",

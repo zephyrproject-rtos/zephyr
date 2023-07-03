@@ -10,6 +10,7 @@ common:
     - simulation
   integration_platforms:
     - native_posix
+  min_ram: 32
 tests:
   logging.log_api_deferred_overflow_rt_filter:
     extra_configs:

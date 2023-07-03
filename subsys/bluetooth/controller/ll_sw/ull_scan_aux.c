@@ -40,7 +40,7 @@
 #include "ull_sync_iso_internal.h"
 #include "ull_df_internal.h"
 
-#include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/hci_types.h>
 
 #include <soc.h>
 #include "hal/debug.h"
@@ -411,7 +411,7 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 		 * Setup synchronization if address and SID match in the
 		 * Periodic Advertiser List or with the explicitly supplied.
 		 */
-		if (IS_ENABLED(CONFIG_BT_CTLR_SYNC_PERIODIC) && sync && adi &&
+		if (IS_ENABLED(CONFIG_BT_CTLR_SYNC_PERIODIC) && aux && sync && adi &&
 		    ull_sync_setup_sid_match(scan, PDU_ADV_ADI_SID_GET(adi))) {
 			ull_sync_setup(scan, aux, rx, si);
 		}

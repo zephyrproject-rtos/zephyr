@@ -39,13 +39,30 @@ class EzFlashCliBinaryRunner(ZephyrBinaryRunner):
         return EzFlashCliBinaryRunner(cfg, tool=args.tool, sn=args.sn,
                                       erase=args.erase)
 
+    def needs_product_header(self):
+        # Applications linked to code partition are meant to be run by MCUboot
+        # and do not require product header. Other applications and MCUboot itself
+        # are run by internal bootloader and thus require valid product header.
+
+        is_mcuboot = self.build_conf.getboolean('CONFIG_MCUBOOT')
+        uses_code_partition = self.build_conf.getboolean('CONFIG_USE_DT_CODE_PARTITION')
+
+        return is_mcuboot or not uses_code_partition
+
     def program_bin(self):
+
         if self.erase:
             self.logger.info("Erasing flash...")
             self.check_call([self.tool] + self.sn_arg + ["erase_flash"])
 
         self.logger.info(f"Flashing {self.bin_}...")
-        self.check_call([self.tool] + self.sn_arg + ["image_flash", self.bin_])
+        if self.needs_product_header():
+            # Write product header and application image at fixed offset as required
+            # by internal bootloader.
+            self.check_call([self.tool] + self.sn_arg + ["image_flash", self.bin_])
+        else:
+            load_offset = self.build_conf['CONFIG_FLASH_LOAD_OFFSET']
+            self.check_call([self.tool] + self.sn_arg + ["write_flash", f'0x{load_offset:x}', self.bin_])
 
     def reset(self):
         self.logger.info("Resetting...")

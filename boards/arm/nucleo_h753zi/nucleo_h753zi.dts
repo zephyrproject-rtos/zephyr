@@ -56,6 +56,7 @@
 		led1 = &yellow_led;
 		pwm-led0 = &red_pwm_led;
 		sw0 = &user_button;
+		volt-sensor1 = &vbat;
 	};
 };
 
@@ -216,4 +217,8 @@ zephyr_udc0: &usbotg_fs {
 		};
 
 	};
+};
+
+&vbat {
+	status = "okay";
 };

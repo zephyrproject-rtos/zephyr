@@ -110,6 +110,7 @@
 #include <zephyr/sip_svc/sip_svc.h>
 #include <zephyr/sip_svc/sip_svc_controller.h>
 #include <zephyr/drivers/sip_svc/sip_svc_driver.h>
+#include <zephyr/sys/iterable_sections.h>
 #include "sip_svc_id_mgr.h"
 #include <string.h>
 

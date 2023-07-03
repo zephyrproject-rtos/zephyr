@@ -16,7 +16,7 @@ struct bt_bap_iso_dir {
 	struct bt_bap_ep *ep;
 	struct bt_iso_chan_path path;
 	struct bt_iso_chan_io_qos qos;
-	uint8_t cc[CONFIG_BT_CODEC_MAX_DATA_COUNT * CONFIG_BT_CODEC_MAX_DATA_LEN];
+	uint8_t cc[CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_COUNT * CONFIG_BT_AUDIO_CODEC_MAX_DATA_LEN];
 };
 
 struct bt_bap_iso {

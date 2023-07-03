@@ -398,7 +398,7 @@ static int adxl372_reset(const struct device *dev)
 	}
 	/* Writing code 0x52 resets the device */
 	ret = data->hw_tf->write_reg(dev, ADXL372_RESET, ADXL372_RESET_CODE);
-	k_sleep(K_MSEC(1000));
+	k_sleep(K_MSEC(1));
 
 	return ret;
 }

@@ -16,6 +16,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <zephyr/kernel.h>
 #include <zephyr/cache.h>
 #include <zephyr/net/ethernet.h>
+#include <zephyr/sys/barrier.h>
 #include <ethernet/eth_stats.h>
 
 #include "eth_dwmac_priv.h"
@@ -188,7 +189,7 @@ static int dwmac_send(const struct device *dev, struct net_pkt *pkt)
 	} while (frag);
 
 	/* make sure all the above made it to memory */
-	__DMB();
+	barrier_dmem_fence_full();
 
 	/* update the descriptor index head */
 	p->tx_desc_head = d_idx;
@@ -380,7 +381,7 @@ static void dwmac_rx_refill_thread(void *arg1, void *unused1, void *unused2)
 		d->des3 = RDES3_BUF1V | RDES3_IOC | RDES3_OWN;
 
 		/* commit the above to memory */
-		__DMB();
+		barrier_dmem_fence_full();
 
 		/* advance to the next descriptor */
 		p->rx_desc_head = INC_WRAP(d_idx, NB_RX_DESCS);

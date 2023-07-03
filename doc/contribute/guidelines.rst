@@ -506,6 +506,47 @@ issues, you can add option --no-verify to the git push command.
 A more complete alternative to this is using check_compliance.py script from
 ci-tools repo.
 
+
+Static Code Analysis
+********************
+
+Coverity Scan is a free service for static code analysis of Open Source
+projects. It is based on Coverity's commercial product and is able to analyze
+C, C++ and Java code.
+
+Coverity's static code analysis doesn't run the code. Instead of that it uses
+abstract interpretation to gain information about the code's control flow and
+data flow. It's able to follow all possible code paths that a program may take.
+For example the analyzer understands that malloc() returns a memory that must
+be freed with free() later. It follows all branches and function calls to see
+if all possible combinations free the memory. The analyzer is able to detect
+all sorts of issues like resource leaks (memory, file descriptors), NULL
+dereferencing, use after free, unchecked return values, dead code, buffer
+overflows, integer overflows, uninitialized variables, and many more.
+
+The results are available on the `Coverity Scan
+<https://scan.coverity.com/projects/zephyr>`_ website. In order to access the
+results you have to create an account yourself.  From the Zephyr project page,
+you may select "Add me to project" to be added to the project. New members must
+be approved by an admin.
+
+Coverity scans the Zephyr codebase weekly. GitHub issues are automatically
+created for any problems found and assigned to the maintainers of the affected
+areas.
+
+Workflow
+========
+
+If after analyzing the Coverity report it is concluded that it is a false
+positive please set the classification to either "False positive" or
+"Intentional", the action to "Ignore", owner to your own account and add a
+comment why the issue is considered false positive or intentional.
+
+Update the related Github issue in the zephyr project with the details, and only close
+it after completing the steps above on scan service website. Any issues
+closed without a fix or without ignoring the entry in the scan service will be
+automatically reopened if the issue continues to be present in the code.
+
 .. _Contribution Tools:
 
 .. _Contribution workflow:
@@ -953,7 +994,7 @@ Requirements for Treewide Changes
   pull requests that are treewide changes
 
 - The person proposing a treewide change must create an `RFC issue
-  <https://github.com/zephyrproject-rtos/zephyr/issues/new?assignees=&labels=RFC&template=rfc-proposal.md&title=>`_
+  <https://github.com/zephyrproject-rtos/zephyr/issues/new?assignees=&labels=RFC&template=003_rfc-proposal.md&title=>`_
   describing the change, its rationale and impact, etc. before any pull
   requests related to the change can be merged
 

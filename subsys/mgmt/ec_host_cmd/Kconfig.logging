@@ -1,0 +1,12 @@
+# Host command logging configs
+
+# Copyright (c) 2023 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+config EC_HOST_CMD_LOG_DBG_BUFFERS
+	bool "Log full params and response buffers in debug log level"
+	depends on EC_HC_LOG_LEVEL_DBG
+	help
+	  Every command is logged with the debug logging level. Use this config
+	  to decide, if full reqest and response buffers are logged alongside
+	  other command parameters.

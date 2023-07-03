@@ -58,9 +58,9 @@ void isoal_test_debug_print_rx_pdu(struct isoal_pdu_rx *pdu_meta)
 		(uint32_t) pdu_meta->meta->timestamp,
 		LLID_TO_STR(pdu_meta->pdu->ll_id),
 		DU_ERR_TO_STR(pdu_meta->meta->status),
-		pdu_meta->pdu->length);
+		pdu_meta->pdu->len);
 
-	for (int i = 0; i < pdu_meta->pdu->length; i++) {
+	for (int i = 0; i < pdu_meta->pdu->len; i++) {
 		PRINT("%02x ", pdu_meta->pdu->payload[i]);
 	}
 	PRINT("\n");
@@ -86,7 +86,7 @@ void isoal_test_debug_print_rx_sdu(const struct isoal_sink             *sink_ctx
 
 	PRINT("\n");
 	PRINT("SDU %04d (%10d) | %12s [%10s] %03d: ",
-		sdu_frag->sdu.seqn,
+		sdu_frag->sdu.sn,
 		sdu_frag->sdu.timestamp,
 		STATE_TO_STR(sdu_frag->sdu_state),
 		DU_ERR_TO_STR(sdu_frag->sdu.status),
@@ -128,9 +128,9 @@ void isoal_test_debug_print_tx_pdu(struct node_tx_iso *node_tx)
 		(uint32_t) node_tx->payload_count,
 		 node_tx->sdu_fragments,
 		LLID_TO_STR(pdu->ll_id),
-		pdu->length);
+		pdu->len);
 
-	for (int i = 0; i < pdu->length; i++) {
+	for (int i = 0; i < pdu->len; i++) {
 		if (seg_length == 0 && pdu->ll_id == PDU_BIS_LLID_FRAMED) {
 			seg_length = pdu->payload[i+1];
 			PRINT("[%s %s %03u]",

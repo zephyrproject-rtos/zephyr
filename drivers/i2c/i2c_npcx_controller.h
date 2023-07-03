@@ -80,6 +80,32 @@ int npcx_i2c_ctrl_transfer(const struct device *i2c_dev, struct i2c_msg *msgs,
  */
 int npcx_i2c_ctrl_recover_bus(const struct device *dev);
 
+/**
+ * @brief Registers the provided config as Target device of a npcx i2c controller.
+ *
+ * @param i2c_dev Pointer to the device structure for i2c controller instance.
+ * @param target_cfg Config struct used by the i2c target driver
+ * @param port Port index of selected i2c port.
+ *
+ * @retval 0 Is successful
+ * @retval -EBUSY If i2c transaction is proceeding.
+ */
+int npcx_i2c_ctrl_target_register(const struct device *i2c_dev,
+				 struct i2c_target_config *target_cfg, uint8_t port);
+
+/**
+ * @brief Unregisters the provided config as Target device of a npcx i2c controller.
+ *
+ * @param i2c_dev Pointer to the device structure for i2c controller instance.
+ * @param target_cfg Config struct used by the i2c target driver
+ *
+ * @retval 0 Is successful
+ * @retval -EBUSY If i2c transaction is proceeding.
+ * @retval -EINVAL If parameters are invalid
+ */
+int npcx_i2c_ctrl_target_unregister(const struct device *i2c_dev,
+				   struct i2c_target_config *target_cfg);
+
 #ifdef __cplusplus
 }
 #endif

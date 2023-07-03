@@ -395,7 +395,6 @@ SECTIONS {
   {
     _heap_start = .;
     *(.heap_mem)
-    _heap_end = .;
   } >ucram
 
   .unused_ram_start_marker SEGSTART_CACHED (NOLOAD) :
@@ -404,10 +403,13 @@ SECTIONS {
     _unused_ram_start_marker = .;
     *(.unused_ram_start_marker)
     *(.unused_ram_start_marker.*)
+    _end = .;
+    z_mapped_end = .;
   } >ram
 
   . = L2_SRAM_BASE + L2_SRAM_SIZE;
   . = SEGSTART_UNCACHED;
+  _heap_end = .;
   _heap_sentry = .;
 
   /* dma buffers */

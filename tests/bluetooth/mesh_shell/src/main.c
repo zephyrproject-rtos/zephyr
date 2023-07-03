@@ -141,7 +141,7 @@ static void bt_ready(int err)
 	if (bt_mesh_is_provisioned()) {
 		printk("Mesh network restored from flash\n");
 	} else {
-		printk("Use \"pb-adv on\" or \"pb-gatt on\" to "
+		printk("Use \"prov pb-adv on\" or \"prov pb-gatt on\" to "
 			    "enable advertising\n");
 	}
 }

@@ -547,6 +547,7 @@ config NET_UDP_CHECKSUM
 
 config NET_UDP_MISSING_CHECKSUM
 	bool "Accept missing checksum (IPv4 only)"
+	default y
 	depends on NET_UDP && NET_IPV4
 	help
 	  RFC 768 states the possibility to have a missing checksum, for
@@ -826,6 +827,10 @@ config NET_DEFAULT_IF_CANBUS_RAW
 config NET_DEFAULT_IF_PPP
 	bool "PPP interface"
 	depends on NET_L2_PPP
+
+config NET_DEFAULT_IF_WIFI
+	bool "WiFi interface"
+	depends on NET_L2_ETHERNET
 
 endchoice
 

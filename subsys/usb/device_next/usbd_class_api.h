@@ -206,7 +206,7 @@ static inline void usbd_class_enable(struct usbd_class_node *const node)
 }
 
 /**
- * @brief Class associated configuration shutdown handler
+ * @brief Class associated configuration disable handler
  *
  * @note The execution of the handler must not block.
  *
@@ -247,5 +247,22 @@ static inline int usbd_class_init(struct usbd_class_node *const node)
 	return -ENOTSUP;
 }
 
+/**
+ * @brief Shutdown of the class implementation
+ *
+ * This is called for each instance during the shutdown phase.
+ *
+ * @note The execution of the handler must not block.
+ *
+ * @param[in] dev Pointer to device struct of the class instance
+ */
+static inline void usbd_class_shutdown(struct usbd_class_node *const node)
+{
+	const struct usbd_class_api *api = node->api;
+
+	if (api->shutdown != NULL) {
+		api->shutdown(node);
+	}
+}
 
 #endif /* ZEPHYR_INCLUDE_USBD_CLASS_API_H */

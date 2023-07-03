@@ -6,12 +6,11 @@
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/can.h>
+#include <zephyr/drivers/can/can_mcan.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
-
-#include "can_mcan.h"
 
 LOG_MODULE_REGISTER(can_mcux_mcan, CONFIG_CAN_LOG_LEVEL);
 
@@ -23,14 +22,11 @@ LOG_MODULE_REGISTER(can_mcux_mcan, CONFIG_CAN_LOG_LEVEL);
 
 struct mcux_mcan_config {
 	mm_reg_t base;
+	mem_addr_t mram;
 	const struct device *clock_dev;
 	clock_control_subsys_t clock_subsys;
 	void (*irq_config_func)(const struct device *dev);
 	const struct pinctrl_dev_config *pincfg;
-};
-
-struct mcux_mcan_data {
-	struct can_mcan_msg_sram msg_ram __nocache;
 };
 
 static int mcux_mcan_read_reg(const struct device *dev, uint16_t reg, uint32_t *val)
@@ -49,6 +45,31 @@ static int mcux_mcan_write_reg(const struct device *dev, uint16_t reg, uint32_t 
 	return can_mcan_sys_write_reg(mcux_config->base, reg, val);
 }
 
+static int mcux_mcan_read_mram(const struct device *dev, uint16_t offset, void *dst, size_t len)
+{
+	const struct can_mcan_config *mcan_config = dev->config;
+	const struct mcux_mcan_config *mcux_config = mcan_config->custom;
+
+	return can_mcan_sys_read_mram(mcux_config->mram, offset, dst, len);
+}
+
+static int mcux_mcan_write_mram(const struct device *dev, uint16_t offset, const void *src,
+				size_t len)
+{
+	const struct can_mcan_config *mcan_config = dev->config;
+	const struct mcux_mcan_config *mcux_config = mcan_config->custom;
+
+	return can_mcan_sys_write_mram(mcux_config->mram, offset, src, len);
+}
+
+static int mcux_mcan_clear_mram(const struct device *dev, uint16_t offset, size_t len)
+{
+	const struct can_mcan_config *mcan_config = dev->config;
+	const struct mcux_mcan_config *mcux_config = mcan_config->custom;
+
+	return can_mcan_sys_clear_mram(mcux_config->mram, offset, len);
+}
+
 static int mcux_mcan_get_core_clock(const struct device *dev, uint32_t *rate)
 {
 	const struct can_mcan_config *mcan_config = dev->config;
@@ -62,9 +83,7 @@ static int mcux_mcan_init(const struct device *dev)
 {
 	const struct can_mcan_config *mcan_config = dev->config;
 	const struct mcux_mcan_config *mcux_config = mcan_config->custom;
-	struct can_mcan_data *mcan_data = dev->data;
-	struct mcux_mcan_data *mcux_data = mcan_data->custom;
-	const uintptr_t mrba = POINTER_TO_UINT(&mcux_data->msg_ram) & MCUX_MCAN_MRBA_BA;
+	const uintptr_t mrba = mcux_config->mram & MCUX_MCAN_MRBA_BA;
 	int err;
 
 	if (!device_is_ready(mcux_config->clock_dev)) {
@@ -88,7 +107,7 @@ static int mcux_mcan_init(const struct device *dev)
 		return -EIO;
 	}
 
-	err = can_mcan_configure_message_ram(dev, mrba);
+	err = can_mcan_configure_mram(dev, mrba, mcux_config->mram);
 	if (err != 0) {
 		return -EIO;
 	}
@@ -128,21 +147,13 @@ static const struct can_driver_api mcux_mcan_driver_api = {
 	 * Note that the values here are the "physical" timing limits, whereas
 	 * the register field limits are physical values minus 1 (which is
 	 * handled by the register assignments in the common MCAN driver code).
+	 *
+	 * Beware that at least some SoC reference manuals contain a bug
+	 * regarding the minimum values for nominal phase segments. Valid
+	 * register values are 1 and up.
 	 */
-	.timing_min = {
-		.sjw = 1,
-		.prop_seg = 0,
-		.phase_seg1 = 1,
-		.phase_seg2 = 1,
-		.prescaler = 1
-	},
-	.timing_max = {
-		.sjw = 128,
-		.prop_seg = 0,
-		.phase_seg1 = 256,
-		.phase_seg2 = 128,
-		.prescaler = 512,
-	},
+	.timing_min = CAN_MCAN_TIMING_MIN_INITIALIZER,
+	.timing_max = CAN_MCAN_TIMING_MAX_INITIALIZER,
 #ifdef CONFIG_CAN_FD_MODE
 	.set_timing_data = can_mcan_set_timing_data,
 	/*
@@ -152,31 +163,36 @@ static const struct can_driver_api mcux_mcan_driver_api = {
 	 * Note that the values here are the "physical" timing limits, whereas
 	 * the register field limits are physical values minus 1 (which is
 	 * handled by the register assignments in the common MCAN driver code).
+	 *
+	 * Beware that at least some SoC reference manuals contain a bug
+	 * regarding the maximum value for data phase segment 2. Valid register
+	 * values are 0 to 31.
 	 */
-	.timing_data_min = {
-		.sjw = 1,
-		.prop_seg = 0,
-		.phase_seg1 = 1,
-		.phase_seg2 = 1,
-		.prescaler = 1,
-	},
-	.timing_data_max = {
-		.sjw = 16,
-		.prop_seg = 0,
-		.phase_seg1 = 16,
-		.phase_seg2 = 16,
-		.prescaler = 32,
-	}
+	.timing_data_min = CAN_MCAN_TIMING_DATA_MIN_INITIALIZER,
+	.timing_data_max = CAN_MCAN_TIMING_DATA_MAX_INITIALIZER,
 #endif /* CONFIG_CAN_FD_MODE */
 };
 
+static const struct can_mcan_ops mcux_mcan_ops = {
+	.read_reg = mcux_mcan_read_reg,
+	.write_reg = mcux_mcan_write_reg,
+	.read_mram = mcux_mcan_read_mram,
+	.write_mram = mcux_mcan_write_mram,
+	.clear_mram = mcux_mcan_clear_mram,
+};
+
 #define MCUX_MCAN_INIT(n)						\
+	CAN_MCAN_DT_INST_BUILD_ASSERT_MRAM_CFG(n);			\
 	PINCTRL_DT_INST_DEFINE(n);					\
 									\
 	static void mcux_mcan_irq_config_##n(const struct device *dev); \
 									\
+	CAN_MCAN_DT_INST_CALLBACKS_DEFINE(n, mcux_mcan_cbs_##n);	\
+	CAN_MCAN_DT_INST_MRAM_DEFINE(n, mcux_mcan_mram_##n);	\
+									\
 	static const struct mcux_mcan_config mcux_mcan_config_##n = {	\
-		.base = (mm_reg_t)DT_INST_REG_ADDR(n),			\
+		.base = CAN_MCAN_DT_INST_MCAN_ADDR(n),			\
+		.mram = (mem_addr_t)POINTER_TO_UINT(&mcux_mcan_mram_##n), \
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),	\
 		.clock_subsys = (clock_control_subsys_t)		\
 			DT_INST_CLOCKS_CELL(n, name),			\
@@ -186,14 +202,11 @@ static const struct can_driver_api mcux_mcan_driver_api = {
 									\
 	static const struct can_mcan_config can_mcan_config_##n =	\
 		CAN_MCAN_DT_CONFIG_INST_GET(n, &mcux_mcan_config_##n,	\
-					    mcux_mcan_read_reg,		\
-					    mcux_mcan_write_reg);	\
-									\
-	static struct mcux_mcan_data mcux_mcan_data_##n;		\
+					    &mcux_mcan_ops,		\
+					    &mcux_mcan_cbs_##n);	\
 									\
 	static struct can_mcan_data can_mcan_data_##n =			\
-		CAN_MCAN_DATA_INITIALIZER(&mcux_mcan_data_##n.msg_ram,	\
-					  &mcux_mcan_data_##n);		\
+		CAN_MCAN_DATA_INITIALIZER(NULL);			\
 									\
 	DEVICE_DT_INST_DEFINE(n, &mcux_mcan_init, NULL,			\
 			      &can_mcan_data_##n,			\

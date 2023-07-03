@@ -15,6 +15,7 @@
 #include <zephyr/kernel.h>
 #include <ksched.h>
 #include <zephyr/wait_q.h>
+#include <zephyr/sys/barrier.h>
 
 #if (MPU_GUARD_ALIGN_AND_SIZE_FLOAT > MPU_GUARD_ALIGN_AND_SIZE)
 #define FP_GUARD_EXTRA_SIZE	(MPU_GUARD_ALIGN_AND_SIZE_FLOAT - \
@@ -522,7 +523,7 @@ static void z_arm_prepare_switch_to_main(void)
 #if defined(CONFIG_CPU_CORTEX_M) && defined(CONFIG_FPU_SHARING)
 	/* In Sharing mode clearing FPSCR may set the CONTROL.FPCA flag. */
 	__set_CONTROL(__get_CONTROL() & (~(CONTROL_FPCA_Msk)));
-	__ISB();
+	barrier_isync_fence_full();
 #endif /* CONFIG_FPU_SHARING */
 #endif /* CONFIG_FPU */
 }

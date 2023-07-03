@@ -452,6 +452,21 @@ config SYSTEM_WORKQUEUE_NO_YIELD
 
 endmenu
 
+menu "Barrier Operations"
+config BARRIER_OPERATIONS_BUILTIN
+	bool
+	help
+	  Use the compiler builtin functions for barrier operations. This is
+	  the preferred method. However, support for all arches in GCC is
+	  incomplete.
+
+config BARRIER_OPERATIONS_ARCH
+	bool
+	help
+	  Use when there isn't support for compiler built-ins, but you have
+	  written optimized assembly code under arch/ which implements these.
+endmenu
+
 menu "Atomic Operations"
 config ATOMIC_OPERATIONS_BUILTIN
 	bool
@@ -841,6 +856,7 @@ menu "SMP Options"
 config SMP
 	bool "Symmetric multiprocessing support"
 	depends on USE_SWITCH
+	depends on !ATOMIC_OPERATIONS_C
 	help
 	  When true, kernel will be built with SMP support, allowing
 	  more than one CPU to schedule Zephyr tasks at a time.
@@ -953,10 +969,19 @@ endmenu
 
 menu "Device Options"
 
-config HAS_DYNAMIC_DEVICE_HANDLES
-	bool
+config DEVICE_DEPS
+	bool "Store device dependencies"
 	help
-	  Hidden option that makes possible to manipulate device handles at
+	  When enabled, device dependencies will be stored so that they can be
+	  queried at runtime. Device dependencies are typically inferred from
+	  devicetree. Enabling this option will increase ROM usage (or RAM if
+	  dynamic device dependencies are enabled).
+
+config DEVICE_DEPS_DYNAMIC
+	bool "Dynamic device dependencies"
+	depends on DEVICE_DEPS
+	help
+	  Option that makes it possible to manipulate device dependencies at
 	  runtime.
 
 endmenu

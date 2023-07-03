@@ -132,7 +132,7 @@ int dw_dma_config(const struct device *dev, uint32_t channel,
 	uint32_t msize = 3;/* default msize, 8 bytes */
 	int ret = 0;
 
-	if (channel >= DW_MAX_CHAN) {
+	if (channel >= DW_CHAN_COUNT) {
 		LOG_ERR("%s: invalid dma channel %d", __func__, channel);
 		ret = -EINVAL;
 		goto out;
@@ -206,6 +206,7 @@ int dw_dma_config(const struct device *dev, uint32_t channel,
 		case 1:
 			/* byte at a time transfer */
 			lli_desc->ctrl_lo |= DW_CTLL_SRC_WIDTH(0);
+			break;
 		case 2:
 			/* non peripheral copies are optimal using words */
 			switch (cfg->channel_direction) {
@@ -236,7 +237,8 @@ int dw_dma_config(const struct device *dev, uint32_t channel,
 		switch (cfg->dest_data_size) {
 		case 1:
 			/* byte at a time transfer */
-			lli_desc->ctrl_lo |= DW_CTLL_SRC_WIDTH(0);
+			lli_desc->ctrl_lo |= DW_CTLL_DST_WIDTH(0);
+			break;
 		case 2:
 			/* non peripheral copies are optimal using words */
 			switch (cfg->channel_direction) {
@@ -360,7 +362,7 @@ int dw_dma_config(const struct device *dev, uint32_t channel,
 		chan_data->ptr_data.buffer_bytes += block_cfg->block_size;
 
 		/* set next descriptor in list */
-		lli_desc->llp = (uint32_t)(lli_desc + 1);
+		lli_desc->llp = (uintptr_t)(lli_desc + 1);
 
 		LOG_DBG("lli_desc llp %x", lli_desc->llp);
 
@@ -376,7 +378,7 @@ int dw_dma_config(const struct device *dev, uint32_t channel,
 
 	/* end of list or cyclic buffer */
 	if (cfg->cyclic) {
-		lli_desc_tail->llp = (uint32_t)lli_desc_head;
+		lli_desc_tail->llp = (uintptr_t)lli_desc_head;
 	} else {
 		lli_desc_tail->llp = 0;
 #if CONFIG_DMA_DW_HW_LLI
@@ -442,7 +444,7 @@ int dw_dma_start(const struct device *dev, uint32_t channel)
 	int ret = 0;
 
 	/* validate channel */
-	if (channel >= DW_MAX_CHAN) {
+	if (channel >= DW_CHAN_COUNT) {
 		ret = -EINVAL;
 		goto out;
 	}
@@ -489,8 +491,15 @@ int dw_dma_start(const struct device *dev, uint32_t channel)
 #endif /* CONFIG_DMA_DW_HW_LLI */
 
 	/* channel needs to start from scratch, so write SAR and DAR */
+#ifdef CONFIG_DMA_64BIT
+	dw_write(dev_cfg->base, DW_SAR(channel), (uint32_t)(lli->sar & DW_ADDR_MASK_32));
+	dw_write(dev_cfg->base, DW_SAR_HI(channel), (uint32_t)(lli->sar >> DW_ADDR_RIGHT_SHIFT));
+	dw_write(dev_cfg->base, DW_DAR(channel), (uint32_t)(lli->dar & DW_ADDR_MASK_32));
+	dw_write(dev_cfg->base, DW_DAR_HI(channel), (uint32_t)(lli->dar >> DW_ADDR_RIGHT_SHIFT));
+#else
 	dw_write(dev_cfg->base, DW_SAR(channel), lli->sar);
 	dw_write(dev_cfg->base, DW_DAR(channel), lli->dar);
+#endif /* CONFIG_DMA_64BIT */
 
 	/* program CTL_LO and CTL_HI */
 	dw_write(dev_cfg->base, DW_CTRL_LOW(channel), lli->ctrl_lo);
@@ -500,10 +509,17 @@ int dw_dma_start(const struct device *dev, uint32_t channel)
 	dw_write(dev_cfg->base, DW_CFG_LOW(channel), chan_data->cfg_lo);
 	dw_write(dev_cfg->base, DW_CFG_HIGH(channel), chan_data->cfg_hi);
 
+#ifdef CONFIG_DMA_64BIT
+	LOG_DBG("start: sar %llx, dar %llx, ctrl_lo %x, ctrl_hi %x, cfg_lo %x, cfg_hi %x, llp %x",
+		lli->sar, lli->dar, lli->ctrl_lo, lli->ctrl_hi, chan_data->cfg_lo,
+		chan_data->cfg_hi, dw_read(dev_cfg->base, DW_LLP(channel))
+		);
+#else
 	LOG_DBG("start: sar %x, dar %x, ctrl_lo %x, ctrl_hi %x, cfg_lo %x, cfg_hi %x, llp %x",
 		lli->sar, lli->dar, lli->ctrl_lo, lli->ctrl_hi, chan_data->cfg_lo,
 		chan_data->cfg_hi, dw_read(dev_cfg->base, DW_LLP(channel))
 		);
+#endif /* CONFIG_DMA_64BIT */
 
 #ifdef CONFIG_DMA_DW_HW_LLI
 	if (lli->ctrl_lo & DW_CTLL_D_SCAT_EN) {
@@ -532,7 +548,7 @@ int dw_dma_stop(const struct device *dev, uint32_t channel)
 	struct dw_dma_chan_data *chan_data = &dev_data->chan[channel];
 	int ret = 0;
 
-	if (channel >= DW_MAX_CHAN) {
+	if (channel >= DW_CHAN_COUNT) {
 		ret = -EINVAL;
 		goto out;
 	}
@@ -601,7 +617,7 @@ int dw_dma_resume(const struct device *dev, uint32_t channel)
 	int ret = 0;
 
 	/* Validate channel index */
-	if (channel >= DW_MAX_CHAN) {
+	if (channel >= DW_CHAN_COUNT) {
 		ret = -EINVAL;
 		goto out;
 	}
@@ -633,7 +649,7 @@ int dw_dma_suspend(const struct device *dev, uint32_t channel)
 	int ret = 0;
 
 	/* Validate channel index */
-	if (channel >= DW_MAX_CHAN) {
+	if (channel >= DW_CHAN_COUNT) {
 		ret = -EINVAL;
 		goto out;
 	}
@@ -688,7 +704,7 @@ int dw_dma_setup(const struct device *dev)
 
 	LOG_DBG("%s: dma %s", __func__, dev->name);
 
-	for (i = 0; i <  DW_MAX_CHAN; i++) {
+	for (i = 0; i <  DW_CHAN_COUNT; i++) {
 		dw_read(dev_cfg->base, DW_DMA_CHAN_EN);
 	}
 

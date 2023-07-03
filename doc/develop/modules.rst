@@ -422,16 +422,16 @@ added to the build using CMake's `add_subdirectory()`_ command, and the
 If you have :ref:`west <west>` installed, you don't need to worry about how
 this variable is defined unless you are adding a new module. The build system
 knows how to use west to set :makevar:`ZEPHYR_MODULES`. You can add additional
-modules to this list by setting the :makevar:`ZEPHYR_EXTRA_MODULES` CMake
-variable or by adding a :makevar:`ZEPHYR_EXTRA_MODULES` line to ``.zephyrrc``
+modules to this list by setting the :makevar:`EXTRA_ZEPHYR_MODULES` CMake
+variable or by adding a :makevar:`EXTRA_ZEPHYR_MODULES` line to ``.zephyrrc``
 (See the section on :ref:`env_vars` for more details). This can be
 useful if you want to keep the list of modules found with west and also add
 your own.
 
 .. note::
    If the module ``FOO`` is provided by :ref:`west <west>` but also given with
-   ``-DZEPHYR_EXTRA_MODULES=/<path>/foo`` then the module given by the command
-   line variable :makevar:`ZEPHYR_EXTRA_MODULES` will take precedence.
+   ``-DEXTRA_ZEPHYR_MODULES=/<path>/foo`` then the module given by the command
+   line variable :makevar:`EXTRA_ZEPHYR_MODULES` will take precedence.
    This allows you to use a custom version of ``FOO`` when building and still
    use other Zephyr modules provided by :ref:`west <west>`.
    This can for example be useful for special test purposes.

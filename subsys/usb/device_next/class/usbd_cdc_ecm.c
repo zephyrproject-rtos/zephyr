@@ -24,12 +24,6 @@ LOG_MODULE_REGISTER(cdc_ecm, CONFIG_USBD_CDC_ECM_LOG_LEVEL);
 #define CDC_ECM_EP_MPS_INT		16
 #define CDC_ECM_EP_INTERVAL_INT		0x0A
 
-/*
- * REVISE: We can change usbd_add_descriptor() so that hardcoded
- * indexes are not necessary.
- */
-#define CDC_ECM_IMAC_BASE		4
-
 enum {
 	CDC_ECM_IFACE_UP,
 	CDC_ECM_CLASS_ENABLED,
@@ -416,10 +410,22 @@ static int usbd_cdc_ecm_init(struct usbd_class_node *const c_nd)
 	LOG_DBG("CDC ECM class initialized");
 
 	if (usbd_add_descriptor(c_nd->data->uds_ctx, data->mac_desc_nd)) {
-		LOG_ERR("Failed to add iMACAddress");
+		LOG_ERR("Failed to add iMACAddress string descriptor");
+	} else {
+		desc->if0_ecm.iMACAddress = data->mac_desc_nd->idx;
 	}
 
 	return 0;
+}
+
+static void usbd_cdc_ecm_shutdown(struct usbd_class_node *const c_nd)
+{
+	struct usbd_cdc_ecm_desc *desc = c_nd->data->desc;
+	const struct device *dev = c_nd->data->priv;
+	struct cdc_ecm_eth_data *const data = dev->data;
+
+	desc->if0_ecm.iMACAddress = 0;
+	sys_dlist_remove(&data->mac_desc_nd->node);
 }
 
 static int cdc_ecm_send(const struct device *dev, struct net_pkt *const pkt)
@@ -573,6 +579,7 @@ static struct usbd_class_api usbd_cdc_ecm_api = {
 	.resumed = usbd_cdc_ecm_resumed,
 	.control_to_dev = usbd_cdc_ecm_ctd,
 	.init = usbd_cdc_ecm_init,
+	.shutdown = usbd_cdc_ecm_shutdown,
 };
 
 static const struct ethernet_api cdc_ecm_eth_api = {
@@ -629,7 +636,7 @@ static struct usbd_cdc_ecm_desc cdc_ecm_desc_##n = {				\
 		.bFunctionLength = sizeof(struct cdc_ecm_descriptor),		\
 		.bDescriptorType = USB_DESC_CS_INTERFACE,			\
 		.bDescriptorSubtype = ETHERNET_FUNC_DESC,			\
-		.iMACAddress = CDC_ECM_IMAC_BASE + n,				\
+		.iMACAddress = 0,						\
 		.bmEthernetStatistics = sys_cpu_to_le32(0),			\
 		.wMaxSegmentSize = sys_cpu_to_le16(NET_ETH_MAX_FRAME_SIZE),	\
 		.wNumberMCFilters = sys_cpu_to_le16(0),				\
@@ -697,7 +704,7 @@ static struct usbd_cdc_ecm_desc cdc_ecm_desc_##n = {				\
 	CDC_ECM_DEFINE_DESCRIPTOR(n);						\
 	USBD_DESC_STRING_DEFINE(mac_desc_nd_##n,				\
 				DT_INST_PROP(n, remote_mac_address),		\
-				CDC_ECM_IMAC_BASE + n);				\
+				USBD_DUT_STRING_INTERFACE);			\
 										\
 	static struct usbd_class_data usbd_cdc_ecm_data_##n;			\
 										\

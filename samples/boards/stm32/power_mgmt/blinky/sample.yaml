@@ -14,3 +14,5 @@ tests:
             dt_enabled_alias_with_parent_compat("led0", "gpio-leds") and
             dt_compat_enabled("st,stm32-lptim")
     extra_args: "CONFIG_DEBUG=y"
+    integration_platforms:
+      - nucleo_wb55rg

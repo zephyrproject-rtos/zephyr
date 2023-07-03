@@ -520,9 +520,13 @@ int eswifi_mgmt_iface_status(const struct device *dev,
 	return 0;
 }
 
-static int eswifi_mgmt_scan(const struct device *dev, scan_result_cb_t cb)
+static int eswifi_mgmt_scan(const struct device *dev,
+			    struct wifi_scan_params *params,
+			    scan_result_cb_t cb)
 {
 	struct eswifi_dev *eswifi = dev->data;
+
+	ARG_UNUSED(params);
 
 	LOG_DBG("");
 
@@ -777,8 +781,14 @@ static int eswifi_init(const struct device *dev)
 	return 0;
 }
 
+static enum offloaded_net_if_types eswifi_get_type(void)
+{
+	return L2_OFFLOADED_NET_IF_TYPE_WIFI;
+}
+
 static const struct net_wifi_mgmt_offload eswifi_offload_api = {
 	.wifi_iface.iface_api.init = eswifi_iface_init,
+	.wifi_iface.get_type	   = eswifi_get_type,
 	.scan			   = eswifi_mgmt_scan,
 	.connect		   = eswifi_mgmt_connect,
 	.disconnect		   = eswifi_mgmt_disconnect,

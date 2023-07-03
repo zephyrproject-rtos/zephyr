@@ -11,7 +11,7 @@
 #include <zephyr/usb/usbd.h>
 #include <zephyr/usb/usb_ch9.h>
 #include <zephyr/usb/class/usbd_msc.h>
-
+#include <zephyr/sys/iterable_sections.h>
 #include <zephyr/drivers/usb/udc.h>
 
 #include "usbd_msc_scsi.h"
@@ -304,8 +304,10 @@ static void msc_process_cbw(struct msc_bot_ctx *ctx)
 	struct scsi_ctx *lun = &ctx->luns[ctx->cbw.bCBWLUN];
 	bool cmd_is_data_read, cmd_is_data_write;
 	size_t data_len;
+	int cb_len;
 
-	data_len = scsi_cmd(lun, ctx->cbw.CBWCB, ctx->cbw.bCBWCBLength, ctx->scsi_buf);
+	cb_len = scsi_usb_boot_cmd_len(ctx->cbw.CBWCB, ctx->cbw.bCBWCBLength);
+	data_len = scsi_cmd(lun, ctx->cbw.CBWCB, cb_len, ctx->scsi_buf);
 	ctx->scsi_bytes = data_len;
 	ctx->scsi_offset = 0;
 	cmd_is_data_read = scsi_cmd_is_data_read(lun);

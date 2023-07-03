@@ -8,6 +8,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/init.h>
+#include <zephyr/sys/barrier.h>
 
 /**
  *
@@ -33,8 +34,8 @@ void z_arm_platform_init(void)
 
 	/* Invalidate instruction cache and flush branch target cache */
 	__set_ICIALLU(0);
-	__DSB();
-	__ISB();
+	barrier_dsync_fence_full();
+	barrier_isync_fence_full();
 
 	L1C_EnableCaches();
 	L1C_EnableBTAC();

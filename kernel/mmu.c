@@ -237,9 +237,11 @@ static void virt_region_free(void *vaddr, size_t size)
 		virt_region_init();
 	}
 
+#ifndef CONFIG_KERNEL_DIRECT_MAP
 	__ASSERT((vaddr_u8 >= Z_VIRT_REGION_START_ADDR)
 		 && ((vaddr_u8 + size - 1) < Z_VIRT_REGION_END_ADDR),
 		 "invalid virtual address region %p (%zu)", vaddr_u8, size);
+#endif
 	if (!((vaddr_u8 >= Z_VIRT_REGION_START_ADDR)
 	      && ((vaddr_u8 + size - 1) < Z_VIRT_REGION_END_ADDR))) {
 		return;
@@ -721,7 +723,12 @@ void z_phys_map(uint8_t **virt_ptr, uintptr_t phys, size_t size, uint32_t flags)
 	size_t aligned_size, align_boundary;
 	k_spinlock_key_t key;
 	uint8_t *dest_addr;
+	size_t num_bits;
+	size_t offset;
 
+#ifndef CONFIG_KERNEL_DIRECT_MAP
+	__ASSERT(!(flags & K_MEM_DIRECT_MAP), "The direct-map is not enabled");
+#endif
 	addr_offset = k_mem_region_align(&aligned_phys, &aligned_size,
 					 phys, size,
 					 CONFIG_MMU_PAGE_SIZE);
@@ -733,10 +740,23 @@ void z_phys_map(uint8_t **virt_ptr, uintptr_t phys, size_t size, uint32_t flags)
 	align_boundary = arch_virt_region_align(aligned_phys, aligned_size);
 
 	key = k_spin_lock(&z_mm_lock);
-	/* Obtain an appropriately sized chunk of virtual memory */
-	dest_addr = virt_region_alloc(aligned_size, align_boundary);
-	if (!dest_addr) {
-		goto fail;
+	if (flags & K_MEM_DIRECT_MAP) {
+		dest_addr = (uint8_t *)aligned_phys;
+		/* Reserve from the virtual memory space */
+		if (!(dest_addr + aligned_size < Z_VIRT_RAM_START ||
+		    dest_addr > Z_VIRT_RAM_END)) {
+			num_bits = aligned_size / CONFIG_MMU_PAGE_SIZE;
+			offset = virt_to_bitmap_offset(dest_addr, aligned_size);
+			if (sys_bitarray_test_and_set_region(
+			    &virt_region_bitmap, num_bits, offset, true))
+				goto fail;
+		}
+	} else {
+		/* Obtain an appropriately sized chunk of virtual memory */
+		dest_addr = virt_region_alloc(aligned_size, align_boundary);
+		if (!dest_addr) {
+			goto fail;
+		}
 	}
 
 	/* If this fails there's something amiss with virt_region_get */

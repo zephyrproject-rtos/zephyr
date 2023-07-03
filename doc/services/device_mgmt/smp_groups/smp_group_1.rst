@@ -110,8 +110,8 @@ CBOR data of successful response:
     {
         (str)"images" : [
             {
-                (str,opt)"image"        : (int)
-                (str)"slot"             : (int)
+                (str,opt)"image"        : (uint)
+                (str)"slot"             : (uint)
                 (str)"version"          : (str)
                 (str,opt*)"hash"        : (byte str)
                 (str,opt)"bootable"     : (bool)
@@ -198,7 +198,7 @@ where:
 .. note::
     For more information on how does image/slots function, please refer to
     the MCUBoot documentation
-    https://www.mcuboot.com/documentation/design/#image-slots
+    https://docs.mcuboot.com/design.html#image-slots
     For information on MCUboot image format, please reset to the MCUboot
     documentation https://docs.mcuboot.com/design.html#image-format
 

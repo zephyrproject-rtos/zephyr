@@ -4,13 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/**
- * @file
- * @defgroup bt_mesh_sar_cfg SAR Configuration common header
- * @{
- * @brief Definitions for the SAR Configuration models.
- */
-
 #ifndef BT_MESH_SAR_CFG_H__
 #define BT_MESH_SAR_CFG_H__
 
@@ -19,6 +12,12 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/**
+ * @defgroup bt_mesh_sar_cfg SAR Configuration common header
+ * @ingroup bt_mesh
+ * @{
+ */
 
 /** SAR Transmitter Configuration state structure */
 struct bt_mesh_sar_tx {
@@ -62,10 +61,10 @@ struct bt_mesh_sar_rx {
 	uint8_t ack_retrans_count;
 };
 
+/** @} */
+
 #ifdef __cplusplus
 }
 #endif
 
 #endif /* BT_MESH_SAR_CFG_H__ */
-
-/** @} */

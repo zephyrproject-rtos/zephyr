@@ -211,7 +211,7 @@ static int cmd_ieee802154_scan(const struct shell *sh,
 {
 	struct net_if *iface = net_if_get_ieee802154();
 	uint32_t scan_type;
-	int ret;
+	int ret = 0;
 
 	if (argc < 3) {
 		shell_help(sh);
@@ -235,7 +235,8 @@ static int cmd_ieee802154_scan(const struct shell *sh,
 	} else if (!strcmp(argv[1], "passive")) {
 		scan_type = NET_REQUEST_IEEE802154_PASSIVE_SCAN;
 	} else {
-		return -ENOEXEC;
+		ret = -ENOEXEC;
+		goto release_event_cb;
 	}
 
 	if (!strcmp(argv[2], "all")) {
@@ -245,7 +246,8 @@ static int cmd_ieee802154_scan(const struct shell *sh,
 	}
 
 	if (!params.channel_set) {
-		return -ENOEXEC;
+		ret = -ENOEXEC;
+		goto release_event_cb;
 	}
 
 	params.duration = atoi(argv[3]);
@@ -270,13 +272,16 @@ static int cmd_ieee802154_scan(const struct shell *sh,
 		shell_fprintf(sh, SHELL_WARNING,
 			      "Could not raise a scan (status: %i)\n", ret);
 
-		return -ENOEXEC;
+		ret = -ENOEXEC;
+		goto release_event_cb;
 	} else {
 		shell_fprintf(sh, SHELL_NORMAL,
 			      "Done\n");
 	}
 
-	return 0;
+release_event_cb:
+	net_mgmt_del_event_callback(&scan_cb);
+	return ret;
 }
 
 static int cmd_ieee802154_set_chan(const struct shell *sh,
@@ -467,7 +472,7 @@ static int cmd_ieee802154_get_ext_addr(const struct shell *sh,
 
 		for (i = 0; i < IEEE802154_EXT_ADDR_LENGTH; i++) {
 			pos += snprintk(ext_addr + pos,
-					IEEE802154_EXT_ADDR_LENGTH - pos,
+					EXT_ADDR_STR_LEN - pos,
 					"%02X:", addr[i]);
 		}
 

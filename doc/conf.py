@@ -67,7 +67,7 @@ release = version
 # -- General configuration ------------------------------------------------
 
 extensions = [
-    "breathe",
+    "docleaf.doxygen",
     "sphinx.ext.todo",
     "sphinx.ext.extlinks",
     "sphinx.ext.autodoc",
@@ -102,8 +102,6 @@ else:
 pygments_style = "sphinx"
 
 todo_include_todos = False
-
-numfig = True
 
 nitpick_ignore = [
     # ignore C standard identifiers (they are not defined in Zephyr docs)
@@ -161,16 +159,10 @@ html_context = {
     "current_version": version,
     "versions": (
         ("latest", "/"),
+        ("3.4.0", "/3.4.0/"),
         ("3.3.0", "/3.3.0/"),
         ("3.2.0", "/3.2.0/"),
-        ("3.1.0", "/3.1.0/"),
-        ("3.0.0", "/3.0.0/"),
-        ("2.7.4 (LTS)", "/2.7.4/"),
-        ("2.6.0", "/2.6.0/"),
-        ("2.5.0", "/2.5.0/"),
-        ("2.4.0", "/2.4.0/"),
-        ("2.3.0", "/2.3.0/"),
-        ("1.14.1", "/1.14.1/"),
+        ("2.7.5 (LTS)", "/2.7.5/"),
     ),
     "display_vcs_link": True,
     "reference_links": {
@@ -219,16 +211,17 @@ doxyrunner_fmt = True
 doxyrunner_fmt_vars = {"ZEPHYR_BASE": str(ZEPHYR_BASE), "ZEPHYR_VERSION": version}
 doxyrunner_outdir_var = "DOXY_OUT"
 
-# -- Options for Breathe plugin -------------------------------------------
+# -- Options for Docleaf plugin -------------------------------------------
 
-breathe_projects = {"Zephyr": str(doxyrunner_outdir / "xml")}
-breathe_default_project = "Zephyr"
-breathe_domain_by_extension = {
+docleaf_projects = {"Zephyr": {"xml": str(doxyrunner_outdir / "xml"), "root": "../"}}
+docleaf_default_project = "Zephyr"
+docleaf_domain_by_extension = {
     "h": "c",
     "c": "c",
 }
-breathe_show_enumvalue_initializer = True
-breathe_default_members = ("members", )
+# Filters out any 'function' or 'variable' members that have 'all caps' names as
+# they are likely unprocessed macro calls
+docleaf_doxygen_skip = ["members:all_caps"]
 
 cpp_id_attributes = [
     "__syscall",

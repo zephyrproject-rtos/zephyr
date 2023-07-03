@@ -120,8 +120,8 @@ static void fill_multi_heap(void)
 		 * address retrieved by DT at run-time because the SMH
 		 * framework expects virtual addresses.
 		 *
-		 * For MPU-enabled plaform the code is assuming that the region
-		 * are configured at build-time, so no map is needed.
+		 * For MPU-enabled platform the code is assuming that the
+		 * region are configured at build-time, so no map is needed.
 		 */
 		smh_reg_map(&reg_map->region);
 #endif /* CONFIG_MMU */

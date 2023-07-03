@@ -9,6 +9,7 @@
 
 #include <zephyr/logging/log_instance.h>
 #include <zephyr/logging/log_core.h>
+#include <zephyr/sys/iterable_sections.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -17,6 +18,7 @@ extern "C" {
 /**
  * @brief Logging
  * @defgroup logging Logging
+ * @ingroup os_services
  * @{
  * @}
  */

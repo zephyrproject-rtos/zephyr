@@ -8,6 +8,7 @@
 #include <zephyr/logging/log_ctrl.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/logging/log_internal.h>
+#include <zephyr/sys/iterable_sections.h>
 #include <string.h>
 
 typedef int (*log_backend_cmd_t)(const struct shell *sh,

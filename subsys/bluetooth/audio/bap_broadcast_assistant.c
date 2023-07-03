@@ -166,6 +166,7 @@ static int parse_recv_state(const void *data, uint16_t length,
 			LOG_DBG("Metadata too long: %u/%zu",
 			       subgroup->metadata_len,
 			       sizeof(subgroup->metadata));
+			return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
 		}
 
 		metadata = net_buf_simple_pull_mem(&buf,
@@ -318,9 +319,12 @@ static uint8_t read_recv_state_cb(struct bt_conn *conn, uint8_t err,
 			}
 		}
 	} else {
-		for (int i = 0; i < broadcast_assistant.recv_state_cnt; i++) {
+		for (uint8_t i = 0U; i < broadcast_assistant.recv_state_cnt; i++) {
 			if (handle == broadcast_assistant.recv_state_handles[i]) {
-				(void)bt_bap_broadcast_assistant_read_recv_state(conn, i + 1);
+				if (i + 1 < ARRAY_SIZE(broadcast_assistant.recv_state_handles)) {
+					(void)bt_bap_broadcast_assistant_read_recv_state(conn,
+											 i + 1);
+				}
 				break;
 			}
 		}
@@ -946,6 +950,12 @@ int bt_bap_broadcast_assistant_read_recv_state(struct bt_conn *conn,
 
 	if (conn == NULL) {
 		LOG_DBG("conn is NULL");
+
+		return -EINVAL;
+	}
+
+	CHECKIF(idx >= ARRAY_SIZE(broadcast_assistant.recv_state_handles)) {
+		LOG_DBG("Invalid idx: %u", idx);
 
 		return -EINVAL;
 	}

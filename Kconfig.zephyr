@@ -5,6 +5,7 @@
 # Copyright (c) 2023 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
+osource "${APPLICATION_SOURCE_DIR}/VERSION"
 
 # Include Kconfig.defconfig files first so that they can override defaults and
 # other symbol/choice properties by adding extra symbol/choice definitions.
@@ -718,6 +719,32 @@ config BUILD_OUTPUT_STRIP_PATHS
 	  Debuggers usually have a path mapping feature to ensure the files are
 	  still found.
 
+config CHECK_INIT_PRIORITIES
+	bool "Build time initialization priorities check"
+	help
+	  Check the build for initialization priority issues by comparing the
+	  initialization priority in the build with the device dependency
+	  derived from the devicetree definition.
+
+	  Fails the build on priority errors (dependent devices, inverted
+	  priority), see CHECK_INIT_PRIORITIES_FAIL_ON_WARNING to fail on
+	  warnings (dependent devices, same priority) as well.
+
+config CHECK_INIT_PRIORITIES_FAIL_ON_WARNING
+	bool "Fail the build on priority check warnings"
+	depends on CHECK_INIT_PRIORITIES
+	help
+	  Fail the build if the dependency check script identifies any pair of
+	  devices depending on each other but initialized with the same
+	  priority.
+
+config EMIT_ALL_SYSCALLS
+	bool "Emit all possible syscalls in the tree"
+	help
+	  This tells the build system to emit all possible syscalls found
+	  in the tree, instead of only those syscalls associated with enabled
+	  drivers and subsystems.
+
 endmenu
 
 config DEPRECATED
@@ -794,12 +821,10 @@ config BOOTLOADER_SRAM_SIZE
 	  - Zephyr is a !XIP image, which implicitly assumes existence of a
 	  bootloader that loads the Zephyr !XIP image onto SRAM.
 
-source "Kconfig.mcuboot"
-
 config BOOTLOADER_ESP_IDF
 	bool "ESP-IDF bootloader support"
-	depends on (SOC_ESP32 || SOC_ESP32S2 || SOC_ESP32C3 || SOC_ESP32S3) && !BOOTLOADER_MCUBOOT
-	default y
+	depends on SOC_FAMILY_ESP32 && !BOOTLOADER_MCUBOOT && !MCUBOOT
+	default	y
 	help
 	  This option will trigger the compilation of the ESP-IDF bootloader
 	  inside the build folder.

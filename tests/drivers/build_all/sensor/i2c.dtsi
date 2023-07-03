@@ -90,12 +90,6 @@ test_i2c_bmm150: bmm150@d {
 	reg = <0xd>;
 };
 
-test_i2c_ft5336: ft5336@e {
-	compatible = "focaltech,ft5336";
-	reg = <0xe>;
-	int-gpios = <&test_gpio 0 0>;
-};
-
 test_i2c_ht16k33: ht16k33@f {
 	compatible = "holtek,ht16k33";
 	reg = <0xf>;
@@ -727,4 +721,27 @@ test_i2c_lsm6dso16is: lsm6dso16is@6f {
 	compatible = "st,lsm6dso16is";
 	reg = <0x6f>;
 	irq-gpios = <&test_gpio 0 0>;
+};
+
+test_i2c_lsm6dsv16x: lsm6dsv16x@70 {
+	compatible = "st,lsm6dsv16x";
+	reg = <0x70>;
+	irq-gpios = <&test_gpio 0 0>;
+};
+
+test_i2c_mcp9600: mcp9600@71 {
+	compatible = "microchip,mcp9600";
+	reg = <0x71>;
+};
+
+test_i2c_tcs3400: tcs3400@72 {
+	compatible = "ams,tcs3400";
+	reg = <0x72>;
+	int-gpios = <&test_gpio 0 0>;
+};
+
+test_tcn75a: tcn75a@73 {
+	compatible = "microchip,tcn75a";
+	reg = <0x73>;
+	alert-gpios = <&test_gpio 0 0>;
 };

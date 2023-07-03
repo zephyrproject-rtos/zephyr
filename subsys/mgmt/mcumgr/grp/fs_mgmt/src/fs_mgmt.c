@@ -221,7 +221,7 @@ static int fs_mgmt_file_download(struct smp_streamer *ctxt)
 
 #if defined(CONFIG_MCUMGR_GRP_FS_FILE_ACCESS_HOOK)
 	struct fs_mgmt_file_access file_access_data = {
-		.upload = false,
+		.access = FS_MGMT_FILE_ACCESS_READ,
 		.filename = path,
 	};
 
@@ -230,32 +230,15 @@ static int fs_mgmt_file_download(struct smp_streamer *ctxt)
 	uint16_t ret_group;
 #endif
 
-	ok = zcbor_map_decode_bulk(zsd, fs_download_decode,
-		ARRAY_SIZE(fs_download_decode), &decoded) == 0;
+	ok = zcbor_map_decode_bulk(zsd, fs_download_decode, ARRAY_SIZE(fs_download_decode),
+				   &decoded) == 0;
 
-	if (!ok || name.len == 0 || name.len > (sizeof(path) - 1)) {
+	if (!ok || off == ULLONG_MAX || name.len == 0 || name.len > (sizeof(path) - 1)) {
 		return MGMT_ERR_EINVAL;
 	}
 
 	memcpy(path, name.value, name.len);
 	path[name.len] = '\0';
-
-#if defined(CONFIG_MCUMGR_GRP_FS_FILE_ACCESS_HOOK)
-	/* Send request to application to check if access should be allowed or not */
-	status = mgmt_callback_notify(MGMT_EVT_OP_FS_MGMT_FILE_ACCESS, &file_access_data,
-				      sizeof(file_access_data), &ret_rc, &ret_group);
-
-	if (status != MGMT_CB_OK) {
-		bool ok;
-
-		if (status == MGMT_CB_ERROR_RC) {
-			return ret_rc;
-		}
-
-		ok = smp_add_cmd_ret(zse, ret_group, (uint16_t)ret_rc);
-		return ok ? MGMT_ERR_EOK : MGMT_ERR_EMSGSIZE;
-	}
-#endif
 
 	if (k_sem_take(&fs_mgmt_ctxt.lock_sem, FILE_SEMAPHORE_MAX_TAKE_TIME)) {
 		return MGMT_ERR_EBUSY;
@@ -265,6 +248,21 @@ static int fs_mgmt_file_download(struct smp_streamer *ctxt)
 	if (ctxt->smpt != fs_mgmt_ctxt.transport ||
 	    fs_mgmt_ctxt.state != STATE_DOWNLOAD ||
 	    strcmp(path, fs_mgmt_ctxt.path)) {
+#if defined(CONFIG_MCUMGR_GRP_FS_FILE_ACCESS_HOOK)
+		/* Send request to application to check if access should be allowed or not */
+		status = mgmt_callback_notify(MGMT_EVT_OP_FS_MGMT_FILE_ACCESS, &file_access_data,
+					      sizeof(file_access_data), &ret_rc, &ret_group);
+
+		if (status != MGMT_CB_OK) {
+			if (status == MGMT_CB_ERROR_RC) {
+				return ret_rc;
+			}
+
+			ok = smp_add_cmd_ret(zse, ret_group, (uint16_t)ret_rc);
+			goto end;
+		}
+#endif
+
 		fs_mgmt_cleanup();
 	}
 
@@ -273,9 +271,8 @@ static int fs_mgmt_file_download(struct smp_streamer *ctxt)
 		rc = fs_mgmt_filelen(path, &fs_mgmt_ctxt.len);
 
 		if (rc != FS_MGMT_RET_RC_OK) {
-			k_sem_give(&fs_mgmt_ctxt.lock_sem);
 			ok = smp_add_cmd_ret(zse, MGMT_GROUP_ID_FS, rc);
-			return ok ? MGMT_ERR_EOK : MGMT_ERR_EMSGSIZE;
+			goto end;
 		}
 
 		fs_mgmt_ctxt.off = 0;
@@ -372,7 +369,7 @@ static int fs_mgmt_file_upload(struct smp_streamer *ctxt)
 
 #if defined(CONFIG_MCUMGR_GRP_FS_FILE_ACCESS_HOOK)
 	struct fs_mgmt_file_access file_access_data = {
-		.upload = true,
+		.access = FS_MGMT_FILE_ACCESS_WRITE,
 		.filename = file_name,
 	};
 
@@ -381,40 +378,16 @@ static int fs_mgmt_file_upload(struct smp_streamer *ctxt)
 	uint16_t ret_group;
 #endif
 
-	ok = zcbor_map_decode_bulk(zsd, fs_upload_decode,
-		ARRAY_SIZE(fs_upload_decode), &decoded) == 0;
+	ok = zcbor_map_decode_bulk(zsd, fs_upload_decode, ARRAY_SIZE(fs_upload_decode),
+				   &decoded) == 0;
 
-	if (!ok || off == ULLONG_MAX || name.len == 0 ||
-	    name.len > (sizeof(file_name) - 1)) {
+	if (!ok || off == ULLONG_MAX || name.len == 0 || name.len > (sizeof(file_name) - 1) ||
+	    (off == 0 && len == ULLONG_MAX)) {
 		return MGMT_ERR_EINVAL;
 	}
 
 	memcpy(file_name, name.value, name.len);
 	file_name[name.len] = '\0';
-
-#if defined(CONFIG_MCUMGR_GRP_FS_FILE_ACCESS_HOOK)
-	/* Send request to application to check if access should be allowed or not */
-	status = mgmt_callback_notify(MGMT_EVT_OP_FS_MGMT_FILE_ACCESS, &file_access_data,
-				      sizeof(file_access_data), &ret_rc, &ret_group);
-
-	if (status != MGMT_CB_OK) {
-		bool ok;
-
-		if (status == MGMT_CB_ERROR_RC) {
-			return ret_rc;
-		}
-
-		ok = smp_add_cmd_ret(zse, ret_group, (uint16_t)ret_rc);
-		return ok ? MGMT_ERR_EOK : MGMT_ERR_EMSGSIZE;
-	}
-#endif
-
-	if (off == 0) {
-		/* Total file length is a required field in the first chunk request. */
-		if (len == ULLONG_MAX) {
-			return MGMT_ERR_EINVAL;
-		}
-	}
 
 	if (k_sem_take(&fs_mgmt_ctxt.lock_sem, FILE_SEMAPHORE_MAX_TAKE_TIME)) {
 		return MGMT_ERR_EBUSY;
@@ -424,6 +397,21 @@ static int fs_mgmt_file_upload(struct smp_streamer *ctxt)
 	if (ctxt->smpt != fs_mgmt_ctxt.transport ||
 	    fs_mgmt_ctxt.state != STATE_UPLOAD ||
 	    strcmp(file_name, fs_mgmt_ctxt.path)) {
+#if defined(CONFIG_MCUMGR_GRP_FS_FILE_ACCESS_HOOK)
+		/* Send request to application to check if access should be allowed or not */
+		status = mgmt_callback_notify(MGMT_EVT_OP_FS_MGMT_FILE_ACCESS, &file_access_data,
+					      sizeof(file_access_data), &ret_rc, &ret_group);
+
+		if (status != MGMT_CB_OK) {
+			if (status == MGMT_CB_ERROR_RC) {
+				return ret_rc;
+			}
+
+			ok = smp_add_cmd_ret(zse, ret_group, (uint16_t)ret_rc);
+			goto end;
+		}
+#endif
+
 		fs_mgmt_cleanup();
 	}
 
@@ -561,7 +549,6 @@ static int fs_mgmt_file_upload(struct smp_streamer *ctxt)
 
 	/* Send the response. */
 	ok = fs_mgmt_file_rsp(zse, MGMT_ERR_EOK, fs_mgmt_ctxt.off);
-
 	fs_mgmt_upload_download_finish_check();
 
 end:
@@ -590,6 +577,17 @@ static int fs_mgmt_file_status(struct smp_streamer *ctxt)
 		ZCBOR_MAP_DECODE_KEY_DECODER("name", zcbor_tstr_decode, &name),
 	};
 
+#if defined(CONFIG_MCUMGR_GRP_FS_FILE_ACCESS_HOOK)
+	struct fs_mgmt_file_access file_access_data = {
+		.access = FS_MGMT_FILE_ACCESS_STATUS,
+		.filename = path,
+	};
+
+	enum mgmt_cb_return status;
+	int32_t ret_rc;
+	uint16_t ret_group;
+#endif
+
 	ok = zcbor_map_decode_bulk(zsd, fs_status_decode,
 		ARRAY_SIZE(fs_status_decode), &decoded) == 0;
 
@@ -600,6 +598,21 @@ static int fs_mgmt_file_status(struct smp_streamer *ctxt)
 	/* Copy path and ensure it is null-teminated */
 	memcpy(path, name.value, name.len);
 	path[name.len] = '\0';
+
+#if defined(CONFIG_MCUMGR_GRP_FS_FILE_ACCESS_HOOK)
+	/* Send request to application to check if access should be allowed or not */
+	status = mgmt_callback_notify(MGMT_EVT_OP_FS_MGMT_FILE_ACCESS, &file_access_data,
+				      sizeof(file_access_data), &ret_rc, &ret_group);
+
+	if (status != MGMT_CB_OK) {
+		if (status == MGMT_CB_ERROR_RC) {
+			return ret_rc;
+		}
+
+		ok = smp_add_cmd_ret(zse, ret_group, (uint16_t)ret_rc);
+		return ok ? MGMT_ERR_EOK : MGMT_ERR_EMSGSIZE;
+	}
+#endif
 
 	/* Retrieve file size */
 	rc = fs_mgmt_filelen(path, &file_len);
@@ -656,6 +669,17 @@ static int fs_mgmt_file_hash_checksum(struct smp_streamer *ctxt)
 		ZCBOR_MAP_DECODE_KEY_DECODER("len", zcbor_uint64_decode, &len),
 	};
 
+#if defined(CONFIG_MCUMGR_GRP_FS_FILE_ACCESS_HOOK)
+	struct fs_mgmt_file_access file_access_data = {
+		.access = FS_MGMT_FILE_ACCESS_HASH_CHECKSUM,
+		.filename = path,
+	};
+
+	enum mgmt_cb_return status;
+	int32_t ret_rc;
+	uint16_t ret_group;
+#endif
+
 	ok = zcbor_map_decode_bulk(zsd, fs_hash_checksum_decode,
 		ARRAY_SIZE(fs_hash_checksum_decode), &decoded) == 0;
 
@@ -681,6 +705,21 @@ static int fs_mgmt_file_hash_checksum(struct smp_streamer *ctxt)
 				     FS_MGMT_RET_RC_CHECKSUM_HASH_NOT_FOUND);
 		goto end;
 	}
+
+#if defined(CONFIG_MCUMGR_GRP_FS_FILE_ACCESS_HOOK)
+	/* Send request to application to check if access should be allowed or not */
+	status = mgmt_callback_notify(MGMT_EVT_OP_FS_MGMT_FILE_ACCESS, &file_access_data,
+				      sizeof(file_access_data), &ret_rc, &ret_group);
+
+	if (status != MGMT_CB_OK) {
+		if (status == MGMT_CB_ERROR_RC) {
+			return ret_rc;
+		}
+
+		ok = smp_add_cmd_ret(zse, ret_group, (uint16_t)ret_rc);
+		return ok ? MGMT_ERR_EOK : MGMT_ERR_EMSGSIZE;
+	}
+#endif
 
 	/* Check provided offset is valid for target file */
 	rc = fs_mgmt_filelen(path, &file_len);
@@ -822,9 +861,12 @@ fs_mgmt_supported_hash_checksum(struct smp_streamer *ctxt)
 		.zse = zse,
 	};
 
-	itr_ctx.ok = zcbor_tstr_put_lit(zse, "types");
+	itr_ctx.ok = zcbor_tstr_put_lit(zse, "types") &&
+	    zcbor_map_start_encode(zse, CONFIG_MCUMGR_GRP_FS_CHECKSUM_HASH_SUPPORTED_MAX_TYPES);
 
-	zcbor_map_start_encode(zse, CONFIG_MCUMGR_GRP_FS_CHECKSUM_HASH_SUPPORTED_MAX_TYPES);
+	if (!itr_ctx.ok) {
+		return MGMT_ERR_EMSGSIZE;
+	}
 
 	fs_mgmt_hash_checksum_find_handlers(fs_mgmt_supported_hash_checksum_callback, &itr_ctx);
 

@@ -350,6 +350,14 @@
 			status = "disabled";
 		};
 	};
+
+	vref: vref {
+		compatible = "st,stm32-vref";
+		vrefint-cal-addr = <0x1FFFF7BA>;
+		vrefint-cal-mv = <3300>;
+		io-channels = <&adc1 17>;
+		status = "disabled";
+	};
 };
 
 &nvic {

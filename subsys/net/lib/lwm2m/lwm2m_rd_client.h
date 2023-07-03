@@ -38,6 +38,8 @@
 #ifndef LWM2M_RD_CLIENT_H
 #define LWM2M_RD_CLIENT_H
 
+#include <zephyr/net/lwm2m.h> /* struct lwm2m_ctx */
+
 int lwm2m_rd_client_init(void);
 void engine_trigger_update(bool update_objects);
 int engine_trigger_bootstrap(void);

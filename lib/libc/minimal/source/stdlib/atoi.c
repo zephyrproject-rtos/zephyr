@@ -43,6 +43,7 @@ int atoi(const char *s)
 		break;	/* artifact to quiet coverity warning */
 	case '+':
 		s++;
+		break;
 	default:
 		/* Add an empty default with break, this is a defensive programming.
 		 * Static analysis tool won't raise a violation if default is empty,

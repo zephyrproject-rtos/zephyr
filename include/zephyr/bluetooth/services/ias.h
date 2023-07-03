@@ -18,6 +18,7 @@
  */
 
 #include <zephyr/bluetooth/conn.h>
+#include <zephyr/sys/iterable_sections.h>
 
 #ifdef __cplusplus
 extern "C" {

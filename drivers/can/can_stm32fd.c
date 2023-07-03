@@ -6,6 +6,7 @@
  */
 
 #include <zephyr/drivers/can.h>
+#include <zephyr/drivers/can/can_mcan.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/pinctrl.h>
@@ -15,8 +16,6 @@
 #include <stm32_ll_rcc.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
-
-#include "can_mcan.h"
 
 LOG_MODULE_REGISTER(can_stm32fd, CONFIG_CAN_LOG_LEVEL);
 
@@ -169,6 +168,7 @@ LOG_MODULE_REGISTER(can_stm32fd, CONFIG_CAN_LOG_LEVEL);
 
 struct can_stm32fd_config {
 	mm_reg_t base;
+	mem_addr_t mram;
 	size_t pclk_len;
 	const struct stm32_pclken *pclken;
 	void (*config_irq)(void);
@@ -445,6 +445,31 @@ static int can_stm32fd_write_reg(const struct device *dev, uint16_t reg, uint32_
 	return can_mcan_sys_write_reg(stm32fd_config->base, remap, bits);
 }
 
+static int can_stm32fd_read_mram(const struct device *dev, uint16_t offset, void *dst, size_t len)
+{
+	const struct can_mcan_config *mcan_config = dev->config;
+	const struct can_stm32fd_config *stm32fd_config = mcan_config->custom;
+
+	return can_mcan_sys_read_mram(stm32fd_config->mram, offset, dst, len);
+}
+
+static int can_stm32fd_write_mram(const struct device *dev, uint16_t offset, const void *src,
+				size_t len)
+{
+	const struct can_mcan_config *mcan_config = dev->config;
+	const struct can_stm32fd_config *stm32fd_config = mcan_config->custom;
+
+	return can_mcan_sys_write_mram(stm32fd_config->mram, offset, src, len);
+}
+
+static int can_stm32fd_clear_mram(const struct device *dev, uint16_t offset, size_t len)
+{
+	const struct can_mcan_config *mcan_config = dev->config;
+	const struct can_stm32fd_config *stm32fd_config = mcan_config->custom;
+
+	return can_mcan_sys_clear_mram(stm32fd_config->mram, offset, len);
+}
+
 static int can_stm32fd_get_core_clock(const struct device *dev, uint32_t *rate)
 {
 	const uint32_t rate_tmp = LL_RCC_GetFDCANClockFreq(LL_RCC_FDCAN_CLKSOURCE);
@@ -568,46 +593,38 @@ static const struct can_driver_api can_stm32fd_driver_api = {
 	.get_max_bitrate = can_mcan_get_max_bitrate,
 	.get_max_filters = can_mcan_get_max_filters,
 	.set_state_change_callback = can_mcan_set_state_change_callback,
-	.timing_min = {
-		.sjw = 0x01,
-		.prop_seg = 0x00,
-		.phase_seg1 = 0x01,
-		.phase_seg2 = 0x01,
-		.prescaler = 0x01
-	},
-	.timing_max = {
-		.sjw = 0x80,
-		.prop_seg = 0x00,
-		.phase_seg1 = 0x100,
-		.phase_seg2 = 0x80,
-		.prescaler = 0x200
-	},
+	.timing_min = CAN_MCAN_TIMING_MIN_INITIALIZER,
+	.timing_max = CAN_MCAN_TIMING_MAX_INITIALIZER,
 #ifdef CONFIG_CAN_FD_MODE
 	.set_timing_data = can_mcan_set_timing_data,
-	.timing_data_min = {
-		.sjw = 0x01,
-		.prop_seg = 0x00,
-		.phase_seg1 = 0x01,
-		.phase_seg2 = 0x01,
-		.prescaler = 0x01
-	},
-	.timing_data_max = {
-		.sjw = 0x10,
-		.prop_seg = 0x00,
-		.phase_seg1 = 0x20,
-		.phase_seg2 = 0x10,
-		.prescaler = 0x20
-	}
+	.timing_data_min = CAN_MCAN_TIMING_DATA_MIN_INITIALIZER,
+	.timing_data_max = CAN_MCAN_TIMING_DATA_MAX_INITIALIZER,
 #endif /* CONFIG_CAN_FD_MODE */
 };
 
-/* Assert that the Message RAM configuration meets the hardware limitiations */
-BUILD_ASSERT(NUM_STD_FILTER_ELEMENTS <= 28, "Maximum standard filter elements exceeded");
-BUILD_ASSERT(NUM_EXT_FILTER_ELEMENTS <= 8, "Maximum extended filter elements exceeded");
-BUILD_ASSERT(NUM_RX_FIFO0_ELEMENTS == 3, "Rx FIFO 0 elements must be 3");
-BUILD_ASSERT(NUM_RX_FIFO1_ELEMENTS == 3, "Rx FIFO 1 elements must be 3");
-BUILD_ASSERT(NUM_RX_BUF_ELEMENTS == 0, "Rx Buffer elements must be 0");
-BUILD_ASSERT(NUM_TX_BUF_ELEMENTS == 3, "Tx Buffer elements must be 0");
+static const struct can_mcan_ops can_stm32fd_ops = {
+	.read_reg = can_stm32fd_read_reg,
+	.write_reg = can_stm32fd_write_reg,
+	.read_mram = can_stm32fd_read_mram,
+	.write_mram = can_stm32fd_write_mram,
+	.clear_mram = can_stm32fd_clear_mram,
+};
+
+#define CAN_STM32FD_BUILD_ASSERT_MRAM_CFG(inst)					\
+	BUILD_ASSERT(CAN_MCAN_DT_INST_MRAM_STD_FILTER_ELEMENTS(inst) == 28,	\
+		     "Standard filter elements must be 28");			\
+	BUILD_ASSERT(CAN_MCAN_DT_INST_MRAM_EXT_FILTER_ELEMENTS(inst) == 8,	\
+		     "Extended filter elements must be 8");			\
+	BUILD_ASSERT(CAN_MCAN_DT_INST_MRAM_RX_FIFO0_ELEMENTS(inst) == 3,	\
+		     "Rx FIFO 0 elements must be 3");				\
+	BUILD_ASSERT(CAN_MCAN_DT_INST_MRAM_RX_FIFO1_ELEMENTS(inst) == 3,	\
+		     "Rx FIFO 1 elements must be 3");				\
+	BUILD_ASSERT(CAN_MCAN_DT_INST_MRAM_RX_BUFFER_ELEMENTS(inst) == 0,	\
+		     "Rx Buffer elements must be 0");				\
+	BUILD_ASSERT(CAN_MCAN_DT_INST_MRAM_TX_EVENT_FIFO_ELEMENTS(inst) == 3,	\
+		     "Tx Event FIFO elements must be 3");			\
+	BUILD_ASSERT(CAN_MCAN_DT_INST_MRAM_TX_BUFFER_ELEMENTS(inst) == 3,	\
+		     "Tx Buffer elements must be 0");
 
 #define CAN_STM32FD_IRQ_CFG_FUNCTION(inst)                                     \
 static void config_can_##inst##_irq(void)                                      \
@@ -624,12 +641,22 @@ static void config_can_##inst##_irq(void)                                      \
 }
 
 #define CAN_STM32FD_CFG_INST(inst)					\
+	BUILD_ASSERT(CAN_MCAN_DT_INST_MRAM_ELEMENTS_SIZE(inst) <=	\
+		     CAN_MCAN_DT_INST_MRAM_SIZE(inst),			\
+		     "Insufficient Message RAM size to hold elements");	\
+									\
 	PINCTRL_DT_INST_DEFINE(inst);					\
+	CAN_MCAN_CALLBACKS_DEFINE(can_stm32fd_cbs_##inst,		\
+				  CAN_MCAN_DT_INST_MRAM_TX_BUFFER_ELEMENTS(inst), \
+				  CONFIG_CAN_MAX_STD_ID_FILTER,		\
+				  CONFIG_CAN_MAX_EXT_ID_FILTER);	\
+									\
 	static const struct stm32_pclken can_stm32fd_pclken_##inst[] =	\
 					STM32_DT_INST_CLOCKS(inst);	\
 									\
 	static const struct can_stm32fd_config can_stm32fd_cfg_##inst = { \
-		.base = (mm_reg_t)DT_INST_REG_ADDR_BY_NAME(inst, m_can), \
+		.base = CAN_MCAN_DT_INST_MCAN_ADDR(inst),		\
+		.mram = CAN_MCAN_DT_INST_MRAM_ADDR(inst),		\
 		.pclken = can_stm32fd_pclken_##inst,			\
 		.pclk_len = DT_INST_NUM_CLOCKS(inst),			\
 		.config_irq = config_can_##inst##_irq,			\
@@ -639,14 +666,12 @@ static void config_can_##inst##_irq(void)                                      \
 									\
 	static const struct can_mcan_config can_mcan_cfg_##inst =	\
 		CAN_MCAN_DT_CONFIG_INST_GET(inst, &can_stm32fd_cfg_##inst, \
-					    can_stm32fd_read_reg,	\
-					    can_stm32fd_write_reg);
+					    &can_stm32fd_ops,		\
+					    &can_stm32fd_cbs_##inst);
 
 #define CAN_STM32FD_DATA_INST(inst)					\
 	static struct can_mcan_data can_mcan_data_##inst =		\
-		CAN_MCAN_DATA_INITIALIZER((struct can_mcan_msg_sram *)	\
-			DT_INST_REG_ADDR_BY_NAME(inst, message_ram),	\
-			NULL);
+		CAN_MCAN_DATA_INITIALIZER(NULL);
 
 #define CAN_STM32FD_DEVICE_INST(inst)					\
 	DEVICE_DT_INST_DEFINE(inst, &can_stm32fd_init, NULL,		\
@@ -654,10 +679,11 @@ static void config_can_##inst##_irq(void)                                      \
 			      POST_KERNEL, CONFIG_CAN_INIT_PRIORITY,	\
 			      &can_stm32fd_driver_api);
 
-#define CAN_STM32FD_INST(inst)     \
-CAN_STM32FD_IRQ_CFG_FUNCTION(inst) \
-CAN_STM32FD_CFG_INST(inst)         \
-CAN_STM32FD_DATA_INST(inst)        \
+#define CAN_STM32FD_INST(inst)          \
+CAN_STM32FD_BUILD_ASSERT_MRAM_CFG(inst) \
+CAN_STM32FD_IRQ_CFG_FUNCTION(inst)      \
+CAN_STM32FD_CFG_INST(inst)              \
+CAN_STM32FD_DATA_INST(inst)             \
 CAN_STM32FD_DEVICE_INST(inst)
 
 DT_INST_FOREACH_STATUS_OKAY(CAN_STM32FD_INST)

@@ -9,6 +9,7 @@
 #include <string.h>
 
 #include <zephyr/kernel.h>
+#include <zephyr/sys/iterable_sections.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -17,6 +18,7 @@ extern "C" {
 /**
  * @brief Zbus API
  * @defgroup zbus_apis Zbus APIs
+ * @ingroup os_services
  * @{
  */
 

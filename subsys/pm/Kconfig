@@ -90,8 +90,7 @@ config PM_DEVICE_POWER_DOMAIN
 
 config PM_DEVICE_POWER_DOMAIN_DYNAMIC
 	bool "Dynamically bind devices to a Power Pomain"
-	depends on PM_DEVICE_POWER_DOMAIN
-	select HAS_DYNAMIC_DEVICE_HANDLES
+	depends on PM_DEVICE_POWER_DOMAIN && DEVICE_DEPS_DYNAMIC
 	help
 	  Enable support for dynamically bind devices to a Power Domain.
 

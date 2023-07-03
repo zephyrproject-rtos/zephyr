@@ -145,7 +145,7 @@ static uint32_t smsc_mii_bitbang_read(struct smsc_data *sc)
 
 	__ASSERT(FIELD_GET(BSR_BANK_MASK, smsc_read_2(sc, BSR)) == 3,
 		 "%s called with bank %d (!=3)", __func__,
-		 FIELD_GET(BSR_BANK_MASK, smsc_read_2(sc, BSR)))
+		 FIELD_GET(BSR_BANK_MASK, smsc_read_2(sc, BSR)));
 
 	val = smsc_read_2(sc, MGMT);
 	delay(1); /* Simulate a timing sequence */

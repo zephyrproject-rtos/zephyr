@@ -51,4 +51,17 @@
 		io-channels = <&adc1 16>;
 		status = "disabled";
 	};
+
+	/* All STM32F0 series have ADC VBAT channel, except STM32F0x0 value line */
+	vbat: vbat {
+		compatible = "st,stm32-vbat";
+		ratio = <2>;
+		io-channels = <&adc1 18>;
+		status = "disabled";
+	};
+};
+
+/* All STM32F0 series have ADC VBAT channel, except STM32F0x0 value line */
+&adc1 {
+	vbat-channel = <18>;
 };

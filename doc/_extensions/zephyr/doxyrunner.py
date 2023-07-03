@@ -9,7 +9,7 @@ Introduction
 ============
 
 This Sphinx plugin can be used to run Doxygen build as part of the Sphinx build
-process. It is meant to be used with other plugins such as ``breathe`` in order
+process. It is meant to be used with other plugins such as ``docleaf`` in order
 to improve the user experience. The principal features offered by this plugin
 are:
 

@@ -1,5 +1,6 @@
 /*
  * Copyright 2022 Google LLC
+ * Copyright 2023 Microsoft Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -20,12 +21,15 @@ LOG_MODULE_REGISTER(sbs_sbs_gauge);
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/i2c_emul.h>
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/drivers/fuel_gauge.h>
 
 #include "sbs_gauge.h"
 
 /** Run-time data used by the emulator */
 struct sbs_gauge_emul_data {
 	uint16_t mfr_acc;
+	uint16_t remaining_capacity_alarm;
+	uint16_t remaining_time_alarm;
 	uint16_t mode;
 	int16_t at_rate;
 };
@@ -44,6 +48,12 @@ static int emul_sbs_gauge_reg_write(const struct emul *target, int reg, int val)
 	switch (reg) {
 	case SBS_GAUGE_CMD_MANUFACTURER_ACCESS:
 		data->mfr_acc = val;
+		break;
+	case SBS_GAUGE_CMD_REM_CAPACITY_ALARM:
+		data->remaining_capacity_alarm = val;
+		break;
+	case SBS_GAUGE_CMD_REM_TIME_ALARM:
+		data->remaining_time_alarm = val;
 		break;
 	case SBS_GAUGE_CMD_BATTERY_MODE:
 		data->mode = val;
@@ -67,10 +77,23 @@ static int emul_sbs_gauge_reg_read(const struct emul *target, int reg, int *val)
 	case SBS_GAUGE_CMD_MANUFACTURER_ACCESS:
 		*val = data->mfr_acc;
 		break;
+	case SBS_GAUGE_CMD_REM_CAPACITY_ALARM:
+		*val = data->remaining_capacity_alarm;
+		break;
+	case SBS_GAUGE_CMD_REM_TIME_ALARM:
+		*val = data->remaining_time_alarm;
+		break;
+	case SBS_GAUGE_CMD_BATTERY_MODE:
+		*val = data->mode;
+		break;
+	case SBS_GAUGE_CMD_AR:
+		*val = data->at_rate;
+		break;
 	case SBS_GAUGE_CMD_VOLTAGE:
 	case SBS_GAUGE_CMD_AVG_CURRENT:
 	case SBS_GAUGE_CMD_TEMP:
 	case SBS_GAUGE_CMD_ASOC:
+	case SBS_GAUGE_CMD_RSOC:
 	case SBS_GAUGE_CMD_FULL_CAPACITY:
 	case SBS_GAUGE_CMD_REM_CAPACITY:
 	case SBS_GAUGE_CMD_NOM_CAPACITY:
@@ -80,11 +103,9 @@ static int emul_sbs_gauge_reg_read(const struct emul *target, int reg, int *val)
 	case SBS_GAUGE_CMD_CYCLE_COUNT:
 	case SBS_GAUGE_CMD_DESIGN_VOLTAGE:
 	case SBS_GAUGE_CMD_CURRENT:
-	case SBS_GAUGE_CMD_BATTERY_MODE:
 	case SBS_GAUGE_CMD_CHG_CURRENT:
 	case SBS_GAUGE_CMD_CHG_VOLTAGE:
 	case SBS_GAUGE_CMD_FLAGS:
-	case SBS_GAUGE_CMD_AR:
 	case SBS_GAUGE_CMD_ARTTF:
 	case SBS_GAUGE_CMD_ARTTE:
 	case SBS_GAUGE_CMD_AROK:
@@ -96,6 +117,38 @@ static int emul_sbs_gauge_reg_read(const struct emul *target, int reg, int *val)
 		return -EIO;
 	}
 	LOG_INF("read 0x%x = 0x%x", reg, *val);
+
+	return 0;
+}
+
+static int emul_sbs_gauge_buffer_read(const struct emul *target, int reg, char *val)
+{
+	char mfg[] = "ACME";
+	char dev[] = "B123456";
+	char chem[] = "LiPO";
+	struct sbs_gauge_manufacturer_name *mfg_name = (struct sbs_gauge_manufacturer_name *)val;
+	struct sbs_gauge_device_name *dev_name = (struct sbs_gauge_device_name *)val;
+	struct sbs_gauge_device_chemistry *dev_chem = (struct sbs_gauge_device_chemistry *)val;
+
+	switch (reg) {
+	case SBS_GAUGE_CMD_MANUFACTURER_NAME:
+		mfg_name->manufacturer_name_length = sizeof(mfg);
+		memcpy(mfg_name->manufacturer_name, mfg, mfg_name->manufacturer_name_length);
+		break;
+	case SBS_GAUGE_CMD_DEVICE_NAME:
+		dev_name->device_name_length = sizeof(dev);
+		memcpy(dev_name->device_name, dev, dev_name->device_name_length);
+		break;
+
+	case SBS_GAUGE_CMD_DEVICE_CHEMISTRY:
+		dev_chem->device_chemistry_length = MIN(sizeof(chem),
+							sizeof(dev_chem->device_chemistry));
+		memcpy(dev_chem->device_chemistry, chem, dev_chem->device_chemistry_length);
+		break;
+	default:
+		LOG_ERR("Unknown register 0x%x read", reg);
+		return -EIO;
+	}
 
 	return 0;
 }
@@ -129,8 +182,8 @@ static int sbs_gauge_emul_transfer_i2c(const struct emul *target, struct i2c_msg
 		/* Now process the 'read' part of the message */
 		msgs++;
 		if (msgs->flags & I2C_MSG_READ) {
-			switch (msgs->len - 1) {
-			case 1:
+			switch (msgs->len) {
+			case 2:
 				rc = emul_sbs_gauge_reg_read(target, reg, &val);
 				if (rc) {
 					/* Return before writing bad value to message buffer */
@@ -139,6 +192,11 @@ static int sbs_gauge_emul_transfer_i2c(const struct emul *target, struct i2c_msg
 
 				/* SBS uses SMBus, which sends data in little-endian format. */
 				sys_put_le16(val, msgs->buf);
+				break;
+					/* buffer properties */
+			case (sizeof(struct sbs_gauge_manufacturer_name)):
+			case (sizeof(struct sbs_gauge_device_chemistry)):
+				rc = emul_sbs_gauge_buffer_read(target, reg, (char *)msgs->buf);
 				break;
 			default:
 				LOG_ERR("Unexpected msg1 length %d", msgs->len);

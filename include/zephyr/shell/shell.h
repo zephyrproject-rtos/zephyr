@@ -15,6 +15,7 @@
 #include <zephyr/shell/shell_string_conv.h>
 #include <zephyr/logging/log_instance.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/sys/iterable_sections.h>
 #include <zephyr/sys/util.h>
 
 #if defined CONFIG_SHELL_GETOPT
@@ -68,7 +69,7 @@ extern "C" {
 /**
  * @brief Shell API
  * @defgroup shell_api Shell API
- * @ingroup shell
+ * @ingroup os_services
  * @{
  */
 

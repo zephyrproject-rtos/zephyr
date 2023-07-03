@@ -36,6 +36,7 @@
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/mem_blocks.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/sys/iterable_sections.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -45,6 +46,7 @@ extern "C" {
 /**
  * @brief RTIO
  * @defgroup rtio RTIO
+ * @ingroup os_services
  * @{
  * @}
  */
@@ -111,6 +113,7 @@ extern "C" {
  */
 #define RTIO_SQE_TRANSACTION BIT(1)
 
+
 /**
  * @brief The buffer should be allocated by the RTIO mempool
  *
@@ -137,6 +140,11 @@ extern "C" {
  * complete. It should be placed back in queue until canceled.
  */
 #define RTIO_SQE_MULTISHOT BIT(4)
+
+/**
+ * @brief The SQE does not produce a CQE.
+ */
+#define RTIO_SQE_NO_RESPONSE BIT(5)
 
 /**
  * @}
@@ -190,6 +198,21 @@ extern "C" {
  * @}
  */
 
+/**
+ * @brief Equivalent to the I2C_MSG_STOP flag
+ */
+#define RTIO_IODEV_I2C_STOP BIT(0)
+
+/**
+ * @brief Equivalent to the I2C_MSG_RESTART flag
+ */
+#define RTIO_IODEV_I2C_RESTART BIT(1)
+
+/**
+ * @brief Equivalent to the I2C_MSG_ADDR_10_BITS
+ */
+#define RTIO_IODEV_I2C_10_BITS BIT(2)
+
 /** @cond ignore */
 struct rtio;
 struct rtio_cqe;
@@ -219,6 +242,10 @@ struct rtio_sqe {
 	uint8_t prio; /**< Op priority */
 
 	uint16_t flags; /**< Op Flags */
+
+	uint16_t iodev_flags; /**< Op iodev flags */
+
+	uint16_t _resv0;
 
 	const struct rtio_iodev *iodev; /**< Device to operation on */
 
@@ -988,8 +1015,6 @@ static inline uint32_t rtio_cqe_compute_flags(struct rtio_iodev_sqe *iodev_sqe)
 {
 	uint32_t flags = 0;
 
-	ARG_UNUSED(iodev_sqe);
-
 #ifdef CONFIG_RTIO_SYS_MEM_BLOCKS
 	if (iodev_sqe->sqe.op == RTIO_OP_RX && iodev_sqe->sqe.flags & RTIO_SQE_MEMPOOL_BUFFER) {
 		struct rtio *r = iodev_sqe->r;
@@ -1000,6 +1025,8 @@ static inline uint32_t rtio_cqe_compute_flags(struct rtio_iodev_sqe *iodev_sqe)
 
 		flags = RTIO_CQE_FLAG_PREP_MEMPOOL(blk_index, blk_count);
 	}
+#else
+	ARG_UNUSED(iodev_sqe);
 #endif
 
 	return flags;
@@ -1176,7 +1203,10 @@ static inline int rtio_sqe_rx_buf(const struct rtio_iodev_sqe *iodev_sqe, uint32
 
 		return -ENOMEM;
 	}
+#else
+	ARG_UNUSED(max_buf_len);
 #endif
+
 	if (sqe->buf_len < min_buf_len) {
 		return -ENOMEM;
 	}
@@ -1210,6 +1240,10 @@ static inline void z_impl_rtio_release_buffer(struct rtio *r, void *buff, uint32
 	}
 
 	rtio_block_pool_free(r->block_pool, buff, buff_len);
+#else
+	ARG_UNUSED(r);
+	ARG_UNUSED(buff);
+	ARG_UNUSED(buff_len);
 #endif
 }
 
@@ -1341,7 +1375,7 @@ static inline int z_impl_rtio_cqe_copy_out(struct rtio *r,
 {
 	size_t copied = 0;
 	struct rtio_cqe *cqe;
-	uint64_t end = sys_clock_timeout_end_calc(timeout);
+	int64_t end = sys_clock_timeout_end_calc(timeout);
 
 	do {
 		cqe = K_TIMEOUT_EQ(timeout, K_FOREVER) ? rtio_cqe_consume_block(r)

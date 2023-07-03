@@ -120,6 +120,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 	uint32_t remainder;
 	uint32_t start_us;
 	uint8_t phy_s;
+	uint32_t ret;
 	uint8_t upd;
 
 	DEBUG_RADIO_START_A(1);
@@ -237,26 +238,29 @@ static int prepare_cb(struct lll_prepare_param *p)
 
 #if defined(CONFIG_BT_CTLR_XTAL_ADVANCED) && \
 	(EVENT_OVERHEAD_PREEMPT_US <= EVENT_OVERHEAD_PREEMPT_MIN_US)
+	uint32_t overhead;
+
+	overhead = lll_preempt_calc(ull, (TICKER_ID_ADV_SYNC_BASE +
+					  ull_adv_sync_lll_handle_get(lll)), ticks_at_event);
 	/* check if preempt to start has changed */
-	if (lll_preempt_calc(ull, (TICKER_ID_ADV_SYNC_BASE +
-				   ull_adv_sync_lll_handle_get(lll)),
-			     ticks_at_event)) {
+	if (overhead) {
+		LL_ASSERT_OVERHEAD(overhead);
+
 		radio_isr_set(lll_isr_abort, lll);
 		radio_disable();
-	} else
+
+		return -ECANCELED;
+	}
 #endif /* CONFIG_BT_CTLR_XTAL_ADVANCED */
-	{
-		uint32_t ret;
 
 #if defined(CONFIG_BT_CTLR_ADV_ISO) && defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
-		if (lll->iso) {
-			ull_adv_iso_lll_biginfo_fill(pdu, lll);
-		}
+	if (lll->iso) {
+		ull_adv_iso_lll_biginfo_fill(pdu, lll);
+	}
 #endif /* CONFIG_BT_CTLR_ADV_ISO && CONFIG_BT_TICKER_EXT_EXPIRE_INFO */
 
-		ret = lll_prepare_done(lll);
-		LL_ASSERT(!ret);
-	}
+	ret = lll_prepare_done(lll);
+	LL_ASSERT(!ret);
 
 	DEBUG_RADIO_START_A(1);
 

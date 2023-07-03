@@ -9,6 +9,7 @@ common:
   integration_platforms:
     - native_posix
 tests:
+  pm.policy.api.default: {}
   pm.policy.api.app:
     extra_configs:
       - CONFIG_PM_POLICY_CUSTOM=y

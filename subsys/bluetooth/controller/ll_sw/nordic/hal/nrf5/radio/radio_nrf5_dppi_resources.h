@@ -9,9 +9,8 @@
  * Enable Radio on Event Timer tick:
  * wire the EVENT_TIMER EVENTS_COMPARE[0] event to RADIO TASKS_TXEN/RXEN task.
  */
-#define HAL_RADIO_ENABLE_ON_TICK_PPI 6
-#define HAL_RADIO_ENABLE_TX_ON_TICK_PPI HAL_RADIO_ENABLE_ON_TICK_PPI
-#define HAL_RADIO_ENABLE_RX_ON_TICK_PPI HAL_RADIO_ENABLE_ON_TICK_PPI
+#define HAL_RADIO_ENABLE_TX_ON_TICK_PPI 6
+#define HAL_RADIO_ENABLE_RX_ON_TICK_PPI 6
 
 /*******************************************************************************
  * Capture event timer on Address reception:

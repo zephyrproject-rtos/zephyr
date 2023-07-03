@@ -59,6 +59,7 @@ source "drivers/ethernet/Kconfig.cyclonev"
 source "drivers/ethernet/Kconfig.nxp_s32"
 source "drivers/ethernet/Kconfig.smsc91x"
 source "drivers/ethernet/Kconfig.ivshmem"
+source "drivers/ethernet/Kconfig.adin2111"
 
 source "drivers/ethernet/phy/Kconfig"
 

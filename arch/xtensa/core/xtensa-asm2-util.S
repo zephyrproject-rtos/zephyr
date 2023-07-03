@@ -278,7 +278,7 @@ _switch_restore_pc:
  */
 .align 4
 _handle_excint:
-	EXCINT_HANDLER ZSR_CPU, ___cpu_t_nested_OFFSET, ___cpu_t_irq_stack_OFFSET
+	EXCINT_HANDLER ___cpu_t_nested_OFFSET, ___cpu_t_irq_stack_OFFSET
 
 /* Define the actual vectors for the hardware-defined levels with
  * DEF_EXCINT.  These load a C handler address and jump to our handler
@@ -345,6 +345,7 @@ _Level1RealVector:
 	wsr a0, ZSR_ALLOCA
 	rsr.exccause a0
 	bnei a0, EXCCAUSE_ALLOCA, _not_alloca
+
 	j _xt_alloca_exc
 _not_alloca:
 	rsr a0, ZSR_ALLOCA
@@ -362,13 +363,47 @@ _not_alloca:
 .pushsection .KernelExceptionVector.text, "ax"
 .global _KernelExceptionVector
 _KernelExceptionVector:
+#ifdef CONFIG_XTENSA_MMU
+	wsr a0, ZSR_ALLOCA
+	rsr.exccause a0
+	beqi a0, EXCCAUSE_ITLB_MISS, _handle_tlb_miss_kernel
+	addi a0, a0, -EXCCAUSE_DTLB_MISS
+	beqz a0, _handle_tlb_miss_kernel
+	rsr a0, ZSR_ALLOCA
+#endif
 	j _Level1Vector
+#ifdef CONFIG_XTENSA_MMU
+_handle_tlb_miss_kernel:
+	/* The TLB miss handling is used only during z_xtensa_mmu_init()
+	 * where vecbase is at a different address, as the offset used
+	 * in the jump ('j') instruction will not jump to correct
+	 * address (... remember the vecbase is moved).
+	 * So we handle TLB misses in a very simple way here until
+	 * we move back to using UserExceptionVector above.
+	 */
+	rsr.ptevaddr a0
+	l32i a0, a0, 0
+	rsr a0, ZSR_ALLOCA
+	rfe
+#endif
 .popsection
 
 #ifdef XCHAL_DOUBLEEXC_VECTOR_VADDR
 .pushsection .DoubleExceptionVector.text, "ax"
 .global _DoubleExceptionVector
 _DoubleExceptionVector:
+#ifdef CONFIG_XTENSA_MMU
+	wsr a0, ZSR_ALLOCA
+	wsr a1, ZSR_EXTRA0
+
+	rsr.exccause a0
+	addi a0, a0, -EXCCAUSE_DTLB_MISS
+	beqz a0, _handle_tlb_miss_dblexc
+
+_not_handle_tlb_miss_dblexc:
+	rsr a1, ZSR_EXTRA0
+	rsr a0, ZSR_ALLOCA
+#endif
 #if defined(CONFIG_SIMULATOR_XTENSA) || defined(XT_SIMULATOR)
 1:
 /* Tell simulator to stop executing here, instead of trying to do
@@ -386,5 +421,57 @@ _DoubleExceptionVector:
 1:
 #endif
 	j	1b
+
+#ifdef CONFIG_XTENSA_MMU
+_handle_tlb_miss_dblexc:
+	/* The tiny space reserved for each vector is not enough
+	 * to accommodate code below, and beqz cannot jump too far.
+	 * So we have this here as a trampoline.
+	 */
+	j _handle_tlb_miss_dblexc_helper
+#endif
 .popsection
+
+#ifdef CONFIG_XTENSA_MMU
+.pushsection .iram.text, "ax"
+_handle_tlb_miss_dblexc_helper:
+	/* It is possible that VECBASE is not mapped in TLB
+	 * so TLB misses would be raised. We will need to
+	 * map it and return so it can continue handling
+	 * the original exception.
+	 */
+
+	/* Find the address of mapped region of this PTE page.
+	 * Since each PTE page maps 1024 of 4K pages, we simply
+	 * need to multiply by 1024 (shift left by 10).
+	 */
+	rsr.ptevaddr a0
+	slli a0, a0, 10
+
+	/* Get the beginning address of the 4K page mapped for
+	 * VECBASE. Shift 12 bits right and left as a way to zero
+	 * the lower 11 bits.
+	 */
+	rsr.vecbase a1
+	srli a1, a1, 12
+	slli a1, a1, 12
+
+	/* If it is VECBASE causing TLB miss, we load the PTE page
+	 * and continue.
+	 */
+	beq a0, a1, _dblexc_load_pte
+
+	/* Ignore TLB miss is not on VECBASE page. */
+	j _not_handle_tlb_miss_dblexc
+
+_dblexc_load_pte:
+	rsr.ptevaddr a0
+	l32i a0, a0, 0
+
+	rsr a1, ZSR_EXTRA0
+	rsr a0, ZSR_ALLOCA
+	rfde
+.popsection
+#endif
+
 #endif

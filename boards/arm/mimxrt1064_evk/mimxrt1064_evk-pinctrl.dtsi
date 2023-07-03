@@ -24,7 +24,7 @@
 	/* conflicts with lpuart3 and flexcan1 */
 	pinmux_csi: pinmux_csi {
 		group0 {
-			pinmux = <&iomuxc_gpio_ad_b0_04_gpio1_io04>;
+			pinmux = <&iomuxc_gpio_ad_b1_02_gpio1_io18>;
 			drive-strength = "r0-6";
 			bias-pull-down;
 			bias-pull-down-value = "100k";

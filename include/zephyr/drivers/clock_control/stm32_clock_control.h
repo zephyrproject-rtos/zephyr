@@ -20,9 +20,10 @@
 #elif defined(CONFIG_SOC_SERIES_STM32F3X)
 #include <zephyr/dt-bindings/clock/stm32f3_clock.h>
 #elif defined(CONFIG_SOC_SERIES_STM32F2X) || \
-	defined(CONFIG_SOC_SERIES_STM32F4X) || \
-	defined(CONFIG_SOC_SERIES_STM32F7X)
+	defined(CONFIG_SOC_SERIES_STM32F4X)
 #include <zephyr/dt-bindings/clock/stm32f4_clock.h>
+#elif defined(CONFIG_SOC_SERIES_STM32F7X)
+#include <zephyr/dt-bindings/clock/stm32f7_clock.h>
 #elif defined(CONFIG_SOC_SERIES_STM32G0X)
 #include <zephyr/dt-bindings/clock/stm32g0_clock.h>
 #elif defined(CONFIG_SOC_SERIES_STM32G4X)
@@ -329,7 +330,8 @@
 #define STM32_HSI_ENABLED	1
 #define STM32_HSI_FREQ		DT_PROP(DT_NODELABEL(clk_hsi), clock_frequency)
 #elif DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(clk_hsi), st_stm32h7_hsi_clock, okay) \
-	|| DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(clk_hsi), st_stm32g0_hsi_clock, okay)
+	|| DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(clk_hsi), st_stm32g0_hsi_clock, okay) \
+	|| DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(clk_hsi), st_stm32c0_hsi_clock, okay)
 #define STM32_HSI_DIV_ENABLED	1
 #define STM32_HSI_ENABLED	1
 #define STM32_HSI_DIVISOR	DT_PROP(DT_NODELABEL(clk_hsi), hsi_div)

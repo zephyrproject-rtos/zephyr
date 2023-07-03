@@ -6,3 +6,5 @@ tests:
       - userspace
     filter: CONFIG_USERSPACE
     ignore_faults: true
+    integration_platforms:
+      - qemu_x86

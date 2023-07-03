@@ -6,7 +6,7 @@ description: |
 
 compatible: "nxp,mcux-usbd"
 
-include: usb-ep.yaml
+include: [usb-ep.yaml, pinctrl-device.yaml]
 
 properties:
   reg:

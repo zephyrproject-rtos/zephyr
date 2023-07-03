@@ -377,8 +377,8 @@ static void i2s_mcux_config_dma_blocks(const struct device *dev,
 		blk_cfg->source_address = (uint32_t)&base->FIFORD;
 		blk_cfg->dest_address = (uint32_t)buffer[0];
 		blk_cfg->block_size = stream->cfg.block_size;
-		blk_cfg->source_gather_en = 1;
 		blk_cfg->next_block = &stream->dma_block[1];
+		blk_cfg->dest_reload_en = 1;
 
 		blk_cfg = &stream->dma_block[1];
 		memset(blk_cfg, 0, sizeof(struct dma_block_config));

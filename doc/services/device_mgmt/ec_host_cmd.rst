@@ -47,15 +47,16 @@ The supported backend and peripheral drivers:
 Initialization
 **************
 
-If the application configures one of the following backend chosen nodes, then the corresponding backend
+If the application configures one of the following backend chosen nodes and
+:kconfig:option:`CONFIG_EC_HOST_CMD_INITIALIZE_AT_BOOT` is set, then the corresponding backend
 initializes the host command subsystem by calling :c:func:`ec_host_cmd_init`:
 
 * ``zephyr,host-cmd-espi-backend``
 * ``zephyr,host-cmd-shi-backend``
 * ``zephyr,host-cmd-uart-backend``
 
-If no backend chosen node is configured, the application must call the :c:func:`ec_host_cmd_init` function
-directly. This way of initialization is useful if a backend is chosen in runtime
+If no backend chosen node is configured, the application must call the :c:func:`ec_host_cmd_init`
+function directly. This way of initialization is useful if a backend is chosen in runtime
 based on e.g. GPIO state.
 
 Buffers
@@ -63,10 +64,22 @@ Buffers
 
 The host command communication requires buffers for rx and tx. The buffers are be provided by the
 general handler if :kconfig:option:`CONFIG_EC_HOST_CMD_HANDLER_RX_BUFFER_SIZE` > 0 for rx buffer and
-:kconfig:option:`CONFIG_EC_HOST_CMD_HANDLER_TX_BUFFER_SIZE` > 0 for the tx buffer. The shared buffers are
-useful for applications that use multiple backends. Defining separate buffers by every backend would
-increase the memory usage. However, some buffers can be defined by a peripheral driver e.g. eSPI.
-These ones should be reused as much as possible.
+:kconfig:option:`CONFIG_EC_HOST_CMD_HANDLER_TX_BUFFER_SIZE` > 0 for the tx buffer. The shared
+buffers are useful for applications that use multiple backends. Defining separate buffers by every
+backend would increase the memory usage. However, some buffers can be defined by a peripheral driver
+e.g. eSPI. These ones should be reused as much as possible.
+
+Logging
+*******
+
+The host command has an embedded logging system of the ongoing communication. The are a few logging
+levels:
+
+* `LOG_INF` is used to log a command id of a new command and not success responses. Repeats of the
+  same command are not logged
+* `LOG_DBG` logs every command, even repeats
+* `LOG_DBG` + :kconfig:option:`CONFIG_EC_HOST_CMD_LOG_DBG_BUFFERS` logs every command and responses
+  with the data buffers
 
 API Reference
 *************

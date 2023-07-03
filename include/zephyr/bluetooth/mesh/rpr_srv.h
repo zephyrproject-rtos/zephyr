@@ -4,13 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/**
- * @file
- * @defgroup bt_mesh_rpr_srv Remote provisioning server
- * @{
- * @brief API For remote provisioning server model
- */
-
 #ifndef ZEPHYR_INCLUDE_BT_MESH_RPR_SRV_H__
 #define ZEPHYR_INCLUDE_BT_MESH_RPR_SRV_H__
 
@@ -21,6 +14,12 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/**
+ * @defgroup bt_mesh_rpr_srv Remote provisioning server
+ * @ingroup bt_mesh
+ * @{
+ */
 
 /**
  *
@@ -36,10 +35,10 @@ extern const struct bt_mesh_model_op _bt_mesh_rpr_srv_op[];
 extern const struct bt_mesh_model_cb _bt_mesh_rpr_srv_cb;
 /** @endcond */
 
+/** @} */
+
 #ifdef __cplusplus
 }
 #endif
 
 #endif /* ZEPHYR_INCLUDE_BT_MESH_RPR_SRV_H__ */
-
-/** @} */

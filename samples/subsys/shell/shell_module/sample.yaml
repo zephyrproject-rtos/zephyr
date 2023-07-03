@@ -51,3 +51,7 @@ tests:
     extra_args: CONF_FILE="prj_login.conf"
     integration_platforms:
       - native_posix
+  sample.shell.shell_module.robot:
+    harness: robot
+    harness_config:
+      robot_test_path: shell_module.robot

@@ -16,6 +16,7 @@
 #define ZEPHYR_INCLUDE_NET_ETHERNET_BRIDGE_H_
 
 #include <zephyr/sys/slist.h>
+#include <zephyr/sys/iterable_sections.h>
 
 #ifdef __cplusplus
 extern "C" {

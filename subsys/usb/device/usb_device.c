@@ -67,7 +67,7 @@
 #include <zephyr/usb/usb_device.h>
 #include <usb_descriptor.h>
 #include <zephyr/usb/class/usb_audio.h>
-
+#include <zephyr/sys/iterable_sections.h>
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(usb_device, CONFIG_USB_DEVICE_LOG_LEVEL);
 

@@ -15,6 +15,7 @@ LOG_MODULE_REGISTER(net_dhcpv4, CONFIG_NET_DHCPV4_LOG_LEVEL);
 
 #include <errno.h>
 #include <inttypes.h>
+#include <stdbool.h>
 #include <zephyr/random/rand32.h>
 #include <zephyr/net/net_core.h>
 #include <zephyr/net/net_pkt.h>
@@ -31,6 +32,9 @@ LOG_MODULE_REGISTER(net_dhcpv4, CONFIG_NET_DHCPV4_LOG_LEVEL);
 #include "ipv4.h"
 #include "net_stats.h"
 
+#include <zephyr/sys/slist.h>
+#include <zephyr/sys/util.h>
+
 #define PKT_WAIT_TIME K_SECONDS(1)
 
 static K_MUTEX_DEFINE(lock);
@@ -40,28 +44,12 @@ static struct k_work_delayable timeout_work;
 
 static struct net_mgmt_event_callback mgmt4_cb;
 
+#if defined(CONFIG_NET_DHCPV4_OPTION_CALLBACKS)
+static sys_slist_t option_callbacks;
+#endif
+
 /* RFC 1497 [17] */
 static const uint8_t magic_cookie[4] = { 0x63, 0x82, 0x53, 0x63 };
-
-static const char *dhcpv4_msg_type_name(enum dhcpv4_msg_type msg_type)
-	__attribute__((unused));
-
-static const char *dhcpv4_msg_type_name(enum dhcpv4_msg_type msg_type)
-{
-	static const char * const name[] = {
-		"discover",
-		"offer",
-		"request",
-		"decline",
-		"ack",
-		"nak",
-		"release",
-		"inform"
-	};
-
-	__ASSERT_NO_MSG(msg_type >= 1 && msg_type <= sizeof(name));
-	return name[msg_type - 1];
-}
 
 /* Add magic cookie to DCHPv4 messages */
 static inline bool dhcpv4_add_cookie(struct net_pkt *pkt)
@@ -191,7 +179,7 @@ static struct net_pkt *dhcpv4_create_message(struct net_if *iface, uint8_t type,
 		size +=  DHCPV4_OLV_MSG_REQ_IPADDR;
 	}
 
-	if (type == DHCPV4_MSG_TYPE_DISCOVER) {
+	if (type == NET_DHCPV4_MSG_TYPE_DISCOVER) {
 		size +=  DHCPV4_OLV_MSG_REQ_LIST;
 	}
 
@@ -254,7 +242,7 @@ static struct net_pkt *dhcpv4_create_message(struct net_if *iface, uint8_t type,
 		goto fail;
 	}
 
-	if (type == DHCPV4_MSG_TYPE_DISCOVER && !dhcpv4_add_req_options(pkt)) {
+	if (type == NET_DHCPV4_MSG_TYPE_DISCOVER && !dhcpv4_add_req_options(pkt)) {
 		goto fail;
 	}
 
@@ -384,7 +372,7 @@ static uint32_t dhcpv4_send_request(struct net_if *iface)
 
 	timeout = dhcpv4_update_message_timeout(&iface->config.dhcpv4);
 
-	pkt = dhcpv4_create_message(iface, DHCPV4_MSG_TYPE_REQUEST,
+	pkt = dhcpv4_create_message(iface, NET_DHCPV4_MSG_TYPE_REQUEST,
 				    ciaddr, src_addr, server_addr,
 				    with_server_id, with_requested_ip);
 	if (!pkt) {
@@ -424,7 +412,7 @@ static uint32_t dhcpv4_send_discover(struct net_if *iface)
 
 	iface->config.dhcpv4.xid++;
 
-	pkt = dhcpv4_create_message(iface, DHCPV4_MSG_TYPE_DISCOVER,
+	pkt = dhcpv4_create_message(iface, NET_DHCPV4_MSG_TYPE_DISCOVER,
 				    NULL, NULL, net_ipv4_broadcast_address(),
 				    false, false);
 	if (!pkt) {
@@ -683,12 +671,17 @@ static void dhcpv4_timeout(struct k_work *work)
  */
 static bool dhcpv4_parse_options(struct net_pkt *pkt,
 				 struct net_if *iface,
-				 enum dhcpv4_msg_type *msg_type)
+				 enum net_dhcpv4_msg_type *msg_type)
 {
+#if defined(CONFIG_NET_DHCPV4_OPTION_CALLBACKS)
+	struct net_dhcpv4_option_callback *cb, *tmp;
+	struct net_pkt_cursor backup;
+#endif
 	uint8_t cookie[4];
 	uint8_t length;
 	uint8_t type;
 	bool router_present = false;
+	bool unhandled = true;
 
 	if (net_pkt_read(pkt, cookie, sizeof(cookie)) ||
 	    memcmp(magic_cookie, cookie, sizeof(magic_cookie))) {
@@ -706,6 +699,29 @@ static bool dhcpv4_parse_options(struct net_pkt *pkt,
 			NET_ERR("option parsing, bad length");
 			return false;
 		}
+
+
+#if defined(CONFIG_NET_DHCPV4_OPTION_CALLBACKS)
+		net_pkt_cursor_backup(pkt, &backup);
+		unhandled = true;
+
+		SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&option_callbacks,
+						  cb, tmp, node) {
+			if (cb->option == type) {
+				NET_ASSERT(cb->handler, "No callback handler!");
+
+				if (net_pkt_read(pkt, cb->data,
+						 MIN(cb->max_length, length))) {
+					NET_DBG("option callback, read err");
+					return false;
+				}
+
+				cb->handler(cb, length, *msg_type, iface);
+				unhandled = false;
+			}
+			net_pkt_cursor_restore(pkt, &backup);
+		}
+#endif /* CONFIG_NET_DHCPV4_OPTION_CALLBACKS */
 
 		switch (type) {
 		case DHCPV4_OPTIONS_SUBNET_MASK: {
@@ -881,13 +897,16 @@ static bool dhcpv4_parse_options(struct net_pkt *pkt,
 			break;
 		}
 		default:
-			NET_DBG("option unknown: %d", type);
+			if (unhandled) {
+				NET_DBG("option unknown: %d", type);
+			} else {
+				NET_DBG("option unknown, handled by callback: %d", type);
+			}
 
 			if (net_pkt_skip(pkt, length)) {
 				NET_DBG("option unknown, skip err");
 				return false;
 			}
-
 			break;
 		}
 	}
@@ -896,7 +915,7 @@ static bool dhcpv4_parse_options(struct net_pkt *pkt,
 	return false;
 
 end:
-	if (*msg_type == DHCPV4_MSG_TYPE_OFFER && !router_present) {
+	if (*msg_type == NET_DHCPV4_MSG_TYPE_OFFER && !router_present) {
 		struct in_addr any = INADDR_ANY_INIT;
 
 		net_if_ipv4_set_gw(iface, &any);
@@ -991,21 +1010,21 @@ static void dhcpv4_handle_msg_nak(struct net_if *iface)
 
 /* Takes and releases lock */
 static void dhcpv4_handle_reply(struct net_if *iface,
-				enum dhcpv4_msg_type msg_type,
+				enum net_dhcpv4_msg_type msg_type,
 				struct dhcp_msg *msg)
 {
 	NET_DBG("state=%s msg=%s",
 		net_dhcpv4_state_name(iface->config.dhcpv4.state),
-		dhcpv4_msg_type_name(msg_type));
+		net_dhcpv4_msg_type_name(msg_type));
 
 	switch (msg_type) {
-	case DHCPV4_MSG_TYPE_OFFER:
+	case NET_DHCPV4_MSG_TYPE_OFFER:
 		dhcpv4_handle_msg_offer(iface, msg);
 		break;
-	case DHCPV4_MSG_TYPE_ACK:
+	case NET_DHCPV4_MSG_TYPE_ACK:
 		dhcpv4_handle_msg_ack(iface);
 		break;
-	case DHCPV4_MSG_TYPE_NAK:
+	case NET_DHCPV4_MSG_TYPE_NAK:
 		dhcpv4_handle_msg_nak(iface);
 		break;
 	default:
@@ -1022,7 +1041,7 @@ static enum net_verdict net_dhcpv4_input(struct net_conn *conn,
 {
 	NET_PKT_DATA_ACCESS_DEFINE(dhcp_access, struct dhcp_msg);
 	enum net_verdict verdict = NET_DROP;
-	enum dhcpv4_msg_type msg_type = 0;
+	enum net_dhcpv4_msg_type msg_type = 0;
 	struct dhcp_msg *msg;
 	struct net_if *iface;
 
@@ -1175,6 +1194,23 @@ const char *net_dhcpv4_state_name(enum net_dhcpv4_state state)
 	return name[state];
 }
 
+const char *net_dhcpv4_msg_type_name(enum net_dhcpv4_msg_type msg_type)
+{
+	static const char * const name[] = {
+		"discover",
+		"offer",
+		"request",
+		"decline",
+		"ack",
+		"nak",
+		"release",
+		"inform"
+	};
+
+	__ASSERT_NO_MSG(msg_type >= 1 && msg_type <= sizeof(name));
+	return name[msg_type - 1];
+}
+
 static void dhcpv4_start_internal(struct net_if *iface, bool first_start)
 {
 	uint32_t entropy;
@@ -1235,6 +1271,38 @@ static void dhcpv4_start_internal(struct net_if *iface, bool first_start)
 
 	k_mutex_unlock(&lock);
 }
+
+#if defined(CONFIG_NET_DHCPV4_OPTION_CALLBACKS)
+
+int net_dhcpv4_add_option_callback(struct net_dhcpv4_option_callback *cb)
+{
+	if (!cb || !cb->handler) {
+		return -EINVAL;
+	}
+
+	k_mutex_lock(&lock, K_FOREVER);
+	sys_slist_prepend(&option_callbacks, &cb->node);
+	k_mutex_unlock(&lock);
+	return 0;
+}
+
+int net_dhcpv4_remove_option_callback(struct net_dhcpv4_option_callback *cb)
+{
+	int ret = 0;
+
+	if (!cb || !cb->handler) {
+		return -EINVAL;
+	}
+
+	k_mutex_lock(&lock, K_FOREVER);
+	if (!sys_slist_find_and_remove(&option_callbacks, &cb->node)) {
+		ret = -EINVAL;
+	}
+	k_mutex_unlock(&lock);
+	return ret;
+}
+
+#endif /* CONFIG_NET_DHCPV4_OPTION_CALLBACKS */
 
 void net_dhcpv4_start(struct net_if *iface)
 {
@@ -1322,5 +1390,10 @@ int net_dhcpv4_init(void)
 	net_mgmt_init_event_callback(&mgmt4_cb, dhcpv4_iface_event_handler,
 					 NET_EVENT_IF_DOWN | NET_EVENT_IF_UP);
 
+#if defined(CONFIG_NET_DHCPV4_OPTION_CALLBACKS)
+	k_mutex_lock(&lock, K_FOREVER);
+	sys_slist_init(&option_callbacks);
+	k_mutex_unlock(&lock);
+#endif
 	return 0;
 }

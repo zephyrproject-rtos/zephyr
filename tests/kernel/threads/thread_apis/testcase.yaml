@@ -9,6 +9,7 @@ tests:
     min_flash: 34
   kernel.threads.apis.pinonly:
     min_flash: 34
-    filter: CONFIG_SMP
+    depends_on:
+      - smp
     extra_configs:
       - CONFIG_SCHED_CPU_MASK_PIN_ONLY=y

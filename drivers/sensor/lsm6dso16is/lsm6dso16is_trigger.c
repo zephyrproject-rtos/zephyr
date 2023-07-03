@@ -38,8 +38,9 @@ static int lsm6dso16is_enable_t_int(const struct device *dev, int enable)
 	}
 
 	/* set interrupt (TEMP DRDY interrupt is only on INT2) */
-	if (cfg->drdy_pin == 1)
+	if (cfg->drdy_pin == 1) {
 		return -EIO;
+	}
 
 	ret = lsm6dso16is_pin_int2_route_get(ctx, &val);
 	if (ret < 0) {

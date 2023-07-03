@@ -4,19 +4,24 @@ SMP Protocol Specification
 ##########################
 
 This is description of Simple Management Protocol, SMP, that is used by
-mcumgr to pass requests to devices and receive responses from them.
+MCUmgr to pass requests to devices and receive responses from them.
 
 SMP is an application layer protocol. The underlying transport layer is not
 in scope of this documentation.
 
+.. note::
+    SMP in this context refers to SMP for MCUmgr (Simple Management Protocol),
+    it is unrelated to SMP in Bluetooth (Security Manager Protocol), but there
+    is an MCUmgr SMP transport for Bluetooth.
+
 Frame: The envelope
 *******************
 
-Each frame consists of header and following it data. The ``Data Length``" field in
-the header may be used for reassembly purposes if underlying transport layer supports
+Each frame consists of a header and data. The ``Data Length`` field in the
+header may be used for reassembly purposes if underlying transport layer supports
 fragmentation.
-Frame is encoded in "Big Endian" (Network endianness), where field is more than
-one byte lone, and takes the following form:
+Frames are encoded in "Big Endian" (Network endianness) when fields are more than
+one byte long, and takes the following form:
 
 .. _mcumgr_smp_protocol_frame:
 
@@ -39,14 +44,14 @@ one byte lone, and takes the following form:
 .. note::
     The original specification states that SMP should support receiving
     both the "Little-endian" and "Big-endian" frames but in reality the
-    mcumgr library is hardcoded to always treat "Network" side as
+    MCUmgr library is hardcoded to always treat "Network" side as
     "Big-endian".
 
 
-The Data is optional and is not present when ``Data Length`` is zero.
+Data is optional and is not present when ``Data Length`` is zero.
 The encoding of data depends on the target of group/ID.
 
-Where meaning of fields is:
+A description of the various fields and their meaning:
 
 .. table::
     :align: center
@@ -54,7 +59,7 @@ Where meaning of fields is:
     +-------------------+---------------------------------------------------+
     | Field             | Description                                       |
     +===================+===================================================+
-    | ``Res``           | This is reserved, not-used field and should be    |
+    | ``Res``           | This is reserved, not-used field and must be      |
     |                   | always set to 0.                                  |
     +-------------------+---------------------------------------------------+
     | ``Ver`` (Version) | This indicates the version of the protocol being  |
@@ -62,7 +67,7 @@ Where meaning of fields is:
     |                   | SMP transport where error codes are more detailed |
     |                   | and returned in the map, otherwise left as 0b00   |
     |                   | to use the legacy SMP protocol. Versions 0b10 and |
-    |                   | 0x11 are reserved for future use and should not   |
+    |                   | 0b11 are reserved for future use and should not   |
     |                   | be used.                                          |
     +-------------------+---------------------------------------------------+
     | ``OP``            | :c:enum:`mcumgr_op_t`, determines whether         |
@@ -94,12 +99,8 @@ Where meaning of fields is:
     +-------------------+---------------------------------------------------+
 
 .. note::
-    Contents of a ``Data`` depends on a value of an ``OP``, a ``Group ID``,
+    Contents of ``Data`` depends on a value of an ``OP``, a ``Group ID``,
     and a ``Command ID``.
-
-.. note::
-    The ``Res`` field may be repurposed by Zephyr for protocol version
-    in the future.
 
 .. _mcumgr_smp_protocol_group_ids:
 
@@ -107,7 +108,7 @@ Management ``Group ID``'s
 =========================
 
 The SMP protocol supports predefined common groups and allows user defined
-groups. Below table presents list of common groups:
+groups. The following table presents a list of common groups:
 
 
 .. table::
@@ -147,15 +148,15 @@ groups. Below table presents list of common groups:
     |               | an application specific management groups.    |
     +---------------+-----------------------------------------------+
 
-The payload for above groups, except for ``64`` which is not defined,
-is always CBOR encoded. The group ``64``, and above, are free to be defined
-by application developers and are not defined within this documentation.
+The payload for above groups, except for user groups (``64`` and above) is
+always CBOR encoded. The group ``64``, and above can define their own scheme
+for data communication.
 
 Minimal response
 ****************
 
 Regardless of a command issued, as long as there is SMP client on the
-other side of a request, a response should be issued containing header
+other side of a request, a response should be issued containing the header
 followed by CBOR map container.
 Lack of response is only allowed when there is no SMP service or device is
 non-responsive.

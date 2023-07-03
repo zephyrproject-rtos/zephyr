@@ -28,6 +28,8 @@
 		pwm-led0 = &pwm_led_1;
 		pwm-led1 = &pwm_led_2;
 		watchdog0 = &iwdg;
+		volt-sensor0 = &vref1;
+		volt-sensor1 = &vbat4;
 	};
 };
 

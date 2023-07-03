@@ -12,7 +12,7 @@ tests:
       - qemu_x86
       - nrf5340dk_nrf5340_cpuapp
     tags: bluetooth
-  sample.bluetooth.broadcast_audio_sink.bt_ll_sw_split:
+  sample.bluetooth.broadcast_audio_source.bt_ll_sw_split:
     harness: bluetooth
     platform_allow:
       - nrf52_bsim

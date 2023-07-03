@@ -12,6 +12,7 @@
 #include <zephyr/bluetooth/hci.h>
 
 #include <zephyr/settings/settings.h>
+#include <zephyr/bluetooth/mesh.h>
 
 #include "host/hci_core.h"
 #include "mesh.h"
@@ -29,6 +30,7 @@
 #include "settings.h"
 #include "cfg.h"
 #include "solicitation.h"
+#include "va.h"
 
 #define LOG_LEVEL CONFIG_BT_MESH_SETTINGS_LOG_LEVEL
 #include <zephyr/logging/log.h>

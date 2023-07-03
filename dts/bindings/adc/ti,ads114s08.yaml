@@ -28,5 +28,22 @@ properties:
     description: |
       GPIO for start/sync, used to signal the ADC that a conversion should be started
 
+  idac-current:
+    type: int
+    enum:
+      - 0
+      - 10
+      - 50
+      - 100
+      - 250
+      - 500
+      - 750
+      - 1000
+      - 1500
+      - 2000
+    default: 0
+    description: |
+      IDAC current in microampere, the default value turns the current source off
+
 io-channel-cells:
   - input

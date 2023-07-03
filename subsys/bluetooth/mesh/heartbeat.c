@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <zephyr/bluetooth/mesh.h>
+#include <zephyr/sys/iterable_sections.h>
+
 #include "net.h"
 #include "rpl.h"
 #include "access.h"

@@ -9,6 +9,7 @@
 #include <zephyr/wait_q.h>
 #include <zephyr/init.h>
 #include <zephyr/linker/linker-defs.h>
+#include <zephyr/sys/iterable_sections.h>
 
 void k_heap_init(struct k_heap *h, void *mem, size_t bytes)
 {

@@ -162,7 +162,7 @@ int flash_area_read(const struct flash_area *fa, off_t off, void *dst,
  *
  * @param[in]  fa  Flash area
  * @param[in]  off Offset relative from beginning of flash area to write
- * @param[out] src Buffer with data to be written
+ * @param[in]  src Buffer with data to be written
  * @param[in]  len Number of bytes to write
  *
  * @return  0 on success, negative errno code on fail.

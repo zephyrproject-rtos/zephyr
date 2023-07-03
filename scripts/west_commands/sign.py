@@ -36,7 +36,7 @@ In the simplest usage, run this from your build directory:
 
 The "ARGS_FOR_YOUR_TOOL" value can be any additional
 arguments you want to pass to the tool, such as the location of a
-signing key, a version identifier, etc.
+signing key etc.
 
 See tool-specific help below for details.'''
 
@@ -56,11 +56,10 @@ Assuming your binary was properly built for processing and handling by
 imgtool, this creates zephyr.signed.bin and zephyr.signed.hex
 files which are ready for use by your bootloader.
 
-The image header size, alignment, and slot sizes are determined from
-the build directory using .config and the device tree. A default
-version number of 0.0.0+0 is used (which can be overridden by passing
-"--version x.y.z+w" after "--key"). As shown above, extra arguments
-after a '--' are passed to imgtool directly.
+The version number, image header size, alignment, and slot sizes are
+determined from the build directory using .config and the device tree.
+As shown above, extra arguments after a '--' are passed to imgtool
+directly.
 
 rimage
 ------
@@ -245,7 +244,8 @@ class ImgtoolSigner(Signer):
         b = pathlib.Path(build_dir)
 
         imgtool = self.find_imgtool(command, args)
-        # The vector table offset is set in Kconfig:
+        # The vector table offset and application version are set in Kconfig:
+        appver = self.get_cfg(command, build_conf, 'CONFIG_MCUBOOT_IMGTOOL_SIGN_VERSION')
         vtoff = self.get_cfg(command, build_conf, 'CONFIG_ROM_START_OFFSET')
         # Flash device write alignment and the partition's slot size
         # come from devicetree:
@@ -280,12 +280,8 @@ class ImgtoolSigner(Signer):
             log.inf('rom start offset: {0} (0x{0:x})'.format(vtoff))
 
         # Base sign command.
-        #
-        # We provide a default --version in case the user is just
-        # messing around and doesn't want to set one. It will be
-        # overridden if there is a --version in args.tool_args.
         sign_base = imgtool + ['sign',
-                               '--version', '0.0.0+0',
+                               '--version', str(appver),
                                '--align', str(align),
                                '--header-size', str(vtoff),
                                '--slot-size', str(size)]
@@ -526,13 +522,17 @@ class RimageSigner(Signer):
         sign_config_extra_args = config_get_words(command.config, 'rimage.extra-args', [])
 
         if '-k' not in sign_config_extra_args + args.tool_args:
-            cmake_default_key = cache.get('RIMAGE_SIGN_KEY')
+            # rimage requires a key argument even when it does not sign
+            cmake_default_key = cache.get('RIMAGE_SIGN_KEY', 'key placeholder from sign.py')
             extra_ri_args += [ '-k', str(sof_src_dir / 'keys' / cmake_default_key) ]
+
+        if '-c' not in sign_config_extra_args + args.tool_args:
+            extra_ri_args += conf_path_cmd
 
         # Warning: while not officially supported (yet?), the rimage --option that is last
         # on the command line currently wins in case of duplicate options. So pay
         # attention to the _args order below.
-        sign_base += (['-o', out_bin] + sign_config_extra_args + conf_path_cmd +
+        sign_base += (['-o', out_bin] + sign_config_extra_args +
                       extra_ri_args + args.tool_args + components)
 
         if not args.quiet:

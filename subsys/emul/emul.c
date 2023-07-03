@@ -11,6 +11,7 @@ LOG_MODULE_REGISTER(emul);
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/emul.h>
+#include <zephyr/sys/iterable_sections.h>
 #include <string.h>
 
 const struct emul *emul_get_binding(const char *name)

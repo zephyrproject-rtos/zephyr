@@ -43,6 +43,8 @@ the Earl Grey chip simulated in Verilator, a cycle-accurate HDL simulation tool.
 +-----------+------------+-------------------------------------+
 | SPI       | on-chip    | SPI host                            |
 +-----------+------------+-------------------------------------+
+| WDT       | on-chip    | Always-On Timer (Watchdog)          |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on Zephyr porting.
 
@@ -89,8 +91,8 @@ References
 
 .. target-notes::
 
-.. _OpenTitan Earl Grey Chip Datasheet: https://docs.opentitan.org/hw/top_earlgrey/doc/
+.. _OpenTitan Earl Grey Chip Datasheet: https://opentitan.org/book/hw/top_earlgrey/doc/specification.html
 
 .. _OpenTitan GitHub: https://github.com/lowRISC/opentitan
 
-.. _OpenTitan Verilator Setup: https://docs.opentitan.org/doc/getting_started/setup_verilator/
+.. _OpenTitan Verilator Setup: https://opentitan.org/guides/getting_started/setup_verilator.html

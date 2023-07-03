@@ -18,6 +18,7 @@ extern "C" {
 /**
  * @brief IPC
  * @defgroup ipc IPC
+ * @ingroup os_services
  * @{
  * @}
  */

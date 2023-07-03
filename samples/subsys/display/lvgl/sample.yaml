@@ -17,3 +17,5 @@ tests:
       - gui
     modules:
       - lvgl
+    integration_platforms:
+      - native_posix_64

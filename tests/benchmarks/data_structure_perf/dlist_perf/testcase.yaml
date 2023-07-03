@@ -3,3 +3,6 @@ tests:
     tags:
       - benchmark
       - dlist
+      - kernel
+    integration_platforms:
+      - native_posix

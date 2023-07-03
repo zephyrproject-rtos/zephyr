@@ -409,36 +409,57 @@ static int firmware_update_cb(uint16_t obj_inst_id,
 
 static struct lwm2m_engine_obj_inst *firmware_create(uint16_t obj_inst_id)
 {
-	int i = 0, j = 0;
+	int index, i = 0, j = 0;
 
-	init_res_instance(res_inst[obj_inst_id], ARRAY_SIZE(res_inst[obj_inst_id]));
+	/* Check that there is no other instance with this ID */
+	for (index = 0; index < MAX_INSTANCE_COUNT; index++) {
+		if (inst[index].obj && inst[index].obj_inst_id == obj_inst_id) {
+			LOG_ERR("Can not create instance - "
+				"already existing: %u", obj_inst_id);
+			return NULL;
+		}
+	}
+
+	for (index = 0; index < MAX_INSTANCE_COUNT; index++) {
+		if (!inst[index].obj) {
+			break;
+		}
+	}
+
+	if (index >= MAX_INSTANCE_COUNT) {
+		LOG_ERR("Can not create instance - "
+			"no more room: %u", obj_inst_id);
+		return NULL;
+	}
+
+	init_res_instance(res_inst[index], ARRAY_SIZE(res_inst[index]));
 
 	/* initialize instance resource data */
-	INIT_OBJ_RES_OPT(FIRMWARE_PACKAGE_ID, res[obj_inst_id], i, res_inst[obj_inst_id], j, 1,
+	INIT_OBJ_RES_OPT(FIRMWARE_PACKAGE_ID, res[index], i, res_inst[index], j, 1,
 			 false, true, NULL, NULL, NULL, package_write_cb, NULL);
-	INIT_OBJ_RES_LEN(FIRMWARE_PACKAGE_URI_ID, res[obj_inst_id], i, res_inst[obj_inst_id], j, 1,
-		     false, true, package_uri[obj_inst_id], PACKAGE_URI_LEN, 0, NULL, NULL, NULL,
+	INIT_OBJ_RES_LEN(FIRMWARE_PACKAGE_URI_ID, res[index], i, res_inst[index], j, 1,
+		     false, true, package_uri[index], PACKAGE_URI_LEN, 0, NULL, NULL, NULL,
 		     package_uri_write_cb, NULL);
-	INIT_OBJ_RES_EXECUTE(FIRMWARE_UPDATE_ID, res[obj_inst_id], i, firmware_update_cb);
-	INIT_OBJ_RES_DATA(FIRMWARE_STATE_ID, res[obj_inst_id], i, res_inst[obj_inst_id], j,
-			  &(update_state[obj_inst_id]), sizeof(update_state[obj_inst_id]));
-	INIT_OBJ_RES_DATA(FIRMWARE_UPDATE_RESULT_ID, res[obj_inst_id], i, res_inst[obj_inst_id], j,
-			  &(update_result[obj_inst_id]), sizeof(update_result[obj_inst_id]));
-	INIT_OBJ_RES_OPTDATA(FIRMWARE_PACKAGE_NAME_ID, res[obj_inst_id], i,
-			     res_inst[obj_inst_id], j);
-	INIT_OBJ_RES_OPTDATA(FIRMWARE_PACKAGE_VERSION_ID, res[obj_inst_id], i,
-			     res_inst[obj_inst_id], j);
-	INIT_OBJ_RES_MULTI_OPTDATA(FIRMWARE_UPDATE_PROTO_SUPPORT_ID, res[obj_inst_id], i,
-				 res_inst[obj_inst_id], j, 1, false);
-	INIT_OBJ_RES_DATA(FIRMWARE_UPDATE_DELIV_METHOD_ID, res[obj_inst_id], i,
-			  res_inst[obj_inst_id], j, &(delivery_method[obj_inst_id]),
-			  sizeof(delivery_method[obj_inst_id]));
+	INIT_OBJ_RES_EXECUTE(FIRMWARE_UPDATE_ID, res[index], i, firmware_update_cb);
+	INIT_OBJ_RES_DATA(FIRMWARE_STATE_ID, res[index], i, res_inst[index], j,
+			  &(update_state[index]), sizeof(update_state[index]));
+	INIT_OBJ_RES_DATA(FIRMWARE_UPDATE_RESULT_ID, res[index], i, res_inst[index], j,
+			  &(update_result[index]), sizeof(update_result[index]));
+	INIT_OBJ_RES_OPTDATA(FIRMWARE_PACKAGE_NAME_ID, res[index], i,
+			     res_inst[index], j);
+	INIT_OBJ_RES_OPTDATA(FIRMWARE_PACKAGE_VERSION_ID, res[index], i,
+			     res_inst[index], j);
+	INIT_OBJ_RES_MULTI_OPTDATA(FIRMWARE_UPDATE_PROTO_SUPPORT_ID, res[index], i,
+				 res_inst[index], j, 1, false);
+	INIT_OBJ_RES_DATA(FIRMWARE_UPDATE_DELIV_METHOD_ID, res[index], i,
+			  res_inst[index], j, &(delivery_method[index]),
+			  sizeof(delivery_method[index]));
 
-	inst[obj_inst_id].resources = res[obj_inst_id];
-	inst[obj_inst_id].resource_count = i;
+	inst[index].resources = res[index];
+	inst[index].resource_count = i;
 
 	LOG_DBG("Create LWM2M firmware instance: %d", obj_inst_id);
-	return &inst[obj_inst_id];
+	return &inst[index];
 }
 
 static int lwm2m_firmware_init(void)

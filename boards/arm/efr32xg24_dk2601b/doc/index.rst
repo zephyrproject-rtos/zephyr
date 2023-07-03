@@ -64,6 +64,8 @@ The board configuration supports the following hardware features:
 +-----------+------------+-------------------------------------+
 | I2C(M/S)  | on-chip    | i2c                                 |
 +-----------+------------+-------------------------------------+
+| RADIO     | on-chip    | bluetooth                           |
++-----------+------------+-------------------------------------+
 
 Other hardware features are currently not supported by the port.
 
@@ -91,7 +93,7 @@ means Pin number 2 on PORTA, as used in the board's datasheets and manuals.
 
 The default configuration can be found in the defconfig file:
 
-	``boards/arm/efr32_radio/efr32_radio_brd4186a_defconfig``
+	``boards/arm/efr32xg24_dk2601b/efr32xg24_dk2601b_defconfig``
 
 System Clock
 ============
@@ -139,6 +141,25 @@ terminal session:
 .. code-block:: console
 
    Hello World! efr32xg24_dk2601b
+
+Bluetooth
+=========
+
+To use the BLE function, run the command below to retrieve necessary binary
+blobs from the SiLabs HAL repository.
+
+.. code-block:: console
+
+   west blobs fetch silabs
+
+Then build the Zephyr kernel and a Bluetooth sample with the following
+command. The :ref:`bluetooth-observer-sample` sample application is used in
+this example.
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/bluetooth/observer
+   :board: efr32xg24_dk2601b
+   :goals: build
 
 .. _EFR32MG24 Website:
    https://www.silabs.com/wireless/zigbee/efr32mg24-series-2-socs#

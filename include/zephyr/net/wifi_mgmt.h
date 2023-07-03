@@ -114,6 +114,7 @@ enum net_event_wifi_cmd {
 	NET_EVENT_WIFI_CMD_TWT,
 	NET_EVENT_WIFI_CMD_TWT_SLEEP_STATE,
 	NET_EVENT_WIFI_CMD_RAW_SCAN_RESULT,
+	NET_EVENT_WIFI_CMD_DISCONNECT_COMPLETE,
 };
 
 #define NET_EVENT_WIFI_SCAN_RESULT				\
@@ -139,6 +140,19 @@ enum net_event_wifi_cmd {
 
 #define NET_EVENT_WIFI_RAW_SCAN_RESULT                          \
 	(_NET_WIFI_EVENT | NET_EVENT_WIFI_CMD_RAW_SCAN_RESULT)
+
+#define NET_EVENT_WIFI_DISCONNECT_COMPLETE			\
+	(_NET_WIFI_EVENT | NET_EVENT_WIFI_CMD_DISCONNECT_COMPLETE)
+
+struct wifi_scan_params {
+	/* The scan_type is only a hint to the underlying Wi-Fi chip for the
+	 * preferred mode of scan. The actual mode of scan can depend on factors
+	 * such as the Wi-Fi chip implementation support, regulatory domain
+	 * restrictions etc.
+	 */
+	enum wifi_scan_type scan_type;
+};
+
 /* Each result is provided to the net_mgmt_event_callback
  * via its info attribute (see net_mgmt.h)
  */
@@ -199,7 +213,13 @@ struct wifi_ps_params {
 	unsigned short listen_interval;
 	enum wifi_ps_wakeup_mode wakeup_mode;
 	enum wifi_ps_mode mode;
-	int timeout_ms;
+	/* This is the time out to wait after sending a TX packet
+	 * before going back to power save (in ms) to receive any replies
+	 * from the AP. Zero means this feature is disabled.
+	 *
+	 * It's a tradeoff between power consumption and latency.
+	 */
+	unsigned int timeout_ms;
 	enum ps_param_type type;
 	enum wifi_config_ps_param_fail_reason fail_reason;
 };
@@ -311,7 +331,9 @@ struct net_wifi_mgmt_offload {
 	 * result by the driver. The wifi mgmt part will take care of
 	 * raising the necessary event etc...
 	 */
-	int (*scan)(const struct device *dev, scan_result_cb_t cb);
+	int (*scan)(const struct device *dev,
+		    struct wifi_scan_params *params,
+		    scan_result_cb_t cb);
 	int (*connect)(const struct device *dev,
 		       struct wifi_connect_req_params *params);
 	int (*disconnect)(const struct device *dev);
@@ -344,6 +366,7 @@ void wifi_mgmt_raise_twt_sleep_state(struct net_if *iface, int twt_sleep_state);
 void wifi_mgmt_raise_raw_scan_result_event(struct net_if *iface,
 		struct wifi_raw_scan_result *raw_scan_info);
 #endif /* CONFIG_WIFI_MGMT_RAW_SCAN_RESULTS */
+void wifi_mgmt_raise_disconnect_complete_event(struct net_if *iface, int status);
 #ifdef __cplusplus
 }
 #endif

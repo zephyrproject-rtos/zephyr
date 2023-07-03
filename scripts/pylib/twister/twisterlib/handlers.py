@@ -40,18 +40,28 @@ logger = logging.getLogger('twister')
 logger.setLevel(logging.DEBUG)
 
 SUPPORTED_SIMS = ["mdb-nsim", "nsim", "renode", "qemu", "tsim", "armfvp", "xt-sim", "native"]
+SUPPORTED_SIMS_IN_PYTEST = ['native', 'qemu']
 
-class HarnessImporter:
 
-    def __init__(self, name):
-        sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/pylib/twister/twisterlib"))
-        module = __import__("harness")
-        if name:
-            my_class = getattr(module, name)
-        else:
-            my_class = getattr(module, "Test")
+def terminate_process(proc):
+    """
+    encapsulate terminate functionality so we do it consistently where ever
+    we might want to terminate the proc.  We need try_kill_process_by_pid
+    because of both how newer ninja (1.6.0 or greater) and .NET / renode
+    work.  Newer ninja's don't seem to pass SIGTERM down to the children
+    so we need to use try_kill_process_by_pid.
+    """
 
-        self.instance = my_class()
+    for child in psutil.Process(proc.pid).children(recursive=True):
+        try:
+            os.kill(child.pid, signal.SIGTERM)
+        except ProcessLookupError:
+            pass
+    proc.terminate()
+    # sleep for a while before attempting to kill
+    time.sleep(0.5)
+    proc.kill()
+
 
 class Handler:
     def __init__(self, instance, type_str="build"):
@@ -93,20 +103,7 @@ class Handler:
                     cw.writerow(instance)
 
     def terminate(self, proc):
-        # encapsulate terminate functionality so we do it consistently where ever
-        # we might want to terminate the proc.  We need try_kill_process_by_pid
-        # because of both how newer ninja (1.6.0 or greater) and .NET / renode
-        # work.  Newer ninja's don't seem to pass SIGTERM down to the children
-        # so we need to use try_kill_process_by_pid.
-        for child in psutil.Process(proc.pid).children(recursive=True):
-            try:
-                os.kill(child.pid, signal.SIGTERM)
-            except ProcessLookupError:
-                pass
-        proc.terminate()
-        # sleep for a while before attempting to kill
-        time.sleep(0.5)
-        proc.kill()
+        terminate_process(proc)
         self.terminated = True
 
     def _verify_ztest_suite_name(self, harness_state, detected_suite_names, handler_time):
@@ -187,9 +184,7 @@ class BinaryHandler(Handler):
         self.line = proc.stdout.readline()
 
     def _output_handler(self, proc, harness):
-        if harness.is_pytest:
-            harness.handle(None)
-            return
+        suffix = '\\r\\n'
 
         with open(self.log, "wt") as log_out_fp:
             timeout_extended = False
@@ -203,7 +198,10 @@ class BinaryHandler(Handler):
                 reader_t.join(this_timeout)
                 if not reader_t.is_alive() and self.line != b"":
                     line_decoded = self.line.decode('utf-8', "replace")
-                    stripped_line = line_decoded.rstrip()
+                    if line_decoded.endswith(suffix):
+                        stripped_line = line_decoded[:-len(suffix)].rstrip()
+                    else:
+                        stripped_line = line_decoded.rstrip()
                     logger.debug("OUTPUT: %s", stripped_line)
                     log_out_fp.write(line_decoded)
                     log_out_fp.flush()
@@ -225,14 +223,13 @@ class BinaryHandler(Handler):
             except subprocess.TimeoutExpired:
                 self.terminate(proc)
 
-    def handle(self):
+    def handle(self, harness):
 
-        harness_name = self.instance.testsuite.harness.capitalize()
-        harness_import = HarnessImporter(harness_name)
-        harness = harness_import.instance
-        harness.configure(self.instance)
+        robot_test = getattr(harness, "is_robot_test", False)
 
-        if self.call_make_run:
+        if robot_test:
+            command = [self.generator_cmd, "run_renode_test"]
+        elif self.call_make_run:
             command = [self.generator_cmd, "run"]
         elif self.call_west_flash:
             command = ["west", "flash", "--skip-rebuild", "-d", self.build_dir]
@@ -272,6 +269,10 @@ class BinaryHandler(Handler):
             env["UBSAN_OPTIONS"] = "log_path=stdout:halt_on_error=1:" + \
                                   env.get("UBSAN_OPTIONS", "")
 
+        if robot_test:
+            harness.run_robot_test(command, self)
+            return
+
         with subprocess.Popen(command, stdout=subprocess.PIPE,
                               stderr=subprocess.PIPE, cwd=self.build_dir, env=env) as proc:
             logger.debug("Spawning BinaryHandler Thread for %s" % self.name)
@@ -295,9 +296,6 @@ class BinaryHandler(Handler):
         # garbled and needs to be reset. Did not find a better way to do that.
         if sys.stdout.isatty():
             subprocess.call(["stty", "sane"], stdin=sys.stdout)
-
-        if harness.is_pytest:
-            harness.pytest_run(self.log)
 
         self.instance.execution_time = handler_time
         if not self.terminated and self.returncode != 0:
@@ -345,10 +343,6 @@ class DeviceHandler(Handler):
         super().__init__(instance, type_str)
 
     def monitor_serial(self, ser, halt_event, harness):
-        if harness.is_pytest:
-            harness.handle(None)
-            return
-
         log_out_fp = open(self.log, "wt")
 
         if self.options.coverage:
@@ -457,9 +451,7 @@ class DeviceHandler(Handler):
                 proc.communicate()
                 logger.error("{} timed out".format(script))
 
-    def handle(self):
-        runner = None
-
+    def get_hardware(self):
         try:
             hardware = self.device_is_available(self.instance)
             while not hardware:
@@ -469,6 +461,12 @@ class DeviceHandler(Handler):
             self.instance.status = "failed"
             self.instance.reason = str(error)
             logger.error(self.instance.reason)
+        return hardware
+
+    def handle(self, harness):
+        runner = None
+        hardware = self.get_hardware()
+        if not hardware:
             return
 
         runner = hardware.runner or self.options.west_runner
@@ -575,10 +573,6 @@ class DeviceHandler(Handler):
                 self.make_device_available(serial_device)
             return
 
-        harness_name = self.instance.testsuite.harness.capitalize()
-        harness_import = HarnessImporter(harness_name)
-        harness = harness_import.instance
-        harness.configure(self.instance)
         halt_monitor_evt = threading.Event()
 
         t = threading.Thread(target=self.monitor_serial, daemon=True,
@@ -647,9 +641,6 @@ class DeviceHandler(Handler):
             logger.debug("Process {} terminated outs: {} errs {}".format(serial_pty, outs, errs))
 
         handler_time = time.time() - start_time
-
-        if harness.is_pytest:
-            harness.pytest_run(self.log)
 
         self.instance.execution_time = handler_time
         if harness.state:
@@ -770,11 +761,6 @@ class QEMUHandler(Handler):
             if pid == 0 and os.path.exists(pid_fn):
                 pid = int(open(pid_fn).read())
 
-            if harness.is_pytest:
-                harness.handle(None)
-                out_state = harness.state
-                break
-
             try:
                 c = in_fp.read(1).decode("utf-8")
             except UnicodeDecodeError:
@@ -818,10 +804,6 @@ class QEMUHandler(Handler):
                         timeout_time = time.time() + 2
             line = ""
 
-        if harness.is_pytest:
-            harness.pytest_run(logfile)
-            out_state = harness.state
-
         handler_time = time.time() - start_time
         logger.debug(f"QEMU ({pid}) complete ({out_state}) after {handler_time} seconds")
 
@@ -853,7 +835,7 @@ class QEMUHandler(Handler):
         os.unlink(fifo_in)
         os.unlink(fifo_out)
 
-    def handle(self):
+    def handle(self, harness):
         self.results = {}
         self.run = True
 
@@ -880,10 +862,6 @@ class QEMUHandler(Handler):
             os.unlink(self.pid_fn)
 
         self.log_fn = self.log
-
-        harness_import = HarnessImporter(self.instance.testsuite.harness.capitalize())
-        harness = harness_import.instance
-        harness.configure(self.instance)
 
         self.thread = threading.Thread(name=self.name, target=QEMUHandler._thread,
                                        args=(self, self.timeout, self.build_dir,

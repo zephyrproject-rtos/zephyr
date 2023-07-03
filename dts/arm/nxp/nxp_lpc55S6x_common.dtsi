@@ -9,6 +9,7 @@
 #include <zephyr/dt-bindings/clock/mcux_lpc_syscon_clock.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/inputmux/inputmux_trigger_ports.h>
 #include <arm/armv8-m.dtsi>
 
 / {
@@ -84,18 +85,18 @@
 		compatible = "mmio-sram";
 		reg = <0x20040000  DT_SIZE_K(16)>;
 	};
-
-	usb_sram: memory@40100000 {
-		compatible = "zephyr,memory-region", "mmio-sram";
-		reg = <0x40100000  DT_SIZE_K(16)>;
-		zephyr,memory-region = "USB_SRAM";
-		zephyr,memory-region-mpu = "RAM";
-	};
 };
 
 &peripheral {
 	#address-cells = <1>;
 	#size-cells = <1>;
+
+	usb_sram: memory@100000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x100000 DT_SIZE_K(16)>;
+		zephyr,memory-region = "USB_SRAM";
+		zephyr,memory-region-mpu = "RAM";
+	};
 
 	syscon: syscon@0 {
 		compatible = "nxp,lpc-syscon";
@@ -178,6 +179,8 @@
 		compatible = "nxp,lpc-dma";
 		reg = <0x82000 0x1000>;
 		interrupts = <1 0>;
+		nxp,dma-otrig-base-address = <LPC55S69_DMA0_OTRIG_BASE>;
+		nxp,dma-itrig-base-address = <LPC55S69_DMA0_ITRIG_BASE>;
 		status = "disabled";
 		#dma-cells = <1>;
 	};
@@ -186,6 +189,8 @@
 		compatible = "nxp,lpc-dma";
 		reg = <0xa7000 0x1000>;
 		interrupts = <58 0>;
+		nxp,dma-otrig-base-address = <LPC55S69_DMA1_OTRIG_BASE>;
+		nxp,dma-itrig-base-address = <LPC55S69_DMA1_ITRIG_BASE>;
 		status = "disabled";
 		#dma-cells = <1>;
 	};
@@ -314,7 +319,17 @@
 		#io-channel-cells = <1>;
 	};
 
-	usbhs: usbhs@144000 {
+	usbfs: usbfs@84000 {
+		compatible = "nxp,mcux-usbd";
+		reg = <0x84000 0x1000>;
+		interrupts = <28 1>;
+		num-bidir-endpoints = <5>;
+		maximum-speed = "full-speed";
+		usb-controller-index = "LpcIp3511Fs0";
+		status = "disabled";
+	};
+
+	usbhs: usbhs@94000 {
 		compatible = "nxp,mcux-usbd";
 		reg = <0x94000 0x1000>;
 		interrupts = <47 1>;

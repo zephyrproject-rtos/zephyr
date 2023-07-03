@@ -67,6 +67,8 @@ vulnerability and flash wear out.
    the RPL between reboots, will make the device vulnerable to replay attacks
    and not perform the replay protection required by the spec.
 
+.. _bluetooth_mesh_persistent_storage:
+
 Persistent storage
 ******************
 
@@ -107,6 +109,16 @@ When this option is disabled, the work item is submitted to the system workqueue
 This means that the system workqueue is blocked for the time it takes to store
 the stack's configuration. It is not recommended to disable this option as this
 will make the device non-responsive for a noticeable amount of time.
+
+.. _bluetooth_mesh_adv_identity:
+
+Advertisement identity
+**********************
+
+All mesh stack bearers advertise data with the :c:macro:`BT_ID_DEFAULT` local identity.
+The value is preset in the mesh stack implementation. When Bluetooth® Low Energy (LE)
+and Bluetooth mesh coexist on the same device, the application should allocate and
+configure another local identity for Bluetooth LE purposes before starting the communication.
 
 API reference
 **************

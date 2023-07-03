@@ -35,6 +35,8 @@
 
 	aliases {
 		die-temp0 = &die_temp;
+		volt-sensor0 = &vref;
+		volt-sensor1 = &vbat;
 	};
 };
 
@@ -103,5 +105,13 @@
 	pinctrl-0 = <&spi1_nss_pa4 &spi1_sck_pa5
 			&spi1_miso_pa6 &spi1_mosi_pa7>;
 	pinctrl-names = "default";
+	status = "okay";
+};
+
+&vref {
+	status = "okay";
+};
+
+&vbat {
 	status = "okay";
 };

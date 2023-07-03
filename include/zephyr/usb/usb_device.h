@@ -41,6 +41,7 @@
 #include <zephyr/drivers/usb/usb_dc.h>
 #include <zephyr/usb/usb_ch9.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/sys/iterable_sections.h>
 
 #ifdef __cplusplus
 extern "C" {

@@ -84,11 +84,8 @@ increase device usage count and resume the device if necessary. Similarly, the
 :c:func:`pm_device_runtime_put` function can be used to indicate that the device
 is no longer needed. This function will decrease the device usage count and
 suspend the device if necessary. It is worth to note that in both cases, the
-operation is carried out synchronously. The sequence diagram shown in
-:numref:`pm_device_runtime_sync_ops` illustrates how a device can use this API
-and the expected sequence of events.
-
-.. _pm_device_runtime_sync_ops:
+operation is carried out synchronously. The sequence diagram shown below
+illustrates how a device can use this API and the expected sequence of events.
 
 .. figure:: images/devr-sync-ops.svg
 
@@ -103,10 +100,7 @@ slow bus. For this reason the device drivers can also make use of the
 :c:func:`pm_device_runtime_put_async` function. This function will schedule
 the suspend operation, again, if device is no longer used. The suspension will
 then be carried out when the system work queue gets the chance to run. The
-sequence diagram in :numref:`pm_device_runtime_async_ops` illustrates this
-scenario.
-
-.. _pm_device_runtime_async_ops:
+sequence diagram shown below illustrates this scenario.
 
 .. figure:: images/devr-async-ops.svg
 

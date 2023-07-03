@@ -18,7 +18,7 @@
 #include <zephyr/irq.h>
 #include <zephyr/cache.h>
 
-#define CORE_POWER_CHECK_NUM 32
+#define CORE_POWER_CHECK_NUM 128
 #define ACE_INTC_IRQ DT_IRQN(DT_NODELABEL(ace_intc))
 
 static void ipc_isr(void *arg)
@@ -78,6 +78,17 @@ void soc_mp_init(void)
 	/* Set the core 0 active */
 	soc_cpus_active[0] = true;
 }
+
+#ifdef CONFIG_ADSP_IMR_CONTEXT_SAVE
+/*
+ * Called after exiting D3 state when context restore is enabled.
+ * Re-enables IDC interrupt again for all cores. Called once from core 0.
+ */
+void soc_mp_on_d3_exit(void)
+{
+	soc_mp_init();
+}
+#endif
 
 void soc_start_core(int cpu_num)
 {

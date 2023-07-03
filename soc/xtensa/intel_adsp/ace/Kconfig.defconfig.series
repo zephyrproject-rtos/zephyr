@@ -9,7 +9,7 @@ config SOC_SERIES
 
 config SOC_TOOLCHAIN_NAME
 	string
-	default "intel_s1000"
+	default "intel_ace15_mtpm"
 
 config SMP
 	default y

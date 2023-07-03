@@ -121,7 +121,7 @@ PR Requirements
       :zephyr_file:`kernel timer <kernel/timer.c>`, measured by lines of code.
     - Emulators for off-chip peripherals are an effective way to test driver
       APIs. The :zephyr_file:`fuel gauge tests <tests/drivers/fuel_gauge/sbs_gauge>`
-      use the :zephyr_file:`smart battery emulator <drivers/sensor/sbs_gauge/emul_sbs_gauge.c>`,
+      use the :zephyr_file:`smart battery emulator <drivers/fuel_gauge/sbs_gauge/emul_sbs_gauge.c>`,
       providing test coverage for the
       :zephyr_file:`fuel gauge API <include/zephyr/drivers/fuel_gauge.h>`
       and the :zephyr_file:`smart battery driver <drivers/fuel_gauge/sbs_gauge/sbs_gauge.c>`.

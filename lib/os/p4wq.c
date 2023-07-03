@@ -9,6 +9,7 @@
 #include <zephyr/kernel.h>
 #include <ksched.h>
 #include <zephyr/init.h>
+#include <zephyr/sys/iterable_sections.h>
 
 LOG_MODULE_REGISTER(p4wq, CONFIG_LOG_DEFAULT_LEVEL);
 

@@ -26,8 +26,8 @@ The Zephyr release model was loosely based on the Linux kernel model:
   changes such as bug fixes and documentation will be merged unless granted a
   special exemption by the Technical Steering Committee.
 
-  - Development phase: all changes are accepted (subject to approval from the
-    respective maintainers).
+  - Development phase: all changes are considered and merged, subject to
+    approval from the respective maintainers.
   - Stabilisation phase: the release manager creates a vN-rc1 tag and the tree
     enters the stabilization phase
   - CI sees the tag, builds and runs tests; Test teams analyse the report from the
@@ -55,7 +55,7 @@ sufficiently stable (and which is accepted by the maintainers and the wide commu
 merged into the mainline tree.  The bulk of changes for a new development cycle
 (and all of the major changes) will be merged during this time.
 
-The development phase lasts for approximately two months.  At the end of this time,
+The development phase lasts for approximately three months.  At the end of this time,
 the release owner will declare that the development phase is over and releases the first
 of the release candidates.  For the codebase release which is destined to be
 3.1.0, for example, the release which happens at the end of the development phase
@@ -178,6 +178,8 @@ The following syntax should be used for releases and tags in Git:
     :width: 80%
 
     Zephyr Code and Releases
+
+.. _release_process_lts:
 
 Long Term Support (LTS)
 =======================

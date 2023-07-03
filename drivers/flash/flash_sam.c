@@ -14,6 +14,7 @@
 #include <zephyr/drivers/flash.h>
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
+#include <zephyr/sys/barrier.h>
 #include <soc.h>
 #include <string.h>
 
@@ -150,14 +151,14 @@ static int flash_sam_write_page(const struct device *dev, off_t offset,
 	for (; len > 0; len -= sizeof(*src)) {
 		*dst++ = *src++;
 		/* Assure data are written to the latch buffer consecutively */
-		__DSB();
+		barrier_dsync_fence_full();
 	}
 
 	/* Trigger the flash write */
 	efc->EEFC_FCR = EEFC_FCR_FKEY_PASSWD |
 			EEFC_FCR_FARG(flash_sam_get_page(offset)) |
 			EEFC_FCR_FCMD_WP;
-	__DSB();
+	barrier_dsync_fence_full();
 
 	/* Wait for the flash write to finish */
 	return flash_sam_wait_ready(dev);
@@ -256,7 +257,7 @@ static int flash_sam_erase_block(const struct device *dev, off_t offset)
 	efc->EEFC_FCR = EEFC_FCR_FKEY_PASSWD |
 			EEFC_FCR_FARG(flash_sam_get_page(offset) | 2) |
 			EEFC_FCR_FCMD_EPA;
-	__DSB();
+	barrier_dsync_fence_full();
 
 	return flash_sam_wait_ready(dev);
 }

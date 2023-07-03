@@ -48,42 +48,11 @@ endforeach()
 set(SYSBUILD_CURRENT_MODULE_DIR)
 set(SYSBUILD_CURRENT_CMAKE_DIR)
 
-# Propagate bootloader and signing settings from this system to the MCUboot and
-# application image build systems.
-if(SB_CONFIG_BOOTLOADER_MCUBOOT)
-  set(${app_name}_CONFIG_BOOTLOADER_MCUBOOT y CACHE STRING
-      "MCUBOOT is enabled as bootloader" FORCE
-  )
-  set(${app_name}_CONFIG_MCUBOOT_SIGNATURE_KEY_FILE
-      \"${SB_CONFIG_BOOT_SIGNATURE_KEY_FILE}\" CACHE STRING
-      "Signature key file for signing" FORCE
-  )
-
-  if(SB_CONFIG_BOOT_SIGNATURE_TYPE_NONE)
-    set(${app_name}_CONFIG_MCUBOOT_GENERATE_UNSIGNED_IMAGE y CACHE STRING
-        "MCUBOOT is configured for checksum mode" FORCE
-    )
-  endif()
-
-  # Set corresponding values in mcuboot
-  set(mcuboot_CONFIG_BOOT_SIGNATURE_TYPE_${SB_CONFIG_SIGNATURE_TYPE} y CACHE STRING
-      "MCUBOOT signature type" FORCE
-  )
-  set(mcuboot_CONFIG_BOOT_SIGNATURE_KEY_FILE
-      \"${SB_CONFIG_BOOT_SIGNATURE_KEY_FILE}\" CACHE STRING
-      "Signature key file for signing" FORCE
-  )
-else()
-  set(${app_name}_CONFIG_BOOTLOADER_MCUBOOT n CACHE STRING
-      "MCUBOOT is disabled as bootloader" FORCE
-  )
-endif()
-
 # This adds the primary application to the build.
 ExternalZephyrProject_Add(
   APPLICATION ${app_name}
   SOURCE_DIR ${APP_DIR}
-  MAIN_APP
+  APP_TYPE MAIN
 )
 list(APPEND IMAGES "${app_name}")
 set(DEFAULT_IMAGE "${app_name}")
@@ -117,6 +86,7 @@ endwhile()
 
 sysbuild_module_call(PRE_CMAKE MODULES ${SYSBUILD_MODULE_NAMES} IMAGES ${IMAGES})
 foreach(image ${IMAGES})
+  include(image_config.cmake)
   ExternalZephyrProject_Cmake(APPLICATION ${image})
 endforeach()
 sysbuild_module_call(POST_CMAKE MODULES ${SYSBUILD_MODULE_NAMES} IMAGES ${IMAGES})

@@ -384,6 +384,9 @@ Manifest and sub-objects
    .. versionadded:: 0.7.0
    .. automethod:: is_active
    .. versionadded:: 0.9.0
+   .. versionchanged:: 1.1.0
+      This respects the ``manifest.project-filter`` configuration
+      option. See :ref:`west-config-index`.
 
 .. autoclass:: west.manifest.ImportFlag
    :members:
@@ -484,10 +487,10 @@ Manifest and sub-objects
 Exceptions
 ==========
 
-.. autoclass:: west.manifest.MalformedManifest
+.. autoclass:: west.configuration.MalformedConfig
    :show-inheritance:
 
-.. autoclass:: west.manifest.MalformedConfig
+.. autoclass:: west.manifest.MalformedManifest
    :show-inheritance:
 
 .. autoclass:: west.manifest.ManifestVersionError

@@ -8,9 +8,6 @@ if SHIELD_FRDM_CR20A
 
 if IEEE802154
 
-config SPI
-	default y
-
 rsource "boards/*.defconfig"
 
 endif # IEEE802154

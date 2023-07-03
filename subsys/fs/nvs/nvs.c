@@ -548,6 +548,7 @@ static int nvs_sector_close(struct nvs_fs *fs)
 	close_ate.id = 0xFFFF;
 	close_ate.len = 0U;
 	close_ate.offset = (uint16_t)((fs->ate_wra + ate_size) & ADDR_OFFS_MASK);
+	close_ate.part = 0xff;
 
 	fs->ate_wra &= ADDR_SECT_MASK;
 	fs->ate_wra += (fs->sector_size - ate_size);
@@ -570,6 +571,7 @@ static int nvs_add_gc_done_ate(struct nvs_fs *fs)
 	LOG_DBG("Adding gc done ate at %x", fs->ate_wra & ADDR_OFFS_MASK);
 	gc_done_ate.id = 0xffff;
 	gc_done_ate.len = 0U;
+	gc_done_ate.part = 0xff;
 	gc_done_ate.offset = (uint16_t)(fs->data_wra & ADDR_OFFS_MASK);
 	nvs_ate_crc8_update(&gc_done_ate);
 

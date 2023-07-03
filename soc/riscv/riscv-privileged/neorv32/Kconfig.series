@@ -1,0 +1,26 @@
+# Copyright (c) 2021 Henrik Brix Andersen <henrik@brixandersen.dk>
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_NEORV32
+	bool "NEORV32 Processor"
+	select RISCV
+	select RISCV_ISA_RV32I
+	select RISCV_ISA_EXT_M
+	select RISCV_ISA_EXT_A
+	select RISCV_ISA_EXT_ZICSR
+	select RISCV_ISA_EXT_ZIFENCEI
+	select SOC_FAMILY_RISCV_PRIVILEGED
+	help
+	  Enable support for the NEORV32 Processor (SoC).
+
+	  The NEORV32 CPU implementation must have the following RISC-V ISA
+	  extensions enabled in order to support Zephyr:
+	  - M (Integer Multiplication and Division)
+	  - Zicsr (Control and Status Register (CSR) Instructions)
+
+	  The following NEORV32 CPU ISA extensions are not currently supported
+	  by Zephyr and can safely be disabled:
+	  - A (Atomic Instructions)
+	  - E (Embedded, only 16 integer registers)
+	  - Zbb (Basic Bit Manipulation)
+	  - Zfinx (Floating Point in Integer Registers)

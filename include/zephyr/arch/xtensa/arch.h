@@ -30,6 +30,8 @@
 #include <zephyr/arch/xtensa/gdbstub.h>
 #include <zephyr/debug/sparse.h>
 
+#include <zephyr/arch/xtensa/xtensa_mmu.h>
+
 #ifdef CONFIG_KERNEL_COHERENCE
 #define ARCH_STACK_PTR_ALIGN XCHAL_DCACHE_LINESIZE
 #else
@@ -103,6 +105,20 @@ static inline bool arch_mem_coherent(void *ptr)
 	return (addr >> 29) == CONFIG_XTENSA_UNCACHED_REGION;
 }
 #endif
+
+static inline bool arch_xtensa_is_ptr_cached(void *ptr)
+{
+	size_t addr = (size_t) ptr;
+
+	return (addr >> 29) == CONFIG_XTENSA_CACHED_REGION;
+}
+
+static inline bool arch_xtensa_is_ptr_uncached(void *ptr)
+{
+	size_t addr = (size_t) ptr;
+
+	return (addr >> 29) == CONFIG_XTENSA_UNCACHED_REGION;
+}
 
 static ALWAYS_INLINE uint32_t z_xtrpoflip(uint32_t addr, uint32_t rto, uint32_t rfrom)
 {

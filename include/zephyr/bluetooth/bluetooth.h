@@ -14,6 +14,7 @@
 /**
  * @brief Bluetooth APIs
  * @defgroup bluetooth Bluetooth APIs
+ * @ingroup connectivity
  * @{
  */
 

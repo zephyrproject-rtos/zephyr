@@ -1,5 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
+zephyr_syscall_header(${ZEPHYR_BASE}/include/zephyr/drivers/can.h)
+
 zephyr_library()
 zephyr_sources_ifdef(CONFIG_CAN_MCUX_MCAN    can_mcux_mcan.c)
 
@@ -10,6 +12,7 @@ zephyr_library_sources_ifdef(CONFIG_CAN_MCAN         can_mcan.c)
 zephyr_library_sources_ifdef(CONFIG_CAN_MCP2515      can_mcp2515.c)
 zephyr_library_sources_ifdef(CONFIG_CAN_MCUX_FLEXCAN can_mcux_flexcan.c)
 zephyr_library_sources_ifdef(CONFIG_CAN_SAM          can_sam.c)
+zephyr_library_sources_ifdef(CONFIG_CAN_SAM0         can_sam0.c)
 zephyr_library_sources_ifdef(CONFIG_CAN_STM32        can_stm32.c)
 zephyr_library_sources_ifdef(CONFIG_CAN_STM32FD      can_stm32fd.c)
 zephyr_library_sources_ifdef(CONFIG_CAN_STM32H7      can_stm32h7.c)

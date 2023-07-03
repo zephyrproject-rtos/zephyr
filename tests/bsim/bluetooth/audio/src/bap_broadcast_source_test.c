@@ -99,8 +99,8 @@ static struct bt_bap_stream_ops stream_ops = {
 
 static int setup_broadcast_source(struct bt_bap_broadcast_source **source)
 {
-	struct bt_codec_data bis_codec_data = BT_CODEC_DATA(BT_CODEC_CONFIG_LC3_FREQ,
-							    BT_CODEC_CONFIG_LC3_FREQ_16KHZ);
+	struct bt_audio_codec_data bis_codec_data = BT_AUDIO_CODEC_DATA(
+		BT_AUDIO_CODEC_CONFIG_LC3_FREQ, BT_AUDIO_CODEC_CONFIG_LC3_FREQ_16KHZ);
 	struct bt_bap_broadcast_source_stream_param
 		stream_params[ARRAY_SIZE(broadcast_source_streams)];
 	struct bt_bap_broadcast_source_subgroup_param
@@ -122,7 +122,7 @@ static int setup_broadcast_source(struct bt_bap_broadcast_source **source)
 	for (size_t i = 0U; i < ARRAY_SIZE(subgroup_params); i++) {
 		subgroup_params[i].params_count = 1U;
 		subgroup_params[i].params = &stream_params[i];
-		subgroup_params[i].codec = &preset_16_2_1.codec;
+		subgroup_params[i].codec_cfg = &preset_16_2_1.codec_cfg;
 	}
 
 	create_param.params_count = ARRAY_SIZE(subgroup_params);
@@ -246,8 +246,8 @@ static int stop_extended_adv(struct bt_le_ext_adv *adv)
 
 static void test_main(void)
 {
-	struct bt_codec_data new_metadata[1] =
-		BT_CODEC_LC3_CONFIG_META(BT_AUDIO_CONTEXT_TYPE_ALERTS);
+	struct bt_audio_codec_data new_metadata[1] =
+		BT_AUDIO_CODEC_LC3_CONFIG_META(BT_AUDIO_CONTEXT_TYPE_ALERTS);
 	struct bt_bap_broadcast_source *source;
 	struct bt_le_ext_adv *adv;
 	int err;
@@ -273,7 +273,8 @@ static void test_main(void)
 	}
 
 	printk("Reconfiguring broadcast source\n");
-	err = bt_bap_broadcast_source_reconfig(source, &preset_16_2_1.codec, &preset_16_2_1.qos);
+	err = bt_bap_broadcast_source_reconfig(source, &preset_16_2_1.codec_cfg,
+					       &preset_16_2_1.qos);
 	if (err != 0) {
 		FAIL("Unable to reconfigure broadcast source: %d\n", err);
 		return;

@@ -1,7 +1,7 @@
 .. _cy8cproto_063_ble:
 
-CY8CPROTO-063-BLE
-#########################
+INFINEON CY8CPROTO-063-BLE
+###########################
 
 Overview
 ********
@@ -60,7 +60,7 @@ The board configuration supports the following hardware features:
 
 The default configurations can be found in the Kconfig
 
-:zephyr_file:`boards/arm/cy8cproto-063-ble/cy8cproto_063_defconfig`
+:zephyr_file:`boards/arm/cy8cproto_063_ble/cy8cproto_063_ble_defconfig`
 
 System Clock
 ============
@@ -75,6 +75,18 @@ OpenOCD Installation
 
 You must download `Infineon OpenOCD`_ from Github to flash and debug.
 Extract the files and note the path.
+
+Fetch Binary Blobs
+******************
+
+cy8cproto_063_ble board requires fetch binary files
+(e.g Bluetooth controller firmware, CM0p prebuilt images, etc).
+
+To fetch Binary Blobs:
+
+.. code-block:: console
+
+   west blobs fetch hal_infineon
 
 Programming and Debugging
 *************************

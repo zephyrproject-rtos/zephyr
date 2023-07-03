@@ -731,7 +731,7 @@ static int cmd_mcc_set_track_position(const struct shell *sh, size_t argc,
 		return -ENOEXEC;
 	}
 
-	if (!IN_RANGE(pos, INT32_MIN, INT32_MAX)) {
+	if (sizeof(long) != sizeof(int32_t) && !IN_RANGE(pos, INT32_MIN, INT32_MAX)) {
 		shell_error(sh, "Invalid pos: %ld", pos);
 
 		return -ENOEXEC;
@@ -826,10 +826,10 @@ static int cmd_mcc_read_current_track_obj_id(const struct shell *sh,
 static int cmd_mcc_set_current_track_obj_id(const struct shell *sh, size_t argc,
 					    char *argv[])
 {
-	unsigned long id;
+	unsigned long long id;
 	int result = 0;
 
-	id = shell_strtoul(argv[1], 0, &result);
+	id = shell_strtoull(argv[1], 0, &result);
 	if (result != 0) {
 		shell_error(sh, "Could not parse id: %d", result);
 
@@ -837,7 +837,7 @@ static int cmd_mcc_set_current_track_obj_id(const struct shell *sh, size_t argc,
 	}
 
 	if (!IN_RANGE(id, BT_OTS_OBJ_ID_MIN, BT_OTS_OBJ_ID_MAX)) {
-		shell_error(sh, "Invalid id: %lu", id);
+		shell_error(sh, "Invalid id: %llu", id);
 
 		return -ENOEXEC;
 	}
@@ -864,10 +864,10 @@ static int cmd_mcc_read_next_track_obj_id(const struct shell *sh, size_t argc,
 static int cmd_mcc_set_next_track_obj_id(const struct shell *sh, size_t argc,
 					 char *argv[])
 {
-	unsigned long id;
+	unsigned long long id;
 	int result = 0;
 
-	id = shell_strtoul(argv[1], 0, &result);
+	id = shell_strtoull(argv[1], 0, &result);
 	if (result != 0) {
 		shell_error(sh, "Could not parse id: %d", result);
 
@@ -875,7 +875,7 @@ static int cmd_mcc_set_next_track_obj_id(const struct shell *sh, size_t argc,
 	}
 
 	if (!IN_RANGE(id, BT_OTS_OBJ_ID_MIN, BT_OTS_OBJ_ID_MAX)) {
-		shell_error(sh, "Invalid id: %lu", id);
+		shell_error(sh, "Invalid id: %llu", id);
 
 		return -ENOEXEC;
 	}
@@ -914,10 +914,10 @@ static int cmd_mcc_read_current_group_obj_id(const struct shell *sh,
 static int cmd_mcc_set_current_group_obj_id(const struct shell *sh, size_t argc,
 					    char *argv[])
 {
-	unsigned long id;
+	unsigned long long id;
 	int result = 0;
 
-	id = shell_strtoul(argv[1], 0, &result);
+	id = shell_strtoull(argv[1], 0, &result);
 	if (result != 0) {
 		shell_error(sh, "Could not parse id: %d", result);
 
@@ -925,7 +925,7 @@ static int cmd_mcc_set_current_group_obj_id(const struct shell *sh, size_t argc,
 	}
 
 	if (!IN_RANGE(id, BT_OTS_OBJ_ID_MIN, BT_OTS_OBJ_ID_MAX)) {
-		shell_error(sh, "Invalid id: %lu", id);
+		shell_error(sh, "Invalid id: %llu", id);
 
 		return -ENOEXEC;
 	}
@@ -1105,7 +1105,7 @@ static int cmd_mcc_move_relative(const struct shell *sh, size_t argc,
 		return err;
 	}
 
-	if (!IN_RANGE(offset, INT32_MIN, INT32_MAX)) {
+	if (sizeof(long) != sizeof(int32_t) && !IN_RANGE(offset, INT32_MIN, INT32_MAX)) {
 		shell_error(sh, "Invalid offset: %ld", offset);
 
 		return -ENOEXEC;
@@ -1211,7 +1211,7 @@ static int cmd_mcc_goto_segment(const struct shell *sh, size_t argc,
 		return err;
 	}
 
-	if (!IN_RANGE(segment, INT32_MIN, INT32_MAX)) {
+	if (sizeof(long) != sizeof(int32_t) && !IN_RANGE(segment, INT32_MIN, INT32_MAX)) {
 		shell_error(sh, "Invalid segment: %ld", segment);
 
 		return -ENOEXEC;
@@ -1313,7 +1313,7 @@ static int cmd_mcc_goto_track(const struct shell *sh, size_t argc, char *argv[])
 		return err;
 	}
 
-	if (!IN_RANGE(track, INT32_MIN, INT32_MAX)) {
+	if (sizeof(long) != sizeof(int32_t) && !IN_RANGE(track, INT32_MIN, INT32_MAX)) {
 		shell_error(sh, "Invalid track: %ld", track);
 
 		return -ENOEXEC;
@@ -1415,7 +1415,7 @@ static int cmd_mcc_goto_group(const struct shell *sh, size_t argc, char *argv[])
 		return err;
 	}
 
-	if (!IN_RANGE(group, INT32_MIN, INT32_MAX)) {
+	if (sizeof(long) != sizeof(int32_t) && !IN_RANGE(group, INT32_MIN, INT32_MAX)) {
 		shell_error(sh, "Invalid group: %ld", group);
 
 		return -ENOEXEC;
@@ -1680,10 +1680,10 @@ static int cmd_mcc_otc_read_metadata(const struct shell *sh, size_t argc,
 
 static int cmd_mcc_otc_select(const struct shell *sh, size_t argc, char *argv[])
 {
-	unsigned long id;
+	unsigned long long id;
 	int result = 0;
 
-	id = shell_strtoul(argv[1], 0, &result);
+	id = shell_strtoull(argv[1], 0, &result);
 	if (result != 0) {
 		shell_error(sh, "Could not parse id: %d", result);
 
@@ -1691,7 +1691,7 @@ static int cmd_mcc_otc_select(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	if (!IN_RANGE(id, BT_OTS_OBJ_ID_MIN, BT_OTS_OBJ_ID_MAX)) {
-		shell_error(sh, "Invalid id: %lu", id);
+		shell_error(sh, "Invalid id: %llu", id);
 
 		return -ENOEXEC;
 	}

@@ -10,6 +10,7 @@ LOG_MODULE_REGISTER(intc_gicv3_its, LOG_LEVEL_ERR);
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/interrupt_controller/gicv3_its.h>
+#include <zephyr/sys/barrier.h>
 
 #include "intc_gic_common_priv.h"
 #include "intc_gicv3_priv.h"
@@ -302,7 +303,7 @@ static int its_post_command(struct gicv3_its_data *data, struct its_cmd_block *c
 	wr_idx = (data->cmd_write - data->cmd_base) * sizeof(*cmd);
 	rd_idx = sys_read32(data->base + GITS_CREADR);
 
-	dsb();
+	barrier_dsync_fence_full();
 
 	sys_write32(wr_idx, data->base + GITS_CWRITER);
 
@@ -531,7 +532,7 @@ static int gicv3_its_init_device_id(const struct device *dev, uint32_t device_id
 			data->indirect_dev_lvl1_table[offset] = (uintptr_t)alloc_addr |
 								MASK_SET(1, GITS_BASER_VALID);
 
-			dsb();
+			barrier_dsync_fence_full();
 		}
 	}
 

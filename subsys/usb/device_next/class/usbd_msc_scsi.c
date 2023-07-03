@@ -373,6 +373,15 @@ static size_t not_ready(struct scsi_ctx *ctx, enum scsi_additional_sense_code as
 	return 0;
 }
 
+static size_t medium_error(struct scsi_ctx *ctx, enum scsi_additional_sense_code asc)
+{
+	ctx->status = CHECK_CONDITION;
+	ctx->sense_key = MEDIUM_ERROR;
+	ctx->asc = asc;
+
+	return 0;
+}
+
 void scsi_init(struct scsi_ctx *ctx, const char *disk, const char *vendor,
 	       const char *product, const char *revision)
 {
@@ -738,6 +747,7 @@ static size_t store_write_10(struct scsi_ctx *ctx, const uint8_t *buf, size_t le
 {
 	uint32_t remaining_sectors;
 	uint32_t sectors;
+	bool error = false;
 
 	remaining_sectors = ctx->remaining_data / ctx->sector_size;
 	sectors = MIN(length, ctx->remaining_data) / ctx->sector_size;
@@ -745,17 +755,24 @@ static size_t store_write_10(struct scsi_ctx *ctx, const uint8_t *buf, size_t le
 		/* Flush cache and terminate transfer */
 		sectors = 0;
 		remaining_sectors = 0;
+		error = true;
 	}
 
 	/* Flush cache if this is the last sector in transfer */
 	if (remaining_sectors - sectors == 0) {
 		if (disk_access_ioctl(ctx->disk, DISK_IOCTL_CTRL_SYNC, NULL)) {
 			LOG_ERR("Disk cache sync failed");
+			error = true;
 		}
 	}
 
 	ctx->lba += sectors;
-	return sectors * ctx->sector_size;
+
+	if (error) {
+		return medium_error(ctx, WRITE_ERROR);
+	} else {
+		return sectors * ctx->sector_size;
+	}
 }
 
 SCSI_CMD_HANDLER(WRITE_10)
@@ -804,6 +821,29 @@ SCSI_CMD_HANDLER(MODE_SENSE_10)
 	memcpy(data_in_buf, &r, length);
 
 	return good(ctx, length);
+}
+
+int scsi_usb_boot_cmd_len(const uint8_t *cb, int len)
+{
+	/* Universal Serial Bus Mass Storage Specification For Bootability
+	 * requires device to accept CBW padded to 12 bytes for commands
+	 * documented in Bootability specification. Windows 11 uses padding
+	 * for REQUEST SENSE command.
+	 */
+	if (len != 12) {
+		return len;
+	}
+
+	switch (cb[0]) {
+	case TEST_UNIT_READY:	return sizeof(SCSI_CMD_STRUCT(TEST_UNIT_READY));
+	case REQUEST_SENSE:	return sizeof(SCSI_CMD_STRUCT(REQUEST_SENSE));
+	case INQUIRY:		return sizeof(SCSI_CMD_STRUCT(INQUIRY));
+	case READ_CAPACITY_10:	return sizeof(SCSI_CMD_STRUCT(READ_CAPACITY_10));
+	case READ_10:		return sizeof(SCSI_CMD_STRUCT(READ_10));
+	case WRITE_10:		return sizeof(SCSI_CMD_STRUCT(WRITE_10));
+	case MODE_SENSE_10:	return sizeof(SCSI_CMD_STRUCT(MODE_SENSE_10));
+	default:		return len;
+	}
 }
 
 size_t scsi_cmd(struct scsi_ctx *ctx, const uint8_t *cb, int len,

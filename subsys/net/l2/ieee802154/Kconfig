@@ -14,6 +14,15 @@ config NET_L2_IEEE802154_MGMT
 	select NET_MGMT
 	select NET_MGMT_EVENT
 
+# TODO: Selecting PHYs and frequency bands is abstracted by the concept
+#       of channel pages in recent versions of the standard (see
+#       IEEE 802.15.4-2020, 10.1.3).
+#       This option will be replaced by configuration options on driver
+#       instance level that allow selection of a channel page as well
+#       as other PHY-specific configuration options (frequency bands,
+#       operating modes, etc.).
+#       New and existing drivers should not introduce additional
+#       references to this option.
 config NET_L2_IEEE802154_SUB_GHZ
 	bool
 	help
@@ -57,10 +66,8 @@ config NET_DEBUG_L2_IEEE802154_DISPLAY_PACKET_TX
 endchoice
 
 config NET_L2_IEEE802154_ACK_REPLY
-	bool "IEEE 802.15.4 ACK reply logic"
-	help
-	  Enable inner stack's logic on handling ACK request. Note that
-	  if the hw driver has an AUTOACK feature, this is then unnecessary.
+	bool
+	select DEPRECATED
 
 choice
 	prompt "Device features level support"
@@ -119,7 +126,11 @@ config NET_L2_IEEE802154_SECURITY
 	select EXPERIMENTAL
 	help
 	  Enable 802.15.4 frame security handling, in order to bring data
-	  confidentiality and authenticity.
+	  confidentiality and authenticity. The implementation is incomplete
+	  (only implicit key mode, no key/device specific state, incoming
+	  and outgoing security procedures only partially implemented, etc.).
+	  Therefore the feature is to be considered EXPERIMENTAL work in
+	  progress.
 
 config NET_L2_IEEE802154_SECURITY_CRYPTO_DEV_NAME
 	string "Crypto device name used for <en/de>cryption"

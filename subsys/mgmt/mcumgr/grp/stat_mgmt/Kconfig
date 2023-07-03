@@ -17,7 +17,7 @@ menuconfig MCUMGR_GRP_STAT
 	depends on STATS
 	select MCUMGR_SMP_CBOR_MIN_DECODING_LEVEL_2
 	help
-	  Enables mcumgr handlers for statistics management.
+	  Enables MCUmgr handlers for statistics management.
 
 if MCUMGR_GRP_STAT
 
@@ -26,7 +26,7 @@ config MCUMGR_GRP_STAT_MAX_NAME_LEN
 	default 32
 	depends on MCUMGR_GRP_STAT
 	help
-	  Limits the maximum stat group name length in mcumgr requests, in bytes.
+	  Limits the maximum stat group name length in MCUmgr requests, in bytes.
 	  A buffer of this size gets allocated on the stack during handling of all
 	  stat read commands.  If a stat group's name exceeds this limit, it will
 	  be impossible to retrieve its values with a stat show command.

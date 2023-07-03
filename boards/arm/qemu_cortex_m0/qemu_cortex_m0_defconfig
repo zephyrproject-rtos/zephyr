@@ -19,3 +19,6 @@ CONFIG_CONSOLE=y
 CONFIG_UART_CONSOLE=y
 
 CONFIG_PINCTRL=y
+
+# icount is kinda broken when the NRF timer emulation is used
+CONFIG_QEMU_ICOUNT=n

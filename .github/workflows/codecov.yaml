@@ -13,7 +13,7 @@ jobs:
     if: github.repository == 'zephyrproject-rtos/zephyr'
     runs-on: zephyr-runner-linux-x64-4xlarge
     container:
-      image: ghcr.io/zephyrproject-rtos/ci:v0.26.2
+      image: ghcr.io/zephyrproject-rtos/ci:v0.26.4
       options: '--entrypoint /bin/bash'
       volumes:
         - /repo-cache/zephyrproject:/github/cache/zephyrproject
@@ -22,7 +22,7 @@ jobs:
       matrix:
         platform: ["native_posix", "qemu_x86", "unit_testing"]
     env:
-      ZEPHYR_SDK_INSTALL_DIR: /opt/toolchains/zephyr-sdk-0.16.0
+      ZEPHYR_SDK_INSTALL_DIR: /opt/toolchains/zephyr-sdk-0.16.1
     steps:
       - name: Apply container owner mismatch workaround
         run: |
@@ -70,7 +70,7 @@ jobs:
         uses: zephyrproject-rtos/action-s3-cache@v1.2.0
         with:
           key: ${{ steps.ccache_cache_prop.outputs.repo }}-${{github.event_name}}-${{matrix.platform}}-codecov-ccache
-          path: /github/home/.ccache
+          path: /github/home/.cache/ccache
           aws-s3-bucket: ccache.zephyrproject.org
           aws-access-key-id: ${{ vars.AWS_CCACHE_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_CCACHE_SECRET_ACCESS_KEY }}
@@ -78,7 +78,8 @@ jobs:
 
       - name: ccache stats initial
         run: |
-          test -d github/home/.ccache && mv github/home/.ccache /github/home/.ccache
+          mkdir -p /github/home/.cache
+          test -d github/home/.cache/ccache && mv github/home/.cache/ccache /github/home/.cache/ccache
           ccache -M 10G -s
 
       - name: Run Tests with Twister (Push)
@@ -100,6 +101,7 @@ jobs:
       - name: ccache stats post
         run: |
           ccache -s
+          ccache -p
 
       - name: Upload Coverage Results
         if: always()

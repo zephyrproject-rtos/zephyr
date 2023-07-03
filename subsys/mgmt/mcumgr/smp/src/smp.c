@@ -31,6 +31,9 @@
 #ifdef CONFIG_MCUMGR_GRP_IMG
 #include <zephyr/mgmt/mcumgr/grp/img_mgmt/img_mgmt.h>
 #endif
+#ifdef CONFIG_MCUMGR_GRP_OS
+#include <zephyr/mgmt/mcumgr/grp/os_mgmt/os_mgmt.h>
+#endif
 #ifdef CONFIG_MCUMGR_GRP_SHELL
 #include <zephyr/mgmt/mcumgr/grp/shell_mgmt/shell_mgmt.h>
 #endif
@@ -45,6 +48,11 @@
 static int smp_translate_error_code(uint16_t group, uint16_t ret)
 {
 	switch (group) {
+#ifdef CONFIG_MCUMGR_GRP_OS
+	case MGMT_GROUP_ID_OS:
+	return os_mgmt_translate_error_code(ret);
+#endif
+
 #ifdef CONFIG_MCUMGR_GRP_IMG
 	case MGMT_GROUP_ID_IMAGE:
 	return img_mgmt_translate_error_code(ret);
@@ -116,7 +124,8 @@ static void smp_make_rsp_hdr(const struct smp_hdr *req_hdr, struct smp_hdr *rsp_
 		.nh_group = sys_cpu_to_be16(req_hdr->nh_group),
 		.nh_seq = req_hdr->nh_seq,
 		.nh_id = req_hdr->nh_id,
-		.nh_ver = req_hdr->nh_ver,
+		.nh_version = (req_hdr->nh_version > SMP_MCUMGR_VERSION_2 ? SMP_MCUMGR_VERSION_2 :
+			       req_hdr->nh_version),
 	};
 }
 
@@ -192,6 +201,7 @@ static int smp_handle_single_payload(struct smp_streamer *cbuf, const struct smp
 	mgmt_handler_fn handler_fn;
 	int rc;
 #if defined(CONFIG_MCUMGR_SMP_COMMAND_STATUS_HOOKS)
+	enum mgmt_cb_return status;
 	struct mgmt_evt_op_cmd_arg cmd_recv;
 	int32_t ret_rc;
 	uint16_t ret_group;
@@ -220,18 +230,39 @@ static int smp_handle_single_payload(struct smp_streamer *cbuf, const struct smp
 		zcbor_map_start_encode(cbuf->writer->zs,
 				       CONFIG_MCUMGR_SMP_CBOR_MAX_MAIN_MAP_ENTRIES);
 
+		MGMT_CTXT_SET_RC_RSN(cbuf, NULL);
+
 #if defined(CONFIG_MCUMGR_SMP_COMMAND_STATUS_HOOKS)
 		cmd_recv.group = req_hdr->nh_group;
 		cmd_recv.id = req_hdr->nh_id;
 		cmd_recv.err = MGMT_ERR_EOK;
 
-		(void)mgmt_callback_notify(MGMT_EVT_OP_CMD_RECV, &cmd_recv, sizeof(cmd_recv),
-					   &ret_rc, &ret_group);
+		/* Send request to application to check if handler should run or not. */
+		status = mgmt_callback_notify(MGMT_EVT_OP_CMD_RECV, &cmd_recv, sizeof(cmd_recv),
+					      &ret_rc, &ret_group);
+
+		/* Skip running the command if a handler reported an error and return that
+		 * instead.
+		 */
+		if (status != MGMT_CB_OK) {
+			if (status == MGMT_CB_ERROR_RC) {
+				rc = ret_rc;
+			} else {
+				bool ok = smp_add_cmd_ret(cbuf->writer->zs, ret_group,
+							  (uint16_t)ret_rc);
+
+				rc = (ok ? MGMT_ERR_EOK : MGMT_ERR_EMSGSIZE);
+			}
+
+			goto end;
+		}
 #endif
 
-		MGMT_CTXT_SET_RC_RSN(cbuf, NULL);
 		rc = handler_fn(cbuf);
 
+#if defined(CONFIG_MCUMGR_SMP_COMMAND_STATUS_HOOKS)
+end:
+#endif
 		/* End response payload. */
 		if (!zcbor_map_end_encode(cbuf->writer->zs,
 					  CONFIG_MCUMGR_SMP_CBOR_MAX_MAIN_MAP_ENTRIES) &&
@@ -268,14 +299,14 @@ static int smp_handle_single_req(struct smp_streamer *streamer, const struct smp
 	nbw->error_group = 0;
 	nbw->error_ret = 0;
 #else
-	if (req_hdr->nh_ver == SMP_MCUMGR_VERSION_1) {
+	if (req_hdr->nh_version == SMP_MCUMGR_VERSION_1) {
 		/* Support for the original version is excluded in this build */
 		return MGMT_ERR_UNSUPPORTED_TOO_OLD;
 	}
 #endif
 
 	/* We do not currently support future versions of the protocol */
-	if (req_hdr->nh_ver > SMP_MCUMGR_VERSION_2) {
+	if (req_hdr->nh_version > SMP_MCUMGR_VERSION_2) {
 		return MGMT_ERR_UNSUPPORTED_TOO_NEW;
 	}
 
@@ -288,7 +319,7 @@ static int smp_handle_single_req(struct smp_streamer *streamer, const struct smp
 
 #ifdef CONFIG_MCUMGR_SMP_SUPPORT_ORIGINAL_PROTOCOL
 	/* If using the legacy protocol, translate the error code to a return code */
-	if (nbw->error_ret != 0 && req_hdr->nh_ver == 0) {
+	if (nbw->error_ret != 0 && req_hdr->nh_version == 0) {
 		rc = smp_translate_error_code(nbw->error_group, nbw->error_ret);
 		*rsn = MGMT_CTXT_RC_RSN(streamer);
 		return rc;

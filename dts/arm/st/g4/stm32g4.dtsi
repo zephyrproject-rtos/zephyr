@@ -62,8 +62,9 @@
 
 		clk_lse: clk-lse {
 			#clock-cells = <0>;
-			compatible = "fixed-clock";
+			compatible = "st,stm32-lse-clock";
 			clock-frequency = <32768>;
+			driving-capability = <0>;
 			status = "disabled";
 		};
 
@@ -108,6 +109,7 @@
 			status = "disabled";
 			#io-channel-cells = <1>;
 			temp-channel = <16>;
+			vbat-channel = <17>;
 			vref-channel = <18>;
 			resolutions = <STM32_ADC_RES(12, 0x00)
 				       STM32_ADC_RES(10, 0x01)
@@ -380,30 +382,19 @@
 			status = "disabled";
 		};
 
-		can {
-			compatible = "bosch,m_can-base";
-			#address-cells = <1>;
-			#size-cells = <1>;
-			std-filter-elements = <28>;
-			ext-filter-elements = <8>;
-			rx-fifo0-elements = <3>;
-			rx-fifo1-elements = <3>;
-			rx-buffer-elements = <0>;
-			tx-buffer-elements = <3>;
-
-			can1: can@40006400 {
-				compatible = "st,stm32-fdcan";
-				reg = <0x40006400 0x400>, <0x4000A400 0x350>;
-				reg-names = "m_can", "message_ram";
-				interrupts = <21 0>, <22 0>;
-				interrupt-names = "LINE_0", "LINE_1";
-				clocks = <&rcc STM32_CLOCK_BUS_APB1 0x02000000>;
-				status = "disabled";
-				sjw = <1>;
-				sample-point = <875>;
-				sjw-data = <1>;
-				sample-point-data = <875>;
-			};
+		can1: can@40006400 {
+			compatible = "st,stm32-fdcan";
+			reg = <0x40006400 0x400>, <0x4000a400 0x350>;
+			reg-names = "m_can", "message_ram";
+			interrupts = <21 0>, <22 0>;
+			interrupt-names = "LINE_0", "LINE_1";
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x02000000>;
+			bosch,mram-cfg = <0x0 28 8 3 3 0 3 3>;
+			sjw = <1>;
+			sample-point = <875>;
+			sjw-data = <1>;
+			sample-point-data = <875>;
+			status = "disabled";
 		};
 
 		lptim1: timers@40007c00 {
@@ -680,6 +671,21 @@
 		ts-cal2-temp = <130>;
 		ts-cal-vrefanalog = <3000>;
 		io-channels = <&adc1 16>;
+		status = "disabled";
+	};
+
+	vref: vref {
+		compatible = "st,stm32-vref";
+		vrefint-cal-addr = <0x1FFF75AA>;
+		vrefint-cal-mv = <3000>;
+		io-channels = <&adc1 18>;
+		status = "disabled";
+	};
+
+	vbat: vbat {
+		compatible = "st,stm32-vbat";
+		ratio = <3>;
+		io-channels = <&adc1 17>;
 		status = "disabled";
 	};
 

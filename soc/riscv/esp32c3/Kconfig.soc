@@ -8,7 +8,7 @@ config SOC_ESP32C3
 	select DYNAMIC_INTERRUPTS
 	select CLOCK_CONTROL
 	select PINCTRL
-	select XIP
+	select XIP if !MCUBOOT
 	select HAS_ESPRESSIF_HAL
 	select RISCV_ISA_RV32I
 	select RISCV_ISA_EXT_M

@@ -45,6 +45,125 @@ enum net_dhcpv4_state {
 /** @endcond */
 
 /**
+ * @brief DHCPv4 message types
+ *
+ * These enumerations represent RFC2131 defined msy type codes, hence
+ * they should not be renumbered.
+ *
+ * Additions, removald and reorders in this definition must be reflected
+ * within corresponding changes to net_dhcpv4_msg_type_name.
+ */
+enum net_dhcpv4_msg_type {
+	NET_DHCPV4_MSG_TYPE_DISCOVER	= 1,
+	NET_DHCPV4_MSG_TYPE_OFFER	= 2,
+	NET_DHCPV4_MSG_TYPE_REQUEST	= 3,
+	NET_DHCPV4_MSG_TYPE_DECLINE	= 4,
+	NET_DHCPV4_MSG_TYPE_ACK		= 5,
+	NET_DHCPV4_MSG_TYPE_NAK		= 6,
+	NET_DHCPV4_MSG_TYPE_RELEASE	= 7,
+	NET_DHCPV4_MSG_TYPE_INFORM	= 8,
+};
+
+#ifdef CONFIG_NET_DHCPV4_OPTION_CALLBACKS
+
+struct net_dhcpv4_option_callback;
+
+/**
+ * @typedef net_dhcpv4_option_callback_handler_t
+ * @brief Define the application callback handler function signature
+ *
+ * @param cb Original struct net_dhcpv4_option_callback owning this handler
+ * @param length The length of data returned by the server. If this is
+ *		 greater than cb->max_length, only cb->max_length bytes
+ *		 will be available in cb->data
+ * @param msg_type Type of DHCP message that triggered the callback
+ * @param iface The interface on which the DHCP message was received
+ *
+ * Note: cb pointer can be used to retrieve private data through
+ * CONTAINER_OF() if original struct net_dhcpv4_option_callback is stored in
+ * another private structure.
+ */
+typedef void (*net_dhcpv4_option_callback_handler_t)(struct net_dhcpv4_option_callback *cb,
+						     size_t length,
+						     enum net_dhcpv4_msg_type msg_type,
+						     struct net_if *iface);
+
+/** @cond INTERNAL_HIDDEN */
+
+/**
+ * @brief DHCP option callback structure
+ *
+ * Used to register a callback in the DHCPv4 client callback list.
+ * As many callbacks as needed can be added as long as each of them
+ * are unique pointers of struct net_dhcpv4_option_callback.
+ * Beware such structure should not be allocated on stack.
+ *
+ * Note: To help setting it, see net_dhcpv4_init_option_callback() below
+ */
+struct net_dhcpv4_option_callback {
+	/** This is meant to be used internally and the user should not
+	 * mess with it.
+	 */
+	sys_snode_t node;
+
+	/** Actual callback function being called when relevant. */
+	net_dhcpv4_option_callback_handler_t handler;
+
+	/** The DHCP option this callback is attached to. */
+	uint8_t option;
+
+	/** Maximum length of data buffer. */
+	size_t max_length;
+
+	/** Pointer to a buffer of size max_length that is used to store the
+	 * option data.
+	 */
+	void *data;
+};
+
+/** @endcond */
+
+/**
+ * @brief Helper to initialize a struct net_dhcpv4_option_callback properly
+ * @param callback A valid Application's callback structure pointer.
+ * @param handler A valid handler function pointer.
+ * @param option The DHCP option the callback responds to.
+ * @param data A pointer to a buffer for max_length bytes.
+ * @param max_length The maximum length of the data returned.
+ */
+static inline void net_dhcpv4_init_option_callback(struct net_dhcpv4_option_callback *callback,
+						   net_dhcpv4_option_callback_handler_t handler,
+						   uint8_t option,
+						   void *data,
+						   size_t max_length)
+{
+	__ASSERT(callback, "Callback pointer should not be NULL");
+	__ASSERT(handler, "Callback handler pointer should not be NULL");
+	__ASSERT(data, "Data pointer should not be NULL");
+
+	callback->handler = handler;
+	callback->option = option;
+	callback->data = data;
+	callback->max_length = max_length;
+}
+
+/**
+ * @brief Add an application callback.
+ * @param cb A valid application's callback structure pointer.
+ * @return 0 if successful, negative errno code on failure.
+ */
+int net_dhcpv4_add_option_callback(struct net_dhcpv4_option_callback *cb);
+
+/**
+ * @brief Remove an application callback.
+ * @param cb A valid application's callback structure pointer.
+ * @return 0 if successful, negative errno code on failure.
+ */
+int net_dhcpv4_remove_option_callback(struct net_dhcpv4_option_callback *cb);
+
+#endif /* CONFIG_NET_DHCPV4_OPTION_CALLBACKS */
+
+/**
  *  @brief Start DHCPv4 client on an iface
  *
  *  @details Start DHCPv4 client on a given interface. DHCPv4 client
@@ -87,6 +206,14 @@ void net_dhcpv4_restart(struct net_if *iface);
 const char *net_dhcpv4_state_name(enum net_dhcpv4_state state);
 
 /** @endcond */
+
+/**
+ * @brief Return a text representation of the msg_type
+ *
+ * @param msg_type The msg_type to be converted to text
+ * @return A text representation of msg_type
+ */
+const char *net_dhcpv4_msg_type_name(enum net_dhcpv4_msg_type msg_type);
 
 /**
  * @}

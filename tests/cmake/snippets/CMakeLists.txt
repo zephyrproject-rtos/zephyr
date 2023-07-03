@@ -3,7 +3,6 @@
 cmake_minimum_required(VERSION 3.20.0)
 
 set(SNIPPET_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/extra_snippet_root")
-set(SNIPPET foo bar)
 
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(test_snippets)

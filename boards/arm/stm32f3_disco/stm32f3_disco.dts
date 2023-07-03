@@ -72,6 +72,8 @@
 		watchdog0 = &iwdg;
 		accel0 = &lsm303dlhc_accel;
 		die-temp0 = &die_temp;
+		volt-sensor0 = &vref;
+		volt-sensor1 = &vbat;
 	};
 };
 
@@ -231,5 +233,13 @@ zephyr_udc0: &usb {
 };
 
 &dma1 {
+	status = "okay";
+};
+
+&vref {
+	status = "okay";
+};
+
+&vbat {
 	status = "okay";
 };

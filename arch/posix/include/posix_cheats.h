@@ -44,7 +44,7 @@
 #define main(...) _posix_zephyr_main(__VA_ARGS__)
 #endif
 
-#if defined(__cplusplus) && defined(CONFIG_CPP_MAIN)
+#if defined(__cplusplus)
 /* To be able to define main() in C++ code we need to have its prototype
  * defined somewhere visibly. Otherwise name mangling will prevent the linker
  * from finding it. Zephyr assumes an int main(void) prototype and therefore

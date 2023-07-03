@@ -209,6 +209,7 @@ if (CONFIG_BUILD_WITH_TFM)
 
     ${TFM_INTERFACE_SOURCE_DIR}/tfm_attest_api.c
     ${TFM_INTERFACE_SOURCE_DIR}/tfm_crypto_api.c
+    ${TFM_INTERFACE_SOURCE_DIR}/tfm_fwu_api.c
     ${TFM_INTERFACE_SOURCE_DIR}/tfm_its_api.c
     ${TFM_INTERFACE_SOURCE_DIR}/tfm_platform_api.c
     ${TFM_INTERFACE_SOURCE_DIR}/tfm_ps_api.c

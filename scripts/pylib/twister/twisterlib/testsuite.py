@@ -76,6 +76,10 @@ def scan_file(inf_name):
     new_suite_regex = re.compile(
         br"^\s*ZTEST_SUITE\(\s*(?P<suite_name>[a-zA-Z0-9_]+)\s*,",
         re.MULTILINE)
+    testcase_regex = re.compile(
+        br"^\s*(?:ZTEST|ZTEST_F|ZTEST_USER|ZTEST_USER_F)\(\s*(?P<suite_name>[a-zA-Z0-9_]+)\s*,"
+        br"\s*(?P<testcase_name>[a-zA-Z0-9_]+)\s*",
+        re.MULTILINE)
     # Checks if the file contains a definition of "void test_main(void)"
     # Since ztest provides a plain test_main implementation it is OK to:
     # 1. register test suites and not call the run function iff the test
@@ -107,6 +111,8 @@ def scan_file(inf_name):
                 [m for m in regular_suite_regex.finditer(main_c)]
             registered_suite_regex_matches = \
                 [m for m in registered_suite_regex.finditer(main_c)]
+            new_suite_testcase_regex_matches = \
+                [m for m in testcase_regex.finditer(main_c)]
             new_suite_regex_matches = \
                 [m for m in new_suite_regex.finditer(main_c)]
 
@@ -127,7 +133,7 @@ def scan_file(inf_name):
                     _extract_ztest_suite_names(registered_suite_regex_matches)
                 testcase_names, warnings = \
                     _find_regular_ztest_testcases(main_c, registered_suite_regex_matches, has_registered_test_suites)
-            elif new_suite_regex_matches:
+            elif new_suite_regex_matches or new_suite_testcase_regex_matches:
                 ztest_suite_names = \
                     _extract_ztest_suite_names(new_suite_regex_matches)
                 testcase_names, warnings = \

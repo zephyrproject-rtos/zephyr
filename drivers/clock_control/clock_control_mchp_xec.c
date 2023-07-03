@@ -15,6 +15,7 @@
 #include <zephyr/dt-bindings/clock/mchp_xec_pcr.h>
 #include <zephyr/irq.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/sys/barrier.h>
 LOG_MODULE_REGISTER(clock_control_xec, LOG_LEVEL_ERR);
 
 #define CLK32K_SIL_OSC_DELAY		256
@@ -765,8 +766,8 @@ static void xec_clock_control_core_clock_divider_set(uint8_t clkdiv)
 	arch_nop();
 	arch_nop();
 	arch_nop();
-	__DSB();
-	__ISB();
+	barrier_dsync_fence_full();
+	barrier_isync_fence_full();
 }
 
 /*

@@ -4,10 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/kernel.h>
 #include <soc.h>
+#include <zephyr/kernel.h>
 #include <zephyr/sys/byteorder.h>
-#include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/hci_types.h>
+#include <zephyr/bluetooth/buf.h>
 
 #include "hal/cpu.h"
 #include "hal/ccm.h"
@@ -176,9 +177,18 @@ uint8_t ll_read_iso_tx_sync(uint16_t handle, uint16_t *seq,
 		return BT_HCI_ERR_CMD_DISALLOWED;
 
 	} else if (IS_ADV_ISO_HANDLE(handle)) {
-		/* FIXME: Do something similar to connected */
+		const struct lll_adv_iso_stream *adv_stream;
+		uint16_t stream_handle;
 
-		return BT_HCI_ERR_CMD_DISALLOWED;
+		stream_handle = LL_BIS_ADV_IDX_FROM_HANDLE(handle);
+		adv_stream = ull_adv_iso_stream_get(stream_handle);
+		if (!adv_stream || !adv_stream->dp ||
+		    isoal_tx_get_sync_info(adv_stream->dp->source_hdl, seq,
+					   timestamp, offset) != ISOAL_STATUS_OK) {
+			return BT_HCI_ERR_CMD_DISALLOWED;
+		}
+
+		return BT_HCI_ERR_SUCCESS;
 	}
 
 	return BT_HCI_ERR_UNKNOWN_CONN_ID;
@@ -303,7 +313,7 @@ uint8_t ll_setup_iso_path(uint16_t handle, uint8_t path_dir, uint8_t path_id,
 		adv_iso = ull_adv_iso_by_stream_get(stream_handle);
 		lll_iso = &adv_iso->lll;
 
-		role = 0U; /* FIXME: Set role from LLL struct */
+		role = ISOAL_ROLE_BROADCAST_SOURCE;
 		iso_interval = lll_iso->iso_interval;
 		sdu_interval = lll_iso->sdu_interval;
 		burst_number = lll_iso->bn;
@@ -329,7 +339,7 @@ uint8_t ll_setup_iso_path(uint16_t handle, uint8_t path_dir, uint8_t path_id,
 		sync_iso = ull_sync_iso_by_stream_get(stream_handle);
 		lll_iso = &sync_iso->lll;
 
-		role = 1U; /* FIXME: Is this correct role value? */
+		role = ISOAL_ROLE_BROADCAST_SINK;
 		iso_interval = lll_iso->iso_interval;
 		sdu_interval = lll_iso->sdu_interval;
 		burst_number = lll_iso->bn;
@@ -510,26 +520,22 @@ uint8_t ll_setup_iso_path(uint16_t handle, uint8_t path_dir, uint8_t path_id,
 
 uint8_t ll_remove_iso_path(uint16_t handle, uint8_t path_dir)
 {
+	/* If the Host issues this command with a Connection_Handle that does
+	 * not exist or is not for a CIS or a BIS, the Controller shall return
+	 * the error code Unknown Connection Identifier (0x02).
+	 */
 	if (false) {
 
 #if defined(CONFIG_BT_CTLR_CONN_ISO)
 	} else if (IS_CIS_HANDLE(handle)) {
 		struct ll_conn_iso_stream *cis;
+		struct ll_iso_stream_hdr *hdr;
+		struct ll_iso_datapath *dp;
 
-		/* If the Host issues this command with a Connection_Handle that does
-		 * not exist or is not for a CIS or a BIS, the Controller shall return
-		 * the error code Unknown Connection Identifier (0x02).
-		 */
 		cis = ll_conn_iso_stream_get(handle);
-		if (!cis) {
-			return BT_HCI_ERR_UNKNOWN_CONN_ID;
-		}
+		hdr = &cis->hdr;
 
-		if (path_dir == BT_HCI_DATAPATH_DIR_HOST_TO_CTLR) {
-			struct ll_iso_stream_hdr *hdr;
-			struct ll_iso_datapath *dp;
-
-			hdr = &cis->hdr;
+		if (path_dir & BIT(BT_HCI_DATAPATH_DIR_HOST_TO_CTLR)) {
 			dp = hdr->datapath_in;
 			if (dp) {
 				isoal_source_destroy(dp->source_hdl);
@@ -540,11 +546,9 @@ uint8_t ll_remove_iso_path(uint16_t handle, uint8_t path_dir)
 				/* Datapath was not previously set up */
 				return BT_HCI_ERR_CMD_DISALLOWED;
 			}
-		} else if (path_dir == BT_HCI_DATAPATH_DIR_CTLR_TO_HOST) {
-			struct ll_iso_stream_hdr *hdr;
-			struct ll_iso_datapath *dp;
+		}
 
-			hdr = &cis->hdr;
+		if (path_dir & BIT(BT_HCI_DATAPATH_DIR_CTLR_TO_HOST)) {
 			dp = hdr->datapath_out;
 			if (dp) {
 				isoal_sink_destroy(dp->sink_hdl);
@@ -555,9 +559,6 @@ uint8_t ll_remove_iso_path(uint16_t handle, uint8_t path_dir)
 				/* Datapath was not previously set up */
 				return BT_HCI_ERR_CMD_DISALLOWED;
 			}
-		} else {
-			/* Reserved for future use */
-			return BT_HCI_ERR_CMD_DISALLOWED;
 		}
 #endif /* CONFIG_BT_CTLR_CONN_ISO */
 
@@ -567,7 +568,7 @@ uint8_t ll_remove_iso_path(uint16_t handle, uint8_t path_dir)
 		struct ll_iso_datapath *dp;
 		uint16_t stream_handle;
 
-		if (path_dir != BT_HCI_DATAPATH_DIR_HOST_TO_CTLR) {
+		if (!(path_dir & BIT(BT_HCI_DATAPATH_DIR_HOST_TO_CTLR))) {
 			return BT_HCI_ERR_CMD_DISALLOWED;
 		}
 
@@ -594,7 +595,7 @@ uint8_t ll_remove_iso_path(uint16_t handle, uint8_t path_dir)
 			struct ll_iso_datapath *dp;
 		uint16_t stream_handle;
 
-		if (path_dir != BT_HCI_DATAPATH_DIR_CTLR_TO_HOST) {
+		if (!(path_dir & BIT(BT_HCI_DATAPATH_DIR_CTLR_TO_HOST))) {
 			return BT_HCI_ERR_CMD_DISALLOWED;
 		}
 
@@ -1419,8 +1420,8 @@ static void iso_rx_cig_ref_point_update(struct ll_conn_iso_group *cig,
 			/* Update the CIG reference point based on the CIS
 			 * anchor point
 			 */
-			cig->cig_ref_point = meta->timestamp + cis_sync_delay -
-					     cig_sync_delay;
+			cig->cig_ref_point = isoal_get_wrapped_time_us(meta->timestamp,
+						cis_sync_delay - cig_sync_delay);
 		}
 	}
 }

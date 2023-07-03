@@ -16,6 +16,8 @@ DT_CHOSEN_Z_SHELL_UART := zephyr,shell-uart
 
 config SHELL_BACKEND_SERIAL
 	bool "Serial backend"
+	# Serial (UART) requires interrupts and the RTT backend cannot be used from an ISR context.
+	default n if SHELL_BACKEND_RTT
 	default "$(dt_chosen_enabled,$(DT_CHOSEN_Z_SHELL_UART))" if HAS_DTS
 	default y if !HAS_DTS
 	select SERIAL

@@ -11,7 +11,7 @@
 
 / {
 	model = "IT82XX2 EV-Board";
-	compatible = "riscv,it82xx2-evb";
+	compatible = "ite,it82xx2-evb";
 
 	aliases {
 		i2c-0 = &i2c0;
@@ -194,6 +194,13 @@
 &peci0 {
 	status = "okay";
 	pinctrl-0 = <&peci_gpf6_default>;
+	pinctrl-names = "default";
+};
+
+zephyr_udc0: &usb0 {
+	status = "okay";
+	pinctrl-0 = <&usb0_dm_gph5_default
+		     &usb0_dp_gph6_default>;
 	pinctrl-names = "default";
 };
 

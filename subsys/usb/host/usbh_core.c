@@ -9,7 +9,7 @@
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/devicetree.h>
 #include "usbh_internal.h"
-
+#include <zephyr/sys/iterable_sections.h>
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(uhs, CONFIG_USBH_LOG_LEVEL);
 

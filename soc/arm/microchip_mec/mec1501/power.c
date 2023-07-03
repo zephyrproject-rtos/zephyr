@@ -8,6 +8,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/sys/sys_io.h>
 #include <zephyr/sys/__assert.h>
+#include <zephyr/sys/barrier.h>
 #include <zephyr/pm/pm.h>
 #include <soc.h>
 #include "device_power.h"
@@ -53,7 +54,7 @@ static void z_power_soc_deep_sleep(void)
 	 * prevent entering an ISR after unmasking in BASEPRI.
 	 */
 	__set_BASEPRI(0);
-	__DSB();
+	barrier_dsync_fence_full();
 	__WFI();	/* triggers sleep hardware */
 	__NOP();
 	__NOP();
@@ -90,7 +91,7 @@ static void z_power_soc_sleep(void)
 	soc_lite_sleep_enable();
 
 	__set_BASEPRI(0); /* Make sure wake interrupts are not masked! */
-	__DSB();
+	barrier_dsync_fence_full();
 	__WFI();	/* triggers sleep hardware */
 	__NOP();
 	__NOP();
@@ -133,7 +134,7 @@ __weak void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 	case PM_STATE_SUSPEND_TO_IDLE:
 	case PM_STATE_SUSPEND_TO_RAM:
 		__set_PRIMASK(0);
-		__ISB();
+		barrier_isync_fence_full();
 		break;
 
 	default:

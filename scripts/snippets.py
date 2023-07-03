@@ -52,7 +52,7 @@ class Snippet:
         '''Process the data in a snippet.yml file, after it is loaded into a
         python object and validated by pykwalify.'''
         def append_value(variable, value):
-            if variable in ('DTC_OVERLAY_FILE', 'OVERLAY_CONFIG'):
+            if variable in ('EXTRA_DTC_OVERLAY_FILE', 'EXTRA_CONF_FILE'):
                 path = pathobj.parent / value
                 if not path.is_file():
                     _err(f'snippet file {pathobj}: {variable}: file not found: {path}')
@@ -78,7 +78,7 @@ class Snippets(UserDict):
     def __init__(self, requested: Iterable[str] = None):
         super().__init__()
         self.paths: Set[Path] = set()
-        self.requested: Set[str] = set(requested or [])
+        self.requested: List[str] = list(requested or [])
 
 class SnippetsError(Exception):
     '''Class for signalling expected errors'''
@@ -133,11 +133,12 @@ set(SNIPPET_NAMES {' '.join(f'"{name}"' for name in snippet_names)})
 # The paths to all the snippet.yml files. One snippet
 # can have multiple snippet.yml files.
 set(SNIPPET_PATHS {snippet_path_list})
+
+# Create variable scope for snippets build variables
+zephyr_create_scope(snippets)
 ''')
 
-        for snippet_name in snippet_names:
-            if snippet_name not in snippets.requested:
-                continue
+        for snippet_name in snippets.requested:
             self.print_cmake_for(snippets[snippet_name])
             self.print()
 
@@ -168,7 +169,7 @@ if("${{BOARD}}" STREQUAL "{board}")''')
         space = '  ' * indent
         for name, values in appends.items():
             for value in values:
-                self.print(f'{space}list(APPEND {name} {value})')
+                self.print(f'{space}zephyr_set({name} {value} SCOPE snippets APPEND)')
 
     def print(self, *args, **kwargs):
         kwargs['file'] = self.out_file
@@ -310,7 +311,7 @@ def write_cmake_out(snippets: Snippets, cmake_out: Path) -> None:
     detail and are not meant to be used outside of snippets.cmake.'''
     if not cmake_out.parent.exists():
         cmake_out.parent.mkdir()
-    with open(cmake_out, 'w') as f:
+    with open(cmake_out, 'w', encoding="utf-8") as f:
         SnippetToCMakePrinter(snippets, f).print_cmake()
 
 def main():

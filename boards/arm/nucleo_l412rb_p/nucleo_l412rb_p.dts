@@ -39,6 +39,8 @@
 	aliases {
 		led0 = &green_led;
 		sw0 = &user_button;
+		volt-sensor0 = &vref;
+		volt-sensor1 = &vbat;
 	};
 };
 
@@ -134,4 +136,12 @@
 			reg = <0x0001c276 DT_SIZE_K(16)>;
 		};
 	};
+};
+
+&vref {
+	status = "okay";
+};
+
+&vbat {
+	status = "okay";
 };

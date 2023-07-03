@@ -23,18 +23,18 @@
 	vl53l0x_c_x_nucleo_53l0a1: vl53l0x@30 {
 		compatible = "st,vl53l0x";
 		reg = <0x30>;
-		xshut-gpios = <&expander1_x_nucleo_53l0a1 15 0>;
+		xshut-gpios = <&expander1_x_nucleo_53l0a1 15 GPIO_ACTIVE_LOW>;
 	};
 
 	/* Satellites optional sensors */
 	vl53l0x_l_x_nucleo_53l0a1: vl53l0x@31 {
 		compatible = "st,vl53l0x";
 		reg = <0x31>;
-		xshut-gpios = <&expander2_x_nucleo_53l0a1 14 0>;
+		xshut-gpios = <&expander2_x_nucleo_53l0a1 14 GPIO_ACTIVE_LOW>;
 	};
 	vl53l0x_r_x_nucleo_53l0a1: vl53l0x@32 {
 		compatible = "st,vl53l0x";
 		reg = <0x32>;
-		xshut-gpios = <&expander2_x_nucleo_53l0a1 15 0>;
+		xshut-gpios = <&expander2_x_nucleo_53l0a1 15 GPIO_ACTIVE_LOW>;
 	};
 };

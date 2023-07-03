@@ -54,7 +54,7 @@ set(CMAKE_EXECUTABLE_SUFFIX .elf)
 # into the `zephyr_final` target.
 #
 # Multiple linking stages are required in the following cases:
-# - device handles structs must be generated (CONFIG_HAS_DTS=y)
+# - device dependencies structs must be generated (CONFIG_DEVICE_DEPS=y)
 # - ISR tables must be generated (CONFIG_GEN_ISR_TABLES=y)
 # - Kernel objects hash tables (CONFIG_USERSPACE=y)
 # - Application memory partitions (CONFIG_USERSPACE=y)
@@ -75,7 +75,7 @@ set(ZEPHYR_LINK_STAGE_EXECUTABLE zephyr_pre${ZEPHYR_CURRENT_LINKER_PASS})
 # existing variable to allow slowly cleanup of linking stage handling.
 # Three stage linking active: pre0 -> pre1 -> final, this will correspond to `pre1`
 # Two stage linking active:   pre0 -> final, this will correspond to `pre0`
-if(CONFIG_USERSPACE OR CONFIG_HAS_DTS)
+if(CONFIG_USERSPACE OR CONFIG_DEVICE_DEPS)
   set(ZEPHYR_PREBUILT_EXECUTABLE zephyr_pre1)
 else()
   set(ZEPHYR_PREBUILT_EXECUTABLE zephyr_pre0)
@@ -91,6 +91,11 @@ set(PARSE_SYSCALLS_TARGET      parse_syscalls_target)
 
 define_property(GLOBAL PROPERTY PROPERTY_OUTPUT_FORMAT BRIEF_DOCS " " FULL_DOCS " ")
 set_property(   GLOBAL PROPERTY PROPERTY_OUTPUT_FORMAT elf32-little${ARCH}) # BFD format
+
+# Contains the list of files with syscall function prototypes.
+add_library(syscalls_interface INTERFACE)
+set(syscalls_file_list_output
+    ${CMAKE_CURRENT_BINARY_DIR}/misc/generated/syscalls_file_list.txt)
 
 # "zephyr_interface" is a source-less library that encapsulates all the global
 # compiler options needed by all source files. All zephyr libraries,
@@ -544,11 +549,28 @@ add_custom_command(
   OUTPUT ${PROJECT_BINARY_DIR}/include/generated/version.h
   COMMAND ${CMAKE_COMMAND} -DZEPHYR_BASE=${ZEPHYR_BASE}
     -DOUT_FILE=${PROJECT_BINARY_DIR}/include/generated/version.h
+    -DVERSION_TYPE=KERNEL
+    -DVERSION_FILE=${ZEPHYR_BASE}/VERSION
     ${build_version_argument}
     -P ${ZEPHYR_BASE}/cmake/gen_version_h.cmake
   DEPENDS ${ZEPHYR_BASE}/VERSION ${git_dependency}
 )
 add_custom_target(version_h DEPENDS ${PROJECT_BINARY_DIR}/include/generated/version.h)
+
+if(EXISTS ${APPLICATION_SOURCE_DIR}/VERSION)
+  add_custom_command(
+    OUTPUT ${PROJECT_BINARY_DIR}/include/generated/app_version.h
+    COMMAND ${CMAKE_COMMAND} -DZEPHYR_BASE=${ZEPHYR_BASE}
+      -DOUT_FILE=${PROJECT_BINARY_DIR}/include/generated/app_version.h
+      -DVERSION_TYPE=APP
+      -DVERSION_FILE=${APPLICATION_SOURCE_DIR}/VERSION
+      ${build_version_argument}
+      -P ${ZEPHYR_BASE}/cmake/gen_version_h.cmake
+    DEPENDS ${APPLICATION_SOURCE_DIR}/VERSION ${git_dependency}
+  )
+  add_custom_target(app_version_h DEPENDS ${PROJECT_BINARY_DIR}/include/generated/app_version.h)
+  add_dependencies(zephyr_interface app_version_h)
+endif()
 
 # Unfortunately, the order in which CMakeLists.txt code is processed
 # matters so we need to be careful about how we order the processing
@@ -687,6 +709,15 @@ endif()
 
 if(CONFIG_ZTEST)
   list(APPEND SYSCALL_INCLUDE_DIRS ${ZEPHYR_BASE}/subsys/testsuite/ztest/include)
+
+  if(CONFIG_NO_OPTIMIZATIONS AND CONFIG_ZTEST_WARN_NO_OPTIMIZATIONS)
+    message(WARNING "Running tests with CONFIG_NO_OPTIMIZATIONS is generally "
+    "not supported and known to break in many cases due to stack overflow or "
+    "other problems. Please do not file issues about it unless the test is "
+    "specifically tuned to run in this configuration. To disable this warning "
+    "set CONFIG_ZTEST_WARN_NO_OPTIMIZATIONS=n.")
+  endif()
+
 endif()
 
 foreach(d ${SYSCALL_INCLUDE_DIRS})
@@ -702,13 +733,16 @@ add_custom_command(
   COMMAND
   ${PYTHON_EXECUTABLE}
   ${ZEPHYR_BASE}/scripts/build/parse_syscalls.py
-   --include          ${ZEPHYR_BASE}/include        # Read files from this dir
-   --include          ${ZEPHYR_BASE}/drivers        # For net sockets
-   --include          ${ZEPHYR_BASE}/subsys/net     # More net sockets
+  --scan             ${ZEPHYR_BASE}/include         # Read files from this dir
+  --scan             ${ZEPHYR_BASE}/drivers         # For net sockets
+  --scan             ${ZEPHYR_BASE}/subsys/net      # More net sockets
   ${parse_syscalls_include_args}                    # Read files from these dirs also
   --json-file        ${syscalls_json}               # Write this file
   --tag-struct-file  ${struct_tags_json}            # Write subsystem list to this file
+  --file-list        ${syscalls_file_list_output}
+  $<$<BOOL:${CONFIG_EMIT_ALL_SYSCALLS}>:--emit-all-syscalls>
   DEPENDS ${syscalls_subdirs_trigger} ${PARSE_SYSCALLS_HEADER_DEPENDS}
+          ${syscalls_file_list_output} ${syscalls_interface}
   )
 
 # Make sure Picolibc is built before the rest of the system; there's no explicit
@@ -824,6 +858,14 @@ zephyr_get_include_directories_for_lang(C ZEPHYR_INCLUDES)
 
 add_subdirectory(kernel)
 
+get_property(
+  syscalls_file_list
+  TARGET syscalls_interface
+  PROPERTY INTERFACE_INCLUDE_DIRECTORIES
+)
+file(CONFIGURE OUTPUT ${syscalls_file_list_output}
+     CONTENT "@syscalls_file_list@" @ONLY)
+
 # Read list content
 get_property(ZEPHYR_LIBS_PROPERTY GLOBAL PROPERTY ZEPHYR_LIBS)
 
@@ -870,22 +912,27 @@ zephyr_get_include_directories_for_lang(C
   STRIP_PREFIX # Don't use a -I prefix
   )
 
-if(CONFIG_PM_DEVICE_POWER_DOMAIN_DYNAMIC)
-  set(number_of_dynamic_devices ${CONFIG_PM_DEVICE_POWER_DOMAIN_DYNAMIC_NUM})
-else()
-  set(number_of_dynamic_devices 0)
-endif()
+if(CONFIG_DEVICE_DEPS)
+  if(CONFIG_DEVICE_DEPS_DYNAMIC)
+    set(dynamic_deps --dynamic-deps)
+  endif()
 
-if(CONFIG_HAS_DTS)
-  # dev_handles.c is generated from ${ZEPHYR_LINK_STAGE_EXECUTABLE} by
-  # gen_handles.py
+  if(CONFIG_PM_DEVICE_POWER_DOMAIN_DYNAMIC)
+    set(number_of_dynamic_devices ${CONFIG_PM_DEVICE_POWER_DOMAIN_DYNAMIC_NUM})
+  else()
+    set(number_of_dynamic_devices 0)
+  endif()
+
+  # device_deps.c is generated from ${ZEPHYR_LINK_STAGE_EXECUTABLE} by
+  # gen_device_deps.py
   add_custom_command(
-    OUTPUT dev_handles.c
+    OUTPUT device_deps.c
     COMMAND
     ${PYTHON_EXECUTABLE}
-    ${ZEPHYR_BASE}/scripts/build/gen_handles.py
-    --output-source dev_handles.c
+    ${ZEPHYR_BASE}/scripts/build/gen_device_deps.py
+    --output-source device_deps.c
     --output-graphviz dev_graph.dot
+    ${dynamic_deps}
     --num-dynamic-devices ${number_of_dynamic_devices}
     --kernel $<TARGET_FILE:${ZEPHYR_LINK_STAGE_EXECUTABLE}>
     --zephyr-base ${ZEPHYR_BASE}
@@ -893,10 +940,10 @@ if(CONFIG_HAS_DTS)
     VERBATIM
     DEPENDS ${ZEPHYR_LINK_STAGE_EXECUTABLE}
     )
-  set_property(GLOBAL APPEND PROPERTY GENERATED_APP_SOURCE_FILES dev_handles.c)
+  set_property(GLOBAL APPEND PROPERTY GENERATED_APP_SOURCE_FILES device_deps.c)
 
-  # gen_handles runs on `__device_handles_pass1` so pass this info to the linker script generator
-  list(APPEND LINKER_PASS_${ZEPHYR_CURRENT_LINKER_PASS}_DEFINE "LINKER_DEVICE_HANDLES_PASS1")
+  # gen_device_deps runs on `__device_deps_pass1` so pass this info to the linker script generator
+  list(APPEND LINKER_PASS_${ZEPHYR_CURRENT_LINKER_PASS}_DEFINE "LINKER_DEVICE_DEPS_PASS1")
 endif()
 
 if(CONFIG_CODE_DATA_RELOCATION)
@@ -1130,7 +1177,7 @@ if(CONFIG_USERSPACE)
   )
 endif()
 
-if(CONFIG_USERSPACE OR CONFIG_HAS_DTS)
+if(CONFIG_USERSPACE OR CONFIG_DEVICE_DEPS)
   configure_linker_script(
     ${ZEPHYR_CURRENT_LINKER_CMD}
     "${LINKER_PASS_${ZEPHYR_CURRENT_LINKER_PASS}_DEFINE}"
@@ -1591,7 +1638,7 @@ if(CONFIG_BUILD_OUTPUT_META)
     COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/zephyr_module.py
             ${WEST_ARG}
             ${ZEPHYR_MODULES_ARG}
-            ${ZEPHYR_EXTRA_MODULES_ARG}
+            ${EXTRA_ZEPHYR_MODULES_ARG}
             --meta-out ${KERNEL_META_NAME}
             $<$<BOOL:${CONFIG_BUILD_OUTPUT_META_STATE_PROPAGATE}>:--meta-state-propagate>
   )
@@ -1730,6 +1777,19 @@ if(CONFIG_BUILD_OUTPUT_INFO_HEADER)
   list(APPEND
     post_build_byproducts
     ${PROJECT_BINARY_DIR}/include/public/zephyr_image_info.h
+    )
+endif()
+
+if(CONFIG_CHECK_INIT_PRIORITIES)
+  if(CONFIG_CHECK_INIT_PRIORITIES_FAIL_ON_WARNING)
+    set(fail_on_warning "--fail-on-warning")
+  endif()
+  list(APPEND
+    post_build_commands
+    COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/build/check_init_priorities.py
+      --build-dir ${PROJECT_BINARY_DIR}/..
+      --edt-pickle ${EDT_PICKLE}
+      ${fail_on_warning}
     )
 endif()
 

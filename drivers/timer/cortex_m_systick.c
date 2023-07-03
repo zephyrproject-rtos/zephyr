@@ -36,6 +36,12 @@ static struct k_spinlock lock;
 
 static uint32_t last_load;
 
+#ifdef CONFIG_CORTEX_M_SYSTICK_64BIT_CYCLE_COUNTER
+#define cycle_t uint64_t
+#else
+#define cycle_t uint32_t
+#endif
+
 /*
  * This local variable holds the amount of SysTick HW cycles elapsed
  * and it is updated in sys_clock_isr() and sys_clock_set_timeout().
@@ -46,13 +52,19 @@ static uint32_t last_load;
  *
  * t = cycle_counter + elapsed();
  */
-static uint32_t cycle_count;
+static cycle_t cycle_count;
 
 /*
  * This local variable holds the amount of elapsed SysTick HW cycles
  * that have been announced to the kernel.
+ *
+ * Note:
+ * Additions/subtractions/comparisons of 64-bits values on 32-bits systems
+ * are very cheap. Divisions are not. Make sure the difference between
+ * cycle_count and announced_cycles is stored in a 32-bit variable before
+ * dividing it by CYC_PER_TICK.
  */
-static uint32_t announced_cycles;
+static cycle_t announced_cycles;
 
 /*
  * This local variable holds the amount of elapsed HW cycles due to
@@ -119,6 +131,7 @@ static uint32_t elapsed(void)
 void sys_clock_isr(void *arg)
 {
 	ARG_UNUSED(arg);
+	uint32_t dcycles;
 	uint32_t dticks;
 
 	/* Update overflow_cyc and clear COUNTFLAG by invoking elapsed() */
@@ -143,7 +156,8 @@ void sys_clock_isr(void *arg)
 		 * We can assess if this is the case by inspecting COUNTFLAG.
 		 */
 
-		dticks = (cycle_count - announced_cycles) / CYC_PER_TICK;
+		dcycles = cycle_count - announced_cycles;
+		dticks = dcycles / CYC_PER_TICK;
 		announced_cycles += dticks * CYC_PER_TICK;
 		sys_clock_announce(dticks);
 	} else {
@@ -240,7 +254,8 @@ uint32_t sys_clock_elapsed(void)
 	}
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
-	uint32_t cyc = elapsed() + cycle_count - announced_cycles;
+	uint32_t unannounced = cycle_count - announced_cycles;
+	uint32_t cyc = elapsed() + unannounced;
 
 	k_spin_unlock(&lock, key);
 	return cyc / CYC_PER_TICK;
@@ -249,11 +264,23 @@ uint32_t sys_clock_elapsed(void)
 uint32_t sys_clock_cycle_get_32(void)
 {
 	k_spinlock_key_t key = k_spin_lock(&lock);
-	uint32_t ret = elapsed() + cycle_count;
+	uint32_t ret = cycle_count;
+
+	ret += elapsed();
+	k_spin_unlock(&lock, key);
+	return ret;
+}
+
+#ifdef CONFIG_CORTEX_M_SYSTICK_64BIT_CYCLE_COUNTER
+uint64_t sys_clock_cycle_get_64(void)
+{
+	k_spinlock_key_t key = k_spin_lock(&lock);
+	uint64_t ret = cycle_count + elapsed();
 
 	k_spin_unlock(&lock, key);
 	return ret;
 }
+#endif
 
 void sys_clock_idle_exit(void)
 {

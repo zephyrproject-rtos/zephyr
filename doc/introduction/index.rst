@@ -60,8 +60,9 @@ Zephyr offers a large and ever growing number of features including:
    * *Inter-thread Data Passing Services* for basic message queues, enhanced
      message queues, and byte streams.
 
-   * *Power Management Services* such as tickless idle and an advanced idling
-     infrastructure.
+   * *Power Management Services* such as overarching, application or
+     policy-defined, System Power Management and fine-grained, driver-defined,
+     Device Power Management.
 
 **Multiple Scheduling Algorithms**
    Zephyr provides a comprehensive set of thread scheduling choices:

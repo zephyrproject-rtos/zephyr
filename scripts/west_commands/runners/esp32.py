@@ -112,8 +112,9 @@ class Esp32BinaryRunner(ZephyrBinaryRunner):
 
         if self.bootloader_bin:
             cmd_flash.extend([self.boot_address, self.bootloader_bin])
-            cmd_flash.extend([self.part_table_address, self.partition_table_bin])
-            cmd_flash.extend([self.app_address, self.app_bin])
+            if self.partition_table_bin:
+                cmd_flash.extend([self.part_table_address, self.partition_table_bin])
+                cmd_flash.extend([self.app_address, self.app_bin])
         else:
             cmd_flash.extend([self.app_address, self.app_bin])
 

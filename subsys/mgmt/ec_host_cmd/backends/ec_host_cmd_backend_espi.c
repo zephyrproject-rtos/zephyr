@@ -126,6 +126,10 @@ static int ec_host_cmd_espi_send(const struct ec_host_cmd_backend *backend)
 	uint32_t result = resp_hdr->result;
 	int ret;
 
+	/* Ignore in-progress on eSPI since interface is synchronous anyway */
+	if (result == EC_HOST_CMD_IN_PROGRESS)
+		return 0;
+
 	hc_espi->state = ESPI_STATE_SENDING;
 
 	/* Data to transfer are already in the tx buffer (shared memory) */
@@ -147,7 +151,8 @@ struct ec_host_cmd_backend *ec_host_cmd_backend_get_espi(const struct device *de
 	return &ec_host_cmd_espi;
 }
 
-#if DT_NODE_EXISTS(DT_CHOSEN(zephyr_host_cmd_espi_backend))
+#if DT_NODE_EXISTS(DT_CHOSEN(zephyr_host_cmd_espi_backend)) &&                                     \
+	defined(CONFIG_EC_HOST_CMD_INITIALIZE_AT_BOOT)
 static int host_cmd_init(void)
 {
 	const struct device *const dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_host_cmd_espi_backend));

@@ -99,11 +99,6 @@
 			status = "disabled";
 		};
 
-		uuid: flash@9fc70 {
-			compatible = "nxp,lpc-uid";
-			reg = <0x9fc70 0x10>;
-		};
-
 		boot_rom: flash@3000000 {
 			compatible = "soc-nv-flash";
 			reg = <0x3000000 DT_SIZE_K(128)>;
@@ -259,12 +254,7 @@
 		reg = <0x4009d000 0x1000>;
 		interrupts = <43 0>, <44 0>;
 		clocks = <&syscon MCUX_MCAN_CLK>;
-		std-filter-elements = <15>;
-		ext-filter-elements = <15>;
-		rx-fifo0-elements = <8>;
-		rx-fifo1-elements = <8>;
-		rx-buffer-elements = <8>;
-		tx-buffer-elements = <15>;
+		bosch,mram-cfg = <0x0 15 15 8 8 0 15 15>;
 		sjw = <1>;
 		sample-point = <875>;
 		sjw-data = <1>;
@@ -379,6 +369,16 @@
 			status = "disabled";
 			run-in-wait;
 		};
+	};
+
+	usbfs: usbfs@84000 {
+		compatible = "nxp,mcux-usbd";
+		reg = <0x84000 0x1000>;
+		interrupts = <28 0>;
+		num-bidir-endpoints = <5>;
+		maximum-speed = "full-speed";
+		usb-controller-index = "LpcIp3511Fs0";
+		status = "disabled";
 	};
 
 	sc_timer: pwm@85000 {

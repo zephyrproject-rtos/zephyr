@@ -8,6 +8,8 @@
 #include <zephyr/dt-bindings/display/panel.h>
 #include <zephyr/dt-bindings/flash_controller/ospi.h>
 
+/delete-node/ &adc3;
+
 / {
 	soc {
 		compatible = "st,stm32h7a3", "st,stm32h7", "simple-bus";
@@ -23,6 +25,7 @@
 		};
 
 		adc2: adc@40022100 {
+			vbat-channel = <14>;
 			temp-channel = <18>;
 			vref-channel = <19>;
 		};
@@ -152,5 +155,14 @@
 		ts-cal2-addr = <0x08FFF818>;
 		io-channels = <&adc2 18>;
 		ts-cal2-temp = <130>;
+	};
+
+	vref: vref {
+		vrefint-cal-addr = <0x08FFF810>;
+		io-channels = <&adc2 19>;
+	};
+
+	vbat: vbat {
+		io-channels = <&adc2 14>;
 	};
 };

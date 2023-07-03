@@ -4,20 +4,12 @@
 menuconfig NET_L2_PPP
 	bool "Point-to-point (PPP) support [EXPERIMENTAL]"
 	select EXPERIMENTAL
+	select NET_MGMT
+	select NET_MGMT_EVENT
 	help
 	  Add support for PPP.
 
 if NET_L2_PPP
-
-config NET_L2_PPP_DELAY_STARTUP_MS
-	int "PPP delay startup ms"
-	default 0
-	help
-	  If the PPP starts too fast, it is possible to delay it
-	  a bit. This is mostly useful in debugging if you want the
-	  device be fully up before PPP handshake is started.
-	  Wait amount of milliseconds before starting PPP. Value 0 disables
-	  the wait.
 
 config NET_L2_PPP_TIMEOUT
 	int "Maximum timeout in ms for Configure-Req"

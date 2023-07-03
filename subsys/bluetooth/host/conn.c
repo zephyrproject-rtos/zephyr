@@ -13,6 +13,7 @@
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/check.h>
+#include <zephyr/sys/iterable_sections.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
 #include <zephyr/sys/slist.h>
@@ -3157,10 +3158,14 @@ int bt_conn_auth_cb_register(const struct bt_conn_auth_cb *cb)
 #if defined(CONFIG_BT_SMP)
 int bt_conn_auth_cb_overlay(struct bt_conn *conn, const struct bt_conn_auth_cb *cb)
 {
+	CHECKIF(conn == NULL) {
+		return -EINVAL;
+	}
+
 	/* The cancel callback must always be provided if the app provides
 	 * interactive callbacks.
 	 */
-	if (!cb->cancel &&
+	if (cb && !cb->cancel &&
 	    (cb->passkey_display || cb->passkey_entry || cb->passkey_confirm ||
 	     cb->pairing_confirm)) {
 		return -EINVAL;

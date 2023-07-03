@@ -177,9 +177,10 @@ typedef void (*uart_irq_config_func_t)(const struct device *dev);
  *    generated. It can happen multiples times for the same buffer. RX timeout
  *    is counted from last byte received i.e. if no data was received, there
  *    won't be any timeout event.
- * 4. After buffer is filled #UART_RX_RDY will be generated, immediately
- *    followed by #UART_RX_BUF_RELEASED indicating that current buffer
- *    is no longer used.
+ * 4. #UART_RX_BUF_RELEASED event will be generated when the current buffer is
+ *    no longer used by the driver. It will immediately follow #UART_RX_RDY event.
+ *    Depending on the implementation buffer may be released when it is completely
+ *    or partially filled.
  * 5. If there was second buffer provided, it will become current buffer and
  *    we start again at point 2.
  *    If no second buffer was specified receiving is stopped and

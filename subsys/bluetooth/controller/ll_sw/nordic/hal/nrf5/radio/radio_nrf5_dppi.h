@@ -4,17 +4,6 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#if defined(CONFIG_SOC_NRF5340_CPUNET) || defined(DPPI_PRESENT)
-
-#include <hal/nrf_dppi.h>
-#include <hal/nrf_timer.h>
-#include <hal/nrf_radio.h>
-#include <hal/nrf_rtc.h>
-#include <hal/nrf_ccm.h>
-#include <hal/nrf_aar.h>
-#include <hal/nrf_gpiote.h>
-
-#include "radio_nrf5_dppi_resources.h"
 
 static inline void hal_radio_nrf_ppi_channels_enable(uint32_t mask)
 {
@@ -32,27 +21,35 @@ static inline void hal_radio_nrf_ppi_channels_disable(uint32_t mask)
  */
 static inline void hal_radio_enable_on_tick_ppi_config_and_enable(uint8_t trx)
 {
-	nrf_timer_publish_set(EVENT_TIMER, NRF_TIMER_EVENT_COMPARE0, HAL_RADIO_ENABLE_ON_TICK_PPI);
-
 	if (trx) {
-		nrf_radio_subscribe_set(NRF_RADIO,
-					NRF_RADIO_TASK_TXEN, HAL_RADIO_ENABLE_TX_ON_TICK_PPI);
+		nrf_timer_publish_set(EVENT_TIMER, NRF_TIMER_EVENT_COMPARE0,
+				      HAL_RADIO_ENABLE_TX_ON_TICK_PPI);
+		nrf_radio_subscribe_set(NRF_RADIO, NRF_RADIO_TASK_TXEN,
+					HAL_RADIO_ENABLE_TX_ON_TICK_PPI);
 
 		/* Address nRF5340 Engineering A Errata 16 */
 		if (IS_ENABLED(CONFIG_BT_CTLR_TIFS_HW)) {
-			nrf_radio_subscribe_clear(NRF_RADIO, NRF_RADIO_TASK_RXEN);
+			nrf_radio_subscribe_clear(NRF_RADIO,
+						  NRF_RADIO_TASK_RXEN);
 		}
+
+		nrf_dppi_channels_enable(NRF_DPPIC,
+					 BIT(HAL_RADIO_ENABLE_TX_ON_TICK_PPI));
 	} else {
-		nrf_radio_subscribe_set(NRF_RADIO,
-					NRF_RADIO_TASK_RXEN, HAL_RADIO_ENABLE_RX_ON_TICK_PPI);
+		nrf_timer_publish_set(EVENT_TIMER, NRF_TIMER_EVENT_COMPARE0,
+				      HAL_RADIO_ENABLE_RX_ON_TICK_PPI);
+		nrf_radio_subscribe_set(NRF_RADIO, NRF_RADIO_TASK_RXEN,
+					HAL_RADIO_ENABLE_RX_ON_TICK_PPI);
 
 		/* Address nRF5340 Engineering A Errata 16 */
 		if (IS_ENABLED(CONFIG_BT_CTLR_TIFS_HW)) {
-			nrf_radio_subscribe_clear(NRF_RADIO, NRF_RADIO_TASK_TXEN);
+			nrf_radio_subscribe_clear(NRF_RADIO,
+						  NRF_RADIO_TASK_TXEN);
 		}
-	}
 
-	nrf_dppi_channels_enable(NRF_DPPIC, BIT(HAL_RADIO_ENABLE_ON_TICK_PPI));
+		nrf_dppi_channels_enable(NRF_DPPIC,
+					 BIT(HAL_RADIO_ENABLE_RX_ON_TICK_PPI));
+	}
 }
 
 /*******************************************************************************
@@ -757,5 +754,3 @@ hal_radio_sw_switch_phyend_delay_compensation_config_clear(uint8_t radio_enable_
 #endif /* CONFIG_BT_CTLR_DF_PHYEND_OFFSET_COMPENSATION_ENABLE */
 
 #endif /* !CONFIG_BT_CTLR_TIFS_HW */
-
-#endif /* CONFIG_SOC_NRF5340_CPUNET || DPPI_PRESENT */

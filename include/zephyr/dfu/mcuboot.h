@@ -26,6 +26,7 @@
  * @brief MCUboot public API for MCUboot control of image boot process
  *
  * @defgroup mcuboot_api MCUboot image control API
+ * @ingroup third_party
  * @{
  */
 

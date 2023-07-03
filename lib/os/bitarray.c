@@ -132,7 +132,7 @@ static bool match_region(sys_bitarray_t *bitarray, size_t offset,
 
 		if (bundle != 0U) {
 			/* Bits in "between bundles" do not match */
-			mismatch_bundle = ~bundle;
+			mismatch_bundle = bundle;
 			mismatch_bundle_idx = idx;
 			goto mismatch;
 		}

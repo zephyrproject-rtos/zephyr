@@ -112,15 +112,15 @@ config EXTERNAL_LIBCPP
 endchoice # LIBCPP_IMPLEMENTATION
 
 config CPP_MAIN
-	bool "C++ main() function definition"
+	bool "[DEPRECATED] C++ main() function definition"
+	select DEPRECATED
 	help
-	  This option instructs the Zephyr kernel to call the 'int main(void)'
-	  instead of the 'void main(void)', which is the default main() type
-	  for Zephyr.
+	  This option used to be necessary to instruct the Zephyr kernel to
+	  call 'int main(void)' instead of the old Zephyr default, 'void
+	  main(void)'.
 
-	  C++ does not allow the main() to be defined with 'void' return type,
-	  and any applications defining its main() in a C++ source file must
-	  enable this option.
+	  As the Zephyr type now matches the C++ required type, this option
+	  is no longer necessary.
 
 if !MINIMAL_LIBCPP
 

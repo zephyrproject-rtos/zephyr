@@ -35,6 +35,7 @@ extern "C" {
 
 /**
  * @defgroup sys-util Utility Functions
+ * @ingroup utilities
  * @{
  */
 
@@ -538,9 +539,7 @@ char *utf8_lcpy(char *dst, const char *src, size_t n);
  * @note This macro expands its argument multiple times (to permit use
  *       in constant expressions), which must not have side effects.
  *
- * @param x An unsigned integral value
- *
- * @param x value to compute logarithm of (positive only)
+ * @param x An unsigned integral value to compute logarithm of (positive only)
  *
  * @return log2(x) when 1 <= x <= max(x), -1 when x < 1
  */

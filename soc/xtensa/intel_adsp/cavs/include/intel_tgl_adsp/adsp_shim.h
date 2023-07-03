@@ -145,4 +145,8 @@ struct cavs_win {
 #define GENO_MDIVOSEL           BIT(1)
 #define GENO_DIOPTOSEL          BIT(2)
 
+#define DSPALHO_ASO_FLAG        BIT(0)
+#define DSPALHO_CSO_FLAG        BIT(1)
+#define DSPALHO_CFO_FLAG        BIT(2)
+
 #endif /* ZEPHYR_SOC_INTEL_ADSP_SHIM_H_ */

@@ -1,5 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
+zephyr_syscall_header(${ZEPHYR_BASE}/include/zephyr/drivers/adc.h)
+
 zephyr_library()
 
 zephyr_library_sources_ifdef(CONFIG_ADC			adc_common.c)
@@ -28,6 +30,7 @@ zephyr_library_sources_ifdef(CONFIG_ADC_EMUL		adc_emul.c)
 zephyr_library_sources_ifdef(CONFIG_ADC_TEST		adc_test.c)
 zephyr_library_sources_ifdef(CONFIG_ADC_ADS1X1X		adc_ads1x1x.c)
 zephyr_library_sources_ifdef(CONFIG_ADC_GD32		adc_gd32.c)
+zephyr_library_sources_ifdef(CONFIG_ADC_ADS1112		adc_ads1112.c)
 zephyr_library_sources_ifdef(CONFIG_ADC_ADS1119		adc_ads1119.c)
 zephyr_library_sources_ifdef(CONFIG_ADC_ADS7052		adc_ads7052.c)
 zephyr_library_sources_ifdef(CONFIG_ADC_ADS114S0X		adc_ads114s0x.c)
@@ -36,3 +39,6 @@ zephyr_library_sources_ifdef(CONFIG_ADC_XMC4XXX		adc_xmc4xxx.c)
 zephyr_library_sources_ifdef(CONFIG_ADC_ESP32		adc_esp32.c)
 zephyr_library_sources_ifdef(CONFIG_ADC_GECKO_IADC   	iadc_gecko.c)
 zephyr_library_sources_ifdef(CONFIG_ADC_INFINEON_CAT1	adc_ifx_cat1.c)
+zephyr_library_sources_ifdef(CONFIG_ADC_SMARTBOND_GPADC adc_smartbond_gpadc.c)
+zephyr_library_sources_ifdef(CONFIG_ADC_SMARTBOND_SDADC adc_smartbond_sdadc.c)
+zephyr_library_sources_ifdef(CONFIG_ADC_TLA2021         adc_tla2021.c)

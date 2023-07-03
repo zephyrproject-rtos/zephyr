@@ -29,6 +29,8 @@
 #include <zephyr/random/rand32.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/sys/iterable_sections.h>
+
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
 #ifdef CONFIG_THREAD_MONITOR

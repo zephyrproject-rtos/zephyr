@@ -60,6 +60,8 @@
 		led2 = &red_led;
 		sw0 = &user_button;
 		watchdog0 = &iwdg;
+		volt-sensor0 = &vref;
+		volt-sensor1 = &vbat;
 	};
 };
 
@@ -249,4 +251,12 @@ zephyr_udc0: &usbotg_fs {
 			reg = <0x001C0000 DT_SIZE_K(256)>;
 		};
 	};
+};
+
+&vref {
+	status = "okay";
+};
+
+&vbat {
+	status = "okay";
 };

@@ -12,7 +12,7 @@ LOG_MODULE_REGISTER(net_eth_bridge, CONFIG_NET_ETHERNET_BRIDGE_LOG_LEVEL);
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/ethernet.h>
 #include <zephyr/net/ethernet_bridge.h>
-
+#include <zephyr/sys/iterable_sections.h>
 #include <zephyr/sys/slist.h>
 
 #include "bridge.h"

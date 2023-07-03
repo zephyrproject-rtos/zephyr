@@ -87,11 +87,17 @@ config OPENTHREAD_CSL_RECEIVE_TIME_AHEAD
 	int "CSL receiver wake up margin in microseconds"
 	default 5000
 
-config OPENTHREAD_CSL_MIN_RECEIVE_ON
-	int "Minimum CSL receive window"
-	default 5696
+config OPENTHREAD_MIN_RECEIVE_ON_AHEAD
+	int "Minimum receiving time before start of MHR"
+	default 192
 	help
-	  The minimum CSL receive window (in microseconds) required to receive a full IEEE 802.15.4 frame
+	  The minimum time (microseconds) that radio has to be in receive mode before the start of the MHR.
+
+config OPENTHREAD_MIN_RECEIVE_ON_AFTER
+	int "Minimum receiving time after start of MHR"
+	default 5504
+	help
+	  The minimum time (microseconds) that radio should be in receive mode after the start of the MHR.
 
 config OPENTHREAD_PLATFORM_CSL_UNCERT
 	int "CSL uncertainty"

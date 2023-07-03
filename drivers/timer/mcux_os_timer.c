@@ -122,9 +122,9 @@ static int sys_clock_driver_init(void)
 
 	base = (OSTIMER_Type *)DT_INST_REG_ADDR(0);
 
-	if (DT_INST_PROP(0, wakeup_source)) {
-		EnableDeepSleepIRQ(DT_INST_IRQN(0));
-	}
+#if (DT_INST_PROP(0, wakeup_source))
+	EnableDeepSleepIRQ(DT_INST_IRQN(0));
+#endif
 
 	/* Initialize the OS timer, setting clock configuration. */
 	OSTIMER_Init(base);

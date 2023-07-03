@@ -129,7 +129,7 @@ Both symbols can be enabled with the :file:`overlay-permanent-download.conf` ove
 
    west build -b nrf52840dk_nrf52840 zephyr/samples/subsys/usb/dfu -d build-dfu -- \
    -DCONFIG_BOOTLOADER_MCUBOOT=y '-DCONFIG_MCUBOOT_SIGNATURE_KEY_FILE="bootloader/mcuboot/root-rsa-2048.pem"' \
-   -DOVERLAY_CONFIG=overlay-permanent-download.conf
+   -DEXTRA_CONF_FILE=overlay-permanent-download.conf
 
 
 The listing below shows the output to the console when downloading via dfu-util.
@@ -153,4 +153,4 @@ Note the ``Swap type: perm``.
 
 
 .. _MCUboot GitHub repo: https://github.com/zephyrproject-rtos/mcuboot
-.. _Using MCUboot with Zephyr: https://mcuboot.com/documentation/readme-zephyr/
+.. _Using MCUboot with Zephyr: https://docs.mcuboot.com/readme-zephyr

@@ -21,6 +21,7 @@ uint32_t dma_stm32_id_to_stream(uint32_t id)
 		LL_DMA_CHANNEL_1,
 		LL_DMA_CHANNEL_2,
 		LL_DMA_CHANNEL_3,
+#if defined(LL_DMA_CHANNEL_4)
 		LL_DMA_CHANNEL_4,
 		LL_DMA_CHANNEL_5,
 #if defined(LL_DMA_CHANNEL_6)
@@ -32,6 +33,7 @@ uint32_t dma_stm32_id_to_stream(uint32_t id)
 #endif /* LL_DMA_CHANNEL_8 */
 #endif /* LL_DMA_CHANNEL_7 */
 #endif /* LL_DMA_CHANNEL_6 */
+#endif /* LL_DMA_CHANNEL_4 */
 	};
 
 	__ASSERT_NO_MSG(id < ARRAY_SIZE(stream_nr));
@@ -45,6 +47,7 @@ void dma_stm32_clear_ht(DMA_TypeDef *DMAx, uint32_t id)
 		LL_DMA_ClearFlag_HT1,
 		LL_DMA_ClearFlag_HT2,
 		LL_DMA_ClearFlag_HT3,
+#if defined(LL_DMA_IFCR_CHTIF4)
 		LL_DMA_ClearFlag_HT4,
 		LL_DMA_ClearFlag_HT5,
 #if defined(LL_DMA_IFCR_CHTIF6)
@@ -56,6 +59,7 @@ void dma_stm32_clear_ht(DMA_TypeDef *DMAx, uint32_t id)
 #endif /* LL_DMA_IFCR_CHTIF8 */
 #endif /* LL_DMA_IFCR_CHTIF7 */
 #endif /* LL_DMA_IFCR_CHTIF6 */
+#endif /* LL_DMA_IFCR_CHTIF4 */
 	};
 
 	__ASSERT_NO_MSG(id < ARRAY_SIZE(func));
@@ -69,6 +73,7 @@ void dma_stm32_clear_tc(DMA_TypeDef *DMAx, uint32_t id)
 		LL_DMA_ClearFlag_TC1,
 		LL_DMA_ClearFlag_TC2,
 		LL_DMA_ClearFlag_TC3,
+#if defined(LL_DMA_IFCR_CTCIF4)
 		LL_DMA_ClearFlag_TC4,
 		LL_DMA_ClearFlag_TC5,
 #if defined(LL_DMA_IFCR_CTCIF6)
@@ -80,6 +85,7 @@ void dma_stm32_clear_tc(DMA_TypeDef *DMAx, uint32_t id)
 #endif /* LL_DMA_IFCR_CTCIF8 */
 #endif /* LL_DMA_IFCR_CTCIF7 */
 #endif /* LL_DMA_IFCR_CTCIF6 */
+#endif /* LL_DMA_IFCR_CTCIF4 */
 	};
 
 	__ASSERT_NO_MSG(id < ARRAY_SIZE(func));
@@ -93,6 +99,7 @@ bool dma_stm32_is_ht_active(DMA_TypeDef *DMAx, uint32_t id)
 		LL_DMA_IsActiveFlag_HT1,
 		LL_DMA_IsActiveFlag_HT2,
 		LL_DMA_IsActiveFlag_HT3,
+#if defined(LL_DMA_IFCR_CHTIF4)
 		LL_DMA_IsActiveFlag_HT4,
 		LL_DMA_IsActiveFlag_HT5,
 #if defined(LL_DMA_IFCR_CHTIF6)
@@ -104,6 +111,7 @@ bool dma_stm32_is_ht_active(DMA_TypeDef *DMAx, uint32_t id)
 #endif /* LL_DMA_IFCR_CHTIF8 */
 #endif /* LL_DMA_IFCR_CHTIF7 */
 #endif /* LL_DMA_IFCR_CHTIF6 */
+#endif /* LL_DMA_IFCR_CHTIF4 */
 	};
 
 	__ASSERT_NO_MSG(id < ARRAY_SIZE(func));
@@ -117,6 +125,7 @@ bool dma_stm32_is_tc_active(DMA_TypeDef *DMAx, uint32_t id)
 		LL_DMA_IsActiveFlag_TC1,
 		LL_DMA_IsActiveFlag_TC2,
 		LL_DMA_IsActiveFlag_TC3,
+#if defined(LL_DMA_IFCR_CTCIF4)
 		LL_DMA_IsActiveFlag_TC4,
 		LL_DMA_IsActiveFlag_TC5,
 #if defined(LL_DMA_IFCR_CTCIF6)
@@ -128,6 +137,7 @@ bool dma_stm32_is_tc_active(DMA_TypeDef *DMAx, uint32_t id)
 #endif /* LL_DMA_IFCR_CTCIF8 */
 #endif /* LL_DMA_IFCR_CTCIF7 */
 #endif /* LL_DMA_IFCR_CTCIF6 */
+#endif /* LL_DMA_IFCR_CTCIF4 */
 	};
 
 	__ASSERT_NO_MSG(id < ARRAY_SIZE(func));
@@ -142,6 +152,7 @@ void dma_stm32_clear_te(DMA_TypeDef *DMAx, uint32_t id)
 		LL_DMA_ClearFlag_TE1,
 		LL_DMA_ClearFlag_TE2,
 		LL_DMA_ClearFlag_TE3,
+#if defined(LL_DMA_IFCR_CTEIF4)
 		LL_DMA_ClearFlag_TE4,
 		LL_DMA_ClearFlag_TE5,
 #if defined(LL_DMA_IFCR_CTEIF6)
@@ -150,6 +161,7 @@ void dma_stm32_clear_te(DMA_TypeDef *DMAx, uint32_t id)
 		LL_DMA_ClearFlag_TE7,
 #if defined(LL_DMA_IFCR_CTEIF8)
 		LL_DMA_ClearFlag_TE8,
+#endif /* LL_DMA_IFCR_CTEIF4 */
 #endif /* LL_DMA_IFCR_CTEIF6 */
 #endif /* LL_DMA_IFCR_CTEIF7 */
 #endif /* LL_DMA_IFCR_CTEIF8 */
@@ -166,6 +178,7 @@ void dma_stm32_clear_gi(DMA_TypeDef *DMAx, uint32_t id)
 		LL_DMA_ClearFlag_GI1,
 		LL_DMA_ClearFlag_GI2,
 		LL_DMA_ClearFlag_GI3,
+#if defined(LL_DMA_IFCR_CGIF4)
 		LL_DMA_ClearFlag_GI4,
 		LL_DMA_ClearFlag_GI5,
 #if defined(LL_DMA_IFCR_CGIF6)
@@ -174,6 +187,7 @@ void dma_stm32_clear_gi(DMA_TypeDef *DMAx, uint32_t id)
 		LL_DMA_ClearFlag_GI7,
 #if defined(LL_DMA_IFCR_CGIF8)
 		LL_DMA_ClearFlag_GI8,
+#endif /* LL_DMA_IFCR_CGIF4 */
 #endif /* LL_DMA_IFCR_CGIF6 */
 #endif /* LL_DMA_IFCR_CGIF7 */
 #endif /* LL_DMA_IFCR_CGIF8 */
@@ -190,6 +204,7 @@ bool dma_stm32_is_te_active(DMA_TypeDef *DMAx, uint32_t id)
 		LL_DMA_IsActiveFlag_TE1,
 		LL_DMA_IsActiveFlag_TE2,
 		LL_DMA_IsActiveFlag_TE3,
+#if defined(LL_DMA_IFCR_CTEIF4)
 		LL_DMA_IsActiveFlag_TE4,
 		LL_DMA_IsActiveFlag_TE5,
 #if defined(LL_DMA_IFCR_CTEIF6)
@@ -198,6 +213,7 @@ bool dma_stm32_is_te_active(DMA_TypeDef *DMAx, uint32_t id)
 		LL_DMA_IsActiveFlag_TE7,
 #if defined(LL_DMA_IFCR_CTEIF8)
 		LL_DMA_IsActiveFlag_TE8,
+#endif /* LL_DMA_IFCR_CTEIF4 */
 #endif /* LL_DMA_IFCR_CTEIF6 */
 #endif /* LL_DMA_IFCR_CTEIF7 */
 #endif /* LL_DMA_IFCR_CTEIF8 */
@@ -214,6 +230,7 @@ bool dma_stm32_is_gi_active(DMA_TypeDef *DMAx, uint32_t id)
 		LL_DMA_IsActiveFlag_GI1,
 		LL_DMA_IsActiveFlag_GI2,
 		LL_DMA_IsActiveFlag_GI3,
+#if defined(LL_DMA_IFCR_CGIF4)
 		LL_DMA_IsActiveFlag_GI4,
 		LL_DMA_IsActiveFlag_GI5,
 #if defined(LL_DMA_IFCR_CGIF6)
@@ -222,6 +239,7 @@ bool dma_stm32_is_gi_active(DMA_TypeDef *DMAx, uint32_t id)
 		LL_DMA_IsActiveFlag_GI7,
 #if defined(LL_DMA_IFCR_CGIF8)
 		LL_DMA_IsActiveFlag_GI8,
+#endif /* LL_DMA_IFCR_CGIF4 */
 #endif /* LL_DMA_IFCR_CGIF6 */
 #endif /* LL_DMA_IFCR_CGIF7 */
 #endif /* LL_DMA_IFCR_CGIF8 */

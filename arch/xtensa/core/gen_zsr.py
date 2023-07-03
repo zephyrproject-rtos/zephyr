@@ -65,6 +65,7 @@ with open(outfile, "w") as f:
     # Emit any remaining registers as generics
     for i in range(len(NEEDED), len(regs)):
         f.write(f"# define ZSR_EXTRA{i - len(NEEDED)} {regs[i]}\n")
+        f.write(f"# define ZSR_EXTRA{i - len(NEEDED)}_STR \"{regs[i]}\"\n")
 
     # Also, our highest level EPC/EPS registers
     f.write(f"# define ZSR_RFI_LEVEL {maxint}\n")

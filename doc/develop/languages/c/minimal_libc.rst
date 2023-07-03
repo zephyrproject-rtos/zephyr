@@ -15,6 +15,14 @@ with a number of different toolchains.
 The minimal libc implementation can be found in :file:`lib/libc/minimal` in the
 main Zephyr tree.
 
+Functions
+*********
+
+The minimal libc implements the minimal subset of the ISO/IEC 9899:2011
+standard C library functions required to meet the needs of the Zephyr kernel,
+as defined by the :ref:`Coding Guidelines Rule A.4
+<coding_guideline_libc_usage_restrictions_in_zephyr_kernel>`.
+
 Formatted Output
 ****************
 

@@ -23,6 +23,14 @@
 		vctl2-gpios = <&gpio0 7 GPIO_ACTIVE_HIGH>;
 	};
 
+	/* Power to the level shifter for uart1 */
+	en_buff_pwr: enable-buff-pwr {
+		compatible = "regulator-fixed";
+		regulator-name = "en_buff_pwr";
+		enable-gpios = <&gpio0 25 GPIO_ACTIVE_LOW>;
+		regulator-boot-on;
+	};
+
 	aliases {
 		watchdog0 = &wdt0;
 	};

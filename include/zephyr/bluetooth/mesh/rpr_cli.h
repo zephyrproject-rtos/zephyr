@@ -4,16 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/**
- * @file
- * @defgroup bt_mesh_rpr_cli Remote Provisioning Client model
- * @{
- * @brief API For Remote Provisioning Client model
- *
- * @note Remote Provisioning with the Remote Provisioning Client is performed
- *       with the provisioning API.
- */
-
 #ifndef ZEPHYR_INCLUDE_BT_MESH_RPR_CLI_H__
 #define ZEPHYR_INCLUDE_BT_MESH_RPR_CLI_H__
 
@@ -24,6 +14,12 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/**
+ * @defgroup bt_mesh_rpr_cli Remote Provisioning Client model
+ * @ingroup bt_mesh
+ * @{
+ */
 
 /** Special value for the @c max_devs parameter of @ref bt_mesh_rpr_scan_start.
  *
@@ -250,10 +246,10 @@ extern const struct bt_mesh_model_op _bt_mesh_rpr_cli_op[];
 extern const struct bt_mesh_model_cb _bt_mesh_rpr_cli_cb;
 /** @endcond */
 
+/** @} */
+
 #ifdef __cplusplus
 }
 #endif
 
 #endif /* ZEPHYR_INCLUDE_BT_MESH_RPR_CLI_H__ */
-
-/** @} */

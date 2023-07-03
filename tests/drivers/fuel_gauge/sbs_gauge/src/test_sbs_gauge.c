@@ -1,5 +1,6 @@
 /*
  * Copyright 2022 Google LLC
+ * Copyright 2023 Microsoft Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -134,23 +135,66 @@ ZTEST_USER_F(sbs_gauge_new_api, test_set_some_props_failed_returns_failed_prop_c
 ZTEST_USER_F(sbs_gauge_new_api, test_set_prop_can_be_get)
 {
 	uint16_t word = BIT(15) | BIT(0);
-	struct fuel_gauge_set_property set_prop = {
-		/* Valid property */
-		.property_type = FUEL_GAUGE_SBS_MFR_ACCESS,
-		/* Set Manufacturer's Access to 16 bit word*/
-		.value.sbs_mfr_access_word = word,
+	struct fuel_gauge_set_property set_props[] = {
+		{
+			/* Valid property */
+			.property_type = FUEL_GAUGE_SBS_MFR_ACCESS,
+			/* Set Manufacturer's Access to 16 bit word */
+			.value.sbs_mfr_access_word = word,
+		},
+		{
+			.property_type = FUEL_GAUGE_SBS_REMAINING_CAPACITY_ALARM,
+			.value.sbs_remaining_capacity_alarm = word,
+		},
+		{
+			.property_type = FUEL_GAUGE_SBS_REMAINING_TIME_ALARM,
+			.value.sbs_remaining_time_alarm = word,
+		},
+		{
+			.property_type = FUEL_GAUGE_SBS_MODE,
+			.value.sbs_mode = word,
+		},
+		{
+			.property_type = FUEL_GAUGE_SBS_ATRATE,
+			.value.sbs_at_rate = (int16_t)word,
+		},
 	};
 
-	zassert_ok(fuel_gauge_set_prop(fixture->dev, &set_prop, 1));
-	zassert_ok(set_prop.status);
-
-	struct fuel_gauge_get_property get_prop = {
-		.property_type = FUEL_GAUGE_SBS_MFR_ACCESS,
+	struct fuel_gauge_get_property get_props[] = {
+		{
+			.property_type = FUEL_GAUGE_SBS_MFR_ACCESS,
+		},
+		{
+			.property_type = FUEL_GAUGE_SBS_REMAINING_CAPACITY_ALARM,
+		},
+		{
+			.property_type = FUEL_GAUGE_SBS_REMAINING_TIME_ALARM,
+		},
+		{
+			.property_type = FUEL_GAUGE_SBS_MODE,
+		},
+		{
+			.property_type = FUEL_GAUGE_SBS_ATRATE,
+		},
 	};
 
-	zassert_ok(fuel_gauge_get_prop(fixture->dev, &get_prop, 1));
-	zassert_ok(get_prop.status);
-	zassert_equal(get_prop.value.sbs_mfr_access_word, word);
+	zassert_ok(fuel_gauge_set_prop(fixture->dev, set_props, ARRAY_SIZE(set_props)));
+	for (int i = 0; i < ARRAY_SIZE(set_props); i++) {
+		zassert_ok(set_props[i].status, "Property %d writing %d has a bad status.", i,
+			   set_props[i].property_type);
+	}
+
+	zassert_ok(fuel_gauge_get_prop(fixture->dev, get_props, ARRAY_SIZE(get_props)));
+	for (int i = 0; i < ARRAY_SIZE(get_props); i++) {
+		zassert_ok(get_props[i].status, "Property %d getting %d has a bad status.", i,
+			   get_props[i].property_type);
+	}
+
+	zassert_equal(get_props[0].value.sbs_mfr_access_word, word);
+	zassert_equal(get_props[1].value.sbs_remaining_capacity_alarm, word);
+	zassert_equal(get_props[2].value.sbs_remaining_time_alarm, word);
+	zassert_equal(get_props[3].value.sbs_mode, word);
+	zassert_equal(get_props[4].value.sbs_at_rate, (int16_t)word);
 }
 
 ZTEST_USER_F(sbs_gauge_new_api, test_get_props__returns_ok)
@@ -171,7 +215,10 @@ ZTEST_USER_F(sbs_gauge_new_api, test_get_props__returns_ok)
 			.property_type = FUEL_GAUGE_TEMPERATURE,
 		},
 		{
-			.property_type = FUEL_GAUGE_STATE_OF_CHARGE,
+			.property_type = FUEL_GAUGE_ABSOLUTE_STATE_OF_CHARGE,
+		},
+		{
+			.property_type = FUEL_GAUGE_RELATIVE_STATE_OF_CHARGE,
 		},
 		{
 			.property_type = FUEL_GAUGE_RUNTIME_TO_FULL,
@@ -221,6 +268,12 @@ ZTEST_USER_F(sbs_gauge_new_api, test_get_props__returns_ok)
 		{
 			.property_type = FUEL_GAUGE_SBS_ATRATE_OK,
 		},
+		{
+			.property_type = FUEL_GAUGE_SBS_REMAINING_CAPACITY_ALARM,
+		},
+		{
+			.property_type = FUEL_GAUGE_SBS_REMAINING_TIME_ALARM,
+		},
 	};
 
 	int ret = fuel_gauge_get_prop(fixture->dev, props, ARRAY_SIZE(props));
@@ -242,6 +295,12 @@ ZTEST_USER_F(sbs_gauge_new_api, test_set_props__returns_ok)
 			.property_type = FUEL_GAUGE_SBS_MFR_ACCESS,
 		},
 		{
+			.property_type = FUEL_GAUGE_SBS_REMAINING_CAPACITY_ALARM,
+		},
+		{
+			.property_type = FUEL_GAUGE_SBS_REMAINING_TIME_ALARM,
+		},
+		{
 			.property_type = FUEL_GAUGE_SBS_MODE,
 		},
 		{
@@ -258,5 +317,32 @@ ZTEST_USER_F(sbs_gauge_new_api, test_set_props__returns_ok)
 
 	zassert_ok(ret);
 }
+
+
+ZTEST_USER_F(sbs_gauge_new_api, test_get_buffer_props__returns_ok)
+{
+	/* Validate what properties are supported by the driver */
+	struct fuel_gauge_get_buffer_property prop;
+	struct sbs_gauge_manufacturer_name mfg_name;
+	struct sbs_gauge_device_name dev_name;
+	struct sbs_gauge_device_chemistry chem;
+	int ret;
+
+	prop.property_type = FUEL_GAUGE_MANUFACTURER_NAME;
+	ret = fuel_gauge_get_buffer_prop(fixture->dev, &prop, &mfg_name, sizeof(mfg_name));
+	zassert_ok(prop.status, "Property %d has a bad status.", prop.property_type);
+	zassert_ok(ret);
+
+	prop.property_type = FUEL_GAUGE_DEVICE_NAME;
+	ret = fuel_gauge_get_buffer_prop(fixture->dev, &prop, &dev_name, sizeof(dev_name));
+	zassert_ok(prop.status, "Property %d has a bad status.", prop.property_type);
+	zassert_ok(ret);
+
+	prop.property_type = FUEL_GAUGE_DEVICE_CHEMISTRY;
+	ret = fuel_gauge_get_buffer_prop(fixture->dev, &prop, &chem, sizeof(chem));
+	zassert_ok(prop.status, "Property %d has a bad status.", prop.property_type);
+	zassert_ok(ret);
+}
+
 
 ZTEST_SUITE(sbs_gauge_new_api, NULL, sbs_gauge_new_api_setup, NULL, NULL, NULL);

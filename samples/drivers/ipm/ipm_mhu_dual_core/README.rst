@@ -80,4 +80,4 @@ Sample Output
 
 
 .. _Srecord Manual:
-   http://srecord.sourceforge.net/man/man1/srec_cat.html
+   https://srecord.sourceforge.net/man/man1/srec_cat.1.html

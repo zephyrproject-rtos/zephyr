@@ -6,8 +6,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/sys/byteorder.h>
-#include <zephyr/bluetooth/bluetooth.h>
-#include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/hci_types.h>
 
 #include "util/util.h"
 #include "util/mem.h"
@@ -66,6 +65,12 @@
 
 
 static int init_reset(void);
+#if !defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
+static void cis_lazy_fill(struct ll_conn_iso_stream *cis);
+static void mfy_cis_lazy_fill(void *param);
+static void ticker_next_slot_get_op_cb(uint32_t status, void *param);
+#endif /* !CONFIG_BT_CTLR_JIT_SCHEDULING */
+static void ticker_start_op_cb(uint32_t status, void *param);
 static void ticker_update_cig_op_cb(uint32_t status, void *param);
 static void ticker_resume_op_cb(uint32_t status, void *param);
 static void ticker_resume_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
@@ -97,8 +102,8 @@ struct ll_conn_iso_group *ll_conn_iso_group_acquire(void)
 
 void ll_conn_iso_group_release(struct ll_conn_iso_group *cig)
 {
-	cig->cig_id  = 0xFF;
-	cig->started = 0U;
+	cig->cig_id = 0xFF;
+	cig->state  = CIG_STATE_NO_CIG;
 	cig->lll.num_cis = 0U;
 
 	mem_release(cig, &cig_free);
@@ -253,6 +258,21 @@ struct ll_conn_iso_stream *ll_conn_iso_stream_get_by_group(struct ll_conn_iso_gr
 			if (handle_iter) {
 				(*handle_iter) = handle;
 			}
+			return cis;
+		}
+	}
+
+	return NULL;
+}
+
+struct ll_conn_iso_stream *ll_conn_iso_stream_get_by_id(uint8_t cis_id)
+{
+	struct ll_conn_iso_stream *cis;
+	uint16_t handle;
+
+	for (handle = LL_CIS_HANDLE_BASE; handle <= LL_CIS_HANDLE_LAST; handle++) {
+		cis = ll_conn_iso_stream_get(handle);
+		if (cis->group && (cis->cis_id == cis_id)) {
 			return cis;
 		}
 	}
@@ -609,8 +629,8 @@ static int init_reset(void)
 
 	for (handle = 0; handle < CONFIG_BT_CTLR_CONN_ISO_GROUPS; handle++) {
 		cig = ll_conn_iso_group_get(handle);
-		cig->cig_id  = 0xFF;
-		cig->started = 0;
+		cig->cig_id = 0xFF;
+		cig->state  = CIG_STATE_NO_CIG;
 		cig->lll.num_cis = 0;
 	}
 
@@ -671,6 +691,11 @@ void ull_conn_iso_ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 		 */
 		if (cis->lll.handle != 0xFFFF && cis->lll.active) {
 			cis->lll.event_count += (lazy + 1U);
+
+#if !defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
+			cis->lll.event_count -= cis->lll.lazy_active;
+			cis->lll.lazy_active = 0U;
+#endif /* !CONFIG_BT_CTLR_JIT_SCHEDULING */
 
 			leading_event_count = MAX(leading_event_count,
 						cis->lll.event_count);
@@ -746,13 +771,6 @@ void ull_conn_iso_ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 	ull_conn_iso_transmit_test_cig_interval(cig->lll.handle, ticks_at_expire);
 }
 
-static void ticker_op_cb(uint32_t status, void *param)
-{
-	ARG_UNUSED(param);
-
-	LL_ASSERT(status == TICKER_STATUS_SUCCESS);
-}
-
 void ull_conn_iso_start(struct ll_conn *conn, uint16_t cis_handle,
 			uint32_t ticks_at_expire, uint32_t remainder,
 			uint16_t instant_latency)
@@ -776,7 +794,6 @@ void ull_conn_iso_start(struct ll_conn *conn, uint16_t cis_handle,
 
 	cis->lll.offset = cis_offs_to_cig_ref;
 	cis->lll.handle = cis_handle;
-	cis->lll.active = 1U;
 
 #if defined(CONFIG_BT_CTLR_LE_ENC)
 	if (conn->lll.enc_tx) {
@@ -829,7 +846,14 @@ void ull_conn_iso_start(struct ll_conn *conn, uint16_t cis_handle,
 	 * running. If so, we just return with updated offset and
 	 * validated handle.
 	 */
-	if (cig->started) {
+	if (cig->state == CIG_STATE_ACTIVE) {
+#if !defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
+		cis_lazy_fill(cis);
+#else /* CONFIG_BT_CTLR_JIT_SCHEDULING */
+		/* Set CIS active in already active CIG */
+		cis->lll.active = 1U;
+#endif /* CONFIG_BT_CTLR_JIT_SCHEDULING */
+
 		/* We're done */
 		return;
 	}
@@ -980,11 +1004,118 @@ void ull_conn_iso_start(struct ll_conn *conn, uint16_t cis_handle,
 					ticks_periodic,	ticks_remainder,
 					TICKER_NULL_LAZY, ticks_slot,
 					ull_conn_iso_ticker_cb, cig,
-					ticker_op_cb, NULL);
+					ticker_start_op_cb, NULL);
 	LL_ASSERT((ticker_status == TICKER_STATUS_SUCCESS) ||
 		  (ticker_status == TICKER_STATUS_BUSY));
 
-	cig->started = 1;
+	/* Set CIG and the first CIS state as active */
+	cig->state = CIG_STATE_ACTIVE;
+	cis->lll.active = 1U;
+
+#if !defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
+	/* CIS event lazy at CIS create */
+	cis->lll.lazy_active = 0U;
+#endif /* !CONFIG_BT_CTLR_JIT_SCHEDULING */
+}
+
+#if !defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
+static void cis_lazy_fill(struct ll_conn_iso_stream *cis)
+{
+	static memq_link_t link;
+	static struct mayfly mfy = {0U, 0U, &link, NULL, mfy_cis_lazy_fill};
+	uint32_t ret;
+
+	mfy.param = cis;
+	ret = mayfly_enqueue(TICKER_USER_ID_ULL_HIGH, TICKER_USER_ID_ULL_LOW, 1U, &mfy);
+	LL_ASSERT(!ret);
+}
+
+static void mfy_cis_lazy_fill(void *param)
+{
+	struct ll_conn_iso_stream *cis;
+	struct ll_conn_iso_group *cig;
+	uint32_t ticks_to_expire;
+	uint32_t ticks_current;
+	uint32_t remainder;
+	uint8_t ticker_id;
+	uint16_t lazy;
+	uint8_t retry;
+	uint8_t id;
+
+	cis = param;
+	cig = cis->group;
+	ticker_id = TICKER_ID_CONN_ISO_BASE + ll_conn_iso_group_handle_get(cig);
+
+	id = TICKER_NULL;
+	ticks_to_expire = 0U;
+	ticks_current = 0U;
+
+	/* In the first iteration the actual ticks_current value is returned
+	 * which will be different from the initial value of 0 that is set.
+	 * Subsequent iterations should return the same ticks_current as the
+	 * reference tick.
+	 * In order to avoid infinite updates to ticker's reference due to any
+	 * race condition due to expiring tickers, we try upto 3 more times.
+	 * Hence, first iteration to get an actual ticks_current and 3 more as
+	 * retries when there could be race conditions that changes the value
+	 * of ticks_current.
+	 *
+	 * ticker_next_slot_get_ext() restarts iterating when updated value of
+	 * ticks_current is returned.
+	 */
+	retry = 4U;
+	do {
+		uint32_t volatile ret_cb;
+		uint32_t ticks_previous;
+		uint32_t ret;
+		bool success;
+
+		ticks_previous = ticks_current;
+
+		ret_cb = TICKER_STATUS_BUSY;
+		ret = ticker_next_slot_get_ext(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_ULL_LOW, &id,
+					       &ticks_current, &ticks_to_expire, &remainder, &lazy,
+					       NULL, NULL, ticker_next_slot_get_op_cb,
+					       (void *)&ret_cb);
+		if (ret == TICKER_STATUS_BUSY) {
+			/* Busy wait until Ticker Job is enabled after any Radio
+			 * event is done using the Radio hardware. Ticker Job
+			 * ISR is disabled during Radio events in LOW_LAT
+			 * feature to avoid Radio ISR latencies.
+			 */
+			while (ret_cb == TICKER_STATUS_BUSY) {
+				ticker_job_sched(TICKER_INSTANCE_ID_CTLR,
+						 TICKER_USER_ID_ULL_LOW);
+			}
+		}
+
+		success = (ret_cb == TICKER_STATUS_SUCCESS);
+		LL_ASSERT(success);
+
+		LL_ASSERT((ticks_current == ticks_previous) || retry--);
+
+		LL_ASSERT(id != TICKER_NULL);
+	} while (id != ticker_id);
+
+	/* Set CIS active in already active CIG and any previous laziness in
+	 * CIG before the CIS gets active that be decremented when event_count
+	 * is incremented in ull_conn_iso_ticker_cb().
+	 */
+	cis->lll.active = 1U;
+	cis->lll.lazy_active = lazy;
+}
+
+static void ticker_next_slot_get_op_cb(uint32_t status, void *param)
+{
+	*((uint32_t volatile *)param) = status;
+}
+#endif /* !CONFIG_BT_CTLR_JIT_SCHEDULING */
+
+static void ticker_start_op_cb(uint32_t status, void *param)
+{
+	ARG_UNUSED(param);
+
+	LL_ASSERT(status == TICKER_STATUS_SUCCESS);
 }
 
 static void ticker_update_cig_op_cb(uint32_t status, void *param)
@@ -1075,12 +1206,13 @@ static void cis_disabled_cb(void *param)
 
 			if (IS_PERIPHERAL(cig)) {
 				/* Remove data path and ISOAL sink/source associated with this
-				 * CIS for both directions.
+				 * CIS for both directions. Disable them one at a time to make sure
+				 * both are removed, even if only one is set.
 				 */
 				ll_remove_iso_path(cis->lll.handle,
-						   BT_HCI_DATAPATH_DIR_CTLR_TO_HOST);
+						   BIT(BT_HCI_DATAPATH_DIR_HOST_TO_CTLR));
 				ll_remove_iso_path(cis->lll.handle,
-						   BT_HCI_DATAPATH_DIR_HOST_TO_CTLR);
+						   BIT(BT_HCI_DATAPATH_DIR_CTLR_TO_HOST));
 
 				ll_conn_iso_stream_release(cis);
 
@@ -1163,11 +1295,11 @@ static void cis_disabled_cb(void *param)
 		}
 	}
 
-	if (cig->started && !active_cises) {
+	if ((cig->state == CIG_STATE_ACTIVE) && !active_cises) {
 		/* This was the last active CIS of the CIG. Initiate CIG teardown by
 		 * stopping ticker.
 		 */
-		cig->started = 0;
+		cig->state = CIG_STATE_INACTIVE;
 
 		ticker_status = ticker_stop(TICKER_INSTANCE_ID_CTLR,
 					    TICKER_USER_ID_ULL_HIGH,

@@ -40,7 +40,7 @@ PTHREAD_COND_DEFINE(cvar0);
 
 PTHREAD_COND_DEFINE(cvar1);
 
-PTHREAD_BARRIER_DEFINE(barrier, N_THR_E);
+static pthread_barrier_t barrier;
 
 sem_t main_sem;
 
@@ -243,6 +243,12 @@ ZTEST(posix_apis, test_posix_pthread_execution)
 	int serial_threads = 0;
 	static const char thr_name[] = "thread name";
 	char thr_name_buf[CONFIG_THREAD_MAX_NAME_LEN];
+
+	/*
+	 * initialize barriers the standard way after deprecating
+	 * PTHREAD_BARRIER_DEFINE().
+	 */
+	zassert_ok(pthread_barrier_init(&barrier, NULL, N_THR_E));
 
 	sem_init(&main_sem, 0, 1);
 	schedparam.sched_priority = CONFIG_NUM_COOP_PRIORITIES - 1;
@@ -587,12 +593,19 @@ ZTEST(posix_apis, test_pthread_descriptor_leak)
 	pthread_t pthread1;
 	pthread_attr_t attr;
 
+	zassert_ok(pthread_attr_init(&attr));
+	zassert_ok(pthread_attr_setstack(&attr, &stack_e[0][0], STACKS));
+
 	/* If we are leaking descriptors, then this loop will never complete */
 	for (size_t i = 0; i < CONFIG_MAX_PTHREAD_COUNT * 2; ++i) {
-		zassert_ok(pthread_attr_init(&attr));
-		zassert_ok(pthread_attr_setstack(&attr, &stack_e[0][0], STACKS));
 		zassert_ok(pthread_create(&pthread1, &attr, create_thread1, NULL),
 			   "unable to create thread %zu", i);
+		/*
+		 * k_msleep() should not be necessary, but it is added as a workaround
+		 * for #56163 and #58116, which identified race conditions on some
+		 * platforms.
+		 */
+		k_msleep(100);
 		zassert_ok(pthread_join(pthread1, NULL), "unable to join thread %zu", i);
 	}
 }

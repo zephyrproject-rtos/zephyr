@@ -8,3 +8,5 @@ tests:
     depends_on: pwm
     harness: led
     filter: dt_alias_exists("pwm-led0") and dt_compat_enabled("pwm-leds")
+    integration_platforms:
+      - nrf51dk_nrf51422

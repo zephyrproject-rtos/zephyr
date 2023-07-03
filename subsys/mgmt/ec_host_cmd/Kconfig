@@ -74,8 +74,22 @@ config EC_HOST_CMD_HANDLER_RX_BUFFER_DEF
 	help
 	  The handler defines common rx buffer
 
-endif # EC_HOST_CMD
+config EC_HOST_CMD_INITIALIZE_AT_BOOT
+	bool "Initialize the host command subsystem automacitlly"
+	default y
+	help
+	  Automatically initialize the host command subsystem with the chosen backend.
+	  The ec_host_cmd_init function is called by the chosen backend.
 
+config EC_HOST_CMD_DEDICATED_THREAD
+	bool "Create a new task for host command"
+	help
+	  The ec_host_cmd_init function creates a new thread dedicated for Host Command.
+	  Otherwise the ec_host_cmd_task function has to be called within another thread.
+
+source "subsys/mgmt/ec_host_cmd/Kconfig.logging"
 source "subsys/mgmt/ec_host_cmd/backends/Kconfig"
+
+endif # EC_HOST_CMD
 
 endmenu

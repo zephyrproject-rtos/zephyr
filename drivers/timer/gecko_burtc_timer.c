@@ -69,6 +69,8 @@ static atomic_t g_last_count;
 /* Spinlock to sync between Compare ISR and update of Compare register */
 static struct k_spinlock g_lock;
 
+/* Set to true when timer is initialized */
+static bool g_init;
 
 static void burtc_isr(const void *arg)
 {
@@ -159,7 +161,7 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 
 uint32_t sys_clock_elapsed(void)
 {
-	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
+	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL) || !g_init) {
 		return 0;
 	} else {
 		return (BURTC_CounterGet() - g_last_count) / g_cyc_per_tick;
@@ -172,7 +174,11 @@ uint32_t sys_clock_cycle_get_32(void)
 	 * a value of some 32-bit hw_cycles counter which counts with
 	 * z_clock_hw_cycles_per_sec frequency
 	 */
-	return BURTC_CounterGet();
+	if (!g_init) {
+		return 0;
+	} else {
+		return BURTC_CounterGet();
+	}
 }
 
 static int burtc_init(void)
@@ -214,6 +220,7 @@ static int burtc_init(void)
 	init.clkDiv = 1;
 	init.start = false;
 	BURTC_Init(&init);
+	g_init = true;
 
 	/* Enable compare match interrupt */
 	BURTC_IntClear(BURTC_IF_COMP);

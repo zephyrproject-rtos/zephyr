@@ -148,11 +148,13 @@
 
 &i2c00_scl_gpio004 {
 	drive-open-drain;
+	output-enable;
 	output-high;
 };
 
 &i2c00_sda_gpio003 {
 	drive-open-drain;
+	output-enable;
 	output-high;
 };
 
@@ -181,11 +183,13 @@
 
 &i2c01_scl_gpio131 {
 	drive-open-drain;
+	output-enable;
 	output-high;
 };
 
 &i2c01_sda_gpio130 {
 	drive-open-drain;
+	output-enable;
 	output-high;
 };
 
@@ -198,11 +202,13 @@
 
 &i2c07_scl_gpio013 {
 	drive-open-drain;
+	output-enable;
 	output-high;
 };
 
 &i2c07_sda_gpio012 {
 	drive-open-drain;
+	output-enable;
 	output-high;
 };
 
@@ -297,7 +303,8 @@
 &ps2_0 {
 	status = "okay";
 	pinctrl-0 = <&ps2_clk0a_gpio114 &ps2_dat0a_gpio115>;
-	pinctrl-names = "default";
+	pinctrl-1 = <&ps2_clk0a_gpio114_sleep &ps2_dat0a_gpio115_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 &timer5 {

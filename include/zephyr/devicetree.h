@@ -18,6 +18,10 @@
 
 #include <devicetree_generated.h>
 
+#if !defined(_LINKER) && !defined(_ASMLANGUAGE)
+#include <stdint.h>
+#endif
+
 #include <zephyr/sys/util.h>
 
 /**
@@ -39,6 +43,7 @@
  * are missing from this list, please add them. It should be complete.
  *
  * _ENUM_IDX: property's value as an index into bindings enum
+ * _ENUM_VAL_<val>_EXISTS property's value as a token exists
  * _ENUM_TOKEN: property's value as a token into bindings enum (string
  *              enum values are identifiers) [deprecated, use _STRING_TOKEN]
  * _ENUM_UPPER_TOKEN: like _ENUM_TOKEN, but uppercased [deprecated, use
@@ -621,6 +626,10 @@
  * - for type phandles, this expands to the number of phandles
  * - for type phandle-array, this expands to the number of
  *   phandle and specifier blocks in the property
+ * - for type phandle, this expands to 1 (so that a phandle
+ *   can be treated as a degenerate case of phandles with length 1)
+ * - for type string, this expands to 1 (so that a string can be
+ *   treated as a degenerate case of string-array with length 1)
  *
  * These properties are handled as special cases:
  *
@@ -720,16 +729,28 @@
  * It might help to read the argument order as being similar to
  * `node->property[index]`.
  *
- * When the property's binding has type array, string-array,
- * uint8-array, or phandles, this expands to the idx-th array element
- * as an integer, string literal, or node identifier respectively.
+ * The return value depends on the property's type:
+ *
+ * - for types array, string-array, uint8-array, and phandles,
+ *   this expands to the idx-th array element as an
+ *   integer, string literal, integer, and node identifier
+ *   respectively
+ *
+ * - for type phandle, idx must be 0 and the expansion is a node
+ *   identifier (this treats phandle like a phandles of length 1)
+ *
+ * - for type string, idx must be 0 and the expansion is the the
+ *   entire string (this treats string like string-array of length 1)
  *
  * These properties are handled as special cases:
  *
- * - `reg` property: use DT_REG_ADDR_BY_IDX() or DT_REG_SIZE_BY_IDX() instead
- * - `interrupts` property: use DT_IRQ_BY_IDX() instead
+ * - `reg`: use DT_REG_ADDR_BY_IDX() or DT_REG_SIZE_BY_IDX() instead
+ * - `interrupts`: use DT_IRQ_BY_IDX()
+ * - `ranges`: use DT_NUM_RANGES()
+ * - `dma-ranges`: it is an error to use this property with
+ *   DT_PROP_BY_IDX()
  *
- * For non-array properties, behavior is undefined.
+ * For properties of other types, behavior is undefined.
  *
  * @param node_id node identifier
  * @param prop lowercase-and-underscores property name
@@ -826,6 +847,17 @@
 #define DT_ENUM_IDX_OR(node_id, prop, default_idx_value) \
 	COND_CODE_1(DT_NODE_HAS_PROP(node_id, prop), \
 		    (DT_ENUM_IDX(node_id, prop)), (default_idx_value))
+
+/**
+ * @brief Does a node enumeration property have a given value?
+ *
+ * @param node_id node identifier
+ * @param prop lowercase-and-underscores property name
+ * @param value lowercase-and-underscores enumeration value
+ * @return 1 if the node property has the value @a value, 0 otherwise.
+ */
+#define DT_ENUM_HAS_VALUE(node_id, prop, value) \
+	IS_ENABLED(DT_CAT6(node_id, _P_, prop, _ENUM_VAL_, value, _EXISTS))
 
 /**
  * @brief Get a string property's value as a token.
@@ -2192,6 +2224,18 @@
 #define DT_REG_ADDR(node_id) DT_REG_ADDR_BY_IDX(node_id, 0)
 
 /**
+ * @brief 64-bit version of DT_REG_ADDR()
+ *
+ * This macro version adds the appropriate suffix for 64-bit unsigned
+ * integer literals.
+ * Note that this macro is equivalent to DT_REG_ADDR() in linker/ASM context.
+ *
+ * @param node_id node identifier
+ * @return node's register block address
+ */
+#define DT_REG_ADDR_U64(node_id) DT_U64_C(DT_REG_ADDR(node_id))
+
+/**
  * @brief Get a node's (only) register block size
  *
  * Equivalent to DT_REG_SIZE_BY_IDX(node_id, 0).
@@ -2208,6 +2252,21 @@
  */
 #define DT_REG_ADDR_BY_NAME(node_id, name) \
 	DT_CAT4(node_id, _REG_NAME_, name, _VAL_ADDRESS)
+
+/**
+ * @brief 64-bit version of DT_REG_ADDR_BY_NAME()
+ *
+ * This macro version adds the appropriate suffix for 64-bit unsigned
+ * integer literals.
+ * Note that this macro is equivalent to DT_REG_ADDR_BY_NAME() in
+ * linker/ASM context.
+ *
+ * @param node_id node identifier
+ * @param name lowercase-and-underscores register specifier name
+ * @return address of the register block specified by name
+ */
+#define DT_REG_ADDR_BY_NAME_U64(node_id, name) \
+	DT_U64_C(DT_REG_ADDR_BY_NAME(node_id, name))
 
 /**
  * @brief Get a register block's size by name
@@ -2637,6 +2696,9 @@
  * DT_FOREACH_PROP_ELEM(), and @p idx is the current index into the array.
  * The @p idx values are integer literals starting from 0.
  *
+ * The @p prop argument must refer to a property that can be passed to
+ * DT_PROP_LEN().
+ *
  * Example devicetree fragment:
  *
  * @code{.dts}
@@ -2671,13 +2733,10 @@
  * where `n` is the number of elements in @p prop, as it would be
  * returned by `DT_PROP_LEN(node_id, prop)`.
  *
- * The @p prop argument must refer to a property with type `string`,
- * `array`, `uint8-array`, `string-array`, `phandles`, or `phandle-array`. It
- * is an error to use this macro with properties of other types.
- *
  * @param node_id node identifier
  * @param prop lowercase-and-underscores property name
  * @param fn macro to invoke
+ * @see DT_PROP_LEN
  */
 #define DT_FOREACH_PROP_ELEM(node_id, prop, fn)		\
 	DT_CAT4(node_id, _P_, prop, _FOREACH_PROP_ELEM)(fn)
@@ -2714,9 +2773,8 @@
  *     };
  * @endcode
  *
- * The "prop" argument must refer to a property with type string,
- * array, uint8-array, string-array, phandles, or phandle-array. It is
- * an error to use this macro with properties of other types.
+ * The @p prop parameter has the same restrictions as the same parameter
+ * given to DT_FOREACH_PROP_ELEM().
  *
  * @param node_id node identifier
  * @param prop lowercase-and-underscores property name
@@ -2739,6 +2797,9 @@
  * the array. The @p idx values are integer literals starting from 0. The
  * remaining arguments are passed-in by the caller.
  *
+ * The @p prop parameter has the same restrictions as the same parameter
+ * given to DT_FOREACH_PROP_ELEM().
+ *
  * @param node_id node identifier
  * @param prop lowercase-and-underscores property name
  * @param fn macro to invoke
@@ -2752,6 +2813,9 @@
 /**
  * @brief Invokes @p fn for each element in the value of property @p prop with
  * multiple arguments and a separator.
+ *
+ * The @p prop parameter has the same restrictions as the same parameter
+ * given to DT_FOREACH_PROP_ELEM().
  *
  * @param node_id node identifier
  * @param prop lowercase-and-underscores property name
@@ -3337,6 +3401,17 @@
 	DT_ENUM_IDX_OR(DT_DRV_INST(inst), prop, default_idx_value)
 
 /**
+ * @brief Does a `DT_DRV_COMPAT` enumeration property have a given value?
+ *
+ * @param inst instance number
+ * @param prop lowercase-and-underscores property name
+ * @param value lowercase-and-underscores enumeration value
+ * @return 1 if the node property has the value @a value, 0 otherwise.
+ */
+#define DT_INST_ENUM_HAS_VALUE(inst, prop, value) \
+	DT_ENUM_HAS_VALUE(DT_DRV_INST(inst), prop, value)
+
+/**
  * @brief Get a `DT_DRV_COMPAT` instance property
  * @param inst instance number
  * @param prop lowercase-and-underscores property name
@@ -3638,6 +3713,21 @@
 	DT_REG_ADDR_BY_NAME(DT_DRV_INST(inst), name)
 
 /**
+ * @brief 64-bit version of DT_INST_REG_ADDR_BY_NAME()
+ *
+ * This macro version adds the appropriate suffix for 64-bit unsigned
+ * integer literals.
+ * Note that this macro is equivalent to DT_INST_REG_ADDR_BY_NAME() in
+ * linker/ASM context.
+ *
+ * @param inst instance number
+ * @param name lowercase-and-underscores register specifier name
+ * @return address of the register block with the given @p name
+ */
+#define DT_INST_REG_ADDR_BY_NAME_U64(inst, name) \
+	DT_U64_C(DT_INST_REG_ADDR_BY_NAME(inst, name))
+
+/**
  * @brief Get a `DT_DRV_COMPAT`'s register block size by name
  * @param inst instance number
  * @param name lowercase-and-underscores register specifier name
@@ -3652,6 +3742,19 @@
  * @return instance's register block address
  */
 #define DT_INST_REG_ADDR(inst) DT_INST_REG_ADDR_BY_IDX(inst, 0)
+
+/**
+ * @brief 64-bit version of DT_INST_REG_ADDR()
+ *
+ * This macro version adds the appropriate suffix for 64-bit unsigned
+ * integer literals.
+ * Note that this macro is equivalent to DT_INST_REG_ADDR() in
+ * linker/ASM context.
+ *
+ * @param inst instance number
+ * @return instance's register block address
+ */
+#define DT_INST_REG_ADDR_U64(inst) DT_U64_C(DT_INST_REG_ADDR(inst))
 
 /**
  * @brief Get a `DT_DRV_COMPAT`'s (only) register block size
@@ -4127,6 +4230,16 @@
 /** @brief Helper macro to OR multiple has property checks in a loop macro */
 #define DT_INST_NODE_HAS_PROP_AND_OR(inst, prop) \
 	DT_INST_NODE_HAS_PROP(inst, prop) ||
+
+/**
+ * @def DT_U64_C
+ * @brief Macro to add ULL postfix to the devicetree address constants
+ */
+#if defined(_LINKER) || defined(_ASMLANGUAGE)
+#define DT_U64_C(_v) (_v)
+#else
+#define DT_U64_C(_v) UINT64_C(_v)
+#endif
 
 /** @endcond */
 

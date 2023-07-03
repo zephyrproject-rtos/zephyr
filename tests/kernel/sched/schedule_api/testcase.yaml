@@ -37,10 +37,3 @@ tests:
     extra_args: CONF_FILE=prj_dumb.conf
     extra_configs:
       - CONFIG_TIMESLICING=n
-  kernel.scheduler.linker_generator:
-    filter: not CONFIG_SCHED_MULTIQ
-    platform_allow: qemu_cortex_m3
-    extra_configs:
-      - CONFIG_TIMESLICING=y
-      - CONFIG_CMAKE_LINKER_GENERATOR=y
-    tags: linker_generator

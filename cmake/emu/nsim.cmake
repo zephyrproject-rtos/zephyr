@@ -3,7 +3,7 @@ if("${BOARD_DEBUG_RUNNER}" STREQUAL "mdb-nsim" OR "${BOARD_FLASH_RUNNER}" STREQU
 # mdb is required to run nsim multicore targets
 find_program(
   MDB
-  mdb
+  mdb64
   )
 set(MDB_BASIC_OPTIONS -nooptions -nogoifmain -toggle=include_local_symbols=1)
 

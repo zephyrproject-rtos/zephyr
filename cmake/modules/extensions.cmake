@@ -1486,6 +1486,42 @@ function(zephyr_build_string outvar)
   set(${outvar} ${${outvar}} PARENT_SCOPE)
 endfunction()
 
+# Function to add header file(s) to the list to be passed to syscall generator.
+function(zephyr_syscall_header)
+  foreach(one_file ${ARGV})
+    if(EXISTS ${one_file})
+      set(header_file ${one_file})
+    elseif(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/${one_file})
+      set(header_file ${CMAKE_CURRENT_SOURCE_DIR}/${one_file})
+    else()
+      message(FATAL_ERROR "Syscall header file not found: ${one_file}")
+    endif()
+
+    target_sources(
+      syscalls_interface INTERFACE
+      ${header_file}
+    )
+    target_include_directories(
+      syscalls_interface INTERFACE
+      ${header_file}
+    )
+    add_dependencies(
+      syscalls_interface
+      ${header_file}
+    )
+
+    unset(header_file)
+  endforeach()
+endfunction()
+
+# Function to add header file(s) to the list to be passed to syscall generator
+# if condition is true.
+function(zephyr_syscall_header_ifdef feature_toggle)
+  if(${${feature_toggle}})
+    zephyr_syscall_header(${ARGN})
+  endif()
+endfunction()
+
 ########################################################
 # 2. Kconfig-aware extensions
 ########################################################
@@ -2467,10 +2503,44 @@ function(zephyr_list transform list_var action)
 endfunction()
 
 # Usage:
-#   zephyr_get(<variable> [MERGE] [SYSBUILD [LOCAL|GLOBAL]])
+#   zephyr_var_name(<variable> <scope> <out>)
+#
+# Internal function for construction of scoped variable name expansion string.
+# Examples:
+#   reading a current scope FOO variable is identical to expand ${FOO}.
+#   reading a cache scope FOO variable is identical to expand $CACHE{FOO}.
+#
+# this functions will return the var name in out var for the scope if it is
+# defined, else it will set the outvar to undefined.
+function(zephyr_var_name variable scope out)
+  if(scope STREQUAL "ENV" OR scope STREQUAL "CACHE")
+    if(DEFINED ${scope}{${variable}})
+      set(${out} "$${scope}{${variable}}" PARENT_SCOPE)
+    else()
+      set(${out} PARENT_SCOPE)
+    endif()
+  else()
+    if(DEFINED ${scope}_${variable})
+      set(${out} "${${scope}_${variable}}" PARENT_SCOPE)
+    else()
+      set(${out} PARENT_SCOPE)
+    endif()
+  endif()
+endfunction()
+
+# Usage:
+#   zephyr_get(<variable> [MERGE [REVERSE]] [SYSBUILD [LOCAL|GLOBAL]] [VAR <var1> ...])
 #
 # Return the value of <variable> as local scoped variable of same name. If MERGE
-# is supplied, will return a list of found items.
+# is supplied, will return a list of found items. If REVERSE is supplied
+# together with MERGE, the order of the list will be reversed before being
+# returned. Reverse will happen before the list is returned and hence it will
+# not change the order of precedence in which the list itself is constructed.
+#
+# VAR can be used either to store the result in a variable with a different
+# name, or to look for values from multiple variables.
+# zephyr_get(FOO VAR FOO_A FOO_B)
+# zephyr_get(FOO MERGE VAR FOO_A FOO_B)
 #
 # zephyr_get() is a common function to provide a uniform way of supporting
 # build settings that can be set from sysbuild, CMakeLists.txt, CMake cache, or
@@ -2495,7 +2565,7 @@ endfunction()
 # using `-DZEPHYR_TOOLCHAIN_VARIANT=<val>`, then the value from the cache is
 # returned.
 function(zephyr_get variable)
-  cmake_parse_arguments(GET_VAR "MERGE" "SYSBUILD" "" ${ARGN})
+  cmake_parse_arguments(GET_VAR "MERGE;REVERSE" "SYSBUILD" "VAR" ${ARGN})
 
   if(DEFINED GET_VAR_SYSBUILD)
     if(NOT ("${GET_VAR_SYSBUILD}" STREQUAL "GLOBAL" OR
@@ -2507,80 +2577,136 @@ function(zephyr_get variable)
     set(GET_VAR_SYSBUILD "GLOBAL")
   endif()
 
-  if(GET_VAR_MERGE)
-    # Clear variable before appending items in MERGE mode but keep a backup for
-    # local appending later
-    set(local_var_backup ${${variable}})
-    set(${variable})
+  if(GET_VAR_REVERSE AND NOT GET_VAR_MERGE)
+    message(FATAL_ERROR "zephyr_get(... REVERSE) missing a required argument: MERGE")
   endif()
 
-  set(used_global false)
-
-  if(SYSBUILD)
-    get_property(sysbuild_name TARGET sysbuild_cache PROPERTY SYSBUILD_NAME)
-    get_property(sysbuild_main_app TARGET sysbuild_cache PROPERTY SYSBUILD_MAIN_APP)
-    get_property(sysbuild_${variable} TARGET sysbuild_cache PROPERTY ${sysbuild_name}_${variable})
-    if(NOT DEFINED sysbuild_${variable} AND
-       ("${GET_VAR_SYSBUILD}" STREQUAL "GLOBAL" OR sysbuild_main_app)
-    )
-      get_property(sysbuild_${variable} TARGET sysbuild_cache PROPERTY ${variable})
-      set(used_global true)
-    endif()
+  if(NOT DEFINED GET_VAR_VAR)
+    set(GET_VAR_VAR ${variable})
   endif()
 
-  if(DEFINED sysbuild_${variable})
-    if(GET_VAR_MERGE)
-      list(APPEND ${variable} ${sysbuild_${variable}})
-    else()
-      set(${variable} ${sysbuild_${variable}} PARENT_SCOPE)
-      return()
-    endif()
-  endif()
-  if(SYSBUILD AND GET_VAR_MERGE AND NOT used_global AND "${GET_VAR_SYSBUILD}" STREQUAL "GLOBAL")
-    get_property(sysbuild_${variable} TARGET sysbuild_cache PROPERTY ${variable})
-    list(APPEND ${variable} ${sysbuild_${variable}})
-  endif()
-  if(DEFINED CACHE{${variable}})
-    if(GET_VAR_MERGE)
-      list(APPEND ${variable} $CACHE{${variable}})
-    else()
-      set(${variable} $CACHE{${variable}} PARENT_SCOPE)
-      return()
-    endif()
-  endif()
-  if(DEFINED ENV{${variable}})
-    if(GET_VAR_MERGE)
-      list(APPEND ${variable} $ENV{${variable}}})
-    else()
-      set(${variable} $ENV{${variable}} PARENT_SCOPE)
-      # Set the environment variable in CMake cache, so that a build invocation
-      # triggering a CMake rerun doesn't rely on the environment variable still
-      # being available / have identical value.
-      set(${variable} $ENV{${variable}} CACHE INTERNAL "")
-    endif()
+  # Keep current scope variables in internal variables.
+  # This is needed to properly handle cases where we want to check value against
+  # environment value or when appending with the MERGE operation.
+  foreach(var ${GET_VAR_VAR})
+    set(current_${var} ${${var}})
+    set(${var})
 
-    if(DEFINED ${variable} AND NOT "${${variable}}" STREQUAL "$ENV{${variable}}")
-      # Variable exists as a local scoped variable, defined in a CMakeLists.txt
-      # file, however it is also set in environment.
-      # This might be a surprise to the user, so warn about it.
-      message(WARNING "environment variable '${variable}' is hiding local "
-                      "variable of same name.\n"
-                      "Environment value (in use): $ENV{${variable}}\n"
-                      "Local scope value (hidden): ${${variable}}\n"
+    if(SYSBUILD)
+      get_property(sysbuild_name TARGET sysbuild_cache PROPERTY SYSBUILD_NAME)
+      get_property(sysbuild_main_app TARGET sysbuild_cache PROPERTY SYSBUILD_MAIN_APP)
+      get_property(sysbuild_${var} TARGET sysbuild_cache PROPERTY ${sysbuild_name}_${var})
+      if(NOT DEFINED sysbuild_${var} AND
+         ("${GET_VAR_SYSBUILD}" STREQUAL "GLOBAL" OR sysbuild_main_app)
       )
+        get_property(sysbuild_${var} TARGET sysbuild_cache PROPERTY ${var})
+      endif()
+    else()
+      set(sysbuild_${var})
     endif()
 
-    if(NOT GET_VAR_MERGE)
-      return()
+    if(TARGET snippets_scope)
+      get_property(snippets_${var} TARGET snippets_scope PROPERTY ${var})
     endif()
+  endforeach()
+
+  set(scopes "sysbuild;CACHE;snippets;ENV;current")
+  if(GET_VAR_REVERSE)
+    list(REVERSE scopes)
   endif()
+  foreach(scope IN LISTS scopes)
+    foreach(var ${GET_VAR_VAR})
+      zephyr_var_name("${var}" "${scope}" expansion_var)
+      if(DEFINED expansion_var)
+        string(CONFIGURE "${expansion_var}" scope_value)
+        if(GET_VAR_MERGE)
+          list(APPEND ${variable} ${scope_value})
+        else()
+          set(${variable} ${scope_value} PARENT_SCOPE)
+
+          if("${scope}" STREQUAL "ENV")
+            # Set the environment variable in CMake cache, so that a build
+            # invocation triggering a CMake rerun doesn't rely on the
+            # environment variable still being available / have identical value.
+            set(${var} $ENV{${var}} CACHE INTERNAL "Cached environment variable ${var}")
+          endif()
+
+          if("${scope}" STREQUAL "ENV" AND DEFINED current_${var}
+             AND NOT "${current_${var}}" STREQUAL "$ENV{${var}}"
+          )
+            # Variable exists as current scoped variable, defined in a CMakeLists.txt
+            # file, however it is also set in environment.
+            # This might be a surprise to the user, so warn about it.
+            message(WARNING "environment variable '${var}' is hiding local "
+                            "variable of same name.\n"
+                            "Environment value (in use): $ENV{${var}}\n"
+                            "Current scope value (hidden): ${current_${var}}\n"
+            )
+          endif()
+
+          return()
+        endif()
+      endif()
+    endforeach()
+  endforeach()
 
   if(GET_VAR_MERGE)
-    list(APPEND ${variable} ${local_var_backup})
-    list(REMOVE_DUPLICATES ${variable})
+    if(GET_VAR_REVERSE)
+      list(REVERSE ${variable})
+      list(REMOVE_DUPLICATES ${variable})
+      list(REVERSE ${variable})
+    else()
+      list(REMOVE_DUPLICATES ${variable})
+    endif()
     set(${variable} ${${variable}} PARENT_SCOPE)
   endif()
 endfunction(zephyr_get variable)
+
+# Usage:
+#   zephyr_create_scope(<scope>)
+#
+# Create a new scope for creation of scoped variables.
+#
+# <scope>: Name of new scope.
+#
+function(zephyr_create_scope scope)
+  if(TARGET ${scope}_scope)
+    message(FATAL_ERROR "zephyr_create_scope(${scope}) already exists.")
+  endif()
+
+  add_custom_target(${scope}_scope)
+endfunction()
+
+# Usage:
+#   zephyr_set(<variable> <value> SCOPE <scope> [APPEND])
+#
+# Zephyr extension of CMake set which allows a variable to be set in a specific
+# scope. The scope is used on later zephyr_get() invocation for precedence
+# handling when a variable it set in multiple scopes.
+#
+# <variable>   : Name of variable
+# <value>      : Value of variable, multiple values will create a list.
+#                The SCOPE argument identifies the end of value list.
+# SCOPE <scope>: Name of scope for the variable
+# APPEND       : Append values to the already existing variable in <scope>
+#
+function(zephyr_set variable)
+  cmake_parse_arguments(SET_VAR "APPEND" "SCOPE" "" ${ARGN})
+
+  zephyr_check_arguments_required_all(zephyr_set SET_VAR SCOPE)
+
+  if(NOT TARGET ${SET_VAR_SCOPE}_scope)
+    message(FATAL_ERROR "zephyr_set(... SCOPE ${SET_VAR_SCOPE}) doesn't exists.")
+  endif()
+
+  if(SET_VAR_APPEND)
+    set(property_args APPEND)
+  endif()
+
+  set_property(TARGET ${SET_VAR_SCOPE}_scope ${property_args}
+               PROPERTY ${variable} ${SET_VAR_UNPARSED_ARGUMENTS}
+  )
+endfunction()
 
 # Usage:
 #   zephyr_check_cache(<variable> [REQUIRED])
@@ -2808,7 +2934,7 @@ function(target_byproducts)
   endif()
 
   add_custom_command(TARGET ${TB_TARGET}
-                     POST_BUILD COMMAND ${CMAKE_COMMAND} -E echo ""
+                     POST_BUILD COMMAND ${CMAKE_COMMAND} -E true
                      BYPRODUCTS ${TB_BYPRODUCTS}
                      COMMENT "Logical command for additional byproducts on target: ${TB_TARGET}"
   )

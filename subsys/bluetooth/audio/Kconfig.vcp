@@ -47,6 +47,12 @@ config BT_VCP_VOL_REND_AICS
 	  This hidden option makes it possible to easily check if AICS is
 	  enabled for VCS.
 
+config BT_VCP_VOL_REND_VOL_FLAGS_NOTIFIABLE
+	bool "Volume Flags notifiable support"
+	help
+	  This option enables support for clients to subscribe for notifications
+	  on the Volume Flags characteristic.
+
 endif # BT_VCP_VOL_REND
 
 ################### Volume Control Profile Volume Controller ###################

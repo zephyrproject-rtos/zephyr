@@ -111,13 +111,13 @@ static struct onoff_manager *get_onoff_manager(const struct device *dev,
 struct onoff_manager *z_nrf_clock_control_get_onoff(clock_control_subsys_t sys)
 {
 	return get_onoff_manager(CLOCK_DEVICE,
-				(enum clock_control_nrf_type)sys);
+				(enum clock_control_nrf_type)(size_t)sys);
 }
 
 static enum clock_control_status get_status(const struct device *dev,
 					    clock_control_subsys_t subsys)
 {
-	enum clock_control_nrf_type type = (enum clock_control_nrf_type)subsys;
+	enum clock_control_nrf_type type = (enum clock_control_nrf_type)(size_t)subsys;
 
 	__ASSERT_NO_MSG(type < CLOCK_CONTROL_NRF_TYPE_COUNT);
 
@@ -342,7 +342,7 @@ void z_nrf_clock_bt_ctlr_hf_release(void)
 static int stop(const struct device *dev, clock_control_subsys_t subsys,
 		uint32_t ctx)
 {
-	enum clock_control_nrf_type type = (enum clock_control_nrf_type)subsys;
+	enum clock_control_nrf_type type = (enum clock_control_nrf_type)(size_t)subsys;
 	struct nrf_clock_control_sub_data *subdata = get_sub_data(dev, type);
 	int err;
 
@@ -366,7 +366,7 @@ static int api_stop(const struct device *dev, clock_control_subsys_t subsys)
 static int async_start(const struct device *dev, clock_control_subsys_t subsys,
 			clock_control_cb_t cb, void *user_data, uint32_t ctx)
 {
-	enum clock_control_nrf_type type = (enum clock_control_nrf_type)subsys;
+	enum clock_control_nrf_type type = (enum clock_control_nrf_type)(size_t)subsys;
 	struct nrf_clock_control_sub_data *subdata = get_sub_data(dev, type);
 	int err;
 
@@ -437,7 +437,7 @@ static void onoff_started_callback(const struct device *dev,
 				   clock_control_subsys_t sys,
 				   void *user_data)
 {
-	enum clock_control_nrf_type type = (enum clock_control_nrf_type)sys;
+	enum clock_control_nrf_type type = (enum clock_control_nrf_type)(size_t)sys;
 	struct onoff_manager *mgr = get_onoff_manager(dev, type);
 	onoff_notify_fn notify = user_data;
 

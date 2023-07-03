@@ -116,13 +116,17 @@ typedef void (*counter_alarm_callback_t)(const struct device *dev,
  *
  * @param callback Callback called on alarm (cannot be NULL).
  * @param ticks Number of ticks that triggers the alarm. It can be relative (to
- *		now) or absolute value (see @ref COUNTER_ALARM_CFG_ABSOLUTE).
- *		Absolute alarm cannot be set further in future than top_value
- *		decremented by the guard period. Relative alarm ticks cannot
- *		exceed current top value (see @ref counter_get_top_value).
- *		If counter is clock driven then ticks can be converted to
+ *		now) or an absolute value (see @ref COUNTER_ALARM_CFG_ABSOLUTE).
+ *		Both, relative and absolute, alarm values can be any value
+ *		between zero and the current top value (see @ref counter_get_top_value).
+ *		When setting an absolute alarm value close to the current counter
+ *		value there is a risk that the counter will have counted past the
+ *		given absolute value before the driver manages to activate the alarm.
+ *		Therefore a guard period can be defined that lets the driver decide
+ *		unambiguously whether it is late or not (see @ref counter_set_guard_period).
+ *		If the counter is clock driven then ticks can be converted to
  *		microseconds (see @ref counter_ticks_to_us). Alternatively,
- *		counter implementation may count asynchronous events.
+ *		the counter implementation may count asynchronous events.
  * @param user_data User data returned in callback.
  * @param flags	Alarm flags. See @ref COUNTER_ALARM_FLAGS.
  */
@@ -545,22 +549,46 @@ static inline uint32_t z_impl_counter_get_top_value(const struct device *dev)
 /**
  * @brief Set guard period in counter ticks.
  *
- * Setting non-zero guard period enables detection of setting absolute alarm
- * too late. It limits how far in the future absolute alarm can be set.
+ * When setting an absolute alarm value close to the current counter value there
+ * is a risk that the counter will have counted past the given absolute value
+ * before the driver manages to activate the alarm. If this would go unnoticed
+ * then the alarm would only expire after the timer has wrapped and reached the
+ * given absolute value again after a full timer period. This could take a long
+ * time in case of a 32 bit timer. Setting a sufficiently large guard period will
+ * help the driver detect unambiguously whether it is late or not.
  *
- * Detection of too late setting is vital since if it is not detected alarm
- * is delayed by full period of the counter (up to 32 bits). Because of the
- * wrapping, it is impossible to distinguish alarm which is short in the past
- * from alarm which is targeted to expire after full counter period. In order to
- * detect too late setting, longest possible alarm is limited. Absolute value
- * cannot exceed: (now + top_value - guard_period) % top_value.
+ * The guard period should be as many counter ticks as the driver will need at
+ * most to actually activate the alarm after the driver API has been called. If
+ * the driver finds that the counter has just passed beyond the given absolute
+ * tick value but is still close enough to fall within the guard period, it will
+ * assume that it is "late", i.e. that the intended expiry time has already passed.
+ * Depending on the @ref COUNTER_ALARM_CFG_EXPIRE_WHEN_LATE flag the driver will
+ * either ignore the alarm or expire it immediately in such a case.
  *
- * Guard period depends on application and counter frequency. If it is expected
- * that absolute alarms setting might be delayed then guard period should
- * exceed maximal potential delay. If use case allows, guard period can be set
- * very high (e.g. half of the counter top value).
+ * If, however, the counter is past the given absolute tick value but outside
+ * the guard period, then the driver will assume that this is intentional and
+ * let the counter wrap around to/from zero before it expires.
  *
- * After initialization guard period is set to 0 and late detection is disabled.
+ * More precisely:
+ *
+ * - When counting upwards (see @ref COUNTER_CONFIG_INFO_COUNT_UP) the given
+ *   absolute tick value must be above (now + guard_period) % top_value to be
+ *   accepted by the driver.
+ * - When counting downwards, the given absolute tick value must be less than
+ *   (now + top_value - guard_period) % top_value to be accepted.
+ *
+ * Examples:
+ *
+ * - counting upwards, now = 4950, top value = 5000, guard period = 100:
+ *      absolute tick value >= (4950 + 100) % 5000 = 50
+ * - counting downwards, now = 50, top value = 5000, guard period = 100:
+ *      absolute tick value <= (50 + 5000 - * 100) % 5000 = 4950
+ *
+ * If you need only short alarm periods, you can set the guard period very high
+ * (e.g. half of the counter top value) which will make it highly unlikely that
+ * the counter will ever unintentionally wrap.
+ *
+ * The guard period is set to 0 on initialization (no protection).
  *
  * @param dev		Pointer to the device structure for the driver instance.
  * @param ticks		Guard period in counter ticks.

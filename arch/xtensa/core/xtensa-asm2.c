@@ -14,6 +14,7 @@
 #include <zephyr/toolchain.h>
 #include <zephyr/logging/log.h>
 #include <offsets.h>
+#include <zsr.h>
 
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
@@ -162,6 +163,17 @@ void z_xtensa_dump_stack(const z_arch_esf_t *stack)
 #endif
 
 	LOG_ERR(" ** SAR %p", (void *)bsa->sar);
+
+#ifdef CONFIG_XTENSA_MMU
+	uint32_t vaddrstatus, vaddr0, vaddr1;
+
+	__asm__ volatile("rsr.vaddrstatus %0" : "=r"(vaddrstatus));
+	__asm__ volatile("rsr.vaddr0 %0" : "=r"(vaddr0));
+	__asm__ volatile("rsr.vaddr1 %0" : "=r"(vaddr1));
+
+	LOG_ERR(" ** VADDRSTATUS %p VADDR0 %p VADDR1 %p",
+		(void *)vaddrstatus, (void *)vaddr0, (void *)vaddr1);
+#endif /* CONFIG_XTENSA_MMU */
 }
 
 static inline unsigned int get_bits(int offset, int num_bits, unsigned int val)
@@ -180,10 +192,22 @@ static ALWAYS_INLINE void usage_stop(void)
 #endif
 }
 
-static inline void *return_to(void *interrupted)
+#ifdef CONFIG_MULTITHREADING
+void *z_arch_get_next_switch_handle(struct k_thread *interrupted)
 {
 	return _current_cpu->nested <= 1 ?
 		z_get_next_switch_handle(interrupted) : interrupted;
+}
+#else
+void *z_arch_get_next_switch_handle(struct k_thread *interrupted)
+{
+	return interrupted;
+}
+#endif /* CONFIG_MULTITHREADING */
+
+static inline void *return_to(void *interrupted)
+{
+	return z_arch_get_next_switch_handle(interrupted);
 }
 
 /* The wrapper code lives here instead of in the python script that
@@ -244,12 +268,38 @@ void *xtensa_excint1_c(int *interrupted_stack)
 	int cause, vaddr;
 	_xtensa_irq_bsa_t *bsa = (void *)*(int **)interrupted_stack;
 	bool is_fatal_error = false;
+	uint32_t ps;
+	void *pc;
 
 	__asm__ volatile("rsr.exccause %0" : "=r"(cause));
 
-	if (cause == EXCCAUSE_LEVEL1_INTERRUPT) {
+#ifdef CONFIG_XTENSA_MMU
+	/* TLB miss exception comes through level 1 interrupt also.
+	 * We need to preserve execution context after we have handled
+	 * the TLB miss, so we cannot unconditionally unmask interrupts.
+	 * For other cause, we can unmask interrupts so this would act
+	 * the same as if there is no MMU.
+	 */
+	switch (cause) {
+	case EXCCAUSE_ITLB_MISS:
+		/* Instruction TLB miss */
+		__fallthrough;
+	case EXCCAUSE_DTLB_MISS:
+		/* Data TLB miss */
+
+		/* Do not unmask interrupt while handling TLB misses. */
+		break;
+	default:
+		/* For others, we can unmask interrupts. */
+		bsa->ps &= ~PS_INTLEVEL_MASK;
+		break;
+	}
+#endif /* CONFIG_XTENSA_MMU */
+
+	switch (cause) {
+	case EXCCAUSE_LEVEL1_INTERRUPT:
 		return xtensa_int1_c(interrupted_stack);
-	} else if (cause == EXCCAUSE_SYSCALL) {
+	case EXCCAUSE_SYSCALL:
 		/* Just report it to the console for now */
 		LOG_ERR(" ** SYSCALL PS %p PC %p",
 			(void *)bsa->ps, (void *)bsa->pc);
@@ -260,15 +310,47 @@ void *xtensa_excint1_c(int *interrupted_stack)
 		 * else it will just loop forever
 		 */
 		bsa->pc += 3;
-	} else {
-		uint32_t ps = bsa->ps;
-		void *pc = (void *)bsa->pc;
+		break;
+#ifdef CONFIG_XTENSA_MMU
+	case EXCCAUSE_ITLB_MISS:
+		/* Instruction TLB miss */
+		__fallthrough;
+	case EXCCAUSE_DTLB_MISS:
+		/* Data TLB miss */
+
+		/**
+		 * The way it works is, when we try to access an address
+		 * that is not mapped, we will have a miss. The HW then
+		 * will try to get the correspondent memory in the page
+		 * table. As the page table is not mapped in memory we will
+		 * have a second miss, which will trigger an exception.
+		 * In the exception (here) what we do is to exploit this
+		 * hardware capability just trying to load the page table
+		 * (not mapped address), which will cause a miss, but then
+		 * the hardware will automatically map it again from
+		 * the page table. This time it will work since the page
+		 * necessary to map the page table itself are wired map.
+		 */
+		__asm__ volatile("wsr a0, " ZSR_EXTRA0_STR "\n\t"
+				 "rsr.ptevaddr a0\n\t"
+				 "l32i a0, a0, 0\n\t"
+				 "rsr a0, " ZSR_EXTRA0_STR "\n\t"
+				 "rsync"
+				 : : : "a0", "memory");
+
+		/* Since we are dealing with TLB misses, we will probably not
+		 * want to switch to another thread.
+		 */
+		return interrupted_stack;
+#endif /* CONFIG_XTENSA_MMU */
+	default:
+		ps = bsa->ps;
+		pc = (void *)bsa->pc;
 
 		__asm__ volatile("rsr.excvaddr %0" : "=r"(vaddr));
 
 		/* Default for exception */
 		int reason = K_ERR_CPU_EXCEPTION;
-		is_fatal_error = true;
 
 		/* We need to distinguish between an ill in xtensa_arch_except,
 		 * e.g for k_panic, and any other ill. For exceptions caused by
@@ -305,6 +387,21 @@ void *xtensa_excint1_c(int *interrupted_stack)
 		 */
 		z_xtensa_fatal_error(reason,
 				     (void *)interrupted_stack);
+		break;
+	}
+
+
+	switch (cause) {
+	case EXCCAUSE_SYSCALL:
+	case EXCCAUSE_LEVEL1_INTERRUPT:
+	case EXCCAUSE_ALLOCA:
+	case EXCCAUSE_ITLB_MISS:
+	case EXCCAUSE_DTLB_MISS:
+		is_fatal_error = false;
+		break;
+	default:
+		is_fatal_error = true;
+		break;
 	}
 
 	if (is_fatal_error) {

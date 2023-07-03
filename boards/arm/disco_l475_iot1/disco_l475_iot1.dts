@@ -66,6 +66,8 @@
 		watchdog0 = &iwdg;
 		spi-flash0 = &mx25r6435f;
 		accel0 = &lsm6dsl;
+		volt-sensor0 = &vref;
+		volt-sensor1 = &vbat;
 	};
 };
 
@@ -161,7 +163,7 @@
 	vl53l0x@29 {
 		compatible = "st,vl53l0x";
 		reg = <0x29>;
-		xshut-gpios = <&gpioc 6 GPIO_ACTIVE_HIGH>;
+		xshut-gpios = <&gpioc 6 GPIO_ACTIVE_LOW>;
 	};
 };
 
@@ -343,4 +345,12 @@ zephyr_udc0: &usbotg_fs {
 			};
 		};
 	};
+};
+
+&vref {
+	status = "okay";
+};
+
+&vbat {
+	status = "okay";
 };

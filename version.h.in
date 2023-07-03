@@ -1,20 +1,21 @@
-#ifndef _KERNEL_VERSION_H_
-#define _KERNEL_VERSION_H_
+#ifndef _@VERSION_TYPE@_VERSION_H_
+#define _@VERSION_TYPE@_VERSION_H_
 
-/* KERNEL and ZEPHYR_VERSION @templates@ values come from cmake/version.cmake
- * BUILD_VERSION @template@ will be 'git describe', alternatively user defined BUILD_VERSION.
+/* @templates@ values come from cmake/version.cmake
+ * BUILD_VERSION related @template@ values will be 'git describe',
+ * alternatively user defined BUILD_VERSION.
  */
 
 #cmakedefine ZEPHYR_VERSION_CODE @ZEPHYR_VERSION_CODE@
-#define ZEPHYR_VERSION(a,b,c) (((a) << 16) + ((b) << 8) + (c))
+#cmakedefine ZEPHYR_VERSION(a,b,c) (((a) << 16) + ((b) << 8) + (c))
 
-#define KERNELVERSION          @KERNELVERSION@
-#define KERNEL_VERSION_NUMBER  @KERNEL_VERSION_NUMBER@
-#define KERNEL_VERSION_MAJOR   @KERNEL_VERSION_MAJOR@
-#define KERNEL_VERSION_MINOR   @KERNEL_VERSION_MINOR@
-#define KERNEL_PATCHLEVEL      @KERNEL_PATCHLEVEL@
-#define KERNEL_VERSION_STRING  @KERNEL_VERSION_STRING@
+#define @VERSION_TYPE@VERSION          @@VERSION_TYPE@VERSION@
+#define @VERSION_TYPE@_VERSION_NUMBER  @@VERSION_TYPE@_VERSION_NUMBER@
+#define @VERSION_TYPE@_VERSION_MAJOR   @@VERSION_TYPE@_VERSION_MAJOR@
+#define @VERSION_TYPE@_VERSION_MINOR   @@VERSION_TYPE@_VERSION_MINOR@
+#define @VERSION_TYPE@_PATCHLEVEL      @@VERSION_TYPE@_PATCHLEVEL@
+#define @VERSION_TYPE@_VERSION_STRING  "@@VERSION_TYPE@_VERSION_STRING@"
 
-#define BUILD_VERSION          @BUILD_VERSION@
+#define @BUILD_VERSION_NAME@ @@BUILD_VERSION_NAME@@
 
-#endif /* _KERNEL_VERSION_H_ */
+#endif /* _@VERSION_TYPE@_VERSION_H_ */

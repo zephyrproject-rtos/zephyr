@@ -353,10 +353,6 @@ static ALWAYS_INLINE struct k_thread *next_up(void)
 	 * "ready", it means "is _current already added back to the
 	 * queue such that we don't want to re-add it".
 	 */
-	if (is_aborting(_current)) {
-		end_thread(_current);
-	}
-
 	bool queued = z_is_thread_queued(_current);
 	bool active = !z_is_thread_prevented_from_running(_current);
 
@@ -1086,6 +1082,10 @@ void *z_get_next_switch_handle(void *interrupted)
 	LOCKED(&sched_spinlock) {
 		struct k_thread *old_thread = _current, *new_thread;
 
+		if (is_aborting(_current)) {
+			end_thread(_current);
+		}
+
 		if (IS_ENABLED(CONFIG_SMP)) {
 			old_thread->switch_handle = NULL;
 		}
@@ -1095,7 +1095,7 @@ void *z_get_next_switch_handle(void *interrupted)
 
 		if (old_thread != new_thread) {
 			update_metairq_preempt(new_thread);
-			wait_for_switch(new_thread);
+			z_sched_switch_spin(new_thread);
 			arch_cohere_stacks(old_thread, interrupted, new_thread);
 
 			_current_cpu->swap_ok = 0;
@@ -1771,6 +1771,13 @@ void z_thread_abort(struct k_thread *thread)
 			k_spin_unlock(&sched_spinlock, key);
 			while (is_aborting(thread)) {
 			}
+
+			/* Now we know it's dying, but not necessarily
+			 * dead.  Wait for the switch to happen!
+			 */
+			key = k_spin_lock(&sched_spinlock);
+			z_sched_switch_spin(thread);
+			k_spin_unlock(&sched_spinlock, key);
 		} else if (active) {
 			/* Threads can join */
 			add_to_waitq_locked(_current, &thread->join_queue);
@@ -1806,6 +1813,7 @@ int z_impl_k_thread_join(struct k_thread *thread, k_timeout_t timeout)
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_thread, join, thread, timeout);
 
 	if ((thread->base.thread_state & _THREAD_DEAD) != 0U) {
+		z_sched_switch_spin(thread);
 		ret = 0;
 	} else if (K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
 		ret = -EBUSY;

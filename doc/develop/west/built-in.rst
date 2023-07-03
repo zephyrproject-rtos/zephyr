@@ -251,6 +251,7 @@ detailed help.
 - ``west diff``: run ``git diff`` in local project repositories
 - ``west status``: run ``git status`` in local project repositories
 - ``west forall``: run an arbitrary command in local project repositories
+- ``west compare``: compare the state of the workspace against the manifest
 
 Other built-in commands
 ***********************

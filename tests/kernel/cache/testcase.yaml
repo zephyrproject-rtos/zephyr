@@ -4,3 +4,7 @@ tests:
       - kernel
       - cache
     filter: CONFIG_CACHE_MANAGEMENT
+    integration_platforms:
+      - qemu_xtensa
+      - qemu_cortex_a53
+      - nsim_em

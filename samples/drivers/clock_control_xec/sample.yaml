@@ -3,7 +3,6 @@ sample:
   name: XEC clock control sample
 tests:
   sample.drivers.clock_control_xec:
-    build_only: true
     tags: clock_control
     platform_allow:
       - mec172xevb_assy6906

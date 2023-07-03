@@ -8,6 +8,7 @@ toolchain:
 simulation: qemu
 supported:
   - can
+  - smp
 testing:
   default: true
   ignore_tags:

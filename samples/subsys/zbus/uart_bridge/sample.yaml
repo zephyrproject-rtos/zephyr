@@ -18,3 +18,5 @@ tests:
   sample.zbus.uart_bridge_build:
     tags: zbus
     filter: dt_nodelabel_enabled("uart1")
+    integration_platforms:
+      - qemu_x86

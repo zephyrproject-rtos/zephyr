@@ -11,5 +11,7 @@ tests:
       - mimxrt1064_evk
       - mimxrt1160_evk_cm7
       - mimxrt1170_evk_cm7
+      - mimxrt1024_evk
+      - lpcxpresso55s69_cpu0
     integration_platforms:
       - frdm_k64f

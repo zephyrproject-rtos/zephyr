@@ -12,14 +12,19 @@ menuconfig DISPLAY_MCUX_DCNANO_LCDIF
 
 if DISPLAY_MCUX_DCNANO_LCDIF
 
-config MCUX_DCNANO_LCDIF_DOUBLE_FRAMEBUFFER
-	bool "Double framebuffer"
+config MCUX_DCNANO_LCDIF_FB_NUM
+	int "Framebuffers to allocate in driver"
+	default 1
+	range 0 2
 	help
-	  Enable dual framebuffer for LCDIF peripheral. Two framebuffers
-	  will be allocated, and switched between for each frame.
-	  Note that for partial display updates, the prior framebuffer must
-	  be copied into the next one. This can have significant performance
-	  impact.
+	  Number of framebuffers to allocate in DCNANO driver. Driver allocated
+	  framebuffers are required to support partial display updates.
+	  The driver has been validated to support 0 through 2 framebuffers.
+	  Note that hardware will likely perform best if zero driver
+	  framebuffers are allocated by the driver, and the application
+	  implements double framebuffering by always calling display_write with
+	  a buffer equal in size to the connected panel.
+
 
 config MCUX_DCNANO_LCDIF_MAINTAIN_CACHE
 	bool "Maintain cache coherency"

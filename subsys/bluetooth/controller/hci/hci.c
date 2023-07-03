@@ -17,10 +17,9 @@
 
 #include <zephyr/drivers/bluetooth/hci_driver.h>
 
-#include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/bluetooth/hci_vs.h>
 #include <zephyr/bluetooth/buf.h>
-#include <zephyr/bluetooth/bluetooth.h>
 
 #include "../host/hci_ecc.h"
 
@@ -2025,26 +2024,21 @@ static void le_set_cig_parameters(struct net_buf *buf, struct net_buf **evt)
 
 	rp = hci_cmd_complete(evt, sizeof(*rp) + cis_count * sizeof(uint16_t));
 	rp->cig_id = cig_id;
-	rp->num_handles = cis_count;
 
 	/* Only apply parameters if all went well */
 	if (!status) {
-		status = ll_cig_parameters_commit(cig_id);
+		uint16_t handles[CONFIG_BT_CTLR_CONN_ISO_STREAMS_PER_GROUP];
+
+		status = ll_cig_parameters_commit(cig_id, handles);
 
 		if (status == BT_HCI_ERR_SUCCESS) {
-			struct ll_conn_iso_group *cig;
-			uint16_t handle;
-
-			cig = ll_conn_iso_group_get_by_id(cig_id);
-			handle = UINT16_MAX;
-
 			for (uint8_t i = 0; i < cis_count; i++) {
-				(void)ll_conn_iso_stream_get_by_group(cig, &handle);
-				rp->handle[i] = sys_cpu_to_le16(handle);
+				rp->handle[i] = sys_cpu_to_le16(handles[i]);
 			}
 		}
 	}
 
+	rp->num_handles = status ? 0U : cis_count;
 	rp->status = status;
 }
 
@@ -2102,31 +2096,27 @@ static void le_set_cig_params_test(struct net_buf *buf, struct net_buf **evt)
 
 	rp = hci_cmd_complete(evt, sizeof(*rp) + cis_count * sizeof(uint16_t));
 	rp->cig_id = cig_id;
-	rp->num_handles = cis_count;
 
 	/* Only apply parameters if all went well */
 	if (!status) {
-		status = ll_cig_parameters_commit(cig_id);
+		uint16_t handles[CONFIG_BT_CTLR_CONN_ISO_STREAMS_PER_GROUP];
+
+		status = ll_cig_parameters_commit(cig_id, handles);
 
 		if (status == BT_HCI_ERR_SUCCESS) {
-			struct ll_conn_iso_group *cig;
-			uint16_t handle;
-
-			cig = ll_conn_iso_group_get_by_id(cig_id);
-			handle = UINT16_MAX;
-
 			for (uint8_t i = 0; i < cis_count; i++) {
-				(void)ll_conn_iso_stream_get_by_group(cig, &handle);
-				rp->handle[i] = sys_cpu_to_le16(handle);
+				rp->handle[i] = sys_cpu_to_le16(handles[i]);
 			}
 		}
 	}
 
+	rp->num_handles = status ? 0U : cis_count;
 	rp->status = status;
 }
 
 static void le_create_cis(struct net_buf *buf, struct net_buf **evt)
 {
+	uint16_t handle_used[CONFIG_BT_CTLR_CONN_ISO_STREAMS_PER_GROUP] = {0};
 	struct bt_hci_cp_le_create_cis *cmd = (void *)buf->data;
 	uint8_t status;
 	uint8_t i;
@@ -2145,9 +2135,19 @@ static void le_create_cis(struct net_buf *buf, struct net_buf **evt)
 	for (i = 0; !status && i < cmd->num_cis; i++) {
 		uint16_t cis_handle;
 		uint16_t acl_handle;
+		uint8_t cis_idx;
 
 		cis_handle = sys_le16_to_cpu(cmd->cis[i].cis_handle);
 		acl_handle = sys_le16_to_cpu(cmd->cis[i].acl_handle);
+
+		cis_idx = LL_CIS_IDX_FROM_HANDLE(cis_handle);
+		if (handle_used[cis_idx]) {
+			/* Handle must be unique in request */
+			status = BT_HCI_ERR_INVALID_PARAM;
+			break;
+		}
+
+		handle_used[cis_idx]++;
 		status = ll_cis_create_check(cis_handle, acl_handle);
 	}
 
@@ -3514,8 +3514,9 @@ static void le_set_ext_adv_enable(struct net_buf *buf, struct net_buf **evt)
 			return;
 		}
 
-		/* FIXME: Implement disable of all advertising sets */
-		*evt = cmd_complete_status(BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL);
+		status = ll_adv_disable_all();
+
+		*evt = cmd_complete_status(status);
 
 		return;
 	}
@@ -5457,6 +5458,12 @@ int hci_vendor_cmd_handle_common(uint16_t ocf, struct net_buf *cmd,
 		vs_read_tx_power_level(cmd, evt);
 		break;
 #endif /* CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL */
+
+#if defined(CONFIG_BT_CTLR_MIN_USED_CHAN) && defined(CONFIG_BT_PERIPHERAL)
+	case BT_OCF(BT_HCI_OP_VS_SET_MIN_NUM_USED_CHANS):
+		vs_set_min_used_chans(cmd, evt);
+		break;
+#endif /* CONFIG_BT_CTLR_MIN_USED_CHAN && CONFIG_BT_PERIPHERAL */
 #endif /* CONFIG_BT_HCI_VS_EXT */
 
 #if defined(CONFIG_BT_HCI_MESH_EXT)
@@ -5464,12 +5471,6 @@ int hci_vendor_cmd_handle_common(uint16_t ocf, struct net_buf *cmd,
 		mesh_cmd_handle(cmd, evt);
 		break;
 #endif /* CONFIG_BT_HCI_MESH_EXT */
-
-#if defined(CONFIG_BT_CTLR_MIN_USED_CHAN) && defined(CONFIG_BT_PERIPHERAL)
-	case BT_OCF(BT_HCI_OP_VS_SET_MIN_NUM_USED_CHANS):
-		vs_set_min_used_chans(cmd, evt);
-		break;
-#endif /* CONFIG_BT_CTLR_MIN_USED_CHAN && CONFIG_BT_PERIPHERAL */
 
 	default:
 		return -EINVAL;
@@ -5791,6 +5792,8 @@ int hci_iso_handle(struct net_buf *buf, struct net_buf **evt)
 		struct ll_adv_iso_set *adv_iso;
 		struct lll_adv_iso *lll_iso;
 		uint16_t stream_handle;
+		uint8_t target_event;
+		uint8_t event_offset;
 		uint16_t slen;
 
 		/* FIXME: Code only expects header present */
@@ -5816,33 +5819,34 @@ int hci_iso_handle(struct net_buf *buf, struct net_buf **evt)
 			return -EINVAL;
 		}
 
-		/* FIXME: convey group start */
-		sdu_frag_tx.grp_ref_point = 0;
-
-		/* FIXME: temporary interface to enable ISOAL data Tx
-		 * Create provide proper interface between client
-		 * (using ISOAL target_event) and ISOAL, preferably
-		 * without dependence on peeking at LL data.
-		 * Problem is that client must specify a value greater
-		 * than LL bisPayloadCounter or no data is sent.
+		/* Determine the target event and the first event offset after
+		 * datapath setup.
+		 * event_offset mitigates the possibility of first SDU being
+		 * late on the datapath and avoid all subsequent SDUs being
+		 * dropped for a said SDU interval. i.e. upper layer is not
+		 * drifting, say first SDU dropped, hence subsequent SDUs all
+		 * dropped, is mitigated by offsetting the grp_ref_point.
+		 *
+		 * It is ok to do the below for every received ISO data, ISOAL
+		 * will not consider subsequent skewed target_event after the
+		 * first use of target_event value.
+		 *
+		 * In BIG implementation in LLL, payload_count corresponds to
+		 * the next BIG event, hence calculate grp_ref_point for next
+		 * BIG event by incrementing the previous elapsed big_ref_point
+		 * by one additional ISO interval.
 		 */
 		lll_iso = &adv_iso->lll;
+		target_event = lll_iso->payload_count / lll_iso->bn;
+		event_offset = ull_ref_get(&adv_iso->ull) ? 0U : 1U;
+		event_offset += lll_iso->latency_prepare;
 
-		/* FIXME: Remove the below temporary hack to buffer up ISO data
-		 * if the SDU interval and ISO interval misalign.
-		 */
-		uint64_t pkt_seq_num = lll_iso->payload_count / lll_iso->bn;
-
-		if (((pkt_seq_num - stream->pkt_seq_num) & BIT64_MASK(39)) <=
-		    BIT64_MASK(38)) {
-			stream->pkt_seq_num = pkt_seq_num;
-		} else {
-			pkt_seq_num = stream->pkt_seq_num;
-		}
-
-		sdu_frag_tx.target_event = pkt_seq_num;
-
-		stream->pkt_seq_num++;
+		sdu_frag_tx.target_event = target_event + event_offset;
+		sdu_frag_tx.grp_ref_point =
+			isoal_get_wrapped_time_us(adv_iso->big_ref_point,
+						  ((event_offset + 1U) *
+						   lll_iso->iso_interval *
+						   ISO_INT_UNIT_US));
 
 		/* Start Fragmentation */
 		/* FIXME: need to ensure ISO-AL returns proper isoal_status.
@@ -6381,7 +6385,7 @@ static void le_ext_adv_legacy_report(struct pdu_data *pdu_data,
 	sep->num_reports = 1U;
 	adv_info = (void *)(((uint8_t *)sep) + sizeof(*sep));
 
-	adv_info->evt_type = evt_type_lookup[adv->type];
+	adv_info->evt_type = sys_cpu_to_le16((uint16_t)evt_type_lookup[adv->type]);
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 	if (rl_idx < ll_rl_size_get()) {
@@ -6572,7 +6576,7 @@ static void ext_adv_info_fill(uint8_t evt_type, uint8_t phy, uint8_t sec_phy,
 	sep->num_reports = 1U;
 	adv_info = (void *)(((uint8_t *)sep) + sizeof(*sep));
 
-	adv_info->evt_type = evt_type;
+	adv_info->evt_type = sys_cpu_to_le16((uint16_t)evt_type);
 
 	if (0) {
 #if defined(CONFIG_BT_CTLR_PRIVACY)

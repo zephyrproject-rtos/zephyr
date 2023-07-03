@@ -9,6 +9,7 @@
 #include <zephyr/xen/public/xen.h>
 #include <zephyr/xen/public/event_channel.h>
 #include <zephyr/xen/events.h>
+#include <zephyr/sys/barrier.h>
 
 #include <errno.h>
 #include <zephyr/kernel.h>
@@ -219,7 +220,7 @@ static void events_isr(void *data)
 	 */
 	vcpu->evtchn_upcall_pending = 0;
 
-	dmb();
+	barrier_dmem_fence_full();
 
 	/* Can not use system atomic_t/atomic_set() due to 32-bit casting */
 	pos_selector = __atomic_exchange_n(&vcpu->evtchn_pending_sel,

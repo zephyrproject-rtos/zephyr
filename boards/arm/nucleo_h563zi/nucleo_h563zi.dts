@@ -28,6 +28,8 @@
 		sw0 = &user_button;
 		watchdog0 = &iwdg;
 		pwm-led0 = &pwm_led_1;
+		volt-sensor0 = &vref;
+		volt-sensor1 = &vbat;
 	};
 };
 

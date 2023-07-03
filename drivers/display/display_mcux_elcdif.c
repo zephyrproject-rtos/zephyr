@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-22, NXP
+ * Copyright 2019-23, NXP
  * Copyright (c) 2022, Basalte bv
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -22,12 +22,6 @@
 
 LOG_MODULE_REGISTER(display_mcux_elcdif, CONFIG_DISPLAY_LOG_LEVEL);
 
-#ifdef CONFIG_MCUX_ELCDIF_DOUBLE_FRAMEBUFFER
-#define MCUX_ELCDIF_FB_NUM 2
-#else
-#define MCUX_ELCDIF_FB_NUM 1
-#endif
-
 struct mcux_elcdif_config {
 	LCDIF_Type *base;
 	void (*irq_config_func)(const struct device *dev);
@@ -37,13 +31,17 @@ struct mcux_elcdif_config {
 	size_t fb_bytes;
 	const struct pinctrl_dev_config *pincfg;
 	const struct gpio_dt_spec backlight_gpio;
+	uint8_t *fb_ptr;
 };
 
 struct mcux_elcdif_data {
-	uint8_t *fb_ptr;
-	uint8_t *fb[MCUX_ELCDIF_FB_NUM];
+	/* Pointer to active framebuffer */
+	const uint8_t *active_fb;
+	/* Pointers to driver allocated framebuffers */
+	uint8_t *fb[CONFIG_MCUX_ELCDIF_FB_NUM];
 	struct k_sem sem;
-	uint8_t write_idx;
+	/* Tracks index of next active driver framebuffer */
+	uint8_t next_idx;
 };
 
 static int mcux_elcdif_write(const struct device *dev, const uint16_t x,
@@ -53,9 +51,6 @@ static int mcux_elcdif_write(const struct device *dev, const uint16_t x,
 {
 	const struct mcux_elcdif_config *config = dev->config;
 	struct mcux_elcdif_data *dev_data = dev->data;
-
-	uint8_t write_idx = (dev_data->write_idx + 1) % MCUX_ELCDIF_FB_NUM;
-
 	int h_idx;
 	const uint8_t *src;
 	uint8_t *dst;
@@ -65,39 +60,65 @@ static int mcux_elcdif_write(const struct device *dev, const uint16_t x,
 
 	LOG_DBG("W=%d, H=%d, @%d,%d", desc->width, desc->height, x, y);
 
-#ifdef CONFIG_MCUX_ELCDIF_DOUBLE_FRAMEBUFFER
-	k_sem_take(&dev_data->sem, K_FOREVER);
 
-	memcpy(dev_data->fb[write_idx], dev_data->fb[dev_data->write_idx],
-	       config->fb_bytes);
-#else
-	/* wait for the next frame done */
-	k_sem_reset(&dev_data->sem);
-	k_sem_take(&dev_data->sem, K_FOREVER);
-#endif
+	if ((x == 0) && (y == 0) &&
+	    (desc->width == config->rgb_mode.panelWidth) &&
+	    (desc->height == config->rgb_mode.panelHeight) &&
+	    (desc->pitch == desc->width)) {
+		/* We can use the display buffer directly, no need to copy it */
+		LOG_DBG("Setting FB from %p->%p",
+			(void *) dev_data->active_fb, (void *) buf);
+		dev_data->active_fb = buf;
+	} else {
+		/* We must use partial framebuffer copy */
+		if (CONFIG_MCUX_ELCDIF_FB_NUM == 0) {
+			LOG_ERR("Partial display refresh requires driver framebuffers");
+			return -ENOTSUP;
+		} else if (dev_data->active_fb != dev_data->fb[dev_data->next_idx]) {
+			/*
+			 * We must copy the entire current framebuffer to new
+			 * buffer, since we wil change the active buffer
+			 * address
+			 */
+			src = dev_data->active_fb;
+			dst = dev_data->fb[dev_data->next_idx];
+			memcpy(dst, src, config->fb_bytes);
+		}
+		/* Now, write the display update into active framebuffer */
+		src = buf;
+		dst = dev_data->fb[dev_data->next_idx];
+		dst += config->pixel_bytes * (y * config->rgb_mode.panelWidth + x);
 
-	src = buf;
-	dst = dev_data->fb[write_idx];
-	dst += config->pixel_bytes * (y * config->rgb_mode.panelWidth + x);
+		for (h_idx = 0; h_idx < desc->height; h_idx++) {
+			memcpy(dst, src, config->pixel_bytes * desc->width);
+			src += config->pixel_bytes * desc->pitch;
+			dst += config->pixel_bytes * config->rgb_mode.panelWidth;
+		}
 
-	for (h_idx = 0; h_idx < desc->height; h_idx++) {
-		memcpy(dst, src, config->pixel_bytes * desc->width);
-		src += config->pixel_bytes * desc->pitch;
-		dst += config->pixel_bytes * config->rgb_mode.panelWidth;
+		LOG_DBG("Setting FB from %p->%p", (void *) dev_data->active_fb,
+			(void *) dev_data->fb[dev_data->next_idx]);
+		/* Set new active framebuffer */
+		dev_data->active_fb = dev_data->fb[dev_data->next_idx];
 	}
 
+
 #ifdef CONFIG_HAS_MCUX_CACHE
-	DCACHE_CleanByRange((uint32_t) dev_data->fb[write_idx],
-			    config->fb_bytes);
+	DCACHE_CleanByRange((uint32_t) dev_data->active_fb, config->fb_bytes);
 #endif
 
-#ifdef CONFIG_MCUX_ELCDIF_DOUBLE_FRAMEBUFFER
-	ELCDIF_SetNextBufferAddr(config->base,
-				 (uint32_t) dev_data->fb[write_idx]);
+	/* Queue next framebuffer */
+	ELCDIF_SetNextBufferAddr(config->base, (uint32_t)dev_data->active_fb);
+
+#if CONFIG_MCUX_ELCDIF_FB_NUM != 0
+		/* Update index of active framebuffer */
+		dev_data->next_idx =
+			(dev_data->next_idx + 1) % CONFIG_MCUX_ELCDIF_FB_NUM;
 #endif
-
-	dev_data->write_idx = write_idx;
-
+	/* Enable frame buffer completion interrupt */
+	ELCDIF_EnableInterrupts(config->base,
+				kELCDIF_CurFrameDoneInterruptEnable);
+	/* Wait for frame send to complete */
+	k_sem_take(&dev_data->sem, K_FOREVER);
 	return 0;
 }
 
@@ -112,14 +133,14 @@ static int mcux_elcdif_read(const struct device *dev, const uint16_t x,
 
 static void *mcux_elcdif_get_framebuffer(const struct device *dev)
 {
-#ifdef CONFIG_MCUX_ELCDIF_DOUBLE_FRAMEBUFFER
+	/*
+	 * Direct FB access is not available. If the user wants to set
+	 * the framebuffer directly, they must provide a buffer to
+	 * `display_write` equal in size to the connected display,
+	 * with coordinates [0,0]
+	 */
 	LOG_ERR("Direct framebuffer access not available");
 	return NULL;
-#else
-	struct mcux_elcdif_data *dev_data = dev->data;
-
-	return dev_data->fb_ptr;
-#endif
 }
 
 static int mcux_elcdif_display_blanking_off(const struct device *dev)
@@ -194,8 +215,14 @@ static void mcux_elcdif_isr(const struct device *dev)
 
 	status = ELCDIF_GetInterruptStatus(config->base);
 	ELCDIF_ClearInterruptStatus(config->base, status);
-
-	k_sem_give(&dev_data->sem);
+	if (config->base->CUR_BUF == ((uint32_t)dev_data->active_fb)) {
+		/* Disable frame completion interrupt, post to
+		 * sem to notify that frame send is complete.
+		 */
+		ELCDIF_DisableInterrupts(config->base,
+					kELCDIF_CurFrameDoneInterruptEnable);
+		k_sem_give(&dev_data->sem);
+	}
 }
 
 static int mcux_elcdif_init(const struct device *dev)
@@ -223,20 +250,19 @@ static int mcux_elcdif_init(const struct device *dev)
 		rgb_mode.pixelFormat = kELCDIF_PixelFormatRGB888;
 	}
 
-	dev_data->fb[0] = dev_data->fb_ptr;
-#ifdef CONFIG_MCUX_ELCDIF_DOUBLE_FRAMEBUFFER
-	dev_data->fb[1] = dev_data->fb_ptr + config->fb_bytes;
-#endif
+	for (int i = 0; i < CONFIG_MCUX_ELCDIF_FB_NUM; i++) {
+		/* Record pointers to each driver framebuffer */
+		dev_data->fb[i] = config->fb_ptr + (config->fb_bytes * i);
+	}
 
-	rgb_mode.bufferAddr = (uint32_t) dev_data->fb_ptr;
+	rgb_mode.bufferAddr = (uint32_t) config->fb_ptr;
+	dev_data->active_fb = config->fb_ptr;
 
-	k_sem_init(&dev_data->sem, 1, 1);
+	k_sem_init(&dev_data->sem, 0, 1);
 
 	config->irq_config_func(dev);
 
 	ELCDIF_RgbModeInit(config->base, &rgb_mode);
-	ELCDIF_EnableInterrupts(config->base,
-				kELCDIF_CurFrameDoneInterruptEnable);
 	ELCDIF_RgbModeStart(config->base);
 
 	return 0;
@@ -261,6 +287,10 @@ static const struct display_driver_api mcux_elcdif_api = {
 #define MCUX_ELCDIF_DEVICE_INIT(id)						\
 	PINCTRL_DT_INST_DEFINE(id);						\
 	static void mcux_elcdif_config_func_##id(const struct device *dev);	\
+	static uint8_t __aligned(64) frame_buffer_##id[CONFIG_MCUX_ELCDIF_FB_NUM\
+			* DT_INST_PROP(id, width)				\
+			* DT_INST_PROP(id, height)				\
+			* MCUX_ELCDIF_PIXEL_BYTES(id)];				\
 	static const struct mcux_elcdif_config mcux_elcdif_config_##id = {	\
 		.base = (LCDIF_Type *) DT_INST_REG_ADDR(id),			\
 		.irq_config_func = mcux_elcdif_config_func_##id,		\
@@ -304,13 +334,10 @@ static const struct display_driver_api mcux_elcdif_api = {
 			* MCUX_ELCDIF_PIXEL_BYTES(id),				\
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(id),			\
 		.backlight_gpio = GPIO_DT_SPEC_INST_GET(id, backlight_gpios),	\
-	};									\
-	static uint8_t __aligned(64) frame_buffer_##id[MCUX_ELCDIF_FB_NUM	\
-			* DT_INST_PROP(id, width)				\
-			* DT_INST_PROP(id, height)				\
-			* MCUX_ELCDIF_PIXEL_BYTES(id)];				\
-	static struct mcux_elcdif_data mcux_elcdif_data_##id = {		\
 		.fb_ptr = frame_buffer_##id,					\
+	};									\
+	static struct mcux_elcdif_data mcux_elcdif_data_##id = {		\
+		.next_idx = 0,							\
 	};									\
 	DEVICE_DT_INST_DEFINE(id,						\
 			    &mcux_elcdif_init,					\

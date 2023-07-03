@@ -40,3 +40,5 @@ tests:
   sample.filesystem.fat_fs.has_sdmmc_disk:
     build_only: true
     filter: dt_compat_enabled("zephyr,sdmmc-disk")
+    integration_platforms:
+      - frdm_k64f

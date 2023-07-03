@@ -5,6 +5,7 @@
  */
 #include <ctype.h>
 #include <zephyr/device.h>
+#include <zephyr/sys/iterable_sections.h>
 #include <stdlib.h>
 #include "shell_utils.h"
 #include "shell_wildcard.h"
@@ -551,6 +552,29 @@ unsigned long shell_strtoul(const char *str, int base, int *err)
 
 	errno = 0;
 	val = strtoul(str, &endptr, base);
+	if (errno == ERANGE) {
+		*err = -ERANGE;
+		return 0;
+	} else if (errno || endptr == str || *endptr) {
+		*err = -EINVAL;
+		return 0;
+	}
+
+	return val;
+}
+
+unsigned long long shell_strtoull(const char *str, int base, int *err)
+{
+	unsigned long long val;
+	char *endptr = NULL;
+
+	if (*str == '-') {
+		*err = -EINVAL;
+		return 0;
+	}
+
+	errno = 0;
+	val = strtoull(str, &endptr, base);
 	if (errno == ERANGE) {
 		*err = -ERANGE;
 		return 0;

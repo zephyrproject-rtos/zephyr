@@ -48,6 +48,10 @@ LOG_MODULE_REGISTER(mt9m114);
 #define MT9M114_SYS_STATE_STANDBY			0x52
 #define MT9M114_SYS_STATE_LEAVE_STANDBY			0x54
 
+/* Camera output format */
+#define MT9M114_CAM_OUTPUT_FORMAT_FORMAT_YUV		(0 << 8)
+#define MT9M114_CAM_OUTPUT_FORMAT_FORMAT_RGB		(1 << 8)
+
 struct mt9m114_config {
 	struct i2c_dt_spec i2c;
 };
@@ -256,17 +260,43 @@ static int mt9m114_set_state(const struct device *dev, uint8_t state)
 	return 0;
 }
 
+static int mt9m114_set_output_format(const struct device *dev,
+				int pixel_format)
+{
+	int ret = 0;
+	uint16_t output_format;
+
+	if (pixel_format == VIDEO_PIX_FMT_YUYV) {
+		output_format = (MT9M114_CAM_OUTPUT_FORMAT_FORMAT_YUV | (1U << 1U));
+	} else if (pixel_format == VIDEO_PIX_FMT_RGB565) {
+		output_format = (MT9M114_CAM_OUTPUT_FORMAT_FORMAT_RGB | (1U << 1U));
+	} else {
+		LOG_ERR("Image format not supported");
+		return -ENOTSUP;
+	}
+
+	ret = mt9m114_write_reg(dev, MT9M114_CAM_OUTPUT_FORMAT,
+				sizeof(output_format), &output_format);
+
+	return ret;
+}
+
 static int mt9m114_set_fmt(const struct device *dev,
 			   enum video_endpoint_id ep,
 			   struct video_format *fmt)
 {
 	struct mt9m114_data *drv_data = dev->data;
-	uint16_t output_format;
 	int ret;
 
-	/* we only support one format for now (VGA RGB565) */
-	if (fmt->pixelformat != VIDEO_PIX_FMT_RGB565 || fmt->height != 480 ||
-	    fmt->width != 640) {
+	/* we support RGB565 and YUV output pixel formats for now */
+	if (fmt->pixelformat != VIDEO_PIX_FMT_RGB565 && fmt->pixelformat != VIDEO_PIX_FMT_YUYV) {
+		LOG_ERR("Unsupported output pixel format");
+		return -ENOTSUP;
+	}
+
+	/* we only support one format size for now (VGA) */
+	if (fmt->height != 480 || fmt->width != 640) {
+		LOG_ERR("Unsupported output size format");
 		return -ENOTSUP;
 	}
 
@@ -285,9 +315,7 @@ static int mt9m114_set_fmt(const struct device *dev,
 	}
 
 	/* Set output format */
-	output_format = ((1U << 8U) | (1U << 1U)); /* RGB565 */
-	ret = mt9m114_write_reg(dev, MT9M114_CAM_OUTPUT_FORMAT,
-				sizeof(output_format), &output_format);
+	ret = mt9m114_set_output_format(dev, fmt->pixelformat);
 	if (ret) {
 		LOG_ERR("Unable to set output format");
 		return ret;
@@ -320,16 +348,20 @@ static int mt9m114_stream_stop(const struct device *dev)
 	return mt9m114_set_state(dev, MT9M114_SYS_STATE_ENTER_SUSPEND);
 }
 
+#define MT9M114_VIDEO_FORMAT_CAP(width, height, format) \
+	{ \
+		.pixelformat = (format), \
+		.width_min = (width), \
+		.width_max = (width), \
+		.height_min = (height), \
+		.height_max = (height), \
+		.width_step = 0, \
+		.height_step = 0 \
+	}
+
 static const struct video_format_cap fmts[] = {
-	{
-		.pixelformat = VIDEO_PIX_FMT_RGB565,
-		.width_min = 640,
-		.width_max = 640,
-		.height_min = 480,
-		.height_max = 480,
-		.width_step = 0,
-		.height_step = 0,
-	},
+	MT9M114_VIDEO_FORMAT_CAP(640, 480, VIDEO_PIX_FMT_RGB565),  	/* VGA  RGB565 	*/
+	MT9M114_VIDEO_FORMAT_CAP(640, 480, VIDEO_PIX_FMT_YUYV),   	/* VGA  YUYV 	*/
 	{ 0 }
 };
 
@@ -409,6 +441,6 @@ static int mt9m114_init_0(const struct device *dev)
 
 DEVICE_DT_INST_DEFINE(0, &mt9m114_init_0, NULL,
 		    &mt9m114_data_0, &mt9m114_cfg_0,
-		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		    POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY,
 		    &mt9m114_driver_api);
 #endif

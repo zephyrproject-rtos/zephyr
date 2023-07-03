@@ -165,3 +165,11 @@
 		};
 	};
 };
+
+&vref {
+	status = "okay";
+};
+
+&vbat {
+	status = "okay";
+};

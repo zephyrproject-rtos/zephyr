@@ -1,6 +1,4 @@
-# DMA configuration options
-
-# Copyright (c) 2020, NXP
+# Copyright (c) 2020-2023, NXP
 # SPDX-License-Identifier: Apache-2.0
 
 config DMA_MCUX_LPC
@@ -12,10 +10,12 @@ config DMA_MCUX_LPC
 
 if DMA_MCUX_LPC
 
-config DMA_LINK_QUEUE_SIZE
-	int "number of transfer descriptors in a queue for SG mode"
-	default 4
+config DMA_NUMBER_OF_DESCRIPTORS
+	int "Number of DMA descriptors to use"
+	default 16
 	help
-	  number of transfer descriptors in a queue for SG mode
+	  Each DMA descriptor can be used to transfer (1024*width) bytes of data.
+	  Increase or decrease this value depending on the max number of data
+	  transferred by the application.
 
 endif # DMA_MCUX_LPC

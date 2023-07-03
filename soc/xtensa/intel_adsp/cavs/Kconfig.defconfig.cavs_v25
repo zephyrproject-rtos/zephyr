@@ -5,7 +5,7 @@ if SOC_INTEL_CAVS_V25
 
 config SOC_TOOLCHAIN_NAME
 	string
-	default "intel_s1000"
+	default "intel_tgl_adsp"
 
 config SOC
 	default "intel_tgl_adsp"

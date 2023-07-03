@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, NXP
+ * Copyright (c) 2020-2023, NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -144,6 +144,7 @@
  */
 &os_timer {
 	status = "okay";
+	wakeup-source;
 };
 
 &rtc {
@@ -156,6 +157,8 @@
 	current-speed = <115200>;
 	pinctrl-0 = <&pinmux_flexcomm0_usart>;
 	pinctrl-names = "default";
+	dmas = <&dma0 0>, <&dma0 1>;
+	dma-names = "rx", "tx";
 };
 
 arduino_i2c: &flexcomm2 {
@@ -177,9 +180,12 @@ arduino_i2c: &flexcomm2 {
 
 arduino_serial: &flexcomm4 {
 	compatible = "nxp,lpc-usart";
+	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&pinmux_flexcomm4_usart>;
 	pinctrl-names = "default";
+	dmas = <&dma0 8>, <&dma0 9>;
+	dma-names = "rx", "tx";
 };
 
 arduino_spi: &flexcomm5 {
@@ -395,5 +401,10 @@ zephyr_udc0: &usbhs {
 	pinctrl-0 = <&pinmux_i3c>;
 	pinctrl-names = "default";
 
+	status = "okay";
+};
+
+/* Disable this node if not using USB and need another MPU region */
+&sram1 {
 	status = "okay";
 };

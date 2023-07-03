@@ -91,22 +91,28 @@ static int pinctrl_it8xxx2_set(const pinctrl_soc_pin_t *pins)
 		return -EINVAL;
 	}
 
-	/* Setting voltage 3.3V or 1.8V. */
-	switch (IT8XXX2_DT_PINCFG_VOLTAGE(pincfg)) {
-	case IT8XXX2_VOLTAGE_3V3:
-		/* Input voltage selection 3.3V. */
-		*reg_volt_sel &= ~gpio->volt_sel_mask[pin];
-		break;
-	case IT8XXX2_VOLTAGE_1V8:
-		__ASSERT(!(IT8XXX2_DT_PINCFG_PUPDR(pincfg)
-			   == IT8XXX2_PULL_UP),
-		"Don't enable internal pullup if 1.8V voltage is used");
-		/* Input voltage selection 1.8V. */
-		*reg_volt_sel |= gpio->volt_sel_mask[pin];
-		break;
-	default:
-		LOG_ERR("The voltage selection is not supported");
-		return -EINVAL;
+	/*
+	 * Since not all GPIOs support voltage selection, configure voltage
+	 * selection register only if it is present.
+	 */
+	if (reg_volt_sel != NULL) {
+		/* Setting voltage 3.3V or 1.8V. */
+		switch (IT8XXX2_DT_PINCFG_VOLTAGE(pincfg)) {
+		case IT8XXX2_VOLTAGE_3V3:
+			/* Input voltage selection 3.3V. */
+			*reg_volt_sel &= ~gpio->volt_sel_mask[pin];
+			break;
+		case IT8XXX2_VOLTAGE_1V8:
+			__ASSERT(!(IT8XXX2_DT_PINCFG_PUPDR(pincfg)
+				   == IT8XXX2_PULL_UP),
+			"Don't enable internal pullup if 1.8V voltage is used");
+			/* Input voltage selection 1.8V. */
+			*reg_volt_sel |= gpio->volt_sel_mask[pin];
+			break;
+		default:
+			LOG_ERR("The voltage selection is not supported");
+			return -EINVAL;
+		}
 	}
 
 	/* Setting tri-state mode. */

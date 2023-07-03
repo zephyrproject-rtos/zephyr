@@ -227,15 +227,15 @@ The Zephyr SDK supports the following target architectures:
 
 Follow these steps to install the Zephyr SDK:
 
-#. Download and verify the `latest Zephyr SDK bundle
-   <https://github.com/zephyrproject-rtos/sdk-ng/releases>`_:
+#. Download and verify the `Zephyr SDK bundle
+   <https://github.com/zephyrproject-rtos/sdk-ng/releases/tag/v0.16.1>`_:
 
    .. code-block:: bash
 
-      wget https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v0.16.0/zephyr-sdk-0.16.0_linux-x86_64.tar.xz
-      wget -O - https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v0.16.0/sha256.sum | shasum --check --ignore-missing
+      wget https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v0.16.1/zephyr-sdk-0.16.1_linux-x86_64.tar.xz
+      wget -O - https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v0.16.1/sha256.sum | shasum --check --ignore-missing
 
-   You can change ``0.16.0`` to another version if needed; the `Zephyr SDK
+   You can change ``0.16.1`` to another version if needed; the `Zephyr SDK
    Releases`_ page contains all available SDK releases.
 
    If your host architecture is 64-bit ARM (for example, Raspberry Pi), replace
@@ -246,13 +246,13 @@ Follow these steps to install the Zephyr SDK:
    .. code-block:: bash
 
       cd <sdk download directory>
-      tar xvf zephyr-sdk-0.16.0_linux-x86_64.tar.xz
+      tar xvf zephyr-sdk-0.16.1_linux-x86_64.tar.xz
 
 #. Run the Zephyr SDK bundle setup script:
 
    .. code-block:: bash
 
-      cd zephyr-sdk-0.16.0
+      cd zephyr-sdk-0.16.1
       ./setup.sh
 
    If this fails, make sure Zephyr's dependencies were installed as described
@@ -271,9 +271,9 @@ If you relocate the SDK directory, you need to re-run the setup script.
    * ``/opt``
    * ``/usr/local``
 
-   The Zephyr SDK bundle archive contains the ``zephyr-sdk-0.16.0`` directory and, when
+   The Zephyr SDK bundle archive contains the ``zephyr-sdk-0.16.1`` directory and, when
    extracted under ``$HOME``, the resulting installation path will be
-   ``$HOME/zephyr-sdk-0.16.0``.
+   ``$HOME/zephyr-sdk-0.16.1``.
 
    If you install the Zephyr SDK outside any of these locations, you must
    register the Zephyr SDK in the CMake package registry by running the setup
@@ -317,5 +317,5 @@ To make sure this variable is unset, run:
 
    unset ZEPHYR_SDK_INSTALL_DIR
 
-.. _Zephyr SDK Releases: https://github.com/zephyrproject-rtos/sdk-ng/releases
+.. _Zephyr SDK Releases: https://github.com/zephyrproject-rtos/sdk-ng/tags
 .. _CMake Downloads: https://cmake.org/download

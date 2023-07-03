@@ -4,12 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/**
- * @file
- * @defgroup bt_mesh_large_comp_data_cli Large Composition Data Client model
- * @{
- * @brief API for the Large Composition Data Client model.
- */
 #ifndef BT_MESH_LARGE_COMP_DATA_CLI_H__
 #define BT_MESH_LARGE_COMP_DATA_CLI_H__
 
@@ -18,6 +12,12 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/**
+ * @defgroup bt_mesh_large_comp_data_cli Large Composition Data Client model
+ * @ingroup bt_mesh
+ * @{
+ */
 
 struct bt_mesh_large_comp_data_cli;
 
@@ -142,11 +142,12 @@ extern const struct bt_mesh_model_op _bt_mesh_large_comp_data_cli_op[];
 extern const struct bt_mesh_model_cb _bt_mesh_large_comp_data_cli_cb;
 /** @endcond */
 
-#ifdef __cplusplus
-}
-#endif
 /**
  * @}
  */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* BT_MESH_LARGE_COMP_DATA_CLI_H__ */

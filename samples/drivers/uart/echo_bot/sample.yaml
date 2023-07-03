@@ -2,6 +2,8 @@ sample:
   name: UART driver sample
 tests:
   sample.drivers.uart:
+    integration_platforms:
+      - qemu_x86
     tags:
       - serial
       - uart

@@ -176,6 +176,8 @@ class TestPlan:
         for _, ts in self.testsuites.items():
             self.scenarios.append(ts.id)
 
+        self.report_duplicates()
+
         self.parse_configuration(config_file=self.env.test_config)
         self.add_configurations()
 
@@ -301,10 +303,7 @@ class TestPlan:
 
 
     def report(self):
-        if self.options.list_test_duplicates:
-            self.report_duplicates()
-            return 0
-        elif self.options.test_tree:
+        if self.options.test_tree:
             self.report_test_tree()
             return 0
         elif self.options.list_tests:
@@ -319,13 +318,14 @@ class TestPlan:
     def report_duplicates(self):
         dupes = [item for item, count in collections.Counter(self.scenarios).items() if count > 1]
         if dupes:
-            print("Tests with duplicate identifiers:")
+            msg = "Duplicated test scenarios found:\n"
             for dupe in dupes:
-                print("- {}".format(dupe))
+                msg += ("- {} found in:\n".format(dupe))
                 for dc in self.get_testsuite(dupe):
-                    print("  - {}".format(dc.name))
+                    msg += ("  - {}\n".format(dc.yamlfile))
+            raise TwisterRuntimeError(msg)
         else:
-            print("No duplicates found.")
+            logger.debug("No duplicates found.")
 
     def report_tag_list(self):
         tags = set()
@@ -505,6 +505,16 @@ class TestPlan:
                 suite_yaml_path = os.path.join(dirpath, filename)
                 suite_path = os.path.dirname(suite_yaml_path)
 
+                for alt_config_root in self.env.alt_config_root:
+                    alt_config = os.path.join(os.path.abspath(alt_config_root),
+                                              os.path.relpath(suite_path, root),
+                                              filename)
+                    if os.path.exists(alt_config):
+                        logger.info("Using alternative configuration from %s" %
+                                    os.path.normpath(alt_config))
+                        suite_yaml_path = alt_config
+                        break
+
                 try:
                     parsed_data = TwisterConfigParser(suite_yaml_path, self.suite_schema)
                     parsed_data.load()
@@ -614,6 +624,7 @@ class TestPlan:
         runnable = (self.options.device_testing or self.options.filter == 'runnable')
         force_toolchain = self.options.force_toolchain
         force_platform = self.options.force_platform
+        slow_only = self.options.enable_slow_only
         ignore_platform_key = self.options.ignore_platform_key
         emu_filter = self.options.emulation_only
 
@@ -738,6 +749,9 @@ class TestPlan:
                 if tag_filter and not ts.tags.intersection(tag_filter):
                     instance.add_filter("Command line testsuite tag filter", Filters.CMD_LINE)
 
+                if slow_only and not ts.slow:
+                    instance.add_filter("Not a slow test", Filters.CMD_LINE)
+
                 if exclude_tag and ts.tags.intersection(exclude_tag):
                     instance.add_filter("Command line testsuite exclude filter", Filters.CMD_LINE)
 
@@ -786,6 +800,10 @@ class TestPlan:
 
                 if plat.ram < ts.min_ram:
                     instance.add_filter("Not enough RAM", Filters.PLATFORM)
+
+                if ts.harness:
+                    if ts.harness == 'robot' and plat.simulation != 'renode':
+                        instance.add_filter("No robot support for the selected platform", Filters.SKIP)
 
                 if ts.depends_on:
                     dep_intersection = ts.depends_on.intersection(set(plat.supported))

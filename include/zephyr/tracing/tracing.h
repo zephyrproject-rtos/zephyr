@@ -27,7 +27,7 @@
  * inner-working of the kernel and various other subsystems.
  *
  * @defgroup subsys_tracing Tracing
- * @ingroup subsys
+ * @ingroup os_services
  * @{
  */
 

@@ -404,7 +404,7 @@ should know about.
 
   See :ref:`initial-conf` for more information.
 
-* :makevar:`OVERLAY_CONFIG`: Additional Kconfig configuration fragment files.
+* :makevar:`EXTRA_CONF_FILE`: Additional Kconfig configuration fragment files.
   Multiple filenames can be separated with either spaces or semicolons. This
   can be useful in order to leave :makevar:`CONF_FILE` at its default value,
   but "mix in" some additional configuration options.
@@ -422,7 +422,7 @@ should know about.
   variable, it must be a complete list of all modules to use, as the build
   system will not automatically pick up any modules from west.
 
-* :makevar:`ZEPHYR_EXTRA_MODULES`: Like :makevar:`ZEPHYR_MODULES`, except these
+* :makevar:`EXTRA_ZEPHYR_MODULES`: Like :makevar:`ZEPHYR_MODULES`, except these
   will be added to the list of modules found via west, instead of replacing it.
 
 .. note::
@@ -587,8 +587,8 @@ Application Configuration Directory
 
 Zephyr will use configuration files from the application's configuration
 directory except for files with an absolute path provided by the arguments
-described earlier, for example ``CONF_FILE``, ``OVERLAY_CONFIG``, and
-``DTC_OVERLAY_FILE``.
+described earlier, for example ``CONF_FILE``, ``EXTRA_CONF_FILE``,
+``DTC_OVERLAY_FILE``, and ``EXTRA_DTC_OVERLAY_FILE``.
 
 The application configuration directory is defined by the
 ``APPLICATION_CONFIG_DIR`` variable.

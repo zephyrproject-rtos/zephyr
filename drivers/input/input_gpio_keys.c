@@ -97,11 +97,17 @@ static void gpio_keys_interrupt(const struct device *dev, struct gpio_callback *
 static int gpio_keys_interrupt_configure(const struct gpio_dt_spec *gpio_spec,
 					 struct gpio_keys_callback *cb, uint32_t zephyr_code)
 {
-	int retval = -ENODEV;
+	int retval;
 	gpio_flags_t flags;
 
 	gpio_init_callback(&cb->gpio_cb, gpio_keys_interrupt, BIT(gpio_spec->pin));
-	gpio_add_callback(gpio_spec->port, &cb->gpio_cb);
+
+	retval = gpio_add_callback(gpio_spec->port, &cb->gpio_cb);
+	if (retval < 0) {
+		LOG_ERR("Could not set gpio callback");
+		return retval;
+	}
+
 	cb->zephyr_code = zephyr_code;
 	cb->pin_state = -1;
 	flags = GPIO_INT_EDGE_BOTH & ~GPIO_INT_MODE_DISABLED;

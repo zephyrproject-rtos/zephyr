@@ -15,6 +15,7 @@
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/init.h>
 #include <zephyr/drivers/gpio.h>
+#include <zephyr/pm/device.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/types.h>
 #include <zephyr/device.h>
@@ -39,6 +40,9 @@ LOG_MODULE_REGISTER(VL53L0X, CONFIG_SENSOR_LOG_LEVEL);
 #define VL53L0X_SETUP_MAX_TIME_FOR_RANGING      33000
 #define VL53L0X_SETUP_PRE_RANGE_VCSEL_PERIOD    18
 #define VL53L0X_SETUP_FINAL_RANGE_VCSEL_PERIOD  14
+
+/* tBOOT (1.2ms max.) VL53L0X firmware boot period */
+#define T_BOOT K_USEC(1200)
 
 struct vl53l0x_config {
 	struct i2c_dt_spec i2c;
@@ -77,7 +81,7 @@ static int vl53l0x_setup_single_shot(const struct device *dev)
 	}
 
 	ret = VL53L0X_PerformRefSpadManagement(&drv_data->vl53l0x,
-					       (uint32_t *)&refSpadCount,
+					       &refSpadCount,
 					       &isApertureSpads);
 	if (ret) {
 		LOG_ERR("[%s] VL53L0X_PerformRefSpadManagement failed",
@@ -167,19 +171,18 @@ static int vl53l0x_start(const struct device *dev)
 	int r;
 	VL53L0X_Error ret;
 	uint16_t vl53l0x_id = 0U;
-	VL53L0X_DeviceInfo_t vl53l0x_dev_info;
+	VL53L0X_DeviceInfo_t vl53l0x_dev_info = { 0 };
 
 	LOG_DBG("[%s] Starting", dev->name);
 
-	/* Pull XSHUT high to start the sensor */
 	if (config->xshut.port) {
-		r = gpio_pin_set_dt(&config->xshut, 1);
+		r = gpio_pin_configure_dt(&config->xshut, GPIO_OUTPUT_INACTIVE);
 		if (r < 0) {
-			LOG_ERR("[%s] Unable to set XSHUT gpio (error %d)",
+			LOG_ERR("[%s] Unable to inactivate XSHUT: %d",
 				dev->name, r);
 			return -EIO;
 		}
-		k_sleep(K_MSEC(2));
+		k_sleep(T_BOOT);
 	}
 
 #ifdef CONFIG_VL53L0X_RECONFIGURE_ADDRESS
@@ -193,12 +196,9 @@ static int vl53l0x_start(const struct device *dev)
 
 		drv_data->vl53l0x.I2cDevAddr = config->i2c.addr;
 		LOG_DBG("[%s] I2C address reconfigured", dev->name);
-		k_sleep(K_MSEC(2));
+		k_sleep(T_BOOT);
 	}
 #endif
-
-	/* Get info from sensor */
-	(void)memset(&vl53l0x_dev_info, 0, sizeof(VL53L0X_DeviceInfo_t));
 
 	ret = VL53L0X_GetDeviceInfo(&drv_data->vl53l0x, &vl53l0x_dev_info);
 	if (ret < 0) {
@@ -217,7 +217,7 @@ static int vl53l0x_start(const struct device *dev)
 
 	ret = VL53L0X_RdWord(&drv_data->vl53l0x,
 			     VL53L0X_REG_WHO_AM_I,
-			     (uint16_t *) &vl53l0x_id);
+			     &vl53l0x_id);
 	if ((ret < 0) || (vl53l0x_id != VL53L0X_CHIP_ID)) {
 		LOG_ERR("[%s] Issue on device identification", dev->name);
 		return -ENOTSUP;
@@ -300,6 +300,36 @@ static const struct sensor_driver_api vl53l0x_api_funcs = {
 	.channel_get = vl53l0x_channel_get,
 };
 
+#ifdef CONFIG_PM_DEVICE
+static int vl53l0x_pm_action(const struct device *dev,
+			     enum pm_device_action action)
+{
+	const struct vl53l0x_config *const config = dev->config;
+	int ret;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		ret = gpio_pin_set_dt(&config->xshut, 0);
+		if (ret < 0) {
+			LOG_ERR("[%s] XSHUT pin inactive", dev->name);
+			return ret;
+		}
+		break;
+	case PM_DEVICE_ACTION_SUSPEND:
+		ret = gpio_pin_set_dt(&config->xshut, 1);
+		if (ret < 0) {
+			LOG_ERR("[%s] XSHUT pin active", dev->name);
+			return ret;
+		}
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+#endif
+
 static int vl53l0x_init(const struct device *dev)
 {
 	int r;
@@ -312,11 +342,24 @@ static int vl53l0x_init(const struct device *dev)
 	drv_data->vl53l0x.I2cDevAddr = VL53L0X_INITIAL_ADDR;
 	drv_data->vl53l0x.i2c = config->i2c.bus;
 
-#ifdef CONFIG_VL53L0X_RECONFIGURE_ADDRESS
-	if (!config->xshut.port) {
+#if defined(CONFIG_VL53L0X_RECONFIGURE_ADDRESS) || defined(CONFIG_PM_DEVICE)
+	if (config->xshut.port == NULL) {
 		LOG_ERR("[%s] Missing XSHUT gpio spec", dev->name);
 		return -ENOTSUP;
 	}
+#endif
+
+#ifdef CONFIG_VL53L0X_RECONFIGURE_ADDRESS
+	/*
+	 * Shutdown all vl53l0x sensors so at each sensor's 1st fetch call
+	 * they can be enabled one at a time and programmed with their address.
+	 */
+	r = gpio_pin_configure_dt(&config->xshut, GPIO_OUTPUT_ACTIVE);
+	if (r < 0) {
+		LOG_ERR("[%s] Unable to shutdown sensor", dev->name);
+		return -EIO;
+	}
+	LOG_DBG("[%s] Shutdown", dev->name);
 #else
 	if (config->i2c.addr != VL53L0X_INITIAL_ADDR) {
 		LOG_ERR("[%s] Invalid device address (should be 0x%X or "
@@ -324,25 +367,7 @@ static int vl53l0x_init(const struct device *dev)
 			dev->name, VL53L0X_INITIAL_ADDR);
 		return -ENOTSUP;
 	}
-#endif
 
-	if (config->xshut.port) {
-		r = gpio_pin_configure_dt(&config->xshut, GPIO_OUTPUT);
-		if (r < 0) {
-			LOG_ERR("[%s] Unable to configure GPIO as output",
-				dev->name);
-		}
-	}
-
-#ifdef CONFIG_VL53L0X_RECONFIGURE_ADDRESS
-	/* Pull XSHUT low to shut down the sensor for now */
-	r = gpio_pin_set_dt(&config->xshut, 0);
-	if (r < 0) {
-		LOG_ERR("[%s] Unable to shutdown sensor", dev->name);
-		return -EIO;
-	}
-	LOG_DBG("[%s] Shutdown", dev->name);
-#else
 	r = vl53l0x_start(dev);
 	if (r) {
 		return r;
@@ -361,7 +386,10 @@ static int vl53l0x_init(const struct device *dev)
 									 \
 	static struct vl53l0x_data vl53l0x_##inst##_driver;		 \
 									 \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, vl53l0x_init, NULL,		 \
+	PM_DEVICE_DT_INST_DEFINE(inst, vl53l0x_pm_action);		 \
+									 \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, vl53l0x_init,		 \
+			      PM_DEVICE_DT_INST_GET(inst),		 \
 			      &vl53l0x_##inst##_driver,			 \
 			      &vl53l0x_##inst##_config,			 \
 			      POST_KERNEL,				 \

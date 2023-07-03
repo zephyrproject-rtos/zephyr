@@ -13,8 +13,11 @@ config RP2_FLASH_W25Q080
 if I2C_DW
 
 config I2C_DW_CLOCK_SPEED
-	default 100
+	default 125
 
 endif #I2C_DW
+
+config USB_SELF_POWERED
+	default n
 
 endif # BOARD_RPI_PICO || BOARD_RPI_PICO_W

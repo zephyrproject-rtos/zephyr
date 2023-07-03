@@ -28,6 +28,12 @@ config ADC_SHELL
 config ADC_CONFIGURABLE_INPUTS
 	bool
 
+# By selecting or not this option particular ADC drivers indicate if it is
+# required to explicitly specify for the excitation current source the pin
+# which should be used.
+config ADC_CONFIGURABLE_EXCITATION_CURRENT_SOURCE_PIN
+	bool
+
 config ADC_ASYNC
 	bool "Asynchronous call support"
 	select POLL
@@ -84,6 +90,8 @@ source "drivers/adc/Kconfig.ads1x1x"
 
 source "drivers/adc/Kconfig.gd32"
 
+source "drivers/adc/Kconfig.ads1112"
+
 source "drivers/adc/Kconfig.ads1119"
 
 source "drivers/adc/Kconfig.ads7052"
@@ -97,5 +105,9 @@ source "drivers/adc/Kconfig.xmc4xxx"
 source "drivers/adc/Kconfig.gecko"
 
 source "drivers/adc/Kconfig.ifx_cat1"
+
+source "drivers/adc/Kconfig.smartbond"
+
+source "drivers/adc/Kconfig.tla2021"
 
 endif # ADC

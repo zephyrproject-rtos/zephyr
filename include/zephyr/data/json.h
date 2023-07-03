@@ -18,14 +18,8 @@ extern "C" {
 #endif
 
 /**
- * @brief Structured Data
- * @defgroup structured_data Structured Data
- */
-
-
-/**
  * @defgroup json JSON
- * @ingroup structured_data
+ * @ingroup utilities
  * @{
  */
 
@@ -694,6 +688,18 @@ size_t json_calc_escaped_len(const char *str, size_t len);
  */
 ssize_t json_calc_encoded_len(const struct json_obj_descr *descr,
 			      size_t descr_len, const void *val);
+
+/**
+ * @brief Calculates the string length to fully encode an array
+ *
+ * @param descr Pointer to the descriptor array
+ * @param val Struct holding the values
+ *
+ * @return Number of bytes necessary to encode the values if >0,
+ * an error code is returned.
+ */
+ssize_t json_calc_encoded_arr_len(const struct json_obj_descr *descr,
+				  const void *val);
 
 /**
  * @brief Encodes an object in a contiguous memory location

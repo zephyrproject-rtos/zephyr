@@ -32,6 +32,7 @@ extern "C" {
 
 /**
  * @defgroup checksum Checksum
+ * @ingroup os_services
  */
 
 /**

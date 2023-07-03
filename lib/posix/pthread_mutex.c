@@ -4,15 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "posix_internal.h"
+
+#include <zephyr/init.h>
 #include <zephyr/kernel.h>
-#include <ksched.h>
-#include <zephyr/wait_q.h>
 #include <zephyr/posix/pthread.h>
 #include <zephyr/sys/bitarray.h>
 
-#include "posix_internal.h"
-
-struct k_spinlock z_pthread_spinlock;
+static struct k_spinlock pthread_mutex_spinlock;
 
 int64_t timespec_to_timeoutms(const struct timespec *abstime);
 
@@ -25,7 +24,8 @@ static const struct pthread_mutexattr def_attr = {
 	.type = PTHREAD_MUTEX_DEFAULT,
 };
 
-static struct posix_mutex posix_mutex_pool[CONFIG_MAX_PTHREAD_MUTEX_COUNT];
+static struct k_mutex posix_mutex_pool[CONFIG_MAX_PTHREAD_MUTEX_COUNT];
+static uint8_t posix_mutex_type[CONFIG_MAX_PTHREAD_MUTEX_COUNT];
 SYS_BITARRAY_DEFINE_STATIC(posix_mutex_bitarray, CONFIG_MAX_PTHREAD_MUTEX_COUNT);
 
 /*
@@ -36,7 +36,7 @@ SYS_BITARRAY_DEFINE_STATIC(posix_mutex_bitarray, CONFIG_MAX_PTHREAD_MUTEX_COUNT)
 BUILD_ASSERT(CONFIG_MAX_PTHREAD_MUTEX_COUNT < PTHREAD_OBJ_MASK_INIT,
 	"CONFIG_MAX_PTHREAD_MUTEX_COUNT is too high");
 
-static inline size_t posix_mutex_to_offset(struct posix_mutex *m)
+static inline size_t posix_mutex_to_offset(struct k_mutex *m)
 {
 	return m - posix_mutex_pool;
 }
@@ -46,7 +46,7 @@ static inline size_t to_posix_mutex_idx(pthread_mutex_t mut)
 	return mark_pthread_obj_uninitialized(mut);
 }
 
-struct posix_mutex *get_posix_mutex(pthread_mutex_t mu)
+static struct k_mutex *get_posix_mutex(pthread_mutex_t mu)
 {
 	int actually_initialized;
 	size_t bit = to_posix_mutex_idx(mu);
@@ -69,10 +69,11 @@ struct posix_mutex *get_posix_mutex(pthread_mutex_t mu)
 	return &posix_mutex_pool[bit];
 }
 
-struct posix_mutex *to_posix_mutex(pthread_mutex_t *mu)
+struct k_mutex *to_posix_mutex(pthread_mutex_t *mu)
 {
+	int err;
 	size_t bit;
-	struct posix_mutex *m;
+	struct k_mutex *m;
 
 	if (*mu != PTHREAD_MUTEX_INITIALIZER) {
 		return get_posix_mutex(*mu);
@@ -90,60 +91,68 @@ struct posix_mutex *to_posix_mutex(pthread_mutex_t *mu)
 	/* Initialize the posix_mutex */
 	m = &posix_mutex_pool[bit];
 
-	m->owner = NULL;
-	m->lock_count = 0U;
-
-	z_waitq_init(&m->wait_q);
+	err = k_mutex_init(m);
+	__ASSERT_NO_MSG(err == 0);
 
 	return m;
 }
 
 static int acquire_mutex(pthread_mutex_t *mu, k_timeout_t timeout)
 {
-	int rc = 0;
+	int type;
+	size_t bit;
+	int ret = 0;
+	struct k_mutex *m;
 	k_spinlock_key_t key;
-	struct posix_mutex *m;
-
-	key = k_spin_lock(&z_pthread_spinlock);
 
 	m = to_posix_mutex(mu);
 	if (m == NULL) {
-		k_spin_unlock(&z_pthread_spinlock, key);
 		return EINVAL;
 	}
 
-	if (m->lock_count == 0U && m->owner == NULL) {
-		m->lock_count++;
-		m->owner = k_current_get();
+	bit = posix_mutex_to_offset(m);
+	type = posix_mutex_type[bit];
 
-		k_spin_unlock(&z_pthread_spinlock, key);
-		return 0;
-	} else if (m->owner == k_current_get()) {
-		if (m->type == PTHREAD_MUTEX_RECURSIVE &&
-		    m->lock_count < MUTEX_MAX_REC_LOCK) {
-			m->lock_count++;
-			rc = 0;
-		} else if (m->type == PTHREAD_MUTEX_ERRORCHECK) {
-			rc = EDEADLK;
-		} else {
-			rc = EINVAL;
+	key = k_spin_lock(&pthread_mutex_spinlock);
+	if (m->owner == k_current_get()) {
+		switch (type) {
+		case PTHREAD_MUTEX_NORMAL:
+			if (K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
+				ret = EBUSY;
+				break;
+			}
+			/* On most POSIX systems, this usually results in an infinite loop */
+			k_spin_unlock(&pthread_mutex_spinlock, key);
+			do {
+				(void)k_sleep(K_FOREVER);
+			} while (true);
+			CODE_UNREACHABLE;
+			break;
+		case PTHREAD_MUTEX_RECURSIVE:
+			if (m->lock_count >= MUTEX_MAX_REC_LOCK) {
+				ret = EAGAIN;
+			}
+			break;
+		case PTHREAD_MUTEX_ERRORCHECK:
+			ret = EDEADLK;
+			break;
+		default:
+			__ASSERT(false, "invalid pthread type %d", type);
+			ret = EINVAL;
+			break;
 		}
+	}
+	k_spin_unlock(&pthread_mutex_spinlock, key);
 
-		k_spin_unlock(&z_pthread_spinlock, key);
-		return rc;
+	if (ret == 0) {
+		ret = k_mutex_lock(m, timeout);
 	}
 
-	if (K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
-		k_spin_unlock(&z_pthread_spinlock, key);
-		return EINVAL;
+	if (ret < 0) {
+		ret = -ret;
 	}
 
-	rc = z_pend_curr(&z_pthread_spinlock, key, &m->wait_q, timeout);
-	if (rc != 0) {
-		rc = ETIMEDOUT;
-	}
-
-	return rc;
+	return ret;
 }
 
 /**
@@ -176,22 +185,23 @@ int pthread_mutex_timedlock(pthread_mutex_t *m,
  */
 int pthread_mutex_init(pthread_mutex_t *mu, const pthread_mutexattr_t *_attr)
 {
-	k_spinlock_key_t key;
-	struct posix_mutex *m;
+	size_t bit;
+	struct k_mutex *m;
 	const struct pthread_mutexattr *attr = (const struct pthread_mutexattr *)_attr;
 
 	*mu = PTHREAD_MUTEX_INITIALIZER;
-	key = k_spin_lock(&z_pthread_spinlock);
 
 	m = to_posix_mutex(mu);
 	if (m == NULL) {
-		k_spin_unlock(&z_pthread_spinlock, key);
 		return ENOMEM;
 	}
 
-	m->type = (attr == NULL) ? def_attr.type : attr->type;
-
-	k_spin_unlock(&z_pthread_spinlock, key);
+	bit = posix_mutex_to_offset(m);
+	if (attr == NULL) {
+		posix_mutex_type[bit] = def_attr.type;
+	} else {
+		posix_mutex_type[bit] = attr->type;
+	}
 
 	return 0;
 }
@@ -214,45 +224,21 @@ int pthread_mutex_lock(pthread_mutex_t *m)
  */
 int pthread_mutex_unlock(pthread_mutex_t *mu)
 {
-	k_tid_t thread;
-	k_spinlock_key_t key;
-	struct posix_mutex *m;
-	pthread_mutex_t mut = *mu;
+	int ret;
+	struct k_mutex *m;
 
-	key = k_spin_lock(&z_pthread_spinlock);
-
-	m = get_posix_mutex(mut);
+	m = get_posix_mutex(*mu);
 	if (m == NULL) {
-		k_spin_unlock(&z_pthread_spinlock, key);
 		return EINVAL;
 	}
 
-	if (m->owner != k_current_get()) {
-		k_spin_unlock(&z_pthread_spinlock, key);
-		return EPERM;
+	ret = k_mutex_unlock(m);
+	if (ret < 0) {
+		return -ret;
 	}
 
-	if (m->lock_count == 0U) {
-		k_spin_unlock(&z_pthread_spinlock, key);
-		return EINVAL;
-	}
+	__ASSERT_NO_MSG(ret == 0);
 
-	m->lock_count--;
-
-	if (m->lock_count == 0U) {
-		thread = z_unpend_first_thread(&m->wait_q);
-		if (thread) {
-			m->owner = thread;
-			m->lock_count++;
-			arch_thread_return_value_set(thread, 0);
-			z_ready_thread(thread);
-			z_reschedule(&z_pthread_spinlock, key);
-			return 0;
-		}
-		m->owner = NULL;
-
-	}
-	k_spin_unlock(&z_pthread_spinlock, key);
 	return 0;
 }
 
@@ -263,23 +249,18 @@ int pthread_mutex_unlock(pthread_mutex_t *mu)
  */
 int pthread_mutex_destroy(pthread_mutex_t *mu)
 {
-	__unused int rc;
-	k_spinlock_key_t key;
-	struct posix_mutex *m;
-	pthread_mutex_t mut = *mu;
-	size_t bit = to_posix_mutex_idx(mut);
+	int err;
+	size_t bit;
+	struct k_mutex *m;
 
-	key = k_spin_lock(&z_pthread_spinlock);
-	m = get_posix_mutex(mut);
+	m = get_posix_mutex(*mu);
 	if (m == NULL) {
-		k_spin_unlock(&z_pthread_spinlock, key);
 		return EINVAL;
 	}
 
-	rc = sys_bitarray_free(&posix_mutex_bitarray, 1, bit);
-	__ASSERT(rc == 0, "failed to free bit %zu", bit);
-
-	k_spin_unlock(&z_pthread_spinlock, key);
+	bit = to_posix_mutex_idx(*mu);
+	err = sys_bitarray_free(&posix_mutex_bitarray, 1, bit);
+	__ASSERT_NO_MSG(err == 0);
 
 	return 0;
 }
@@ -304,6 +285,7 @@ int pthread_mutexattr_getprotocol(const pthread_mutexattr_t *attr,
 int pthread_mutexattr_gettype(const pthread_mutexattr_t *_attr, int *type)
 {
 	const struct pthread_mutexattr *attr = (const struct pthread_mutexattr *)_attr;
+
 	*type = attr->type;
 	return 0;
 }
@@ -327,3 +309,17 @@ int pthread_mutexattr_settype(pthread_mutexattr_t *_attr, int type)
 
 	return retc;
 }
+
+static int pthread_mutex_pool_init(void)
+{
+	int err;
+	size_t i;
+
+	for (i = 0; i < CONFIG_MAX_PTHREAD_MUTEX_COUNT; ++i) {
+		err = k_mutex_init(&posix_mutex_pool[i]);
+		__ASSERT_NO_MSG(err == 0);
+	}
+
+	return 0;
+}
+SYS_INIT(pthread_mutex_pool_init, PRE_KERNEL_1, 0);

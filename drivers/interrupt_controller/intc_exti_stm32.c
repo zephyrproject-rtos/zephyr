@@ -16,6 +16,7 @@
 #include <soc.h>
 #include <stm32_ll_exti.h>
 #include <zephyr/sys/__assert.h>
+#include <zephyr/sys/util.h>
 #include <zephyr/drivers/interrupt_controller/exti_stm32.h>
 #include <zephyr/irq.h>
 
@@ -61,9 +62,9 @@ void stm32_exti_enable(int line)
 
 	/* Enable requested line interrupt */
 #if defined(CONFIG_SOC_SERIES_STM32H7X) && defined(CONFIG_CPU_CORTEX_M4)
-	LL_C2_EXTI_EnableIT_0_31(1 << line);
+	LL_C2_EXTI_EnableIT_0_31(BIT((uint32_t)line));
 #else
-	LL_EXTI_EnableIT_0_31(1 << line);
+	LL_EXTI_EnableIT_0_31(BIT((uint32_t)line));
 #endif
 
 	/* Enable exti irq interrupt */
@@ -76,9 +77,9 @@ void stm32_exti_disable(int line)
 
 	if (line < 32) {
 #if defined(CONFIG_SOC_SERIES_STM32H7X) && defined(CONFIG_CPU_CORTEX_M4)
-		LL_C2_EXTI_DisableIT_0_31(1 << line);
+		LL_C2_EXTI_DisableIT_0_31(BIT((uint32_t)line));
 #else
-		LL_EXTI_DisableIT_0_31(1 << line);
+		LL_EXTI_DisableIT_0_31(BIT((uint32_t)line));
 #endif
 	} else {
 		__ASSERT_NO_MSG(line);
@@ -95,12 +96,12 @@ static inline int stm32_exti_is_pending(int line)
 {
 	if (line < 32) {
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32g0_exti)
-		return (LL_EXTI_IsActiveRisingFlag_0_31(1 << line) ||
-			LL_EXTI_IsActiveFallingFlag_0_31(1 << line));
+		return (LL_EXTI_IsActiveRisingFlag_0_31(BIT((uint32_t)line)) ||
+			LL_EXTI_IsActiveFallingFlag_0_31(BIT((uint32_t)line)));
 #elif defined(CONFIG_SOC_SERIES_STM32H7X) && defined(CONFIG_CPU_CORTEX_M4)
-		return LL_C2_EXTI_IsActiveFlag_0_31(1 << line);
+		return LL_C2_EXTI_IsActiveFlag_0_31(BIT((uint32_t)line));
 #else
-		return LL_EXTI_IsActiveFlag_0_31(1 << line);
+		return LL_EXTI_IsActiveFlag_0_31(BIT((uint32_t)line));
 #endif
 	} else {
 		__ASSERT_NO_MSG(line);
@@ -117,12 +118,12 @@ static inline void stm32_exti_clear_pending(int line)
 {
 	if (line < 32) {
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32g0_exti)
-		LL_EXTI_ClearRisingFlag_0_31(1 << line);
-		LL_EXTI_ClearFallingFlag_0_31(1 << line);
+		LL_EXTI_ClearRisingFlag_0_31(BIT((uint32_t)line));
+		LL_EXTI_ClearFallingFlag_0_31(BIT((uint32_t)line));
 #elif defined(CONFIG_SOC_SERIES_STM32H7X) && defined(CONFIG_CPU_CORTEX_M4)
-		LL_C2_EXTI_ClearFlag_0_31(1 << line);
+		LL_C2_EXTI_ClearFlag_0_31(BIT((uint32_t)line));
 #else
-		LL_EXTI_ClearFlag_0_31(1 << line);
+		LL_EXTI_ClearFlag_0_31(BIT((uint32_t)line));
 #endif
 	} else {
 		__ASSERT_NO_MSG(line);
@@ -140,23 +141,24 @@ void stm32_exti_trigger(int line, int trigger)
 
 	switch (trigger) {
 	case STM32_EXTI_TRIG_NONE:
-		LL_EXTI_DisableRisingTrig_0_31(1 << line);
-		LL_EXTI_DisableFallingTrig_0_31(1 << line);
+		LL_EXTI_DisableRisingTrig_0_31(BIT((uint32_t)line));
+		LL_EXTI_DisableFallingTrig_0_31(BIT((uint32_t)line));
 		break;
 	case STM32_EXTI_TRIG_RISING:
-		LL_EXTI_EnableRisingTrig_0_31(1 << line);
-		LL_EXTI_DisableFallingTrig_0_31(1 << line);
+		LL_EXTI_EnableRisingTrig_0_31(BIT((uint32_t)line));
+		LL_EXTI_DisableFallingTrig_0_31(BIT((uint32_t)line));
 		break;
 	case STM32_EXTI_TRIG_FALLING:
-		LL_EXTI_EnableFallingTrig_0_31(1 << line);
-		LL_EXTI_DisableRisingTrig_0_31(1 << line);
+		LL_EXTI_EnableFallingTrig_0_31(BIT((uint32_t)line));
+		LL_EXTI_DisableRisingTrig_0_31(BIT((uint32_t)line));
 		break;
 	case STM32_EXTI_TRIG_BOTH:
-		LL_EXTI_EnableRisingTrig_0_31(1 << line);
-		LL_EXTI_EnableFallingTrig_0_31(1 << line);
+		LL_EXTI_EnableRisingTrig_0_31(BIT((uint32_t)line));
+		LL_EXTI_EnableFallingTrig_0_31(BIT((uint32_t)line));
 		break;
 	default:
 		__ASSERT_NO_MSG(trigger);
+		break;
 	}
 	z_stm32_hsem_unlock(CFG_HW_EXTI_SEMID);
 }
@@ -176,10 +178,10 @@ static void stm32_exti_isr(const void *exti_range)
 	int line;
 
 	/* see which bits are set */
-	for (int i = 0; i <= range->len; i++) {
+	for (uint8_t i = 0; i <= range->len; i++) {
 		line = range->start + i;
 		/* check if interrupt is pending */
-		if (stm32_exti_is_pending(line)) {
+		if (stm32_exti_is_pending(line) != 0) {
 			/* clear pending interrupt */
 			stm32_exti_clear_pending(line);
 
@@ -205,10 +207,11 @@ static void stm32_fill_irq_table(int8_t start, int8_t len, int32_t irqn)
  * - fill exti_irq_table through stm32_fill_irq_table()
  * - calls IRQ_CONNECT for each irq & matching line_range
  */
+
 #define STM32_EXTI_INIT(node_id, interrupts, idx)			\
 	static const struct stm32_exti_range line_range_##idx = {	\
-		range[2 * idx],						\
-		range[2 * idx + 1]					\
+		DT_PROP_BY_IDX(node_id, line_ranges, UTIL_X2(idx)),	      \
+		DT_PROP_BY_IDX(node_id, line_ranges, UTIL_INC(UTIL_X2(idx))) \
 	};								\
 	stm32_fill_irq_table(line_range_##idx.start,			\
 			     line_range_##idx.len,			\
@@ -224,8 +227,7 @@ static void stm32_fill_irq_table(int8_t start, int8_t len, int32_t irqn)
 static int stm32_exti_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
-	const uint8_t range[2*NUM_EXTI_LINES] =
-					DT_PROP(DT_NODELABEL(exti), line_ranges);
+
 	DT_FOREACH_PROP_ELEM(DT_NODELABEL(exti),
 			     interrupt_names,
 			     STM32_EXTI_INIT);
@@ -248,11 +250,12 @@ int stm32_exti_set_callback(int line, stm32_exti_callback_t cb, void *arg)
 	const struct device *const dev = DEVICE_DT_GET(EXTI_NODE);
 	struct stm32_exti_data *data = dev->data;
 
-	if (data->cb[line].cb == cb && data->cb[line].data == arg) {
+	if ((data->cb[line].cb == cb) && (data->cb[line].data == arg)) {
 		return 0;
 	}
 
-	if (data->cb[line].cb) {
+	/* if callback already exists/maybe-running return busy */
+	if (data->cb[line].cb != NULL) {
 		return -EBUSY;
 	}
 

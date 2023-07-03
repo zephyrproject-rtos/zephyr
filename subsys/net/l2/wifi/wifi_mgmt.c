@@ -84,12 +84,19 @@ static int wifi_scan(uint32_t mgmt_request, struct net_if *iface,
 	const struct device *dev = net_if_get_device(iface);
 	struct net_wifi_mgmt_offload *off_api =
 		(struct net_wifi_mgmt_offload *) dev->api;
+	struct wifi_scan_params *params = data;
 
 	if (off_api == NULL || off_api->scan == NULL) {
 		return -ENOTSUP;
 	}
 
-	return off_api->scan(dev, scan_result_cb);
+	if (data && (len == sizeof(*params))) {
+#ifdef CONFIG_WIFI_MGMT_FORCED_PASSIVE_SCAN
+		params->scan_type = WIFI_SCAN_TYPE_PASSIVE;
+#endif
+	}
+
+	return off_api->scan(dev, params, scan_result_cb);
 }
 
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_SCAN, wifi_scan);
@@ -297,6 +304,10 @@ static int wifi_set_twt(uint32_t mgmt_request, struct net_if *iface,
 		return -ENOTSUP;
 	}
 
+	if (twt_params->operation == WIFI_TWT_TEARDOWN) {
+		return off_api->set_twt(dev, twt_params);
+	}
+
 	if (net_mgmt(NET_REQUEST_WIFI_IFACE_STATUS, iface, &info,
 			sizeof(struct wifi_iface_status))) {
 		twt_params->fail_reason =
@@ -309,6 +320,18 @@ static int wifi_set_twt(uint32_t mgmt_request, struct net_if *iface,
 			WIFI_TWT_FAIL_DEVICE_NOT_CONNECTED;
 		goto fail;
 	}
+
+#ifdef CONFIG_WIFI_MGMT_TWT_CHECK_IP
+	if ((!net_if_ipv4_get_global_addr(iface, NET_ADDR_PREFERRED)) &&
+	    (!net_if_ipv6_get_global_addr(NET_ADDR_PREFERRED, &iface))) {
+		twt_params->fail_reason =
+			WIFI_TWT_FAIL_IP_NOT_ASSIGNED;
+		goto fail;
+	}
+#else
+	NET_WARN("Check for valid IP address been disabled. "
+		 "Device might be unreachable or might not receive traffic.\n");
+#endif /* CONFIG_WIFI_MGMT_TWT_CHECK_IP */
 
 	if (info.link_mode < WIFI_6) {
 		twt_params->fail_reason =
@@ -362,7 +385,7 @@ void wifi_mgmt_raise_twt_sleep_state(struct net_if *iface,
 				     int twt_sleep_state)
 {
 	net_mgmt_event_notify_with_info(NET_EVENT_WIFI_TWT_SLEEP_STATE,
-					iface, INT_TO_POINTER(twt_sleep_state),
+					iface, &twt_sleep_state,
 					sizeof(twt_sleep_state));
 }
 
@@ -382,3 +405,15 @@ void wifi_mgmt_raise_raw_scan_result_event(struct net_if *iface,
 					sizeof(*raw_scan_result));
 }
 #endif /* CONFIG_WIFI_MGMT_RAW_SCAN_RESULTS */
+
+void wifi_mgmt_raise_disconnect_complete_event(struct net_if *iface,
+					       int status)
+{
+	struct wifi_status cnx_status = {
+		.status = status,
+	};
+
+	net_mgmt_event_notify_with_info(NET_EVENT_WIFI_DISCONNECT_COMPLETE,
+					iface, &cnx_status,
+					sizeof(struct wifi_status));
+}

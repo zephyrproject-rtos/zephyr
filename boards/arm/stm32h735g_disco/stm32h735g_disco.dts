@@ -44,6 +44,7 @@
 		led0 = &red_led;
 		led1 = &green_led;
 		sw0 = &user_button;
+		volt-sensor1 = &vbat;
 	};
 };
 
@@ -179,4 +180,8 @@
 	backup_regs {
 		status = "okay";
 	};
+};
+
+&vbat {
+	status = "okay";
 };

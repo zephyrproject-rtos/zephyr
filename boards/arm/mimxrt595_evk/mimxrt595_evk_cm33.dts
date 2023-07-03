@@ -149,6 +149,7 @@
  */
 &os_timer {
 	status = "okay";
+	wakeup-source;
 };
 
 &rtc {
@@ -215,6 +216,8 @@
 	current-speed = <115200>;
 	pinctrl-0 = <&pinmux_flexcomm0_usart>;
 	pinctrl-names = "default";
+	dmas = <&dma0 0>, <&dma0 1>;
+	dma-names = "rx", "tx";
 };
 
 arduino_i2c: &flexcomm4 {
@@ -280,6 +283,8 @@ arduino_serial: &flexcomm12 {
 	current-speed = <115200>;
 	pinctrl-0 = <&pinmux_flexcomm12_usart>;
 	pinctrl-names = "default";
+	dmas = <&dma0 34>, <&dma0 35>;
+	dma-names = "rx", "tx";
 };
 
 /* PCA9420 PMIC */
@@ -525,5 +530,17 @@ zephyr_udc0: &usbhs {
 &sc_timer {
 	pinctrl-0 = <&pinmux_sctimer_default>;
 	pinctrl-names = "default";
+	status = "okay";
+};
+
+&i3c0 {
+	pinctrl-0 = <&pinmux_i3c>;
+	pinctrl-names = "default";
+
+	status = "okay";
+};
+
+/* Disable this node if not using USB and need another MPU region */
+&sram1 {
 	status = "okay";
 };

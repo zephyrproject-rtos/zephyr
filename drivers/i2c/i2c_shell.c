@@ -163,7 +163,7 @@ static int i2c_write_from_buffer(const struct shell *shell_ctx,
 			buf + MAX_BYTES_FOR_REGISTER_INDEX - reg_addr_bytes,
 			reg_addr_bytes + data_length, dev_addr);
 	if (ret < 0) {
-		shell_error(shell_ctx, "Failed to read from device: %s",
+		shell_error(shell_ctx, "Failed to write to device: %s",
 			    s_dev_addr);
 		return -EIO;
 	}

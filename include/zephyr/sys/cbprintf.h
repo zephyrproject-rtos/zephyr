@@ -129,7 +129,7 @@ extern "C" {
 
 /**
  * @defgroup cbprintf_apis Formatted Output APIs
- * @ingroup support_apis
+ * @ingroup utilities
  * @{
  */
 

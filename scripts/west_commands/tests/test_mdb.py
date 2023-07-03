@@ -13,7 +13,7 @@ from runners.mdb import MdbNsimBinaryRunner, MdbHwBinaryRunner
 from conftest import RC_KERNEL_ELF, RC_BOARD_DIR, RC_BUILD_DIR
 
 
-TEST_DRIVER_CMD = 'mdb'
+TEST_DRIVER_CMD = 'mdb64'
 TEST_NSIM_ARGS='test_nsim.args'
 TEST_TARGET = 'test-target'
 TEST_BOARD_NSIM_ARGS = '@' + path.join(RC_BOARD_DIR, 'support', TEST_NSIM_ARGS)

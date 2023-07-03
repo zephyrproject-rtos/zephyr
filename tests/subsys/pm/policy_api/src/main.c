@@ -290,4 +290,68 @@ ZTEST(policy_api, test_pm_policy_next_state_custom)
 }
 #endif /* CONFIG_PM_POLICY_CUSTOM */
 
+#ifdef CONFIG_PM_POLICY_DEFAULT
+/* note: we can't easily mock k_cycle_get_32(), so test is not ideal */
+ZTEST(policy_api, test_pm_policy_events)
+{
+	struct pm_policy_event evt1, evt2;
+	const struct pm_state_info *next;
+	uint32_t now;
+
+	now = k_cyc_to_us_ceil32(k_cycle_get_32());
+
+	/* events:
+	 *   - 10ms from now (time < runtime idle latency)
+	 *   - 200ms from now (time > runtime idle, < suspend to ram latencies)
+	 *
+	 * system wakeup:
+	 *   - 2s from now (time > suspend to ram latency)
+	 *
+	 * first event wins, so we must stay active
+	 */
+	pm_policy_event_register(&evt1, 10000);
+	pm_policy_event_register(&evt2, 200000);
+	next = pm_policy_next_state(0U, now + k_us_to_ticks_floor32(2000000));
+	zassert_is_null(next);
+
+	/* remove first event so second event now wins, meaning we can now enter
+	 * runtime idle
+	 */
+	pm_policy_event_unregister(&evt1);
+	next = pm_policy_next_state(0U, now + k_us_to_ticks_floor32(2000000));
+	zassert_equal(next->state, PM_STATE_RUNTIME_IDLE);
+
+	/* remove second event, now we can enter deepest state */
+	pm_policy_event_unregister(&evt2);
+	next = pm_policy_next_state(0U, now + k_us_to_ticks_floor32(2000000));
+	zassert_equal(next->state, PM_STATE_SUSPEND_TO_RAM);
+
+	/* events:
+	 *   - 2s from now (time > suspend to ram latency)
+	 *
+	 * system wakeup:
+	 *   - 200ms from now (time > runtime idle, < suspend to ram latencies)
+	 *
+	 * system wakeup wins, so we can go up to runtime idle.
+	 */
+	pm_policy_event_register(&evt1, 2000000);
+	next = pm_policy_next_state(0U, now + k_us_to_ticks_floor32(200000));
+	zassert_equal(next->state, PM_STATE_RUNTIME_IDLE);
+
+	/* modify event to occur in 10ms, so it now wins system wakeup and
+	 * requires to stay awake
+	 */
+	pm_policy_event_update(&evt1, 10000);
+	next = pm_policy_next_state(0U, now + k_us_to_ticks_floor32(200000));
+	zassert_is_null(next);
+
+	pm_policy_event_unregister(&evt1);
+}
+#else
+ZTEST(policy_api, test_pm_policy_events)
+{
+	ztest_test_skip();
+}
+#endif /* CONFIG_PM_POLICY_CUSTOM */
+
 ZTEST_SUITE(policy_api, NULL, NULL, NULL, NULL, NULL);

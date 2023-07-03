@@ -103,4 +103,57 @@ config XTENSA_CCOUNT_HZ
 	  Rate in HZ of the Xtensa core as measured by the value of
 	  the CCOUNT register.
 
+if CPU_HAS_MMU
+
+config XTENSA_MMU
+	bool "Xtensa MMU Support"
+	default n
+	select MMU
+	select XTENSA_SMALL_VECTOR_TABLE_ENTRY
+	help
+	  Enable support for Xtensa Memory Management Unit.
+
+if XTENSA_MMU
+
+	choice
+		prompt "PageTable virtual adddress"
+		default XTENSA_MMU_PTEVADDR_20000000
+		help
+		  The virtual address for Xtensa page table (PTEVADDR).
+
+	config XTENSA_MMU_PTEVADDR_20000000
+		bool "0x20000000"
+
+	endchoice
+
+	config XTENSA_MMU_PTEVADDR
+		hex
+		default 0x20000000 if XTENSA_MMU_PTEVADDR_20000000
+		help
+		  The virtual address for Xtensa page table (PTEVADDR).
+
+	config XTENSA_MMU_PTEVADDR_SHIFT
+		int
+		default 29 if XTENSA_MMU_PTEVADDR_20000000
+		help
+		  The bit shift number for the virtual address for Xtensa
+		  page table (PTEVADDR).
+
+	config XTENSA_MMU_NUM_L2_TABLES
+		int "Number of L2 page tables"
+		default 10
+		help
+		  Each table can address up to 4MB memory address.
+
+	config XTENSA_MMU_DOUBLE_MAP
+		bool "Map memory in cached and uncached region"
+		default n
+		help
+			This option specifies that the memory is mapped in two
+			distinct region, cached and uncached.
+
+endif # XTENSA_MMU
+
+endif # CPU_HAS_MMU
+
 endmenu

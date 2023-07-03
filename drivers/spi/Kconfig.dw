@@ -18,22 +18,6 @@ menuconfig SPI_DW
 
 if SPI_DW
 
-config SPI_DW_ARC_AUX_REGS
-	bool "Registers are part of ARC auxiliary registers"
-	depends on ARC
-	default y
-	help
-	  SPI IP block registers are part of user extended auxiliary
-	  registers and thus their access is different than memory
-	  mapped registers.
-
-config SPI_DW_FIFO_DEPTH
-	int "RX and TX FIFO Depth"
-	help
-	  Corresponds to the SSI_TX_FIFO_DEPTH and
-	  SSI_RX_FIFO_DEPTH of the DesignWare Synchronous
-	  Serial Interface. Depth ranges from 2-256.
-
 config SPI_DW_ACCESS_WORD_ONLY
 	bool "DesignWare SPI only allows word access"
 	help

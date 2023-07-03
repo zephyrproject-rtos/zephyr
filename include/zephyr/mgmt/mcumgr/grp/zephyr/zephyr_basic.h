@@ -22,8 +22,16 @@ enum zephyr_basic_group_ret_code_t {
 	/** No error, this is implied if there is no ret value in the response */
 	ZEPHYR_MGMT_GRP_CMD_RC_OK = 0,
 
+	/** Unknown error occurred. */
+	ZEPHYR_MGMT_RET_RC_UNKNOWN,
+
+	/** Opening of the flash area has failed. */
 	ZEPHYR_MGMT_GRP_CMD_RC_FLASH_OPEN_FAILED,
+
+	/** Querying the flash area parameters has failed. */
 	ZEPHYR_MGMT_GRP_CMD_RC_FLASH_CONFIG_QUERY_FAIL,
+
+	/** Erasing the flash area has failed. */
 	ZEPHYR_MGMT_GRP_CMD_RC_FLASH_ERASE_FAILED,
 };
 

@@ -14,7 +14,7 @@ LOG_MODULE_REGISTER(bt_cap_stream, CONFIG_BT_CAP_STREAM_LOG_LEVEL);
 
 #if defined(CONFIG_BT_BAP_UNICAST)
 static void cap_stream_configured_cb(struct bt_bap_stream *bap_stream,
-				     const struct bt_codec_qos_pref *pref)
+				     const struct bt_audio_codec_qos_pref *pref)
 {
 	struct bt_cap_stream *cap_stream = CONTAINER_OF(bap_stream,
 							struct bt_cap_stream,

@@ -7,15 +7,19 @@
 /**
  * @file
  * @brief Public IEEE 802.15.4 Radio API
+ *
+ * All references to the spec refer to IEEE 802.15.4-2020.
  */
 
 #ifndef ZEPHYR_INCLUDE_NET_IEEE802154_RADIO_H_
 #define ZEPHYR_INCLUDE_NET_IEEE802154_RADIO_H_
 
 #include <zephyr/device.h>
+#include <zephyr/sys_clock.h>
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/net/ieee802154.h>
+#include <zephyr/sys/util.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -26,16 +30,64 @@ extern "C" {
  * @{
  */
 
+/* See section 6.1: "Some of the timing parameters in definition of the MAC are in units of PHY
+ * symbols. For PHYs that have multiple symbol periods, the duration to be used for the MAC
+ * parameters is defined in that PHY clause."
+ */
+#define IEEE802154_PHY_SUN_FSK_863MHZ_915MHZ_SYMBOL_PERIOD_US 20U /* see section 19.1, table 19-1 */
+#define IEEE802154_PHY_OQPSK_2450MHZ_SYMBOL_PERIOD_US         16U /* see section 12.3.3 */
+
+/* TODO: Get PHY-specific symbol period from radio API. Requires an attribute getter, see
+ *       https://github.com/zephyrproject-rtos/zephyr/issues/50336#issuecomment-1251122582.
+ *       For now we assume PHYs that current drivers actually implement.
+ */
+#define IEEE802154_PHY_SYMBOL_PERIOD(is_subg_phy)                                                  \
+	((is_subg_phy) ? IEEE802154_PHY_SUN_FSK_863MHZ_915MHZ_SYMBOL_PERIOD_US                     \
+		       : IEEE802154_PHY_OQPSK_2450MHZ_SYMBOL_PERIOD_US)
+
+/* The inverse of the symbol period as defined in section 6.1. This is not necessarily the true
+ * physical symbol period, so take care to use this macro only when either the symbol period used
+ * for MAC timing is the same as the physical symbol period or if you actually mean the MAC timing
+ * symbol period.
+ */
+#define IEEE802154_PHY_SYMBOLS_PER_SECOND(symbol_period) (USEC_PER_SEC / symbol_period)
+
+/* see section 19.2.4 */
+#define IEEE802154_PHY_SUN_FSK_PHR_LEN 2
+
+/* Default PHY PIB attribute aTurnaroundTime, in PHY symbols, see section 11.3, table 11-1. */
+#define IEEE802154_PHY_A_TURNAROUND_TIME_DEFAULT 12U
+
+/* PHY PIB attribute aTurnaroundTime for SUN, RS-GFSK, TVWS, and LECIM FSK PHY,
+ * in PHY symbols, see section 11.3, table 11-1.
+ */
+#define IEEE802154_PHY_A_TURNAROUND_TIME_1MS(symbol_period)                                        \
+	DIV_ROUND_UP(USEC_PER_MSEC, symbol_period)
+
+/* TODO: Get PHY-specific turnaround time from radio API, see
+ *       https://github.com/zephyrproject-rtos/zephyr/issues/50336#issuecomment-1251122582.
+ *       For now we assume PHYs that current drivers actually implement.
+ */
+#define IEEE802154_PHY_A_TURNAROUND_TIME(is_subg_phy)                                              \
+	((is_subg_phy)                                                                             \
+		 ? IEEE802154_PHY_A_TURNAROUND_TIME_1MS(IEEE802154_PHY_SYMBOL_PERIOD(is_subg_phy)) \
+		 : IEEE802154_PHY_A_TURNAROUND_TIME_DEFAULT)
+
+/* PHY PIB attribute aCcaTime, in PHY symbols, all PHYs except for SUN O-QPSK,
+ * see section 11.3, table 11-1.
+ */
+#define IEEE802154_PHY_A_CCA_TIME 8U
+
 /**
  * @brief IEEE 802.15.4 Channel assignments
  *
- * Channel numbering for 868 MHz, 915 MHz, and 2450 MHz bands.
+ * Channel numbering for 868 MHz, 915 MHz, and 2450 MHz bands (channel page zero).
  *
  * - Channel 0 is for 868.3 MHz.
  * - Channels 1-10 are for 906 to 924 MHz with 2 MHz channel spacing.
  * - Channels 11-26 are for 2405 to 2530 MHz with 5 MHz channel spacing.
  *
- * For more information, please refer to 802.15.4-2015 Section 10.1.2.2.
+ * For more information, please refer to section 10.1.3.
  */
 enum ieee802154_channel {
 	IEEE802154_SUB_GHZ_CHANNEL_MIN = 0,
@@ -45,18 +97,24 @@ enum ieee802154_channel {
 };
 
 enum ieee802154_hw_caps {
-	IEEE802154_HW_FCS	  = BIT(0), /* Frame Check-Sum supported */
-	IEEE802154_HW_PROMISC	  = BIT(1), /* Promiscuous mode supported */
-	IEEE802154_HW_FILTER	  = BIT(2), /* Filter PAN ID, long/short addr */
-	IEEE802154_HW_CSMA	  = BIT(3), /* CSMA-CA supported */
-	IEEE802154_HW_2_4_GHZ	  = BIT(4), /* 2.4Ghz radio supported */
-	IEEE802154_HW_TX_RX_ACK	  = BIT(5), /* Handles ACK request on TX */
-	IEEE802154_HW_SUB_GHZ	  = BIT(6), /* Sub-GHz radio supported */
-	IEEE802154_HW_ENERGY_SCAN = BIT(7), /* Energy scan supported */
-	IEEE802154_HW_TXTIME	  = BIT(8), /* TX at specified time supported */
-	IEEE802154_HW_SLEEP_TO_TX = BIT(9), /* TX directly from sleep supported */
-	IEEE802154_HW_TX_SEC	  = BIT(10), /* TX security handling supported */
-	IEEE802154_HW_RXTIME	  = BIT(11), /* RX at specified time supported */
+	IEEE802154_HW_FCS = BIT(0),            /* Frame Check-Sum supported */
+	IEEE802154_HW_PROMISC = BIT(1),        /* Promiscuous mode supported */
+	IEEE802154_HW_FILTER = BIT(2),         /* Filter PAN ID, long/short addr */
+	IEEE802154_HW_CSMA = BIT(3),           /* Executes CSMA-CA procedure on TX */
+	IEEE802154_HW_RETRANSMISSION = BIT(4), /* Handles retransmission on TX ACK timeout */
+	IEEE802154_HW_TX_RX_ACK = BIT(5),      /* Waits for ACK on TX if AR bit is set in TX pkt */
+	IEEE802154_HW_RX_TX_ACK = BIT(6),      /* Sends ACK on RX if AR bit is set in RX pkt */
+	IEEE802154_HW_ENERGY_SCAN = BIT(7),    /* Energy scan supported */
+	IEEE802154_HW_TXTIME = BIT(8),         /* TX at specified time supported */
+	IEEE802154_HW_SLEEP_TO_TX = BIT(9),    /* TX directly from sleep supported */
+	IEEE802154_HW_TX_SEC = BIT(10),        /* TX security handling supported */
+	IEEE802154_HW_RXTIME = BIT(11),        /* RX at specified time supported */
+	IEEE802154_HW_2_4_GHZ = BIT(12),       /* 2.4Ghz radio supported
+						* TODO: Replace with channel page attribute.
+						*/
+	IEEE802154_HW_SUB_GHZ = BIT(13),       /* Sub-GHz radio supported
+						* TODO: Replace with channel page attribute.
+						*/
 };
 
 enum ieee802154_filter_type {
@@ -113,13 +171,22 @@ enum ieee802154_tx_mode {
 	/** Perform CCA before packet transmission. */
 	IEEE802154_TX_MODE_CCA,
 
-	/** Perform full CSMA CA procedure before packet transmission. */
+	/**
+	 * Perform full CSMA CA procedure before packet transmission.
+	 * Requires IEEE802154_HW_CSMA capability.
+	 */
 	IEEE802154_TX_MODE_CSMA_CA,
 
-	/** Transmit packet in the future, at specified time, no CCA. */
+	/**
+	 * Transmit packet in the future, at specified time, no CCA.
+	 * Requires IEEE802154_HW_TXTIME capability.
+	 */
 	IEEE802154_TX_MODE_TXTIME,
 
-	/** Transmit packet in the future, perform CCA before transmission. */
+	/**
+	 * Transmit packet in the future, perform CCA before transmission.
+	 * Requires IEEE802154_HW_TXTIME capability.
+	 */
 	IEEE802154_TX_MODE_TXTIME_CCA,
 };
 
@@ -142,13 +209,15 @@ enum ieee802154_config_type {
 	 *  determine whether to set the bit or not based on the information
 	 *  provided with ``IEEE802154_CONFIG_ACK_FPB`` config and FPB address
 	 *  matching mode specified. Otherwise, Frame Pending bit should be set
-	 *  to ``1`` (see IEEE Std 802.15.4-2006, 7.2.2.3.1).
+	 *  to ``1`` (see section 6.7.3).
+	 *  Requires IEEE802154_HW_TX_RX_ACK capability.
 	 */
 	IEEE802154_CONFIG_AUTO_ACK_FPB,
 
 	/** Indicates whether to set ACK Frame Pending bit for specific address
 	 *  or not. Disabling the Frame Pending bit with no address provided
 	 *  (NULL pointer) should disable it for all enabled addresses.
+	 *  Requires IEEE802154_HW_TX_RX_ACK capability.
 	 */
 	IEEE802154_CONFIG_ACK_FPB,
 
@@ -175,8 +244,13 @@ enum ieee802154_config_type {
 
 	IEEE802154_CONFIG_FRAME_COUNTER_IF_LARGER,
 
-	/** Configure a radio reception slot. This can be used for any scheduler reception, e.g.:
+	/** Configure a radio reception slot. This can be used for any scheduled reception, e.g.:
 	 *  Zigbee GP device, CSL, TSCH, etc.
+	 *  Requires IEEE802154_HW_RXTIME capability.
+	 */
+	IEEE802154_CONFIG_RX_SLOT,
+
+	/** Configure CSL receiver (Endpoint) period
 	 *
 	 *  In order to configure a CSL receiver the upper layer should combine several
 	 *  configuration options in the following way:
@@ -210,9 +284,6 @@ enum ieee802154_config_type {
 	 *                                            |                                    |
 	 *                                            +--------------------- loop ---------+
 	 */
-	IEEE802154_CONFIG_RX_SLOT,
-
-	/** Configure CSL receiver (Endpoint) period */
 	IEEE802154_CONFIG_CSL_PERIOD,
 
 	/** Configure the next CSL receive window center, in units of microseconds,
@@ -327,7 +398,7 @@ struct ieee802154_radio_api {
 	/** Set current channel, channel is in CPU byte order. */
 	int (*set_channel)(const struct device *dev, uint16_t channel);
 
-	/** Set/Unset filters (for IEEE802154_HW_FILTER ) */
+	/** Set/Unset filters. Requires IEEE802154_HW_FILTER capability. */
 	int (*filter)(const struct device *dev,
 		      bool set,
 		      enum ieee802154_filter_type type,
@@ -357,24 +428,31 @@ struct ieee802154_radio_api {
 			 enum ieee802154_config_type type,
 			 const struct ieee802154_config *config);
 
-	/** Get the available amount of Sub-GHz channels */
+	/**
+	 * Get the available amount of Sub-GHz channels
+	 * TODO: Replace with a combination of channel page and channel attributes.
+	 */
 	uint16_t (*get_subg_channel_count)(const struct device *dev);
 
 	/** Run an energy detection scan.
 	 *  Note: channel must be set prior to request this function.
 	 *  duration parameter is in ms.
+	 *  Requires IEEE802154_HW_ENERGY_SCAN capability.
 	 */
 	int (*ed_scan)(const struct device *dev,
 		       uint16_t duration,
 		       energy_scan_done_cb_t done_cb);
 
-	/** Get the current radio time in microseconds */
+	/** Get the current radio time in microseconds
+	 *  Requires IEEE802154_HW_TXTIME and/or IEEE802154_HW_RXTIME capabilities.
+	 */
 	uint64_t (*get_time)(const struct device *dev);
 
 	/** Get the current accuracy, in units of ± ppm, of the clock used for
 	 *  scheduling delayed receive or transmit radio operations.
 	 *  Note: Implementations may optimize this value based on operational
 	 *  conditions (i.e.: temperature).
+	 *  Requires IEEE802154_HW_TXTIME and/or IEEE802154_HW_RXTIME capabilities.
 	 */
 	uint8_t (*get_sch_acc)(const struct device *dev);
 };
@@ -402,26 +480,45 @@ static inline bool ieee802154_is_ar_flag_set(struct net_buf *frag)
 }
 
 /**
- * @brief Radio driver ACK handling function that hw drivers should use
+ * @brief Radio driver ACK handling callback into L2 that radio
+ *        drivers must call when receiving an ACK package.
  *
- * @details ACK handling requires fast handling and thus such function
- *          helps to hook directly the hw drivers to the radio driver.
+ * @details The IEEE 802.15.4 standard prescribes generic procedures for ACK
+ *          handling on L2 (MAC) level. L2 stacks therefore have to provides a
+ *          fast and re-usable generic implementation of this callback for
+ *          radio drivers to call when receiving an ACK packet.
+ *
+ *          Note: This function is part of Zephyr's 802.15.4 stack L1 -> L2
+ *          "inversion-of-control" adaptation API and must be implemented by
+ *          all IEEE 802.15.4 L2 stacks.
  *
  * @param iface A valid pointer on a network interface that received the packet
  * @param pkt A valid pointer on a packet to check
  *
- * @return NET_OK if it was handled, NET_CONTINUE otherwise
+ * @return NET_OK if L2 handles the ACK package, NET_CONTINUE or NET_DROP otherwise.
+ *
+ *         Note: Deviating from other functions in the net stack returning net_verdict,
+ *               this function will not unref the package even if it returns NET_OK.
+ *
+ *         TODO: Fix this deviating behavior.
  */
-extern enum net_verdict ieee802154_radio_handle_ack(struct net_if *iface,
-						    struct net_pkt *pkt);
+extern enum net_verdict ieee802154_handle_ack(struct net_if *iface, struct net_pkt *pkt);
 
 /**
- * @brief Initialize L2 stack for a given interface
+ * @brief Radio driver initialization callback into L2 called by radio drivers
+ *        to initialize the active L2 stack for a given interface.
+ *
+ * @details Radio drivers must call this function as part of their own
+ *          initialization routine.
+ *
+ *          Note: This function is part of Zephyr's 802.15.4 stack L1 -> L2
+ *          "inversion-of-control" adaptation API and must be implemented by
+ *          all IEEE 802.15.4 L2 stacks.
  *
  * @param iface A valid pointer on a network interface
  */
 #ifndef CONFIG_IEEE802154_RAW_MODE
-void ieee802154_init(struct net_if *iface);
+extern void ieee802154_init(struct net_if *iface);
 #else
 #define ieee802154_init(_iface_)
 #endif /* CONFIG_IEEE802154_RAW_MODE */

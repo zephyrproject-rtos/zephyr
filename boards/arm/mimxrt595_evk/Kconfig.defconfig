@@ -19,16 +19,6 @@ config FXOS8700_DRDY_INT1
 	default y
 	depends on FXOS8700_TRIGGER
 
-if DMA_MCUX_LPC
-
-# Memory from the heap pool is used to allocate DMA descriptors for
-# channels that use multiple blocks for a DMA transfer.
-# Adjust HEAP_MEM_POOL_SIZE in case you need more memory.
-config HEAP_MEM_POOL_SIZE
-	default 4096
-
-endif # DMA_MCUX_LPC
-
 if DISPLAY
 
 # Enable MIPI display driver
@@ -41,6 +31,8 @@ config MCUX_DCNANO_LCDIF_EXTERNAL_FB_MEM
 	default y
 # Use FlexSPI2 base address for framebuffer (pSRAM is present on this bus)
 config MCUX_DCNANO_LCDIF_EXTERNAL_FB_ADDR
+	# Move DCNANO framebuffer if LVGL framebuffers are also in PSRAM
+	default 0x38400000 if LV_Z_VBD_CUSTOM_SECTION
 	default 0x38000000
 # M33 core and LCDIF both access FlexSPI2 through the same cache,
 # so coherency does not need to be managed.
@@ -54,13 +46,41 @@ config KSCAN
 
 if LVGL
 
+# LVGL should allocate buffers equal to size of display
+config LV_Z_VDB_SIZE
+	default 100
+
+# Enable double buffering
+config LV_Z_DOUBLE_VDB
+	default y
+
+# Force full refresh. This prevents memory copy associated with partial
+# display refreshes, which is not necessary for the eLCDIF driver
+config LV_Z_FULL_REFRESH
+	default y
+
+config LV_DPI_DEF
+	default 128
+
+config LV_Z_BITS_PER_PIXEL
+	default 16
+
+# Force display buffers to be aligned for DCNANO LCDIF (128 byte alignment)
+config LV_Z_VDB_ALIGN
+	default 128
+
+# LVGL display buffers will be too large for internal SRAM, locate in
+# custom section within PSRAM
+config LV_Z_VBD_CUSTOM_SECTION
+	default y
+
 config LV_Z_POINTER_KSCAN
 	default y
 
 config LV_Z_VDB_SIZE
 	default 16
 
-config LV_Z_DPI
+config LV_DPI_DEF
 	default 128
 
 choice LV_COLOR_DEPTH
@@ -68,5 +88,15 @@ choice LV_COLOR_DEPTH
 endchoice
 
 endif # LVGL
+
+if PM
+# Turn on Device Level Power Management as we wish
+# to reconfigure the FlexSPI pins for power savings
+# when transitioning the SoC to Deep Low Power modes.
+config PM_DEVICE
+	default y
+config REGULATOR
+	default y
+endif # PM
 
 endif # BOARD_MIMXRT595_EVK

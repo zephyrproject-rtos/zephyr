@@ -82,6 +82,12 @@ else()
   set(OT_BORDER_ROUTING_COUNTERS OFF CACHE BOOL "Enable Border routing counters" FORCE)
 endif()
 
+if(CONFIG_OPENTHREAD_BORDER_ROUTING_DHCP6_PD)
+  set(OT_BORDER_ROUTING_DHCP6_PD ON CACHE BOOL "DHCPv6-PD support in border routing" FORCE)
+else()
+  set(OT_BORDER_ROUTING_DHCP6_PD OFF CACHE BOOL "DHCPv6-PD support in border routing" FORCE)
+endif()
+
 if(CONFIG_OPENTHREAD_CHANNEL_MANAGER)
   set(OT_CHANNEL_MANAGER ON CACHE BOOL "Enable channel manager support" FORCE)
 else()

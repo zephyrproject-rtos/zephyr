@@ -8,11 +8,12 @@
 #include <zephyr/device.h>
 #include <zephyr/toolchain/common.h>
 #include <zephyr/sys/slist.h>
-
+#include <zephyr/sys/iterable_sections.h>
 #include <zephyr/drivers/usb/udc.h>
 #include <zephyr/usb/usbd.h>
 
 #include "usbd_device.h"
+#include "usbd_desc.h"
 #include "usbd_config.h"
 #include "usbd_init.h"
 #include "usbd_ch9.h"
@@ -169,7 +170,8 @@ static void usbd_thread(void)
 		k_msgq_get(&usbd_msgq, &event, K_FOREVER);
 
 		STRUCT_SECTION_FOREACH(usbd_contex, uds_ctx) {
-			if (uds_ctx->dev == event.dev) {
+			if (uds_ctx->dev == event.dev &&
+			    usbd_is_initialized(uds_ctx)) {
 				usbd_event_handler(uds_ctx, &event);
 			}
 		}
@@ -199,6 +201,23 @@ int usbd_device_init_core(struct usbd_contex *const uds_ctx)
 
 int usbd_device_shutdown_core(struct usbd_contex *const uds_ctx)
 {
+	struct usbd_config_node *cfg_nd;
+	int ret;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&uds_ctx->configs, cfg_nd, node) {
+		uint8_t cfg_value = usbd_config_get_value(cfg_nd);
+
+		ret = usbd_class_remove_all(uds_ctx, cfg_value);
+		if (ret) {
+			LOG_ERR("Failed to cleanup registered classes, %d", ret);
+		}
+	}
+
+	ret = usbd_desc_remove_all(uds_ctx);
+	if (ret) {
+		LOG_ERR("Failed to cleanup descriptors, %d", ret);
+	}
+
 	return udc_shutdown(uds_ctx->dev);
 }
 

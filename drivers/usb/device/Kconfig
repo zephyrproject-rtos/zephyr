@@ -73,6 +73,15 @@ config USB_DC_SAM0
 	help
 	  SAM0 family USB device controller Driver.
 
+config USB_DC_SMARTBOND
+	bool "SmartBond series USB Device Controller driver"
+	default y
+	select CLOCK_CONTROL_SMARTBOND
+	select CLOCK_CONTROL
+	depends on DT_HAS_RENESAS_SMARTBOND_USBD_ENABLED
+	help
+	  SmartBond family USB device controller Driver.
+
 config USB_DC_SAM_USBC
 	bool "SAM4L USBC Device Controller driver"
 	default y
@@ -158,7 +167,8 @@ config USB_DC_NXP_EHCI
 
 config USB_DC_NXP_LPCIP3511
 	bool "LPC USB Device Controller"
-	select USB_DC_HAS_HS_SUPPORT
+	select USB_DC_HAS_HS_SUPPORT if "$(dt_nodelabel_enabled,usbhs)"
+	select PINCTRL
 	help
 	  LPC USB Device Controller Driver.
 
@@ -173,11 +183,19 @@ config USB_DC_MSG_QUEUE_LEN
 
 config USB_MCUX_THREAD_STACK_SIZE
 	int "Stack size for the USB driver"
+	default 2048 if USB_DEVICE_LOG_LEVEL_DBG
 	default 1024
 	help
 	  Size of the stack used for the internal USB thread.
 
 endif # USB_MCUX
+
+config USB_DC_IT82XX2
+	bool "ITE IT82XX2 USB Device Controller Driver"
+	default y
+	depends on DT_HAS_ITE_IT82XX2_USB_ENABLED
+	help
+	  ITE IT82XX2 USB Device Controller Driver
 
 config USB_NATIVE_POSIX
 	bool "Native Posix USB Device Controller Driver"

@@ -58,6 +58,7 @@ enum scsi_additional_sense_code {
 	INVALID_FIELD_IN_CDB = 0x2400,
 	MEDIUM_NOT_PRESENT = 0x3A00,
 	MEDIUM_REMOVAL_PREVENTED = 0x5302,
+	WRITE_ERROR = 0x0C00,
 };
 
 struct scsi_ctx {
@@ -84,6 +85,7 @@ struct scsi_ctx {
 void scsi_init(struct scsi_ctx *ctx, const char *disk, const char *vendor,
 	       const char *product, const char *revision);
 void scsi_reset(struct scsi_ctx *ctx);
+int scsi_usb_boot_cmd_len(const uint8_t *cb, int len);
 size_t scsi_cmd(struct scsi_ctx *ctx, const uint8_t *cb, int len,
 		uint8_t data_in_buf[static CONFIG_USBD_MSC_SCSI_BUFFER_SIZE]);
 

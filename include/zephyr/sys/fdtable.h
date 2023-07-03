@@ -108,6 +108,24 @@ void *z_get_fd_obj_and_vtable(int fd, const struct fd_op_vtable **vtable,
 			      struct k_mutex **lock);
 
 /**
+ * @brief Get the mutex and condition variable associated with the given object and vtable.
+ *
+ * @param obj Object previously returned by a call to e.g. @ref z_get_fd_obj.
+ * @param vtable A pointer the vtable associated with @p obj.
+ * @param lock An optional pointer to a pointer variable to store the mutex
+ *        preventing concurrent descriptor access. The lock is not taken,
+ *        it is just returned for the caller to use if necessary. Pass NULL
+ *        if the lock is not needed by the caller.
+ * @param cond An optional pointer to a pointer variable to store the condition variable
+ *        to notify waiting threads in the case of concurrent descriptor access. Pass NULL
+ *        if the condition variable is not needed by the caller.
+ *
+ * @return `true` on success, `false` otherwise.
+ */
+bool z_get_obj_lock_and_cond(void *obj, const struct fd_op_vtable *vtable, struct k_mutex **lock,
+			     struct k_condvar **cond);
+
+/**
  * @brief Call ioctl vmethod on an object using varargs.
  *
  * We need this helper function because ioctl vmethod is declared to

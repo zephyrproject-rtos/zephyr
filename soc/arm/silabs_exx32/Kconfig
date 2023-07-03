@@ -126,6 +126,23 @@ config SOC_GECKO_TRNG
 	help
 	  Set if the SoC has a True Random Number Generator (TRNG) module.
 
+if PM
+
+config SOC_GECKO_PM_BACKEND_PMGR
+	bool
+	depends on SOC_GECKO_DEV_INIT
+	default y if SOC_GECKO_SERIES2
+	help
+	  Implement PM using sl_power_manager service from Gecko SDK
+
+config SOC_GECKO_PM_BACKEND_EMU
+	bool
+	default y if !SOC_GECKO_PM_BACKEND_PMGR
+	help
+	  Implement PM using direct calls to EMU driver in emlib
+
+endif
+
 config SOC_GECKO_EMU_DCDC
 	bool "SoC DC/DC regulator"
 	select SOC_GECKO_EMU

@@ -8,8 +8,8 @@
 #include <zephyr/shell/shell.h>
 #include <zephyr/bluetooth/mesh.h>
 
-#include "../net.h"
-#include "../access.h"
+#include "mesh/net.h"
+#include "mesh/access.h"
 #include "utils.h"
 #include <zephyr/bluetooth/mesh/shell.h>
 
@@ -530,7 +530,11 @@ static int cmd_net_key_add(const struct shell *sh, size_t argc, char *argv[])
 				return 0;
 			}
 
-			memcpy(key_val, subnet->keys[0].net_key, 16);
+			if (bt_mesh_cdb_subnet_key_export(subnet, 0, key_val)) {
+				shell_error(sh, "Unable to export subnet key from cdb 0x%03x",
+					    key_net_idx);
+				return 0;
+			}
 		} else {
 			subnet = bt_mesh_cdb_subnet_alloc(key_net_idx);
 			if (!subnet) {
@@ -538,7 +542,11 @@ static int cmd_net_key_add(const struct shell *sh, size_t argc, char *argv[])
 				return 0;
 			}
 
-			memcpy(subnet->keys[0].net_key, key_val, 16);
+			if (bt_mesh_cdb_subnet_key_import(subnet, 0, key_val)) {
+				shell_error(sh, "Unable to import subnet key into cdb 0x%03x",
+					    key_net_idx);
+				return 0;
+			}
 			bt_mesh_cdb_subnet_store(subnet);
 		}
 	}
@@ -684,7 +692,11 @@ static int cmd_app_key_add(const struct shell *sh, size_t argc, char *argv[])
 				return 0;
 			}
 
-			memcpy(key_val, app_key->keys[0].app_key, 16);
+			if (bt_mesh_cdb_app_key_export(app_key, 0, key_val)) {
+				shell_error(sh, "Unable to export app key 0x%03x from cdb",
+					    key_app_idx);
+				return 0;
+			}
 		} else {
 			app_key = bt_mesh_cdb_app_key_alloc(key_net_idx, key_app_idx);
 			if (!app_key) {
@@ -692,7 +704,11 @@ static int cmd_app_key_add(const struct shell *sh, size_t argc, char *argv[])
 				return 0;
 			}
 
-			memcpy(app_key->keys[0].app_key, key_val, 16);
+			if (bt_mesh_cdb_app_key_import(app_key, 0, key_val)) {
+				shell_error(sh, "Unable to import app key 0x%03x into cdb",
+					    key_app_idx);
+				return 0;
+			}
 			bt_mesh_cdb_app_key_store(app_key);
 		}
 	}
@@ -807,7 +823,6 @@ static int cmd_node_id(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	if (argc <= 2) {
-		printk("ANders\n");
 		err = bt_mesh_cfg_cli_node_identity_get(bt_mesh_shell_target_ctx.net_idx,
 						    bt_mesh_shell_target_ctx.dst, net_idx, &status,
 						    &identify);
@@ -1564,7 +1579,7 @@ static int cmd_mod_pub(const struct shell *sh, size_t argc, char *argv[])
 	argc -= 3;
 	argv += 3;
 
-	if (argc == 1 || argc == 8) {
+	if (argc == 1 || argc == 9) {
 		cid = shell_strtoul(argv[0], 0, &err);
 		argc--;
 		argv++;

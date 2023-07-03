@@ -34,6 +34,7 @@ config ARM
 	# is really only necessary for Cortex-M with ARM MPU!
 	select GEN_PRIV_STACKS
 	select ARCH_HAS_THREAD_LOCAL_STORAGE if CPU_AARCH32_CORTEX_R || CPU_CORTEX_M || CPU_AARCH32_CORTEX_A
+	select BARRIER_OPERATIONS_ARCH
 	help
 	  ARM architecture
 
@@ -42,11 +43,13 @@ config ARM64
 	select ARCH_IS_SET
 	select 64BIT
 	select HAS_DTS
+	select ARCH_SUPPORTS_COREDUMP
 	select HAS_ARM_SMCCC
 	select ARCH_HAS_THREAD_LOCAL_STORAGE
 	select USE_SWITCH
 	select USE_SWITCH_SUPPORTED
 	select IRQ_OFFLOAD_NESTED if IRQ_OFFLOAD
+	select BARRIER_OPERATIONS_ARCH
 	help
 	  ARM64 (AArch64) architecture
 
@@ -113,6 +116,7 @@ config RISCV
 	select USE_SWITCH_SUPPORTED
 	select USE_SWITCH
 	select SCHED_IPI_SUPPORTED if SMP
+	select BARRIER_OPERATIONS_BUILTIN
 	imply XIP
 	help
 	  RISCV architecture
@@ -140,6 +144,7 @@ config ARCH_POSIX
 	select ARCH_HAS_THREAD_ABORT
 	select NATIVE_APPLICATION
 	select HAS_COVERAGE_SUPPORT
+	select BARRIER_OPERATIONS_BUILTIN
 	help
 	  POSIX (native) architecture
 
@@ -457,13 +462,14 @@ config GEN_SW_ISR_TABLE
 
 config ARCH_SW_ISR_TABLE_ALIGN
 	int "Alignment size of a software ISR table"
+	default 64 if RISCV_HAS_CLIC
 	default 4
 	depends on GEN_SW_ISR_TABLE
 	help
 	  This option controls alignment size of generated
 	  _sw_isr_table.  Some architecture needs a software ISR table
 	  to be aligned to architecture specific size.  The default
-	  size is 0 for no alignment.
+	  size is 4.
 
 config GEN_IRQ_START_VECTOR
 	int

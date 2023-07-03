@@ -19,6 +19,8 @@ Requirements
 Building and Running
 ********************
 This sample can be found under
-:zephyr_file:`samples/bluetooth/audio_unicast_client` in the Zephyr tree.
+:zephyr_file:`samples/bluetooth/unicast_audio_client` in the Zephyr tree.
+Use `-DEXTRA_CONF_FILE=overlay-bt_ll_sw_split.conf` to enable required ISO
+feature support in Zephyr Bluetooth Controller on supported boards.
 
 See :ref:`bluetooth samples section <bluetooth-samples>` for details.

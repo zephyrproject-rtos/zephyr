@@ -11,6 +11,7 @@
 #include <zephyr/kernel.h>
 #include <errno.h>
 #include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/pinctrl.h>
 #include <soc.h>
 
 /* Driverlib includes */
@@ -64,6 +65,7 @@ struct i2c_cc32xx_config {
 	uint32_t base;
 	uint32_t bitrate;
 	unsigned int irq_no;
+	const struct pinctrl_dev_config *pcfg;
 };
 
 struct i2c_cc32xx_data {
@@ -329,6 +331,18 @@ static int i2c_cc32xx_init(const struct device *dev)
 	int error;
 	uint32_t regval;
 
+	/* Enable the I2C module clocks and wait for completion:*/
+	MAP_PRCMPeripheralClkEnable(PRCM_I2CA0,
+					PRCM_RUN_MODE_CLK |
+					PRCM_SLP_MODE_CLK);
+	while (!MAP_PRCMPeripheralStatusGet(PRCM_I2CA0)) {
+	}
+
+	error = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
+	if (error < 0) {
+		return error;
+	}
+
 	k_sem_init(&data->mutex, 1, K_SEM_MAX_LIMIT);
 	k_sem_init(&data->transfer_complete, 0, K_SEM_MAX_LIMIT);
 
@@ -371,10 +385,13 @@ static const struct i2c_driver_api i2c_cc32xx_driver_api = {
 };
 
 
+PINCTRL_DT_INST_DEFINE(0);
+
 static const struct i2c_cc32xx_config i2c_cc32xx_config = {
 	.base = DT_INST_REG_ADDR(0),
 	.bitrate = DT_INST_PROP(0, clock_frequency),
 	.irq_no = DT_INST_IRQN(0),
+	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
 };
 
 static struct i2c_cc32xx_data i2c_cc32xx_data;

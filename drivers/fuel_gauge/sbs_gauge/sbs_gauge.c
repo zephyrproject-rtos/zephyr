@@ -2,6 +2,7 @@
  * Copyright (c) 2022 Leica Geosystems AG
  *
  * Copyright 2022 Google LLC
+ * Copyright 2023 Microsoft Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -45,6 +46,22 @@ static int sbs_cmd_reg_write(const struct device *dev, uint8_t reg_addr, uint16_
 	return i2c_burst_write_dt(&config->i2c, reg_addr, buf, sizeof(buf));
 }
 
+static int sbs_cmd_buffer_read(const struct device *dev, uint8_t reg_addr, char *buffer,
+			      const uint8_t buffer_size)
+{
+	const struct sbs_gauge_config *cfg;
+	int status;
+
+	cfg = dev->config;
+	status = i2c_burst_read_dt(&cfg->i2c, reg_addr, buffer, buffer_size);
+	if (status < 0) {
+		LOG_ERR("Unable to read register");
+		return status;
+	}
+
+	return 0;
+}
+
 static int sbs_gauge_get_prop(const struct device *dev, struct fuel_gauge_get_property *prop)
 {
 	int rc = 0;
@@ -77,15 +94,19 @@ static int sbs_gauge_get_prop(const struct device *dev, struct fuel_gauge_get_pr
 		break;
 	case FUEL_GAUGE_RUNTIME_TO_FULL:
 		rc = sbs_cmd_reg_read(dev, SBS_GAUGE_CMD_AVG_TIME2FULL, &val);
-		prop->value.runtime_to_empty = val;
+		prop->value.runtime_to_full = val;
 		break;
 	case FUEL_GAUGE_SBS_MFR_ACCESS:
 		rc = sbs_cmd_reg_read(dev, SBS_GAUGE_CMD_MANUFACTURER_ACCESS, &val);
 		prop->value.sbs_mfr_access_word = val;
 		break;
-	case FUEL_GAUGE_STATE_OF_CHARGE:
+	case FUEL_GAUGE_ABSOLUTE_STATE_OF_CHARGE:
 		rc = sbs_cmd_reg_read(dev, SBS_GAUGE_CMD_ASOC, &val);
-		prop->value.state_of_charge = val;
+		prop->value.absolute_state_of_charge = val;
+		break;
+	case FUEL_GAUGE_RELATIVE_STATE_OF_CHARGE:
+		rc = sbs_cmd_reg_read(dev, SBS_GAUGE_CMD_RSOC, &val);
+		prop->value.relative_state_of_charge = val;
 		break;
 	case FUEL_GAUGE_TEMPERATURE:
 		rc = sbs_cmd_reg_read(dev, SBS_GAUGE_CMD_TEMP, &val);
@@ -135,7 +156,14 @@ static int sbs_gauge_get_prop(const struct device *dev, struct fuel_gauge_get_pr
 		rc = sbs_cmd_reg_read(dev, SBS_GAUGE_CMD_AROK, &val);
 		prop->value.sbs_at_rate_ok = val;
 		break;
-
+	case FUEL_GAUGE_SBS_REMAINING_CAPACITY_ALARM:
+		rc = sbs_cmd_reg_read(dev, SBS_GAUGE_CMD_REM_CAPACITY_ALARM, &val);
+		prop->value.sbs_remaining_capacity_alarm = val;
+		break;
+	case FUEL_GAUGE_SBS_REMAINING_TIME_ALARM:
+		rc = sbs_cmd_reg_read(dev, SBS_GAUGE_CMD_REM_TIME_ALARM, &val);
+		prop->value.sbs_remaining_time_alarm = val;
+		break;
 	default:
 		rc = -ENOTSUP;
 	}
@@ -157,6 +185,16 @@ static int sbs_gauge_set_prop(const struct device *dev, struct fuel_gauge_set_pr
 				       prop->value.sbs_mfr_access_word);
 		prop->value.sbs_mfr_access_word = val;
 		break;
+	case FUEL_GAUGE_SBS_REMAINING_CAPACITY_ALARM:
+		rc = sbs_cmd_reg_write(dev, SBS_GAUGE_CMD_REM_CAPACITY_ALARM,
+				       prop->value.sbs_remaining_capacity_alarm);
+		prop->value.sbs_remaining_capacity_alarm = val;
+		break;
+	case FUEL_GAUGE_SBS_REMAINING_TIME_ALARM:
+		rc = sbs_cmd_reg_write(dev, SBS_GAUGE_CMD_REM_TIME_ALARM,
+				       prop->value.sbs_remaining_time_alarm);
+		prop->value.sbs_remaining_time_alarm = val;
+		break;
 	case FUEL_GAUGE_SBS_MODE:
 		rc = sbs_cmd_reg_write(dev, SBS_GAUGE_CMD_BATTERY_MODE, prop->value.sbs_mode);
 		prop->value.sbs_mode = val;
@@ -172,6 +210,45 @@ static int sbs_gauge_set_prop(const struct device *dev, struct fuel_gauge_set_pr
 
 	prop->status = rc;
 
+	return rc;
+}
+
+static int sbs_gauge_get_buffer_prop(const struct device *dev,
+				    struct fuel_gauge_get_buffer_property *prop, void *dst,
+				    size_t dst_len)
+{
+	int rc = 0;
+
+	switch (prop->property_type) {
+	case FUEL_GAUGE_MANUFACTURER_NAME:
+		if (dst_len == sizeof(struct sbs_gauge_manufacturer_name)) {
+			rc = sbs_cmd_buffer_read(dev, SBS_GAUGE_CMD_MANUFACTURER_NAME, (char *)dst,
+						dst_len);
+		} else {
+			rc = -EINVAL;
+		}
+		break;
+	case FUEL_GAUGE_DEVICE_NAME:
+		if (dst_len == sizeof(struct sbs_gauge_device_name)) {
+			rc = sbs_cmd_buffer_read(dev, SBS_GAUGE_CMD_DEVICE_NAME, (char *)dst,
+						dst_len);
+		} else {
+			rc = -EINVAL;
+		}
+		break;
+	case FUEL_GAUGE_DEVICE_CHEMISTRY:
+		if (dst_len == sizeof(struct sbs_gauge_device_chemistry)) {
+			rc = sbs_cmd_buffer_read(dev, SBS_GAUGE_CMD_DEVICE_CHEMISTRY, (char *)dst,
+						dst_len);
+		} else {
+			rc = -EINVAL;
+		}
+		break;
+	default:
+		rc = -ENOTSUP;
+	}
+
+	prop->status = rc;
 	return rc;
 }
 
@@ -229,6 +306,7 @@ static int sbs_gauge_init(const struct device *dev)
 static const struct fuel_gauge_driver_api sbs_gauge_driver_api = {
 	.get_property = &sbs_gauge_get_props,
 	.set_property = &sbs_gauge_set_props,
+	.get_buffer_property = &sbs_gauge_get_buffer_prop,
 };
 
 /* FIXME: fix init priority */
@@ -239,6 +317,7 @@ static const struct fuel_gauge_driver_api sbs_gauge_driver_api = {
 	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(index, &sbs_gauge_init, NULL, NULL, &sbs_gauge_config_##index,       \
-			      POST_KERNEL, CONFIG_FUEL_GAUGE_INIT_PRIORITY, &sbs_gauge_driver_api);
+			      POST_KERNEL, CONFIG_FUEL_GAUGE_INIT_PRIORITY,                        \
+			      &sbs_gauge_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SBS_GAUGE_INIT)

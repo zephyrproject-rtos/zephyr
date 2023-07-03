@@ -9,6 +9,11 @@
 
 #define BT_ASCS_ASE_ID_NONE              0x00
 
+/* The number of ASEs in the notification when the opcode is unsupported or the length of the
+ * control point write request is incorrect
+ */
+#define BT_ASCS_UNSUPP_OR_LENGTH_ERR_NUM_ASE 0xFFU
+
 /* Transport QoS Packing */
 #define BT_ASCS_QOS_PACKING_SEQ          0x00
 #define BT_ASCS_QOS_PACKING_INT          0x01
@@ -337,7 +342,8 @@ void bt_ascs_cleanup(void);
 
 void ascs_ep_set_state(struct bt_bap_ep *ep, uint8_t state);
 
-int bt_ascs_config_ase(struct bt_conn *conn, struct bt_bap_stream *stream, struct bt_codec *codec,
-		       const struct bt_codec_qos_pref *qos_pref);
+int bt_ascs_config_ase(struct bt_conn *conn, struct bt_bap_stream *stream,
+		       struct bt_audio_codec_cfg *codec_cfg,
+		       const struct bt_audio_codec_qos_pref *qos_pref);
 
 void bt_ascs_foreach_ep(struct bt_conn *conn, bt_bap_ep_func_t func, void *user_data);

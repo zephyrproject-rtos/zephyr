@@ -28,9 +28,3 @@ tests:
       - qemu_cortex_m3
     extra_configs:
       - CONFIG_MULTITHREADING=n
-  kernel.memory_heap.linker_generator:
-    platform_allow: qemu_cortex_m3
-    tags: linker_generator
-    extra_configs:
-      - CONFIG_IRQ_OFFLOAD=y
-      - CONFIG_CMAKE_LINKER_GENERATOR=y

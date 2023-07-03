@@ -285,7 +285,7 @@ class Build(Forceable):
                     arg_list = extra.split(" ")
                 else:
                     arg_list = extra
-                args = ["-D{}".format(arg.replace('"', '')) for arg in arg_list]
+                args = ["-D{}".format(arg.replace('"', '\"')) for arg in arg_list]
                 if self.args.cmake_opts:
                     self.args.cmake_opts.extend(args)
                 else:

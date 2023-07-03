@@ -55,6 +55,12 @@ config SPI_COMPLETION_TIMEOUT_TOLERANCE
 	help
 	  The tolerance value in ms for the SPI completion timeout logic.
 
+config SPI_STATS
+	bool "SPI device statistics"
+	depends on STATS
+	help
+	  Enable SPI device statistics.
+
 module = SPI
 module-str = spi
 source "subsys/logging/Kconfig.template.log_config"

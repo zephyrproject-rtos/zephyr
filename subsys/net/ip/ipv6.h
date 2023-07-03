@@ -524,6 +524,16 @@ static inline void net_ipv6_set_dscp(uint8_t *tc, uint8_t dscp)
 }
 
 /**
+ * @brief Convert DSCP value to priority.
+ *
+ * @param dscp DSCP value.
+ */
+static inline uint8_t net_ipv6_dscp_to_priority(uint8_t dscp)
+{
+	return dscp >> 3;
+}
+
+/**
  * @brief Decode ECN value from TC field.
  *
  * @param tc TC field value from the IPv6 header.

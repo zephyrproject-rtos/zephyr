@@ -770,30 +770,19 @@
 			num-sampling-time-common-channels = <2>;
 		};
 
-		can {
-			compatible = "bosch,m_can-base";
-			#address-cells = <1>;
-			#size-cells = <1>;
-			std-filter-elements = <28>;
-			ext-filter-elements = <8>;
-			rx-fifo0-elements = <3>;
-			rx-fifo1-elements = <3>;
-			rx-buffer-elements = <0>;
-			tx-buffer-elements = <3>;
-
-			can1: can@4000a400 {
-				compatible = "st,stm32-fdcan";
-				reg = <0x4000a400 0x400>, <0x4000ac00 0x350>;
-				reg-names = "m_can", "message_ram";
-				interrupts = <39 0>, <40 0>;
-				interrupt-names = "LINE_0", "LINE_1";
-				clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x00000200>;
-				status = "disabled";
-				sjw = <1>;
-				sample-point = <875>;
-				sjw-data = <1>;
-				sample-point-data = <875>;
-			};
+		can1: can@4000a400 {
+			compatible = "st,stm32-fdcan";
+			reg = <0x4000a400 0x400>, <0x4000ac00 0x350>;
+			reg-names = "m_can", "message_ram";
+			interrupts = <39 0>, <40 0>;
+			interrupt-names = "LINE_0", "LINE_1";
+			clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x00000200>;
+			bosch,mram-cfg = <0x0 28 8 3 3 0 3 3>;
+			sjw = <1>;
+			sample-point = <875>;
+			sjw-data = <1>;
+			sample-point-data = <875>;
+			status = "disabled";
 		};
 
 		ucpd1: ucpd@4000dc00 {
@@ -841,6 +830,36 @@
 		ts-cal-vrefanalog = <3000>;
 		ts-cal-resolution = <14>;
 		io-channels = <&adc1 19>;
+		status = "disabled";
+	};
+
+	vref1: vref_1 {
+		compatible = "st,stm32-vref";
+		vrefint-cal-addr = <0x0BFA07A5>;
+		vrefint-cal-mv = <3000>;
+		io-channels = <&adc1 0>;
+		status = "disabled";
+	};
+
+	vref4: vref_4 {
+		compatible = "st,stm32-vref";
+		vrefint-cal-addr = <0x0BFA07A5>;
+		vrefint-cal-mv = <3000>;
+		io-channels = <&adc4 0>;
+		status = "disabled";
+	};
+
+	vbat1: vbat_1 {
+		compatible = "st,stm32-vbat";
+		ratio = <4>;
+		io-channels = <&adc1 18>;
+		status = "disabled";
+	};
+
+	vbat4: vbat_4 {
+		compatible = "st,stm32-vbat";
+		ratio = <4>;
+		io-channels = <&adc4 14>;
 		status = "disabled";
 	};
 };

@@ -12,5 +12,7 @@ supported:
   - watchdog
   - pwm
   - adc
+  - i2c
+  - dma
 ram: 12
 flash: 32

@@ -81,16 +81,6 @@ config MCUMGR_SMP_COMMAND_STATUS_HOOKS
 	  This will enable SMP command status notification hooks for when an SMP message is
 	  received or processed.
 
-config MCUMGR_SMP_VERBOSE_ERR_RESPONSE
-	bool "Support verbose error response"
-	help
-	  Support for encoding "rc" code explanation in form of "rsn"
-	  text string.  This is useful, when returning MGMT_ERR_EUNKNOWN,
-	  to add additional information on the source of an error.
-	  Note that the "rsn" is string additional to "rc" code,
-	  so MCUMGR_TRANSPORT_NETBUF_SIZE should be large enough to be able
-	  to encode both.
-
 config MCUMGR_SMP_SUPPORT_ORIGINAL_PROTOCOL
 	bool "Support original protocol"
 	default y
@@ -100,3 +90,14 @@ config MCUMGR_SMP_SUPPORT_ORIGINAL_PROTOCOL
 	  whereby there is a dedicated entry for command error/result codes.
 	  The protocol selection is indicated by the request header sent by the
 	  client.
+
+config MCUMGR_SMP_VERBOSE_ERR_RESPONSE
+	bool "Support verbose error response"
+	depends on MCUMGR_SMP_SUPPORT_ORIGINAL_PROTOCOL
+	help
+	  Support for encoding "rc" code explanation in form of "rsn"
+	  text string.  This is useful, when returning MGMT_ERR_EUNKNOWN,
+	  to add additional information on the source of an error.
+	  Note that the "rsn" is string additional to "rc" code,
+	  so MCUMGR_TRANSPORT_NETBUF_SIZE should be large enough to be able
+	  to encode both.

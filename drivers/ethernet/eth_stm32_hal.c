@@ -1203,7 +1203,8 @@ static int eth_initialize(const struct device *dev)
 	memset(&tx_config, 0, sizeof(ETH_TxPacketConfig));
 	tx_config.Attributes = ETH_TX_PACKETS_FEATURES_CSUM |
 				ETH_TX_PACKETS_FEATURES_CRCPAD;
-	tx_config.ChecksumCtrl = ETH_CHECKSUM_IPHDR_PAYLOAD_INSERT_PHDR_CALC;
+	tx_config.ChecksumCtrl = IS_ENABLED(CONFIG_ETH_STM32_HW_CHECKSUM) ?
+			ETH_CHECKSUM_IPHDR_PAYLOAD_INSERT_PHDR_CALC : ETH_CHECKSUM_DISABLE;
 	tx_config.CRCPadCtrl = ETH_CRC_PAD_INSERT;
 #endif /* CONFIG_SOC_SERIES_STM32H7X || CONFIG_ETH_STM32_HAL_API_V2 */
 
@@ -1225,8 +1226,10 @@ static int eth_initialize(const struct device *dev)
 	ETH_MACConfigTypeDef mac_config;
 
 	HAL_ETH_GetMACConfig(heth, &mac_config);
-	mac_config.DuplexMode = ETH_FULLDUPLEX_MODE;
-	mac_config.Speed = ETH_SPEED_100M;
+	mac_config.DuplexMode = IS_ENABLED(CONFIG_ETH_STM32_MODE_HALFDUPLEX) ?
+				      ETH_HALFDUPLEX_MODE : ETH_FULLDUPLEX_MODE;
+	mac_config.Speed = IS_ENABLED(CONFIG_ETH_STM32_SPEED_10M) ?
+				 ETH_SPEED_10M : ETH_SPEED_100M;
 	hal_ret = HAL_ETH_SetMACConfig(heth, &mac_config);
 	if (hal_ret != HAL_OK) {
 		LOG_ERR("HAL_ETH_SetMACConfig: failed: %d", hal_ret);

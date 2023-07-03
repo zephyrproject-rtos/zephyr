@@ -20,7 +20,22 @@ LOG_MODULE_REGISTER(net_dhcpv4_client_sample, LOG_LEVEL_DBG);
 #include <zephyr/net/net_context.h>
 #include <zephyr/net/net_mgmt.h>
 
+#define DHCP_OPTION_NTP (42)
+
+static uint8_t ntp_server[4];
+
 static struct net_mgmt_event_callback mgmt_cb;
+
+static struct net_dhcpv4_option_callback dhcp_cb;
+
+static void start_dhcpv4_client(struct net_if *iface, void *user_data)
+{
+	ARG_UNUSED(user_data);
+
+	LOG_INF("Start on %s: index=%d", net_if_get_device(iface)->name,
+		net_if_get_by_iface(iface));
+	net_dhcpv4_start(iface);
+}
 
 static void handler(struct net_mgmt_event_callback *cb,
 		    uint32_t mgmt_event,
@@ -40,21 +55,32 @@ static void handler(struct net_mgmt_event_callback *cb,
 			continue;
 		}
 
-		LOG_INF("Your address: %s",
+		LOG_INF("   Address[%d]: %s", net_if_get_by_iface(iface),
 			net_addr_ntop(AF_INET,
 			    &iface->config.ip.ipv4->unicast[i].address.in_addr,
 						  buf, sizeof(buf)));
-		LOG_INF("Lease time: %u seconds",
-			 iface->config.dhcpv4.lease_time);
-		LOG_INF("Subnet: %s",
+		LOG_INF("    Subnet[%d]: %s", net_if_get_by_iface(iface),
 			net_addr_ntop(AF_INET,
 				       &iface->config.ip.ipv4->netmask,
 				       buf, sizeof(buf)));
-		LOG_INF("Router: %s",
+		LOG_INF("    Router[%d]: %s", net_if_get_by_iface(iface),
 			net_addr_ntop(AF_INET,
 						 &iface->config.ip.ipv4->gw,
 						 buf, sizeof(buf)));
+		LOG_INF("Lease time[%d]: %u seconds", net_if_get_by_iface(iface),
+			iface->config.dhcpv4.lease_time);
 	}
+}
+
+static void option_handler(struct net_dhcpv4_option_callback *cb,
+			   size_t length,
+			   enum net_dhcpv4_msg_type msg_type,
+			   struct net_if *iface)
+{
+	char buf[NET_IPV4_ADDR_LEN];
+
+	LOG_INF("DHCP Option %d: %s", cb->option,
+		net_addr_ntop(AF_INET, cb->data, buf, sizeof(buf)));
 }
 
 int main(void)
@@ -69,6 +95,12 @@ int main(void)
 
 	iface = net_if_get_default();
 
-	net_dhcpv4_start(iface);
+	net_dhcpv4_init_option_callback(&dhcp_cb, option_handler,
+					DHCP_OPTION_NTP, ntp_server,
+					sizeof(ntp_server));
+
+	net_dhcpv4_add_option_callback(&dhcp_cb);
+
+	net_if_foreach(start_dhcpv4_client, NULL);
 	return 0;
 }

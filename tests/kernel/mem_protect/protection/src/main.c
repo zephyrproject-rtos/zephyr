@@ -10,6 +10,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
 #include <zephyr/kernel_structs.h>
+#include <zephyr/sys/barrier.h>
 #include <string.h>
 #include <stdlib.h>
 
@@ -40,7 +41,9 @@ void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *pEsf)
 /* Must set LSB of function address to call in Thumb mode. */
 #define PTR_TO_FUNC(x) (int (*)(int))((uintptr_t)(x) | 0x1)
 /* Flush preceding data writes and instruction fetches. */
-#define DO_BARRIERS() do { __DSB(); __ISB(); } while (0)
+#define DO_BARRIERS() do { barrier_dsync_fence_full(); \
+			   barrier_isync_fence_full(); \
+			} while (0)
 #else
 #define FUNC_TO_PTR(x) (void *)(x)
 #define PTR_TO_FUNC(x) (int (*)(int))(x)

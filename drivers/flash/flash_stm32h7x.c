@@ -12,6 +12,7 @@
 #include <string.h>
 #include <zephyr/drivers/flash.h>
 #include <zephyr/init.h>
+#include <zephyr/sys/barrier.h>
 #include <soc.h>
 #include <stm32h7xx_ll_bus.h>
 #include <stm32h7xx_ll_utils.h>
@@ -262,7 +263,7 @@ static int erase_sector(const struct device *dev, int offset)
 		| ((sector.sector_index << FLASH_CR_SNB_Pos) & FLASH_CR_SNB));
 	*(sector.cr) |= FLASH_CR_START;
 	/* flush the register write */
-	__DSB();
+	barrier_dsync_fence_full();
 
 	rc = flash_stm32_wait_flash_idle(dev);
 	*(sector.cr) &= ~(FLASH_CR_SER | FLASH_CR_SNB);
@@ -338,14 +339,14 @@ static int write_ndwords(const struct device *dev,
 	*(sector.cr) |= FLASH_CR_PG;
 
 	/* Flush the register write */
-	__DSB();
+	barrier_dsync_fence_full();
 
 	/* Perform the data write operation at the desired memory address */
 	for (i = 0; i < n; ++i) {
 		flash[i] = data[i];
 
 		/* Flush the data write */
-		__DSB();
+		barrier_dsync_fence_full();
 
 		wait_write_queue(&sector);
 	}
@@ -569,15 +570,15 @@ static int flash_stm32h7_read(const struct device *dev, off_t offset,
 
 	__set_FAULTMASK(1);
 	SCB->CCR |= SCB_CCR_BFHFNMIGN_Msk;
-	__DSB();
-	__ISB();
+	barrier_dsync_fence_full();
+	barrier_isync_fence_full();
 
 	memcpy(data, (uint8_t *) CONFIG_FLASH_BASE_ADDRESS + offset, len);
 
 	__set_FAULTMASK(0);
 	SCB->CCR &= ~SCB_CCR_BFHFNMIGN_Msk;
-	__DSB();
-	__ISB();
+	barrier_dsync_fence_full();
+	barrier_isync_fence_full();
 	irq_unlock(irq_lock_key);
 
 	return flash_stm32_check_status(dev);

@@ -50,6 +50,12 @@ enum miwu_int_trig {
 	NPCX_MIWU_TRIG_BOTH, /** Both edge rising and failing detection */
 };
 
+/* NPCX miwu driver callback type */
+enum {
+	NPCX_MIWU_CALLBACK_GPIO,
+	NPCX_MIWU_CALLBACK_DEV,
+};
+
 /**
  * @brief NPCX wake-up input source structure
  *
@@ -79,46 +85,50 @@ typedef void (*miwu_dev_callback_handler_t)(const struct device *source,
  */
 struct miwu_io_params {
 	uint8_t pin_mask; /** A mask of pins the callback is interested in. */
-	uint8_t reserved;
 	uint8_t gpio_port; /** GPIO device index */
+	uint8_t cb_type; /** Callback type */
 	struct npcx_wui wui; /** Wake-up input source of GPIO */
 };
 
 /**
- * @brief MIWU callback structure for a GPIO input
+ * @brief MIWU/generic device information structure
  *
- * Used to register a GPIO callback in the driver instance callback list.
- * Beware such structure should not be allocated on stack and its size must
- * equal struct gpio_callback.
- *
- * Note: To help setting it, see npcx_miwu_init_gpio_callback() below
+ * It contains the information used for MIWU generic device event. Please notice
+ * the offset of cb_type must be the same as cb_type in struct miwu_io_params.
  */
-struct miwu_io_callback {
-	/** Node of single-linked list */
-	sys_snode_t node;
-	/** Callback function being called when GPIO event occurred */
-	gpio_callback_handler_t handler;
-	/** GPIO callback parameters used in MIWU ISR */
-	struct miwu_io_params params;
+struct miwu_dev_params {
+	uint8_t reserve1;
+	uint8_t reserve2;
+	uint8_t cb_type; /** Callback type */
+	struct npcx_wui wui; /** Device instance register callback function */
+	const struct device *source; /** Wake-up input source */
 };
 
 /**
- * @brief MIWU callback structure for a device input
+ * @brief MIWU callback structure for a gpio or device input
  *
- * Used to register a generic hardware device callback in the driver instance
+ * Used to register a generic gpio/device callback in the driver instance
  * callback list. Beware such structure should not be allocated on stack.
  *
- * Note: To help setting it, see npcx_miwu_init_dev_callback() below
+ * Note: To help setting it, see npcx_miwu_init_dev_callback() and
+ *       npcx_miwu_manage_callback() below
  */
-struct miwu_dev_callback {
+struct miwu_callback {
 	/** Node of single-linked list */
 	sys_snode_t node;
-	/** Callback function being called when device event occurred */
-	miwu_dev_callback_handler_t handler;
-	/** Device instance register callback function */
-	const struct device *source;
-	/* Wake-up input source */
-	struct npcx_wui wui;
+	union {
+		struct {
+			/** Callback function being called when GPIO event occurred */
+			gpio_callback_handler_t handler;
+			struct miwu_io_params params;
+		} io_cb;
+
+		struct {
+			/** Callback function being called when device event occurred */
+			miwu_dev_callback_handler_t handler;
+			struct miwu_dev_params params;
+		} dev_cb;
+	};
 };
 
 /**
@@ -181,50 +191,38 @@ int npcx_miwu_interrupt_configure(const struct npcx_wui *wui,
 		enum miwu_int_mode mode, enum miwu_int_trig trig);
 
 /**
- * @brief Function to initialize a struct miwu_io_callback properly
+ * @brief Function to initialize a struct miwu_callback with gpio properly
  *
  * @param callback Pointer to io callback structure for initialization
  * @param io_wui Pointer to wake-up input IO source
  * @param port GPIO port issued a callback function
  */
-void npcx_miwu_init_gpio_callback(struct miwu_io_callback *callback,
+void npcx_miwu_init_gpio_callback(struct miwu_callback *callback,
 				const struct npcx_wui *io_wui, int port);
 
 /**
- * @brief Function to initialize a struct miwu_dev_callback properly
+ * @brief Function to initialize a struct miwu_callback with device properly
  *
  * @param callback Pointer to device callback structure for initialization
  * @param dev_wui Pointer to wake-up input device source
  * @param handler A function called when its device input event issued
  * @param source Pointer to device instance issued a callback function
  */
-void npcx_miwu_init_dev_callback(struct miwu_dev_callback *callback,
+void npcx_miwu_init_dev_callback(struct miwu_callback *callback,
 				const struct npcx_wui *dev_wui,
 				miwu_dev_callback_handler_t handler,
 				const struct device *source);
 
 /**
- * @brief Function to insert or remove a IO callback from a callback list
+ * @brief Function to insert or remove a miwu callback from a callback list
  *
- * @param callback Pointer to io callback structure
+ * @param callback Pointer to miwu callback structure
  * @param set A boolean indicating insertion or removal of the callback
  *
  * @retval 0 If successful.
  * @retval -EINVAL Invalid parameters
  */
-int npcx_miwu_manage_gpio_callback(struct miwu_io_callback *callback, bool set);
-
-
-/**
- * @brief Function to insert or remove a device callback from a callback list
- *
- * @param callback Pointer to device callback structure
- * @param set A boolean indicating insertion or removal of the callback
- *
- * @retval 0 If successful.
- * @retval -EINVAL Invalid parameters
- */
-int npcx_miwu_manage_dev_callback(struct miwu_dev_callback *cb, bool set);
+int npcx_miwu_manage_callback(struct miwu_callback *cb, bool set);
 
 #ifdef __cplusplus
 }

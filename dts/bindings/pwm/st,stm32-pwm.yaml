@@ -18,8 +18,10 @@ properties:
       - channel of the timer used for PWM
       - period to set in ns
       - flags : combination of standard flags like PWM_POLARITY_NORMAL
-        or specific flags like STM32_PWM_COMPLEMENTARY. As an example for channel2:
-         <&pwm1 2 100 (PWM_POLARITY_NORMAL | STM32_PWM_COMPLEMENTARY)>;
+        or specific flags like STM32_PWM_COMPLEMENTARY. As an example,
+        the following complementary PWMs(CH2&CH2N) are shown below.
+          <&pwm1 2 100 (PWM_POLARITY_NORMAL)>;
+          <&pwm1 2 100 (PWM_POLARITY_NORMAL | STM32_PWM_COMPLEMENTARY)>;
 
 pwm-cells:
   - channel

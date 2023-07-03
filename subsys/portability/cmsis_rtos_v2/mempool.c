@@ -68,7 +68,15 @@ osMemoryPoolId_t osMemoryPoolNew(uint32_t block_count, uint32_t block_size,
 		mslab->is_dynamic_allocation = FALSE;
 	}
 
-	k_mem_slab_init(&mslab->z_mslab, mslab->pool, block_size, block_count);
+	int rc = k_mem_slab_init(&mslab->z_mslab, mslab->pool, block_size, block_count);
+
+	if (rc != 0) {
+		k_mem_slab_free(&cv2_mem_slab, (void *) &mslab);
+		if (attr->mp_mem == NULL) {
+			k_free(mslab->pool);
+		}
+		return NULL;
+	}
 
 	if (attr->name == NULL) {
 		strncpy(mslab->name, init_mslab_attrs.name,

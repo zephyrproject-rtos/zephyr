@@ -10,6 +10,7 @@
 #include <zephyr/sys/mpsc_packet.h>
 #include <zephyr/sys/cbprintf.h>
 #include <zephyr/sys/atomic.h>
+#include <zephyr/sys/iterable_sections.h>
 #include <zephyr/sys/util.h>
 #include <string.h>
 #include <zephyr/toolchain.h>
@@ -341,7 +342,8 @@ do { \
 #define Z_LOG_MSG_STR_VAR_IN_SECTION(_name, ...) \
 	COND_CODE_0(NUM_VA_ARGS_LESS_1(_, ##__VA_ARGS__), \
 		    (/* No args provided, no variable */), \
-		    (static const TYPE_SECTION_ITERABLE(char *, _name, log_strings, _name) = \
+		    (static const char _name[] \
+		     __in_section(_log_strings, static, _CONCAT(_name, _)) __used __noasan = \
 			GET_ARG_N(1, __VA_ARGS__);))
 
 /** @brief Create variable in the dedicated memory section (if enabled).

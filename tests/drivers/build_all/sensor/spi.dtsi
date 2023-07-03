@@ -388,3 +388,10 @@ test_spi_lsm6dso16is: lsm6dso16is@2f {
 	spi-max-frequency = <0>;
 	irq-gpios = <&test_gpio 0 0>;
 };
+
+test_spi_lsm6dsv16x: lsm6dsv16x@30 {
+	compatible = "st,lsm6dsv16x";
+	reg = <0x30>;
+	spi-max-frequency = <0>;
+	irq-gpios = <&test_gpio 0 0>;
+};

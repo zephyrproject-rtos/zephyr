@@ -74,6 +74,9 @@ static uint8_t supported_services(const void *cmd, uint16_t cmd_len,
 #if defined(CONFIG_BT_VOCS) || defined(CONFIG_BT_VOCS_CLIENT)
 	tester_set_bit(rp->data, BTP_SERVICE_ID_VOCS);
 #endif /* CONFIG_BT_VOCS */
+#if defined(CONFIG_BT_HAS) || defined(CONFIG_BT_HAS_CLIENT)
+	tester_set_bit(rp->data, BTP_SERVICE_ID_HAS);
+#endif /* CONFIG_BT_HAS */
 
 	*rsp_len = sizeof(*rp) + 2;
 
@@ -140,6 +143,11 @@ static uint8_t register_service(const void *cmd, uint16_t cmd_len,
 		status = tester_init_bap();
 		break;
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT or CONFIG_BT_BAP_UNICAST_SERVER */
+#if defined(CONFIG_BT_HAS)
+	case BTP_SERVICE_ID_HAS:
+		status = tester_init_has();
+		break;
+#endif /* CONFIG_BT_HAS */
 	default:
 		LOG_WRN("unknown id: 0x%02x", cp->id);
 		status = BTP_STATUS_FAILED;
@@ -213,6 +221,11 @@ static uint8_t unregister_service(const void *cmd, uint16_t cmd_len,
 		status = tester_unregister_bap();
 		break;
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT or CONFIG_BT_BAP_UNICAST_SERVER */
+#if defined(CONFIG_BT_HAS)
+	case BTP_SERVICE_ID_HAS:
+		status = tester_unregister_has();
+		break;
+#endif /* CONFIG_BT_HAS */
 	default:
 		LOG_WRN("unknown id: 0x%x", cp->id);
 		status = BTP_STATUS_FAILED;

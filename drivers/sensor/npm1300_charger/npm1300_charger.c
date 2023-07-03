@@ -6,14 +6,14 @@
 #define DT_DRV_COMPAT nordic_npm1300_charger
 
 #include <math.h>
-#include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/sensor.h>
+#include <zephyr/drivers/mfd/npm1300.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/linear_range.h>
 #include <zephyr/drivers/sensor/npm1300_charger.h>
 
 struct npm1300_charger_config {
-	struct i2c_dt_spec i2c;
+	const struct device *mfd;
 	int32_t term_microvolt;
 	int32_t term_warm_microvolt;
 	int32_t current_microamp;
@@ -102,39 +102,6 @@ static const struct linear_range discharge_limit_range = LINEAR_RANGE_INIT(26809
 /* Linear range for vbusin current limit */
 static const struct linear_range vbus_current_ranges[] = {
 	LINEAR_RANGE_INIT(100000, 0, 1U, 1U), LINEAR_RANGE_INIT(500000, 100000, 5U, 15U)};
-
-/* Read multiple registers from specified address */
-static int reg_read_burst(const struct device *dev, uint8_t base, uint8_t offset, void *data,
-			  size_t len)
-{
-	const struct npm1300_charger_config *const config = dev->config;
-	uint8_t buff[] = {base, offset};
-
-	return i2c_write_read_dt(&config->i2c, buff, sizeof(buff), data, len);
-}
-
-static int reg_read(const struct device *dev, uint8_t base, uint8_t offset, uint8_t *data)
-{
-	return reg_read_burst(dev, base, offset, data, 1U);
-}
-
-/* Write single register to specified address */
-static int reg_write(const struct device *dev, uint8_t base, uint8_t offset, uint8_t data)
-{
-	const struct npm1300_charger_config *const config = dev->config;
-	uint8_t buff[] = {base, offset, data};
-
-	return i2c_write_dt(&config->i2c, buff, sizeof(buff));
-}
-
-static int reg_write2(const struct device *dev, uint8_t base, uint8_t offset, uint8_t data1,
-		      uint8_t data2)
-{
-	const struct npm1300_charger_config *const config = dev->config;
-	uint8_t buff[] = {base, offset, data1, data2};
-
-	return i2c_write_dt(&config->i2c, buff, sizeof(buff));
-}
 
 static void calc_temp(const struct npm1300_charger_config *const config, uint16_t code,
 		      struct sensor_value *valp)
@@ -228,24 +195,26 @@ int npm1300_charger_channel_get(const struct device *dev, enum sensor_channel ch
 
 int npm1300_charger_sample_fetch(const struct device *dev, enum sensor_channel chan)
 {
+	const struct npm1300_charger_config *const config = dev->config;
 	struct npm1300_charger_data *data = dev->data;
 	struct adc_results_t results;
 	bool last_vbus;
 	int ret;
 
 	/* Read charge status and error reason */
-	ret = reg_read(dev, CHGR_BASE, CHGR_OFFSET_CHG_STAT, &data->status);
+	ret = mfd_npm1300_reg_read(config->mfd, CHGR_BASE, CHGR_OFFSET_CHG_STAT, &data->status);
 	if (ret != 0) {
 		return ret;
 	}
 
-	ret = reg_read(dev, CHGR_BASE, CHGR_OFFSET_ERR_REASON, &data->error);
+	ret = mfd_npm1300_reg_read(config->mfd, CHGR_BASE, CHGR_OFFSET_ERR_REASON, &data->error);
 	if (ret != 0) {
 		return ret;
 	}
 
 	/* Read adc results */
-	ret = reg_read_burst(dev, ADC_BASE, ADC_OFFSET_RESULTS, &results, sizeof(results));
+	ret = mfd_npm1300_reg_read_burst(config->mfd, ADC_BASE, ADC_OFFSET_RESULTS, &results,
+					 sizeof(results));
 	if (ret != 0) {
 		return ret;
 	}
@@ -256,26 +225,26 @@ int npm1300_charger_sample_fetch(const struct device *dev, enum sensor_channel c
 	data->ibat_stat = results.ibat_stat;
 
 	/* Trigger temperature measurement */
-	ret = reg_write(dev, ADC_BASE, ADC_OFFSET_TASK_TEMP, 1U);
+	ret = mfd_npm1300_reg_write(config->mfd, ADC_BASE, ADC_OFFSET_TASK_TEMP, 1U);
 	if (ret != 0) {
 		return ret;
 	}
 
 	/* Trigger current and voltage measurement */
-	ret = reg_write(dev, ADC_BASE, ADC_OFFSET_TASK_VBAT, 1U);
+	ret = mfd_npm1300_reg_write(config->mfd, ADC_BASE, ADC_OFFSET_TASK_VBAT, 1U);
 	if (ret != 0) {
 		return ret;
 	}
 
 	/* Read vbus status, and set SW current limit on new vbus detection */
 	last_vbus = (data->vbus_stat & 1U) != 0U;
-	ret = reg_read(dev, VBUS_BASE, VBUS_OFFSET_STATUS, &data->vbus_stat);
+	ret = mfd_npm1300_reg_read(config->mfd, VBUS_BASE, VBUS_OFFSET_STATUS, &data->vbus_stat);
 	if (ret != 0) {
 		return ret;
 	}
 
 	if (!last_vbus && ((data->vbus_stat & 1U) != 0U)) {
-		ret = reg_write(dev, VBUS_BASE, VBUS_OFFSET_TASK_UPDATE, 1U);
+		ret = mfd_npm1300_reg_write(config->mfd, VBUS_BASE, VBUS_OFFSET_TASK_UPDATE, 1U);
 
 		if (ret != 0) {
 			return ret;
@@ -291,12 +260,13 @@ int npm1300_charger_init(const struct device *dev)
 	uint16_t idx;
 	int ret;
 
-	if (!i2c_is_ready_dt(&config->i2c)) {
+	if (!device_is_ready(config->mfd)) {
 		return -ENODEV;
 	}
 
 	/* Configure thermistor */
-	ret = reg_write(dev, ADC_BASE, ADC_OFFSET_NTCR_SEL, config->thermistor_idx + 1U);
+	ret = mfd_npm1300_reg_write(config->mfd, ADC_BASE, ADC_OFFSET_NTCR_SEL,
+				    config->thermistor_idx + 1U);
 	if (ret != 0) {
 		return ret;
 	}
@@ -308,7 +278,7 @@ int npm1300_charger_init(const struct device *dev)
 	if (ret == -EINVAL) {
 		return ret;
 	}
-	ret = reg_write(dev, CHGR_BASE, CHGR_OFFSET_VTERM, idx);
+	ret = mfd_npm1300_reg_write(config->mfd, CHGR_BASE, CHGR_OFFSET_VTERM, idx);
 	if (ret != 0) {
 		return ret;
 	}
@@ -320,7 +290,7 @@ int npm1300_charger_init(const struct device *dev)
 		return ret;
 	}
 
-	ret = reg_write(dev, CHGR_BASE, CHGR_OFFSET_VTERM_R, idx);
+	ret = mfd_npm1300_reg_write(config->mfd, CHGR_BASE, CHGR_OFFSET_VTERM_R, idx);
 	if (ret != 0) {
 		return ret;
 	}
@@ -333,7 +303,7 @@ int npm1300_charger_init(const struct device *dev)
 		return ret;
 	}
 
-	ret = reg_write2(dev, CHGR_BASE, CHGR_OFFSET_ISET, idx / 2U, idx & 1U);
+	ret = mfd_npm1300_reg_write2(config->mfd, CHGR_BASE, CHGR_OFFSET_ISET, idx / 2U, idx & 1U);
 	if (ret != 0) {
 		return ret;
 	}
@@ -346,7 +316,8 @@ int npm1300_charger_init(const struct device *dev)
 		return ret;
 	}
 
-	ret = reg_write2(dev, CHGR_BASE, CHGR_OFFSET_ISET_DISCHG, idx / 2U, idx & 1U);
+	ret = mfd_npm1300_reg_write2(config->mfd, CHGR_BASE, CHGR_OFFSET_ISET_DISCHG, idx / 2U,
+				     idx & 1U);
 	if (ret != 0) {
 		return ret;
 	}
@@ -358,32 +329,32 @@ int npm1300_charger_init(const struct device *dev)
 	if (ret == -EINVAL) {
 		return ret;
 	}
-	ret = reg_write(dev, VBUS_BASE, VBUS_OFFSET_ILIM, idx);
+	ret = mfd_npm1300_reg_write(config->mfd, VBUS_BASE, VBUS_OFFSET_ILIM, idx);
 	if (ret != 0) {
 		return ret;
 	}
 
 	/* Enable current measurement */
-	ret = reg_write(dev, ADC_BASE, ADC_OFFSET_IBAT_EN, 1U);
+	ret = mfd_npm1300_reg_write(config->mfd, ADC_BASE, ADC_OFFSET_IBAT_EN, 1U);
 	if (ret != 0) {
 		return ret;
 	}
 
 	/* Trigger current and voltage measurement */
-	ret = reg_write(dev, ADC_BASE, ADC_OFFSET_TASK_VBAT, 1U);
+	ret = mfd_npm1300_reg_write(config->mfd, ADC_BASE, ADC_OFFSET_TASK_VBAT, 1U);
 	if (ret != 0) {
 		return ret;
 	}
 
 	/* Trigger temperature measurement */
-	ret = reg_write(dev, ADC_BASE, ADC_OFFSET_TASK_TEMP, 1U);
+	ret = mfd_npm1300_reg_write(config->mfd, ADC_BASE, ADC_OFFSET_TASK_TEMP, 1U);
 	if (ret != 0) {
 		return ret;
 	}
 
 	/* Enable charging if configured */
 	if (config->charging_enable) {
-		ret = reg_write(dev, CHGR_BASE, CHGR_OFFSET_EN_SET, 1U);
+		ret = mfd_npm1300_reg_write(config->mfd, CHGR_BASE, CHGR_OFFSET_EN_SET, 1U);
 		if (ret != 0) {
 			return ret;
 		}
@@ -401,7 +372,7 @@ static const struct sensor_driver_api npm1300_charger_battery_driver_api = {
 	static struct npm1300_charger_data npm1300_charger_data_##n;                               \
                                                                                                    \
 	static const struct npm1300_charger_config npm1300_charger_config_##n = {                  \
-		.i2c = I2C_DT_SPEC_GET(DT_INST_PARENT(n)),                                         \
+		.mfd = DEVICE_DT_GET(DT_INST_PARENT(n)),                                           \
 		.term_microvolt = DT_INST_PROP(n, term_microvolt),                                 \
 		.term_warm_microvolt =                                                             \
 			DT_INST_PROP_OR(n, term_warm_microvolt, DT_INST_PROP(n, term_microvolt)),  \

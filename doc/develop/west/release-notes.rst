@@ -3,6 +3,61 @@
 West Release Notes
 ##################
 
+v1.1.0
+******
+
+Major changes:
+
+- ``west compare``: new command that compares the state of the
+  workspace against the manifest.
+
+- Support for a new ``manifest.project-filter`` configuration option.
+  See :ref:`west-config-index` for details. The ``west manifest --freeze``
+  and ``west manifest --resolve`` commands currently cannot be used when
+  this option is set. This restriction can be removed in a later release.
+
+- Project names which contain comma (``,``) or whitespace now generate
+  warnings. These warnings are errors if the new ``manifest.project-filter``
+  configuration option is set. The warnings may be promoted to errors in a
+  future major version of west.
+
+Other changes:
+
+- ``west forall`` now takese a ``--group`` argument that can be used
+  to restrict the command to only run in one or more groups. Run
+  ``west help forall`` for details.
+
+- All west commands will now output log messages from west API modules at
+  warning level or higher. In addition, the ``--verbose`` argument to west
+  can be used once to include informational messages, or twice to include
+  debug messages, from all commands.
+
+Bug fixes:
+
+- Various improvements to error messages, debug logging, and error handling.
+
+API changes:
+
+- ``west.manifest.Manifest.is_active()`` now respects the
+  ``manifest.project-filter`` configuration option's value.
+
+v1.0.1
+******
+
+Major changes:
+
+- Manifest schema version "1.0" is now available for use in this release. This
+  is identical to the "0.13" schema version in terms of features, but can be
+  used by applications that do not wish to use a "0.x" manifest "version:"
+  field. See :ref:`west-manifest-schema-version` for details on this feature.
+
+Bug fixes:
+
+- West no longer exits with a successful error code when sent an
+  interrupt signal. Instead, it exits with a platform-specific
+  error code and signals to the calling environment that the
+  process was interrupted.
+
 v1.0.0
 ******
 
@@ -293,6 +348,8 @@ New features:
   ``master`` to ``main`` without breaking scripts that do not provide this
   option.
 
+.. _west_0_10_0:
+
 v0.10.0
 *******
 
@@ -341,6 +398,8 @@ Other changes:
 - West now warns if you combine ``import`` with ``group-filter``. Semantics for
   this combination have changed starting with v0.10.x. See the v0.10.0 release
   notes above for more information.
+
+.. _west_0_9_0:
 
 v0.9.0
 ******

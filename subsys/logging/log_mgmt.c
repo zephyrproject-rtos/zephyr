@@ -9,6 +9,8 @@
 #include <zephyr/init.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/logging/log_link.h>
+#include <zephyr/sys/iterable_sections.h>
+
 #include "log_cache.h"
 
 LOG_MODULE_REGISTER(log_mgmt);

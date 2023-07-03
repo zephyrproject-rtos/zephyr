@@ -29,6 +29,14 @@ between major releases are available in the :ref:`zephyr_release_notes`.
      - Experimental
      - 1.13
 
+   * - :ref:`auxdisplay_api`
+     - Experimental
+     - 3.4
+
+   * - :ref:`barriers_api`
+     - Experimental
+     - 3.4
+
    * - :ref:`bluetooth_api`
      - Stable
      - 1.0
@@ -54,7 +62,7 @@ between major releases are available in the :ref:`zephyr_release_notes`.
      - 1.7
 
    * - :ref:`dac_api`
-     - Experimental
+     - Unstable
      - 2.3
 
    * - :ref:`dai_api`
@@ -86,7 +94,7 @@ between major releases are available in the :ref:`zephyr_release_notes`.
      - 2.4
 
    * - :ref:`edac_api`
-     - Experimental
+     - Unstable
      - 2.5
 
    * - :ref:`eeprom_api`
@@ -189,6 +197,10 @@ between major releases are available in the :ref:`zephyr_release_notes`.
      - Experimental
      - 1.0
 
+   * - :ref:`mcu_mgr`
+     - Stable
+     - 1.11
+
    * - :ref:`mqtt_socket_interface`
      - Unstable
      - 1.14
@@ -286,7 +298,7 @@ between major releases are available in the :ref:`zephyr_release_notes`.
      - 3.1
 
    * - :ref:`task_wdt_api`
-     - Experimental
+     - Unstable
      - 2.5
 
    * - :ref:`tcpc_api`

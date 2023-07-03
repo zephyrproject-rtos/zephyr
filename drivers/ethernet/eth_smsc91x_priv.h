@@ -41,7 +41,7 @@
 #define MIR_SIZE_MASK GENMASK(7, 0)  /* Memory size (2k pages) */
 #define MIR_FREE_MASK GENMASK(15, 8) /* Memory free (2k pages) */
 
-/* bank 0, offset 0xa: receive/phy control reigster */
+/* bank 0, offset 0xa: receive/phy control register */
 #define RPCR		  0xa
 #define RPCR_ANEG	  0x0800 /* Put PHY in autonegotiation mode */
 #define RPCR_DPLX	  0x1000 /* Put PHY in full-duplex mode */
@@ -130,7 +130,7 @@
 
 /* Bank 3, Offset 0x8: Management interface register */
 #define MGMT	  0x8
-#define MGMT_MDO  0x0001 /* MII managememt output */
+#define MGMT_MDO  0x0001 /* MII management output */
 #define MGMT_MDI  0x0002 /* MII management input */
 #define MGMT_MCLK 0x0004 /* MII management clock */
 #define MGMT_MDOE 0x0008 /* MII management output enable */

@@ -32,10 +32,14 @@ extern "C" {
  * @param channel_id Channel identifier of the DAC that should be configured.
  * @param resolution Desired resolution of the DAC (depends on device
  *                   capabilities).
+ * @param buffered Enable output buffer for this channel. This is relevant for instance
+ *                 if the output is directly connected to the load, without an amplifier
+ *                 in between. The actual details on this are hardware dependent.
  */
 struct dac_channel_cfg {
 	uint8_t channel_id;
 	uint8_t resolution;
+	bool buffered;
 };
 
 /**

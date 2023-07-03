@@ -381,6 +381,22 @@ enum ads114s0x_register {
 	ADS114S0X_REGISTER_PGA_DELAY_SET(target, 0b000);                                           \
 	ADS114S0X_REGISTER_PGA_PGA_EN_SET(target, 0b00);                                           \
 	ADS114S0X_REGISTER_PGA_GAIN_SET(target, 0b000)
+/*
+ * - disable PGA output rail flag
+ * - low-side power switch
+ * - IDAC off
+ */
+#define ADS114S0X_REGISTER_IDACMAG_SET_DEFAULTS(target)                                            \
+	ADS114S0X_REGISTER_IDACMAG_FL_RAIL_EN_SET(target, 0b0);                                    \
+	ADS114S0X_REGISTER_IDACMAG_PSW_SET(target, 0b0);                                           \
+	ADS114S0X_REGISTER_IDACMAG_IMAG_SET(target, 0b0000)
+/*
+ * - disconnect IDAC1
+ * - disconnect IDAC2
+ */
+#define ADS114S0X_REGISTER_IDACMUX_SET_DEFAULTS(target)                                            \
+	ADS114S0X_REGISTER_IDACMUX_I1MUX_SET(target, 0b1111);                                      \
+	ADS114S0X_REGISTER_IDACMUX_I2MUX_SET(target, 0b1111)
 
 struct ads114s0x_config {
 	struct spi_dt_spec bus;
@@ -390,6 +406,7 @@ struct ads114s0x_config {
 	const struct gpio_dt_spec gpio_reset;
 	const struct gpio_dt_spec gpio_data_ready;
 	const struct gpio_dt_spec gpio_start_sync;
+	int idac_current;
 };
 
 struct ads114s0x_data {
@@ -570,14 +587,20 @@ static int ads114s0x_channel_setup(const struct device *dev,
 	uint8_t reference_control = 0;
 	uint8_t data_rate = 0;
 	uint8_t gain = 0;
+	uint8_t idac_magnitude = 0;
+	uint8_t idac_mux = 0;
+	uint8_t pin_selections[4];
+	size_t pin_selections_size;
 	int result;
-	enum ads114s0x_register register_addresses[4];
+	enum ads114s0x_register register_addresses[6];
 	uint8_t values[ARRAY_SIZE(register_addresses)];
 
 	ADS114S0X_REGISTER_INPMUX_SET_DEFAULTS(gain);
 	ADS114S0X_REGISTER_REF_SET_DEFAULTS(reference_control);
 	ADS114S0X_REGISTER_DATARATE_SET_DEFAULTS(data_rate);
 	ADS114S0X_REGISTER_PGA_SET_DEFAULTS(gain);
+	ADS114S0X_REGISTER_IDACMAG_SET_DEFAULTS(idac_magnitude);
+	ADS114S0X_REGISTER_IDACMUX_SET_DEFAULTS(idac_mux);
 
 	if (channel_cfg->channel_id != 0) {
 		LOG_ERR("only one channel is supported");
@@ -634,6 +657,8 @@ static int ads114s0x_channel_setup(const struct device *dev,
 
 		ADS114S0X_REGISTER_INPMUX_MUXP_SET(input_mux, channel_cfg->input_positive);
 		ADS114S0X_REGISTER_INPMUX_MUXN_SET(input_mux, channel_cfg->input_negative);
+		pin_selections[0] = channel_cfg->input_positive;
+		pin_selections[1] = channel_cfg->input_negative;
 	} else {
 		if (channel_cfg->input_positive >= ADS114S0X_INPUT_SELECTION_AINCOM) {
 			LOG_ERR("channel input %i is invalid", channel_cfg->input_positive);
@@ -642,6 +667,8 @@ static int ads114s0x_channel_setup(const struct device *dev,
 
 		ADS114S0X_REGISTER_INPMUX_MUXP_SET(input_mux, channel_cfg->input_positive);
 		ADS114S0X_REGISTER_INPMUX_MUXN_SET(input_mux, ADS114S0X_INPUT_SELECTION_AINCOM);
+		pin_selections[0] = channel_cfg->input_positive;
+		pin_selections[1] = ADS114S0X_INPUT_SELECTION_AINCOM;
 	}
 
 	switch (channel_cfg->gain) {
@@ -680,16 +707,95 @@ static int ads114s0x_channel_setup(const struct device *dev,
 		ADS114S0X_REGISTER_PGA_PGA_EN_SET(gain, 0b01);
 	}
 
+	switch (config->idac_current) {
+	case 0:
+		ADS114S0X_REGISTER_IDACMAG_IMAG_SET(idac_magnitude, 0b0000);
+		break;
+	case 10:
+		ADS114S0X_REGISTER_IDACMAG_IMAG_SET(idac_magnitude, 0b0001);
+		break;
+	case 50:
+		ADS114S0X_REGISTER_IDACMAG_IMAG_SET(idac_magnitude, 0b0010);
+		break;
+	case 100:
+		ADS114S0X_REGISTER_IDACMAG_IMAG_SET(idac_magnitude, 0b0011);
+		break;
+	case 250:
+		ADS114S0X_REGISTER_IDACMAG_IMAG_SET(idac_magnitude, 0b0100);
+		break;
+	case 500:
+		ADS114S0X_REGISTER_IDACMAG_IMAG_SET(idac_magnitude, 0b0101);
+		break;
+	case 750:
+		ADS114S0X_REGISTER_IDACMAG_IMAG_SET(idac_magnitude, 0b0110);
+		break;
+	case 1000:
+		ADS114S0X_REGISTER_IDACMAG_IMAG_SET(idac_magnitude, 0b0111);
+		break;
+	case 1500:
+		ADS114S0X_REGISTER_IDACMAG_IMAG_SET(idac_magnitude, 0b1000);
+		break;
+	case 2000:
+		ADS114S0X_REGISTER_IDACMAG_IMAG_SET(idac_magnitude, 0b1001);
+		break;
+	default:
+		LOG_ERR("IDAC magnitude %i not supported", config->idac_current);
+		return -EINVAL;
+	}
+
+	if (channel_cfg->current_source_pin_set) {
+		if (channel_cfg->current_source_pin[0] > 0b1111) {
+			LOG_ERR("invalid selection %i for I1MUX",
+				channel_cfg->current_source_pin[0]);
+			return -EINVAL;
+		}
+
+		if (channel_cfg->current_source_pin[1] > 0b1111) {
+			LOG_ERR("invalid selection %i for I2MUX",
+				channel_cfg->current_source_pin[1]);
+			return -EINVAL;
+		}
+
+		ADS114S0X_REGISTER_IDACMUX_I1MUX_SET(idac_mux, channel_cfg->current_source_pin[0]);
+		ADS114S0X_REGISTER_IDACMUX_I2MUX_SET(idac_mux, channel_cfg->current_source_pin[1]);
+		pin_selections[2] = channel_cfg->current_source_pin[0];
+		pin_selections[3] = channel_cfg->current_source_pin[1];
+		pin_selections_size = 4;
+	} else {
+		pin_selections_size = 2;
+	}
+
+	for (size_t i = 0; i < pin_selections_size; ++i) {
+		if (pin_selections[i] > ADS114S0X_INPUT_SELECTION_AINCOM) {
+			continue;
+		}
+
+		for (size_t j = i + 1; j < pin_selections_size; ++j) {
+			if (pin_selections[j] > ADS114S0X_INPUT_SELECTION_AINCOM) {
+				continue;
+			}
+
+			if (pin_selections[i] == pin_selections[j]) {
+				LOG_ERR("pins for inputs and current sources must be different");
+				return -EINVAL;
+			}
+		}
+	}
+
 	register_addresses[0] = ADS114S0X_REGISTER_INPMUX;
 	register_addresses[1] = ADS114S0X_REGISTER_PGA;
 	register_addresses[2] = ADS114S0X_REGISTER_DATARATE;
 	register_addresses[3] = ADS114S0X_REGISTER_REF;
-	BUILD_ASSERT(ARRAY_SIZE(register_addresses) == 4);
+	register_addresses[4] = ADS114S0X_REGISTER_IDACMAG;
+	register_addresses[5] = ADS114S0X_REGISTER_IDACMUX;
+	BUILD_ASSERT(ARRAY_SIZE(register_addresses) == 6);
 	values[0] = input_mux;
 	values[1] = gain;
 	values[2] = data_rate;
 	values[3] = reference_control;
-	BUILD_ASSERT(ARRAY_SIZE(values) == 4);
+	values[4] = idac_magnitude;
+	values[5] = idac_mux;
+	BUILD_ASSERT(ARRAY_SIZE(values) == 6);
 
 	result = ads114s0x_write_multiple_registers(&config->bus, register_addresses, values,
 						    ARRAY_SIZE(values));
@@ -1328,6 +1434,7 @@ BUILD_ASSERT(CONFIG_ADC_INIT_PRIORITY > CONFIG_SPI_INIT_PRIORITY,
 		.gpio_reset = GPIO_DT_SPEC_INST_GET_OR(n, reset_gpios, {0}),                       \
 		.gpio_data_ready = GPIO_DT_SPEC_INST_GET(n, drdy_gpios),                           \
 		.gpio_start_sync = GPIO_DT_SPEC_INST_GET_OR(n, start_sync_gpios, {0}),             \
+		.idac_current = DT_INST_PROP(n,	idac_current),                                     \
 	};                                                                                         \
 	static struct ads114s0x_data data_##n;                                                     \
 	DEVICE_DT_INST_DEFINE(n, ads114s0x_init, NULL, &data_##n, &config_##n, POST_KERNEL,        \

@@ -6,6 +6,7 @@
 #include <zephyr/rtio/rtio.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/app_memory/app_memdomain.h>
+#include <zephyr/sys/iterable_sections.h>
 
 #ifdef CONFIG_USERSPACE
 K_APPMEM_PARTITION_DEFINE(rtio_partition);

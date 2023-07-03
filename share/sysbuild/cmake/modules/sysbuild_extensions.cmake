@@ -75,7 +75,7 @@ function(sysbuild_get variable)
     message(FATAL_ERROR "sysbuild_get(...) requires IMAGE.")
   endif()
 
-  if(DEFINED ${variable})
+  if(DEFINED ${variable} AND NOT DEFINED GET_VAR_VAR)
     message(WARNING "Return variable ${variable} already defined with a value. "
                     "sysbuild_get(${variable} ...) may overwrite existing value. "
 		    "Please use sysbuild_get(<variable> ... VAR <image-variable>) "
@@ -106,7 +106,7 @@ endfunction()
 #   ExternalZephyrProject_Add(APPLICATION <name>
 #                             SOURCE_DIR <dir>
 #                             [BOARD <board> [BOARD_REVISION <revision>]]
-#                             [MAIN_APP]
+#                             [APP_TYPE <MAIN|BOOTLOADER>]
 #   )
 #
 # This function includes a Zephyr based build system into the multiimage
@@ -118,20 +118,33 @@ endfunction()
 # BOARD <board>:             Use <board> for application build instead user defined BOARD.
 # BOARD_REVISION <revision>: Use <revision> of <board> for application (only valid if
 #                            <board> is also supplied).
-# MAIN_APP:                  Flag indicating this application is the main application
-#                            and where user defined settings should be passed on as-is
-#                            except for multi image build flags.
-#                            For example, -DCONF_FILES=<files> will be passed on to the
-#                            MAIN_APP unmodified.
+# APP_TYPE <MAIN|BOOTLOADER>: Application type.
+#                             MAIN indicates this application is the main application
+#                             and where user defined settings should be passed on as-is
+#                             except for multi image build flags.
+#                             For example, -DCONF_FILES=<files> will be passed on to the
+#                             MAIN_APP unmodified.
+#                             BOOTLOADER indicates this app is a bootloader
 #
 function(ExternalZephyrProject_Add)
-  cmake_parse_arguments(ZBUILD "MAIN_APP" "APPLICATION;BOARD;BOARD_REVISION;SOURCE_DIR" "" ${ARGN})
+  set(app_types MAIN BOOTLOADER)
+  cmake_parse_arguments(ZBUILD "" "APPLICATION;BOARD;BOARD_REVISION;SOURCE_DIR;APP_TYPE" "" ${ARGN})
 
   if(ZBUILD_UNPARSED_ARGUMENTS)
     message(FATAL_ERROR
       "ExternalZephyrProject_Add(${ARGV0} <val> ...) given unknown arguments:"
       " ${ZBUILD_UNPARSED_ARGUMENTS}"
     )
+  endif()
+
+  if(DEFINED ZBUILD_APP_TYPE)
+    if(NOT ZBUILD_APP_TYPE IN_LIST app_types)
+      message(FATAL_ERROR
+        "ExternalZephyrProject_Add(APP_TYPE <val> ...) given unknown type: ${ZBUILD_APP_TYPE}\n"
+        "Valid types are: ${app_types}"
+      )
+    endif()
+
   endif()
 
   set(sysbuild_image_conf_dir ${APP_DIR}/sysbuild)
@@ -148,13 +161,15 @@ function(ExternalZephyrProject_Add)
      # The contents of these are appended to the image existing configuration
      # when user is not specifying custom fragments.
     if(NOT "${CONF_FILE_BUILD_TYPE}" STREQUAL "")
-      set(sysbuil_image_conf_fragment ${sysbuild_image_conf_dir}/${ZBUILD_APPLICATION}_${CONF_FILE_BUILD_TYPE}.conf)
+      set(sysbuild_image_conf_fragment ${sysbuild_image_conf_dir}/${ZBUILD_APPLICATION}_${CONF_FILE_BUILD_TYPE}.conf)
     else()
       set(sysbuild_image_conf_fragment ${sysbuild_image_conf_dir}/${ZBUILD_APPLICATION}.conf)
     endif()
 
-    if (NOT ${ZBUILD_APPLICATION}_OVERLAY_CONFIG AND EXISTS ${sysbuild_image_conf_fragment})
-      set(${ZBUILD_APPLICATION}_OVERLAY_CONFIG ${sysbuild_image_conf_fragment}
+    if (NOT (${ZBUILD_APPLICATION}_OVERLAY_CONFIG OR ${ZBUILD_APPLICATION}_EXTRA_CONF_FILE)
+        AND EXISTS ${sysbuild_image_conf_fragment}
+    )
+      set(${ZBUILD_APPLICATION}_EXTRA_CONF_FILE ${sysbuild_image_conf_fragment}
           CACHE INTERNAL "Kconfig fragment defined by main application"
       )
     endif()
@@ -167,6 +182,17 @@ function(ExternalZephyrProject_Add)
       )
     endif()
   endif()
+
+  # Update ROOT variables with relative paths to use absolute paths based on
+  # the source application directory.
+  foreach(type MODULE_EXT BOARD SOC ARCH SCA)
+    if(DEFINED CACHE{${ZBUILD_APPLICATION}_${type}_ROOT} AND NOT IS_ABSOLUTE $CACHE{${ZBUILD_APPLICATION}_${type}_ROOT})
+      set(rel_path $CACHE{${ZBUILD_APPLICATION}_${type}_ROOT})
+      cmake_path(ABSOLUTE_PATH rel_path BASE_DIRECTORY "${ZBUILD_SOURCE_DIR}" NORMALIZE OUTPUT_VARIABLE abs_path)
+      set(${ZBUILD_APPLICATION}_${type}_ROOT ${abs_path} CACHE PATH "Sysbuild adjusted absolute path" FORCE)
+    endif()
+  endforeach()
+
   # CMake variables which must be known by all Zephyr CMake build systems
   # Those are settings which controls the build and must be known to CMake at
   # invocation time, and thus cannot be passed though the sysbuild cache file.
@@ -200,7 +226,7 @@ function(ExternalZephyrProject_Add)
       ${EXTRA_KCONFIG_TARGETS}
       )
 
-    if(NOT ZBUILD_MAIN_APP)
+    if(NOT ZBUILD_APP_TYPE STREQUAL "MAIN")
       set(image_prefix "${ZBUILD_APPLICATION}_")
     endif()
 
@@ -211,10 +237,11 @@ function(ExternalZephyrProject_Add)
       )
   endforeach()
   include(ExternalProject)
+  set(application_binary_dir ${CMAKE_BINARY_DIR}/${ZBUILD_APPLICATION})
   ExternalProject_Add(
     ${ZBUILD_APPLICATION}
     SOURCE_DIR ${ZBUILD_SOURCE_DIR}
-    BINARY_DIR ${CMAKE_BINARY_DIR}/${ZBUILD_APPLICATION}
+    BINARY_DIR ${application_binary_dir}
     CONFIGURE_COMMAND ""
     CMAKE_ARGS -DSYSBUILD:BOOL=True
                -DSYSBUILD_CACHE:FILEPATH=${sysbuild_cache_file}
@@ -224,8 +251,15 @@ function(ExternalZephyrProject_Add)
     BUILD_ALWAYS True
     USES_TERMINAL_BUILD True
   )
+  set_property(TARGET ${ZBUILD_APPLICATION} PROPERTY APP_TYPE ${ZBUILD_APP_TYPE})
+  set_property(TARGET ${ZBUILD_APPLICATION} PROPERTY CONFIG
+               "# sysbuild controlled configuration settings\n"
+  )
   set_target_properties(${ZBUILD_APPLICATION} PROPERTIES CACHE_FILE ${sysbuild_cache_file})
-  if(ZBUILD_MAIN_APP)
+  set_target_properties(${ZBUILD_APPLICATION} PROPERTIES KCONFIG_BINARY_DIR
+                        ${application_binary_dir}/Kconfig
+  )
+  if("${ZBUILD_APP_TYPE}" STREQUAL "MAIN")
     set_target_properties(${ZBUILD_APPLICATION} PROPERTIES MAIN_APP True)
   endif()
 
@@ -244,9 +278,6 @@ function(ExternalZephyrProject_Add)
       "ExternalZephyrProject_Add(... BOARD_REVISION ${ZBUILD_BOARD_REVISION})"
       " requires BOARD."
     )
-  elseif(DEFINED BOARD_REVISION)
-    # Include build revision for target image
-    set_target_properties(${ZBUILD_APPLICATION} PROPERTIES BOARD ${BOARD}@${BOARD_REVISION})
   endif()
 endfunction()
 
@@ -295,9 +326,19 @@ function(ExternalZephyrProject_Cmake)
   get_target_property(${ZCMAKE_APPLICATION}_BOARD      ${ZCMAKE_APPLICATION} BOARD)
   get_target_property(${ZCMAKE_APPLICATION}_MAIN_APP   ${ZCMAKE_APPLICATION} MAIN_APP)
 
+  # Update ROOT variables with relative paths to use absolute paths based on
+  # the source application directory.
+  foreach(type MODULE_EXT BOARD SOC ARCH SCA)
+    if(DEFINED CACHE{${type}_ROOT} AND NOT IS_ABSOLUTE $CACHE{${type}_ROOT})
+      set(rel_path $CACHE{${type}_ROOT})
+      cmake_path(ABSOLUTE_PATH rel_path BASE_DIRECTORY "${APP_DIR}" NORMALIZE OUTPUT_VARIABLE abs_path)
+      set(${type}_ROOT ${abs_path} CACHE PATH "Sysbuild adjusted absolute path" FORCE)
+    endif()
+  endforeach()
+
   get_cmake_property(sysbuild_cache CACHE_VARIABLES)
   foreach(var_name ${sysbuild_cache})
-    if(NOT "${var_name}" MATCHES "^CMAKE_.*")
+    if(NOT "${var_name}" MATCHES "^(CMAKE_.*|BOARD)$")
       # Perform a dummy read to prevent a false warning about unused variables
       # being emitted due to a cmake bug: https://gitlab.kitware.com/cmake/cmake/-/issues/24555
       set(unused_tmp_var ${${var_name}})
@@ -311,13 +352,18 @@ function(ExternalZephyrProject_Cmake)
       list(APPEND sysbuild_cache_strings "${cache_entry}\n")
     endif()
   endforeach()
+  if(DEFINED BOARD_REVISION)
+    list(APPEND sysbuild_cache_strings "BOARD:STRING=${BOARD}@${BOARD_REVISION}\n")
+  else()
+    list(APPEND sysbuild_cache_strings "BOARD:STRING=${BOARD}\n")
+  endif()
   list(APPEND sysbuild_cache_strings "SYSBUILD_NAME:STRING=${ZCMAKE_APPLICATION}\n")
 
   if(${ZCMAKE_APPLICATION}_MAIN_APP)
     list(APPEND sysbuild_cache_strings "SYSBUILD_MAIN_APP:BOOL=True\n")
   endif()
 
-  if(${ZCMAKE_APPLICATION}_BOARD)
+  if(${ZCMAKE_APPLICATION}_BOARD AND NOT DEFINED CACHE{${ZCMAKE_APPLICATION}_BOARD})
     # Only set image specific board if provided.
     # The sysbuild BOARD is exported through sysbuild cache, and will be used
     # unless <image>_BOARD is defined.
@@ -331,10 +377,16 @@ function(ExternalZephyrProject_Cmake)
                    ${${ZCMAKE_APPLICATION}_CACHE_FILE} ONLY_IF_DIFFERENT
   )
 
+  set(dotconfigsysbuild ${BINARY_DIR}/zephyr/.config.sysbuild)
+  get_target_property(config_content ${ZCMAKE_APPLICATION} CONFIG)
+  string(CONFIGURE "${config_content}" config_content)
+  file(WRITE ${dotconfigsysbuild} ${config_content})
+
   execute_process(
     COMMAND ${CMAKE_COMMAND}
       -G${CMAKE_GENERATOR}
         ${CMAKE_ARGS}
+      -DFORCED_CONF_FILE:FILEPATH=${dotconfigsysbuild}
       -B${BINARY_DIR}
       -S${SOURCE_DIR}
     RESULT_VARIABLE   return_val
@@ -450,4 +502,16 @@ function(sysbuild_cache_set)
   endif()
 
   set(${VARS_VAR} "${var_new}" CACHE "${var_type}" "${var_help}" FORCE)
+endfunction()
+
+function(set_config_bool image setting value)
+  if(${value})
+    set_property(TARGET ${image} APPEND_STRING PROPERTY CONFIG "${setting}=y\n")
+  else()
+    set_property(TARGET ${image} APPEND_STRING PROPERTY CONFIG "${setting}=n\n")
+  endif()
+endfunction()
+
+function(set_config_string image setting value)
+  set_property(TARGET ${image} APPEND_STRING PROPERTY CONFIG "${setting}=\"${value}\"\n")
 endfunction()

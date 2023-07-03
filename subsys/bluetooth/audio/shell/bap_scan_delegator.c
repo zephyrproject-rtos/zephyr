@@ -178,6 +178,7 @@ static int pa_sync_no_past(struct sync_state *state,
 	recv_state = state->recv_state;
 
 	bt_addr_le_copy(&param.addr, &recv_state->addr);
+	param.options = BT_LE_PER_ADV_SYNC_OPT_FILTER_DUPLICATE;
 	param.sid = recv_state->adv_sid;
 	param.skip = PA_SYNC_SKIP;
 	param.timeout = interval_to_sync_timeout(pa_interval);
@@ -294,6 +295,7 @@ static void broadcast_code_cb(struct bt_conn *conn,
 	struct sync_state *state;
 
 	shell_info(ctx_shell, "Broadcast code received for %p", recv_state);
+	shell_hexdump(ctx_shell, broadcast_code, BT_AUDIO_BROADCAST_CODE_SIZE);
 
 	state = sync_state_get(recv_state);
 	if (state == NULL) {
@@ -380,8 +382,15 @@ static struct bt_le_per_adv_sync_cb pa_sync_cb =  {
 static int cmd_bap_scan_delegator_init(const struct shell *sh, size_t argc,
 				       char **argv)
 {
-	bt_le_per_adv_sync_cb_register(&pa_sync_cb);
-	bt_bap_scan_delegator_register_cb(&scan_delegator_cb);
+	static bool registered;
+
+	if (!registered) {
+		bt_le_per_adv_sync_cb_register(&pa_sync_cb);
+		bt_bap_scan_delegator_register_cb(&scan_delegator_cb);
+
+		registered = true;
+	}
+
 	return 0;
 }
 static int cmd_bap_scan_delegator_set_past_pref(const struct shell *sh,

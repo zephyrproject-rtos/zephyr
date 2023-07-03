@@ -31,7 +31,7 @@ changing ``nrf52833dk_nrf52833`` as needed for your board:
    :zephyr-app: samples/bluetooth/direction_finding_peripheral
    :host-os: unix
    :board: nrf52833dk_nrf52833
-   :gen-args: -DOVERLAY_CONFIG=overlay-aoa.conf
+   :gen-args: -DEXTRA_CONF_FILE=overlay-aoa.conf
    :goals: build flash
    :compact:
 

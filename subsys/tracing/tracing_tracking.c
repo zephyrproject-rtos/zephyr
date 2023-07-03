@@ -8,6 +8,7 @@
 #include <zephyr/spinlock.h>
 #include <zephyr/sys/slist.h>
 #include <zephyr/tracing/tracking.h>
+#include <zephyr/sys/iterable_sections.h>
 
 struct k_timer *_track_list_k_timer;
 struct k_spinlock _track_list_k_timer_lock;

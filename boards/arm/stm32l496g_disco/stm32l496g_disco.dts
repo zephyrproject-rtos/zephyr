@@ -18,6 +18,7 @@
 		zephyr,shell-uart = &usart2;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
+		zephyr,flash-controller = &mx25r6435;
 	};
 
 	leds {
@@ -59,6 +60,9 @@
 		sw2 = &joy_right;
 		sw3 = &joy_up;
 		sw4 = &joy_left;
+		volt-sensor0 = &vref;
+		volt-sensor1 = &vbat;
+		spi-flash0 = &mx25r6435;
 	};
 
 };
@@ -163,4 +167,39 @@ zephyr_udc0: &usbotg_fs {
 		     &usb_otg_fs_id_pa10>;
 	pinctrl-names = "default";
 	status = "okay";
+};
+
+&vref {
+	status = "okay";
+};
+
+&vbat {
+	status = "okay";
+};
+
+&dma2 {
+	status = "okay";
+};
+
+&quadspi {
+	pinctrl-0 = <&quadspi_bk1_io0_pb1 &quadspi_bk1_io1_pb0
+			&quadspi_bk1_io2_pa7 &quadspi_bk1_io3_pa6
+			&quadspi_bk1_ncs_pb11 &quadspi_clk_pa3>;
+	pinctrl-names = "default";
+
+	dmas = <&dma2 7 3 0x480>; /* channel 7 request 3 on DMA2 */
+	dma-names = "tx_rx";
+
+	flash-id = <1>;
+	status = "okay";
+
+	mx25r6435: qspi-nor-flash@0 {
+		compatible = "st,stm32-qspi-nor";
+		reg = <0>;
+		qspi-max-frequency = <8000000>;
+		size = <DT_SIZE_M(64)>; /* 8 MBytes */
+		status = "okay";
+		spi-bus-width = <4>;
+		writeoc = "PP_1_4_4";
+	};
 };

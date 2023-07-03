@@ -13,6 +13,18 @@
 #include <unistd.h>
 #include <errno.h>
 
+#ifndef STDIN_FILENO
+  #define STDIN_FILENO    0
+#endif
+
+#ifndef STDOUT_FILENO
+  #define STDOUT_FILENO   1
+#endif
+
+#ifndef STDERR_FILENO
+  #define STDERR_FILENO   2
+#endif
+
 static int _stdout_hook_default(int c)
 {
 	ARG_UNUSED(c);

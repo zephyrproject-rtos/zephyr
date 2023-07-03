@@ -21,17 +21,100 @@ manifest:
   remotes:
     - name: upstream
       url-base: https://github.com/zephyrproject-rtos
+    - name: babblesim
+      url-base: https://github.com/BabbleSim
 
   group-filter: [-babblesim]
 
   #
   # Please add items below based on alphabetical order
   projects:
+    - name: acpica
+      revision: f16a0b4d0f0edd7b78a332fcf507be2187fac21e
+      path: modules/lib/acpica
     - name: bsim
       repo-path: babblesim-manifest
-      revision: 908ffde6298a937c6549dbfa843a62caab26bfc5
-      import:
-        path-prefix: tools
+      revision: 384a091445c57b44ac8cbd18ebd245b47c71db94
+      path: tools/bsim
+      groups:
+        - babblesim
+    - name: babblesim_base
+      remote: babblesim
+      repo-path: base.git
+      path: tools/bsim/components
+      revision: 19d62424c0802c6c9fc15528febe666e40f372a1
+      groups:
+        - babblesim
+    - name: babblesim_ext_2G4_libPhyComv1
+      remote: babblesim
+      repo-path: ext_2G4_libPhyComv1.git
+      path: tools/bsim/components/ext_2G4_libPhyComv1
+      revision: 9018113a362fa6c9e8f4b9cab9e5a8f12cc46b94
+      groups:
+        - babblesim
+    - name: babblesim_ext_2G4_phy_v1
+      remote: babblesim
+      repo-path: ext_2G4_phy_v1.git
+      path: tools/bsim/components/ext_2G4_phy_v1
+      revision: d47c6dd90035b41b14f6921785ccb7b8484868e2
+      groups:
+        - babblesim
+    - name: babblesim_ext_2G4_channel_NtNcable
+      remote: babblesim
+      repo-path: ext_2G4_channel_NtNcable.git
+      path: tools/bsim/components/ext_2G4_channel_NtNcable
+      revision: 20a38c997f507b0aa53817aab3d73a462fff7af1
+      groups:
+        - babblesim
+    - name: babblesim_ext_2G4_channel_multiatt
+      remote: babblesim
+      repo-path: ext_2G4_channel_multiatt.git
+      path: tools/bsim/components/ext_2G4_channel_multiatt
+      revision: bde72a57384dde7a4310bcf3843469401be93074
+      groups:
+        - babblesim
+    - name: babblesim_ext_2G4_modem_magic
+      remote: babblesim
+      repo-path: ext_2G4_modem_magic.git
+      path: tools/bsim/components/ext_2G4_modem_magic
+      revision: cb70771794f0bf6f262aa474848611c68ae8f1ed
+      groups:
+        - babblesim
+    - name: babblesim_ext_2G4_modem_BLE_simple
+      remote: babblesim
+      repo-path: ext_2G4_modem_BLE_simple.git
+      path: tools/bsim/components/ext_2G4_modem_BLE_simple
+      revision: 809ab073159c9ab6686c2fea5749b0702e0909f7
+      groups:
+        - babblesim
+    - name: babblesim_ext_2G4_device_burst_interferer
+      remote: babblesim
+      repo-path: ext_2G4_device_burst_interferer.git
+      path: tools/bsim/components/ext_2G4_device_burst_interferer
+      revision: 5b5339351d6e6a2368c686c734dc8b2fc65698fc
+      groups:
+        - babblesim
+    - name: babblesim_ext_2G4_device_WLAN_actmod
+      remote: babblesim
+      repo-path: ext_2G4_device_WLAN_actmod.git
+      path: tools/bsim/components/ext_2G4_device_WLAN_actmod
+      revision: 9cb6d8e72695f6b785e57443f0629a18069d6ce4
+      groups:
+        - babblesim
+    - name: babblesim_ext_2G4_device_playback
+      remote: babblesim
+      repo-path: ext_2G4_device_playback.git
+      path: tools/bsim/components/ext_2G4_device_playback
+      revision: 85c645929cf1ce995d8537107d9dcbd12ed64036
+      groups:
+        - babblesim
+    - name: babblesim_ext_libCryptov1
+      remote: babblesim
+      repo-path: ext_libCryptov1.git
+      path: tools/bsim/components/ext_libCryptov1
+      revision: eed6d7038e839153e340bd333bc43541cb90ba64
+      groups:
+        - babblesim
     - name: canopennode
       revision: dec12fa3f0d790cafa8414a4c2930ea71ab72ffd
       path: modules/lib/canopennode
@@ -64,7 +147,7 @@ manifest:
       groups:
         - hal
     - name: hal_espressif
-      revision: 075894ed22caa5c2d1686a1e33953edd6aa41333
+      revision: 9531c1c17873aa4935f85864ebafd20c02062a8f
       path: modules/hal/espressif
       west-commands: west/west-commands.yml
       groups:
@@ -80,7 +163,7 @@ manifest:
       groups:
         - hal
     - name: hal_infineon
-      revision: 03d6f5563552022fb53f149640b127889fb3c01f
+      revision: 0bebc14d8bd1a249ee7fbc70b37db6f01f72544f
       path: modules/hal/infineon
       groups:
         - hal
@@ -95,12 +178,12 @@ manifest:
       groups:
         - hal
     - name: hal_nuvoton
-      revision: 0a1f153c433f5f637a4490651bdda6d966de3b99
+      revision: 8a2b5de1670b59fcacd20d7495cb1c0f26fbe7bd
       path: modules/hal/nuvoton
       groups:
         - hal
     - name: hal_nxp
-      revision: a45b6bcee7824e42d9950c8324b3d783a2521a84
+      revision: 904830e8f684a9fd573751a1cdecde877ec49242
       path: modules/hal/nxp
       groups:
         - hal
@@ -126,7 +209,7 @@ manifest:
       groups:
         - hal
     - name: hal_silabs
-      revision: cee0e7704ece414924734cb422a6f346e13e71e5
+      revision: a143f03e846eb1b7b3135f3c8192820ce1b6d9c4
       path: modules/hal/silabs
       groups:
         - hal
@@ -156,12 +239,12 @@ manifest:
       groups:
         - hal
     - name: hal_xtensa
-      revision: bce25bd242fb07c4cfd13ccb1ed29bc8bc12b0b8
+      revision: 41a631d4aeeeaedc0daece21eecc338807296ad7
       path: modules/hal/xtensa
       groups:
         - hal
     - name: libmetal
-      revision: efa2ace6028290ddee494a78ade772a0b112ab83
+      revision: b91611a6f47dd29fb24c46e5621e797557f80ec6
       path: modules/hal/libmetal
       groups:
         - hal
@@ -177,24 +260,24 @@ manifest:
       revision: ce57712f3e426bbbb13acaec97b45369f716f43a
       path: modules/lib/loramac-node
     - name: lvgl
-      revision: 1557cb3e4d5c8dc7bb2e8610b686b5acb157903c
+      revision: 7102083f626cda09e5792420ea60af0525cce9ae
       path: modules/lib/gui/lvgl
     - name: lz4
       revision: 8e303c264fc21c2116dc612658003a22e933124d
       path: modules/lib/lz4
     - name: mbedtls
-      revision: 4e1f66df894dc622da7bcd3884016a6ace08e9ea
+      revision: 6e7841e5a08eb5da3c82dbc8b6b6d82ae4b7d2a0
       path: modules/crypto/mbedtls
       groups:
         - crypto
     - name: mcuboot
-      revision: 2878eb4e32fabc14bc391c3221cbf285064d9db4
+      revision: 74c4d1c52fd51d07904b27a7aa9b2303e896a4e3
       path: bootloader/mcuboot
     - name: mipi-sys-t
       path: modules/debug/mipi-sys-t
       groups:
         - debug
-      revision: 0d521d8055f3b2b4842f728b0365d3f0ece9c37f
+      revision: a819419603a2dfcb47f7f39092e1bc112e45d1ef
     - name: nanopb
       revision: 42fa8b211e946b90b9d968523fce7b1cfe27617e
       path: modules/lib/nanopb
@@ -204,17 +287,17 @@ manifest:
       groups:
         - tools
     - name: nrf_hw_models
-      revision: c8d2ecd25d6976d2d77eccf66878420fdb8ef5a1
+      revision: 37c571ef7c4a86dad852566fc43eb36f42534e9f
       path: modules/bsim_hw_models/nrf_hw_models
     - name: open-amp
-      revision: 233fb29c52ffa7733ba132a2b5987a8201ba8ec6
+      revision: c904a01d4a882bcbb39987e0e2ce5308f49ac7ad
       path: modules/lib/open-amp
     - name: openthread
-      revision: 1203ea6426a906d62a3921b6d4c6a4a6c8e0abde
+      revision: 6d557383e8bc8654f813674e8631c2e56b8e70d0
       path: modules/lib/openthread
     - name: picolibc
       path: modules/lib/picolibc
-      revision: 93b5d5f2ad44867b60267417cd6d6250dbf68983
+      revision: d07c38ff051386f8e09a143ea0a6c1d6d66dd1d8
     - name: segger
       revision: 4bfaf28a11c3e5ec29badac744fab6d2f342749e
       path: modules/debug/segger
@@ -238,12 +321,12 @@ manifest:
       groups:
         - debug
     - name: trusted-firmware-m
-      revision: 8209cb2ed2bc9a768cc1d715c2059616192cc720
+      revision: 79a6115d3a8d0e04864ae8156c1dc8532b750f5a
       path: modules/tee/tf-m/trusted-firmware-m
       groups:
         - tee
     - name: trusted-firmware-a
-      revision: 28f5e137837f1c1a7a7b2af2dd8bb778c0a27532
+      revision: 421dc050278287839f5c70019bd6aec617f2bbdb
       path: modules/tee/tf-a/trusted-firmware-a
       groups:
         - tee
@@ -265,7 +348,7 @@ manifest:
       path: modules/lib/zcbor
     - name: zscilib
       path: modules/lib/zscilib
-      revision: 0035be5e6a45e4ab89755b176d305d7a877fc79c
+      revision: 34c3432e81085bb717e4871d21ca419ae0058ec5
     - name: thrift
       path: modules/lib/thrift
       revision: 10023645a0e6cb7ce23fcd7fd3dbac9f18df6234

@@ -54,7 +54,8 @@ config DMAMUX_STM32
 config DMA_STM32_SHARED_IRQS
 	bool
 	default y
-	depends on SOC_SERIES_STM32F0X || SOC_SERIES_STM32G0X || SOC_SERIES_STM32L0X
+	depends on SOC_SERIES_STM32C0X || SOC_SERIES_STM32F0X || \
+		   SOC_SERIES_STM32G0X || SOC_SERIES_STM32L0X
 	help
 	  Enable shared IRQ support on devices where channels share 1 IRQ.
 
@@ -65,5 +66,13 @@ config DMA_STM32_BDMA
 	depends on DT_HAS_ST_STM32_BDMA_ENABLED
 	help
 	  BDMA driver for STM32H7 series SoCs.
+
+config DMAMUX_STM32_INIT_PRIORITY
+	int "STM32 DMAMUX init priority"
+	depends on DT_HAS_ST_STM32_DMAMUX_ENABLED
+	default 41
+	help
+	  DMAMUX driver device must be init'd after the DMA (CONFIG_DMA_INIT_PRIORITY)
+	  DMAMUX driver device initialization priority is greater than DMA one's
 
 endif # DMA_STM32

@@ -27,10 +27,11 @@ tests:
         - "I: Pub a valid value to a channel with validator successfully."
         - "I: Pub an invalid value to a channel with validator successfully."
     arch_exclude:
-      - posix
       - xtensa
     platform_exclude: qemu_leon3
     tags: zbus
+    integration_platforms:
+      - qemu_x86
   sample.zbus.hello_world_no_iterable_sections:
     harness: console
     harness_config:
@@ -45,6 +46,5 @@ tests:
         - "I: Pub a valid value to a channel with validator successfully."
         - "I: Pub an invalid value to a channel with validator successfully."
     arch_allow:
-      - posix
       - xtensa
     tags: zbus

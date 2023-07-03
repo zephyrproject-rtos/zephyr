@@ -93,10 +93,6 @@ function(zephyr_process_snippets)
   endif()
   include(${snippets_generated})
 
-  # Propagate include()d build system settings to the caller.
-  set(DTC_OVERLAY_FILE ${DTC_OVERLAY_FILE} PARENT_SCOPE)
-  set(OVERLAY_CONFIG ${OVERLAY_CONFIG} PARENT_SCOPE)
-
   # Create the 'snippets' target. Each snippet is printed in a
   # separate command because build system files are not fond of
   # newlines.

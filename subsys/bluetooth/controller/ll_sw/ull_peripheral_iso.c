@@ -5,8 +5,10 @@
  */
 
 #include <zephyr/kernel.h>
-#include <zephyr/bluetooth/buf.h>
 #include <zephyr/sys/byteorder.h>
+
+#include <zephyr/bluetooth/hci_types.h>
+#include <zephyr/bluetooth/conn.h>
 
 #include "util/util.h"
 #include "util/memq.h"
@@ -45,8 +47,6 @@
 #include "ull_conn_internal.h"
 #include "ull_conn_iso_internal.h"
 #include "ull_llcp_internal.h"
-
-#include <zephyr/bluetooth/hci.h>
 
 #include "hal/debug.h"
 
@@ -104,8 +104,9 @@ uint8_t ll_cis_accept(uint16_t handle)
 	if (conn) {
 		uint32_t cis_offset_min;
 
-		if (IS_ENABLED(CONFIG_BT_CTLR_JIT_SCHEDULING)) {
-			cis_offset_min = MAX(400, EVENT_OVERHEAD_CIS_SETUP_US);
+		if (IS_ENABLED(CONFIG_BT_CTLR_PERIPHERAL_ISO_EARLY_CIG_START)) {
+			/* Early start allows offset down to spec defined minimum */
+			cis_offset_min = CIS_MIN_OFFSET_MIN;
 		} else {
 			cis_offset_min = HAL_TICKER_TICKS_TO_US(conn->ull.ticks_slot) +
 					 (EVENT_TICKER_RES_MARGIN_US << 1U);
@@ -259,12 +260,14 @@ uint8_t ull_peripheral_iso_acquire(struct ll_conn *acl,
 	cis->lll.rx.ft = req->c_ft;
 	cis->lll.rx.max_pdu = sys_le16_to_cpu(req->c_max_pdu);
 	cis->lll.rx.payload_count = 0;
+	cis->lll.rx.bn_curr = 1U;
 
 	cis->lll.tx.phy = req->p_phy;
 	cis->lll.tx.bn = req->p_bn;
 	cis->lll.tx.ft = req->p_ft;
 	cis->lll.tx.max_pdu = sys_le16_to_cpu(req->p_max_pdu);
 	cis->lll.tx.payload_count = 0;
+	cis->lll.tx.bn_curr = 1U;
 
 	if (!cis->lll.link_tx_free) {
 		cis->lll.link_tx_free = &cis->lll.link_tx;
@@ -305,7 +308,7 @@ uint8_t ull_peripheral_iso_setup(struct pdu_data_llctrl_cis_ind *ind,
 	cis_offset = sys_get_le24(ind->cis_offset);
 
 #if defined(CONFIG_BT_CTLR_PERIPHERAL_ISO_EARLY_CIG_START)
-	if (!cig->started) {
+	if (cig->state != CIG_STATE_ACTIVE) {
 		/* This is the first CIS. Make sure we can make the anchorpoint, otherwise
 		 * we need to move up the instant up by one connection interval.
 		 */
@@ -319,7 +322,7 @@ uint8_t ull_peripheral_iso_setup(struct pdu_data_llctrl_cis_ind *ind,
 	cis->sync_delay = sys_get_le24(ind->cis_sync_delay);
 	cis->offset = cis_offset;
 	memcpy(cis->lll.access_addr, ind->aa, sizeof(ind->aa));
-	cis->lll.event_count = -1;
+	cis->lll.event_count = LLL_CONN_ISO_EVENT_COUNT_MAX;
 	cis->lll.next_subevent = 0U;
 	cis->lll.sn = 0U;
 	cis->lll.nesn = 0U;
@@ -330,6 +333,8 @@ uint8_t ull_peripheral_iso_setup(struct pdu_data_llctrl_cis_ind *ind,
 	cis->lll.datapath_ready_rx = 0U;
 	cis->lll.tx.payload_count = 0U;
 	cis->lll.rx.payload_count = 0U;
+	cis->lll.rx.bn_curr = 1U;
+	cis->lll.tx.bn_curr = 1U;
 
 	return 0;
 }

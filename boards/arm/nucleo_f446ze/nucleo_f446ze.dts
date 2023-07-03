@@ -50,6 +50,8 @@
 		led1 = &blue_led_2;
 		led2 = &red_led_3;
 		sw0 = &user_button;
+		volt-sensor0 = &vref;
+		volt-sensor1 = &vbat;
 	};
 };
 
@@ -214,4 +216,12 @@ zephyr_udc0: &usbotg_fs {
 			reg = <0x00060000 DT_SIZE_K(128)>;
 		};
 	};
+};
+
+&vref {
+	status = "okay";
+};
+
+&vbat {
+	status = "okay";
 };

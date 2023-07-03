@@ -47,7 +47,7 @@ enum uart_pm_policy_state_flag {
 struct uart_npcx_data {
 	/* Baud rate */
 	uint32_t baud_rate;
-	struct miwu_dev_callback uart_rx_cb;
+	struct miwu_callback uart_rx_cb;
 	struct k_spinlock lock;
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	uart_irq_callback_user_data_t user_cb;
@@ -519,7 +519,7 @@ static int uart_npcx_init(const struct device *dev)
 		/* Initialize a miwu device input and its callback function */
 		npcx_miwu_init_dev_callback(&data->uart_rx_cb, &config->uart_rx_wui,
 					    uart_npcx_rx_wk_isr, dev);
-		npcx_miwu_manage_dev_callback(&data->uart_rx_cb, true);
+		npcx_miwu_manage_callback(&data->uart_rx_cb, true);
 		/*
 		 * Configure the UART wake-up event triggered from a falling
 		 * edge on CR_SIN pin. No need for callback function.

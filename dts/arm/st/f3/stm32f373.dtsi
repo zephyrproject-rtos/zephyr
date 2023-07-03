@@ -177,12 +177,15 @@
 		};
 
 		adc1: adc@40012400 {
-			compatible = "st,stm32-adc";
+			compatible = "st,stm32f1-adc", "st,stm32-adc";
 			reg = <0x40012400 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00000200>;
 			interrupts = <18 0>;
 			status = "disabled";
 			#io-channel-cells = <1>;
+			temp-channel = <16>;
+			vref-channel = <17>;
+			vbat-channel = <18>;
 			resolutions = <STM32F1_ADC_RES(12)>;
 			sampling-times = <2 8 14 29 42 56 72 240>;
 		};
@@ -194,5 +197,13 @@
 				status = "disabled";
 			};
 		};
+	};
+
+	vref: vref {
+		io-channels = <&adc1 17>;
+	};
+
+	vbat: vbat {
+		io-channels = <&adc1 18>;
 	};
 };

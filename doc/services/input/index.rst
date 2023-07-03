@@ -59,9 +59,24 @@ Kscan Compatibility
 *******************
 
 Input devices generating X/Y/Touch events can be used in existing applications
-based on the :ref:`kscan_api` API by defining a
-:dtcompatible:`zephyr,kscan-input` node as a childnode of the corresponding
-input device.
+based on the :ref:`kscan_api` API by enabling both
+:kconfig:option:`CONFIG_INPUT` and :kconfig:option:`CONFIG_KSCAN`, defining a
+:dtcompatible:`zephyr,kscan-input` node as a child node of the corresponding
+input device and pointing the ``zephyr,keyboard-scan`` chosen node to the
+compatibility device node, for example:
+
+.. code-block:: devicetree
+
+    chosen {
+        zephyr,keyboard-scan = &kscan_input;
+    };
+
+    ft5336@38 {
+        ...
+        kscan_input: kscan-input {
+            compatible = "zephyr,kscan-input";
+        };
+    };
 
 API Reference
 *************

@@ -14,7 +14,6 @@ properties:
 
   mdm-reset-gpios:
     type: phandle-array
-    required: true
 
   mdm-dtr-gpios:
     type: phandle-array

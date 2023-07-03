@@ -33,7 +33,7 @@ endchoice
 config LV_Z_BITS_PER_PIXEL
 	default 1
 
-config LV_Z_DPI
+config LV_DPI_DEF
 	default 130
 
 config LV_Z_VDB_SIZE

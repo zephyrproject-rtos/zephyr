@@ -12,6 +12,8 @@ struct lll_conn_iso_stream_rxtx {
 	uint64_t bn:4;             /* Burst number (BN) */
 	uint64_t phy:3;            /* PHY */
 	uint64_t rfu:1;
+	uint8_t bn_curr:4;        /* Current burst number */
+
 
 #if defined(CONFIG_BT_CTLR_LE_ENC)
 	struct ccm ccm;
@@ -44,6 +46,15 @@ struct lll_conn_iso_stream {
 	uint8_t active:1;           /* 1 if CIS LLL is active */
 	uint8_t datapath_ready_rx:1;/* 1 if datapath for RX is ready */
 
+#if !defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
+	/* Lazy at CIS active. Number of previously skipped CIG events that is
+	 * determined when CIS is made active and subtracted from total CIG
+	 * events that where skipped when this CIS gets to use radio for the
+	 * first time.
+	 */
+	uint16_t lazy_active;
+#endif /* !CONFIG_BT_CTLR_JIT_SCHEDULING */
+
 	/* Resumption information */
 	uint8_t next_subevent;      /* Next subevent to schedule */
 
@@ -52,6 +63,8 @@ struct lll_conn_iso_stream {
 	memq_link_t link_tx;
 	memq_link_t *link_tx_free;
 };
+
+#define LLL_CONN_ISO_EVENT_COUNT_MAX BIT64_MASK(39)
 
 struct lll_conn_iso_group {
 	struct lll_hdr hdr;

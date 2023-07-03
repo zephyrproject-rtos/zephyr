@@ -7,20 +7,19 @@
 #ifndef ZEPHYR_INCLUDE_POSIX_SYS_EVENTFD_H_
 #define ZEPHYR_INCLUDE_POSIX_SYS_EVENTFD_H_
 
-#include <zephyr/kernel.h>
-#include <zephyr/sys/fdtable.h>
-#include <sys/types.h>
+#include <stdint.h>
 
+#include <zephyr/kernel.h>
 #include <zephyr/posix/fcntl.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#define EFD_IN_USE    0x1
+#define EFD_IN_USE    0x1 __DEPRECATED_MACRO
 #define EFD_SEMAPHORE 0x2
 #define EFD_NONBLOCK  O_NONBLOCK
-#define EFD_FLAGS_SET (EFD_SEMAPHORE | EFD_NONBLOCK)
+#define EFD_FLAGS_SET (EFD_SEMAPHORE | EFD_NONBLOCK) __DEPRECATED_MACRO
 
 typedef uint64_t eventfd_t;
 
@@ -51,23 +50,7 @@ int eventfd(unsigned int initval, int flags);
  *
  * @return 0 on success, -1 on error
  */
-static inline int eventfd_read(int fd, eventfd_t *value)
-{
-	const struct fd_op_vtable *efd_vtable;
-	struct k_mutex *lock;
-	ssize_t ret;
-	void *obj;
-
-	obj = z_get_fd_obj_and_vtable(fd, &efd_vtable, &lock);
-
-	(void)k_mutex_lock(lock, K_FOREVER);
-
-	ret = efd_vtable->read(obj, value, sizeof(*value));
-
-	k_mutex_unlock(lock);
-
-	return ret == sizeof(eventfd_t) ? 0 : -1;
-}
+int eventfd_read(int fd, eventfd_t *value);
 
 /**
  * @brief Write to an eventfd
@@ -77,23 +60,7 @@ static inline int eventfd_read(int fd, eventfd_t *value)
  *
  * @return 0 on success, -1 on error
  */
-static inline int eventfd_write(int fd, eventfd_t value)
-{
-	const struct fd_op_vtable *efd_vtable;
-	struct k_mutex *lock;
-	ssize_t ret;
-	void *obj;
-
-	obj = z_get_fd_obj_and_vtable(fd, &efd_vtable, &lock);
-
-	(void)k_mutex_lock(lock, K_FOREVER);
-
-	ret = efd_vtable->write(obj, &value, sizeof(value));
-
-	k_mutex_unlock(lock);
-
-	return ret == sizeof(eventfd_t) ? 0 : -1;
-}
+int eventfd_write(int fd, eventfd_t value);
 
 #ifdef __cplusplus
 }

@@ -1,6 +1,6 @@
 # i.MX RT5XX series configuration options
 
-# Copyright (c) 2022, NXP
+# Copyright (c) 2022-2023, NXP
 # SPDX-License-Identifier: Apache-2.0
 
 if SOC_SERIES_IMX_RT5XX
@@ -77,4 +77,4 @@ endif # MBEDTLS
 
 source "soc/arm/nxp_imx/rt5xx/Kconfig.defconfig.mimxrt5*"
 
-endif # SOC_SERIES_MIMXRT6XX
+endif # SOC_SERIES_MIMXRT5XX

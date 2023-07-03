@@ -15,12 +15,11 @@
 		/delete-node/ gpio@40320100; // gpio_prt2
 		/delete-node/ gpio@40320180; // gpio_prt3
 		/delete-node/ gpio@40320200; // gpio_prt4
-
+		/delete-node/ gpio@40320280; // gpio_prt5
 		/delete-node/ gpio@40320680; // gpio_prt13
 		/delete-node/ gpio@40320700; // gpio_prt14
 
 		pinctrl: pinctrl@40310000 {
-
 			/* scb_i2c_scl */
 			/omit-if-no-ref/ p0_2_scb0_i2c_scl: p0_2_scb0_i2c_scl {
 				pinmux = <DT_CAT1_PINMUX(0, 2, HSIOM_SEL_ACT_7)>;

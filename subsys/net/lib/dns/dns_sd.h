@@ -13,6 +13,7 @@
 
 #include <zephyr/net/dns_sd.h>
 #include <zephyr/net/net_ip.h>
+#include <zephyr/sys/iterable_sections.h>
 
 #include "dns_pack.h"
 

@@ -1869,4 +1869,93 @@ static void *setup(void)
 	return NULL;
 }
 
+struct close_data {
+	struct k_work_delayable work;
+	int fd;
+};
+
+static void close_work(struct k_work *work)
+{
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	struct close_data *data = CONTAINER_OF(dwork, struct close_data, work);
+
+	close(data->fd);
+}
+
+ZTEST(net_socket_tcp, test_close_while_recv)
+{
+	/* Blocking recv() should return an error after close() is
+	 * called from another thread.
+	 */
+	int c_sock;
+	int s_sock;
+	int new_sock;
+	struct sockaddr_in6 c_saddr, s_saddr;
+	struct sockaddr addr;
+	socklen_t addrlen = sizeof(addr);
+	struct close_data close_work_data;
+	char rx_buf[1];
+	ssize_t ret;
+
+	prepare_sock_tcp_v6(MY_IPV6_ADDR, ANY_PORT, &c_sock, &c_saddr);
+	prepare_sock_tcp_v6(MY_IPV6_ADDR, SERVER_PORT, &s_sock, &s_saddr);
+
+	test_bind(s_sock, (struct sockaddr *)&s_saddr, sizeof(s_saddr));
+	test_listen(s_sock);
+
+	/* Connect and accept that connection */
+	test_connect(c_sock, (struct sockaddr *)&s_saddr, sizeof(s_saddr));
+
+	test_accept(s_sock, &new_sock, &addr, &addrlen);
+
+	/* Schedule close() from workqueue */
+	k_work_init_delayable(&close_work_data.work, close_work);
+	close_work_data.fd = c_sock;
+	k_work_schedule(&close_work_data.work, K_MSEC(10));
+
+	/* Start blocking recv(), which should be unblocked by close() from
+	 * another thread and return an error.
+	 */
+	ret = recv(c_sock, rx_buf, sizeof(rx_buf), 0);
+	zassert_equal(ret, -1, "recv did not return error");
+	zassert_equal(errno, EINTR, "Unexpected errno value: %d", errno);
+
+	test_close(new_sock);
+	test_close(s_sock);
+
+	test_context_cleanup();
+}
+
+ZTEST(net_socket_tcp, test_close_while_accept)
+{
+	/* Blocking accept() should return an error after close() is
+	 * called from another thread.
+	 */
+	int s_sock;
+	int new_sock;
+	struct sockaddr_in6 s_saddr;
+	struct sockaddr addr;
+	socklen_t addrlen = sizeof(addr);
+	struct close_data close_work_data;
+
+	prepare_sock_tcp_v6(MY_IPV6_ADDR, SERVER_PORT, &s_sock, &s_saddr);
+
+	test_bind(s_sock, (struct sockaddr *)&s_saddr, sizeof(s_saddr));
+	test_listen(s_sock);
+
+	/* Schedule close() from workqueue */
+	k_work_init_delayable(&close_work_data.work, close_work);
+	close_work_data.fd = s_sock;
+	k_work_schedule(&close_work_data.work, K_MSEC(10));
+
+	/* Start blocking accept(), which should be unblocked by close() from
+	 * another thread and return an error.
+	 */
+	new_sock = accept(s_sock, &addr, &addrlen);
+	zassert_equal(new_sock, -1, "accept did not return error");
+	zassert_equal(errno, EINTR, "Unexpected errno value: %d", errno);
+
+	test_context_cleanup();
+}
+
 ZTEST_SUITE(net_socket_tcp, NULL, setup, NULL, NULL, NULL);

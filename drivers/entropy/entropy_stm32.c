@@ -27,6 +27,7 @@
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <zephyr/irq.h>
+#include <zephyr/sys/barrier.h>
 #include "stm32_hsem.h"
 
 #define IRQN		DT_INST_IRQN(0)
@@ -313,7 +314,7 @@ static uint16_t generate_from_isr(uint8_t *buf, uint16_t len)
 			 * DSB is recommended by spec before WFE (to
 			 * guarantee completion of memory transactions)
 			 */
-			__DSB();
+			barrier_dsync_fence_full();
 			__WFE();
 			__SEV();
 			__WFE();
@@ -376,11 +377,14 @@ static void pool_filling_work_handler(struct k_work *work)
 	}
 }
 
-#pragma GCC push_options
 #if defined(CONFIG_BT_CTLR_FAST_ENC)
-#pragma GCC optimize ("Ofast")
+#define __fast __attribute__((optimize("Ofast")))
+#else
+#define __fast
 #endif
-static uint16_t rng_pool_get(struct rng_pool *rngp, uint8_t *buf, uint16_t len)
+
+__fast static uint16_t rng_pool_get(struct rng_pool *rngp, uint8_t *buf,
+	uint16_t len)
 {
 	uint32_t last  = rngp->last;
 	uint32_t mask  = rngp->mask;
@@ -444,7 +448,7 @@ static uint16_t rng_pool_get(struct rng_pool *rngp, uint8_t *buf, uint16_t len)
 
 	return len;
 }
-#pragma GCC pop_options
+#undef __fast
 
 static int rng_pool_put(struct rng_pool *rngp, uint8_t byte)
 {

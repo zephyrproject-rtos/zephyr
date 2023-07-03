@@ -1190,6 +1190,16 @@ bool arch_pcie_msi_vector_connect(msi_vector_t *vector,
 
 #endif /* CONFIG_PCIE_MSI_MULTI_VECTOR */
 
+/**
+ * @brief Perform architecture specific processing within spin loops
+ *
+ * This is invoked from busy loops with IRQs disabled such as the contended
+ * spinlock loop. The default implementation is a weak function that calls
+ * arch_nop(). Architectures may implement this function to perform extra
+ * checks or power management tricks if needed.
+ */
+void arch_spin_relax(void);
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */

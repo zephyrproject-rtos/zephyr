@@ -22,6 +22,7 @@ LOG_MODULE_REGISTER(LOG_DOMAIN);
 #include <zephyr/irq.h>
 
 #include "dmic.h"
+#include <dmic_regs.h>
 
 /* Base addresses (in PDM scope) of 2ch PDM controllers and coefficient RAM. */
 static const uint32_t base[4] = {PDM0, PDM1, PDM2, PDM3};
@@ -139,14 +140,14 @@ static inline void dai_dmic_claim_ownership(const struct dai_intel_dmic *dmic)
 {
 	/* DMIC Owner Select to DSP */
 	sys_write32(sys_read32(dmic->shim_base + DMICLCTL_OFFSET) |
-			DMICLCTL_OSEL(0x3), dmic->shim_base + DMICLCTL_OFFSET);
+		    FIELD_PREP(DMICLCTL_OSEL, 0x3), dmic->shim_base + DMICLCTL_OFFSET);
 }
 
 static inline void dai_dmic_release_ownership(const struct dai_intel_dmic *dmic)
 {
 	/* DMIC Owner Select back to Host CPU + DSP */
 	sys_write32(sys_read32(dmic->shim_base + DMICLCTL_OFFSET) &
-			~DMICLCTL_OSEL(0x0), dmic->shim_base + DMICLCTL_OFFSET);
+			~DMICLCTL_OSEL, dmic->shim_base + DMICLCTL_OFFSET);
 }
 
 #else /* CONFIG_DAI_DMIC_HAS_OWNERSHIP */
@@ -172,7 +173,7 @@ static inline void dai_dmic_set_sync_period(uint32_t period, const struct dai_in
 	uint32_t base = dai_dmic_base(dmic);
 	/* DMIC Change sync period */
 #ifdef CONFIG_SOC_INTEL_ACE20_LNL
-	sys_write32(sys_read32(base + DMICSYNC_OFFSET) | DMICSYNC_SYNCPRD(val),
+	sys_write32(sys_read32(base + DMICSYNC_OFFSET) | FIELD_PREP(DMICSYNC_SYNCPRD, val),
 		    base + DMICSYNC_OFFSET);
 	sys_write32(sys_read32(base + DMICSYNC_OFFSET) | DMICSYNC_SYNCPU,
 		    base + DMICSYNC_OFFSET);
@@ -182,7 +183,7 @@ static inline void dai_dmic_set_sync_period(uint32_t period, const struct dai_in
 	sys_write32(sys_read32(base + DMICSYNC_OFFSET) | DMICSYNC_CMDSYNC,
 		    base + DMICSYNC_OFFSET);
 #else /* All other CAVS and ACE platforms */
-	sys_write32(sys_read32(base + DMICSYNC_OFFSET) | DMICSYNC_SYNCPRD(val),
+	sys_write32(sys_read32(base + DMICSYNC_OFFSET) | FIELD_PREP(DMICSYNC_SYNCPRD, val),
 		    base + DMICSYNC_OFFSET);
 	sys_write32(sys_read32(base + DMICSYNC_OFFSET) | DMICSYNC_CMDSYNC,
 		    base + DMICSYNC_OFFSET);
@@ -193,7 +194,7 @@ static inline void dai_dmic_clear_sync_period(const struct dai_intel_dmic *dmic)
 {
 	uint32_t base = dai_dmic_base(dmic);
 	/* DMIC Clean sync period */
-	sys_write32(sys_read32(base + DMICSYNC_OFFSET) & ~DMICSYNC_SYNCPRD(0x0000),
+	sys_write32(sys_read32(base + DMICSYNC_OFFSET) & ~DMICSYNC_SYNCPRD,
 			base + DMICSYNC_OFFSET);
 	sys_write32(sys_read32(base + DMICSYNC_OFFSET) & ~DMICSYNC_CMDSYNC,
 			base + DMICSYNC_OFFSET);
@@ -239,13 +240,13 @@ static void dai_dmic_stop_fifo_packers(struct dai_intel_dmic *dmic,
 	switch (fifo_index) {
 	case 0:
 		dai_dmic_update_bits(dmic, OUTCONTROL0,
-				OUTCONTROL0_SIP_BIT | OUTCONTROL0_FINIT_BIT,
-				OUTCONTROL0_FINIT_BIT);
+				OUTCONTROL_SIP | OUTCONTROL_FINIT,
+				OUTCONTROL_FINIT);
 		break;
 	case 1:
 		dai_dmic_update_bits(dmic, OUTCONTROL1,
-				OUTCONTROL1_SIP_BIT | OUTCONTROL1_FINIT_BIT,
-				OUTCONTROL1_FINIT_BIT);
+				OUTCONTROL_SIP | OUTCONTROL_FINIT,
+				OUTCONTROL_FINIT);
 		break;
 	}
 }
@@ -255,7 +256,7 @@ static void dai_dmic_stop_fifo_packers(struct dai_intel_dmic *dmic,
  */
 static void dai_dmic_irq_handler(const void *data)
 {
-	struct dai_intel_dmic *dmic = (struct dai_intel_dmic *) data;
+	struct dai_intel_dmic *dmic = ((struct device *)data)->data;
 	uint32_t val0;
 	uint32_t val1;
 
@@ -264,13 +265,13 @@ static void dai_dmic_irq_handler(const void *data)
 	val1 = dai_dmic_read(dmic, OUTSTAT1);
 	LOG_DBG("dmic_irq_handler(), OUTSTAT0 = 0x%x, OUTSTAT1 = 0x%x", val0, val1);
 
-	if (val0 & OUTSTAT0_ROR_BIT) {
+	if (val0 & OUTSTAT_ROR) {
 		LOG_ERR("dmic_irq_handler(): full fifo A or PDM overrun");
 		dai_dmic_write(dmic, OUTSTAT0, val0);
 		dai_dmic_stop_fifo_packers(dmic, 0);
 	}
 
-	if (val1 & OUTSTAT1_ROR_BIT) {
+	if (val1 & OUTSTAT_ROR) {
 		LOG_ERR("dmic_irq_handler(): full fifo B or PDM overrun");
 		dai_dmic_write(dmic, OUTSTAT1, val1);
 		dai_dmic_stop_fifo_packers(dmic, 1);
@@ -281,10 +282,10 @@ static inline void dai_dmic_dis_clk_gating(const struct dai_intel_dmic *dmic)
 {
 	/* Disable DMIC clock gating */
 #ifdef CONFIG_SOC_INTEL_ACE20_LNL /* Ace 2.0 */
-	sys_write32((sys_read32(dmic->vshim_base + DMICLCTL_OFFSET) | DMIC_DCGD),
-		    dmic->vshim_base + DMICLCTL_OFFSET);
+	sys_write32((sys_read32(dmic->vshim_base + DMICLVSCTL_OFFSET) | DMICLVSCTL_DCGD),
+		    dmic->vshim_base + DMICLVSCTL_OFFSET);
 #else
-	sys_write32((sys_read32(dmic->shim_base + DMICLCTL_OFFSET) | DMIC_DCGD),
+	sys_write32((sys_read32(dmic->shim_base + DMICLCTL_OFFSET) | DMICLCTL_DCGD),
 		    dmic->shim_base + DMICLCTL_OFFSET);
 #endif
 }
@@ -293,10 +294,10 @@ static inline void dai_dmic_en_clk_gating(const struct dai_intel_dmic *dmic)
 {
 	/* Enable DMIC clock gating */
 #ifdef CONFIG_SOC_INTEL_ACE20_LNL /* Ace 2.0 */
-	sys_write32((sys_read32(dmic->vshim_base + DMICLCTL_OFFSET) & ~DMIC_DCGD),
-		    dmic->vshim_base + DMICLCTL_OFFSET);
+	sys_write32((sys_read32(dmic->vshim_base + DMICLVSCTL_OFFSET) & ~DMICLVSCTL_DCGD),
+		    dmic->vshim_base + DMICLVSCTL_OFFSET);
 #else
-	sys_write32((sys_read32(dmic->shim_base + DMICLCTL_OFFSET) & ~DMIC_DCGD),
+	sys_write32((sys_read32(dmic->shim_base + DMICLCTL_OFFSET) & ~DMICLCTL_DCGD),
 		    dmic->shim_base + DMICLCTL_OFFSET);
 #endif
 
@@ -413,12 +414,12 @@ static int dai_timestamp_dmic_start(const struct device *dev, struct dai_ts_cfg 
 	/* First point CDMAS to GPDMA channel that is used by DMIC
 	 * also clear NTK to be sure there is no old timestamp.
 	 */
-	cdmas = TS_LOCAL_TSCTRL_CDMAS(cfg->dma_chan_index +
+	cdmas = FIELD_PREP(TS_LOCAL_TSCTRL_CDMAS, cfg->dma_chan_index +
 		cfg->dma_chan_count * cfg->dma_id);
-	sys_write32(TS_LOCAL_TSCTRL_NTK_BIT | cdmas, addr);
+	sys_write32(TS_LOCAL_TSCTRL_NTK | cdmas, addr);
 
 	/* Request on demand timestamp */
-	sys_write32(TS_LOCAL_TSCTRL_ODTS_BIT | cdmas, addr);
+	sys_write32(TS_LOCAL_TSCTRL_ODTS | cdmas, addr);
 
 	return 0;
 }
@@ -426,8 +427,7 @@ static int dai_timestamp_dmic_start(const struct device *dev, struct dai_ts_cfg 
 static int dai_timestamp_dmic_stop(const struct device *dev, struct dai_ts_cfg *cfg)
 {
 	/* Clear NTK and write zero to CDMAS */
-	sys_write32(TS_LOCAL_TSCTRL_NTK_BIT,
-		    TS_DMIC_LOCAL_TSCTRL);
+	sys_write32(TS_LOCAL_TSCTRL_NTK, TS_DMIC_LOCAL_TSCTRL);
 	return 0;
 }
 
@@ -439,7 +439,7 @@ static int dai_timestamp_dmic_get(const struct device *dev, struct dai_ts_cfg *c
 	uint32_t ntk;
 
 	/* Read SSP timestamp registers */
-	ntk = sys_read32(tsctrl) & TS_LOCAL_TSCTRL_NTK_BIT;
+	ntk = sys_read32(tsctrl) & TS_LOCAL_TSCTRL_NTK;
 	if (!ntk)
 		goto out;
 
@@ -450,7 +450,7 @@ static int dai_timestamp_dmic_get(const struct device *dev, struct dai_ts_cfg *c
 	tsd->sample = sys_read64(TS_DMIC_LOCAL_SAMPLE);
 
 	/* Clear NTK to enable successive timestamps */
-	sys_write32(TS_LOCAL_TSCTRL_NTK_BIT, tsctrl);
+	sys_write32(TS_LOCAL_TSCTRL_NTK, tsctrl);
 
 out:
 	tsd->walclk_rate = cfg->walclk_rate;
@@ -514,28 +514,28 @@ static void dai_dmic_gain_ramp(struct dai_intel_dmic *dmic)
 
 		if (dmic->startcount == DMIC_UNMUTE_CIC)
 			dai_dmic_update_bits(dmic, base[i] + CIC_CONTROL,
-					     CIC_CONTROL_MIC_MUTE_BIT, 0);
+					     CIC_CONTROL_MIC_MUTE, 0);
 
 		if (dmic->startcount == DMIC_UNMUTE_FIR) {
 			switch (dmic->dai_config_params.dai_index) {
 			case 0:
 				dai_dmic_update_bits(dmic, base[i] + FIR_CONTROL_A,
-						     FIR_CONTROL_A_MUTE_BIT, 0);
+						     FIR_CONTROL_MUTE, 0);
 				break;
 			case 1:
 				dai_dmic_update_bits(dmic, base[i] + FIR_CONTROL_B,
-						     FIR_CONTROL_B_MUTE_BIT, 0);
+						     FIR_CONTROL_MUTE, 0);
 				break;
 			}
 		}
 		switch (dmic->dai_config_params.dai_index) {
 		case 0:
-			val = OUT_GAIN_LEFT_A_GAIN(gval);
+			val = FIELD_PREP(OUT_GAIN, gval);
 			dai_dmic_write(dmic, base[i] + OUT_GAIN_LEFT_A, val);
 			dai_dmic_write(dmic, base[i] + OUT_GAIN_RIGHT_A, val);
 			break;
 		case 1:
-			val = OUT_GAIN_LEFT_B_GAIN(gval);
+			val = FIELD_PREP(OUT_GAIN, gval);
 			dai_dmic_write(dmic, base[i] + OUT_GAIN_LEFT_B, val);
 			dai_dmic_write(dmic, base[i] + OUT_GAIN_RIGHT_B, val);
 			break;
@@ -576,8 +576,8 @@ static void dai_dmic_start(struct dai_intel_dmic *dmic)
 		dai_dmic_update_bits(
 				dmic,
 				OUTCONTROL0,
-				OUTCONTROL0_FINIT_BIT | OUTCONTROL0_SIP_BIT,
-				OUTCONTROL0_SIP_BIT);
+				OUTCONTROL_FINIT | OUTCONTROL_SIP,
+				OUTCONTROL_SIP);
 		break;
 	case 1:
 		LOG_INF("dmic_start(), dmic->fifo_b");
@@ -585,14 +585,14 @@ static void dai_dmic_start(struct dai_intel_dmic *dmic)
 		 *  Start FIFO B packer.
 		 */
 		dai_dmic_update_bits(dmic, OUTCONTROL1,
-				     OUTCONTROL1_FINIT_BIT | OUTCONTROL1_SIP_BIT,
-				     OUTCONTROL1_SIP_BIT);
+				     OUTCONTROL_FINIT | OUTCONTROL_SIP,
+				     OUTCONTROL_SIP);
 	}
 
 	for (i = 0; i < CONFIG_DAI_DMIC_HW_CONTROLLERS; i++) {
 #ifdef CONFIG_SOC_SERIES_INTEL_ACE
 		dai_dmic_update_bits(dmic, base[i] + CIC_CONTROL,
-				     CIC_CONTROL_SOFT_RESET_BIT, 0);
+				     CIC_CONTROL_SOFT_RESET, 0);
 
 		LOG_INF("dmic_start(), cic 0x%08x",
 			dai_dmic_read(dmic, base[i] + CIC_CONTROL));
@@ -611,41 +611,41 @@ static void dai_dmic_start(struct dai_intel_dmic *dmic)
 		 */
 		if (mic_a && mic_b) {
 			dai_dmic_update_bits(dmic, base[i] + CIC_CONTROL,
-					     CIC_CONTROL_CIC_START_A_BIT |
-					     CIC_CONTROL_CIC_START_B_BIT,
-					     CIC_CONTROL_CIC_START_A(1) |
-					     CIC_CONTROL_CIC_START_B(1));
+					     CIC_CONTROL_CIC_START_A |
+					     CIC_CONTROL_CIC_START_B,
+					     FIELD_PREP(CIC_CONTROL_CIC_START_A, 1) |
+					     FIELD_PREP(CIC_CONTROL_CIC_START_B, 1));
 			dai_dmic_update_bits(dmic, base[i] + MIC_CONTROL,
-					     MIC_CONTROL_PDM_EN_A_BIT |
-					     MIC_CONTROL_PDM_EN_B_BIT,
-					     MIC_CONTROL_PDM_EN_A(1) |
-					     MIC_CONTROL_PDM_EN_B(1));
+					     MIC_CONTROL_PDM_EN_A |
+					     MIC_CONTROL_PDM_EN_B,
+					     FIELD_PREP(MIC_CONTROL_PDM_EN_A, 1) |
+					     FIELD_PREP(MIC_CONTROL_PDM_EN_B, 1));
 		} else if (mic_a) {
 			dai_dmic_update_bits(dmic, base[i] + CIC_CONTROL,
-					     CIC_CONTROL_CIC_START_A_BIT,
-					     CIC_CONTROL_CIC_START_A(1));
+					     CIC_CONTROL_CIC_START_A,
+					     FIELD_PREP(CIC_CONTROL_CIC_START_A, 1));
 			dai_dmic_update_bits(dmic, base[i] + MIC_CONTROL,
-					     MIC_CONTROL_PDM_EN_A_BIT,
-					     MIC_CONTROL_PDM_EN_A(1));
+					     MIC_CONTROL_PDM_EN_A,
+					     FIELD_PREP(MIC_CONTROL_PDM_EN_A, 1));
 		} else if (mic_b) {
 			dai_dmic_update_bits(dmic, base[i] + CIC_CONTROL,
-					     CIC_CONTROL_CIC_START_B_BIT,
-					     CIC_CONTROL_CIC_START_B(1));
+					     CIC_CONTROL_CIC_START_B,
+					     FIELD_PREP(CIC_CONTROL_CIC_START_B, 1));
 			dai_dmic_update_bits(dmic, base[i] + MIC_CONTROL,
-					     MIC_CONTROL_PDM_EN_B_BIT,
-					     MIC_CONTROL_PDM_EN_B(1));
+					     MIC_CONTROL_PDM_EN_B,
+					     FIELD_PREP(MIC_CONTROL_PDM_EN_B, 1));
 		}
 
 		switch (dmic->dai_config_params.dai_index) {
 		case 0:
 			dai_dmic_update_bits(dmic, base[i] + FIR_CONTROL_A,
-					     FIR_CONTROL_A_START_BIT,
-					     FIR_CONTROL_A_START(fir_a));
+					     FIR_CONTROL_START,
+					     FIELD_PREP(FIR_CONTROL_START, fir_a));
 			break;
 		case 1:
 			dai_dmic_update_bits(dmic, base[i] + FIR_CONTROL_B,
-					     FIR_CONTROL_B_START_BIT,
-					     FIR_CONTROL_B_START(fir_b));
+					     FIR_CONTROL_START,
+					     FIELD_PREP(FIR_CONTROL_START, fir_b));
 			break;
 		}
 	}
@@ -656,7 +656,7 @@ static void dai_dmic_start(struct dai_intel_dmic *dmic)
 	 */
 	for (i = 0; i < CONFIG_DAI_DMIC_HW_CONTROLLERS; i++) {
 		dai_dmic_update_bits(dmic, base[i] + CIC_CONTROL,
-				     CIC_CONTROL_SOFT_RESET_BIT, 0);
+				     CIC_CONTROL_SOFT_RESET, 0);
 
 		LOG_INF("dmic_start(), cic 0x%08x",
 			dai_dmic_read(dmic, base[i] + CIC_CONTROL));
@@ -704,21 +704,21 @@ static void dai_dmic_stop(struct dai_intel_dmic *dmic, bool stop_is_pause)
 		/* Don't stop CIC yet if one FIFO remains active */
 		if (dai_dmic_global.active_fifos_mask == 0) {
 			dai_dmic_update_bits(dmic, base[i] + CIC_CONTROL,
-					     CIC_CONTROL_SOFT_RESET_BIT |
-					     CIC_CONTROL_MIC_MUTE_BIT,
-					     CIC_CONTROL_SOFT_RESET_BIT |
-					     CIC_CONTROL_MIC_MUTE_BIT);
+					     CIC_CONTROL_SOFT_RESET |
+					     CIC_CONTROL_MIC_MUTE,
+					     CIC_CONTROL_SOFT_RESET |
+					     CIC_CONTROL_MIC_MUTE);
 		}
 		switch (dmic->dai_config_params.dai_index) {
 		case 0:
 			dai_dmic_update_bits(dmic, base[i] + FIR_CONTROL_A,
-					     FIR_CONTROL_A_MUTE_BIT,
-					     FIR_CONTROL_A_MUTE_BIT);
+					     FIR_CONTROL_MUTE,
+					     FIR_CONTROL_MUTE);
 			break;
 		case 1:
 			dai_dmic_update_bits(dmic, base[i] + FIR_CONTROL_B,
-					     FIR_CONTROL_B_MUTE_BIT,
-					     FIR_CONTROL_B_MUTE_BIT);
+					     FIR_CONTROL_MUTE,
+					     FIR_CONTROL_MUTE);
 			break;
 		}
 	}
