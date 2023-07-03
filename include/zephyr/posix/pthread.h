@@ -297,6 +297,12 @@ static inline int pthread_mutexattr_destroy(pthread_mutexattr_t *m)
 
 #define PTHREAD_BARRIER_SERIAL_THREAD 1
 
+/*
+ *  Barrier attributes - type
+ */
+#define PTHREAD_PROCESS_PRIVATE		0
+#define PTHREAD_PROCESS_PUBLIC		1
+
 /**
  * @brief POSIX threading compatibility API
  *
@@ -323,29 +329,30 @@ int pthread_barrier_destroy(pthread_barrier_t *b);
  * @brief POSIX threading compatibility API
  *
  * See IEEE 1003.1
- *
- * Note that pthread attribute structs are currently noops in Zephyr.
  */
-static inline int pthread_barrierattr_init(pthread_barrierattr_t *b)
-{
-	ARG_UNUSED(b);
-
-	return 0;
-}
+int pthread_barrierattr_init(pthread_barrierattr_t *b);
 
 /**
  * @brief POSIX threading compatibility API
  *
  * See IEEE 1003.1
- *
- * Note that pthread attribute structs are currently noops in Zephyr.
  */
-static inline int pthread_barrierattr_destroy(pthread_barrierattr_t *b)
-{
-	ARG_UNUSED(b);
+int pthread_barrierattr_destroy(pthread_barrierattr_t *b);
 
-	return 0;
-}
+/**
+ * @brief POSIX threading compatibility API
+ *
+ * See IEEE 1003.1
+ */
+int pthread_barrierattr_setpshared(pthread_barrierattr_t *attr, int pshared);
+
+/**
+ * @brief POSIX threading compatibility API
+ *
+ * See IEEE 1003.1
+ */
+int pthread_barrierattr_getpshared(const pthread_barrierattr_t *ZRESTRICT attr,
+				   int *ZRESTRICT pshared);
 
 /* Predicates and setters for various pthread attribute values that we
  * don't support (or always support: the "process shared" attribute
@@ -370,8 +377,6 @@ int pthread_mutexattr_getrobust(const pthread_mutexattr_t * int *);
 int pthread_mutexattr_setprioceiling(pthread_mutexattr_t *, int);
 int pthread_mutexattr_setpshared(pthread_mutexattr_t *, int);
 int pthread_mutexattr_setrobust(pthread_mutexattr_t *, int);
-int pthread_barrierattr_getpshared(const pthread_barrierattr_t *, int *);
-int pthread_barrierattr_setpshared(pthread_barrierattr_t *, int);
 */
 
 /* Base Pthread related APIs */
