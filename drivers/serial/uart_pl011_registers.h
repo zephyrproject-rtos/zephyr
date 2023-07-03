@@ -105,6 +105,16 @@ volatile struct pl011_regs *const get_uart(const struct device *dev)
 #define PL011_CR_RTSEn		BIT(14)	/* RTS hw flow control enable */
 #define PL011_CR_CTSEn		BIT(15)	/* CTS hw flow control enable */
 
+/* PL011 Control Register - vendor-specific fields */
+#define PL011_CR_AMBIQ_CLKEN	BIT(3)	/* clock enable */
+#define PL011_CR_AMBIQ_CLKSEL	GENMASK(6, 4) /* clock select */
+#define PL011_CR_AMBIQ_CLKSEL_NOCLK	0
+#define PL011_CR_AMBIQ_CLKSEL_24MHZ	1
+#define PL011_CR_AMBIQ_CLKSEL_12MHZ	2
+#define PL011_CR_AMBIQ_CLKSEL_6MHZ	3
+#define PL011_CR_AMBIQ_CLKSEL_3MHZ	4
+#define PL011_CR_AMBIQ_CLKSEL_48MHZ	5
+
 /* PL011 Interrupt Fifo Level Select Register */
 #define PL011_IFLS_RXIFLSEL_M	GENMASK(5, 3)
 #define RXIFLSEL_1_2_FULL	2UL
