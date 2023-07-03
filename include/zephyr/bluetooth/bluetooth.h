@@ -2250,6 +2250,15 @@ static inline int bt_le_whitelist_clear(void)
 /**
  * @brief Set (LE) channel map.
  *
+ * Channel map format is chan_map[5] = {0xXX, 0xXX, 0xXX, 0xXX, 0xXX};
+ * chan_map[0] = 0-7
+ * chan_map[1] = 8-15
+ * chan_map[2] = 16-23
+ * chan_map[3] = 24-31
+ * chan_map[4] = 32-39
+ *
+ * A bit set in this array disables the specified channel.
+ *
  * @param chan_map Channel map.
  *
  * @return Zero on success or error code otherwise, positive in case of
