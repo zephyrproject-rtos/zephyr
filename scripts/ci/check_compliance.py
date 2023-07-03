@@ -440,9 +440,13 @@ deliberately adding new entries, then bump the 'max_top_items' variable in
         # Checks that no symbols are (re)defined in defconfigs.
 
         for node in kconf.node_iter():
+            # 'kconfiglib' is global
+            # pylint: disable=undefined-variable
             if "defconfig" in node.filename and (node.prompt or node.help):
+                name = (node.item.name if node.item not in
+                        (kconfiglib.MENU, kconfiglib.COMMENT) else str(node))
                 self.failure(f"""
-Kconfig node '{node.item.name}' found with prompt or help in {node.filename}.
+Kconfig node '{name}' found with prompt or help in {node.filename}.
 Options must not be defined in defconfig files.
 """)
                 continue
