@@ -1032,7 +1032,7 @@ static void isr_done_cleanup(void *param)
 	 * expired, hence ignore failure.
 	 */
 	(void)ticker_stop(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_LLL,
-		    TICKER_ID_SCAN_STOP, NULL, NULL);
+			  TICKER_ID_SCAN_STOP, NULL, NULL);
 
 #if defined(CONFIG_BT_CTLR_SCAN_INDICATION)
 	struct node_rx_hdr *node_rx;

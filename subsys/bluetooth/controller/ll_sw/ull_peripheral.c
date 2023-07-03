@@ -442,7 +442,7 @@ void ull_periph_setup(struct node_rx_hdr *rx, struct node_rx_ftr *ftr,
 		 * expired, hence ignore failure.
 		 */
 		(void)ticker_stop(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_ULL_HIGH,
-			    TICKER_ID_ADV_STOP, NULL, NULL);
+				  TICKER_ID_ADV_STOP, NULL, NULL);
 	}
 
 	/* Start Peripheral */
