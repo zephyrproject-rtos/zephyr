@@ -193,7 +193,7 @@ manifest:
       groups:
         - hal
     - name: hal_quicklogic
-      revision: b3a66fe6d04d87fd1533a5c8de51d0599fcd08d0
+      revision: pull/4/head
       path: modules/hal/quicklogic
       repo-path: hal_quicklogic
       groups:
