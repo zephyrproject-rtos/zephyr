@@ -8,7 +8,9 @@
 #define FLASH_SIZE   DT_REG_SIZE(DT_INST(0, soc_nv_flash))
 #define FLASH_ORIGIN DT_REG_ADDR(DT_INST(0, soc_nv_flash))
 
-#include "flash.h"
+#include <clock.h>
+#include <watchdog.h>
+#include <flash.h>
 #include <string.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/flash.h>
@@ -22,10 +24,12 @@
 #define SECTOR_SIZE            (0x1000u)
 #define SECTOR_PAGES           (SECTOR_SIZE / PAGE_SIZE)
 
+#define FLASH_B91_ACCESS_TIMEOUT_MS  30
+
 
 /* driver data structure */
 struct flash_b91_data {
-	struct k_sem write_lock;
+	struct k_mutex flash_lock;
 };
 
 /* driver parameters structure */
@@ -56,7 +60,7 @@ static int flash_b91_init(const struct device *dev)
 {
 	struct flash_b91_data *dev_data = dev->data;
 
-	k_sem_init(&dev_data->write_lock, 1, 1);
+	k_mutex_init(&dev_data->flash_lock);
 
 	return 0;
 }
@@ -82,9 +86,15 @@ static int flash_b91_erase(const struct device *dev, off_t offset, size_t len)
 		return -EINVAL;
 	}
 
-	/* take semaphore */
-	if (k_sem_take(&dev_data->write_lock, K_NO_WAIT)) {
+	if (k_mutex_lock(&dev_data->flash_lock, K_MSEC(FLASH_B91_ACCESS_TIMEOUT_MS))) {
 		return -EACCES;
+	}
+
+	bool wdt_been_enabled = false;
+
+	if (BM_IS_SET(reg_tmr_ctrl2, FLD_TMR_WD_EN)) {
+		BM_CLR(reg_tmr_ctrl2, FLD_TMR_WD_EN);
+		wdt_been_enabled = true;
 	}
 
 	while (page_nums) {
@@ -112,8 +122,11 @@ static int flash_b91_erase(const struct device *dev, off_t offset, size_t len)
 		}
 	}
 
-	/* release semaphore */
-	k_sem_give(&dev_data->write_lock);
+	if (wdt_been_enabled) {
+		BM_SET(reg_tmr_ctrl2, FLD_TMR_WD_EN);
+	}
+
+	k_mutex_unlock(&dev_data->flash_lock);
 
 	return 0;
 }
@@ -135,9 +148,15 @@ static int flash_b91_write(const struct device *dev, off_t offset,
 		return -EINVAL;
 	}
 
-	/* take semaphore */
-	if (k_sem_take(&dev_data->write_lock, K_NO_WAIT)) {
+	if (k_mutex_lock(&dev_data->flash_lock, K_MSEC(FLASH_B91_ACCESS_TIMEOUT_MS))) {
 		return -EACCES;
+	}
+
+	bool wdt_been_enabled = false;
+
+	if (BM_IS_SET(reg_tmr_ctrl2, FLD_TMR_WD_EN)) {
+		BM_CLR(reg_tmr_ctrl2, FLD_TMR_WD_EN);
+		wdt_been_enabled = true;
 	}
 
 	/* need to store data in intermediate RAM buffer in case from flash to flash write */
@@ -146,7 +165,10 @@ static int flash_b91_write(const struct device *dev, off_t offset,
 
 		buf = k_malloc(len);
 		if (buf == NULL) {
-			k_sem_give(&dev_data->write_lock);
+			if (wdt_been_enabled) {
+				BM_SET(reg_tmr_ctrl2, FLD_TMR_WD_EN);
+			}
+			k_mutex_unlock(&dev_data->flash_lock);
 			return -ENOMEM;
 		}
 
@@ -165,8 +187,11 @@ static int flash_b91_write(const struct device *dev, off_t offset,
 		k_free(buf);
 	}
 
-	/* release semaphore */
-	k_sem_give(&dev_data->write_lock);
+	if (wdt_been_enabled) {
+		BM_SET(reg_tmr_ctrl2, FLD_TMR_WD_EN);
+	}
+
+	k_mutex_unlock(&dev_data->flash_lock);
 
 	return 0;
 }
@@ -175,7 +200,7 @@ static int flash_b91_write(const struct device *dev, off_t offset,
 static int flash_b91_read(const struct device *dev, off_t offset,
 			  void *data, size_t len)
 {
-	ARG_UNUSED(dev);
+	struct flash_b91_data *dev_data = dev->data;
 
 	/* return SUCCESS if len equals 0 (required by tests/drivers/flash) */
 	if (!len) {
@@ -187,8 +212,25 @@ static int flash_b91_read(const struct device *dev, off_t offset,
 		return -EINVAL;
 	}
 
+	if (k_mutex_lock(&dev_data->flash_lock, K_MSEC(FLASH_B91_ACCESS_TIMEOUT_MS))) {
+		return -EACCES;
+	}
+
+	bool wdt_been_enabled = false;
+
+	if (BM_IS_SET(reg_tmr_ctrl2, FLD_TMR_WD_EN)) {
+		BM_CLR(reg_tmr_ctrl2, FLD_TMR_WD_EN);
+		wdt_been_enabled = true;
+	}
+
 	/* read flash */
 	flash_read_page(CONFIG_FLASH_BASE_ADDRESS + offset, len, (unsigned char *)data);
+
+	if (wdt_been_enabled) {
+		BM_SET(reg_tmr_ctrl2, FLD_TMR_WD_EN);
+	}
+
+	k_mutex_unlock(&dev_data->flash_lock);
 
 	return 0;
 }
