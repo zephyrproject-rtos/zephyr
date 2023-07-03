@@ -3,10 +3,11 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <sys/time.h>
+#include <time.h>
+#include <unistd.h>
+
 #include <zephyr/ztest.h>
-#include <zephyr/posix/time.h>
-#include <zephyr/posix/sys/time.h>
-#include <zephyr/posix/unistd.h>
 
 #define SLEEP_SECONDS 1
 #define CLOCK_INVALID -1

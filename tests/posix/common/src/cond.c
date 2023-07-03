@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/ztest.h>
-
 #include <pthread.h>
+
+#include <zephyr/ztest.h>
 
 /**
  * @brief Test to demonstrate limited condition variable resources
