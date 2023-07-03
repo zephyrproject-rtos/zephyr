@@ -1,0 +1,18 @@
+# Copyright (c) 2023 Antmicro <www.antmicro.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: Ambiq UART controller (PL011 compatible)
+
+compatible: "ambiq,uart"
+
+include: ["arm,pl011.yaml", pinctrl-device.yaml, ambiq-pwrcfg.yaml]
+
+properties:
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  ambiq,pwrcfg:
+    required: true
