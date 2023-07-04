@@ -1,5 +1,10 @@
 # SPDX-License-Identifier: Apache-2.0
 
+if (NOT CMAKE_HOST_UNIX OR CMAKE_HOST_APPLE)
+  message(FATAL_ERROR "The POSIX architecture only works on Linux. If on Windows or macOS "
+          "consider using a virtual machine to run a Linux guest.")
+endif()
+
 # This native_simulator library is used to pass options to the
 # native_simulator runner build. Currently the following are used:
 #  INTERFACE_COMPILE_OPTIONS:
