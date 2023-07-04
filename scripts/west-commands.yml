@@ -56,3 +56,8 @@ west-commands:
       - name: blobs
         class: Blobs
         help: work with binary blobs
+  - file: scripts/west_commands/patch.py
+    commands:
+      - name: patch
+        class: Patch
+        help: Apply formatted patches, specified in the manifest file
