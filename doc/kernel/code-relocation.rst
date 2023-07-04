@@ -62,9 +62,6 @@ for  data copy operations from ROM to required memory type.
   .. note::
 
      function zephyr_code_relocate() can be called  as many times as required.
-     This step has to be performed before calling find_package(Zephyr ...)
-     in the application's CMakeLists.txt.
-
 
 Additional Configurations
 =========================
