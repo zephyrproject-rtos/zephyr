@@ -47,7 +47,9 @@
 LOG_MODULE_REGISTER(bt_conn);
 
 struct tx_meta {
-	struct bt_conn_tx *tx;
+	bt_conn_tx_cb_t cb;
+	void *cb_user_data;
+
 	/* This flag indicates if the current buffer has already been partially
 	 * sent to the controller (ie, the next fragments should be sent as
 	 * continuations).
@@ -434,8 +436,6 @@ int bt_conn_send_iso_cb(struct bt_conn *conn, struct net_buf *buf,
 int bt_conn_send_cb(struct bt_conn *conn, struct net_buf *buf,
 		    bt_conn_tx_cb_t cb, void *user_data)
 {
-	struct bt_conn_tx *tx;
-
 	LOG_DBG("conn handle %u buf len %u cb %p user_data %p", conn->handle, buf->len, cb,
 		user_data);
 
@@ -452,29 +452,8 @@ int bt_conn_send_cb(struct bt_conn *conn, struct net_buf *buf,
 		return -ENOTCONN;
 	}
 
-	if (cb) {
-		tx = conn_tx_alloc();
-		if (!tx) {
-			LOG_DBG("Unable to allocate TX context");
-			return -ENOBUFS;
-		}
-
-		/* Verify that we're still connected after blocking */
-		if (conn->state != BT_CONN_CONNECTED) {
-			LOG_WRN("Disconnected while allocating context");
-			tx_free(tx);
-			return -ENOTCONN;
-		}
-
-		tx->cb = cb;
-		tx->user_data = user_data;
-		tx->pending_no_cb = 0U;
-
-		tx_data(buf)->tx = tx;
-	} else {
-		tx_data(buf)->tx = NULL;
-	}
-
+	tx_data(buf)->cb = cb;
+	tx_data(buf)->cb_user_data = user_data;
 	tx_data(buf)->is_cont = false;
 
 	net_buf_put(&conn->tx_queue, buf);
@@ -570,10 +549,10 @@ static inline uint16_t conn_mtu(struct bt_conn *conn)
 #endif /* CONFIG_BT_CONN */
 }
 
-static int do_send_frag(struct bt_conn *conn, struct net_buf *buf, uint8_t flags)
+static int do_send_frag(struct bt_conn *conn, struct net_buf *buf, uint8_t flags,
+			struct bt_conn_tx *tx)
 {
-	struct bt_conn_tx *tx = tx_data(buf)->tx;
-	uint32_t *pending_no_cb;
+	uint32_t *pending_no_cb = NULL;
 	unsigned int key;
 	int err = 0;
 
@@ -643,7 +622,6 @@ fail:
 		/* `buf` might not get destroyed, and its `tx` pointer will still be reachable.
 		 * Make sure that we don't try to use the destroyed context later.
 		 */
-		tx_data(buf)->tx = NULL;
 		conn_tx_destroy(conn, tx);
 	}
 
@@ -669,6 +647,8 @@ static int send_frag(struct bt_conn *conn,
 		     struct net_buf *buf, struct net_buf *frag,
 		     uint8_t flags)
 {
+	struct bt_conn_tx *tx = NULL;
+
 	/* Check if the controller can accept ACL packets */
 	if (k_sem_take(bt_conn_get_pkts(conn), K_NO_WAIT)) {
 		LOG_DBG("no controller bufs");
@@ -684,6 +664,25 @@ static int send_frag(struct bt_conn *conn,
 		net_buf_add_mem(frag, buf->data, frag_len);
 		net_buf_pull(buf, frag_len);
 	} else {
+		if (tx_data(buf)->cb) {
+			tx = conn_tx_alloc();
+			if (!tx) {
+				LOG_DBG("Unable to allocate TX context");
+				return -ENOBUFS;
+			}
+
+			/* Verify that we're still connected after blocking */
+			if (conn->state != BT_CONN_CONNECTED) {
+				LOG_WRN("Disconnected while allocating context");
+				tx_free(tx);
+				return -ENOTCONN;
+			}
+
+			tx->cb = tx_data(buf)->cb;
+			tx->user_data = tx_data(buf)->cb_user_data;
+			tx->pending_no_cb = 0U;
+		}
+
 		/* De-queue the buffer now that we know we can send it.
 		 * Only applies if the buffer to be sent is the original buffer,
 		 * and not one of its fragments.
@@ -693,7 +692,7 @@ static int send_frag(struct bt_conn *conn,
 		frag = buf;
 	}
 
-	return do_send_frag(conn, frag, flags);
+	return do_send_frag(conn, frag, flags, tx);
 }
 
 static struct net_buf *create_frag(struct bt_conn *conn, struct net_buf *buf)
@@ -721,7 +720,7 @@ static struct net_buf *create_frag(struct bt_conn *conn, struct net_buf *buf)
 	}
 
 	/* Fragments never have a TX completion callback */
-	tx_data(frag)->tx = NULL;
+	tx_data(frag)->cb = NULL;
 	tx_data(frag)->is_cont = false;
 
 	return frag;
@@ -787,17 +786,11 @@ static void conn_cleanup(struct bt_conn *conn)
 
 	/* Give back any allocated buffers */
 	while ((buf = net_buf_get(&conn->tx_queue, K_NO_WAIT))) {
-		struct bt_conn_tx *tx = tx_data(buf)->tx;
+		bt_conn_tx_cb_t cb = tx_data(buf)->cb;
+		void *cb_user_data = tx_data(buf)->cb_user_data;
 
-		tx_data(buf)->tx = NULL;
-
-		/* destroy the buffer */
 		net_buf_unref(buf);
-
-		/* destroy the tx context (and any associated meta-data) */
-		if (tx) {
-			conn_tx_destroy(conn, tx);
-		}
+		cb(conn, cb_user_data, -ESHUTDOWN);
 	}
 
 	__ASSERT(sys_slist_is_empty(&conn->tx_pending), "Pending TX packets");
@@ -942,17 +935,12 @@ void bt_conn_process_tx(struct bt_conn *conn)
 	net_buf_unref(buf);
 
 	if (err  == -EIO) {
-		struct bt_conn_tx *tx = tx_data(buf)->tx;
-
-		tx_data(buf)->tx = NULL;
+		bt_conn_tx_cb_t cb = tx_data(buf)->cb;
+		void *cb_user_data = tx_data(buf)->cb_user_data;
 
 		/* destroy the buffer */
 		net_buf_unref(buf);
-
-		/* destroy the tx context (and any associated meta-data) */
-		if (tx) {
-			conn_tx_destroy(conn, tx);
-		}
+		cb(conn, cb_user_data, -ESHUTDOWN);
 	}
 }
 
