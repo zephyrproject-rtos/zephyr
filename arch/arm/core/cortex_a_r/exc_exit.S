@@ -23,7 +23,7 @@ _ASM_FILE_PROLOGUE
 
 GTEXT(z_arm_exc_exit)
 GTEXT(z_arm_int_exit)
-GTEXT(z_arm_pendsv)
+GTEXT(z_arm_do_swap)
 GDATA(_kernel)
 
 .macro userspace_exc_exit
@@ -148,7 +148,7 @@ SECTION_SUBSEC_FUNC(TEXT, _HandlerModeExit, z_arm_int_exit)
 	ldr r1, [r3, #_kernel_offset_to_current]
 	ldr r0, [r3, #_kernel_offset_to_ready_q_cache]
 	cmp r0, r1
-	blne z_arm_pendsv
+	blne z_arm_do_swap
 __EXIT_INT:
 #endif /* CONFIG_PREEMPT_ENABLED */
 
@@ -231,12 +231,12 @@ SECTION_SUBSEC_FUNC(TEXT, _HandlerModeExit, z_arm_exc_exit)
 	/*
 	 * Switch in the next scheduled thread.
 	 *
-	 * Note that z_arm_pendsv must be called in the SVC mode because it
+	 * Note that z_arm_do_swap must be called in the SVC mode because it
 	 * switches to the SVC mode during context switch and returns to the
 	 * caller using lr_svc.
 	 */
 	cps #MODE_SVC
-	bl z_arm_pendsv
+	bl z_arm_do_swap
 
 	/* Decrement exception nesting count */
 	ldr r3, =_kernel

@@ -36,16 +36,11 @@ int arch_swap(unsigned int key)
 	_current->arch.basepri = key;
 	_current->arch.swap_return_value = _k_neg_eagain;
 
-#if defined(CONFIG_CPU_CORTEX_M)
 	/* set pending bit to make sure we will take a PendSV exception */
 	SCB->ICSR |= SCB_ICSR_PENDSVSET_Msk;
 
 	/* clear mask or enable all irqs to take a pendsv */
 	irq_unlock(0);
-#elif defined(CONFIG_CPU_AARCH32_CORTEX_R) || defined(CONFIG_CPU_AARCH32_CORTEX_A)
-	z_arm_cortex_r_svc();
-	irq_unlock(key);
-#endif
 
 	/* Context switch is performed here. Returning implies the
 	 * thread has been context-switched-in again.
