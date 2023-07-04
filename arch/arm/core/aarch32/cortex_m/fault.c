@@ -16,6 +16,7 @@
 #include <kernel_internal.h>
 #include <inttypes.h>
 #include <zephyr/exc_handle.h>
+#include <zephyr/linker/linker-defs.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/barrier.h>
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
@@ -729,6 +730,30 @@ static inline bool z_arm_is_synchronous_svc(z_arch_esf_t *esf)
 	return false;
 }
 
+#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
+static inline bool z_arm_is_pc_valid(uintptr_t pc)
+{
+	/* Is it in valid text region */
+	if ((((uintptr_t)&__text_region_start) <= pc) && (pc < ((uintptr_t)&__text_region_end))) {
+		return true;
+	}
+
+	/* Is it in valid ramfunc range */
+	if ((((uintptr_t)&__ramfunc_start) <= pc) && (pc < ((uintptr_t)&__ramfunc_end))) {
+		return true;
+	}
+
+#if DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_itcm), okay)
+	/* Is it in the ITCM */
+	if ((((uintptr_t)&__itcm_start) <= pc) && (pc < ((uintptr_t)&__itcm_end))) {
+		return true;
+	}
+#endif
+
+	return false;
+}
+#endif
+
 /**
  *
  * @brief Dump hard fault information
@@ -752,8 +777,8 @@ static uint32_t hard_fault(z_arch_esf_t *esf, bool *recoverable)
 	 * priority. We handle the case of Kernel OOPS and Stack
 	 * Fail here.
 	 */
-	if (z_arm_is_synchronous_svc(esf)) {
 
+	if (z_arm_is_pc_valid((uintptr_t)esf->basic.pc) && z_arm_is_synchronous_svc(esf)) {
 		PR_EXC("ARCH_EXCEPT with reason %x\n", esf->basic.r0);
 		reason = esf->basic.r0;
 	}
