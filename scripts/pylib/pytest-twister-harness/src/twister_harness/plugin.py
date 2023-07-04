@@ -87,10 +87,10 @@ def pytest_addoption(parser: pytest.Parser):
              'will translate to "west flash -- --board-id=foobar --erase"'
     )
     twister_harness_group.addoption(
-        '--flashing-timeout',
-        type=int,
-        default=60,
-        help='Set timeout for the device flash operation in seconds.'
+        '--connection-timeout',
+        type=float,
+        default=60.0,
+        help='Set timeout for the connection with device in seconds.'
     )
     twister_harness_group.addoption(
         '--build-dir',

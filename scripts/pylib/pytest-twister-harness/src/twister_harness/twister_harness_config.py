@@ -24,7 +24,7 @@ class DeviceConfig:
     product: str = ''
     serial_pty: str = ''
     west_flash_extra_args: list[str] = field(default_factory=list, repr=False)
-    flashing_timeout: int = 60  # [s]
+    connection_timeout: float = 60.0  # [s]
     build_dir: Path | str = ''
     binary_file: Path | str = ''
     name: str = ''
@@ -59,7 +59,7 @@ class TwisterHarnessConfig:
             product=config.option.device_product,
             serial_pty=config.option.device_serial_pty,
             west_flash_extra_args=west_flash_extra_args,
-            flashing_timeout=config.option.flashing_timeout,
+            connection_timeout=config.option.connection_timeout,
             build_dir=config.option.build_dir,
             binary_file=config.option.binary_file,
             pre_script=config.option.pre_script,

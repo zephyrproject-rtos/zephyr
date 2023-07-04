@@ -72,15 +72,15 @@ class SimulatorAdapterBase(DeviceAbstract, abc.ABC):
         }
         self._data_to_send: bytes | None = None
 
-    def connect(self, timeout: float = 1) -> None:
+    def connect(self) -> None:
         pass  # pragma: no cover
 
-    def flash_and_run(self, timeout: float = 60.0) -> None:
+    def flash_and_run(self) -> None:
         if not self.command:
             msg = 'Run simulation command is empty, please verify if it was generated properly.'
             logger.error(msg)
             raise TwisterHarnessException(msg)
-        self._thread = threading.Thread(target=self._run_simulation, args=(timeout,), daemon=True)
+        self._thread = threading.Thread(target=self._run_simulation, args=(self.connection_timeout,), daemon=True)
         self._thread.start()
         # Give a time to start subprocess before test is executed
         time.sleep(0.1)
@@ -112,7 +112,7 @@ class SimulatorAdapterBase(DeviceAbstract, abc.ABC):
         finally:
             self.queue.put(END_OF_DATA)  # indicate to the other threads that there will be no more data in queue
 
-    async def _run_command(self, timeout: float = 60.):
+    async def _run_command(self, timeout: float):
         assert isinstance(self.command, (list, tuple, set))
         # to avoid stupid and difficult to debug mistakes
         # we are using asyncio to run subprocess to be able to read from stdout

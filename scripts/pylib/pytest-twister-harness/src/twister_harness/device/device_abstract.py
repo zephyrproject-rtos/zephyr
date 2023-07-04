@@ -23,6 +23,7 @@ class DeviceAbstract(abc.ABC):
         :param device_config: device configuration
         """
         self.device_config: DeviceConfig = device_config
+        self.connection_timeout: float = device_config.connection_timeout
         self.handler_log_file: LogFile = NullLogFile.create()
         self.device_log_file: LogFile = NullLogFile.create()
         self.iter_object: Generator[str, None, None] | None = None
@@ -36,7 +37,7 @@ class DeviceAbstract(abc.ABC):
         return env
 
     @abc.abstractmethod
-    def connect(self, timeout: float = 1) -> None:
+    def connect(self) -> None:
         """Connect with the device (e.g. via UART)"""
 
     @abc.abstractmethod
@@ -45,16 +46,10 @@ class DeviceAbstract(abc.ABC):
 
     @abc.abstractmethod
     def generate_command(self) -> None:
-        """
-        Generate command which will be used during flashing or running device.
-        """
+        """Generate command which will be used during flashing or running device."""
 
-    def flash_and_run(self, timeout: float = 60.0) -> None:
-        """
-        Flash and run application on a device.
-
-        :param timeout: time out in seconds
-        """
+    def flash_and_run(self) -> None:
+        """Flash and run application on a device."""
 
     @abc.abstractmethod
     def write(self, data: bytes) -> None:
@@ -62,9 +57,7 @@ class DeviceAbstract(abc.ABC):
 
     @abc.abstractmethod
     def initialize_log_files(self):
-        """
-        Initialize file to store logs.
-        """
+        """Initialize file to store logs."""
 
     def stop(self) -> None:
         """Stop device."""

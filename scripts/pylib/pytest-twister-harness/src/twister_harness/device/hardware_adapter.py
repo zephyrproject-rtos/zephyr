@@ -38,18 +38,15 @@ class HardwareAdapter(DeviceAbstract):
         }
         self.serial_pty_proc: subprocess.Popen | None = None
 
-    def connect(self, timeout: float = 1) -> None:
-        """
-        Open serial connection.
+    def connect(self) -> None:
+        """Open serial connection."""
 
-        :param timeout: Read timeout value in seconds
-        """
         if self.connection:
             # already opened
             return
 
         if self.device_config.pre_script:
-            self.run_custom_script(self.device_config.pre_script, 30)
+            self.run_custom_script(self.device_config.pre_script, self.connection_timeout)
 
         serial_name = self._open_serial_pty() or self.device_config.serial
         logger.info('Opening serial connection for %s', serial_name)
@@ -60,7 +57,7 @@ class HardwareAdapter(DeviceAbstract):
                 parity=serial.PARITY_NONE,
                 stopbits=serial.STOPBITS_ONE,
                 bytesize=serial.EIGHTBITS,
-                timeout=timeout
+                timeout=self.connection_timeout
             )
         except serial.SerialException as e:
             logger.exception('Cannot open connection: %s', e)
@@ -80,7 +77,7 @@ class HardwareAdapter(DeviceAbstract):
 
     def stop(self) -> None:
         if self.device_config.post_script:
-            self.run_custom_script(self.device_config.post_script, 30)
+            self.run_custom_script(self.device_config.post_script, self.connection_timeout)
 
     def _open_serial_pty(self) -> str | None:
         """Open a pty pair, run process and return tty name"""
@@ -152,7 +149,7 @@ class HardwareAdapter(DeviceAbstract):
         self.command = command
 
     @staticmethod
-    def run_custom_script(script, timeout):
+    def run_custom_script(script, timeout: float) -> None:
         with subprocess.Popen(script, stderr=subprocess.PIPE, stdout=subprocess.PIPE) as proc:
             try:
                 stdout, stderr = proc.communicate(timeout=timeout)
@@ -165,7 +162,7 @@ class HardwareAdapter(DeviceAbstract):
                 proc.communicate()
                 logger.error("{} timed out".format(script))
 
-    def flash_and_run(self, timeout: float = 60.0) -> None:
+    def flash_and_run(self) -> None:
         if not self.command:
             msg = 'Flash command is empty, please verify if it was generated properly.'
             logger.error(msg)
@@ -184,7 +181,7 @@ class HardwareAdapter(DeviceAbstract):
         else:
             stdout = stderr = None
             try:
-                stdout, stderr = process.communicate(timeout=self.device_config.flashing_timeout)
+                stdout, stderr = process.communicate(timeout=self.connection_timeout)
             except subprocess.TimeoutExpired:
                 process.kill()
             finally:
@@ -199,7 +196,7 @@ class HardwareAdapter(DeviceAbstract):
                 raise TwisterHarnessException(f'Could not flash device {self.device_config.id}')
         finally:
             if self.device_config.post_flash_script:
-                self.run_custom_script(self.device_config.post_flash_script, 30)
+                self.run_custom_script(self.device_config.post_flash_script, self.connection_timeout)
 
     def iter_stdout_lines(self) -> Generator[str, None, None]:
         """Return output from serial."""

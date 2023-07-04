@@ -41,7 +41,6 @@ class QemuAdapter(DeviceAbstract):
         self._emulation_was_finished: bool = False
         self.connection = FifoHandler(Path(self.device_config.build_dir).joinpath(QEMU_FIFO_FILE_NAME))
         self.command: list[str] = []
-        self.timeout: float = 60  # running timeout in seconds
         self.booting_timeout_in_ms: int = 10_000  #: wait time for booting Qemu in milliseconds
 
     def generate_command(self) -> None:
@@ -52,18 +51,17 @@ class QemuAdapter(DeviceAbstract):
         else:
             self.command = [west, 'build', '-d', str(self.device_config.build_dir), '-t', 'run']
 
-    def connect(self, timeout: float = 1) -> None:
+    def connect(self) -> None:
         logger.debug('Opening connection')
         self.connection.connect()
 
-    def flash_and_run(self, timeout: float = 60.0) -> None:
-        self.timeout = timeout
+    def flash_and_run(self) -> None:
         if not self.command:
             msg = 'Run simulation command is empty, please verify if it was generated properly.'
             logger.error(msg)
             raise TwisterHarnessException(msg)
 
-        self._thread = threading.Thread(target=self._run_command, args=(self.timeout,), daemon=True)
+        self._thread = threading.Thread(target=self._run_command, args=(self.connection_timeout,), daemon=True)
         self._thread.start()
         # Give a time to start subprocess before test is executed
         time.sleep(0.1)
@@ -167,7 +165,7 @@ class QemuAdapter(DeviceAbstract):
         t = threading.Thread(target=read_lines, daemon=True)
         t.start()
 
-        end_time = time.time() + self.timeout
+        end_time = time.time() + self.connection_timeout
         try:
             while True:
                 try:
