@@ -140,10 +140,10 @@ multiple processes.
     pthread_barrier_destroy(),yes
     pthread_barrier_init(),yes
     pthread_barrier_wait(),yes
-    pthread_barrierattr_destroy(),
-    pthread_barrierattr_getpshared(),
-    pthread_barrierattr_init(),
-    pthread_barrierattr_setpshared(),
+    pthread_barrierattr_destroy(),yes
+    pthread_barrierattr_getpshared(),yes
+    pthread_barrierattr_init(),yes
+    pthread_barrierattr_setpshared(),yes
     pthread_cancel(),yes
     pthread_cleanup_pop(),
     pthread_cleanup_push(),
