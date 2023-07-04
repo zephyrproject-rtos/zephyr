@@ -20,6 +20,11 @@
 
 void __esp_platform_start(void);
 
+static inline uint32_t esp_core_id(void)
+{
+	return 0;
+}
+
 extern void esp_rom_intr_matrix_set(int cpu_no, uint32_t model_num, uint32_t intr_num);
 extern void esp_rom_uart_attach(void);
 extern void esp_rom_uart_tx_wait_idle(uint8_t uart_no);
