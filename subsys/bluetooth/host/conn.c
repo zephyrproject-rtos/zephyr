@@ -447,9 +447,10 @@ int bt_conn_send_cb(struct bt_conn *conn, struct net_buf *buf,
 		user_data);
 
 	if (buf->user_data_size < CONFIG_BT_CONN_TX_USER_DATA_SIZE) {
-		LOG_ERR("not enough room in user_data %d < %d",
+		LOG_ERR("not enough room in user_data %d < %d pool %u",
 			buf->user_data_size,
-			CONFIG_BT_CONN_TX_USER_DATA_SIZE);
+			CONFIG_BT_CONN_TX_USER_DATA_SIZE,
+			buf->pool_id);
 		return -EINVAL;
 	}
 
