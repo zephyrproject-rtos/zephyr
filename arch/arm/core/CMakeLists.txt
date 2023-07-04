@@ -5,14 +5,12 @@ zephyr_library()
 zephyr_library_sources(
   cpu_idle.S
   fatal.c
-  irq_manage.c
   nmi.c
   nmi_on_reset.S
   prep_c.c
   thread.c
 )
 
-zephyr_library_sources_ifdef(CONFIG_GEN_SW_ISR_TABLE isr_wrapper.S)
 zephyr_library_sources_ifdef(CONFIG_CPP __aeabi_atexit.c)
 zephyr_library_sources_ifdef(CONFIG_IRQ_OFFLOAD irq_offload.c)
 zephyr_library_sources_ifdef(CONFIG_THREAD_LOCAL_STORAGE tls.c)
