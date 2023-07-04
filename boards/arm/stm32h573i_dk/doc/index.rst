@@ -191,6 +191,8 @@ hardware features:
 +-----------+------------+-------------------------------------+
 | AES       | on-chip    | crypto                              |
 +-----------+------------+-------------------------------------+
+| USB       | on-chip    | USB full-speed host/device bus      |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on this Zephyr port.
 
