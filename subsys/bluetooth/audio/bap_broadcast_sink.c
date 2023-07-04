@@ -1265,6 +1265,9 @@ int bt_bap_broadcast_sink_create(struct bt_le_per_adv_sync *pa_sync, uint32_t br
 		return -ENOMEM;
 	}
 
+	sink->broadcast_id = broadcast_id;
+	sink->pa_sync = pa_sync;
+
 	recv_state = bt_bap_scan_delegator_find_state(find_recv_state_by_pa_sync_cb,
 						      (void *)pa_sync);
 	if (recv_state == NULL) {
@@ -1275,14 +1278,12 @@ int bt_bap_broadcast_sink_create(struct bt_le_per_adv_sync *pa_sync, uint32_t br
 			LOG_DBG("Broadcast ID mismatch: 0x%X != 0x%X",
 				recv_state->broadcast_id, broadcast_id);
 
+			broadcast_sink_cleanup(sink);
 			return -EINVAL;
 		}
 
 		sink->bass_src_id = recv_state->src_id;
 	}
-
-	sink->broadcast_id = broadcast_id;
-	sink->pa_sync = pa_sync;
 	atomic_set_bit(sink->flags, BT_BAP_BROADCAST_SINK_FLAG_INITIALIZED);
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&sink_cbs, listener, _node) {
