@@ -274,12 +274,14 @@ struct shell_static_entry {
  * function body.
  *
  * Example usage:
- * SHELL_STATIC_SUBCMD_SET_CREATE(
- *	foo,
- *	SHELL_CMD(abc, ...),
- *	SHELL_CMD(def, ...),
- *	SHELL_SUBCMD_SET_END
- * )
+ * @code{.c}
+ *	SHELL_STATIC_SUBCMD_SET_CREATE(
+ *		foo,
+ *		SHELL_CMD(abc, ...),
+ *		SHELL_CMD(def, ...),
+ *		SHELL_SUBCMD_SET_END
+ *	)
+ * @endcode
  *
  * @param[in] name	Name of the subcommand set.
  * @param[in] ...	List of commands created with @ref SHELL_CMD_ARG or
@@ -532,6 +534,7 @@ static int UTIL_CAT(UTIL_CAT(cmd_dict_, UTIL_CAT(_handler, _)),		\
  *			passed to the _handler as user data.
  *
  * Example usage:
+ * @code{.c}
  *	static int my_handler(const struct shell *sh,
  *			      size_t argc, char **argv, void *data)
  *	{
@@ -546,6 +549,7 @@ static int UTIL_CAT(UTIL_CAT(cmd_dict_, UTIL_CAT(_handler, _)),		\
  *		(value_2, 2, "value 2"), (value_3, 3, "value 3")
  *	);
  *	SHELL_CMD_REGISTER(dictionary, &sub_dict_cmds, NULL, NULL);
+ * @endcode
  */
 #define SHELL_SUBCMD_DICT_SET_CREATE(_name, _handler, ...)		\
 	FOR_EACH_FIXED_ARG(Z_SHELL_CMD_DICT_HANDLER_CREATE, (),		\
