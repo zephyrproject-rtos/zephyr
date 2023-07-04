@@ -1,0 +1,13 @@
+/*
+ * Copyright (c) 2023 TOKITA Hiroshi <tokita.hiroshi@fujitsu.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <renesas/ra/r7fa4m1ab3cfm.dtsi>
+
+/ {
+	model = "Arduino Uno R4 Board";
+	compatible = "renesas,r7fa4m1aB3cfm";
+};
