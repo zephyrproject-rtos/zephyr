@@ -245,6 +245,61 @@
 			reg-names = "pfs", "pmisc_pwpr";
 			status = "okay";
 		};
+
+		sci0: sci@40070000 {
+			compatible = "renesas,ra-uart-sci";
+			reg = <0x40070000 0x20>;
+			interrupts = <RA_ICU_IRQ_UNSPECIFIED 0 RA_ICU_SCI0_RXI>,
+				     <RA_ICU_IRQ_UNSPECIFIED 0 RA_ICU_SCI0_TXI>,
+				     <RA_ICU_IRQ_UNSPECIFIED 0 RA_ICU_SCI0_TEI>,
+				     <RA_ICU_IRQ_UNSPECIFIED 0 RA_ICU_SCI0_ERI>,
+				     <RA_ICU_IRQ_UNSPECIFIED 0 RA_ICU_SCI0_AM>,
+				     <RA_ICU_IRQ_UNSPECIFIED 0 RA_ICU_SCI0_RXI_OR_ERI>;
+			interrupt-names = "rxi", "txi", "tei", "eri", "am", "rxi-or-eri";
+			clocks = <&cgc RA_CLOCK_SCI(0)>;
+			#clock-cells = <1>;
+			status = "disabled";
+			uart {
+				compatible = "renesas,ra-uart-sci";
+				status = "disabled";
+			};
+		};
+
+		sci1: sci@40070020 {
+			compatible = "renesas,ra-uart-sci";
+			reg = <0x40070020 0x20>;
+			interrupts = <RA_ICU_IRQ_UNSPECIFIED 0 RA_ICU_SCI1_RXI>,
+				     <RA_ICU_IRQ_UNSPECIFIED 0 RA_ICU_SCI1_TXI>,
+				     <RA_ICU_IRQ_UNSPECIFIED 0 RA_ICU_SCI1_TEI>,
+				     <RA_ICU_IRQ_UNSPECIFIED 0 RA_ICU_SCI1_ERI>,
+				     <RA_ICU_IRQ_UNSPECIFIED 0 RA_ICU_SCI1_AM>;
+			interrupt-names = "rxi", "txi", "tei", "eri", "am";
+			clocks = <&cgc RA_CLOCK_SCI(1)>;
+			#clock-cells = <1>;
+			status = "disabled";
+			uart {
+				compatible = "renesas,ra-uart-sci";
+				status = "disabled";
+			};
+		};
+
+		sci9: sci@40070120 {
+			compatible = "renesas,ra-uart-sci";
+			reg = <0x40070120 0x20>;
+			interrupts = <RA_ICU_IRQ_UNSPECIFIED 0 RA_ICU_SCI9_RXI>,
+				     <RA_ICU_IRQ_UNSPECIFIED 0 RA_ICU_SCI9_TXI>,
+				     <RA_ICU_IRQ_UNSPECIFIED 0 RA_ICU_SCI9_TEI>,
+				     <RA_ICU_IRQ_UNSPECIFIED 0 RA_ICU_SCI9_ERI>,
+				     <RA_ICU_IRQ_UNSPECIFIED 0 RA_ICU_SCI9_AM>;
+			interrupt-names = "rxi", "txi", "tei", "eri", "am";
+			clocks = <&cgc RA_CLOCK_SCI(9)>;
+			#clock-cells = <1>;
+			status = "disabled";
+			uart {
+				compatible = "renesas,ra-uart-sci";
+				status = "disabled";
+			};
+		};
 	};
 };
 
