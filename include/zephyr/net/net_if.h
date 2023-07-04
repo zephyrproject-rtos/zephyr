@@ -465,7 +465,8 @@ typedef int (*net_socket_create_t)(int, int, int);
  * and the network device.
  *
  * Because of the strong relationship between a device driver and such
- * network interface, each net_if_dev should be instantiated by
+ * network interface, each net_if_dev should be instantiated by one of the
+ * network device init macros found in net_if.h.
  */
 struct net_if_dev {
 	/** The actually device driver instance the net_if is related to */
