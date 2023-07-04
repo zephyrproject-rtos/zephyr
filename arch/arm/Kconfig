@@ -69,7 +69,7 @@ config ARM_ON_EXIT_CPU_IDLE
 	  observed on some SoCs caused by a memory access following WFI/WFE
 	  instructions.
 
-rsource "core/aarch32/Kconfig"
-rsource "core/aarch32/Kconfig.vfp"
+rsource "core/Kconfig"
+rsource "core/Kconfig.vfp"
 
 endmenu

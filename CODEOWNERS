@@ -18,9 +18,9 @@
 /MAINTAINERS.yml                          @MaureenHelm
 /arch/arc/                                @abrodkin @ruuddw @evgeniy-paltsev
 /arch/arm/                                @MaureenHelm @galak @ioannisg
-/arch/arm/core/aarch32/cortex_m/cmse/     @ioannisg
-/arch/arm/include/aarch32/cortex_m/cmse.h @ioannisg
-/arch/arm/core/aarch32/cortex_a_r/        @MaureenHelm @galak @ioannisg @bbolen @stephanosio
+/arch/arm/core/cortex_m/cmse/             @ioannisg
+/arch/arm/include/cortex_m/cmse.h         @ioannisg
+/arch/arm/core/cortex_a_r/                @MaureenHelm @galak @ioannisg @bbolen @stephanosio
 /arch/arm64/                              @carlocaione
 /arch/arm64/core/cortex_r/                @povergoing
 /arch/arm64/core/xen/                     @lorc @firscity

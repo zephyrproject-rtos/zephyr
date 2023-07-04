@@ -18,7 +18,8 @@
 #include <soc.h>
 #include <zephyr/drivers/uart.h>
 #include <zephyr/linker/sections.h>
-#include <aarch32/cortex_m/exc.h>
+#include <zephyr/arch/cpu.h>
+#include <cortex_m/exc.h>
 #include <fsl_power.h>
 #include <fsl_clock.h>
 #include <fsl_common.h>

@@ -5,8 +5,8 @@
  */
 
 #include <cmsis_core.h>
-#include <aarch32/cortex_m/tz.h>
-#include <aarch32/cortex_m/exc.h>
+#include <cortex_m/tz.h>
+#include <cortex_m/exc.h>
 
 static void configure_nonsecure_vtor_offset(uint32_t vtor_ns)
 {

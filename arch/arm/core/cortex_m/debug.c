@@ -12,7 +12,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
-#include <aarch32/cortex_m/dwt.h>
+#include <cortex_m/dwt.h>
 
 /**
  * @brief Assess whether a debug monitor event should be treated as an error

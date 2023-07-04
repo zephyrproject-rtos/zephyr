@@ -5,7 +5,7 @@
  */
 
 #include <zephyr/ztest.h>
-#include <aarch32/cortex_m/tz_ns.h>
+#include <cortex_m/tz_ns.h>
 #include <cmsis_core.h>
 
 static bool expect_preface;

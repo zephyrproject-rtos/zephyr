@@ -169,7 +169,7 @@ PendSV exception return sequence restores the new thread's caller-saved register
 return address, as part of unstacking the exception stack frame.
 
 The implementation of the context-switch mechanism is present in
-:file:`arch/arm/core/aarch32/swap_helper.S`.
+:file:`arch/arm/core/swap_helper.S`.
 
 Stack limit checking (Arm v8-M)
 -------------------------------
@@ -337,7 +337,7 @@ CPU Idling
 
 The Cortex-M architecture port implements both k_cpu_idle()
 and k_cpu_atomic_idle(). The implementation is present in
-:file:`arch/arm/core/aarch32/cpu_idle.S`.
+:file:`arch/arm/core/cpu_idle.S`.
 
 In both implementations, the processor
 will attempt to put the core to low power mode.
