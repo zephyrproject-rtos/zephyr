@@ -86,9 +86,7 @@ int bt_bap_unicast_server_reconfig(struct bt_bap_stream *stream,
 
 	(void)memcpy(&ep->codec_cfg, codec_cfg, sizeof(*codec_cfg));
 
-	ascs_ep_set_state(ep, BT_BAP_EP_STATE_CODEC_CONFIGURED);
-
-	return 0;
+	return ascs_ep_set_state(ep, BT_BAP_EP_STATE_CODEC_CONFIGURED);
 }
 
 int bt_bap_unicast_server_start(struct bt_bap_stream *stream)
@@ -106,10 +104,10 @@ int bt_bap_unicast_server_start(struct bt_bap_stream *stream)
 	 * else wait for ISO to be connected
 	 */
 	if (ep->iso->chan.state == BT_ISO_STATE_CONNECTED) {
-		ascs_ep_set_state(ep, BT_BAP_EP_STATE_STREAMING);
-	} else {
-		ep->receiver_ready = true;
+		return ascs_ep_set_state(ep, BT_BAP_EP_STATE_STREAMING);
 	}
+
+	ep->receiver_ready = true;
 
 	return 0;
 }
@@ -140,9 +138,7 @@ int bt_bap_unicast_server_metadata(struct bt_bap_stream *stream, struct bt_audio
 	}
 
 	/* Set the state to the same state to trigger the notifications */
-	ascs_ep_set_state(ep, ep->status.state);
-
-	return 0;
+	return ascs_ep_set_state(ep, ep->status.state);
 }
 
 int bt_bap_unicast_server_disable(struct bt_bap_stream *stream)
