@@ -16,7 +16,7 @@
 #include <zephyr/linker/sections.h>
 #include <zephyr/arch/cpu.h>
 #include <offsets_short.h>
-#include <aarch32/cortex_a_r/tcm.h>
+#include <cortex_a_r/tcm.h>
 #include "vector_table.h"
 
 _ASM_FILE_PROLOGUE
