@@ -45,6 +45,7 @@ class Snippet:
     individual snippet.'''
 
     name: str
+    boards: set = field(default_factory=set)
     appends: Appends = field(default_factory=_new_append)
     board2appends: Dict[str, Appends] = field(default_factory=_new_board2appends)
 
@@ -65,6 +66,7 @@ class Snippet:
             if board.startswith('/') and not board.endswith('/'):
                 _err(f"snippet file {pathobj}: board {board} starts with '/', so "
                      "it must end with '/' to use a regular expression")
+            self.boards.add(board)
             for variable, value in settings.get('append', {}).items():
                 self.board2appends[board][variable].append(
                     append_value(variable, value))
@@ -149,21 +151,20 @@ zephyr_create_scope(snippets)
 
 # Common variable appends.''')
         self.print_appends(snippet.appends, 0)
-        for board, appends in snippet.board2appends.items():
-            self.print_appends_for_board(board, appends)
-
-    def print_appends_for_board(self, board: str, appends: Appends):
-        if board.startswith('/'):
-            board_re = board[1:-1]
-            self.print(f'''\
+        for board in snippet.boards:
+            if board.startswith('/'):
+                board_re = board[1:-1]
+                self.print(f'''\
 # Appends for board regular expression '{board_re}'
 if("${{BOARD}}" MATCHES "^{board_re}$")''')
-        else:
-            self.print(f'''\
+            else:
+                self.print(f'''\
 # Appends for board '{board}'
 if("${{BOARD}}" STREQUAL "{board}")''')
-        self.print_appends(appends, 1)
-        self.print('endif()')
+
+            if board in snippet.board2appends:
+                self.print_appends(snippet.board2appends[board], 1)
+            self.print('endif()')
 
     def print_appends(self, appends: Appends, indent: int):
         space = '  ' * indent
