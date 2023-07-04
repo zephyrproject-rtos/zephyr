@@ -7,6 +7,7 @@
  */
 
 #include <arm/armv7-m.dtsi>
+#include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/pwm/pwm.h>
@@ -242,6 +243,15 @@
 				status = "disabled";
 				#pwm-cells = <3>;
 			};
+		};
+
+		adc0: adc@40002000 {
+			compatible = "silabs,gecko-adc";
+			reg = <0x40002000 0x400>;
+			interrupts = <15 0>;
+			frequency = <16000000>;
+			status = "disabled";
+			#io-channel-cells = <1>;
 		};
 	};
 };
