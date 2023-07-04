@@ -62,6 +62,8 @@ static int flash_b91_init(const struct device *dev)
 
 	k_mutex_init(&dev_data->flash_lock);
 
+	flash_change_rw_func(flash_4read, flash_quad_page_program);
+
 	return 0;
 }
 
