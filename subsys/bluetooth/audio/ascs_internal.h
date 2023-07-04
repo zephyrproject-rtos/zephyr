@@ -340,7 +340,7 @@ static inline const char *bt_ascs_reason_str(uint8_t reason)
 int bt_ascs_init(const struct bt_bap_unicast_server_cb *cb);
 void bt_ascs_cleanup(void);
 
-void ascs_ep_set_state(struct bt_bap_ep *ep, uint8_t state);
+int ascs_ep_set_state(struct bt_bap_ep *ep, uint8_t state);
 
 int bt_ascs_config_ase(struct bt_conn *conn, struct bt_bap_stream *stream,
 		       struct bt_audio_codec_cfg *codec_cfg,
