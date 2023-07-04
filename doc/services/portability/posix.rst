@@ -355,7 +355,7 @@ process applications.
     getenv(),
     setenv(),
     sysconf(),
-    uname(),
+    uname(),yes
     unsetenv()
 
 
