@@ -1426,8 +1426,19 @@ ZTEST(devicetree_api, test_foreach)
 	zassert_equal(1, DT_FOREACH_STATUS_OKAY_NODE(IS_ALIASES), "");
 	zassert_equal(0, DT_FOREACH_STATUS_OKAY_NODE(IS_DISABLED_GPIO), "");
 
+#define IS_ALIASES_VARGS(node_id, mul) + ((mul) * DT_SAME_NODE(DT_PATH(aliases), node_id))
+#define IS_DISABLED_GPIO_VARGS(node_id, mul) + ((mul) * \
+			       DT_SAME_NODE(DT_NODELABEL(disabled_gpio), node_id))
+	zassert_equal(2, DT_FOREACH_NODE_VARGS(IS_ALIASES_VARGS, 2), "");
+	zassert_equal(2, DT_FOREACH_NODE_VARGS(IS_DISABLED_GPIO_VARGS, 2), "");
+	zassert_equal(2, DT_FOREACH_STATUS_OKAY_NODE_VARGS(IS_ALIASES_VARGS, 2), "");
+	zassert_equal(0, DT_FOREACH_STATUS_OKAY_NODE_VARGS(IS_DISABLED_GPIO_VARGS, 2), "");
+
+
 #undef IS_ALIASES
 #undef IS_DISABLED_GPIO
+#undef IS_ALIASES_VARGS
+#undef IS_DISABLED_GPIO_VARGS
 }
 
 #undef DT_DRV_COMPAT
