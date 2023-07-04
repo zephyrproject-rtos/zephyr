@@ -149,7 +149,7 @@ extern void _arch_isr_direct_pm(void);
 #define ARCH_ISR_DIRECT_HEADER() arch_isr_direct_header()
 #define ARCH_ISR_DIRECT_FOOTER(swap) arch_isr_direct_footer(swap)
 
-/* arch/arm/core/aarch32/exc_exit.S */
+/* arch/arm/core/exc_exit.S */
 extern void z_arm_int_exit(void);
 
 #ifdef CONFIG_TRACING_ISR

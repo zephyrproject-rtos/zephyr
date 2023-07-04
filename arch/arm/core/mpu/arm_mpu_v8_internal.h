@@ -8,7 +8,7 @@
 #ifndef ZEPHYR_ARCH_ARM_CORE_AARCH32_MPU_ARM_MPU_V8_INTERNAL_H_
 #define ZEPHYR_ARCH_ARM_CORE_AARCH32_MPU_ARM_MPU_V8_INTERNAL_H_
 
-#include <aarch32/cortex_m/cmse.h>
+#include <cortex_m/cmse.h>
 #define LOG_LEVEL CONFIG_MPU_LOG_LEVEL
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/math_extras.h>

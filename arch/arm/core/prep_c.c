@@ -26,7 +26,7 @@
 #endif
 
 #if defined(CONFIG_ARMV7_R) || defined(CONFIG_ARMV7_A)
-#include <aarch32/cortex_a_r/stack.h>
+#include <cortex_a_r/stack.h>
 #endif
 
 #if defined(__GNUC__)

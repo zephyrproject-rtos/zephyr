@@ -5,7 +5,7 @@
  */
 
 #include <zephyr/kernel.h>
-#include <aarch32/cortex_a_r/stack.h>
+#include <cortex_a_r/stack.h>
 #include <string.h>
 #include <kernel_internal.h>
 

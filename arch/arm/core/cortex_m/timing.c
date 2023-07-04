@@ -14,7 +14,7 @@
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
 #include <zephyr/timing/timing.h>
-#include <aarch32/cortex_m/dwt.h>
+#include <cortex_m/dwt.h>
 #include <cmsis_core.h>
 #include <zephyr/sys_clock.h>
 
