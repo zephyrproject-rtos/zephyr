@@ -156,6 +156,25 @@ This :file:`snippet.yml` adds :file:`foo.conf` to the build:
 The path to :file:`foo.conf` is relative to the directory containing
 :file:`snippet.yml`.
 
+``.cmake`` files
+****************
+
+This :file:`snippet.yml` adds :file:`foo.cmake` to the build:
+
+.. code-block:: yaml
+
+   name: foo
+   cmake:
+     EXTRA_CMAKE_FILE: foo.cmake
+
+The path to :file:`foo.cmake` is relative to the directory containing
+:file:`snippet.yml`. Adding cmake files like this can be useful for
+extending the configuration options available in devicetree. e.g.
+
+.. code-block:: cmake
+
+   set(DTS_EXTRA_CPPFLAGS "-DMY_DTS_CONFIGURE ${DTS_EXTRA_CPPFLAGS}" PARENT_SCOPE)
+
 Board-specific settings
 ***********************
 

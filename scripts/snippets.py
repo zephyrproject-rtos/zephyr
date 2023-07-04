@@ -48,12 +48,14 @@ class Snippet:
     boards: set = field(default_factory=set)
     appends: Appends = field(default_factory=_new_append)
     board2appends: Dict[str, Appends] = field(default_factory=_new_board2appends)
+    includes: Appends = field(default_factory=_new_append)
+    board2includes: Dict[str, Appends] = field(default_factory=_new_board2appends)
 
     def process_data(self, pathobj: Path, snippet_data: dict):
         '''Process the data in a snippet.yml file, after it is loaded into a
         python object and validated by pykwalify.'''
         def append_value(variable, value):
-            if variable in ('EXTRA_DTC_OVERLAY_FILE', 'EXTRA_CONF_FILE'):
+            if variable in ('EXTRA_DTC_OVERLAY_FILE', 'EXTRA_CONF_FILE', 'EXTRA_CMAKE_FILE'):
                 path = pathobj.parent / value
                 if not path.is_file():
                     _err(f'snippet file {pathobj}: {variable}: file not found: {path}')
@@ -62,6 +64,8 @@ class Snippet:
 
         for variable, value in snippet_data.get('append', {}).items():
             self.appends[variable].append(append_value(variable, value))
+        for variable, value in snippet_data.get('cmake', {}).items():
+            self.includes[variable].append(append_value(variable, value))
         for board, settings in snippet_data.get('boards', {}).items():
             if board.startswith('/') and not board.endswith('/'):
                 _err(f"snippet file {pathobj}: board {board} starts with '/', so "
@@ -69,6 +73,9 @@ class Snippet:
             self.boards.add(board)
             for variable, value in settings.get('append', {}).items():
                 self.board2appends[board][variable].append(
+                    append_value(variable, value))
+            for variable, value in settings.get('cmake', {}).items():
+                self.board2includes[board][variable].append(
                     append_value(variable, value))
 
 class Snippets(UserDict):
@@ -151,6 +158,7 @@ zephyr_create_scope(snippets)
 
 # Common variable appends.''')
         self.print_appends(snippet.appends, 0)
+        self.print_includes(snippet.includes, 0)
         for board in snippet.boards:
             if board.startswith('/'):
                 board_re = board[1:-1]
@@ -164,6 +172,8 @@ if("${{BOARD}}" STREQUAL "{board}")''')
 
             if board in snippet.board2appends:
                 self.print_appends(snippet.board2appends[board], 1)
+            if board in snippet.board2includes:
+                self.print_includes(snippet.board2includes[board], 1)
             self.print('endif()')
 
     def print_appends(self, appends: Appends, indent: int):
@@ -171,6 +181,12 @@ if("${{BOARD}}" STREQUAL "{board}")''')
         for name, values in appends.items():
             for value in values:
                 self.print(f'{space}zephyr_set({name} {value} SCOPE snippets APPEND)')
+
+    def print_includes(self, includes: Appends, indent: int):
+        space = '  ' * indent
+        for _, values in includes.items():
+            for value in values:
+                self.print(f'{space}include({value})')
 
     def print(self, *args, **kwargs):
         kwargs['file'] = self.out_file

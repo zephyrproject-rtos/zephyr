@@ -14,6 +14,14 @@ schema;append-schema:
     EXTRA_CONF_FILE:
       type: str
 
+schema;cmake-schema:
+  # Sub-schema for including additional cmake files.
+  # See uses under 'cmake:' keys below.
+  type: map
+  mapping:
+    EXTRA_CMAKE_FILE:
+      type: str
+
 type: map
 mapping:
   name:
@@ -27,6 +35,14 @@ mapping:
         append:
           DTC_OVERLAY_FILE: m3.overlay
     include: append-schema
+  cmake:
+    example: |
+      Snippet-wide inclusions can be done here:
+
+        name: foo
+        cmake:
+          EXTRA_CMAKE_FILE: m3.cmake
+    include: cmake-schema
   boards:
     example: |
       Board-specific appending can be done here:
@@ -43,3 +59,5 @@ mapping:
         mapping:
           append:
             include: append-schema
+          cmake:
+            include: cmake-schema
