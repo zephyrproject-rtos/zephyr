@@ -2885,37 +2885,14 @@ int bt_ascs_init(const struct bt_bap_unicast_server_cb *cb)
 	return 0;
 }
 
-static void ase_cleanup(struct bt_ascs_ase *ase)
-{
-	struct bt_bap_ascs_rsp rsp;
-	struct bt_bap_stream *stream;
-	enum bt_bap_ep_state state;
-
-	state = ascs_ep_get_state(&ase->ep);
-	if (state == BT_BAP_EP_STATE_IDLE || state == BT_BAP_EP_STATE_RELEASING) {
-		return;
-	}
-
-	stream = ase->ep.stream;
-	__ASSERT(stream != NULL, "ep.stream is NULL");
-
-	if (unicast_server_cb != NULL && unicast_server_cb->release != NULL) {
-		unicast_server_cb->release(stream, &rsp);
-	}
-
-	ascs_ep_set_state(&ase->ep, BT_BAP_EP_STATE_RELEASING);
-}
-
 void bt_ascs_cleanup(void)
 {
 	for (size_t i = 0; i < ARRAY_SIZE(ase_pool); i++) {
 		struct bt_ascs_ase *ase = &ase_pool[i];
 
-		if (ase->conn == NULL) {
-			continue;
+		if (ase->conn != NULL) {
+			bt_ascs_release_ase(&ase->ep);
 		}
-
-		ase_cleanup(ase);
 	}
 
 	if (unicast_server_cb != NULL) {
