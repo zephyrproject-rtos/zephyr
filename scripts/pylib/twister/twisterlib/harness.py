@@ -231,7 +231,7 @@ class Pytest(Harness):
 
     def pytest_run(self, timeout):
         try:
-            cmd = self.generate_command()
+            cmd = self.generate_command(timeout)
             self.run_command(cmd, timeout)
         except PytestHarnessException as pytest_exception:
             logger.error(str(pytest_exception))
@@ -242,7 +242,7 @@ class Pytest(Harness):
                 self.instance.handler.make_device_available(self.reserved_serial)
         self._update_test_status()
 
-    def generate_command(self):
+    def generate_command(self, timeout):
         config = self.instance.testsuite.harness_config
         pytest_root = config.get('pytest_root', 'pytest') if config else 'pytest'
         pytest_args = config.get('pytest_args', []) if config else []
@@ -253,7 +253,8 @@ class Pytest(Harness):
             '-q',
             os.path.join(self.source_dir, pytest_root),
             f'--build-dir={self.running_dir}',
-            f'--junit-xml={self.report_file}'
+            f'--junit-xml={self.report_file}',
+            f'--connection-timeout={timeout}'
         ]
         command.extend(pytest_args)
 
