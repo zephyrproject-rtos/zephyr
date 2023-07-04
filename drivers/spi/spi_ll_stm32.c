@@ -693,9 +693,20 @@ static int wait_dma_rx_tx_done(const struct device *dev)
 {
 	struct spi_stm32_data *data = dev->data;
 	int res = -1;
+	k_timeout_t timeout;
+
+	/*
+	 * In slave mode we do not know when the transaction will start. Hence,
+	 * it doesn't make sense to have timeout in this case.
+	 */
+	if (IS_ENABLED(CONFIG_SPI_SLAVE) && spi_context_is_slave(&data->ctx)) {
+		timeout = K_FOREVER;
+	} else {
+		timeout = K_MSEC(1000);
+	}
 
 	while (1) {
-		res = k_sem_take(&data->status_sem, K_MSEC(1000));
+		res = k_sem_take(&data->status_sem, timeout);
 		if (res != 0) {
 			return res;
 		}
