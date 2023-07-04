@@ -5,3 +5,43 @@
  */
 
 #include <renesas/ra/ra-cm4-common.dtsi>
+
+/ {
+	soc {
+		ioport6: gpio@400400c0 {
+			compatible = "renesas,ra-gpio";
+			reg = <0x400400c0 0x20>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <16>;
+			status = "disabled";
+		};
+
+		ioport7: gpio@400400e0 {
+			compatible = "renesas,ra-gpio";
+			reg = <0x400400e0 0x20>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <16>;
+			status = "disabled";
+		};
+
+		ioport8: gpio@40040100 {
+			compatible = "renesas,ra-gpio";
+			reg = <0x40040100 0x20>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <16>;
+			status = "disabled";
+		};
+
+		ioport9: gpio@40040120 {
+			compatible = "renesas,ra-gpio";
+			reg = <0x40040120 0x20>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <16>;
+			status = "disabled";
+		};
+	};
+};
