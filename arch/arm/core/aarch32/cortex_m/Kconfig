@@ -469,4 +469,12 @@ endif # CORTEX_M_NULL_POINTER_EXCEPTION
 
 rsource "tz/Kconfig"
 
+config CORTEX_M_EARLY_BOOT_INIT
+	bool "Early boot init function"
+	help
+	  Enables an early boot function which is called prior to kernel initialisation
+	  ``z_arm_early_boot_init()``, this should be used for any setup that is required
+	  before any setup of the kernel takes place, for example to power up RAM sections
+	  that are needed if another image on the device has disabled them.
+
 endif # CPU_CORTEX_M

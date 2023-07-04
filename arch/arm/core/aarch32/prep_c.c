@@ -29,6 +29,10 @@
 #include <aarch32/cortex_a_r/stack.h>
 #endif
 
+#if defined(CONFIG_CPU_CORTEX_M) && defined(CONFIG_CORTEX_M_EARLY_BOOT_INIT)
+#include <aarch32/cortex_m/early_init.h>
+#endif
+
 #if defined(__GNUC__)
 /*
  * GCC can detect if memcpy is passed a NULL argument, however one of
@@ -259,6 +263,9 @@ void z_arm_prep_c(void)
 	relocate_vector_table();
 #if defined(CONFIG_CPU_HAS_FPU)
 	z_arm_floating_point_init();
+#endif
+#if defined(CONFIG_CORTEX_M_EARLY_BOOT_INIT)
+	z_arm_early_boot_init();
 #endif
 	z_bss_zero();
 	z_data_copy();
