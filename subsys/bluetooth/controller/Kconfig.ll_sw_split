@@ -261,6 +261,15 @@ config BT_CTLR_RPA_CACHE_SIZE
 	  Set the size of the Known Unknown Resolving List for LE
 	  Controller-based Software deferred Privacy.
 
+config BT_CTLR_TRPA_CACHE_SIZE
+	int "LE Controller-based Software Privacy target RPA cache size"
+	depends on BT_CTLR_SW_DEFERRED_PRIVACY
+	default 4
+	range 1 64
+	help
+	  Set the size of the Known Unknown Target RPA Resolving List for LE
+	  Controller-based Software deferred Privacy.
+
 config BT_CTLR_DATA_LENGTH_CLEAR
 	bool "Data Length Support (Cleartext only)"
 	depends on SOC_SERIES_NRF51X
