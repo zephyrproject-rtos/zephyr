@@ -7,7 +7,7 @@
 
 /**
  * @file
- * @brief ARM Cortex-A, Cortex-M and Cortex-R wrapper for ISRs with parameter
+ * @brief ARM Cortex-A and Cortex-R wrapper for ISRs with parameter
  *
  * Wrapper installed in vector table for handling dynamic interrupts that accept
  * a parameter.
@@ -44,10 +44,6 @@ GTEXT(z_arm_int_exit)
  *
  */
 SECTION_FUNC(TEXT, _isr_wrapper)
-
-#if defined(CONFIG_CPU_CORTEX_M)
-	push {r0,lr}		/* r0, lr are now the first items on the stack */
-#elif defined(CONFIG_CPU_AARCH32_CORTEX_R) || defined(CONFIG_CPU_AARCH32_CORTEX_A)
 
 #if defined(CONFIG_USERSPACE)
 	/* See comment below about svc stack usage */
@@ -147,7 +143,6 @@ _vfp_not_enabled:
 	ldr r0, [r2, #_kernel_offset_to_nested]
 	add r0, r0, #1
 	str r0, [r2, #_kernel_offset_to_nested]
-#endif /* CONFIG_CPU_CORTEX_M */
 
 #ifdef CONFIG_TRACING_ISR
 	bl sys_trace_isr_enter
@@ -163,65 +158,21 @@ _vfp_not_enabled:
 	 * is called with interrupts disabled.
 	 */
 
-#if defined(CONFIG_CPU_CORTEX_M)
-	/*
-	 * Disable interrupts to prevent nesting while exiting idle state. This
-	 * is only necessary for the Cortex-M because it is the only ARM
-	 * architecture variant that automatically enables interrupts when
-	 * entering an ISR.
-	 */
-	cpsid i  /* PRIMASK = 1 */
-#endif
-
 	/* is this a wakeup from idle ? */
 	ldr r2, =_kernel
 	/* requested idle duration, in ticks */
 	ldr r0, [r2, #_kernel_offset_to_idle]
 	cmp r0, #0
 
-#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
-	beq _idle_state_cleared
-	movs.n r1, #0
-	/* clear kernel idle state */
-	str r1, [r2, #_kernel_offset_to_idle]
-	bl z_pm_save_idle_exit
-_idle_state_cleared:
-
-#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
-	ittt ne
-	movne	r1, #0
-		/* clear kernel idle state */
-		strne	r1, [r2, #_kernel_offset_to_idle]
-		blne	z_pm_save_idle_exit
-#elif defined(CONFIG_ARMV7_R) || defined(CONFIG_AARCH32_ARMV8_R) \
-	|| defined(CONFIG_ARMV7_A)
 	beq _idle_state_cleared
 	movs r1, #0
 	/* clear kernel idle state */
 	str r1, [r2, #_kernel_offset_to_idle]
 	bl z_pm_save_idle_exit
 _idle_state_cleared:
-#else
-#error Unknown ARM architecture
-#endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
-
-#if defined(CONFIG_CPU_CORTEX_M)
-	cpsie i		/* re-enable interrupts (PRIMASK = 0) */
-#endif
 
 #endif /* CONFIG_PM */
 
-#if defined(CONFIG_CPU_CORTEX_M)
-	mrs r0, IPSR	/* get exception number */
-#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
-	ldr r1, =16
-	subs r0, r1	/* get IRQ number */
-	lsls r0, #3	/* table is 8-byte wide */
-#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
-	sub r0, r0, #16	/* get IRQ number */
-	lsl r0, r0, #3	/* table is 8-byte wide */
-#endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
-#elif defined(CONFIG_CPU_AARCH32_CORTEX_R) || defined(CONFIG_CPU_AARCH32_CORTEX_A)
 	/* Get active IRQ number from the interrupt controller */
 #if !defined(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER)
 	bl arm_gic_get_active
@@ -230,11 +181,7 @@ _idle_state_cleared:
 #endif /* !CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER */
 	push {r0, r1}
 	lsl r0, r0, #3	/* table is 8-byte wide */
-#else
-#error Unknown ARM architecture
-#endif /* CONFIG_CPU_CORTEX_M */
 
-#if !defined(CONFIG_CPU_CORTEX_M)
 	/*
 	 * Enable interrupts to allow nesting.
 	 *
@@ -254,7 +201,6 @@ _idle_state_cleared:
 	lsl r1, r1, #3
 	cmp r0, r1
 	bge spurious_continue
-#endif /* !CONFIG_CPU_CORTEX_M */
 
 	ldr r1, =_sw_isr_table
 	add r1, r1, r0	/* table entry: ISRs must have their MSB set to stay
@@ -263,7 +209,6 @@ _idle_state_cleared:
 	ldm r1!,{r0,r3}	/* arg in r0, ISR in r3 */
 	blx r3		/* call ISR */
 
-#if defined(CONFIG_CPU_AARCH32_CORTEX_R) || defined(CONFIG_CPU_AARCH32_CORTEX_A)
 spurious_continue:
 	/* Signal end-of-interrupt */
 	pop {r0, r1}
@@ -272,28 +217,10 @@ spurious_continue:
 #else
 	bl z_soc_irq_eoi
 #endif /* !CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER */
-#endif /* CONFIG_CPU_AARCH32_CORTEX_R || CONFIG_CPU_AARCH32_CORTEX_A */
 
 #ifdef CONFIG_TRACING_ISR
 	bl sys_trace_isr_exit
 #endif
-
-#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
-	pop {r0, r3}
-	mov lr, r3
-#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
-	pop {r0, lr}
-#elif defined(CONFIG_ARMV7_R) || defined(CONFIG_AARCH32_ARMV8_R) \
-	|| defined(CONFIG_ARMV7_A)
-	/*
-	 * r0 and lr_irq were saved on the process stack since a swap could
-	 * happen.  exc_exit will handle getting those values back
-	 * from the process stack to return to the correct location
-	 * so there is no need to do anything here.
-	 */
-#else
-#error Unknown ARM architecture
-#endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
 
 	/* Use 'bx' instead of 'b' because 'bx' can jump further, and use
 	 * 'bx' instead of 'blx' because exception return is done in
