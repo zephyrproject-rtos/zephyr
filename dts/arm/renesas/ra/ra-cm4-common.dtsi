@@ -7,6 +7,7 @@
 #include <mem.h>
 #include <freq.h>
 #include <arm/armv7-m.dtsi>
+#include <zephyr/dt-bindings/interrupt-controller/renesas-ra-icu.h>
 
 / {
 	cpus {
@@ -113,6 +114,129 @@
 				compatible = "soc-nv-flash";
 				reg = <0x40100000 DT_SIZE_K(8)>;
 			};
+		};
+
+		ioport0: gpio@40040000 {
+			compatible = "renesas,ra-gpio";
+			reg = <0x40040000 0x20>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <16>;
+			interrupts = <RA_ICU_IRQ_UNSPECIFIED 0 RA_ICU_PORT_IRQ2>,
+				     <RA_ICU_IRQ_UNSPECIFIED 0 RA_ICU_PORT_IRQ3>,
+				     <RA_ICU_IRQ_UNSPECIFIED 0 RA_ICU_PORT_IRQ6>,
+				     <RA_ICU_IRQ_UNSPECIFIED 0 RA_ICU_PORT_IRQ7>,
+				     <RA_ICU_IRQ_UNSPECIFIED 0 RA_ICU_PORT_IRQ10>,
+				     <RA_ICU_IRQ_UNSPECIFIED 0 RA_ICU_PORT_IRQ15>;
+			interrupt-names = "port-irq2", "port-irq3", "port-irq6",
+					  "port-irq7", "port-irq10", "port-irq15";
+			port-irq2-pins = <2>;
+			port-irq3-pins = <4>;
+			port-irq6-pins = <0>;
+			port-irq7-pins = <1 15>;
+			port-irq10-pins = <5>;
+			port-irq15-pins = <11>;
+			status = "disabled";
+		};
+
+		ioport1: gpio@40040020 {
+			compatible = "renesas,ra-gpio";
+			reg = <0x40040020 0x20>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			interrupts = <RA_ICU_IRQ_UNSPECIFIED 0 RA_ICU_PORT_IRQ0>,
+				     <RA_ICU_IRQ_UNSPECIFIED 0 RA_ICU_PORT_IRQ1>,
+				     <RA_ICU_IRQ_UNSPECIFIED 0 RA_ICU_PORT_IRQ2>,
+				     <RA_ICU_IRQ_UNSPECIFIED 0 RA_ICU_PORT_IRQ3>,
+				     <RA_ICU_IRQ_UNSPECIFIED 0 RA_ICU_PORT_IRQ4>;
+			interrupt-names = "port-irq0", "port-irq1", "port-irq2",
+					  "port-irq3", "port-irq4";
+			port-irq0-pins = <5>;
+			port-irq1-pins = <1>;
+			port-irq2-pins = <0>;
+			port-irq3-pins = <10>;
+			port-irq4-pins = <11>;
+			ngpios = <16>;
+			status = "disabled";
+		};
+
+		ioport2: gpio@40040040 {
+			compatible = "renesas,ra-gpio";
+			reg = <0x40040040 0x20>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <16>;
+			interrupts = <RA_ICU_IRQ_UNSPECIFIED 0 RA_ICU_PORT_IRQ0>,
+				     <RA_ICU_IRQ_UNSPECIFIED 0 RA_ICU_PORT_IRQ1>,
+				     <RA_ICU_IRQ_UNSPECIFIED 0 RA_ICU_PORT_IRQ2>,
+				     <RA_ICU_IRQ_UNSPECIFIED 0 RA_ICU_PORT_IRQ3>,
+				     <RA_ICU_IRQ_UNSPECIFIED 0 RA_ICU_PORT_IRQ9>;
+			interrupt-names = "port-irq0", "port-irq1", "port-irq2",
+					  "port-irq3", "port-irq9";
+			port-irq0-pins = <6>;
+			port-irq1-pins = <5>;
+			port-irq2-pins = <13>;
+			port-irq3-pins = <12>;
+			status = "disabled";
+		};
+
+		ioport3: gpio@40040060 {
+			compatible = "renesas,ra-gpio";
+			reg = <0x40040060 0x20>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <16>;
+			interrupts = <RA_ICU_IRQ_UNSPECIFIED 0 RA_ICU_PORT_IRQ5>,
+				     <RA_ICU_IRQ_UNSPECIFIED 0 RA_ICU_PORT_IRQ6>,
+				     <RA_ICU_IRQ_UNSPECIFIED 0 RA_ICU_PORT_IRQ8>,
+				     <RA_ICU_IRQ_UNSPECIFIED 0 RA_ICU_PORT_IRQ9>;
+			interrupt-names = "port-irq5", "port-irq6", "port-irq8", "port-irq9";
+			port-irq5-pins = <2>;
+			port-irq6-pins = <1>;
+			port-irq8-pins = <5>;
+			port-irq9-pins = <4>;
+			status = "disabled";
+		};
+
+		ioport4: gpio@40040080 {
+			compatible = "renesas,ra-gpio";
+			reg = <0x40040080 0x20>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <16>;
+			interrupts = <RA_ICU_IRQ_UNSPECIFIED 0 RA_ICU_PORT_IRQ0>,
+				     <RA_ICU_IRQ_UNSPECIFIED 0 RA_ICU_PORT_IRQ4>,
+				     <RA_ICU_IRQ_UNSPECIFIED 0 RA_ICU_PORT_IRQ5>,
+				     <RA_ICU_IRQ_UNSPECIFIED 0 RA_ICU_PORT_IRQ6>,
+				     <RA_ICU_IRQ_UNSPECIFIED 0 RA_ICU_PORT_IRQ7>,
+				     <RA_ICU_IRQ_UNSPECIFIED 0 RA_ICU_PORT_IRQ8>,
+				     <RA_ICU_IRQ_UNSPECIFIED 0 RA_ICU_PORT_IRQ9>;
+			interrupt-names = "port-irq0", "port-irq4", "port-irq5", "port-irq6",
+					  "port-irq7", "port-irq8", "port-irq9";
+			port-irq0-pins = <0>;
+			port-irq4-pins = <2 11>;
+			port-irq5-pins = <1 10>;
+			port-irq6-pins = <9>;
+			port-irq7-pins = <8>;
+			port-irq8-pins = <15>;
+			port-irq9-pins = <14>;
+			status = "disabled";
+		};
+
+		ioport5: gpio@400400a0 {
+			compatible = "renesas,ra-gpio";
+			reg = <0x400400a0 0x20>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <16>;
+			interrupts = <RA_ICU_IRQ_UNSPECIFIED 0 RA_ICU_PORT_IRQ11>,
+				     <RA_ICU_IRQ_UNSPECIFIED 0 RA_ICU_PORT_IRQ12>,
+				     <RA_ICU_IRQ_UNSPECIFIED 0 RA_ICU_PORT_IRQ14>;
+			interrupt-names = "port-irq11", "port-irq12", "port-irq14";
+			port-irq11-pins = <1>;
+			port-irq12-pins = <2>;
+			port-irq14-pins = <5>;
+			status = "disabled";
 		};
 
 		pinctrl: pinctrl@40040800 {
