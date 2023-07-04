@@ -106,7 +106,8 @@ static bt_addr_le_t peer_addr;
 
 #define BUF_ALLOC_TIMEOUT   (50) /* milliseconds */
 NET_BUF_POOL_FIXED_DEFINE(tx_pool, CONFIG_BT_ISO_TX_BUF_COUNT,
-			  BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU), 8, NULL);
+			  BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU),
+			  CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
 
 static bool data_cb(struct bt_data *data, void *user_data)
 {
