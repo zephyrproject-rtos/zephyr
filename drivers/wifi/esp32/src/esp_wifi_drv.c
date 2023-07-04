@@ -406,7 +406,7 @@ static int esp32_wifi_scan(const struct device *dev,
 
 	if (params) {
 		/* The enum values are same, so, no conversion needed */
-		scan_config->scan_type = params->scan_type;
+		scan_config.scan_type = params->scan_type;
 	}
 
 	ret = esp_wifi_set_mode(ESP32_WIFI_MODE_STA);
