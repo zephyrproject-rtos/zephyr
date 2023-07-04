@@ -2471,6 +2471,20 @@
 #define DT_FOREACH_NODE(fn) DT_FOREACH_HELPER(fn)
 
 /**
+ * @brief Invokes @p fn for every node in the tree with multiple arguments.
+ *
+ * The macro @p fn takes multiple arguments. The first should be the node
+ * identifier for the node. The remaining are passed-in by the caller.
+ *
+ * The macro is expanded once for each node in the tree. The order that nodes
+ * are visited in is not specified.
+ *
+ * @param fn macro to invoke
+ * @param ... variable number of arguments to pass to @p fn
+ */
+#define DT_FOREACH_NODE_VARGS(fn, ...) DT_FOREACH_VARGS_HELPER(fn, __VA_ARGS__)
+
+/**
  * @brief Invokes @p fn for every status `okay` node in the tree.
  *
  * The macro @p fn must take one parameter, which will be a node
@@ -2482,6 +2496,22 @@
  * @param fn macro to invoke
  */
 #define DT_FOREACH_STATUS_OKAY_NODE(fn) DT_FOREACH_OKAY_HELPER(fn)
+
+/**
+ * @brief Invokes @p fn for every status `okay` node in the tree with multiple
+ *        arguments.
+ *
+ * The macro @p fn takes multiple arguments. The first should be the node
+ * identifier for the node. The remaining are passed-in by the caller.
+ *
+ * The macro is expanded once for each node in the tree with status `okay` (as
+ * usual, a missing status property is treated as status `okay`). The order
+ * that nodes are visited in is not specified.
+ *
+ * @param fn macro to invoke
+ * @param ... variable number of arguments to pass to @p fn
+ */
+#define DT_FOREACH_STATUS_OKAY_NODE_VARGS(fn, ...) DT_FOREACH_OKAY_VARGS_HELPER(fn, __VA_ARGS__)
 
 /**
  * @brief Invokes @p fn for each child of @p node_id
