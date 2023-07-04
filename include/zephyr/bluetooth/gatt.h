@@ -1866,12 +1866,12 @@ struct bt_gatt_subscribe_params {
  *
  *  The Response comes in callback @p params->subscribe. The callback is run from
  *  the context specified by 'config BT_RECV_CONTEXT'.
- *  @p params must remain valid until start of callback.
  *  The Notification callback @p params->notify is also called from the BT RX
  *  thread.
  *
- *  @note Notifications are asynchronous therefore the parameters need to
- *        remain valid while subscribed.
+ *  @note Notifications are asynchronous therefore the @p params must remain
+ *        valid while subscribed and cannot be reused for additional subscriptions
+ *        whilst active.
  *
  *  This function will block while the ATT request queue is full, except when
  *  called from the BT RX thread, as this would cause a deadlock.
