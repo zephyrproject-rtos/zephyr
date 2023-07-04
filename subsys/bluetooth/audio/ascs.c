@@ -61,6 +61,8 @@ static struct bt_ascs_ase {
 	struct bt_bap_ep ep;
 	const struct bt_gatt_attr *attr;
 	struct k_work_delayable disconnect_work;
+	struct k_work state_transition_work;
+	enum bt_bap_ep_state state_pending;
 } ase_pool[CONFIG_BT_ASCS_MAX_ACTIVE_ASES];
 
 #define MAX_CODEC_CONFIG                                                                           \
@@ -124,12 +126,14 @@ static void ase_free(struct bt_ascs_ase *ase)
 	ase->conn = NULL;
 }
 
-static void ase_status_changed(struct bt_bap_ep *ep, uint8_t old_state, uint8_t state)
+static void ase_status_changed(struct bt_ascs_ase *ase, uint8_t state)
 {
-	struct bt_ascs_ase *ase = CONTAINER_OF(ep, struct bt_ascs_ase, ep);
 	struct bt_conn *conn = ase->conn;
 
-	LOG_DBG("ase %p, ep %p", ase, ep);
+	LOG_DBG("ase %p id 0x%02x %s -> %s", ase, ase->ep.status.id,
+		bt_bap_ep_state_str(ascs_ep_get_state(&ase->ep)), bt_bap_ep_state_str(state));
+
+	ase->ep.status.state = state;
 
 	if (conn != NULL) {
 		struct bt_conn_info conn_info;
@@ -155,7 +159,7 @@ static void ase_status_changed(struct bt_bap_ep *ep, uint8_t old_state, uint8_t 
 				return;
 			}
 
-			ascs_ep_get_status(ep, &ase_buf);
+			ascs_ep_get_status(&ase->ep, &ase_buf);
 
 			ntf_size = MIN(max_ntf_size, ase_buf.len);
 			if (ntf_size < ase_buf.len) {
@@ -163,7 +167,8 @@ static void ase_status_changed(struct bt_bap_ep *ep, uint8_t old_state, uint8_t 
 					ntf_size, ase_buf.len);
 			}
 
-			bt_gatt_notify(conn, ase->attr, ase_buf.data, ntf_size);
+			err = bt_gatt_notify(conn, ase->attr, ase_buf.data, ntf_size);
+			__ASSERT_NO_MSG(err == 0);
 
 			k_sem_give(&ase_buf_sem);
 		}
@@ -237,37 +242,157 @@ static int ascs_disconnect_stream(struct bt_bap_stream *stream)
 				 K_MSEC(CONFIG_BT_ASCS_ISO_DISCONNECT_DELAY));
 }
 
-void ascs_ep_set_state(struct bt_bap_ep *ep, uint8_t state)
+static void ase_set_state_idle(struct bt_ascs_ase *ase)
 {
-	struct bt_bap_stream *stream;
-	bool state_changed;
-	uint8_t old_state;
+	struct bt_bap_stream *stream = ase->ep.stream;
+	struct bt_bap_stream_ops *ops;
 
-	if (!ep) {
-		return;
+	__ASSERT_NO_MSG(stream != NULL);
+
+	ase->ep.receiver_ready = false;
+
+	ase_status_changed(ase, BT_BAP_EP_STATE_IDLE);
+
+	bt_bap_stream_reset(stream);
+
+	ops = stream->ops;
+	if (ops != NULL && ops->released != NULL) {
+		ops->released(stream);
 	}
 
-	/* TODO: Verify state changes */
+	ase_free(ase);
+}
 
-	old_state = ep->status.state;
-	ep->status.state = state;
-	state_changed = old_state != state;
+static void ase_set_state_codec_configured(struct bt_ascs_ase *ase)
+{
+	struct bt_bap_stream *stream = ase->ep.stream;
+	struct bt_bap_stream_ops *ops;
 
-	LOG_DBG("ep %p id 0x%02x %s -> %s", ep, ep->status.id, bt_bap_ep_state_str(old_state),
-		bt_bap_ep_state_str(state));
+	__ASSERT_NO_MSG(stream != NULL);
 
-	/* Notify clients*/
-	ase_status_changed(ep, old_state, state);
+	ase->ep.receiver_ready = false;
 
-	if (ep->stream == NULL) {
-		return;
+	ase_status_changed(ase, BT_BAP_EP_STATE_CODEC_CONFIGURED);
+
+	ops = stream->ops;
+	if (ops != NULL && ops->configured != NULL) {
+		ops->configured(stream, &ase->ep.qos_pref);
+	}
+}
+
+static void ase_set_state_qos_configured(struct bt_ascs_ase *ase)
+{
+	struct bt_bap_stream *stream = ase->ep.stream;
+	struct bt_bap_stream_ops *ops;
+
+	__ASSERT_NO_MSG(stream != NULL);
+
+	ase->ep.receiver_ready = false;
+
+	ase_status_changed(ase, BT_BAP_EP_STATE_QOS_CONFIGURED);
+
+	ops = stream->ops;
+	if (ops != NULL && ops->qos_set != NULL) {
+		ops->qos_set(stream);
+	}
+}
+
+static void ase_set_state_enabling(struct bt_ascs_ase *ase)
+{
+	const bool state_changed = ascs_ep_get_state(&ase->ep) != BT_BAP_EP_STATE_ENABLING;
+	struct bt_bap_stream *stream = ase->ep.stream;
+	struct bt_bap_stream_ops *ops;
+
+	__ASSERT_NO_MSG(stream != NULL);
+
+	ase_status_changed(ase, BT_BAP_EP_STATE_ENABLING);
+
+	ops = stream->ops;
+	if (state_changed && ops != NULL && ops->enabled != NULL) {
+		ops->enabled(stream);
+	} else if (!state_changed && ops != NULL && ops->metadata_updated != NULL) {
+		ops->metadata_updated(stream);
 	}
 
-	stream = ep->stream;
+	/* SINK ASEs can autonomously go into the streaming state if the CIS is connected */
+	if (ase->ep.dir == BT_AUDIO_DIR_SINK && ase->ep.receiver_ready && ase->ep.iso != NULL &&
+	    ase->ep.iso->chan.state == BT_ISO_STATE_CONNECTED) {
+		ascs_ep_set_state(&ase->ep, BT_BAP_EP_STATE_STREAMING);
+	}
+}
 
-	if (state_changed && old_state == BT_BAP_EP_STATE_STREAMING) {
-		/* We left the streaming state, let the upper layers know that the stream is stopped
-		 */
+static void ase_set_state_streaming(struct bt_ascs_ase *ase)
+{
+	const bool state_changed = ascs_ep_get_state(&ase->ep) != BT_BAP_EP_STATE_STREAMING;
+	struct bt_bap_stream *stream = ase->ep.stream;
+	struct bt_bap_stream_ops *ops;
+
+	__ASSERT_NO_MSG(stream != NULL);
+
+	ase_status_changed(ase, BT_BAP_EP_STATE_STREAMING);
+
+	ops = stream->ops;
+	if (state_changed && ops != NULL && ops->started != NULL) {
+		ops->started(stream);
+	} else if (!state_changed && ops != NULL && ops->metadata_updated != NULL) {
+		ops->metadata_updated(stream);
+	}
+}
+
+static void ase_set_state_disabling(struct bt_ascs_ase *ase)
+{
+	struct bt_bap_stream *stream = ase->ep.stream;
+	struct bt_bap_stream_ops *ops;
+
+	__ASSERT_NO_MSG(stream != NULL);
+
+	ase->ep.receiver_ready = false;
+
+	ase_status_changed(ase, BT_BAP_EP_STATE_DISABLING);
+
+	ops = stream->ops;
+	if (ops != NULL && ops->disabled != NULL) {
+		ops->disabled(stream);
+	}
+}
+
+static void ase_set_state_releasing(struct bt_ascs_ase *ase)
+{
+	struct bt_bap_stream *stream = ase->ep.stream;
+
+	__ASSERT_NO_MSG(stream != NULL);
+
+	ase->ep.receiver_ready = false;
+
+	ase_status_changed(ase, BT_BAP_EP_STATE_RELEASING);
+
+	/* Either the client or the server may disconnect the CISes when entering the releasing
+	 * state.
+	 */
+	if (bt_bap_stream_can_disconnect(stream)) {
+		int err;
+
+		err = ascs_disconnect_stream(stream);
+		if (err < 0) {
+			LOG_ERR("Failed to disconnect stream %p: %d", stream, err);
+		}
+	} else {
+		ascs_ep_set_state(&ase->ep, BT_BAP_EP_STATE_IDLE);
+	}
+}
+
+static void state_transition_work_handler(struct k_work *work)
+{
+	struct bt_ascs_ase *ase = CONTAINER_OF(work, struct bt_ascs_ase, state_transition_work);
+	const enum bt_bap_ep_state old_state = ascs_ep_get_state(&ase->ep);
+	const enum bt_bap_ep_state new_state = ase->state_pending;
+	struct bt_bap_stream *stream = ase->ep.stream;
+	struct bt_bap_ep *ep = &ase->ep;
+
+	__ASSERT_NO_MSG(stream != NULL);
+
+	/* We left the streaming state, let the upper layers know that the stream is stopped */
+	if (old_state != new_state && old_state == BT_BAP_EP_STATE_STREAMING) {
 		struct bt_bap_stream_ops *ops = stream->ops;
 		uint8_t reason = ep->reason;
 
@@ -286,198 +411,130 @@ void ascs_ep_set_state(struct bt_bap_ep *ep, uint8_t state)
 		}
 	}
 
-	if (stream->ops != NULL) {
-		const struct bt_bap_stream_ops *ops = stream->ops;
+	switch (new_state) {
+	case BT_BAP_EP_STATE_IDLE:
+		ase_set_state_idle(ase);
+		break;
+	case BT_BAP_EP_STATE_CODEC_CONFIGURED:
+		ase_set_state_codec_configured(ase);
+		break;
+	case BT_BAP_EP_STATE_QOS_CONFIGURED:
+		ase_set_state_qos_configured(ase);
+		break;
+	case BT_BAP_EP_STATE_ENABLING:
+		ase_set_state_enabling(ase);
+		break;
+	case BT_BAP_EP_STATE_STREAMING:
+		ase_set_state_streaming(ase);
+		break;
+	case BT_BAP_EP_STATE_DISABLING:
+		ase_set_state_disabling(ase);
+		break;
+	case BT_BAP_EP_STATE_RELEASING:
+		ase_set_state_releasing(ase);
+		break;
+	default:
+		__ASSERT_PRINT("Invalid state %d", new_state);
+	}
+}
 
-		switch (state) {
+int ascs_ep_set_state(struct bt_bap_ep *ep, uint8_t state)
+{
+	struct bt_ascs_ase *ase = CONTAINER_OF(ep, struct bt_ascs_ase, ep);
+	const enum bt_bap_ep_state old_state = ascs_ep_get_state(&ase->ep);
+	bool valid_state_transition = false;
+	int err;
+
+	switch (state) {
+	case BT_BAP_EP_STATE_IDLE:
+		valid_state_transition = true;
+		break;
+	case BT_BAP_EP_STATE_CODEC_CONFIGURED:
+		switch (old_state) {
 		case BT_BAP_EP_STATE_IDLE:
-			ep->receiver_ready = false;
-			bt_bap_stream_reset(stream);
-
-			if (ops->released != NULL) {
-				ops->released(stream);
-			}
-			struct bt_ascs_ase *ase = CONTAINER_OF(ep, struct bt_ascs_ase, ep);
-
-			ase_free(ase);
-
-			break;
 		case BT_BAP_EP_STATE_CODEC_CONFIGURED:
-			switch (old_state) {
-			case BT_BAP_EP_STATE_IDLE:
-			case BT_BAP_EP_STATE_CODEC_CONFIGURED:
-			case BT_BAP_EP_STATE_QOS_CONFIGURED:
-			case BT_BAP_EP_STATE_RELEASING:
-				break;
-			default:
-				BT_ASSERT_MSG(false, "Invalid state transition: %s -> %s",
-					      bt_bap_ep_state_str(old_state),
-					      bt_bap_ep_state_str(ep->status.state));
-				return;
-			}
-
-			ep->receiver_ready = false;
-
-			if (ops->configured != NULL) {
-				ops->configured(stream, &ep->qos_pref);
-			}
-
-			break;
 		case BT_BAP_EP_STATE_QOS_CONFIGURED:
-			/* QoS configured have different allowed states
-			 * depending on the endpoint type
-			 */
-			if (ep->dir == BT_AUDIO_DIR_SOURCE) {
-				switch (old_state) {
-				case BT_BAP_EP_STATE_CODEC_CONFIGURED:
-				case BT_BAP_EP_STATE_QOS_CONFIGURED:
-				case BT_BAP_EP_STATE_DISABLING:
-					break;
-				default:
-					BT_ASSERT_MSG(false, "Invalid state transition: %s -> %s",
-						      bt_bap_ep_state_str(old_state),
-						      bt_bap_ep_state_str(ep->status.state));
-					return;
-				}
-			} else {
-				switch (old_state) {
-				case BT_BAP_EP_STATE_CODEC_CONFIGURED:
-				case BT_BAP_EP_STATE_QOS_CONFIGURED:
-				case BT_BAP_EP_STATE_ENABLING:
-				case BT_BAP_EP_STATE_STREAMING:
-					break;
-				default:
-					BT_ASSERT_MSG(false, "Invalid state transition: %s -> %s",
-						      bt_bap_ep_state_str(old_state),
-						      bt_bap_ep_state_str(ep->status.state));
-					return;
-				}
-			}
-
-			ep->receiver_ready = false;
-
-			if (ops->qos_set != NULL) {
-				ops->qos_set(stream);
-			}
-
-			break;
-		case BT_BAP_EP_STATE_ENABLING:
-			switch (old_state) {
-			case BT_BAP_EP_STATE_QOS_CONFIGURED:
-			case BT_BAP_EP_STATE_ENABLING:
-				break;
-			default:
-				BT_ASSERT_MSG(false, "Invalid state transition: %s -> %s",
-					      bt_bap_ep_state_str(old_state),
-					      bt_bap_ep_state_str(ep->status.state));
-				return;
-			}
-
-			if (state_changed && ops->enabled != NULL) {
-				ops->enabled(stream);
-			} else if (!state_changed && ops->metadata_updated) {
-				ops->metadata_updated(stream);
-			}
-
-			/* SINK ASEs can autonomously go into the streaming state if
-			 * the CIS is connected
-			 */
-			if (ep->dir == BT_AUDIO_DIR_SINK &&
-			    ep->receiver_ready &&
-			    ep->iso != NULL &&
-			    ep->iso->chan.state == BT_ISO_STATE_CONNECTED) {
-				ascs_ep_set_state(ep, BT_BAP_EP_STATE_STREAMING);
-			}
-
-			break;
-		case BT_BAP_EP_STATE_STREAMING:
-			switch (old_state) {
-			case BT_BAP_EP_STATE_ENABLING:
-			case BT_BAP_EP_STATE_STREAMING:
-				break;
-			default:
-				BT_ASSERT_MSG(false, "Invalid state transition: %s -> %s",
-					      bt_bap_ep_state_str(old_state),
-					      bt_bap_ep_state_str(ep->status.state));
-				return;
-			}
-
-			if (state_changed && ops->started != NULL) {
-				ops->started(stream);
-			} else if (!state_changed && ops->metadata_updated) {
-				ops->metadata_updated(stream);
-			}
-
-			break;
-		case BT_BAP_EP_STATE_DISABLING:
-			if (ep->dir == BT_AUDIO_DIR_SOURCE) {
-				switch (old_state) {
-				case BT_BAP_EP_STATE_ENABLING:
-				case BT_BAP_EP_STATE_STREAMING:
-					break;
-				default:
-					BT_ASSERT_MSG(false, "Invalid state transition: %s -> %s",
-						      bt_bap_ep_state_str(old_state),
-						      bt_bap_ep_state_str(ep->status.state));
-					return;
-				}
-			} else {
-				/* Sinks cannot go into the disabling state */
-				BT_ASSERT_MSG(false, "Invalid state transition: %s -> %s",
-					      bt_bap_ep_state_str(old_state),
-					      bt_bap_ep_state_str(ep->status.state));
-				return;
-			}
-
-			ep->receiver_ready = false;
-
-			if (ops->disabled != NULL) {
-				ops->disabled(stream);
-			}
-
-			break;
 		case BT_BAP_EP_STATE_RELEASING:
-			switch (old_state) {
-			case BT_BAP_EP_STATE_CODEC_CONFIGURED:
-			case BT_BAP_EP_STATE_QOS_CONFIGURED:
-			case BT_BAP_EP_STATE_ENABLING:
-			case BT_BAP_EP_STATE_STREAMING:
-				break;
-			case BT_BAP_EP_STATE_DISABLING:
-				if (ep->dir == BT_AUDIO_DIR_SOURCE) {
-					break;
-				} /* else fall through for sink */
-
-				/* fall through */
-			default:
-				BT_ASSERT_MSG(false, "Invalid state transition: %s -> %s",
-					      bt_bap_ep_state_str(old_state),
-					      bt_bap_ep_state_str(ep->status.state));
-				return;
-			}
-
-			ep->receiver_ready = false;
-
-			if (bt_bap_stream_can_disconnect(stream)) {
-				/* Either the client or the server may disconnect the
-				 * CISes when entering the releasing state.
-				 */
-				const int err = ascs_disconnect_stream(stream);
-
-				if (err < 0) {
-					LOG_ERR("Failed to disconnect stream %p: %d",
-						stream, err);
-				}
-			} else {
-				ascs_ep_set_state(ep, BT_BAP_EP_STATE_IDLE);
-			}
-
+			valid_state_transition = true;
 			break;
 		default:
-			LOG_ERR("Invalid state: %u", state);
 			break;
-		}
+		} break;
+	case BT_BAP_EP_STATE_QOS_CONFIGURED:
+		switch (old_state) {
+		case BT_BAP_EP_STATE_CODEC_CONFIGURED:
+		case BT_BAP_EP_STATE_QOS_CONFIGURED:
+			valid_state_transition = true;
+			break;
+		case BT_BAP_EP_STATE_DISABLING:
+			valid_state_transition = ase->ep.dir == BT_AUDIO_DIR_SOURCE;
+			break;
+		case BT_BAP_EP_STATE_ENABLING:
+		case BT_BAP_EP_STATE_STREAMING:
+			valid_state_transition = ase->ep.dir == BT_AUDIO_DIR_SINK;
+			break;
+		default:
+			break;
+		} break;
+	case BT_BAP_EP_STATE_ENABLING:
+		switch (old_state) {
+		case BT_BAP_EP_STATE_QOS_CONFIGURED:
+		case BT_BAP_EP_STATE_ENABLING:
+			valid_state_transition = true;
+			break;
+		default:
+			break;
+		} break;
+	case BT_BAP_EP_STATE_STREAMING:
+		switch (old_state) {
+		case BT_BAP_EP_STATE_ENABLING:
+		case BT_BAP_EP_STATE_STREAMING:
+			valid_state_transition = true;
+			break;
+		default:
+			break;
+		} break;
+	case BT_BAP_EP_STATE_DISABLING:
+		switch (old_state) {
+		case BT_BAP_EP_STATE_ENABLING:
+		case BT_BAP_EP_STATE_STREAMING:
+			valid_state_transition = ase->ep.dir == BT_AUDIO_DIR_SOURCE;
+			break;
+		default:
+			break;
+		} break;
+	case BT_BAP_EP_STATE_RELEASING:
+		switch (old_state) {
+		case BT_BAP_EP_STATE_CODEC_CONFIGURED:
+		case BT_BAP_EP_STATE_QOS_CONFIGURED:
+		case BT_BAP_EP_STATE_ENABLING:
+		case BT_BAP_EP_STATE_STREAMING:
+			valid_state_transition = true;
+			break;
+		case BT_BAP_EP_STATE_DISABLING:
+			valid_state_transition = ase->ep.dir == BT_AUDIO_DIR_SOURCE;
+			break;
+		default:
+			break;
+		} break;
 	}
+
+	if (!valid_state_transition) {
+		BT_ASSERT_MSG(false, "Invalid state transition: %s -> %s",
+			      bt_bap_ep_state_str(old_state), bt_bap_ep_state_str(state));
+
+		return -EBADMSG;
+	}
+
+	ase->state_pending = state;
+
+	err = k_work_submit(&ase->state_transition_work);
+	if (err < 0) {
+		LOG_ERR("Failed to submit state transition work err %d", err);
+		return err;
+	}
+
+	return 0;
 }
 
 static void ascs_codec_data_add(struct net_buf_simple *buf, const char *prefix, uint8_t num,
@@ -1135,6 +1192,7 @@ static void ase_init(struct bt_ascs_ase *ase, struct bt_conn *conn, uint8_t id)
 
 	k_work_init_delayable(&ase->disconnect_work,
 			      ascs_disconnect_stream_work_handler);
+	k_work_init(&ase->state_transition_work, state_transition_work_handler);
 }
 
 static struct bt_ascs_ase *ase_new(struct bt_conn *conn, uint8_t id)
@@ -1508,7 +1566,12 @@ int bt_ascs_config_ase(struct bt_conn *conn, struct bt_bap_stream *stream,
 
 	bt_bap_stream_attach(conn, stream, ep, &ep->codec_cfg);
 
-	ascs_ep_set_state(ep, BT_BAP_EP_STATE_CODEC_CONFIGURED);
+	err = ascs_ep_set_state(ep, BT_BAP_EP_STATE_CODEC_CONFIGURED);
+	if (err != 0) {
+		bt_bap_stream_detach(stream);
+		ase_free(ase);
+		return err;
+	}
 
 	return 0;
 }

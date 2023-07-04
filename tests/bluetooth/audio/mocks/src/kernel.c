@@ -56,6 +56,23 @@ int k_work_cancel_delayable(struct k_work_delayable *dwork)
 	return 0;
 }
 
+void k_work_init(struct k_work *work, k_work_handler_t handler)
+{
+	work->handler = handler;
+}
+
+int k_work_submit(struct k_work *work)
+{
+	work->handler(work);
+
+	return 0;
+}
+
+int k_work_busy_get(const struct k_work *work)
+{
+	return 0;
+}
+
 int32_t k_sleep(k_timeout_t timeout)
 {
 	struct k_work *work;
