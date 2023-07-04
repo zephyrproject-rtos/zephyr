@@ -17,7 +17,6 @@ zephyr_library_sources(
 zephyr_library_sources_ifdef(CONFIG_GEN_SW_ISR_TABLE isr_wrapper.S)
 zephyr_library_sources_ifdef(CONFIG_CPP __aeabi_atexit.c)
 zephyr_library_sources_ifdef(CONFIG_IRQ_OFFLOAD irq_offload.c)
-zephyr_library_sources_ifdef(CONFIG_SW_VECTOR_RELAY irq_relay.S)
 zephyr_library_sources_ifdef(CONFIG_THREAD_LOCAL_STORAGE tls.c)
 zephyr_library_sources_ifdef(CONFIG_USERSPACE userspace.S)
 zephyr_library_sources_ifdef(CONFIG_ARM_ZIMAGE_HEADER header.S)
