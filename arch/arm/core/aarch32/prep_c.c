@@ -20,6 +20,7 @@
 #include <kernel_internal.h>
 #include <zephyr/linker/linker-defs.h>
 #include <zephyr/sys/barrier.h>
+#include <aarch32/early_init.h>
 
 #if !defined(CONFIG_CPU_CORTEX_M)
 #include <zephyr/arch/arm/aarch32/cortex_a_r/lib_helpers.h>
@@ -245,6 +246,11 @@ static inline void z_arm_floating_point_init(void)
 #endif /* CONFIG_CPU_CORTEX_M */
 #endif /* CONFIG_CPU_HAS_FPU */
 
+void __weak z_arm_early_boot_init(void)
+{
+	/* Do nothing */
+}
+
 extern FUNC_NORETURN void z_cstart(void);
 
 /**
@@ -256,6 +262,7 @@ extern FUNC_NORETURN void z_cstart(void);
  */
 void z_arm_prep_c(void)
 {
+	z_arm_early_boot_init();
 	relocate_vector_table();
 #if defined(CONFIG_CPU_HAS_FPU)
 	z_arm_floating_point_init();
