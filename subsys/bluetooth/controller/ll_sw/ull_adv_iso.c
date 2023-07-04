@@ -97,13 +97,19 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 	struct ll_adv_iso_set *adv_iso;
 	struct pdu_adv *pdu_prev, *pdu;
 	struct pdu_big_info *big_info;
+	uint32_t ticks_slot_overhead;
+	struct ll_adv_sync_set *sync;
+	struct ll_adv_aux_set *aux;
 	uint32_t event_spacing_max;
 	uint8_t pdu_big_info_size;
 	uint32_t iso_interval_us;
 	uint32_t latency_packing;
+	uint32_t ticks_slot_sync;
+	uint32_t ticks_slot_aux;
 	memq_link_t *link_cmplt;
 	memq_link_t *link_term;
 	struct ll_adv_set *adv;
+	uint32_t slot_overhead;
 	uint32_t event_spacing;
 	uint16_t ctrl_spacing;
 	uint8_t sdu_per_event;
@@ -275,14 +281,48 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 			  lll_adv_iso->num_bis;
 	event_spacing = latency_packing + ctrl_spacing +
 			EVENT_OVERHEAD_START_US + EVENT_OVERHEAD_END_US;
-	/* FIXME: calculate overheads due to extended and periodic advertising.
-	 */
-	event_spacing_max = iso_interval_us - 2000U;
-	if (event_spacing > event_spacing_max) {
-		/* ISO interval too small to fit the calculated BIG event
-		 * timing required for the supplied BIG create parameters.
-		 */
 
+	/* Calculate overheads due to extended advertising. */
+	aux = HDR_LLL2ULL(adv->lll.aux);
+	ticks_slot_aux = aux->ull.ticks_slot;
+	if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT)) {
+		ticks_slot_overhead = MAX(aux->ull.ticks_active_to_start,
+					  aux->ull.ticks_prepare_to_start);
+	} else {
+		ticks_slot_overhead = 0U;
+	}
+	ticks_slot_aux += ticks_slot_overhead;
+
+	/* Calculate overheads due to periodic advertising. */
+	sync = HDR_LLL2ULL(lll_adv_sync);
+	ticks_slot_sync = sync->ull.ticks_slot;
+	if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT)) {
+		ticks_slot_overhead = MAX(sync->ull.ticks_active_to_start,
+					  sync->ull.ticks_prepare_to_start);
+	} else {
+		ticks_slot_overhead = 0U;
+	}
+	ticks_slot_sync += ticks_slot_overhead;
+
+	/* Calculate total overheads due to extended and periodic advertising */
+	if (CONFIG_BT_CTLR_ADV_AUX_SYNC_OFFSET > 0U) {
+		ticks_slot_overhead = MAX(ticks_slot_aux, ticks_slot_sync);
+	} else {
+		ticks_slot_overhead = ticks_slot_aux + ticks_slot_sync;
+	}
+
+	/* Calculate max available ISO event spacing */
+	slot_overhead = HAL_TICKER_TICKS_TO_US(ticks_slot_overhead);
+	if (slot_overhead < iso_interval_us) {
+		event_spacing_max = iso_interval_us - slot_overhead;
+	} else {
+		event_spacing_max = 0U;
+	}
+
+	/* Check if ISO interval too small to fit the calculated BIG event
+	 * timing required for the supplied BIG create parameters.
+	 */
+	if (event_spacing > event_spacing_max) {
 		/* Release allocated link buffers */
 		ll_rx_link_release(link_cmplt);
 		ll_rx_link_release(link_term);
