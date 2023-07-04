@@ -245,4 +245,6 @@ source "drivers/serial/Kconfig.bcm2711"
 
 source "drivers/serial/Kconfig.intel_lw"
 
+source "drivers/serial/Kconfig.ra"
+
 endif # SERIAL

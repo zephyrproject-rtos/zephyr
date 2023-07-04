@@ -1,0 +1,8 @@
+# Copyright (c) 2023 TOKITA Hiroshi <tokita.hiroshi@fujitsu.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas RA Series SCI based UART controller
+
+compatible: "renesas,ra-uart-sci"
+
+include: [uart-controller.yaml]
