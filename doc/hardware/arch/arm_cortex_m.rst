@@ -262,7 +262,7 @@ interrupt. If the ZLI feature is enabled in Mainline Cortex-M builds (see
 * Regular HW interrupts are assigned priority levels lower than SVC.
 
 The priority level configuration in Cortex-M is implemented in
-:file:`include/arch/arm/aarch32/exc.h`.
+:file:`include/arch/arm/exc.h`.
 
 Locking and unlocking IRQs
 --------------------------
@@ -624,7 +624,7 @@ Linking Cortex-M applications
 *****************************
 
 Most Cortex-M platforms make use of the default Cortex-M
-GCC linker script in :file:`include/arch/arm/aarch32/cortex-m/scripts/linked.ld`,
+GCC linker script in :file:`include/arch/arm/cortex-m/scripts/linked.ld`,
 although it is possible for platforms to use a custom linker
 script as well.
 

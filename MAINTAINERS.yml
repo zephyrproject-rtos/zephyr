@@ -141,7 +141,6 @@ ARM arch:
   files:
     - arch/arm/
     - arch/arm/core/offsets/
-    - include/zephyr/arch/arm/aarch32/
     - include/zephyr/arch/arm/
     - tests/arch/arm/
     - doc/hardware/arch/arm_cortex_m.rst

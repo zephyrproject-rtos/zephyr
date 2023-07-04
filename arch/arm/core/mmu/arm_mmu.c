@@ -31,7 +31,7 @@
 
 #include <cmsis_core.h>
 
-#include <zephyr/arch/arm/aarch32/mmu/arm_mmu.h>
+#include <zephyr/arch/arm/mmu/arm_mmu.h>
 #include "arm_mmu_priv.h"
 
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);

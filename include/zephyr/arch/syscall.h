@@ -18,7 +18,7 @@
 #elif defined(CONFIG_ARM64)
 #include <zephyr/arch/arm64/syscall.h>
 #elif defined(CONFIG_ARM)
-#include <zephyr/arch/arm/aarch32/syscall.h>
+#include <zephyr/arch/arm/syscall.h>
 #elif defined(CONFIG_ARC)
 #include <zephyr/arch/arc/syscall.h>
 #elif defined(CONFIG_RISCV)
