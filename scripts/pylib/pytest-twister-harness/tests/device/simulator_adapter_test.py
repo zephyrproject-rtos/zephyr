@@ -42,9 +42,10 @@ def test_if_native_simulator_adapter_runs_without_errors(
     """
     script_path = resources.joinpath('mock_script.py')
     # patching original command by mock_script.py to simulate same behaviour as zephyr.exe
+    device.connection_timeout = 4
     device.command = ['python3', str(script_path)]
     device.initialize_log_files()
-    device.flash_and_run(timeout=4)
+    device.flash_and_run()
     lines = list(device.iter_stdout)  # give it time before close thread
     device.stop()
     assert device._process_ended_with_timeout is False
@@ -60,9 +61,10 @@ def test_if_native_simulator_adapter_finishes_after_timeout_while_there_is_no_da
 ) -> None:
     """Test if thread finishes after timeout when there is no data on stdout, but subprocess is still running"""
     script_path = resources.joinpath('mock_script.py')
+    device.connection_timeout = 0.5
     device.command = ['python3', str(script_path), '--long-sleep', '--sleep=5']
     device.initialize_log_files()
-    device.flash_and_run(timeout=0.5)
+    device.flash_and_run()
     lines = list(device.iter_stdout)
     device.stop()
     assert device._process_ended_with_timeout is True
@@ -72,19 +74,21 @@ def test_if_native_simulator_adapter_finishes_after_timeout_while_there_is_no_da
 
 
 def test_if_native_simulator_adapter_raises_exception_file_not_found(device: NativeSimulatorAdapter) -> None:
+    device.connection_timeout = 0.1
     device.command = ['dummy']
     with pytest.raises(TwisterHarnessException, match='File not found: dummy'):
-        device.flash_and_run(timeout=0.1)
+        device.flash_and_run()
         device.stop()
     assert device._exc is not None
     assert isinstance(device._exc, TwisterHarnessException)
 
 
 def test_if_simulator_adapter_raises_exception_empty_command(device: NativeSimulatorAdapter) -> None:
+    device.connection_timeout = 0.1
     device.command = []
     exception_msg = 'Run simulation command is empty, please verify if it was generated properly.'
     with pytest.raises(TwisterHarnessException, match=exception_msg):
-        device.flash_and_run(timeout=0.1)
+        device.flash_and_run()
 
 
 def test_handler_and_device_log_correct_initialized_on_simulators(device: NativeSimulatorAdapter) -> None:
@@ -98,9 +102,10 @@ def test_handler_and_device_log_correct_initialized_on_simulators(device: Native
 def test_if_simulator_adapter_raises_exception_when_subprocess_raised_subprocess_error(
     patched_run, device: NativeSimulatorAdapter
 ):
+    device.connection_timeout = 0.1
     device.command = ['echo', 'TEST']
     with pytest.raises(TwisterHarnessException, match='Exception message'):
-        device.flash_and_run(timeout=0.1)
+        device.flash_and_run()
         device.stop()
 
 
@@ -108,9 +113,10 @@ def test_if_simulator_adapter_raises_exception_when_subprocess_raised_subprocess
 def test_if_simulator_adapter_raises_exception_when_subprocess_raised_an_error(
     patched_run, device: NativeSimulatorAdapter
 ):
+    device.connection_timeout = 0.1
     device.command = ['echo', 'TEST']
     with pytest.raises(TwisterHarnessException, match='Raised other exception'):
-        device.flash_and_run(timeout=0.1)
+        device.flash_and_run()
         device.stop()
 
 
