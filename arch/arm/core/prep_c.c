@@ -22,7 +22,7 @@
 #include <zephyr/sys/barrier.h>
 
 #if !defined(CONFIG_CPU_CORTEX_M)
-#include <zephyr/arch/arm/aarch32/cortex_a_r/lib_helpers.h>
+#include <zephyr/arch/arm/cortex_a_r/lib_helpers.h>
 #endif
 
 #if defined(CONFIG_ARMV7_R) || defined(CONFIG_ARMV7_A)

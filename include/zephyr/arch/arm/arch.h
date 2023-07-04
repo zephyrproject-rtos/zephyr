@@ -22,29 +22,29 @@
 /* ARM GPRs are often designated by two different names */
 #define sys_define_gpr_with_alias(name1, name2) union { uint32_t name1, name2; }
 
-#include <zephyr/arch/arm/aarch32/thread.h>
-#include <zephyr/arch/arm/aarch32/exc.h>
-#include <zephyr/arch/arm/aarch32/irq.h>
-#include <zephyr/arch/arm/aarch32/error.h>
-#include <zephyr/arch/arm/aarch32/misc.h>
+#include <zephyr/arch/arm/thread.h>
+#include <zephyr/arch/arm/exc.h>
+#include <zephyr/arch/arm/irq.h>
+#include <zephyr/arch/arm/error.h>
+#include <zephyr/arch/arm/misc.h>
 #include <zephyr/arch/common/addr_types.h>
 #include <zephyr/arch/common/ffs.h>
-#include <zephyr/arch/arm/aarch32/nmi.h>
-#include <zephyr/arch/arm/aarch32/asm_inline.h>
+#include <zephyr/arch/arm/nmi.h>
+#include <zephyr/arch/arm/asm_inline.h>
 #include <zephyr/arch/common/sys_bitops.h>
 
 #ifdef CONFIG_CPU_CORTEX_M
-#include <zephyr/arch/arm/aarch32/cortex_m/cpu.h>
-#include <zephyr/arch/arm/aarch32/cortex_m/memory_map.h>
+#include <zephyr/arch/arm/cortex_m/cpu.h>
+#include <zephyr/arch/arm/cortex_m/memory_map.h>
 #include <zephyr/arch/common/sys_io.h>
 #elif defined(CONFIG_CPU_AARCH32_CORTEX_R) || defined(CONFIG_CPU_AARCH32_CORTEX_A)
-#include <zephyr/arch/arm/aarch32/cortex_a_r/cpu.h>
-#include <zephyr/arch/arm/aarch32/cortex_a_r/sys_io.h>
+#include <zephyr/arch/arm/cortex_a_r/cpu.h>
+#include <zephyr/arch/arm/cortex_a_r/sys_io.h>
 #if defined(CONFIG_AARCH32_ARMV8_R)
-#include <zephyr/arch/arm/aarch32/cortex_a_r/lib_helpers.h>
-#include <zephyr/arch/arm/aarch32/cortex_a_r/armv8_timer.h>
+#include <zephyr/arch/arm/cortex_a_r/lib_helpers.h>
+#include <zephyr/arch/arm/cortex_a_r/armv8_timer.h>
 #else
-#include <zephyr/arch/arm/aarch32/cortex_a_r/timer.h>
+#include <zephyr/arch/arm/cortex_a_r/timer.h>
 #endif
 #endif
 
@@ -265,14 +265,14 @@ enum k_fatal_error_reason_arch {
 /* Legacy case: retain containing extern "C" with C++ */
 #ifdef CONFIG_ARM_MPU
 #ifdef CONFIG_CPU_HAS_ARM_MPU
-#include <zephyr/arch/arm/aarch32/mpu/arm_mpu.h>
+#include <zephyr/arch/arm/mpu/arm_mpu.h>
 #endif /* CONFIG_CPU_HAS_ARM_MPU */
 #ifdef CONFIG_CPU_HAS_NXP_MPU
-#include <zephyr/arch/arm/aarch32/mpu/nxp_mpu.h>
+#include <zephyr/arch/arm/mpu/nxp_mpu.h>
 #endif /* CONFIG_CPU_HAS_NXP_MPU */
 #endif /* CONFIG_ARM_MPU */
 #ifdef CONFIG_ARM_AARCH32_MMU
-#include <zephyr/arch/arm/aarch32/mmu/arm_mmu.h>
+#include <zephyr/arch/arm/mmu/arm_mmu.h>
 #endif /* CONFIG_ARM_AARCH32_MMU */
 
 #ifdef __cplusplus

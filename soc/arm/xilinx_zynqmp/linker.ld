@@ -7,5 +7,5 @@
 
 
 #if defined(CONFIG_SOC_XILINX_ZYNQMP_RPU)
-#include <zephyr/arch/arm/aarch32/cortex_a_r/scripts/linker.ld>
+#include <zephyr/arch/arm/cortex_a_r/scripts/linker.ld>
 #endif

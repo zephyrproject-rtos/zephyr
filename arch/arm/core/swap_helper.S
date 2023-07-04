@@ -22,7 +22,7 @@
 #include <zephyr/kernel.h>
 
 #if defined(CONFIG_CPU_CORTEX_M)
-#include <zephyr/arch/arm/aarch32/cortex_m/cpu.h>
+#include <zephyr/arch/arm/cortex_m/cpu.h>
 #endif
 _ASM_FILE_PROLOGUE
 

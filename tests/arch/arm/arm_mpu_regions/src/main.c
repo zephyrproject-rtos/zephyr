@@ -7,7 +7,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/linker/linker-defs.h>
 #include <zephyr/sys/slist.h>
-#include <zephyr/arch/arm/aarch32/mpu/arm_mpu.h>
+#include <zephyr/arch/arm/mpu/arm_mpu.h>
 #include <zephyr/ztest.h>
 #include <string.h>
 

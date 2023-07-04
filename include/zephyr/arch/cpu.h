@@ -16,7 +16,7 @@
 #elif defined(CONFIG_ARM64)
 #include <zephyr/arch/arm64/arch.h>
 #elif defined(CONFIG_ARM)
-#include <zephyr/arch/arm/aarch32/arch.h>
+#include <zephyr/arch/arm/arch.h>
 #elif defined(CONFIG_ARC)
 #include <zephyr/arch/arc/arch.h>
 #elif defined(CONFIG_NIOS2)
