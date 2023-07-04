@@ -15,7 +15,7 @@
 #if defined(CONFIG_X86) || defined(CONFIG_X86_64)
 #include <zephyr/arch/x86/arch_inlines.h>
 #elif defined(CONFIG_ARM)
-#include <zephyr/arch/arm/aarch32/arch_inlines.h>
+#include <zephyr/arch/arm/arch_inlines.h>
 #elif defined(CONFIG_ARM64)
 #include <zephyr/arch/arm64/arch_inlines.h>
 #elif defined(CONFIG_ARC)

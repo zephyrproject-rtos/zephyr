@@ -7,7 +7,7 @@
 
 #include <zephyr/kernel.h>
 #include <cmsis_core.h>
-#include <zephyr/arch/arm/aarch32/cortex_m/fpu.h>
+#include <zephyr/arch/arm/cortex_m/fpu.h>
 
 /**
  * @file @brief Helper functions for saving and restoring the FP context.

@@ -655,11 +655,11 @@
 /include/zephyr/arch/arc/                        @abrodkin @ruuddw @evgeniy-paltsev
 /include/zephyr/arch/arc/arch.h                  @abrodkin @ruuddw @evgeniy-paltsev
 /include/zephyr/arch/arc/v2/irq.h                @abrodkin @ruuddw @evgeniy-paltsev
-/include/zephyr/arch/arm/aarch32/                @MaureenHelm @galak @ioannisg
-/include/zephyr/arch/arm/aarch32/cortex_a_r/     @stephanosio
+/include/zephyr/arch/arm                         @MaureenHelm @galak @ioannisg
+/include/zephyr/arch/arm/cortex_a_r/             @stephanosio
 /include/zephyr/arch/arm64/                      @carlocaione
 /include/zephyr/arch/arm64/cortex_r/             @povergoing
-/include/zephyr/arch/arm/aarch32/irq.h           @carlocaione
+/include/zephyr/arch/arm/irq.h                   @carlocaione
 /include/zephyr/arch/mips/                       @frantony
 /include/zephyr/arch/nios2/                      @nashif
 /include/zephyr/arch/nios2/arch.h                @nashif

@@ -44,4 +44,4 @@ MEMORY
 
 #endif /* CONFIG_BOARD_NRF5340DK_NRF5340_CPUAPP */
 
-#include <zephyr/arch/arm/aarch32/cortex_m/scripts/linker.ld>
+#include <zephyr/arch/arm/cortex_m/scripts/linker.ld>

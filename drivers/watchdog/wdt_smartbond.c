@@ -5,7 +5,7 @@
  */
 
 #include <soc.h>
-#include <zephyr/arch/arm/aarch32/nmi.h>
+#include <zephyr/arch/arm/nmi.h>
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/watchdog.h>
 #include <zephyr/logging/log.h>

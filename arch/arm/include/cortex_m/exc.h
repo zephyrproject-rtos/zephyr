@@ -23,7 +23,7 @@
 #else
 
 #include <cmsis_core.h>
-#include <zephyr/arch/arm/aarch32/exc.h>
+#include <zephyr/arch/arm/exc.h>
 #include <zephyr/irq_offload.h>
 
 #ifdef __cplusplus
