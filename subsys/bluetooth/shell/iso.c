@@ -129,7 +129,7 @@ struct bt_iso_chan iso_chan = {
 };
 
 NET_BUF_POOL_FIXED_DEFINE(tx_pool, 1, BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU),
-			  8, NULL);
+			  CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
 
 #if defined(CONFIG_BT_ISO_CENTRAL)
 static struct bt_iso_cig *cig;
