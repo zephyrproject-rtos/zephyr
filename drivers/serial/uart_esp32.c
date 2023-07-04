@@ -721,7 +721,7 @@ static int uart_esp32_async_tx(const struct device *dev, const uint8_t *buf, siz
 	dma_cfg.channel_direction = MEMORY_TO_PERIPHERAL;
 	dma_cfg.dma_callback = uart_esp32_dma_tx_done;
 	dma_cfg.user_data = (void *)dev;
-	dma_cfg.dma_slot = GDMA_TRIG_PERIPH_UHCI0;
+	dma_cfg.dma_slot = ESP_GDMA_TRIG_PERIPH_UHCI0;
 	dma_cfg.block_count = 1;
 	dma_cfg.head_block = &dma_blk;
 	dma_blk.block_size = len;
@@ -782,7 +782,7 @@ static int uart_esp32_async_rx_enable(const struct device *dev, uint8_t *buf, si
 	dma_cfg.channel_direction = PERIPHERAL_TO_MEMORY;
 	dma_cfg.dma_callback = uart_esp32_dma_rx_done;
 	dma_cfg.user_data = (void *)dev;
-	dma_cfg.dma_slot = GDMA_TRIG_PERIPH_UHCI0;
+	dma_cfg.dma_slot = ESP_GDMA_TRIG_PERIPH_UHCI0;
 	dma_cfg.block_count = 1;
 	dma_cfg.head_block = &dma_blk;
 	dma_blk.block_size = len;

@@ -11,11 +11,11 @@ LOG_MODULE_REGISTER(dma_esp32_gdma, CONFIG_DMA_LOG_LEVEL);
 
 #include <hal/gdma_hal.h>
 #include <hal/gdma_ll.h>
-#include <gdma_channel.h>
+#include <soc/gdma_channel.h>
 #include <hal/dma_types.h>
 
 #include <soc.h>
-#include <soc/soc_memory_types.h>
+#include <esp_memory_utils.h>
 #include <errno.h>
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/dma.h>
@@ -34,6 +34,8 @@ LOG_MODULE_REGISTER(dma_esp32_gdma, CONFIG_DMA_LOG_LEVEL);
 #endif
 
 #define DMA_MAX_CHANNEL SOC_GDMA_PAIRS_PER_GROUP
+#define ESP_DMA_M2M_ON  0
+#define ESP_DMA_M2M_OFF 1
 
 struct dma_esp32_data {
 	gdma_hal_context_t hal;
@@ -181,10 +183,12 @@ static int dma_esp32_config_rx(const struct device *dev, struct dma_esp32_channe
 
 	gdma_ll_rx_reset_channel(data->hal.dev, dma_channel->channel_id);
 
-	if (dma_channel->periph_id != SOC_GDMA_TRIG_PERIPH_M2M0) {
-		gdma_ll_rx_connect_to_periph(data->hal.dev, dma_channel->channel_id,
-					     dma_channel->periph_id);
-	}
+	gdma_ll_rx_connect_to_periph(
+		data->hal.dev, dma_channel->channel_id,
+		dma_channel->periph_id == SOC_GDMA_TRIG_PERIPH_M2M0 ? ESP_DMA_M2M_ON
+								    : ESP_DMA_M2M_OFF,
+		dma_channel->periph_id == SOC_GDMA_TRIG_PERIPH_M2M0 ? ESP_DMA_M2M_ON
+								    : dma_channel->periph_id);
 
 	if (config_dma->dest_burst_length) {
 		/*
@@ -236,10 +240,12 @@ static int dma_esp32_config_tx(const struct device *dev, struct dma_esp32_channe
 
 	gdma_ll_tx_reset_channel(data->hal.dev, dma_channel->channel_id);
 
-	if (dma_channel->periph_id != SOC_GDMA_TRIG_PERIPH_M2M0) {
-		gdma_ll_tx_connect_to_periph(data->hal.dev, dma_channel->channel_id,
-					     dma_channel->periph_id);
-	}
+	gdma_ll_tx_connect_to_periph(
+		data->hal.dev, dma_channel->channel_id,
+		dma_channel->periph_id == SOC_GDMA_TRIG_PERIPH_M2M0 ? ESP_DMA_M2M_ON
+								    : ESP_DMA_M2M_OFF,
+		dma_channel->periph_id == SOC_GDMA_TRIG_PERIPH_M2M0 ? ESP_DMA_M2M_ON
+								    : dma_channel->periph_id);
 
 	/*
 	 * TX channel can always enable burst mode, no matter data alignment
@@ -287,9 +293,6 @@ static int dma_esp32_config(const struct device *dev, uint32_t channel,
 					 : config_dma->dma_slot;
 
 	dma_channel->channel_id = channel / 2;
-
-	gdma_ll_enable_m2m_mode(data->hal.dev, dma_channel->channel_id,
-				config_dma->channel_direction == MEMORY_TO_MEMORY);
 
 	switch (config_dma->channel_direction) {
 	case MEMORY_TO_MEMORY:
@@ -538,7 +541,7 @@ static int dma_esp32_init(const struct device *dev)
 		dma_channel = &config->dma_channel[i];
 		dma_channel->cb = NULL;
 		dma_channel->dir = DMA_UNCONFIGURED;
-		dma_channel->periph_id = GDMA_TRIG_PERIPH_INVALID;
+		dma_channel->periph_id = ESP_GDMA_TRIG_PERIPH_INVALID;
 		memset(&dma_channel->desc, 0, sizeof(dma_descriptor_t));
 	}
 
