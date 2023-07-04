@@ -86,6 +86,12 @@ struct lll_prpa_cache {
 	uint8_t   taken:1;
 	bt_addr_t rpa;
 };
+
+/* Cache of known unknown target RPAs */
+struct lll_trpa_cache {
+	uint8_t   rl_idx;
+	bt_addr_t rpa;
+};
 #endif
 
 extern uint8_t ull_filter_lll_fal_match(struct lll_filter const *const filter,
@@ -111,6 +117,7 @@ extern bool ull_filter_lll_rl_addr_resolve(uint8_t id_addr_type,
 extern bool ull_filter_lll_rl_enabled(void);
 #if defined(CONFIG_BT_CTLR_SW_DEFERRED_PRIVACY)
 extern const struct lll_prpa_cache *ull_filter_lll_prpa_cache_get(void);
+extern const struct lll_trpa_cache *ull_filter_lll_trpa_cache_get(void);
 typedef void (*resolve_callback_t)(void *param);
 extern uint8_t ull_filter_deferred_resolve(bt_addr_t *rpa,
 					resolve_callback_t cb);
