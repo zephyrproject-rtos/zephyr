@@ -12,6 +12,8 @@ zephyr_library_sources(
   scb.c
   thread_abort.c
   vector_table.S
+  swap.c
+  swap_helper.S
   )
 
 zephyr_library_sources_ifdef(CONFIG_USERSPACE thread.c)

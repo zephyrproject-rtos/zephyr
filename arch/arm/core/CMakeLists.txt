@@ -9,8 +9,6 @@ zephyr_library_sources(
   nmi.c
   nmi_on_reset.S
   prep_c.c
-  swap.c
-  swap_helper.S
   thread.c
 )
 
