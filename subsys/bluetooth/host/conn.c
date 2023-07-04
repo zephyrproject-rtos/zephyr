@@ -394,25 +394,7 @@ void bt_conn_recv(struct bt_conn *conn, struct net_buf *buf, uint8_t flags)
 
 static struct bt_conn_tx *conn_tx_alloc(void)
 {
-	/* The TX context always get freed in the system workqueue,
-	 * so if we're in the same workqueue but there are no immediate
-	 * contexts available, there's no chance we'll get one by waiting.
-	 */
-	if (k_current_get() == &k_sys_work_q.thread) {
-		return k_fifo_get(&free_tx, K_NO_WAIT);
-	}
-
-	if (IS_ENABLED(CONFIG_BT_CONN_LOG_LEVEL_DBG)) {
-		struct bt_conn_tx *tx = k_fifo_get(&free_tx, K_NO_WAIT);
-
-		if (tx) {
-			return tx;
-		}
-
-		LOG_WRN("Unable to get an immediate free conn_tx");
-	}
-
-	return k_fifo_get(&free_tx, K_FOREVER);
+	return k_fifo_get(&free_tx, K_NO_WAIT);
 }
 
 int bt_conn_send_iso_cb(struct bt_conn *conn, struct net_buf *buf,
@@ -666,16 +648,11 @@ static int send_frag(struct bt_conn *conn,
 	} else {
 		if (tx_data(buf)->cb) {
 			tx = conn_tx_alloc();
+			atomic_set_bit_to(conn->flags, BT_CONN_TX_WOULDBLOCK_FREE_TX, !tx);
 			if (!tx) {
-				LOG_DBG("Unable to allocate TX context");
-				return -ENOBUFS;
-			}
-
-			/* Verify that we're still connected after blocking */
-			if (conn->state != BT_CONN_CONNECTED) {
-				LOG_WRN("Disconnected while allocating context");
-				tx_free(tx);
-				return -ENOTCONN;
+				LOG_DBG("No available tx context");
+				k_sem_give(bt_conn_get_pkts(conn));
+				return -EWOULDBLOCK;
 			}
 
 			tx->cb = tx_data(buf)->cb;
@@ -856,6 +833,13 @@ static int conn_prepare_events(struct bt_conn *conn,
 				  K_POLL_TYPE_SEM_AVAILABLE,
 				  K_POLL_MODE_NOTIFY_ONLY,
 				  conn_pkts);
+	} else if (atomic_test_bit(conn->flags, BT_CONN_TX_WOULDBLOCK_FREE_TX)) {
+		LOG_DBG("wait on tx contexts");
+		k_poll_event_init(&events[0],
+				  K_POLL_TYPE_FIFO_DATA_AVAILABLE,
+				  K_POLL_MODE_NOTIFY_ONLY,
+				  &free_tx);
+		events[0].tag = BT_EVENT_CONN_FREE_TX;
 	} else {
 		/* Wait until there is more data to send. */
 		LOG_DBG("wait on host fifo");
@@ -863,8 +847,8 @@ static int conn_prepare_events(struct bt_conn *conn,
 				  K_POLL_TYPE_FIFO_DATA_AVAILABLE,
 				  K_POLL_MODE_NOTIFY_ONLY,
 				  &conn->tx_queue);
+		events[0].tag = BT_EVENT_CONN_TX_QUEUE;
 	}
-	events[0].tag = BT_EVENT_CONN_TX_QUEUE;
 
 	return 0;
 }
