@@ -26,9 +26,10 @@ int icm42688_trigger_init(const struct device *dev);
  * @brief enable the trigger gpio interrupt
  *
  * @param dev icm42688 device pointer
+ * @param new_cfg New configuration to use for the device
  * @return int 0 on success, negative error code otherwise
  */
-int icm42688_trigger_enable_interrupt(const struct device *dev);
+int icm42688_trigger_enable_interrupt(const struct device *dev, struct icm42688_cfg *new_cfg);
 
 /**
  * @brief lock access to the icm42688 device driver
