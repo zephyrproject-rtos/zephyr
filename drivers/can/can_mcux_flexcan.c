@@ -1459,17 +1459,17 @@ static const struct can_driver_api mcux_flexcan_fd_driver_api = {
 		.clk_source = DT_INST_PROP(id, clk_source),		\
 		.bitrate = DT_INST_PROP(id, bus_speed),			\
 		.sjw = DT_INST_PROP(id, sjw),				\
-		.prop_seg = DT_INST_PROP_OR(id, prop_seg, 0),		\
-		.phase_seg1 = DT_INST_PROP_OR(id, phase_seg1, 0),	\
-		.phase_seg2 = DT_INST_PROP_OR(id, phase_seg2, 0),	\
+		.prop_seg = DT_INST_PROP_OR(id, prop_seg, 1),		\
+		.phase_seg1 = DT_INST_PROP_OR(id, phase_seg1, 1),	\
+		.phase_seg2 = DT_INST_PROP_OR(id, phase_seg2, 2),	\
 		.sample_point = DT_INST_PROP_OR(id, sample_point, 0),	\
 		IF_ENABLED(CONFIG_CAN_MCUX_FLEXCAN_FD, (		\
 			.flexcan_fd = DT_NODE_HAS_COMPAT(DT_DRV_INST(id), FLEXCAN_FD_DRV_COMPAT), \
 			.bitrate_data = DT_INST_PROP_OR(id, bus_speed_data, 0),		\
-			.sjw_data = DT_INST_PROP_OR(id, sjw_data, 0),			\
+			.sjw_data = DT_INST_PROP_OR(id, sjw_data, 1),			\
 			.prop_seg_data = DT_INST_PROP_OR(id, prop_seg_data, 0),		\
-			.phase_seg1_data = DT_INST_PROP_OR(id, phase_seg1_data, 0),	\
-			.phase_seg2_data = DT_INST_PROP_OR(id, phase_seg2_data, 0),	\
+			.phase_seg1_data = DT_INST_PROP_OR(id, phase_seg1_data, 1),	\
+			.phase_seg2_data = DT_INST_PROP_OR(id, phase_seg2_data, 2),	\
 			.sample_point_data = DT_INST_PROP_OR(id, sample_point_data, 0),	\
 		))							\
 		.irq_config_func = mcux_flexcan_irq_config_##id,	\
