@@ -7,7 +7,7 @@
 
 #include <zephyr/arch/arm64/cortex_r/arm_mpu.h>
 #include <zephyr/linker/linker-defs.h>
-#include <zephyr/linker/devicetree_regions.h>
+#include <zephyr/devicetree/memory-attr.h>
 #include <zephyr/sys/util.h>
 
 static const struct arm_mpu_region mpu_regions[] = {
@@ -41,7 +41,7 @@ static const struct arm_mpu_region mpu_regions[] = {
 			 REGION_RAM_ATTR),
 
 	/* Extra regions defined in device tree */
-	LINKER_DT_REGION_MPU(MPU_REGION_ENTRY_FROM_DTS)
+	DT_MEMORY_ATTR_APPLY(MPU_REGION_ENTRY_FROM_DTS)
 };
 
 const struct arm_mpu_config mpu_config = {

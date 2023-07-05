@@ -48,7 +48,7 @@
 		device_type = "memory";
 		reg = <0xd0000000 DT_SIZE_M(16)>;
 		zephyr,memory-region = "SDRAM2";
-		zephyr,memory-region-mpu = "RAM";
+		zephyr,memory-attr = "RAM";
 	};
 
 	transceiver0: can-phy0 {

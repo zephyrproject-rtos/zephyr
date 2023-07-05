@@ -10,14 +10,14 @@
 			compatible = "zephyr,memory-region", "mmio-sram";
 			reg = <0x0 0x42000000 0x0 0x1000>;
 			zephyr,memory-region = "RES0";
-			zephyr,memory-region-mpu = "RAM";
+			zephyr,memory-attr = "RAM";
 		};
 
 		res1: memory@43000000 {
 			compatible = "zephyr,memory-region", "mmio-sram";
 			reg = <0x0 0x43000000 0x0 0x2000>;
 			zephyr,memory-region = "RES1";
-			zephyr,memory-region-mpu = "RAM_NOCACHE";
+			zephyr,memory-attr = "RAM_NOCACHE";
 		};
 
 		res_no_mpu: memory@45000000 {
@@ -30,7 +30,7 @@
 			compatible = "zephyr,memory-region", "mmio-sram";
 			reg = <0x0 0x44000000 0x0 0x3000>;
 			zephyr,memory-region = "RES2";
-			zephyr,memory-region-mpu = "RAM";
+			zephyr,memory-attr = "RAM";
 		};
 	};
 };
