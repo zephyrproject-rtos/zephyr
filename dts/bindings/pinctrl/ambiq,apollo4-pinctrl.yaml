@@ -104,3 +104,8 @@ child-binding:
         default: 1500
         description: |
           The pullup resistor value. The default value is 1500 ohms.
+      ambiq,iom-nce-module:
+        type: int
+        default: 0
+        description: |
+          IOM nCE module select. The default value is reset value.
