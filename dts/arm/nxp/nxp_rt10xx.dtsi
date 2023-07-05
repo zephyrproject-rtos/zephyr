@@ -417,6 +417,7 @@
 			reg = <0x402b8000 0x4000>;
 			interrupts = <42 0>;
 			status = "disabled";
+			nxp,pxp = <&pxp>;
 		};
 
 		lpspi1: spi@40394000 {
@@ -905,6 +906,14 @@
 			compatible = "nxp,imx-gpr";
 			reg = <0x400AC000 0x4000>;
 			#pinmux-cells = <2>;
+		};
+
+		pxp: pxp@402b4000 {
+			compatible = "nxp,pxp";
+			reg = <0x402b4000 0x4000>;
+			interrupts = <44 0>;
+			status = "disabled";
+			#dma-cells = <0>;
 		};
 
 		sai1: sai@40384000 {
