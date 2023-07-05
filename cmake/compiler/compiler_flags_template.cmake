@@ -106,6 +106,9 @@ set_compiler_property(PROPERTY debug)
 # Flags to save temporary object files
 set_compiler_property(PROPERTY save_temps)
 
+# Flag to specify linker script
+set_compiler_property(PROPERTY linker_script)
+
 set_compiler_property(PROPERTY no_common)
 
 # Flags for imacros. The specific header must be appended by user.

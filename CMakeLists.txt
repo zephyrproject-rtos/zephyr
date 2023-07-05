@@ -485,8 +485,9 @@ if(CONFIG_USERSPACE)
 endif()
 
 get_property(TOPT GLOBAL PROPERTY TOPT)
-set_ifndef(  TOPT -Wl,-T) # clang doesn't pick -T for some reason and complains,
-                          # while -Wl,-T works for both, gcc and clang
+get_property(COMPILER_TOPT TARGET compiler PROPERTY linker_script)
+set_ifndef(  TOPT "${COMPILER_TOPT}")
+set_ifndef(  TOPT -Wl,-T) # Use this if the compiler driver doesn't set a value
 
 if(CONFIG_HAVE_CUSTOM_LINKER_SCRIPT)
   set(LINKER_SCRIPT ${APPLICATION_SOURCE_DIR}/${CONFIG_CUSTOM_LINKER_SCRIPT})
