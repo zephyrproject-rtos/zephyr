@@ -331,6 +331,7 @@ int sys_mm_drv_unmap_page(void *virt)
 {
 	k_spinlock_key_t key;
 	uint32_t entry_idx, bank_idx;
+	uint16_t entry;
 	uint16_t *tlb_entries = UINT_TO_POINTER(TLB_BASE);
 	uintptr_t pa;
 	int ret = 0;
@@ -360,9 +361,11 @@ int sys_mm_drv_unmap_page(void *virt)
 	sys_cache_data_flush_range(virt, CONFIG_MM_DRV_PAGE_SIZE);
 
 	entry_idx = get_tlb_entry_idx(va);
-
-	/* Simply clear the enable bit */
-	tlb_entries[entry_idx] &= ~TLB_ENABLE_BIT;
+	/* Restore default entry settings */
+	entry = pa_to_tlb_entry(va) | TLB_EXEC_BIT | TLB_WRITE_BIT;
+	/* Clear the enable bit */
+	entry &= ~TLB_ENABLE_BIT;
+	tlb_entries[entry_idx] = entry;
 
 	pa = tlb_entry_to_pa(tlb_entries[entry_idx]);
 
@@ -723,7 +726,8 @@ static void adsp_mm_save_context(void *storage_buffer)
 		entry_idx = get_tlb_entry_idx(phys_addr);
 		entry = pa_to_tlb_entry(phys_addr);
 
-		if ((tlb_entries[entry_idx] & TLB_PADDR_MASK) != entry) {
+		if (((tlb_entries[entry_idx] & TLB_PADDR_MASK) != entry) ||
+		    ((tlb_entries[entry_idx] & TLB_ENABLE_BIT) != TLB_ENABLE_BIT)) {
 			/* this page needs remapping, invalidate cache to avoid stalled data
 			 * all cache data has been flushed before
 			 * do this for pages to remap only
