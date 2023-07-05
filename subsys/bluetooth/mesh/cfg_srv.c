@@ -280,6 +280,28 @@ static uint8_t mod_unbind(struct bt_mesh_model *model, uint16_t key_idx, bool st
 	return STATUS_SUCCESS;
 }
 
+static void key_idx_pack_list(struct net_buf_simple *buf, uint16_t *arr, size_t cnt)
+{
+	uint16_t *idx = NULL;
+
+	for (int i = 0; i < cnt; i++) {
+		if (arr[i] != BT_MESH_KEY_UNUSED) {
+			if (!idx) {
+				idx = &arr[i];
+				continue;
+			}
+
+			key_idx_pack_pair(buf, *idx, arr[i]);
+			idx = NULL;
+		}
+	}
+
+	if (idx) {
+		net_buf_simple_add_le16(buf, *idx);
+	}
+
+}
+
 static int send_app_key_status(struct bt_mesh_model *model,
 			       struct bt_mesh_msg_ctx *ctx,
 			       uint8_t status,
@@ -289,7 +311,7 @@ static int send_app_key_status(struct bt_mesh_model *model,
 
 	bt_mesh_model_msg_init(&msg, OP_APP_KEY_STATUS);
 	net_buf_simple_add_u8(&msg, status);
-	key_idx_pack(&msg, net_idx, app_idx);
+	key_idx_pack_pair(&msg, net_idx, app_idx);
 
 	if (bt_mesh_model_send(model, ctx, &msg, NULL, NULL)) {
 		LOG_ERR("Unable to send App Key Status response");
@@ -305,7 +327,7 @@ static int app_key_add(struct bt_mesh_model *model,
 	uint16_t key_net_idx, key_app_idx;
 	uint8_t status;
 
-	key_idx_unpack(buf, &key_net_idx, &key_app_idx);
+	key_idx_unpack_pair(buf, &key_net_idx, &key_app_idx);
 
 	LOG_DBG("AppIdx 0x%04x NetIdx 0x%04x", key_app_idx, key_net_idx);
 
@@ -321,7 +343,7 @@ static int app_key_update(struct bt_mesh_model *model,
 	uint16_t key_net_idx, key_app_idx;
 	uint8_t status;
 
-	key_idx_unpack(buf, &key_net_idx, &key_app_idx);
+	key_idx_unpack_pair(buf, &key_net_idx, &key_app_idx);
 
 	LOG_DBG("AppIdx 0x%04x NetIdx 0x%04x", key_app_idx, key_net_idx);
 
@@ -357,7 +379,7 @@ static int app_key_del(struct bt_mesh_model *model,
 	uint16_t key_net_idx, key_app_idx;
 	uint8_t status;
 
-	key_idx_unpack(buf, &key_net_idx, &key_app_idx);
+	key_idx_unpack_pair(buf, &key_net_idx, &key_app_idx);
 
 	LOG_DBG("AppIdx 0x%04x NetIdx 0x%04x", key_app_idx, key_net_idx);
 
@@ -379,7 +401,6 @@ static int app_key_get(struct bt_mesh_model *model,
 	uint16_t get_idx;
 	uint8_t status;
 	ssize_t count;
-	int i;
 
 	get_idx = net_buf_simple_pull_le16(buf);
 	if (get_idx > 0xfff) {
@@ -409,13 +430,7 @@ static int app_key_get(struct bt_mesh_model *model,
 		count = ARRAY_SIZE(app_idx);
 	}
 
-	for (i = 0; i < count - 1; i += 2) {
-		key_idx_pack(&msg, app_idx[i], app_idx[i + 1]);
-	}
-
-	if (i < count) {
-		net_buf_simple_add_le16(&msg, app_idx[i]);
-	}
+	key_idx_pack_list(&msg, app_idx, count);
 
 send_status:
 	if (bt_mesh_model_send(model, ctx, &msg, NULL, NULL)) {
@@ -1731,7 +1746,6 @@ static int net_key_get(struct bt_mesh_model *model,
 				 IDX_LEN(CONFIG_BT_MESH_SUBNET_COUNT));
 	uint16_t net_idx[CONFIG_BT_MESH_SUBNET_COUNT];
 	ssize_t count;
-	int i;
 
 	bt_mesh_model_msg_init(&msg, OP_NET_KEY_LIST);
 
@@ -1740,13 +1754,7 @@ static int net_key_get(struct bt_mesh_model *model,
 		count = ARRAY_SIZE(net_idx);
 	}
 
-	for (i = 0; i < count - 1; i += 2) {
-		key_idx_pack(&msg, net_idx[i], net_idx[i + 1]);
-	}
-
-	if (i < count) {
-		net_buf_simple_add_le16(&msg, net_idx[i]);
-	}
+	key_idx_pack_list(&msg, net_idx, count);
 
 	if (bt_mesh_model_send(model, ctx, &msg, NULL, NULL)) {
 		LOG_ERR("Unable to send NetKey List");
@@ -2037,13 +2045,7 @@ send_list:
 	}
 
 	if (mod) {
-		int i;
-
-		for (i = 0; i < mod->keys_cnt; i++) {
-			if (mod->keys[i] != BT_MESH_KEY_UNUSED) {
-				net_buf_simple_add_le16(&msg, mod->keys[i]);
-			}
-		}
+		key_idx_pack_list(&msg, mod->keys, mod->keys_cnt);
 	}
 
 	if (bt_mesh_model_send(model, ctx, &msg, NULL, NULL)) {
