@@ -182,6 +182,9 @@ set_compiler_property(PROPERTY debug -g)
 # Flags to save temporary object files
 set_compiler_property(PROPERTY save_temps -save-temps=obj)
 
+# Flag to specify linker script
+set_compiler_property(PROPERTY linker_script -T)
+
 # Flags to not track macro expansion
 set_compiler_property(PROPERTY no_track_macro_expansion -ftrack-macro-expansion=0)
 
