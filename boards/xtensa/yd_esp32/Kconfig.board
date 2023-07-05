@@ -1,0 +1,12 @@
+# YD-ESP32 board configuration
+
+# Copyright (c) 2023 Julio Cesar <hi@jcsx.dev>
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_YD_ESP32
+	bool "YD-ESP32 Development Board"
+	depends on SOC_SERIES_ESP32
+
+choice SOC_PART_NUMBER
+	default SOC_ESP32_WROOM_32UE_N4
+endchoice
