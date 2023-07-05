@@ -1801,7 +1801,9 @@ static inline struct net_buf *l2cap_alloc_seg(struct net_buf *buf, struct bt_l2c
 	/* Use the dedicated segment callback if registered */
 	if (ch->chan.ops->alloc_seg) {
 		seg = ch->chan.ops->alloc_seg(&ch->chan);
-		__ASSERT_NO_MSG(seg);
+		if (!seg) {
+			return NULL;
+		}
 	} else {
 		/* Try to use original pool if possible */
 		seg = net_buf_alloc(pool, K_NO_WAIT);
@@ -2075,6 +2077,9 @@ static int l2cap_chan_le_send_sdu(struct bt_l2cap_le_chan *ch,
 			}
 			*buf = frag;
 			return ret;
+		}
+		if (sent < total_len) {
+			return -EAGAIN;
 		}
 	}
 

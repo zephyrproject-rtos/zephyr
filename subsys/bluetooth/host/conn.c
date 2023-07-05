@@ -422,6 +422,9 @@ int bt_conn_send_cb(struct bt_conn *conn, struct net_buf *buf,
 		user_data);
 
 	if (buf->user_data_size < CONFIG_BT_CONN_TX_USER_DATA_SIZE) {
+		/* To find the pool:
+		 *     gdb --batch -ex 'b main' -ex 'r' -ex 'p net_buf_pool_get(pool_id)'
+		 */
 		LOG_ERR("not enough room in user_data %d < %d pool %u",
 			buf->user_data_size,
 			CONFIG_BT_CONN_TX_USER_DATA_SIZE,
