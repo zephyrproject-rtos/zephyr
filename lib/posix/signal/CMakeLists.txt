@@ -2,4 +2,5 @@
 
 zephyr_library_sources(
   emptyset.c
+  fillset.c
 )
