@@ -68,7 +68,12 @@ zephyr_library_sources_ifdef(CONFIG_USERSPACE   uart_handlers.c)
 
 if(CONFIG_UART_NATIVE_POSIX)
   zephyr_library_compile_definitions(NO_POSIX_CHEATS)
-  zephyr_library_sources(uart_native_posix.c)
+  zephyr_library_sources(uart_native_ptty.c)
+  if (CONFIG_NATIVE_APPLICATION)
+    zephyr_library_sources(uart_native_ptty_bottom.c)
+  else()
+    target_sources(native_simulator INTERFACE uart_native_ptty_bottom.c)
+  endif()
 endif()
 
 if(CONFIG_UART_NATIVE_TTY)
