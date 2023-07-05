@@ -8,11 +8,11 @@
 #include <zephyr/bluetooth/iso.h>
 #include <zephyr/sys/byteorder.h>
 
-#define BUF_ALLOC_TIMEOUT (10) /* milliseconds */
+#define BUF_ALLOC_TIMEOUT (30) /* milliseconds */
 #define BIG_TERMINATE_TIMEOUT_US (60 * USEC_PER_SEC) /* microseconds */
 #define BIG_SDU_INTERVAL_US (10000)
 
-#define BIS_ISO_CHAN_COUNT 2
+#define BIS_ISO_CHAN_COUNT 4
 NET_BUF_POOL_FIXED_DEFINE(bis_tx_pool, BIS_ISO_CHAN_COUNT,
 			  BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU),
 			  CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
@@ -54,7 +54,7 @@ static struct bt_iso_chan_ops iso_ops = {
 };
 
 static struct bt_iso_chan_io_qos iso_tx_qos = {
-	.sdu = sizeof(uint32_t), /* bytes */
+	.sdu = CONFIG_BT_ISO_TX_MTU,
 	.rtn = 1,
 	.phy = BT_GAP_LE_PHY_2M,
 };
@@ -66,11 +66,15 @@ static struct bt_iso_chan_qos bis_iso_qos = {
 static struct bt_iso_chan bis_iso_chan[] = {
 	{ .ops = &iso_ops, .qos = &bis_iso_qos, },
 	{ .ops = &iso_ops, .qos = &bis_iso_qos, },
+	{ .ops = &iso_ops, .qos = &bis_iso_qos, },
+	{ .ops = &iso_ops, .qos = &bis_iso_qos, },
 };
 
 static struct bt_iso_chan *bis[] = {
 	&bis_iso_chan[0],
 	&bis_iso_chan[1],
+	&bis_iso_chan[2],
+	&bis_iso_chan[3],
 };
 
 static struct bt_iso_big_create_param big_create_param = {
@@ -90,7 +94,7 @@ int main(void)
 	int err;
 
 	uint32_t iso_send_count = 0;
-	uint8_t iso_data[sizeof(iso_send_count)] = { 0 };
+	uint8_t iso_data[CONFIG_BT_ISO_TX_MTU] = { 0 };
 
 	printk("Starting ISO Broadcast Demo\n");
 
