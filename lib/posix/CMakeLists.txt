@@ -38,6 +38,7 @@ zephyr_library_sources_ifdef(CONFIG_POSIX_FS fs.c)
 zephyr_library_sources_ifdef(CONFIG_EVENTFD eventfd.c)
 zephyr_library_sources_ifdef(CONFIG_FNMATCH fnmatch.c)
 add_subdirectory_ifdef(CONFIG_GETOPT getopt)
+add_subdirectory_ifdef(CONFIG_POSIX_SIGNAL signal)
 
 zephyr_library_include_directories(
   ${ZEPHYR_BASE}/kernel/include

@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 source "lib/posix/getopt/Kconfig"
+source "lib/posix/signal/Kconfig"
 
 config POSIX_MAX_FDS
 	int "Maximum number of open file descriptors"

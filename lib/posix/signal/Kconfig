@@ -1,0 +1,23 @@
+# Copyright (c) 2023 Meta
+# SPDX-License-Identifier: Apache-2.0
+
+
+menuconfig POSIX_SIGNAL
+	bool "POSIX signal support"
+	default y if POSIX_API
+	help
+	  This option adds support of POSIX signal.
+
+config POSIX_SIGNAL_MAX
+	int "Highest valid signal number"
+	depends on POSIX_SIGNAL
+	default 63
+	help
+	  Defines the highest valid signal number.
+
+config POSIX_SIGNAL_STD_MAX
+	int "Highest number for standard signal"
+	depends on POSIX_SIGNAL
+	default 31
+	help
+	  Defines the highest number for standard signal.
