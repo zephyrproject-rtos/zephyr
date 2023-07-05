@@ -323,3 +323,7 @@ arduino_spi: &lpspi1 {
 	pinctrl-0 = <&pinmux_swo>;
 	pinctrl-names = "default";
 };
+
+&pxp {
+	status = "okay";
+};
