@@ -17,6 +17,11 @@
 #include <fsl_cache.h>
 #endif
 
+#ifdef CONFIG_MCUX_ELCDIF_PXP
+#include <zephyr/drivers/dma.h>
+#include <zephyr/drivers/dma/dma_mcux_pxp.h>
+#endif
+
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
 
@@ -32,6 +37,7 @@ struct mcux_elcdif_config {
 	const struct pinctrl_dev_config *pincfg;
 	const struct gpio_dt_spec backlight_gpio;
 	uint8_t *fb_ptr;
+	const struct device *pxp;
 };
 
 struct mcux_elcdif_data {
@@ -42,7 +48,21 @@ struct mcux_elcdif_data {
 	struct k_sem sem;
 	/* Tracks index of next active driver framebuffer */
 	uint8_t next_idx;
+#ifdef CONFIG_MCUX_ELCDIF_PXP
+	/* Given to when PXP completes rotation */
+	struct k_sem pxp_done;
+#endif
 };
+
+#ifdef CONFIG_MCUX_ELCDIF_PXP
+static void mcux_elcdif_pxp_callback(const struct device *dma_dev,
+				void *user_data, uint32_t channel, int ret)
+{
+	struct mcux_elcdif_data *data = user_data;
+
+	k_sem_give(&data->pxp_done);
+}
+#endif /* CONFIG_MCUX_ELCDIF_PXP */
 
 static int mcux_elcdif_write(const struct device *dev, const uint16_t x,
 			     const uint16_t y,
@@ -54,6 +74,8 @@ static int mcux_elcdif_write(const struct device *dev, const uint16_t x,
 	int h_idx;
 	const uint8_t *src;
 	uint8_t *dst;
+	int ret = 0;
+	bool full_fb = false;
 
 	__ASSERT((config->pixel_bytes * desc->pitch * desc->height) <=
 		 desc->buf_size, "Input buffer too small");
@@ -69,6 +91,19 @@ static int mcux_elcdif_write(const struct device *dev, const uint16_t x,
 		LOG_DBG("Setting FB from %p->%p",
 			(void *) dev_data->active_fb, (void *) buf);
 		dev_data->active_fb = buf;
+		full_fb = true;
+	} else if ((x == 0) && (y == 0) &&
+	    (desc->width == config->rgb_mode.panelHeight) &&
+	    (desc->height == config->rgb_mode.panelWidth) &&
+	    (desc->pitch == desc->width) &&
+	    IS_ENABLED(CONFIG_MCUX_ELCDIF_PXP)) {
+		/* With the PXP, we can rotate this display buffer to align
+		 * with output dimensions
+		 */
+		LOG_DBG("Setting FB from %p->%p",
+			(void *) dev_data->active_fb, (void *) buf);
+		dev_data->active_fb = buf;
+		full_fb = true;
 	} else {
 		/* We must use partial framebuffer copy */
 		if (CONFIG_MCUX_ELCDIF_FB_NUM == 0) {
@@ -101,25 +136,79 @@ static int mcux_elcdif_write(const struct device *dev, const uint16_t x,
 		dev_data->active_fb = dev_data->fb[dev_data->next_idx];
 	}
 
-
 #ifdef CONFIG_HAS_MCUX_CACHE
 	DCACHE_CleanByRange((uint32_t) dev_data->active_fb, config->fb_bytes);
 #endif
+
+#ifdef CONFIG_MCUX_ELCDIF_PXP
+	if (full_fb) {
+		/* Configure PXP using DMA API, and rotate frame */
+		struct dma_config pxp_dma = {0};
+		struct dma_block_config pxp_block = {0};
+
+		/* Source buffer is input to display_write, we will
+		 * place rotated output into a driver framebuffer.
+		 */
+		dev_data->active_fb = dev_data->fb[dev_data->next_idx];
+		pxp_block.source_address = (uint32_t)buf;
+		pxp_block.dest_address = (uint32_t)dev_data->active_fb;
+		pxp_block.block_size = desc->buf_size;
+
+		/* DMA slot sets pixel format and rotation angle */
+		if (config->pixel_format == PIXEL_FORMAT_BGR_565) {
+			pxp_dma.dma_slot = DMA_MCUX_PXP_FMT(DMA_MCUX_PXP_FMT_RGB565);
+		} else if (config->pixel_format == PIXEL_FORMAT_RGB_888) {
+			pxp_dma.dma_slot = DMA_MCUX_PXP_FMT(DMA_MCUX_PXP_FMT_RGB888);
+		} else {
+			/* Cannot rotate */
+			return -ENOTSUP;
+		}
+		if (IS_ENABLED(CONFIG_MCUX_ELCDIF_PXP_ROTATE_90)) {
+			pxp_dma.dma_slot |= DMA_MCUX_PXP_CMD(DMA_MCUX_PXP_CMD_ROTATE_90);
+		} else if (IS_ENABLED(CONFIG_MCUX_ELCDIF_PXP_ROTATE_180)) {
+			pxp_dma.dma_slot |= DMA_MCUX_PXP_CMD(DMA_MCUX_PXP_CMD_ROTATE_180);
+		} else if (IS_ENABLED(CONFIG_MCUX_ELCDIF_PXP_ROTATE_270)) {
+			pxp_dma.dma_slot |= DMA_MCUX_PXP_CMD(DMA_MCUX_PXP_CMD_ROTATE_270);
+		} else {
+			pxp_dma.dma_slot |= DMA_MCUX_PXP_CMD(DMA_MCUX_PXP_CMD_ROTATE_0);
+		}
+
+		pxp_dma.channel_direction = MEMORY_TO_MEMORY;
+		pxp_dma.source_data_size = desc->width * config->pixel_bytes;
+		pxp_dma.dest_data_size = config->rgb_mode.panelWidth * config->pixel_bytes;
+		/* Burst lengths are heights of source/dest buffer in pixels */
+		pxp_dma.source_burst_length = desc->height;
+		pxp_dma.dest_burst_length = config->rgb_mode.panelHeight;
+		pxp_dma.head_block = &pxp_block;
+		pxp_dma.dma_callback = mcux_elcdif_pxp_callback;
+		pxp_dma.user_data = dev_data;
+
+		ret = dma_config(config->pxp, 0, &pxp_dma);
+		if (ret < 0) {
+			return ret;
+		}
+		ret = dma_start(config->pxp, 0);
+		if (ret < 0) {
+			return ret;
+		}
+		k_sem_take(&dev_data->pxp_done, K_FOREVER);
+	}
+#endif /* CONFIG_MCUX_ELCDIF_PXP */
 
 	/* Queue next framebuffer */
 	ELCDIF_SetNextBufferAddr(config->base, (uint32_t)dev_data->active_fb);
 
 #if CONFIG_MCUX_ELCDIF_FB_NUM != 0
-		/* Update index of active framebuffer */
-		dev_data->next_idx =
-			(dev_data->next_idx + 1) % CONFIG_MCUX_ELCDIF_FB_NUM;
+	/* Update index of active framebuffer */
+	dev_data->next_idx =
+		(dev_data->next_idx + 1) % CONFIG_MCUX_ELCDIF_FB_NUM;
 #endif
 	/* Enable frame buffer completion interrupt */
 	ELCDIF_EnableInterrupts(config->base,
 				kELCDIF_CurFrameDoneInterruptEnable);
 	/* Wait for frame send to complete */
 	k_sem_take(&dev_data->sem, K_FOREVER);
-	return 0;
+	return ret;
 }
 
 static int mcux_elcdif_read(const struct device *dev, const uint16_t x,
@@ -259,6 +348,13 @@ static int mcux_elcdif_init(const struct device *dev)
 	dev_data->active_fb = config->fb_ptr;
 
 	k_sem_init(&dev_data->sem, 0, 1);
+#ifdef CONFIG_MCUX_ELCDIF_PXP
+	k_sem_init(&dev_data->pxp_done, 0, 1);
+	if (!device_is_ready(config->pxp)) {
+		LOG_ERR("PXP device is not ready");
+		return -ENODEV;
+	}
+#endif
 
 	config->irq_config_func(dev);
 
@@ -335,6 +431,8 @@ static const struct display_driver_api mcux_elcdif_api = {
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(id),			\
 		.backlight_gpio = GPIO_DT_SPEC_INST_GET(id, backlight_gpios),	\
 		.fb_ptr = frame_buffer_##id,					\
+		IF_ENABLED(CONFIG_MCUX_ELCDIF_PXP,				\
+		(.pxp = DEVICE_DT_GET(DT_INST_PHANDLE(id, nxp_pxp)),))		\
 	};									\
 	static struct mcux_elcdif_data mcux_elcdif_data_##id = {		\
 		.next_idx = 0,							\
