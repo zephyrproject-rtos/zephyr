@@ -7,7 +7,6 @@
 .*Duplicate C declaration.*\n.*'\.\. c:.*:: .*dmic_trigger.*'.*
 .*Duplicate C declaration.*\n.*'\.\. c:.*:: dma_config'.*
 .*Duplicate C declaration.*\n.*'\.\. c:.*:: net_if_mcast_monitor'.*
-.*Duplicate C declaration.*\n.*'\.\. c:struct:: bt_ots_init'.*
 
 # Struct and typedef name
 .*Duplicate C declaration.*\n.*'\.\. c:.*:: zsock_fd_set'.*
