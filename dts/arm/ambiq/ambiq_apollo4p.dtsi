@@ -102,10 +102,8 @@
 			ambiq,pwrcfg = <&pwrcfg 0x4 0x1000>;
 		};
 
-		i2c0: i2c@40050000 {
-			compatible = "ambiq,i2c";
+		iom0: iom@40050000 {
 			reg = <0x40050000 0x1000>;
-			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			interrupts = <6 0>;
@@ -113,10 +111,8 @@
 			ambiq,pwrcfg = <&pwrcfg 0x4 0x2>;
 		};
 
-		i2c1: i2c@40051000 {
-			compatible = "ambiq,i2c";
+		iom1: iom@40051000 {
 			reg = <0x40051000 0x1000>;
-			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			interrupts = <7 0>;
@@ -124,10 +120,8 @@
 			ambiq,pwrcfg = <&pwrcfg 0x4 0x4>;
 		};
 
-		i2c2: i2c@40052000 {
-			compatible = "ambiq,i2c";
+		iom2: iom@40052000 {
 			reg = <0x40052000 0x1000>;
-			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			interrupts = <8 0>;
@@ -135,21 +129,16 @@
 			ambiq,pwrcfg = <&pwrcfg 0x4 0x8>;
 		};
 
-		i2c3: i2c@40053000 {
-			compatible = "ambiq,i2c";
+		iom3: iom@40053000 {
 			reg = <0x40053000 0x1000>;
-			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			interrupts = <9 0>;
 			status = "disabled";
 			ambiq,pwrcfg = <&pwrcfg 0x4 0x10>;
 		};
-
-		i2c4: i2c@40054000 {
-			compatible = "ambiq,i2c";
+		iom4: iom@40054000 {
 			reg = <0x40054000 0x1000>;
-			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			interrupts = <10 0>;
@@ -157,10 +146,8 @@
 			ambiq,pwrcfg = <&pwrcfg 0x4 0x20>;
 		};
 
-		i2c5: i2c@40055000 {
-			compatible = "ambiq,i2c";
+		iom5: iom@40055000 {
 			reg = <0x40055000 0x1000>;
-			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			interrupts = <11 0>;
@@ -168,10 +155,8 @@
 			ambiq,pwrcfg = <&pwrcfg 0x4 0x40>;
 		};
 
-		i2c6: i2c@40056000 {
-			compatible = "ambiq,i2c";
+		iom6: iom@40056000 {
 			reg = <0x40056000 0x1000>;
-			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			interrupts = <12 0>;
@@ -179,10 +164,8 @@
 			ambiq,pwrcfg = <&pwrcfg 0x4 0x80>;
 		};
 
-		i2c7: i2c@40057000 {
-			compatible = "ambiq,i2c";
+		iom7: iom@40057000 {
 			reg = <0x40057000 0x1000>;
-			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			interrupts = <13 0>;
