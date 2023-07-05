@@ -14,6 +14,12 @@
 #      For ex. target_sources(native_simulator INTERFACE silly.c)
 #      Note that these are built with the host libC and the include directories
 #      the runner is built with.
+#  Note: target_link_libraries() cannot be used on this library at this point.
+#        target_link_libraries() updates INTERFACE_LINK_LIBRARIES but wrapping it with extra
+#        information. This means we cannot directly pass it to the native_simulator runner build.
+#        Check https://cmake.org/cmake/help/latest/prop_tgt/INTERFACE_LINK_LIBRARIES.html for more
+#        info.
+#        We use target_link_options() instead
 add_library(native_simulator INTERFACE)
 
 if(EXISTS ${CMAKE_CURRENT_LIST_DIR}/${CMAKE_HOST_SYSTEM_NAME}.${CMAKE_HOST_SYSTEM_PROCESSOR}.cmake)
