@@ -62,17 +62,17 @@ static struct rpmsg_virtio_device rvdev;
 static struct metal_io_region *io;
 static struct virtqueue *vq[2];
 
-static unsigned char virtio_get_status(struct virtio_device *vdev)
+static unsigned char ipc_virtio_get_status(struct virtio_device *vdev)
 {
 	return sys_read8(VDEV_STATUS_ADDR);
 }
 
-static uint32_t virtio_get_features(struct virtio_device *vdev)
+static uint32_t ipc_virtio_get_features(struct virtio_device *vdev)
 {
 	return 1 << VIRTIO_RPMSG_F_NS;
 }
 
-static void virtio_notify(struct virtqueue *vq)
+static void ipc_virtio_notify(struct virtqueue *vq)
 {
 #if defined(CONFIG_SOC_MPS2_AN521) || \
 	defined(CONFIG_SOC_V2M_MUSCA_B1)
@@ -87,9 +87,9 @@ static void virtio_notify(struct virtqueue *vq)
 }
 
 struct virtio_dispatch dispatch = {
-	.get_status = virtio_get_status,
-	.get_features = virtio_get_features,
-	.notify = virtio_notify,
+	.get_status = ipc_virtio_get_status,
+	.get_features = ipc_virtio_get_features,
+	.notify = ipc_virtio_notify,
 };
 
 static K_SEM_DEFINE(data_sem, 0, 1);
