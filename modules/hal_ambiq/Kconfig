@@ -35,4 +35,9 @@ config AMBIQ_HAL_USE_I2C
 	help
 	  Use the I2C driver from Ambiq HAL
 
+config AMBIQ_HAL_USE_SPI
+	bool
+	help
+	  Use the SPI driver from Ambiq HAL
+
 endif # AMBIQ_HAL

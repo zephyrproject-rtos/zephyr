@@ -129,4 +129,6 @@ source "drivers/spi/Kconfig.opentitan"
 
 source "drivers/spi/Kconfig.numaker"
 
+source "drivers/spi/Kconfig.ambiq"
+
 endif # SPI
