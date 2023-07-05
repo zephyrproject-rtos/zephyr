@@ -41,6 +41,7 @@ zephyr_library_sources_ifdef(CONFIG_SPI_PW		spi_pw.c)
 zephyr_library_sources_ifdef(CONFIG_SPI_SMARTBOND   spi_smartbond.c)
 zephyr_library_sources_ifdef(CONFIG_SPI_OPENTITAN	spi_opentitan.c)
 zephyr_library_sources_ifdef(CONFIG_SPI_NUMAKER		spi_numaker.c)
+zephyr_library_sources_ifdef(CONFIG_SPI_AMBIQ		spi_ambiq.c)
 
 zephyr_library_sources_ifdef(CONFIG_SPI_RTIO spi_rtio.c)
 zephyr_library_sources_ifdef(CONFIG_SPI_ASYNC spi_signal.c)
