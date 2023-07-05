@@ -12,6 +12,7 @@
 
 #include "icm42688.h"
 #include "icm42688_reg.h"
+#include "icm42688_rtio.h"
 #include "icm42688_spi.h"
 #include "icm42688_trigger.h"
 
@@ -30,6 +31,9 @@ static void icm42688_gpio_callback(const struct device *dev, struct gpio_callbac
 #elif defined(CONFIG_ICM42688_TRIGGER_GLOBAL_THREAD)
 	k_work_submit(&data->work);
 #endif
+	if (IS_ENABLED(CONFIG_ICM42688_STREAM)) {
+		icm42688_fifo_event(data->dev);
+	}
 }
 
 #if defined(CONFIG_ICM42688_TRIGGER_OWN_THREAD) || defined(CONFIG_ICM42688_TRIGGER_GLOBAL_THREAD)
@@ -90,6 +94,8 @@ int icm42688_trigger_set(const struct device *dev, const struct sensor_trigger *
 
 	switch (trig->type) {
 	case SENSOR_TRIG_DATA_READY:
+	case SENSOR_TRIG_FIFO_WATERMARK:
+	case SENSOR_TRIG_FIFO_FULL:
 		data->data_ready_handler = handler;
 		data->data_ready_trigger = trig;
 
@@ -146,7 +152,7 @@ int icm42688_trigger_init(const struct device *dev)
 	return gpio_pin_interrupt_configure_dt(&cfg->gpio_int1, GPIO_INT_EDGE_TO_ACTIVE);
 }
 
-int icm42688_trigger_enable_interrupt(const struct device *dev)
+int icm42688_trigger_enable_interrupt(const struct device *dev, struct icm42688_cfg *new_cfg)
 {
 	int res;
 	const struct icm42688_dev_cfg *cfg = dev->config;
@@ -164,9 +170,19 @@ int icm42688_trigger_enable_interrupt(const struct device *dev)
 		return res;
 	}
 
-	/* enable data ready interrupt on INT1 pin */
-	return icm42688_spi_single_write(&cfg->spi, REG_INT_SOURCE0,
-					 FIELD_PREP(BIT_UI_DRDY_INT1_EN, 1));
+	/* enable interrupts on INT1 pin */
+	uint8_t value = 0;
+
+	if (new_cfg->interrupt1_drdy) {
+		value |= FIELD_PREP(BIT_UI_DRDY_INT1_EN, 1);
+	}
+	if (new_cfg->interrupt1_fifo_ths) {
+		value |= FIELD_PREP(BIT_FIFO_THS_INT1_EN, 1);
+	}
+	if (new_cfg->interrupt1_fifo_full) {
+		value |= FIELD_PREP(BIT_FIFO_FULL_INT1_EN, 1);
+	}
+	return icm42688_spi_single_write(&cfg->spi, REG_INT_SOURCE0, value);
 }
 
 void icm42688_lock(const struct device *dev)
