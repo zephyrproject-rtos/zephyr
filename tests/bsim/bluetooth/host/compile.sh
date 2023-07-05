@@ -65,6 +65,7 @@ app=tests/bsim/bluetooth/host/privacy/legacy compile
 
 app=tests/bsim/bluetooth/host/security/bond_overwrite_allowed compile
 app=tests/bsim/bluetooth/host/security/bond_overwrite_denied compile
+app=tests/bsim/bluetooth/host/security/bond_per_connection compile
 app=tests/bsim/bluetooth/host/security/ccc_update compile
 app=tests/bsim/bluetooth/host/security/ccc_update conf_file=prj_2.conf compile
 
