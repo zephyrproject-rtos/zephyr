@@ -182,3 +182,12 @@ config FNMATCH
 	help
 	  Match filenames using the the fnmatch function. For example, the pattern
 	  "*.c" matches the filename "hello.c".
+
+config POSIX_SYSCONF
+	bool "Support for sysconf"
+	default y if POSIX_API
+	help
+	  The sysconf() function provides a method for the application to determine
+	  the current value of a configurable system limit or option (variable).
+	  The implementation shall support all of the variables listed in the
+	  following table and may support others.

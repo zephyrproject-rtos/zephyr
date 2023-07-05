@@ -352,7 +352,7 @@ process applications.
     errno,yes
     getenv(),
     setenv(),
-    sysconf(),
+    sysconf(),yes
     uname(),
     unsetenv()
 

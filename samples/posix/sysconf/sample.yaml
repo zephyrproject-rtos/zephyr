@@ -1,0 +1,17 @@
+sample:
+  description: Posix sysconf sample
+  name: posix sysconf
+common:
+  tags: posix
+  filter: not CONFIG_ARCH_POSIX
+  integration_platforms:
+    - native_posix_64
+    - qemu_riscv64
+  harness: console
+  harness_config:
+    type: one_line
+    regex:
+      - "\\[errno: \\d\\d\\d] _SC_.*\\(\\d+\\) = .*"
+tests:
+  sample.posix.sysconf:
+    tags: sysconf
