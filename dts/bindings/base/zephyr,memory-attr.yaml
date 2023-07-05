@@ -1,0 +1,20 @@
+# Copyright (c) 2023, Carlo Caione <ccaione@baylibre.com>
+# SPDX-License-Identifier: Apache-2.0
+
+include: [base.yaml]
+
+properties:
+  zephyr,memory-attr:
+    type: string
+    enum:
+      - "RAM"
+      - "RAM_NOCACHE"
+      - "FLASH"
+      - "PPB"
+      - "IO"
+      - "EXTMEM"
+    description: |
+      Attribute for the memory region.
+
+  reg:
+    required: true
