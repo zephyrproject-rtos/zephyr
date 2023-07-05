@@ -729,12 +729,8 @@ def parse_arguments(parser, args, options = None):
                         only one platform is allowed""")
         sys.exit(1)
 
-    if options.device_flash_timeout and options.device_testing is None:
-        logger.error("--device-flash-timeout requires --device-testing")
-        sys.exit(1)
-
-    if options.device_flash_with_test and options.device_testing is None:
-        logger.error("--device-flash-with-test requires --device-testing")
+    if options.device_flash_with_test and not options.device_testing:
+        logger.error("--device-flash-with-test requires --device_testing")
         sys.exit(1)
 
     if options.shuffle_tests and options.subset is None:
