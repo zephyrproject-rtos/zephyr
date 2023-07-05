@@ -18,7 +18,7 @@ test_dma0: &dmamux1 {
  * to be non-cachable.
  */
 &sram4 {
-	zephyr,memory-region-mpu = "RAM_NOCACHE";
+	zephyr,memory-attr = "RAM_NOCACHE";
 };
 
 &bdma1 {
