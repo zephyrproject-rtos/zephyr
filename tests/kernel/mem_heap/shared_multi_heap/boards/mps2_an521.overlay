@@ -17,20 +17,20 @@
 		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x38100000 0x1000>;
 		zephyr,memory-region = "RES0";
-		zephyr,memory-region-mpu = "RAM";
+		zephyr,memory-attr = "RAM";
 	};
 
 	res1: memory@38200000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x38200000 0x2000>;
 		zephyr,memory-region = "RES1";
-		zephyr,memory-region-mpu = "RAM_NOCACHE";
+		zephyr,memory-attr = "RAM_NOCACHE";
 	};
 
 	res2: memory@38300000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x38300000 0x3000>;
 		zephyr,memory-region = "RES2";
-		zephyr,memory-region-mpu = "RAM";
+		zephyr,memory-attr = "RAM";
 	};
 };

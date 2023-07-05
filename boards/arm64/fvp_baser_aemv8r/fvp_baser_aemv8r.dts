@@ -41,7 +41,7 @@
 			compatible = "zephyr,memory-region", "mmio-dram";
 			reg = <0x80000000 DT_SIZE_M(2048)>;
 			zephyr,memory-region = "DEVICE_REGION";
-			zephyr,memory-region-mpu = "IO";
+			zephyr,memory-attr = "IO";
 		};
 	};
 };

@@ -22,7 +22,7 @@
 
 /* ADC driver expects a buffer in a non-cachable memory region */
 &sram4 {
-	zephyr,memory-region-mpu = "RAM_NOCACHE";
+	zephyr,memory-attr = "RAM_NOCACHE";
 };
 
 &dma1 {
