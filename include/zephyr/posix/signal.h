@@ -102,6 +102,7 @@ typedef struct sigset {
 	uint32_t _elem[_SIGSET_NELEM];
 } sigset_t;
 
+int sigaddset(sigset_t *set, int signo);
 int sigemptyset(sigset_t *set);
 int sigfillset(sigset_t *set);
 #endif /* CONFIG_POSIX_SIGNAL */
