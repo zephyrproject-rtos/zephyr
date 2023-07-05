@@ -1,4 +1,4 @@
-# Copyright (c) 2022, NXP
+# Copyright 2022-2023 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 description: NXP i.MX eLCDIF (Enhanced LCD Interface) controller
@@ -30,3 +30,9 @@ properties:
     required: true
     description:
       LCB backlight control gpio. Driver will initialize this GPIO to active high
+
+  nxp,pxp:
+    type: phandle
+    description:
+      NXP PXP device phandle. The LCDIF can utilize the PXP for acclerated
+      display rotation via the DMA API, when present and enabled.

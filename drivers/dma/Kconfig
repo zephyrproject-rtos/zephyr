@@ -59,4 +59,6 @@ source "drivers/dma/Kconfig.xmc4xxx"
 source "drivers/dma/Kconfig.rpi_pico"
 
 source "drivers/dma/Kconfig.intel_lpss"
+
+source "drivers/dma/Kconfig.mcux_pxp"
 endif # DMA
