@@ -61,7 +61,7 @@
 		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x20010000 DT_SIZE_K(16)>;
 		zephyr,memory-region = "USB_SRAM";
-		zephyr,memory-region-mpu = "RAM";
+		zephyr,memory-attr = "RAM";
 	};
 };
 

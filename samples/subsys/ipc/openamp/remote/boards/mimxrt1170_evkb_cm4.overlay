@@ -33,7 +33,7 @@
 		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x202c0000 DT_SIZE_K(16)>;
 		zephyr,memory-region="OCRAM2_OVERLAY";
-		zephyr,memory-region-mpu = "IO";
+		zephyr,memory-attr = "IO";
 	};
 };
 

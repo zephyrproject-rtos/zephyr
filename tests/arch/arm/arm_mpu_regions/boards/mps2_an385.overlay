@@ -16,21 +16,21 @@
 		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x20200000 0x100000>;
 		zephyr,memory-region = "SRAM_CACHE";
-		zephyr,memory-region-mpu = "RAM";
+		zephyr,memory-attr = "RAM";
 	};
 
 	sram_no_cache: memory@20300000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x20300000 0x100000>;
 		zephyr,memory-region = "SRAM_NO_CACHE";
-		zephyr,memory-region-mpu = "RAM_NOCACHE";
+		zephyr,memory-attr = "RAM_NOCACHE";
 	};
 
 	sram_dtcm_fake: memory@abcdabcd {
 		compatible = "zephyr,memory-region", "arm,dtcm";
 		reg = <0xabcdabcd 0x100000>;
 		zephyr,memory-region = "SRAM_DTCM_FAKE";
-		zephyr,memory-region-mpu = "RAM";
+		zephyr,memory-attr = "RAM";
 	};
 
 	sram_no_mpu: memory@deaddead {

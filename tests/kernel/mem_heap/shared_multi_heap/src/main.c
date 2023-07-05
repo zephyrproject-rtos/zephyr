@@ -27,7 +27,7 @@ struct region_map {
 		.region = {								\
 			.addr = (uintptr_t) DT_INST_REG_ADDR(n),			\
 			.size = DT_INST_REG_SIZE(n),					\
-			.attr = DT_INST_ENUM_IDX_OR(n, zephyr_memory_region_mpu,	\
+			.attr = DT_INST_ENUM_IDX_OR(n, zephyr_memory_attr,		\
 						    SMH_REG_ATTR_NUM),			\
 		},									\
 	},
@@ -103,7 +103,7 @@ static void fill_multi_heap(void)
 	for (size_t idx = 0; idx < DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT); idx++) {
 		reg_map = &map[idx];
 
-		/* zephyr,memory-region-mpu property not found. Skip it. */
+		/* zephyr,memory-attr property not found. Skip it. */
 		if (reg_map->region.attr == SMH_REG_ATTR_NUM) {
 			continue;
 		}
