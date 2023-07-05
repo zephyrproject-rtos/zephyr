@@ -1468,7 +1468,7 @@ int bt_ascs_config_ase(struct bt_conn *conn, struct bt_bap_stream *stream,
 		       const struct bt_audio_codec_qos_pref *qos_pref)
 {
 	int err;
-	struct bt_ascs_ase *ase;
+	struct bt_ascs_ase *ase = NULL;
 	struct bt_bap_ep *ep;
 	struct bt_bap_ascs_rsp rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_SUCCESS,
 						     BT_BAP_ASCS_REASON_NONE);
@@ -1487,8 +1487,7 @@ int bt_ascs_config_ase(struct bt_conn *conn, struct bt_bap_stream *stream,
 
 	/* Get a free ASE or NULL if all ASE instances are aready in use */
 	for (int i = 1; i <= ASE_COUNT; i++) {
-		ase = ase_find(conn, i);
-		if (ase == NULL) {
+		if (ase_find(conn, i) == NULL) {
 			ase = ase_new(conn, i);
 			break;
 		}
@@ -1501,14 +1500,10 @@ int bt_ascs_config_ase(struct bt_conn *conn, struct bt_bap_stream *stream,
 
 	ep = &ase->ep;
 
-	if (ep->status.state != BT_BAP_EP_STATE_IDLE) {
-		LOG_ERR("Invalid state: %s", bt_bap_ep_state_str(ep->status.state));
-		return -EBADMSG;
-	}
-
 	err = ascs_ep_set_codec(ep, codec_cfg->id, sys_le16_to_cpu(codec_cfg->cid),
 				sys_le16_to_cpu(codec_cfg->vid), NULL, 0, &rsp);
 	if (err) {
+		ase_free(ase);
 		return err;
 	}
 
