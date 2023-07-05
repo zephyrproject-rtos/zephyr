@@ -18,7 +18,7 @@ class Esp32BinaryRunner(ZephyrBinaryRunner):
     def __init__(self, cfg, device, boot_address, part_table_address,
                  app_address, erase=False, baud=921600, flash_size='detect',
                  flash_freq='40m', flash_mode='dio', espidf='espidf',
-                 bootloader_bin=None, partition_table_bin=None):
+                 bootloader_bin=None, partition_table_bin=None, no_stub=False):
         super().__init__(cfg)
         self.elf = cfg.elf_file
         self.app_bin = cfg.bin_file
@@ -34,6 +34,7 @@ class Esp32BinaryRunner(ZephyrBinaryRunner):
         self.espidf = espidf
         self.bootloader_bin = bootloader_bin
         self.partition_table_bin = partition_table_bin
+        self.no_stub = no_stub
 
     @classmethod
     def name(cls):
@@ -73,6 +74,8 @@ class Esp32BinaryRunner(ZephyrBinaryRunner):
                             help='Bootloader image to flash')
         parser.add_argument('--esp-flash-partition_table',
                             help='Partition table to flash')
+        parser.add_argument('--esp-no-stub', default=False, action='store_true',
+                            help='Disable launching the flasher stub, only talk to ROM bootloader')
 
     @classmethod
     def do_create(cls, cfg, args):
@@ -89,7 +92,8 @@ class Esp32BinaryRunner(ZephyrBinaryRunner):
             baud=args.esp_baud_rate, flash_size=args.esp_flash_size,
             flash_freq=args.esp_flash_freq, flash_mode=args.esp_flash_mode,
             espidf=espidf, bootloader_bin=args.esp_flash_bootloader,
-            partition_table_bin=args.esp_flash_partition_table)
+            partition_table_bin=args.esp_flash_partition_table,
+            no_stub=args.esp_no_stub)
 
     def do_run(self, command, **kwargs):
         self.require(self.espidf)
@@ -101,6 +105,8 @@ class Esp32BinaryRunner(ZephyrBinaryRunner):
             cmd_erase = cmd_flash + ['erase_flash']
             self.check_call(cmd_erase)
 
+        if self.no_stub is True:
+            cmd_flash.extend(['--no-stub'])
         if self.device is not None:
             cmd_flash.extend(['--port', self.device])
         cmd_flash.extend(['--baud', self.baud])
