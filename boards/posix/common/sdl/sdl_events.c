@@ -18,7 +18,8 @@ static void sdl_handle_events(void *p1, void *p2, void *p3)
 
 	for (;;) {
 		int rc = sdl_handle_pending_events();
-		if (rc != 0){
+
+		if (rc != 0) {
 			posix_exit(0);
 		}
 

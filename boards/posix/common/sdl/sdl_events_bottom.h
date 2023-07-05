@@ -16,7 +16,7 @@ extern "C" {
 int sdl_handle_pending_events(void);
 int sdl_init_video(void);
 void sdl_quit(void);
-const char* sdl_get_error(void);
+const char *sdl_get_error(void);
 
 #ifdef __cplusplus
 }

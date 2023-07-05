@@ -73,7 +73,8 @@ int sdl_init_video(void)
 /*
  * Trampoline to SDL_GetError
  */
-const char* sdl_get_error(void) {
+const char *sdl_get_error(void)
+{
 	return SDL_GetError();
 }
 
