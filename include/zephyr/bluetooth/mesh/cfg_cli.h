@@ -1644,6 +1644,19 @@ struct bt_mesh_comp_p1_model_item *bt_mesh_comp_p1_item_pull(
 struct bt_mesh_comp_p1_ext_item *bt_mesh_comp_p1_pull_ext_item(
 	struct bt_mesh_comp_p1_model_item *item, struct bt_mesh_comp_p1_ext_item *ext_item);
 
+/** @brief Unpack a list of key index entries from a buffer.
+ *
+ * On success, @c dst_cnt is set to the amount of unpacked key index entries.
+ *
+ * @param buf Message buffer containing encoded AppKey or NetKey Indexes.
+ * @param dst_arr Destination array for the unpacked list.
+ * @param dst_cnt Size of the destination array.
+ *
+ * @return 0 on success.
+ * @return -EMSGSIZE if dst_arr size is to small to parse full message.
+ */
+int bt_mesh_key_idx_unpack_list(struct net_buf_simple *buf, uint16_t *dst_arr, size_t *dst_cnt);
+
 /** @cond INTERNAL_HIDDEN */
 extern const struct bt_mesh_model_op bt_mesh_cfg_cli_op[];
 extern const struct bt_mesh_model_cb bt_mesh_cfg_cli_cb;
