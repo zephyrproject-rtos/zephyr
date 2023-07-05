@@ -18,6 +18,15 @@ struct icm42688_decoder_header {
 	uint8_t reserved: 2;
 } __attribute__((__packed__));
 
+struct icm42688_fifo_data {
+	struct icm42688_decoder_header header;
+	uint8_t int_status;
+	uint16_t gyro_odr: 4;
+	uint16_t accel_odr: 4;
+	uint16_t fifo_count: 11;
+	uint16_t reserved: 5;
+} __attribute__((__packed__));
+
 struct icm42688_encoded_data {
 	struct icm42688_decoder_header header;
 	struct {

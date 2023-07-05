@@ -9,4 +9,6 @@
 
 int icm42688_submit(const struct device *sensor, struct rtio_iodev_sqe *iodev_sqe);
 
+void icm42688_fifo_event(const struct device *dev);
+
 #endif /* ZEPHYR_DRIVERS_SENSOR_ICM42688_RTIO_H_ */

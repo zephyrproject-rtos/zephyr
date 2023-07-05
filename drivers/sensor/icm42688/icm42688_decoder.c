@@ -218,6 +218,98 @@ int icm42688_encode(const struct device *dev, const enum sensor_channel *const c
 	return 0;
 }
 
+static int icm42688_fifo_decode(const uint8_t *buffer, sensor_frame_iterator_t *fit,
+				sensor_channel_iterator_t *cit, enum sensor_channel *channels,
+				q31_t *values, uint8_t max_count)
+{
+	const struct icm42688_fifo_data *edata = (const struct icm42688_fifo_data *)buffer;
+
+	if (edata->fifo_count <= *fit) {
+		return 0;
+	}
+
+	/* Jump to the frame start */
+	buffer += sizeof(struct icm42688_fifo_data) + *fit;
+
+	const bool is_20b = FIELD_GET(FIFO_HEADER_20, buffer[0]);
+	const bool has_accel = FIELD_GET(FIFO_HEADER_ACCEL, buffer[0]);
+	const bool has_gyro = FIELD_GET(FIFO_HEADER_GYRO, buffer[0]);
+	const int channel_count = 1 + (has_accel ? 3 : 0) + (has_gyro ? 3 : 0);
+	const uint8_t *frame_end = buffer + /* header */ 1 + /* accel */ (has_accel ? 6 : 0) +
+				   /* gyro */ (has_gyro ? 6 : 0) +
+				   /* timestamp */ (has_accel && has_gyro ? 2 : 0) +
+				   /* temperature */ (is_20b ? 2 : 1);
+	int header_channels[7];
+	int count = 0;
+
+	if (*cit >= channel_count) {
+		return -1;
+	}
+
+	if (has_accel) {
+		header_channels[count++] = SENSOR_CHAN_ACCEL_X;
+		header_channels[count++] = SENSOR_CHAN_ACCEL_Y;
+		header_channels[count++] = SENSOR_CHAN_ACCEL_Z;
+	}
+	if (has_gyro) {
+		header_channels[count++] = SENSOR_CHAN_GYRO_X;
+		header_channels[count++] = SENSOR_CHAN_GYRO_Y;
+		header_channels[count++] = SENSOR_CHAN_GYRO_Z;
+	}
+	header_channels[count] = SENSOR_CHAN_DIE_TEMP;
+	count = 0;
+
+	while (count < max_count && *cit < channel_count) {
+		/*
+		 * [0]@0 - accel_x
+		 * [1]@2 - accel_y
+		 * [2]@4 - accel_z
+		 * [3]@6 - gyro_x
+		 * [4]@8 - gyro_y
+		 * [5]@a - gyro_z
+		 * [6]@c - temp
+		 */
+		int offset = 1 + *cit * 2;
+
+		channels[count] = header_channels[*cit];
+		int32_t value;
+		int32_t value_max = INT16_MAX;
+
+		if (channels[count] == SENSOR_CHAN_DIE_TEMP) {
+			value = buffer[offset];
+			if (is_20b) {
+				value |= (buffer[offset + 1] << 8);
+			} else {
+				value_max = INT8_MAX;
+			}
+		} else {
+			value = (buffer[offset] << 8) | buffer[offset + 1];
+			if (is_20b) {
+				int mask = channels[count] < SENSOR_CHAN_ACCEL_XYZ ? GENMASK(7, 4)
+										   : GENMASK(3, 0);
+				/* Get the offset after the end of the frame data */
+				int ext_offset =
+					(channels[count] - (channels[count] < SENSOR_CHAN_ACCEL_XYZ
+								    ? SENSOR_CHAN_ACCEL_X
+								    : SENSOR_CHAN_GYRO_X));
+
+				value = (value << 4) | FIELD_GET(mask, frame_end[ext_offset]);
+				value_max = (1 << 19) - 1;
+			}
+		}
+		values[count] = (q31_t)((int64_t)value * INT32_MAX / value_max);
+		count++;
+		*cit += 1;
+	}
+
+	if (*cit == channel_count) {
+		/* Reached the end of the frame */
+		*fit += (uintptr_t)frame_end - (uintptr_t)buffer + (is_20b ? 3 : 0);
+		*cit = 0;
+	}
+	return count;
+}
+
 static int icm42688_one_shot_decode(const uint8_t *buffer, sensor_frame_iterator_t *fit,
 				    sensor_channel_iterator_t *cit, enum sensor_channel *channels,
 				    q31_t *values, uint8_t max_count)
@@ -271,13 +363,53 @@ static int icm42688_decoder_decode(const uint8_t *buffer, sensor_frame_iterator_
 				   sensor_channel_iterator_t *cit, enum sensor_channel *channels,
 				   q31_t *values, uint8_t max_count)
 {
+	const struct icm42688_decoder_header *header =
+		(const struct icm42688_decoder_header *)buffer;
+
+	if (header->is_fifo) {
+		return icm42688_fifo_decode(buffer, fit, cit, channels, values, max_count);
+	}
 	return icm42688_one_shot_decode(buffer, fit, cit, channels, values, max_count);
 }
 
 static int icm42688_decoder_get_frame_count(const uint8_t *buffer, uint16_t *frame_count)
 {
-	ARG_UNUSED(buffer);
-	*frame_count = 1;
+	const struct icm42688_fifo_data *data = (const struct icm42688_fifo_data *)buffer;
+	const struct icm42688_decoder_header *header = &data->header;
+
+	if (!header->is_fifo) {
+		*frame_count = 1;
+		return 0;
+	}
+
+	/* Skip the header */
+	buffer += sizeof(struct icm42688_fifo_data);
+
+	uint16_t count = 0;
+	const uint8_t *end = buffer + data->fifo_count;
+
+	while (buffer < end) {
+		bool is_20b = FIELD_GET(FIFO_HEADER_20, buffer[0]);
+		int size = is_20b ? 3 : 2;
+
+		if (FIELD_GET(FIFO_HEADER_ACCEL, buffer[0])) {
+			size += 6;
+		}
+		if (FIELD_GET(FIFO_HEADER_GYRO, buffer[0])) {
+			size += 6;
+		}
+		if (FIELD_GET(FIFO_HEADER_TIMESTAMP_FSYNC, buffer[0])) {
+			size += 2;
+		}
+		if (is_20b) {
+			size += 3;
+		}
+
+		buffer += size;
+		++count;
+	}
+
+	*frame_count = count;
 	return 0;
 }
 
@@ -288,6 +420,26 @@ static int icm42688_decoder_get_timestamp(const uint8_t *buffer, uint64_t *times
 
 	*timestamp_ns = header->timestamp;
 	return 0;
+}
+
+static bool icm24688_decoder_has_trigger(const uint8_t *buffer, enum sensor_trigger_type trigger)
+{
+	const struct icm42688_fifo_data *edata = (const struct icm42688_fifo_data *)buffer;
+
+	if (!edata->header.is_fifo) {
+		return false;
+	}
+
+	switch (trigger) {
+	case SENSOR_TRIG_DATA_READY:
+		return FIELD_GET(BIT_INT_STATUS_DATA_RDY, edata->int_status);
+	case SENSOR_TRIG_FIFO_THRESHOLD:
+		return FIELD_GET(BIT_INT_STATUS_FIFO_THS, edata->int_status);
+	case SENSOR_TRIG_FIFO_FULL:
+		return FIELD_GET(BIT_INT_STATUS_FIFO_FULL, edata->int_status);
+	default:
+		return false;
+	}
 }
 
 static int icm42688_decoder_get_shift(const uint8_t *buffer, enum sensor_channel channel_type,
@@ -303,6 +455,7 @@ SENSOR_DECODER_API_DT_DEFINE() = {
 	.get_frame_count = icm42688_decoder_get_frame_count,
 	.get_timestamp = icm42688_decoder_get_timestamp,
 	.get_shift = icm42688_decoder_get_shift,
+	.has_trigger = icm24688_decoder_has_trigger,
 	.decode = icm42688_decoder_decode,
 };
 

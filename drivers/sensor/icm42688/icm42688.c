@@ -156,6 +156,19 @@ static int icm42688_attr_set(const struct device *dev, enum sensor_channel chan,
 			res = -EINVAL;
 		}
 		break;
+	case SENSOR_CHAN_ALL:
+		if (attr == SENSOR_ATTR_FIFO_WATERMARK) {
+			int64_t mval = sensor_value_to_micro(val);
+
+			if (mval < 0 || mval > 1000000) {
+				return -EINVAL;
+			}
+			new_config.fifo_wm = CLAMP(mval * 2048 / 1000000, 0, 2048);
+		} else {
+			LOG_ERR("Unsupported attribute");
+			res = -EINVAL;
+		}
+		break;
 	default:
 		LOG_ERR("Unsupported channel");
 		res = -EINVAL;
@@ -258,7 +271,7 @@ int icm42688_init(const struct device *dev)
 	data->cfg.gyro_fs = ICM42688_GYRO_FS_125;
 	data->cfg.accel_odr = ICM42688_ACCEL_ODR_1000;
 	data->cfg.gyro_odr = ICM42688_GYRO_ODR_1000;
-	data->cfg.fifo_en = false;
+	data->cfg.fifo_en = IS_ENABLED(CONFIG_ICM42688_STREAM);
 
 	res = icm42688_configure(dev, &data->cfg);
 	if (res != 0) {
@@ -284,8 +297,15 @@ void icm42688_unlock(const struct device *dev)
 #define ICM42688_SPI_CFG                                                                           \
 	SPI_OP_MODE_MASTER | SPI_MODE_CPOL | SPI_MODE_CPHA | SPI_WORD_SET(8) | SPI_TRANSFER_MSB
 
+#define ICM42688_RTIO_DEFINE(inst)                                                                 \
+	SPI_DT_IODEV_DEFINE(icm42688_spi_iodev_##inst, DT_DRV_INST(inst), ICM42688_SPI_CFG, 0U);   \
+	RTIO_DEFINE(icm42688_rtio_##inst, 8, 4);
+
 #define ICM42688_DEFINE_DATA(inst)                                                                 \
-	static struct icm42688_dev_data icm42688_driver_##inst;
+	IF_ENABLED(CONFIG_ICM42688_STREAM, (ICM42688_RTIO_DEFINE(inst)));                          \
+	static struct icm42688_dev_data icm42688_driver_##inst = {                                 \
+		IF_ENABLED(CONFIG_ICM42688_STREAM, (.r = &icm42688_rtio_##inst,                    \
+						    .spi_iodev = &icm42688_spi_iodev_##inst,))};
 
 #define ICM42688_INIT(inst)                                                                        \
 	ICM42688_DEFINE_DATA(inst);                                                                \
