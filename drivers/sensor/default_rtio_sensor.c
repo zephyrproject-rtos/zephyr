@@ -316,9 +316,8 @@ static int decode(const uint8_t *buffer, sensor_frame_iterator_t *fit,
 {
 	const struct sensor_data_generic_header *header =
 		(const struct sensor_data_generic_header *)buffer;
-	const q31_t *q =
-		(const q31_t *)(buffer + sizeof(struct sensor_data_generic_header) +
-				header->num_channels * sizeof(enum sensor_channel));
+	const q31_t *q = (const q31_t *)(buffer + sizeof(struct sensor_data_generic_header) +
+					 header->num_channels * sizeof(enum sensor_channel));
 	int count = 0;
 
 	if (*fit != 0 || *cit >= header->num_channels) {

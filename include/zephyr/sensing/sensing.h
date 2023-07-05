@@ -168,6 +168,7 @@ typedef void *sensing_sensor_handle_t;
  */
 typedef void (*sensing_data_event_t)(sensing_sensor_handle_t handle, const void *buf);
 
+#include <zephyr/rtio/rtio.h>
 /**
  * @struct sensing_sensor_info
  * @brief Sensor basic constant information
@@ -180,6 +181,13 @@ struct sensing_sensor_info {
 
 	/** Sensor type */
 	int32_t type;
+
+	/****** TODO hide these (private members) ******/
+	struct rtio_iodev *iodev;
+
+#ifdef CONFIG_SENSING_SHELL
+	char *shell_name;
+#endif
 };
 
 /**
@@ -241,7 +249,7 @@ struct sensing_sensor_attribute {
 	int8_t shift;
 };
 
-int sensing_set_attributes(sensing_sensor_handle_t handle,
+int sensing_set_attributes(sensing_sensor_handle_t handle, enum sensing_sensor_mode mode,
 			   struct sensing_sensor_attribute *attributes, size_t count);
 
 /**

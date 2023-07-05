@@ -6,6 +6,7 @@ config SENSING
 	select DSP
 	select SENSOR_INFO
 	select SYS_MEM_BLOCKS
+	select SENSOR_ASYNC_API
 	help
 	  Enable Sensing Subsystem.
 
@@ -24,6 +25,28 @@ config SENSING_MAX_CONNECTIONS
 	  number of concurrent connections (note that a connection can be to the
 	  same sensor by different clients or the same client to different
 	  sensors).
+
+config SENSING_RTIO_BLOCK_SIZE
+	int "Block size of the RTIO context"
+	default 64
+
+config SENSING_RTIO_BLOCK_COUNT
+	int "Number of memory blocks of the RTIO context"
+	default 32
+
+config SENSING_PROCESSING_THREAD_STACK_SIZE
+	int "Stack size for the subsystem's data processing thread"
+	default 1024
+	help
+	  Thread stack size to use for the sensor data processing of the sensing
+	  subsystem. The more data is expected to come through prior to being
+	  dispatched to clients, the larger the stack will need to be.
+
+config SENSING_PROCESSING_THREAD_PRIORITY
+	int "Thread priority of the subsystem's data processing thread"
+	default 10
+	help
+	  The sensor subsystem's data processing thread priority
 
 config SENSING_SHELL
 	bool "Shell commands for sensing subsystem"

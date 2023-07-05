@@ -16,6 +16,7 @@
 struct sensing_connection {
 	const struct sensing_sensor_info *info;
 	const struct sensing_callback_list *cb_list;
+	enum sensing_sensor_mode mode;
 	q31_t attributes[SENSOR_ATTR_COMMON_COUNT];
 	uint32_t attribute_mask;
 } __packed __aligned(4);
@@ -27,6 +28,8 @@ extern struct sensing_connection_pool {
 } __sensing_connection_pool;
 
 BUILD_ASSERT(SENSOR_ATTR_COMMON_COUNT <= 32, "Too many sensor attributes");
+
+extern struct rtio sensing_rtio_ctx;
 
 static inline bool __sensing_is_connected(const struct sensing_sensor_info *info,
 					  const struct sensing_connection *connection)

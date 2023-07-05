@@ -1,6 +1,7 @@
 
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/sensing/sensing.h>
+#include <zephyr/sensing/sensor.h>
 #include <zephyr/sys/mem_blocks.h>
 #include <zephyr/dsp/types.h>
 #include <zephyr/logging/log.h>
@@ -13,7 +14,7 @@ LOG_MODULE_REGISTER(sensing_connect, CONFIG_SENSING_LOG_LEVEL);
 	struct sensing_connection *name = handle;                                                  \
 	__ASSERT_NO_MSG((uintptr_t)name >= (uintptr_t)__sensing_connection_pool.pool);             \
 	__ASSERT_NO_MSG((uintptr_t)name < (uintptr_t)__sensing_connection_pool.pool +              \
-						  sizeof(__sensing_connection_pool.pool));
+						  sizeof(__sensing_connection_pool.pool))
 
 SENSING_DMEM SYS_MUTEX_DEFINE(connection_lock);
 
@@ -31,6 +32,10 @@ SENSING_DMEM struct sensing_connection_pool __sensing_connection_pool = {
 
 #define __lock   sys_mutex_lock(__sensing_connection_pool.lock, K_FOREVER)
 #define __unlock sys_mutex_unlock(__sensing_connection_pool.lock)
+
+RTIO_DEFINE_WITH_MEMPOOL(sensing_rtio_ctx, CONFIG_SENSING_MAX_CONNECTIONS,
+			 CONFIG_SENSING_MAX_CONNECTIONS, CONFIG_SENSING_RTIO_BLOCK_COUNT,
+			 CONFIG_SENSING_RTIO_BLOCK_SIZE, 4);
 
 int sensing_open_sensor(const struct sensing_sensor_info *info,
 			const struct sensing_callback_list *cb_list,
@@ -84,10 +89,11 @@ int sensing_close_sensor(sensing_sensor_handle_t handle)
 	return rc;
 }
 
-int sensing_set_attributes(sensing_sensor_handle_t handle,
+int sensing_set_attributes(sensing_sensor_handle_t handle, enum sensing_sensor_mode mode,
 			   struct sensing_sensor_attribute *attributes, size_t count)
 {
 	__HANDLE_TO_CONNECTION(connection, handle);
+	int rc;
 
 	__lock;
 	for (size_t i = 0; i < count; ++i) {
@@ -101,9 +107,21 @@ int sensing_set_attributes(sensing_sensor_handle_t handle,
 		LOG_DBG("Updated attribute (%d) to 0x%08x->0x%08x", attributes[i].attribute,
 			attributes[i].value, value);
 	}
+	connection->mode = mode;
 	__sensing_arbitrate();
+
+	switch (mode) {
+	case SENSING_SENSOR_MODE_ONE_SHOT:
+		LOG_DBG("Starting one-shot read");
+		rc = sensor_read(connection->info->iodev, &sensing_rtio_ctx,
+				 (void *)connection->info);
+		break;
+	default:
+		rc = -EINVAL;
+		break;
+	}
 	__unlock;
-	return 0;
+	return rc;
 }
 
 const struct sensing_sensor_info *sensing_get_sensor_info(sensing_sensor_handle_t handle)
