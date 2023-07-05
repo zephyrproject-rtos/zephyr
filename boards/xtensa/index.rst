@@ -1,6 +1,6 @@
 .. _boards-xtensa:
 
-XTENSA Boards
+Xtensa Boards
 #############
 
 .. toctree::
