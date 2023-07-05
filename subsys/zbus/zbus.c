@@ -11,9 +11,13 @@ LOG_MODULE_REGISTER(zbus, CONFIG_ZBUS_LOG_LEVEL);
 
 k_timeout_t _zbus_timeout_remainder(uint64_t end_ticks)
 {
-	int64_t now_ticks = sys_clock_tick_get();
+	int64_t remainder = ((int64_t)end_ticks) - sys_clock_tick_get();
 
-	return K_TICKS((k_ticks_t)MAX(end_ticks - now_ticks, 0));
+	if (remainder < 0) {
+		remainder = 0;
+	}
+
+	return K_TICKS((k_ticks_t)remainder);
 }
 
 #if (CONFIG_ZBUS_RUNTIME_OBSERVERS_POOL_SIZE > 0)
