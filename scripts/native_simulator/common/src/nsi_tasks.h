@@ -42,7 +42,7 @@ extern "C" {
  * The function must take no parameters and return nothing.
  */
 #define NSI_TASK(fn, level, prio)	\
-	static void (* const NSI_CONCAT(__nsi_task_, fn))() \
+	static void (* const NSI_CONCAT(__nsi_task_, fn))(void) \
 	__attribute__((__used__)) \
 	__attribute__((__section__(".nsi_" #level NSI_STRINGIFY(prio) "_task")))\
 	= fn
