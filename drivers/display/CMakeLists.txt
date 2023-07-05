@@ -15,7 +15,6 @@ zephyr_library_sources_ifdef(CONFIG_ILI9488		display_ili9488.c)
 zephyr_library_sources_ifdef(CONFIG_LS0XX		ls0xx.c)
 zephyr_library_sources_ifdef(CONFIG_MAX7219		display_max7219.c)
 zephyr_library_sources_ifdef(CONFIG_OTM8009A		display_otm8009a.c)
-zephyr_library_sources_ifdef(CONFIG_SDL_DISPLAY		display_sdl.c)
 zephyr_library_sources_ifdef(CONFIG_SSD1306		ssd1306.c)
 zephyr_library_sources_ifdef(CONFIG_SSD16XX		ssd16xx.c)
 zephyr_library_sources_ifdef(CONFIG_ST7789V		display_st7789v.c)
@@ -27,3 +26,12 @@ zephyr_library_sources_ifdef(CONFIG_MICROBIT_DISPLAY
 	mb_display.c
 	mb_font.c
 )
+
+if (CONFIG_SDL_DISPLAY)
+	zephyr_library_sources(display_sdl.c)
+	if (CONFIG_NATIVE_APPLICATION)
+		zephyr_library_sources(display_sdl_bottom.c)
+	else()
+		target_sources(native_simulator INTERFACE display_sdl_bottom.c)
+	endif()
+endif()
