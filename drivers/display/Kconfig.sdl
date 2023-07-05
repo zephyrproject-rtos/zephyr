@@ -7,7 +7,6 @@ menuconfig SDL_DISPLAY
 	bool "SDL based emulated display"
 	default y
 	depends on DT_HAS_ZEPHYR_SDL_DC_ENABLED
-	depends on EXTERNAL_LIBC
 	select HAS_SDL
 	help
 	  Enable SDL based emulated display compliant with display driver API.
