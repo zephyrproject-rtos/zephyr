@@ -26,6 +26,8 @@ config ETH_MCUX_USE_DTCM_FOR_DMA_BUFFER
 
 config ETH_MCUX_PROMISCUOUS_MODE
 	bool "Promiscuous mode"
+	default y if NET_IPV6
+	default n
 	help
 	  Place the Ethernet receiver in promiscuous mode. This may be useful
 	  for debugging and not needed for normal work.
