@@ -277,6 +277,17 @@ static ALWAYS_INLINE void k_spin_release(struct k_spinlock *l)
 #endif
 }
 
+#if defined(CONFIG_SPIN_VALIDATE) && defined(__GNUC__)
+static ALWAYS_INLINE void z_spin_onexit(k_spinlock_key_t *k)
+{
+	__ASSERT(k->key, "K_SPINLOCK exited with goto, break or return, "
+			 "use K_SPINLOCK_BREAK instead.");
+}
+#define K_SPINLOCK_ONEXIT __attribute__((__cleanup__(z_spin_onexit)))
+#else
+#define K_SPINLOCK_ONEXIT
+#endif
+
 /**
  * INTERNAL_HIDDEN @endcond
  */
@@ -331,7 +342,7 @@ static ALWAYS_INLINE void k_spin_release(struct k_spinlock *l)
  * @param lck Spinlock used to guard the enclosed code block.
  */
 #define K_SPINLOCK(lck)                                                                            \
-	for (k_spinlock_key_t __i = {}, __key = k_spin_lock(lck); !__i.key;                        \
+	for (k_spinlock_key_t __i K_SPINLOCK_ONEXIT = {}, __key = k_spin_lock(lck); !__i.key;      \
 	     k_spin_unlock(lck, __key), __i.key = 1)
 
 /** @} */
