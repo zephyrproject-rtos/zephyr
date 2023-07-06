@@ -162,11 +162,13 @@ static ssize_t available_contexts_read(struct bt_conn *conn,
 				 sizeof(context));
 }
 
+#if defined(CONFIG_BT_PACS_SUPPORTED_CONTEXT_NOTIFIABLE)
 static void supported_context_cfg_changed(const struct bt_gatt_attr *attr,
 					  uint16_t value)
 {
 	LOG_DBG("attr %p value 0x%04x", attr, value);
 }
+#endif /* CONFIG_BT_PACS_SUPPORTED_CONTEXT_NOTIFIABLE */
 
 static ssize_t supported_context_read(struct bt_conn *conn,
 				      const struct bt_gatt_attr *attr,
@@ -184,7 +186,9 @@ static ssize_t supported_context_read(struct bt_conn *conn,
 }
 
 static int available_contexts_notify(void);
+#if defined(CONFIG_BT_PACS_SUPPORTED_CONTEXT_NOTIFIABLE)
 static int supported_contexts_notify(void);
+#endif /* CONFIG_BT_PACS_SUPPORTED_CONTEXT_NOTIFIABLE */
 
 static int set_available_contexts(uint16_t contexts, uint16_t *available,
 				  uint16_t supported)
@@ -236,6 +240,7 @@ static int set_supported_contexts(uint16_t contexts, uint16_t *supported,
 		}
 	}
 
+#if defined(CONFIG_BT_PACS_SUPPORTED_CONTEXT_NOTIFIABLE)
 	err = supported_contexts_notify();
 	if (err) {
 		*supported = tmp_supported;
@@ -243,12 +248,12 @@ static int set_supported_contexts(uint16_t contexts, uint16_t *supported,
 
 		return err;
 	}
+#endif /* CONFIG_BT_PACS_SUPPORTED_CONTEXT_NOTIFIABLE */
 
 	return 0;
 }
 
 #if defined(CONFIG_BT_PAC_SNK)
-static int pac_notify_snk(void);
 static ssize_t snk_read(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			void *buf, uint16_t len, uint16_t offset)
 {
@@ -274,10 +279,12 @@ static ssize_t snk_read(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 	return ret_val;
 }
 
+#if defined(CONFIG_BT_PAC_SNK_NOTIFIABLE)
 static void snk_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
 {
 	LOG_DBG("attr %p value 0x%04x", attr, value);
 }
+#endif /* CONFIG_BT_PAC_SNK_NOTIFIABLE */
 
 static inline int set_snk_available_contexts(uint16_t contexts)
 {
@@ -316,10 +323,12 @@ static ssize_t snk_loc_read(struct bt_conn *conn,
 				 sizeof(location));
 }
 
+#if defined(CONFIG_BT_PAC_SNK_LOC_NOTIFIABLE)
 static void snk_loc_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
 {
 	LOG_DBG("attr %p value 0x%04x", attr, value);
 }
+#endif /* CONFIG_BT_PAC_SNK_LOC_NOTIFIABLE */
 
 static int set_snk_location(enum bt_audio_location audio_location)
 {
@@ -375,7 +384,6 @@ static ssize_t snk_loc_write(struct bt_conn *conn,
 #endif /* CONFIG_BT_PAC_SNK_LOC_WRITEABLE */
 
 #if defined(CONFIG_BT_PAC_SRC)
-static int pac_notify_src(void);
 static ssize_t src_read(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			void *buf, uint16_t len, uint16_t offset)
 {
@@ -430,7 +438,9 @@ static inline int set_src_supported_contexts(uint16_t contexts)
 #endif /* CONFIG_BT_PAC_SRC */
 
 #if defined(CONFIG_BT_PAC_SRC_LOC)
+#if defined(CONFIG_BT_PAC_SRC_LOC_NOTIFIABLE)
 static int pac_notify_src_loc(void);
+#endif /* CONFIG_BT_PAC_SRC_LOC_NOTIFIABLE */
 static ssize_t src_loc_read(struct bt_conn *conn,
 			    const struct bt_gatt_attr *attr, void *buf,
 			    uint16_t len, uint16_t offset)
@@ -443,16 +453,19 @@ static ssize_t src_loc_read(struct bt_conn *conn,
 				 sizeof(location));
 }
 
+#if defined(CONFIG_BT_PAC_SRC_LOC_NOTIFIABLE)
 static void src_loc_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
 {
 	LOG_DBG("attr %p value 0x%04x", attr, value);
 }
+#endif /* CONFIG_BT_PAC_SRC_LOC_NOTIFIABLE */
 
 static int set_src_location(enum bt_audio_location audio_location)
 {
-	int err;
-	enum bt_audio_location tmp_audio_location = audio_location;
-
+	int err = 0;
+#if defined(CONFIG_BT_PAC_SRC_LOC_NOTIFIABLE)
+	enum bt_audio_location tmp_audio_location = pacs_src_location;
+#endif /* CONFIG_BT_PAC_SRC_LOC_NOTIFIABLE */
 
 	if (audio_location == pacs_src_location) {
 		return 0;
@@ -460,6 +473,7 @@ static int set_src_location(enum bt_audio_location audio_location)
 
 	pacs_src_location = audio_location;
 
+#if defined(CONFIG_BT_PAC_SRC_LOC_NOTIFIABLE)
 	err = pac_notify_src_loc();
 	if (err) {
 		LOG_DBG("Notify failed, previous audio location restored");
@@ -467,8 +481,9 @@ static int set_src_location(enum bt_audio_location audio_location)
 
 		return err;
 	}
+#endif /* CONFIG_BT_PAC_SRC_LOC_NOTIFIABLE */
 
-	return 0;
+	return err;
 }
 #else
 static int set_src_location(enum bt_audio_location location)
@@ -512,45 +527,82 @@ static ssize_t src_loc_write(struct bt_conn *conn,
 BT_GATT_SERVICE_DEFINE(pacs_svc,
 	BT_GATT_PRIMARY_SERVICE(BT_UUID_PACS),
 #if defined(CONFIG_BT_PAC_SNK)
+#if defined(CONFIG_BT_PAC_SNK_NOTIFIABLE)
 	BT_AUDIO_CHRC(BT_UUID_PACS_SNK,
 		      BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY,
 		      BT_GATT_PERM_READ_ENCRYPT,
 		      snk_read, NULL, NULL),
 	BT_AUDIO_CCC(snk_cfg_changed),
+#else
+	BT_AUDIO_CHRC(BT_UUID_PACS_SNK,
+		      BT_GATT_CHRC_READ,
+		      BT_GATT_PERM_READ_ENCRYPT,
+		      snk_read, NULL, NULL),
+#endif /* CONFIG_BT_PAC_SNK_NOTIFIABLE */
 #if defined(CONFIG_BT_PAC_SNK_LOC)
-#if defined(CONFIG_BT_PAC_SNK_LOC_WRITEABLE)
+#if defined(CONFIG_BT_PAC_SNK_LOC_WRITEABLE) && defined(CONFIG_BT_PAC_SNK_LOC_NOTIFIABLE)
 	BT_AUDIO_CHRC(BT_UUID_PACS_SNK_LOC,
 		      BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE | BT_GATT_CHRC_NOTIFY,
 		      BT_GATT_PERM_READ_ENCRYPT | BT_GATT_PERM_WRITE_ENCRYPT,
 		      snk_loc_read, snk_loc_write, NULL),
-#else
+	BT_AUDIO_CCC(snk_loc_cfg_changed),
+#elif defined(CONFIG_BT_PAC_SNK_LOC_NOTIFIABLE)
 	BT_AUDIO_CHRC(BT_UUID_PACS_SNK_LOC,
 		      BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY,
 		      BT_GATT_PERM_READ_ENCRYPT,
 		      snk_loc_read, NULL, NULL),
-#endif /* CONFIG_BT_PAC_SNK_LOC_WRITEABLE */
 	BT_AUDIO_CCC(snk_loc_cfg_changed),
+#elif defined(CONFIG_BT_PAC_SNK_LOC_WRITEABLE)
+	BT_AUDIO_CHRC(BT_UUID_PACS_SNK_LOC,
+		      BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE,
+		      BT_GATT_PERM_READ_ENCRYPT,
+		      snk_loc_read, snk_loc_write, NULL),
+#else
+	BT_AUDIO_CHRC(BT_UUID_PACS_SNK_LOC,
+		      BT_GATT_CHRC_READ,
+		      BT_GATT_PERM_READ_ENCRYPT,
+		      snk_loc_read, NULL, NULL),
+#endif /* (CONFIG_BT_PAC_SNK_LOC_WRITEABLE && CONFIG_BT_PAC_SNK_LOC_NOTIFIABLE) */
 #endif /* CONFIG_BT_PAC_SNK_LOC */
 #endif /* CONFIG_BT_PAC_SNK */
 #if defined(CONFIG_BT_PAC_SRC)
+#if defined(CONFIG_BT_PAC_SRC_NOTIFIABLE)
 	BT_AUDIO_CHRC(BT_UUID_PACS_SRC,
 		      BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY,
 		      BT_GATT_PERM_READ_ENCRYPT,
 		      src_read, NULL, NULL),
 	BT_AUDIO_CCC(src_cfg_changed),
+#else
+	BT_AUDIO_CHRC(BT_UUID_PACS_SRC,
+		      BT_GATT_CHRC_READ,
+		      BT_GATT_PERM_READ_ENCRYPT,
+		      src_read, NULL, NULL),
+	BT_AUDIO_CCC(src_cfg_changed),
+#endif /* CONFIG_BT_PAC_SRC_NOTIFIABLE */
 #if defined(CONFIG_BT_PAC_SRC_LOC)
-#if defined(CONFIG_BT_PAC_SRC_LOC_WRITEABLE)
+#if defined(CONFIG_BT_PAC_SRC_LOC_WRITEABLE) && defined(CONFIG_BT_PAC_SRC_LOC_NOTIFIABLE)
 	BT_AUDIO_CHRC(BT_UUID_PACS_SRC_LOC,
 		      BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE | BT_GATT_CHRC_NOTIFY,
 		      BT_GATT_PERM_READ_ENCRYPT | BT_GATT_PERM_WRITE_ENCRYPT,
 		      src_loc_read, src_loc_write, NULL),
-#else
+	BT_AUDIO_CCC(src_loc_cfg_changed),
+#elif defined(CONFIG_BT_PAC_SRC_LOC_NOTIFIABLE)
 	BT_AUDIO_CHRC(BT_UUID_PACS_SRC_LOC,
 		      BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY,
 		      BT_GATT_PERM_READ_ENCRYPT,
 		      src_loc_read, NULL, NULL),
-#endif /* CONFIG_BT_PAC_SRC_LOC_WRITEABLE */
 	BT_AUDIO_CCC(src_loc_cfg_changed),
+#elif defined(CONFIG_BT_PAC_SRC_LOC_WRITEABLE)
+	BT_AUDIO_CHRC(BT_UUID_PACS_SRC_LOC,
+		      BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE,
+		      BT_GATT_PERM_READ_ENCRYPT,
+		      src_loc_read, src_loc_write, NULL),
+#else
+	BT_AUDIO_CHRC(BT_UUID_PACS_SRC_LOC,
+		      BT_GATT_CHRC_READ,
+		      BT_GATT_PERM_READ_ENCRYPT,
+		      src_loc_read, NULL, NULL),
+#endif /* (CONFIG_BT_PAC_SRC_LOC_WRITEABLE && CONFIG_BT_PAC_SRC_LOC_NOTIFIABLE) */
 #endif /* CONFIG_BT_PAC_SRC_LOC */
 #endif /* CONFIG_BT_PAC_SRC */
 	BT_AUDIO_CHRC(BT_UUID_PACS_AVAILABLE_CONTEXT,
@@ -558,14 +610,21 @@ BT_GATT_SERVICE_DEFINE(pacs_svc,
 		      BT_GATT_PERM_READ_ENCRYPT,
 		      available_contexts_read, NULL, NULL),
 	BT_AUDIO_CCC(available_context_cfg_changed),
+#if defined(CONFIG_BT_PACS_SUPPORTED_CONTEXT_NOTIFIABLE)
 	BT_AUDIO_CHRC(BT_UUID_PACS_SUPPORTED_CONTEXT,
 		      BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY,
 		      BT_GATT_PERM_READ_ENCRYPT,
 		      supported_context_read, NULL, NULL),
 	BT_AUDIO_CCC(supported_context_cfg_changed)
+#else
+	BT_AUDIO_CHRC(BT_UUID_PACS_SUPPORTED_CONTEXT,
+		      BT_GATT_CHRC_READ,
+		      BT_GATT_PERM_READ_ENCRYPT,
+		      supported_context_read, NULL, NULL),
+#endif /* CONFIG_BT_PACS_SUPPORTED_CONTEXT_NOTIFIABLE */
 );
 
-#if defined(CONFIG_BT_PAC_SNK_LOC)
+#if defined(CONFIG_BT_PAC_SNK_LOC_NOTIFIABLE)
 static int pac_notify_snk_loc(void)
 {
 	uint32_t location_le = sys_cpu_to_le32(pacs_snk_location);
@@ -580,9 +639,9 @@ static int pac_notify_snk_loc(void)
 
 	return 0;
 }
-#endif /* CONFIG_BT_PAC_SNK_LOC */
+#endif /* CONFIG_BT_PAC_SNK_LOC_NOTIFIABLE */
 
-#if defined(CONFIG_BT_PAC_SRC_LOC)
+#if defined(CONFIG_BT_PAC_SRC_LOC_NOTIFIABLE)
 static int pac_notify_src_loc(void)
 {
 	uint32_t location_le = sys_cpu_to_le32(pacs_src_location);
@@ -597,9 +656,9 @@ static int pac_notify_src_loc(void)
 
 	return 0;
 }
-#endif /* CONFIG_BT_PAC_SRC_LOC */
+#endif /* CONFIG_BT_PAC_SRC_LOC_NOTIFIABLE */
 
-#if defined(CONFIG_BT_PAC_SNK)
+#if defined(CONFIG_BT_PAC_SNK_NOTIFIABLE)
 static int pac_notify_snk(void)
 {
 	int err = 0;
@@ -627,9 +686,9 @@ static int pac_notify_snk(void)
 		return 0;
 	}
 }
-#endif /* CONFIG_BT_PAC_SNK */
+#endif /* CONFIG_BT_PAC_SNK_NOTIFIABLE */
 
-#if defined(CONFIG_BT_PAC_SRC)
+#if defined(CONFIG_BT_PAC_SRC_NOTIFIABLE)
 static int pac_notify_src(void)
 {
 	int err = 0;
@@ -657,20 +716,20 @@ static int pac_notify_src(void)
 		return 0;
 	}
 }
-#endif /* CONFIG_BT_PAC_SRC */
+#endif /* CONFIG_BT_PAC_SRC_NOTIFIABLE */
 
 static int pacs_changed(enum bt_audio_dir dir)
 {
 	int err = 0;
 
 	if (dir == BT_AUDIO_DIR_SINK) {
-#if defined(CONFIG_BT_PAC_SNK)
+#if defined(CONFIG_BT_PAC_SNK_NOTIFIABLE)
 		err = pac_notify_snk();
-#endif /* CONFIG_BT_PAC_SNK */
+#endif /* CONFIG_BT_PAC_SNK_NOTIFIABLE */
 	} else {
-#if defined(CONFIG_BT_PAC_SRC)
+#if defined(CONFIG_BT_PAC_SRC_NOTIFIABLE)
 		err = pac_notify_src();
-#endif /* CONFIG_BT_PAC_SRC */
+#endif /* CONFIG_BT_PAC_SRC_NOTIFIABLE */
 	}
 
 	return err;
@@ -694,6 +753,7 @@ static int available_contexts_notify(void)
 	return 0;
 }
 
+#if defined(CONFIG_BT_PACS_SUPPORTED_CONTEXT_NOTIFIABLE)
 static int supported_contexts_notify(void)
 {
 	struct bt_pacs_context context = {
@@ -709,9 +769,9 @@ static int supported_contexts_notify(void)
 
 		return err;
 	}
-
 	return 0;
 }
+#endif /* CONFIG_BT_PACS_SUPPORTED_CONTEXT_NOTIFIABLE */
 
 bool bt_pacs_context_available(enum bt_audio_dir dir, uint16_t context)
 {
@@ -819,9 +879,13 @@ int bt_pacs_set_location(enum bt_audio_dir dir, enum bt_audio_location location)
 {
 	switch (dir) {
 	case BT_AUDIO_DIR_SINK:
+#if defined(CONFIG_BT_PAC_SNK_LOC_NOTIFIABLE)
 		return set_snk_location(location);
+#endif /* CONFIG_BT_PAC_SNK_LOC_NOTIFIABLE */
 	case BT_AUDIO_DIR_SOURCE:
+#if defined(CONFIG_BT_PAC_SRC_LOC_NOTIFIABLE)
 		return set_src_location(location);
+#endif /* CONFIG_BT_PAC_SRC_LOC_NOTIFIABLE */
 	}
 
 	return -EINVAL;
