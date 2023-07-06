@@ -960,9 +960,9 @@
 		sdmmc2: sdmmc@48022400 {
 			compatible = "st,stm32-sdmmc";
 			reg = <0x48022400 0x400>;
-			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00000100>,
+			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00000200>,
 				 <&rcc STM32_SRC_PLL1_Q SDMMC_SEL(0)>;
-			resets = <&rctl STM32_RESET(AHB2, 8U)>;
+			resets = <&rctl STM32_RESET(AHB2, 9U)>;
 			interrupts = <124 0>;
 			status = "disabled";
 		};
