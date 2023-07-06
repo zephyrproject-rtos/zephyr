@@ -114,4 +114,6 @@ source "drivers/watchdog/Kconfig.opentitan"
 
 source "drivers/watchdog/Kconfig.andes_atcwdt200"
 
+source "drivers/watchdog/Kconfig.nxp_fs26"
+
 endif # WATCHDOG
