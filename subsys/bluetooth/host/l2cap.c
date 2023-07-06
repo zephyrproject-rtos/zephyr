@@ -2035,32 +2035,63 @@ static int l2cap_chan_le_send_sdu(struct bt_l2cap_le_chan *ch,
 				  struct net_buf **buf, uint16_t sent)
 {
 	int ret;
+ 	struct net_buf *frag;
+	size_t frag_len;
 
-	/* Drop any preceding empty frags. */
-	if (!(*buf)->len && (*buf)->frags) {
+	/* Drop empty frags unless it's the last one. */
+	while (!(*buf)->len && (*buf)->frags) {
 		*buf = net_buf_frag_del(NULL, *buf);
-		/* Copy the metadata into the next fragment. */
-		l2cap_tx_meta_data(*buf)->sent = sent;
 	}
 
-	if (!sent) {
-		/* Add SDU length for the first segment */
-		ret = l2cap_chan_le_send(ch, *buf, BT_L2CAP_SDU_HDR_SIZE);
-		/* Keep track of whether the SDU header has been sent. */
-		l2cap_tx_meta_data(*buf)->sent = (ret >= 0);
-	} else {
-		ret = l2cap_chan_le_send(ch, *buf, 0);
-	}
-
-	if (ret < 0) {
-		/* Send was unsucessful. May be -EAGAIN or some other error. */
-		return ret;
-	}
-
-	/* If all remaining fragments are empty, we are done. Unref is recursive. */
-	if (net_buf_frags_len(*buf) == 0) {
+	/* Don't send the empty frag unless it's the whole SDU. */
+	if (sent && !(*buf)->len) {
 		net_buf_unref(*buf);
-		return ret;
+		*buf = NULL;
+		return 0;
+	}
+
+	/* l2cap_chan_le_send does not handle frags well. It will only
+	 * send the first frag and then unref all of them.
+	 *
+	 * To work around this, we detach the first frag from the chain
+	 * before passing it to l2cap_chan_le_send.
+	 */
+	if ((*buf)->frags) {
+		frag = *buf;
+		*buf = frag->frags;
+		frag->frags = NULL;
+	} else {
+		frag = *buf;
+		*buf = NULL;
+	}
+
+	frag_len = frag->len;
+
+	ret = l2cap_chan_le_send(ch, frag, (!sent? BT_L2CAP_SDU_HDR_SIZE :-0));
+
+	if (ret == frag_len) {
+		/* The frag was sent in full. */
+		net_buf_unref(frag);
+		frag = NULL;
+	}
+
+	/* On failure or partial transfer, reattach the frag to the
+	 * chain.
+	 */
+	if (frag) {
+		if (*buf) {
+			net_buf_frag_insert(*buf, frag);
+		} else {
+			*buf = frag;
+		}
+		frag = NULL;
+	}
+
+	/* Request caller to continue later if there is no failure and more to send. */
+	if (ret >= 0 && *buf) {
+		sent += ret;
+		l2cap_tx_meta_data(*buf)->sent = sent;
+		ret = -EAGAIN;
 	}
 
 	LOG_DBG("ch %p cid 0x%04x sent %u", ch, ch->tx.cid, sent);
