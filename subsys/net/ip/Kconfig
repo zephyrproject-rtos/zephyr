@@ -508,6 +508,7 @@ config NET_TCP_PKT_ALLOC_TIMEOUT
 
 config NET_TCP_WORKQ_STACK_SIZE
 	int "TCP work queue thread stack size"
+	default 1200 if X86
 	default 1024
 	depends on NET_TCP
 	help
