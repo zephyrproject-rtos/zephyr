@@ -5666,7 +5666,7 @@ int hci_iso_handle(struct net_buf *buf, struct net_buf **evt)
 
 	iso_hdr = net_buf_pull_mem(buf, sizeof(*iso_hdr));
 	handle = sys_le16_to_cpu(iso_hdr->handle);
-	len = sys_le16_to_cpu(iso_hdr->len);
+	len = bt_iso_hdr_len(sys_le16_to_cpu(iso_hdr->len));
 
 	if (buf->len < len) {
 		LOG_ERR("Invalid HCI ISO packet length");
@@ -5706,7 +5706,8 @@ int hci_iso_handle(struct net_buf *buf, struct net_buf **evt)
 		iso_data_hdr = net_buf_pull_mem(buf, sizeof(*iso_data_hdr));
 		len -= sizeof(*iso_data_hdr);
 		sdu_frag_tx.packet_sn = sys_le16_to_cpu(iso_data_hdr->sn);
-		sdu_frag_tx.iso_sdu_length = sys_le16_to_cpu(iso_data_hdr->slen);
+		sdu_frag_tx.iso_sdu_length =
+			sys_le16_to_cpu(bt_iso_pkt_len(iso_data_hdr->slen));
 	} else {
 		sdu_frag_tx.packet_sn = 0;
 		sdu_frag_tx.iso_sdu_length = 0;
