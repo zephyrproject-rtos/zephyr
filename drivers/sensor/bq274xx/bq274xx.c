@@ -51,7 +51,7 @@ static int bq274xx_ctrl_reg_write(const struct device *dev, uint16_t subcommand)
 {
 	const struct bq274xx_config *config = dev->config;
 	uint8_t i2c_data, reg_addr;
-	int ret = 0;
+	int ret;
 
 	reg_addr = BQ274XX_CMD_CONTROL_LOW;
 	i2c_data = subcommand & 0xFF;
@@ -81,7 +81,7 @@ static int bq274xx_cmd_reg_write(const struct device *dev, uint8_t command,
 {
 	const struct bq274xx_config *config = dev->config;
 	uint8_t i2c_data, reg_addr;
-	int ret = 0;
+	int ret;
 
 	reg_addr = command;
 	i2c_data = data;
@@ -100,7 +100,7 @@ static int bq274xx_read_data_block(const struct device *dev, uint8_t offset,
 {
 	const struct bq274xx_config *config = dev->config;
 	uint8_t i2c_data;
-	int ret = 0;
+	int ret;
 
 	i2c_data = BQ274XX_EXT_BLKDAT_START + offset;
 
@@ -140,9 +140,9 @@ static int bq274xx_gauge_configure(const struct device *dev)
 	const struct bq274xx_config *const config = dev->config;
 	struct bq274xx_data *data = dev->data;
 
-	int ret = 0;
-	uint8_t tmp_checksum = 0, checksum_old = 0, checksum_new = 0;
-	uint16_t flags = 0, designenergy_mwh = 0, taperrate = 0;
+	int ret;
+	uint8_t tmp_checksum, checksum_old, checksum_new;
+	uint16_t flags, designenergy_mwh, taperrate;
 	uint8_t designcap_msb, designcap_lsb, designenergy_msb, designenergy_lsb,
 		terminatevolt_msb, terminatevolt_lsb, taperrate_msb, taperrate_lsb;
 	uint8_t block[32];
@@ -202,10 +202,6 @@ static int bq274xx_gauge_configure(const struct device *dev)
 	if (ret < 0) {
 		LOG_ERR("Failed to update block offset");
 		return -EIO;
-	}
-
-	for (uint8_t i = 0; i < 32; i++) {
-		block[i] = 0;
 	}
 
 	ret = bq274xx_read_data_block(dev, 0x00, block, 32);
@@ -291,10 +287,6 @@ static int bq274xx_gauge_configure(const struct device *dev)
 		return -EIO;
 	}
 
-	for (uint8_t i = 0; i < 32; i++) {
-		block[i] = 0;
-	}
-
 	ret = bq274xx_read_data_block(dev, 0x00, block, 32);
 	if (ret < 0) {
 		LOG_ERR("Unable to read block data");
@@ -332,7 +324,6 @@ static int bq274xx_gauge_configure(const struct device *dev)
 		return -EIO;
 	}
 
-	flags = 0;
 	/* Poll Flags */
 	do {
 		ret = bq274xx_cmd_reg_read(dev, BQ274XX_CMD_FLAGS, &flags);
@@ -442,7 +433,7 @@ static int bq274xx_channel_get(const struct device *dev, enum sensor_channel cha
 static int bq274xx_sample_fetch(const struct device *dev, enum sensor_channel chan)
 {
 	struct bq274xx_data *data = dev->data;
-	int ret = 0;
+	int ret;
 
 	if (!data->configured) {
 		ret = bq274xx_gauge_configure(dev);
@@ -579,7 +570,7 @@ static int bq274xx_sample_fetch(const struct device *dev, enum sensor_channel ch
 static int bq274xx_gauge_init(const struct device *dev)
 {
 	const struct bq274xx_config *const config = dev->config;
-	int ret = 0;
+	int ret;
 	uint16_t id;
 
 	if (!device_is_ready(config->i2c.bus)) {
@@ -661,7 +652,7 @@ static int bq274xx_enter_shutdown_mode(const struct device *dev)
 static int bq274xx_exit_shutdown_mode(const struct device *dev)
 {
 	const struct bq274xx_config *const config = dev->config;
-	int ret = 0;
+	int ret;
 
 	ret = gpio_pin_configure_dt(&config->int_gpios, GPIO_OUTPUT | GPIO_OPEN_DRAIN);
 	if (ret < 0) {
