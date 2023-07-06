@@ -182,33 +182,7 @@ int bt_bap_unicast_server_disable(struct bt_bap_stream *stream)
 
 int bt_bap_unicast_server_release(struct bt_bap_stream *stream)
 {
-	struct bt_bap_ascs_rsp rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_SUCCESS,
-						     BT_BAP_ASCS_REASON_NONE);
-	struct bt_bap_ep *ep;
-	int err;
-
-	if (unicast_server_cb != NULL && unicast_server_cb->release != NULL) {
-		err = unicast_server_cb->release(stream, &rsp);
-	} else {
-		err = -ENOTSUP;
-	}
-
-	if (err != 0) {
-		LOG_ERR("Release failed: err %d, code %u, reason %u", err, rsp.code, rsp.reason);
-		return err;
-	}
-
-	ep = stream->ep;
-
-	/* Set reason in case this exits the streaming state */
-	ep->reason = BT_HCI_ERR_LOCALHOST_TERM_CONN;
-
-	/* ase_process will set the state to IDLE after sending the
-	 * notification, finalizing the release
-	 */
-	ascs_ep_set_state(ep, BT_BAP_EP_STATE_RELEASING);
-
-	return 0;
+	return bt_ascs_release_ase(stream->ep);
 }
 
 int bt_bap_unicast_server_config_ase(struct bt_conn *conn, struct bt_bap_stream *stream,
