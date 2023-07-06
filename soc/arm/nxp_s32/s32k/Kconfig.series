@@ -18,5 +18,6 @@ config SOC_SERIES_S32K3_M7
 	select HAS_MCUX_LPUART
 	select HAS_MCUX_FLEXCAN
 	select HAS_MCUX_LPI2C
+	select HAS_MCUX_LPSPI
 	help
 	  Enable support for NXP S32K3 MCUs family on Cortex-M7 cores
