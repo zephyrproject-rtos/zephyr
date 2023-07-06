@@ -84,13 +84,13 @@ struct bt_hci_acl_hdr {
 #define BT_ISO_DATA_INVALID              0x01
 #define BT_ISO_DATA_NOP                  0x02
 
-#define bt_iso_pkt_len(h)                ((h) & 0x3fff)
+#define bt_iso_pkt_len(h)                ((h) & BIT_MASK(12))
 #define bt_iso_pkt_flags(h)              ((h) >> 14)
-#define bt_iso_pkt_len_pack(h, f)        ((h) | ((f) << 14))
+#define bt_iso_pkt_len_pack(h, f)        (((h) & BIT_MASK(12)) | ((f) << 14))
 
 struct bt_hci_iso_data_hdr {
 	uint16_t sn;
-	uint16_t slen;
+	uint16_t slen; /* 12 bit len, 2 bit RFU, 2 bit packet status */
 } __packed;
 #define BT_HCI_ISO_DATA_HDR_SIZE	4
 
