@@ -212,6 +212,10 @@ config OPENTHREAD_NEIGHBOR_DISCOVERY_AGENT
 config OPENTHREAD_NETDATA_PUBLISHER
 	bool "Thread Network Data publisher"
 
+config OPENTHREAD_OPERATIONAL_DATASET_AUTO_INIT
+	bool "Operational dataset auto init"
+	default y
+
 config OPENTHREAD_OTNS
 	bool "OTNS support"
 
