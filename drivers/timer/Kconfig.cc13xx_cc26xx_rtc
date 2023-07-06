@@ -6,7 +6,7 @@
 config CC13XX_CC26XX_RTC_TIMER
 	bool "TI SimpleLink CC13xx/CC26xx RTC system clock timer"
 	default y
-	depends on DT_HAS_TI_CC13XX_CC26XX_RTC_ENABLED
+	depends on DT_HAS_TI_CC13XX_CC26XX_RTC_TIMER_ENABLED
 	select TICKLESS_CAPABLE
 	select TIMER_HAS_64BIT_CYCLE_COUNTER
 	help

@@ -123,11 +123,12 @@
 			status = "disabled";
 		};
 
+		/* The RTC peripheral backs the kernel system clock and tick timer. */
 		rtc: rtc@40092000 {
-			compatible = "ti,cc13xx-cc26xx-rtc";
+			compatible = "ti,cc13xx-cc26xx-rtc-timer";
 			reg = <0x40092000 0x1000>;
 			interrupts = <4 0>;  /* interrupt #20 = 4 + 16 */
-			status = "disabled";
+			status = "okay"; /* the system clock timer is mandatory */
 		};
 
 		radio: radio@40040000 {
