@@ -29,8 +29,6 @@ LOG_MODULE_REGISTER(bq274xx, CONFIG_SENSOR_LOG_LEVEL);
 /* Time it takes device to initialize before doing any configuration */
 #define INIT_TIME              100U
 
-static int bq274xx_gauge_configure(const struct device *dev);
-
 static int bq274xx_cmd_reg_read(const struct device *dev, uint8_t reg_addr,
 				int16_t *val)
 {
@@ -133,6 +131,229 @@ static int bq274xx_get_device_type(const struct device *dev, uint16_t *val)
 		LOG_ERR("Unable to read register");
 		return -EIO;
 	}
+
+	return 0;
+}
+
+static int bq274xx_gauge_configure(const struct device *dev)
+{
+	const struct bq274xx_config *const config = dev->config;
+	struct bq274xx_data *data = dev->data;
+
+	int ret = 0;
+	uint8_t tmp_checksum = 0, checksum_old = 0, checksum_new = 0;
+	uint16_t flags = 0, designenergy_mwh = 0, taperrate = 0;
+	uint8_t designcap_msb, designcap_lsb, designenergy_msb, designenergy_lsb,
+		terminatevolt_msb, terminatevolt_lsb, taperrate_msb, taperrate_lsb;
+	uint8_t block[32];
+
+	designenergy_mwh = (uint16_t)3.7 * config->design_capacity;
+	taperrate = (uint16_t)config->design_capacity / (0.1 * config->taper_current);
+
+	/* Unseal the battery control register */
+	ret = bq274xx_ctrl_reg_write(dev, BQ274XX_UNSEAL_KEY);
+	if (ret < 0) {
+		LOG_ERR("Unable to unseal the battery");
+		return -EIO;
+	}
+
+	ret = bq274xx_ctrl_reg_write(dev, BQ274XX_UNSEAL_KEY);
+	if (ret < 0) {
+		LOG_ERR("Unable to unseal the battery");
+		return -EIO;
+	}
+
+	/* Send CFG_UPDATE */
+	ret = bq274xx_ctrl_reg_write(dev, BQ274XX_CTRL_SET_CFGUPDATE);
+	if (ret < 0) {
+		LOG_ERR("Unable to set CFGUpdate");
+		return -EIO;
+	}
+
+	/* Step to place the Gauge into CONFIG UPDATE Mode */
+	do {
+		ret = bq274xx_cmd_reg_read(dev, BQ274XX_CMD_FLAGS, &flags);
+		if (ret < 0) {
+			LOG_ERR("Unable to read flags");
+			return -EIO;
+		}
+
+		if (!(flags & 0x0010)) {
+			k_msleep(BQ274XX_SUBCLASS_DELAY * 10);
+		}
+
+	} while (!(flags & 0x0010));
+
+	ret = bq274xx_cmd_reg_write(dev, BQ274XX_EXT_DATA_CONTROL, 0x00);
+	if (ret < 0) {
+		LOG_ERR("Failed to enable block data memory");
+		return -EIO;
+	}
+
+	/* Access State subclass */
+	ret = bq274xx_cmd_reg_write(dev, BQ274XX_EXT_DATA_CLASS, 0x52);
+	if (ret < 0) {
+		LOG_ERR("Failed to update state subclass");
+		return -EIO;
+	}
+
+	/* Write the block offset */
+	ret = bq274xx_cmd_reg_write(dev, BQ274XX_EXT_DATA_BLOCK, 0x00);
+	if (ret < 0) {
+		LOG_ERR("Failed to update block offset");
+		return -EIO;
+	}
+
+	for (uint8_t i = 0; i < 32; i++) {
+		block[i] = 0;
+	}
+
+	ret = bq274xx_read_data_block(dev, 0x00, block, 32);
+	if (ret < 0) {
+		LOG_ERR("Unable to read block data");
+		return -EIO;
+	}
+
+	tmp_checksum = 0;
+	for (uint8_t i = 0; i < 32; i++) {
+		tmp_checksum += block[i];
+	}
+	tmp_checksum = 255 - tmp_checksum;
+
+	/* Read the block checksum */
+	ret = i2c_reg_read_byte_dt(&config->i2c, BQ274XX_EXT_CHECKSUM, &checksum_old);
+	if (ret < 0) {
+		LOG_ERR("Unable to read block checksum");
+		return -EIO;
+	}
+
+	designcap_msb = config->design_capacity >> 8;
+	designcap_lsb = config->design_capacity & 0x00FF;
+	designenergy_msb = designenergy_mwh >> 8;
+	designenergy_lsb = designenergy_mwh & 0x00FF;
+	terminatevolt_msb = config->terminate_voltage >> 8;
+	terminatevolt_lsb = config->terminate_voltage & 0x00FF;
+	taperrate_msb = taperrate >> 8;
+	taperrate_lsb = taperrate & 0x00FF;
+
+	ret = i2c_reg_write_byte_dt(&config->i2c, BQ274XX_EXT_BLKDAT_DESIGN_CAP_HIGH,
+				    designcap_msb);
+	if (ret < 0) {
+		LOG_ERR("Failed to write designCAP MSB");
+		return -EIO;
+	}
+
+	ret = i2c_reg_write_byte_dt(&config->i2c, BQ274XX_EXT_BLKDAT_DESIGN_CAP_LOW,
+				    designcap_lsb);
+	if (ret < 0) {
+		LOG_ERR("Failed to write designCAP LSB");
+		return -EIO;
+	}
+
+	ret = i2c_reg_write_byte_dt(&config->i2c, BQ274XX_EXT_BLKDAT_DESIGN_ENR_HIGH,
+				    designenergy_msb);
+	if (ret < 0) {
+		LOG_ERR("Failed to write designEnergy MSB");
+		return -EIO;
+	}
+
+	ret = i2c_reg_write_byte_dt(&config->i2c, BQ274XX_EXT_BLKDAT_DESIGN_ENR_LOW,
+				    designenergy_lsb);
+	if (ret < 0) {
+		LOG_ERR("Failed to write designEnergy LSB");
+		return -EIO;
+	}
+
+	ret = i2c_reg_write_byte_dt(&config->i2c, BQ274XX_EXT_BLKDAT_TERMINATE_VOLT_HIGH,
+				    terminatevolt_msb);
+	if (ret < 0) {
+		LOG_ERR("Failed to write terminateVolt MSB");
+		return -EIO;
+	}
+
+	ret = i2c_reg_write_byte_dt(&config->i2c, BQ274XX_EXT_BLKDAT_TERMINATE_VOLT_LOW,
+				    terminatevolt_lsb);
+	if (ret < 0) {
+		LOG_ERR("Failed to write terminateVolt LSB");
+		return -EIO;
+	}
+
+	ret = i2c_reg_write_byte_dt(&config->i2c, BQ274XX_EXT_BLKDAT_TAPERRATE_HIGH,
+				    taperrate_msb);
+	if (ret < 0) {
+		LOG_ERR("Failed to write taperRate MSB");
+		return -EIO;
+	}
+
+	ret = i2c_reg_write_byte_dt(&config->i2c, BQ274XX_EXT_BLKDAT_TAPERRATE_LOW, taperrate_lsb);
+	if (ret < 0) {
+		LOG_ERR("Failed to write taperRate LSB");
+		return -EIO;
+	}
+
+	for (uint8_t i = 0; i < 32; i++) {
+		block[i] = 0;
+	}
+
+	ret = bq274xx_read_data_block(dev, 0x00, block, 32);
+	if (ret < 0) {
+		LOG_ERR("Unable to read block data");
+		return -EIO;
+	}
+
+	checksum_new = 0;
+	for (uint8_t i = 0; i < 32; i++) {
+		checksum_new += block[i];
+	}
+	checksum_new = 255 - checksum_new;
+
+	ret = bq274xx_cmd_reg_write(dev, BQ274XX_EXT_CHECKSUM, checksum_new);
+	if (ret < 0) {
+		LOG_ERR("Failed to update new checksum");
+		return -EIO;
+	}
+
+	tmp_checksum = 0;
+	ret = i2c_reg_read_byte_dt(&config->i2c, BQ274XX_EXT_CHECKSUM, &tmp_checksum);
+	if (ret < 0) {
+		LOG_ERR("Failed to read checksum");
+		return -EIO;
+	}
+
+	ret = bq274xx_ctrl_reg_write(dev, BQ274XX_CTRL_BAT_INSERT);
+	if (ret < 0) {
+		LOG_ERR("Unable to configure BAT Detect");
+		return -EIO;
+	}
+
+	ret = bq274xx_ctrl_reg_write(dev, BQ274XX_CTRL_SOFT_RESET);
+	if (ret < 0) {
+		LOG_ERR("Failed to soft reset the gauge");
+		return -EIO;
+	}
+
+	flags = 0;
+	/* Poll Flags */
+	do {
+		ret = bq274xx_cmd_reg_read(dev, BQ274XX_CMD_FLAGS, &flags);
+		if (ret < 0) {
+			LOG_ERR("Unable to read flags");
+			return -EIO;
+		}
+
+		if (flags & 0x0010) {
+			k_msleep(BQ274XX_SUBCLASS_DELAY * 10);
+		}
+	} while (flags & 0x0010);
+
+	/* Seal the gauge */
+	ret = bq274xx_ctrl_reg_write(dev, BQ274XX_CTRL_SEALED);
+	if (ret < 0) {
+		LOG_ERR("Failed to seal the gauge");
+		return -EIO;
+	}
+
+	data->configured = true;
 
 	return 0;
 }
@@ -397,229 +618,6 @@ static int bq274xx_gauge_init(const struct device *dev)
 	}
 
 	return ret;
-}
-
-static int bq274xx_gauge_configure(const struct device *dev)
-{
-	const struct bq274xx_config *const config = dev->config;
-	struct bq274xx_data *data = dev->data;
-
-	int ret = 0;
-	uint8_t tmp_checksum = 0, checksum_old = 0, checksum_new = 0;
-	uint16_t flags = 0, designenergy_mwh = 0, taperrate = 0;
-	uint8_t designcap_msb, designcap_lsb, designenergy_msb, designenergy_lsb,
-		terminatevolt_msb, terminatevolt_lsb, taperrate_msb, taperrate_lsb;
-	uint8_t block[32];
-
-	designenergy_mwh = (uint16_t)3.7 * config->design_capacity;
-	taperrate = (uint16_t)config->design_capacity / (0.1 * config->taper_current);
-
-	/** Unseal the battery control register **/
-	ret = bq274xx_ctrl_reg_write(dev, BQ274XX_UNSEAL_KEY);
-	if (ret < 0) {
-		LOG_ERR("Unable to unseal the battery");
-		return -EIO;
-	}
-
-	ret = bq274xx_ctrl_reg_write(dev, BQ274XX_UNSEAL_KEY);
-	if (ret < 0) {
-		LOG_ERR("Unable to unseal the battery");
-		return -EIO;
-	}
-
-	/* Send CFG_UPDATE */
-	ret = bq274xx_ctrl_reg_write(dev, BQ274XX_CTRL_SET_CFGUPDATE);
-	if (ret < 0) {
-		LOG_ERR("Unable to set CFGUpdate");
-		return -EIO;
-	}
-
-	/** Step to place the Gauge into CONFIG UPDATE Mode **/
-	do {
-		ret = bq274xx_cmd_reg_read(dev, BQ274XX_CMD_FLAGS, &flags);
-		if (ret < 0) {
-			LOG_ERR("Unable to read flags");
-			return -EIO;
-		}
-
-		if (!(flags & 0x0010)) {
-			k_msleep(BQ274XX_SUBCLASS_DELAY * 10);
-		}
-
-	} while (!(flags & 0x0010));
-
-	ret = bq274xx_cmd_reg_write(dev, BQ274XX_EXT_DATA_CONTROL, 0x00);
-	if (ret < 0) {
-		LOG_ERR("Failed to enable block data memory");
-		return -EIO;
-	}
-
-	/* Access State subclass */
-	ret = bq274xx_cmd_reg_write(dev, BQ274XX_EXT_DATA_CLASS, 0x52);
-	if (ret < 0) {
-		LOG_ERR("Failed to update state subclass");
-		return -EIO;
-	}
-
-	/* Write the block offset */
-	ret = bq274xx_cmd_reg_write(dev, BQ274XX_EXT_DATA_BLOCK, 0x00);
-	if (ret < 0) {
-		LOG_ERR("Failed to update block offset");
-		return -EIO;
-	}
-
-	for (uint8_t i = 0; i < 32; i++) {
-		block[i] = 0;
-	}
-
-	ret = bq274xx_read_data_block(dev, 0x00, block, 32);
-	if (ret < 0) {
-		LOG_ERR("Unable to read block data");
-		return -EIO;
-	}
-
-	tmp_checksum = 0;
-	for (uint8_t i = 0; i < 32; i++) {
-		tmp_checksum += block[i];
-	}
-	tmp_checksum = 255 - tmp_checksum;
-
-	/* Read the block checksum */
-	ret = i2c_reg_read_byte_dt(&config->i2c, BQ274XX_EXT_CHECKSUM, &checksum_old);
-	if (ret < 0) {
-		LOG_ERR("Unable to read block checksum");
-		return -EIO;
-	}
-
-	designcap_msb = config->design_capacity >> 8;
-	designcap_lsb = config->design_capacity & 0x00FF;
-	designenergy_msb = designenergy_mwh >> 8;
-	designenergy_lsb = designenergy_mwh & 0x00FF;
-	terminatevolt_msb = config->terminate_voltage >> 8;
-	terminatevolt_lsb = config->terminate_voltage & 0x00FF;
-	taperrate_msb = taperrate >> 8;
-	taperrate_lsb = taperrate & 0x00FF;
-
-	ret = i2c_reg_write_byte_dt(&config->i2c, BQ274XX_EXT_BLKDAT_DESIGN_CAP_HIGH,
-				    designcap_msb);
-	if (ret < 0) {
-		LOG_ERR("Failed to write designCAP MSB");
-		return -EIO;
-	}
-
-	ret = i2c_reg_write_byte_dt(&config->i2c, BQ274XX_EXT_BLKDAT_DESIGN_CAP_LOW,
-				    designcap_lsb);
-	if (ret < 0) {
-		LOG_ERR("Failed to write designCAP LSB");
-		return -EIO;
-	}
-
-	ret = i2c_reg_write_byte_dt(&config->i2c, BQ274XX_EXT_BLKDAT_DESIGN_ENR_HIGH,
-				    designenergy_msb);
-	if (ret < 0) {
-		LOG_ERR("Failed to write designEnergy MSB");
-		return -EIO;
-	}
-
-	ret = i2c_reg_write_byte_dt(&config->i2c, BQ274XX_EXT_BLKDAT_DESIGN_ENR_LOW,
-				    designenergy_lsb);
-	if (ret < 0) {
-		LOG_ERR("Failed to write designEnergy LSB");
-		return -EIO;
-	}
-
-	ret = i2c_reg_write_byte_dt(&config->i2c, BQ274XX_EXT_BLKDAT_TERMINATE_VOLT_HIGH,
-				    terminatevolt_msb);
-	if (ret < 0) {
-		LOG_ERR("Failed to write terminateVolt MSB");
-		return -EIO;
-	}
-
-	ret = i2c_reg_write_byte_dt(&config->i2c, BQ274XX_EXT_BLKDAT_TERMINATE_VOLT_LOW,
-				    terminatevolt_lsb);
-	if (ret < 0) {
-		LOG_ERR("Failed to write terminateVolt LSB");
-		return -EIO;
-	}
-
-	ret = i2c_reg_write_byte_dt(&config->i2c, BQ274XX_EXT_BLKDAT_TAPERRATE_HIGH,
-				    taperrate_msb);
-	if (ret < 0) {
-		LOG_ERR("Failed to write taperRate MSB");
-		return -EIO;
-	}
-
-	ret = i2c_reg_write_byte_dt(&config->i2c, BQ274XX_EXT_BLKDAT_TAPERRATE_LOW, taperrate_lsb);
-	if (ret < 0) {
-		LOG_ERR("Failed to write taperRate LSB");
-		return -EIO;
-	}
-
-	for (uint8_t i = 0; i < 32; i++) {
-		block[i] = 0;
-	}
-
-	ret = bq274xx_read_data_block(dev, 0x00, block, 32);
-	if (ret < 0) {
-		LOG_ERR("Unable to read block data");
-		return -EIO;
-	}
-
-	checksum_new = 0;
-	for (uint8_t i = 0; i < 32; i++) {
-		checksum_new += block[i];
-	}
-	checksum_new = 255 - checksum_new;
-
-	ret = bq274xx_cmd_reg_write(dev, BQ274XX_EXT_CHECKSUM, checksum_new);
-	if (ret < 0) {
-		LOG_ERR("Failed to update new checksum");
-		return -EIO;
-	}
-
-	tmp_checksum = 0;
-	ret = i2c_reg_read_byte_dt(&config->i2c, BQ274XX_EXT_CHECKSUM, &tmp_checksum);
-	if (ret < 0) {
-		LOG_ERR("Failed to read checksum");
-		return -EIO;
-	}
-
-	ret = bq274xx_ctrl_reg_write(dev, BQ274XX_CTRL_BAT_INSERT);
-	if (ret < 0) {
-		LOG_ERR("Unable to configure BAT Detect");
-		return -EIO;
-	}
-
-	ret = bq274xx_ctrl_reg_write(dev, BQ274XX_CTRL_SOFT_RESET);
-	if (ret < 0) {
-		LOG_ERR("Failed to soft reset the gauge");
-		return -EIO;
-	}
-
-	flags = 0;
-	/* Poll Flags   */
-	do {
-		ret = bq274xx_cmd_reg_read(dev, BQ274XX_CMD_FLAGS, &flags);
-		if (ret < 0) {
-			LOG_ERR("Unable to read flags");
-			return -EIO;
-		}
-
-		if (flags & 0x0010) {
-			k_msleep(BQ274XX_SUBCLASS_DELAY * 10);
-		}
-	} while (flags & 0x0010);
-
-	/* Seal the gauge */
-	ret = bq274xx_ctrl_reg_write(dev, BQ274XX_CTRL_SEALED);
-	if (ret < 0) {
-		LOG_ERR("Failed to seal the gauge");
-		return -EIO;
-	}
-
-	data->configured = true;
-
-	return 0;
 }
 
 #ifdef CONFIG_BQ274XX_PM
