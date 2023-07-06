@@ -19,8 +19,8 @@ When there is radio activity, this Linux executable will connect to the BabbleSi
 to simulate the radio channel.
 
 In the BabbleSim documentation you can find more information on how to
-`get <https://babblesim.github.io/fetching.html>`_. and
-`build <https://babblesim.github.io/building.html>_` the simulator.
+`get <https://babblesim.github.io/fetching.html>`_ and
+`build <https://babblesim.github.io/building.html>`_ the simulator.
 In the :ref:`nrf52_bsim<nrf52_bsim>` board documentation you can find more information about how
 to build Zephyr targeting that particular board, and a few examples.
 
