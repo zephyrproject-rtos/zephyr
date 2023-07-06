@@ -1,0 +1,39 @@
+/*
+ * Copyright 2023 NXP
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/adc/mcux-lpadc.h>
+#include <zephyr/dt-bindings/regulator/nxp_vref.h>
+
+/* To do this test, connect AN (J7-1) to VREF_OUT (J12-16) */
+
+/ {
+	resources: resources {
+		compatible = "test-regulator-voltage";
+		regulators = <&vref0>;
+		tolerance-microvolt = <1000000>;
+		set-read-delay-ms = <10>;
+		adc-avg-count = <10>;
+		io-channels = <&adc0 0>;
+	};
+};
+
+&vref0 {
+	regulator-initial-mode = <NXP_VREF_MODE_INTERNAL_REGULATOR>;
+};
+
+&adc0 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	channel@0 {
+		reg = <0>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_EXTERNAL0";
+		zephyr,vref-mv = <1800>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+		zephyr,input-positive = <MCUX_LPADC_CH0A>;
+	};
+};
