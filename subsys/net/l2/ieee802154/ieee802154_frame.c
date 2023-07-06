@@ -914,8 +914,8 @@ bool ieee802154_create_ack_frame(struct net_if *iface, struct net_pkt *pkt, uint
 
 	fs = generate_fcf_grounds(&p_buf, false);
 
-	fs->fc.dst_addr_mode = 0U;
-	fs->fc.src_addr_mode = 0U;
+	fs->fc.dst_addr_mode = IEEE802154_ADDR_MODE_NONE;
+	fs->fc.src_addr_mode = IEEE802154_ADDR_MODE_NONE;
 
 	fs->fc.frame_type = IEEE802154_FRAME_TYPE_ACK;
 	fs->sequence = seq;
