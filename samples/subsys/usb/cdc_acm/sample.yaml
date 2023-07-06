@@ -27,7 +27,9 @@ tests:
     depends_on: usb_device
     tags: usb
     arch_exclude: posix
-    extra_args: OVERLAY_CONFIG=overlay-composite-cdc-msc.conf
+    extra_args:
+      - OVERLAY_CONFIG=overlay-composite-cdc-msc.conf
+      - EXTRA_DTC_OVERLAY_FILE="ramdisk.overlay"
     harness: console
     harness_config:
       type: one_line

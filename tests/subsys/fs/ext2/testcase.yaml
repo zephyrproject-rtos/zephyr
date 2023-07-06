@@ -3,10 +3,14 @@ common:
 tests:
   filesystem.ext2.default:
     platform_allow: native_posix native_posix_64 hifive_unmatched bl5340_dvk_cpuapp
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE="ramdisk_small.overlay"
 
   filesystem.ext2.big:
     platform_allow: native_posix native_posix_64
-    extra_args: CONF_FILE=prj_big.conf
+    extra_args:
+      - CONF_FILE=prj_big.conf
+      - EXTRA_DTC_OVERLAY_FILE="ramdisk_big.overlay"
 
   filesystem.ext2.sdcard:
     platform_allow: hifive_unmatched bl5340_dvk_cpuapp
