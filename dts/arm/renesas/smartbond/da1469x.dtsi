@@ -199,6 +199,22 @@
 			status = "disabled";
 		};
 
+		uart2: uart@50020100 {
+			compatible = "renesas,smartbond-uart";
+			reg = <0x50020100 0x100>;
+			periph-clock-config = <0x02>;
+			interrupts = <6 0>;
+			status = "disabled";
+		};
+
+		uart3: uart@50020200 {
+			compatible = "renesas,smartbond-uart";
+			reg = <0x50020200 0x100>;
+			periph-clock-config = <0x08>;
+			interrupts = <7 0>;
+			status = "disabled";
+		};
+
 		adc: adc@50030900 {
 			compatible = "renesas,smartbond-adc";
 			reg = <0x50030900 0x1C>;
