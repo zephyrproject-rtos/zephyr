@@ -40,6 +40,14 @@
 		#interrupt-cells = <3>;
 	};
 
+    intc_loapic: loapic@fee00000  {
+		compatible = "intel,loapic";
+		reg = <0xfee00000 0x1000>;
+        num-irqs = <6>;
+		interrupt-controller;
+		#interrupt-cells = <3>;
+	};
+
 	pcie0: pcie0 {
 		#address-cells = <1>;
 		#size-cells = <1>;

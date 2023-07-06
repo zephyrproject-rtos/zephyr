@@ -13,6 +13,8 @@
  * exception) stubs are implemented in this module.  The stubs are invoked when
  * entering and exiting a C interrupt handler.
  */
+#define DT_DRV_COMPAT intel_loapic
+#define LOAPIC_BASE_ADDRESS DT_REG_ADDR(DT_DRV_INST(0))
 
 #include <zephyr/arch/x86/ia32/asm.h>
 #include <offsets_short.h>
@@ -197,10 +199,10 @@ alreadyOnIntStack:
 	wrmsr
 #else /* xAPIC */
 #ifdef DEVICE_MMIO_IS_IN_RAM
-	movl	z_loapic_regs, %edx
+	movl	Z_TOPLEVEL_RAM_NAME(loapic_regs), %edx
 	movl	%eax, LOAPIC_EOI(%edx)
 #else
-	movl	%eax, (CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_EOI)
+	movl	%eax, (LOAPIC_BASE_ADDRESS + LOAPIC_EOI)
 #endif /* DEVICE_MMIO_IS_IN_RAM */
 #endif /* CONFIG_X2APIC */
 

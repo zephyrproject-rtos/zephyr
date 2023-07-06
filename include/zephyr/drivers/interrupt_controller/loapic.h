@@ -71,11 +71,8 @@ static inline uint64_t x86_read_x2apic(unsigned int reg)
 	reg >>= 4;
 	return z_x86_msr_read(X86_X2APIC_BASE_MSR + reg);
 }
-
 /* Defined in intc_loapic.c */
-#ifdef DEVICE_MMIO_IS_IN_RAM
-extern mm_reg_t z_loapic_regs;
-#endif
+DEVICE_MMIO_TOPLEVEL_DECLARE(loapic_regs);
 
 /**
  * @brief Read 32-bit value from the local APIC in xAPIC (MMIO) mode.
@@ -85,11 +82,7 @@ extern mm_reg_t z_loapic_regs;
 static inline uint32_t x86_read_xapic(unsigned int reg)
 {
 	mm_reg_t base;
-#ifdef DEVICE_MMIO_IS_IN_RAM
-	base = z_loapic_regs;
-#else
-	base = CONFIG_LOAPIC_BASE_ADDRESS;
-#endif
+    base = DEVICE_MMIO_TOPLEVEL_GET(loapic_regs);
 	return sys_read32(base + reg);
 }
 
@@ -133,11 +126,7 @@ static inline void x86_write_x2apic(unsigned int reg, uint64_t val)
 static inline void x86_write_xapic(unsigned int reg, uint32_t val)
 {
 	mm_reg_t base;
-#ifdef DEVICE_MMIO_IS_IN_RAM
-	base = z_loapic_regs;
-#else
-	base = CONFIG_LOAPIC_BASE_ADDRESS;
-#endif
+    base = DEVICE_MMIO_TOPLEVEL_GET(loapic_regs);
 	sys_write32(val, base + reg);
 }
 
