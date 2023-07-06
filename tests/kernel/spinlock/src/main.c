@@ -137,6 +137,8 @@ ZTEST(spinlock, test_spinlock_bounce)
 		bounce_once(1234, false);
 	}
 
+	k_thread_abort(&cpu1_thread);
+
 	bounce_done = 1;
 }
 
@@ -218,6 +220,8 @@ ZTEST(spinlock, test_trylock)
 	}
 
 	bounce_done = 1;
+
+	k_thread_abort(&cpu1_thread);
 
 	zassert_true(trylock_failures > 0);
 	zassert_true(trylock_successes > 0);
