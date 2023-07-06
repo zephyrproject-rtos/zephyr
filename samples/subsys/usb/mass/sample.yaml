@@ -2,9 +2,11 @@ sample:
   name: Mass Storage
 tests:
   sample.usb.mass_ram_none:
-    min_ram: 64
+    min_ram: 128
     depends_on: usb_device
     arch_exclude: posix
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE="ramdisk.overlay"
     extra_configs:
       - CONFIG_LOG_DEFAULT_LEVEL=3
     tags:
@@ -18,12 +20,14 @@ tests:
         - "No file system selected"
         - "The device is put in USB mass storage mode."
   sample.usb_device_next.mass_ram_none:
-    min_ram: 64
+    min_ram: 128
     depends_on: usb_device
     platform_allow:
       - nrf52840dk_nrf52840
       - frdm_k64f
-    extra_args: CONF_FILE="usbd_next_prj.conf"
+    extra_args:
+      - CONF_FILE="usbd_next_prj.conf"
+      - EXTRA_DTC_OVERLAY_FILE="ramdisk.overlay"
     extra_configs:
       - CONFIG_LOG_DEFAULT_LEVEL=3
     tags:
@@ -40,6 +44,8 @@ tests:
     min_ram: 128
     depends_on: usb_device
     arch_exclude: posix
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE="ramdisk.overlay"
     extra_configs:
       - CONFIG_LOG_DEFAULT_LEVEL=3
       - CONFIG_APP_MSC_STORAGE_RAM=y

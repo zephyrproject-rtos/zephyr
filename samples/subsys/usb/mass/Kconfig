@@ -14,11 +14,9 @@ choice
 
 config APP_MSC_STORAGE_NONE
 	bool "Use RAM disk as block device"
-	imply DISK_DRIVER_RAM
 
 config APP_MSC_STORAGE_RAM
 	bool "Use RAM disk and FAT file system"
-	imply DISK_DRIVER_RAM
 	imply FILE_SYSTEM
 	imply FAT_FILESYSTEM_ELM
 
@@ -41,9 +39,6 @@ config APP_MSC_STORAGE_SDCARD
 	imply FAT_FILESYSTEM_ELM
 
 endchoice
-
-config DISK_RAM_VOLUME_SIZE
-	default 32 if APP_MSC_STORAGE_NONE
 
 config MASS_STORAGE_DISK_NAME
 	default "NAND" if DISK_DRIVER_FLASH
