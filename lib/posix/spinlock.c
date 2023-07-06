@@ -15,7 +15,7 @@ union _spinlock_storage {
 	struct k_spinlock lock;
 	uint8_t byte;
 };
-#if !defined(CONFIG_SMP) && !defined(CONFIG_SPIN_VALIDATE)
+#if !defined(CONFIG_CPP) && !defined(CONFIG_SMP) && !defined(CONFIG_SPIN_VALIDATE)
 BUILD_ASSERT(sizeof(struct k_spinlock) == 0,
 	     "please remove the _spinlock_storage workaround if, at some point, k_spinlock is no "
 	     "longer zero bytes when CONFIG_SMP=n && CONFIG_SPIN_VALIDATE=n");
