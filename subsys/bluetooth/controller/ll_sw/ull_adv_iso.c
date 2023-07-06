@@ -487,7 +487,7 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 
 #if defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
 	/* Notify the sync instance */
-	ull_adv_iso_created(HDR_LLL2ULL(lll_adv_sync));
+	ull_adv_sync_iso_created(HDR_LLL2ULL(lll_adv_sync));
 #endif /* CONFIG_BT_TICKER_EXT_EXPIRE_INFO */
 
 	/* Commit the BIGInfo in the ACAD field of Periodic Advertising */

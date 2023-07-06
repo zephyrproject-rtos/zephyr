@@ -205,7 +205,7 @@ ull_adv_aux_hdr_len_fill(struct pdu_adv_com_ext_adv *com_hdr, uint8_t len)
 void ull_adv_sync_started_stopped(struct ll_adv_aux_set *aux);
 
 /* notify adv_sync_set that an iso instance has been created for it */
-void ull_adv_iso_created(struct ll_adv_sync_set *sync);
+void ull_adv_sync_iso_created(struct ll_adv_sync_set *sync);
 
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 
