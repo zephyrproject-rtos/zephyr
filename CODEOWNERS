@@ -445,7 +445,7 @@
 /drivers/timer/*riscv_machine*            @kgugala @pgielda
 /drivers/timer/*ite_it8xxx2*              @ite
 /drivers/timer/*xlnx_psttc*               @wjliang @stephanosio
-/drivers/timer/*cc13x2_cc26x2_rtc*        @vanti
+/drivers/timer/*cc13xx_cc26xx_rtc*        @vanti
 /drivers/timer/*cavs*                     @dcpleung
 /drivers/timer/*stm32_lptim*              @FRASTM
 /drivers/timer/*leon_gptimer*             @julius-barendt
