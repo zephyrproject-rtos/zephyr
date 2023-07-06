@@ -139,8 +139,8 @@ static int bq274xx_gauge_configure(const struct device *dev)
 		terminatevolt_msb, terminatevolt_lsb, taperrate_msb, taperrate_lsb;
 	uint8_t block[BQ27XXX_DM_SZ];
 
-	designenergy_mwh = (uint16_t)3.7 * config->design_capacity;
-	taperrate = (uint16_t)config->design_capacity / (0.1 * config->taper_current);
+	designenergy_mwh = (uint32_t)config->design_capacity * 3700 / 1000;
+	taperrate = config->design_capacity * 10 / config->taper_current;
 
 	/* Unseal the battery control register */
 	ret = bq274xx_ctrl_reg_write(dev, BQ274XX_UNSEAL_KEY);
