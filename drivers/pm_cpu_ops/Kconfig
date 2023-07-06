@@ -20,7 +20,7 @@ config PM_CPU_OPS_HAS_DRIVER
 config PM_CPU_OPS_PSCI
 	bool "Support for the ARM Power State Coordination Interface (PSCI)"
 	default y
-	depends on DT_HAS_ARM_PSCI_0_2_ENABLED
+	depends on DT_HAS_ARM_PSCI_0_2_ENABLED || DT_HAS_ARM_PSCI_1_1_ENABLED
 	select PM_CPU_OPS_HAS_DRIVER
 	help
 	  Say Y here if you want Zephyr to communicate with system firmware
@@ -28,5 +28,13 @@ config PM_CPU_OPS_PSCI
 	  management operations described in ARM document number ARM DEN
 	  0022A ("Power State Coordination Interface System Software on
 	  ARM processors").
+
+config PSCI_SHELL
+	bool "Support for PSCI interface shell commands"
+	default y
+	depends on SHELL && PM_CPU_OPS_PSCI
+	help
+	  Say Y here if you need to enable PSCI interface shell commands
+	  like 'warm' and 'cold' reset commands.
 
 endif
