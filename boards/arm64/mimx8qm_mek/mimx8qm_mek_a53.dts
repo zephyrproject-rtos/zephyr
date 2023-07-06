@@ -7,6 +7,7 @@
 /dts-v1/;
 
 #include <nxp/nxp_mimx8qm_a53.dtsi>
+#include "mimx8qm_mek-pinctrl.dtsi"
 
 / {
 	model = "NXP i.MX8QM A53";
@@ -14,6 +15,8 @@
 
 	chosen {
 		zephyr,sram = &sram0;
+		zephyr,console = &lpuart2;
+		zephyr,shell = &lpuart2;
 	};
 
 	cpus {
@@ -35,3 +38,9 @@
 	};
 };
 
+&lpuart2 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&lpuart2_default>;
+	pinctrl-names = "default";
+};
