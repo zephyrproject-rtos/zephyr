@@ -82,7 +82,7 @@ DEVICE_MMIO_TOPLEVEL_DECLARE(loapic_regs);
 static inline uint32_t x86_read_xapic(unsigned int reg)
 {
 	mm_reg_t base;
-    base = DEVICE_MMIO_TOPLEVEL_GET(loapic_regs);
+	base = DEVICE_MMIO_TOPLEVEL_GET(loapic_regs);
 	return sys_read32(base + reg);
 }
 
@@ -126,7 +126,7 @@ static inline void x86_write_x2apic(unsigned int reg, uint64_t val)
 static inline void x86_write_xapic(unsigned int reg, uint32_t val)
 {
 	mm_reg_t base;
-    base = DEVICE_MMIO_TOPLEVEL_GET(loapic_regs);
+	base = DEVICE_MMIO_TOPLEVEL_GET(loapic_regs);
 	sys_write32(val, base + reg);
 }
 
