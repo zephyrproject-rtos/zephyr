@@ -6,7 +6,7 @@
 
 description: TI SimpleLink CC13xx/CC26xx RTC
 
-compatible: "ti,cc13xx-cc26xx-rtc"
+compatible: "ti,cc13xx-cc26xx-rtc-timer"
 
 include: rtc.yaml
 

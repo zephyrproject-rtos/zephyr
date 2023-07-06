@@ -141,10 +141,6 @@
 	/* TODO: "jedec,spi-nor" for the mx25r8035 */
 };
 
-&rtc {
-	status = "okay";
-};
-
 &radio {
 	status = "okay";
 };
