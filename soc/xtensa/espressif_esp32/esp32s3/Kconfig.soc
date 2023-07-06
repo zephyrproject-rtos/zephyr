@@ -67,6 +67,12 @@ config ESP32S3_APPCPU_DRAM
 	help
 	  Defines APPCPU DRAM area in bytes.
 
+config SPIRAM_SPEED
+	int
+	default 120 if SPIRAM_SPEED_120M
+	default 80 if SPIRAM_SPEED_80M
+	default 40 if SPIRAM_SPEED_40M
+
 choice ESP32_RTC_CLK_SRC
 	prompt "RTC clock source"
 	default ESP32_RTC_CLK_SRC_INT_RC
