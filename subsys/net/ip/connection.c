@@ -576,6 +576,11 @@ enum net_verdict net_conn_input(struct net_pkt *pkt,
 	uint8_t pkt_family = net_pkt_family(pkt);
 	uint16_t src_port = 0U, dst_port = 0U;
 
+	if (!net_pkt_filter_local_in_recv_ok(pkt)) {
+		/* drop the packet */
+		return NET_DROP;
+	}
+
 	if (IS_ENABLED(CONFIG_NET_IP) && (pkt_family == AF_INET || pkt_family == AF_INET6)) {
 		if (IS_ENABLED(CONFIG_NET_UDP) && proto == IPPROTO_UDP) {
 			src_port = proto_hdr->udp->src_port;
