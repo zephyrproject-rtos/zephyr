@@ -72,7 +72,7 @@ static inline void ieee802154_acknowledge(struct net_if *iface, struct ieee80215
 {
 	struct net_pkt *pkt;
 
-	if (ieee802154_get_hw_capabilities(iface) & IEEE802154_HW_RX_TX_ACK) {
+	if (ieee802154_radio_get_hw_capabilities(iface) & IEEE802154_HW_RX_TX_ACK) {
 		return;
 	}
 
@@ -88,7 +88,7 @@ static inline void ieee802154_acknowledge(struct net_if *iface, struct ieee80215
 
 	if (ieee802154_create_ack_frame(iface, pkt, mpdu->mhr.fs->sequence)) {
 		/* ACK frames must not use the CSMA/CA procedure, see section 6.2.5.1. */
-		ieee802154_tx(iface, IEEE802154_TX_MODE_DIRECT, pkt, pkt->buffer);
+		ieee802154_radio_tx(iface, IEEE802154_TX_MODE_DIRECT, pkt, pkt->buffer);
 	}
 
 	net_pkt_unref(pkt);
@@ -101,7 +101,7 @@ inline bool ieee802154_prepare_for_ack(struct net_if *iface, struct net_pkt *pkt
 {
 	bool ack_required = ieee802154_is_ar_flag_set(frag);
 
-	if (ieee802154_get_hw_capabilities(iface) & IEEE802154_HW_TX_RX_ACK) {
+	if (ieee802154_radio_get_hw_capabilities(iface) & IEEE802154_HW_TX_RX_ACK) {
 		return ack_required;
 	}
 
@@ -123,7 +123,7 @@ enum net_verdict ieee802154_handle_ack(struct net_if *iface, struct net_pkt *pkt
 {
 	struct ieee802154_context *ctx = net_if_l2_data(iface);
 
-	if (ieee802154_get_hw_capabilities(iface) & IEEE802154_HW_TX_RX_ACK) {
+	if (ieee802154_radio_get_hw_capabilities(iface) & IEEE802154_HW_TX_RX_ACK) {
 		__ASSERT_NO_MSG(ctx->ack_seq == 0U);
 		/* TODO: Release packet in L2 as we're taking ownership. */
 		return NET_OK;
@@ -153,7 +153,8 @@ inline int ieee802154_wait_for_ack(struct net_if *iface, bool ack_required)
 {
 	struct ieee802154_context *ctx = net_if_l2_data(iface);
 
-	if (!ack_required || (ieee802154_get_hw_capabilities(iface) & IEEE802154_HW_TX_RX_ACK)) {
+	if (!ack_required ||
+	    (ieee802154_radio_get_hw_capabilities(iface) & IEEE802154_HW_TX_RX_ACK)) {
 		__ASSERT_NO_MSG(ctx->ack_seq == 0U);
 		return 0;
 	}
@@ -178,17 +179,18 @@ int ieee802154_radio_send(struct net_if *iface, struct net_pkt *pkt, struct net_
 
 	NET_DBG("frag %p", frag);
 
-	if (ieee802154_get_hw_capabilities(iface) & IEEE802154_HW_RETRANSMISSION) {
+	if (ieee802154_radio_get_hw_capabilities(iface) & IEEE802154_HW_RETRANSMISSION) {
 		/* A driver that claims retransmission capability must also be able
 		 * to wait for ACK frames otherwise it could not decide whether or
 		 * not retransmission is required in a standard conforming way.
 		 */
-		__ASSERT_NO_MSG(ieee802154_get_hw_capabilities(iface) & IEEE802154_HW_TX_RX_ACK);
+		__ASSERT_NO_MSG(ieee802154_radio_get_hw_capabilities(iface) &
+				IEEE802154_HW_TX_RX_ACK);
 		remaining_attempts = 1;
 	}
 
 	hw_csma = IS_ENABLED(CONFIG_NET_L2_IEEE802154_RADIO_CSMA_CA) &&
-		  ieee802154_get_hw_capabilities(iface) & IEEE802154_HW_CSMA;
+		  ieee802154_radio_get_hw_capabilities(iface) & IEEE802154_HW_CSMA;
 
 	/* Media access (CSMA, ALOHA, ...) and retransmission, see section 6.7.4.4. */
 	while (remaining_attempts) {
@@ -211,7 +213,7 @@ int ieee802154_radio_send(struct net_if *iface, struct net_pkt *pkt, struct net_
 		 *  - retransmission on ACK timeout in case the driver has
 		 *    IEEE802154_HW_RETRANSMISSION capability.
 		 */
-		ret = ieee802154_tx(
+		ret = ieee802154_radio_tx(
 			iface, hw_csma ? IEEE802154_TX_MODE_CSMA_CA : IEEE802154_TX_MODE_DIRECT,
 			pkt, frag);
 		if (ret) {
@@ -590,10 +592,10 @@ static int ieee802154_enable(struct net_if *iface, bool state)
 	k_sem_give(&ctx->ctx_lock);
 
 	if (state) {
-		return ieee802154_start(iface);
+		return ieee802154_radio_start(iface);
 	}
 
-	return ieee802154_stop(iface);
+	return ieee802154_radio_stop(iface);
 }
 
 static enum net_l2_flags ieee802154_flags(struct net_if *iface)
@@ -630,7 +632,7 @@ void ieee802154_init(struct net_if *iface)
 
 	ctx->channel = IEEE802154_NO_CHANNEL;
 	ctx->flags = NET_L2_MULTICAST;
-	if (ieee802154_get_hw_capabilities(iface) & IEEE802154_HW_PROMISC) {
+	if (ieee802154_radio_get_hw_capabilities(iface) & IEEE802154_HW_PROMISC) {
 		ctx->flags |= NET_L2_PROMISC_MODE;
 	}
 
@@ -661,9 +663,9 @@ void ieee802154_init(struct net_if *iface)
 #endif
 
 	sys_memcpy_swap(ctx->ext_addr, eui64_be, IEEE802154_EXT_ADDR_LENGTH);
-	ieee802154_filter_ieee_addr(iface, ctx->ext_addr);
+	ieee802154_radio_filter_ieee_addr(iface, ctx->ext_addr);
 
-	if (!ieee802154_set_tx_power(iface, tx_power)) {
+	if (!ieee802154_radio_set_tx_power(iface, tx_power)) {
 		ctx->tx_power = tx_power;
 	}
 }
