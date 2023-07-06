@@ -9,12 +9,6 @@ menuconfig LOAPIC
 
 if LOAPIC
 
-config LOAPIC_BASE_ADDRESS
-	hex "Local APIC Base Address"
-	default 0xFEE00000
-	help
-	  This option specifies the base address of the Local APIC device.
-
 config X2APIC
 	bool "Access local APIC in x2APIC mode"
 	help
