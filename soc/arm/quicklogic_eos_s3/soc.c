@@ -20,20 +20,6 @@ void eos_s3_lock_disable(void)
 	MISC_CTRL->LOCK_KEY_CTRL = 1;
 }
 
-int eos_s3_io_mux(uint32_t pad_nr, uint32_t pad_cfg)
-{
-	volatile uint32_t *p = (uint32_t *)IO_MUX_BASE;
-
-	if (pad_nr > EOS_S3_MAX_PAD_NR) {
-		return -EINVAL;
-	}
-
-	p += pad_nr;
-	*p = pad_cfg;
-
-	return 0;
-}
-
 static void eos_s3_cru_init(void)
 {
 	/* Set desired frequency */
