@@ -18,7 +18,7 @@
 
 LOG_MODULE_DECLARE(bq274xx, CONFIG_SENSOR_LOG_LEVEL);
 
-static void handle_interrupts(const struct device *dev)
+static void bq274xx_handle_interrupts(const struct device *dev)
 {
 	struct bq274xx_data *data = dev->data;
 
@@ -31,26 +31,27 @@ static void handle_interrupts(const struct device *dev)
 static K_KERNEL_STACK_DEFINE(bq274xx_thread_stack, CONFIG_BQ274XX_THREAD_STACK_SIZE);
 static struct k_thread bq274xx_thread;
 
-static void thread_main(struct bq274xx_data *data)
+static void bq274xx_thread_main(struct bq274xx_data *data)
 {
 	while (1) {
 		k_sem_take(&data->sem, K_FOREVER);
-		handle_interrupts(data->dev);
+		bq274xx_handle_interrupts(data->dev);
 	}
 }
 #endif
 
 #ifdef CONFIG_BQ274XX_TRIGGER_GLOBAL_THREAD
-static void work_handler(struct k_work *work)
+static void bq274xx_work_handler(struct k_work *work)
 {
 	struct bq274xx_data *data = CONTAINER_OF(work, struct bq274xx_data, work);
 
-	handle_interrupts(data->dev);
+	bq274xx_handle_interrupts(data->dev);
 }
 #endif
 
-static void ready_callback_handler(const struct device *port, struct gpio_callback *cb,
-				   gpio_port_pins_t pins)
+static void bq274xx_ready_callback_handler(const struct device *port,
+					   struct gpio_callback *cb,
+					   gpio_port_pins_t pins)
 {
 	struct bq274xx_data *data = CONTAINER_OF(cb, struct bq274xx_data,
 						 ready_callback);
@@ -78,12 +79,12 @@ int bq274xx_trigger_mode_init(const struct device *dev)
 
 	k_thread_create(&bq274xx_thread, bq274xx_thread_stack,
 			CONFIG_BQ274XX_THREAD_STACK_SIZE,
-			(k_thread_entry_t)thread_main,
+			(k_thread_entry_t)bq274xx_thread_main,
 			data, NULL, NULL,
 			K_PRIO_COOP(CONFIG_BQ274XX_THREAD_PRIORITY),
 			0, K_NO_WAIT);
 #elif defined(CONFIG_BQ274XX_TRIGGER_GLOBAL_THREAD)
-	k_work_init(&data->work, work_handler);
+	k_work_init(&data->work, bq274xx_work_handler);
 #endif
 
 	ret = gpio_pin_configure_dt(&config->int_gpios, GPIO_INPUT);
@@ -92,7 +93,7 @@ int bq274xx_trigger_mode_init(const struct device *dev)
 		return ret;
 	}
 	gpio_init_callback(&data->ready_callback,
-			   ready_callback_handler,
+			   bq274xx_ready_callback_handler,
 			   BIT(config->int_gpios.pin));
 
 	return 0;
