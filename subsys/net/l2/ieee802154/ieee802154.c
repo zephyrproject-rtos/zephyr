@@ -110,8 +110,9 @@ inline bool ieee802154_prepare_for_ack(struct net_if *iface, struct net_pkt *pkt
 		struct ieee802154_context *ctx = net_if_l2_data(iface);
 
 		ctx->ack_seq = fs->sequence;
-		ctx->ack_received = false;
-		k_sem_init(&ctx->ack_lock, 0, K_SEM_MAX_LIMIT);
+		if (k_sem_count_get(&ctx->ack_lock) == 1U) {
+			k_sem_take(&ctx->ack_lock, K_NO_WAIT);
+		}
 
 		return true;
 	}
@@ -139,7 +140,6 @@ enum net_verdict ieee802154_handle_ack(struct net_if *iface, struct net_pkt *pkt
 			return NET_CONTINUE;
 		}
 
-		ctx->ack_received = true;
 		k_sem_give(&ctx->ack_lock);
 
 		/* TODO: Release packet in L2 as we're taking ownership. */
@@ -152,6 +152,7 @@ enum net_verdict ieee802154_handle_ack(struct net_if *iface, struct net_pkt *pkt
 inline int ieee802154_wait_for_ack(struct net_if *iface, bool ack_required)
 {
 	struct ieee802154_context *ctx = net_if_l2_data(iface);
+	int ret;
 
 	if (!ack_required ||
 	    (ieee802154_radio_get_hw_capabilities(iface) & IEEE802154_HW_TX_RX_ACK)) {
@@ -159,16 +160,18 @@ inline int ieee802154_wait_for_ack(struct net_if *iface, bool ack_required)
 		return 0;
 	}
 
-	if (k_sem_take(&ctx->ack_lock, K_MSEC(10)) == 0) {
-		/* We reinit the semaphore in case ieee802154_handle_ack()
-		 * got called multiple times.
-		 */
-		k_sem_init(&ctx->ack_lock, 0, K_SEM_MAX_LIMIT);
+	ret = k_sem_take(&ctx->ack_lock, K_MSEC(10));
+	if (ret == 0) {
+		/* no-op */
+	} else if (ret == -EAGAIN) {
+		ret = -ETIME;
+	} else {
+		NET_ERR("Error while waiting for ACK.");
+		ret = -EFAULT;
 	}
 
 	ctx->ack_seq = 0U;
-
-	return ctx->ack_received ? 0 : -ETIME;
+	return ret;
 }
 
 int ieee802154_radio_send(struct net_if *iface, struct net_pkt *pkt, struct net_buf *frag)
@@ -619,6 +622,7 @@ void ieee802154_init(struct net_if *iface)
 	NET_DBG("Initializing IEEE 802.15.4 stack on iface %p", iface);
 
 	k_sem_init(&ctx->ctx_lock, 1, 1);
+	k_sem_init(&ctx->ack_lock, 0, 1);
 
 	/* no need to lock the context here as it has
 	 * not been published yet.
