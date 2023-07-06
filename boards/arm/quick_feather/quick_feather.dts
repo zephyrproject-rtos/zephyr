@@ -6,6 +6,7 @@
 
 /dts-v1/;
 #include <quicklogic/quicklogic_eos_s3.dtsi>
+#include <zephyr/dt-bindings/pinctrl/quicklogic-eos-s3-pinctrl.h>
 
 / {
 	model = "QuickLogic Quick Feather board";
@@ -56,6 +57,17 @@
 	};
 };
 
+&pinctrl {
+	uart_rx_default: uart_rx_default {
+		pinmux = <UART_RX_PAD45>;
+		input-enable;
+	};
+	uart_tx_default: uart_tx_default {
+		pinmux = <UART_TX_PAD44>;
+		output-enable;
+	};
+};
+
 &cpu0 {
 	clock-frequency = <61440000>;
 };
@@ -67,4 +79,6 @@
 &uart0 {
 	status = "okay";
 	current-speed = <115200>;
+	pinctrl-0 = <&uart_rx_default &uart_tx_default>;
+	pinctrl-names = "default";
 };
