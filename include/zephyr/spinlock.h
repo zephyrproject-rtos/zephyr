@@ -261,9 +261,11 @@ static ALWAYS_INLINE void k_spin_unlock(struct k_spinlock *l,
 	arch_irq_unlock(key.key);
 }
 
-/* Internal function: releases the lock, but leaves local interrupts
- * disabled
+/**
+ * @cond INTERNAL_HIDDEN
  */
+
+/* Internal function: releases the lock, but leaves local interrupts disabled */
 static ALWAYS_INLINE void k_spin_release(struct k_spinlock *l)
 {
 	ARG_UNUSED(l);
@@ -274,6 +276,10 @@ static ALWAYS_INLINE void k_spin_release(struct k_spinlock *l)
 	atomic_clear(&l->locked);
 #endif
 }
+
+/**
+ * INTERNAL_HIDDEN @endcond
+ */
 
 /** @} */
 
