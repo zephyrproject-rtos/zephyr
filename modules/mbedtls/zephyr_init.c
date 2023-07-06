@@ -105,5 +105,5 @@ SYS_INIT(_mbedtls_init, POST_KERNEL, 0);
  */
 int mbedtls_init(void)
 {
-	return _mbedtls_init(NULL);
+	return _mbedtls_init();
 }
