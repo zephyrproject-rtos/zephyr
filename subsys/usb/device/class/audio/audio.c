@@ -292,12 +292,10 @@ static void audio_interface_config(struct usb_desc_header *head,
 	struct usb_if_descriptor *iface = (struct usb_if_descriptor *)head;
 	struct cs_ac_if_descriptor *header;
 
-#ifdef CONFIG_USB_COMPOSITE_DEVICE
 	struct usb_association_descriptor *iad =
 		(struct usb_association_descriptor *)
 		((char *)iface - sizeof(struct usb_association_descriptor));
 	iad->bFirstInterface = bInterfaceNumber;
-#endif
 	fix_fu_descriptors(iface);
 
 	/* Audio Control Interface */
