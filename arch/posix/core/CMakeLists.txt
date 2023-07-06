@@ -18,6 +18,7 @@ if(CONFIG_NATIVE_APPLICATION)
 		posix_core.c
 		nsi_compat/nsi_compat.c
 		${ZEPHYR_BASE}/scripts/native_simulator/common/src/nce.c
+		${ZEPHYR_BASE}/scripts/native_simulator/common/src/nsi_host_trampolines.c
 	)
 else()
 	zephyr_library_sources(
