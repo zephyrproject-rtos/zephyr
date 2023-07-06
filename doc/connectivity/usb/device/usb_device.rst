@@ -286,10 +286,11 @@ access and expose a RAM disk, emulated block device on a flash partition,
 or SD Card to the host. Only one disk instance can be exported at a time.
 
 The disc to be used by the implementation is set by the
-:kconfig:option:`CONFIG_MASS_STORAGE_DISK_NAME` and should be equal to one
-of the options used by the disc access driver that the application wants to expose to
-the host, :kconfig:option:`CONFIG_DISK_RAM_VOLUME_NAME`,
-:kconfig:option:`CONFIG_MMC_VOLUME_NAME`, or :kconfig:option:`CONFIG_SDMMC_VOLUME_NAME`.
+:kconfig:option:`CONFIG_MASS_STORAGE_DISK_NAME` and should be the same as the name
+used by the disc access driver that the application wants to expose to the host.
+SD card disk drivers use options :kconfig:option:`CONFIG_MMC_VOLUME_NAME` or
+:kconfig:option:`CONFIG_SDMMC_VOLUME_NAME`, and flash and RAM disk drivers use
+node property ``disk-name`` to set the disk name.
 
 For the emulated block device on a flash partition, the flash partition and
 flash disk to be used must be described in the devicetree. If a storage partition
