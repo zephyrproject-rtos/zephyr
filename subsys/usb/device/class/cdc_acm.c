@@ -80,9 +80,7 @@ LOG_MODULE_REGISTER(usb_cdc_acm, CONFIG_USB_CDC_ACM_LOG_LEVEL);
 #define ACM_IN_EP_IDX			2
 
 struct usb_cdc_acm_config {
-#if (CONFIG_USB_COMPOSITE_DEVICE || CONFIG_CDC_ACM_IAD)
 	struct usb_association_descriptor iad_cdc;
-#endif
 	struct usb_if_descriptor if0;
 	struct cdc_header_descriptor if0_header;
 	struct cdc_cm_descriptor if0_cm;
@@ -437,9 +435,7 @@ static void cdc_interface_config(struct usb_desc_header *head,
 	desc->if0_union.bControlInterface = bInterfaceNumber;
 	desc->if1.bInterfaceNumber = bInterfaceNumber + 1;
 	desc->if0_union.bSubordinateInterface0 = bInterfaceNumber + 1;
-#if (CONFIG_USB_COMPOSITE_DEVICE || CONFIG_CDC_ACM_IAD)
 	desc->iad_cdc.bFirstInterface = bInterfaceNumber;
-#endif
 }
 
 /**
@@ -1051,7 +1047,6 @@ static const struct uart_driver_api cdc_acm_driver_api = {
 #endif /* CONFIG_UART_USE_RUNTIME_CONFIGURE */
 };
 
-#if (CONFIG_USB_COMPOSITE_DEVICE || CONFIG_CDC_ACM_IAD)
 #define INITIALIZER_IAD							\
 	.iad_cdc = {							\
 		.bLength = sizeof(struct usb_association_descriptor),	\
@@ -1063,9 +1058,6 @@ static const struct uart_driver_api cdc_acm_driver_api = {
 		.bFunctionProtocol = 0,					\
 		.iFunction = 0,						\
 	},
-#else
-#define INITIALIZER_IAD
-#endif
 
 #define INITIALIZER_IF(iface_num, num_ep, class, subclass)		\
 	{								\
