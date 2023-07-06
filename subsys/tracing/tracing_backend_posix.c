@@ -5,11 +5,9 @@
  */
 
 #include <soc.h>
-#include <stdio.h>
-#include <zephyr/kernel.h>
 #include <cmdline.h>
-#include <zephyr/sys/__assert.h>
 #include <tracing_backend.h>
+#include "tracing_backend_posix_bottom.h"
 
 static void *out_stream;
 static const char *file_name;
@@ -20,20 +18,16 @@ static void tracing_backend_posix_init(void)
 		file_name = "channel0_0";
 	}
 
-	out_stream = (void *)fopen(file_name, "wb");
-
-	__ASSERT(out_stream != NULL, "posix backend init failed");
+	out_stream = tracing_backend_posix_init_bottom(file_name);
 }
 
 static void tracing_backend_posix_output(
 		const struct tracing_backend *backend,
 		uint8_t *data, uint32_t length)
 {
-	fwrite(data, length, 1, (FILE *)out_stream);
+	ARG_UNUSED(backend);
 
-	if (!k_is_in_isr()) {
-		fflush((FILE *)out_stream);
-	}
+	tracing_backend_posix_output_bottom(data, length, out_stream);
 }
 
 const struct tracing_backend_api tracing_backend_posix_api = {
