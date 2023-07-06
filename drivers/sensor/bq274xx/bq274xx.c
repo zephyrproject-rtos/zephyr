@@ -119,7 +119,6 @@ static int bq274xx_get_device_type(const struct device *dev, uint16_t *val)
 	}
 
 	ret = bq274xx_cmd_reg_read(dev, BQ274XX_CMD_CONTROL_LOW, val);
-
 	if (ret < 0) {
 		LOG_ERR("Unable to read register");
 		return -EIO;
@@ -592,8 +591,9 @@ static int bq274xx_gauge_init(const struct device *dev)
 		return -EIO;
 	}
 
-	if (id != BQ274XX_DEVICE_ID) {
-		LOG_ERR("Invalid Device");
+	if (id != BQ27421_DEVICE_ID &&
+	    id != BQ27427_DEVICE_ID) {
+		LOG_ERR("Invalid Device ID: 0x%x", id);
 		return -EINVAL;
 	}
 

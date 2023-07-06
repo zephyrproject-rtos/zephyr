@@ -12,7 +12,8 @@
 
 /*** General Constant ***/
 #define BQ274XX_UNSEAL_KEY 0x8000 /* Secret code to unseal the BQ27441-G1A */
-#define BQ274XX_DEVICE_ID  0x0421 /* Default device ID */
+#define BQ27421_DEVICE_ID  0x0421
+#define BQ27427_DEVICE_ID  0x0427
 
 /*** Standard Commands ***/
 #define BQ274XX_CMD_CONTROL_LOW    0x00 /* Control() low register */
