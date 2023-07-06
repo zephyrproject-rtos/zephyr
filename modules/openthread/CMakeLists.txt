@@ -352,6 +352,12 @@ else()
   set(OT_NETDATA_PUBLISHER OFF CACHE BOOL "Enable Thread Network Data publisher" FORCE)
 endif()
 
+if(CONFIG_OPENTHREAD_OPERATIONAL_DATASET_AUTO_INIT)
+  set(OT_OPERATIONAL_DATASET_AUTO_INIT ON CACHE BOOL "Enable operational dataset auto init" FORCE)
+else()
+  set(OT_OPERATIONAL_DATASET_AUTO_INIT OFF CACHE BOOL "Enable operational dataset auto init" FORCE)
+endif()
+
 if(CONFIG_OPENTHREAD_OTNS)
   set(OT_OTNS ON CACHE BOOL "Enable OTNS support" FORCE)
 else()
