@@ -314,6 +314,23 @@ enum cap_unicast_subproc_type {
 	CAP_UNICAST_SUBPROC_TYPE_RELEASE,
 };
 
+struct cap_unicast_proc_param {
+	struct bt_cap_stream *stream;
+	union {
+		struct {
+			struct bt_conn *conn;
+			struct bt_bap_ep *ep;
+			struct bt_audio_codec_cfg codec_cfg;
+		} start;
+		struct {
+			/** Codec Specific Capabilities Metadata count */
+			size_t meta_len;
+			/** Codec Specific Capabilities Metadata */
+			uint8_t meta[CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_SIZE];
+		} meta_update;
+	};
+};
+
 struct cap_unicast_proc {
 	ATOMIC_DEFINE(proc_state_flags, CAP_UNICAST_PROC_STATE_FLAG_NUM);
 	/* Total number of streams in the procedure*/
@@ -326,7 +343,7 @@ struct cap_unicast_proc {
 	enum cap_unicast_subproc_type subproc_type;
 	int err;
 	struct bt_conn *failed_conn;
-	struct bt_cap_stream *streams[CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_STREAM_COUNT];
+	struct cap_unicast_proc_param proc_param[CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_STREAM_COUNT];
 	struct bt_bap_unicast_group *unicast_group;
 };
 
@@ -388,7 +405,7 @@ static bool cap_conn_in_active_proc(const struct bt_conn *conn)
 	}
 
 	for (size_t i = 0U; i < active_proc.stream_initiated_cnt; i++) {
-		if (active_proc.streams[i]->bap_stream.conn == conn) {
+		if (active_proc.proc_param[i].stream->bap_stream.conn == conn) {
 			return true;
 		}
 	}
@@ -619,7 +636,7 @@ static bool cap_stream_in_active_proc(const struct bt_cap_stream *cap_stream)
 	}
 
 	for (size_t i = 0U; i < active_proc.stream_cnt; i++) {
-		if (active_proc.streams[i] == cap_stream) {
+		if (active_proc.proc_param[i].stream == cap_stream) {
 			return true;
 		}
 	}
@@ -749,71 +766,6 @@ static bool valid_unicast_audio_start_param(const struct bt_cap_unicast_audio_st
 	return true;
 }
 
-static int cap_initiator_unicast_audio_configure(
-	const struct bt_cap_unicast_audio_start_param *param)
-{
-	/** TODO: If this is a CSIP set, then the order of the procedures may
-	 * not match the order in the parameters, and the CSIP ordered access
-	 * procedure should be used.
-	 */
-
-	/* Store the information about the active procedure so that we can
-	 * continue the procedure after each step
-	 */
-	atomic_set_bit(active_proc.proc_state_flags, CAP_UNICAST_PROC_STATE_ACTIVE);
-	active_proc.stream_cnt = param->count;
-
-	cap_set_subproc(CAP_UNICAST_SUBPROC_TYPE_CODEC_CONFIG);
-
-	for (size_t i = 0U; i < param->count; i++) {
-		struct bt_cap_unicast_audio_start_stream_param *stream_param =
-									&param->stream_params[i];
-		union bt_cap_set_member *member = &stream_param->member;
-		struct bt_cap_stream *cap_stream = stream_param->stream;
-		struct bt_bap_stream *bap_stream = &cap_stream->bap_stream;
-		struct bt_bap_ep *ep = stream_param->ep;
-		struct bt_audio_codec_cfg *codec_cfg = stream_param->codec_cfg;
-		struct bt_conn *conn;
-		int err;
-
-		if (param->type == BT_CAP_SET_TYPE_AD_HOC) {
-			conn = member->member;
-		} else {
-			struct cap_unicast_client *client;
-
-			/* We have verified that `client` wont be NULL in
-			 * `valid_unicast_audio_start_param`.
-			 */
-			client = lookup_unicast_client_by_csis(member->csip);
-			__ASSERT(client != NULL, "client is NULL");
-			conn = client->conn;
-		}
-
-		/* Ensure that ops are registered before any procedures are started */
-		bt_cap_stream_ops_register_bap(cap_stream);
-
-		active_proc.streams[i] = cap_stream;
-
-		err = bt_bap_stream_config(conn, bap_stream, ep, codec_cfg);
-		if (err != 0) {
-			LOG_DBG("bt_bap_stream_config failed for param->stream_params[%zu]: %d",
-				i, err);
-
-			if (i > 0U) {
-				cap_abort_proc(bap_stream->conn, err);
-			} else {
-				(void)memset(&active_proc, 0, sizeof(active_proc));
-			}
-
-			return err;
-		}
-
-		active_proc.stream_initiated_cnt++;
-	}
-
-	return 0;
-}
-
 static void cap_initiator_unicast_audio_proc_complete(void)
 {
 	struct bt_bap_unicast_group *unicast_group;
@@ -853,6 +805,82 @@ static void cap_initiator_unicast_audio_proc_complete(void)
 	}
 }
 
+static int cap_initiator_unicast_audio_configure(
+	const struct bt_cap_unicast_audio_start_param *param)
+{
+	struct cap_unicast_proc_param *proc_param;
+	struct bt_audio_codec_cfg *codec_cfg;
+	struct bt_bap_stream *bap_stream;
+	struct bt_bap_ep *ep;
+	struct bt_conn *conn;
+	int err;
+	/** TODO: If this is a CSIP set, then the order of the procedures may
+	 * not match the order in the parameters, and the CSIP ordered access
+	 * procedure should be used.
+	 */
+
+	for (size_t i = 0U; i < param->count; i++) {
+		struct bt_cap_unicast_audio_start_stream_param *stream_param =
+									&param->stream_params[i];
+		union bt_cap_set_member *member = &stream_param->member;
+		struct bt_cap_stream *cap_stream = stream_param->stream;
+
+		if (param->type == BT_CAP_SET_TYPE_AD_HOC) {
+			conn = member->member;
+		} else {
+			struct cap_unicast_client *client;
+
+			/* We have verified that `client` wont be NULL in
+			 * `valid_unicast_audio_start_param`.
+			 */
+			client = lookup_unicast_client_by_csis(member->csip);
+			__ASSERT(client != NULL, "client is NULL");
+			conn = client->conn;
+		}
+
+		/* Ensure that ops are registered before any procedures are started */
+		bt_cap_stream_ops_register_bap(cap_stream);
+
+		/* Store the necessary parameters as we cannot assume that the supplied parameters
+		 * are kept valid
+		 */
+		active_proc.proc_param[i].stream = cap_stream;
+		active_proc.proc_param[i].start.ep = stream_param->ep;
+		active_proc.proc_param[i].start.conn = conn;
+		memcpy(&active_proc.proc_param[i].start.codec_cfg, stream_param->codec_cfg,
+		       sizeof(*stream_param->codec_cfg));
+	}
+
+	/* Store the information about the active procedure so that we can
+	 * continue the procedure after each step
+	 */
+	atomic_set_bit(active_proc.proc_state_flags, CAP_UNICAST_PROC_STATE_ACTIVE);
+	active_proc.stream_cnt = param->count;
+
+	cap_set_subproc(CAP_UNICAST_SUBPROC_TYPE_CODEC_CONFIG);
+
+	proc_param = &active_proc.proc_param[0];
+	bap_stream = &proc_param->stream->bap_stream;
+	codec_cfg = &proc_param->start.codec_cfg;
+	conn = proc_param->start.conn;
+	ep = proc_param->start.ep;
+
+	/* Since BAP operations may require a write long or a read long on the notification,
+	 * we cannot assume that we can do multiple streams at once, thus do it one at a time.
+	 * TODO: We should always be able to do one per ACL, so there is room for optimization.
+	 */
+	err = bt_bap_stream_config(conn, bap_stream, ep, codec_cfg);
+	if (err != 0) {
+		LOG_DBG("Failed to config stream %p: %d", proc_param->stream, err);
+
+		(void)memset(&active_proc, 0, sizeof(active_proc));
+	} else {
+		active_proc.stream_initiated_cnt++;
+	}
+
+	return err;
+}
+
 int bt_cap_initiator_unicast_audio_start(const struct bt_cap_unicast_audio_start_param *param,
 					 struct bt_bap_unicast_group *unicast_group)
 {
@@ -879,8 +907,9 @@ int bt_cap_initiator_unicast_audio_start(const struct bt_cap_unicast_audio_start
 
 void bt_cap_initiator_codec_configured(struct bt_cap_stream *cap_stream)
 {
-	struct bt_conn *conns[MIN(CONFIG_BT_MAX_CONN,
-				  CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_STREAM_COUNT)];
+	struct bt_conn
+		*conns[MIN(CONFIG_BT_MAX_CONN, CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_STREAM_COUNT)];
+	struct cap_unicast_proc_param *proc_param;
 	struct bt_bap_unicast_group *unicast_group;
 
 	if (!cap_stream_in_active_proc(cap_stream)) {
@@ -900,19 +929,43 @@ void bt_cap_initiator_codec_configured(struct bt_cap_stream *cap_stream)
 	} else {
 		active_proc.stream_done_cnt++;
 
-		LOG_DBG("Stream %p configured (%zu/%zu streams done)",
-			cap_stream, active_proc.stream_done_cnt,
-			active_proc.stream_cnt);
-
-		if (!cap_proc_is_done()) {
-			/* Not yet finished, wait for all */
-			return;
-		}
+		LOG_DBG("Stream %p configured (%zu/%zu streams done)", cap_stream,
+			active_proc.stream_done_cnt, active_proc.stream_cnt);
 	}
 
 	if (cap_proc_is_aborted()) {
 		if (cap_proc_all_streams_handled()) {
 			cap_initiator_unicast_audio_proc_complete();
+		}
+
+		return;
+	}
+
+	if (!cap_proc_is_done()) {
+		struct bt_cap_stream *next_cap_stream =
+			active_proc.proc_param[active_proc.stream_done_cnt].stream;
+		struct bt_conn *conn =
+			active_proc.proc_param[active_proc.stream_done_cnt].start.conn;
+		struct bt_bap_ep *ep = active_proc.proc_param[active_proc.stream_done_cnt].start.ep;
+		struct bt_audio_codec_cfg *codec_cfg =
+			&active_proc.proc_param[active_proc.stream_done_cnt].start.codec_cfg;
+		struct bt_bap_stream *bap_stream = &next_cap_stream->bap_stream;
+		int err;
+
+		/* Since BAP operations may require a write long or a read long on the notification,
+		 * we cannot assume that we can do multiple streams at once, thus do it one at a
+		 * time.
+		 * TODO: We should always be able to do one per ACL, so there is room for
+		 * optimization.
+		 */
+		err = bt_bap_stream_config(conn, bap_stream, ep, codec_cfg);
+		if (err != 0) {
+			LOG_DBG("Failed to config stream %p: %d", next_cap_stream, err);
+
+			cap_abort_proc(conn, err);
+			cap_initiator_unicast_audio_proc_complete();
+		} else {
+			active_proc.stream_initiated_cnt++;
 		}
 
 		return;
@@ -924,7 +977,7 @@ void bt_cap_initiator_codec_configured(struct bt_cap_stream *cap_stream)
 	 */
 	(void)memset(conns, 0, sizeof(conns));
 	for (size_t i = 0U; i < active_proc.stream_cnt; i++) {
-		struct bt_conn *stream_conn = active_proc.streams[i]->bap_stream.conn;
+		struct bt_conn *stream_conn = active_proc.proc_param[i].stream->bap_stream.conn;
 		struct bt_conn **free_conn = NULL;
 		bool already_added = false;
 
@@ -951,7 +1004,8 @@ void bt_cap_initiator_codec_configured(struct bt_cap_stream *cap_stream)
 	/* All streams in the procedure share the same unicast group, so we just
 	 * use the reference from the first stream
 	 */
-	unicast_group = (struct bt_bap_unicast_group *)active_proc.streams[0]->bap_stream.group;
+	proc_param = &active_proc.proc_param[0];
+	unicast_group = (struct bt_bap_unicast_group *)proc_param->stream->bap_stream.group;
 	cap_set_subproc(CAP_UNICAST_SUBPROC_TYPE_QOS_CONFIG);
 
 	for (size_t i = 0U; i < ARRAY_SIZE(conns); i++) {
@@ -985,6 +1039,11 @@ void bt_cap_initiator_codec_configured(struct bt_cap_stream *cap_stream)
 
 void bt_cap_initiator_qos_configured(struct bt_cap_stream *cap_stream)
 {
+	struct cap_unicast_proc_param *proc_param;
+	struct bt_cap_stream *next_cap_stream;
+	struct bt_bap_stream *bap_stream;
+	int err;
+
 	if (!cap_stream_in_active_proc(cap_stream)) {
 		/* State change happened outside of a procedure; ignore */
 		return;
@@ -996,14 +1055,8 @@ void bt_cap_initiator_qos_configured(struct bt_cap_stream *cap_stream)
 	} else {
 		active_proc.stream_done_cnt++;
 
-		LOG_DBG("Stream %p QoS configured (%zu/%zu streams done)",
-			cap_stream, active_proc.stream_done_cnt,
-			active_proc.stream_cnt);
-
-		if (!cap_proc_is_done()) {
-			/* Not yet finished, wait for all */
-			return;
-		}
+		LOG_DBG("Stream %p QoS configured (%zu/%zu streams done)", cap_stream,
+			active_proc.stream_done_cnt, active_proc.stream_cnt);
 	}
 
 	if (cap_proc_is_aborted()) {
@@ -1014,36 +1067,35 @@ void bt_cap_initiator_qos_configured(struct bt_cap_stream *cap_stream)
 		return;
 	}
 
+	if (!cap_proc_is_done()) {
+		/* Not yet finished, wait for all */
+		return;
+	}
+
 	cap_set_subproc(CAP_UNICAST_SUBPROC_TYPE_ENABLE);
+	proc_param = &active_proc.proc_param[0];
+	next_cap_stream = proc_param->stream;
+	bap_stream = &next_cap_stream->bap_stream;
 
-	for (size_t i = 0U; i < active_proc.stream_cnt; i++) {
-		struct bt_cap_stream *cap_stream_active = active_proc.streams[i];
-		struct bt_bap_stream *bap_stream = &cap_stream_active->bap_stream;
-		int err;
+	/* Since BAP operations may require a write long or a read long on the notification, we
+	 * cannot assume that we can do multiple streams at once, thus do it one at a time.
+	 * TODO: We should always be able to do one per ACL, so there is room for optimization.
+	 */
+	err = bt_bap_stream_enable(bap_stream, bap_stream->codec_cfg->meta,
+				   bap_stream->codec_cfg->meta_len);
+	if (err != 0) {
+		LOG_DBG("Failed to enable stream %p: %d", next_cap_stream, err);
 
-		/* TODO: Add metadata */
-		err = bt_bap_stream_enable(bap_stream, bap_stream->codec_cfg->meta,
-					   bap_stream->codec_cfg->meta_len);
-		if (err != 0) {
-			LOG_DBG("Failed to enable stream %p: %d",
-				cap_stream_active, err);
-
-			/* End or mark procedure as aborted.
-			 * If we have sent any requests over air, we will abort
-			 * once all sent requests has completed
-			 */
-			cap_abort_proc(bap_stream->conn, err);
-			if (i == 0U) {
-				cap_initiator_unicast_audio_proc_complete();
-			}
-
-			return;
-		}
+		cap_abort_proc(bap_stream->conn, err);
+		cap_initiator_unicast_audio_proc_complete();
+	} else {
+		active_proc.stream_initiated_cnt++;
 	}
 }
 
 void bt_cap_initiator_enabled(struct bt_cap_stream *cap_stream)
 {
+	struct cap_unicast_proc_param *proc_param;
 	struct bt_bap_stream *bap_stream;
 	int err;
 
@@ -1058,14 +1110,8 @@ void bt_cap_initiator_enabled(struct bt_cap_stream *cap_stream)
 	} else {
 		active_proc.stream_done_cnt++;
 
-		LOG_DBG("Stream %p enabled (%zu/%zu streams done)",
-			cap_stream, active_proc.stream_done_cnt,
-			active_proc.stream_cnt);
-
-		if (!cap_proc_is_done()) {
-			/* Not yet finished, wait for all */
-			return;
-		}
+		LOG_DBG("Stream %p enabled (%zu/%zu streams done)", cap_stream,
+			active_proc.stream_done_cnt, active_proc.stream_cnt);
 	}
 
 	if (cap_proc_is_aborted()) {
@@ -1076,17 +1122,42 @@ void bt_cap_initiator_enabled(struct bt_cap_stream *cap_stream)
 		return;
 	}
 
+	if (!cap_proc_is_done()) {
+		struct bt_cap_stream *next_cap_stream =
+			active_proc.proc_param[active_proc.stream_done_cnt].stream;
+		struct bt_bap_stream *next_bap_stream = &next_cap_stream->bap_stream;
+
+		/* Since BAP operations may require a write long or a read long on the notification,
+		 * we cannot assume that we can do multiple streams at once, thus do it one at a
+		 * time.
+		 * TODO: We should always be able to do one per ACL, so there is room for
+		 * optimization.
+		 */
+		err = bt_bap_stream_enable(next_bap_stream, next_bap_stream->codec_cfg->meta,
+					   next_bap_stream->codec_cfg->meta_len);
+		if (err != 0) {
+			LOG_DBG("Failed to enable stream %p: %d", next_cap_stream, err);
+
+			cap_abort_proc(next_bap_stream->conn, err);
+			cap_initiator_unicast_audio_proc_complete();
+		} else {
+			active_proc.stream_initiated_cnt++;
+		}
+
+		return;
+	}
+
 	cap_set_subproc(CAP_UNICAST_SUBPROC_TYPE_START);
+	proc_param = &active_proc.proc_param[0];
+	bap_stream = &proc_param->stream->bap_stream;
 
-	bap_stream = &active_proc.streams[0]->bap_stream;
-
-	/* Since bt_bap_stream_start connects the ISO, we can, at this point,
-	 * only do this one by one due to a restriction in the ISO layer
-	 * (maximum 1 outstanding ISO connection request at any one time).
+	/* Since BAP operations may require a write long or a read long on the notification, we
+	 * cannot assume that we can do multiple streams at once, thus do it one at a time.
+	 * TODO: We should always be able to do one per ACL, so there is room for optimization.
 	 */
 	err = bt_bap_stream_start(bap_stream);
 	if (err != 0) {
-		LOG_DBG("Failed to start stream %p: %d", active_proc.streams[0], err);
+		LOG_DBG("Failed to start stream %p: %d", proc_param->stream, err);
 
 		/* End and mark procedure as aborted.
 		 * If we have sent any requests over air, we will abort
@@ -1122,14 +1193,15 @@ void bt_cap_initiator_started(struct bt_cap_stream *cap_stream)
 	 * (maximum 1 outstanding ISO connection request at any one time).
 	 */
 	if (!cap_proc_is_done()) {
-		struct bt_cap_stream *next = active_proc.streams[active_proc.stream_done_cnt];
-		struct bt_bap_stream *bap_stream = &next->bap_stream;
+		struct bt_cap_stream *next_cap_stream =
+			active_proc.proc_param[active_proc.stream_done_cnt].stream;
+		struct bt_bap_stream *bap_stream = &next_cap_stream->bap_stream;
 		int err;
 
 		/* Not yet finished, start next */
 		err = bt_bap_stream_start(bap_stream);
 		if (err != 0) {
-			LOG_DBG("Failed to start stream %p: %d", next, err);
+			LOG_DBG("Failed to start stream %p: %d", next_cap_stream, err);
 
 			/* End and mark procedure as aborted.
 			 * If we have sent any requests over air, we will abort
@@ -1166,6 +1238,12 @@ static bool can_update_metadata(const struct bt_bap_stream *bap_stream)
 int bt_cap_initiator_unicast_audio_update(const struct bt_cap_unicast_audio_update_param params[],
 					  size_t count)
 {
+	struct cap_unicast_proc_param *proc_param;
+	struct bt_bap_stream *bap_stream;
+	const uint8_t *meta;
+	size_t meta_len;
+	int err;
+
 	CHECKIF(params == NULL) {
 		LOG_DBG("params is NULL");
 
@@ -1185,13 +1263,15 @@ int bt_cap_initiator_unicast_audio_update(const struct bt_cap_unicast_audio_upda
 	}
 
 	for (size_t i = 0U; i < count; i++) {
-		CHECKIF(params[i].stream == NULL) {
+		struct bt_cap_stream *cap_stream = params[i].stream;
+
+		CHECKIF(cap_stream == NULL) {
 			LOG_DBG("params[%zu].stream is NULL", i);
 
 			return -EINVAL;
 		}
 
-		CHECKIF(params[i].stream->bap_stream.conn == NULL) {
+		CHECKIF(cap_stream->bap_stream.conn == NULL) {
 			LOG_DBG("params[%zu].stream->bap_stream.conn is NULL", i);
 
 			return -EINVAL;
@@ -1205,56 +1285,46 @@ int bt_cap_initiator_unicast_audio_update(const struct bt_cap_unicast_audio_upda
 		}
 
 		for (size_t j = 0U; j < i; j++) {
-			if (params[j].stream == params[i].stream) {
+			if (params[j].stream == cap_stream) {
 				LOG_DBG("param.streams[%zu] is duplicated by param.streams[%zu]",
 					j, i);
 				return -EINVAL;
 			}
 		}
 
-		if (!can_update_metadata(&params[i].stream->bap_stream)) {
+		if (!can_update_metadata(&cap_stream->bap_stream)) {
 			LOG_DBG("params[%zu].stream is not in right state to be updated", i);
 
 			return -EINVAL;
 		}
+
+		active_proc.proc_param[i].stream = cap_stream;
+		active_proc.proc_param[i].meta_update.meta_len = params[i].meta_len;
+		memcpy(&active_proc.proc_param[i].meta_update.meta, params[i].meta,
+		       params[i].meta_len);
 	}
 
-	atomic_set_bit(active_proc.proc_state_flags,
-		       CAP_UNICAST_PROC_STATE_ACTIVE);
+	atomic_set_bit(active_proc.proc_state_flags, CAP_UNICAST_PROC_STATE_ACTIVE);
 	active_proc.stream_cnt = count;
-	active_proc.proc_type = CAP_UNICAST_PROC_TYPE_UPDATE;
 
+	active_proc.proc_type = CAP_UNICAST_PROC_TYPE_UPDATE;
 	cap_set_subproc(CAP_UNICAST_SUBPROC_TYPE_META_UPDATE);
 
-	/** TODO: If this is a CSIP set, then the order of the procedures may
-	 * not match the order in the parameters, and the CSIP ordered access
-	 * procedure should be used.
-	 */
-	for (size_t i = 0U; i < count; i++) {
-		int err;
+	proc_param = &active_proc.proc_param[0];
+	bap_stream = &proc_param->stream->bap_stream;
+	meta_len = proc_param->meta_update.meta_len;
+	meta = proc_param->meta_update.meta;
 
-		active_proc.streams[i] = params[i].stream;
+	err = bt_bap_stream_metadata(bap_stream, meta, meta_len);
+	if (err != 0) {
+		LOG_DBG("Failed to update metadata for stream %p: %d", proc_param->stream, err);
 
-		err = bt_bap_stream_metadata(&params[i].stream->bap_stream, params[i].meta,
-					     params[i].meta_len);
-		if (err != 0) {
-			LOG_DBG("Failed to update metadata for stream %p: %d",
-				params[i].stream, err);
-
-			if (i > 0U) {
-				cap_abort_proc(params[i].stream->bap_stream.conn, err);
-			} else {
-				(void)memset(&active_proc, 0,
-					     sizeof(active_proc));
-			}
-
-			return err;
-		}
-
+		(void)memset(&active_proc, 0, sizeof(active_proc));
+	} else {
 		active_proc.stream_initiated_cnt++;
 	}
 
-	return 0;
+	return err;
 }
 
 int bt_cap_initiator_unicast_audio_cancel(void)
@@ -1289,12 +1359,40 @@ void bt_cap_initiator_metadata_updated(struct bt_cap_stream *cap_stream)
 			active_proc.stream_cnt);
 	}
 
-	if (!cap_proc_is_done()) {
-		/* Not yet finished, wait for all */
-		return;
-	} else if (cap_proc_is_aborted()) {
+	if (cap_proc_is_aborted()) {
 		if (cap_proc_all_streams_handled()) {
 			cap_initiator_unicast_audio_proc_complete();
+		}
+
+		return;
+	}
+
+	if (!cap_proc_is_done()) {
+		const size_t meta_len =
+			active_proc.proc_param[active_proc.stream_done_cnt].meta_update.meta_len;
+		const uint8_t *meta =
+			active_proc.proc_param[active_proc.stream_done_cnt].meta_update.meta;
+		struct bt_cap_stream *next_cap_stream =
+			active_proc.proc_param[active_proc.stream_done_cnt].stream;
+		struct bt_bap_stream *bap_stream = &next_cap_stream->bap_stream;
+		int err;
+
+		/* Since BAP operations may require a write long or a read long on the notification,
+		 * we cannot assume that we can do multiple streams at once, thus do it one at a
+		 * time.
+		 * TODO: We should always be able to do one per ACL, so there is room for
+		 * optimization.
+		 */
+
+		err = bt_bap_stream_metadata(bap_stream, meta, meta_len);
+		if (err != 0) {
+			LOG_DBG("Failed to update metadata for stream %p: %d", next_cap_stream,
+				err);
+
+			cap_abort_proc(bap_stream->conn, err);
+			cap_initiator_unicast_audio_proc_complete();
+		} else {
+			active_proc.stream_initiated_cnt++;
 		}
 
 		return;
@@ -1324,8 +1422,10 @@ static bool can_release(const struct bt_bap_stream *bap_stream)
 
 int bt_cap_initiator_unicast_audio_stop(struct bt_bap_unicast_group *unicast_group)
 {
+	struct cap_unicast_proc_param *proc_param;
 	struct bt_bap_stream *bap_stream;
 	size_t stream_cnt;
+	int err;
 
 	if (cap_proc_is_active()) {
 		LOG_DBG("A CAP procedure is already in progress");
@@ -1341,6 +1441,9 @@ int bt_cap_initiator_unicast_audio_stop(struct bt_bap_unicast_group *unicast_gro
 	stream_cnt = 0U;
 	SYS_SLIST_FOR_EACH_CONTAINER(&unicast_group->streams, bap_stream, _node) {
 		if (can_release(bap_stream)) {
+			struct bt_cap_stream *cap_stream =
+				CONTAINER_OF(bap_stream, struct bt_cap_stream, bap_stream);
+			active_proc.proc_param[stream_cnt].stream = cap_stream;
 			stream_cnt++;
 		}
 	}
@@ -1363,35 +1466,19 @@ int bt_cap_initiator_unicast_audio_stop(struct bt_bap_unicast_group *unicast_gro
 	 * not match the order in the parameters, and the CSIP ordered access
 	 * procedure should be used.
 	 */
-	SYS_SLIST_FOR_EACH_CONTAINER(&unicast_group->streams, bap_stream, _node) {
-		struct bt_cap_stream *cap_stream =
-			CONTAINER_OF(bap_stream, struct bt_cap_stream, bap_stream);
-		int err;
+	proc_param = &active_proc.proc_param[0];
+	bap_stream = &proc_param->stream->bap_stream;
 
-		if (!can_release(bap_stream)) {
-			continue;
-		}
+	err = bt_bap_stream_release(bap_stream);
+	if (err != 0) {
+		LOG_DBG("Failed to stop bap_stream %p: %d", proc_param->stream, err);
 
-		active_proc.streams[active_proc.stream_initiated_cnt] = cap_stream;
-
-		err = bt_bap_stream_release(bap_stream);
-		if (err != 0) {
-			LOG_DBG("Failed to stop bap_stream %p: %d", bap_stream, err);
-
-			if (active_proc.stream_initiated_cnt > 0U) {
-				cap_abort_proc(bap_stream->conn, err);
-			} else {
-				(void)memset(&active_proc, 0,
-					     sizeof(active_proc));
-			}
-
-			return err;
-		}
-
+		(void)memset(&active_proc, 0, sizeof(active_proc));
+	} else {
 		active_proc.stream_initiated_cnt++;
 	}
 
-	return 0;
+	return err;
 }
 
 void bt_cap_initiator_released(struct bt_cap_stream *cap_stream)
@@ -1412,10 +1499,7 @@ void bt_cap_initiator_released(struct bt_cap_stream *cap_stream)
 			active_proc.stream_cnt);
 	}
 
-	if (!cap_proc_is_done()) {
-		/* Not yet finished, wait for all */
-		return;
-	} else if (cap_proc_is_aborted()) {
+	if (cap_proc_is_aborted()) {
 		if (cap_proc_all_streams_handled()) {
 			cap_initiator_unicast_audio_proc_complete();
 		}
@@ -1423,7 +1507,30 @@ void bt_cap_initiator_released(struct bt_cap_stream *cap_stream)
 		return;
 	}
 
-	cap_initiator_unicast_audio_proc_complete();
+	if (!cap_proc_is_done()) {
+		struct bt_cap_stream *next_cap_stream =
+			active_proc.proc_param[active_proc.stream_done_cnt].stream;
+		struct bt_bap_stream *bap_stream = &next_cap_stream->bap_stream;
+		int err;
+
+		/* Since BAP operations may require a write long or a read long on the notification,
+		 * we cannot assume that we can do multiple streams at once, thus do it one at a
+		 * time.
+		 * TODO: We should always be able to do one per ACL, so there is room for
+		 * optimization.
+		 */
+		err = bt_bap_stream_release(bap_stream);
+		if (err != 0) {
+			LOG_DBG("Failed to release stream %p: %d", next_cap_stream, err);
+
+			cap_abort_proc(bap_stream->conn, err);
+			cap_initiator_unicast_audio_proc_complete();
+		} else {
+			active_proc.stream_initiated_cnt++;
+		}
+	} else {
+		cap_initiator_unicast_audio_proc_complete();
+	}
 }
 
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT */
