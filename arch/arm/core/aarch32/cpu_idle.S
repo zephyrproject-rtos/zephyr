@@ -13,6 +13,10 @@
 #include <zephyr/toolchain.h>
 #include <zephyr/linker/sections.h>
 
+#if defined(CONFIG_ARM_ON_EXIT_CPU_IDLE)
+#include <soc_cpu_idle.h>
+#endif
+
 _ASM_FILE_PROLOGUE
 
 GTEXT(z_arm_cpu_idle_init)
@@ -63,6 +67,11 @@ SECTION_FUNC(TEXT, z_arm_cpu_idle_init)
 	 */
 	dsb
 	\wait_instruction
+
+#if defined(CONFIG_ARM_ON_EXIT_CPU_IDLE)
+	/* Inline the macro provided by SoC-specific code */
+	SOC_ON_EXIT_CPU_IDLE
+#endif /* CONFIG_ARM_ON_EXIT_CPU_IDLE */
 
 #if defined(CONFIG_ARM_ON_ENTER_CPU_IDLE_HOOK)
 _skip_\@:
