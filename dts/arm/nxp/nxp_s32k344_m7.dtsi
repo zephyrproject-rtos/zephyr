@@ -529,6 +529,66 @@
 			#io-channel-cells = <1>;
 			status = "disabled";
 		};
+
+		lpspi0: spi@40358000 {
+			compatible = "nxp,imx-lpspi";
+			reg = <0x40358000 0x4000>;
+			interrupts = <165 0>;
+			clocks = <&clock NXP_S32_LPSPI0_CLK>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		lpspi1: spi@4035c000 {
+			compatible = "nxp,imx-lpspi";
+			reg = <0x4035c000 0x4000>;
+			interrupts = <166 0>;
+			clocks = <&clock NXP_S32_LPSPI1_CLK>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		lpspi2: spi@40360000 {
+			compatible = "nxp,imx-lpspi";
+			reg = <0x40360000 0x4000>;
+			interrupts = <167 0>;
+			clocks = <&clock NXP_S32_LPSPI2_CLK>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		lpspi3: spi@40364000 {
+			compatible = "nxp,imx-lpspi";
+			reg = <0x40364000 0x4000>;
+			interrupts = <168 0>;
+			clocks = <&clock NXP_S32_LPSPI3_CLK>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		lpspi4: spi@404bc000 {
+			compatible = "nxp,imx-lpspi";
+			reg = <0x404bc000 0x4000>;
+			interrupts = <169 0>;
+			clocks = <&clock NXP_S32_LPSPI4_CLK>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		lpspi5: spi@404c0000 {
+			compatible = "nxp,imx-lpspi";
+			reg = <0x404c0000 0x4000>;
+			interrupts = <170 0>;
+			clocks = <&clock NXP_S32_LPSPI5_CLK>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
 	};
 };
 
