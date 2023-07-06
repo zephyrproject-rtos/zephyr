@@ -965,12 +965,10 @@ int bt_ascs_release_ase(struct bt_bap_ep *ep)
 	return ase_release(ase, BT_HCI_ERR_LOCALHOST_TERM_CONN, BT_BAP_ASCS_RSP_NULL);
 }
 
-static void ase_disable(struct bt_ascs_ase *ase)
+static int ase_disable(struct bt_ascs_ase *ase, uint8_t reason, struct bt_bap_ascs_rsp *rsp)
 {
 	struct bt_bap_stream *stream;
 	struct bt_bap_ep *ep;
-	struct bt_bap_ascs_rsp rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_SUCCESS,
-						     BT_BAP_ASCS_REASON_NONE);
 	int err;
 
 	LOG_DBG("ase %p", ase);
@@ -985,34 +983,31 @@ static void ase_disable(struct bt_ascs_ase *ase)
 		break;
 	default:
 		LOG_WRN("Invalid operation in state: %s", bt_bap_ep_state_str(ep->status.state));
-		ascs_cp_rsp_add(ASE_ID(ase), BT_BAP_ASCS_RSP_CODE_INVALID_ASE_STATE,
-				BT_BAP_ASCS_REASON_NONE);
-		return;
+		*rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_INVALID_ASE_STATE,
+				       BT_BAP_ASCS_REASON_NONE);
+		return -EBADMSG;
 	}
 
 	stream = ep->stream;
 
-	if (unicast_server_cb != NULL && unicast_server_cb->disable != NULL) {
-		err = unicast_server_cb->disable(stream, &rsp);
-	} else {
-		err = -ENOTSUP;
-		rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_UNSPECIFIED,
-				      BT_BAP_ASCS_REASON_NONE);
+	if (unicast_server_cb == NULL || unicast_server_cb->disable == NULL) {
+		*rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_UNSPECIFIED, BT_BAP_ASCS_REASON_NONE);
+		return -ENOTSUP;
 	}
 
+	err = unicast_server_cb->disable(stream, rsp);
 	if (err) {
-		if (rsp.code == BT_BAP_ASCS_RSP_CODE_SUCCESS) {
-			rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_UNSPECIFIED,
-					      BT_BAP_ASCS_REASON_NONE);
+		if (rsp->code == BT_BAP_ASCS_RSP_CODE_SUCCESS) {
+			*rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_UNSPECIFIED,
+					       BT_BAP_ASCS_REASON_NONE);
 		}
 
-		LOG_ERR("Disable failed: err %d, code %u, reason %u", err, rsp.code, rsp.reason);
-		ascs_cp_rsp_add(ASE_ID(ase), rsp.code, rsp.reason);
-		return;
+		LOG_ERR("Disable failed: err %d, code %u, reason %u", err, rsp->code, rsp->reason);
+		return err;
 	}
 
 	/* Set reason in case this exits the streaming state */
-	ep->reason = BT_HCI_ERR_REMOTE_USER_TERM_CONN;
+	ep->reason = reason;
 
 	/* The ASE state machine goes into different states from this operation
 	 * based on whether it is a source or a sink ASE.
@@ -1023,7 +1018,15 @@ static void ase_disable(struct bt_ascs_ase *ase)
 		ascs_ep_set_state(ep, BT_BAP_EP_STATE_QOS_CONFIGURED);
 	}
 
-	ascs_cp_rsp_success(ASE_ID(ase));
+	*rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_SUCCESS, BT_BAP_ASCS_REASON_NONE);
+	return 0;
+}
+
+int bt_ascs_disable_ase(struct bt_bap_ep *ep)
+{
+	struct bt_ascs_ase *ase = CONTAINER_OF(ep, struct bt_ascs_ase, ep);
+
+	return ase_disable(ase, BT_HCI_ERR_LOCALHOST_TERM_CONN, BT_BAP_ASCS_RSP_NULL);
 }
 
 static void disconnected(struct bt_conn *conn, uint8_t reason)
@@ -2416,7 +2419,6 @@ static bool is_valid_disable_len(struct net_buf_simple *buf)
 static ssize_t ascs_disable(struct bt_conn *conn, struct net_buf_simple *buf)
 {
 	const struct bt_ascs_disable_op *req;
-	int i;
 
 	if (!is_valid_disable_len(buf)) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
@@ -2426,7 +2428,9 @@ static ssize_t ascs_disable(struct bt_conn *conn, struct net_buf_simple *buf)
 
 	LOG_DBG("num_ases %u", req->num_ases);
 
-	for (i = 0; i < req->num_ases; i++) {
+	for (uint8_t i = 0; i < req->num_ases; i++) {
+		struct bt_bap_ascs_rsp rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_UNSPECIFIED,
+							     BT_BAP_ASCS_REASON_NONE);
 		struct bt_ascs_ase *ase;
 		uint8_t id;
 
@@ -2449,7 +2453,8 @@ static ssize_t ascs_disable(struct bt_conn *conn, struct net_buf_simple *buf)
 			continue;
 		}
 
-		ase_disable(ase);
+		ase_disable(ase, BT_HCI_ERR_REMOTE_USER_TERM_CONN, &rsp);
+		ascs_cp_rsp_add(id, rsp.code, rsp.reason);
 	}
 
 	return buf->size;
