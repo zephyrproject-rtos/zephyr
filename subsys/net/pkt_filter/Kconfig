@@ -12,6 +12,28 @@ config NET_PKT_FILTER
 	  transmission and reception.
 
 if NET_PKT_FILTER
+
+config NET_PKT_FILTER_IPV4_HOOK
+	bool "Additional network packet filtering hook inside IPv4 stack"
+	depends on NET_IPV4
+	help
+	  This additional hook provides infrastructure to construct custom
+	  rules on the IP packet.
+
+config NET_PKT_FILTER_IPV6_HOOK
+	bool "Additional network packet filtering hook inside IPv6 stack"
+	depends on NET_IPV6
+	help
+	  This additional hook provides infrastructure to construct custom
+	  rules on the IP packet.
+
+config NET_PKT_FILTER_LOCAL_IN_HOOK
+	bool "Additional network packet filtering hook for connection input"
+	depends on NET_IP
+	help
+	  This additional hook provides infrastructure to construct custom
+	  rules for e.g. TCP/UDP packets.
+
 module = NET_PKT_FILTER
 module-dep = NET_LOG
 module-str = Log level for packet filtering

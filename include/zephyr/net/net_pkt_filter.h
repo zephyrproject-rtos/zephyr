@@ -67,6 +67,12 @@ struct npf_rule_list {
 extern struct npf_rule_list npf_send_rules;
 /** @brief rule list applied to incoming packets */
 extern struct npf_rule_list npf_recv_rules;
+/** @brief rule list applied for local incoming packets */
+extern struct npf_rule_list npf_local_in_recv_rules;
+/** @brief rule list applied for IPv4 incoming packets */
+extern struct npf_rule_list npf_ipv4_recv_rules;
+/** @brief rule list applied for IPv6 incoming packets */
+extern struct npf_rule_list npf_ipv6_recv_rules;
 
 /**
  * @brief Insert a rule at the front of given rule list
@@ -110,6 +116,27 @@ bool npf_remove_all_rules(struct npf_rule_list *rules);
 #define npf_remove_recv_rule(rule) npf_remove_rule(&npf_recv_rules, rule)
 #define npf_remove_all_send_rules() npf_remove_all_rules(&npf_send_rules)
 #define npf_remove_all_recv_rules() npf_remove_all_rules(&npf_recv_rules)
+
+#ifdef CONFIG_NET_PKT_FILTER_LOCAL_IN_HOOK
+#define npf_insert_local_in_recv_rule(rule) npf_insert_rule(&npf_local_in_recv_rules, rule)
+#define npf_append_local_in_recv_rule(rule) npf_append_rule(&npf_local_in_recv_rules, rule)
+#define npf_remove_local_in_recv_rule(rule) npf_remove_rule(&npf_local_in_recv_rules, rule)
+#define npf_remove_all_local_in_recv_rules() npf_remove_all_rules(&npf_local_in_recv_rules)
+#endif /* CONFIG_NET_PKT_FILTER_LOCAL_IN_HOOK */
+
+#ifdef CONFIG_NET_PKT_FILTER_IPV4_HOOK
+#define npf_insert_ipv4_recv_rule(rule) npf_insert_rule(&npf_ipv4_recv_rules, rule)
+#define npf_append_ipv4_recv_rule(rule) npf_append_rule(&npf_ipv4_recv_rules, rule)
+#define npf_remove_ipv4_recv_rule(rule) npf_remove_rule(&npf_ipv4_recv_rules, rule)
+#define npf_remove_all_ipv4_recv_rules() npf_remove_all_rules(&npf_ipv4_recv_rules)
+#endif /* CONFIG_NET_PKT_FILTER_IPV4_HOOK */
+
+#ifdef CONFIG_NET_PKT_FILTER_IPV6_HOOK
+#define npf_insert_ipv6_recv_rule(rule) npf_insert_rule(&npf_ipv6_recv_rules, rule)
+#define npf_append_ipv6_recv_rule(rule) npf_append_rule(&npf_ipv6_recv_rules, rule)
+#define npf_remove_ipv6_recv_rule(rule) npf_remove_rule(&npf_ipv6_recv_rules, rule)
+#define npf_remove_all_ipv6_recv_rules() npf_remove_all_rules(&npf_ipv6_recv_rules)
+#endif /* CONFIG_NET_PKT_FILTER_IPV6_HOOK */
 
 /**
  * @brief Statically define one packet filter rule
@@ -294,6 +321,60 @@ extern npf_test_fn_t npf_size_inbounds;
 		.min = (_min_size), \
 		.max = (_max_size), \
 		.test.fn = npf_size_inbounds, \
+	}
+
+/** @cond INTERNAL_HIDDEN */
+
+struct npf_test_ip {
+	struct npf_test test;
+	uint8_t addr_family;
+	void *ipaddr;
+	uint32_t ipaddr_num;
+};
+
+extern npf_test_fn_t npf_ip_src_addr_match;
+extern npf_test_fn_t npf_ip_src_addr_unmatch;
+
+/** @endcond */
+
+/**
+ * @brief Statically define a "ip address allowlist" packet filter condition
+ *
+ * This tests if the packet source ip address matches any of the ip
+ * addresses contained in the provided set.
+ *
+ * @param _name Name of the condition
+ * @param _ip_addr_array Array of <tt>struct in_addr</tt> or <tt>struct in6_addr</tt> items to test
+ *against
+ * @param _ip_addr_num number of IP addresses in the array
+ * @param _af Addresses family type (AF_INET / AF_INET6) in the array
+ */
+#define NPF_IP_SRC_ADDR_ALLOWLIST(_name, _ip_addr_array, _ip_addr_num, _af) \
+	struct npf_test_ip _name = { \
+		.addr_family = _af, \
+		.ipaddr = (_ip_addr_array), \
+		.ipaddr_num = _ip_addr_num, \
+		.test.fn = npf_ip_src_addr_match, \
+	}
+
+/**
+ * @brief Statically define a "ip address blocklist" packet filter condition
+ *
+ * This tests if the packet source ip address matches any of the ip
+ * addresses contained in the provided set.
+ *
+ * @param _name Name of the condition
+ * @param _ip_addr_array Array of <tt>struct in_addr</tt> or <tt>struct in6_addr</tt> items to test
+ *against
+ * @param _ip_addr_num number of IP addresses in the array
+ * @param _af Addresses family type (AF_INET / AF_INET6) in the array
+ */
+#define NPF_IP_SRC_ADDR_BLOCKLIST(_name, _ip_addr_array, _ip_addr_num, _af) \
+	struct npf_test_ip _name = { \
+		.addr_family = _af, \
+		.ipaddr = (_ip_addr_array), \
+		.ipaddr_num = _ip_addr_num, \
+		.test.fn = npf_ip_src_addr_unmatch, \
 	}
 
 /** @} */
