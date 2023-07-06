@@ -6,6 +6,7 @@
 
 /dts-v1/;
 #include <quicklogic/quicklogic_eos_s3.dtsi>
+#include <zephyr/dt-bindings/pinctrl/quicklogic-eos-s3-pinctrl.h>
 
 / {
 	model = "QuickLogic Qomu board";
@@ -56,6 +57,35 @@
 	};
 };
 
+&pinctrl {
+	uart1_rx_default: uart1_rx_default {
+		pinmux = <UART_RX_PAD45>;
+		input-enable;
+	};
+	uart1_tx_default: uart1_tx_default {
+		pinmux = <UART_TX_PAD44>;
+		output-enable;
+	};
+	usb_pu_default: usb_pu_default {
+		pinmux = <USB_PU_CTRL_PAD23>;
+		bias-high-impedance;
+		quicklogic,control-selection = "fabric";
+		output-enable;
+	};
+	usb_dn_default: usb_dn_default {
+		pinmux = <USB_DN_PAD28>;
+		bias-high-impedance;
+		quicklogic,control-selection = "fabric";
+		output-enable;
+	};
+	usb_dp_default: usb_dp_default {
+		pinmux = <USB_DP_PAD31>;
+		bias-high-impedance;
+		quicklogic,control-selection = "fabric";
+		output-enable;
+	};
+};
+
 &cpu0 {
 	clock-frequency = <61440000>;
 };
@@ -71,4 +101,7 @@
 &uart1 {
 	status = "okay";
 	current-speed = <115200>;
+	pinctrl-0 = <&uart1_rx_default &uart1_tx_default
+		     &usb_pu_default &usb_dn_default &usb_dp_default>;
+	pinctrl-names = "default";
 };
