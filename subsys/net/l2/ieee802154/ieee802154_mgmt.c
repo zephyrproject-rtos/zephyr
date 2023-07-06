@@ -394,15 +394,17 @@ static int ieee802154_associate(uint32_t mgmt_request, struct net_if *iface,
 		goto out;
 	}
 
-	/* acquire the lock so that the next k_sem_take() blocks */
+	/* Acquire the lock so that the next k_sem_take() blocks. */
 	k_sem_take(&ctx->scan_ctx_lock, K_FOREVER);
 
-	/* TODO: current timeout is arbitrary,
-	 * see section 8.4.3.1, table 8-94, macResponseWaitTime
+	/* Wait macResponseWaitTime PHY symbols for the association response, see
+	 * ieee802154_handle_mac_command() and section 6.4.1.
 	 */
-	k_sem_take(&ctx->scan_ctx_lock, K_SECONDS(1));
+	k_sem_take(&ctx->scan_ctx_lock, K_USEC(ieee802154_get_response_wait_time_us(iface)));
 
-	/* release the lock */
+	/* Release the scan lock in case an association response was not received
+	 * within macResponseWaitTime and we got a timeout instead.
+	 */
 	k_sem_give(&ctx->scan_ctx_lock);
 
 	k_sem_take(&ctx->ctx_lock, K_FOREVER);
