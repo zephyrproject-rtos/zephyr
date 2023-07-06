@@ -54,6 +54,7 @@ BUILD_ASSERT(CONFIG_BT_ASCS_MAX_ACTIVE_ASES <= MAX(MAX_ASES_SESSIONS,
 #define ASE_UUID(_id) \
 	(_id > CONFIG_BT_ASCS_ASE_SNK_COUNT ? BT_UUID_ASCS_ASE_SRC : BT_UUID_ASCS_ASE_SNK)
 #define ASE_COUNT (CONFIG_BT_ASCS_ASE_SNK_COUNT + CONFIG_BT_ASCS_ASE_SRC_COUNT)
+#define BT_BAP_ASCS_RSP_NULL ((struct bt_bap_ascs_rsp[]) { BT_BAP_ASCS_RSP(0, 0) })
 
 static struct bt_ascs_ase {
 	struct bt_conn *conn;
@@ -919,46 +920,49 @@ static void ascs_cp_rsp_success(uint8_t id)
 	ascs_cp_rsp_add(id, BT_BAP_ASCS_RSP_CODE_SUCCESS, BT_BAP_ASCS_REASON_NONE);
 }
 
-static void ase_release(struct bt_ascs_ase *ase)
+static int ase_release(struct bt_ascs_ase *ase, uint8_t reason, struct bt_bap_ascs_rsp *rsp)
 {
-	uint8_t ase_id = ASE_ID(ase);
-	struct bt_bap_ascs_rsp rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_SUCCESS,
-						     BT_BAP_ASCS_REASON_NONE);
+	enum bt_bap_ep_state state = ascs_ep_get_state(&ase->ep);
 	int err;
 
-	LOG_DBG("ase %p state %s", ase, bt_bap_ep_state_str(ase->ep.status.state));
-
-	if (ase->ep.status.state == BT_BAP_EP_STATE_RELEASING) {
-		/* already releasing */
-		return;
+	if (state == BT_BAP_EP_STATE_IDLE || state == BT_BAP_EP_STATE_RELEASING) {
+		LOG_WRN("Invalid operation in state: %s", bt_bap_ep_state_str(state));
+		*rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_INVALID_ASE_STATE,
+				       BT_BAP_ASCS_REASON_NONE);
+		return -EBADMSG;
 	}
 
-	if (unicast_server_cb != NULL && unicast_server_cb->release != NULL) {
-		err = unicast_server_cb->release(ase->ep.stream, &rsp);
-	} else {
-		err = -ENOTSUP;
-		rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_UNSPECIFIED,
-				      BT_BAP_ASCS_REASON_NONE);
+	if (unicast_server_cb == NULL || unicast_server_cb->release == NULL) {
+		*rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_UNSPECIFIED,
+				       BT_BAP_ASCS_REASON_NONE);
+		return -ENOTSUP;
 	}
 
+	err = unicast_server_cb->release(ase->ep.stream, rsp);
 	if (err) {
-		if (rsp.code == BT_BAP_ASCS_RSP_CODE_SUCCESS) {
-			rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_UNSPECIFIED,
-					      BT_BAP_ASCS_REASON_NONE);
+		if (rsp->code == BT_BAP_ASCS_RSP_CODE_SUCCESS) {
+			*rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_UNSPECIFIED,
+					       BT_BAP_ASCS_REASON_NONE);
 		}
 
-		LOG_ERR("Release failed: err %d, code %u, reason %u", err, rsp.code, rsp.reason);
-		ascs_cp_rsp_add(ase_id, rsp.code, rsp.reason);
-		return;
+		LOG_ERR("Release failed: err %d, code %u, reason %u", err, rsp->code, rsp->reason);
+		return err;
 	}
 
 	/* Set reason in case this exits the streaming state */
-	ase->ep.reason = BT_HCI_ERR_REMOTE_USER_TERM_CONN;
+	ase->ep.reason = reason;
 
 	ascs_ep_set_state(&ase->ep, BT_BAP_EP_STATE_RELEASING);
-	/* At this point, `ase` object might have been free'd if automously went to Idle */
 
-	ascs_cp_rsp_success(ase_id);
+	*rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_SUCCESS, BT_BAP_ASCS_REASON_NONE);
+	return 0;
+}
+
+int bt_ascs_release_ase(struct bt_bap_ep *ep)
+{
+	struct bt_ascs_ase *ase = CONTAINER_OF(ep, struct bt_ascs_ase, ep);
+
+	return ase_release(ase, BT_HCI_ERR_LOCALHOST_TERM_CONN, BT_BAP_ASCS_RSP_NULL);
 }
 
 static void ase_disable(struct bt_ascs_ase *ase)
@@ -1032,8 +1036,7 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 		}
 
 		if (ase->ep.status.state != BT_BAP_EP_STATE_IDLE) {
-			ase->ep.reason = reason;
-			ase_release(ase);
+			ase_release(ase, reason, BT_BAP_ASCS_RSP_NULL);
 			/* At this point, `ase` object have been free'd */
 		}
 	}
@@ -2719,8 +2722,10 @@ static ssize_t ascs_release(struct bt_conn *conn, struct net_buf_simple *buf)
 	LOG_DBG("num_ases %u", req->num_ases);
 
 	for (i = 0; i < req->num_ases; i++) {
-		uint8_t id;
+		struct bt_bap_ascs_rsp rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_UNSPECIFIED,
+							     BT_BAP_ASCS_REASON_NONE);
 		struct bt_ascs_ase *ase;
+		uint8_t id;
 
 		id = net_buf_simple_pull_u8(buf);
 
@@ -2741,16 +2746,8 @@ static ssize_t ascs_release(struct bt_conn *conn, struct net_buf_simple *buf)
 			continue;
 		}
 
-		if (ase->ep.status.state == BT_BAP_EP_STATE_IDLE ||
-		    ase->ep.status.state == BT_BAP_EP_STATE_RELEASING) {
-			LOG_WRN("Invalid operation in state: %s",
-				bt_bap_ep_state_str(ase->ep.status.state));
-			ascs_cp_rsp_add(id, BT_BAP_ASCS_RSP_CODE_INVALID_ASE_STATE,
-					BT_BAP_ASCS_REASON_NONE);
-			continue;
-		}
-
-		ase_release(ase);
+		ase_release(ase, BT_HCI_ERR_REMOTE_USER_TERM_CONN, &rsp);
+		ascs_cp_rsp_add(id, rsp.code, rsp.reason);
 	}
 
 	return buf->size;
