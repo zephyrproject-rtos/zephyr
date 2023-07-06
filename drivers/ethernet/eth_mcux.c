@@ -8,6 +8,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "fsl_iomuxc.h"
 #define DT_DRV_COMPAT nxp_kinetis_ethernet
 
 /* Driver Limitations:
@@ -472,11 +473,13 @@ static void eth_mcux_phy_event(struct eth_context *context)
 			LOG_WRN("Reading PHY reg failed (status 0x%x)", res);
 			k_work_submit(&context->phy_work);
 		} else {
-			ctrl2 |= PHY_CTL2_REFCLK_SELECT_MASK;
-			ENET_StartSMIWrite(context->base, context->phy_addr,
-					   PHY_CONTROL2_REG,
-					   kENET_MiiWriteValidFrame,
-					   ctrl2);
+			if(IS_ENABLED(CONFIG_ETH_MCUX_REFCLK_50MHZ)) {
+				ctrl2 |= PHY_CTL2_REFCLK_SELECT_MASK;
+				ENET_StartSMIWrite(context->base, context->phy_addr,
+						   PHY_CONTROL2_REG,
+						   kENET_MiiWriteValidFrame,
+						   ctrl2);
+			}
 		}
 		context->phy_state = eth_mcux_phy_state_reset;
 #endif /* CONFIG_SOC_SERIES_IMX_RT */
@@ -1026,7 +1029,9 @@ static void eth_mcux_init(const struct device *dev)
 	sys_clock = CLOCK_GetFreq(kCLOCK_IpgClk);
 #endif
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(enet2), okay)
-	sys_clock = CLOCK_GetFreq(kCLOCK_EnetPll1Clk);
+	if(context->base == ENET2) {
+		sys_clock = CLOCK_GetFreq(kCLOCK_EnetPll1Clk);
+	}
 #endif
 #elif defined(CONFIG_SOC_SERIES_IMX_RT11XX)
 	sys_clock = CLOCK_GetRootClockFreq(kCLOCK_Root_Bus);
@@ -1058,6 +1063,16 @@ static void eth_mcux_init(const struct device *dev)
 			kENET_RxAccelIpCheckEnabled |
 			kENET_RxAccelProtoCheckEnabled;
 	}
+
+#ifdef CONFIG_ETH_MCUX_RMII_EXT_CLK
+	if(context->base == ENET) {
+		IOMUXC_EnableMode(IOMUXC_GPR, kIOMUXC_GPR_ENET1RefClkMode, true);
+		IOMUXC_EnableMode(IOMUXC_GPR, kIOMUXC_GPR_ENET1TxClkOutputDir, false);
+	} else {
+		IOMUXC_EnableMode(IOMUXC_GPR, kIOMUXC_GPR_ENET2RefClkMode, true);
+		IOMUXC_EnableMode(IOMUXC_GPR, kIOMUXC_GPR_ENET2TxClkOutputDir, false);
+	}
+#endif
 
 	ENET_Init(context->base,
 		  &context->enet_handle,
@@ -1512,6 +1527,12 @@ static void eth_mcux_err_isr(const struct device *dev)
 #endif
 #define ETH_MCUX_MAC_ADDR_TO_BOOL(n) ETH_MCUX_MAC_ADDR_TO_BOOL_##n
 
+#if (NODE_HAS_VALID_MAC_ADDR(DT_DRV_INST(1))) == 0
+#define ETH_MCUX_MAC_ADDR_TO_BOOL_1 0
+#else
+#define ETH_MCUX_MAC_ADDR_TO_BOOL_1 1
+#endif
+
 #if defined(CONFIG_PINCTRL)
 #define ETH_MCUX_PINCTRL_DEFINE(n) PINCTRL_DT_INST_DEFINE(n);
 #define ETH_MCUX_PINCTRL_INIT(n) .pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),
@@ -1554,19 +1575,19 @@ static void eth_mcux_err_isr(const struct device *dev)
 		tx_enet_frame_##n##_buf[NET_ETH_MAX_FRAME_SIZE];	\
 	static _mcux_driver_buffer uint8_t				\
 		rx_enet_frame_##n##_buf[NET_ETH_MAX_FRAME_SIZE];	\
-	static status_t _MDIO_Write(uint8_t phyAddr, uint8_t regAddr, uint16_t data) \
+	static status_t _MDIO_##n##_Write(uint8_t phyAddr, uint8_t regAddr, uint16_t data) \
 	{								\
 		return ENET_MDIOWrite((ENET_Type *)DT_INST_REG_ADDR(n), phyAddr, regAddr, data);\
 	};								\
 									\
-	static status_t _MDIO_Read(uint8_t phyAddr, uint8_t regAddr, uint16_t *pData) \
+	static status_t _MDIO_##n##_Read(uint8_t phyAddr, uint8_t regAddr, uint16_t *pData) \
 	{  \
 		return ENET_MDIORead((ENET_Type *)DT_INST_REG_ADDR(n), phyAddr, regAddr, pData); \
 	}; \
 									\
 	static struct _phy_resource eth##n##_phy_resource = {		\
-		.read = _MDIO_Read,					\
-		.write = _MDIO_Write					\
+		.read = _MDIO_##n##_Read,				\
+		.write = _MDIO_##n##_Write				\
 	};								\
 	static phy_handle_t eth##n##_phy_handle = {			\
 		.resource = (void *)&eth##n##_phy_resource		\
