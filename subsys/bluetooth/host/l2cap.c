@@ -2034,58 +2034,36 @@ static int l2cap_chan_le_send(struct bt_l2cap_le_chan *ch,
 static int l2cap_chan_le_send_sdu(struct bt_l2cap_le_chan *ch,
 				  struct net_buf **buf, uint16_t sent)
 {
-	int ret, total_len;
-	struct net_buf *frag;
+	int ret;
 
-	total_len = net_buf_frags_len(*buf) + sent;
-
-	if (total_len > ch->tx.mtu) {
-		return -EMSGSIZE;
-	}
-
-	frag = *buf;
-	if (!frag->len && frag->frags) {
-		frag = frag->frags;
+	/* Drop any preceding empty frags. */
+	if (!(*buf)->len && (*buf)->frags) {
+		*buf = net_buf_frag_del(NULL, *buf);
+		/* Copy the metadata into the next fragment. */
+		l2cap_tx_meta_data(*buf)->sent = sent;
 	}
 
 	if (!sent) {
 		/* Add SDU length for the first segment */
-		ret = l2cap_chan_le_send(ch, frag, BT_L2CAP_SDU_HDR_SIZE);
-		if (ret < 0) {
-			if (ret == -EAGAIN) {
-				/* Store sent data into user_data */
-				l2cap_tx_meta_data(frag)->sent = sent;
-			}
-			*buf = frag;
-			return ret;
-		}
-		sent = ret;
+		ret = l2cap_chan_le_send(ch, *buf, BT_L2CAP_SDU_HDR_SIZE);
+		/* Keep track of whether the SDU header has been sent. */
+		l2cap_tx_meta_data(*buf)->sent = (ret >= 0);
+	} else {
+		ret = l2cap_chan_le_send(ch, *buf, 0);
 	}
 
-	/* Send remaining segments */
-	for (ret = 0; sent < total_len; sent += ret) {
-		/* Proceed to next fragment */
-		if (!frag->len) {
-			frag = net_buf_frag_del(NULL, frag);
-		}
-
-		ret = l2cap_chan_le_send(ch, frag, 0);
-		if (ret < 0) {
-			if (ret == -EAGAIN) {
-				/* Store sent data into user_data */
-				l2cap_tx_meta_data(frag)->sent = sent;
-			}
-			*buf = frag;
-			return ret;
-		}
-		if (sent < total_len) {
-			return -EAGAIN;
-		}
+	if (ret < 0) {
+		/* Send was unsucessful. May be -EAGAIN or some other error. */
+		return ret;
 	}
 
-	LOG_DBG("ch %p cid 0x%04x sent %u total_len %u", ch, ch->tx.cid, sent, total_len);
+	/* If all remaining fragments are empty, we are done. Unref is recursive. */
+	if (net_buf_frags_len(*buf) == 0) {
+		net_buf_unref(*buf);
+		return ret;
+	}
 
-	net_buf_unref(frag);
+	LOG_DBG("ch %p cid 0x%04x sent %u", ch, ch->tx.cid, sent);
 
 	return ret;
 }
@@ -3168,13 +3146,13 @@ int bt_l2cap_chan_send_cb(struct bt_l2cap_chan *chan, struct net_buf *buf, bt_co
 	}
 
 	err = l2cap_chan_le_send_sdu(le_chan, &buf, 0);
-	if (err < 0) {
-		if (err == -EAGAIN && l2cap_tx_meta_data(buf)->sent) {
-			/* Queue buffer if at least one segment could be sent */
-			net_buf_put(&le_chan->tx_queue, buf);
-			return l2cap_tx_meta_data(buf)->sent;
-		}
 
+	if (err == -EAGAIN) {
+		net_buf_put(&le_chan->tx_queue, buf);
+		return l2cap_tx_meta_data(buf)->sent;
+	}
+
+	if (err < 0) {
 		LOG_ERR("failed to send message %d", err);
 
 		l2cap_tx_meta_data(buf) = old_user_data;

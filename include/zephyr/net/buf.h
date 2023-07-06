@@ -1187,6 +1187,7 @@ extern const struct net_buf_data_cb net_buf_var_cb;
  * static variable, so if it needs to be exported outside the current module
  * this needs to happen with the help of a separate pointer rather than an
  * extern declaration.
+
  *
  * If provided with a custom destroy callback this callback is
  * responsible for eventually calling net_buf_destroy() to complete the
