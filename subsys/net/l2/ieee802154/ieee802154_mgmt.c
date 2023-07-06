@@ -138,9 +138,9 @@ static int ieee802154_scan(uint32_t mgmt_request, struct net_if *iface,
 
 	ret = 0;
 
-	ieee802154_filter_pan_id(iface, IEEE802154_BROADCAST_PAN_ID);
+	ieee802154_radio_filter_pan_id(iface, IEEE802154_BROADCAST_PAN_ID);
 
-	if (ieee802154_start(iface)) {
+	if (ieee802154_radio_start(iface)) {
 		NET_DBG("Could not start device");
 		ret = -EIO;
 
@@ -157,7 +157,7 @@ static int ieee802154_scan(uint32_t mgmt_request, struct net_if *iface,
 
 		scan->channel = channel;
 		NET_DBG("Scanning channel %u", channel);
-		ieee802154_set_channel(iface, channel);
+		ieee802154_radio_set_channel(iface, channel);
 
 		/* Active scan sends a beacon request */
 		if (mgmt_request == NET_REQUEST_IEEE802154_ACTIVE_SCAN) {
@@ -190,8 +190,8 @@ static int ieee802154_scan(uint32_t mgmt_request, struct net_if *iface,
 
 out:
 	/* Let's come back to context's settings. */
-	ieee802154_filter_pan_id(iface, ctx->pan_id);
-	ieee802154_set_channel(iface, ctx->channel);
+	ieee802154_radio_filter_pan_id(iface, ctx->pan_id);
+	ieee802154_radio_set_channel(iface, ctx->channel);
 
 	ctx->scan_ctx = NULL;
 	k_sem_give(&ctx->scan_ctx_lock);
@@ -244,7 +244,7 @@ static inline void set_association(struct net_if *iface, struct ieee802154_conte
 	memcpy(ctx->linkaddr.addr, &short_addr_be, IEEE802154_SHORT_ADDR_LENGTH);
 
 	update_net_if_link_addr(iface, ctx);
-	ieee802154_filter_short_addr(iface, ctx->short_addr);
+	ieee802154_radio_filter_short_addr(iface, ctx->short_addr);
 }
 
 /* Requires the context lock to be held. */
@@ -254,7 +254,7 @@ static inline void remove_association(struct net_if *iface, struct ieee802154_co
 	memset(ctx->coord_ext_addr, 0, IEEE802154_EXT_ADDR_LENGTH);
 	ctx->coord_short_addr = 0U;
 	set_linkaddr_to_ext_addr(iface, ctx);
-	ieee802154_filter_short_addr(iface, IEEE802154_SHORT_ADDRESS_NOT_ASSOCIATED);
+	ieee802154_radio_filter_short_addr(iface, IEEE802154_SHORT_ADDRESS_NOT_ASSOCIATED);
 }
 
 /* Requires the context lock to be held. */
@@ -386,7 +386,7 @@ static int ieee802154_associate(uint32_t mgmt_request, struct net_if *iface,
 
 	ieee802154_mac_cmd_finalize(pkt, IEEE802154_CFI_ASSOCIATION_REQUEST);
 
-	ieee802154_filter_pan_id(iface, req->pan_id);
+	ieee802154_radio_filter_pan_id(iface, req->pan_id);
 
 	if (net_if_send_data(iface, pkt)) {
 		net_pkt_unref(pkt);
@@ -442,7 +442,7 @@ static int ieee802154_associate(uint32_t mgmt_request, struct net_if *iface,
 
 out:
 	if (ret < 0) {
-		ieee802154_filter_pan_id(iface, 0);
+		ieee802154_radio_filter_pan_id(iface, 0);
 	}
 
 	k_sem_give(&ctx->ctx_lock);
@@ -567,12 +567,12 @@ static int ieee802154_set_parameters(uint32_t mgmt_request,
 
 	if (mgmt_request == NET_REQUEST_IEEE802154_SET_CHANNEL) {
 		if (ctx->channel != value) {
-			if (!ieee802154_verify_channel(iface, value)) {
+			if (!ieee802154_radio_verify_channel(iface, value)) {
 				ret = -EINVAL;
 				goto out;
 			}
 
-			ret = ieee802154_set_channel(iface, value);
+			ret = ieee802154_radio_set_channel(iface, value);
 			if (!ret) {
 				ctx->channel = value;
 			}
@@ -580,7 +580,7 @@ static int ieee802154_set_parameters(uint32_t mgmt_request,
 	} else if (mgmt_request == NET_REQUEST_IEEE802154_SET_PAN_ID) {
 		if (ctx->pan_id != value) {
 			ctx->pan_id = value;
-			ieee802154_filter_pan_id(iface, ctx->pan_id);
+			ieee802154_radio_filter_pan_id(iface, ctx->pan_id);
 		}
 	} else if (mgmt_request == NET_REQUEST_IEEE802154_SET_EXT_ADDR) {
 		if (len != IEEE802154_EXT_ADDR_LENGTH) {
@@ -599,7 +599,7 @@ static int ieee802154_set_parameters(uint32_t mgmt_request,
 				set_linkaddr_to_ext_addr(iface, ctx);
 			}
 
-			ieee802154_filter_ieee_addr(iface, ctx->ext_addr);
+			ieee802154_radio_filter_ieee_addr(iface, ctx->ext_addr);
 		}
 	} else if (mgmt_request == NET_REQUEST_IEEE802154_SET_SHORT_ADDR) {
 		if (ctx->short_addr != value) {
@@ -611,7 +611,7 @@ static int ieee802154_set_parameters(uint32_t mgmt_request,
 		}
 	} else if (mgmt_request == NET_REQUEST_IEEE802154_SET_TX_POWER) {
 		if (ctx->tx_power != (int16_t)value) {
-			ret = ieee802154_set_tx_power(iface, (int16_t)value);
+			ret = ieee802154_radio_set_tx_power(iface, (int16_t)value);
 			if (!ret) {
 				ctx->tx_power = (int16_t)value;
 			}
