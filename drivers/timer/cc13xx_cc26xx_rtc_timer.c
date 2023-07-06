@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT ti_cc13xx_cc26xx_rtc
+#define DT_DRV_COMPAT ti_cc13xx_cc26xx_rtc_timer
 
 /*
  * TI SimpleLink CC13X2/CC26X2 RTC-based system timer
