@@ -1369,7 +1369,7 @@ static inline int z_impl_rtio_cqe_copy_out(struct rtio *r,
 {
 	size_t copied = 0;
 	struct rtio_cqe *cqe;
-	int64_t end = sys_clock_timeout_end_calc(timeout);
+	k_timepoint_t end = sys_timepoint_calc(timeout);
 
 	do {
 		cqe = K_TIMEOUT_EQ(timeout, K_FOREVER) ? rtio_cqe_consume_block(r)
@@ -1385,7 +1385,7 @@ static inline int z_impl_rtio_cqe_copy_out(struct rtio *r,
 		}
 		cqes[copied++] = *cqe;
 		rtio_cqe_release(r, cqe);
-	} while (copied < cqe_count && end > k_uptime_ticks());
+	} while (copied < cqe_count && !sys_timepoint_expired(end));
 
 	return copied;
 }

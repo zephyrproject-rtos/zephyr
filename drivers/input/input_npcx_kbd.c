@@ -325,7 +325,7 @@ static bool check_key_events(const struct device *dev)
 static void kbd_matrix_poll(const struct device *dev)
 {
 	struct input_npcx_kbd_data *const data = dev->data;
-	uint64_t poll_time_end = sys_clock_timeout_end_calc(K_USEC(data->poll_timeout_us));
+	k_timepoint_t poll_time_end = sys_timepoint_calc(K_USEC(data->poll_timeout_us));
 	uint32_t current_cycles;
 	uint32_t cycles_diff;
 	uint32_t wait_period;
@@ -334,8 +334,8 @@ static void kbd_matrix_poll(const struct device *dev)
 		uint32_t start_period_cycles = k_cycle_get_32();
 
 		if (check_key_events(dev)) {
-			poll_time_end = sys_clock_timeout_end_calc(K_USEC(data->poll_timeout_us));
-		} else if (start_period_cycles > poll_time_end) {
+			poll_time_end = sys_timepoint_calc(K_USEC(data->poll_timeout_us));
+		} else if (sys_timepoint_expired(poll_time_end)) {
 			break;
 		}
 
