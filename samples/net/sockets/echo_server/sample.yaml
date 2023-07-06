@@ -84,15 +84,6 @@ tests:
     tags:
       - net
       - usb
-  sample.net.sockets.echo_server.usbnet_composite:
-    depends_on: usb_device
-    harness: net
-    extra_args: OVERLAY_CONFIG="overlay-netusb.conf"
-    extra_configs:
-      - CONFIG_USB_COMPOSITE_DEVICE=y
-    tags:
-      - net
-      - usb
   sample.net.sockets.echo_server.nrf_openthread:
     extra_args: OVERLAY_CONFIG="overlay-ot.conf"
     slow: true

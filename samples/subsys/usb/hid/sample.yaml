@@ -11,18 +11,6 @@ tests:
       regex:
         - "main: HID Device: dev"
         - "main: Starting application"
-  sample.usb.hid_composite:
-    depends_on: usb_device
-    extra_configs:
-      - CONFIG_USB_COMPOSITE_DEVICE=y
-    tags: usb
-    arch_exclude: posix
-    harness: console
-    harness_config:
-      type: multi_line
-      regex:
-        - "main: HID Device: dev"
-        - "main: Starting application"
   sample.usb.hid.buildonly:
     depends_on: usb_device
     tags: usb

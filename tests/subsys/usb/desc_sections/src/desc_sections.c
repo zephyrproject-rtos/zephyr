@@ -14,10 +14,6 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(test_main, LOG_LEVEL_DBG);
 
-#ifdef CONFIG_USB_COMPOSITE_DEVICE
-#error Do not use composite configuration
-#endif
-
 /* Linker-defined symbols bound the USB descriptor structs */
 extern struct usb_desc_header __usb_descriptor_start[];
 extern struct usb_desc_header __usb_descriptor_end[];
