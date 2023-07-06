@@ -427,22 +427,24 @@ class RimageSigner(Signer):
 
         # warning: RIMAGE_TARGET is a duplicate of CONFIG_RIMAGE_SIGNING_SCHEMA
         target = cache.get('RIMAGE_TARGET')
+        kernel_name = build_conf.get('CONFIG_KERNEL_BIN_NAME', 'zephyr')
+
         if not target:
             log.die('rimage target not defined')
 
         # TODO: make this a new sign.py --bootloader option.
         if target in ('imx8', 'imx8m'):
             bootloader = None
-            kernel = str(b / 'zephyr' / 'zephyr.elf')
-            out_bin = str(b / 'zephyr' / 'zephyr.ri')
-            out_xman = str(b / 'zephyr' / 'zephyr.ri.xman')
-            out_tmp = str(b / 'zephyr' / 'zephyr.rix')
+            kernel = str(b / 'zephyr' / f'{kernel_name}.elf')
+            out_bin = str(b / 'zephyr' / f'{kernel_name}.ri')
+            out_xman = str(b / 'zephyr' / f'{kernel_name}.ri.xman')
+            out_tmp = str(b / 'zephyr' / f'{kernel_name}.rix')
         else:
             bootloader = str(b / 'zephyr' / 'boot.mod')
             kernel = str(b / 'zephyr' / 'main.mod')
-            out_bin = str(b / 'zephyr' / 'zephyr.ri')
-            out_xman = str(b / 'zephyr' / 'zephyr.ri.xman')
-            out_tmp = str(b / 'zephyr' / 'zephyr.rix')
+            out_bin = str(b / 'zephyr' / f'{kernel_name}.ri')
+            out_xman = str(b / 'zephyr' / f'{kernel_name}.ri.xman')
+            out_tmp = str(b / 'zephyr' / f'{kernel_name}.rix')
 
         # Clean any stale output. This is especially important when using --if-tool-available
         # (but not just)
