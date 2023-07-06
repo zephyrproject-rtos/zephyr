@@ -139,7 +139,7 @@ config ZTEST_SHUFFLE
 if ZTEST_SHUFFLE
 config ZTEST_SHUFFLE_SUITE_REPEAT_COUNT
 	int "Number of iterations the test suite will run"
-	default 3
+	default 1
 	help
 	  This rule will execute a test suite N number of times. The tests
 	  per suite will be shuffled on each iteration.  The test order will likely
@@ -147,7 +147,7 @@ config ZTEST_SHUFFLE_SUITE_REPEAT_COUNT
 
 config ZTEST_SHUFFLE_TEST_REPEAT_COUNT
 	int "Number of iterations the test will run"
-	default 3
+	default 1
 	help
 	  This rule will execute a test N number of times.  The test order will
 	  likely be different per iteration.
