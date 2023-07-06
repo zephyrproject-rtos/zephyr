@@ -190,7 +190,78 @@ int64_t sys_clock_tick_get(void);
 #define sys_clock_tick_get_32() (0)
 #endif
 
-uint64_t sys_clock_timeout_end_calc(k_timeout_t timeout);
+/**
+ * @brief Kernel timepoint type
+ *
+ * Absolute timepoints are stored in this opaque type.
+ * It is best not to inspect its content directly.
+ *
+ * @see sys_timepoint_calc()
+ * @see sys_timepoint_timeout()
+ * @see sys_timepoint_expired()
+ */
+typedef struct { uint64_t tick; } k_timepoint_t;
+
+/**
+ * @brief Calculate a timepoint value
+ *
+ * Returns a timepoint corresponding to the expiration (relative to an
+ * unlocked "now"!) of a timeout object.  When used correctly, this should
+ * be called once, synchronously with the user passing a new timeout value.
+ * It should not be used iteratively to adjust a timeout (see
+ * `sys_timepoint_timeout()` for that purpose).
+ *
+ * @param timeout Timeout value relative to current time (may also be
+ *                `K_FOREVER` or `K_NO_WAIT`).
+ * @retval Timepoint value corresponding to given timeout
+ *
+ * @see sys_timepoint_timeout()
+ * @see sys_timepoint_expired()
+ */
+k_timepoint_t sys_timepoint_calc(k_timeout_t timeout);
+
+/**
+ * @brief Remaining time to given timepoint
+ *
+ * Returns the timeout interval between current time and provided timepoint.
+ * If the timepoint is now in the past or if it was created with `K_NO_WAIT`
+ * then `K_NO_WAIT` is returned. If it was created with `K_FOREVER` then
+ * `K_FOREVER` is returned.
+ *
+ * @param timepoint Timepoint for which a timeout value is wanted.
+ * @retval Corresponding timeout value.
+ *
+ * @see sys_timepoint_calc()
+ */
+k_timeout_t sys_timepoint_timeout(k_timepoint_t timepoint);
+
+/**
+ * @brief Indicates if timepoint is expired
+ *
+ * @param timepoint Timepoint to evaluate
+ * @retval true if the timepoint is in the past, false otherwise
+ *
+ * @see sys_timepoint_calc()
+ */
+static inline bool sys_timepoint_expired(k_timepoint_t timepoint)
+{
+	return K_TIMEOUT_EQ(sys_timepoint_timeout(timepoint), Z_TIMEOUT_NO_WAIT);
+}
+
+/**
+ * @brief Provided for backward compatibility.
+ *
+ * This is deprecated. Consider `sys_timepoint_calc()` instead.
+ *
+ * @see sys_timepoint_calc()
+ */
+__deprecated
+static inline uint64_t sys_clock_timeout_end_calc(k_timeout_t timeout)
+{
+	k_timepoint_t tp = sys_timepoint_calc(timeout);
+
+	return tp.tick;
+}
 
 #ifdef __cplusplus
 }

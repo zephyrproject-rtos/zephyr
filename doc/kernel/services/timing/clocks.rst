@@ -324,39 +324,43 @@ code.  For example, consider this design:
     }
 
 This code requires that the timeout value be inspected, which is no
-longer possible.  For situations like this, the new API provides an
-internal :c:func:`sys_clock_timeout_end_calc` routine that converts an
-arbitrary timeout to the uptime value in ticks at which it will
-expire.  So such a loop might look like:
+longer possible.  For situations like this, the new API provides the
+internal :c:func:`sys_timepoint_calc` and :c:func:`sys_timepoint_timeout` routines
+that converts an arbitrary timeout to and from a timepoint value based on
+an uptime tick at which it will expire.  So such a loop might look like:
 
 
 .. code-block:: c
 
-    void my_wait_for_event(struct my_subsys *obj, k_timeout_t timeout_in_ms)
+    void my_wait_for_event(struct my_subsys *obj, k_timeout_t timeout)
     {
         /* Compute the end time from the timeout */
-        uint64_t end = sys_clock_timeout_end_calc(timeout_in_ms);
+        k_timepoint_t end = sys_timepoint_calc(timeout);
 
-        while (end > k_uptime_ticks()) {
+        do {
             if (is_event_complete(obj)) {
                 return;
             }
 
+            /* Update timeout with remaining time */
+            timeout = sys_timepoint_timeout(end);
+
             /* Wait for notification of state change */
-            k_sem_take(obj->sem, timeout_in_ms);
-        }
+            k_sem_take(obj->sem, timeout);
+        } while (!K_TIMEOUT_EQ(timeout, K_NO_WAIT));
     }
 
-Note that :c:func:`sys_clock_timeout_end_calc` returns values in units of
-ticks, to prevent conversion aliasing, is always presented at 64 bit
-uptime precision to prevent rollover bugs, handles special
-:c:macro:`K_FOREVER` naturally (as ``UINT64_MAX``), and works
-identically for absolute timeouts as well as conventional ones.
+Note that :c:func:`sys_timepoint_calc` accepts special values :c:macro:`K_FOREVER`
+and :c:macro:`K_NO_WAIT`, and works identically for absolute timeouts as well
+as conventional ones. Conversely, :c:func:`sys_timepoint_timeout` may return
+:c:macro:`K_FOREVER` or :c:macro:`K_NO_WAIT` if those were used to create
+the timepoint, the later also being returned if the timepoint is now in the
+past. For simple cases, :c:func:`sys_timepoint_expired` can be used as well.
 
-But some care is still required for subsystems that use it.  Note that
+But some care is still required for subsystems that use those.  Note that
 delta timeouts need to be interpreted relative to a "current time",
 and obviously that time is the time of the call to
-:c:func:`sys_clock_timeout_end_calc`.  But the user expects that the time is
+:c:func:`sys_timepoint_calc`.  But the user expects that the time is
 the time they passed the timeout to you.  Care must be taken to call
 this function just once, as synchronously as possible to the timeout
 creation in user code.  It should not be used on a "stored" timeout

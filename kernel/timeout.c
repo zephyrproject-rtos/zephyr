@@ -289,28 +289,41 @@ static inline int64_t z_vrfy_k_uptime_ticks(void)
 #include <syscalls/k_uptime_ticks_mrsh.c>
 #endif
 
-/* Returns the uptime expiration (relative to an unlocked "now"!) of a
- * timeout object.  When used correctly, this should be called once,
- * synchronously with the user passing a new timeout value.  It should
- * not be used iteratively to adjust a timeout.
- */
-uint64_t sys_clock_timeout_end_calc(k_timeout_t timeout)
+k_timepoint_t sys_timepoint_calc(k_timeout_t timeout)
 {
-	k_ticks_t dt;
+	k_timepoint_t timepoint;
 
 	if (K_TIMEOUT_EQ(timeout, K_FOREVER)) {
-		return UINT64_MAX;
+		timepoint.tick = UINT64_MAX;
 	} else if (K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
-		return sys_clock_tick_get();
+		timepoint.tick = 0;
 	} else {
-
-		dt = timeout.ticks;
+		k_ticks_t dt = timeout.ticks;
 
 		if (IS_ENABLED(CONFIG_TIMEOUT_64BIT) && Z_TICK_ABS(dt) >= 0) {
-			return Z_TICK_ABS(dt);
+			timepoint.tick = Z_TICK_ABS(dt);
+		} else {
+			timepoint.tick = sys_clock_tick_get() + MAX(1, dt);
 		}
-		return sys_clock_tick_get() + MAX(1, dt);
 	}
+
+	return timepoint;
+}
+
+k_timeout_t sys_timepoint_timeout(k_timepoint_t timepoint)
+{
+	uint64_t now, remaining;
+
+	if (timepoint.tick == UINT64_MAX) {
+		return K_FOREVER;
+	}
+	if (timepoint.tick == 0) {
+		return K_NO_WAIT;
+	}
+
+	now = sys_clock_tick_get();
+	remaining = (timepoint.tick > now) ? (timepoint.tick - now) : 0;
+	return K_TICKS(remaining);
 }
 
 #ifdef CONFIG_ZTEST
