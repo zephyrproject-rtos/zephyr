@@ -322,6 +322,9 @@ struct lll_adv_iso_stream *ull_adv_iso_stream_get(uint16_t handle);
 /* helper function to release stream instances */
 void ull_adv_iso_stream_release(struct ll_adv_iso_set *adv_iso);
 
+/* helper function to return time reservation for Broadcast ISO event */
+uint32_t ull_adv_iso_max_time_get(const struct ll_adv_iso_set *adv_iso);
+
 #if defined(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
 /* helper function to release unused DF configuration memory */
 void ull_df_adv_cfg_release(struct lll_df_adv_cfg *df_adv_cfg);
