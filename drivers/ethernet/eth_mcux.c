@@ -1552,14 +1552,17 @@ static void eth_mcux_err_isr(const struct device *dev)
 #define _mcux_dma_desc __dtcm_bss_section
 #define _mcux_dma_buffer __dtcm_noinit_section
 #define _mcux_driver_buffer __dtcm_noinit_section
+#define MCUX_CACHED_BUF 0
 #elif defined(CONFIG_NOCACHE_MEMORY)
 #define _mcux_dma_desc __nocache
 #define _mcux_dma_buffer __nocache
 #define _mcux_driver_buffer
+#define MCUX_CACHED_BUF 1
 #else
 #define _mcux_dma_desc
 #define _mcux_dma_buffer
 #define _mcux_driver_buffer
+#define MCUX_CACHED_BUF 1
 #endif
 
 #if defined(CONFIG_ETH_MCUX_PHY_RESET)
@@ -1646,8 +1649,8 @@ static void eth_mcux_err_isr(const struct device *dev)
 		.txBdStartAddrAlign = eth##n##_tx_buffer_desc,		\
 		.rxBufferAlign = eth##n##_rx_buffer[0],			\
 		.txBufferAlign = eth##n##_tx_buffer[0],			\
-		.rxMaintainEnable = true,				\
-		.txMaintainEnable = true,				\
+		.rxMaintainEnable = (MCUX_CACHED_BUF == 1 ? true : false), \
+		.txMaintainEnable = (MCUX_CACHED_BUF == 1 ? true : false), \
 		ETH_MCUX_PTP_FRAMEINFO(n)				\
 	};								\
 									\
