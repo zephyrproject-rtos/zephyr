@@ -1711,7 +1711,9 @@ static int ase_stream_qos(struct bt_bap_stream *stream, struct bt_audio_codec_qo
 		bt_bap_iso_unref(iso);
 	}
 
-	stream->qos = qos;
+	/* Store the QoS once accepted */
+	ep->qos = *qos;
+	stream->qos = &ep->qos;
 
 	/* We setup the data path here, as this is the earliest where
 	 * we have the ISO <-> EP coupling completed (due to setting
@@ -1732,44 +1734,29 @@ static int ase_stream_qos(struct bt_bap_stream *stream, struct bt_audio_codec_qo
 	return 0;
 }
 
-static void ase_qos(struct bt_ascs_ase *ase, const struct bt_ascs_qos *qos)
+static void ase_qos(struct bt_ascs_ase *ase, uint8_t cig_id, uint8_t cis_id,
+		    struct bt_audio_codec_qos *cqos, struct bt_bap_ascs_rsp *rsp)
 {
 	struct bt_bap_ep *ep = &ase->ep;
 	struct bt_bap_stream *stream = ep->stream;
-	struct bt_audio_codec_qos *cqos = &ep->qos;
-	const uint8_t cig_id = qos->cig;
-	const uint8_t cis_id = qos->cis;
-	struct bt_bap_ascs_rsp rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_SUCCESS,
-						     BT_BAP_ASCS_REASON_NONE);
 	int err;
 
-	cqos->interval = sys_get_le24(qos->interval);
-	cqos->framing = qos->framing;
-	cqos->phy = qos->phy;
-	cqos->sdu = sys_le16_to_cpu(qos->sdu);
-	cqos->rtn = qos->rtn;
-	cqos->latency = sys_le16_to_cpu(qos->latency);
-	cqos->pd = sys_get_le24(qos->pd);
+	LOG_DBG("ase %p cig 0x%02x cis 0x%02x interval %u framing 0x%02x phy 0x%02x sdu %u rtn %u "
+		"latency %u pd %u", ase, cig_id, cis_id, cqos->interval, cqos->framing, cqos->phy,
+		cqos->sdu, cqos->rtn, cqos->latency, cqos->pd);
 
-	LOG_DBG("ase %p cig 0x%02x cis 0x%02x interval %u framing 0x%02x "
-	       "phy 0x%02x sdu %u rtn %u latency %u pd %u", ase, qos->cig,
-	       qos->cis, cqos->interval, cqos->framing, cqos->phy, cqos->sdu,
-	       cqos->rtn, cqos->latency, cqos->pd);
-
-	err = ase_stream_qos(stream, cqos, ase->conn, cig_id, cis_id, &rsp);
+	err = ase_stream_qos(stream, cqos, ase->conn, cig_id, cis_id, rsp);
 	if (err) {
-		if (rsp.code == BT_BAP_ASCS_RSP_CODE_SUCCESS) {
-			rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_UNSPECIFIED,
-					      BT_BAP_ASCS_REASON_NONE);
+		if (rsp->code == BT_BAP_ASCS_RSP_CODE_SUCCESS) {
+			*rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_UNSPECIFIED,
+					       BT_BAP_ASCS_REASON_NONE);
 		}
-		LOG_ERR("QoS failed: err %d, code %u, reason %u", err, rsp.code, rsp.reason);
-		memset(cqos, 0, sizeof(*cqos));
 
-		ascs_cp_rsp_add(ASE_ID(ase), rsp.code, rsp.reason);
+		LOG_ERR("QoS failed: err %d, code %u, reason %u", err, rsp->code, rsp->reason);
 		return;
 	}
 
-	ascs_cp_rsp_success(ASE_ID(ase));
+	*rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_SUCCESS, BT_BAP_ASCS_REASON_NONE);
 }
 
 static bool is_valid_qos_len(struct net_buf_simple *buf)
@@ -1812,8 +1799,6 @@ static bool is_valid_qos_len(struct net_buf_simple *buf)
 static ssize_t ascs_qos(struct bt_conn *conn, struct net_buf_simple *buf)
 {
 	const struct bt_ascs_qos_op *req;
-	const struct bt_ascs_qos *qos;
-	int i;
 
 	if (!is_valid_qos_len(buf)) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
@@ -1823,7 +1808,11 @@ static ssize_t ascs_qos(struct bt_conn *conn, struct net_buf_simple *buf)
 
 	LOG_DBG("num_ases %u", req->num_ases);
 
-	for (i = 0; i < req->num_ases; i++) {
+	for (uint8_t i = 0; i < req->num_ases; i++) {
+		struct bt_bap_ascs_rsp rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_UNSPECIFIED,
+							     BT_BAP_ASCS_REASON_NONE);
+		struct bt_audio_codec_qos cqos;
+		const struct bt_ascs_qos *qos;
 		struct bt_ascs_ase *ase;
 
 		qos = net_buf_simple_pull_mem(buf, sizeof(*qos));
@@ -1845,7 +1834,16 @@ static ssize_t ascs_qos(struct bt_conn *conn, struct net_buf_simple *buf)
 			continue;
 		}
 
-		ase_qos(ase, qos);
+		cqos.interval = sys_get_le24(qos->interval);
+		cqos.framing = qos->framing;
+		cqos.phy = qos->phy;
+		cqos.sdu = sys_le16_to_cpu(qos->sdu);
+		cqos.rtn = qos->rtn;
+		cqos.latency = sys_le16_to_cpu(qos->latency);
+		cqos.pd = sys_get_le24(qos->pd);
+
+		ase_qos(ase, qos->cig, qos->cis, &cqos, &rsp);
+		ascs_cp_rsp_add(qos->ase, rsp.code, rsp.reason);
 	}
 
 	return buf->size;
