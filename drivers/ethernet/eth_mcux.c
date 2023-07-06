@@ -1242,6 +1242,9 @@ static enum ethernet_hw_caps eth_mcux_get_capabilities(const struct device *dev)
 #if defined(CONFIG_NET_DSA)
 		ETHERNET_DSA_MASTER_PORT |
 #endif
+#if defined(CONFIG_ETH_MCUX_PROMISCUOUS_MODE)
+		ETHERNET_PROMISC_MODE |
+#endif
 #if defined(CONFIG_ETH_MCUX_HW_ACCELERATION)
 		ETHERNET_HW_TX_CHKSUM_OFFLOAD |
 		ETHERNET_HW_RX_CHKSUM_OFFLOAD |
@@ -1271,6 +1274,8 @@ static int eth_mcux_set_config(const struct device *dev,
 			context->mac_addr[2], context->mac_addr[3],
 			context->mac_addr[4], context->mac_addr[5]);
 		return 0;
+  case ETHERNET_CONFIG_TYPE_PROMISC_MODE:
+    return 0;
 	default:
 		break;
 	}
