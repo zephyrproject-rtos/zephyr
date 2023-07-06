@@ -848,7 +848,7 @@
 			interrupts = <36 0>;
 			interrupt-names = "common";
 			clocks = <&ccm IMX_CCM_CAN_CLK 0x68 14>;
-			clk-source = <2>;
+			clk-source = <0>;
 			sjw = <1>;
 			sample-point = <875>;
 			status = "disabled";
@@ -860,7 +860,7 @@
 			interrupts = <37 0>;
 			interrupt-names = "common";
 			clocks = <&ccm IMX_CCM_CAN_CLK 0x68 18>;
-			clk-source = <2>;
+			clk-source = <0>;
 			sjw = <1>;
 			sample-point = <875>;
 			status = "disabled";
@@ -872,7 +872,7 @@
 			interrupts = <154 0>;
 			interrupt-names = "common";
 			clocks = <&ccm IMX_CCM_CAN_CLK 0x84 6>;
-			clk-source = <2>;
+			clk-source = <0>;
 			sjw = <1>;
 			sjw-data = <1>;
 			sample-point = <875>;
