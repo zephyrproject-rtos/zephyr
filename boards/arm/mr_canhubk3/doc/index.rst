@@ -53,6 +53,7 @@ QSPI          on-chip     flash
 FLEXCAN       on-chip     can
 LPI2C         on-chip     i2c
 ADC SAR       on-chip     adc
+LPSPI         on-chip     spi
 ============  ==========  ================================
 
 The default configuration can be found in the Kconfig file

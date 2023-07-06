@@ -15,3 +15,4 @@ supported:
   - can
   - i2c
   - adc
+  - spi

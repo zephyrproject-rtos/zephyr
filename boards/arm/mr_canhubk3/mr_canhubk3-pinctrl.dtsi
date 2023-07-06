@@ -194,4 +194,63 @@
 			output-enable;
 		};
 	};
+
+	lpspi1_default: lpspi1_default {
+		group1 {
+			pinmux = <PTA28_LPSPI1_SCK_O>, <PTA29_LPSPI1_SIN_O>,
+				<PTA21_LPSPI1_PCS0_O>, <PTE4_LPSPI1_PCS1_O>;
+			output-enable;
+		};
+		group2 {
+			pinmux = <PTA30_LPSPI1_SOUT_I>;
+			input-enable;
+		};
+	};
+
+	lpspi2_default: lpspi2_default {
+		group1 {
+			pinmux = <PTB29_LPSPI2_SCK_O>, <PTB28_LPSPI2_SIN_O>,
+				<PTB25_LPSPI2_PCS0_O>, <PTC19_LPSPI2_PCS1_O>;
+			output-enable;
+		};
+		group2 {
+			pinmux = <PTB27_LPSPI2_SOUT_I>;
+			input-enable;
+		};
+	};
+
+	lpspi3_default: lpspi3_default {
+		group1 {
+			pinmux = <PTD1_LPSPI3_SCK_O>, <PTE10_LPSPI3_SIN_O>,
+				<PTD17_LPSPI3_PCS0_O>;
+			output-enable;
+		};
+		group2 {
+			pinmux = <PTD0_LPSPI3_SOUT_I>;
+			input-enable;
+		};
+	};
+
+	lpspi4_default: lpspi4_default {
+		group1 {
+			pinmux = <PTB10_LPSPI4_SCK_O>, <PTB11_LPSPI4_SIN_O>,
+				<PTB8_LPSPI4_PCS0_O>;
+			output-enable;
+		};
+		group2 {
+			pinmux = <PTB9_LPSPI4_SOUT_I>;
+			input-enable;
+		};
+	};
+
+	lpspi5_default: lpspi5_default {
+		group1 {
+			pinmux = <PTD26_LPSPI5_SCK_O>, <PTD28_LPSPI5_SIN_O>;
+			output-enable;
+		};
+		group2 {
+			pinmux = <PTD27_LPSPI5_SOUT_I>;
+			input-enable;
+		};
+	};
 };
