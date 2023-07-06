@@ -120,6 +120,12 @@ static inline int gpio_npm1300_configure(const struct device *dev, gpio_pin_t pi
 	if ((flags & GPIO_INPUT) != 0U) {
 		ret = mfd_npm1300_reg_write(config->mfd, NPM_GPIO_BASE, NPM_GPIO_OFFSET_MODE + pin,
 					    NPM1300_GPIO_GPIINPUT);
+	} else if ((flags & NPM1300_GPIO_WDT_RESET_ON) != 0U) {
+		ret = mfd_npm1300_reg_write(config->mfd, NPM_GPIO_BASE, NPM_GPIO_OFFSET_MODE + pin,
+					    NPM1300_GPIO_GPORESET);
+	} else if ((flags & NPM1300_GPIO_PWRLOSSWARN_ON) != 0U) {
+		ret = mfd_npm1300_reg_write(config->mfd, NPM_GPIO_BASE, NPM_GPIO_OFFSET_MODE + pin,
+					    NPM1300_GPIO_GPOPWRLOSSWARN);
 	} else if ((flags & GPIO_OUTPUT_INIT_HIGH) != 0U) {
 		ret = mfd_npm1300_reg_write(config->mfd, NPM_GPIO_BASE, NPM_GPIO_OFFSET_MODE + pin,
 					    NPM1300_GPIO_GPOLOGIC1);
