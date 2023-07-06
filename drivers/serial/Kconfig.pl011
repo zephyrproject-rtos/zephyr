@@ -7,6 +7,7 @@ menuconfig UART_PL011
 	depends on DT_HAS_ARM_PL011_ENABLED || DT_HAS_ARM_SBSA_UART_ENABLED
 	select SERIAL_HAS_DRIVER
 	select SERIAL_SUPPORT_INTERRUPT
+	select PINCTRL if SOC_EOS_S3
 	help
 	  This option enables the UART driver for the PL011
 
