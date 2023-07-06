@@ -62,5 +62,6 @@ source "drivers/pinctrl/Kconfig.ti_k3"
 source "drivers/pinctrl/Kconfig.emsdp"
 source "drivers/pinctrl/Kconfig.ti_cc32xx"
 source "drivers/pinctrl/Kconfig.numaker"
+source "drivers/pinctrl/Kconfig.eos_s3"
 
 endif # PINCTRL
