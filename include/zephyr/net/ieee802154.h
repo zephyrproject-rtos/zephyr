@@ -71,17 +71,53 @@ struct ieee802154_security_ctx {
 	uint8_t _unused	: 3;
 };
 
-/* This not meant to be used by any code but 802.15.4 L2 stack */
+/* This not meant to be used by any code but the IEEE 802.15.4 L2 stack */
 struct ieee802154_context {
-	uint16_t pan_id; /* in CPU byte order */
-	uint16_t channel; /* in CPU byte order */
-	/* short address:
-	 *   0 == not associated,
-	 *   0xfffe == associated but no short address assigned
-	 * see section 7.4.2
+	/* PAN ID
+	 *
+	 * The identifier of the PAN on which the device is operating. If this
+	 * value is 0xffff, the device is not associated. See section 8.4.3.1,
+	 * table 8-94, macPanId.
+	 *
+	 * in CPU byte order
 	 */
-	uint16_t short_addr; /* in CPU byte order */
-	uint8_t ext_addr[IEEE802154_MAX_ADDR_LENGTH]; /* in little endian */
+	uint16_t pan_id;
+
+	/* Channel Number
+	 *
+	 * The RF channel to use for all transmissions and receptions, see
+	 * section 11.3, table 11-2, phyCurrentChannel. The allowable range
+	 * of values is PHY dependent as defined in section 10.1.3.
+	 *
+	 * in CPU byte order
+	 */
+	uint16_t channel;
+
+	/* Short Address
+	 *
+	 * Range:
+	 *  * 0x0000–0xfffd: associated, short address was assigned
+	 *  * 0xfffe: associated but no short address assigned
+	 *  * 0xffff: not associated (default),
+	 *
+	 * See section 6.4.1, table 6-4 (Usage of the shart address) and
+	 * section 8.4.3.1, table 8-94, macShortAddress.
+	 *
+	 * in CPU byte order
+	 */
+	uint16_t short_addr;
+
+	/* Extended Address
+	 *
+	 * The extended address is device specific, usually permanently stored
+	 * on the device and immutable.
+	 *
+	 * See section 8.4.3.1, table 8-94, macExtendedAddress.
+	 *
+	 * in little endian
+	 */
+	uint8_t ext_addr[IEEE802154_MAX_ADDR_LENGTH];
+
 	struct net_linkaddr_storage linkaddr; /* in big endian */
 #ifdef CONFIG_NET_L2_IEEE802154_SECURITY
 	struct ieee802154_security_ctx sec_ctx;
@@ -90,13 +126,35 @@ struct ieee802154_context {
 	struct ieee802154_req_params *scan_ctx; /* guarded by scan_ctx_lock */
 	struct k_sem scan_ctx_lock;
 
-	uint8_t coord_ext_addr[IEEE802154_MAX_ADDR_LENGTH]; /* in little endian */
-	uint16_t coord_short_addr; /* in CPU byte order */
+	/* see section 8.4.3.1, table 8-94, macCoordExtendedAddress, the address
+	 * of the coordinator through which the device is associated.
+	 *
+	 * A value of zero indicates that a coordinator extended address is
+	 * unknown (default).
+	 *
+	 * in little endian
+	 */
+	uint8_t coord_ext_addr[IEEE802154_MAX_ADDR_LENGTH];
+
+	/* see section 8.4.3.1, table 8-94, macCoordShortAddress, the short
+	 * address assigned to the coordinator through which the device is
+	 * associated.
+	 *
+	 * A value of 0xfffe indicates that the coordinator is only using its
+	 * extended address. A value of 0xffff indicates that this value is
+	 * unknown.
+	 *
+	 * in CPU byte order
+	 */
+	uint16_t coord_short_addr;
 #endif
 	int16_t tx_power;
 	enum net_l2_flags flags;
 
-	uint8_t sequence; /* see section 8.4.3.1, table 8-94, macDsn */
+	/* The sequence number added to the transmitted Data frame or MAC
+	 * command, see section 8.4.3.1, table 8-94, macDsn.
+	 */
+	uint8_t sequence;
 
 	uint8_t _unused : 6;
 
