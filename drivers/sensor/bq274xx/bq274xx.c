@@ -56,7 +56,7 @@ static int bq274xx_ctrl_reg_write(const struct device *dev, uint16_t subcommand)
 	int ret = 0;
 
 	reg_addr = BQ274XX_CMD_CONTROL_LOW;
-	i2c_data = (uint8_t)((subcommand)&0x00FF);
+	i2c_data = subcommand & 0xFF;
 
 	ret = i2c_reg_write_byte_dt(&config->i2c, reg_addr, i2c_data);
 	if (ret < 0) {
@@ -67,7 +67,7 @@ static int bq274xx_ctrl_reg_write(const struct device *dev, uint16_t subcommand)
 	k_msleep(BQ274XX_SUBCLASS_DELAY);
 
 	reg_addr = BQ274XX_CMD_CONTROL_HIGH;
-	i2c_data = (uint8_t)((subcommand >> 8) & 0x00FF);
+	i2c_data = (subcommand >> 8) & 0xFF;
 
 	ret = i2c_reg_write_byte_dt(&config->i2c, reg_addr, i2c_data);
 	if (ret < 0) {
