@@ -262,6 +262,23 @@ static ALWAYS_INLINE void k_spin_unlock(struct k_spinlock *l,
 }
 
 /**
+ * @brief Explicitly initialize the spinlock's locked count
+ *
+ * This routine explicitly initializes the spinlock's locked count to zero.
+ * It is to be used on spinlock's that are allocated from memory regions whose
+ * contents are not guaranteed to be zeroed.
+ *
+ * @param l Pointer to spinlock to initialize
+ */
+static ALWAYS_INLINE void k_spinlock_init(struct k_spinlock *l)
+{
+	ARG_UNUSED(l);
+#ifdef CONFIG_SMP
+	atomic_set(&l->locked, 0);
+#endif
+}
+
+/**
  * @cond INTERNAL_HIDDEN
  */
 
