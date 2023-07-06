@@ -71,7 +71,7 @@ MEMORY
   rtc_iram_seg(RWX): org = 0x40070000, len = 0x2000
   rtc_slow_seg(RW): org = 0x50000000, len = 0x2000
 #if defined(CONFIG_ESP_SPIRAM)
-  ext_ram_seg(RW): org = 0x3f500000, len = CONFIG_ESP_SPIRAM_SIZE
+  ext_ram_seg(RW): org = 0x3f800000, len = CONFIG_ESP_SPIRAM_SIZE
 #endif
 #ifdef CONFIG_GEN_ISR_TABLES
   IDT_LIST(RW): org = 0x3ebfe010, len = 0x2000
@@ -137,6 +137,7 @@ SECTIONS
   {
     _rodata_reserved_start = ABSOLUTE(.);
     __rodata_region_start = ABSOLUTE(.);
+    _rodata_reserved_start = ABSOLUTE(.);  /* This is a symbol marking the flash.rodata start, this can be used for mmu driver to maintain virtual address */
 
     . = ALIGN(4);
     #include <snippets-rodata.ld>
@@ -375,11 +376,18 @@ SECTIONS
   } GROUP_LINK_IN(RAMABLE_REGION)
 
 #if defined(CONFIG_ESP_SPIRAM)
-  .ext_ram.bss (NOLOAD):
+  /* This section holds .ext_ram.bss data, and will be put in PSRAM */
+  .ext_ram.bss (NOLOAD) :
   {
     _ext_ram_data_start = ABSOLUTE(.);
     _ext_ram_bss_start = ABSOLUTE(.);
+    *(.ext_ram.bss*)
+    . = ALIGN(4);
+    _ext_ram_bss_end = ABSOLUTE(.);
+  } > ext_ram_seg
 
+  .ext_ram_noinit (NOLOAD) :
+  {
 #if defined(CONFIG_ESP32_WIFI_NET_ALLOC_SPIRAM)
     *libdrivers__wifi.a:(.noinit .noinit.*)
     *libsubsys__net__l2__ethernet.a:(.noinit .noinit.*)
@@ -389,10 +397,6 @@ SECTIONS
 #endif
     _spiram_heap_start = ABSOLUTE(.);
     . = . + CONFIG_ESP_SPIRAM_HEAP_SIZE;
-
-    *(.ext_ram.bss*)
-    . = ALIGN(4);
-    _ext_ram_bss_end = ABSOLUTE(.);
 
     _ext_ram_data_end = ABSOLUTE(.);
   } > ext_ram_seg

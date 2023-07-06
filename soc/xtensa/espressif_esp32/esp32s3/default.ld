@@ -89,11 +89,11 @@ MEMORY
    */
   drom0_0_seg(R): org = 0x3C000040, len = FLASH_SIZE - 0x40
   /**
-   * `extern_ram_seg` and `drom0_0_seg` share the same bus and the address region.
-   * so we allocate `extern_ram_seg` at the end of the address region.
+   * `ext_ram_seg` and `drom0_0_seg` share the same bus and the address region.
+   * so we allocate `ext_ram_seg` at the end of the address region.
    */
 #if defined(CONFIG_ESP_SPIRAM)
-  ext_ram_seg(RWX): org = EXT_RAM_ORG, len = CONFIG_ESP_SPIRAM_SIZE
+  ext_ram_seg(RWX): org = 0x3C000040, len = CONFIG_ESP_SPIRAM_SIZE
 #endif
 
   /* RTC fast memory (executable). Persists over deep sleep.
@@ -273,6 +273,16 @@ SECTIONS
   } GROUP_DATA_LINK_IN(RODATA_REGION, ROMABLE_REGION)
 
 #if defined(CONFIG_ESP_SPIRAM)
+  /**
+   * This section is required to skip flash rodata sections, because `extern_ram_seg`
+   * and `drom0_0_seg` are on the same bus
+   */
+  .ext_ram.dummy (NOLOAD):
+  {
+    . = ORIGIN(ext_ram_seg) + (_rodata_reserved_end - _flash_rodata_dummy_start);
+    . = ALIGN (0x10000);
+  } > ext_ram_seg
+
   /* This section holds .ext_ram.bss data, and will be put in PSRAM */
   .ext_ram.bss (NOLOAD) :
   {

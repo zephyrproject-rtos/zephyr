@@ -50,6 +50,13 @@ choice SOC_PART_NUMBER
 
 endchoice # SOC_PART_NUMBER
 
+config SPIRAM_SPEED
+	int
+	default 80 if SPIRAM_SPEED_80M
+	default 40 if SPIRAM_SPEED_40M
+	default 40 if SPIRAM_SPEED_26M
+	default 40 if SPIRAM_SPEED_20M
+
 config ESP_SYSTEM_RTC_EXT_XTAL
 	bool
 
@@ -142,19 +149,18 @@ choice
 
 endchoice
 
-choice
+choice ESP32S2_DATA_CACHE_SIZE
 	prompt "Data cache size"
-	default ESP32S2_DATA_CACHE_0KB if !ESP_SPIRAM
-	default ESP32S2_DATA_CACHE_8KB if ESP_SPIRAM
-
+	default ESP32S2_DATA_CACHE_8KB
+	help
+		Data cache size to be set on application startup.
 	config ESP32S2_DATA_CACHE_0KB
-		bool "0KB data cache size"
-
+		depends on !ESP_SPIRAM
+		bool "0KB"
 	config ESP32S2_DATA_CACHE_8KB
-		bool "8KB data cache size"
-
+		bool "8KB"
 	config ESP32S2_DATA_CACHE_16KB
-		bool "16KB data cache size"
+		bool "16KB"
 
 endchoice
 

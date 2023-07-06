@@ -15,6 +15,7 @@
 #include <esp_private/esp_mmu_map_private.h>
 #if CONFIG_ESP_SPIRAM
 #include <esp_psram.h>
+#include <esp_private/esp_psram_extram.h>
 #endif
 
 #include <zephyr/kernel_structs.h>
@@ -43,6 +44,11 @@
 #include "bootloader_init.h"
 #endif /* CONFIG_MCUBOOT */
 #include <zephyr/sys/printk.h>
+
+#if CONFIG_ESP_SPIRAM
+extern int _ext_ram_bss_start;
+extern int _ext_ram_bss_end;
+#endif
 
 extern void z_cstart(void);
 extern void esp_reset_reason_init(void);
@@ -161,17 +167,26 @@ void __attribute__((section(".iram1"))) __esp_platform_start(void)
 #endif
 
 #if CONFIG_ESP_SPIRAM
-	esp_err_t err = esp_spiram_init();
+	esp_err_t err = esp_psram_init();
 
 	if (err != ESP_OK) {
 		printk("Failed to Initialize SPIRAM, aborting.\n");
 		abort();
 	}
-	esp_spiram_init_cache();
-	if (esp_spiram_get_size() < CONFIG_ESP_SPIRAM_SIZE) {
+	if (esp_psram_get_size() < CONFIG_ESP_SPIRAM_SIZE) {
 		printk("SPIRAM size is less than configured size, aborting.\n");
 		abort();
 	}
+
+	if (esp_psram_is_initialized()) {
+		if (!esp_psram_extram_test()) {
+			printk("External RAM failed memory test!");
+			abort();
+		}
+	}
+
+	memset(&_ext_ram_bss_start, 0,
+	       (&_ext_ram_bss_end - &_ext_ram_bss_start) * sizeof(_ext_ram_bss_start));
 #endif
 
 /* Scheduler is not started at this point. Hence, guard functions

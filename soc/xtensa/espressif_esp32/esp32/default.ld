@@ -515,10 +515,12 @@ SECTIONS
     *libsubsys__net__ip.a:(.noinit .noinit.*)
     *libsubsys__net.a:(.noinit .noinit.*)
 #endif
+    _ext_ram_bss_start = ABSOLUTE(.);
+    *(.ext_ram.bss*)
+    _ext_ram_bss_end = ABSOLUTE(.);
+
     _spiram_heap_start = ABSOLUTE(.);
     . = . + CONFIG_ESP_SPIRAM_HEAP_SIZE;
-
-    *(.ext_ram.bss*)
 
     _ext_ram_data_end = ABSOLUTE(.);
   } GROUP_LINK_IN(ext_ram_seg)
