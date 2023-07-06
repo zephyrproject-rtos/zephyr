@@ -156,9 +156,8 @@ struct ieee802154_context {
 	 */
 	uint8_t sequence;
 
-	uint8_t _unused : 6;
+	uint8_t _unused : 7;
 
-	uint8_t ack_received : 1;  /* guarded by ack_lock */
 	uint8_t ack_requested : 1; /* guarded by ack_lock */
 	uint8_t ack_seq;	   /* guarded by ack_lock */
 	struct k_sem ack_lock;
