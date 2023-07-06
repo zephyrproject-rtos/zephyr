@@ -6,11 +6,11 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
 #include "cmdline.h" /* native_posix command line options header */
 #include "soc.h"
 #include <zephyr/tc_util.h>
 #include <zephyr/ztest_test_new.h>
+#include "nsi_host_trampolines.h"
 
 static const char *test_args;
 static bool list_tests;
@@ -57,7 +57,7 @@ const char *ztest_relative_filename(const char *file)
 	const char *cwd;
 	char buf[200];
 
-	cwd = getcwd(buf, sizeof(buf));
+	cwd = nsi_host_getcwd(buf, sizeof(buf));
 	if (cwd && strlen(file) > strlen(cwd) && !strncmp(file, cwd, strlen(cwd))) {
 		return file + strlen(cwd) + 1; /* move past the trailing '/' */
 	}
@@ -146,7 +146,7 @@ void z_ztest_run_all(const void *state)
 static bool z_ztest_testargs_contains(const char *suite_name, const char *test_name)
 {
 	bool found = false;
-	char *test_args_local = strdup(test_args);
+	char *test_args_local = nsi_host_strdup(test_args);
 	char *suite_test_pair;
 	char *last_suite_test_pair;
 	char *suite_arg;
@@ -168,7 +168,7 @@ static bool z_ztest_testargs_contains(const char *suite_name, const char *test_n
 		suite_test_pair = strtok_r(NULL, ",", &last_suite_test_pair);
 	}
 
-	free(test_args_local);
+	nsi_host_free(test_args_local);
 	return found;
 }
 
