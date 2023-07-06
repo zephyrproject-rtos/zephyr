@@ -66,6 +66,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define PHY_OMS_FACTORY_MODE_MASK 0x8000U /* The factory mode Override/Status mask. */
 
 /* Defines the PHY KSZ8081 vendor defined registers. */
+#define PHY_INTCTL_REG   0x1BU /* The PHY interrupt control / status register */
 #define PHY_CONTROL1_REG 0x1EU /* The PHY control one register. */
 #define PHY_CONTROL2_REG 0x1FU /* The PHY control two register. */
 
@@ -83,6 +84,9 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define PHY_CTL1_ENERGYDETECT_MASK  0x10U   /* The PHY signal present on rx differential pair. */
 #define PHY_CTL1_LINKUP_MASK        0x100U  /* The PHY link up. */
 #define PHY_LINK_READY_MASK         (PHY_CTL1_ENERGYDETECT_MASK | PHY_CTL1_LINKUP_MASK)
+
+#define PHY_INTCTL_LINKUP_IE_MASK   0x0100
+#define PHY_INTCTL_LINKDOWN_IE_MASK 0x0400
 
 /* Defines the timeout macro. */
 #define PHY_READID_TIMEOUT_COUNT 1000U
@@ -480,6 +484,11 @@ static void eth_mcux_phy_event(struct eth_context *context)
 						   kENET_MiiWriteValidFrame,
 						   ctrl2);
 			}
+			uint16_t int_ctrl = PHY_INTCTL_LINKDOWN_IE_MASK | PHY_INTCTL_LINKUP_IE_MASK;
+			ENET_StartSMIWrite(context->base, context->phy_addr,
+					PHY_INTCTL_REG,
+					kENET_MiiWriteValidFrame,
+					int_ctrl);
 		}
 		context->phy_state = eth_mcux_phy_state_reset;
 #endif /* CONFIG_SOC_SERIES_IMX_RT */
