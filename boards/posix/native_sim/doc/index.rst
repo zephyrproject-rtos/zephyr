@@ -124,5 +124,5 @@ host libC (:kconfig:option:`CONFIG_EXTERNAL_LIBC`).
      serial, uart native TTY, :kconfig:option:`CONFIG_UART_NATIVE_TTY`, host libC
      spi, SPI emul, :kconfig:option:`CONFIG_SPI_EMUL`, all
      system tick, native_posix timer, :kconfig:option:`CONFIG_NATIVE_POSIX_TIMER`, all
-     tracing, Posix tracing backend, :kconfig:option:`CONFIG_TRACING_BACKEND_POSIX`, host libC
+     tracing, Posix tracing backend, :kconfig:option:`CONFIG_TRACING_BACKEND_POSIX`, all
      usb, USB native posix, :kconfig:option:`CONFIG_USB_NATIVE_POSIX`, host libC
