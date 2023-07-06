@@ -222,7 +222,7 @@ uint8_t ll_adv_sync_param_set(uint8_t handle, uint16_t interval, uint16_t flags)
 }
 
 #if defined(CONFIG_BT_CTLR_ADV_ISO) && defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
-void ull_adv_iso_created(struct ll_adv_sync_set *sync)
+void ull_adv_sync_iso_created(struct ll_adv_sync_set *sync)
 {
 	if (sync->lll.iso && sync->is_started) {
 		uint8_t iso_handle = sync->lll.iso->handle;
