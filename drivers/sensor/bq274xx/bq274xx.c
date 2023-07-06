@@ -29,6 +29,12 @@ LOG_MODULE_REGISTER(bq274xx, CONFIG_SENSOR_LOG_LEVEL);
 /* Time it takes device to initialize before doing any configuration */
 #define INIT_TIME              100U
 
+/* Data memory size */
+#define BQ27XXX_DM_SZ 32
+
+/* Config update mode flag */
+#define BQ27XXX_FLAG_CFGUP BIT(4)
+
 static int bq274xx_cmd_reg_read(const struct device *dev, uint8_t reg_addr,
 				int16_t *val)
 {
@@ -132,7 +138,7 @@ static int bq274xx_gauge_configure(const struct device *dev)
 	uint16_t flags, designenergy_mwh, taperrate;
 	uint8_t designcap_msb, designcap_lsb, designenergy_msb, designenergy_lsb,
 		terminatevolt_msb, terminatevolt_lsb, taperrate_msb, taperrate_lsb;
-	uint8_t block[32];
+	uint8_t block[BQ27XXX_DM_SZ];
 
 	designenergy_mwh = (uint16_t)3.7 * config->design_capacity;
 	taperrate = (uint16_t)config->design_capacity / (0.1 * config->taper_current);
@@ -165,11 +171,11 @@ static int bq274xx_gauge_configure(const struct device *dev)
 			return -EIO;
 		}
 
-		if (!(flags & 0x0010)) {
+		if (!(flags & BQ27XXX_FLAG_CFGUP)) {
 			k_msleep(BQ274XX_SUBCLASS_DELAY * 10);
 		}
 
-	} while (!(flags & 0x0010));
+	} while (!(flags & BQ27XXX_FLAG_CFGUP));
 
 	ret = bq274xx_cmd_reg_write(dev, BQ274XX_EXT_DATA_CONTROL, 0x00);
 	if (ret < 0) {
@@ -191,18 +197,18 @@ static int bq274xx_gauge_configure(const struct device *dev)
 		return -EIO;
 	}
 
-	for (uint8_t i = 0; i < 32; i++) {
+	for (uint8_t i = 0; i < BQ27XXX_DM_SZ; i++) {
 		block[i] = 0;
 	}
 
-	ret = bq274xx_read_data_block(dev, 0x00, block, 32);
+	ret = bq274xx_read_data_block(dev, 0x00, block, BQ27XXX_DM_SZ);
 	if (ret < 0) {
 		LOG_ERR("Unable to read block data");
 		return -EIO;
 	}
 
 	tmp_checksum = 0;
-	for (uint8_t i = 0; i < 32; i++) {
+	for (uint8_t i = 0; i < BQ27XXX_DM_SZ; i++) {
 		tmp_checksum += block[i];
 	}
 	tmp_checksum = 255 - tmp_checksum;
@@ -278,18 +284,18 @@ static int bq274xx_gauge_configure(const struct device *dev)
 		return -EIO;
 	}
 
-	for (uint8_t i = 0; i < 32; i++) {
+	for (uint8_t i = 0; i < BQ27XXX_DM_SZ; i++) {
 		block[i] = 0;
 	}
 
-	ret = bq274xx_read_data_block(dev, 0x00, block, 32);
+	ret = bq274xx_read_data_block(dev, 0x00, block, BQ27XXX_DM_SZ);
 	if (ret < 0) {
 		LOG_ERR("Unable to read block data");
 		return -EIO;
 	}
 
 	checksum_new = 0;
-	for (uint8_t i = 0; i < 32; i++) {
+	for (uint8_t i = 0; i < BQ27XXX_DM_SZ; i++) {
 		checksum_new += block[i];
 	}
 	checksum_new = 255 - checksum_new;
@@ -327,10 +333,10 @@ static int bq274xx_gauge_configure(const struct device *dev)
 			return -EIO;
 		}
 
-		if (flags & 0x0010) {
+		if (flags & BQ27XXX_FLAG_CFGUP) {
 			k_msleep(BQ274XX_SUBCLASS_DELAY * 10);
 		}
-	} while (flags & 0x0010);
+	} while (flags & BQ27XXX_FLAG_CFGUP);
 
 	/* Seal the gauge */
 	ret = bq274xx_ctrl_reg_write(dev, BQ274XX_CTRL_SEALED);
