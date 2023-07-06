@@ -1,0 +1,17 @@
+# Copyright 2023 NXP
+# SPDX-License-Identifier
+
+description: Use this compatible for i.MX8QM board.
+
+compatible: "nxp,imx8qm-pinctrl"
+
+include: base.yaml
+
+child-binding:
+  description: i.MX8QM pin controller pin group.
+  child-binding:
+    description: i.MX8QM pin controller pin configuration node.
+    properties:
+      pinmux:
+        required: true
+        type: phandles

@@ -75,5 +75,14 @@
 			compatible = "nxp,imx-ccm-rev3";
 			#clock-cells = <2>;
 		};
+
+		iomuxc: iomuxc {
+			compatible = "nxp,imx-iomuxc-scu";
+			status = "okay";
+			pinctrl: pinctrl {
+				compatible = "nxp,imx8qm-pinctrl";
+				status = "okay";
+			};
+		};
 	};
 };
