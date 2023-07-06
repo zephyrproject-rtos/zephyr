@@ -157,7 +157,7 @@ static int w5500_writebuf(const struct device *dev, uint16_t offset, uint8_t *bu
 static int w5500_command(const struct device *dev, uint8_t cmd)
 {
 	uint8_t reg;
-	uint64_t end = sys_clock_timeout_end_calc(K_MSEC(100));
+	k_timepoint_t end = sys_timepoint_calc(K_MSEC(100));
 
 	w5500_spi_write(dev, W5500_S0_CR, &cmd, 1);
 	while (1) {
@@ -165,8 +165,7 @@ static int w5500_command(const struct device *dev, uint8_t cmd)
 		if (!reg) {
 			break;
 			}
-		int64_t remaining = end - sys_clock_tick_get();
-		if (remaining <= 0) {
+		if (sys_timepoint_expired(end)) {
 			return -EIO;
 			}
 		k_busy_wait(W5500_PHY_ACCESS_DELAY);

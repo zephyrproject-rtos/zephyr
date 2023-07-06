@@ -566,7 +566,7 @@ int dwmac_probe(const struct device *dev)
 	struct dwmac_priv *p = dev->data;
 	int ret;
 	uint32_t reg_val;
-	int64_t timeout;
+	k_timepoint_t timeout;
 
 	ret = dwmac_bus_init(p);
 	if (ret != 0) {
@@ -580,9 +580,9 @@ int dwmac_probe(const struct device *dev)
 
 	/* resets all of the MAC internal registers and logic */
 	REG_WRITE(DMA_MODE, DMA_MODE_SWR);
-	timeout = sys_clock_timeout_end_calc(K_MSEC(100));
+	timeout = sys_timepoint_calc(K_MSEC(100));
 	while (REG_READ(DMA_MODE) & DMA_MODE_SWR) {
-		if (timeout - sys_clock_tick_get() < 0) {
+		if (sys_timepoint_expired(timeout)) {
 			LOG_ERR("unable to reset hardware");
 			return -EIO;
 		}
