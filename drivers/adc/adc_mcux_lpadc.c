@@ -238,8 +238,8 @@ static int mcux_lpadc_start_read(const struct device *dev,
 			} else {
 				/* End of chain */
 				data->cmd_config[channel].chainedNextCommandNumber = 0;
-				last_enabled = channel;
 			}
+			last_enabled = channel;
 			LPADC_SetConvCommandConfig(config->base,
 				channel + 1, &data->cmd_config[channel]);
 		}
