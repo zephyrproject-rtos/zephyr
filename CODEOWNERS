@@ -201,6 +201,7 @@
 /boards/arm64/fvp_baser_aemv8r/           @povergoing
 /boards/arm64/fvp_base_revc_2xaemv8a/     @carlocaione
 /boards/arm64/intel_socfpga_agilex_socdk/ @siclim @ngboonkhai
+/boards/arm64/intel_socfpga_agilex5_socdk/ @chongteikheng
 /boards/Kconfig                           @tejlmand @galak @nashif @nordicjm
 # All cmake related files
 /cmake/                                   @tejlmand @nashif
@@ -246,7 +247,7 @@
 /drivers/can/                             @alexanderwachter @henrikbrixandersen
 /drivers/can/*mcp2515*                    @karstenkoenig
 /drivers/can/*rcar*                       @aaillet @pmarzin
-/drivers/clock_control/*agilex*           @siclim
+/drivers/clock_control/*agilex*           @siclim @gdengi
 /drivers/clock_control/*nrf*              @nordic-krch
 /drivers/clock_control/*esp32*            @extremegtx @sylvioalves
 /drivers/clock_control/*cpg_mssr*         @aaillet
@@ -368,7 +369,8 @@
 /drivers/pinctrl/                         @gmarull
 /drivers/pinctrl/*esp32*                  @sylvioalves
 /drivers/pinctrl/*it8xxx2*                @ite
-/drivers/pm_cpu_ops/                      @carlocaione
+/drivers/pm_cpu_ops/                      @carlocaione @gdengi
+/drivers/pm_cpu_ops/psci_shell.c          @nbalabak @gdengi
 /drivers/power_domain/                    @ceolin
 /drivers/ps2/                             @franciscomunoz @sjvasanth1
 /drivers/ps2/*xec*                        @franciscomunoz @sjvasanth1
@@ -390,6 +392,8 @@
 /drivers/regulator/regulator_pca9420.c    @danieldegrasse
 /drivers/regulator/regulator_shell.c      @danieldegrasse
 /drivers/reset/                           @andrei-edward-popa
+/drivers/reset/reset_intel_socfpga.c      @nbalabak
+/drivers/reset/Kconfig.intel_socfpga      @nbalabak
 /drivers/sensor/                          @MaureenHelm
 /drivers/sensor/ams_iAQcore/              @alexanderwachter
 /drivers/sensor/ens210/                   @alexanderwachter
@@ -405,7 +409,7 @@
 /drivers/serial/*b91*                     @andy-liu-telink
 /drivers/serial/uart_altera_jtag.c        @nashif @gohshunjing
 /drivers/serial/uart_altera.c             @gohshunjing
-/drivers/serial/*ns16550*                 @dcpleung @nashif
+/drivers/serial/*ns16550*                 @dcpleung @nashif @gdengi
 /drivers/serial/*nrfx*                    @anangl
 /drivers/serial/uart_liteuart.c           @mateusz-holenko @kgugala @pgielda
 /drivers/serial/Kconfig.mcux_iuart        @Mani-Sadhasivam
@@ -584,6 +588,7 @@
 /dts/bindings/smbus/                      @finikorg
 /dts/bindings/sip_svc/                    @maheshraotm
 /dts/bindings/cpu/intel,niosv.yaml        @sweeaun
+/dts/bindings/reset/intel,socfpga-reset.yaml    @nbalabak
 /dts/common/                              @galak
 /include/                                 @nashif @carlescufi @galak @MaureenHelm
 /include/zephyr/drivers/*/*litex*                @mateusz-holenko @kgugala @pgielda
@@ -740,7 +745,7 @@
 /samples/subsys/ipc/ipc_service/icmsg     @emob-nordic
 /samples/subsys/logging/                  @nordic-krch @jakub-uC
 /samples/subsys/logging/syst/             @dcpleung
-/samples/subsys/shell/                    @jakub-uC @nordic-krch
+/samples/subsys/shell/                    @jakub-uC @nordic-krch @gdengi
 /samples/subsys/sip_svc/                  @maheshraotm
 /samples/subsys/mgmt/mcumgr/              @de-nordic @nordicjm
 /samples/subsys/mgmt/updatehub/           @nandojve @otavio
