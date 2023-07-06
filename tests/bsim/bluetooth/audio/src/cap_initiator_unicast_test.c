@@ -717,15 +717,23 @@ static void unicast_audio_update_inval(void)
 static void unicast_audio_update(void)
 {
 	struct bt_cap_unicast_audio_update_param param[2];
+	uint8_t new_meta[] = {
+		3,
+		BT_AUDIO_METADATA_TYPE_STREAM_CONTEXT,
+		BT_BYTES_LIST_LE16(BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED),
+		LONG_META_LEN,
+		BT_AUDIO_METADATA_TYPE_VENDOR,
+		LONG_META,
+	};
 	int err;
 
 	param[0].stream = &unicast_client_sink_streams[0];
-	param[0].meta = unicast_preset_16_2_1.codec_cfg.meta;
-	param[0].meta_len = unicast_preset_16_2_1.codec_cfg.meta_len;
+	param[0].meta = new_meta;
+	param[0].meta_len = ARRAY_SIZE(new_meta);
 
 	param[1].stream = &unicast_client_source_streams[0];
-	param[1].meta = unicast_preset_16_2_1.codec_cfg.meta;
-	param[1].meta_len = unicast_preset_16_2_1.codec_cfg.meta_len;
+	param[1].meta = new_meta;
+	param[1].meta_len = ARRAY_SIZE(new_meta);
 
 	UNSET_FLAG(flag_updated);
 
@@ -736,6 +744,7 @@ static void unicast_audio_update(void)
 	}
 
 	WAIT_FOR_FLAG(flag_updated);
+	printk("READ LONG META\n");
 }
 
 static void unicast_audio_stop_inval(void)
