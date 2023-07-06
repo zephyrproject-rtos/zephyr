@@ -20,6 +20,9 @@
 extern "C" {
 #endif
 
+/* System reset types. */
+#define SYS_WARM_RESET 0
+#define SYS_COLD_RESET 1
 /**
  * @defgroup power_management_cpu_api CPU Power Management
  * @ingroup subsys_pm
@@ -64,6 +67,17 @@ int pm_cpu_on(unsigned long cpuid, uintptr_t entry_point);
  * @retval -ENOTSUP If the operation is not supported
  */
 int pm_system_off(void);
+
+/**
+ * @brief System reset
+ *
+ * This function provides a method for performing a system cold or warm reset.
+ *
+ * @param reset system reset type, cold or warm.
+ *
+ * @retval 0 on success, a negative errno otherwise
+ */
+int pm_system_reset(unsigned char reset);
 
 #ifdef __cplusplus
 }
