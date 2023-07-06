@@ -38,6 +38,20 @@ LOG_MODULE_REGISTER(bq274xx, CONFIG_SENSOR_LOG_LEVEL);
 /* Config update mode flag */
 #define BQ27XXX_FLAG_CFGUP BIT(4)
 
+static const struct bq274xx_regs bq27421_regs = {
+	.dm_design_capacity = 10,
+	.dm_design_energy = 12,
+	.dm_terminate_voltage = 16,
+	.dm_taper_rate = 27,
+};
+
+static const struct bq274xx_regs bq27427_regs = {
+	.dm_design_capacity = 6,
+	.dm_design_energy = 8,
+	.dm_terminate_voltage = 10,
+	.dm_taper_rate = 21,
+};
+
 static int bq274xx_cmd_reg_read(const struct device *dev, uint8_t reg_addr,
 				int16_t *val)
 {
@@ -107,7 +121,6 @@ static int bq274xx_get_device_type(const struct device *dev, uint16_t *val)
 	}
 
 	ret = bq274xx_cmd_reg_read(dev, BQ274XX_CMD_CONTROL_LOW, val);
-
 	if (ret < 0) {
 		LOG_ERR("Unable to read register");
 		return -EIO;
@@ -120,7 +133,7 @@ static int bq274xx_gauge_configure(const struct device *dev)
 {
 	const struct bq274xx_config *const config = dev->config;
 	struct bq274xx_data *data = dev->data;
-
+	const struct bq274xx_regs *regs = data->regs;
 	int ret;
 	uint8_t tmp_checksum, checksum_old, checksum_new;
 	uint16_t flags, designenergy_mwh, taperrate;
@@ -219,56 +232,65 @@ static int bq274xx_gauge_configure(const struct device *dev)
 	taperrate_msb = taperrate >> 8;
 	taperrate_lsb = taperrate & 0x00FF;
 
-	ret = i2c_reg_write_byte_dt(&config->i2c, BQ274XX_EXT_BLKDAT_DESIGN_CAP_HIGH,
+	ret = i2c_reg_write_byte_dt(&config->i2c,
+				    BQ274XX_EXT_BLKDAT_HIGH(regs->dm_design_capacity),
 				    designcap_msb);
 	if (ret < 0) {
 		LOG_ERR("Failed to write designCAP MSB");
 		return -EIO;
 	}
 
-	ret = i2c_reg_write_byte_dt(&config->i2c, BQ274XX_EXT_BLKDAT_DESIGN_CAP_LOW,
+	ret = i2c_reg_write_byte_dt(&config->i2c,
+				    BQ274XX_EXT_BLKDAT_LOW(regs->dm_design_capacity),
 				    designcap_lsb);
 	if (ret < 0) {
 		LOG_ERR("Failed to write designCAP LSB");
 		return -EIO;
 	}
 
-	ret = i2c_reg_write_byte_dt(&config->i2c, BQ274XX_EXT_BLKDAT_DESIGN_ENR_HIGH,
+	ret = i2c_reg_write_byte_dt(&config->i2c,
+				    BQ274XX_EXT_BLKDAT_HIGH(regs->dm_design_energy),
 				    designenergy_msb);
 	if (ret < 0) {
 		LOG_ERR("Failed to write designEnergy MSB");
 		return -EIO;
 	}
 
-	ret = i2c_reg_write_byte_dt(&config->i2c, BQ274XX_EXT_BLKDAT_DESIGN_ENR_LOW,
+	ret = i2c_reg_write_byte_dt(&config->i2c,
+				    BQ274XX_EXT_BLKDAT_LOW(regs->dm_design_energy),
 				    designenergy_lsb);
 	if (ret < 0) {
 		LOG_ERR("Failed to write designEnergy LSB");
 		return -EIO;
 	}
 
-	ret = i2c_reg_write_byte_dt(&config->i2c, BQ274XX_EXT_BLKDAT_TERMINATE_VOLT_HIGH,
+	ret = i2c_reg_write_byte_dt(&config->i2c,
+				    BQ274XX_EXT_BLKDAT_HIGH(regs->dm_terminate_voltage),
 				    terminatevolt_msb);
 	if (ret < 0) {
 		LOG_ERR("Failed to write terminateVolt MSB");
 		return -EIO;
 	}
 
-	ret = i2c_reg_write_byte_dt(&config->i2c, BQ274XX_EXT_BLKDAT_TERMINATE_VOLT_LOW,
+	ret = i2c_reg_write_byte_dt(&config->i2c,
+				    BQ274XX_EXT_BLKDAT_LOW(regs->dm_terminate_voltage),
 				    terminatevolt_lsb);
 	if (ret < 0) {
 		LOG_ERR("Failed to write terminateVolt LSB");
 		return -EIO;
 	}
 
-	ret = i2c_reg_write_byte_dt(&config->i2c, BQ274XX_EXT_BLKDAT_TAPERRATE_HIGH,
+	ret = i2c_reg_write_byte_dt(&config->i2c,
+				    BQ274XX_EXT_BLKDAT_HIGH(regs->dm_taper_rate),
 				    taperrate_msb);
 	if (ret < 0) {
 		LOG_ERR("Failed to write taperRate MSB");
 		return -EIO;
 	}
 
-	ret = i2c_reg_write_byte_dt(&config->i2c, BQ274XX_EXT_BLKDAT_TAPERRATE_LOW, taperrate_lsb);
+	ret = i2c_reg_write_byte_dt(&config->i2c,
+				    BQ274XX_EXT_BLKDAT_LOW(regs->dm_taper_rate),
+				    taperrate_lsb);
 	if (ret < 0) {
 		LOG_ERR("Failed to write taperRate LSB");
 		return -EIO;
@@ -552,6 +574,7 @@ static int bq274xx_sample_fetch(const struct device *dev, enum sensor_channel ch
 static int bq274xx_gauge_init(const struct device *dev)
 {
 	const struct bq274xx_config *const config = dev->config;
+	struct bq274xx_data *data = dev->data;
 	int ret;
 	uint16_t id;
 
@@ -573,9 +596,13 @@ static int bq274xx_gauge_init(const struct device *dev)
 		return -EIO;
 	}
 
-	if (id != BQ274XX_DEVICE_ID) {
-		LOG_ERR("Invalid Device");
-		return -EINVAL;
+	if (id == BQ27421_DEVICE_ID) {
+		data->regs = &bq27421_regs;
+	} else if (id == BQ27427_DEVICE_ID) {
+		data->regs = &bq27427_regs;
+	} else {
+		LOG_ERR("Unsupported device ID: 0x%04x", id);
+		return -ENOTSUP;
 	}
 
 #ifdef CONFIG_BQ274XX_TRIGGER
