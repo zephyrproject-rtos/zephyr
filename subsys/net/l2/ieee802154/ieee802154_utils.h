@@ -14,8 +14,7 @@
 
 #include <zephyr/net/ieee802154_radio.h>
 
-static inline
-enum ieee802154_hw_caps ieee802154_get_hw_capabilities(struct net_if *iface)
+static inline enum ieee802154_hw_caps ieee802154_radio_get_hw_capabilities(struct net_if *iface)
 {
 	const struct ieee802154_radio_api *radio =
 		net_if_get_device(iface)->api;
@@ -27,7 +26,7 @@ enum ieee802154_hw_caps ieee802154_get_hw_capabilities(struct net_if *iface)
 	return radio->get_capabilities(net_if_get_device(iface));
 }
 
-static inline int ieee802154_cca(struct net_if *iface)
+static inline int ieee802154_radio_cca(struct net_if *iface)
 {
 	const struct ieee802154_radio_api *radio =
 		net_if_get_device(iface)->api;
@@ -39,7 +38,7 @@ static inline int ieee802154_cca(struct net_if *iface)
 	return radio->cca(net_if_get_device(iface));
 }
 
-static inline int ieee802154_set_channel(struct net_if *iface, uint16_t channel)
+static inline int ieee802154_radio_set_channel(struct net_if *iface, uint16_t channel)
 {
 	const struct ieee802154_radio_api *radio =
 		net_if_get_device(iface)->api;
@@ -51,7 +50,7 @@ static inline int ieee802154_set_channel(struct net_if *iface, uint16_t channel)
 	return radio->set_channel(net_if_get_device(iface), channel);
 }
 
-static inline int ieee802154_set_tx_power(struct net_if *iface, int16_t dbm)
+static inline int ieee802154_radio_set_tx_power(struct net_if *iface, int16_t dbm)
 {
 	const struct ieee802154_radio_api *radio =
 		net_if_get_device(iface)->api;
@@ -63,10 +62,8 @@ static inline int ieee802154_set_tx_power(struct net_if *iface, int16_t dbm)
 	return radio->set_txpower(net_if_get_device(iface), dbm);
 }
 
-static inline int ieee802154_tx(struct net_if *iface,
-				enum ieee802154_tx_mode mode,
-				struct net_pkt *pkt,
-				struct net_buf *buf)
+static inline int ieee802154_radio_tx(struct net_if *iface, enum ieee802154_tx_mode mode,
+				      struct net_pkt *pkt, struct net_buf *buf)
 {
 	const struct ieee802154_radio_api *radio =
 		net_if_get_device(iface)->api;
@@ -78,7 +75,7 @@ static inline int ieee802154_tx(struct net_if *iface,
 	return radio->tx(net_if_get_device(iface), mode, pkt, buf);
 }
 
-static inline int ieee802154_start(struct net_if *iface)
+static inline int ieee802154_radio_start(struct net_if *iface)
 {
 	const struct ieee802154_radio_api *radio =
 		net_if_get_device(iface)->api;
@@ -90,7 +87,7 @@ static inline int ieee802154_start(struct net_if *iface)
 	return radio->start(net_if_get_device(iface));
 }
 
-static inline int ieee802154_stop(struct net_if *iface)
+static inline int ieee802154_radio_stop(struct net_if *iface)
 {
 	const struct ieee802154_radio_api *radio =
 		net_if_get_device(iface)->api;
@@ -108,7 +105,7 @@ static inline int ieee802154_stop(struct net_if *iface)
  * @param iface Pointer to the IEEE 802.15.4 interface
  * @param ieee_addr Pointer to an extended address in little endian byte order
  */
-static inline void ieee802154_filter_ieee_addr(struct net_if *iface, uint8_t *ieee_addr)
+static inline void ieee802154_radio_filter_ieee_addr(struct net_if *iface, uint8_t *ieee_addr)
 {
 	const struct ieee802154_radio_api *radio =
 		net_if_get_device(iface)->api;
@@ -127,8 +124,7 @@ static inline void ieee802154_filter_ieee_addr(struct net_if *iface, uint8_t *ie
 	}
 }
 
-static inline void ieee802154_filter_short_addr(struct net_if *iface,
-						uint16_t short_addr)
+static inline void ieee802154_radio_filter_short_addr(struct net_if *iface, uint16_t short_addr)
 {
 	const struct ieee802154_radio_api *radio =
 		net_if_get_device(iface)->api;
@@ -147,8 +143,7 @@ static inline void ieee802154_filter_short_addr(struct net_if *iface,
 	}
 }
 
-static inline void ieee802154_filter_pan_id(struct net_if *iface,
-					    uint16_t pan_id)
+static inline void ieee802154_radio_filter_pan_id(struct net_if *iface, uint16_t pan_id)
 {
 	const struct ieee802154_radio_api *radio =
 		net_if_get_device(iface)->api;
@@ -167,8 +162,7 @@ static inline void ieee802154_filter_pan_id(struct net_if *iface,
 	}
 }
 
-static inline void ieee802154_filter_src_ieee_addr(struct net_if *iface,
-						   uint8_t *ieee_addr)
+static inline void ieee802154_radio_filter_src_ieee_addr(struct net_if *iface, uint8_t *ieee_addr)
 {
 	const struct ieee802154_radio_api *radio =
 		net_if_get_device(iface)->api;
@@ -187,8 +181,7 @@ static inline void ieee802154_filter_src_ieee_addr(struct net_if *iface,
 	}
 }
 
-static inline void ieee802154_filter_src_short_addr(struct net_if *iface,
-						    uint16_t short_addr)
+static inline void ieee802154_radio_filter_src_short_addr(struct net_if *iface, uint16_t short_addr)
 {
 	const struct ieee802154_radio_api *radio =
 		net_if_get_device(iface)->api;
@@ -207,8 +200,7 @@ static inline void ieee802154_filter_src_short_addr(struct net_if *iface,
 	}
 }
 
-static inline void ieee802154_remove_src_ieee_addr(struct net_if *iface,
-						   uint8_t *ieee_addr)
+static inline void ieee802154_radio_remove_src_ieee_addr(struct net_if *iface, uint8_t *ieee_addr)
 {
 	const struct ieee802154_radio_api *radio =
 		net_if_get_device(iface)->api;
@@ -227,8 +219,7 @@ static inline void ieee802154_remove_src_ieee_addr(struct net_if *iface,
 	}
 }
 
-static inline void ieee802154_remove_src_short_addr(struct net_if *iface,
-						    uint16_t short_addr)
+static inline void ieee802154_radio_remove_src_short_addr(struct net_if *iface, uint16_t short_addr)
 {
 	const struct ieee802154_radio_api *radio =
 		net_if_get_device(iface)->api;
@@ -247,8 +238,7 @@ static inline void ieee802154_remove_src_short_addr(struct net_if *iface,
 	}
 }
 
-static inline bool ieee802154_verify_channel(struct net_if *iface,
-					     uint16_t channel)
+static inline bool ieee802154_radio_verify_channel(struct net_if *iface, uint16_t channel)
 {
 	if (channel == IEEE802154_NO_CHANNEL) {
 		return false;
