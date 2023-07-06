@@ -7,6 +7,7 @@
 /dts-v1/;
 #include <arm/nxp/nxp_s32k344_m7.dtsi>
 #include <dt-bindings/gpio/gpio.h>
+#include <freq.h>
 #include "mr_canhubk3-pinctrl.dtsi"
 
 / {
@@ -31,6 +32,7 @@
 		led2 = &user_led1_blue;
 		sw0 = &user_button_1;
 		sw1 = &user_button_2;
+		watchdog0 = &fs26_wdt;
 	};
 
 	leds {
@@ -337,6 +339,16 @@
 	pinctrl-0 = <&lpspi3_default>;
 	pinctrl-names = "default";
 	data-pin-config = "sdo-in,sdi-out";
+	status = "okay";
+
+	fs26_wdt: watchdog@0 {
+		compatible = "nxp,fs26-wdog";
+		reg = <0>;
+		spi-max-frequency = <DT_FREQ_M(5)>;
+		type = "challenger";
+		int-gpios = <&gpioa_h 2 GPIO_ACTIVE_LOW>;
+		status = "okay";
+	};
 };
 
 &lpspi4 {
