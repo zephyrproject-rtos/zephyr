@@ -28,14 +28,9 @@ BUILD_ASSERT(CONFIG_NET_L2_IEEE802154_RADIO_CSMA_CA_MIN_BE <=
 /* See section 6.2.5.1. */
 static inline int unslotted_csma_ca_channel_access(struct net_if *iface)
 {
+	uint32_t turnaround_time = ieee802154_radio_get_a_turnaround_time(iface);
+	uint32_t symbol_period = ieee802154_radio_get_symbol_period_us(iface);
 	uint8_t be = CONFIG_NET_L2_IEEE802154_RADIO_CSMA_CA_MIN_BE;
-	uint32_t symbol_period, turnaround_time;
-	bool is_subg_phy;
-
-	is_subg_phy = ieee802154_radio_get_hw_capabilities(iface) & IEEE802154_HW_SUB_GHZ;
-	/* TODO: Move symbol period calculation to radio driver. */
-	symbol_period = IEEE802154_PHY_SYMBOL_PERIOD(is_subg_phy);
-	turnaround_time = IEEE802154_PHY_A_TURNAROUND_TIME(is_subg_phy);
 
 	for (uint8_t nb = 0U; nb <= CONFIG_NET_L2_IEEE802154_RADIO_CSMA_CA_MAX_BO; nb++) {
 		int ret;

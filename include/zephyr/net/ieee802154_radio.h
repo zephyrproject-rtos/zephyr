@@ -41,7 +41,7 @@ extern "C" {
  *       https://github.com/zephyrproject-rtos/zephyr/issues/50336#issuecomment-1251122582.
  *       For now we assume PHYs that current drivers actually implement.
  */
-#define IEEE802154_PHY_SYMBOL_PERIOD(is_subg_phy)                                                  \
+#define IEEE802154_PHY_SYMBOL_PERIOD_US(is_subg_phy)                                               \
 	((is_subg_phy) ? IEEE802154_PHY_SUN_FSK_863MHZ_915MHZ_SYMBOL_PERIOD_US                     \
 		       : IEEE802154_PHY_OQPSK_2450MHZ_SYMBOL_PERIOD_US)
 
@@ -69,9 +69,9 @@ extern "C" {
  *       For now we assume PHYs that current drivers actually implement.
  */
 #define IEEE802154_PHY_A_TURNAROUND_TIME(is_subg_phy)                                              \
-	((is_subg_phy)                                                                             \
-		 ? IEEE802154_PHY_A_TURNAROUND_TIME_1MS(IEEE802154_PHY_SYMBOL_PERIOD(is_subg_phy)) \
-		 : IEEE802154_PHY_A_TURNAROUND_TIME_DEFAULT)
+	((is_subg_phy) ? IEEE802154_PHY_A_TURNAROUND_TIME_1MS(                                     \
+				 IEEE802154_PHY_SYMBOL_PERIOD_US(is_subg_phy))                     \
+		       : IEEE802154_PHY_A_TURNAROUND_TIME_DEFAULT)
 
 /* PHY PIB attribute aCcaTime, in PHY symbols, all PHYs except for SUN O-QPSK,
  * see section 11.3, table 11-1.
