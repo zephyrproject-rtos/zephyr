@@ -701,7 +701,10 @@ static struct ull_hdr *ull_hdr_get_cb(uint8_t ticker_id, uint32_t *ticks_slot)
 
 		adv_iso = ull_adv_iso_get(ticker_id - TICKER_ID_ADV_ISO_BASE);
 		if (adv_iso) {
-			*ticks_slot = adv_iso->ull.ticks_slot;
+			uint32_t time_us;
+
+			time_us = ull_adv_iso_max_time_get(adv_iso);
+			*ticks_slot = HAL_TICKER_US_TO_TICKS_CEIL(time_us);
 
 			return &adv_iso->ull;
 		}
