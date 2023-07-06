@@ -1073,16 +1073,6 @@ static void eth_mcux_init(const struct device *dev)
 			kENET_RxAccelProtoCheckEnabled;
 	}
 
-#ifdef CONFIG_ETH_MCUX_RMII_EXT_CLK
-	if(context->base == ENET) {
-		IOMUXC_EnableMode(IOMUXC_GPR, kIOMUXC_GPR_ENET1RefClkMode, true);
-		IOMUXC_EnableMode(IOMUXC_GPR, kIOMUXC_GPR_ENET1TxClkOutputDir, false);
-	} else {
-		IOMUXC_EnableMode(IOMUXC_GPR, kIOMUXC_GPR_ENET2RefClkMode, true);
-		IOMUXC_EnableMode(IOMUXC_GPR, kIOMUXC_GPR_ENET2TxClkOutputDir, false);
-	}
-#endif
-
 	ENET_Init(context->base,
 		  &context->enet_handle,
 		  &enet_config,
