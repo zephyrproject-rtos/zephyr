@@ -39,6 +39,7 @@ K_SEM_DEFINE(scan_lock, 0, 1);
 #define EXPECTED_COORDINATOR_ADDR_LE       0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f
 #define EXPECTED_COORDINATOR_ADDR_BE       0x0f, 0x0e, 0x0d, 0x0c, 0x0b, 0x0a, 0x09, 0x08
 #define EXPECTED_COORDINATOR_ADDR_STR      "0f:0e:0d:0c:0b:0a:09:08"
+#define EXPECTED_COORDINATOR_SHORT_ADDR    0xbbbb
 
 #define EXPECTED_ENDDEVICE_EXT_ADDR_LE     0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08
 #define EXPECTED_ENDDEVICE_EXT_ADDR_STR    "08:07:06:05:04:03:02:01"
@@ -97,6 +98,25 @@ static void test_association_request(struct ieee802154_mpdu *mpdu)
 		      "Association Request: should allocate short address.");
 	zassert_equal(cmd->assoc_req.ci.association_type, false,
 		      "Association Request: fast association is not supported.");
+}
+
+static void test_disassociation_notification(struct ieee802154_mpdu *mpdu)
+{
+	struct ieee802154_command *cmd = mpdu->command;
+
+	zassert_equal(mpdu->mhr.fs->fc.frame_version, IEEE802154_VERSION_802154_2006,
+		      "Disassociation Notification: currently only IEEE 802.15.4 2006 frame "
+		      "version supported.");
+	zassert_equal(mpdu->mhr.fs->fc.frame_type, IEEE802154_FRAME_TYPE_MAC_COMMAND,
+		      "Disassociation Notification: should be a MAC command.");
+	zassert_equal(mpdu->mhr.fs->fc.ar, true, "Disassociation Notification: must request ACK.");
+	zassert_equal(mpdu->payload_length, 1U + IEEE802154_CMD_DISASSOC_NOTE_LENGTH);
+
+	zassert_equal(cmd->cfi, IEEE802154_CFI_DISASSOCIATION_NOTIFICATION,
+		      "Disassociation Notification: unexpected CFI.");
+	zassert_equal(
+		cmd->disassoc_note.reason, IEEE802154_DRF_DEVICE_WISH,
+		"Disassociation Notification: notification should be initiated by the enddevice.");
 }
 
 static void test_scan_shell_cmd(void)
@@ -257,6 +277,51 @@ ZTEST(ieee802154_l2_shell, test_associate)
 fail:
 	sys_memcpy_swap(ctx->ext_addr, params.dst.ext_addr, sizeof(ctx->ext_addr));
 	ztest_test_fail();
+}
+
+ZTEST(ieee802154_l2_shell, test_initiate_disassociation_from_enddevice)
+{
+	uint8_t expected_coord_addr_le[] = {EXPECTED_COORDINATOR_ADDR_LE};
+	uint8_t empty_coord_addr[IEEE802154_EXT_ADDR_LENGTH] = {0};
+	struct ieee802154_context *ctx = net_if_l2_data(iface);
+	uint8_t mock_ext_addr_le[IEEE802154_EXT_ADDR_LENGTH];
+	struct ieee802154_mpdu mpdu = {0};
+	int ret;
+
+	/* Simulate an associated device. */
+	ctx->pan_id = EXPECTED_COORDINATOR_PAN_CPU_ORDER;
+	ctx->short_addr = EXPECTED_ENDDEVICE_SHORT_ADDR;
+	ctx->coord_short_addr = EXPECTED_COORDINATOR_SHORT_ADDR;
+	memcpy(ctx->coord_ext_addr, expected_coord_addr_le, sizeof(ctx->coord_ext_addr));
+
+	ret = shell_execute_cmd(NULL, "ieee802154 disassociate");
+	zassert_equal(0, ret, "Initiating disassociation from the enddevice failed: %d", ret);
+
+	/* Ensure we've been disassociated. */
+	zassert_mem_equal(ctx->coord_ext_addr, empty_coord_addr, sizeof(ctx->coord_ext_addr),
+			  "Disassociation: coordinator address should be unset.");
+	zassert_equal(ctx->pan_id, IEEE802154_PAN_ID_NOT_ASSOCIATED,
+		      "Disassociation: PAN should be unset.");
+	zassert_equal(ctx->short_addr, IEEE802154_SHORT_ADDRESS_NOT_ASSOCIATED,
+		      "Disassociation: Short addr should be unset.");
+	sys_memcpy_swap(mock_ext_addr_le, mock_ext_addr_be, sizeof(mock_ext_addr_le));
+	zassert_mem_equal(ctx->ext_addr, mock_ext_addr_le, sizeof(ctx->ext_addr),
+			  "Disassociation: Ext addr should be unaffected.");
+
+	zassert_not_null(current_pkt);
+
+	if (!ieee802154_validate_frame(net_pkt_data(current_pkt), net_pkt_get_len(current_pkt),
+				       &mpdu)) {
+		NET_ERR("*** Could not parse disassociation notification.\n");
+		ztest_test_fail();
+		goto release_frag;
+	}
+
+	test_disassociation_notification(&mpdu);
+
+release_frag:
+	net_pkt_frag_unref(current_pkt->frags);
+	current_pkt->frags = NULL;
 }
 
 ZTEST(ieee802154_l2_shell, test_set_ext_addr)
