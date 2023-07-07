@@ -29,4 +29,6 @@ source "drivers/memc/Kconfig.sam"
 
 source "drivers/memc/Kconfig.sifive"
 
+source "drivers/memc/Kconfig.nxp_s32"
+
 endif
