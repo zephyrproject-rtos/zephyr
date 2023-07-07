@@ -54,23 +54,14 @@ struct named_lc3_preset {
 		     CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT),                                  \
 		    (0))
 
-struct unicast_stream {
+struct shell_stream {
 	struct bt_cap_stream stream;
 	struct bt_audio_codec_cfg codec_cfg;
 	struct bt_audio_codec_qos qos;
 #if defined(CONFIG_BT_AUDIO_TX)
 	int64_t connected_at_ticks;      /* The uptime tick measured when stream was connected */
 	uint16_t last_allocated_seq_num; /* The last packet sequence number allocated */
-#endif /* defined(CONFIG_BT_AUDIO_TX) */
-};
-
-struct broadcast_stream {
-	struct bt_cap_stream stream;
-	struct bt_audio_codec_data data;
-#if defined(CONFIG_BT_AUDIO_TX)
-	int64_t connected_at_ticks;      /* The uptime tick measured when stream was connected */
-	uint16_t last_allocated_seq_num; /* The last packet sequence number allocated */
-#endif /* defined(CONFIG_BT_AUDIO_TX) */
+#endif /* CONFIG_BT_AUDIO_TX */
 };
 
 struct broadcast_source {
@@ -82,8 +73,8 @@ struct broadcast_source {
 	struct bt_audio_codec_qos qos;
 };
 
-extern struct unicast_stream unicast_streams[CONFIG_BT_MAX_CONN * (UNICAST_SERVER_STREAM_COUNT +
-								   UNICAST_CLIENT_STREAM_COUNT)];
+extern struct shell_stream unicast_streams[CONFIG_BT_MAX_CONN * (UNICAST_SERVER_STREAM_COUNT +
+								 UNICAST_CLIENT_STREAM_COUNT)];
 
 #if defined(CONFIG_BT_BAP_UNICAST_CLIENT)
 
@@ -167,7 +158,7 @@ static inline void print_codec_cfg(const struct shell *sh,
 }
 
 #if defined(CONFIG_BT_BAP_BROADCAST_SOURCE)
-extern struct broadcast_stream broadcast_source_streams[CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT];
+extern struct shell_stream broadcast_source_streams[CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT];
 extern struct broadcast_source default_source;
 #endif /* CONFIG_BT_BAP_BROADCAST_SOURCE */
 
@@ -227,7 +218,7 @@ static inline void print_base(const struct shell *sh, const struct bt_bap_base *
 }
 #endif /* BROADCAST_SNK_SUBGROUP_CNT > 0 */
 
-static inline void copy_unicast_stream_preset(struct unicast_stream *stream,
+static inline void copy_unicast_stream_preset(struct shell_stream *stream,
 					      const struct named_lc3_preset *named_preset)
 {
 	memcpy(&stream->qos, &named_preset->preset.qos, sizeof(stream->qos));
