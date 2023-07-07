@@ -55,6 +55,7 @@ LPI2C         on-chip     i2c
 ADC SAR       on-chip     adc
 LPSPI         on-chip     spi
 WDT           FS26 SBC    watchdog
+EMAC          on-chip     ethernet
 ============  ==========  ================================
 
 The default configuration can be found in the Kconfig file
@@ -228,6 +229,18 @@ The on-board MX25L6433F 64M-bit multi-I/O Serial NOR Flash memory is connected
 to the QSPI controller port A1. This board configuration selects it as the
 default flash controller.
 
+Ethernet
+========
+
+This board has a single instance of Ethernet Media Access Controller (EMAC)
+interfacing with a `NXP TJA1103`_ 100Base-T1 Ethernet PHY. Currently, there is
+no driver for this PHY and this board default pin strapping configuration for
+the PHY (RMII, master, autonomous mode enabled, polarity correction enabled)
+allows to use it without software configuration.
+
+The 100Base-T1 signals are available in connector ``P9`` and can be converted to
+100Base-T using a Ethernet media converter such as `RDDRONE-T1ADAPT`_.
+
 Programming and Debugging
 *************************
 
@@ -294,6 +307,12 @@ References
 
 .. _NXP FS26 Safety System Basis Chip:
    https://www.nxp.com/products/power-management/pmics-and-sbcs/safety-sbcs/safety-system-basis-chip-with-low-power-fit-for-asil-d:FS26
+
+.. _NXP TJA1103:
+   https://www.nxp.com/products/interfaces/ethernet-/automotive-ethernet-phys/asil-b-compliant-100base-t1-ethernet-phy:TJA1103
+
+.. _RDDRONE-T1ADAPT:
+   https://www.nxp.com/products/interfaces/ethernet-/automotive-ethernet-phys/ethernet-media-converter-for-drones-rovers-mobile-robotics-and-automotive:RDDRONE-T1ADAPT
 
 .. _Lauterbach TRACE32:
    https://www.lauterbach.com
