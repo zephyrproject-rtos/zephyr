@@ -18,13 +18,12 @@
 #include <zephyr/init.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/drivers/swdp.h>
+#include <stdint.h>
 
 #include <cmsis_dap.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(dap, CONFIG_DAP_LOG_LEVEL);
-
-const char dap_fw_ver[] = DAP_FW_VER;
 
 #define DAP_STATE_CONNECTED	0
 
@@ -48,6 +47,25 @@ struct dap_context {
 
 static struct dap_context dap_ctx[1];
 
+BUILD_ASSERT(sizeof(CONFIG_CMSIS_DAP_PROBE_VENDOR) <=
+	     MIN(CONFIG_CMSIS_DAP_PACKET_SIZE - 2, UINT8_MAX - 2),
+	     "PROBE_VENDOR string is too long.");
+BUILD_ASSERT(sizeof(CONFIG_CMSIS_DAP_PROBE_NAME) <=
+	     MIN(CONFIG_CMSIS_DAP_PACKET_SIZE - 2, UINT8_MAX - 2),
+	     "PROBE_NAME string is too long.");
+BUILD_ASSERT(sizeof(CONFIG_CMSIS_DAP_BOARD_VENDOR) <=
+	     MIN(CONFIG_CMSIS_DAP_PACKET_SIZE - 2, UINT8_MAX - 2),
+	     "BOARD_VENDOR string is too long.");
+BUILD_ASSERT(sizeof(CONFIG_CMSIS_DAP_BOARD_NAME) <=
+	     MIN(CONFIG_CMSIS_DAP_PACKET_SIZE - 2, UINT8_MAX - 2),
+	     "BOARD_NAME string is too long.");
+BUILD_ASSERT(sizeof(CONFIG_CMSIS_DAP_DEVICE_VENDOR) <=
+	     MIN(CONFIG_CMSIS_DAP_PACKET_SIZE - 2, UINT8_MAX - 2),
+	     "DEVICE_VENDOR string is too long.");
+BUILD_ASSERT(sizeof(CONFIG_CMSIS_DAP_DEVICE_NAME) <=
+	     MIN(CONFIG_CMSIS_DAP_PACKET_SIZE - 2, UINT8_MAX - 2),
+	     "DEVICE_NAME string is too long.");
+
 /* Get DAP Information */
 static uint16_t dap_info(struct dap_context *const ctx,
 			 const uint8_t *const request,
@@ -59,29 +77,67 @@ static uint16_t dap_info(struct dap_context *const ctx,
 
 	switch (id) {
 	case DAP_ID_VENDOR:
-		LOG_DBG("ID_VENDOR unsupported");
+		LOG_DBG("ID_VENDOR");
+		memcpy(info, CONFIG_CMSIS_DAP_PROBE_VENDOR,
+		      sizeof(CONFIG_CMSIS_DAP_PROBE_VENDOR));
+		length = sizeof(CONFIG_CMSIS_DAP_PROBE_VENDOR);
 		break;
 	case DAP_ID_PRODUCT:
-		LOG_DBG("ID_PRODUCT unsupported");
+		LOG_DBG("ID_PRODUCT");
+		memcpy(info, CONFIG_CMSIS_DAP_PROBE_NAME,
+		      sizeof(CONFIG_CMSIS_DAP_PROBE_NAME));
+		length = sizeof(CONFIG_CMSIS_DAP_PROBE_NAME);
 		break;
 	case DAP_ID_SER_NUM:
+		/* optional to implement */
 		LOG_DBG("ID_SER_NUM unsupported");
 		break;
 	case DAP_ID_FW_VER:
 		LOG_DBG("ID_FW_VER");
-		memcpy(info, dap_fw_ver, sizeof(dap_fw_ver));
-		length = (uint8_t)sizeof(dap_fw_ver);
+		memcpy(info, DAP_FW_VER, sizeof(DAP_FW_VER));
+		length = sizeof(DAP_FW_VER);
 		break;
 	case DAP_ID_DEVICE_VENDOR:
-		LOG_DBG("ID_DEVICE_VENDOR unsupported");
+		LOG_DBG("ID_DEVICE_VENDOR");
+		memcpy(info, CONFIG_CMSIS_DAP_DEVICE_VENDOR,
+		      sizeof(CONFIG_CMSIS_DAP_DEVICE_VENDOR));
+		length = sizeof(CONFIG_CMSIS_DAP_DEVICE_VENDOR);
 		break;
 	case DAP_ID_DEVICE_NAME:
-		LOG_DBG("ID_DEVICE_NAME unsupported");
+		LOG_DBG("ID_DEVICE_NAME");
+		memcpy(info, CONFIG_CMSIS_DAP_DEVICE_NAME,
+		      sizeof(CONFIG_CMSIS_DAP_DEVICE_NAME));
+		length = sizeof(CONFIG_CMSIS_DAP_DEVICE_NAME);
+		break;
+	case DAP_ID_BOARD_VENDOR:
+		LOG_DBG("ID_BOARD_VENDOR");
+		memcpy(info, CONFIG_CMSIS_DAP_BOARD_VENDOR,
+		      sizeof(CONFIG_CMSIS_DAP_BOARD_VENDOR));
+		length = sizeof(CONFIG_CMSIS_DAP_BOARD_VENDOR);
+		break;
+	case DAP_ID_BOARD_NAME:
+		memcpy(info, CONFIG_CMSIS_DAP_BOARD_NAME,
+		      sizeof(CONFIG_CMSIS_DAP_BOARD_NAME));
+		length = sizeof(CONFIG_CMSIS_DAP_BOARD_NAME);
+		LOG_DBG("ID_BOARD_NAME");
+		break;
+	case DAP_ID_PRODUCT_FW_VER:
+		/* optional to implement */
+		LOG_DBG("ID_PRODUCT_FW_VER unsupported");
 		break;
 	case DAP_ID_CAPABILITIES:
 		info[0] = ctx->capabilities;
 		LOG_DBG("ID_CAPABILITIES 0x%0x", info[0]);
 		length = 1U;
+		break;
+	case DAP_ID_TIMESTAMP_CLOCK:
+		LOG_DBG("ID_TIMESTAMP_CLOCK unsupported");
+		break;
+	case DAP_ID_UART_RX_BUFFER_SIZE:
+		LOG_DBG("ID_UART_RX_BUFFER_SIZE unsupported");
+		break;
+	case DAP_ID_UART_TX_BUFFER_SIZE:
+		LOG_DBG("ID_UART_TX_BUFFER_SIZE unsupported");
 		break;
 	case DAP_ID_SWO_BUFFER_SIZE:
 		LOG_DBG("ID_SWO_BUFFER_SIZE unsupported");
@@ -101,7 +157,7 @@ static uint16_t dap_info(struct dap_context *const ctx,
 		break;
 	}
 
-	response[0] = (uint8_t)length;
+	response[0] = length;
 
 	return length + 1U;
 }
