@@ -202,6 +202,7 @@ static inline const char *state2str(bt_conn_state_t state)
 
 static void tx_free(struct bt_conn_tx *tx)
 {
+	LOG_DBG("%p", tx);
 	tx->cb = NULL;
 	tx->user_data = NULL;
 	tx->pending_no_cb = 0U;
@@ -394,7 +395,9 @@ void bt_conn_recv(struct bt_conn *conn, struct net_buf *buf, uint8_t flags)
 
 static struct bt_conn_tx *conn_tx_alloc(void)
 {
-	return k_fifo_get(&free_tx, K_NO_WAIT);
+	struct bt_conn_tx *ret = k_fifo_get(&free_tx, K_NO_WAIT);
+	LOG_DBG("%p", ret);
+	return ret;
 }
 
 int bt_conn_send_iso_cb(struct bt_conn *conn, struct net_buf *buf,
@@ -836,7 +839,8 @@ static int conn_prepare_events(struct bt_conn *conn,
 				  K_POLL_TYPE_SEM_AVAILABLE,
 				  K_POLL_MODE_NOTIFY_ONLY,
 				  conn_pkts);
-	} else if (atomic_test_bit(conn->flags, BT_CONN_TX_WOULDBLOCK_FREE_TX)) {
+	} else if (atomic_test_bit(conn->flags, BT_CONN_TX_WOULDBLOCK_FREE_TX) &&
+		   k_fifo_is_empty(&free_tx)) {
 		LOG_DBG("wait on tx contexts");
 		k_poll_event_init(&events[0],
 				  K_POLL_TYPE_FIFO_DATA_AVAILABLE,
@@ -844,6 +848,9 @@ static int conn_prepare_events(struct bt_conn *conn,
 				  &free_tx);
 		events[0].tag = BT_EVENT_CONN_FREE_TX;
 	} else {
+		/* This must be the last thing to be waited on, since
+		 * only this event triggers processing.
+		 */
 		/* Wait until there is more data to send. */
 		LOG_DBG("wait on host fifo");
 		k_poll_event_init(&events[0],
