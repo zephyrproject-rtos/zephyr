@@ -13,18 +13,4 @@ config ADC_INIT_PRIORITY
 
 endif # ADC
 
-if GPIO
-
-config GPIO_INIT_PRIORITY
-	default 99
-
-endif # GPIO
-
-if EEPROM
-
-config EEPROM_INIT_PRIORITY
-	default 75
-
-endif # EEPROM
-
 endif # SHIELD_LMP90100_EVB
