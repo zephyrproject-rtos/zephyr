@@ -56,6 +56,7 @@ config ESP_HEAP_MEM_POOL_REGION_1_SIZE
 
 config ESP_SPIRAM
 	bool "Support for external, SPI-connected RAM"
+	default n if MCUBOOT
 	help
 	  This enables support for an external SPI RAM chip, connected in
 	  parallel with the main SPI flash chip.
