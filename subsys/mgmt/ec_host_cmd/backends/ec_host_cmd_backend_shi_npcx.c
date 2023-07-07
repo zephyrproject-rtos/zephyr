@@ -687,7 +687,9 @@ static void shi_npcx_reset_prepare(const struct device *dev)
 	data->tx_msg = data->out_msg;
 	data->rx_buf = inst->IBUF;
 	data->tx_buf = inst->OBUF;
-	data->rx_ctx->len = 0;
+	if (data->rx_ctx) {
+		data->rx_ctx->len = 0;
+	}
 	data->sz_sending = 0;
 	data->sz_request = 0;
 	data->sz_response = 0;
