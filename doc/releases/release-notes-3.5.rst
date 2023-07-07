@@ -262,6 +262,14 @@ USB
 Devicetree
 **********
 
+* ``zephyr,memory-region-mpu`` was renamed ``zephyr,memory-attr``
+
+* The following macros were added:
+  :c:macro:`DT_FOREACH_NODE_VARGS`,
+  :c:macro:`DT_FOREACH_STATUS_OKAY_NODE_VARGS`
+  :c:macro:`DT_MEMORY_ATTR_FOREACH_NODE`
+  :c:macro:`DT_MEMORY_ATTR_APPLY`
+
 Libraries / Subsystems
 **********************
 
