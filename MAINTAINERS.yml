@@ -2986,7 +2986,9 @@ West:
     - manifest-hal_telink
 
 "West project: hal_ti":
-  status: odd fixes
+  status: maintained
+  maintainers:
+    - vaishnavachath
   collaborators:
     - cfriedt
   files: []
