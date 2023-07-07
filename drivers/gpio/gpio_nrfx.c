@@ -302,6 +302,7 @@ static int gpio_nrfx_port_get_direction(const struct device *port,
 	}
 
 	if (inputs != NULL) {
+		*inputs = 0;
 		while (map) {
 			uint32_t pin = NRF_CTZ(map);
 			uint32_t pin_cnf = reg->PIN_CNF[pin];
