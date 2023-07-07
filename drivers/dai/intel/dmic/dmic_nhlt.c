@@ -541,6 +541,8 @@ int dai_dmic_set_config_nhlt(struct dai_intel_dmic *dmic, const void *bespoke_cf
 	uint32_t out_control[DMIC_HW_FIFOS_MAX] = {0};
 	uint32_t channel_ctrl_mask;
 	uint32_t pdm_ctrl_mask;
+	uint32_t pdm_base;
+	int pdm_idx;
 	uint32_t val;
 	const uint8_t *p = bespoke_cfg;
 	int num_fifos;
@@ -633,90 +635,90 @@ int dai_dmic_set_config_nhlt(struct dai_intel_dmic *dmic, const void *bespoke_cf
 		return -EINVAL;
 	}
 
-	for (n = 0; n < CONFIG_DAI_DMIC_HW_CONTROLLERS; n++) {
-		fir_cfg_a[n] = NULL;
-		fir_cfg_b[n] = NULL;
+	for (pdm_idx = 0; pdm_idx < CONFIG_DAI_DMIC_HW_CONTROLLERS; pdm_idx++) {
+		pdm_base = base[pdm_idx];
+		fir_cfg_a[pdm_idx] = NULL;
+		fir_cfg_b[pdm_idx] = NULL;
 
-		if (!(pdm_ctrl_mask & (1 << n))) {
+		if (!(pdm_ctrl_mask & (1 << pdm_idx))) {
 			/* Set MIC_MUTE bit to unused PDM */
-			dai_dmic_write(dmic, base[n] + CIC_CONTROL, CIC_CONTROL_MIC_MUTE);
+			dai_dmic_write(dmic, pdm_base + CIC_CONTROL, CIC_CONTROL_MIC_MUTE);
 			continue;
 		}
 
-		LOG_DBG("dmic_set_config_nhlt(): PDM%d", n);
+		LOG_DBG("PDM%d", pdm_idx);
 
 		/* Get CIC configuration */
-		pdm_cfg[n] = (struct nhlt_pdm_ctrl_cfg *)p;
+		pdm_cfg[pdm_idx] = (struct nhlt_pdm_ctrl_cfg *)p;
 		p += sizeof(struct nhlt_pdm_ctrl_cfg);
 
-		comb_count = FIELD_GET(CIC_CONFIG_COMB_COUNT, pdm_cfg[n]->cic_config);
+		comb_count = FIELD_GET(CIC_CONFIG_COMB_COUNT, pdm_cfg[pdm_idx]->cic_config);
 		p_mcic = comb_count + 1;
-		clk_div = FIELD_GET(MIC_CONTROL_PDM_CLKDIV, pdm_cfg[n]->mic_control);
+		clk_div = FIELD_GET(MIC_CONTROL_PDM_CLKDIV, pdm_cfg[pdm_idx]->mic_control);
 		p_clkdiv = clk_div + 2;
 		if (dai_dmic_global.active_fifos_mask == 0) {
-			print_pdm_ctrl(pdm_cfg[n]);
+			print_pdm_ctrl(pdm_cfg[pdm_idx]);
 
-			val = pdm_cfg[n]->cic_control;
+			val = pdm_cfg[pdm_idx]->cic_control;
 			print_cic_control(val);
 
 			/* Clear CIC_START_A and CIC_START_B */
 			val = (val & ~(CIC_CONTROL_CIC_START_A | CIC_CONTROL_CIC_START_B));
-			dai_dmic_write(dmic, base[n] + CIC_CONTROL, val);
+			dai_dmic_write(dmic, pdm_base + CIC_CONTROL, val);
 			LOG_DBG("dmic_set_config_nhlt(): CIC_CONTROL = %08x", val);
 
 			/* Use CIC_CONFIG as such */
-			val = pdm_cfg[n]->cic_config;
-			dai_dmic_write(dmic, base[n] + CIC_CONFIG, val);
+			val = pdm_cfg[pdm_idx]->cic_config;
+			dai_dmic_write(dmic, pdm_base + CIC_CONFIG, val);
 
 			/* Clear PDM_EN_A and PDM_EN_B */
-			val = pdm_cfg[n]->mic_control;
+			val = pdm_cfg[pdm_idx]->mic_control;
 			val &= ~(MIC_CONTROL_PDM_EN_A | MIC_CONTROL_PDM_EN_B);
-			dai_dmic_write(dmic, base[n] + MIC_CONTROL, val);
+			dai_dmic_write(dmic, pdm_base + MIC_CONTROL, val);
 			LOG_DBG("dmic_set_config_nhlt(): MIC_CONTROL = %08x", val);
 		}
 
-		configure_fir(dmic, base[n] +
+		configure_fir(dmic, pdm_base +
 			      FIR_CHANNEL_REGS_SIZE * dmic->dai_config_params.dai_index,
-			      &pdm_cfg[n]->fir_config[dmic->dai_config_params.dai_index]);
+			      &pdm_cfg[pdm_idx]->fir_config[dmic->dai_config_params.dai_index]);
 
 		/* FIR A */
-		fir_cfg_a[n] = &pdm_cfg[n]->fir_config[0];
-		val = fir_cfg_a[n]->fir_config;
+		fir_cfg_a[pdm_idx] = &pdm_cfg[pdm_idx]->fir_config[0];
+		val = fir_cfg_a[pdm_idx]->fir_config;
 		fir_length = FIELD_GET(FIR_CONFIG_FIR_LENGTH, val);
 		fir_length_a = fir_length + 1; /* Need for parsing */
 		fir_decimation = FIELD_GET(FIR_CONFIG_FIR_DECIMATION, val);
 		p_mfira = fir_decimation + 1;
 
 		/* FIR B */
-		fir_cfg_b[n] = &pdm_cfg[n]->fir_config[1];
-		val = fir_cfg_b[n]->fir_config;
+		fir_cfg_b[pdm_idx] = &pdm_cfg[pdm_idx]->fir_config[1];
+		val = fir_cfg_b[pdm_idx]->fir_config;
 		fir_length = FIELD_GET(FIR_CONFIG_FIR_LENGTH, val);
 		fir_length_b = fir_length + 1; /* Need for parsing */
 		fir_decimation = FIELD_GET(FIR_CONFIG_FIR_DECIMATION, val);
 		p_mfirb = fir_decimation + 1;
 
 		/* Set up FIR coefficients RAM */
-		val = pdm_cfg[n]->reuse_fir_from_pdm;
+		val = pdm_cfg[pdm_idx]->reuse_fir_from_pdm;
 		if (val == 0) {
-			fir_a[n] = (uint32_t *)p;
+			fir_a[pdm_idx] = (uint32_t *)p;
 			p += sizeof(int32_t) * fir_length_a;
-			fir_b[n] = (uint32_t *)p;
+			fir_b[pdm_idx] = (uint32_t *)p;
 			p += sizeof(int32_t) * fir_length_b;
 		} else {
 			val--;
-			if (val >= n) {
-				LOG_ERR("dmic_set_config_nhlt(): Illegal FIR reuse 0x%x", val);
+			if (val >= pdm_idx) {
+				LOG_ERR("Illegal FIR reuse 0x%x", val);
 				return -EINVAL;
 			}
 
 			if (!fir_a[val]) {
-				LOG_ERR("dmic_set_config_nhlt(): PDM%d FIR reuse from %d fail",
-					n, val);
+				LOG_ERR("PDM%d FIR reuse from %d fail", pdm_idx, val);
 				return -EINVAL;
 			}
 
-			fir_a[n] = fir_a[val];
-			fir_b[n] = fir_b[val];
+			fir_a[pdm_idx] = fir_a[val];
+			fir_b[pdm_idx] = fir_b[val];
 		}
 
 		if (dmic->dai_config_params.dai_index == 0) {
@@ -725,14 +727,14 @@ int dai_dmic_set_config_nhlt(struct dai_intel_dmic *dmic, const void *bespoke_cf
 			   p_clkdiv, p_mcic, p_mfira, fir_length_a);
 			for (i = 0; i < fir_length_a; i++)
 				dai_dmic_write(dmic,
-					       coef_base_a[n] + (i << 2), fir_a[n][i]);
+					       coef_base_a[pdm_idx] + (i << 2), fir_a[pdm_idx][i]);
 		} else {
 			LOG_INF(
 			  "dmic_set_config_nhlt(): clkdiv = %d, mcic = %d, mfir_b = %d, len = %d",
 			  p_clkdiv, p_mcic, p_mfirb, fir_length_b);
 			for (i = 0; i < fir_length_b; i++)
 				dai_dmic_write(dmic,
-					       coef_base_b[n] + (i << 2), fir_b[n][i]);
+					       coef_base_b[pdm_idx] + (i << 2), fir_b[pdm_idx][i]);
 		}
 	}
 
