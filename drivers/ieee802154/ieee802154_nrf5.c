@@ -940,7 +940,7 @@ static int nrf5_configure(const struct device *dev,
 	} break;
 
 #if defined(CONFIG_IEEE802154_CSL_ENDPOINT)
-	case IEEE802154_CONFIG_CSL_RX_TIME:
+	case IEEE802154_CONFIG_CSL_RX_TIME: {
 		/*
 		 * `target_time_convert_to_64_bits()` is a workaround until OpenThread (the only
 		 * CSL user in Zephyr so far) is able to schedule RX windows using 64-bit time.
@@ -948,9 +948,9 @@ static int nrf5_configure(const struct device *dev,
 		uint64_t csl_rx_time = target_time_convert_to_64_bits(config->csl_rx_time);
 
 		nrf_802154_csl_writer_anchor_time_set(csl_rx_time);
-		break;
+	} break;
 
-	case IEEE802154_CONFIG_RX_SLOT:
+	case IEEE802154_CONFIG_RX_SLOT: {
 		/* Note that even if the nrf_802154_receive_at function is not called in time
 		 * (for example due to the call being blocked by higher priority threads) and
 		 * the delayed reception window is not scheduled, the CSL phase will still be
@@ -966,7 +966,7 @@ static int nrf5_configure(const struct device *dev,
 
 		nrf_802154_receive_at(start, config->rx_slot.duration, config->rx_slot.channel,
 				      DRX_SLOT_RX);
-		break;
+	} break;
 
 	case IEEE802154_CONFIG_CSL_PERIOD:
 		nrf_802154_csl_writer_period_set(config->csl_period);
