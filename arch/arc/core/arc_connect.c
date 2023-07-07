@@ -20,7 +20,7 @@ static struct k_spinlock arc_connect_spinlock;
 /* Generate an inter-core interrupt to the target core */
 void z_arc_connect_ici_generate(uint32_t core)
 {
-	LOCKED(&arc_connect_spinlock) {
+	K_SPINLOCK(&arc_connect_spinlock) {
 		z_arc_connect_cmd(ARC_CONNECT_CMD_INTRPT_GENERATE_IRQ, core);
 	}
 }
@@ -28,7 +28,7 @@ void z_arc_connect_ici_generate(uint32_t core)
 /* Acknowledge the inter-core interrupt raised by core */
 void z_arc_connect_ici_ack(uint32_t core)
 {
-	LOCKED(&arc_connect_spinlock) {
+	K_SPINLOCK(&arc_connect_spinlock) {
 		z_arc_connect_cmd(ARC_CONNECT_CMD_INTRPT_GENERATE_ACK, core);
 	}
 }
@@ -38,7 +38,7 @@ uint32_t z_arc_connect_ici_read_status(uint32_t core)
 {
 	uint32_t ret = 0;
 
-	LOCKED(&arc_connect_spinlock) {
+	K_SPINLOCK(&arc_connect_spinlock) {
 		z_arc_connect_cmd(ARC_CONNECT_CMD_INTRPT_READ_STATUS, core);
 		ret = z_arc_connect_cmd_readback();
 	}
@@ -51,7 +51,7 @@ uint32_t z_arc_connect_ici_check_src(void)
 {
 	uint32_t ret = 0;
 
-	LOCKED(&arc_connect_spinlock) {
+	K_SPINLOCK(&arc_connect_spinlock) {
 		z_arc_connect_cmd(ARC_CONNECT_CMD_INTRPT_CHECK_SOURCE, 0);
 		ret = z_arc_connect_cmd_readback();
 	}
@@ -64,7 +64,7 @@ void z_arc_connect_ici_clear(void)
 {
 	uint32_t cpu, c;
 
-	LOCKED(&arc_connect_spinlock) {
+	K_SPINLOCK(&arc_connect_spinlock) {
 
 		z_arc_connect_cmd(ARC_CONNECT_CMD_INTRPT_CHECK_SOURCE, 0);
 		cpu = z_arc_connect_cmd_readback(); /* 1,2,4,8... */
@@ -85,7 +85,7 @@ void z_arc_connect_ici_clear(void)
 /* Reset the cores in core_mask */
 void z_arc_connect_debug_reset(uint32_t core_mask)
 {
-	LOCKED(&arc_connect_spinlock) {
+	K_SPINLOCK(&arc_connect_spinlock) {
 		z_arc_connect_cmd_data(ARC_CONNECT_CMD_DEBUG_RESET,
 			0, core_mask);
 	}
@@ -94,7 +94,7 @@ void z_arc_connect_debug_reset(uint32_t core_mask)
 /* Halt the cores in core_mask */
 void z_arc_connect_debug_halt(uint32_t core_mask)
 {
-	LOCKED(&arc_connect_spinlock) {
+	K_SPINLOCK(&arc_connect_spinlock) {
 		z_arc_connect_cmd_data(ARC_CONNECT_CMD_DEBUG_HALT,
 			0, core_mask);
 	}
@@ -103,7 +103,7 @@ void z_arc_connect_debug_halt(uint32_t core_mask)
 /* Run the cores in core_mask */
 void z_arc_connect_debug_run(uint32_t core_mask)
 {
-	LOCKED(&arc_connect_spinlock) {
+	K_SPINLOCK(&arc_connect_spinlock) {
 		z_arc_connect_cmd_data(ARC_CONNECT_CMD_DEBUG_RUN,
 			0, core_mask);
 	}
@@ -112,7 +112,7 @@ void z_arc_connect_debug_run(uint32_t core_mask)
 /* Set core mask */
 void z_arc_connect_debug_mask_set(uint32_t core_mask, uint32_t mask)
 {
-	LOCKED(&arc_connect_spinlock) {
+	K_SPINLOCK(&arc_connect_spinlock) {
 		z_arc_connect_cmd_data(ARC_CONNECT_CMD_DEBUG_SET_MASK,
 			mask, core_mask);
 	}
@@ -123,7 +123,7 @@ uint32_t z_arc_connect_debug_mask_read(uint32_t core_mask)
 {
 	uint32_t ret = 0;
 
-	LOCKED(&arc_connect_spinlock) {
+	K_SPINLOCK(&arc_connect_spinlock) {
 		z_arc_connect_cmd_data(ARC_CONNECT_CMD_DEBUG_READ_MASK,
 			0, core_mask);
 		ret = z_arc_connect_cmd_readback();
@@ -137,7 +137,7 @@ uint32_t z_arc_connect_debug_mask_read(uint32_t core_mask)
  */
 void z_arc_connect_debug_select_set(uint32_t core_mask)
 {
-	LOCKED(&arc_connect_spinlock) {
+	K_SPINLOCK(&arc_connect_spinlock) {
 		z_arc_connect_cmd_data(ARC_CONNECT_CMD_DEBUG_SET_SELECT,
 			0, core_mask);
 	}
@@ -148,7 +148,7 @@ uint32_t z_arc_connect_debug_select_read(void)
 {
 	uint32_t ret = 0;
 
-	LOCKED(&arc_connect_spinlock) {
+	K_SPINLOCK(&arc_connect_spinlock) {
 		z_arc_connect_cmd(ARC_CONNECT_CMD_DEBUG_READ_SELECT, 0);
 		ret = z_arc_connect_cmd_readback();
 	}
@@ -161,7 +161,7 @@ uint32_t z_arc_connect_debug_en_read(void)
 {
 	uint32_t ret = 0;
 
-	LOCKED(&arc_connect_spinlock) {
+	K_SPINLOCK(&arc_connect_spinlock) {
 		z_arc_connect_cmd(ARC_CONNECT_CMD_DEBUG_READ_EN, 0);
 		ret = z_arc_connect_cmd_readback();
 	}
@@ -174,7 +174,7 @@ uint32_t z_arc_connect_debug_cmd_read(void)
 {
 	uint32_t ret = 0;
 
-	LOCKED(&arc_connect_spinlock) {
+	K_SPINLOCK(&arc_connect_spinlock) {
 		z_arc_connect_cmd(ARC_CONNECT_CMD_DEBUG_READ_CMD, 0);
 		ret = z_arc_connect_cmd_readback();
 	}
@@ -187,7 +187,7 @@ uint32_t z_arc_connect_debug_core_read(void)
 {
 	uint32_t ret = 0;
 
-	LOCKED(&arc_connect_spinlock) {
+	K_SPINLOCK(&arc_connect_spinlock) {
 		z_arc_connect_cmd(ARC_CONNECT_CMD_DEBUG_READ_CORE, 0);
 		ret = z_arc_connect_cmd_readback();
 	}
@@ -198,7 +198,7 @@ uint32_t z_arc_connect_debug_core_read(void)
 /* Clear global free running counter */
 void z_arc_connect_gfrc_clear(void)
 {
-	LOCKED(&arc_connect_spinlock) {
+	K_SPINLOCK(&arc_connect_spinlock) {
 		z_arc_connect_cmd(ARC_CONNECT_CMD_GFRC_CLEAR, 0);
 	}
 }
@@ -233,7 +233,7 @@ uint64_t z_arc_connect_gfrc_read(void)
 /* Enable global free running counter */
 void z_arc_connect_gfrc_enable(void)
 {
-	LOCKED(&arc_connect_spinlock) {
+	K_SPINLOCK(&arc_connect_spinlock) {
 		z_arc_connect_cmd(ARC_CONNECT_CMD_GFRC_ENABLE, 0);
 	}
 }
@@ -241,7 +241,7 @@ void z_arc_connect_gfrc_enable(void)
 /* Disable global free running counter */
 void z_arc_connect_gfrc_disable(void)
 {
-	LOCKED(&arc_connect_spinlock) {
+	K_SPINLOCK(&arc_connect_spinlock) {
 		z_arc_connect_cmd(ARC_CONNECT_CMD_GFRC_DISABLE, 0);
 	}
 }
@@ -249,7 +249,7 @@ void z_arc_connect_gfrc_disable(void)
 /* Disable global free running counter */
 void z_arc_connect_gfrc_core_set(uint32_t core_mask)
 {
-	LOCKED(&arc_connect_spinlock) {
+	K_SPINLOCK(&arc_connect_spinlock) {
 		z_arc_connect_cmd_data(ARC_CONNECT_CMD_GFRC_SET_CORE,
 			0, core_mask);
 	}
@@ -260,7 +260,7 @@ uint32_t z_arc_connect_gfrc_halt_read(void)
 {
 	uint32_t ret = 0;
 
-	LOCKED(&arc_connect_spinlock) {
+	K_SPINLOCK(&arc_connect_spinlock) {
 		z_arc_connect_cmd(ARC_CONNECT_CMD_GFRC_READ_HALT, 0);
 		ret = z_arc_connect_cmd_readback();
 	}
@@ -273,7 +273,7 @@ uint32_t z_arc_connect_gfrc_core_read(void)
 {
 	uint32_t ret = 0;
 
-	LOCKED(&arc_connect_spinlock) {
+	K_SPINLOCK(&arc_connect_spinlock) {
 		z_arc_connect_cmd(ARC_CONNECT_CMD_GFRC_READ_CORE, 0);
 		ret = z_arc_connect_cmd_readback();
 	}
@@ -284,7 +284,7 @@ uint32_t z_arc_connect_gfrc_core_read(void)
 /* Enable interrupt distribute unit */
 void z_arc_connect_idu_enable(void)
 {
-	LOCKED(&arc_connect_spinlock) {
+	K_SPINLOCK(&arc_connect_spinlock) {
 		z_arc_connect_cmd(ARC_CONNECT_CMD_IDU_ENABLE, 0);
 	}
 }
@@ -292,7 +292,7 @@ void z_arc_connect_idu_enable(void)
 /* Disable interrupt distribute unit */
 void z_arc_connect_idu_disable(void)
 {
-	LOCKED(&arc_connect_spinlock) {
+	K_SPINLOCK(&arc_connect_spinlock) {
 		z_arc_connect_cmd(ARC_CONNECT_CMD_IDU_DISABLE, 0);
 	}
 }
@@ -302,7 +302,7 @@ uint32_t z_arc_connect_idu_read_enable(void)
 {
 	uint32_t ret = 0;
 
-	LOCKED(&arc_connect_spinlock) {
+	K_SPINLOCK(&arc_connect_spinlock) {
 		z_arc_connect_cmd(ARC_CONNECT_CMD_IDU_READ_ENABLE, 0);
 		ret = z_arc_connect_cmd_readback();
 	}
@@ -317,7 +317,7 @@ uint32_t z_arc_connect_idu_read_enable(void)
 void z_arc_connect_idu_set_mode(uint32_t irq_num,
 	uint16_t trigger_mode, uint16_t distri_mode)
 {
-	LOCKED(&arc_connect_spinlock) {
+	K_SPINLOCK(&arc_connect_spinlock) {
 		z_arc_connect_cmd_data(ARC_CONNECT_CMD_IDU_SET_MODE,
 			irq_num, (distri_mode | (trigger_mode << 4)));
 	}
@@ -328,7 +328,7 @@ uint32_t z_arc_connect_idu_read_mode(uint32_t irq_num)
 {
 	uint32_t ret = 0;
 
-	LOCKED(&arc_connect_spinlock) {
+	K_SPINLOCK(&arc_connect_spinlock) {
 		z_arc_connect_cmd(ARC_CONNECT_CMD_IDU_READ_MODE, irq_num);
 		ret = z_arc_connect_cmd_readback();
 	}
@@ -342,7 +342,7 @@ uint32_t z_arc_connect_idu_read_mode(uint32_t irq_num)
  */
 void z_arc_connect_idu_set_dest(uint32_t irq_num, uint32_t core_mask)
 {
-	LOCKED(&arc_connect_spinlock) {
+	K_SPINLOCK(&arc_connect_spinlock) {
 		z_arc_connect_cmd_data(ARC_CONNECT_CMD_IDU_SET_DEST,
 			irq_num, core_mask);
 	}
@@ -353,7 +353,7 @@ uint32_t z_arc_connect_idu_read_dest(uint32_t irq_num)
 {
 	uint32_t ret = 0;
 
-	LOCKED(&arc_connect_spinlock) {
+	K_SPINLOCK(&arc_connect_spinlock) {
 		z_arc_connect_cmd(ARC_CONNECT_CMD_IDU_READ_DEST, irq_num);
 		ret = z_arc_connect_cmd_readback();
 	}
@@ -364,7 +364,7 @@ uint32_t z_arc_connect_idu_read_dest(uint32_t irq_num)
 /* Assert the specified common interrupt */
 void z_arc_connect_idu_gen_cirq(uint32_t irq_num)
 {
-	LOCKED(&arc_connect_spinlock) {
+	K_SPINLOCK(&arc_connect_spinlock) {
 		z_arc_connect_cmd(ARC_CONNECT_CMD_IDU_GEN_CIRQ, irq_num);
 	}
 }
@@ -372,7 +372,7 @@ void z_arc_connect_idu_gen_cirq(uint32_t irq_num)
 /* Acknowledge the specified common interrupt */
 void z_arc_connect_idu_ack_cirq(uint32_t irq_num)
 {
-	LOCKED(&arc_connect_spinlock) {
+	K_SPINLOCK(&arc_connect_spinlock) {
 		z_arc_connect_cmd(ARC_CONNECT_CMD_IDU_ACK_CIRQ, irq_num);
 	}
 }
@@ -382,7 +382,7 @@ uint32_t z_arc_connect_idu_check_status(uint32_t irq_num)
 {
 	uint32_t ret = 0;
 
-	LOCKED(&arc_connect_spinlock) {
+	K_SPINLOCK(&arc_connect_spinlock) {
 		z_arc_connect_cmd(ARC_CONNECT_CMD_IDU_CHECK_STATUS, irq_num);
 		ret = z_arc_connect_cmd_readback();
 	}
@@ -395,7 +395,7 @@ uint32_t z_arc_connect_idu_check_source(uint32_t irq_num)
 {
 	uint32_t ret = 0;
 
-	LOCKED(&arc_connect_spinlock) {
+	K_SPINLOCK(&arc_connect_spinlock) {
 		z_arc_connect_cmd(ARC_CONNECT_CMD_IDU_CHECK_SOURCE, irq_num);
 		ret = z_arc_connect_cmd_readback();
 	}
@@ -406,7 +406,7 @@ uint32_t z_arc_connect_idu_check_source(uint32_t irq_num)
 /* Mask or unmask the specified common interrupt */
 void z_arc_connect_idu_set_mask(uint32_t irq_num, uint32_t mask)
 {
-	LOCKED(&arc_connect_spinlock) {
+	K_SPINLOCK(&arc_connect_spinlock) {
 		z_arc_connect_cmd_data(ARC_CONNECT_CMD_IDU_SET_MASK,
 			irq_num, mask);
 	}
@@ -417,7 +417,7 @@ uint32_t z_arc_connect_idu_read_mask(uint32_t irq_num)
 {
 	uint32_t ret = 0;
 
-	LOCKED(&arc_connect_spinlock) {
+	K_SPINLOCK(&arc_connect_spinlock) {
 		z_arc_connect_cmd(ARC_CONNECT_CMD_IDU_READ_MASK, irq_num);
 		ret = z_arc_connect_cmd_readback();
 	}
@@ -433,7 +433,7 @@ uint32_t z_arc_connect_idu_check_first(uint32_t irq_num)
 {
 	uint32_t ret = 0;
 
-	LOCKED(&arc_connect_spinlock) {
+	K_SPINLOCK(&arc_connect_spinlock) {
 		z_arc_connect_cmd(ARC_CONNECT_CMD_IDU_CHECK_FIRST, irq_num);
 		ret = z_arc_connect_cmd_readback();
 	}
