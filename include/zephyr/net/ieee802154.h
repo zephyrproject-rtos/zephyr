@@ -71,6 +71,12 @@ struct ieee802154_security_ctx {
 	uint8_t _unused	: 3;
 };
 
+enum ieee802154_device_role {
+	IEEE802154_DEVICE_ROLE_ENDDEVICE,
+	IEEE802154_DEVICE_ROLE_COORDINATOR,
+	IEEE802154_DEVICE_ROLE_PAN_COORDINATOR,
+};
+
 /* This not meant to be used by any code but the IEEE 802.15.4 L2 stack */
 struct ieee802154_context {
 	/* PAN ID
@@ -156,7 +162,16 @@ struct ieee802154_context {
 	 */
 	uint8_t sequence;
 
-	uint8_t _unused : 7;
+	/* See section 6.1: A device may be operating as end device
+	 * (0 - default), coordinator (1), or PAN coordinator (2).
+	 *
+	 * A value of 3 is undefined.
+	 *
+	 * Can be read/set via enum ieee802154_device_role.
+	 */
+	uint8_t device_role : 2;
+
+	uint8_t _unused : 5;
 
 	uint8_t ack_requested : 1; /* guarded by ack_lock */
 	uint8_t ack_seq;	   /* guarded by ack_lock */
