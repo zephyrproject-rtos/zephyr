@@ -55,12 +55,12 @@ static void scan_result_cb(struct net_mgmt_event_callback *cb, uint32_t mgmt_eve
 	/* No need for scan_ctx locking as we should execute exclusively. */
 
 	zassert_not_null(scan_ctx);
-	zassert_equal(EXPECTED_COORDINATOR_PAN_CPU_ORDER, scan_ctx->pan_id,
+	zassert_equal(scan_ctx->pan_id, EXPECTED_COORDINATOR_PAN_CPU_ORDER,
 		      "Scan did not receive correct PAN id.");
-	zassert_equal(IEEE802154_EXT_ADDR_LENGTH, scan_ctx->len,
+	zassert_equal(scan_ctx->len, IEEE802154_EXT_ADDR_LENGTH,
 		      "Scan did not receive correct co-ordinator address length.");
-	zassert_mem_equal(expected_coordinator_address, scan_ctx->addr, IEEE802154_EXT_ADDR_LENGTH);
-	zassert_equal(EXPECTED_COORDINATOR_LQI, scan_ctx->lqi,
+	zassert_mem_equal(scan_ctx->addr, expected_coordinator_address, IEEE802154_EXT_ADDR_LENGTH);
+	zassert_equal(scan_ctx->lqi, EXPECTED_COORDINATOR_LQI,
 		      "Scan did not receive correct link quality indicator.");
 
 	k_sem_give(&scan_lock);
@@ -70,13 +70,13 @@ static void test_beacon_request(struct ieee802154_mpdu *mpdu)
 {
 	struct ieee802154_command *cmd = mpdu->command;
 
-	zassert_equal(1U, mpdu->payload_length, "Beacon request: invalid payload length.");
-	zassert_equal(IEEE802154_CFI_BEACON_REQUEST, cmd->cfi, "Not a beacon request.");
-	zassert_equal(IEEE802154_ADDR_MODE_SHORT, mpdu->mhr.fs->fc.dst_addr_mode,
+	zassert_equal(mpdu->payload_length, 1U, "Beacon request: invalid payload length.");
+	zassert_equal(cmd->cfi, IEEE802154_CFI_BEACON_REQUEST, "Not a beacon request.");
+	zassert_equal(mpdu->mhr.fs->fc.dst_addr_mode, IEEE802154_ADDR_MODE_SHORT,
 		      "Beacon request: invalid destination address mode.");
-	zassert_equal(IEEE802154_BROADCAST_ADDRESS, mpdu->mhr.dst_addr->plain.addr.short_addr,
+	zassert_equal(mpdu->mhr.dst_addr->plain.addr.short_addr, IEEE802154_BROADCAST_ADDRESS,
 		      "Beacon request: destination address should be broadcast address.");
-	zassert_equal(IEEE802154_BROADCAST_PAN_ID, mpdu->mhr.dst_addr->plain.pan_id,
+	zassert_equal(mpdu->mhr.dst_addr->plain.pan_id, IEEE802154_BROADCAST_PAN_ID,
 		      "Beacon request: destination PAN should be broadcast PAN.");
 }
 
