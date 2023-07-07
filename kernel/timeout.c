@@ -110,7 +110,7 @@ void z_add_timeout(struct _timeout *to, _timeout_func_t fn,
 	__ASSERT(!sys_dnode_is_linked(&to->node), "");
 	to->fn = fn;
 
-	LOCKED(&timeout_lock) {
+	K_SPINLOCK(&timeout_lock) {
 		struct _timeout *t;
 
 		if (IS_ENABLED(CONFIG_TIMEOUT_64BIT) &&
@@ -145,7 +145,7 @@ int z_abort_timeout(struct _timeout *to)
 {
 	int ret = -EINVAL;
 
-	LOCKED(&timeout_lock) {
+	K_SPINLOCK(&timeout_lock) {
 		if (sys_dnode_is_linked(&to->node)) {
 			remove_timeout(to);
 			ret = 0;
@@ -178,7 +178,7 @@ k_ticks_t z_timeout_remaining(const struct _timeout *timeout)
 {
 	k_ticks_t ticks = 0;
 
-	LOCKED(&timeout_lock) {
+	K_SPINLOCK(&timeout_lock) {
 		ticks = timeout_rem(timeout);
 	}
 
@@ -189,7 +189,7 @@ k_ticks_t z_timeout_expires(const struct _timeout *timeout)
 {
 	k_ticks_t ticks = 0;
 
-	LOCKED(&timeout_lock) {
+	K_SPINLOCK(&timeout_lock) {
 		ticks = curr_tick + timeout_rem(timeout);
 	}
 
@@ -200,7 +200,7 @@ int32_t z_get_next_timeout_expiry(void)
 {
 	int32_t ret = (int32_t) K_TICKS_FOREVER;
 
-	LOCKED(&timeout_lock) {
+	K_SPINLOCK(&timeout_lock) {
 		ret = next_timeout();
 	}
 	return ret;
@@ -261,7 +261,7 @@ int64_t sys_clock_tick_get(void)
 {
 	uint64_t t = 0U;
 
-	LOCKED(&timeout_lock) {
+	K_SPINLOCK(&timeout_lock) {
 		t = curr_tick + elapsed();
 	}
 	return t;

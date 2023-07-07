@@ -227,9 +227,6 @@ void z_mem_manage_init(void);
  */
 void z_mem_manage_boot_finish(void);
 
-/* Alias of K_SPINLOCK to keep kernel code concise. */
-#define LOCKED K_SPINLOCK
-
 #ifdef CONFIG_PM
 
 /* When the kernel is about to go idle, it calls this function to notify the
