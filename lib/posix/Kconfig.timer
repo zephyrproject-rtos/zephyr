@@ -14,3 +14,10 @@ config TIMER_CREATE_WAIT
 	help
 	  This controls how long to wait for resources to come available to create
 	  a new timer in POSIX compliant application
+
+config TIMER_DELAYTIMER_MAX
+	int "Maximum count returned my timer_getoverrun() in POSIX application"
+	default 20
+	help
+	  This controls the maximum number of times a timer can overrun before
+	  timer_getoverrun() in POSIX compliant application.
