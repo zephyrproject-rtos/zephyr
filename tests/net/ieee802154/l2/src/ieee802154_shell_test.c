@@ -23,6 +23,7 @@ LOG_MODULE_REGISTER(net_ieee802154_mgmt_test, LOG_LEVEL_DBG);
 
 extern struct net_pkt *current_pkt;
 extern struct k_sem driver_lock;
+extern uint8_t mock_ext_addr_be[8];
 
 static struct net_if *iface;
 
@@ -39,6 +40,8 @@ K_SEM_DEFINE(scan_lock, 0, 1);
 #define EXPECTED_COORDINATOR_ADDR_BE       0x0f, 0x0e, 0x0d, 0x0c, 0x0b, 0x0a, 0x09, 0x08
 #define EXPECTED_COORDINATOR_ADDR_STR      "0f:0e:0d:0c:0b:0a:09:08"
 
+#define EXPECTED_ENDDEVICE_EXT_ADDR_LE     0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08
+#define EXPECTED_ENDDEVICE_EXT_ADDR_STR    "08:07:06:05:04:03:02:01"
 #define EXPECTED_ENDDEVICE_SHORT_ADDR      0xaaaa
 
 static void scan_result_cb(struct net_mgmt_event_callback *cb, uint32_t mgmt_event,
@@ -254,6 +257,31 @@ ZTEST(ieee802154_l2_shell, test_associate)
 fail:
 	sys_memcpy_swap(ctx->ext_addr, params.dst.ext_addr, sizeof(ctx->ext_addr));
 	ztest_test_fail();
+}
+
+ZTEST(ieee802154_l2_shell, test_set_ext_addr)
+{
+	uint8_t expected_ext_addr_le[] = {EXPECTED_ENDDEVICE_EXT_ADDR_LE};
+	struct ieee802154_context *ctx = net_if_l2_data(iface);
+	uint8_t initial_ext_addr_le[sizeof(mock_ext_addr_be)];
+	int ret;
+
+	sys_memcpy_swap(initial_ext_addr_le, mock_ext_addr_be, sizeof(initial_ext_addr_le));
+	zassert_equal(ctx->pan_id, IEEE802154_PAN_ID_NOT_ASSOCIATED,
+		      "Setting Ext Addr: PAN should not be set initially.");
+	zassert_equal(ctx->short_addr, IEEE802154_SHORT_ADDRESS_NOT_ASSOCIATED,
+		      "Setting Ext Addr: Short addr should not be set initially.");
+	zassert_mem_equal(ctx->ext_addr, initial_ext_addr_le, sizeof(ctx->coord_ext_addr),
+			  "Setting Ext Addr: Ext addr should be the mock addr initially.");
+
+	ret = shell_execute_cmd(NULL, "ieee802154 set_ext_addr " EXPECTED_ENDDEVICE_EXT_ADDR_STR);
+	zassert_equal(0, ret, "Setting the external address failed: %d", ret);
+
+	zassert_mem_equal(
+		ctx->ext_addr, expected_ext_addr_le, sizeof(ctx->coord_ext_addr),
+		"Setting Ext Addr: failed.");
+
+	memcpy(ctx->ext_addr, initial_ext_addr_le, sizeof(ctx->ext_addr));
 }
 
 static void reset_fake_driver(void *test_fixture)

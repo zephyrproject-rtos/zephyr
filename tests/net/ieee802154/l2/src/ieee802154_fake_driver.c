@@ -22,6 +22,8 @@ LOG_MODULE_REGISTER(net_ieee802154_fake_driver, LOG_LEVEL_DBG);
 struct net_pkt *current_pkt;
 K_SEM_DEFINE(driver_lock, 0, UINT_MAX);
 
+uint8_t mock_ext_addr_be[8] = {0x00, 0x12, 0x4b, 0x00, 0x00, 0x9e, 0xa3, 0xc2};
+
 static enum ieee802154_hw_caps fake_get_capabilities(const struct device *dev)
 {
 	return IEEE802154_HW_FCS | IEEE802154_HW_2_4_GHZ;
@@ -120,10 +122,8 @@ static int fake_stop(const struct device *dev)
 static void fake_iface_init(struct net_if *iface)
 {
 	struct ieee802154_context *ctx = net_if_l2_data(iface);
-	static uint8_t mac[8] = { 0x00, 0x12, 0x4b, 0x00,
-				  0x00, 0x9e, 0xa3, 0xc2 };
 
-	net_if_set_link_addr(iface, mac, 8, NET_LINK_IEEE802154);
+	net_if_set_link_addr(iface, mock_ext_addr_be, 8, NET_LINK_IEEE802154);
 
 	ieee802154_init(iface);
 
