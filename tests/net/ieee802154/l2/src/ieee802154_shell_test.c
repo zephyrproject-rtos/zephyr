@@ -324,6 +324,84 @@ release_frag:
 	current_pkt->frags = NULL;
 }
 
+ZTEST(ieee802154_l2_shell, test_initiate_disassociation_from_coordinator)
+{
+	uint8_t expected_coord_addr_le[] = {EXPECTED_COORDINATOR_ADDR_LE};
+	uint8_t empty_coord_addr[IEEE802154_EXT_ADDR_LENGTH] = {0};
+	struct ieee802154_context *ctx = net_if_l2_data(iface);
+	uint8_t mock_ext_addr_le[IEEE802154_EXT_ADDR_LENGTH];
+	struct ieee802154_frame_params params = {
+		.dst = {
+			.len = IEEE802154_EXT_ADDR_LENGTH,
+			.pan_id = EXPECTED_COORDINATOR_PAN_CPU_ORDER,
+		}};
+	struct ieee802154_command *cmd;
+	struct net_pkt *pkt;
+
+	/* Simulate an associated device. */
+
+	sys_memcpy_swap(params.dst.ext_addr, ctx->ext_addr, sizeof(params.dst.ext_addr));
+
+	/* Simulate a packet from the coordinator. */
+	ctx->device_role = IEEE802154_DEVICE_ROLE_PAN_COORDINATOR;
+	ctx->pan_id = EXPECTED_COORDINATOR_PAN_CPU_ORDER;
+	ctx->short_addr = EXPECTED_COORDINATOR_SHORT_ADDR;
+	memcpy(ctx->ext_addr, expected_coord_addr_le, sizeof(ctx->ext_addr));
+
+	/* Create and send an incoming disassociation notification. */
+	pkt = ieee802154_create_mac_cmd_frame(iface, IEEE802154_CFI_DISASSOCIATION_NOTIFICATION,
+					      &params);
+	if (!pkt) {
+		NET_ERR("*** Could not create association response\n");
+		goto fail;
+	}
+
+	cmd = ieee802154_get_mac_command(pkt);
+	cmd->disassoc_note.reason = IEEE802154_DRF_COORDINATOR_WISH;
+	ieee802154_mac_cmd_finalize(pkt, IEEE802154_CFI_DISASSOCIATION_NOTIFICATION);
+
+	/* Restore the end device's state and simulate an associated device. */
+	ctx->device_role = IEEE802154_DEVICE_ROLE_ENDDEVICE;
+	ctx->short_addr = EXPECTED_ENDDEVICE_SHORT_ADDR;
+	sys_memcpy_swap(ctx->ext_addr, params.dst.ext_addr, sizeof(ctx->ext_addr));
+	ctx->coord_short_addr = EXPECTED_COORDINATOR_SHORT_ADDR;
+	memcpy(ctx->coord_ext_addr, expected_coord_addr_le, sizeof(ctx->coord_ext_addr));
+
+	if (net_recv_data(iface, pkt) < 0) {
+		NET_ERR("Recv assoc resp pkt failed");
+		net_pkt_unref(pkt);
+		goto fail;
+	}
+
+	/* We need to yield, so that the packet is actually being received from the RX thread. */
+	k_yield();
+
+	/* We should have received an ACK packet. */
+	zassert_not_null(current_pkt);
+	zassert_not_null(current_pkt->frags);
+	zassert_equal(net_pkt_get_len(current_pkt), IEEE802154_ACK_PKT_LENGTH,
+		      "Did not receive the expected ACK packet.");
+	net_pkt_frag_unref(current_pkt->frags);
+	current_pkt->frags = NULL;
+
+	/* Ensure we've been disassociated. */
+	zassert_mem_equal(ctx->coord_ext_addr, empty_coord_addr, sizeof(ctx->coord_ext_addr),
+			  "Disassociation: coordinator address should be unset.");
+	zassert_equal(ctx->pan_id, IEEE802154_PAN_ID_NOT_ASSOCIATED,
+		      "Disassociation: PAN should be unset.");
+	zassert_equal(ctx->short_addr, IEEE802154_SHORT_ADDRESS_NOT_ASSOCIATED,
+		      "Disassociation: Short addr should be unset.");
+	sys_memcpy_swap(mock_ext_addr_le, mock_ext_addr_be, sizeof(mock_ext_addr_le));
+	zassert_mem_equal(ctx->ext_addr, mock_ext_addr_le, sizeof(ctx->ext_addr),
+			  "Disassociation: Ext addr should be unaffected.");
+
+	return;
+
+fail:
+	sys_memcpy_swap(ctx->ext_addr, params.dst.ext_addr, sizeof(ctx->ext_addr));
+	ztest_test_fail();
+}
+
 ZTEST(ieee802154_l2_shell, test_set_ext_addr)
 {
 	uint8_t expected_ext_addr_le[] = {EXPECTED_ENDDEVICE_EXT_ADDR_LE};
