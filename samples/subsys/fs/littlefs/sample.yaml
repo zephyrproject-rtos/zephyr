@@ -14,6 +14,7 @@ tests:
       - native_posix
       - mimxrt1160_evk_cm7
       - lpcxpresso55s69_cpu0
+      - mr_canhubk3
     tags: filesystem
     integration_platforms:
       - nrf52840dk_nrf52840
