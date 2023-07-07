@@ -5,6 +5,7 @@ tests:
       - qemu_x86
       - native_posix
       - native_posix_64
+      - mr_canhubk3
     tags: flash_map
     integration_platforms:
       - native_posix
@@ -26,6 +27,7 @@ tests:
       - qemu_x86
       - native_posix
       - native_posix_64
+      - mr_canhubk3
     tags: flash_map
     integration_platforms:
       - native_posix

@@ -76,3 +76,7 @@ tests:
       - DTC_OVERLAY_FILE=boards/nrf52840dk_mx25r_high_perf.overlay
     integration_platforms:
       - nrf52840dk_nrf52840
+  drivers.flash.common.mr_canhubk3_sfdp_runtime:
+    platform_allow: mr_canhubk3
+    extra_configs:
+      - CONFIG_FLASH_NXP_S32_QSPI_NOR_SFDP_RUNTIME=y
