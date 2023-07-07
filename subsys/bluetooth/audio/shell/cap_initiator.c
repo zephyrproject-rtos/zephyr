@@ -234,8 +234,8 @@ static int cmd_cap_initiator_unicast_start(const struct shell *sh, size_t argc,
 		for (size_t i = 0U; i < sink_cnt; i++) {
 			struct bt_cap_stream *stream =
 				&unicast_streams[start_param.count].stream;
-			struct unicast_stream *uni_stream =
-				CONTAINER_OF(stream, struct unicast_stream, stream);
+			struct shell_stream *uni_stream =
+				CONTAINER_OF(stream, struct shell_stream, stream);
 			struct bt_bap_ep *snk_ep = snks[bt_conn_index(conn)][i];
 
 			if (snk_ep == NULL) {
@@ -268,8 +268,8 @@ static int cmd_cap_initiator_unicast_start(const struct shell *sh, size_t argc,
 		for (size_t i = 0U; i < source_cnt; i++) {
 			struct bt_cap_stream *stream =
 				&unicast_streams[start_param.count].stream;
-			struct unicast_stream *uni_stream =
-				CONTAINER_OF(stream, struct unicast_stream, stream);
+			struct shell_stream *uni_stream =
+				CONTAINER_OF(stream, struct shell_stream, stream);
 			struct bt_bap_ep *src_ep = srcs[bt_conn_index(conn)][i];
 
 			if (src_ep == NULL) {
@@ -364,8 +364,8 @@ static int cmd_cap_initiator_unicast_update(const struct shell *sh, size_t argc,
 	if (argc == 2 && strcmp(argv[1], "all") == 0) {
 		for (size_t i = 0U; i < ARRAY_SIZE(unicast_streams); i++) {
 			struct bt_cap_stream *stream = &unicast_streams[i].stream;
-			struct unicast_stream *uni_stream =
-				CONTAINER_OF(stream, struct unicast_stream, stream);
+			struct shell_stream *uni_stream =
+				CONTAINER_OF(stream, struct shell_stream, stream);
 			struct bt_bap_ep_info ep_info;
 
 			if (stream->bap_stream.conn == NULL) {
@@ -397,8 +397,8 @@ static int cmd_cap_initiator_unicast_update(const struct shell *sh, size_t argc,
 	} else {
 		for (size_t i = 1U; i < argc; i++) {
 			struct bt_cap_stream *stream = (void *)shell_strtoul(argv[i], 16, &err);
-			struct unicast_stream *uni_stream =
-				CONTAINER_OF(stream, struct unicast_stream, stream);
+			struct shell_stream *uni_stream =
+				CONTAINER_OF(stream, struct shell_stream, stream);
 			struct bt_bap_ep_info ep_info;
 
 			if (err != 0) {

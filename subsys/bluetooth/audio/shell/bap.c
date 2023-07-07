@@ -34,8 +34,8 @@
 
 #if defined(CONFIG_BT_BAP_UNICAST)
 
-struct unicast_stream unicast_streams[CONFIG_BT_MAX_CONN *
-				      (UNICAST_SERVER_STREAM_COUNT + UNICAST_CLIENT_STREAM_COUNT)];
+struct shell_stream unicast_streams[CONFIG_BT_MAX_CONN *
+				    (UNICAST_SERVER_STREAM_COUNT + UNICAST_CLIENT_STREAM_COUNT)];
 
 static const struct bt_audio_codec_qos_pref qos_pref =
 	BT_AUDIO_CODEC_QOS_PREF(true, BT_GAP_LE_PHY_2M, 0u, 60u, 20000u, 40000u, 20000u, 40000u);
@@ -53,7 +53,7 @@ struct bt_bap_ep *srcs[CONFIG_BT_MAX_CONN][CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_
 #endif /* CONFIG_BT_BAP_UNICAST */
 
 #if defined(CONFIG_BT_BAP_BROADCAST_SOURCE)
-struct broadcast_stream broadcast_source_streams[CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT];
+struct shell_stream broadcast_source_streams[CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT];
 struct broadcast_source default_source;
 #endif /* CONFIG_BT_BAP_BROADCAST_SOURCE */
 #if defined(CONFIG_BT_BAP_BROADCAST_SINK)
@@ -143,39 +143,20 @@ static bool initialized;
 #if defined(CONFIG_BT_AUDIO_TX)
 static struct bt_bap_stream *txing_stream;
 
-static uint16_t get_next_seq_num(struct bt_bap_stream *stream)
+static uint16_t get_next_seq_num(struct bt_bap_stream *bap_stream)
 {
-	const uint32_t interval_us = stream->qos->interval;
-	uint16_t *last_allocated_seq_num_ptr = NULL;
-	int64_t connected_at_ticks;
+	struct bt_cap_stream *cap_stream =
+		CONTAINER_OF(bap_stream, struct bt_cap_stream, bap_stream);
+	struct shell_stream *sh_stream = CONTAINER_OF(cap_stream, struct shell_stream, stream);
+	const uint32_t interval_us = bap_stream->qos->interval;
 	int64_t uptime_ticks;
 	int64_t delta_ticks;
 	uint64_t delta_us;
 	uint16_t seq_num;
 
-#if defined(CONFIG_BT_BAP_UNICAST)
-	if (stream->conn != NULL) { /* if unicast */
-		struct unicast_stream *uni_stream =
-			CONTAINER_OF(stream, struct unicast_stream, stream);
-
-		last_allocated_seq_num_ptr = &uni_stream->last_allocated_seq_num;
-		connected_at_ticks = uni_stream->connected_at_ticks;
-	}
-#endif /* CONFIG_BT_BAP_UNICAST */
-
-#if defined(CONFIG_BT_BAP_BROADCAST_SOURCE)
-	if (stream->conn == NULL) { /* if broadcast */
-		struct broadcast_stream *bro_stream =
-			CONTAINER_OF(stream, struct broadcast_stream, stream);
-
-		last_allocated_seq_num_ptr = &bro_stream->last_allocated_seq_num;
-		connected_at_ticks = bro_stream->connected_at_ticks;
-	}
-#endif /* CONFIG_BT_BAP_BROADCAST_SOURCE */
-
 	/* Note: This does not handle wrapping of ticks when they go above 2^(62-1) */
 	uptime_ticks = k_uptime_ticks();
-	delta_ticks = uptime_ticks - connected_at_ticks;
+	delta_ticks = uptime_ticks - sh_stream->connected_at_ticks;
 
 	delta_us = k_ticks_to_us_near64((uint64_t)delta_ticks);
 	/* Calculate the sequence number by dividing the stream uptime by the SDU interval */
@@ -188,13 +169,12 @@ static uint16_t get_next_seq_num(struct bt_bap_stream *stream)
 	 * The additional condition that checks that the difference is smaller than a specific value
 	 * is used to handle the case where seq_num has wrapped.
 	 */
-	if (seq_num <= *last_allocated_seq_num_ptr && *last_allocated_seq_num_ptr - seq_num < 100) {
-		seq_num = *last_allocated_seq_num_ptr + 1;
+	if (seq_num <= sh_stream->last_allocated_seq_num &&
+	    sh_stream->last_allocated_seq_num - seq_num < 100) {
+		seq_num = sh_stream->last_allocated_seq_num + 1;
 	}
 
-	if (last_allocated_seq_num_ptr != NULL) {
-		*last_allocated_seq_num_ptr = seq_num;
-	}
+	sh_stream->last_allocated_seq_num = seq_num;
 
 	return seq_num;
 }
@@ -964,7 +944,8 @@ static int cmd_config(const struct shell *sh, size_t argc, char *argv[])
 {
 	enum bt_audio_location location = BT_AUDIO_LOCATION_PROHIBITED;
 	const struct named_lc3_preset *named_preset;
-	struct unicast_stream *uni_stream;
+	struct shell_stream *uni_stream;
+	struct bt_cap_stream *cap_stream;
 	struct bt_bap_stream *bap_stream;
 	struct bt_bap_ep *ep = NULL;
 	unsigned long index;
@@ -1071,7 +1052,8 @@ static int cmd_config(const struct shell *sh, size_t argc, char *argv[])
 		}
 	}
 
-	uni_stream = CONTAINER_OF(bap_stream, struct unicast_stream, stream);
+	cap_stream = CONTAINER_OF(bap_stream, struct bt_cap_stream, bap_stream);
+	uni_stream = CONTAINER_OF(cap_stream, struct shell_stream, stream);
 	copy_unicast_stream_preset(uni_stream, named_preset);
 
 	/* If location has been modifed, we update the location in the codec configuration */
@@ -1250,8 +1232,7 @@ static int create_unicast_group(const struct shell *sh)
 
 	for (size_t i = 0U; i < ARRAY_SIZE(unicast_streams); i++) {
 		struct bt_bap_stream *stream = &unicast_streams[i].stream.bap_stream;
-		struct unicast_stream *uni_stream =
-			CONTAINER_OF(stream, struct unicast_stream, stream);
+		struct shell_stream *uni_stream = &unicast_streams[i];
 
 		if (stream->ep != NULL) {
 			struct bt_bap_unicast_group_stream_param *stream_param;
@@ -1781,43 +1762,20 @@ static void stream_enabled_cb(struct bt_bap_stream *stream)
 	}
 }
 
-static void stream_started_cb(struct bt_bap_stream *stream)
+static void stream_started_cb(struct bt_bap_stream *bap_stream)
 {
 #if defined(CONFIG_BT_AUDIO_TX)
-	int64_t *connected_at_ticks_ptr = NULL;
-	uint16_t *last_allocated_seq_num_ptr = NULL;
+	struct bt_cap_stream *cap_stream =
+		CONTAINER_OF(bap_stream, struct bt_cap_stream, bap_stream);
+	struct shell_stream *sh_stream = CONTAINER_OF(cap_stream, struct shell_stream, stream);
 
-#if defined(CONFIG_BT_BAP_UNICAST)
-	if (stream->conn != NULL) { /* if unicast */
-		struct unicast_stream *uni_stream =
-			CONTAINER_OF(stream, struct unicast_stream, stream);
+	sh_stream->connected_at_ticks = k_uptime_ticks();
 
-		connected_at_ticks_ptr = &uni_stream->connected_at_ticks;
-		last_allocated_seq_num_ptr = &uni_stream->last_allocated_seq_num;
-	}
-#endif /* CONFIG_BT_BAP_UNICAST */
-
-#if defined(CONFIG_BT_BAP_BROADCAST_SOURCE)
-	if (stream == NULL) { /* if broadcast */
-		struct broadcast_stream *bro_stream =
-			CONTAINER_OF(stream, struct broadcast_stream, stream);
-
-		connected_at_ticks_ptr = &bro_stream->connected_at_ticks;
-		last_allocated_seq_num_ptr = &bro_stream->last_allocated_seq_num;
-	}
-#endif /* CONFIG_BT_BAP_BROADCAST_SOURCE */
-
-	if (connected_at_ticks_ptr != NULL) {
-		*connected_at_ticks_ptr = k_uptime_ticks();
-	}
-
-	if (last_allocated_seq_num_ptr != NULL) {
-		/* Set to max value to support sending the first packet with PSN = 0*/
-		*last_allocated_seq_num_ptr = UINT16_MAX;
-	}
+	/* Set to max value to support sending the first packet with PSN = 0*/
+	sh_stream->last_allocated_seq_num = UINT16_MAX;
 #endif /* CONFIG_BT_AUDIO_TX */
 
-	printk("Stream %p started\n", stream);
+	printk("Stream %p started\n", bap_stream);
 
 #if defined(CONFIG_BT_AUDIO_RX)
 	lost_pkts = 0U;
