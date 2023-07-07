@@ -2608,7 +2608,7 @@ Task Watchdog:
 TF-M Integration:
   status: maintained
   maintainers:
-    - microbuilder
+    - d3zd3z
   collaborators:
     - joerchan
   files:
@@ -3232,11 +3232,10 @@ West:
 "West project: trusted-firmware-m":
   status: maintained
   maintainers:
-    - microbuilder
+    - d3zd3z
   collaborators:
     - joerchan
     - SebastianBoe
-    - theotherjimmy
   files:
     - modules/trusted-firmware-m/
   labels:
@@ -3245,11 +3244,10 @@ West:
 "West project: tf-m-tests":
   status: maintained
   maintainers:
-    - microbuilder
+    - d3zd3z
   collaborators:
     - joerchan
     - SebastianBoe
-    - theotherjimmy
   files: []
   labels:
     - manifest-tf-m-tests
@@ -3269,11 +3267,10 @@ West:
 "West project: psa-arch-tests":
   status: maintained
   maintainers:
-    - microbuilder
+    - d3zd3z
   collaborators:
     - joerchan
     - SebastianBoe
-    - theotherjimmy
   files: []
   labels:
     - manifest-psa-arch-tests
