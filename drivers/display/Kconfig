@@ -39,5 +39,6 @@ source "drivers/display/Kconfig.max7219"
 source "drivers/display/Kconfig.intel_multibootfb"
 source "drivers/display/Kconfig.mcux_dcnano_lcdif"
 source "drivers/display/Kconfig.otm8009a"
+source "drivers/display/Kconfig.hx8394"
 
 endif # DISPLAY
