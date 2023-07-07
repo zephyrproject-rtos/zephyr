@@ -1,0 +1,28 @@
+# Copyright 2023 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP S32 GMAC/EMAC driver
+
+compatible: "nxp,s32-gmac"
+
+include: [ethernet-controller.yaml, "ethernet,fixed-link.yaml", pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  interrupt-names:
+    required: true
+
+  phy-connection-type:
+    type: string
+    enum:
+      - "mii"
+      - "rmii"
+      - "rgmii"
+    description: |
+      Specifies interface type between the Ethernet device and a physical
+      layer (PHY) device.
