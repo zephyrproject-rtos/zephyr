@@ -191,6 +191,9 @@ static ssize_t dsi_mcux_transfer(const struct device *dev, uint8_t channel,
 	case MIPI_DSI_GENERIC_SHORT_WRITE_2_PARAM:
 		dsi_xfer.txDataType = kDSI_TxDataGenShortWrTwoParam;
 		break;
+	case MIPI_DSI_GENERIC_LONG_WRITE:
+		dsi_xfer.txDataType = kDSI_TxDataGenLongWr;
+		break;
 	case MIPI_DSI_GENERIC_READ_REQUEST_0_PARAM:
 		__fallthrough;
 	case MIPI_DSI_GENERIC_READ_REQUEST_1_PARAM:
