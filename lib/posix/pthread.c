@@ -509,14 +509,18 @@ int pthread_getschedparam(pthread_t pthread, int *policy, struct sched_param *pa
  */
 int pthread_once(pthread_once_t *once, void (*init_func)(void))
 {
-	k_mutex_lock(&pthread_once_lock, K_FOREVER);
+	__unused int ret;
+
+	ret = k_mutex_lock(&pthread_once_lock, K_FOREVER);
+	__ASSERT_NO_MSG(ret == 0);
 
 	if (once->is_initialized != 0 && once->init_executed == 0) {
 		init_func();
 		once->init_executed = 1;
 	}
 
-	k_mutex_unlock(&pthread_once_lock);
+	ret = k_mutex_unlock(&pthread_once_lock);
+	__ASSERT_NO_MSG(ret == 0);
 
 	return 0;
 }
