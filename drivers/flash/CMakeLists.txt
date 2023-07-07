@@ -106,6 +106,12 @@ zephyr_library_include_directories_ifdef(
   ${ZEPHYR_BASE}/drivers/memc
 )
 
+zephyr_library_sources_ifdef(CONFIG_FLASH_NXP_S32_QSPI_NOR flash_nxp_s32_qspi_nor.c)
+zephyr_library_include_directories_ifdef(
+  CONFIG_FLASH_NXP_S32_QSPI_NOR
+  ${ZEPHYR_BASE}/drivers/memc
+)
+
 zephyr_library_sources_ifdef(CONFIG_FLASH_SHELL flash_shell.c)
 zephyr_library_sources_ifdef(CONFIG_FLASH_JESD216 jesd216.c)
 zephyr_library_sources_ifdef(CONFIG_FLASH_INFINEON_CAT1 flash_ifx_cat1.c)
