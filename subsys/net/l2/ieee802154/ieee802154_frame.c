@@ -598,7 +598,7 @@ static uint8_t *generate_addressing_fields(struct ieee802154_context *ctx,
 	if (fs->fc.dst_addr_mode != IEEE802154_ADDR_MODE_NONE) {
 		address_field = (struct ieee802154_address_field *)p_buf;
 
-		address_field->plain.pan_id = params->dst.pan_id;
+		address_field->plain.pan_id = sys_cpu_to_le16(params->dst.pan_id);
 		p_buf += IEEE802154_PAN_ID_LENGTH;
 
 		if (fs->fc.dst_addr_mode == IEEE802154_ADDR_MODE_SHORT) {
@@ -623,7 +623,7 @@ static uint8_t *generate_addressing_fields(struct ieee802154_context *ctx,
 	if (fs->fc.pan_id_comp) {
 		src_addr = &address_field->comp.addr;
 	} else {
-		address_field->plain.pan_id = params->pan_id;
+		address_field->plain.pan_id = sys_cpu_to_le16(params->pan_id);
 		src_addr = &address_field->plain.addr;
 		p_buf += IEEE802154_PAN_ID_LENGTH;
 	}
