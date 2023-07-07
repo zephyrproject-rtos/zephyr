@@ -253,4 +253,21 @@
 			input-enable;
 		};
 	};
+
+	emac0_default: emac0_default {
+		group1 {
+			pinmux = <PTC0_EMAC_MII_RMII_RXD0>,
+				<PTC1_EMAC_MII_RMII_RXD1>,
+				<PTC14_EMAC_MII_RMII_RX_ER>,
+				<PTC15_EMAC_MII_RMII_RX_DV>,
+				<PTD6_EMAC_MII_RMII_TX_CLK>;
+			input-enable;
+		};
+		group2 {
+			pinmux = <PTB5_EMAC_MII_RMII_TXD0>,
+				<PTB4_EMAC_MII_RMII_TXD1>,
+				<PTE9_EMAC_MII_RMII_TX_EN>;
+			output-enable;
+		};
+	};
 };
