@@ -180,6 +180,29 @@ int timer_settime(timer_t timerid, int flags, const struct itimerspec *value,
 }
 
 /**
+ * @brief Returns the timer expiration overrun count.
+ *
+ * See IEEE 1003.1
+ */
+int timer_getoverrun(timer_t timerid)
+{
+	struct timer_obj *timer = (struct timer_obj *) timerid;
+
+	if (timer == NULL) {
+		errno = EINVAL;
+		return -1;
+	}
+
+	int overruns = k_timer_status_get(&timer->ztimer) - 1;
+
+	if (overruns > CONFIG_TIMER_DELAYTIMER_MAX) {
+		overruns = CONFIG_TIMER_DELAYTIMER_MAX;
+	}
+
+	return overruns;
+}
+
+/**
  * @brief Delete a per-process timer.
  *
  * See IEEE 1003.1
