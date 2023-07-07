@@ -24,6 +24,7 @@ config SWDP_BITBANG_DRIVER
 	bool "Serial Wire Debug Port bit-bang driver"
 	default y
 	depends on DT_HAS_ZEPHYR_SWDP_GPIO_ENABLED
+	depends on GPIO
 	help
 	  Serial Wire Debug Port bit-bang driver.
 
