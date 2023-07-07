@@ -21,14 +21,10 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/swdp.h>
 
+#include "swdp_ll_pin.h"
+
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(swdp, CONFIG_DP_DRIVER_LOG_LEVEL);
-
-#if defined(CONFIG_SOC_SERIES_NRF52X)
-#define CPU_CLOCK		64000000U
-#else
-#define CPU_CLOCK		CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC
-#endif
 
 #define CLOCK_DELAY(swclk_freq, port_write_cycles) \
 	((CPU_CLOCK / 2 / swclk_freq) - port_write_cycles)
@@ -44,15 +40,15 @@ LOG_MODULE_REGISTER(swdp, CONFIG_DP_DRIVER_LOG_LEVEL);
 struct sw_config {
 	struct gpio_dt_spec clk;
 	struct gpio_dt_spec dout;
-	struct gpio_dt_spec din;
+	struct gpio_dt_spec dio;
 	struct gpio_dt_spec dnoe;
+	void *dout_reg;
+	void *dio_reg;
+	void *dnoe_reg;
 	struct gpio_dt_spec noe;
 	struct gpio_dt_spec reset;
 	uint32_t port_write_cycles;
 	void *clk_reg;
-	void *dout_reg;
-	void *din_reg;
-	void *dnoe_reg;
 };
 
 struct sw_cfg_data {
@@ -98,102 +94,78 @@ static ALWAYS_INLINE uint32_t sw_get32bit_parity(uint32_t data)
 	return data & 1U;
 }
 
-static ALWAYS_INLINE void pin_delay_asm(uint32_t delay)
-{
-#if defined(CONFIG_SOC_SERIES_NRF52X)
-	__asm volatile ("movs r3, %[p]\n"
-			".start_%=:\n"
-			"subs r3, #1\n"
-			"bne .start_%=\n"
-			:
-			: [p] "r" (delay)
-			: "r3", "cc"
-			);
-#else
-#error "Not defined for this SoC family"
-#endif
-}
-
-static ALWAYS_INLINE void pin_platform_set(void *base, uint8_t pin)
-{
-#if defined(CONFIG_SOC_SERIES_NRF52X)
-	NRF_GPIO_Type * reg = base;
-
-	reg->OUTSET = BIT(pin);
-#else
-#error "Not defined for this SoC family"
-#endif
-}
-
-static ALWAYS_INLINE void pin_platform_clr(void *base, uint8_t pin)
-{
-#if defined(CONFIG_SOC_SERIES_NRF52X)
-	NRF_GPIO_Type * reg = base;
-
-	reg->OUTCLR = BIT(pin);
-#else
-#error "Not defined for this SoC family"
-#endif
-}
-
-static ALWAYS_INLINE uint32_t pin_platform_get(void *base, uint8_t pin)
-{
-#if defined(CONFIG_SOC_SERIES_NRF52X)
-	NRF_GPIO_Type * reg = base;
-
-	return ((reg->IN >> pin) & 1);
-#else
-#error "Not defined for this SoC family"
-#endif
-}
-
 /* Set SWCLK DAP hardware output pin to high level */
 static ALWAYS_INLINE void pin_swclk_set(const struct device *dev)
 {
 	const struct sw_config *config = dev->config;
-	const struct gpio_dt_spec *dt_spec = &config->clk;
 
-	pin_platform_set(config->clk_reg, dt_spec->pin);
+	if (FAST_BITBANG_HW_SUPPORT) {
+		swdp_ll_pin_set(config->clk_reg, config->clk.pin);
+	} else {
+		gpio_pin_set_dt(&config->clk, 1);
+	}
 }
 
 /* Set SWCLK DAP hardware output pin to low level */
 static ALWAYS_INLINE void pin_swclk_clr(const struct device *dev)
 {
 	const struct sw_config *config = dev->config;
-	const struct gpio_dt_spec *dt_spec = &config->clk;
 
-	pin_platform_clr(config->clk_reg, dt_spec->pin);
+	if (FAST_BITBANG_HW_SUPPORT) {
+		swdp_ll_pin_clr(config->clk_reg, config->clk.pin);
+	} else {
+		gpio_pin_set_dt(&config->clk, 0);
+	}
 }
 
 /* Set the SWDIO DAP hardware output pin to high level */
 static ALWAYS_INLINE void pin_swdio_set(const struct device *dev)
 {
 	const struct sw_config *config = dev->config;
-	const struct gpio_dt_spec *dt_spec = &config->dout;
 
-	pin_platform_set(config->dout_reg, dt_spec->pin);
+	if (config->dout.port) {
+		if (FAST_BITBANG_HW_SUPPORT) {
+			swdp_ll_pin_set(config->dout_reg, config->dout.pin);
+		} else {
+			gpio_pin_set_dt(&config->dout, 1);
+		}
+	} else {
+		if (FAST_BITBANG_HW_SUPPORT) {
+			swdp_ll_pin_set(config->dio_reg, config->dio.pin);
+		} else {
+			gpio_pin_set_dt(&config->dio, 1);
+		}
+	}
 }
 
 /* Set the SWDIO DAP hardware output pin to low level */
 static ALWAYS_INLINE void pin_swdio_clr(const struct device *dev)
 {
 	const struct sw_config *config = dev->config;
-	const struct gpio_dt_spec *dt_spec = &config->dout;
 
-	pin_platform_clr(config->dout_reg, dt_spec->pin);
+	if (config->dout.port) {
+		if (FAST_BITBANG_HW_SUPPORT) {
+			swdp_ll_pin_clr(config->dout_reg, config->dout.pin);
+		} else {
+			gpio_pin_set_dt(&config->dout, 0);
+		}
+	} else {
+		if (FAST_BITBANG_HW_SUPPORT) {
+			swdp_ll_pin_clr(config->dio_reg, config->dio.pin);
+		} else {
+			gpio_pin_set_dt(&config->dio, 0);
+		}
+	}
 }
 
 /* Set the SWDIO DAP hardware output pin to bit level */
 static ALWAYS_INLINE void pin_swdio_out(const struct device *dev,
 					const uint32_t bit)
 {
-	const struct sw_config *config = dev->config;
-	const struct gpio_dt_spec *dt_spec = &config->dout;
-
 	if (bit & 1U) {
-		pin_platform_set(config->dout_reg, dt_spec->pin);
+		pin_swdio_set(dev);
 	} else {
-		pin_platform_clr(config->dout_reg, dt_spec->pin);
+		pin_swdio_clr(dev);
 	}
 }
 
@@ -201,9 +173,12 @@ static ALWAYS_INLINE void pin_swdio_out(const struct device *dev,
 static ALWAYS_INLINE uint32_t pin_swdio_in(const struct device *dev)
 {
 	const struct sw_config *config = dev->config;
-	const struct gpio_dt_spec *dt_spec = &config->din;
 
-	return pin_platform_get(config->din_reg, dt_spec->pin);
+	if (FAST_BITBANG_HW_SUPPORT) {
+		return swdp_ll_pin_get(config->dio_reg, config->dio.pin);
+	} else {
+		return gpio_pin_get_dt(&config->dio);
+	}
 }
 
 /*
@@ -213,9 +188,20 @@ static ALWAYS_INLINE uint32_t pin_swdio_in(const struct device *dev)
 static ALWAYS_INLINE void pin_swdio_out_enable(const struct device *dev)
 {
 	const struct sw_config *config = dev->config;
-	const struct gpio_dt_spec *dt_spec = &config->dnoe;
 
-	pin_platform_set(config->dnoe_reg, dt_spec->pin);
+	if (config->dnoe.port) {
+		if (FAST_BITBANG_HW_SUPPORT) {
+			swdp_ll_pin_set(config->dnoe_reg, config->dnoe.pin);
+		} else {
+			gpio_pin_set_dt(&config->dnoe, 1);
+		}
+	} else {
+		if (FAST_BITBANG_HW_SUPPORT) {
+			swdp_ll_pin_output(config->dio_reg, config->dio.pin);
+		} else {
+			gpio_pin_configure_dt(&config->dio, GPIO_OUTPUT_ACTIVE);
+		}
+	}
 }
 
 /*
@@ -224,9 +210,20 @@ static ALWAYS_INLINE void pin_swdio_out_enable(const struct device *dev)
 static ALWAYS_INLINE void pin_swdio_out_disable(const struct device *dev)
 {
 	const struct sw_config *config = dev->config;
-	const struct gpio_dt_spec *dt_spec = &config->dnoe;
 
-	pin_platform_clr(config->dnoe_reg, dt_spec->pin);
+	if (config->dnoe.port) {
+		if (FAST_BITBANG_HW_SUPPORT) {
+			swdp_ll_pin_clr(config->dnoe_reg, config->dnoe.pin);
+		} else {
+			gpio_pin_set_dt(&config->dnoe, 0);
+		}
+	} else {
+		if (FAST_BITBANG_HW_SUPPORT) {
+			swdp_ll_pin_input(config->dio_reg, config->dio.pin);
+		} else {
+			gpio_pin_configure_dt(&config->dio, GPIO_INPUT);
+		}
+	}
 }
 
 #define SW_CLOCK_CYCLE(dev, delay)			\
@@ -260,13 +257,14 @@ static int sw_sequence(const struct device *dev, uint32_t count,
 {
 	struct sw_cfg_data *sw_data = dev->data;
 	unsigned int key;
-	uint32_t val = 0;
-	uint32_t n = 0;
+	uint32_t val = 0; /* current byte */
+	uint32_t n = 0; /* bit counter */
 
-	LOG_DBG("count %u", count);
+	LOG_DBG("writing %u bits", count);
 	LOG_HEXDUMP_DBG(data, count, "sequence bit data");
 	key = irq_lock();
 
+	pin_swdio_out_enable(dev);
 	while (count--) {
 		if (n == 0U) {
 			val = *data++;
@@ -308,6 +306,8 @@ static int sw_transfer(const struct device *dev,
 	uint32_t val;
 	uint32_t parity = 0;
 	uint32_t n;
+
+	pin_swdio_out_enable(dev);
 
 	LOG_DBG("request 0x%02x idle %u", request, idle_cycles);
 	if (!(request & SWDP_REQUEST_RnW)) {
@@ -449,19 +449,31 @@ static int sw_set_pins(const struct device *dev,
 		}
 	}
 
-	if (pins & BIT(SWDP_SWDIO_PIN)) {
-		if (value & BIT(SWDP_SWDIO_PIN)) {
-			gpio_pin_set_dt(&config->dout, 1);
-		} else {
-			gpio_pin_set_dt(&config->dout, 0);
+	if (config->dout_reg != NULL) {
+		if (pins & BIT(SWDP_SWDIO_PIN)) {
+			if (value & BIT(SWDP_SWDIO_PIN)) {
+				gpio_pin_set_dt(&config->dout, 1);
+			} else {
+				gpio_pin_set_dt(&config->dout, 0);
+			}
+		}
+	} else {
+		if (pins & BIT(SWDP_SWDIO_PIN)) {
+			if (value & BIT(SWDP_SWDIO_PIN)) {
+				gpio_pin_set_dt(&config->dio, 1);
+			} else {
+				gpio_pin_set_dt(&config->dio, 0);
+			}
 		}
 	}
 
-	if (pins & BIT(SWDP_nRESET_PIN)) {
-		if (value & BIT(SWDP_nRESET_PIN)) {
-			gpio_pin_set_dt(&config->reset, 1);
-		} else {
-			gpio_pin_set_dt(&config->reset, 0);
+	if (config->reset.port) {
+		if (pins & BIT(SWDP_nRESET_PIN)) {
+			if (value & BIT(SWDP_nRESET_PIN)) {
+				gpio_pin_set_dt(&config->reset, 1);
+			} else {
+				gpio_pin_set_dt(&config->reset, 0);
+			}
 		}
 	}
 
@@ -473,10 +485,12 @@ static int sw_get_pins(const struct device *dev, uint8_t *const state)
 	const struct sw_config *config = dev->config;
 	uint32_t val;
 
-	val = gpio_pin_get_dt(&config->reset);
-	*state = val ? BIT(SWDP_nRESET_PIN) : 0;
+	if (config->reset.port) {
+		val = gpio_pin_get_dt(&config->reset);
+		*state = val ? BIT(SWDP_nRESET_PIN) : 0;
+	}
 
-	val = gpio_pin_get_dt(&config->din);
+	val = gpio_pin_get_dt(&config->dio);
 	*state |= val ? BIT(SWDP_SWDIO_PIN) : 0;
 
 	val = gpio_pin_get_dt(&config->clk);
@@ -529,10 +543,28 @@ static int sw_port_on(const struct device *dev)
 	const struct sw_config *config = dev->config;
 
 	gpio_pin_set_dt(&config->clk, 1);
-	gpio_pin_set_dt(&config->dout, 1);
-	gpio_pin_set_dt(&config->dnoe, 1);
-	gpio_pin_set_dt(&config->noe, 1);
-	gpio_pin_set_dt(&config->reset, 1);
+
+	if (config->dnoe.port) {
+		gpio_pin_set_dt(&config->dnoe, 1);
+	}
+
+	if (config->dout.port) {
+		gpio_pin_set_dt(&config->dout, 1);
+	} else {
+		int ret;
+
+		ret = gpio_pin_configure_dt(&config->dio, GPIO_OUTPUT_ACTIVE);
+		if (ret) {
+			return ret;
+		}
+	}
+
+	if (config->noe.port) {
+		gpio_pin_set_dt(&config->noe, 1);
+	}
+	if (config->reset.port) {
+		gpio_pin_set_dt(&config->reset, 1);
+	}
 
 	return 0;
 }
@@ -541,9 +573,27 @@ static int sw_port_off(const struct device *dev)
 {
 	const struct sw_config *config = dev->config;
 
-	gpio_pin_set_dt(&config->dnoe, 0);
-	gpio_pin_set_dt(&config->noe, 0);
-	gpio_pin_set_dt(&config->reset, 1);
+	if (config->dnoe.port) {
+		gpio_pin_set_dt(&config->dnoe, 0);
+	}
+
+	if (config->dout.port) {
+		gpio_pin_set_dt(&config->dout, 0);
+	} else {
+		int ret;
+
+		ret = gpio_pin_configure_dt(&config->dio, GPIO_INPUT);
+		if (ret) {
+			return ret;
+		}
+	}
+
+	if (config->noe.port) {
+		gpio_pin_set_dt(&config->noe, 0);
+	}
+	if (config->reset.port) {
+		gpio_pin_set_dt(&config->reset, 1);
+	}
 
 	return 0;
 }
@@ -559,29 +609,37 @@ static int sw_gpio_init(const struct device *dev)
 		return ret;
 	}
 
-	ret = gpio_pin_configure_dt(&config->dout, GPIO_OUTPUT_ACTIVE);
+	ret = gpio_pin_configure_dt(&config->dio, GPIO_INPUT);
 	if (ret) {
 		return ret;
 	}
 
-	ret = gpio_pin_configure_dt(&config->din, GPIO_INPUT);
-	if (ret) {
-		return ret;
+	if (config->dout.port) {
+		ret = gpio_pin_configure_dt(&config->dout, GPIO_OUTPUT_ACTIVE);
+		if (ret) {
+			return ret;
+		}
 	}
 
-	ret = gpio_pin_configure_dt(&config->dnoe, GPIO_OUTPUT_INACTIVE);
-	if (ret) {
-		return ret;
+	if (config->dnoe.port) {
+		ret = gpio_pin_configure_dt(&config->dnoe, GPIO_OUTPUT_INACTIVE);
+		if (ret) {
+			return ret;
+		}
 	}
 
-	ret = gpio_pin_configure_dt(&config->noe, GPIO_OUTPUT_INACTIVE);
-	if (ret) {
-		return ret;
+	if (config->noe.port) {
+		ret = gpio_pin_configure_dt(&config->noe, GPIO_OUTPUT_INACTIVE);
+		if (ret) {
+			return ret;
+		}
 	}
 
-	ret = gpio_pin_configure_dt(&config->reset, GPIO_OUTPUT_INACTIVE);
-	if (ret) {
-		return ret;
+	if (config->reset.port) {
+		ret = gpio_pin_configure_dt(&config->reset, GPIO_OUTPUT_ACTIVE);
+		if (ret) {
+			return ret;
+		}
 	}
 
 	sw_data->turnaround = 1U;
@@ -605,29 +663,35 @@ static struct swdp_api swdp_bitbang_api = {
 	.swdp_port_off	= sw_port_off,
 };
 
-#define SW_GPIOS_GET_REG(n, gpios)						\
-	INT_TO_POINTER(DT_REG_ADDR(DT_PHANDLE(DT_DRV_INST(n), gpios)))
+#define SW_GPIOS_GET_REG(n, gpios)							\
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, gpios),					\
+		    (INT_TO_POINTER(DT_REG_ADDR(DT_PHANDLE(DT_DRV_INST(n), gpios)))),	\
+		    (NULL))
 
-#define SW_DEVICE_DEFINE(n)							\
-	static const struct sw_config sw_cfg_##n = {				\
-		.clk = GPIO_DT_SPEC_INST_GET(n, clk_gpios),			\
-		.dout = GPIO_DT_SPEC_INST_GET(n, dout_gpios),			\
-		.din = GPIO_DT_SPEC_INST_GET(n, din_gpios),			\
-		.dnoe = GPIO_DT_SPEC_INST_GET(n, dnoe_gpios),			\
-		.noe = GPIO_DT_SPEC_INST_GET(n, noe_gpios),			\
-		.reset = GPIO_DT_SPEC_INST_GET(n, reset_gpios),			\
-		.port_write_cycles = DT_INST_PROP(n, port_write_cycles),	\
-		.clk_reg = SW_GPIOS_GET_REG(n, clk_gpios),			\
-		.dout_reg = SW_GPIOS_GET_REG(n, dout_gpios),			\
-		.din_reg = SW_GPIOS_GET_REG(n, din_gpios),			\
-		.dnoe_reg = SW_GPIOS_GET_REG(n, dnoe_gpios),			\
-	};									\
-										\
-	static struct sw_cfg_data sw_data_##n;					\
-										\
-	DEVICE_DT_INST_DEFINE(n, sw_gpio_init, NULL,				\
-			      &sw_data_##n, &sw_cfg_##n,			\
-			      POST_KERNEL, CONFIG_DP_DRIVER_INIT_PRIO,		\
-			      &swdp_bitbang_api);				\
+#define SW_DEVICE_DEFINE(n)								\
+	BUILD_ASSERT((DT_INST_NODE_HAS_PROP(n, dout_gpios)) == 				\
+		     (DT_INST_NODE_HAS_PROP(n, dnoe_gpios)),				\
+		     "Either the dout-gpios or dnoe-gpios property is missing.");	\
+											\
+	static const struct sw_config sw_cfg_##n = {					\
+		.clk = GPIO_DT_SPEC_INST_GET(n, clk_gpios),				\
+		.clk_reg = SW_GPIOS_GET_REG(n, clk_gpios),				\
+		.dio = GPIO_DT_SPEC_INST_GET(n, dio_gpios),				\
+		.dio_reg = SW_GPIOS_GET_REG(n, dio_gpios),				\
+		.dout = GPIO_DT_SPEC_INST_GET_OR(n, dout_gpios, {0}),			\
+		.dout_reg = SW_GPIOS_GET_REG(n, dout_gpios),				\
+		.dnoe = GPIO_DT_SPEC_INST_GET_OR(n, dnoe_gpios, {0}),			\
+		.dnoe_reg = SW_GPIOS_GET_REG(n, dnoe_gpios),				\
+		.noe = GPIO_DT_SPEC_INST_GET_OR(n, noe_gpios, {0}),			\
+		.reset = GPIO_DT_SPEC_INST_GET_OR(n, reset_gpios, {0}),			\
+		.port_write_cycles = DT_INST_PROP(n, port_write_cycles),		\
+	};										\
+											\
+	static struct sw_cfg_data sw_data_##n;						\
+											\
+	DEVICE_DT_INST_DEFINE(n, sw_gpio_init, NULL,					\
+			      &sw_data_##n, &sw_cfg_##n,				\
+			      POST_KERNEL, CONFIG_DP_DRIVER_INIT_PRIO,			\
+			      &swdp_bitbang_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SW_DEVICE_DEFINE)
