@@ -14,8 +14,3 @@ tests:
       - kscan
     extra_args: CONF_FILE="mec15xxevb_assy6853.conf"
     platform_allow: mec15xxevb_assy6853
-  drivers.kscan.rk055hdmipi4m:
-    tags: drivers kscan userspace
-    depends_on: kscan
-    extra_args: SHIELD="rk055hdmipi4m"
-    platform_allow: mimxrt1170_evk_cm7 mimxrt595_evk_cm33

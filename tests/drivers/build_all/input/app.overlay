@@ -57,6 +57,13 @@
 				reg = <0x0>;
 				int-gpios = <&test_gpio 0 0>;
 			};
+
+			gt911@1 {
+				compatible = "goodix,gt911";
+				reg = <0x1>;
+				irq-gpios = <&gpio0 0 0>;
+				reset-gpios = <&gpio0 0 0>;
+			};
 		};
 
 		spi@2 {
