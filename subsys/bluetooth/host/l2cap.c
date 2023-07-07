@@ -907,7 +907,7 @@ static struct net_buf *l2cap_chan_le_get_tx_buf(struct bt_l2cap_le_chan *ch)
 }
 
 static int l2cap_chan_le_send_sdu(struct bt_l2cap_le_chan *ch,
-				  struct net_buf **buf, uint16_t sent);
+				  struct net_buf **buf);
 
 static void l2cap_chan_tx_process(struct k_work *work)
 {
@@ -918,11 +918,11 @@ static void l2cap_chan_tx_process(struct k_work *work)
 
 	/* Resume tx in case there are buffers in the queue */
 	while ((buf = l2cap_chan_le_get_tx_buf(ch))) {
-		int sent = l2cap_tx_meta_data(buf)->sent;
+		int sent;
 
-		LOG_DBG("buf %p sent %u", buf, sent);
+		LOG_DBG("buf %p sent %u", buf);
 
-		sent = l2cap_chan_le_send_sdu(ch, &buf, sent);
+		sent = l2cap_chan_le_send_sdu(ch, &buf);
 		if (sent < 0) {
 			if (sent == -EAGAIN) {
 				ch->tx_buf = buf;
@@ -2032,11 +2032,12 @@ static int l2cap_chan_le_send(struct bt_l2cap_le_chan *ch,
 }
 
 static int l2cap_chan_le_send_sdu(struct bt_l2cap_le_chan *ch,
-				  struct net_buf **buf, uint16_t sent)
+				  struct net_buf **buf)
 {
 	int ret;
  	struct net_buf *frag;
 	size_t frag_len;
+	uint16_t sent = l2cap_tx_meta_data(*buf)->sent;
 
 	/* Drop empty frags unless it's the last one. */
 	while (!(*buf)->len && (*buf)->frags) {
@@ -3176,7 +3177,7 @@ int bt_l2cap_chan_send_cb(struct bt_l2cap_chan *chan, struct net_buf *buf, bt_co
 		return 0;
 	}
 
-	err = l2cap_chan_le_send_sdu(le_chan, &buf, 0);
+	err = l2cap_chan_le_send_sdu(le_chan, &buf);
 
 	if (err == -EAGAIN) {
 		net_buf_put(&le_chan->tx_queue, buf);
