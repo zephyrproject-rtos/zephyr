@@ -12,6 +12,7 @@ tests:
       - native_posix
       - native_posix_64
       - nrf52840dk_nrf52840
+      - mr_canhubk3
     integration_platforms:
       - native_posix
   logging.log_backend_fs.manualmounted.native_posix:
@@ -29,3 +30,6 @@ tests:
     extra_args: DTC_OVERLAY_FILE="./boards/nrf52840dk_nrf52840.overlay;./boards/automount.overlay"
     integration_platforms:
       - nrf52840dk_nrf52840
+  logging.log_backend_fs.manualmounted.mr_canhubk3:
+    platform_allow: mr_canhubk3
+    extra_args: DTC_OVERLAY_FILE="./boards/mr_canhubk3.overlay;./boards/automount.overlay"

@@ -6,6 +6,7 @@ tests:
       - nrf51dk_nrf51422
       - native_posix
       - native_posix_64
+      - mr_canhubk3
     tags: flash_circural_buffer
     integration_platforms:
       - nrf52840dk_nrf52840
