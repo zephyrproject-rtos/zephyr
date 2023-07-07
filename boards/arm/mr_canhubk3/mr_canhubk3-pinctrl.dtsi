@@ -90,4 +90,24 @@
 			input-enable;
 		};
 	};
+
+	qspi0_default: qspi0_default {
+		group1 {
+			pinmux = <(PTD11_QUADSPI_IOFA0_O | PTD11_QUADSPI_IOFA0_I)>,
+				<(PTD7_QUADSPI_IOFA1_O | PTD7_QUADSPI_IOFA1_I)>,
+				<(PTD12_QUADSPI_IOFA2_O | PTD12_QUADSPI_IOFA2_I)>,
+				<(PTC2_QUADSPI_IOFA3_O | PTC2_QUADSPI_IOFA3_I)>;
+			output-enable;
+			input-enable;
+		};
+		group2 {
+			pinmux = <PTD10_QUADSPI_SCKFA_O>;
+			output-enable;
+		};
+		group3 {
+			pinmux = <PTC3_QUADSPI_PCSFA>;
+			output-enable;
+			bias-pull-up;
+		};
+	};
 };

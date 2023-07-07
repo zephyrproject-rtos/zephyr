@@ -49,6 +49,7 @@ SIUL2         on-chip     | pinctrl
                           | gpio
                           | external interrupt controller
 LPUART        on-chip     serial
+QSPI          on-chip     flash
 ============  ==========  ================================
 
 The default configuration can be found in the Kconfig file
@@ -118,6 +119,13 @@ the watchdog so the FS26 must be started in debug mode following these steps:
 2. Remove the jumper ``JP1`` (pins 1-2 open), which is connected by default.
 3. Power on the board.
 4. Reconnect the jumper ``JP1`` (pins 1-2 shorted).
+
+External Flash
+==============
+
+The on-board MX25L6433F 64M-bit multi-I/O Serial NOR Flash memory is connected
+to the QSPI controller port A1. This board configuration selects it as the
+default flash controller.
 
 Programming and Debugging
 *************************
