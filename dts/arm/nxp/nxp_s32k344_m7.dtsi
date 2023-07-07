@@ -415,6 +415,14 @@
 			clocks = <&clock NXP_S32_LPUART15_CLK>;
 			status = "disabled";
 		};
+
+		qspi0: qspi@404cc000 {
+			compatible = "nxp,s32-qspi";
+			reg = <0x404cc000 0x4000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
 	};
 };
 
