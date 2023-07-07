@@ -8,13 +8,13 @@
 
 #define DT_DRV_COMPAT goodix_gt911
 
-#include <zephyr/drivers/kscan.h>
-#include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/input/input.h>
 #include <zephyr/sys/byteorder.h>
 
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(gt911, CONFIG_KSCAN_LOG_LEVEL);
+LOG_MODULE_REGISTER(gt911, CONFIG_INPUT_LOG_LEVEL);
 
 /* GT911 used registers */
 #define DEVICE_ID           __bswap_16(0x8140U)
@@ -45,11 +45,9 @@ struct gt911_config {
 struct gt911_data {
 	/** Device pointer. */
 	const struct device *dev;
-	/** KSCAN Callback. */
-	kscan_callback_t callback;
 	/** Work queue (for deferred read). */
 	struct k_work work;
-#ifdef CONFIG_KSCAN_GT911_INTERRUPT
+#ifdef CONFIG_INPUT_GT911_INTERRUPT
 	/** Interrupt GPIO callback. */
 	struct gpio_callback int_gpio_cb;
 #else
@@ -73,7 +71,6 @@ struct  gt911_point_reg_t {
 static int gt911_process(const struct device *dev)
 {
 	const struct gt911_config *config = dev->config;
-	struct gt911_data *data = dev->data;
 
 	int r;
 	uint16_t reg_addr;
@@ -124,7 +121,13 @@ static int gt911_process(const struct device *dev)
 
 	LOG_DBG("pressed: %d, row: %d, col: %d", pressed, row, col);
 
-	data->callback(dev, row, col, pressed);
+	if (pressed) {
+		input_report_abs(dev, INPUT_ABS_X, col, false, K_FOREVER);
+		input_report_abs(dev, INPUT_ABS_Y, row, false, K_FOREVER);
+		input_report_key(dev, INPUT_BTN_TOUCH, 1, true, K_FOREVER);
+	} else {
+		input_report_key(dev, INPUT_BTN_TOUCH, 0, true, K_FOREVER);
+	}
 
 	return 0;
 }
@@ -136,7 +139,7 @@ static void gt911_work_handler(struct k_work *work)
 	gt911_process(data->dev);
 }
 
-#ifdef CONFIG_KSCAN_GT911_INTERRUPT
+#ifdef CONFIG_INPUT_GT911_INTERRUPT
 static void gt911_isr_handler(const struct device *dev,
 			       struct gpio_callback *cb, uint32_t pins)
 {
@@ -152,52 +155,6 @@ static void gt911_timer_handler(struct k_timer *timer)
 	k_work_submit(&data->work);
 }
 #endif
-
-static int gt911_configure(const struct device *dev,
-			    kscan_callback_t callback)
-{
-	struct gt911_data *data = dev->data;
-
-	if (!callback) {
-		LOG_ERR("Invalid callback (NULL)");
-		return -EINVAL;
-	}
-
-	data->callback = callback;
-
-	return 0;
-}
-
-static int gt911_enable_callback(const struct device *dev)
-{
-	struct gt911_data *data = dev->data;
-
-#ifdef CONFIG_KSCAN_GT911_INTERRUPT
-	const struct gt911_config *config = dev->config;
-
-	gpio_add_callback(config->int_gpio.port, &data->int_gpio_cb);
-#else
-	k_timer_start(&data->timer, K_MSEC(CONFIG_KSCAN_GT911_PERIOD),
-		      K_MSEC(CONFIG_KSCAN_GT911_PERIOD));
-#endif
-
-	return 0;
-}
-
-static int gt911_disable_callback(const struct device *dev)
-{
-	struct gt911_data *data = dev->data;
-
-#ifdef CONFIG_KSCAN_GT911_INTERRUPT
-	const struct gt911_config *config = dev->config;
-
-	gpio_remove_callback(config->int_gpio.port, &data->int_gpio_cb);
-#else
-	k_timer_stop(&data->timer);
-#endif
-
-	return 0;
-}
 
 static uint8_t gt911_get_firmware_checksum(const uint8_t *firmware)
 {
@@ -269,7 +226,7 @@ static int gt911_init(const struct device *dev)
 		return r;
 	}
 
-#ifdef CONFIG_KSCAN_GT911_INTERRUPT
+#ifdef CONFIG_INPUT_GT911_INTERRUPT
 	r = gpio_pin_interrupt_configure_dt(&config->int_gpio,
 					    GPIO_INT_EDGE_TO_ACTIVE);
 	if (r < 0) {
@@ -320,14 +277,15 @@ static int gt911_init(const struct device *dev)
 		return r;
 	}
 
+#ifdef CONFIG_INPUT_GT911_INTERRUPT
+	gpio_add_callback(config->int_gpio.port, &data->int_gpio_cb);
+#else
+	k_timer_start(&data->timer, K_MSEC(CONFIG_INPUT_GT911_PERIOD_MS),
+		      K_MSEC(CONFIG_INPUT_GT911_PERIOD_MS));
+#endif
+
 	return 0;
 }
-
-static const struct kscan_driver_api gt911_driver_api = {
-	.config = gt911_configure,
-	.enable_callback = gt911_enable_callback,
-	.disable_callback = gt911_disable_callback,
-};
 
 #define GT911_INIT(index)                                                     \
 	static const struct gt911_config gt911_config_##index = {	       \
@@ -338,7 +296,7 @@ static const struct kscan_driver_api gt911_driver_api = {
 	static struct gt911_data gt911_data_##index;			       \
 	DEVICE_DT_INST_DEFINE(index, gt911_init, NULL,			       \
 			    &gt911_data_##index, &gt911_config_##index,      \
-			    POST_KERNEL, CONFIG_KSCAN_INIT_PRIORITY,	       \
-			    &gt911_driver_api);
+			    POST_KERNEL, CONFIG_INPUT_INIT_PRIORITY,	       \
+			    NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(GT911_INIT)

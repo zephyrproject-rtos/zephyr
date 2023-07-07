@@ -14,15 +14,3 @@ tests:
       fixture: fixture_connect_keyboard
     depends_on: kscan
     filter: dt_chosen_enabled("zephyr,keyboard-scan")
-  sample.drivers.kscan.rk055hdmipi4m:
-    tags: drivers kscan
-    harness: console
-    harness_config:
-      type: multi_line
-      ordered: true
-      regex:
-        - "kb data(.*)"
-      fixture: fixture_connect_rk055hdmipi4m
-    depends_on: kscan
-    extra_args: SHIELD="rk055hdmipi4m"
-    platform_allow: mimxrt1170_evk_cm7 mimxrt595_evk_cm33
