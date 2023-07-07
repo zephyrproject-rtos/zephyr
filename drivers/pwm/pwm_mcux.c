@@ -96,8 +96,8 @@ static int mcux_pwm_set_cycles(const struct device *dev, uint32_t channel,
 		data->channel[channel].level = level;
 
 		status = PWM_SetupPwm(config->base, config->index,
-				      &data->channel[channel], CHANNEL_COUNT,
-				      config->mode, 1, clock_freq);
+				      &data->channel[channel], 1U,
+				      config->mode, 1U, clock_freq);
 		if (status != kStatus_Success) {
 			LOG_ERR("Could not set up pwm");
 			return -ENOTSUP;
