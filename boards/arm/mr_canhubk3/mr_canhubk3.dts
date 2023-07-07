@@ -21,6 +21,7 @@
 		zephyr,code-partition = &code_partition;
 		zephyr,console = &lpuart2;
 		zephyr,shell-uart = &lpuart2;
+		zephyr,flash-controller = &mx25l6433f;
 	};
 
 	aliases {
@@ -131,4 +132,39 @@
 &lpuart14 {
 	pinctrl-0 = <&lpuart14_default>;
 	pinctrl-names = "default";
+};
+
+&qspi0 {
+	pinctrl-0 = <&qspi0_default>;
+	pinctrl-names = "default";
+	data-rate = "SDR";
+	a-rx-clock-source = "LOOPBACK";
+	a-dll-mode = "BYPASSED";
+	ahb-buffers-masters = <0 1 2 3>;
+	ahb-buffers-sizes = <0 0 0 256>;
+	ahb-buffers-all-masters;
+	status = "okay";
+
+	mx25l6433f: mx25l6433f@0 {
+		compatible = "nxp,s32-qspi-nor";
+		reg = <0>;
+		size = <DT_SIZE_M(64)>;
+		jedec-id = [c2 20 17];
+		quad-enable-requirements = "S1B6";
+		readoc = "1-4-4";
+		writeoc = "1-4-4";
+		has-32k-erase;
+		status = "okay";
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			storage_partition: partition@0 {
+				label = "storage";
+				reg = <0x0 0x100000>;
+			};
+		};
+	};
 };
