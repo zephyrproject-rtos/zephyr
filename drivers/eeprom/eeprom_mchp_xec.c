@@ -325,7 +325,7 @@ PINCTRL_DT_INST_DEFINE(0);
 
 static const struct eeprom_xec_config eeprom_config = {
 	.regs = (struct eeprom_xec_regs * const)DT_INST_REG_ADDR(0),
-	.size = DT_INST_REG_SIZE(0),
+	.size = DT_INST_PROP(0, size),
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
 };
 
