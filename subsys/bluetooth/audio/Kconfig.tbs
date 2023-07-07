@@ -132,21 +132,22 @@ endif # BT_TBS
 
 ##################### Call Control Client #####################
 
+config BT_TBS_CLIENT_GTBS
+	bool "Generic Telephone Bearer Service client support"
+	help
+	  This option enables support for the GTBS-oriented Call Control client.
+
+config BT_TBS_CLIENT_TBS
+	bool "Telephone Bearer Service client support"
+	help
+	  This option enables support for the TBS-oriented Call Control client.
+
 config BT_TBS_CLIENT
-	bool "Telephone Bearer Service client"
+	def_bool BT_TBS_CLIENT_GTBS || BT_TBS_CLIENT_TBS
 	select BT_GATT_CLIENT
 	select BT_GATT_AUTO_DISCOVER_CCC
-	help
-	  This option enables support for Telephone Bearer Service client.
 
 if BT_TBS_CLIENT
-
-config BT_TBS_CLIENT_GTBS
-	bool "Telephone Bearer Service client GTBS support"
-	default y
-	help
-	  This option enables support for the generic TBS for the
-	  Call Control client.
 
 config BT_TBS_CLIENT_MAX_CALLS
 	int "Maximum Number Of Calls Supported"
@@ -156,8 +157,8 @@ config BT_TBS_CLIENT_MAX_CALLS
 
 config BT_TBS_CLIENT_MAX_TBS_INSTANCES
 	int "Maximum number of TBS instances to setup"
+	depends on BT_TBS_CLIENT_TBS
 	default 1
-	range 0 3 if BT_TBS_CLIENT_GTBS
 	range 1 3
 	help
 	  Sets the maximum number of Telephone Bearer Service (TBS)

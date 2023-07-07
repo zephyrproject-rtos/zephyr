@@ -289,14 +289,22 @@ tests:
     build_only: true
     platform_allow: native_posix
     extra_configs:
-      - CONFIG_BT_TBS_CLIENT=n
+      - CONFIG_BT_TBS_CLIENT_TBS=n
+      - CONFIG_BT_TBS_CLIENT_GTBS=n
+    tags: bluetooth
+  bluetooth.shell.audio.tbs_only_client:
+    extra_args: CONF_FILE="audio.conf"
+    build_only: true
+    platform_allow: native_posix
+    extra_configs:
+      - CONFIG_BT_TBS_CLIENT_GTBS=n
     tags: bluetooth
   bluetooth.shell.audio.gtbs_only_client:
     extra_args: CONF_FILE="audio.conf"
     build_only: true
     platform_allow: native_posix
     extra_configs:
-      - CONFIG_BT_TBS_CLIENT_MAX_TBS_INSTANCES=0
+      - CONFIG_BT_TBS_CLIENT_TBS=n
     tags: bluetooth
   bluetooth.audio_shell.no_cap_acceptor:
     extra_args: CONF_FILE="audio.conf"
