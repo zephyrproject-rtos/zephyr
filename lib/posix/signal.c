@@ -46,3 +46,15 @@ int sigaddset(sigset_t *set, int signo)
 
 	return 0;
 }
+
+int sigdelset(sigset_t *set, int signo)
+{
+	if (!signo_valid(signo)) {
+		errno = EINVAL;
+		return -1;
+	}
+
+	WRITE_BIT(set->sig[SIGNO_WORD_IDX(signo)], SIGNO_WORD_BIT(signo), 0);
+
+	return 0;
+}
