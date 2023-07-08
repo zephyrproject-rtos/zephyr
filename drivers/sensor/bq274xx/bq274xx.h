@@ -11,7 +11,8 @@
 #include <zephyr/drivers/gpio.h>
 
 /*** General Constant ***/
-#define BQ274XX_UNSEAL_KEY 0x8000 /* Secret code to unseal the BQ27441-G1A */
+#define BQ274XX_UNSEAL_KEY_A 0x8000 /* Unseal code one on BQ27441-G1A and similar */
+#define BQ274XX_UNSEAL_KEY_B 0x8000 /* Unseal code two on BQ27441-G1A and similar */
 #define BQ274XX_DEVICE_ID  0x0421 /* Default device ID */
 
 /*** Standard Commands ***/
