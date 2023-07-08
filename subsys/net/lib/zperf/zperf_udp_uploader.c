@@ -137,13 +137,13 @@ static int udp_upload(int sock, int port,
 		      unsigned int rate_in_kbps,
 		      struct zperf_results *results)
 {
-	uint32_t packet_duration = zperf_packet_duration(packet_size, rate_in_kbps);
-	uint64_t duration = sys_clock_timeout_end_calc(K_MSEC(duration_in_ms));
-	uint64_t delay = packet_duration;
+	uint32_t packet_duration_us = zperf_packet_duration(packet_size, rate_in_kbps);
+	uint32_t packet_duration = k_us_to_ticks_ceil32(packet_duration_us);
+	uint32_t delay = packet_duration;
 	uint32_t nb_packets = 0U;
 	int64_t start_time, end_time;
-	int64_t last_print_time, last_loop_time;
-	int64_t remaining;
+	int64_t print_time, last_loop_time;
+	uint32_t print_period;
 	int ret;
 
 	if (packet_size > PACKET_SIZE_MAX) {
@@ -158,14 +158,19 @@ static int udp_upload(int sock, int port,
 
 	/* Start the loop */
 	start_time = k_uptime_ticks();
-	last_print_time = start_time;
 	last_loop_time = start_time;
+	end_time = start_time + k_ms_to_ticks_ceil64(duration_in_ms);
+
+	/* Print log every seconds */
+	print_period = k_ms_to_ticks_ceil32(MSEC_PER_SEC);
+	print_time = start_time + print_period;
 
 	(void)memset(sample_packet, 'z', sizeof(sample_packet));
 
 	do {
 		struct zperf_udp_datagram *datagram;
 		struct zperf_client_hdr_v1 *hdr;
+		uint64_t usecs64;
 		uint32_t secs, usecs;
 		int64_t loop_time;
 		int32_t adjust;
@@ -175,27 +180,25 @@ static int udp_upload(int sock, int port,
 
 		/* Algorithm to maintain a given baud rate */
 		if (last_loop_time != loop_time) {
-			adjust = (int32_t)(packet_duration -
-				   k_ticks_to_us_ceil32(loop_time -
-							last_loop_time));
+			adjust = packet_duration;
+			adjust -= (int32_t)(loop_time - last_loop_time);
 		} else {
 			/* It's the first iteration so no need for adjustment
 			 */
 			adjust = 0;
 		}
 
-		if (adjust >= 0) {
+		if ((adjust >= 0) || (-adjust < delay)) {
 			delay += adjust;
-		} else if ((uint64_t)-adjust < delay) {
-			delay -= (uint64_t)-adjust;
 		} else {
 			delay = 0U; /* delay should never be negative */
 		}
 
 		last_loop_time = loop_time;
 
-		secs = k_ticks_to_ms_ceil32(loop_time) / 1000U;
-		usecs = k_ticks_to_us_ceil32(loop_time) - secs * USEC_PER_SEC;
+		usecs64 = k_ticks_to_us_floor64(loop_time);
+		secs = usecs64 / USEC_PER_SEC;
+		usecs = usecs64 - (uint64_t)secs * USEC_PER_SEC;
 
 		/* Fill the packet header */
 		datagram = (struct zperf_udp_datagram *)sample_packet;
@@ -224,33 +227,23 @@ static int udp_upload(int sock, int port,
 		}
 
 		if (IS_ENABLED(CONFIG_NET_ZPERF_LOG_LEVEL_DBG)) {
-			int64_t print_interval = sys_clock_timeout_end_calc(K_SECONDS(1));
-			/* Print log every seconds */
-			int64_t print_info = print_interval - k_uptime_ticks();
-
-			if (print_info <= 0) {
+			if (print_time >= loop_time) {
 				NET_DBG("nb_packets=%u\tdelay=%u\tadjust=%d",
 					nb_packets, (unsigned int)delay,
 					(int)adjust);
-				print_interval = sys_clock_timeout_end_calc(K_SECONDS(1));
+				print_time += print_period;
 			}
 		}
-
-		remaining = duration - k_uptime_ticks();
 
 		/* Wait */
 #if defined(CONFIG_ARCH_POSIX)
 		k_busy_wait(USEC_PER_MSEC);
 #else
 		if (delay != 0) {
-			if (k_us_to_ticks_floor64(delay) > remaining) {
-				delay = k_ticks_to_us_ceil64(remaining);
-			}
-
-			k_sleep(K_USEC(delay));
+			k_sleep(K_TICKS(delay));
 		}
 #endif
-	} while (remaining > 0);
+	} while (last_loop_time < end_time);
 
 	end_time = k_uptime_ticks();
 
