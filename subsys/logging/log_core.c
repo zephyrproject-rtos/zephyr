@@ -237,8 +237,9 @@ void log_core_init(void)
 	if (sys_clock_hw_cycles_per_sec() > 1000000) {
 		log_set_timestamp_func(default_lf_get_timestamp, 1000U);
 	} else {
-		log_set_timestamp_func(default_get_timestamp,
-				       sys_clock_hw_cycles_per_sec());
+		uint32_t freq = IS_ENABLED(CONFIG_LOG_TIMESTAMP_64BIT) ?
+			CONFIG_SYS_CLOCK_TICKS_PER_SEC : sys_clock_hw_cycles_per_sec();
+		log_set_timestamp_func(default_get_timestamp, freq);
 	}
 
 	if (IS_ENABLED(CONFIG_LOG_MODE_DEFERRED)) {
