@@ -25,8 +25,8 @@ static int tcp_upload(int sock,
 		      unsigned int packet_size,
 		      struct zperf_results *results)
 {
-	int64_t duration = sys_clock_timeout_end_calc(K_MSEC(duration_in_ms));
-	int64_t start_time, last_print_time, end_time, remaining;
+	k_timepoint_t end = sys_timepoint_calc(K_MSEC(duration_in_ms));
+	int64_t start_time, end_time;
 	uint32_t nb_packets = 0U, nb_errors = 0U;
 	uint32_t alloc_errors = 0U;
 	int ret = 0;
@@ -39,7 +39,6 @@ static int tcp_upload(int sock,
 
 	/* Start the loop */
 	start_time = k_uptime_ticks();
-	last_print_time = start_time;
 
 	(void)memset(sample_packet, 'z', sizeof(sample_packet));
 
@@ -80,8 +79,7 @@ static int tcp_upload(int sock,
 		k_yield();
 #endif
 
-		remaining = duration - k_uptime_ticks();
-	} while (remaining > 0);
+	} while (!sys_timepoint_expired(end));
 
 	end_time = k_uptime_ticks();
 
