@@ -692,11 +692,9 @@ static inline int z_vrfy_zsock_accept(int sock, struct sockaddr *addr,
 #define MAX_WAIT_BUFS K_SECONDS(10)
 
 static int send_check_and_wait(struct net_context *ctx, int status,
-			       uint64_t buf_timeout, k_timeout_t timeout,
+			       k_timepoint_t buf_timeout, k_timeout_t timeout,
 			       uint32_t *retry_timeout)
 {
-	int64_t remaining;
-
 	if (K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
 		goto out;
 	}
@@ -712,8 +710,7 @@ static int send_check_and_wait(struct net_context *ctx, int status,
 	 * it means that the sending window is blocked
 	 * and we just cannot send anything.
 	 */
-	remaining = buf_timeout - sys_clock_tick_get();
-	if (remaining <= 0) {
+	if (sys_timepoint_expired(buf_timeout)) {
 		if (status == -ENOBUFS) {
 			status = -ENOMEM;
 		} else {
@@ -769,38 +766,23 @@ out:
 	return -1;
 }
 
-static void timeout_recalc(uint64_t end, k_timeout_t *timeout)
-{
-	if (!K_TIMEOUT_EQ(*timeout, K_NO_WAIT) &&
-	    !K_TIMEOUT_EQ(*timeout, K_FOREVER)) {
-		int64_t remaining = end - sys_clock_tick_get();
-
-		if (remaining <= 0) {
-			*timeout = K_NO_WAIT;
-		} else {
-			*timeout = Z_TIMEOUT_TICKS(remaining);
-		}
-	}
-}
-
 ssize_t zsock_sendto_ctx(struct net_context *ctx, const void *buf, size_t len,
 			 int flags,
 			 const struct sockaddr *dest_addr, socklen_t addrlen)
 {
 	k_timeout_t timeout = K_FOREVER;
 	uint32_t retry_timeout = WAIT_BUFS_INITIAL_MS;
-	uint64_t buf_timeout = 0;
-	uint64_t end;
+	k_timepoint_t buf_timeout, end;
 	int status;
 
 	if ((flags & ZSOCK_MSG_DONTWAIT) || sock_is_nonblock(ctx)) {
 		timeout = K_NO_WAIT;
+		buf_timeout = sys_timepoint_calc(K_NO_WAIT);
 	} else {
 		net_context_get_option(ctx, NET_OPT_SNDTIMEO, &timeout, NULL);
-		buf_timeout = sys_clock_timeout_end_calc(MAX_WAIT_BUFS);
+		buf_timeout = sys_timepoint_calc(MAX_WAIT_BUFS);
 	}
-
-	end = sys_clock_timeout_end_calc(timeout);
+	end = sys_timepoint_calc(timeout);
 
 	/* Register the callback before sending in order to receive the response
 	 * from the peer.
@@ -830,7 +812,7 @@ ssize_t zsock_sendto_ctx(struct net_context *ctx, const void *buf, size_t len,
 			}
 
 			/* Update the timeout value in case loop is repeated. */
-			timeout_recalc(end, &timeout);
+			timeout = sys_timepoint_timeout(end);
 
 			continue;
 		}
@@ -885,18 +867,17 @@ ssize_t zsock_sendmsg_ctx(struct net_context *ctx, const struct msghdr *msg,
 {
 	k_timeout_t timeout = K_FOREVER;
 	uint32_t retry_timeout = WAIT_BUFS_INITIAL_MS;
-	uint64_t buf_timeout = 0;
-	uint64_t end;
+	k_timepoint_t buf_timeout, end;
 	int status;
 
 	if ((flags & ZSOCK_MSG_DONTWAIT) || sock_is_nonblock(ctx)) {
 		timeout = K_NO_WAIT;
+		buf_timeout = sys_timepoint_calc(K_NO_WAIT);
 	} else {
 		net_context_get_option(ctx, NET_OPT_SNDTIMEO, &timeout, NULL);
-		buf_timeout = sys_clock_timeout_end_calc(MAX_WAIT_BUFS);
+		buf_timeout = sys_timepoint_calc(MAX_WAIT_BUFS);
 	}
-
-	end = sys_clock_timeout_end_calc(timeout);
+	end = sys_timepoint_calc(timeout);
 
 	while (1) {
 		status = net_context_sendmsg(ctx, msg, flags, NULL, timeout, NULL);
@@ -910,7 +891,7 @@ ssize_t zsock_sendmsg_ctx(struct net_context *ctx, const struct msghdr *msg,
 				}
 
 				/* Update the timeout value in case loop is repeated. */
-				timeout_recalc(end, &timeout);
+				timeout = sys_timepoint_timeout(end);
 
 				continue;
 			}
@@ -1307,7 +1288,7 @@ static inline ssize_t zsock_recv_stream(struct net_context *ctx,
 	size_t recv_len = 0;
 	struct net_pkt_cursor backup;
 	int res;
-	uint64_t end;
+	k_timepoint_t end;
 	const bool waitall = flags & ZSOCK_MSG_WAITALL;
 
 	if (!net_context_is_used(ctx)) {
@@ -1326,7 +1307,7 @@ static inline ssize_t zsock_recv_stream(struct net_context *ctx,
 		net_context_get_option(ctx, NET_OPT_RCVTIMEO, &timeout, NULL);
 	}
 
-	end = sys_clock_timeout_end_calc(timeout);
+	end = sys_timepoint_calc(timeout);
 
 	do {
 		struct net_pkt *pkt;
@@ -1409,7 +1390,7 @@ static inline ssize_t zsock_recv_stream(struct net_context *ctx,
 		}
 
 		/* Update the timeout value in case loop is repeated. */
-		timeout_recalc(end, &timeout);
+		timeout = sys_timepoint_timeout(end);
 	} while ((recv_len == 0) || (waitall && (recv_len < max_len)));
 
 	if (!(flags & ZSOCK_MSG_PEEK)) {
@@ -1619,12 +1600,12 @@ int zsock_poll_internal(struct zsock_pollfd *fds, int nfds, k_timeout_t timeout)
 	struct k_poll_event *pev_end = poll_events + ARRAY_SIZE(poll_events);
 	const struct fd_op_vtable *vtable;
 	struct k_mutex *lock;
-	uint64_t end;
+	k_timepoint_t end;
 	bool offload = false;
 	const struct fd_op_vtable *offl_vtable = NULL;
 	void *offl_ctx = NULL;
 
-	end = sys_clock_timeout_end_calc(timeout);
+	end = sys_timepoint_calc(timeout);
 
 	pev = poll_events;
 	for (pfd = fds, i = nfds; i--; pfd++) {
@@ -1656,6 +1637,7 @@ int zsock_poll_internal(struct zsock_pollfd *fds, int nfds, k_timeout_t timeout)
 			 * as many events as possible, but without any wait.
 			 */
 			timeout = K_NO_WAIT;
+			end = sys_timepoint_calc(timeout);
 			result = 0;
 		} else if (result == -EXDEV) {
 			/* If POLL_PREPARE returned EXDEV, it means
@@ -1697,7 +1679,7 @@ int zsock_poll_internal(struct zsock_pollfd *fds, int nfds, k_timeout_t timeout)
 					    fds, nfds, poll_timeout);
 	}
 
-	timeout_recalc(end, &timeout);
+	timeout = sys_timepoint_timeout(end);
 
 	do {
 		ret = k_poll(poll_events, pev - poll_events, timeout);
@@ -1756,7 +1738,7 @@ int zsock_poll_internal(struct zsock_pollfd *fds, int nfds, k_timeout_t timeout)
 				break;
 			}
 
-			timeout_recalc(end, &timeout);
+			timeout = sys_timepoint_timeout(end);
 
 			if (K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
 				break;
