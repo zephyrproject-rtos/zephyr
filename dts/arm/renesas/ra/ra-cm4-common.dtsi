@@ -105,6 +105,13 @@
 				reg = <0x40100000 DT_SIZE_K(8)>;
 			};
 		};
+
+		pinctrl: pinctrl@40040800 {
+			compatible = "renesas,ra-pinctrl";
+			reg = <0x40040800 0x500 0x40040d03 0x1>;
+			reg-names = "pfs", "pmisc_pwpr";
+			status = "okay";
+		};
 	};
 };
 
