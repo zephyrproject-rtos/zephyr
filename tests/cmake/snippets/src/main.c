@@ -128,3 +128,14 @@ ZTEST(snippet_tests, test_dtc_overlay)
 		zassert(false, "Invalid test type");
 	}
 }
+
+ZTEST(snippet_tests, test_cmake_include)
+{
+	if (IS_ENABLED(CONFIG_TEST_TYPE_FOO) ||
+	    IS_ENABLED(CONFIG_TEST_TYPE_FOO_BAR) ||
+	    IS_ENABLED(CONFIG_TEST_TYPE_BAR_FOO)) {
+		zassert_true(DT_NODE_EXISTS(DT_PATH(cmake_dts_configure)));
+	} else {
+		zassert_false(DT_NODE_EXISTS(DT_PATH(cmake_dts_configure)));
+	}
+}
