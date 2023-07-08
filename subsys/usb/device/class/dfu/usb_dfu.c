@@ -943,12 +943,12 @@ static bool is_dfu_started(void)
  */
 void wait_for_usb_dfu(k_timeout_t delay)
 {
-	uint64_t end = sys_clock_timeout_end_calc(delay);
+	k_timepoint_t end = sys_timepoint_calc(delay);
 
 	/* Wait for a prescribed duration of time. If DFU hasn't started within
 	 * that time, stop waiting and proceed further.
 	 */
-	while (end > k_uptime_ticks()) {
+	while (!sys_timepoint_expired(end)) {
 		if (is_dfu_started()) {
 			k_poll_event_init(&dfu_event, K_POLL_TYPE_SIGNAL,
 				K_POLL_MODE_NOTIFY_ONLY, &dfu_signal);
