@@ -1,0 +1,30 @@
+if SOC_SERIES_RISCV64_SHAKTI
+
+config SOC_SERIES
+	default "shakti-vajra" if SOC_RISCV64_SHAKTI
+	depends on SOC_RISCV64_SHAKTI
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 40000000
+
+config RISCV_SOC_INTERRUPT_INIT
+	bool
+	default y
+
+config RISCV_HAS_CPU_IDLE
+	bool
+	default y
+
+config NUM_IRQS
+	int
+	default 32
+
+config RISCV_RAM_BASE_ADDR
+	hex
+	default	0x80000000
+
+config RISCV_RAM_SIZE
+	hex
+	default 0x10000000
+
+endif

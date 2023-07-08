@@ -1,0 +1,20 @@
+/dts-v1/;
+
+#include <riscv64-shakti.dtsi>
+
+/ {
+	model = "shakti,spike-bare";
+	compatible = "shakti,spike-bare-dev";
+
+chosen {
+		zephyr,console = &uart0;
+	};
+
+
+};
+
+&uart0 {
+	status = "ok";
+	current-speed = <19200>;
+	clock-frequency = <16000000>;
+};

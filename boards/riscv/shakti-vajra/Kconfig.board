@@ -1,0 +1,6 @@
+config BOARD_SHAKTI_VAJRA
+	bool "shakti vajra target"
+	depends on SOC_RISCV64_SHAKTI
+        select HAS_DTS
+        select RISCV_HAS_PLIC
+        select CPU_HAS_FPU

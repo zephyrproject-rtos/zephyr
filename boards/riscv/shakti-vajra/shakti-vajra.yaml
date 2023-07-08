@@ -1,0 +1,13 @@
+identifier: vajra
+name: shakti vajra board
+type: mcu
+arch: riscv64
+simulation: qemu
+toolchain:
+  - cross-compile
+  - zephyr
+ram: 128
+testing:
+  ignore_tags:
+    - net
+    - bluetooth

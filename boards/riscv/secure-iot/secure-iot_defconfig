@@ -1,0 +1,805 @@
+CONFIG_SOC_SERIES_RISCV64_SHAKTI=y
+CONFIG_SOC_RISCV64_SHAKTI=y
+CONFIG_BOARD_SECURE_IOT=y
+CONFIG_CONSOLE=y
+CONFIG_PRINTK=y
+CONFIG_SERIAL=y
+CONFIG_UART_SHAKTI=y
+CONFIG_UART_SHAKTI_PORT_0=y
+CONFIG_UART_CONSOLE=y
+CONFIG_XIP=n
+CONFIG_RISCV_MACHINE_TIMER=y
+CONFIG_PLIC=y
+CONFIG_BOOT_BANNER=y
+CONFIG_SRAM_BASE_ADDRESS=0x80000000
+CONFIG_SRAM_SIZE=256000
+CONFIG_RAM_CONSOLE=y
+CONFIG_TIMING_FUNCTIONS=y
+CONFIG_FPU=y
+# CONFIG_MINIMAL_LIBC_RAND=y
+# CONFIG_POSIX_CLOCK=y
+
+# # CONFIG_GPIO is not set
+# # CONFIG_KSCAN is not set
+# # CONFIG_WIFI is not set
+# # CONFIG_SPI is not set
+# # CONFIG_MODEM is not set
+# # CONFIG_UART_INTERRUPT_DRIVEN is not set
+# # CONFIG_I2C is not set
+# # CONFIG_SENSOR is not set
+# CONFIG_BOARD="vajra"
+# CONFIG_ROM_START_OFFSET=0
+# CONFIG_NUM_IRQS=32
+# # CONFIG_GEN_ISR_TABLES is not set
+# # CONFIG_DYNAMIC_INTERRUPTS is not set
+# CONFIG_ISR_STACK_SIZE=2048
+# CONFIG_MINIMAL_LIBC_OPTIMIZE_STRING_FOR_SIZE=y
+# CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC=32768
+# CONFIG_RISCV_HAS_CPU_IDLE=y
+# CONFIG_RISCV_HAS_PLIC=y
+# # CONFIG_RISCV_GENERIC_TOOLCHAIN is not set
+# CONFIG_RISCV_SOC_CONTEXT_SAVE=y
+# CONFIG_RISCV_SOC_OFFSETS=y
+# CONFIG_RISCV_SOC_INTERRUPT_INIT=y
+# CONFIG_MAX_IRQ_PER_AGGREGATOR=0
+# CONFIG_2ND_LEVEL_INTERRUPTS=y
+# CONFIG_2ND_LVL_ISR_TBL_OFFSET=0
+# CONFIG_NUM_2ND_LEVEL_AGGREGATORS=1
+# CONFIG_2ND_LVL_INTR_00_OFFSET=0
+# CONFIG_2ND_LVL_INTR_01_OFFSET=0
+# CONFIG_2ND_LVL_INTR_02_OFFSET=0
+# CONFIG_2ND_LVL_INTR_03_OFFSET=0
+# CONFIG_2ND_LVL_INTR_04_OFFSET=0
+# CONFIG_2ND_LVL_INTR_05_OFFSET=0
+# CONFIG_2ND_LVL_INTR_06_OFFSET=0
+# CONFIG_2ND_LVL_INTR_07_OFFSET=0
+# CONFIG_FLASH_BASE_ADDRESS=0x0
+# CONFIG_SOC_SERIES="shakti-vajra"
+# # CONFIG_RISCV_GP is not set
+# CONFIG_SYS_CLOCK_TICKS_PER_SEC=10000
+# # CONFIG_PINCTRL is not set
+# CONFIG_MAIN_STACK_SIZE=4096
+# CONFIG_IDLE_STACK_SIZE=512
+# CONFIG_TEST_EXTRA_STACK_SIZE=1024
+# CONFIG_MP_NUM_CPUS=1
+# CONFIG_KERNEL_ENTRY="__start"
+# CONFIG_RISCV_MACHINE_TIMER_SYSTEM_CLOCK_DIVIDER=0
+# CONFIG_RISCV_SOC_MCAUSE_EXCEPTION_MASK=0x7FFFFFFFFFFFFFFF
+# # CONFIG_RESET is not set
+# # CONFIG_CLOCK_CONTROL is not set
+# # CONFIG_SYSCON is not set
+# CONFIG_SERIAL_INIT_PRIORITY=50
+# CONFIG_RISCV_RAM_BASE_ADDR=0x80000000
+# CONFIG_RISCV_RAM_SIZE=0x10000000
+# # CONFIG_XIP is not set
+# CONFIG_HAS_DTS=y
+
+# #
+# # Devicetree Info
+# #
+# CONFIG_DT_HAS_RISCV_CPU_INTC_ENABLED=y
+# CONFIG_DT_HAS_SHAKTI_UART0_ENABLED=y
+# CONFIG_DT_HAS_SIFIVE_CLINT0_ENABLED=y
+# CONFIG_DT_HAS_SIFIVE_PLIC_1_0_0_ENABLED=y
+# # end of Devicetree Info
+
+# #
+# # Modules
+# #
+
+# #
+# # Available modules.
+# #
+
+# #
+# # Optional modules. Make sure they're installed, via the project manifest.
+# #
+# # CONFIG_LIBMETAL is not set
+# # CONFIG_LVGL is not set
+# # CONFIG_HAS_MEC_HAL is not set
+# # CONFIG_HAS_MPFS_HAL is not set
+# # CONFIG_OPENAMP is not set
+# # CONFIG_SOF is not set
+# # CONFIG_MIPI_SYST_LIB is not set
+# # CONFIG_HAS_TELINK_DRIVERS is not set
+# # CONFIG_TINYCBOR is not set
+# # CONFIG_TINYCRYPT is not set
+# # CONFIG_ZCBOR is not set
+# # CONFIG_MCUBOOT_BOOTUTIL_LIB is not set
+
+# #
+# # Unavailable modules, please install those via the project manifest.
+# #
+
+# #
+# # hal_gigadevice module not available.
+# #
+
+# #
+# # hal_nordic module not available.
+# #
+
+# #
+# # liblc3 module not available.
+# #
+
+# #
+# # LittleFS module not available.
+# #
+
+# #
+# # mbedtls module not available.
+# #
+
+# #
+# # Trusted-firmware-m module not available.
+# #
+
+# #
+# # Trusted-firmware-a module not available.
+# #
+
+# #
+# # Nanopb module not available.
+# #
+
+# #
+# # Lz4 module not available.
+# #
+
+# #
+# # loramac-node module not available.
+# #
+
+# #
+# # CANopenNode module not available.
+# #
+
+# #
+# # FFF module not available.
+# #
+
+# #
+# # zcbor module not available.
+# #
+
+# #
+# # CHRE module not available.
+# #
+# # end of Modules
+
+# CONFIG_BOARD_REVISION=""
+# # CONFIG_NET_DRIVERS is not set
+# CONFIG_BOARD_SHAKTI_VAJRA=y
+
+# #
+# # Board Options
+# #
+# # end of Board Options
+
+# # CONFIG_SOC_ESP32C3 is not set
+# # CONFIG_SOC_RISCV32_LITEX_VEXRISCV is not set
+# # CONFIG_SOC_OPENISA_RV32M1_RISCV32 is not set
+# # CONFIG_SOC_SERIES_RISCV32_IT8XXX2 is not set
+# # CONFIG_SOC_SERIES_RISCV_ANDES_V5 is not set
+# # CONFIG_SOC_SERIES_GD32VF103 is not set
+# # CONFIG_SOC_SERIES_RISCV32_MIV is not set
+# # CONFIG_SOC_SERIES_RISCV64_MIV is not set
+# # CONFIG_SOC_SERIES_NEORV32 is not set
+# CONFIG_SOC_SERIES_RISCV64_SHAKTI=y
+# # CONFIG_SOC_SERIES_RISCV_SIFIVE_FREEDOM is not set
+# # CONFIG_SOC_SERIES_STARFIVE_JH71XX is not set
+# # CONFIG_SOC_SERIES_RISCV_TELINK_B91 is not set
+# # CONFIG_SOC_SERIES_RISCV_VIRT is not set
+
+# #
+# # Hardware Configuration
+# #
+# CONFIG_SOC_FAMILY="riscv-privilege"
+# CONFIG_SOC_FAMILY_RISCV_PRIVILEGE=y
+# # CONFIG_RISCV_HAS_CLIC is not set
+# # CONFIG_RISCV_MTVEC_VECTORED_MODE is not set
+# CONFIG_SOC_RISCV64_SHAKTI=y
+# # end of Hardware Configuration
+
+# #
+# # RISCV Options
+# #
+# CONFIG_ARCH="riscv64"
+# # CONFIG_RISCV_ALWAYS_SWITCH_THROUGH_ECALL is not set
+
+# #
+# # RISCV Processor Options
+# #
+# CONFIG_INCLUDE_RESET_VECTOR=y
+# # CONFIG_RISCV_PMP is not set
+# # end of RISCV Processor Options
+
+# CONFIG_CMSIS_THREAD_MAX_STACK_SIZE=1024
+# CONFIG_CMSIS_V2_THREAD_MAX_STACK_SIZE=1024
+# CONFIG_ARCH_IRQ_VECTOR_TABLE_ALIGN=256
+# CONFIG_RISCV_ISA_RV64I=y
+# CONFIG_RISCV_ISA_EXT_M=y
+# CONFIG_RISCV_ISA_EXT_A=y
+# CONFIG_RISCV_ISA_EXT_C=y
+
+# #
+# # RISCV core
+# #
+# # CONFIG_RISCV_CORE_E31 is not set
+# # end of RISCV core
+# # end of RISCV Options
+
+# CONFIG_RISCV=y
+# CONFIG_ARCH_IS_SET=y
+
+# #
+# # General Architecture Options
+# #
+# # CONFIG_SEMIHOST is not set
+# CONFIG_64BIT=y
+# CONFIG_SRAM_SIZE=256000
+# CONFIG_SRAM_BASE_ADDRESS=0x80000000
+# # CONFIG_STACK_GROWS_UP is not set
+
+# #
+# # Interrupt Configuration
+# #
+# # end of Interrupt Configuration
+# # end of General Architecture Options
+
+# CONFIG_ARCH_SUPPORTS_COREDUMP=y
+# CONFIG_ARCH_HAS_THREAD_LOCAL_STORAGE=y
+# CONFIG_ARCH_HAS_CODE_DATA_RELOCATION=y
+# # CONFIG_CODE_DATA_RELOCATION is not set
+
+# #
+# # Floating Point Options
+# #
+# # end of Floating Point Options
+
+# #
+# # Cache Options
+# #
+# # end of Cache Options
+
+# #
+# # General Kernel Options
+# #
+# CONFIG_MULTITHREADING=y
+# CONFIG_NUM_COOP_PRIORITIES=16
+# CONFIG_NUM_PREEMPT_PRIORITIES=15
+# CONFIG_MAIN_THREAD_PRIORITY=0
+# CONFIG_COOP_ENABLED=y
+# CONFIG_PREEMPT_ENABLED=y
+# CONFIG_PRIORITY_CEILING=-127
+# CONFIG_NUM_METAIRQ_PRIORITIES=0
+# # CONFIG_SCHED_DEADLINE is not set
+# # CONFIG_SCHED_CPU_MASK is not set
+# # CONFIG_THREAD_STACK_INFO is not set
+# # CONFIG_THREAD_CUSTOM_DATA is not set
+# CONFIG_ERRNO=y
+# CONFIG_SCHED_DUMB=y
+# # CONFIG_SCHED_SCALABLE is not set
+# # CONFIG_SCHED_MULTIQ is not set
+# # CONFIG_WAITQ_SCALABLE is not set
+# CONFIG_WAITQ_DUMB=y
+
+# #
+# # Kernel Debugging and Metrics
+# #
+# # CONFIG_INIT_STACKS is not set
+# CONFIG_BOOT_BANNER=y
+# CONFIG_BOOT_DELAY=0
+# # CONFIG_THREAD_MONITOR is not set
+# # CONFIG_THREAD_NAME is not set
+# # CONFIG_THREAD_RUNTIME_STATS is not set
+# # end of Kernel Debugging and Metrics
+
+# #
+# # Work Queue Options
+# #
+# CONFIG_SYSTEM_WORKQUEUE_STACK_SIZE=1024
+# CONFIG_SYSTEM_WORKQUEUE_PRIORITY=-1
+# # CONFIG_SYSTEM_WORKQUEUE_NO_YIELD is not set
+# # end of Work Queue Options
+
+# #
+# # Atomic Operations
+# #
+# CONFIG_ATOMIC_OPERATIONS_ARCH=y
+# # end of Atomic Operations
+
+# #
+# # Timer API Options
+# #
+# CONFIG_TIMESLICING=y
+# CONFIG_TIMESLICE_SIZE=0
+# CONFIG_TIMESLICE_PRIORITY=0
+# # CONFIG_TIMESLICE_PER_THREAD is not set
+# # CONFIG_POLL is not set
+# # end of Timer API Options
+
+# #
+# # Other Kernel Object Options
+# #
+# # CONFIG_MEM_SLAB_TRACE_MAX_UTILIZATION is not set
+# CONFIG_NUM_MBOX_ASYNC_MSGS=10
+# # CONFIG_EVENTS is not set
+# # CONFIG_PIPES is not set
+# CONFIG_KERNEL_MEM_POOL=y
+# CONFIG_HEAP_MEM_POOL_SIZE=0
+# # end of Other Kernel Object Options
+
+# CONFIG_SYS_CLOCK_EXISTS=y
+# CONFIG_TIMEOUT_64BIT=y
+# CONFIG_SYS_CLOCK_MAX_TIMEOUT_DAYS=365
+
+# #
+# # Initialization Priorities
+# #
+# CONFIG_KERNEL_INIT_PRIORITY_OBJECTS=30
+# CONFIG_KERNEL_INIT_PRIORITY_DEFAULT=40
+# CONFIG_KERNEL_INIT_PRIORITY_DEVICE=50
+# CONFIG_APPLICATION_INIT_PRIORITY=90
+# # end of Initialization Priorities
+
+# #
+# # Security Options
+# #
+# # end of Security Options
+
+# #
+# # SMP Options
+# #
+# # CONFIG_SMP is not set
+# CONFIG_USE_SWITCH=y
+# CONFIG_USE_SWITCH_SUPPORTED=y
+# # end of SMP Options
+
+# CONFIG_TICKLESS_KERNEL=y
+# # end of General Kernel Options
+
+# #
+# # Device Options
+# #
+# # end of Device Options
+
+# #
+# # Virtual Memory Support
+# #
+# # end of Virtual Memory Support
+
+# #
+# # Device Drivers
+# #
+# # CONFIG_LORA is not set
+# CONFIG_CONSOLE=y
+# CONFIG_CONSOLE_INPUT_MAX_LINE_LEN=128
+# CONFIG_CONSOLE_HAS_DRIVER=y
+# # CONFIG_CONSOLE_HANDLER is not set
+# CONFIG_CONSOLE_INIT_PRIORITY=60
+# CONFIG_UART_CONSOLE=y
+# # CONFIG_UART_CONSOLE_DEBUG_SERVER_HOOKS is not set
+# # CONFIG_UART_CONSOLE_MCUMGR is not set
+# CONFIG_RAM_CONSOLE=y
+# CONFIG_RAM_CONSOLE_BUFFER_SIZE=1024
+# # CONFIG_IPM_CONSOLE_SENDER is not set
+# # CONFIG_IPM_CONSOLE_RECEIVER is not set
+# # CONFIG_UART_MCUMGR is not set
+# # CONFIG_GSM_MUX is not set
+# # CONFIG_EFI_CONSOLE is not set
+# # CONFIG_EC_HOST_CMD_PERIPH is not set
+# CONFIG_ETH_INIT_PRIORITY=80
+# # CONFIG_MDIO is not set
+# CONFIG_SERIAL=y
+
+# #
+# # Capabilities
+# #
+# CONFIG_SERIAL_HAS_DRIVER=y
+# CONFIG_SERIAL_SUPPORT_INTERRUPT=y
+# CONFIG_UART_USE_RUNTIME_CONFIGURE=y
+# # CONFIG_UART_LINE_CTRL is not set
+# # CONFIG_UART_DRV_CMD is not set
+# # CONFIG_UART_WIDE_DATA is not set
+# # CONFIG_UART_PIPE is not set
+
+# #
+# # Serial Drivers
+# #
+# CONFIG_UART_SHAKTI=y
+# CONFIG_UART_SHAKTI_PORT_0=y
+# CONFIG_UART_SHAKTI_PORT_0_IRQ_PRIORITY=1
+# CONFIG_UART_SHAKTI_PORT_0_RXCNT_IRQ=0
+# CONFIG_UART_SHAKTI_PORT_0_TXCNT_IRQ=0
+
+# #
+# # Interrupt Controllers
+# #
+# CONFIG_INTC_INIT_PRIORITY=40
+# CONFIG_MULTI_LEVEL_INTERRUPTS=y
+# # CONFIG_3RD_LEVEL_INTERRUPTS is not set
+# # CONFIG_INTC_ESP32 is not set
+# CONFIG_PLIC=y
+# # end of Interrupt Controllers
+
+# #
+# # Timer Drivers
+# #
+# CONFIG_TIMER_HAS_64BIT_CYCLE_COUNTER=y
+# # CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME is not set
+# # CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE is not set
+# CONFIG_SYSTEM_CLOCK_INIT_PRIORITY=0
+# CONFIG_TICKLESS_CAPABLE=y
+# # CONFIG_INTEL_ADSP_TIMER is not set
+# CONFIG_RISCV_MACHINE_TIMER=y
+# CONFIG_RISCV_MACHINE_TIMER_MIN_DELAY=100
+# # end of Timer Drivers
+
+# # CONFIG_ENTROPY_GENERATOR is not set
+# # CONFIG_PCIE is not set
+# # CONFIG_PCIE_ENDPOINT is not set
+# # CONFIG_SDHC is not set
+# # CONFIG_I3C is not set
+# # CONFIG_I2S is not set
+# # CONFIG_DAI is not set
+# # CONFIG_PWM is not set
+# # CONFIG_PINMUX is not set
+# # CONFIG_ADC is not set
+# # CONFIG_DAC is not set
+# # CONFIG_WATCHDOG is not set
+# # CONFIG_W1 is not set
+# # CONFIG_PTP_CLOCK is not set
+# # CONFIG_IPM is not set
+# # CONFIG_FLASH is not set
+# # CONFIG_COUNTER is not set
+# # CONFIG_DMA is not set
+# # CONFIG_USB_DEVICE_DRIVER is not set
+# # CONFIG_CRYPTO is not set
+# # CONFIG_DISPLAY is not set
+# # CONFIG_LED_STRIP is not set
+# # CONFIG_LED is not set
+# # CONFIG_CAN is not set
+# # CONFIG_AUDIO is not set
+# # CONFIG_NEURAL_NET_ACCEL is not set
+# # CONFIG_HWINFO is not set
+# # CONFIG_ESPI is not set
+# # CONFIG_PS2 is not set
+# # CONFIG_VIDEO is not set
+# # CONFIG_EEPROM is not set
+# # CONFIG_PECI is not set
+# # CONFIG_PECI_INTERRUPT_DRIVEN is not set
+# # CONFIG_REGULATOR is not set
+# # CONFIG_MEMC is not set
+# # CONFIG_VIRTUALIZATION is not set
+# # CONFIG_EDAC is not set
+# # CONFIG_PM_CPU_OPS is not set
+
+# #
+# # Miscellaneous Drivers
+# #
+# # CONFIG_GROVE_LCD_RGB is not set
+# # end of Miscellaneous Drivers
+
+# # CONFIG_DISK_DRIVERS is not set
+# # CONFIG_CACHE is not set
+# # CONFIG_BBRAM is not set
+# # CONFIG_FPGA is not set
+# # CONFIG_MBOX is not set
+# # CONFIG_MM_DRV is not set
+# # CONFIG_POWER_DOMAIN is not set
+# # CONFIG_USBC_TCPC_DRIVER is not set
+# # CONFIG_MIPI_DSI is not set
+# # CONFIG_COREDUMP_DEVICE is not set
+# # end of Device Drivers
+
+# #
+# # C Library
+# #
+# CONFIG_SUPPORT_MINIMAL_LIBC=y
+# CONFIG_PICOLIBC_SUPPORTED=y
+# CONFIG_MINIMAL_LIBC=y
+# # CONFIG_PICOLIBC is not set
+# # CONFIG_NEWLIB_LIBC is not set
+# # CONFIG_EXTERNAL_LIBC is not set
+# CONFIG_MINIMAL_LIBC_NON_REENTRANT_FUNCTIONS=y
+# CONFIG_MINIMAL_LIBC_MALLOC=y
+# CONFIG_MINIMAL_LIBC_MALLOC_ARENA_SIZE=0
+# CONFIG_MINIMAL_LIBC_CALLOC=y
+# CONFIG_MINIMAL_LIBC_REALLOCARRAY=y
+# CONFIG_MINIMAL_LIBC_LL_PRINTF=y
+# # CONFIG_MINIMAL_LIBC_RAND is not set
+# CONFIG_MINIMAL_LIBC_TIME=y
+# # CONFIG_MINIMAL_LIBC_STRING_ERROR_TABLE is not set
+# CONFIG_STDOUT_CONSOLE=y
+# CONFIG_NEED_LIBC_MEM_PARTITION=y
+# # end of C Library
+
+# #
+# # Additional libraries
+# #
+
+# #
+# # OS Support Library
+# #
+# # CONFIG_JSON_LIBRARY is not set
+# # CONFIG_RING_BUFFER is not set
+# # CONFIG_BASE64 is not set
+# # CONFIG_PRINTK_SYNC is not set
+# # CONFIG_MPSC_PBUF is not set
+# # CONFIG_SPSC_PBUF is not set
+# # CONFIG_SHARED_MULTI_HEAP is not set
+# # CONFIG_WINSTREAM is not set
+# # CONFIG_REBOOT is not set
+# # CONFIG_UTF8 is not set
+# CONFIG_CBPRINTF_COMPLETE=y
+# # CONFIG_CBPRINTF_NANO is not set
+# CONFIG_CBPRINTF_FULL_INTEGRAL=y
+# # CONFIG_CBPRINTF_REDUCED_INTEGRAL is not set
+# # CONFIG_CBPRINTF_FP_SUPPORT is not set
+# # CONFIG_CBPRINTF_FP_A_SUPPORT is not set
+# # CONFIG_CBPRINTF_FP_ALWAYS_A is not set
+# CONFIG_CBPRINTF_N_SPECIFIER=y
+# # CONFIG_CBPRINTF_LIBC_SUBSTS is not set
+# # CONFIG_CBPRINTF_PACKAGE_LONGDOUBLE is not set
+# # CONFIG_CBPRINTF_STATIC_PACKAGE_CHECK_ALIGNMENT is not set
+
+# #
+# # Heap and Memory Allocation
+# #
+# # CONFIG_SYS_HEAP_VALIDATE is not set
+# CONFIG_SYS_HEAP_ALLOC_LOOPS=3
+# # CONFIG_SYS_HEAP_RUNTIME_STATS is not set
+# # CONFIG_SYS_HEAP_LISTENER is not set
+# # CONFIG_SYS_MEM_BLOCKS is not set
+# # end of Heap and Memory Allocation
+# # end of OS Support Library
+
+# # CONFIG_GETOPT is not set
+# CONFIG_POSIX_MAX_FDS=4
+# # CONFIG_POSIX_API is not set
+# # CONFIG_POSIX_CLOCK is not set
+# CONFIG_MAX_TIMER_COUNT=5
+# # CONFIG_POSIX_MQUEUE is not set
+# # CONFIG_EVENTFD is not set
+# # CONFIG_OPENAMP_RSC_TABLE is not set
+
+# #
+# # Util libraries
+# #
+# # CONFIG_FNMATCH is not set
+# # end of Util libraries
+
+# # CONFIG_SMF is not set
+# # end of Additional libraries
+
+# #
+# # Sub Systems and OS Services
+# #
+# # CONFIG_BT is not set
+
+# #
+# # Controller Area Network (CAN) bus subsystem
+# #
+# # CONFIG_ISOTP is not set
+# # end of Controller Area Network (CAN) bus subsystem
+
+# # CONFIG_CONSOLE_SUBSYS is not set
+# # CONFIG_CPLUSPLUS is not set
+
+# #
+# # System Monitoring Options
+# #
+# # CONFIG_THREAD_ANALYZER is not set
+# # end of System Monitoring Options
+
+# #
+# # Debugging Options
+# #
+# # CONFIG_DEBUG is not set
+# # CONFIG_STACK_USAGE is not set
+# # CONFIG_STACK_SENTINEL is not set
+# CONFIG_PRINTK=y
+# CONFIG_EARLY_CONSOLE=y
+# # CONFIG_ASSERT is not set
+# # CONFIG_FORCE_NO_ASSERT is not set
+# CONFIG_ASSERT_VERBOSE=y
+# # CONFIG_ASSERT_NO_FILE_INFO is not set
+# # CONFIG_ASSERT_NO_COND_INFO is not set
+# # CONFIG_ASSERT_NO_MSG_INFO is not set
+# # CONFIG_ASSERT_TEST is not set
+# # CONFIG_OVERRIDE_FRAME_POINTER_DEFAULT is not set
+# # CONFIG_DEBUG_INFO is not set
+# # CONFIG_DEBUG_THREAD_INFO is not set
+# # CONFIG_DEBUG_COREDUMP is not set
+# # end of Debugging Options
+
+# # CONFIG_DISK_ACCESS is not set
+# # CONFIG_EMUL is not set
+# # CONFIG_CHARACTER_FRAMEBUFFER is not set
+
+# #
+# # File Systems
+# #
+# # CONFIG_FILE_SYSTEM is not set
+# # CONFIG_NVS is not set
+# # end of File Systems
+
+# #
+# # Inter Processor Communication
+# #
+# # CONFIG_RPMSG_SERVICE is not set
+# # CONFIG_IPC_SERVICE is not set
+# # end of Inter Processor Communication
+
+# # CONFIG_JWT is not set
+
+# #
+# # Logging
+# #
+# # CONFIG_LOG is not set
+# # CONFIG_LOG_OUTPUT is not set
+# # end of Logging
+
+# #
+# # Device Management
+# #
+
+# #
+# # Host command handler subsystem
+# #
+# # CONFIG_EC_HOST_CMD is not set
+# # end of Host command handler subsystem
+
+# # CONFIG_MCUMGR is not set
+# # CONFIG_HAWKBIT is not set
+# # CONFIG_UPDATEHUB is not set
+# # CONFIG_OSDP is not set
+# # end of Device Management
+
+# # CONFIG_MODBUS is not set
+
+# #
+# # Networking
+# #
+# # CONFIG_NET_BUF is not set
+# # CONFIG_NETWORKING is not set
+# # end of Networking
+
+# #
+# # Portability
+# #
+# # end of Portability
+
+# #
+# # Power Management
+# #
+# # CONFIG_PM is not set
+# # CONFIG_PM_DEVICE is not set
+# # end of Power Management
+
+# # CONFIG_SHELL is not set
+# # CONFIG_STATS is not set
+# # CONFIG_USB_DEVICE_STACK is not set
+# # CONFIG_SD_STACK is not set
+# # CONFIG_IMG_MANAGER is not set
+
+# #
+# # Random Number Generators
+# #
+# # CONFIG_TEST_RANDOM_GENERATOR is not set
+# # end of Random Number Generators
+
+# #
+# # Storage
+# #
+# # CONFIG_STREAM_FLASH is not set
+# # end of Storage
+
+# # CONFIG_SETTINGS is not set
+# # CONFIG_TASK_WDT is not set
+
+# #
+# # Testing
+# #
+# # CONFIG_ZTEST is not set
+# # CONFIG_ZTEST_MOCKING is not set
+# # CONFIG_ZTRESS is not set
+# # CONFIG_TEST is not set
+# # CONFIG_TEST_USERSPACE is not set
+# # end of Testing
+
+# # CONFIG_TIMING_FUNCTIONS is not set
+# # CONFIG_TRACING is not set
+# # CONFIG_RTIO is not set
+# # end of Sub Systems and OS Services
+
+# # CONFIG_TOOLCHAIN_CROSS_COMPILE_SUPPORTS_THREAD_LOCAL_STORAGE is not set
+
+# #
+# # Build and Link Features
+# #
+
+# #
+# # Linker Options
+# #
+# # CONFIG_LINKER_ORPHAN_SECTION_PLACE is not set
+# CONFIG_LINKER_ORPHAN_SECTION_WARN=y
+# # CONFIG_LINKER_ORPHAN_SECTION_ERROR is not set
+# CONFIG_LD_LINKER_SCRIPT_SUPPORTED=y
+# CONFIG_LD_LINKER_TEMPLATE=y
+# # CONFIG_HAVE_CUSTOM_LINKER_SCRIPT is not set
+# CONFIG_LINKER_SORT_BY_ALIGNMENT=y
+# # CONFIG_SRAM_VECTOR_TABLE is not set
+# CONFIG_SRAM_OFFSET=0
+
+# #
+# # Linker Sections
+# #
+# # CONFIG_LINKER_USE_BOOT_SECTION is not set
+# # CONFIG_LINKER_USE_PINNED_SECTION is not set
+# CONFIG_LINKER_GENERIC_SECTIONS_PRESENT_AT_BOOT=y
+# # end of Linker Sections
+# # end of Linker Options
+
+# #
+# # Compiler Options
+# #
+# # CONFIG_CODING_GUIDELINE_CHECK is not set
+# # CONFIG_NATIVE_APPLICATION is not set
+# CONFIG_SIZE_OPTIMIZATIONS=y
+# # CONFIG_SPEED_OPTIMIZATIONS is not set
+# # CONFIG_DEBUG_OPTIMIZATIONS is not set
+# # CONFIG_NO_OPTIMIZATIONS is not set
+# CONFIG_COMPILER_COLOR_DIAGNOSTICS=y
+# CONFIG_COMPILER_OPT=""
+# # CONFIG_MISRA_SANE is not set
+# # end of Compiler Options
+
+# # CONFIG_ASSERT_ON_ERRORS is not set
+# # CONFIG_NO_RUNTIME_CHECKS is not set
+# CONFIG_RUNTIME_ERROR_CHECKS=y
+
+# #
+# # Build Options
+# #
+# CONFIG_KERNEL_BIN_NAME="zephyr"
+# CONFIG_OUTPUT_STAT=y
+# # CONFIG_OUTPUT_SYMBOLS is not set
+# CONFIG_OUTPUT_DISASSEMBLY=y
+# # CONFIG_OUTPUT_DISASSEMBLE_ALL is not set
+# CONFIG_OUTPUT_PRINT_MEMORY_USAGE=y
+# # CONFIG_CLEANUP_INTERMEDIATE_FILES is not set
+# # CONFIG_BUILD_NO_GAP_FILL is not set
+# # CONFIG_BUILD_OUTPUT_HEX is not set
+# CONFIG_BUILD_OUTPUT_BIN=y
+# # CONFIG_BUILD_OUTPUT_EXE is not set
+# # CONFIG_BUILD_OUTPUT_S19 is not set
+# # CONFIG_BUILD_OUTPUT_UF2 is not set
+# # CONFIG_BUILD_OUTPUT_STRIPPED is not set
+# # CONFIG_BUILD_OUTPUT_INFO_HEADER is not set
+# # CONFIG_APPLICATION_DEFINED_SYSCALL is not set
+# # CONFIG_MAKEFILE_EXPORTS is not set
+# # CONFIG_BUILD_OUTPUT_META is not set
+# # end of Build Options
+
+# CONFIG_WARN_DEPRECATED=y
+# # CONFIG_WARN_EXPERIMENTAL is not set
+# CONFIG_ENFORCE_ZEPHYR_STDINT=y
+# # end of Build and Link Features
+
+# #
+# # Boot Options
+# #
+# # CONFIG_BOOTLOADER_MCUBOOT is not set
+# # CONFIG_BOOTLOADER_BOSSA is not set
+# # end of Boot Options
+
+# #
+# # Compatibility
+# #
+# CONFIG_COMPAT_INCLUDES=y
+# # end of Compatibility
+
+# # CONFIG_LEGACY_INCLUDE_PATH is not set

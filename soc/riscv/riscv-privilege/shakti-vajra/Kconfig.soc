@@ -1,0 +1,17 @@
+# Kconfig - RISCV64 SHAKTI-VAJRA SOC configuration options
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+choice
+prompt "Shakti Vajra SOC implementation"
+depends on SOC_SERIES_RISCV64_SHAKTI
+
+config SOC_RISCV64_SHAKTI
+	bool "Shakti Vajra SOC implementation"
+	select ATOMIC_OPERATIONS_ARCH
+	select RISCV_ISA_EXT_M
+    select RISCV_ISA_EXT_A
+    select RISCV_ISA_EXT_C
+	select INCLUDE_RESET_VECTOR
+endchoice

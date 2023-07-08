@@ -1,0 +1,13 @@
+identifier: secure IoT
+name: secure iot board
+type: mcu
+arch: riscv64
+simulation: qemu
+toolchain:
+  - cross-compile
+  - zephyr
+ram: 128
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
