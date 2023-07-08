@@ -890,20 +890,6 @@ static int wait_rx(int sock, int timeout)
 	return 0;
 }
 
-static void timeout_recalc(uint64_t end, k_timeout_t *timeout)
-{
-	if (!K_TIMEOUT_EQ(*timeout, K_NO_WAIT) &&
-	    !K_TIMEOUT_EQ(*timeout, K_FOREVER)) {
-		int64_t remaining = end - sys_clock_tick_get();
-
-		if (remaining <= 0) {
-			*timeout = K_NO_WAIT;
-		} else {
-			*timeout = Z_TIMEOUT_TICKS(remaining);
-		}
-	}
-}
-
 static int timeout_to_ms(k_timeout_t *timeout)
 {
 	if (K_TIMEOUT_EQ(*timeout, K_NO_WAIT)) {
@@ -922,7 +908,7 @@ int websocket_recv_msg(int ws_sock, uint8_t *buf, size_t buf_len,
 {
 	struct websocket_context *ctx;
 	int ret;
-	uint64_t end;
+	k_timepoint_t end;
 	k_timeout_t tout = K_FOREVER;
 	struct websocket_buffer payload = {.buf = buf, .size = buf_len, .count = 0};
 
@@ -934,7 +920,7 @@ int websocket_recv_msg(int ws_sock, uint8_t *buf, size_t buf_len,
 		return -EINVAL;
 	}
 
-	end = sys_clock_timeout_end_calc(tout);
+	end = sys_timepoint_calc(tout);
 
 #if defined(CONFIG_NET_TEST)
 	struct test_data *test_data = z_get_fd_obj(ws_sock, NULL, 0);
@@ -973,7 +959,7 @@ int websocket_recv_msg(int ws_sock, uint8_t *buf, size_t buf_len,
 				ret = -EAGAIN;
 			}
 #else
-			timeout_recalc(end, &tout);
+			tout = sys_timepoint_timeout(end);
 
 			ret = wait_rx(ctx->real_sock, timeout_to_ms(&tout));
 			if (ret == 0) {
