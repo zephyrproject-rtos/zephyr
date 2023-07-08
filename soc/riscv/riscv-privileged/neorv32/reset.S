@@ -16,7 +16,7 @@ SECTION_FUNC(reset, __reset)
 	/* Zerorize zero register */
 	lui x0, 0
 
-	/* Disable insterrupts */
+	/* Disable interrupts */
 	csrw mstatus, x0
 	csrw mie, x0
 
