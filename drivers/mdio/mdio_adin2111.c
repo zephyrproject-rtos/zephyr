@@ -131,7 +131,7 @@ int adin2111_mdio_c45_write(const struct device *dev, uint8_t prtad,
 }
 
 static int mdio_adin2111_read(const struct device *dev, uint8_t prtad,
-			      uint8_t devad, uint16_t *data)
+			      uint8_t regad, uint16_t *data)
 {
 	const struct mdio_adin2111_config *const cfg = dev->config;
 	uint32_t read;
@@ -141,7 +141,7 @@ static int mdio_adin2111_read(const struct device *dev, uint8_t prtad,
 	cmd = BIT(28);
 	cmd |= 0x3U << 26;
 	cmd |= (prtad & 0x1FU) << 21;
-	cmd |= (devad & 0x1FU) << 16;
+	cmd |= (regad & 0x1FU) << 16;
 
 	ret = eth_adin2111_reg_write(cfg->adin, ADIN2111_MDIOACC0, cmd);
 	if (ret >= 0) {
@@ -153,7 +153,7 @@ static int mdio_adin2111_read(const struct device *dev, uint8_t prtad,
 }
 
 static int mdio_adin2111_write(const struct device *dev, uint8_t prtad,
-			       uint8_t devad, uint16_t data)
+			       uint8_t regad, uint16_t data)
 {
 	const struct mdio_adin2111_config *const cfg = dev->config;
 	uint32_t cmd;
@@ -163,7 +163,7 @@ static int mdio_adin2111_write(const struct device *dev, uint8_t prtad,
 	cmd = BIT(28);
 	cmd |= BIT(26);
 	cmd |= (prtad & 0x1FU) << 21;
-	cmd |= (devad & 0x1FU) << 16;
+	cmd |= (regad & 0x1FU) << 16;
 	cmd |= data;
 
 	ret = eth_adin2111_reg_write(cfg->adin, ADIN2111_MDIOACC0, cmd);

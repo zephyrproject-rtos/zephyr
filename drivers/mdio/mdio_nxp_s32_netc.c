@@ -25,7 +25,7 @@ struct nxp_s32_mdio_data {
 };
 
 static int nxp_s32_mdio_read(const struct device *dev, uint8_t prtad,
-			     uint8_t devad, uint16_t *regval)
+			     uint8_t regad, uint16_t *regval)
 {
 	const struct nxp_s32_mdio_config *const cfg = dev->config;
 	struct nxp_s32_mdio_data *data = dev->data;
@@ -37,14 +37,14 @@ static int nxp_s32_mdio_read(const struct device *dev, uint8_t prtad,
 	}
 
 	k_mutex_lock(&data->rw_mutex, K_FOREVER);
-	status = Netc_EthSwt_Ip_ReadTrcvRegister(NETC_SWT_IDX, prtad, devad, regval);
+	status = Netc_EthSwt_Ip_ReadTrcvRegister(NETC_SWT_IDX, prtad, regad, regval);
 	k_mutex_unlock(&data->rw_mutex);
 
 	return status == E_OK ? 0 : -EIO;
 }
 
 static int nxp_s32_mdio_write(const struct device *dev, uint8_t prtad,
-			      uint8_t devad, uint16_t regval)
+			      uint8_t regad, uint16_t regval)
 {
 	const struct nxp_s32_mdio_config *const cfg = dev->config;
 	struct nxp_s32_mdio_data *data = dev->data;
@@ -56,7 +56,7 @@ static int nxp_s32_mdio_write(const struct device *dev, uint8_t prtad,
 	}
 
 	k_mutex_lock(&data->rw_mutex, K_FOREVER);
-	status = Netc_EthSwt_Ip_WriteTrcvRegister(NETC_SWT_IDX, prtad, devad, regval);
+	status = Netc_EthSwt_Ip_WriteTrcvRegister(NETC_SWT_IDX, prtad, regad, regval);
 	k_mutex_unlock(&data->rw_mutex);
 
 	return status == E_OK ? 0 : -EIO;
