@@ -54,6 +54,8 @@ BUILD_ASSERT(CONFIG_POSIX_RTSIG_MAX >= 0);
 typedef struct {
 	unsigned long sig[DIV_ROUND_UP(_NSIG, BITS_PER_LONG)];
 } sigset_t;
+
+int sigemptyset(sigset_t *set);
 #endif /* CONFIG_POSIX_SIGNAL */
 
 #ifndef SIGEV_NONE

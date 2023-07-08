@@ -378,7 +378,7 @@ required for error and event handling.
     sigaction(),
     igaddset(),
     sigdelset(),
-    sigemptyset(),
+    sigemptyset(),yes
     sigfillset(),
     igismember(),
     signal(),
