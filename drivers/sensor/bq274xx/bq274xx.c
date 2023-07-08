@@ -357,11 +357,6 @@ static int bq274xx_gauge_configure(const struct device *dev)
 	return 0;
 }
 
-/**
- * @brief sensor value get
- *
- * @return -ENOTSUP for unsupported channels
- */
 static int bq274xx_channel_get(const struct device *dev, enum sensor_channel chan,
 			       struct sensor_value *val)
 {
@@ -441,117 +436,115 @@ static int bq274xx_channel_get(const struct device *dev, enum sensor_channel cha
 static int bq274xx_sample_fetch(const struct device *dev, enum sensor_channel chan)
 {
 	struct bq274xx_data *data = dev->data;
-	int ret;
+	int ret = -ENOTSUP;
 
 	if (!data->configured) {
 		ret = bq274xx_gauge_configure(dev);
-
 		if (ret < 0) {
 			return ret;
 		}
 	}
 
-	switch (chan) {
-	case SENSOR_CHAN_GAUGE_VOLTAGE:
+	if (chan == SENSOR_CHAN_ALL || chan == SENSOR_CHAN_GAUGE_VOLTAGE) {
 		ret = bq274xx_cmd_reg_read(dev, BQ274XX_CMD_VOLTAGE,
 					   &data->voltage);
 		if (ret < 0) {
 			LOG_ERR("Failed to read voltage");
 			return -EIO;
 		}
-		break;
+	}
 
-	case SENSOR_CHAN_GAUGE_AVG_CURRENT:
+	if (chan == SENSOR_CHAN_ALL || chan == SENSOR_CHAN_GAUGE_AVG_CURRENT) {
 		ret = bq274xx_cmd_reg_read(dev, BQ274XX_CMD_AVG_CURRENT,
 					   &data->avg_current);
 		if (ret < 0) {
 			LOG_ERR("Failed to read average current ");
 			return -EIO;
 		}
-		break;
+	}
 
-	case SENSOR_CHAN_GAUGE_TEMP:
+	if (chan == SENSOR_CHAN_ALL || chan == SENSOR_CHAN_GAUGE_TEMP) {
 		ret = bq274xx_cmd_reg_read(dev, BQ274XX_CMD_INT_TEMP,
 					   &data->internal_temperature);
 		if (ret < 0) {
 			LOG_ERR("Failed to read internal temperature");
 			return -EIO;
 		}
-		break;
+	}
 
-	case SENSOR_CHAN_GAUGE_STDBY_CURRENT:
+	if (chan == SENSOR_CHAN_ALL || chan == SENSOR_CHAN_GAUGE_STDBY_CURRENT) {
 		ret = bq274xx_cmd_reg_read(dev, BQ274XX_CMD_STDBY_CURRENT,
 					   &data->stdby_current);
 		if (ret < 0) {
 			LOG_ERR("Failed to read standby current");
 			return -EIO;
 		}
-		break;
+	}
 
-	case SENSOR_CHAN_GAUGE_MAX_LOAD_CURRENT:
+	if (chan == SENSOR_CHAN_ALL || chan == SENSOR_CHAN_GAUGE_MAX_LOAD_CURRENT) {
 		ret = bq274xx_cmd_reg_read(dev, BQ274XX_CMD_MAX_CURRENT,
 					   &data->max_load_current);
 		if (ret < 0) {
 			LOG_ERR("Failed to read maximum current");
 			return -EIO;
 		}
-		break;
+	}
 
-	case SENSOR_CHAN_GAUGE_STATE_OF_CHARGE:
+	if (chan == SENSOR_CHAN_ALL || chan == SENSOR_CHAN_GAUGE_STATE_OF_CHARGE) {
 		ret = bq274xx_cmd_reg_read(dev, BQ274XX_CMD_SOC,
 					   &data->state_of_charge);
 		if (ret < 0) {
 			LOG_ERR("Failed to read state of charge");
 			return -EIO;
 		}
-		break;
+	}
 
-	case SENSOR_CHAN_GAUGE_FULL_CHARGE_CAPACITY:
+	if (chan == SENSOR_CHAN_ALL || chan == SENSOR_CHAN_GAUGE_FULL_CHARGE_CAPACITY) {
 		ret = bq274xx_cmd_reg_read(dev, BQ274XX_CMD_FULL_CAPACITY,
 				   &data->full_charge_capacity);
 		if (ret < 0) {
 			LOG_ERR("Failed to read full charge capacity");
 			return -EIO;
 		}
-		break;
+	}
 
-	case SENSOR_CHAN_GAUGE_REMAINING_CHARGE_CAPACITY:
+	if (chan == SENSOR_CHAN_ALL || chan == SENSOR_CHAN_GAUGE_REMAINING_CHARGE_CAPACITY) {
 		ret = bq274xx_cmd_reg_read(dev, BQ274XX_CMD_REM_CAPACITY,
 				   &data->remaining_charge_capacity);
 		if (ret < 0) {
 			LOG_ERR("Failed to read remaining charge capacity");
 			return -EIO;
 		}
-		break;
+	}
 
-	case SENSOR_CHAN_GAUGE_NOM_AVAIL_CAPACITY:
+	if (chan == SENSOR_CHAN_ALL || chan == SENSOR_CHAN_GAUGE_NOM_AVAIL_CAPACITY) {
 		ret = bq274xx_cmd_reg_read(dev, BQ274XX_CMD_NOM_CAPACITY,
 				   &data->nom_avail_capacity);
 		if (ret < 0) {
 			LOG_ERR("Failed to read nominal available capacity");
 			return -EIO;
 		}
-		break;
+	}
 
-	case SENSOR_CHAN_GAUGE_FULL_AVAIL_CAPACITY:
+	if (chan == SENSOR_CHAN_ALL || chan == SENSOR_CHAN_GAUGE_FULL_AVAIL_CAPACITY) {
 		ret = bq274xx_cmd_reg_read(dev, BQ274XX_CMD_AVAIL_CAPACITY,
 				   &data->full_avail_capacity);
 		if (ret < 0) {
 			LOG_ERR("Failed to read full available capacity");
 			return -EIO;
 		}
-		break;
+	}
 
-	case SENSOR_CHAN_GAUGE_AVG_POWER:
+	if (chan == SENSOR_CHAN_ALL || chan == SENSOR_CHAN_GAUGE_AVG_POWER) {
 		ret = bq274xx_cmd_reg_read(dev, BQ274XX_CMD_AVG_POWER,
 					   &data->avg_power);
 		if (ret < 0) {
 			LOG_ERR("Failed to read battery average power");
 			return -EIO;
 		}
-		break;
+	}
 
-	case SENSOR_CHAN_GAUGE_STATE_OF_HEALTH:
+	if (chan == SENSOR_CHAN_ALL || chan == SENSOR_CHAN_GAUGE_STATE_OF_HEALTH) {
 		ret = bq274xx_cmd_reg_read(dev, BQ274XX_CMD_SOH,
 					   &data->state_of_health);
 
@@ -561,13 +554,9 @@ static int bq274xx_sample_fetch(const struct device *dev, enum sensor_channel ch
 			LOG_ERR("Failed to read state of health");
 			return -EIO;
 		}
-		break;
-
-	default:
-		return -ENOTSUP;
 	}
 
-	return 0;
+	return ret;
 }
 
 /**
