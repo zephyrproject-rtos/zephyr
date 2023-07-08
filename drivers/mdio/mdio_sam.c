@@ -34,7 +34,7 @@ struct mdio_sam_dev_config {
 	int protocol;
 };
 
-static int mdio_transfer(const struct device *dev, uint8_t prtad, uint8_t devad,
+static int mdio_transfer(const struct device *dev, uint8_t prtad, uint8_t regad,
 			 uint8_t rw, uint16_t data_in, uint16_t *data_out)
 {
 	const struct mdio_sam_dev_config *const cfg = dev->config;
@@ -48,7 +48,7 @@ static int mdio_transfer(const struct device *dev, uint8_t prtad, uint8_t devad,
 		cfg->regs->GMAC_MAN = (GMAC_MAN_OP(rw ? 0x2 : 0x3))
 				    |  GMAC_MAN_WTN(0x02)
 				    |  GMAC_MAN_PHYA(prtad)
-				    |  GMAC_MAN_REGA(devad)
+				    |  GMAC_MAN_REGA(regad)
 				    |  GMAC_MAN_DATA(data_in);
 
 	} else if (cfg->protocol == CLAUSE_22) {
@@ -56,7 +56,7 @@ static int mdio_transfer(const struct device *dev, uint8_t prtad, uint8_t devad,
 				    | (GMAC_MAN_OP(rw ? 0x2 : 0x1))
 				    |  GMAC_MAN_WTN(0x02)
 				    |  GMAC_MAN_PHYA(prtad)
-				    |  GMAC_MAN_REGA(devad)
+				    |  GMAC_MAN_REGA(regad)
 				    |  GMAC_MAN_DATA(data_in);
 
 	} else {
@@ -84,16 +84,16 @@ static int mdio_transfer(const struct device *dev, uint8_t prtad, uint8_t devad,
 	return 0;
 }
 
-static int mdio_sam_read(const struct device *dev, uint8_t prtad, uint8_t devad,
+static int mdio_sam_read(const struct device *dev, uint8_t prtad, uint8_t regad,
 			 uint16_t *data)
 {
-	return mdio_transfer(dev, prtad, devad, 1, 0, data);
+	return mdio_transfer(dev, prtad, regad, 1, 0, data);
 }
 
 static int mdio_sam_write(const struct device *dev, uint8_t prtad,
-			  uint8_t devad, uint16_t data)
+			  uint8_t regad, uint16_t data)
 {
-	return mdio_transfer(dev, prtad, devad, 0, data, NULL);
+	return mdio_transfer(dev, prtad, regad, 0, data, NULL);
 }
 
 static void mdio_sam_bus_enable(const struct device *dev)

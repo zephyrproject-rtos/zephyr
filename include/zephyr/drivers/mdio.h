@@ -6,6 +6,7 @@
 
 /*
  * Copyright (c) 2021 IP-Logix Inc.
+ * Copyright 2023 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -47,11 +48,11 @@ __subsystem struct mdio_driver_api {
 	void (*bus_disable)(const struct device *dev);
 
 	/** Read data from MDIO bus */
-	int (*read)(const struct device *dev, uint8_t prtad, uint8_t devad,
+	int (*read)(const struct device *dev, uint8_t prtad, uint8_t regad,
 		    uint16_t *data);
 
 	/** Write data to MDIO bus */
-	int (*write)(const struct device *dev, uint8_t prtad, uint8_t devad,
+	int (*write)(const struct device *dev, uint8_t prtad, uint8_t regad,
 		     uint16_t data);
 };
 /**
@@ -98,23 +99,23 @@ static inline void z_impl_mdio_bus_disable(const struct device *dev)
  *
  * @param[in]  dev         Pointer to the device structure for the controller
  * @param[in]  prtad       Port address
- * @param[in]  devad       Device address
+ * @param[in]  regad       Register address
  * @param      data        Pointer to receive read data
  *
  * @retval 0 If successful.
  * @retval -EIO General input / output error.
  * @retval -ETIMEDOUT If transaction timedout on the bus
  */
-__syscall int mdio_read(const struct device *dev, uint8_t prtad, uint8_t devad,
+__syscall int mdio_read(const struct device *dev, uint8_t prtad, uint8_t regad,
 			uint16_t *data);
 
 static inline int z_impl_mdio_read(const struct device *dev, uint8_t prtad,
-				   uint8_t devad, uint16_t *data)
+				   uint8_t regad, uint16_t *data)
 {
 	const struct mdio_driver_api *api =
 		(const struct mdio_driver_api *)dev->api;
 
-	return api->read(dev, prtad, devad, data);
+	return api->read(dev, prtad, regad, data);
 }
 
 
@@ -126,23 +127,23 @@ static inline int z_impl_mdio_read(const struct device *dev, uint8_t prtad,
  *
  * @param[in]  dev         Pointer to the device structure for the controller
  * @param[in]  prtad       Port address
- * @param[in]  devad       Device address
+ * @param[in]  regad       Register address
  * @param[in]  data        Data to write
  *
  * @retval 0 If successful.
  * @retval -EIO General input / output error.
  * @retval -ETIMEDOUT If transaction timedout on the bus
  */
-__syscall int mdio_write(const struct device *dev, uint8_t prtad, uint8_t devad,
+__syscall int mdio_write(const struct device *dev, uint8_t prtad, uint8_t regad,
 			 uint16_t data);
 
 static inline int z_impl_mdio_write(const struct device *dev, uint8_t prtad,
-				    uint8_t devad, uint16_t data)
+				    uint8_t regad, uint16_t data)
 {
 	const struct mdio_driver_api *api =
 		(const struct mdio_driver_api *)dev->api;
 
-	return api->write(dev, prtad, devad, data);
+	return api->write(dev, prtad, regad, data);
 }
 
 #ifdef __cplusplus
