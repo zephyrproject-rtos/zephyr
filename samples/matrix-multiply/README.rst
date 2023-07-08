@@ -1,13 +1,13 @@
-.. _hello_world:
+.. _matrix_multiply:
 
-Hello World
-###########
+Matrix-Multiply
+###############
 
 Overview
 ********
 
 A simple sample that can be used with any :ref:`supported board <boards>` and
-prints "Hello World" to the console.
+prints the values after the Matrix Multiplication of the numbers on to the console.
 
 Building and Running
 ********************
@@ -15,19 +15,19 @@ Building and Running
 This application can be built and executed on QEMU as follows:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/hello_world
+   :zephyr-app: samples/matrix-multiply
    :host-os: unix
-   :board: qemu_x86
+   :board: secure_iot
    :goals: run
    :compact:
 
-To build for another board, change "qemu_x86" above to that board's name.
+To build for another board, change "secure_iot" above to that board's name.
 
 Sample Output
 =============
 
 .. code-block:: console
 
-    Hello World! x86
+    Output of the Matrix Multiplication
 
-Exit QEMU by pressing :kbd:`CTRL+A` :kbd:`x`.
+If running in QEMU, exit from QEMU by pressing :kbd:`CTRL+C` :kbd:`x`.

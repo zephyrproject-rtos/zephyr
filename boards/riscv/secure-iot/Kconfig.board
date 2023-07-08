@@ -4,3 +4,4 @@ config BOARD_SECURE_IOT
         select HAS_DTS
         select RISCV_HAS_PLIC
         select RISCV_HAS_FPU
+        select CPU_HAS_FPU

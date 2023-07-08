@@ -12,5 +12,5 @@ common:
       regex:
         - "(.*)"
 tests:
-  sample.basic.helloworld:
+  sample.basic.matrix-multiply:
     tags: introduction

@@ -13,8 +13,8 @@ Repository:
 $ git clone --recursive https://gitlab.com/shaktiproject/software/shakti-tools.git
 $ git clone https://github.com/Mindgrove-Technologies/zephyr.git zephyr-mindgrove
 $ cd zephyr-mindgrove
-$ git checkout -b seciot-1.0.0
-$ git pull origin seciot-1.0.0
+$ git checkout -b seciot-1.0.1
+$ git pull origin seciot-1.0.1
 $ pip3 install --user -r scripts/requirements.txt
 $ unset GNUARMEMB_TOOLCHAIN_PATH
 $ export ZEPHYR_BASE=$PWD
@@ -23,7 +23,7 @@ $ export CROSS_COMPILE=<tool_chain_path>
 
 Eg. for 64-bit c-class
 
-$ export CROSS_COMPILE=/path/to/shakti-tools/riscv64/bin/riscv64-unknown-elf-
+$ export CROSS_COMPILE=/path/to/opt/riscv/bin/riscv64-unknown-elf-
 $ source zephyr-env.sh
 ```
 ## Building sample application using Ninja
