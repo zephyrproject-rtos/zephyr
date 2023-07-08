@@ -56,6 +56,7 @@ typedef struct {
 } sigset_t;
 
 int sigemptyset(sigset_t *set);
+int sigfillset(sigset_t *set);
 #endif /* CONFIG_POSIX_SIGNAL */
 
 #ifndef SIGEV_NONE

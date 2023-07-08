@@ -379,7 +379,7 @@ required for error and event handling.
     igaddset(),
     sigdelset(),
     sigemptyset(),yes
-    sigfillset(),
+    sigfillset(),yes
     igismember(),
     signal(),
     sigpending(),
