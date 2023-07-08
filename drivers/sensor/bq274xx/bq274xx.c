@@ -148,13 +148,13 @@ static int bq274xx_gauge_configure(const struct device *dev)
 	taperrate = config->design_capacity * 10 / config->taper_current;
 
 	/* Unseal the battery control register */
-	ret = bq274xx_ctrl_reg_write(dev, BQ274XX_UNSEAL_KEY);
+	ret = bq274xx_ctrl_reg_write(dev, BQ274XX_UNSEAL_KEY_A);
 	if (ret < 0) {
 		LOG_ERR("Unable to unseal the battery");
 		return -EIO;
 	}
 
-	ret = bq274xx_ctrl_reg_write(dev, BQ274XX_UNSEAL_KEY);
+	ret = bq274xx_ctrl_reg_write(dev, BQ274XX_UNSEAL_KEY_B);
 	if (ret < 0) {
 		LOG_ERR("Unable to unseal the battery");
 		return -EIO;
@@ -624,13 +624,13 @@ static int bq274xx_enter_shutdown_mode(const struct device *dev)
 {
 	int ret;
 
-	ret = bq274xx_ctrl_reg_write(dev, BQ274XX_UNSEAL_KEY);
+	ret = bq274xx_ctrl_reg_write(dev, BQ274XX_UNSEAL_KEY_A);
 	if (ret < 0) {
 		LOG_ERR("Unable to unseal the battery");
 		return ret;
 	}
 
-	ret = bq274xx_ctrl_reg_write(dev, BQ274XX_UNSEAL_KEY);
+	ret = bq274xx_ctrl_reg_write(dev, BQ274XX_UNSEAL_KEY_B);
 	if (ret < 0) {
 		LOG_ERR("Unable to unseal the battery");
 		return ret;
