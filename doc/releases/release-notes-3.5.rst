@@ -190,8 +190,6 @@ Drivers and Sensors
 
 * PECI
 
-Trusted Firmware-M
-******************
 * Pin control
 
 * PWM
