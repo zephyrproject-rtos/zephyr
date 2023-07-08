@@ -380,7 +380,7 @@ required for error and event handling.
     sigdelset(),yes
     sigemptyset(),yes
     sigfillset(),yes
-    igismember(),
+    sigismember(),yes
     signal(),
     sigpending(),
     sigprocmask(),

@@ -162,6 +162,7 @@ ZTEST(posix_headers, test_signal_h)
 	zassert_not_null(sigfillset);
 	zassert_not_null(sigaddset);
 	zassert_not_null(sigdelset);
+	zassert_not_null(sigismember);
 #endif /* CONFIG_POSIX_SIGNAL */
 
 	if (IS_ENABLED(CONFIG_POSIX_API)) {
@@ -177,7 +178,6 @@ ZTEST(posix_headers, test_signal_h)
 		/* zassert_not_null(sighold); */ /* not implemented */
 		/* zassert_not_null(sigignore); */ /* not implemented */
 		/* zassert_not_null(siginterrupt); */ /* not implemented */
-		/* zassert_not_null(sigismember); */ /* not implemented */
 		/* zassert_not_null(signal); */ /* not implemented */
 		/* zassert_not_null(sigpause); */ /* not implemented */
 		/* zassert_not_null(sigpending); */ /* not implemented */

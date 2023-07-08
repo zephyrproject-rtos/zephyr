@@ -157,3 +157,38 @@ ZTEST(posix_apis, test_signal_delset)
 			      ARRAY_SIZE(set.sig) - 1, set.sig[i], target.sig[i]);
 	}
 }
+
+ZTEST(posix_apis, test_signal_ismember_oor)
+{
+	sigset_t set = {0};
+
+	zassert_equal(sigismember(&set, -1), -1, "rc should be -1");
+	zassert_equal(errno, EINVAL, "errno should be %s", "EINVAL");
+
+	zassert_equal(sigismember(&set, 0), -1, "rc should be -1");
+	zassert_equal(errno, EINVAL, "errno should be %s", "EINVAL");
+
+	zassert_equal(sigismember(&set, _NSIG), -1, "rc should be -1");
+	zassert_equal(errno, EINVAL, "errno should be %s", "EINVAL");
+}
+
+ZTEST(posix_apis, test_signal_ismember)
+{
+	sigset_t set = (sigset_t){0};
+
+#ifdef CONFIG_64BIT
+	set.sig[0] = BIT(SIGHUP) | BIT(SIGSYS) | BIT(SIGRTMIN);
+#else /* 32BIT */
+	set.sig[0] = BIT(SIGHUP) | BIT(SIGSYS);
+	set.sig[1] = BIT((SIGRTMIN)-BITS_PER_LONG);
+#endif
+	WRITE_BIT(set.sig[SIGRTMAX / BITS_PER_LONG], SIGRTMAX % BITS_PER_LONG, 1);
+
+	zassert_equal(sigismember(&set, SIGHUP), 1, "%s expected to be member", "SIGHUP");
+	zassert_equal(sigismember(&set, SIGSYS), 1, "%s expected to be member", "SIGSYS");
+	zassert_equal(sigismember(&set, SIGRTMIN), 1, "%s expected to be member", "SIGRTMIN");
+	zassert_equal(sigismember(&set, SIGRTMAX), 1, "%s expected to be member", "SIGRTMAX");
+
+	zassert_equal(sigismember(&set, SIGKILL), 0, "%s not expected to be member", "SIGKILL");
+	zassert_equal(sigismember(&set, SIGTERM), 0, "%s not expected to be member", "SIGTERM");
+}

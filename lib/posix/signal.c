@@ -58,3 +58,13 @@ int sigdelset(sigset_t *set, int signo)
 
 	return 0;
 }
+
+int sigismember(const sigset_t *set, int signo)
+{
+	if (!signo_valid(signo)) {
+		errno = EINVAL;
+		return -1;
+	}
+
+	return 1 & (set->sig[SIGNO_WORD_IDX(signo)] >> SIGNO_WORD_BIT(signo));
+}
