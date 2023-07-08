@@ -158,6 +158,7 @@ ZTEST(posix_headers, test_signal_h)
 	zassert_not_equal(-1, SIGXCPU);
 	zassert_not_equal(-1, SIGXFSZ);
 	zassert_not_equal(((sigset_t){.sig[0] = 0}).sig[0], ((sigset_t){.sig[0] = -1}).sig[0]);
+	zassert_not_null(sigemptyset);
 #endif /* CONFIG_POSIX_SIGNAL */
 
 	if (IS_ENABLED(CONFIG_POSIX_API)) {
@@ -172,7 +173,6 @@ ZTEST(posix_headers, test_signal_h)
 		/* zassert_not_null(sigaddset); */ /* not implemented */
 		/* zassert_not_null(sigaltstack); */ /* not implemented */
 		/* zassert_not_null(sigdelset); */ /* not implemented */
-		/* zassert_not_null(sigemptyset); */ /* not implemented */
 		/* zassert_not_null(sigfillset); */ /* not implemented */
 		/* zassert_not_null(sighold); */ /* not implemented */
 		/* zassert_not_null(sigignore); */ /* not implemented */
