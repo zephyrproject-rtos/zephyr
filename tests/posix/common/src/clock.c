@@ -14,6 +14,7 @@
 
 ZTEST(posix_apis, test_clock)
 {
+	int ret;
 	int64_t nsecs_elapsed, secs_elapsed;
 	struct timespec ts, te;
 
@@ -35,6 +36,12 @@ ZTEST(posix_apis, test_clock)
 		nsecs_elapsed = NSEC_PER_SEC + te.tv_nsec - ts.tv_nsec;
 		secs_elapsed = (te.tv_sec - ts.tv_sec - 1);
 	}
+
+	ret = clock_getres(CLOCK_MONOTONIC, &te);
+	zassert_equal(ret, 0, "Fail to get monotonic clock resolution");
+	zassert_equal(te.tv_sec, 0, "Monotonic clock resolution should be in ns");
+	zassert_equal(te.tv_nsec, NSEC_PER_SEC / CONFIG_SYS_CLOCK_TICKS_PER_SEC,
+			"Monotonic clock resolution should be in ns");
 
 	/*TESTPOINT: Check if POSIX clock API test passes*/
 	zassert_equal(secs_elapsed, SLEEP_SECONDS,
@@ -122,4 +129,9 @@ ZTEST(posix_apis, test_realtime)
 			" provide correct result");
 	zassert_true(rts.tv_nsec >= tv.tv_usec * NSEC_PER_USEC,
 			"gettimeofday didn't provide correct result");
+
+	ret = clock_getres(CLOCK_REALTIME, &nts);
+	zassert_equal(ret, 0, "Fail to get realtime clock resolution");
+	zassert_equal(nts.tv_sec, 0, "Realtime clock resolution should be in ns");
+	zassert_not_equal(nts.tv_nsec, 0, "Invalid realtime clock resolution");
 }

@@ -107,6 +107,41 @@ int clock_settime(clockid_t clock_id, const struct timespec *tp)
 }
 
 /**
+ * @brief Get clock resolution.
+ *
+ * See IEEE 1003.1
+ */
+int clock_getres(clockid_t clock_id, struct timespec *res)
+{
+	switch (clock_id) {
+	case CLOCK_MONOTONIC:
+		res->tv_sec = 0;
+		res->tv_nsec = NSEC_PER_SEC / CONFIG_SYS_CLOCK_TICKS_PER_SEC;
+		break;
+
+	case CLOCK_REALTIME:
+		uint64_t tick_1 = k_uptime_ticks();
+		uint64_t tick_2 = tick_1;
+
+		while (tick_1 == tick_2) {
+			tick_2 = k_uptime_ticks();
+		}
+
+		int tick_res = tick_2 - tick_1;
+
+		res->tv_sec = 0;
+		res->tv_nsec = NSEC_PER_SEC / tick_res;
+		break;
+
+	default:
+		errno = EINVAL;
+		return -1;
+	}
+
+	return 0;
+}
+
+/**
  * @brief Get current real time.
  *
  * See IEEE 1003.1

@@ -88,6 +88,7 @@ int clock_gettime(clockid_t clock_id, struct timespec *ts);
 __syscall int clock_gettime(clockid_t clock_id, struct timespec *ts);
 #endif /* CONFIG_ARCH_POSIX */
 int clock_settime(clockid_t clock_id, const struct timespec *ts);
+int clock_getres(clockid_t clock_id, struct timespec *res);
 /* Timer APIs */
 int timer_create(clockid_t clockId, struct sigevent *evp, timer_t *timerid);
 int timer_delete(timer_t timerid);
