@@ -76,21 +76,6 @@ static int bq274xx_ctrl_reg_write(const struct device *dev, uint16_t subcommand)
 	return 0;
 }
 
-static int bq274xx_cmd_reg_write(const struct device *dev, uint8_t command,
-				 uint8_t data)
-{
-	const struct bq274xx_config *config = dev->config;
-	int ret;
-
-	ret = i2c_reg_write_byte_dt(&config->i2c, command, data);
-	if (ret < 0) {
-		LOG_ERR("Failed to write into control register");
-		return -EIO;
-	}
-
-	return 0;
-}
-
 static int bq274xx_read_data_block(const struct device *dev, uint8_t offset,
 				   uint8_t *data, uint8_t bytes)
 {
@@ -186,21 +171,21 @@ static int bq274xx_gauge_configure(const struct device *dev)
 		return -EIO;
 	}
 
-	ret = bq274xx_cmd_reg_write(dev, BQ274XX_EXT_DATA_CONTROL, 0x00);
+	ret = i2c_reg_write_byte_dt(&config->i2c, BQ274XX_EXT_DATA_CONTROL, 0x00);
 	if (ret < 0) {
 		LOG_ERR("Failed to enable block data memory");
 		return -EIO;
 	}
 
 	/* Access State subclass */
-	ret = bq274xx_cmd_reg_write(dev, BQ274XX_EXT_DATA_CLASS, 0x52);
+	ret = i2c_reg_write_byte_dt(&config->i2c, BQ274XX_EXT_DATA_CLASS, 0x52);
 	if (ret < 0) {
 		LOG_ERR("Failed to update state subclass");
 		return -EIO;
 	}
 
 	/* Write the block offset */
-	ret = bq274xx_cmd_reg_write(dev, BQ274XX_EXT_DATA_BLOCK, 0x00);
+	ret = i2c_reg_write_byte_dt(&config->i2c, BQ274XX_EXT_DATA_BLOCK, 0x00);
 	if (ret < 0) {
 		LOG_ERR("Failed to update block offset");
 		return -EIO;
@@ -301,7 +286,7 @@ static int bq274xx_gauge_configure(const struct device *dev)
 	}
 	checksum_new = 255 - checksum_new;
 
-	ret = bq274xx_cmd_reg_write(dev, BQ274XX_EXT_CHECKSUM, checksum_new);
+	ret = i2c_reg_write_byte_dt(&config->i2c, BQ274XX_EXT_CHECKSUM, checksum_new);
 	if (ret < 0) {
 		LOG_ERR("Failed to update new checksum");
 		return -EIO;
