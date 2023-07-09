@@ -69,8 +69,7 @@
 #define BQ274XX_EXT_BLKDAT_END                 0x5F /* BlockData_end() */
 #define BQ274XX_EXT_CHECKSUM                   0x60 /* BlockDataCheckSum() */
 #define BQ274XX_EXT_DATA_CONTROL               0x61 /* BlockDataControl() */
-#define BQ274XX_EXT_BLKDAT_HIGH(off)           (BQ274XX_EXT_BLKDAT_START + off)
-#define BQ274XX_EXT_BLKDAT_LOW(off)            (BQ274XX_EXT_BLKDAT_START + off + 1)
+#define BQ274XX_EXT_BLKDAT(off)                (BQ274XX_EXT_BLKDAT_START + off)
 
 /* Hold the register offset for a device variant. */
 struct bq274xx_regs {
