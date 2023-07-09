@@ -1,0 +1,3 @@
+qemu:
+  qemu_option:
+    - "-bios {self.bin_name}"

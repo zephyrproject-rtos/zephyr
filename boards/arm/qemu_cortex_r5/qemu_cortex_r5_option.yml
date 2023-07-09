@@ -1,0 +1,8 @@
+qemu:
+  qemu_option:
+    - "-device loader,file={self.elf_name},cpu-num=4"
+    - "-device loader,addr=0xff5e023c,data=0x80008fde,data-len=4"
+    - "-device loader,addr=0xff9a0000,data=0x80000218,data-len=4"
+    - "-net none -pidfile qemu.pid -chardev stdio,id=con,mux=on"
+    - "-serial chardev:con -mon chardev=con,mode=readline"
+    - "-icount shift=3,align=off,sleep=off -rtc clock=vm"

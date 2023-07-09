@@ -12,12 +12,14 @@ if(CONFIG_BOARD_QEMU_RISCV32 OR CONFIG_BOARD_QEMU_RISCV32_SMP)
     -bios none
     -m 256
     )
+  board_runner_args(qemu "--commander=qemu-system-riscv32" "--machine=virt"
+  "--qemu_option=${CMAKE_CURRENT_LIST_DIR}/qemu_riscv32_smp_option.yml")
 else()
   set(QEMU_FLAGS_${ARCH}
     -nographic
     -machine sifive_e
     )
+  board_runner_args(qemu "--commander=qemu-system-riscv32" "--machine=sifive_e")
 endif()
 
-
-board_set_debugger_ifnset(qemu)
+include(${ZEPHYR_BASE}/boards/common/qemu.board.cmake)

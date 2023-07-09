@@ -11,4 +11,7 @@ set(QEMU_FLAGS_${ARCH}
   -bios none
   -m 256
   )
-board_set_debugger_ifnset(qemu)
+board_runner_args(qemu "--commander=qemu-system-riscv64" "--machine=virt"
+              "--qemu_option=${CMAKE_CURRENT_LIST_DIR}/qemu_riscv64_option.yml")
+
+include(${ZEPHYR_BASE}/boards/common/qemu.board.cmake)

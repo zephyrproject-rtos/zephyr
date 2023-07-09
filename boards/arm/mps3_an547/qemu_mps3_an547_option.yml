@@ -1,0 +1,2 @@
+qemu:
+  variable_options: true

@@ -19,13 +19,18 @@ set(QEMU_FLAGS_${ARCH}
   -nographic
   -vga none
   )
-board_set_debugger_ifnset(qemu)
 
 if (CONFIG_BUILD_WITH_TFM)
   # Override the binary used by qemu, to use the combined
   # TF-M (Secure) & Zephyr (Non Secure) image (when running
   # in-tree tests).
   set(QEMU_KERNEL_OPTION "-device;loader,file=${CMAKE_BINARY_DIR}/zephyr/tfm_merged.hex")
+
+  FILE(WRITE "${PROJECT_BINARY_DIR}/qemu_runner_variables.conf" "${QEMU_KERNEL_OPTION}"\n)
+  board_runner_args(qemu "--cpu=cortex-m55" "--machine=mps3-an547"
+                   "--qemu_option=${CMAKE_CURRENT_LIST_DIR}/qemu_mps3_an547_option.yml")
+else()
+  board_runner_args(qemu "--cpu=cortex-m55" "--machine=mps3-an547")
 endif()
 
 # FVP settings
@@ -44,3 +49,5 @@ set(ARMFVP_FLAGS
   -C mps3_board.uart2.unbuffered_output=1
   -C mps3_board.visualisation.disable-visualisation=1
   )
+
+include(${ZEPHYR_BASE}/boards/common/qemu.board.cmake)

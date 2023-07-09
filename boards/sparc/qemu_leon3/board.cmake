@@ -10,4 +10,7 @@ set(QEMU_FLAGS_${ARCH}
   -machine leon3_generic
   -icount auto
   )
-board_set_debugger_ifnset(qemu)
+board_runner_args(qemu "--commander=qemu-system-leon3" "--machine=leon3_generic"
+  "--qemu_option=${CMAKE_CURRENT_LIST_DIR}/qemu_leon3_option.yml")
+
+include(${ZEPHYR_BASE}/boards/common/qemu.board.cmake)

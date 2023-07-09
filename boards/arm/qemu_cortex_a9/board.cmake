@@ -18,4 +18,8 @@ set(QEMU_KERNEL_OPTION
   "-device;loader,file=\$<TARGET_FILE:\${logical_target_for_zephyr_elf}>,cpu-num=0"
   )
 
-board_set_debugger_ifnset(qemu)
+board_runner_args(qemu "--commander=qemu-system-xilinx-aarch64" "--cpu=cortex-a9" "--machine=arm-generic-fdt-7series"
+                  "--dtb=${CMAKE_CURRENT_LIST_DIR}/fdt-zynq7000s.dtb"
+                  "--qemu_option=${CMAKE_CURRENT_LIST_DIR}/qemu_cortex_a9_option.yml")
+
+include(${ZEPHYR_BASE}/boards/common/qemu.board.cmake)

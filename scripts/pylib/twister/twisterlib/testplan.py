@@ -451,7 +451,6 @@ class TestPlan:
 
                                     break
 
-
                 except RuntimeError as e:
                     logger.error("E: %s: can't load: %s" % (file, e))
                     self.load_errors += 1

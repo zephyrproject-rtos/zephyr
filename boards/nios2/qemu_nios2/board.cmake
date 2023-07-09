@@ -9,4 +9,6 @@ set(QEMU_FLAGS_${ARCH}
   -nographic
   )
 
-board_set_debugger_ifnset(qemu)
+board_runner_args(qemu "--commander=qemu-system-nios2" "--machine=altera_10m50_zephyr")
+
+include(${ZEPHYR_BASE}/boards/common/qemu.board.cmake)

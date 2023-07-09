@@ -12,4 +12,6 @@ set(QEMU_FLAGS_${ARCH}
   -nographic
   -vga none
   )
-board_set_debugger_ifnset(qemu)
+board_runner_args(qemu "--cpu=cortex-m0" "--machine=microbit")
+
+include(${ZEPHYR_BASE}/boards/common/qemu.board.cmake)

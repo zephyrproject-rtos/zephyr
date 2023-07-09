@@ -1,0 +1,3 @@
+qemu:
+  qemu_option:
+    - "-chardev pty,id=hostS0 -serial chardev:hostS0"

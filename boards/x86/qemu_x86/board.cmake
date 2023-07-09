@@ -16,6 +16,7 @@ if(CONFIG_X86_64)
     list(APPEND QEMU_EXTRA_FLAGS -icount shift=5,align=off,sleep=off -rtc clock=vm)
   endif()
 else()
+  set(QEMU_binary_suffix i386)
   set(QEMU_CPU_TYPE_${ARCH} qemu32,+nx,+pae)
 endif()
 
@@ -82,3 +83,14 @@ if(CONFIG_BOARD_QEMU_X86_TINY AND CONFIG_DEMAND_PAGING
   set(X86_EXTRA_GEN_MMU_ARGUMENTS
       --map ${CONFIG_FLASH_BASE_ADDRESS},${QEMU_FLASH_SIZE_KB},W)
 endif()
+
+# for CMake variables that are not passed in west command
+FILE(WRITE "${PROJECT_BINARY_DIR}/qemu_runner_variables.conf" "") # Empty file
+FILE(APPEND "${PROJECT_BINARY_DIR}/qemu_runner_variables.conf" ${REBOOT_FLAG}\n)
+FILE(APPEND "${PROJECT_BINARY_DIR}/qemu_runner_variables.conf" -m ${QEMU_MEMORY_SIZE_MB}\n)
+
+board_runner_args(qemu "--commander=qemu-system-${QEMU_binary_suffix}"
+  "--machine=q35" "--cpu=${QEMU_CPU_TYPE_${ARCH}}"
+  "--qemu_option=${CMAKE_CURRENT_LIST_DIR}/qemu_x86_option.yml")
+
+include(${ZEPHYR_BASE}/boards/common/qemu.board.cmake)

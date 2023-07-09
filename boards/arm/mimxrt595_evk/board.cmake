@@ -9,7 +9,10 @@ board_runner_args(linkserver  "--device=MIMXRT595S:EVK-MIMXRT595")
 board_runner_args(linkserver  "--override=/device/memory/5/flash-driver=MIMXRT500_SFDP_MXIC_OSPI_S.cfx")
 board_runner_args(linkserver  "--override=/device/memory/5/location=0x18000000")
 
+board_runner_args(qemu "--commander=qemu-system-arm_rt595" "--machine=rt595-m33,boot-base-addr=0x18001000")
+set(SUPPORTED_EMU_PLATFORMS qemu)
 
 
 include(${ZEPHYR_BASE}/boards/common/jlink.board.cmake)
 include(${ZEPHYR_BASE}/boards/common/linkserver.board.cmake)
+include(${ZEPHYR_BASE}/boards/common/qemu.board.cmake)

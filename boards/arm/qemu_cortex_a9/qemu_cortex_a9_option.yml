@@ -1,0 +1,3 @@
+qemu:
+  qemu_option:
+    - "-device loader,file={self.elf_name},cpu-num=0"

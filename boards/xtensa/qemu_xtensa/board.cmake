@@ -10,7 +10,7 @@ if(CONFIG_BOARD_QEMU_XTENSA OR CONFIG_BOARD_QEMU_XTENSA_MMU)
   )
 endif()
 
-# TODO: Support debug
-# board_set_debugger_ifnset(qemu)
-# debugserver: QEMU_EXTRA_FLAGS += -s -S
-# debugserver: qemu
+board_runner_args(qemu "--commander=qemu-system-xtensa" "--machine=sim" "--cpu=sample_controller"
+  "--qemu_option=${CMAKE_CURRENT_LIST_DIR}/qemu_xtensa_option.yml")
+
+include(${ZEPHYR_BASE}/boards/common/qemu.board.cmake)

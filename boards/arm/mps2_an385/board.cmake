@@ -10,4 +10,6 @@ set(QEMU_FLAGS_${ARCH}
   -vga none
   )
 
-board_set_debugger_ifnset(qemu)
+board_runner_args(qemu "--cpu=cortex-m3" "--machine=mps2-an385")
+
+include(${ZEPHYR_BASE}/boards/common/qemu.board.cmake)

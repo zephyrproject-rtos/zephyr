@@ -160,8 +160,18 @@ class TestInstance:
 
         options = env.options
         handler = Handler(self, "")
+        runner = None
         if options.device_testing:
-            handler = DeviceHandler(self, "device")
+            for dut in env.hwm.duts:
+                if dut.platform == self.platform.name:
+                    runner = dut.runner
+                    break
+            if env.hwm and runner == "qemu":
+                handler = QEMUHandler(self, "qemu")
+                handler.args.append(f"QEMU_PIPE={handler.get_fifo()}")
+                handler.call_west_flash = True
+            else:
+                handler = DeviceHandler(self, "device")
             handler.call_make_run = False
             handler.ready = True
         elif self.platform.simulation != "na":

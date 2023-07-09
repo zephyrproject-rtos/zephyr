@@ -24,6 +24,12 @@ if(CONFIG_XIP)
   set(QEMU_KERNEL_OPTION
   -bios ${PROJECT_BINARY_DIR}/${CONFIG_KERNEL_BIN_NAME}.bin
   )
+  board_runner_args(qemu "--commander=qemu-system-aarch64" "--cpu=host"
+    "--machine=${QEMU_MACH}"
+    "--qemu_option=${CMAKE_CURRENT_LIST_DIR}/qemu_kvm_arm64_xip_option.yml")
+else()
+  board_runner_args(qemu "--commander=qemu-system-aarch64" "--cpu=host"
+    "--machine=${QEMU_MACH}")
 endif()
 
-board_set_debugger_ifnset(qemu)
+include(${ZEPHYR_BASE}/boards/common/qemu.board.cmake)

@@ -18,4 +18,8 @@ set(QEMU_KERNEL_OPTION
   "-device;loader,addr=0xff9a0000,data=0x80000218,data-len=4"
   )
 
-board_set_debugger_ifnset(qemu)
+board_runner_args(qemu "--commander=qemu-system-xilinx-aarch64" "--cpu=cortex-r5" "--machine=arm-generic-fdt"
+             "--dtb=${CMAKE_CURRENT_LIST_DIR}/fdt-single_arch-zcu102-arm.dtb"
+             "--qemu_option=${CMAKE_CURRENT_LIST_DIR}/qemu_cortex_r5_option.yml")
+
+include(${ZEPHYR_BASE}/boards/common/qemu.board.cmake)

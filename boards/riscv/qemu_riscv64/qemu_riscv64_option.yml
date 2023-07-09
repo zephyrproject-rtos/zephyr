@@ -1,0 +1,4 @@
+qemu:
+  qemu_option:
+    - "-bios none"
+    - "-m 256"
