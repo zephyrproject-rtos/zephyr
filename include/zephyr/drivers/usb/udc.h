@@ -618,6 +618,24 @@ struct net_buf *udc_ep_buf_alloc(const struct device *dev,
 				 const size_t size);
 
 /**
+ * @brief Allocate UDC request buffer with external data storage
+ *
+ * Allocate a new buffer from common request buffer pool, where the
+ * storage is provided by the caller (and not by the pool).
+ *
+ * @param[in] dev    Pointer to device struct of the driver instance
+ * @param[in] ep     Endpoint address
+ * @param[in] data   External data pointer
+ * @param[in] size   Size of the request buffer
+ *
+ * @return pointer to allocated request or NULL on error.
+ */
+struct net_buf *udc_ep_buf_alloc_with_data(const struct device *dev,
+					   const uint8_t ep,
+					   void *data,
+					   const size_t size);
+
+/**
  * @brief Free UDC request buffer
  *
  * Put the buffer back into the request buffer pool.

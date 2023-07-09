@@ -638,6 +638,34 @@ ep_alloc_error:
 	return buf;
 }
 
+struct net_buf *udc_ep_buf_alloc_with_data(const struct device *dev,
+					   const uint8_t ep,
+					   void *data,
+					   const size_t size)
+{
+	const struct udc_api *api = dev->api;
+	struct net_buf *buf = NULL;
+	struct udc_buf_info *bi;
+
+	api->lock(dev);
+
+	buf = net_buf_alloc_with_data(&udc_ep_pool, data, size, K_NO_WAIT);
+	if (!buf) {
+		LOG_ERR("Failed to allocate net_buf %zd", size);
+		goto ep_alloc_error;
+	}
+
+	bi = udc_get_buf_info(buf);
+	memset(bi, 0, sizeof(struct udc_buf_info));
+	bi->ep = ep;
+	LOG_DBG("Allocate net_buf with data, ep 0x%02x, size %zd", ep, size);
+
+ep_alloc_error:
+	api->unlock(dev);
+
+	return buf;
+}
+
 struct net_buf *udc_ctrl_alloc(const struct device *dev,
 			       const uint8_t ep,
 			       const size_t size)
