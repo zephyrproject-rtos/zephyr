@@ -65,7 +65,7 @@ static int bq274xx_cmd_reg_read(const struct device *dev, uint8_t reg_addr,
 		return -EIO;
 	}
 
-	*val = (i2c_data[1] << 8) | i2c_data[0];
+	*val = sys_get_le16(i2c_data);
 
 	return 0;
 }
@@ -136,9 +136,7 @@ static int bq274xx_gauge_configure(const struct device *dev)
 	const struct bq274xx_regs *regs = data->regs;
 	int ret;
 	uint8_t tmp_checksum, checksum_old, checksum_new;
-	uint16_t flags, designenergy_mwh, taperrate;
-	uint8_t designcap_msb, designcap_lsb, designenergy_msb, designenergy_lsb,
-		terminatevolt_msb, terminatevolt_lsb, taperrate_msb, taperrate_lsb;
+	uint16_t flags, designenergy_mwh, taperrate, reg_val;
 	uint8_t block[BQ27XXX_DM_SZ];
 	uint8_t try;
 
@@ -223,76 +221,39 @@ static int bq274xx_gauge_configure(const struct device *dev)
 		return -EIO;
 	}
 
-	designcap_msb = config->design_capacity >> 8;
-	designcap_lsb = config->design_capacity & 0x00FF;
-	designenergy_msb = designenergy_mwh >> 8;
-	designenergy_lsb = designenergy_mwh & 0x00FF;
-	terminatevolt_msb = config->terminate_voltage >> 8;
-	terminatevolt_lsb = config->terminate_voltage & 0x00FF;
-	taperrate_msb = taperrate >> 8;
-	taperrate_lsb = taperrate & 0x00FF;
-
-	ret = i2c_reg_write_byte_dt(&config->i2c,
-				    BQ274XX_EXT_BLKDAT_HIGH(regs->dm_design_capacity),
-				    designcap_msb);
+	reg_val = sys_cpu_to_be16(config->design_capacity);
+	ret = i2c_burst_write_dt(&config->i2c,
+				 BQ274XX_EXT_BLKDAT(regs->dm_design_capacity),
+				 (uint8_t *)&reg_val, sizeof(reg_val));
 	if (ret < 0) {
-		LOG_ERR("Failed to write designCAP MSB");
+		LOG_ERR("Failed to write design capacity");
 		return -EIO;
 	}
 
-	ret = i2c_reg_write_byte_dt(&config->i2c,
-				    BQ274XX_EXT_BLKDAT_LOW(regs->dm_design_capacity),
-				    designcap_lsb);
+	reg_val = sys_cpu_to_be16(designenergy_mwh);
+	ret = i2c_burst_write_dt(&config->i2c,
+				 BQ274XX_EXT_BLKDAT(regs->dm_design_energy),
+				 (uint8_t *)&reg_val, sizeof(reg_val));
 	if (ret < 0) {
-		LOG_ERR("Failed to write designCAP LSB");
+		LOG_ERR("Failed to write design energy");
 		return -EIO;
 	}
 
-	ret = i2c_reg_write_byte_dt(&config->i2c,
-				    BQ274XX_EXT_BLKDAT_HIGH(regs->dm_design_energy),
-				    designenergy_msb);
+	reg_val = sys_cpu_to_be16(config->terminate_voltage);
+	ret = i2c_burst_write_dt(&config->i2c,
+				 BQ274XX_EXT_BLKDAT(regs->dm_terminate_voltage),
+				 (uint8_t *)&reg_val, sizeof(reg_val));
 	if (ret < 0) {
-		LOG_ERR("Failed to write designEnergy MSB");
+		LOG_ERR("Failed to write terminate voltage");
 		return -EIO;
 	}
 
-	ret = i2c_reg_write_byte_dt(&config->i2c,
-				    BQ274XX_EXT_BLKDAT_LOW(regs->dm_design_energy),
-				    designenergy_lsb);
+	reg_val = sys_cpu_to_be16(taperrate);
+	ret = i2c_burst_write_dt(&config->i2c,
+				 BQ274XX_EXT_BLKDAT(regs->dm_taper_rate),
+				 (uint8_t *)&reg_val, sizeof(reg_val));
 	if (ret < 0) {
-		LOG_ERR("Failed to write designEnergy LSB");
-		return -EIO;
-	}
-
-	ret = i2c_reg_write_byte_dt(&config->i2c,
-				    BQ274XX_EXT_BLKDAT_HIGH(regs->dm_terminate_voltage),
-				    terminatevolt_msb);
-	if (ret < 0) {
-		LOG_ERR("Failed to write terminateVolt MSB");
-		return -EIO;
-	}
-
-	ret = i2c_reg_write_byte_dt(&config->i2c,
-				    BQ274XX_EXT_BLKDAT_LOW(regs->dm_terminate_voltage),
-				    terminatevolt_lsb);
-	if (ret < 0) {
-		LOG_ERR("Failed to write terminateVolt LSB");
-		return -EIO;
-	}
-
-	ret = i2c_reg_write_byte_dt(&config->i2c,
-				    BQ274XX_EXT_BLKDAT_HIGH(regs->dm_taper_rate),
-				    taperrate_msb);
-	if (ret < 0) {
-		LOG_ERR("Failed to write taperRate MSB");
-		return -EIO;
-	}
-
-	ret = i2c_reg_write_byte_dt(&config->i2c,
-				    BQ274XX_EXT_BLKDAT_LOW(regs->dm_taper_rate),
-				    taperrate_lsb);
-	if (ret < 0) {
-		LOG_ERR("Failed to write taperRate LSB");
+		LOG_ERR("Failed to write taper rate");
 		return -EIO;
 	}
 
