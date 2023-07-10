@@ -16,7 +16,7 @@ source "drivers/mbox/Kconfig.nxp_s32"
 
 config MBOX_INIT_PRIORITY
 	int "MBOX init priority"
-	default KERNEL_INIT_PRIORITY_DEVICE
+	default 40
 	help
 	  MBOX driver device initialization priority.
 
