@@ -446,7 +446,7 @@ static void increment_msgid_counter(const struct device *dev)
 /**
  * @brief Get the SOP* header for the current received message
  */
-static uint32_t get_sop_star_header(const struct device *dev)
+static uint16_t get_sop_star_header(const struct device *dev)
 {
 	struct usbc_port_data *data = dev->data;
 	struct protocol_layer_tx_t *prl_tx = data->prl_tx;

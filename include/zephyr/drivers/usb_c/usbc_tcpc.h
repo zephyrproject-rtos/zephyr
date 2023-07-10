@@ -137,7 +137,7 @@ __subsystem struct tcpc_driver_api {
 	int (*set_roles)(const struct device *dev, enum tc_power_role power_role,
 			enum tc_data_role data_role);
 	int (*receive_data)(const struct device *dev, struct pd_msg *msg);
-	bool (*is_rx_pending_msg)(const struct device *dev, enum pd_packet_type *type);
+	int (*is_rx_pending_msg)(const struct device *dev, enum pd_packet_type *type);
 	int (*set_rx_enable)(const struct device *dev, bool enable);
 	int (*set_cc_polarity)(const struct device *dev, enum tc_cc_polarity polarity);
 	int (*transmit_data)(const struct device *dev, struct pd_msg *msg);
@@ -152,8 +152,8 @@ __subsystem struct tcpc_driver_api {
 	int (*set_debug_accessory)(const struct device *dev, bool enable);
 	int (*set_debug_detach)(const struct device *dev);
 	int (*set_drp_toggle)(const struct device *dev, bool enable);
-	bool (*get_snk_ctrl)(const struct device *dev);
-	bool (*get_src_ctrl)(const struct device *dev);
+	int (*get_snk_ctrl)(const struct device *dev);
+	int (*get_src_ctrl)(const struct device *dev);
 	int (*get_chip_info)(const struct device *dev, struct tcpc_chip_info *chip_info);
 	int (*set_low_power_mode)(const struct device *dev, bool enable);
 	int (*sop_prime_enable)(const struct device *dev, bool enable);
@@ -460,12 +460,12 @@ static inline int tcpc_set_roles(const struct device *dev,
  * @param dev  Runtime device structure
  * @param type  pointer to where message type is written. Can be NULL
  *
- * @retval true if message is pending, else false
+ * @retval 0 if there is no pending message
+ * @retval 1 if there is a pending message
  * @retval -EIO on failure
  * @retval -ENOSYS if not implemented
  */
-static inline bool tcpc_is_rx_pending_msg(const struct device *dev,
-					  enum pd_packet_type *type)
+static inline int tcpc_is_rx_pending_msg(const struct device *dev, enum pd_packet_type *type)
 {
 	const struct tcpc_driver_api *api =
 		(const struct tcpc_driver_api *)dev->api;
@@ -767,7 +767,7 @@ static inline int tcpc_set_drp_toggle(const struct device *dev, bool enable)
  * @retval false if not sinking power
  * @retval -ENOSYS if not implemented
  */
-static inline bool tcpc_get_snk_ctrl(const struct device *dev)
+static inline int tcpc_get_snk_ctrl(const struct device *dev)
 {
 	const struct tcpc_driver_api *api =
 		(const struct tcpc_driver_api *)dev->api;
@@ -788,7 +788,7 @@ static inline bool tcpc_get_snk_ctrl(const struct device *dev)
  * @retval false if not sourcing power
  * @retval -ENOSYS if not implemented
  */
-static inline bool tcpc_get_src_ctrl(const struct device *dev)
+static inline int tcpc_get_src_ctrl(const struct device *dev)
 {
 	const struct tcpc_driver_api *api =
 		(const struct tcpc_driver_api *)dev->api;
