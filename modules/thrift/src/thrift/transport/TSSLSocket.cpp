@@ -565,7 +565,7 @@ int TSSLSocketFactory::passwordCallback(char *password, int size, int, void *dat
 	return length;
 }
 
-// extract error messages from error queue
+// generate error message for error status
 static void tlsCredtErrMsg(string &errors, const int status)
 {
 	if (status == EACCES) {
