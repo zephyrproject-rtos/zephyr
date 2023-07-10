@@ -1027,21 +1027,20 @@ static int ucpd_transmit_data(const struct device *dev,
 /**
  * @brief Tests if a received Power Delivery message is pending
  *
- * @retval true if message is pending, else false
+ * @retval 0 if message is pending, else -ENODATA
  */
-static bool ucpd_is_rx_pending_msg(const struct device *dev,
-				   enum pd_packet_type *type)
+static int ucpd_is_rx_pending_msg(const struct device *dev, enum pd_packet_type *type)
 {
 	struct tcpc_data *data = dev->data;
-	bool ret;
+	bool is_pending;
 
-	ret = (*(uint32_t *)data->ucpd_rx_buffer > 0);
+	is_pending = (*(uint32_t *)data->ucpd_rx_buffer > 0);
 
-	if (ret & (type != NULL)) {
+	if (is_pending & (type != NULL)) {
 		*type = *(uint16_t *)data->ucpd_rx_buffer;
 	}
 
-	return ret;
+	return (is_pending) ? 0 : -ENODATA;
 }
 
 /**
@@ -1061,7 +1060,7 @@ static int ucpd_receive_data(const struct device *dev, struct pd_msg *msg)
 	}
 
 	/* Make sure we have a message to retrieve */
-	if (!ucpd_is_rx_pending_msg(dev, NULL)) {
+	if (ucpd_is_rx_pending_msg(dev, NULL) < 0) {
 		return -EIO;
 	}
 
