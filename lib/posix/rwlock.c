@@ -200,13 +200,13 @@ int pthread_rwlock_unlock(pthread_rwlock_t *rwlock)
 		k_sem_give(&rwlock->wr_sem);
 	} else {
 		/* Read unlock */
+		k_sem_give(&rwlock->rd_sem);
+
 		if (k_sem_count_get(&rwlock->rd_sem) ==
-				    (CONCURRENT_READER_LIMIT - 1)) {
+				    CONCURRENT_READER_LIMIT) {
 			/* Last read lock, unlock writer */
 			k_sem_give(&rwlock->reader_active);
 		}
-
-		k_sem_give(&rwlock->rd_sem);
 	}
 	return 0;
 }
