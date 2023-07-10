@@ -9,3 +9,21 @@ config WDT_DW
 	depends on DT_HAS_SNPS_DESIGNWARE_WATCHDOG_ENABLED
 	help
 	  Synopsys DesignWare Watchdog driver.
+
+if WDT_DW
+
+config WDT_DW_PAUSE_BY_DBG
+	bool "pause watchdog counter while debugging"
+	help
+	  pause mode for debugging
+
+config WDT_DW_RESET_MODE
+	int "reset none or SoC or cpu cores"
+	default 0
+	range 0 2
+	help
+	  select 0 for reset none
+	  select 1 for cpu core reset
+	  select 2 for SoC reset
+
+endif # WDT_DW

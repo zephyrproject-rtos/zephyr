@@ -296,4 +296,36 @@
 		status = "disabled";
 		resets = <&reset RSTMGR_I2C4_RSTLINE>;
 	};
+
+	watchdog0: watchdog@ffd00200 {
+		compatible = "snps,designware-watchdog";
+		reg = <0xffd00200 0x100>;
+		clocks = <&clock INTEL_SOCFPGA_CLOCK_WDT>;
+		resets = <&reset RSTMGR_WATCHDOG0_RSTLINE>;
+		status = "disabled";
+	};
+
+	watchdog1: watchdog@ffd00300 {
+		compatible = "snps,designware-watchdog";
+		reg = <0xffd00300 0x100>;
+		clocks = <&clock INTEL_SOCFPGA_CLOCK_WDT>;
+		resets = <&reset RSTMGR_WATCHDOG1_RSTLINE>;
+		status = "disabled";
+	};
+
+	watchdog2: watchdog@ffd00400 {
+		compatible = "snps,designware-watchdog";
+		reg = <0xffd00400 0x100>;
+		clocks = <&clock INTEL_SOCFPGA_CLOCK_WDT>;
+		resets = <&reset RSTMGR_WATCHDOG2_RSTLINE>;
+		status = "disabled";
+	};
+
+	watchdog3: watchdog@ffd00500 {
+		compatible = "snps,designware-watchdog";
+		reg = <0xffd00500 0x100>;
+		clocks = <&clock INTEL_SOCFPGA_CLOCK_WDT>;
+		resets = <&reset RSTMGR_WATCHDOG3_RSTLINE>;
+		status = "disabled";
+	};
 };
