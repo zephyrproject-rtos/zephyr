@@ -341,7 +341,7 @@ static int dma_xec_configure(const struct device *dev, uint32_t channel,
 	uint32_t ctrl, mstart, mend, dstart, unit_size;
 	int ret;
 
-	if (!dev || !config || (channel >= (uint32_t)devcfg->dma_channels)) {
+	if (!config || (channel >= (uint32_t)devcfg->dma_channels)) {
 		return -EINVAL;
 	}
 
