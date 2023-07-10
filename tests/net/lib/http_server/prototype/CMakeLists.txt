@@ -4,7 +4,10 @@ cmake_minimum_required(VERSION 3.20.0)
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(prototype)
 
-FILE(GLOB app_sources ../../../../../subsys/net/lib/http_server/src/server.c src/main.c)
+set(BASE_PATH "../../../../../subsys/net/lib/http_server/src/")
+include_directories(${BASE_PATH}/headers)
+
+FILE(GLOB app_sources ${BASE_PATH}/server.c src/main.c)
 target_sources(app PRIVATE ${app_sources})
 
 set(gen_dir ${ZEPHYR_BINARY_DIR}/include/generated/)

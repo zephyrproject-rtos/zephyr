@@ -8,8 +8,16 @@
 #include <zephyr/net/socket.h>
 #include <string.h>
 #include <zephyr/net/http/server.h>
+#include "server_functions.h"
 
 ZTEST_SUITE(server_function_tests, NULL, NULL, NULL, NULL, NULL);
+
+ZTEST(server_function_tests, test_http2_server_stop)
+{
+	int sem_count = http2_server_stop(NULL, 0, NULL);
+
+	zassert_equal(sem_count, 1, "Semaphore should have one token after 'quit' command");
+}
 
 ZTEST(server_function_tests, test_http2_server_init)
 {
@@ -22,7 +30,7 @@ ZTEST(server_function_tests, test_http2_server_init)
 	int server_fd = http2_server_init(&ctx, &config);
 
 	/* Check that the function returned a valid file descriptor */
-	zassert_true(server_fd >= 0, "Failed to create server socket");
+	zassert_true(server_fd >= 0, "Failed to initiate server socket");
 
 	close(server_fd);
 }
