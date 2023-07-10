@@ -277,7 +277,7 @@ static int rtc_emul_set_time(const struct device *dev, const struct rtc_time *ti
 
 	K_SPINLOCK(&data->lock)
 	{
-		data->datetime = (*timeptr);
+		data->datetime = *timeptr;
 		data->datetime.tm_isdst = -1;
 		data->datetime.tm_nsec = 0;
 
@@ -306,7 +306,7 @@ static int rtc_emul_get_time(const struct device *dev, struct rtc_time *timeptr)
 			K_SPINLOCK_BREAK;
 		}
 
-		(*timeptr) = data->datetime;
+		*timeptr = data->datetime;
 	}
 
 	return ret;
@@ -322,7 +322,7 @@ static int  rtc_emul_alarm_get_supported_fields(const struct device *dev, uint16
 		return -EINVAL;
 	}
 
-	(*mask) = (RTC_ALARM_TIME_MASK_SECOND
+	*mask = (RTC_ALARM_TIME_MASK_SECOND
 		 | RTC_ALARM_TIME_MASK_MINUTE
 		 | RTC_ALARM_TIME_MASK_HOUR
 		 | RTC_ALARM_TIME_MASK_MONTHDAY
@@ -374,8 +374,8 @@ static int rtc_emul_alarm_get_time(const struct device *dev, uint16_t id, uint16
 
 	K_SPINLOCK(&data->lock)
 	{
-		(*timeptr) = data->alarms[id].datetime;
-		(*mask) = data->alarms[id].mask;
+		*timeptr = data->alarms[id].datetime;
+		*mask = data->alarms[id].mask;
 	}
 
 	return 0;
@@ -454,7 +454,7 @@ static int rtc_emul_get_calibration(const struct device *dev, int32_t *calibrati
 
 	K_SPINLOCK(&data->lock)
 	{
-		(*calibration) = data->calibration;
+		*calibration = data->calibration;
 	}
 
 	return 0;
