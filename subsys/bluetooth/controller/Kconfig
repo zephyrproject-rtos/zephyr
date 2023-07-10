@@ -142,31 +142,10 @@ config BT_CTLR_HCI_VS_BUILD_INFO
 	  character is required at the beginning to separate it from the
 	  already included information.
 
-config BT_CTLR_AD_DATA_BACKUP
-	bool "Legacy AD Data backup"
-	depends on BT_PERIPHERAL || BT_CTLR_ADV_EXT
-	default y
-	help
-	  Backup Legacy Advertising Data when switching to Legacy Directed or
-	  to Extended Advertising mode, and restore it when switching back to
-	  Legacy Non-Directed Advertising mode.
-	  Application can disable this feature if not using Directed
-	  Advertising or switch between Legacy and Extended Advertising.
-
-config BT_CTLR_HCI_ADV_HANDLE_MAPPING
-	bool "Advertising set handle mapping between HCI and LL"
-	depends on BT_CTLR_ADV_EXT
-	default y if BT_HCI_RAW
-	help
-	  Enable mapping of advertising set handles between HCI and LL when
-	  using external host since it can use arbitrary numbers as set handles
-	  (as defined by Core specification) as opposed to LL which always uses
-	  zero-based numbering. When using with Zephyr host this option can be
-	  disabled to remove extra mapping logic.
-
 config BT_CTLR_DUP_FILTER_LEN
 	int "Number of addresses in the scan duplicate filter"
 	depends on BT_OBSERVER
+	depends on BT_LL_SW_SPLIT
 	default 16
 	help
 	  Set the number of unique BLE addresses that can be filtered as
@@ -175,32 +154,16 @@ config BT_CTLR_DUP_FILTER_LEN
 config BT_CTLR_DUP_FILTER_ADV_SET_MAX
 	int "Number of Extended Advertising Sets in the scan duplicate filter"
 	depends on BT_OBSERVER && BT_CTLR_ADV_EXT && (BT_CTLR_DUP_FILTER_LEN > 0)
+	depends on BT_LL_SW_SPLIT
 	range 1 16
 	default 1
 	help
 	  Set the number of unique Advertising Set ID per Bluetooth Low Energy
 	  addresses that can be filtered as duplicates while Extended Scanning.
 
-config BT_CTLR_MESH_SCAN_FILTERS
-	int "Number of Mesh scan filters"
-	depends on BT_HCI_MESH_EXT
-	default 1
-	range 1 15
-	help
-	  Set the number of unique Mesh Scan Filters available as part of
-	  the Intel Mesh Vendor Specific Extensions.
-
-config BT_CTLR_MESH_SF_PATTERNS
-	int "Number of Mesh scan filter patterns"
-	depends on BT_HCI_MESH_EXT
-	default 15
-	range 1 15
-	help
-	  Set the number of unique Mesh Scan Filter patterns available per
-	  Scan Filter as part of the Intel Mesh Vendor Specific Extensions.
-
 config BT_CTLR_RX_BUFFERS
 	int "Number of Rx buffers"
+	depends on BT_LL_SW_SPLIT
 	default 6 if BT_HCI_RAW
 	default 1
 	range 1 18
@@ -530,10 +493,6 @@ config BT_CTLR_CONN_RSSI
 	help
 	  Enable connection RSSI measurement.
 
-config BT_CTLR_CHECK_SAME_PEER_CONN
-	bool
-	default BT_MAX_CONN > 1 && !BT_CTLR_ALLOW_SAME_PEER_CONN
-
 endif # BT_CONN
 
 config BT_CTLR_FILTER_ACCEPT_LIST
@@ -644,22 +603,6 @@ config BT_CTLR_ADV_DATA_LEN_MAX
 	help
 	  Maximum Extended Advertising Data Length.
 
-config BT_CTLR_ADV_EXT_RX_PDU_LEN_MAX
-	int "Maximum Advertising Extensions Receive PDU Length"
-	depends on BT_OBSERVER
-	range 255 255 if BT_HCI_RAW
-	range 31 255
-	default 255
-	help
-	  Maximum Advertising Extensions Receive PDU Length.
-
-config BT_CTLR_SCAN_DATA_LEN_MAX
-	int "Maximum Extended Scanning Data Length"
-	depends on BT_OBSERVER
-	range 31 1650
-	help
-	  Maximum Extended Scanning Data Length.
-
 config BT_CTLR_ADV_PERIODIC
 	bool "LE Periodic Advertising in Advertising State"
 	depends on BT_BROADCASTER && BT_CTLR_ADV_PERIODIC_SUPPORT
@@ -747,11 +690,6 @@ config BT_CTLR_SYNC_PERIODIC_CTE_TYPE_FILTERING
 	help
 	  Enable filtering of periodic advertisements depending on type of
 	  Constant Tone Extension.
-
-config BT_CTLR_CHECK_SAME_PEER_SYNC
-	# Hidden Kconfig to add same peer synchronization check
-	bool
-	default BT_PER_ADV_SYNC_MAX > 1
 
 config BT_CTLR_SYNC_TRANSFER_RECEIVER
 	bool "Periodic Advertising Sync Transfer receiver"
@@ -931,13 +869,6 @@ config BT_CTLR_CONN_ISO_STREAMS_PER_GROUP
 	help
 	  Maximum supported CISes per CIG.
 
-config BT_CTLR_CONN_ISO_HCI_DATAPATH_SKIP_INVALID_DATA
-	bool "Do not pass invalid SDUs on HCI datapath"
-	depends on BT_CTLR_CONN_ISO
-	help
-	  This allows for applications to decide whether to
-	  forward invalid SDUs through HCI upwards.
-
 config BT_CTLR_CONN_ISO_PDU_LEN_MAX
 	int "Maximum Connected Isochronous Channel PDU Length"
 	depends on BT_CTLR_CONN_ISO
@@ -962,28 +893,6 @@ config BT_CTLR_CONN_ISO_STREAMS_MAX_NSE
 	default 31
 	help
 	  Maximum number of CIS subevents.
-
-choice
-	prompt "CIS Creation Policy Selection"
-	default BT_CTLR_CONN_ISO_RELIABILITY_POLICY
-
-config BT_CTLR_CONN_ISO_RELIABILITY_POLICY
-	bool "CIS creation policy for reliability"
-	depends on BT_CTLR_CENTRAL_ISO
-	help
-	  Select this option to use reliability policy for CIS creation. This
-	  favors a CIS layout/configuration which utilizes the full range of the
-	  Max_Transmission_Latency for maximum retransmission and payload
-	  recovery.
-
-config BT_CTLR_CONN_ISO_LOW_LATENCY_POLICY
-	bool "CIS creation policy for low latency"
-	depends on BT_CTLR_CENTRAL_ISO
-	help
-	  Select this option to use low latency policy for CIS creation. This
-	  favors a CIS layout/configuration which compacts payload transmission
-	  for lowest possible latency.
-endchoice
 
 config BT_CTLR_ISO
 	bool
@@ -1032,11 +941,6 @@ config BT_CTLR_ASSERT_HANDLER
 	  application code as void \"bt_ctlr_assert_handle(char \*, int)\"
 	  and will be invoked whenever the controller code encounters
 	  an unrecoverable error.
-
-config BT_CTLR_TEST
-	bool "Run in-system unit tests"
-	help
-	  Run in-system unit tests
 
 endif # BT_CTLR
 
