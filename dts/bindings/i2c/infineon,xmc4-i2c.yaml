@@ -1,0 +1,77 @@
+# Copyright (c) 2023 Cypress Semiconductor Corporation (an Infineon company) or
+# an affiliate of Cypress Semiconductor Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: Infineon XMC4 I2C
+
+compatible: "infineon,xmc4-i2c"
+
+include: [i2c-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    type: array
+    required: true
+
+  scl-src:
+    description: |
+      Connects the I2C clock line (USIC DX0 input) to a specific GPIO pin.
+      The USIC DX0 input is a multiplexer which connects to different GPIO pins.
+      Refer to the XMC4XXX reference manual for the GPIO pin/mux mappings.
+    type: string
+    required: true
+    enum:
+      - "DX0A"
+      - "DX0B"
+      - "DX0C"
+      - "DX0D"
+      - "DX0E"
+      - "DX0F"
+      - "DX0G"
+
+  sda-src:
+    description: |
+      Connects the I2C data line (USIC DX0 input) to a specific GPIO pin.
+      The USIC DX0 input is a multiplexer which connects to different GPIO pins.
+      Refer to the XMC4XXX reference manual for the GPIO pin/mux mappings.
+    type: string
+    required: true
+    enum:
+      - "DX0A"
+      - "DX0B"
+      - "DX0C"
+      - "DX0D"
+      - "DX0E"
+      - "DX0F"
+      - "DX0G"
+
+  interrupts:
+    type: array
+    required: true
+    description: |
+      IRQ number and priority to use for interrupt driven by I2C.
+      Each USIC must use a certain interrupt range:
+      USIC0 = [84, 89]
+      USIC1 = [90, 95]
+      USIC2 = [96, 101]
+
+  pinctrl-0:
+    description: |
+      PORT pin configuration for SCL, SDA signals.
+      We expect that the phandles will reference pinctrl nodes. These
+      nodes will have a nodelabel that matches the Infineon SoC Pinctrl
+      defines and have following
+      format: <signal>_p<port>_<pin>_<peripheral inst>
+
+      Examples:
+        pinctrl-0 = <&i2c_scl_p5_2_u2c0 &i2c_sda_p5_0_u2c0>;
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  clock-frequency:
+    type: int
+    description: |
+      Frequency that the I2C bus runs
