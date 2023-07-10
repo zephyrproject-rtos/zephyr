@@ -51,6 +51,7 @@ SIUL2         on-chip     | pinctrl
 LPUART        on-chip     serial
 QSPI          on-chip     flash
 FLEXCAN       on-chip     can
+LPI2C         on-chip     i2c
 ============  ==========  ================================
 
 The default configuration can be found in the Kconfig file
@@ -174,6 +175,21 @@ flexcan5         | 8 bytes   | 32 MBs          | 32 MBs
    A CAN bus usually requires 60 Ohm termination at both ends of the bus. This may be
    accomplished using one of the included CAN termination boards. For more details, refer
    to the section ``6.3 CAN Connectors`` in the Hardware User Manual of `NXP MR-CANHUBK3`_.
+
+I2C
+===
+
+I2C is provided through LPI2C interface with 2 instances ``lpi2c0`` and ``lpi2c1``
+on corresponding connectors ``P4``, ``P3``.
+
+=========  =====  ============
+Connector  Pin    Pin Function
+=========  =====  ============
+P3.2       PTD9   LPI2C1_SCL
+P3.3       PTD8   LPI2C1_SDA
+P4.3       PTD14  LPI2C0_SCL
+P4.4       PTD13  LPI2C0_SDA
+=========  =====  ============
 
 FS26 SBC Watchdog
 =================
