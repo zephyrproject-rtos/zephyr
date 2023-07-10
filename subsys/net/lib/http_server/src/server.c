@@ -136,7 +136,7 @@ int accept_new_client(int server_fd)
 void handle_http1_request(struct http2_server_ctx *ctx, int i)
 {
 	const char *data;
-	size_t len;
+	int len;
 
 	data = content;
 	len = sizeof(content);
@@ -152,7 +152,7 @@ void handle_http1_request(struct http2_server_ctx *ctx, int i)
 			"HTTP/1.1 200 OK\r\n"
 			"Content-Type: text/html\r\n"
 			"Content-Encoding: gzip\r\n"
-			"Content-Length: %u\r\n\r\n",
+			"Content-Length: %d\r\n\r\n",
 			len);
 		if (sendall(ctx->client_fds[i].fd, http_response,
 			    strlen(http_response)) < 0) {
@@ -231,7 +231,6 @@ void handle_http2_request(struct http2_server_ctx *ctx, int i, int valread)
 	} else {
 		readBytes =
 			recv(ctx->client_fds[i].fd, frame, sizeof(frame), 0);
-		printf("readBytes length: %u\n", readBytes);
 		if (readBytes < 0) {
 			LOG_ERR("ERROR reading from socket");
 			close_client_connection(ctx, i);
@@ -244,7 +243,6 @@ void handle_http2_request(struct http2_server_ctx *ctx, int i, int valread)
 
 		readBytes =
 			recv(ctx->client_fds[i].fd, frame, sizeof(frame), 0);
-		printf("readBytes length: %u\n", readBytes);
 		if (readBytes < 0) {
 			LOG_ERR("ERROR reading from socket");
 			close_client_connection(ctx, i);
