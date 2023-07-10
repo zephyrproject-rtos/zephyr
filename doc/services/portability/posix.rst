@@ -385,7 +385,8 @@ required for error and event handling.
     sigpending(),
     sigprocmask(),
     igsuspend(),
-    sigwait()
+    sigwait(),
+    strsignal(),yes
 
 .. csv-table:: POSIX_SPIN_LOCKS
    :header: API, Supported
