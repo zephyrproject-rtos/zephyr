@@ -163,6 +163,7 @@ ZTEST(posix_headers, test_signal_h)
 	zassert_not_null(sigaddset);
 	zassert_not_null(sigdelset);
 	zassert_not_null(sigismember);
+	zassert_not_null(strsignal);
 #endif /* CONFIG_POSIX_SIGNAL */
 
 	if (IS_ENABLED(CONFIG_POSIX_API)) {
