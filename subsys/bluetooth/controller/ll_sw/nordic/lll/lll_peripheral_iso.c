@@ -616,9 +616,9 @@ static void isr_rx(void *param)
 			iso_meta->payload_number = (cis_lll->event_count *
 						    cis_lll->rx.bn) +
 						   (cis_lll->rx.bn_curr - 1U);
-			iso_meta->timestamp =
+			iso_meta->timestamp = cis_lll->offset +
 				HAL_TICKER_TICKS_TO_US(radio_tmr_start_get()) +
-				radio_tmr_aa_restore() -
+				radio_tmr_aa_restore() - cis_offset_first -
 				addr_us_get(cis_lll->rx.phy);
 			iso_meta->timestamp %=
 				HAL_TICKER_TICKS_TO_US(BIT(HAL_TICKER_CNTR_MSBIT + 1U));
@@ -1246,14 +1246,14 @@ static void isr_done(void *param)
 		iso_meta->payload_number = (cis_lll->event_count *
 					    cis_lll->rx.bn) + (bn - 1U);
 		if (trx_performed_bitmask) {
-			iso_meta->timestamp =
+			iso_meta->timestamp = cis_lll->offset +
 				HAL_TICKER_TICKS_TO_US(radio_tmr_start_get()) +
-				radio_tmr_aa_restore() -
+				radio_tmr_aa_restore() - cis_offset_first -
 				addr_us_get(cis_lll->rx.phy);
 		} else {
-			iso_meta->timestamp =
+			iso_meta->timestamp = cis_lll->offset +
 				HAL_TICKER_TICKS_TO_US(radio_tmr_start_get()) +
-				radio_tmr_ready_restore();
+				radio_tmr_ready_restore() - cis_offset_first;
 		}
 		iso_meta->timestamp %=
 			HAL_TICKER_TICKS_TO_US(BIT(HAL_TICKER_CNTR_MSBIT + 1U));
