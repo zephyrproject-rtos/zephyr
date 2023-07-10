@@ -1,0 +1,6 @@
+tests:
+  arch.x86.hybrid:
+    arch_allow: x86
+    integration_platforms:
+      - intel_rpl_s_crb
+    filter: (CONFIG_MP_MAX_NUM_CPUS > 1) and CONFIG_X86_PC_COMPATIBLE
