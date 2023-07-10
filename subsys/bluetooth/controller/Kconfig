@@ -894,6 +894,14 @@ config BT_CTLR_CONN_ISO_STREAMS_MAX_NSE
 	help
 	  Maximum number of CIS subevents.
 
+config BT_CTLR_CONN_ISO_STREAMS_MAX_FT
+	int "LE Connected Isochronous Streams max flush timeout"
+	depends on BT_CTLR_CONN_ISO
+	range 1 255
+	default 255
+	help
+	  Maximum number of CIS flush timeout events.
+
 config BT_CTLR_ISO
 	bool
 	default BT_CTLR_BROADCAST_ISO || BT_CTLR_CONN_ISO
