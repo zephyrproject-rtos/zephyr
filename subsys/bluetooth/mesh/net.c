@@ -283,6 +283,12 @@ bool bt_mesh_net_iv_update(uint32_t iv_index, bool iv_update)
 		return false;
 	}
 
+	/* Discard [iv, false] --> [iv, true] */
+	if (iv_index == bt_mesh.iv_index && iv_update) {
+		LOG_DBG("Ignore previous IV update procedure");
+		return false;
+	}
+
 	if ((iv_index > bt_mesh.iv_index + 1) ||
 	    (iv_index == bt_mesh.iv_index + 1 &&
 	     (atomic_test_bit(bt_mesh.flags, BT_MESH_IVU_IN_PROGRESS) || !iv_update))) {
