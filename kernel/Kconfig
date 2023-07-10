@@ -390,6 +390,13 @@ config BOOT_BANNER
 	help
 	  This option outputs a banner to the console device during boot up.
 
+config BOOT_BANNER_STRING
+	string "Boot banner string"
+	depends on BOOT_BANNER
+	default "Booting Zephyr OS build"
+	help
+	  Use this option to set the boot banner.
+
 config BOOT_DELAY
 	int "Boot delay in milliseconds"
 	depends on MULTITHREADING
