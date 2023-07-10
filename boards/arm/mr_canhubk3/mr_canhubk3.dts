@@ -308,3 +308,15 @@
 	sample-point-data = <875>;
 	sjw-data = <1>;
 };
+
+&lpi2c0 {
+	pinctrl-0 = <&lpi2c0_default>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+};
+
+&lpi2c1 {
+	pinctrl-0 = <&lpi2c1_default>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+};

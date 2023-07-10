@@ -494,6 +494,11 @@ static int mcux_lpi2c_init(const struct device *dev)
 		return -ENODEV;
 	}
 
+	error = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
+	if (error) {
+		return error;
+	}
+
 	if (clock_control_get_rate(config->clock_dev, config->clock_subsys,
 				   &clock_freq)) {
 		return -EINVAL;
@@ -509,11 +514,6 @@ static int mcux_lpi2c_init(const struct device *dev)
 	bitrate_cfg = i2c_map_dt_bitrate(config->bitrate);
 
 	error = mcux_lpi2c_configure(dev, I2C_MODE_CONTROLLER | bitrate_cfg);
-	if (error) {
-		return error;
-	}
-
-	error = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
 	if (error) {
 		return error;
 	}

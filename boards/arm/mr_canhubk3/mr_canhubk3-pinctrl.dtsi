@@ -176,4 +176,22 @@
 			output-enable;
 		};
 	};
+
+	lpi2c0_default: lpi2c0_default {
+		group1 {
+			pinmux = <(PTD13_LPI2C0_SDA_I | PTD13_LPI2C0_SDA_O)>,
+				<(PTD14_LPI2C0_SCL_I | PTD14_LPI2C0_SCL_O)>;
+			input-enable;
+			output-enable;
+		};
+	};
+
+	lpi2c1_default: lpi2c1_default {
+		group1 {
+			pinmux = <(PTD8_LPI2C1_SDA_I | PTD8_LPI2C1_SDA_O)>,
+				<(PTD9_LPI2C1_SCL_I | PTD9_LPI2C1_SCL_O)>;
+			input-enable;
+			output-enable;
+		};
+	};
 };

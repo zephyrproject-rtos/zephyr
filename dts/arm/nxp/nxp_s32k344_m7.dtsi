@@ -7,6 +7,7 @@
 #include <arm/armv7-m.dtsi>
 #include <mem.h>
 #include <zephyr/dt-bindings/clock/nxp_s32k344_clock.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
 
 / {
 	cpus {
@@ -482,6 +483,26 @@
 			clk-source = <0>;
 			interrupts = <123 0>, <124 0>;
 			interrupt-names = "ored", "ored_0_31_mb";
+			status = "disabled";
+		};
+
+		lpi2c0: i2c@40350000 {
+			compatible = "nxp,imx-lpi2c";
+			reg = <0x40350000 0x10000>;
+			clocks = <&clock NXP_S32_LPI2C0_CLK>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <161 0>;
+			status = "disabled";
+		};
+
+		lpi2c1: i2c@40354000 {
+			compatible = "nxp,imx-lpi2c";
+			reg = <0x40354000 0x10000>;
+			clocks = <&clock NXP_S32_LPI2C1_CLK>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <162 0>;
 			status = "disabled";
 		};
 	};
