@@ -223,10 +223,8 @@ CBOR data of request:
 .. code-block:: none
 
     {
-        {
-            (str,opt)"hash"     : (str)
-            (str)"confirm"      : (bool)
-        }
+        (str,opt)"hash"     : (str)
+        (str)"confirm"      : (bool)
     }
 
 If "confirm" is false or not provided, an image with the "hash" will be set for
@@ -267,14 +265,12 @@ CBOR data of request:
 .. code-block:: none
 
     {
-        {
-            (str,opt)"image"    : (uint)
-            (str,opt)"len"      : (uint)
-            (str)"off"          : (uint)
-            (str,opt)"sha"      : (byte str)
-            (str,opt)"data"     : (byte str)
-            (str,opt)"upgrade"  : (bool)
-        }
+        (str,opt)"image"    : (uint)
+        (str,opt)"len"      : (uint)
+        (str)"off"          : (uint)
+        (str,opt)"sha"      : (byte str)
+        (str,opt)"data"     : (byte str)
+        (str,opt)"upgrade"  : (bool)
     }
 
 where:
@@ -412,9 +408,7 @@ CBOR data of request:
 .. code-block:: none
 
     {
-        {
-            (str,opt)"slot"     : (uint)
-        }
+        (str,opt)"slot"     : (uint)
     }
 
 where:
