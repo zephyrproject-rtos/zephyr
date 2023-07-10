@@ -21,10 +21,10 @@ properties:
   pinctrl-0:
     description: |
       PORT pin configuration for SCL, SDA signals.
-      We expect that the phandles will reference pinctrl nodes.These
+      We expect that the phandles will reference pinctrl nodes. These
       nodes will have a nodelabel that matches the Infineon SoC Pinctrl
       defines and have following
-      format: p<port>_<pin><peripheral inst>_<signal>.
+      format: p<port>_<pin>_<peripheral inst>_<signal>.
 
       Examples:
         pinctrl-0 = <&p6_0_scb3_i2c_scl &p6_1_scb3_i2c_sda>;

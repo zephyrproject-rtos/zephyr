@@ -9,6 +9,7 @@ supported:
   - adc
   - dma
   - gpio
+  - i2c
   - spi
   - uart
 ram: 352
