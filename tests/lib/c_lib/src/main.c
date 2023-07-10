@@ -15,6 +15,10 @@
  * it guarantee that ALL functionality provided is working correctly.
  */
 
+#ifdef CONFIG_NEWLIB_LIBC
+#define _POSIX_C_SOURCE 200809
+#endif
+
 #include <zephyr/kernel.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/ztest.h>
@@ -33,6 +37,9 @@
 #include <time.h>
 #include <zephyr/ztest_error_hook.h>
 #ifdef CONFIG_PICOLIBC
+#include <unistd.h>
+#endif
+#ifdef CONFIG_NEWLIB_LIBC
 #include <unistd.h>
 #endif
 
@@ -1083,7 +1090,7 @@ ZTEST(test_c_lib, test_time)
  */
 ZTEST(test_c_lib, test_rand)
 {
-#ifndef CONFIG_PICOLIBC
+#ifdef CONFIG_MINIMAL_LIBC
 	int a;
 
 	a = rand();
@@ -1101,7 +1108,7 @@ ZTEST(test_c_lib, test_rand)
  */
 ZTEST(test_c_lib, test_srand)
 {
-#ifndef CONFIG_PICOLIBC
+#ifdef CONFIG_MINIMAL_LIBC
 	int a;
 
 	srand(0);
@@ -1135,7 +1142,7 @@ ZTEST(test_c_lib, test_srand)
  */
 ZTEST(test_c_lib, test_rand_reproducibility)
 {
-#ifndef CONFIG_PICOLIBC
+#ifdef CONFIG_MINIMAL_LIBC
 	int a;
 	int b;
 	int c;
