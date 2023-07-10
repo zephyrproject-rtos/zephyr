@@ -6,6 +6,7 @@
 
 #include <errno.h>
 #include <signal.h>
+#include <stdio.h>
 
 #include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
@@ -191,4 +192,27 @@ ZTEST(posix_apis, test_signal_ismember)
 
 	zassert_equal(sigismember(&set, SIGKILL), 0, "%s not expected to be member", "SIGKILL");
 	zassert_equal(sigismember(&set, SIGTERM), 0, "%s not expected to be member", "SIGTERM");
+}
+
+ZTEST(posix_apis, test_signal_strsignal)
+{
+	char buf[sizeof("RT signal " STRINGIFY(SIGRTMAX))] = {0};
+
+	zassert_mem_equal(strsignal(-1), "Invalid signal", sizeof("Invalid signal"));
+	zassert_mem_equal(strsignal(0), "Invalid signal", sizeof("Invalid signal"));
+	zassert_mem_equal(strsignal(_NSIG), "Invalid signal", sizeof("Invalid signal"));
+
+	zassert_mem_equal(strsignal(30), "Signal 30", sizeof("Signal 30"));
+	snprintf(buf, sizeof(buf), "RT signal %d", SIGRTMIN - SIGRTMIN);
+	zassert_mem_equal(strsignal(SIGRTMIN), buf, strlen(buf));
+	snprintf(buf, sizeof(buf), "RT signal %d", SIGRTMAX - SIGRTMIN);
+	zassert_mem_equal(strsignal(SIGRTMAX), buf, strlen(buf));
+
+#ifdef CONFIG_POSIX_SIGNAL_STRING_DESC
+	zassert_mem_equal(strsignal(SIGHUP), "Hangup", sizeof("Hangup"));
+	zassert_mem_equal(strsignal(SIGSYS), "Bad system call", sizeof("Bad system call"));
+#else
+	zassert_mem_equal(strsignal(SIGHUP), "Signal 1", sizeof("Signal 1"));
+	zassert_mem_equal(strsignal(SIGSYS), "Signal 31", sizeof("Signal 31"));
+#endif
 }
