@@ -16,33 +16,33 @@
 #define XMC4XXX_PIN_MASK        0xf
 
 #define XMC4XXX_ALT_POS	        8
-#define XMC4XXX_ALT_MASK        0xf
+#define XMC4XXX_ALT_MASK        0x1f
 
-#define XMC4XXX_PULL_DOWN_POS   12
+#define XMC4XXX_PULL_DOWN_POS   13
 #define XMC4XXX_PULL_DOWN_MASK  0x1
 
-#define XMC4XXX_PULL_UP_POS     13
+#define XMC4XXX_PULL_UP_POS     14
 #define XMC4XXX_PULL_UP_MASK    0x1
 
-#define XMC4XXX_PUSH_PULL_POS   14
+#define XMC4XXX_PUSH_PULL_POS   15
 #define XMC4XXX_PUSH_PULL_MASK  0x1
 
-#define XMC4XXX_OPEN_DRAIN_POS	15
+#define XMC4XXX_OPEN_DRAIN_POS	16
 #define XMC4XXX_OPEN_DRAIN_MASK 0x1
 
-#define XMC4XXX_OUT_HIGH_POS    16
+#define XMC4XXX_OUT_HIGH_POS    17
 #define XMC4XXX_OUT_HIGH_MASK   0x1
 
-#define XMC4XXX_OUT_LOW_POS     17
+#define XMC4XXX_OUT_LOW_POS     18
 #define XMC4XXX_OUT_LOW_MASK    0x1
 
-#define XMC4XXX_INV_INPUT_POS   18
+#define XMC4XXX_INV_INPUT_POS   19
 #define XMC4XXX_INV_INPUT_MASK  0x1
 
-#define XMC4XXX_DRIVE_POS       19
+#define XMC4XXX_DRIVE_POS       20
 #define XMC4XXX_DRIVE_MASK      0x7
 
-#define XMC4XXX_HWCTRL_POS      22
+#define XMC4XXX_HWCTRL_POS      23
 #define XMC4XXX_HWCTRL_MASK     0x3
 
 /* Setters and getters */
