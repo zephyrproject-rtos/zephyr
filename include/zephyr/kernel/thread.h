@@ -12,6 +12,7 @@
 #endif
 
 #include <zephyr/kernel/stats.h>
+#include <zephyr/sys/arch_interface.h>
 
 /**
  * @typedef k_thread_entry_t
