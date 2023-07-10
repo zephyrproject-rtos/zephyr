@@ -1127,15 +1127,13 @@ void nrf_802154_cca_failed(nrf_802154_cca_error_t error)
 	k_sem_give(&nrf5_data.cca_wait);
 }
 
-void nrf_802154_energy_detected(uint8_t result)
+void nrf_802154_energy_detected(const nrf_802154_energy_detected_t *result)
 {
 	if (nrf5_data.energy_scan_done != NULL) {
-		int16_t dbm;
 		energy_scan_done_cb_t callback = nrf5_data.energy_scan_done;
 
 		nrf5_data.energy_scan_done = NULL;
-		dbm = nrf_802154_dbm_from_energy_level_calculate(result);
-		callback(net_if_get_device(nrf5_data.iface), dbm);
+		callback(net_if_get_device(nrf5_data.iface), result->ed_dbm);
 	}
 }
 
