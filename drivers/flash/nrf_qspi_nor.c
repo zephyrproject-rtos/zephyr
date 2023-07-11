@@ -1421,8 +1421,18 @@ static int qspi_nor_pm_action(const struct device *dev,
 void z_impl_nrf_qspi_nor_xip_enable(const struct device *dev, bool enable)
 {
 	struct qspi_nor_data *dev_data = dev->data;
+	int ret;
 
-	qspi_device_init(dev);
+	if (dev_data->xip_enabled == enable) {
+		return;
+	}
+
+	ret = qspi_device_init(dev);
+
+	if (ret != 0) {
+		LOG_ERR("NRF QSPI NOR XIP %s failed with %d\n", enable ? "enable" : "disable", ret);
+		return;
+	}
 
 #if NRF_QSPI_HAS_XIPEN
 	nrf_qspi_xip_set(NRF_QSPI, enable);
