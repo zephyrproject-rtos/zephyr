@@ -10,6 +10,7 @@
 #include <zephyr/dt-bindings/reset/stm32wba_reset.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
 
 #include <freq.h>
 
@@ -248,6 +249,12 @@
 			interrupt-names = "brk", "up", "trgcom", "cc";
 			st,prescaler = <0>;
 			status = "disabled";
+
+			pwm {
+				compatible = "st,stm32-pwm";
+				status = "disabled";
+				#pwm-cells = <3>;
+			};
 		};
 
 		timers2: timers@40000000 {
@@ -259,6 +266,12 @@
 			interrupt-names = "global";
 			st,prescaler = <0>;
 			status = "disabled";
+
+			pwm {
+				compatible = "st,stm32-pwm";
+				status = "disabled";
+				#pwm-cells = <3>;
+			};
 		};
 
 		timers3: timers@40000400 {
@@ -270,6 +283,12 @@
 			interrupt-names = "global";
 			st,prescaler = <0>;
 			status = "disabled";
+
+			pwm {
+				compatible = "st,stm32-pwm";
+				status = "disabled";
+				#pwm-cells = <3>;
+			};
 		};
 
 		timers16: timers@40014400 {
@@ -280,6 +299,12 @@
 			interrupts = <51 0>;
 			interrupt-names = "global";
 			status = "disabled";
+
+			pwm {
+				compatible = "st,stm32-pwm";
+				status = "disabled";
+				#pwm-cells = <3>;
+			};
 		};
 
 		timers17: timers@40014800 {
@@ -290,6 +315,12 @@
 			interrupts = <52 0>;
 			interrupt-names = "global";
 			status = "disabled";
+
+			pwm {
+				compatible = "st,stm32-pwm";
+				status = "disabled";
+				#pwm-cells = <3>;
+			};
 		};
 
 	};
