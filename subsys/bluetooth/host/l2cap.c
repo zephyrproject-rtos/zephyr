@@ -2653,7 +2653,12 @@ static void l2cap_chan_le_recv(struct bt_l2cap_le_chan *chan,
 		return;
 	}
 
-	l2cap_chan_send_credits(chan, 1);
+	/* Only attempt to send credits if the channel wasn't disconnected
+	 * in the recv() callback above
+	 */
+	if (bt_l2cap_chan_get_state(&chan->chan) == BT_L2CAP_CONNECTED) {
+		l2cap_chan_send_credits(chan, 1);
+	}
 }
 
 static void l2cap_chan_recv_queue(struct bt_l2cap_le_chan *chan,
