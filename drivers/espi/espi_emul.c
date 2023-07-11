@@ -232,8 +232,8 @@ static struct emul_espi_driver_api emul_espi_driver_api = {
 	},
 
 #define ESPI_EMUL_INIT(n)                                                                          \
-	static const struct emul_link_for_bus emuls_##n[] = { DT_FOREACH_CHILD(                    \
-		DT_DRV_INST(n), EMUL_LINK_AND_COMMA) };                                            \
+	static const struct emul_link_for_bus emuls_##n[] = {                                      \
+		DT_FOREACH_CHILD_STATUS_OKAY(DT_DRV_INST(n), EMUL_LINK_AND_COMMA)};                \
 	static struct emul_list_for_bus espi_emul_cfg_##n = {                                      \
 		.children = emuls_##n,                                                             \
 		.num_children = ARRAY_SIZE(emuls_##n),                                             \
