@@ -10,3 +10,22 @@ config EC_HOST_CMD_LOG_DBG_BUFFERS
 	  Every command is logged with the debug logging level. Use this config
 	  to decide, if full reqest and response buffers are logged alongside
 	  other command parameters.
+
+config EC_HOST_CMD_LOG_SUPPRESSED_NUMBER
+	int "Maximum number of suppressed commands"
+	default 8
+	help
+	  Suppressed commands are not logged on host command reception. Set
+	  the maximum number of the suppressed commands. Set 0 to disable
+	  suppressing commands.
+
+config EC_HOST_CMD_LOG_SUPPRESSED_INTERVAL_SECS
+	int "Interval of logging suppressed commands"
+	default 3600
+	help
+	  Once every interval the suppressed commands are logged with the
+	  suppression number.
+
+config EC_HOST_CMD_LOG_SUPPRESSED
+	bool
+	default y if (EC_HOST_CMD_LOG_SUPPRESSED_NUMBER > 0)
