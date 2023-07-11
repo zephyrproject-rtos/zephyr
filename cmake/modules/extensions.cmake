@@ -1371,9 +1371,9 @@ function(zephyr_code_relocate)
   # of using CMake lists. This way, the ";" character can be reserved for
   # generator expression file lists.
   get_property(code_rel_str TARGET code_data_relocation_target
-    PROPERTY COMPILE_DEFINITIONS)
+    PROPERTY reloc_file_list)
   set_property(TARGET code_data_relocation_target
-    PROPERTY COMPILE_DEFINITIONS
+    PROPERTY reloc_file_list
     "${code_rel_str}|${CODE_REL_LOCATION}:${copy_flag}:${file_list}")
 endfunction()
 
