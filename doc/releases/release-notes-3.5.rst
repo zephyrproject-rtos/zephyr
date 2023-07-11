@@ -2060,6 +2060,9 @@ Libraries / Subsystems
     supported in function handlers by setting ``mg_translate_error`` of
     :c:struct:`mgmt_group` when registering a group. See
     :c:type:`smp_translate_error_fn` for function details.
+* shell
+
+  * Added an application shell module with helpers common to all applications.
 
   * Fixed an issue with MCUmgr img_mgmt group whereby the size of the upload in
     the initial packet was not checked.

@@ -45,3 +45,9 @@ config DEVMEM_SHELL
 	select GETOPT
 	help
 	  This shell command provides read/write access to physical memory.
+
+config APP_SHELL
+	bool "application shell (common to all applications)"
+	default y if !SHELL_MINIMAL
+	help
+	  This shell module provides access to common helpers.
