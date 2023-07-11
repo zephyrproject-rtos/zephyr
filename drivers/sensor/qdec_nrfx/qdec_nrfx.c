@@ -135,6 +135,13 @@ static void qdec_nrfx_event_handler(nrfx_qdec_event_t event, void *p_context)
 	unsigned int key;
 
 	switch (event.type) {
+	case NRF_QDEC_EVENT_SAMPLERDY:
+		/* The underlying HAL driver may improperly forward an samplerdy event even if it's
+		 * disabled in the configuration. Ignore the event to prevent error logs until the
+		 * issue is fixed in HAL.
+		 */
+		break;
+
 	case NRF_QDEC_EVENT_REPORTRDY:
 		accumulate(dev_data, event.data.report.acc);
 
