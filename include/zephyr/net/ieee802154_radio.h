@@ -15,9 +15,9 @@
 #define ZEPHYR_INCLUDE_NET_IEEE802154_RADIO_H_
 
 #include <zephyr/device.h>
-#include <zephyr/sys_clock.h>
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/net_pkt.h>
+#include <zephyr/net/net_time.h>
 #include <zephyr/net/ieee802154.h>
 #include <zephyr/sys/util.h>
 
@@ -364,7 +364,7 @@ enum ieee802154_config_type {
 	IEEE802154_CONFIG_CSL_PERIOD,
 
 	/** Configure the next CSL receive window (i.e. "channel sample") center,
-	 *  in units of microseconds relative to the network subsystem's local clock.
+	 *  in units of nanoseconds relative to the network subsystem's local clock.
 	 */
 	IEEE802154_CONFIG_CSL_RX_TIME,
 
@@ -425,24 +425,24 @@ struct ieee802154_config {
 
 		/** ``IEEE802154_CONFIG_RX_SLOT`` */
 		struct {
-			uint8_t channel;
-
 			/**
-			 * Microsecond resolution timestamp relative to the
+			 * Nanosecond resolution timestamp relative to the
 			 * network subsystem's local clock defining the start of
 			 * the RX window during which the receiver is expected
 			 * to be listening (i.e. not including any startup
 			 * times).
 			 */
-			uint32_t start;
+			net_time_t start;
 
 			/**
-			 * Microsecond resolution duration of the RX window
+			 * Nanosecond resolution duration of the RX window
 			 * relative to the above RX window start time during
 			 * which the receiver is expected to be listening (i.e.
 			 * not including any shutdown times).
 			 */
-			uint32_t duration;
+			net_time_t duration;
+
+			uint8_t channel;
 		} rx_slot;
 
 		/**
@@ -458,12 +458,12 @@ struct ieee802154_config {
 		/**
 		 * ``IEEE802154_CONFIG_CSL_RX_TIME``
 		 *
-		 * Microsecond resolution timestamp relative to the network
+		 * Nanosecond resolution timestamp relative to the network
 		 * subsystem's local clock defining the center of the CSL RX window
 		 * at which the receiver is expected to be fully started up
 		 * (i.e.  not including any startup times).
 		 */
-		uint32_t csl_rx_time;
+		net_time_t csl_rx_time;
 
 		/** ``IEEE802154_CONFIG_ENH_ACK_HEADER_IE`` */
 		struct {
@@ -742,17 +742,20 @@ struct ieee802154_radio_api {
 		       energy_scan_done_cb_t done_cb);
 
 	/**
-	 * @brief Get the current time in microseconds relative to the network
-	 * subsystem's local clock.
+	 * @brief Get the current time in nanoseconds relative to the network
+	 * subsystem's local uptime clock as represented by this network
+	 * interface.
+	 *
+	 * See @ref net_time_t for semantic details.
 	 *
 	 * @note requires IEEE802154_HW_TXTIME and/or IEEE802154_HW_RXTIME
 	 * capabilities.
 	 *
 	 * @param dev pointer to radio device
 	 *
-	 * @return microseconds relative to the network subsystem's local clock
+	 * @return nanoseconds relative to the network subsystem's local clock
 	 */
-	uint64_t (*get_time)(const struct device *dev);
+	net_time_t (*get_time)(const struct device *dev);
 
 	/**
 	 * @brief Get the current estimated worst case accuracy (maximum ±
