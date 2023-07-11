@@ -59,6 +59,13 @@ static bool cmd_in_progress;
 static enum ec_host_cmd_status saved_status = EC_HOST_CMD_UNAVAILABLE;
 #endif
 
+#ifdef CONFIG_EC_HOST_CMD_LOG_SUPPRESSED
+static uint16_t suppressed_cmds[CONFIG_EC_HOST_CMD_LOG_SUPPRESSED_NUMBER];
+static uint16_t suppressed_cmds_count[CONFIG_EC_HOST_CMD_LOG_SUPPRESSED_NUMBER];
+static int64_t suppressed_cmds_deadline = CONFIG_EC_HOST_CMD_LOG_SUPPRESSED_INTERVAL_SECS * 1000U;
+static size_t suppressed_cmds_number;
+#endif /* CONFIG_EC_HOST_CMD_LOG_SUPPRESSED */
+
 static uint8_t cal_checksum(const uint8_t *const buffer, const uint16_t size)
 {
 	uint8_t checksum = 0;
@@ -84,6 +91,58 @@ enum ec_host_cmd_status ec_host_cmd_send_in_progress_status(void)
 	return ret;
 }
 #endif /* CONFIG_EC_HOST_CMD_IN_PROGRESS_STATUS */
+
+#ifdef CONFIG_EC_HOST_CMD_LOG_SUPPRESSED
+int ec_host_cmd_add_suppressed(uint16_t cmd_id)
+{
+	if (suppressed_cmds_number >= CONFIG_EC_HOST_CMD_LOG_SUPPRESSED_NUMBER) {
+		return -EIO;
+	}
+
+	suppressed_cmds[suppressed_cmds_number] = cmd_id;
+	++suppressed_cmds_number;
+
+	return 0;
+}
+
+static bool ec_host_cmd_is_suppressed(uint16_t cmd_id)
+{
+	int i;
+
+	for (i = 0; i < suppressed_cmds_number; i++) {
+		if (suppressed_cmds[i] == cmd_id) {
+			suppressed_cmds_count[i]++;
+
+			return true;
+		}
+	}
+
+	return false;
+}
+
+void ec_host_cmd_dump_suppressed(void)
+{
+	int i;
+	int64_t uptime = k_uptime_get();
+
+	LOG_PRINTK("[%llds HC Suppressed:", uptime / 1000U);
+	for (i = 0; i < suppressed_cmds_number; i++) {
+		LOG_PRINTK(" 0x%x=%d", suppressed_cmds[i], suppressed_cmds_count[i]);
+		suppressed_cmds_count[i] = 0;
+	}
+	LOG_PRINTK("]\n");
+
+	/* Reset the timer */
+	suppressed_cmds_deadline = uptime + CONFIG_EC_HOST_CMD_LOG_SUPPRESSED_INTERVAL_SECS * 1000U;
+}
+
+static void ec_host_cmd_check_suppressed(void)
+{
+	if (k_uptime_get() >= suppressed_cmds_deadline) {
+		ec_host_cmd_dump_suppressed();
+	}
+}
+#endif /* CONFIG_EC_HOST_CMD_LOG_SUPPRESSED */
 
 static void send_status_response(const struct ec_host_cmd_backend *backend,
 				 struct ec_host_cmd_tx_buf *tx,
@@ -266,6 +325,14 @@ static void ec_host_cmd_log_request(const uint8_t *rx_buf)
 	static uint16_t prev_cmd;
 	const struct ec_host_cmd_request_header *const rx_header =
 		(const struct ec_host_cmd_request_header *const)rx_buf;
+
+#ifdef CONFIG_EC_HOST_CMD_LOG_SUPPRESSED
+	if (ec_host_cmd_is_suppressed(rx_header->cmd_id)) {
+		ec_host_cmd_check_suppressed();
+
+		return;
+	}
+#endif /* CONFIG_EC_HOST_CMD_LOG_SUPPRESSED */
 
 	if (IS_ENABLED(CONFIG_EC_HOST_CMD_LOG_DBG_BUFFERS)) {
 		if (rx_header->data_len) {
