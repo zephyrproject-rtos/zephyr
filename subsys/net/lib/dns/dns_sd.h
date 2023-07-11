@@ -33,6 +33,12 @@ extern "C" {
 #define DNS_SD_FOREACH(it) \
 	STRUCT_SECTION_FOREACH(dns_sd_rec, it)
 
+#define DNS_SD_COUNT(dst) \
+	STRUCT_SECTION_COUNT(dns_sd_rec, dst)
+
+#define DNS_SD_GET(i, dst) \
+	STRUCT_SECTION_GET(dns_sd_rec, i, dst)
+
 /**
  * @brief Extract labels from a DNS-SD PTR query
  *
