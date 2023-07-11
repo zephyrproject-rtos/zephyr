@@ -302,6 +302,9 @@ Libraries / Subsystems
     supported in function handlers by setting ``mg_translate_error`` of
     :c:struct:`mgmt_group` when registering a transport. See
     :c:type:`smp_translate_error_fn` for function details.
+* shell
+
+  * Added an application shell module with helpers common to all applications.
 
 * File systems
 
