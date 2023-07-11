@@ -99,7 +99,7 @@ int sys_mm_drv_page_phys_get(void *virt, uintptr_t *phys)
 	if (virt == NULL) {
 		return -EINVAL;
 	}
-	uint64_t pa = ((uint64_t) (virt));
+	uintptr_t pa = (uintptr_t) virt;
 	uintptr_t *va = phys;
 
 	uint32_t found, regionId;
@@ -130,10 +130,10 @@ int sys_mm_drv_page_phys_get(void *virt, uintptr_t *phys)
 		uint32_t offset =
 			pa - translate_config.region_config[regionId].system_addr;
 
-		*va = (void *)(translate_config.region_config[regionId].local_addr + offset);
+		*va = (translate_config.region_config[regionId].local_addr + offset);
 	} else {
 		/* no mapping found, set output = input with 32b truncation */
-		*va = (void *)pa;
+		*va = pa;
 	}
 
 	if (va == NULL) {
