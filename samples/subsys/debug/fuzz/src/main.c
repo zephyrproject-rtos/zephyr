@@ -49,7 +49,8 @@ GEN_CHECK(5, 6)
 GEN_CHECK(6, 0)
 
 /* Fuzz input received from LLVM via "interrupt" */
-extern uint8_t *posix_fuzz_buf, posix_fuzz_sz;
+extern uint8_t *posix_fuzz_buf;
+extern size_t posix_fuzz_sz;
 
 K_SEM_DEFINE(fuzz_sem, 0, K_SEM_MAX_LIMIT);
 

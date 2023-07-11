@@ -127,7 +127,8 @@ int main(int argc, char *argv[])
  * "long enough" to handle the event and reach a quiescent state
  * again)
  */
-uint8_t *posix_fuzz_buf, posix_fuzz_sz;
+uint8_t *posix_fuzz_buf;
+size_t posix_fuzz_sz;
 
 int LLVMFuzzerTestOneInput(const uint8_t *data, size_t sz)
 {
