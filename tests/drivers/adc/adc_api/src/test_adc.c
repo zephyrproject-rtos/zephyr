@@ -255,12 +255,12 @@ static enum adc_action repeated_samplings_callback(const struct device *dev,
 	++m_samplings_done;
 	TC_PRINT("%s: done %d\n", __func__, m_samplings_done);
 	if (m_samplings_done == 1U) {
-		check_samples(adc_channels_count);
+		check_samples(MIN(adc_channels_count, 2));
 
 		/* After first sampling continue normally. */
 		return ADC_ACTION_CONTINUE;
 	} else {
-		check_samples(2 * adc_channels_count);
+		check_samples(2 * MIN(adc_channels_count, 2));
 
 		/*
 		 * The second sampling is repeated 9 times (the samples are
