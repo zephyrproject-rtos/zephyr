@@ -23,21 +23,21 @@ bool found[ARRAY_SIZE(key)];
 
 #define LASTKEY (ARRAY_SIZE(key) - 1)
 
-#define GEN_CHECK(cur, nxt)						\
-	void check##nxt(uint8_t *data, size_t sz);			\
-	void __attribute__((noinline)) check##cur(uint8_t *data, size_t sz) \
-	{								\
-		if (cur < sz && data[cur] == key[cur]) {		\
-			if (!found[cur]) {				\
-				printk("#\n# Found key %d\n#\n", cur);	\
-				found[cur] = true;			\
-			}						\
-			if (cur == LASTKEY) {				\
-				*global_null_ptr = 0; /* boom! */	\
-			} else {					\
-				check##nxt(data, sz);			\
-			}						\
-		}							\
+#define GEN_CHECK(cur, nxt)                                                                        \
+	void check##nxt(const uint8_t *data, size_t sz);                                           \
+	void __attribute__((noinline)) check##cur(const uint8_t *data, size_t sz)                  \
+	{                                                                                          \
+		if (cur < sz && data[cur] == key[cur]) {                                           \
+			if (!found[cur]) {                                                         \
+				printk("#\n# Found key %d\n#\n", cur);                             \
+				found[cur] = true;                                                 \
+			}                                                                          \
+			if (cur == LASTKEY) {                                                      \
+				*global_null_ptr = 0; /* boom! */                                  \
+			} else {                                                                   \
+				check##nxt(data, sz);                                              \
+			}                                                                          \
+		}                                                                                  \
 	}
 
 GEN_CHECK(0, 1)
@@ -49,7 +49,7 @@ GEN_CHECK(5, 6)
 GEN_CHECK(6, 0)
 
 /* Fuzz input received from LLVM via "interrupt" */
-extern uint8_t *posix_fuzz_buf;
+extern const uint8_t *posix_fuzz_buf;
 extern size_t posix_fuzz_sz;
 
 K_SEM_DEFINE(fuzz_sem, 0, K_SEM_MAX_LIMIT);
