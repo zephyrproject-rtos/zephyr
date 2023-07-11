@@ -17,9 +17,34 @@ if(DEFINED SB_CONF_FILE)
   # SB_CONF_FILE already set so nothing to do.
 elseif(DEFINED ENV{SB_CONF_FILE})
   set(SB_CONF_FILE $ENV{SB_CONF_FILE})
-elseif(EXISTS      ${APP_DIR}/sysbuild.conf)
-  set(SB_CONF_FILE ${APP_DIR}/sysbuild.conf)
 else()
+  # Check if there is a sysbuild file for this board
+  if(DEFINED SB_APPLICATION_CONFIG_DIR)
+    # Sysbuild-specified application configuration directory
+    string(CONFIGURE ${SB_APPLICATION_CONFIG_DIR} app_config_dir)
+    if(NOT IS_ABSOLUTE ${app_config_dir})
+      get_filename_component(app_config_dir ${app_config_dir} ABSOLUTE)
+    endif()
+  elseif(DEFINED APPLICATION_CONFIG_DIR)
+    # Application configuration directory
+    string(CONFIGURE ${APPLICATION_CONFIG_DIR} app_config_dir)
+    if(NOT IS_ABSOLUTE ${app_config_dir})
+      get_filename_component(app_config_dir ${app_config_dir} ABSOLUTE)
+    endif()
+  else()
+    # Application config dir is not set, so we default to the application
+    # source directory as configuration directory.
+    set(app_config_dir ${APP_DIR})
+  endif()
+
+  if(EXISTS "${app_config_dir}/sysbuild_${BOARD}.conf")
+    # Use sysbuild configuration file specifically targeting this board
+    set(SB_CONF_FILE "${app_config_dir}/sysbuild_${BOARD}.conf")
+  elseif(EXISTS "${app_config_dir}/sysbuild.conf")
+    # Use project sysbuild configuration file
+    set(SB_CONF_FILE "${app_config_dir}/sysbuild.conf")
+  endif()
+
   # Because SYSBuild is opt-in feature, then it is permitted to not have a
   # SYSBuild dedicated configuration file.
 endif()
