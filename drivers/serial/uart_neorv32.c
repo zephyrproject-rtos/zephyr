@@ -21,23 +21,26 @@ LOG_MODULE_REGISTER(uart_neorv32, CONFIG_UART_LOG_LEVEL);
 #define NEORV32_UART_DATA_OFFSET 0x04
 
 /* UART_CTRL register bits */
-#define NEORV32_UART_CTRL_BAUD_MASK   BIT_MASK(12)
-#define NEORV32_UART_CTRL_BAUD_POS    0U
-#define NEORV32_UART_CTRL_PRSC_MASK   BIT_MASK(3)
-#define NEORV32_UART_CTRL_PRSC_POS    24U
-#define NEORV32_UART_CTRL_RTS_EN      BIT(20)
-#define NEORV32_UART_CTRL_CTS_EN      BIT(21)
-#define NEORV32_UART_CTRL_PMODE_NONE  BIT(22)
-#define NEORV32_UART_CTRL_PMODE_EVEN  BIT(23)
-#define NEORV32_UART_CTRL_PMODE_ODD  (BIT(22) | BIT(23))
-#define NEORV32_UART_CTRL_EN          BIT(28)
-#define NEORV32_UART_CTRL_TX_BUSY     BIT(31)
-
-/* UART_DATA register status bits */
-#define NEORV32_UART_DATA_PERR  BIT(28)
-#define NEORV32_UART_DATA_FERR  BIT(29)
-#define NEORV32_UART_DATA_OVERR BIT(30)
-#define NEORV32_UART_DATA_AVAIL BIT(31)
+#define NEORV32_UART_CTRL_EN              BIT(0)
+#define NEORV32_UART_CTRL_SIM_MODE        BIT(1)
+#define NEORV32_UART_CTRL_HWFC_EN         BIT(2)
+#define NEORV32_UART_CTRL_PRSC_POS        3U
+#define NEORV32_UART_CTRL_PRSC_MASK       BIT_MASK(3)
+#define NEORV32_UART_CTRL_BAUD_POS        6U
+#define NEORV32_UART_CTRL_BAUD_MASK       BIT_MASK(10)
+#define NEORV32_UART_CTRL_RX_NEMPTY       BIT(16)
+#define NEORV32_UART_CTRL_RX_HALF         BIT(17)
+#define NEORV32_UART_CTRL_RX_FULL         BIT(18)
+#define NEORV32_UART_CTRL_TX_NEMPTY       BIT(19)
+#define NEORV32_UART_CTRL_TX_HALF         BIT(20)
+#define NEORV32_UART_CTRL_TX_FULL         BIT(21)
+#define NEORV32_UART_CTRL_IRQ_RX_NEMPTY   BIT(22)
+#define NEORV32_UART_CTRL_IRQ_RX_HALF     BIT(23)
+#define NEORV32_UART_CTRL_IRQ_RX_FULL     BIT(24)
+#define NEORV32_UART_CTRL_IRQ_TX_EMPTY    BIT(25)
+#define NEORV32_UART_CTRL_IRQ_TX_NHALF    BIT(26)
+#define NEORV32_UART_CTRL_RX_OVER         BIT(30)
+#define NEORV32_UART_CTRL_TX_BUSY         BIT(31)
 
 struct neorv32_uart_config {
 	const struct device *syscon;
@@ -100,7 +103,7 @@ static int neorv32_uart_poll_in(const struct device *dev, unsigned char *c)
 
 	data = neorv32_uart_read_data(dev);
 
-	if ((data & NEORV32_UART_DATA_AVAIL) != 0) {
+	if ((data & NEORV32_UART_CTRL_RX_NEMPTY) != 0) {
 		*c = data & BIT_MASK(8);
 		return 0;
 	}
@@ -114,29 +117,6 @@ static void neorv32_uart_poll_out(const struct device *dev, unsigned char c)
 	}
 
 	neorv32_uart_write_data(dev, c);
-}
-
-static int neorv32_uart_err_check(const struct device *dev)
-{
-	struct neorv32_uart_data *data = dev->data;
-	int err = 0;
-
-	if ((data->last_data & NEORV32_UART_DATA_OVERR) != 0) {
-		err |= UART_ERROR_OVERRUN;
-	}
-
-	if ((data->last_data & NEORV32_UART_DATA_PERR) != 0) {
-		err |= UART_ERROR_PARITY;
-	}
-
-	if ((data->last_data & NEORV32_UART_DATA_FERR) != 0) {
-		err |= UART_ERROR_FRAMING;
-	}
-
-	data->last_data &= ~(NEORV32_UART_DATA_OVERR | NEORV32_UART_DATA_PERR |
-		NEORV32_UART_DATA_FERR);
-
-	return err;
 }
 
 static int neorv32_uart_configure(const struct device *dev, const struct uart_config *cfg)
@@ -163,13 +143,6 @@ static int neorv32_uart_configure(const struct device *dev, const struct uart_co
 
 	switch (cfg->parity) {
 	case UART_CFG_PARITY_NONE:
-		ctrl |= NEORV32_UART_CTRL_PMODE_NONE;
-		break;
-	case UART_CFG_PARITY_ODD:
-		ctrl |= NEORV32_UART_CTRL_PMODE_ODD;
-		break;
-	case UART_CFG_PARITY_EVEN:
-		ctrl |= NEORV32_UART_CTRL_PMODE_EVEN;
 		break;
 	default:
 		LOG_ERR("unsupported parity mode %d", cfg->parity);
@@ -181,7 +154,7 @@ static int neorv32_uart_configure(const struct device *dev, const struct uart_co
 		ctrl |= 0;
 		break;
 	case UART_CFG_FLOW_CTRL_RTS_CTS:
-		ctrl |= NEORV32_UART_CTRL_RTS_EN | NEORV32_UART_CTRL_CTS_EN;
+		ctrl |= NEORV32_UART_CTRL_HWFC_EN;
 		break;
 	default:
 		LOG_ERR("unsupported flow control mode %d", cfg->flow_ctrl);
@@ -270,9 +243,9 @@ static int neorv32_uart_fifo_read(const struct device *dev, uint8_t *rx_data, co
 
 	__ASSERT_NO_MSG(rx_data != NULL);
 
-	while ((data->last_data & NEORV32_UART_DATA_AVAIL) != 0) {
+	while ((data->last_data & NEORV32_UART_CTRL_RX_NEMPTY) != 0) {
 		rx_data[count++] = data->last_data & BIT_MASK(8);
-		data->last_data &= ~(NEORV32_UART_DATA_AVAIL);
+		data->last_data &= ~(NEORV32_UART_CTRL_RX_NEMPTY);
 
 		if (count >= size) {
 			break;
@@ -367,7 +340,7 @@ static int neorv32_uart_irq_rx_ready(const struct device *dev)
 		return 0;
 	}
 
-	return (data->last_data & NEORV32_UART_DATA_AVAIL) != 0;
+	return (data->last_data & NEORV32_UART_CTRL_RX_NEMPTY) != 0;
 }
 
 static int neorv32_uart_irq_is_pending(const struct device *dev)
@@ -467,7 +440,6 @@ static int neorv32_uart_pm_action(const struct device *dev,
 static const struct uart_driver_api neorv32_uart_driver_api = {
 	.poll_in = neorv32_uart_poll_in,
 	.poll_out = neorv32_uart_poll_out,
-	.err_check = neorv32_uart_err_check,
 	.configure = neorv32_uart_configure,
 	.config_get = neorv32_uart_config_get,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
