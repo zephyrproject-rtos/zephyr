@@ -261,7 +261,7 @@ ZTEST(openthread_radio, test_tx_test)
 	const uint8_t chan = 20;
 	uint8_t chan2 = chan - 1;
 	const int8_t power = -3;
-	uint64_t expected_target_time = 0;
+	net_time_t expected_target_time = 0;
 
 	otRadioFrame *frm = otPlatRadioGetTransmitBuffer(ot);
 
@@ -315,7 +315,8 @@ ZTEST(openthread_radio, test_tx_test)
 	zassert_equal(power, set_txpower_mock_fake.arg1_val);
 	zassert_equal(1, tx_mock_fake.call_count);
 	zassert_equal_ptr(frm->mPsdu, tx_mock_fake.arg3_val->data, NULL);
-	zassert_equal(expected_target_time, net_pkt_txtime(tx_mock_fake.arg2_val));
+	zassert_equal(expected_target_time,
+		      net_ptp_time_to_ns(net_pkt_timestamp(tx_mock_fake.arg2_val)));
 	zassert_equal(IS_ENABLED(CONFIG_NET_PKT_TXTIME) ? IEEE802154_TX_MODE_TXTIME_CCA
 							: IEEE802154_TX_MODE_DIRECT,
 		      tx_mock_fake.arg1_val);
@@ -917,7 +918,7 @@ ZTEST(openthread_radio, test_csl_receiver_sample_time)
 	configure_mock_fake.custom_fake = custom_configure_csl_rx_time;
 	otPlatRadioUpdateCslSampleTime(NULL, sample_time);
 	zassert_equal(1, configure_mock_fake.call_count);
-	zassert_equal(sample_time, custom_configure_csl_rx_time_mock_csl_rx_time);
+	zassert_equal(sample_time * NSEC_PER_USEC, custom_configure_csl_rx_time_mock_csl_rx_time);
 }
 
 
@@ -947,8 +948,9 @@ ZTEST(openthread_radio, test_csl_receiver_receive_at)
 	zassert_ok(res);
 	zassert_equal(1, configure_mock_fake.call_count);
 	zassert_equal(channel, custom_configure_rx_slot_mock_config.rx_slot.channel);
-	zassert_equal(start, custom_configure_rx_slot_mock_config.rx_slot.start);
-	zassert_equal(duration, custom_configure_rx_slot_mock_config.rx_slot.duration);
+	zassert_equal(start * NSEC_PER_USEC, custom_configure_rx_slot_mock_config.rx_slot.start);
+	zassert_equal(duration * NSEC_PER_USEC,
+		      custom_configure_rx_slot_mock_config.rx_slot.duration);
 }
 #endif
 
