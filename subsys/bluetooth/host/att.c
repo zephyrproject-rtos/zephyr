@@ -103,6 +103,7 @@ struct bt_att_chan {
 	ATOMIC_DEFINE(flags, ATT_NUM_FLAGS);
 	struct bt_att_req	*req;
 	struct k_fifo		tx_queue;
+	struct net_buf		*rsp_buf;
 	struct bt_att_tx_meta_data rsp_meta;
 	struct k_work_delayable	timeout_work;
 	sys_snode_t		node;
@@ -658,7 +659,7 @@ static struct net_buf *bt_att_chan_create_pdu(struct bt_att_chan *chan, uint8_t 
 	struct net_buf *buf;
 	struct bt_att_tx_meta_data *data;
 	k_timeout_t timeout;
-	bool is_rsp = false;
+	bool re_use = false;
 
 	if (len + sizeof(op) > bt_att_mtu(chan)) {
 		LOG_WRN("ATT MTU exceeded, max %u, wanted %zu", bt_att_mtu(chan),
@@ -671,19 +672,23 @@ static struct net_buf *bt_att_chan_create_pdu(struct bt_att_chan *chan, uint8_t 
 	case ATT_CONFIRMATION:
 		/* Use a timeout only when responding/confirming */
 		timeout = BT_ATT_TIMEOUT;
-		is_rsp = true;
+		re_use = true;
 		break;
 	default:
 		timeout = K_FOREVER;
 	}
 
-	buf = bt_l2cap_create_pdu_timeout(NULL, 0, timeout);
-	if (!buf) {
-		LOG_ERR("Unable to allocate buffer for op 0x%02x", op);
-		return NULL;
+	if (IS_ENABLED(CONFIG_BT_GATT_READ_MULTIPLE) &&
+	    (op == BT_ATT_OP_READ_MULT_RSP ||
+	     op == BT_ATT_OP_READ_MULT_VL_RSP)) {
+		/* We can't re-use the REQ buffer (see below) for these two
+		 * opcodes, as the handler will read from it _after_ allocating
+		 * the RSP buffer.
+		 */
+		re_use = false;
 	}
 
-	if (is_rsp) {
+	if (re_use) {
 		/* There can only ever be one transaction at a time on a
 		 * bearer/channel. Use a dedicated channel meta-data to ensure
 		 * we can always queue an (error) RSP for each REQ. The ATT
@@ -700,8 +705,27 @@ static struct net_buf *bt_att_chan_create_pdu(struct bt_att_chan *chan, uint8_t 
 			return NULL;
 		}
 		data = &chan->rsp_meta;
-		LOG_INF("alloc rsp meta");
+
+		/* Re-use REQ buf to avoid dropping the REQ and timing out.
+		 * This only works if the bearer used to RX REQs is the same as
+		 * for sending the RSP. That should always be the case
+		 * (per-spec).
+		 */
+		__ASSERT_NO_MSG(chan->rsp_buf);
+		buf = net_buf_ref(chan->rsp_buf);
+
+		net_buf_reset(buf);
+		net_buf_reserve(buf, BT_L2CAP_BUF_SIZE(0));
+
+		LOG_DBG("re-using REQ buf %p for RSP", buf);
 	} else {
+		LOG_DBG("alloc buf & meta from global pools");
+		buf = bt_l2cap_create_pdu_timeout(NULL, 0, timeout);
+		if (!buf) {
+			LOG_ERR("Unable to allocate buffer for op 0x%02x", op);
+			return NULL;
+		}
+
 		data = tx_meta_data_alloc(timeout);
 		if (!data) {
 			LOG_WRN("Unable to allocate ATT TX meta");
@@ -781,6 +805,7 @@ static void send_err_rsp(struct bt_att_chan *chan, uint8_t req, uint16_t handle,
 
 	buf = bt_att_chan_create_pdu(chan, BT_ATT_OP_ERROR_RSP, sizeof(*rsp));
 	if (!buf) {
+		LOG_ERR("unable to allocate buf for error response");
 		return;
 	}
 
@@ -2874,6 +2899,20 @@ static int bt_att_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 		}
 	}
 
+	/* Thread-local variable, shouldn't be used by anything else */
+	__ASSERT_NO_MSG(!att_chan->rsp_buf);
+
+	/* Mark buffer free for re-use by the opcode handler.
+	 *
+	 * This allows ATT to always be able to send a RSP (or err RSP)
+	 * to the peer, regardless of the TX buffer usage by other stack
+	 * users (e.g. GATT notifications, L2CAP using global pool, SMP,
+	 * etc..), avoiding an ATT timeout due to resource usage.
+	 *
+	 * The ref is taken by `bt_att_chan_create_pdu`.
+	 */
+	att_chan->rsp_buf = net_buf_ref(buf);
+
 	if (!handler) {
 		LOG_WRN("Unhandled ATT code 0x%02x", hdr->code);
 		if (att_op_get_type(hdr->code) != ATT_COMMAND &&
@@ -2881,19 +2920,19 @@ static int bt_att_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 			send_err_rsp(att_chan, hdr->code, 0,
 				     BT_ATT_ERR_NOT_SUPPORTED);
 		}
-		return 0;
+		goto exit;
 	}
 
 	if (IS_ENABLED(CONFIG_BT_ATT_ENFORCE_FLOW)) {
 		if (handler->type == ATT_REQUEST &&
 		    atomic_test_and_set_bit(att_chan->flags, ATT_PENDING_RSP)) {
 			LOG_WRN("Ignoring unexpected request");
-			return 0;
+			goto exit;
 		} else if (handler->type == ATT_INDICATION &&
 			   atomic_test_and_set_bit(att_chan->flags,
 						   ATT_PENDING_CFM)) {
 			LOG_WRN("Ignoring unexpected indication");
-			return 0;
+			goto exit;
 		}
 	}
 
@@ -2908,6 +2947,10 @@ static int bt_att_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 		LOG_DBG("ATT error 0x%02x", err);
 		send_err_rsp(att_chan, hdr->code, 0, err);
 	}
+
+exit:
+	net_buf_unref(att_chan->rsp_buf);
+	att_chan->rsp_buf = NULL;
 
 	return 0;
 }
