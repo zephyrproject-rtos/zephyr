@@ -35,9 +35,9 @@
  *
  * Integer value.
  * Supported values:
- * - RC                  = 0
- * - XTAL                = 1
- * - Synth               = 2
+ * - RC    = 0
+ * - XTAL  = 1
+ * - Synth = 2
  * - External Low Swing  = 131073
  * - External Full Swing = 196609
  */
