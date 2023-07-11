@@ -111,6 +111,9 @@ static void test_ivu_normal(void)
 	ASSERT_EQUAL(TEST_IV_IDX, bt_mesh.iv_index);
 	ASSERT_EQUAL(0, bt_mesh.seq);
 
+	/* Ignore same iv index but iv in progress */
+	ASSERT_FALSE(bt_mesh_net_iv_update(TEST_IV_IDX, BCN_IV_IN_PROGRESS));
+
 	bt_mesh.seq = 100;
 	/* update before minimum duration */
 	ASSERT_FALSE(bt_mesh_net_iv_update(TEST_IV_IDX + 1, BCN_IV_IN_PROGRESS));
