@@ -121,7 +121,7 @@ host libC (:kconfig:option:`CONFIG_EXTERNAL_LIBC`).
      log backend, native backend, :kconfig:option:`CONFIG_LOG_BACKEND_NATIVE_POSIX`, all
      rtc, RTC emul, :kconfig:option:`CONFIG_RTC_EMUL`, all
      serial, uart native posix/PTTY, :kconfig:option:`CONFIG_UART_NATIVE_POSIX`, all
-     serial, uart native TTY, :kconfig:option:`CONFIG_UART_NATIVE_TTY`, host libC
+     serial, uart native TTY, :kconfig:option:`CONFIG_UART_NATIVE_TTY`, all
      spi, SPI emul, :kconfig:option:`CONFIG_SPI_EMUL`, all
      system tick, native_posix timer, :kconfig:option:`CONFIG_NATIVE_POSIX_TIMER`, all
      tracing, Posix tracing backend, :kconfig:option:`CONFIG_TRACING_BACKEND_POSIX`, all
