@@ -120,6 +120,9 @@ int main(int argc, char *argv[])
 
 #else /* CONFIG_ARCH_POSIX_LIBFUZZER */
 
+const uint8_t *posix_fuzz_buf;
+size_t posix_fuzz_sz;
+
 /**
  * Entry point for fuzzing (when enabled). Works by placing the data
  * into two known symbols, triggering an app-visible interrupt, and
@@ -127,9 +130,6 @@ int main(int argc, char *argv[])
  * "long enough" to handle the event and reach a quiescent state
  * again)
  */
-const uint8_t *posix_fuzz_buf;
-size_t posix_fuzz_sz;
-
 int LLVMFuzzerTestOneInput(const uint8_t *data, size_t sz)
 {
 	static bool posix_initialized;
