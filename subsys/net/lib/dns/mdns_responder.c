@@ -52,6 +52,8 @@ static struct net_context *ipv6[MAX_IPV6_IFACE_COUNT];
 #endif
 
 static struct net_mgmt_event_callback mgmt_cb;
+static const struct dns_sd_rec *external_records;
+static size_t external_records_count;
 
 #define BUF_ALLOC_TIMEOUT K_MSEC(100)
 
@@ -340,6 +342,7 @@ static void send_sd_response(struct net_context *ctx,
 			     struct net_buf *result)
 {
 	int ret;
+	const struct dns_sd_rec *record;
 	/* filter must be zero-initialized for "wildcard" port */
 	struct dns_sd_rec filter = {0};
 	struct sockaddr dst;
@@ -359,6 +362,8 @@ static void send_sd_response(struct net_context *ctx,
 		ARRAY_SIZE(domain_buf),
 	};
 	size_t n = ARRAY_SIZE(label);
+	size_t rec_num;
+	size_t ext_rec_num = external_records_count;
 
 	BUILD_ASSERT(ARRAY_SIZE(label) == ARRAY_SIZE(size), "");
 
@@ -423,7 +428,21 @@ static void send_sd_response(struct net_context *ctx,
 		service_type_enum = true;
 	}
 
-	DNS_SD_FOREACH(record) {
+	DNS_SD_COUNT(&rec_num);
+
+	while (rec_num > 0 || ext_rec_num > 0) {
+		/*
+		 * The loop will always iterate over all entries, it can be done
+		 * backwards for simplicity
+		 */
+		if (rec_num > 0) {
+			DNS_SD_GET(rec_num - 1, &record);
+			rec_num--;
+		} else {
+			record = &external_records[ext_rec_num - 1];
+			ext_rec_num--;
+		}
+
 		/* Checks validity and then compare */
 		if (dns_sd_rec_match(record, &filter)) {
 			NET_DBG("matched query: %s.%s.%s.%s port: %u",
@@ -760,6 +779,8 @@ ipv4_out:
 
 static int mdns_responder_init(void)
 {
+	external_records = NULL;
+	external_records_count = 0;
 
 	net_mgmt_init_event_callback(&mgmt_cb, mdns_iface_event_handler,
 				     NET_EVENT_IF_UP);
@@ -767,6 +788,18 @@ static int mdns_responder_init(void)
 	net_mgmt_add_event_callback(&mgmt_cb);
 
 	return init_listener();
+}
+
+int mdns_responder_set_ext_records(const struct dns_sd_rec *records, size_t count)
+{
+	if (records == NULL || count == 0) {
+		return -EINVAL;
+	}
+
+	external_records = records;
+	external_records_count = count;
+
+	return 0;
 }
 
 SYS_INIT(mdns_responder_init, APPLICATION, CONFIG_MDNS_RESPONDER_INIT_PRIO);
