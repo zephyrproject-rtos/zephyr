@@ -25,6 +25,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_OPENTHREAD_L2_LOG_LEVEL);
 #include <zephyr/device.h>
 #include <zephyr/net/ieee802154_radio.h>
 #include <zephyr/net/net_pkt.h>
+#include <zephyr/net/net_time.h>
 #include <zephyr/sys/__assert.h>
 
 #include <openthread/ip6.h>
@@ -316,7 +317,9 @@ void transmit_message(struct k_work *tx_job)
 	    (sTransmitFrame.mInfo.mTxInfo.mTxDelay != 0)) {
 		uint64_t tx_at = sTransmitFrame.mInfo.mTxInfo.mTxDelayBaseTime +
 				 sTransmitFrame.mInfo.mTxInfo.mTxDelay;
-		net_pkt_set_txtime(tx_pkt, NSEC_PER_USEC * tx_at);
+		struct net_ptp_time timestamp = ns_to_net_ptp_time(tx_at * NSEC_PER_USEC);
+
+		net_pkt_set_timestamp(tx_pkt, &timestamp);
 		tx_err =
 			radio_api->tx(radio_dev, IEEE802154_TX_MODE_TXTIME_CCA, tx_pkt, tx_payload);
 	} else if (sTransmitFrame.mInfo.mTxInfo.mCsmaCaEnabled) {
@@ -663,8 +666,8 @@ otError otPlatRadioReceiveAt(otInstance *aInstance, uint8_t aChannel,
 
 	struct ieee802154_config config = {
 		.rx_slot.channel = aChannel,
-		.rx_slot.start = aStart,
-		.rx_slot.duration = aDuration,
+		.rx_slot.start = (net_time_t)aStart * NSEC_PER_USEC,
+		.rx_slot.duration = (net_time_t)aDuration * NSEC_PER_USEC,
 	};
 
 	result = radio_api->configure(radio_dev, IEEE802154_CONFIG_RX_SLOT,
@@ -1051,7 +1054,7 @@ uint64_t otPlatTimeGet(void)
 	if (radio_api == NULL || radio_api->get_time == NULL) {
 		return k_ticks_to_us_floor64(k_uptime_ticks());
 	} else {
-		return radio_api->get_time(radio_dev);
+		return radio_api->get_time(radio_dev) / NSEC_PER_USEC;
 	}
 }
 
@@ -1192,7 +1195,7 @@ void otPlatRadioUpdateCslSampleTime(otInstance *aInstance, uint32_t aCslSampleTi
 {
 	ARG_UNUSED(aInstance);
 
-	struct ieee802154_config config = { .csl_rx_time = aCslSampleTime };
+	struct ieee802154_config config = { .csl_rx_time = aCslSampleTime * NSEC_PER_USEC };
 
 	(void)radio_api->configure(radio_dev, IEEE802154_CONFIG_CSL_RX_TIME, &config);
 }

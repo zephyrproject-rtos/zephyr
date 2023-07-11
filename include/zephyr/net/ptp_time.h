@@ -23,6 +23,7 @@
  */
 
 #include <zephyr/net/net_core.h>
+#include <zephyr/net/net_time.h>
 #include <zephyr/toolchain.h>
 
 #ifdef __cplusplus
@@ -176,6 +177,50 @@ struct net_ptp_extended_time {
 		uint64_t fract_nsecond;
 	};
 } __packed;
+
+/**
+ * @brief Convert a PTP timestamp to a nanosecond precision timestamp, both
+ * related to the local network reference clock.
+ *
+ * @note Only timestamps representing up to ~290 years can be converted to
+ * nanosecond timestamps. Larger timestamps will return the maximum
+ * representable nanosecond precision timestamp.
+ *
+ * @param ts the PTP timestamp
+ *
+ * @return the corresponding nanosecond precision timestamp
+ */
+static inline net_time_t net_ptp_time_to_ns(struct net_ptp_time *ts)
+{
+	if (!ts) {
+		return 0;
+	}
+
+	if (ts->second >= NET_TIME_SEC_MAX) {
+		return NET_TIME_MAX;
+	}
+
+	return ((int64_t)ts->second * NSEC_PER_SEC) + ts->nanosecond;
+}
+
+/**
+ * @brief Convert a nanosecond precision timestamp to a PTP timestamp, both
+ * related to the local network reference clock.
+ *
+ * @param nsec a nanosecond precision timestamp
+ *
+ * @return the corresponding PTP timestamp
+ */
+static inline struct net_ptp_time ns_to_net_ptp_time(net_time_t nsec)
+{
+	struct net_ptp_time ts;
+
+	__ASSERT_NO_MSG(nsec >= 0);
+
+	ts.second = nsec / NSEC_PER_SEC;
+	ts.nanosecond = nsec % NSEC_PER_SEC;
+	return ts;
+}
 
 /**
  * @}

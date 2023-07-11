@@ -939,7 +939,7 @@ static struct net_linkaddr server_link_addr = {
 };
 #define MY_IPV6_ADDR_ETH   "2001:db8:100::1"
 #define PEER_IPV6_ADDR_ETH "2001:db8:100::2"
-#define TEST_TXTIME 0xff112233445566ff
+#define TEST_TXTIME INT64_MAX
 #define WAIT_TIME K_MSEC(250)
 
 static void eth_fake_iface_init(struct net_if *iface)
@@ -958,7 +958,7 @@ static void eth_fake_iface_init(struct net_if *iface)
 
 static int eth_fake_send(const struct device *dev, struct net_pkt *pkt)
 {
-	uint64_t txtime;
+	net_time_t txtime;
 
 	ARG_UNUSED(dev);
 	ARG_UNUSED(pkt);
@@ -967,7 +967,7 @@ static int eth_fake_send(const struct device *dev, struct net_pkt *pkt)
 		return 0;
 	}
 
-	txtime = net_pkt_txtime(pkt);
+	txtime = net_ptp_time_to_ns(net_pkt_timestamp(pkt));
 	if (txtime != TEST_TXTIME) {
 		test_failed = true;
 	} else {
@@ -1032,7 +1032,7 @@ ZTEST_USER(net_socket_udp, test_18_v6_sendmsg_with_txtime)
 	int rv;
 	int client_sock;
 	bool optval;
-	uint64_t txtime;
+	net_time_t txtime;
 	struct sockaddr_in6 client_addr;
 	struct msghdr msg;
 	struct cmsghdr *cmsg;
@@ -1066,7 +1066,7 @@ ZTEST_USER(net_socket_udp, test_18_v6_sendmsg_with_txtime)
 	cmsg->cmsg_len = CMSG_LEN(sizeof(txtime));
 	cmsg->cmsg_level = SOL_SOCKET;
 	cmsg->cmsg_type = SCM_TXTIME;
-	*(uint64_t *)CMSG_DATA(cmsg) = txtime;
+	*(net_time_t *)CMSG_DATA(cmsg) = txtime;
 
 	optval = true;
 	rv = setsockopt(client_sock, SOL_SOCKET, SO_TXTIME, &optval,

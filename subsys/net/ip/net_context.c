@@ -1459,9 +1459,10 @@ static void set_pkt_txtime(struct net_pkt *pkt, const struct msghdr *msghdr)
 		if (cmsg->cmsg_len == CMSG_LEN(sizeof(uint64_t)) &&
 		    cmsg->cmsg_level == SOL_SOCKET &&
 		    cmsg->cmsg_type == SCM_TXTIME) {
-			uint64_t txtime = *(uint64_t *)CMSG_DATA(cmsg);
+			struct net_ptp_time txtime =
+				ns_to_net_ptp_time(*(net_time_t *)CMSG_DATA(cmsg));
 
-			net_pkt_set_txtime(pkt, txtime);
+			net_pkt_set_timestamp(pkt, &txtime);
 			break;
 		}
 	}
