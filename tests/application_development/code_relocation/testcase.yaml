@@ -15,6 +15,14 @@ tests:
       - CONFIG_MPU_ALLOW_FLASH_WRITE=y
     platform_allow:
       - frdm_k64f
+  tests.application_development.code_relocation.nxp_s32:
+    filter: not CONFIG_CPU_HAS_NXP_MPU and CONFIG_MINIMAL_LIBC and dt_chosen_enabled("zephyr,itcm")
+    arch_allow: arm
+    extra_configs:
+      - CONFIG_RELOCATE_TO_ITCM=y
+      - CONFIG_NULL_POINTER_EXCEPTION_DETECTION_NONE=y
+    platform_allow:
+      - mr_canhubk3
   tests.application_development.code_relocation.no_itcm:
     filter: not CONFIG_CPU_HAS_NXP_MPU and not dt_chosen_enabled("zephyr,itcm")
     arch_allow: arm
