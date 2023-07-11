@@ -349,6 +349,17 @@ enum ec_host_cmd_status ec_host_cmd_send_in_progress_status(void);
 #endif /* CONFIG_EC_HOST_CMD_IN_PROGRESS_STATUS */
 
 /**
+ * @brief Add a suppressed command.
+ *
+ * Suppressed commands are not logged. Add a command to be suppressed.
+ *
+ * @param[in] cmd_id        A command id to be suppressed.
+ *
+ * @retval 0 if successful, -EIO if exceeded max number of suppressed commands.
+ */
+int ec_host_cmd_add_suppressed(uint16_t cmd_id);
+
+/**
  * @}
  */
 
