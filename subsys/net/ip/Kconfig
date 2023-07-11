@@ -840,7 +840,8 @@ config NET_PKT_TIMESTAMP
 	help
 	  Enable network packet timestamp support. This is needed for
 	  example in gPTP which needs to know how long it takes to send
-	  a network packet.
+	  a network packet or for timed radio protocols like IEEE 802.15.4
+	  CSL and TSCH.
 
 config NET_PKT_TIMESTAMP_THREAD
 	bool "Create TX timestamp thread"
