@@ -12,3 +12,6 @@ zephyr_library_sources_ifdef(CONFIG_SENSING_SHELL src/shell.c)
 zephyr_library_sources_ifdef(CONFIG_USERSPACE     src/userspace.c)
 
 zephyr_library_include_directories(include)
+add_subdirectory(vsensors)
+
+zephyr_linker_sources(DATA_SECTIONS sections.ld)

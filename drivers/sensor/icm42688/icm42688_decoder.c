@@ -23,16 +23,16 @@ static int icm42688_get_shift(enum sensor_channel channel, int accel_fs, int gyr
 	case SENSOR_CHAN_ACCEL_Z:
 		switch (accel_fs) {
 		case ICM42688_ACCEL_FS_2G:
-			*shift = 5;
+			*shift = 4;
 			return 0;
 		case ICM42688_ACCEL_FS_4G:
-			*shift = 6;
+			*shift = 5;
 			return 0;
 		case ICM42688_ACCEL_FS_8G:
-			*shift = 7;
+			*shift = 6;
 			return 0;
 		case ICM42688_ACCEL_FS_16G:
-			*shift = 8;
+			*shift = 7;
 			return 0;
 		default:
 			return -EINVAL;
@@ -132,12 +132,9 @@ int icm42688_convert_raw_to_q31(struct icm42688_cfg *cfg, enum sensor_channel ch
 	default:
 		return -ENOTSUP;
 	}
+
 	intermediate = ((int64_t)whole * INT64_C(1000000) + fraction);
-	if (shift < 0) {
-		intermediate = intermediate * INT32_MAX * (1 << -shift) /  INT64_C(1000000);
-	} else if (shift > 0) {
-		intermediate = intermediate * INT32_MAX / (((1 << shift) - 1) * INT64_C(1000000));
-	}
+	intermediate = intermediate * ((INT64_C(1) << (31 - shift)) - 1) / INT64_C(1000000);
 	*out = CLAMP(intermediate, INT32_MIN, INT32_MAX);
 
 	return 0;
@@ -190,6 +187,9 @@ static uint8_t icm42688_encode_channel(enum sensor_channel chan)
 		encode_bmask = BIT(icm42688_get_channel_position(SENSOR_CHAN_GYRO_X)) |
 			       BIT(icm42688_get_channel_position(SENSOR_CHAN_GYRO_Y)) |
 			       BIT(icm42688_get_channel_position(SENSOR_CHAN_GYRO_Z));
+		break;
+	case SENSOR_CHAN_ALL:
+		encode_bmask = 0x7f;
 		break;
 	default:
 		break;

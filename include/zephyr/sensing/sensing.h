@@ -166,7 +166,7 @@ typedef void *sensing_sensor_handle_t;
  *
  * @param buf The data buffer with sensor data.
  */
-typedef void (*sensing_data_event_t)(sensing_sensor_handle_t handle, const void *buf);
+typedef void (*sensing_data_event_t)(sensing_sensor_handle_t handle, const void *buf, void *userdata);
 
 #include <zephyr/rtio/rtio.h>
 /**
@@ -232,7 +232,8 @@ int sensing_get_sensors(int *num_sensors, const struct sensing_sensor_info **inf
  */
 int sensing_open_sensor(const struct sensing_sensor_info *info,
 			const struct sensing_callback_list *cb_list,
-			sensing_sensor_handle_t *handle);
+			sensing_sensor_handle_t *handle,
+			void *userdata);
 
 /**
  * @brief Close sensor instance.

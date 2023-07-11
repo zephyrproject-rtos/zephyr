@@ -64,17 +64,24 @@ struct sensing_sensor_value_header {
  * SENSING_SENSOR_TYPE_MOTION_GYROMETER_3D,
  * q31 version
  */
-struct sensing_sensor_value_3d_q31 {
+struct sensing_sensor_three_axis_data {
 	struct sensing_sensor_value_header header;
 	int8_t shift;
 	struct {
 		uint32_t timestamp_delta;
 		union {
+			q31_t values[3];
 			q31_t v[3];
 			struct {
 				q31_t x;
 				q31_t y;
 				q31_t z;
+			};
+			q31_t bias[3];
+			struct {
+				q31_t x_bias;
+				q31_t y_bias;
+				q31_t z_bias;
 			};
 		};
 	} readings[1];
@@ -98,7 +105,7 @@ struct sensing_sensor_value_uint32 {
  * struct sensing_sensor_value_q31 can be used by SENSING_SENSOR_TYPE_MOTION_HINGE_ANGLE sensor
  * q31 version
  */
-struct sensing_sensor_value_q31 {
+struct sensing_sensor_float_data {
 	int8_t shift;
 	struct sensing_sensor_value_header header;
 	struct {

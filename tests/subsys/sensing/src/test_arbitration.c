@@ -30,7 +30,7 @@ ZTEST(sensing, test_single_connection_arbitration)
 		.value = FIELD_PREP(GENMASK(31, 24), 100),
 		.shift = 8,
 	};
-	zassert_ok(sensing_set_attributes(handle, &attribute, 1));
+	zassert_ok(sensing_set_attributes(handle, SENSING_SENSOR_MODE_DONE, &attribute, 1));
 
 	uint8_t reg_val;
 	icm42688_emul_get_reg(icm42688, REG_ACCEL_CONFIG0, &reg_val, 1);
@@ -59,10 +59,10 @@ ZTEST(sensing, test_double_connection_arbitration)
 		.value = FIELD_PREP(GENMASK(31, 23), 100),
 		.shift = 9,
 	};
-	zassert_ok(sensing_set_attributes(handles[0], &attribute, 1));
+	zassert_ok(sensing_set_attributes(handles[0], SENSING_SENSOR_MODE_DONE, &attribute, 1));
 
 	attribute.value = FIELD_PREP(GENMASK(31, 23), 200);
-	zassert_ok(sensing_set_attributes(handles[1], &attribute, 1));
+	zassert_ok(sensing_set_attributes(handles[1], SENSING_SENSOR_MODE_DONE, &attribute, 1));
 
 	icm42688_emul_get_reg(icm42688, REG_ACCEL_CONFIG0, &reg_val, 1);
 	zassert_equal(0b0111, FIELD_GET(MASK_ACCEL_ODR, reg_val), "ACCEL_CONFIG0=0x%02x",

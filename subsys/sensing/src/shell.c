@@ -76,6 +76,7 @@ static const char *get_sensor_type_string(int32_t type)
 	switch (type) {
 		SENSOR_TYPE_TO_STRING(SENSING_SENSOR_TYPE_MOTION_ACCELEROMETER_3D);
 		SENSOR_TYPE_TO_STRING(SENSING_SENSOR_TYPE_MOTION_GYROMETER_3D);
+		SENSOR_TYPE_TO_STRING(SENSING_SENSOR_TYPE_MOTION_HINGE_ANGLE);
 	default:
 		return "UNKNOWN";
 	}
@@ -125,14 +126,92 @@ struct shell_cmd_connection {
 	sensing_sensor_handle_t handle;
 	bool is_used;
 	char shell_name[5];
+	const struct shell *owning_shell;
 };
-static struct shell_cmd_connection open_connections[CONFIG_SENSING_MAX_CONNECTIONS];
+static struct shell_cmd_connection open_connections[CONFIG_SENSING_MAX_DYNAMIC_CONNECTIONS];
 
-static void sensing_shell_on_data_event(sensing_sensor_handle_t handle, const void *data)
+static void sensing_shell_print_three_axis_data(const struct shell *sh,
+						const struct sensing_sensor_info *info,
+						const struct sensing_sensor_three_axis_data *data)
 {
+	int64_t intermediate[] = {
+		(int64_t)data->readings[0].values[0],
+		(int64_t)data->readings[0].values[1],
+		(int64_t)data->readings[0].values[2],
+	};
+
+//	shell_info(sh,
+//		   "%s: shift=%d, mask=0x%016" PRIx64 " ("
+//		   "0x%08" PRIx32 "/0x%016" PRIx64 ", "
+//		   "0x%08" PRIx32 "/0x%016" PRIx64 ", "
+//		   "0x%08" PRIx32 "/0x%016" PRIx64 ")",
+//		   get_sensor_type_string(info->type), data->shift, GENMASK64(63, 31),
+//		   data->readings[0].values[0], intermediate[0], data->readings[0].values[1],
+//		   intermediate[1], data->readings[0].values[2], intermediate[2]);
+
+	intermediate[0] = (data->shift >= 0) ? (intermediate[0] << data->shift)
+					     : (intermediate[0] >> -data->shift);
+	intermediate[1] = (data->shift >= 0) ? (intermediate[1] << data->shift)
+					     : (intermediate[1] >> -data->shift);
+	intermediate[2] = (data->shift >= 0) ? (intermediate[2] << data->shift)
+					     : (intermediate[2] >> -data->shift);
+	//	shell_info(sh,
+	//		   "%s: %" PRIi32 ".%06" PRIu32 ", %" PRIi32 ".%06" PRIu32 ", %" PRIi32
+	//		   ".%06" PRIu32,
+	//		   get_sensor_type_string(info->type),
+	//		   (int32_t)FIELD_GET(GENMASK64(63, 31), intermediate[0]),
+	//		   (uint32_t)((uint64_t)FIELD_GET(GENMASK64(30, 0), intermediate[0]) *
+	//			      INT64_C(1000000) / INT32_MAX),
+	//		   (int32_t)FIELD_GET(GENMASK64(63, 31), intermediate[1]),
+	//		   (uint32_t)((uint64_t)FIELD_GET(GENMASK64(30, 0), intermediate[1]) *
+	//			      INT64_C(1000000) / INT32_MAX),
+	//		   (int32_t)FIELD_GET(GENMASK64(63, 31), intermediate[2]),
+	//		   (uint32_t)((uint64_t)FIELD_GET(GENMASK64(30, 0), intermediate[2]) *
+	//			      INT64_C(1000000) / INT32_MAX));
+	shell_info(sh,
+		   "%s %" PRIi32 ".%06" PRIu32 ", %" PRIi32 ".%06" PRIu32 ", %" PRIi32
+		   ".%06" PRIu32,
+		   get_sensor_type_string(info->type), (int32_t)(intermediate[0] / INT32_MAX),
+		   (uint32_t)((intermediate[0] % INT32_MAX) * INT64_C(1000000) / INT32_MAX),
+		   (int32_t)(intermediate[1] / INT32_MAX),
+		   (uint32_t)((intermediate[1] % INT32_MAX) * INT64_C(1000000) / INT32_MAX),
+		   (int32_t)(intermediate[2] / INT32_MAX),
+		   (uint32_t)((intermediate[2] % INT32_MAX) * INT64_C(1000000) / INT32_MAX));
+}
+
+static void sensing_shell_print_float_data(const struct shell *sh,
+					   const struct sensing_sensor_info *info,
+					   const struct sensing_sensor_float_data *data)
+{
+	int64_t intermediate = (int64_t)data->readings[0].v;
+
+	intermediate =
+		(data->shift >= 0) ? (intermediate << data->shift) : (intermediate >> -data->shift);
+
+	shell_info(sh, "%s: %" PRIi32 ".%06" PRIu32, get_sensor_type_string(info->type),
+		   (int32_t)(intermediate / INT32_MAX),
+		   (uint32_t)((intermediate % INT32_MAX) * INT64_C(1000000) / INT32_MAX));
+}
+
+static void sensing_shell_on_data_event(sensing_sensor_handle_t handle, const void *data,
+					void *userdata)
+{
+	struct shell_cmd_connection *connection = userdata;
 	const struct sensing_sensor_info *info = sensing_get_sensor_info(handle);
 
-	printk("Got data for '%s' at %p\n", get_sensor_type_string(info->type), data);
+	switch (info->type) {
+	case SENSING_SENSOR_TYPE_MOTION_ACCELEROMETER_3D:
+	case SENSING_SENSOR_TYPE_MOTION_UNCALIB_ACCELEROMETER_3D:
+	case SENSING_SENSOR_TYPE_MOTION_GYROMETER_3D:
+		sensing_shell_print_three_axis_data(connection->owning_shell, info, data);
+		break;
+	case SENSING_SENSOR_TYPE_MOTION_HINGE_ANGLE:
+		sensing_shell_print_float_data(connection->owning_shell, info, data);
+		break;
+	default:
+		shell_info(connection->owning_shell, "Got data for '%s' at %p",
+			   get_sensor_type_string(info->type), data);
+	}
 }
 
 static const struct sensing_callback_list callback_list = {
@@ -189,7 +268,8 @@ static int cmd_open_connection(const struct shell *sh, size_t argc, char **argv)
 	}
 
 	rc = sensing_open_sensor(&sensors[sensor_index], &callback_list,
-				 &open_connections[connection_idx].handle);
+				 &open_connections[connection_idx].handle,
+				 &open_connections[connection_idx]);
 
 	if (rc != 0) {
 		shell_error(sh, "Failed to open connection");
@@ -197,6 +277,7 @@ static int cmd_open_connection(const struct shell *sh, size_t argc, char **argv)
 	}
 
 	open_connections[connection_idx].is_used = true;
+	open_connections[connection_idx].owning_shell = sh;
 	shell_print(sh, "New connection [%d] to sensor [%ld] created", connection_idx,
 		    sensor_index);
 

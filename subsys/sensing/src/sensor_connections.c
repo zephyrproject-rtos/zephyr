@@ -12,16 +12,15 @@ LOG_MODULE_REGISTER(sensing_connect, CONFIG_SENSING_LOG_LEVEL);
 
 #define __HANDLE_TO_CONNECTION(name, handle)                                                       \
 	struct sensing_connection *name = handle;                                                  \
-	__ASSERT_NO_MSG((uintptr_t)name >= (uintptr_t)__sensing_connection_pool.pool);             \
-	__ASSERT_NO_MSG((uintptr_t)name < (uintptr_t)__sensing_connection_pool.pool +              \
-						  sizeof(__sensing_connection_pool.pool))
+	__ASSERT_NO_MSG((uintptr_t)name >= (uintptr_t)STRUCT_SECTION_START(sensing_connection));   \
+	__ASSERT_NO_MSG((uintptr_t)name < (uintptr_t)STRUCT_SECTION_END(sensing_connection))
 
 SENSING_DMEM SYS_MUTEX_DEFINE(connection_lock);
 
-SENSING_DMEM static uint32_t bitarray_bundles[__SENSING_POOL_MASK_BUNDLE_COUNT] = {0};
+SENSING_DMEM static uint32_t bitarray_bundles[4] = {0};
 SENSING_DMEM static sys_bitarray_t bitarray = {
-	.num_bits = CONFIG_SENSING_MAX_CONNECTIONS,
-	.num_bundles = __SENSING_POOL_MASK_BUNDLE_COUNT,
+	.num_bits = ARRAY_SIZE(bitarray_bundles) * 32,
+	.num_bundles = ARRAY_SIZE(bitarray_bundles),
 	.bundles = bitarray_bundles,
 };
 
@@ -30,16 +29,18 @@ SENSING_DMEM struct sensing_connection_pool __sensing_connection_pool = {
 	.lock = &connection_lock,
 };
 
+STRUCT_SECTION_ITERABLE_ARRAY(sensing_connection, dynamic_connections,
+			      CONFIG_SENSING_MAX_DYNAMIC_CONNECTIONS);
+
 #define __lock   sys_mutex_lock(__sensing_connection_pool.lock, K_FOREVER)
 #define __unlock sys_mutex_unlock(__sensing_connection_pool.lock)
 
-RTIO_DEFINE_WITH_MEMPOOL(sensing_rtio_ctx, CONFIG_SENSING_MAX_CONNECTIONS,
-			 CONFIG_SENSING_MAX_CONNECTIONS, CONFIG_SENSING_RTIO_BLOCK_COUNT,
+RTIO_DEFINE_WITH_MEMPOOL(sensing_rtio_ctx, 32, 32, CONFIG_SENSING_RTIO_BLOCK_COUNT,
 			 CONFIG_SENSING_RTIO_BLOCK_SIZE, 4);
 
 int sensing_open_sensor(const struct sensing_sensor_info *info,
 			const struct sensing_callback_list *cb_list,
-			sensing_sensor_handle_t *handle)
+			sensing_sensor_handle_t *handle, void *userdata)
 {
 	struct sensing_connection *connection;
 	size_t offset;
@@ -50,19 +51,22 @@ int sensing_open_sensor(const struct sensing_sensor_info *info,
 	__ASSERT_NO_MSG(handle != NULL);
 
 	__lock;
+	bitarray.num_bits = __CONNECTION_POOL_COUNT; // TODO this should only happen once
 	rc = sys_bitarray_alloc(__sensing_connection_pool.bitarray, 1, &offset);
 	if (rc != 0) {
 		__unlock;
 		return rc;
 	}
 
-	connection = &__sensing_connection_pool.pool[offset];
+	LOG_DBG("Got offset %d/%d", (int)offset, (int)__CONNECTION_POOL_COUNT);
+	connection = &STRUCT_SECTION_START(sensing_connection)[offset];
 
 	LOG_DBG("Connection opened @ %p (size=%d) for info @ %p", connection,
 		(int)sizeof(struct sensing_connection), info);
 	memset(connection, 0, sizeof(struct sensing_connection));
 	connection->info = info;
 	connection->cb_list = cb_list;
+	connection->userdata = userdata;
 	*handle = connection;
 	__unlock;
 	return 0;
@@ -76,9 +80,9 @@ int sensing_close_sensor(sensing_sensor_handle_t handle)
 	__lock;
 	if (__sensing_is_connected(NULL, connection)) {
 		LOG_DBG("Releasing connection at %p/%d", handle,
-			connection - __sensing_connection_pool.pool);
+			connection - STRUCT_SECTION_START(sensing_connection));
 		rc = sys_bitarray_free(__sensing_connection_pool.bitarray, 1,
-				       connection - __sensing_connection_pool.pool);
+				       connection - STRUCT_SECTION_START(sensing_connection));
 		if (rc == 0) {
 			__sensing_arbitrate();
 		} else {
@@ -116,6 +120,9 @@ int sensing_set_attributes(sensing_sensor_handle_t handle, enum sensing_sensor_m
 		rc = sensor_read(connection->info->iodev, &sensing_rtio_ctx,
 				 (void *)connection->info);
 		break;
+	case SENSING_SENSOR_MODE_DONE:
+		rc = 0;
+		break;
 	default:
 		rc = -EINVAL;
 		break;
@@ -136,7 +143,9 @@ void sensing_reset_connections(void)
 	__lock;
 	sys_bitarray_clear_region(__sensing_connection_pool.bitarray,
 				  __sensing_connection_pool.bitarray->num_bits, 0);
-	memset(__sensing_connection_pool.pool, 0, sizeof(__sensing_connection_pool.pool));
+	memset(STRUCT_SECTION_START(sensing_connection), 0,
+	       (uintptr_t)STRUCT_SECTION_END(sensing_connection) -
+		       (uintptr_t)STRUCT_SECTION_START(sensing_connection));
 	__sensing_arbitrate();
 	__unlock;
 }

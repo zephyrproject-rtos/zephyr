@@ -7,6 +7,8 @@
 #include <zephyr/rtio/rtio.h>
 #include <zephyr/sensing/sensing.h>
 
+#include "sensing/internal/sensing.h"
+
 LOG_MODULE_REGISTER(sensing_userspace, CONFIG_SENSING_LOG_LEVEL);
 
 K_APPMEM_PARTITION_DEFINE(sensing_mem_partition);
@@ -14,6 +16,11 @@ K_APPMEM_PARTITION_DEFINE(sensing_mem_partition);
 static int sensing_mem_init(void)
 {
 	int rc;
+
+	for (struct sensing_connection *ptr = STRUCT_SECTION_START(sensing_connection);
+	     ptr < STRUCT_SECTION_END(sensing_connection); ++ptr) {
+		k_object_access_all_grant(ptr);
+	}
 
 	rc = k_mem_domain_add_partition(&k_mem_domain_default, &sensing_mem_partition);
 	if (rc != 0) {

@@ -5,10 +5,25 @@
  #include <zephyr/sensing/sensor_types.h>
 
 / {
-	accelgyro: accelgyro {
+	lidaccel: accelgyro {
 		compatible = "zephyr,sensing-pipe";
 		status = "okay";
+		friendly-name = "Lid accel";
 		dev = <&icm42688>;
 		sensor-types = <SENSING_SENSOR_TYPE_MOTION_ACCELEROMETER_3D SENSING_SENSOR_TYPE_MOTION_GYROMETER_3D>;
+	};
+
+	baseaccel: accelemul {
+		compatible = "sensing,emul";
+		status = "okay";
+		friendly-name = "Base accel";
+		sensor-types = <SENSING_SENSOR_TYPE_MOTION_ACCELEROMETER_3D>;
+	};
+
+	angle: angle {
+		compatible = "sensing,accel-based-angle";
+		status = "okay";
+		plane0 = <&lidaccel>;
+		plane1 = <&baseaccel>;
 	};
 };

@@ -11,18 +11,36 @@
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/sensing/sensing.h>
 
+struct sensing_connection {
+	const struct sensing_sensor_info *info;
+	const struct sensing_callback_list *cb_list;
+	void *userdata;
+	enum sensing_sensor_mode mode;
+	q31_t attributes[SENSOR_ATTR_COMMON_COUNT];
+	uint32_t attribute_mask;
+} __packed __aligned(4);
+
+#define SENSING_CONNECTION_DT_DEFINE(node_id, target_node_id, type, _cb_list)                      \
+	SENSING_DMEM STRUCT_SECTION_ITERABLE(sensing_connection, node_id##_sensing_connection) = { \
+		.info = SENSING_SENSOR_INFO_GET(target_node_id, type),                             \
+		.cb_list = (_cb_list),                                                             \
+	}
+
+STRUCT_SECTION_START_EXTERN(sensing_connection);
+STRUCT_SECTION_END_EXTERN(sensing_connection);
+
 #define SENSING_SENSOR_INFO_DT_NAME(node_id, type)                                                 \
 	_CONCAT(_CONCAT(__sensing_sensor_info_, DEVICE_DT_NAME_GET(node_id)), type)
 
 #define SENSING_SENSOR_INFO_INST_DEFINE_NAMED(node_id, name, prop, idx, _iodev)                    \
-	IF_ENABLED(CONFIG_SENSING_SHELL, (static char node_id##_##idx##_name_buffer[5];))                     \
+	IF_ENABLED(CONFIG_SENSING_SHELL, (static char node_id##_##idx##_name_buffer[5];))          \
 	const STRUCT_SECTION_ITERABLE(sensing_sensor_info, name) = {                               \
 		.info = &SENSOR_INFO_DT_NAME(DT_PHANDLE(node_id, dev)),                            \
 		.dev = DEVICE_DT_GET(node_id),                                                     \
 		.type = DT_PROP_BY_IDX(node_id, prop, idx),                                        \
 		.iodev = &(_iodev),                                                                \
-		IF_ENABLED(CONFIG_SENSING_SHELL, (.shell_name = node_id##_##idx##_name_buffer, ))                   \
-	};
+		IF_ENABLED(CONFIG_SENSING_SHELL,                                                   \
+			   (.shell_name = node_id##_##idx##_name_buffer, ))};
 
 #define SENSING_SENSOR_INFO_INST_DEFINE(node_id, prop, idx, _iodev)                                \
 	SENSING_SENSOR_INFO_INST_DEFINE_NAMED(                                                     \

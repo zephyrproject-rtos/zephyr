@@ -51,10 +51,17 @@ static int submit(const struct device *sensor, struct rtio_iodev_sqe *sqe)
 	return rc;
 }
 
+static int get_decoder(const struct device *sensor, const struct sensor_decoder_api **api)
+{
+	const struct sensor_pipe_config *cfg = sensor->config;
+
+	return sensor_get_decoder(cfg->parent_info->dev, api);
+}
+
 SENSING_DMEM static const struct sensor_driver_api sensor_pipe_api = {
 	.attr_set = attribute_set,
 	.attr_get = NULL,
-	.get_decoder = NULL,
+	.get_decoder = get_decoder,
 	.submit = submit,
 };
 

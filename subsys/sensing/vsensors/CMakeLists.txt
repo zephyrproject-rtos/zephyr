@@ -1,0 +1,2 @@
+add_subdirectory_ifdef(CONFIG_SENSING_ACCEL_BASED_ANGLE accel-based-angle)
+add_subdirectory_ifdef(CONFIG_SENSING_EMUL emul)

@@ -47,11 +47,11 @@ static void set_arbitrated_value(const struct device *dev, int32_t type,
 static int arbitrate_sensor_attribute(const struct sensing_sensor_info *info,
 				      enum sensor_attribute attribute)
 {
-	const struct sensing_connection *connections = __sensing_connection_pool.pool;
+	const struct sensing_connection *connections = STRUCT_SECTION_START(sensing_connection);
 	int connection_count = 0;
-	q31_t value;
+	q31_t value = 0;
 
-	for (int i = 0; i < CONFIG_SENSING_MAX_CONNECTIONS; ++i) {
+	for (int i = 0; i < __CONNECTION_POOL_COUNT; ++i) {
 		if (!__sensing_is_connected(info, &connections[i])) {
 			continue;
 		}

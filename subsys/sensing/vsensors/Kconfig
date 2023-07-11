@@ -1,0 +1,10 @@
+config SENSING_ACCEL_BASED_ANGLE
+	bool
+	default y
+	depends on DT_HAS_SENSING_ACCEL_BASED_ANGLE_ENABLED
+	select DSP
+
+config SENSING_EMUL
+	bool
+	default y
+	depends on DT_HAS_SENSING_EMUL_ENABLED

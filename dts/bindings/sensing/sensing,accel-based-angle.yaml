@@ -1,0 +1,21 @@
+# Copyright (c) 2023 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+description: Accelerometer based lid angle virtual sensor
+
+compatible: "sensing,accel-based-angle"
+
+include: [sensor-device.yaml, base.yaml]
+
+properties:
+  plane0:
+    type: phandle
+    required: true
+    description: |
+      Node owning the sensing_sensor_info for the first plane's accelerometer
+
+  plane1:
+    type: phandle
+    required: true
+    description: |
+      Node owning the sensing_sensor_info for the second plane's accelerometer

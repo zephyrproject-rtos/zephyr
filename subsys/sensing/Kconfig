@@ -16,7 +16,9 @@ module = SENSING
 module-str = sensing
 source "subsys/logging/Kconfig.template.log_config"
 
-config SENSING_MAX_CONNECTIONS
+source "subsys/sensing/vsensors/Kconfig"
+
+config SENSING_MAX_DYNAMIC_CONNECTIONS
 	int "Maximum number of simultaneous open connections"
 	default 10
 	help
