@@ -45,6 +45,11 @@ static struct lwm2m_ctx client;
 static const char *endpoint =
 	(sizeof(CONFIG_LWM2M_APP_ID) > 1 ? CONFIG_LWM2M_APP_ID : CONFIG_BOARD);
 
+#if defined(CONFIG_LWM2M_DTLS_SUPPORT)
+BUILD_ASSERT(sizeof(endpoint) <= CONFIG_LWM2M_SECURITY_KEY_SIZE,
+		"Client ID length is too long");
+#endif /* CONFIG_LWM2M_DTLS_SUPPORT */
+
 static struct k_sem quit_lock;
 
 static int device_reboot_cb(uint16_t obj_inst_id,
