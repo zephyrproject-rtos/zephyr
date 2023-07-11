@@ -87,6 +87,10 @@
 	apb7-prescaler = <1>;
 };
 
+&cpu0 {
+	cpu-power-states = <&stop0 &stop1>;
+};
+
 &usart1 {
 	pinctrl-0 = <&usart1_tx_pb12 &usart1_rx_pa8>;
 	pinctrl-names = "default";
@@ -106,4 +110,16 @@
 	pinctrl-names = "default";
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
+};
+
+&adc4 {
+	pinctrl-0 = <&adc4_in8_pa1>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&lptim1 {
+	clocks = <&rcc STM32_CLOCK_BUS_APB7 0x00000800>,
+		 <&rcc STM32_SRC_LSE LPTIM1_SEL(3)>;
+	status = "okay";
 };
