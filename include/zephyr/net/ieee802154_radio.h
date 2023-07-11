@@ -97,24 +97,83 @@ enum ieee802154_channel {
 };
 
 enum ieee802154_hw_caps {
-	IEEE802154_HW_FCS = BIT(0),            /* Frame Check-Sum supported */
-	IEEE802154_HW_PROMISC = BIT(1),        /* Promiscuous mode supported */
-	IEEE802154_HW_FILTER = BIT(2),         /* Filter PAN ID, long/short addr */
-	IEEE802154_HW_CSMA = BIT(3),           /* Executes CSMA-CA procedure on TX */
-	IEEE802154_HW_RETRANSMISSION = BIT(4), /* Handles retransmission on TX ACK timeout */
-	IEEE802154_HW_TX_RX_ACK = BIT(5),      /* Waits for ACK on TX if AR bit is set in TX pkt */
-	IEEE802154_HW_RX_TX_ACK = BIT(6),      /* Sends ACK on RX if AR bit is set in RX pkt */
-	IEEE802154_HW_ENERGY_SCAN = BIT(7),    /* Energy scan supported */
-	IEEE802154_HW_TXTIME = BIT(8),         /* TX at specified time supported */
-	IEEE802154_HW_SLEEP_TO_TX = BIT(9),    /* TX directly from sleep supported */
-	IEEE802154_HW_TX_SEC = BIT(10),        /* TX security handling supported */
-	IEEE802154_HW_RXTIME = BIT(11),        /* RX at specified time supported */
-	IEEE802154_HW_2_4_GHZ = BIT(12),       /* 2.4Ghz radio supported
-						* TODO: Replace with channel page attribute.
-						*/
-	IEEE802154_HW_SUB_GHZ = BIT(13),       /* Sub-GHz radio supported
-						* TODO: Replace with channel page attribute.
-						*/
+
+	/*
+	 * PHY capabilities
+	 *
+	 * The following capabilities describe features of the underlying radio
+	 * hardware (PHY/L1).
+	 *
+	 * Note: A device driver must support the mandatory channel pages,
+	 * frequency bands and channels of at least one IEEE 802.15.4 PHY.
+	 */
+
+	/**
+	 * 2.4Ghz radio supported
+	 *
+	 * TODO: Replace with channel page attribute.
+	 */
+	IEEE802154_HW_2_4_GHZ = BIT(0),
+
+	/**
+	 * Sub-GHz radio supported
+	 *
+	 * TODO: Replace with channel page attribute.
+	 */
+	IEEE802154_HW_SUB_GHZ = BIT(1),
+
+	/** Energy detection (ED) supported (optional) */
+	IEEE802154_HW_ENERGY_SCAN = BIT(2),
+
+
+	/*
+	 * MAC offloading capabilities (optional)
+	 *
+	 * The following MAC/L2 features may optionally be offloaded to
+	 * specialized hardware or proprietary driver firmware ("hard MAC").
+	 *
+	 * L2 implementations will have to provide a "soft MAC" fallback for
+	 * these features in case the driver does not support them natively.
+	 *
+	 * Note: Some of these offloading capabilities may be mandatory in
+	 * practice to stay within timing requirements of certain IEEE 802.15.4
+	 * protocols, e.g. CPUs may not be fast enough to send ACKs within the
+	 * required delays in the 2.4 GHz band without hard MAC support.
+	 */
+
+	/** Frame checksum verification supported */
+	IEEE802154_HW_FCS = BIT(3),
+
+	/** Filtering of PAN ID, extended and short address supported */
+	IEEE802154_HW_FILTER = BIT(4),
+
+	/** Promiscuous mode supported */
+	IEEE802154_HW_PROMISC = BIT(5),
+
+	/** CSMA-CA procedure supported on TX */
+	IEEE802154_HW_CSMA = BIT(6),
+
+	/** Waits for ACK on TX if AR bit is set in TX pkt */
+	IEEE802154_HW_TX_RX_ACK = BIT(7),
+
+	/** Supports retransmission on TX ACK timeout */
+	IEEE802154_HW_RETRANSMISSION = BIT(8),
+
+	/** Sends ACK on RX if AR bit is set in RX pkt */
+	IEEE802154_HW_RX_TX_ACK = BIT(9),
+
+	/** TX at specified time supported */
+	IEEE802154_HW_TXTIME = BIT(10),
+
+	/** TX directly from sleep supported */
+	IEEE802154_HW_SLEEP_TO_TX = BIT(11),
+
+	/** Timed RX window scheduling supported */
+	IEEE802154_HW_RXTIME = BIT(12),
+
+	/** TX security supported (key management, encryption and authentication) */
+	IEEE802154_HW_TX_SEC = BIT(13),
+
 	/* Note: Update also IEEE802154_HW_CAPS_BITS_COMMON_COUNT when changing
 	 * the ieee802154_hw_caps type.
 	 */
@@ -155,13 +214,13 @@ typedef void (*ieee802154_event_cb_t)(const struct device *dev,
 				      void *event_params);
 
 struct ieee802154_filter {
-/** @cond ignore */
+/** @cond INTERNAL_HIDDEN */
 	union {
 		uint8_t *ieee_addr; /* in little endian */
 		uint16_t short_addr; /* in CPU byte order */
 		uint16_t pan_id; /* in CPU byte order */
 	};
-/* @endcond */
+/** @endcond */
 };
 
 struct ieee802154_key {
@@ -181,20 +240,23 @@ enum ieee802154_tx_mode {
 	IEEE802154_TX_MODE_CCA,
 
 	/**
-	 * Perform full CSMA CA procedure before packet transmission.
-	 * Requires IEEE802154_HW_CSMA capability.
+	 * Perform full CSMA/CA procedure before packet transmission.
+	 *
+	 * @note requires IEEE802154_HW_CSMA capability.
 	 */
 	IEEE802154_TX_MODE_CSMA_CA,
 
 	/**
 	 * Transmit packet in the future, at specified time, no CCA.
-	 * Requires IEEE802154_HW_TXTIME capability.
+	 *
+	 * @note requires IEEE802154_HW_TXTIME capability.
 	 */
 	IEEE802154_TX_MODE_TXTIME,
 
 	/**
 	 * Transmit packet in the future, perform CCA before transmission.
-	 * Requires IEEE802154_HW_TXTIME capability.
+	 *
+	 * @note requires IEEE802154_HW_TXTIME capability.
 	 */
 	IEEE802154_TX_MODE_TXTIME_CCA,
 
@@ -254,14 +316,14 @@ enum ieee802154_config_type {
 	IEEE802154_CONFIG_FRAME_COUNTER,
 
 	/** Sets the current MAC frame counter value if the provided value is greater than
-	 * the current one.
+	 *  the current one.
 	 */
-
 	IEEE802154_CONFIG_FRAME_COUNTER_IF_LARGER,
 
-	/** Configure a radio reception slot. This can be used for any scheduled reception, e.g.:
-	 *  Zigbee GP device, CSL, TSCH, etc.
-	 *  Requires IEEE802154_HW_RXTIME capability.
+	/** Configure a radio reception window. This can be used for any
+	 *  scheduled reception, e.g.: Zigbee GP device, CSL, TSCH, etc.
+	 *
+	 *  @note requires IEEE802154_HW_RXTIME capability.
 	 */
 	IEEE802154_CONFIG_RX_SLOT,
 
@@ -270,19 +332,19 @@ enum ieee802154_config_type {
 	 *  In order to configure a CSL receiver the upper layer should combine several
 	 *  configuration options in the following way:
 	 *    1. Use ``IEEE802154_CONFIG_ENH_ACK_HEADER_IE`` once to inform the radio driver of the
-	 *  short and extended addresses of the peer to which it should inject CSL IEs.
+	 *       short and extended addresses of the peer to which it should inject CSL IEs.
 	 *    2. Use ``IEEE802154_CONFIG_CSL_RX_TIME`` periodically, before each use of
-	 *  ``IEEE802154_CONFIG_CSL_PERIOD`` setting parameters of the nearest CSL RX window, and
-	 *  before each use of IEEE_CONFIG_RX_SLOT setting parameters of the following (not the
-	 *  nearest one) CSL RX window, to allow the radio driver to calculate the proper CSL Phase
-	 *  to the nearest CSL window to inject in the CSL IEs for both transmitted data and ack
-	 *  frames.
+	 *       ``IEEE802154_CONFIG_CSL_PERIOD`` setting parameters of the nearest CSL RX window,
+	 *       and before each use of IEEE_CONFIG_RX_SLOT setting parameters of the following (not
+	 *       the nearest one) CSL RX window, to allow the radio driver to calculate the proper
+	 *       CSL Phase to the nearest CSL window to inject in the CSL IEs for both transmitted
+	 *       data and ACK frames.
 	 *    3. Use ``IEEE802154_CONFIG_CSL_PERIOD`` on each value change to update the current CSL
-	 *  period value which will be injected in the CSL IEs together with the CSL Phase based on
-	 *  ``IEEE802154_CONFIG_CSL_RX_TIME``.
+	 *       period value which will be injected in the CSL IEs together with the CSL Phase
+	 *       based on ``IEEE802154_CONFIG_CSL_RX_TIME``.
 	 *    4. Use ``IEEE802154_CONFIG_RX_SLOT`` periodically to schedule the immediate receive
-	 *  window earlier enough before the expected window start time, taking into account
-	 *  possible clock drifts and scheduling uncertainties.
+	 *       window earlier enough before the expected window start time, taking into account
+	 *       possible clock drifts and scheduling uncertainties.
 	 *
 	 *  This diagram shows the usage of the four options over time:
 	 *        Start CSL                                  Schedule CSL window
@@ -301,8 +363,8 @@ enum ieee802154_config_type {
 	 */
 	IEEE802154_CONFIG_CSL_PERIOD,
 
-	/** Configure the next CSL receive window center, in units of microseconds,
-	 *  based on the radio time.
+	/** Configure the next CSL receive window (i.e. "channel sample") center,
+	 *  in units of microseconds relative to the network subsystem's local clock.
 	 */
 	IEEE802154_CONFIG_CSL_RX_TIME,
 
@@ -364,40 +426,68 @@ struct ieee802154_config {
 		/** ``IEEE802154_CONFIG_RX_SLOT`` */
 		struct {
 			uint8_t channel;
+
+			/**
+			 * Microsecond resolution timestamp relative to the
+			 * network subsystem's local clock defining the start of
+			 * the RX window during which the receiver is expected
+			 * to be listening (i.e. not including any startup
+			 * times).
+			 */
 			uint32_t start;
+
+			/**
+			 * Microsecond resolution duration of the RX window
+			 * relative to the above RX window start time during
+			 * which the receiver is expected to be listening (i.e.
+			 * not including any shutdown times).
+			 */
 			uint32_t duration;
 		} rx_slot;
 
-		/** ``IEEE802154_CONFIG_CSL_PERIOD`` */
-		uint32_t csl_period; /* in CPU byte order */
+		/**
+		 * ``IEEE802154_CONFIG_CSL_PERIOD``
+		 *
+		 * The CSL period in units of 10 symbol periods,
+		 * see section 7.4.2.3.
+		 *
+		 * in CPU byte order
+		 */
+		uint32_t csl_period;
 
-		/** ``IEEE802154_CONFIG_CSL_RX_TIME`` */
-		uint32_t csl_rx_time; /* in microseconds,
-				       * based on ieee802154_radio_api.get_time()
-				       */
+		/**
+		 * ``IEEE802154_CONFIG_CSL_RX_TIME``
+		 *
+		 * Microsecond resolution timestamp relative to the network
+		 * subsystem's local clock defining the center of the CSL RX window
+		 * at which the receiver is expected to be fully started up
+		 * (i.e.  not including any startup times).
+		 */
+		uint32_t csl_rx_time;
 
 		/** ``IEEE802154_CONFIG_ENH_ACK_HEADER_IE`` */
 		struct {
-			const uint8_t *data; /* header IEs to be added to the Enh-Ack frame in
-					      * little endian byte order
-					      */
-			uint16_t data_len;
-			uint16_t short_addr; /* in CPU byte order */
 			/**
-			 * The extended address is expected to be passed starting
-			 * with the most significant octet and ending with the
-			 * least significant octet.
-			 * A device with an extended address 01:23:45:67:89:ab:cd:ef
-			 * as written in the usual big-endian hex notation should
-			 * provide a pointer to an array containing values in the
-			 * exact same order.
+			 * header IEs to be added to the Enh-Ack frame
+			 *
+			 * in little endian
 			 */
-			const uint8_t *ext_addr; /* in big endian */
+			const uint8_t *data;
+			uint16_t data_len;
+			/** in CPU byte order */
+			uint16_t short_addr;
+			/** in big endian */
+			const uint8_t *ext_addr;
 		} ack_ie;
 	};
 };
 
-/** IEEE 802.15.4 attributes. */
+/**
+ * @brief IEEE 802.15.4 driver attributes.
+ *
+ * See @ref ieee802154_attr_value and @ref ieee802154_radio_api for usage
+ * details.
+ */
 enum ieee802154_attr {
 	/** Number of attributes defined in ieee802154_attr. */
 	IEEE802154_ATTR_COMMON_COUNT,
@@ -406,11 +496,28 @@ enum ieee802154_attr {
 	IEEE802154_ATTR_PRIV_START = IEEE802154_ATTR_COMMON_COUNT,
 };
 
-/** IEEE 802.15.4 attribute value data. */
+/**
+ * @brief IEEE 802.15.4 driver attributes.
+ *
+ * @details This structure is reserved to scalar and structured attributes that
+ * originate in the driver implementation and can neither be implemented as
+ * boolean @ref ieee802154_hw_caps nor be derived directly or indirectly by the
+ * MAC (L2) layer. In particular this structure MUST NOT be used to return
+ * configuration data that originate from L2.
+ *
+ * @note To keep this union reasonably small, any attribute requiring a large
+ * memory area, SHALL be provided pointing to memory allocated from the driver's
+ * stack. Clients that need to persist the attribute value SHALL therefore copy
+ * such memory before returning control to the driver.
+ */
 struct ieee802154_attr_value {
 	union {
 		/* TODO: Please remove when first attribute is added. */
 		uint8_t dummy;
+
+		/* TODO: Add driver specific PHY attributes (symbol rate,
+		 * aTurnaroundTime, aCcaTime, channels, channel pages, etc.)
+		 */
 	};
 };
 
@@ -420,84 +527,268 @@ struct ieee802154_attr_value {
  */
 struct ieee802154_radio_api {
 	/**
-	 * Mandatory to get in first position.
-	 * A network device should indeed provide a pointer on such
-	 * net_if_api structure. So we make current structure pointer
-	 * that can be casted to a net_if_api structure pointer.
+	 * @brief network interface API
+	 *
+	 * @note Network devices must extend the network interface API. It is
+	 * therefore mandatory to place it at the top of the radio API struct so
+	 * that it can be cast to a network interface.
 	 */
 	struct net_if_api iface_api;
 
-	/** Get the device capabilities */
+	/**
+	 * @brief Get the device driver capabilities.
+	 *
+	 * @param dev pointer to radio device
+	 *
+	 * @return Bit field with all supported device driver capabilities.
+	 */
 	enum ieee802154_hw_caps (*get_capabilities)(const struct device *dev);
 
-	/** Clear Channel Assessment - Check channel's activity */
+	/**
+	 * @brief Clear Channel Assessment - Check channel's activity
+	 *
+	 * @param dev pointer to radio device
+	 *
+	 * @retval 0 the channel is available
+	 * @retval -EBUSY The channel is busy.
+	 * @retval -EIO The CCA procedure could not be executed.
+	 * @retval -ENOTSUP CCA is not supported by this driver.
+	 */
 	int (*cca)(const struct device *dev);
 
-	/** Set current channel, channel is in CPU byte order. */
+	/**
+	 * @brief Set current channel
+	 *
+	 * @param dev pointer to radio device
+	 * @param channel the number of the channel to be set in CPU byte order
+	 *
+	 * @retval 0 channel was successfully set
+	 * @retval -EINVAL The given channel is not within the range of valid
+	 * channels of the driver's current channel page.
+	 * @retval -ENOTSUP The given channel is within the range of valid
+	 * channels of the driver's current channel page but unsupported by the
+	 * current driver.
+	 * @retval -EIO The channel could not be set.
+	 */
 	int (*set_channel)(const struct device *dev, uint16_t channel);
 
-	/** Set/Unset filters. Requires IEEE802154_HW_FILTER capability. */
+	/**
+	 * @brief Set/Unset PAN ID, extended or short address filters.
+	 *
+	 * @note requires IEEE802154_HW_FILTER capability.
+	 *
+	 * @param dev pointer to radio device
+	 * @param set true to set the filter, false to remove it
+	 * @param type the type of entity to be added/removed from the filter
+	 * list (a PAN ID or a source/destination address)
+	 * @param filter the entity to be added/removed from the filter list
+	 *
+	 * @retval 0 The filter was successfully added/removed.
+	 * @retval -EINVAL The given filter entity or filter entity type
+	 * was not valid.
+	 * @retval -ENOTSUP Setting/removing this filter or filter type
+	 * is not supported by this driver.
+	 * @retval -EIO Error while setting/removing the filter.
+	 */
 	int (*filter)(const struct device *dev,
 		      bool set,
 		      enum ieee802154_filter_type type,
 		      const struct ieee802154_filter *filter);
 
-	/** Set TX power level in dbm */
+	/**
+	 * @brief Set TX power level in dbm
+	 *
+	 * @param dev pointer to radio device
+	 * @param dbm TX power in dbm
+	 *
+	 * @retval 0 The TX power was successfully set.
+	 * @retval -EINVAL The given dbm value is invalid or not supported by
+	 * the driver.
+	 * @retval -EIO The TX power could not be set.
+	 */
 	int (*set_txpower)(const struct device *dev, int16_t dbm);
 
-	/** Transmit a packet fragment */
+	/**
+	 * @brief Transmit a packet fragment as a single frame
+	 *
+	 * @warning The driver must not take ownership of the given network
+	 * packet and frame (fragment) buffer. Any data required by the driver
+	 * (including the actual frame content) must be read synchronously and
+	 * copied internally if transmission is delayed or executed
+	 * asynchronously. Both, the packet and the buffer may be re-used or
+	 * released immediately after the function returns.
+	 *
+	 * @note Depending on the level of offloading features supported by the
+	 * driver, the frame may not be fully encrypted/authenticated, may not
+	 * contain an FCS or may contain incomplete information elements (IEs).
+	 * It is the responsibility of L2 implementations to prepare the frame
+	 * according to the offloading capabilities announced by the driver and
+	 * to decide whether CCA, CSMA/CA or ACK procedures need to be executed
+	 * in software ("soft MAC") or will be provided by the driver itself
+	 * ("hard MAC").
+	 *
+	 * @param dev pointer to radio device
+	 * @param mode the transmission mode, some of which require specific
+	 * offloading capabilities.
+	 * @param pkt pointer to the network packet to be transmitted.
+	 * @param frag pointer to a network buffer containing a single fragment
+	 * with the frame data to be transmitted
+	 *
+	 * @retval 0 The frame was successfully sent or scheduled. If the driver
+	 * supports ACK offloading and the frame requested acknowlegment (AR bit
+	 * set), this means that the packet was successfully acknowledged by its
+	 * peer.
+	 * @retval -ENOTSUP The given TX mode is not supported.
+	 * @retval -EIO The frame could not be sent due to some unspecified
+	 * error.
+	 * @retval -EBUSY The frame could not be sent because the medium was
+	 * busy (CSMA/CA or CCA offloading feature only).
+	 * @retval -ENOMSG The frame was not confirmed by an ACK packet (TX ACK
+	 * offloading feature only).
+	 * @retval -ENOBUFS The frame could not be scheduled due to missing
+	 * internal buffer resources (timed TX offloading feature only).
+	 */
 	int (*tx)(const struct device *dev, enum ieee802154_tx_mode mode,
 		  struct net_pkt *pkt, struct net_buf *frag);
 
-	/** Start the device */
+	/**
+	 * @brief Start the device and place it in receive mode.
+	 *
+	 * @param dev pointer to radio device
+	 *
+	 * @retval 0 The driver was successfully started.
+	 * @retval -EIO The driver could not be started.
+	 */
 	int (*start)(const struct device *dev);
 
-	/** Stop the device */
+	/**
+	 * @brief Stop the device and switch off the receiver (sleep mode).
+	 *
+	 * @param dev pointer to radio device
+	 *
+	 * @retval 0 The driver was successfully stopped.
+	 * @retval -EIO The driver could not be stopped.
+	 */
 	int (*stop)(const struct device *dev);
 
-	/** Start continuous carrier wave transmission.
-	 *  To leave this mode, `start()` or `stop()` API function should be called,
-	 *  resulting in changing radio's state to receive or sleep, respectively.
+	/**
+	 * @brief Start continuous carrier wave transmission.
+	 *
+	 * @details To leave this mode, `start()` or `stop()` should be called,
+	 * putting the radio driver in receive or sleep mode, respectively.
+	 *
+	 * @param dev pointer to radio device
+	 *
+	 * @retval 0 continuous carrier wave transmission started
+	 * @retval -EIO not started
 	 */
 	int (*continuous_carrier)(const struct device *dev);
 
-	/** Set specific radio driver configuration. */
+	/**
+	 * @brief Set radio driver configuration.
+	 *
+	 * @param dev pointer to radio device
+	 * @param type the configuration type to be set
+	 * @param config the configuration parameters to be set for the given
+	 * configuration type
+	 *
+	 * @retval 0 configuration successful
+	 * @retval -ENOTSUP The given configuration type is not supported by
+	 * this driver.
+	 * @retval -EINVAL The configuration parameters are invalid for the
+	 * given configuration type.
+	 * @retval -ENOMEM The configuration cannot be saved due to missing
+	 * memory resources.
+	 * @retval -ENOENT The resource referenced in the configuration
+	 * parameters cannot be found in the configuration.
+	 */
 	int (*configure)(const struct device *dev,
 			 enum ieee802154_config_type type,
 			 const struct ieee802154_config *config);
 
 	/**
-	 * Get the available amount of Sub-GHz channels
-	 * TODO: Replace with a combination of channel page and channel attributes.
+	 * @brief Get the available amount of Sub-GHz channels.
+	 *
+	 * TODO: Replace with a combination of channel page and channel
+	 * attributes.
+	 *
+	 * @param dev pointer to radio device
+	 *
+	 * @return number of available channels in the sub-gigahertz band
 	 */
 	uint16_t (*get_subg_channel_count)(const struct device *dev);
 
-	/** Run an energy detection scan.
-	 *  Note: channel must be set prior to request this function.
-	 *  duration parameter is in ms.
-	 *  Requires IEEE802154_HW_ENERGY_SCAN capability.
+	/**
+	 * @brief Run an energy detection scan.
+	 *
+	 * @note requires IEEE802154_HW_ENERGY_SCAN capability
+	 *
+	 * @note The radio channel must be set prior to calling this function.
+	 *
+	 * @param dev pointer to radio device
+	 * @param duration duration of energy scan in ms
+	 * @param done_cb function called when the energy scan has finished
+	 *
+	 * @retval 0 the energy detection scan was successfully scheduled
+	 *
+	 * @retval -EBUSY the energy detection scan could not be scheduled at
+	 * this time
+	 * @retval -EALREADY a previous energy detection scan has not finished
+	 * yet.
+	 * @retval -ENOTSUP This driver does not support energy scans.
 	 */
 	int (*ed_scan)(const struct device *dev,
 		       uint16_t duration,
 		       energy_scan_done_cb_t done_cb);
 
-	/** Get the current radio time in microseconds
-	 *  Requires IEEE802154_HW_TXTIME and/or IEEE802154_HW_RXTIME capabilities.
+	/**
+	 * @brief Get the current time in microseconds relative to the network
+	 * subsystem's local clock.
+	 *
+	 * @note requires IEEE802154_HW_TXTIME and/or IEEE802154_HW_RXTIME
+	 * capabilities.
+	 *
+	 * @param dev pointer to radio device
+	 *
+	 * @return microseconds relative to the network subsystem's local clock
 	 */
 	uint64_t (*get_time)(const struct device *dev);
 
-	/** Get the current accuracy, in units of ± ppm, of the clock used for
-	 *  scheduling delayed receive or transmit radio operations.
-	 *  Note: Implementations may optimize this value based on operational
-	 *  conditions (i.e.: temperature).
-	 *  Requires IEEE802154_HW_TXTIME and/or IEEE802154_HW_RXTIME capabilities.
+	/**
+	 * @brief Get the current estimated worst case accuracy (maximum ±
+	 * deviation from the nominal frequency) of the network subsystem's
+	 * local clock used to calculate tolerances and guard times when
+	 * scheduling delayed receive or transmit radio operations.
+	 *
+	 * The deviation is given in units of PPM (parts per million).
+	 *
+	 * @note requires IEEE802154_HW_TXTIME and/or IEEE802154_HW_RXTIME
+	 * capabilities.
+	 *
+	 * @note Implementations may estimate this value based on current
+	 * operating conditions (e.g. temperature).
+	 *
+	 * @param dev pointer to radio device
+	 *
+	 * @return current estimated clock accuracy in PPM
 	 */
 	uint8_t (*get_sch_acc)(const struct device *dev);
 
-	/** Get the value of an attribute.
-	 *  If the requested attribute is supported by implementation, this function returns 0
-	 *  and fills appropriate version of union in `value`.
-	 *  If requested attribute is not supported, this function returns -ENOENT.
+	/**
+	 * @brief Get the value of a driver specific attribute.
+	 *
+	 * @note This function SHALL NOT return any values configurable by the
+	 * MAC (L2) layer. It is reserved to non-boolean (i.e. scalar or
+	 * structured) attributes that originate from the driver implementation
+	 * and cannot be directly or indirectly derived by L2. Boolean
+	 * attributes SHALL be implemented as @ref ieee802154_hw_caps.
+	 *
+	 * @retval 0 The requested attribute is supported by the driver and the
+	 * value can be retrieved from the corresponding @ref ieee802154_attr_value
+	 * member.
+	 *
+	 * @retval -ENOENT The driver does not provide the requested attribute.
+	 * The value structure has does not been updated with attribute data.
 	 */
 	int (*attr_get)(const struct device *dev,
 			enum ieee802154_attr attr,
@@ -515,11 +806,10 @@ BUILD_ASSERT(offsetof(struct ieee802154_radio_api, iface_api) == 0);
  * @brief Check if AR flag is set on the frame inside given net_pkt
  *
  * @param frag A valid pointer on a net_buf structure, must not be NULL,
- *        and its length should be at least made of 1 byte (ACK frames
- *        are the smallest frames on 15.4 and made of 3 bytes, not
- *        not counting the FCS part).
+ *        and its length should be at least 1 byte (ImmAck frames are the
+ *        shortest supported frames with 3 bytes excluding FCS).
  *
- * @return True if AR flag is set, False otherwise
+ * @return true if AR flag is set, false otherwise
  */
 static inline bool ieee802154_is_ar_flag_set(struct net_buf *frag)
 {
