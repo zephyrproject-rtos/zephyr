@@ -561,10 +561,17 @@ static void stream_released(struct bt_bap_stream *stream)
 static void stream_started(struct bt_bap_stream *stream)
 {
 	struct audio_stream *a_stream = CONTAINER_OF(stream, struct audio_stream, stream);
+	struct bt_bap_ep_info info;
+	int err;
 
 	LOG_DBG("Started stream %p", stream);
 
-	if (stream->dir == BT_AUDIO_DIR_SINK) {
+	err = bt_bap_ep_get_info(stream->ep, &info);
+	if (err) {
+		LOG_ERR("Could not get EP info for stream %p", stream);
+	}
+
+	if (info.dir == BT_AUDIO_DIR_SINK) {
 		/* Schedule first TX ISO data at seq_num 1 instead of 0 to ensure
 		 * we are in sync with the controller at start of streaming.
 		 */

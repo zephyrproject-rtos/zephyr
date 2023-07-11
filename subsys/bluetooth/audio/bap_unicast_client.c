@@ -2511,11 +2511,10 @@ static void unicast_group_add_stream(struct bt_bap_unicast_group *group,
 	__ASSERT_NO_MSG(stream->ep == NULL || (stream->ep != NULL && stream->ep->iso == NULL));
 
 	stream->qos = qos;
-	stream->dir = dir;
 	stream->group = group;
 
 	/* iso initialized already */
-	bt_bap_iso_bind_stream(iso, stream);
+	bt_bap_iso_bind_stream(iso, stream, dir);
 	if (stream->ep != NULL) {
 		bt_bap_iso_bind_ep(iso, stream->ep);
 	}
@@ -2561,7 +2560,7 @@ static int unicast_group_add_stream_pair(struct bt_bap_unicast_group *group,
 }
 
 static void unicast_group_del_stream(struct bt_bap_unicast_group *group,
-				     struct bt_bap_stream *stream)
+				     struct bt_bap_stream *stream, enum bt_audio_dir dir)
 {
 	__ASSERT_NO_MSG(group != NULL);
 	__ASSERT_NO_MSG(stream != NULL);
@@ -2570,7 +2569,7 @@ static void unicast_group_del_stream(struct bt_bap_unicast_group *group,
 		struct bt_bap_ep *ep = stream->ep;
 
 		if (stream->bap_iso != NULL) {
-			bt_bap_iso_unbind_stream(stream->bap_iso, stream);
+			bt_bap_iso_unbind_stream(stream->bap_iso, stream, dir);
 		}
 
 		if (ep != NULL && ep->iso != NULL) {
@@ -2592,12 +2591,12 @@ static void unicast_group_del_stream_pair(struct bt_bap_unicast_group *group,
 
 	if (param->rx_param != NULL) {
 		__ASSERT_NO_MSG(param->rx_param->stream);
-		unicast_group_del_stream(group, param->rx_param->stream);
+		unicast_group_del_stream(group, param->rx_param->stream, BT_AUDIO_DIR_SOURCE);
 	}
 
 	if (param->tx_param != NULL) {
 		__ASSERT_NO_MSG(param->tx_param->stream);
-		unicast_group_del_stream(group, param->tx_param->stream);
+		unicast_group_del_stream(group, param->tx_param->stream, BT_AUDIO_DIR_SINK);
 	}
 }
 
@@ -2628,11 +2627,20 @@ static void unicast_group_free(struct bt_bap_unicast_group *group)
 	__ASSERT_NO_MSG(group != NULL);
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&group->streams, stream, next, _node) {
+		struct bt_bap_iso *bap_iso = stream->bap_iso;
 		struct bt_bap_ep *ep = stream->ep;
 
 		stream->group = NULL;
-		if (stream->bap_iso != NULL) {
-			bt_bap_iso_unbind_stream(stream->bap_iso, stream);
+		if (bap_iso != NULL) {
+			if (bap_iso->rx.stream == stream) {
+				bt_bap_iso_unbind_stream(stream->bap_iso, stream,
+							 BT_AUDIO_DIR_SOURCE);
+			} else if (bap_iso->tx.stream == stream) {
+				bt_bap_iso_unbind_stream(stream->bap_iso, stream,
+							 BT_AUDIO_DIR_SINK);
+			} else {
+				__ASSERT_PRINT("stream %p has invalid bap_iso %p", stream, bap_iso);
+			}
 		}
 
 		if (ep != NULL && ep->iso != NULL) {

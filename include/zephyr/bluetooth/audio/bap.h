@@ -445,9 +445,6 @@ int bt_bap_ep_get_info(const struct bt_bap_ep *ep, struct bt_bap_ep_info *info);
  * connected isochronous stream.
  */
 struct bt_bap_stream {
-	/** Stream direction */
-	enum bt_audio_dir dir;
-
 	/** Connection reference */
 	struct bt_conn *conn;
 
