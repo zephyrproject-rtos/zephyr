@@ -269,6 +269,16 @@ struct spi_cs_control {
 	SPI_CS_CONTROL_INIT(DT_DRV_INST(inst), delay_)
 
 /**
+ * @typedef spi_operation_t
+ * Opaque type to hold the SPI operation flags.
+ */
+#if defined(CONFIG_SPI_EXTENDED_MODES)
+typedef uint32_t spi_operation_t;
+#else
+typedef uint16_t spi_operation_t;
+#endif
+
+/**
  * @brief SPI controller configuration structure
  *
  * @param frequency is the bus frequency in Hertz
@@ -296,15 +306,8 @@ struct spi_cs_control {
  */
 struct spi_config {
 	uint32_t		frequency;
-#if defined(CONFIG_SPI_EXTENDED_MODES)
-	uint32_t		operation;
+	spi_operation_t		operation;
 	uint16_t		slave;
-	uint16_t		_unused;
-#else
-	uint16_t		operation;
-	uint16_t		slave;
-#endif /* CONFIG_SPI_EXTENDED_MODES */
-
 	struct spi_cs_control cs;
 };
 
