@@ -30,9 +30,9 @@ as wake-up source, deep sleep for 20 seconds, wake up.
 Requirements
 ************
 
-This example should be able to run on any commonly available :ref:`esp32`
-development board without any extra hardware if only ``Timer`` is used as
-wakeup source.
+This example should be able to run on any commonly available
+:ref:`esp32_devkitc_wroom` development board without any extra hardware if
+only ``Timer`` is used as wakeup source.
 
 However, when ``EXT1`` is also enabled, GPIO2 and GPIO4 should be pulled-down
 by external resistors to avoid floating pins. When triggering a wake up, one
