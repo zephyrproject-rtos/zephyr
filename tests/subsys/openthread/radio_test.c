@@ -46,6 +46,7 @@ FAKE_VALUE_FUNC(int, set_channel_mock, const struct device *, uint16_t);
 FAKE_VALUE_FUNC(int, filter_mock, const struct device *, bool, enum ieee802154_filter_type,
 		const struct ieee802154_filter *);
 FAKE_VALUE_FUNC(int, set_txpower_mock, const struct device *, int16_t);
+FAKE_VALUE_FUNC(int64_t, get_time_mock, const struct device *);
 FAKE_VALUE_FUNC(int, tx_mock, const struct device *, enum ieee802154_tx_mode, struct net_pkt *,
 		struct net_buf *);
 FAKE_VALUE_FUNC(int, start_mock, const struct device *);
@@ -62,6 +63,7 @@ static struct ieee802154_radio_api rapi = {.get_capabilities = get_capabilities,
 					   .set_channel = set_channel_mock,
 					   .filter = filter_mock,
 					   .set_txpower = set_txpower_mock,
+					   .get_time = get_time_mock,
 					   .tx = tx_mock,
 					   .start = start_mock,
 					   .stop = stop_mock,
@@ -284,11 +286,17 @@ ZTEST(openthread_radio, test_tx_test)
 	FFF_RESET_HISTORY();
 
 	if (IS_ENABLED(CONFIG_NET_PKT_TXTIME)) {
+		/* cover dealing with wrapped scheduling time:
+		 *  current time: (UINT32_MAX + 1) us
+		 *  target time wrapped: (3 + 5) us, unwrapped: (UINT32_MAX + 3 + 5) us
+		 */
+		get_time_mock_fake.return_val = (int64_t)UINT32_MAX * NSEC_PER_USEC + 1000;
 		frm->mInfo.mTxInfo.mTxDelayBaseTime = 3U;
 		frm->mInfo.mTxInfo.mTxDelay = 5U;
 		expected_target_time =
+			get_time_mock_fake.return_val +
 			(frm->mInfo.mTxInfo.mTxDelayBaseTime + frm->mInfo.mTxInfo.mTxDelay) *
-			NSEC_PER_USEC;
+				NSEC_PER_USEC;
 	}
 
 	/* ACKed frame */
