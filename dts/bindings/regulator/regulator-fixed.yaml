@@ -1,7 +1,8 @@
 # Copyright 2019-2020 Peter Bigot Consulting, LLC
+# Copyright 2023 EPAM Systems
 # SPDX-License-Identifier: Apache-2.0
 
-description: GPIO-controlled regulators
+description: Fixed voltage regulators
 
 include:
   - name: base.yaml
@@ -19,7 +20,6 @@ properties:
 
   enable-gpios:
     type: phandle-array
-    required: true
     description: |
       GPIO to use to enable/disable the regulator.
 
