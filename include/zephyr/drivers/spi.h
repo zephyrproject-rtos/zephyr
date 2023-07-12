@@ -287,8 +287,8 @@ struct spi_cs_control {
  *     lines               [ 16 : 17 ] - MISO lines: Single/Dual/Quad/Octal.
  *     reserved            [ 18 : 31 ] - reserved for future use.
  * @param slave is the slave number from 0 to host controller slave limit.
- * @param cs is a valid pointer on a struct spi_cs_control is CS line is
- *    emulated through a gpio line, or NULL otherwise.
+ * @param cs GPIO chip-select line (optional, must be initialized to zero if not
+ *           used).
  * @warning Most drivers use pointer comparison to determine whether a
  * passed configuration is different from one used in a previous
  * transaction.  Changes to fields in the structure may not be
@@ -314,10 +314,6 @@ struct spi_config {
  * This helper macro expands to a static initializer for a <tt>struct
  * spi_config</tt> by reading the relevant @p frequency, @p slave, and
  * @p cs data from the devicetree.
- *
- * Important: the @p cs field is initialized using
- * SPI_CS_CONTROL_INIT(). The @p gpio_dev value pointed to by this
- * structure must be checked using device_is_ready() before use.
  *
  * @param node_id Devicetree node identifier for the SPI device whose
  *                struct spi_config to create an initializer for
