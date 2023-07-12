@@ -69,12 +69,9 @@ static int max17048_emul_transfer_i2c(const struct emul *target, struct i2c_msg 
 				       int num_msgs, int addr)
 {
 	/* Largely copied from emul_bmi160.c */
-	struct max17048_emul_data *data;
 	unsigned int val;
 	int reg;
 	int rc;
-
-	data = target->data;
 
 	__ASSERT_NO_MSG(msgs && num_msgs);
 
