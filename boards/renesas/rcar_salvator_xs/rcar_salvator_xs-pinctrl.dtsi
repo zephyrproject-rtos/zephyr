@@ -14,4 +14,48 @@
 	scif2_data_a_rx_default: scif2_data_a_rx_default {
 		pin = <PIN_RX2_A FUNC_RX2_A>;
 	};
+
+	emmc2_clk: emmc2_clk {
+		pin = <PIN_SD2_CLK FUNC_SD2_CLK>;
+	};
+
+	emmc2_cmd: emmc2_cmd {
+		pin = <PIN_SD2_CMD FUNC_SD2_CMD>;
+	};
+
+	emmc2_data0: emmc2_data0 {
+		pin = <PIN_SD2_DATA0 FUNC_SD2_DAT0>;
+	};
+
+	emmc2_data1: emmc2_data1 {
+		pin = <PIN_SD2_DATA1 FUNC_SD2_DAT1>;
+	};
+
+	emmc2_data2: emmc2_data2 {
+		pin = <PIN_SD2_DATA2 FUNC_SD2_DAT2>;
+	};
+
+	emmc2_data3: emmc2_data3 {
+		pin = <PIN_SD2_DATA3 FUNC_SD2_DAT3>;
+	};
+
+	emmc2_data4: emmc2_data4 {
+		pin = <PIN_SD1_DATA0 FUNC_SD2_DAT4>;
+	};
+
+	emmc2_data5: emmc2_data5 {
+		pin = <PIN_SD1_DATA1 FUNC_SD2_DAT5>;
+	};
+
+	emmc2_data6: emmc2_data6 {
+		pin = <PIN_SD1_DATA2 FUNC_SD2_DAT6>;
+	};
+
+	emmc2_data7: emmc2_data7 {
+		pin = <PIN_SD1_DATA3 FUNC_SD2_DAT7>;
+	};
+
+	emmc2_ds: emmc2_ds {
+		pin = <PIN_SD2_DS FUNC_SD2_DS>;
+	};
 };
