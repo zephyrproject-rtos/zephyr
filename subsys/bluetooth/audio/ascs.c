@@ -747,6 +747,23 @@ static void ascs_iso_sent(struct bt_iso_chan *chan)
 }
 #endif /* CONFIG_BT_AUDIO_TX */
 
+static void ascs_update_sdu_size(struct bt_bap_ep *ep)
+{
+	struct bt_iso_chan_io_qos *io_qos;
+	struct bt_audio_codec_qos *codec_qos = &ep->qos;
+
+	if (ep->dir == BT_AUDIO_DIR_SINK) {
+		io_qos = ep->iso->chan.qos->rx;
+	} else if (ep->dir == BT_AUDIO_DIR_SOURCE) {
+		io_qos = ep->iso->chan.qos->tx;
+	} else {
+		return;
+	}
+
+	io_qos->sdu = codec_qos->sdu;
+	io_qos->rtn = codec_qos->rtn;
+}
+
 static void ascs_ep_iso_connected(struct bt_bap_ep *ep)
 {
 	struct bt_bap_stream *stream;
@@ -762,6 +779,12 @@ static void ascs_ep_iso_connected(struct bt_bap_ep *ep)
 		LOG_ERR("No stream for ep %p", ep);
 		return;
 	}
+
+	/* Some values are not provided by the HCI events when the CIS is established for the
+	 * peripheral, so we update them here based on the parameters provided by the BAP Unicast
+	 * Client
+	 */
+	ascs_update_sdu_size(ep);
 
 	if (ep->dir == BT_AUDIO_DIR_SINK && ep->receiver_ready) {
 		/* Source ASEs shall be ISO connected first, and then receive
