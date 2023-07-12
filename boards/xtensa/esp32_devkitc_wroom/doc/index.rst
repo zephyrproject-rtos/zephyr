@@ -1,15 +1,15 @@
-.. _esp32:
+.. _esp32_devkitc_wroom:
 
-ESP32
-#####
+ESP32-DEVKITC-WROOM
+###################
 
 Overview
 ********
 
-ESP32 is a series of low cost, low power system on a chip microcontrollers
+ESP32-DEVKITC-WROOM is a series of low cost, low power system on a chip microcontrollers
 with integrated Wi-Fi & dual-mode Bluetooth.  The ESP32 series employs a
 Tensilica Xtensa LX6 microprocessor in both dual-core and single-core
-variations.  ESP32 is created and developed by Espressif Systems, a
+variations.  ESP32-WROOM is created and developed by Espressif Systems, a
 Shanghai-based Chinese company, and is manufactured by TSMC using their 40nm
 process. [1]_
 
@@ -41,10 +41,16 @@ The features include the following:
 - Cryptographic hardware acceleration (RNG, ECC, RSA, SHA-2, AES)
 - 5uA deep sleep current
 
+.. figure:: img/esp32_devkitc_wroom.jpg
+    :align: center
+    :alt: ESP32-DEVKITC-WROOM
+
+    ESP32-DevKitC-WROOM-32D DK
+
 Supported Features
 ==================
 
-Current Zephyr's ESP32-devkitc board supports the following features:
+Current Zephyr's ESP32-WROOM board supports the following features:
 
 +------------+------------+-------------------------------------+
 | Interface  | Controller | Driver/Component                    |
@@ -103,104 +109,23 @@ below to retrieve those files.
    It is recommended running the command above after :file:`west update`.
 
 Building & Flashing
-*******************
-
-ESP-IDF bootloader
-==================
-
-The board is using the ESP-IDF bootloader as the default 2nd stage bootloader.
-It is build as a subproject at each application build. No further attention
-is expected from the user.
-
-MCUboot bootloader
-==================
-
-User may choose to use MCUboot bootloader instead. In that case the bootloader
-must be build (and flash) at least once.
-
-There are two options to be used when building an application:
-
-1. Sysbuild
-2. Manual build
-
-.. note::
-
-   User can select the MCUboot bootloader by adding the following line
-   to the board default configuration file.
-   ```
-   CONFIG_BOOTLOADER_MCUBOOT=y
-   ```
-
-Sysbuild
-========
-
-The sysbuild makes possible to build and flash all necessary images needed to
-bootstrap the board with the EPS32 SoC.
-
-To build the sample application using sysbuild use the command:
-
-.. zephyr-app-commands::
-   :tool: west
-   :app: samples/hello_world
-   :board: esp32
-   :goals: build
-   :west-args: --sysbuild
-   :compact:
-
-By default, the ESP32 sysbuild creates bootloader (MCUboot) and application
-images. But it can be configured to create other kind of images.
-
-Build directory structure created by sysbuild is different from traditional
-Zephyr build. Output is structured by the domain subdirectories:
-
-.. code-block::
-
-  build/
-  ├── hello_world
-  │   └── zephyr
-  │       ├── zephyr.elf
-  │       └── zephyr.bin
-  ├── mcuboot
-  │    └── zephyr
-  │       ├── zephyr.elf
-  │       └── zephyr.bin
-  └── domains.yaml
-
-.. note::
-
-   With ``--sysbuild`` option the bootloader will be re-build and re-flash
-   every time the pristine build is used.
-
-For more information about the system build please read the :ref:`sysbuild` documentation.
-
-Manual build
-============
-
-During the development cycle, it is intended to build & flash as quickly possible.
-For that reason, images can be build one at a time using traditional build.
-
-The instructions following are relevant for both manual build and sysbuild.
-The only difference is the structure of the build directory.
-
-.. note::
-
-   Remember that bootloader (MCUboot) needs to be flash at least once.
+-------------------
 
 Build and flash applications as usual (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: esp32
+   :board: esp32_devkitc_wroom
    :goals: build
 
-The usual ``flash`` target will work with the ``esp32`` board
+The usual ``flash`` target will work with the ``esp32_devkitc_wroom`` board
 configuration. Here is an example for the :ref:`hello_world`
 application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: esp32
+   :board: esp32_devkitc_wroom
    :goals: flash
 
 Open the serial monitor using the following command:
@@ -215,12 +140,12 @@ message in the monitor:
 .. code-block:: console
 
    ***** Booting Zephyr OS vx.x.x-xxx-gxxxxxxxxxxxx *****
-   Hello World! esp32
+   Hello World! esp32_devkitc_wroom
 
 Debugging
-*********
+---------
 
-ESP32 support on OpenOCD is available upstream as of version 0.12.0.
+ESP32-DEVKITC-WROOM support on OpenOCD is available upstream as of version 0.12.0.
 Download and install OpenOCD from `OpenOCD`_.
 
 On the ESP-WROOM-32 DevKitC board, the JTAG pins are not run to a
@@ -252,14 +177,14 @@ Here is an example for building the :ref:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: esp32
+   :board: esp32_devkitc_wroom
    :goals: build flash
 
 You can debug an application in the usual way. Here is an example for the :ref:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: esp32
+   :board: esp32_devkitc_wroom
    :goals: debug
 
 Note on Debugging with GDB Stub

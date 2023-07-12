@@ -69,7 +69,7 @@ Make sure you have your board connected over USB port.
 
 .. code-block:: console
 
-   west build -b esp32 samples/boards/esp32/flash_encryption
+   west build -b esp32_devkitc_wrover samples/boards/esp32/flash_encryption
    west flash
 
 Sample Output
