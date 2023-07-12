@@ -120,10 +120,16 @@ FAKE_VOID_FUNC(otPlatRadioTxDone, otInstance *, otRadioFrame *, otRadioFrame *, 
 
 static enum ieee802154_hw_caps get_capabilities(const struct device *dev)
 {
+	enum ieee802154_hw_caps caps;
+
 	zassert_equal(dev, radio, "Device handle incorrect.");
 
-	return IEEE802154_HW_FCS | IEEE802154_HW_2_4_GHZ | IEEE802154_HW_TX_RX_ACK |
+	caps = IEEE802154_HW_FCS | IEEE802154_HW_2_4_GHZ | IEEE802154_HW_TX_RX_ACK |
 	       IEEE802154_HW_FILTER | IEEE802154_HW_ENERGY_SCAN | IEEE802154_HW_SLEEP_TO_TX;
+	if (IS_ENABLED(CONFIG_NET_PKT_TXTIME)) {
+		caps |= IEEE802154_HW_TXTIME;
+	}
+	return caps;
 }
 
 FAKE_VALUE_FUNC(otError, otIp6Send, otInstance *, otMessage *);
@@ -255,6 +261,7 @@ ZTEST(openthread_radio, test_tx_test)
 	const uint8_t chan = 20;
 	uint8_t chan2 = chan - 1;
 	const int8_t power = -3;
+	uint64_t expected_target_time = 0;
 
 	otRadioFrame *frm = otPlatRadioGetTransmitBuffer(ot);
 
@@ -276,12 +283,21 @@ ZTEST(openthread_radio, test_tx_test)
 	RESET_FAKE(start_mock);
 	FFF_RESET_HISTORY();
 
+	if (IS_ENABLED(CONFIG_NET_PKT_TXTIME)) {
+		frm->mInfo.mTxInfo.mTxDelayBaseTime = 3U;
+		frm->mInfo.mTxInfo.mTxDelay = 5U;
+		expected_target_time =
+			(frm->mInfo.mTxInfo.mTxDelayBaseTime + frm->mInfo.mTxInfo.mTxDelay) *
+			NSEC_PER_USEC;
+	}
+
 	/* ACKed frame */
 	frm->mChannel = chan2;
 	frm->mInfo.mTxInfo.mCsmaCaEnabled = true;
 	frm->mPsdu[0] = IEEE802154_AR_FLAG_SET;
 	set_channel_mock_fake.return_val = 0;
 	zassert_equal(otPlatRadioTransmit(ot, frm), OT_ERROR_NONE, "Transmit failed.");
+	k_yield();
 
 	create_ack_frame();
 	make_sure_sem_set(Z_TIMEOUT_MS(100));
@@ -289,12 +305,20 @@ ZTEST(openthread_radio, test_tx_test)
 	platformRadioProcess(ot);
 	zassert_equal(1, set_channel_mock_fake.call_count);
 	zassert_equal(chan2, set_channel_mock_fake.arg1_val);
-	zassert_equal(1, cca_mock_fake.call_count);
-	zassert_equal_ptr(radio, cca_mock_fake.arg0_val, NULL);
+	if (IS_ENABLED(CONFIG_NET_PKT_TXTIME)) {
+		zassert_equal(0, cca_mock_fake.call_count);
+	} else {
+		zassert_equal(1, cca_mock_fake.call_count);
+		zassert_equal_ptr(radio, cca_mock_fake.arg0_val, NULL);
+	}
 	zassert_equal(1, set_txpower_mock_fake.call_count);
 	zassert_equal(power, set_txpower_mock_fake.arg1_val);
 	zassert_equal(1, tx_mock_fake.call_count);
 	zassert_equal_ptr(frm->mPsdu, tx_mock_fake.arg3_val->data, NULL);
+	zassert_equal(expected_target_time, net_pkt_txtime(tx_mock_fake.arg2_val));
+	zassert_equal(IS_ENABLED(CONFIG_NET_PKT_TXTIME) ? IEEE802154_TX_MODE_TXTIME_CCA
+							: IEEE802154_TX_MODE_DIRECT,
+		      tx_mock_fake.arg1_val);
 	zassert_equal(1, otPlatRadioTxDone_fake.call_count);
 	zassert_equal_ptr(ot, otPlatRadioTxDone_fake.arg0_val, NULL);
 	zassert_equal(OT_ERROR_NONE, otPlatRadioTxDone_fake.arg3_val);
@@ -532,10 +556,6 @@ ZTEST(openthread_radio, test_get_caps_test)
 		      "Incorrect capabilities returned.");
 
 	/* not implemented or not fully supported */
-	get_capabilities_caps_mock_fake.return_val = IEEE802154_HW_TXTIME;
-	zassert_equal(otPlatRadioGetCaps(ot), OT_RADIO_CAPS_NONE,
-		      "Incorrect capabilities returned.");
-
 	get_capabilities_caps_mock_fake.return_val = IEEE802154_HW_PROMISC;
 	zassert_equal(otPlatRadioGetCaps(ot), OT_RADIO_CAPS_NONE,
 		      "Incorrect capabilities returned.");
@@ -553,6 +573,12 @@ ZTEST(openthread_radio, test_get_caps_test)
 	zassert_equal(otPlatRadioGetCaps(ot), OT_RADIO_CAPS_ACK_TIMEOUT,
 		      "Incorrect capabilities returned.");
 
+	get_capabilities_caps_mock_fake.return_val = IEEE802154_HW_TXTIME;
+	zassert_equal(otPlatRadioGetCaps(ot),
+		      IS_ENABLED(CONFIG_NET_PKT_TXTIME) ? OT_RADIO_CAPS_TRANSMIT_TIMING
+							: OT_RADIO_CAPS_NONE,
+		      "Incorrect capabilities returned.");
+
 	get_capabilities_caps_mock_fake.return_val = IEEE802154_HW_SLEEP_TO_TX;
 	zassert_equal(otPlatRadioGetCaps(ot), OT_RADIO_CAPS_SLEEP_TO_TX,
 		      "Incorrect capabilities returned.");
@@ -563,10 +589,12 @@ ZTEST(openthread_radio, test_get_caps_test)
 		IEEE802154_HW_CSMA | IEEE802154_HW_2_4_GHZ | IEEE802154_HW_TX_RX_ACK |
 		IEEE802154_HW_SUB_GHZ | IEEE802154_HW_ENERGY_SCAN | IEEE802154_HW_TXTIME |
 		IEEE802154_HW_SLEEP_TO_TX;
-	zassert_equal(otPlatRadioGetCaps(ot),
-		      OT_RADIO_CAPS_CSMA_BACKOFF | OT_RADIO_CAPS_ENERGY_SCAN |
-			      OT_RADIO_CAPS_ACK_TIMEOUT | OT_RADIO_CAPS_SLEEP_TO_TX,
-		      "Incorrect capabilities returned.");
+	zassert_equal(
+		otPlatRadioGetCaps(ot),
+		OT_RADIO_CAPS_CSMA_BACKOFF | OT_RADIO_CAPS_ENERGY_SCAN | OT_RADIO_CAPS_ACK_TIMEOUT |
+			OT_RADIO_CAPS_SLEEP_TO_TX |
+			(IS_ENABLED(CONFIG_NET_PKT_TXTIME) ? OT_RADIO_CAPS_TRANSMIT_TIMING : 0),
+		"Incorrect capabilities returned.");
 
 	rapi.get_capabilities = get_capabilities;
 }
