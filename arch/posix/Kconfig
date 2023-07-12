@@ -57,4 +57,10 @@ config ARCH_POSIX_FUZZ_TICKS
 
 endif # CONFIG_ARCH_POSIX_LIBFUZZER
 
+config ARCH_POSIX_TRAP_ON_FATAL
+	bool "Raise a SIGTRAP on fatal error"
+	help
+	  Raise a SIGTRAP signal on fatal error before exiting.
+	  This automatically suspends the target if a debugger is attached.
+
 endmenu
