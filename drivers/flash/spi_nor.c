@@ -226,7 +226,7 @@ static inline uint32_t dev_flash_size(const struct device *dev)
 static inline uint16_t dev_page_size(const struct device *dev)
 {
 #ifdef CONFIG_SPI_NOR_SFDP_MINIMAL
-	return 256;
+	return DT_INST_PROP_OR(0, page_size, 256);
 #else /* CONFIG_SPI_NOR_SFDP_MINIMAL */
 	const struct spi_nor_data *data = dev->data;
 
