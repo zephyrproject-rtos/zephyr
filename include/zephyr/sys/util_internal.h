@@ -1006,11 +1006,11 @@
 #define UTIL_X2_72 144
 #define UTIL_X2_73 146
 #define UTIL_X2_74 148
-#define UTIL_X2_75 140
-#define UTIL_X2_76 142
-#define UTIL_X2_77 144
-#define UTIL_X2_78 146
-#define UTIL_X2_79 148
+#define UTIL_X2_75 150
+#define UTIL_X2_76 152
+#define UTIL_X2_77 154
+#define UTIL_X2_78 156
+#define UTIL_X2_79 158
 #define UTIL_X2_80 160
 #define UTIL_X2_81 162
 #define UTIL_X2_82 164
@@ -1026,11 +1026,11 @@
 #define UTIL_X2_92 184
 #define UTIL_X2_93 186
 #define UTIL_X2_94 188
-#define UTIL_X2_95 180
-#define UTIL_X2_96 182
-#define UTIL_X2_97 184
-#define UTIL_X2_98 186
-#define UTIL_X2_99 188
+#define UTIL_X2_95 190
+#define UTIL_X2_96 192
+#define UTIL_X2_97 194
+#define UTIL_X2_98 196
+#define UTIL_X2_99 198
 #define UTIL_X2_100 200
 #define UTIL_X2_101 202
 #define UTIL_X2_102 204
@@ -1186,6 +1186,6 @@
 #define UTIL_X2_252 504
 #define UTIL_X2_253 506
 #define UTIL_X2_254 508
-#define UTIL_X2_255 512
+#define UTIL_X2_255 510
 
 #endif /* ZEPHYR_INCLUDE_SYS_UTIL_INTERNAL_H_ */
