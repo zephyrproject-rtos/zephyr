@@ -20,7 +20,8 @@ tests:
     extra_args: CONF_FILE=prj_flash_partition.conf
     platform_allow:
       - qemu_x86
-      - esp32
+      - esp32_devkitc_wroom
+      - esp32_devkitc_wrover
       - esp32s2_saola
       - esp32s3_devkitm
       - esp32c3_devkitm
