@@ -1,15 +1,15 @@
 /*
- * Copyright (c) 2019 Intel Corporation.
+ * Copyright (c) 2023 Espressif Systems (Shanghai) Co., Ltd.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 /dts-v1/;
 
-#include <espressif/esp32/esp32_wrover_e_n4r2.dtsi>
-#include "esp32-pinctrl.dtsi"
+#include <espressif/esp32/esp32_wrover_e_n4r8.dtsi>
+#include "esp32_devkitc_wrover-pinctrl.dtsi"
 
 / {
-	model = "esp32";
+	model = "Espressif ESP32-DEVKITC-WROVER-E";
 	compatible = "espressif,esp32";
 
 	aliases {

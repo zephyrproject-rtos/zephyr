@@ -19,7 +19,7 @@ tests:
       - smp
     filter: (CONFIG_MP_MAX_NUM_CPUS > 1)
     platform_exclude:
-      - esp32
+      - esp32_devkitc_wroom
       - esp_wrover_kit
       - esp32_ethernet_kit
       - heltec_wifi_lora32_v2
