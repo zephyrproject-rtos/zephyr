@@ -66,11 +66,7 @@ enum bt_mesh_dfu_phase {
 	/** Firmware applying failed. */
 	BT_MESH_DFU_PHASE_APPLY_FAIL,
 
-	/** The current phase is unknown.
-	 *
-	 *  This is a metaphase, used by the Firmware Update Client to keep track of
-	 *  the Target state, and is not defined by the specification.
-	 */
+	/** Phase of a node was not yet retrieved. */
 	BT_MESH_DFU_PHASE_UNKNOWN,
 };
 
