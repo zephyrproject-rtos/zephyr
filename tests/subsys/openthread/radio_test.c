@@ -52,8 +52,6 @@ FAKE_VALUE_FUNC(int, start_mock, const struct device *);
 FAKE_VALUE_FUNC(int, stop_mock, const struct device *);
 FAKE_VALUE_FUNC(int, configure_mock, const struct device *, enum ieee802154_config_type,
 		const struct ieee802154_config *);
-FAKE_VALUE_FUNC(int, configure_promiscuous_mock, const struct device *, enum ieee802154_config_type,
-		const struct ieee802154_config *);
 FAKE_VALUE_FUNC(enum ieee802154_hw_caps, get_capabilities_caps_mock, const struct device *);
 
 static enum ieee802154_hw_caps get_capabilities(const struct device *dev);
@@ -127,9 +125,6 @@ static enum ieee802154_hw_caps get_capabilities(const struct device *dev)
 	return IEEE802154_HW_FCS | IEEE802154_HW_2_4_GHZ | IEEE802154_HW_TX_RX_ACK |
 	       IEEE802154_HW_FILTER | IEEE802154_HW_ENERGY_SCAN | IEEE802154_HW_SLEEP_TO_TX;
 }
-
-FAKE_VALUE_FUNC(int, configure_match_mock, const struct device *, enum ieee802154_config_type,
-		const struct ieee802154_config *);
 
 FAKE_VALUE_FUNC(otError, otIp6Send, otInstance *, otMessage *);
 
@@ -432,9 +427,8 @@ static void set_expected_match_values(enum ieee802154_config_type type, uint8_t 
 ZTEST(openthread_radio, test_source_match_test)
 {
 	otExtAddress ext_addr;
-	configure_match_mock_fake.custom_fake = custom_configure_match_mock;
+	configure_mock_fake.custom_fake = custom_configure_match_mock;
 
-	rapi.configure = configure_match_mock;
 	/* Enable/Disable */
 	set_expected_match_values(IEEE802154_CONFIG_AUTO_ACK_FPB, NULL, false, true);
 	otPlatRadioEnableSrcMatch(ot, true);
@@ -473,8 +467,6 @@ ZTEST(openthread_radio, test_source_match_test)
 
 	set_expected_match_values(IEEE802154_CONFIG_ACK_FPB, NULL, true, false);
 	otPlatRadioClearSrcMatchExtEntries(ot);
-
-	rapi.configure = configure_mock;
 }
 
 static bool custom_configure_promiscuous_mock_promiscuous;
@@ -495,27 +487,22 @@ static int custom_configure_promiscuous_mock(const struct device *dev,
  */
 ZTEST(openthread_radio, test_promiscuous_mode_set_test)
 {
-	rapi.configure = configure_promiscuous_mock;
-
 	zassert_false(otPlatRadioGetPromiscuous(ot),
 		      "By default promiscuous mode shall be disabled.");
 
-	configure_promiscuous_mock_fake.custom_fake = custom_configure_promiscuous_mock;
+	configure_mock_fake.custom_fake = custom_configure_promiscuous_mock;
 	otPlatRadioSetPromiscuous(ot, true);
 	zassert_true(otPlatRadioGetPromiscuous(ot), "Mode not enabled.");
-	zassert_equal(1, configure_promiscuous_mock_fake.call_count);
+	zassert_equal(1, configure_mock_fake.call_count);
 	zassert_true(custom_configure_promiscuous_mock_promiscuous);
 
-	RESET_FAKE(configure_promiscuous_mock);
-	FFF_RESET_HISTORY();
+	RESET_FAKE(configure_mock);
 
-	configure_promiscuous_mock_fake.custom_fake = custom_configure_promiscuous_mock;
+	configure_mock_fake.custom_fake = custom_configure_promiscuous_mock;
 	otPlatRadioSetPromiscuous(ot, false);
 	zassert_false(otPlatRadioGetPromiscuous(ot), "Mode still enabled.");
-	zassert_equal(1, configure_promiscuous_mock_fake.call_count);
+	zassert_equal(1, configure_mock_fake.call_count);
 	zassert_false(custom_configure_promiscuous_mock_promiscuous);
-
-	rapi.configure = configure_mock;
 }
 
 /**
@@ -900,7 +887,6 @@ static void openthread_radio_before(void *f)
 	RESET_FAKE(start_mock);
 	RESET_FAKE(stop_mock);
 	RESET_FAKE(configure_mock);
-	RESET_FAKE(configure_promiscuous_mock);
 	RESET_FAKE(get_capabilities_caps_mock);
 	RESET_FAKE(otPlatRadioEnergyScanDone);
 	RESET_FAKE(otPlatRadioTxDone);
