@@ -1,6 +1,7 @@
 /*
  * Copyright 2019-2020 Peter Bigot Consulting, LLC
  * Copyright 2022 Nordic Semiconductor ASA
+ * Copyright 2023 EPAM Systems
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -31,6 +32,10 @@ static int regulator_fixed_enable(const struct device *dev)
 	const struct regulator_fixed_config *cfg = dev->config;
 	int ret;
 
+	if (!cfg->enable.port) {
+		return -ENOTSUP;
+	}
+
 	ret = gpio_pin_set_dt(&cfg->enable, 1);
 	if (ret < 0) {
 		return ret;
@@ -46,6 +51,10 @@ static int regulator_fixed_enable(const struct device *dev)
 static int regulator_fixed_disable(const struct device *dev)
 {
 	const struct regulator_fixed_config *cfg = dev->config;
+
+	if (!cfg->enable.port) {
+		return -ENOTSUP;
+	}
 
 	return gpio_pin_set_dt(&cfg->enable, 0);
 }
@@ -63,24 +72,26 @@ static int regulator_fixed_init(const struct device *dev)
 
 	regulator_common_data_init(dev);
 
-	if (!device_is_ready(cfg->enable.port)) {
-		LOG_ERR("GPIO port: %s not ready", cfg->enable.port->name);
-		return -ENODEV;
-	}
-
 	init_enabled = regulator_common_is_init_enabled(dev);
 
-	if (init_enabled) {
-		ret = gpio_pin_configure_dt(&cfg->enable, GPIO_OUTPUT_ACTIVE);
-		if (ret < 0) {
-			return ret;
+	if (cfg->enable.port != NULL) {
+		if (!device_is_ready(cfg->enable.port)) {
+			LOG_ERR("GPIO port: %s not ready", cfg->enable.port->name);
+			return -ENODEV;
 		}
 
-		k_busy_wait(cfg->startup_delay_us);
-	} else {
-		ret = gpio_pin_configure_dt(&cfg->enable, GPIO_OUTPUT_INACTIVE);
-		if (ret < 0) {
-			return ret;
+		if (init_enabled) {
+			ret = gpio_pin_configure_dt(&cfg->enable, GPIO_OUTPUT_ACTIVE);
+			if (ret < 0) {
+				return ret;
+			}
+
+			k_busy_wait(cfg->startup_delay_us);
+		} else {
+			ret = gpio_pin_configure_dt(&cfg->enable, GPIO_OUTPUT_INACTIVE);
+			if (ret < 0) {
+				return ret;
+			}
 		}
 	}
 
@@ -94,7 +105,7 @@ static int regulator_fixed_init(const struct device *dev)
 		.common = REGULATOR_DT_INST_COMMON_CONFIG_INIT(inst),          \
 		.startup_delay_us = DT_INST_PROP(inst, startup_delay_us),      \
 		.off_on_delay_us = DT_INST_PROP(inst, off_on_delay_us),        \
-		.enable = GPIO_DT_SPEC_INST_GET(inst, enable_gpios),           \
+		.enable = GPIO_DT_SPEC_INST_GET_OR(inst, enable_gpios, {0}),   \
 	};                                                                     \
                                                                                \
 	DEVICE_DT_INST_DEFINE(inst, regulator_fixed_init, NULL, &data##inst,   \
