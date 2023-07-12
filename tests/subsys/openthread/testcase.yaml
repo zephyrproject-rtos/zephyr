@@ -1,8 +1,12 @@
+common:
+  platform_allow:
+    - native_posix
+    - native_posix_64
+  integration_platforms:
+    - native_posix
+  tags: ot_radio
 tests:
-  openthread.radio:
-    platform_allow:
-      - native_posix
-      - native_posix_64
-    integration_platforms:
-      - native_posix
-    tags: ot_radio
+  tests.subsys.openthread.radio_test.min: {}
+  tests.subsys.openthread.radio_test.timed_tx:
+    extra_configs:
+      - CONFIG_NET_PKT_TXTIME=y
