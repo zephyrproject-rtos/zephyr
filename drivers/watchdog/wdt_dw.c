@@ -96,7 +96,9 @@ static int dw_wdt_setup(const struct device *dev, uint8_t options)
 
 static int dw_wdt_install_timeout(const struct device *dev, const struct wdt_timeout_cfg *config)
 {
+#if WDT_DW_INTERRUPT_SUPPORT || !WDT_DW_CLK_MANAGER_SUPPORT
 	const struct dw_wdt_dev_cfg *const dev_config = dev->config;
+#endif
 	struct dw_wdt_dev_data *const dev_data = dev->data;
 	uintptr_t reg_base = DEVICE_MMIO_GET(dev);
 
@@ -135,7 +137,7 @@ static int dw_wdt_install_timeout(const struct device *dev, const struct wdt_tim
 	}
 #endif
 
-#ifdef WDT_DW_INTERRUPT_SUPPORT
+#if WDT_DW_INTERRUPT_SUPPORT
 	dev_data->callback = config->callback;
 #endif
 
