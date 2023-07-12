@@ -322,6 +322,7 @@ static inline int regulator_parent_ship_mode(const struct device *dev)
  *
  * @retval 0 If regulator has been successfully enabled.
  * @retval -errno Negative errno in case of failure.
+ * @retval -ENOTSUP If regulator enablement can not be controlled.
  */
 int regulator_enable(const struct device *dev);
 
@@ -349,6 +350,7 @@ bool regulator_is_enabled(const struct device *dev);
  *
  * @retval 0 If regulator has been successfully disabled.
  * @retval -errno Negative errno in case of failure.
+ * @retval -ENOTSUP If regulator disablement can not be controlled.
  */
 int regulator_disable(const struct device *dev);
 
