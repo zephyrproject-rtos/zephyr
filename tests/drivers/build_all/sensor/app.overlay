@@ -48,7 +48,7 @@
 		test_i2c: i2c@11112222 {
 			#address-cells = <1>;
 			#size-cells = <0>;
-			compatible = "vnd,i2c";
+			compatible = "zephyr,i2c-emul-controller";
 			reg = <0x11112222 0x1000>;
 			status = "okay";
 			clock-frequency = <100000>;
@@ -59,7 +59,7 @@
 		test_spi: spi@33334444 {
 			#address-cells = <1>;
 			#size-cells = <0>;
-			compatible = "vnd,spi";
+			compatible = "zephyr,spi-emul-controller";
 			reg = <0x33334444 0x1000>;
 			status = "okay";
 			clock-frequency = <2000000>;
@@ -101,35 +101,7 @@
 				   <&test_gpio 0 0>,
 				   <&test_gpio 0 0>,
 				   <&test_gpio 0 0>,
-				   <&test_gpio 0 0>,
-				   <&test_gpio 0 0>,
-				   <&test_gpio 0 0>,
-				   <&test_gpio 0 0>,
-				   <&test_gpio 0 0>,
-				   <&test_gpio 0 0>,
-				   <&test_gpio 0 0>,
-				   <&test_gpio 0 0>,
-				   <&test_gpio 0 0>,
-				   <&test_gpio 0 0>,
-				   <&test_gpio 0 0>,
-				   <&test_gpio 0 0>,
-				   <&test_gpio 0 0>,	/* 0x30 */
-				   <&test_gpio 0 0>,
-				   <&test_gpio 0 0>,
-				   <&test_gpio 0 0>,
-				   <&test_gpio 0 0>,
-				   <&test_gpio 0 0>,
-				   <&test_gpio 0 0>,
-				   <&test_gpio 0 0>,
-				   <&test_gpio 0 0>,
-				   <&test_gpio 0 0>,
-				   <&test_gpio 0 0>,
-				   <&test_gpio 0 0>,
-				   <&test_gpio 0 0>,
-				   <&test_gpio 0 0>,
-				   <&test_gpio 0 0>,
-				   <&test_gpio 0 0>,
-				   <&test_gpio 0 0>;	/* 0x40 */
+				   <&test_gpio 0 0>;	/* 0x24 */
 
 			#include "spi.dtsi"
 		};
