@@ -897,6 +897,61 @@ ZTEST(openthread_radio, test_net_pkt_transmit)
 	zassert_equal_ptr(ip_msg, otIp6Send_fake.arg1_val, NULL);
 }
 
+#ifdef CONFIG_OPENTHREAD_CSL_RECEIVER
+static int64_t custom_configure_csl_rx_time_mock_csl_rx_time;
+static int custom_configure_csl_rx_time(const struct device *dev,
+					     enum ieee802154_config_type type,
+					     const struct ieee802154_config *config)
+{
+	zassert_equal(dev, radio, "Device handle incorrect.");
+	zassert_equal(type, IEEE802154_CONFIG_CSL_RX_TIME, "Config type incorrect.");
+	custom_configure_csl_rx_time_mock_csl_rx_time = config->csl_rx_time;
+
+	return 0;
+}
+
+ZTEST(openthread_radio, test_csl_receiver_sample_time)
+{
+	uint32_t sample_time = 50U;
+
+	configure_mock_fake.custom_fake = custom_configure_csl_rx_time;
+	otPlatRadioUpdateCslSampleTime(NULL, sample_time);
+	zassert_equal(1, configure_mock_fake.call_count);
+	zassert_equal(sample_time, custom_configure_csl_rx_time_mock_csl_rx_time);
+}
+
+
+static struct ieee802154_config custom_configure_rx_slot_mock_config;
+static int custom_configure_csl_rx_slot(const struct device *dev,
+					     enum ieee802154_config_type type,
+					     const struct ieee802154_config *config)
+{
+	zassert_equal(dev, radio, "Device handle incorrect.");
+	zassert_equal(type, IEEE802154_CONFIG_RX_SLOT, "Config type incorrect.");
+	custom_configure_rx_slot_mock_config.rx_slot.channel = config->rx_slot.channel;
+	custom_configure_rx_slot_mock_config.rx_slot.start = config->rx_slot.start;
+	custom_configure_rx_slot_mock_config.rx_slot.duration = config->rx_slot.duration;
+
+	return 0;
+}
+
+ZTEST(openthread_radio, test_csl_receiver_receive_at)
+{
+	uint8_t channel = 11U;
+	uint32_t start = 1000U;
+	uint32_t duration = 100U;
+	int res;
+
+	configure_mock_fake.custom_fake = custom_configure_csl_rx_slot;
+	res = otPlatRadioReceiveAt(NULL, channel, start, duration);
+	zassert_ok(res);
+	zassert_equal(1, configure_mock_fake.call_count);
+	zassert_equal(channel, custom_configure_rx_slot_mock_config.rx_slot.channel);
+	zassert_equal(start, custom_configure_rx_slot_mock_config.rx_slot.start);
+	zassert_equal(duration, custom_configure_rx_slot_mock_config.rx_slot.duration);
+}
+#endif
+
 static void *openthread_radio_setup(void)
 {
 	platformRadioInit();
