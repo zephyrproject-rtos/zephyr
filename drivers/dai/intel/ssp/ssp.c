@@ -2280,7 +2280,7 @@ static const char irq_name_level5_z[] = "level5";
 			ssp_init, PM_DEVICE_DT_INST_GET(n),		\
 			&dai_intel_ssp_data_##n,			\
 			&dai_intel_ssp_config_##n,			\
-			POST_KERNEL, 32,				\
+			POST_KERNEL, 42,				\
 			&dai_intel_ssp_api_funcs);
 
 DT_INST_FOREACH_STATUS_OKAY(DAI_INTEL_SSP_DEVICE_INIT)
