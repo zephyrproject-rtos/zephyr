@@ -19,10 +19,6 @@ config FXOS8700_DRDY_INT1
 	default y
 	depends on FXOS8700_TRIGGER
 
-# Allocate LVGL buffers in custom section
-config LV_Z_VBD_CUSTOM_SECTION
-	default y if LVGL
-
 if DMA_MCUX_LPC
 
 # Memory from the heap pool is used to allocate DMA descriptors for
