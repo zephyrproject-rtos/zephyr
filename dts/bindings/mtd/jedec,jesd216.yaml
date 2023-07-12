@@ -68,3 +68,16 @@ properties:
       addressing is require to access the full address range, and
       automatically puts the device into 4-byte address mode when the device
       is initialized.
+
+  page-size:
+    type: int
+    description: |
+      Number of bytes in a page from JESD216 BFP DW11
+
+      This property is only used in the CONFIG_SPI_NOR_SFDP_MINIMAL configuration.
+      It is ignored if the device is configured to use SFDP data
+      from the sfdp-bfp property (CONFIG_SPI_NOR_SFDP_DEVICETREE) or
+      if the SFDP parameters are read from the device at
+      runtime (CONFIG_SPI_NOR_SFDP_RUNTIME).
+
+      The default value is 256 bytes if the value is not specified.
