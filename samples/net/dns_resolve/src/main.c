@@ -152,46 +152,8 @@ static void do_ipv4_lookup(struct k_work *work)
 	LOG_DBG("DNS id %u", dns_id);
 }
 
-static void ipv4_addr_add_handler(struct net_mgmt_event_callback *cb,
-				  uint32_t mgmt_event,
-				  struct net_if *iface)
+static void schedule_ipv4_queries(void)
 {
-	char hr_addr[NET_IPV4_ADDR_LEN];
-	int i;
-
-	if (mgmt_event != NET_EVENT_IPV4_ADDR_ADD) {
-		return;
-	}
-
-	for (i = 0; i < NET_IF_MAX_IPV4_ADDR; i++) {
-		struct net_if_addr *if_addr =
-			&iface->config.ip.ipv4->unicast[i];
-
-		if (if_addr->addr_type != NET_ADDR_DHCP || !if_addr->is_used) {
-			continue;
-		}
-
-		LOG_INF("IPv4 address: %s",
-			net_addr_ntop(AF_INET,
-						 &if_addr->address.in_addr,
-						 hr_addr, NET_IPV4_ADDR_LEN));
-		LOG_INF("Lease time: %u seconds",
-			 iface->config.dhcpv4.lease_time);
-		LOG_INF("Subnet: %s",
-			net_addr_ntop(AF_INET,
-					       &iface->config.ip.ipv4->netmask,
-					       hr_addr, NET_IPV4_ADDR_LEN));
-		LOG_INF("Router: %s",
-			net_addr_ntop(AF_INET,
-					       &iface->config.ip.ipv4->gw,
-					       hr_addr, NET_IPV4_ADDR_LEN));
-		break;
-	}
-
-	/* We cannot run DNS lookup directly from this thread as the
-	 * management event thread stack is very small by default.
-	 * So run it from work queue instead.
-	 */
 	k_work_init_delayable(&ipv4_timer, do_ipv4_lookup);
 	k_work_reschedule(&ipv4_timer, K_NO_WAIT);
 
@@ -201,8 +163,85 @@ static void ipv4_addr_add_handler(struct net_mgmt_event_callback *cb,
 #endif
 }
 
+static void print_dhcpv4_addr(struct net_if *iface, struct net_if_addr *if_addr,
+			      void *user_data)
+{
+	bool *found = (bool *)user_data;
+	char hr_addr[NET_IPV4_ADDR_LEN];
+
+	if (*found) {
+		return;
+	}
+
+	if (if_addr->addr_type != NET_ADDR_DHCP) {
+		return;
+	}
+
+	LOG_INF("IPv4 address: %s",
+		net_addr_ntop(AF_INET, &if_addr->address.in_addr,
+			      hr_addr, NET_IPV4_ADDR_LEN));
+	LOG_INF("Lease time: %u seconds", iface->config.dhcpv4.lease_time);
+	LOG_INF("Subnet: %s",
+		net_addr_ntop(AF_INET,
+			      &iface->config.ip.ipv4->netmask,
+			      hr_addr, NET_IPV4_ADDR_LEN));
+	LOG_INF("Router: %s",
+		net_addr_ntop(AF_INET,
+			      &iface->config.ip.ipv4->gw,
+			      hr_addr, NET_IPV4_ADDR_LEN));
+
+	*found = true;
+}
+
+static void ipv4_addr_add_handler(struct net_mgmt_event_callback *cb,
+				  uint32_t mgmt_event,
+				  struct net_if *iface)
+{
+
+	bool found = false;
+
+	if (mgmt_event != NET_EVENT_IPV4_ADDR_ADD) {
+		return;
+	}
+
+	net_if_ipv4_addr_foreach(iface, print_dhcpv4_addr, &found);
+
+	/* We cannot run DNS lookup directly from this thread as the
+	 * management event thread stack is very small by default.
+	 * So run it from work queue instead.
+	 */
+	schedule_ipv4_queries();
+}
+
+static void check_dhcpv4_addr(struct net_if *iface, struct net_if_addr *if_addr,
+			      void *user_data)
+{
+	bool *found = (bool *)user_data;
+
+	if (if_addr->addr_type != NET_ADDR_DHCP) {
+		return;
+	}
+
+	*found = true;
+}
+
 static void setup_dhcpv4(struct net_if *iface)
 {
+	bool found;
+
+	/* If DHCP registers an IP address before we register the
+	 * ipv4_addr_add_handler() callback, we won't be notified. Check
+	 * whether this is the case.
+	 */
+	net_if_ipv4_addr_foreach(iface, check_dhcpv4_addr, &found);
+
+	if (found) {
+		/* Already have DHCP assigned address, schedule queries. */
+		schedule_ipv4_queries();
+		return;
+	}
+
+	/* Otherwise, wait for DHCP to assign an address. */
 	LOG_INF("Getting IPv4 address via DHCP before issuing DNS query");
 
 	net_mgmt_init_event_callback(&mgmt4_cb, ipv4_addr_add_handler,
