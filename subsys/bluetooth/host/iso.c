@@ -1014,6 +1014,12 @@ void hci_le_cis_established(struct net_buf *buf)
 			rx = chan->qos->rx;
 			tx = chan->qos->tx;
 
+			/* As of BT Core 5.4, there is no way for the peripheral to get the actual
+			 * SDU size or SDU interval without the use of higher layer profiles such as
+			 * the Basic Audio Profile (BAP). The best we can do is use the PDU size
+			 * until https://bluetooth.atlassian.net/browse/ES-18552 has been resolved
+			 * and incorporated
+			 */
 			if (rx != NULL) {
 				rx->phy = bt_get_phy(evt->c_phy);
 				rx->sdu = sys_le16_to_cpu(evt->c_max_pdu);
