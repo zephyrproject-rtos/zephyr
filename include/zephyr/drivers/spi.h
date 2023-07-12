@@ -280,34 +280,37 @@ typedef uint16_t spi_operation_t;
 
 /**
  * @brief SPI controller configuration structure
- *
- * @param frequency is the bus frequency in Hertz
- * @param operation is a bit field with the following parts:
- *
- *     operational mode    [ 0 ]       - master or slave.
- *     mode                [ 1 : 3 ]   - Polarity, phase and loop mode.
- *     transfer            [ 4 ]       - LSB or MSB first.
- *     word_size           [ 5 : 10 ]  - Size of a data frame in bits.
- *     duplex              [ 11 ]      - full/half duplex.
- *     cs_hold             [ 12 ]      - Hold on the CS line if possible.
- *     lock_on             [ 13 ]      - Keep resource locked for the caller.
- *     cs_active_high      [ 14 ]      - Active high CS logic.
- *     format              [ 15 ]      - Motorola or TI frame format (optional).
- * if @kconfig{CONFIG_SPI_EXTENDED_MODES} is defined:
- *     lines               [ 16 : 17 ] - MISO lines: Single/Dual/Quad/Octal.
- *     reserved            [ 18 : 31 ] - reserved for future use.
- * @param slave is the slave number from 0 to host controller slave limit.
- * @param cs GPIO chip-select line (optional, must be initialized to zero if not
- *           used).
- * @warning Most drivers use pointer comparison to determine whether a
- * passed configuration is different from one used in a previous
- * transaction.  Changes to fields in the structure may not be
- * detected.
  */
 struct spi_config {
-	uint32_t		frequency;
-	spi_operation_t		operation;
-	uint16_t		slave;
+	/** @brief Bus frequency in Hertz. */
+	uint32_t frequency;
+	/**
+	 * @brief Operation flags.
+	 *
+	 * It is a bit field with the following parts:
+	 *
+	 * - 0:      Master or slave.
+	 * - 1..3:   Polarity, phase and loop mode.
+	 * - 4:      LSB or MSB first.
+	 * - 5..10:  Size of a data frame in bits.
+	 * - 11:     Full/half duplex.
+	 * - 12:     Hold on the CS line if possible.
+	 * - 13:     Keep resource locked for the caller.
+	 * - 14:     Active high CS logic.
+	 * - 15:     Motorola or TI frame format (optional).
+	 *
+	 * If @kconfig{CONFIG_SPI_EXTENDED_MODES} is enabled:
+	 *
+	 * - 16..17: MISO lines (Single/Dual/Quad/Octal).
+	 * - 18..31: Reserved for future use.
+	 */
+	spi_operation_t operation;
+	/** @brief Slave number from 0 to host controller slave limit. */
+	uint16_t slave;
+	/**
+	 * @brief GPIO chip-select line (optional, must be initialized to zero
+	 * if not used).
+	 */
 	struct spi_cs_control cs;
 };
 
