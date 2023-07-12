@@ -484,77 +484,6 @@ static bool nrf5_tx_csma_ca(struct net_pkt *pkt, uint8_t *payload)
 #endif
 
 #if defined(CONFIG_NET_PKT_TXTIME)
-/**
- * @brief Convert 32-bit target time to absolute 64-bit target time.
- *
- * @param target_time_ns_wrapped time in nanoseconds referred to the radio clock
- * modulo (UINT32_MAX * NSEC_PER_USEC).
- */
-static uint64_t target_time_convert_to_64_bits(uint64_t target_time_ns_wrapped)
-{
-	/**
-	 * Target time is provided as two 32-bit integers defining a moment in time
-	 * in microsecond domain. In order to use bit-shifting instead of modulo
-	 * division, calculations are performed in microsecond domain, not in RTC ticks.
-	 *
-	 * The target time can point to a moment in the future, but can be overdue
-	 * as well. In order to determine what's the case and correctly set the
-	 * absolute target time, it's necessary to compare the least significant
-	 * 32 bits of the current time, 64-bit time with the provided 32-bit target
-	 * time. Let's assume that half of the 32-bit range can be used for specifying
-	 * target times in the future, and the other half - in the past.
-	 */
-	uint32_t target_time_us_wrapped = target_time_ns_wrapped / NSEC_PER_USEC;
-	uint64_t now_us = nrf_802154_time_get();
-	uint32_t now_us_wrapped = (uint32_t)now_us;
-	uint32_t time_diff = target_time_us_wrapped - now_us_wrapped;
-	uint64_t result = UINT64_C(0);
-
-	if (time_diff < 0x80000000) {
-		/**
-		 * Target time is assumed to be in the future. Check if a 32-bit overflow
-		 * occurs between the current time and the target time.
-		 */
-		if (now_us_wrapped > target_time_us_wrapped) {
-			/**
-			 * Add a 32-bit overflow and replace the least significant 32 bits
-			 * with the provided target time.
-			 */
-			result = now_us + UINT32_MAX + 1;
-			result &= ~(uint64_t)UINT32_MAX;
-			result |= target_time_us_wrapped;
-		} else {
-			/**
-			 * Leave the most significant 32 bits and replace the least significant
-			 * 32 bits with the provided target time.
-			 */
-			result = (now_us & (~(uint64_t)UINT32_MAX)) | target_time_us_wrapped;
-		}
-	} else {
-		/**
-		 * Target time is assumed to be in the past. Check if a 32-bit overflow
-		 * occurs between the target time and the current time.
-		 */
-		if (now_us_wrapped > target_time_us_wrapped) {
-			/**
-			 * Leave the most significant 32 bits and replace the least significant
-			 * 32 bits with the provided target time.
-			 */
-			result = (now_us & (~(uint64_t)UINT32_MAX)) | target_time_us_wrapped;
-		} else {
-			/**
-			 * Subtract a 32-bit overflow and replace the least significant
-			 * 32 bits with the provided target time.
-			 */
-			result = now_us - UINT32_MAX - 1;
-			result &= ~(uint64_t)UINT32_MAX;
-			result |= target_time_us_wrapped;
-		}
-	}
-
-	return result;
-}
-
 static bool nrf5_tx_at(struct nrf5_802154_data *nrf5_radio, struct net_pkt *pkt,
 		   uint8_t *payload, enum ieee802154_tx_mode mode)
 {
@@ -598,7 +527,7 @@ static bool nrf5_tx_at(struct nrf5_802154_data *nrf5_radio, struct net_pkt *pkt,
 		.extra_cca_attempts = max_extra_cca_attempts,
 #endif
 	};
-	uint64_t tx_at = target_time_convert_to_64_bits(net_ptp_time_to_ns(net_pkt_timestamp(pkt)));
+	uint64_t tx_at = net_ptp_time_to_ns(net_pkt_timestamp(pkt)) / NSEC_PER_USEC;
 
 	return nrf_802154_transmit_raw_at(payload, tx_at, &metadata);
 }
@@ -984,13 +913,7 @@ static int nrf5_configure(const struct device *dev,
 
 #if defined(CONFIG_IEEE802154_CSL_ENDPOINT)
 	case IEEE802154_CONFIG_CSL_RX_TIME: {
-		/*
-		 * `target_time_convert_to_64_bits()` is a workaround until OpenThread (the only
-		 * CSL user in Zephyr so far) is able to schedule RX windows using 64-bit time.
-		 */
-		uint64_t csl_rx_time = target_time_convert_to_64_bits(config->csl_rx_time);
-
-		nrf_802154_csl_writer_anchor_time_set(csl_rx_time);
+		nrf_802154_csl_writer_anchor_time_set(config->csl_rx_time / NSEC_PER_USEC);
 	} break;
 
 	case IEEE802154_CONFIG_RX_SLOT: {
@@ -1000,13 +923,9 @@ static int nrf5_configure(const struct device *dev,
 		 * calculated as if the following reception windows were at times
 		 * anchor_time + n * csl_period. The previously set
 		 * anchor_time will be used for calculations.
-		 *
-		 * `target_time_convert_to_64_bits()` is a workaround until OpenThread
-		 *  is able to schedule RX windows using 64-bit time.
 		 */
-		uint64_t start = target_time_convert_to_64_bits(config->rx_slot.start);
-
-		nrf_802154_receive_at(start, config->rx_slot.duration / NSEC_PER_USEC,
+		nrf_802154_receive_at(config->rx_slot.start / NSEC_PER_USEC,
+				      config->rx_slot.duration / NSEC_PER_USEC,
 				      config->rx_slot.channel, DRX_SLOT_RX);
 	} break;
 

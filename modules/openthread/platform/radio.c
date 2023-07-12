@@ -33,6 +33,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_OPENTHREAD_L2_LOG_LEVEL);
 #include <openthread/instance.h>
 #include <openthread/platform/radio.h>
 #include <openthread/platform/diag.h>
+#include <openthread/platform/time.h>
 #include <openthread/message.h>
 
 #include "platform-zephyr.h"
@@ -237,6 +238,84 @@ void handle_radio_event(const struct device *dev, enum ieee802154_event evt,
 	}
 }
 
+#if defined(CONFIG_NET_PKT_TXTIME) || defined(CONFIG_OPENTHREAD_CSL_RECEIVER)
+/**
+ * @brief Convert 32-bit (potentially wrapped) OpenThread microsecond timestamps
+ * to 64-bit Zephyr network subsystem nanosecond timestamps.
+ *
+ * This is a workaround until OpenThread is able to schedule 64-bit RX/TX time.
+ *
+ * @param target_time_ns_wrapped time in nanoseconds referred to the radio clock
+ * modulo UINT32_MAX.
+ *
+ * @return 64-bit nanosecond timestamp
+ */
+static net_time_t convert_32bit_us_wrapped_to_64bit_ns(uint32_t target_time_us_wrapped)
+{
+	/**
+	 * OpenThread provides target time as a (potentially wrapped) 32-bit
+	 * integer defining a moment in time in the microsecond domain.
+	 *
+	 * The target time can point to a moment in the future, but can be
+	 * overdue as well. In order to determine what's the case and correctly
+	 * set the absolute (non-wrapped) target time, it's necessary to compare
+	 * the least significant 32 bits of the current 64-bit network subsystem
+	 * time with the provided 32-bit target time. Let's assume that half of
+	 * the 32-bit range can be used for specifying target times in the
+	 * future, and the other half - in the past.
+	 */
+	uint64_t now_us = otPlatTimeGet();
+	uint32_t now_us_wrapped = (uint32_t)now_us;
+	uint32_t time_diff = target_time_us_wrapped - now_us_wrapped;
+	uint64_t result = UINT64_C(0);
+
+	if (time_diff < 0x80000000) {
+		/**
+		 * Target time is assumed to be in the future. Check if a 32-bit overflow
+		 * occurs between the current time and the target time.
+		 */
+		if (now_us_wrapped > target_time_us_wrapped) {
+			/**
+			 * Add a 32-bit overflow and replace the least significant 32 bits
+			 * with the provided target time.
+			 */
+			result = now_us + UINT32_MAX + 1;
+			result &= ~(uint64_t)UINT32_MAX;
+			result |= target_time_us_wrapped;
+		} else {
+			/**
+			 * Leave the most significant 32 bits and replace the least significant
+			 * 32 bits with the provided target time.
+			 */
+			result = (now_us & (~(uint64_t)UINT32_MAX)) | target_time_us_wrapped;
+		}
+	} else {
+		/**
+		 * Target time is assumed to be in the past. Check if a 32-bit overflow
+		 * occurs between the target time and the current time.
+		 */
+		if (now_us_wrapped > target_time_us_wrapped) {
+			/**
+			 * Leave the most significant 32 bits and replace the least significant
+			 * 32 bits with the provided target time.
+			 */
+			result = (now_us & (~(uint64_t)UINT32_MAX)) | target_time_us_wrapped;
+		} else {
+			/**
+			 * Subtract a 32-bit overflow and replace the least significant
+			 * 32 bits with the provided target time.
+			 */
+			result = now_us - UINT32_MAX - 1;
+			result &= ~(uint64_t)UINT32_MAX;
+			result |= target_time_us_wrapped;
+		}
+	}
+
+	__ASSERT_NO_MSG(result <= INT64_MAX / NSEC_PER_USEC);
+	return (net_time_t)result * NSEC_PER_USEC;
+}
+#endif /* CONFIG_NET_PKT_TXTIME || CONFIG_OPENTHREAD_CSL_RECEIVER */
+
 static void dataInit(void)
 {
 	tx_pkt = net_pkt_alloc(K_NO_WAIT);
@@ -315,11 +394,13 @@ void transmit_message(struct k_work *tx_job)
 
 	if ((radio_api->get_capabilities(radio_dev) & IEEE802154_HW_TXTIME) &&
 	    (sTransmitFrame.mInfo.mTxInfo.mTxDelay != 0)) {
-		uint64_t tx_at = sTransmitFrame.mInfo.mTxInfo.mTxDelayBaseTime +
+#if defined(CONFIG_NET_PKT_TXTIME)
+		uint32_t tx_at = sTransmitFrame.mInfo.mTxInfo.mTxDelayBaseTime +
 				 sTransmitFrame.mInfo.mTxInfo.mTxDelay;
-		struct net_ptp_time timestamp = ns_to_net_ptp_time(tx_at * NSEC_PER_USEC);
-
+		struct net_ptp_time timestamp =
+			ns_to_net_ptp_time(convert_32bit_us_wrapped_to_64bit_ns(tx_at));
 		net_pkt_set_timestamp(tx_pkt, &timestamp);
+#endif
 		tx_err =
 			radio_api->tx(radio_dev, IEEE802154_TX_MODE_TXTIME_CCA, tx_pkt, tx_payload);
 	} else if (sTransmitFrame.mInfo.mTxInfo.mCsmaCaEnabled) {
@@ -666,7 +747,7 @@ otError otPlatRadioReceiveAt(otInstance *aInstance, uint8_t aChannel,
 
 	struct ieee802154_config config = {
 		.rx_slot.channel = aChannel,
-		.rx_slot.start = (net_time_t)aStart * NSEC_PER_USEC,
+		.rx_slot.start = convert_32bit_us_wrapped_to_64bit_ns(aStart),
 		.rx_slot.duration = (net_time_t)aDuration * NSEC_PER_USEC,
 	};
 
@@ -1195,7 +1276,8 @@ void otPlatRadioUpdateCslSampleTime(otInstance *aInstance, uint32_t aCslSampleTi
 {
 	ARG_UNUSED(aInstance);
 
-	struct ieee802154_config config = { .csl_rx_time = aCslSampleTime * NSEC_PER_USEC };
+	struct ieee802154_config config = {
+		.csl_rx_time = convert_32bit_us_wrapped_to_64bit_ns(aCslSampleTime)};
 
 	(void)radio_api->configure(radio_dev, IEEE802154_CONFIG_CSL_RX_TIME, &config);
 }
