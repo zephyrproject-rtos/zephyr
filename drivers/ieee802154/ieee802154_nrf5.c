@@ -291,7 +291,7 @@ static int nrf5_energy_scan_start(const struct device *dev,
 
 		if (nrf_802154_energy_detection(duration * 1000) == false) {
 			nrf5_data.energy_scan_done = NULL;
-			err = -EPERM;
+			err = -EBUSY;
 		}
 	} else {
 		err = -EALREADY;
