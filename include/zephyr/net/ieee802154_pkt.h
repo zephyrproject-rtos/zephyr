@@ -59,10 +59,21 @@ struct net_pkt_cb_ieee802154 {
 			 */
 			uint8_t rssi;
 		};
-#if defined(CONFIG_IEEE802154_SELECTIVE_TXPOWER)
+#if defined(CONFIG_IEEE802154_SELECTIVE_TXPOWER) || \
+	defined(CONFIG_IEEE802154_MULTIPLE_CCA)
 		/* TX packets */
 		struct {
+#if defined(CONFIG_IEEE802154_SELECTIVE_TXPOWER)
 			int8_t txpwr; /* TX power in dBm. */
+#endif /* CONFIG_IEEE802154_SELECTIVE_TXPOWER */
+#if defined(CONFIG_IEEE802154_MULTIPLE_CCA)
+			/* The number of extra CCA attempts to be performed.
+			 * This field applies only to transmissions requested with
+			 * IEEE802154_TX_MODE_TXTIME_CCA mode.
+			 */
+			uint8_t extra_cca_attempts;
+#endif /* CONFIG_IEEE802154_MULTIPLE_CCA */
+
 		};
 #endif /* CONFIG_IEEE802154_SELECTIVE_TXPOWER */
 	};
@@ -200,6 +211,19 @@ static inline void net_pkt_set_ieee802154_txpwr(struct net_pkt *pkt, int8_t txpw
 	net_pkt_cb_ieee802154(pkt)->txpwr = txpwr;
 }
 #endif /* CONFIG_IEEE802154_SELECTIVE_TXPOWER */
+
+#if defined(CONFIG_IEEE802154_MULTIPLE_CCA)
+static inline uint8_t net_pkt_ieee802154_extra_cca_attempts(struct net_pkt *pkt)
+{
+	return net_pkt_cb_ieee802154(pkt)->extra_cca_attempts;
+}
+
+static inline void net_pkt_set_ieee802154_extra_cca_attempts(struct net_pkt *pkt,
+			uint8_t extra_cca_attempts)
+{
+	net_pkt_cb_ieee802154(pkt)->extra_cca_attempts = extra_cca_attempts;
+}
+#endif /* CONFIG_IEEE802154_MULTIPLE_CCA */
 
 static inline bool net_pkt_ieee802154_arb(struct net_pkt *pkt)
 {

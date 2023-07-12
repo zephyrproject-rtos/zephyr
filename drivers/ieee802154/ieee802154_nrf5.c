@@ -561,6 +561,9 @@ static bool nrf5_tx_at(struct net_pkt *pkt, uint8_t *payload, bool cca)
 			.power = net_pkt_ieee802154_txpwr(pkt),
 #endif
 		},
+#if defined(CONFIG_IEEE802154_MULTIPLE_CCA)
+		.extra_cca_attempts = net_pkt_ieee802154_extra_cca_attempts(pkt),
+#endif
 	};
 	uint64_t tx_at = target_time_convert_to_64_bits(net_pkt_txtime(pkt) / NSEC_PER_USEC);
 
