@@ -1,0 +1,63 @@
+description: Renesas R-Car eMMC
+
+compatible: "renesas,rcar-mmc"
+
+include: [sdhc.yaml, mmc.yaml, pinctrl-device.yaml, reset-device.yaml]
+
+properties:
+  clocks:
+    required: true
+
+  reg:
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  max-bus-freq:
+    required: true
+
+  non-removable:
+    type: boolean
+    description: |
+      Non-removable slots (like eMMC), which are assumed to always be present,
+      will affect the `sdhc_card_present` call. This call will always return
+      true if this property exists for the node.
+
+  mmc-sdr104-support:
+    type: boolean
+
+  cd-gpios:
+    type: phandle-array
+    description: Card Detect pin
+
+  pwr-gpios:
+    type: phandle-array
+    description: Power pin
+
+  vmmc-supply:
+    type: phandle
+    description: |
+      Supply for the card power
+
+  vqmmc-supply:
+    type: phandle
+    description: |
+      Supply for the bus IO line power, such as a level shifter.
+      If the level shifter is controlled by a GPIO line, this shall
+      be modeled as a "regulator-fixed" with a GPIO line for
+      switching the level shifter on/off.
+
+  bus-width:
+    type: int
+    default: 1
+    description: |
+        Bus width for SDMMC access, defaults to the minimum necessary
+        number of bus lines
+    enum:
+      - 1
+      - 4
+      - 8
