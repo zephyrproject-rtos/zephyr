@@ -1,0 +1,10 @@
+sample:
+  description: Bluetooth Low Energy Audio TMAP BMR sample
+  name: Bluetooth Low Energy Audio TMAP BMR sample
+tests:
+  sample.bluetooth.tmap_bmr:
+    harness: bluetooth
+    platform_allow: qemu_cortex_m3 qemu_x86
+    tags: bluetooth
+    integration_platforms:
+      - qemu_cortex_m3
