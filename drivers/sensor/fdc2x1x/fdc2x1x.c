@@ -516,7 +516,7 @@ static int fdc2x1x_device_pm_action(const struct device *dev,
 
 		break;
 	case PM_DEVICE_ACTION_TURN_OFF:
-		if (cfg->sd_gpio->port.name) {
+		if (cfg->sd_gpio.port->name) {
 			ret = fdc2x1x_set_shutdown(dev, true);
 		} else {
 			LOG_ERR("SD pin not defined");
