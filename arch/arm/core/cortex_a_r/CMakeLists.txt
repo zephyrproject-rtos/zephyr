@@ -15,6 +15,7 @@ zephyr_library_sources(
   prep_c.c
   thread.c
   cpu_idle.S
+  smp.c
   )
 
 zephyr_library_sources_ifdef(CONFIG_GEN_SW_ISR_TABLE isr_wrapper.S)

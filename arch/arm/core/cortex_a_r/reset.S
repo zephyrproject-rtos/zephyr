@@ -18,6 +18,8 @@
 #include <offsets_short.h>
 #include <cortex_a_r/tcm.h>
 #include "vector_table.h"
+#include "boot.h"
+#include "macro_priv.inc"
 
 _ASM_FILE_PROLOGUE
 
@@ -76,6 +78,7 @@ SECTION_SUBSEC_FUNC(TEXT, _reset_section, __start)
 EL1_Reset_Handler:
 
 #endif
+
 #if defined(CONFIG_DCLS)
     /*
      * Initialise CPU registers to a defined state if the processor is
@@ -196,33 +199,72 @@ EL1_Reset_Handler:
 
 #endif /* CONFIG_DCLS */
 
+    ldr r0, =arm_cpu_boot_params
+#if CONFIG_MP_MAX_NUM_CPUS > 1
+    get_cpu_id r1
+
+    ldrex r2, [r0, #BOOT_PARAM_MPID_OFFSET]
+    cmp r2, #-1
+    bne 1f
+    strex r3, r1, [r0, #BOOT_PARAM_MPID_OFFSET]
+    cmp r3, #0
+    beq _primary_core
+
+1:
+    dmb ld
+    ldr r2, [r0, #BOOT_PARAM_MPID_OFFSET]
+    cmp r1, r2
+    bne 1b
+
+    /* we can now move on */
+    ldr r4, =z_arm_secondary_start
+    ldr r5, [r0, #BOOT_PARAM_FIQ_SP_OFFSET]
+    ldr r6, [r0, #BOOT_PARAM_IRQ_SP_OFFSET]
+    ldr r7, [r0, #BOOT_PARAM_ABT_SP_OFFSET]
+    ldr r8, [r0, #BOOT_PARAM_UDF_SP_OFFSET]
+    ldr r9, [r0, #BOOT_PARAM_SVC_SP_OFFSET]
+    ldr r10, [r0, #BOOT_PARAM_SYS_SP_OFFSET]
+    b 2f
+
+_primary_core:
+#endif
+
+    ldr r4, =z_arm_prep_c
+    ldr r5, =(z_arm_fiq_stack + CONFIG_ARMV7_FIQ_STACK_SIZE)
+    ldr r6, =(z_interrupt_stacks + CONFIG_ISR_STACK_SIZE)
+    ldr r7, =(z_arm_abort_stack + CONFIG_ARMV7_EXCEPTION_STACK_SIZE)
+    ldr r8, =(z_arm_undef_stack + CONFIG_ARMV7_EXCEPTION_STACK_SIZE)
+    ldr r9, =(z_arm_svc_stack + CONFIG_ARMV7_SVC_STACK_SIZE)
+    ldr r10, =(z_arm_sys_stack + CONFIG_ARMV7_SYS_STACK_SIZE)
+
+2:
     /*
      * Configure stack.
      */
 
     /* FIQ mode stack */
     msr CPSR_c, #(MODE_FIQ | I_BIT | F_BIT)
-    ldr sp, =(z_arm_fiq_stack + CONFIG_ARMV7_FIQ_STACK_SIZE)
+    mov sp, r5
 
     /* IRQ mode stack */
     msr CPSR_c, #(MODE_IRQ | I_BIT | F_BIT)
-    ldr sp, =(z_interrupt_stacks + CONFIG_ISR_STACK_SIZE)
+    mov sp, r6
 
     /* ABT mode stack */
     msr CPSR_c, #(MODE_ABT | I_BIT | F_BIT)
-    ldr sp, =(z_arm_abort_stack + CONFIG_ARMV7_EXCEPTION_STACK_SIZE)
+    mov sp, r7
 
     /* UND mode stack */
     msr CPSR_c, #(MODE_UND | I_BIT | F_BIT)
-    ldr sp, =(z_arm_undef_stack + CONFIG_ARMV7_EXCEPTION_STACK_SIZE)
+    mov sp, r8
 
     /* SVC mode stack */
     msr CPSR_c, #(MODE_SVC | I_BIT | F_BIT)
-    ldr sp, =(z_arm_svc_stack + CONFIG_ARMV7_SVC_STACK_SIZE)
+    mov sp, r9
 
     /* SYS mode stack */
     msr CPSR_c, #(MODE_SYS | I_BIT | F_BIT)
-    ldr sp, =(z_arm_sys_stack + CONFIG_ARMV7_SYS_STACK_SIZE)
+    mov sp, r10
 
 #if defined(CONFIG_PLATFORM_SPECIFIC_INIT)
     /* Execute platform-specific initialisation if applicable */
@@ -238,4 +280,4 @@ EL1_Reset_Handler:
     bl z_arm_tcm_disable_ecc
 #endif
 
-    b z_arm_prep_c
+    bx r4

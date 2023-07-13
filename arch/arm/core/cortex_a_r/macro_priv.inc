@@ -8,6 +8,16 @@
 
 #include <zephyr/arch/arm/cortex_a_r/tpidruro.h>
 
+/*
+ * Get CPU id
+ */
+
+.macro get_cpu_id rreg0
+	/* Read MPIDR register */
+	mrc p15, 0, \rreg0, c0, c0, 5
+	ubfx	\rreg0, \rreg0, #0, #24
+.endm
+
 .macro get_cpu rreg0
 	/*
          * Get CPU pointer.
