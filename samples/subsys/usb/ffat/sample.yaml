@@ -1,0 +1,14 @@
+sample:
+  name: USB FFAT sample
+common:
+  depends_on:
+    - usbd
+  integration_platforms:
+    - nrf52840dk/nrf52840
+    - nrf54h20dk/nrf54h20/cpuapp
+    - frdm_k64f
+    - nucleo_f413zh
+    - mimxrt1060_evk
+tests:
+  sample.usbd.ffat:
+    tags: usb filesystem
