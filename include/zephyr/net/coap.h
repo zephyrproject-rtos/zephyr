@@ -458,6 +458,16 @@ int coap_packet_append_option(struct coap_packet *cpkt, uint16_t code,
 			      const uint8_t *value, uint16_t len);
 
 /**
+ * @brief Remove an option from the packet.
+ *
+ * @param cpkt Packet to be updated
+ * @param code Option code to remove from the packet, see #coap_option_num
+ *
+ * @return 0 in case of success or negative in case of error.
+ */
+int coap_packet_remove_option(struct coap_packet *cpkt, uint16_t code);
+
+/**
  * @brief Converts an option to its integer representation.
  *
  * Assumes that the number is encoded in the network byte order in the
