@@ -3147,8 +3147,7 @@ int bt_l2cap_chan_disconnect(struct bt_l2cap_chan *chan)
 	return 0;
 }
 
-int bt_l2cap_chan_send_cb(struct bt_l2cap_chan *chan, struct net_buf *buf, bt_conn_tx_cb_t cb,
-			  void *user_data)
+int bt_l2cap_chan_send(struct bt_l2cap_chan *chan, struct net_buf *buf)
 {
 	struct bt_l2cap_le_chan *le_chan = BT_L2CAP_LE_CHAN(chan);
 	struct l2cap_tx_meta_data *data;
@@ -3171,7 +3170,7 @@ int bt_l2cap_chan_send_cb(struct bt_l2cap_chan *chan, struct net_buf *buf, bt_co
 
 	if (IS_ENABLED(CONFIG_BT_BREDR) &&
 	    chan->conn->type == BT_CONN_TYPE_BR) {
-		return bt_l2cap_br_chan_send_cb(chan, buf, cb, user_data);
+		return bt_l2cap_br_chan_send_cb(chan, buf, NULL, NULL);
 	}
 
 	data = alloc_tx_meta_data();
@@ -3182,8 +3181,8 @@ int bt_l2cap_chan_send_cb(struct bt_l2cap_chan *chan, struct net_buf *buf, bt_co
 
 	data->sent = 0;
 	data->cid = le_chan->tx.cid;
-	data->cb = cb;
-	data->user_data = user_data;
+	data->cb = NULL;
+	data->user_data = NULL;
 	l2cap_tx_meta_data(buf) = data;
 
 	/* Queue if there are pending segments left from previous packet or
@@ -3214,8 +3213,4 @@ int bt_l2cap_chan_send_cb(struct bt_l2cap_chan *chan, struct net_buf *buf, bt_co
 	return err;
 }
 
-int bt_l2cap_chan_send(struct bt_l2cap_chan *chan, struct net_buf *buf)
-{
-	return bt_l2cap_chan_send_cb(chan, buf, NULL, NULL);
-}
 #endif /* CONFIG_BT_L2CAP_DYNAMIC_CHANNEL */
