@@ -228,3 +228,4 @@ API Reference
 **************
 
 .. doxygengroup:: sensor_interface
+.. doxygengroup:: sensor_emulator_backend
