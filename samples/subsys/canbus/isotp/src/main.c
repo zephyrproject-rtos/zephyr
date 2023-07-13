@@ -12,15 +12,29 @@ const struct isotp_fc_opts fc_opts_0_5 = {.bs = 0, .stmin = 5};
 
 const struct isotp_msg_id rx_addr_8_0 = {
 	.std_id = 0x80,
+#ifdef CONFIG_SAMPLE_CAN_FD_MODE
+	.flags = ISOTP_MSG_FDF | ISOTP_MSG_BRS,
+#endif
 };
 const struct isotp_msg_id tx_addr_8_0 = {
 	.std_id = 0x180,
+#ifdef CONFIG_SAMPLE_CAN_FD_MODE
+	.dl = 64,
+	.flags = ISOTP_MSG_FDF | ISOTP_MSG_BRS,
+#endif
 };
 const struct isotp_msg_id rx_addr_0_5 = {
 	.std_id = 0x01,
+#ifdef CONFIG_SAMPLE_CAN_FD_MODE
+	.flags = ISOTP_MSG_FDF | ISOTP_MSG_BRS,
+#endif
 };
 const struct isotp_msg_id tx_addr_0_5 = {
 	.std_id = 0x101,
+#ifdef CONFIG_SAMPLE_CAN_FD_MODE
+	.dl = 64,
+	.flags = ISOTP_MSG_FDF | ISOTP_MSG_BRS,
+#endif
 };
 
 const struct device *can_dev;
@@ -49,8 +63,6 @@ void rx_8_0_thread(void *arg1, void *arg2, void *arg3)
 	ARG_UNUSED(arg3);
 	int ret, rem_len, received_len;
 	struct net_buf *buf;
-	static uint8_t rx_buffer[7];
-
 
 	ret = isotp_bind(&recv_ctx_8_0, can_dev,
 			 &tx_addr_8_0, &rx_addr_8_0,
@@ -71,19 +83,11 @@ void rx_8_0_thread(void *arg1, void *arg2, void *arg3)
 				break;
 			}
 
-			received_len += buf->len;
-			if (net_buf_tailroom(buf) >= 1) {
-				net_buf_add_u8(buf, '\0');
-				printk("%s", buf->data);
-			} else if (buf->len == 6) {
-				/* First frame does not have tailroom.*/
-				memcpy(rx_buffer, buf->data, 6);
-				rx_buffer[6] = '\0';
-				printk("%s", rx_buffer);
-			} else {
-				printk("No tailroom for string termination\n");
+			while (buf != NULL) {
+				received_len += buf->len;
+				printk("%.*s", buf->len, buf->data);
+				buf = net_buf_frag_del(NULL, buf);
 			}
-			net_buf_unref(buf);
 		} while (rem_len);
 		printk("Got %d bytes in total\n", received_len);
 	}
@@ -142,13 +146,13 @@ int main(void)
 		return 0;
 	}
 
-#ifdef CONFIG_SAMPLE_LOOPBACK_MODE
-	ret = can_set_mode(can_dev, CAN_MODE_LOOPBACK);
+	can_mode_t mode = (IS_ENABLED(CONFIG_SAMPLE_LOOPBACK_MODE) ? CAN_MODE_LOOPBACK : 0) |
+			  (IS_ENABLED(CONFIG_SAMPLE_CAN_FD_MODE) ? CAN_MODE_FD : 0);
+	ret = can_set_mode(can_dev, mode);
 	if (ret != 0) {
-		printk("CAN: Failed to set loopback mode [%d]", ret);
+		printk("CAN: Failed to set mode [%d]", ret);
 		return 0;
 	}
-#endif /* CONFIG_SAMPLE_LOOPBACK_MODE */
 
 	ret = can_start(can_dev);
 	if (ret != 0) {
