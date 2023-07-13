@@ -745,7 +745,7 @@ int bt_conn_le_create_synced(const struct bt_le_ext_adv *adv,
 			     const struct bt_conn_le_create_synced_param *synced_param,
 			     const struct bt_le_conn_param *conn_param, struct bt_conn **conn);
 
-/** @brief Automatically connect to remote devices in the filter accept list..
+/** @brief Automatically connect to remote devices in the filter accept list.
  *
  *  This uses the Auto Connection Establishment procedure.
  *  The procedure will continue until a single connection is established or the
