@@ -25,9 +25,45 @@ extern "C" {
 #endif
 
 struct bt_mesh_cfg_cli;
+struct bt_mesh_cfg_cli_hb_pub;
+struct bt_mesh_cfg_cli_hb_sub;
+struct bt_mesh_cfg_cli_mod_pub;
 
 /** Mesh Configuration Client Status messages callback */
 struct bt_mesh_cfg_cli_cb {
+
+	/** @brief Optional callback for Composition data messages.
+	 *
+	 *  Handles received Composition data messages from a server.
+	 *
+	 *  @note For decoding @c buf, please refer to
+	 *        @ref bt_mesh_comp_p0_get and
+	 *        @ref bt_mesh_comp_p1_elem_pull.
+	 *
+	 *  @param cli       Client that received the status message.
+	 *  @param addr      Address of the sender.
+	 *  @param page      Composition data page.
+	 *  @param buf       Composition data buffer.
+	 */
+	void (*comp_data)(struct bt_mesh_cfg_cli *cli, uint16_t addr, uint8_t page,
+			  struct net_buf_simple *buf);
+
+	/** @brief Optional callback for Model Pub status messages.
+	 *
+	 *  Handles received Model Pub status messages from a server.
+	 *
+	 *  @param cli       Client that received the status message.
+	 *  @param addr      Address of the sender.
+	 *  @param status    Status code for the message.
+	 *  @param elem_addr Address of the element.
+	 *  @param mod_id    Model ID.
+	 *  @param cid       Company ID.
+	 *  @param pub       Publication configuration parameters.
+	 */
+	void (*mod_pub_status)(struct bt_mesh_cfg_cli *cli, uint16_t addr, uint8_t status,
+			       uint16_t elem_addr, uint16_t mod_id, uint16_t cid,
+			       struct bt_mesh_cfg_cli_mod_pub *pub);
+
 	/** @brief Optional callback for Model Sub Status messages.
 	 *
 	 *  Handles received Model Sub Status messages from a server.
@@ -42,6 +78,26 @@ struct bt_mesh_cfg_cli_cb {
 	void (*mod_sub_status)(struct bt_mesh_cfg_cli *cli, uint16_t addr,
 			     uint8_t status, uint16_t elem_addr,
 			     uint16_t sub_addr, uint32_t mod_id);
+
+	/** @brief Optional callback for Model Sub list messages.
+	 *
+	 *  Handles received Model Sub list messages from a server.
+	 *
+	 *  @note The @c buf parameter should be decoded using
+	 *        @ref net_buf_simple_pull_le16 in iteration, as long
+	 *        as @c buf->len is greater than or equal to  2.
+	 *
+	 *  @param cli       Client that received the status message.
+	 *  @param addr      Address of the sender.
+	 *  @param status    Status code for the message.
+	 *  @param elem_addr Address of the element.
+	 *  @param mod_id    Model ID.
+	 *  @param cid       Company ID.
+	 *  @param buf       Message buffer containing subscription addresses.
+	 */
+	void (*mod_sub_list)(struct bt_mesh_cfg_cli *cli, uint16_t addr, uint8_t status,
+			       uint16_t elem_addr, uint16_t mod_id, uint16_t cid,
+			       struct net_buf_simple *buf);
 
 	/** @brief Optional callback for Node Reset Status messages.
 	 *
@@ -131,6 +187,20 @@ struct bt_mesh_cfg_cli_cb {
 	void (*net_key_status)(struct bt_mesh_cfg_cli *cli, uint16_t addr,
 			       uint8_t status, uint16_t net_idx);
 
+	/** @brief Optional callback for Netkey list messages.
+	 *
+	 *  Handles received Netkey list messages from a server.
+	 *
+	 *  @note The @c buf parameter should be decoded using the
+	 *        @ref bt_mesh_key_idx_unpack_list helper function.
+	 *
+	 *  @param cli	Client that received the status message.
+	 *  @param addr	Address of the sender.
+	 *  @param buf	Message buffer containing key indexes.
+	 */
+	void (*net_key_list)(struct bt_mesh_cfg_cli *cli, uint16_t addr,
+			    struct net_buf_simple *buf);
+
 	/** @brief Optional callback for AppKey Status messages.
 	 *
 	 *  Handles received AppKey Status messages from a server.
@@ -144,6 +214,22 @@ struct bt_mesh_cfg_cli_cb {
 	void (*app_key_status)(struct bt_mesh_cfg_cli *cli, uint16_t addr,
 			       uint8_t status, uint16_t net_idx,
 			       uint16_t app_idx);
+
+	/** @brief Optional callback for Appkey list messages.
+	 *
+	 *  Handles received Appkey list messages from a server.
+	 *
+	 *  @note The @c buf parameter should be decoded using the
+	 *        @ref bt_mesh_key_idx_unpack_list helper function.
+	 *
+	 *  @param cli     Client that received the status message.
+	 *  @param addr    Address of the sender.
+	 *  @param status  Status code for the message.
+	 *  @param net_idx The index of the NetKey.
+	 *  @param buf     Message buffer containing key indexes.
+	 */
+	void (*app_key_list)(struct bt_mesh_cfg_cli *cli, uint16_t addr, uint8_t status,
+			    uint16_t net_idx, struct net_buf_simple *buf);
 
 	/** @brief Optional callback for Model App Status messages.
 	 *
@@ -159,6 +245,25 @@ struct bt_mesh_cfg_cli_cb {
 	void (*mod_app_status)(struct bt_mesh_cfg_cli *cli, uint16_t addr,
 			       uint8_t status, uint16_t elem_addr,
 			       uint16_t app_idx, uint32_t mod_id);
+
+	/** @brief Optional callback for Model App list messages.
+	 *
+	 *  Handles received Model App list messages from a server.
+	 *
+	 *  @note The @c buf parameter should be decoded using the
+	 *        @ref bt_mesh_key_idx_unpack_list helper function.
+	 *
+	 *  @param cli       Client that received the status message.
+	 *  @param addr      Address of the sender.
+	 *  @param status    Status code for the message.
+	 *  @param elem_addr Address of the element.
+	 *  @param mod_id    Model ID.
+	 *  @param cid       Company ID.
+	 *  @param buf       Message buffer containing key indexes.
+	 */
+	void (*mod_app_list)(struct bt_mesh_cfg_cli *cli, uint16_t addr, uint8_t status,
+			       uint16_t elem_addr, uint16_t mod_id, uint16_t cid,
+			       struct net_buf_simple *buf);
 
 	/** @brief Optional callback for Node Identity Status messages.
 	 *
@@ -185,6 +290,43 @@ struct bt_mesh_cfg_cli_cb {
 	 */
 	void (*lpn_timeout_status)(struct bt_mesh_cfg_cli *cli, uint16_t addr,
 				   uint16_t elem_addr, uint32_t timeout);
+
+	/** @brief Optional callback for Key Refresh Phase status messages.
+	 *
+	 *  Handles received Key Refresh Phase status messages from a server.
+	 *
+	 *  @param cli     Client that received the status message.
+	 *  @param addr    Address of the sender.
+	 *  @param status  Status code for the message.
+	 *  @param net_idx The index of the NetKey.
+	 *  @param phase   Phase of the KRP.
+	 */
+	void (*krp_status)(struct bt_mesh_cfg_cli *cli, uint16_t addr, uint8_t status,
+			   uint16_t net_idx, uint8_t phase);
+
+	/** @brief Optional callback for Heartbeat pub status messages.
+	 *
+	 *  Handles received Heartbeat pub status messages from a server.
+	 *
+	 *  @param cli    Client that received the status message.
+	 *  @param addr   Address of the sender.
+	 *  @param status Status code for the message.
+	 *  @param pub    HB publication configuration parameters.
+	 */
+	void (*hb_pub_status)(struct bt_mesh_cfg_cli *cli, uint16_t addr, uint8_t status,
+			      struct bt_mesh_cfg_cli_hb_pub *pub);
+
+	/** @brief Optional callback for Heartbeat Sub status messages.
+	 *
+	 *  Handles received Heartbeat Sub status messages from a server.
+	 *
+	 *  @param cli    Client that received the status message.
+	 *  @param addr   Address of the sender.
+	 *  @param status Status code for the message.
+	 *  @param sub    HB subscription configuration parameters.
+	 */
+	void (*hb_sub_status)(struct bt_mesh_cfg_cli *cli, uint16_t addr, uint8_t status,
+				 struct bt_mesh_cfg_cli_hb_sub *sub);
 };
 
 /** Mesh Configuration Client Model Context */
