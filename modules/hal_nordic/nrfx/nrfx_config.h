@@ -364,6 +364,10 @@
 #define NRFX_USBD_ENABLED 1
 #endif
 
+#ifdef CONFIG_NRFX_USBD_ISO_IN_ZLP
+#define NRFX_USBD_CONFIG_ISO_IN_ZLP 1
+#endif
+
 #ifdef CONFIG_NRFX_USBREG
 #define NRFX_USBREG_ENABLED 1
 #endif
