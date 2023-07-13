@@ -260,12 +260,35 @@ bool bt_audio_valid_codec_cfg(const struct bt_audio_codec_cfg *codec_cfg)
 }
 
 #if defined(CONFIG_BT_AUDIO_TX)
+static bool bt_bap_stream_can_send(const struct bt_bap_stream *stream)
+{
+	struct bt_bap_ep_info info;
+	int err;
+
+	if (stream == NULL || stream->ep == NULL) {
+		return false;
+	}
+
+	err = bt_bap_ep_get_info(stream->ep, &info);
+	if (err != 0) {
+		return false;
+	}
+
+	return info.can_send;
+}
+
 int bt_bap_stream_send(struct bt_bap_stream *stream, struct net_buf *buf,
 			 uint16_t seq_num, uint32_t ts)
 {
 	struct bt_bap_ep *ep;
 
 	if (stream == NULL || stream->ep == NULL) {
+		return -EINVAL;
+	}
+
+	if (!bt_bap_stream_can_send(stream)) {
+		LOG_DBG("Stream is not configured for TX");
+
 		return -EINVAL;
 	}
 
@@ -281,6 +304,37 @@ int bt_bap_stream_send(struct bt_bap_stream *stream, struct net_buf *buf,
 
 	return bt_iso_chan_send(bt_bap_stream_iso_chan_get(stream),
 				buf, seq_num, ts);
+}
+
+int bt_bap_stream_get_tx_sync(struct bt_bap_stream *stream, struct bt_iso_tx_info *info)
+{
+	struct bt_iso_chan *iso_chan;
+
+	CHECKIF(stream == NULL) {
+		LOG_DBG("stream is null");
+
+		return -EINVAL;
+	}
+
+	CHECKIF(info == NULL) {
+		LOG_DBG("info is null");
+
+		return -EINVAL;
+	}
+
+	if (!bt_bap_stream_can_send(stream)) {
+		LOG_DBG("Stream is not configured for TX");
+
+		return -EINVAL;
+	}
+
+	iso_chan = bt_bap_stream_iso_chan_get(stream);
+	if (iso_chan == NULL) {
+		LOG_DBG("Could not get iso channel from stream %p", stream);
+		return -EINVAL;
+	}
+
+	return bt_iso_chan_get_tx_sync(iso_chan, info);
 }
 #endif /* CONFIG_BT_AUDIO_TX */
 
