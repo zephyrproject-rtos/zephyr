@@ -128,6 +128,15 @@ config ARM64_SAFE_EXCEPTION_STACK
 	  used for user stack overflow checking, because kernel stack support
 	  the checking work.
 
+config ARM64_ENABLE_FRAME_POINTER
+	bool
+	default y
+	depends on OVERRIDE_FRAME_POINTER_DEFAULT && !OMIT_FRAME_POINTER
+	help
+	  Hidden option to simplify access to OVERRIDE_FRAME_POINTER_DEFAULT
+	  and OMIT_FRAME_POINTER. It is automatically enabled when the frame
+	  pointer unwinding is enabled.
+
 config ARM64_SAFE_EXCEPTION_STACK_SIZE
 	int "The stack size of the safe exception stack"
 	default 4096

@@ -191,6 +191,45 @@ static void esf_dump(const z_arch_esf_t *esf)
 	LOG_ERR("x16: 0x%016llx  x17: 0x%016llx", esf->x16, esf->x17);
 	LOG_ERR("x18: 0x%016llx  lr:  0x%016llx", esf->x18, esf->lr);
 }
+
+#ifdef CONFIG_ARM64_ENABLE_FRAME_POINTER
+static void esf_unwind(const z_arch_esf_t *esf)
+{
+	/*
+	 * For GCC:
+	 *
+	 *  ^  +-----------------+
+	 *  |  |                 |
+	 *  |  |                 |
+	 *  |  |                 |
+	 *  |  |                 |
+	 *  |  | function stack  |
+	 *  |  |                 |
+	 *  |  |                 |
+	 *  |  |                 |
+	 *  |  |                 |
+	 *  |  +-----------------+
+	 *  |  |       LR        |
+	 *  |  +-----------------+
+	 *  |  |   previous FP   | <---+ FP
+	 *  +  +-----------------+
+	 */
+
+	uint64_t *fp = (uint64_t *) esf->fp;
+	unsigned int count = 0;
+	uint64_t lr;
+
+	LOG_ERR("");
+	while (fp != NULL) {
+		lr = fp[1];
+		LOG_ERR("backtrace %2d: fp: 0x%016llx lr: 0x%016llx",
+			 count++, (uint64_t) fp, lr);
+		fp = (uint64_t *) fp[0];
+	}
+	LOG_ERR("");
+}
+#endif
+
 #endif /* CONFIG_EXCEPTION_DEBUG */
 
 static bool is_recoverable(z_arch_esf_t *esf, uint64_t esr, uint64_t far,
@@ -261,6 +300,10 @@ void z_arm64_fatal_error(unsigned int reason, z_arch_esf_t *esf)
 	if (esf != NULL) {
 		esf_dump(esf);
 	}
+
+#ifdef CONFIG_ARM64_ENABLE_FRAME_POINTER
+	esf_unwind(esf);
+#endif /* CONFIG_ARM64_ENABLE_FRAME_POINTER */
 #endif /* CONFIG_EXCEPTION_DEBUG */
 
 	z_fatal_error(reason, esf);
