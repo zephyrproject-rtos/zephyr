@@ -7,6 +7,7 @@
 #define ZEPHYR_DRIVERS_SENSOR_AKM09918C_AKM09918C_H_
 
 #include <zephyr/device.h>
+#include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/sensor.h>
 
 #include "akm09918c_reg.h"
@@ -15,7 +16,17 @@
 #define AKM09918C_MEASURE_TIME_US 9000
 
 /* Conversion values */
-#define AKM09918C_MICRO_GAUSS_PER_BIT INT64_C(500)
+#define AKM09918C_MICRO_GAUSS_PER_BIT INT64_C(1500)
+
+/* Maximum and minimum raw register values for magnetometer data per datasheet */
+#define AKM09918C_MAGN_MAX_DATA_REG (32752)
+#define AKM09918C_MAGN_MIN_DATA_REG (-32752)
+
+/* Maximum and minimum magnetometer values in microgauss. +/-32752 is the maximum range of the
+ * data registers (slightly less than the range of int16). This works out to +/- 49,128,000 uGs
+ */
+#define AKM09918C_MAGN_MAX_MICRO_GAUSS (AKM09918C_MAGN_MAX_DATA_REG * AKM09918C_MICRO_GAUSS_PER_BIT)
+#define AKM09918C_MAGN_MIN_MICRO_GAUSS (AKM09918C_MAGN_MIN_DATA_REG * AKM09918C_MICRO_GAUSS_PER_BIT)
 
 struct akm09918c_data {
 	int16_t x_sample;
