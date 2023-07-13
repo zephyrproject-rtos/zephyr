@@ -960,7 +960,6 @@ static void audio_send_timeout(struct k_work *work)
 	struct bt_iso_tx_info info;
 	struct audio_stream *stream;
 	struct k_work_delayable *dwork;
-	struct bt_iso_chan *iso_chan;
 	struct net_buf *buf;
 	uint32_t size;
 	uint8_t *data;
@@ -970,8 +969,7 @@ static void audio_send_timeout(struct k_work *work)
 	stream = CONTAINER_OF(dwork, struct audio_stream, audio_send_work);
 
 	if (stream->last_req_seq_num % 201 == 200) {
-		iso_chan = bt_bap_stream_iso_chan_get(&stream->stream);
-		err = bt_iso_chan_get_tx_sync(iso_chan, &info);
+		err = bt_bap_stream_get_tx_sync(&stream->stream, &info);
 		if (err != 0) {
 			LOG_DBG("Failed to get last seq num: err %d", err);
 		} else if (stream->last_req_seq_num > info.seq_num) {
