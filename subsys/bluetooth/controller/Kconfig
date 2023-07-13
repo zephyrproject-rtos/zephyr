@@ -324,13 +324,41 @@ config BT_CTLR_TX_PWR_PLUS_3
 
 config BT_CTLR_TX_PWR_PLUS_2
 	bool "+2 dBm"
-	depends on HAS_HW_NRF_RADIO_TX_PWR_HIGH
+	depends on HAS_HW_NRF_RADIO_TX_PWR_HIGH || SOC_SERIES_NRF53X
+
+config BT_CTLR_TX_PWR_PLUS_1
+	bool "+1 dBm"
+	depends on SOC_SERIES_NRF53X
 
 config BT_CTLR_TX_PWR_0
 	bool "0 dBm"
 
+config BT_CTLR_TX_PWR_MINUS_1
+	bool "-1 dBm"
+	depends on SOC_SERIES_NRF53X
+
+config BT_CTLR_TX_PWR_MINUS_2
+	bool "-2 dBm"
+	depends on SOC_SERIES_NRF53X
+
+config BT_CTLR_TX_PWR_MINUS_3
+	bool "-3 dBm"
+	depends on SOC_SERIES_NRF53X
+
 config BT_CTLR_TX_PWR_MINUS_4
 	bool "-4 dBm"
+
+config BT_CTLR_TX_PWR_MINUS_5
+	bool "-5 dBm"
+	depends on SOC_SERIES_NRF53X
+
+config BT_CTLR_TX_PWR_MINUS_6
+	bool "-6 dBm"
+	depends on SOC_SERIES_NRF53X
+
+config BT_CTLR_TX_PWR_MINUS_7
+	bool "-7 dBm"
+	depends on SOC_SERIES_NRF53X
 
 config BT_CTLR_TX_PWR_MINUS_8
 	bool "-8 dBm"
@@ -363,8 +391,15 @@ config BT_CTLR_TX_PWR_DBM
 	default 4 if BT_CTLR_TX_PWR_PLUS_4
 	default 3 if BT_CTLR_TX_PWR_PLUS_3
 	default 2 if BT_CTLR_TX_PWR_PLUS_2
+	default 1 if BT_CTLR_TX_PWR_PLUS_1
 	default 0 if BT_CTLR_TX_PWR_0
+	default -1 if BT_CTLR_TX_PWR_MINUS_1
+	default -2 if BT_CTLR_TX_PWR_MINUS_2
+	default -3 if BT_CTLR_TX_PWR_MINUS_3
 	default -4 if BT_CTLR_TX_PWR_MINUS_4
+	default -5 if BT_CTLR_TX_PWR_MINUS_5
+	default -6 if BT_CTLR_TX_PWR_MINUS_6
+	default -7 if BT_CTLR_TX_PWR_MINUS_7
 	default -8 if BT_CTLR_TX_PWR_MINUS_8
 	default -12 if BT_CTLR_TX_PWR_MINUS_12
 	default -16 if BT_CTLR_TX_PWR_MINUS_16
