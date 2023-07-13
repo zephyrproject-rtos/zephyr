@@ -82,6 +82,13 @@ config UART_NS16550_PARENT_INIT_LEVEL
 	  only post kernel and hence such platforms the UART driver instance init
 	  should be invoked only post kernel in case parent node is PCI.
 
+config UART_NS16550_TI_K3
+	bool "Add support for NS16550 variant specific to TI K3 SoCs"
+	help
+	  Enabling this configuration allows the users to use the UART port in
+	  Texas Instruments K3 SoCs by enabling a vendor specific extended register
+	  set.
+
 menu "NS16550 Workarounds"
 
 config UART_NS16550_WA_ISR_REENABLE_INTERRUPT
