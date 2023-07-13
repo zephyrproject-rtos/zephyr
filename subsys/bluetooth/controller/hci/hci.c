@@ -2122,6 +2122,15 @@ static void le_create_cis(struct net_buf *buf, struct net_buf **evt)
 	uint8_t i;
 
 	/*
+	 * Only create a CIS if the Isochronous Channels (Host Support) feature bit
+	 * is set. Refer to BT Spec v5.4 Vol 6 Part B Section 4.6.33.1.
+	 */
+	if (!(ll_feat_get() & BIT64(BT_LE_FEAT_BIT_ISO_CHANNELS))) {
+		*evt = cmd_status(BT_HCI_ERR_CMD_DISALLOWED);
+		return;
+	}
+
+	/*
 	 * Creating new CISes is disallowed until all previous CIS
 	 * established events have been generated
 	 */
