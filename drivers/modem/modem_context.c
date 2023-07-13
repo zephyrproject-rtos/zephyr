@@ -76,7 +76,7 @@ int modem_context_get_addr_port(const struct sockaddr *addr, uint16_t *port)
 /**
  * @brief  Finds modem context which owns the iface device.
  *
- * @param  *dev: device used by the modem iface.
+ * @param  dev: device used by the modem iface.
  *
  * @retval Modem context or NULL.
  */
@@ -99,7 +99,7 @@ struct modem_context *modem_context_from_iface_dev(const struct device *dev)
  * @note   Amount of stored modem contexts is determined by
  *         CONFIG_MODEM_CONTEXT_MAX_NUM.
  *
- * @param  *ctx: modem context to persist.
+ * @param  ctx: modem context to persist.
  *
  * @retval 0 if ok, < 0 if error.
  */
