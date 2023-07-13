@@ -42,6 +42,7 @@ static enc_decoder_work_mode_t int_to_work_mode(int32_t val)
 static int qdec_mcux_attr_set(const struct device *dev, enum sensor_channel ch,
 	enum sensor_attribute attr, const struct sensor_value *val)
 {
+	const struct qdec_mcux_config *config = dev->config;
 	struct qdec_mcux_data *data = dev->data;
 
 	if (ch != SENSOR_CHAN_ROTATION) {
@@ -59,6 +60,8 @@ static int qdec_mcux_attr_set(const struct device *dev, enum sensor_channel ch,
 	case SENSOR_ATTR_QDEC_ENABLE_SINGLE_PHASE:
 		data->qdec_config.decoderWorkMode =
 			int_to_work_mode(val->val1);
+
+		WRITE_BIT(config->base->CTRL, ENC_CTRL_PH1_SHIFT, val->val1);
 		return 0;
 	default:
 		return -ENOTSUP;
