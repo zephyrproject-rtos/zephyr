@@ -69,33 +69,6 @@ NET_BUF_POOL_FIXED_DEFINE(disc_pool, 1,
 #define l2cap_lookup_ident(conn, ident) __l2cap_lookup_ident(conn, ident, false)
 #define l2cap_remove_ident(conn, ident) __l2cap_lookup_ident(conn, ident, true)
 
-struct l2cap_tx_meta_data {
-	int sent;
-	uint16_t cid;
-	bt_conn_tx_cb_t cb;
-	void *user_data;
-};
-
-struct l2cap_tx_meta {
-	struct l2cap_tx_meta_data *data;
-};
-
-static struct l2cap_tx_meta_data l2cap_tx_meta_data_storage[CONFIG_BT_CONN_TX_MAX];
-K_FIFO_DEFINE(free_l2cap_tx_meta_data);
-
-static struct l2cap_tx_meta_data *alloc_tx_meta_data(void)
-{
-	return k_fifo_get(&free_l2cap_tx_meta_data, K_NO_WAIT);
-}
-
-static void free_tx_meta_data(struct l2cap_tx_meta_data *data)
-{
-	(void)memset(data, 0, sizeof(*data));
-	k_fifo_put(&free_l2cap_tx_meta_data, data);
-}
-
-#define l2cap_tx_meta_data(buf) (((struct l2cap_tx_meta *)net_buf_user_data(buf))->data)
-
 static sys_slist_t servers;
 
 #endif /* CONFIG_BT_L2CAP_DYNAMIC_CHANNEL */
@@ -906,8 +879,8 @@ static struct net_buf *l2cap_chan_le_get_tx_buf(struct bt_l2cap_le_chan *ch)
 	return net_buf_get(&ch->tx_queue, K_NO_WAIT);
 }
 
-static int l2cap_chan_le_send_sdu(struct bt_l2cap_le_chan *ch,
-				  struct net_buf **buf, uint16_t sent);
+static int l2cap_chan_le_send_frag(struct bt_l2cap_le_chan *ch,
+				  struct net_buf **buf);
 
 static void l2cap_chan_tx_process(struct k_work *work)
 {
@@ -917,24 +890,46 @@ static void l2cap_chan_tx_process(struct k_work *work)
 	ch = CONTAINER_OF(work, struct bt_l2cap_le_chan, tx_work);
 
 	/* Resume tx in case there are buffers in the queue */
-	while ((buf = l2cap_chan_le_get_tx_buf(ch))) {
-		int sent = l2cap_tx_meta_data(buf)->sent;
+	if ((buf = l2cap_chan_le_get_tx_buf(ch))) {
+		int err;
+		LOG_DBG("buf %p", buf);
 
-		LOG_DBG("buf %p sent %u", buf, sent);
+		err = l2cap_chan_le_send_frag(ch, &buf);
 
-		sent = l2cap_chan_le_send_sdu(ch, &buf, sent);
-		if (sent < 0) {
-			if (sent == -EAGAIN) {
-				ch->tx_buf = buf;
-				/* If we don't reschedule, and the app doesn't nudge l2cap (e.g. by
-				 * sending another SDU), the channel will be stuck in limbo. To
-				 * prevent this, we reschedule with a configurable delay.
+		if (buf) {
+			ch->tx_buf = buf;
+
+			if (err == -EAGAIN) {
+				/* Out of credits. Work will be
+				 * restarted upon receving credits.
 				 */
-				k_work_schedule(&ch->tx_work, K_MSEC(CONFIG_BT_L2CAP_RESCHED_MS));
-			} else {
-				net_buf_unref(buf);
+				return;
 			}
-			break;
+
+			if (err == -ENOBUFS) {
+				/* Out of segment buffers. Delay work
+				 * until buffers may be available.
+				 *
+				 * Also: Limp mode: Retry after a
+				 * second, in case this logic is broken.
+				 */
+				/* EBIGHACK */
+				struct net_buf_pool *bt_conn_get_acl_tx_pool(void);
+				k_poll_event_init(
+					&ch->tx_work_event, K_POLL_TYPE_FIFO_DATA_AVAILABLE,
+					K_POLL_MODE_NOTIFY_ONLY, &bt_conn_get_acl_tx_pool()->free);
+				k_work_poll_submit(&ch->tx_work, &ch->tx_work_event, 1,
+						   K_SECONDS(1));
+				return;
+			}
+
+			__ASSERT_NO_MSG(!err);
+			/* Frag was sent successfully. Schedule next
+			 * frag for immediate sending.
+			 */
+			k_work_poll_submit(&ch->tx_work, &ch->tx_work_event, 0, K_NO_WAIT);
+		} else {
+			__ASSERT_NO_MSG(!err);
 		}
 	}
 }
@@ -946,7 +941,7 @@ static void l2cap_chan_tx_init(struct bt_l2cap_le_chan *chan)
 	(void)memset(&chan->tx, 0, sizeof(chan->tx));
 	atomic_set(&chan->tx.credits, 0);
 	k_fifo_init(&chan->tx_queue);
-	k_work_init_delayable(&chan->tx_work, l2cap_chan_tx_process);
+	k_work_poll_init(&chan->tx_work, l2cap_chan_tx_process);
 }
 
 static void l2cap_chan_tx_give_credits(struct bt_l2cap_le_chan *chan,
@@ -960,6 +955,8 @@ static void l2cap_chan_tx_give_credits(struct bt_l2cap_le_chan *chan,
 	    chan->chan.ops->status) {
 		chan->chan.ops->status(&chan->chan, chan->chan.status);
 	}
+
+	k_work_poll_submit(&chan->tx_work, &chan->tx_work_event, 0, K_NO_WAIT);
 }
 
 static void l2cap_chan_destroy(struct bt_l2cap_chan *chan)
@@ -1816,55 +1813,6 @@ static inline struct net_buf *l2cap_alloc_seg(struct net_buf *buf, struct bt_l2c
 	return bt_l2cap_create_pdu_timeout(NULL, 0, K_NO_WAIT);
 }
 
-static struct net_buf *l2cap_chan_create_seg(struct bt_l2cap_le_chan *ch,
-					     struct net_buf *buf,
-					     size_t sdu_hdr_len)
-{
-	struct net_buf *seg;
-	uint16_t headroom;
-	uint16_t len;
-
-	/* Segment if data (+ data headroom) is bigger than MPS */
-	if (buf->len + sdu_hdr_len > ch->tx.mps) {
-		goto segment;
-	}
-
-	headroom = BT_L2CAP_CHAN_SEND_RESERVE + sdu_hdr_len;
-
-	/* Check if original buffer has enough headroom and don't have any
-	 * fragments.
-	 */
-	if (net_buf_headroom(buf) >= headroom && !buf->frags) {
-		if (sdu_hdr_len) {
-			/* Push SDU length if set */
-			net_buf_push_le16(buf, net_buf_frags_len(buf));
-		}
-		return net_buf_ref(buf);
-	}
-
-segment:
-	seg = l2cap_alloc_seg(buf, ch);
-
-	if (!seg) {
-		return NULL;
-	}
-
-	if (sdu_hdr_len) {
-		net_buf_add_le16(seg, net_buf_frags_len(buf));
-	}
-
-	/* Don't send more that TX MPS including SDU length */
-	len = MIN(net_buf_tailroom(seg), ch->tx.mps - sdu_hdr_len);
-	/* Limit if original buffer is smaller than the segment */
-	len = MIN(buf->len, len);
-	net_buf_add_mem(seg, buf->data, len);
-	net_buf_pull(buf, len);
-
-	LOG_DBG("ch %p seg %p len %u", ch, seg, seg->len);
-
-	return seg;
-}
-
 static void l2cap_chan_tx_resume(struct bt_l2cap_le_chan *ch)
 {
 	if (!atomic_get(&ch->tx.credits) ||
@@ -1872,26 +1820,17 @@ static void l2cap_chan_tx_resume(struct bt_l2cap_le_chan *ch)
 		return;
 	}
 
-	k_work_reschedule(&ch->tx_work, K_NO_WAIT);
+	k_work_poll_submit(&ch->tx_work, &ch->tx_work_event, 0, K_NO_WAIT);
 }
 
 static void l2cap_chan_sdu_sent(struct bt_conn *conn, void *user_data, int err)
 {
-	struct l2cap_tx_meta_data *data = user_data;
 	struct bt_l2cap_chan *chan;
-	bt_conn_tx_cb_t cb = data->cb;
-	void *cb_user_data = data->user_data;
-	uint16_t cid = data->cid;
+	uint16_t cid = (uintptr_t) user_data;
 
 	LOG_DBG("conn %p CID 0x%04x err %d", conn, cid, err);
 
-	free_tx_meta_data(data);
-
 	if (err) {
-		if (cb) {
-			cb(conn, cb_user_data, err);
-		}
-
 		return;
 	}
 
@@ -1905,26 +1844,22 @@ static void l2cap_chan_sdu_sent(struct bt_conn *conn, void *user_data, int err)
 		chan->ops->sent(chan);
 	}
 
-	if (cb) {
-		cb(conn, cb_user_data, 0);
-	}
-
 	/* Resume the current channel */
 	l2cap_chan_tx_resume(BT_L2CAP_LE_CHAN(chan));
 }
 
 static void l2cap_chan_seg_sent(struct bt_conn *conn, void *user_data, int err)
 {
-	struct l2cap_tx_meta_data *data = user_data;
+	uint16_t cid = (uintptr_t) user_data;
 	struct bt_l2cap_chan *chan;
 
-	LOG_DBG("conn %p CID 0x%04x err %d", conn, data->cid, err);
+	LOG_DBG("conn %p CID 0x%04x err %d", conn, cid, err);
 
 	if (err) {
 		return;
 	}
 
-	chan = bt_l2cap_le_lookup_tx_cid(conn, data->cid);
+	chan = bt_l2cap_le_lookup_tx_cid(conn, cid);
 	if (!chan) {
 		/* Received segment sent callback for disconnected channel */
 		return;
@@ -1958,46 +1893,70 @@ static bool test_and_dec(atomic_t *target)
  *
  * In all cases the original buffer is unaffected so it can be pushed back to
  * be sent later.
+ *
+ * This function may move a reference and set *buf to NULL.
  */
-static int l2cap_chan_le_send(struct bt_l2cap_le_chan *ch,
-			      struct net_buf *buf, uint16_t sdu_hdr_len)
+static int l2cap_chan_le_send_frag(struct bt_l2cap_le_chan *ch,
+			      struct net_buf **buf)
 {
 	struct net_buf *seg;
-	struct net_buf_simple_state state;
-	int len, err;
+	size_t seg_len;
+	bt_conn_tx_cb_t cb;
+	int err;
 
 	if (!test_and_dec(&ch->tx.credits)) {
 		LOG_DBG("No credits to transmit packet");
-		return -EAGAIN;
+		return -EWOULDBLOCK;
 	}
 
-	/* Save state so it can be restored if we failed to send */
-	net_buf_simple_save(&buf->b, &state);
+	/* Not implemented yet. */
+	__ASSERT_NO_MSG(!(*buf)->frags);
 
-	seg = l2cap_chan_create_seg(ch, buf, sdu_hdr_len);
-	if (!seg) {
-		atomic_inc(&ch->tx.credits);
-		return -EAGAIN;
+	/* If the buffer is about to be emptied, steal it instead of
+	 * allocating a separate buffer the segment.
+	 */
+	if ((*buf)->len <= ch->tx.mps) {
+		LOG_DBG("Stealing buffer %p", *buf);
+		/* Ensured by a check in bt_l2cap_chan_send. */
+		__ASSERT_NO_MSG(net_buf_headroom(*buf) >= BT_L2CAP_CHAN_SEND_RESERVE);
+
+		seg = *buf;
+		*buf = NULL;
+	} else {
+		/* Future work: Use the original buffer over and over by
+		 * issuing a NET_BUF_EXTERNAL_DATA buffer. */
+		seg = l2cap_alloc_seg(*buf, ch);
+		if (!seg) {
+			/* Future work: Give the channel a tx state
+			 * machine, so that we remember that we took a
+			 * credit and don't need to give it back here.
+			 */
+			LOG_ERR("Out of segment buffers.");
+			atomic_inc(&ch->tx.credits);
+			return -ENOBUFS;
+		}
+
+		seg_len = MIN(MIN((*buf)->len, ch->tx.mps), net_buf_tailroom(seg));
+		net_buf_add_mem(seg, (*buf)->data, seg_len);
+
+		__ASSERT_NO_MSG(seg->len == seg_len);
 	}
-
-	LOG_DBG("ch %p cid 0x%04x len %u credits %lu", ch, ch->tx.cid, seg->len,
-		atomic_get(&ch->tx.credits));
-
-	len = seg->len - sdu_hdr_len;
 
 	/* Set a callback if there is no data left in the buffer */
-	if (buf == seg || !buf->len) {
-		err = bt_l2cap_send_cb(ch->chan.conn, ch->tx.cid, seg,
-				       l2cap_chan_sdu_sent,
-				       l2cap_tx_meta_data(buf));
+	if (!(*buf)) {
+		cb = l2cap_chan_sdu_sent;
 	} else {
-		err = bt_l2cap_send_cb(ch->chan.conn, ch->tx.cid, seg,
-				       l2cap_chan_seg_sent,
-				       l2cap_tx_meta_data(buf));
+		cb = l2cap_chan_seg_sent;
 	}
+	err = bt_l2cap_send_cb(ch->chan.conn, ch->tx.cid, seg, l2cap_chan_sdu_sent, (void*)(uintptr_t)ch->tx.cid);
 
-	if (err) {
-		LOG_DBG("Unable to send seg %d", err);
+	if (!err) {
+		if (*buf) {
+			/* Remove the sent data from the remaining SDU buffer. */
+			(void) net_buf_pull((*buf), seg_len);
+		}
+	} else {
+		LOG_INF("Unable to send seg %d", err);
 		atomic_inc(&ch->tx.credits);
 
 		/* The host takes ownership of the reference in seg when
@@ -2005,16 +1964,19 @@ static int l2cap_chan_le_send(struct bt_l2cap_le_chan *ch,
 		 * so we must get rid of the reference that was taken in
 		 * l2cap_chan_create_seg.
 		 */
-		net_buf_unref(seg);
-
-		if (err == -ENOBUFS) {
-			/* Restore state since segment could not be sent */
-			net_buf_simple_restore(&buf->b, &state);
-			return -EAGAIN;
+		if (!*buf) {
+			/* Return stolen buf. */
+			*buf = seg;
+			seg = NULL;
+		} else {
+			net_buf_unref(seg);
 		}
 
 		return err;
 	}
+
+	/* Never leave a buffer with no data. It should have been stolen. */
+	__ASSERT_NO_MSG(!(*buf) || (*buf)->len > 0);
 
 	/* Check if there is no credits left clear output status and notify its
 	 * change.
@@ -2026,63 +1988,7 @@ static int l2cap_chan_le_send(struct bt_l2cap_le_chan *ch,
 		}
 	}
 
-	return len;
-}
-
-static int l2cap_chan_le_send_sdu(struct bt_l2cap_le_chan *ch,
-				  struct net_buf **buf, uint16_t sent)
-{
-	int ret, total_len;
-	struct net_buf *frag;
-
-	total_len = net_buf_frags_len(*buf) + sent;
-
-	if (total_len > ch->tx.mtu) {
-		return -EMSGSIZE;
-	}
-
-	frag = *buf;
-	if (!frag->len && frag->frags) {
-		frag = frag->frags;
-	}
-
-	if (!sent) {
-		/* Add SDU length for the first segment */
-		ret = l2cap_chan_le_send(ch, frag, BT_L2CAP_SDU_HDR_SIZE);
-		if (ret < 0) {
-			if (ret == -EAGAIN) {
-				/* Store sent data into user_data */
-				l2cap_tx_meta_data(frag)->sent = sent;
-			}
-			*buf = frag;
-			return ret;
-		}
-		sent = ret;
-	}
-
-	/* Send remaining segments */
-	for (ret = 0; sent < total_len; sent += ret) {
-		/* Proceed to next fragment */
-		if (!frag->len) {
-			frag = net_buf_frag_del(NULL, frag);
-		}
-
-		ret = l2cap_chan_le_send(ch, frag, 0);
-		if (ret < 0) {
-			if (ret == -EAGAIN) {
-				/* Store sent data into user_data */
-				l2cap_tx_meta_data(frag)->sent = sent;
-			}
-			*buf = frag;
-			return ret;
-		}
-	}
-
-	LOG_DBG("ch %p cid 0x%04x sent %u total_len %u", ch, ch->tx.cid, sent, total_len);
-
-	net_buf_unref(frag);
-
-	return ret;
+	return 0;
 }
 
 static void le_credits(struct bt_l2cap *l2cap, uint8_t ident,
@@ -2546,7 +2452,7 @@ static void l2cap_chan_le_recv_seg_direct(struct bt_l2cap_le_chan *chan, struct 
 		chan->_sdu_len_done = 0;
 
 		if (chan->_sdu_len > chan->rx.mtu) {
-			LOG_WRN("SDU exceeds MTU");
+			LOG_WRN("SDU exceeds MTU %u %u", chan->_sdu_len, chan->rx.mtu);
 			bt_l2cap_chan_disconnect(&chan->chan);
 			return;
 		}
@@ -2826,15 +2732,6 @@ void bt_l2cap_init(void)
 	if (IS_ENABLED(CONFIG_BT_BREDR)) {
 		bt_l2cap_br_init();
 	}
-
-#if defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)
-	k_fifo_init(&free_l2cap_tx_meta_data);
-	for (size_t i = 0; i < ARRAY_SIZE(l2cap_tx_meta_data_storage); i++) {
-		(void)memset(&l2cap_tx_meta_data_storage[i], 0,
-					sizeof(l2cap_tx_meta_data_storage[i]));
-		k_fifo_put(&free_l2cap_tx_meta_data, &l2cap_tx_meta_data_storage[i]);
-	}
-#endif /* CONFIG_BT_L2CAP_DYNAMIC_CHANNEL */
 }
 
 #if defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)
@@ -3115,9 +3012,6 @@ int bt_l2cap_chan_disconnect(struct bt_l2cap_chan *chan)
 int bt_l2cap_chan_send(struct bt_l2cap_chan *chan, struct net_buf *buf)
 {
 	struct bt_l2cap_le_chan *le_chan = BT_L2CAP_LE_CHAN(chan);
-	struct l2cap_tx_meta_data *data;
-	void *old_user_data = l2cap_tx_meta_data(buf);
-	int err;
 
 	if (!buf) {
 		return -EINVAL;
@@ -3138,44 +3032,18 @@ int bt_l2cap_chan_send(struct bt_l2cap_chan *chan, struct net_buf *buf)
 		return bt_l2cap_br_chan_send_cb(chan, buf, NULL, NULL);
 	}
 
-	data = alloc_tx_meta_data();
-	if (!data) {
-		LOG_WRN("Unable to allocate TX context");
-		return -ENOBUFS;
+	if (net_buf_headroom(buf) < BT_L2CAP_SDU_CHAN_SEND_RESERVE) {
+		LOG_ERR("Not enough headroom for L2CAP headers");
+		return -EINVAL;
 	}
 
-	data->sent = 0;
-	data->cid = le_chan->tx.cid;
-	data->cb = NULL;
-	data->user_data = NULL;
-	l2cap_tx_meta_data(buf) = data;
+	/* Prepend SDU header. */
+	net_buf_push_le16(buf, net_buf_frags_len(buf));
 
-	/* Queue if there are pending segments left from previous packet or
-	 * there are no credits available.
-	 */
-	if (le_chan->tx_buf || !k_fifo_is_empty(&le_chan->tx_queue) ||
-	    !atomic_get(&le_chan->tx.credits)) {
-		l2cap_tx_meta_data(buf)->sent = 0;
-		net_buf_put(&le_chan->tx_queue, buf);
-		k_work_reschedule(&le_chan->tx_work, K_NO_WAIT);
-		return 0;
-	}
+	net_buf_put(&le_chan->tx_queue, buf);
+	k_work_poll_submit(&le_chan->tx_work, &le_chan->tx_work_event, 0, K_NO_WAIT);
 
-	err = l2cap_chan_le_send_sdu(le_chan, &buf, 0);
-	if (err < 0) {
-		if (err == -EAGAIN && l2cap_tx_meta_data(buf)->sent) {
-			/* Queue buffer if at least one segment could be sent */
-			net_buf_put(&le_chan->tx_queue, buf);
-			return l2cap_tx_meta_data(buf)->sent;
-		}
-
-		LOG_ERR("failed to send message %d", err);
-
-		l2cap_tx_meta_data(buf) = old_user_data;
-		free_tx_meta_data(data);
-	}
-
-	return err;
+	return 0;
 }
 
 #endif /* CONFIG_BT_L2CAP_DYNAMIC_CHANNEL */

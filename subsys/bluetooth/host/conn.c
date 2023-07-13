@@ -1371,6 +1371,10 @@ uint8_t bt_conn_index(const struct bt_conn *conn)
 	return (uint8_t)index;
 }
 
+struct net_buf_pool *bt_conn_get_acl_tx_pool(void)
+{
+	return &acl_tx_pool;
+}
 
 #if defined(CONFIG_NET_BUF_LOG)
 struct net_buf *bt_conn_create_pdu_timeout_debug(struct net_buf_pool *pool,

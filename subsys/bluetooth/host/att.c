@@ -694,7 +694,7 @@ struct net_buf *bt_att_chan_create_pdu(struct bt_att_chan *chan, uint8_t op,
 		timeout = K_FOREVER;
 	}
 
-	buf = bt_l2cap_create_pdu_timeout(NULL, 0, timeout);
+	buf = bt_l2cap_create_pdu_timeout(NULL, BT_L2CAP_SDU_HDR_SIZE, timeout);
 	if (!buf) {
 		LOG_ERR("Unable to allocate buffer for op 0x%02x", op);
 		return NULL;
