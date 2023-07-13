@@ -259,6 +259,9 @@ struct coap_option {
  * @typedef coap_reply_t
  * @brief Helper function to be called when a response matches the
  * a pending request.
+ * When sending blocks, the callback is only executed when the
+ * reply of the last block is received.
+ * i.e. it is not called when the code of the reply is 'continue' (2.31).
  */
 typedef int (*coap_reply_t)(const struct coap_packet *response,
 			    struct coap_reply *reply,

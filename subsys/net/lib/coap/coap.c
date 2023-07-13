@@ -1499,7 +1499,9 @@ struct coap_reply *coap_response_received(
 		/* handle observed requests only if received in order */
 		if (age == -ENOENT || is_newer(r->age, age)) {
 			r->age = age;
-			r->reply(response, r, from);
+			if (coap_header_get_code(response) != COAP_RESPONSE_CODE_CONTINUE) {
+				r->reply(response, r, from);
+			}
 		}
 
 		return r;
