@@ -757,8 +757,7 @@ int bt_bap_stream_release(struct bt_bap_stream *stream);
  *
  * Send data from buffer to the stream.
  *
- * @note Data will not be sent to linked streams since linking is only
- * consider for procedures affecting the state machine.
+ * @note Support for sending must be supported, determined by @kconfig{CONFIG_BT_AUDIO_TX}.
  *
  * @param stream   Stream object.
  * @param buf      Buffer containing data to be sent.
