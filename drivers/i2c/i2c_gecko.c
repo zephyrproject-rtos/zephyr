@@ -21,8 +21,7 @@ LOG_MODULE_REGISTER(i2c_gecko);
 
 #include "i2c-priv.h"
 
-#define DEV_BASE(dev) \
-	((I2C_TypeDef *)((const struct i2c_gecko_config * const)(dev)->config)->base)
+#define DEV_BASE(dev) ((I2C_TypeDef *)((const struct i2c_gecko_config *const)(dev)->config)->base)
 
 struct i2c_gecko_config {
 	I2C_TypeDef *base;
@@ -50,8 +49,7 @@ struct i2c_gecko_data {
 #endif
 };
 
-void i2c_gecko_config_pins(const struct device *dev,
-			   const struct soc_gpio_pin *pin_sda,
+void i2c_gecko_config_pins(const struct device *dev, const struct soc_gpio_pin *pin_sda,
 			   const struct soc_gpio_pin *pin_scl)
 {
 	I2C_TypeDef *base = DEV_BASE(dev);
@@ -65,8 +63,7 @@ void i2c_gecko_config_pins(const struct device *dev,
 	base->ROUTELOC0 = (config->loc_sda << _I2C_ROUTELOC0_SDALOC_SHIFT) |
 			  (config->loc_scl << _I2C_ROUTELOC0_SCLLOC_SHIFT);
 #elif defined(GPIO_I2C_ROUTEEN_SCLPEN) && defined(GPIO_I2C_ROUTEEN_SDAPEN)
-	GPIO->I2CROUTE[I2C_NUM(base)].ROUTEEN = GPIO_I2C_ROUTEEN_SCLPEN |
-		GPIO_I2C_ROUTEEN_SDAPEN;
+	GPIO->I2CROUTE[I2C_NUM(base)].ROUTEEN = GPIO_I2C_ROUTEEN_SCLPEN | GPIO_I2C_ROUTEEN_SDAPEN;
 	GPIO->I2CROUTE[I2C_NUM(base)].SCLROUTE =
 		(config->pin_scl.pin << _GPIO_I2C_SCLROUTE_PIN_SHIFT) |
 		(config->pin_scl.port << _GPIO_I2C_SCLROUTE_PORT_SHIFT);
@@ -78,16 +75,15 @@ void i2c_gecko_config_pins(const struct device *dev,
 #endif
 }
 
-static int i2c_gecko_configure(const struct device *dev,
-			       uint32_t dev_config_raw)
+static int i2c_gecko_configure(const struct device *dev, uint32_t dev_config_raw)
 {
 	I2C_TypeDef *base = DEV_BASE(dev);
 	struct i2c_gecko_data *data = dev->data;
+	I2C_Init_TypeDef i2cInit = I2C_INIT_DEFAULT;
+	uint32_t baudrate;
 #if defined(CONFIG_I2C_TARGET)
 	const struct i2c_gecko_config *config = dev->config;
 #endif
-	I2C_Init_TypeDef i2cInit = I2C_INIT_DEFAULT;
-	uint32_t baudrate;
 
 	if (!(I2C_MODE_CONTROLLER & dev_config_raw)) {
 		return -EINVAL;
@@ -120,8 +116,8 @@ static int i2c_gecko_configure(const struct device *dev,
 	return 0;
 }
 
-static int i2c_gecko_transfer(const struct device *dev, struct i2c_msg *msgs,
-			      uint8_t num_msgs, uint16_t addr)
+static int i2c_gecko_transfer(const struct device *dev, struct i2c_msg *msgs, uint8_t num_msgs,
+			      uint16_t addr)
 {
 	I2C_TypeDef *base = DEV_BASE(dev);
 	struct i2c_gecko_data *data = dev->data;
@@ -137,7 +133,7 @@ static int i2c_gecko_transfer(const struct device *dev, struct i2c_msg *msgs,
 
 	do {
 		seq.buf[0].data = msgs->buf;
-		seq.buf[0].len	= msgs->len;
+		seq.buf[0].len = msgs->len;
 
 		if ((msgs->flags & I2C_MSG_RW_MASK) == I2C_MSG_READ) {
 			seq.flags = I2C_FLAG_READ;
@@ -147,14 +143,13 @@ static int i2c_gecko_transfer(const struct device *dev, struct i2c_msg *msgs,
 				/* Next message */
 				msgs++;
 				num_msgs--;
-				if ((msgs->flags & I2C_MSG_RW_MASK)
-				    == I2C_MSG_READ) {
+				if ((msgs->flags & I2C_MSG_RW_MASK) == I2C_MSG_READ) {
 					seq.flags = I2C_FLAG_WRITE_READ;
 				} else {
 					seq.flags = I2C_FLAG_WRITE_WRITE;
 				}
 				seq.buf[1].data = msgs->buf;
-				seq.buf[1].len	= msgs->len;
+				seq.buf[1].len = msgs->len;
 			}
 		}
 
@@ -213,6 +208,7 @@ static int i2c_gecko_target_register(const struct device *dev, struct i2c_target
 	data->target_cfg = cfg;
 
 	I2C_SlaveAddressSet(config->base, cfg->address << _I2C_SADDR_ADDR_SHIFT);
+	/* Match with specified address, no wildcards in address */
 	I2C_SlaveAddressMaskSet(config->base, _I2C_SADDRMASK_SADDRMASK_MASK);
 
 	I2C_IntDisable(config->base, _I2C_IEN_MASK);
@@ -302,17 +298,16 @@ static void i2c_gecko_isr(const struct device *dev)
 #endif
 
 #ifdef CONFIG_SOC_GECKO_HAS_INDIVIDUAL_PIN_LOCATION
-#define I2C_LOC_DATA(idx) \
-	.loc_sda = DT_INST_PROP_BY_IDX(idx, location_sda, 0), \
+#define I2C_LOC_DATA(idx)                                                                          \
+	.loc_sda = DT_INST_PROP_BY_IDX(idx, location_sda, 0),                                      \
 	.loc_scl = DT_INST_PROP_BY_IDX(idx, location_scl, 0)
 #define I2C_VALIDATE_LOC(idx) BUILD_ASSERT(true, "")
 #else
-#define I2C_VALIDATE_LOC(idx) \
-	BUILD_ASSERT(DT_INST_PROP_BY_IDX(idx, location_sda, 0) \
-		     == DT_INST_PROP_BY_IDX(idx, location_scl, 0), \
+#define I2C_VALIDATE_LOC(idx)                                                                      \
+	BUILD_ASSERT(DT_INST_PROP_BY_IDX(idx, location_sda, 0) ==                                  \
+			     DT_INST_PROP_BY_IDX(idx, location_scl, 0),                            \
 		     "DTS location-* properties must be equal")
-#define I2C_LOC_DATA(idx) \
-	.loc = DT_INST_PROP_BY_IDX(idx, location_scl, 0)
+#define I2C_LOC_DATA(idx) .loc = DT_INST_PROP_BY_IDX(idx, location_scl, 0)
 #endif
 
 #if defined(CONFIG_I2C_TARGET)
@@ -338,9 +333,9 @@ static void i2c_gecko_isr(const struct device *dev)
 		.base = (I2C_TypeDef *)DT_INST_REG_ADDR(idx),                                      \
 		.clock = cmuClock_I2C##idx,                                                        \
 		.pin_sda = {DT_INST_PROP_BY_IDX(idx, location_sda, 1),                             \
-			    DT_INST_PROP_BY_IDX(idx, location_sda, 2), gpioModeWiredAnd, 1},    \
+			    DT_INST_PROP_BY_IDX(idx, location_sda, 2), gpioModeWiredAnd, 1},       \
 		.pin_scl = {DT_INST_PROP_BY_IDX(idx, location_scl, 1),                             \
-			    DT_INST_PROP_BY_IDX(idx, location_scl, 2), gpioModeWiredAnd, 1},    \
+			    DT_INST_PROP_BY_IDX(idx, location_scl, 2), gpioModeWiredAnd, 1},       \
 		I2C_LOC_DATA(idx),                                                                 \
 		.bitrate = DT_INST_PROP(idx, clock_frequency),                                     \
 		GECKO_I2C_IRQ_DATA(idx)};                                                          \
