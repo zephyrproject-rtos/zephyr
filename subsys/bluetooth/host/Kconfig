@@ -299,6 +299,18 @@ config BT_CONN_TX_MAX
 	  callback. Normally this can be left to the default value, which
 	  is equal to the number of TX buffers in the stack-internal pool.
 
+config BT_CONN_PARAM_ANY
+	bool "Accept any values for connection parameters"
+	help
+	  Some controllers support additional connection parameter ranges
+	  beyond what is described in the specification. Enabling this option
+	  allows the application to set any value to all connection parameters.
+	  Tbe Host will perform no limits nor consistency checks on any of the
+	  connection parameters (conn interval min and max, latency and timeout).
+	  However, the Host will still use numerical comparisons between the
+	  min and max connection intervals in order to verify whether the
+	  desired parameters have been established in the connection.
+
 config BT_USER_PHY_UPDATE
 	bool "User control of PHY Update Procedure"
 	depends on BT_PHY_UPDATE
