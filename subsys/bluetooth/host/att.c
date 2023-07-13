@@ -217,6 +217,12 @@ void att_sent(struct bt_conn *conn, void *user_data)
 	}
 }
 
+static int att_chan_send_cb(struct bt_att_chan *att_chan, struct net_buf *buf, bt_conn_tx_cb_t cb,
+			    void *user_data)
+{
+	return bt_l2cap_chan_send_cb(&att_chan->chan.chan, buf, chan_cb(buf), user_data);
+}
+
 /* In case of success the ownership of the buffer is transferred to the stack
  * which takes care of releasing it when it completes transmitting to the
  * controller.
@@ -274,7 +280,7 @@ static int chan_send(struct bt_att_chan *chan, struct net_buf *buf)
 		/* bt_l2cap_chan_send does actually return the number of bytes
 		 * that could be sent immediately.
 		 */
-		err = bt_l2cap_chan_send_cb(&chan->chan.chan, buf, chan_cb(buf), data);
+		err = att_chan_send_cb(chan, buf, chan_cb(buf), data);
 		if (err < 0) {
 			data->att_chan = prev_chan;
 			atomic_clear_bit(chan->flags, ATT_PENDING_SENT);
