@@ -11,47 +11,6 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/devicetree.h>
 
-#if DT_HAS_COMPAT_STATUS_OKAY(atmel_sam_afec)
-#define DT_DRV_COMPAT atmel_sam_afec
-#elif DT_HAS_COMPAT_STATUS_OKAY(espressif_esp32_adc)
-#define DT_DRV_COMPAT espressif_esp32_adc
-#elif DT_HAS_COMPAT_STATUS_OKAY(atmel_sam_adc)
-#define DT_DRV_COMPAT atmel_sam_adc
-#elif DT_HAS_COMPAT_STATUS_OKAY(atmel_sam0_adc)
-#define DT_DRV_COMPAT atmel_sam0_adc
-#elif DT_HAS_COMPAT_STATUS_OKAY(ite_it8xxx2_adc)
-#define DT_DRV_COMPAT ite_it8xxx2_adc
-#elif DT_HAS_COMPAT_STATUS_OKAY(microchip_xec_adc)
-#define DT_DRV_COMPAT microchip_xec_adc
-#elif DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_adc)
-#define DT_DRV_COMPAT nordic_nrf_adc
-#elif DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_saadc)
-#define DT_DRV_COMPAT nordic_nrf_saadc
-#elif DT_HAS_COMPAT_STATUS_OKAY(nxp_mcux_12b1msps_sar)
-#define DT_DRV_COMPAT nxp_mcux_12b1msps_sar
-#elif DT_HAS_COMPAT_STATUS_OKAY(nxp_kinetis_adc12)
-#define DT_DRV_COMPAT nxp_kinetis_adc12
-#elif DT_HAS_COMPAT_STATUS_OKAY(nxp_kinetis_adc16)
-#define DT_DRV_COMPAT nxp_kinetis_adc16
-#elif DT_HAS_COMPAT_STATUS_OKAY(nxp_vf610_adc)
-#define DT_DRV_COMPAT nxp_vf610_adc
-#elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_adc)
-#define DT_DRV_COMPAT st_stm32_adc
-#elif DT_HAS_COMPAT_STATUS_OKAY(nuvoton_npcx_adc)
-#define DT_DRV_COMPAT nuvoton_npcx_adc
-#elif DT_HAS_COMPAT_STATUS_OKAY(ti_ads1112)
-#define DT_DRV_COMPAT ti_ads1112
-#elif DT_HAS_COMPAT_STATUS_OKAY(ti_ads1119)
-#define DT_DRV_COMPAT ti_ads1119
-#elif DT_HAS_COMPAT_STATUS_OKAY(ti_cc32xx_adc)
-#define DT_DRV_COMPAT ti_cc32xx_adc
-#elif DT_HAS_COMPAT_STATUS_OKAY(raspberrypi_pico_adc)
-#define DT_DRV_COMPAT raspberrypi_pico_adc
-#elif DT_HAS_COMPAT_STATUS_OKAY(zephyr_adc_emul)
-#define DT_DRV_COMPAT zephyr_adc_emul
-#else
-#error No known devicetree compatible match for ADC shell
-#endif
 
 #define LOG_LEVEL CONFIG_LOG_DEFAULT_LEVEL
 #include <zephyr/logging/log.h>
@@ -89,32 +48,48 @@ LOG_MODULE_REGISTER(adc_shell);
 #define CMD_HELP_GAIN	"Configure gain.\n"
 #define CMD_HELP_PRINT	"Print current configuration"
 
-#define DEVICES(n) DEVICE_DT_INST_GET(n),
-#define ADC_HDL_LIST_ENTRY(dev_)					\
-	{								\
-		.dev = dev_,						\
-		.channel_config = {					\
-			.gain = ADC_GAIN_1,				\
-			.reference = ADC_REF_INTERNAL,			\
-			.acquisition_time = ADC_ACQ_TIME_DEFAULT,	\
-			.channel_id = 0,				\
-		},							\
-		.resolution = 0,					\
-	}
-
-#define INIT_MACRO() DT_INST_FOREACH_STATUS_OKAY(DEVICES) NULL
+#define ADC_HDL_LIST_ENTRY(node_id)                                                                \
+	{                                                                                          \
+		.dev = DEVICE_DT_GET(node_id),                                                     \
+		.channel_config =                                                                  \
+			{                                                                          \
+				.gain = ADC_GAIN_1,                                                \
+				.reference = ADC_REF_INTERNAL,                                     \
+				.acquisition_time = ADC_ACQ_TIME_DEFAULT,                          \
+				.channel_id = 0,                                                   \
+			},                                                                         \
+		.resolution = 0,                                                                   \
+	},
 
 #define CHOSEN_STR_LEN 20
 static char chosen_reference[CHOSEN_STR_LEN + 1] = "INTERNAL";
 static char chosen_gain[CHOSEN_STR_LEN + 1] = "1";
 
-/* This table size is = ADC devices count + 1 (NA). */
 static struct adc_hdl {
 	const struct device *dev;
 	struct adc_channel_cfg channel_config;
 	uint8_t resolution;
 } adc_list[] = {
-	FOR_EACH(ADC_HDL_LIST_ENTRY, (,), INIT_MACRO())
+	DT_FOREACH_STATUS_OKAY(atmel_sam_afec, ADC_HDL_LIST_ENTRY)
+	DT_FOREACH_STATUS_OKAY(espressif_esp32_adc, ADC_HDL_LIST_ENTRY)
+	DT_FOREACH_STATUS_OKAY(atmel_sam_adc, ADC_HDL_LIST_ENTRY)
+	DT_FOREACH_STATUS_OKAY(atmel_sam0_adc, ADC_HDL_LIST_ENTRY)
+	DT_FOREACH_STATUS_OKAY(ite_it8xxx2_adc, ADC_HDL_LIST_ENTRY)
+	DT_FOREACH_STATUS_OKAY(microchip_xec_adc, ADC_HDL_LIST_ENTRY)
+	DT_FOREACH_STATUS_OKAY(nordic_nrf_adc, ADC_HDL_LIST_ENTRY)
+	DT_FOREACH_STATUS_OKAY(nordic_nrf_saadc, ADC_HDL_LIST_ENTRY)
+	DT_FOREACH_STATUS_OKAY(nxp_mcux_12b1msps_sar, ADC_HDL_LIST_ENTRY)
+	DT_FOREACH_STATUS_OKAY(nxp_kinetis_adc12, ADC_HDL_LIST_ENTRY)
+	DT_FOREACH_STATUS_OKAY(nxp_kinetis_adc16, ADC_HDL_LIST_ENTRY)
+	DT_FOREACH_STATUS_OKAY(nxp_vf610_adc, ADC_HDL_LIST_ENTRY)
+	DT_FOREACH_STATUS_OKAY(st_stm32_adc, ADC_HDL_LIST_ENTRY)
+	DT_FOREACH_STATUS_OKAY(nuvoton_npcx_adc, ADC_HDL_LIST_ENTRY)
+	DT_FOREACH_STATUS_OKAY(ti_ads1112, ADC_HDL_LIST_ENTRY)
+	DT_FOREACH_STATUS_OKAY(ti_ads1119, ADC_HDL_LIST_ENTRY)
+	DT_FOREACH_STATUS_OKAY(ti_ads114s08, ADC_HDL_LIST_ENTRY)
+	DT_FOREACH_STATUS_OKAY(ti_cc32xx_adc, ADC_HDL_LIST_ENTRY)
+	DT_FOREACH_STATUS_OKAY(raspberrypi_pico_adc, ADC_HDL_LIST_ENTRY)
+	DT_FOREACH_STATUS_OKAY(zephyr_adc_emul, ADC_HDL_LIST_ENTRY)
 };
 
 static struct adc_hdl *get_adc(const char *device_label)
@@ -414,12 +389,11 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_adc_cmds,
 
 static void cmd_adc_dev_get(size_t idx, struct shell_static_entry *entry)
 {
-	/* -1 because the last element in the list is a "list terminator" */
-	if (idx < ARRAY_SIZE(adc_list) - 1) {
+	if (idx < ARRAY_SIZE(adc_list)) {
 		entry->syntax  = adc_list[idx].dev->name;
 		entry->handler = NULL;
 		entry->subcmd  = &sub_adc_cmds;
-		entry->help    = "Select subcommand for ADC property label.\n";
+		entry->help    = "Select subcommand for ADC property label.";
 	} else {
 		entry->syntax  = NULL;
 	}
