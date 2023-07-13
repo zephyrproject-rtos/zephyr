@@ -109,6 +109,15 @@
 				   <&test_gpio 0 0>,
 				   <&test_gpio 0 0>,
 				   <&test_gpio 0 0>,
+				   <&test_gpio 0 0>,
+				   <&test_gpio 0 0>,
+				   <&test_gpio 0 0>,
+				   <&test_gpio 0 0>,
+				   <&test_gpio 0 0>,
+				   <&test_gpio 0 0>,
+				   <&test_gpio 0 0>,
+				   <&test_gpio 0 0>,
+				   <&test_gpio 0 0>,
 				   <&test_gpio 0 0>;
 
 			test_spi_mcp3204: mcp3204@0 {
@@ -228,6 +237,73 @@
 				reset-gpios = <&test_gpio 0 0>;
 				drdy-gpios = <&test_gpio 0 0>;
 				start-sync-gpios = <&test_gpio 0 0>;
+			};
+
+			test_spi_max11102: max11102@a {
+				compatible = "maxim,max11102";
+				reg = <0xa>;
+				spi-max-frequency = <0>;
+				#io-channel-cells = <1>;
+				chsel-gpios = <&test_gpio 0 0>;
+			};
+
+			test_spi_max11103: max11103@b {
+				compatible = "maxim,max11103";
+				reg = <0xb>;
+				spi-max-frequency = <0>;
+				#io-channel-cells = <1>;
+				chsel-gpios = <&test_gpio 0 0>;
+			};
+
+			test_spi_max11105: max11105@c {
+				compatible = "maxim,max11105";
+				reg = <0xc>;
+				spi-max-frequency = <0>;
+				#io-channel-cells = <1>;
+			};
+
+			test_spi_max11106: max11106@d {
+				compatible = "maxim,max11106";
+				reg = <0xd>;
+				spi-max-frequency = <0>;
+				#io-channel-cells = <1>;
+				chsel-gpios = <&test_gpio 0 0>;
+			};
+
+			test_spi_max11110: max11110@e {
+				compatible = "maxim,max11110";
+				reg = <0xe>;
+				spi-max-frequency = <0>;
+				#io-channel-cells = <1>;
+			};
+
+			test_spi_max11111: max11111@f {
+				compatible = "maxim,max11111";
+				reg = <0xf>;
+				spi-max-frequency = <0>;
+				#io-channel-cells = <1>;
+				chsel-gpios = <&test_gpio 0 0>;
+			};
+
+			test_spi_max11115: max11115@10 {
+				compatible = "maxim,max11115";
+				reg = <0x10>;
+				spi-max-frequency = <0>;
+				#io-channel-cells = <1>;
+			};
+
+			test_spi_max11116: max11116@11 {
+				compatible = "maxim,max11116";
+				reg = <0x11>;
+				spi-max-frequency = <0>;
+				#io-channel-cells = <1>;
+			};
+
+			test_spi_max11117: max11117@12 {
+				compatible = "maxim,max11117";
+				reg = <0x12>;
+				spi-max-frequency = <0>;
+				#io-channel-cells = <1>;
 			};
 		};
 	};
