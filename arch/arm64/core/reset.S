@@ -90,6 +90,9 @@ out:
 	/* Initialize stack */
 	mov	sp, x24
 
+	/* fp = NULL */
+	mov	fp, xzr
+
 	ret	x23
 
 /*
