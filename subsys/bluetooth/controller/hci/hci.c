@@ -6969,6 +6969,19 @@ no_ext_hdr:
 			LOG_DBG("    AD Data (%u): <todo>", data_len);
 		}
 
+		if (data_len_total + data_len_curr > CONFIG_BT_CTLR_SCAN_DATA_LEN_MAX) {
+			/* Truncating advertising data
+			 * Note that this has to be done at a PDU boundary, so stop
+			 * processing nodes from this one forward
+			 */
+			if (scan_data) {
+				scan_data_status = BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_INCOMPLETE;
+			} else {
+				data_status = BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_INCOMPLETE;
+			}
+			break;
+		}
+
 		if (node_rx_curr == node_rx) {
 			evt_type = evt_type_curr;
 			adv_addr_type = adv_addr_type_curr;
@@ -7102,16 +7115,6 @@ no_ext_hdr:
 		}
 	}
 
-	/* Restrict data length to maximum scan data length */
-	if (data_len_total > CONFIG_BT_CTLR_SCAN_DATA_LEN_MAX) {
-		data_len_total = CONFIG_BT_CTLR_SCAN_DATA_LEN_MAX;
-		if (data_len > data_len_total) {
-			data_len = data_len_total;
-		}
-
-		data_status = BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_INCOMPLETE;
-	}
-
 	/* Set directed advertising bit */
 	if (direct_addr) {
 		evt_type |= BT_HCI_LE_ADV_EVT_TYPE_DIRECT;
@@ -7149,16 +7152,6 @@ no_ext_hdr:
 		node_rx_extra_list_release(node_rx->hdr.rx_ftr.extra);
 
 		return;
-	}
-
-	/* Restrict scan response data length to maximum scan data length */
-	if (scan_data_len_total > CONFIG_BT_CTLR_SCAN_DATA_LEN_MAX) {
-		scan_data_len_total = CONFIG_BT_CTLR_SCAN_DATA_LEN_MAX;
-		if (scan_data_len > scan_data_len_total) {
-			scan_data_len = scan_data_len_total;
-		}
-
-		scan_data_status = BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_INCOMPLETE;
 	}
 
 	/* Set scan response bit */
