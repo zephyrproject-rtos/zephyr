@@ -99,5 +99,8 @@ MAKE_REG_HELPER(ICC_IGRPEN1_EL1, 0, 12, 12, 7);
 #define write_sysreg(val, reg) write_##reg(val)
 #define read_sysreg(reg) read_##reg()
 
+#define sev()	__asm__ volatile("sev" : : : "memory")
+#define wfe()	__asm__ volatile("wfe" : : : "memory")
+
 #endif /* !_ASMLANGUAGE */
 #endif /* ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_CORTEX_A_R_LIB_HELPERS_H_ */
