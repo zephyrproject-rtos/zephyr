@@ -4,7 +4,8 @@
 
 BUILDDIR ?= _build
 DOC_TAG ?= development
-SPHINXOPTS ?= -j auto
+SPHINXOPTS ?= -j auto -W --keep-going -T
+SPHINXOPTS_EXTRA ?=
 LATEXMKOPTS ?= -halt-on-error -no-shell-escape
 DT_TURBO_MODE ?= 0
 
@@ -26,6 +27,7 @@ configure:
 		-S. \
 		-DDOC_TAG=${DOC_TAG} \
 		-DSPHINXOPTS="${SPHINXOPTS}" \
+		-DSPHINXOPTS_EXTRA="${SPHINXOPTS_EXTRA}" \
 		-DLATEXMKOPTS="${LATEXMKOPTS}" \
 		-DDT_TURBO_MODE=${DT_TURBO_MODE}
 
