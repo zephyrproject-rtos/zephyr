@@ -28,14 +28,15 @@ config NORDIC_QSPI_NOR_FLASH_LAYOUT_PAGE_SIZE
 	  size (65536).  Other option include the sector size (4096).
 
 config NORDIC_QSPI_NOR_STACK_WRITE_BUFFER_SIZE
-	int "Size of a stack-based buffer to support writes from NVMC"
+	int "Size of a stack-based buffer to handle writes not supported by QSPI"
 	default 4
 	help
-	  The QSPI peripheral uses DMA and cannot write data that is
-	  read from the internal flash.  A non-zero value here enables
-	  a stack buffer into which data is copied to allow the write
-	  to proceed.  Multiple transfers will be initiated if the
-	  data is larger than the configured limit.  Must be a
-	  multiple of 4.  The feature is disabled when set to 0.
+	  The QSPI peripheral uses DMA and can only write data that is read
+	  from a word-aligned location in RAM. A non-zero value here enables
+	  a stack buffer to be used for any source data that does not meet
+	  these restrictions. Such data will be copied into this buffer to
+	  allow the write to proceed. Multiple transfers will be initiated
+	  if the data is larger than the configured size.
+	  Must be a multiple of 4. When set to 0, the feature is disabled.
 
 endif # NORDIC_QSPI_NOR
