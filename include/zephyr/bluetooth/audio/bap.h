@@ -420,6 +420,9 @@ struct bt_bap_ep_info {
 	/** Capabilities type */
 	enum bt_audio_dir dir;
 
+	/** @brief True if the stream associated with the endpoint is able to send data */
+	bool can_send;
+
 	/** Pointer to paired endpoint if the endpoint is part of a bidirectional CIS,
 	 *  otherwise NULL
 	 */
