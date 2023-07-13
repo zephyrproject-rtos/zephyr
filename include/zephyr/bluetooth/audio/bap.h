@@ -775,6 +775,26 @@ int bt_bap_stream_send(struct bt_bap_stream *stream, struct net_buf *buf, uint16
 		       uint32_t ts);
 
 /**
+ * @brief Get ISO transmission timing info for a Basic Audio Profile stream
+ *
+ * Reads timing information for transmitted ISO packet on an ISO channel.
+ * The HCI_LE_Read_ISO_TX_Sync HCI command is used to retrieve this information from the controller.
+ *
+ * @note An SDU must have already been successfully transmitted on the ISO channel
+ * for this function to return successfully.
+ * Support for sending must be supported, determined by @kconfig{CONFIG_BT_AUDIO_TX}.
+ *
+ * @param[in]  stream Stream object.
+ * @param[out] info   Transmit info object.
+ *
+ * @retval 0 on success
+ * @retval -EINVAL if the stream is invalid, if the stream is not configured for sending or if it is
+ *         not connected with a isochronous stream
+ * @retval Any return value from bt_iso_chan_get_tx_sync()
+ */
+int bt_bap_stream_get_tx_sync(struct bt_bap_stream *stream, struct bt_iso_tx_info *info);
+
+/**
  * @defgroup bt_bap_unicast_server BAP Unicast Server APIs
  * @ingroup bt_bap
  * @{
