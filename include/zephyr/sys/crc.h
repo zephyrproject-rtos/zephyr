@@ -215,7 +215,7 @@ static inline uint16_t crc16_ansi(const uint8_t *src, size_t len)
 /**
  * @brief Generate IEEE conform CRC32 checksum.
  *
- * @param  *data        Pointer to data on which the CRC should be calculated.
+ * @param  data         Pointer to data on which the CRC should be calculated.
  * @param  len          Data length.
  *
  * @return CRC32 value.
@@ -227,7 +227,7 @@ uint32_t crc32_ieee(const uint8_t *data, size_t len);
  * @brief Update an IEEE conforming CRC32 checksum.
  *
  * @param crc   CRC32 checksum that needs to be updated.
- * @param *data Pointer to data on which the CRC should be calculated.
+ * @param data  Pointer to data on which the CRC should be calculated.
  * @param len   Data length.
  *
  * @return CRC32 value.
@@ -239,7 +239,7 @@ uint32_t crc32_ieee_update(uint32_t crc, const uint8_t *data, size_t len);
  * @brief Calculate CRC32C (Castagnoli) checksum.
  *
  * @param crc       CRC32C checksum that needs to be updated.
- * @param *data     Pointer to data on which the CRC should be calculated.
+ * @param data      Pointer to data on which the CRC should be calculated.
  * @param len       Data length.
  * @param first_pkt Whether this is the first packet in the stream.
  * @param last_pkt  Whether this is the last packet in the stream.

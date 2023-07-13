@@ -188,7 +188,7 @@ int sensing_get_sensors(int *num_sensors, const struct sensing_sensor_info **inf
  *
  * @param cb_list callback list to be registered to sensing.
  *
- * @param *handle The opened instance handle, if failed will be set to NULL.
+ * @param handle The opened instance handle, if failed will be set to NULL.
  *
  * @return 0 on success or negative error value on failure.
  */
@@ -209,7 +209,7 @@ int sensing_open_sensor(
  *
  * @param cb_list callback list to be registered to sensing.
  *
- * @param *handle The opened instance handle, if failed will be set to NULL.
+ * @param handle The opened instance handle, if failed will be set to NULL.
  *
  * @return 0 on success or negative error value on failure.
  */

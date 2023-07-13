@@ -168,7 +168,7 @@ void stm32_exti_trigger(int line, int trigger)
  *
  * Check EXTI lines in exti_range for pending interrupts
  *
- * @param *exti_range Pointer to a exti_range structure
+ * @param exti_range Pointer to a exti_range structure
  */
 static void stm32_exti_isr(const void *exti_range)
 {
