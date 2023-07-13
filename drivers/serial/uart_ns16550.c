@@ -68,6 +68,7 @@ BUILD_ASSERT(IS_ENABLED(CONFIG_PCIE), "NS16550(s) in DT need CONFIG_PCIE");
 #define REG_MSR 0x06  /* Modem status reg.              */
 #define REG_DLF 0xC0  /* Divisor Latch Fraction         */
 #define REG_PCP 0x200 /* PRV_CLOCK_PARAMS (Apollo Lake) */
+#define REG_MDR1 0x08 /* Mode control reg. (TI_K3) */
 
 /* equates for interrupt enable register */
 
@@ -98,6 +99,22 @@ BUILD_ASSERT(IS_ENABLED(CONFIG_PCIE), "NS16550(s) in DT need CONFIG_PCIE");
 
 #define PCP_UPDATE 0x80000000 /* update clock */
 #define PCP_EN 0x00000001     /* enable clock output */
+
+/* Fields for TI K3 UART module */
+
+#define MDR1_MODE_SELECT_FIELD_MASK		BIT_MASK(3)
+#define MDR1_MODE_SELECT_FIELD_SHIFT		BIT_MASK(0)
+
+/* Modes available for TI K3 UART module */
+
+#define MDR1_STD_MODE					(0)
+#define MDR1_SIR_MODE					(1)
+#define MDR1_UART_16X					(2)
+#define MDR1_UART_13X					(3)
+#define MDR1_MIR_MODE					(4)
+#define MDR1_FIR_MODE					(5)
+#define MDR1_CIR_MODE					(6)
+#define MDR1_DISABLE					(7)
 
 /*
  * Per PC16550D (Literature Number: SNLS378B):
@@ -199,6 +216,7 @@ BUILD_ASSERT(IS_ENABLED(CONFIG_PCIE), "NS16550(s) in DT need CONFIG_PCIE");
 #define MDC(dev) (get_port(dev) + REG_MDC * reg_interval(dev))
 #define LSR(dev) (get_port(dev) + REG_LSR * reg_interval(dev))
 #define MSR(dev) (get_port(dev) + REG_MSR * reg_interval(dev))
+#define MDR1(dev) (get_port(dev) + REG_MDR1 * reg_interval(dev))
 #define DLF(dev) (get_port(dev) + REG_DLF)
 #define PCP(dev) (get_port(dev) + REG_PCP)
 
@@ -421,6 +439,13 @@ static int uart_ns16550_configure(const struct device *dev,
 	}
 #endif
 
+#ifdef CONFIG_UART_NS16550_TI_K3
+	uint32_t mdr = ns16550_inbyte(dev_cfg, MDR1(dev));
+
+	mdr = ((mdr & ~MDR1_MODE_SELECT_FIELD_MASK) | ((((MDR1_STD_MODE) <<
+		MDR1_MODE_SELECT_FIELD_SHIFT)) & MDR1_MODE_SELECT_FIELD_MASK));
+	ns16550_outbyte(dev_cfg, MDR1(dev), mdr);
+#endif
 	/*
 	 * set clock frequency from clock_frequency property if valid,
 	 * otherwise, get clock frequency from clock manager
