@@ -24,7 +24,7 @@ LOG_MODULE_REGISTER(modem_iface_uart, CONFIG_MODEM_LOG_LEVEL);
  *
  * @note   Discards remaining data.
  *
- * @param  *iface: modem interface.
+ * @param  iface: modem interface.
  *
  * @retval None.
  */
@@ -43,7 +43,7 @@ static void modem_iface_uart_flush(struct modem_iface *iface)
  * @note   Fills interfaces ring buffer with received data.
  *         When ring buffer is full the data is discarded.
  *
- * @param  *uart_dev: uart device.
+ * @param  uart_dev: uart device.
  *
  * @retval None.
  */

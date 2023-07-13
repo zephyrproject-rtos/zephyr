@@ -169,7 +169,7 @@ int sensing_sensor_post_data(
  * @param max_handles The max count of the \p reporter_handles array input. Can
  * get real count number via \ref sensing_sensor_get_reporters_count
  *
- * @param *reporter_handles Input handles array for receiving found reporter
+ * @param reporter_handles Input handles array for receiving found reporter
  * sensor instances
  *
  * @return number of reporters found, 0 returned if not found.
