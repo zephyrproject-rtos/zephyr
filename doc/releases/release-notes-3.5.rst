@@ -20,6 +20,10 @@ API Changes
 Changes in this release
 =======================
 
+* Set :kconfig:option:`CONFIG_BOOTLOADER_SRAM_SIZE` default value to ``0`` (was
+  ``16``). Bootloaders that use a part of the SRAM should set this value to an
+  appropriate size. :github:`60371`
+
 Removed APIs in this release
 ============================
 
