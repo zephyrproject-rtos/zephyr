@@ -26,6 +26,13 @@
 #endif
 #define RAMABLE_REGION RAM
 
+/* section alignment directive, valid only if not running in XIP mode */
+#ifndef CONFIG_XIP
+  #define SECTION_ALIGN ALIGN(_region_min_align)
+#else
+  #define SECTION_ALIGN
+#endif
+
 #if !defined(CONFIG_XIP) && (CONFIG_FLASH_SIZE == 0)
   #define ROM_ADDR RAM_ADDR
 #else
@@ -72,8 +79,6 @@ _region_min_align = 4;
   #define MPU_ALIGN(region_size) \
     . = ALIGN(_region_min_align)
 #endif
-
-#define BSS_ALIGN ALIGN(_region_min_align)
 
 MEMORY
 {
@@ -266,35 +271,10 @@ SECTIONS
     _app_smem_rom_start = LOADADDR(_APP_SMEM_SECTION_NAME);
 #endif  /* CONFIG_USERSPACE */
 
-    SECTION_DATA_PROLOGUE(_BSS_SECTION_NAME,(NOLOAD), BSS_ALIGN)
-    {
-        /*
-         * For performance, BSS section is assumed to be 4 byte aligned and
-         * a multiple of 4 bytes
-         */
-        . = ALIGN(4);
-        __bss_start = .;
-        __kernel_ram_start = .;
+    . = ALIGN(_region_min_align);
+    __kernel_ram_start = .;
 
-        *(.bss)
-        *(".bss.*")
-        *(COMMON)
-        *(".kernel_bss.*")
-
-#ifdef CONFIG_CODE_DATA_RELOCATION
-#include <linker_sram_bss_relocate.ld>
-#endif
-
-        /*
-         * As memory is cleared in words only, it is simpler to ensure the BSS
-         * section ends on a 4 byte boundary. This wastes a maximum of 3 bytes.
-         */
-        __bss_end = ALIGN(4);
-    } GROUP_DATA_LINK_IN(RAMABLE_REGION, RAMABLE_REGION)
-
-#include <zephyr/linker/common-noinit.ld>
-
-    SECTION_DATA_PROLOGUE(_DATA_SECTION_NAME,,)
+    SECTION_DATA_PROLOGUE(_DATA_SECTION_NAME,,SECTION_ALIGN)
     {
         __data_region_start = .;
         __data_start = .;
@@ -328,7 +308,29 @@ SECTIONS
 #include <snippets-data-sections.ld>
 
     __data_region_end = .;
+    . = ALIGN(_region_min_align);
 
+    SECTION_DATA_PROLOGUE(_BSS_SECTION_NAME,(NOLOAD), SECTION_ALIGN)
+    {
+        __bss_start = .;
+
+        *(.bss)
+        *(".bss.*")
+        *(COMMON)
+        *(".kernel_bss.*")
+
+#ifdef CONFIG_CODE_DATA_RELOCATION
+#include <linker_sram_bss_relocate.ld>
+#endif
+
+        /*
+         * As memory is cleared in words only, it is simpler to ensure the BSS
+         * section ends on a 4 byte boundary. This wastes a maximum of 3 bytes.
+         */
+        __bss_end = ALIGN(4);
+    } GROUP_DATA_LINK_IN(RAMABLE_REGION, RAMABLE_REGION)
+
+#include <zephyr/linker/common-noinit.ld>
 
     /* Define linker symbols */
 
