@@ -989,7 +989,8 @@ void nrf_802154_received_timestamp_raw(uint8_t *data, int8_t power, uint8_t lqi,
 		nrf5_data.rx_frames[i].lqi = lqi;
 
 #if defined(CONFIG_NET_PKT_TIMESTAMP)
-		nrf5_data.rx_frames[i].time = nrf_802154_mhr_timestamp_get(time, data[0]);
+		nrf5_data.rx_frames[i].time =
+			nrf_802154_timestamp_end_to_phr_convert(time, data[0]);
 #endif
 
 		if (data[ACK_REQUEST_BYTE] & ACK_REQUEST_BIT) {
@@ -1084,9 +1085,8 @@ void nrf_802154_transmitted_raw(uint8_t *frame,
 		nrf5_data.ack_frame.lqi = metadata->data.transmitted.lqi;
 
 #if defined(CONFIG_NET_PKT_TIMESTAMP)
-		nrf5_data.ack_frame.time =
-			nrf_802154_mhr_timestamp_get(
-				metadata->data.transmitted.time, nrf5_data.ack_frame.psdu[0]);
+		nrf5_data.ack_frame.time = nrf_802154_timestamp_end_to_phr_convert(
+			metadata->data.transmitted.time, nrf5_data.ack_frame.psdu[0]);
 #endif
 	}
 

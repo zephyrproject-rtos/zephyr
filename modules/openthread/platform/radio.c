@@ -41,7 +41,6 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_OPENTHREAD_L2_LOG_LEVEL);
 #define SHORT_ADDRESS_SIZE 2
 
 #define FCS_SIZE     2
-#define PHR_DURATION 32
 #if defined(CONFIG_OPENTHREAD_THREAD_VERSION_1_1)
 #define ACK_PKT_LENGTH 5
 #else
@@ -189,7 +188,7 @@ enum net_verdict ieee802154_handle_ack(struct net_if *iface, struct net_pkt *pkt
 
 	/* OpenThread expects the timestamp to point to the end of SFD */
 	ack_frame.mInfo.mRxInfo.mTimestamp = pkt_time->second * USEC_PER_SEC +
-					     pkt_time->nanosecond / NSEC_PER_USEC - PHR_DURATION;
+					     pkt_time->nanosecond / NSEC_PER_USEC;
 #endif
 
 	return NET_OK;
@@ -480,8 +479,8 @@ static void openthread_handle_received_frame(otInstance *instance,
 	struct net_ptp_time *pkt_time = net_pkt_timestamp(pkt);
 
 	/* OpenThread expects the timestamp to point to the end of SFD */
-	recv_frame.mInfo.mRxInfo.mTimestamp = pkt_time->second * USEC_PER_SEC +
-					      pkt_time->nanosecond / NSEC_PER_USEC - PHR_DURATION;
+	recv_frame.mInfo.mRxInfo.mTimestamp =
+		pkt_time->second * USEC_PER_SEC + pkt_time->nanosecond / NSEC_PER_USEC;
 #endif
 
 	if (net_pkt_ieee802154_arb(pkt) && net_pkt_ieee802154_fv2015(pkt)) {
