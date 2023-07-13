@@ -1300,6 +1300,14 @@ function(zephyr_linker_sources location)
   endforeach()
 endfunction(zephyr_linker_sources)
 
+# Helper macro for conditionally calling zephyr_code_relocate() when a
+# specific Kconfig symbol is enabled. See zephyr_code_relocate() description
+# for supported arguments.
+macro(zephyr_code_relocate_ifdef feature_toggle)
+  if(${${feature_toggle}})
+    zephyr_code_relocate(${ARGN})
+  endif()
+endmacro()
 
 # Helper function for CONFIG_CODE_DATA_RELOCATION
 # This function may either be invoked with a list of files, or a library
