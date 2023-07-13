@@ -53,7 +53,7 @@ struct __esf {
 #ifdef CONFIG_ARM64_SAFE_EXCEPTION_STACK
 	uint64_t sp;
 #endif
-} __packed __aligned(16);
+} __aligned(16);
 
 typedef struct __esf z_arch_esf_t;
 
