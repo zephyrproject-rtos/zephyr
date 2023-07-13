@@ -52,7 +52,7 @@ extern "C" {
  */
 #define IEEE802154_PHY_SYMBOLS_PER_SECOND(symbol_period) (USEC_PER_SEC / symbol_period)
 
-/* see section 19.2.4 */
+/* in bytes, see section 19.2.4 */
 #define IEEE802154_PHY_SUN_FSK_PHR_LEN 2
 
 /* Default PHY PIB attribute aTurnaroundTime, in PHY symbols, see section 11.3, table 11-1. */

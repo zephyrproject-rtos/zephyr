@@ -30,6 +30,8 @@ DEFINE_FFF_GLOBALS;
 #define FRAME_TYPE_MASK 0x07
 #define FRAME_TYPE_ACK	0x02
 
+#define PHY_SHR_DURATION 160
+
 K_SEM_DEFINE(ot_sem, 0, 1);
 
 /**
@@ -293,10 +295,10 @@ ZTEST(openthread_radio, test_tx_test)
 		get_time_mock_fake.return_val = (int64_t)UINT32_MAX * NSEC_PER_USEC + 1000;
 		frm->mInfo.mTxInfo.mTxDelayBaseTime = 3U;
 		frm->mInfo.mTxInfo.mTxDelay = 5U;
-		expected_target_time =
-			get_time_mock_fake.return_val +
-			(frm->mInfo.mTxInfo.mTxDelayBaseTime + frm->mInfo.mTxInfo.mTxDelay) *
-				NSEC_PER_USEC;
+		expected_target_time = get_time_mock_fake.return_val +
+				       (frm->mInfo.mTxInfo.mTxDelayBaseTime +
+					frm->mInfo.mTxInfo.mTxDelay + PHY_SHR_DURATION) *
+					       NSEC_PER_USEC;
 	}
 
 	/* ACKed frame */
