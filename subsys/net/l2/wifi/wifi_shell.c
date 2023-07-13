@@ -21,6 +21,7 @@ LOG_MODULE_REGISTER(net_wifi_shell, LOG_LEVEL_INF);
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/wifi_mgmt.h>
 #include <zephyr/net/net_event.h>
+#include <zephyr/posix/unistd.h>
 
 #include "net_private.h"
 
@@ -455,6 +456,40 @@ static int cmd_wifi_disconnect(const struct shell *sh, size_t argc,
 	return 0;
 }
 
+
+static int wifi_scan_args_to_params(const struct shell *sh,
+				    size_t argc,
+				    char *argv[],
+				    struct wifi_scan_params *params)
+{
+	struct getopt_state *state;
+	int opt;
+	static struct option long_options[] = {{"type", required_argument, 0, 't'},
+										   {0, 0, 0, 0}};
+	int opt_index = 0;
+
+	while ((opt = getopt_long(argc, argv, "t:", long_options, &opt_index)) != -1) {
+		state = getopt_state_get();
+		switch (opt) {
+		case 't':
+			if (!strcmp(optarg, "passive")) {
+				params->scan_type = WIFI_SCAN_TYPE_PASSIVE;
+			} else if (!strcmp(optarg, "active")) {
+				params->scan_type = WIFI_SCAN_TYPE_ACTIVE;
+			} else {
+				shell_fprintf(sh, SHELL_ERROR, "Invalid scan type %s\n", optarg);
+				return -ENOEXEC;
+			}
+			break;
+		case '?':
+			shell_fprintf(sh, SHELL_ERROR, "Invalid option or option usage: %s\n",
+				      long_options[opt_index].name);
+			return -ENOEXEC;
+		}
+	}
+	return 0;
+}
+
 static int cmd_wifi_scan(const struct shell *sh, size_t argc, char *argv[])
 {
 	struct net_if *iface = net_if_get_first_wifi();
@@ -462,27 +497,13 @@ static int cmd_wifi_scan(const struct shell *sh, size_t argc, char *argv[])
 
 	context.sh = sh;
 
-	if (argc > 2) {
-		shell_fprintf(sh, SHELL_WARNING, "Invalid number of arguments\n");
+	if (wifi_scan_args_to_params(sh, argc, argv, &params)) {
+		shell_help(sh);
 		return -ENOEXEC;
-	}
-
-	if (argc == 2) {
-		if (!strcmp(argv[1], "passive")) {
-			params.scan_type = WIFI_SCAN_TYPE_PASSIVE;
-		} else if (!strcmp(argv[1], "active")) {
-			params.scan_type = WIFI_SCAN_TYPE_ACTIVE;
-		} else {
-			shell_fprintf(sh, SHELL_WARNING, "Invalid argument\n");
-			shell_fprintf(sh, SHELL_INFO,
-				      "Valid argument : <active> / <passive>\n");
-			return -ENOEXEC;
-		}
 	}
 
 	if (net_mgmt(NET_REQUEST_WIFI_SCAN, iface, &params, sizeof(params))) {
 		shell_fprintf(sh, SHELL_WARNING, "Scan request failed\n");
-
 		return -ENOEXEC;
 	}
 
@@ -538,7 +559,6 @@ static int cmd_wifi_status(const struct shell *sh, size_t argc, char *argv[])
 
 	return 0;
 }
-
 
 #if defined(CONFIG_NET_STATISTICS_WIFI) && \
 					defined(CONFIG_NET_STATISTICS_USER_API)
@@ -1192,7 +1212,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_commands,
 		      0),
 	SHELL_CMD(scan, NULL,
 		  "Scan for Wi-Fi APs\n"
-		  "<scan type (optional): <active> : <passive>>\n",
+		    "OPTIONS:\n"
+		    "[-t, --type <active/passive>] : Preferred mode of scan. The actual mode of scan can depend on factors such as the Wi-Fi chip implementation, regulatory domain restrictions. Default type is active.",
 		  cmd_wifi_scan),
 	SHELL_CMD(statistics, NULL, "Wi-Fi interface statistics", cmd_wifi_stats),
 	SHELL_CMD(status, NULL, "Status of the Wi-Fi interface", cmd_wifi_status),
