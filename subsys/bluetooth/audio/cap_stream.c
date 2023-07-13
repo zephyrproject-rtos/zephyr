@@ -210,11 +210,13 @@ void bt_cap_stream_ops_register(struct bt_cap_stream *stream,
 {
 	stream->ops = ops;
 
-	/* For the broadcast sink role, this is the only way we can ensure that
-	 * the BAP callbacks are registered, as there are no CAP broadcast sink
-	 * procedures that we can use to register the callbacks in other ways.
+	/* CAP basically just forwards the BAP callbacks after doing what it (CAP) needs to do,
+	 * so we can just always register the BAP callbacks here
+	 *
+	 * It is, however, only the CAP Initiator Unicast that depend on the callbacks being set in
+	 * order to work, so for the CAP Initiator Unicast we need an additional register to ensure
+	 * correctness.
 	 */
-	if (IS_ENABLED(CONFIG_BT_BAP_BROADCAST_SINK)) {
-		bt_cap_stream_ops_register_bap(stream);
-	}
+
+	bt_cap_stream_ops_register_bap(stream);
 }
