@@ -1,0 +1,24 @@
+# DAC configuration options
+
+# Copyright (c) 2023 SILA Embedded Solutions GmbH
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config DAC_AD568X
+	bool "Analog Devices AD5687/9 DAC driver"
+	default y
+	select SPI
+	depends on DT_HAS_ADI_AD5687_ENABLED \
+		|| DT_HAS_ADI_AD5689_ENABLED
+	help
+	  Enable the driver for the Analog Devices AD5687/9 DAC
+
+if DAC_AD568X
+
+config DAC_AD568X_INIT_PRIORITY
+	int "Init priority"
+	default 80
+	help
+	  Analog Devices AD5687/9 DAC device driver initialization priority.
+
+endif # DAC_AD568X
