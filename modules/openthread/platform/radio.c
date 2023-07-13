@@ -58,6 +58,8 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_OPENTHREAD_L2_LOG_LEVEL);
 
 #define CHANNEL_COUNT OT_RADIO_2P4GHZ_OQPSK_CHANNEL_MAX - OT_RADIO_2P4GHZ_OQPSK_CHANNEL_MIN + 1
 
+#define PHY_SHR_DURATION 160 /* duration of SHR in us */
+
 enum pending_events {
 	PENDING_EVENT_FRAME_TO_SEND, /* There is a tx frame to send  */
 	PENDING_EVENT_FRAME_RECEIVED, /* Radio has received new frame */
@@ -395,7 +397,7 @@ void transmit_message(struct k_work *tx_job)
 	    (sTransmitFrame.mInfo.mTxInfo.mTxDelay != 0)) {
 #if defined(CONFIG_NET_PKT_TXTIME)
 		uint32_t tx_at = sTransmitFrame.mInfo.mTxInfo.mTxDelayBaseTime +
-				 sTransmitFrame.mInfo.mTxInfo.mTxDelay;
+				 sTransmitFrame.mInfo.mTxInfo.mTxDelay + PHY_SHR_DURATION;
 		struct net_ptp_time timestamp =
 			ns_to_net_ptp_time(convert_32bit_us_wrapped_to_64bit_ns(tx_at));
 		net_pkt_set_timestamp(tx_pkt, &timestamp);

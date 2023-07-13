@@ -527,7 +527,12 @@ static bool nrf5_tx_at(struct nrf5_802154_data *nrf5_radio, struct net_pkt *pkt,
 		.extra_cca_attempts = max_extra_cca_attempts,
 #endif
 	};
-	uint64_t tx_at = net_ptp_time_to_ns(net_pkt_timestamp(pkt)) / NSEC_PER_USEC;
+
+	/* The timestamp points to the start of PHR but `nrf_802154_transmit_raw_at`
+	 * expects a timestamp pointing to start of SHR.
+	 */
+	uint64_t tx_at = nrf_802154_timestamp_phr_to_shr_convert(
+		net_ptp_time_to_ns(net_pkt_timestamp(pkt)) / NSEC_PER_USEC);
 
 	return nrf_802154_transmit_raw_at(payload, tx_at, &metadata);
 }
