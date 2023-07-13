@@ -93,10 +93,10 @@ typedef void (*shell_dynamic_get)(size_t idx,
  * @brief Shell command descriptor.
  */
 union shell_cmd_entry {
-	/*!< Pointer to function returning dynamic commands.*/
+	/** Pointer to function returning dynamic commands.*/
 	shell_dynamic_get dynamic_get;
 
-	/*!< Pointer to array of static commands. */
+	/** Pointer to array of static commands. */
 	const struct shell_static_entry *entry;
 };
 
@@ -606,6 +606,7 @@ typedef void (*shell_bypass_cb_t)(const struct shell *sh,
 struct shell_transport;
 
 /**
+ * @struct shell_transport_api
  * @brief Unified shell transport interface.
  */
 struct shell_transport_api {
@@ -665,8 +666,8 @@ struct shell_transport_api {
 	/**
 	 * @brief Function for reading data from the transport interface.
 	 *
-	 * @param[in]  p_transport  Pointer to the transfer instance.
-	 * @param[in]  p_data       Pointer to the destination buffer.
+	 * @param[in]  transport    Pointer to the transfer instance.
+	 * @param[in]  data         Pointer to the destination buffer.
 	 * @param[in]  length       Destination buffer length.
 	 * @param[out] cnt          Pointer to the received bytes counter.
 	 *
@@ -780,21 +781,21 @@ struct shell_ctx {
 	enum shell_state state; /*!< Internal module state.*/
 	enum shell_receive_state receive_state;/*!< Escape sequence indicator.*/
 
-	/*!< Currently executed command.*/
+	/** Currently executed command.*/
 	struct shell_static_entry active_cmd;
 
-	/* New root command. If NULL shell uses default root commands. */
+	/** New root command. If NULL shell uses default root commands. */
 	const struct shell_static_entry *selected_cmd;
 
-	/*!< VT100 color and cursor position, terminal width.*/
+	/** VT100 color and cursor position, terminal width.*/
 	struct shell_vt100_ctx vt100_ctx;
 
-	/*!< Callback called from shell thread context when unitialization is
+	/** Callback called from shell thread context when unitialization is
 	 * completed just before aborting shell thread.
 	 */
 	shell_uninit_cb_t uninit_cb;
 
-	/*!< When bypass is set, all incoming data is passed to the callback. */
+	/** When bypass is set, all incoming data is passed to the callback. */
 	shell_bypass_cb_t bypass;
 
 #if defined CONFIG_SHELL_GETOPT
@@ -807,13 +808,13 @@ struct shell_ctx {
 
 	uint16_t cmd_tmp_buff_len; /*!< Command length in tmp buffer.*/
 
-	/*!< Command input buffer.*/
+	/** Command input buffer.*/
 	char cmd_buff[CONFIG_SHELL_CMD_BUFF_SIZE];
 
-	/*!< Command temporary buffer.*/
+	/** Command temporary buffer.*/
 	char temp_buff[CONFIG_SHELL_CMD_BUFF_SIZE];
 
-	/*!< Printf buffer size.*/
+	/** Printf buffer size.*/
 	char printf_buff[CONFIG_SHELL_PRINTF_BUFF_SIZE];
 
 	volatile union shell_backend_cfg cfg;
@@ -821,7 +822,7 @@ struct shell_ctx {
 
 	struct k_poll_signal signals[SHELL_SIGNALS];
 
-	/*!< Events that should be used only internally by shell thread.
+	/** Events that should be used only internally by shell thread.
 	 * Event for SHELL_SIGNAL_TXDONE is initialized but unused.
 	 */
 	struct k_poll_event events[SHELL_SIGNALS];
@@ -837,8 +838,8 @@ extern const struct log_backend_api log_backend_shell_api;
  * @brief Flags for setting shell output newline sequence.
  */
 enum shell_flag {
-	SHELL_FLAG_CRLF_DEFAULT	= (1<<0),	/* Do not map CR or LF */
-	SHELL_FLAG_OLF_CRLF	= (1<<1)	/* Map LF to CRLF on output */
+	SHELL_FLAG_CRLF_DEFAULT	= (1<<0),	/*!< Do not map CR or LF */
+	SHELL_FLAG_OLF_CRLF	= (1<<1)	/*!< Map LF to CRLF on output */
 };
 
 /**
@@ -1116,7 +1117,7 @@ int shell_prompt_change(const struct shell *sh, const char *prompt);
  */
 void shell_help(const struct shell *sh);
 
-/* @brief Command's help has been printed */
+/** @brief Command's help has been printed */
 #define SHELL_CMD_HELP_PRINTED	(1)
 
 /** @brief Execute command.
