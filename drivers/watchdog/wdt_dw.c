@@ -18,7 +18,7 @@
 /* Check if reset property is defined */
 #define WDT_DW_IS_INST_RESET_EN(inst)	DT_NODE_HAS_PROP(DT_DRV_INST(inst), resets)
 #define WDT_DW_CHECK_RESET(inst)	WDT_DW_IS_INST_RESET_EN(inst) ||
-#define WDT_DW_RESET_SUPPORT		DT_INST_FOREACH_STATUS_OKAY(WDT_DW_CHECK_RESET) 0
+#define WDT_DW_RESET_SUPPORT		(DT_INST_FOREACH_STATUS_OKAY(WDT_DW_CHECK_RESET) 0)
 
 #if WDT_DW_RESET_SUPPORT
 #include <zephyr/drivers/reset.h>
@@ -27,7 +27,7 @@
 /* Check if clock manager is supported */
 #define WDT_DW_IS_INST_CLK_MGR_EN(inst)	DT_PHA_HAS_CELL(DT_DRV_INST(inst), clocks, clkid)
 #define WDT_DW_CHECK_CLK_MGR(inst)	WDT_DW_IS_INST_CLK_MGR_EN(inst) ||
-#define WDT_DW_CLK_MANAGER_SUPPORT	DT_INST_FOREACH_STATUS_OKAY(WDT_DW_CHECK_CLK_MGR) 0
+#define WDT_DW_CLK_MANAGER_SUPPORT	(DT_INST_FOREACH_STATUS_OKAY(WDT_DW_CHECK_CLK_MGR) 0)
 
 #if WDT_DW_CLK_MANAGER_SUPPORT
 #include <zephyr/drivers/clock_control.h>
@@ -37,7 +37,7 @@ LOG_MODULE_REGISTER(wdt_dw, CONFIG_WDT_LOG_LEVEL);
 
 #define WDT_IS_INST_IRQ_EN(inst)	DT_NODE_HAS_PROP(DT_DRV_INST(inst), interrupts)
 #define WDT_CHECK_INTERRUPT_USED(inst)	WDT_IS_INST_IRQ_EN(inst) ||
-#define WDT_DW_INTERRUPT_SUPPORT	DT_INST_FOREACH_STATUS_OKAY(WDT_CHECK_INTERRUPT_USED) 0
+#define WDT_DW_INTERRUPT_SUPPORT	(DT_INST_FOREACH_STATUS_OKAY(WDT_CHECK_INTERRUPT_USED) 0)
 
 /* Device run time data */
 struct dw_wdt_dev_data {
