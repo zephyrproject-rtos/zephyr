@@ -827,7 +827,7 @@ config IS_BOOTLOADER
 
 config BOOTLOADER_SRAM_SIZE
 	int "SRAM reserved for bootloader"
-	default 16
+	default 0
 	depends on !XIP || IS_BOOTLOADER
 	depends on ARM || XTENSA
 	help
