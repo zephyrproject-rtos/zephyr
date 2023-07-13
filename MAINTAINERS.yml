@@ -1673,7 +1673,6 @@ Logging:
   maintainers:
     - nordic-krch
   collaborators:
-    - aasthagr
     - dcpleung
   files:
     - include/zephyr/logging/
@@ -2250,9 +2249,7 @@ Intel Platforms (X86):
     - jhedberg
   collaborators:
     - tbursztyka
-    - aasthagr
     - laurenmurphyx64
-    - MaureenHelm
   files:
     - boards/x86/
     - dts/x86/intel/
@@ -2272,7 +2269,6 @@ Intel Platforms (Xtensa):
     - lgirdwood
     - marc-hb
     - kv2019i
-    - MaureenHelm
     - ceolin
     - aborisovich
     - tmleman
@@ -3344,7 +3340,6 @@ x86 arch:
     - nashif
     - dcpleung
     - ceolin
-    - aasthagr
     - laurenmurphyx64
   files:
     - arch/x86/
