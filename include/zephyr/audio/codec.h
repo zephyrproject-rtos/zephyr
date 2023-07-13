@@ -32,64 +32,65 @@ extern "C" {
  * PCM audio sample rates
  */
 typedef enum {
-	AUDIO_PCM_RATE_8K	= 8000,
-	AUDIO_PCM_RATE_16K	= 16000,
-	AUDIO_PCM_RATE_24K	= 24000,
-	AUDIO_PCM_RATE_32K	= 32000,
-	AUDIO_PCM_RATE_44P1K	= 44100,
-	AUDIO_PCM_RATE_48K	= 48000,
-	AUDIO_PCM_RATE_96K	= 96000,
-	AUDIO_PCM_RATE_192K	= 192000,
+	AUDIO_PCM_RATE_8K	= 8000,		/**< 8 kHz sample rate */
+	AUDIO_PCM_RATE_16K	= 16000,	/**< 16 kHz sample rate */
+	AUDIO_PCM_RATE_24K	= 24000,	/**< 24 kHz sample rate */
+	AUDIO_PCM_RATE_32K	= 32000,	/**< 32 kHz sample rate */
+	AUDIO_PCM_RATE_44P1K	= 44100,	/**< 44.1 kHz sample rate */
+	AUDIO_PCM_RATE_48K	= 48000,	/**< 48 kHz sample rate */
+	AUDIO_PCM_RATE_96K	= 96000,	/**< 96 kHz sample rate */
+	AUDIO_PCM_RATE_192K	= 192000,	/**< 192 kHz sample rate */
 } audio_pcm_rate_t;
 
 /**
  * PCM audio sample bit widths
  */
 typedef enum {
-	AUDIO_PCM_WIDTH_16_BITS	= 16,
-	AUDIO_PCM_WIDTH_20_BITS	= 20,
-	AUDIO_PCM_WIDTH_24_BITS	= 24,
-	AUDIO_PCM_WIDTH_32_BITS	= 32,
+	AUDIO_PCM_WIDTH_16_BITS	= 16,	/**< 16-bit sample width */
+	AUDIO_PCM_WIDTH_20_BITS	= 20,	/**< 20-bit sample width */
+	AUDIO_PCM_WIDTH_24_BITS	= 24,	/**< 24-bit sample width */
+	AUDIO_PCM_WIDTH_32_BITS	= 32,	/**< 32-bit sample width */
 } audio_pcm_width_t;
 
 /**
  * Digital Audio Interface (DAI) type
  */
 typedef enum {
-	AUDIO_DAI_TYPE_I2S,	/* I2S Interface */
-	AUDIO_DAI_TYPE_INVALID,	/* Other interfaces can be added here */
+	AUDIO_DAI_TYPE_I2S,	/**< I2S Interface */
+	AUDIO_DAI_TYPE_INVALID,	/**< Other interfaces can be added here */
 } audio_dai_type_t;
 
 /**
- * Codec properties that can be set by audio_codec_set_property()
+ * Codec properties that can be set by audio_codec_set_property().
  */
 typedef enum {
-	AUDIO_PROPERTY_OUTPUT_VOLUME,
-	AUDIO_PROPERTY_OUTPUT_MUTE,
+	AUDIO_PROPERTY_OUTPUT_VOLUME,	/**< Output volume */
+	AUDIO_PROPERTY_OUTPUT_MUTE,	/**< Output mute/unmute */
 } audio_property_t;
 
 /**
- * Audio channel identifiers to use in audio_codec_set_property()
+ * Audio channel identifiers to use in audio_codec_set_property().
  */
 typedef enum {
-	AUDIO_CHANNEL_FRONT_LEFT,
-	AUDIO_CHANNEL_FRONT_RIGHT,
-	AUDIO_CHANNEL_LFE,
-	AUDIO_CHANNEL_FRONT_CENTER,
-	AUDIO_CHANNEL_REAR_LEFT,
-	AUDIO_CHANNEL_REAR_RIGHT,
-	AUDIO_CHANNEL_REAR_CENTER,
-	AUDIO_CHANNEL_SIDE_LEFT,
-	AUDIO_CHANNEL_SIDE_RIGHT,
-	AUDIO_CHANNEL_ALL,
+	AUDIO_CHANNEL_FRONT_LEFT,	/**< Front left channel */
+	AUDIO_CHANNEL_FRONT_RIGHT,	/**< Front right channel */
+	AUDIO_CHANNEL_LFE,		/**< Low frequency effect channel */
+	AUDIO_CHANNEL_FRONT_CENTER,	/**< Front center channel */
+	AUDIO_CHANNEL_REAR_LEFT,	/**< Rear left channel */
+	AUDIO_CHANNEL_REAR_RIGHT,	/**< Rear right channel */
+	AUDIO_CHANNEL_REAR_CENTER,	/**< Rear center channel */
+	AUDIO_CHANNEL_SIDE_LEFT,	/**< Side left channel */
+	AUDIO_CHANNEL_SIDE_RIGHT,	/**< Side right channel */
+	AUDIO_CHANNEL_ALL,		/**< All channels */
 } audio_channel_t;
 
 /**
- * Digital Audio Interface Configuration
+ * @brief Digital Audio Interface Configuration.
+ *
  * Configuration is dependent on DAI type
  */
 typedef union {
-	struct i2s_config i2s;	/* I2S configuration */
+	struct i2s_config i2s;	/**< I2S configuration */
 				/* Other DAI types go here */
 } audio_dai_cfg_t;
 
@@ -97,17 +98,17 @@ typedef union {
  * Codec configuration parameters
  */
 struct audio_codec_cfg {
-	uint32_t			mclk_freq;	/* MCLK input frequency in Hz */
-	audio_dai_type_t	dai_type;	/* Digital interface type */
-	audio_dai_cfg_t		dai_cfg;	/* DAI configuration info */
+	uint32_t		mclk_freq;	/**< MCLK input frequency in Hz */
+	audio_dai_type_t	dai_type;	/**< Digital interface type */
+	audio_dai_cfg_t		dai_cfg;	/**< DAI configuration info */
 };
 
 /**
  * Codec property values
  */
 typedef union {
-	int 	vol;	/* Volume level in 0.5dB resolution */
-	bool 	mute;	/* mute if true, unmute if false */
+	int	vol;	/**< Volume level in 0.5dB resolution */
+	bool	mute;	/**< Mute if @a true, unmute if @a false */
 } audio_property_value_t;
 
 /**
