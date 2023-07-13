@@ -7,10 +7,13 @@
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/emul.h>
+#include <zephyr/drivers/emul_sensor.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/i2c_emul.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/sys/util.h>
 
+#include "akm09918c.h"
 #include "akm09918c_emul.h"
 #include "akm09918c_reg.h"
 
@@ -130,14 +133,90 @@ static int akm09918c_emul_init(const struct emul *target, const struct device *p
 	return 0;
 }
 
+static int akm09918c_emul_backend_set_channel(const struct emul *target, enum sensor_channel ch,
+					      q31_t value, int8_t shift)
+{
+	if (!target || !target->data) {
+		return -EINVAL;
+	}
+
+	struct akm09918c_emul_data *data = target->data;
+	uint8_t reg;
+
+	switch (ch) {
+	case SENSOR_CHAN_MAGN_X:
+		reg = AKM09918C_REG_HXL;
+		break;
+	case SENSOR_CHAN_MAGN_Y:
+		reg = AKM09918C_REG_HYL;
+		break;
+	case SENSOR_CHAN_MAGN_Z:
+		reg = AKM09918C_REG_HZL;
+		break;
+	/* This function only supports setting single channels, so skip MAGN_XYZ */
+	default:
+		return -ENOTSUP;
+	}
+
+	/* Set the ST1 register to show we have data */
+	data->reg[AKM09918C_REG_ST1] |= AKM09918C_ST1_DRDY;
+
+	/* Convert fixed-point Gauss values into microgauss and then into its bit representation */
+	int32_t microgauss = (shift < 0 ? ((int64_t)value >> -shift) : ((int64_t)value << shift)) *
+			     1000000 / ((int64_t)INT32_MAX + 1);
+
+	int16_t reg_val =
+		CLAMP(microgauss, AKM09918C_MAGN_MIN_MICRO_GAUSS, AKM09918C_MAGN_MAX_MICRO_GAUSS) /
+		AKM09918C_MICRO_GAUSS_PER_BIT;
+
+	/* Insert reading into registers */
+	data->reg[reg] = reg_val & 0xFF;
+	data->reg[reg + 1] = (reg_val >> 8) & 0xFF;
+
+	return 0;
+}
+
+static int akm09918c_emul_backend_get_sample_range(const struct emul *target,
+						   enum sensor_channel ch, q31_t *lower,
+						   q31_t *upper, q31_t *epsilon, int8_t *shift)
+{
+	ARG_UNUSED(target);
+
+	if (!lower || !upper || !epsilon || !shift) {
+		return -EINVAL;
+	}
+
+	switch (ch) {
+	case SENSOR_CHAN_MAGN_X:
+	case SENSOR_CHAN_MAGN_Y:
+	case SENSOR_CHAN_MAGN_Z:
+		/* +/- 49.12 Gs is the measurement range. 0.0015 Gs is the granularity */
+		*shift = 6;
+		*upper = (int64_t)(49.12 * ((int64_t)INT32_MAX + 1)) >> *shift;
+		*lower = -*upper;
+		*epsilon = (int64_t)(0.0015 * ((int64_t)INT32_MAX + 1)) >> *shift;
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+
 static const struct i2c_emul_api akm09918c_emul_api_i2c = {
 	.transfer = akm09918c_emul_transfer_i2c,
+};
+
+static const struct emul_sensor_backend_api akm09918c_emul_sensor_backend_api = {
+	.set_channel = akm09918c_emul_backend_set_channel,
+	.get_sample_range = akm09918c_emul_backend_get_sample_range,
 };
 
 #define AKM09918C_EMUL(n)                                                                          \
 	const struct akm09918c_emul_cfg akm09918c_emul_cfg_##n;                                    \
 	struct akm09918c_emul_data akm09918c_emul_data_##n;                                        \
 	EMUL_DT_INST_DEFINE(n, akm09918c_emul_init, &akm09918c_emul_data_##n,                      \
-			    &akm09918c_emul_cfg_##n, &akm09918c_emul_api_i2c, NULL)
+			    &akm09918c_emul_cfg_##n, &akm09918c_emul_api_i2c,                      \
+			    &akm09918c_emul_sensor_backend_api)
 
 DT_INST_FOREACH_STATUS_OKAY(AKM09918C_EMUL)
