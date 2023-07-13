@@ -302,6 +302,7 @@
 /drivers/flash/*cc13xx_cc26xx*            @pepe2k
 /drivers/flash/*nrf*                      @de-nordic
 /drivers/flash/*esp32*                    @sylvioalves
+/drivers/flash/flash_cadence_nand*        @nbalabak
 /drivers/fpga/                            @tgorochowik @kgugala
 /drivers/gpio/                            @mnkp
 /drivers/gpio/*b91*                       @yurvyn @andy-liu-telink
@@ -741,6 +742,7 @@
 /samples/drivers/ht16k33/                 @henrikbrixandersen
 /samples/drivers/lora/                    @Mani-Sadhasivam
 /samples/drivers/smbus/                   @finikorg
+/samples/drivers/soc_flash_nand/          @nbalabak
 /samples/subsys/lorawan/                  @Mani-Sadhasivam
 /samples/modules/canopennode/             @henrikbrixandersen
 /samples/net/                             @rlubos @tbursztyka
