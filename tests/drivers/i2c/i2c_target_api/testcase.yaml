@@ -19,6 +19,7 @@ tests:
       - nucleo_wl55jc
       - nucleo_l073rz
       - rpi_pico
+      - efr32bg22_brd4184a
     integration_platforms:
       - nucleo_f091rc
     extra_configs:
