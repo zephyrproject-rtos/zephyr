@@ -116,6 +116,8 @@ endif # NET_L2_WIFI_MGMT
 config NET_L2_WIFI_SHELL
 	bool "Wi-Fi shell module"
 	select NET_L2_WIFI_MGMT
+	select SHELL_GETOPT
+	select GETOPT_LONG
 	help
 	  This can be used for controlling Wi-Fi through the console via
 	  exposing a shell module named "wifi".
