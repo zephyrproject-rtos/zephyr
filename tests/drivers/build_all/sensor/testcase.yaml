@@ -19,3 +19,12 @@ tests:
     extra_configs:
       - CONFIG_PM=y
       - CONFIG_PM_DEVICE=y
+  sensors.generic_test:
+    extra_configs:
+      - CONFIG_GENERIC_SENSOR_TEST=y
+      - CONFIG_ZTEST=y
+      - CONFIG_ZTEST_NEW_API=y
+      - CONFIG_EMUL=y
+      - CONFIG_NATIVE_UART_0_ON_STDINOUT=y
+      - CONFIG_SENSOR_ASYNC_API=y
+    build_only: false
