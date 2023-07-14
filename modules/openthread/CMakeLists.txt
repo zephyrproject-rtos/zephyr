@@ -458,6 +458,12 @@ else()
   set(OT_TX_BEACON_PAYLOAD OFF CACHE BOOL "Enable tx beacon payload support" FORCE)
 endif()
 
+if(CONFIG_OPENTHREAD_TX_QUEUE_STATISTICS)
+  set(OT_TX_QUEUE_STATS ON CACHE BOOL "Enable tx queue statistics" FORCE)
+else()
+  set(OT_TX_QUEUE_STATS OFF CACHE BOOL "Enable tx queue statistics" FORCE)
+endif()
+
 if(CONFIG_OPENTHREAD_UDP_FORWARD)
   set(OT_UDP_FORWARD ON CACHE BOOL "Enable UDP forward feature" FORCE)
 else()
