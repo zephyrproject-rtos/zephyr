@@ -80,6 +80,8 @@ enum {
 	BT_CONN_CTE_REQ_ENABLED,              /* CTE request procedure is enabled */
 	BT_CONN_CTE_RSP_ENABLED,              /* CTE response procedure is enabled */
 
+	BT_CONN_TX_WOULDBLOCK_FREE_TX,          /** #bt_conn_process_tx wouldblock on #free_tx */
+
 	/* Total number of flags - must be at the end of the enum */
 	BT_CONN_NUM_FLAGS,
 };
