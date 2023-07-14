@@ -546,7 +546,8 @@ static uint64_t target_time_convert_to_64_bits(uint32_t target_time)
 	return result;
 }
 
-static bool nrf5_tx_at(struct net_pkt *pkt, uint8_t *payload, bool cca)
+static bool nrf5_tx_at(struct nrf5_802154_data *nrf5_radio, struct net_pkt *pkt,
+		   uint8_t *payload, bool cca)
 {
 	nrf_802154_transmit_at_metadata_t metadata = {
 		.frame_props = {
@@ -561,6 +562,9 @@ static bool nrf5_tx_at(struct net_pkt *pkt, uint8_t *payload, bool cca)
 			.power = net_pkt_ieee802154_txpwr(pkt),
 #endif
 		},
+#if defined(CONFIG_IEEE802154_NRF5_MULTIPLE_CCA)
+		.extra_cca_attempts = nrf5_radio->extra_cca_attempts
+#endif
 	};
 	uint64_t tx_at = target_time_convert_to_64_bits(net_pkt_txtime(pkt) / NSEC_PER_USEC);
 
@@ -601,7 +605,7 @@ static int nrf5_tx(const struct device *dev,
 	case IEEE802154_TX_MODE_TXTIME:
 	case IEEE802154_TX_MODE_TXTIME_CCA:
 		__ASSERT_NO_MSG(pkt);
-		ret = nrf5_tx_at(pkt, nrf5_radio->tx_psdu,
+		ret = nrf5_tx_at(nrf5_radio, pkt, nrf5_radio->tx_psdu,
 				 mode == IEEE802154_TX_MODE_TXTIME_CCA);
 		break;
 #endif /* CONFIG_NET_PKT_TXTIME */
@@ -1156,6 +1160,22 @@ void nrf_802154_serialization_error(const nrf_802154_ser_err_data_t *err)
 	k_oops();
 }
 #endif
+
+#if defined(CONFIG_IEEE802154_NRF5_MULTIPLE_CCA)
+void ieee802154_nrf5_extra_cca_attempts_set(const struct device *dev, uint8_t value)
+{
+	struct nrf5_802154_data *nrf5_radio = NRF5_802154_DATA(dev);
+
+	nrf5_radio->extra_cca_attempts = value;
+}
+
+uint8_t ieee802154_nrf5_extra_cca_attempts_get(const struct device *dev)
+{
+	struct nrf5_802154_data *nrf5_radio = NRF5_802154_DATA(dev);
+
+	return nrf5_radio->extra_cca_attempts;
+}
+#endif /* defined(CONFIG_IEEE802154_NRF5_MULTIPLE_CCA) */
 
 static const struct nrf5_802154_config nrf5_radio_cfg = {
 	.irq_config_func = nrf5_irq_config,
