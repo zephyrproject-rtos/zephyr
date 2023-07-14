@@ -112,6 +112,13 @@
 	pinctrl-names = "default";
 };
 
+&i2c1 {
+	pinctrl-0 = <&i2c1_default>;
+	pinctrl-names = "default";
+	status = "disabled";
+	clock-frequency = <I2C_BITRATE_FAST>;
+};
+
 &spi0 {
 	clock-frequency = <DT_FREQ_M(8)>;
 	status = "okay";
@@ -149,3 +156,5 @@ zephyr_udc0: &usbd {
 };
 
 pico_spi: &spi0 {};
+pico_i2c0: &i2c0 {};
+pico_i2c1: &i2c1 {};
