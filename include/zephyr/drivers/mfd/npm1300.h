@@ -98,6 +98,28 @@ int mfd_npm1300_reg_update(const struct device *dev, uint8_t base, uint8_t offse
  */
 int mfd_npm1300_set_timer(const struct device *dev, uint32_t time_ms);
 
+/**
+ * @brief npm1300 full power reset
+ *
+ * @param dev npm1300 mfd device
+ * @retval 0 If successful
+ * @retval -errno In case of any bus error (see i2c_write_dt())
+ */
+int mfd_npm1300_reset(const struct device *dev);
+
+/**
+ * @brief npm1300 hibernate
+ *
+ * Enters low power state, and wakes after specified time
+ *
+ * @param dev npm1300 mfd device
+ * @param time_ms timer value in ms
+ * @retval 0 If successful
+ * @retval -EINVAL if time value is too large
+ * @retval -errno In case of any bus error (see i2c_write_dt())
+ */
+int mfd_npm1300_hibernate(const struct device *dev, uint32_t time_ms);
+
 /** @} */
 
 #ifdef __cplusplus
