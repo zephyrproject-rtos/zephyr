@@ -83,3 +83,6 @@ tests:
   portability.posix.common.signal.strsignal_no_desc:
     extra_configs:
       - CONFIG_POSIX_SIGNAL_STRING_DESC=n
+  portability.posix.common.signal.big_nsig:
+    extra_configs:
+      - CONFIG_POSIX_RTSIG_MAX=1024
