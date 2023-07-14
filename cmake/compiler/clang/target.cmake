@@ -32,6 +32,10 @@ if(NOT "${ARCH}" STREQUAL "posix")
     include(${ZEPHYR_BASE}/cmake/compiler/gcc/target_arm.cmake)
   endif()
 
+  if(DEFINED CMAKE_C_COMPILER_TARGET)
+    set(clang_target_flag "--target=${CMAKE_C_COMPILER_TARGET}")
+  endif()
+
   foreach(file_name include/stddef.h)
     execute_process(
       COMMAND ${CMAKE_C_COMPILER} --print-file-name=${file_name}
@@ -57,7 +61,8 @@ if(NOT "${ARCH}" STREQUAL "posix")
 
   # This libgcc code is partially duplicated in compiler/*/target.cmake
   execute_process(
-    COMMAND ${CMAKE_C_COMPILER} ${TOOLCHAIN_C_FLAGS} --print-libgcc-file-name
+    COMMAND ${CMAKE_C_COMPILER} ${clang_target_flag} ${TOOLCHAIN_C_FLAGS}
+            --print-libgcc-file-name
     OUTPUT_VARIABLE RTLIB_FILE_NAME
     OUTPUT_STRIP_TRAILING_WHITESPACE
     )
