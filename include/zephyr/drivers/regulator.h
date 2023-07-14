@@ -58,9 +58,12 @@ typedef uint8_t regulator_error_flags_t;
 typedef int (*regulator_dvs_state_set_t)(const struct device *dev,
 					 regulator_dvs_state_t state);
 
+typedef int (*regulator_ship_mode_t)(const struct device *dev);
+
 /** @brief Driver-specific API functions to support parent regulator control. */
 __subsystem struct regulator_parent_driver_api {
 	regulator_dvs_state_set_t dvs_state_set;
+	regulator_ship_mode_t ship_mode;
 };
 
 typedef int (*regulator_enable_t)(const struct device *dev);
@@ -277,6 +280,32 @@ static inline int regulator_parent_dvs_state_set(const struct device *dev,
 	}
 
 	return api->dvs_state_set(dev, state);
+}
+
+/**
+ * @brief Enter ship mode.
+ *
+ * Some PMICs feature a ship mode, which allows the system to save power.
+ * Exit from low power is normally by pin transition.
+ *
+ * This API can be used when ship mode needs to be entered.
+ *
+ * @param dev Parent regulator device instance.
+ *
+ * @retval 0 If successful.
+ * @retval -ENOSYS If function is not implemented.
+ * @retval -errno In case of any other error.
+ */
+static inline int regulator_parent_ship_mode(const struct device *dev)
+{
+	const struct regulator_parent_driver_api *api =
+		(const struct regulator_parent_driver_api *)dev->api;
+
+	if (api->ship_mode == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->ship_mode(dev);
 }
 
 /** @} */

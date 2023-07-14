@@ -68,8 +68,12 @@ static int regulator_fake_init(const struct device *dev)
 DEFINE_FAKE_VALUE_FUNC(int, regulator_parent_fake_dvs_state_set,
 		       const struct device *, regulator_dvs_state_t);
 
+DEFINE_FAKE_VALUE_FUNC(int, regulator_parent_fake_ship_mode,
+		       const struct device *);
+
 static struct regulator_parent_driver_api parent_api = {
 	.dvs_state_set = regulator_parent_fake_dvs_state_set,
+	.ship_mode = regulator_parent_fake_ship_mode,
 };
 
 #define FAKE_DATA_NAME(node_id) _CONCAT(data_, DT_DEP_ORD(node_id))
