@@ -16,6 +16,8 @@
 #include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/bluetooth/conn.h>
 
+#include <zephyr/sys/byteorder.h>
+
 #include "util/memq.h"
 
 #include "hal/ccm.h"
@@ -1158,7 +1160,7 @@ static isoal_status_t isoal_rx_framed_consume(struct isoal_sink *sink,
 		case ISOAL_START:
 			if (!sc) {
 				/* Start segment, included time-offset */
-				timeoffset = seg_hdr->timeoffset;
+				timeoffset = sys_le24_to_cpu(seg_hdr->timeoffset);
 				anchorpoint = meta->timestamp;
 				latency = session->sdu_sync_const;
 				timestamp = isoal_get_wrapped_time_us(anchorpoint,
@@ -1215,7 +1217,7 @@ static isoal_status_t isoal_rx_framed_consume(struct isoal_sink *sink,
 
 			if (!sc) {
 				/* Start segment, included time-offset */
-				timeoffset = seg_hdr->timeoffset;
+				timeoffset = sys_le24_to_cpu(seg_hdr->timeoffset);
 				anchorpoint = meta->timestamp;
 				latency = session->sdu_sync_const;
 				timestamp = isoal_get_wrapped_time_us(anchorpoint,
@@ -1634,7 +1636,7 @@ static isoal_status_t isoal_tx_pdu_emit(const struct isoal_source *source_ctx,
 	status = source_ctx->session.pdu_emit(node_tx, handle);
 
 	ISOAL_LOG_DBG("[%p] PDU %llu err=%X len=%u frags=%u released",
-			      source_ctx, node_tx->payload_count, status,
+			      source_ctx, payload_number, status,
 			      produced_pdu->contents.pdu->len, sdu_fragments);
 
 	if (status != ISOAL_STATUS_OK) {
@@ -2479,7 +2481,7 @@ static isoal_status_t isoal_tx_framed_produce(isoal_source_handle_t source_hdl,
 			 */
 			err |= isoal_insert_seg_header_timeoffset(source,
 								false, false,
-								time_offset);
+								sys_cpu_to_le24(time_offset));
 			pp->pdu_state = BT_ISO_CONT;
 		} else if (!padding_pdu && pp->pdu_state == BT_ISO_CONT && pp->pdu_written == 0) {
 			/* Continuing an SDU in a new PDU. Segmentation header
@@ -2487,7 +2489,7 @@ static isoal_status_t isoal_tx_framed_produce(isoal_source_handle_t source_hdl,
 			 */
 			err |= isoal_insert_seg_header_timeoffset(source,
 								true, false,
-								0);
+								sys_cpu_to_le24(0));
 		}
 
 		/*
