@@ -21,6 +21,7 @@
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &code_partition;
+		zephyr,ieee802154 = &ieee802154;
 	};
 
 	leds {
@@ -120,6 +121,10 @@
 		t-exit-dpd = <20000>;
 		quad-enable-requirements = "S2B1v1";
 	};
+};
+
+&ieee802154 {
+	status = "okay";
 };
 
 &flash0 {
