@@ -43,6 +43,7 @@
 #elif defined(CONFIG_BOARD_TWR_KE18F) || \
 	defined(CONFIG_BOARD_FRDM_K64F) || \
 	defined(CONFIG_BOARD_FRDM_K22F) || \
+	defined(CONFIG_BOARD_SEEEDUINO_XIAO) || \
 	defined(CONFIG_BOARD_ARDUINO_MKRZERO) || \
 	defined(CONFIG_BOARD_ARDUINO_ZERO)
 
