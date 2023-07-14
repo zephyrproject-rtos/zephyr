@@ -35,8 +35,10 @@ STRUCT_SECTION_ITERABLE_ARRAY(sensing_connection, dynamic_connections,
 #define __lock   sys_mutex_lock(__sensing_connection_pool.lock, K_FOREVER)
 #define __unlock sys_mutex_unlock(__sensing_connection_pool.lock)
 
-RTIO_DEFINE_WITH_MEMPOOL(sensing_rtio_ctx, 32, 32, CONFIG_SENSING_RTIO_BLOCK_COUNT,
-			 CONFIG_SENSING_RTIO_BLOCK_SIZE, 4);
+Z_RTIO_BLOCK_POOL_DEFINE_SCOPED((), sensing_rtio_block_pool, CONFIG_SENSING_RTIO_BLOCK_COUNT,
+				CONFIG_SENSING_RTIO_BLOCK_SIZE, 4);
+
+RTIO_DEFINE_WITH_EXT_MEMPOOL(sensing_rtio_ctx, 32, 32, sensing_rtio_block_pool);
 
 int sensing_open_sensor(const struct sensing_sensor_info *info,
 			const struct sensing_callback_list *cb_list,

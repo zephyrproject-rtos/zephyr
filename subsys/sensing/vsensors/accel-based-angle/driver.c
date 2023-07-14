@@ -73,82 +73,12 @@ static int submit(const struct device *sensor, struct rtio_iodev_sqe *sqe)
 		data->pending_read = sqe;
 	}
 	return 0;
-}
-
-struct encoded_data {
-	uint64_t timestamp_ns;
-	int8_t shift;
-	q31_t val;
-} __packed;
-
-static int decoder_get_frame_count(const uint8_t *buffer, uint16_t *frame_count)
-{
-	ARG_UNUSED(buffer);
-	*frame_count = 1;
-	return 0;
-}
-
-static int decoder_get_timestamp(const uint8_t *buffer, uint64_t *timestamp_ns)
-{
-	*timestamp_ns = ((struct encoded_data *)buffer)->timestamp_ns;
-	return 0;
-}
-
-static bool decoder_has_trigger(const uint8_t *buffer, enum sensor_trigger_type trigger)
-{
-	ARG_UNUSED(buffer);
-	ARG_UNUSED(trigger);
-	return false;
-}
-
-static int decoder_get_shift(const uint8_t *buffer, enum sensor_channel channel_type, int8_t *shift)
-{
-	ARG_UNUSED(buffer);
-
-	if (channel_type != SENSOR_CHAN_ROTATION) {
-		return -EINVAL;
-	}
-	*shift = ((struct encoded_data *)buffer)->shift;
-	return 0;
-}
-
-static int decoder_decode(const uint8_t *buffer, sensor_frame_iterator_t *fit,
-			  sensor_channel_iterator_t *cit, enum sensor_channel *channels,
-			  q31_t *values, uint8_t max_count)
-{
-	if (*fit != 0) {
-		return 0;
-	}
-	if (*cit > 0) {
-		return -EINVAL;
-	}
-
-	values[0] = ((struct encoded_data *)buffer)->val;
-	channels[0] = SENSOR_CHAN_ROTATION;
-	*fit = 1;
-	*cit = 0;
-	return 1;
-}
-
-SENSING_DMEM static const struct sensor_decoder_api decoder_api = {
-	.get_frame_count = decoder_get_frame_count,
-	.get_timestamp = decoder_get_timestamp,
-	.has_trigger = decoder_has_trigger,
-	.get_shift = decoder_get_shift,
-	.decode = decoder_decode,
-};
-
-static int get_decoder(const struct device *dev, const struct sensor_decoder_api **api)
-{
-	ARG_UNUSED(dev);
-	*api = &decoder_api;
-	return 0;
-}
+}v
 
 SENSING_DMEM static const struct sensor_driver_api angle_api = {
 	.attr_set = attribute_set,
 	.attr_get = NULL,
-	.get_decoder = get_decoder,
+	.get_decoder = NULL,
 	.submit = submit,
 };
 
@@ -248,21 +178,22 @@ static void on_data_event(sensing_sensor_handle_t handle, const void *buf, void 
 
 	uint8_t *out_buf;
 	uint32_t buf_len;
-	int rc = rtio_sqe_rx_buf(data->pending_read, sizeof(struct encoded_data),
-				 sizeof(struct encoded_data), &out_buf, &buf_len);
+	int rc = rtio_sqe_rx_buf(data->pending_read, sizeof(struct sensing_sensor_float_data),
+				 sizeof(struct sensing_sensor_float_data), &out_buf, &buf_len);
 	if (rc != 0) {
 		rtio_iodev_sqe_err(data->pending_read, rc);
 		data->pending_read = NULL;
 		return;
 	}
 
-	struct encoded_data *edata = (struct encoded_data *)out_buf;
-	edata->timestamp_ns = MAX(data->plane0_latest_sample.header.base_timestamp,
+	struct sensing_sensor_float_data *edata = (struct sensing_sensor_float_data *)out_buf;
+	edata->header.base_timestamp = MAX(data->plane0_latest_sample.header.base_timestamp,
 				       data->plane1_latest_sample.header.base_timestamp);
+	edata->header.reading_count = 1;
 	edata->shift = ilog2(llabs(integer_part)) + 1;
 	int8_t extra_shift = (47 - shift * 2) - (31 - edata->shift) + 1;
-	edata->val = FIELD_GET(GENMASK(31, 0), result >> extra_shift);
-	LOG_DBG("shift=%d, val=0x%08" PRIx32, edata->shift, edata->val);
+	edata->readings[0].v = FIELD_GET(GENMASK(31, 0), result >> extra_shift);
+	LOG_DBG("shift=%d, val=0x%08" PRIx32, edata->shift, edata->readings[0].v);
 	rtio_iodev_sqe_ok(data->pending_read, 0);
 	data->pending_read = NULL;
 }

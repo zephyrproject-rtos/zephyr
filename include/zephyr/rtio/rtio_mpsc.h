@@ -147,8 +147,8 @@ static ALWAYS_INLINE void rtio_mpsc_push(struct rtio_mpsc *q, struct rtio_mpsc_n
 static inline struct rtio_mpsc_node *rtio_mpsc_pop(struct rtio_mpsc *q)
 {
 	struct rtio_mpsc_node *head;
-	struct rtio_mpsc_node *tail = q->tail;
-	struct rtio_mpsc_node *next = (struct rtio_mpsc_node *)mpsc_ptr_get(tail->next);
+	struct rtio_mpsc_node *tail = q == NULL ? NULL : q->tail;
+	struct rtio_mpsc_node *next = tail == NULL ? NULL : (struct rtio_mpsc_node *)mpsc_ptr_get(tail->next);
 
 	/* Skip over the stub/sentinel */
 	if (tail == &q->stub) {

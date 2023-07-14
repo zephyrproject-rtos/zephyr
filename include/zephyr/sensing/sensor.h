@@ -20,6 +20,8 @@ struct sensing_connection {
 	uint32_t attribute_mask;
 } __packed __aligned(4);
 
+extern struct rtio_block_pool sensing_rtio_block_pool;
+
 #define SENSING_CONNECTION_DT_DEFINE(node_id, target_node_id, type, _cb_list)                      \
 	SENSING_DMEM STRUCT_SECTION_ITERABLE(sensing_connection, node_id##_sensing_connection) = { \
 		.info = SENSING_SENSOR_INFO_GET(target_node_id, type),                             \

@@ -18,48 +18,56 @@ struct drv_config {
 struct drv_data {
 };
 
-static inline bool is_channel_supported(const struct drv_config *cfg, enum sensor_channel channel)
-{
-	int32_t required_type;
-
-	switch (channel) {
-	case SENSOR_CHAN_ACCEL_X:
-	case SENSOR_CHAN_ACCEL_Y:
-	case SENSOR_CHAN_ACCEL_Z:
-	case SENSOR_CHAN_ACCEL_XYZ:
-		required_type = SENSING_SENSOR_TYPE_MOTION_ACCELEROMETER_3D;
-		break;
-	default:
-		return false;
-	}
-
-	for (size_t i = 0; i < cfg->info_count; ++i) {
-		if (cfg->info[i]->type == required_type) {
-			return true;
-		}
-	}
-	return false;
-}
-
 static int attribute_set(const struct device *dev, enum sensor_channel chan,
 			 enum sensor_attribute attr, const struct sensor_value *val)
 {
 	return 0;
 }
 
-struct raw_data {
-	uint64_t timestamp_ns;
-	uint8_t count;
-	enum sensor_channel channels[0];
-} __packed;
+static int is_channel_supported(enum sensor_channel channel, const struct drv_config *cfg)
+{
+	for (int i = 0; i < cfg->info_count; ++i) {
+		int32_t type = cfg->info[i]->type;
+		switch (channel) {
+		case SENSOR_CHAN_ALL:
+			return i;
+		case SENSOR_CHAN_ACCEL_X:
+		case SENSOR_CHAN_ACCEL_Y:
+		case SENSOR_CHAN_ACCEL_Z:
+		case SENSOR_CHAN_ACCEL_XYZ:
+			if (type == SENSING_SENSOR_TYPE_MOTION_ACCELEROMETER_3D ||
+			    type == SENSING_SENSOR_TYPE_MOTION_UNCALIB_ACCELEROMETER_3D) {
+				return i;
+			}
+			break;
+		case SENSOR_CHAN_GYRO_X:
+		case SENSOR_CHAN_GYRO_Y:
+		case SENSOR_CHAN_GYRO_Z:
+		case SENSOR_CHAN_GYRO_XYZ:
+			if (type == SENSING_SENSOR_TYPE_MOTION_GYROMETER_3D) {
+				return i;
+			}
+			break;
+		case SENSOR_CHAN_ROTATION:
+			if (type == SENSING_SENSOR_TYPE_MOTION_HINGE_ANGLE) {
+				return i;
+			}
+			break;
+		default:
+			break;
+		}
+	}
+
+	return -1;
+}
 
 static int submit(const struct device *sensor, struct rtio_iodev_sqe *sqe)
 {
 	const struct drv_config *cfg = sensor->config;
 	const struct sensor_read_config *read_cfg = sqe->sqe.iodev->data;
+	const struct sensing_sensor_info *info = NULL;
 	uint8_t *buf;
 	uint32_t buf_len;
-	uint8_t channel_count = 0;
 	int rc;
 
 	if (read_cfg->is_streaming) {
@@ -68,137 +76,86 @@ static int submit(const struct device *sensor, struct rtio_iodev_sqe *sqe)
 	}
 
 	/* For now just assume the user wants to read all the channels */
-	for (size_t i = 0; i < cfg->info_count; ++i) {
-		switch (cfg->info[i]->type) {
-		case SENSING_SENSOR_TYPE_MOTION_ACCELEROMETER_3D:
-		case SENSING_SENSOR_TYPE_MOTION_UNCALIB_ACCELEROMETER_3D:
-		case SENSING_SENSOR_TYPE_MOTION_GYROMETER_3D:
-			channel_count += 3;
+
+	for (size_t i = 0; i < read_cfg->count; ++i) {
+		int idx = is_channel_supported(read_cfg->channels[i], cfg);
+		if (idx >= 0) {
+			info = cfg->info[idx];
 			break;
-		case SENSING_SENSOR_TYPE_MOTION_HINGE_ANGLE:
-			channel_count += 1;
-			break;
-		default:
-			rtio_iodev_sqe_err(sqe, -ENOTSUP);
-			return 0;
 		}
 	}
 
-	const uint32_t desired_size =
-		sizeof(struct raw_data) + channel_count * sizeof(enum sensor_channel);
-
-	rc = rtio_sqe_rx_buf(sqe, desired_size, desired_size, &buf, &buf_len);
-	if (rc != 0) {
-		rtio_iodev_sqe_err(sqe, rc);
+	if (info == NULL) {
+		LOG_ERR("Invalid read request");
+		rtio_iodev_sqe_err(sqe, -EINVAL);
 		return 0;
 	}
 
-	((struct raw_data *)buf)->timestamp_ns = k_ticks_to_ns_floor64(k_uptime_ticks());
-	((struct raw_data *)buf)->count = channel_count;
-	buf += sizeof(struct raw_data);
-
-	int count = 0;
-	for (size_t i = 0; i < cfg->info_count; ++i) {
-		switch (cfg->info[i]->type) {
-		case SENSING_SENSOR_TYPE_MOTION_ACCELEROMETER_3D:
-		case SENSING_SENSOR_TYPE_MOTION_UNCALIB_ACCELEROMETER_3D:
-			((enum sensor_channel *)buf)[count++] = SENSOR_CHAN_ACCEL_X;
-			((enum sensor_channel *)buf)[count++] = SENSOR_CHAN_ACCEL_Y;
-			((enum sensor_channel *)buf)[count++] = SENSOR_CHAN_ACCEL_Z;
-			break;
-		case SENSING_SENSOR_TYPE_MOTION_GYROMETER_3D:
-			((enum sensor_channel *)buf)[count++] = SENSOR_CHAN_GYRO_X;
-			((enum sensor_channel *)buf)[count++] = SENSOR_CHAN_GYRO_Y;
-			((enum sensor_channel *)buf)[count++] = SENSOR_CHAN_GYRO_Z;
-			break;
-		case SENSING_SENSOR_TYPE_MOTION_HINGE_ANGLE:
-			((enum sensor_channel *)buf)[count++] = SENSOR_CHAN_ROTATION;
-			break;
-		default:
-			rtio_iodev_sqe_err(sqe, -ENOTSUP);
-			return 0;
+	switch (info->type) {
+	case SENSING_SENSOR_TYPE_MOTION_ACCELEROMETER_3D:
+	case SENSING_SENSOR_TYPE_MOTION_UNCALIB_ACCELEROMETER_3D:
+		rc = rtio_sqe_rx_buf(sqe, sizeof(struct sensing_sensor_three_axis_data),
+				     sizeof(struct sensing_sensor_three_axis_data), &buf, &buf_len);
+		if (rc != 0) {
+			rtio_iodev_sqe_err(sqe, rc);
+		} else {
+			struct sensing_sensor_three_axis_data *edata =
+				(struct sensing_sensor_three_axis_data *)buf;
+			edata->header.base_timestamp = k_ticks_to_ns_floor64(k_uptime_ticks());
+			edata->header.reading_count = 1;
+			edata->shift = 4;
+			edata->readings[0].timestamp_delta = 0;
+			edata->readings[0].x = (q31_t)((9.8f / 16.0f) * INT32_MAX);
+			edata->readings[0].y = 0;
+			edata->readings[0].z = 0;
+			rtio_iodev_sqe_ok(sqe, 0);
 		}
+		break;
+	case SENSING_SENSOR_TYPE_MOTION_GYROMETER_3D:
+		rc = rtio_sqe_rx_buf(sqe, sizeof(struct sensing_sensor_three_axis_data),
+				     sizeof(struct sensing_sensor_three_axis_data), &buf, &buf_len);
+		if (rc != 0) {
+			rtio_iodev_sqe_err(sqe, rc);
+		} else {
+			struct sensing_sensor_three_axis_data *edata =
+				(struct sensing_sensor_three_axis_data *)buf;
+			edata->header.base_timestamp = k_ticks_to_ns_floor64(k_uptime_ticks());
+			edata->header.reading_count = 1;
+			edata->shift = 0;
+			edata->readings[0].timestamp_delta = 0;
+			edata->readings[0].x = 0;
+			edata->readings[0].y = 0;
+			edata->readings[0].z = 0;
+			rtio_iodev_sqe_ok(sqe, 0);
+		}
+		break;
+	case SENSING_SENSOR_TYPE_MOTION_HINGE_ANGLE:
+		rc = rtio_sqe_rx_buf(sqe, sizeof(struct sensing_sensor_float_data),
+				     sizeof(struct sensing_sensor_float_data), &buf, &buf_len);
+		if (rc != 0) {
+			rtio_iodev_sqe_err(sqe, rc);
+		} else {
+			struct sensing_sensor_float_data *edata =
+				(struct sensing_sensor_float_data *)buf;
+			edata->header.base_timestamp = k_ticks_to_ns_floor64(k_uptime_ticks());
+			edata->header.reading_count = 1;
+			edata->shift = 0;
+			edata->readings[0].timestamp_delta = 0;
+			edata->readings[0].v = 0;
+			rtio_iodev_sqe_ok(sqe, 0);
+		}
+		break;
+	default:
+		rtio_iodev_sqe_err(sqe, -ENOTSUP);
+		break;
 	}
-
-	rtio_iodev_sqe_ok(sqe, 0);
-	return 0;
-}
-
-static int decoder_get_frame_count(const uint8_t *buffer, uint16_t *frame_count)
-{
-	ARG_UNUSED(buffer);
-	*frame_count = 1;
-	return 0;
-}
-
-static int decoder_get_timestamp(const uint8_t *buffer, uint64_t *timestamp_ns)
-{
-	*timestamp_ns = ((uint64_t *)buffer)[0];
-	return 0;
-}
-
-static bool decoder_has_trigger(const uint8_t *buffer, enum sensor_trigger_type trigger)
-{
-	ARG_UNUSED(buffer);
-	ARG_UNUSED(trigger);
-	return false;
-}
-
-static int decoder_get_shift(const uint8_t *buffer, enum sensor_channel channel_type, int8_t *shift)
-{
-	ARG_UNUSED(buffer);
-	ARG_UNUSED(channel_type);
-	*shift = 0;
-	return 0;
-}
-
-static int decoder_decode(const uint8_t *buffer, sensor_frame_iterator_t *fit,
-			  sensor_channel_iterator_t *cit, enum sensor_channel *channels,
-			  q31_t *values, uint8_t max_count)
-{
-	if (*fit != 0) {
-		return 0;
-	}
-
-	const struct raw_data *data = (const struct raw_data *)buffer;
-	int count = 0;
-
-	if (*cit >= data->count) {
-		return -EINVAL;
-	}
-
-	while (*cit < data->count && count < max_count) {
-		channels[count] = data->channels[*cit];
-		values[count++] = INT32_MAX;
-		*cit += 1;
-	}
-
-	if (*cit == data->count) {
-		*fit += 1;
-		*cit = 0;
-	}
-	return count;
-}
-
-SENSING_DMEM static const struct sensor_decoder_api decoder_api = {
-	.get_frame_count = decoder_get_frame_count,
-	.get_timestamp = decoder_get_timestamp,
-	.has_trigger = decoder_has_trigger,
-	.get_shift = decoder_get_shift,
-	.decode = decoder_decode,
-};
-
-static int get_decoder(const struct device *dev, const struct sensor_decoder_api **api)
-{
-	ARG_UNUSED(dev);
-	*api = &decoder_api;
 	return 0;
 }
 
 SENSING_DMEM static const struct sensor_driver_api emul_api = {
 	.attr_set = attribute_set,
 	.attr_get = NULL,
-	.get_decoder = get_decoder,
+	.get_decoder = NULL,
 	.submit = submit,
 };
 
