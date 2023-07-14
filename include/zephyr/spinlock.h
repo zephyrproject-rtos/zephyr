@@ -278,7 +278,7 @@ static ALWAYS_INLINE void k_spin_release(struct k_spinlock *l)
 }
 
 #if defined(CONFIG_SPIN_VALIDATE) && defined(__GNUC__)
-static ALWAYS_INLINE void z_spin_onexit(k_spinlock_key_t *k)
+static ALWAYS_INLINE void z_spin_onexit(__maybe_unused k_spinlock_key_t *k)
 {
 	__ASSERT(k->key, "K_SPINLOCK exited with goto, break or return, "
 			 "use K_SPINLOCK_BREAK instead.");
