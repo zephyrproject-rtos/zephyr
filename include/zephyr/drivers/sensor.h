@@ -1107,7 +1107,7 @@ static inline int sensor_value_from_double(struct sensor_value *val, double inp)
  */
 static inline int sensor_value_from_float(struct sensor_value *val, float inp)
 {
-	float val2 = (inp - (int32_t)inp) * 1000000.0;
+	float val2 = (inp - (int32_t)inp) * 1000000.0f;
 
 	if (val2 < INT32_MIN || val2 > (float)(INT32_MAX - 1)) {
 		return -ERANGE;
