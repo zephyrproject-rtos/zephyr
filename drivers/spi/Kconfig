@@ -131,4 +131,6 @@ source "drivers/spi/Kconfig.numaker"
 
 source "drivers/spi/Kconfig.ambiq"
 
+source "drivers/spi/Kconfig.rpi_pico"
+
 endif # SPI
