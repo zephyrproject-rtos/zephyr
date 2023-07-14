@@ -1018,8 +1018,8 @@ struct pdu_iso_sdu_sh {
 	uint8_t len;
 
 	/* Note, timeoffset only available in first segment of sdu */
-	uint32_t payload:8;
 	uint32_t timeoffset:24;
+	uint32_t payload:8;
 #endif /* CONFIG_LITTLE_ENDIAN */
 } __packed;
 
