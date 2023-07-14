@@ -292,6 +292,9 @@ config OPENTHREAD_TREL
 config OPENTHREAD_TX_BEACON_PAYLOAD
 	bool "TX beacon payload support"
 
+config OPENTHREAD_TX_QUEUE_STATISTICS
+	bool "TX queue statistics support"
+
 config OPENTHREAD_UDP_FORWARD
 	bool "UDP forward support"
 
