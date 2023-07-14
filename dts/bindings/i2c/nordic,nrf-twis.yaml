@@ -27,7 +27,7 @@ description: |
 
 compatible: "nordic,nrf-twis"
 
-include: nordic,nrf-twi-common.yaml
+include: ["nordic,nrf-twi-common.yaml", "memory-region.yaml"]
 
 properties:
   address-0:
