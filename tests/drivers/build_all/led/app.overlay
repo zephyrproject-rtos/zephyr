@@ -50,8 +50,8 @@
 				reg = <0x2>;
 			};
 
-			lp503x@3 {
-				compatible = "ti,lp503x";
+			lp50xx@3 {
+				compatible = "ti,lp50xx";
 				reg = <0x3>;
 			};
 

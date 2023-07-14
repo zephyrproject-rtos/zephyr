@@ -1,0 +1,12 @@
+# Copyright (c) 2020 Seagate Technology LLC
+# SPDX-License-Identifier: Apache-2.0
+
+config LP50XX
+	bool "LP50XX LED controller"
+	default y
+	depends on DT_HAS_TI_LP50XX_ENABLED
+	select I2C
+	help
+	  Enable driver for the Texas Instruments LP5009, LP5012, LP5018,
+	  LP5024, LP5030 and LP5036 I2C LED controllers. They are supporting
+	  3 to 12 LEDs.
