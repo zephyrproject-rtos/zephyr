@@ -68,7 +68,6 @@ static struct gpio_callback	gpio_cb;
 
 static K_SEM_DEFINE(sem_initialised, 0, 1);
 static K_SEM_DEFINE(sem_request, 0, 1);
-static K_SEM_DEFINE(sem_done, 0, 1);
 static K_SEM_DEFINE(sem_busy, 1, 1);
 
 static K_KERNEL_STACK_DEFINE(spi_rx_stack, CONFIG_BT_DRV_RX_STACK_SIZE);
@@ -162,27 +161,11 @@ static inline uint16_t bt_spi_get_evt(uint8_t *msg)
 	return (msg[EVT_VENDOR_CODE_MSB] << 8) | msg[EVT_VENDOR_CODE_LSB];
 }
 
-static void bt_to_inactive_isr(const struct device *unused1,
+static void bt_spi_isr(const struct device *unused1,
 		       struct gpio_callback *unused2,
 		       uint32_t unused3)
 {
 	LOG_DBG("");
-
-	/* Disable until RX thread re-enables */
-	gpio_pin_interrupt_configure_dt(&irq_gpio, GPIO_INT_DISABLE);
-
-	k_sem_give(&sem_done);
-}
-
-static void bt_to_active_isr(const struct device *unused1,
-		       struct gpio_callback *unused2,
-		       uint32_t unused3)
-{
-	LOG_DBG("");
-
-	/* Watch for the IRQ line to go inactive */
-	gpio_init_callback(&gpio_cb, bt_to_inactive_isr, BIT(irq_gpio.pin));
-	gpio_pin_interrupt_configure_dt(&irq_gpio, GPIO_INT_LEVEL_INACTIVE);
 
 	k_sem_give(&sem_request);
 }
@@ -216,8 +199,8 @@ static bool bt_spi_handle_vendor_evt(uint8_t *msg)
  */
 static int configure_cs(void)
 {
-	/* Configure pin as output and set to active */
-	return gpio_pin_configure_dt(&bus.config.cs.gpio, GPIO_OUTPUT_ACTIVE);
+	/* Configure pin as output and set to inactive */
+	return gpio_pin_configure_dt(&bus.config.cs.gpio, GPIO_OUTPUT_INACTIVE);
 }
 
 static void kick_cs(void)
@@ -304,21 +287,18 @@ static void bt_spi_rx_thread(void)
 	int len;
 
 	(void)memset(&txmsg, 0xFF, SPI_MAX_MSG_LEN);
-
+	/* Enable the interrupt line */
+	gpio_pin_interrupt_configure_dt(&irq_gpio, GPIO_INT_EDGE_TO_ACTIVE);
 	while (true) {
-		/* Enable the interrupt line */
-		gpio_init_callback(&gpio_cb, bt_to_active_isr, BIT(irq_gpio.pin));
-		gpio_pin_interrupt_configure_dt(&irq_gpio, GPIO_INT_LEVEL_ACTIVE);
 
 		/* Wait for interrupt pin to be active */
 		k_sem_take(&sem_request, K_FOREVER);
 
-		/* Wait for SPI bus to be available */
-		k_sem_take(&sem_busy, K_FOREVER);
-
 		LOG_DBG("");
 
 		do {
+			/* Wait for SPI bus to be available */
+			k_sem_take(&sem_busy, K_FOREVER);
 			init_irq_high_loop();
 			do {
 				kick_cs();
@@ -413,9 +393,6 @@ static void bt_spi_rx_thread(void)
 		/* On BlueNRG-MS, host is expected to read */
 		/* as long as IRQ pin is high */
 		} while (irq_pin_high());
-
-		/* Wait for IRQ to have de-asserted */
-		k_sem_take(&sem_done, K_FOREVER);
 	}
 }
 
@@ -514,7 +491,7 @@ static int bt_spi_open(void)
 		return err;
 	}
 
-	gpio_init_callback(&gpio_cb, bt_to_active_isr, BIT(irq_gpio.pin));
+	gpio_init_callback(&gpio_cb, bt_spi_isr, BIT(irq_gpio.pin));
 	err = gpio_add_callback(irq_gpio.port, &gpio_cb);
 	if (err) {
 		return err;
