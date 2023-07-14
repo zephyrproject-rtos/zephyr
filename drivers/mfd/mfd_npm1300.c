@@ -13,9 +13,15 @@
 #include <zephyr/drivers/mfd/npm1300.h>
 
 #define TIME_BASE 0x07U
+#define MAIN_BASE 0x00U
+#define SHIP_BASE 0x0BU
 
 #define TIME_OFFSET_LOAD  0x03U
 #define TIME_OFFSET_TIMER 0x08U
+
+#define MAIN_OFFSET_RESET 0x01U
+
+#define SHIP_OFFSET_HIBERNATE 0x00U
 
 #define TIMER_PRESCALER_MS 16U
 #define TIMER_MAX          0xFFFFFFU
@@ -113,6 +119,22 @@ int mfd_npm1300_set_timer(const struct device *dev, uint32_t time_ms)
 	}
 
 	return mfd_npm1300_reg_write(dev, TIME_BASE, TIME_OFFSET_LOAD, 1U);
+}
+
+int mfd_npm1300_reset(const struct device *dev)
+{
+	return mfd_npm1300_reg_write(dev, MAIN_BASE, MAIN_OFFSET_RESET, 1U);
+}
+
+int mfd_npm1300_hibernate(const struct device *dev, uint32_t time_ms)
+{
+	int ret = mfd_npm1300_set_timer(dev, time_ms);
+
+	if (ret != 0) {
+		return ret;
+	}
+
+	return mfd_npm1300_reg_write(dev, SHIP_BASE, SHIP_OFFSET_HIBERNATE, 1U);
 }
 
 #define MFD_NPM1300_DEFINE(inst)                                                                   \
