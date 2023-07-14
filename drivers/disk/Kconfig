@@ -9,6 +9,7 @@ menuconfig DISK_DRIVERS
 if DISK_DRIVERS
 
 source "drivers/disk/Kconfig.ram"
+source "drivers/disk/Kconfig.ffat"
 source "drivers/disk/Kconfig.flash"
 source "drivers/disk/Kconfig.sdmmc"
 source "drivers/disk/Kconfig.mmc"
