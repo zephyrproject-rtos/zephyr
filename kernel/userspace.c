@@ -47,7 +47,7 @@ LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
  * not.
  */
 #ifdef CONFIG_DYNAMIC_OBJECTS
-static struct k_spinlock lists_lock;       /* kobj rbtree/dlist */
+static struct k_spinlock lists_lock;       /* kobj dlist */
 static struct k_spinlock objfree_lock;     /* k_object_free */
 
 #ifdef CONFIG_GEN_PRIV_STACKS
@@ -167,8 +167,7 @@ uint8_t *z_priv_stack_find(k_thread_stack_t *stack)
 
 struct dyn_obj_base {
 	struct z_object kobj;
-	sys_dnode_t dobj_list;
-	struct rbnode node; /* must be immediately before data member */
+	sys_dnode_t dobj_list; /* must be immediately before data member */
 };
 
 struct dyn_obj {
@@ -192,16 +191,6 @@ extern struct z_object *z_object_gperf_find(const void *obj);
 extern void z_object_gperf_wordlist_foreach(_wordlist_cb_func_t func,
 					     void *context);
 
-static bool node_lessthan(struct rbnode *a, struct rbnode *b);
-
-/*
- * Red/black tree of allocated kernel objects, for reasonably fast lookups
- * based on object pointer values.
- */
-static struct rbtree obj_rb_tree = {
-	.lessthan_fn = node_lessthan
-};
-
 /*
  * Linked list of allocated kernel objects, for iteration over all allocated
  * objects (and potentially deleting them during iteration).
@@ -209,8 +198,7 @@ static struct rbtree obj_rb_tree = {
 static sys_dlist_t obj_list = SYS_DLIST_STATIC_INIT(&obj_list);
 
 /*
- * TODO: Write some hash table code that will replace both obj_rb_tree
- * and obj_list.
+ * TODO: Write some hash table code that will replace obj_list.
  */
 
 static size_t obj_size_get(enum k_objects otype)
@@ -250,15 +238,9 @@ static size_t obj_align_get(enum k_objects otype)
 	return ret;
 }
 
-static bool node_lessthan(struct rbnode *a, struct rbnode *b)
-{
-	return a < b;
-}
-
 static struct dyn_obj_base *dyn_object_find(void *obj)
 {
-	struct rbnode *node;
-	struct dyn_obj_base *ret;
+	struct dyn_obj_base *node;
 	k_spinlock_key_t key;
 
 	/* For any dynamically allocated kernel object, the object
@@ -268,20 +250,19 @@ static struct dyn_obj_base *dyn_object_find(void *obj)
 	 */
 	key = k_spin_lock(&lists_lock);
 
-	RB_FOR_EACH(&obj_rb_tree, node) {
-		ret = CONTAINER_OF(node, struct dyn_obj_base, node);
-		if (ret->kobj.name == obj) {
+	SYS_DLIST_FOR_EACH_CONTAINER(&obj_list, node, dobj_list) {
+		if (node->kobj.name == obj) {
 			goto end;
 		}
 	}
 
 	/* No object found */
-	ret = NULL;
+	node = NULL;
 
  end:
 	k_spin_unlock(&lists_lock, key);
 
-	return ret;
+	return node;
 }
 
 /**
@@ -407,7 +388,6 @@ static struct z_object *dynamic_object_create(enum k_objects otype, size_t align
 
 	k_spinlock_key_t key = k_spin_lock(&lists_lock);
 
-	rb_insert(&obj_rb_tree, &dyn->node);
 	sys_dlist_append(&obj_list, &dyn->dobj_list);
 	k_spin_unlock(&lists_lock, key);
 
@@ -502,7 +482,6 @@ void k_object_free(void *obj)
 
 	dyn = dyn_object_find(obj);
 	if (dyn != NULL) {
-		rb_remove(&obj_rb_tree, &dyn->node);
 		sys_dlist_remove(&dyn->dobj_list);
 
 		if (dyn->kobj.type == K_OBJ_THREAD) {
@@ -612,7 +591,6 @@ static void unref_check(struct z_object *ko, uintptr_t index)
 		break;
 	}
 
-	rb_remove(&obj_rb_tree, &dyn->node);
 	sys_dlist_remove(&dyn->dobj_list);
 	k_free(dyn);
 out:
