@@ -93,6 +93,13 @@ as described below:
 
    .. group-tab:: Linux
 
+      Common to all Linux installations, install the Python dependencies
+      required to build the documentation:
+
+      .. code-block:: console
+
+         pip install -r ~/zephyrproject/zephyr/doc/requirements.txt
+
       On Ubuntu Linux:
 
       .. code-block:: console
@@ -122,6 +129,12 @@ as described below:
 
    .. group-tab:: macOS
 
+      Install the Python dependencies required to build the documentation:
+
+      .. code-block:: console
+
+         pip install -r ~/zephyrproject/zephyr/doc/requirements.txt
+
       Use ``brew`` and ``tlmgr`` to install the tools:
 
       .. code-block:: console
@@ -131,6 +144,12 @@ as described below:
          tlmgr install collection-fontsrecommended
 
    .. group-tab:: Windows
+
+      Install the Python dependencies required to build the documentation:
+
+      .. code-block:: console
+
+         pip install -r %HOMEPATH$\zephyrproject\zephyr\doc\requirements.txt
 
       Open a ``cmd.exe`` window as **Administrator** and run the following command:
 
