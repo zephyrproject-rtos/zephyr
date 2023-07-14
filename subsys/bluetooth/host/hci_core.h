@@ -26,6 +26,7 @@
 enum {
 	BT_EVENT_CMD_TX,
 	BT_EVENT_CONN_TX_QUEUE,
+	BT_EVENT_CONN_FREE_TX,
 };
 
 /* bt_dev flags: the flags defined here represent BT controller state */
