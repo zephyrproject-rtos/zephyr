@@ -241,25 +241,25 @@ static void print_twt_params(uint8_t dialog_token, uint8_t flow_id,
 			     bool trigger, uint32_t twt_wake_interval,
 			     uint64_t twt_interval)
 {
-	shell_fprintf(context.sh, SHELL_NORMAL, "TWT Dialog token: %d\n",
-		      dialog_token);
-	shell_fprintf(context.sh, SHELL_NORMAL, "TWT flow ID: %d\n",
-		      flow_id);
-	shell_fprintf(context.sh, SHELL_NORMAL, "TWT negotiation type: %s\n",
-		      wifi_twt_negotiation_type2str[negotiation_type]);
-	shell_fprintf(context.sh, SHELL_NORMAL, "TWT responder: %s\n",
-		      responder ? "true" : "false");
-	shell_fprintf(context.sh, SHELL_NORMAL, "TWT implicit: %s\n",
-		      implicit ? "true" : "false");
-	shell_fprintf(context.sh, SHELL_NORMAL, "TWT announce: %s\n",
-		      announce ? "true" : "false");
-	shell_fprintf(context.sh, SHELL_NORMAL, "TWT trigger: %s\n",
-		      trigger ? "true" : "false");
-	shell_fprintf(context.sh, SHELL_NORMAL, "TWT wake interval: %d us\n",
-		      twt_wake_interval);
-	shell_fprintf(context.sh, SHELL_NORMAL, "TWT interval: %lld us\n",
-		      twt_interval);
-	shell_fprintf(context.sh, SHELL_NORMAL, "========================\n");
+	print(context.sh, SHELL_NORMAL, "TWT Dialog token: %d\n",
+	      dialog_token);
+	print(context.sh, SHELL_NORMAL, "TWT flow ID: %d\n",
+	      flow_id);
+	print(context.sh, SHELL_NORMAL, "TWT negotiation type: %s\n",
+	      wifi_twt_negotiation_type2str[negotiation_type]);
+	print(context.sh, SHELL_NORMAL, "TWT responder: %s\n",
+	       responder ? "true" : "false");
+	print(context.sh, SHELL_NORMAL, "TWT implicit: %s\n",
+	      implicit ? "true" : "false");
+	print(context.sh, SHELL_NORMAL, "TWT announce: %s\n",
+	      announce ? "true" : "false");
+	print(context.sh, SHELL_NORMAL, "TWT trigger: %s\n",
+	      trigger ? "true" : "false");
+	print(context.sh, SHELL_NORMAL, "TWT wake interval: %d us\n",
+	      twt_wake_interval);
+	print(context.sh, SHELL_NORMAL, "TWT interval: %lld us\n",
+	      twt_interval);
+	print(context.sh, SHELL_NORMAL, "========================\n");
 }
 
 static void handle_wifi_twt_event(struct net_mgmt_event_callback *cb)
