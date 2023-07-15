@@ -747,6 +747,7 @@ def write_dep_info(node):
 
     out_comment("Node's dependency ordinal:")
     out_dt_define(f"{node.z_path_id}_ORD", node.dep_ordinal)
+    out_dt_define(f"{node.z_path_id}_ORD_STR_SORTABLE", f"{node.dep_ordinal:0>5}")
 
     out_comment("Ordinals for what this node depends on directly:")
     out_dt_define(f"{node.z_path_id}_REQUIRES_ORDS",
