@@ -62,7 +62,7 @@ Set ``-DSHIELD=semtech_sx1271mb1mas`` when you invoke ``west build``. For
 example:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/lorawan/class_a
+   :zephyr-app: samples/subsys/lorawan/class_a
    :board: nucleo_l073rz
    :shield: semtech_sx1276mb1mas
    :goals: build
