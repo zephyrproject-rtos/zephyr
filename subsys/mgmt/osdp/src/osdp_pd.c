@@ -556,10 +556,13 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 	return ret;
 }
 
-static inline void assert_buf_len(int need, int have)
+static inline bool check_buf_len(int need, int have)
 {
-	__ASSERT(need < have, "OOM at build command: need:%d have:%d",
-		 need, have);
+	if (need >= have) {
+		LOG_ERR("OOM at build reply: need:%d have:%d", need, have);
+		return false;
+	}
+	return true;
 }
 
 /**
@@ -582,12 +585,16 @@ static int pd_build_reply(struct osdp_pd *pd, uint8_t *buf, int max_len)
 
 	switch (pd->reply_id) {
 	case REPLY_ACK:
-		assert_buf_len(REPLY_ACK_LEN, max_len);
+		if (!check_buf_len(REPLY_ACK_LEN, max_len)) {
+			return OSDP_PD_ERR_GENERIC;
+		}
 		buf[len++] = pd->reply_id;
 		ret = OSDP_PD_ERR_NONE;
 		break;
 	case REPLY_PDID:
-		assert_buf_len(REPLY_PDID_LEN, max_len);
+		if (!check_buf_len(REPLY_PDID_LEN, max_len)) {
+			return OSDP_PD_ERR_GENERIC;
+		}
 		buf[len++] = pd->reply_id;
 
 		buf[len++] = BYTE_0(pd->id.vendor_code);
@@ -608,7 +615,9 @@ static int pd_build_reply(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		ret = OSDP_PD_ERR_NONE;
 		break;
 	case REPLY_PDCAP:
-		assert_buf_len(REPLY_PDCAP_LEN, max_len);
+		if (!check_buf_len(REPLY_PDCAP_LEN, max_len)) {
+			return OSDP_PD_ERR_GENERIC;
+		}
 		buf[len++] = pd->reply_id;
 		for (i = 1; i < OSDP_PD_CAP_SENTINEL; i++) {
 			if (pd->cap[i].function_code != i) {
@@ -626,21 +635,27 @@ static int pd_build_reply(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		ret = OSDP_PD_ERR_NONE;
 		break;
 	case REPLY_LSTATR:
-		assert_buf_len(REPLY_LSTATR_LEN, max_len);
+		if (!check_buf_len(REPLY_LSTATR_LEN, max_len)) {
+			return OSDP_PD_ERR_GENERIC;
+		}
 		buf[len++] = pd->reply_id;
 		buf[len++] = ISSET_FLAG(pd, PD_FLAG_TAMPER);
 		buf[len++] = ISSET_FLAG(pd, PD_FLAG_POWER);
 		ret = OSDP_PD_ERR_NONE;
 		break;
 	case REPLY_RSTATR:
-		assert_buf_len(REPLY_RSTATR_LEN, max_len);
+		if (!check_buf_len(REPLY_RSTATR_LEN, max_len)) {
+			return OSDP_PD_ERR_GENERIC;
+		}
 		buf[len++] = pd->reply_id;
 		buf[len++] = ISSET_FLAG(pd, PD_FLAG_R_TAMPER);
 		ret = OSDP_PD_ERR_NONE;
 		break;
 	case REPLY_KEYPPAD:
 		event = (struct osdp_event *)pd->ephemeral_data;
-		assert_buf_len(REPLY_KEYPAD_LEN + event->keypress.length, max_len);
+		if (!check_buf_len(REPLY_KEYPAD_LEN + event->keypress.length, max_len)) {
+			return OSDP_PD_ERR_GENERIC;
+		}
 		buf[len++] = pd->reply_id;
 		buf[len++] = (uint8_t)event->keypress.reader_no;
 		buf[len++] = (uint8_t)event->keypress.length;
@@ -653,7 +668,9 @@ static int pd_build_reply(struct osdp_pd *pd, uint8_t *buf, int max_len)
 
 		event = (struct osdp_event *)pd->ephemeral_data;
 		len_bytes = (event->cardread.length + 7) / 8;
-		assert_buf_len(REPLY_RAW_LEN + len_bytes, max_len);
+		if (!check_buf_len(REPLY_RAW_LEN + len_bytes, max_len)) {
+			return OSDP_PD_ERR_GENERIC;
+		}
 		buf[len++] = pd->reply_id;
 		buf[len++] = (uint8_t)event->cardread.reader_no;
 		buf[len++] = (uint8_t)event->cardread.format;
@@ -666,7 +683,9 @@ static int pd_build_reply(struct osdp_pd *pd, uint8_t *buf, int max_len)
 	}
 	case REPLY_FMT:
 		event = (struct osdp_event *)pd->ephemeral_data;
-		assert_buf_len(REPLY_FMT_LEN + event->cardread.length, max_len);
+		if (!check_buf_len(REPLY_FMT_LEN + event->cardread.length, max_len)) {
+			return OSDP_PD_ERR_GENERIC;
+		}
 		buf[len++] = pd->reply_id;
 		buf[len++] = (uint8_t)event->cardread.reader_no;
 		buf[len++] = (uint8_t)event->cardread.direction;
@@ -676,7 +695,9 @@ static int pd_build_reply(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		ret = OSDP_PD_ERR_NONE;
 		break;
 	case REPLY_COM:
-		assert_buf_len(REPLY_COM_LEN, max_len);
+		if (!check_buf_len(REPLY_COM_LEN, max_len)) {
+			return OSDP_PD_ERR_GENERIC;
+		}
 		/**
 		 * If COMSET succeeds, the PD must reply with the old params and
 		 * then switch to the new params from then then on. We have the
@@ -702,7 +723,9 @@ static int pd_build_reply(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		ret = OSDP_PD_ERR_NONE;
 		break;
 	case REPLY_NAK:
-		assert_buf_len(REPLY_NAK_LEN, max_len);
+		if (!check_buf_len(REPLY_NAK_LEN, max_len)) {
+			return OSDP_PD_ERR_GENERIC;
+		}
 		buf[len++] = pd->reply_id;
 		buf[len++] = pd->ephemeral_data[0];
 		ret = OSDP_PD_ERR_NONE;
@@ -712,7 +735,9 @@ static int pd_build_reply(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		if (smb == NULL) {
 			break;
 		}
-		assert_buf_len(REPLY_CCRYPT_LEN, max_len);
+		if (!check_buf_len(REPLY_CCRYPT_LEN, max_len)) {
+			return OSDP_PD_ERR_GENERIC;
+		}
 		osdp_fill_random(pd->sc.pd_random, 8);
 		osdp_compute_session_keys(pd);
 		osdp_compute_pd_cryptogram(pd);
@@ -730,7 +755,9 @@ static int pd_build_reply(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		if (smb == NULL) {
 			break;
 		}
-		assert_buf_len(REPLY_RMAC_I_LEN, max_len);
+		if (!check_buf_len(REPLY_RMAC_I_LEN, max_len)) {
+			return OSDP_PD_ERR_GENERIC;
+		}
 		osdp_compute_rmac_i(pd);
 		buf[len++] = pd->reply_id;
 		memcpy(buf + len, pd->sc.r_mac, 16);
@@ -766,7 +793,9 @@ static int pd_build_reply(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		/* catch all errors and report it as a RECORD error to CP */
 		LOG_ERR("Failed to build REPLY(%02x); Sending NAK instead!",
 			pd->reply_id);
-		assert_buf_len(REPLY_NAK_LEN, max_len);
+		if (!check_buf_len(REPLY_NAK_LEN, max_len)) {
+			return OSDP_PD_ERR_GENERIC;
+		}
 		buf[0] = REPLY_NAK;
 		buf[1] = OSDP_PD_NAK_RECORD;
 		len = 2;
