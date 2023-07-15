@@ -336,11 +336,10 @@ in the `MCUboot with Zephyr`_ documentation page on the MCUboot website.
 
 .. note::
 
-   MCUBoot default configuration will perform a full chip erase when flashed.
-   This can be controlled through the MCUBoot Kconfig option
-   ``CONFIG_ZEPHYR_TRY_MASS_ERASE``. If this option is enabled, then flashing
-   only MCUBoot, for example using ``west flash --domain mcuboot``, may erase
-   the entire flash, including the main application image.
+   The deprecated MCUBoot Kconfig option ``CONFIG_ZEPHYR_TRY_MASS_ERASE`` will
+   perform a full chip erase when flashed. If this option is enabled, then
+   flashing only MCUBoot, for example using ``west flash --domain mcuboot``, may
+   erase the entire flash, including the main application image.
 
 Sysbuild Kconfig file
 *********************
