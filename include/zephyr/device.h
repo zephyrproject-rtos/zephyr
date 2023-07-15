@@ -849,6 +849,17 @@ static inline bool z_impl_device_is_ready(const struct device *dev)
 #endif /* CONFIG_DEVICE_DEPS */
 
 /**
+ * @brief Init sub-priority of the device
+ *
+ * The sub-priority is defined by the devicetree ordinal, which ensures that
+ * multiple drivers running at the same priority level run in an order that
+ * respects the devicetree dependencies.
+ */
+#define Z_DEVICE_INIT_SUB_PRIO(node_id)                                        \
+	COND_CODE_1(DT_NODE_EXISTS(node_id),                                   \
+		    (DT_DEP_ORD_STR_SORTABLE(node_id)), (0))
+
+/**
  * @brief Maximum device name length.
  *
  * The maximum length is set so that device_get_binding() can be used from
@@ -923,14 +934,17 @@ static inline bool z_impl_device_is_ready(const struct device *dev)
 /**
  * @brief Define the init entry for a device.
  *
+ * @param node_id Devicetree node id for the device (DT_INVALID_NODE if a
+ * software device).
  * @param dev_id Device identifier.
  * @param init_fn_ Device init function.
  * @param level Initialization level.
  * @param prio Initialization priority.
  */
-#define Z_DEVICE_INIT_ENTRY_DEFINE(dev_id, init_fn_, level, prio)              \
-	static const Z_DECL_ALIGN(struct init_entry)                           \
-		Z_INIT_ENTRY_SECTION(level, prio) __used __noasan              \
+#define Z_DEVICE_INIT_ENTRY_DEFINE(node_id, dev_id, init_fn_, level, prio)     \
+	static const Z_DECL_ALIGN(struct init_entry) __used __noasan           \
+		Z_INIT_ENTRY_SECTION(level, prio,                              \
+				     Z_DEVICE_INIT_SUB_PRIO(node_id))          \
 		Z_INIT_ENTRY_NAME(DEVICE_NAME_GET(dev_id)) = {                 \
 			.init_fn = {.dev = (init_fn_)},                        \
 			.dev = &DEVICE_NAME_GET(dev_id),                       \
@@ -967,7 +981,7 @@ static inline bool z_impl_device_is_ready(const struct device *dev)
 	Z_DEVICE_BASE_DEFINE(node_id, dev_id, name, pm, data, config, level,   \
 			     prio, api, state, Z_DEVICE_DEPS_NAME(dev_id));    \
                                                                                \
-	Z_DEVICE_INIT_ENTRY_DEFINE(dev_id, init_fn, level, prio)
+	Z_DEVICE_INIT_ENTRY_DEFINE(node_id, dev_id, init_fn, level, prio)
 
 #if defined(CONFIG_HAS_DTS) || defined(__DOXYGEN__)
 /**
