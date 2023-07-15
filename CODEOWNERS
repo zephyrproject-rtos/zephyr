@@ -111,6 +111,7 @@
 /boards/arm/cc26x2r1_launchxl/            @bwitherspoon
 /boards/arm/cc3220sf_launchxl/            @vanti
 /boards/arm/cy8ckit_062_ble/              @ifyall @npal-cy
+/boards/arm/cy8ckit_062s4/                @DaWei8823
 /boards/arm/cy8ckit_062_wifi_bt/          @ifyall @npal-cy
 /boards/arm/cy8cproto_062_4343w/          @ifyall @npal-cy
 /boards/arm/disco_l475_iot1/              @erwango
