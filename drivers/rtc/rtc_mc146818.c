@@ -51,7 +51,6 @@
 #define RTC_UIP		RTC_REG_A
 #define RTC_DATA	RTC_REG_B
 #define RTC_FLAG	RTC_REG_C
-#define RTC_ALARM_MDAY	RTC_REG_D
 
 /* Alarm don't case state */
 #define RTC_ALARM_DC	0xFF
@@ -116,8 +115,6 @@
 
 struct rtc_mc146818_data {
 	struct k_spinlock lock;
-	uint16_t alarms_count;
-	uint16_t mask;
 	bool alarm_pending;
 	rtc_alarm_callback cb;
 	void *cb_data;
@@ -194,31 +191,15 @@ static int rtc_mc146818_set_time(const struct device *dev, const struct rtc_time
 	year = (1900 + timeptr->tm_year) % 100;
 	cent = (1900 + timeptr->tm_year) / 100;
 
-	if (!(rtc_read(RTC_DATA) & RTC_DMODE_BIT)) {
-		rtc_write(RTC_SEC, (uint8_t)bin2bcd(timeptr->tm_sec));
-		rtc_write(RTC_MIN, (uint8_t)bin2bcd(timeptr->tm_min));
-		rtc_write(RTC_HOUR, (uint8_t)bin2bcd(timeptr->tm_hour));
-		rtc_write(RTC_WDAY, (uint8_t)bin2bcd(timeptr->tm_wday));
-		rtc_write(RTC_MDAY, (uint8_t)bin2bcd(timeptr->tm_mday));
-		rtc_write(RTC_MONTH, (uint8_t)bin2bcd(timeptr->tm_mon + 1));
-		rtc_write(RTC_YEAR, (uint8_t)bin2bcd(year));
-		rtc_write(RTC_CENTURY, (uint8_t)bin2bcd(cent));
-	} else {
-		rtc_write(RTC_SEC, (uint8_t)timeptr->tm_sec);
-		rtc_write(RTC_MIN, (uint8_t)timeptr->tm_min);
-		rtc_write(RTC_HOUR, (uint8_t)timeptr->tm_hour);
-		rtc_write(RTC_WDAY, (uint8_t)timeptr->tm_wday);
-		rtc_write(RTC_MDAY, (uint8_t)timeptr->tm_mday);
-		rtc_write(RTC_MONTH, (uint8_t)timeptr->tm_mon + 1);
-		rtc_write(RTC_YEAR, year);
-		rtc_write(RTC_CENTURY, cent);
-	}
+	rtc_write(RTC_SEC, (uint8_t)timeptr->tm_sec);
+	rtc_write(RTC_MIN, (uint8_t)timeptr->tm_min);
+	rtc_write(RTC_HOUR, (uint8_t)timeptr->tm_hour);
+	rtc_write(RTC_WDAY, (uint8_t)timeptr->tm_wday);
+	rtc_write(RTC_MDAY, (uint8_t)timeptr->tm_mday);
+	rtc_write(RTC_MONTH, (uint8_t)timeptr->tm_mon + 1);
+	rtc_write(RTC_YEAR, year);
+	rtc_write(RTC_CENTURY, cent);
 
-	if (timeptr->tm_isdst == 1) {
-		value |= RTC_DSE_BIT;
-	} else {
-		value &= (~RTC_DSE_BIT);
-	}
 	value &= (~RTC_UCI_BIT);
 	rtc_write(RTC_DATA, value);
 	ret = 0;
@@ -243,7 +224,7 @@ static int rtc_mc146818_get_time(const struct device *dev, struct rtc_time  *tim
 		goto out;
 	}
 
-	if (!(rtc_read(RTC_ALARM_MDAY) & RTC_VRT_BIT)) {
+	if (!(rtc_read(RTC_REG_D) & RTC_VRT_BIT)) {
 		ret = -ENODATA;
 		goto out;
 	}
@@ -251,6 +232,7 @@ static int rtc_mc146818_get_time(const struct device *dev, struct rtc_time  *tim
 	while (rtc_read(RTC_UIP) & RTC_UIP_BIT) {
 		continue;
 	}
+
 	cent = rtc_read(RTC_CENTURY);
 	year = rtc_read(RTC_YEAR);
 	timeptr->tm_mon = rtc_read(RTC_MONTH) - 1;
@@ -260,27 +242,11 @@ static int rtc_mc146818_get_time(const struct device *dev, struct rtc_time  *tim
 	timeptr->tm_min = rtc_read(RTC_MIN);
 	timeptr->tm_sec = rtc_read(RTC_SEC);
 
-	if (!(rtc_read(RTC_DATA) & RTC_DMODE_BIT)) {
-		year = bcd2bin(year);
-		cent = bcd2bin(cent);
-		timeptr->tm_mon = bcd2bin(timeptr->tm_mon);
-		timeptr->tm_mday = bcd2bin(timeptr->tm_mday);
-		timeptr->tm_wday = bcd2bin(timeptr->tm_wday);
-		timeptr->tm_hour = bcd2bin(timeptr->tm_hour);
-		timeptr->tm_min = bcd2bin(timeptr->tm_min);
-		timeptr->tm_sec = bcd2bin(timeptr->tm_sec);
-	}
-
 	timeptr->tm_year = 100 * (int)cent + year - 1900;
 
 	timeptr->tm_nsec = 0;
 	timeptr->tm_yday = 0;
 	value = rtc_read(RTC_DATA);
-	if (value & RTC_DSE_BIT) {
-		timeptr->tm_isdst = 1;
-	} else {
-		timeptr->tm_isdst = -1;
-	}
 
 	/* Check time valid */
 	if (!rtc_mc146818_validate_time(timeptr)) {
@@ -311,51 +277,34 @@ static bool rtc_mc146818_validate_alarm(const struct rtc_time *timeptr, uint32_t
 		return false;
 	}
 
-	if ((mask & RTC_ALARM_TIME_MASK_MONTH) &&
-	    (timeptr->tm_mon + 1 < MIN_WDAY || timeptr->tm_mon + 1 > MAX_WDAY)) {
-		return false;
-	}
-
-	if ((mask & RTC_ALARM_TIME_MASK_MONTHDAY) &&
-	    (timeptr->tm_mday < MIN_MDAY || timeptr->tm_mday > MAX_MDAY)) {
-		return false;
-	}
-
-	if ((mask & RTC_ALARM_TIME_MASK_YEAR) &&
-	    (timeptr->tm_year - 70 < MIN_YEAR_DIFF || timeptr->tm_year - 70 > MAX_YEAR_DIFF)) {
-		return false;
-	}
-
 	return true;
 }
 
 static int rtc_mc146818_alarm_get_supported_fields(const struct device *dev, uint16_t id,
-						uint16_t *mask)
+						   uint16_t *mask)
 {
-	struct rtc_mc146818_data * const dev_data = dev->data;
+	ARG_UNUSED(dev);
 
-	if (dev_data->alarms_count <= id) {
+	if (id != 0) {
 		return -EINVAL;
 	}
 
 	(*mask) = (RTC_ALARM_TIME_MASK_SECOND
 		   | RTC_ALARM_TIME_MASK_MINUTE
-		   | RTC_ALARM_TIME_MASK_HOUR
-		   | RTC_ALARM_TIME_MASK_MONTHDAY
-		   | RTC_ALARM_TIME_MASK_MONTH);
+		   | RTC_ALARM_TIME_MASK_HOUR);
 
 	return 0;
 }
 
 static int rtc_mc146818_alarm_set_time(const struct device *dev, uint16_t id, uint16_t mask,
-				   const struct rtc_time *timeptr)
+				       const struct rtc_time *timeptr)
 {
 	struct rtc_mc146818_data * const dev_data = dev->data;
 	int ret;
 
 	k_spinlock_key_t key = k_spin_lock(&dev_data->lock);
 
-	if (dev_data->alarms_count <= id) {
+	if (id != 0) {
 		ret = -EINVAL;
 		goto out;
 	}
@@ -371,53 +320,21 @@ static int rtc_mc146818_alarm_set_time(const struct device *dev, uint16_t id, ui
 		goto out;
 	}
 
-	dev_data->mask = mask;
-
-	if (!(rtc_read(RTC_DATA) & RTC_DMODE_BIT)) {
-		if (mask & RTC_ALARM_TIME_MASK_SECOND) {
-			rtc_write(RTC_ALARM_SEC, bin2bcd(timeptr->tm_sec));
-		} else {
-			rtc_write(RTC_ALARM_SEC, bin2bcd(RTC_ALARM_DC));
-		}
-
-		if (mask & RTC_ALARM_TIME_MASK_MINUTE) {
-			rtc_write(RTC_ALARM_MIN, bin2bcd(timeptr->tm_min));
-		} else {
-			rtc_write(RTC_ALARM_SEC, bin2bcd(RTC_ALARM_DC));
-		}
-
-		if (mask & RTC_ALARM_TIME_MASK_HOUR) {
-			rtc_write(RTC_ALARM_HOUR, bin2bcd(timeptr->tm_hour));
-		} else {
-			rtc_write(RTC_ALARM_SEC, bin2bcd(RTC_ALARM_DC));
-		}
-
+	if (mask & RTC_ALARM_TIME_MASK_SECOND) {
+		rtc_write(RTC_ALARM_SEC, timeptr->tm_sec);
 	} else {
-		if (mask & RTC_ALARM_TIME_MASK_SECOND) {
-			rtc_write(RTC_ALARM_SEC, timeptr->tm_sec);
-		} else {
-			rtc_write(RTC_ALARM_SEC, RTC_ALARM_DC);
-		}
-
-		if (mask & RTC_ALARM_TIME_MASK_MINUTE) {
-			rtc_write(RTC_ALARM_MIN, timeptr->tm_min);
-		} else {
-			rtc_write(RTC_ALARM_SEC, RTC_ALARM_DC);
-		}
-		if (mask & RTC_ALARM_TIME_MASK_HOUR) {
-			rtc_write(RTC_ALARM_HOUR, timeptr->tm_hour);
-		} else {
-			rtc_write(RTC_ALARM_SEC, RTC_ALARM_DC);
-		}
-
+		rtc_write(RTC_ALARM_SEC, RTC_ALARM_DC);
 	}
 
-	if (mask & RTC_ALARM_TIME_MASK_MONTHDAY) {
-		rtc_write(RTC_ALARM_MDAY, rtc_read(RTC_REG_D) |
-			  timeptr->tm_mday);
+	if (mask & RTC_ALARM_TIME_MASK_MINUTE) {
+		rtc_write(RTC_ALARM_MIN, timeptr->tm_min);
 	} else {
-		rtc_write(RTC_ALARM_SEC, rtc_read(RTC_REG_D) &
-			  (~RTC_MDAY_ALARM));
+		rtc_write(RTC_ALARM_SEC, RTC_ALARM_DC);
+	}
+	if (mask & RTC_ALARM_TIME_MASK_HOUR) {
+		rtc_write(RTC_ALARM_HOUR, timeptr->tm_hour);
+	} else {
+		rtc_write(RTC_ALARM_SEC, RTC_ALARM_DC);
 	}
 
 	rtc_write(RTC_DATA, rtc_read(RTC_DATA) | RTC_AIE_BIT);
@@ -431,11 +348,12 @@ static int rtc_mc146818_alarm_get_time(const struct device *dev, uint16_t id, ui
 				   struct rtc_time *timeptr)
 {
 	struct rtc_mc146818_data * const dev_data = dev->data;
+	uint8_t value;
 	int ret;
 
 	k_spinlock_key_t key = k_spin_lock(&dev_data->lock);
 
-	if (dev_data->alarms_count <= id) {
+	if (id != 0) {
 		ret = -EINVAL;
 		goto out;
 	}
@@ -445,23 +363,24 @@ static int rtc_mc146818_alarm_get_time(const struct device *dev, uint16_t id, ui
 		goto out;
 	}
 
-	timeptr->tm_sec = rtc_read(RTC_ALARM_SEC);
-	timeptr->tm_min = rtc_read(RTC_ALARM_MIN);
-	timeptr->tm_hour = rtc_read(RTC_ALARM_HOUR);
-	timeptr->tm_mday = (rtc_read(RTC_ALARM_MDAY) & RTC_MDAY_ALARM);
+	(*mask) = 0;
 
-	if (!(rtc_read(RTC_DATA) & RTC_DMODE_BIT)) {
-		timeptr->tm_sec = bcd2bin(timeptr->tm_sec);
-		timeptr->tm_min = bcd2bin(timeptr->tm_min);
-		timeptr->tm_hour = bcd2bin(timeptr->tm_hour);
+	value = rtc_read(RTC_ALARM_SEC);
+	if (value <= MAX_SEC) {
+		timeptr->tm_sec = value;
+		(*mask) |= RTC_ALARM_TIME_MASK_SECOND;
 	}
 
-	(*mask) = dev_data->mask;
+	value = rtc_read(RTC_ALARM_MIN);
+	if (value <= MAX_SEC) {
+		timeptr->tm_min = value;
+		(*mask) |= RTC_ALARM_TIME_MASK_MINUTE;
+	}
 
-	/* Check time valid */
-	if (!rtc_mc146818_validate_alarm(timeptr, (*mask))) {
-		ret = -ENODATA;
-		goto out;
+	value = rtc_read(RTC_ALARM_HOUR);
+	if (value <= MAX_SEC) {
+		timeptr->tm_hour = value;
+		(*mask) |= RTC_ALARM_TIME_MASK_HOUR;
 	}
 
 	ret = 0;
@@ -475,7 +394,7 @@ static int rtc_mc146818_alarm_set_callback(const struct device *dev, uint16_t id
 {
 	struct rtc_mc146818_data * const dev_data = dev->data;
 
-	if (dev_data->alarms_count <= id) {
+	if (id != 0) {
 		return -EINVAL;
 	}
 
@@ -501,14 +420,13 @@ static int rtc_mc146818_alarm_is_pending(const struct device *dev, uint16_t id)
 	struct rtc_mc146818_data * const dev_data = dev->data;
 	int ret;
 
-	if (dev_data->alarms_count <= id) {
+	if (id != 0) {
 		return -EINVAL;
 	}
 
 	k_spinlock_key_t key = k_spin_lock(&dev_data->lock);
 
-	ret = (dev_data->alarm_pending == true) ? 1 : 0;
-
+	ret = dev_data->alarm_pending ? 1 : 0;
 	dev_data->alarm_pending = false;
 
 	k_spin_unlock(&dev_data->lock, key);
@@ -545,26 +463,31 @@ static int rtc_mc146818_update_set_callback(const struct device *dev,
 static void rtc_mc146818_isr(const struct device *dev)
 {
 	struct rtc_mc146818_data * const dev_data = dev->data;
+	uint8_t regc;
 
 	ARG_UNUSED(dev_data);
 
+	/* Read register, which clears the register */
+	regc = rtc_read(RTC_FLAG);
+
 #if defined(CONFIG_RTC_ALARM)
-	if (rtc_read(RTC_FLAG) & RTC_AF_BIT) {
+	if (regc & RTC_AF_BIT) {
 		if (dev_data->cb) {
 			dev_data->cb(dev, 0, dev_data->cb_data);
 			dev_data->alarm_pending = false;
+		} else {
+			dev_data->alarm_pending = true;
 		}
 	}
 #endif
 
 #if defined(CONFIG_RTC_UPDATE)
-	if (rtc_read(RTC_FLAG) & RTC_UEF_BIT) {
+	if (regc & RTC_UEF_BIT) {
 		if (dev_data->update_cb) {
 			dev_data->update_cb(dev, dev_data->update_cb_data);
 		}
 	}
 #endif
-
 }
 
 struct rtc_driver_api rtc_mc146818_driver_api = {
@@ -583,26 +506,30 @@ struct rtc_driver_api rtc_mc146818_driver_api = {
 #endif /* CONFIG_RTC_UPDATE */
 };
 
-static int rtc_mc146818_init(const struct device *dev)
-{
-	IRQ_CONNECT(DT_INST_IRQN(0),
-			DT_INST_IRQ(0, priority),
-			rtc_mc146818_isr, NULL,
-			DT_INST_IRQ(0, sense));
-	irq_enable(DT_INST_IRQN(0));
-
-	return 0;
-}
-
-#define RTC_MC146818_DEV_CFG(n)							\
-	static struct rtc_mc146818_data rtc_data_##n = {				\
-			.alarms_count = DT_INST_PROP(n, alarms_count),		\
-			.mask = 0,						\
-	};									\
+#define RTC_MC146818_INIT_FN_DEFINE(n)						\
+	static int rtc_mc146818_init##n(const struct device *dev)		\
+	{									\
+		rtc_write(RTC_REG_A, 0);					\
+		rtc_write(RTC_REG_B, RTC_DMODE_BIT | RTC_HFORMAT_BIT);		\
 										\
-	DEVICE_DT_INST_DEFINE(n, &rtc_mc146818_init, NULL, &rtc_data_##n,		\
-				NULL, POST_KERNEL,				\
-				CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
-				&rtc_mc146818_driver_api);				\
+		IRQ_CONNECT(DT_INST_IRQN(0),					\
+				DT_INST_IRQ(0, priority),			\
+				rtc_mc146818_isr, DEVICE_DT_INST_GET(n),	\
+				DT_INST_IRQ(0, sense));				\
+										\
+		irq_enable(DT_INST_IRQN(0));					\
+										\
+		return 0;							\
+	}
+
+#define RTC_MC146818_DEV_CFG(inst)						\
+	struct rtc_mc146818_data rtc_mc146818_data##inst;			\
+										\
+	RTC_MC146818_INIT_FN_DEFINE(inst)					\
+										\
+	DEVICE_DT_INST_DEFINE(inst, &rtc_mc146818_init##inst, NULL,		\
+			      &rtc_mc146818_data##inst, NULL, POST_KERNEL,	\
+			      CONFIG_RTC_INIT_PRIORITY,				\
+			      &rtc_mc146818_driver_api);			\
 
 DT_INST_FOREACH_STATUS_OKAY(RTC_MC146818_DEV_CFG)
