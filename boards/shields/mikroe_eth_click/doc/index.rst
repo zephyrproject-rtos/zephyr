@@ -44,7 +44,7 @@ Programming
 Set ``-DSHIELD=mikroe_eth_click`` when you invoke ``west build``. For example:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/net/dhcp_client
+   :zephyr-app: samples/net/dhcpv4_client
    :board: lpcxpresso55s69
    :shield: mikroe_eth_click
    :goals: build
