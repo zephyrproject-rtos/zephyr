@@ -22,7 +22,7 @@ Build and flash this sample (for example, for the nrf52840dk_nrf52840 board)
 using these commands:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/sensors/dps310
+   :zephyr-app: samples/sensor/dps310
    :board: nrf52840dk_nrf52840
    :goals: flash
    :compact:
