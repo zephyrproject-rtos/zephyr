@@ -6,6 +6,7 @@
 
 #include <string.h>
 #include <zephyr/net/http/server.h>
+#include <zephyr/posix/sys/eventfd.h>
 #include <zephyr/net/socket.h>
 #include <zephyr/ztest.h>
 #include "server_functions.h"
@@ -237,12 +238,49 @@ ZTEST(server_function_tests, test_http2_support_ipv4)
 	close(server_fd);
 }
 
+int http2_server_stop(struct http2_server_ctx *ctx)
+{
+	eventfd_write(ctx->event_fd, 1);
+
+	return 0;
+}
+
+static void server_thread_stp_fn(void *arg0, void *arg1, void *arg2)
+{
+	struct http2_server_ctx *ctx = (struct http2_server_ctx *)arg0;
+
+	k_sleep(K_SECONDS(2));
+
+	ctx->infinite = 0;
+	int program_status = http2_server_start(ctx);
+
+	zassert_equal(program_status, 0,
+		      "The server didn't shut down successfully");
+}
+
 ZTEST(server_function_tests, test_http2_server_stop)
 {
-	int sem_count = http2_server_stop();
+	struct http2_server_config config;
+	struct http2_server_ctx ctx;
 
-	zassert_equal(sem_count, 1,
-		      "Semaphore should have one token after 'quit' command");
+	config.port = PORT;
+	config.address_family = AF_INET;
+
+	int server_fd = http2_server_init(&ctx, &config);
+
+	zassert_true(server_fd >= 0, "Failed to create server socket");
+
+	k_thread_create(&server_thread, server_stack, STACK_SIZE,
+			server_thread_stp_fn, &ctx, NULL, NULL,
+			K_PRIO_PREEMPT(8), 0, K_NO_WAIT);
+
+	k_sleep(K_MSEC(100));
+
+	http2_server_stop(&ctx);
+
+	k_thread_join(&server_thread, K_FOREVER);
+
+	close(server_fd);
 }
 
 ZTEST(server_function_tests, test_http2_server_init)

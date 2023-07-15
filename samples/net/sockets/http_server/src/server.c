@@ -13,8 +13,8 @@
 #include <zephyr/posix/fcntl.h>
 #include <zephyr/posix/netinet/in.h>
 #include <zephyr/posix/poll.h>
-#include <zephyr/shell/shell.h>
 #include <zephyr/sys/atomic.h>
+#include <zephyr/posix/sys/eventfd.h>
 LOG_MODULE_REGISTER(net_http_server, LOG_LEVEL_DBG);
 
 #include <stdio.h>
@@ -24,20 +24,6 @@ LOG_MODULE_REGISTER(net_http_server, LOG_LEVEL_DBG);
 
 #include "headers/config.h"
 #include "headers/server_functions.h"
-
-#define STACKSIZE 1024
-K_THREAD_STACK_DEFINE(thread_stack, STACKSIZE);
-
-K_SEM_DEFINE(my_sem, 0, 1);
-
-int http2_server_stop(void)
-{
-	k_sem_give(&my_sem);
-	int sem_count = k_sem_count_get(&my_sem);
-	return sem_count;
-}
-
-SHELL_CMD_REGISTER(quit, NULL, "Quit the shell.", http2_server_stop);
 
 static char url_buffer[MAX_URL_LENGTH];
 static char buffer[BUFFER_SIZE] = {0};
@@ -49,13 +35,13 @@ struct http_parser_settings parserSettings;
 struct http_parser parser;
 
 static unsigned char settings_frame[9] = {0x00, 0x00, 0x00, /* Length */
-	0x04, /* Type: 0x04 - setting frames for config or acknowledgement */
+	0x04, /* Type: 0x04 - setting frames for config or acknowledgment */
 	0x00, /* Flags: 0x00 - unused flags */
 	0x00, 0x00, 0x00,
 	0x00}; /* Reserved, Stream Identifier: 0x00 - overall connection */
 
 static unsigned char settings_ack[9] = {0x00, 0x00, 0x00, /* Length */
-	0x04, /* Type: 0x04 - setting frames for config or acknowledgement */
+	0x04, /* Type: 0x04 - setting frames for config or acknowledgment */
 	0x01, /* Flags: 0x01 - ACK */
 	0x00, 0x00, 0x00, 0x00}; /* Reserved, Stream Identifier */
 
@@ -133,91 +119,93 @@ int accept_new_client(int server_fd)
 	return new_socket;
 }
 
-void handle_http1_request(struct http2_server_ctx *ctx, int i)
+void handle_http1_request(struct http2_server_ctx *ctx, int i, int *valread)
 {
 	const char *data;
 	int len;
-
-	data = content;
-	len = sizeof(content);
+	int total_received = 0;
+	int offset = 0;
 
 	http_parser_init(&parser, HTTP_REQUEST);
 	http_parser_settings_init(&parserSettings);
-	parserSettings.on_url = on_url;
+	parserSettings.on_header_field = on_header_field;
+	http_parser_execute(
+		&parser, &parserSettings, buffer + offset, *valread);
 
-	http_parser_execute(&parser, &parserSettings, buffer, BUFFER_SIZE);
+	total_received += *valread;
+	offset += *valread;
 
-	if (strcmp(url_buffer, "/") == 0) {
-		sprintf(http_response,
-			"HTTP/1.1 200 OK\r\n"
-			"Content-Type: text/html\r\n"
-			"Content-Encoding: gzip\r\n"
-			"Content-Length: %d\r\n\r\n",
-			len);
-		if (sendall(ctx->client_fds[i].fd, http_response,
-			    strlen(http_response)) < 0) {
-			close_client_connection(ctx, i);
+	if (offset <= BUFFER_SIZE)
+		offset = 0;
+
+	if (has_upgrade_header == 0) {
+		handle_http2_request(ctx, i, valread);
+	} else {
+		data = content;
+		len = sizeof(content);
+
+		parserSettings.on_url = on_url;
+		http_parser_execute(
+			&parser, &parserSettings, buffer, BUFFER_SIZE);
+
+		if (strcmp(url_buffer, "/") == 0) {
+			sprintf(http_response,
+				"HTTP/1.1 200 OK\r\n"
+				"Content-Type: text/html\r\n"
+				"Content-Encoding: gzip\r\n"
+				"Content-Length: %d\r\n\r\n",
+				len);
+			if (sendall(ctx->client_fds[i].fd, http_response,
+				    strlen(http_response)) < 0) {
+				close_client_connection(ctx, i);
+			} else {
+
+				if (sendall(ctx->client_fds[i].fd, data, len) <
+					0) {
+					LOG_ERR("sendall failed");
+					close_client_connection(ctx, i);
+				}
+			}
 		} else {
-
-			if (sendall(ctx->client_fds[i].fd, data, len) < 0) {
-				LOG_ERR("sendall failed");
+			const char *not_found_response =
+				"HTTP/1.1 404 Not Found\r\n"
+				"Content-Length: 9\r\n\r\n"
+				"Not Found";
+			if (sendall(ctx->client_fds[i].fd, not_found_response,
+				    strlen(not_found_response)) < 0) {
 				close_client_connection(ctx, i);
 			}
 		}
-	} else {
-		const char *not_found_response = "HTTP/1.1 404 Not Found\r\n"
-						 "Content-Length: 9\r\n\r\n"
-						 "Not Found";
-		if (sendall(ctx->client_fds[i].fd, not_found_response,
-			    strlen(not_found_response)) < 0) {
-			close_client_connection(ctx, i);
-		}
+		close_client_connection(ctx, i);
 	}
-	close_client_connection(ctx, i);
 }
 
-void handle_http2_request(struct http2_server_ctx *ctx, int i, int valread)
+void handle_awaiting_preface(struct http2_server_ctx *ctx, int i, int *valread)
 {
-	printf("Hello HTTP/2.\n");
+	printf("AWAITING_PREFACE\n");
+	const char *response = "HTTP/1.1 101 Switching Protocols\r\n"
+			       "Connection: Upgrade\r\n"
+			       "Upgrade: h2c\r\n"
+			       "\r\n";
+	if (sendall(ctx->client_fds[i].fd, response, strlen(response)) < 0)
+		close_client_connection(ctx, i);
+
+	ctx->clients[i].state = READING_SETTINGS;
+}
+
+void handle_reading_settings(struct http2_server_ctx *ctx, int i, int *valread)
+{
+	printf("READING_SETTINGS\n");
 	unsigned char frame[100];
-	ssize_t readBytes;
+	ssize_t readBytes = 0;
 	unsigned int frame_count;
 	int stream_header_id = 1;
 
-	if (has_upgrade_header == 0) {
-		const char *response = "HTTP/1.1 101 Switching Protocols\r\n"
-				       "Connection: Upgrade\r\n"
-				       "Upgrade: h2c\r\n"
-				       "\r\n";
-		if (sendall(ctx->client_fds[i].fd, response, strlen(response)) <
-			0) {
-			close_client_connection(ctx, i);
-		}
-
-		/* Read the client data */
-		valread = recv(ctx->client_fds[i].fd, buffer, BUFFER_SIZE, 0);
-		if (valread < 0) {
-			LOG_ERR("read failed");
-			close_client_connection(ctx, i);
-		} else if (valread == 0) {
-			LOG_INF("Connection closed by peer.\n");
-			close_client_connection(ctx, i);
-		} else {
-			/* Check the client preface */
-			if (strncmp(buffer, "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n",
-				    strlen(preface)) != 0) {
-				LOG_INF("Client does not support HTTP/2.\n");
-			} else {
-				LOG_INF("The client support HTTP/2.\n");
-			}
-		}
-	}
-
-	if (valread > 24) {
+	if (*valread > 24) {
 		/* Define a new buffer for the remaining data and copy it there
 		 */
 		int preface_length = strlen(preface);
-		int remaining_length = valread - strlen(preface);
+		int remaining_length = *valread - strlen(preface);
 
 		memcpy(ubuffer, buffer + preface_length, remaining_length);
 
@@ -228,30 +216,53 @@ void handle_http2_request(struct http2_server_ctx *ctx, int i, int valread)
 		stream_header_id =
 			find_headers_frame_stream_id(frames, frame_count);
 		printf("stream_header_id: %d\n", stream_header_id);
+
+		ctx->clients[i].state = STREAMING;
+
 	} else {
-		readBytes =
-			recv(ctx->client_fds[i].fd, frame, sizeof(frame), 0);
-		if (readBytes < 0) {
-			LOG_ERR("ERROR reading from socket");
-			close_client_connection(ctx, i);
-		} else if (readBytes == 0) {
-			printf("Connection closed by peer.\n");
-		}
 
-		frame_count = parse_http2_frames(frame, readBytes, frames);
-		print_http2_frames(frames, frame_count);
+		while (1) {
+			int poll_res = poll(ctx->clients[i].pollfds, 1, 0);
 
-		readBytes =
-			recv(ctx->client_fds[i].fd, frame, sizeof(frame), 0);
-		if (readBytes < 0) {
-			LOG_ERR("ERROR reading from socket");
-			close_client_connection(ctx, i);
-		} else if (readBytes == 0) {
-			printf("Connection closed by peer.\n");
+			if (poll_res > 0) {
+				if (!(ctx->clients[i].pollfds[0].revents &
+					    POLLIN))
+					break;
+
+				readBytes = recv(ctx->client_fds[i].fd, frame,
+					sizeof(frame), 0);
+				if (readBytes < 0) {
+					LOG_ERR("ERROR reading from socket");
+					close_client_connection(ctx, i);
+				} else if (readBytes == 0) {
+					printf("Connection closed by peer.\n");
+				}
+
+				frame_count = parse_http2_frames(
+					frame, readBytes, frames);
+				print_http2_frames(frames, frame_count);
+
+			} else if (poll_res == 0) {
+				LOG_INF("poll() timed out.\n");
+				ctx->clients[i].state = STREAMING;
+				break;
+			} else if (poll_res < 0) {
+				LOG_ERR("still here poll() failed.\n");
+				close_client_connection(ctx, i);
+				ctx->clients[i].state = CLOSING;
+				break;
+			}
 		}
-		frame_count = parse_http2_frames(frame, readBytes, frames);
-		print_http2_frames(frames, frame_count);
 	}
+}
+
+void handle_streaming(struct http2_server_ctx *ctx, int i)
+{
+	printf("STREAMING\n");
+	unsigned char frame[100];
+	ssize_t readBytes = 0;
+	unsigned int frame_count;
+	int stream_header_id = 1;
 
 	/* Send a SETTINGS frame after receiving a valid preface */
 	ssize_t ret = sendall(
@@ -268,14 +279,36 @@ void handle_http2_request(struct http2_server_ctx *ctx, int i, int valread)
 		return;
 	}
 
-	/* Read the header of the next frame */
-	readBytes = recv(ctx->client_fds[i].fd, frame, sizeof(frame), 0);
-	if (readBytes < 0) {
-		LOG_ERR("ERROR reading from socket");
-		close_client_connection(ctx, i);
-	} else if (readBytes == 0) {
-		LOG_INF("Connection closed by peer.\n");
+	while (1) {
+		int poll_res = poll(ctx->clients[i].pollfds, 1, 0);
+
+		if (poll_res > 0) {
+			if (!(ctx->clients[i].pollfds[0].revents & POLLIN))
+				break;
+
+			readBytes = recv(
+				ctx->client_fds[i].fd, frame, sizeof(frame), 0);
+			if (readBytes < 0) {
+				LOG_ERR("ERROR reading from socket");
+				close_client_connection(ctx, i);
+			} else if (readBytes == 0) {
+				printf("Connection closed by peer.\n");
+			}
+
+			frame_count =
+				parse_http2_frames(frame, readBytes, frames);
+			print_http2_frames(frames, frame_count);
+
+		} else if (poll_res == 0) {
+			LOG_INF("poll() timed out.\n");
+			break;
+		} else if (poll_res < 0) {
+			LOG_ERR("poll() failed.\n");
+			close_client_connection(ctx, i);
+			break;
+		}
 	}
+
 	frame_count = parse_http2_frames(frame, readBytes, frames);
 	print_http2_frames(frames, frame_count);
 
@@ -298,12 +331,34 @@ void handle_http2_request(struct http2_server_ctx *ctx, int i, int valread)
 		return;
 	}
 
-	readBytes = recv(ctx->client_fds[i].fd, frame, sizeof(frame), 0);
-	if (readBytes < 0) {
-		LOG_ERR("ERROR reading from socket");
-		close_client_connection(ctx, i);
-	} else if (readBytes == 0) {
-		LOG_INF("Connection closed by peer.\n");
+	while (1) {
+		int poll_res = poll(ctx->clients[i].pollfds, 1, 0);
+
+		if (poll_res > 0) {
+			if (!(ctx->clients[i].pollfds[0].revents & POLLIN))
+				break;
+
+			readBytes = recv(
+				ctx->client_fds[i].fd, frame, sizeof(frame), 0);
+			if (readBytes < 0) {
+				LOG_ERR("ERROR reading from socket");
+				close_client_connection(ctx, i);
+			} else if (readBytes == 0) {
+				printf("Connection closed by peer.\n");
+			}
+
+			frame_count =
+				parse_http2_frames(frame, readBytes, frames);
+			print_http2_frames(frames, frame_count);
+
+		} else if (poll_res == 0) {
+			LOG_INF("poll() timed out.\n");
+			break;
+		} else if (poll_res < 0) {
+			LOG_ERR("poll() failed.\n");
+			close_client_connection(ctx, i);
+			break;
+		}
 	}
 
 	frame_count = parse_http2_frames(frame, readBytes, frames);
@@ -314,29 +369,96 @@ void handle_http2_request(struct http2_server_ctx *ctx, int i, int valread)
 	sendData(
 		ctx->client_fds[i].fd, content, content_size, 0x00, 0x01, 0x01);
 
-	readBytes = recv(ctx->client_fds[i].fd, frame, sizeof(frame), 0);
-	if (readBytes < 0) {
-		LOG_ERR("ERROR reading from socket");
-		close_client_connection(ctx, i);
-	} else if (readBytes == 0) {
-		LOG_INF("Connection closed by peer.\n");
-	}
+	while (1) {
+		int poll_res = poll(ctx->clients[i].pollfds, 1, 0);
 
+		if (poll_res > 0) {
+			if (!(ctx->clients[i].pollfds[0].revents & POLLIN))
+				break;
+
+			readBytes = recv(
+				ctx->client_fds[i].fd, frame, sizeof(frame), 0);
+			if (readBytes < 0) {
+				LOG_ERR("ERROR reading from socket");
+				close_client_connection(ctx, i);
+			} else if (readBytes == 0) {
+				printf("Connection closed by peer.\n");
+			}
+
+			frame_count =
+				parse_http2_frames(frame, readBytes, frames);
+			print_http2_frames(frames, frame_count);
+
+		} else if (poll_res == 0) {
+			LOG_INF("poll() timed out.\n");
+			break;
+		} else if (poll_res < 0) {
+			LOG_ERR("poll() failed.\n");
+			close_client_connection(ctx, i);
+			break;
+		}
+	}
 	frame_count = parse_http2_frames(frame, readBytes, frames);
 	print_http2_frames(frames, frame_count);
 
 	atomic_set(&has_upgrade_header, 1);
 	close_client_connection(ctx, i);
+
+	ctx->clients[i].state = CLOSING;
+}
+
+void handle_closing(struct http2_server_ctx *ctx, int i)
+{
+	printf("CLOSING\n");
+	close_client_connection(ctx, i);
+}
+
+void handle_http2_request(struct http2_server_ctx *ctx, int i, int *valread)
+{
+	printf("Hello HTTP/2.\n");
+
+	/* Initialize state */
+	if (has_upgrade_header == 0)
+		ctx->clients[i].state = AWAITING_PREFACE;
+	else
+		ctx->clients[i].state = READING_SETTINGS;
+
+	ctx->clients[i].pollfds[0].fd = ctx->client_fds[i].fd;
+	ctx->clients[i].pollfds[0].events = POLLIN;
+
+	/* Handle different states */
+	while (1) {
+		switch (ctx->clients[i].state) {
+		case AWAITING_PREFACE:
+			handle_awaiting_preface(ctx, i, valread);
+			break;
+		case READING_SETTINGS:
+			handle_reading_settings(ctx, i, valread);
+			break;
+		case STREAMING:
+			handle_streaming(ctx, i);
+			break;
+		case CLOSING:
+			handle_closing(ctx, i);
+			break;
+		default:
+			LOG_ERR("Unknown state.\n");
+			close_client_connection(ctx, i);
+		}
+
+		if (ctx->clients[i].state == CLOSING)
+			break;
+	}
 }
 
 int http2_server_init(
 	struct http2_server_ctx *ctx, struct http2_server_config *config)
 {
 	/* Create a socket */
-	ctx->sockfd = socket(config->address_family, SOCK_STREAM, 0);
-	if (ctx->sockfd < 0) {
+	ctx->server_fd = socket(config->address_family, SOCK_STREAM, 0);
+	if (ctx->server_fd < 0) {
 		LOG_ERR("socket");
-		return ctx->sockfd;
+		return ctx->server_fd;
 	}
 
 	/* Set up the server address struct according to address family */
@@ -348,7 +470,7 @@ int http2_server_init(
 		serv_addr.sin_addr.s_addr = INADDR_ANY;
 		serv_addr.sin_port = htons(config->port);
 
-		if (bind(ctx->sockfd, (struct sockaddr *)&serv_addr,
+		if (bind(ctx->server_fd, (struct sockaddr *)&serv_addr,
 			    sizeof(serv_addr)) < 0) {
 			LOG_ERR("bind");
 			return -1;
@@ -361,7 +483,7 @@ int http2_server_init(
 		serv_addr.sin6_addr = in6addr_any;
 		serv_addr.sin6_port = htons(config->port);
 
-		if (bind(ctx->sockfd, (struct sockaddr *)&serv_addr,
+		if (bind(ctx->server_fd, (struct sockaddr *)&serv_addr,
 			    sizeof(serv_addr)) < 0) {
 			LOG_ERR("bind");
 			return -1;
@@ -369,18 +491,32 @@ int http2_server_init(
 	}
 
 	/* Listen for connections */
-	if (listen(ctx->sockfd, MAX_CLIENTS) < 0) {
+	if (listen(ctx->server_fd, MAX_CLIENTS) < 0) {
 		LOG_ERR("listen");
+		return -1;
+	}
+
+	/* Create an eventfd*/
+	ctx->event_fd = eventfd(0, 0);
+	if (ctx->event_fd < 0) {
+		LOG_ERR("eventfd");
 		return -1;
 	}
 
 	/* Initialize client_fds */
 	memset(ctx->client_fds, 0, sizeof(ctx->client_fds));
-	ctx->client_fds[0].fd = ctx->sockfd;
-	ctx->client_fds[0].events = POLLIN;
-	ctx->num_clients = 0;
+	memset(ctx->clients, 0, sizeof(ctx->clients));
 
-	return ctx->sockfd;
+	ctx->client_fds[0].fd = ctx->server_fd;
+	ctx->client_fds[0].events = POLLIN;
+
+	ctx->client_fds[1].fd = ctx->event_fd;
+	ctx->client_fds[1].events = POLLIN;
+
+	ctx->num_clients = 0;
+	ctx->infinite = 1;
+
+	return ctx->server_fd;
 }
 
 int http2_server_start(struct http2_server_ctx *ctx)
@@ -388,24 +524,17 @@ int http2_server_start(struct http2_server_ctx *ctx)
 	printf("\nType 'quit' to quit\n\n");
 	printf("Waiting for incoming connections...\n");
 
-	int total_received = 0;
-	int offset = 0;
+	eventfd_t value;
 
-	while (1) {
-		int ret = poll(ctx->client_fds, ctx->num_clients + 1, 1000);
-
-		if (k_sem_take(&my_sem, K_NO_WAIT) == 0) {
-			printf("Shutting down...\n");
-			exit(1);
-		}
-		k_sleep(K_MSEC(100));
+	do {
+		int ret = poll(ctx->client_fds, ctx->num_clients + 2, 1000);
 
 		if (ret < 0) {
-			perror("poll failed");
-			exit(EXIT_FAILURE);
+			LOG_ERR("poll failed");
+			return -1;
 		}
 
-		for (int i = 0; i <= ctx->num_clients; i++) {
+		for (int i = 0; i <= ctx->num_clients + 1; i++) {
 			if (ctx->client_fds[i].revents & POLLERR) {
 				LOG_ERR("Error on fd %d\n",
 					ctx->client_fds[i].fd);
@@ -424,7 +553,8 @@ int http2_server_start(struct http2_server_ctx *ctx)
 				continue;
 
 			if (i == 0) {
-				int new_socket = accept_new_client(ctx->sockfd);
+				int new_socket =
+					accept_new_client(ctx->server_fd);
 
 				for (int j = 1; j < MAX_CLIENTS; j++) {
 					if (ctx->client_fds[j].fd != 0)
@@ -440,9 +570,16 @@ int http2_server_start(struct http2_server_ctx *ctx)
 				}
 				continue;
 			}
-			/* Read the client data */
-			int valread = recv(ctx->client_fds[i].fd,
-				buffer + offset, BUFFER_SIZE - offset, 0);
+
+			if (i == 1) {
+				eventfd_read(ctx->event_fd, &value);
+				printf("Received stop event. exiting ..\n");
+
+				return 0;
+			}
+
+			int valread = recv(
+				ctx->client_fds[i].fd, buffer, BUFFER_SIZE, 0);
 
 			if (valread < 0) {
 				LOG_ERR("ERROR reading from socket");
@@ -456,31 +593,16 @@ int http2_server_start(struct http2_server_ctx *ctx)
 				continue;
 			}
 
-			//printf("buffer %s\n", buffer);
-			http_parser_init(&parser, HTTP_REQUEST);
-			http_parser_settings_init(&parserSettings);
-			parserSettings.on_header_field = on_header_field;
-			http_parser_execute(&parser, &parserSettings,
-				buffer + offset, valread);
-
-			total_received += valread;
-			offset += valread;
-
-			if (offset <= BUFFER_SIZE)
-				offset = 0;
-
 			/* Check the client preface */
-			if ((strncmp(buffer, preface, strlen(preface)) != 0) &&
-				(has_upgrade_header == 1)) {
+			if (strncmp(buffer, preface, strlen(preface)) != 0) {
 				LOG_INF("Client does not support HTTP/2.\n");
-				handle_http1_request(ctx, i);
+				handle_http1_request(ctx, i, &valread);
 				continue;
 			}
 
-			handle_http2_request(ctx, i, valread);
+			handle_http2_request(ctx, i, &valread);
 		}
-	}
-
+	} while (ctx->infinite == 1);
 	return 0;
 }
 
