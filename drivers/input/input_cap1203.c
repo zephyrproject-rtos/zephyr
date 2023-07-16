@@ -6,12 +6,12 @@
 
 #define DT_DRV_COMPAT microchip_cap1203
 
-#include <zephyr/drivers/kscan.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/gpio.h>
+#include <zephyr/input/input.h>
 
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(cap1203, CONFIG_KSCAN_LOG_LEVEL);
+LOG_MODULE_REGISTER(cap1203, CONFIG_INPUT_LOG_LEVEL);
 
 #define REG_MAIN_CONTROL 0x0
 #define CONTROL_INT 0x1
@@ -28,12 +28,11 @@ struct cap1203_config {
 };
 
 struct cap1203_data {
-	struct device *dev;
-	kscan_callback_t callback;
+	const struct device *dev;
 	struct k_work work;
 	/* Interrupt GPIO callback. */
 	struct gpio_callback int_gpio_cb;
-#ifdef CONFIG_KSCAN_CAP1203_POLL
+#ifdef CONFIG_INPUT_CAP1203_POLL
 	/* Timer (polling mode). */
 	struct k_timer timer;
 #endif
@@ -96,7 +95,13 @@ static int cap1203_process(const struct device *dev)
 		return r;
 	}
 
-	data->callback(dev, 0, col, pressed);
+	if (pressed) {
+		input_report_abs(dev, INPUT_ABS_X, col, false, K_FOREVER);
+		input_report_abs(dev, INPUT_ABS_Y, 0, false, K_FOREVER);
+		input_report_key(dev, INPUT_BTN_TOUCH, 1, true, K_FOREVER);
+	} else {
+		input_report_key(dev, INPUT_BTN_TOUCH, 0, true, K_FOREVER);
+	}
 
 	return 0;
 }
@@ -116,7 +121,7 @@ static void cap1203_isr_handler(const struct device *dev,
 	k_work_submit(&data->work);
 }
 
-#ifdef CONFIG_KSCAN_CAP1203_POLL
+#ifdef CONFIG_INPUT_CAP1203_POLL
 static void cap1203_timer_handler(struct k_timer *timer)
 {
 	struct cap1203_data *data = CONTAINER_OF(timer, struct cap1203_data, timer);
@@ -124,69 +129,6 @@ static void cap1203_timer_handler(struct k_timer *timer)
 	k_work_submit(&data->work);
 }
 #endif
-
-static int cap1203_configure(const struct device *dev,
-			     kscan_callback_t callback)
-{
-	struct cap1203_data *data = dev->data;
-	const struct cap1203_config *config = dev->config;
-
-	data->callback = callback;
-
-	if (config->int_gpio.port != NULL) {
-		int r;
-
-		/* Clear pending interrupt */
-		r = cap1203_clear_interrupt(&config->i2c);
-		if (r < 0) {
-			LOG_ERR("Could not clear interrupt");
-			return r;
-		}
-
-		r = cap1203_enable_interrupt(&config->i2c, true);
-		if (r < 0) {
-			LOG_ERR("Could not configure interrupt");
-			return r;
-		}
-	}
-
-	return 0;
-}
-
-static int cap1203_enable_callback(const struct device *dev)
-{
-	struct cap1203_data *data = dev->data;
-
-	const struct cap1203_config *config = dev->config;
-
-	if (config->int_gpio.port != NULL) {
-		gpio_add_callback(config->int_gpio.port, &data->int_gpio_cb);
-	}
-#ifdef CONFIG_KSCAN_CAP1203_POLL
-	else {
-		k_timer_start(&data->timer, K_MSEC(CONFIG_KSCAN_CAP1203_PERIOD),
-			      K_MSEC(CONFIG_KSCAN_CAP1203_PERIOD));
-	}
-#endif
-	return 0;
-}
-
-static int cap1203_disable_callback(const struct device *dev)
-{
-	struct cap1203_data *data = dev->data;
-
-	const struct cap1203_config *config = dev->config;
-
-	if (config->int_gpio.port != NULL) {
-		gpio_remove_callback(config->int_gpio.port, &data->int_gpio_cb);
-	}
-#ifdef CONFIG_KSCAN_CAP1203_POLL
-	else {
-		k_timer_stop(&data->timer);
-	}
-#endif
-	return 0;
-}
 
 static int cap1203_init(const struct device *dev)
 {
@@ -224,8 +166,26 @@ static int cap1203_init(const struct device *dev)
 
 		gpio_init_callback(&data->int_gpio_cb, cap1203_isr_handler,
 				   BIT(config->int_gpio.pin));
+
+		r = gpio_add_callback(config->int_gpio.port, &data->int_gpio_cb);
+		if (r < 0) {
+			LOG_ERR("Could not set gpio callback");
+			return r;
+		}
+
+		r = cap1203_clear_interrupt(&config->i2c);
+		if (r < 0) {
+			LOG_ERR("Could not clear interrupt");
+			return r;
+		}
+
+		r = cap1203_enable_interrupt(&config->i2c, true);
+		if (r < 0) {
+			LOG_ERR("Could not configure interrupt");
+			return r;
+		}
 	}
-#ifdef CONFIG_KSCAN_CAP1203_POLL
+#ifdef CONFIG_INPUT_CAP1203_POLL
 	else {
 		k_timer_init(&data->timer, cap1203_timer_handler, NULL);
 
@@ -234,17 +194,14 @@ static int cap1203_init(const struct device *dev)
 			LOG_ERR("Could not configure interrupt");
 			return r;
 		}
+
+		k_timer_start(&data->timer, K_MSEC(CONFIG_INPUT_CAP1203_PERIOD),
+			      K_MSEC(CONFIG_INPUT_CAP1203_PERIOD));
 	}
 #endif
 
 	return 0;
 }
-
-static const struct kscan_driver_api cap1203_driver_api = {
-	.config = cap1203_configure,
-	.enable_callback = cap1203_enable_callback,
-	.disable_callback = cap1203_disable_callback,
-};
 
 #define CAP1203_INIT(index)							\
 	static const struct cap1203_config cap1203_config_##index = {		\
@@ -254,7 +211,7 @@ static const struct kscan_driver_api cap1203_driver_api = {
 	static struct cap1203_data cap1203_data_##index;			\
 	DEVICE_DT_INST_DEFINE(index, cap1203_init, NULL,			\
 			      &cap1203_data_##index, &cap1203_config_##index,	\
-			      POST_KERNEL, CONFIG_KSCAN_INIT_PRIORITY,		\
-			      &cap1203_driver_api);
+			      POST_KERNEL, CONFIG_INPUT_INIT_PRIORITY,		\
+			      NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(CAP1203_INIT)
