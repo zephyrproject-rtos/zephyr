@@ -83,7 +83,7 @@ static int ntc_thermistor_init(const struct device *dev)
 	const struct ntc_thermistor_config *cfg = dev->config;
 	int err;
 
-	if (!device_is_ready(cfg->adc_channel.dev)) {
+	if (!adc_is_ready_dt(&cfg->adc_channel)) {
 		LOG_ERR("ADC controller device is not ready\n");
 		return -ENODEV;
 	}

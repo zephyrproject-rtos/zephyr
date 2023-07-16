@@ -42,7 +42,7 @@ int main(void)
 
 	/* Configure channels individually prior to sampling. */
 	for (size_t i = 0U; i < ARRAY_SIZE(adc_channels); i++) {
-		if (!device_is_ready(adc_channels[i].dev)) {
+		if (!adc_is_ready_dt(&adc_channels[i])) {
 			printk("ADC controller device %s not ready\n", adc_channels[i].dev->name);
 			return 0;
 		}
