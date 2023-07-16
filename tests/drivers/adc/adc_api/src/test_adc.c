@@ -35,7 +35,7 @@ static const int adc_channels_count = ARRAY_SIZE(adc_channels);
 
 const struct device *get_adc_device(void)
 {
-	if (!device_is_ready(adc_channels[0].dev)) {
+	if (!adc_is_ready_dt(&adc_channels[0])) {
 		printk("ADC device is not ready\n");
 		return NULL;
 	}
@@ -47,7 +47,7 @@ static void init_adc(void)
 {
 	int i, ret;
 
-	zassert_true(device_is_ready(adc_channels[0].dev), "ADC device is not ready");
+	zassert_true(adc_is_ready_dt(&adc_channels[0]), "ADC device is not ready");
 
 	for (int i = 0; i < adc_channels_count; i++) {
 		ret = adc_channel_setup_dt(&adc_channels[i]);

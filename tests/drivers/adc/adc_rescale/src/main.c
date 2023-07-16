@@ -37,7 +37,7 @@ static int init_adc(const struct adc_dt_spec *spec, int input_mv)
 {
 	int ret;
 
-	zassert_true(device_is_ready(spec->dev), "ADC device is not ready");
+	zassert_true(adc_is_ready_dt(spec), "ADC device is not ready");
 
 	ret = adc_channel_setup_dt(spec);
 	zassert_equal(ret, 0, "Setting up of the first channel failed with code %d", ret);
