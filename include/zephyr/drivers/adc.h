@@ -847,6 +847,18 @@ static inline int adc_sequence_init_dt(const struct adc_dt_spec *spec,
 }
 
 /**
+ * @brief Validate that the ADC device is ready.
+ *
+ * @param spec ADC specification from devicetree
+ *
+ * @retval true if the ADC device is ready for use and false otherwise.
+ */
+static inline bool adc_is_ready_dt(const struct adc_dt_spec *spec)
+{
+	return device_is_ready(spec->dev);
+}
+
+/**
  * @}
  */
 
