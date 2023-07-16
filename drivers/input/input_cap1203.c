@@ -19,12 +19,15 @@ LOG_MODULE_REGISTER(cap1203, CONFIG_INPUT_LOG_LEVEL);
 #define REG_INPUT_STATUS 0x03
 
 #define REG_INTERRUPT_ENABLE 0x27
-#define INTERRUPT_ENABLE 0x7
-#define INTERRUPT_DISABLE 0x0
+#define INTERRUPT_ENABLE     0x7
+#define INTERRUPT_DISABLE    0x0
+
+#define TOUCH_INPUT_COUNT 3
 
 struct cap1203_config {
 	struct i2c_dt_spec i2c;
 	struct gpio_dt_spec int_gpio;
+	const uint16_t *input_codes;
 };
 
 struct cap1203_data {
@@ -32,6 +35,7 @@ struct cap1203_data {
 	struct k_work work;
 	/* Interrupt GPIO callback. */
 	struct gpio_callback int_gpio_cb;
+	uint8_t prev_input_state;
 #ifdef CONFIG_INPUT_CAP1203_POLL
 	/* Timer (polling mode). */
 	struct k_timer timer;
@@ -65,24 +69,21 @@ static int cap1203_process(const struct device *dev)
 	struct cap1203_data *data = dev->data;
 	int r;
 	uint8_t input;
-	uint16_t col;
-	bool pressed;
+	uint8_t single_input_state;
 
 	r = i2c_reg_read_byte_dt(&config->i2c, REG_INPUT_STATUS, &input);
 	if (r < 0) {
 		return r;
 	}
 
-	pressed = !!input;
-	if (input & BIT(0)) {
-		col = 0;
+	for (uint8_t i = 0; i < TOUCH_INPUT_COUNT; i++) {
+		single_input_state = input & BIT(i);
+		if (single_input_state != (data->prev_input_state & BIT(i))) {
+			input_report_key(dev, config->input_codes[i], single_input_state, true,
+					 K_FOREVER);
+		}
 	}
-	if (input & BIT(1)) {
-		col = 1;
-	}
-	if (input & BIT(2)) {
-		col = 2;
-	}
+	data->prev_input_state = input;
 
 	LOG_DBG("event: input: %d\n", input);
 
@@ -93,14 +94,6 @@ static int cap1203_process(const struct device *dev)
 	r = cap1203_clear_interrupt(&config->i2c);
 	if (r < 0) {
 		return r;
-	}
-
-	if (pressed) {
-		input_report_abs(dev, INPUT_ABS_X, col, false, K_FOREVER);
-		input_report_abs(dev, INPUT_ABS_Y, 0, false, K_FOREVER);
-		input_report_key(dev, INPUT_BTN_TOUCH, 1, true, K_FOREVER);
-	} else {
-		input_report_key(dev, INPUT_BTN_TOUCH, 0, true, K_FOREVER);
 	}
 
 	return 0;
@@ -203,15 +196,17 @@ static int cap1203_init(const struct device *dev)
 	return 0;
 }
 
-#define CAP1203_INIT(index)							\
-	static const struct cap1203_config cap1203_config_##index = {		\
-		.i2c = I2C_DT_SPEC_INST_GET(index),				\
-		.int_gpio = GPIO_DT_SPEC_INST_GET_OR(index, int_gpios, {0}),	\
-	};									\
-	static struct cap1203_data cap1203_data_##index;			\
-	DEVICE_DT_INST_DEFINE(index, cap1203_init, NULL,			\
-			      &cap1203_data_##index, &cap1203_config_##index,	\
-			      POST_KERNEL, CONFIG_INPUT_INIT_PRIORITY,		\
+#define CAP1203_INIT(index)                                                                        \
+	static const uint16_t cap1203_input_codes_##inst[] = DT_INST_PROP(index, input_codes);     \
+	BUILD_ASSERT(DT_INST_PROP_LEN(index, input_codes) == TOUCH_INPUT_COUNT);                   \
+	static const struct cap1203_config cap1203_config_##index = {                              \
+		.i2c = I2C_DT_SPEC_INST_GET(index),                                                \
+		.int_gpio = GPIO_DT_SPEC_INST_GET_OR(index, int_gpios, {0}),                       \
+		.input_codes = cap1203_input_codes_##inst,                                         \
+	};                                                                                         \
+	static struct cap1203_data cap1203_data_##index;                                           \
+	DEVICE_DT_INST_DEFINE(index, cap1203_init, NULL, &cap1203_data_##index,                    \
+			      &cap1203_config_##index, POST_KERNEL, CONFIG_INPUT_INIT_PRIORITY,    \
 			      NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(CAP1203_INIT)
