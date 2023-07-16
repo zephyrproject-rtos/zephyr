@@ -39,8 +39,10 @@
 /* this is for storing sequence during initialization */
 __pinned_bss int init_level_sequence[4] = {0};
 __pinned_bss int init_priority_sequence[4] = {0};
+__pinned_bss int init_sub_priority_sequence[3] = {0};
 __pinned_bss unsigned int seq_level_cnt;
 __pinned_bss unsigned int seq_priority_cnt;
+__pinned_bss unsigned int seq_sub_priority_cnt;
 
 /* define driver type 1: for testing initialize levels and priorities */
 typedef int (*my_api_configure_t)(const struct device *dev, int dev_config);
@@ -126,6 +128,28 @@ static int my_driver_pri_4_init(const struct device *dev)
 	return 0;
 }
 
+/* driver init function of testing sub_priority */
+static int my_driver_sub_pri_0_init(const struct device *dev)
+{
+	init_sub_priority_sequence[0] = seq_sub_priority_cnt++;
+
+	return 0;
+}
+
+static int my_driver_sub_pri_1_init(const struct device *dev)
+{
+	init_sub_priority_sequence[1] = seq_sub_priority_cnt++;
+
+	return 0;
+}
+
+static int my_driver_sub_pri_2_init(const struct device *dev)
+{
+	init_sub_priority_sequence[2] = seq_sub_priority_cnt++;
+
+	return 0;
+}
+
 /**
  * @brief Test providing control device driver initialization order
  *
@@ -172,3 +196,13 @@ DEVICE_DEFINE(my_driver_priority_2, MY_DRIVER_PRI_2,
 DEVICE_DEFINE(my_driver_priority_3, MY_DRIVER_PRI_3,
 		&my_driver_pri_3_init, NULL, NULL, NULL, POST_KERNEL, 3,
 		&funcs_my_drivers);
+
+/* Create several devices at the same init priority that depend on each
+ * other in devicetree so that we can validate linker sorting.
+ */
+DEVICE_DT_DEFINE(DT_NODELABEL(fakedomain_0), my_driver_sub_pri_0_init,
+		NULL, NULL, NULL, APPLICATION, 33, NULL);
+DEVICE_DT_DEFINE(DT_NODELABEL(fakedomain_1), my_driver_sub_pri_1_init,
+		NULL, NULL, NULL, APPLICATION, 33, NULL);
+DEVICE_DT_DEFINE(DT_NODELABEL(fakedomain_2), my_driver_sub_pri_2_init,
+		NULL, NULL, NULL, APPLICATION, 33, NULL);
