@@ -396,10 +396,7 @@ pthread_t pthread_self(void);
  *
  * See IEEE 1003.1
  */
-static inline int pthread_equal(pthread_t pt1, pthread_t pt2)
-{
-	return (pt1 == pt2);
-}
+int pthread_equal(pthread_t pt1, pthread_t pt2);
 
 /**
  * @brief Destroy the read-write lock attributes object.
