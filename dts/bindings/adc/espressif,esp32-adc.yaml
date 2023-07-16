@@ -8,6 +8,7 @@ description: |
     - ESP32     < 9,10,11,12 >
     - ESP32-S2  < 12 >
     - ESP32-C3  < 12 >
+    - ESP32-S3  < 12 >
   For chips with configurable resolution feature (ESP32),
   maximum resolution will be used if not set explicitly.
 
