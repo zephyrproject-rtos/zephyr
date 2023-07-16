@@ -40,17 +40,17 @@ ZTEST(device_power_domain, test_demo)
 	/* Initial power state */
 	zassert_true(pm_device_is_powered(reg_0), "");
 	zassert_true(pm_device_is_powered(reg_1), "");
-	zassert_false(pm_device_is_powered(reg_chained), "");
-	zassert_false(pm_device_is_powered(dev), "");
+	zassert_true(pm_device_is_powered(reg_chained), "");
+	zassert_true(pm_device_is_powered(dev), "");
 
 	TC_PRINT("Enabling runtime power management on regulators\n");
 
-	pm_device_runtime_enable(reg_0);
-	pm_device_runtime_enable(reg_1);
-	pm_device_runtime_enable(reg_chained);
 	pm_device_runtime_enable(dev);
+	pm_device_runtime_enable(reg_chained);
+	pm_device_runtime_enable(reg_1);
+	pm_device_runtime_enable(reg_0);
 
-	/* State shouldn't have changed */
+	/* Power domains should now be suspended */
 	zassert_true(pm_device_is_powered(reg_0), "");
 	zassert_true(pm_device_is_powered(reg_1), "");
 	zassert_false(pm_device_is_powered(reg_chained), "");
