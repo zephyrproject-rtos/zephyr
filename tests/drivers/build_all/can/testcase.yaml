@@ -16,3 +16,6 @@ tests:
       - arduino_gpio
     extra_args: SHIELD=tcan4550evm
     platform_allow: frdm_k64f
+  drivers.build_all.can.mcp251xfd:
+    extra_args: SHIELD=mikroe_mcp2518fd_click
+    platform_allow: lpcxpresso55s28
