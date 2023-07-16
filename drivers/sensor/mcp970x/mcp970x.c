@@ -102,7 +102,7 @@ static int init(const struct device *dev)
 	struct mcp970x_data *data = dev->data;
 	int ret;
 
-	if (!device_is_ready(config->adc.dev)) {
+	if (!adc_is_ready_dt(&config->adc)) {
 		LOG_ERR("ADC is not ready");
 		return -ENODEV;
 	}
