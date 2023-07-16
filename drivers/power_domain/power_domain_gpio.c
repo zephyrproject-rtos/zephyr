@@ -113,7 +113,6 @@ static int pd_gpio_init(const struct device *dev)
 {
 	const struct pd_gpio_config *cfg = dev->config;
 	struct pd_gpio_data *data = dev->data;
-	int rc;
 
 	if (!device_is_ready(cfg->enable.port)) {
 		LOG_ERR("GPIO port %s is not ready", cfg->enable.port->name);
@@ -122,16 +121,8 @@ static int pd_gpio_init(const struct device *dev)
 	/* We can't know how long the domain has been off for before boot */
 	data->next_boot = K_TIMEOUT_ABS_US(cfg->off_on_delay_us);
 
-	if (pm_device_on_power_domain(dev)) {
-		/* Device is unpowered */
-		pm_device_init_off(dev);
-		rc = gpio_pin_configure_dt(&cfg->enable, GPIO_DISCONNECTED);
-	} else {
-		pm_device_init_suspended(dev);
-		rc = gpio_pin_configure_dt(&cfg->enable, GPIO_OUTPUT_INACTIVE);
-	}
-
-	return rc;
+	/* Boot according to state */
+	return pm_device_driver_init(dev, pd_gpio_pm_action);
 }
 
 #define POWER_DOMAIN_DEVICE(id)						   \
