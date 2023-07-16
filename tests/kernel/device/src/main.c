@@ -265,6 +265,7 @@ ZTEST(device, test_sys_init_multiple)
 /* this is for storing sequence during initialization */
 extern int init_level_sequence[4];
 extern int init_priority_sequence[4];
+extern int init_sub_priority_sequence[3];
 extern unsigned int seq_level_cnt;
 extern unsigned int seq_priority_cnt;
 
@@ -298,7 +299,7 @@ ZTEST(device, test_device_init_level)
 /**
  * @brief Test initialization priorities for device driver instances
  *
- * details After the defined device instances have initialized, we check the
+ * @details After the defined device instances have initialized, we check the
  * sequence number that each driver stored during initialization. If the
  * sequence of initial priority stored is corresponding with our expectation, it
  * means assigning the priority for driver instance works.
@@ -322,6 +323,25 @@ ZTEST(device, test_device_init_priority)
 			"init sequence is not correct");
 }
 
+/**
+ * @brief Test initialization sub-priorities for device driver instances
+ *
+ * @details After the defined device instances have initialized, we check the
+ * sequence number that each driver stored during initialization. If the
+ * sequence of initial priority stored is corresponding with our expectation, it
+ * means using the devicetree for sub-priority sorting works.
+ *
+ * @ingroup kernel_device_tests
+ */
+ZTEST(device, test_device_init_sub_priority)
+{
+	/* fakedomain_1 depends on fakedomain_0 which depends on fakedomain_2,
+	 * therefore we require that the initialisation runs in the reverse order.
+	 */
+	zassert_equal(init_sub_priority_sequence[0], 1, "");
+	zassert_equal(init_sub_priority_sequence[1], 2, "");
+	zassert_equal(init_sub_priority_sequence[2], 0, "");
+}
 
 /**
  * @brief Test abstraction of device drivers with common functionalities
