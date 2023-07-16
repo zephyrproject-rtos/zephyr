@@ -848,4 +848,9 @@ static int posix_thread_pool_init(void)
 	return 0;
 }
 
+int pthread_equal(pthread_t pt1, pthread_t pt2)
+{
+	return (pt1 == pt2);
+}
+
 SYS_INIT(posix_thread_pool_init, PRE_KERNEL_1, 0);
