@@ -5,6 +5,7 @@ if INPUT
 
 menu "Input drivers"
 
+source "drivers/input/Kconfig.cap1203"
 source "drivers/input/Kconfig.cst816s"
 source "drivers/input/Kconfig.ft5336"
 source "drivers/input/Kconfig.gpio_keys"
