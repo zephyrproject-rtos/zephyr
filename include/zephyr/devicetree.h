@@ -3888,6 +3888,39 @@
 #define DT_INST_STRING_UNQUOTED_OR(inst, name, default_value) \
 	DT_STRING_UNQUOTED_OR(DT_DRV_INST(inst), name, default_value)
 
+/*
+ * @brief Test if any enabled node with the given compatible is on
+ *        the given bus type
+ *
+ * This is like DT_ANY_INST_ON_BUS_STATUS_OKAY(), except it can also
+ * be useful for handling multiple compatibles in single source file.
+ *
+ * Example devicetree overlay:
+ *
+ * @code{.dts}
+ *     &i2c0 {
+ *            temp: temperature-sensor@76 {
+ *                     compatible = "vnd,some-sensor";
+ *                     reg = <0x76>;
+ *            };
+ *     };
+ * @endcode
+ *
+ * Example usage, assuming `i2c0` is an I2C bus controller node, and
+ * therefore `temp` is on an I2C bus:
+ *
+ * @code{.c}
+ *     DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(vnd_some_sensor, i2c) // 1
+ * @endcode
+ *
+ * @param compat lowercase-and-underscores compatible, without quotes
+ * @param bus a binding's bus type as a C token, lowercased and without quotes
+ * @return 1 if any enabled node with that compatible is on that bus type,
+ *         0 otherwise
+ */
+#define DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(compat, bus) \
+	IS_ENABLED(UTIL_CAT(DT_CAT(DT_COMPAT_, compat), _BUS_##bus))
+
 /**
  * @brief Test if any `DT_DRV_COMPAT` node is on a bus of a given type
  *        and has status okay
@@ -3921,7 +3954,7 @@
  *         0 otherwise
  */
 #define DT_ANY_INST_ON_BUS_STATUS_OKAY(bus) \
-	DT_COMPAT_ON_BUS_INTERNAL(DT_DRV_COMPAT, bus)
+	DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(DT_DRV_COMPAT, bus)
 
 /**
  * @brief Check if any `DT_DRV_COMPAT` node with status `okay` has a given
@@ -4253,9 +4286,6 @@
 /** @brief Helper for DT_NODE_HAS_STATUS */
 #define DT_NODE_HAS_STATUS_INTERNAL(node_id, status) \
 	IS_ENABLED(DT_CAT3(node_id, _STATUS_, status))
-/** @brief Helper for test cases and DT_ANY_INST_ON_BUS_STATUS_OKAY() */
-#define DT_COMPAT_ON_BUS_INTERNAL(compat, bus) \
-	IS_ENABLED(UTIL_CAT(DT_CAT(DT_COMPAT_, compat), _BUS_##bus))
 
 /** @brief Helper macro to OR multiple has property checks in a loop macro */
 #define DT_INST_NODE_HAS_PROP_AND_OR(inst, prop) \
