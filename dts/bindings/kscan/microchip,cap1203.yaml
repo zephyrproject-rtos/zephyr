@@ -5,7 +5,7 @@ description: CAP1203 3-channel capacitive touch sensor
 
 compatible: "microchip,cap1203"
 
-include: [kscan.yaml, i2c-device.yaml]
+include: i2c-device.yaml
 
 properties:
   int-gpios:
