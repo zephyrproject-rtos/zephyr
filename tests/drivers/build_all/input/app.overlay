@@ -76,6 +76,7 @@
 				compatible = "microchip,cap1203";
 				reg = <0x3>;
 				int-gpios = <&gpio0 0 0>;
+				input-codes = <0 1 2>;
 			};
 		};
 
