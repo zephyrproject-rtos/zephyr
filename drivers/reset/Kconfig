@@ -18,7 +18,7 @@ if RESET
 
 config RESET_INIT_PRIORITY
 	int "Reset Controller driver init priority"
-	default 40
+	default 35
 	help
 	  This option controls the priority of the reset controller device
 	  initialization. Higher priority ensures that the device is
