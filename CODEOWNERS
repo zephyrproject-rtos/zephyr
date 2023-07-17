@@ -346,6 +346,7 @@
 /drivers/ipm/ipm_stm32_ipcc.c             @arnopo
 /drivers/ipm/ipm_stm32_hsem.c             @cameled
 /drivers/ipm/ipm_esp32.c                  @uLipe
+/drivers/ipm/ipm_ivshmem.c                @uLipe
 /drivers/kscan/                           @VenkatKotakonda @franciscomunoz @sjvasanth1
 /drivers/kscan/*xec*                      @franciscomunoz @sjvasanth1
 /drivers/kscan/*ft5336*                   @MaureenHelm
