@@ -13,4 +13,7 @@ endchoice
 config DEVICE_CONFIGURATION_DATA
 	default y
 
+config NXP_IMX_EXTERNAL_SDRAM
+	default y
+
 endif # BOARD_MIMXRT1040_EVK
