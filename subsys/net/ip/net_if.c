@@ -1982,6 +1982,36 @@ bool z_vrfy_net_if_ipv6_addr_rm_by_index(int index,
 #include <syscalls/net_if_ipv6_addr_rm_by_index_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
+void net_if_ipv6_addr_foreach(struct net_if *iface, net_if_ip_addr_cb_t cb,
+			      void *user_data)
+{
+	struct net_if_ipv6 *ipv6;
+
+	if (iface == NULL) {
+		return;
+	}
+
+	net_if_lock(iface);
+
+	ipv6 = iface->config.ip.ipv6;
+	if (ipv6 == NULL) {
+		goto out;
+	}
+
+	for (int i = 0; i < NET_IF_MAX_IPV6_ADDR; i++) {
+		struct net_if_addr *if_addr = &ipv6->unicast[i];
+
+		if (!if_addr->is_used) {
+			continue;
+		}
+
+		cb(iface, if_addr, user_data);
+	}
+
+out:
+	net_if_unlock(iface);
+}
+
 struct net_if_mcast_addr *net_if_ipv6_maddr_add(struct net_if *iface,
 						const struct in6_addr *addr)
 {
@@ -3783,6 +3813,36 @@ bool z_vrfy_net_if_ipv4_addr_rm_by_index(int index,
 
 #include <syscalls/net_if_ipv4_addr_rm_by_index_mrsh.c>
 #endif /* CONFIG_USERSPACE */
+
+void net_if_ipv4_addr_foreach(struct net_if *iface, net_if_ip_addr_cb_t cb,
+			      void *user_data)
+{
+	struct net_if_ipv4 *ipv4;
+
+	if (iface == NULL) {
+		return;
+	}
+
+	net_if_lock(iface);
+
+	ipv4 = iface->config.ip.ipv4;
+	if (ipv4 == NULL) {
+		goto out;
+	}
+
+	for (int i = 0; i < NET_IF_MAX_IPV4_ADDR; i++) {
+		struct net_if_addr *if_addr = &ipv4->unicast[i];
+
+		if (!if_addr->is_used) {
+			continue;
+		}
+
+		cb(iface, if_addr, user_data);
+	}
+
+out:
+	net_if_unlock(iface);
+}
 
 static struct net_if_mcast_addr *ipv4_maddr_find(struct net_if *iface,
 						 bool is_used,
