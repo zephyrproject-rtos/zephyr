@@ -1,0 +1,32 @@
+/*
+ * Copyright (c) 2023, Thomas Kiss <thokis@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Example configuration of a TCS34725 device on an GPIO bitbanging I2C bus.
+ *
+ * Device address 0x29 is assumed. Your device may have a different
+ * address; check your device documentation if unsure.
+ */
+
+/ {
+	gpio_i2c0: gpio_i2c {
+		compatible = "gpio-i2c";
+		status = "okay";
+		clock-frequency = <I2C_BITRATE_STANDARD>;
+		sda-gpios = <&arduino_header 12 (GPIO_OPEN_DRAIN | GPIO_PULL_UP)>;
+		scl-gpios = <&arduino_header 13 (GPIO_OPEN_DRAIN | GPIO_PULL_UP)>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+	};
+};
+
+&gpio_i2c0 {
+	status = "okay";
+	tcs34725@29 {
+		compatible = "ams,tcs3472x";
+		reg = <0x29>;
+	};
+};

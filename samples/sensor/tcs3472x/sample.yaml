@@ -1,0 +1,14 @@
+sample:
+  name: TCS3472x sensor sample
+tests:
+  sample.sensor.tcs3472x:
+    harness: console
+    tags: sensors
+    platform_allow: esp32
+    integration_platforms:
+      - esp32
+    harness_config:
+      type: one_line
+      regex:
+        - "red: (.*); green: (.*); blue: (.*)"
+      fixture: fixture_i2c_tcs3472x

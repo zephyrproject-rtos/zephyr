@@ -1,0 +1,19 @@
+/*
+ * Copyright (c) 2023, Thomas Kiss <thokis@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Example configuration of a TCS34725 device on an Arduino I2C bus.
+ *
+ * Device address 0x29 is assumed. Your device may have a different
+ * address; check your device documentation if unsure.
+ */
+&arduino_i2c {
+	status = "okay";
+	tcs34725@29 {
+		compatible = "ams,tcs3472x";
+		reg = <0x29>;
+	};
+};

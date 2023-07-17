@@ -1,0 +1,19 @@
+# Copyright (c) 2023, Thomas Kiss <thokis@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config LOG
+	default y
+
+config LOG_PRINTK
+	default y
+
+config SENSOR_LOG_LEVEL
+	default 5
+
+# Enable SPI and I2C support by default so that the sample works with
+# the device connected either way. These defaults can be overridden if
+# needed.
+config I2C
+	default y
+
+source "Kconfig.zephyr"
