@@ -377,10 +377,12 @@ __subsystem struct uart_driver_api {
 	/** Console I/O function */
 	int (*err_check)(const struct device *dev);
 
+#ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
 	/** UART configuration functions */
 	int (*configure)(const struct device *dev,
 			 const struct uart_config *cfg);
 	int (*config_get)(const struct device *dev, struct uart_config *cfg);
+#endif
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 
@@ -630,6 +632,7 @@ static inline void z_impl_uart_poll_out_u16(const struct device *dev,
  * @retval -errno Negative errno code in case of failure.
  * @retval -ENOSYS If configuration is not supported by device
  *                  or driver does not support setting configuration in runtime.
+ * @retval -ENOTSUP If API is not enabled.
  */
 __syscall int uart_configure(const struct device *dev,
 			     const struct uart_config *cfg);
@@ -637,6 +640,7 @@ __syscall int uart_configure(const struct device *dev,
 static inline int z_impl_uart_configure(const struct device *dev,
 					const struct uart_config *cfg)
 {
+#ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
 	const struct uart_driver_api *api =
 				(const struct uart_driver_api *)dev->api;
 
@@ -644,6 +648,11 @@ static inline int z_impl_uart_configure(const struct device *dev,
 		return -ENOSYS;
 	}
 	return api->configure(dev, cfg);
+#else
+	ARG_UNUSED(dev);
+	ARG_UNUSED(cfg);
+	return -ENOTSUP;
+#endif
 }
 
 /**
@@ -658,6 +667,7 @@ static inline int z_impl_uart_configure(const struct device *dev,
  * @retval 0 If successful.
  * @retval -errno Negative errno code in case of failure.
  * @retval -ENOSYS If driver does not support getting current configuration.
+ * @retval -ENOTSUP If API is not enabled.
  */
 __syscall int uart_config_get(const struct device *dev,
 			      struct uart_config *cfg);
@@ -665,6 +675,7 @@ __syscall int uart_config_get(const struct device *dev,
 static inline int z_impl_uart_config_get(const struct device *dev,
 					 struct uart_config *cfg)
 {
+#ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
 	const struct uart_driver_api *api =
 				(const struct uart_driver_api *)dev->api;
 
@@ -673,6 +684,11 @@ static inline int z_impl_uart_config_get(const struct device *dev,
 	}
 
 	return api->config_get(dev, cfg);
+#else
+	ARG_UNUSED(dev);
+	ARG_UNUSED(cfg);
+	return -ENOTSUP;
+#endif
 }
 
 /**
