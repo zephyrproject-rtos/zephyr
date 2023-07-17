@@ -48,6 +48,7 @@ static void *udp_user_data;
 static bool udp_server_running;
 static bool udp_server_stop;
 static uint16_t udp_server_port;
+static struct sockaddr udp_server_addr;
 static K_SEM_DEFINE(udp_server_run, 0, 1);
 
 static inline void build_reply(struct zperf_udp_datagram *hdr,
@@ -251,7 +252,12 @@ static void udp_server_session(void)
 			goto error;
 		}
 
-		if (MY_IP4ADDR && strlen(MY_IP4ADDR)) {
+		in4_addr = &net_sin(&udp_server_addr)->sin_addr;
+
+		if (!net_ipv4_is_addr_unspecified(in4_addr)) {
+			memcpy(&in4_addr_my->sin_addr, in4_addr,
+				sizeof(struct in_addr));
+		} else if (MY_IP4ADDR && strlen(MY_IP4ADDR)) {
 			/* Use setting IP */
 			ret = zperf_get_ipv4_addr(MY_IP4ADDR,
 						  &in4_addr_my->sin_addr);
@@ -301,7 +307,12 @@ static void udp_server_session(void)
 			goto error;
 		}
 
-		if (MY_IP6ADDR && strlen(MY_IP6ADDR)) {
+		in6_addr = &net_sin6(&udp_server_addr)->sin6_addr;
+
+		if (!net_ipv6_is_addr_unspecified(in6_addr)) {
+			memcpy(&in6_addr_my->sin6_addr, in6_addr,
+				sizeof(struct in6_addr));
+		} else if (MY_IP6ADDR && strlen(MY_IP6ADDR)) {
 			/* Use setting IP */
 			ret = zperf_get_ipv6_addr(MY_IP6ADDR,
 						  MY_PREFIX_LEN_STR,
@@ -441,6 +452,7 @@ int zperf_udp_download(const struct zperf_download_params *param,
 	udp_server_port = param->port;
 	udp_server_running = true;
 	udp_server_stop = false;
+	memcpy(&udp_server_addr, &param->addr, sizeof(struct sockaddr));
 
 	k_sem_give(&udp_server_run);
 
