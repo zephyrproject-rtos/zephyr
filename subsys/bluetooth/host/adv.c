@@ -475,6 +475,12 @@ static bool valid_adv_ext_param(const struct bt_le_adv_param *param)
 		return false;
 	}
 
+	if ((param->options & BT_LE_ADV_OPT_USE_IDENTITY) &&
+	    (param->options & BT_LE_ADV_OPT_USE_RANDOM)) {
+		/* These options are mutually exclusive. */
+		return false;
+	}
+
 	return true;
 }
 
@@ -1108,6 +1114,9 @@ set_adv_state:
 	atomic_set_bit_to(adv->flags, BT_ADV_USE_IDENTITY,
 			  param->options & BT_LE_ADV_OPT_USE_IDENTITY);
 
+	atomic_set_bit_to(adv->flags, BT_ADV_USE_RANDOM,
+			  param->options & BT_LE_ADV_OPT_USE_RANDOM);
+
 	return 0;
 }
 
@@ -1254,6 +1263,9 @@ static int le_ext_adv_param_set(struct bt_le_ext_adv *adv,
 
 	atomic_set_bit_to(adv->flags, BT_ADV_EXT_ADV,
 			  param->options & BT_LE_ADV_OPT_EXT_ADV);
+
+	atomic_set_bit_to(adv->flags, BT_ADV_USE_RANDOM,
+			  param->options & BT_LE_ADV_OPT_USE_RANDOM);
 
 	return 0;
 }
@@ -1495,8 +1507,9 @@ void bt_le_adv_resume(void)
 
 	LOG_DBG("Resuming connectable advertising");
 
-	if (IS_ENABLED(CONFIG_BT_PRIVACY) &&
-	    !atomic_test_bit(adv->flags, BT_ADV_USE_IDENTITY)) {
+	if ((IS_ENABLED(CONFIG_BT_PRIVACY) &&
+	     !atomic_test_bit(adv->flags, BT_ADV_USE_IDENTITY)) ||
+	    atomic_test_bit(adv->flags, BT_ADV_USE_RANDOM)) {
 		bt_id_set_adv_private_addr(adv);
 	} else {
 		uint8_t own_addr_type;
@@ -1630,8 +1643,9 @@ int bt_le_ext_adv_start(struct bt_le_ext_adv *adv,
 			  (param->timeout > 0 || param->num_events > 0));
 
 	if (atomic_test_bit(adv->flags, BT_ADV_CONNECTABLE)) {
-		if (IS_ENABLED(CONFIG_BT_PRIVACY) &&
-		    !atomic_test_bit(adv->flags, BT_ADV_USE_IDENTITY)) {
+		if ((IS_ENABLED(CONFIG_BT_PRIVACY) &&
+		     !atomic_test_bit(adv->flags, BT_ADV_USE_IDENTITY)) ||
+		    atomic_test_bit(adv->flags, BT_ADV_USE_RANDOM)) {
 			bt_id_set_adv_private_addr(adv);
 		}
 	} else {

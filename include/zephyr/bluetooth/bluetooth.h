@@ -685,6 +685,28 @@ enum {
 	 * @note Requires @ref BT_LE_ADV_OPT_USE_NAME
 	 */
 	BT_LE_ADV_OPT_FORCE_NAME_IN_AD = BIT(18),
+
+	/**
+	 * @brief Use new random address on every connectable advertising
+	 * start.
+	 *
+	 * By default, when starting advertising using the @ref
+	 * BT_LE_ADV_OPT_CONNECTABLE option and @kconfig{CONFIG_BT_PRIVACY} is
+	 * disabled, the advertiser set uses the identity address as the
+	 * advertising address.
+	 * When this option is enabled together with @ref
+	 * BT_LE_ADV_OPT_CONNECTABLE, the advertiser set will regenerate
+	 * the advertising address on every advertising start.
+	 * If this option gets disabled, the advertiser set starts using the
+	 * identity address back again.
+	 *
+	 * @note Requires @ref BT_LE_ADV_OPT_CONNECTABLE.
+	 *
+	 * @note Cannot be set if BT_LE_ADV_OPT_USE_IDENTITY is set.
+	 *
+	 * @note Has no effect if @kconfig{CONFIG_BT_PRIVACY} is enabled.
+	 */
+	BT_LE_ADV_OPT_USE_RANDOM = BIT(19),
 };
 
 /** LE Advertising Parameters. */

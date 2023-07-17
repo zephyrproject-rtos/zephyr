@@ -130,6 +130,9 @@ enum {
 	 */
 	BT_PER_ADV_CTE_ENABLED,
 
+	/* Generate new random address and use it on every connectable advertising start. */
+	BT_ADV_USE_RANDOM,
+
 	BT_ADV_NUM_FLAGS,
 };
 
