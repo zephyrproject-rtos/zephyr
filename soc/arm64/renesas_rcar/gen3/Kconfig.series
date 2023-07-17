@@ -5,7 +5,6 @@ config SOC_SERIES_RCAR_GEN3
 	bool "Renesas RCAR Gen3 Cortex A"
 	select ARM64
 	select CPU_CORTEX_A57
-	select GIC_V2
 	select SOC_FAMILY_RCAR
 	select ARM_ARCH_TIMER
 	select CLOCK_CONTROL_RCAR_CPG_MSSR if CLOCK_CONTROL
