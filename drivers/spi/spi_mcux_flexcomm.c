@@ -590,6 +590,7 @@ static int transceive_dma(const struct device *dev,
 	SPI_Type *base = config->base;
 	int ret;
 	uint32_t word_size;
+	uint16_t data_size;
 
 	spi_context_lock(&data->ctx, asynchronous, cb, userdata, spi_cfg);
 
@@ -604,9 +605,11 @@ static int transceive_dma(const struct device *dev,
 
 	word_size = SPI_WORD_SIZE_GET(spi_cfg->operation);
 
-	data->dma_rx.dma_cfg.dest_data_size = (word_size > 8) ?
-				(sizeof(uint16_t)) : (sizeof(uint8_t));
-	data->dma_tx.dma_cfg.dest_data_size = data->dma_rx.dma_cfg.dest_data_size;
+	data_size = (word_size > 8) ? (sizeof(uint16_t)) : (sizeof(uint8_t));
+	data->dma_rx.dma_cfg.source_data_size = data_size;
+	data->dma_rx.dma_cfg.dest_data_size = data_size;
+	data->dma_tx.dma_cfg.source_data_size = data_size;
+	data->dma_tx.dma_cfg.dest_data_size = data_size;
 
 	while (data->ctx.rx_len > 0 || data->ctx.tx_len > 0) {
 		size_t dma_len;
@@ -830,7 +833,6 @@ static void spi_mcux_config_func_##id(const struct device *dev) \
 		.dma_cfg = {					\
 			.channel_direction = MEMORY_TO_PERIPHERAL,	\
 			.dma_callback = spi_mcux_dma_callback,		\
-			.source_data_size = 1,				\
 			.block_count = 2,		\
 		}							\
 	},								\
@@ -841,7 +843,6 @@ static void spi_mcux_config_func_##id(const struct device *dev) \
 		.dma_cfg = {				\
 			.channel_direction = PERIPHERAL_TO_MEMORY,	\
 			.dma_callback = spi_mcux_dma_callback,		\
-			.source_data_size = 1,				\
 			.block_count = 1,		\
 		}							\
 	}
