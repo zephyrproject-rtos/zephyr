@@ -48,10 +48,11 @@ LOG_MODULE_REGISTER(bt_mesh_gatt);
 #define ADV_OPT_USE_NAME 0
 #endif
 
-#define ADV_OPT_PROXY                                                           \
-	(BT_LE_ADV_OPT_CONNECTABLE | BT_LE_ADV_OPT_SCANNABLE |                 \
-	 BT_LE_ADV_OPT_ONE_TIME | ADV_OPT_USE_IDENTITY |                       \
-	 ADV_OPT_USE_NAME)
+#define ADV_OPT_USE_NRPA(private) ((private) ? BT_LE_ADV_OPT_USE_NRPA : 0)
+
+#define ADV_OPT_PROXY(private)                                                                     \
+	(BT_LE_ADV_OPT_CONNECTABLE | BT_LE_ADV_OPT_SCANNABLE | ADV_OPT_USE_NRPA(private) |         \
+	 BT_LE_ADV_OPT_ONE_TIME | ADV_OPT_USE_IDENTITY | ADV_OPT_USE_NAME)
 
 static void proxy_send_beacons(struct k_work *work);
 static int proxy_send(struct bt_conn *conn,
@@ -496,12 +497,14 @@ static int enc_id_adv(struct bt_mesh_subnet *sub, uint8_t type,
 {
 	struct bt_le_adv_param slow_adv_param = {
 		.id = BT_ID_DEFAULT,
-		.options = ADV_OPT_PROXY,
+		.options = ADV_OPT_PROXY(type == BT_MESH_ID_TYPE_PRIV_NET ||
+					 type == BT_MESH_ID_TYPE_PRIV_NODE),
 		ADV_SLOW_INT,
 	};
 	struct bt_le_adv_param fast_adv_param = {
 		.id = BT_ID_DEFAULT,
-		.options = ADV_OPT_PROXY,
+		.options = ADV_OPT_PROXY(type == BT_MESH_ID_TYPE_PRIV_NET ||
+					 type == BT_MESH_ID_TYPE_PRIV_NODE),
 		ADV_FAST_INT,
 	};
 	int err;
@@ -598,7 +601,7 @@ static int net_id_adv(struct bt_mesh_subnet *sub, int32_t duration)
 {
 	struct bt_le_adv_param slow_adv_param = {
 		.id = BT_ID_DEFAULT,
-		.options = ADV_OPT_PROXY,
+		.options = ADV_OPT_PROXY(false),
 		ADV_SLOW_INT,
 	};
 	int err;
