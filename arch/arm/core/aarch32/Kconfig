@@ -289,7 +289,7 @@ config FP16
 	help
 	  This option enables the half-precision (16-bit) floating point support
 	  via the `__fp16` (both IEEE and ARM alternative formats) and the
-	  `_Float16` (IEEE format only) types.
+	  `_Float16` (defined by ISO/IEC TS 18661-3:2015) types.
 
 choice
 	prompt "FP16 format"
