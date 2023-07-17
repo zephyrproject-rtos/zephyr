@@ -35,53 +35,53 @@ enum {
 
 /** OOB Type field values. */
 enum {
-	BT_MESH_STATIC_OOB_AVAILABLE = BIT(0), /* Static OOB information available */
-	BT_MESH_OOB_AUTH_REQUIRED    = BIT(1)  /* OOB authentication required */
+	BT_MESH_STATIC_OOB_AVAILABLE = BIT(0), /**< Static OOB information available */
+	BT_MESH_OOB_AUTH_REQUIRED    = BIT(1)  /**< OOB authentication required */
 };
 
 /** Available Provisioning output authentication actions. */
 typedef enum {
 	BT_MESH_NO_OUTPUT       = 0,
-	BT_MESH_BLINK           = BIT(0),
-	BT_MESH_BEEP            = BIT(1),
-	BT_MESH_VIBRATE         = BIT(2),
-	BT_MESH_DISPLAY_NUMBER  = BIT(3),
-	BT_MESH_DISPLAY_STRING  = BIT(4),
+	BT_MESH_BLINK           = BIT(0),   /**< Blink */
+	BT_MESH_BEEP            = BIT(1),   /**< Beep */
+	BT_MESH_VIBRATE         = BIT(2),   /**< Vibrate */
+	BT_MESH_DISPLAY_NUMBER  = BIT(3),   /**< Output numeric */
+	BT_MESH_DISPLAY_STRING  = BIT(4),   /**< Output alphanumeric */
 } bt_mesh_output_action_t;
 
 /** Available Provisioning input authentication actions. */
 typedef enum {
 	BT_MESH_NO_INPUT      = 0,
-	BT_MESH_PUSH          = BIT(0),
-	BT_MESH_TWIST         = BIT(1),
-	BT_MESH_ENTER_NUMBER  = BIT(2),
-	BT_MESH_ENTER_STRING  = BIT(3),
+	BT_MESH_PUSH          = BIT(0),	   /**< Push */
+	BT_MESH_TWIST         = BIT(1),	   /**< Twist */
+	BT_MESH_ENTER_NUMBER  = BIT(2),	   /**< Input number */
+	BT_MESH_ENTER_STRING  = BIT(3),	   /**< Input alphanumeric */
 } bt_mesh_input_action_t;
 
 /** Available Provisioning bearers. */
 typedef enum {
-	BT_MESH_PROV_ADV    = BIT(0),
-	BT_MESH_PROV_GATT   = BIT(1),
-	BT_MESH_PROV_REMOTE = BIT(2),
+	BT_MESH_PROV_ADV    = BIT(0),	/**< PB-ADV bearer */
+	BT_MESH_PROV_GATT   = BIT(1),	/**< PB-GATT bearer */
+	BT_MESH_PROV_REMOTE = BIT(2),	/**< PB-Remote bearer */
 } bt_mesh_prov_bearer_t;
 
 /** Out of Band information location. */
 typedef enum {
-	BT_MESH_PROV_OOB_OTHER       = BIT(0),
-	BT_MESH_PROV_OOB_URI         = BIT(1),
-	BT_MESH_PROV_OOB_2D_CODE     = BIT(2),
-	BT_MESH_PROV_OOB_BAR_CODE    = BIT(3),
-	BT_MESH_PROV_OOB_NFC         = BIT(4),
-	BT_MESH_PROV_OOB_NUMBER      = BIT(5),
-	BT_MESH_PROV_OOB_STRING      = BIT(6),
-	BT_MESH_PROV_OOB_CERTIFICATE = BIT(7),
-	BT_MESH_PROV_OOB_RECORDS     = BIT(8),
+	BT_MESH_PROV_OOB_OTHER       = BIT(0),   /**< Other */
+	BT_MESH_PROV_OOB_URI         = BIT(1),   /**< Electronic / URI */
+	BT_MESH_PROV_OOB_2D_CODE     = BIT(2),   /**< 2D machine-readable code */
+	BT_MESH_PROV_OOB_BAR_CODE    = BIT(3),   /**< Bar Code */
+	BT_MESH_PROV_OOB_NFC         = BIT(4),   /**< Near Field Communication (NFC) */
+	BT_MESH_PROV_OOB_NUMBER      = BIT(5),   /**< Number */
+	BT_MESH_PROV_OOB_STRING      = BIT(6),   /**< String */
+	BT_MESH_PROV_OOB_CERTIFICATE = BIT(7),   /**< Support for certificate-based provisioning */
+	BT_MESH_PROV_OOB_RECORDS     = BIT(8),   /**< Support for provisioning records */
 	/* 9 - 10 are reserved */
-	BT_MESH_PROV_OOB_ON_BOX      = BIT(11),
-	BT_MESH_PROV_OOB_IN_BOX      = BIT(12),
-	BT_MESH_PROV_OOB_ON_PAPER    = BIT(13),
-	BT_MESH_PROV_OOB_IN_MANUAL   = BIT(14),
-	BT_MESH_PROV_OOB_ON_DEV      = BIT(15),
+	BT_MESH_PROV_OOB_ON_BOX      = BIT(11),  /**< On box */
+	BT_MESH_PROV_OOB_IN_BOX      = BIT(12),  /**< Inside box */
+	BT_MESH_PROV_OOB_ON_PAPER    = BIT(13),  /**< On piece of paper */
+	BT_MESH_PROV_OOB_IN_MANUAL   = BIT(14),  /**< Inside manual */
+	BT_MESH_PROV_OOB_ON_DEV      = BIT(15),  /**< On device */
 } bt_mesh_prov_oob_info_t;
 
 /** Device Capabilities. */
@@ -556,7 +556,7 @@ bool bt_mesh_is_provisioned(void);
  * @{
  */
 
-/* Primary Network Key index */
+/** Primary Network Key index */
 #define BT_MESH_NET_PRIMARY                 0x000
 
 /** Relay feature */
@@ -567,6 +567,7 @@ bool bt_mesh_is_provisioned(void);
 #define BT_MESH_FEAT_FRIEND                 BIT(2)
 /** Low Power Node feature */
 #define BT_MESH_FEAT_LOW_POWER              BIT(3)
+/** Supported heartbeat publication features */
 #define BT_MESH_FEAT_SUPPORTED              (BT_MESH_FEAT_RELAY |   \
 					     BT_MESH_FEAT_PROXY |   \
 					     BT_MESH_FEAT_FRIEND |  \
