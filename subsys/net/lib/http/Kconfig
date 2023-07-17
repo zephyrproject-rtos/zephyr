@@ -30,6 +30,11 @@ config HTTP_CLIENT
 	help
 	  HTTP client API
 
+config HTTP_HPACK_TABLE
+	bool "HTTP HPACK table support"
+	help
+	  This option enables HPACK table support.
+
 config HTTP_SERVER
 	bool "HTTP Server [EXPERIMENTAL]"
 	select WARN_EXPERIMENTAL
@@ -37,8 +42,60 @@ config HTTP_SERVER
 	  HTTP server support.
 	  Note: this is a work-in-progress
 
-module = NET_HTTP
+#if HTTP_SERVER
+
+config NET_HTTP_MAX_CLIENTS
+	int "Max number of HTTP/2 clients"
+	default 3
+	range 1 100
+	help
+	  This setting determines the maximum number of HTTP/2 clients that the server can handle at once.
+
+config NET_HTTP_MAX_STREAMS
+	int "Max number of HTTP/2 streams"
+	default 2
+	range 1 10
+	help
+	  This setting determines the maximum number of HTTP/2 streams for each client.
+
+config NET_HTTP_CLIENT_BUFFER_SIZE
+	int "Client Buffer Size"
+	default 256
+	range 64 1024
+	help
+	  This setting determines the buffer size for each client.
+
+config MAX_HTTP_RESPONSE_SIZE
+	int "Maximum HTTP Response Size"
+	default 128
+	range 64 1024
+	help
+	  This setting determines the maximum size of the HTTP response that the server can handle.
+
+config MAX_HTTP_URL_LENGTH
+	int "Maximum HTTP URL Length"
+	default 64
+	range 32 256
+	help
+	  This setting determines the maximum length of the HTTP URL that the server can process.
+
+config NET_HTTP_MAX_FRAME_SIZE
+	int "Maximum Frame Size"
+	default 2048
+	range 1024 4096
+	help
+	  This setting determines the maximum size of a frame that the server can handle.
+
+#endif
+
+module = NET_HTTP_CLIENT
 module-dep = NET_LOG
 module-str = Log level for HTTP client library
 module-help = Enables HTTP client code to output debug messages.
+source "subsys/net/Kconfig.template.log_config.net"
+
+module = NET_HTTP_SERVER
+module-dep = NET_LOG
+module-str = Log level for HTTP server library
+module-help = Enables HTTP server code to output debug messages.
 source "subsys/net/Kconfig.template.log_config.net"

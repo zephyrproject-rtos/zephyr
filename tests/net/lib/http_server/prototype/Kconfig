@@ -1,0 +1,15 @@
+# Config options for http2 server sample application
+
+# Copyright (c) 2023, Emna Rekik
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "HTTP2 server sample application"
+
+config NET_HTTP2_MAX_CLIENTS
+	int "Max number of HTTP/2 clients"
+	default 10
+	range 1 1000
+	help
+	  This setting determines the maximum number of HTTP/2 clients that the server can handle at once.
+
+source "Kconfig.zephyr"
