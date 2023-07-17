@@ -46,6 +46,7 @@ static void *tcp_user_data;
 static bool tcp_server_running;
 static bool tcp_server_stop;
 static uint16_t tcp_server_port;
+static struct sockaddr tcp_server_addr;
 static K_SEM_DEFINE(tcp_server_run, 0, 1);
 
 static void tcp_received(const struct sockaddr *addr, size_t datalen)
@@ -150,6 +151,7 @@ static void tcp_server_session(void)
 
 	if (IS_ENABLED(CONFIG_NET_IPV4)) {
 		struct sockaddr_in *in4_addr = zperf_get_sin();
+		const struct in_addr *addr = NULL;
 
 		fds[SOCK_ID_IPV4_LISTEN].fd = zsock_socket(AF_INET, SOCK_STREAM,
 							   IPPROTO_TCP);
@@ -158,7 +160,12 @@ static void tcp_server_session(void)
 			goto error;
 		}
 
-		if (MY_IP4ADDR && strlen(MY_IP4ADDR)) {
+		addr = &net_sin(&tcp_server_addr)->sin_addr;
+
+		if (!net_ipv4_is_addr_unspecified(addr)) {
+			memcpy(&in4_addr->sin_addr, addr,
+				sizeof(struct in_addr));
+		} else if (MY_IP4ADDR && strlen(MY_IP4ADDR)) {
 			/* Use Setting IP */
 			ret = zperf_get_ipv4_addr(MY_IP4ADDR,
 						  &in4_addr->sin_addr);
@@ -167,9 +174,8 @@ static void tcp_server_session(void)
 				goto use_existing_ipv4;
 			}
 		} else {
-			/* Use existing IP */
-			const struct in_addr *addr;
 use_existing_ipv4:
+			/* Use existing IP */
 			addr = zperf_get_default_if_in4_addr();
 			if (!addr) {
 				NET_ERR("Unable to get IPv4 by default");
@@ -197,6 +203,7 @@ use_existing_ipv4:
 
 	if (IS_ENABLED(CONFIG_NET_IPV6)) {
 		struct sockaddr_in6 *in6_addr = zperf_get_sin6();
+		const struct in6_addr *addr = NULL;
 
 		fds[SOCK_ID_IPV6_LISTEN].fd = zsock_socket(AF_INET6, SOCK_STREAM,
 							   IPPROTO_TCP);
@@ -205,7 +212,12 @@ use_existing_ipv4:
 			goto error;
 		}
 
-		if (MY_IP6ADDR && strlen(MY_IP6ADDR)) {
+		addr = &net_sin6(&tcp_server_addr)->sin6_addr;
+
+		if (!net_ipv6_is_addr_unspecified(addr)) {
+			memcpy(&in6_addr->sin6_addr, addr,
+			       sizeof(struct in6_addr));
+		} else if (MY_IP6ADDR && strlen(MY_IP6ADDR)) {
 			/* Use Setting IP */
 			ret = zperf_get_ipv6_addr(MY_IP6ADDR,
 						  MY_PREFIX_LEN_STR,
@@ -215,9 +227,8 @@ use_existing_ipv4:
 				goto use_existing_ipv6;
 			}
 		} else {
-			/* Use existing IP */
-			const struct in6_addr *addr;
 use_existing_ipv6:
+			/* Use existing IP */
 			addr = zperf_get_default_if_in6_addr();
 			if (!addr) {
 				NET_ERR("Unable to get IPv6 by default");
@@ -387,6 +398,7 @@ int zperf_tcp_download(const struct zperf_download_params *param,
 	tcp_server_port = param->port;
 	tcp_server_running = true;
 	tcp_server_stop = false;
+	memcpy(&tcp_server_addr, &param->addr, sizeof(struct sockaddr));
 
 	k_sem_give(&tcp_server_run);
 
