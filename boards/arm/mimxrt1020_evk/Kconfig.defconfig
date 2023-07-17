@@ -15,6 +15,9 @@ endchoice
 config DEVICE_CONFIGURATION_DATA
 	default y
 
+config NXP_IMX_EXTERNAL_SDRAM
+	default y
+
 if NETWORKING
 
 config NET_L2_ETHERNET
