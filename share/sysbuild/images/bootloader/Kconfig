@@ -56,12 +56,28 @@ config BOOT_SIGNATURE_TYPE_ED25519
 endchoice
 
 config BOOT_SIGNATURE_KEY_FILE
-	string "PEM key file"
+	string "Signing PEM key file"
 	default "$(ZEPHYR_MCUBOOT_MODULE_DIR)/root-ec-p256.pem" if BOOT_SIGNATURE_TYPE_ECDSA_P256
 	default "$(ZEPHYR_MCUBOOT_MODULE_DIR)/root-ed25519.pem" if BOOT_SIGNATURE_TYPE_ED25519
 	default "$(ZEPHYR_MCUBOOT_MODULE_DIR)/root-rsa-2048.pem" if BOOT_SIGNATURE_TYPE_RSA
 	default ""
 	help
-	  Absolute path to key file to use with MCUBoot.
+	  Absolute path to signing key file to use with MCUBoot.
+
+config BOOT_ENCRYPTION
+	bool "Encrypted image support"
+	depends on !BOOT_SIGNATURE_TYPE_NONE
+	help
+	  Support encrypted images.
+
+config BOOT_ENCRYPTION_KEY_FILE
+	string "Encryption PEM key file"
+	depends on BOOT_ENCRYPTION
+	default "$(ZEPHYR_MCUBOOT_MODULE_DIR)/enc-ec256-priv.pem" if BOOT_SIGNATURE_TYPE_ECDSA_P256
+	default "$(ZEPHYR_MCUBOOT_MODULE_DIR)/enc-x25519-priv.pem" if BOOT_SIGNATURE_TYPE_ED25519
+	default "$(ZEPHYR_MCUBOOT_MODULE_DIR)/enc-rsa2048-priv.pem" if BOOT_SIGNATURE_TYPE_RSA
+	default ""
+	help
+	  Absolute path to encryption key file to use with MCUBoot.
 
 endif
