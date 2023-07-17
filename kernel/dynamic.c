@@ -41,8 +41,6 @@ static k_thread_stack_t *z_thread_stack_alloc_pool(size_t size)
 	size_t offset;
 	k_thread_stack_t *stack;
 
-	size = Z_KERNEL_STACK_SIZE_ADJUST(size);
-
 	if (size > CONFIG_DYNAMIC_THREAD_STACK_SIZE) {
 		LOG_DBG("stack size %zu is > pool stack size %d", size,
 			CONFIG_DYNAMIC_THREAD_STACK_SIZE);
