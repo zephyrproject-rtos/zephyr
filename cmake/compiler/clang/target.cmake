@@ -29,7 +29,7 @@ if(NOT "${ARCH}" STREQUAL "posix")
       -fshort-enums
       )
 
-    include(${ZEPHYR_BASE}/cmake/compiler/gcc/target_arm.cmake)
+    include(${ZEPHYR_BASE}/cmake/compiler/clang/target_arm.cmake)
   endif()
 
   foreach(file_name include/stddef.h)
