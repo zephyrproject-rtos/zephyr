@@ -107,35 +107,6 @@ static void pm_resume_devices(void)
 #endif  /* !CONFIG_PM_DEVICE_RUNTIME_EXCLUSIVE */
 #endif	/* CONFIG_PM_DEVICE */
 
-static inline void pm_exit_pos_ops(struct pm_state_info *info)
-{
-	extern __weak void
-		pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id);
-
-	if (pm_state_exit_post_ops != NULL) {
-		pm_state_exit_post_ops(info->state, info->substate_id);
-	} else {
-		/*
-		 * This function is supposed to be overridden to do SoC or
-		 * architecture specific post ops after sleep state exits.
-		 *
-		 * The kernel expects that irqs are unlocked after this.
-		 */
-
-		irq_unlock(0);
-	}
-}
-
-static inline void state_set(struct pm_state_info *info)
-{
-	extern __weak void
-		pm_state_set(enum pm_state state, uint8_t substate_id);
-
-	if (pm_state_set != NULL) {
-		pm_state_set(info->state, info->substate_id);
-	}
-}
-
 /*
  * Function called to notify when the system is entering / exiting a
  * power state
@@ -178,7 +149,7 @@ void pm_system_resume(void)
 	 * and it may schedule another thread.
 	 */
 	if (atomic_test_and_clear_bit(z_post_ops_required, id)) {
-		pm_exit_pos_ops(&z_cpus_pm_state[id]);
+		pm_state_exit_post_ops(z_cpus_pm_state[id].state, z_cpus_pm_state[id].substate_id);
 		pm_state_notify(false);
 		z_cpus_pm_state[id] = (struct pm_state_info){PM_STATE_ACTIVE,
 			0, 0};
@@ -266,7 +237,7 @@ bool pm_system_suspend(int32_t ticks)
 	/* Enter power state */
 	pm_state_notify(true);
 	atomic_set_bit(z_post_ops_required, id);
-	state_set(&z_cpus_pm_state[id]);
+	pm_state_set(z_cpus_pm_state[id].state, z_cpus_pm_state[id].substate_id);
 	pm_stats_stop();
 
 	/* Wake up sequence starts here */
