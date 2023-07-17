@@ -260,6 +260,25 @@ extern "C" {
 #define DIV_ROUND_UP(n, d) (((n) + (d) - 1) / (d))
 
 /**
+ * @brief Divide and round to the nearest integer.
+ *
+ * Example:
+ * @code{.c}
+ * DIV_ROUND_CLOSEST(5, 2); // 3
+ * DIV_ROUND_CLOSEST(5, -2); // -3
+ * DIV_ROUND_CLOSEST(5, 3); // 2
+ * @endcode
+ *
+ * @param n Numerator.
+ * @param d Denominator.
+ *
+ * @return The result of @p n / @p d, rounded to the nearest integer.
+ */
+#define DIV_ROUND_CLOSEST(n, d)	\
+	((((n) < 0) ^ ((d) < 0)) ? ((n) - ((d) / 2)) / (d) : \
+	((n) + ((d) / 2)) / (d))
+
+/**
  * @brief Ceiling function applied to @p numerator / @p divider as a fraction.
  * @deprecated Use DIV_ROUND_UP() instead.
  */
