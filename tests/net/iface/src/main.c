@@ -1069,4 +1069,66 @@ ZTEST(net_iface, test_get_by_index_from_userspace)
 	get_by_index_from_userspace();
 }
 
+static void foreach_ipv4_addr_check(struct net_if *iface,
+				    struct net_if_addr *if_addr,
+				    void *user_data)
+{
+	int *count = (int *)user_data;
+
+	(*count)++;
+
+	zassert_equal_ptr(iface, iface1, "Callback called on wrong interface");
+	zassert_mem_equal(&if_addr->address.in_addr, &my_ipv4_addr1,
+			  sizeof(struct in_addr), "Wrong IPv4 address");
+}
+
+ZTEST(net_iface, test_ipv4_addr_foreach)
+{
+	int count = 0;
+
+	/* iface1 has one IPv4 address configured */
+	net_if_ipv4_addr_foreach(iface1, foreach_ipv4_addr_check, &count);
+	zassert_equal(count, 1, "Incorrect number of callback calls");
+
+	count = 0;
+
+	/* iface4 has no IPv4 address configured */
+	net_if_ipv4_addr_foreach(iface4, foreach_ipv4_addr_check, &count);
+	zassert_equal(count, 0, "Incorrect number of callback calls");
+}
+
+static void foreach_ipv6_addr_check(struct net_if *iface,
+				    struct net_if_addr *if_addr,
+				    void *user_data)
+{
+	int *count = (int *)user_data;
+
+	(*count)++;
+
+	zassert_equal_ptr(iface, iface1, "Callback called on wrong interface");
+
+	if (net_ipv6_is_ll_addr(&if_addr->address.in6_addr)) {
+		zassert_mem_equal(&if_addr->address.in6_addr, &ll_addr,
+				  sizeof(struct in6_addr), "Wrong IPv6 address");
+	} else {
+		zassert_mem_equal(&if_addr->address.in6_addr, &my_addr1,
+				  sizeof(struct in6_addr), "Wrong IPv6 address");
+	}
+}
+
+ZTEST(net_iface, test_ipv6_addr_foreach)
+{
+	int count = 0;
+
+	/* iface1 has two IPv6 addresses configured */
+	net_if_ipv6_addr_foreach(iface1, foreach_ipv6_addr_check, &count);
+	zassert_equal(count, 2, "Incorrect number of callback calls");
+
+	count = 0;
+
+	/* iface4 has no IPv6 address configured */
+	net_if_ipv6_addr_foreach(iface4, foreach_ipv6_addr_check, &count);
+	zassert_equal(count, 0, "Incorrect number of callback calls");
+}
+
 ZTEST_SUITE(net_iface, NULL, iface_setup, NULL, NULL, iface_teardown);
