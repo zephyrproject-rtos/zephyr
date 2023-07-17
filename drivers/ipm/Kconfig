@@ -38,10 +38,21 @@ config ESP32_SOFT_IPM
 	help
 	  Interprocessor driver for ESP32 when using AMP.
 
+config IPM_IVSHMEM
+	bool "IPM driver based on IVSHMEM-Doorbell"
+	default y
+	depends on DT_HAS_LINARO_IVSHMEM_IPM_ENABLED
+	depends on IVSHMEM
+	depends on IVSHMEM_DOORBELL
+	help
+	  Interprocessor driver using IVSHMEM Doorbell mechanism.
+
 source "drivers/ipm/Kconfig.nrfx"
 source "drivers/ipm/Kconfig.imx"
 source "drivers/ipm/Kconfig.stm32"
 source "drivers/ipm/Kconfig.intel_adsp"
+source "drivers/ipm/Kconfig.ivshmem"
+
 
 module = IPM
 module-str = ipm
