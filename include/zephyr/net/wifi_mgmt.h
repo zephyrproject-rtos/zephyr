@@ -174,7 +174,11 @@ enum net_event_wifi_cmd {
 #define NET_EVENT_WIFI_DISCONNECT_COMPLETE			\
 	(_NET_WIFI_EVENT | NET_EVENT_WIFI_CMD_DISCONNECT_COMPLETE)
 
-/** Wi-Fi scan parameters */
+/**
+ * @brief Wi-Fi scan parameters structure.
+ * Used to specify parameters which can control how the Wi-Fi scan
+ * is performed.
+ */
 struct wifi_scan_params {
 	/** Scan type, see enum wifi_scan_type.
 	 *
@@ -184,6 +188,10 @@ struct wifi_scan_params {
 	 * restrictions etc.
 	 */
 	enum wifi_scan_type scan_type;
+	/** Bitmap of bands to be scanned.
+	 *  Refer to ::wifi_frequency_bands for bit position of each band.
+	 */
+	uint8_t bands;
 };
 
 /** Wi-Fi scan result, each result is provided to the net_mgmt_event_callback

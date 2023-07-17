@@ -96,11 +96,17 @@ config NET_L2_CUSTOM_IEEE802154_MTU
 
 source "subsys/net/l2/canbus/Kconfig"
 
+config NET_L2_WIFI_UTILS
+	bool
+	help
+	  This provides utility functions for Wi-Fi subsystem.
+
 config NET_L2_WIFI_MGMT
 	bool "Wi-Fi Management support"
 	select NET_MGMT
 	select NET_MGMT_EVENT
 	select NET_MGMT_EVENT_INFO
+	select NET_L2_WIFI_UTILS
 	help
 	  Add support for Wi-Fi Management interface.
 
@@ -116,6 +122,7 @@ endif # NET_L2_WIFI_MGMT
 config NET_L2_WIFI_SHELL
 	bool "Wi-Fi shell module"
 	select NET_L2_WIFI_MGMT
+	select NET_L2_WIFI_UTILS
 	select SHELL_GETOPT
 	select GETOPT_LONG
 	help
