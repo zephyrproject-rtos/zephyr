@@ -686,7 +686,7 @@ struct gpio_dt_spec {
  * in the device structure.
  */
 struct gpio_driver_config {
-	/* Mask identifying pins supported by the controller.
+	/** Mask identifying pins supported by the controller.
 	 *
 	 * Initialization of this mask is the responsibility of device
 	 * instance generation in the driver.
@@ -699,7 +699,7 @@ struct gpio_driver_config {
  * element in the driver's struct driver_data declaration.
  */
 struct gpio_driver_data {
-	/* Mask identifying pins that are configured as active low.
+	/** Mask identifying pins that are configured as active low.
 	 *
 	 * Management of this mask is the responsibility of the
 	 * wrapper functions in this header.
@@ -1024,7 +1024,7 @@ static inline int gpio_pin_configure_dt(const struct gpio_dt_spec *spec,
 				  spec->dt_flags | extra_flags);
 }
 
-/*
+/**
  * @brief Get direction of select pins in a port.
  *
  * Retrieve direction of each pin specified in @p map.
