@@ -615,6 +615,8 @@ flagged.
                               # toolchain Kconfig which is sourced based on
                               # Zephyr toolchain variant and therefore not
                               # visible to compliance.
+        "BOOT_ENCRYPTION_KEY_FILE", # Used in sysbuild
+        "BOOT_ENCRYPT_IMAGE", # Used in sysbuild
         "BOOT_UPGRADE_ONLY", # Used in example adjusting MCUboot config, but
                              # symbol is defined in MCUboot itself.
         "BOOT_SERIAL_BOOT_MODE",     # Used in (sysbuild-based) test/
