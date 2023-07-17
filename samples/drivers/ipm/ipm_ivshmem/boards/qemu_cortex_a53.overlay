@@ -1,0 +1,14 @@
+/*
+ * Copyright 2023 Linaro.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+ #include "pcie_ivshmem.dtsi"
+
+ / {
+     ipm_ivshmem0: ipm_ivshmem {
+         compatible = "linaro,ivshmem-ipm";
+         ivshmem = <&ivshmem0>;
+         status = "okay";
+     };
+ };

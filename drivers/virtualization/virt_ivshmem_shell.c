@@ -76,7 +76,7 @@ static int cmd_ivshmem_shmem(const struct shell *sh,
 
 	shell_fprintf(sh, SHELL_NORMAL,
 		      "IVshmem up and running: \n"
-		      "\tShared memory: 0x%x of size %u bytes\n"
+		      "\tShared memory: 0x%lx of size %lu bytes\n"
 		      "\tPeer id: %u\n"
 		      "\tNotification vectors: %u\n",
 		      mem, size, id, vectors);
