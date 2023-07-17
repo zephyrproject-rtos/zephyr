@@ -350,7 +350,6 @@ static int uart_altera_configure(const struct device *dev,
 
 	return ret_val;
 }
-#endif /* CONFIG_UART_USE_RUNTIME_CONFIGURE */
 
 /**
  * @brief Get UART configuration and stores in *cfg_out.
@@ -377,6 +376,7 @@ static int uart_altera_config_get(const struct device *dev,
 	*cfg_out = data->uart_cfg;
 	return 0;
 }
+#endif /* CONFIG_UART_USE_RUNTIME_CONFIGURE */
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 /**
@@ -907,8 +907,8 @@ static const struct uart_driver_api uart_altera_driver_api = {
 	.err_check = uart_altera_err_check,
 #ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
 	.configure = uart_altera_configure,
-#endif /* CONFIG_UART_USE_RUNTIME_CONFIGURE */
 	.config_get = uart_altera_config_get,
+#endif /* CONFIG_UART_USE_RUNTIME_CONFIGURE */
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.fifo_fill = uart_altera_fifo_fill,
