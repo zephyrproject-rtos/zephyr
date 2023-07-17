@@ -102,7 +102,7 @@ static void z_power_soc_sleep(void)
  * For deep sleep pm_system_suspend has executed all the driver
  * power management call backs.
  */
-__weak void pm_state_set(enum pm_state state, uint8_t substate_id)
+void pm_state_set(enum pm_state state, uint8_t substate_id)
 {
 	ARG_UNUSED(substate_id);
 
@@ -126,7 +126,7 @@ __weak void pm_state_set(enum pm_state state, uint8_t substate_id)
  * an ISR on wake except for faults. We re-enable interrupts by setting PRIMASK
  * to 0.
  */
-__weak void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
+void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 {
 	ARG_UNUSED(substate_id);
 

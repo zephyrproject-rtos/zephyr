@@ -42,7 +42,7 @@ void set_mode_standby(uint8_t substate_id)
 }
 
 /* Invoke Low Power/System Off specific Tasks */
-__weak void pm_state_set(enum pm_state state, uint8_t substate_id)
+void pm_state_set(enum pm_state state, uint8_t substate_id)
 {
 	switch (state) {
 	case PM_STATE_SUSPEND_TO_IDLE:
@@ -65,7 +65,7 @@ __weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 }
 
 /* Handle SOC specific activity after Low Power Mode Exit */
-__weak void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
+void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 {
 	switch (state) {
 	case PM_STATE_SUSPEND_TO_IDLE:
