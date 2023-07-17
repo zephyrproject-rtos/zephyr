@@ -18,6 +18,8 @@
 #include <zephyr/ztest_error_hook.h>
 #include <zephyr/ztest_mock.h>
 
+#include <zephyr/sys/byteorder.h>
+
 #include <zephyr/fff.h>
 
 DEFINE_FFF_GLOBALS;

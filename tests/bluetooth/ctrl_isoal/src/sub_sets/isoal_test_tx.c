@@ -3757,7 +3757,8 @@ ZTEST(test_tx_framed, test_tx_framed_1_sdu_1_frag_1_pdu_bufSize)
  * Test Suite  :   TX framed SDU segmentation
  *
  * Tests segmentation of a single SDU contained in a single fragment
- * into three PDUs where Max PDU is less than the PDU buffer size
+ * into three PDUs where Max PDU is less than the PDU buffer size. Also tests
+ * endianness of the segment header.
  */
 ZTEST(test_tx_framed, test_tx_framed_1_sdu_1_frag_3_pdu)
 {
@@ -3854,10 +3855,11 @@ ZTEST(test_tx_framed, test_tx_framed_1_sdu_1_frag_3_pdu)
 	/* Test segmentation (Black Box) */
 	/* Valid PDUs */
 	/* PDU 1 */
-	seg_hdr[0].sc = 0;
-	seg_hdr[0].cmplt = 0;
-	seg_hdr[0].timeoffset = ref_point - sdu_timestamp;
-	seg_hdr[0].len = PDU_ISO_SEG_TIMEOFFSET_SIZE;
+	/* Test endianness */
+	WRITE_BIT(((uint8_t *)&seg_hdr[0])[0], 0, 0); /* sc */
+	WRITE_BIT(((uint8_t *)&seg_hdr[0])[0], 1, 0); /* cmplt */
+	sys_put_le24(ref_point - sdu_timestamp, (uint8_t *)(&seg_hdr[0]) + PDU_ISO_SEG_HDR_SIZE);
+	((uint8_t *)(&seg_hdr[0]))[1] = PDU_ISO_SEG_TIMEOFFSET_SIZE; /* len */
 	pdu_hdr_loc = 0;
 	pdu_write_loc = PDU_ISO_SEG_HDR_SIZE + PDU_ISO_SEG_TIMEOFFSET_SIZE;
 	sdu_read_loc = 0;
@@ -3877,7 +3879,7 @@ ZTEST(test_tx_framed, test_tx_framed_1_sdu_1_frag_3_pdu)
 			       (pdu_write_size - pdu_write_loc));
 
 	seg_hdr[1] = seg_hdr[0];
-	seg_hdr[1].len += (pdu_write_size - pdu_write_loc);
+	((uint8_t *)(&seg_hdr[1]))[1] += (pdu_write_size - pdu_write_loc);
 
 	ZASSERT_PDU_WRITE_TEST(history[2],
 			       pdu_buffer,
@@ -3895,10 +3897,10 @@ ZTEST(test_tx_framed, test_tx_framed_1_sdu_1_frag_3_pdu)
 
 	/* PDU 2 */
 	payload_number++;
-	seg_hdr[2].sc = 1;
-	seg_hdr[2].cmplt = 0;
-	seg_hdr[2].timeoffset = 0;
-	seg_hdr[2].len = 0;
+	WRITE_BIT(((uint8_t *)&seg_hdr[2])[0], 0, 1); /* sc */
+	WRITE_BIT(((uint8_t *)&seg_hdr[2])[0], 1, 0); /* cmplt */
+	sys_put_le24(0, (uint8_t *)(&seg_hdr[2]) + PDU_ISO_SEG_HDR_SIZE);
+	((uint8_t *)(&seg_hdr[2]))[1] = 0; /* len */
 	pdu_hdr_loc = 0;
 	sdu_read_loc += (pdu_write_size - pdu_write_loc);
 	pdu_write_loc = PDU_ISO_SEG_HDR_SIZE;
@@ -3918,7 +3920,7 @@ ZTEST(test_tx_framed, test_tx_framed_1_sdu_1_frag_3_pdu)
 			       (pdu_write_size - pdu_write_loc));
 
 	seg_hdr[3] = seg_hdr[2];
-	seg_hdr[3].len += (pdu_write_size - pdu_write_loc);
+	((uint8_t *)(&seg_hdr[3]))[1] += (pdu_write_size - pdu_write_loc); /* len */
 
 	ZASSERT_PDU_WRITE_TEST(history[5],
 			       pdu_buffer,
@@ -3936,10 +3938,10 @@ ZTEST(test_tx_framed, test_tx_framed_1_sdu_1_frag_3_pdu)
 
 	/* PDU 3 */
 	payload_number++;
-	seg_hdr[4].sc = 1;
-	seg_hdr[4].cmplt = 0;
-	seg_hdr[4].timeoffset = 0;
-	seg_hdr[4].len = 0;
+	WRITE_BIT(((uint8_t *)&seg_hdr[4])[0], 0, 1); /* sc */
+	WRITE_BIT(((uint8_t *)&seg_hdr[4])[0], 1, 0); /* cmplt */
+	sys_put_le24(0, (uint8_t *)(&seg_hdr[4]) + PDU_ISO_SEG_HDR_SIZE);
+	((uint8_t *)(&seg_hdr[4]))[1] = 0; /* len */
 	pdu_hdr_loc = 0;
 	sdu_read_loc += (pdu_write_size - pdu_write_loc);
 	pdu_write_loc = PDU_ISO_SEG_HDR_SIZE;
@@ -3962,8 +3964,8 @@ ZTEST(test_tx_framed, test_tx_framed_1_sdu_1_frag_3_pdu)
 			       (pdu_write_size - pdu_write_loc));
 
 	seg_hdr[5] = seg_hdr[4];
-	seg_hdr[5].cmplt = 1;
-	seg_hdr[5].len += (pdu_write_size - pdu_write_loc);
+	WRITE_BIT(((uint8_t *)&seg_hdr[5])[0], 1, 1); /* cmplt */
+	((uint8_t *)(&seg_hdr[5]))[1] += (pdu_write_size - pdu_write_loc); /* len */
 
 	ZASSERT_PDU_WRITE_TEST(history[8],
 			       pdu_buffer,
