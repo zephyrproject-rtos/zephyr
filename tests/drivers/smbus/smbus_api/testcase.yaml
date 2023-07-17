@@ -3,8 +3,9 @@ common:
     - smbus
   tags: smbus
 tests:
-  drivers.smbus.api:
-    platform_allow: qemu_x86_64
+  drivers.smbus.api.access.io:
+    extra_configs:
+      - CONFIG_SMBUS_INTEL_PCH_ACCESS_IO=y
   drivers.smbus.api.access.mmio:
     platform_exclude: qemu_x86_64
     extra_configs:
