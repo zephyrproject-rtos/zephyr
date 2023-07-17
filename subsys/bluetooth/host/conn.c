@@ -2170,6 +2170,10 @@ int bt_conn_le_start_encryption(struct bt_conn *conn, uint8_t rand[8],
 	struct bt_hci_cp_le_start_encryption *cp;
 	struct net_buf *buf;
 
+	if (len > sizeof(cp->ltk)) {
+		return -EINVAL;
+	}
+
 	buf = bt_hci_cmd_create(BT_HCI_OP_LE_START_ENCRYPTION, sizeof(*cp));
 	if (!buf) {
 		return -ENOBUFS;
