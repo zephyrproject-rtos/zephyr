@@ -47,6 +47,18 @@ config WIFI_MGMT_FORCED_PASSIVE_SCAN
 	  This doesn't guarantee that passive scan will be used, it depends
 	  on the underlying chip implementation to support and honour scan type.
 
+config WIFI_MGMT_SCAN_BANDS
+	string "Frequency bands to scan"
+	default ""
+	help
+	  Specifies the frequency bands to scan, as follows:
+	  2 - 2.4 GHz
+	  5 - 5 GHz
+	  6 - 6 GHz
+	  "" - All bands allowed by the regulatory domain.
+	  Multiple bands can be specified as comma separated band values.
+	  Only regulatory domain permitted values are allowed.
+
 config WIFI_NM
 	bool "Wi-Fi Network manager support"
 	help
