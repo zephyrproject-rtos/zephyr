@@ -26,6 +26,7 @@ source "subsys/logging/Kconfig.template.log_config"
 
 choice
 	prompt "Thread analysis print mode"
+	default THREAD_ANALYZER_USE_PRINTK
 
 config THREAD_ANALYZER_USE_LOG
 	bool "Use logger output"
