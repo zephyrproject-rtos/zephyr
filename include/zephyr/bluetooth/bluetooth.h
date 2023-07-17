@@ -32,8 +32,8 @@ extern "C" {
 #endif
 
 /**
- * @brief Generic Access Profile
- * @defgroup bt_gap Generic Access Profile
+ * @brief Generic Access Profile (GAP)
+ * @defgroup bt_gap Generic Access Profile (GAP)
  * @ingroup bluetooth
  * @{
  */
