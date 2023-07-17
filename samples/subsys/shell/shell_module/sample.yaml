@@ -8,6 +8,7 @@ tests:
     min_ram: 40
     integration_platforms:
       - native_posix
+      - intel_socfpga_agilex5_socdk
   sample.shell.shell_module.usb:
     depends_on: usb_device
     tags:
