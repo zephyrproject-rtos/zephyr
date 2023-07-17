@@ -615,3 +615,16 @@ void run_DIV_ROUND_UP(void)
 	zassert_equal(DIV_ROUND_UP(1, 2), 1);
 	zassert_equal(DIV_ROUND_UP(3, 2), 2);
 }
+
+void run_DIV_ROUND_CLOSEST(void)
+{
+	zassert_equal(DIV_ROUND_CLOSEST(0, 1), 0);
+	/* 5 / 2 = 2.5 -> 3 */
+	zassert_equal(DIV_ROUND_CLOSEST(5, 2), 3);
+	zassert_equal(DIV_ROUND_CLOSEST(5, -2), -3);
+	zassert_equal(DIV_ROUND_CLOSEST(-5, 2), -3);
+	zassert_equal(DIV_ROUND_CLOSEST(-5, -2), 3);
+	/* 7 / 3 = 2.(3) -> 2 */
+	zassert_equal(DIV_ROUND_CLOSEST(7, 3), 2);
+	zassert_equal(DIV_ROUND_CLOSEST(-7, 3), -2);
+}
