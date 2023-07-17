@@ -1210,6 +1210,29 @@ __syscall bool net_if_ipv6_addr_rm_by_index(int index,
 					    const struct in6_addr *addr);
 
 /**
+ * @typedef net_if_ip_addr_cb_t
+ * @brief Callback used while iterating over network interface IP addresses
+ *
+ * @param iface Pointer to the network interface the address belongs to
+ * @param addr Pointer to current IP address
+ * @param user_data A valid pointer to user data or NULL
+ */
+typedef void (*net_if_ip_addr_cb_t)(struct net_if *iface,
+				    struct net_if_addr *addr,
+				    void *user_data);
+
+/**
+ * @brief Go through all IPv6 addresses on a network interface and call callback
+ * for each used address.
+ *
+ * @param iface Pointer to the network interface
+ * @param cb User-supplied callback function to call
+ * @param user_data User specified data
+ */
+void net_if_ipv6_addr_foreach(struct net_if *iface, net_if_ip_addr_cb_t cb,
+			      void *user_data);
+
+/**
  * @brief Add a IPv6 multicast address to an interface
  *
  * @param iface Network interface
@@ -1839,6 +1862,17 @@ __syscall bool net_if_ipv4_addr_add_by_index(int index,
  */
 __syscall bool net_if_ipv4_addr_rm_by_index(int index,
 					    const struct in_addr *addr);
+
+/**
+ * @brief Go through all IPv4 addresses on a network interface and call callback
+ * for each used address.
+ *
+ * @param iface Pointer to the network interface
+ * @param cb User-supplied callback function to call
+ * @param user_data User specified data
+ */
+void net_if_ipv4_addr_foreach(struct net_if *iface, net_if_ip_addr_cb_t cb,
+			      void *user_data);
 
 /**
  * @brief Add a IPv4 multicast address to an interface
