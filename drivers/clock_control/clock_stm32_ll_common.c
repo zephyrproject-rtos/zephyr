@@ -17,6 +17,7 @@
 #include <zephyr/sys/__assert.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include "clock_stm32_ll_common.h"
+#include "clock_stm32_ll_mco.h"
 #include "stm32_hsem.h"
 
 /* Macros to fill up prescaler values */
@@ -33,12 +34,6 @@
 #define fn_apb2_prescaler(v) LL_RCC_APB2_DIV_ ## v
 #define apb2_prescaler(v) fn_apb2_prescaler(v)
 #endif
-
-#define fn_mco1_prescaler(v) LL_RCC_MCO1_DIV_ ## v
-#define mco1_prescaler(v) fn_mco1_prescaler(v)
-
-#define fn_mco2_prescaler(v) LL_RCC_MCO2_DIV_ ## v
-#define mco2_prescaler(v) fn_mco2_prescaler(v)
 
 #if DT_NODE_HAS_PROP(DT_NODELABEL(rcc), ahb4_prescaler)
 #define RCC_CALC_FLASH_FREQ __LL_RCC_CALC_HCLK4_FREQ
@@ -477,27 +472,6 @@ static void stm32_clock_switch_to_hsi(void)
 	LL_RCC_SetSysClkSource(LL_RCC_SYS_CLKSOURCE_HSI);
 	while (LL_RCC_GetSysClkSource() != LL_RCC_SYS_CLKSOURCE_STATUS_HSI) {
 	}
-}
-
-/*
- * MCO configure doesn't active requested clock source,
- * so please make sure the clock source was enabled.
- */
-static inline void stm32_clock_control_mco_init(void)
-{
-#ifndef CONFIG_CLOCK_STM32_MCO1_SRC_NOCLOCK
-#ifdef CONFIG_SOC_SERIES_STM32F1X
-	LL_RCC_ConfigMCO(MCO1_SOURCE);
-#else
-	LL_RCC_ConfigMCO(MCO1_SOURCE,
-			 mco1_prescaler(CONFIG_CLOCK_STM32_MCO1_DIV));
-#endif
-#endif /* CONFIG_CLOCK_STM32_MCO1_SRC_NOCLOCK */
-
-#ifndef CONFIG_CLOCK_STM32_MCO2_SRC_NOCLOCK
-	LL_RCC_ConfigMCO(MCO2_SOURCE,
-			 mco2_prescaler(CONFIG_CLOCK_STM32_MCO2_DIV));
-#endif /* CONFIG_CLOCK_STM32_MCO2_SRC_NOCLOCK */
 }
 
 __unused
