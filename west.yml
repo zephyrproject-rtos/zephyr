@@ -167,6 +167,11 @@ manifest:
       path: modules/hal/infineon
       groups:
         - hal
+    - name: hal_intel
+      revision: 89a0db5d9155484624447d62a5211bcf6f6f0387
+      path: modules/hal/intel
+      groups:
+        - hal
     - name: hal_microchip
       revision: 5d079f1683a00b801373bbbbf5d181d4e33b30d5
       path: modules/hal/microchip
