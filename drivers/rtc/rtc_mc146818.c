@@ -113,6 +113,11 @@
 #define MIN_YEAR_DIFF	0 /* YEAR - 1900 */
 #define MAX_YEAR_DIFF	99 /* YEAR - 1999 */
 
+/* Input clock frequency mapped to divider bits */
+#define RTC_IN_CLK_DIV_BITS_4194304 (0)
+#define RTC_IN_CLK_DIV_BITS_1048576 (1 << 4)
+#define RTC_IN_CLK_DIV_BITS_32768   (2 << 4)
+
 struct rtc_mc146818_data {
 	struct k_spinlock lock;
 	bool alarm_pending;
@@ -509,7 +514,10 @@ struct rtc_driver_api rtc_mc146818_driver_api = {
 #define RTC_MC146818_INIT_FN_DEFINE(n)						\
 	static int rtc_mc146818_init##n(const struct device *dev)		\
 	{									\
-		rtc_write(RTC_REG_A, 0);					\
+		rtc_write(RTC_REG_A,						\
+			  _CONCAT(RTC_IN_CLK_DIV_BITS_,				\
+				  DT_INST_PROP(n, clock_frequency)));		\
+										\
 		rtc_write(RTC_REG_B, RTC_DMODE_BIT | RTC_HFORMAT_BIT);		\
 										\
 		IRQ_CONNECT(DT_INST_IRQN(0),					\
