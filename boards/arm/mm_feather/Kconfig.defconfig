@@ -16,6 +16,9 @@ endchoice
 config DEVICE_CONFIGURATION_DATA
 	default y
 
+config NXP_IMX_EXTERNAL_SDRAM
+	default y
+
 config DISK_DRIVER_SDMMC
 	default y if DISK_DRIVERS
 

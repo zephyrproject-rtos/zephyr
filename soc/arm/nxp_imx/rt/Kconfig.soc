@@ -795,6 +795,14 @@ config OCRAM_NOCACHE
 	  Creates linker section and MPU region for OCRAM region with
 	  noncacheable attribute. OCRAM memory is useful for fast DMA transfers.
 
+config NXP_IMX_EXTERNAL_SDRAM
+	bool "Allow access to external SDRAM region"
+	help
+	  Enable access to external SDRAM region managed by the SEMC. This
+	  setting should be enabled when the application uses SDRAM, or
+	  an MPU region will be defined to disable cached access to the
+	  SDRAM memory space.
+
 config SECOND_CORE_MCUX
 	bool "Dual core operation on the RT11xx series"
 	depends on SOC_SERIES_IMX_RT11XX
