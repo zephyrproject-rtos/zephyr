@@ -440,8 +440,10 @@ static int neorv32_uart_pm_action(const struct device *dev,
 static const struct uart_driver_api neorv32_uart_driver_api = {
 	.poll_in = neorv32_uart_poll_in,
 	.poll_out = neorv32_uart_poll_out,
+#ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
 	.configure = neorv32_uart_configure,
 	.config_get = neorv32_uart_config_get,
+#endif /* CONFIG_UART_USE_RUNTIME_CONFIGURE */
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.fifo_fill = neorv32_uart_fifo_fill,
 	.fifo_read = neorv32_uart_fifo_read,

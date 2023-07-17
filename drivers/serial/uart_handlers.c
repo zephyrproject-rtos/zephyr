@@ -58,6 +58,7 @@ static inline void z_vrfy_uart_poll_out_u16(const struct device *dev,
 }
 #include <syscalls/uart_poll_out_u16_mrsh.c>
 
+#ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
 static inline int z_vrfy_uart_config_get(const struct device *dev,
 					 struct uart_config *cfg)
 {
@@ -77,6 +78,7 @@ static inline int z_vrfy_uart_configure(const struct device *dev,
 	return z_impl_uart_configure(dev, cfg);
 }
 #include <syscalls/uart_configure_mrsh.c>
+#endif
 
 #ifdef CONFIG_UART_ASYNC_API
 /* callback_set() excluded as we don't allow ISR callback installation from
