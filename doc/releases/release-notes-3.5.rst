@@ -97,6 +97,8 @@ Boards & SoC Support
   * i.MX RT SOCs no longer enable CONFIG_DEVICE_CONFIGURATION_DATA by default.
     boards using external SDRAM should set CONFIG_DEVICE_CONFIGURATION_DATA
     and CONFIG_NXP_IMX_EXTERNAL_SDRAM to enabled.
+  * i.MX RT SOCs no longer support CONFIG_OCRAM_NOCACHE, as this functionality
+    can be achieved using devicetree memory regions
 
 * Added support for these ARC boards:
 
