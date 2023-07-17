@@ -592,6 +592,20 @@ our @mode_permission_funcs = (
 	["__ATTR", 2],
 );
 
+our $api_defines = qr{(?x:
+	_ATFILE_SOURCE|
+	_BSD_SOURCE|
+	_DEFAULT_SOURCE
+	_GNU_SOURCE|
+	_ISOC11_SOURCE|
+	_ISOC99_SOURCE|
+	_POSIX_C_SOURCE|
+	_POSIX_SOURCE|
+	_SVID_SOURCE|
+	_XOPEN_SOURCE|
+	_XOPEN_SOURCE_EXTENDED|
+)};
+
 my $word_pattern = '\b[A-Z]?[a-z]{2,}\b';
 
 #Create a search pattern for all these functions to speed up a loop below
@@ -6525,6 +6539,13 @@ sub process {
 			    $fix) {
 				$fixed[$fixlinenr] =~ s/\(?\s*1\s*[ulUL]*\s*<<\s*(\d+|$Ident)\s*\)?/BIT${ull}($1)/;
 			}
+		}
+
+# check for feature test macros that request C library API extensions, violating rules A.4 and A.5
+
+		if ($line =~ /#\s*define\s+$api_defines/) {
+			ERROR("API_DEFINE",
+			      "do not specify a non-Zephyr API for libc\n" . "$here$rawline\n");
 		}
 
 # check for IS_ENABLED() without CONFIG_<FOO> ($rawline for comments too)
