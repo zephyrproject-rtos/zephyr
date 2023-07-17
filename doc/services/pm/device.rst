@@ -37,47 +37,6 @@ For more information, see :ref:`pm-device-runtime`.
 
 .. _pm-device-system-pm:
 
-System Power Management
-***********************
-
-When using this type, device power management is mostly done inside
-:c:func:`pm_system_suspend()` along with entering a CPU or SOC power state.
-
-If a decision to enter a CPU lower power state is made, the power management
-subsystem will suspend devices before changing state. The subsystem takes care
-of suspending devices following their initialization order, ensuring that
-possible dependencies between them are satisfied. As soon as the CPU wakes up
-from a sleep state, devices are resumed in the opposite order that they were
-suspended.
-
-.. note::
-
-   When using :ref:`pm-system`, device transitions can be run from the idle thread.
-   As functions in this context cannot block, transitions that intend to use blocking
-   APIs **must** check whether they can do so with :c:func:`k_can_yield`.
-
-This type of device power management can be useful when the application is not
-power aware and does not implement runtime device power management. Though,
-:ref:`Device Runtime Power Management <pm-device-runtime-pm>` is the **preferred**
-option for device power management.
-
-.. note::
-
-    When using this type of device power management, the CPU will only enter
-    a low power state only if no device is in the middle of a hardware
-    transaction that cannot be interrupted.
-
-.. note::
-
-    This type of device power management is disabled when
-    :kconfig:option:`CONFIG_PM_DEVICE_RUNTIME_EXCLUSIVE` is set to ``y`` (that is
-    the default value when :kconfig:option:`CONFIG_PM_DEVICE_RUNTIME` is enabled)
-
-.. note::
-
-   Devices are suspended only when the last active core is entering a low power
-   state and devices are resumed by the first core that becomes active.
-
 Device Power Management States
 ******************************
 

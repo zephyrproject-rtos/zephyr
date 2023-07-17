@@ -38,10 +38,6 @@
                 __device_states_end = .;
         } GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
-#if CONFIG_PM_DEVICE
-	ITERABLE_SECTION_RAM(pm_device_slots, 4)
-#endif
-
 #if defined(CONFIG_DEVICE_DEPS_DYNAMIC)
 	SECTION_DATA_PROLOGUE(device_deps,,)
 	{

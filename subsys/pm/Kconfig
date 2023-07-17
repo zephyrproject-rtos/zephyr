@@ -66,12 +66,10 @@ config PM_DEVICE
 	bool "Device Power Management"
 	help
 	  This option enables the device power management interface.  The
-	  interface consists of hook functions implemented by device drivers
-	  that get called by the power manager application when the system
-	  is going to suspend state or resuming from suspend state. This allows
-	  device drivers to do any necessary power management operations
-	  like turning off device clocks and peripherals. The device drivers
-	  may also save and restore states in these hook functions.
+	  interface consists of hook functions implemented by device drivers.
+	  This allows device drivers to do any necessary power management
+	  operations like turning off device clocks and peripherals. The device
+	  drivers may also save and restore states in these hook functions.
 
 if PM_DEVICE
 
@@ -108,14 +106,6 @@ config PM_DEVICE_RUNTIME
 	  Enable Runtime Power Management to save power. With device runtime PM
 	  enabled, devices can be suspended or resumed based on the device
 	  usage even while the CPU or system is running.
-
-config PM_DEVICE_RUNTIME_EXCLUSIVE
-	depends on PM_DEVICE_RUNTIME
-	bool "Use only on Runtime Power Management on system suspend / resume"
-	default y
-	help
-	  On system suspend / resume do not trigger the Device PM hooks but
-	  only rely on Runtime PM to manage the devices power states.
 
 endif # PM_DEVICE
 

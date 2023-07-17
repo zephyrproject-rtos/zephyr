@@ -17,10 +17,6 @@ zephyr_linker_section_configure(SECTION device_states
   KEEP INPUT ".z_devstate" ".z_devstate.*"
 )
 
-if(CONFIG_PM_DEVICE)
-  zephyr_iterable_section(NAME pm_device_slots GROUP DATA_REGION ${XIP_ALIGN_WITH_INPUT} SUBALIGN 4)
-endif()
-
 zephyr_iterable_section(NAME log_dynamic GROUP DATA_REGION ${XIP_ALIGN_WITH_INPUT} SUBALIGN 4)
 
 if(CONFIG_USERSPACE)
