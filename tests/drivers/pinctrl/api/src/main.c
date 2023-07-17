@@ -45,10 +45,10 @@ ZTEST(pinctrl_api, test_config_dev0)
 
 	scfg = &pcfg0->states[0];
 	zassert_equal(scfg->id, PINCTRL_STATE_DEFAULT);
-	zassert_equal(TEST_GET_PIN(scfg->pins[0]), 0);
-	zassert_equal(TEST_GET_PULL(scfg->pins[0]), TEST_PULL_UP);
-	zassert_equal(TEST_GET_PIN(scfg->pins[1]), 1);
-	zassert_equal(TEST_GET_PULL(scfg->pins[1]), TEST_PULL_DOWN);
+	zassert_equal(POSIX_GET_PIN(scfg->pins[0]), 0);
+	zassert_equal(POSIX_GET_PULL(scfg->pins[0]), POSIX_PULL_UP);
+	zassert_equal(POSIX_GET_PIN(scfg->pins[1]), 1);
+	zassert_equal(POSIX_GET_PULL(scfg->pins[1]), POSIX_PULL_DOWN);
 }
 
 /**
@@ -70,22 +70,22 @@ ZTEST(pinctrl_api, test_config_dev1)
 	scfg = &pcfg1->states[0];
 	zassert_equal(scfg->id, PINCTRL_STATE_DEFAULT);
 	zassert_equal(scfg->pin_cnt, 3);
-	zassert_equal(TEST_GET_PIN(scfg->pins[0]), 10);
-	zassert_equal(TEST_GET_PULL(scfg->pins[0]), TEST_PULL_DISABLE);
-	zassert_equal(TEST_GET_PIN(scfg->pins[1]), 11);
-	zassert_equal(TEST_GET_PULL(scfg->pins[1]), TEST_PULL_DISABLE);
-	zassert_equal(TEST_GET_PIN(scfg->pins[2]), 12);
-	zassert_equal(TEST_GET_PULL(scfg->pins[2]), TEST_PULL_DISABLE);
+	zassert_equal(POSIX_GET_PIN(scfg->pins[0]), 10);
+	zassert_equal(POSIX_GET_PULL(scfg->pins[0]), POSIX_PULL_DISABLE);
+	zassert_equal(POSIX_GET_PIN(scfg->pins[1]), 11);
+	zassert_equal(POSIX_GET_PULL(scfg->pins[1]), POSIX_PULL_DISABLE);
+	zassert_equal(POSIX_GET_PIN(scfg->pins[2]), 12);
+	zassert_equal(POSIX_GET_PULL(scfg->pins[2]), POSIX_PULL_DISABLE);
 
 	scfg = &pcfg1->states[1];
 	zassert_equal(scfg->id, PINCTRL_STATE_MYSTATE);
 	zassert_equal(scfg->pin_cnt, 3);
-	zassert_equal(TEST_GET_PIN(scfg->pins[0]), 10);
-	zassert_equal(TEST_GET_PULL(scfg->pins[0]), TEST_PULL_DISABLE);
-	zassert_equal(TEST_GET_PIN(scfg->pins[1]), 11);
-	zassert_equal(TEST_GET_PULL(scfg->pins[1]), TEST_PULL_UP);
-	zassert_equal(TEST_GET_PIN(scfg->pins[2]), 12);
-	zassert_equal(TEST_GET_PULL(scfg->pins[2]), TEST_PULL_DOWN);
+	zassert_equal(POSIX_GET_PIN(scfg->pins[0]), 10);
+	zassert_equal(POSIX_GET_PULL(scfg->pins[0]), POSIX_PULL_DISABLE);
+	zassert_equal(POSIX_GET_PIN(scfg->pins[1]), 11);
+	zassert_equal(POSIX_GET_PULL(scfg->pins[1]), POSIX_PULL_UP);
+	zassert_equal(POSIX_GET_PIN(scfg->pins[2]), 12);
+	zassert_equal(POSIX_GET_PULL(scfg->pins[2]), POSIX_PULL_DOWN);
 }
 
 /**
@@ -149,10 +149,10 @@ ZTEST(pinctrl_api, test_update_states)
 	zassert_equal(ret, 0);
 
 	scfg = &pcfg0->states[0];
-	zassert_equal(TEST_GET_PIN(scfg->pins[0]), 2);
-	zassert_equal(TEST_GET_PULL(scfg->pins[0]), TEST_PULL_DOWN);
-	zassert_equal(TEST_GET_PIN(scfg->pins[1]), 3);
-	zassert_equal(TEST_GET_PULL(scfg->pins[1]), TEST_PULL_UP);
+	zassert_equal(POSIX_GET_PIN(scfg->pins[0]), 2);
+	zassert_equal(POSIX_GET_PULL(scfg->pins[0]), POSIX_PULL_DOWN);
+	zassert_equal(POSIX_GET_PIN(scfg->pins[1]), 3);
+	zassert_equal(POSIX_GET_PULL(scfg->pins[1]), POSIX_PULL_UP);
 
 	ret = pinctrl_update_states(pcfg0, test_device0_alt_invalid,
 				    ARRAY_SIZE(test_device0_alt_invalid));

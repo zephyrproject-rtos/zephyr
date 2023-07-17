@@ -1,16 +1,17 @@
 /*
  * Copyright (c) 2021 Nordic Semiconductor ASA
+ * Copyright (c) 2023 MUNIC SA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 /**
  * @file
- * Testing specific helpers for pinctrl driver.
+ * Posix specific helpers for pinctrl driver.
  */
 
-#ifndef ZEPHYR_TESTS_DRIVERS_PINCTRL_API_SRC_PINCTRL_SOC_H_
-#define ZEPHYR_TESTS_DRIVERS_PINCTRL_API_SRC_PINCTRL_SOC_H_
+#ifndef _ZEPHYR_SOC_POSIX_INF_CLOCK_PINCTRL_SOC_H_
+#define _ZEPHYR_SOC_POSIX_INF_CLOCK_PINCTRL_SOC_H_
 
 #include <zephyr/devicetree.h>
 #include <zephyr/types.h>
@@ -25,13 +26,13 @@
  */
 
 /** Position of the pull field. */
-#define TEST_PULL_POS 30U
+#define POSIX_PULL_POS 30U
 /** Mask of the pull field. */
-#define TEST_PULL_MSK 0x3U
+#define POSIX_PULL_MSK GENMASK(1, 0)
 /** Position of the pin field. */
-#define TEST_PIN_POS 0U
+#define POSIX_PIN_POS 0U
 /** Mask for the pin field. */
-#define TEST_PIN_MSK 0x3FFFFFFFU
+#define POSIX_PIN_MSK GENMASK(POSIX_PULL_POS - 1, POSIX_PIN_POS)
 
 /** @} */
 
@@ -41,11 +42,11 @@
  */
 
 /** Pull-up disabled. */
-#define TEST_PULL_DISABLE 0U
+#define POSIX_PULL_DISABLE 0U
 /** Pull-down enabled. */
-#define TEST_PULL_DOWN 1U
+#define POSIX_PULL_DOWN 1U
 /** Pull-up enabled. */
-#define TEST_PULL_UP 2U
+#define POSIX_PULL_UP 2U
 
 /** @} */
 
@@ -54,14 +55,14 @@
  *
  * @param pincfg Pin configuration bit field.
  */
-#define TEST_GET_PULL(pincfg) (((pincfg) >> TEST_PULL_POS) & TEST_PULL_MSK)
+#define POSIX_GET_PULL(pincfg) (((pincfg) >> POSIX_PULL_POS) & POSIX_PULL_MSK)
 
 /**
  * @brief Utility macro to obtain port and pin combination.
  *
  * @param pincfg Pin configuration bit field.
  */
-#define TEST_GET_PIN(pincfg) (((pincfg) >> TEST_PIN_POS) & TEST_PIN_MSK)
+#define POSIX_GET_PIN(pincfg) (((pincfg) >> POSIX_PIN_POS) & POSIX_PIN_MSK)
 
 /** @cond INTERNAL_HIDDEN */
 
@@ -76,12 +77,12 @@ typedef uint32_t pinctrl_soc_pin_t;
  * @param idx Property entry index.
  */
 #define Z_PINCTRL_STATE_PIN_INIT(node_id, prop, idx)			       \
-	(((DT_PROP_BY_IDX(node_id, prop, idx) << TEST_PIN_POS)		       \
-	  & TEST_PIN_MSK) |						       \
-	 ((TEST_PULL_UP * DT_PROP(node_id, bias_pull_up))		       \
-	  << TEST_PULL_POS) |						       \
-	 ((TEST_PULL_DOWN * DT_PROP(node_id, bias_pull_down))		       \
-	  << TEST_PULL_POS)						       \
+	(((DT_PROP_BY_IDX(node_id, prop, idx) << POSIX_PIN_POS)		       \
+	  & POSIX_PIN_MSK) |						       \
+	 ((POSIX_PULL_UP * DT_PROP(node_id, bias_pull_up))		       \
+	  << POSIX_PULL_POS) |						       \
+	 ((POSIX_PULL_DOWN * DT_PROP(node_id, bias_pull_down))		       \
+	  << POSIX_PULL_POS)						       \
 	),
 
 /**
@@ -97,4 +98,4 @@ typedef uint32_t pinctrl_soc_pin_t;
 
 /** @endcond */
 
-#endif /* ZEPHYR_TESTS_DRIVERS_PINCTRL_API_SRC_PINCTRL_SOC_H_ */
+#endif /* _ZEPHYR_SOC_POSIX_INF_CLOCK_PINCTRL_SOC_H_ */
