@@ -312,6 +312,8 @@ config FP16_ALT
 	  so that this format can represent normalized values in the range of
 	  2^(-14) to 131008.
 
+	  Please note that Clang doesn't support the ARM alternative format.
+
 endchoice
 
 rsource "cortex_m/Kconfig"
