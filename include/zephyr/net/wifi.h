@@ -104,17 +104,22 @@ static inline const char *wifi_mfp_txt(enum wifi_mfp_options mfp)
 	}
 }
 
-/** IEEE 802.11 operational frequency bands (not exhaustive). */
+/**
+ * @brief IEEE 802.11 operational frequency bands (not exhaustive).
+ */
 enum wifi_frequency_bands {
-	/** 2.4GHz band. */
+	/** 2.4 GHz band. */
 	WIFI_FREQ_BAND_2_4_GHZ = 0,
-	/** 5GHz band. */
+	/** 5 GHz band. */
 	WIFI_FREQ_BAND_5_GHZ,
-	/** 6GHz band (Wi-Fi 6E, also extends to 7GHz). */
+	/** 6 GHz band (Wi-Fi 6E, also extends to 7GHz). */
 	WIFI_FREQ_BAND_6_GHZ,
 
+	/** Number of frequency bands available. */
 	__WIFI_FREQ_BAND_AFTER_LAST,
+	/** Highest frequency band available. */
 	WIFI_FREQ_BAND_MAX = __WIFI_FREQ_BAND_AFTER_LAST - 1,
+	/** Invalid frequency band */
 	WIFI_FREQ_BAND_UNKNOWN
 };
 

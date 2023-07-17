@@ -14,13 +14,15 @@ LOG_MODULE_REGISTER(net_wifi_shell, LOG_LEVEL_INF);
 #include <zephyr/kernel.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <zephyr/shell/shell.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/init.h>
 
 #include <zephyr/net/net_if.h>
-#include <zephyr/net/wifi_mgmt.h>
 #include <zephyr/net/net_event.h>
+#include <zephyr/net/wifi_mgmt.h>
+#include <zephyr/net/wifi_utils.h>
 #include <zephyr/posix/unistd.h>
 
 #include "net_private.h"
@@ -457,6 +459,7 @@ static int cmd_wifi_disconnect(const struct shell *sh, size_t argc,
 }
 
 
+
 static int wifi_scan_args_to_params(const struct shell *sh,
 				    size_t argc,
 				    char *argv[],
@@ -465,10 +468,11 @@ static int wifi_scan_args_to_params(const struct shell *sh,
 	struct getopt_state *state;
 	int opt;
 	static struct option long_options[] = {{"type", required_argument, 0, 't'},
-										   {0, 0, 0, 0}};
+					       {"bands", required_argument, 0, 'b'},
+					       {0, 0, 0, 0}};
 	int opt_index = 0;
 
-	while ((opt = getopt_long(argc, argv, "t:", long_options, &opt_index)) != -1) {
+	while ((opt = getopt_long(argc, argv, "t:b:", long_options, &opt_index)) != -1) {
 		state = getopt_state_get();
 		switch (opt) {
 		case 't':
@@ -481,9 +485,15 @@ static int wifi_scan_args_to_params(const struct shell *sh,
 				return -ENOEXEC;
 			}
 			break;
+		case 'b':
+			if (wifi_utils_parse_scan_bands(optarg, &params->bands)) {
+				shell_fprintf(sh, SHELL_ERROR, "Invalid band value(s)\n");
+				return -ENOEXEC;
+			}
+			break;
 		case '?':
 			shell_fprintf(sh, SHELL_ERROR, "Invalid option or option usage: %s\n",
-				      long_options[opt_index].name);
+						  argv[opt_index + 1]);
 			return -ENOEXEC;
 		}
 	}
@@ -1213,7 +1223,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_commands,
 	SHELL_CMD(scan, NULL,
 		  "Scan for Wi-Fi APs\n"
 		    "OPTIONS:\n"
-		    "[-t, --type <active/passive>] : Preferred mode of scan. The actual mode of scan can depend on factors such as the Wi-Fi chip implementation, regulatory domain restrictions. Default type is active.",
+		    "[-t, --type <active/passive>] : Preferred mode of scan. The actual mode of scan can depend on factors such as the Wi-Fi chip implementation, regulatory domain restrictions. Default type is active.\n"
+		    "[-b, --bands <Comma separated list of band values (2/5/6)>] : Bands to be scanned where 2: 2.4 GHz, 5: 5 GHz, 6: 6 GHz.",
 		  cmd_wifi_scan),
 	SHELL_CMD(statistics, NULL, "Wi-Fi interface statistics", cmd_wifi_stats),
 	SHELL_CMD(status, NULL, "Status of the Wi-Fi interface", cmd_wifi_status),
