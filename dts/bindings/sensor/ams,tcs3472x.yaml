@@ -1,0 +1,8 @@
+# Copyright (c) 2023, Thomas Kiss <thokis@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: TCS3472X color sensor
+
+compatible: "ams,tcs3472x"
+
+include: [sensor-device.yaml, i2c-device.yaml]

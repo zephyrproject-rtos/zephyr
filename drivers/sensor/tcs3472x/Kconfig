@@ -1,0 +1,67 @@
+# TCS3472x color sensor configuration options
+
+# Copyright (c) 2023, Thomas Kiss <thokis@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig TCS3472X
+	bool "TCS3472X sensor"
+	default y
+	depends on DT_HAS_AMS_TCS3472X_ENABLED
+	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_AMS_TCS3457X),i2c)
+	help
+	  Enable driver for TCS3472x I2C-based color sensor.
+
+if TCS3472X
+
+config TCS3472X_INT_TIME_SCALE
+	int "Integration time scale"
+	range 1 256
+	default 42
+	help
+	  Integration time set in 2.4ms increments.
+
+choice
+	prompt "TCS3472X analogue RGBC gain"
+	default TCS3472X_GAIN_1X
+	help
+	  Select analogue RGBC gain.
+config TCS3472X_GAIN_1X
+	bool "x1"
+config TCS3472X_GAIN_4X
+	bool "x4"
+config TCS3472X_GAIN_16X
+	bool "x16"
+config TCS3472X_GAIN_60X
+	bool "x60"
+endchoice
+
+config TCS3472X_PM
+	bool "TCS3472X power management"
+	default n
+	help
+	  Enable power management.
+
+if TCS3472X_PM
+
+config TCS3472X_PM_STANDBY_SCALE
+	int "Standby scale"
+	range 1 256
+	default 1
+	help
+	  Standby time set in 2.4ms increments.
+
+choice
+	prompt "TCS3472X power management mode"
+	default TCS3472X_PM_DEFAULT
+	help
+	  Select power management operation mode. Extended power managemend increases
+	  standby time by 12x.
+config TCS3472X_PM_DEFAULT
+	bool "default"
+config TCS3472X_PM_EXTENDED
+	bool "extended"
+endchoice
+
+endif # TCS3472X_PM
+
+endif # TCS3472X
