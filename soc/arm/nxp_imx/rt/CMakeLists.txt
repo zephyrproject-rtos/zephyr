@@ -11,7 +11,6 @@ zephyr_linker_sources_ifdef(CONFIG_NXP_IMX_RT_BOOT_HEADER
 
 # Add custom mpu regions
 zephyr_sources(mpu_regions.c)
-zephyr_linker_sources_ifdef(CONFIG_OCRAM_NOCACHE SECTIONS sections.ld)
 
 zephyr_linker_section_configure(
   SECTION .rom_start
