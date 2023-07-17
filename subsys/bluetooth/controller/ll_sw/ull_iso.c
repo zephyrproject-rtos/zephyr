@@ -1132,8 +1132,8 @@ uint8_t ll_iso_transmit_test(uint16_t handle, uint8_t payload_type)
 
 		/* Setup the test source */
 		err = isoal_source_create(handle, cig->lll.role, cis->framed,
-					  cis->lll.rx.bn, cis->lll.rx.ft,
-					  cis->lll.rx.max_pdu, sdu_interval,
+					  cis->lll.tx.bn, cis->lll.tx.ft,
+					  cis->lll.tx.max_pdu, sdu_interval,
 					  cig->iso_interval, cis->sync_delay,
 					  cig->sync_delay, ll_iso_pdu_alloc,
 					  ll_iso_pdu_write, ll_iso_pdu_emit,
