@@ -458,8 +458,12 @@ static int uart_ns16550_configure(const struct device *dev,
 			goto out;
 		}
 
-		clock_control_get_rate(dev_cfg->clock_dev, dev_cfg->clock_subsys,
-			   &pclk);
+		if (clock_control_get_rate(dev_cfg->clock_dev,
+					   dev_cfg->clock_subsys,
+					   &pclk) != 0) {
+			ret = -EINVAL;
+			goto out;
+		}
 	}
 
 	set_baud_rate(dev, cfg->baudrate, pclk);
