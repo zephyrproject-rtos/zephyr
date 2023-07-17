@@ -144,7 +144,7 @@ static void z_power_soc_sleep(void)
  * For deep sleep pm_system_suspend has executed all the driver
  * power management call backs.
  */
-__weak void pm_state_set(enum pm_state state, uint8_t substate_id)
+void pm_state_set(enum pm_state state, uint8_t substate_id)
 {
 	ARG_UNUSED(substate_id);
 
@@ -168,7 +168,7 @@ __weak void pm_state_set(enum pm_state state, uint8_t substate_id)
  * ISR on wake except for faults. We re-enable interrupts by undoing global disable
  * and alling irq_unlock with the same value, 0 zephyr core uses.
  */
-__weak void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
+void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 {
 	__enable_irq();
 	irq_unlock(0);
