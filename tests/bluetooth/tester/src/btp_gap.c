@@ -32,6 +32,10 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_BTTESTER_LOG_LEVEL);
 #define BT_LE_AD_DISCOV_MASK (BT_LE_AD_LIMITED | BT_LE_AD_GENERAL)
 #define ADV_BUF_LEN (sizeof(struct btp_gap_device_found_ev) + 2 * 31)
 
+#if defined(CONFIG_BT_EXT_ADV)
+static struct bt_le_ext_adv *ext_adv;
+#endif
+
 static atomic_t current_settings;
 struct bt_conn_auth_cb cb;
 static uint8_t oob_legacy_tk[16] = { 0 };
@@ -254,6 +258,9 @@ static uint8_t supported_commands(const void *cmd, uint16_t cmd_len,
 #endif /* !defined(CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY) */
 	tester_set_bit(rp->data, BTP_GAP_SET_MITM);
 	tester_set_bit(rp->data, BTP_GAP_SET_FILTER_LIST);
+#if defined(CONFIG_BT_EXT_ADV)
+	tester_set_bit(rp->data, BTP_GAP_SET_EXTENDED_ADVERTISING);
+#endif
 
 	*rsp_len = sizeof(*rp) + 4;
 
@@ -306,6 +313,7 @@ static uint8_t controller_info(const void *cmd, uint16_t cmd_len,
 	supported_settings |= BIT(BTP_GAP_SETTINGS_BONDABLE);
 	supported_settings |= BIT(BTP_GAP_SETTINGS_LE);
 	supported_settings |= BIT(BTP_GAP_SETTINGS_ADVERTISING);
+	supported_settings |= BIT(BTP_GAP_SETTINGS_EXTENDED_ADVERTISING);
 
 	rp->supported_settings = sys_cpu_to_le32(supported_settings);
 	rp->current_settings = sys_cpu_to_le32(current_settings);
@@ -533,6 +541,7 @@ static uint8_t start_advertising(const void *cmd, uint16_t cmd_len,
 	uint32_t duration;
 	uint8_t adv_len;
 	uint8_t sd_len;
+	int err;
 	int i;
 
 	/* This command is very unfortunate since after variable data there is
@@ -600,8 +609,38 @@ static uint8_t start_advertising(const void *cmd, uint16_t cmd_len,
 		return BTP_STATUS_FAILED;
 	}
 
+	if (atomic_test_bit(&current_settings, BTP_GAP_SETTINGS_EXTENDED_ADVERTISING)) {
+#if defined(CONFIG_BT_EXT_ADV)
+		param.options |= BT_LE_ADV_OPT_EXT_ADV;
+		if (ext_adv != NULL) {
+			err = bt_le_ext_adv_delete(ext_adv);
+			if (err) {
+				return BTP_STATUS_FAILED;
+			}
+
+			ext_adv = NULL;
+		}
+
+		err = bt_le_ext_adv_create(&param, NULL, &ext_adv);
+		if (err) {
+			return BTP_STATUS_FAILED;
+		}
+
+		err = bt_le_ext_adv_set_data(ext_adv, ad, adv_len, sd_len ? sd : NULL, sd_len);
+		if (err) {
+			return BTP_STATUS_FAILED;
+		}
+
+		err = bt_le_ext_adv_start(ext_adv, BT_LE_EXT_ADV_START_DEFAULT);
+#else
+		return BTP_STATUS_FAILED;
+#endif
+	} else {
+		err = bt_le_adv_start(&param, ad, adv_len, sd_len ? sd : NULL, sd_len);
+	}
+
 	/* BTP API don't allow to set empty scan response data. */
-	if (bt_le_adv_start(&param, ad, adv_len, sd_len ? sd : NULL, sd_len) < 0) {
+	if (err < 0) {
 		LOG_ERR("Failed to start advertising");
 		return BTP_STATUS_FAILED;
 	}
@@ -1212,6 +1251,28 @@ static uint8_t set_filter_list(const void *cmd, uint16_t cmd_len,
 	return BTP_STATUS_SUCCESS;
 }
 
+static uint8_t set_extended_advertising(const void *cmd, uint16_t cmd_len,
+					void *rsp, uint16_t *rsp_len)
+{
+	const struct btp_gap_set_extended_advertising_cmd *cp = cmd;
+	struct btp_gap_set_extended_advertising_rp *rp = rsp;
+
+	LOG_DBG("ext adv settings: %u", cp->settings);
+
+	if (cp->settings != 0) {
+		atomic_set_bit(&current_settings,
+			       BTP_GAP_SETTINGS_EXTENDED_ADVERTISING);
+	} else {
+		atomic_clear_bit(&current_settings,
+				 BTP_GAP_SETTINGS_EXTENDED_ADVERTISING);
+	}
+
+	rp->current_settings = sys_cpu_to_le32(current_settings);
+
+	*rsp_len = sizeof(*rp);
+	return BTP_STATUS_SUCCESS;
+}
+
 static const struct btp_handler handlers[] = {
 	{
 		.opcode = BTP_GAP_READ_SUPPORTED_COMMANDS,
@@ -1337,6 +1398,13 @@ static const struct btp_handler handlers[] = {
 		.expect_len = BTP_HANDLER_LENGTH_VARIABLE,
 		.func = set_filter_list,
 	},
+#if defined(CONFIG_BT_EXT_ADV)
+	{
+		.opcode = BTP_GAP_SET_EXTENDED_ADVERTISING,
+		.expect_len = sizeof(struct btp_gap_set_extended_advertising_cmd),
+		.func = set_extended_advertising,
+	},
+#endif
 };
 
 uint8_t tester_init_gap(void)
