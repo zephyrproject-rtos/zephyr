@@ -433,7 +433,8 @@ static bool is_free_psm(uint16_t psm)
 	return true;
 }
 
-static int accept(struct bt_conn *conn, struct bt_l2cap_chan **l2cap_chan)
+static int accept(struct bt_conn *conn, struct bt_l2cap_server *server,
+		  struct bt_l2cap_chan **l2cap_chan)
 {
 	struct channel *chan;
 
