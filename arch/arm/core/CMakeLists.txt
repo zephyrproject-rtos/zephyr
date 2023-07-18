@@ -7,7 +7,6 @@ zephyr_library_sources(
   fatal.c
   nmi.c
   nmi_on_reset.S
-  prep_c.c
   thread.c
 )
 
