@@ -42,6 +42,8 @@ GTEXT(z_arm_undef_instruction)
 GTEXT(z_arm_prefetch_abort)
 GTEXT(z_arm_data_abort)
 
+#ifndef CONFIG_USE_SWITCH
+
 .macro exception_entry mode
 	/*
 	 * Store r0-r3, r12, lr, lr_und and spsr_und into the stack to
@@ -233,3 +235,59 @@ SECTION_SUBSEC_FUNC(TEXT, __exc, z_arm_data_abort)
 	streq r1, [sp, #24 + FPU_SF_SIZE]
 
 	b z_arm_exc_exit
+
+#else
+/**
+ * @brief Undefined instruction exception handler
+ *
+ * An undefined instruction (UNDEF) exception is generated when an undefined
+ * instruction, or a VFP instruction when the VFP is not enabled, is
+ * encountered.
+ */
+SECTION_SUBSEC_FUNC(TEXT, __exc, z_arm_undef_instruction)
+	/*
+	 * The undefined instruction address is offset by 2 if the previous
+	 * mode is Thumb; otherwise, it is offset by 4.
+	 */
+	push {r0}
+	mrs r0, spsr
+	tst r0, #T_BIT
+	subeq lr, #4	/* ARM   (!T_BIT) */
+	subne lr, #2	/* Thumb (T_BIT) */
+	pop {r0}
+
+	z_arm_cortex_ar_enter_exc
+	bl z_arm_fault_undef_instruction
+	b z_arm_cortex_ar_exit_exc
+
+/**
+ * @brief Prefetch abort exception handler
+ *
+ * A prefetch abort (PABT) exception is generated when the processor marks the
+ * prefetched instruction as invalid and the instruction is executed.
+ */
+SECTION_SUBSEC_FUNC(TEXT, __exc, z_arm_prefetch_abort)
+	/*
+	 * The faulting instruction address is always offset by 4 for the
+	 * prefetch abort exceptions.
+	 */
+	sub lr, #4
+	z_arm_cortex_ar_enter_exc
+	bl z_arm_fault_prefetch
+	b z_arm_cortex_ar_exit_exc
+
+/**
+ * @brief Data abort exception handler
+ *
+ * A data abort (DABT) exception is generated when an error occurs on a data
+ * memory access. This exception can be either synchronous or asynchronous,
+ * depending on the type of fault that caused it.
+ */
+SECTION_SUBSEC_FUNC(TEXT, __exc, z_arm_data_abort)
+	sub lr, #8
+
+	z_arm_cortex_ar_enter_exc
+	bl z_arm_fault_data
+	b z_arm_cortex_ar_exit_exc
+
+#endif
