@@ -1609,6 +1609,7 @@ Kernel:
     - ceolin
     - dcpleung
     - peter-mitsis
+    - cfriedt
   files:
     - doc/kernel/
     - include/zephyr/kernel*.h
