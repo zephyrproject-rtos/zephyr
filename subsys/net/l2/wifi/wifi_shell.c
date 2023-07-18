@@ -333,6 +333,9 @@ static int __wifi_args_to_params(size_t argc, char *argv[],
 	/* SSID */
 	params->ssid = argv[0];
 	params->ssid_length = strlen(params->ssid);
+	if (params->ssid_length > WIFI_SSID_MAX_LEN) {
+		return -EINVAL;
+	}
 
 	/* Channel (optional) */
 	if ((idx < argc) && (strlen(argv[idx]) <= 3)) {
@@ -377,6 +380,14 @@ static int __wifi_args_to_params(size_t argc, char *argv[],
 				}
 				idx++;
 			}
+		}
+
+		if (params->psk_length < WIFI_PSK_MIN_LEN ||
+		    (params->security != WIFI_SECURITY_TYPE_SAE &&
+		     params->psk_length > WIFI_PSK_MAX_LEN) ||
+		    (params->security == WIFI_SECURITY_TYPE_SAE &&
+		     params->psk_length > WIFI_SAE_PSWD_MAX_LEN)) {
+			return -EINVAL;
 		}
 	} else {
 		params->security = WIFI_SECURITY_TYPE_NONE;
