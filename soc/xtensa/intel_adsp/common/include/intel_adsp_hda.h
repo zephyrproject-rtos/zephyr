@@ -392,7 +392,7 @@ static inline void intel_adsp_hda_underrun_clear(uint32_t base, uint32_t regbloc
  * @param base Base address of the IP register block
  * @param regblock_size Register block size
  * @param sid Stream ID
- * @param size size
+ * @param size
  */
 static inline void intel_adsp_hda_set_buffer_segment_ptr(uint32_t base, uint32_t regblock_size,
 							 uint32_t sid, uint32_t size)
@@ -461,7 +461,7 @@ static inline void intel_adsp_hda_clear_buffer_interrupt(uint32_t base, uint32_t
  * @param regblock_size Register block size
  * @param sid Stream ID
  *
- * @retval buffer segment ptr
+ * @retval interrupt status
  */
 static inline uint32_t intel_adsp_hda_check_buffer_interrupt(uint32_t base, uint32_t regblock_size,
 							     uint32_t sid)
