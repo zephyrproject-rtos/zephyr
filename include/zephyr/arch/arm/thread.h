@@ -32,6 +32,9 @@ struct _callee_saved {
 	uint32_t v7;  /* r10 */
 	uint32_t v8;  /* r11 */
 	uint32_t psp; /* r13 */
+#ifdef CONFIG_USE_SWITCH
+	uint32_t lr;  /* lr */
+#endif
 };
 
 typedef struct _callee_saved _callee_saved_t;
@@ -72,6 +75,10 @@ struct _thread_arch {
 	 * in its exception stack frame.
 	 */
 	struct _preempt_float  preempt_float;
+#endif
+
+#if defined(CONFIG_CPU_AARCH32_CORTEX_A) || defined(CONFIG_CPU_AARCH32_CORTEX_R)
+	int8_t exception_depth;
 #endif
 
 #if defined(CONFIG_ARM_STORE_EXC_RETURN) || defined(CONFIG_USERSPACE)

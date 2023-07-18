@@ -40,7 +40,7 @@ static ALWAYS_INLINE bool arch_is_in_isr(void)
 
 static ALWAYS_INLINE bool arch_is_in_nested_exception(const z_arch_esf_t *esf)
 {
-	return (arch_curr_cpu()->nested > 1U) ? (true) : (false);
+	return (arch_curr_cpu()->arch.exc_depth > 1U) ? (true) : (false);
 }
 
 #if defined(CONFIG_USERSPACE)
@@ -54,7 +54,9 @@ static ALWAYS_INLINE bool z_arm_preempted_thread_in_user_mode(const z_arch_esf_t
 }
 #endif
 
+#ifndef CONFIG_USE_SWITCH
 extern void z_arm_cortex_r_svc(void);
+#endif
 
 #ifdef __cplusplus
 }
