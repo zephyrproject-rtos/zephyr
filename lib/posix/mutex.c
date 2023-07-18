@@ -112,8 +112,11 @@ static int acquire_mutex(pthread_mutex_t *mu, k_timeout_t timeout)
 	struct k_mutex *m;
 	k_spinlock_key_t key;
 
+	key = k_spin_lock(&pthread_mutex_spinlock);
+
 	m = to_posix_mutex(mu);
 	if (m == NULL) {
+		k_spin_unlock(&pthread_mutex_spinlock, key);
 		return EINVAL;
 	}
 
@@ -122,7 +125,6 @@ static int acquire_mutex(pthread_mutex_t *mu, k_timeout_t timeout)
 	bit = posix_mutex_to_offset(m);
 	type = posix_mutex_type[bit];
 
-	key = k_spin_lock(&pthread_mutex_spinlock);
 	if (m->owner == k_current_get()) {
 		switch (type) {
 		case PTHREAD_MUTEX_NORMAL:
