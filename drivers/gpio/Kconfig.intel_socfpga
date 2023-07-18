@@ -1,0 +1,11 @@
+# Intel SoCFPGA GPIO configuration options
+
+# Copyright (C) 2022-2023 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config GPIO_INTEL_SOCFPGA
+	bool "Intel SoC FPGA GPIO"
+	default y
+	depends on DT_HAS_INTEL_SOCFPGA_GPIO_ENABLED
+	help
+	  Enable driver for Intel SoC FPGA GPIO
