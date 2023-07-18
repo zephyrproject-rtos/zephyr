@@ -1,7 +1,7 @@
 /* ieee802154_nrf5.h - nRF5 802.15.4 driver */
 
 /*
- * Copyright (c) 2017 Nordic Semiconductor ASA
+ * Copyright (c) 2017-2023 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -87,6 +87,11 @@ struct nrf5_802154_data {
 
 	/* Indicates if currently processed TX frame has dynamic data updated. */
 	bool tx_frame_mac_hdr_rdy;
+
+#if defined(CONFIG_IEEE802154_NRF5_MULTIPLE_CCA)
+	/* The maximum number of extra CCA attempts to be performed before transmission. */
+	uint8_t max_extra_cca_attempts;
+#endif
 };
 
 #endif /* ZEPHYR_DRIVERS_IEEE802154_IEEE802154_NRF5_H_ */
