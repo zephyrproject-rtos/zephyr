@@ -3,9 +3,9 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-description: Infineon XMC4 I2C
+description: Infineon XMC4XXX I2C
 
-compatible: "infineon,xmc4-i2c"
+compatible: "infineon,xmc4xxx-i2c"
 
 include: [i2c-controller.yaml, pinctrl-device.yaml]
 
@@ -16,19 +16,19 @@ properties:
 
   scl-src:
     description: |
-      Connects the I2C clock line (USIC DX0 input) to a specific GPIO pin.
-      The USIC DX0 input is a multiplexer which connects to different GPIO pins.
+      Connects the I2C clock line (USIC DX1 input) to a specific GPIO pin.
+      The USIC DX1 input is a multiplexer which connects to different GPIO pins.
       Refer to the XMC4XXX reference manual for the GPIO pin/mux mappings.
     type: string
     required: true
     enum:
-      - "DX0A"
-      - "DX0B"
-      - "DX0C"
-      - "DX0D"
-      - "DX0E"
-      - "DX0F"
-      - "DX0G"
+      - "DX1A"
+      - "DX1B"
+      - "DX1C"
+      - "DX1D"
+      - "DX1E"
+      - "DX1F"
+      - "DX1G"
 
   sda-src:
     description: |
@@ -47,7 +47,6 @@ properties:
       - "DX0G"
 
   interrupts:
-    type: array
     required: true
     description: |
       IRQ number and priority to use for interrupt driven by I2C.
@@ -70,8 +69,3 @@ properties:
 
   pinctrl-names:
     required: true
-
-  clock-frequency:
-    type: int
-    description: |
-      Frequency that the I2C bus runs
