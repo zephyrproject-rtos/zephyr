@@ -1058,7 +1058,8 @@ void ll_iso_transmit_test_send_sdu(uint16_t handle, uint32_t ticks_at_expire)
 
 		/* Send all SDU fragments */
 		do {
-			sdu.time_stamp = HAL_TICKER_TICKS_TO_US(ticks_at_expire);
+			sdu.cntr_time_stamp = HAL_TICKER_TICKS_TO_US(ticks_at_expire);
+			sdu.time_stamp = sdu.cntr_time_stamp;
 			sdu.size = MIN(remaining_tx, ISO_TEST_TX_BUFFER_SIZE);
 			memset(tx_buffer, 0, sdu.size);
 

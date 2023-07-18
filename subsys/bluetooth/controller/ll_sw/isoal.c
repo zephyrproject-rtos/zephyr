@@ -1282,7 +1282,7 @@ static isoal_status_t isoal_rx_framed_consume(struct isoal_sink *sink,
 		}
 
 		/* Update next state */
-		ISOAL_LOG_DBGV("[%p] Decoding: Next State %s", sink, FSM_TO_STR(next_state));
+		ISOAL_LOG_DBGV("[%p] FSM Next State %s", sink, FSM_TO_STR(next_state));
 		sp->fsm = next_state;
 
 		/* Find next segment header, set to null if past end of PDU */
@@ -1350,7 +1350,7 @@ static isoal_status_t isoal_rx_framed_consume(struct isoal_sink *sink,
 
 			if (error_sdu_pending) {
 				sp->sdu_status = next_sdu_status;
-				err |= isoal_rx_append_to_sdu(sink, pdu_meta, 0, 0, true, false);
+				err |= isoal_rx_append_to_sdu(sink, pdu_meta, 0U, 0U, true, false);
 			}
 			break;
 
@@ -1373,8 +1373,8 @@ static isoal_status_t isoal_rx_framed_consume(struct isoal_sink *sink,
 		}
 
 		/* Update next state */
-		ISOAL_LOG_DBGV("[%p] Error: Next State %s", sink, FSM_TO_STR(next_state));
-		sink->sdu_production.fsm = next_state;
+		ISOAL_LOG_DBGV("[%p] FSM Error Next State %s", sink, FSM_TO_STR(next_state));
+		sp->fsm = next_state;
 	}
 
 	sp->prev_pdu_id = meta->payload_number;
@@ -1591,6 +1591,46 @@ void isoal_source_destroy(isoal_source_handle_t hdl)
 	isoal_source_deallocate(hdl);
 }
 
+static bool isoal_is_time_stamp_valid(const struct isoal_source *source_ctx,
+				      const uint32_t cntr_time,
+				      const uint32_t time_stamp)
+{
+	const struct isoal_source_session *session;
+	uint32_t time_diff;
+
+	session = &source_ctx->session;
+
+	/* This is an arbitrarily defined range. The purpose is to
+	 * decide if the time stamp provided by the host is sensible
+	 * within the controller's clock domain. An SDU interval plus ISO
+	 * interval is expected to provide a good balance between situations
+	 * where either could be significantly larger than the other.
+	 *
+	 * BT Core V5.4 : Vol 6 Low Energy Controller : Part G IS0-AL:
+	 * 3.3 Time Stamp for SDU :
+	 * When an HCI ISO Data packet sent by the Host does not contain
+	 * a Time Stamp or the Time_Stamp value is not based on the
+	 * Controller's clock, the Controller should determine the CIS
+	 * or BIS event to be used to transmit the SDU contained in that
+	 * packet based on the time of arrival of that packet.
+	 */
+	const uint32_t sdu_interval_us = session->sdu_interval;
+	const uint32_t iso_interval_us = session->iso_interval * ISO_INT_UNIT_US;
+	/* ISO Interval 0x0000_0004 ~ 0x0000_0C80 x 1250 +
+	 * SDU Interval 0x0000_00FF ~ 0x000F_FFFF          <= 004D_08FF
+	 */
+	const int32_t time_stamp_valid_half_range = sdu_interval_us + iso_interval_us;
+	const uint32_t time_stamp_valid_min = isoal_get_wrapped_time_us(cntr_time,
+							(-time_stamp_valid_half_range));
+	const uint32_t time_stamp_valid_range = 2 * time_stamp_valid_half_range;
+	const bool time_stamp_is_valid = isoal_get_time_diff(time_stamp_valid_min,
+							     time_stamp,
+							     &time_diff) &&
+					 time_diff <= time_stamp_valid_range;
+
+	return time_stamp_is_valid;
+}
+
 /**
  * Queue the PDU in production in the relevant LL transmit queue. If the
  * attmept to release the PDU fails, the buffer linked to the PDU will be released
@@ -1636,8 +1676,8 @@ static isoal_status_t isoal_tx_pdu_emit(const struct isoal_source *source_ctx,
 	status = source_ctx->session.pdu_emit(node_tx, handle);
 
 	ISOAL_LOG_DBG("[%p] PDU %llu err=%X len=%u frags=%u released",
-			      source_ctx, payload_number, status,
-			      produced_pdu->contents.pdu->len, sdu_fragments);
+		      source_ctx, payload_number, status,
+		      produced_pdu->contents.pdu->len, sdu_fragments);
 
 	if (status != ISOAL_STATUS_OK) {
 		/* If it fails, the node will be released and no further attempt
@@ -1841,8 +1881,8 @@ uint16_t isoal_tx_unframed_get_next_payload_number(isoal_source_handle_t source_
  * @brief Fragment received SDU and produce unframed PDUs
  * @details Destination source may have an already partially built PDU
  *
- * @param source_hdl[in] Destination source handle
- * @param tx_sdu[in]     SDU with packet boundary information
+ * @param[in] source_hdl Destination source handle
+ * @param[in] tx_sdu     SDU with packet boundary information
  *
  * @return Status
  *
@@ -2162,7 +2202,7 @@ static isoal_status_t isoal_insert_seg_header_timeoffset(struct isoal_source *so
 	pp->pdu_available -= write_size;
 
 	ISOAL_LOG_DBGV("[%p] Seg header write size=%u sc=%u cmplt=%u TO=%u len=%u",
-		source, write_size, sc, cmplt, time_offset, seg_hdr.len);
+		       source, write_size, sc, cmplt, time_offset, seg_hdr.len);
 
 	return err;
 }
@@ -2203,46 +2243,48 @@ static isoal_status_t isoal_update_seg_header_cmplt_length(struct isoal_source *
 				  PDU_ISO_SEG_HDR_SIZE);
 
 	ISOAL_LOG_DBGV("[%p] Seg header write size=%u sc=%u cmplt=%u len=%u",
-		source, PDU_ISO_SEG_HDR_SIZE, seg_hdr.sc, cmplt, seg_hdr.len);
+		       source, PDU_ISO_SEG_HDR_SIZE, seg_hdr.sc, cmplt, seg_hdr.len);
 }
 
 /**
  * Find the earliest feasible event for transmission capacity is not wasted and
  * return information based on that event.
- * @param[in]  source_hdl     Destination source handle
+ *
+ * @param[in]  *source_ctx    Destination source context
  * @param[in]  tx_sdu         SDU with meta data information
  * @param[out] payload_number Updated payload number for the selected event
  * @param[out] grp_ref_point  Group reference point for the selected event
  * @param[out] time_offset    Segmentation Time offset to selected event
  * @return                The number SDUs skipped from the last
  */
-static uint16_t isoal_tx_framed_find_correct_tx_event(isoal_source_handle_t source_hdl,
+static uint16_t isoal_tx_framed_find_correct_tx_event(const struct isoal_source *source_ctx,
 						      const struct isoal_sdu_tx *tx_sdu,
 						      uint64_t *payload_number,
 						      uint32_t *grp_ref_point,
 						      uint32_t *time_offset)
 {
-	struct isoal_source_session *session;
-	struct isoal_pdu_production *pp;
+	const struct isoal_source_session *session;
+	const struct isoal_pdu_production *pp;
 	uint32_t actual_grp_ref_point;
 	uint64_t next_payload_number;
-	struct isoal_source *source;
 	uint16_t sdus_skipped;
 	uint64_t actual_event;
 	bool time_diff_valid;
 	uint32_t time_diff;
+	uint32_t time_stamp_selected;
 
-	source      = &isoal_global.source_state[source_hdl];
-	session     = &source->session;
-	pp          = &source->pdu_production;
+	session     = &source_ctx->session;
+	pp          = &source_ctx->pdu_production;
 
-	sdus_skipped = 0;
+	sdus_skipped = 0U;
+	time_diff = 0U;
 
 	/* Continue with the current payload unless there is need to change */
 	next_payload_number = pp->payload_number;
 	actual_event = pp->payload_number / session->burst_number;
 
-	ISOAL_LOG_DBGV("[%p] Start PL=%llu Evt=%lu.", source, next_payload_number, actual_event);
+	ISOAL_LOG_DBGV("[%p] Start PL=%llu Evt=%lu.", source_ctx, next_payload_number,
+		       actual_event);
 
 	/* Get the drift updated group reference point for this event based on
 	 * the actual event being set. This might introduce some errors as the
@@ -2259,29 +2301,35 @@ static uint16_t isoal_tx_framed_find_correct_tx_event(isoal_source_handle_t sour
 	}
 
 	ISOAL_LOG_DBGV("[%p] Current PL=%llu Evt=%llu Ref=%lu",
-		source, next_payload_number, actual_event, actual_grp_ref_point);
+		       source_ctx, next_payload_number, actual_event, actual_grp_ref_point);
 
 	if (tx_sdu->sdu_state == BT_ISO_START ||
 		tx_sdu->sdu_state == BT_ISO_SINGLE) {
 		/* Start of a new SDU */
+
+		const bool time_stamp_is_valid = isoal_is_time_stamp_valid(source_ctx,
+									   tx_sdu->cntr_time_stamp,
+									   tx_sdu->time_stamp);
 
 		/* Adjust payload number */
 		if (pp->initialized) {
 			/* Not the first SDU in this session, so reference
 			 * information should be valid. .
 			 */
+
 			time_diff_valid = isoal_get_time_diff(session->last_input_time_stamp,
 							      tx_sdu->time_stamp,
 							      &time_diff);
 
 			/* Priority is given to the sequence number */
 			if (tx_sdu->packet_sn > session->last_input_sn + 1) {
-				ISOAL_LOG_DBGV("[%p] Using packet_sn for skipped SDUs", source);
+				ISOAL_LOG_DBGV("[%p] Using packet_sn for skipped SDUs", source_ctx);
 				sdus_skipped = (tx_sdu->packet_sn - session->last_input_sn) - 1;
 
 			} else if (tx_sdu->packet_sn == session->last_input_sn &&
-					time_diff_valid && time_diff > session->sdu_interval) {
-				ISOAL_LOG_DBGV("[%p] Using time_stamp for skipped SDUs", source);
+				   time_diff_valid && time_diff > session->sdu_interval) {
+				ISOAL_LOG_DBGV("[%p] Using time_stamp for skipped SDUs",
+						source_ctx);
 				/* Round at mid-point */
 				sdus_skipped = ((time_diff + (session->sdu_interval / 2)) /
 							session->sdu_interval) - 1;
@@ -2289,12 +2337,58 @@ static uint16_t isoal_tx_framed_find_correct_tx_event(isoal_source_handle_t sour
 				/* SDU is next in sequence */
 			}
 
+			if (time_stamp_is_valid) {
+				/* Use provided time stamp for time offset
+				 * calcutation
+				 */
+				time_stamp_selected = tx_sdu->time_stamp;
+				ISOAL_LOG_DBGV("[%p] Selecting Time Stamp (%lu) from SDU",
+					       source_ctx, time_stamp_selected);
+			} else if (time_diff_valid) {
+				/* Project a time stamp based on the last time
+				 * stamp and the difference in input time stamps
+				 */
+				time_stamp_selected = isoal_get_wrapped_time_us(
+							session->tx_time_stamp,
+							time_diff - session->tx_time_offset);
+				ISOAL_LOG_DBGV("[%p] Projecting Time Stamp (%lu) from SDU delta",
+					       source_ctx, time_stamp_selected);
+			} else {
+				/* Project a time stamp based on the last time
+				 * stamp and the number of skipped SDUs
+				 */
+				time_stamp_selected = isoal_get_wrapped_time_us(
+							session->tx_time_stamp,
+							((sdus_skipped + 1) * session->sdu_interval)
+							- session->tx_time_offset);
+				ISOAL_LOG_DBGV("[%p] Projecting Time Stamp (%lu) from skipped SDUs",
+						source_ctx, time_stamp_selected);
+			}
+
 		} else {
 			/* First SDU, align with target event */
-			actual_event = tx_sdu->target_event;
-			actual_grp_ref_point = tx_sdu->grp_ref_point;
+			if (actual_event < tx_sdu->target_event) {
+				actual_event = tx_sdu->target_event;
+				actual_grp_ref_point = tx_sdu->grp_ref_point;
+			}
 
-			ISOAL_LOG_DBGV("[%p] Use target_event", source);
+			ISOAL_LOG_DBGV("[%p] Use target_event", source_ctx);
+
+			if (time_stamp_is_valid) {
+				/* Time stamp is within valid range -
+				 * use provided time stamp
+				 */
+				time_stamp_selected = tx_sdu->time_stamp;
+				ISOAL_LOG_DBGV("[%p] Selecting Time Stamp (%lu) from SDU",
+						source_ctx, time_stamp_selected);
+			} else {
+				/* Time stamp is out of range -
+				 * use controller's capture time
+				 */
+				time_stamp_selected = tx_sdu->cntr_time_stamp;
+				ISOAL_LOG_DBGV("[%p] Selecting Time Stamp (%lu) from controller",
+						source_ctx, time_stamp_selected);
+			}
 		}
 
 		/* Selecting the event for transmission is done solely based on
@@ -2309,8 +2403,8 @@ static uint16_t isoal_tx_framed_find_correct_tx_event(isoal_source_handle_t sour
 		 * 3.1 Time_Offset in framed PDUs :
 		 * The Time_Offset shall be a positive value.
 		 */
-		while (!isoal_get_time_diff(tx_sdu->time_stamp, actual_grp_ref_point, &time_diff) ||
-			time_diff == 0) {
+		while (!isoal_get_time_diff(time_stamp_selected, actual_grp_ref_point, &time_diff)
+			|| time_diff == 0) {
 			/* Advance target to next event */
 			actual_event++;
 			actual_grp_ref_point = isoal_get_wrapped_time_us(actual_grp_ref_point,
@@ -2318,8 +2412,8 @@ static uint16_t isoal_tx_framed_find_correct_tx_event(isoal_source_handle_t sour
 		}
 
 		ISOAL_LOG_DBGV("[%p] Chosen PL=%llu Evt=%llu Ref=%lu",
-				source,  (actual_event * session->burst_number), actual_event,
-				actual_grp_ref_point);
+			       source_ctx, (actual_event * session->burst_number), actual_event,
+			       actual_grp_ref_point);
 
 		/* If the event selected is the last event segmented for, then
 		 * it is possible that that some payloads have already been
@@ -2327,23 +2421,23 @@ static uint16_t isoal_tx_framed_find_correct_tx_event(isoal_source_handle_t sour
 		 * that payload.
 		 */
 		next_payload_number = MAX(pp->payload_number,
-					 (actual_event * session->burst_number));
+					  (actual_event * session->burst_number));
+
+		ISOAL_LOG_DBGV("[%p] Final Evt=%llu (PL=%llu) Ref.=%lu Next PL=%llu",
+			       source, actual_event, (actual_event * session->burst_number),
+			       actual_grp_ref_point, next_payload_number);
+
+		/* Calculate the time offset */
+		time_diff_valid = isoal_get_time_diff(time_stamp_selected,
+					actual_grp_ref_point, &time_diff);
+
+		LL_ASSERT(time_diff_valid);
+		LL_ASSERT(time_diff > 0);
+		/* Time difference must be less than the maximum possible
+		 * time-offset of 24-bits.
+		 */
+		LL_ASSERT(time_diff <= 0x00FFFFFF);
 	}
-
-	ISOAL_LOG_DBGV("[%p] Final Evt=%llu (PL=%llu) Ref.=%lu Next PL=%llu",
-			source, actual_event, (actual_event * session->burst_number),
-			actual_grp_ref_point, next_payload_number);
-
-	/* Calculate the time offset */
-	time_diff_valid = isoal_get_time_diff(tx_sdu->time_stamp,
-				actual_grp_ref_point, &time_diff);
-
-	LL_ASSERT(time_diff_valid);
-	LL_ASSERT(time_diff > 0);
-	/* Time difference must be less than the maximum possible
-	 * time-offset of 24-bits.
-	 */
-	LL_ASSERT(time_diff <= 0x00FFFFFF);
 
 	*payload_number = next_payload_number;
 	*grp_ref_point = actual_grp_ref_point;
@@ -2389,19 +2483,24 @@ static isoal_status_t isoal_tx_framed_produce(isoal_source_handle_t source_hdl,
 		tx_sdu->sdu_state == BT_ISO_SINGLE);
 
 	ISOAL_LOG_DBGV("[%p] SDU %u len=%u TS=%lu Ref=%lu Evt=%llu Frag=%u",
-		source, tx_sdu->packet_sn, tx_sdu->iso_sdu_length, tx_sdu->time_stamp,
-		tx_sdu->grp_ref_point, tx_sdu->target_event, tx_sdu->sdu_state);
+		       source, tx_sdu->packet_sn, tx_sdu->iso_sdu_length, tx_sdu->time_stamp,
+		       tx_sdu->grp_ref_point, tx_sdu->target_event, tx_sdu->sdu_state);
 
 	if (tx_sdu->sdu_state == BT_ISO_START ||
 		tx_sdu->sdu_state == BT_ISO_SINGLE) {
 		uint32_t actual_grp_ref_point;
 		uint64_t next_payload_number;
 		uint16_t sdus_skipped;
+		bool time_diff_valid;
+		uint32_t time_diff;
 
 		/* Start of a new SDU */
+		time_diff_valid = isoal_get_time_diff(session->last_input_time_stamp,
+						      tx_sdu->time_stamp,
+						      &time_diff);
 
 		/* Find the best transmission event */
-		sdus_skipped = isoal_tx_framed_find_correct_tx_event(source_hdl, tx_sdu,
+		sdus_skipped = isoal_tx_framed_find_correct_tx_event(source, tx_sdu,
 								     &next_payload_number,
 								     &actual_grp_ref_point,
 								     &time_offset);
@@ -2460,7 +2559,22 @@ static isoal_status_t isoal_tx_framed_produce(isoal_source_handle_t source_hdl,
 
 		/* Update input packet number and time stamp */
 		session->last_input_sn = tx_sdu->packet_sn;
-		session->last_input_time_stamp = tx_sdu->time_stamp;
+
+		if (pp->initialized && tx_sdu->time_stamp == tx_sdu->cntr_time_stamp &&
+		    (!time_diff_valid || time_diff < session->sdu_interval)) {
+			/* If the time-stamp is invalid or the difference is
+			 * less than an SDU interval, then set the reference
+			 * time stamp to what should have been received. This is
+			 * done to avoid incorrectly detecting a gap in time
+			 * stamp inputs should there be a burst of SDUs
+			 * clustered together.
+			 */
+			session->last_input_time_stamp = isoal_get_wrapped_time_us(
+								session->last_input_time_stamp,
+								session->sdu_interval);
+		} else {
+			session->last_input_time_stamp = tx_sdu->time_stamp;
+		}
 	}
 
 	/* PDUs should be created until the SDU fragment has been fragmented or if

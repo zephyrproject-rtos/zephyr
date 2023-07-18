@@ -5700,17 +5700,21 @@ int hci_iso_handle(struct net_buf *buf, struct net_buf **evt)
 	 * -- A captured time stamp of the SDU
 	 * -- A time stamp provided by the higher layer
 	 * -- A computed time stamp based on a sequence counter provided by the
-	 *    higher layer (Not implemented)
-	 * -- Any other method of determining Time_Offset (Not implemented)
+	 *    higher layer
+	 * -- Any other method of determining Time_Offset
+	 *    (Uses a timestamp computed from the difference in provided
+	 *    timestamps, if the timestamp is deemed not based on the
+	 *    controller's clock)
 	 */
+	sdu_frag_tx.cntr_time_stamp = HAL_TICKER_TICKS_TO_US(ticker_ticks_now_get());
 	if (ts_flag) {
-		/* Overwrite time stamp with HCI provided time stamp */
+		/* Use HCI provided time stamp */
 		time_stamp = net_buf_pull_mem(buf, sizeof(*time_stamp));
 		len -= sizeof(*time_stamp);
 		sdu_frag_tx.time_stamp = sys_le32_to_cpu(*time_stamp);
 	} else {
-		sdu_frag_tx.time_stamp =
-			HAL_TICKER_TICKS_TO_US(ticker_ticks_now_get());
+		/* Use controller's capture time */
+		sdu_frag_tx.time_stamp = sdu_frag_tx.cntr_time_stamp;
 	}
 
 	/* Extract ISO data header if included (PB_Flag 0b00 or 0b10) */

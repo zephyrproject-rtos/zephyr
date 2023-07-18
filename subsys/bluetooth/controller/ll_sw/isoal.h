@@ -189,6 +189,8 @@ struct isoal_sdu_tx {
 	uint16_t iso_sdu_length;
 	/** Time stamp from HCI or vendor specific path (us) */
 	uint32_t time_stamp;
+	/** Capture time stamp from controller (us) */
+	uint32_t cntr_time_stamp;
 	/** CIG Reference of target event (us, compensated for drift) */
 	uint32_t grp_ref_point;
 	/** Target Event of SDU */
