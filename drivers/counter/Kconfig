@@ -84,4 +84,6 @@ source "drivers/counter/Kconfig.nxp_s32"
 
 source "drivers/counter/Kconfig.gd32"
 
+source "drivers/counter/Kconfig.dw"
+
 endif # COUNTER
