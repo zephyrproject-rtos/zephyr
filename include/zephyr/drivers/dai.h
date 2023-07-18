@@ -33,7 +33,7 @@
 extern "C" {
 #endif
 
-/** \brief Types of DAI
+/** @brief Types of DAI
  *
  * The type of the DAI. This ID type is used to configure bespoke DAI HW
  * settings.
@@ -61,7 +61,7 @@ enum dai_type {
 };
 
 /**
- * @brief Dai Direction
+ * @brief DAI Direction
  */
 enum dai_dir {
 	/** Receive data */
@@ -124,7 +124,7 @@ enum dai_trigger_cmd {
 	 *
 	 * Pause the transmission / reception of data at the end of the current
 	 * memory block. Behavior is implementation specific but usually this
-	 * state doesn't completely stop the clocks or transmission. The dai could
+	 * state doesn't completely stop the clocks or transmission. The DAI could
 	 * be transmitting 0's (silence), but it is not consuming data from outside.
 	 */
 	DAI_TRIGGER_PAUSE,
@@ -169,65 +169,80 @@ enum dai_trigger_cmd {
 	DAI_TRIGGER_COPY,
 };
 
-/** @brief Properties of DAI
+/** @brief DAI properties
  *
  * This struct is used with APIs get_properties function to query DAI
  * properties like fifo address and dma handshake. These are needed
  * for example to setup dma outside the driver code.
- *
- * @param fifo_address Fifo hw address for e.g. when connecting to dma.
- * @param fifo_depth Fifo depth.
- * @param dma_hs_id Dma handshake id.
- * @param reg_init_delay Delay for initializing registers.
- * @param stream_id Stream ID.
  */
 struct dai_properties {
-	uint32_t fifo_address; /* fifo address */
-	uint32_t fifo_depth; /* fifo depth */
-	uint32_t dma_hs_id; /* dma handshake id */
-	uint32_t reg_init_delay; /* delay for register init */
-	int stream_id; /* stream id */
+	/** Fifo hw address for e.g. when connecting to dma. */
+	uint32_t fifo_address;
+	/** Fifo depth. */
+	uint32_t fifo_depth;
+	/** DMA handshake id. */
+	uint32_t dma_hs_id;
+	/** Delay for initializing registers. */
+	uint32_t reg_init_delay;
+	/** Stream ID. */
+	int stream_id;
 };
 
-/** Main dai config struct
- * @brief Generic Dai interface configuration options.
+/** @brief Main DAI config structure
  *
- * @param dai_type Type of the dai.
- * @param dai_index Index of the dai.
- * @param channels Number of audio channels, words in frame.
- * @param rate Frame clock (WS) frequency, sampling rate.
- * @param format Dai specific data stream format.
- * @param options Dai specific configuration options.
- * @param word_size Number of bits representing one data word.
- * @param block_size Size of one RX/TX memory block (buffer) in bytes.
- * @param link_config Dai specific link configuration.
+ * Generic DAI interface configuration options.
  */
 struct dai_config {
+	/** Type of the DAI. */
 	enum dai_type type;
+	/** Index of the DAI. */
 	uint32_t dai_index;
+	/** Number of audio channels, words in frame. */
 	uint8_t channels;
+	/** Frame clock (WS) frequency, sampling rate. */
 	uint32_t rate;
+	/** DAI specific data stream format. */
 	uint16_t format;
+	/** DAI specific configuration options. */
 	uint8_t options;
+	/** Number of bits representing one data word. */
 	uint8_t word_size;
+	/** Size of one RX/TX memory block (buffer) in bytes. */
 	size_t block_size;
+	/** DAI specific link configuration. */
 	uint16_t link_config;
 };
 
+/**
+ * @brief DAI timestamp configuration
+ */
 struct dai_ts_cfg {
-	uint32_t walclk_rate; /* Rate in Hz, e.g. 19200000 */
-	int type; /* SSP, DMIC, HDA, etc. */
-	int direction; /* Playback, capture */
-	int index; /* For SSPx to select correct timestamp register */
-	int dma_id; /* DMA instance id */
-	int dma_chan_index; /* Used DMA channel */
-	int dma_chan_count; /* Channels in single DMA */
+	/** Rate in Hz, e.g. 19200000 */
+	uint32_t walclk_rate;
+	/** Type of the DAI (SSP, DMIC, HDA, etc.). */
+	int type;
+	/** Direction (playback/capture) */
+	int direction;
+	/** Index for SSPx to select correct timestamp register */
+	int index;
+	/** DMA instance id */
+	int dma_id;
+	/** Used DMA channel index */
+	int dma_chan_index;
+	/** Number of channels in single DMA */
+	int dma_chan_count;
 };
 
+/**
+ * @brief DAI timestamp data
+ */
 struct dai_ts_data {
-	uint64_t walclk; /* Wall clock */
-	uint64_t sample; /* Sample count */
-	uint32_t walclk_rate; /* Rate in Hz, e.g. 19200000 */
+	/** Wall clock */
+	uint64_t walclk;
+	/** Sample count */
+	uint64_t sample;
+	/** Rate in Hz, e.g. 19200000 */
+	uint32_t walclk_rate;
 };
 
 /**
@@ -332,7 +347,7 @@ static inline int dai_config_set(const struct device *dev,
  * @param dev Pointer to the device structure for the driver instance
  * @param cfg Pointer to the config structure to be filled by the instance
  * @param dir Stream direction: RX or TX as defined by DAI_DIR_*
- * @retval 0 if success, negative if invalid parameters or dai un-configured
+ * @retval 0 if success, negative if invalid parameters or DAI un-configured
  */
 static inline int dai_config_get(const struct device *dev,
 				 struct dai_config *cfg,
