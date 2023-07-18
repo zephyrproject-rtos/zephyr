@@ -26,7 +26,7 @@
 #include <zephyr/net/buf.h>
 #include <zephyr/sys/util.h>
 
-/** Audio Interface Subclass Codes
+/** Audio Interface Subclass Codes.
  * Refer to Table A-2 from audio10.pdf
  */
 enum usb_audio_int_subclass_codes {
@@ -36,7 +36,7 @@ enum usb_audio_int_subclass_codes {
 	USB_AUDIO_MIDISTREAMING		= 0x03
 };
 
-/** Audio Class-Specific AC Interface Descriptor Subtypes
+/** Audio Class-Specific AC Interface Descriptor Subtypes.
  * Refer to Table A-5 from audio10.pdf
  */
 enum usb_audio_cs_ac_int_desc_subtypes {
@@ -100,39 +100,81 @@ enum usb_audio_fucs {
  * Refer to Table 2-1 - Table 2-4 from termt10.pdf
  */
 enum usb_audio_terminal_types {
-	/* USB Terminal Types */
+	/**
+	 * @name USB Terminal Types
+	 * @{
+	 */
+	/** USB undefined */
 	USB_AUDIO_USB_UNDEFINED   = 0x0100,
+	/** USB streaming */
 	USB_AUDIO_USB_STREAMING   = 0x0101,
+	/** USB vendor specific */
 	USB_AUDIO_USB_VENDOR_SPEC = 0x01FF,
+	/** @} */
 
-	/* Input Terminal Types */
+	/**
+	 * @name Input Terminal Types
+	 * @{
+	 */
+	/** Input undefined */
 	USB_AUDIO_IN_UNDEFINED      = 0x0200,
+	/** Microphone */
 	USB_AUDIO_IN_MICROPHONE     = 0x0201,
+	/** Desktop microphone */
 	USB_AUDIO_IN_DESKTOP_MIC    = 0x0202,
+	/** Personal microphone */
 	USB_AUDIO_IN_PERSONAL_MIC   = 0x0203,
+	/** Omni directional microphone */
 	USB_AUDIO_IN_OM_DIR_MIC     = 0x0204,
+	/** Microphone array */
 	USB_AUDIO_IN_MIC_ARRAY      = 0x0205,
+	/** Processing microphone array */
 	USB_AUDIO_IN_PROC_MIC_ARRAY = 0x0205,
+	/** @} */
 
-	/* Output Terminal Types */
+	/**
+	 * @name Output Terminal Types
+	 * @{
+	 */
+	/** Output undefined */
 	USB_AUDIO_OUT_UNDEFINED		= 0x0300,
+	/** Speaker */
 	USB_AUDIO_OUT_SPEAKER		= 0x0301,
+	/** Headphones */
 	USB_AUDIO_OUT_HEADPHONES	= 0x0302,
+	/** Head mounted display audio */
 	USB_AUDIO_OUT_HEAD_AUDIO	= 0x0303,
+	/** Desktop speaker */
 	USB_AUDIO_OUT_DESKTOP_SPEAKER	= 0x0304,
+	/** Room speaker */
 	USB_AUDIO_OUT_ROOM_SPEAKER	= 0x0305,
+	/** Communication speaker */
 	USB_AUDIO_OUT_COMM_SPEAKER	= 0x0306,
+	/** Low frequency effects speaker */
 	USB_AUDIO_OUT_LOW_FREQ_SPEAKER	= 0x0307,
+	/** @} */
 
-	/* Bi-directional Terminal Types */
+	/**
+	 * @name Bi-directional Terminal Types
+	 * @{
+	 */
+	/** Bidirectional undefined */
 	USB_AUDIO_IO_UNDEFINED			= 0x0400,
+	/** Handset */
 	USB_AUDIO_IO_HANDSET			= 0x0401,
+	/** Headset */
 	USB_AUDIO_IO_HEADSET			= 0x0402,
+	/** Speakerphone, no echo reduction */
 	USB_AUDIO_IO_SPEAKERPHONE_ECHO_NONE	= 0x0403,
+	/** Speakerphone, echo reduction */
 	USB_AUDIO_IO_SPEAKERPHONE_ECHO_SUP	= 0x0404,
+	/** Speakerphone, echo cancellation */
 	USB_AUDIO_IO_SPEAKERPHONE_ECHO_CAN	= 0x0405,
 };
 
+/**
+ * @brief Audio device direction.
+ */
 enum usb_audio_direction {
 	USB_AUDIO_IN = 0x00,
 	USB_AUDIO_OUT = 0x01
@@ -143,20 +185,23 @@ enum usb_audio_direction {
  *
  * The event structure is used by feature_update_cb in order to inform the App
  * whenever the Host has modified one of the device features.
- *
- * @param dir	  The device direction that has been changed. Applicable for
- *		  Headset device only.
- * @param cs	  Control selector, feature that has been changed.
- * @param channel Device channel that has been changed. If 0xFF, then
- *		  all channels have been changed.
- * @param val_len Length of the val field.
- * @param val	  Value of the feature that has been set.
  */
 struct usb_audio_fu_evt {
+	/**
+	 * The device direction that has been changed.
+	 * Applicable for Headset device only.
+	 */
 	enum usb_audio_direction dir;
+	/** Control selector feature that has been changed. */
 	enum usb_audio_fucs cs;
+	/**
+	 * Device channel that has been changed.
+	 * If 0xFF, then all channels have been changed.
+	 */
 	uint8_t channel;
+	/** Length of the val field. */
 	uint8_t val_len;
+	/** Value of the feature that has been set. */
 	const void *val;
 };
 
@@ -214,22 +259,22 @@ typedef void (*usb_audio_feature_updated_cb_t)(const struct device *dev,
  * to callback documentation above.
  */
 struct usb_audio_ops {
-	/* Callback called when data could be send */
+	/** Callback called when data could be send */
 	usb_audio_data_request_cb_t data_request_cb;
 
-	/* Callback called when data were successfully written with sending
+	/** Callback called when data were successfully written with sending
 	 * capable device. Applicable for headset and microphone. Unused for
 	 * headphones.
 	 */
 	usb_audio_data_completion_cb_t data_written_cb;
 
-	/* Callback called when data were successfully received by receive
+	/** Callback called when data were successfully received by receive
 	 * capable device. Applicable for headset and headphones. Unused for
 	 * microphone.
 	 */
 	usb_audio_data_completion_cb_t data_received_cb;
 
-	/* Callback called when features were modified by the Host */
+	/** Callback called when features were modified by the Host */
 	usb_audio_feature_updated_cb_t feature_update_cb;
 };
 
