@@ -9,6 +9,20 @@
 #include <zephyr/sys_clock.h>
 #include <zephyr/ztest.h>
 
+void pm_state_set(enum pm_state state, uint8_t substate_id)
+{
+	ARG_UNUSED(substate_id);
+	ARG_UNUSED(state);
+}
+
+void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
+{
+	ARG_UNUSED(state);
+	ARG_UNUSED(substate_id);
+
+	irq_unlock(0);
+}
+
 #ifdef CONFIG_PM_POLICY_DEFAULT
 /**
  * @brief Test the behavior of pm_policy_next_state() when
