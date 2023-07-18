@@ -1,0 +1,19 @@
+# TLE9104 GPIO configuration options
+
+# Copyright (c) 2023 SILA Embedded Solutions GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig GPIO_TLE9104
+	bool "TLE9104 SPI-based powertrain switch"
+	default y
+	depends on DT_HAS_INFINEON_TLE9104_ENABLED
+	depends on SPI
+	help
+	  Enable driver for TLE9104 SPI-based powertrain switch.
+
+config GPIO_TLE9104_INIT_PRIORITY
+	int "Init priority"
+	default 75
+	depends on GPIO_TLE9104
+	help
+	  Device driver initialization priority.
