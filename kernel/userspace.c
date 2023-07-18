@@ -165,23 +165,9 @@ uint8_t *z_priv_stack_find(k_thread_stack_t *stack)
 #define DYN_OBJ_DATA_ALIGN		\
 	MAX(DYN_OBJ_DATA_ALIGN_K_THREAD, (sizeof(void *)))
 
-struct dyn_obj_base {
-	struct z_object kobj;
-	sys_dnode_t dobj_list; /* must be immediately before data member */
-};
-
 struct dyn_obj {
-	struct dyn_obj_base base;
-
-	/* The object itself */
-	uint8_t data[] __aligned(DYN_OBJ_DATA_ALIGN_K_THREAD);
-};
-
-/* Thread stacks impose a very restrict alignment. Use this alignment
- * (generally page size) for all objects will cause a lot waste memory.
- */
-struct dyn_obj_stack {
-	struct dyn_obj_base base;
+	struct z_object kobj;
+	sys_dnode_t dobj_list;
 
 	/* The object itself */
 	void *data;
@@ -227,9 +213,6 @@ static size_t obj_align_get(enum k_objects otype)
 		ret = __alignof(struct dyn_obj);
 #endif
 		break;
-	case K_OBJ_THREAD_STACK_ELEMENT:
-		ret = __alignof(struct dyn_obj_stack);
-		break;
 	default:
 		ret = __alignof(struct dyn_obj);
 		break;
@@ -238,9 +221,9 @@ static size_t obj_align_get(enum k_objects otype)
 	return ret;
 }
 
-static struct dyn_obj_base *dyn_object_find(void *obj)
+static struct dyn_obj *dyn_object_find(void *obj)
 {
-	struct dyn_obj_base *node;
+	struct dyn_obj *node;
 	k_spinlock_key_t key;
 
 	/* For any dynamically allocated kernel object, the object
@@ -331,55 +314,51 @@ static void thread_idx_free(uintptr_t tidx)
 static struct z_object *dynamic_object_create(enum k_objects otype, size_t align,
 					      size_t size)
 {
-	struct dyn_obj_base *dyn;
+	struct dyn_obj *dyn;
+
+	dyn = z_thread_aligned_alloc(align, sizeof(struct dyn_obj));
+	if (dyn == NULL) {
+		return NULL;
+	}
 
 	if (otype == K_OBJ_THREAD_STACK_ELEMENT) {
-		struct dyn_obj_stack *stack;
 		size_t adjusted_size;
 
 		if (size == 0) {
+			k_free(dyn);
 			return NULL;
 		}
 
 		adjusted_size = STACK_ELEMENT_DATA_SIZE(size);
-		stack = z_thread_aligned_alloc(align, sizeof(struct dyn_obj_stack));
-		if (stack == NULL) {
-			return NULL;
-		}
-		dyn = &stack->base;
-
-		stack->data = z_thread_aligned_alloc(DYN_OBJ_DATA_ALIGN_K_THREAD_STACK,
+		dyn->data = z_thread_aligned_alloc(DYN_OBJ_DATA_ALIGN_K_THREAD_STACK,
 						     adjusted_size);
-		if (stack->data == NULL) {
-			k_free(stack);
+		if (dyn->data == NULL) {
+			k_free(dyn);
 			return NULL;
 		}
 
 #ifdef CONFIG_GEN_PRIV_STACKS
 		struct z_stack_data *stack_data = (struct z_stack_data *)
-			((uint8_t *)stack->data + adjusted_size - sizeof(*stack_data));
-		stack_data->priv = (uint8_t *)stack->data;
+			((uint8_t *)dyn->data + adjusted_size - sizeof(*stack_data));
+		stack_data->priv = (uint8_t *)dyn->data;
 		dyn->kobj.data.stack_data = stack_data;
 #ifdef CONFIG_ARM_MPU
 		dyn->kobj.name = (void *)ROUND_UP(
-			  ((uint8_t *)stack->data + CONFIG_PRIVILEGED_STACK_SIZE),
+			  ((uint8_t *)dyn->data + CONFIG_PRIVILEGED_STACK_SIZE),
 			  Z_THREAD_STACK_OBJ_ALIGN(size));
 #else
-		dyn->kobj.name = stack->data;
+		dyn->kobj.name = dyn->data;
 #endif
 #else
-		dyn->kobj.name = stack->data;
+		dyn->kobj.name = dyn->data;
 #endif
 	} else {
-		struct dyn_obj *obj;
-
-		obj = z_thread_aligned_alloc(align,
-			     sizeof(struct dyn_obj) + obj_size_get(otype) + size);
-		if (obj == NULL) {
+		dyn->data = z_thread_aligned_alloc(align, obj_size_get(otype) + size);
+		if (dyn->data == NULL) {
+			k_free(dyn->data);
 			return NULL;
 		}
-		dyn = &obj->base;
-		dyn->kobj.name = &obj->data;
+		dyn->kobj.name = dyn->data;
 	}
 
 	dyn->kobj.type = otype;
@@ -471,7 +450,7 @@ void *z_impl_k_object_alloc_size(enum k_objects otype, size_t size)
 
 void k_object_free(void *obj)
 {
-	struct dyn_obj_base *dyn;
+	struct dyn_obj *dyn;
 
 	/* This function is intentionally not exposed to user mode.
 	 * There's currently no robust way to track that an object isn't
@@ -502,7 +481,7 @@ struct z_object *z_object_find(const void *obj)
 	ret = z_object_gperf_find(obj);
 
 	if (ret == NULL) {
-		struct dyn_obj_base *dyn;
+		struct dyn_obj *dyn;
 
 		/* The cast to pointer-to-non-const violates MISRA
 		 * 11.8 but is justified since we know dynamic objects
@@ -519,7 +498,7 @@ struct z_object *z_object_find(const void *obj)
 
 void z_object_wordlist_foreach(_wordlist_cb_func_t func, void *context)
 {
-	struct dyn_obj_base *obj, *next;
+	struct dyn_obj *obj, *next;
 
 	z_object_gperf_wordlist_foreach(func, context);
 
@@ -559,7 +538,7 @@ static void unref_check(struct z_object *ko, uintptr_t index)
 
 	void *vko = ko;
 
-	struct dyn_obj_base *dyn = CONTAINER_OF(vko, struct dyn_obj_base, kobj);
+	struct dyn_obj *dyn = CONTAINER_OF(vko, struct dyn_obj, kobj);
 
 	__ASSERT(IS_PTR_ALIGNED(dyn, struct dyn_obj), "unaligned z_object");
 
