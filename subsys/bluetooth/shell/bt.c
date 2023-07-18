@@ -840,6 +840,7 @@ static struct bt_le_ext_adv_cb adv_callbacks = {
 
 #if defined(CONFIG_BT_PER_ADV_SYNC)
 struct bt_le_per_adv_sync *per_adv_syncs[CONFIG_BT_PER_ADV_SYNC_MAX];
+size_t selected_per_adv_sync;
 
 static void per_adv_sync_sync_cb(struct bt_le_per_adv_sync *sync,
 				 struct bt_le_per_adv_sync_synced_info *info)
@@ -2307,21 +2308,13 @@ static int cmd_per_adv_data(const struct shell *sh, size_t argc,
 static int cmd_per_adv_sync_create(const struct shell *sh, size_t argc,
 				   char *argv[])
 {
+	struct bt_le_per_adv_sync *per_adv_sync = per_adv_syncs[selected_per_adv_sync];
 	int err;
 	struct bt_le_per_adv_sync_param create_params = { 0 };
 	uint32_t options = 0;
-	struct bt_le_per_adv_sync **free_per_adv_sync = NULL;
-	int i = 0;
 
-	for (i = 0; i < ARRAY_SIZE(per_adv_syncs); i++) {
-		if (per_adv_syncs[i] == NULL) {
-			free_per_adv_sync = &per_adv_syncs[i];
-			break;
-		}
-	}
-
-	if (i == ARRAY_SIZE(per_adv_syncs)) {
-		shell_error(sh, "Cannot create more per adv syncs");
+	if (per_adv_sync != NULL) {
+		shell_error(sh, "Selected per-adv-sync is not NULL");
 		return -ENOEXEC;
 	}
 
@@ -2371,7 +2364,7 @@ static int cmd_per_adv_sync_create(const struct shell *sh, size_t argc,
 
 	create_params.options = options;
 
-	err = bt_le_per_adv_sync_create(&create_params, free_per_adv_sync);
+	err = bt_le_per_adv_sync_create(&create_params, &per_adv_syncs[selected_per_adv_sync]);
 	if (err) {
 		shell_error(sh, "Per adv sync failed (%d)", err);
 	} else {
@@ -2384,24 +2377,11 @@ static int cmd_per_adv_sync_create(const struct shell *sh, size_t argc,
 static int cmd_per_adv_sync_delete(const struct shell *sh, size_t argc,
 				   char *argv[])
 {
-	struct bt_le_per_adv_sync *per_adv_sync = NULL;
-	int index;
+	struct bt_le_per_adv_sync *per_adv_sync = per_adv_syncs[selected_per_adv_sync];
 	int err;
 
-	if (argc > 1) {
-		index = strtol(argv[1], NULL, 10);
-	} else {
-		index = 0;
-	}
-
-	if (index >= ARRAY_SIZE(per_adv_syncs)) {
-		shell_error(sh, "Maximum index is %zu but %d was requested",
-			    ARRAY_SIZE(per_adv_syncs) - 1, index);
-	}
-
-	per_adv_sync = per_adv_syncs[index];
-
 	if (!per_adv_sync) {
+		shell_error(sh, "Selected per-adv-sync is NULL");
 		return -EINVAL;
 	}
 
@@ -2411,10 +2391,40 @@ static int cmd_per_adv_sync_delete(const struct shell *sh, size_t argc,
 		shell_error(sh, "Per adv sync delete failed (%d)", err);
 	} else {
 		shell_print(sh, "Per adv sync deleted");
-		per_adv_syncs[index] = NULL;
+		per_adv_syncs[selected_per_adv_sync] = NULL;
 	}
 
 	return 0;
+}
+
+static int cmd_per_adv_sync_select(const struct shell *sh, size_t argc, char *argv[])
+{
+	if (argc == 2) {
+		unsigned long id;
+		int err = 0;
+
+		id = shell_strtoul(argv[1], 0, &err);
+		if (err != 0) {
+			shell_error(sh, "Could not parse id: %d", err);
+			return -ENOEXEC;
+		}
+
+		if (id > ARRAY_SIZE(adv_sets)) {
+			shell_error(sh, "Invalid id: %lu", id);
+			return -EINVAL;
+		}
+
+		selected_per_adv_sync = id;
+		return 0;
+	}
+
+	for (size_t i = 0U; i < ARRAY_SIZE(adv_sets); i++) {
+		if (adv_sets[i]) {
+			shell_print(sh, "PER_ADV_SYNC[%zu] %p", i, adv_sets[i]);
+		}
+	}
+
+	return -ENOEXEC;
 }
 
 #if defined(CONFIG_BT_PER_ADV_SYNC_TRANSFER_RECEIVER)
@@ -4030,6 +4040,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
 		      cmd_per_adv_sync_create, 4, 6),
 	SHELL_CMD_ARG(per-adv-sync-delete, NULL, "[<index>]",
 		      cmd_per_adv_sync_delete, 1, 1),
+	SHELL_CMD_ARG(per-adv-sync-select, NULL, "[adv]", cmd_per_adv_sync_select, 1, 1),
 #endif /* defined(CONFIG_BT_PER_ADV_SYNC) */
 #if defined(CONFIG_BT_CONN)
 #if defined(CONFIG_BT_PER_ADV_SYNC_TRANSFER_RECEIVER)
