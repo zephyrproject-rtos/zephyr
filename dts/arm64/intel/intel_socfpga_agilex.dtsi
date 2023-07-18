@@ -73,6 +73,12 @@
 		#clock-cells = <1>;
 	};
 
+	/* This is for setting the MMU region for pinmux */
+	pinmux: pinmux@ffd13000 {
+		compatible = "syscon";
+		reg = <0xffd13000 0x1000>;
+	};
+
 	/*
 	 * This qspi setting included
 	 * The QSPI controller register and
@@ -183,5 +189,23 @@
 		reg = <0xffd00500 0x100>;
 		clocks = <&clock INTEL_SOCFPGA_CLOCK_WDT>;
 		status = "disabled";
+	};
+
+	gpio0: gpio@ffc03200 {
+		compatible = "intel,socfpga-gpio";
+		reg = <0xffc03200 0x100>;
+		gpio-controller;
+		#gpio-cells=<2>;
+		status = "disabled";
+		ngpios = <24>;   /* 0..23 */
+	};
+
+	gpio1: gpio@ffc03300 {
+		compatible = "intel,socfpga-gpio";
+		reg = <0xffc03300 0x100>;
+		gpio-controller;
+		#gpio-cells=<2>;
+		status = "disabled";
+		ngpios = <24>;   /* 24..47 */
 	};
 };
