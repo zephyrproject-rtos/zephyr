@@ -206,18 +206,20 @@ void trylock_fn(void *p1, void *p2, void *p3)
 ZTEST(spinlock, test_trylock)
 {
 	int i;
+	int j;
 
-	k_thread_create(&cpu1_thread, cpu1_stack, CPU1_STACK_SIZE,
-			trylock_fn, NULL, NULL, NULL,
-			0, 0, K_NO_WAIT);
+	for (j = 0; trylock_failures == 0 && j < CONFIG_TEST_TRYLOCK_RETRIES; j++) {
+		k_thread_create(&cpu1_thread, cpu1_stack, CPU1_STACK_SIZE, trylock_fn, NULL, NULL,
+				NULL, 0, 0, K_NO_WAIT);
 
-	k_busy_wait(10);
+		k_busy_wait(10);
 
-	for (i = 0; i < 10000; i++) {
-		bounce_once(1234, true);
+		for (i = 0; i < 10000; i++) {
+			bounce_once(1234, true);
+		}
+
+		bounce_done = 1;
 	}
-
-	bounce_done = 1;
 
 	zassert_true(trylock_failures > 0);
 	zassert_true(trylock_successes > 0);

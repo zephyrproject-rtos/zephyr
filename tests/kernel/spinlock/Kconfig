@@ -1,0 +1,17 @@
+# Copyright (c) 2023 Meta
+#
+# SPDX-License-Identifier: Apache-2.0
+
+source "Kconfig.zephyr"
+
+config TEST_TRYLOCK_RETRIES
+	int "Max number of retries to ensure contention"
+	default 10
+	help
+	  The k_spin_trylock() function will return an error code in the case that the lock is owned
+	  by another thread and generally speaking, that is a type of resource contention. For this
+	  particular test, we actually do want to see trylock fail, because that is of course a code
+	  path that needs to be tested.
+
+	  This option will retry the test up to CONFIG_TEST_TRYLOCK_RETRIES times if a failure is
+	  not seen in an attempt to elicit the desired code path.
