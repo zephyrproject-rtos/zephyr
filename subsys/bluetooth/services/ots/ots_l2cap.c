@@ -187,7 +187,8 @@ static struct bt_gatt_ots_l2cap *find_free_l2cap_ctx(void)
 	return NULL;
 }
 
-static int l2cap_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
+static int l2cap_accept(struct bt_conn *conn, struct bt_l2cap_server *server,
+			struct bt_l2cap_chan **chan)
 {
 	struct bt_gatt_ots_l2cap *l2cap_ctx;
 

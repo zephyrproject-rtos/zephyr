@@ -261,7 +261,8 @@ static void disconnect_all_channels(void)
 	}
 }
 
-static int accept(struct bt_conn *conn, struct bt_l2cap_chan **l2cap_chan)
+static int accept(struct bt_conn *conn, struct bt_l2cap_server *server,
+		  struct bt_l2cap_chan **l2cap_chan)
 {
 	struct channel *chan;
 
