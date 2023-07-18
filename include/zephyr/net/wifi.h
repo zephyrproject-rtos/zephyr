@@ -135,7 +135,9 @@ static inline const char *wifi_band_txt(enum wifi_frequency_bands band)
 }
 
 #define WIFI_SSID_MAX_LEN 32
+#define WIFI_PSK_MIN_LEN 8
 #define WIFI_PSK_MAX_LEN 64
+#define WIFI_SAE_PSWD_MAX_LEN 128
 #define WIFI_MAC_ADDR_LEN 6
 
 #define WIFI_CHANNEL_MAX 233
