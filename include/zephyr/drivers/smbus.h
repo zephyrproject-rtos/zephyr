@@ -288,12 +288,11 @@ struct smbus_callback {
 
 /**
  * @brief Complete SMBus DT information
- *
- * @param bus SMBus bus
- * @param addr Address of the SMBus peripheral device.
  */
 struct smbus_dt_spec {
+	/** SMBus bus */
 	const struct device *bus;
+	/** Address of the SMBus peripheral device */
 	uint16_t addr;
 };
 
