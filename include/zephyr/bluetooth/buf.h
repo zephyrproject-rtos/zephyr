@@ -164,6 +164,18 @@ static inline enum bt_buf_type bt_buf_get_type(struct net_buf *buf)
 		->type;
 }
 
+struct bt_buf_view_meta {
+	struct net_buf *parent;
+	/* saves the data pointers while the parent buffer is locked. */
+	struct net_buf_simple backup;
+};
+
+struct net_buf *bt_buf_make_view(struct net_buf *view, struct net_buf *parent,
+				 size_t winsize, size_t headroom, struct bt_buf_view_meta *meta);
+
+bool bt_buf_has_view(struct net_buf *parent);
+
+void bt_buf_destroy_view(struct net_buf *view, struct bt_buf_view_meta *meta);
 /**
  * @}
  */
