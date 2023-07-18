@@ -5,6 +5,9 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#ifndef ZEPHYR_INCLUDE_BLUETOOTH_EAD_H_
+#define ZEPHYR_INCLUDE_BLUETOOTH_EAD_H_
+
 #include <zephyr/kernel.h>
 #include <zephyr/bluetooth/bluetooth.h>
 
@@ -89,3 +92,5 @@ int bt_ead_encrypt(const uint8_t session_key[BT_EAD_KEY_SIZE], const uint8_t iv[
 int bt_ead_decrypt(const uint8_t session_key[BT_EAD_KEY_SIZE], const uint8_t iv[BT_EAD_IV_SIZE],
 		   const uint8_t *encrypted_payload, size_t encrypted_payload_size,
 		   uint8_t *payload);
+
+#endif /* ZEPHYR_INCLUDE_BLUETOOTH_EAD_H_ */
