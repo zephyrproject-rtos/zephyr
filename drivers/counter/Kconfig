@@ -16,6 +16,12 @@ config COUNTER_INIT_PRIORITY
 	help
 	  Counter driver device initialization priority.
 
+config COUNTER_SHELL
+	bool "Counter shell"
+	depends on SHELL
+	help
+	  Enable Shell Commands for Counter and Timer
+
 module = COUNTER
 module-str = counter
 source "subsys/logging/Kconfig.template.log_config"
