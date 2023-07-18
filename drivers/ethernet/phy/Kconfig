@@ -23,8 +23,7 @@ config PHY_INIT_PRIORITY
 
 config PHY_GENERIC_MII
 	bool "Generic MII PHY Driver"
-	default y
-	depends on DT_HAS_ETHERNET_PHY_ENABLED
+	default y if DT_HAS_ETHERNET_PHY_ENABLED
 	depends on MDIO
 	help
 	  This is a generic MII PHY interface that communicates with the
@@ -46,6 +45,15 @@ config PHY_TJA1103
 	depends on MDIO
 	help
 	  Enable TJA1103 PHY driver.
+
+config PHY_MICROCHIP_KSZ8081
+	bool "Microchip KSZ8081 Phy Driver"
+	default y
+	depends on DT_HAS_MICROCHIP_KSZ8081_ENABLED
+	depends on MDIO
+	depends on GPIO
+	help
+	  Enable Microchip KSZ8081 Ethernet Phy Driver
 
 config PHY_AUTONEG_TIMEOUT_MS
 	int "Auto-negotiation timeout value in milliseconds"
