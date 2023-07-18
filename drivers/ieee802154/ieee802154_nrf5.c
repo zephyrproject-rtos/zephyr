@@ -1,7 +1,7 @@
 /* ieee802154_nrf5.c - nRF5 802.15.4 driver */
 
 /*
- * Copyright (c) 2017 Nordic Semiconductor ASA
+ * Copyright (c) 2017-2023 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -34,6 +34,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #if defined(CONFIG_NET_L2_OPENTHREAD)
 #include <zephyr/net/openthread.h>
+#include <zephyr/net/ieee802154_radio_openthread.h>
 #endif
 
 #include <zephyr/sys/byteorder.h>
@@ -229,7 +230,11 @@ static void nrf5_get_capabilities_at_boot(void)
 		((caps & NRF_802154_CAPABILITY_DELAYED_TX) ? IEEE802154_HW_TXTIME : 0UL) |
 		((caps & NRF_802154_CAPABILITY_DELAYED_RX) ? IEEE802154_HW_RXTIME : 0UL) |
 		IEEE802154_HW_SLEEP_TO_TX |
-		((caps & NRF_802154_CAPABILITY_SECURITY) ? IEEE802154_HW_TX_SEC : 0UL);
+		((caps & NRF_802154_CAPABILITY_SECURITY) ? IEEE802154_HW_TX_SEC : 0UL)
+#if defined(CONFIG_IEEE802154_NRF5_MULTIPLE_CCA)
+		| IEEE802154_OPENTHREAD_HW_MULTIPLE_CCA
+#endif
+		;
 }
 
 /* Radio device API */
@@ -546,8 +551,32 @@ static uint64_t target_time_convert_to_64_bits(uint32_t target_time)
 	return result;
 }
 
-static bool nrf5_tx_at(struct net_pkt *pkt, uint8_t *payload, bool cca)
+static bool nrf5_tx_at(struct nrf5_802154_data *nrf5_radio, struct net_pkt *pkt,
+		   uint8_t *payload, enum ieee802154_tx_mode mode)
 {
+	bool cca = false;
+#if defined(CONFIG_IEEE802154_NRF5_MULTIPLE_CCA)
+	uint8_t max_extra_cca_attempts = 0;
+#endif
+
+	switch (mode) {
+	case IEEE802154_TX_MODE_TXTIME:
+		break;
+	case IEEE802154_TX_MODE_TXTIME_CCA:
+		cca = true;
+		break;
+#if defined(CONFIG_IEEE802154_NRF5_MULTIPLE_CCA)
+	case IEEE802154_OPENTHREAD_TX_MODE_TXTIME_MULTIPLE_CCA:
+		cca = true;
+		max_extra_cca_attempts = nrf5_radio->max_extra_cca_attempts;
+		break;
+#endif
+		break;
+	default:
+		__ASSERT_NO_MSG(false);
+		return false;
+	}
+
 	nrf_802154_transmit_at_metadata_t metadata = {
 		.frame_props = {
 			.is_secured = net_pkt_ieee802154_frame_secured(pkt),
@@ -561,6 +590,9 @@ static bool nrf5_tx_at(struct net_pkt *pkt, uint8_t *payload, bool cca)
 			.power = net_pkt_ieee802154_txpwr(pkt),
 #endif
 		},
+#if defined(CONFIG_IEEE802154_NRF5_MULTIPLE_CCA)
+		.extra_cca_attempts = max_extra_cca_attempts,
+#endif
 	};
 	uint64_t tx_at = target_time_convert_to_64_bits(net_pkt_txtime(pkt) / NSEC_PER_USEC);
 
@@ -605,9 +637,11 @@ static int nrf5_tx(const struct device *dev,
 #if defined(CONFIG_NET_PKT_TXTIME)
 	case IEEE802154_TX_MODE_TXTIME:
 	case IEEE802154_TX_MODE_TXTIME_CCA:
+#if defined(CONFIG_IEEE802154_NRF5_MULTIPLE_CCA)
+	case IEEE802154_OPENTHREAD_TX_MODE_TXTIME_MULTIPLE_CCA:
+#endif
 		__ASSERT_NO_MSG(pkt);
-		ret = nrf5_tx_at(pkt, nrf5_radio->tx_psdu,
-				 mode == IEEE802154_TX_MODE_TXTIME_CCA);
+		ret = nrf5_tx_at(nrf5_radio, pkt, nrf5_radio->tx_psdu, mode);
 		break;
 #endif /* CONFIG_NET_PKT_TXTIME */
 	default:
@@ -978,8 +1012,42 @@ static int nrf5_configure(const struct device *dev,
 		break;
 #endif /* CONFIG_IEEE802154_CSL_ENDPOINT */
 
+#if defined(IEEE802154_NRF5_MULTIPLE_CCA)
+	case IEEE802154_OPENTHREAD_CONFIG_MULTIPLE_CCA:
+		nrf5_data.max_extra_cca_attempts =
+			((const struct ieee802154_openthread_config *)config)
+				->max_extra_cca_attempts;
+		break;
+#endif /* IEEE802154_NRF5_MULTIPLE_CCA */
+
 	default:
 		return -EINVAL;
+	}
+
+	return 0;
+}
+
+static int nrf5_attr_get(const struct device *dev,
+			 enum ieee802154_attr attr,
+			 struct ieee802154_attr_value *value)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(value);
+
+	switch (attr) {
+#if defined(IEEE802154_NRF5_MULTIPLE_CCA)
+	/* TODO: t_recca and t_ccatx should be provided by the public API of the
+	 * nRF 802.15.4 Radio Driver.
+	 */
+	case IEEE802154_OPENTHREAD_ATTR_T_RECCA:
+		((struct ieee802154_openthread_attr_value *)value)->t_recca = 0;
+		break;
+	case IEEE802154_OPENTHREAD_ATTR_T_CCATX:
+		((struct ieee802154_openthread_attr_value *)value)->t_ccatx = 20;
+		break;
+#endif
+	default:
+		return -ENOENT;
 	}
 
 	return 0;
@@ -1184,6 +1252,7 @@ static struct ieee802154_radio_api nrf5_radio_api = {
 	.get_time = nrf5_get_time,
 	.get_sch_acc = nrf5_get_acc,
 	.configure = nrf5_configure,
+	.attr_get = nrf5_attr_get
 };
 
 #if defined(CONFIG_NET_L2_IEEE802154)
