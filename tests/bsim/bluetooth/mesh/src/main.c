@@ -77,7 +77,7 @@ bst_test_install_t test_installers[] = {
 static struct k_thread bsim_mesh_thread;
 static K_KERNEL_STACK_DEFINE(bsim_mesh_thread_stack, 4096);
 
-static void bsim_mesh_entry_point(void *, void *, void *)
+static void bsim_mesh_entry_point(void *unused1, void *unused2, void *unused3)
 {
 	bst_main();
 }
