@@ -76,77 +76,23 @@ Build Zephyr application
       A Zephyr EFI image file named :file:`zephyr.efi` is automatically
       created in the build directory after the application is built.
 
-Preparing the Boot Device
-=========================
+Booting the UP Squared Board using UEFI
+=======================================
 
-Prepare a USB flash drive to boot the Zephyr application image on
-a UP Squared board.
+.. include:: ../../common/efi_boot.rst
 
-#. Refer to the `UP Squared Serial Console Wiki page
+
+.. note::
+   Refer to the `UP Squared Serial Console Wiki page
    <https://wiki.up-community.org/Serial_console>`_ for instructions on how to
-   connect for serial console.
+   connect serial console.
 
-#. Format the USB flash drive as FAT32.
-
-   On Windows, open ``File Explorer``, and right-click on the USB flash drive.
-   Select ``Format...``. Make sure in ``File System``, ``FAT32`` is selected.
-   Click on the ``Format`` button and wait for it to finish.
-
-   On Linux, graphical utilities such as ``gparted`` can be used to format
-   the USB flash drive as FAT32. Alternatively, under terminal, find out
-   the corresponding device node for the USB flash drive (for example,
-   ``/dev/sdd``). Execute the following command:
+.. note::
+   You can safely ignore this message if it appears:
 
    .. code-block:: console
 
-      $ mkfs.vfat -F 32 <device-node>
-
-   .. important::
-      Make sure the device node is the actual device node for
-      the USB flash drive. Or else you may erase other storage devices
-      on your system, and will render the system unusable afterwards.
-
-#. Copy the Zephyr EFI image file :file:`zephyr/zephyr.efi` to the USB drive.
-
-Booting the UP Squared Board
-============================
-
-Boot the UP Squared board to the EFI shell with USB flash drive connected.
-
-#. Insert the prepared boot device (USB flash drive) into the UP Squared board.
-
-#. Connect the board to the host system using the serial cable and
-   configure your host system to watch for serial data.  See
-   https://wiki.up-community.org/Serial_console.
-
-   .. note::
-      On Windows, PuTTY has an option to set up configuration for
-      serial data.  Use a baud rate of 115200.
-
-#. Power on the UP Squared board.
-
-#. When the following output appears, press :kbd:`F7`:
-
-   .. code-block:: console
-
-      Press <DEL> or <ESC> to enter setup.
-
-#. From the menu that appears, select the menu entry that describes
-   that particular EFI shell.
-
-#. From the EFI shell select Zephyr EFI image to boot.
-
-   .. code-block:: console
-
-      Shell> fs0:zephyr.efi
-
-   .. note::
-      You can safely ignore this message if it appears:
-
-      .. code-block:: console
-
-         WARNING: no console will be available to OS
-
+      WARNING: no console will be available to OS
 
 Booting the UP Squared Board over network
 =========================================
