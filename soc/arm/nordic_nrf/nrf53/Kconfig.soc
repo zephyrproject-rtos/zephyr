@@ -9,6 +9,7 @@ config SOC_NRF5340_CPUAPP
 	select CPU_HAS_NRF_IDAU
 	select CPU_HAS_FPU
 	select ARMV8_M_DSP
+	select HAS_PM
 
 config SOC_NRF5340_CPUNET
 	bool

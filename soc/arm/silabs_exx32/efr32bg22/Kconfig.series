@@ -20,5 +20,6 @@ config SOC_SERIES_EFR32BG22
 	select SOC_GECKO_CORE
 	select SOC_GECKO_DEV_INIT
 	select SOC_GECKO_SE
+	select HAS_PM
 	help
 	  Enable support for EFR32BG22 Blue Gecko MCU series
