@@ -5,11 +5,6 @@
  */
 
 / {
-	power_states: power_states {
-		compatible = "test-power-states-api";
-		cpu-power-states = <&state0 &state1 &state2>;
-	};
-
 	state0: state0 {
 		compatible = "zephyr,power-state";
 		power-state-name = "suspend-to-idle";
@@ -28,4 +23,8 @@
 		compatible = "zephyr,power-state";
 		power-state-name = "standby";
 	};
+};
+
+&cpu0 {
+	cpu-power-states = <&state0 &state1 &state2>;
 };
