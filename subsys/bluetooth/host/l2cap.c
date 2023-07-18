@@ -1048,7 +1048,7 @@ static uint16_t l2cap_chan_accept(struct bt_conn *conn,
 	/* Request server to accept the new connection and allocate the
 	 * channel.
 	 */
-	err = server->accept(conn, chan);
+	err = server->accept(conn, server, chan);
 	if (err < 0) {
 		return le_err_to_result(err);
 	}

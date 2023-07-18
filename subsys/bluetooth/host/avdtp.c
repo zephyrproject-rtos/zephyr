@@ -220,7 +220,8 @@ int bt_avdtp_disconnect(struct bt_avdtp *session)
 	return bt_l2cap_chan_disconnect(&session->br_chan.chan);
 }
 
-int bt_avdtp_l2cap_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
+int bt_avdtp_l2cap_accept(struct bt_conn *conn, struct bt_l2cap_server *server,
+			  struct bt_l2cap_chan **chan)
 {
 	struct bt_avdtp *session = NULL;
 	int result;
