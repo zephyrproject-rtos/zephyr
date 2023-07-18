@@ -9,7 +9,7 @@
  * @brief I2C driver for Infineon XMC MCU family.
  */
 
-#define DT_DRV_COMPAT infineon_xmc4_i2c
+#define DT_DRV_COMPAT infineon_xmc4xxx_i2c
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(i2c_infineon_xmc4, CONFIG_I2C_LOG_LEVEL);
