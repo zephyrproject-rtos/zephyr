@@ -470,6 +470,7 @@ void k_object_free(void *obj)
 	k_spin_unlock(&objfree_lock, key);
 
 	if (dyn != NULL) {
+		k_free(dyn->data);
 		k_free(dyn);
 	}
 }
@@ -571,6 +572,7 @@ static void unref_check(struct z_object *ko, uintptr_t index)
 	}
 
 	sys_dlist_remove(&dyn->dobj_list);
+	k_free(dyn->data);
 	k_free(dyn);
 out:
 #endif
