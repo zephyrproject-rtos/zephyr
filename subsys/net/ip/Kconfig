@@ -456,6 +456,14 @@ config NET_TCP_FAST_RETRANSMIT
 	  In that case a retransmission is triggerd to avoid having to wait for
 	  the retransmit timer to elapse.
 
+config NET_TCP_CONGESTION_AVOIDANCE
+	bool "Implement a congestion avoidance algorithm in TCP"
+	depends on NET_TCP
+	default y
+	help
+	  To avoid overstressing a link reduce the transmission rate as soon as
+	  packets are starting to drop.
+
 config NET_TCP_MAX_SEND_WINDOW_SIZE
 	int "Maximum sending window size to use"
 	depends on NET_TCP
