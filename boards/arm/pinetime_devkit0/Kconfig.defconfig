@@ -11,6 +11,9 @@ config BOARD
 config BT_CTLR
 	default BT
 
+config INPUT
+	default y if KSCAN
+
 if FLASH
 
 config SPI_NOR_FLASH_LAYOUT_PAGE_SIZE

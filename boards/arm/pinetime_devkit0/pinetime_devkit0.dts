@@ -25,7 +25,7 @@
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
 		zephyr,display = &st7789v;
-		zephyr,keyboard-scan = &cst816s;
+		zephyr,keyboard-scan = &kscan_input;
 	};
 
 	aliases {
@@ -34,7 +34,7 @@
 		led2 = &blled2;	/* backlight high */
 		led3 = &statusled;	/* status led, may be not populated */
 		sw0 = &key_in;  /* key in */
-		kscan0 = &cst816s;
+		kscan0 = &kscan_input;
 		watchdog0 = &wdt0;
 	};
 
@@ -128,6 +128,10 @@
 		reg = <0x15>;
 		irq-gpios = <&gpio0 28 GPIO_ACTIVE_LOW>;
 		rst-gpios = <&gpio0 10 GPIO_ACTIVE_LOW>;
+
+		kscan_input: kscan-input {
+			compatible = "zephyr,kscan-input";
+		};
 	};
 };
 
