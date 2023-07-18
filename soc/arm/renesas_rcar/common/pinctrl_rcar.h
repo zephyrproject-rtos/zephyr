@@ -1,12 +1,12 @@
 /*
- * Copyright (c) 2021 IoT.bzh
+ * Copyright (c) 2023 IoT.bzh
  *
  * SPDX-License-Identifier: Apache-2.0
  *
  */
 
-#ifndef ZEPHYR_SOC_ARM_RENESAS_RCAR_GEN3_PINCTRL_SOC_H_
-#define ZEPHYR_SOC_ARM_RENESAS_RCAR_GEN3_PINCTRL_SOC_H_
+#ifndef ZEPHYR_SOC_ARM_RENESAS_RCAR_COMMON_PINCTRL_SOC_H_
+#define ZEPHYR_SOC_ARM_RENESAS_RCAR_COMMON_PINCTRL_SOC_H_
 
 #include <zephyr/devicetree.h>
 #include <zephyr/dt-bindings/pinctrl/renesas/pinctrl-rcar-common.h>
@@ -18,6 +18,7 @@ struct rcar_pin_func {
 	uint8_t shift:5;     /* bit shift 0 - 28 */
 	uint8_t func:4;      /* choice from 0x0 to 0xF */
 };
+
 /** Pull-up, pull-down, or bias disable is requested */
 #define RCAR_PIN_FLAGS_PULL_SET BIT(0)
 /** Performs on/off control of the pull resistors */
@@ -60,7 +61,7 @@ typedef struct pinctrl_soc_pin {
 	{								       \
 		.pin = DT_PROP_BY_IDX(node_id, pin, 0),			       \
 		.func = COND_CODE_1(RCAR_HAS_IPSR(node_id),		       \
-				    (RCAR_PIN_FUNC(node_id)), (0)),	       \
+				    (RCAR_PIN_FUNC(node_id)), {0}),	       \
 		.flags = RCAR_PIN_FLAGS(node_id),			       \
 		.drive_strength =					       \
 			COND_CODE_1(DT_NODE_HAS_PROP(node_id, drive_strength), \
@@ -111,4 +112,4 @@ struct pfc_bias_reg {
  */
 #define RCAR_IS_GP_PIN(pin) (pin < PIN_NOGPSR_START)
 
-#endif /* ZEPHYR_SOC_ARM_RENESAS_RCAR_GEN3_PINCTRL_SOC_H_ */
+#endif /* ZEPHYR_SOC_ARM_RENESAS_RCAR_COMMON_PINCTRL_SOC_H_ */

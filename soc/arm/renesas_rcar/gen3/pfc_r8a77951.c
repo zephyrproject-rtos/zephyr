@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 IoT.bzh
+ * Copyright (c) 2021-2023 IoT.bzh
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -528,6 +528,7 @@ const struct pfc_bias_reg pfc_bias_regs[] = {
 	  } },
 	{ /* sentinel */ },
 };
+
 const struct pfc_bias_reg *pfc_rcar_get_bias_regs(void)
 {
 	return pfc_bias_regs;
@@ -535,4 +536,11 @@ const struct pfc_bias_reg *pfc_rcar_get_bias_regs(void)
 const struct pfc_drive_reg *pfc_rcar_get_drive_regs(void)
 {
 	return pfc_drive_regs;
+}
+
+int pfc_rcar_get_reg_index(uint8_t pin, uint8_t *reg_index)
+{
+	/* There is only one register on Gen 3 */
+	*reg_index = 0;
+	return 0;
 }
