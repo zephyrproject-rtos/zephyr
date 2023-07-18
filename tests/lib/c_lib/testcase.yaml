@@ -16,6 +16,7 @@ tests:
       - CONFIG_PICOLIBC=y
   libraries.libc.newlib:
     filter: CONFIG_NEWLIB_LIBC_SUPPORTED
+    min_ram: 32
     tags: newlib
     ignore_faults: true
     extra_configs:
