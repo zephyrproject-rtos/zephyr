@@ -179,6 +179,7 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 {
 	/* new LPTIM AutoReload value to set (aligned on Kernel ticks) */
 	uint32_t next_arr = 0;
+	int err;
 
 	ARG_UNUSED(idle);
 
@@ -192,8 +193,11 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 	}
 
 	/* if LPTIM clock was previously stopped, it must now be restored */
-	clock_control_on(clk_ctrl, (clock_control_subsys_t) &lptim_clk[0]);
+	err = clock_control_on(clk_ctrl, (clock_control_subsys_t) &lptim_clk[0]);
 
+	if (err < 0) {
+		return;
+	}
 	/* passing ticks==1 means "announce the next tick",
 	 * ticks value of zero (or even negative) is legal and
 	 * treated identically: it simply indicates the kernel would like the
@@ -327,7 +331,6 @@ static int sys_clock_driver_init(void)
 {
 	uint32_t count_per_tick;
 	int err;
-
 
 	if (!device_is_ready(clk_ctrl)) {
 		return -ENODEV;
