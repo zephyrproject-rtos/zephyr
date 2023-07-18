@@ -56,6 +56,4 @@
 
 arduino_spi: &usic2ch0 {};
 arduino_serial: &usic1ch0 {};
-/* The drivers for i2c not yet implemented. Add placeholder in the */
-/* correct usic channel. */
 arduino_i2c: &usic1ch1 {};
