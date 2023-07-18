@@ -39,6 +39,8 @@ struct btp_gap_read_controller_index_list_rp {
 #define BTP_GAP_SETTINGS_PRIVACY		13
 #define BTP_GAP_SETTINGS_CONTROLLER_CONFIG	14
 #define BTP_GAP_SETTINGS_STATIC_ADDRESS		15
+#define BTP_GAP_SETTINGS_SC_ONLY		16
+#define BTP_GAP_SETTINGS_EXTENDED_ADVERTISING	17
 
 #define BTP_GAP_READ_CONTROLLER_INFO		0x03
 struct btp_gap_read_controller_info_rp {
@@ -232,6 +234,19 @@ struct btp_gap_set_mitm {
 struct btp_gap_set_filter_list {
 	uint8_t cnt;
 	bt_addr_le_t addr[0];
+} __packed;
+
+#define BTP_GAP_SET_PRIVACY			0x1d
+#define BTP_GAP_SET_SC_ONLY			0x1e
+#define BTP_GAP_SET_SC				0x1f
+#define BTP_GAP_SET_MIN_ENC_KEY_SIZE		0x20
+
+#define BTP_GAP_SET_EXTENDED_ADVERTISING	0x21
+struct btp_gap_set_extended_advertising_cmd {
+	uint8_t settings;
+} __packed;
+struct btp_gap_set_extended_advertising_rp {
+	uint32_t current_settings;
 } __packed;
 
 /* events */
