@@ -795,7 +795,6 @@ static void ascs_iso_connected(struct bt_iso_chan *chan)
 static void ascs_ep_iso_disconnected(struct bt_bap_ep *ep, uint8_t reason)
 {
 	struct bt_ascs_ase *ase = CONTAINER_OF(ep, struct bt_ascs_ase, ep);
-	const struct bt_bap_stream_ops *ops;
 	struct bt_bap_stream *stream;
 
 	stream = ep->stream;
@@ -803,8 +802,6 @@ static void ascs_ep_iso_disconnected(struct bt_bap_ep *ep, uint8_t reason)
 		LOG_ERR("No stream for ep %p", ep);
 		return;
 	}
-
-	ops = stream->ops;
 
 	LOG_DBG("stream %p ep %p reason 0x%02x", stream, stream->ep, reason);
 
