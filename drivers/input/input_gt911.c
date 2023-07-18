@@ -343,7 +343,11 @@ static int gt911_init(const struct device *dev)
 	}
 
 #ifdef CONFIG_INPUT_GT911_INTERRUPT
-	gpio_add_callback(config->int_gpio.port, &data->int_gpio_cb);
+	r = gpio_add_callback(config->int_gpio.port, &data->int_gpio_cb);
+	if (r < 0) {
+		LOG_ERR("Could not set gpio callback");
+		return ret;
+	}
 #else
 	k_timer_start(&data->timer, K_MSEC(CONFIG_INPUT_GT911_PERIOD_MS),
 		      K_MSEC(CONFIG_INPUT_GT911_PERIOD_MS));
