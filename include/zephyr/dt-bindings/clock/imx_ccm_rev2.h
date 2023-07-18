@@ -84,5 +84,8 @@
 #define IMX_CCM_SAI3_CLK        0x2002UL
 #define IMX_CCM_SAI4_CLK        0x2003UL
 
+/* ENET */
+#define IMX_CCM_ENET_CLK	0x3000UL
+
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_IMX_CCM_REV2_H_ */
