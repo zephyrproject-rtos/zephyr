@@ -30,15 +30,11 @@
 			   <18 0 &gpio3 7 0>,	/* D12 */
 			   <19 0 &gpio3 9 0>,	/* D13 */
 			   <20 0 &gpio3 15 0>,	/* D14 */
-			   <21 0 &gpio3 13 0>;	/* D15 */
+			   <21 0 &gpio0 13 0>;	/* D15 */
 	};
 };
 
-&gpio14 {
-	status = "okay";
-};
-
-&gpio2 {
+&gpio0 {
 	status = "okay";
 };
 
@@ -46,7 +42,15 @@
 	status = "okay";
 };
 
+&gpio2 {
+	status = "okay";
+};
+
 &gpio3 {
+	status = "okay";
+};
+
+&gpio14 {
 	status = "okay";
 };
 
