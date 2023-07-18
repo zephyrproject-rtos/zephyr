@@ -473,7 +473,7 @@ struct dev##_descriptor_##i {						\
 	.bDescriptorType = USB_DESC_CS_INTERFACE,	\
 	.bDescriptorSubtype = USB_AUDIO_AS_GENERAL,	\
 	.bTerminalLink = link,				\
-	.bDelay = 0,					\
+	.bDelay = 1,					\
 	.wFormatTag = sys_cpu_to_le16(0x0001),		\
 }
 
