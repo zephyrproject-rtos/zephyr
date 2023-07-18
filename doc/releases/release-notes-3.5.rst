@@ -266,11 +266,18 @@ HALs
 MCUboot
 *******
 
+Mbed TLS
+********
+
+* Update to Mbed TLS 3.4.0.
+
 Storage
 *******
 
 Trusted Firmware-M
 ******************
+
+* Update to TF-M 1.8.0
 
 Trusted Firmware-A
 ******************
