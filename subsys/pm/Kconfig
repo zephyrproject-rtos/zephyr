@@ -6,7 +6,7 @@ menu "Power Management"
 
 menuconfig PM
 	bool "System Power Management"
-	depends on SYS_CLOCK_EXISTS && !HAS_NO_PM
+	depends on SYS_CLOCK_EXISTS
 	help
 	  This option enables the board to implement extra power management
 	  policies whenever the kernel becomes idle. The kernel informs the
@@ -53,14 +53,6 @@ config PM_POLICY_CUSTOM
 endchoice
 
 endif # PM
-
-config HAS_NO_PM
-	bool
-	help
-	  This option blocks selection of PM.  It can be selected in SOC
-	  targets where system power management is not supported, for example
-	  on support core of a multi-core device where SoC power management is
-	  the responsibility of a different core.
 
 config PM_DEVICE
 	bool "Device Power Management"
