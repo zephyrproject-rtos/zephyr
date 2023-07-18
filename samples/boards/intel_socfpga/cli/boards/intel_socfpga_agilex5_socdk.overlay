@@ -76,3 +76,7 @@
 &nand {
 	status = "okay";
 };
+
+&usbotg {
+	status = "okay";
+};
