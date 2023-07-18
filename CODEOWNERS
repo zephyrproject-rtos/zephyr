@@ -234,6 +234,7 @@
 /drivers/flash/*nrf*                      @de-nordic
 /drivers/flash/*esp32*                    @sylvioalves
 /drivers/gpio/*b91*                       @andy-liu-telink
+/drivers/gpio/*intel_socfpga*             @alifzakuan @ickochar
 /drivers/gpio/*lmp90xxx*                  @henrikbrixandersen
 /drivers/gpio/*nct38xx*                   @MulinChao @ChiHuaL
 /drivers/gpio/*stm32*                     @erwango
@@ -462,6 +463,7 @@
 /dts/xtensa/espressif/                    @sylvioalves
 /dts/xtensa/nxp/                          @iuliana-prodan @dbaluta
 /dts/bindings/can/                        @alexanderwachter @henrikbrixandersen
+/dts/bindings/gpio/*intel,socfpga-gpio*.yaml @alifzakuan @ickochar
 /dts/bindings/i2c/zephyr*i2c-emul*.yaml   @sjg20
 /dts/bindings/adc/st*stm32-adc.yaml       @cybertale
 /dts/bindings/adc/*ads114s08.yaml         @benediktibk
