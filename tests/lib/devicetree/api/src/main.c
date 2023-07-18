@@ -25,6 +25,8 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/mbox.h>
 
+#include <stdlib.h>
+
 #define TEST_CHILDREN	DT_PATH(test, test_children)
 #define TEST_DEADBEEF	DT_PATH(test, gpio_deadbeef)
 #define TEST_ABCD1234	DT_PATH(test, gpio_abcd1234)
@@ -2438,6 +2440,28 @@ ZTEST(devicetree_api, test_dep_ord)
 	for (i = 0; i < ARRAY_SIZE(inst_supports); i++) {
 		zassert_true(ORD_IN_ARRAY(inst_supports[i], children_ords), "");
 	}
+}
+
+ZTEST(devicetree_api, test_dep_ord_str_sortable)
+{
+	const char *root_ord = STRINGIFY(DT_DEP_ORD_STR_SORTABLE(DT_ROOT));
+
+	/* Root ordinal is always 0 */
+	zassert_mem_equal(root_ord, "00000", 6);
+
+	/* Test string sortable versions equal decimal values.
+	 * We go through the STRINGIFY()->atoi conversion cycle to avoid
+	 * the C compiler treating the number as octal due to leading zeros.
+	 * atoi() simply ignores them.
+	 */
+	zassert_equal(atoi(STRINGIFY(DT_DEP_ORD_STR_SORTABLE(DT_ROOT))),
+		      DT_DEP_ORD(DT_ROOT), "Invalid sortable string");
+	zassert_equal(atoi(STRINGIFY(DT_DEP_ORD_STR_SORTABLE(TEST_DEADBEEF))),
+		      DT_DEP_ORD(TEST_DEADBEEF), "Invalid sortable string");
+	zassert_equal(atoi(STRINGIFY(DT_DEP_ORD_STR_SORTABLE(TEST_TEMP))),
+		      DT_DEP_ORD(TEST_TEMP), "Invalid sortable string");
+	zassert_equal(atoi(STRINGIFY(DT_DEP_ORD_STR_SORTABLE(TEST_REG))),
+		      DT_DEP_ORD(TEST_REG), "Invalid sortable string");
 }
 
 ZTEST(devicetree_api, test_path)
