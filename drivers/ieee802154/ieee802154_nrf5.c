@@ -582,6 +582,11 @@ static int nrf5_tx(const struct device *dev,
 	uint8_t *payload = frag->data;
 	bool ret = true;
 
+	if (payload_len > NRF5_PSDU_LENGTH) {
+		LOG_ERR("Payload too large: %d", payload_len);
+		return -EMSGSIZE;
+	}
+
 	LOG_DBG("%p (%u)", payload, payload_len);
 
 	nrf5_radio->tx_psdu[0] = payload_len + NRF5_FCS_LENGTH;
