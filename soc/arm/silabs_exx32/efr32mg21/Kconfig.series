@@ -19,5 +19,6 @@ config SOC_SERIES_EFR32MG21
 	select SOC_GECKO_EMU
 	select SOC_GECKO_GPIO
 	select SOC_GECKO_SE
+	select HAS_PM
 	help
 	  Enable support for EFR32MG21 Mighty Gecko MCU series

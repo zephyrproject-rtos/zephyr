@@ -14,6 +14,7 @@ config SOC_ESP32C3
 	select RISCV_ISA_EXT_M
 	select RISCV_ISA_EXT_C
 	select RISCV_ISA_EXT_ZICSR
+	select HAS_PM
 
 if SOC_ESP32C3
 
