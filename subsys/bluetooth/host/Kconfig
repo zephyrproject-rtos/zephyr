@@ -273,6 +273,14 @@ config BT_CONN_TX_USER_DATA_SIZE
 	  Necessary user_data size for allowing packet fragmentation when
 	  sending over HCI. See `struct tx_meta` in conn.c.
 
+config BT_CONN_FRAG_COUNT
+	int
+	default BT_MAX_CONN if BT_CONN
+	default BT_ISO_MAX_CHAN if BT_ISO
+	help
+	  Internal kconfig that sets the maximum amount of simultaneous data
+	  packets in flight. It should be equal to the number of connections.
+
 if BT_CONN
 
 config BT_CONN_TX_MAX
