@@ -289,6 +289,7 @@ __syscall k_thread_stack_t *k_thread_stack_alloc(size_t size, int flags);
  * @retval 0 on success.
  * @retval -EBUSY if the thread stack is in use.
  * @retval -EINVAL if @p stack is invalid.
+ * @retval -ENOSYS if dynamic thread stack allocation is disabled
  *
  * @see CONFIG_DYNAMIC_THREAD
  */
