@@ -110,6 +110,16 @@ config UART_PIPE
 	  data (as contrary to console UART driver) and all aspects of received
 	  protocol data are handled by application provided callback.
 
+config UART_REINIT_API
+	bool "UART Re-initialization API"
+	help
+	  This enables the use of uart_deinit() and uart_reinit() to
+	  de-initialize and re-initialize the UART. This allows
+	  the UART pins to be re-purposed for other functionalities
+	  depending on usage (usually via pinctrl).
+
+	  Says no if not sure.
+
 comment "Serial Drivers"
 
 source "drivers/serial/Kconfig.b91"

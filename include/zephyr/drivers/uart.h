@@ -453,6 +453,14 @@ __subsystem struct uart_driver_api {
 	int (*drv_cmd)(const struct device *dev, uint32_t cmd, uint32_t p);
 #endif
 
+#ifdef CONFIG_UART_REINIT_API
+	/** De-initialize UART */
+	int (*deinit)(const struct device *dev);
+
+	/** Re-initialize UART */
+	int (*reinit)(const struct device *dev);
+#endif
+
 };
 
 /** @endcond */
@@ -1648,6 +1656,63 @@ static inline int z_impl_uart_drv_cmd(const struct device *dev, uint32_t cmd,
 	return -ENOTSUP;
 #endif
 }
+
+/**
+ * @brief De-initialize UART device.
+ *
+ * @param dev UART device instance.
+ *
+ * @retval 0 if successful.
+ * @retval -ENOSYS If this function is not implemented.
+ * @retval -ENOTSUP If API is not enabled.
+ * @retval -errno Other negative errno value in case of failure.
+ */
+__syscall int uart_deinit(const struct device *dev);
+
+static inline int z_impl_uart_deinit(const struct device *dev)
+{
+#ifdef CONFIG_UART_REINIT_API
+	const struct uart_driver_api *api =
+		(const struct uart_driver_api *)dev->api;
+
+	if (api->deinit == NULL) {
+		return -ENOSYS;
+	}
+	return api->deinit(dev);
+#else
+	ARG_UNUSED(dev);
+	return -ENOTSUP;
+#endif
+}
+
+/**
+ * @brief Re-initialize UART device.
+ *
+ * @param dev UART device instance.
+ *
+ * @retval 0 if successful.
+ * @retval -ENOSYS If this function is not implemented.
+ * @retval -ENOTSUP If API is not enabled.
+ * @retval -errno Other negative errno value in case of failure.
+ */
+__syscall int uart_reinit(const struct device *dev);
+
+static inline int z_impl_uart_reinit(const struct device *dev)
+{
+#ifdef CONFIG_UART_REINIT_API
+	const struct uart_driver_api *api =
+		(const struct uart_driver_api *)dev->api;
+
+	if (api->reinit == NULL) {
+		return -ENOSYS;
+	}
+	return api->reinit(dev);
+#else
+	ARG_UNUSED(dev);
+	return -ENOTSUP;
+#endif
+}
+
 
 #ifdef __cplusplus
 }

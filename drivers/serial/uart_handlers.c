@@ -184,3 +184,11 @@ static inline int z_vrfy_uart_drv_cmd(const struct device *dev, uint32_t cmd,
 }
 #include <syscalls/uart_drv_cmd_mrsh.c>
 #endif /* CONFIG_UART_DRV_CMD */
+
+#ifdef CONFIG_UART_REINIT_API
+UART_SIMPLE(deinit)
+#include <syscalls/uart_deinit_mrsh.c>
+
+UART_SIMPLE(reinit)
+#include <syscalls/uart_reinit_mrsh.c>
+#endif /* CONFIG_UART_REINIT_API */
