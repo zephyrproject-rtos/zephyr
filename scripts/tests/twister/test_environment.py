@@ -71,24 +71,14 @@ TESTDATA_1 = [
         'When --device-testing is used with --device-serial' \
         ' or --device-serial-pty, only one platform is allowed'
     ),
-# environment.py compares a store_false/true argument to None.
-# This case will never raise an error, until that is fixed.
-#    (
-#        None,
-#        None,
-#        None,
-#        ['--device-flash-timeout', '60'],
-#        '--device-flash-timeout requires --device-testing'
-#    ),
-# environment.py compares a store_false/true argument to None.
-# This case will never raise an error, until that is fixed.
-#    (
-#        None,
-#        None,
-#        None,
-#        ['--device-flash-with-test'],
-#        '--device-flash-with-test requires --device-testing'
-#    ),
+# Note the underscore.
+    (
+        None,
+        None,
+        None,
+        ['--device-flash-with-test'],
+        '--device-flash-with-test requires --device_testing'
+    ),
     (
         None,
         None,
@@ -102,14 +92,6 @@ TESTDATA_1 = [
         None,
         ['--shuffle-tests-seed', '0'],
         '--shuffle-tests-seed requires --shuffle-tests'
-    ),
-    (
-        None,
-        None,
-        None,
-        ['--coverage-formats', 'html', '--coverage-tool', 'lcov'],
-        '--coverage-formats can only be used when' \
-        ' coverage tool is set to gcovr'
     ),
     (
         None,
@@ -134,7 +116,7 @@ TESTDATA_1 = [
 
 
 @pytest.mark.parametrize(
-    'os_name, which_dict, pytest_installed_var, args, expected_error',
+    'os_name, which_dict, pytest_plugin, args, expected_error',
     TESTDATA_1,
     ids=[
         'short build path without ninja',
@@ -143,11 +125,9 @@ TESTDATA_1 = [
         'west-flash without device-testing',
         'valgrind without executable',
         'device serial with multiple platforms',
-#        'device flash timeout without device testing',
-#        'device flash with test without device testing',
+        'device flash with test without device testing',
         'shuffle-tests without subset',
         'shuffle-tests-seed without shuffle-tests',
-        'coverage-formats without gcovr',
         'unrecognised argument',
         'pytest-twister-harness installed'
     ]
@@ -156,7 +136,7 @@ def test_parse_arguments_errors(
     caplog,
     os_name,
     which_dict,
-    pytest_installed_var,
+    pytest_plugin,
     args,
     expected_error
 ):
@@ -179,13 +159,12 @@ def test_parse_arguments_errors(
         which_mock = mock.Mock(side_effect=mock_which)
 
     with mock.patch('os.name', os_name) \
-        if os_name is not None else nullcontext(), \
+            if os_name is not None else nullcontext(), \
          mock.patch('shutil.which', which_mock) \
-        if which_dict else nullcontext(), \
-         mock.patch(
-        'twisterlib.environment.PYTEST_PLUGIN_INSTALLED',
-        pytest_installed_var
-    ) if pytest_installed_var is not None else nullcontext():
+            if which_dict else nullcontext(), \
+         mock.patch('twisterlib.environment' \
+                    '.PYTEST_PLUGIN_INSTALLED', pytest_plugin) \
+            if pytest_plugin is not None else nullcontext():
         with pytest.raises(SystemExit) as exit_info:
             twisterlib.environment.parse_arguments(parser, args)
 
@@ -263,18 +242,16 @@ def test_parse_arguments(zephyr_base, additional_args):
 
 
 TESTDATA_3 = [
-# Causes an error because some option member accesses
-# do not check if it is not None
-#    (
-#        None,
-#        mock.Mock(
-#            generator_cmd='make',
-#            generator='Unix Makefiles',
-#            test_roots=None,
-#            board_roots=None,
-#            outdir=None,
-#        )
-#    ),
+    (
+        None,
+        mock.Mock(
+            generator_cmd='make',
+            generator='Unix Makefiles',
+            test_roots=None,
+            board_roots=None,
+            outdir=None,
+        )
+    ),
     (
         mock.Mock(
             ninja=True,
@@ -322,16 +299,15 @@ TESTDATA_3 = [
     'options, expected_env',
     TESTDATA_3,
     ids=[
-#        'no options',
+        'no options',
         'ninja',
         'make'
     ]
 )
 def test_twisterenv_init(options, expected_env):
     with mock.patch(
-        'os.path.abspath',
-        mock.Mock(return_value='dummy_abspath')
-    ):
+            'os.path.abspath',
+            mock.Mock(return_value='dummy_abspath')):
         twister_env = twisterlib.environment.TwisterEnv(options=options)
 
     assert twister_env.generator_cmd == expected_env.generator_cmd
@@ -348,10 +324,9 @@ def test_twisterenv_discover():
         ninja=True
     )
 
-    with mock.patch(
-        'os.path.abspath',
-        mock.Mock(return_value='dummy_abspath')
-    ):
+    abspath_mock = mock.Mock(return_value='dummy_abspath')
+
+    with mock.patch('os.path.abspath', abspath_mock):
         twister_env = twisterlib.environment.TwisterEnv(options=options)
 
     mock_datetime = mock.Mock(
@@ -363,15 +338,13 @@ def test_twisterenv_discover():
     )
 
     with mock.patch.object(
-        twisterlib.environment.TwisterEnv,
-        'check_zephyr_version',
-        mock.Mock()
-    ) as mock_czv, \
+            twisterlib.environment.TwisterEnv,
+            'check_zephyr_version',
+            mock.Mock()) as mock_czv, \
          mock.patch.object(
-        twisterlib.environment.TwisterEnv,
-        'get_toolchain',
-        mock.Mock()
-    ) as mock_gt, \
+            twisterlib.environment.TwisterEnv,
+            'get_toolchain',
+            mock.Mock()) as mock_gt, \
          mock.patch('twisterlib.environment.datetime', mock_datetime):
         twister_env.discover()
 
@@ -388,11 +361,10 @@ TESTDATA_4 = [
         'dummy stdout version',
         'dummy stdout date'
     ),
-# Note the 'Coult' typo instead of 'Could'
     (
         mock.Mock(returncode=0, stdout=''),
         mock.Mock(returncode=0, stdout='dummy stdout date'),
-        ['Coult not determine version'],
+        ['Could not determine version'],
         'Unknown',
         'dummy stdout date'
     ),
@@ -436,10 +408,9 @@ def test_twisterenv_check_zephyr_version(
         ninja=True
     )
 
-    with mock.patch(
-        'os.path.abspath',
-        mock.Mock(return_value='dummy_abspath')
-    ):
+    abspath_mock = mock.Mock(return_value='dummy_abspath')
+
+    with mock.patch('os.path.abspath', abspath_mock):
         twister_env = twisterlib.environment.TwisterEnv(options=options)
 
     with mock.patch('subprocess.run', mock.Mock(side_effect=mock_run)):
@@ -459,15 +430,14 @@ TESTDATA_5 = [
         'Unable to find `cmake` in path',
         None
     ),
-# Note the double-space
     (
         True,
         0,
         b'somedummy\x1B[123-@d1770',
-        'Finished running  dummy/script/path',
+        'Finished running dummy/script/path',
         {
             'returncode': 0,
-            'msg': 'Finished running  dummy/script/path',
+            'msg': 'Finished running dummy/script/path',
             'stdout': 'somedummyd1770',
         }
     ),
@@ -517,8 +487,8 @@ def test_twisterenv_run_cmake_script(
 
     with mock.patch('shutil.which', mock_which), \
          mock.patch('subprocess.Popen', mock.Mock(side_effect=mock_popen)), \
-         pytest.raises(Exception) if \
-        not find_cmake else nullcontext() as exception:
+         pytest.raises(Exception) \
+            if not find_cmake else nullcontext() as exception:
         results = twisterlib.environment.TwisterEnv.run_cmake_script(args)
 
     assert 'Running cmake script dummy/script/path' in caplog.text
@@ -558,19 +528,17 @@ def test_get_toolchain(caplog, script_result, exit_value, expected_log):
         ninja=True
     )
 
-    with mock.patch(
-        'os.path.abspath',
-        mock.Mock(return_value='dummy_abspath')
-    ):
+    abspath_mock = mock.Mock(return_value='dummy_abspath')
+
+    with mock.patch('os.path.abspath', abspath_mock):
         twister_env = twisterlib.environment.TwisterEnv(options=options)
 
     with mock.patch.object(
-        twisterlib.environment.TwisterEnv,
-        'run_cmake_script',
-        mock.Mock(return_value=script_result)
-    ), \
-         pytest.raises(SystemExit) if \
-        exit_value is not None else nullcontext() as exit_info:
+            twisterlib.environment.TwisterEnv,
+            'run_cmake_script',
+            mock.Mock(return_value=script_result)), \
+         pytest.raises(SystemExit) \
+            if exit_value is not None else nullcontext() as exit_info:
         twister_env.get_toolchain()
 
     if exit_info is not None:
