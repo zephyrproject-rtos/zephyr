@@ -22,6 +22,12 @@ config I2C_SHELL
 	  The I2C shell supports scanning, bus recovery, I2C read and write
 	  operations.
 
+config I2C_ZERO_LEN_XFER_SUPPORTED
+	bool "I2C transfer without data (data length 0)"
+	default y
+	help
+	  Enable this flag to support 0 length I2C transfers(quick commands).
+
 config I2C_STATS
 	bool "I2C device Stats"
 	depends on STATS
