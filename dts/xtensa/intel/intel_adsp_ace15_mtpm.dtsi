@@ -487,6 +487,8 @@
 			dma-buf-size-alignment = <32>;
 			dma-copy-alignment = <32>;
 			power-domain = <&hst_domain>;
+			interrupts = <13 0 0>;
+			interrupt-parent = <&ace_intc>;
 			status = "okay";
 		};
 
@@ -499,6 +501,8 @@
 			dma-buf-size-alignment = <32>;
 			dma-copy-alignment = <32>;
 			power-domain = <&hst_domain>;
+			interrupts = <12 0 0>;
+			interrupt-parent = <&ace_intc>;
 			status = "okay";
 		};
 
