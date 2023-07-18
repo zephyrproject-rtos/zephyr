@@ -8,11 +8,15 @@
 #include <zephyr/bluetooth/buf.h>
 #include <zephyr/bluetooth/l2cap.h>
 
+#include "buf_view.h"
 #include "hci_core.h"
 #include "conn_internal.h"
 #include "iso_internal.h"
 
 #include <zephyr/bluetooth/hci.h>
+
+#include <zephyr/logging/log.h>
+LOG_MODULE_REGISTER(bt_buf, CONFIG_BT_LOG_LEVEL);
 
 #if defined(CONFIG_BT_CONN)
 #if defined(CONFIG_BT_ISO)
@@ -147,3 +151,67 @@ struct net_buf_pool *bt_buf_get_num_complete_pool(void)
 }
 #endif /* CONFIG_BT_CONN || CONFIG_BT_ISO */
 #endif /* ZTEST_UNITTEST */
+
+struct net_buf *bt_buf_make_view(struct net_buf *view,
+				 struct net_buf *parent,
+				 size_t len,
+				 struct bt_buf_view_meta *meta)
+{
+	__ASSERT_NO_MSG(len);
+	__ASSERT_NO_MSG(view);
+	/* The whole point of this API is to allow prepending data. If the
+	 * headroom is 0, that will not happen.
+	 */
+	__ASSERT_NO_MSG(net_buf_headroom(parent) > 0);
+
+	/* `parent` should have been just re-used instead of trying to make a
+	 * view into it.
+	 */
+	__ASSERT_NO_MSG(len < parent->len);
+
+	__ASSERT_NO_MSG(!bt_buf_has_view(parent));
+
+	LOG_DBG("make-view %p viewsize %u meta %p", view, len, meta);
+
+	net_buf_simple_clone(&parent->b, &view->b);
+	view->size = net_buf_headroom(parent) + len;
+	view->len = len;
+	view->flags = NET_BUF_EXTERNAL_DATA;
+
+	/* we have a view, eat `len`'s worth of data from the parent */
+	(void)net_buf_pull(parent, len);
+
+	meta->backup.data = parent->data;
+	parent->data = NULL;
+
+	meta->backup.size = parent->size;
+	parent->size = 0;
+
+	/* The ref to `parent` is moved in by passing `parent` as argument. */
+	/* save backup & "clip" the buffer so the next `make_view` will fail */
+	meta->parent = parent;
+	parent = NULL;
+
+	return view;
+}
+
+void bt_buf_destroy_view(struct net_buf *view, struct bt_buf_view_meta *meta)
+{
+	LOG_DBG("destroy-view %p meta %p", view, meta);
+	__ASSERT_NO_MSG(meta->parent);
+
+	/* "unclip" the parent buf */
+	meta->parent->data = meta->backup.data;
+	meta->parent->size = meta->backup.size;
+
+	net_buf_unref(meta->parent);
+
+	memset(meta, 0, sizeof(*meta));
+	net_buf_destroy(view);
+}
+
+bool bt_buf_has_view(const struct net_buf *parent)
+{
+	/* This is enforced by `make_view`. see comment there. */
+	return parent->size == 0 && parent->data == NULL;
+}
