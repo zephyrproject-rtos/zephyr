@@ -19,6 +19,7 @@
 #endif
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/pm/device.h>
 
 #include <soc.h>
 
@@ -60,6 +61,10 @@ struct xec_params {
 	uint32_t on;
 	uint32_t off;
 	uint8_t div;
+};
+
+struct pwm_xec_data {
+	uint32_t config;
 };
 
 #define NUM_DIV_ELEMS		16
@@ -368,6 +373,50 @@ static int pwm_xec_get_cycles_per_sec(const struct device *dev,
 	return 0;
 }
 
+#ifdef CONFIG_PM_DEVICE
+static int pwm_xec_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	const struct pwm_xec_config *const devcfg = dev->config;
+	struct pwm_regs * const regs = devcfg->regs;
+	struct pwm_xec_data * const data = dev->data;
+	int ret = 0;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		ret = pinctrl_apply_state(devcfg->pcfg, PINCTRL_STATE_DEFAULT);
+		if (ret != 0) {
+			LOG_ERR("XEC PWM pinctrl setup failed (%d)", ret);
+		}
+
+		/* Turn on PWM only if it is ON before sleep */
+		if ((data->config & MCHP_PWM_CFG_ENABLE) == MCHP_PWM_CFG_ENABLE) {
+
+			regs->CONFIG |= MCHP_PWM_CFG_ENABLE;
+
+			data->config &= (~MCHP_PWM_CFG_ENABLE);
+		}
+	break;
+	case PM_DEVICE_ACTION_SUSPEND:
+		if ((regs->CONFIG & MCHP_PWM_CFG_ENABLE) == MCHP_PWM_CFG_ENABLE) {
+			/* Do copy first, then clear mode. */
+			data->config = regs->CONFIG;
+
+			regs->CONFIG &= ~(MCHP_PWM_CFG_ENABLE);
+		}
+
+		ret = pinctrl_apply_state(devcfg->pcfg, PINCTRL_STATE_SLEEP);
+		/* pinctrl-1 does not exist. */
+		if (ret == -ENOENT) {
+			ret = 0;
+		}
+	break;
+	default:
+		ret = -ENOTSUP;
+	}
+	return ret;
+}
+#endif /* CONFIG_PM_DEVICE */
+
 static const struct pwm_driver_api pwm_xec_driver_api = {
 	.set_cycles = pwm_xec_set_cycles,
 	.get_cycles_per_sec = pwm_xec_get_cycles_per_sec,
@@ -396,13 +445,17 @@ static int pwm_xec_init(const struct device *dev)
 
 #define XEC_PWM_DEVICE_INIT(index)					\
 									\
+	static struct pwm_xec_data pwm_xec_data_##index;		\
+									\
 	PINCTRL_DT_INST_DEFINE(index);					\
 									\
 	XEC_PWM_CONFIG(index);						\
 									\
+	PM_DEVICE_DT_INST_DEFINE(index, pwm_xec_pm_action);		\
+									\
 	DEVICE_DT_INST_DEFINE(index, &pwm_xec_init,			\
-			      NULL,					\
-			      NULL,					\
+			      PM_DEVICE_DT_INST_GET(index),		\
+			      &pwm_xec_data_##index,			\
 			      &pwm_xec_config_##index, POST_KERNEL,	\
 			      CONFIG_PWM_INIT_PRIORITY,			\
 			      &pwm_xec_driver_api);
