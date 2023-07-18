@@ -1707,6 +1707,9 @@ ZTEST(net_socket_tcp, test_v4_msg_waitall)
 	k_work_reschedule(&test_data.tx_work, K_MSEC(10));
 
 	ret = recv(new_sock, rx_buf, sizeof(rx_buf) - 1, MSG_WAITALL);
+	if (ret < 0) {
+		LOG_ERR("receive return val %i", ret);
+	}
 	zassert_equal(ret, sizeof(rx_buf) - 1, "Invalid length received");
 	zassert_mem_equal(rx_buf, TEST_STR_SMALL, sizeof(rx_buf) - 1,
 			  "Invalid data received");
