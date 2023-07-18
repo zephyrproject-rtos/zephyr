@@ -258,6 +258,17 @@
 					ngpios = <8>;
 				};
 			};
+
+			test_spi_tle9104: tle9104@4 {
+				compatible = "infineon,tle9104";
+				spi-max-frequency = <0>;
+				reg = <0x04>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <4>;
+				resn-gpios = <&test_gpio 0 0>;
+				en-gpios = <&test_gpio 0 0>;
+			};
 		};
 	};
 };
