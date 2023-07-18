@@ -115,7 +115,16 @@ enum ieee802154_hw_caps {
 	IEEE802154_HW_SUB_GHZ = BIT(13),       /* Sub-GHz radio supported
 						* TODO: Replace with channel page attribute.
 						*/
+	/* Note: Update also IEEE802154_HW_CAPS_BITS_COMMON_COUNT when changing
+	 * the ieee802154_hw_caps type.
+	 */
 };
+
+/** @brief Number of bits used by ieee802154_hw_caps type. */
+#define IEEE802154_HW_CAPS_BITS_COMMON_COUNT (14)
+
+/** @brief This and higher values are specific to the protocol- or driver-specific extensions. */
+#define IEEE802154_HW_CAPS_BITS_PRIV_START IEEE802154_HW_CAPS_BITS_COMMON_COUNT
 
 enum ieee802154_filter_type {
 	IEEE802154_FILTER_TYPE_IEEE_ADDR,
@@ -188,6 +197,12 @@ enum ieee802154_tx_mode {
 	 * Requires IEEE802154_HW_TXTIME capability.
 	 */
 	IEEE802154_TX_MODE_TXTIME_CCA,
+
+	/** Number of modes defined in ieee802154_tx_mode. */
+	IEEE802154_TX_MODE_COMMON_COUNT,
+
+	/** This and higher values are specific to the protocol- or driver-specific extensions. */
+	IEEE802154_TX_MODE_PRIV_START = IEEE802154_TX_MODE_COMMON_COUNT,
 };
 
 /** IEEE802.15.4 Frame Pending Bit table address matching mode. */
@@ -296,6 +311,12 @@ enum ieee802154_config_type {
 	 *  should disable it for all enabled addresses.
 	 */
 	IEEE802154_CONFIG_ENH_ACK_HEADER_IE,
+
+	/** Number of types defined in ieee802154_config_type. */
+	IEEE802154_CONFIG_COMMON_COUNT,
+
+	/** This and higher values are specific to the protocol- or driver-specific extensions. */
+	IEEE802154_CONFIG_PRIV_START = IEEE802154_CONFIG_COMMON_COUNT,
 };
 
 /** IEEE802.15.4 driver configuration data. */
