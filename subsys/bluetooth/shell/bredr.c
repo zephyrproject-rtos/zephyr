@@ -243,7 +243,8 @@ static struct bt_l2cap_br_chan l2cap_chan = {
 	.rx.mtu		= 48,
 };
 
-static int l2cap_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
+static int l2cap_accept(struct bt_conn *conn, struct bt_l2cap_server *server,
+			struct bt_l2cap_chan **chan)
 {
 	shell_print(ctx_shell, "Incoming BR/EDR conn %p", conn);
 

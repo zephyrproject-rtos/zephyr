@@ -14,7 +14,8 @@
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/l2cap.h>
 
-static int l2cap_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
+static int l2cap_accept(struct bt_conn *conn, struct bt_l2cap_server *server,
+			struct bt_l2cap_chan **chan)
 {
 	return -ENOSYS;
 }
