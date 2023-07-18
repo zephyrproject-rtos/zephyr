@@ -111,7 +111,7 @@ void cpu1_fn(void *p1, void *p2, void *p3)
 	ARG_UNUSED(p2);
 	ARG_UNUSED(p3);
 
-	while (1) {
+	while (!bounce_done) {
 		bounce_once(4321, false);
 	}
 }
@@ -138,6 +138,8 @@ ZTEST(spinlock, test_spinlock_bounce)
 	}
 
 	bounce_done = 1;
+
+	k_thread_join(&cpu1_thread, K_FOREVER);
 }
 
 /**
@@ -191,7 +193,7 @@ void trylock_fn(void *p1, void *p2, void *p3)
 	ARG_UNUSED(p2);
 	ARG_UNUSED(p3);
 
-	while (1) {
+	while (!bounce_done) {
 		bounce_once(4321, true);
 	}
 }
@@ -219,8 +221,17 @@ ZTEST(spinlock, test_trylock)
 
 	bounce_done = 1;
 
+	k_thread_join(&cpu1_thread, K_FOREVER);
+
 	zassert_true(trylock_failures > 0);
 	zassert_true(trylock_successes > 0);
 }
 
-ZTEST_SUITE(spinlock, NULL, NULL, NULL, NULL, NULL);
+static void before(void *ctx)
+{
+	ARG_UNUSED(ctx);
+
+	bounce_done = 0;
+}
+
+ZTEST_SUITE(spinlock, NULL, NULL, before, NULL, NULL);
