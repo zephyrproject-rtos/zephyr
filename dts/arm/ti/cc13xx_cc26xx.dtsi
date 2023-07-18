@@ -23,7 +23,7 @@
 			device_type = "cpu";
 			compatible = "arm,cortex-m4";
 			reg = <0>;
-			cpu-power-states = <&idle &standby>;
+			cpu-idle-states = <&idle &standby>;
 		};
 
 		power-states {

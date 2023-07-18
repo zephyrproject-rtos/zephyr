@@ -7,7 +7,7 @@
 / {
 	cpus {
 		cpu@0 {
-			cpu-power-states = <&state0 &state1 &state2>;
+			cpu-idle-states = <&state0 &state1 &state2>;
 		};
 
 		power-states {

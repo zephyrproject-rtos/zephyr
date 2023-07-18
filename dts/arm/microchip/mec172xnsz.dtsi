@@ -26,7 +26,7 @@
 			device_type = "cpu";
 			compatible = "arm,cortex-m4";
 			reg = <0>;
-			cpu-power-states = <&idle &suspend_to_ram>;
+			cpu-idle-states = <&idle &suspend_to_ram>;
 		};
 
 		power-states {

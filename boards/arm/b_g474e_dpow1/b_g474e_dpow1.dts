@@ -65,7 +65,7 @@
 
 	cpus {
 		cpu@0 {
-			cpu-power-states = <&stop0 &stop1>;
+			cpu-idle-states = <&stop0 &stop1>;
 		};
 	};
 

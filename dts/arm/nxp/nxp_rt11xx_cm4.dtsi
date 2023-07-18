@@ -178,7 +178,7 @@
 
 /* Set default power states for CM4 cpu */
 &cpu1 {
-	cpu-power-states = <&idle &suspend>;
+	cpu-idle-states = <&idle &suspend>;
 };
 
 

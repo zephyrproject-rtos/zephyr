@@ -25,7 +25,7 @@
 			device_type = "cpu";
 			compatible = "arm,cortex-m33";
 			reg = <0>;
-			cpu-power-states = <&state0>;
+			cpu-idle-states = <&state0>;
 		};
 
 		power-states {

@@ -197,7 +197,7 @@
 
 /* Set default power states for CM7 cpu */
 &cpu0 {
-	cpu-power-states = <&idle &suspend>;
+	cpu-idle-states = <&idle &suspend>;
 };
 
 

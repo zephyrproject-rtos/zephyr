@@ -19,9 +19,9 @@ BUILD_ASSERT(DT_NODE_EXISTS(DT_PATH(cpus)),
  */
 #define CHECK_POWER_STATE_CONSISTENCY(i, node_id)			       \
 	BUILD_ASSERT(							       \
-		DT_PROP_BY_PHANDLE_IDX_OR(node_id, cpu_power_states, i,	       \
+		DT_PROP_BY_PHANDLE_IDX_OR(node_id, cpu_idle_states, i,	       \
 					  min_residency_us, 0U) >=	       \
-		DT_PROP_BY_PHANDLE_IDX_OR(node_id, cpu_power_states, i,	       \
+		DT_PROP_BY_PHANDLE_IDX_OR(node_id, cpu_idle_states, i,	       \
 					  exit_latency_us, 0U),		       \
 		"Found CPU power state with min_residency < exit_latency")
 

@@ -9,7 +9,7 @@ properties:
   clock-frequency:
     type: int
     description: Clock frequency in Hz
-  cpu-power-states:
+  cpu-idle-states:
     type: phandles
     description: List of power management states supported by this cpu
   i-cache-line-size:

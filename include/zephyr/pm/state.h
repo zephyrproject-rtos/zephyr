@@ -166,7 +166,7 @@ struct pm_state_info {
  * @param node_id A node identifier with compatible zephyr,power-state
  */
 #define Z_PM_STATE_INFO_FROM_DT_CPU(i, node_id) \
-	PM_STATE_INFO_DT_INIT(DT_PHANDLE_BY_IDX(node_id, cpu_power_states, i))
+	PM_STATE_INFO_DT_INIT(DT_PHANDLE_BY_IDX(node_id, cpu_idle_states, i))
 
 /**
  * @brief Helper macro to initialize an entry of a struct pm_state array when
@@ -176,7 +176,7 @@ struct pm_state_info {
  * @param node_id A node identifier with compatible zephyr,power-state
  */
 #define Z_PM_STATE_FROM_DT_CPU(i, node_id) \
-	PM_STATE_DT_INIT(DT_PHANDLE_BY_IDX(node_id, cpu_power_states, i))
+	PM_STATE_DT_INIT(DT_PHANDLE_BY_IDX(node_id, cpu_idle_states, i))
 
 /** @endcond */
 
@@ -211,7 +211,7 @@ struct pm_state_info {
  * @return Number of supported CPU power states.
  */
 #define DT_NUM_CPU_POWER_STATES(node_id) \
-	DT_PROP_LEN_OR(node_id, cpu_power_states, 0)
+	DT_PROP_LEN_OR(node_id, cpu_idle_states, 0)
 
 /**
  * @brief Initialize an array of struct pm_state_info with information from all
@@ -225,7 +225,7 @@ struct pm_state_info {
  *		cpu0: cpu@0 {
  *			device_type = "cpu";
  *			...
- *			cpu-power-states = <&state0 &state1>;
+ *			cpu-idle-states = <&state0 &state1>;
  *		};
  *
  *		power-states {
@@ -274,7 +274,7 @@ struct pm_state_info {
  *		cpu0: cpu@0 {
  *			device_type = "cpu";
  *			...
- *			cpu-power-states = <&state0 &state1>;
+ *			cpu-idle-states = <&state0 &state1>;
  *		};
  *
  *		power-states {

@@ -26,7 +26,7 @@
 			device_type = "cpu";
 			compatible = "arm,cortex-m4f";
 			reg = <0>;
-			cpu-power-states = <&suspend_to_idle0 &suspend_to_idle1>;
+			cpu-idle-states = <&suspend_to_idle0 &suspend_to_idle1>;
 		};
 
 		power-states {

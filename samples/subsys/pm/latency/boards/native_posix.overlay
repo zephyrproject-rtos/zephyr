@@ -27,5 +27,5 @@
 };
 
 &cpu0 {
-	cpu-power-states = <&runtime_idle &suspend_to_idle &standby>;
+	cpu-idle-states = <&runtime_idle &suspend_to_idle &standby>;
 };

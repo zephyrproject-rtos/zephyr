@@ -28,7 +28,7 @@
 			device_type = "cpu";
 			compatible = "cdns,tensilica-xtensa-lx6";
 			reg = <0>;
-			cpu-power-states = <&light_sleep &deep_sleep>;
+			cpu-idle-states = <&light_sleep &deep_sleep>;
 		};
 
 		cpu1: cpu@1 {

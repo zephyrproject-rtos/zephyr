@@ -31,7 +31,7 @@
 			compatible = "ite,riscv-ite";
 			device_type = "cpu";
 			reg = <0>;
-			cpu-power-states = <&standby>;
+			cpu-idle-states = <&standby>;
 		};
 
 		power-states {
