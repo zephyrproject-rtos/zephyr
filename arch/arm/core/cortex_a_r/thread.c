@@ -125,6 +125,13 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	 * initial values in all other registers/thread entries are
 	 * irrelevant.
 	 */
+#if defined(CONFIG_USE_SWITCH)
+	extern void z_arm_cortex_ar_exit_exc(void);
+	thread->switch_handle = thread;
+	/* thread birth happens through the exception return path */
+	thread->arch.exception_depth = 1;
+	thread->callee_saved.lr = (uint32_t)z_arm_cortex_ar_exit_exc;
+#endif
 }
 
 #if defined(CONFIG_MPU_STACK_GUARD) && defined(CONFIG_FPU) \
