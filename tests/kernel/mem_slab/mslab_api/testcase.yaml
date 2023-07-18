@@ -3,7 +3,7 @@ tests:
     tags:
       - kernel
       - memory_slabs
-  kernel.memory_slabs.api_no_multithreading:
+  kernel.memory_slabs.api.no-mt:
     tags:
       - kernel
       - memory_slabs
