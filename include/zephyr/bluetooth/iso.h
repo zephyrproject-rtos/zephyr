@@ -12,8 +12,8 @@
 #define ZEPHYR_INCLUDE_BLUETOOTH_ISO_H_
 
 /**
- * @brief ISO
- * @defgroup bt_iso ISO
+ * @brief Isochronous channels (ISO)
+ * @defgroup bt_iso Isochronous channels (ISO)
  * @ingroup bluetooth
  * @{
  */
@@ -110,11 +110,14 @@ enum bt_iso_state {
 };
 
 
+/**
+ * @brief ISO Channel Type.
+ */
 enum bt_iso_chan_type {
-	BT_ISO_CHAN_TYPE_NONE,
-	BT_ISO_CHAN_TYPE_CONNECTED,
-	BT_ISO_CHAN_TYPE_BROADCASTER,
-	BT_ISO_CHAN_TYPE_SYNC_RECEIVER
+	BT_ISO_CHAN_TYPE_NONE,		/**< No channel type */
+	BT_ISO_CHAN_TYPE_CONNECTED,	/**< Connected */
+	BT_ISO_CHAN_TYPE_BROADCASTER,	/**< Isochronous broadcaster */
+	BT_ISO_CHAN_TYPE_SYNC_RECEIVER	/**< Synchronized receiver */
 };
 
 /** @brief ISO Channel structure. */
@@ -125,14 +128,17 @@ struct bt_iso_chan {
 	struct bt_iso_chan_ops		*ops;
 	/** Channel QoS reference */
 	struct bt_iso_chan_qos		*qos;
+	/** Channel state */
 	enum bt_iso_state		state;
-#if defined(CONFIG_BT_SMP)
+#if defined(CONFIG_BT_SMP) || defined(__DOXYGEN__)
 	/** @brief The required security level of the channel
 	 *
 	 * This value can be set as the central before connecting a CIS
 	 * with bt_iso_chan_connect().
 	 * The value is overwritten to @ref bt_iso_server::sec_level for the
 	 * peripheral once a channel has been accepted.
+	 *
+	 * Only available when @kconfig{CONFIG_BT_SMP} is enabled.
 	 */
 	bt_security_t			required_sec_level;
 #endif /* CONFIG_BT_SMP */
@@ -249,6 +255,7 @@ struct bt_iso_tx_info {
 /** Opaque type representing an Connected Isochronous Group (CIG). */
 struct bt_iso_cig;
 
+/** @brief Connected Isochronous Group (CIG) parameters */
 struct bt_iso_cig_param {
 	/** @brief Array of pointers to CIS channels */
 	struct bt_iso_chan **cis_channels;
@@ -295,17 +302,19 @@ struct bt_iso_cig_param {
 	uint8_t framing;
 };
 
+/** ISO connection parameters structure */
 struct bt_iso_connect_param {
-	/* The ISO channel to connect */
+	/** The ISO channel to connect */
 	struct bt_iso_chan *iso_chan;
 
-	/* The ACL connection */
+	/** The ACL connection */
 	struct bt_conn *acl;
 };
 
-/** Opaque type representing an Broadcast Isochronous Group (BIG). */
+/** Opaque type representing a Broadcast Isochronous Group (BIG). */
 struct bt_iso_big;
 
+/** @brief Broadcast Isochronous Group (BIG) creation parameters */
 struct bt_iso_big_create_param {
 	/** Array of pointers to BIS channels */
 	struct bt_iso_chan **bis_channels;
@@ -360,6 +369,7 @@ struct bt_iso_big_create_param {
 	uint8_t bcode[BT_ISO_BROADCAST_CODE_SIZE];
 };
 
+/** @brief Broadcast Isochronous Group (BIG) Sync Parameters */
 struct bt_iso_big_sync_param {
 	/** Array of pointers to BIS channels */
 	struct bt_iso_chan **bis_channels;
@@ -414,6 +424,7 @@ struct bt_iso_big_sync_param {
 	uint8_t bcode[BT_ISO_BROADCAST_CODE_SIZE];
 };
 
+/** @brief Broadcast Isochronous Group (BIG) information */
 struct bt_iso_biginfo {
 	/** Address of the advertiser */
 	const bt_addr_le_t *addr;
@@ -517,6 +528,7 @@ struct bt_iso_chan_ops {
 	void (*sent)(struct bt_iso_chan *chan);
 };
 
+/** @brief ISO Accept Info Structure */
 struct bt_iso_accept_info {
 	/** The ACL connection that is requesting authorization */
 	struct bt_conn *acl;
@@ -536,8 +548,10 @@ struct bt_iso_accept_info {
 
 /** @brief ISO Server structure. */
 struct bt_iso_server {
-#if defined(CONFIG_BT_SMP)
-	/** Required minimum security level */
+#if defined(CONFIG_BT_SMP) || defined(__DOXYGEN__)
+	/** Required minimum security level.
+	 * Only available when @kconfig{CONFIG_BT_SMP} is enabled.
+	 */
 	bt_security_t		sec_level;
 #endif /* CONFIG_BT_SMP */
 
@@ -703,6 +717,7 @@ int bt_iso_chan_disconnect(struct bt_iso_chan *chan);
 int bt_iso_chan_send(struct bt_iso_chan *chan, struct net_buf *buf,
 		     uint16_t seq_num, uint32_t ts);
 
+/** @brief ISO Unicast TX Info Structure */
 struct bt_iso_unicast_tx_info {
 	/** The transport latency in us */
 	uint32_t latency;
@@ -720,6 +735,7 @@ struct bt_iso_unicast_tx_info {
 	uint8_t  bn;
 };
 
+/** @brief ISO Unicast Info Structure */
 struct bt_iso_unicast_info {
 	/** The maximum time in us for all PDUs of all CIS in a CIG event */
 	uint32_t cig_sync_delay;
@@ -730,10 +746,11 @@ struct bt_iso_unicast_info {
 	/** @brief TX information for the central to peripheral data path */
 	struct bt_iso_unicast_tx_info central;
 
-	/** TX information for  the peripheral to central data */
+	/** TX information for the peripheral to central data */
 	struct bt_iso_unicast_tx_info peripheral;
 };
 
+/** @brief ISO Broadcaster Info Structure */
 struct bt_iso_broadcaster_info {
 	/** The maximum time in us for all PDUs of all BIS in a BIG event */
 	uint32_t sync_delay;
@@ -757,6 +774,7 @@ struct bt_iso_broadcaster_info {
 	uint8_t  irc;
 };
 
+/** @brief ISO Synchronized Receiver Info Structure */
 struct bt_iso_sync_receiver_info {
 	/** The transport latency in us */
 	uint32_t latency;
@@ -803,16 +821,22 @@ struct bt_iso_info {
 
 	/** Connection Type specific Info.*/
 	union {
-#if defined(CONFIG_BT_ISO_UNICAST)
-		/** Unicast specific Info. */
+#if defined(CONFIG_BT_ISO_UNICAST) || defined(__DOXYGEN__)
+		/** Unicast specific Info.
+		 * Only available when @kconfig{CONFIG_BT_ISO_UNICAST} is enabled.
+		 */
 		struct bt_iso_unicast_info unicast;
 #endif /* CONFIG_BT_ISO_UNICAST */
-#if defined(CONFIG_BT_ISO_BROADCASTER)
-		/** Broadcaster specific Info. */
+#if defined(CONFIG_BT_ISO_BROADCASTER) || defined(__DOXYGEN__)
+		/** Broadcaster specific Info.
+		 * Only available when @kconfig{CONFIG_BT_ISO_BROADCASTER} is enabled.
+		 */
 		struct bt_iso_broadcaster_info broadcaster;
 #endif /* CONFIG_BT_ISO_BROADCASTER */
-#if defined(CONFIG_BT_ISO_SYNC_RECEIVER)
-		/** Sync receiver specific Info. */
+#if defined(CONFIG_BT_ISO_SYNC_RECEIVER) || defined(__DOXYGEN__)
+		/** Sync receiver specific Info.
+		 * Only available when @kconfig{CONFIG_BT_ISO_SYNC_RECEIVER} is enabled.
+		 */
 		struct bt_iso_sync_receiver_info sync_receiver;
 #endif /* CONFIG_BT_ISO_SYNC_RECEIVER */
 	};
