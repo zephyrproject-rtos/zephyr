@@ -938,7 +938,6 @@ Release Notes:
   status: odd fixes
   collaborators:
     - henrikbrixandersen
-    - cfriedt
     - mnkp
   files:
     - doc/hardware/peripherals/gpio.rst
