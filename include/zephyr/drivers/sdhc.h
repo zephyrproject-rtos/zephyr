@@ -159,43 +159,43 @@ enum sd_voltage {
  * driver, using the @ref sdhc_get_host_props api.
  */
 struct sdhc_host_caps {
-	unsigned int timeout_clk_freq: 5;
-	unsigned int _rsvd_6: 1;
-	unsigned int timeout_clk_unit: 1;
-	unsigned int sd_base_clk: 8;
-	unsigned int max_blk_len: 2;
-	unsigned int bus_8_bit_support: 1;
-	unsigned int bus_4_bit_support: 1;
-	unsigned int adma_2_support: 1;
-	unsigned int _rsvd_20: 1;
-	unsigned int high_spd_support: 1;
-	unsigned int sdma_support: 1;
-	unsigned int suspend_res_support: 1;
-	unsigned int vol_330_support: 1;
-	unsigned int vol_300_support: 1;
-	unsigned int vol_180_support: 1;
-	unsigned int address_64_bit_support_v4: 1;
-	unsigned int address_64_bit_support_v3: 1;
-	unsigned int sdio_async_interrupt_support: 1;
-	unsigned int slot_type: 2;
-	unsigned int sdr50_support: 1;
-	unsigned int sdr104_support: 1;
-	unsigned int ddr50_support: 1;
-	unsigned int uhs_2_support: 1;
-	unsigned int drv_type_a_support: 1;
-	unsigned int drv_type_c_support: 1;
-	unsigned int drv_type_d_support: 1;
-	unsigned int _rsvd_39: 1;
-	unsigned int retune_timer_count: 4;
-	unsigned int sdr50_needs_tuning: 1;
-	unsigned int retuning_mode: 2;
-	unsigned int clk_multiplier: 8;
-	unsigned int _rsvd_56: 3;
-	unsigned int adma3_support: 1;
-	unsigned int vdd2_180_support: 1;
-	unsigned int _rsvd_61: 3;
-	unsigned int hs200_support: 1;
-	unsigned int hs400_support: 1;
+	unsigned int timeout_clk_freq: 5;		/**< Timeout clock frequency */
+	unsigned int _rsvd_6: 1;			/**< Reserved */
+	unsigned int timeout_clk_unit: 1;		/**< Timeout clock unit */
+	unsigned int sd_base_clk: 8;			/**< SD base clock frequency */
+	unsigned int max_blk_len: 2;			/**< Max block length */
+	unsigned int bus_8_bit_support: 1;		/**< 8-bit Support for embedded device */
+	unsigned int bus_4_bit_support: 1;		/**< 4 bit bus support */
+	unsigned int adma_2_support: 1;			/**< ADMA2 support */
+	unsigned int _rsvd_20: 1;			/**< Reserved */
+	unsigned int high_spd_support: 1;		/**< High speed support */
+	unsigned int sdma_support: 1;			/**< SDMA support */
+	unsigned int suspend_res_support: 1;		/**< Suspend/Resume support */
+	unsigned int vol_330_support: 1;		/**< Voltage support 3.3V */
+	unsigned int vol_300_support: 1;		/**< Voltage support 3.0V */
+	unsigned int vol_180_support: 1;		/**< Voltage support 1.8V */
+	unsigned int address_64_bit_support_v4: 1;	/**< 64-bit system address support for V4 */
+	unsigned int address_64_bit_support_v3: 1;	/**< 64-bit system address support for V3 */
+	unsigned int sdio_async_interrupt_support: 1;	/**< Asynchronous interrupt support */
+	unsigned int slot_type: 2;			/**< Slot type */
+	unsigned int sdr50_support: 1;			/**< SDR50 support */
+	unsigned int sdr104_support: 1;			/**< SDR104 support */
+	unsigned int ddr50_support: 1;			/**< DDR50 support */
+	unsigned int uhs_2_support: 1;			/**< UHS-II support */
+	unsigned int drv_type_a_support: 1;		/**< Driver type A support */
+	unsigned int drv_type_c_support: 1;		/**< Driver type C support */
+	unsigned int drv_type_d_support: 1;		/**< Driver type D support */
+	unsigned int _rsvd_39: 1;			/**< Reserved */
+	unsigned int retune_timer_count: 4;		/**< Timer count for re-tuning */
+	unsigned int sdr50_needs_tuning: 1;		/**< Use tuning for SDR50 */
+	unsigned int retuning_mode: 2;			/**< Re-tuning mode */
+	unsigned int clk_multiplier: 8;			/**< Clock multiplier */
+	unsigned int _rsvd_56: 3;			/**< Reserved */
+	unsigned int adma3_support: 1;			/**< ADMA3 support */
+	unsigned int vdd2_180_support: 1;		/**< 1.8V VDD2 support */
+	unsigned int _rsvd_61: 3;			/**< Reserved */
+	unsigned int hs200_support: 1;			/**< HS200 support */
+	unsigned int hs400_support: 1;			/**< HS400 support */
 };
 
 /**
