@@ -116,4 +116,48 @@
 		#reset-cells = <1>;
 		status = "okay";
 	};
+
+	timer0: timer@10C03000 {
+		compatible = "snps,dw-timers";
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_SPI 113 IRQ_TYPE_LEVEL
+				IRQ_DEFAULT_PRIORITY>;
+		reg = <0x10c03000 0x100>;
+		clock-frequency = <100000000>;
+		resets = <&reset RSTMGR_SPTIMER0_RSTLINE>;
+		status = "disabled";
+	};
+
+	timer1: timer@10C03100 {
+		compatible = "snps,dw-timers";
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_SPI 114 IRQ_TYPE_LEVEL
+				IRQ_DEFAULT_PRIORITY>;
+		reg = <0x10c03100 0x100>;
+		clock-frequency = <100000000>;
+		resets = <&reset RSTMGR_SPTIMER1_RSTLINE>;
+		status = "disabled";
+	};
+
+	timer2: timer@10D00000 {
+		compatible = "snps,dw-timers";
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_SPI 115 IRQ_TYPE_LEVEL
+				IRQ_DEFAULT_PRIORITY>;
+		reg = <0x10D00000 0x100>;
+		clock-frequency = <100000000>;
+		resets = <&reset RSTMGR_L4SYSTIMER0_RSTLINE>;
+		status = "disabled";
+	};
+
+	timer3: timer@10D00100 {
+		compatible = "snps,dw-timers";
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_SPI 116 IRQ_TYPE_LEVEL
+				IRQ_DEFAULT_PRIORITY>;
+		reg = <0x10D00100 0x100>;
+		clock-frequency = <100000000>;
+		resets = <&reset RSTMGR_L4SYSTIMER1_RSTLINE>;
+		status = "disabled";
+	};
 };
