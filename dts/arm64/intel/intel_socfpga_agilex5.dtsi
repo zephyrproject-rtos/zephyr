@@ -1,8 +1,7 @@
 /*
- * SPDX-License-Identifier: Apache-2.0
- *
  * Copyright (C) 2023, Intel Corporation
  *
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <arm64/armv8-a.dtsi>
@@ -364,4 +363,13 @@
 		status = "disabled";
 	};
 
+	usbotg: usbotg@10b00000 {
+		compatible = "snps,designware_usbh";
+		reg = <0x10B00000 0x40000>;
+		interrupts = <GIC_SPI 93 IRQ_TYPE_LEVEL
+			      IRQ_DEFAULT_PRIORITY>;
+		interrupt-parent = <&gic>;
+		resets = <&reset RSTMGR_USB0_RSTLINE>;
+		status = "disabled";
+	};
 };
