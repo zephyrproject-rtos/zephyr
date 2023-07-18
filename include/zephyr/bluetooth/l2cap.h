@@ -597,6 +597,7 @@ int bt_l2cap_chan_disconnect(struct bt_l2cap_chan *chan);
  *  @return -EINVAL if `buf` or `chan` is NULL.
  *  @return -EINVAL if `chan` is not either BR/EDR or LE credit-based.
  *  @return -EINVAL if buffer doesn't have enough bytes reserved to fit header.
+ *  @return -EINVAL if buffer's reference counter != 1
  *  @return -EMSGSIZE if `buf` is larger than `chan`'s MTU.
  *  @return -ENOTCONN if underlying conn is disconnected.
  *  @return -ESHUTDOWN if L2CAP channel is disconnected.
