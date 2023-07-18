@@ -137,11 +137,22 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	thread->arch.priv_stack_start = 0;
 #endif
 #endif
+#if defined(CONFIG_USE_SWITCH)
+	thread->switch_handle = (void *)thread;
+#endif
 	/*
 	 * initial values in all other registers/thread entries are
 	 * irrelevant.
 	 */
 }
+
+#if defined(CONFIG_USE_SWITCH)
+void *z_arch_get_next_switch_handle(struct k_thread **old_thread)
+{
+	*old_thread = _current;
+	return z_get_next_switch_handle(*old_thread);
+}
+#endif
 
 #if defined(CONFIG_MPU_STACK_GUARD) && defined(CONFIG_FPU) \
 	&& defined(CONFIG_FPU_SHARING)

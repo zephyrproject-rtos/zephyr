@@ -145,10 +145,25 @@ SECTION_SUBSEC_FUNC(TEXT, _HandlerModeExit, z_arm_int_exit)
 	cmp r0, #1
 	bhi __EXIT_INT
 
+#if defined(CONFIG_USE_SWITCH)
+	sub sp, sp, #0x4
+	mov r0, sp
+	bl z_arch_get_next_switch_handle
+	ldr r1, [sp]
+	add sp, sp, #0x4
+	cmp r0, r1
+	beq __EXIT_INT
+
+	push {r0-r1}
+	bl z_arm_pendsv
+	pop {r0-r1}
+#else
 	ldr r1, [r3, #_kernel_offset_to_current]
 	ldr r0, [r3, #_kernel_offset_to_ready_q_cache]
 	cmp r0, r1
 	blne z_arm_pendsv
+#endif
+
 __EXIT_INT:
 #endif /* CONFIG_PREEMPT_ENABLED */
 
@@ -236,7 +251,19 @@ SECTION_SUBSEC_FUNC(TEXT, _HandlerModeExit, z_arm_exc_exit)
 	 * caller using lr_svc.
 	 */
 	cps #MODE_SVC
+#if defined(CONFIG_USE_SWITCH)
+	sub sp, sp, #0x4
+	mov r0, sp
+	bl z_arch_get_next_switch_handle
+	ldr r1, [sp]
+	add sp, sp, #0x4
+
+	push {r0-r1}
 	bl z_arm_pendsv
+	pop {r0-r1}
+#else
+	bl z_arm_pendsv
+#endif
 
 	/* Decrement exception nesting count */
 	ldr r3, =_kernel

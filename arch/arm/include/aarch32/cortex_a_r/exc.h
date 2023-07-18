@@ -74,7 +74,11 @@ static ALWAYS_INLINE void z_arm_clear_faults(void)
 {
 }
 
+#if !defined(CONFIG_USE_SWITCH)
 extern void z_arm_cortex_r_svc(void);
+#else
+extern void z_arm_cortex_r_svc(void *switch_to, void **switched_from);
+#endif /* !CONFIG_USE_SWITCH */
 
 #ifdef __cplusplus
 }

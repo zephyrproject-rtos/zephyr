@@ -72,9 +72,21 @@ SECTION_FUNC(TEXT, z_arm_pendsv)
 #endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
 #endif /* CONFIG_INSTRUMENT_THREAD_SWITCHING */
 
-    /* load _kernel into r1 and current k_thread into r2 */
+    /*
+     * load _kernel into r1 and current k_thread into r2
+     * Source of the current thread info:
+     * - from the top of the stack if CONFIG_USE_SWITCH is set
+     *   (value provided to arch_switch before triggering SVC) or
+     * - _kernel->current otherwise.
+     */
+
     ldr r1, =_kernel
+#if defined(CONFIG_USE_SWITCH)
+    /* Thread to switch out of is at [sp, #0x4] */
+    ldr r2, [sp, #0x4]
+#else
     ldr r2, [r1, #_kernel_offset_to_current]
+#endif
 
 #if defined(CONFIG_ARM_STORE_EXC_RETURN)
     /* Store LSB of LR (EXC_RETURN) to the thread's 'mode' word. */
@@ -204,10 +216,15 @@ out_fp_inactive:
 
     /* _kernel is still in r1 */
 
+#if defined(CONFIG_USE_SWITCH)
+    /* Thread to switch to is at [sp] */
+    /* _current has already been updated by caller */
+    ldr r2, [sp]
+#else
     /* fetch the thread to run from the ready queue cache */
     ldr r2, [r1, #_kernel_offset_to_ready_q_cache]
-
     str r2, [r1, #_kernel_offset_to_current]
+#endif
 
     /*
      * Clear PendSV so that if another interrupt comes in and
@@ -392,9 +409,11 @@ in_fp_endif:
 #elif defined(CONFIG_ARMV7_R) || defined(CONFIG_AARCH32_ARMV8_R) \
 	|| defined(CONFIG_ARMV7_A)
 _thread_irq_disabled:
+#if !defined(CONFIG_USE_SWITCH)
     /* load _kernel into r1 and current k_thread into r2 */
     ldr r1, =_kernel
     ldr r2, [r1, #_kernel_offset_to_current]
+#endif /* _kernel already in r1, current already in r2 with USE_SWITCH set */
 
     /* addr of callee-saved regs in thread in r0 */
     ldr r0, =_thread_offset_to_callee_saved
@@ -829,9 +848,22 @@ demux:
 #endif
 
 _context_switch:
+#if defined(CONFIG_USE_SWITCH)
+    cps #MODE_SYS
+    /*
+     * The two parameters of arch_switch are the last two words that
+     * have been pushed onto the SYS mode's stack.
+     */
+    ldr r0, [sp]       /* switch_to */
+    ldr r1, [sp, #0x4] /* switch_from* */
+    cps #MODE_SVC
+    push {r0-r1}
+#endif
     /* handler mode exit, to PendSV */
     bl z_arm_pendsv
-
+#if defined(CONFIG_USE_SWITCH)
+    pop {r0-r1}
+#endif
     b z_arm_int_exit
 
 _oops:

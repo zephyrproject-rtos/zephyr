@@ -61,11 +61,27 @@ static ALWAYS_INLINE void arch_kernel_init(void)
 #endif /* CONFIG_ARM_AARCH32_MMU */
 }
 
+#if !defined(CONFIG_USE_SWITCH)
+/*
+ * When CONFIG_USE_SWITCH is set, this function is already provided in
+ * kernel/include/kernel_internal.h.
+ */
 static ALWAYS_INLINE void
 arch_thread_return_value_set(struct k_thread *thread, unsigned int value)
 {
 	thread->arch.swap_return_value = value;
 }
+#endif
+
+#if defined(CONFIG_USE_SWITCH)
+static inline void arch_switch(void *switch_to, void **switched_from)
+{
+	void *switched_from_thread = CONTAINER_OF(switched_from, struct k_thread,
+						  switch_handle);
+
+	z_arm_cortex_r_svc(switch_to, switched_from_thread);
+}
+#endif
 
 #if !defined(CONFIG_MULTITHREADING) && defined(CONFIG_CPU_CORTEX_M)
 extern FUNC_NORETURN void z_arm_switch_to_main_no_multithreading(
