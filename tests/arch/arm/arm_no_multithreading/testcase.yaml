@@ -3,7 +3,7 @@ common:
   tags: arm
   arch_allow: arm
 tests:
-  arch.arm.no_multithreading:
+  arch.arm.no-mt:
     filter: not CONFIG_TRUSTED_EXECUTION_NONSECURE
     platform_allow:
       - qemu_cortex_m0

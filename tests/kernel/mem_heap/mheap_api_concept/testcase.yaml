@@ -5,7 +5,7 @@ tests:
       - memory_heap
     extra_configs:
       - CONFIG_IRQ_OFFLOAD=y
-  kernel.memory_heap_no_multithreading:
+  kernel.memory_heap.no_mt:
     tags:
       - kernel
       - memory_heap
