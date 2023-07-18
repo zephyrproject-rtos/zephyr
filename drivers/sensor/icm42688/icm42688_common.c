@@ -58,15 +58,7 @@ int icm42688_reset(const struct device *dev)
 		return -EINVAL;
 	}
 
-	/* Always use internal RC oscillator */
-	res = icm42688_spi_single_write(&dev_cfg->spi, REG_INTF_CONFIG1,
-					FIELD_PREP(MASK_CLKSEL, BIT_CLKSEL_INT_RC));
-	if (res) {
-		return res;
-	}
-
-	/* Switch on MCLK by setting the IDLE bit */
-	return icm42688_spi_single_write(&dev_cfg->spi, REG_PWR_MGMT0, BIT_IDLE);
+	return 0;
 }
 
 int icm42688_configure(const struct device *dev, struct icm42688_cfg *cfg)
