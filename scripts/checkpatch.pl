@@ -595,7 +595,7 @@ our @mode_permission_funcs = (
 our $api_defines = qr{(?x:
 	_ATFILE_SOURCE|
 	_BSD_SOURCE|
-	_DEFAULT_SOURCE
+	_DEFAULT_SOURCE|
 	_GNU_SOURCE|
 	_ISOC11_SOURCE|
 	_ISOC99_SOURCE|
@@ -603,7 +603,7 @@ our $api_defines = qr{(?x:
 	_POSIX_SOURCE|
 	_SVID_SOURCE|
 	_XOPEN_SOURCE|
-	_XOPEN_SOURCE_EXTENDED|
+	_XOPEN_SOURCE_EXTENDED
 )};
 
 my $word_pattern = '\b[A-Z]?[a-z]{2,}\b';
