@@ -348,13 +348,55 @@ static inline int z_impl_w1_configure(const struct device *dev,
  * @name 1-Wire ROM Commands
  * @{
  */
+
+/**
+ * This command allows the bus master to read the slave devices without
+ * providing their ROM code.
+ */
 #define W1_CMD_SKIP_ROM			0xCC
+
+/**
+ * This command allows the bus master to address a specific slave device by
+ * providing its ROM code.
+ */
 #define W1_CMD_MATCH_ROM		0x55
+
+/**
+ * This command allows the bus master to resume a previous read out from where
+ * it left off.
+ */
 #define W1_CMD_RESUME			0xA5
+
+/**
+ * This command allows the bus master to read the ROM code from a single slave
+ * device.
+ * This command should be used when there is only a single slave device on the
+ * bus.
+ */
 #define W1_CMD_READ_ROM			0x33
+
+/**
+ * This command allows the bus master to discover the addresses (i.e., ROM
+ * codes) of all slave devices on the bus.
+ */
 #define W1_CMD_SEARCH_ROM		0xF0
+
+/**
+ * This command allows the bus master to identify which devices have experienced
+ * an alarm condition.
+ */
 #define W1_CMD_SEARCH_ALARM		0xEC
+
+/**
+ * This command allows the bus master to address all devices on the bus and then
+ * switch them to overdrive speed.
+ */
 #define W1_CMD_OVERDRIVE_SKIP_ROM	0x3C
+
+/**
+ * This command allows the bus master to address a specific device and switch it
+ * to overdrive speed.
+ */
 #define W1_CMD_OVERDRIVE_MATCH_ROM	0x69
 
 /** @} */
