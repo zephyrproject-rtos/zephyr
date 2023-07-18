@@ -121,6 +121,80 @@ static int icm42605_channel_get(const struct device *dev,
 	return 0;
 }
 
+static int icm42605_get_int_status(const struct device *dev, uint8_t interrupt)
+{
+	int result = 0;
+	struct icm42605_data *drv_data = dev->data;
+	const struct icm42605_config *cfg = dev->config;
+
+	/* Read INT_STATUS (0x45), FIFO_COUNTH(0x46) and FIFO_COUNTL(0x47) */
+	switch (interrupt) {
+	case REG_INT_STATUS:
+		result = inv_spi_read(&cfg->spi, interrupt, drv_data->fifo_data, 3);
+		break;
+	case REG_INT_STATUS2:
+		result = inv_spi_read(&cfg->spi, interrupt, drv_data->fifo_data, 3);
+		break;
+	case REG_INT_STATUS3:
+		result = inv_spi_read(&cfg->spi, interrupt, drv_data->fifo_data, 3);
+		break;
+	default:
+		LOG_ERR("Not supported interrupt status register");
+		break;
+	}
+
+	return result;
+}
+
+static int icm42605_get_data(const struct device *dev, size_t size)
+{
+	int result = 0;
+	struct icm42605_data *drv_data = dev->data;
+	const struct icm42605_config *cfg = dev->config;
+
+	result = inv_spi_read(&cfg->spi, REG_FIFO_DATA, drv_data->fifo_data, size);
+	if (drv_data->fifo_data[0] & BIT_FIFO_HEAD_ACCEL) {
+		/* Check empty values */
+		if (!(drv_data->fifo_data[1] == FIFO_ACCEL0_RESET_VALUE
+		&& drv_data->fifo_data[2] == FIFO_ACCEL1_RESET_VALUE)) {
+			drv_data->accel_x = (drv_data->fifo_data[1] << 8)
+								+ (drv_data->fifo_data[2]);
+			drv_data->accel_y = (drv_data->fifo_data[3] << 8)
+								+ (drv_data->fifo_data[4]);
+			drv_data->accel_z = (drv_data->fifo_data[5] << 8)
+								+ (drv_data->fifo_data[6]);
+		}
+		if (!(drv_data->fifo_data[0] & BIT_FIFO_HEAD_GYRO)) {
+			drv_data->temp = (int16_t)(drv_data->fifo_data[7]);
+		} else {
+			if (!(drv_data->fifo_data[7] == FIFO_GYRO0_RESET_VALUE &&
+			drv_data->fifo_data[8] == FIFO_GYRO1_RESET_VALUE)) {
+				drv_data->gyro_x = (drv_data->fifo_data[7] << 8)
+									+ (drv_data->fifo_data[8]);
+				drv_data->gyro_y = (drv_data->fifo_data[9] << 8)
+									+ (drv_data->fifo_data[10]);
+				drv_data->gyro_z = (drv_data->fifo_data[11] << 8)
+									+ (drv_data->fifo_data[12]);
+			}
+			drv_data->temp = (int16_t)(drv_data->fifo_data[13]);
+		}
+	} else {
+		if (drv_data->fifo_data[0] & BIT_FIFO_HEAD_GYRO) {
+			if (!(drv_data->fifo_data[1] == FIFO_GYRO0_RESET_VALUE &&
+			drv_data->fifo_data[2] == FIFO_GYRO1_RESET_VALUE)) {
+				drv_data->gyro_x = (drv_data->fifo_data[1] << 8)
+									+ (drv_data->fifo_data[2]);
+				drv_data->gyro_y = (drv_data->fifo_data[3] << 8)
+									+ (drv_data->fifo_data[4]);
+				drv_data->gyro_z = (drv_data->fifo_data[5] << 8)
+									+ (drv_data->fifo_data[6]);
+			}
+			drv_data->temp = (int16_t)(drv_data->fifo_data[7]);
+		}
+	}
+	return result;
+}
+
 int icm42605_tap_fetch(const struct device *dev)
 {
 	int result = 0;
@@ -423,6 +497,8 @@ static const struct sensor_driver_api icm42605_driver_api = {
 	.channel_get = icm42605_channel_get,
 	.attr_set = icm42605_attr_set,
 	.attr_get = icm42605_attr_get,
+	.interrupt_get = icm42605_get_int_status,
+	.data_get = icm42605_get_data,
 };
 
 #define ICM42605_DEFINE_CONFIG(index)					\

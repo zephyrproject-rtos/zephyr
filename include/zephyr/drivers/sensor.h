@@ -400,6 +400,24 @@ typedef int (*sensor_channel_get_t)(const struct device *dev,
 				    struct sensor_value *val);
 
 /**
+ * @typedef sensor_interrupt_get_t
+ * @brief Callback API for reading an interrupt status from a sensor
+ *
+ * See sensor_interrupt_get() for argument description
+ */
+typedef int (*sensor_interrupt_get_t)(const struct device *dev,
+				    uint8_t interrupt);
+
+/**
+ * @typedef sensor_data_get_t
+ * @brief Callback API for reading measurement data from the sensor
+ *
+ * See sensor_data_get() for argument description
+ */
+typedef int (*sensor_data_get_t)(const struct device *dev,
+				    size_t data_size);
+
+/**
  * @typedef sensor_frame_iterator_t
  * @brief Used for iterating over the data frames via the :c:struct:`sensor_decoder_api`
  *
@@ -563,6 +581,8 @@ __subsystem struct sensor_driver_api {
 	sensor_channel_get_t channel_get;
 	sensor_get_decoder_t get_decoder;
 	sensor_submit_t submit;
+	sensor_interrupt_get_t interrupt_get;
+	sensor_data_get_t data_get;
 };
 
 /**
@@ -627,6 +647,52 @@ static inline int z_impl_sensor_attr_get(const struct device *dev,
 	}
 
 	return api->attr_get(dev, chan, attr, val);
+}
+
+/**
+ * @brief Get the status of the interrupts
+ * @param dev Pointer to the sensor device
+ * @param interrupt The interrupt register, for which we want to get the status
+ *
+ * @return 0 if successful, negative errno code if failure.
+ */
+__syscall int sensor_interrupt_get(const struct device *dev,
+			      uint8_t interrupt);
+
+static inline int z_impl_sensor_interrupt_get(const struct device *dev,
+			      uint8_t interrupt)
+{
+	const struct sensor_driver_api *api =
+		(const struct sensor_driver_api *)dev->api;
+
+	if (api->interrupt_get == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->interrupt_get(dev, interrupt);
+}
+
+/**
+ * @brief Get the measurement data from the sensor
+ * @param dev Pointer to the sensor device
+ * @param data_size Size of data to be read from sensor
+ *
+ * @return 0 if successful, negative errno code if failure.
+ */
+__syscall int sensor_data_get(const struct device *dev,
+			      size_t data_size);
+
+static inline int z_impl_sensor_data_get(const struct device *dev,
+			      size_t data_size)
+{
+	const struct sensor_driver_api *api =
+		(const struct sensor_driver_api *)dev->api;
+
+	if (api->data_get == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->data_get(dev, data_size);
 }
 
 /**
