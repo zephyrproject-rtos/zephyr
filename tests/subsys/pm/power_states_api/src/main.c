@@ -18,7 +18,7 @@ static enum pm_state states[] = {PM_STATE_SUSPEND_TO_IDLE,
 static enum pm_state wrong_states[] = {PM_STATE_SUSPEND_TO_DISK,
 		PM_STATE_SUSPEND_TO_RAM, PM_STATE_SUSPEND_TO_RAM};
 
-ZTEST(power_states_1cpu, test_power_states)
+ZTEST(idle_states_1cpu, test_idle_states)
 {
 	enum pm_state dts_states[] =
 		PM_STATE_LIST_FROM_DT_CPU(DT_NODELABEL(cpu0));
@@ -38,5 +38,5 @@ ZTEST(power_states_1cpu, test_power_states)
 		     "Invalid pm-states array");
 }
 
-ZTEST_SUITE(power_states_1cpu, NULL, NULL, ztest_simple_1cpu_before,
+ZTEST_SUITE(idle_states_1cpu, NULL, NULL, ztest_simple_1cpu_before,
 			ztest_simple_1cpu_after, NULL);

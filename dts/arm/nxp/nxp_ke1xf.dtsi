@@ -30,7 +30,7 @@
 			reg = <0>;
 		};
 
-		power-states {
+		idle-states {
 			idle: idle {
 				compatible = "zephyr,power-state";
 				power-state-name = "runtime-idle";

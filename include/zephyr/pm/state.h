@@ -120,7 +120,7 @@ struct pm_state_info {
 	 * distinguish them. e.g:
 	 *
 	 * @code{.dts}
-	 *	power-states {
+	 *	idle-states {
 	 *		state0: state0 {
 	 *			compatible = "zephyr,power-state";
 	 *			power-state-name = "suspend-to-idle";
@@ -228,7 +228,7 @@ struct pm_state_info {
  *			cpu-idle-states = <&state0 &state1>;
  *		};
  *
- *		power-states {
+ *		idle-states {
  *			state0: state0 {
  *				compatible = "zephyr,power-state";
  *				power-state-name = "suspend-to-idle";
@@ -277,7 +277,7 @@ struct pm_state_info {
  *			cpu-idle-states = <&state0 &state1>;
  *		};
  *
- *		power-states {
+ *		idle-states {
  *			state0: state0 {
  *				compatible = "zephyr,power-state";
  *				power-state-name = "suspend-to-idle";

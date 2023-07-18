@@ -39,7 +39,7 @@
 			cpu-idle-states = <&pstate_em1>;
 		};
 
-		power-states {
+		idle-states {
 			/*
 			 * EM1 is a basic "CPU WFI idle", all high-freq clocks remain
 			 * enabled.

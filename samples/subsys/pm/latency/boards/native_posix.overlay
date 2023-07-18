@@ -4,7 +4,7 @@
  */
 
 / {
-	power-states {
+	idle-states {
 		runtime_idle: runtime-idle {
 			compatible = "zephyr,power-state";
 			power-state-name = "runtime-idle";

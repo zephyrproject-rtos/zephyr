@@ -37,7 +37,7 @@
 			reg = <1>;
 		};
 
-		power-states {
+		idle-states {
 			light_sleep: light_sleep {
 				compatible = "zephyr,power-state";
 				power-state-name = "standby";

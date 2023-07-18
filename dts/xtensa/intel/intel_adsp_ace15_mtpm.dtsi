@@ -35,7 +35,7 @@
 			cpu-idle-states = <&d0i3 &d3>;
 		};
 
-		power-states {
+		idle-states {
 			d0i3: idle {
 				compatible = "zephyr,power-state";
 				power-state-name = "runtime-idle";

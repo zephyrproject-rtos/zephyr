@@ -26,7 +26,7 @@
 			cpu-idle-states = <&idle &standby>;
 		};
 
-		power-states {
+		idle-states {
 			idle: idle {
 				compatible = "zephyr,power-state";
 				power-state-name = "suspend-to-idle";

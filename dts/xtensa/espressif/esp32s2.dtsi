@@ -37,7 +37,7 @@
 			cpu-idle-states = <&light_sleep &deep_sleep>;
 		};
 
-		power-states {
+		idle-states {
 			light_sleep: light_sleep {
 				compatible = "zephyr,power-state";
 				power-state-name = "standby";

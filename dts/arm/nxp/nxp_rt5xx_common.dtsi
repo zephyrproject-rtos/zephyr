@@ -36,7 +36,7 @@
 			};
 		};
 
-		power-states {
+		idle-states {
 			/* This is the setting Sleep Mode */
 			idle: idle {
 				compatible = "zephyr,power-state";

@@ -33,7 +33,7 @@
 			cpu-idle-states = <&stop>;
 		};
 
-		power-states {
+		idle-states {
 			stop: stop {
 				compatible = "zephyr,power-state";
 				power-state-name = "suspend-to-idle";
