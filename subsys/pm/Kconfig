@@ -4,9 +4,15 @@
 
 menu "Power Management"
 
-menuconfig PM
+config HAS_PM
+	bool
+	help
+	  This option must be selected by SoCs that provide PM hooks, that is,
+	  calls to configure low-power states.
+
+config PM
 	bool "System Power Management"
-	depends on SYS_CLOCK_EXISTS
+	depends on SYS_CLOCK_EXISTS && HAS_PM
 	help
 	  This option enables the board to implement extra power management
 	  policies whenever the kernel becomes idle. The kernel informs the

@@ -11,6 +11,7 @@ config SOC_ESP32S2
 	select XIP if !MCUBOOT
 	select HAS_ESPRESSIF_HAL
 	select ARCH_SUPPORTS_COREDUMP
+	select HAS_PM
 
 if SOC_ESP32S2
 

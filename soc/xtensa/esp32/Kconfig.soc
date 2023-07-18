@@ -12,6 +12,7 @@ config SOC_ESP32
 	select XIP if !MCUBOOT
 	select HAS_ESPRESSIF_HAL
 	select CPU_HAS_FPU
+	select HAS_PM
 
 if SOC_ESP32
 
