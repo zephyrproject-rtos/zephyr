@@ -103,6 +103,13 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 		clock_root =  kCLOCK_Root_Sai4;
 		break;
 #endif
+
+#ifdef CONFIG_ETH_NXP_ENET
+	case IMX_CCM_ENET_CLK:
+		clock_root = kCLOCK_Root_Bus;
+		break;
+#endif
+
 	default:
 		return -EINVAL;
 	}
