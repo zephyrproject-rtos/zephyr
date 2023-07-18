@@ -8,5 +8,6 @@ config SOC_SERIES_IMX_RT
 	select ARM
 	select SOC_FAMILY_IMX
 	select CLOCK_CONTROL
+	select HAS_PM
 	help
 	  Enable support for i.MX RT MCU series

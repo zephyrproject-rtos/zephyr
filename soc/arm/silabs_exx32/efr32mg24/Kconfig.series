@@ -22,5 +22,6 @@ config SOC_SERIES_EFR32MG24
 	select SOC_GECKO_GPIO
 	select SOC_GECKO_DEV_INIT
 	select SOC_GECKO_SE
+	select HAS_PM
 	help
 	  Enable support for EFR32MG24 Mighty Gecko MCU series

@@ -11,5 +11,6 @@ config SOC_SERIES_INTEL_ACE
 	select SCHED_IPI_SUPPORTED
 	select DW_ICTL_ACE
 	select SOC_HAS_RUNTIME_NUM_CPUS
+	select HAS_PM
 	help
 	  Intel ADSP ACE

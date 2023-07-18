@@ -11,5 +11,6 @@ config SOC_SERIES_NPCX9
 	select CPU_HAS_FPU
 	select CPU_HAS_ARM_MPU
 	select SOC_FAMILY_NPCX
+	select HAS_PM
 	help
 	  Enable support for Nuvoton NPCX9 series
