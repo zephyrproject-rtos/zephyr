@@ -12,6 +12,12 @@ module = POWER_DOMAIN
 module-str = power_domain
 source "subsys/logging/Kconfig.template.log_config"
 
+config POWER_DOMAIN_INIT_PRIORITY
+	int "Power domain init priority"
+	default 75
+	help
+	  Power domain initialization priority.
+
 config POWER_DOMAIN_GPIO
 	bool "GPIO controlled power domain"
 	default y
@@ -27,5 +33,12 @@ config POWER_DOMAIN_INTEL_ADSP
 	select DEVICE_DEPS
 	help
 	  Include Intel ADSP power domain control mechanisms
+
+config POWER_DOMAIN_GPIO_MONITOR
+	bool "GPIO monitor for sensing power on rail"
+	default y
+	depends on DT_HAS_POWER_DOMAIN_GPIO_MONITOR_ENABLED
+	depends on GPIO
+	select DEVICE_DEPS
 
 endif
