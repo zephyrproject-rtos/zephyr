@@ -33,6 +33,23 @@
 			device_type = "cpu";
 			compatible = "espressif,riscv";
 			reg = <0>;
+			cpu-power-states = <&light_sleep &deep_sleep>;
+		};
+	};
+
+	power-states {
+		light_sleep: light_sleep {
+			compatible = "zephyr,power-state";
+			power-state-name = "standby";
+			min-residency-us = <200>;
+			exit-latency-us = <60>;
+		};
+
+		deep_sleep: deep_sleep {
+			compatible = "zephyr,power-state";
+			power-state-name = "soft-off";
+			min-residency-us = <660>;
+			exit-latency-us = <105>;
 		};
 	};
 
