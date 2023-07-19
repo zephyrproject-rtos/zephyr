@@ -1595,6 +1595,7 @@ Kconfig:
   files:
     - scripts/kconfig/
     - doc/build/kconfig/
+    - Kconfig.zephyr
   labels:
     - "area: Kconfig"
   description: >-
