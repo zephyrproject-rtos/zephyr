@@ -184,16 +184,16 @@ ZTEST(test_log_api, test_log_various_messages)
 	LOG_DBG(TEST_MSG_0, ll, ull, i);
 
 #ifdef CONFIG_FPU
-	float f = -1.2356;
+	float f = -1.2356f;
 	double d = -1.2356;
 
-	snprintk(str, sizeof(str), TEST_MSG_1, f, 100,  d);
+	snprintk(str, sizeof(str), TEST_MSG_1, (double)f, 100,  d);
 	mock_log_frontend_record(LOG_CURRENT_MODULE_ID(), LOG_LEVEL_INF, str);
 	mock_log_backend_record(&backend1, LOG_CURRENT_MODULE_ID(),
 				Z_LOG_LOCAL_DOMAIN_ID, LOG_LEVEL_INF,
 				exp_timestamp++, str);
 
-	LOG_INF(TEST_MSG_1, f, 100, d);
+	LOG_INF(TEST_MSG_1, (double)f, 100, d);
 #endif /* CONFIG_FPU */
 
 	snprintk(str, sizeof(str), "wrn %s", dstr);
