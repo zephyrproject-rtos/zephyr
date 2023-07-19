@@ -270,6 +270,7 @@ class Build(Forceable):
                     y = yaml.safe_load(stream)
                 except yaml.YAMLError as exc:
                     log.die(exc)
+            common = y.get('common')
             tests = y.get('tests')
             if not tests:
                 log.die(f"No tests found in {yf}")
@@ -277,23 +278,29 @@ class Build(Forceable):
             if not item:
                 log.die(f"Test item {test_item} not found in {yf}")
 
-            for data in ['extra_args', 'extra_configs']:
-                extra = item.get(data)
-                if not extra:
+            sysbuild = False
+            for section in [common, item]:
+                if not section:
                     continue
-                if isinstance(extra, str):
-                    arg_list = extra.split(" ")
-                else:
-                    arg_list = extra
-                if data == 'extra_configs':
-                    args = ["-D{}".format(arg.replace('"', '\"')) for arg in arg_list]
-                elif data == 'extra_args':
-                    args = ["-D{}".format(arg.replace('"', '')) for arg in arg_list]
-                if self.args.cmake_opts:
-                    self.args.cmake_opts.extend(args)
-                else:
-                    self.args.cmake_opts = args
-            self.args.sysbuild = item.get('sysbuild')
+                sysbuild = section.get('sysbuild', sysbuild)
+                for data in ['extra_args', 'extra_configs']:
+                    extra = section.get(data)
+                    if not extra:
+                        continue
+                    if isinstance(extra, str):
+                        arg_list = extra.split(" ")
+                    else:
+                        arg_list = extra
+                    if data == 'extra_configs':
+                        args = ["-D{}".format(arg.replace('"', '\"')) for arg in arg_list]
+                    elif data == 'extra_args':
+                        args = ["-D{}".format(arg.replace('"', '')) for arg in arg_list]
+                    if self.args.cmake_opts:
+                        self.args.cmake_opts.extend(args)
+                    else:
+                        self.args.cmake_opts = args
+
+            self.args.sysbuild = sysbuild
         return found_test_metadata
 
     def _sanity_precheck(self):
