@@ -29,17 +29,23 @@ extern "C" {
 #endif
 
 
+/** @cond INTERNAL_HIDDEN */
 struct _snode {
 	struct _snode *next;
 };
+/** @endcond */
 
+/** Single-linked list node structure. */
 typedef struct _snode sys_snode_t;
 
+/** @cond INTERNAL_HIDDEN */
 struct _slist {
 	sys_snode_t *head;
 	sys_snode_t *tail;
 };
+/** @endcond */
 
+/** Single-linked list structure. */
 typedef struct _slist sys_slist_t;
 
 /**
@@ -102,7 +108,7 @@ typedef struct _slist sys_slist_t;
 #define SYS_SLIST_FOR_EACH_NODE_SAFE(__sl, __sn, __sns)			\
 	Z_GENLIST_FOR_EACH_NODE_SAFE(slist, __sl, __sn, __sns)
 
-/*
+/**
  * @brief Provide the primitive to resolve the container of a list node
  * Note: it is safe to use with NULL pointer nodes
  *
@@ -113,7 +119,7 @@ typedef struct _slist sys_slist_t;
 #define SYS_SLIST_CONTAINER(__ln, __cn, __n) \
 	Z_GENLIST_CONTAINER(__ln, __cn, __n)
 
-/*
+/**
  * @brief Provide the primitive to peek container of the list head
  *
  * @param __sl A pointer on a sys_slist_t to peek
@@ -123,7 +129,7 @@ typedef struct _slist sys_slist_t;
 #define SYS_SLIST_PEEK_HEAD_CONTAINER(__sl, __cn, __n) \
 	Z_GENLIST_PEEK_HEAD_CONTAINER(slist, __sl, __cn, __n)
 
-/*
+/**
  * @brief Provide the primitive to peek container of the list tail
  *
  * @param __sl A pointer on a sys_slist_t to peek
@@ -133,7 +139,7 @@ typedef struct _slist sys_slist_t;
 #define SYS_SLIST_PEEK_TAIL_CONTAINER(__sl, __cn, __n) \
 	Z_GENLIST_PEEK_TAIL_CONTAINER(slist, __sl, __cn, __n)
 
-/*
+/**
  * @brief Provide the primitive to peek the next container
  *
  * @param __cn Container struct type pointer
@@ -196,6 +202,10 @@ static inline void sys_slist_init(sys_slist_t *list)
 	list->tail = NULL;
 }
 
+/**
+ * @brief Statically initialize a single-linked list
+ * @param ptr_to_list A pointer on the list to initialize
+ */
 #define SYS_SLIST_STATIC_INIT(ptr_to_list) {NULL, NULL}
 
 static inline sys_snode_t *z_snode_next_peek(sys_snode_t *node)
