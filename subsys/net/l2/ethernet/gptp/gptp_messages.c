@@ -535,7 +535,7 @@ struct net_pkt *gptp_prepare_announce(int port)
 	hdr->reserved1 = 0U;
 	hdr->reserved2 = 0U;
 
-	ann->cur_utc_offset = global_ds->current_utc_offset;
+	ann->cur_utc_offset = htons(global_ds->current_utc_offset);
 	ann->time_source = global_ds->time_source;
 
 	switch (GPTP_PORT_BMCA_DATA(port)->info_is) {
@@ -543,9 +543,11 @@ struct net_pkt *gptp_prepare_announce(int port)
 		ann->root_system_id.grand_master_prio1 = default_ds->priority1;
 		ann->root_system_id.grand_master_prio2 = default_ds->priority2;
 
-		memcpy(&ann->root_system_id.clk_quality,
-		       &default_ds->clk_quality,
-		       sizeof(struct gptp_clock_quality));
+		ann->root_system_id.clk_quality.clock_accuracy =
+			default_ds->clk_quality.clock_accuracy;
+		ann->root_system_id.clk_quality.clock_class = default_ds->clk_quality.clock_class;
+		ann->root_system_id.clk_quality.offset_scaled_log_var =
+			htons(default_ds->clk_quality.offset_scaled_log_var);
 
 		memcpy(&ann->root_system_id.grand_master_id,
 		       default_ds->clk_id,
