@@ -25,22 +25,23 @@
  *
  * This implements an intrusive balanced tree that guarantees
  * O(log2(N)) runtime for all operations and amortized O(1) behavior
- * for creation and destruction of whole trees.  The algorithms and
+ * for creation and destruction of whole trees. The algorithms and
  * naming are conventional per existing academic and didactic
  * implementations, c.f.:
  *
  * https://en.wikipedia.org/wiki/Red%E2%80%93black_tree
  *
  * The implementation is size-optimized to prioritize runtime memory
- * usage.  The data structure is intrusive, which is to say the struct
- * rbnode handle is intended to be placed in a separate struct the
- * same way other such structures (e.g. Zephyr's dlist list) and
- * requires no data pointer to be stored in the node.  The color bit
- * is unioned with a pointer (fairly common for such libraries).  Most
- * notably, there is no "parent" pointer stored in the node, the upper
- * structure of the tree being generated dynamically via a stack as
- * the tree is recursed.  So the overall memory overhead of a node is
- * just two pointers, identical with a doubly-linked list.
+ * usage. The data structure is intrusive, which is to say the @ref
+ * rbnode handle is intended to be placed in a separate struct, in the
+ * same way as with other such structures (e.g. Zephyr's @ref
+ * doubly-linked-list_apis), and requires no data pointer to be stored
+ * in the node. The color bit is unioned with a pointer (fairly common
+ * for such libraries). Most notably, there is no "parent" pointer
+ * stored in the node, the upper structure of the tree being generated
+ * dynamically via a stack as the tree is recursed. So the overall
+ * memory overhead of a node is just two pointers, identical with a
+ * doubly-linked list.
  *
  * @{
  */
