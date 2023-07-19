@@ -39,14 +39,14 @@
 		idle-states {
 			light_sleep: light_sleep {
 				compatible = "zephyr,power-state";
-				power-state-name = "standby";
+				idle-state-name = "standby";
 				min-residency-us = <200>;
 				exit-latency-us = <60>;
 			};
 
 			deep_sleep: deep_sleep {
 				compatible = "zephyr,power-state";
-				power-state-name = "soft-off";
+				idle-state-name = "soft-off";
 				min-residency-us = <660>;
 				exit-latency-us = <105>;
 			};

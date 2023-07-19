@@ -40,14 +40,14 @@
 			/* This is the setting Sleep Mode */
 			idle: idle {
 				compatible = "zephyr,power-state";
-				power-state-name = "runtime-idle";
+				idle-state-name = "runtime-idle";
 				min-residency-us = <0>;
 				exit-latency-us = <0>;
 			};
 			/* This is the setting for Deep-sleep Mode */
 			suspend: suspend {
 				compatible = "nxp,pdcfg-power", "zephyr,power-state";
-				power-state-name = "suspend-to-idle";
+				idle-state-name = "suspend-to-idle";
 				min-residency-us = <500>;
 				exit-latency-us = <120>;
 				/*

@@ -6,7 +6,7 @@ description: Properties for power management state
 compatible: "zephyr,power-state"
 
 properties:
-  power-state-name:
+  idle-state-name:
     type: string
     required: true
     description: indicates a power state

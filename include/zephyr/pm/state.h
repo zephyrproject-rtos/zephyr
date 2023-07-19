@@ -123,14 +123,14 @@ struct pm_state_info {
 	 *	idle-states {
 	 *		state0: state0 {
 	 *			compatible = "zephyr,power-state";
-	 *			power-state-name = "suspend-to-idle";
+	 *			idle-state-name = "suspend-to-idle";
 	 *			substate-id = <1>;
 	 *			min-residency-us = <10000>;
 	 *			exit-latency-us = <100>;
 	 *		};
 	 *		state1: state1 {
 	 *			compatible = "zephyr,power-state";
-	 *			power-state-name = "suspend-to-idle";
+	 *			idle-state-name = "suspend-to-idle";
 	 *			substate-id = <2>;
 	 *			min-residency-us = <20000>;
 	 *			exit-latency-us = <200>;
@@ -201,7 +201,7 @@ struct pm_state_info {
  * @param node_id A node identifier with compatible zephyr,power-state
  */
 #define PM_STATE_DT_INIT(node_id) \
-	DT_ENUM_IDX(node_id, power_state_name)
+	DT_ENUM_IDX(node_id, idle_state_name)
 
 /**
  * @brief Obtain number of CPU power states supported by the given CPU node
@@ -231,14 +231,14 @@ struct pm_state_info {
  *		idle-states {
  *			state0: state0 {
  *				compatible = "zephyr,power-state";
- *				power-state-name = "suspend-to-idle";
+ *				idle-state-name = "suspend-to-idle";
  *				min-residency-us = <10000>;
  *				exit-latency-us = <100>;
  *			};
  *
  *			state1: state1 {
  *				compatible = "zephyr,power-state";
- *				power-state-name = "suspend-to-ram";
+ *				idle-state-name = "suspend-to-ram";
  *				min-residency-us = <50000>;
  *				exit-latency-us = <500>;
  *			};
@@ -280,14 +280,14 @@ struct pm_state_info {
  *		idle-states {
  *			state0: state0 {
  *				compatible = "zephyr,power-state";
- *				power-state-name = "suspend-to-idle";
+ *				idle-state-name = "suspend-to-idle";
  *				min-residency-us = <10000>;
  *				exit-latency-us = <100>;
  *			};
  *
  *			state1: state1 {
  *				compatible = "zephyr,power-state";
- *				power-state-name = "suspend-to-ram";
+ *				idle-state-name = "suspend-to-ram";
  *				min-residency-us = <50000>;
  *				exit-latency-us = <500>;
  *			};

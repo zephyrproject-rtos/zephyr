@@ -38,7 +38,7 @@
 		idle-states {
 			d0i3: idle {
 				compatible = "zephyr,power-state";
-				power-state-name = "runtime-idle";
+				idle-state-name = "runtime-idle";
 				min-residency-us = <200>;
 				exit-latency-us = <100>;
 			};
@@ -47,7 +47,7 @@
 			 */
 			d3: off {
 				compatible = "zephyr,power-state";
-				power-state-name = "soft-off";
+				idle-state-name = "soft-off";
 				min-residency-us = <2147483647>;
 				exit-latency-us = <0>;
 			};

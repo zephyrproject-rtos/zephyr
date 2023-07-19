@@ -36,7 +36,7 @@
 		idle-states {
 			stop: stop {
 				compatible = "zephyr,power-state";
-				power-state-name = "suspend-to-idle";
+				idle-state-name = "suspend-to-idle";
 				min-residency-us = <2000>;
 				exit-latency-us = <750>;
 			};
