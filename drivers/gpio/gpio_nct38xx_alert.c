@@ -9,6 +9,7 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/gpio/gpio_nct38xx.h>
+#include <zephyr/drivers/mfd/nct38xx.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/util_macro.h>
 

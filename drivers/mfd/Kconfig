@@ -19,6 +19,7 @@ config MFD_INIT_PRIORITY
 	  Multi-function devices initialization priority.
 
 source "drivers/mfd/Kconfig.axp192"
+source "drivers/mfd/Kconfig.nct38xx"
 source "drivers/mfd/Kconfig.npm1300"
 source "drivers/mfd/Kconfig.npm6001"
 
