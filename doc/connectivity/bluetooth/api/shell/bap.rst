@@ -17,36 +17,36 @@ Commands
    bap --help
    Subcommands:
       init
-      select_broadcast     :<stream>
-      create_broadcast     :[preset <preset_name>] [enc <broadcast_code>]
-      start_broadcast      :
-      stop_broadcast       :
-      delete_broadcast     :
-      broadcast_scan       :<on, off>
-      accept_broadcast     :0x<broadcast_id>
-      sync_broadcast       :0x<bis_index> [[[0x<bis_index>] 0x<bis_index>] ...]
-      stop_broadcast_sink  :Stops broadcast sink
-      term_broadcast_sink  :
-      discover             :[dir: sink, source]
-      config               :<direction: sink, source> <index> [loc <loc_bits>] [preset <preset_name>]
-      stream_qos           :interval [framing] [latency] [pd] [sdu] [phy] [rtn]
-      qos                  :Send QoS configure for Unicast Group
-      enable               :[context]
+      select_broadcast      :<stream>
+      create_broadcast      :[preset <preset_name>] [enc <broadcast_code>]
+      start_broadcast       :
+      stop_broadcast        :
+      delete_broadcast      :
+      broadcast_scan        :<on, off>
+      create_broadcast_sink :0x<broadcast_id>
+      sync_broadcast        :0x<bis_index> [[[0x<bis_index>] 0x<bis_index>] ...]
+      stop_broadcast_sink   :Stops broadcast sink
+      term_broadcast_sink   :
+      discover              :[dir: sink, source]
+      config                :<direction: sink, source> <index> [loc <loc_bits>] [preset <preset_name>]
+      stream_qos            :interval [framing] [latency] [pd] [sdu] [phy] [rtn]
+      qos                   :Send QoS configure for Unicast Group
+      enable                :[context]
       stop
-      print_ase_info       :Print ASE info for default connection
-      metadata             :[context]
+      print_ase_info        :Print ASE info for default connection
+      metadata              :[context]
       start
       disable
       release
       list
-      select_unicast       :<stream>
-      preset               :<sink, source, broadcast> [preset]
-      send                 :Send to Audio Stream [data]
-      start_sine           :Start sending a LC3 encoded sine wave
-      stop_sine            :Stop sending a LC3 encoded sine wave
-      set_location         :<direction: sink, source> <location bitmask>
-      set_context          :<direction: sink, source><context bitmask> <type:
-                            supported, available>
+      select_unicast        :<stream>
+      preset                :<sink, source, broadcast> [preset]
+      send                  :Send to Audio Stream [data]
+      start_sine            :Start sending a LC3 encoded sine wave
+      stop_sine             :Stop sending a LC3 encoded sine wave
+      set_location          :<direction: sink, source> <location bitmask>
+      set_context           :<direction: sink, source><context bitmask> <type:
+                             supported, available>
 
 
 .. csv-table:: State Machine Transitions
@@ -139,34 +139,57 @@ Stop and release a broadcast source stream:
 
 
 Example Broadcast Sink
-************************
+**********************
 
-Scan for and establish a broadcast sink stream:
+Scan for and establish a broadcast sink stream.
+The command :code:`bap create_broadcast_sink 0xEF6716` will either use existing periodic advertising
+sync (if exist) or start scanning and sync to the periodic advertising before syncing to the BIG.
 
 .. code-block:: console
 
    uart:~$ bap init
    uart:~$ bap broadcast_scan on
-   Found broadcaster with ID 0xB91CD4
-   uart:~$ bap accept_broadcast 0xB91CD4
-   PA syncing to broadcaster
-   Broadcast scan was terminated: 0
-   PA synced to broadcaster with ID 0xB91CD4 as sink 0x2000d09c
-   Sink 0x2000d09c is set as default
-   Sink 0x2000d09c is ready to sync without encryption
-   Received BASE from sink 0x2000d09c:
+   Found broadcaster with ID 0xEF6716 and addr 3D:A5:F9:35:0B:19 (random) and sid 0x00
+   uart:~$ bap create_broadcast_sink 0xEF6716
+   Attempting to PA sync to the broadcaster
+   PA synced to broadcast with broadcast ID 0xEF6716
+   Attempting to sync to the BIG
+   Received BASE from sink 0x20031fac:
+   Presentation delay: 40000
+   Subgroup count: 2
    Subgroup[0]:
-   codec 0x06 cid 0x0000 vid 0x0000 count 4
+   codec cfg id 0x06 cid 0x0000 vid 0x0000
+   data_count 4
    data #0: type 0x01 len 1
+   00000000: 03                                               |.                |
    data #1: type 0x02 len 1
+   00000000: 01                                               |.                |
    data #2: type 0x03 len 4
-   00000000: 00 00 00                                         |...              |
+   00000000: 01 00 00 00                                      |....             |
    data #3: type 0x04 len 2
-   00000000: 28                                               |(                |
+   00000000: 28 00                                            |(.               |
+   meta_count 4
    meta #0: type 0x02 len 2
-   BIS[0] index 0x01
+   00000000: 01 00                                            |..               |
+      BIS[0] index 0x01
+   Subgroup[1]:
+   codec cfg id 0x06 cid 0x0000 vid 0x0000
+   data_count 4
+   data #0: type 0x01 len 1
+   00000000: 03                                               |.                |
+   data #1: type 0x02 len 1
+   00000000: 01                                               |.                |
+   data #2: type 0x03 len 4
+   00000000: 01 00 00 00                                      |....             |
+   data #3: type 0x04 len 2
+   00000000: 28 00                                            |(.               |
+   meta_count 4
+   meta #0: type 0x02 len 2
+   00000000: 01 00                                            |..               |
+      BIS[1] index 0x01
    [0]: 0x01
-   Possible indexes: 0x01
+   [1]: 0x01
+   Possible indexes: 0x01 0x01
    uart:~$ bap sync_broadcast 0x01
 
 Stop and release a broadcast sink stream:
