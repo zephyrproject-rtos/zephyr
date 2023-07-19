@@ -47,19 +47,19 @@
 			stop0: state0 {
 				compatible = "zephyr,power-state";
 				idle-state-name = "suspend-to-idle";
-				substate-id = <1>;
+				zephyr,substate-id = <1>;
 				min-residency-us = <100>;
 			};
 			stop1: state1 {
 				compatible = "zephyr,power-state";
 				idle-state-name = "suspend-to-idle";
-				substate-id = <2>;
+				zephyr,substate-id = <2>;
 				min-residency-us = <500>;
 			};
 			stop2: state2 {
 				compatible = "zephyr,power-state";
 				idle-state-name = "suspend-to-idle";
-				substate-id = <3>;
+				zephyr,substate-id = <3>;
 				min-residency-us = <900>;
 			};
 		};

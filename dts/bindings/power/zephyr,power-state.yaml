@@ -18,7 +18,7 @@ properties:
       - "suspend-to-ram"
       - "suspend-to-disk"
       - "soft-off"
-  substate-id:
+  zephyr,substate-id:
     type: int
     description: Platform specific identification.
   min-residency-us:

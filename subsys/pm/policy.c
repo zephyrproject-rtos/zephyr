@@ -17,10 +17,10 @@
 
 #if DT_HAS_COMPAT_STATUS_OKAY(zephyr_power_state)
 
-#define DT_SUB_LOCK_INIT(node_id)				\
-	{ .state = PM_STATE_DT_INIT(node_id),			\
-	  .substate_id = DT_PROP_OR(node_id, substate_id, 0),	\
-	  .lock = ATOMIC_INIT(0),				\
+#define DT_SUB_LOCK_INIT(node_id)					\
+	{ .state = PM_STATE_DT_INIT(node_id),				\
+	  .substate_id = DT_PROP_OR(node_id, zephyr_substate_id, 0),	\
+	  .lock = ATOMIC_INIT(0),					\
 	},
 
 /**

@@ -124,14 +124,14 @@ struct pm_state_info {
 	 *		state0: state0 {
 	 *			compatible = "zephyr,power-state";
 	 *			idle-state-name = "suspend-to-idle";
-	 *			substate-id = <1>;
+	 *			zephyr,substate-id = <1>;
 	 *			min-residency-us = <10000>;
 	 *			exit-latency-us = <100>;
 	 *		};
 	 *		state1: state1 {
 	 *			compatible = "zephyr,power-state";
 	 *			idle-state-name = "suspend-to-idle";
-	 *			substate-id = <2>;
+	 *			zephyr,substate-id = <2>;
 	 *			min-residency-us = <20000>;
 	 *			exit-latency-us = <200>;
 	 *		};
@@ -189,7 +189,7 @@ struct pm_state_info {
 #define PM_STATE_INFO_DT_INIT(node_id)					       \
 	{								       \
 		.state = PM_STATE_DT_INIT(node_id),			       \
-		.substate_id = DT_PROP_OR(node_id, substate_id, 0),	       \
+		.substate_id = DT_PROP_OR(node_id, zephyr_substate_id, 0),     \
 		.min_residency_us = DT_PROP_OR(node_id, min_residency_us, 0),  \
 		.exit_latency_us = DT_PROP_OR(node_id, exit_latency_us, 0),    \
 	}

@@ -39,19 +39,19 @@
 			stop: stop {
 				compatible = "zephyr,power-state";
 				idle-state-name = "suspend-to-idle";
-				substate-id = <0>;
+				zephyr,substate-id = <0>;
 			};
 
 			pstop1: pstop1 {
 				compatible = "zephyr,power-state";
 				idle-state-name = "suspend-to-idle";
-				substate-id = <1>;
+				zephyr,substate-id = <1>;
 			};
 
 			pstop2: pstop2 {
 				compatible = "zephyr,power-state";
 				idle-state-name = "suspend-to-idle";
-				substate-id = <2>;
+				zephyr,substate-id = <2>;
 			};
 		};
 	};

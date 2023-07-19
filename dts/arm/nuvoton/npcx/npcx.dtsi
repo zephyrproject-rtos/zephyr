@@ -33,14 +33,14 @@
 			suspend_to_idle0: suspend-to-idle0 {
 				compatible = "zephyr,power-state";
 				idle-state-name = "suspend-to-idle";
-				substate-id = <0>;
+				zephyr,substate-id = <0>;
 				min-residency-us = <1000>;
 			};
 
 			suspend_to_idle1: suspend-to-idle1 {
 				compatible = "zephyr,power-state";
 				idle-state-name = "suspend-to-idle";
-				substate-id = <1>;
+				zephyr,substate-id = <1>;
 				min-residency-us = <201000>;
 			};
 		};
