@@ -265,13 +265,13 @@ static int icp10125_sample_fetch(const struct device *dev, const enum sensor_cha
 
 static void icp10125_convert_press_value(struct icp10125_data *data, struct sensor_value *val)
 {
-	sensor_value_from_double(val, icp10125_calc_calibrated_press(data) / 1000.f);
+	sensor_value_from_float(val, icp10125_calc_calibrated_press(data) / 1000.f);
 }
 
 static void icp10125_convert_ambient_temp_value(struct icp10125_data *data,
 						struct sensor_value *val)
 {
-	sensor_value_from_double(val, icp10125_calc_calibrated_ambient_temp(data));
+	sensor_value_from_float(val, icp10125_calc_calibrated_ambient_temp(data));
 }
 
 static int icp10125_channel_get(const struct device *dev, enum sensor_channel chan,
