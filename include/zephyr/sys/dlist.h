@@ -6,6 +6,9 @@
 
 /**
  * @file
+ * @defgroup doubly-linked-list_apis Doubly-linked list
+ * @ingroup datastructure_apis
+ *
  * @brief Doubly-linked list implementation
  *
  * Doubly-linked list implementation using inline macros/functions.
@@ -15,6 +18,8 @@
  * The lists are expected to be initialized such that both the head and tail
  * pointers point to the list itself.  Initializing the lists in such a fashion
  * simplifies the adding and removing of nodes to/from the list.
+ *
+ * @{
  */
 
 #ifndef ZEPHYR_INCLUDE_SYS_DLIST_H_
@@ -28,11 +33,6 @@
 extern "C" {
 #endif
 
-/**
- * @defgroup doubly-linked-list_apis Doubly-linked list
- * @ingroup datastructure_apis
- * @{
- */
 
 struct _dnode {
 	union {

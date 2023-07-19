@@ -1,11 +1,8 @@
-/* ring_buffer.h: Simple ring buffer API */
-
 /*
  * Copyright (c) 2015 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-/** @file */
 
 #ifndef ZEPHYR_INCLUDE_SYS_RING_BUFFER_H_
 #define ZEPHYR_INCLUDE_SYS_RING_BUFFER_H_
@@ -41,6 +38,16 @@ struct ring_buf {
 };
 
 /**
+ * @file
+ * @defgroup ring_buffer_apis Ring Buffer APIs
+ * @ingroup datastructure_apis
+ *
+ * @brief Simple ring buffer implementation.
+ *
+ * @{
+ */
+
+/**
  * @brief Function to force ring_buf internal states to given value
  *
  * Any value other than 0 makes sense only in validation testing context.
@@ -50,12 +57,6 @@ static inline void ring_buf_internal_reset(struct ring_buf *buf, int32_t value)
 	buf->put_head = buf->put_tail = buf->put_base = value;
 	buf->get_head = buf->get_tail = buf->get_base = value;
 }
-
-/**
- * @defgroup ring_buffer_apis Ring Buffer APIs
- * @ingroup datastructure_apis
- * @{
- */
 
 /**
  * @brief Define and initialize a ring buffer for byte data.

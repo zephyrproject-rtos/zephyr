@@ -18,7 +18,10 @@
 
 /**
  * @file
- * @brief Red/Black balanced tree data structure
+ * @defgroup rbtree_apis Balanced Red/Black Tree
+ * @ingroup datastructure_apis
+ *
+ * @brief Balanced Red/Black Tree implementation
  *
  * This implements an intrusive balanced tree that guarantees
  * O(log2(N)) runtime for all operations and amortized O(1) behavior
@@ -38,6 +41,8 @@
  * structure of the tree being generated dynamically via a stack as
  * the tree is recursed.  So the overall memory overhead of a node is
  * just two pointers, identical with a doubly-linked list.
+ *
+ * @{
  */
 
 #ifndef ZEPHYR_INCLUDE_SYS_RB_H_
@@ -59,12 +64,6 @@ struct rbnode {
 #define Z_PBITS(t) (8 * sizeof(t))
 #define Z_MAX_RBTREE_DEPTH (2 * (Z_PBITS(int *) - Z_TBITS(int *) - 1) + 1)
 
-
- /**
-  * @defgroup rbtree_apis Balanced Red/Black Tree
-  * @ingroup datastructure_apis
-  * @{
-  */
 /**
  * @typedef rb_lessthan_t
  * @brief Red/black tree comparison predicate

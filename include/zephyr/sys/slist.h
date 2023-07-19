@@ -4,15 +4,18 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/**
- * @file
- *
- * @brief Single-linked list implementation
- *
- * Single-linked list implementation using inline macros/functions.
- * This API is not thread safe, and thus if a list is used across threads,
- * calls to functions must be protected with synchronization primitives.
- */
+ /**
+  * @file
+  * @defgroup single-linked-list_apis Single-linked list
+  * @ingroup datastructure_apis
+  *
+  * @brief Single-linked list implementation.
+  *
+  * Single-linked list implementation using inline macros/functions.
+  * This API is not thread safe, and thus if a list is used across threads,
+  * calls to functions must be protected with synchronization primitives.
+  * @{
+  */
 
 #ifndef ZEPHYR_INCLUDE_SYS_SLIST_H_
 #define ZEPHYR_INCLUDE_SYS_SLIST_H_
@@ -38,12 +41,6 @@ struct _slist {
 };
 
 typedef struct _slist sys_slist_t;
-
- /**
-  * @defgroup single-linked-list_apis Single-linked list
-  * @ingroup datastructure_apis
-  * @{
-  */
 
 /**
  * @brief Provide the primitive to iterate on a list
