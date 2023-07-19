@@ -32,14 +32,14 @@
 			reg = <0>;
 			cpu-power-states = <&stop>;
 		};
-	};
 
-	power-states {
-		stop: stop {
-			compatible = "zephyr,power-state";
-			power-state-name = "suspend-to-idle";
-			min-residency-us = <2000>;
-			exit-latency-us = <750>;
+		power-states {
+			stop: stop {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-idle";
+				min-residency-us = <2000>;
+				exit-latency-us = <750>;
+			};
 		};
 	};
 
