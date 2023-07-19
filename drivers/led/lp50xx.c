@@ -94,14 +94,11 @@ struct lp50xx_data {
 static const struct led_info *lp50xx_led_to_info(
 			const struct lp50xx_config *config, uint32_t led)
 {
-	const struct led_info *led_info = NULL;
-
-	for (uint8_t i = 0; i < config->num_leds; i++) {
-		if (config->leds_info[i].index == led) {
-			led_info = &config->leds_info[i];
-		}
+	if (led < config->num_leds) {
+		return &config->leds_info[led];
 	}
-	return led_info;
+
+	return NULL;
 }
 
 static int lp50xx_get_info(const struct device *dev, uint32_t led,
