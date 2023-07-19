@@ -103,6 +103,22 @@ config XTENSA_CCOUNT_HZ
 	  Rate in HZ of the Xtensa core as measured by the value of
 	  the CCOUNT register.
 
+config XTENSA_MORE_SPIN_RELAX_NOPS
+	bool "Use Xtensa specific arch_spin_relax() with more NOPs"
+	help
+	  Some Xtensa SoCs, especially under SMP, may need extra
+	  NOPs after failure to lock a spinlock. This gives
+	  the bus extra time to synchronize the RCW transaction
+	  among CPUs.
+
+config XTENSA_NUM_SPIN_RELAX_NOPS
+	int "Number of NOPs to be used in arch_spin_relax()"
+	default 1
+	depends on XTENSA_MORE_SPIN_RELAX_NOPS
+	help
+	  Specify the number of NOPs in Xtensa specific
+	  arch_spin_relax().
+
 if CPU_HAS_MMU
 
 config XTENSA_MMU
