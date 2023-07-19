@@ -204,12 +204,10 @@ static void test_friend_msg(void)
 	 * after sending the segments.
 	 */
 	ASSERT_OK(bt_mesh_test_recv(15, cfg->addr, NULL, K_SECONDS(10)));
-	/* 4 polls (2 if legacy transport layer is used):
-	 * - The first one triggered manually by transport when sending segmented message;
-	 * - 2 for each SegAck (SegAcks are sent faster than Friend Poll messages);
+	/* - 2 for each SegAck (SegAcks are sent faster than Friend Poll messages);
 	 * - The last one with MD == 0;
 	 */
-	friend_wait_for_polls(IS_ENABLED(CONFIG_BT_MESH_V1d1) ? 4 : 2);
+	friend_wait_for_polls(2);
 
 	PASS();
 }
