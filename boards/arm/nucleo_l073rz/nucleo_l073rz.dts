@@ -37,15 +37,6 @@
 		};
 	};
 
-	power-states {
-		stop: state {
-			compatible = "zephyr,power-state";
-			power-state-name = "suspend-to-idle";
-			min-residency-us = <2000>;
-			exit-latency-us = <750>;
-		};
-	};
-
 	pwmleds: pwmleds {
 		compatible = "pwm-leds";
 		/* NOTE: disabled by default, PWM2 conflicts with SPI1 */
@@ -65,10 +56,6 @@
 		die-temp0 = &die_temp;
 		volt-sensor0 = &vref;
 	};
-};
-
-&cpu0 {
-	cpu-power-states = <&stop>;
 };
 
 &clk_hse {

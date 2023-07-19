@@ -31,6 +31,7 @@
 			device_type = "cpu";
 			compatible = "arm,cortex-m4f";
 			reg = <0>;
+			cpu-power-states = <&stop0 &stop1 &stop2>;
 		};
 	};
 
