@@ -755,6 +755,18 @@ config SYS_CLOCK_MAX_TIMEOUT_DAYS
 	  algorithm is selected for conversion if maximum timeout represented in
 	  source frequency domain multiplied by target frequency fits in 64 bits.
 
+config BUSYWAIT_CPU_LOOPS_PER_USEC
+	int "Number of CPU loops per microsecond for crude busy looping"
+	depends on !SYS_CLOCK_EXISTS && !ARCH_HAS_CUSTOM_BUSY_WAIT
+	default 500
+	help
+	  Calibration for crude CPU based busy loop duration. The default
+	  is assuming 1 GHz CPU and 2 cycles per loop. Reality is certainly
+	  much worse but all we want here is a ball-park figure that ought
+	  to be good enough for the purpose of being able to configure out
+	  system timer support. If accuracy is very important then
+	  implementing arch_busy_wait() should be considered.
+
 config XIP
 	bool "Execute in place"
 	help
