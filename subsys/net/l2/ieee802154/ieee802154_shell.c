@@ -67,10 +67,12 @@ static int cmd_ieee802154_ack(const struct shell *sh,
  *
  * @param addr Extended address as a string.
  * @param ext_addr Extended address in big endian byte ordering.
+ *
+ * @return 0 on success, negative error code otherwise
  */
-static inline void parse_extended_address(char *addr, uint8_t *ext_addr)
+static inline int parse_extended_address(char *addr, uint8_t *ext_addr)
 {
-	net_bytes_from_str(ext_addr, IEEE802154_EXT_ADDR_LENGTH, addr);
+	return net_bytes_from_str(ext_addr, IEEE802154_EXT_ADDR_LENGTH, addr);
 }
 
 static int cmd_ieee802154_associate(const struct shell *sh,
@@ -90,12 +92,21 @@ static int cmd_ieee802154_associate(const struct shell *sh,
 		return -ENOEXEC;
 	}
 
+	if (strlen(argv[2]) > EXT_ADDR_STR_LEN) {
+		shell_fprintf(sh, SHELL_INFO, "Address too long\n");
+		return -ENOEXEC;
+	}
+
 	params = (struct ieee802154_req_params){0};
 	params.pan_id = atoi(argv[1]);
 	strncpy(ext_addr, argv[2], sizeof(ext_addr));
 
 	if (strlen(ext_addr) == EXT_ADDR_STR_LEN) {
-		parse_extended_address(ext_addr, params.addr);
+		if (parse_extended_address(ext_addr, params.addr) < 0) {
+			shell_fprintf(sh, SHELL_INFO,
+				      "Failed to parse extended address\n");
+			return -ENOEXEC;
+		}
 		params.len = IEEE802154_EXT_ADDR_LENGTH;
 	} else {
 		params.short_addr = (uint16_t) atoi(ext_addr);
@@ -435,7 +446,11 @@ static int cmd_ieee802154_set_ext_addr(const struct shell *sh,
 		return -ENOEXEC;
 	}
 
-	parse_extended_address(argv[1], addr);
+	if (parse_extended_address(argv[1], addr) < 0) {
+		shell_fprintf(sh, SHELL_INFO,
+			      "Failed to parse extended address\n");
+		return -ENOEXEC;
+	}
 
 	if (net_mgmt(NET_REQUEST_IEEE802154_SET_EXT_ADDR, iface,
 		     addr, IEEE802154_EXT_ADDR_LENGTH)) {
