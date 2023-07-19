@@ -37,7 +37,7 @@ DEFINE_FFF_GLOBALS;
 
 ZTEST_SUITE(test_rx_basics, NULL, NULL, isoal_test_rx_common_before, NULL, NULL);
 ZTEST_SUITE(test_rx_unframed, NULL, NULL, isoal_test_rx_common_before, NULL, NULL);
-ZTEST_SUITE(test_rx_framed, NULL, NULL, NULL, isoal_test_rx_common_before, NULL);
+ZTEST_SUITE(test_rx_framed, NULL, NULL, isoal_test_rx_common_before, NULL, NULL);
 
 ZTEST_SUITE(test_tx_basics, NULL, NULL, isoal_test_tx_common_before, NULL, NULL);
 ZTEST_SUITE(test_tx_unframed, NULL, NULL, isoal_test_tx_common_before, NULL, NULL);
