@@ -167,8 +167,7 @@ int32_t *p_root_squared = (int32_t *)&root_squared;
 ZTEST(test_c_lib, test_sqrt)
 {
 int i;
-float	exponent;
-double	resd, error, square, root_squared;
+double	resd, error, square, root_squared, exponent;
 uint64_t max_error;
 int64_t ierror;
 int64_t *p_square = (int64_t *)&square;
