@@ -744,7 +744,7 @@ ZTEST(posix_apis, test_sched_policy)
 	}
 }
 
-ZTEST(posix_apis, test_posix_pthread_barrier)
+ZTEST(posix_apis, test_barrier)
 {
 	int ret, pshared;
 	pthread_barrierattr_t attr;
