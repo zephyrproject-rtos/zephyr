@@ -537,7 +537,8 @@ config CLEANUP_INTERMEDIATE_FILES
 	bool "Remove all intermediate files"
 	help
 	  Delete intermediate files to save space and cleanup clutter resulting
-	  from the build process.
+	  from the build process. Note this breaks incremental builds, west spdx
+	  (Software Bill of Material generation), and maybe others.
 
 config BUILD_NO_GAP_FILL
 	bool "Don't fill gaps in generated hex/bin/s19 files."
