@@ -17,6 +17,7 @@
 #include <zephyr/drivers/led.h>
 #include <zephyr/drivers/led/lp50xx.h>
 #include <zephyr/kernel.h>
+#include <zephyr/pm/device.h>
 #include <zephyr/sys/util.h>
 
 #include <zephyr/logging/log.h>
@@ -328,6 +329,23 @@ static int lp50xx_init(const struct device *dev)
 	return 0;
 }
 
+#ifdef CONFIG_PM_DEVICE
+static int lp50xx_pm_action(const struct device *dev,
+			    enum pm_device_action action)
+{
+	switch (action) {
+	case PM_DEVICE_ACTION_SUSPEND:
+		return lp50xx_enable(dev, false);
+	case PM_DEVICE_ACTION_RESUME:
+		return lp50xx_enable(dev, true);
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_PM_DEVICE */
+
 static const struct led_driver_api lp50xx_led_api = {
 	.on		= lp50xx_on,
 	.off		= lp50xx_off,
@@ -375,9 +393,11 @@ static const struct led_driver_api lp50xx_led_api = {
 		.chan_buf	= lp##id##_chan_buf_##n,			\
 	};									\
 										\
+	PM_DEVICE_DT_INST_DEFINE(n, lp50xx_pm_action);				\
+										\
 	DEVICE_DT_INST_DEFINE(n,						\
 			      lp50xx_init,					\
-			      NULL,						\
+			      PM_DEVICE_DT_INST_GET(n),				\
 			      &lp##id##_data_##n,				\
 			      &lp##id##_config_##n,				\
 			      POST_KERNEL, CONFIG_LED_INIT_PRIORITY,		\
