@@ -121,7 +121,7 @@
 /** Mask for priority in fixed addressing mode */
 #define ISOTP_FIXED_ADDR_PRIO_MASK      (CONFIG_ISOTP_FIXED_ADDR_PRIO_MASK)
 
-/* CAN filter RX mask to match any priority and source address (SA) */
+/** CAN filter RX mask to match any priority and source address (SA) */
 #define ISOTP_FIXED_ADDR_RX_MASK        (CONFIG_ISOTP_FIXED_ADDR_RX_MASK)
 
 #ifdef __cplusplus
@@ -172,6 +172,14 @@ struct isotp_fc_opts {
 	uint8_t stmin; /**< Minimum separation time. Min time between frames */
 };
 
+/**
+ * @brief Transmission callback
+ *
+ * This callback is called when a transmission is completed.
+ *
+ * @param error_nr ISOTP_N_OK on success, ISOTP_N_* on error
+ * @param arg      Callback argument passed to the send function
+ */
 typedef void (*isotp_tx_callback_t)(int error_nr, void *arg);
 
 struct isotp_send_ctx;
