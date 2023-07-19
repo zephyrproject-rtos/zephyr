@@ -227,24 +227,24 @@ struct pm_state_info {
  *			...
  *			cpu-power-states = <&state0 &state1>;
  *		};
- *	};
  *
- *	...
- *	power-states {
- *		state0: state0 {
- *			compatible = "zephyr,power-state";
- *			power-state-name = "suspend-to-idle";
- *			min-residency-us = <10000>;
- *			exit-latency-us = <100>;
- *		};
+ *		power-states {
+ *			state0: state0 {
+ *				compatible = "zephyr,power-state";
+ *				power-state-name = "suspend-to-idle";
+ *				min-residency-us = <10000>;
+ *				exit-latency-us = <100>;
+ *			};
  *
- *		state1: state1 {
- *			compatible = "zephyr,power-state";
- *			power-state-name = "suspend-to-ram";
- *			min-residency-us = <50000>;
- *			exit-latency-us = <500>;
+ *			state1: state1 {
+ *				compatible = "zephyr,power-state";
+ *				power-state-name = "suspend-to-ram";
+ *				min-residency-us = <50000>;
+ *				exit-latency-us = <500>;
+ *			};
  *		};
  *	};
+
  * @endcode
  *
  * Example usage:
@@ -276,22 +276,21 @@ struct pm_state_info {
  *			...
  *			cpu-power-states = <&state0 &state1>;
  *		};
- *	};
  *
- *	...
- *	power-states {
- *		state0: state0 {
- *			compatible = "zephyr,power-state";
- *			power-state-name = "suspend-to-idle";
- *			min-residency-us = <10000>;
- *			exit-latency-us = <100>;
- *		};
+ *		power-states {
+ *			state0: state0 {
+ *				compatible = "zephyr,power-state";
+ *				power-state-name = "suspend-to-idle";
+ *				min-residency-us = <10000>;
+ *				exit-latency-us = <100>;
+ *			};
  *
- *		state1: state1 {
- *			compatible = "zephyr,power-state";
- *			power-state-name = "suspend-to-ram";
- *			min-residency-us = <50000>;
- *			exit-latency-us = <500>;
+ *			state1: state1 {
+ *				compatible = "zephyr,power-state";
+ *				power-state-name = "suspend-to-ram";
+ *				min-residency-us = <50000>;
+ *				exit-latency-us = <500>;
+ *			};
  *		};
  *	};
  * @endcode

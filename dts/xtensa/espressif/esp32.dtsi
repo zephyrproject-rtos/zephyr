@@ -37,22 +37,20 @@
 			reg = <1>;
 		};
 
-	};
+		power-states {
+			light_sleep: light_sleep {
+				compatible = "zephyr,power-state";
+				power-state-name = "standby";
+				min-residency-us = <200>;
+				exit-latency-us = <60>;
+			};
 
-
-	power-states {
-		light_sleep: light_sleep {
-			compatible = "zephyr,power-state";
-			power-state-name = "standby";
-			min-residency-us = <200>;
-			exit-latency-us = <60>;
-		};
-
-		deep_sleep: deep_sleep {
-			compatible = "zephyr,power-state";
-			power-state-name = "soft-off";
-			min-residency-us = <2000>;
-			exit-latency-us = <212>;
+			deep_sleep: deep_sleep {
+				compatible = "zephyr,power-state";
+				power-state-name = "soft-off";
+				min-residency-us = <2000>;
+				exit-latency-us = <212>;
+			};
 		};
 	};
 
