@@ -1096,6 +1096,15 @@ int coap_append_descriptive_block_option(struct coap_packet *cpkt, struct coap_b
 	}
 }
 
+bool coap_has_descriptive_block_option(struct coap_packet *cpkt)
+{
+	if (is_request(cpkt)) {
+		return coap_get_option_int(cpkt, COAP_OPTION_BLOCK1) >= 0;
+	} else {
+		return coap_get_option_int(cpkt, COAP_OPTION_BLOCK2) >= 0;
+	}
+}
+
 int coap_remove_descriptive_block_option(struct coap_packet *cpkt)
 {
 	if (is_request(cpkt)) {
