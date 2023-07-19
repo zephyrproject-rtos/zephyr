@@ -6,10 +6,8 @@
 
 /**
  * @file
- * @brief Hashmap (Hash Table) API
- *
- * Hashmaps (a.k.a Hash Tables) sacrifice space for speed. All operations
- * on a Hashmap (insert, delete, search) are O(1) complexity (on average).
+ * @addtogroup hashmap_apis
+ * @{
  */
 
 #ifndef ZEPHYR_INCLUDE_SYS_HASH_MAP_H_
@@ -28,11 +26,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-/**
- * @ingroup hashmap_apis
- * @{
- */
 
 /**
  * @brief Declare a Hashmap (advanced)

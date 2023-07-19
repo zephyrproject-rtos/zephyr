@@ -4,14 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/**
- * @file
- * @brief Hashmap (Hash Table) API
- *
- * Hashmaps (a.k.a Hash Tables) sacrifice space for speed. All operations
- * on a Hashmap (insert, delete, search) are O(1) complexity (on average).
- */
-
 #ifndef ZEPHYR_INCLUDE_SYS_HASHMAP_API_H_
 #define ZEPHYR_INCLUDE_SYS_HASHMAP_API_H_
 
@@ -27,8 +19,14 @@ extern "C" {
 #endif
 
 /**
+ * @file
  * @defgroup hashmap_apis Hashmap
  * @ingroup datastructure_apis
+ *
+ * @brief Hashmap (Hash Table) API
+ *
+ * Hashmaps (a.k.a Hash Tables) sacrifice space for speed. All operations
+ * on a Hashmap (insert, delete, search) are O(1) complexity (on average).
  *
  * @defgroup hashmap_implementations Hashmap Implementations
  * @ingroup hashmap_apis
