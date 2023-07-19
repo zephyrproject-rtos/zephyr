@@ -3,8 +3,19 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/toolchain.h>
 #include <zephyr/tracing/tracing.h>
 
+/* xt-clang removes any NOPs more than 8. So we need to set
+ * no optimization to avoid those NOPs from being removed.
+ *
+ * This function is simply enough and full of hand written
+ * assembly that optimization is not really meaningful
+ * anyway. So we can skip optimization unconditionally.
+ * Re-evalulate its use and add #ifdef if this assumption
+ * is no longer valid.
+ */
+__no_optimization
 void arch_cpu_idle(void)
 {
 	sys_trace_idle();
