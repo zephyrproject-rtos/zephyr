@@ -33,6 +33,8 @@ if(CONFIG_PERCEPIO_TRACERECORDER)
     ${TRACERECORDER_DIR}/trcString.c
     ${TRACERECORDER_DIR}/trcTask.c
     ${TRACERECORDER_DIR}/trcTimestamp.c
+    ${TRACERECORDER_DIR}/trcDependency.c
+    ${TRACERECORDER_DIR}/trcRunnable.c
     )
 
   if(CONFIG_PERCEPIO_TRC_CFG_STREAM_PORT_RTT)
@@ -68,11 +70,26 @@ if(CONFIG_PERCEPIO_TRACERECORDER)
     )
   endif()
 
+  if (CONFIG_PERCEPIO_TRC_CFG_STREAM_PORT_ZEPHYR_SEMIHOST)
+    zephyr_library_sources(
+      ${TRACERECORDER_DIR}/kernelports/Zephyr/streamports/Semihost/trcStreamPort.c
+    )
+
+    zephyr_include_directories(
+      ${TRACERECORDER_DIR}/kernelports/Zephyr/streamports/Semihost/config
+      ${TRACERECORDER_DIR}/kernelports/Zephyr/streamports/Semihost/include
+    )
+  endif()
+
   zephyr_include_directories(
     ${TRACERECORDER_DIR}/kernelports/Zephyr/include
     ${TRACERECORDER_DIR}/kernelports/Zephyr/config
     ${TRACERECORDER_DIR}/kernelports/Zephyr/config/core
     ${TRACERECORDER_DIR}/include
+    )
+
+    set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
+      COMMAND python3 ${TRACERECORDER_DIR}/kernelports/Zephyr/scripts/tz_parse_syscalls.py ${CMAKE_BINARY_DIR} ${ZEPHYR_BASE}
     )
 
 endif()
