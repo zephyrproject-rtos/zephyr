@@ -26,6 +26,7 @@
 			compatible = "arm,cortex-m7";
 			d-cache-line-size = <32>;
 			reg = <0>;
+			cpu-power-states = <&idle &suspend>;
 			#address-cells = <1>;
 			#size-cells = <1>;
 
@@ -40,6 +41,21 @@
 				reg = <0xe0000000 0x1000>;
 				swo-ref-frequency = <132000000>;
 			};
+		};
+	};
+
+	power-states {
+		idle: idle {
+			compatible = "zephyr,power-state";
+			power-state-name = "runtime-idle";
+			exit-latency-us = <4000>;
+			min-residency-us = <5000>;
+		};
+		suspend: suspend {
+			compatible = "zephyr,power-state";
+			power-state-name = "suspend-to-idle";
+			exit-latency-us = <5000>;
+			min-residency-us = <10000>;
 		};
 	};
 
