@@ -38,8 +38,7 @@ Boot the board to the EFI shell with USB flash drive connected.
    website for more information.
 
    .. note::
-      On Windows, PuTTY has an option to set up configuration for
-      serial data.  Use a baud rate of 115200.
+      Use a baud rate of 115200.
 
 #. Power on the board.
 
