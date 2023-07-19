@@ -336,7 +336,7 @@ img_mgmt_get_other_slot(void)
  * Command handler: image erase
  */
 static int
-img_mgmt_erase(struct smp_streamer *ctxt)
+img_mgmt_erase(struct smp_streamer *ctxt, void *user_data)
 {
 	struct image_version ver;
 	int rc;
@@ -453,7 +453,7 @@ img_mgmt_upload_log(bool is_first, bool is_last, int status)
  * Command handler: image upload
  */
 static int
-img_mgmt_upload(struct smp_streamer *ctxt)
+img_mgmt_upload(struct smp_streamer *ctxt, void *user_data)
 {
 	zcbor_state_t *zse = ctxt->writer->zs;
 	zcbor_state_t *zsd = ctxt->reader->zs;

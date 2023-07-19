@@ -87,7 +87,7 @@ extern uint8_t *MCUMGR_GRP_OS_INFO_BUILD_DATE_TIME;
  * Command handler: os echo
  */
 #ifdef CONFIG_MCUMGR_GRP_OS_ECHO
-static int os_mgmt_echo(struct smp_streamer *ctxt)
+static int os_mgmt_echo(struct smp_streamer *ctxt, void *user_data)
 {
 	struct zcbor_string value = { 0 };
 	struct zcbor_string key;
@@ -276,7 +276,7 @@ static void os_mgmt_taskstat_encode_one(const struct k_thread *thread, void *use
 /**
  * Command handler: os taskstat
  */
-static int os_mgmt_taskstat_read(struct smp_streamer *ctxt)
+static int os_mgmt_taskstat_read(struct smp_streamer *ctxt, void *user_data)
 {
 	zcbor_state_t *zse = ctxt->writer->zs;
 	struct thread_iterator_info iterator_ctx = {
@@ -319,7 +319,7 @@ static void os_mgmt_reset_cb(struct k_timer *timer)
 	k_work_submit(&os_mgmt_reset_work);
 }
 
-static int os_mgmt_reset(struct smp_streamer *ctxt)
+static int os_mgmt_reset(struct smp_streamer *ctxt, void *user_data)
 {
 #if defined(CONFIG_MCUMGR_GRP_OS_RESET_HOOK)
 	zcbor_state_t *zse = ctxt->writer->zs;
@@ -349,7 +349,7 @@ static int os_mgmt_reset(struct smp_streamer *ctxt)
 
 #ifdef CONFIG_MCUMGR_GRP_OS_MCUMGR_PARAMS
 static int
-os_mgmt_mcumgr_params(struct smp_streamer *ctxt)
+os_mgmt_mcumgr_params(struct smp_streamer *ctxt, void *user_data)
 {
 	zcbor_state_t *zse = ctxt->writer->zs;
 	bool ok;
@@ -367,7 +367,7 @@ os_mgmt_mcumgr_params(struct smp_streamer *ctxt)
 /**
  * Command handler: os info
  */
-static int os_mgmt_info(struct smp_streamer *ctxt)
+static int os_mgmt_info(struct smp_streamer *ctxt, void *user_data)
 {
 	struct zcbor_string format = { 0 };
 	uint8_t output[CONFIG_MCUMGR_GRP_OS_INFO_MAX_RESPONSE_SIZE] = { 0 };

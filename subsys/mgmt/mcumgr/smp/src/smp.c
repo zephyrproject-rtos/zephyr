@@ -264,7 +264,7 @@ static int smp_handle_single_payload(struct smp_streamer *cbuf, const struct smp
 		}
 #endif
 
-		rc = handler_fn(cbuf);
+		rc = handler_fn(cbuf, handler->user_data);
 
 #if defined(CONFIG_MCUMGR_SMP_COMMAND_STATUS_HOOKS)
 end:

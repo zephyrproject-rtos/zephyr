@@ -151,8 +151,8 @@ int img_mgmt_erased_val(int slot, uint8_t *erased_val);
 
 int img_mgmt_find_by_hash(uint8_t *find, struct image_version *ver);
 int img_mgmt_find_by_ver(struct image_version *find, uint8_t *hash);
-int img_mgmt_state_read(struct smp_streamer *ctxt);
-int img_mgmt_state_write(struct smp_streamer *njb);
+int img_mgmt_state_read(struct smp_streamer *ctxt, void *user_data);
+int img_mgmt_state_write(struct smp_streamer *njb, void *user_data);
 int img_mgmt_flash_area_id(int slot);
 
 #ifdef __cplusplus

@@ -45,7 +45,7 @@ static int storage_erase(void)
 	return rc;
 }
 
-static int storage_erase_handler(struct smp_streamer *ctxt)
+static int storage_erase_handler(struct smp_streamer *ctxt, void *user_data)
 {
 	zcbor_state_t *zse = ctxt->writer->zs;
 	int rc;

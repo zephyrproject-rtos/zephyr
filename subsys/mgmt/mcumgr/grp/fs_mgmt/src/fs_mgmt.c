@@ -201,7 +201,7 @@ static void fs_mgmt_upload_download_finish_check(void)
 /**
  * Command handler: fs file (read)
  */
-static int fs_mgmt_file_download(struct smp_streamer *ctxt)
+static int fs_mgmt_file_download(struct smp_streamer *ctxt, void *user_data)
 {
 	uint8_t file_data[MCUMGR_GRP_FS_DL_CHUNK_SIZE];
 	char path[CONFIG_MCUMGR_GRP_FS_PATH_LEN + 1];
@@ -346,7 +346,7 @@ end:
 /**
  * Command handler: fs file (write)
  */
-static int fs_mgmt_file_upload(struct smp_streamer *ctxt)
+static int fs_mgmt_file_upload(struct smp_streamer *ctxt, void *user_data)
 {
 	char file_name[CONFIG_MCUMGR_GRP_FS_PATH_LEN + 1];
 	unsigned long long len = ULLONG_MAX;
@@ -562,7 +562,7 @@ end:
 /**
  * Command handler: fs stat (read)
  */
-static int fs_mgmt_file_status(struct smp_streamer *ctxt)
+static int fs_mgmt_file_status(struct smp_streamer *ctxt, void *user_data)
 {
 	char path[CONFIG_MCUMGR_GRP_FS_PATH_LEN + 1];
 	size_t file_len;
@@ -644,7 +644,7 @@ end:
 /**
  * Command handler: fs hash/checksum (read)
  */
-static int fs_mgmt_file_hash_checksum(struct smp_streamer *ctxt)
+static int fs_mgmt_file_hash_checksum(struct smp_streamer *ctxt, void *user_data)
 {
 	char path[CONFIG_MCUMGR_GRP_FS_PATH_LEN + 1];
 	char type_arr[HASH_CHECKSUM_TYPE_SIZE + 1] = MCUMGR_GRP_FS_CHECKSUM_HASH_DEFAULT;
@@ -854,7 +854,7 @@ static void fs_mgmt_supported_hash_checksum_callback(
  * Command handler: fs supported hash/checksum (read)
  */
 static int
-fs_mgmt_supported_hash_checksum(struct smp_streamer *ctxt)
+fs_mgmt_supported_hash_checksum(struct smp_streamer *ctxt, void *user_data)
 {
 	zcbor_state_t *zse = ctxt->writer->zs;
 	struct fs_mgmt_hash_checksum_iterator_info itr_ctx = {
@@ -883,7 +883,7 @@ fs_mgmt_supported_hash_checksum(struct smp_streamer *ctxt)
 /**
  * Command handler: fs opened file (write)
  */
-static int fs_mgmt_close_opened_file(struct smp_streamer *ctxt)
+static int fs_mgmt_close_opened_file(struct smp_streamer *ctxt, void *user_data)
 {
 	if (k_sem_take(&fs_mgmt_ctxt.lock_sem, FILE_SEMAPHORE_MAX_TAKE_TIME)) {
 		return MGMT_ERR_EBUSY;

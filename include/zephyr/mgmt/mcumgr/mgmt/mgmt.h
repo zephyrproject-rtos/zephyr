@@ -174,7 +174,7 @@ typedef void (*mgmt_reset_buf_fn)(void *buf, void *arg);
  *
  * @return 0 if a response was successfully encoded, #mcumgr_err_t code on failure.
  */
-typedef int (*mgmt_handler_fn)(struct smp_streamer *ctxt);
+typedef int (*mgmt_handler_fn)(struct smp_streamer *ctxt, void *user_data);
 
 /**
  * @brief Read handler and write handler for a single command ID.
@@ -182,6 +182,7 @@ typedef int (*mgmt_handler_fn)(struct smp_streamer *ctxt);
 struct mgmt_handler {
 	mgmt_handler_fn mh_read;
 	mgmt_handler_fn mh_write;
+	void *user_data;
 };
 
 /**

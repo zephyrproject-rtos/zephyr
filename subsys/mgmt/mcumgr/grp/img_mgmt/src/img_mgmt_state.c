@@ -230,7 +230,7 @@ err:
  * Command handler: image state read
  */
 int
-img_mgmt_state_read(struct smp_streamer *ctxt)
+img_mgmt_state_read(struct smp_streamer *ctxt, void *user_data)
 {
 	char vers_str[IMG_MGMT_VER_MAX_STR_LEN];
 	uint8_t hash[IMAGE_HASH_LEN]; /* SHA256 hash */
@@ -365,7 +365,7 @@ int img_mgmt_set_next_boot_slot(int slot, bool confirm)
  * Command handler: image state write
  */
 int
-img_mgmt_state_write(struct smp_streamer *ctxt)
+img_mgmt_state_write(struct smp_streamer *ctxt, void *user_data)
 {
 	bool confirm = false;
 	int slot;
@@ -427,7 +427,7 @@ img_mgmt_state_write(struct smp_streamer *ctxt)
 	}
 
 	/* Send the current image state in the response. */
-	rc = img_mgmt_state_read(ctxt);
+	rc = img_mgmt_state_read(ctxt, user_data);
 	if (rc != 0) {
 		img_mgmt_release_lock();
 		return rc;

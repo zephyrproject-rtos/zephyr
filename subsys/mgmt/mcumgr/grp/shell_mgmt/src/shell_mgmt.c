@@ -42,7 +42,7 @@ shell_get_output(size_t *len)
  * Command handler: shell exec
  */
 static int
-shell_mgmt_exec(struct smp_streamer *ctxt)
+shell_mgmt_exec(struct smp_streamer *ctxt, void *user_data)
 {
 	int rc;
 	bool ok;

@@ -118,7 +118,7 @@ stat_mgmt_cb_encode(zcbor_state_t *zse, struct stat_mgmt_entry *entry)
  * Command handler: stat show
  */
 static int
-stat_mgmt_show(struct smp_streamer *ctxt)
+stat_mgmt_show(struct smp_streamer *ctxt, void *user_data)
 {
 	struct zcbor_string value = { 0 };
 	zcbor_state_t *zse = ctxt->writer->zs;
@@ -199,7 +199,7 @@ end:
  * Command handler: stat list
  */
 static int
-stat_mgmt_list(struct smp_streamer *ctxt)
+stat_mgmt_list(struct smp_streamer *ctxt, void *user_data)
 {
 	const struct stats_hdr *cur = NULL;
 	zcbor_state_t *zse = ctxt->writer->zs;
