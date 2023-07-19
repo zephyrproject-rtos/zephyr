@@ -328,6 +328,8 @@ Libraries / Subsystems
   * Added optional mutex locking support to MCUmgr img_mgmt group, which can
     be enabled with :kconfig:option:`CONFIG_MCUMGR_GRP_IMG_MUTEX`.
 
+  * Added ``user_data`` as a field to :c:struct:`mgmt_handler`.
+
 * File systems
 
   * Added support for ext2 file system.
