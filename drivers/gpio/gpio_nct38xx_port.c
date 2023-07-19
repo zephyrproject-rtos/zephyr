@@ -90,8 +90,7 @@ static int gpio_nct38xx_pin_config(const struct device *dev, gpio_pin_t pin, gpi
 		ret = nct38xx_reg_update(config->nct38xx_dev,
 					 NCT38XX_REG_GPIO_DIR(config->gpio_port), reg, new_reg);
 
-		k_sem_give(&data->lock);
-		return ret;
+		goto done;
 	}
 
 	/* Select open drain 0:push-pull 1:open-drain */
@@ -220,10 +219,17 @@ done:
 
 static int gpio_nct38xx_port_get_raw(const struct device *dev, gpio_port_value_t *value)
 {
+	int ret;
 	const struct gpio_nct38xx_port_config *const config = dev->config;
+	struct gpio_nct38xx_port_data *const data = dev->data;
 
-	return nct38xx_reg_read_byte(config->nct38xx_dev,
-				     NCT38XX_REG_GPIO_DATA_IN(config->gpio_port), (uint8_t *)value);
+	k_sem_take(&data->lock, K_FOREVER);
+
+	ret = nct38xx_reg_read_byte(config->nct38xx_dev,
+				    NCT38XX_REG_GPIO_DATA_IN(config->gpio_port), (uint8_t *)value);
+
+	k_sem_give(&data->lock);
+	return ret;
 }
 
 static int gpio_nct38xx_port_set_masked_raw(const struct device *dev, gpio_port_pins_t mask,
