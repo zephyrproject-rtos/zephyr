@@ -59,6 +59,13 @@ config WIFI_MGMT_SCAN_BANDS
 	  Multiple bands can be specified as comma separated band values.
 	  Only regulatory domain permitted values are allowed.
 
+config WIFI_MGMT_SCAN_DWELL_TIME_ACTIVE
+	int "Active scan dwell time"
+	default 50
+	range 5 1000
+	help
+	  Active scan dwell time (in ms) per channel.
+
 config WIFI_NM
 	bool "Wi-Fi Network manager support"
 	help

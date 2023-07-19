@@ -192,6 +192,9 @@ struct wifi_scan_params {
 	 *  Refer to ::wifi_frequency_bands for bit position of each band.
 	 */
 	uint8_t bands;
+	/** Active scan dwell time (in ms) on a channel.
+	 */
+	uint16_t dwell_time_active;
 };
 
 /** Wi-Fi scan result, each result is provided to the net_mgmt_event_callback
