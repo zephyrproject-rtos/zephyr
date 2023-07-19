@@ -4,4 +4,5 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/dt-bindings/clock/r7fa4m1xxxxxx-clock.h>
 #include <renesas/ra/ra4-cm4-common.dtsi>
