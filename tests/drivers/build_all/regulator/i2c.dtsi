@@ -69,6 +69,7 @@ axp192@4 {
 		DCDC1 {};
 		DCDC2 {};
 		DCDC3 {};
+		LDOIO0 {};
 		LDO1 {};
 		LDO2 {};
 		LDO3 {};

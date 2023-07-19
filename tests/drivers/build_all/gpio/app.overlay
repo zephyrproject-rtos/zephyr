@@ -172,6 +172,18 @@
 				int-gpios = <&test_gpio 0 0>;
 				reset-gpios = <&test_gpio 0 0>;
 			};
+
+			test_i2c_axp192: axp192@24 {
+				compatible = "x-powers,axp192";
+				reg = <0x24>;
+
+				axp192_gpio {
+					compatible = "x-powers,axp192-gpio";
+					gpio-controller;
+					#gpio-cells = <2>;
+					ngpios = <5>;
+				};
+			};
 		};
 
 		nct3807_alert_1 {
