@@ -8,3 +8,7 @@
 config BOARD_AM62X_M4_SK
 	bool "TI AM62x M4 Starter Kit (SK) Evaluation Module (EVM)"
 	depends on SOC_SERIES_AM62X_M4
+
+config BOARD_AM62X_M4_PHYBOARD_LYRA
+	bool "PHYTEC AM62x M4 phyBOARD-Lyra"
+	depends on SOC_SERIES_AM62X_M4
