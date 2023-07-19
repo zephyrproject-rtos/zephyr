@@ -117,7 +117,7 @@ static void fill_audio_buf_sin(int16_t *buf, int length_us, int frequency_hz, in
 {
 	const int sine_period_samples = sample_rate_hz / frequency_hz;
 	const unsigned int num_samples = (length_us * sample_rate_hz) / USEC_PER_SEC;
-	const float step = 2 * 3.1415 / sine_period_samples;
+	const float step = 2 * 3.1415f / sine_period_samples;
 
 	for (unsigned int i = 0; i < num_samples; i++) {
 		const float sample = sin(i * step);
