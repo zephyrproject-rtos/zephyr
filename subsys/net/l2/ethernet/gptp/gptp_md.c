@@ -38,22 +38,6 @@ static void gptp_md_follow_up_prepare(struct net_pkt *pkt,
 	hdr = GPTP_HDR(pkt);
 	fup = GPTP_FOLLOW_UP(pkt);
 
-	/*
-	 * Compute correction field according to IEEE802.1AS 11.2.14.2.3.
-	 *
-	 * The correction_field already contains the timestamp of the sync
-	 * message.
-	 *
-	 * TODO: if the value to be stored in correction_field is too big to
-	 * be represented, the field should be set to all 1's except the most
-	 * significant bit.
-	 */
-	hdr->correction_field -= sync_send->upstream_tx_time;
-	hdr->correction_field *= sync_send->rate_ratio;
-	hdr->correction_field += sync_send->follow_up_correction_field;
-	hdr->correction_field <<= 16;
-	hdr->correction_field = htonll(hdr->correction_field);
-
 	memcpy(&hdr->port_id.clk_id, &sync_send->src_port_id.clk_id,
 	       GPTP_CLOCK_ID_LEN);
 
