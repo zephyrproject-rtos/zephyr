@@ -25,6 +25,9 @@ description: |
         DCDC3 {
           /* all properties for DCDC3 */
         };
+        LDOIO0 {
+          /* all properties for LDOIO0 */
+        };
         LDO2 {
           /* all properties for LDO2 */
         };
