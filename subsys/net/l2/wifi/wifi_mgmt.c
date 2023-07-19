@@ -121,6 +121,10 @@ static int wifi_scan(uint32_t mgmt_request, struct net_if *iface,
 				return -EINVAL;
 			}
 		}
+
+		if (!params->dwell_time_active) {
+			params->dwell_time_active = CONFIG_WIFI_MGMT_SCAN_DWELL_TIME_ACTIVE;
+		}
 	}
 
 	return wifi_mgmt_api->scan(dev, params, scan_result_cb);
