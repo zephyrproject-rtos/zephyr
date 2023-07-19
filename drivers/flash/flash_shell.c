@@ -663,7 +663,7 @@ static int cmd_load(const struct shell *sh, size_t argc, char *argv[])
 	flash_load_boff = 0;
 	flash_load_chunk = 0;
 
-	shell_print(sh, "Loading %d bytes starting at address %x", size, addr);
+	shell_print(sh, "Send %d bytes to complete flash load command", size);
 
 	set_bypass(sh, bypass_cb);
 	return 0;
