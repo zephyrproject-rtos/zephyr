@@ -52,34 +52,34 @@
 				arm,num-mpu-regions = <16>;
 			};
 		};
-	};
 
-	power-states {
-		/*
-		 * Power states are managed with set points (see page 30-35 of RT1170
-		 * datasheet). These set points correspond to various power
-		 * savings, and associated transition (residency) times.
-		 *
-		 * Set points 1 and 10 were chosen as sane defaults to offer
-		 * limited power savings and quick transitions when entering idle for
-		 * short periods, and better power savings with longer transition
-		 * times for long idle periods
-		 */
-		idle: set_point_1_wait {
-			/* idle corresponds to set point 1 (wait) for RT1170 */
-			compatible = "zephyr,power-state";
-			power-state-name="runtime-idle";
-			substate-id = <IMX_SPC_SET_POINT_1_WAIT>;
-			min-residency-us = <100>;
-		};
+		power-states {
+			/*
+			 * Power states are managed with set points (see page 30-35 of RT1170
+			 * datasheet). These set points correspond to various power
+			 * savings, and associated transition (residency) times.
+			 *
+			 * Set points 1 and 10 were chosen as sane defaults to offer
+			 * limited power savings and quick transitions when entering idle for
+			 * short periods, and better power savings with longer transition
+			 * times for long idle periods
+			 */
+			idle: set_point_1_wait {
+				/* idle corresponds to set point 1 (wait) for RT1170 */
+				compatible = "zephyr,power-state";
+				power-state-name="runtime-idle";
+				substate-id = <IMX_SPC_SET_POINT_1_WAIT>;
+				min-residency-us = <100>;
+			};
 
-		suspend: set_point_10_suspend {
-			/*  suspend corresponds to set point 10 for RT1170 */
-			compatible = "zephyr,power-state";
-			power-state-name="suspend-to-idle";
-			substate-id = <IMX_SPC_SET_POINT_10_SUSPEND>;
-			min-residency-us = <5000>;
-			exit-latency-us = <500>;
+			suspend: set_point_10_suspend {
+				/*  suspend corresponds to set point 10 for RT1170 */
+				compatible = "zephyr,power-state";
+				power-state-name="suspend-to-idle";
+				substate-id = <IMX_SPC_SET_POINT_10_SUSPEND>;
+				min-residency-us = <5000>;
+				exit-latency-us = <500>;
+			};
 		};
 	};
 
