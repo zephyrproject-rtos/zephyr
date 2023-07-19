@@ -35,7 +35,7 @@ LOG_MODULE_REGISTER(soc);
 # define SHIM_GPDMA_CLKCTL(x)     (SHIM_GPDMA_BASE(x) + 0x4)
 # define SHIM_CLKCTL_LPGPDMAFDCGB BIT(0)
 
-#ifdef CONFIG_PM_POLICY_CUSTOM
+#ifdef CONFIG_PM
 #define SRAM_ALIAS_BASE		0x9E000000
 #define SRAM_ALIAS_MASK		0xFF000000
 #define SRAM_ALIAS_OFFSET	0x20000000
@@ -125,7 +125,7 @@ void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 		__ASSERT(false, "invalid argument - unsupported power state");
 	}
 }
-#endif /* CONFIG_PM_POLICY_CUSTOM */
+#endif /* CONFIG_PM */
 
 __imr void power_init(void)
 {
