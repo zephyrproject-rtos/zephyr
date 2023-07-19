@@ -924,6 +924,8 @@ static int __arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flag
 	 *			(Device memory nGnRE)
 	 * K_MEM_ARM_DEVICE_GRE => MT_DEVICE_GRE
 	 *			(Device memory GRE)
+	 * K_MEM_ARM_NORMAL_NC   => MT_NORMAL_NC
+	 *			(Normal memory Non-cacheable)
 	 * K_MEM_CACHE_WB   => MT_NORMAL
 	 *			(Normal memory Outer WB + Inner WB)
 	 * K_MEM_CACHE_WT   => MT_NORMAL_WT
@@ -939,6 +941,9 @@ static int __arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flag
 		break;
 	case K_MEM_ARM_DEVICE_GRE:
 		entry_flags |= MT_DEVICE_GRE;
+		break;
+	case K_MEM_ARM_NORMAL_NC:
+		entry_flags |= MT_NORMAL_NC;
 		break;
 	case K_MEM_CACHE_WT:
 		entry_flags |= MT_NORMAL_WT;
