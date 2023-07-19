@@ -320,7 +320,7 @@ ZTEST(sensor_api, test_sensor_unit_conversion)
 	zassert_equal(data.val2, SENSOR_PI%(data.val1 * 1000000LL),
 			"the data does not match");
 
-	sensor_value_from_float(&data, (float)(SENSOR_PI) / 1000000.0);
+	sensor_value_from_float(&data, (float)(SENSOR_PI) / 1000000.0f);
 	zassert_equal(data.val1, SENSOR_PI/1000000LL,
 			"the data does not match");
 	zassert_equal(data.val2, SENSOR_PI%(data.val1 * 1000000LL),
