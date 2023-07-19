@@ -10,8 +10,6 @@
 
 #include <zephyr/net/ieee802154_radio.h>
 
-#define NRF5_FCS_LENGTH   (2)
-#define NRF5_PSDU_LENGTH  (125)
 #define NRF5_PHR_LENGTH   (1)
 
 struct nrf5_802154_rx_frame {
@@ -61,7 +59,7 @@ struct nrf5_802154_data {
 	/* TX buffer. First byte is PHR (length), remaining bytes are
 	 * MPDU data.
 	 */
-	uint8_t tx_psdu[NRF5_PHR_LENGTH + NRF5_PSDU_LENGTH + NRF5_FCS_LENGTH];
+	uint8_t tx_psdu[NRF5_PHR_LENGTH + IEEE802154_MAX_PHY_PACKET_SIZE];
 
 	/* TX result, updated in radio transmit callbacks. */
 	uint8_t tx_result;
