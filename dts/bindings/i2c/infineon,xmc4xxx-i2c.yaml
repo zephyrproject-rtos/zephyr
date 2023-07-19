@@ -3,7 +3,49 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-description: Infineon XMC4XXX I2C
+description: |
+
+  Infineon XMC4XXX I2C
+
+  This driver configures the USIC as an I2C device.
+
+  Example devicetree configuration with an adt7420 temperature sensor
+  connected on the bus:
+
+  &usic1ch1 {
+      compatible = "infineon,xmc4xxx-i2c";
+      status = "okay";
+
+      pinctrl-0 = <&i2c_scl_p0_13_u1c1 &i2c_sda_p3_15_u1c1>;
+      pinctrl-names = "default";
+      scl-src = "DX1B";
+      sda-src = "DX0A";
+      interrupts = <94 1>;
+
+      #address-cells = <1>;
+      #size-cells = <0>;
+
+      clock-frequency = <I2C_BITRATE_STANDARD>;
+      adt7420@48 {
+          compatible = "adi,adt7420";
+          reg = <0x48>;
+      };
+  };
+
+  The pinctrl nodes need to be configured as open-drain and
+  hwctrl should be disabled:
+
+  &i2c_scl_p0_13_u1c1 {
+      drive-strength = "strong-sharp-edge";
+      drive-open-drain;
+      hwctrl = "disabled";
+  };
+
+  &i2c_sda_p3_15_u1c1 {
+      drive-strength = "strong-soft-edge";
+      drive-open-drain;
+      hwctrl = "disabled";
+  };
 
 compatible: "infineon,xmc4xxx-i2c"
 
