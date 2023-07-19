@@ -127,7 +127,7 @@ static int mcux_lpc_syscon_clock_control_get_subsys_rate(
 		break;
 #endif /* defined(CONFIG_CAN_MCUX_MCAN) */
 
-#if defined(CONFIG_COUNTER_MCUX_CTIMER)
+#if defined(CONFIG_COUNTER_MCUX_CTIMER) || defined(CONFIG_PWM_MCUX_CTIMER)
 	case (MCUX_CTIMER0_CLK + MCUX_CTIMER_CLK_OFFSET):
 		*rate = CLOCK_GetCTimerClkFreq(0);
 		break;
