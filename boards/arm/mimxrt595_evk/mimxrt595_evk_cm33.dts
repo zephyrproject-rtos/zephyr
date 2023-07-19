@@ -118,47 +118,12 @@
 				<34 0 &gpio0 12 0>;	/* Pin 34, BL_PWM */
 	};
 
-	power-states {
-		/* This is the setting Sleep Mode */
-		idle: idle {
-			compatible = "zephyr,power-state";
-			power-state-name = "runtime-idle";
-			min-residency-us = <0>;
-			exit-latency-us = <0>;
-		};
-		/* This is the setting for Deep-sleep Mode */
-		suspend: suspend {
-			compatible = "nxp,pdcfg-power", "zephyr,power-state";
-			power-state-name = "suspend-to-idle";
-			min-residency-us = <500>;
-			exit-latency-us = <120>;
-			/*
-			 * These values are written to the PDSLEEPCFG registers to keep certain
-			 * blocks such as LPOSC, SRAM's, FlexSPI0 SRAM powered on during deep
-			 * sleep mode.
-			 */
-			deep-sleep-config = <0xC800>,
-						<0x80000004>,
-						<0xFFFFFFFF>,
-						<0>;
-		};
-		/*
-		 * Deep power-down mode is supported in this SoC through 'PM_STATE_SOFT_OFF' state.
-		 * There is no entry for this in device tree, user can call pm_state_force to enter
-		 * this state.
-		 */
-	};
-
 	en_mipi_display: enable-mipi-display {
 		compatible = "regulator-fixed";
 		regulator-name = "en_mipi_display";
 		enable-gpios = <&gpio3 15 GPIO_ACTIVE_HIGH>;
 		regulator-boot-on;
 	};
-};
-
-&cpu0 {
-	cpu-power-states = <&idle &suspend>;
 };
 
 /*
