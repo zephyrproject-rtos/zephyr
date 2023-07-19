@@ -58,17 +58,6 @@
 		lora0 = &lora;
 	};
 
-	power-states {
-		stop: stop {
-			compatible = "zephyr,power-state";
-			power-state-name = "suspend-to-idle";
-			min-residency-us = <100>;
-		};
-	};
-};
-
-&cpu0 {
-	cpu-power-states = <&stop>;
 };
 
 &clk_lse {
