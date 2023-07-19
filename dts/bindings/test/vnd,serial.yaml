@@ -5,9 +5,6 @@ compatible: "vnd,serial"
 include: uart-controller.yaml
 
 properties:
-  reg:
-    required: true
-
   baud-rate:
     type: int
 
