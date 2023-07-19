@@ -4,18 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/* Our SDK/toolchains integration seems to be inconsistent about
- * whether they expose alloca.h or not.  On gcc it's a moot point as
- * it's always builtin.
- */
-#ifdef __GNUC__
-#ifndef alloca
-#define alloca __builtin_alloca
-#endif
-#else
-#include <alloca.h>
-#endif
-
 /**
  * @file
  * @defgroup rbtree_apis Balanced Red/Black Tree
@@ -51,6 +39,18 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+
+/* Our SDK/toolchains integration seems to be inconsistent about
+ * whether they expose alloca.h or not.  On gcc it's a moot point as
+ * it's always builtin.
+ */
+#ifdef __GNUC__
+#ifndef alloca
+#define alloca __builtin_alloca
+#endif
+#else
+#include <alloca.h>
+#endif
 
 /**
  * @brief Balanced red/black tree node structure
