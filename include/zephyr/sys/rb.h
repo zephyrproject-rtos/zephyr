@@ -51,8 +51,13 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+/**
+ * @brief Balanced red/black tree node structure
+ */
 struct rbnode {
+	/** @cond INTERNAL_HIDDEN */
 	struct rbnode *children[2];
+	/** @endcond */
 };
 
 /* Theoretical maximum depth of tree based on pointer size. If memory
@@ -79,16 +84,28 @@ struct rbnode {
  */
 typedef bool (*rb_lessthan_t)(struct rbnode *a, struct rbnode *b);
 
+/**
+ * @brief Balanced red/black tree structure
+ */
 struct rbtree {
+	/** Root node of the tree */
 	struct rbnode *root;
+	/** Comparison function for nodes in the tree */
 	rb_lessthan_t lessthan_fn;
+	/** @cond INTERNAL_HIDDEN */
 	int max_depth;
 #ifdef CONFIG_MISRA_SANE
 	struct rbnode *iter_stack[Z_MAX_RBTREE_DEPTH];
 	unsigned char iter_left[Z_MAX_RBTREE_DEPTH];
 #endif
+	/** @endcond */
 };
 
+/**
+ * @brief Prototype for node visitor callback.
+ * @param node Node being visited
+ * @param cookie User-specified data
+ */
 typedef void (*rb_visit_t)(struct rbnode *node, void *cookie);
 
 struct rbnode *z_rb_child(struct rbnode *node, uint8_t side);
