@@ -19,17 +19,17 @@ class TestPriority(unittest.TestCase):
     """Tests for the Priority class."""
 
     def test_priority_parsing(self):
-        prio1 = check_init_priorities.Priority(".rel.z_init_POST_KERNEL12_")
-        self.assertEqual(prio1._level_priority, 312)
+        prio1 = check_init_priorities.Priority(".rel.z_init_POST_KERNEL12_0_")
+        self.assertEqual(prio1._level_priority, (3, 12, 0))
 
-        prio2 = check_init_priorities.Priority("noisenoise_POST_KERNEL99_")
-        self.assertEqual(prio2._level_priority, 399)
+        prio2 = check_init_priorities.Priority("noisenoise_POST_KERNEL99_00023_")
+        self.assertEqual(prio2._level_priority, (3, 99, 23))
 
-        prio3 = check_init_priorities.Priority("_PRE_KERNEL_10_")
-        self.assertEqual(prio3._level_priority, 100)
+        prio3 = check_init_priorities.Priority("_PRE_KERNEL_10_99999_")
+        self.assertEqual(prio3._level_priority, (1, 0, 99999))
 
-        prio4 = check_init_priorities.Priority("_PRE_KERNEL_110_")
-        self.assertEqual(prio4._level_priority, 110)
+        prio4 = check_init_priorities.Priority("_PRE_KERNEL_110_00001_")
+        self.assertEqual(prio4._level_priority, (1, 10, 1))
 
         with self.assertRaises(ValueError):
             check_init_priorities.Priority("i-am-not-a-priority")
@@ -40,32 +40,35 @@ class TestPriority(unittest.TestCase):
 
     def test_priority_levels(self):
         prios = [
-                check_init_priorities.Priority(".rel.z_init_EARLY0_"),
-                check_init_priorities.Priority(".rel.z_init_EARLY1_"),
-                check_init_priorities.Priority(".rel.z_init_EARLY11_"),
-                check_init_priorities.Priority(".rel.z_init_PRE_KERNEL_10_"),
-                check_init_priorities.Priority(".rel.z_init_PRE_KERNEL_11_"),
-                check_init_priorities.Priority(".rel.z_init_PRE_KERNEL_111_"),
-                check_init_priorities.Priority(".rel.z_init_PRE_KERNEL_20_"),
-                check_init_priorities.Priority(".rel.z_init_PRE_KERNEL_21_"),
-                check_init_priorities.Priority(".rel.z_init_PRE_KERNEL_211_"),
-                check_init_priorities.Priority(".rel.z_init_POST_KERNEL0_"),
-                check_init_priorities.Priority(".rel.z_init_POST_KERNEL1_"),
-                check_init_priorities.Priority(".rel.z_init_POST_KERNEL11_"),
-                check_init_priorities.Priority(".rel.z_init_APPLICATION0_"),
-                check_init_priorities.Priority(".rel.z_init_APPLICATION1_"),
-                check_init_priorities.Priority(".rel.z_init_APPLICATION11_"),
-                check_init_priorities.Priority(".rel.z_init_SMP0_"),
-                check_init_priorities.Priority(".rel.z_init_SMP1_"),
-                check_init_priorities.Priority(".rel.z_init_SMP11_"),
+                check_init_priorities.Priority(".rel.z_init_EARLY0_0_"),
+                check_init_priorities.Priority(".rel.z_init_EARLY1_0_"),
+                check_init_priorities.Priority(".rel.z_init_EARLY11_0_"),
+                check_init_priorities.Priority(".rel.z_init_PRE_KERNEL_10_0_"),
+                check_init_priorities.Priority(".rel.z_init_PRE_KERNEL_11_0_"),
+                check_init_priorities.Priority(".rel.z_init_PRE_KERNEL_111_0_"),
+                check_init_priorities.Priority(".rel.z_init_PRE_KERNEL_111_1_"),
+                check_init_priorities.Priority(".rel.z_init_PRE_KERNEL_111_00002_"),
+                check_init_priorities.Priority(".rel.z_init_PRE_KERNEL_111_00010_"),
+                check_init_priorities.Priority(".rel.z_init_PRE_KERNEL_20_0_"),
+                check_init_priorities.Priority(".rel.z_init_PRE_KERNEL_21_0_"),
+                check_init_priorities.Priority(".rel.z_init_PRE_KERNEL_211_0_"),
+                check_init_priorities.Priority(".rel.z_init_POST_KERNEL0_0_"),
+                check_init_priorities.Priority(".rel.z_init_POST_KERNEL1_0_"),
+                check_init_priorities.Priority(".rel.z_init_POST_KERNEL11_0_"),
+                check_init_priorities.Priority(".rel.z_init_APPLICATION0_0_"),
+                check_init_priorities.Priority(".rel.z_init_APPLICATION1_0_"),
+                check_init_priorities.Priority(".rel.z_init_APPLICATION11_0_"),
+                check_init_priorities.Priority(".rel.z_init_SMP0_0_"),
+                check_init_priorities.Priority(".rel.z_init_SMP1_0_"),
+                check_init_priorities.Priority(".rel.z_init_SMP11_0_"),
                 ]
 
         self.assertListEqual(prios, sorted(prios))
 
     def test_priority_strings(self):
-        prio = check_init_priorities.Priority(".rel.z_init_POST_KERNEL12_")
-        self.assertEqual(str(prio), "POST_KERNEL 12")
-        self.assertEqual(repr(prio), "<Priority POST_KERNEL 12>")
+        prio = check_init_priorities.Priority(".rel.z_init_POST_KERNEL12_00023_")
+        self.assertEqual(str(prio), "POST_KERNEL 12 23")
+        self.assertEqual(repr(prio), "<Priority POST_KERNEL 12 23>")
 
 class testZephyrObjectFile(unittest.TestCase):
     """Tests for the ZephyrObjectFile class."""
