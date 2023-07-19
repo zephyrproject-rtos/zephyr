@@ -97,104 +97,27 @@ Booting the UP Squared Board using UEFI
 Booting the UP Squared Board over network
 =========================================
 
-Build Zephyr image
-------------------
+.. include:: ../../common/net_boot.rst
 
-#. Follow `Build Zephyr application`_ steps to build Zephyr image.
+.. note::
+   Refer to the `UP Squared Serial Console Wiki page
+   <https://wiki.up-community.org/Serial_console>`_ for instructions on how to
+   connect serial console.
 
-Prepare Linux host
-------------------
+.. note::
+   To enable PXE boot for Up Squared board do the following:
 
-#. Install DHCP, TFTP servers. For example ``dnsmasq``
+   #. Enable network from BIOS settings.
 
-   .. code-block:: console
+      .. code-block:: console
 
-      $ sudo apt-get install dnsmasq
+         Advanced -> Network Stack Configuration -> Enable Network Stack -> Enable Ipv4 PXE Support
 
-#. Configure DHCP server. Configuration for ``dnsmasq`` is below:
+   #. Make network boot as the first boot option.
 
-   .. code-block:: console
+      .. code-block:: console
 
-      # Only listen to this interface
-      interface=eno2
-      dhcp-range=10.1.1.20,10.1.1.30,12h
-
-#. Configure TFTP server.
-
-   .. code-block:: console
-
-      # tftp
-      enable-tftp
-      tftp-root=/srv/tftp
-      dhcp-boot=zephyr.efi
-
-   ``zephyr.efi`` is a Zephyr EFI binary created above.
-
-#. Copy the Zephyr EFI image :file:`zephyr/zephyr.efi` to the
-   :file:`/srv/tftp` folder.
-
-    .. code-block:: console
-
-       $ sudo cp zephyr/zephyr.efi /srv/tftp
-
-
-#. TFTP root should be looking like:
-
-   .. code-block:: console
-
-      $ tree /srv/tftp
-      /srv/tftp
-      └── zephyr.efi
-
-#. Restart ``dnsmasq`` service:
-
-   .. code-block:: console
-
-      $ sudo systemctl restart dnsmasq.service
-
-Prepare UP Squared board for network boot
------------------------------------------
-
-#. Enable PXE network from BIOS settings.
-
-   .. code-block:: console
-
-      Advanced -> Network Stack Configuration -> Enable Network Stack -> Enable Ipv4 PXE Support
-
-#. Make network boot as the first boot option.
-
-   .. code-block:: console
-
-      Boot -> Boot Option #1 : [Network]
-
-Booting UP Squared
-------------------
-
-#. Connect the board to the host system using the serial cable and
-   configure your host system to watch for serial data.  See
-   https://wiki.up-community.org/Serial_console.
-
-#. Power on the UP Squared board.
-
-#. Verify that the board got an IP address:
-
-   .. code-block:: console
-
-      $ journalctl -f -u dnsmasq
-      dnsmasq-dhcp[5386]: DHCPDISCOVER(eno2) 00:07:32:52:25:88
-      dnsmasq-dhcp[5386]: DHCPOFFER(eno2) 10.1.1.28 00:07:32:52:25:88
-      dnsmasq-dhcp[5386]: DHCPREQUEST(eno2) 10.1.1.28 00:07:32:52:25:88
-      dnsmasq-dhcp[5386]: DHCPACK(eno2) 10.1.1.28 00:07:32:52:25:88
-
-#. Verify that network booting is started:
-
-   .. code-block:: console
-
-      $ journalctl -f -u dnsmasq
-      dnsmasq-tftp[5386]: sent /srv/tftp/zephyr.efi to 10.1.1.28
-
-#. When the boot process completes, you have finished booting the
-   Zephyr application image.
+         Boot -> Boot Option #1 : [Network]
 
 .. _UP Squared: https://www.up-board.org/upsquared/specifications
 
