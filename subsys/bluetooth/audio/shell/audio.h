@@ -96,6 +96,15 @@ struct broadcast_source {
 	struct bt_audio_codec_qos qos;
 };
 
+struct broadcast_sink {
+	struct bt_bap_broadcast_sink *bap_sink;
+	struct bt_le_per_adv_sync *pa_sync;
+	struct bt_bap_base received_base;
+	uint32_t broadcast_id;
+	size_t stream_cnt;
+	bool syncable;
+};
+
 extern struct shell_stream unicast_streams[CONFIG_BT_MAX_CONN * (UNICAST_SERVER_STREAM_COUNT +
 								 UNICAST_CLIENT_STREAM_COUNT)];
 
@@ -178,9 +187,7 @@ static inline void print_codec_cfg(const struct shell *sh,
 	for (size_t i = 0U; i < codec_cfg->data_count; i++) {
 		shell_print(sh, "data #%u: type 0x%02x len %u", i, codec_cfg->data[i].data.type,
 			    codec_cfg->data[i].data.data_len);
-		shell_hexdump(sh, codec_cfg->data[i].data.data,
-			      codec_cfg->data[i].data.data_len -
-				      sizeof(codec_cfg->data[i].data.type));
+		shell_hexdump(sh, codec_cfg->data[i].data.data, codec_cfg->data[i].data.data_len);
 	}
 #endif /* CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_COUNT > 0 */
 
@@ -189,9 +196,7 @@ static inline void print_codec_cfg(const struct shell *sh,
 	for (size_t i = 0U; i < codec_cfg->meta_count; i++) {
 		shell_print(sh, "meta #%u: type 0x%02x len %u", i, codec_cfg->meta[i].data.type,
 			    codec_cfg->meta[i].data.data_len);
-		shell_hexdump(sh, codec_cfg->meta[i].data.data,
-			      codec_cfg->meta[i].data.data_len -
-				      sizeof(codec_cfg->meta[i].data.type));
+		shell_hexdump(sh, codec_cfg->meta[i].data.data, codec_cfg->meta[i].data.data_len);
 	}
 #endif /* CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_COUNT > 0 */
 }
