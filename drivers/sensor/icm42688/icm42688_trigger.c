@@ -32,25 +32,22 @@ static void icm42688_gpio_callback(const struct device *dev, struct gpio_callbac
 #endif
 }
 
+#if defined(CONFIG_ICM42688_TRIGGER_OWN_THREAD) || defined(CONFIG_ICM42688_TRIGGER_GLOBAL_THREAD)
 static void icm42688_thread_cb(const struct device *dev)
 {
 	struct icm42688_dev_data *data = dev->data;
-	const struct icm42688_dev_cfg *cfg = dev->config;
 
 	icm42688_lock(dev);
 
 	if (data->data_ready_handler != NULL) {
 		data->data_ready_handler(dev, data->data_ready_trigger);
-	} else {
-		uint8_t status;
-
-		icm42688_spi_read(&cfg->spi, REG_INT_STATUS, &status, 1);
 	}
 
 	icm42688_unlock(dev);
 }
+#endif
 
-#if defined(CONFIG_ICM42688_TRIGGER_OWN_THREAD)
+#ifdef CONFIG_ICM42688_TRIGGER_OWN_THREAD
 
 static void icm42688_thread(void *p1, void *p2, void *p3)
 {
@@ -81,6 +78,7 @@ int icm42688_trigger_set(const struct device *dev, const struct sensor_trigger *
 {
 	struct icm42688_dev_data *data = dev->data;
 	const struct icm42688_dev_cfg *cfg = dev->config;
+	uint8_t status;
 	int res = 0;
 
 	if (trig == NULL || handler == NULL) {
@@ -94,6 +92,10 @@ int icm42688_trigger_set(const struct device *dev, const struct sensor_trigger *
 	case SENSOR_TRIG_DATA_READY:
 		data->data_ready_handler = handler;
 		data->data_ready_trigger = trig;
+
+		icm42688_lock(dev);
+		icm42688_spi_read(&cfg->spi, REG_INT_STATUS, &status, 1);
+		icm42688_unlock(dev);
 		break;
 	default:
 		res = -ENOTSUP;

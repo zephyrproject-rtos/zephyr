@@ -116,7 +116,7 @@ an external programmer. The programmer is attached to the SWD header.
 Build the Zephyr kernel and the :ref:`blinky-sample` sample application.
 
    .. zephyr-app-commands::
-      :zephyr-app: samples/blinky
+      :zephyr-app: samples/basic/blinky
       :board: adafruit_feather_nrf52840
       :goals: build
       :compact:
@@ -124,7 +124,7 @@ Build the Zephyr kernel and the :ref:`blinky-sample` sample application.
 Flash the image.
 
    .. zephyr-app-commands::
-      :zephyr-app: samples/blinky
+      :zephyr-app: samples/basic/blinky
       :board: adafruit_feather_nrf52840
       :goals: flash
       :compact:

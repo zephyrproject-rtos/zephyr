@@ -70,7 +70,7 @@ jobs:
         uses: zephyrproject-rtos/action-s3-cache@v1.2.0
         with:
           key: ${{ steps.ccache_cache_prop.outputs.repo }}-${{github.event_name}}-${{matrix.platform}}-codecov-ccache
-          path: /github/home/.ccache
+          path: /github/home/.cache/ccache
           aws-s3-bucket: ccache.zephyrproject.org
           aws-access-key-id: ${{ vars.AWS_CCACHE_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_CCACHE_SECRET_ACCESS_KEY }}
@@ -78,7 +78,8 @@ jobs:
 
       - name: ccache stats initial
         run: |
-          test -d github/home/.ccache && mv github/home/.ccache /github/home/.ccache
+          mkdir -p /github/home/.cache
+          test -d github/home/.cache/ccache && mv github/home/.cache/ccache /github/home/.cache/ccache
           ccache -M 10G -s
 
       - name: Run Tests with Twister (Push)
@@ -100,6 +101,7 @@ jobs:
       - name: ccache stats post
         run: |
           ccache -s
+          ccache -p
 
       - name: Upload Coverage Results
         if: always()

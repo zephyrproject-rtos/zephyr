@@ -385,7 +385,7 @@ ZTEST(context_cpu_idle, test_cpu_idle_atomic)
 static void _test_kernel_interrupts(disable_int_func disable_int,
 				    enable_int_func enable_int, int irq)
 {
-	unsigned long long count = 0;
+	unsigned long long count = 1ull;
 	unsigned long long i = 0;
 	int tick;
 	int tick2;

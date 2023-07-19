@@ -12,6 +12,7 @@ supported:
   - i2c
   - spi
   - eeprom
+  - watchdog
 testing:
   ignore_tags:
     - bluetooth

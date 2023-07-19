@@ -173,7 +173,7 @@ static void nrf5_rx_thread(void *arg1, void *arg2, void *arg3)
 		}
 
 		net_pkt_set_ieee802154_lqi(pkt, rx_frame->lqi);
-		net_pkt_set_ieee802154_rssi(pkt, rx_frame->rssi);
+		net_pkt_set_ieee802154_rssi_dbm(pkt, rx_frame->rssi);
 		net_pkt_set_ieee802154_ack_fpb(pkt, rx_frame->ack_fpb);
 
 #if defined(CONFIG_NET_PKT_TIMESTAMP)
@@ -224,6 +224,7 @@ static void nrf5_get_capabilities_at_boot(void)
 		((caps & NRF_802154_CAPABILITY_CSMA) ? IEEE802154_HW_CSMA : 0UL) |
 		IEEE802154_HW_2_4_GHZ |
 		IEEE802154_HW_TX_RX_ACK |
+		IEEE802154_HW_RX_TX_ACK |
 		IEEE802154_HW_ENERGY_SCAN |
 		((caps & NRF_802154_CAPABILITY_DELAYED_TX) ? IEEE802154_HW_TXTIME : 0UL) |
 		((caps & NRF_802154_CAPABILITY_DELAYED_RX) ? IEEE802154_HW_RXTIME : 0UL) |
@@ -399,7 +400,7 @@ static int handle_ack(struct nrf5_802154_data *nrf5_radio)
 	}
 
 	net_pkt_set_ieee802154_lqi(ack_pkt, nrf5_radio->ack_frame.lqi);
-	net_pkt_set_ieee802154_rssi(ack_pkt, nrf5_radio->ack_frame.rssi);
+	net_pkt_set_ieee802154_rssi_dbm(ack_pkt, nrf5_radio->ack_frame.rssi);
 
 #if defined(CONFIG_NET_PKT_TIMESTAMP)
 	struct net_ptp_time timestamp = {
@@ -412,7 +413,7 @@ static int handle_ack(struct nrf5_802154_data *nrf5_radio)
 
 	net_pkt_cursor_init(ack_pkt);
 
-	if (ieee802154_radio_handle_ack(nrf5_radio->iface, ack_pkt) != NET_OK) {
+	if (ieee802154_handle_ack(nrf5_radio->iface, ack_pkt) != NET_OK) {
 		LOG_INF("ACK packet not handled - releasing.");
 	}
 
@@ -545,7 +546,8 @@ static uint64_t target_time_convert_to_64_bits(uint32_t target_time)
 	return result;
 }
 
-static bool nrf5_tx_at(struct net_pkt *pkt, uint8_t *payload, bool cca)
+static bool nrf5_tx_at(struct nrf5_802154_data *nrf5_radio, struct net_pkt *pkt,
+		   uint8_t *payload, bool cca)
 {
 	nrf_802154_transmit_at_metadata_t metadata = {
 		.frame_props = {
@@ -560,6 +562,9 @@ static bool nrf5_tx_at(struct net_pkt *pkt, uint8_t *payload, bool cca)
 			.power = net_pkt_ieee802154_txpwr(pkt),
 #endif
 		},
+#if defined(CONFIG_IEEE802154_NRF5_MULTIPLE_CCA)
+		.extra_cca_attempts = nrf5_radio->extra_cca_attempts
+#endif
 	};
 	uint64_t tx_at = target_time_convert_to_64_bits(net_pkt_txtime(pkt) / NSEC_PER_USEC);
 
@@ -600,7 +605,7 @@ static int nrf5_tx(const struct device *dev,
 	case IEEE802154_TX_MODE_TXTIME:
 	case IEEE802154_TX_MODE_TXTIME_CCA:
 		__ASSERT_NO_MSG(pkt);
-		ret = nrf5_tx_at(pkt, nrf5_radio->tx_psdu,
+		ret = nrf5_tx_at(nrf5_radio, pkt, nrf5_radio->tx_psdu,
 				 mode == IEEE802154_TX_MODE_TXTIME_CCA);
 		break;
 #endif /* CONFIG_NET_PKT_TXTIME */
@@ -624,7 +629,7 @@ static int nrf5_tx(const struct device *dev,
 
 	LOG_DBG("Result: %d", nrf5_data.tx_result);
 
-#if defined(CONFIG_IEEE802154_2015)
+#if defined(CONFIG_NRF_802154_ENCRYPTION)
 	/*
 	 * When frame encryption by the radio driver is enabled, the frame stored in
 	 * the tx_psdu buffer is:
@@ -795,7 +800,7 @@ static void nrf5_iface_init(struct net_if *iface)
 	ieee802154_init(iface);
 }
 
-#if defined(CONFIG_IEEE802154_2015)
+#if defined(CONFIG_NRF_802154_ENCRYPTION)
 static void nrf5_config_mac_keys(struct ieee802154_key *mac_keys)
 {
 	static nrf_802154_key_id_t stored_key_ids[NRF_802154_SECURITY_KEY_STORAGE_SIZE];
@@ -830,7 +835,7 @@ static void nrf5_config_mac_keys(struct ieee802154_key *mac_keys)
 		stored_key_ids[i].p_key_id = &stored_ids[i];
 	};
 }
-#endif /* CONFIG_IEEE802154_2015 */
+#endif /* CONFIG_NRF_802154_ENCRYPTION */
 
 static int nrf5_configure(const struct device *dev,
 			  enum ieee802154_config_type type,
@@ -896,7 +901,7 @@ static int nrf5_configure(const struct device *dev,
 		nrf5_data.event_handler = config->event_handler;
 		break;
 
-#if defined(CONFIG_IEEE802154_2015)
+#if defined(CONFIG_NRF_802154_ENCRYPTION)
 	case IEEE802154_CONFIG_MAC_KEYS:
 		nrf5_config_mac_keys(config->mac_keys);
 		break;
@@ -908,7 +913,7 @@ static int nrf5_configure(const struct device *dev,
 	case IEEE802154_CONFIG_FRAME_COUNTER_IF_LARGER:
 		nrf_802154_security_global_frame_counter_set_if_larger(config->frame_counter);
 		break;
-#endif /* CONFIG_IEEE802154_2015 */
+#endif /* CONFIG_NRF_802154_ENCRYPTION */
 
 	case IEEE802154_CONFIG_ENH_ACK_HEADER_IE: {
 		uint8_t short_addr_le[SHORT_ADDRESS_SIZE];
@@ -939,7 +944,7 @@ static int nrf5_configure(const struct device *dev,
 	} break;
 
 #if defined(CONFIG_IEEE802154_CSL_ENDPOINT)
-	case IEEE802154_CONFIG_CSL_RX_TIME:
+	case IEEE802154_CONFIG_CSL_RX_TIME: {
 		/*
 		 * `target_time_convert_to_64_bits()` is a workaround until OpenThread (the only
 		 * CSL user in Zephyr so far) is able to schedule RX windows using 64-bit time.
@@ -947,9 +952,9 @@ static int nrf5_configure(const struct device *dev,
 		uint64_t csl_rx_time = target_time_convert_to_64_bits(config->csl_rx_time);
 
 		nrf_802154_csl_writer_anchor_time_set(csl_rx_time);
-		break;
+	} break;
 
-	case IEEE802154_CONFIG_RX_SLOT:
+	case IEEE802154_CONFIG_RX_SLOT: {
 		/* Note that even if the nrf_802154_receive_at function is not called in time
 		 * (for example due to the call being blocked by higher priority threads) and
 		 * the delayed reception window is not scheduled, the CSL phase will still be
@@ -965,7 +970,7 @@ static int nrf5_configure(const struct device *dev,
 
 		nrf_802154_receive_at(start, config->rx_slot.duration, config->rx_slot.channel,
 				      DRX_SLOT_RX);
-		break;
+	} break;
 
 	case IEEE802154_CONFIG_CSL_PERIOD:
 		nrf_802154_csl_writer_period_set(config->csl_period);
@@ -1019,7 +1024,15 @@ void nrf_802154_receive_failed(nrf_802154_rx_error_t error, uint32_t id)
 #if defined(CONFIG_IEEE802154_CSL_ENDPOINT)
 	if (id == DRX_SLOT_RX) {
 		__ASSERT_NO_MSG(nrf5_data.event_handler);
+#if !defined(CONFIG_IEEE802154_CSL_DEBUG)
+		/* When CSL debug option is used we intentionally avoid notifying the higher layer
+		 * about the finalization of a DRX slot, so that the radio stays in receive state
+		 * for receiving "out of slot" frames.
+		 * As a side effect, regular failure notifications would be reported with the
+		 * incorrect ID.
+		 */
 		nrf5_data.event_handler(dev, IEEE802154_EVENT_SLEEP, NULL);
+#endif
 		if (error == NRF_802154_RX_ERROR_DELAYED_TIMEOUT) {
 			return;
 		}
@@ -1144,8 +1157,25 @@ void nrf_802154_energy_detection_failed(nrf_802154_ed_error_t error)
 void nrf_802154_serialization_error(const nrf_802154_ser_err_data_t *err)
 {
 	__ASSERT(false, "802.15.4 serialization error: %d", err->reason);
+	k_oops();
 }
 #endif
+
+#if defined(CONFIG_IEEE802154_NRF5_MULTIPLE_CCA)
+void ieee802154_nrf5_extra_cca_attempts_set(const struct device *dev, uint8_t value)
+{
+	struct nrf5_802154_data *nrf5_radio = NRF5_802154_DATA(dev);
+
+	nrf5_radio->extra_cca_attempts = value;
+}
+
+uint8_t ieee802154_nrf5_extra_cca_attempts_get(const struct device *dev)
+{
+	struct nrf5_802154_data *nrf5_radio = NRF5_802154_DATA(dev);
+
+	return nrf5_radio->extra_cca_attempts;
+}
+#endif /* defined(CONFIG_IEEE802154_NRF5_MULTIPLE_CCA) */
 
 static const struct nrf5_802154_config nrf5_radio_cfg = {
 	.irq_config_func = nrf5_irq_config,

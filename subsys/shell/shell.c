@@ -1503,11 +1503,11 @@ void shell_vfprintf(const struct shell *sh, enum shell_vt100_color color,
 	}
 
 	k_mutex_lock(&sh->ctx->wr_mtx, K_FOREVER);
-	if (!z_flag_cmd_ctx_get(sh) && !sh->ctx->bypass) {
+	if (!z_flag_cmd_ctx_get(sh) && !sh->ctx->bypass && z_flag_use_vt100_get(sh)) {
 		z_shell_cmd_line_erase(sh);
 	}
 	z_shell_vfprintf(sh, color, fmt, args);
-	if (!z_flag_cmd_ctx_get(sh) && !sh->ctx->bypass) {
+	if (!z_flag_cmd_ctx_get(sh) && !sh->ctx->bypass && z_flag_use_vt100_get(sh)) {
 		z_shell_print_prompt_and_cmd(sh);
 	}
 	z_transport_buffer_flush(sh);

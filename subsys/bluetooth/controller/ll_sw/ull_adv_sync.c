@@ -6,7 +6,7 @@
 
 #include <zephyr/kernel.h>
 #include <soc.h>
-#include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/sys/byteorder.h>
 
 #include "hal/cpu.h"
@@ -1268,7 +1268,6 @@ void ull_adv_sync_chm_complete(struct node_rx_hdr *rx)
 	struct pdu_adv *pdu_prev;
 	struct ll_adv_set *adv;
 	struct pdu_adv *pdu;
-	uint8_t others_len;
 	uint8_t acad_len;
 	uint8_t *others;
 	uint8_t ter_idx;
@@ -1299,12 +1298,6 @@ void ull_adv_sync_chm_complete(struct node_rx_hdr *rx)
 	/* Dev assert if ACAD empty */
 	LL_ASSERT(hdr_data[ULL_ADV_HDR_DATA_LEN_OFFSET]);
 
-	/* Get the pointer, prev content and size of current ACAD */
-	err = ull_adv_sync_pdu_set_clear(lll_sync, pdu_prev, pdu,
-					 ULL_ADV_PDU_HDR_FIELD_ACAD, 0U,
-					 &hdr_data);
-	LL_ASSERT(!err);
-
 	/* Find the Channel Map Update Indication */
 	acad_len = hdr_data[ULL_ADV_HDR_DATA_LEN_OFFSET];
 	len = acad_len;
@@ -1315,7 +1308,7 @@ void ull_adv_sync_chm_complete(struct node_rx_hdr *rx)
 		ad_len = ad[PDU_ADV_DATA_HEADER_LEN_OFFSET];
 		if (ad_len &&
 		    (ad[PDU_ADV_DATA_HEADER_TYPE_OFFSET] ==
-		     BT_DATA_CHANNEL_MAP_UPDATE_IND)) {
+		     PDU_ADV_DATA_TYPE_CHANNEL_MAP_UPDATE_IND)) {
 			break;
 		}
 
@@ -1334,8 +1327,7 @@ void ull_adv_sync_chm_complete(struct node_rx_hdr *rx)
 	ad_len += 1U;
 	others = ad + ad_len;
 	acad_len -= ad_len;
-	others_len = acad_len - (ad - acad);
-	(void)memmove(ad, others, others_len);
+	(void)memmove(ad, others, acad_len);
 
 	/* Adjust the next PDU for ACAD length, this is done by using the next
 	 * PDU to copy ACAD into same next PDU.
@@ -1729,19 +1721,22 @@ uint8_t ull_adv_sync_pdu_set_clear(struct lll_adv_sync *lll_sync,
 
 	/* Add/Retain/Remove ACAD */
 	if (hdr_add_fields & ULL_ADV_PDU_HDR_FIELD_ACAD) {
+		/* remember the new acad data len */
 		acad_len = *(uint8_t *)hdr_data;
-		/* If zero length ACAD then do not reduce ACAD but return
-		 * return previous ACAD length.
-		 */
-		if (!acad_len) {
-			acad_len = acad_len_prev;
-		}
+
 		/* return prev ACAD length */
 		*(uint8_t *)hdr_data = acad_len_prev;
-		hdr_data = (uint8_t *)hdr_data + 1;
+		hdr_data = (uint8_t *)hdr_data + sizeof(acad_len);
+
 		/* return the pointer to ACAD offset */
 		(void)memcpy(hdr_data, &ter_dptr, sizeof(ter_dptr));
 		hdr_data = (uint8_t *)hdr_data + sizeof(ter_dptr);
+
+		/* unchanged acad */
+		if (!acad_len) {
+			acad_len = acad_len_prev;
+		}
+
 		ter_dptr += acad_len;
 	} else if (!(hdr_rem_fields & ULL_ADV_PDU_HDR_FIELD_ACAD)) {
 		acad_len = acad_len_prev;
@@ -1801,6 +1796,8 @@ uint8_t ull_adv_sync_pdu_set_clear(struct lll_adv_sync *lll_sync,
 		 */
 		return BT_HCI_ERR_PACKET_TOO_LONG;
 	}
+
+	LL_ASSERT(ter_len <= (PDU_AC_EXT_HEADER_SIZE_MIN + PDU_AC_EXT_HEADER_SIZE_MAX));
 
 	/* set the tertiary extended header and PDU length */
 	ull_adv_aux_hdr_len_fill(ter_com_hdr, ter_len);
@@ -2108,7 +2105,7 @@ static uint8_t sync_chm_update(uint8_t handle)
 	/* Try to allocate ACAD for channel map update indication, previous
 	 * ACAD length with be returned back.
 	 */
-	hdr_data[ULL_ADV_HDR_DATA_LEN_OFFSET] = sizeof(*chm_upd_ind) + 2U;
+	hdr_data[ULL_ADV_HDR_DATA_LEN_OFFSET] = 0U;
 	err = ull_adv_sync_pdu_set_clear(lll_sync, pdu_prev, pdu,
 					 ULL_ADV_PDU_HDR_FIELD_ACAD, 0U,
 					 &hdr_data);
@@ -2116,20 +2113,18 @@ static uint8_t sync_chm_update(uint8_t handle)
 		return err;
 	}
 
-	/* Check if there are other ACAD data previously */
+	/* Check if there are other ACAD data previously and append to end of
+	 * other ACAD already present.
+	 */
 	acad_len_prev = hdr_data[ULL_ADV_HDR_DATA_LEN_OFFSET];
-	if (acad_len_prev) {
-		/* Append to end of other ACAD already present */
-		hdr_data[ULL_ADV_HDR_DATA_LEN_OFFSET] = acad_len_prev +
-							sizeof(*chm_upd_ind) +
-							2U;
-
-		err = ull_adv_sync_pdu_set_clear(lll_sync, pdu_prev, pdu,
-						 ULL_ADV_PDU_HDR_FIELD_ACAD, 0U,
-						 &hdr_data);
-		if (err) {
-			return err;
-		}
+	hdr_data[ULL_ADV_HDR_DATA_LEN_OFFSET] = acad_len_prev +
+						sizeof(*chm_upd_ind) +
+						2U;
+	err = ull_adv_sync_pdu_set_clear(lll_sync, pdu_prev, pdu,
+					 ULL_ADV_PDU_HDR_FIELD_ACAD, 0U,
+					 &hdr_data);
+	if (err) {
+		return err;
 	}
 
 	/* Populate the AD data length and opcode */
@@ -2137,7 +2132,8 @@ static uint8_t sync_chm_update(uint8_t handle)
 		     sizeof(acad));
 	acad += acad_len_prev;
 	acad[PDU_ADV_DATA_HEADER_LEN_OFFSET] = sizeof(*chm_upd_ind) + 1U;
-	acad[PDU_ADV_DATA_HEADER_TYPE_OFFSET] = BT_DATA_CHANNEL_MAP_UPDATE_IND;
+	acad[PDU_ADV_DATA_HEADER_TYPE_OFFSET] =
+		PDU_ADV_DATA_TYPE_CHANNEL_MAP_UPDATE_IND;
 
 	/* Populate the Channel Map Indication structure */
 	chm_upd_ind = (void *)&acad[PDU_ADV_DATA_HEADER_DATA_OFFSET];

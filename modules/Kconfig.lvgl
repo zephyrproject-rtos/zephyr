@@ -8,6 +8,27 @@ config LVGL
 
 if LVGL
 
+config LV_DPI_DEF
+	int
+
+config LV_Z_BITS_PER_PIXEL
+	int
+
+config LV_Z_DOUBLE_VDB
+	bool
+
+config LV_Z_FULL_REFRESH
+	bool
+
+config LV_Z_VBD_CUSTOM_SECTION
+	bool
+
+config LV_Z_VDB_ALIGN
+	int
+
+config LV_Z_VDB_SIZE
+	int
+
 config LV_Z_POINTER_KSCAN
 	bool
 

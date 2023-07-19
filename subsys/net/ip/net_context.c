@@ -337,6 +337,8 @@ int net_context_get(sa_family_t family, enum net_sock_type type, uint16_t proto,
 			*context = NULL;
 			return ret;
 		}
+
+		net_context_set_iface(*context, net_if_get_default());
 	}
 
 	return 0;
@@ -1112,6 +1114,8 @@ int net_context_connect(struct net_context *context,
 		ret = 0;
 	} else if (IS_ENABLED(CONFIG_NET_TCP) &&
 		   net_context_get_type(context) == SOCK_STREAM) {
+		NET_ASSERT(laddr != NULL);
+
 		ret = net_tcp_connect(context, addr, laddr, rport, lport,
 				      timeout, cb, user_data);
 	} else {

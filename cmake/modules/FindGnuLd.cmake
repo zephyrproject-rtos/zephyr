@@ -23,6 +23,8 @@
 # Note that this will use CROSS_COMPILE, if defined,
 # as a prefix to the linker executable.
 
+include(FindPackageHandleStandardArgs)
+
 # GNULD_LINKER exists on repeated builds or defined manually...
 if(EXISTS "${GNULD_LINKER}")
   if(NOT DEFINED GNULD_LINKER_IS_BFD)

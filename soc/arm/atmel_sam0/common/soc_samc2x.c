@@ -9,7 +9,6 @@
  * @brief Atmel SAMC MCU series initialization code
  */
 
-#include <zephyr/arch/cpu.h>
 #include <zephyr/device.h>
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
@@ -45,22 +44,10 @@ static void gclks_init(void)
 
 static int atmel_samc_init(void)
 {
-	uint32_t key;
-
-
-	key = irq_lock();
-
 	flash_waitstates_init();
 	osc48m_init();
 	mclk_init();
 	gclks_init();
-
-	/* Install default handler that simply resets the CPU
-	 * if configured in the kernel, NOP otherwise
-	 */
-	NMI_INIT();
-
-	irq_unlock(key);
 
 	return 0;
 }

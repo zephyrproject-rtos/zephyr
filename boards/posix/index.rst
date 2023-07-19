@@ -1,6 +1,6 @@
 .. _boards_posix:
 
-POSIX/NATIVE Boards
+POSIX/Native Boards
 ###################
 
 .. toctree::

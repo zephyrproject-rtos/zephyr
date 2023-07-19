@@ -151,4 +151,16 @@ static inline uint32_t __LDREXW(volatile uint32_t *ptr)
  */
 static inline void __CLREX(void) { /* Nothing to be done */ }
 
+/**
+ * \brief Model of an ARM CLZ instruction
+ */
+static inline unsigned char __CLZ(uint32_t value)
+{
+	if (value == 0) {
+		return 32;
+	} else {
+		return __builtin_clz(value);
+	}
+}
+
 #endif /* BOARDS_POSIX_NRF52_BSIM_CMSIS_INSTR_H */

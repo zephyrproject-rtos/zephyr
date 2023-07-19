@@ -14,7 +14,6 @@ more information on these commands.
 
 .. _atmel_sam_ba_bootloader:
 
-
 SAM Boot Assistant (SAM-BA)
 ***************************
 
@@ -182,10 +181,9 @@ As a quick reference, see these three board documentation pages:
   - :ref:`arduino_nano_33_iot` (Arduino bootloader)
   - :ref:`arduino_nano_33_ble` (Arduino legacy bootloader)
 
-.. _jlink-debug-host-tools:
-
 Enabling BOSSAC on Windows Native [Experimental]
 ------------------------------------------------
+
 Zephyr SDK´s bossac is only currenty support on Linux and macOS. Windows support
 can be achieved by using the bossac version from `BOSSA oficial releases`_.
 After installing using default options, the :file:`bossac.exe` must be added to
@@ -199,6 +197,9 @@ Windows PATH. A specific bossac executable can be used by passing the
 .. note::
 
    WSL is not currently supported.
+
+
+.. _jlink-debug-host-tools:
 
 J-Link Debug Host Tools
 ***********************

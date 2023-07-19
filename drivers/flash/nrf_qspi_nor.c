@@ -1060,8 +1060,8 @@ BUILD_ASSERT((CONFIG_NORDIC_QSPI_NOR_STACK_WRITE_BUFFER_SIZE % 4) == 0,
  *
  * If not enabled return the error the peripheral would have produced.
  */
-static inline nrfx_err_t write_from_nvmc(const struct device *dev, off_t addr,
-					 const void *sptr, size_t slen)
+static nrfx_err_t write_through_buffer(const struct device *dev, off_t addr,
+				       const void *sptr, size_t slen)
 {
 	nrfx_err_t res = NRFX_SUCCESS;
 
@@ -1073,7 +1073,7 @@ static inline nrfx_err_t write_from_nvmc(const struct device *dev, off_t addr,
 			size_t len = MIN(slen, sizeof(buf));
 
 			memcpy(buf, sp, len);
-			res = nrfx_qspi_write(buf, sizeof(buf), addr);
+			res = nrfx_qspi_write(buf, len, addr);
 			qspi_wait_for_completion(dev, res);
 
 			if (res == NRFX_SUCCESS) {
@@ -1131,8 +1131,9 @@ static int qspi_nor_write(const struct device *dev, off_t addr,
 	if (!res) {
 		if (size < 4U) {
 			res = write_sub_word(dev, addr, src, size);
-		} else if (!nrfx_is_in_ram(src)) {
-			res = write_from_nvmc(dev, addr, src, size);
+		} else if (!nrfx_is_in_ram(src) ||
+			   !nrfx_is_word_aligned(src)) {
+			res = write_through_buffer(dev, addr, src, size);
 		} else {
 			res = nrfx_qspi_write(src, size, addr);
 			qspi_wait_for_completion(dev, res);

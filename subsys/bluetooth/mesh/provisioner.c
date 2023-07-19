@@ -488,26 +488,25 @@ static void send_prov_data(void)
 {
 	PROV_BUF(pdu, PDU_LEN_DATA);
 	struct bt_mesh_cdb_subnet *sub;
-	uint8_t session_key[16];
+	uint8_t net_key[16];
+	struct bt_mesh_key session_key;
 	uint8_t nonce[13];
 	int err;
 
 	err = bt_mesh_session_key(bt_mesh_prov_link.dhkey,
-				  bt_mesh_prov_link.prov_salt, session_key);
+				  bt_mesh_prov_link.prov_salt, &session_key);
 	if (err) {
 		LOG_ERR("Unable to generate session key");
 		prov_fail(PROV_ERR_UNEXP_ERR);
 		return;
 	}
 
-	LOG_DBG("SessionKey: %s", bt_hex(session_key, 16));
-
 	err = bt_mesh_prov_nonce(bt_mesh_prov_link.dhkey,
 				 bt_mesh_prov_link.prov_salt, nonce);
 	if (err) {
 		LOG_ERR("Unable to generate session nonce");
 		prov_fail(PROV_ERR_UNEXP_ERR);
-		return;
+		goto session_key_destructor;
 	}
 
 	LOG_DBG("Nonce: %s", bt_hex(nonce, 13));
@@ -517,20 +516,25 @@ static void send_prov_data(void)
 	if (err) {
 		LOG_ERR("Unable to generate device key");
 		prov_fail(PROV_ERR_UNEXP_ERR);
-		return;
+		goto session_key_destructor;
 	}
-
-	LOG_DBG("DevKey: %s", bt_hex(prov_device.new_dev_key, 16));
 
 	sub = bt_mesh_cdb_subnet_get(prov_device.node->net_idx);
 	if (sub == NULL) {
 		LOG_ERR("No subnet with net_idx %u", prov_device.node->net_idx);
 		prov_fail(PROV_ERR_UNEXP_ERR);
-		return;
+		goto session_key_destructor;
+	}
+
+	err = bt_mesh_key_export(net_key, &sub->keys[SUBNET_KEY_TX_IDX(sub)].net_key);
+	if (err) {
+		LOG_ERR("Unable to export network key");
+		prov_fail(PROV_ERR_UNEXP_ERR);
+		goto session_key_destructor;
 	}
 
 	bt_mesh_prov_buf_init(&pdu, PROV_DATA);
-	net_buf_simple_add_mem(&pdu, sub->keys[SUBNET_KEY_TX_IDX(sub)].net_key, 16);
+	net_buf_simple_add_mem(&pdu, net_key, sizeof(net_key));
 	net_buf_simple_add_be16(&pdu, prov_device.node->net_idx);
 	net_buf_simple_add_u8(&pdu, bt_mesh_cdb_subnet_flags(sub));
 	net_buf_simple_add_be32(&pdu, bt_mesh_cdb.iv_index);
@@ -541,20 +545,23 @@ static void send_prov_data(void)
 		prov_device.node->net_idx, bt_mesh.iv_index,
 		bt_mesh_prov_link.addr);
 
-	err = bt_mesh_prov_encrypt(session_key, nonce, &pdu.data[1],
+	err = bt_mesh_prov_encrypt(&session_key, nonce, &pdu.data[1],
 				   &pdu.data[1]);
 	if (err) {
 		LOG_ERR("Unable to encrypt provisioning data");
 		prov_fail(PROV_ERR_DECRYPT);
-		return;
+		goto session_key_destructor;
 	}
 
 	if (bt_mesh_prov_send(&pdu, NULL)) {
 		LOG_ERR("Failed to send Provisioning Data");
-		return;
+		goto session_key_destructor;
 	}
 
 	bt_mesh_prov_link.expect = PROV_COMPLETE;
+
+session_key_destructor:
+	bt_mesh_key_destroy(&session_key);
 }
 
 static void prov_complete(const uint8_t *data)
@@ -562,8 +569,8 @@ static void prov_complete(const uint8_t *data)
 	struct bt_mesh_cdb_node *node = prov_device.node;
 
 	LOG_DBG("key %s, net_idx %u, num_elem %u, addr 0x%04x",
-		bt_hex(prov_device.new_dev_key, 16), node->net_idx, node->num_elem,
-		node->addr);
+		bt_hex(&prov_device.new_dev_key, 16), node->net_idx,
+		node->num_elem, node->addr);
 
 	bt_mesh_prov_link.expect = PROV_NO_PDU;
 	atomic_set_bit(bt_mesh_prov_link.flags, COMPLETE);
@@ -575,13 +582,18 @@ static void prov_node_add(void)
 {
 	LOG_DBG("");
 	struct bt_mesh_cdb_node *node = prov_device.node;
+	int err;
 
 	if (atomic_test_bit(bt_mesh_prov_link.flags, REPROVISION)) {
 		bt_mesh_cdb_node_update(node, bt_mesh_prov_link.addr,
 					prov_device.elem_count);
 	}
 
-	memcpy(node->dev_key, prov_device.new_dev_key, 16);
+	err = bt_mesh_cdb_node_key_import(node, prov_device.new_dev_key);
+	if (err) {
+		LOG_ERR("Failed to import node device key");
+		return;
+	}
 
 	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
 		bt_mesh_cdb_node_store(node);

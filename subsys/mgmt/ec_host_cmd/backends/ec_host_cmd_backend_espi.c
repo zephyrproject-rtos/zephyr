@@ -89,7 +89,7 @@ static void espi_handler(const struct device *dev, struct espi_callback *cb,
 
 	/* Even in case of errors, let the general handler send response */
 	hc_espi->state = ESPI_STATE_PROCESSING;
-	k_sem_give(&hc_espi->rx_ctx->handler_owns);
+	ec_host_cmd_rx_notify();
 }
 
 static int ec_host_cmd_espi_init(const struct ec_host_cmd_backend *backend,
@@ -125,6 +125,10 @@ static int ec_host_cmd_espi_send(const struct ec_host_cmd_backend *backend)
 	struct ec_host_cmd_response_header *resp_hdr = hc_espi->tx->buf;
 	uint32_t result = resp_hdr->result;
 	int ret;
+
+	/* Ignore in-progress on eSPI since interface is synchronous anyway */
+	if (result == EC_HOST_CMD_IN_PROGRESS)
+		return 0;
 
 	hc_espi->state = ESPI_STATE_SENDING;
 

@@ -14,7 +14,7 @@ if LVGL
 config LV_Z_VDB_SIZE
 	default 64
 
-config LV_Z_DPI
+config LV_DPI_DEF
 	default 116 if SHIELD_SH1106_128X64
 	default 148
 

@@ -6,9 +6,11 @@ toolchain:
   - zephyr
 ram: 2048
 supported:
+  - smp
   - smbus
   - watchdog
   - rtc
+  - pwm
 testing:
   ignore_tags:
     - net

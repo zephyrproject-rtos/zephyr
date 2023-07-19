@@ -6,8 +6,10 @@
 
 #include <zephyr/kernel.h>
 
-void main(void)
+int main(void)
 {
 	/* This sample uses the shell */
 	k_sleep(K_FOREVER);
+
+	return 0;
 }

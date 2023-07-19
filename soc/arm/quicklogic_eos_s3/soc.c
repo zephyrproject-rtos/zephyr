@@ -66,9 +66,6 @@ static void eos_s3_cru_init(void)
 
 static int eos_s3_init(void)
 {
-	uint32_t key;
-
-
 	/* Clocks setup */
 	eos_s3_lock_enable();
 	eos_s3_cru_init();
@@ -81,12 +78,6 @@ static int eos_s3_init(void)
 
 	/* Enable UART interrupt */
 	INTR_CTRL->OTHER_INTR_EN_M4 = UART_INTR_EN_M4;
-
-	key = irq_lock();
-
-	NMI_INIT();
-
-	irq_unlock(key);
 
 	return 0;
 }

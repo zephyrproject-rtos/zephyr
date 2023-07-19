@@ -258,6 +258,7 @@
 		compatible = "nxp,lpc-dma";
 		reg = <0x104000 0x1000>;
 		interrupts = <1 0>;
+		dma-channels = <33>;
 		status = "disabled";
 		#dma-cells = <1>;
 	};
@@ -266,6 +267,7 @@
 		compatible = "nxp,lpc-dma";
 		reg = <0x105000 0x1000>;
 		interrupts = <54 0>;
+		dma-channels = <33>;
 		status = "disabled";
 		#dma-cells = <1>;
 	};

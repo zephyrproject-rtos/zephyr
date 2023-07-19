@@ -23,6 +23,7 @@ supported:
   - watchdog
   - adc
   - dac
+  - qspi
   - dma
 ram: 96
 flash: 1024

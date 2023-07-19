@@ -230,6 +230,10 @@ ZTEST(clock, test_ms_time_duration)
 	/** cleanup environment */
 	k_timer_stop(&ktimer);
 }
+
+extern void *common_setup(void);
+ZTEST_SUITE(clock, NULL, common_setup, NULL, NULL, NULL);
+
 /**
  * @}
  */

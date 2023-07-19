@@ -43,7 +43,6 @@ static int mcux_pwm_set_cycles(const struct device *dev, uint32_t channel,
 {
 	const struct pwm_mcux_config *config = dev->config;
 	struct pwm_mcux_data *data = dev->data;
-	uint8_t duty_cycle;
 	pwm_level_select_t level;
 
 	if (channel >= CHANNEL_COUNT) {
@@ -64,58 +63,95 @@ static int mcux_pwm_set_cycles(const struct device *dev, uint32_t channel,
 		return -EINVAL;
 	}
 
-	duty_cycle = 100 * pulse_cycles / period_cycles;
-
 	if (flags & PWM_POLARITY_INVERTED) {
 		level = kPWM_LowTrue;
 	} else {
 		level = kPWM_HighTrue;
 	}
 
-	/* FIXME: Force re-setup even for duty-cycle update */
 	if (period_cycles != data->period_cycles[channel]
 	    || level != data->channel[channel].level) {
 		uint32_t clock_freq;
-		uint32_t pwm_freq;
 		status_t status;
 
 		data->period_cycles[channel] = period_cycles;
-
-		LOG_DBG("SETUP dutycycle to %u", duty_cycle);
 
 		if (clock_control_get_rate(config->clock_dev, config->clock_subsys,
 				&clock_freq)) {
 			return -EINVAL;
 		}
 
-		pwm_freq = DIV_ROUND_UP(clock_freq >> config->prescale, period_cycles);
-
-		if (pwm_freq == 0) {
-			LOG_ERR("Could not set up pwm_freq=%d", pwm_freq);
-			return -EINVAL;
-		}
 		data->channel[channel].pwmchannelenable = true;
 
 		PWM_StopTimer(config->base, 1U << config->index);
 
-		data->channel[channel].dutyCyclePercent = duty_cycle;
+		/*
+		 * We will directly write the duty cycle pulse width
+		 * and full pulse width into the VALx registers to
+		 * setup PWM with higher resolution.
+		 * Therefore we use dummy values for the duty cycle
+		 * and frequency.
+		 */
+		data->channel[channel].dutyCyclePercent = 0;
 		data->channel[channel].level = level;
 
 		status = PWM_SetupPwm(config->base, config->index,
-				      &data->channel[0], CHANNEL_COUNT,
-				      config->mode, pwm_freq, clock_freq);
+				      &data->channel[channel], 1U,
+				      config->mode, 1U, clock_freq);
 		if (status != kStatus_Success) {
 			LOG_ERR("Could not set up pwm");
 			return -ENOTSUP;
+		}
+
+		/* Setup VALx values directly for edge aligned PWM */
+		if (channel == 0) {
+			/* Side A */
+			PWM_SetVALxValue(config->base, config->index,
+					 kPWM_ValueRegister_0,
+					 (uint16_t)(period_cycles / 2U));
+			PWM_SetVALxValue(config->base, config->index,
+					 kPWM_ValueRegister_1,
+					 (uint16_t)(period_cycles - 1U));
+			PWM_SetVALxValue(config->base, config->index,
+					 kPWM_ValueRegister_2, 0U);
+			PWM_SetVALxValue(config->base, config->index,
+					 kPWM_ValueRegister_3,
+					 (uint16_t)pulse_cycles);
+		} else {
+			/* Side B */
+			PWM_SetVALxValue(config->base, config->index,
+					 kPWM_ValueRegister_0,
+					 (uint16_t)(period_cycles / 2U));
+			PWM_SetVALxValue(config->base, config->index,
+					 kPWM_ValueRegister_1,
+					 (uint16_t)(period_cycles - 1U));
+			PWM_SetVALxValue(config->base, config->index,
+					 kPWM_ValueRegister_4, 0U);
+			PWM_SetVALxValue(config->base, config->index,
+					 kPWM_ValueRegister_5,
+					 (uint16_t)pulse_cycles);
 		}
 
 		PWM_SetPwmLdok(config->base, 1U << config->index, true);
 
 		PWM_StartTimer(config->base, 1U << config->index);
 	} else {
-		PWM_UpdatePwmDutycycle(config->base, config->index,
-				       (channel == 0) ? kPWM_PwmA : kPWM_PwmB,
-				       config->mode, duty_cycle);
+		/* Setup VALx values directly for edge aligned PWM */
+		if (channel == 0) {
+			/* Side A */
+			PWM_SetVALxValue(config->base, config->index,
+					 kPWM_ValueRegister_2, 0U);
+			PWM_SetVALxValue(config->base, config->index,
+					 kPWM_ValueRegister_3,
+					 (uint16_t)pulse_cycles);
+		} else {
+			/* Side B */
+			PWM_SetVALxValue(config->base, config->index,
+					 kPWM_ValueRegister_4, 0U);
+			PWM_SetVALxValue(config->base, config->index,
+					 kPWM_ValueRegister_5,
+					 (uint16_t)pulse_cycles);
+		}
 		PWM_SetPwmLdok(config->base, 1U << config->index, true);
 	}
 

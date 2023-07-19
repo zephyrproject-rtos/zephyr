@@ -17,6 +17,7 @@
 #include <zephyr/sys/atomic.h>
 #include <zephyr/drivers/dma.h>
 #include <zephyr/drivers/clock_control.h>
+#include <zephyr/sys/barrier.h>
 
 #include "dma_mcux_edma.h"
 
@@ -147,7 +148,7 @@ static void dma_mcux_edma_irq_handler(const struct device *dev)
 			EDMA_HandleIRQ(DEV_EDMA_HANDLE(dev, i));
 			LOG_DBG("IRQ DONE");
 #if defined __CORTEX_M && (__CORTEX_M == 4U)
-			__DSB();
+			barrier_dsync_fence_full();
 #endif
 		}
 	}
@@ -170,7 +171,7 @@ static void dma_mcux_edma_error_irq_handler(const struct device *dev)
 	}
 
 #if defined __CORTEX_M && (__CORTEX_M == 4U)
-	__DSB();
+	barrier_dsync_fence_full();
 #endif
 }
 

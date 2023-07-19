@@ -85,6 +85,21 @@ extern const struct device *vega_debug_portd;
 		vega_debug_portc = DEVICE_DT_GET(DT_NODELABEL(gpioc)); \
 		vega_debug_portd = DEVICE_DT_GET(DT_NODELABEL(gpiod)); \
 		\
+		__ASSERT_NO_MSG(device_is_ready(vega_debug_portb)); \
+		__ASSERT_NO_MSG(device_is_ready(vega_debug_portc)); \
+		__ASSERT_NO_MSG(device_is_ready(vega_debug_portd)); \
+		\
+		gpio_pin_configure(DEBUG0_PORT, DEBUG0_PIN, GPIO_OUTPUT); \
+		gpio_pin_configure(DEBUG1_PORT, DEBUG1_PIN, GPIO_OUTPUT); \
+		gpio_pin_configure(DEBUG2_PORT, DEBUG2_PIN, GPIO_OUTPUT); \
+		gpio_pin_configure(DEBUG3_PORT, DEBUG3_PIN, GPIO_OUTPUT); \
+		gpio_pin_configure(DEBUG4_PORT, DEBUG4_PIN, GPIO_OUTPUT); \
+		gpio_pin_configure(DEBUG5_PORT, DEBUG5_PIN, GPIO_OUTPUT); \
+		gpio_pin_configure(DEBUG6_PORT, DEBUG6_PIN, GPIO_OUTPUT); \
+		gpio_pin_configure(DEBUG7_PORT, DEBUG7_PIN, GPIO_OUTPUT); \
+		gpio_pin_configure(DEBUG8_PORT, DEBUG8_PIN, GPIO_OUTPUT); \
+		gpio_pin_configure(DEBUG9_PORT, DEBUG9_PIN, GPIO_OUTPUT); \
+		\
 		gpio_pin_set(DEBUG0_PORT, DEBUG0_PIN, 1); \
 		gpio_pin_set(DEBUG0_PORT, DEBUG0_PIN, 0); \
 	} while (0)

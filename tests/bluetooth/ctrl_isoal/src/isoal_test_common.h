@@ -37,9 +37,11 @@
 		(s == BT_ISO_CONT ? "CONT" : \
 			(s == BT_ISO_END ? "END" : "???"))))
 
-#define ROLE_TO_STR(s) (s == BT_ROLE_BROADCAST ? "Broadcast" : \
-	(role == BT_CONN_ROLE_PERIPHERAL ? "Peripheral" : \
-	(role == BT_CONN_ROLE_CENTRAL ? "Central" : "Undefined")))
+#define ROLE_TO_STR(s) \
+	((s) == ISOAL_ROLE_BROADCAST_SOURCE ? "Broadcast Source" : \
+	 ((s) == ISOAL_ROLE_BROADCAST_SINK ? "Broadcast Sink" : \
+	  ((s) == ISOAL_ROLE_PERIPHERAL ? "Peripheral" : \
+	   ((s) == ISOAL_ROLE_CENTRAL ? "Central" : "Undefined"))))
 
 #define FSM_TO_STR(s) (s == ISOAL_START ? "START" : \
 	(s == ISOAL_CONTINUE ? "CONTINUE" : \

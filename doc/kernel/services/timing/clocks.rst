@@ -100,9 +100,23 @@ For example:
 
 All these values are specified using a :c:struct:`k_timeout_t` value.  This is
 an opaque struct type that must be initialized using one of a family
-of kernel timeout macros.  The most common, :c:macro:`K_MSEC` , defines
-a time in milliseconds after the current time (strictly: the time at
-which the kernel receives the timeout value).
+of kernel timeout macros.  The most common, :c:macro:`K_MSEC`, defines
+a time in milliseconds after the current time.
+
+What is meant by "current time" for relative timeouts depends on the context:
+
+* When scheduling a relative timeout from within a timeout callback (e.g. from
+  within the expiry function passed to :c:func:`k_timer_init` or the work handler
+  passed to :c:func:`k_work_init_delayable`), "current time" is the exact time at
+  which the currently firing timeout was originally scheduled even if the "real
+  time" will already have advanced. This is to ensure that timers scheduled from
+  within another timer's callback will always be calculated with a precise offset
+  to the firing timer. It is thereby possible to fire at regular intervals without
+  introducing systematic clock drift over time.
+
+* When scheduling a timeout from application context, "current time" means the
+  value returned by :c:func:`k_uptime_ticks` at the time at which the kernel
+  receives the timeout value.
 
 Other options for timeout initialization follow the unit conventions
 described above: :c:macro:`K_NSEC()`, :c:macro:`K_USEC`, :c:macro:`K_TICKS` and

@@ -30,7 +30,7 @@ struct rtc_emul_data {
 
 	struct rtc_time datetime;
 
-	struct k_mutex lock;
+	struct k_spinlock lock;
 
 	struct rtc_emul_work_delayable dwork;
 
@@ -253,19 +253,17 @@ static void rtc_emul_update(struct k_work *work)
 
 	k_work_schedule(&work_delayable->dwork, K_MSEC(1000));
 
-	k_mutex_lock(&data->lock, K_FOREVER);
-
-	rtc_emul_increment_tm(&data->datetime);
+	K_SPINLOCK(&data->lock) {
+		rtc_emul_increment_tm(&data->datetime);
 
 #ifdef CONFIG_RTC_ALARM
-	rtc_emul_test_alarms(dev);
+		rtc_emul_test_alarms(dev);
 #endif /* CONFIG_RTC_ALARM */
 
 #ifdef CONFIG_RTC_UPDATE
-	rtc_emul_invoke_update_callback(dev);
+		rtc_emul_invoke_update_callback(dev);
 #endif /* CONFIG_RTC_UPDATE */
-
-	k_mutex_unlock(&data->lock);
+	}
 }
 
 static int rtc_emul_set_time(const struct device *dev, const struct rtc_time *timeptr)
@@ -277,15 +275,14 @@ static int rtc_emul_set_time(const struct device *dev, const struct rtc_time *ti
 		return -EINVAL;
 	}
 
-	k_mutex_lock(&data->lock, K_FOREVER);
+	K_SPINLOCK(&data->lock)
+	{
+		data->datetime = *timeptr;
+		data->datetime.tm_isdst = -1;
+		data->datetime.tm_nsec = 0;
 
-	data->datetime = (*timeptr);
-	data->datetime.tm_isdst = -1;
-	data->datetime.tm_nsec = 0;
-
-	data->datetime_set = true;
-
-	k_mutex_unlock(&data->lock);
+		data->datetime_set = true;
+	}
 
 	return 0;
 }
@@ -293,26 +290,26 @@ static int rtc_emul_set_time(const struct device *dev, const struct rtc_time *ti
 static int rtc_emul_get_time(const struct device *dev, struct rtc_time *timeptr)
 {
 	struct rtc_emul_data *data = (struct rtc_emul_data *)dev->data;
+	int ret = 0;
 
 	/* Validate arguments */
 	if (timeptr == NULL) {
 		return -EINVAL;
 	}
 
-	k_mutex_lock(&data->lock, K_FOREVER);
+	K_SPINLOCK(&data->lock)
+	{
+		/* Validate RTC time is set */
+		if (data->datetime_set == false) {
+			ret = -ENODATA;
 
-	/* Validate RTC time is set */
-	if (data->datetime_set == false) {
-		k_mutex_unlock(&data->lock);
+			K_SPINLOCK_BREAK;
+		}
 
-		return -ENODATA;
+		*timeptr = data->datetime;
 	}
 
-	(*timeptr) = data->datetime;
-
-	k_mutex_unlock(&data->lock);
-
-	return 0;
+	return ret;
 }
 
 #ifdef CONFIG_RTC_ALARM
@@ -325,7 +322,7 @@ static int  rtc_emul_alarm_get_supported_fields(const struct device *dev, uint16
 		return -EINVAL;
 	}
 
-	(*mask) = (RTC_ALARM_TIME_MASK_SECOND
+	*mask = (RTC_ALARM_TIME_MASK_SECOND
 		 | RTC_ALARM_TIME_MASK_MINUTE
 		 | RTC_ALARM_TIME_MASK_HOUR
 		 | RTC_ALARM_TIME_MASK_MONTHDAY
@@ -354,15 +351,14 @@ static int rtc_emul_alarm_set_time(const struct device *dev, uint16_t id, uint16
 		}
 	}
 
-	k_mutex_lock(&data->lock, K_FOREVER);
+	K_SPINLOCK(&data->lock)
+	{
+		data->alarms[id].mask = mask;
 
-	data->alarms[id].mask = mask;
-
-	if (timeptr != NULL) {
-		data->alarms[id].datetime = *timeptr;
+		if (timeptr != NULL) {
+			data->alarms[id].datetime = *timeptr;
+		}
 	}
-
-	k_mutex_unlock(&data->lock);
 
 	return 0;
 }
@@ -376,12 +372,11 @@ static int rtc_emul_alarm_get_time(const struct device *dev, uint16_t id, uint16
 		return -EINVAL;
 	}
 
-	k_mutex_lock(&data->lock, K_FOREVER);
-
-	(*timeptr) = data->alarms[id].datetime;
-	(*mask) = data->alarms[id].mask;
-
-	k_mutex_unlock(&data->lock);
+	K_SPINLOCK(&data->lock)
+	{
+		*timeptr = data->alarms[id].datetime;
+		*mask = data->alarms[id].mask;
+	}
 
 	return 0;
 }
@@ -389,19 +384,18 @@ static int rtc_emul_alarm_get_time(const struct device *dev, uint16_t id, uint16
 static int rtc_emul_alarm_is_pending(const struct device *dev, uint16_t id)
 {
 	struct rtc_emul_data *data = (struct rtc_emul_data *)dev->data;
-	int ret;
+	int ret = 0;
 
 	if (data->alarms_count <= id) {
 		return -EINVAL;
 	}
 
-	k_mutex_lock(&data->lock, K_FOREVER);
+	K_SPINLOCK(&data->lock)
+	{
+		ret = (data->alarms[id].pending == true) ? 1 : 0;
 
-	ret = (data->alarms[id].pending == true) ? 1 : 0;
-
-	data->alarms[id].pending = false;
-
-	k_mutex_unlock(&data->lock);
+		data->alarms[id].pending = false;
+	}
 
 	return ret;
 }
@@ -415,12 +409,11 @@ static int rtc_emul_alarm_set_callback(const struct device *dev, uint16_t id,
 		return -EINVAL;
 	}
 
-	k_mutex_lock(&data->lock, K_FOREVER);
-
-	data->alarms[id].callback = callback;
-	data->alarms[id].user_data = user_data;
-
-	k_mutex_unlock(&data->lock);
+	K_SPINLOCK(&data->lock)
+	{
+		data->alarms[id].callback = callback;
+		data->alarms[id].user_data = user_data;
+	}
 
 	return 0;
 }
@@ -432,12 +425,11 @@ static int rtc_emul_update_set_callback(const struct device *dev,
 {
 	struct rtc_emul_data *data = (struct rtc_emul_data *)dev->data;
 
-	k_mutex_lock(&data->lock, K_FOREVER);
-
-	data->update_callback = callback;
-	data->update_callback_user_data = user_data;
-
-	k_mutex_unlock(&data->lock);
+	K_SPINLOCK(&data->lock)
+	{
+		data->update_callback = callback;
+		data->update_callback_user_data = user_data;
+	}
 
 	return 0;
 }
@@ -448,11 +440,10 @@ static int rtc_emul_set_calibration(const struct device *dev, int32_t calibratio
 {
 	struct rtc_emul_data *data = (struct rtc_emul_data *)dev->data;
 
-	k_mutex_lock(&data->lock, K_FOREVER);
-
-	data->calibration = calibration;
-
-	k_mutex_unlock(&data->lock);
+	K_SPINLOCK(&data->lock)
+	{
+		data->calibration = calibration;
+	}
 
 	return 0;
 }
@@ -461,11 +452,10 @@ static int rtc_emul_get_calibration(const struct device *dev, int32_t *calibrati
 {
 	struct rtc_emul_data *data = (struct rtc_emul_data *)dev->data;
 
-	k_mutex_lock(&data->lock, K_FOREVER);
-
-	(*calibration) = data->calibration;
-
-	k_mutex_unlock(&data->lock);
+	K_SPINLOCK(&data->lock)
+	{
+		*calibration = data->calibration;
+	}
 
 	return 0;
 }
@@ -493,8 +483,6 @@ struct rtc_driver_api rtc_emul_driver_api = {
 int rtc_emul_init(const struct device *dev)
 {
 	struct rtc_emul_data *data = (struct rtc_emul_data *)dev->data;
-
-	k_mutex_init(&data->lock);
 
 	data->dwork.dev = dev;
 	k_work_init_delayable(&data->dwork.dwork, rtc_emul_update);

@@ -97,7 +97,7 @@ static uint8_t *generic_data_ref(struct net_buf *buf, uint8_t *data)
 {
 	uint8_t *ref_count;
 
-	ref_count = data - 1;
+	ref_count = data - sizeof(void *);
 	(*ref_count)++;
 
 	return data;

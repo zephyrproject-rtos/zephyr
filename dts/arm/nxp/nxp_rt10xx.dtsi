@@ -564,7 +564,7 @@
 			reg = <0x403dc000 0x4000>;
 			interrupts = <106 0>;
 
-			flexpwm1_pwm0: pwm0 {
+			flexpwm1_pwm0: flexpwm1_pwm0 {
 				compatible = "nxp,imx-pwm";
 				index = <0>;
 				interrupts = <102 0>;
@@ -574,7 +574,7 @@
 				status = "disabled";
 			};
 
-			flexpwm1_pwm1: pwm1 {
+			flexpwm1_pwm1: flexpwm1_pwm1 {
 				compatible = "nxp,imx-pwm";
 				index = <1>;
 				interrupts = <103 0>;
@@ -584,7 +584,7 @@
 				status = "disabled";
 			};
 
-			flexpwm1_pwm2: pwm2 {
+			flexpwm1_pwm2: flexpwm1_pwm2 {
 				compatible = "nxp,imx-pwm";
 				index = <2>;
 				interrupts = <104 0>;
@@ -594,7 +594,7 @@
 				status = "disabled";
 			};
 
-			flexpwm1_pwm3: pwm3 {
+			flexpwm1_pwm3: flexpwm1_pwm3 {
 				compatible = "nxp,imx-pwm";
 				index = <3>;
 				interrupts = <105 0>;
@@ -610,7 +610,7 @@
 			reg = <0x403e0000 0x4000>;
 			interrupts =  <141 0>;
 
-			flexpwm2_pwm0: pwm0 {
+			flexpwm2_pwm0: flexpwm2_pwm0 {
 				compatible = "nxp,imx-pwm";
 				index = <0>;
 				interrupts = <137 0>;
@@ -620,7 +620,7 @@
 				status = "disabled";
 			};
 
-			flexpwm2_pwm1: pwm1 {
+			flexpwm2_pwm1: flexpwm2_pwm1 {
 				compatible = "nxp,imx-pwm";
 				index = <1>;
 				interrupts = <138 0>;
@@ -630,7 +630,7 @@
 				status = "disabled";
 			};
 
-			flexpwm2_pwm2: pwm2 {
+			flexpwm2_pwm2: flexpwm2_pwm2 {
 				compatible = "nxp,imx-pwm";
 				index = <2>;
 				interrupts = <139 0>;
@@ -640,7 +640,7 @@
 				status = "disabled";
 			};
 
-			flexpwm2_pwm3: pwm3 {
+			flexpwm2_pwm3: flexpwm2_pwm3 {
 				compatible = "nxp,imx-pwm";
 				index = <3>;
 				interrupts = <140 0>;
@@ -656,7 +656,7 @@
 			reg = <0x403e4000 0x4000>;
 			interrupts =  <146 0>;
 
-			flexpwm3_pwm0: pwm0 {
+			flexpwm3_pwm0: flexpwm3_pwm0 {
 				compatible = "nxp,imx-pwm";
 				index = <0>;
 				interrupts = <142 0>;
@@ -666,7 +666,7 @@
 				status = "disabled";
 			};
 
-			flexpwm3_pwm1: pwm1 {
+			flexpwm3_pwm1: flexpwm3_pwm1 {
 				compatible = "nxp,imx-pwm";
 				index = <1>;
 				interrupts = <143 0>;
@@ -676,7 +676,7 @@
 				status = "disabled";
 			};
 
-			flexpwm3_pwm2: pwm2 {
+			flexpwm3_pwm2: flexpwm3_pwm2 {
 				compatible = "nxp,imx-pwm";
 				index = <2>;
 				interrupts = <144 0>;
@@ -686,7 +686,7 @@
 				status = "disabled";
 			};
 
-			flexpwm3_pwm3: pwm3 {
+			flexpwm3_pwm3: flexpwm3_pwm3 {
 				compatible = "nxp,imx-pwm";
 				index = <3>;
 				interrupts = <145 0>;
@@ -702,7 +702,7 @@
 			reg = <0x403e8000 0x4000>;
 			interrupts = <151 0>;
 
-			flexpwm4_pwm0: pwm0 {
+			flexpwm4_pwm0: flexpwm4_pwm0 {
 				compatible = "nxp,imx-pwm";
 				index = <0>;
 				interrupts = <147 0>;
@@ -712,7 +712,7 @@
 				status = "disabled";
 			};
 
-			flexpwm4_pwm1: pwm1 {
+			flexpwm4_pwm1: flexpwm4_pwm1 {
 				compatible = "nxp,imx-pwm";
 				index = <1>;
 				interrupts = <148 0>;
@@ -722,7 +722,7 @@
 				status = "disabled";
 			};
 
-			flexpwm4_pwm2: pwm2 {
+			flexpwm4_pwm2: flexpwm4_pwm2 {
 				compatible = "nxp,imx-pwm";
 				index = <2>;
 				interrupts = <149 0>;
@@ -732,7 +732,7 @@
 				status = "disabled";
 			};
 
-			flexpwm4_pwm3: pwm3 {
+			flexpwm4_pwm3: flexpwm4_pwm3 {
 				compatible = "nxp,imx-pwm";
 				index = <3>;
 				interrupts = <150 0>;

@@ -22,6 +22,7 @@ rsource "smp/Kconfig"
 
 config MCUMGR_SMP_LEGACY_RC_BEHAVIOUR
 	bool "Legacy rc (result code) response behaviour"
+	depends on MCUMGR_SMP_SUPPORT_ORIGINAL_PROTOCOL
 	help
 	  This will enable legacy result code response behaviour of having rc
 	  present in responses when the status is 0. With this option disabled,

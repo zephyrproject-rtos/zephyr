@@ -236,6 +236,32 @@ extern struct ztest_suite_node _ztest_suite_node_list_end[];
 void ztest_run_all(const void *state);
 
 /**
+ * The result of the current running test. It's possible that the setup function sets the result
+ * to ZTEST_RESULT_SUITE_* which will apply the failure/skip to every test in the suite.
+ */
+enum ztest_result {
+	ZTEST_RESULT_PENDING,
+	ZTEST_RESULT_PASS,
+	ZTEST_RESULT_FAIL,
+	ZTEST_RESULT_SKIP,
+	ZTEST_RESULT_SUITE_SKIP,
+	ZTEST_RESULT_SUITE_FAIL,
+};
+/**
+ * Each enum member represents a distinct phase of execution for the test binary.
+ * TEST_PHASE_FRAMEWORK is active when internal ztest code is executing; the rest refer to
+ * corresponding phases of user test code.
+ */
+enum ztest_phase {
+	TEST_PHASE_SETUP,
+	TEST_PHASE_BEFORE,
+	TEST_PHASE_TEST,
+	TEST_PHASE_AFTER,
+	TEST_PHASE_TEARDOWN,
+	TEST_PHASE_FRAMEWORK,
+};
+
+/**
  * Run the registered unit tests which return true from their predicate function.
  *
  * @param state The current state of the machine as it relates to the test executable.
@@ -251,6 +277,26 @@ static inline int ztest_run_test_suites(const void *state)
 
 #else
 __syscall int ztest_run_test_suites(const void *state);
+#endif
+
+#ifdef ZTEST_UNITTEST
+void z_impl___ztest_set_test_result(enum ztest_result new_result);
+static inline void __ztest_set_test_result(enum ztest_result new_result)
+{
+	z_impl___ztest_set_test_result(new_result);
+}
+
+void z_impl___ztest_set_test_phase(enum ztest_phase new_phase);
+static inline void __ztest_set_test_phase(enum ztest_phase new_phase)
+{
+	z_impl___ztest_set_test_phase(new_phase);
+}
+#else
+__syscall void __ztest_set_test_result(enum ztest_result new_result);
+__syscall void __ztest_set_test_phase(enum ztest_phase new_phase);
+#endif
+
+#ifndef ZTEST_UNITTEST
 #include <syscalls/ztest_test_new.h>
 #endif
 

@@ -36,4 +36,8 @@ config NET_CONNECTION_MANAGER_PRIORITY
 	help
 	  This sets the starting priority of the connection manager thread.
 
+config NET_CONNECTION_MANAGER_AUTO_IF_DOWN
+	bool "Automatically call net_if_down on ifaces that have given up on connecting"
+	default y
+
 endif # NET_CONNECTION_MANAGER

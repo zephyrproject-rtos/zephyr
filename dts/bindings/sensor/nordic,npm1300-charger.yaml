@@ -62,6 +62,22 @@ properties:
     required: true
     description: Beta value of selected thermistor.
 
+  thermistor-cold-millidegrees:
+    type: int
+    description: Thermistor cold threshold in milli-degrees
+
+  thermistor-cool-millidegrees:
+    type: int
+    description: Thermistor cool threshold in milli-degrees
+
+  thermistor-warm-millidegrees:
+    type: int
+    description: Thermistor warm threshold in milli-degrees
+
+  thermistor-hot-millidegrees:
+    type: int
+    description: Thermistor hot threshold in milli-degrees
+
   charging-enable:
     type: boolean
     description: |

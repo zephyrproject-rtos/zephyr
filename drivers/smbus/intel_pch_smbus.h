@@ -2,7 +2,7 @@
  * Copyright (c) 2022 Intel Corporation
  *
  * Intel I/O Controller Hub (ICH) later renamed to Intel Platform Controller
- * Hub (PCH) SMbus driver.
+ * Hub (PCH) SMBus driver.
  *
  * PCH provides SMBus 2.0 - compliant Host Controller.
  *

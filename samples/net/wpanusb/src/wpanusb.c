@@ -414,7 +414,7 @@ out:
 	return ret;
 }
 
-enum net_verdict ieee802154_radio_handle_ack(struct net_if *iface, struct net_pkt *pkt)
+enum net_verdict ieee802154_handle_ack(struct net_if *iface, struct net_pkt *pkt)
 {
 	return NET_CONTINUE;
 }

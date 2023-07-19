@@ -5,7 +5,8 @@ tests:
   sample.sensor.esp32_temp_sensor:
     tags:
       - sensors
-      - tests
+    integration_platforms:
+      - esp32c3_devkitm
     filter: dt_compat_enabled("espressif,esp32-temp")
     harness: console
     harness_config:

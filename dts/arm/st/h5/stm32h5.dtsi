@@ -436,30 +436,19 @@
 			status = "disabled";
 		};
 
-		can {
-			compatible = "bosch,m_can-base";
-			#address-cells = <1>;
-			#size-cells = <1>;
-			std-filter-elements = <28>;
-			ext-filter-elements = <8>;
-			rx-fifo0-elements = <3>;
-			rx-fifo1-elements = <3>;
-			rx-buffer-elements = <0>;
-			tx-buffer-elements = <3>;
-
-			can1: can@4000a400 {
-				compatible = "st,stm32-fdcan";
-				reg = <0x4000a400 0x400>, <0x4000ac00 0x350>;
-				reg-names = "m_can", "message_ram";
-				interrupts = <39 0>, <40 0>;
-				interrupt-names = "LINE_0", "LINE_1";
-				clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x00000200>;
-				status = "disabled";
-				sjw = <1>;
-				sample-point = <875>;
-				sjw-data = <1>;
-				sample-point-data = <875>;
-			};
+		can1: can@4000a400 {
+			compatible = "st,stm32-fdcan";
+			reg = <0x4000a400 0x400>, <0x4000ac00 0x350>;
+			reg-names = "m_can", "message_ram";
+			interrupts = <39 0>, <40 0>;
+			interrupt-names = "LINE_0", "LINE_1";
+			clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x00000200>;
+			bosch,mram-cfg = <0x0 28 8 3 3 0 3 3>;
+			sjw = <1>;
+			sample-point = <875>;
+			sjw-data = <1>;
+			sample-point-data = <875>;
+			status = "disabled";
 		};
 
 		rng: rng@420c0800 {
@@ -469,6 +458,17 @@
 			interrupts = <114 0>;
 			nist-config = <0xf00d00>;
 			health-test-config = <0xaac7>;
+			status = "disabled";
+		};
+
+		mac: ethernet@40028000 {
+			compatible = "st,stm32-ethernet";
+			reg = <0x40028000 0x8000>;
+			interrupts = <106 0>;
+			clock-names = "stmmaceth", "mac-clk-tx", "mac-clk-rx";
+			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x00080000>,
+				 <&rcc STM32_CLOCK_BUS_AHB1 0x00100000>,
+				 <&rcc STM32_CLOCK_BUS_AHB1 0x00200000>;
 			status = "disabled";
 		};
 
@@ -493,6 +493,19 @@
 			dma-channels = <8>;
 			dma-requests = <140>;
 			dma-offset = <8>;
+			status = "disabled";
+		};
+
+		usb: usb@40016000 {
+			compatible = "st,stm32-usb";
+			reg = <0x40016000 0x400>;
+			interrupts = <74 0>;
+			interrupt-names = "usb";
+			num-bidir-endpoints = <8>;
+			ram-size = <2048>;
+			phys = <&usb_fs_phy>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x01000000>,
+				 <&rcc STM32_SRC_HSI48 USB_SEL(3)>;
 			status = "disabled";
 		};
 	};
@@ -522,6 +535,11 @@
 		ratio = <4>;
 		io-channels = <&adc1 2>;
 		status = "disabled";
+	};
+
+	usb_fs_phy: usbphy {
+		compatible = "usb-nop-xceiv";
+		#phy-cells = <0>;
 	};
 };
 

@@ -34,10 +34,22 @@ ZTEST(sys_mm_bank_api, test_sys_mm_drv_bank)
 	struct sys_memory_stats stats;
 	struct sys_memory_stats expected;
 	uint32_t  count;
+	uint32_t index;
 
 	/* Verify that the initialization routine works as expected. */
-
+	/* It set mapped state for all pages                         */
 	sys_mm_drv_bank_init(&bank_data, BANK_PAGES);
+	expected.free_bytes = EXPECTED(0);
+	expected.allocated_bytes = EXPECTED(BANK_PAGES);
+	expected.max_allocated_bytes = EXPECTED(BANK_PAGES);
+	sys_mm_drv_bank_stats_get(&bank_data, &stats);
+	test_stats("MM Bank Init Error", &stats, &expected);
+
+	/* Now unmap all pages */
+	for (index = 0; index < BANK_PAGES; index++) {
+		sys_mm_drv_bank_page_unmapped(&bank_data);
+	}
+	sys_mm_drv_bank_stats_reset_max(&bank_data);
 
 	expected.free_bytes = EXPECTED(BANK_PAGES);
 	expected.allocated_bytes = EXPECTED(0);
@@ -46,7 +58,6 @@ ZTEST(sys_mm_bank_api, test_sys_mm_drv_bank)
 	test_stats("MM Bank Init Error", &stats, &expected);
 
 	/* Verify mapped pages are counted correctly */
-
 	count = sys_mm_drv_bank_page_mapped(&bank_data);
 	zassert_equal(count, 1,
 		      "MM Page Mapped Error: 1st mapped = %u, not %u\n",
@@ -116,7 +127,6 @@ ZTEST(sys_mm_bank_api, test_sys_mm_drv_bank)
 	expected.max_allocated_bytes = EXPECTED(2);
 	sys_mm_drv_bank_stats_get(&bank_data, &stats);
 	test_stats("MM Bank Reset Max Error", &stats, &expected);
-
 }
 
 ZTEST_SUITE(sys_mm_bank_api, NULL, NULL, NULL, NULL, NULL);

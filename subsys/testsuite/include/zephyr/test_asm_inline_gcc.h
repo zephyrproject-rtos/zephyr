@@ -9,6 +9,8 @@
 #ifndef _TEST_ASM_INLINE_GCC_H
 #define _TEST_ASM_INLINE_GCC_H
 
+#include <zephyr/sys/barrier.h>
+
 #if !defined(__GNUC__)
 #error test_asm_inline_gcc.h goes only with GCC
 #endif
@@ -23,24 +25,14 @@ static inline void timestamp_serialize(void)
 	:
 	: "%eax", "%ebx", "%ecx", "%edx");
 }
-#elif defined(CONFIG_CPU_CORTEX_M)
-#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
+#elif defined(CONFIG_CPU_CORTEX_M) || \
+	defined(CONFIG_CPU_AARCH32_CORTEX_R) || \
+	defined(CONFIG_CPU_AARCH32_CORTEX_A) || \
+	defined(CONFIG_CPU_CORTEX_A) || \
+	defined(CONFIG_CPU_AARCH64_CORTEX_R)
 static inline void timestamp_serialize(void)
 {
-	/* isb is available in all Cortex-M  */
-	__ISB();
-}
-#elif defined(CONFIG_CPU_AARCH32_CORTEX_R) || defined(CONFIG_CPU_AARCH32_CORTEX_A)
-#include <zephyr/arch/arm/aarch32/cortex_a_r/cpu.h>
-static inline void timestamp_serialize(void)
-{
-	__ISB();
-}
-#elif defined(CONFIG_CPU_CORTEX_A) || defined(CONFIG_CPU_AARCH64_CORTEX_R)
-#include <zephyr/arch/arm64/cpu.h>
-static inline void timestamp_serialize(void)
-{
-	__ISB();
+	barrier_isync_fence_full();
 }
 #elif defined(CONFIG_ARC)
 #define timestamp_serialize()

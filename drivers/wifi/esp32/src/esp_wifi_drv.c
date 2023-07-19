@@ -388,7 +388,9 @@ static int esp32_wifi_connect(const struct device *dev,
 	return 0;
 }
 
-static int esp32_wifi_scan(const struct device *dev, scan_result_cb_t cb)
+static int esp32_wifi_scan(const struct device *dev,
+			   struct wifi_scan_params *params,
+			   scan_result_cb_t cb)
 {
 	struct esp32_wifi_runtime *data = dev->data;
 	int ret = 0;
@@ -401,6 +403,11 @@ static int esp32_wifi_scan(const struct device *dev, scan_result_cb_t cb)
 	data->scan_cb = cb;
 
 	wifi_scan_config_t scan_config = { 0 };
+
+	if (params) {
+		/* The enum values are same, so, no conversion needed */
+		scan_config.scan_type = params->scan_type;
+	}
 
 	ret = esp_wifi_set_mode(ESP32_WIFI_MODE_STA);
 	ret |= esp_wifi_scan_start(&scan_config, false);
@@ -547,7 +554,9 @@ static void esp32_wifi_init(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
 	struct esp32_wifi_runtime *dev_data = dev->data;
+	struct ethernet_context *eth_ctx = net_if_l2_data(iface);
 
+	eth_ctx->eth_if_type = L2_ETH_IF_TYPE_WIFI;
 	esp32_wifi_iface = iface;
 	dev_data->state = ESP32_STA_STOPPED;
 
@@ -615,18 +624,22 @@ static int esp32_wifi_dev_init(const struct device *dev)
 	return 0;
 }
 
-static const struct net_wifi_mgmt_offload esp32_api = {
-	.wifi_iface.iface_api.init = esp32_wifi_init,
-	.wifi_iface.send = esp32_wifi_send,
+static const struct wifi_mgmt_ops esp32_wifi_mgmt = {
+	.scan		   = esp32_wifi_scan,
+	.connect	   = esp32_wifi_connect,
+	.disconnect	   = esp32_wifi_disconnect,
+	.ap_enable	   = esp32_wifi_ap_enable,
+	.ap_disable	   = esp32_wifi_ap_disable,
+	.iface_status	   = esp32_wifi_status,
 #if defined(CONFIG_NET_STATISTICS_WIFI)
-	.get_stats			 = esp32_wifi_stats,
- #endif
-	.scan			   = esp32_wifi_scan,
-	.connect		   = esp32_wifi_connect,
-	.disconnect		   = esp32_wifi_disconnect,
-	.ap_enable		   = esp32_wifi_ap_enable,
-	.ap_disable		   = esp32_wifi_ap_disable,
-	.iface_status		   = esp32_wifi_status,
+	.get_stats	   = esp32_wifi_stats,
+#endif
+};
+
+static const struct net_wifi_mgmt_offload esp32_api = {
+	.wifi_iface.iface_api.init	  = esp32_wifi_init,
+	.wifi_iface.send = esp32_wifi_send,
+	.wifi_mgmt_api = &esp32_wifi_mgmt,
 };
 
 NET_DEVICE_DT_INST_DEFINE(0,

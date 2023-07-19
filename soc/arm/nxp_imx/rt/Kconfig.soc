@@ -703,7 +703,7 @@ config PM_MCUX_PMU
 
 menuconfig NXP_IMX_RT_BOOT_HEADER
 	bool "Boot header"
-	depends on (!BOOTLOADER_MCUBOOT)
+	depends on (!BOOTLOADER_MCUBOOT) && CPU_CORTEX_M7
 	help
 	  Enable data structures required by the boot ROM to boot the
 	  application from an external flash device.

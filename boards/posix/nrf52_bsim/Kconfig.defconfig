@@ -43,7 +43,7 @@ endif # LOG
 
 if CONSOLE
 
-config BSIM_CONSOLE
+config POSIX_ARCH_CONSOLE
 	default y if !SERIAL
 
 config UART_CONSOLE

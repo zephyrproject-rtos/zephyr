@@ -78,6 +78,7 @@ zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_SPI     ${hal_psoc6_dir}/source
 zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_TIMER   ${hal_psoc6_dir}/source/cyhal_timer.c)
 zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_TRNG    ${hal_psoc6_dir}/source/cyhal_trng.c)
 zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_UART    ${hal_psoc6_dir}/source/cyhal_uart.c)
+zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_WDT     ${hal_psoc6_dir}/source/cyhal_wdt.c)
 
 
 if(CONFIG_USE_INFINEON_ADC)

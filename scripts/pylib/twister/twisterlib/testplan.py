@@ -624,6 +624,7 @@ class TestPlan:
         runnable = (self.options.device_testing or self.options.filter == 'runnable')
         force_toolchain = self.options.force_toolchain
         force_platform = self.options.force_platform
+        slow_only = self.options.enable_slow_only
         ignore_platform_key = self.options.ignore_platform_key
         emu_filter = self.options.emulation_only
 
@@ -748,6 +749,9 @@ class TestPlan:
                 if tag_filter and not ts.tags.intersection(tag_filter):
                     instance.add_filter("Command line testsuite tag filter", Filters.CMD_LINE)
 
+                if slow_only and not ts.slow:
+                    instance.add_filter("Not a slow test", Filters.CMD_LINE)
+
                 if exclude_tag and ts.tags.intersection(exclude_tag):
                     instance.add_filter("Command line testsuite exclude filter", Filters.CMD_LINE)
 
@@ -796,6 +800,10 @@ class TestPlan:
 
                 if plat.ram < ts.min_ram:
                     instance.add_filter("Not enough RAM", Filters.PLATFORM)
+
+                if ts.harness:
+                    if ts.harness == 'robot' and plat.simulation != 'renode':
+                        instance.add_filter("No robot support for the selected platform", Filters.SKIP)
 
                 if ts.depends_on:
                     dep_intersection = ts.depends_on.intersection(set(plat.supported))

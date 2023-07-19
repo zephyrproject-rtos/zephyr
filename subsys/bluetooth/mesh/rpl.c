@@ -398,7 +398,7 @@ void bt_mesh_rpl_pending_store(uint16_t addr)
 		}
 	}
 
-	atomic_test_and_clear_bit(&rpl_flags, PENDING_RESET);
+	atomic_clear_bit(&rpl_flags, PENDING_RESET);
 
 	if (addr == BT_MESH_ADDR_ALL_NODES) {
 		(void)memset(&replay_list[last - shift + 1], 0, sizeof(struct bt_mesh_rpl) * shift);

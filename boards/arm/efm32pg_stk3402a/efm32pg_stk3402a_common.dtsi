@@ -107,6 +107,12 @@
 
 &gpioa {
 	status = "okay";
+
+	board-controller-enable {
+		gpio-hog;
+		gpios = <5 GPIO_ACTIVE_HIGH>;
+		output-high;
+	};
 };
 
 &gpiob {
@@ -147,5 +153,9 @@
 };
 
 &trng0 {
-		status = "okay";
+	status = "okay";
+};
+
+&adc0 {
+	status = "okay";
 };

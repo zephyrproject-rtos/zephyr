@@ -399,7 +399,7 @@ serial port:
    https://developer.arm.com/documentation/dto0051/latest/subsystem-overview/about-the-sse-200
 
 .. _Srecord Manual:
-   http://srecord.sourceforge.net/man/man1/srec_cat.html
+   https://srecord.sourceforge.net/man/man1/srec_cat.1.html
 
 .. _IDAU:
    https://developer.arm.com/documentation/100690/latest/Attribution-units--SAU-and-IDAU-

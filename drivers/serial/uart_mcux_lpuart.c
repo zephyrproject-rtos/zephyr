@@ -370,6 +370,11 @@ static void mcux_lpuart_irq_callback_set(const struct device *dev,
 
 	data->callback = cb;
 	data->cb_data = cb_data;
+
+#if defined(CONFIG_UART_EXCLUSIVE_API_CALLBACKS)
+	data->async.user_callback = NULL;
+	data->async.user_data = NULL;
+#endif
 }
 
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
@@ -661,6 +666,11 @@ static int mcux_lpuart_callback_set(const struct device *dev, uart_callback_t ca
 	data->async.user_callback = callback;
 	data->async.user_data = user_data;
 
+#if defined(CONFIG_UART_EXCLUSIVE_API_CALLBACKS)
+	data->callback = NULL;
+	data->cb_data = NULL;
+#endif
+
 	return 0;
 }
 
@@ -855,8 +865,6 @@ static void mcux_lpuart_isr(const struct device *dev)
 			data->tx_poll_stream_on = false;
 			mcux_lpuart_pm_policy_state_lock_put(dev);
 		}
-		assert(LPUART_ClearStatusFlags(config->base,
-			kLPUART_TransmissionCompleteFlag) == 0U);
 	}
 #endif /* CONFIG_PM */
 
@@ -874,7 +882,7 @@ static void mcux_lpuart_isr(const struct device *dev)
 	if (status & kLPUART_IdleLineFlag) {
 		async_timer_start(&data->async.rx_dma_params.timeout_work,
 				  data->async.rx_dma_params.timeout_us);
-		assert(LPUART_ClearStatusFlags(config->base, kLPUART_IdleLineFlag) == 0U);
+		LPUART_ClearStatusFlags(config->base, kLPUART_IdleLineFlag);
 	}
 #endif /* CONFIG_UART_ASYNC_API */
 }

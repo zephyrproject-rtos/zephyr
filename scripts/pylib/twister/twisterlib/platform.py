@@ -71,9 +71,29 @@ class Platform:
         self.simulation = data.get('simulation', "na")
         self.simulation_exec = data.get('simulation_exec')
         self.supported_toolchains = data.get("toolchain", [])
-        if self.arch == 'arm':
-            if 'armclang' not in self.supported_toolchains:
-                self.supported_toolchains.append('armclang')
+        if self.supported_toolchains is None:
+            self.supported_toolchains = []
+
+        support_toolchain_variants = {
+          "arc": ["zephyr", "cross-compile", "xtools", "arcmwdt"],
+          "arm": ["zephyr", "gnuarmemb", "xtools", "armclang", "llvm"],
+          "arm64": ["zephyr", "cross-compile"],
+          "mips": ["zephyr", "xtools"],
+          "nios2": ["zephyr", "xtools"],
+          "riscv32": ["zephyr", "cross-compile", "xtools"],
+          "riscv64": ["zephyr"],
+          "posix": ["host", "llvm"],
+          "sparc": ["zephyr", "xtools"],
+          "x86": ["zephyr", "xtools", "llvm"],
+          # Xtensa is not listed on purpose, since there is no single toolchain
+          # that is supported on all board targets for xtensa.
+        }
+
+        if self.arch in support_toolchain_variants:
+            for toolchain in support_toolchain_variants[self.arch]:
+                if toolchain not in self.supported_toolchains:
+                    self.supported_toolchains.append(toolchain)
+
         self.env = data.get("env", [])
         self.env_satisfied = True
         for env in self.env:

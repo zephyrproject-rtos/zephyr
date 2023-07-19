@@ -484,6 +484,11 @@ static inline int z_impl_flash_ex_op(const struct device *dev, uint16_t code,
 
 	return api->ex_op(dev, code, in, out);
 #else
+	ARG_UNUSED(dev);
+	ARG_UNUSED(code);
+	ARG_UNUSED(in);
+	ARG_UNUSED(out);
+
 	return -ENOSYS;
 #endif /* CONFIG_FLASH_EX_OP_ENABLED */
 }

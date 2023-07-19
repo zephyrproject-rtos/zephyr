@@ -14,5 +14,6 @@ config SOC_SERIES_CC13X2_CC26X2
 	select SOC_FAMILY_TISIMPLELINK
 	select HAS_CC13X2_CC26X2_SDK
 	select HAS_TI_CCFG
+	select HAS_SEGGER_RTT if ZEPHYR_SEGGER_MODULE
 	help
 	  Enable support for TI SimpleLink CC13x2 / CC26x2 SoCs

@@ -57,12 +57,16 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(flash_esp32, CONFIG_FLASH_LOG_LEVEL);
 
+#define FLASH_SEM_TIMEOUT (k_is_in_isr() ? K_NO_WAIT : K_FOREVER)
+
 struct flash_esp32_dev_config {
 	spi_dev_t *controller;
 };
 
 struct flash_esp32_dev_data {
+#ifdef CONFIG_MULTITHREADING
 	struct k_sem sem;
+#endif
 };
 
 static const struct flash_parameters flash_esp32_parameters = {
@@ -70,11 +74,12 @@ static const struct flash_parameters flash_esp32_parameters = {
 	.erase_value = 0xff,
 };
 
+#ifdef CONFIG_MULTITHREADING
 static inline void flash_esp32_sem_take(const struct device *dev)
 {
 	struct flash_esp32_dev_data *data = dev->data;
 
-	k_sem_take(&data->sem, K_FOREVER);
+	k_sem_take(&data->sem, FLASH_SEM_TIMEOUT);
 }
 
 static inline void flash_esp32_sem_give(const struct device *dev)
@@ -83,6 +88,12 @@ static inline void flash_esp32_sem_give(const struct device *dev)
 
 	k_sem_give(&data->sem);
 }
+#else
+
+#define flash_esp32_sem_take(dev) do {} while (0)
+#define flash_esp32_sem_give(dev) do {} while (0)
+
+#endif /* CONFIG_MULTITHREADING */
 
 static int flash_esp32_read(const struct device *dev, off_t address, void *buffer, size_t length)
 {
@@ -150,7 +161,9 @@ static int flash_esp32_init(const struct device *dev)
 {
 	struct flash_esp32_dev_data *const dev_data = dev->data;
 
+#ifdef CONFIG_MULTITHREADING
 	k_sem_init(&dev_data->sem, 1, 1);
+#endif /* CONFIG_MULTITHREADING */
 
 	return 0;
 }

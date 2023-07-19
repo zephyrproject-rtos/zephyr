@@ -11,7 +11,7 @@
 
 / {
 	model = "Laird BL652 DVK";
-	compatible = "laird,bl652_dvk";
+	compatible = "lairdconnect,bl652_dvk";
 
 	chosen {
 		zephyr,console = &uart0;

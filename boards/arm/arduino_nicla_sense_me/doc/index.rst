@@ -137,7 +137,7 @@ References
    https://docs.arduino.cc/resources/datasheets/ABX00050-datasheet.pdf
 
 .. _full pinout:
-    https://docs.arduino.cc/static/5eff7076d9a031ce823972d6f1faac4a/ABX00050-full-pinout.pdf
+    https://docs.arduino.cc/static/b35956b631d757a0455c286da441641b/ABX00050-full-pinout.pdf
 
 .. _schematics:
-    https://docs.arduino.cc/static/aa5abe05aeec6f8b5fe6f3f605a986b5/ABX00050-schematics.pdf
+    https://docs.arduino.cc/static/ebd652e859efba8536a7e275c79d5f79/ABX00050-schematics.pdf

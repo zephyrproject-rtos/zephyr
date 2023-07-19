@@ -29,4 +29,22 @@ config LOG_BACKEND_SWO_FREQ_HZ
 	default 875000
 	depends on LOG_BACKEND_SWO
 
+if BT
+
+config FPU
+	default y
+
+config MINIMAL_LIBC_MALLOC_ARENA_SIZE
+	default 8192
+
+config MAIN_STACK_SIZE
+	default 3072 if PM
+	default 2304
+
+choice BT_HCI_BUS_TYPE
+	default BT_SILABS_HCI
+endchoice
+
+endif # BT
+
 endif # BOARD_EFR32_RADIO

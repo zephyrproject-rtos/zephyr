@@ -110,8 +110,8 @@ CBOR data of successful response:
     {
         (str)"images" : [
             {
-                (str,opt)"image"        : (int)
-                (str)"slot"             : (int)
+                (str,opt)"image"        : (uint)
+                (str)"slot"             : (uint)
                 (str)"version"          : (str)
                 (str,opt*)"hash"        : (byte str)
                 (str,opt)"bootable"     : (bool)
@@ -198,7 +198,7 @@ where:
 .. note::
     For more information on how does image/slots function, please refer to
     the MCUBoot documentation
-    https://www.mcuboot.com/documentation/design/#image-slots
+    https://docs.mcuboot.com/design.html#image-slots
     For information on MCUboot image format, please reset to the MCUboot
     documentation https://docs.mcuboot.com/design.html#image-format
 
@@ -223,10 +223,8 @@ CBOR data of request:
 .. code-block:: none
 
     {
-        {
-            (str,opt)"hash"     : (str)
-            (str)"confirm"      : (bool)
-        }
+        (str,opt)"hash"     : (str)
+        (str)"confirm"      : (bool)
     }
 
 If "confirm" is false or not provided, an image with the "hash" will be set for
@@ -267,14 +265,12 @@ CBOR data of request:
 .. code-block:: none
 
     {
-        {
-            (str,opt)"image"    : (uint)
-            (str,opt)"len"      : (uint)
-            (str)"off"          : (uint)
-            (str,opt)"sha"      : (byte str)
-            (str,opt)"data"     : (byte str)
-            (str,opt)"upgrade"  : (bool)
-        }
+        (str,opt)"image"    : (uint)
+        (str,opt)"len"      : (uint)
+        (str)"off"          : (uint)
+        (str,opt)"sha"      : (byte str)
+        (str,opt)"data"     : (byte str)
+        (str,opt)"upgrade"  : (bool)
     }
 
 where:
@@ -412,9 +408,7 @@ CBOR data of request:
 .. code-block:: none
 
     {
-        {
-            (str,opt)"slot"     : (uint)
-        }
+        (str,opt)"slot"     : (uint)
     }
 
 where:

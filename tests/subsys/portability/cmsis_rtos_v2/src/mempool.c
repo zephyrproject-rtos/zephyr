@@ -16,7 +16,7 @@ struct mem_block {
 	int member2;
 };
 
-static char __aligned(4) sample_mem[sizeof(struct mem_block) * MAX_BLOCKS];
+static char __aligned(sizeof(void *)) sample_mem[sizeof(struct mem_block) * MAX_BLOCKS];
 static const osMemoryPoolAttr_t mp_attrs = {
 	.name = "TestMempool",
 	.attr_bits = 0,

@@ -75,7 +75,7 @@ SECTION_FUNC(TEXT, z_arm64_context_switch)
 #endif
 
 	/* save old thread into switch handle which is required by
-	 * wait_for_switch
+	 * z_sched_switch_spin()
 	 */
 	 str	x1, [x1, #___thread_t_switch_handle_OFFSET]
 

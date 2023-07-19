@@ -138,7 +138,7 @@ source files that are compiled to generate the built library files.
   document, :file:`sdk.spdx`, which lists header files included from the SDK.
 
 .. _SPDX specification clause 6:
-   https://spdx.github.io/spdx-spec/document-creation-information/
+   https://spdx.github.io/spdx-spec/v2.2.2/document-creation-information/
 
 .. _west-blobs:
 

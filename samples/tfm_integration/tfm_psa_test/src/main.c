@@ -9,7 +9,6 @@
 /* Run the PSA test suite */
 void psa_test(void);
 
-__attribute__((noreturn))
 int main(void)
 {
 #ifdef CONFIG_TFM_PSA_TEST_NONE

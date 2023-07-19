@@ -1,0 +1,18 @@
+# Renesas R-Car Gen3 SoC line
+
+# Copyright (c) 2023 EPAM Systems
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_RCAR_GEN3
+
+config SOC_SERIES
+	default "gen3"
+
+config NUM_IRQS
+	int
+	default 240
+
+config PINCTRL
+	default y
+
+endif # SOC_SERIES_RCAR_GEN3

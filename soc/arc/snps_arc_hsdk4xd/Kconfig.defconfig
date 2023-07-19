@@ -50,4 +50,7 @@ config ARC_HAS_ACCL_REGS
 config ARC_EARLY_SOC_INIT
 	default y
 
+config ARC_HAS_STACK_CHECKING
+	default n
+
 endif # SOC_ARC_HS4XD

@@ -75,10 +75,47 @@ static int cmd_preset_unreg(const struct shell *sh, size_t argc, char **argv)
 	return 0;
 }
 
+static int cmd_features_set(const struct shell *sh, size_t argc, char **argv)
+{
+	int err;
+	struct bt_has_features_param param = {
+		.type = BT_HAS_HEARING_AID_TYPE_MONAURAL,
+		.preset_sync_support = false,
+		.independent_presets = false
+	};
+
+	for (size_t argn = 1; argn < argc; argn++) {
+		const char *arg = argv[argn];
+
+		if (strcmp(arg, "binaural") == 0) {
+			param.type = BT_HAS_HEARING_AID_TYPE_BINAURAL;
+		} else if (strcmp(arg, "monaural") == 0) {
+			param.type = BT_HAS_HEARING_AID_TYPE_MONAURAL;
+		} else if (strcmp(arg, "banded") == 0) {
+			param.type = BT_HAS_HEARING_AID_TYPE_BANDED;
+		} else if (strcmp(arg, "sync") == 0) {
+			param.preset_sync_support = true;
+		} else if (strcmp(arg, "independent") == 0) {
+			param.independent_presets = true;
+		} else {
+			shell_help(sh);
+			return SHELL_CMD_HELP_PRINTED;
+		}
+	}
+
+	err = bt_has_features_set(&param);
+	if (err != 0) {
+		shell_error(sh, "Could not set features: %d", err);
+		return err;
+	}
+
+	return 0;
+}
+
 static int cmd_has_register(const struct shell *sh, size_t argc, char **argv)
 {
 	int err;
-	struct bt_has_register_param param = {
+	struct bt_has_features_param param = {
 		.type = BT_HAS_HEARING_AID_TYPE_MONAURAL,
 		.preset_sync_support = false,
 		.independent_presets = false
@@ -271,6 +308,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(has_cmds,
 	SHELL_CMD_ARG(preset-active-clear, NULL, "Clear selected preset",
 		      cmd_preset_active_clear, 1, 0),
 	SHELL_CMD_ARG(set-name, NULL, "Set preset name <index> <name>", cmd_preset_name_set, 3, 0),
+	SHELL_CMD_ARG(features-set, NULL, "Set hearing aid features "
+		      "[binaural | monaural(default) | banded] [sync] [independent]",
+		      cmd_features_set, 1, 3),
 	SHELL_SUBCMD_SET_END
 );
 

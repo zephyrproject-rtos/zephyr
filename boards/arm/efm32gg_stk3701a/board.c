@@ -13,20 +13,9 @@
 
 static int efm32gg_stk3701a_init(void)
 {
+#ifdef CONFIG_ETH_GECKO
 	const struct device *cur_dev;
 
-
-	/* Enable the board controller to be able to use the serial port */
-	cur_dev = DEVICE_DT_GET(BC_ENABLE_GPIO_NODE);
-	if (!device_is_ready(cur_dev)) {
-		printk("Board controller gpio port is not ready!\n");
-		return -ENODEV;
-	}
-
-	gpio_pin_configure(cur_dev, BC_ENABLE_GPIO_PIN, GPIO_OUTPUT);
-	gpio_pin_set(cur_dev, BC_ENABLE_GPIO_PIN, 1);
-
-#ifdef CONFIG_ETH_GECKO
 	/* Enable the ethernet PHY power */
 	cur_dev = DEVICE_DT_GET(ETH_PWR_ENABLE_GPIO_NODE);
 	if (!device_is_ready(cur_dev)) {

@@ -9,6 +9,8 @@ import os
 import sys
 import pytest
 
+pytest_plugins = ["pytester"]
+
 ZEPHYR_BASE = os.getenv("ZEPHYR_BASE")
 sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/pylib/twister"))
 sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts"))
@@ -26,6 +28,10 @@ def _test_data():
     """ Pytest fixture to load the test data directory"""
     data = ZEPHYR_BASE + "/scripts/tests/twister/test_data/"
     return data
+
+@pytest.fixture(name='zephyr_base')
+def zephyr_base_directory():
+    return ZEPHYR_BASE
 
 @pytest.fixture(name='testsuites_dir')
 def testsuites_directory():

@@ -1,5 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
+zephyr_syscall_header(${ZEPHYR_BASE}/include/zephyr/drivers/gpio.h)
+
 zephyr_library()
 
 zephyr_library_sources_ifdef(CONFIG_GPIO_TELINK_B91 gpio_b91.c)
@@ -43,7 +45,6 @@ zephyr_library_sources_ifdef(CONFIG_GPIO_LPC11U6X   gpio_lpc11u6x.c)
 zephyr_library_sources_ifdef(CONFIG_GPIO_XLNX_AXI   gpio_xlnx_axi.c)
 zephyr_library_sources_ifdef(CONFIG_GPIO_NPCX       gpio_npcx.c)
 zephyr_library_sources_ifdef(CONFIG_GPIO_EMUL       gpio_emul.c)
-zephyr_library_sources_ifdef(CONFIG_GPIO_EMUL_SDL   gpio_emul_sdl.c)
 zephyr_library_sources_ifdef(CONFIG_GPIO_PSOC6      gpio_psoc6.c)
 zephyr_library_sources_ifdef(CONFIG_GPIO_PCAL64XXA  gpio_pcal64xxa.c)
 zephyr_library_sources_ifdef(CONFIG_GPIO_EOS_S3     gpio_eos_s3.c)
@@ -77,6 +78,17 @@ zephyr_library_sources_ifdef(CONFIG_GPIO_RT1718S    gpio_rt1718s.c)
 zephyr_library_sources_ifdef(CONFIG_GPIO_RT1718S    gpio_rt1718s_port.c)
 zephyr_library_sources_ifdef(CONFIG_GPIO_NUMICRO    gpio_numicro.c)
 zephyr_library_sources_ifdef(CONFIG_GPIO_HOGS       gpio_hogs.c)
+zephyr_library_sources_ifdef(CONFIG_GPIO_NUMAKER    gpio_numaker.c)
+zephyr_library_sources_ifdef(CONFIG_GPIO_EFINIX_SAPPHIRE    gpio_efinix_sapphire.c)
+
+if (CONFIG_GPIO_EMUL_SDL)
+  zephyr_library_sources(gpio_emul_sdl.c)
+  if (CONFIG_NATIVE_APPLICATION)
+    zephyr_library_sources(gpio_emul_sdl_bottom.c)
+  else()
+    target_sources(native_simulator INTERFACE gpio_emul_sdl_bottom.c)
+  endif()
+endif()
 
 if(CONFIG_GPIO_SC18IM704)
   zephyr_library_include_directories(${ZEPHYR_BASE}/drivers)

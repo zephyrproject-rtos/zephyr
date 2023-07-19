@@ -10,8 +10,8 @@ on:
       - main
       - v*-branch
   schedule:
-    # Run at 00:00 on Wednesday and Saturday
-    - cron: '0 0 * * 3,6'
+    # Run at 03:00 UTC on every Sunday
+    - cron: '0 3 * * 0'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.head_ref || github.ref }}
@@ -200,7 +200,7 @@ jobs:
         continue-on-error: true
         with:
           key: ${{ steps.ccache_cache_timestamp.outputs.repo }}-${{ github.ref_name }}-${{github.event_name}}-${{ matrix.subset }}-ccache
-          path: /github/home/.ccache
+          path: /github/home/.cache/ccache
           aws-s3-bucket: ccache.zephyrproject.org
           aws-access-key-id: ${{ vars.AWS_CCACHE_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_CCACHE_SECRET_ACCESS_KEY }}
@@ -208,7 +208,8 @@ jobs:
 
       - name: ccache stats initial
         run: |
-          test -d github/home/.ccache && rm -rf /github/home/.ccache && mv github/home/.ccache /github/home/.ccache
+          mkdir -p /github/home/.cache
+          test -d github/home/.cache/ccache && rm -rf /github/home/.cache/ccache && mv github/home/.cache/ccache /github/home/.cache/ccache
           ccache -M 10G -s
 
       - if: github.event_name == 'push'
@@ -254,6 +255,7 @@ jobs:
 
       - name: ccache stats post
         run: |
+          ccache -p
           ccache -s
 
       - name: Upload Unit Test Results

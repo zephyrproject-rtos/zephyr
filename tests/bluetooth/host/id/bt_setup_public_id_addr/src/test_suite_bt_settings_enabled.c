@@ -50,7 +50,7 @@ ZTEST_SUITE(bt_setup_public_id_addr_bt_settings_enabled, NULL, NULL, tc_setup, N
  *
  *  Expected behaviour:
  *   - ID count is set to 0 and bt_setup_public_id_addr() returns 0
- *   - No expected calls to bt_settings_save_id()
+ *   - No expected calls to bt_settings_store_id()
  */
 ZTEST(bt_setup_public_id_addr_bt_settings_enabled, test_bt_id_read_public_addr_returns_zero)
 {
@@ -61,7 +61,7 @@ ZTEST(bt_setup_public_id_addr_bt_settings_enabled, test_bt_id_read_public_addr_r
 
 	err = bt_setup_public_id_addr();
 
-	expect_not_called_bt_settings_save_id();
+	expect_not_called_bt_settings_store_id();
 
 	zassert_true(bt_dev.id_count == 0, "Incorrect value '%d' was set to bt_dev.id_count",
 		     bt_dev.id_count);
@@ -86,7 +86,7 @@ static int bt_hci_cmd_send_sync_custom_fake(uint16_t opcode, struct net_buf *buf
 
 /*
  *  Test reading controller public address through bt_hci_cmd_send_sync().
- *  Even if the operation succeeded, bt_settings_save_id() shouldn't be called to
+ *  Even if the operation succeeded, bt_settings_store_id() shouldn't be called to
  *  store settings as the 'BT_DEV_READY' bit isn't set.
  *
  *  Constraints:
@@ -112,7 +112,7 @@ ZTEST(bt_setup_public_id_addr_bt_settings_enabled,
 
 	err = bt_setup_public_id_addr();
 
-	expect_not_called_bt_settings_save_id();
+	expect_not_called_bt_settings_store_id();
 
 	zassert_true(err == 0, "Unexpected error code '%d' was returned", err);
 	zassert_mem_equal(&bt_dev.id_addr[BT_ID_DEFAULT], BT_LE_ADDR, sizeof(bt_addr_le_t),
@@ -122,8 +122,8 @@ ZTEST(bt_setup_public_id_addr_bt_settings_enabled,
 }
 
 /*
- *  Test reading controller public address through bt_hci_cmd_send_sync().
- *  With the 'BT_DEV_READY' bit set, bt_settings_save_id() should be called to store
+ *  Test reading controller public address through bt_hci_cmd_send_sync(). With
+ *  the 'BT_DEV_READY' bit set, bt_settings_store_id() should be called to store
  *  settings to persistent memory.
  *
  *  Constraints:
@@ -149,7 +149,7 @@ ZTEST(bt_setup_public_id_addr_bt_settings_enabled,
 
 	err = bt_setup_public_id_addr();
 
-	expect_single_call_bt_settings_save_id();
+	expect_single_call_bt_settings_store_id();
 
 	zassert_true(err == 0, "Unexpected error code '%d' was returned", err);
 	zassert_mem_equal(&bt_dev.id_addr[BT_ID_DEFAULT], BT_LE_ADDR, sizeof(bt_addr_le_t),

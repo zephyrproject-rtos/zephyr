@@ -14,6 +14,12 @@ properties:
   reset-gpios:
     type: phandle-array
 
+  external-reset:
+    type: boolean
+    description:
+      Modem is reset by an external source. In most situations this will
+      be the microcontroller and the ESP modem on a common reset line.
+
   target-speed:
     type: int
     description:

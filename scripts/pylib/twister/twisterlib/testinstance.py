@@ -3,7 +3,7 @@
 # Copyright (c) 2018-2022 Intel Corporation
 # Copyright 2022 NXP
 # SPDX-License-Identifier: Apache-2.0
-
+from __future__ import annotations
 import os
 import hashlib
 import random
@@ -11,10 +11,19 @@ import logging
 import shutil
 import glob
 
-from twisterlib.testsuite import TestCase
+from twisterlib.testsuite import TestCase, TestSuite
+from twisterlib.platform import Platform
 from twisterlib.error import BuildError
 from twisterlib.size_calc import SizeCalculator
-from twisterlib.handlers import Handler, SimulationHandler, BinaryHandler, QEMUHandler, DeviceHandler, SUPPORTED_SIMS
+from twisterlib.handlers import (
+    Handler,
+    SimulationHandler,
+    BinaryHandler,
+    QEMUHandler,
+    DeviceHandler,
+    SUPPORTED_SIMS,
+    SUPPORTED_SIMS_IN_PYTEST,
+)
 
 logger = logging.getLogger('twister')
 logger.setLevel(logging.DEBUG)
@@ -28,10 +37,12 @@ class TestInstance:
         out directory used is <outdir>/<platform>/<test case name>
     """
 
+    __test__ = False
+
     def __init__(self, testsuite, platform, outdir):
 
-        self.testsuite = testsuite
-        self.platform = platform
+        self.testsuite: TestSuite = testsuite
+        self.platform: Platform = platform
 
         self.status = None
         self.reason = "Unknown"
@@ -48,7 +59,7 @@ class TestInstance:
         self.domains = None
 
         self.run = False
-        self.testcases = []
+        self.testcases: list[TestCase] = []
         self.init_cases()
         self.filters = []
         self.filter_type = None
@@ -127,7 +138,7 @@ class TestInstance:
     def testsuite_runnable(testsuite, fixtures):
         can_run = False
         # console harness allows us to run the test and capture data.
-        if testsuite.harness in [ 'console', 'ztest', 'pytest', 'test']:
+        if testsuite.harness in [ 'console', 'ztest', 'pytest', 'test', 'gtest', 'robot']:
             can_run = True
             # if we have a fixture that is also being supplied on the
             # command-line, then we need to run the test, not just build it.
@@ -193,14 +204,16 @@ class TestInstance:
                         self.platform.simulation in SUPPORTED_SIMS or \
                         filter == 'runnable')
 
-        for sim in ['nsim', 'mdb-nsim', 'renode', 'tsim', 'native']:
-            if self.platform.simulation == sim and self.platform.simulation_exec:
-                if not shutil.which(self.platform.simulation_exec):
-                    target_ready = False
-                break
-            else:
-                target_ready = True
+        # check if test is runnable in pytest
+        if self.testsuite.harness == 'pytest':
+            target_ready = bool(filter == 'runnable' or self.platform.simulation in SUPPORTED_SIMS_IN_PYTEST)
 
+        SUPPORTED_SIMS_WITH_EXEC = ['nsim', 'mdb-nsim', 'renode', 'tsim', 'native']
+        if filter != 'runnable' and \
+                self.platform.simulation in SUPPORTED_SIMS_WITH_EXEC and \
+                self.platform.simulation_exec:
+            if not shutil.which(self.platform.simulation_exec):
+                target_ready = False
 
         testsuite_runnable = self.testsuite_runnable(self.testsuite, fixtures)
 
@@ -225,7 +238,7 @@ class TestInstance:
                 if cond_config[0] == "arch" and len(cond_config) == 3:
                     if self.platform.arch == cond_config[1]:
                         new_config_list.append(cond_config[2])
-                elif cond_config[0] == "plaform" and len(cond_config) == 3:
+                elif cond_config[0] == "platform" and len(cond_config) == 3:
                     if self.platform.name == cond_config[1]:
                         new_config_list.append(cond_config[2])
                 else:

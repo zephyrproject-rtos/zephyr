@@ -18,12 +18,13 @@ struct max17048_fixture {
 	const struct fuel_gauge_driver_api *api;
 };
 
+void emul_max17048_set_crate_status(int value);
+
 static void *max17048_setup(void)
 {
 	static ZTEST_DMEM struct max17048_fixture fixture;
 
 	fixture.dev = DEVICE_DT_GET_ANY(maxim_max17048);
-
 	k_object_access_all_grant(fixture.dev);
 
 	zassert_true(device_is_ready(fixture.dev), "Fuel Gauge not found");
@@ -108,6 +109,43 @@ ZTEST_USER_F(max17048, test_get_props__returns_ok)
 	}
 
 	zassert_ok(ret);
+}
+
+ZTEST_USER_F(max17048, test_current_rate_zero)
+{
+	/* Test when crate is 0, which is a special case */
+
+	struct fuel_gauge_get_property props[] = {
+		{
+			.property_type = FUEL_GAUGE_RUNTIME_TO_EMPTY,
+		},
+		{
+			.property_type = FUEL_GAUGE_RUNTIME_TO_FULL,
+		}
+	};
+
+	/** Null value, not charging either discharging. If not handled correctly,
+	 * it will cause a division by zero
+	 */
+	emul_max17048_set_crate_status(0);
+	int ret = fuel_gauge_get_prop(fixture->dev, props, ARRAY_SIZE(props));
+
+	for (int i = 0; i < ARRAY_SIZE(props); i++) {
+		zassert_ok(props[i].status, "Property %d getting %d has a bad status.", i,
+			   props[i].property_type);
+	}
+	zassert_equal(props[0].value.runtime_to_empty, 0,
+		"Runtime to empty is %d but it should be 0.",
+		props[0].value.runtime_to_full
+	);
+	zassert_equal(props[1].value.runtime_to_full, 0,
+		"Runtime to full is %d but it should be 0.",
+		props[1].value.runtime_to_full
+	);
+
+	zassert_ok(ret);
+	/* Return value to the original state */
+	emul_max17048_set_crate_status(0x4000);
 }
 
 

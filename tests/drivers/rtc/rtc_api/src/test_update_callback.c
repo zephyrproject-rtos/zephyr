@@ -29,7 +29,7 @@ ZTEST(rtc_api, test_update_callback)
 
 	ret = rtc_update_set_callback(rtc, NULL, NULL);
 
-	zassert_true(ret == 0, "Failed to clear and disable update callback");
+	zassert_ok(ret, "Failed to clear and disable update callback");
 
 	atomic_set(&callback_called_counter, 0);
 
@@ -37,11 +37,11 @@ ZTEST(rtc_api, test_update_callback)
 
 	counter = atomic_get(&callback_called_counter);
 
-	zassert_true(counter == 0, "Update callback should not have been called");
+	zassert_equal(counter, 0, "Update callback should not have been called");
 
 	ret = rtc_update_set_callback(rtc, test_rtc_update_callback_handler, &test_user_data);
 
-	zassert_true(ret == 0, "Failed to set and enable update callback");
+	zassert_ok(ret, "Failed to set and enable update callback");
 
 	k_msleep(10000);
 
@@ -51,5 +51,5 @@ ZTEST(rtc_api, test_update_callback)
 
 	zassert_true(counter < 12 && counter > 8, "Invalid update callback called counter");
 
-	zassert_true(address == ((uint32_t)(&test_user_data)), "Incorrect user data");
+	zassert_equal(address, (uint32_t)(&test_user_data), "Incorrect user data");
 }

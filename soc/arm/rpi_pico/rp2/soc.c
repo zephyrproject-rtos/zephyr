@@ -15,7 +15,6 @@
 
 #include <stdio.h>
 
-#include <zephyr/arch/arm/aarch32/nmi.h>
 #include <zephyr/kernel.h>
 #include <zephyr/init.h>
 #include <zephyr/logging/log.h>
@@ -29,8 +28,6 @@ LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 
 static int rp2040_init(void)
 {
-	uint32_t key;
-
 	reset_block(~(RESETS_RESET_IO_QSPI_BITS | RESETS_RESET_PADS_QSPI_BITS |
 		      RESETS_RESET_PLL_USB_BITS | RESETS_RESET_PLL_SYS_BITS));
 
@@ -43,16 +40,6 @@ static int rp2040_init(void)
 	clocks_init();
 
 	unreset_block_wait(RESETS_RESET_BITS);
-
-
-	key = irq_lock();
-
-	/* Install default handler that simply resets the CPU
-	 * if configured in the kernel, NOP otherwise
-	 */
-	NMI_INIT();
-
-	irq_unlock(key);
 
 	return 0;
 }

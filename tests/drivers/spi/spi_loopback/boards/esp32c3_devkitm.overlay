@@ -4,6 +4,23 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+&pinctrl {
+	spim2_loopback: spim2_loopback {
+		group1 {
+			pinmux = <SPIM2_MISO_GPIO2>;
+			output-enable; /* Enable internal loopback */
+		};
+		group2 {
+			pinmux = <SPIM2_MOSI_GPIO2>;
+			input-enable; /* Enable internal loopback */
+		};
+		group3 {
+			pinmux = <SPIM2_SCLK_GPIO6>,
+				<SPIM2_CSEL_GPIO10>;
+		};
+	};
+};
+
 &spi2 {
 	slow@0 {
 		compatible = "test-spi-loopback-slow";
@@ -19,4 +36,5 @@
 
 &spi2 {
 	dma-enabled;
+	pinctrl-0 = <&spim2_default>;
 };

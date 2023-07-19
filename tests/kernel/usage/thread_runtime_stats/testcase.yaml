@@ -13,3 +13,6 @@ tests:
       - mips
     # SMP is excluded as the test was only written for UP
     filter: not CONFIG_SMP
+    integration_platforms:
+      - qemu_x86
+      - mps2_an385

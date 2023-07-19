@@ -116,6 +116,10 @@ static int prepare_aics_inst(struct bt_micp_mic_dev_register_param *param)
 	int j;
 	int err;
 
+	if (CONFIG_BT_MICP_MIC_DEV_AICS_INSTANCE_COUNT == 0) {
+		return 0;
+	}
+
 	for (j = 0, i = 0; i < ARRAY_SIZE(mics_attrs); i++) {
 		if (bt_uuid_cmp(mics_attrs[i].uuid, BT_UUID_GATT_INCLUDE) == 0) {
 			micp_inst.aics_insts[j] = bt_aics_free_instance_get();

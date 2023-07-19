@@ -2,11 +2,11 @@
 
 .. _intel_adsp_generic:
 
-Intel ADSP CAVS and ACE
+Intel ADSP cAVS and ACE
 #######################
 
 Intel's Audio and Digital Signal Processing (ADSP) hardware offerings
-include the Converged Audio Video Sensing (CAVS) series and its successor,
+include the Converged Audio Voice Speech (cAVS) series and its successor,
 the Audio and Context Engine (ACE). These Xtensa-based ADSPs can be integrated
 into a variety of Intel products. The below table lists (some of) the Intel
 microprocessor(s) that each version of the Intel ADSP is compatible with.
@@ -14,11 +14,11 @@ microprocessor(s) that each version of the Intel ADSP is compatible with.
 +----------+-----------------------------+
 | ADSP     | Microprocessor              |
 +==========+=============================+
-| CAVS 1.5 | Apollo Lake                 |
+| cAVS 1.5 | Apollo Lake                 |
 +----------+-----------------------------+
-| CAVS 1.8 | Whiskey Lake                |
+| cAVS 1.8 | Whiskey Lake                |
 +----------+-----------------------------+
-| CAVS 2.5 | Tiger Lake                  |
+| cAVS 2.5 | Tiger Lake                  |
 +----------+-----------------------------+
 | ACE 1.5  | Meteor Lake                 |
 +----------+-----------------------------+
@@ -27,7 +27,7 @@ Intel open-sources firmware for its ADSP hardware under the Sound Open Firmware
 (`SOF`_) project. SOF can be built with either Zephyr or Cadence's proprietary
 Xtensa OS (XTOS) and run on a variety of Intel and non-Intel platforms.
 
-In general, the Intel `UP2`_ and `UP Xtreme`_ product lines are the publicly
+The Intel `UP Xtreme`_ product line has the publicly
 available reference boards for Zephyr's Intel ADSP support. This guide uses the
 `UP Xtreme i11-0001 series`_ (:ref:`intel_adsp_cavs25`) board as an example.
 However, the instructions are generic and will work on other boards unless
@@ -53,7 +53,7 @@ Note that if you plan to use SOF on your board, you will need to build and
 install the modified Linux SOF kernel instead of the default kernel. It is
 recommended you follow the `SOF instructions`_ to build and run SOF on Zephyr.
 
-UP2 and UP Xtreme users can refer to the `UP Community wiki`_ for help installing a
+UP Xtreme users can refer to the `UP Community wiki`_ for help installing a
 Linux operating system on their board.
 
 Signing Tool
@@ -68,29 +68,41 @@ you will also need to set up the SOF rimage signing tool and key.
    git clone https://github.com/thesofproject/rimage --recurse-submodules
    cd rimage
 
-Follow the instructions in the :file:`README.md` to build and install the tool
-globally on your system. You should be able to invoke the binary from the
-command line with the name "rimage". For example:
+Follow the instructions in the rimage :file:`README.md` to build the tool on
+your system. You can either copy the executable to a directory in your PATH or
+use ``west config rimage.path /path/to/rimage-build/rimage``; see more details
+in the output of ``west sign -h``. Running directly from the build directory
+makes you less likely to use an obsolete rimage version by mistake.
 
-.. code-block:: shell
+Until https://github.com/zephyrproject-rtos/zephyr/issues/58212 gets
+implemented, you must manually and regularly update and rebuild rimage.
 
-   which rimage
-   /usr/local/bin/rimage
+The SOF project does not require this manual step because its west manifest
+automatically downloads and builds a specific rimage version validated with
+matching SOF sources. An indirect Zephyr -> SOF -> rimage dependency chain is
+unfortunately not appropriate because unlike rimage, SOF is *not* required to
+run Zephyr on cAVS/ACE hardware.
 
-If you are unable to install it, you can also pass the path to the tool binary
-as an argument to ``west flash``, though this is not recommended.
+Until https://github.com/thesofproject/sof/issues/7270 is implemented,
+platform-specific configuration files are also located in the rimage
+repository, more specifically in the ``rimage/config/`` subdirectory; this is
+another reason to update rimage regularly. If you cloned rimage in a location
+different from above (not recommended) then you must also run ``west config
+build.cmake-args -- -DRIMAGE_CONFIG_PATH=/path/to/source/rimage/config``.
+
 
 Xtensa Toolchain (Optional)
 ---------------------------
 
 The Zephyr SDK provides GCC-based toolchains necessary to build Zephyr for
-the CAVS and ACE boards. However, users seeking greater levels of optimization
+the cAVS and ACE boards. However, users seeking greater levels of optimization
 may desire to build with the proprietary Xtensa toolchain distributed by
 `Cadence`_ instead. The following instructions assume you have purchased and
 installed the toolchain(s) and core(s) for your board following their
 instructions.
 
-First, make sure to set ``XTENSAD_LICENSE_FILE`` as instructed by Cadence.
+First, make sure to set the ``$HOME/.flexlmrc`` file or
+``XTENSAD_LICENSE_FILE`` variable as instructed by Cadence.
 Next, set the following environment variables:
 
 .. code-block:: shell
@@ -101,7 +113,7 @@ Next, set the following environment variables:
    export TOOLCHAIN_VER=RG-2017.8-linux
    export XTENSA_CORE=cavs2x_LX6HiFi3_2017_8
 
-The bottom three variables are specific to each version of CAVS / ACE; refer to
+The bottom three variables are specific to each version of cAVS / ACE; refer to
 your board's documentation for their values.
 
 Programming and Debugging
@@ -120,13 +132,30 @@ Build as usual.
 Signing
 -------
 
-West automatically signs the binary as the first step of flashing, but if you
-need to sign the binary yourself without flashing, you can invoke the west sign
-command directly. Read the output of a ``west flash`` command to find the
-``west sign`` invocation. You can copy and modify it for your own purposes.
+``west build`` tries to sign the binary at the end of the build. If you need
+to sign the binary yourself, you can invoke ``west sign`` directly. Read the
+``west`` logs to find the ``west sign`` invocation; you can copy and modify
+the command logged for your own purposes. Run ``west sign -h`` for more
+details.
 
-As mentioned previously, if you're unable to install the rimage tool
-globally, you can pass it the path to the tool binary as an argument to
+The build tries to provide as many default rimage parameters are possible. If
+needed, there are several ways to override them depending on your specific
+situation and use case. They're often not mutually exclusive but to avoid
+undocumented rimage precedence rules it's best to use only one way at a time.
+
+- For local, interactive use prefer ``rimage.extra-args`` in west config, see
+  ``west sign -h``. The WEST_CONFIG_LOCAL environment variable can point at a
+  different west configuration file if needed.
+
+- You can add or overwrite a ``$platform.toml`` file(s) in your
+  ``rimage/config/`` directory
+
+- For board-specific needs you can define WEST_SIGN_OPTS in
+  ``boards/my/board/board.cmake``, see example in
+  ``soc/xtensa/intel_adsp/common/CMakeLists.txt``
+
+For backwards compatibility reasons, you can also pass rimage parameters like
+the path to the tool binary as arguments to
 ``west flash`` if the flash target exists for your board. To see a list
 of all arguments to the Intel ADSP runner, run the following after you have
 built the binary. There are multiple arguments related to signing, including a
@@ -136,20 +165,20 @@ key argument.
 
    west flash --context
 
-Remote Flashing to CAVS-based ADSP
+Remote Flashing to cAVS-based ADSP
 ----------------------------------
 
 As mentioned previously, the recommended way to run and monitor the output of
-Zephyr on CAVS boards is remotely. The Linux host on the main CPU may freeze up
+Zephyr on cAVS boards is remotely. The Linux host on the main CPU may freeze up
 and need to be restarted if a flash or runtime error occurs on the ADSP. From
 this point onward, we will refer to the board as the "remote host" and your
 development machine as the "local host".
 
-Copy the below scripts to the CAVS board.
+Copy the below scripts to the cAVS board.
 :zephyr_file:`soc/xtensa/intel_adsp/tools/remote-fw-service.py` will receive
 the binary sent over the network by West and invoke
 :zephyr_file:`soc/xtensa/intel_adsp/tools/cavstool.py` (referred to as the
-"CAVS tool"), which performs the flash and captures the log. Start
+"cAVS tool"), which performs the flash and captures the log. Start
 :file:`remote-fw-service.py`.
 
 .. code-block:: console
@@ -164,7 +193,7 @@ communicate. It forwards logs collected by :file:`cavstool.py` on port 9999
 (referred to as its "log port") and services requests on port 10000
 (its "requests port"). When you run West or Twister on your local host,
 it sends requests using the :zephyr_file:`soc/xtensa/intel_adsp/tools/cavstool_client.py`
-script (referred to as "CAVS tool client"). It also uses ports 9999 and 10000 on
+script (referred to as "cAVS tool client"). It also uses ports 9999 and 10000 on
 your local host, so be sure those ports are free.
 
 Flashing with West is simple.
@@ -216,10 +245,10 @@ arguments by passing the ``--context`` flag while flashing with West.
 
 Refer to :ref:`twister_script` for more information on hardware maps.
 
-Local Flashing to CAVS-based ADSP
+Local Flashing to cAVS-based ADSP
 ---------------------------------
 
-You can also directly flash the signed binary with the CAVS tool on the board.
+You can also directly flash the signed binary with the cAVS tool on the board.
 This may be useful for debugging.
 
 .. code-block:: console
@@ -326,8 +355,6 @@ exporting ``FLEXLM_DIAGNOSTICS=3``.
 .. _SOF: https://thesofproject.github.io/latest/index.html
 
 .. _Chromebooks: https://www.hp.com/us-en/shop/pdp/hp-chromebook-x360-14c-cc0047nr
-
-.. _UP2: https://up-board.org/upsquared/specifications/
 
 .. _UP Xtreme: https://up-board.org/up-xtreme/
 

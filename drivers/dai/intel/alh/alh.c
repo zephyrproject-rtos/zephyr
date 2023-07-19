@@ -11,6 +11,10 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/logging/log.h>
 
+#ifdef CONFIG_SOC_SERIES_INTEL_CAVS_V25
+#include <adsp_shim.h>
+#endif
+
 #define DT_DRV_COMPAT intel_alh_dai
 #define LOG_DOMAIN dai_intel_alh
 
@@ -75,6 +79,10 @@ static void alh_claim_ownership(void)
 	sys_write32(sys_read32(ALHASCTL) | ALHASCTL_OSEL(0x3), ALHASCTL);
 	sys_write32(sys_read32(ALHCSCTL) | ALHASCTL_OSEL(0x3), ALHCSCTL);
 #endif
+#ifdef CONFIG_SOC_SERIES_INTEL_CAVS_V25
+	/* Allow LPGPDMA connection to Audio Link Hub */
+	sys_set_bits(ADSP_DSPALHO_ADDRESS, DSPALHO_ASO_FLAG | DSPALHO_CSO_FLAG);
+#endif
 }
 
 static void alh_release_ownership(void)
@@ -85,6 +93,9 @@ static void alh_release_ownership(void)
 
 	sys_write32(sys_read32(ALHASCTL) | ALHASCTL_OSEL(0), ALHASCTL);
 	sys_write32(sys_read32(ALHCSCTL) | ALHASCTL_OSEL(0), ALHCSCTL);
+#endif
+#ifdef CONFIG_SOC_SERIES_INTEL_CAVS_V25
+	sys_clear_bits(ADSP_DSPALHO_ADDRESS, DSPALHO_ASO_FLAG | DSPALHO_CSO_FLAG);
 #endif
 }
 

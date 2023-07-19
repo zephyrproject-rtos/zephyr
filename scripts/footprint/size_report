@@ -12,6 +12,7 @@ Process an ELF file to generate size report on RAM and ROM.
 """
 
 import argparse
+import locale
 import os
 import sys
 import re
@@ -229,7 +230,7 @@ def get_die_filename(die, lineprog):
         directory = lineprog.header['include_directory'][dir_index - 1]
         filename = os.path.join(directory, file_entry.name)
 
-    path = Path(filename.decode())
+    path = Path(filename.decode(locale.getpreferredencoding()))
 
     # Prepend output path to relative path
     if not path.is_absolute():
@@ -520,8 +521,10 @@ def find_common_path_prefix(symbol_dict):
             for file in symbol['mapped_files']:
                 paths.append(file)
 
-    return os.path.commonpath(paths)
-
+    try:
+        return os.path.commonpath(paths)
+    except ValueError:
+        return None
 
 class TreeNode(NodeMixin):
     """
@@ -560,7 +563,7 @@ def generate_any_tree(symbol_dict, total_size, path_prefix):
     root = TreeNode('Root', "root")
     node_no_paths = TreeNode('(no paths)', ":", parent=root)
 
-    if Path(path_prefix) == Path(args.zephyrbase):
+    if path_prefix and Path(path_prefix) == Path(args.zephyrbase):
         # All source files are under ZEPHYR_BASE so there is
         # no need for another level.
         node_zephyr_base = root

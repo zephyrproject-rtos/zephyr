@@ -18,7 +18,7 @@
 
 LOG_MODULE_DECLARE(bq274xx, CONFIG_SENSOR_LOG_LEVEL);
 
-static void bq274xx_handle_interrupts(const struct device *dev)
+static void handle_interrupts(const struct device *dev)
 {
 	struct bq274xx_data *data = dev->data;
 
@@ -31,29 +31,29 @@ static void bq274xx_handle_interrupts(const struct device *dev)
 static K_KERNEL_STACK_DEFINE(bq274xx_thread_stack, CONFIG_BQ274XX_THREAD_STACK_SIZE);
 static struct k_thread bq274xx_thread;
 
-static void bq274xx_thread_main(struct bq274xx_data *data)
+static void thread_main(struct bq274xx_data *data)
 {
 	while (1) {
 		k_sem_take(&data->sem, K_FOREVER);
-		bq274xx_handle_interrupts(data->dev);
+		handle_interrupts(data->dev);
 	}
 }
 #endif
 
 #ifdef CONFIG_BQ274XX_TRIGGER_GLOBAL_THREAD
-static void bq274xx_work_handler(struct k_work *work)
+static void work_handler(struct k_work *work)
 {
 	struct bq274xx_data *data = CONTAINER_OF(work, struct bq274xx_data, work);
 
-	bq274xx_handle_interrupts(data->dev);
+	handle_interrupts(data->dev);
 }
 #endif
 
-static void bq274xx_ready_callback_handler(const struct device *port,
-					   struct gpio_callback *cb,
-					   gpio_port_pins_t pins)
+static void ready_callback_handler(const struct device *port, struct gpio_callback *cb,
+				   gpio_port_pins_t pins)
 {
-	struct bq274xx_data *data = CONTAINER_OF(cb, struct bq274xx_data, ready_callback);
+	struct bq274xx_data *data = CONTAINER_OF(cb, struct bq274xx_data,
+						 ready_callback);
 
 	ARG_UNUSED(port);
 	ARG_UNUSED(pins);
@@ -69,7 +69,7 @@ int bq274xx_trigger_mode_init(const struct device *dev)
 {
 	const struct bq274xx_config *const config = dev->config;
 	struct bq274xx_data *data = dev->data;
-	int status = 0;
+	int ret = 0;
 
 	data->dev = dev;
 
@@ -78,21 +78,21 @@ int bq274xx_trigger_mode_init(const struct device *dev)
 
 	k_thread_create(&bq274xx_thread, bq274xx_thread_stack,
 			CONFIG_BQ274XX_THREAD_STACK_SIZE,
-			(k_thread_entry_t)bq274xx_thread_main,
+			(k_thread_entry_t)thread_main,
 			data, NULL, NULL,
 			K_PRIO_COOP(CONFIG_BQ274XX_THREAD_PRIORITY),
 			0, K_NO_WAIT);
 #elif defined(CONFIG_BQ274XX_TRIGGER_GLOBAL_THREAD)
-	k_work_init(&data->work, bq274xx_work_handler);
+	k_work_init(&data->work, work_handler);
 #endif
 
-	status = gpio_pin_configure_dt(&config->int_gpios, GPIO_INPUT);
-	if (status < 0) {
-		LOG_ERR("Unable to configure interrupt pin to input");
-		return status;
+	ret = gpio_pin_configure_dt(&config->int_gpios, GPIO_INPUT);
+	if (ret < 0) {
+		LOG_ERR("Unable to configure interrupt pin");
+		return ret;
 	}
 	gpio_init_callback(&data->ready_callback,
-			   bq274xx_ready_callback_handler,
+			   ready_callback_handler,
 			   BIT(config->int_gpios.pin));
 
 	return 0;
@@ -104,7 +104,7 @@ int bq274xx_trigger_set(const struct device *dev,
 {
 	const struct bq274xx_config *config = dev->config;
 	struct bq274xx_data *data = dev->data;
-	int status;
+	int ret;
 
 #ifdef CONFIG_BQ274XX_PM
 	enum pm_device_state state;
@@ -120,7 +120,7 @@ int bq274xx_trigger_set(const struct device *dev,
 	}
 
 	if (!device_is_ready(config->int_gpios.port)) {
-		LOG_ERR("GPIO device pointer is not ready to be used");
+		LOG_ERR("GPIO device is not ready");
 		return -ENODEV;
 	}
 
@@ -128,35 +128,37 @@ int bq274xx_trigger_set(const struct device *dev,
 	data->ready_trig = trig;
 
 	if (handler) {
-		status = gpio_pin_configure_dt(&config->int_gpios, GPIO_INPUT);
-		if (status < 0) {
-			LOG_ERR("Unable to configure interrupt pin to input (%d)", status);
-			return status;
+		ret = gpio_pin_configure_dt(&config->int_gpios, GPIO_INPUT);
+		if (ret < 0) {
+			LOG_ERR("Unable to configure interrupt pin: %d", ret);
+			return ret;
 		}
 
-		status = gpio_add_callback(config->int_gpios.port, &data->ready_callback);
-		if (status < 0) {
-			LOG_ERR("Unable to add interrupt callback (%d)", status);
-			return status;
+		ret = gpio_add_callback(config->int_gpios.port,
+					&data->ready_callback);
+		if (ret < 0) {
+			LOG_ERR("Unable to add interrupt callback: %d", ret);
+			return ret;
 		}
 
-		status = gpio_pin_interrupt_configure_dt(&config->int_gpios,
-							 GPIO_INT_EDGE_TO_ACTIVE);
-		if (status < 0) {
-			LOG_ERR("Unable to configure interrupt (%d)", status);
-			return status;
+		ret = gpio_pin_interrupt_configure_dt(&config->int_gpios,
+						      GPIO_INT_EDGE_TO_ACTIVE);
+		if (ret < 0) {
+			LOG_ERR("Unable to configure interrupt: %d", ret);
+			return ret;
 		}
 	} else {
-		status = gpio_remove_callback(config->int_gpios.port, &data->ready_callback);
-		if (status < 0) {
-			LOG_ERR("Unable to remove interrupt callback (%d)", status);
-			return status;
+		ret = gpio_remove_callback(config->int_gpios.port,
+					   &data->ready_callback);
+		if (ret < 0) {
+			LOG_ERR("Unable to remove interrupt callback: %d", ret);
+			return ret;
 		}
 
-		status = gpio_pin_interrupt_configure_dt(&config->int_gpios, GPIO_INT_DISABLE);
-		if (status < 0) {
-			LOG_ERR("Unable to configure interrupt (%d)", status);
-			return status;
+		ret = gpio_pin_interrupt_configure_dt(&config->int_gpios, GPIO_INT_DISABLE);
+		if (ret < 0) {
+			LOG_ERR("Unable to disable interrupt: %d", ret);
+			return ret;
 		}
 	}
 

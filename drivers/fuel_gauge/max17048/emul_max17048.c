@@ -21,6 +21,13 @@ LOG_MODULE_REGISTER(maxim_max17048);
 
 #include "max17048.h"
 
+static int crate_value = 0x4000;
+
+void emul_max17048_set_crate_status(int value)
+{
+	crate_value = value;
+}
+
 /** Static configuration for the emulator */
 struct max17048_emul_cfg {
 	/** I2C address of emulator */
@@ -41,7 +48,7 @@ static int emul_max17048_reg_read(const struct emul *target, int reg, int *val)
 	*val = 0x1000;
 		break;
 	case REGISTER_CRATE:
-	*val = 0x4000;
+	*val = crate_value;
 	break;
 	case REGISTER_SOC:
 	*val = 0x3525;
@@ -62,12 +69,9 @@ static int max17048_emul_transfer_i2c(const struct emul *target, struct i2c_msg 
 				       int num_msgs, int addr)
 {
 	/* Largely copied from emul_bmi160.c */
-	struct max17048_emul_data *data;
 	unsigned int val;
 	int reg;
 	int rc;
-
-	data = target->data;
 
 	__ASSERT_NO_MSG(msgs && num_msgs);
 

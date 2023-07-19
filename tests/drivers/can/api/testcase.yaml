@@ -9,10 +9,6 @@ tests:
     tags:
       - drivers
       - can
-    extra_args: DTC_OVERLAY_FILE="twai-enable.overlay"
-    harness: console
-    harness_config:
-      # actual CAN transceiver or shorted CAN RX/TX pins required for board testing
-      fixture: can_transceiver
+    extra_args: DTC_OVERLAY_FILE=twai-enable.overlay
     filter: dt_compat_enabled("espressif,esp32-twai")
-    platform_allow: esp32c3_devkitm
+    platform_allow: esp32c3_devkitm esp32s3_devkitm xiao_esp32s3

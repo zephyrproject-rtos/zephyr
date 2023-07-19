@@ -7,12 +7,12 @@ zephyr_interface_library_named(zephyr-802154-interface)
 if (CONFIG_NRF_802154_RADIO_DRIVER)
   target_sources(nrf-802154-platform
     PRIVATE
-      ${CMAKE_CURRENT_SOURCE_DIR}/radio/platform/nrf_802154_random_zephyr.c
-      ${CMAKE_CURRENT_SOURCE_DIR}/sl_opensource/platform/nrf_802154_gpiote_crit_sect.c
-      ${CMAKE_CURRENT_SOURCE_DIR}/sl_opensource/platform/nrf_802154_clock_zephyr.c
-      ${CMAKE_CURRENT_SOURCE_DIR}/sl_opensource/platform/nrf_802154_gpiote_zephyr.c
-      ${CMAKE_CURRENT_SOURCE_DIR}/sl_opensource/platform/nrf_802154_irq_zephyr.c
-      ${CMAKE_CURRENT_SOURCE_DIR}/sl_opensource/platform/nrf_802154_temperature_zephyr.c
+      radio/platform/nrf_802154_random_zephyr.c
+      sl_opensource/platform/nrf_802154_gpiote_crit_sect.c
+      sl_opensource/platform/nrf_802154_clock_zephyr.c
+      sl_opensource/platform/nrf_802154_gpiote_zephyr.c
+      sl_opensource/platform/nrf_802154_irq_zephyr.c
+      sl_opensource/platform/nrf_802154_temperature_zephyr.c
   )
 
   target_compile_definitions(zephyr-802154-interface
@@ -37,17 +37,17 @@ endif ()
 if (CONFIG_NRF_802154_SERIALIZATION)
   target_sources(nrf-802154-platform
     PRIVATE
-      ${CMAKE_CURRENT_SOURCE_DIR}/serialization/platform/nrf_802154_serialization_crit_sect.c
-      ${CMAKE_CURRENT_SOURCE_DIR}/serialization/platform/nrf_802154_spinel_log.c
-      ${CMAKE_CURRENT_SOURCE_DIR}/serialization/platform/nrf_802154_spinel_backend_ipc.c
-      ${CMAKE_CURRENT_SOURCE_DIR}/serialization/platform/nrf_802154_spinel_response_notifier.c
+      serialization/platform/nrf_802154_serialization_crit_sect.c
+      serialization/platform/nrf_802154_spinel_log.c
+      serialization/platform/nrf_802154_spinel_backend_ipc.c
+      serialization/platform/nrf_802154_spinel_response_notifier.c
   )
 endif ()
 
 if (CONFIG_NRF_802154_SER_RADIO)
     target_sources(nrf-802154-platform
       PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/serialization/platform/nrf_802154_init_net.c
+        serialization/platform/nrf_802154_init_net.c
     )
 endif ()
 

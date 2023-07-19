@@ -7,6 +7,8 @@
 /**
  * @file
  * @brief IEEE 802.15.4 Management interface public header
+ *
+ * All references to the standard in this file cite IEEE 802.15.4-2020.
  */
 
 #ifndef ZEPHYR_INCLUDE_NET_IEEE802154_MGMT_H_
@@ -34,26 +36,63 @@ extern "C" {
 				 NET_MGMT_LAYER_CODE(_NET_IEEE802154_CODE))
 #define _NET_IEEE802154_EVENT	(_NET_IEEE802154_BASE | NET_MGMT_EVENT_BIT)
 
+/* All attributes and parameters are given in CPU byte order
+ * (scalars) or big endian (byte arrays) unless otherwise
+ * specified.
+ *
+ * The following IEEE 802.15.4 MAC management service primitives
+ * are referenced below:
+ *  - MLME-ASSOCIATE.request, see section 8.2.3
+ *  - MLME-DISASSOCIATE.request, see section 8.2.4
+ *  - MLME-SET/GET.request, see section 8.2.6
+ *  - MLME-SCAN.request, see section 8.2.11
+ *
+ * The following IEEE 802.15.4 MAC data service primitives
+ * are referenced below:
+ *  - MLME-DATA.request, see section 8.3.2
+ *
+ * MAC PIB attributes (mac.../sec...): see sections 8.4.3 and 9.5.
+ * PHY PIB attributes (phy...): see section 11.3.
+ * Both are accessed through MLME-SET/GET primitives.
+ */
 enum net_request_ieee802154_cmd {
-	NET_REQUEST_IEEE802154_CMD_SET_ACK = 1,
-	NET_REQUEST_IEEE802154_CMD_UNSET_ACK,
-	NET_REQUEST_IEEE802154_CMD_PASSIVE_SCAN,
-	NET_REQUEST_IEEE802154_CMD_ACTIVE_SCAN,
-	NET_REQUEST_IEEE802154_CMD_CANCEL_SCAN,
-	NET_REQUEST_IEEE802154_CMD_ASSOCIATE,
-	NET_REQUEST_IEEE802154_CMD_DISASSOCIATE,
-	NET_REQUEST_IEEE802154_CMD_SET_CHANNEL, /* in CPU byte order */
-	NET_REQUEST_IEEE802154_CMD_GET_CHANNEL, /* in CPU byte order */
-	NET_REQUEST_IEEE802154_CMD_SET_PAN_ID, /* in CPU byte order */
-	NET_REQUEST_IEEE802154_CMD_GET_PAN_ID, /* in CPU byte order */
-	NET_REQUEST_IEEE802154_CMD_SET_EXT_ADDR, /* in big endian byte order */
-	NET_REQUEST_IEEE802154_CMD_GET_EXT_ADDR, /* in big endian byte order */
-	NET_REQUEST_IEEE802154_CMD_SET_SHORT_ADDR, /* in CPU byte order */
-	NET_REQUEST_IEEE802154_CMD_GET_SHORT_ADDR, /* in CPU byte order */
-	NET_REQUEST_IEEE802154_CMD_GET_TX_POWER,
-	NET_REQUEST_IEEE802154_CMD_SET_TX_POWER,
-	NET_REQUEST_IEEE802154_CMD_SET_SECURITY_SETTINGS,
-	NET_REQUEST_IEEE802154_CMD_GET_SECURITY_SETTINGS,
+	NET_REQUEST_IEEE802154_CMD_SET_ACK = 1,	   /* sets AckTx for all subsequent
+						    * MLME-DATA (aka TX) requests
+						    */
+	NET_REQUEST_IEEE802154_CMD_UNSET_ACK,	   /* unsets AckTx for all subsequent
+						    * MLME-DATA requests
+						    */
+	NET_REQUEST_IEEE802154_CMD_PASSIVE_SCAN,   /* MLME-SCAN(PASSIVE, ...) request */
+	NET_REQUEST_IEEE802154_CMD_ACTIVE_SCAN,	   /* MLME-SCAN(ACTIVE, ...) request */
+	NET_REQUEST_IEEE802154_CMD_CANCEL_SCAN,	   /* not-standard */
+	NET_REQUEST_IEEE802154_CMD_ASSOCIATE,	   /* MLME-ASSOCIATE(...) request */
+	NET_REQUEST_IEEE802154_CMD_DISASSOCIATE,   /* MLME-DISASSOCIATE(...) request */
+	NET_REQUEST_IEEE802154_CMD_SET_CHANNEL,	   /* MLME-SET(phyCurrentChannel) request */
+	NET_REQUEST_IEEE802154_CMD_GET_CHANNEL,	   /* MLME-GET(phyCurrentChannel) request */
+	NET_REQUEST_IEEE802154_CMD_SET_PAN_ID,	   /* MLME-SET(macPanId) request */
+	NET_REQUEST_IEEE802154_CMD_GET_PAN_ID,	   /* MLME-GET(macPanId) request */
+	NET_REQUEST_IEEE802154_CMD_SET_EXT_ADDR,   /* non-standard, see chapters 7.1 and 8.4.3.1, in
+						    * big endian byte order
+						    */
+	NET_REQUEST_IEEE802154_CMD_GET_EXT_ADDR,   /* like MLME-GET(macExtendedAddress) but in big
+						    * endian byte order
+						    */
+	NET_REQUEST_IEEE802154_CMD_SET_SHORT_ADDR, /* MLME-SET(macShortAddress) request, only
+						    * allowed for co-ordinators
+						    */
+	NET_REQUEST_IEEE802154_CMD_GET_SHORT_ADDR, /* MLME-GET(macShortAddress) request */
+	NET_REQUEST_IEEE802154_CMD_GET_TX_POWER, /* MLME-SET(phyUnicastTxPower/phyBroadcastTxPower)
+						  * request (currently not distinguished)
+						  */
+	NET_REQUEST_IEEE802154_CMD_SET_TX_POWER, /* MLME-GET(phyUnicastTxPower/phyBroadcastTxPower)
+						  * request
+						  */
+
+	NET_REQUEST_IEEE802154_CMD_SET_SECURITY_SETTINGS, /* implies macSecurityEnabled=true,
+							   * configures basic sec* MAC PIB
+							   * attributes
+							   */
+	NET_REQUEST_IEEE802154_CMD_GET_SECURITY_SETTINGS, /* gets the configured sec* attributes */
 };
 
 
@@ -173,15 +212,15 @@ enum net_event_ieee802154_cmd {
 #define IEEE802154_IS_CHAN_UNSCANNED(_channel_set, _chan)	\
 	(!IEEE802154_IS_CHAN_SCANNED(_channel_set, _chan))
 
-/* Useful define to request all channels to be scanned,
- * from 11 to 26 included.
+/* Useful define to request all 16 channels of channel page zero
+ * in the 2450 MHz band to be scanned, from 11 to 26 included.
  */
 #define IEEE802154_ALL_CHANNELS	(0x03FFFC00)
 
 /**
  * @brief Scanning parameters
  *
- * Used to request a scan and get results as well
+ * Used to request a scan and get results as well, see section 8.2.11.2
  */
 struct ieee802154_req_params {
 	/** The set of channels to scan, use above macros to manage it */
@@ -197,8 +236,8 @@ struct ieee802154_req_params {
 
 	/** Result address */
 	union {
+		uint16_t short_addr;			  /* in CPU byte order */
 		uint8_t addr[IEEE802154_MAX_ADDR_LENGTH]; /* in big endian */
-		uint16_t short_addr; /* in CPU byte order */
 	};
 
 	/** length of address */
@@ -210,14 +249,17 @@ struct ieee802154_req_params {
 /**
  * @brief Security parameters
  *
- * Used to setup the link-layer security settings
+ * Used to setup the link-layer security settings,
+ * see tables 9-9 and 9-10 in section 9.5.
  */
 struct ieee802154_security_params {
-	uint8_t key[16];
-	uint8_t key_len;
-	uint8_t key_mode	: 2;
-	uint8_t level	: 3;
-	uint8_t _unused	: 3;
+	uint8_t key[16];      /* secKeyDescriptor.secKey */
+	uint8_t key_len;      /* a key length of 16 bytes is mandatory for standards conformance */
+	uint8_t key_mode : 2; /* secKeyIdMode */
+	uint8_t level : 3;    /* Used instead of a frame-specific SecurityLevel parameter when
+			       * constructing the auxiliary security header
+			       */
+	uint8_t _unused : 3;
 };
 
 #ifdef __cplusplus

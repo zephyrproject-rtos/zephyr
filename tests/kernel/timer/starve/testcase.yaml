@@ -5,3 +5,5 @@ tests:
     tags:
       - kernel
       - timer
+    integration_platforms:
+      - qemu_x86

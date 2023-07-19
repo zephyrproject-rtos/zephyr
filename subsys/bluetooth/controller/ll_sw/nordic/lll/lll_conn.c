@@ -39,7 +39,7 @@
 #include "lll_tim_internal.h"
 #include "lll_prof_internal.h"
 
-#include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/hci_types.h>
 
 #include "hal/debug.h"
 

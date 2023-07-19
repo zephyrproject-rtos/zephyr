@@ -27,3 +27,44 @@ config WIFI_MGMT_RAW_SCAN_RESULTS_ONLY
 	  to the application.
 
 endif # WIFI_MGMT_RAW_SCAN_RESULTS
+
+config WIFI_MGMT_TWT_CHECK_IP
+	bool "Check IP Assignment for TWT"
+	default y
+	help
+	  This option enables check for valid IP address before TWT setup.
+	  If TWT setup is triggered early in the connection, then device might
+	  enter deep sleep without having a valid IP, this can result in device
+	  being unreachable (IP Level) or unable to receive down link traffic
+	  even when it is awake intervals. Rejecting TWT setup till Wi-Fi
+	  interface has a valid IP address might be desirable in most scenarios.
+
+config WIFI_MGMT_FORCED_PASSIVE_SCAN
+	bool "Force Passive scan"
+	help
+	  Force passive scan (typically used to reduce power consumption),
+	  the scan type is always sent as passive.
+	  This doesn't guarantee that passive scan will be used, it depends
+	  on the underlying chip implementation to support and honour scan type.
+
+config WIFI_NM
+	bool "Wi-Fi Network manager support"
+	help
+	  This option enables using the Wi-Fi Network managers (e.g. wpa_supplicant) to
+	  manage the Wi-Fi network interfaces.
+
+if WIFI_NM
+
+config WIFI_NM_MAX_MANAGED_INTERFACES
+	int "Maximum number of managed interfaces per Wi-Fi network manager"
+	default 1
+	help
+	  This option defines the maximum number of managed interfaces per Wi-Fi
+	  network manager instance that can be used simultaneously.
+
+module = WIFI_NM
+module-dep = NET_LOG
+module-str = Log level for Wi-Fi Network manager module
+module-help = Enables using the Wi-Fi Network managers to manage the Wi-Fi network interfaces.
+source "subsys/net/Kconfig.template.log_config.net"
+endif # WIFI_NM

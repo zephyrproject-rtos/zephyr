@@ -260,6 +260,10 @@ static int prepare_vocs_inst(struct bt_vcp_vol_rend_register_param *param)
 	int j;
 	int i;
 
+	if (CONFIG_BT_VCP_VOL_REND_VOCS_INSTANCE_COUNT == 0) {
+		return 0;
+	}
+
 	__ASSERT(param, "NULL param");
 
 	for (j = 0, i = 0; i < ARRAY_SIZE(vcs_attrs); i++) {
@@ -302,6 +306,10 @@ static int prepare_aics_inst(struct bt_vcp_vol_rend_register_param *param)
 	int err;
 	int j;
 	int i;
+
+	if (CONFIG_BT_VCP_VOL_REND_AICS_INSTANCE_COUNT == 0) {
+		return 0;
+	}
 
 	__ASSERT(param, "NULL param");
 

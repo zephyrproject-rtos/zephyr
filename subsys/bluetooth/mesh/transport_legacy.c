@@ -34,6 +34,7 @@
 #include "settings.h"
 #include "heartbeat.h"
 #include "transport.h"
+#include "va.h"
 
 #define LOG_LEVEL CONFIG_BT_MESH_TRANS_LOG_LEVEL
 #include <zephyr/logging/log.h>
@@ -77,20 +78,6 @@ LOG_MODULE_REGISTER(bt_mesh_transport);
 		 SEG_RETRANSMIT_TIMEOUT_GROUP)
 /* How long to wait for available buffers before giving up */
 #define BUF_TIMEOUT                 K_NO_WAIT
-
-struct virtual_addr {
-	uint16_t ref:15,
-		 changed:1;
-	uint16_t addr;
-	uint8_t  uuid[16];
-};
-
-/* Virtual Address information for persistent storage. */
-struct va_val {
-	uint16_t ref;
-	uint16_t addr;
-	uint8_t uuid[16];
-} __packed;
 
 static struct seg_tx {
 	struct bt_mesh_subnet *sub;
@@ -137,8 +124,6 @@ static struct seg_rx {
 } seg_rx[CONFIG_BT_MESH_RX_SEG_MSG_COUNT];
 
 K_MEM_SLAB_DEFINE(segs, BT_MESH_APP_SEG_SDU_MAX, CONFIG_BT_MESH_SEG_BUFS, 4);
-
-static struct virtual_addr virtual_addrs[CONFIG_BT_MESH_LABEL_COUNT];
 
 static int send_unseg(struct bt_mesh_net_tx *tx, struct net_buf_simple *sdu,
 		      const struct bt_mesh_send_cb *cb, void *cb_data,
@@ -445,7 +430,7 @@ static void seg_tx_send_unacked(struct seg_tx *tx)
 
 end:
 	if (IS_ENABLED(CONFIG_BT_MESH_LOW_POWER) &&
-	    bt_mesh_lpn_established()) {
+	    bt_mesh_lpn_established() && !bt_mesh_has_addr(ctx.addr)) {
 		bt_mesh_lpn_poll();
 	}
 
@@ -600,7 +585,7 @@ static int send_seg(struct bt_mesh_net_tx *net_tx, struct net_buf_simple *sdu,
 	return 0;
 }
 
-static int trans_encrypt(const struct bt_mesh_net_tx *tx, const uint8_t *key,
+static int trans_encrypt(const struct bt_mesh_net_tx *tx, const struct bt_mesh_key *key,
 			 struct net_buf_simple *msg)
 {
 	struct bt_mesh_app_crypto_ctx crypto = {
@@ -613,7 +598,10 @@ static int trans_encrypt(const struct bt_mesh_net_tx *tx, const uint8_t *key,
 	};
 
 	if (BT_MESH_ADDR_IS_VIRTUAL(tx->ctx->addr)) {
-		crypto.ad = bt_mesh_va_label_get(tx->ctx->addr);
+		crypto.ad = tx->ctx->uuid;
+		if (crypto.ad == NULL) {
+			return -ENOENT;
+		}
 	}
 
 	return bt_mesh_app_encrypt(key, &crypto, msg);
@@ -622,7 +610,7 @@ static int trans_encrypt(const struct bt_mesh_net_tx *tx, const uint8_t *key,
 int bt_mesh_trans_send(struct bt_mesh_net_tx *tx, struct net_buf_simple *msg,
 		       const struct bt_mesh_send_cb *cb, void *cb_data)
 {
-	const uint8_t *key;
+	const struct bt_mesh_key *key;
 	uint8_t aid;
 	int err;
 
@@ -717,18 +705,38 @@ struct decrypt_ctx {
 	struct seg_rx *seg;
 };
 
-static int sdu_try_decrypt(struct bt_mesh_net_rx *rx, const uint8_t key[16],
+static int sdu_try_decrypt(struct bt_mesh_net_rx *rx, const struct bt_mesh_key *key,
 			   void *cb_data)
 {
-	const struct decrypt_ctx *ctx = cb_data;
+	struct decrypt_ctx *ctx = cb_data;
+	int err;
 
-	if (ctx->seg) {
-		seg_rx_assemble(ctx->seg, ctx->buf, ctx->crypto.aszmic);
+	ctx->crypto.ad = NULL;
+
+	do {
+		if (ctx->seg) {
+			seg_rx_assemble(ctx->seg, ctx->buf, ctx->crypto.aszmic);
+		}
+
+		if (BT_MESH_ADDR_IS_VIRTUAL(rx->ctx.recv_dst)) {
+			ctx->crypto.ad = bt_mesh_va_uuid_get(rx->ctx.recv_dst, ctx->crypto.ad,
+							     NULL);
+
+			if (!ctx->crypto.ad) {
+				return -ENOENT;
+			}
+		}
+
+		net_buf_simple_reset(ctx->sdu);
+
+		err = bt_mesh_app_decrypt(key, &ctx->crypto, ctx->buf, ctx->sdu);
+	} while (err && ctx->crypto.ad != NULL);
+
+	if (!err && BT_MESH_ADDR_IS_VIRTUAL(rx->ctx.recv_dst)) {
+		rx->ctx.uuid = ctx->crypto.ad;
 	}
 
-	net_buf_simple_reset(ctx->sdu);
-
-	return bt_mesh_app_decrypt(key, &ctx->crypto, ctx->buf, ctx->sdu);
+	return err;
 }
 
 static int sdu_recv(struct bt_mesh_net_rx *rx, uint8_t hdr, uint8_t aszmic,
@@ -753,10 +761,6 @@ static int sdu_recv(struct bt_mesh_net_rx *rx, uint8_t hdr, uint8_t aszmic,
 
 	if (!rx->local_match) {
 		return 0;
-	}
-
-	if (BT_MESH_ADDR_IS_VIRTUAL(rx->ctx.recv_dst)) {
-		ctx.crypto.ad = bt_mesh_va_label_get(rx->ctx.recv_dst);
 	}
 
 	rx->ctx.app_idx = bt_mesh_app_key_find(ctx.crypto.dev_key, AID(&hdr),
@@ -1069,7 +1073,7 @@ static int send_ack(struct bt_mesh_subnet *sub, uint16_t src, uint16_t dst,
 
 	LOG_DBG("SeqZero 0x%04x Block 0x%08x OBO %u", seq_zero, block, obo);
 
-	if (bt_mesh_lpn_established()) {
+	if (bt_mesh_lpn_established() && !bt_mesh_has_addr(ctx.addr)) {
 		LOG_WRN("Not sending ack when LPN is enabled");
 		return 0;
 	}
@@ -1625,11 +1629,6 @@ void bt_mesh_rx_reset(void)
 	}
 }
 
-static void store_va_label(void)
-{
-	bt_mesh_settings_store_schedule(BT_MESH_SETTINGS_VA_PENDING);
-}
-
 void bt_mesh_trans_reset(void)
 {
 	int i;
@@ -1642,18 +1641,8 @@ void bt_mesh_trans_reset(void)
 		seg_tx_reset(&seg_tx[i]);
 	}
 
-	for (i = 0; i < ARRAY_SIZE(virtual_addrs); i++) {
-		if (virtual_addrs[i].ref) {
-			virtual_addrs[i].ref = 0U;
-			virtual_addrs[i].changed = 1U;
-		}
-	}
-
 	bt_mesh_rpl_clear();
-
-	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
-		store_va_label();
-	}
+	bt_mesh_va_clear();
 }
 
 void bt_mesh_trans_init(void)
@@ -1668,199 +1657,3 @@ void bt_mesh_trans_init(void)
 		k_work_init_delayable(&seg_rx[i].ack, seg_ack);
 	}
 }
-
-static inline void va_store(struct virtual_addr *store)
-{
-	store->changed = 1U;
-	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
-		store_va_label();
-	}
-}
-
-uint8_t bt_mesh_va_add(const uint8_t uuid[16], uint16_t *addr)
-{
-	struct virtual_addr *va = NULL;
-	int err;
-
-	for (int i = 0; i < ARRAY_SIZE(virtual_addrs); i++) {
-		if (!virtual_addrs[i].ref) {
-			if (!va) {
-				va = &virtual_addrs[i];
-			}
-
-			continue;
-		}
-
-		if (!memcmp(uuid, virtual_addrs[i].uuid,
-			    ARRAY_SIZE(virtual_addrs[i].uuid))) {
-			*addr = virtual_addrs[i].addr;
-			virtual_addrs[i].ref++;
-			va_store(&virtual_addrs[i]);
-			return STATUS_SUCCESS;
-		}
-	}
-
-	if (!va) {
-		return STATUS_INSUFF_RESOURCES;
-	}
-
-	memcpy(va->uuid, uuid, ARRAY_SIZE(va->uuid));
-	err = bt_mesh_virtual_addr(uuid, &va->addr);
-	if (err) {
-		va->addr = BT_MESH_ADDR_UNASSIGNED;
-		return STATUS_UNSPECIFIED;
-	}
-
-	va->ref = 1;
-	va_store(va);
-
-	*addr = va->addr;
-
-	return STATUS_SUCCESS;
-}
-
-uint8_t bt_mesh_va_del(const uint8_t uuid[16], uint16_t *addr)
-{
-	struct virtual_addr *va = NULL;
-
-	for (int i = 0; i < ARRAY_SIZE(virtual_addrs); i++) {
-		if (virtual_addrs[i].ref &&
-		    !memcmp(uuid, virtual_addrs[i].uuid,
-			    ARRAY_SIZE(virtual_addrs[i].uuid))) {
-			va = &virtual_addrs[i];
-			break;
-		}
-	}
-
-	if (!va) {
-		return STATUS_CANNOT_REMOVE;
-	}
-
-	va->ref--;
-	if (addr) {
-		*addr = va->addr;
-	}
-
-	va_store(va);
-	return STATUS_SUCCESS;
-}
-
-uint8_t *bt_mesh_va_label_get(uint16_t addr)
-{
-	int i;
-
-	LOG_DBG("addr 0x%04x", addr);
-
-	for (i = 0; i < ARRAY_SIZE(virtual_addrs); i++) {
-		if (virtual_addrs[i].ref && virtual_addrs[i].addr == addr) {
-			LOG_DBG("Found Label UUID for 0x%04x: %s", addr,
-				bt_hex(virtual_addrs[i].uuid, 16));
-			return virtual_addrs[i].uuid;
-		}
-	}
-
-	LOG_WRN("No matching Label UUID for 0x%04x", addr);
-
-	return NULL;
-}
-
-#if CONFIG_BT_MESH_LABEL_COUNT > 0
-static struct virtual_addr *bt_mesh_va_get(uint16_t index)
-{
-	if (index >= ARRAY_SIZE(virtual_addrs)) {
-		return NULL;
-	}
-
-	return &virtual_addrs[index];
-}
-
-static int va_set(const char *name, size_t len_rd,
-		  settings_read_cb read_cb, void *cb_arg)
-{
-	struct va_val va;
-	struct virtual_addr *lab;
-	uint16_t index;
-	int err;
-
-	if (!name) {
-		LOG_ERR("Insufficient number of arguments");
-		return -ENOENT;
-	}
-
-	index = strtol(name, NULL, 16);
-
-	if (len_rd == 0) {
-		LOG_WRN("Mesh Virtual Address length = 0");
-		return 0;
-	}
-
-	err = bt_mesh_settings_set(read_cb, cb_arg, &va, sizeof(va));
-	if (err) {
-		LOG_ERR("Failed to set \'virtual address\'");
-		return err;
-	}
-
-	if (va.ref == 0) {
-		LOG_WRN("Ignore Mesh Virtual Address ref = 0");
-		return 0;
-	}
-
-	lab = bt_mesh_va_get(index);
-	if (lab == NULL) {
-		LOG_WRN("Out of labels buffers");
-		return -ENOBUFS;
-	}
-
-	memcpy(lab->uuid, va.uuid, 16);
-	lab->addr = va.addr;
-	lab->ref = va.ref;
-
-	LOG_DBG("Restored Virtual Address, addr 0x%04x ref 0x%04x", lab->addr, lab->ref);
-
-	return 0;
-}
-
-BT_MESH_SETTINGS_DEFINE(va, "Va", va_set);
-
-#define IS_VA_DEL(_label)	((_label)->ref == 0)
-void bt_mesh_va_pending_store(void)
-{
-	struct virtual_addr *lab;
-	struct va_val va;
-	char path[18];
-	uint16_t i;
-	int err;
-
-	for (i = 0; (lab = bt_mesh_va_get(i)) != NULL; i++) {
-		if (!lab->changed) {
-			continue;
-		}
-
-		lab->changed = 0U;
-
-		snprintk(path, sizeof(path), "bt/mesh/Va/%x", i);
-
-		if (IS_VA_DEL(lab)) {
-			err = settings_delete(path);
-		} else {
-			va.ref = lab->ref;
-			va.addr = lab->addr;
-			memcpy(va.uuid, lab->uuid, 16);
-
-			err = settings_save_one(path, &va, sizeof(va));
-		}
-
-		if (err) {
-			LOG_ERR("Failed to %s %s value (err %d)",
-				IS_VA_DEL(lab) ? "delete" : "store", path, err);
-		} else {
-			LOG_DBG("%s %s value", IS_VA_DEL(lab) ? "Deleted" : "Stored", path);
-		}
-	}
-}
-#else
-void bt_mesh_va_pending_store(void)
-{
-	/* Do nothing. */
-}
-#endif /* CONFIG_BT_MESH_LABEL_COUNT > 0 */

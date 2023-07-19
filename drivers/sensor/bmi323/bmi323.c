@@ -108,11 +108,6 @@ static void bosch_bmi323_value_to_sensor_value(struct sensor_value *result, int1
 	result->val2 = frac_part;
 }
 
-static int64_t bosch_bmi323_sensor_value_to_milli(const struct sensor_value *val)
-{
-	return ((int64_t)val->val1 * 1000) + val->val2 / 1000;
-}
-
 static void bosch_bmi323_sensor_value_from_micro(struct sensor_value *result, int64_t micro)
 {
 	int32_t int_part = (int32_t)(micro / 1000000);
@@ -194,7 +189,7 @@ static int bosch_bmi323_driver_api_set_acc_odr(const struct device *dev,
 {
 	int ret;
 	uint16_t acc_conf;
-	int64_t odr = bosch_bmi323_sensor_value_to_milli(val);
+	int64_t odr = sensor_value_to_milli(val);
 
 	ret = bosch_bmi323_bus_read_words(dev, IMU_BOSCH_BMI323_REG_ACC_CONF, &acc_conf, 1);
 
@@ -243,7 +238,7 @@ static int bosch_bmi323_driver_api_set_acc_full_scale(const struct device *dev,
 	struct bosch_bmi323_data *data = (struct bosch_bmi323_data *)dev->data;
 	int ret;
 	uint16_t acc_conf;
-	int64_t fullscale = bosch_bmi323_sensor_value_to_milli(val);
+	int64_t fullscale = sensor_value_to_milli(val);
 
 	ret = bosch_bmi323_bus_read_words(dev, IMU_BOSCH_BMI323_REG_ACC_CONF, &acc_conf, 1);
 
@@ -296,7 +291,7 @@ static int bosch_bmi323_driver_api_set_gyro_odr(const struct device *dev,
 {
 	int ret;
 	uint16_t gyro_conf;
-	int64_t odr = bosch_bmi323_sensor_value_to_milli(val);
+	int64_t odr = sensor_value_to_milli(val);
 
 	ret = bosch_bmi323_bus_read_words(dev, IMU_BOSCH_BMI323_REG_GYRO_CONF, &gyro_conf, 1);
 
@@ -345,7 +340,7 @@ static int bosch_bmi323_driver_api_set_gyro_full_scale(const struct device *dev,
 	struct bosch_bmi323_data *data = (struct bosch_bmi323_data *)dev->data;
 	int ret;
 	uint16_t gyro_conf;
-	int32_t fullscale = bosch_bmi323_sensor_value_to_milli(val);
+	int32_t fullscale = sensor_value_to_milli(val);
 
 	ret = bosch_bmi323_bus_read_words(dev, IMU_BOSCH_BMI323_REG_GYRO_CONF, &gyro_conf, 1);
 
@@ -909,7 +904,7 @@ static int bosch_bmi323_driver_api_fetch_acc_samples(const struct device *dev)
 			return ret;
 		}
 
-		data->acc_full_scale = bosch_bmi323_sensor_value_to_milli(&full_scale);
+		data->acc_full_scale = sensor_value_to_milli(&full_scale);
 	}
 
 	ret = bosch_bmi323_bus_read_words(dev, IMU_BOSCH_BMI323_REG_ACC_DATA_X, (uint16_t *)buf, 3);
@@ -951,7 +946,7 @@ static int bosch_bmi323_driver_api_fetch_gyro_samples(const struct device *dev)
 			return ret;
 		}
 
-		data->gyro_full_scale = bosch_bmi323_sensor_value_to_milli(&full_scale);
+		data->gyro_full_scale = sensor_value_to_milli(&full_scale);
 	}
 
 	ret = bosch_bmi323_bus_read_words(dev, IMU_BOSCH_BMI323_REG_GYRO_DATA_X, (uint16_t *)buf,

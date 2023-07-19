@@ -122,9 +122,9 @@ static void client_event_callback(RF_Handle h, RF_ClientEvent event, void *arg)
 static enum ieee802154_hw_caps
 ieee802154_cc13xx_cc26xx_get_capabilities(const struct device *dev)
 {
-	return IEEE802154_HW_FCS | IEEE802154_HW_2_4_GHZ |
-	       IEEE802154_HW_FILTER | IEEE802154_HW_TX_RX_ACK |
-	       IEEE802154_HW_CSMA;
+	return IEEE802154_HW_FCS | IEEE802154_HW_2_4_GHZ | IEEE802154_HW_FILTER |
+	       IEEE802154_HW_RX_TX_ACK | IEEE802154_HW_TX_RX_ACK | IEEE802154_HW_CSMA |
+	       IEEE802154_HW_RETRANSMISSION;
 }
 
 static int ieee802154_cc13xx_cc26xx_cca(const struct device *dev)
@@ -361,12 +361,20 @@ static int ieee802154_cc13xx_cc26xx_tx(const struct device *dev,
 		}
 
 		if (drv_data->cmd_ieee_csma.status != IEEE_DONE_OK) {
+			/* TODO: According to IEEE 802.15.4 CSMA/CA failure
+			 *       fails TX immediately and should not trigger
+			 *       attempt (which is reserved for ACK timeouts).
+			 */
 			LOG_DBG("Channel access failure (0x%x)",
 				drv_data->cmd_ieee_csma.status);
 			continue;
 		}
 
 		if (drv_data->cmd_ieee_tx.status != IEEE_DONE_OK) {
+			/* TODO: According to IEEE 802.15.4 transmission failure
+			 *       fails TX immediately and should not trigger
+			 *       attempt (which is reserved for ACK timeouts).
+			 */
 			LOG_DBG("Transmit failed (0x%x)",
 				drv_data->cmd_ieee_tx.status);
 			continue;
@@ -388,20 +396,6 @@ static int ieee802154_cc13xx_cc26xx_tx(const struct device *dev,
 out:
 	k_mutex_unlock(&drv_data->tx_mutex);
 	return r;
-}
-
-static inline uint8_t ieee802154_cc13xx_cc26xx_convert_rssi(int8_t rssi)
-{
-	if (rssi > CC13XX_CC26XX_RECEIVER_SENSITIVITY +
-			   CC13XX_CC26XX_RSSI_DYNAMIC_RANGE) {
-		rssi = CC13XX_CC26XX_RECEIVER_SENSITIVITY +
-		       CC13XX_CC26XX_RSSI_DYNAMIC_RANGE;
-	} else if (rssi < CC13XX_CC26XX_RECEIVER_SENSITIVITY) {
-		rssi = CC13XX_CC26XX_RECEIVER_SENSITIVITY;
-	}
-
-	return (255 * (rssi - CC13XX_CC26XX_RECEIVER_SENSITIVITY)) /
-	       CC13XX_CC26XX_RSSI_DYNAMIC_RANGE;
 }
 
 static void ieee802154_cc13xx_cc26xx_rx_done(
@@ -450,9 +444,10 @@ static void ieee802154_cc13xx_cc26xx_rx_done(
 			drv_data->rx_entry[i].status = DATA_ENTRY_PENDING;
 
 			net_pkt_set_ieee802154_lqi(pkt, lqi);
-			net_pkt_set_ieee802154_rssi(
-				pkt,
-				ieee802154_cc13xx_cc26xx_convert_rssi(rssi));
+			net_pkt_set_ieee802154_rssi_dbm(pkt,
+							rssi == CC13XX_CC26XX_INVALID_RSSI
+								? IEEE802154_MAC_RSSI_DBM_UNDEFINED
+								: rssi);
 
 			if (net_recv_data(drv_data->iface, pkt)) {
 				LOG_WRN("Packet dropped");
@@ -642,11 +637,6 @@ static struct ieee802154_cc13xx_cc26xx_data ieee802154_cc13xx_cc26xx_data = {
 		.commandNo = CMD_IEEE_CCA_REQ,
 	},
 
-	.cmd_clear_rx = {
-		.commandNo = CMD_CLEAR_RX,
-		.pQueue = &ieee802154_cc13xx_cc26xx_data.rx_queue,
-	},
-
 	.cmd_ieee_rx = {
 		.commandNo = CMD_IEEE_RX,
 		.status = IDLE,
@@ -718,10 +708,6 @@ static struct ieee802154_cc13xx_cc26xx_data ieee802154_cc13xx_cc26xx_data = {
 		.localShortAddr = 0x0000,
 		.localPanID = 0x0000,
 		.endTrigger.triggerType = TRIG_NEVER
-	},
-
-	.cmd_set_tx_power = {
-		.commandNo = CMD_SET_TX_POWER
 	},
 
 	.cmd_ieee_csma = {

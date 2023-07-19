@@ -13,6 +13,7 @@
 / {
 	chosen {
 		zephyr,entropy = &trng;
+		zephyr,flash-controller = &flash_controller;
 	};
 
 	cpus: cpus {
@@ -102,7 +103,7 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 
-			flash0: flash@0 {
+			flash0: flash@16000000 {
 				compatible = "soc-nv-flash";
 				erase-block-size = <4096>;
 				write-block-size = <1>;
@@ -146,6 +147,42 @@
 			compatible = "renesas,smartbond-watchdog";
 			reg = <0x50000700 0x8>;
 			status = "okay";
+		};
+
+		timer1: timer@50010200 {
+			compatible = "renesas,smartbond-timer";
+			reg = <0x50010200 0x300>;
+			clock-src = <&lp_clk>;
+			interrupts = <16 0>;
+			prescaler = <1>;
+			status = "disabled";
+		};
+
+		timer2: timer@50010300 {
+			compatible = "renesas,smartbond-timer";
+			reg = <0x50010300 0x300>;
+			clock-src = <&divn_clk>;
+			interrupts = <17 0>;
+			prescaler = <32>;
+			status = "disabled";
+		};
+
+		timer3: timer@50040a00 {
+			compatible = "renesas,smartbond-timer";
+			reg = <0x50040a00 0x300>;
+			clock-src = <&lp_clk>;
+			interrupts = <34 0>;
+			prescaler = <31>;
+			status = "disabled";
+		};
+
+		timer4: timer@50040b00 {
+			compatible = "renesas,smartbond-timer";
+			reg = <0x50040b00 0x300>;
+			clock-src = <&divn_clk>;
+			interrupts = <35 0>;
+			prescaler = <32>;
+			status = "disabled";
 		};
 
 		uart: uart@50020000 {
@@ -217,6 +254,17 @@
 			reg = <0x50020400 0x100>;
 			periph-clock-config = <0x80>;
 			interrupts = <11 0>;
+			status = "disabled";
+		};
+		usbd: usb@50040000 {
+			compatible = "renesas,smartbond-usbd";
+			reg = <0x50040000 0x1B0>;
+			dma-chan-rx = <6>;
+			dma-chan-tx = <7>;
+			dma-min-transfer-size = <65>;
+			fifo-read-threshold = <4>;
+			ep-out-buf-size = <8 64 64 64>;
+			interrupts = <15 0>, <21 0>;
 			status = "disabled";
 		};
 	};

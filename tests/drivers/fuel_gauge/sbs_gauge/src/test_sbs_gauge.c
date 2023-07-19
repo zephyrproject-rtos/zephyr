@@ -6,6 +6,8 @@
  */
 
 #include <zephyr/device.h>
+#include <zephyr/drivers/emul.h>
+#include <zephyr/drivers/emul_fuel_gauge.h>
 #include <zephyr/drivers/fuel_gauge.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/logging/log.h>
@@ -16,6 +18,7 @@
 
 struct sbs_gauge_new_api_fixture {
 	const struct device *dev;
+	const struct emul *sbs_fuel_gauge;
 	const struct fuel_gauge_driver_api *api;
 };
 
@@ -24,6 +27,7 @@ static void *sbs_gauge_new_api_setup(void)
 	static ZTEST_DMEM struct sbs_gauge_new_api_fixture fixture;
 
 	fixture.dev = DEVICE_DT_GET_ANY(sbs_sbs_gauge_new_api);
+	fixture.sbs_fuel_gauge = EMUL_DT_GET(DT_NODELABEL(smartbattery0));
 
 	k_object_access_all_grant(fixture.dev);
 
@@ -344,5 +348,32 @@ ZTEST_USER_F(sbs_gauge_new_api, test_get_buffer_props__returns_ok)
 	zassert_ok(ret);
 }
 
+ZTEST_F(sbs_gauge_new_api, test_charging_5v_3a)
+{
+	/* Validate what props are supported by the driver */
+	uint32_t expected_uV = 5000 * 1000;
+	uint32_t expected_uA = 3000 * 1000;
+
+	struct fuel_gauge_get_property props[] = {
+		{
+			.property_type = FUEL_GAUGE_VOLTAGE,
+		},
+		{
+			.property_type = FUEL_GAUGE_CURRENT,
+		},
+	};
+
+	zassume_ok(emul_fuel_gauge_set_battery_charging(fixture->sbs_fuel_gauge, expected_uV,
+							expected_uA));
+	zassert_ok(fuel_gauge_get_prop(fixture->dev, props, ARRAY_SIZE(props)));
+
+	zassert_ok(props[0].status);
+	zassert_equal(props[0].value.voltage, expected_uV, "Got %d instead of %d",
+		      props[0].value.voltage, expected_uV);
+
+	zassert_ok(props[1].status);
+	zassert_equal(props[1].value.current, expected_uA, "Got %d instead of %d",
+		      props[1].value.current, expected_uA);
+}
 
 ZTEST_SUITE(sbs_gauge_new_api, NULL, sbs_gauge_new_api_setup, NULL, NULL, NULL);

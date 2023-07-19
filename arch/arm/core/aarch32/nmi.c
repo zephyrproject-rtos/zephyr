@@ -31,37 +31,6 @@ static _NmiHandler_t handler = z_SysNmiOnReset;
 
 /**
  *
- * @brief Default NMI handler installed when kernel is up
- *
- * The default handler outputs a error message and reboots the target. It is
- * installed by calling z_arm_nmi_init();
- *
- */
-
-static void DefaultHandler(void)
-{
-	printk("NMI received! Rebooting...\n");
-	/* In ARM implementation sys_reboot ignores the parameter */
-	sys_reboot(0);
-}
-
-/**
- *
- * @brief Install default runtime NMI handler
- *
- * Meant to be called by platform code if they want to install a simple NMI
- * handler that reboots the target. It should be installed after the console is
- * initialized.
- *
- */
-
-void z_arm_nmi_init(void)
-{
-	handler = DefaultHandler;
-}
-
-/**
- *
  * @brief Install a custom runtime NMI handler
  *
  * Meant to be called by platform code if they want to install a custom NMI

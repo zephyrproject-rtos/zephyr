@@ -21,6 +21,7 @@ LOG_MODULE_REGISTER(sbs_sbs_gauge);
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/i2c_emul.h>
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/drivers/emul_fuel_gauge.h>
 #include <zephyr/drivers/fuel_gauge.h>
 
 #include "sbs_gauge.h"
@@ -32,6 +33,13 @@ struct sbs_gauge_emul_data {
 	uint16_t remaining_time_alarm;
 	uint16_t mode;
 	int16_t at_rate;
+	struct {
+		/* Non-register values associated with the state of the battery */
+		/* Battery terminal voltage */
+		uint32_t uV;
+		/* Battery terminal current - Pos is charging, Neg is discharging */
+		int uA;
+	} batt_state;
 };
 
 /** Static configuration for the emulator */
@@ -90,6 +98,11 @@ static int emul_sbs_gauge_reg_read(const struct emul *target, int reg, int *val)
 		*val = data->at_rate;
 		break;
 	case SBS_GAUGE_CMD_VOLTAGE:
+		*val = data->batt_state.uV / 1000;
+		break;
+	case SBS_GAUGE_CMD_CURRENT:
+		*val = data->batt_state.uA / 1000;
+		break;
 	case SBS_GAUGE_CMD_AVG_CURRENT:
 	case SBS_GAUGE_CMD_TEMP:
 	case SBS_GAUGE_CMD_ASOC:
@@ -102,7 +115,6 @@ static int emul_sbs_gauge_reg_read(const struct emul *target, int reg, int *val)
 	case SBS_GAUGE_CMD_RUNTIME2EMPTY:
 	case SBS_GAUGE_CMD_CYCLE_COUNT:
 	case SBS_GAUGE_CMD_DESIGN_VOLTAGE:
-	case SBS_GAUGE_CMD_CURRENT:
 	case SBS_GAUGE_CMD_CHG_CURRENT:
 	case SBS_GAUGE_CMD_CHG_VOLTAGE:
 	case SBS_GAUGE_CMD_FLAGS:
@@ -220,9 +232,53 @@ static int sbs_gauge_emul_transfer_i2c(const struct emul *target, struct i2c_msg
 	return rc;
 }
 
+static int emul_sbs_fuel_gauge_set_battery_charging(const struct emul *target, uint32_t uV, int uA)
+{
+	struct sbs_gauge_emul_data *data = target->data;
+
+	if (uV == 0 || uA == 0)
+		return -EINVAL;
+
+	data->batt_state.uA = uA;
+	data->batt_state.uV = uV;
+
+	return 0;
+}
+
+static const struct fuel_gauge_emul_driver_api sbs_gauge_backend_api = {
+	.set_battery_charging = emul_sbs_fuel_gauge_set_battery_charging,
+};
+
 static const struct i2c_emul_api sbs_gauge_emul_api_i2c = {
 	.transfer = sbs_gauge_emul_transfer_i2c,
 };
+
+static void sbs_gauge_emul_reset(const struct emul *target)
+{
+	struct sbs_gauge_emul_data *data = target->data;
+
+	memset(data, 0, sizeof(*data));
+}
+
+#ifdef CONFIG_ZTEST
+#include <zephyr/ztest.h>
+
+/* Add test reset handlers in when using emulators with tests */
+#define SBS_GAUGE_EMUL_RESET_RULE_BEFORE(inst)                                                     \
+	sbs_gauge_emul_reset(EMUL_DT_GET(DT_DRV_INST(inst)));
+
+static void emul_sbs_gauge_reset_rule_after(const struct ztest_unit_test *test, void *data)
+{
+	ARG_UNUSED(test);
+	ARG_UNUSED(data);
+
+	DT_INST_FOREACH_STATUS_OKAY(SBS_GAUGE_EMUL_RESET_RULE_BEFORE)
+}
+ZTEST_RULE(emul_sbs_gauge_reset, NULL, emul_sbs_gauge_reset_rule_after);
+#else /* !CONFIG_ZTEST */
+/* Stub ZTEST_DMEM in case emulator is not used in a testing environment. */
+#define ZTEST_DMEM
+#endif /* CONFIG_ZTEST */
 
 /**
  * Set up a new SBS_GAUGE emulator (I2C)
@@ -233,8 +289,9 @@ static const struct i2c_emul_api sbs_gauge_emul_api_i2c = {
  */
 static int emul_sbs_sbs_gauge_init(const struct emul *target, const struct device *parent)
 {
-	ARG_UNUSED(target);
 	ARG_UNUSED(parent);
+
+	sbs_gauge_emul_reset(target);
 
 	return 0;
 }
@@ -248,6 +305,7 @@ static int emul_sbs_sbs_gauge_init(const struct emul *target, const struct devic
 		.addr = DT_INST_REG_ADDR(n),                                                       \
 	};                                                                                         \
 	EMUL_DT_INST_DEFINE(n, emul_sbs_sbs_gauge_init, &sbs_gauge_emul_data_##n,                  \
-			    &sbs_gauge_emul_cfg_##n, &sbs_gauge_emul_api_i2c, NULL)
+			    &sbs_gauge_emul_cfg_##n, &sbs_gauge_emul_api_i2c,                      \
+			    &sbs_gauge_backend_api)
 
 DT_INST_FOREACH_STATUS_OKAY(SBS_GAUGE_EMUL)

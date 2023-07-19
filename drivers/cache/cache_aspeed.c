@@ -7,6 +7,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
 #include <zephyr/drivers/syscon.h>
+#include <zephyr/sys/barrier.h>
 
 /*
  * cache area control: each bit controls 32KB cache area
@@ -145,10 +146,10 @@ int cache_data_invd_all(void)
 	ctrl &= ~DCACHE_CLEAN;
 	syscon_write_reg(dev, CACHE_FUNC_CTRL_REG, ctrl);
 
-	__DSB();
+	barrier_dsync_fence_full();
 	ctrl |= DCACHE_CLEAN;
 	syscon_write_reg(dev, CACHE_FUNC_CTRL_REG, ctrl);
-	__DSB();
+	barrier_dsync_fence_full();
 
 	/* exit critical section */
 	if (!k_is_in_isr()) {
@@ -181,7 +182,7 @@ int cache_data_invd_range(void *addr, size_t size)
 		syscon_write_reg(dev, CACHE_INVALID_REG, DCACHE_INVALID(aligned_addr));
 		aligned_addr += CACHE_LINE_SIZE;
 	}
-	__DSB();
+	barrier_dsync_fence_full();
 
 	/* exit critical section */
 	if (!k_is_in_isr()) {
@@ -206,10 +207,10 @@ int cache_instr_invd_all(void)
 
 	ctrl &= ~ICACHE_CLEAN;
 	syscon_write_reg(dev, CACHE_FUNC_CTRL_REG, ctrl);
-	__ISB();
+	barrier_isync_fence_full();
 	ctrl |= ICACHE_CLEAN;
 	syscon_write_reg(dev, CACHE_FUNC_CTRL_REG, ctrl);
-	__ISB();
+	barrier_isync_fence_full();
 
 	/* exit critical section */
 	if (!k_is_in_isr()) {
@@ -242,7 +243,7 @@ int cache_instr_invd_range(void *addr, size_t size)
 		syscon_write_reg(dev, CACHE_INVALID_REG, ICACHE_INVALID(aligned_addr));
 		aligned_addr += CACHE_LINE_SIZE;
 	}
-	__DSB();
+	barrier_dsync_fence_full();
 
 	/* exit critical section */
 	if (!k_is_in_isr()) {

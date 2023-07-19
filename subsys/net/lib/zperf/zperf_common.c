@@ -40,6 +40,9 @@ struct sockaddr_in *zperf_get_sin(void)
 	return &in4_addr_my;
 }
 
+#define ZPERF_WORK_Q_THREAD_PRIORITY                                                               \
+	CLAMP(CONFIG_ZPERF_WORK_Q_THREAD_PRIORITY, K_HIGHEST_APPLICATION_THREAD_PRIO,              \
+	      K_LOWEST_APPLICATION_THREAD_PRIO)
 K_THREAD_STACK_DEFINE(zperf_work_q_stack, CONFIG_ZPERF_WORK_Q_STACK_SIZE);
 
 static struct k_work_q zperf_work_q;
@@ -215,8 +218,8 @@ static int zperf_init(void)
 
 	k_work_queue_init(&zperf_work_q);
 	k_work_queue_start(&zperf_work_q, zperf_work_q_stack,
-			   K_THREAD_STACK_SIZEOF(zperf_work_q_stack),
-			   CONFIG_ZPERF_WORK_Q_THREAD_PRIORITY, NULL);
+			   K_THREAD_STACK_SIZEOF(zperf_work_q_stack), ZPERF_WORK_Q_THREAD_PRIORITY,
+			   NULL);
 	k_thread_name_set(&zperf_work_q.thread, "zperf_work_q");
 
 	zperf_udp_uploader_init();

@@ -28,7 +28,7 @@ Building, Flashing and Running
 ******************************
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/boards/cc13x2_cc26x2/system_off
+   :zephyr-app: samples/boards/ti/cc13x2_cc26x2/system_off
    :board: cc1352r1_launchxl
    :goals: build flash
    :compact:

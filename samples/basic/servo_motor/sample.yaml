@@ -8,3 +8,5 @@ tests:
     depends_on: pwm
     harness: motor
     filter: dt_compat_enabled("pwm-servo")
+    integration_platforms:
+      - bbc_microbit

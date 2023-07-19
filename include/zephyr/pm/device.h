@@ -576,7 +576,8 @@ int pm_device_power_domain_remove(const struct device *dev,
  *
  * @param dev Device instance.
  *
- * @retval true If device is currently powered
+ * @retval true If device is currently powered, or is assumed to be powered
+ * (i.e. it does not support PM or is not under a PM domain)
  * @retval false If device is not currently powered
  */
 bool pm_device_is_powered(const struct device *dev);

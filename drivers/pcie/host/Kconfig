@@ -14,6 +14,12 @@ module = PCIE
 module-str = pcie
 source "subsys/logging/Kconfig.template.log_config"
 
+config PCIE_INIT_PRIORITY
+	int "PCIe initialization priority"
+	default 41
+	help
+	  PCIe host drivers initialization priority.
+
 config PCIE_CONTROLLER
 	bool "PCIe Controller management"
 	help

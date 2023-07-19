@@ -1,5 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
+zephyr_syscall_header(${ZEPHYR_BASE}/include/zephyr/drivers/i2c.h)
+
 zephyr_library()
 
 zephyr_library_sources(i2c_common.c)
@@ -44,10 +46,12 @@ zephyr_library_sources_ifdef(CONFIG_I2C_TCA954X		i2c_tca954x.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_XEC_V2		i2c_mchp_xec_v2.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_GD32		i2c_gd32.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_INFINEON_CAT1	i2c_ifx_cat1.c)
+zephyr_library_sources_ifdef(CONFIG_I2C_INFINEON_XMC4	i2c_ifx_xmc4.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_ANDES_ATCIIC100		i2c_andes_atciic100.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_SC18IM704	i2c_sc18im704.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_SMARTBOND	i2c_smartbond.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_XILINX_AXI	i2c_xilinx_axi.c)
+zephyr_library_sources_ifdef(CONFIG_I2C_MCHP_MSS		i2c_mchp_mss.c)
 
 zephyr_library_sources_ifdef(CONFIG_I2C_STM32_V1
 	i2c_ll_stm32_v1.c

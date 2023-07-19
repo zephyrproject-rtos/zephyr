@@ -7,6 +7,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/reboot.h>
+#include <zephyr/sys/barrier.h>
 #include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
 #include <zephyr/arch/arm/aarch32/nmi.h>
 #include <zephyr/ztest.h>
@@ -52,13 +53,16 @@ ZTEST(arm_runtime_nmi_fn, test_arm_runtime_nmi)
 	/* Configure the NMI isr */
 	z_arm_nmi_set_handler(nmi_test_isr);
 
-	for (i = 0U; i < 10; i++) {
-		printk("Trigger NMI in 10s: %d s\n", i);
+	for (i = 0U; i < 2; i++) {
+		printk("Trigger NMI in 2s: %d s\n", i);
 		k_sleep(K_MSEC(1000));
 	}
 
 	/* Trigger NMI: Should fire immediately */
 	SCB->ICSR |= SCB_ICSR_NMIPENDSET_Msk;
+
+	barrier_dsync_fence_full();
+	barrier_isync_fence_full();
 
 #ifdef ARM_CACHEL1_ARMV7_H
 	/* Flush Data Cache now if enabled */

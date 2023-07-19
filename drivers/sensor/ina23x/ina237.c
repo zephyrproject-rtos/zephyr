@@ -17,7 +17,7 @@
 LOG_MODULE_REGISTER(INA237, CONFIG_SENSOR_LOG_LEVEL);
 
 /** @brief Calibration scaling value (scaled by 10^-5) */
-#define INA237_CAL_SCALING 8192U
+#define INA237_CAL_SCALING 8192ULL
 
 /** @brief The LSB value for the bus voltage register, in microvolts/LSB. */
 #define INA237_BUS_VOLTAGE_UV_LSB 3125
@@ -25,8 +25,7 @@ LOG_MODULE_REGISTER(INA237, CONFIG_SENSOR_LOG_LEVEL);
 /** @brief Power scaling (scaled by 10) */
 #define INA237_POWER_SCALING 2
 
-static int ina237_channel_get(const struct device *dev,
-			      enum sensor_channel chan,
+static int ina237_channel_get(const struct device *dev, enum sensor_channel chan,
 			      struct sensor_value *val)
 {
 	struct ina237_data *data = dev->data;
@@ -61,8 +60,7 @@ static int ina237_channel_get(const struct device *dev,
 
 	case SENSOR_CHAN_POWER:
 		/* see datasheet "Current and Power calculations" section */
-		power_uw = (data->power * INA237_POWER_SCALING *
-			    config->current_lsb) / 10000U;
+		power_uw = (data->power * INA237_POWER_SCALING * config->current_lsb) / 10000U;
 
 		/* convert to fractional watts */
 		val->val1 = (int32_t)(power_uw / 1000000U);
@@ -166,14 +164,11 @@ static int ina237_read_data(const struct device *dev)
  * @retval 0 for success
  * @retval negative errno code on fail
  */
-static int ina237_sample_fetch(const struct device *dev,
-			       enum sensor_channel chan)
+static int ina237_sample_fetch(const struct device *dev, enum sensor_channel chan)
 {
 	struct ina237_data *data = dev->data;
 
-	if (chan != SENSOR_CHAN_ALL &&
-	    chan != SENSOR_CHAN_VOLTAGE &&
-	    chan != SENSOR_CHAN_CURRENT &&
+	if (chan != SENSOR_CHAN_ALL && chan != SENSOR_CHAN_VOLTAGE && chan != SENSOR_CHAN_CURRENT &&
 	    chan != SENSOR_CHAN_POWER) {
 		return -ENOTSUP;
 	}
@@ -188,8 +183,7 @@ static int ina237_sample_fetch(const struct device *dev,
 }
 
 static int ina237_attr_set(const struct device *dev, enum sensor_channel chan,
-			   enum sensor_attribute attr,
-			   const struct sensor_value *val)
+			   enum sensor_attribute attr, const struct sensor_value *val)
 {
 	const struct ina237_config *config = dev->config;
 	uint16_t data = val->val1;
@@ -206,8 +200,7 @@ static int ina237_attr_set(const struct device *dev, enum sensor_channel chan,
 }
 
 static int ina237_attr_get(const struct device *dev, enum sensor_channel chan,
-			   enum sensor_attribute attr,
-			   struct sensor_value *val)
+			   enum sensor_attribute attr, struct sensor_value *val)
 {
 	const struct ina237_config *config = dev->config;
 	uint16_t data;
@@ -240,14 +233,10 @@ static int ina237_attr_get(const struct device *dev, enum sensor_channel chan,
 static int ina237_calibrate(const struct device *dev)
 {
 	const struct ina237_config *config = dev->config;
-	uint16_t val;
 	int ret;
 
 	/* see datasheet "Current and Power calculations" section */
-	val = (INA237_CAL_SCALING * config->current_lsb * config->rshunt) /
-	       10000000U;
-
-	ret = ina23x_reg_write(&config->bus, INA237_REG_CALIB, val);
+	ret = ina23x_reg_write(&config->bus, INA237_REG_CALIB, config->cal);
 	if (ret < 0) {
 		return ret;
 	}
@@ -347,8 +336,7 @@ static int ina237_init(const struct device *dev)
 	return 0;
 }
 
-static int ina237_trigger_set(const struct device *dev,
-			      const struct sensor_trigger *trig,
+static int ina237_trigger_set(const struct device *dev, const struct sensor_trigger *trig,
 			      sensor_trigger_handler_t handler)
 {
 	ARG_UNUSED(trig);
@@ -372,24 +360,20 @@ static const struct sensor_driver_api ina237_driver_api = {
 	.channel_get = ina237_channel_get,
 };
 
-#define INA237_DRIVER_INIT(inst)						\
-	static struct ina237_data ina237_data_##inst;				\
-	static const struct ina237_config ina237_config_##inst = {		\
-		.bus = I2C_DT_SPEC_INST_GET(inst),				\
-		.config = DT_INST_PROP(inst, config),				\
-		.adc_config = DT_INST_PROP(inst, adc_config),			\
-		.current_lsb = DT_INST_PROP(inst, current_lsb_microamps),	\
-		.rshunt = DT_INST_PROP(inst, rshunt_milliohms),			\
-		.alert_config = DT_INST_PROP_OR(inst, alert_config, 0x01),	\
-		.alert_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, alert_gpios, {0}),	\
-	};							    \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst,			    \
-			      &ina237_init,			    \
-			      NULL,				    \
-			      &ina237_data_##inst,		    \
-			      &ina237_config_##inst,		    \
-			      POST_KERNEL,			    \
-			      CONFIG_SENSOR_INIT_PRIORITY,	    \
-			      &ina237_driver_api);
+#define INA237_DRIVER_INIT(inst)                                                                   \
+	static struct ina237_data ina237_data_##inst;                                              \
+	static const struct ina237_config ina237_config_##inst = {                                 \
+		.bus = I2C_DT_SPEC_INST_GET(inst),                                                 \
+		.config = DT_INST_PROP(inst, config),                                              \
+		.adc_config = DT_INST_PROP(inst, adc_config),                                      \
+		.current_lsb = DT_INST_PROP(inst, current_lsb_microamps),                          \
+		.cal = INA237_CAL_SCALING * DT_INST_PROP(inst, current_lsb_microamps) *            \
+		       DT_INST_PROP(inst, rshunt_micro_ohms) / 10000000000ULL,                     \
+		.alert_config = DT_INST_PROP_OR(inst, alert_config, 0x01),                         \
+		.alert_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, alert_gpios, {0}),                    \
+	};                                                                                         \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, &ina237_init, NULL, &ina237_data_##inst,                \
+				     &ina237_config_##inst, POST_KERNEL,                           \
+				     CONFIG_SENSOR_INIT_PRIORITY, &ina237_driver_api);             \
 
 DT_INST_FOREACH_STATUS_OKAY(INA237_DRIVER_INIT)

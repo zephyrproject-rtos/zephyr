@@ -87,4 +87,7 @@ config X86_USERSPACE
 	 supporting user-level threads that are protected from each other and
 	 from crashing the kernel.
 
+config MP_MAX_NUM_CPUS
+	range 1 4
+
 endif # X86_64

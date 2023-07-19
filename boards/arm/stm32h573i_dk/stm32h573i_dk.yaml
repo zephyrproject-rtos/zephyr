@@ -20,3 +20,5 @@ supported:
   - spi
   - octospi
   - can
+  - usb_device
+  - usb

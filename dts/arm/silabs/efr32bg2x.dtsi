@@ -109,11 +109,8 @@
 			compatible = "silabs,gecko-spi-usart";
 			reg = <0x5005C000 0x400>;
 			interrupt-names = "rx", "tx";
-			status = "disabled";
-
 			#address-cells = <1>;
 			#size-cells = <0>;
-
 			status = "disabled";
 		};
 

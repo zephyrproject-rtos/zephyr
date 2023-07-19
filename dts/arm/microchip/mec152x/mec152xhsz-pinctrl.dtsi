@@ -1070,4 +1070,22 @@
 		pinmux = < MCHP_XEC_PINMUX(044, MCHP_AF1) >;
 		low-power-enable;
 	};
+
+	/* PS2 */
+	ps2_clk0b_gpio007_sleep: ps2_clk0b_gpio007_sleep {
+		pinmux = < MCHP_XEC_PINMUX(007, MCHP_AF2) >;
+		low-power-enable;
+	};
+	ps2_dat0b_gpio010_sleep: ps2_dat0b_gpio010_sleep {
+		pinmux = < MCHP_XEC_PINMUX(010, MCHP_AF2) >;
+		low-power-enable;
+	};
+	ps2_clk1b_gpio154_sleep: ps2_clk1b_gpio154_sleep {
+		pinmux = < MCHP_XEC_PINMUX(0154, MCHP_AF2) >;
+		low-power-enable;
+	};
+	ps2_dat1b_gpio155_sleep: ps2_dat1b_gpio155_sleep {
+		pinmux = < MCHP_XEC_PINMUX(0155, MCHP_AF2) >;
+		low-power-enable;
+	};
 };

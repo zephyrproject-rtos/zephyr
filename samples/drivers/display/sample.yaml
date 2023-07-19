@@ -98,6 +98,7 @@ tests:
     platform_allow: mimxrt595_evk_cm33
     tags: display
     harness: console
+    extra_args: SHIELD=rk055hdmipi4m
     harness_config:
       fixture: fixture_display
   sample.display.sdl:

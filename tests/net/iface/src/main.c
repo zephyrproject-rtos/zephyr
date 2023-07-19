@@ -55,8 +55,7 @@ static struct in6_addr ll_addr = { { { 0xfe, 0x80, 0x43, 0xb8, 0, 0, 0, 0,
 				       0, 0, 0, 0xf2, 0xaa, 0x29, 0x02,
 				       0x04 } } };
 
-static struct in6_addr in6addr_mcast = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
-					     0, 0, 0, 0, 0, 0, 0, 0x1 } } };
+static struct in6_addr in6addr_mcast;
 
 static struct net_if *iface1;
 static struct net_if *iface2;
@@ -878,6 +877,60 @@ ZTEST(net_iface, test_v6_addr_add_rm)
 	v6_addr_add_mcast_twice();
 	v6_addr_lookup();
 	v6_addr_rm();
+}
+
+ZTEST(net_iface, test_v6_addr_add_rm_solicited)
+{
+	const struct in6_addr prefix = { { { 0x20, 0x01, 0x1b, 0x98, 0x24, 0xb8, 0x7e, 0xbb,
+					     0, 0, 0, 0, 0, 0, 0, 0 } } };
+	struct in6_addr iid_addr = { };
+	struct in6_addr iid_addr_mcast = { };
+	struct in6_addr unicast_addr = { };
+	struct in6_addr unicast_addr_mcast = { };
+	struct net_if_addr *ifaddr;
+	struct net_if_mcast_addr *maddr;
+	bool ret;
+
+	/* Add a link-local address based on the interface identifier */
+	net_ipv6_addr_create_iid(&iid_addr, net_if_get_link_addr(iface4));
+	ifaddr = net_if_ipv6_addr_add(iface4, &iid_addr,
+				      NET_ADDR_AUTOCONF, 0);
+	zassert_not_null(ifaddr, "Cannot add IPv6 link-local address");
+
+	/* Add the corresponding solicited-node multicast address */
+	net_ipv6_addr_create_solicited_node(&iid_addr, &iid_addr_mcast);
+	maddr = net_if_ipv6_maddr_add(iface4, &iid_addr_mcast);
+	zassert_not_null(maddr, "Cannot add solicited-node multicast address");
+
+	/* Add an autoconfigured global unicast address */
+	net_ipv6_addr_create_iid(&unicast_addr, net_if_get_link_addr(iface4));
+	memcpy(&unicast_addr, &prefix, sizeof(prefix) / 2);
+	ifaddr = net_if_ipv6_addr_add(iface4, &unicast_addr,
+				      NET_ADDR_AUTOCONF, 0);
+	zassert_not_null(ifaddr, "Cannot add IPv6 global unicast address");
+
+	/* Add the corresponding solicited-node multicast address (should exist) */
+	net_ipv6_addr_create_solicited_node(&unicast_addr, &unicast_addr_mcast);
+	zassert_mem_equal(&unicast_addr_mcast, &iid_addr_mcast,
+			  sizeof(struct in6_addr));
+	maddr = net_if_ipv6_maddr_add(iface4, &unicast_addr_mcast);
+	zassert_is_null(maddr, "Solicited-node multicast address was added twice");
+
+	/* Remove the global unicast address */
+	ret = net_if_ipv6_addr_rm(iface4, &unicast_addr);
+	zassert_true(ret, "Cannot remove IPv6 global unicast address");
+
+	/* The solicited-node multicast address should stay */
+	maddr = net_if_ipv6_maddr_lookup(&iid_addr_mcast, &iface4);
+	zassert_not_null(maddr, "Solicited-node multicast address was removed");
+
+	/* Remove the link-local address */
+	ret = net_if_ipv6_addr_rm(iface4, &iid_addr);
+	zassert_true(ret, "Cannot remove IPv6 link-local address");
+
+	/* The solicited-node multicast address should be gone */
+	maddr = net_if_ipv6_maddr_lookup(&iid_addr_mcast, &iface4);
+	zassert_is_null(maddr, "Solicited-node multicast address was not removed");
 }
 
 #define MY_ADDR_V6_USER { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0, \

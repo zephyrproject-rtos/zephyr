@@ -139,6 +139,11 @@ static int adc_vbus_init(const struct device *dev)
 	const struct gpio_dt_spec *gcd = &config->discharge_gpios;
 	int ret;
 
+	if (!adc_is_ready_dt(&config->adc_channel)) {
+		LOG_ERR("ADC controller device is not ready");
+		return -ENODEV;
+	}
+
 	/* Configure VBUS Measurement enable pin if defined */
 	if (gcp->port) {
 		ret = device_is_ready(gcp->port);

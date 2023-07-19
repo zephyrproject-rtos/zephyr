@@ -17,9 +17,7 @@
 #include <zephyr/device.h>
 #include <zephyr/init.h>
 #include <soc.h>
-#include <zephyr/arch/cpu.h>
 #include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
-#include <zephyr/irq.h>
 
 /**
  * @brief Setup various clock on SoC at boot time.
@@ -191,11 +189,6 @@ static ALWAYS_INLINE void clock_init(void)
  */
 static int atmel_sam4s_init(void)
 {
-	uint32_t key;
-
-
-	key = irq_lock();
-
 	/*
 	 * Set FWS (Flash Wait State) value before increasing Master Clock
 	 * (MCK) frequency. Look at table 44.73 in the SAM4S datasheet.
@@ -209,14 +202,6 @@ static int atmel_sam4s_init(void)
 
 	/* Setup system clocks. */
 	clock_init();
-
-	/*
-	 * Install default handler that simply resets the CPU
-	 * if configured in the kernel, NOP otherwise.
-	 */
-	NMI_INIT();
-
-	irq_unlock(key);
 
 	return 0;
 }

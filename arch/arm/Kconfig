@@ -53,6 +53,22 @@ config ARM_ON_ENTER_CPU_IDLE_HOOK
 	  If needed, this hook can be used to prevent the CPU from actually
 	  entering sleep by skipping the WFE/WFI instruction.
 
+config ARM_ON_EXIT_CPU_IDLE
+	bool
+	help
+	  Enables a possibility to inject SoC-specific code just after WFI/WFE
+	  instructions of the cpu idle implementation.
+
+	  Enabling this option requires that the SoC provides a soc_cpu_idle.h
+	  header file which defines SOC_ON_EXIT_CPU_IDLE macro guarded by
+	  _ASMLANGUAGE.
+
+	  The SOC_ON_EXIT_CPU_IDLE macro is expanded just after
+	  WFI/WFE instructions before any memory access is performed. The purpose
+	  of the SOC_ON_EXIT_CPU_IDLE is to perform an action that mitigate issues
+	  observed on some SoCs caused by a memory access following WFI/WFE
+	  instructions.
+
 rsource "core/aarch32/Kconfig"
 rsource "core/aarch32/Kconfig.vfp"
 

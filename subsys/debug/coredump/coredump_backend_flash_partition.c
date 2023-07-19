@@ -48,6 +48,8 @@ LOG_MODULE_REGISTER(coredump, CONFIG_KERNEL_LOG_LEVEL);
 
 #define HDR_VER			1
 
+#define FLASH_BACKEND_SEM_TIMEOUT (k_is_in_isr() ? K_NO_WAIT : K_FOREVER)
+
 typedef int (*data_read_cb_t)(void *arg, uint8_t *buf, size_t len);
 
 static struct {
@@ -104,7 +106,7 @@ static int partition_open(void)
 {
 	int ret;
 
-	(void)k_sem_take(&flash_sem, K_FOREVER);
+	(void)k_sem_take(&flash_sem, FLASH_BACKEND_SEM_TIMEOUT);
 
 	ret = flash_area_open(FLASH_PARTITION_ID, &backend_ctx.flash_area);
 	if (ret != 0) {
@@ -617,7 +619,6 @@ struct coredump_backend_api coredump_backend_flash_partition = {
 	.query = coredump_flash_backend_query,
 	.cmd = coredump_flash_backend_cmd,
 };
-
 
 #ifdef CONFIG_DEBUG_COREDUMP_SHELL
 #include <zephyr/shell/shell.h>

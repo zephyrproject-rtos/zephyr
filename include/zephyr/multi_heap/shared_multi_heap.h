@@ -19,6 +19,7 @@ extern "C" {
 /**
  * @brief Heap Management
  * @defgroup heaps Heap Management
+ * @ingroup os_services
  * @{
  * @}
  */

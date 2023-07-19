@@ -8,6 +8,7 @@
 #include <st/f0/stm32f091Xc.dtsi>
 #include <st/f0/stm32f091r(b-c)tx-pinctrl.dtsi>
 #include "arduino_r3_connector.dtsi"
+#include "st_morpho_connector.dtsi"
 
 / {
 	model = "STMicroelectronics STM32F091RC-NUCLEO board";

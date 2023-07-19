@@ -21,6 +21,8 @@
 /** RCU configuration bit (from id cell) */
 #define GD32_CLOCK_ID_BIT(id)	 ((id)&0x1FU)
 
+#define CPU_FREQ DT_PROP(DT_PATH(cpus, cpu_0), clock_frequency)
+
 /** AHB prescaler exponents */
 static const uint8_t ahb_exp[16] = {
 	0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 1U, 2U, 3U, 4U, 6U, 7U, 8U, 9U,
@@ -109,7 +111,7 @@ static int clock_control_gd32_get_rate(const struct device *dev,
 	case RCU_AHBEN_OFFSET:
 #endif
 		psc = (cfg & RCU_CFG0_AHBPSC_MSK) >> RCU_CFG0_AHBPSC_POS;
-		*rate = CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC >> ahb_exp[psc];
+		*rate = CPU_FREQ >> ahb_exp[psc];
 		break;
 	case RCU_APB1EN_OFFSET:
 #if !defined(CONFIG_SOC_SERIES_GD32VF103) && \
@@ -118,11 +120,11 @@ static int clock_control_gd32_get_rate(const struct device *dev,
 	case RCU_ADDAPB1EN_OFFSET:
 #endif
 		psc = (cfg & RCU_CFG0_APB1PSC_MSK) >> RCU_CFG0_APB1PSC_POS;
-		*rate = CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC >> apb1_exp[psc];
+		*rate = CPU_FREQ >> apb1_exp[psc];
 		break;
 	case RCU_APB2EN_OFFSET:
 		psc = (cfg & RCU_CFG0_APB2PSC_MSK) >> RCU_CFG0_APB2PSC_POS;
-		*rate = CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC >> apb2_exp[psc];
+		*rate = CPU_FREQ >> apb2_exp[psc];
 		break;
 	default:
 		return -ENOTSUP;
@@ -152,14 +154,14 @@ static int clock_control_gd32_get_rate(const struct device *dev,
 		/* TIMERSEL = 0 */
 		if ((cfg1 & RCU_CFG1_TIMERSEL_MSK) == 0U) {
 			if (psc <= 2U) {
-				*rate = CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC;
+				*rate = CPU_FREQ;
 			} else {
 				*rate *= 2U;
 			}
 		/* TIMERSEL = 1 */
 		} else {
 			if (psc <= 4U) {
-				*rate = CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC;
+				*rate = CPU_FREQ;
 			} else {
 				*rate *= 4U;
 			}

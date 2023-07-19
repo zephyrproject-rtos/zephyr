@@ -92,14 +92,15 @@ void soc_deep_sleep_non_wake_dis(void)
 /* When MEC172x drivers are power-aware this should be move there */
 void soc_deep_sleep_wake_en(void)
 {
-#if defined(CONFIG_KSCAN) || DT_NODE_HAS_STATUS(DT_NODELABEL(ps2_0), okay)
+#if defined(CONFIG_KSCAN) ||	\
+	(!defined(CONFIG_PM_DEVICE) && DT_NODE_HAS_STATUS(DT_NODELABEL(ps2_0), okay))
 	struct ecia_named_regs *regs = ECIA_XEC_REG_BASE;
 #if defined(CONFIG_KSCAN)
 	/* Enable PLL wake via KSCAN  */
 	regs->GIRQ21.SRC = MCHP_KEYSCAN_GIRQ_BIT;
 	regs->GIRQ21.EN_SET = MCHP_KEYSCAN_GIRQ_BIT;
 #endif
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(ps2_0), okay)
+#if !defined(CONFIG_PM_DEVICE) && DT_NODE_HAS_STATUS(DT_NODELABEL(ps2_0), okay)
 	/* Enable PS2_0B_WK */
 	regs->GIRQ21.SRC = MCHP_PS2_0_PORT0B_WK_GIRQ_BIT;
 	regs->GIRQ21.EN_SET = MCHP_PS2_0_PORT0B_WK_GIRQ_BIT;
@@ -109,7 +110,7 @@ void soc_deep_sleep_wake_en(void)
 
 void soc_deep_sleep_wake_dis(void)
 {
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(ps2_0), okay)
+#if !defined(CONFIG_PM_DEVICE) && DT_NODE_HAS_STATUS(DT_NODELABEL(ps2_0), okay)
 	struct ecia_named_regs *regs = ECIA_XEC_REG_BASE;
 
 	/* Enable PS2_0B_WK */

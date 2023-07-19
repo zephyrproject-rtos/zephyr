@@ -56,6 +56,13 @@ LOG_MODULE_REGISTER(uart_stm32, CONFIG_UART_LOG_LEVEL);
 #define HAS_LPUART_1 (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(lpuart1), \
 					 st_stm32_lpuart, okay))
 
+/* Available everywhere except l1, f1, f2, f4. */
+#ifdef USART_CR3_DEM
+#define HAS_DRIVER_ENABLE 1
+#else
+#define HAS_DRIVER_ENABLE 0
+#endif
+
 #if HAS_LPUART_1
 #ifdef USART_PRESC_PRESCALER
 uint32_t lpuartdiv_calc(const uint64_t clock_rate, const uint16_t presc_idx,
@@ -188,7 +195,7 @@ static inline void uart_stm32_set_baudrate(const struct device *dev, uint32_t ba
 #endif
 				     baud_rate);
 		/* Check BRR is greater than or equal to 16d */
-		__ASSERT(LL_USART_ReadReg(config->usart, BRR) > 16,
+		__ASSERT(LL_USART_ReadReg(config->usart, BRR) >= 16,
 			 "BaudRateReg >= 16");
 
 #if HAS_LPUART_1
@@ -255,6 +262,27 @@ static inline uint32_t uart_stm32_get_hwctrl(const struct device *dev)
 
 	return LL_USART_GetHWFlowCtrl(config->usart);
 }
+
+#if HAS_DRIVER_ENABLE
+static inline void uart_stm32_set_driver_enable(const struct device *dev,
+						bool driver_enable)
+{
+	const struct uart_stm32_config *config = dev->config;
+
+	if (driver_enable) {
+		LL_USART_EnableDEMode(config->usart);
+	} else {
+		LL_USART_DisableDEMode(config->usart);
+	}
+}
+
+static inline bool uart_stm32_get_driver_enable(const struct device *dev)
+{
+	const struct uart_stm32_config *config = dev->config;
+
+	return LL_USART_IsEnabledDEMode(config->usart);
+}
+#endif
 
 static inline uint32_t uart_stm32_cfg2ll_parity(enum uart_config_parity parity)
 {
@@ -388,7 +416,7 @@ static inline enum uart_config_data_bits uart_stm32_ll2cfg_databits(uint32_t db,
 /**
  * @brief  Get LL hardware flow control define from
  *         Zephyr hardware flow control option.
- * @note   Supports only UART_CFG_FLOW_CTRL_RTS_CTS.
+ * @note   Supports only UART_CFG_FLOW_CTRL_RTS_CTS and UART_CFG_FLOW_CTRL_RS485.
  * @param  fc: Zephyr hardware flow control option.
  * @retval LL_USART_HWCONTROL_RTS_CTS, or LL_USART_HWCONTROL_NONE.
  */
@@ -396,6 +424,9 @@ static inline uint32_t uart_stm32_cfg2ll_hwctrl(enum uart_config_flow_control fc
 {
 	if (fc == UART_CFG_FLOW_CTRL_RTS_CTS) {
 		return LL_USART_HWCONTROL_RTS_CTS;
+	} else if (fc == UART_CFG_FLOW_CTRL_RS485) {
+		/* Driver Enable is handled separately */
+		return LL_USART_HWCONTROL_NONE;
 	}
 
 	return LL_USART_HWCONTROL_NONE;
@@ -428,6 +459,9 @@ static int uart_stm32_configure(const struct device *dev,
 	const uint32_t databits = uart_stm32_cfg2ll_databits(cfg->data_bits,
 							     cfg->parity);
 	const uint32_t flowctrl = uart_stm32_cfg2ll_hwctrl(cfg->flow_ctrl);
+#if HAS_DRIVER_ENABLE
+	bool driver_enable = cfg->flow_ctrl == UART_CFG_FLOW_CTRL_RS485;
+#endif
 
 	/* Hardware doesn't support mark or space parity */
 	if ((cfg->parity == UART_CFG_PARITY_MARK) ||
@@ -473,12 +507,16 @@ static int uart_stm32_configure(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	/* Driver supports only RTS CTS flow control */
-	if (cfg->flow_ctrl != UART_CFG_FLOW_CTRL_NONE) {
-		if (!IS_UART_HWFLOW_INSTANCE(config->usart) ||
-		    UART_CFG_FLOW_CTRL_RTS_CTS != cfg->flow_ctrl) {
-			return -ENOTSUP;
-		}
+	/* Driver supports only RTS/CTS and RS485 flow control */
+	if (!(cfg->flow_ctrl == UART_CFG_FLOW_CTRL_NONE
+		|| (cfg->flow_ctrl == UART_CFG_FLOW_CTRL_RTS_CTS &&
+			IS_UART_HWFLOW_INSTANCE(config->usart))
+#if HAS_DRIVER_ENABLE
+		|| (cfg->flow_ctrl == UART_CFG_FLOW_CTRL_RS485 &&
+			IS_UART_DRIVER_ENABLE_INSTANCE(config->usart))
+#endif
+		)) {
+		return -ENOTSUP;
 	}
 
 	LL_USART_Disable(config->usart);
@@ -498,6 +536,12 @@ static int uart_stm32_configure(const struct device *dev,
 	if (flowctrl != uart_stm32_get_hwctrl(dev)) {
 		uart_stm32_set_hwctrl(dev, flowctrl);
 	}
+
+#if HAS_DRIVER_ENABLE
+	if (driver_enable != uart_stm32_get_driver_enable(dev)) {
+		uart_stm32_set_driver_enable(dev, driver_enable);
+	}
+#endif
 
 	if (cfg->baudrate != data->baud_rate) {
 		uart_stm32_set_baudrate(dev, cfg->baudrate);
@@ -521,6 +565,11 @@ static int uart_stm32_config_get(const struct device *dev,
 		uart_stm32_get_databits(dev), uart_stm32_get_parity(dev));
 	cfg->flow_ctrl = uart_stm32_ll2cfg_hwctrl(
 		uart_stm32_get_hwctrl(dev));
+#if HAS_DRIVER_ENABLE
+	if (uart_stm32_get_driver_enable(dev)) {
+		cfg->flow_ctrl = UART_CFG_FLOW_CTRL_RS485;
+	}
+#endif
 	return 0;
 }
 #endif /* CONFIG_UART_USE_RUNTIME_CONFIGURE */
@@ -855,6 +904,11 @@ static void uart_stm32_irq_callback_set(const struct device *dev,
 
 	data->user_cb = cb;
 	data->user_data = cb_data;
+
+#if defined(CONFIG_UART_EXCLUSIVE_API_CALLBACKS)
+	data->async_cb = NULL;
+	data->async_user_data = NULL;
+#endif
 }
 
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
@@ -1075,6 +1129,11 @@ static int uart_stm32_async_callback_set(const struct device *dev,
 
 	data->async_cb = callback;
 	data->async_user_data = user_data;
+
+#if defined(CONFIG_UART_EXCLUSIVE_API_CALLBACKS)
+	data->user_cb = NULL;
+	data->user_data = NULL;
+#endif
 
 	return 0;
 }
@@ -1705,6 +1764,23 @@ static int uart_stm32_init(const struct device *dev)
 	}
 #endif
 
+#if HAS_DRIVER_ENABLE
+	if (config->de_enable) {
+		if (!IS_UART_DRIVER_ENABLE_INSTANCE(config->usart)) {
+			LOG_ERR("%s does not support driver enable", dev->name);
+			return -EINVAL;
+		}
+
+		uart_stm32_set_driver_enable(dev, true);
+		LL_USART_SetDEAssertionTime(config->usart, config->de_assert_time);
+		LL_USART_SetDEDeassertionTime(config->usart, config->de_deassert_time);
+
+		if (config->de_invert) {
+			LL_USART_SetDESignalPolarity(config->usart, LL_USART_DE_POLARITY_LOW);
+		}
+	}
+#endif
+
 	LL_USART_Enable(config->usart);
 
 #ifdef USART_ISR_TEACK
@@ -1918,6 +1994,10 @@ static const struct uart_stm32_config uart_stm32_cfg_##index = {	\
 	.tx_rx_swap = DT_INST_PROP_OR(index, tx_rx_swap, false),	\
 	.rx_invert = DT_INST_PROP(index, rx_invert),			\
 	.tx_invert = DT_INST_PROP(index, tx_invert),			\
+	.de_enable = DT_INST_PROP(index, de_enable),			\
+	.de_assert_time = DT_INST_PROP(index, de_assert_time),		\
+	.de_deassert_time = DT_INST_PROP(index, de_deassert_time),	\
+	.de_invert = DT_INST_PROP(index, de_invert),			\
 	STM32_UART_IRQ_HANDLER_FUNC(index)				\
 	STM32_UART_PM_WAKEUP(index)					\
 };									\

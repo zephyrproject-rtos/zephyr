@@ -14,11 +14,13 @@
 
 menuconfig MCUMGR_GRP_OS
 	bool "Mcumgr handlers for OS management"
-	select REBOOT
+	imply REBOOT
 	help
 	  Enables MCUmgr handlers for OS management
 
 if MCUMGR_GRP_OS
+
+if REBOOT
 
 config MCUMGR_GRP_OS_RESET_MS
 	int "Delay before executing reset command (ms)"
@@ -41,6 +43,8 @@ config MCUMGR_GRP_OS_RESET_HOOK
 	  application will be notified that a reset command has been received
 	  and will allow the application to perform any required operations
 	  before accepting or declining the reset request.
+
+endif
 
 config MCUMGR_GRP_OS_TASKSTAT
 	bool "Support for taskstat command"

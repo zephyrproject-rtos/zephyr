@@ -11,6 +11,7 @@ target_sources(app PRIVATE
 	src/main.c
 	src/test_time_incrementing.c
 	src/test_time.c
+	src/test_y2k.c
 )
 
 if(DEFINED CONFIG_RTC_ALARM)

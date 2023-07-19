@@ -146,8 +146,8 @@ Default Zephyr Peripheral Mapping:
 
 .. rst-class:: rst-columns
 
-- UART_1_TX : PB6
-- UART_1_RX : PB7
+- UART_1_TX : PA9
+- UART_1_RX : PA10
 - UART_2_TX : PA2
 - UART_2_RX : PA3
 - USER_PB : PA0
@@ -179,11 +179,11 @@ at 168MHz, driven by 8MHz high speed external clock.
 Serial Port
 ===========
 
-BLACK_F407VE has up to 6 UARTs. The Zephyr console output is assigned to UART2.
+BLACK_F407VE has up to 6 UARTs. The Zephyr console output is assigned to UART1.
 Default settings are 115200 8N1.
 Please note that ST-Link Virtual Com Port is not wired to chip serial port.
 In order to enable console output you should use a serial cable and connect
-it to UART2 pins (PA2/PA3).
+it to UART1 pins (PA9/PA10).
 
 
 Programming and Debugging

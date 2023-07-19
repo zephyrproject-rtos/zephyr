@@ -4,7 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/posix/fnmatch.h>
+#include <fnmatch.h>
+
 #include <zephyr/ztest.h>
 
 /*

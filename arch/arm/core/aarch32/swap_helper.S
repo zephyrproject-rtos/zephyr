@@ -147,6 +147,9 @@ out_fp_endif:
     beq out_store_thread_context
 
     vstmia r0!, {s0-s15}
+#ifdef CONFIG_VFP_FEATURE_REGS_S64_D32
+    vstmia r0!, {d16-d31}
+#endif
     vmrs r3, fpscr
     stm r0, {r3, ip}
 
@@ -746,11 +749,16 @@ svc_system_thread:
      */
     vmrs r0, fpexc
     str r0, [sp, #___fpu_t_SIZEOF - 4]
+    tst r0, #FPEXC_EN
+    beq _vfp_not_enabled
+    vmrs r0, fpscr
+    str r0, [sp, #___fpu_t_SIZEOF - 8]
 
     /* Disable VFP */
     mov r0, #0
     vmsr fpexc, r0
 
+_vfp_not_enabled:
     /*
      * Mark where to store the floating context for the undefined
      * instruction handler

@@ -98,6 +98,30 @@ Note: DW SPI only available on SPI0 and SPI1.
 whole flash then write 4 byte data to the flash. Read from the flash and compare the
 result with buffer to check functionality.
 
+Pinmux interface
+================
+
+The following pinmux peripheral module standards are supported:
+
+* Digilent Pmod (3x)
+
+The ARC EM SDP features three 12-pin Pmod connectors: Pmod_A, Pmod_B, and Pmod_C.
+The functionality of the Pmod connectors is programmable and includes GPIO, UART, SPI,
+I2C, and PWM (Note: support two type UART Pmod interface: UARTA is newer version).
+Multiplexing is controlled by software using the PMOD_MUX_CTRL register.
+
+* Arduino (1x)
+
+The ARC EM SDP provides an Arduino shield interface. Multiplexing is controlled by software
+using the ARDUINO_MUX_CTRL register. Note: some IO must be programmed in group and can't be
+set individually, for details see Table 9 in `EM Software Development Platform user guide`_.
+
+* MikroBUS (1x)
+
+Note that since the controllers that are mapped to the MikroBUS are shared with the Arduino
+controllers, and therefore the MikroBUS functions are only available when the Arduino
+multiplexer ARDUINO_MUX_CTRL is in the default mode (GPIO).
+
 Programming and Debugging
 *************************
 
@@ -251,6 +275,9 @@ References
 **********
 
 .. target-notes::
+
+.. _EM Software Development Platform user guide:
+   https://www.synopsys.com/dw/ipdir.php?ds=arc-em-software-development-platform
 
 .. _Digilent Pmod Modules:
    http://store.digilentinc.com/pmod-modules

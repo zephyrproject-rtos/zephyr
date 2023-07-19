@@ -8,6 +8,6 @@ project(x86_info)
 
 target_sources(app PRIVATE src/main.c)
 target_sources(app PRIVATE src/timer.c)
-target_sources_ifdef(CONFIG_ACPI app PRIVATE src/acpi.c)
+target_sources_ifdef(CONFIG_X86_ACPI app PRIVATE src/acpi.c)
 target_sources_ifdef(CONFIG_MULTIBOOT app PRIVATE src/multiboot.c)
 target_sources_ifdef(CONFIG_X86_MEMMAP app PRIVATE src/memmap.c)

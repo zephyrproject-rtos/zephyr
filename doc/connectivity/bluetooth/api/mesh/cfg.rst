@@ -14,6 +14,10 @@ cases, the mesh node can't rely on the Configuration Client to detect or determi
 local constraints, such as low battery power or changes in topology. For these
 scenarios, this API can be used to change the configuration locally.
 
+.. note::
+   Runtime configuration changes before the node is provisioned will not be stored
+   in the :ref:`persistent storage <bluetooth_mesh_persistent_storage>`.
+
 API reference
 *************
 

@@ -21,8 +21,8 @@ ZTEST_SUITE(bt_id_delete_bt_settings, NULL, NULL, NULL, NULL, NULL);
 
 /*
  *  Test deleting an ID, but not the last one
- *  As 'CONFIG_BT_SETTINGS' is enabled, settings should be saved by calling bt_settings_save_id()
- *  if 'BT_DEV_READY' flag in bt_dev.flags is set
+ *  As 'CONFIG_BT_SETTINGS' is enabled, settings should be saved by calling bt_settings_store_id()
+ *  and bt_settings_store_irk() if 'BT_DEV_READY' flag in bt_dev.flags is set
  *
  *  Constraints:
  *   - ID value used is neither corresponds to default index nor the last index
@@ -32,7 +32,7 @@ ZTEST_SUITE(bt_id_delete_bt_settings, NULL, NULL, NULL, NULL, NULL);
  *  Expected behaviour:
  *   - bt_dev.id_addr[] at index equals to the ID value used is cleared
  *   - bt_dev.irk[] at index equals to the ID value used is cleared (if privacy is enabled)
- *   - bt_settings_save_id() is called to save settings
+ *   - bt_settings_store_id() and bt_settings_store_irk() are called to save settings
  *   - bt_dev.id_count is kept unchanged
  *   - bt_id_delete() returns 0
  */
@@ -59,7 +59,8 @@ ZTEST(bt_id_delete_bt_settings, test_delete_non_default_no_last_item_settings_en
 
 	err = bt_id_delete(id);
 
-	expect_single_call_bt_settings_save_id();
+	expect_single_call_bt_settings_store_id();
+	expect_single_call_bt_settings_store_irk();
 
 	zassert_ok(err, "Unexpected error code '%d' was returned", err);
 	zassert_true(bt_dev.id_count == id_count, "Incorrect ID count %d was set", bt_dev.id_count);
@@ -73,9 +74,9 @@ ZTEST(bt_id_delete_bt_settings, test_delete_non_default_no_last_item_settings_en
 }
 
 /*
- *  Test deleting last ID.
- *  As 'CONFIG_BT_SETTINGS' is enabled, settings should be saved by calling bt_settings_save_id()
- *  if 'BT_DEV_READY' flag in bt_dev.flags is set
+ *  Test deleting last ID. As 'CONFIG_BT_SETTINGS' is enabled, settings should
+ *  be saved by calling bt_settings_store_id() and bt_settings_store_irk() if
+ *  'BT_DEV_READY' flag in bt_dev.flags is set
  *
  *  Constraints:
  *   - ID value used corresponds to the last item in the list bt_dev.id_addr[]
@@ -84,8 +85,9 @@ ZTEST(bt_id_delete_bt_settings, test_delete_non_default_no_last_item_settings_en
  *
  *  Expected behaviour:
  *   - bt_dev.id_addr[] at index equals to the ID value used is cleared
- *   - bt_dev.irk[] at index equals to the ID value used is cleared (if privacy is enabled)
- *   - bt_settings_save_id() is called to save settings
+ *   - bt_dev.irk[] at index equals to the ID value used is cleared (if privacy
+ *     is enabled)
+ *   - bt_settings_store_id() and bt_settings_store_irk() are called to save settings
  *   - bt_dev.id_count is decremented
  *   - bt_id_delete() returns 0
  */
@@ -111,7 +113,8 @@ ZTEST(bt_id_delete_bt_settings, test_delete_last_id_settings_enabled)
 
 	err = bt_id_delete(id);
 
-	expect_single_call_bt_settings_save_id();
+	expect_single_call_bt_settings_store_id();
+	expect_single_call_bt_settings_store_irk();
 
 	zassert_ok(err, "Unexpected error code '%d' was returned", err);
 	zassert_true(bt_dev.id_count == (id_count - 1), "Incorrect ID count %d was set",

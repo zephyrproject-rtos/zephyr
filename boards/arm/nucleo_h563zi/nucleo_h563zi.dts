@@ -8,6 +8,7 @@
 /dts-v1/;
 #include "nucleo_h563zi-common.dtsi"
 
+
 / {
 	model = "STMicroelectronics STM32H563ZI-NUCLEO board";
 	compatible = "st,stm32h563zi-nucleo";
@@ -18,7 +19,7 @@
 	chosen {
 		zephyr,console = &usart3;
 		zephyr,shell-uart = &usart3;
-		zephyr,sram = &sram0;
+		zephyr,sram = &sram1;
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
 	};
@@ -35,4 +36,18 @@
 
 &rng {
 	status = "okay";
+};
+
+&mac {
+	status = "okay";
+	pinctrl-0 = <&eth_mdc_pc1
+		     &eth_rxd0_pc4
+		     &eth_rxd1_pc5
+		     &eth_ref_clk_pa1
+		     &eth_mdio_pa2
+		     &eth_crs_dv_pa7
+		     &eth_tx_en_pg11
+		     &eth_txd0_pg13
+		     &eth_txd1_pb15>;
+	pinctrl-names = "default";
 };

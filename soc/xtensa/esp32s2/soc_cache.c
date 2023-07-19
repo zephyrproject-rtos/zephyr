@@ -49,7 +49,6 @@ void IRAM_ATTR esp_config_instruction_cache_mode(void)
 	esp_rom_Cache_Allocate_SRAM(CACHE_MEMORY_ICACHE_LOW, CACHE_MEMORY_ICACHE_HIGH,
 				CACHE_MEMORY_INVALID, CACHE_MEMORY_INVALID);
 #endif
-
 	cache_size = ESP32S2_ICACHE_SIZE;
 	cache_ways = CACHE_4WAYS_ASSOC;
 	cache_line_size = ESP32S2_ICACHE_LINE_SIZE;

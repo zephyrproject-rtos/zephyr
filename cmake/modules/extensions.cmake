@@ -1331,11 +1331,16 @@ function(zephyr_code_relocate)
     message(FATAL_ERROR "zephyr_code_relocate() requires a LOCATION argument")
   endif()
   if(CODE_REL_LIBRARY)
-    # Use cmake generator expression to convert library to file list
+    # Use cmake generator expression to convert library to file list,
+    # supporting relative and absolute paths
     set(genex_src_dir "$<TARGET_PROPERTY:${CODE_REL_LIBRARY},SOURCE_DIR>")
     set(genex_src_list "$<TARGET_PROPERTY:${CODE_REL_LIBRARY},SOURCES>")
-    set(file_list
-      "${genex_src_dir}/$<JOIN:${genex_src_list},$<SEMICOLON>${genex_src_dir}/>")
+    set(src_list_abs "$<FILTER:${genex_src_list},INCLUDE,^/>")
+    set(src_list_rel "$<FILTER:${genex_src_list},EXCLUDE,^/>")
+    set(src_list "${genex_src_dir}/$<JOIN:${src_list_rel},$<SEMICOLON>${genex_src_dir}/>")
+    set(nonempty_src_list "$<$<BOOL:${src_list_rel}>:${src_list}>")
+    set(sep_list "$<$<AND:$<BOOL:${src_list_abs}>,$<BOOL:${src_list_rel}>>:$<SEMICOLON>>")
+    set(file_list "${src_list_abs}${sep_list}${nonempty_src_list}")
   else()
     # Check if CODE_REL_FILES is a generator expression, if so leave it
     # untouched.
@@ -1484,6 +1489,42 @@ function(zephyr_build_string outvar)
 
   # This updates the provided outvar in parent scope (callers scope)
   set(${outvar} ${${outvar}} PARENT_SCOPE)
+endfunction()
+
+# Function to add header file(s) to the list to be passed to syscall generator.
+function(zephyr_syscall_header)
+  foreach(one_file ${ARGV})
+    if(EXISTS ${one_file})
+      set(header_file ${one_file})
+    elseif(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/${one_file})
+      set(header_file ${CMAKE_CURRENT_SOURCE_DIR}/${one_file})
+    else()
+      message(FATAL_ERROR "Syscall header file not found: ${one_file}")
+    endif()
+
+    target_sources(
+      syscalls_interface INTERFACE
+      ${header_file}
+    )
+    target_include_directories(
+      syscalls_interface INTERFACE
+      ${header_file}
+    )
+    add_dependencies(
+      syscalls_interface
+      ${header_file}
+    )
+
+    unset(header_file)
+  endforeach()
+endfunction()
+
+# Function to add header file(s) to the list to be passed to syscall generator
+# if condition is true.
+function(zephyr_syscall_header_ifdef feature_toggle)
+  if(${${feature_toggle}})
+    zephyr_syscall_header(${ARGN})
+  endif()
 endfunction()
 
 ########################################################
@@ -2493,10 +2534,13 @@ function(zephyr_var_name variable scope out)
 endfunction()
 
 # Usage:
-#   zephyr_get(<variable> [MERGE] [SYSBUILD [LOCAL|GLOBAL]] [VAR <var1> ...])
+#   zephyr_get(<variable> [MERGE [REVERSE]] [SYSBUILD [LOCAL|GLOBAL]] [VAR <var1> ...])
 #
 # Return the value of <variable> as local scoped variable of same name. If MERGE
-# is supplied, will return a list of found items.
+# is supplied, will return a list of found items. If REVERSE is supplied
+# together with MERGE, the order of the list will be reversed before being
+# returned. Reverse will happen before the list is returned and hence it will
+# not change the order of precedence in which the list itself is constructed.
 #
 # VAR can be used either to store the result in a variable with a different
 # name, or to look for values from multiple variables.
@@ -2526,7 +2570,7 @@ endfunction()
 # using `-DZEPHYR_TOOLCHAIN_VARIANT=<val>`, then the value from the cache is
 # returned.
 function(zephyr_get variable)
-  cmake_parse_arguments(GET_VAR "MERGE" "SYSBUILD" "VAR" ${ARGN})
+  cmake_parse_arguments(GET_VAR "MERGE;REVERSE" "SYSBUILD" "VAR" ${ARGN})
 
   if(DEFINED GET_VAR_SYSBUILD)
     if(NOT ("${GET_VAR_SYSBUILD}" STREQUAL "GLOBAL" OR
@@ -2536,6 +2580,10 @@ function(zephyr_get variable)
     endif()
   else()
     set(GET_VAR_SYSBUILD "GLOBAL")
+  endif()
+
+  if(GET_VAR_REVERSE AND NOT GET_VAR_MERGE)
+    message(FATAL_ERROR "zephyr_get(... REVERSE) missing a required argument: MERGE")
   endif()
 
   if(NOT DEFINED GET_VAR_VAR)
@@ -2561,9 +2609,16 @@ function(zephyr_get variable)
     else()
       set(sysbuild_${var})
     endif()
+
+    if(TARGET snippets_scope)
+      get_property(snippets_${var} TARGET snippets_scope PROPERTY ${var})
+    endif()
   endforeach()
 
-  set(scopes "sysbuild;CACHE;ENV;current")
+  set(scopes "sysbuild;CACHE;snippets;ENV;current")
+  if(GET_VAR_REVERSE)
+    list(REVERSE scopes)
+  endif()
   foreach(scope IN LISTS scopes)
     foreach(var ${GET_VAR_VAR})
       zephyr_var_name("${var}" "${scope}" expansion_var)
@@ -2601,10 +2656,62 @@ function(zephyr_get variable)
   endforeach()
 
   if(GET_VAR_MERGE)
-    list(REMOVE_DUPLICATES ${variable})
+    if(GET_VAR_REVERSE)
+      list(REVERSE ${variable})
+      list(REMOVE_DUPLICATES ${variable})
+      list(REVERSE ${variable})
+    else()
+      list(REMOVE_DUPLICATES ${variable})
+    endif()
     set(${variable} ${${variable}} PARENT_SCOPE)
   endif()
 endfunction(zephyr_get variable)
+
+# Usage:
+#   zephyr_create_scope(<scope>)
+#
+# Create a new scope for creation of scoped variables.
+#
+# <scope>: Name of new scope.
+#
+function(zephyr_create_scope scope)
+  if(TARGET ${scope}_scope)
+    message(FATAL_ERROR "zephyr_create_scope(${scope}) already exists.")
+  endif()
+
+  add_custom_target(${scope}_scope)
+endfunction()
+
+# Usage:
+#   zephyr_set(<variable> <value> SCOPE <scope> [APPEND])
+#
+# Zephyr extension of CMake set which allows a variable to be set in a specific
+# scope. The scope is used on later zephyr_get() invocation for precedence
+# handling when a variable it set in multiple scopes.
+#
+# <variable>   : Name of variable
+# <value>      : Value of variable, multiple values will create a list.
+#                The SCOPE argument identifies the end of value list.
+# SCOPE <scope>: Name of scope for the variable
+# APPEND       : Append values to the already existing variable in <scope>
+#
+function(zephyr_set variable)
+  cmake_parse_arguments(SET_VAR "APPEND" "SCOPE" "" ${ARGN})
+
+  zephyr_check_arguments_required_all(zephyr_set SET_VAR SCOPE)
+
+  if(NOT TARGET ${SET_VAR_SCOPE}_scope)
+    message(FATAL_ERROR "zephyr_set(... SCOPE ${SET_VAR_SCOPE}) doesn't exists.")
+  endif()
+
+  if(SET_VAR_APPEND)
+    set(property_args APPEND)
+  endif()
+
+  set_property(TARGET ${SET_VAR_SCOPE}_scope ${property_args}
+               PROPERTY ${variable} ${SET_VAR_UNPARSED_ARGUMENTS}
+  )
+endfunction()
 
 # Usage:
 #   zephyr_check_cache(<variable> [REQUIRED])
@@ -2832,7 +2939,7 @@ function(target_byproducts)
   endif()
 
   add_custom_command(TARGET ${TB_TARGET}
-                     POST_BUILD COMMAND ${CMAKE_COMMAND} -E echo ""
+                     POST_BUILD COMMAND ${CMAKE_COMMAND} -E true
                      BYPRODUCTS ${TB_BYPRODUCTS}
                      COMMENT "Logical command for additional byproducts on target: ${TB_TARGET}"
   )

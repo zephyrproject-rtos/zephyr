@@ -12,10 +12,6 @@
 	reg = <0x10000000 0xd0000>;
 };
 
-&sram0 {
-	reg = <0x8000000 0x48000>;
-};
-
 &nvic {
 	arm,num-irq-priority-bits = <3>;
 };

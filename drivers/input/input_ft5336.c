@@ -173,7 +173,11 @@ static int ft5336_init(const struct device *dev)
 
 	gpio_init_callback(&data->int_gpio_cb, ft5336_isr_handler,
 			   BIT(config->int_gpio.pin));
-	gpio_add_callback(config->int_gpio.port, &data->int_gpio_cb);
+	r = gpio_add_callback(config->int_gpio.port, &data->int_gpio_cb);
+	if (r < 0) {
+		LOG_ERR("Could not set gpio callback");
+		return r;
+	}
 #else
 	k_timer_init(&data->timer, ft5336_timer_handler, NULL);
 	k_timer_start(&data->timer, K_MSEC(CONFIG_INPUT_FT5336_PERIOD),

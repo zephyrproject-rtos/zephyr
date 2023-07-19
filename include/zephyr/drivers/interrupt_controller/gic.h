@@ -295,6 +295,21 @@ void arm_gic_irq_disable(unsigned int irq);
 bool arm_gic_irq_is_enabled(unsigned int irq);
 
 /**
+ * @brief Check if an interrupt is pending
+ *
+ * @param irq interrupt ID
+ * @return Returns true if interrupt is pending, false otherwise
+ */
+bool arm_gic_irq_is_pending(unsigned int irq);
+
+/**
+ * @brief Clear the pending irq
+ *
+ * @param irq interrupt ID
+ */
+void arm_gic_irq_clear_pending(unsigned int irq);
+
+/**
  * @brief Set interrupt priority
  *
  * @param irq interrupt ID

@@ -30,7 +30,7 @@ static struct mdm_receiver_context *contexts[MAX_MDM_CTX];
 /**
  * @brief  Finds receiver context which manages provided device.
  *
- * @param  *dev: device used by the receiver context.
+ * @param  dev: device used by the receiver context.
  *
  * @retval Receiver context or NULL.
  */
@@ -53,7 +53,7 @@ static struct mdm_receiver_context *context_from_dev(const struct device *dev)
  * @note   Amount of stored receiver contexts is determined by
  *         MAX_MDM_CTX.
  *
- * @param  *ctx: receiver context to persist.
+ * @param  ctx: receiver context to persist.
  *
  * @retval 0 if ok, < 0 if error.
  */
@@ -76,7 +76,7 @@ static int mdm_receiver_get(struct mdm_receiver_context *ctx)
  *
  * @note   Discards remaining data.
  *
- * @param  *ctx: receiver context.
+ * @param  ctx: receiver context.
  *
  * @retval None.
  */
@@ -98,7 +98,7 @@ static void mdm_receiver_flush(struct mdm_receiver_context *ctx)
  * @note   Fills contexts ring buffer with received data.
  *         When ring buffer is full the data is discarded.
  *
- * @param  *uart_dev: uart device.
+ * @param  uart_dev: uart device.
  *
  * @retval None.
  */
@@ -138,7 +138,7 @@ static void mdm_receiver_isr(const struct device *uart_dev, void *user_data)
 /**
  * @brief  Configures receiver context and assigned device.
  *
- * @param  *ctx: receiver context.
+ * @param  ctx: receiver context.
  *
  * @retval None.
  */
@@ -208,7 +208,7 @@ int mdm_receiver_sleep(struct mdm_receiver_context *ctx)
 int mdm_receiver_wake(struct mdm_receiver_context *ctx)
 {
 #ifdef CONFIG_PM_DEVICE
-	pm_device_action_run(ctx->uart_dev, PM_DEVICE_ACTION_SUSPEND);
+	pm_device_action_run(ctx->uart_dev, PM_DEVICE_ACTION_RESUME);
 #endif
 	uart_irq_rx_enable(ctx->uart_dev);
 

@@ -52,7 +52,7 @@ The project's documentation contains the following items:
       header [shape="rectangle" label="c header\ncomments"]
       xml [shape="rectangle" label="XML"]
       html [shape="rectangle" label="HTML\nweb site"]
-      sphinx[shape="ellipse" label="sphinx +\nbreathe,\ndocutils"]
+      sphinx[shape="ellipse" label="sphinx +\ndocleaf,\ndocutils"]
       images -> sphinx
       rst -> sphinx
       conf -> sphinx
@@ -65,7 +65,7 @@ The project's documentation contains the following items:
 
 
 The reStructuredText files are processed by the Sphinx documentation system,
-and make use of the breathe extension for including the doxygen-generated API
+and make use of the docleaf extension for including the doxygen-generated API
 material.  Additional tools are required to generate the
 documentation locally, as described in the following sections.
 
@@ -80,7 +80,7 @@ Our documentation processing has been tested to run with:
 * Graphviz 2.43
 * Latexmk version 4.56
 * All Python dependencies listed in the repository file
-  ``scripts/requirements-doc.txt``
+  ``doc/requirements.txt``
 
 In order to install the documentation tools, first install Zephyr as
 described in :ref:`getting_started`. Then install additional tools
@@ -226,7 +226,7 @@ build the documentation directly from there:
 Filtering expected warnings
 ***************************
 
-There are some known issues with Sphinx/Breathe that generate Sphinx warnings
+There are some known issues with Sphinx/Docleaf that generate Sphinx warnings
 even though the input is valid C code. While these issues are being considered
 for fixing we have created a Sphinx extension that allows to filter them out
 based on a set of regular expressions. The extension is named
@@ -234,8 +234,8 @@ based on a set of regular expressions. The extension is named
 ``doc/_extensions/zephyr/warnings_filter.py``. The warnings to be filtered out
 can be added to the ``doc/known-warnings.txt`` file.
 
-The most common warning reported by Sphinx/Breathe is related to duplicate C
-declarations. This warning may be caused by different Sphinx/Breathe issues:
+The most common warning reported by Sphinx/Docleaf is related to duplicate C
+declarations. This warning may be caused by different Sphinx/Docleaf issues:
 
 - Multiple declarations of the same object are not supported
 - Different objects (e.g. a struct and a function) can not share the same name

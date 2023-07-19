@@ -41,6 +41,8 @@ enum {
 	ADV_FLAG_SENT,
 	/** Currently performing proxy advertising */
 	ADV_FLAG_PROXY,
+	/** The proxy has been start, but maybe pending. */
+	ADV_FLAG_PROXY_START,
 	/** The send-call has been scheduled. */
 	ADV_FLAG_SCHEDULED,
 	/** The send-call has been pending. */
@@ -267,6 +269,7 @@ static void send_pending_adv(struct k_work *work)
 
 		atomic_clear_bit(adv->flags, ADV_FLAG_ACTIVE);
 		atomic_clear_bit(adv->flags, ADV_FLAG_PROXY);
+		atomic_clear_bit(adv->flags, ADV_FLAG_PROXY_START);
 
 		if (adv->buf) {
 			net_buf_unref(adv->buf);
@@ -307,6 +310,8 @@ static void send_pending_adv(struct k_work *work)
 		return;
 	}
 
+	atomic_set_bit(adv->flags, ADV_FLAG_PROXY_START);
+
 	if (!bt_mesh_adv_gatt_send()) {
 		atomic_set_bit(adv->flags, ADV_FLAG_PROXY);
 	}
@@ -324,7 +329,9 @@ static bool schedule_send(struct bt_mesh_ext_adv *adv)
 	timestamp = adv->timestamp;
 
 	if (atomic_test_and_clear_bit(adv->flags, ADV_FLAG_PROXY)) {
+		atomic_clear_bit(adv->flags, ADV_FLAG_PROXY_START);
 		(void)bt_le_ext_adv_stop(adv->instance);
+
 		atomic_clear_bit(adv->flags, ADV_FLAG_ACTIVE);
 	}
 
@@ -436,7 +443,7 @@ static void connected(struct bt_le_ext_adv *instance,
 {
 	struct bt_mesh_ext_adv *adv = gatt_adv_get();
 
-	if (atomic_test_and_clear_bit(adv->flags, ADV_FLAG_PROXY)) {
+	if (atomic_test_and_clear_bit(adv->flags, ADV_FLAG_PROXY_START)) {
 		atomic_clear_bit(adv->flags, ADV_FLAG_ACTIVE);
 		(void)schedule_send(adv);
 	}

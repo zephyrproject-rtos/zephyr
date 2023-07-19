@@ -381,6 +381,15 @@ config NRFX_USBD
 	bool "USBD driver"
 	depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_USBD))
 
+config NRFX_USBD_ISO_IN_ZLP
+	bool "Send ZLP on ISO IN when not ready"
+	depends on NRFX_USBD
+	default y
+	help
+	  Controls the response of the ISO IN endpoint to an IN token when no
+	  data is ready to be sent. When enabled, ZLP is sent when no data is
+	  ready. When disabled, no response is sent (bus timeout occurs).
+
 config NRFX_USBREG
 	bool "USBREG driver"
 	depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_USBREG))

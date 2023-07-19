@@ -32,7 +32,7 @@ Building and Running
 For :ref:`mimxrt1064_evk`, build this sample application with the following commands:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/video/mt9m114
+   :zephyr-app: samples/subsys/video/capture
    :board: mimxrt1064_evk
    :goals: build
    :compact:

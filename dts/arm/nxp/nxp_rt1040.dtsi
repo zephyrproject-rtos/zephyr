@@ -27,8 +27,17 @@
 		/delete-node/ usbd@402e0200;
 		/* CSI is not present on RT1040 */
 		/delete-node/ csi@402bc000;
+		/* LPSPI at 0x4039c000 is not present */
+		/delete-node/ spi@4039c000;
 	};
 };
+
+/*
+ * RT1040 RM descibes the SPI peripheral at 0x403a0000 as LPSPI3.
+ * other RT10xx SOCs describe this as LPSPI4, so just add an alias.
+ */
+lpspi3: &lpspi4 {};
+
 
 /*
  * GPIO pinmux options. These options define the pinmux settings

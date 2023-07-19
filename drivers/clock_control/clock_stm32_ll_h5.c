@@ -74,6 +74,10 @@ static uint32_t get_startup_frequency(void)
 		return STM32_CSI_FREQ;
 	case LL_RCC_SYS_CLKSOURCE_STATUS_HSI:
 		return STM32_HSI_FREQ;
+	case LL_RCC_SYS_CLKSOURCE_STATUS_HSE:
+		return STM32_HSE_FREQ;
+	case LL_RCC_SYS_CLKSOURCE_STATUS_PLL1:
+		return get_pllsrc_frequency(PLL1_ID);
 	default:
 		__ASSERT(0, "Unexpected startup freq");
 		return 0;
@@ -367,11 +371,11 @@ static uint32_t get_vco_output_range(uint32_t vco_input_range)
 
 static void set_regu_voltage(uint32_t hclk_freq)
 {
-	if (hclk_freq < MHZ(80)) {
+	if (hclk_freq <= MHZ(100)) {
 		LL_PWR_SetRegulVoltageScaling(LL_PWR_REGU_VOLTAGE_SCALE3);
-	} else if (hclk_freq < MHZ(130)) {
+	} else if (hclk_freq <= MHZ(150)) {
 		LL_PWR_SetRegulVoltageScaling(LL_PWR_REGU_VOLTAGE_SCALE2);
-	} else if (hclk_freq < MHZ(180)) {
+	} else if (hclk_freq <= MHZ(200)) {
 		LL_PWR_SetRegulVoltageScaling(LL_PWR_REGU_VOLTAGE_SCALE1);
 	} else {
 		LL_PWR_SetRegulVoltageScaling(LL_PWR_REGU_VOLTAGE_SCALE0);

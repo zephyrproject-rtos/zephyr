@@ -36,6 +36,7 @@ Important limitations
 This board inherits
 :ref:`the limitations of its architecture<posix_arch_limitations>`
 
+.. _native_posix_how_to_use:
 
 How to use it
 *************
@@ -173,6 +174,7 @@ should be considered.
 Check the :ref:`POSIX architecture comparison <posix_arch_compare>`
 with other development and test options for more insights.
 
+.. _native_posix_architecture:
 
 Architecture
 ************
@@ -246,6 +248,8 @@ simulated time when the last clock ratio adjustment took place.
 
 All times are kept in microseconds.
 
+.. _native_posix_peripherals:
+
 Peripherals
 ***********
 
@@ -266,9 +270,18 @@ The following peripherals are currently provided with this board:
   Please refer to the section `About time in native_posix`_ for more
   information.
 
-**UART**
-  An optional UART driver can be compiled with native_posix.
-  For more information refer to the section `UART`_.
+**UART/Serial**
+   Two optional native UART drivers are available:
+
+   **PTTY driver (UART_NATIVE_POSIX)**
+      With this driver, one or two Zephyr UART devices can be created. These
+      can be connected to the Linux process stdin/stdout or a newly created
+      pseudo-tty. For more information refer to the section `PTTY UART`_.
+
+   **TTY driver (UART_NATIVE_TTY)**
+      An UART driver for interacting with host-attached serial port devices
+      (eg. USB to UART dongles). For more information refer to the section
+      `TTY UART`_.
 
 **Real time clock**
   The real time clock model provides a model of a constantly powered clock.
@@ -371,8 +384,8 @@ The following peripherals are currently provided with this board:
   The flash content can be accessed from the host system, as explained in the
   `Host based flash access`_ section.
 
-UART
-****
+PTTY UART
+*********
 
 This driver can be configured with :kconfig:option:`CONFIG_UART_NATIVE_POSIX`
 to instantiate up to two UARTs. By default only one UART is enabled.
@@ -408,6 +421,42 @@ option ``-attach_uart_cmd=<"cmd">``. Where the default command is given by
 Note that the default command assumes both ``xterm`` and ``screen`` are
 installed in the system.
 
+.. _native_tty_uart:
+
+TTY UART
+********
+
+With this driver an application can use the polling UART API (``uart_poll_out``,
+``uart_poll_in``) to write and read characters to and from a connected serial
+port device.
+
+This driver is automatically enabled when a devicetree contains a node
+with ``"zephyr,native-tty-uart"`` compatible property and ``okay`` status, such
+as one below::
+
+	uart {
+		status = "okay";
+		compatible = "zephyr,native-tty-uart";
+		serial-port = "/dev/ttyUSB0";
+		current-speed = <115200>;
+	};
+
+Interaction with serial ports can be configured in several different ways:
+
+* The default serial port and baud rate can be set via the device tree
+  properties ``serial-port`` and ``current-speed`` respectively.  The
+  ``serial-port`` property is optional.
+* Serial port and baud rate can also be set via command line options ``X_port``
+  and ``X_baud`` respectively, where ``X`` is a name of a node. Command line
+  options override values from the devicetree.
+* The rest of the configuration options such as number of data and stop bits,
+  parity, as well as baud rate can be set at runtime with ``uart_configure``.
+
+Multiple instances of such uart drivers are supported.
+
+The :ref:`sample-uart-native-tty` sample app provides a working example of the
+driver.
+
 Subsystems backends
 *******************
 
@@ -420,7 +469,7 @@ development by integrating more seamlessly with the host operating system:
   redirect any :c:func:`printk` write to the native host application's
   ``stdout``.
 
-  This driver is selected by default if the `UART`_ is not compiled in.
+  This driver is selected by default if the `PTTY UART`_ is not compiled in.
   Otherwise :kconfig:option:`CONFIG_UART_CONSOLE` will be set to select the UART as
   console backend.
 
@@ -437,7 +486,8 @@ development by integrating more seamlessly with the host operating system:
 
   This backend can be selected with :kconfig:option:`CONFIG_LOG_BACKEND_NATIVE_POSIX`
   and is enabled by default unless the native_posix UART is compiled in.
-  In this later case, by default, the logger is set to output to the `UART`_.
+  In this later case, by default, the logger is set to output to the
+  `PTTY UART`_.
 
 **Tracing**:
   A backend/"bottom" for Zephyr's CTF tracing subsystem which writes the tracing

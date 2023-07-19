@@ -67,6 +67,20 @@ config INPUT_THREAD_STACK_SIZE
 
 endif # INPUT_MODE_THREAD
 
+config INPUT_EVENT_DUMP
+	bool "Log all input events"
+	depends on LOG
+	help
+	  Dump all input devents using log info messages, has to be enabled
+	  with "input dump on" if INPUT_SHELL is used.
+
+config INPUT_SHELL
+	bool "Input shell"
+	depends on SHELL
+	help
+	  Enable the input shell, for interacting with the input subsystem
+	  through the shell interface.
+
 config INPUT_LONGPRESS
 	bool "Input longpress"
 	default y

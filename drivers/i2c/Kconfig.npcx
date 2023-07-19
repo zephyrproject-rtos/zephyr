@@ -11,3 +11,11 @@ config I2C_NPCX
 	  This option enables the I2C driver for NPCX family of
 	  processors.
 	  Say y if you wish to use I2C modules on NPCX MCU.
+
+config I2C_NPCX_PORT_INIT_PRIORITY
+	int "NPCX I2C port init priority"
+	default 51
+	depends on I2C_NPCX
+	help
+	  Initialization priority for the I2C port on an NPCX device, must be
+	  set to a lower priority than the controller one (I2C_INIT_PRIORITY).

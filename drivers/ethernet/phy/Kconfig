@@ -23,11 +23,20 @@ config PHY_INIT_PRIORITY
 
 config PHY_GENERIC_MII
 	bool "Generic MII PHY Driver"
-	default y
+	default y if !ETH_ADIN2111
 	depends on MDIO
 	help
 	  This is a generic MII PHY interface that communicates with the
 	  PHY using the MDIO bus.
+
+config PHY_ADIN2111
+	bool "ADIN2111 PHY driver"
+	default y
+	depends on DT_HAS_ADI_ADIN2111_PHY_ENABLED
+	depends on ETH_ADIN2111
+	depends on MDIO_ADIN2111
+	help
+	  Enable ADIN2111 PHY driver.
 
 config PHY_AUTONEG_TIMEOUT_MS
 	int "Auto-negotiation timeout value in milliseconds"

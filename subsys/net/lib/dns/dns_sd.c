@@ -1064,6 +1064,12 @@ int dns_sd_query_extract(const uint8_t *query, size_t query_size, struct dns_sd_
 		size[i] = 0;
 	}
 
+	if (qlabels > N) {
+		NET_DBG("too few buffers to extract query: qlabels: %zu, N: %zu",
+			qlabels, N);
+		return -ENOBUFS;
+	}
+
 	if (qlabels < DNS_SD_MIN_LABELS) {
 		NET_DBG("too few labels in query %zu, DNS_SD_MIN_LABELS: %d", qlabels,
 			DNS_SD_MIN_LABELS);
@@ -1120,10 +1126,6 @@ int dns_sd_query_extract(const uint8_t *query, size_t query_size, struct dns_sd_
 			NET_DBG("domain '%s' is invalid", record->domain);
 			return -EINVAL;
 		}
-	} else if (qlabels > N) {
-		NET_DBG("too few buffers to extract query: qlabels: %zu, N: %zu",
-			qlabels, N);
-		return -ENOBUFS;
 	}
 
 	return offset;

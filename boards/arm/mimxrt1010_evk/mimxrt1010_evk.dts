@@ -82,10 +82,11 @@ arduino_serial: &lpuart1 {};
 };
 
 &flexspi {
+	status = "okay";
 	reg = <0x400a0000 0x4000>, <0x60000000 DT_SIZE_M(16)>;
 	at25sf128a: at25sf128a@0 {
 		compatible = "nxp,imx-flexspi-nor";
-		size = <134217728>;
+		size = <DT_SIZE_M(16 * 8)>;
 		reg = <0>;
 		spi-max-frequency = <133000000>;
 		status = "okay";

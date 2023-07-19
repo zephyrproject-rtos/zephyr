@@ -894,7 +894,7 @@ bool net_ipaddr_parse(const char *str, size_t str_len, struct sockaddr *addr)
 		return parse_ipv6(str, str_len, addr, true);
 	}
 
-	for (count = i = 0; str[i] && i < str_len; i++) {
+	for (count = i = 0; i < str_len && str[i]; i++) {
 		if (str[i] == ':') {
 			count++;
 		}

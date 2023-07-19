@@ -7,6 +7,7 @@
 /dts-v1/;
 
 #include <ti/cc3235sf.dtsi>
+#include "cc3235sf_launchxl-pinctrl.dtsi"
 
 / {
 	model = "TI CC3235SF LaunchXL";
@@ -70,11 +71,15 @@
 &uart0 {
 	status = "okay";
 	current-speed = <115200>;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-names = "default";
 };
 
 &i2c0 {
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-names = "default";
 };
 
 &wdt0 {

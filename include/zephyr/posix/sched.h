@@ -25,7 +25,8 @@ extern "C" {
 /* Priority based preemptive scheduling policy */
 #define SCHED_RR 2
 
-#if defined(CONFIG_MINIMAL_LIBC) || defined(CONFIG_PICOLIBC) || defined(CONFIG_ARMCLANG_STD_LIBC)
+#if defined(CONFIG_MINIMAL_LIBC) || defined(CONFIG_PICOLIBC) || defined(CONFIG_ARMCLANG_STD_LIBC) \
+	|| defined(CONFIG_ARCMWDT_LIBC)
 struct sched_param {
 	int sched_priority;
 };

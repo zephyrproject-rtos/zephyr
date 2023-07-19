@@ -19,6 +19,10 @@ config FXOS8700_DRDY_INT1
 	default y
 	depends on FXOS8700_TRIGGER
 
+# Allocate LVGL buffers in custom section
+config LV_Z_VBD_CUSTOM_SECTION
+	default y if LVGL
+
 if DMA_MCUX_LPC
 
 # Memory from the heap pool is used to allocate DMA descriptors for
@@ -29,51 +33,13 @@ config HEAP_MEM_POOL_SIZE
 
 endif # DMA_MCUX_LPC
 
-if DISPLAY
-
-# Enable MIPI display driver
-
-config MIPI_DSI
-	default y
-
-# Use external framebuffer memory for the LCDIF framebuffer
-config MCUX_DCNANO_LCDIF_EXTERNAL_FB_MEM
-	default y
-# Use FlexSPI2 base address for framebuffer (pSRAM is present on this bus)
-config MCUX_DCNANO_LCDIF_EXTERNAL_FB_ADDR
-	default 0x38000000
-# M33 core and LCDIF both access FlexSPI2 through the same cache,
-# so coherency does not need to be managed.
-config MCUX_DCNANO_LCDIF_MAINTAIN_CACHE
-	depends on !MCUX_DCNANO_LCDIF_EXTERNAL_FB_MEM
-
-endif # DISPLAY
-
-config KSCAN
-	default y if LVGL
-
-if LVGL
-
-config LV_Z_POINTER_KSCAN
-	default y
-
-config LV_Z_VDB_SIZE
-	default 16
-
-config LV_Z_DPI
-	default 128
-
-choice LV_COLOR_DEPTH
-	default LV_COLOR_DEPTH_16
-endchoice
-
-endif # LVGL
-
 if PM
 # Turn on Device Level Power Management as we wish
 # to reconfigure the FlexSPI pins for power savings
 # when transitioning the SoC to Deep Low Power modes.
 config PM_DEVICE
+	default y
+config REGULATOR
 	default y
 endif # PM
 

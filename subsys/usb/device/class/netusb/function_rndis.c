@@ -652,7 +652,7 @@ static int rndis_set_handle(uint8_t *data, uint32_t len)
 	/* Parameter starts at offset buf_offset of the req_id field ;) */
 	param = (uint8_t *)&cmd->req_id + sys_le32_to_cpu(cmd->buf_offset);
 
-	if (len - ((uint32_t)param - (uint32_t)cmd) !=
+	if (len - ((uintptr_t)param - (uintptr_t)cmd) !=
 	    sys_le32_to_cpu(cmd->buf_len)) {
 		LOG_ERR("Packet parsing error");
 		return -EINVAL;
@@ -834,12 +834,18 @@ static int handle_encapsulated_rsp(uint8_t **data, uint32_t *len)
 		return -ENODATA;
 	}
 
+	*len = buf->len;
+	if (*len > CONFIG_USB_REQUEST_BUFFER_SIZE) {
+		LOG_ERR("Response too long %u, truncating to %u", buf->len,
+			CONFIG_USB_REQUEST_BUFFER_SIZE);
+		*len = CONFIG_USB_REQUEST_BUFFER_SIZE;
+	}
+
 	if (VERBOSE_DEBUG) {
 		net_hexdump("RSP <", buf->data, buf->len);
 	}
 
-	memcpy(*data, buf->data, buf->len);
-	*len = buf->len;
+	memcpy(*data, buf->data, *len);
 
 	net_buf_unref(buf);
 

@@ -93,6 +93,7 @@ extern struct ztest_suite_node _ztest_suite_node_list_end[];
  * @param state The current state of the machine as it relates to the test executable.
  * @return The number of tests that ran.
  */
+__deprecated
 int ztest_run_registered_test_suites(const void *state);
 
 /**
@@ -104,6 +105,7 @@ int ztest_run_registered_test_suites(const void *state);
  * may be called at the end of test_main(). It will cause the test to fail if any suite was
  * registered but never ran.
  */
+__deprecated
 void ztest_verify_all_registered_test_suites_ran(void);
 
 /**
@@ -273,14 +275,14 @@ extern struct k_mem_partition ztest_mem_partition;
  *
  * @param suite Name of the testing suite
  */
-#define ztest_test_suite(suite, ...)                                                               \
+#define ztest_test_suite(suite, ...) __DEPRECATED_MACRO                                            \
 	static ZTEST_DMEM struct unit_test _##suite[] = { __VA_ARGS__, { 0 } }
 /**
  * @brief Run the specified test suite.
  *
  * @param suite Test suite to run.
  */
-#define ztest_run_test_suite(suite)                                                                \
+#define ztest_run_test_suite(suite)  __DEPRECATED_MACRO                                            \
 	z_ztest_run_test_suite(#suite, _##suite)
 
 /**

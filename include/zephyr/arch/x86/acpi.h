@@ -169,7 +169,7 @@ union acpi_dmar_id {
 	uint16_t raw;
 };
 
-#if defined(CONFIG_ACPI)
+#if defined(CONFIG_X86_ACPI)
 
 void *z_acpi_find_table(uint32_t signature);
 
@@ -187,7 +187,7 @@ z_acpi_get_dev_scope_paths(struct acpi_dmar_dev_scope *dev_scope, int *n);
 
 uint16_t z_acpi_get_dev_id_from_dmar(uint8_t dev_scope_type);
 
-#else /* CONFIG_ACPI */
+#else /* CONFIG_X86_ACPI */
 
 #define z_acpi_find_table(...) NULL
 #define z_acpi_get_cpu(...) NULL
@@ -197,7 +197,7 @@ uint16_t z_acpi_get_dev_id_from_dmar(uint8_t dev_scope_type);
 #define z_acpi_get_dev_scope_paths(...) NULL
 #define z_acpi_get_dev_id_from_dmar(...) USHRT_MAX
 
-#endif /* CONFIG_ACPI */
+#endif /* CONFIG_X86_ACPI */
 
 #endif /* _ASMLANGUAGE */
 

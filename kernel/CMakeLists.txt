@@ -3,6 +3,27 @@
 # kernel is a normal CMake library and not a zephyr_library because it
 # should not be --whole-archive'd
 
+zephyr_syscall_header(
+  ${ZEPHYR_BASE}/include/zephyr/device.h
+  ${ZEPHYR_BASE}/include/zephyr/kernel.h
+  ${ZEPHYR_BASE}/include/zephyr/sys/kobject.h
+  ${ZEPHYR_BASE}/include/zephyr/sys/time_units.h
+)
+
+if(NOT CONFIG_ERRNO_IN_TLS AND NOT CONFIG_LIBC_ERRNO)
+  zephyr_syscall_header(${ZEPHYR_BASE}/include/zephyr/sys/errno_private.h)
+endif()
+
+zephyr_syscall_header_ifdef(
+  CONFIG_ATOMIC_OPERATIONS_C
+  ${ZEPHYR_BASE}/include/zephyr/sys/atomic_c.h
+)
+
+zephyr_syscall_header_ifdef(
+  CONFIG_MMU
+  ${ZEPHYR_BASE}/include/zephyr/sys/mem_manage.h
+)
+
 # If a pre-built static library containing kernel code exists in
 # this directory, libkernel.a, link it with the application code
 # instead of building from source.
@@ -99,6 +120,12 @@ target_sources_ifdef(
   mem_domain.c
   userspace_handler.c
   userspace.c
+  )
+
+target_sources_ifdef(
+  CONFIG_DYNAMIC_THREAD
+  kernel PRIVATE
+  dynamic.c
   )
 
 target_include_directories(kernel PRIVATE

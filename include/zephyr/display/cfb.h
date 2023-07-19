@@ -21,16 +21,9 @@ extern "C" {
 #endif
 
 /**
- * @brief Display Drivers
- * @addtogroup display_interfaces Display Drivers
- * @{
- * @}
- */
-
-/**
  * @brief Public Monochrome Character Framebuffer API
  * @defgroup monochrome_character_framebuffer Monochrome Character Framebuffer
- * @ingroup display_interfaces
+ * @ingroup utilities
  * @{
  */
 
@@ -55,6 +48,11 @@ struct cfb_font {
 	uint8_t height;
 	uint8_t first_char;
 	uint8_t last_char;
+};
+
+struct cfb_position {
+	uint16_t x;
+	uint16_t y;
 };
 
 /**
@@ -103,6 +101,40 @@ int cfb_print(const struct device *dev, const char *const str, uint16_t x, uint1
  * @return 0 on success, negative value otherwise
  */
 int cfb_draw_text(const struct device *dev, const char *const str, int16_t x, int16_t y);
+
+/**
+ * @brief Draw a point.
+ *
+ * @param dev Pointer to device structure for driver instance
+ * @param pos position of the point
+ *
+ * @return 0 on success, negative value otherwise
+ */
+int cfb_draw_point(const struct device *dev, const struct cfb_position *pos);
+
+/**
+ * @brief Draw a line.
+ *
+ * @param dev Pointer to device structure for driver instance
+ * @param start start position of the line
+ * @param end end position of the line
+ *
+ * @return 0 on success, negative value otherwise
+ */
+int cfb_draw_line(const struct device *dev, const struct cfb_position *start,
+		  const struct cfb_position *end);
+
+/**
+ * @brief Draw a rectangle.
+ *
+ * @param dev Pointer to device structure for driver instance
+ * @param start Top-Left position of the rectangle
+ * @param end Bottom-Right position of the rectangle
+ *
+ * @return 0 on success, negative value otherwise
+ */
+int cfb_draw_rect(const struct device *dev, const struct cfb_position *start,
+		  const struct cfb_position *end);
 
 /**
  * @brief Clear framebuffer.

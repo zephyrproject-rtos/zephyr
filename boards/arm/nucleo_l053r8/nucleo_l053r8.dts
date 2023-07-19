@@ -8,6 +8,7 @@
 #include <st/l0/stm32l053X8.dtsi>
 #include <st/l0/stm32l053r(6-8)tx-pinctrl.dtsi>
 #include "arduino_r3_connector.dtsi"
+#include "st_morpho_connector.dtsi"
 
 / {
 	model = "STMicroelectronics STM32L053R8-NUCLEO board";

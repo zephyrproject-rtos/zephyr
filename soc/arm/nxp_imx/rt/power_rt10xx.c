@@ -14,6 +14,7 @@
 #include <fsl_gpc.h>
 #include <fsl_clock.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/sys/barrier.h>
 
 #include "power_rt10xx.h"
 
@@ -97,8 +98,8 @@ static void lpm_enter_sleep_mode(clock_mode_t mode)
 	__disable_irq();
 	/* Set BASEPRI to 0 */
 	irq_unlock(0);
-	__DSB();
-	__ISB();
+	barrier_dsync_fence_full();
+	barrier_isync_fence_full();
 
 	if (mode == kCLOCK_ModeWait) {
 		/* Clear the SLEEPDEEP bit to go into sleep mode (WAIT) */

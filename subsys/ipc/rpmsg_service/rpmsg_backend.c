@@ -92,7 +92,7 @@ static struct virtqueue *vq[2];
 
 static struct k_work ipm_work;
 
-static unsigned char virtio_get_status(struct virtio_device *vdev)
+static unsigned char ipc_virtio_get_status(struct virtio_device *vdev)
 {
 #if MASTER
 	return VIRTIO_CONFIG_STATUS_DRIVER_OK;
@@ -101,22 +101,21 @@ static unsigned char virtio_get_status(struct virtio_device *vdev)
 #endif
 }
 
-static void virtio_set_status(struct virtio_device *vdev, unsigned char status)
+static void ipc_virtio_set_status(struct virtio_device *vdev, unsigned char status)
 {
 	sys_write8(status, VDEV_STATUS_ADDR);
 }
 
-static uint32_t virtio_get_features(struct virtio_device *vdev)
+static uint32_t ipc_virtio_get_features(struct virtio_device *vdev)
 {
 	return BIT(VIRTIO_RPMSG_F_NS);
 }
 
-static void virtio_set_features(struct virtio_device *vdev,
-				uint32_t features)
+static void ipc_virtio_set_features(struct virtio_device *vdev, uint32_t features)
 {
 }
 
-static void virtio_notify(struct virtqueue *vq)
+static void ipc_virtio_notify(struct virtqueue *vq)
 {
 	int status;
 
@@ -143,11 +142,11 @@ static void virtio_notify(struct virtqueue *vq)
 }
 
 const struct virtio_dispatch dispatch = {
-	.get_status = virtio_get_status,
-	.set_status = virtio_set_status,
-	.get_features = virtio_get_features,
-	.set_features = virtio_set_features,
-	.notify = virtio_notify,
+	.get_status = ipc_virtio_get_status,
+	.set_status = ipc_virtio_set_status,
+	.get_features = ipc_virtio_get_features,
+	.set_features = ipc_virtio_set_features,
+	.notify = ipc_virtio_notify,
 };
 
 static void ipm_callback_process(struct k_work *work)
@@ -285,7 +284,7 @@ int rpmsg_backend_init(struct metal_io_region **io, struct virtio_device *vdev)
  */
 int init_status_flag(void)
 {
-	virtio_set_status(NULL, 0);
+	ipc_virtio_set_status(NULL, 0);
 
 	return 0;
 }

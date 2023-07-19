@@ -449,11 +449,11 @@ ZTEST_F(test_ase_state_transition_invalid, test_client_source_state_disabling)
 
 static void test_server_config_codec_expect_error(struct bt_bap_stream *stream)
 {
-	struct bt_codec codec = BT_CODEC_LC3_CONFIG_16_2(BT_AUDIO_LOCATION_FRONT_LEFT,
-							 BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED);
+	struct bt_audio_codec_cfg codec_cfg = BT_AUDIO_CODEC_LC3_CONFIG_16_2(
+		BT_AUDIO_LOCATION_FRONT_LEFT, BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED);
 	int err;
 
-	err = bt_bap_stream_reconfig(stream, &codec);
+	err = bt_bap_stream_reconfig(stream, &codec_cfg);
 	zassert_false(err == 0, "bt_bap_stream_reconfig unexpected success");
 }
 
@@ -490,8 +490,8 @@ static void test_server_config_qos_expect_error(struct bt_bap_stream *stream)
 
 static void test_server_enable_expect_error(struct bt_bap_stream *stream)
 {
-	struct bt_codec_data meta[] = {
-		BT_CODEC_DATA(BT_AUDIO_METADATA_TYPE_STREAM_CONTEXT,
+	struct bt_audio_codec_data meta[] = {
+		BT_AUDIO_CODEC_DATA(BT_AUDIO_METADATA_TYPE_STREAM_CONTEXT,
 			      (BT_AUDIO_CONTEXT_TYPE_RINGTONE & 0xFFU),
 			      ((BT_AUDIO_CONTEXT_TYPE_RINGTONE >> 8) & 0xFFU)),
 	};
@@ -516,8 +516,8 @@ static void test_server_receiver_stop_ready_expect_error(struct bt_bap_stream *s
 
 static void test_server_update_metadata_expect_error(struct bt_bap_stream *stream)
 {
-	struct bt_codec_data meta[] = {
-		BT_CODEC_DATA(BT_AUDIO_METADATA_TYPE_STREAM_CONTEXT,
+	struct bt_audio_codec_data meta[] = {
+		BT_AUDIO_CODEC_DATA(BT_AUDIO_METADATA_TYPE_STREAM_CONTEXT,
 			      (BT_AUDIO_CONTEXT_TYPE_RINGTONE & 0xFFU),
 			      ((BT_AUDIO_CONTEXT_TYPE_RINGTONE >> 8) & 0xFFU)),
 	};

@@ -5,10 +5,9 @@
  */
 
 #include <errno.h>
+#include <pthread.h>
 
 #include <zephyr/ztest.h>
-
-#include <pthread.h>
 
 #define STACK_SIZE (1024 + CONFIG_TEST_EXTRA_STACK_SIZE)
 
@@ -56,7 +55,7 @@ void *recursive_mutex_entry(void *p1)
  *	    and pthread_mutex_lock are tested with mutex type being
  *	    normal.
  */
-ZTEST(posix_apis, test_posix_normal_mutex)
+ZTEST(posix_apis, test_mutex_normal)
 {
 	pthread_t thread_1;
 	pthread_attr_t attr;
@@ -112,7 +111,7 @@ ZTEST(posix_apis, test_posix_normal_mutex)
  *	    twice and unlocked for the same number of time.
  *
  */
-ZTEST(posix_apis, test_posix_recursive_mutex)
+ZTEST(posix_apis, test_mutex_recursive)
 {
 	pthread_t thread_2;
 	pthread_attr_t attr2;
@@ -160,7 +159,7 @@ ZTEST(posix_apis, test_posix_recursive_mutex)
  *
  * @details Exactly CONFIG_MAX_PTHREAD_MUTEX_COUNT can be in use at once.
  */
-ZTEST(posix_apis, test_posix_mutex_resource_exhausted)
+ZTEST(posix_apis, test_mutex_resource_exhausted)
 {
 	size_t i;
 	pthread_mutex_t m[CONFIG_MAX_PTHREAD_MUTEX_COUNT + 1];
@@ -184,7 +183,7 @@ ZTEST(posix_apis, test_posix_mutex_resource_exhausted)
  *
  * @details Demonstrate that mutexes may be used over and over again.
  */
-ZTEST(posix_apis, test_posix_mutex_resource_leak)
+ZTEST(posix_apis, test_mutex_resource_leak)
 {
 	pthread_mutex_t m;
 

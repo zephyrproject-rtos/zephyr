@@ -6,7 +6,6 @@ menuconfig UART_NS16550
 	depends on DT_HAS_NS16550_ENABLED
 	select SERIAL_HAS_DRIVER
 	select SERIAL_SUPPORT_INTERRUPT
-	select SERIAL_SUPPORT_ASYNC
 	help
 	  This option enables the NS16550 serial driver.
 	  This driver can be used for the serial hardware
@@ -72,6 +71,23 @@ config UART_NS16550_SIMULT_ACCESS
 	help
 	  When enabled, NS16550 supports IO, MMIO, PCIe UART devices simultaneously.
 	  For io-mapped instances, io-mapped DTS property need to be added in dtsi.
+
+config UART_NS16550_PARENT_INIT_LEVEL
+	bool "Boot level based on parent node"
+	default y if ACPI
+	help
+	  Boot level based on parent node (PCI or no PCI device). Some platforms the
+	  PCI bus driver depends on ACPI sub system to retrieve platform information
+	  such as interrupt routing information. But ACPI sub system currently support
+	  only post kernel and hence such platforms the UART driver instance init
+	  should be invoked only post kernel in case parent node is PCI.
+
+config UART_NS16550_TI_K3
+	bool "Add support for NS16550 variant specific to TI K3 SoCs"
+	help
+	  Enabling this configuration allows the users to use the UART port in
+	  Texas Instruments K3 SoCs by enabling a vendor specific extended register
+	  set.
 
 menu "NS16550 Workarounds"
 

@@ -1,0 +1,7 @@
+# Copyright (c) 2023 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+source "Kconfig.zephyr"
+
+config SKIP_PULL_TEST
+	bool "Skip the pull test even if the driver supports it"

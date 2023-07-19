@@ -116,31 +116,24 @@ uint8_t test_ase_get(const struct bt_uuid *uuid, int num_ase, ...)
 
 uint8_t test_ase_id_get(const struct bt_gatt_attr *ase)
 {
-	const struct test_ase_chrc_value_hdr *hdr;
+	struct test_ase_chrc_value_hdr hdr = { 0 };
 	ssize_t ret;
 
-	ret = ase->read(NULL, ase, NULL, 0, 0);
+	ret = ase->read(NULL, ase, &hdr, sizeof(hdr), 0);
 	zassert_false(ret < 0, "ase->read returned unexpected (err 0x%02x)", BT_GATT_ERR(ret));
 
-	expect_bt_gatt_attr_read_called_once(NULL, ase, EMPTY, EMPTY, 0, EMPTY, sizeof(*hdr));
-
-	hdr = bt_gatt_attr_read_fake.arg5_val;
-
-	/* Reset the mock state */
-	bt_gatt_attr_read_reset();
-
-	return hdr->ase_id;
+	return hdr.ase_id;
 }
 
 static struct bt_bap_stream *stream_allocated;
-static const struct bt_codec_qos_pref qos_pref = BT_CODEC_QOS_PREF(true, BT_GAP_LE_PHY_2M,
-								   0x02, 10, 40000, 40000,
-								   40000, 40000);
+static const struct bt_audio_codec_qos_pref qos_pref =
+	BT_AUDIO_CODEC_QOS_PREF(true, BT_GAP_LE_PHY_2M, 0x02, 10, 40000, 40000, 40000, 40000);
 
 static int unicast_server_cb_config_custom_fake(struct bt_conn *conn, const struct bt_bap_ep *ep,
-						enum bt_audio_dir dir, const struct bt_codec *codec,
+						enum bt_audio_dir dir,
+						const struct bt_audio_codec_cfg *codec_cfg,
 						struct bt_bap_stream **stream,
-						struct bt_codec_qos_pref *const pref,
+						struct bt_audio_codec_qos_pref *const pref,
 						struct bt_bap_ascs_rsp *rsp)
 {
 	*stream = stream_allocated;

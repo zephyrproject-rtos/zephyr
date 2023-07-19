@@ -9,7 +9,6 @@
  * @brief Atmel SAML MCU series initialization code
  */
 
-#include <zephyr/arch/cpu.h>
 #include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
 #include <zephyr/device.h>
 #include <zephyr/init.h>
@@ -245,11 +244,6 @@ static inline void pause_for_debug(void) {}
 
 static int atmel_saml_init(void)
 {
-	uint32_t key;
-
-
-	key = irq_lock();
-
 	pause_for_debug();
 
 	gclk_reset();
@@ -261,13 +255,6 @@ static int atmel_saml_init(void)
 	pm_init();
 	gclk_main_configure();
 	gclk_adc_configure();
-
-	/* Install default handler that simply resets the CPU
-	 * if configured in the kernel, NOP otherwise
-	 */
-	NMI_INIT();
-
-	irq_unlock(key);
 
 	return 0;
 }

@@ -818,7 +818,7 @@ static int set_up_plls(void)
 }
 
 #if defined(CONFIG_CPU_CORTEX_M7)
-static int stm32_clock_control_init(const struct device *dev)
+int stm32_clock_control_init(const struct device *dev)
 {
 	uint32_t old_hclk_freq = 0;
 	uint32_t new_hclk_freq = 0;
@@ -913,7 +913,7 @@ static int stm32_clock_control_init(const struct device *dev)
 	return r;
 }
 #else
-static int stm32_clock_control_init(const struct device *dev)
+int stm32_clock_control_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 

@@ -22,24 +22,28 @@ static const struct gpio_dt_spec phase_a =
 			GPIO_DT_SPEC_GET(DT_ALIAS(qenca), gpios);
 static const struct gpio_dt_spec phase_b =
 			GPIO_DT_SPEC_GET(DT_ALIAS(qencb), gpios);
+static bool toggle_a;
 
 void qenc_emulate_work_handler(struct k_work *work)
 {
-	gpio_pin_toggle_dt(&phase_a);
-	k_msleep(1);
-	gpio_pin_toggle_dt(&phase_b);
+	toggle_a = !toggle_a;
+	if (toggle_a) {
+		gpio_pin_toggle_dt(&phase_a);
+	} else {
+		gpio_pin_toggle_dt(&phase_b);
+	}
 }
 
-K_WORK_DEFINE(qenc_emulate_work, qenc_emulate_work_handler);
+static K_WORK_DEFINE(qenc_emulate_work, qenc_emulate_work_handler);
 
-void qenc_emulate_timer_handler(struct k_timer *dummy)
+static void qenc_emulate_timer_handler(struct k_timer *dummy)
 {
 	k_work_submit(&qenc_emulate_work);
 }
 
-K_TIMER_DEFINE(qenc_emulate_timer, qenc_emulate_timer_handler, NULL);
+static K_TIMER_DEFINE(qenc_emulate_timer, qenc_emulate_timer_handler, NULL);
 
-void qenc_emulate_init(void)
+static void qenc_emulate_init(void)
 {
 	printk("Quadrature encoder emulator enabled with %u ms period\n",
 		QUAD_ENC_EMUL_PERIOD);
@@ -56,13 +60,13 @@ void qenc_emulate_init(void)
 	}
 	gpio_pin_configure_dt(&phase_b, GPIO_OUTPUT);
 
-	k_timer_start(&qenc_emulate_timer, K_MSEC(QUAD_ENC_EMUL_PERIOD),
-			K_MSEC(QUAD_ENC_EMUL_PERIOD));
+	k_timer_start(&qenc_emulate_timer, K_MSEC(QUAD_ENC_EMUL_PERIOD / 2),
+			K_MSEC(QUAD_ENC_EMUL_PERIOD / 2));
 }
 
 #else
 
-void qenc_emulate_init(void) { };
+static void qenc_emulate_init(void) { };
 
 #endif /* QUAD_ENC_EMUL_ENABLED */
 

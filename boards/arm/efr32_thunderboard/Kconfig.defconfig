@@ -18,7 +18,7 @@ config BOARD
 endif # BOARD_EFR32BG27_BRD2602A
 
 config CMU_HFXO_FREQ
-	default 40000000
+	default 38400000
 
 config CMU_LFXO_FREQ
 	default 32768
@@ -32,6 +32,7 @@ config COMMON_LIBC_MALLOC_ARENA_SIZE
 	default 8192
 
 config MAIN_STACK_SIZE
+	default 3072 if PM
 	default 2304
 
 choice BT_HCI_BUS_TYPE

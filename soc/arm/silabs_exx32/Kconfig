@@ -39,6 +39,11 @@ config SOC_GECKO_CORE
 	help
 	  Set if the Core interrupt handling (CORE) HAL module is used.
 
+config SOC_GECKO_ADC
+	bool
+	help
+	  Set if the Analog to Digital Converter (ADC) HAL module is used.
+
 config SOC_GECKO_IADC
 	bool
 	help
@@ -125,6 +130,23 @@ config SOC_GECKO_TRNG
 	bool
 	help
 	  Set if the SoC has a True Random Number Generator (TRNG) module.
+
+if PM
+
+config SOC_GECKO_PM_BACKEND_PMGR
+	bool
+	depends on SOC_GECKO_DEV_INIT
+	default y if SOC_GECKO_SERIES2
+	help
+	  Implement PM using sl_power_manager service from Gecko SDK
+
+config SOC_GECKO_PM_BACKEND_EMU
+	bool
+	default y if !SOC_GECKO_PM_BACKEND_PMGR
+	help
+	  Implement PM using direct calls to EMU driver in emlib
+
+endif
 
 config SOC_GECKO_EMU_DCDC
 	bool "SoC DC/DC regulator"

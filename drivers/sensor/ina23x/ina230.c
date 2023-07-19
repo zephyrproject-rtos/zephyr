@@ -16,7 +16,7 @@
 LOG_MODULE_REGISTER(INA230, CONFIG_SENSOR_LOG_LEVEL);
 
 /** @brief Calibration scaling value (value scaled by 100000) */
-#define INA230_CAL_SCALING 512U
+#define INA230_CAL_SCALING 512ULL
 
 /** @brief The LSB value for the bus voltage register, in microvolts/LSB. */
 #define INA230_BUS_VOLTAGE_UV_LSB 1250U
@@ -24,8 +24,7 @@ LOG_MODULE_REGISTER(INA230, CONFIG_SENSOR_LOG_LEVEL);
 /** @brief The scaling for the power register. */
 #define INA230_POWER_SCALING 25
 
-static int ina230_channel_get(const struct device *dev,
-			      enum sensor_channel chan,
+static int ina230_channel_get(const struct device *dev, enum sensor_channel chan,
 			      struct sensor_value *val)
 {
 	struct ina230_data *data = dev->data;
@@ -61,8 +60,7 @@ static int ina230_channel_get(const struct device *dev,
 		break;
 
 	case SENSOR_CHAN_POWER:
-		power_uw = data->power * INA230_POWER_SCALING
-			   * config->current_lsb;
+		power_uw = data->power * INA230_POWER_SCALING * config->current_lsb;
 
 		/* convert to fractional watts */
 		val->val1 = (int32_t)(power_uw / 1000000U);
@@ -77,16 +75,13 @@ static int ina230_channel_get(const struct device *dev,
 	return 0;
 }
 
-static int ina230_sample_fetch(const struct device *dev,
-			       enum sensor_channel chan)
+static int ina230_sample_fetch(const struct device *dev, enum sensor_channel chan)
 {
 	struct ina230_data *data = dev->data;
 	const struct ina230_config *config = dev->config;
 	int ret;
 
-	if (chan != SENSOR_CHAN_ALL &&
-	    chan != SENSOR_CHAN_VOLTAGE &&
-	    chan != SENSOR_CHAN_CURRENT &&
+	if (chan != SENSOR_CHAN_ALL && chan != SENSOR_CHAN_VOLTAGE && chan != SENSOR_CHAN_CURRENT &&
 	    chan != SENSOR_CHAN_POWER) {
 		return -ENOTSUP;
 	}
@@ -119,8 +114,7 @@ static int ina230_sample_fetch(const struct device *dev,
 }
 
 static int ina230_attr_set(const struct device *dev, enum sensor_channel chan,
-			   enum sensor_attribute attr,
-			   const struct sensor_value *val)
+			   enum sensor_attribute attr, const struct sensor_value *val)
 {
 	const struct ina230_config *config = dev->config;
 	uint16_t data = val->val1;
@@ -141,8 +135,7 @@ static int ina230_attr_set(const struct device *dev, enum sensor_channel chan,
 }
 
 static int ina230_attr_get(const struct device *dev, enum sensor_channel chan,
-			   enum sensor_attribute attr,
-			   struct sensor_value *val)
+			   enum sensor_attribute attr, struct sensor_value *val)
 {
 	const struct ina230_config *config = dev->config;
 	uint16_t data;
@@ -187,14 +180,10 @@ static int ina230_attr_get(const struct device *dev, enum sensor_channel chan,
 static int ina230_calibrate(const struct device *dev)
 {
 	const struct ina230_config *config = dev->config;
-	uint16_t val;
 	int ret;
 
 	/* See datasheet "Programming" section */
-	val = (INA230_CAL_SCALING * 10000U) /
-	      (config->current_lsb * config->rshunt);
-
-	ret = ina23x_reg_write(&config->bus, INA230_REG_CALIB, val);
+	ret = ina23x_reg_write(&config->bus, INA230_REG_CALIB, config->cal);
 	if (ret < 0) {
 		return ret;
 	}
@@ -232,8 +221,7 @@ static int ina230_init(const struct device *dev)
 			return ret;
 		}
 
-		ret = ina23x_reg_write(&config->bus, INA230_REG_ALERT,
-				       config->alert_limit);
+		ret = ina23x_reg_write(&config->bus, INA230_REG_ALERT, config->alert_limit);
 		if (ret < 0) {
 			LOG_ERR("Failed to write alert register!");
 			return ret;
@@ -245,7 +233,7 @@ static int ina230_init(const struct device *dev)
 			return ret;
 		}
 	}
-#endif  /* CONFIG_INA230_TRIGGER */
+#endif /* CONFIG_INA230_TRIGGER */
 
 	return 0;
 }
@@ -261,32 +249,27 @@ static const struct sensor_driver_api ina230_driver_api = {
 };
 
 #ifdef CONFIG_INA230_TRIGGER
-#define INA230_CFG_IRQ(inst)				\
-	.trig_enabled = true,				\
-	.mask = DT_INST_PROP(inst, mask),		\
-	.alert_limit = DT_INST_PROP(inst, alert_limit),	\
+#define INA230_CFG_IRQ(inst)                                                                       \
+	.trig_enabled = true, .mask = DT_INST_PROP(inst, mask),                                    \
+	.alert_limit = DT_INST_PROP(inst, alert_limit),                                            \
 	.alert_gpio = GPIO_DT_SPEC_INST_GET(inst, alert_gpios)
 #else
 #define INA230_CFG_IRQ(inst)
 #endif /* CONFIG_INA230_TRIGGER */
 
-#define INA230_DRIVER_INIT(inst)				    \
-	static struct ina230_data drv_data_##inst;		    \
-	static const struct ina230_config drv_config_##inst = {	    \
-		.bus = I2C_DT_SPEC_INST_GET(inst),		    \
-		.config = DT_INST_PROP(inst, config),		    \
-		.current_lsb = DT_INST_PROP(inst, current_lsb_microamps),\
-		.rshunt = DT_INST_PROP(inst, rshunt_milliohms),	    \
-		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, alert_gpios),\
-			    (INA230_CFG_IRQ(inst)), ())		    \
-	};							    \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst,			    \
-			      &ina230_init,			    \
-			      NULL,				    \
-			      &drv_data_##inst,			    \
-			      &drv_config_##inst,		    \
-			      POST_KERNEL,			    \
-			      CONFIG_SENSOR_INIT_PRIORITY,	    \
-			      &ina230_driver_api);
+#define INA230_DRIVER_INIT(inst)                                                                   \
+	static struct ina230_data drv_data_##inst;                                                 \
+	static const struct ina230_config drv_config_##inst = {                                    \
+		.bus = I2C_DT_SPEC_INST_GET(inst),                                                 \
+		.config = DT_INST_PROP(inst, config),                                              \
+		.current_lsb = DT_INST_PROP(inst, current_lsb_microamps),                          \
+		.cal = (uint16_t)((INA230_CAL_SCALING * 10000000ULL) /                             \
+				  ((uint64_t)DT_INST_PROP(inst, current_lsb_microamps) *           \
+				   DT_INST_PROP(inst, rshunt_micro_ohms))),                        \
+		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, alert_gpios), (INA230_CFG_IRQ(inst)),      \
+			    ())};                                                                  \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, &ina230_init, NULL, &drv_data_##inst,                   \
+				     &drv_config_##inst, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY, \
+				     &ina230_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(INA230_DRIVER_INIT)

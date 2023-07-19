@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2019, NXP
+ * Copyright 2018-2023, NXP
  * Copyright (c) 2019 PHYTEC Messtechnik GmbH
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -14,6 +14,7 @@
 #include <soc.h>
 #include <zephyr/device.h>
 #include <zephyr/kernel.h>
+#include <zephyr/drivers/pinctrl.h>
 #include "usb.h"
 #include "usb_device.h"
 #include "usb_device_config.h"
@@ -72,7 +73,7 @@ static void usb_isr_handler(void);
 /* We do not need a buffer for the write side on platforms that have USB RAM.
  * The SDK driver will copy the data buffer to be sent to USB RAM.
  */
-#ifdef FSL_FEATURE_USBHSD_USB_RAM_BASE_ADDRESS
+#ifdef CONFIG_USB_DC_NXP_LPCIP3511
 #define EP_BUF_NUMOF_BLOCKS	(NUM_OF_EP_MAX / 2)
 #else
 #define EP_BUF_NUMOF_BLOCKS	NUM_OF_EP_MAX
@@ -139,10 +140,7 @@ int usb_dc_reset(void)
 	if (dev_state.dev_struct.controllerHandle != NULL) {
 		dev_state.dev_struct.controllerInterface->deviceControl(
 						dev_state.dev_struct.controllerHandle,
-						kUSB_DeviceControlStop, NULL);
-		dev_state.dev_struct.controllerInterface->deviceDeinit(
-						dev_state.dev_struct.controllerHandle);
-		dev_state.dev_struct.controllerHandle = NULL;
+						kUSB_DeviceControlSetDefaultStatus, NULL);
 	}
 
 	return 0;
@@ -274,7 +272,7 @@ int usb_dc_ep_configure(const struct usb_dc_ep_cfg_data *const cfg)
 		LOG_WRN("Failed to un-initialize endpoint (status=%d)", (int)status);
 	}
 
-#ifdef FSL_FEATURE_USBHSD_USB_RAM_BASE_ADDRESS
+#ifdef CONFIG_USB_DC_NXP_LPCIP3511
 	/* Allocate buffers used during read operation */
 	if (USB_EP_DIR_IS_OUT(cfg->ep_addr)) {
 #endif
@@ -293,7 +291,7 @@ int usb_dc_ep_configure(const struct usb_dc_ep_cfg_data *const cfg)
 		}
 
 		memset(block->data, 0, cfg->ep_mps);
-#ifdef FSL_FEATURE_USBHSD_USB_RAM_BASE_ADDRESS
+#ifdef CONFIG_USB_DC_NXP_LPCIP3511
 	}
 #endif
 
@@ -469,12 +467,14 @@ int usb_dc_ep_disable(const uint8_t ep)
 		return -EINVAL;
 	}
 
-	status = dev_state.dev_struct.controllerInterface->deviceCancel(
-						  dev_state.dev_struct.controllerHandle,
-						  ep);
-	if (kStatus_USB_Success != status) {
-		LOG_ERR("Failed to disable ep 0x%02x", ep);
-		return -EIO;
+	if (dev_state.dev_struct.controllerHandle != NULL) {
+		status = dev_state.dev_struct.controllerInterface->deviceCancel(
+							dev_state.dev_struct.controllerHandle,
+							ep);
+		if (kStatus_USB_Success != status) {
+			LOG_ERR("Failed to disable ep 0x%02x", ep);
+			return -EIO;
+		}
 	}
 
 	dev_state.eps[ep_abs_idx].ep_enabled = false;
@@ -519,7 +519,7 @@ int usb_dc_ep_write(const uint8_t ep, const uint8_t *const data,
 	 * as the SDK driver will copy the data into USB RAM,
 	 * if available.
 	 */
-#ifndef FSL_FEATURE_USBHSD_USB_RAM_BASE_ADDRESS
+#ifndef CONFIG_USB_DC_NXP_LPCIP3511
 	buffer = (uint8_t *)dev_state.eps[ep_abs_idx].block.data;
 
 	if (data_len > dev_state.eps[ep_abs_idx].ep_mps) {
@@ -915,12 +915,21 @@ static void usb_isr_handler(void)
 
 static int usb_mcux_init(void)
 {
+	int err;
 
 	k_thread_create(&dev_state.thread, dev_state.thread_stack,
 			CONFIG_USB_MCUX_THREAD_STACK_SIZE,
 			usb_mcux_thread_main, NULL, NULL, NULL,
 			K_PRIO_COOP(2), 0, K_NO_WAIT);
 	k_thread_name_set(&dev_state.thread, "usb_mcux");
+
+	PINCTRL_DT_INST_DEFINE(0);
+
+	/* Apply pinctrl state */
+	err = pinctrl_apply_state(PINCTRL_DT_INST_DEV_CONFIG_GET(0), PINCTRL_STATE_DEFAULT);
+	if (err) {
+		return err;
+	}
 
 	return 0;
 }

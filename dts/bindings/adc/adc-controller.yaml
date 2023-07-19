@@ -146,3 +146,11 @@ child-binding:
         Oversampling setting to be used for the channel.
         When specified, each sample is averaged from 2^N conversion results
         (where N is the provided value).
+
+    zephyr,current-source-pin:
+      type: uint8-array
+      description: |
+        Output pin selection for the current sources. The actual
+        interpretation depends on the driver. This is used only for drivers
+        which select the ADC_CONFIGURABLE_EXCITATION_CURRENT_SOURCE_PIN
+        Kconfig option.

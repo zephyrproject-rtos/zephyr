@@ -1,0 +1,14 @@
+# ST Microelectronics STM32WBA52XX MCU
+
+# Copyright (c) 2023 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_STM32WBA52XX
+
+config SOC
+	default "stm32wba52xx"
+
+config NUM_IRQS
+	default 70
+
+endif # SOC_STM32WBA52XX

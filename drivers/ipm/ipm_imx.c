@@ -11,6 +11,7 @@
 #include <soc.h>
 #include <zephyr/drivers/ipm.h>
 #include <zephyr/irq.h>
+#include <zephyr/sys/barrier.h>
 #if defined(CONFIG_IPM_IMX_REV2)
 #define DT_DRV_COMPAT nxp_imx_mu_rev2
 #include "fsl_mu.h"
@@ -155,7 +156,7 @@ static void imx_mu_isr(const struct device *dev)
 	 * with errata 838869.
 	 */
 #if (defined __CORTEX_M) && ((__CORTEX_M == 4U) || (__CORTEX_M == 7U))
-	__DSB();
+	barrier_dsync_fence_full();
 #endif
 }
 

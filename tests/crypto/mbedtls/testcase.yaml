@@ -12,3 +12,6 @@ tests:
     extra_configs:
       - CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE=0
       - arch:riscv64:CONFIG_ZTEST_STACK_SIZE=8192
+    integration_platforms:
+      - qemu_x86
+      - native_posix

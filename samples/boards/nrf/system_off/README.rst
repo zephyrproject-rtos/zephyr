@@ -40,7 +40,7 @@ Building, Flashing and Running
 ******************************
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/boards/nrf52/system_off
+   :zephyr-app: samples/boards/nrf/system_off
    :board: nrf52dk_nrf52832
    :goals: build flash
    :compact:

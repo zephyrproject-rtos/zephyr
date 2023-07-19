@@ -38,9 +38,11 @@ tests:
       fixture: gpio_loopback
     depends_on: gpio
     extra_args: DTC_OVERLAY_FILE="boards/nrf52840dk_nrf52840.overlay;boards/nrf_uart.overlay"
+    integration_platforms:
+      - nrf52840dk_nrf52840
   drivers.uart.async_api.rtt:
     filter: CONFIG_UART_CONSOLE and CONFIG_SERIAL_SUPPORT_ASYNC and CONFIG_HAS_SEGGER_RTT
-      and not CONFIG_UART_MCUX_LPUART
+      and not CONFIG_UART_MCUX_LPUART and not CONFIG_UART_MCUX_FLEXCOMM
     extra_args: DTC_OVERLAY_FILE=boards/segger_rtt.overlay
     extra_configs:
       - CONFIG_USE_SEGGER_RTT=y
@@ -49,6 +51,8 @@ tests:
       - xmc45_relax_kit
       - xmc47_relax_kit
     build_only: true
+    integration_platforms:
+      - qemu_cortex_m0
   drivers.uart.async_api.lpuart:
     filter: CONFIG_UART_CONSOLE and CONFIG_SERIAL_SUPPORT_ASYNC and CONFIG_UART_MCUX_LPUART
     harness: ztest

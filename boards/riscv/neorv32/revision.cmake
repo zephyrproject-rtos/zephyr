@@ -3,5 +3,5 @@
 
 board_check_revision(
   FORMAT MAJOR.MINOR.PATCH
-  DEFAULT_REVISION 1.6.1
+  DEFAULT_REVISION 1.8.6
 )

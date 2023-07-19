@@ -1,0 +1,32 @@
+# Copyright (c) 2021 Henrik Brix Andersen <henrik@brixandersen.dk>
+# SPDX-License-Identifier: Apache-2.0
+
+choice
+	prompt "NEORV32 Version"
+	depends on SOC_SERIES_NEORV32
+
+config SOC_NEORV32_V1_8_6
+	bool "v1.8.6"
+	# NEORV32 RISC-V ISA A extension implements only LR/SC, not AMO
+	select ATOMIC_OPERATIONS_C
+
+endchoice
+
+if SOC_SERIES_NEORV32
+
+config SOC_NEORV32_VERSION
+	hex
+	default 0x01080600 if SOC_NEORV32_V1_8_6
+	help
+	  The targeted NEORV32 version as BCD-coded number. The format is
+	  identical to that of the NEORV32 Machine implementation ID (mimpid)
+	  register.
+
+config SOC_NEORV32_ISA_C
+	bool "RISC-V ISA Extension \"C\""
+	select RISCV_ISA_EXT_C
+	help
+	  Enable this if the NEORV32 CPU implementation supports the RISC-V ISA
+	  "C" extension (Compressed Instructions).
+
+endif # SOC_SERIES_NEORV32

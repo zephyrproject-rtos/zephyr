@@ -3,6 +3,7 @@
 if (CONFIG_ENTROPY_DEVICE_RANDOM_GENERATOR OR
     CONFIG_TIMER_RANDOM_GENERATOR OR
     CONFIG_XOSHIRO_RANDOM_GENERATOR)
+zephyr_syscall_header(${ZEPHYR_BASE}/include/zephyr/random/rand32.h)
 zephyr_library()
 zephyr_library_sources_ifdef(CONFIG_USERSPACE           rand32_handlers.c)
 endif()

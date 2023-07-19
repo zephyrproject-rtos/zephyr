@@ -29,9 +29,15 @@
 #include "esp_timer.h"
 #include "esp32/spiram.h"
 #include "esp_app_format.h"
+#include "hal/wdt_hal.h"
+
 #ifndef CONFIG_SOC_ESP32_NET
 #include "esp_clk_internal.h"
-#endif
+#endif /* CONFIG_SOC_ESP32_NET */
+
+#ifdef CONFIG_MCUBOOT
+#include "bootloader_init.h"
+#endif /* CONFIG_MCUBOOT */
 #include <zephyr/sys/printk.h>
 
 extern void z_cstart(void);
@@ -76,7 +82,7 @@ void __attribute__((section(".iram1"))) start_esp32_net_cpu(void)
 
 	esp_appcpu_start((void *)entry_addr);
 }
-#endif
+#endif /* CONFIG_ESP32_NETWORK_CORE */
 
 /*
  * This is written in C rather than assembly since, during the port bring up,
@@ -85,8 +91,6 @@ void __attribute__((section(".iram1"))) start_esp32_net_cpu(void)
  */
 void __attribute__((section(".iram1"))) __esp_platform_start(void)
 {
-	volatile uint32_t *wdt_rtc_protect = (uint32_t *)RTC_CNTL_WDTWPROTECT_REG;
-	volatile uint32_t *wdt_rtc_reg = (uint32_t *)RTC_CNTL_WDTCONFIG0_REG;
 	extern uint32_t _init_start;
 
 	/* Move the exception vector table to IRAM. */
@@ -115,13 +119,21 @@ void __attribute__((section(".iram1"))) __esp_platform_start(void)
 	 */
 	__asm__ volatile("wsr.MISC0 %0; rsync" : : "r"(&_kernel.cpus[0]));
 
-	/* ESP-IDF/MCUboot 2nd stage bootloader enables RTC WDT to check on startup sequence
-	 * related issues in application. Hence disable that as we are about to start
-	 * Zephyr environment.
+#ifdef CONFIG_MCUBOOT
+	/* MCUboot early initialisation. */
+	if (bootloader_init()) {
+		abort();
+	}
+#else
+	/* ESP-IDF/MCUboot 2nd stage bootloader enables RTC WDT to check
+	 * on startup sequence related issues in application. Hence disable that
+	 * as we are about to start Zephyr environment.
 	 */
-	*wdt_rtc_protect = RTC_CNTL_WDT_WKEY_VALUE;
-	*wdt_rtc_reg &= ~RTC_CNTL_WDT_EN;
-	*wdt_rtc_protect = 0;
+	wdt_hal_context_t rtc_wdt_ctx = {.inst = WDT_RWDT, .rwdt_dev = &RTCCNTL};
+
+	wdt_hal_write_protect_disable(&rtc_wdt_ctx);
+	wdt_hal_disable(&rtc_wdt_ctx);
+	wdt_hal_write_protect_enable(&rtc_wdt_ctx);
 
 #ifndef CONFIG_SOC_ESP32_NET
 	/* Configures the CPU clock, RTC slow and fast clocks, and performs
@@ -161,6 +173,9 @@ void __attribute__((section(".iram1"))) __esp_platform_start(void)
 #if CONFIG_SOC_FLASH_ESP32 || CONFIG_ESP_SPIRAM
 	spi_flash_guard_set(&g_flash_guard_default_ops);
 #endif
+
+#endif /* CONFIG_MCUBOOT */
+
 	esp_intr_initialize();
 
 	/* Start Zephyr */

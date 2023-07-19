@@ -10,7 +10,7 @@
 /* Per CPU architecture specifics */
 struct _cpu_arch {
 #ifdef CONFIG_FPU_SHARING
-	struct k_thread *fpu_owner;
+	atomic_ptr_val_t fpu_owner;
 #endif
 #ifdef CONFIG_ARM64_SAFE_EXCEPTION_STACK
 	uint64_t safe_exception_stack;

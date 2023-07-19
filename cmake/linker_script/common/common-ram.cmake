@@ -54,6 +54,10 @@ if(CONFIG_NETWORKING)
   zephyr_iterable_section(NAME eth_bridge GROUP DATA_REGION ${XIP_ALIGN_WITH_INPUT} SUBALIGN 4)
 endif()
 
+if(CONFIG_SENSING)
+  zephyr_iterable_section(NAME sensing_sensor GROUP DATA_REGION ${XIP_ALIGN_WITH_INPUT} SUBALIGN 4)
+endif()
+
 if(CONFIG_UART_MUX)
   zephyr_iterable_section(NAME uart_mux GROUP DATA_REGION ${XIP_ALIGN_WITH_INPUT} SUBALIGN 4)
 endif()

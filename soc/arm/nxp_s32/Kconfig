@@ -10,9 +10,33 @@ config SOC_FAMILY
 	string
 	default "nxp_s32"
 
+config NXP_S32_FUNC_RESET_THRESHOLD
+	int "Functional Reset Escalation threshold"
+	default 15
+	range 0 15
+	help
+	  If the value of this option is 0, the Functional reset escalation
+	  function is disabled. Any other value is the number of Functional
+	  resets that causes a Destructive reset, if the FRET register isn't
+	  written to beforehand.
+	  Default to maximum threshold (hardware reset value).
+
+config NXP_S32_DEST_RESET_THRESHOLD
+	int "Destructive Reset Escalation threshold"
+	default 0
+	range 0 15
+	help
+	  If the value of this field is 0, the Destructive reset escalation
+	  function is disabled. Any other value is the number of Destructive
+	  resets which keeps the chip in the reset state until the next power-on
+	  reset triggers a new reset sequence, if the DRET register isn't
+	  written to beforehand.
+	  Default to disabled (hardware reset value).
+
 source "soc/arm/nxp_s32/*/Kconfig.soc"
 
 config SOC_PART_NUMBER
 	default SOC_PART_NUMBER_S32ZE_R52 if SOC_SERIES_S32ZE_R52
+	default SOC_PART_NUMBER_S32K3 if SOC_SERIES_S32K3_M7
 
 endif # SOC_FAMILY_S32

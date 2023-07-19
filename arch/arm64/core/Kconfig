@@ -23,6 +23,9 @@ config CPU_AARCH64_CORTEX_R
 	select HAS_FLASH_LOAD_OFFSET
 	select CPU_HAS_DCACHE
 	select CPU_HAS_ICACHE
+	select CPU_HAS_FPU
+	imply FPU
+	imply FPU_SHARING
 	help
 	  This option signifies the use of a CPU of the Cortex-R 64-bit family.
 
@@ -39,6 +42,13 @@ config CPU_CORTEX_A55
 	select ARMV8_A
 	help
 	  This option signifies the use of a Cortex-A55 CPU
+
+config CPU_CORTEX_A57
+	bool
+	select CPU_CORTEX_A
+	select ARMV8_A
+	help
+	  This option signifies the use of a Cortex-A57 CPU
 
 config CPU_CORTEX_A72
 	bool
@@ -117,6 +127,15 @@ config ARM64_SAFE_EXCEPTION_STACK
 	  overflows during the exception happens from EL1. This stack is not
 	  used for user stack overflow checking, because kernel stack support
 	  the checking work.
+
+config ARM64_ENABLE_FRAME_POINTER
+	bool
+	default y
+	depends on OVERRIDE_FRAME_POINTER_DEFAULT && !OMIT_FRAME_POINTER
+	help
+	  Hidden option to simplify access to OVERRIDE_FRAME_POINTER_DEFAULT
+	  and OMIT_FRAME_POINTER. It is automatically enabled when the frame
+	  pointer unwinding is enabled.
 
 config ARM64_SAFE_EXCEPTION_STACK_SIZE
 	int "The stack size of the safe exception stack"

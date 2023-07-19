@@ -1,14 +1,15 @@
 .. _mimxrt1170_evk:
 
-NXP MIMXRT1170-EVK
-##################
+NXP MIMXRT1170-EVK/EVKB
+#######################
 
 Overview
 ********
 
 The dual core i.MX RT1170 runs on the Cortex-M7 core at 1 GHz and on the Cortex-M4
 at 400 MHz. The i.MX RT1170 MCU offers support over a wide temperature range
-and is qualified for consumer, industrial and automotive markets.
+and is qualified for consumer, industrial and automotive markets. Zephyr
+supports the initial revision of this EVK, as well as EVK rev B.
 
 .. image:: mimxrt1170_evk.jpg
    :align: center
@@ -86,55 +87,60 @@ Supported Features
 NXP considers the MIMXRT1170-EVK as the superset board for the i.MX RT11xx
 family of MCUs.  This board is a focus for NXP's Full Platform Support for
 Zephyr, to better enable the entire RT11xx family.  NXP prioritizes enabling
-this board with new support for Zephyr features.  The mimxrt1170_evk board
-configuration supports the following hardware features:
+this board with new support for Zephyr features. Note that this table
+covers two boards: the RT1170 EVK (`mimxrt1170_evk_cm7/cm4`), and
+RT1170 EVKB (`mimxrt1170_evkb_cm7/cm4`)
 
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| SYSTICK   | on-chip    | systick                             |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| COUNTER   | on-chip    | counter                             |
-+-----------+------------+-------------------------------------+
-| CAN       | on-chip    | flexcan                             |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| PWM       | on-chip    | pwm                                 |
-+-----------+------------+-------------------------------------+
-| ADC       | on-chip    | adc                                 |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| DMA       | on-chip    | dma                                 |
-+-----------+------------+-------------------------------------+
-| GPT       | on-chip    | gpt                                 |
-+-----------+------------+-------------------------------------+
-| WATCHDOG  | on-chip    | watchdog                            |
-+-----------+------------+-------------------------------------+
-| ENET      | on-chip    | ethernet                            |
-+-----------+------------+-------------------------------------+
-| SAI       | on-chip    | i2s                                 |
-+-----------+------------+-------------------------------------+
-| USB       | on-chip    | USB Device                          |
-+-----------+------------+-------------------------------------+
-| HWINFO    | on-chip    | Unique device serial number         |
-+-----------+------------+-------------------------------------+
-| DISPLAY   | on-chip    | display                             |
-+-----------+------------+-------------------------------------+
-| ACMP      | on-chip    | analog comparator                   |
-+-----------+------------+-------------------------------------+
-| CAAM RNG  | on-chip    | entropy                             |
-+-----------+------------+-------------------------------------+
-| FLEXSPI   | on-chip    | flash programming                   |
-+-----------+------------+-------------------------------------+
++-----------+------------+-------------------------------------+-----------------+-----------------+
+| Interface | Controller | Driver/Component                    | RT1170 EVK      | RT1170 EVKB     |
++===========+============+=====================================+=================+=================+
+| NVIC      | on-chip    | nested vector interrupt controller  | Supported       | Supported       |
++-----------+------------+-------------------------------------+-----------------+-----------------+
+| SYSTICK   | on-chip    | systick                             | Supported       | Supported       |
++-----------+------------+-------------------------------------+-----------------+-----------------+
+| GPIO      | on-chip    | gpio                                | Supported       | Supported       |
++-----------+------------+-------------------------------------+-----------------+-----------------+
+| COUNTER   | on-chip    | gpt                                 | Supported       | Supported       |
++-----------+------------+-------------------------------------+-----------------+-----------------+
+| CAN       | on-chip    | flexcan                             | Supported (M7)  | Supported (M7)  |
++-----------+------------+-------------------------------------+-----------------+-----------------+
+| SPI       | on-chip    | spi                                 | Supported (M7)  | Supported       |
++-----------+------------+-------------------------------------+-----------------+-----------------+
+| I2C       | on-chip    | i2c                                 | Supported       | Supported       |
++-----------+------------+-------------------------------------+-----------------+-----------------+
+| PWM       | on-chip    | pwm                                 | Supported       | Supported       |
++-----------+------------+-------------------------------------+-----------------+-----------------+
+| ADC       | on-chip    | adc                                 | Supported (M7)  | Supported (M7)  |
++-----------+------------+-------------------------------------+-----------------+-----------------+
+| UART      | on-chip    | serial port-polling;                | Supported       | Supported       |
+|           |            | serial port-interrupt;              |                 |                 |
+|           |            | serial port-async                   |                 |                 |
++-----------+------------+-------------------------------------+-----------------+-----------------+
+| DMA       | on-chip    | dma                                 | Supported       | Supported       |
++-----------+------------+-------------------------------------+-----------------+-----------------+
+| GPT       | on-chip    | gpt                                 | Supported       | Supported       |
++-----------+------------+-------------------------------------+-----------------+-----------------+
+| WATCHDOG  | on-chip    | watchdog                            | Supported (M7)  | Supported (M7)  |
++-----------+------------+-------------------------------------+-----------------+-----------------+
+| ENET      | on-chip    | ethernet                            | Supported (M7)  | No support      |
++-----------+------------+-------------------------------------+-----------------+-----------------+
+| SAI       | on-chip    | i2s                                 | Supported       | No support      |
++-----------+------------+-------------------------------------+-----------------+-----------------+
+| USB       | on-chip    | USB Device                          | Supported (M7)  | Supported (M7)  |
++-----------+------------+-------------------------------------+-----------------+-----------------+
+| HWINFO    | on-chip    | Unique device serial number         | Supported (M7)  | Supported (M7)  |
++-----------+------------+-------------------------------------+-----------------+-----------------+
+| DISPLAY   | on-chip    | eLCDIF; MIPI-DSI. Tested with       | Supported (M7)  | Supported (M7)  |
+|           |            | :ref:`rk055hdmipi4m` shield         |                 |                 |
++-----------+------------+-------------------------------------+-----------------+-----------------+
+| ACMP      | on-chip    | analog comparator                   | Supported       | No support      |
++-----------+------------+-------------------------------------+-----------------+-----------------+
+| CAAM RNG  | on-chip    | entropy                             | Supported (M7)  | No support      |
++-----------+------------+-------------------------------------+-----------------+-----------------+
+| FLEXSPI   | on-chip    | flash programming                   | Supported (M7)  | No support      |
++-----------+------------+-------------------------------------+-----------------+-----------------+
+| SDHC      | on-chip    | SD host controller                  | Supported (M7)  | Supported (M7)  |
++-----------+------------+-------------------------------------+-----------------+-----------------+
 
 The default configuration can be found in the defconfig file:
 ``boards/arm/mimxrt1170_evk/mimxrt1170_evk_cm7_defconfig``

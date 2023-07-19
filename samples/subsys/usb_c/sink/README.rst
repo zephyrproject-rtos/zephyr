@@ -30,7 +30,7 @@ Building and Running
 Build and flash as follows, changing ``b_g474e_dpow1`` for your board:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/subsys/usb-c/sink
+   :zephyr-app: samples/subsys/usb_c/sink
    :board: b_g474e_dpow1
    :goals: build flash
    :compact:

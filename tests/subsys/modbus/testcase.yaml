@@ -11,3 +11,5 @@ tests:
     build_only: true
     tags: modbus
     filter: CONFIG_UART_CONSOLE and CONFIG_UART_INTERRUPT_DRIVEN
+    integration_platforms:
+      - frdm_k64f

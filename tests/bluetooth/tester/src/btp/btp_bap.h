@@ -20,6 +20,18 @@ struct btp_bap_discover_cmd {
 #define BTP_BAP_DISCOVERY_STATUS_SUCCESS	0x00
 #define BTP_BAP_DISCOVERY_STATUS_FAILED		0x01
 
+#define BTP_BAP_SEND	0x03
+struct btp_bap_send_cmd {
+	bt_addr_le_t address;
+	uint8_t ase_id;
+	uint8_t data_len;
+	uint8_t data[0];
+} __packed;
+
+struct btp_bap_send_rp {
+	uint8_t data_len;
+} __packed;
+
 /* BAP events */
 #define BTP_BAP_EV_DISCOVERY_COMPLETED	0x80
 struct btp_bap_discovery_completed_ev {
@@ -35,6 +47,7 @@ struct btp_bap_codec_cap_found_ev {
 	uint16_t frequencies;
 	uint8_t frame_durations;
 	uint32_t octets_per_frame;
+	uint8_t channel_counts;
 } __packed;
 
 #define BTP_BAP_EV_ASE_FOUND	0x82
@@ -42,4 +55,12 @@ struct btp_ascs_ase_found_ev {
 	bt_addr_le_t address;
 	uint8_t dir;
 	uint8_t ase_id;
+} __packed;
+
+#define BTP_BAP_EV_STREAM_RECEIVED	0x83
+struct btp_bap_stream_received_ev {
+	bt_addr_le_t address;
+	uint8_t ase_id;
+	uint8_t data_len;
+	uint8_t data[0];
 } __packed;

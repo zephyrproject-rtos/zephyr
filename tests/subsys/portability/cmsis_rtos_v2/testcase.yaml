@@ -4,3 +4,5 @@ tests:
     tags: cmsis_rtos
     min_ram: 32
     min_flash: 34
+    integration_platforms:
+      - native_posix

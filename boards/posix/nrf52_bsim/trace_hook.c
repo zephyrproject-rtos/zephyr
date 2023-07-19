@@ -15,15 +15,32 @@
  * is down.
  */
 
+void posix_vprint_error_and_exit(const char *format, va_list vargs)
+{
+	bs_trace_vprint(BS_TRACE_WARNING, NULL, 0, 0, BS_TRACE_AUTOTIME, 0,
+			format, vargs);
+	posix_exit(1);
+}
+
+void posix_vprint_warning(const char *format, va_list vargs)
+{
+	bs_trace_vprint(BS_TRACE_WARNING, NULL, 0, 0, BS_TRACE_AUTOTIME, 0,
+				format, vargs);
+}
+
+void posix_vprint_trace(const char *format, va_list vargs)
+{
+	bs_trace_vprint(BS_TRACE_RAW, NULL, 0, 2, BS_TRACE_AUTOTIME, 0,
+				format, vargs);
+}
+
 void posix_print_error_and_exit(const char *format, ...)
 {
 	va_list variable_argsp;
 
 	va_start(variable_argsp, format);
-	bs_trace_vprint(BS_TRACE_WARNING, NULL, 0, 0, BS_TRACE_AUTOTIME, 0,
-			format, variable_argsp);
+	posix_vprint_error_and_exit(format, variable_argsp);
 	va_end(variable_argsp);
-	posix_exit(1);
 }
 
 void posix_print_warning(const char *format, ...)

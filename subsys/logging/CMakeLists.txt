@@ -1,5 +1,10 @@
 # SPDX-License-Identifier: Apache-2.0
 
+zephyr_syscall_header(
+  ${ZEPHYR_BASE}/include/zephyr/logging/log_msg.h
+  ${ZEPHYR_BASE}/include/zephyr/logging/log_ctrl.h
+)
+
 if(NOT CONFIG_LOG_MODE_MINIMAL)
   zephyr_sources_ifdef(
     CONFIG_LOG
@@ -7,7 +12,6 @@ if(NOT CONFIG_LOG_MODE_MINIMAL)
     log_mgmt.c
     log_cache.c
     log_msg.c
-    log_cache.c
   )
 
   zephyr_sources_ifdef(

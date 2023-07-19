@@ -8,15 +8,12 @@ if DISPLAY
 if LVGL
 
 config LV_Z_VDB_SIZE
-	int
 	default 16
 
-config LV_Z_DPI
-	int
+config LV_DPI_DEF
 	default 150
 
 config LV_Z_BITS_PER_PIXEL
-	int
 	default 1
 
 choice LV_COLOR_DEPTH

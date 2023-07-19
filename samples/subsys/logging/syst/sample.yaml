@@ -17,8 +17,6 @@ tests:
     integration_platforms:
       - mps2_an385
       - qemu_x86
-      - sam_e70_xplained
-      - qemu_cortex_a53
     extra_args: OVERLAY_CONFIG=overlay_deferred.conf
     harness: console
     harness_config:
@@ -39,10 +37,8 @@ tests:
     toolchain_exclude: xcc
     extra_args: OVERLAY_CONFIG=overlay_immediate.conf
     integration_platforms:
-      - mps2_an385
       - qemu_x86
       - sam_e70_xplained
-      - qemu_cortex_a53
     harness: console
     harness_config:
       type: multi_line
@@ -56,10 +52,8 @@ tests:
     toolchain_exclude: xcc
     extra_args: OVERLAY_CONFIG=overlay_deferred.conf
     integration_platforms:
-      - mps2_an385
       - qemu_x86
       - qemu_x86_64
-      - qemu_cortex_a53
     harness: console
     harness_config:
       type: one_line
@@ -72,10 +66,8 @@ tests:
   sample.logger.syst.catalog.immediate:
     toolchain_exclude: xcc
     integration_platforms:
-      - mps2_an385
       - qemu_x86
       - qemu_x86_64
-      - qemu_cortex_a53
     harness: console
     harness_config:
       type: one_line
@@ -89,11 +81,8 @@ tests:
     toolchain_exclude: xcc
     extra_args: OVERLAY_CONFIG=overlay_deferred.conf
     integration_platforms:
-      - mps2_an385
       - qemu_x86
       - qemu_x86_64
-      - sam_e70_xplained
-      - qemu_cortex_a53
     harness: console
     harness_config:
       type: one_line
@@ -108,9 +97,6 @@ tests:
     integration_platforms:
       - mps2_an385
       - qemu_x86
-      - qemu_x86_64
-      - sam_e70_xplained
-      - qemu_cortex_a53
     harness: console
     harness_config:
       type: one_line
@@ -124,10 +110,8 @@ tests:
     toolchain_exclude: xcc
     extra_args: OVERLAY_CONFIG=overlay_deferred.conf
     integration_platforms:
-      - mps2_an385
       - qemu_x86
       - qemu_x86_64
-      - qemu_cortex_a53
     harness: console
     harness_config:
       type: one_line
@@ -141,10 +125,8 @@ tests:
   sample.logger.syst.catalog.immediate_cpp:
     toolchain_exclude: xcc
     integration_platforms:
-      - mps2_an385
       - qemu_x86
       - qemu_x86_64
-      - qemu_cortex_a53
     harness: console
     harness_config:
       type: one_line

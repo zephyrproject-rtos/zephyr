@@ -10,19 +10,27 @@
 {
    POSIX arch no thread cleanup
    Memcheck:Leak
-   match-leak-kinds: possible
+   match-leak-kinds: reachable,possible
    ...
-   fun:pthread_create*
    fun:posix_new_thread
+   fun:arch_new_thread
+}
+{
+   POSIX soc no cpu cleanup
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   ...
+   fun:posix_boot_cpu
+   ...
+   fun:main
 }
 {
    POSIX arch no cpu cleanup
    Memcheck:Leak
-   match-leak-kinds: possible
+   match-leak-kinds: reachable
    ...
-   fun:pthread_create*
-   fun:posix_boot_cpu
-   fun:main
+   fun:nct_init
+   fun:posix_arch_init
 }
 {
    lvgl no cleanup

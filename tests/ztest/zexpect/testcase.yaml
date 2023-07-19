@@ -4,6 +4,8 @@
 common:
   integration_platforms:
     - native_posix
+  tags:
+    - test_framework
 tests:
   testing.ztest.expect:
     integration_platforms:

@@ -12,5 +12,6 @@ tests:
       - frdm_k82f
       - frdm_k64f
       - nucleo_h743zi
+      - nucleo_u575zi_q
     integration_platforms:
       - frdm_k82f

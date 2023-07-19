@@ -56,7 +56,7 @@ config LV_Z_POINTER_KSCAN
 config LV_Z_VDB_SIZE
 	default 16
 
-config LV_Z_DPI
+config LV_DPI_DEF
 	default 128
 
 choice LV_COLOR_DEPTH

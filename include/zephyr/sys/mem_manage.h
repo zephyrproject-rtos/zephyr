@@ -16,6 +16,7 @@
 /**
  * @brief Memory Management
  * @defgroup memory_management Memory Management
+ * @ingroup os_services
  * @{
  * @}
  */
@@ -53,6 +54,13 @@
 
 /** Region will be accessible to user mode (normally supervisor-only) */
 #define K_MEM_PERM_USER		BIT(5)
+
+/*
+ * Region mapping behaviour attributes
+ */
+
+/** Region will be mapped to 1:1 virtual and physical address */
+#define K_MEM_DIRECT_MAP	BIT(6)
 
 /*
  * This is the offset to subtract from a virtual address mapped in the

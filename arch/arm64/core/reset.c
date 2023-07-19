@@ -5,6 +5,7 @@
  */
 
 #include <kernel_internal.h>
+#include <zephyr/sys/barrier.h>
 #include "boot.h"
 
 void z_arm64_el2_init(void);
@@ -37,7 +38,7 @@ void z_arm64_el_highest_init(void)
 
 	z_arm64_el_highest_plat_init();
 
-	isb();
+	barrier_isync_fence_full();
 }
 
 enum el3_next_el {
@@ -68,7 +69,7 @@ void z_arm64_el3_init(void)
 
 	/* Setup vector table */
 	write_vbar_el3((uint64_t)_vector_table);
-	isb();
+	barrier_isync_fence_full();
 
 	reg = 0U;			/* Mostly RES0 */
 	reg &= ~(CPTR_TTA_BIT |		/* Do not trap sysreg accesses */
@@ -79,6 +80,10 @@ void z_arm64_el3_init(void)
 	reg = 0U;			/* Reset */
 #ifdef CONFIG_ARMV8_A_NS
 	reg |= SCR_NS_BIT;		/* EL2 / EL3 non-secure */
+#else
+	if (is_in_secure_state() && is_el2_sec_supported()) {
+		reg |= SCR_EEL2_BIT;    /* Enable EL2 secure */
+	}
 #endif
 	reg |= (SCR_RES1 |		/* RES1 */
 		SCR_RW_BIT |		/* EL2 execution state is AArch64 */
@@ -98,7 +103,7 @@ void z_arm64_el3_init(void)
 
 	z_arm64_el3_plat_init();
 
-	isb();
+	barrier_isync_fence_full();
 
 	if (el3_get_next_el() == EL3_TO_EL1_SKIP_EL2) {
 		/*
@@ -149,7 +154,7 @@ void z_arm64_el2_init(void)
 
 	z_arm64_el2_plat_init();
 
-	isb();
+	barrier_isync_fence_full();
 }
 
 void z_arm64_el1_init(void)
@@ -158,7 +163,7 @@ void z_arm64_el1_init(void)
 
 	/* Setup vector table */
 	write_vbar_el1((uint64_t)_vector_table);
-	isb();
+	barrier_isync_fence_full();
 
 	reg = 0U;			/* RES0 */
 	reg |= CPACR_EL1_FPEN_NOTRAP;	/* Do not trap NEON/SIMD/FP initially */
@@ -180,7 +185,7 @@ void z_arm64_el1_init(void)
 
 	z_arm64_el1_plat_init();
 
-	isb();
+	barrier_isync_fence_full();
 }
 
 void z_arm64_el3_get_next_el(uint64_t switch_addr)

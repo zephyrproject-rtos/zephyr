@@ -75,6 +75,7 @@ static K_KERNEL_STACK_DEFINE(work_q_stack, CONFIG_NET_TCP_WORKQ_STACK_SIZE);
 static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt);
 static bool is_destination_local(struct net_pkt *pkt);
 static void tcp_out(struct tcp *conn, uint8_t flags);
+static const char *tcp_state_to_str(enum tcp_state state, bool prefix);
 
 int (*tcp_send_cb)(struct net_pkt *pkt) = NULL;
 size_t (*tcp_recv_cb)(struct tcp *conn, struct net_pkt *pkt) = NULL;
@@ -489,6 +490,9 @@ static int tcp_conn_close(struct tcp *conn, int status)
 #if CONFIG_NET_TCP_LOG_LEVEL >= LOG_LEVEL_DBG
 	NET_DBG("conn: %p closed by TCP stack (%s():%d)", conn, caller, line);
 #endif
+	k_mutex_lock(&conn->lock, K_FOREVER);
+	conn_state(conn, TCP_CLOSED);
+	k_mutex_unlock(&conn->lock);
 
 	if (conn->in_connect) {
 		if (conn->connect_cb) {
@@ -497,9 +501,7 @@ static int tcp_conn_close(struct tcp *conn, int status)
 			/* Make sure the connect_cb is only called once. */
 			conn->connect_cb = NULL;
 		}
-	}
-
-	if (conn->context->recv_cb) {
+	} else if (conn->context->recv_cb) {
 		conn->context->recv_cb(conn->context, NULL, NULL, NULL,
 				       status, conn->recv_user_data);
 	}
@@ -1764,16 +1766,12 @@ static struct tcp *tcp_conn_new(struct net_pkt *pkt)
 
 	if (IS_ENABLED(CONFIG_NET_IPV6) &&
 	    net_context_get_family(context) == AF_INET6) {
-		if (net_sin6_ptr(&context->local)->sin6_addr) {
-			net_ipaddr_copy(&net_sin6(&local_addr)->sin6_addr,
-				     net_sin6_ptr(&context->local)->sin6_addr);
-		}
+		net_ipaddr_copy(&net_sin6(&local_addr)->sin6_addr,
+				&conn->src.sin6.sin6_addr);
 	} else if (IS_ENABLED(CONFIG_NET_IPV4) &&
 		   net_context_get_family(context) == AF_INET) {
-		if (net_sin_ptr(&context->local)->sin_addr) {
-			net_ipaddr_copy(&net_sin(&local_addr)->sin_addr,
-				      net_sin_ptr(&context->local)->sin_addr);
-		}
+		net_ipaddr_copy(&net_sin(&local_addr)->sin_addr,
+				&conn->src.sin.sin_addr);
 	}
 
 	ret = net_context_bind(context, &local_addr, sizeof(local_addr));
@@ -2103,7 +2101,7 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt)
 
 	if (th && th_off(th) < 5) {
 		tcp_out(conn, RST);
-		conn_state(conn, TCP_CLOSED);
+		do_close = true;
 		close_status = -ECONNRESET;
 		goto next_state;
 	}
@@ -2119,7 +2117,7 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt)
 		/* Valid RST received. */
 		verdict = NET_OK;
 		net_stats_update_tcp_seg_rst(net_pkt_iface(pkt));
-		conn_state(conn, TCP_CLOSED);
+		do_close = true;
 		close_status = -ECONNRESET;
 		goto next_state;
 	}
@@ -2128,7 +2126,7 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt)
 						  tcp_options_len)) {
 		NET_DBG("DROP: Invalid TCP option list");
 		tcp_out(conn, RST);
-		conn_state(conn, TCP_CLOSED);
+		do_close = true;
 		close_status = -ECONNRESET;
 		goto next_state;
 	}
@@ -2143,7 +2141,7 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt)
 			conn, tcp_state_to_str(conn->state, false));
 		net_stats_update_tcp_seg_drop(conn->iface);
 		tcp_out(conn, RST);
-		conn_state(conn, TCP_CLOSED);
+		do_close = true;
 		close_status = -ECONNRESET;
 		goto next_state;
 	}
@@ -2359,7 +2357,7 @@ next_state:
 					conn->send_data_total);
 				net_stats_update_tcp_seg_drop(conn->iface);
 				tcp_out(conn, RST);
-				conn_state(conn, TCP_CLOSED);
+				do_close = true;
 				close_status = -ECONNRESET;
 				break;
 			}
@@ -2413,7 +2411,7 @@ next_state:
 			ret = tcp_send_queued_data(conn);
 			if (ret < 0 && ret != -ENOBUFS) {
 				tcp_out(conn, RST);
-				conn_state(conn, TCP_CLOSED);
+				do_close = true;
 				close_status = ret;
 				verdict = NET_OK;
 				break;
@@ -2467,13 +2465,12 @@ next_state:
 	case TCP_LAST_ACK:
 		if (th && FL(&fl, ==, ACK, th_seq(th) == conn->ack)) {
 			tcp_send_timer_cancel(conn);
-			next = TCP_CLOSED;
+			do_close = true;
 			verdict = NET_OK;
 			close_status = 0;
 		}
 		break;
 	case TCP_CLOSED:
-		do_close = true;
 		break;
 	case TCP_FIN_WAIT_1:
 		if (th) {

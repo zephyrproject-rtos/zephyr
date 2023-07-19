@@ -14,7 +14,7 @@ version of Zephyr (backports), and one for issues that are being fixed only in a
 
 The upstream MCUmgr repository is located `in this page <https://github.com/apache/mynewt-mcumgr>`_.
 The Zephyr fork used in version 2.7 and earlier is `located here <https://github.com/zephyrproject-rtos/mcumgr>`_.
-Versions of Zephyr past 2.7 use the MCUmgr library that is `part of the Zephyr code base <https://github.com/zephyrproject-rtos/zephyr/tree/main/subsys/mgmt/mcumgr/lib>`_.
+Versions of Zephyr past 2.7 use the MCUmgr library that is `part of the Zephyr code base <https://github.com/zephyrproject-rtos/zephyr/tree/main/subsys/mgmt/mcumgr>`_.
 
 Possible origins of a code change
 *********************************

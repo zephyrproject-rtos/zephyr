@@ -29,10 +29,10 @@ ZTEST(rtc_api, test_set_get_time)
 
 	memset(&datetime_get, 0xFF, sizeof(datetime_get));
 
-	zassert_true(rtc_set_time(rtc, &datetime_set) == 0, "Failed to set time");
+	zassert_equal(rtc_set_time(rtc, &datetime_set), 0, "Failed to set time");
 
-	zassert_true(rtc_get_time(rtc, &datetime_get) == 0,
-		     "Failed to get time using rtc_time_get()");
+	zassert_equal(rtc_get_time(rtc, &datetime_get), 0,
+		      "Failed to get time using rtc_time_get()");
 
 	zassert_true((datetime_get.tm_sec > -1) && (datetime_get.tm_sec < 60),
 		     "Invalid tm_sec");
@@ -55,7 +55,7 @@ ZTEST(rtc_api, test_set_get_time)
 	zassert_true((datetime_get.tm_yday > -2) && (datetime_get.tm_yday < 366),
 		     "Invalid tm_yday");
 
-	zassert_true((datetime_get.tm_isdst == -1), "Invalid tm_isdst");
+	zassert_equal(datetime_get.tm_isdst, -1, "Invalid tm_isdst");
 
 	zassert_true((datetime_get.tm_nsec > -1) && (datetime_get.tm_yday < 1000000000),
 		     "Invalid tm_yday");

@@ -1,0 +1,93 @@
+/*
+ * Copyright 2023 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <nxp/s32/S32K344-172MQFP-pinctrl.h>
+
+&pinctrl {
+	eirq0_default: eirq0_default {
+		group1 {
+			pinmux = <PTD15_EIRQ31>;
+			input-enable;
+		};
+	};
+
+	lpuart0_default: lpuart0_default {
+		group1 {
+			pinmux = <PTA3_LPUART0_TX_O>, <PTA1_LPUART0_RTS>;
+			output-enable;
+		};
+		group2 {
+			pinmux = <PTA2_LPUART0_RX>, <PTA0_LPUART0_CTS>;
+			input-enable;
+		};
+	};
+
+	lpuart1_default: lpuart1_default {
+		group1 {
+			pinmux = <PTC7_LPUART1_TX_O>, <PTE6_LPUART1_RTS>;
+			output-enable;
+		};
+		group2 {
+			pinmux = <PTC6_LPUART1_RX>, <PTE2_LPUART1_CTS>;
+			input-enable;
+		};
+	};
+
+	lpuart2_default: lpuart2_default {
+		group1 {
+			pinmux = <PTA9_LPUART2_TX_O>;
+			output-enable;
+		};
+		group2 {
+			pinmux = <PTA8_LPUART2_RX>;
+			input-enable;
+		};
+	};
+
+	lpuart9_default: lpuart9_default {
+		group1 {
+			pinmux = <PTB3_LPUART9_TX_O>;
+			output-enable;
+		};
+		group2 {
+			pinmux = <PTB2_LPUART9_RX>;
+			input-enable;
+		};
+	};
+
+	lpuart10_default: lpuart10_default {
+		group1 {
+			pinmux = <PTC13_LPUART10_TX_O>;
+			output-enable;
+		};
+		group2 {
+			pinmux = <PTC12_LPUART10_RX>;
+			input-enable;
+		};
+	};
+
+	lpuart13_default: lpuart13_default {
+		group1 {
+			pinmux = <PTB18_LPUART13_TX_O>;
+			output-enable;
+		};
+		group2 {
+			pinmux = <PTB19_LPUART13_RX>;
+			input-enable;
+		};
+	};
+
+	lpuart14_default: lpuart14_default {
+		group1 {
+			pinmux = <PTB20_LPUART14_TX_O>;
+			output-enable;
+		};
+		group2 {
+			pinmux = <PTB21_LPUART14_RX>;
+			input-enable;
+		};
+	};
+};

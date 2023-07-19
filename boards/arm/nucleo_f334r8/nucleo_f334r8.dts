@@ -8,6 +8,7 @@
 #include <st/f3/stm32f334X8.dtsi>
 #include <st/f3/stm32f334r(6-8)tx-pinctrl.dtsi>
 #include "arduino_r3_connector.dtsi"
+#include "st_morpho_connector.dtsi"
 
 / {
 	model = "STMicroelectronics STM32F334R8-NUCLEO board";

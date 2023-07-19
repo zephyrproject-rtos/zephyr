@@ -11,3 +11,12 @@ config ADC_GECKO_IADC
 	select ADC_CONFIGURABLE_INPUTS
 	help
 	  Enable the driver implementation for the Silabs GeckoEXX32 Incremental ADC
+
+config ADC_GECKO_ADC
+	bool "Gecko ADC driver"
+	default y
+	depends on DT_HAS_SILABS_GECKO_ADC_ENABLED
+	select SOC_GECKO_ADC
+	select ADC_CONFIGURABLE_INPUTS
+	help
+	  Enable the driver implementation for the Silabs GeckoEFM32 ADC

@@ -63,6 +63,10 @@ zephyr_library_sources_ifdef(
   CONFIG_BT_HAS_CLIENT
   has_client.c
   )
+zephyr_library_sources_ifdef(
+  CONFIG_BT_TMAP
+  tmap.c
+  )
 # We use BT_BAP_STREAM as a common ground for audio, as that is set whenever
 # any audio stream functionality is enabled.
 zephyr_library_sources_ifdef(

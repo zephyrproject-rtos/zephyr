@@ -16,6 +16,7 @@
 #include <zephyr/device.h>
 #include <zephyr/net/net_if.h>
 #include <zephyr/sys/iterable_sections.h>
+#include <zephyr/net/net_mgmt.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -34,7 +35,8 @@ extern "C" {
 /* Connectivity Events */
 #define _NET_MGMT_CONN_LAYER			NET_MGMT_LAYER(NET_MGMT_LAYER_L2)
 #define _NET_MGMT_CONN_CODE			NET_MGMT_LAYER_CODE(0x207)
-#define _NET_MGMT_CONN_BASE			(_NET_MGMT_CONN_LAYER | _NET_MGMT_CONN_CODE)
+#define _NET_MGMT_CONN_BASE			(_NET_MGMT_CONN_LAYER | _NET_MGMT_CONN_CODE | \
+						 NET_MGMT_EVENT_BIT)
 #define _NET_MGMT_CONN_IF_EVENT			(NET_MGMT_IFACE_BIT | _NET_MGMT_CONN_BASE)
 
 enum net_event_ethernet_cmd {
@@ -177,6 +179,18 @@ enum conn_mgr_if_flag {
 	 * attempt to persist connectivity by automatically reconnecting after connection loss.
 	 */
 	CONN_MGR_IF_PERSISTENT,
+
+	/* No auto-connect
+	 * When set, conn_mgr will not automatically attempt to connect this iface when it reaches
+	 * admin-up.
+	 */
+	CONN_MGR_IF_NO_AUTO_CONNECT,
+
+	/* No auto-down
+	 * When set, conn_mgr will not automatically take the iface admin-down when it stops
+	 * trying to connect, even if NET_CONNECTION_MANAGER_AUTO_IF_DOWN is enabled.
+	 */
+	CONN_MGR_IF_NO_AUTO_DOWN,
 
 /** @cond INTERNAL_HIDDEN */
 	/* Total number of flags - must be at the end of the enum */
@@ -408,6 +422,57 @@ int conn_mgr_if_set_timeout(struct net_if *iface, int timeout);
  *
  */
 void conn_mgr_conn_init(void);
+
+/**
+ * @brief Convenience function that takes all available ifaces into the admin-up state.
+ *
+ * Essentially a wrapper for net_if_up.
+ *
+ * @param skip_ignored - If true, only affect ifaces that aren't ignored by conn_mgr.
+ *			 Otherwise, affect all ifaces.
+ * @return 0 if all net_if_up calls returned 0, otherwise the first nonzero value
+ *         returned by a net_if_up call.
+ */
+int conn_mgr_all_if_up(bool skip_ignored);
+
+
+/**
+ * @brief Convenience function that takes all available ifaces into the admin-down state.
+ *
+ * Essentially a wrapper for net_if_down.
+ *
+ * @param skip_ignored - If true, only affect ifaces that aren't ignored by conn_mgr.
+ *			 Otherwise, affect all ifaces.
+ * @return 0 if all net_if_down calls returned 0, otherwise the first nonzero value
+ *         returned by a net_if_down call.
+ */
+int conn_mgr_all_if_down(bool skip_ignored);
+
+/**
+ * @brief Convenience function that takes all available ifaces into the admin-up state, and
+ * connects those that support connectivity.
+ *
+ * Essentially a wrapper for net_if_up and conn_mgr_if_connect.
+ *
+ * @param skip_ignored - If true, only affect ifaces that aren't ignored by conn_mgr.
+ *			 Otherwise, affect all ifaces.
+ * @return 0 if all net_if_up and conn_mgr_if_connect calls returned 0, otherwise the first nonzero
+ *	   value returned by either net_if_up or conn_mgr_if_connect.
+ */
+int conn_mgr_all_if_connect(bool skip_ignored);
+
+/**
+ * @brief Convenience function that disconnects all available ifaces that support connectivity
+ *        without putting them into admin-down state (unless auto-down is enabled for the iface).
+ *
+ * Essentially a wrapper for net_if_down.
+ *
+ * @param skip_ignored - If true, only affect ifaces that aren't ignored by conn_mgr.
+ *			 Otherwise, affect all ifaces.
+ * @return 0 if all net_if_up and conn_mgr_if_connect calls returned 0, otherwise the first nonzero
+ *	   value returned by either net_if_up or conn_mgr_if_connect.
+ */
+int conn_mgr_all_if_disconnect(bool skip_ignored);
 
 /**
  * @}

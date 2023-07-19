@@ -5,7 +5,7 @@
 
 #include <zephyr/device.h>
 #include <zephyr/init.h>
-#include <zephyr/irq.h>
+#include <soc.h>
 
 /* initial ecc memory */
 void z_arm_platform_init(void)
@@ -21,15 +21,7 @@ void z_arm_platform_init(void)
 
 static int gd32a50x_soc_init(void)
 {
-	uint32_t key;
-
-
-	key = irq_lock();
-
 	SystemInit();
-	NMI_INIT();
-
-	irq_unlock(key);
 
 	return 0;
 }

@@ -12,10 +12,8 @@
  * hardware for the RT5XX platforms.
  */
 
-#include <zephyr/arch/arm/aarch32/nmi.h>
 #include <zephyr/init.h>
 #include <zephyr/devicetree.h>
-#include <zephyr/irq.h>
 #include <zephyr/linker/sections.h>
 #include <soc.h>
 #include "fsl_power.h"
@@ -472,28 +470,12 @@ void imxrt_post_init_display_interface(void)
  */
 static int nxp_rt500_init(void)
 {
-
-	/* old interrupt lock level */
-	unsigned int oldLevel;
-
-	/* disable interrupts */
-	oldLevel = irq_lock();
-
 	/* Initialize clocks with tool generated code */
 	clock_init();
-
-	/*
-	 * install default handler that simply resets the CPU if configured in
-	 * the kernel, NOP otherwise
-	 */
-	NMI_INIT();
 
 #ifndef CONFIG_IMXRT5XX_CODE_CACHE
 	CACHE64_DisableCache(CACHE64_CTRL0);
 #endif
-
-	/* restore interrupt state */
-	irq_unlock(oldLevel);
 
 	return 0;
 }

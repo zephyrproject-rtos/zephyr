@@ -32,10 +32,14 @@ tests:
   drivers.flash.common.default:
     filter: ((CONFIG_FLASH_HAS_DRIVER_ENABLED and not CONFIG_TRUSTED_EXECUTION_NONSECURE)
       and dt_label_with_parent_compat_enabled("storage_partition", "fixed-partitions"))
+    integration_platforms:
+      - qemu_x86
   drivers.flash.common.tfm_ns:
     build_only: true
     filter: (CONFIG_FLASH_HAS_DRIVER_ENABLED and CONFIG_TRUSTED_EXECUTION_NONSECURE
       and dt_label_with_parent_compat_enabled("slot1_ns_partition", "fixed-partitions"))
+    integration_platforms:
+      - nrf9161dk_nrf9161_ns
   drivers.flash.mcux:
     platform_allow:
       - mimxrt1060_evk

@@ -976,8 +976,12 @@ static void winc1500_thread(void)
 	}
 }
 
-static int winc1500_mgmt_scan(const struct device *dev, scan_result_cb_t cb)
+static int winc1500_mgmt_scan(const struct device *dev,
+			      struct wifi_scan_params *params,
+			      scan_result_cb_t cb)
 {
+	ARG_UNUSED(params);
+
 	if (w1500_data.scan_cb) {
 		return -EALREADY;
 	}
@@ -1099,13 +1103,22 @@ static void winc1500_iface_init(struct net_if *iface)
 	w1500_data.iface = iface;
 }
 
+static enum offloaded_net_if_types winc1500_get_wifi_type(void)
+{
+	return L2_OFFLOADED_NET_IF_TYPE_WIFI;
+}
+
+static const struct wifi_mgmt_ops winc1500_mgmt_ops = {
+	.scan		= winc1500_mgmt_scan,
+	.connect	= winc1500_mgmt_connect,
+	.disconnect	= winc1500_mgmt_disconnect,
+	.ap_enable	= winc1500_mgmt_ap_enable,
+	.ap_disable	= winc1500_mgmt_ap_disable,
+};
 static const struct net_wifi_mgmt_offload winc1500_api = {
 	.wifi_iface.iface_api.init = winc1500_iface_init,
-	.scan			   = winc1500_mgmt_scan,
-	.connect		   = winc1500_mgmt_connect,
-	.disconnect		   = winc1500_mgmt_disconnect,
-	.ap_enable		   = winc1500_mgmt_ap_enable,
-	.ap_disable		   = winc1500_mgmt_ap_disable,
+	.wifi_iface.get_type = winc1500_get_wifi_type,
+	.wifi_mgmt_api = &winc1500_mgmt_ops,
 };
 
 static int winc1500_init(const struct device *dev)

@@ -60,6 +60,12 @@ config USE_INFINEON_PWM
 	  Enable Pulse Width Modulator (PWM) HAL module
 	  driver for Infineon devices
 
+config USE_INFINEON_WDT
+	bool
+	help
+	  Enable WATCHDOG TIMER (WDT) HAL module
+	  driver for Infineon devices
+
 config ABSTRACTION_RTOS_COMPONENT_ZEPHYR
 	bool "Abstraction RTOS component (Zephyr support)"
 	default n

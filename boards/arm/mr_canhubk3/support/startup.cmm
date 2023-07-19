@@ -1,0 +1,128 @@
+;*******************************************************************************
+;   Copyright 2023 NXP                                                         *
+;                                                                              *
+;   Lauterbach Trace32 start-up script for S32K344 / Cortex-M7                 *
+;                                                                              *
+;   Parameters:                                                                *
+;   - command     operation to execute                                         *
+;                 valid values: flash, debug                                   *
+;   - elfFile     filepath of ELF to load                                      *
+;   - loadTo      if "flash", the application will be downloaded to SoC        *
+;                 program flash by a flash programming routine; if "sram" it   *
+;                 will be downloaded to SoC SRAM.                              *
+;                 valid values: flash, sram                                    *
+;                 default: flash                                               *
+;   - eraseFlash  if set to "yes", the whole content in Flash device will be   *
+;                 erased before the application is downloaded to either Flash  *
+;                 or SRAM. This routine takes time to execute                  *
+;                 default: "no"                                                *
+;   - verifyFlash if set to "yes", verify after program application to Flash   *
+;                 default: "no"                                                *
+;*******************************************************************************
+
+ENTRY %LINE &args
+
+&command=STRing.SCANAndExtract("&args","command=","")
+&elfFile=STRing.SCANAndExtract("&args","elfFile=","")
+&loadTo=STRing.SCANAndExtract("&args","loadTo=","flash")
+&eraseFlash=STRing.SCANAndExtract("&args","eraseFlash=","no")
+&verifyFlash=STRing.SCANAndExtract("&args","verifyFlash=","no")
+
+IF ("&elfFile"=="")
+(
+  PRINT %ERROR "Missing ELF file path"
+  PLIST
+  STOP
+  ENDDO
+)
+
+; Initialize debugger
+RESet
+SYStem.RESet
+SYStem.CPU S32K344-M7
+SYStem.CONFIG.DEBUGPORTTYPE JTAG
+SYStem.Option.DUALPORT ON
+SYStem.Option.DisMode THUMB
+SYStem.MemAccess DAP
+SYStem.JtagClock 10MHz
+Trace.DISable
+TrOnchip.Set MMERR OFF
+TrOnchip.Set BUSERR OFF
+SYStem.Up
+
+; Init SRAM
+DO ~~/demo/arm/hardware/s32k3/scripts/init_sram.cmm
+
+; Only declares flash, does not execute flash programming
+DO ~~/demo/arm/flash/s32k3.cmm PREPAREONLY
+
+; The prepare cmm is protecting flash area for HSE firmware, but
+; since HSE firmware usage feature is not enabled, this region can
+; be used by application core, marked as programmable.
+FLASH.CHANGEtype 0x007D4000--0x7F3FFF TARGET
+
+IF ("&eraseFlash"=="yes")
+(
+  FLASH.Erase ALL
+)
+
+IF ("&loadTo"=="flash")
+(
+  ; Switch target flash to reprogramming state, erase virtual flash programming memory,
+  ; all target non-empty flash sectors are marked as pending, to be reprogrammed.
+  FLASH.ReProgram ALL /Erase
+
+  ; Write contents of the file to virtual Flash programming memory
+  Data.LOAD.Elf &elfFile
+
+  ; Program only changed sectors to target flash and erase obsolete code
+  FLASH.ReProgram off
+
+  IF ("&verifyFlash"=="yes")
+  (
+    Data.LOAD.Elf &elfFile /DIFF
+
+    IF FOUND()
+    (
+      AREA.view
+      PRINT %ERROR "ERROR ! Failed to download the code to flash"
+      Data.LOAD.Elf &elfFile /ComPare
+      ENDDO
+    )
+  )
+
+  ; Reset the processor
+  SYStem.Up
+)
+ELSE
+(
+  ; Init ITCM
+  DO ~~/demo/arm/hardware/s32k3/scripts/init_itcm.cmm
+
+  Data.LOAD.Elf &elfFile
+)
+
+IF ("&command"=="flash")
+(
+  ; Execute the application and quit
+  Go
+  QUIT
+)
+ELSE IF ("&command"=="debug")
+(
+  ; Setup minimal debug environment
+  WinCLEAR
+  SETUP.Var.%SpotLight
+  WinPOS 0. 0. 120. 30.
+  List.auto
+  WinPOS 125. 0. 80. 10.
+  Frame.view
+  WinPOS 125. 18.
+  Register.view /SpotLight
+)
+ELSE
+(
+  PRINT %ERROR "Invalid command"
+)
+
+ENDDO

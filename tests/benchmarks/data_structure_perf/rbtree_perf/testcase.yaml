@@ -3,3 +3,6 @@ tests:
     tags:
       - benchmark
       - rbtree
+      - kernel
+    integration_platforms:
+      - native_posix

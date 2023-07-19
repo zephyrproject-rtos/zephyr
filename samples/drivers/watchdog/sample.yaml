@@ -70,7 +70,7 @@ tests:
     integration_platforms:
       - nucleo_f103rb
   sample.drivers.watchdog.gd32_fwdgt:
-    filter: dt_has_compat("gd,gd32-fwdgt")
+    filter: dt_compat_enabled("gd,gd32-fwdgt")
     extra_args: DTC_OVERLAY_FILE=boards/gd32_fwdgt.overlay
     platform_allow:
       - gd32e103v_eval
@@ -86,7 +86,7 @@ tests:
     integration_platforms:
       - gd32e103v_eval
   sample.drivers.watchdog.gd32_wwdgt:
-    filter: dt_has_compat("gd,gd32-wwdgt")
+    filter: dt_compat_enabled("gd,gd32-wwdgt")
     extra_args: DTC_OVERLAY_FILE=boards/gd32_wwdgt.overlay
     platform_allow:
       - gd32e103v_eval

@@ -17,3 +17,4 @@ supported:
   - gpio
   - uart
   - i2c
+  - watchdog

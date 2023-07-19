@@ -11,3 +11,12 @@ config UART_ITE_IT8XXX2
 	  to handle IT8XXX2 specific UART features. In addition
 	  to use pm_action_cb, we also need to make some setting
 	  at uart_it8xxx2_init.
+
+config UART_ITE_IT8XXX2_INIT_PRIORITY
+	int "ITE IT8XXX2 UART wrapper init priority"
+	default 51
+	depends on UART_ITE_IT8XXX2
+	help
+	  Initialization priority for the UART wrapper driver on ITE IT8XXX2,
+	  must be set to a lower priority than the matching ns16550 device
+	  (CONFIG_SERIAL_INIT_PRIORITY).

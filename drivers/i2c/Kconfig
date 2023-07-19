@@ -70,10 +70,12 @@ source "drivers/i2c/Kconfig.rcar"
 source "drivers/i2c/Kconfig.tca954x"
 source "drivers/i2c/Kconfig.gd32"
 source "drivers/i2c/Kconfig.ifx_cat1"
+source "drivers/i2c/Kconfig.ifx_xmc4"
 source "drivers/i2c/Kconfig.andes_atciic100"
 source "drivers/i2c/Kconfig.sc18im704"
 source "drivers/i2c/Kconfig.smartbond"
 source "drivers/i2c/Kconfig.xilinx_axi"
+source "drivers/i2c/Kconfig.mchp_mss"
 
 config I2C_INIT_PRIORITY
 	int "Init priority"
@@ -151,6 +153,7 @@ config I2C_CC32XX
 	bool "CC32XX I2C driver"
 	default y
 	depends on DT_HAS_TI_CC32XX_I2C_ENABLED
+	select PINCTRL
 	help
 	  Enable the CC32XX I2C driver.
 

@@ -101,13 +101,15 @@
 &ps2_0 {
 	status = "okay";
 	pinctrl-0 = <&ps2_clk0b_gpio007 &ps2_dat0b_gpio010>;
-	pinctrl-names = "default";
+	pinctrl-1 = <&ps2_clk0b_gpio007_sleep &ps2_dat0b_gpio010_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 &ps2_1 {
 	status = "okay";
 	pinctrl-0 = <&ps2_clk1b_gpio154 &ps2_dat1b_gpio155>;
-	pinctrl-names = "default";
+	pinctrl-1 = <&ps2_clk1b_gpio154_sleep &ps2_dat1b_gpio155_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 &pwm0 {

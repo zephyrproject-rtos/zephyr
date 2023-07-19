@@ -42,6 +42,9 @@
 #define IS_MINIMAL_LIBC_NOFP (IS_ENABLED(CONFIG_MINIMAL_LIBC) \
 	      && !IS_ENABLED(CONFIG_CBPRINTF_FP_SUPPORT))
 
+#define IS_PICOLIBC_NOFP (IS_ENABLED(CONFIG_PICOLIBC) \
+	      && !IS_ENABLED(CONFIG_PICOLIBC_IO_FLOAT))
+
 /*
  * A really long string (330 characters + NULL).
  * The underlying sprintf() architecture will truncate it.
@@ -106,11 +109,11 @@ ZTEST(sprintf, test_sprintf_double)
 	/* Conversion not supported with minimal_libc without
 	 * CBPRINTF_FP_SUPPORT.
 	 *
-	 * Conversion not supported without FPU except on native POSIX.
+	 * Conversion not supported with picolibc without
+	 * PICOLIBC_IO_FLOAT
+	 *
 	 */
-	if (IS_MINIMAL_LIBC_NOFP
-	    || !(IS_ENABLED(CONFIG_FPU)
-		 || IS_ENABLED(CONFIG_BOARD_NATIVE_POSIX))) {
+	if (IS_MINIMAL_LIBC_NOFP || IS_PICOLIBC_NOFP) {
 		ztest_test_skip();
 		return;
 	}

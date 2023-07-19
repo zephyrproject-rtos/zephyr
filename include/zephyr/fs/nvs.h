@@ -33,27 +33,29 @@ extern "C" {
 
 /**
  * @brief Non-volatile Storage File system structure
- *
- * @param offset File system offset in flash
- * @param ate_wra Allocation table entry write address. Addresses are stored as uint32_t:
- * high 2 bytes correspond to the sector, low 2 bytes are the offset in the sector
- * @param data_wra Data write address
- * @param sector_size File system is split into sectors, each sector must be multiple of pagesize
- * @param sector_count Number of sectors in the file systems
- * @param ready Flag indicating if the filesystem is initialized
- * @param nvs_lock Mutex
- * @param flash_device Flash Device runtime structure
- * @param flash_parameters Flash memory parameters structure
  */
 struct nvs_fs {
+	 /** File system offset in flash **/
 	off_t offset;
+	/** Allocation table entry write address.
+	 * Addresses are stored as uint32_t:
+	 * - high 2 bytes correspond to the sector
+	 * - low 2 bytes are the offset in the sector
+	 */
 	uint32_t ate_wra;
+	/** Data write address */
 	uint32_t data_wra;
+	/** File system is split into sectors, each sector must be multiple of erase-block-size */
 	uint16_t sector_size;
+	/** Number of sectors in the file system */
 	uint16_t sector_count;
+	/** Flag indicating if the file system is initialized */
 	bool ready;
+	/** Mutex */
 	struct k_mutex nvs_lock;
+	/** Flash device runtime structure */
 	const struct device *flash_device;
+	/** Flash memory parameters structure */
 	const struct flash_parameters *flash_parameters;
 #if CONFIG_NVS_LOOKUP_CACHE
 	uint32_t lookup_cache[CONFIG_NVS_LOOKUP_CACHE_SIZE];

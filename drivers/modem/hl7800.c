@@ -5004,8 +5004,8 @@ error:
 /**
  * @brief  compares two version strings with any delimiter
  *
- * @param  *v1: version string 1
- * @param  *v2: version string 2
+ * @param  v1: version string 1
+ * @param  v2: version string 2
  *
  * @retval 0 if equal, < 0 if v1 < v2, > 0 if v1 > v2.
  */

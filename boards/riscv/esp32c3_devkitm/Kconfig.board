@@ -6,4 +6,3 @@
 config BOARD_ESP32C3_DEVKITM
 	bool "ESP32C3 Devkit-M Board"
 	depends on SOC_ESP32C3
-	select CONSOLE_HAS_DRIVER

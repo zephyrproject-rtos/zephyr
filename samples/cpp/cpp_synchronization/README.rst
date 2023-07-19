@@ -22,7 +22,7 @@ This kernel project outputs to the console.  It can be built and executed
 on QEMU as follows:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/cpp_synchronization
+   :zephyr-app: samples/cpp/cpp_synchronization
    :host-os: unix
    :board: qemu_x86
    :goals: run

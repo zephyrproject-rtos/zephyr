@@ -22,12 +22,13 @@ choice ETH_STM32_HAL_API_VERSION
 
 config ETH_STM32_HAL_API_V2
 	bool "Use new HAL driver"
-	depends on SOC_SERIES_STM32H7X || SOC_SERIES_STM32F4X || SOC_SERIES_STM32F7X
+	depends on SOC_SERIES_STM32H7X || SOC_SERIES_STM32H5X || SOC_SERIES_STM32F4X || SOC_SERIES_STM32F7X
 	help
 	  Use the new HAL driver instead of the legacy one.
 
 config ETH_STM32_HAL_API_V1
 	bool "Use new HAL driver"
+	depends on !SOC_SERIES_STM32H5X
 	select DEPRECATED if SOC_SERIES_STM32H7X || SOC_SERIES_STM32F4X || SOC_SERIES_STM32F7X
 	help
 	  Driver version based on legacy HAL version. Deprecated unless using STM32F2 series.
@@ -135,7 +136,7 @@ config ETH_STM32_AUTO_NEGOTIATION_ENABLE
 
 config ETH_STM32_HW_CHECKSUM
 	bool "Use TX and RX hardware checksum"
-	depends on !SOC_SERIES_STM32H7X
+	depends on (!SOC_SERIES_STM32H7X && !SOC_SERIES_STM32H5X )
 	help
 	  Enable receive and transmit checksum offload to enhance throughput
 	  performances.
@@ -157,7 +158,7 @@ config ETH_STM32_MODE_HALFDUPLEX
 
 endif # !ETH_STM32_AUTO_NEGOTIATION_ENABLE
 
-if SOC_SERIES_STM32F7X || SOC_SERIES_STM32H7X
+if SOC_SERIES_STM32F7X || SOC_SERIES_STM32H7X || SOC_SERIES_STM32H5X
 
 config PTP_CLOCK_STM32_HAL
 	bool "STM32 HAL PTP clock driver support"
@@ -197,7 +198,7 @@ config ETH_STM32_HAL_PTP_CLOCK_INIT_PRIO
 	  a dependency from the network stack that this device
 	  initializes before network stack (NET_INIT_PRIO).
 
-endif # SOC_SERIES_STM32F7X || SOC_SERIES_STM32H7X
+endif # SOC_SERIES_STM32F7X || SOC_SERIES_STM32H7X || SOC_SERIES_STM32H5X
 
 config ETH_STM32_MULTICAST_FILTER
 	bool "Multicast hash filter support"

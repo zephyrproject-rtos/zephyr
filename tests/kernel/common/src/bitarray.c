@@ -335,6 +335,23 @@ void alloc_and_free_predefined(void)
 	zassert_equal(ret, 0, "sys_bitarray_free() failed: %d", ret);
 	zassert_true(cmp_u32_arrays(ba_128.bundles, ba_128_expected, ba_128.num_bundles),
 		     "sys_bitarray_free() failed bits comparison");
+
+	/* test in-between bundles */
+	ba_128.bundles[0] = 0x7FFFFFFF;
+	ba_128.bundles[1] = 0xFFFFFFFF;
+	ba_128.bundles[2] = 0x00000000;
+	ba_128.bundles[3] = 0x00000000;
+
+	ba_128_expected[0] = 0x7FFFFFFF;
+	ba_128_expected[1] = 0xFFFFFFFF;
+	ba_128_expected[2] = 0xFFFFFFFF;
+	ba_128_expected[3] = 0x00000003;
+
+	ret = sys_bitarray_alloc(&ba_128, 34, &offset);
+	zassert_equal(ret, 0, "sys_bitarray_alloc() failed: %d", ret);
+	zassert_equal(offset, 64, "sys_bitarray_alloc() offset expected %d, got %d", 64, offset);
+	zassert_true(cmp_u32_arrays(ba_128.bundles, ba_128_expected, ba_128.num_bundles),
+		     "sys_bitarray_alloc() failed bits comparison");
 }
 
 static inline size_t count_bits(uint32_t val)
@@ -613,6 +630,34 @@ ZTEST(bitarray, test_bitarray_region_set_clear)
 	zassert_equal(ret, -EINVAL, "sys_bitarray_clear_region() should fail but not");
 	zassert_true(cmp_u32_arrays(ba.bundles, ba_expected, ba.num_bundles),
 		     "sys_bitarray_clear_region() failed bits comparison");
+
+	SYS_BITARRAY_DEFINE(bw, 128);
+
+	/* Pre-populate the bits */
+	bw.bundles[0] = 0xFF0F0F0F;
+	bw.bundles[1] = 0xF0000000;
+	bw.bundles[2] = 0xFFFFFFFF;
+	bw.bundles[3] = 0x0000000F;
+
+	zassert_true(sys_bitarray_is_region_set(&bw, 40, 60));
+	zassert_false(sys_bitarray_is_region_cleared(&bw, 40, 60));
+
+	bw.bundles[2] = 0xFFFEEFFF;
+
+	zassert_false(sys_bitarray_is_region_set(&bw, 40, 60));
+	zassert_false(sys_bitarray_is_region_cleared(&bw, 40, 60));
+
+	bw.bundles[1] = 0x0FFFFFFF;
+	bw.bundles[2] = 0x00000000;
+	bw.bundles[3] = 0xFFFFFFF0;
+
+	zassert_true(sys_bitarray_is_region_cleared(&bw, 40, 60));
+	zassert_false(sys_bitarray_is_region_set(&bw, 40, 60));
+
+	bw.bundles[2] = 0x00011000;
+
+	zassert_false(sys_bitarray_is_region_cleared(&bw, 40, 60));
+	zassert_false(sys_bitarray_is_region_set(&bw, 40, 60));
 }
 
 /**
@@ -665,6 +710,8 @@ ZTEST(bitarray, test_ffs)
 		zassert_equal(find_lsb_set(value), bit + 1, "LSB is not matched");
 	}
 }
+extern void *common_setup(void);
+ZTEST_SUITE(bitarray, NULL, common_setup, NULL, NULL, NULL);
 
 /**
  * @}

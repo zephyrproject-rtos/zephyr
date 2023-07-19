@@ -87,8 +87,17 @@ config EC_HOST_CMD_DEDICATED_THREAD
 	  The ec_host_cmd_init function creates a new thread dedicated for Host Command.
 	  Otherwise the ec_host_cmd_task function has to be called within another thread.
 
-endif # EC_HOST_CMD
+config EC_HOST_CMD_IN_PROGRESS_STATUS
+	bool "Save status of last IN_PROGRESS command"
+	default y if EC_HOST_CMD_BACKEND_SHI
+	help
+	  Enable support for saving final status of a last command that has sent
+	  EC_HOST_CMD_IN_PROGRESS status. The saved status can be get with the
+	  ec_host_cmd_send_in_progress_status function.
 
+source "subsys/mgmt/ec_host_cmd/Kconfig.logging"
 source "subsys/mgmt/ec_host_cmd/backends/Kconfig"
+
+endif # EC_HOST_CMD
 
 endmenu

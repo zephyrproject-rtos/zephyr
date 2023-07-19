@@ -57,10 +57,13 @@ extern volatile rfc_CMD_PROP_RADIO_DIV_SETUP_t ieee802154_cc13xx_subg_radio_div_
 #elif defined(CONFIG_SOC_CC1352P)
 extern volatile rfc_CMD_PROP_RADIO_DIV_SETUP_PA_t ieee802154_cc13xx_subg_radio_div_setup;
 #endif /* CONFIG_SOC_CC1352x, extern RADIO_DIV_SETUP */
+#else
 
-#elif defined(CONFIG_SOC_CC1352R)
-/* Radio values for CC13x2R (note: CC26x2 does not support sub-GHz radio) */
-/* From SmartRF Studio (200kbps, 50kHz deviation, 2-GFSK, 311.8kHz Rx BW) */
+#if defined(CONFIG_SOC_CC1352R)
+/* Radio register overrides for CC13x2R (note: CC26x2 does not support sub-GHz radio)
+ * from SmartRF Studio (200kbps, 50kHz deviation, 2-GFSK, 311.8kHz Rx BW),
+ * approximates SUN FSK PHY, 915 MHz band, operating mode #3.
+ */
 static uint32_t ieee802154_cc13xx_overrides_sub_ghz[] = {
 	/* DC/DC regulator: In Tx, use DCDCCTL5[3:0]=0x7 (DITHER_EN=0 and IPEAK=7). */
 	(uint32_t)0x00F788D3,
@@ -70,41 +73,21 @@ static uint32_t ieee802154_cc13xx_overrides_sub_ghz[] = {
 	(uint32_t)0x08141131,
 	/* Tx: Configure PA ramp time, PACTL2.RC=0x3 (in ADI0, set PACTL2[4:3]=0x3) */
 	ADI_2HALFREG_OVERRIDE(0, 16, 0x8, 0x8, 17, 0x1, 0x1),
-	/* Tx: Configure PA ramping, set wait time before turning off */
-	/* (0x1A ticks of 16/24 us = 17.3 us). */
+	/* Tx: Configure PA ramping, set wait time before turning off
+	 * (0x1A ticks of 16/24 us = 17.3 us).
+	 */
 	HW_REG_OVERRIDE(0x6028, 0x001A),
 	/* Rx: Set AGC reference level to 0x16 (default: 0x2E) */
 	HW_REG_OVERRIDE(0x609C, 0x0016),
-	/* Rx: Set RSSI offset to adjust reported RSSI by -1 dB (default: -2), */
-	/* trimmed for external bias and differential configuration */
+	/* Rx: Set RSSI offset to adjust reported RSSI by -1 dB (default: -2),
+	 * trimmed for external bias and differential configuration
+	 */
 	(uint32_t)0x000188A3,
 	/* Rx: Set anti-aliasing filter bandwidth to 0x8 (in ADI0, set IFAMPCTL3[7:4]=0x8) */
 	ADI_HALFREG_OVERRIDE(0, 61, 0xF, 0x8),
 	/* Tx: Set PA trim to max to maximize its output power (in ADI0, set PACTL0=0xF8) */
 	ADI_REG_OVERRIDE(0, 12, 0xF8),
 	(uint32_t)0xFFFFFFFF
-};
-
-/* Radio setup command for CC1312R / CC1352R */
-static volatile rfc_CMD_PROP_RADIO_DIV_SETUP_t ieee802154_cc13xx_subg_radio_div_setup = {
-	.commandNo = CMD_PROP_RADIO_DIV_SETUP,
-	.condition.rule = COND_NEVER,
-	.modulation.modType = 1, /* FSK */
-	.modulation.deviation = 200,
-	.symbolRate.preScale = 15,
-	.symbolRate.rateWord = 131072,
-	.rxBw = 0x59,                   /* 310.8 kHz */
-	.preamConf.nPreamBytes = 7,
-	.formatConf.nSwBits = 24,       /* 24-bit of syncword */
-	.formatConf.bMsbFirst = true,
-	.formatConf.whitenMode = 7,
-	.config.biasMode = true,
-	.formatConf.bMsbFirst = true,
-	.txPower = 0x013f, /* from Smart RF Studio */
-	.centerFreq = 915,
-	.intFreq = 0x0999,
-	.loDivider = 5,
-	.pRegOverride = ieee802154_cc13xx_overrides_sub_ghz,
 };
 
 /* Radio values for CC13X2P */
@@ -115,8 +98,9 @@ static uint32_t ieee802154_cc13xx_overrides_sub_ghz[] = {
 	ADI_2HALFREG_OVERRIDE(0, 16, 0x8, 0x8, 17, 0x1, 0x0),
 	/* Rx: Set AGC reference level to 0x16 (default: 0x2E) */
 	HW_REG_OVERRIDE(0x609C, 0x0016),
-	/* Rx: Set RSSI offset to adjust reported RSSI by -1 dB (default: -2), trimmed */
-	/* for external bias and differential configuration */
+	/* Rx: Set RSSI offset to adjust reported RSSI by -1 dB (default: -2),
+	 * trimmed for external bias and differential configuration.
+	 */
 	(uint32_t)0x000188A3,
 	/* Rx: Set anti-aliasing filter bandwidth to 0x6 (in ADI0, set IFAMPCTL3[7:4]=0x8) */
 	ADI_HALFREG_OVERRIDE(0, 61, 0xF, 0x8),
@@ -129,20 +113,19 @@ static uint32_t ieee802154_cc13xx_overrides_sub_ghz[] = {
 	/* DC/DC regulator: In Tx with 14 dBm PA setting, use DCDCCTL5[3:0]=0xF */
 	/* (DITHER_EN=1 and IPEAK=7). In Rx, use default settings. */
 	(uint32_t)0x00F788D3,
-	/* TX power override */
-	/* Tx: Set PA trim to max to maximize its output power (in ADI0, set PACTL0=0xF8) */
-	ADI_REG_OVERRIDE(0, 12, 0xF8),
 	(uint32_t)0xFFFFFFFF
 };
 static uint32_t rf_prop_overrides_tx_std[] = {
 	/* The TX Power element should always be the first in the list */
-	TX_STD_POWER_OVERRIDE(0xB224),
+	TX_STD_POWER_OVERRIDE(0x013F),
 	/* The ANADIV radio parameter based on the LO divider (0) and front-end (0) settings */
 	(uint32_t)0x11310703,
 	/* override_phy_tx_pa_ramp_genfsk_std.xml */
 	/* Tx: Configure PA ramping, set wait time before turning off */
 	/* (0x1A ticks of 16/24 us = 17.3 us). */
 	HW_REG_OVERRIDE(0x6028, 0x001A),
+	/* Set TXRX pin to 0 in RX and high impedance in idle/TX. */
+	HW_REG_OVERRIDE(0x60A8, 0x0401),
 	(uint32_t)0xFFFFFFFF
 };
 static uint32_t rf_prop_overrides_tx_20[] = {
@@ -154,33 +137,55 @@ static uint32_t rf_prop_overrides_tx_20[] = {
 	/* Tx: Configure PA ramping, set wait time before turning off */
 	/* (0x1F ticks of 16/24 us = 20.3 us). */
 	HW_REG_OVERRIDE(0x6028, 0x001F),
+	/* Set TXRX pin to 0 in RX/TX and high impedance in idle. */
+	HW_REG_OVERRIDE(0x60A8, 0x0001),
 	(uint32_t)0xFFFFFFFF
 };
 
-/* Radio setup command for CC1312P / CC1352P */
+#else
+#error "unsupported CC13xx SoC"
+#endif /* CONFIG_SOC_CC1352x */
+
+/* Radio setup command for CC13xx */
+#if defined(CONFIG_SOC_CC1352R)
+static volatile rfc_CMD_PROP_RADIO_DIV_SETUP_t ieee802154_cc13xx_subg_radio_div_setup = {
+	.commandNo = CMD_PROP_RADIO_DIV_SETUP,
+#elif defined(CONFIG_SOC_CC1352P)
 static volatile rfc_CMD_PROP_RADIO_DIV_SETUP_PA_t ieee802154_cc13xx_subg_radio_div_setup = {
 	.commandNo = CMD_PROP_RADIO_DIV_SETUP_PA,
+#endif /* CONFIG_SOC_CC1352x */
 	.condition.rule = COND_NEVER,
-	.modulation.modType = 1, /* FSK */
-	.modulation.deviation = 200,
-	.symbolRate.preScale = 15,
-	.symbolRate.rateWord = 131072,
-	.rxBw = 0x59,                   /* 310.8 kHz */
-	.preamConf.nPreamBytes = 7,
-	.formatConf.nSwBits = 24,       /* 24-bit of syncword */
-	.formatConf.bMsbFirst = true,
-	.formatConf.whitenMode = 7,
-	.config.biasMode = true,
-	.formatConf.bMsbFirst = true,
-	.txPower = 0x013f, /* from Smart RF Studio */
-	.centerFreq = 915,
-	.intFreq = 0x0C00,
+	.modulation = {
+		.modType = 1, /* 2-GFSK - non-standard modulation */
+		.deviation = 200, /* +/- 200*250 = 50kHz deviation (modulation index 0.5) */
+	},
+	.symbolRate = {
+		.preScale = 15,
+		.rateWord = 131072, /* 200 kBit, see TRM, section 25.10.5.2, formula 15 */
+	},
+	.rxBw = 0x59, /* 310.8 kHz RX bandwidth, see TRM, section 25.10.5.2, table 25-183 */
+	.preamConf.nPreamBytes = 7, /* phyFskPreambleLength = 7 + 1, also see nSwBits below */
+	.formatConf = {
+		.nSwBits = 24, /* 24-bit (1 byte preamble + 16 bit SFD) */
+		.bMsbFirst = true,
+		.whitenMode = 7, /* Determine whitening and CRC from PHY header */
+	},
+	.config.biasMode = true, /* Rely on an external antenna biasing network. */
+	.txPower = 0x013f, /* 14 dBm, see TRM 25.3.3.2.16 */
+	.centerFreq = 906, /* Set channel page zero, channel 1 by default, see IEEE 802.15.4,
+			    * section 10.1.3.3.
+			    * TODO: Use compliant SUN PHY frequencies from channel page 9.
+			    */
+	.intFreq = 0x8000, /* Use default intermediate frequency. */
 	.loDivider = 5,
 	.pRegOverride = ieee802154_cc13xx_overrides_sub_ghz,
+#if defined(CONFIG_SOC_CC1352P)
 	.pRegOverrideTxStd = rf_prop_overrides_tx_std,
 	.pRegOverrideTx20 = rf_prop_overrides_tx_20,
+#endif /* CONFIG_SOC_CC1352P */
 };
-#endif /* CONFIG_SOC_CC1352x, default CMD_PROP_RADIO_DIV_SETUP structures */
+
+#endif /* CONFIG_IEEE802154_CC13XX_CC26XX_SUB_GHZ_CUSTOM_RADIO_SETUP */
 
 /* Sub GHz power tables */
 #if defined(CONFIG_IEEE802154_CC13XX_CC26XX_SUB_GHZ_CUSTOM_POWER_TABLE)
@@ -206,7 +211,7 @@ static const RF_TxPowerTable_Entry ieee802154_cc13xx_subg_power_table[] = {
 	{ 11, RF_TxPowerTable_DEFAULT_PA_ENTRY(26, 2, 0, 51) },
 	{ 12, RF_TxPowerTable_DEFAULT_PA_ENTRY(16, 0, 0, 82) },
 	{ 13, RF_TxPowerTable_DEFAULT_PA_ENTRY(36, 0, 0, 89) },
-#ifdef CC13X2_CC26X2_BOOST_MODE
+#ifdef CONFIG_CC13X2_CC26X2_BOOST_MODE
 	{ 14, RF_TxPowerTable_DEFAULT_PA_ENTRY(63, 0, 1, 0) },
 #endif
 	RF_TxPowerTable_TERMINATION_ENTRY
@@ -232,7 +237,7 @@ static const RF_TxPowerTable_Entry ieee802154_cc13xx_subg_power_table[] = {
 	{ 11, RF_TxPowerTable_DEFAULT_PA_ENTRY(26, 2, 0, 51) },
 	{ 12, RF_TxPowerTable_DEFAULT_PA_ENTRY(16, 0, 0, 82) },
 	{ 13, RF_TxPowerTable_DEFAULT_PA_ENTRY(36, 0, 0, 89) },
-#ifdef CC13X2_CC26X2_BOOST_MODE
+#ifdef CONFIG_CC13X2_CC26X2_BOOST_MODE
 	{ 14, RF_TxPowerTable_DEFAULT_PA_ENTRY(63, 0, 1, 0) },
 #endif
 	{ 15, RF_TxPowerTable_HIGH_PA_ENTRY(18, 0, 0, 36, 0) },
@@ -258,6 +263,7 @@ static inline int ieee802154_cc13xx_cc26xx_subg_channel_to_frequency(
 	__ASSERT_NO_MSG(frequency != NULL);
 	__ASSERT_NO_MSG(fractFreq != NULL);
 
+	/* See IEEE 802.15.4, section 10.1.3.3. */
 	if (channel == IEEE802154_SUB_GHZ_CHANNEL_MIN) {
 		*frequency = 868;
 		/*
@@ -265,18 +271,35 @@ static inline int ieee802154_cc13xx_cc26xx_subg_channel_to_frequency(
 		 * equivalent to (0.3 * 1000 * BIT(16)) / 1000, rounded up
 		 */
 		*fractFreq = 0x4ccd;
-	} else if (1 <= channel && channel <= IEEE802154_SUB_GHZ_CHANNEL_MAX) {
+	} else if (channel <= IEEE802154_SUB_GHZ_CHANNEL_MAX) {
 		*frequency = 906 + 2 * (channel - 1);
-		*fractFreq = 0;
-	} else if (IEEE802154_2_4_GHZ_CHANNEL_MIN <= channel
-		&& channel <= IEEE802154_2_4_GHZ_CHANNEL_MAX) {
-		*frequency = 2405 + 5 * (channel - IEEE802154_2_4_GHZ_CHANNEL_MIN);
 		*fractFreq = 0;
 	} else {
 		*frequency = 0;
 		*fractFreq = 0;
 		return -EINVAL;
 	}
+
+	/* TODO: This incorrectly mixes up legacy O-QPSK SubGHz PHY channel page zero
+	 *       frequency calculation with SUN FSK operating mode #3 PHY radio settings.
+	 *
+	 * The correct channel frequency calculation for this PHY is on channel page 9,
+	 * using the formula ChanCenterFreq = ChanCenterFreq0 + channel * ChanSpacing.
+	 *
+	 * Assuming operating mode #3, the parameters for some frequently used bands
+	 * on this channel page are:
+	 *   863 MHz: ChanSpacing 0.2, TotalNumChan 35, ChanCenterFreq0 863.1
+	 *   915 MHz: ChanSpacing 0.4, TotalNumChan 64, ChanCenterFreq0 902.4
+	 *
+	 * See IEEE 802.15.4, section 10.1.3.9.
+	 *
+	 * Setting the PHY, channel page, band and operating mode requires additional
+	 * radio configuration settings.
+	 *
+	 * Making derived MAC/PHY PIB attributes available to L2 requires an additional
+	 * attribute getter, see
+	 * https://github.com/zephyrproject-rtos/zephyr/issues/50336#issuecomment-1251122582.
+	 */
 
 	return 0;
 }
@@ -339,34 +362,62 @@ static enum ieee802154_hw_caps
 ieee802154_cc13xx_cc26xx_subg_get_capabilities(const struct device *dev)
 {
 	/* TODO: enable IEEE802154_HW_FILTER */
-	return IEEE802154_HW_FCS | IEEE802154_HW_CSMA
-	       | IEEE802154_HW_SUB_GHZ;
+	return IEEE802154_HW_FCS | IEEE802154_HW_SUB_GHZ;
 }
 
 static int ieee802154_cc13xx_cc26xx_subg_cca(const struct device *dev)
 {
 	struct ieee802154_cc13xx_cc26xx_subg_data *drv_data = dev->data;
-	RF_Stat status;
+	RF_EventMask events;
+	bool was_rx_on;
+	int ret;
 
 	drv_data->cmd_prop_cs.status = IDLE;
 	drv_data->cmd_prop_cs.pNextOp = NULL;
 	drv_data->cmd_prop_cs.condition.rule = COND_NEVER;
 
-	status = RF_runImmediateCmd(drv_data->rf_handle,
-				    (uint32_t *)&drv_data->cmd_prop_cs);
-	if (status != RF_StatSuccess) {
-		LOG_ERR("Failed to request CCA (0x%x)", status);
-		return -EIO;
+	was_rx_on = drv_data->cmd_prop_rx_adv.status == ACTIVE;
+
+	ret = ieee802154_cc13xx_cc26xx_subg_stop(dev);
+	if (ret < 0) {
+		ret = -EIO;
+		goto out;
+	}
+
+	events = RF_runCmd(drv_data->rf_handle, (RF_Op *)&drv_data->cmd_prop_cs, RF_PriorityNormal,
+			   NULL, 0);
+	if (events != RF_EventLastCmdDone) {
+		LOG_DBG("Failed to request CCA: 0x%" PRIx64, events);
+		ret = -EIO;
+		goto out;
 	}
 
 	switch (drv_data->cmd_prop_cs.status) {
-	case PROP_DONE_OK:
+	case PROP_DONE_IDLE:
+		/* Do not re-enable RX when the channel is idle as
+		 * this usually means we want to TX directly after
+		 * and cannot afford any extra latency.
+		 */
 		return 0;
 	case PROP_DONE_BUSY:
-		return -EBUSY;
+	case PROP_DONE_BUSYTIMEOUT:
+		ret = -EBUSY;
+		break;
 	default:
-		return -EIO;
+		ret = -EIO;
 	}
+
+out:
+	/* Re-enable RX if we found it on initially
+	 * and the channel is busy (or another error
+	 * occurred) as this usually means we back off
+	 * and want to be able to receive packets in
+	 * the meantime.
+	 */
+	if (was_rx_on) {
+		ieee802154_cc13xx_cc26xx_subg_rx(dev);
+	}
+	return ret;
 }
 
 static int ieee802154_cc13xx_cc26xx_subg_rx(const struct device *dev)
@@ -393,23 +444,27 @@ static int ieee802154_cc13xx_cc26xx_subg_set_channel(
 	const struct device *dev, uint16_t channel)
 {
 	struct ieee802154_cc13xx_cc26xx_subg_data *drv_data = dev->data;
-	RF_EventMask reason;
+	RF_EventMask events;
 	uint16_t freq, fract;
-	int r;
+	bool was_rx_on;
+	int ret;
 
 	if (!is_subghz(channel)) {
 		return -EINVAL;
 	}
 
-	r = ieee802154_cc13xx_cc26xx_subg_channel_to_frequency(
-		channel, &freq, &fract);
-	if (r < 0) {
+	ret = ieee802154_cc13xx_cc26xx_subg_channel_to_frequency(channel, &freq, &fract);
+	if (ret < 0) {
 		return -EINVAL;
 	}
 
+	was_rx_on = drv_data->cmd_prop_rx_adv.status == ACTIVE;
+
 	/* Abort FG and BG processes */
-	if (ieee802154_cc13xx_cc26xx_subg_stop(dev) < 0) {
-		return -EIO;
+	ret = ieee802154_cc13xx_cc26xx_subg_stop(dev);
+	if (ret) {
+		ret = -EIO;
+		goto out;
 	}
 
 	/* Block TX while changing channel */
@@ -419,20 +474,21 @@ static int ieee802154_cc13xx_cc26xx_subg_set_channel(
 	drv_data->cmd_fs.status = IDLE;
 	drv_data->cmd_fs.frequency = freq;
 	drv_data->cmd_fs.fractFreq = fract;
-	reason = RF_runCmd(drv_data->rf_handle, (RF_Op *)&drv_data->cmd_fs,
+	events = RF_runCmd(drv_data->rf_handle, (RF_Op *)&drv_data->cmd_fs,
 			   RF_PriorityNormal, NULL, 0);
-	if (reason != RF_EventLastCmdDone) {
-		LOG_DBG("Failed to set frequency: 0x%" PRIx64, reason);
-		r = -EIO;
-		goto out;
+	if (events != RF_EventLastCmdDone) {
+		LOG_DBG("Failed to set frequency: 0x%" PRIx64, events);
+		ret = -EIO;
 	}
 
-	/* Run BG receive process on requested channel */
-	r = ieee802154_cc13xx_cc26xx_subg_rx(dev);
+	k_mutex_unlock(&drv_data->tx_mutex);
 
 out:
-	k_mutex_unlock(&drv_data->tx_mutex);
-	return r;
+	/* Re-enable RX if we found it on initially. */
+	if (was_rx_on) {
+		ieee802154_cc13xx_cc26xx_subg_rx(dev);
+	}
+	return ret;
 }
 
 static int
@@ -470,112 +526,68 @@ static int ieee802154_cc13xx_cc26xx_subg_set_txpower(
 	return 0;
 }
 
-/* See IEEE 802.15.4 section 6.2.5.1 and TRM section 25.5.4.3 */
+/* See IEEE 802.15.4 section 6.7.1 and TRM section 25.5.4.3 */
 static int ieee802154_cc13xx_cc26xx_subg_tx(const struct device *dev,
 					    enum ieee802154_tx_mode mode,
 					    struct net_pkt *pkt,
-					    struct net_buf *frag)
+					    struct net_buf *buf)
 {
 	struct ieee802154_cc13xx_cc26xx_subg_data *drv_data = dev->data;
-	int retry = CONFIG_IEEE802154_CC13XX_CC26XX_SUB_GHZ_RADIO_TX_RETRIES;
-	RF_EventMask reason;
-	int r;
+	RF_EventMask events;
+	int ret;
 
-	if (mode != IEEE802154_TX_MODE_CSMA_CA) {
-		NET_ERR("TX mode %d not supported", mode);
-		return -ENOTSUP;
+	if (mode != IEEE802154_TX_MODE_DIRECT) {
+		/* For backwards compatibility we only log an error but do not bail. */
+		NET_ERR("TX mode %d not supported - sending directly instead.", mode);
 	}
 
 	k_mutex_lock(&drv_data->tx_mutex, K_FOREVER);
 
-	/* Prepend data with the SUN FSK PHY header */
-	drv_data->tx_data[0] = frag->len + IEEE802154_SUN_PHY_FSK_PHR_LEN;
-	/* 20.2.2 PHR field format. 802.15.4-2015 */
+	/* Prepend data with the SUN FSK PHY header,
+	 * see IEEE 802.15.4, section 19.2.4.
+	 */
+	drv_data->tx_data[0] = buf->len + IEEE802154_FCS_LENGTH;
 	drv_data->tx_data[1] = 0;
 	drv_data->tx_data[1] |= BIT(3); /* FCS Type: 2-octet FCS */
 	drv_data->tx_data[1] |= BIT(4); /* DW: Enable Data Whitening */
-	memcpy(&drv_data->tx_data[IEEE802154_SUN_PHY_FSK_PHR_LEN],
-		frag->data, frag->len);
 
-	/* Chain commands */
-	drv_data->cmd_prop_cs.pNextOp =
-		(rfc_radioOp_t *) &drv_data->cmd_prop_tx_adv;
-	drv_data->cmd_prop_cs.condition.rule = COND_STOP_ON_TRUE;
+	/* TODO: Zero-copy TX, see discussion in #49775. */
+	__ASSERT_NO_MSG(buf->len + IEEE802154_PHY_SUN_FSK_PHR_LEN <= CC13XX_CC26XX_TX_BUF_SIZE);
+	memcpy(&drv_data->tx_data[IEEE802154_PHY_SUN_FSK_PHR_LEN], buf->data, buf->len);
 
 	/* Set TX data */
-	drv_data->cmd_prop_tx_adv.pktLen = frag->len
-		+ IEEE802154_SUN_PHY_FSK_PHR_LEN;
+	drv_data->cmd_prop_tx_adv.pktLen = buf->len + IEEE802154_PHY_SUN_FSK_PHR_LEN;
 	drv_data->cmd_prop_tx_adv.pPkt = drv_data->tx_data;
 
+	/* Reset command status */
+	drv_data->cmd_prop_tx_adv.status = IDLE;
+	drv_data->cmd_prop_tx_adv.pNextOp = NULL;
+
 	/* Abort FG and BG processes */
-	r = ieee802154_cc13xx_cc26xx_subg_stop(dev);
-	if (r < 0) {
-		r = -EIO;
+	ret = ieee802154_cc13xx_cc26xx_subg_stop(dev);
+	if (ret < 0) {
+		ret = -EIO;
 		goto out;
 	}
 
-	do {
-		/* Reset command status */
-		drv_data->cmd_prop_cs.status = IDLE;
-		drv_data->cmd_prop_tx_adv.status = IDLE;
-
-		reason = RF_runCmd(drv_data->rf_handle,
-				   (RF_Op *)&drv_data->cmd_prop_cs,
-				   RF_PriorityNormal, cmd_prop_tx_adv_callback,
-				   RF_EventLastCmdDone);
-		if ((reason & RF_EventLastCmdDone) == 0) {
-			LOG_DBG("Failed to run command (%" PRIx64 ")", reason);
-			r = -EIO;
-			goto out;
-		}
-
-		if (drv_data->cmd_prop_cs.status != PROP_DONE_IDLE) {
-			LOG_DBG("Channel access failure (0x%x)",
-				drv_data->cmd_prop_cs.status);
-			/* Collision Avoidance is a WIP
-			 * Currently, we just wait a random amount of us in the
-			 * range [0,256) but k_busy_wait() is fairly inaccurate in
-			 * practice. Future revisions may attempt to use the RAdio
-			 * Timer (RAT) to measure this somewhat more precisely.
-			 */
-			k_busy_wait(sys_rand32_get() & 0xff);
-			continue;
-		}
-
-		if (drv_data->cmd_prop_tx_adv.status != PROP_DONE_OK) {
-			LOG_DBG("Transmit failed (0x%x)",
-				drv_data->cmd_prop_tx_adv.status);
-			continue;
-		}
-
-		/* TODO: handle RX acknowledgment */
-		r = 0;
+	events = RF_runCmd(drv_data->rf_handle, (RF_Op *)&drv_data->cmd_prop_tx_adv,
+			   RF_PriorityNormal, cmd_prop_tx_adv_callback, RF_EventLastCmdDone);
+	if ((events & RF_EventLastCmdDone) == 0) {
+		LOG_DBG("Failed to run command (%" PRIx64 ")", events);
+		ret = -EIO;
 		goto out;
+	}
 
-	} while (retry-- > 0);
-
-	LOG_DBG("Failed to TX");
-	r = -EIO;
+	if (drv_data->cmd_prop_tx_adv.status != PROP_DONE_OK) {
+		LOG_DBG("Transmit failed (0x%x)", drv_data->cmd_prop_tx_adv.status);
+		ret = -EIO;
+		goto out;
+	}
 
 out:
 	(void)ieee802154_cc13xx_cc26xx_subg_rx(dev);
 	k_mutex_unlock(&drv_data->tx_mutex);
-	return r;
-}
-
-static inline uint8_t ieee802154_cc13xx_cc26xx_subg_convert_rssi(
-	int8_t rssi)
-{
-	if (rssi > CC13XX_CC26XX_RECEIVER_SENSITIVITY +
-	    CC13XX_CC26XX_RSSI_DYNAMIC_RANGE) {
-		rssi = CC13XX_CC26XX_RECEIVER_SENSITIVITY +
-		       CC13XX_CC26XX_RSSI_DYNAMIC_RANGE;
-	} else if (rssi < CC13XX_CC26XX_RECEIVER_SENSITIVITY) {
-		rssi = CC13XX_CC26XX_RECEIVER_SENSITIVITY;
-	}
-
-	return (255 * (rssi - CC13XX_CC26XX_RECEIVER_SENSITIVITY)) /
-	       CC13XX_CC26XX_RSSI_DYNAMIC_RANGE;
+	return ret;
 }
 
 static void ieee802154_cc13xx_cc26xx_subg_rx_done(
@@ -593,6 +605,7 @@ static void ieee802154_cc13xx_cc26xx_subg_rx_done(
 			status = drv_data->rx_data[i][len--];
 			rssi = drv_data->rx_data[i][len--];
 
+			/* TODO: Configure firmware to include CRC in raw mode. */
 			if (IS_ENABLED(CONFIG_IEEE802154_RAW_MODE) && len > 0) {
 				/* append CRC-16/CCITT */
 				uint16_t crc = 0;
@@ -620,11 +633,17 @@ static void ieee802154_cc13xx_cc26xx_subg_rx_done(
 
 			drv_data->rx_entry[i].status = DATA_ENTRY_PENDING;
 
-			/* TODO determine LQI in PROP mode */
+			/* TODO: Determine LQI in PROP mode. */
 			net_pkt_set_ieee802154_lqi(pkt, 0xff);
-			net_pkt_set_ieee802154_rssi(
-				pkt,
-				ieee802154_cc13xx_cc26xx_subg_convert_rssi(rssi));
+			net_pkt_set_ieee802154_rssi_dbm(pkt,
+							rssi == CC13XX_CC26XX_INVALID_RSSI
+								? IEEE802154_MAC_RSSI_DBM_UNDEFINED
+								: rssi);
+
+			if (ieee802154_handle_ack(drv_data->iface, pkt) == NET_OK) {
+				net_pkt_unref(pkt);
+				continue;
+			}
 
 			if (net_recv_data(drv_data->iface, pkt)) {
 				LOG_WRN("Packet dropped");
@@ -642,8 +661,7 @@ static void ieee802154_cc13xx_cc26xx_subg_rx_done(
 static int ieee802154_cc13xx_cc26xx_subg_start(const struct device *dev)
 {
 	/* Start RX */
-	(void)ieee802154_cc13xx_cc26xx_subg_rx(dev);
-	return 0;
+	return ieee802154_cc13xx_cc26xx_subg_rx(dev);
 }
 
 /**
@@ -698,7 +716,7 @@ uint16_t ieee802154_cc13xx_cc26xx_subg_get_subg_channel_count(
 {
 	ARG_UNUSED(dev);
 
-	/* IEEE 802.15.4 SubGHz channels range from 0 to 10*/
+	/* IEEE 802.15.4 SubGHz channels range from 0 to 10 for channel page zero. */
 	return 11;
 }
 
@@ -731,7 +749,7 @@ static void ieee802154_cc13xx_cc26xx_subg_data_init(
 {
 	uint8_t *mac;
 
-	/* FIXME do multi-protocol devices need more than one IEEE MAC? */
+	/* TODO: Do multi-protocol devices need more than one IEEE MAC? */
 	if (sys_read32(CCFG_BASE + CCFG_O_IEEE_MAC_0) != 0xFFFFFFFF &&
 	    sys_read32(CCFG_BASE + CCFG_O_IEEE_MAC_1) != 0xFFFFFFFF) {
 		mac = (uint8_t *)(CCFG_BASE + CCFG_O_IEEE_MAC_0);
@@ -780,7 +798,7 @@ static struct ieee802154_radio_api
 static int ieee802154_cc13xx_cc26xx_subg_init(const struct device *dev)
 {
 	RF_Params rf_params;
-	RF_EventMask reason;
+	RF_EventMask events;
 	struct ieee802154_cc13xx_cc26xx_subg_data *drv_data = dev->data;
 
 	/* Initialize driver data */
@@ -811,28 +829,18 @@ static int ieee802154_cc13xx_cc26xx_subg_init(const struct device *dev)
 	drv_data->cmd_fs.frequency = 0;
 	drv_data->cmd_fs.fractFreq = 0;
 
-	reason = RF_runCmd(drv_data->rf_handle, (RF_Op *)&drv_data->cmd_fs,
+	events = RF_runCmd(drv_data->rf_handle, (RF_Op *)&drv_data->cmd_fs,
 			   RF_PriorityNormal, NULL, 0);
-	if (reason != RF_EventLastCmdDone) {
-		LOG_ERR("Failed to set frequency: 0x%" PRIx64, reason);
+	if (events != RF_EventLastCmdDone) {
+		LOG_ERR("Failed to set frequency: 0x%" PRIx64, events);
 		return -EIO;
 	}
 
 	return 0;
 }
 
-static struct ieee802154_cc13xx_cc26xx_subg_data
-	ieee802154_cc13xx_cc26xx_subg_data = {
-	.cmd_set_tx_power = {
-		.commandNo = CMD_SET_TX_POWER
-	},
-
+static struct ieee802154_cc13xx_cc26xx_subg_data ieee802154_cc13xx_cc26xx_subg_data = {
 	/* Common Radio Commands */
-	.cmd_clear_rx = {
-		.commandNo = CMD_CLEAR_RX,
-		.pQueue = &ieee802154_cc13xx_cc26xx_subg_data.rx_queue,
-	},
-
 	.cmd_fs = {
 		.commandNo = CMD_FS,
 		.condition.rule = COND_NEVER,
@@ -853,9 +861,12 @@ static struct ieee802154_cc13xx_cc26xx_subg_data
 			.bAppendRssi = true,
 			.bAppendStatus = true,
 		},
-		/* Preamble & SFD for 2-FSK SUN PHY. 802.15.4-2015, 20.2.1 */
-		.syncWord0 = 0x0055904E,
+		/* Last preamble byte and SFD for uncoded 2-FSK SUN PHY, phySunFskSfd = 0,
+		 * see IEEE 802.15.4, section 19.2.3.2, table 19-2.
+		 */
+		.syncWord0 = 0x55904E,
 		.maxPktLen = IEEE802154_MAX_PHY_PACKET_SIZE,
+		/* PHR field format, see IEEE 802.15.4, section 19.2.4 */
 		.hdrConf = {
 			.numHdrBits = 16,
 			.numLenBits = 11,
@@ -868,19 +879,24 @@ static struct ieee802154_cc13xx_cc26xx_subg_data
 				.cmd_prop_rx_adv_output,
 	},
 
+	/* TODO: Support correlation CCA modes, see section 10.2.8. */
 	.cmd_prop_cs = {
 		.commandNo = CMD_PROP_CS,
-		.startTrigger.pastTrig = true,
 		.condition.rule = COND_NEVER,
-		.csConf.bEnaRssi = true,
-		.csConf.busyOp = true,
-		.csConf.idleOp = true,
+		.csConf = {
+			/* CCA Mode 1: Energy above threshold, see section 10.2.8. */
+			.bEnaRssi = true,
+			/* Abort as soon as any energy above the ED threshold is detected. */
+			.busyOp = true,
+			/* Continue sensing until the timeout is reached. */
+			.idleOp = false,
+		},
 		.rssiThr = CONFIG_IEEE802154_CC13XX_CC26XX_SUB_GHZ_CS_THRESHOLD,
-		.corrPeriod = 640, /* Filler, used for correlation only */
-		.corrConfig.numCorrInv = 0x03,
 		.csEndTrigger.triggerType = TRIG_REL_START,
-		/* 8 symbol periods. 802.15.4-2015 Table 11.1 */
-		.csEndTime = 5000,
+		/* see IEEE 802.15.4, section 11.3, table 11-1 and section 10.2.8 */
+		.csEndTime = RF_convertUsToRatTicks(
+			IEEE802154_PHY_A_CCA_TIME *
+				IEEE802154_PHY_SUN_FSK_863MHZ_915MHZ_SYMBOL_PERIOD_US),
 	},
 
 	.cmd_prop_tx_adv = {
@@ -889,12 +905,14 @@ static struct ieee802154_cc13xx_cc26xx_subg_data
 		.startTrigger.pastTrig = true,
 		.condition.rule = COND_NEVER,
 		.pktConf.bUseCrc = true,
-		/* PHR field format. 802.15.4-2015, 20.2.2 */
+		/* PHR field format, see IEEE 802.15.4, section 19.2.4 */
 		.numHdrBits = 16,
 		.preTrigger.triggerType = TRIG_REL_START,
 		.preTrigger.pastTrig = true,
-		/* Preamble & SFD for 2-FSK SUN PHY. 802.15.4-2015, 20.2.1 */
-		.syncWord = 0x0055904E,
+		/* Last preamble byte and SFD for uncoded 2-FSK SUN PHY, phySunFskSfd = 0,
+		 * see IEEE 802.15.4, section 19.2.3.2, table 19-2.
+		 */
+		.syncWord = 0x55904E,
 	},
 };
 

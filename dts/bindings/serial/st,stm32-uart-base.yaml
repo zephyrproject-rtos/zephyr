@@ -58,3 +58,31 @@ properties:
       configured masked at boot (sm32wl55 for instance), preventing the device to wakeup
       the core from stop mode(s).
       Valid range: 0 - 31
+
+  de-enable:
+    type: boolean
+    description: |
+      Enable activating an external transeiver through the DE pin which must also be configured
+      using pinctrl.
+
+  de-assert-time:
+    type: int
+    default: 0
+    description: |
+      Defines the time between the activation of the DE signal and the beginning of the start bit.
+      It is expressed in 16th of a bit time.
+      Valid range: 0 - 31
+
+  de-deassert-time:
+    type: int
+    default: 0
+    description: |
+      Defines the time between the activation of the DE signal and the beginning of the start bit.
+      It is expressed in 16th of a bit time.
+      Valid range: 0 - 31
+
+  de-invert:
+    type: boolean
+    description: |
+      Invert the binary logic of the de pin. When enabled, physical logic levels are inverted and
+      we use 1=Low, 0=High instead of 1=High, 0=Low.

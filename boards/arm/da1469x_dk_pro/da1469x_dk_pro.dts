@@ -18,6 +18,7 @@
 		zephyr,flash = &flash0;
 		zephyr,console = &uart;
 		zephyr,shell-uart = &uart;
+		zephyr,code-partition = &slot0_partition;
 	};
 
 	leds {
@@ -70,32 +71,33 @@
 };
 
 &flash0 {
-	reg = <0 DT_SIZE_M(1)>;
+	reg = <0x16000000 DT_SIZE_M(1)>;
 
 	partitions {
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
 
+		/*
+		 * Flash area from 0x0000 to 0x2400 is reserved
+		 * for product header added by flasher.
+		 */
+
 		boot_partition: partition@2400 {
 			label = "mcuboot";
-			reg = <0x000002400 0x00005c00>;
+			reg = <0x000002400 0x00009c00>;
 		};
-		slot0_partition: partition@8000 {
+		slot0_partition: partition@c000 {
 			label = "image-0";
-			reg = <0x00008000 0x00060000>;
+			reg = <0x0000c000 0x00076000>;
 		};
-		slot1_partition: partition@68000 {
+		slot1_partition: partition@80000 {
 			label = "image-1";
-			reg = <0x00068000 0x00060000>;
+			reg = <0x00082000 0x00076000>;
 		};
-		scratch_partition: partition@c8000 {
-			label = "image-scratch";
-			reg = <0x000c8000 0x00010000>;
-		};
-		storage_partition: partition@dc000 {
+		storage_partition: partition@f8000 {
 			label = "storage";
-			reg = <0x000dc000 0x00004000>;
+			reg = <0x000f8000 0x00008000>;
 		};
 	};
 };
@@ -113,6 +115,11 @@
 	status = "okay";
 	pinctrl-0 = <&uart_default>;
 	pinctrl-names = "default";
+};
+
+zephyr_udc0: &usbd {
+	compatible = "renesas,smartbond-usbd";
+	status = "okay";
 };
 
 &rc32m {

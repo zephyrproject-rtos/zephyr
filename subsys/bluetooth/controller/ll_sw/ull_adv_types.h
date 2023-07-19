@@ -101,6 +101,11 @@ struct ll_adv_iso_set {
 	struct ull_hdr        ull;
 	struct lll_adv_iso    lll;
 
+	uint32_t big_ref_point; /* Previously elapsed BIG reference point in
+				 * microseconds of the free running Controller
+				 * clock.
+				 */
+
 	struct {
 		struct node_rx_hdr hdr;
 	} node_rx_complete;

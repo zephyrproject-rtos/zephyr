@@ -21,8 +21,11 @@ extern "C" {
 	(((x) & ((1ULL << ((b_hi) - (b_lo) + 1ULL)) - 1ULL)) << (b_lo))
 
 #define DW_MAX_CHAN		8
+#define DW_CHAN_COUNT		CONFIG_DMA_DW_CHANNEL_COUNT
 #define DW_CH_SIZE		0x58
 #define DW_CHAN_OFFSET(chan)	(DW_CH_SIZE * chan)
+#define DW_ADDR_MASK_32		BIT_MASK(32)
+#define DW_ADDR_RIGHT_SHIFT	32
 
 #define DW_SAR(chan)	\
 	(0x0000 + DW_CHAN_OFFSET(chan))
@@ -40,6 +43,13 @@ extern "C" {
 	(0x0044 + DW_CHAN_OFFSET(chan))
 #define DW_DSR(chan) \
 	(0x0050 + DW_CHAN_OFFSET(chan))
+
+#ifdef CONFIG_DMA_64BIT
+#define DW_SAR_HI(chan) \
+	(0x0004 + DW_CHAN_OFFSET(chan))
+#define DW_DAR_HI(chan) \
+	(0x000C + DW_CHAN_OFFSET(chan))
+#endif
 
 /* registers */
 #define DW_RAW_TFR		0x02C0
@@ -169,13 +179,18 @@ struct dw_chan_arbit_data {
 };
 
 struct dw_drv_plat_data {
-	struct dw_chan_arbit_data chan[DW_MAX_CHAN];
+	struct dw_chan_arbit_data chan[DW_CHAN_COUNT];
 };
 
 /* DMA descriptor used by HW */
 struct dw_lli {
+#ifdef CONFIG_DMA_64BIT
+	uint64_t sar;
+	uint64_t dar;
+#else
 	uint32_t sar;
 	uint32_t dar;
+#endif
 	uint32_t llp;
 	uint32_t ctrl_lo;
 	uint32_t ctrl_hi;
@@ -231,24 +246,24 @@ static const uint32_t burst_elems[] = {1, 2, 4, 8};
 struct dw_dma_dev_data {
 	struct dma_context dma_ctx;
 	struct dw_drv_plat_data *channel_data;
-	struct dw_dma_chan_data chan[DW_MAX_CHAN];
-	struct dw_lli lli_pool[DW_MAX_CHAN][CONFIG_DMA_DW_LLI_POOL_SIZE] __aligned(64);
+	struct dw_dma_chan_data chan[DW_CHAN_COUNT];
+	struct dw_lli lli_pool[DW_CHAN_COUNT][CONFIG_DMA_DW_LLI_POOL_SIZE] __aligned(64);
 
-	ATOMIC_DEFINE(channels_atomic, DW_MAX_CHAN);
+	ATOMIC_DEFINE(channels_atomic, DW_CHAN_COUNT);
 };
 
 /* Device constant configuration parameters */
 struct dw_dma_dev_cfg {
-	uint32_t base;
+	uintptr_t base;
 	void (*irq_config)(void);
 };
 
-static ALWAYS_INLINE void dw_write(uint32_t dma_base, uint32_t reg, uint32_t value)
+static ALWAYS_INLINE void dw_write(uintptr_t dma_base, uint32_t reg, uint32_t value)
 {
 	*((volatile uint32_t *)(dma_base + reg)) = value;
 }
 
-static ALWAYS_INLINE uint32_t dw_read(uint32_t dma_base, uint32_t reg)
+static ALWAYS_INLINE uint32_t dw_read(uintptr_t dma_base, uint32_t reg)
 {
 	return *((volatile uint32_t *)(dma_base + reg));
 }

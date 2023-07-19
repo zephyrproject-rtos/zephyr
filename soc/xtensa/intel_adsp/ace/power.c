@@ -16,6 +16,8 @@
 #include <adsp_memory.h>
 #include <adsp_imr_layout.h>
 #include <zephyr/drivers/mm/mm_drv_intel_adsp_mtl_tlb.h>
+#include <zephyr/drivers/timer/system_timer.h>
+#include <mem_window.h>
 
 #define LPSRAM_MAGIC_VALUE      0x13579BDF
 #define LPSCTL_BATTR_MASK       GENMASK(16, 12)
@@ -73,6 +75,14 @@ uint8_t *global_imr_ram_storage;
  * @biref a d3 restore boot entry point
  */
 extern void boot_entry_d3_restore(void);
+
+/*
+ * @brief re-enables IDC interrupt for all cores after exiting D3 state
+ *
+ * Called once from core 0
+ */
+extern void soc_mp_on_d3_exit(void);
+
 #else
 
 /*
@@ -284,7 +294,7 @@ __weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 	} else if (state == PM_STATE_RUNTIME_IDLE) {
 		DSPCS.bootctl[cpu].bctl &= ~DSPBR_BCTL_WAITIPPG;
 		DSPCS.bootctl[cpu].bctl &= ~DSPBR_BCTL_WAITIPCG;
-		ACE_PWRCTL->wpdsphpxpg &= ~BIT(cpu);
+		soc_cpu_power_down(cpu);
 		if (cpu == 0) {
 			uint32_t battr = DSPCS.bootctl[cpu].battr & (~LPSCTL_BATTR_MASK);
 
@@ -317,6 +327,9 @@ __weak void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 			imr_layout->imr_state.header.adsp_imr_magic = 0;
 			imr_layout->imr_state.header.imr_restore_vector = NULL;
 			imr_layout->imr_state.header.imr_ram_storage = NULL;
+			sys_clock_idle_exit();
+			mem_window_idle_exit();
+			soc_mp_on_d3_exit();
 		}
 #endif /* CONFIG_ADSP_IMR_CONTEXT_SAVE */
 		soc_cpus_active[cpu] = true;
@@ -333,9 +346,9 @@ __weak void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 			return;
 		}
 
-		ACE_PWRCTL->wpdsphpxpg |= BIT(cpu);
+		soc_cpu_power_up(cpu);
 
-		while ((ACE_PWRSTS->dsphpxpgs & BIT(cpu)) == 0) {
+		while (!soc_cpu_is_powered(cpu)) {
 			k_busy_wait(HW_STATE_CHECK_DELAY);
 		}
 

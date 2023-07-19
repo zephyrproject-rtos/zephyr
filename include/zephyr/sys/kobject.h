@@ -248,13 +248,32 @@ static inline void k_object_access_all_grant(const void *object)
  * state, with the calling thread being granted permission on it. The memory
  * for the object will be allocated out of the calling thread's resource pool.
  *
- * Currently, allocation of thread stacks is not supported.
+ * @note Thread stack object has to use k_object_alloc_size() since stacks may
+ * have different sizes.
  *
  * @param otype Requested kernel object type
  * @return A pointer to the allocated kernel object, or NULL if memory wasn't
  * available
  */
 __syscall void *k_object_alloc(enum k_objects otype);
+
+/**
+ * Allocate a kernel object of a designated type and a given size
+ *
+ * This will instantiate at runtime a kernel object of the specified type,
+ * returning a pointer to it. The object will be returned in an uninitialized
+ * state, with the calling thread being granted permission on it. The memory
+ * for the object will be allocated out of the calling thread's resource pool.
+ *
+ * This function is specially helpful for thread stack objects because
+ * their sizes can vary. Other objects should probably look k_object_alloc().
+ *
+ * @param otype Requested kernel object type
+ * @param size Requested kernel object size
+ * @return A pointer to the allocated kernel object, or NULL if memory wasn't
+ * available
+ */
+__syscall void *k_object_alloc_size(enum k_objects otype, size_t size);
 
 /**
  * Allocate memory and install as a generic kernel object
@@ -318,6 +337,15 @@ void k_object_free(void *obj);
 static inline void *z_impl_k_object_alloc(enum k_objects otype)
 {
 	ARG_UNUSED(otype);
+
+	return NULL;
+}
+
+static inline void *z_impl_k_object_alloc_size(enum k_objects otype,
+					size_t size)
+{
+	ARG_UNUSED(otype);
+	ARG_UNUSED(size);
 
 	return NULL;
 }

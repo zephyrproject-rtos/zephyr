@@ -36,7 +36,7 @@ the certificate and private key in order to embed them in the application.
 
 Register a *thing* in AWS IoT Core and download the certificate and private key.
 Copy these files to the :zephyr_file:`samples/net/cloud/aws_iot_mqtt/src/creds`
-directory. Run the :zephyr_file:`samples/net/cloud/aws_iot_mqtt/src/creds/convert_certs.py`
+directory. Run the :zephyr_file:`samples/net/cloud/aws_iot_mqtt/src/creds/convert_keys.py`
 script, which will generate files ``ca.c``, ``cert.c`` and ``key.c``.
 
 To configure the sample, set the following Kconfig options based on your AWS IoT

@@ -1390,10 +1390,10 @@ void bt_bap_scan_delegator_foreach_state(bt_bap_scan_delegator_state_func_t func
 {
 	for (size_t i = 0U; i < ARRAY_SIZE(scan_delegator.recv_states); i++) {
 		if (scan_delegator.recv_states[i].active) {
-			enum bt_bap_scan_delegator_iter iter;
+			bool stop;
 
-			iter = func(&scan_delegator.recv_states[i].state, user_data);
-			if (iter == BT_BAP_SCAN_DELEGATOR_ITER_STOP) {
+			stop = func(&scan_delegator.recv_states[i].state, user_data);
+			if (stop) {
 				return;
 			}
 		}
@@ -1406,7 +1406,7 @@ struct scan_delegator_state_find_state_param {
 	void *user_data;
 };
 
-static enum bt_bap_scan_delegator_iter
+static bool
 scan_delegator_state_find_state_cb(const struct bt_bap_scan_delegator_recv_state *recv_state,
 				   void *user_data)
 {
@@ -1417,10 +1417,10 @@ scan_delegator_state_find_state_cb(const struct bt_bap_scan_delegator_recv_state
 	if (found) {
 		param->recv_state = recv_state;
 
-		return BT_BAP_SCAN_DELEGATOR_ITER_STOP;
+		return true;
 	}
 
-	return BT_BAP_SCAN_DELEGATOR_ITER_CONTINUE;
+	return false;
 }
 
 const struct bt_bap_scan_delegator_recv_state *

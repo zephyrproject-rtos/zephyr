@@ -48,9 +48,6 @@ echo-server directory:
   This overlay config enables support for two QEMU's when simulating
   IEEE 802.15.4 network that are connected together.
 
-- :file:`overlay-ppp.conf`
-  This overlay config enables support for PPP (Point-to-Point Protocol).
-
 - :file:`overlay-tls.conf`
   This overlay config enables support for TLS.
 

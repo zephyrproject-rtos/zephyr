@@ -5,7 +5,7 @@
  */
 
 #include <mem.h>
-#include <ti/cc13x2_cc26x2.dtsi>
+#include <ti/cc13xx_cc26xx.dtsi>
 
 / {
 	sram0: memory@20000000 {

@@ -266,6 +266,35 @@ extern void k_thread_foreach_unlocked(
 
 #if !defined(_ASMLANGUAGE)
 /**
+ * @brief Dynamically allocate a thread stack.
+ *
+ * Relevant stack creation flags include:
+ * - @ref K_USER allocate a userspace thread (requires `CONFIG_USERSPACE=y`)
+ *
+ * @param size Stack size in bytes.
+ * @param flags Stack creation flags, or 0.
+ *
+ * @retval the allocated thread stack on success.
+ * @retval NULL on failure.
+ *
+ * @see CONFIG_DYNAMIC_THREAD
+ */
+__syscall k_thread_stack_t *k_thread_stack_alloc(size_t size, int flags);
+
+/**
+ * @brief Free a dynamically allocated thread stack.
+ *
+ * @param stack Pointer to the thread stack.
+ *
+ * @retval 0 on success.
+ * @retval -EBUSY if the thread stack is in use.
+ * @retval -EINVAL if @p stack is invalid.
+ *
+ * @see CONFIG_DYNAMIC_THREAD
+ */
+__syscall int k_thread_stack_free(k_thread_stack_t *stack);
+
+/**
  * @brief Create a thread.
  *
  * This routine initializes a thread, then schedules it for execution.
@@ -680,6 +709,22 @@ struct _static_thread_data {
 	.init_name = STRINGIFY(tname),                           \
 	}
 
+/*
+ * Refer to K_THREAD_DEFINE() and K_KERNEL_THREAD_DEFINE() for
+ * information on arguments.
+ */
+#define Z_THREAD_COMMON_DEFINE(name, stack_size,			\
+			       entry, p1, p2, p3,			\
+			       prio, options, delay)			\
+	struct k_thread _k_thread_obj_##name;				\
+	STRUCT_SECTION_ITERABLE(_static_thread_data,			\
+				_k_thread_data_##name) =		\
+		Z_THREAD_INITIALIZER(&_k_thread_obj_##name,		\
+				     _k_thread_stack_##name, stack_size,\
+				     entry, p1, p2, p3, prio, options,	\
+				     delay, name);			\
+	const k_tid_t name = (k_tid_t)&_k_thread_obj_##name
+
 /**
  * INTERNAL_HIDDEN @endcond
  */
@@ -714,23 +759,50 @@ struct _static_thread_data {
  * affect anything in the OS per se, but consider it bad practice.
  * Use a SYS_INIT() callback if you need to run code before entrance
  * to the application main().
- *
- * @internal It has been observed that the x86 compiler by default aligns
- * these _static_thread_data structures to 32-byte boundaries, thereby
- * wasting space. To work around this, force a 4-byte alignment.
- *
  */
 #define K_THREAD_DEFINE(name, stack_size,                                \
 			entry, p1, p2, p3,                               \
 			prio, options, delay)                            \
 	K_THREAD_STACK_DEFINE(_k_thread_stack_##name, stack_size);	 \
-	struct k_thread _k_thread_obj_##name;				 \
-	STRUCT_SECTION_ITERABLE(_static_thread_data, _k_thread_data_##name) = \
-		Z_THREAD_INITIALIZER(&_k_thread_obj_##name,		 \
-				    _k_thread_stack_##name, stack_size,  \
-				entry, p1, p2, p3, prio, options, delay, \
-				name);					 \
-	const k_tid_t name = (k_tid_t)&_k_thread_obj_##name
+	Z_THREAD_COMMON_DEFINE(name, stack_size, entry, p1, p2, p3,	 \
+			       prio, options, delay)
+
+/**
+ * @brief Statically define and initialize a thread intended to run only in kernel mode.
+ *
+ * The thread may be scheduled for immediate execution or a delayed start.
+ *
+ * Thread options are architecture-specific, and can include K_ESSENTIAL,
+ * K_FP_REGS, and K_SSE_REGS. Multiple options may be specified by separating
+ * them using "|" (the logical OR operator).
+ *
+ * The ID of the thread can be accessed using:
+ *
+ * @code extern const k_tid_t <name>; @endcode
+ *
+ * @note Threads defined by this can only run in kernel mode, and cannot be
+ *       transformed into user thread via k_thread_user_mode_enter().
+ *
+ * @warning Depending on the architecture, the stack size (@p stack_size)
+ *          may need to be multiples of CONFIG_MMU_PAGE_SIZE (if MMU)
+ *          or in power-of-two size (if MPU).
+ *
+ * @param name Name of the thread.
+ * @param stack_size Stack size in bytes.
+ * @param entry Thread entry function.
+ * @param p1 1st entry point parameter.
+ * @param p2 2nd entry point parameter.
+ * @param p3 3rd entry point parameter.
+ * @param prio Thread priority.
+ * @param options Thread options.
+ * @param delay Scheduling delay (in milliseconds), zero for no delay.
+ */
+#define K_KERNEL_THREAD_DEFINE(name, stack_size,			\
+			       entry, p1, p2, p3,			\
+			       prio, options, delay)			\
+	K_KERNEL_STACK_DEFINE(_k_thread_stack_##name, stack_size);	\
+	Z_THREAD_COMMON_DEFINE(name, stack_size, entry, p1, p2, p3,	\
+			       prio, options, delay)
 
 /**
  * @brief Get a thread's priority.
@@ -2158,8 +2230,10 @@ __syscall void k_event_init(struct k_event *event);
  *
  * @param event Address of the event object
  * @param events Set of events to post to @a event
+ *
+ * @retval Previous value of the events in @a event
  */
-__syscall void k_event_post(struct k_event *event, uint32_t events);
+__syscall uint32_t k_event_post(struct k_event *event, uint32_t events);
 
 /**
  * @brief Set the events in an event object
@@ -2173,8 +2247,10 @@ __syscall void k_event_post(struct k_event *event, uint32_t events);
  *
  * @param event Address of the event object
  * @param events Set of events to set in @a event
+ *
+ * @retval Previous value of the events in @a event
  */
-__syscall void k_event_set(struct k_event *event, uint32_t events);
+__syscall uint32_t k_event_set(struct k_event *event, uint32_t events);
 
 /**
  * @brief Set or clear the events in an event object
@@ -2187,8 +2263,10 @@ __syscall void k_event_set(struct k_event *event, uint32_t events);
  * @param event Address of the event object
  * @param events Set of events to set/clear in @a event
  * @param events_mask Mask to be applied to @a events
+ *
+ * @retval Previous value of the events in @a events_mask
  */
-__syscall void k_event_set_masked(struct k_event *event, uint32_t events,
+__syscall uint32_t k_event_set_masked(struct k_event *event, uint32_t events,
 				  uint32_t events_mask);
 
 /**
@@ -2198,8 +2276,10 @@ __syscall void k_event_set_masked(struct k_event *event, uint32_t events,
  *
  * @param event Address of the event object
  * @param events Set of events to clear in @a event
+ *
+ * @retval Previous value of the events in @a event
  */
-__syscall void k_event_clear(struct k_event *event, uint32_t events);
+__syscall uint32_t k_event_clear(struct k_event *event, uint32_t events);
 
 /**
  * @brief Wait for any of the specified events
@@ -2248,6 +2328,19 @@ __syscall uint32_t k_event_wait(struct k_event *event, uint32_t events,
  */
 __syscall uint32_t k_event_wait_all(struct k_event *event, uint32_t events,
 				    bool reset, k_timeout_t timeout);
+
+/**
+ * @brief Test the events currently tracked in the event object
+ *
+ * @param event Address of the event object
+ * @param events_mask Set of desired events to test
+ *
+ * @retval Current value of events in @a events_mask
+ */
+static inline uint32_t k_event_test(struct k_event *event, uint32_t events_mask)
+{
+	return k_event_wait(event, events_mask, false, K_NO_WAIT);
+}
 
 /**
  * @brief Statically define and initialize an event object

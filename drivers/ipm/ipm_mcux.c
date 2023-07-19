@@ -13,6 +13,7 @@
 #include <fsl_clock.h>
 #include <soc.h>
 #include <zephyr/irq.h>
+#include <zephyr/sys/barrier.h>
 
 #define MCUX_IPM_DATA_REGS 1
 #define MCUX_IPM_MAX_ID_VAL 0
@@ -69,7 +70,7 @@ static void mcux_mailbox_isr(const struct device *dev)
 	 * might vector to incorrect interrupt
 	 */
 #if defined __CORTEX_M && (__CORTEX_M == 4U)
-	__DSB();
+	barrier_dsync_fence_full();
 #endif
 }
 

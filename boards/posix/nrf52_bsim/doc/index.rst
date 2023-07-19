@@ -47,28 +47,32 @@ This board requires the host 32 bit C library. See
 :ref:`POSIX Arch dependencies<posix_arch_deps>`.
 
 To target this board you also need to have `BabbleSim`_ compiled in your system.
-If you do not have it yet, in `its web page <https://BabbleSim.github.io>`_
-you can find instructions on how to
-`fetch <https://babblesim.github.io/fetching.html>`_ and
-`build <https://babblesim.github.io/building.html>`_ it.
-In short, you can do:
+If you do not have it yet, the easiest way to get it, is to enable the babblesim group
+in your local west configuration, running west update, and building the simulator:
 
 .. code-block:: console
 
-   mkdir -p ${HOME}/bsim && cd ${HOME}/bsim
-   curl https://storage.googleapis.com/git-repo-downloads/repo > ./repo  && chmod a+x ./repo
-   ./repo init -u https://github.com/BabbleSim/manifest.git -m everything.xml -b master
-   ./repo sync
+   west config manifest.group-filter -- +babblesim
+   west update
+   cd ${ZEPHYR_BASE}/../tools/bsim
    make everything -j 8
 
-Define two environment variables to point to your BabbleSim
+.. note::
+
+   If you need more BabbleSim components, or more up to date versions,
+   you can check the `BabbleSim web page <https://BabbleSim.github.io>`_
+   for instructions on how to
+   `fetch <https://babblesim.github.io/fetching.html>`_ and
+   `build <https://babblesim.github.io/building.html>`_ it.
+
+You will now need to define two environment variables to point to your BabbleSim
 installation, ``BSIM_OUT_PATH`` and ``BSIM_COMPONENTS_PATH``.
 If you followed the previous steps, you can just do:
 
 .. code-block:: console
 
-   export BSIM_OUT_PATH=${HOME}/bsim/
-   export BSIM_COMPONENTS_PATH=${HOME}/bsim/components/
+   export BSIM_OUT_PATH=${ZEPHYR_BASE}/../tools/bsim
+   export BSIM_COMPONENTS_PATH=${BSIM_OUT_PATH}/components/
 
 .. note::
 

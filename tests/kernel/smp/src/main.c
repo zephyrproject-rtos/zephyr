@@ -276,6 +276,84 @@ static void cleanup_resources(void)
 	}
 }
 
+static void __no_optimization thread_ab_entry(void *p1, void *p2, void *p3)
+{
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	while (true) {
+	}
+}
+
+#define SPAWN_AB_PRIO K_PRIO_COOP(10)
+
+/**
+ * @brief Verify the code path when we do context switch in k_thread_abort on SMP system
+ *
+ * @ingroup kernel_smp_tests
+ *
+ * @details test logic:
+ * - The ztest thread has cooperative priority.
+ * - From ztest thread we spawn N number of cooperative threads, where N = number of CPUs.
+ *   - The spawned cooperative are executing infinite loop (so they occupy CPU core until they are
+ *     aborted).
+ *   - We have (number of CPUs - 1) spawned threads run and executing infinite loop, as current CPU
+ *     is occupied by ztest cooperative thread. Due to that the last of spawned threads is ready but
+ *     not executing.
+ * - We abort spawned threads one-by-one from the ztest thread.
+ *   - At the first k_thread_abort call the ztest thread will be preempted by the remaining spawned
+ *     thread which has higher priority than ztest thread.
+ *     But... k_thread_abort call should has destroyed one of the spawned threads, so ztest thread
+ *     should have a CPU available to run on.
+ * - We expect that all spawned threads will be aborted successfully.
+ *
+ * This was the test case for zephyrproject-rtos/zephyr#58040 issue where this test caused system
+ * hang.
+ */
+
+ZTEST(smp, test_coop_switch_in_abort)
+{
+	k_tid_t tid[MAX_NUM_THREADS];
+	unsigned int num_threads = arch_num_cpus();
+	unsigned int i;
+
+	zassert_true(_current->base.prio < 0, "test case relies on ztest thread be cooperative");
+	zassert_true(_current->base.prio > SPAWN_AB_PRIO,
+		     "spawn test need to have higher priority than ztest thread");
+
+	/* Spawn N number of cooperative threads, where N = number of CPUs */
+	for (i = 0; i < num_threads; i++) {
+		tid[i] = k_thread_create(&tthread[i], tstack[i],
+					 STACK_SIZE, thread_ab_entry,
+					 NULL, NULL, NULL,
+					 SPAWN_AB_PRIO, 0, K_NO_WAIT);
+	}
+
+	/* Wait for some time to let spawned threads on other cores run and start executing infinite
+	 * loop.
+	 */
+	k_busy_wait(DELAY_US * 4);
+
+	/* At this time we have (number of CPUs - 1) spawned threads run and executing infinite loop
+	 * on other CPU cores, as current CPU is occupied by this ztest cooperative thread.
+	 * Due to that the last of spawned threads is ready but not executing.
+	 */
+
+	/* Abort all spawned threads one-by-one. At the first k_thread_abort call the context
+	 * switch will happen and the last 'spawned' thread will start.
+	 * We should successfully abort all threads.
+	 */
+	for (i = 0; i < num_threads; i++) {
+		k_thread_abort(tid[i]);
+	}
+
+	/* Cleanup */
+	for (i = 0; i < num_threads; i++) {
+		zassert_equal(k_thread_join(tid[i], K_FOREVER), 0);
+	}
+}
+
 /**
  * @brief Test cooperative threads non-preemption
  *

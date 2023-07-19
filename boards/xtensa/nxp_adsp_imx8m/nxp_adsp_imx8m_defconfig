@@ -22,3 +22,18 @@ CONFIG_BUILD_OUTPUT_BIN=n
 CONFIG_CLEANUP_INTERMEDIATE_FILES=y
 
 CONFIG_DCACHE_LINE_SIZE=128
+
+# enable uart driver
+CONFIG_SERIAL=y
+
+# clock configuration
+CONFIG_CLOCK_CONTROL=y
+
+# console (remote proc console by default)
+CONFIG_CONSOLE=y
+
+# uart console (overrides remote proc console)
+CONFIG_UART_CONSOLE=y
+
+# enable pin controller
+CONFIG_PINCTRL=y

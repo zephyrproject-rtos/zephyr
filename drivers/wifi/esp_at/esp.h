@@ -264,6 +264,7 @@ struct esp_data {
 	struct k_sem sem_tx_ready;
 	struct k_sem sem_response;
 	struct k_sem sem_if_ready;
+	struct k_sem sem_if_up;
 };
 
 int esp_offload_init(struct net_if *iface);

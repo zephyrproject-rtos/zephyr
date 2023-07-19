@@ -56,12 +56,23 @@ example, you can set ``ZEPHYR_SDK_INSTALL_DIR`` to ``/company/tools``, where the
 This allows the Zephyr build system to choose the correct version of the SDK,
 while allowing multiple Zephyr SDKs to be grouped together at a specific path.
 
+.. _toolchain_zephyr_sdk_compatibility:
+
+Zephyr SDK version compatibility
+********************************
+
+In general, the Zephyr SDK version referenced in this page should be considered
+the recommended version for the corresponding Zephyr version.
+
+For the full list of compatible Zephyr and Zephyr SDK versions, refer to the
+`Zephyr SDK Version Compatibility Matrix`_.
+
 .. _toolchain_zephyr_sdk_install_linux:
 
 Install Zephyr SDK on Linux
 ***************************
 
-#. Download and verify the `latest Zephyr SDK bundle`_:
+#. Download and verify the `Zephyr SDK bundle`_:
 
    .. code-block:: bash
 
@@ -114,7 +125,7 @@ If you relocate the SDK directory, you need to re-run the setup script.
 Install Zephyr SDK on macOS
 ***************************
 
-#. Download and verify the `latest Zephyr SDK bundle`_:
+#. Download and verify the `Zephyr SDK bundle`_:
 
    .. code-block:: bash
 
@@ -166,7 +177,7 @@ Install Zephyr SDK on Windows
 
 #. Open a ``cmd.exe`` window by pressing the Windows key typing "cmd.exe".
 
-#. Download the `latest Zephyr SDK bundle`_:
+#. Download the `Zephyr SDK bundle`_:
 
    .. code-block:: console
 
@@ -203,5 +214,6 @@ Install Zephyr SDK on Windows
       You must rerun the setup script if you relocate the Zephyr SDK bundle directory after
       the initial setup.
 
-.. _latest Zephyr SDK bundle: https://github.com/zephyrproject-rtos/sdk-ng/releases
-.. _Zephyr SDK Releases: https://github.com/zephyrproject-rtos/sdk-ng/releases
+.. _Zephyr SDK bundle: https://github.com/zephyrproject-rtos/sdk-ng/releases/tag/v0.16.1
+.. _Zephyr SDK Releases: https://github.com/zephyrproject-rtos/sdk-ng/tags
+.. _Zephyr SDK Version Compatibility Matrix: https://github.com/zephyrproject-rtos/sdk-ng/wiki/Zephyr-SDK-Version-Compatibility-Matrix

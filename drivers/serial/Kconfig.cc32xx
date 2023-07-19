@@ -6,5 +6,6 @@ config UART_CC32XX
 	depends on DT_HAS_TI_CC32XX_UART_ENABLED
 	select SERIAL_HAS_DRIVER
 	select SERIAL_SUPPORT_INTERRUPT
+	select PINCTRL
 	help
 	  This option enables the CC32XX UART driver, for UART_0.

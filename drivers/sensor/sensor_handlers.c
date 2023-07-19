@@ -57,3 +57,26 @@ static inline int z_vrfy_sensor_channel_get(const struct device *dev,
 					 (struct sensor_value *)val);
 }
 #include <syscalls/sensor_channel_get_mrsh.c>
+
+#ifdef CONFIG_SENSOR_ASYNC_API
+static inline int z_vrfy_sensor_get_decoder(const struct device *dev,
+					    const struct sensor_decoder_api **decoder)
+{
+	Z_OOPS(Z_SYSCALL_OBJ(dev, K_OBJ_DRIVER_SENSOR));
+	Z_OOPS(Z_SYSCALL_MEMORY_READ(decoder, sizeof(struct sensor_decoder_api)));
+	return z_impl_sensor_get_decoder(dev, decoder);
+}
+#include <syscalls/sensor_get_decoder_mrsh.c>
+
+static inline int z_vrfy_sensor_reconfigure_read_iodev(struct rtio_iodev *iodev,
+						       const struct device *sensor,
+						       const enum sensor_channel *channels,
+						       size_t num_channels)
+{
+	Z_OOPS(Z_SYSCALL_OBJ(iodev, K_OBJ_RTIO_IODEV));
+	Z_OOPS(Z_SYSCALL_OBJ(sensor, K_OBJ_DRIVER_SENSOR));
+	Z_OOPS(Z_SYSCALL_MEMORY_READ(channels, sizeof(enum sensor_channel) * num_channels));
+	return z_impl_sensor_reconfigure_read_iodev(iodev, sensor, channels, num_channels);
+}
+#include <syscalls/sensor_reconfigure_read_iodev_mrsh.c>
+#endif

@@ -200,7 +200,7 @@ static void uart_callback(const struct device *dev, struct uart_event *evt, void
 				 */
 				hc_uart->state = UART_HOST_CMD_PROCESSING;
 
-				k_sem_give(&hc_uart->rx_ctx->handler_owns);
+				ec_host_cmd_rx_notify();
 			} else if (hc_uart->rx_ctx->len > expected_len) {
 				/* Overrun error, set the state and wait for timeout */
 				hc_uart->state = UART_HOST_CMD_RX_OVERRUN;

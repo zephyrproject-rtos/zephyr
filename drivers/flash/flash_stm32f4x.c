@@ -12,6 +12,7 @@
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/sys/barrier.h>
 
 #include <soc.h>
 
@@ -232,7 +233,7 @@ static __unused int write_optb(const struct device *dev, uint32_t mask,
 	regs->OPTCR |= FLASH_OPTCR_OPTSTRT;
 
 	/* Make sure previous write is completed. */
-	__DSB();
+	barrier_dsync_fence_full();
 
 	rc = flash_stm32_wait_flash_idle(dev);
 	if (rc < 0) {

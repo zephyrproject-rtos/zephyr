@@ -470,10 +470,7 @@ uint32_t lll_preempt_calc(struct ull_hdr *ull, uint8_t ticker_id,
 		 *    duration.
 		 * 3. Increase the preempt to start ticks for future events.
 		 */
-		LL_ASSERT_MSG(false, "%s: Actual EVENT_OVERHEAD_START_US = %u",
-			      __func__, HAL_TICKER_TICKS_TO_US(diff));
-
-		return 1U;
+		return diff;
 	}
 
 	return 0U;
@@ -757,6 +754,11 @@ int lll_prepare_resolve(lll_is_abort_cb_t is_abort_cb, lll_abort_cb_t abort_cb,
 	event.curr.abort_cb = abort_cb;
 
 	err = prepare_cb(prepare_param);
+
+	if (!IS_ENABLED(CONFIG_BT_CTLR_ASSERT_OVERHEAD_START) &&
+	    (err == -ECANCELED)) {
+		err = 0;
+	}
 
 #if !defined(CONFIG_BT_CTLR_LOW_LAT)
 	uint32_t ret;

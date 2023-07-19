@@ -27,7 +27,7 @@ struct bt_bap_broadcast_subgroup {
 	sys_slist_t streams;
 
 	/* The codec of the subgroup */
-	struct bt_codec *codec;
+	struct bt_audio_codec_cfg *codec_cfg;
 
 	/* List node */
 	sys_snode_t _node;
@@ -265,7 +265,8 @@ static struct bt_bap_broadcast_subgroup *broadcast_source_new_subgroup(uint8_t i
 }
 
 static int broadcast_source_setup_stream(uint8_t index, struct bt_bap_stream *stream,
-					 struct bt_codec *codec, struct bt_codec_qos *qos,
+					 struct bt_audio_codec_cfg *codec_cfg,
+					 struct bt_audio_codec_qos *qos,
 					 struct bt_bap_broadcast_source *source)
 {
 	struct bt_bap_iso *iso;
@@ -287,11 +288,11 @@ static int broadcast_source_setup_stream(uint8_t index, struct bt_bap_stream *st
 	bt_bap_iso_bind_ep(iso, ep);
 
 	bt_audio_codec_qos_to_iso_qos(iso->chan.qos->tx, qos);
-	bt_audio_codec_to_iso_path(iso->chan.qos->tx->path, codec);
+	bt_audio_codec_cfg_to_iso_path(iso->chan.qos->tx->path, codec_cfg);
 
 	bt_bap_iso_unref(iso);
 
-	bt_bap_stream_attach(NULL, stream, ep, codec);
+	bt_bap_stream_attach(NULL, stream, ep, codec_cfg);
 	stream->qos = qos;
 	ep->broadcast_source = source;
 
@@ -303,7 +304,7 @@ static bool encode_base_subgroup(struct bt_bap_broadcast_subgroup *subgroup,
 				 uint8_t *streams_encoded, struct net_buf_simple *buf)
 {
 	struct bt_bap_stream *stream;
-	const struct bt_codec *codec;
+	const struct bt_audio_codec_cfg *codec_cfg;
 	uint8_t stream_count;
 	uint8_t bis_index;
 	uint8_t *start;
@@ -314,19 +315,18 @@ static bool encode_base_subgroup(struct bt_bap_broadcast_subgroup *subgroup,
 		stream_count++;
 	}
 
-	codec = subgroup->codec;
+	codec_cfg = subgroup->codec_cfg;
 
 	net_buf_simple_add_u8(buf, stream_count);
-	net_buf_simple_add_u8(buf, codec->id);
-	net_buf_simple_add_le16(buf, codec->cid);
-	net_buf_simple_add_le16(buf, codec->vid);
-
+	net_buf_simple_add_u8(buf, codec_cfg->id);
+	net_buf_simple_add_le16(buf, codec_cfg->cid);
+	net_buf_simple_add_le16(buf, codec_cfg->vid);
 
 	/* Insert codec configuration data in LTV format */
 	start = net_buf_simple_add(buf, sizeof(len));
 
-	for (int i = 0; i < codec->data_count; i++) {
-		const struct bt_data *codec_data = &codec->data[i].data;
+	for (int i = 0; i < codec_cfg->data_count; i++) {
+		const struct bt_data *codec_data = &codec_cfg->data[i].data;
 
 		if ((buf->size - buf->len) < (sizeof(codec_data->data_len) +
 					      sizeof(codec_data->type) +
@@ -339,7 +339,6 @@ static bool encode_base_subgroup(struct bt_bap_broadcast_subgroup *subgroup,
 		net_buf_simple_add_u8(buf, codec_data->data_len + sizeof(codec_data->type));
 		net_buf_simple_add_u8(buf, codec_data->type);
 		net_buf_simple_add_mem(buf, codec_data->data, codec_data->data_len);
-
 	}
 	/* Calculate length of codec config data */
 	len = net_buf_simple_tail(buf) - start - sizeof(len);
@@ -354,8 +353,8 @@ static bool encode_base_subgroup(struct bt_bap_broadcast_subgroup *subgroup,
 
 	/* Insert codec metadata in LTV format*/
 	start = net_buf_simple_add(buf, sizeof(len));
-	for (int i = 0; i < codec->meta_count; i++) {
-		const struct bt_data *metadata = &codec->meta[i].data;
+	for (int i = 0; i < codec_cfg->meta_count; i++) {
+		const struct bt_data *metadata = &codec_cfg->meta[i].data;
 
 		if ((buf->size - buf->len) < (sizeof(metadata->data_len) +
 					      sizeof(metadata->type) +
@@ -395,7 +394,7 @@ static bool encode_base_subgroup(struct bt_bap_broadcast_subgroup *subgroup,
 		/* Insert codec configuration data in LTV format */
 		start = net_buf_simple_add(buf, sizeof(len));
 
-#if defined(CONFIG_BT_CODEC_MAX_DATA_COUNT)
+#if defined(CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_COUNT)
 		for (size_t j = 0U; j < stream_data[i].data_count; j++) {
 			const struct bt_data *codec_data = &stream_data[i].data[j].data;
 
@@ -412,7 +411,7 @@ static bool encode_base_subgroup(struct bt_bap_broadcast_subgroup *subgroup,
 			net_buf_simple_add_u8(buf, codec_data->type);
 			net_buf_simple_add_mem(buf, codec_data->data, codec_data->data_len);
 		}
-#endif  /* CONFIG_BT_CODEC_MAX_DATA_COUNT */
+#endif /* CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_COUNT */
 
 		/* Calculate length of codec config data */
 		len = net_buf_simple_tail(buf) - start - sizeof(len);
@@ -504,7 +503,7 @@ static void broadcast_source_cleanup(struct bt_bap_broadcast_source *source)
 			bt_bap_iso_unbind_ep(stream->ep->iso, stream->ep);
 			stream->ep->stream = NULL;
 			stream->ep = NULL;
-			stream->codec = NULL;
+			stream->codec_cfg = NULL;
 			stream->qos = NULL;
 			stream->group = NULL;
 
@@ -519,7 +518,7 @@ static void broadcast_source_cleanup(struct bt_bap_broadcast_source *source)
 
 static bool valid_create_param(const struct bt_bap_broadcast_source_create_param *param)
 {
-	const struct bt_codec_qos *qos;
+	const struct bt_audio_codec_qos *qos;
 
 	CHECKIF(param == NULL) {
 		LOG_DBG("param is NULL");
@@ -580,8 +579,8 @@ static bool valid_create_param(const struct bt_bap_broadcast_source_create_param
 			return false;
 		}
 
-		CHECKIF(!bt_audio_valid_codec(subgroup_param->codec)) {
-			LOG_DBG("subgroup_params[%zu].codec is invalid", i);
+		CHECKIF(!bt_audio_valid_codec_cfg(subgroup_param->codec_cfg)) {
+			LOG_DBG("subgroup_params[%zu].codec_cfg  is invalid", i);
 			return false;
 		}
 
@@ -610,12 +609,13 @@ static bool valid_create_param(const struct bt_bap_broadcast_source_create_param
 				return false;
 			}
 
-#if CONFIG_BT_CODEC_MAX_DATA_COUNT > 0
-			CHECKIF(stream_param->data_count > CONFIG_BT_CODEC_MAX_DATA_COUNT) {
+#if CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_COUNT > 0
+			CHECKIF(stream_param->data_count >
+				CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_COUNT) {
 				LOG_DBG("subgroup_params[%zu].stream_params[%zu]->data_count too "
 					"large: %zu/%d",
 					i, j, stream_param->data_count,
-					CONFIG_BT_CODEC_MAX_DATA_COUNT);
+					CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_COUNT);
 				return false;
 			}
 
@@ -629,7 +629,7 @@ static bool valid_create_param(const struct bt_bap_broadcast_source_create_param
 				}
 			}
 		}
-#endif /* CONFIG_BT_CODEC_MAX_DATA_COUNT > 0 */
+#endif /* CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_COUNT > 0 */
 	}
 
 	return true;
@@ -673,7 +673,7 @@ int bt_bap_broadcast_source_create(struct bt_bap_broadcast_source_create_param *
 				   struct bt_bap_broadcast_source **out_source)
 {
 	struct bt_bap_broadcast_source *source;
-	struct bt_codec_qos *qos;
+	struct bt_audio_codec_qos *qos;
 	size_t stream_count;
 	uint8_t index;
 	int err;
@@ -723,7 +723,7 @@ int bt_bap_broadcast_source_create(struct bt_bap_broadcast_source_create_param *
 			return -ENOMEM;
 		}
 
-		subgroup->codec = subgroup_param->codec;
+		subgroup->codec_cfg = subgroup_param->codec_cfg;
 		sys_slist_append(&source->subgroups, &subgroup->_node);
 
 		/* Check that we are not above the maximum BIS count */
@@ -742,8 +742,7 @@ int bt_bap_broadcast_source_create(struct bt_bap_broadcast_source_create_param *
 			stream = stream_param->stream;
 
 			err = broadcast_source_setup_stream(index, stream,
-							    subgroup_param->codec,
-							    qos, source);
+							    subgroup_param->codec_cfg, qos, source);
 			if (err != 0) {
 				LOG_DBG("Failed to setup streams[%zu]: %d", i, err);
 				broadcast_source_cleanup(source);
@@ -794,8 +793,9 @@ int bt_bap_broadcast_source_create(struct bt_bap_broadcast_source_create_param *
 	return 0;
 }
 
-int bt_bap_broadcast_source_reconfig(struct bt_bap_broadcast_source *source, struct bt_codec *codec,
-				     struct bt_codec_qos *qos)
+int bt_bap_broadcast_source_reconfig(struct bt_bap_broadcast_source *source,
+				     struct bt_audio_codec_cfg *codec_cfg,
+				     struct bt_audio_codec_qos *qos)
 {
 	struct bt_bap_broadcast_subgroup *subgroup;
 	enum bt_bap_ep_state broadcast_state;
@@ -806,8 +806,8 @@ int bt_bap_broadcast_source_reconfig(struct bt_bap_broadcast_source *source, str
 		return -EINVAL;
 	}
 
-	CHECKIF(!bt_audio_valid_codec(codec)) {
-		LOG_DBG("codec is invalid");
+	CHECKIF(!bt_audio_valid_codec_cfg(codec_cfg)) {
+		LOG_DBG("codec_cfg is invalid");
 		return -EINVAL;
 	}
 
@@ -838,10 +838,10 @@ int bt_bap_broadcast_source_reconfig(struct bt_bap_broadcast_source *source, str
 
 			iso_qos = stream->ep->iso->chan.qos->tx;
 
-			bt_bap_stream_attach(NULL, stream, stream->ep, codec);
+			bt_bap_stream_attach(NULL, stream, stream->ep, codec_cfg);
 
 			bt_audio_codec_qos_to_iso_qos(iso_qos, qos);
-			bt_audio_codec_to_iso_path(iso_qos->path, codec);
+			bt_audio_codec_cfg_to_iso_path(iso_qos->path, codec_cfg);
 			stream->qos = qos;
 		}
 	}
@@ -851,30 +851,30 @@ int bt_bap_broadcast_source_reconfig(struct bt_bap_broadcast_source *source, str
 	return 0;
 }
 
-static void broadcast_source_store_metadata(struct bt_codec *codec,
-					    const struct bt_codec_data meta[],
+static void broadcast_source_store_metadata(struct bt_audio_codec_cfg *codec_cfg,
+					    const struct bt_audio_codec_data meta[],
 					    size_t meta_count)
 {
 	size_t old_meta_count;
 
-	old_meta_count = codec->meta_count;
+	old_meta_count = codec_cfg->meta_count;
 
 	/* Update metadata */
-	codec->meta_count = meta_count;
-	(void)memcpy(codec->meta, meta, meta_count * sizeof(*meta));
+	codec_cfg->meta_count = meta_count;
+	(void)memcpy(codec_cfg->meta, meta, meta_count * sizeof(*meta));
 	if (old_meta_count > meta_count) {
 		size_t meta_count_diff = old_meta_count - meta_count;
 
 		/* If we previously had more metadata entries we reset the
 		 * data that was not overwritten by the new metadata
 		 */
-		(void)memset(&codec->meta[meta_count],
-			     0, meta_count_diff * sizeof(*meta));
+		(void)memset(&codec_cfg->meta[meta_count], 0, meta_count_diff * sizeof(*meta));
 	}
 }
 
 int bt_bap_broadcast_source_update_metadata(struct bt_bap_broadcast_source *source,
-					    const struct bt_codec_data meta[], size_t meta_count)
+					    const struct bt_audio_codec_data meta[],
+					    size_t meta_count)
 {
 	struct bt_bap_broadcast_subgroup *subgroup;
 	enum bt_bap_ep_state broadcast_state;
@@ -893,9 +893,9 @@ int bt_bap_broadcast_source_update_metadata(struct bt_bap_broadcast_source *sour
 		return -EINVAL;
 	}
 
-	CHECKIF(meta_count > CONFIG_BT_CODEC_MAX_METADATA_COUNT) {
-		LOG_DBG("Invalid meta_count: %zu (max %d)",
-			meta_count, CONFIG_BT_CODEC_MAX_METADATA_COUNT);
+	CHECKIF(meta_count > CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_COUNT) {
+		LOG_DBG("Invalid meta_count: %zu (max %d)", meta_count,
+			CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_COUNT);
 
 		return -EINVAL;
 	}
@@ -919,7 +919,7 @@ int bt_bap_broadcast_source_update_metadata(struct bt_bap_broadcast_source *sour
 	 * for each subgroup individually
 	 */
 	SYS_SLIST_FOR_EACH_CONTAINER(&source->subgroups, subgroup, _node) {
-		broadcast_source_store_metadata(subgroup->codec, meta, meta_count);
+		broadcast_source_store_metadata(subgroup->codec_cfg, meta, meta_count);
 	}
 
 	return 0;

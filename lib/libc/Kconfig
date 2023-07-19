@@ -35,7 +35,7 @@ config NEWLIB_LIBC_SUPPORTED
 config PICOLIBC_SUPPORTED
 	bool
 	depends on !NATIVE_APPLICATION
-	depends on "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "zephyr"
+	depends on ("$(ZEPHYR_TOOLCHAIN_VARIANT)" = "zephyr") || (NATIVE_LIBRARY)
 	depends on !(CPP && "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "zephyr")
 	# picolibc text is outside .pinned.text on this board. #54148
 	default y
@@ -54,7 +54,7 @@ menu "C Library"
 
 choice LIBC_IMPLEMENTATION
 	prompt "C Library Implementation"
-	default EXTERNAL_LIBC if NATIVE_APPLICATION
+	default EXTERNAL_LIBC if NATIVE_BUILD
 	default NEWLIB_LIBC if REQUIRES_FULL_LIBC
 	default PICOLIBC if REQUIRES_FULL_LIBC
 	default MINIMAL_LIBC
@@ -117,7 +117,7 @@ rsource "picolibc/Kconfig"
 config STDOUT_CONSOLE
 	bool "Send stdout to console"
 	depends on CONSOLE_HAS_DRIVER
-	depends on !NATIVE_APPLICATION
+	depends on !(NATIVE_APPLICATION || (NATIVE_LIBRARY && EXTERNAL_LIBC))
 	default y
 	help
 	  This option directs standard output (e.g. printf) to the console

@@ -1399,7 +1399,7 @@ int bt_ots_client_write_object_data(struct bt_ots_client *otc_inst,
 		return -EINVAL;
 	}
 
-	CHECKIF((offset > UINT32_MAX) || (offset < 0)) {
+	CHECKIF((sizeof(offset) > sizeof(uint32_t) && (offset > UINT32_MAX)) || (offset < 0)) {
 		LOG_ERR("offset %ld exceeds UINT32 and must be >= 0", offset);
 		return -EINVAL;
 	}
@@ -1460,7 +1460,7 @@ int bt_ots_client_get_object_checksum(struct bt_ots_client *otc_inst, struct bt_
 		return -EINVAL;
 	}
 
-	CHECKIF((offset > UINT32_MAX) || (offset < 0)) {
+	CHECKIF((sizeof(offset) > sizeof(uint32_t) && (offset > UINT32_MAX)) || (offset < 0)) {
 		LOG_DBG("offset exceeds %ld UINT32 and must be >= 0", offset);
 		return -EINVAL;
 	}

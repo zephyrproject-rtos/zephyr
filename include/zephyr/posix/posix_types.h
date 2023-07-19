@@ -47,12 +47,15 @@ struct pthread_attr {
 	int32_t detachstate;
 	uint32_t initialized;
 };
-#if defined(CONFIG_MINIMAL_LIBC) || defined(CONFIG_PICOLIBC) || defined(CONFIG_ARMCLANG_STD_LIBC)
+#if defined(CONFIG_MINIMAL_LIBC) || defined(CONFIG_PICOLIBC) || defined(CONFIG_ARMCLANG_STD_LIBC) \
+	|| defined(CONFIG_ARCMWDT_LIBC)
 typedef struct pthread_attr pthread_attr_t;
 #endif
+
 BUILD_ASSERT(sizeof(pthread_attr_t) >= sizeof(struct pthread_attr));
 
 typedef uint32_t pthread_t;
+typedef uint32_t pthread_spinlock_t;
 
 /* Semaphore */
 typedef struct k_sem sem_t;
@@ -63,7 +66,8 @@ typedef uint32_t pthread_mutex_t;
 struct pthread_mutexattr {
 	int type;
 };
-#if defined(CONFIG_MINIMAL_LIBC) || defined(CONFIG_PICOLIBC) || defined(CONFIG_ARMCLANG_STD_LIBC)
+#if defined(CONFIG_MINIMAL_LIBC) || defined(CONFIG_PICOLIBC) || defined(CONFIG_ARMCLANG_STD_LIBC) \
+	|| defined(CONFIG_ARCMWDT_LIBC)
 typedef struct pthread_mutexattr pthread_mutexattr_t;
 #endif
 BUILD_ASSERT(sizeof(pthread_mutexattr_t) >= sizeof(struct pthread_mutexattr));
@@ -74,19 +78,17 @@ typedef uint32_t pthread_cond_t;
 struct pthread_condattr {
 };
 
-#if defined(CONFIG_MINIMAL_LIBC) || defined(CONFIG_PICOLIBC) || defined(CONFIG_ARMCLANG_STD_LIBC)
+#if defined(CONFIG_MINIMAL_LIBC) || defined(CONFIG_PICOLIBC) || defined(CONFIG_ARMCLANG_STD_LIBC) \
+	|| defined(CONFIG_ARCMWDT_LIBC)
 typedef struct pthread_condattr pthread_condattr_t;
 #endif
 BUILD_ASSERT(sizeof(pthread_condattr_t) >= sizeof(struct pthread_condattr));
 
 /* Barrier */
-typedef struct pthread_barrier {
-	_wait_q_t wait_q;
-	int max;
-	int count;
-} pthread_barrier_t;
+typedef uint32_t pthread_barrier_t;
 
 typedef struct pthread_barrierattr {
+	int pshared;
 } pthread_barrierattr_t;
 
 typedef uint32_t pthread_rwlockattr_t;

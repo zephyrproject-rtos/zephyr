@@ -332,15 +332,8 @@ SECTIONS
 
     /* Define linker symbols */
 
-    . = ALIGN(_region_min_align);
-    _image_ram_end = .;
-    _end = .; /* end of image */
-    z_mapped_end = .;
-
     __kernel_ram_end = RAM_ADDR + RAM_SIZE;
     __kernel_ram_size = __kernel_ram_end - __kernel_ram_start;
-
-    GROUP_END(RAMABLE_REGION)
 
 #if DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_ocm), okay)
 GROUP_START(OCM)
@@ -372,6 +365,12 @@ GROUP_END(OCM)
  * zephyr_linker_sources() Cmake function.
  */
 #include <snippets-sections.ld>
+
+#define LAST_RAM_ALIGN . = ALIGN(_region_min_align);
+
+#include <zephyr/linker/ram-end.ld>
+
+    GROUP_END(RAMABLE_REGION)
 
 #include <zephyr/linker/debug-sections.ld>
 

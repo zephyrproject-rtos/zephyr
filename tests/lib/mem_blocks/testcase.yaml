@@ -3,3 +3,5 @@ tests:
     tags:
       - heap
       - mem_blocks
+    integration_platforms:
+      - native_posix

@@ -57,7 +57,6 @@ static int lwm2m_get_bool_custom_fake(const struct lwm2m_obj_path *path, bool *v
 
 static void test_service(struct k_work *work)
 {
-	LOG_INF("Test service");
 	k_sleep(K_MSEC(10));
 }
 
@@ -339,8 +338,8 @@ ZTEST(lwm2m_engine, test_retransmit_request)
 	k_sleep(K_MSEC(500));
 	ret = lwm2m_engine_stop(&ctx);
 	zassert_equal(ret, 0);
-	zassert_equal(lwm2m_reset_message_fake.call_count, 1, "Message was not reseted");
-	zassert_equal(lwm2m_send_message_async_fake.call_count, 1, "Message was not sent");
+	zassert_not_equal(lwm2m_reset_message_fake.call_count, 0, "Message was not reseted");
+	zassert_not_equal(lwm2m_send_message_async_fake.call_count, 0, "Message was not sent");
 }
 
 ZTEST(lwm2m_engine, test_socket_recv)

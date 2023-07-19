@@ -232,26 +232,26 @@ static void active_members_store_ordered(const struct bt_csip_set_coordinator_se
 		qsort(active.members, count, sizeof(members[0U]),
 		ascending ? member_rank_compare_asc : member_rank_compare_desc);
 
-		if (IS_ENABLED(CONFIG_ASSERT)) {
-			for (size_t i = 1U; i < count; i++) {
-				const struct bt_csip_set_coordinator_svc_inst *svc_inst_1 =
-					lookup_instance_by_set_info(active.members[i - 1U], info);
-				const struct bt_csip_set_coordinator_svc_inst *svc_inst_2 =
-					lookup_instance_by_set_info(active.members[i], info);
-				const uint8_t rank_1 = svc_inst_1->set_info->rank;
-				const uint8_t rank_2 = svc_inst_2->set_info->rank;
+#if defined(CONFIG_ASSERT)
+		for (size_t i = 1U; i < count; i++) {
+			const struct bt_csip_set_coordinator_svc_inst *svc_inst_1 =
+				lookup_instance_by_set_info(active.members[i - 1U], info);
+			const struct bt_csip_set_coordinator_svc_inst *svc_inst_2 =
+				lookup_instance_by_set_info(active.members[i], info);
+			const uint8_t rank_1 = svc_inst_1->set_info->rank;
+			const uint8_t rank_2 = svc_inst_2->set_info->rank;
 
-				if (ascending) {
-					__ASSERT(rank_1 <= rank_2,
-						"Members not sorted by ascending rank %u - %u",
-						rank_1, rank_2);
-				} else {
-					__ASSERT(rank_1 >= rank_2,
-						"Members not sorted by descending rank %u - %u",
-						rank_1, rank_2);
-				}
+			if (ascending) {
+				__ASSERT(rank_1 <= rank_2,
+					 "Members not sorted by ascending rank %u - %u", rank_1,
+					 rank_2);
+			} else {
+				__ASSERT(rank_1 >= rank_2,
+					 "Members not sorted by descending rank %u - %u", rank_1,
+					 rank_2);
 			}
 		}
+#endif /* CONFIG_ASSERT */
 	}
 }
 
@@ -667,7 +667,8 @@ static uint8_t discover_func(struct bt_conn *conn,
 		LOG_DBG("Setup complete for %u / %u", cur_inst->idx + 1, client->inst_count);
 		(void)memset(params, 0, sizeof(*params));
 
-		if ((cur_inst->idx + 1) < client->inst_count) {
+		if (CONFIG_BT_CSIP_SET_COORDINATOR_MAX_CSIS_INSTANCES > 1 &&
+		    (cur_inst->idx + 1) < client->inst_count) {
 			int err;
 
 			cur_inst = &client->svc_insts[cur_inst->idx + 1];
@@ -1374,8 +1375,21 @@ BT_CONN_CB_DEFINE(conn_callbacks) = {
 struct bt_csip_set_coordinator_csis_inst *bt_csip_set_coordinator_csis_inst_by_handle(
 	struct bt_conn *conn, uint16_t start_handle)
 {
-	const struct bt_csip_set_coordinator_svc_inst *svc_inst =
-		lookup_instance_by_handle(conn, start_handle);
+	const struct bt_csip_set_coordinator_svc_inst *svc_inst;
+
+	CHECKIF(conn == NULL) {
+		LOG_DBG("conn is NULL");
+
+		return NULL;
+	}
+
+	CHECKIF(start_handle == 0) {
+		LOG_DBG("start_handle is 0");
+
+		return NULL;
+	}
+
+	svc_inst = lookup_instance_by_handle(conn, start_handle);
 
 	if (svc_inst != NULL) {
 		struct bt_csip_set_coordinator_inst *client;
@@ -1493,9 +1507,12 @@ static int verify_members(const struct bt_csip_set_coordinator_set_member **memb
 			LOG_DBG("Found mix of 0 and non-0 ranks");
 			return -EINVAL;
 		}
+	}
 
-		if (!zero_rank) {
-			for (size_t j = 0U; j < i; j++) {
+	if (CONFIG_BT_MAX_CONN > 1 && !zero_rank && count > 1U) {
+		/* Search for duplicate ranks */
+		for (uint8_t i = 0U; i < count - 1; i++) {
+			for (uint8_t j = i + 1; j < count; j++) {
 				if (ranks[j] == ranks[i]) {
 					/* duplicate rank */
 					LOG_DBG("Duplicate rank (%u) for members[%zu] "

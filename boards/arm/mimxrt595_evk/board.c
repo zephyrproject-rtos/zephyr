@@ -1,5 +1,5 @@
 /*
- * Copyright 2022,  NXP
+ * Copyright 2022-2023 NXP
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -127,9 +127,33 @@ static int mimxrt595_evk_init(void)
 	return 0;
 }
 
+
+#ifdef CONFIG_LV_Z_VBD_CUSTOM_SECTION
+extern char __flexspi2_start[];
+extern char __flexspi2_end[];
+
+static int init_psram_framebufs(void)
+{
+	/*
+	 * Framebuffers will be stored in PSRAM, within FlexSPI2 linker
+	 * section. Zero out BSS section.
+	 */
+	memset(__flexspi2_start, 0, __flexspi2_end - __flexspi2_start);
+	return 0;
+}
+
+#endif /* CONFIG_LV_Z_VBD_CUSTOM_SECTION */
+
 #if CONFIG_REGULATOR
 /* PMIC setup is dependent on the regulator API */
 SYS_INIT(board_config_pmic, POST_KERNEL, CONFIG_APPLICATION_INIT_PRIORITY);
+#endif
+
+#ifdef CONFIG_LV_Z_VBD_CUSTOM_SECTION
+/* Framebuffers should be setup after PSRAM is initialized but before
+ * Graphics framework init
+ */
+SYS_INIT(init_psram_framebufs, POST_KERNEL, CONFIG_APPLICATION_INIT_PRIORITY);
 #endif
 
 SYS_INIT(mimxrt595_evk_init, PRE_KERNEL_1, CONFIG_BOARD_INIT_PRIORITY);

@@ -43,6 +43,7 @@
 #elif defined(CONFIG_BOARD_TWR_KE18F) || \
 	defined(CONFIG_BOARD_FRDM_K64F) || \
 	defined(CONFIG_BOARD_FRDM_K22F) || \
+	defined(CONFIG_BOARD_SEEEDUINO_XIAO) || \
 	defined(CONFIG_BOARD_ARDUINO_MKRZERO) || \
 	defined(CONFIG_BOARD_ARDUINO_ZERO)
 
@@ -87,7 +88,8 @@
 
 static const struct dac_channel_cfg dac_ch_cfg = {
 	.channel_id  = DAC_CHANNEL_ID,
-	.resolution  = DAC_RESOLUTION
+	.resolution  = DAC_RESOLUTION,
+	.buffered = true
 };
 
 const struct device *get_dac_device(void)

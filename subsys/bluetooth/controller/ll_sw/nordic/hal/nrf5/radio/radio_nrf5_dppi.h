@@ -4,17 +4,6 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#if defined(CONFIG_SOC_NRF5340_CPUNET) || defined(DPPI_PRESENT)
-
-#include <hal/nrf_dppi.h>
-#include <hal/nrf_timer.h>
-#include <hal/nrf_radio.h>
-#include <hal/nrf_rtc.h>
-#include <hal/nrf_ccm.h>
-#include <hal/nrf_aar.h>
-#include <hal/nrf_gpiote.h>
-
-#include "radio_nrf5_dppi_resources.h"
 
 static inline void hal_radio_nrf_ppi_channels_enable(uint32_t mask)
 {
@@ -765,5 +754,3 @@ hal_radio_sw_switch_phyend_delay_compensation_config_clear(uint8_t radio_enable_
 #endif /* CONFIG_BT_CTLR_DF_PHYEND_OFFSET_COMPENSATION_ENABLE */
 
 #endif /* !CONFIG_BT_CTLR_TIFS_HW */
-
-#endif /* CONFIG_SOC_NRF5340_CPUNET || DPPI_PRESENT */

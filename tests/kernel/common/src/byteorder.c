@@ -456,6 +456,9 @@ ZTEST(byteorder, test_sys_put_le64)
 	zassert_mem_equal(tmp, buf, sizeof(uint64_t), "sys_put_le64() failed");
 }
 
+extern void *common_setup(void);
+ZTEST_SUITE(byteorder, NULL, common_setup, NULL, NULL, NULL);
+
 /**
  * @}
  */

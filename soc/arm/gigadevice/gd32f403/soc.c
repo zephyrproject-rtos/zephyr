@@ -13,7 +13,7 @@
 
 #include <zephyr/device.h>
 #include <zephyr/init.h>
-#include <zephyr/irq.h>
+#include <soc.h>
 
 /**
  * @brief Perform basic hardware initialization at boot.
@@ -25,15 +25,7 @@
  */
 static int gigadevice_gd32_soc_init(void)
 {
-	uint32_t key;
-
-
-	key = irq_lock();
-
 	SystemInit();
-	NMI_INIT();
-
-	irq_unlock(key);
 
 	return 0;
 }

@@ -25,6 +25,7 @@ menuconfig MCUMGR_GRP_IMG
 if MCUMGR_GRP_IMG
 
 if HEAP_MEM_POOL_SIZE > 0
+
 config MCUMGR_GRP_IMG_USE_HEAP_FOR_FLASH_IMG_CONTEXT
 	bool "Use heap mem pool for flash image DFU context"
 	help
@@ -38,6 +39,7 @@ config MCUMGR_GRP_IMG_USE_HEAP_FOR_FLASH_IMG_CONTEXT
 	  to allocate this context or it will not be possible to perform DFU; it may also not be
 	  possible to allocate such context when heap is under pressure, due to application
 	  operation, an issue that should also be addressed within application.
+
 endif
 
 config MCUMGR_GRP_IMG_UPDATABLE_IMAGE_NUMBER
@@ -111,6 +113,15 @@ config MCUMGR_GRP_IMG_STATUS_HOOKS
 	  This will enable DFU status hooks which can be checked by the application to monitor DFU
 	  uploads. Note that these are status checking only, to allow inspecting of a file upload
 	  or prevent it, CONFIG_MCUMGR_GRP_IMG_UPLOAD_CHECK_HOOK must be used.
+
+config MCUMGR_GRP_IMG_MUTEX
+	bool "Mutex locking"
+	help
+	  This will enable use of a mutex to lock the image group object access, preventing issues
+	  of concurrent thread (i.e. multiple transport) access. This option also makes the
+	  ``img_mgmt_reset_upload()`` function visible in the image management group header, which
+	  can be used by applications to reset the image management state (useful if there are
+	  multiple ways that firmware updates can be loaded).
 
 module = MCUMGR_GRP_IMG
 module-str = mcumgr_grp_img

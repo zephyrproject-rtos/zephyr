@@ -496,8 +496,8 @@ that are used to emulate, flash and debug Zephyr applications.
 
       .. _ubuntu_zephyr_sdk:
 
-      #. Download and verify the `latest Zephyr SDK bundle
-         <https://github.com/zephyrproject-rtos/sdk-ng/releases>`_:
+      #. Download and verify the `Zephyr SDK bundle
+         <https://github.com/zephyrproject-rtos/sdk-ng/releases/tag/v0.16.1>`_:
 
          .. code-block:: bash
 
@@ -553,8 +553,8 @@ that are used to emulate, flash and debug Zephyr applications.
 
       .. _macos_zephyr_sdk:
 
-      #. Download and verify the `latest Zephyr SDK bundle
-         <https://github.com/zephyrproject-rtos/sdk-ng/releases>`_:
+      #. Download and verify the `Zephyr SDK bundle
+         <https://github.com/zephyrproject-rtos/sdk-ng/releases/tag/v0.16.1>`_:
 
          .. code-block:: bash
 
@@ -604,8 +604,8 @@ that are used to emulate, flash and debug Zephyr applications.
 
       #. Open a ``cmd.exe`` window by pressing the Windows key typing "cmd.exe".
 
-      #. Download the `latest Zephyr SDK bundle
-         <https://github.com/zephyrproject-rtos/sdk-ng/releases>`_:
+      #. Download the `Zephyr SDK bundle
+         <https://github.com/zephyrproject-rtos/sdk-ng/releases/tag/v0.16.1>`_:
 
          .. code-block:: console
 

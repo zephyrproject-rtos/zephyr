@@ -21,7 +21,7 @@ extern "C" {
 /**
  * @brief System and device power management
  * @defgroup subsys_pm Power Management (PM)
- * @ingroup subsys
+ * @ingroup os_services
  * @{
  * @}
  */

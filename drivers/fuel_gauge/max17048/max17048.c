@@ -234,41 +234,53 @@ static int max17048_get_props(const struct device *dev, struct fuel_gauge_get_pr
 		return rc;
 	}
 
-	/**
-	 * May take some time until the chip detects the change between discharging to charging
-	 * (and vice versa) especially if your device consumes little power
-	 */
-	data->charging = crate > 0;
+	if (crate != 0) {
+
+		/**
+		 * May take some time until the chip detects the change between discharging to
+		 * charging (and vice versa) especially if your device consumes little power
+		 */
+		data->charging = crate > 0;
 
 
-	/**
-	 * In the following code, we multiply by 1000 the charge to increase the precision. If we
-	 * just truncate the division without this multiplier, the precision lost is very
-	 * significant when converting it into minutes (the value given is in hours)
-	 *
-	 * The value coming from crate is already 1000 times higher (check the function
-	 * max17048_crate to
-	 * see the reason) so the multiplier for the charge
-	 * will be 1000000
-	 */
-	if (data->charging) {
-		uint8_t percentage_pending = 100 - data->charge;
-		uint32_t hours_pending = percentage_pending * 1000000 / crate;
+		/**
+		 * In the following code, we multiply by 1000 the charge to increase the
+		 * precision. If we just truncate the division without this multiplier,
+		 * the precision lost is very significant when converting it into minutes
+		 * (the value given is in hours)
+		 *
+		 * The value coming from crate is already 1000 times higher (check the
+		 * function max17048_crate to see the reason) so the multiplier for the
+		 * charge will be 1000000
+		 */
+		if (data->charging) {
+			uint8_t percentage_pending = 100 - data->charge;
+			uint32_t hours_pending = percentage_pending * 1000000 / crate;
 
-		data->time_to_empty = 0;
-		data->time_to_full = hours_pending * 60 / 1000;
+			data->time_to_empty = 0;
+			data->time_to_full = hours_pending * 60 / 1000;
+		} else {
+			/* Discharging */
+			uint32_t hours_pending = data->charge * 1000000 / -crate;
+
+			data->time_to_empty = hours_pending * 60 / 1000;
+			data->time_to_full = 0;
+		}
+
+		for (int i = 0; i < len; i++) {
+			int ret = max17048_get_prop(dev, props + i);
+
+			err_count += ret ? 1 : 0;
+		}
 	} else {
-		/* Discharging */
-		uint32_t hours_pending = data->charge * 1000000 / -crate;
-
-		data->time_to_empty = hours_pending * 60 / 1000;
+		/**
+		 * This case is to avoid a division by 0 when the charge rate is the same
+		 * than consumption rate. It could also happen when the sensor is still
+		 * calibrating the battery
+		 */
+		data->charging = false;
 		data->time_to_full = 0;
-	}
-
-	for (int i = 0; i < len; i++) {
-		int ret = max17048_get_prop(dev, props + i);
-
-		err_count += ret ? 1 : 0;
+		data->time_to_empty = 0;
 	}
 
 	err_count = (err_count == len) ? -1 : err_count;

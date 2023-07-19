@@ -66,7 +66,7 @@ set(QEMU_FLAGS_${ARCH}
   -nographic
   )
 
-if(NOT CONFIG_ACPI)
+if(NOT CONFIG_X86_ACPI)
   list(APPEND QEMU_FLAGS_${ARCH} -no-acpi)
 endif()
 

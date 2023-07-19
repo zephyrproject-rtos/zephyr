@@ -678,7 +678,12 @@ static enum ethernet_hw_caps eth_smsc_get_caps(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	return ETHERNET_LINK_10BASE_T | ETHERNET_LINK_100BASE_T;
+	return (ETHERNET_LINK_10BASE_T
+		| ETHERNET_LINK_100BASE_T
+#if defined(CONFIG_NET_PROMISCUOUS_MODE)
+		| ETHERNET_PROMISC_MODE
+#endif
+	);
 }
 
 static int eth_tx(const struct device *dev, struct net_pkt *pkt)
@@ -694,6 +699,42 @@ static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 	}
 
 	return smsc_send_pkt(sc, tx_buffer, len);
+}
+
+static int eth_smsc_set_config(const struct device *dev,
+			       enum ethernet_config_type type,
+			       const struct ethernet_config *config)
+{
+	struct eth_context *data = dev->data;
+	struct smsc_data *sc = &data->sc;
+	uint8_t reg_val;
+	int ret = 0;
+
+	(void) reg_val;
+
+	switch (type) {
+#if defined(CONFIG_NET_PROMISCUOUS_MODE)
+	case ETHERNET_CONFIG_TYPE_PROMISC_MODE:
+		SMSC_LOCK(sc);
+		smsc_select_bank(sc, 0);
+		reg_val = smsc_read_1(sc, RCR);
+		if (config->promisc_mode && !(reg_val & RCR_PRMS)) {
+			smsc_write_1(sc, RCR, reg_val | RCR_PRMS);
+		} else if (!config->promisc_mode && (reg_val & RCR_PRMS)) {
+			smsc_write_1(sc, RCR, reg_val & ~RCR_PRMS);
+		} else {
+			ret = -EALREADY;
+		}
+		SMSC_UNLOCK(sc);
+		break;
+#endif
+
+	default:
+		ret = -ENOTSUP;
+		break;
+	}
+
+	return ret;
 }
 
 static void eth_initialize(struct net_if *iface)
@@ -725,9 +766,10 @@ static void eth_initialize(struct net_if *iface)
 }
 
 static const struct ethernet_api api_funcs = {
-	.iface_api.init = eth_initialize,
+	.iface_api.init   = eth_initialize,
 	.get_capabilities = eth_smsc_get_caps,
-	.send = eth_tx,
+	.set_config       = eth_smsc_set_config,
+	.send             = eth_tx,
 };
 
 static void eth_smsc_isr(const struct device *dev)

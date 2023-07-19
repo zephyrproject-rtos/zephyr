@@ -251,6 +251,9 @@
 #define PDU_ADV_DATA_HEADER_TYPE_OFFSET 1U
 #define PDU_ADV_DATA_HEADER_DATA_OFFSET 2U
 
+/* Advertising Data Types in ACAD */
+#define PDU_ADV_DATA_TYPE_CHANNEL_MAP_UPDATE_IND 0x28
+
 /*
  * Macros to return correct Data Channel PDU time
  * Note: formula is valid for 1M, 2M and Coded S8

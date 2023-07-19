@@ -11,4 +11,6 @@ tests:
       - native_posix_64
       - qemu_riscv32_smp
       - qemu_riscv64
-    tags: cb_notifications
+    tags:
+      - cb_notifications
+      - mcumgr

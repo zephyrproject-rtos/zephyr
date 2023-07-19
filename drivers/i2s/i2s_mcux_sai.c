@@ -20,6 +20,7 @@
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/dt-bindings/clock/imx_ccm.h>
+#include <zephyr/sys/barrier.h>
 #include <soc.h>
 
 #include "i2s_mcux_sai.h"
@@ -1114,7 +1115,7 @@ static void i2s_mcux_isr(void *arg)
 	 *  might vector to incorrect interrupt
 	 */
 #if defined __CORTEX_M && (__CORTEX_M == 4U)
-	__DSB();
+	barrier_dsync_fence_full();
 #endif
 }
 

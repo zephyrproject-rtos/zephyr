@@ -154,15 +154,16 @@ config MCUMGR_GRP_FS_PATH_LEN
 	  and download commands.
 
 config MCUMGR_GRP_FS_FILE_ACCESS_HOOK
-	bool "File read/write access hook"
+	bool "File access hooks"
 	depends on MCUMGR_MGMT_NOTIFICATION_HOOKS
 	help
-	  Allows applications to control file read and write access by
-	  registering for a callback which is then triggered whenever a file
-	  read or write attempt is made. This also, optionally, allows
-	  re-writing or changing of supplied file paths.
-	  Note that this will be called multiple times for each file read and
-	  write due to mcumgr's method of stateless operation.
+	  Allows applications to control file access (e.g. for uploading and
+	  downloading of files) by registering for a callback which is then
+	  triggered whenever a files are accessed using the FS management group
+	  function. This also, optionally, allows re-writing or changing of
+	  supplied file paths.
+	  Note that this may be called multiple times for each file read and
+	  write due to MCUmgr's method of operation with a single file state.
 
 config MCUMGR_GRP_FS_FILE_SEMAPHORE_TAKE_TIME
 	int "File handle semaphore take time (ms)"

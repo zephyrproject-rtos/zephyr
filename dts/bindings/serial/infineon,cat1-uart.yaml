@@ -9,7 +9,7 @@ description: Infineon CAT1 UART
 
 compatible: "infineon,cat1-uart"
 
-include: [uart-controller.yaml, pinctrl-device.yaml]
+include: [uart-controller.yaml, pinctrl-device.yaml, "infineon,cat1-scb.yaml"]
 
 properties:
   reg:

@@ -30,6 +30,8 @@ tests:
       - xtensa
     platform_exclude: qemu_leon3
     tags: zbus
+    integration_platforms:
+      - qemu_x86
   sample.zbus.hello_world_no_iterable_sections:
     harness: console
     harness_config:

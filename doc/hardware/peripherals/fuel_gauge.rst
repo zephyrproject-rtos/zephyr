@@ -35,3 +35,4 @@ API Reference
 *************
 
 .. doxygengroup:: fuel_gauge_interface
+.. doxygengroup:: fuel_gauge_emulator_backend

@@ -11,7 +11,7 @@
 
 / {
 	model = "IT8XXX2 EV-Board";
-	compatible = "riscv,it8xxx2-evb";
+	compatible = "ite,it8xxx2-evb";
 
 	aliases {
 		i2c-0 = &i2c0;
@@ -178,6 +178,9 @@
 	status = "okay";
 	pinctrl-0 = <&peci_gpf6_default>;
 	pinctrl-names = "default";
+};
+&sha0 {
+	status = "okay";
 };
 &flash0 {
 	partitions {

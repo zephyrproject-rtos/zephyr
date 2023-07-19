@@ -4,13 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/ztest.h>
-#include <zephyr/kernel.h>
-#include <zephyr/sys/printk.h>
 #include <fcntl.h>
-#include <zephyr/sys/util.h>
 #include <mqueue.h>
 #include <pthread.h>
+
+#include <zephyr/sys/util.h>
+#include <zephyr/ztest.h>
 
 #define N_THR 2
 #define STACKSZ (1024 + CONFIG_TEST_EXTRA_STACK_SIZE)
@@ -60,7 +59,7 @@ void *receiver_thread(void *p1)
 	return NULL;
 }
 
-ZTEST(posix_apis, test_posix_mqueue)
+ZTEST(posix_apis, test_mqueue)
 {
 	mqd_t mqd;
 	struct mq_attr attrs;

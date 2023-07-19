@@ -165,6 +165,10 @@ static void csip_set_coordinator_scan_recv(const struct bt_le_scan_recv_info *in
 {
 	/* We're only interested in connectable events */
 	if (info->adv_props & BT_GAP_ADV_PROP_CONNECTABLE) {
+		if (!passes_scan_filter(info, ad)) {
+			return;
+		}
+
 		if (cur_inst != NULL) {
 			bt_data_parse(ad, csip_found, (void *)info->addr);
 		}
@@ -240,7 +244,7 @@ static int cmd_csip_set_coordinator_discover(const struct shell *sh,
 	char addr[BT_ADDR_LE_STR_LEN];
 	static bool initialized;
 	struct bt_conn *conn;
-	int err;
+	int err = 0;
 
 	if (!initialized) {
 		k_work_init_delayable(&discover_members_timer,
@@ -307,9 +311,44 @@ static int cmd_csip_set_coordinator_discover_members(const struct shell *sh,
 		return -EINVAL;
 	}
 
-	if (members_found > 1) {
-		members_found = 1;
+	/* Reset and populate based on current connections */
+	memset(addr_found, 0, sizeof(addr_found));
+	members_found = 0;
+	for (size_t i = 0U; i < ARRAY_SIZE(set_members); i++) {
+		const struct bt_csip_set_coordinator_set_member *set_member = set_members[i];
+
+		if (set_member == NULL) {
+			continue;
+		}
+
+		for (size_t j = 0U; j < ARRAY_SIZE(set_members[i]->insts); j++) {
+			const struct bt_csip_set_coordinator_csis_inst *inst =
+				&set_members[i]->insts[j];
+
+			if (memcmp(inst->info.set_sirk, cur_inst->info.set_sirk,
+				   BT_CSIP_SET_SIRK_SIZE) == 0) {
+				bt_addr_le_copy(&addr_found[members_found++],
+						bt_conn_get_dst(conns[i]));
+				break;
+			}
+		}
 	}
+
+	if (cur_inst->info.set_size > 0) {
+		if (members_found == cur_inst->info.set_size) {
+			shell_print(sh, "All members already known");
+
+			return 0;
+		} else if (members_found > cur_inst->info.set_size) {
+			shell_error(sh, "Found %u members but set size is %u", members_found,
+				    cur_inst->info.set_size);
+
+			return -ENOEXEC;
+		}
+	}
+
+	shell_print(sh, "Already know %u/%u members, start scanning for remaining", members_found,
+		    cur_inst->info.set_size);
 
 	err = k_work_reschedule(&discover_members_timer,
 				BT_CSIP_SET_COORDINATOR_DISCOVER_TIMER_VALUE);

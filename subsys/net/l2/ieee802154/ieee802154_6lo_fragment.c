@@ -359,18 +359,18 @@ static inline size_t fragment_cached_pkt_len(struct net_pkt *pkt)
 {
 	size_t len = 0U;
 	struct net_buf *frag;
-	int hdr_len;
+	int hdr_diff;
 	uint8_t *data;
 
 	frag = pkt->buffer;
 	while (frag) {
-		uint16_t hdr_len = NET_6LO_FRAGN_HDR_LEN;
+		uint16_t frag_hdr_len = NET_6LO_FRAGN_HDR_LEN;
 
 		if (get_datagram_type(frag->data) == NET_6LO_DISPATCH_FRAG1) {
-			hdr_len = NET_6LO_FRAG1_HDR_LEN;
+			frag_hdr_len = NET_6LO_FRAG1_HDR_LEN;
 		}
 
-		len += frag->len - hdr_len;
+		len += frag->len - frag_hdr_len;
 
 		frag = frag->frags;
 	}
@@ -381,15 +381,15 @@ static inline size_t fragment_cached_pkt_len(struct net_pkt *pkt)
 	data = pkt->buffer->data;
 	pkt->buffer->data += NET_6LO_FRAG1_HDR_LEN;
 
-	hdr_len = net_6lo_uncompress_hdr_diff(pkt);
+	hdr_diff = net_6lo_uncompress_hdr_diff(pkt);
 
 	pkt->buffer->data = data;
 
-	if (hdr_len == INT_MAX) {
+	if (hdr_diff == INT_MAX) {
 		return 0;
 	}
 
-	return len + hdr_len;
+	return len + hdr_diff;
 }
 
 static inline uint16_t fragment_offset(struct net_buf *frag)
@@ -429,14 +429,14 @@ static inline void fragment_remove_headers(struct net_pkt *pkt)
 
 	frag = pkt->buffer;
 	while (frag) {
-		uint16_t hdr_len = NET_6LO_FRAGN_HDR_LEN;
+		uint16_t frag_hdr_len = NET_6LO_FRAGN_HDR_LEN;
 
 		if (get_datagram_type(frag->data) == NET_6LO_DISPATCH_FRAG1) {
-			hdr_len = NET_6LO_FRAG1_HDR_LEN;
+			frag_hdr_len = NET_6LO_FRAG1_HDR_LEN;
 		}
 
-		memmove(frag->data, frag->data + hdr_len, frag->len - hdr_len);
-		frag->len -= hdr_len;
+		memmove(frag->data, frag->data + frag_hdr_len, frag->len - frag_hdr_len);
+		frag->len -= frag_hdr_len;
 
 		frag = frag->frags;
 	}

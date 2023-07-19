@@ -194,6 +194,10 @@ ZTEST(printk, test_printk)
 	pk_console[count] = '\0';
 	zassert_true((strcmp(pk_console, expected) == 0), "snprintk failed");
 }
+
+extern void *common_setup(void);
+ZTEST_SUITE(printk, NULL, common_setup, NULL, NULL, NULL);
+
 /**
  * @}
  */

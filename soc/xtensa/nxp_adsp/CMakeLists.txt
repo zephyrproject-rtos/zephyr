@@ -15,6 +15,6 @@ add_custom_target(zephyr.ri ALL
 add_custom_command(
   OUTPUT ${CMAKE_BINARY_DIR}/zephyr/zephyr.ri
   COMMENT "west sign --if-tool-available --tool rimage ..."
-  COMMAND  west sign --if-tool-available --tool rimage --build-dir ${CMAKE_BINARY_DIR}
-  DEPENDS ${CMAKE_BINARY_DIR}/zephyr/zephyr.elf
+  COMMAND  west sign --if-tool-available --tool rimage --build-dir ${CMAKE_BINARY_DIR} ${WEST_SIGN_OPTS}
+  DEPENDS ${CMAKE_BINARY_DIR}/zephyr/${KERNEL_ELF_NAME}
 )

@@ -4,6 +4,7 @@
 
 /*
  * Copyright (c) 2015-2016 Intel Corporation
+ * Copyright (c) 2023 Nordic Semiconductor
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,6 +17,8 @@
  * @ingroup bluetooth
  * @{
  */
+
+#include <sys/types.h>
 
 #include <zephyr/sys/atomic.h>
 #include <zephyr/bluetooth/buf.h>
@@ -93,6 +96,13 @@ typedef void (*bt_l2cap_chan_destroy_t)(struct bt_l2cap_chan *chan);
  *
  *  Used only by internal APIs dealing with setting channel to proper state
  *  depending on operational context.
+ *
+ *  A channel enters the @ref BT_L2CAP_CONNECTING state upon @ref
+ *  bt_l2cap_chan_connect, @ref bt_l2cap_ecred_chan_connect or upon returning
+ *  from @ref bt_l2cap_server.accept.
+ *
+ *  When a channel leaves the @ref BT_L2CAP_CONNECTING state, @ref
+ *  bt_l2cap_chan_ops.connected is called.
  */
 typedef enum bt_l2cap_chan_state {
 	/** Channel disconnected */
@@ -165,7 +175,7 @@ struct bt_l2cap_le_chan {
 	 *  MTU of the receiving endpoint will be initialized to
 	 *  @ref BT_L2CAP_SDU_RX_MTU by the stack.
 	 *
-	 *  This is the source of the MTU and MPS values when sending
+	 *  This is the source of the MTU, MPS and credit values when sending
 	 *  L2CAP_LE_CREDIT_BASED_CONNECTION_REQ/RSP and
 	 *  L2CAP_CONFIGURATION_REQ.
 	 */
@@ -192,6 +202,9 @@ struct bt_l2cap_le_chan {
 	/** Segment SDU packet from upper layer */
 	struct net_buf			*_sdu;
 	uint16_t			_sdu_len;
+#if defined(CONFIG_BT_L2CAP_SEG_RECV)
+	uint16_t			_sdu_len_done;
+#endif /* CONFIG_BT_L2CAP_SEG_RECV */
 
 	struct k_work			rx_work;
 	struct k_fifo			rx_queue;
@@ -366,6 +379,42 @@ struct bt_l2cap_chan_ops {
 	 *  @param chan The channel which was reconfigured
 	 */
 	void (*reconfigured)(struct bt_l2cap_chan *chan);
+
+#if defined(CONFIG_BT_L2CAP_SEG_RECV)
+	/** @brief Handle L2CAP segments directly
+	 *
+	 *  This is an alternative to @ref bt_l2cap_chan_ops.recv. They cannot
+	 *  be used together.
+	 *
+	 *  This is called immediately for each received segment.
+	 *
+	 *  Unlike with @ref bt_l2cap_chan_ops.recv, flow control is explicit.
+	 *  Each time this handler is invoked, the remote has permanently used
+	 *  up one credit. Use @ref bt_l2cap_chan_give_credits to give credits.
+	 *
+	 *  The start of an SDU is marked by `seg_offset == 0`. The end of an
+	 *  SDU is marked by `seg_offset + seg->len == sdu_len`.
+	 *
+	 *  The stack guarantees that:
+	 *    - The sender had the credit.
+	 *    - The SDU length does not exceed MTU.
+	 *    - The segment length does not exceed MPS.
+	 *
+	 *  Additionally, the L2CAP protocol is such that:
+	 *    - Segments come in order.
+	 *    - SDUs cannot be interleaved or aborted halfway.
+	 *
+	 *  @note With this alternative API, the application is responsible for
+	 *  setting the RX MTU and MPS. The MPS must not exceed @ref BT_L2CAP_RX_MTU.
+	 *
+	 *  @param chan The receiving channel.
+	 *  @param sdu_len Byte length of the SDU this segment is part of.
+	 *  @param seg_offset The byte offset of this segment in the SDU.
+	 *  @param seg The segment payload.
+	 */
+	void (*seg_recv)(struct bt_l2cap_chan *chan, size_t sdu_len,
+			 off_t seg_offset, struct net_buf_simple *seg);
+#endif /* CONFIG_BT_L2CAP_SEG_RECV */
 };
 
 /**
@@ -544,6 +593,29 @@ int bt_l2cap_chan_disconnect(struct bt_l2cap_chan *chan);
  *  @return Bytes sent in case of success or negative value in case of error.
  */
 int bt_l2cap_chan_send(struct bt_l2cap_chan *chan, struct net_buf *buf);
+
+/** @brief Give credits to the remote
+ *
+ *  Only available for channels using @ref bt_l2cap_chan_ops.seg_recv.
+ *  @kconfig{CONFIG_BT_L2CAP_SEG_RECV} must be enabled to make this function
+ *  available.
+ *
+ *  Each credit given allows the peer to send one segment.
+ *
+ *  This function depends on a valid @p chan object. Make sure to
+ *  default-initialize or memset @p chan when allocating or reusing it for new
+ *  connections.
+ *
+ *  Adding zero credits is not allowed.
+ *
+ *  Credits can be given before entering the @ref BT_L2CAP_CONNECTING state.
+ *  Doing so will adjust the 'initial credits' sent in the connection PDU.
+ *
+ *  Must not be called while the channel is in @ref BT_L2CAP_CONNECTING state.
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ */
+int bt_l2cap_chan_give_credits(struct bt_l2cap_chan *chan, uint16_t additional_credits);
 
 /** @brief Complete receiving L2CAP channel data
  *

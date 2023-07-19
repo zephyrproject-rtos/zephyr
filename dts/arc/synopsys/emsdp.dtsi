@@ -101,6 +101,11 @@
 			status = "disabled";
 		};
 
+		pinctrl: pinctrl@f0001000 {
+			compatible = "snps,emsdp-pinctrl";
+			reg = <0xf0001000 0x100>;
+		};
+
 		/* SPI-flash for user data */
 		spi1: spi@f1000000 {
 			compatible = "snps,designware-spi";
@@ -120,5 +125,32 @@
 			};
 		};
 
+		/* DFSS-SPI0 */
+		spi2: spi@80010000 {
+			compatible = "snps,designware-spi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x80010000 0x100>;
+			clocks = <&spiclk>;
+			interrupts = <63 2>, <64 2>, <65 2>;
+			interrupt-names = "err_int", "rx_avail", "tx_req";
+			interrupt-parent = <&intc>;
+			aux_reg;
+			fifo-depth = <16>;
+		};
+
+		/* DFSS-SPI1 */
+		spi3: spi@80010100 {
+			compatible = "snps,designware-spi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x80010100 0x100>;
+			clocks = <&spiclk>;
+			interrupts = <67 2>, <68 2>, <69 2>;
+			interrupt-names = "err_int", "rx_avail", "tx_req";
+			interrupt-parent = <&intc>;
+			aux_reg;
+			fifo-depth = <16>;
+		};
 	};
 };

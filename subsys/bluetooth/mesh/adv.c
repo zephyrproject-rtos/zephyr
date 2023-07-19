@@ -25,6 +25,7 @@
 #include "proxy.h"
 #include "pb_gatt_srv.h"
 #include "solicitation.h"
+#include "statistic.h"
 
 #define LOG_LEVEL CONFIG_BT_MESH_ADV_LOG_LEVEL
 #include <zephyr/logging/log.h>
@@ -45,6 +46,30 @@ static bool active_scanning;
 static K_FIFO_DEFINE(bt_mesh_adv_queue);
 static K_FIFO_DEFINE(bt_mesh_relay_queue);
 static K_FIFO_DEFINE(bt_mesh_friend_queue);
+
+void bt_mesh_adv_send_start(uint16_t duration, int err, struct bt_mesh_adv *adv)
+{
+	if (!adv->started) {
+		adv->started = 1;
+
+		if (adv->cb && adv->cb->start) {
+			adv->cb->start(duration, err, adv->cb_data);
+		}
+
+		if (err) {
+			adv->cb = NULL;
+		} else if (IS_ENABLED(CONFIG_BT_MESH_STATISTIC)) {
+			bt_mesh_stat_succeeded_count(adv);
+		}
+	}
+}
+
+static void bt_mesh_adv_send_end(int err, struct bt_mesh_adv const *adv)
+{
+	if (adv->started && adv->cb && adv->cb->end) {
+		adv->cb->end(err, adv->cb_data);
+	}
+}
 
 static void adv_buf_destroy(struct net_buf *buf)
 {
@@ -229,6 +254,10 @@ void bt_mesh_adv_send(struct net_buf *buf, const struct bt_mesh_send_cb *cb,
 	BT_MESH_ADV(buf)->cb = cb;
 	BT_MESH_ADV(buf)->cb_data = cb_data;
 	BT_MESH_ADV(buf)->busy = 1U;
+
+	if (IS_ENABLED(CONFIG_BT_MESH_STATISTIC)) {
+		bt_mesh_stat_planned_count(BT_MESH_ADV(buf));
+	}
 
 	if (IS_ENABLED(CONFIG_BT_MESH_ADV_EXT_FRIEND_SEPARATE) &&
 	    BT_MESH_ADV(buf)->tag == BT_MESH_FRIEND_ADV) {

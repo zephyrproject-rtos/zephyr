@@ -668,8 +668,10 @@ ZTEST(gpio_port, test_gpio_port)
 		      "check_input_levels failed");
 	zassert_equal(bits_logical(), TC_PASS,
 		      "bits_logical failed");
-	zassert_equal(check_pulls(), TC_PASS,
-		      "check_pulls failed");
+	if (!IS_ENABLED(CONFIG_SKIP_PULL_TEST)) {
+		zassert_equal(check_pulls(), TC_PASS,
+				"check_pulls failed");
+	}
 	if (IS_ENABLED(CONFIG_GPIO_GET_CONFIG)) {
 		zassert_equal(pin_get_config(), TC_PASS,
 			      "pin_get_config failed");

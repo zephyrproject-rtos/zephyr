@@ -1661,9 +1661,6 @@ static int lwm2m_perform_read_object_instance(struct lwm2m_message *msg,
 			if (ret < 0 && msg->path.level > LWM2M_PATH_LEVEL_OBJECT_INST) {
 				break;
 			}
-
-			/* when reading multiple resources ignore return code */
-			ret = 0;
 		}
 
 move_forward:

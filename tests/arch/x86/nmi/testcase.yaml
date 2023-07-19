@@ -4,6 +4,8 @@ common:
   tags:
     - interrupt
     - nmi
+  integration_platforms:
+    - qemu_x86_64
 tests:
   arch.interrupt.nmi:
     extra_configs:

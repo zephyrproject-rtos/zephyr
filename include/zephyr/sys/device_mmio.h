@@ -33,8 +33,12 @@
  * If we have PCIE enabled, this does mean that non-PCIE drivers may waste
  * a bit of RAM, but systems with PCI express are not RAM constrained.
  */
-#if defined(CONFIG_MMU) || defined(CONFIG_PCIE)
+#if defined(CONFIG_MMU) || defined(CONFIG_PCIE) || defined(CONFIG_EXTERNAL_ADDRESS_TRANSLATION)
 #define DEVICE_MMIO_IS_IN_RAM
+#endif
+
+#if defined(CONFIG_EXTERNAL_ADDRESS_TRANSLATION)
+#include <zephyr/drivers/mm/system_mm.h>
 #endif
 
 #ifndef _ASMLANGUAGE
@@ -101,8 +105,11 @@ static inline void device_map(mm_reg_t *virt_addr, uintptr_t phys_addr,
 #else
 	ARG_UNUSED(size);
 	ARG_UNUSED(flags);
-
+#ifdef CONFIG_EXTERNAL_ADDRESS_TRANSLATION
+	sys_mm_drv_page_phys_get((void *) phys_addr, virt_addr);
+#else
 	*virt_addr = phys_addr;
+#endif /* CONFIG_EXTERNAL_ADDRESS_TRANSLATION */
 #endif /* CONFIG_MMU */
 }
 #else
@@ -116,12 +123,12 @@ struct z_device_mmio_rom {
 
 #define Z_DEVICE_MMIO_ROM_INITIALIZER(node_id) \
 	{ \
-		.addr = DT_REG_ADDR(node_id) \
+		.addr = (mm_reg_t)DT_REG_ADDR_U64(node_id) \
 	}
 
 #define Z_DEVICE_MMIO_NAMED_ROM_INITIALIZER(name, node_id) \
 	{ \
-		.addr = DT_REG_ADDR_BY_NAME(node_id, name) \
+		.addr = (mm_reg_t)DT_REG_ADDR_BY_NAME_U64(node_id, name) \
 	}
 
 #endif /* DEVICE_MMIO_IS_IN_RAM */

@@ -6,5 +6,6 @@
 #include "xenvm.dts"
 
 &gic {
+	compatible = "arm,gic-v3", "arm,gic";
 	reg = <0x00 0x3001000 0x00 0x10000 0x00 0x3020000 0x00 0x1000000>;
 };

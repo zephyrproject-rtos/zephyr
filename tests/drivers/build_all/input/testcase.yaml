@@ -1,0 +1,7 @@
+tests:
+  drivers.input.build:
+    tags:
+      - drivers
+      - input
+    build_only: true
+    platform_allow: native_posix

@@ -11,6 +11,8 @@ tests:
     platform_exclude:
       - mps3_an547_ns
       - nucleo_l552ze_q_ns
+    integration_platforms:
+      - mps2_an521_ns
   arch.arm.swap.tz_off:
     extra_configs:
       - CONFIG_ARM_NONSECURE_PREEMPTIBLE_SECURE_CALLS=n
@@ -18,3 +20,5 @@ tests:
     platform_exclude:
       - mps3_an547_ns
       - nucleo_l552ze_q_ns
+    integration_platforms:
+      - mps2_an521_ns

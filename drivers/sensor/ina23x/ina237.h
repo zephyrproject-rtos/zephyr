@@ -49,7 +49,7 @@ struct ina237_config {
 	uint16_t config;
 	uint16_t adc_config;
 	uint32_t current_lsb;
-	uint16_t rshunt;
+	uint16_t cal;
 	const struct gpio_dt_spec alert_gpio;
 	uint16_t alert_config;
 };

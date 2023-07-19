@@ -240,14 +240,9 @@ static ALWAYS_INLINE void clk_init(void)
 static int ke1xf_init(void)
 
 {
-
-	unsigned int old_level; /* old interrupt lock level */
 #if !defined(CONFIG_ARM_MPU)
 	uint32_t temp_reg;
 #endif /* !CONFIG_ARM_MPU */
-
-	/* Disable interrupts */
-	old_level = irq_lock();
 
 #if !defined(CONFIG_ARM_MPU)
 	/*
@@ -265,18 +260,10 @@ static int ke1xf_init(void)
 	/* Initialize system clocks and PLL */
 	clk_init();
 
-	/*
-	 * Install default handler that simply resets the CPU if
-	 * configured in the kernel, NOP otherwise
-	 */
-	NMI_INIT();
-
 #ifndef CONFIG_KINETIS_KE1XF_ENABLE_CODE_CACHE
 	/* SystemInit will have enabled the code cache. Disable it here */
 	L1CACHE_DisableCodeCache();
 #endif
-	/* Restore interrupt state */
-	irq_unlock(old_level);
 
 	return 0;
 }

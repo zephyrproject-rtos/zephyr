@@ -20,52 +20,49 @@ extern enum bst_result_t bst_result;
 #define PREF_CONTEXT \
 	(BT_AUDIO_CONTEXT_TYPE_CONVERSATIONAL | BT_AUDIO_CONTEXT_TYPE_MEDIA)
 
-static struct bt_codec lc3_codec = {
+static struct bt_audio_codec_cap lc3_codec_cap = {
 	.path_id = BT_ISO_DATA_PATH_HCI,
-	.id = BT_CODEC_LC3_ID,
+	.id = BT_AUDIO_CODEC_LC3_ID,
 	.cid = 0x0000U,
 	.vid = 0x0000U,
 	.data_count = 5U,
 	.data = {
-		BT_CODEC_DATA(BT_CODEC_LC3_FREQ,
-			      (BT_CODEC_LC3_FREQ_16KHZ & 0xFFU),
-			       ((BT_CODEC_LC3_FREQ_16KHZ >> 8) & 0xFFU)),
-		BT_CODEC_DATA(BT_CODEC_LC3_DURATION, BT_CODEC_LC3_DURATION_10),
-		BT_CODEC_DATA(BT_CODEC_LC3_CHAN_COUNT, CHANNEL_COUNT_1),
-		BT_CODEC_DATA(BT_CODEC_LC3_FRAME_LEN,
-			      (40U & 0xFFU), ((40U >> 8) & 0xFFU),
-			      (40U & 0xFFU), ((40U >> 8) & 0xFFU)),
-		BT_CODEC_DATA(BT_CODEC_LC3_FRAME_COUNT, 1U)
-	},
+			BT_AUDIO_CODEC_DATA(BT_AUDIO_CODEC_LC3_FREQ,
+					    BT_BYTES_LIST_LE16(BT_AUDIO_CODEC_LC3_FREQ_16KHZ)),
+			BT_AUDIO_CODEC_DATA(BT_AUDIO_CODEC_LC3_DURATION,
+					    BT_AUDIO_CODEC_LC3_DURATION_10),
+			BT_AUDIO_CODEC_DATA(BT_AUDIO_CODEC_LC3_CHAN_COUNT, CHANNEL_COUNT_1),
+			BT_AUDIO_CODEC_DATA(BT_AUDIO_CODEC_LC3_FRAME_LEN, BT_BYTES_LIST_LE32(40U)),
+			BT_AUDIO_CODEC_DATA(BT_AUDIO_CODEC_LC3_FRAME_COUNT, 1U),
+		},
 	.meta_count = 2,
 	.meta = {
-		BT_CODEC_DATA(BT_AUDIO_METADATA_TYPE_PREF_CONTEXT,
-			      (PREF_CONTEXT & 0xFFU),
-			      ((PREF_CONTEXT >> 8) & 0xFFU)),
-		BT_CODEC_DATA(BT_AUDIO_METADATA_TYPE_VENDOR,
-			      0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
-			      0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f,
-			      0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,
-			      0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f,
-			      0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27,
-			      0x28, 0x29, 0x2a, 0x2b, 0x2c, 0x2d, 0x2e, 0x2f,
-			      0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37,
-			      0x38, 0x39, 0x3a, 0x3b, 0x3c, 0x3d, 0x3e, 0x3f,
-			      0x40, 0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47,
-			      0x48, 0x49, 0x4a, 0x4b, 0x4c, 0x4d, 0x4e, 0x4f,
-			      0x50, 0x51, 0x52, 0x53, 0x54, 0x55, 0x56, 0x57,
-			      0x58, 0x59, 0x5a, 0x5b, 0x5c, 0x5d, 0x5e, 0x5f,
-			      0x60, 0x61, 0x62, 0x63, 0x64, 0x65, 0x66, 0x67,
-			      0x68, 0x69, 0x6a, 0x6b, 0x6c, 0x6d, 0x6e, 0x6f,
-			      0x70, 0x71, 0x72, 0x73, 0x74, 0x75, 0x76, 0x77,
-			      0x78, 0x79, 0x7a, 0x7b, 0x7c, 0x7d, 0x7e, 0x7f)
-	}
+			BT_AUDIO_CODEC_DATA(BT_AUDIO_METADATA_TYPE_PREF_CONTEXT,
+					    BT_BYTES_LIST_LE32(PREF_CONTEXT)),
+			BT_AUDIO_CODEC_DATA(BT_AUDIO_METADATA_TYPE_VENDOR,
+					    0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+					    0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f,
+					    0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,
+					    0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f,
+					    0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27,
+					    0x28, 0x29, 0x2a, 0x2b, 0x2c, 0x2d, 0x2e, 0x2f,
+					    0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37,
+					    0x38, 0x39, 0x3a, 0x3b, 0x3c, 0x3d, 0x3e, 0x3f,
+					    0x40, 0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47,
+					    0x48, 0x49, 0x4a, 0x4b, 0x4c, 0x4d, 0x4e, 0x4f,
+					    0x50, 0x51, 0x52, 0x53, 0x54, 0x55, 0x56, 0x57,
+					    0x58, 0x59, 0x5a, 0x5b, 0x5c, 0x5d, 0x5e, 0x5f,
+					    0x60, 0x61, 0x62, 0x63, 0x64, 0x65, 0x66, 0x67,
+					    0x68, 0x69, 0x6a, 0x6b, 0x6c, 0x6d, 0x6e, 0x6f,
+					    0x70, 0x71, 0x72, 0x73, 0x74, 0x75, 0x76, 0x77,
+					    0x78, 0x79, 0x7a, 0x7b, 0x7c, 0x7d, 0x7e, 0x7f),
+		},
 };
 
 static struct bt_bap_stream streams[CONFIG_BT_ASCS_ASE_SNK_COUNT + CONFIG_BT_ASCS_ASE_SRC_COUNT];
 
-static const struct bt_codec_qos_pref qos_pref =
-	BT_CODEC_QOS_PREF(true, BT_GAP_LE_PHY_2M, 0x02, 10, 40000, 40000, 40000, 40000);
+static const struct bt_audio_codec_qos_pref qos_pref =
+	BT_AUDIO_CODEC_QOS_PREF(true, BT_GAP_LE_PHY_2M, 0x02, 10, 40000, 40000, 40000, 40000);
 
 /* TODO: Expand with BAP data */
 static const struct bt_data unicast_server_ad[] = {
@@ -97,12 +94,12 @@ static struct bt_bap_stream *stream_alloc(void)
 }
 
 static int lc3_config(struct bt_conn *conn, const struct bt_bap_ep *ep, enum bt_audio_dir dir,
-		      const struct bt_codec *codec, struct bt_bap_stream **stream,
-		      struct bt_codec_qos_pref *const pref, struct bt_bap_ascs_rsp *rsp)
+		      const struct bt_audio_codec_cfg *codec_cfg, struct bt_bap_stream **stream,
+		      struct bt_audio_codec_qos_pref *const pref, struct bt_bap_ascs_rsp *rsp)
 {
 	printk("ASE Codec Config: conn %p ep %p dir %u\n", conn, ep, dir);
 
-	print_codec(codec);
+	print_codec_cfg(codec_cfg);
 
 	*stream = stream_alloc();
 	if (*stream == NULL) {
@@ -123,19 +120,19 @@ static int lc3_config(struct bt_conn *conn, const struct bt_bap_ep *ep, enum bt_
 }
 
 static int lc3_reconfig(struct bt_bap_stream *stream, enum bt_audio_dir dir,
-			const struct bt_codec *codec, struct bt_codec_qos_pref *const pref,
-			struct bt_bap_ascs_rsp *rsp)
+			const struct bt_audio_codec_cfg *codec_cfg,
+			struct bt_audio_codec_qos_pref *const pref, struct bt_bap_ascs_rsp *rsp)
 {
 	printk("ASE Codec Reconfig: stream %p\n", stream);
 
-	print_codec(codec);
+	print_codec_cfg(codec_cfg);
 	*rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_CONF_UNSUPPORTED, BT_BAP_ASCS_REASON_NONE);
 
 	/* We only support one QoS at the moment, reject changes */
 	return -ENOEXEC;
 }
 
-static int lc3_qos(struct bt_bap_stream *stream, const struct bt_codec_qos *qos,
+static int lc3_qos(struct bt_bap_stream *stream, const struct bt_audio_codec_qos *qos,
 		   struct bt_bap_ascs_rsp *rsp)
 {
 	printk("QoS: stream %p qos %p\n", stream, qos);
@@ -145,7 +142,7 @@ static int lc3_qos(struct bt_bap_stream *stream, const struct bt_codec_qos *qos,
 	return 0;
 }
 
-static int lc3_enable(struct bt_bap_stream *stream, const struct bt_codec_data *meta,
+static int lc3_enable(struct bt_bap_stream *stream, const struct bt_audio_codec_data *meta,
 		      size_t meta_count, struct bt_bap_ascs_rsp *rsp)
 {
 	printk("Enable: stream %p meta_count %zu\n", stream, meta_count);
@@ -182,19 +179,15 @@ static bool valid_metadata_type(uint8_t type, uint8_t len)
 		}
 
 		return true;
-	case BT_AUDIO_METADATA_TYPE_EXTENDED: /* 1 - 255 octets */
-	case BT_AUDIO_METADATA_TYPE_VENDOR:   /* 1 - 255 octets */
-		if (len < 1) {
-			return false;
-		}
-
-		return true;
-	case BT_AUDIO_METADATA_TYPE_CCID_LIST: /* 2 - 254 octets */
+	case BT_AUDIO_METADATA_TYPE_EXTENDED: /* 2 - 255 octets */
+	case BT_AUDIO_METADATA_TYPE_VENDOR: /* 2 - 255 octets */
+		/* At least Extended Metadata Type / Company_ID should be there */
 		if (len < 2) {
 			return false;
 		}
 
 		return true;
+	case BT_AUDIO_METADATA_TYPE_CCID_LIST:
 	case BT_AUDIO_METADATA_TYPE_PROGRAM_INFO:     /* 0 - 255 octets */
 	case BT_AUDIO_METADATA_TYPE_PROGRAM_INFO_URI: /* 0 - 255 octets */
 		return true;
@@ -203,13 +196,13 @@ static bool valid_metadata_type(uint8_t type, uint8_t len)
 	}
 }
 
-static int lc3_metadata(struct bt_bap_stream *stream, const struct bt_codec_data *meta,
+static int lc3_metadata(struct bt_bap_stream *stream, const struct bt_audio_codec_data *meta,
 			size_t meta_count, struct bt_bap_ascs_rsp *rsp)
 {
 	printk("Metadata: stream %p meta_count %zu\n", stream, meta_count);
 
 	for (size_t i = 0; i < meta_count; i++) {
-		const struct bt_codec_data *data = &meta[i];
+		const struct bt_audio_codec_data *data = &meta[i];
 
 		if (!valid_metadata_type(data->data.type, data->data.data_len)) {
 			printk("Invalid metadata type %u or length %u\n", data->data.type,
@@ -294,7 +287,7 @@ static struct bt_bap_stream_ops stream_ops = {
 static void init(void)
 {
 	static struct bt_pacs_cap cap = {
-		.codec = &lc3_codec,
+		.codec_cap = &lc3_codec_cap,
 	};
 	int err;
 

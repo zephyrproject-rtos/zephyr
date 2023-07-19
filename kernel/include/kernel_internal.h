@@ -141,7 +141,9 @@ z_thread_return_value_set_with_data(struct k_thread *thread,
 
 #ifdef CONFIG_SMP
 extern void z_smp_init(void);
+#ifdef CONFIG_SYS_CLOCK_EXISTS
 extern void smp_timer_init(void);
+#endif
 #endif
 
 extern void z_early_boot_rand_get(uint8_t *buf, size_t length);
@@ -224,11 +226,6 @@ void z_mem_manage_init(void);
  * @brief Finalize page frame management at the end of boot process.
  */
 void z_mem_manage_boot_finish(void);
-
-#define LOCKED(lck) for (k_spinlock_key_t __i = {},			\
-					  __key = k_spin_lock(lck);	\
-			!__i.key;					\
-			k_spin_unlock(lck, __key), __i.key = 1)
 
 #ifdef CONFIG_PM
 

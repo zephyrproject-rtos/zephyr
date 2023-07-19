@@ -1,4 +1,4 @@
-# Copyright 2022 NXP
+# Copyright 2022-2023 NXP
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -26,6 +26,16 @@ properties:
     description: |
       Setting the prescaler which selects the clock for all digital filters.
       Valid range: 0 - 15.
+
+  interrupt-names:
+    description: |
+      For platforms that external interrupt lines belong to different interrupt
+      IDs (i.e. there is no single interrupt handler for all the lines), this
+      property is used by the shim driver to determine the ISR name as defined
+      by the HAL.
+
+      The naming must follow: <from-line-number>_<to-line-number>, for example:
+      interrupt-names = "0_7", "8_15", "16_23", "24_31";
 
 child-binding:
   description: |

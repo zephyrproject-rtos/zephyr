@@ -27,7 +27,7 @@ Build the application for the :ref:`twr_ke18f` board, and adjust the
 ACMP input voltage by turning the on-board potentiometer.
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/drivers/mcux_acmp
+   :zephyr-app: samples/sensor/mcux_acmp
    :board: twr_ke18f
    :goals: flash
    :compact:
@@ -38,7 +38,7 @@ Build the application for the MIMXRT1170-EVK board, and adjust the
 ACMP input voltage by changing the voltage input to J25-13.
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/drivers/mcux_acmp
+   :zephyr-app: samples/sensor/mcux_acmp
    :board: mimxrt1170_evk_cm7
    :goals: flash
    :compact:

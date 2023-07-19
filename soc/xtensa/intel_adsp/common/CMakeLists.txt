@@ -121,6 +121,20 @@ add_custom_target(zephyr.ri ALL
   DEPENDS ${CMAKE_BINARY_DIR}/zephyr/zephyr.ri
 )
 
+# If some of your board(s) need to override default rimage parameters
+# then you can define WEST_SIGN_OPTS in  boards/my/board/board.cmake.
+# Example:
+#
+#   set(WEST_SIGN_OPTS -- -c "/home/sweet  home/rimage/config/abc.toml" -i 4)
+
+# Parameters after the double dash -- are passed through to rimage.  For
+# other ways to override default rimage parameters check
+# boards/xtensa/intel_adsp_cavs25/doc/intel_adsp_generic.rst
+
+# Warning: because `west sign` can also be used interactively, using
+# ${WEST_SIGN_OPTS} like this has _higher_ precedence than `west config
+# rimage.extra-args`! Avoid overriding default rimage parameters in
+# multiple places to avoid unexpected precedence rules.
 add_custom_command(
   OUTPUT ${CMAKE_BINARY_DIR}/zephyr/zephyr.ri
   COMMENT "west sign --if-tool-available --tool rimage ..."
@@ -129,7 +143,7 @@ add_custom_command(
   # require signing. When rimage is missing, `west flash` fails with a
   # clear "zephyr.ri missing" error with an "rimage not found" warning
   # from west sign immediately before it.
-  COMMAND  west sign --if-tool-available --tool rimage --build-dir ${CMAKE_BINARY_DIR}
+  COMMAND  west sign --if-tool-available --tool rimage --build-dir ${CMAKE_BINARY_DIR} ${WEST_SIGN_OPTS}
   DEPENDS gen_modules
           ${CMAKE_BINARY_DIR}/zephyr/boot.mod ${CMAKE_BINARY_DIR}/zephyr/main.mod
 )

@@ -93,7 +93,7 @@ __asm__(".section .text.z_soc_mp_asm_entry, \"x\" \n\t"
 	"  j soc_mp_idle            \n\t");
 
 #undef NOP128
-#undef NOP16
+#undef NOP32
 #undef NOP4
 
 __imr void z_mp_entry(void)

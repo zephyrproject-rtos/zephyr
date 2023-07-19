@@ -10,6 +10,8 @@ else()
   set_property(TARGET linker PROPERTY no_position_independent)
 endif()
 
+set_property(TARGET linker PROPERTY partial_linking "-r")
+
 # Some linker flags might not be purely ld specific, but a combination of
 # linker and compiler, such as:
 # --coverage for clang

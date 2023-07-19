@@ -272,7 +272,8 @@ static inline int bt_addr_le_to_str(const bt_addr_le_t *addr, char *str,
  *  @param[in]  str   The string representation of a Bluetooth address.
  *  @param[out] addr  Address of buffer to store the Bluetooth address
  *
- *  @return Zero on success or (negative) error code otherwise.
+ *  @retval 0 Success. The parsed address is stored in @p addr.
+ *  @return -EINVAL Invalid address string. @p str is not a well-formed Bluetooth address.
  */
 int bt_addr_from_str(const char *str, bt_addr_t *addr);
 

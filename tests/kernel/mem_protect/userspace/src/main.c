@@ -14,6 +14,7 @@
 #include <stdlib.h>
 #include <zephyr/app_memory/app_memdomain.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/sys/barrier.h>
 #include <zephyr/debug/stack.h>
 #include <zephyr/syscall_handler.h>
 #include "test_syscall.h"
@@ -145,8 +146,8 @@ ZTEST_USER(userspace, test_write_control)
 	msr_value = __get_CONTROL();
 	msr_value &= ~(CONTROL_nPRIV_Msk);
 	__set_CONTROL(msr_value);
-	__DSB();
-	__ISB();
+	barrier_dsync_fence_full();
+	barrier_isync_fence_full();
 	msr_value = __get_CONTROL();
 	zassert_true((msr_value & (CONTROL_nPRIV_Msk)),
 		     "Write to control register was successful");
@@ -1015,6 +1016,65 @@ ZTEST(userspace, test_tls_pointer)
 #endif
 }
 
+K_APP_BMEM(default_part) volatile bool kernel_only_thread_ran;
+K_APP_BMEM(default_part) volatile bool kernel_only_thread_user_ran;
+static K_SEM_DEFINE(kernel_only_thread_run_sem, 0, 1);
+
+void kernel_only_thread_user_entry(void *p1, void *p2, void *p3)
+{
+	printk("kernel only thread in user mode\n");
+
+	kernel_only_thread_user_ran = true;
+}
+
+void kernel_only_thread_entry(void *p1, void *p2, void *p3)
+{
+	k_sem_take(&kernel_only_thread_run_sem, K_FOREVER);
+
+	printk("kernel only thread in kernel mode\n");
+
+	/* Some architectures emit kernel OOPS instead of panic. */
+#if defined(CONFIG_ARM64)
+	set_fault(K_ERR_KERNEL_OOPS);
+#else
+	set_fault(K_ERR_KERNEL_PANIC);
+#endif
+
+	kernel_only_thread_ran = true;
+
+	k_thread_user_mode_enter(kernel_only_thread_user_entry, NULL, NULL, NULL);
+}
+
+#ifdef CONFIG_MMU
+#define KERNEL_ONLY_THREAD_STACK_SIZE (ROUND_UP(1024, CONFIG_MMU_PAGE_SIZE))
+#else
+#define KERNEL_ONLY_THREAD_STACK_SIZE (1024)
+#endif
+
+static K_KERNEL_THREAD_DEFINE(kernel_only_thread,
+			      KERNEL_ONLY_THREAD_STACK_SIZE,
+			      kernel_only_thread_entry, NULL, NULL, NULL,
+			      0, 0, 0);
+
+ZTEST(userspace, test_kernel_only_thread)
+{
+	kernel_only_thread_ran = false;
+	kernel_only_thread_user_ran = false;
+
+	k_sem_give(&kernel_only_thread_run_sem);
+
+	k_sleep(K_MSEC(500));
+
+	if (!kernel_only_thread_ran) {
+		printk("kernel only thread not running in kernel mode!\n");
+		ztest_test_fail();
+	}
+
+	if (kernel_only_thread_user_ran) {
+		printk("kernel only thread should not have run in user mode!\n");
+		ztest_test_fail();
+	}
+}
 
 void *userspace_setup(void)
 {
@@ -1053,6 +1113,7 @@ void *userspace_setup(void)
 #endif
 	k_thread_access_grant(k_current_get(),
 			      &test_thread, &test_stack,
+			      &kernel_only_thread_run_sem,
 			      &test_revoke_sem, &kpipe);
 	return NULL;
 }

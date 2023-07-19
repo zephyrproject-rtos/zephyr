@@ -1108,6 +1108,16 @@ The Firmware Update Client model can be added to the mesh shell by enabling conf
 	* ``Group``: Optional group address to use when communicating with the Target nodes. If omitted, the Firmware Update Client will address each Target node individually.
 
 
+``mesh models dfu cli cancel [<Addr>]``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+	Cancel the DFU procedure at any state on a specific Target node or on all Target nodes.
+	When a Target node address is provided, the Firmware Update Client model will try to cancel the DFU procedure on the provided Target node.
+	Otherwise, the Firmware Update Client model will try to cancel the ongoing DFU procedure on all Target nodes.
+
+	* ``Addr``: Optional unicast address of a Target node on which to cancel the DFU procedure.
+
+
 ``mesh models dfu cli apply``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -1118,12 +1128,6 @@ The Firmware Update Client model can be added to the mesh shell by enabling conf
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 	Confirm that the most recent DFU transfer was successfully applied on all Target nodes. Can only be called after a DFU transfer is completed and applied.
-
-
-``mesh models dfu cli progress``
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-	Check the progress of the current transfer.
 
 
 ``mesh models dfu cli suspend``
@@ -1137,10 +1141,12 @@ The Firmware Update Client model can be added to the mesh shell by enabling conf
 
 	Resume the suspended DFU transfer.
 
-``mesh models dfu srv progress``
+
+``mesh models dfu cli progress``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 	Check the progress of the current transfer.
+
 
 ``mesh models dfu cli instance-set <ElemIdx>``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1687,3 +1693,18 @@ The Solicitation PDU RPL Client model is an optional mesh subsystem that can be 
 	* ``RngStart``: Start address of the SSRC range.
 	* ``Ackd``: This argument decides on whether an acknowledged or unacknowledged message will be sent.
 	* ``RngLen``: Range length for the SSRC addresses to be cleared from the solicitiation RPL list. This parameter is optional; if absent, only a single SSRC address will be cleared.
+
+
+Frame statistic
+===============
+
+``mesh stat get``
+-----------------
+
+	Get the frame statistic. The command prints numbers of received frames, as well as numbers of planned and succeeded transmission attempts.
+
+
+``mesh stat clear``
+-------------------
+
+	Clear all statistics collected before.

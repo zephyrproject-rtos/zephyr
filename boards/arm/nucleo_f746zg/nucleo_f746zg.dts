@@ -126,6 +126,13 @@ zephyr_udc0: &usbotg_fs {
 	clock-frequency = <I2C_BITRATE_FAST>;
 };
 
+&i2c2 {
+	pinctrl-0 = <&i2c2_scl_pb10 &i2c2_sda_pb11>;
+	pinctrl-names = "default";
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+};
+
 &timers1 {
 	st,prescaler = <10000>;
 	status = "okay";

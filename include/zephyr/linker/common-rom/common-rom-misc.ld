@@ -10,8 +10,16 @@
 	ITERABLE_SECTION_ROM(settings_handler_static, 4)
 #endif
 
+#if defined(CONFIG_SENSING)
+	ITERABLE_SECTION_ROM(sensing_sensor_info, 4)
+#endif
+
 #if defined(CONFIG_SENSOR_INFO)
 	ITERABLE_SECTION_ROM(sensor_info, 4)
+#endif
+
+#if defined(CONFIG_SENSOR_ASYNC_API)
+	ITERABLE_SECTION_ROM(sensor_decoder_api, 4)
 #endif
 
 #if defined(CONFIG_MCUMGR)

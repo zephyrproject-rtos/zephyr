@@ -7,7 +7,7 @@
 
 /dts-v1/;
 #include <nordic/nrf9160ns_sica.dtsi>
-#include "circuitdojo_feather_nrf9160_common.dts"
+#include "circuitdojo_feather_nrf9160_common.dtsi"
 
 / {
 	chosen {

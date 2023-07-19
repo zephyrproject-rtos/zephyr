@@ -1102,4 +1102,15 @@
 		pinmux = < MCHP_XEC_PINMUX(044, MCHP_AF1) >;
 		low-power-enable;
 	};
+
+	ps2_clk0a_gpio114_sleep: ps2_clk0a_gpio114_sleep {
+		pinmux = < MCHP_XEC_PINMUX(0114, MCHP_AF1) >;
+		low-power-enable;
+	};
+
+	ps2_dat0a_gpio115_sleep: ps2_dat0a_gpio115_sleep {
+		pinmux = < MCHP_XEC_PINMUX(0115, MCHP_AF1) >;
+		low-power-enable;
+	};
+
 };

@@ -16,14 +16,16 @@ used by network administrators to configure and diagnose mesh nodes.
    cfg_cli
    health_srv
    health_cli
-   priv_beacon_srv
-   priv_beacon_cli
-   op_agg_cli
-   op_agg_srv
-   rpr_cli
-   rpr_srv
+   lcd_cli
+   lcd_srv
    od_cli
    od_srv
+   op_agg_cli
+   op_agg_srv
+   priv_beacon_srv
+   priv_beacon_cli
+   rpr_cli
+   rpr_srv
    srpl_cli
    srpl_srv
 

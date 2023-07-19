@@ -6,6 +6,7 @@
 
 #include <zephyr/device.h>
 #include <zephyr/kernel.h>
+#include <zephyr/kernel_structs.h>
 #include <zephyr/timeout_q.h>
 #include <zephyr/init.h>
 #include <string.h>
@@ -43,12 +44,7 @@ static struct pm_state_info z_cpus_pm_forced_state[] = {
 };
 
 static struct k_spinlock pm_forced_state_lock;
-
-#if defined(CONFIG_PM_DEVICE) && !defined(CONFIG_PM_DEVICE_RUNTIME_EXCLUSIVE)
-static atomic_t z_cpus_active = ATOMIC_INIT(CONFIG_MP_MAX_NUM_CPUS);
-#endif
 static struct k_spinlock pm_notifier_lock;
-
 
 #ifdef CONFIG_PM_DEVICE
 TYPE_SECTION_START_EXTERN(const struct device *, pm_device_slots);
@@ -243,12 +239,12 @@ bool pm_system_suspend(int32_t ticks)
 	}
 
 #if defined(CONFIG_PM_DEVICE) && !defined(CONFIG_PM_DEVICE_RUNTIME_EXCLUSIVE)
-	if (atomic_sub(&z_cpus_active, 1) == 1) {
+	if (atomic_sub(&_cpus_active, 1) == 1) {
 		if (z_cpus_pm_state[id].state != PM_STATE_RUNTIME_IDLE) {
 			if (pm_suspend_devices()) {
 				pm_resume_devices();
 				z_cpus_pm_state[id].state = PM_STATE_ACTIVE;
-				(void)atomic_add(&z_cpus_active, 1);
+				(void)atomic_add(&_cpus_active, 1);
 				SYS_PORT_TRACING_FUNC_EXIT(pm, system_suspend, ticks,
 							   z_cpus_pm_state[id].state);
 				return false;
@@ -275,7 +271,7 @@ bool pm_system_suspend(int32_t ticks)
 
 	/* Wake up sequence starts here */
 #if defined(CONFIG_PM_DEVICE) && !defined(CONFIG_PM_DEVICE_RUNTIME_EXCLUSIVE)
-	if (atomic_add(&z_cpus_active, 1) == 0) {
+	if (atomic_add(&_cpus_active, 1) == 0) {
 		pm_resume_devices();
 	}
 #endif

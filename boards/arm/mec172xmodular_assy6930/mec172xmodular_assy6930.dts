@@ -138,22 +138,6 @@
 
 	pinctrl-0 = < &i2c00_scl_gpio004 &i2c00_sda_gpio003 >;
 	pinctrl-names = "default";
-
-	pca9555@26 {
-		compatible = "nxp,pca95xx";
-
-		/* Depends on JP53 for device address.
-		 * Pin 1-2 = A0, pin 3-4 = A1, pin 5-6 = A2.
-		 * Address is: 0100<A2><A1><A0>b.
-		 *
-		 * Default has pin 1-2 on JP53 connected,
-		 * resulting in device address 0x26.
-		 */
-		reg = <0x26>;
-
-		gpio-controller;
-		#gpio-cells = <2>;
-	};
 };
 
 &i2c00_scl_gpio004 {
@@ -208,10 +192,10 @@
 
 &spi0 {
 	status = "okay";
+	compatible = "microchip,xec-qmspi-ldma";
 	clock-frequency = <4000000>;
 	lines = <4>;
-	chip_select = <0>;
-	port_sel = <0>; /* Shared SPI */
+	chip-select = <0>;
 
 	pinctrl-0 = < &shd_cs0_n_gpio055
 		      &shd_clk_gpio056
@@ -298,4 +282,8 @@
 	status = "okay";
 	pinctrl-0 = <&ps2_clk0a_gpio114 &ps2_dat0a_gpio115>;
 	pinctrl-names = "default";
+};
+
+&timer5 {
+	status = "okay";
 };

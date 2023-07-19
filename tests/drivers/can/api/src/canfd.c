@@ -373,7 +373,7 @@ ZTEST_USER(canfd, test_filters_preserved_through_fd_to_classic_mode_change)
 }
 
 /**
- * @brief Test setting bitrate is not allowed while started.
+ * @brief Test setting data phase bitrate is not allowed while started.
  */
 ZTEST_USER(canfd, test_set_bitrate_data_while_started)
 {
@@ -385,7 +385,7 @@ ZTEST_USER(canfd, test_set_bitrate_data_while_started)
 }
 
 /**
- * @brief Test setting timing is not allowed while started.
+ * @brief Test setting data phase timing is not allowed while started.
  */
 ZTEST_USER(canfd, test_set_timing_data_while_started)
 {
@@ -397,7 +397,7 @@ ZTEST_USER(canfd, test_set_timing_data_while_started)
 	err = can_calc_timing_data(can_dev, &timing, TEST_BITRATE_3, TEST_SAMPLE_POINT);
 	zassert_ok(err, "failed to calculate data timing (err %d)", err);
 
-	err = can_set_timing(can_dev, &timing);
+	err = can_set_timing_data(can_dev, &timing);
 	zassert_not_equal(err, 0, "changed data timing while started");
 	zassert_equal(err, -EBUSY, "wrong error return code (err %d)", err);
 }

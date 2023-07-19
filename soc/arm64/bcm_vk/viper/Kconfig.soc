@@ -10,6 +10,5 @@ config SOC_BCM58402_A72
 	select ARM64
 	select CPU_CORTEX_A72
 	select ARM_ARCH_TIMER
-	select GIC_V3
 
 endchoice

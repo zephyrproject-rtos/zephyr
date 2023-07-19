@@ -71,17 +71,17 @@ enum {
 };
 
 enum {
-	/* +/-6.144V range = Gain 2/3 */
+	/* +/-6.144V range = Gain 1/3 */
 	ADS1X1X_CONFIG_PGA_6144 = 0,
-	/* +/-4.096V range = Gain 1 */
+	/* +/-4.096V range = Gain 1/2 */
 	ADS1X1X_CONFIG_PGA_4096 = 1,
-	/* +/-2.048V range = Gain 2 (default) */
+	/* +/-2.048V range = Gain 1 (default) */
 	ADS1X1X_CONFIG_PGA_2048 = 2,
-	/* +/-1.024V range = Gain 4 */
+	/* +/-1.024V range = Gain 2 */
 	ADS1X1X_CONFIG_PGA_1024 = 3,
-	/* +/-0.512V range = Gain 8 */
+	/* +/-0.512V range = Gain 4 */
 	ADS1X1X_CONFIG_PGA_512 = 4,
-	/* +/-0.256V range = Gain 16 */
+	/* +/-0.256V range = Gain 8 */
 	ADS1X1X_CONFIG_PGA_256 = 5
 };
 

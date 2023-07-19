@@ -4,6 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Public LoRa driver APIs
+ */
 #ifndef ZEPHYR_INCLUDE_DRIVERS_LORA_H_
 #define ZEPHYR_INCLUDE_DRIVERS_LORA_H_
 
@@ -23,12 +27,18 @@
 extern "C" {
 #endif
 
+/**
+ * @brief LoRa signal bandwidth
+ */
 enum lora_signal_bandwidth {
 	BW_125_KHZ = 0,
 	BW_250_KHZ,
 	BW_500_KHZ,
 };
 
+/**
+ * @brief LoRa data-rate
+ */
 enum lora_datarate {
 	SF_6 = 6,
 	SF_7,
@@ -39,6 +49,9 @@ enum lora_datarate {
 	SF_12,
 };
 
+/**
+ * @brief LoRa coding rate
+ */
 enum lora_coding_rate {
 	CR_4_5 = 1,
 	CR_4_6 = 2,
@@ -46,26 +59,30 @@ enum lora_coding_rate {
 	CR_4_8 = 4,
 };
 
+/**
+ * @struct lora_modem_config
+ * Structure containing the configuration of a LoRa modem
+ */
 struct lora_modem_config {
-	/* Frequency in Hz to use for transceiving */
+	/** Frequency in Hz to use for transceiving */
 	uint32_t frequency;
 
-	/* The bandwidth to use for transceiving */
+	/** The bandwidth to use for transceiving */
 	enum lora_signal_bandwidth bandwidth;
 
-	/* The data-rate to use for transceiving */
+	/** The data-rate to use for transceiving */
 	enum lora_datarate datarate;
 
-	/* The coding rate to use for transceiving */
+	/** The coding rate to use for transceiving */
 	enum lora_coding_rate coding_rate;
 
-	/* Length of the preamble */
+	/** Length of the preamble */
 	uint16_t preamble_len;
 
-	/* TX-power in dBm to use for transmission */
+	/** TX-power in dBm to use for transmission */
 	int8_t tx_power;
 
-	/* Set to true for transmission, false for receiving */
+	/** Set to true for transmission, false for receiving */
 	bool tx;
 
 	/**

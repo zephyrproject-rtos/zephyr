@@ -18,6 +18,7 @@
 #include <zephyr/irq.h>
 #include <fsl_qtmr.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/sys/barrier.h>
 
 LOG_MODULE_REGISTER(mcux_qtmr, CONFIG_COUNTER_LOG_LEVEL);
 
@@ -57,7 +58,7 @@ void mcux_qtmr_timer_handler(const struct device *dev, uint32_t status)
 	uint32_t current = QTMR_GetCurrentTimerCount(config->base, config->channel);
 
 	QTMR_ClearStatusFlags(config->base, config->channel, status);
-	__DSB();
+	barrier_dsync_fence_full();
 
 	if ((status & kQTMR_Compare1Flag) && data->alarm_callback) {
 		QTMR_DisableInterrupts(config->base, config->channel,

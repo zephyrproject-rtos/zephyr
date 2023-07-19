@@ -5,11 +5,10 @@
  */
 
 #include <zephyr/init.h>
-#include <zephyr/irq.h>
+#include <zephyr/sys/barrier.h>
 #include <soc.h>
 #include <zephyr/dt-bindings/rdc/imx_rdc.h>
 #include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
-#include <zephyr/arch/arm/aarch32/nmi.h>
 #include "wdog_imx.h"
 
 /* Initialize Resource Domain Controller. */
@@ -163,7 +162,7 @@ static void SOC_CacheInit(void)
 		;
 	/* Enable system bus cache, enable write buffer */
 	LMEM_PSCCR = (LMEM_PSCCR_ENWRBUF_MASK | LMEM_PSCCR_ENCACHE_MASK);
-	__ISB();
+	barrier_isync_fence_full();
 
 	/* Enable Code Bus Cache */
 	/* set command to invalidate all ways and write GO bit
@@ -176,8 +175,8 @@ static void SOC_CacheInit(void)
 		;
 	/* Enable code bus cache, enable write buffer */
 	LMEM_PCCCR = (LMEM_PCCCR_ENWRBUF_MASK | LMEM_PCCCR_ENCACHE_MASK);
-	__ISB();
-	__DSB();
+	barrier_isync_fence_full();
+	barrier_dsync_fence_full();
 }
 
 /* Initialize clock. */
@@ -287,12 +286,6 @@ static void SOC_ClockInit(void)
  */
 static int mcimx6x_m4_init(void)
 {
-
-	unsigned int oldLevel; /* Old interrupt lock level */
-
-	/* Disable interrupts */
-	oldLevel = irq_lock();
-
 	/* Configure RDC */
 	SOC_RdcInit();
 
@@ -304,15 +297,6 @@ static int mcimx6x_m4_init(void)
 
 	/* Initialize clock */
 	SOC_ClockInit();
-
-	/*
-	 * Install default handler that simply resets the CPU
-	 * if configured in the kernel, NOP otherwise
-	 */
-	NMI_INIT();
-
-	/* Restore interrupt state */
-	irq_unlock(oldLevel);
 
 	return 0;
 }

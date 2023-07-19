@@ -71,7 +71,7 @@ After the serial console has stable output like this:
 	threadB: Hello World!
 
 Connect the board's USB port to the host device and
-run the :zephyr_file:`trace_capture_usb.py` script on the host:
+run the :zephyr_file:`scripts/tracing/trace_capture_usb.py` script on the host:
 
 .. code-block:: console
 

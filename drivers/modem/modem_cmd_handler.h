@@ -126,7 +126,7 @@ struct modem_cmd_handler_data {
 /**
  * @brief  get the last error code
  *
- * @param  *data: command handler data reference
+ * @param  data: command handler data reference
  *
  * @retval last handled error.
  */
@@ -135,8 +135,8 @@ int modem_cmd_handler_get_error(struct modem_cmd_handler_data *data);
 /**
  * @brief  set the last error code
  *
- * @param  *data: command handler data reference
- * @param  *error_code: error
+ * @param  data: command handler data reference
+ * @param  error_code: error
  *
  * @retval 0 if ok, < 0 if error.
  */
@@ -146,8 +146,8 @@ int modem_cmd_handler_set_error(struct modem_cmd_handler_data *data,
 /**
  * @brief  update the parser's handler commands
  *
- * @param  *data: handler data to use
- * @param  *handler_cmds: commands to attach
+ * @param  data: handler data to use
+ * @param  handler_cmds: commands to attach
  * @param  handler_cmds_len: size of commands array
  * @param  reset_error_flag: reset last error code
  *
@@ -165,12 +165,12 @@ int modem_cmd_handler_update_cmds(struct modem_cmd_handler_data *data,
  * specific behavior regarding acquiring tx_lock, setting and unsetting
  * @a handler_cmds.
  *
- * @param  *iface: interface to use
- * @param  *handler: command handler to use
- * @param  *handler_cmds: commands to attach
+ * @param  iface: interface to use
+ * @param  handler: command handler to use
+ * @param  handler_cmds: commands to attach
  * @param  handler_cmds_len: size of commands array
- * @param  *buf: NULL terminated send buffer
- * @param  *sem: wait for response semaphore
+ * @param  buf: NULL terminated send buffer
+ * @param  sem: wait for response semaphore
  * @param  timeout: timeout of command
  * @param  flags: flags which influence behavior of command sending
  *
@@ -185,12 +185,12 @@ int modem_cmd_send_ext(struct modem_iface *iface,
 /**
  * @brief  send AT command to interface w/o locking TX
  *
- * @param  *iface: interface to use
- * @param  *handler: command handler to use
- * @param  *handler_cmds: commands to attach
+ * @param  iface: interface to use
+ * @param  handler: command handler to use
+ * @param  handler_cmds: commands to attach
  * @param  handler_cmds_len: size of commands array
- * @param  *buf: NULL terminated send buffer
- * @param  *sem: wait for response semaphore
+ * @param  buf: NULL terminated send buffer
+ * @param  sem: wait for response semaphore
  * @param  timeout: timeout of command
  *
  * @retval 0 if ok, < 0 if error.
@@ -210,12 +210,12 @@ static inline int modem_cmd_send_nolock(struct modem_iface *iface,
 /**
  * @brief  send AT command to interface w/ a TX lock
  *
- * @param  *iface: interface to use
- * @param  *handler: command handler to use
- * @param  *handler_cmds: commands to attach
+ * @param  iface: interface to use
+ * @param  handler: command handler to use
+ * @param  handler_cmds: commands to attach
  * @param  handler_cmds_len: size of commands array
- * @param  *buf: NULL terminated send buffer
- * @param  *sem: wait for response semaphore
+ * @param  buf: NULL terminated send buffer
+ * @param  sem: wait for response semaphore
  * @param  timeout: timeout of command
  *
  * @retval 0 if ok, < 0 if error.
@@ -233,11 +233,11 @@ static inline int modem_cmd_send(struct modem_iface *iface,
 /**
  * @brief  send a series of AT commands w/ a TX lock
  *
- * @param  *iface: interface to use
- * @param  *handler: command handler to use
- * @param  *cmds: array of setup commands to send
+ * @param  iface: interface to use
+ * @param  handler: command handler to use
+ * @param  cmds: array of setup commands to send
  * @param  cmds_len: size of the setup command array
- * @param  *sem: wait for response semaphore
+ * @param  sem: wait for response semaphore
  * @param  timeout: timeout of command
  *
  * @retval 0 if ok, < 0 if error.
@@ -250,11 +250,11 @@ int modem_cmd_handler_setup_cmds(struct modem_iface *iface,
 /**
  * @brief  send a series of AT commands w/o locking TX
  *
- * @param  *iface: interface to use
- * @param  *handler: command handler to use
- * @param  *cmds: array of setup commands to send
+ * @param  iface: interface to use
+ * @param  handler: command handler to use
+ * @param  cmds: array of setup commands to send
  * @param  cmds_len: size of the setup command array
- * @param  *sem: wait for response semaphore
+ * @param  sem: wait for response semaphore
  * @param  timeout: timeout of command
  *
  * @retval 0 if ok, < 0 if error.
@@ -325,7 +325,7 @@ int modem_cmd_handler_init(struct modem_cmd_handler *handler,
  * when one needs to prevent threads from sending UART data to the modem for an
  * extended period of time (for example during modem reset).
  *
- * @param  *handler: command handler to lock
+ * @param  handler: command handler to lock
  * @param  timeout: give up after timeout
  *
  * @retval 0 if ok, < 0 if error.
@@ -336,7 +336,7 @@ int modem_cmd_handler_tx_lock(struct modem_cmd_handler *handler,
 /**
  * @brief  Unlock the modem for sending cmds
  *
- * @param  *handler: command handler to unlock
+ * @param  handler: command handler to unlock
  */
 void modem_cmd_handler_tx_unlock(struct modem_cmd_handler *handler);
 

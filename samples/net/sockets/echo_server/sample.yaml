@@ -24,9 +24,6 @@ tests:
     platform_allow: qemu_x86
     integration_platforms:
       - qemu_x86
-  sample.net.sockets.echo_server.802154.rf2xx:
-    extra_args: OVERLAY_CONFIG="overlay-802154.conf"
-    platform_allow: atsamr21_xpro
   sample.net.sockets.echo_server.802154.rf2xx.xplained:
     extra_args:
       - SHIELD=atmel_rf2xx_xplained

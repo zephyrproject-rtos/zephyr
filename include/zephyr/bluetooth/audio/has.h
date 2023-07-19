@@ -68,8 +68,8 @@ enum bt_has_capabilities {
 	BT_HAS_PRESET_SUPPORT = BIT(0),
 };
 
-/** @brief Structure for registering a Hearing Access Service instance. */
-struct bt_has_register_param {
+/** @brief Structure for registering features of a Hearing Access Service instance. */
+struct bt_has_features_param {
 	/** Hearing Aid Type value */
 	enum bt_has_hearing_aid_type type;
 
@@ -341,11 +341,11 @@ struct bt_has_preset_register_param {
 /**
  * @brief Register the Hearing Access Service instance.
  *
- * @param param     Hearing Access Service register parameters.
+ * @param features     Hearing Access Service register parameters.
  *
  * @return 0 if success, errno on failure.
  */
-int bt_has_register(const struct bt_has_register_param *param);
+int bt_has_register(const struct bt_has_features_param *features);
 
 /**
  * @brief Register preset.
@@ -469,6 +469,17 @@ static inline int bt_has_preset_active_clear(void)
  * @return 0 in case of success or negative value in case of error.
  */
 int bt_has_preset_name_change(uint8_t index, const char *name);
+
+/**
+ * @brief Change the Hearing Aid Features.
+ *
+ * Change the hearing aid features.
+ *
+ * @param features The features to be set.
+ *
+ * @return 0 in case of success or negative value in case of error.
+ */
+int bt_has_features_set(const struct bt_has_features_param *features);
 
 #ifdef __cplusplus
 }

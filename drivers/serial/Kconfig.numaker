@@ -1,0 +1,16 @@
+# NPCX UART driver configuration options
+
+# Copyright (c) 2023 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+config UART_NUMAKER
+	bool "Nuvoton NUMAKER MCU serial driver"
+	default y
+	select SERIAL_HAS_DRIVER
+	select HAS_NUMAKER_UART
+	select SERIAL_SUPPORT_INTERRUPT
+	depends on DT_HAS_NUVOTON_NUMAKER_UART_ENABLED
+	help
+	  This option enables the UART driver for Nuvoton Numaker family of
+	  processors.
+	  Say y if you wish to use serial port on Nuvoton Numaker MCU.

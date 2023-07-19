@@ -33,6 +33,16 @@ static void esf_dump(const z_arch_esf_t *esf)
 			i + 2, (uint32_t)esf->fpu.s[i + 2],
 			i + 3, (uint32_t)esf->fpu.s[i + 3]);
 	}
+#ifdef CONFIG_VFP_FEATURE_REGS_S64_D32
+	for (int i = 0; i < ARRAY_SIZE(esf->fpu.d); i += 4) {
+		LOG_ERR("d[%2d]:  0x%16llx  d[%2d]:  0x%16llx"
+			"  d[%2d]:  0x%16llx  d[%2d]:  0x%16llx",
+			i, (uint64_t)esf->fpu.d[i],
+			i + 1, (uint64_t)esf->fpu.d[i + 1],
+			i + 2, (uint64_t)esf->fpu.d[i + 2],
+			i + 3, (uint64_t)esf->fpu.d[i + 3]);
+	}
+#endif
 	LOG_ERR("fpscr:  0x%08x", esf->fpu.fpscr);
 #endif
 #if defined(CONFIG_EXTRA_EXCEPTION_INFO)

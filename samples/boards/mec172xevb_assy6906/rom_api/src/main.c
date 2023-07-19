@@ -282,7 +282,7 @@ static size_t hash_block_size(enum hash_algo algo);
 #define MCHP_XEC_STRUCT_HASH_STRUCT_SIZE	240
 #define MCHP_XEC_STRUCT_HMAC2_STRUCT_SIZE	256
 
-void main(void)
+int main(void)
 {
 	int ret;
 	size_t chunk_size = 0;
@@ -298,14 +298,14 @@ void main(void)
 
 	if (!device_is_ready(symcr_dev)) {
 		printf("ERROR: symcr device is not ready!\n");
-		return;
+		return 0;
 	}
 
 	/* Check zephyr crypto drivers capabilities */
 	ret = validate_hw_compatibility(symcr_dev);
 	if (ret) {
 		printf("ERROR: symcr driver capabilties failure\n");
-		return;
+		return 0;
 	}
 
 	printf("\nTest Zephyr crypto hash API for multiblock plus remainder\n");
@@ -327,6 +327,7 @@ void main(void)
 	printf("Test Zephyr crypto arbitrary chunk size returned %d\n", ret);
 
 	printf("Application done\n");
+	return 0;
 }
 
 static size_t hash_digest_size(enum hash_algo algo)

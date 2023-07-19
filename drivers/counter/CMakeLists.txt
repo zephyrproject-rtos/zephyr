@@ -1,5 +1,12 @@
 # SPDX-License-Identifier: Apache-2.0
 
+zephyr_syscall_header_ifdef(
+  CONFIG_COUNTER_MAXIM_DS3231
+  ${ZEPHYR_BASE}/include/zephyr/drivers/rtc/maxim_ds3231.h
+)
+
+zephyr_syscall_header(${ZEPHYR_BASE}/include/zephyr/drivers/counter.h)
+
 zephyr_library()
 
 zephyr_library_sources_ifdef(CONFIG_TIMER_TMR_CMSDK_APB         timer_tmr_cmsdk_apb.c)
@@ -29,6 +36,7 @@ zephyr_library_sources_ifdef(CONFIG_COUNTER_MCUX_PIT            counter_mcux_pit
 zephyr_library_sources_ifdef(CONFIG_COUNTER_XLNX_AXI_TIMER      counter_xlnx_axi_timer.c)
 zephyr_library_sources_ifdef(CONFIG_COUNTER_TMR_ESP32           counter_esp32_tmr.c)
 zephyr_library_sources_ifdef(CONFIG_COUNTER_RTC_ESP32           counter_esp32_rtc.c)
+zephyr_library_sources_ifdef(CONFIG_COUNTER_SMARTBOND_TIMER     counter_smartbond_timer.c)
 zephyr_library_sources_ifdef(CONFIG_COUNTER_MICROCHIP_MCP7940N  rtc_mcp7940n.c)
 zephyr_library_sources_ifdef(CONFIG_COUNTER_ANDES_ATCPIT100     counter_andes_atcpit100.c)
 zephyr_library_sources_ifdef(CONFIG_ACE_V1X_ART_COUNTER         counter_ace_v1x_art.c)

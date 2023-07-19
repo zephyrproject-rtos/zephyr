@@ -38,3 +38,9 @@ config DMA_DW_HOST_MASK
 	help
 	  Some instances of the DesignWare DMAC require a mask applied to source/destination
 	  addresses to signifiy the memory space the address is in.
+
+config DMA_DW_CHANNEL_COUNT
+	int "dw max channel count"
+	default 8
+	help
+	  Channel count for designware DMA instances.

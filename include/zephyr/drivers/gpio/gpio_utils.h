@@ -20,11 +20,27 @@
 #define GPIO_PORT_PIN_MASK_FROM_NGPIOS(ngpios)			\
 	((gpio_port_pins_t)(((uint64_t)1 << (ngpios)) - 1U))
 
+/**
+ * @brief Makes a bitmask of allowed GPIOs from the @p "gpio-reserved-ranges"
+ *        and @p "ngpios" DT properties values
+ *
+ * @param node_id GPIO controller node identifier.
+ * @return the bitmask of allowed gpios
+ * @see GPIO_DT_PORT_PIN_MASK_NGPIOS_EXC()
+ */
 #define GPIO_PORT_PIN_MASK_FROM_DT_NODE(node_id)		\
-	GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_PROP(node_id, ngpios))
+	GPIO_DT_PORT_PIN_MASK_NGPIOS_EXC(node_id, DT_PROP(node_id, ngpios))
 
+/**
+ * @brief Make a bitmask of allowed GPIOs from a DT_DRV_COMPAT instance's GPIO
+ *        @p "gpio-reserved-ranges" and @p "ngpios" DT properties values
+ *
+ * @param inst DT_DRV_COMPAT instance number
+ * @return the bitmask of allowed gpios
+ * @see GPIO_DT_PORT_PIN_MASK_NGPIOS_EXC()
+ */
 #define GPIO_PORT_PIN_MASK_FROM_DT_INST(inst)			\
-	GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_PROP(inst, ngpios))
+	GPIO_PORT_PIN_MASK_FROM_DT_NODE(DT_DRV_INST(inst))
 
 /**
  * @brief Generic function to insert or remove a callback from a callback list

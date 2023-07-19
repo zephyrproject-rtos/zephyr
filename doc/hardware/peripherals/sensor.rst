@@ -29,9 +29,16 @@ description and units of measurement:
 Values
 ======
 
-Sensor devices return results as :c:struct:`sensor_value`.  This
+Sensor stable APIs return results as :c:struct:`sensor_value`.  This
 representation avoids use of floating point values as they may not be
 supported on certain setups.
+
+A newer experimental (may change) API that can interpret raw sensor data is
+available in parallel. This new API exposes raw encoded sensor data to the
+application and provides a separate decoder to convert the data to a Q31 format
+which is compatible with the Zephyr :ref:`zdsp_api`. The values represented are
+in the range of (-1.0, 1.0) and require a shift operation in order to scale
+them to their SI unit values. See :ref:`Async Read` for more information.
 
 Fetching Values
 ===============
@@ -54,6 +61,112 @@ compensates data for both channels.
    :language: c
    :lines: 12-
    :linenos:
+
+.. _Async Read:
+
+Async Read
+==========
+
+To enable the async APIs, use :kconfig:option:`CONFIG_SENSOR_ASYNC_API`.
+
+Reading the sensors leverages the :ref:`rtio_api` subsystem. Applications
+gain control of the data processing thread and even memory management. In order
+to get started with reading the sensors, an IODev must be created via the
+:c:macro:`SENSOR_DT_READ_IODEV`. Next, an RTIO context must be created. It is
+strongly suggested that this context is created with a memory pool via
+:c:macro:`RTIO_DEFINE_WITH_MEMPOOL`.
+
+.. code-block:: C
+
+   #include <zephyr/device.h>
+   #include <zephyr/drivers/sensor.h>
+   #include <zephyr/rtio/rtio.h>
+
+   static const struct device *lid_accel = DEVICE_DT_GET(DT_ALIAS(lid_accel));
+   SENSOR_DT_READ_IODEV(lid_accel_iodev, DT_ALIAS(lid_accel), SENSOR_CHAN_ACCEL_XYZ);
+
+   RTIO_DEFINE_WITH_MEMPOOL(sensors_rtio,
+                            4,  /* submission queue size */
+                            4,  /* completion queue size */
+                            16, /* number of memory blocks */
+                            32, /* size of each memory block */
+                            4   /* memory alignment */
+                            );
+
+To trigger a read, the application simply needs to call :c:func:`sensor_read`
+and pass the relevant IODev and RTIO context. Getting the result is done like
+any other RTIO operation, by waiting on a completion queue event (CQE). In
+order to help reduce some boilerplate code, the helper function
+:c:func:`sensor_processing_with_callback` is provided. When called, the
+function will block until a CQE becomes available from the provided RTIO
+context. The appropriate buffers are extracted and the callback is called.
+Once the callback is done, the memory is reclaimed by the memorypool. This
+looks like:
+
+.. code-block:: C
+
+   static void sensor_processing_callback(int result, uint8_t *buf,
+                                          uint32_t buf_len, void *userdata) {
+     // Process the data...
+   }
+
+   static void sensor_processing_thread(void *, void *, void *) {
+     while (true) {
+       sensor_processing_with_callback(&sensors_rtio, sensor_processing_callback);
+     }
+   }
+   K_THREAD_DEFINE(sensor_processing_tid, 1024, sensor_processing_thread,
+                   NULL, NULL, NULL, 0, 0, 0);
+
+.. note::
+   Helper functions to create custom length IODev nodes and ones that don't
+   have static bindings will be added soon.
+
+Processing the Data
+===================
+
+Once data collection completes and the processing callback was called,
+processing the data is done via the :c:struct:`sensor_decoder_api`. The API
+provides a means for applications to control *when* to process the data and how
+many resources to dedicate to the processing. The API is entirely self
+contained and requires no system calls (even when
+:kconfig:option:`CONFIG_USERSPACE` is enabled).
+
+.. code-block:: C
+
+   static struct sensor_decoder_api *lid_accel_decoder = SENSOR_DECODER_DT_GET(DT_ALIAS(lid_accel));
+
+   static void sensor_processing_callback(int result, uint8_t *buf,
+                                          uint32_t buf_len, void *userdata) {
+     uint64_t timestamp;
+     sensor_frame_iterator_t fit = {0};
+     sensor_channel_iterator_t cit = {0};
+     enum sensor_channel channels[3];
+     q31_t values[3];
+     int8_t shift[3];
+
+     lid_accel_decoder->get_timestamp(buf, &timestamp);
+     lid_accel_decoder->decode(buf, &fit, &cit, channels, values, 3);
+
+     /* Values are now in q31_t format, we're going to convert them to micro-units */
+
+     /* First, we need to know by how much to shift the values */
+     lid_accel_decoder->get_shift(buf, channels[0], &shift[0]);
+     lid_accel_decoder->get_shift(buf, channels[1], &shift[1]);
+     lid_accel_decoder->get_shift(buf, channels[2], &shift[2]);
+
+     /* Shift the values to get the SI units */
+     int64_t scaled_values[] = {
+       (int64_t)values[0] << shift[0],
+       (int64_t)values[1] << shift[1],
+       (int64_t)values[2] << shift[2],
+     };
+
+     /*
+      * FIELD_GET(GENMASK64(63, 31), scaled_values[]) - will give the integer value
+      * FIELD_GET(GENMASK64(30, 0), scaled_values[]) / INT32_MAX - is the decimal value
+      */
+   }
 
 Configuration and Attributes
 ****************************

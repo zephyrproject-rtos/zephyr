@@ -232,13 +232,9 @@ static void update_adv_params(struct bt_le_ext_adv *adv, enum adv_param_t adv_pa
 	}
 
 	if (use_ext_adv && adv_params == NCONN_SCAN) {
-		uint8_t data[4] = {0x61, 0x6c, 0x65, 0x64};
-		struct bt_data sd;
+		struct bt_data sd =
+			BT_DATA_BYTES(BT_DATA_NAME_COMPLETE, 'z', 'e', 'p', 'h', 'y', 'r');
 		size_t sd_len = 1;
-
-		sd.type = 0x09;
-		sd.data_len = 0x05;
-		sd.data = data;
 
 		err = bt_le_ext_adv_set_data(adv, NULL, 0, &sd, sd_len);
 		if (err) {

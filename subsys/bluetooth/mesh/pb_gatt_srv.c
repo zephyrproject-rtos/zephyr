@@ -274,6 +274,7 @@ int bt_mesh_pb_gatt_srv_adv_start(void)
 	}
 
 	struct bt_le_adv_param fast_adv_param = {
+		.id = BT_ID_DEFAULT,
 		.options = ADV_OPT_PROV,
 		ADV_FAST_INT,
 	};
@@ -286,6 +287,7 @@ int bt_mesh_pb_gatt_srv_adv_start(void)
 
 	if (elapsed_time > FAST_ADV_TIME) {
 		struct bt_le_adv_param slow_adv_param = {
+			.id = BT_ID_DEFAULT,
 			.options = ADV_OPT_PROV,
 			ADV_SLOW_INT,
 		};

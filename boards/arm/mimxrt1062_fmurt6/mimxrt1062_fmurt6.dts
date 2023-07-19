@@ -20,7 +20,9 @@
 		led1 = &red_led;
 		watchdog0 = &wdog0;
 		sdhc0 = &usdhc1;
-		pwm-0 = &flexpwm2_pwm0;
+		gps1 = &lpuart2;
+		telem1 = &lpuart3;
+		telem4-gps2 = &lpuart5;
 	};
 
 	chosen {
@@ -140,6 +142,7 @@
 	pinctrl-0 = <&pinmux_flexcan3>;
 	pinctrl-names = "default";
 	bus-speed = <125000>;
+	bus-speed-data = <1000000>;
 	can-transceiver {
 		max-bitrate = <5000000>;
 	};
@@ -284,6 +287,30 @@
 	pinctrl-names = "default", "sleep";
 };
 
+&lpuart2 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&pinmux_lpuart2>;
+	pinctrl-1 = <&pinmux_lpuart2_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&lpuart3 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&pinmux_lpuart3>;
+	pinctrl-1 = <&pinmux_lpuart3_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&lpuart5 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&pinmux_lpuart5>;
+	pinctrl-1 = <&pinmux_lpuart5_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
 &lpspi1 {
 	status = "okay";
 	pinctrl-0 = <&pinmux_lpspi1>;
@@ -323,48 +350,56 @@
 	status = "okay";
 	pinctrl-0 = <&pinmux_flexpwm_fmu_ch1>;
 	pinctrl-names = "default";
+	nxp,prescaler = <64>;
 };
 
 &flexpwm2_pwm1 {
 	status = "okay";
 	pinctrl-0 = <&pinmux_flexpwm_fmu_ch2>;
 	pinctrl-names = "default";
+	nxp,prescaler = <64>;
 };
 
 &flexpwm2_pwm2	{
 	status = "okay";
 	pinctrl-0 = <&pinmux_flexpwm_fmu_ch3>;
 	pinctrl-names = "default";
+	nxp,prescaler = <64>;
 };
 
 &flexpwm2_pwm3	{
 	status = "okay";
 	pinctrl-0 = <&pinmux_flexpwm_fmu_ch4>;
 	pinctrl-names = "default";
+	nxp,prescaler = <64>;
 };
 
 &flexpwm3_pwm2	{
 	status = "okay";
 	pinctrl-0 = <&pinmux_flexpwm_fmu_ch5>;
 	pinctrl-names = "default";
+	nxp,prescaler = <64>;
 };
 
 &flexpwm3_pwm0	{
 	status = "okay";
 	pinctrl-0 = <&pinmux_flexpwm_fmu_ch6>;
 	pinctrl-names = "default";
+	nxp,prescaler = <64>;
 };
 
 &flexpwm4_pwm2	{
 	status = "okay";
 	pinctrl-0 = <&pinmux_flexpwm_fmu_ch7>;
 	pinctrl-names = "default";
+	nxp,prescaler = <64>;
 };
 
 &flexpwm4_pwm0	{
 	status = "okay";
 	pinctrl-0 = <&pinmux_flexpwm_fmu_ch8>;
 	pinctrl-names = "default";
+	nxp,prescaler = <64>;
 };
 
 &enet2 {

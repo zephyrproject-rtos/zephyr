@@ -117,20 +117,19 @@
 			status = "disabled";
 		};
 
-		can {
-			can3: can@4000D400 {
-				compatible = "st,stm32h7-fdcan";
-				reg = <0x4000D400 0x400>, <0x4000ac00 0x350>;
-				reg-names = "m_can", "message_ram";
-				clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x00000100>;
-				interrupts = <159 0>, <160 0>, <63 0>;
-				interrupt-names = "LINE_0", "LINE_1", "CALIB";
-				sjw = <1>;
-				sample-point = <875>;
-				sjw-data = <1>;
-				sample-point-data = <875>;
-				status = "disabled";
-			};
+		can3: can@4000d400 {
+			compatible = "st,stm32h7-fdcan";
+			reg = <0x4000d400 0x400>, <0x4000ac00 0x9f0>;
+			reg-names = "m_can", "message_ram";
+			clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x00000100>;
+			interrupts = <159 0>, <160 0>, <63 0>;
+			interrupt-names = "LINE_0", "LINE_1", "CALIB";
+			bosch,mram-cfg = <0x6a0 28 8 3 3 0 3 3>;
+			sjw = <1>;
+			sample-point = <875>;
+			sjw-data = <1>;
+			sample-point-data = <875>;
+			status = "disabled";
 		};
 
 		rtc@58004000 {

@@ -21,6 +21,13 @@ config EMUL_ICM42688
 	  Enable the hardware emulator for the ICM42688. Doing so allows exercising
 	  sensor APIs for this IMU in native_posix and qemu.
 
+config ICM42688_DECODER
+	bool "ICM42688 decoder logic"
+	default y if ICM42688
+	help
+	  Compile the ICM42688 decoder API which allows decoding raw data returned
+	  from the sensor.
+
 if ICM42688
 
 choice

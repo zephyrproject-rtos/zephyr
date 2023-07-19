@@ -6,21 +6,23 @@
 #define DT_DRV_COMPAT nordic_npm1300_charger
 
 #include <math.h>
-#include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/sensor.h>
+#include <zephyr/drivers/mfd/npm1300.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/linear_range.h>
 #include <zephyr/drivers/sensor/npm1300_charger.h>
 
 struct npm1300_charger_config {
-	struct i2c_dt_spec i2c;
+	const struct device *mfd;
 	int32_t term_microvolt;
 	int32_t term_warm_microvolt;
 	int32_t current_microamp;
 	int32_t dischg_limit_microamp;
 	int32_t vbus_limit_microamp;
-	uint8_t thermistor_idx;
+	int32_t temp_thresholds[4U];
+	uint32_t thermistor_ohms;
 	uint16_t thermistor_beta;
+	uint8_t thermistor_idx;
 	bool charging_enable;
 };
 
@@ -40,33 +42,34 @@ struct npm1300_charger_data {
 #define VBUS_BASE 0x02U
 
 /* nPM1300 charger register offsets */
-#define CHGR_OFFSET_EN_SET	0x04U
-#define CHGR_OFFSET_EN_CLR	0x05U
-#define CHGR_OFFSET_ISET	0x08U
+#define CHGR_OFFSET_EN_SET      0x04U
+#define CHGR_OFFSET_EN_CLR      0x05U
+#define CHGR_OFFSET_ISET        0x08U
 #define CHGR_OFFSET_ISET_DISCHG 0x0AU
-#define CHGR_OFFSET_VTERM	0x0CU
-#define CHGR_OFFSET_VTERM_R	0x0DU
-#define CHGR_OFFSET_CHG_STAT	0x34U
-#define CHGR_OFFSET_ERR_REASON	0x36U
+#define CHGR_OFFSET_VTERM       0x0CU
+#define CHGR_OFFSET_VTERM_R     0x0DU
+#define CHGR_OFFSET_NTC_TEMPS   0x10U
+#define CHGR_OFFSET_CHG_STAT    0x34U
+#define CHGR_OFFSET_ERR_REASON  0x36U
 
 /* nPM1300 ADC register offsets */
 #define ADC_OFFSET_TASK_VBAT 0x00U
 #define ADC_OFFSET_TASK_TEMP 0x01U
 #define ADC_OFFSET_CONFIG    0x09U
 #define ADC_OFFSET_NTCR_SEL  0x0AU
+#define ADC_OFFSET_TASK_AUTO 0x0CU
 #define ADC_OFFSET_RESULTS   0x10U
 #define ADC_OFFSET_IBAT_EN   0x24U
 
 /* nPM1300 VBUS register offsets */
-#define VBUS_OFFSET_TASK_UPDATE 0x00U
-#define VBUS_OFFSET_ILIM	0x01U
-#define VBUS_OFFSET_STATUS	0x07U
+#define VBUS_OFFSET_ILIMSTARTUP 0x02U
+#define VBUS_OFFSET_STATUS      0x07U
 
 /* Ibat status */
-#define IBAT_STAT_DISCHARGE	 0x04U
+#define IBAT_STAT_DISCHARGE      0x04U
 #define IBAT_STAT_CHARGE_TRICKLE 0x0CU
-#define IBAT_STAT_CHARGE_COOL	 0x0DU
-#define IBAT_STAT_CHARGE_NORMAL	 0x0FU
+#define IBAT_STAT_CHARGE_COOL    0x0DU
+#define IBAT_STAT_CHARGE_NORMAL  0x0FU
 
 struct adc_results_t {
 	uint8_t ibat_stat;
@@ -83,11 +86,15 @@ struct adc_results_t {
 } __packed;
 
 /* ADC result masks */
-#define ADC_MSB_SHIFT	   2U
-#define ADC_LSB_MASK	   0x03U
+#define ADC_MSB_SHIFT      2U
+#define ADC_LSB_MASK       0x03U
 #define ADC_LSB_VBAT_SHIFT 0U
 #define ADC_LSB_NTC_SHIFT  2U
 #define ADC_LSB_IBAT_SHIFT 4U
+
+/* NTC temp masks */
+#define NTCTEMP_MSB_SHIFT 2U
+#define NTCTEMP_LSB_MASK  0x03U
 
 /* Linear range for charger terminal voltage */
 static const struct linear_range charger_volt_ranges[] = {
@@ -103,39 +110,6 @@ static const struct linear_range discharge_limit_range = LINEAR_RANGE_INIT(26809
 static const struct linear_range vbus_current_ranges[] = {
 	LINEAR_RANGE_INIT(100000, 0, 1U, 1U), LINEAR_RANGE_INIT(500000, 100000, 5U, 15U)};
 
-/* Read multiple registers from specified address */
-static int reg_read_burst(const struct device *dev, uint8_t base, uint8_t offset, void *data,
-			  size_t len)
-{
-	const struct npm1300_charger_config *const config = dev->config;
-	uint8_t buff[] = {base, offset};
-
-	return i2c_write_read_dt(&config->i2c, buff, sizeof(buff), data, len);
-}
-
-static int reg_read(const struct device *dev, uint8_t base, uint8_t offset, uint8_t *data)
-{
-	return reg_read_burst(dev, base, offset, data, 1U);
-}
-
-/* Write single register to specified address */
-static int reg_write(const struct device *dev, uint8_t base, uint8_t offset, uint8_t data)
-{
-	const struct npm1300_charger_config *const config = dev->config;
-	uint8_t buff[] = {base, offset, data};
-
-	return i2c_write_dt(&config->i2c, buff, sizeof(buff));
-}
-
-static int reg_write2(const struct device *dev, uint8_t base, uint8_t offset, uint8_t data1,
-		      uint8_t data2)
-{
-	const struct npm1300_charger_config *const config = dev->config;
-	uint8_t buff[] = {base, offset, data1, data2};
-
-	return i2c_write_dt(&config->i2c, buff, sizeof(buff));
-}
-
 static void calc_temp(const struct npm1300_charger_config *const config, uint16_t code,
 		      struct sensor_value *valp)
 {
@@ -147,6 +121,17 @@ static void calc_temp(const struct npm1300_charger_config *const config, uint16_
 
 	valp->val1 = (int32_t)temp;
 	valp->val2 = (int32_t)(fmodf(temp, 1.f) * 1000000.f);
+}
+
+static uint32_t calc_ntc_res(const struct npm1300_charger_config *const config, int32_t temp_mdegc)
+{
+	float inv_t0 = 1.f / 298.15f;
+	float temp = (float)temp_mdegc / 1000000.f;
+
+	float inv_temp_k = 1.f / (temp + 273.15f);
+
+	return config->thermistor_ohms *
+	       exp((float)config->thermistor_beta * (inv_temp_k - inv_t0));
 }
 
 static uint16_t adc_get_res(uint8_t msb, uint8_t lsb, uint16_t lsb_shift)
@@ -228,24 +213,25 @@ int npm1300_charger_channel_get(const struct device *dev, enum sensor_channel ch
 
 int npm1300_charger_sample_fetch(const struct device *dev, enum sensor_channel chan)
 {
+	const struct npm1300_charger_config *const config = dev->config;
 	struct npm1300_charger_data *data = dev->data;
 	struct adc_results_t results;
-	bool last_vbus;
 	int ret;
 
 	/* Read charge status and error reason */
-	ret = reg_read(dev, CHGR_BASE, CHGR_OFFSET_CHG_STAT, &data->status);
+	ret = mfd_npm1300_reg_read(config->mfd, CHGR_BASE, CHGR_OFFSET_CHG_STAT, &data->status);
 	if (ret != 0) {
 		return ret;
 	}
 
-	ret = reg_read(dev, CHGR_BASE, CHGR_OFFSET_ERR_REASON, &data->error);
+	ret = mfd_npm1300_reg_read(config->mfd, CHGR_BASE, CHGR_OFFSET_ERR_REASON, &data->error);
 	if (ret != 0) {
 		return ret;
 	}
 
 	/* Read adc results */
-	ret = reg_read_burst(dev, ADC_BASE, ADC_OFFSET_RESULTS, &results, sizeof(results));
+	ret = mfd_npm1300_reg_read_burst(config->mfd, ADC_BASE, ADC_OFFSET_RESULTS, &results,
+					 sizeof(results));
 	if (ret != 0) {
 		return ret;
 	}
@@ -256,33 +242,46 @@ int npm1300_charger_sample_fetch(const struct device *dev, enum sensor_channel c
 	data->ibat_stat = results.ibat_stat;
 
 	/* Trigger temperature measurement */
-	ret = reg_write(dev, ADC_BASE, ADC_OFFSET_TASK_TEMP, 1U);
+	ret = mfd_npm1300_reg_write(config->mfd, ADC_BASE, ADC_OFFSET_TASK_TEMP, 1U);
 	if (ret != 0) {
 		return ret;
 	}
 
 	/* Trigger current and voltage measurement */
-	ret = reg_write(dev, ADC_BASE, ADC_OFFSET_TASK_VBAT, 1U);
+	ret = mfd_npm1300_reg_write(config->mfd, ADC_BASE, ADC_OFFSET_TASK_VBAT, 1U);
 	if (ret != 0) {
 		return ret;
 	}
 
-	/* Read vbus status, and set SW current limit on new vbus detection */
-	last_vbus = (data->vbus_stat & 1U) != 0U;
-	ret = reg_read(dev, VBUS_BASE, VBUS_OFFSET_STATUS, &data->vbus_stat);
+	/* Read vbus status */
+	ret = mfd_npm1300_reg_read(config->mfd, VBUS_BASE, VBUS_OFFSET_STATUS, &data->vbus_stat);
 	if (ret != 0) {
 		return ret;
-	}
-
-	if (!last_vbus && ((data->vbus_stat & 1U) != 0U)) {
-		ret = reg_write(dev, VBUS_BASE, VBUS_OFFSET_TASK_UPDATE, 1U);
-
-		if (ret != 0) {
-			return ret;
-		}
 	}
 
 	return ret;
+}
+
+static int set_ntc_thresholds(const struct npm1300_charger_config *const config)
+{
+	for (uint8_t idx = 0U; idx < 4U; idx++) {
+		if (config->temp_thresholds[idx] < INT32_MAX) {
+			uint32_t res = calc_ntc_res(config, config->temp_thresholds[idx]);
+
+			/* Ref: Datasheet Figure 14: Equation for battery temperature */
+			uint16_t code = (1024 * res) / (res + config->thermistor_ohms);
+
+			int ret = mfd_npm1300_reg_write2(
+				config->mfd, CHGR_BASE, CHGR_OFFSET_NTC_TEMPS + (idx * 2U),
+				code >> NTCTEMP_MSB_SHIFT, code & NTCTEMP_LSB_MASK);
+
+			if (ret != 0) {
+				return ret;
+			}
+		}
+	}
+
+	return 0;
 }
 
 int npm1300_charger_init(const struct device *dev)
@@ -291,12 +290,18 @@ int npm1300_charger_init(const struct device *dev)
 	uint16_t idx;
 	int ret;
 
-	if (!i2c_is_ready_dt(&config->i2c)) {
+	if (!device_is_ready(config->mfd)) {
 		return -ENODEV;
 	}
 
 	/* Configure thermistor */
-	ret = reg_write(dev, ADC_BASE, ADC_OFFSET_NTCR_SEL, config->thermistor_idx + 1U);
+	ret = mfd_npm1300_reg_write(config->mfd, ADC_BASE, ADC_OFFSET_NTCR_SEL,
+				    config->thermistor_idx + 1U);
+	if (ret != 0) {
+		return ret;
+	}
+
+	ret = set_ntc_thresholds(config);
 	if (ret != 0) {
 		return ret;
 	}
@@ -308,7 +313,7 @@ int npm1300_charger_init(const struct device *dev)
 	if (ret == -EINVAL) {
 		return ret;
 	}
-	ret = reg_write(dev, CHGR_BASE, CHGR_OFFSET_VTERM, idx);
+	ret = mfd_npm1300_reg_write(config->mfd, CHGR_BASE, CHGR_OFFSET_VTERM, idx);
 	if (ret != 0) {
 		return ret;
 	}
@@ -320,7 +325,7 @@ int npm1300_charger_init(const struct device *dev)
 		return ret;
 	}
 
-	ret = reg_write(dev, CHGR_BASE, CHGR_OFFSET_VTERM_R, idx);
+	ret = mfd_npm1300_reg_write(config->mfd, CHGR_BASE, CHGR_OFFSET_VTERM_R, idx);
 	if (ret != 0) {
 		return ret;
 	}
@@ -333,7 +338,7 @@ int npm1300_charger_init(const struct device *dev)
 		return ret;
 	}
 
-	ret = reg_write2(dev, CHGR_BASE, CHGR_OFFSET_ISET, idx / 2U, idx & 1U);
+	ret = mfd_npm1300_reg_write2(config->mfd, CHGR_BASE, CHGR_OFFSET_ISET, idx / 2U, idx & 1U);
 	if (ret != 0) {
 		return ret;
 	}
@@ -346,7 +351,8 @@ int npm1300_charger_init(const struct device *dev)
 		return ret;
 	}
 
-	ret = reg_write2(dev, CHGR_BASE, CHGR_OFFSET_ISET_DISCHG, idx / 2U, idx & 1U);
+	ret = mfd_npm1300_reg_write2(config->mfd, CHGR_BASE, CHGR_OFFSET_ISET_DISCHG, idx / 2U,
+				     idx & 1U);
 	if (ret != 0) {
 		return ret;
 	}
@@ -358,32 +364,38 @@ int npm1300_charger_init(const struct device *dev)
 	if (ret == -EINVAL) {
 		return ret;
 	}
-	ret = reg_write(dev, VBUS_BASE, VBUS_OFFSET_ILIM, idx);
+	ret = mfd_npm1300_reg_write(config->mfd, VBUS_BASE, VBUS_OFFSET_ILIMSTARTUP, idx);
 	if (ret != 0) {
 		return ret;
 	}
 
 	/* Enable current measurement */
-	ret = reg_write(dev, ADC_BASE, ADC_OFFSET_IBAT_EN, 1U);
+	ret = mfd_npm1300_reg_write(config->mfd, ADC_BASE, ADC_OFFSET_IBAT_EN, 1U);
 	if (ret != 0) {
 		return ret;
 	}
 
 	/* Trigger current and voltage measurement */
-	ret = reg_write(dev, ADC_BASE, ADC_OFFSET_TASK_VBAT, 1U);
+	ret = mfd_npm1300_reg_write(config->mfd, ADC_BASE, ADC_OFFSET_TASK_VBAT, 1U);
 	if (ret != 0) {
 		return ret;
 	}
 
 	/* Trigger temperature measurement */
-	ret = reg_write(dev, ADC_BASE, ADC_OFFSET_TASK_TEMP, 1U);
+	ret = mfd_npm1300_reg_write(config->mfd, ADC_BASE, ADC_OFFSET_TASK_TEMP, 1U);
+	if (ret != 0) {
+		return ret;
+	}
+
+	/* Enable automatic temperature measurements during charging */
+	ret = mfd_npm1300_reg_write(config->mfd, ADC_BASE, ADC_OFFSET_TASK_AUTO, 1U);
 	if (ret != 0) {
 		return ret;
 	}
 
 	/* Enable charging if configured */
 	if (config->charging_enable) {
-		ret = reg_write(dev, CHGR_BASE, CHGR_OFFSET_EN_SET, 1U);
+		ret = mfd_npm1300_reg_write(config->mfd, CHGR_BASE, CHGR_OFFSET_EN_SET, 1U);
 		if (ret != 0) {
 			return ret;
 		}
@@ -401,17 +413,21 @@ static const struct sensor_driver_api npm1300_charger_battery_driver_api = {
 	static struct npm1300_charger_data npm1300_charger_data_##n;                               \
                                                                                                    \
 	static const struct npm1300_charger_config npm1300_charger_config_##n = {                  \
-		.i2c = I2C_DT_SPEC_GET(DT_INST_PARENT(n)),                                         \
+		.mfd = DEVICE_DT_GET(DT_INST_PARENT(n)),                                           \
 		.term_microvolt = DT_INST_PROP(n, term_microvolt),                                 \
 		.term_warm_microvolt =                                                             \
 			DT_INST_PROP_OR(n, term_warm_microvolt, DT_INST_PROP(n, term_microvolt)),  \
 		.current_microamp = DT_INST_PROP(n, current_microamp),                             \
 		.dischg_limit_microamp = DT_INST_PROP(n, dischg_limit_microamp),                   \
 		.vbus_limit_microamp = DT_INST_PROP(n, vbus_limit_microamp),                       \
+		.thermistor_ohms = DT_INST_PROP(n, thermistor_ohms),                               \
 		.thermistor_idx = DT_INST_ENUM_IDX(n, thermistor_ohms),                            \
 		.thermistor_beta = DT_INST_PROP(n, thermistor_beta),                               \
 		.charging_enable = DT_INST_PROP(n, charging_enable),                               \
-	};                                                                                         \
+		.temp_thresholds = {DT_INST_PROP_OR(n, thermistor_cold_millidegrees, INT32_MAX),   \
+				    DT_INST_PROP_OR(n, thermistor_cool_millidegrees, INT32_MAX),   \
+				    DT_INST_PROP_OR(n, thermistor_warm_millidegrees, INT32_MAX),   \
+				    DT_INST_PROP_OR(n, thermistor_hot_millidegrees, INT32_MAX)}};  \
                                                                                                    \
 	SENSOR_DEVICE_DT_INST_DEFINE(n, &npm1300_charger_init, NULL, &npm1300_charger_data_##n,    \
 				     &npm1300_charger_config_##n, POST_KERNEL,                     \

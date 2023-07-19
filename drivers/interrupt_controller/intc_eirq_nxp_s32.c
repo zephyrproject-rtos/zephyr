@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 NXP
+ * Copyright 2022-2023 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -173,6 +173,29 @@ static int eirq_nxp_s32_init(const struct device *dev)
 	EIRQ_NXP_S32_INSTANCE_CONFIG(n);							\
 	EIRQ_NXP_S32_COMBINE_CONFIG(n);
 
+#define _EIRQ_NXP_S32_IRQ_NAME(name)	DT_CAT3(SIUL2_EXT_IRQ_, name, _ISR)
+
+#define EIRQ_NXP_S32_IRQ_NAME(idx, n)								\
+	COND_CODE_1(DT_NODE_HAS_PROP(EIRQ_NXP_S32_NODE(n), interrupt_names),			\
+		(_EIRQ_NXP_S32_IRQ_NAME(							\
+			DT_STRING_TOKEN_BY_IDX(EIRQ_NXP_S32_NODE(n), interrupt_names, idx))),	\
+		(DT_CAT3(SIUL2_, n, _ICU_EIRQ_SINGLE_INT_HANDLER)))
+
+#define _EIRQ_NXP_S32_IRQ_CONFIG(idx, n)							\
+	do {											\
+		IRQ_CONNECT(DT_IRQ_BY_IDX(EIRQ_NXP_S32_NODE(n), idx, irq),			\
+			DT_IRQ_BY_IDX(EIRQ_NXP_S32_NODE(n), idx, priority),			\
+			EIRQ_NXP_S32_IRQ_NAME(idx, n),						\
+			DEVICE_DT_GET(EIRQ_NXP_S32_NODE(n)),					\
+			COND_CODE_1(CONFIG_GIC,							\
+				(DT_IRQ_BY_IDX(EIRQ_NXP_S32_NODE(n), idx, flags)),		\
+				(0)));								\
+		irq_enable(DT_IRQ_BY_IDX(EIRQ_NXP_S32_NODE(n), idx, irq));			\
+	} while (false);
+
+#define EIRQ_NXP_S32_IRQ_CONFIG(n)								\
+	LISTIFY(DT_NUM_IRQS(EIRQ_NXP_S32_NODE(n)), _EIRQ_NXP_S32_IRQ_CONFIG, (), n)
+
 #define EIRQ_NXP_S32_INIT_DEVICE(n)								\
 	EIRQ_NXP_S32_CONFIG(n)									\
 	PINCTRL_DT_DEFINE(EIRQ_NXP_S32_NODE(n));						\
@@ -205,13 +228,7 @@ static int eirq_nxp_s32_init(const struct device *dev)
 			return err;								\
 		}										\
 												\
-		IRQ_CONNECT(DT_IRQN(EIRQ_NXP_S32_NODE(n)),					\
-			DT_IRQ(EIRQ_NXP_S32_NODE(n), priority),					\
-			SIUL2_##n##_ICU_EIRQ_SINGLE_INT_HANDLER,				\
-			DEVICE_DT_GET(EIRQ_NXP_S32_NODE(n)),					\
-			DT_IRQ(EIRQ_NXP_S32_NODE(n), flags));					\
-												\
-		irq_enable(DT_IRQN(EIRQ_NXP_S32_NODE(n)));					\
+		EIRQ_NXP_S32_IRQ_CONFIG(n);							\
 												\
 		return 0;									\
 	}

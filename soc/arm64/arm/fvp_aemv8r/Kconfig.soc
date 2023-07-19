@@ -9,7 +9,6 @@ config SOC_FVP_AEMV8R_AARCH64
 	bool "ARM FVP AEMv8R aarch64 simulation"
 	select CPU_CORTEX_R82
 	select CPU_HAS_MPU
-	select GIC_V3
 	select GIC_SINGLE_SECURITY_STATE
 
 endchoice

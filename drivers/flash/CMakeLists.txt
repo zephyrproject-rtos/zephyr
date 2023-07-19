@@ -1,12 +1,31 @@
 # SPDX-License-Identifier: Apache-2.0
 
+zephyr_syscall_header_ifdef(
+  CONFIG_FLASH_SIMULATOR
+  ${ZEPHYR_BASE}/include/zephyr/drivers/flash/flash_simulator.h
+)
+
+zephyr_syscall_header_ifdef(
+  CONFIG_NORDIC_QSPI_NOR
+  ${ZEPHYR_BASE}/include/zephyr/drivers/flash/nrf_qspi_nor.h
+)
+
+zephyr_syscall_header(${ZEPHYR_BASE}/include/zephyr/drivers/flash.h)
+
 zephyr_library()
 
 zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_CC13XX_CC26XX soc_flash_cc13xx_cc26xx.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_TELINK_B91 soc_flash_b91.c)
 zephyr_library_sources_ifdef(CONFIG_SPI_NOR spi_nor.c)
 zephyr_library_sources_ifdef(CONFIG_NORDIC_QSPI_NOR nrf_qspi_nor.c)
-zephyr_library_sources_ifdef(CONFIG_FLASH_SIMULATOR flash_simulator.c)
+if(CONFIG_FLASH_SIMULATOR)
+  zephyr_library_sources(flash_simulator.c)
+  if(CONFIG_NATIVE_LIBRARY)
+    target_sources(native_simulator INTERFACE flash_simulator_native.c)
+  elseif(CONFIG_ARCH_POSIX)
+    zephyr_library_sources(flash_simulator_native.c)
+  endif()
+endif()
 zephyr_library_sources_ifdef(CONFIG_SPI_FLASH_AT45 spi_flash_at45.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_ITE_IT8XXX2 flash_ite_it8xxx2.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_NRF soc_flash_nrf.c)
@@ -58,6 +77,7 @@ if(CONFIG_SOC_FLASH_STM32)
     zephyr_library_sources_ifdef(CONFIG_DT_HAS_ST_STM32WB_FLASH_CONTROLLER_ENABLED flash_stm32wbx.c)
     zephyr_library_sources_ifdef(CONFIG_DT_HAS_ST_STM32G0_FLASH_CONTROLLER_ENABLED flash_stm32g0x.c)
     zephyr_library_sources_ifdef(CONFIG_DT_HAS_ST_STM32G4_FLASH_CONTROLLER_ENABLED flash_stm32g4x.c)
+    zephyr_library_sources_ifdef(CONFIG_DT_HAS_ST_STM32WBA_FLASH_CONTROLLER_ENABLED flash_stm32wbax.c)
   endif()
 endif()
 

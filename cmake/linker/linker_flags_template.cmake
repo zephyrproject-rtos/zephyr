@@ -16,3 +16,7 @@ set_property(TARGET linker PROPERTY warnings_as_errors)
 # Linker flag for disabling position independent binaries,
 # such as, "-no-pie" for LD, and "--no-pie" for LLD.
 set_property(TARGET linker PROPERTY no_position_independent)
+
+# Linker flag for doing partial linking
+# such as, "-r" or "--relocatable" for LD and LLD.
+set_property(TARGET linker PROPERTY partial_linking)

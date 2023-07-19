@@ -167,7 +167,7 @@ References
 .. target-notes::
 
 .. _Adafruit Feather M0 with LoRa radio module Learn site:
-    https://learn.adafruit.com/adafruit-feather-m0-radio-with-lora-radio-module.
+    https://learn.adafruit.com/adafruit-feather-m0-radio-with-lora-radio-module
 
 .. _pinouts:
     https://learn.adafruit.com/adafruit-feather-m0-radio-with-lora-radio-module/pinouts

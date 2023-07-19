@@ -478,7 +478,7 @@ static inline void dwt_irq_handle_rx(const struct device *dev, uint32_t sys_stat
 #endif
 	}
 
-	net_pkt_set_ieee802154_rssi(pkt, rx_level);
+	net_pkt_set_ieee802154_rssi_dbm(pkt, rx_level);
 
 	/*
 	 * Workaround for AAT status bit issue,
@@ -491,14 +491,13 @@ static inline void dwt_irq_handle_rx(const struct device *dev, uint32_t sys_stat
 		flags_to_clear |= DWT_SYS_STATUS_AAT;
 	}
 
-	if (ieee802154_radio_handle_ack(ctx->iface, pkt) == NET_OK) {
+	if (ieee802154_handle_ack(ctx->iface, pkt) == NET_OK) {
 		LOG_INF("ACK packet handled");
 		goto rx_out_unref_pkt;
 	}
 
 	/* LQI not implemented */
-	LOG_DBG("Caught a packet (%u) (RSSI: %d)",
-		pkt_len, (int8_t)net_pkt_ieee802154_rssi(pkt));
+	LOG_DBG("Caught a packet (%u) (RSSI: %d)", pkt_len, rx_level);
 	LOG_HEXDUMP_DBG(pkt->buffer->data, pkt_len, "RX buffer:");
 
 	if (net_recv_data(ctx->iface, pkt) == NET_OK) {
@@ -625,9 +624,10 @@ static void dwt_gpio_callback(const struct device *dev,
 
 static enum ieee802154_hw_caps dwt_get_capabilities(const struct device *dev)
 {
-	return IEEE802154_HW_FCS |
-		IEEE802154_HW_2_4_GHZ | /* FIXME: add IEEE802154_HW_UWB_PHY */
-		IEEE802154_HW_FILTER;
+	/* TODO: Add channel page attribute with channel page four. */
+	/* TODO: Implement HW-supported AUTOACK + frame pending bit handling. */
+	return IEEE802154_HW_FCS | IEEE802154_HW_2_4_GHZ | IEEE802154_HW_FILTER |
+	       IEEE802154_HW_TXTIME;
 }
 
 static uint32_t dwt_get_pkt_duration_ns(struct dwt_context *ctx, uint8_t psdu_len)

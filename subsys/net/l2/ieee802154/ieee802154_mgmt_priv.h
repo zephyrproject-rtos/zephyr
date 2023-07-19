@@ -6,7 +6,7 @@
 
 /**
  * @file
- * @brief IEEE 802.15.4 Private Management
+ * @brief IEEE 802.15.4 Net Management Private API
  */
 
 #ifndef __IEEE802154_MGMT_PRIV_H__

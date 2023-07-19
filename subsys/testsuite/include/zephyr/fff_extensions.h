@@ -18,7 +18,7 @@
 
 /**
  * @defgroup fff_extensions FFF extensions
- * @ingroup all_tests
+ * @ingroup testing
  *
  * This module provides extensions to FFF for simplifying the
  * configuration and usage of fakes.

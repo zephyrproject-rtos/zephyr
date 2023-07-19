@@ -62,7 +62,6 @@ config OPENTHREAD_POLL_PERIOD
 config OPENTHREAD_MAX_CHILDREN
 	int "The maximum number of children"
 	range 1 511
-	default 1 if OPENTHREAD_MTD
 	default 32
 
 config OPENTHREAD_MAX_IP_ADDR_PER_CHILD

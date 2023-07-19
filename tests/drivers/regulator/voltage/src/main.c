@@ -114,7 +114,7 @@ void *setup(void)
 
 	for (size_t i = 0U; i < ARRAY_SIZE(regs); i++) {
 		zassert_true(device_is_ready(regs[i]));
-		zassert_true(device_is_ready(adc_chs[i].dev));
+		zassert_true(adc_is_ready_dt(&adc_chs[i]));
 		zassert_equal(adc_channel_setup_dt(&adc_chs[i]), 0);
 	}
 

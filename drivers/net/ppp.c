@@ -1046,8 +1046,7 @@ static int ppp_start(const struct device *dev)
 	}
 #endif /* !CONFIG_NET_TEST */
 
-	net_ppp_carrier_on(context->iface);
-
+	ARG_UNUSED(context);
 	return 0;
 }
 
@@ -1055,7 +1054,6 @@ static int ppp_stop(const struct device *dev)
 {
 	struct ppp_driver_context *context = dev->data;
 
-	net_ppp_carrier_off(context->iface);
 	context->modem_init_done = false;
 	return 0;
 }

@@ -1,5 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
+zephyr_syscall_header(${ZEPHYR_BASE}/include/zephyr/drivers/watchdog.h)
+
 zephyr_library()
 
 zephyr_library_sources_ifdef(CONFIG_IWDG_STM32 wdt_iwdg_stm32.c)
@@ -20,6 +22,7 @@ zephyr_library_sources_ifdef(CONFIG_WDT_MCUX_WDOG wdt_mcux_wdog.c)
 zephyr_library_sources_ifdef(CONFIG_WDT_MCUX_WDOG32 wdt_mcux_wdog32.c)
 zephyr_library_sources_ifdef(CONFIG_WDT_MCUX_WWDT wdt_mcux_wwdt.c)
 zephyr_library_sources_ifdef(CONFIG_WDT_NPCX wdt_npcx.c)
+zephyr_library_sources_ifdef(CONFIG_WDT_NPM1300 wdt_npm1300.c)
 zephyr_library_sources_ifdef(CONFIG_WDT_NPM6001 wdt_npm6001.c)
 zephyr_library_sources_ifdef(CONFIG_WDT_NRFX wdt_nrfx.c)
 zephyr_library_sources_ifdef(CONFIG_WDT_RPI_PICO wdt_rpi_pico.c)
@@ -33,8 +36,11 @@ zephyr_library_sources_ifdef(CONFIG_WDT_NXP_S32 wdt_nxp_s32.c)
 zephyr_library_sources_ifdef(CONFIG_WDT_SMARTBOND wdt_smartbond.c)
 zephyr_library_sources_ifdef(CONFIG_WDT_TI_TPS382X wdt_ti_tps382x.c)
 zephyr_library_sources_ifdef(CONFIG_WDT_XILINX_AXI wdt_xilinx_axi.c)
+zephyr_library_sources_ifdef(CONFIG_WDT_INFINEON_CAT1 wdt_ifx_cat1.c)
+zephyr_library_sources_ifdef(CONFIG_WDT_OPENTITAN wdt_opentitan.c)
 
 zephyr_library_sources_ifdef(CONFIG_WDT_DW wdt_dw.c wdt_dw_common.c)
 zephyr_library_sources_ifdef(CONFIG_WDT_INTEL_ADSP wdt_intel_adsp.c wdt_dw_common.c)
+zephyr_library_sources_ifdef(CONFIG_WDT_ANDES_ATCWDT200 wdt_andes_atcwdt200.c)
 
 zephyr_library_sources_ifdef(CONFIG_USERSPACE wdt_handlers.c)

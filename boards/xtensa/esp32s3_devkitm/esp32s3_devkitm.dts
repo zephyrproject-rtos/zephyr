@@ -93,6 +93,12 @@
 	pinctrl-names = "default";
 };
 
+&twai {
+	pinctrl-0 = <&twai_default>;
+	pinctrl-names = "default";
+	bus-speed = <125000>;
+};
+
 &timer0 {
 	status = "disabled";
 };
@@ -115,6 +121,10 @@
 
 &trng0 {
 	status = "okay";
+};
+
+&usb_serial {
+	status = "disabled";
 };
 
 &flash0 {

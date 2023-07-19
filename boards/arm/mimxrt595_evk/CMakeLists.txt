@@ -1,5 +1,5 @@
 #
-# Copyright 2022 NXP
+# Copyright 2022-2023 NXP
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -23,3 +23,7 @@ if(CONFIG_NXP_IMX_RT5XX_BOOT_HEADER)
   zephyr_library_sources(${RT595_BOARD_DIR}/flash_config/flash_config.c)
   zephyr_library_include_directories(${RT595_BOARD_DIR}/flash_config)
 endif()
+
+# Add custom linker section to relocate framebuffers to PSRAM
+zephyr_linker_sources_ifdef(CONFIG_LV_Z_VBD_CUSTOM_SECTION
+  SECTIONS dc_ram.ld)

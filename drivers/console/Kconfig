@@ -227,53 +227,17 @@ config XTENSA_SIM_CONSOLE
 	help
 	  Use simulator console to print messages.
 
-config BSIM_CONSOLE
-	bool "Use the BabbleSim tracing system for console output"
-	depends on ARCH_POSIX
-	select CONSOLE_HAS_DRIVER
-	help
-	  Use the BabbleSim tracing system for the Zephyr console.
-
-config BSIM_CONSOLE_INIT_PRIORITY
-	int "Init priority"
-	default 99
-	depends on BSIM_CONSOLE
-	help
-	  Device driver initialization priority.
-
-config NATIVE_POSIX_CONSOLE
+config POSIX_ARCH_CONSOLE
 	bool "Use the host terminal for console"
 	depends on ARCH_POSIX
 	select CONSOLE_HAS_DRIVER
 	help
-	  Use the host terminal (where the native_posix binary was launched) for the
-	  Zephyr console
+	  Zephyr's printk messages will be directed to the host terminal stdout
 
-config NATIVE_POSIX_STDIN_CONSOLE
-	bool "Use the host terminal stdin"
-	depends on NATIVE_POSIX_CONSOLE
-	help
-	  No current use. Kept only as there is plans to start using these
-	  drivers with the shell
-
-config NATIVE_STDIN_POLL_PERIOD
-	int "Polling period for stdin"
-	depends on NATIVE_POSIX_STDIN_CONSOLE
-	default 20
-	help
-	  In ms, polling period for stdin
-
-config NATIVE_POSIX_STDOUT_CONSOLE
-	bool "Print to the host terminal stdout"
-	depends on NATIVE_POSIX_CONSOLE
-	default y
-	help
-	  Zephyr's printk messages will be directed to the host terminal stdout.
-
-config NATIVE_POSIX_CONSOLE_INIT_PRIORITY
+config POSIX_ARCH_CONSOLE_INIT_PRIORITY
 	int "Init priority"
 	default 99
-	depends on NATIVE_POSIX_CONSOLE
+	depends on POSIX_ARCH_CONSOLE
 	help
 	  Device driver initialization priority.
 

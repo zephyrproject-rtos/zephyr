@@ -45,9 +45,9 @@ struct icmsg_data_t {
 	/* Tx/Rx buffers. */
 	struct spsc_pbuf *tx_ib;
 	struct spsc_pbuf *rx_ib;
-	atomic_t send_buffer_reserved;
+	atomic_t tx_buffer_state;
 #ifdef CONFIG_IPC_SERVICE_ICMSG_SHMEM_ACCESS_SYNC
-	struct k_mutex send;
+	struct k_mutex tx_lock;
 #endif
 
 	/* Callbacks for an endpoint. */
@@ -59,11 +59,11 @@ struct icmsg_data_t {
 	struct k_work_delayable notify_work;
 	struct k_work mbox_work;
 	atomic_t state;
-	uint8_t rx_buffer[CONFIG_IPC_SERVICE_ICMSG_CB_BUF_SIZE] __aligned(4);
-
 	/* No-copy */
 #ifdef CONFIG_IPC_SERVICE_ICMSG_NOCOPY_RX
-	atomic_t rx_buffer_held;
+	atomic_t rx_buffer_state;
+	const void *rx_buffer;
+	uint16_t rx_len;
 #endif
 };
 

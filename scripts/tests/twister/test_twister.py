@@ -16,6 +16,7 @@ ZEPHYR_BASE = os.getenv("ZEPHYR_BASE")
 sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/pylib/twister"))
 
 import scl
+from twisterlib.error import ConfigurationError
 from twisterlib.testplan import TwisterConfigParser
 
 def test_yamlload():
@@ -77,3 +78,16 @@ def test_testsuite_config_files():
 
     # Check extra kconfig statements, too
     assert scenario["extra_configs"] == ["CONFIG_FOO=y"]
+
+def test_configuration_error():
+    """Test to validate that the ConfigurationError is raisable without further errors.
+
+    It ought to have an str with a path, colon and a message as its only args entry.
+    """
+    filename = Path(ZEPHYR_BASE) / "scripts/tests/twister/test_twister.py"
+
+    with pytest.raises(ConfigurationError) as exception:
+        raise ConfigurationError(filename, "Dummy message.")
+
+    assert len(exception.value.args) == 1
+    assert exception.value.args[0] == str(filename) + ": " + "Dummy message."

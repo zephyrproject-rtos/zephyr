@@ -359,12 +359,6 @@ if __name__ == "__main__":
         else:
             nodes = round(total_tests / args.tests_per_builder)
 
-        if total_tests % args.tests_per_builder != total_tests:
-            nodes = nodes + 1
-
-        if args.default_matrix > nodes > 5:
-            nodes = args.default_matrix
-
         tp.write(f"TWISTER_TESTS={total_tests}\n")
         tp.write(f"TWISTER_NODES={nodes}\n")
         tp.write(f"TWISTER_FULL={f.full_twister}\n")

@@ -8,8 +8,9 @@
 #define ZEPHYR_INCLUDE_DRIVERS_VIRTUALIZATION_IVSHMEM_H_
 
 /**
- * @brief ivshmem reference API
- * @defgroup ivshmem ivshmem reference API
+ * @brief Inter-VM Shared Memory (ivshmem) reference API
+ * @defgroup ivshmem Inter-VM Shared Memory (ivshmem) reference API
+ * @ingroup io_interfaces
  * @{
  */
 

@@ -71,8 +71,19 @@ extern "C" {
 #endif
 
 #if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
+
+/* Registers s16-s31 (d8-d15, q4-q7) must be preserved across subroutine calls.
+ *
+ * Registers s0-s15 (d0-d7, q0-q3) do not have to be preserved (and can be used
+ * for passing arguments or returning results in standard procedure-call variants).
+ *
+ * Registers d16-d31 (q8-q15), do not have to be preserved.
+ */
 struct __fpu_sf {
-	float s[16];
+	uint32_t s[16]; /* s0~s15 (d0-d7) */
+#ifdef CONFIG_VFP_FEATURE_REGS_S64_D32
+	uint64_t d[16]; /* d16~d31 */
+#endif
 	uint32_t fpscr;
 	uint32_t undefined;
 };

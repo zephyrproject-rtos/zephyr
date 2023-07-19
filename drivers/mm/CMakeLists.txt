@@ -15,3 +15,5 @@ zephyr_sources_ifdef(
 	mm_drv_intel_adsp_regions.c
 	mm_drv_intel_adsp_mtl_tlb.c
 	)
+
+zephyr_sources_ifdef(CONFIG_MM_TI_RAT mm_drv_ti_rat.c)

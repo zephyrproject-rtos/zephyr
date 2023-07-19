@@ -90,6 +90,12 @@
 
 &gpiod {
 	status = "okay";
+
+	board-controller-enable {
+		gpio-hog;
+		gpios = <4 GPIO_ACTIVE_HIGH>;
+		output-high;
+	};
 };
 
 &wdog0 {

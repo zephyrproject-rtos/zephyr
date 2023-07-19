@@ -20,13 +20,18 @@ config RETENTION_INIT_PRIORITY
 	  priorities for retained memory drivers.
 
 config RETENTION_MUTEXES
-	bool "Retention mutex support"
+	bool
 	default y
 	depends on MULTITHREADING
+	depends on !RETENTION_MUTEX_FORCE_DISABLE
+
+config RETENTION_MUTEX_FORCE_DISABLE
+	bool "Disable retention mutex support"
+	depends on MULTITHREADING
 	help
-	  Use mutexes to prevent issues with concurrent retention device
-	  access. Should only be disabled whereby retained memory access is
-	  required in an ISR or for special use cases.
+	  Disable use of mutexes which prevent issues with concurrent retention
+	  device access. This option should only be enabled when retention
+	  access is required in an ISR or for special use cases.
 
 config RETENTION_BUFFER_SIZE
 	int "Retention stack buffer sizes"

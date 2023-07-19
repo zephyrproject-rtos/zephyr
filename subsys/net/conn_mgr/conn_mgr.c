@@ -23,6 +23,10 @@ LOG_MODULE_REGISTER(conn_mgr, CONFIG_NET_CONNECTION_MANAGER_LOG_LEVEL);
 #define THREAD_PRIORITY K_PRIO_PREEMPT(7)
 #endif
 
+static K_THREAD_STACK_DEFINE(conn_mgr_thread_stack,
+			     CONFIG_NET_CONNECTION_MANAGER_STACK_SIZE);
+static struct k_thread conn_mgr_thread;
+
 /* Internal state array tracking readiness, flags, and other state information for all available
  * ifaces. Note that indexing starts at 0, whereas Zephyr iface indices start at 1.
  * conn_mgr_get_if_by_index and conn_mgr_get_index_for_if are used to go back and forth between
@@ -212,10 +216,6 @@ static void conn_mgr_handler(void)
 	}
 }
 
-K_THREAD_DEFINE(conn_mgr, CONFIG_NET_CONNECTION_MANAGER_STACK_SIZE,
-		(k_thread_entry_t)conn_mgr_handler, NULL, NULL, NULL,
-		THREAD_PRIORITY, 0, 0);
-
 void conn_mgr_resend_status(void)
 {
 	k_mutex_lock(&conn_mgr_lock, K_FOREVER);
@@ -326,12 +326,14 @@ static int conn_mgr_init(void)
 {
 	int i;
 
-
 	for (i = 0; i < ARRAY_SIZE(iface_states); i++) {
 		iface_states[i] = 0;
 	}
 
-	k_thread_start(conn_mgr);
+	k_thread_create(&conn_mgr_thread, conn_mgr_thread_stack,
+			CONFIG_NET_CONNECTION_MANAGER_STACK_SIZE,
+			(k_thread_entry_t)conn_mgr_handler,
+			NULL, NULL, NULL, THREAD_PRIORITY, 0, K_NO_WAIT);
 
 	return 0;
 }

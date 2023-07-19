@@ -113,7 +113,8 @@ kobjects = OrderedDict([
     ("ztest_unit_test", ("CONFIG_ZTEST_NEW_API", True, False)),
     ("ztest_test_rule", ("CONFIG_ZTEST_NEW_API", True, False)),
     ("rtio", ("CONFIG_RTIO", False, False)),
-    ("rtio_iodev", ("CONFIG_RTIO", False, False))
+    ("rtio_iodev", ("CONFIG_RTIO", False, False)),
+    ("sensor_decoder_api", ("CONFIG_SENSOR_ASYNC_API", True, False))
 ])
 
 def kobject_to_enum(kobj):

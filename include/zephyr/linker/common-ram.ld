@@ -42,12 +42,12 @@
 	ITERABLE_SECTION_RAM(pm_device_slots, 4)
 #endif
 
-#if defined(CONFIG_HAS_DYNAMIC_DEVICE_HANDLES)
-	SECTION_DATA_PROLOGUE(device_handles,,)
+#if defined(CONFIG_DEVICE_DEPS_DYNAMIC)
+	SECTION_DATA_PROLOGUE(device_deps,,)
 	{
-#include "device-handles.ld"
+#include "device-deps.ld"
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
-#endif 	/* CONFIG_HAS_DYNAMIC_DEVICE_HANDLES */
+#endif 	/* CONFIG_DEVICE_DEPS_DYNAMIC */
 
 	ITERABLE_SECTION_RAM_GC_ALLOWED(log_mpsc_pbuf, 4)
 	ITERABLE_SECTION_RAM(log_msg_ptr, 4)
@@ -119,6 +119,10 @@
 	ITERABLE_SECTION_RAM(rtio_sqe_pool, 4)
 	ITERABLE_SECTION_RAM(rtio_cqe_pool, 4)
 #endif /* CONFIG_RTIO */
+
+#if defined(CONFIG_SENSING)
+	ITERABLE_SECTION_RAM(sensing_sensor, 4)
+#endif /* CONFIG_SENSING */
 
 #ifdef CONFIG_USERSPACE
 	_static_kernel_objects_end = .;

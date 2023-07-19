@@ -197,8 +197,8 @@ static void __attribute__((unused)) get_YMD_from_seconds(uint64_t seconds,
 	/* compute the proper month */
 	for (i = 0; i < ARRAY_SIZE(days_in_month); i++) {
 		tmp = ((i == 1) && is_leap_year(output_date->year)) ?
-					(days_in_month[i] + 1) * SECONDS_IN_DAY :
-					days_in_month[i] * SECONDS_IN_DAY;
+					((uint64_t)days_in_month[i] + 1) * SECONDS_IN_DAY :
+					(uint64_t)days_in_month[i] * SECONDS_IN_DAY;
 		if (tmp > seconds) {
 			output_date->month += i;
 			break;
@@ -432,6 +432,7 @@ static uint32_t prefix_print(const struct log_output *output,
 			     const char *source,
 			     uint8_t level)
 {
+	__ASSERT_NO_MSG(level <= LOG_LEVEL_DBG);
 	uint32_t length = 0U;
 
 	bool stamp = flags & LOG_OUTPUT_FLAG_TIMESTAMP;

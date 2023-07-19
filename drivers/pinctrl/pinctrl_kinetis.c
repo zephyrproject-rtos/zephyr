@@ -76,7 +76,7 @@ static int pinctrl_mcux_init(const struct device *dev)
 			    NULL,					\
 			    NULL, &pinctrl_mcux_##n##_config,		\
 			    PRE_KERNEL_1,				\
-			    0,						\
+			    CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,	\
 			    NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(PINCTRL_MCUX_INIT)

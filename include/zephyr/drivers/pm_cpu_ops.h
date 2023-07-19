@@ -22,6 +22,7 @@ extern "C" {
 
 /**
  * @defgroup power_management_cpu_api CPU Power Management
+ * @ingroup subsys_pm
  * @{
  */
 

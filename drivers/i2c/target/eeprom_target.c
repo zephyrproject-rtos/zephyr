@@ -59,6 +59,25 @@ int eeprom_target_read(const struct device *dev, uint8_t *eeprom_data,
 	return 0;
 }
 
+#ifdef CONFIG_I2C_EEPROM_TARGET_RUNTIME_ADDR
+int eeprom_target_set_addr(const struct device *dev, uint8_t addr)
+{
+	const struct i2c_eeprom_target_config *cfg = dev->config;
+	struct i2c_eeprom_target_data *data = dev->data;
+	int ret;
+
+	ret = i2c_target_unregister(cfg->bus.bus, &data->config);
+	if (ret) {
+		LOG_DBG("eeprom target failed to unregister");
+		return ret;
+	}
+
+	data->config.address = addr;
+
+	return i2c_target_register(cfg->bus.bus, &data->config);
+}
+#endif /* CONFIG_I2C_EEPROM_TARGET_RUNTIME_ADDR */
+
 static int eeprom_target_write_requested(struct i2c_target_config *config)
 {
 	struct i2c_eeprom_target_data *data = CONTAINER_OF(config,
@@ -148,6 +167,32 @@ static int eeprom_target_stop(struct i2c_target_config *config)
 	return 0;
 }
 
+#ifdef CONFIG_I2C_TARGET_BUFFER_MODE
+static void eeprom_target_buf_write_received(struct i2c_target_config *config,
+					     uint8_t *ptr, uint32_t len)
+{
+	struct i2c_eeprom_target_data *data = CONTAINER_OF(config,
+						struct i2c_eeprom_target_data,
+						config);
+	/* The first byte is offset */
+	data->buffer_idx = *ptr;
+	memcpy(&data->buffer[data->buffer_idx], ptr + 1, len - 1);
+}
+
+static int eeprom_target_buf_read_requested(struct i2c_target_config *config,
+					    uint8_t **ptr, uint32_t *len)
+{
+	struct i2c_eeprom_target_data *data = CONTAINER_OF(config,
+						struct i2c_eeprom_target_data,
+						config);
+
+	*ptr = &data->buffer[data->buffer_idx];
+	*len = data->buffer_size;
+
+	return 0;
+}
+#endif
+
 static int eeprom_target_register(const struct device *dev)
 {
 	const struct i2c_eeprom_target_config *cfg = dev->config;
@@ -174,6 +219,10 @@ static const struct i2c_target_callbacks eeprom_callbacks = {
 	.read_requested = eeprom_target_read_requested,
 	.write_received = eeprom_target_write_received,
 	.read_processed = eeprom_target_read_processed,
+#ifdef CONFIG_I2C_TARGET_BUFFER_MODE
+	.buf_write_received = eeprom_target_buf_write_received,
+	.buf_read_requested = eeprom_target_buf_read_requested,
+#endif
 	.stop = eeprom_target_stop,
 };
 

@@ -97,6 +97,24 @@ static uint32_t dump_fault(uint32_t status, uint32_t addr)
 #endif
 
 #if defined(CONFIG_FPU_SHARING)
+
+static void ALWAYS_INLINE z_arm_fpu_caller_save(struct __fpu_sf *fpu)
+{
+	__asm__ volatile (
+		"vstmia %0, {s0-s15};\n"
+		: : "r" (&fpu->s[0])
+		: "memory"
+		);
+#if CONFIG_VFP_FEATURE_REGS_S64_D32
+	__asm__ volatile (
+		"vstmia %0, {d16-d31};\n\t"
+		:
+		: "r" (&fpu->d[0])
+		: "memory"
+		);
+#endif
+}
+
 /**
  * @brief FPU undefined instruction fault handler
  *
@@ -150,11 +168,7 @@ bool z_arm_fault_undef_instruction_fp(void)
 			 */
 			spill_esf->undefined |= FPEXC_EN;
 			spill_esf->fpscr = __get_FPSCR();
-			__asm__ volatile (
-				"vstmia %0, {s0-s15};\n"
-				: : "r" (&spill_esf->s[0])
-				: "memory"
-				);
+			z_arm_fpu_caller_save(spill_esf);
 		}
 	} else {
 		/*
@@ -184,11 +198,7 @@ bool z_arm_fault_undef_instruction(z_arch_esf_t *esf)
 	 */
 	esf->fpu.undefined = __get_FPEXC();
 	esf->fpu.fpscr = __get_FPSCR();
-	__asm__ volatile (
-		"vstmia %0, {s0-s15};\n"
-		: : "r" (&esf->fpu.s[0])
-		: "memory"
-		);
+	z_arm_fpu_caller_save(&esf->fpu);
 #endif
 
 	/* Print fault information */

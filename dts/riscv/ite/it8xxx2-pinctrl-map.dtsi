@@ -390,4 +390,12 @@
 		pinmuxs = <&pinctrlf 1 IT8XXX2_ALT_FUNC_3>;
 	};
 
+	/* USB alternate function */
+	usb0_dm_gph5_default: usb0_dm_gph5_default {
+		pinmuxs = <&pinctrlh 5 IT8XXX2_ALT_DEFAULT>;
+	};
+	usb0_dp_gph6_default: usb0_dp_gph6_default {
+		pinmuxs = <&pinctrlh 6 IT8XXX2_ALT_DEFAULT>;
+	};
+
 };

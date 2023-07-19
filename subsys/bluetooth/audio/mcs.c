@@ -33,15 +33,6 @@
 
 LOG_MODULE_REGISTER(bt_mcs, CONFIG_BT_MCS_LOG_LEVEL);
 
-/* TODO Media control may send a large number of notifications for a
- * single command, so requires many buffers.
- * (Number found by experiment.)
- *
- * Either find a better way of setting up the Kconfig, or serialize the
- * notifications.
- */
-BUILD_ASSERT(CONFIG_BT_L2CAP_TX_BUF_COUNT >= 10, "Too few L2CAP buffers");
-
 static void notify(const struct bt_uuid *uuid, const void *data, uint16_t len);
 
 static struct media_proxy_sctrl_cbs cbs;
@@ -1357,7 +1348,7 @@ int bt_mcs_init(struct bt_ots_cb *ots_cbs)
 	mcs = (struct bt_gatt_service)BT_GATT_SERVICE(svc_attrs);
 
 #ifdef CONFIG_BT_OTS
-	struct bt_ots_init ots_init;
+	struct bt_ots_init_param ots_init;
 
 	ots = bt_ots_free_instance_get();
 	if (!ots) {

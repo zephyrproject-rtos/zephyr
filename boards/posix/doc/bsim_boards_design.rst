@@ -225,15 +225,14 @@ which relies on the bs_trace API. Instead, for tracing the bs_trace API
 should be used directly.
 The same applies to other Zephyr APIs, including the entropy API, etc.
 
-printk and posix_print backend
-==============================
+posix_print backend
+===================
 
-The bsim board provides a very simple backend for Zephyr's :c:func:`printk()`,
-which simply routes the printk strings to the bs_trace bsim API.
-So printk messages are printed in the console (stdout) together with all
-other device messages.
-The board also provides the posix_print API which is expected by the posix ARCH
-and soc inf code, and which is based on the same bs_trace API.
+The bsim board provides a backend for the posix_print API which is expected by the posix ARCH
+and soc inf (POSIX) code.
+It simply routes the printk strings to the bs_trace bsim API.
+Any message printed to the posix_print API, which is also the default printk backend,
+will be printed to the console (stdout) together with all other device messages.
 
 .. _bsim_boards_bs_tests:
 

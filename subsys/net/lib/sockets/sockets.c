@@ -154,6 +154,9 @@ static void zsock_flush_queue(struct net_context *ctx)
 
 	/* Some threads might be waiting on recv, cancel the wait */
 	k_fifo_cancel_wait(&ctx->recv_q);
+
+	/* Wake reader if it was sleeping */
+	(void)k_condvar_signal(&ctx->cond.recv);
 }
 
 #if defined(CONFIG_NET_NATIVE)
@@ -262,6 +265,9 @@ int zsock_close_ctx(struct net_context *ctx)
 		(void)net_context_recv(ctx, NULL, K_NO_WAIT, NULL);
 	}
 
+	ctx->user_data = INT_TO_POINTER(EINTR);
+	sock_set_error(ctx);
+
 	zsock_flush_queue(ctx);
 
 	SET_ERRNO(net_context_put(ctx));
@@ -364,7 +370,10 @@ static void zsock_accepted_cb(struct net_context *new_ctx,
 		 * closing handshake for stack to perform.
 		 */
 		net_context_ref(new_ctx);
+
+		(void)k_condvar_signal(&parent->cond.recv);
 	}
+
 }
 
 static void zsock_received_cb(struct net_context *ctx,
@@ -418,7 +427,7 @@ unlock:
 		(void)k_mutex_unlock(ctx->cond.lock);
 	}
 
-	/* Let reader to wake if it was sleeping */
+	/* Wake reader if it was sleeping */
 	(void)k_condvar_signal(&ctx->cond.recv);
 }
 
@@ -434,9 +443,6 @@ int zsock_shutdown_ctx(struct net_context *ctx, int how)
 		sock_set_eof(ctx);
 
 		zsock_flush_queue(ctx);
-
-		/* Let reader to wake if it was sleeping */
-		(void)k_condvar_signal(&ctx->cond.recv);
 	} else if (how == ZSOCK_SHUT_WR || how == ZSOCK_SHUT_RDWR) {
 		SET_ERRNO(-ENOTSUP);
 	} else {
@@ -487,15 +493,12 @@ static void zsock_connected_cb(struct net_context *ctx, int status, void *user_d
 	if (status < 0) {
 		ctx->user_data = INT_TO_POINTER(-status);
 		sock_set_error(ctx);
-	} else if (status == 0) {
-		(void)net_context_recv(ctx, zsock_received_cb, K_NO_WAIT, ctx->user_data);
 	}
 }
 
 int zsock_connect_ctx(struct net_context *ctx, const struct sockaddr *addr,
 		      socklen_t addrlen)
 {
-	k_timeout_t timeout;
 
 #if defined(CONFIG_SOCKS)
 	if (net_context_is_proxy_enabled(ctx)) {
@@ -513,17 +516,19 @@ int zsock_connect_ctx(struct net_context *ctx, const struct sockaddr *addr,
 		} else {
 			SET_ERRNO(-EALREADY);
 		}
-	} else if (sock_is_nonblock(ctx)) {
-		timeout = K_NO_WAIT;
-		SET_ERRNO(net_context_connect(ctx, addr, addrlen,
-					      zsock_connected_cb, timeout,
-					      ctx->user_data));
 	} else {
-		timeout = K_MSEC(CONFIG_NET_SOCKETS_CONNECT_TIMEOUT);
-		SET_ERRNO(net_context_connect(ctx, addr, addrlen, NULL,
-					      timeout, NULL));
+		k_timeout_t timeout = K_MSEC(CONFIG_NET_SOCKETS_CONNECT_TIMEOUT);
+		net_context_connect_cb_t cb = NULL;
+
+		if (sock_is_nonblock(ctx)) {
+			timeout = K_NO_WAIT;
+			cb = zsock_connected_cb;
+		}
+
 		SET_ERRNO(net_context_recv(ctx, zsock_received_cb, K_NO_WAIT,
 					   ctx->user_data));
+		SET_ERRNO(net_context_connect(ctx, addr, addrlen, cb, timeout,
+					      ctx->user_data));
 	}
 
 	return 0;
@@ -574,38 +579,33 @@ static inline int z_vrfy_zsock_listen(int sock, int backlog)
 int zsock_accept_ctx(struct net_context *parent, struct sockaddr *addr,
 		     socklen_t *addrlen)
 {
-	k_timeout_t timeout = K_FOREVER;
 	struct net_context *ctx;
 	struct net_pkt *last_pkt;
-	int fd;
+	int fd, ret;
 
 	fd = z_reserve_fd();
 	if (fd < 0) {
 		return -1;
 	}
 
-	if (sock_is_nonblock(parent)) {
-		timeout = K_NO_WAIT;
+	if (!sock_is_nonblock(parent)) {
+		k_timeout_t timeout = K_FOREVER;
+
+		/* accept() can reuse zsock_wait_data(), as underneath it's
+		 * monitoring the same queue (accept_q is an alias for recv_q).
+		 */
+		ret = zsock_wait_data(parent, &timeout);
+		if (ret < 0) {
+			z_free_fd(fd);
+			errno = -ret;
+			return -1;
+		}
 	}
 
-	ctx = k_fifo_get(&parent->accept_q, timeout);
+	ctx = k_fifo_get(&parent->accept_q, K_NO_WAIT);
 	if (ctx == NULL) {
 		z_free_fd(fd);
-		if (K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
-			/* For non-blocking sockets return EAGAIN because it
-			 * just means the fifo is empty at this time
-			 */
-			errno = EAGAIN;
-		} else {
-			/* For blocking sockets return EINVAL because it means
-			 * the socket was closed while we were waiting for
-			 * connections. This is the same error code returned
-			 * under Linux when calling shutdown on a blocked accept
-			 * call
-			 */
-			errno = EINVAL;
-		}
-
+		errno = EAGAIN;
 		return -1;
 	}
 
@@ -1151,6 +1151,8 @@ void net_socket_update_tc_rx_time(struct net_pkt *pkt, uint32_t end_tick)
 
 int zsock_wait_data(struct net_context *ctx, k_timeout_t *timeout)
 {
+	int ret;
+
 	if (ctx->cond.lock == NULL) {
 		/* For some reason the lock pointer is not set properly
 		 * when called by fdtable.c:z_finalize_fd()
@@ -1163,8 +1165,15 @@ int zsock_wait_data(struct net_context *ctx, k_timeout_t *timeout)
 
 	if (k_fifo_is_empty(&ctx->recv_q)) {
 		/* Wait for the data to arrive but without holding a lock */
-		return k_condvar_wait(&ctx->cond.recv, ctx->cond.lock,
-				      *timeout);
+		ret = k_condvar_wait(&ctx->cond.recv, ctx->cond.lock,
+				     *timeout);
+		if (ret < 0) {
+			return ret;
+		}
+
+		if (sock_is_error(ctx)) {
+			return -POINTER_TO_INT(ctx->user_data);
+		}
 	}
 
 	return 0;

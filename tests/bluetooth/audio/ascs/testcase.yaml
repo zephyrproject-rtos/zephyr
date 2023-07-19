@@ -17,20 +17,7 @@ tests:
     type: unit
     extra_configs:
       - CONFIG_BT_BAP_UNICAST_CLIENT=y
-    testcases:
-      - server_sink_state_codec_configured
-      - server_sink_state_qos_configured
-      - server_sink_state_enabling
-      - server_sink_state_streaming
-      - server_source_state_codec_configured
-      - server_source_state_qos_configured
-      - server_source_state_enabling
-      - server_source_state_streaming
-      - server_source_state_disabling
   bluetooth.audio.ascs.test_stream_pair:
     type: unit
     extra_configs:
       - CONFIG_BT_ASCS_MAX_ACTIVE_ASES=2
-    testcases:
-      - test_release_stream_pair_on_acl_disconnection_client_terminates_cis
-      - test_release_stream_pair_on_acl_disconnection_server_terminates_cis

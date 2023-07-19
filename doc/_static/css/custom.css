@@ -843,13 +843,13 @@ kbd, .kbd,
     background-color: var(--navbar-scrollbar-active-color);
 }
 
-/* Breathe tweaks */
+/* Docleaf tweaks */
 
 .rst-content .section > dl > dd {
     margin-left: 0;
 }
 
-.rst-content p.breathe-sectiondef-title {
+.rst-content p.docleaf-sectiondef-title {
     font-size: 115%;
     color: var(--link-color);
 }

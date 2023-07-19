@@ -364,14 +364,44 @@ endpoint name.  This is important as it needs to be unique per LwM2M server:
 	(void)memset(&client, 0x0, sizeof(client));
 	lwm2m_rd_client_start(&client, "unique-endpoint-name", 0, rd_client_event);
 
-Using LwM2M library with DTLS
-*****************************
+.. _lwm2m_security:
 
-The Zephyr LwM2M library can be used with DTLS transport for secure
-communication by selecting :kconfig:option:`CONFIG_LWM2M_DTLS_SUPPORT`.  In the client
-initialization we need to create a PSK and identity.  These need to match
-the security information loaded onto the LwM2M server.  Normally, the
-endpoint name is used to lookup the related security information:
+LwM2M security modes
+********************
+
+The Zephyr LwM2M library can be used either without security or use DTLS to secure the communication channel.
+When using DTLS with the LwM2M engine, PSK (Pre-Shared Key) and X.509 certificates are the security modes that can be used to secure the communication.
+The engine uses LwM2M Security object (Id 0) to read the stored credentials and feed keys from the security object into
+the TLS credential subsystem, see :ref:`secure sockets documentation <secure_sockets_interface>`.
+Enable the :kconfig:option:`CONFIG_LWM2M_DTLS_SUPPORT` Kconfig option to use the security.
+
+Depending on the selected mode, the security object must contain following data:
+
+PSK
+  Security Mode (Resource ID 2) set to zero (Pre-Shared Key mode).
+  Identity (Resource ID 3) contains PSK ID in binary form.
+  Secret key (Resource ID 5) contains the PSK key in binary form.
+  If the key or identity is provided as a hex string, it must be converted to binary before storing into the security object.
+
+X509
+  When X509 certificates are used, set Security Mode (ID 2) to ``2`` (Certificate mode).
+  Identity (ID 3) is used to store the client certificate and Secret key (ID 5) must have a private key associated with the certificate.
+  Server Public Key resource (ID 4) must contain a server certificate or CA certificate used to sign the certificate chain.
+  If the :kconfig:option:`CONFIG_MBEDTLS_PEM_CERTIFICATE_FORMAT` Kconfig option is enabled, certificates and private key can be entered in PEM format.
+  Otherwise, they must be in binary DER format.
+
+NoSec
+  When no security is used, set Security Mode (Resource ID 2) to ``3`` (NoSec).
+
+In all modes, Server URI resource (ID 0) must contain the full URI for the target server.
+When DNS names are used, the DNS resolver must be enabled.
+
+LwM2M stack provides callbacks in the :c:struct:`lwm2m_ctx` structure.
+They are used to feed keys from the LwM2M security object into the TLS credential subsystem.
+By default, these callbacks can be left as NULL pointers, in which case default callbacks are used.
+When an external TLS stack, or non-default socket options are required, you can overwrite the :c:func:`lwm2m_ctx.load_credentials` or :c:func:`lwm2m_ctx.set_socketoptions` callbacks.
+
+An example of setting up the security object for PSK mode:
 
 .. code-block:: c
 
@@ -383,21 +413,26 @@ endpoint name is used to lookup the related security information:
 
 	static const char client_identity[] = "Client_identity";
 
-Next we alter the ``Security`` object resources to include DTLS security
-information.  The server URL should begin with ``coaps://`` to indicate security
-is required.  Assign a 0 value (Pre-shared Key mode) to the ``Security Mode``
-resource.  Lastly, set the client identity and PSK resources.
+	lwm2m_set_string(&LWM2M_OBJ(LWM2M_OBJECT_SECURITY_ID, 0, 0), "coaps://lwm2m.example.com");
+	lwm2m_set_u8(&LWM2M_OBJ(LWM2M_OBJECT_SECURITY_ID, 0, 2), LWM2M_SECURITY_PSK);
+	/* Set the client identity as a string, but this could be binary as well */
+	lwm2m_set_string(&LWM2M_OBJ(LWM2M_OBJECT_SECURITY_ID, 0, 3), client_identity);
+	/* Set the client pre-shared key (PSK) */
+	lwm2m_set_opaque(&LWM2M_OBJ(LWM2M_OBJECT_SECURITY_ID, 0, 5), client_psk, sizeof(client_psk));
+
+An example of setting up the security object for X509 certificate mode:
 
 .. code-block:: c
 
-	/* Use coaps:// for server URL protocol */
-	lwm2m_set_string(&LWM2M_OBJ(0, 0, 0), "coaps://5.39.83.206");
-	/* 0 = Pre-Shared Key mode */
-	lwm2m_set_u8(&LWM2M_OBJ(0, 0, 2), 0);
-	/* Set the client identity */
-	lwm2m_set_string(&LWM2M_OBJ(0, 0, 3), (char *)client_identity);
-	/* Set the client pre-shared key (PSK) */
-	lwm2m_set_opaque(&LWM2M_OBJ(0, 0, 5), (void *)client_psk, sizeof(client_psk));
+	static const char certificate[] = "-----BEGIN CERTIFICATE-----\nMIIB6jCCAY+gAw...";
+	static const char key[] = "-----BEGIN EC PRIVATE KEY-----\nMHcCAQ...";
+	static const char root_ca[] = "-----BEGIN CERTIFICATE-----\nMIIBaz...";
+
+	lwm2m_set_string(&LWM2M_OBJ(LWM2M_OBJECT_SECURITY_ID, 0, 0), "coaps://lwm2m.example.com");
+	lwm2m_set_u8(&LWM2M_OBJ(LWM2M_OBJECT_SECURITY_ID, 0, 2), LWM2M_SECURITY_CERT);
+	lwm2m_set_string(&LWM2M_OBJ(LWM2M_OBJECT_SECURITY_ID, 0, 3), certificate);
+	lwm2m_set_string(&LWM2M_OBJ(LWM2M_OBJECT_SECURITY_ID, 0, 5), key);
+	lwm2m_set_string(&LWM2M_OBJ(LWM2M_OBJECT_SECURITY_ID, 0, 5), root_ca);
 
 Before calling :c:func:`lwm2m_rd_client_start` assign the tls_tag # where the
 LwM2M library should store the DTLS information prior to connection (normally a

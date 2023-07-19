@@ -209,6 +209,9 @@ struct bt_smp {
 
 	/* Used Bluetooth authentication callbacks. */
 	atomic_ptr_t			auth_cb;
+
+	/* Bondable flag */
+	atomic_t			bondable;
 };
 
 static unsigned int fixed_passkey = BT_PASSKEY_INVALID;
@@ -288,6 +291,11 @@ static K_SEM_DEFINE(sc_local_pkey_ready, 0, 1);
  */
 #define BT_SMP_AUTH_CB_UNINITIALIZED	((atomic_ptr_val_t)bt_smp_pool)
 
+/* Value used to mark that per-connection bondable flag is not initialized.
+ * Value false/true represent if flag is cleared or set and cannot be used for that purpose.
+ */
+#define BT_SMP_BONDABLE_UNINITIALIZED	((atomic_val_t)-1)
+
 static bool le_sc_supported(void)
 {
 	/*
@@ -308,6 +316,13 @@ static const struct bt_conn_auth_cb *latch_auth_cb(struct bt_smp *smp)
 	atomic_ptr_cas(&smp->auth_cb, BT_SMP_AUTH_CB_UNINITIALIZED, (atomic_ptr_val_t)bt_auth);
 
 	return atomic_ptr_get(&smp->auth_cb);
+}
+
+static bool latch_bondable(struct bt_smp *smp)
+{
+	atomic_cas(&smp->bondable, BT_SMP_BONDABLE_UNINITIALIZED, (atomic_val_t)bondable);
+
+	return atomic_get(&smp->bondable);
 }
 
 static uint8_t get_io_capa(struct bt_smp *smp)
@@ -1632,7 +1647,15 @@ static void smp_pairing_complete(struct bt_smp *smp, uint8_t status)
 {
 	struct bt_conn *conn = smp->chan.chan.conn;
 
-	LOG_DBG("status 0x%x", status);
+	LOG_DBG("got status 0x%x", status);
+
+	if (conn->state != BT_CONN_CONNECTED) {
+		/* If disconnection has been triggered in between the security update
+		 * and the call to this function we need to abort the pairing.
+		 */
+		LOG_WRN("Not connected!");
+		status = BT_SMP_ERR_UNSPECIFIED;
+	}
 
 	if (!status) {
 #if defined(CONFIG_BT_BREDR)
@@ -1701,7 +1724,7 @@ static void smp_pairing_complete(struct bt_smp *smp, uint8_t status)
 
 	smp_reset(smp);
 
-	if (conn->sec_level != conn->required_sec_level) {
+	if (conn->state == BT_CONN_CONNECTED && conn->sec_level != conn->required_sec_level) {
 		bt_smp_start_security(conn);
 	}
 }
@@ -2584,7 +2607,7 @@ static uint8_t get_auth(struct bt_smp *smp, uint8_t auth)
 		auth |= BT_SMP_AUTH_MITM;
 	}
 
-	if (bondable) {
+	if (latch_bondable(smp)) {
 		auth |= BT_SMP_AUTH_BONDING;
 	} else {
 		auth &= ~BT_SMP_AUTH_BONDING;
@@ -3969,7 +3992,7 @@ static uint8_t smp_security_request(struct bt_smp *smp, struct net_buf *buf)
 	}
 
 	if (IS_ENABLED(CONFIG_BT_BONDING_REQUIRED) &&
-	    !(bondable && (auth & BT_SMP_AUTH_BONDING))) {
+	    !(latch_bondable(smp) && (auth & BT_SMP_AUTH_BONDING))) {
 		/* Reject security req if not both intend to bond */
 		LOG_DBG("Bonding required");
 		return BT_SMP_ERR_UNSPECIFIED;
@@ -4533,6 +4556,7 @@ static void bt_smp_connected(struct bt_l2cap_chan *chan)
 	smp_reset(smp);
 
 	atomic_ptr_set(&smp->auth_cb, BT_SMP_AUTH_CB_UNINITIALIZED);
+	atomic_set(&smp->bondable, BT_SMP_BONDABLE_UNINITIALIZED);
 }
 
 static void bt_smp_disconnected(struct bt_l2cap_chan *chan)
@@ -5280,6 +5304,24 @@ static int smp_self_test(void)
 static inline int smp_self_test(void)
 {
 	return 0;
+}
+#endif
+
+#if defined(CONFIG_BT_BONDABLE_PER_CONNECTION)
+int bt_conn_set_bondable(struct bt_conn *conn, bool enable)
+{
+	struct bt_smp *smp;
+
+	smp = smp_chan_get(conn);
+	if (!smp) {
+		return -EINVAL;
+	}
+
+	if (atomic_cas(&smp->bondable, BT_SMP_BONDABLE_UNINITIALIZED, (atomic_val_t)enable)) {
+		return 0;
+	} else {
+		return -EALREADY;
+	}
 }
 #endif
 

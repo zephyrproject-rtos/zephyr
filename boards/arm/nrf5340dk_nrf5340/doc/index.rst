@@ -315,7 +315,7 @@ LEDs on the board are working properly with Zephyr:
 
 You can build and flash the examples to make sure Zephyr is running correctly on
 your board. The button and LED definitions can be found in
-:zephyr_file:`boards/arm/nrf5340dk_nrf5340/nrf5340_cpuapp_common.dts`.
+:zephyr_file:`boards/arm/nrf5340dk_nrf5340/nrf5340_cpuapp_common.dtsi`.
 
 References
 **********

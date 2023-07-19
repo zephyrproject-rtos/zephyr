@@ -34,6 +34,9 @@
 #define RTC_MONTH	0x08
 #define RTC_YEAR	0x09
 
+/* Y2K Bugfix */
+#define RTC_CENTURY	0x32
+
 /* Alarm time indices in RTC RAM */
 #define RTC_ALARM_SEC	0x01
 #define RTC_ALARM_MIN	0x03
@@ -106,10 +109,10 @@
 #define MIN_WDAY	1
 #define MAX_MDAY	31
 #define MIN_MDAY	1
-#define MAX_MON		11
-#define MIN_MON		0
+#define MAX_MON		12
+#define MIN_MON		1
 #define MIN_YEAR_DIFF	0 /* YEAR - 1900 */
-#define MAX_YEAR_DIFF	199 /* YEAR - 1900 */
+#define MAX_YEAR_DIFF	99 /* YEAR - 1999 */
 
 struct rtc_mc146818_data {
 	struct k_spinlock lock;
@@ -149,16 +152,16 @@ static bool rtc_mc146818_validate_time(const struct rtc_time *timeptr)
 	if (timeptr->tm_hour < MIN_HOUR || timeptr->tm_hour > MAX_HOUR) {
 		return false;
 	}
-	if (timeptr->tm_wday < MIN_WDAY || timeptr->tm_wday > MAX_WDAY) {
+	if (timeptr->tm_wday + 1 < MIN_WDAY || timeptr->tm_wday + 1 > MAX_WDAY) {
 		return false;
 	}
 	if (timeptr->tm_mday < MIN_MDAY || timeptr->tm_mday > MAX_MDAY) {
 		return false;
 	}
-	if (timeptr->tm_mon < MIN_MON || timeptr->tm_mon > MAX_MON) {
+	if (timeptr->tm_mon + 1 < MIN_MON || timeptr->tm_mon + 1 > MAX_MON) {
 		return false;
 	}
-	if (timeptr->tm_year < MIN_YEAR_DIFF || timeptr->tm_year > MAX_YEAR_DIFF) {
+	if (timeptr->tm_year - 70 < MIN_YEAR_DIFF || timeptr->tm_year - 70 > MAX_YEAR_DIFF) {
 		return false;
 	}
 	return true;
@@ -168,6 +171,8 @@ static int rtc_mc146818_set_time(const struct device *dev, const struct rtc_time
 {
 	struct rtc_mc146818_data * const dev_data = dev->data;
 	uint8_t value;
+	int year;
+	int cent;
 	int ret;
 
 	k_spinlock_key_t key = k_spin_lock(&dev_data->lock);
@@ -186,6 +191,9 @@ static int rtc_mc146818_set_time(const struct device *dev, const struct rtc_time
 	value = rtc_read(RTC_DATA);
 	rtc_write(RTC_DATA, value | RTC_UCI_BIT);
 
+	year = (1900 + timeptr->tm_year) % 100;
+	cent = (1900 + timeptr->tm_year) / 100;
+
 	if (!(rtc_read(RTC_DATA) & RTC_DMODE_BIT)) {
 		rtc_write(RTC_SEC, (uint8_t)bin2bcd(timeptr->tm_sec));
 		rtc_write(RTC_MIN, (uint8_t)bin2bcd(timeptr->tm_min));
@@ -193,7 +201,8 @@ static int rtc_mc146818_set_time(const struct device *dev, const struct rtc_time
 		rtc_write(RTC_WDAY, (uint8_t)bin2bcd(timeptr->tm_wday));
 		rtc_write(RTC_MDAY, (uint8_t)bin2bcd(timeptr->tm_mday));
 		rtc_write(RTC_MONTH, (uint8_t)bin2bcd(timeptr->tm_mon + 1));
-		rtc_write(RTC_YEAR, (uint8_t)bin2bcd(timeptr->tm_year));
+		rtc_write(RTC_YEAR, (uint8_t)bin2bcd(year));
+		rtc_write(RTC_CENTURY, (uint8_t)bin2bcd(cent));
 	} else {
 		rtc_write(RTC_SEC, (uint8_t)timeptr->tm_sec);
 		rtc_write(RTC_MIN, (uint8_t)timeptr->tm_min);
@@ -201,7 +210,8 @@ static int rtc_mc146818_set_time(const struct device *dev, const struct rtc_time
 		rtc_write(RTC_WDAY, (uint8_t)timeptr->tm_wday);
 		rtc_write(RTC_MDAY, (uint8_t)timeptr->tm_mday);
 		rtc_write(RTC_MONTH, (uint8_t)timeptr->tm_mon + 1);
-		rtc_write(RTC_YEAR, (uint8_t)timeptr->tm_year);
+		rtc_write(RTC_YEAR, year);
+		rtc_write(RTC_CENTURY, cent);
 	}
 
 	if (timeptr->tm_isdst == 1) {
@@ -221,6 +231,8 @@ static int rtc_mc146818_get_time(const struct device *dev, struct rtc_time  *tim
 {
 	struct rtc_mc146818_data * const dev_data = dev->data;
 	int ret;
+	uint8_t cent;
+	uint8_t year;
 	uint8_t value;
 
 	k_spinlock_key_t key = k_spin_lock(&dev_data->lock);
@@ -239,16 +251,18 @@ static int rtc_mc146818_get_time(const struct device *dev, struct rtc_time  *tim
 	while (rtc_read(RTC_UIP) & RTC_UIP_BIT) {
 		continue;
 	}
-	timeptr->tm_year = rtc_read(RTC_YEAR);
+	cent = rtc_read(RTC_CENTURY);
+	year = rtc_read(RTC_YEAR);
 	timeptr->tm_mon = rtc_read(RTC_MONTH) - 1;
 	timeptr->tm_mday = rtc_read(RTC_MDAY);
-	timeptr->tm_wday = rtc_read(RTC_WDAY);
+	timeptr->tm_wday = rtc_read(RTC_WDAY) - 1;
 	timeptr->tm_hour = rtc_read(RTC_HOUR);
 	timeptr->tm_min = rtc_read(RTC_MIN);
 	timeptr->tm_sec = rtc_read(RTC_SEC);
 
 	if (!(rtc_read(RTC_DATA) & RTC_DMODE_BIT)) {
-		timeptr->tm_year = bcd2bin(timeptr->tm_year);
+		year = bcd2bin(year);
+		cent = bcd2bin(cent);
 		timeptr->tm_mon = bcd2bin(timeptr->tm_mon);
 		timeptr->tm_mday = bcd2bin(timeptr->tm_mday);
 		timeptr->tm_wday = bcd2bin(timeptr->tm_wday);
@@ -256,6 +270,8 @@ static int rtc_mc146818_get_time(const struct device *dev, struct rtc_time  *tim
 		timeptr->tm_min = bcd2bin(timeptr->tm_min);
 		timeptr->tm_sec = bcd2bin(timeptr->tm_sec);
 	}
+
+	timeptr->tm_year = 100 * (int)cent + year - 1900;
 
 	timeptr->tm_nsec = 0;
 	timeptr->tm_yday = 0;
@@ -296,7 +312,7 @@ static bool rtc_mc146818_validate_alarm(const struct rtc_time *timeptr, uint32_t
 	}
 
 	if ((mask & RTC_ALARM_TIME_MASK_MONTH) &&
-	    (timeptr->tm_mon < MIN_WDAY || timeptr->tm_mon > MAX_WDAY)) {
+	    (timeptr->tm_mon + 1 < MIN_WDAY || timeptr->tm_mon + 1 > MAX_WDAY)) {
 		return false;
 	}
 
@@ -306,7 +322,7 @@ static bool rtc_mc146818_validate_alarm(const struct rtc_time *timeptr, uint32_t
 	}
 
 	if ((mask & RTC_ALARM_TIME_MASK_YEAR) &&
-	    (timeptr->tm_year < MIN_YEAR_DIFF || timeptr->tm_year > MAX_YEAR_DIFF)) {
+	    (timeptr->tm_year - 70 < MIN_YEAR_DIFF || timeptr->tm_year - 70 > MAX_YEAR_DIFF)) {
 		return false;
 	}
 

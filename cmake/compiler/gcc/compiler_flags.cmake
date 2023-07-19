@@ -106,7 +106,7 @@ if (NOT CONFIG_NEWLIB_LIBC AND
     NOT (CONFIG_PICOLIBC AND NOT CONFIG_PICOLIBC_USE_MODULE) AND
     NOT COMPILER STREQUAL "xcc" AND
     NOT CONFIG_HAS_ESPRESSIF_HAL AND
-    NOT CONFIG_NATIVE_APPLICATION)
+    NOT CONFIG_NATIVE_BUILD)
   set_compiler_property(PROPERTY nostdinc -nostdinc)
   set_compiler_property(APPEND PROPERTY nostdinc_include ${NOSTDINC})
 endif()
@@ -181,6 +181,9 @@ set_compiler_property(PROPERTY debug -g)
 
 # Flags to save temporary object files
 set_compiler_property(PROPERTY save_temps -save-temps=obj)
+
+# Flag to specify linker script
+set_compiler_property(PROPERTY linker_script -T)
 
 # Flags to not track macro expansion
 set_compiler_property(PROPERTY no_track_macro_expansion -ftrack-macro-expansion=0)

@@ -1,6 +1,11 @@
 tests:
   benchmark.kernel.scheduler:
-    tags: benchmark
+    tags:
+      - benchmark
+      - kernel
+    integration_platforms:
+      - mps2_an385
+      - qemu_x86
     slow: true
     harness: console
     harness_config:

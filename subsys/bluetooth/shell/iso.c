@@ -195,9 +195,7 @@ static int cmd_cig_create(const struct shell *sh, size_t argc, char *argv[])
 			return -ENOEXEC;
 		}
 
-		if (!IN_RANGE(packing,
-			      BT_ISO_PACKING_SEQUENTIAL,
-			      BT_ISO_PACKING_INTERLEAVED)) {
+		if (packing != BT_ISO_PACKING_SEQUENTIAL && packing != BT_ISO_PACKING_INTERLEAVED) {
 			shell_error(sh, "Invalid packing %lu", packing);
 
 			return -ENOEXEC;
@@ -218,9 +216,7 @@ static int cmd_cig_create(const struct shell *sh, size_t argc, char *argv[])
 			return -ENOEXEC;
 		}
 
-		if (!IN_RANGE(framing,
-			      BT_ISO_FRAMING_UNFRAMED,
-			      BT_ISO_FRAMING_FRAMED)) {
+		if (framing != BT_ISO_FRAMING_UNFRAMED && framing != BT_ISO_FRAMING_FRAMED) {
 			shell_error(sh, "Invalid framing %lu", framing);
 
 			return -ENOEXEC;

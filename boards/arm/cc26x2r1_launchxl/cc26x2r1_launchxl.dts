@@ -111,10 +111,6 @@
 	cs-gpios = <&gpio0 11 GPIO_ACTIVE_LOW>;
 };
 
-&rtc {
-	status = "okay";
-};
-
 &wdt0 {
 	status = "okay";
 };

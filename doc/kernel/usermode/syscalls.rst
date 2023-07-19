@@ -91,12 +91,23 @@ bottom of ``include/sensor.h``:
 
 C prototype functions must be declared in one of the directories
 listed in the CMake variable ``SYSCALL_INCLUDE_DIRS``. This list
-always contains ``${ZEPHYR_BASE}/include``, but will also contain
-``APPLICATION_SOURCE_DIR`` when ``CONFIG_APPLICATION_DEFINED_SYSCALL``
-is set, or ``${ZEPHYR_BASE}/subsys/testsuite/ztest/include`` when
+always contains ``APPLICATION_SOURCE_DIR`` when
+``CONFIG_APPLICATION_DEFINED_SYSCALL`` is set, or
+``${ZEPHYR_BASE}/subsys/testsuite/ztest/include`` when
 ``CONFIG_ZTEST`` is set. Additional paths can be added to the list
 through the CMake command line or in CMake code that is run before
-``find_package(Zephyr ...)`` is run.
+``find_package(Zephyr ...)`` is run. ``${ZEPHYR_BASE}/include``
+is always scanned for potential syscall prototypes.
+
+Note that not all syscalls will be included in the final binaries.
+CMake functions ``zephyr_syscall_header`` and
+``zephyr_syscall_header_ifdef`` are used to specify which header
+files contain syscall prototypes where those syscalls must be
+present in the final binaries. Note that header files inside
+directories listed in CMake variable ``SYSCALL_INCLUDE_DIRS``
+will always have their syscalls present in final binaries.
+To force all syscalls to be included in the final binaries,
+turn on :kconfig:option:`CONFIG_EMIT_ALL_SYSCALLS`.
 
 Invocation Context
 ==================
@@ -137,6 +148,16 @@ the project out directory under ``include/generated/``:
 
 * An entry for the system call is created in the dispatch table
   ``_k_syscall_table``, expressed in ``include/generated/syscall_dispatch.c``
+
+  * This table only contains syscalls where their corresponding
+    prototypes are declared in header files when
+    :kconfig:option:`CONFIG_EMIT_ALL_SYSCALLS` is enabled:
+
+    * Indicated by CMake functions ``zephyr_syscall_header`` and
+      ``zephyr_syscall_header_ifdef``, or
+
+    * Under directories specified in CMake variable
+      ``SYSCALL_INCLUDE_DIRS``.
 
 * A weak verification function is declared, which is just an alias of the
   'unimplemented system call' verifier. This is necessary since the real
@@ -603,6 +624,7 @@ Configuration Options
 Related configuration options:
 
 * :kconfig:option:`CONFIG_USERSPACE`
+* :kconfig:option:`CONFIG_EMIT_ALL_SYSCALLS`
 
 APIs
 ****

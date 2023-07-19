@@ -414,6 +414,7 @@ MODEM_CMD_DEFINE(on_cmd_wifi_connected)
 
 	esp_flags_set(dev, EDF_STA_CONNECTED);
 	wifi_mgmt_raise_connect_result_event(dev->net_iface, 0);
+	net_if_dormant_off(dev->net_iface);
 
 	return 0;
 }
@@ -438,6 +439,7 @@ static void esp_mgmt_disconnect_work(struct k_work *work)
 	esp_mode_switch_submit_if_needed(dev);
 
 	net_if_ipv4_addr_rm(dev->net_iface, &dev->ip);
+	net_if_dormant_on(dev->net_iface);
 	wifi_mgmt_raise_disconnect_result_event(dev->net_iface, 0);
 }
 
@@ -740,6 +742,7 @@ MODEM_CMD_DEFINE(on_cmd_ready)
 
 
 	if (net_if_is_carrier_ok(dev->net_iface)) {
+		net_if_dormant_on(dev->net_iface);
 		net_if_carrier_off(dev->net_iface);
 		LOG_ERR("Unexpected reset");
 	}
@@ -899,15 +902,19 @@ out:
 	dev->scan_cb = NULL;
 }
 
-static int esp_mgmt_scan(const struct device *dev, scan_result_cb_t cb)
+static int esp_mgmt_scan(const struct device *dev,
+			 struct wifi_scan_params *params,
+			 scan_result_cb_t cb)
 {
 	struct esp_data *data = dev->data;
+
+	ARG_UNUSED(params);
 
 	if (data->scan_cb != NULL) {
 		return -EINPROGRESS;
 	}
 
-	if (!net_if_is_up(data->net_iface)) {
+	if (!net_if_is_carrier_ok(data->net_iface)) {
 		return -EIO;
 	}
 
@@ -950,6 +957,7 @@ static void esp_mgmt_connect_work(struct k_work *work)
 	memset(dev->conn_cmd, 0, sizeof(dev->conn_cmd));
 
 	if (ret < 0) {
+		net_if_dormant_on(dev->net_iface);
 		if (esp_flags_are_set(dev, EDF_STA_CONNECTED)) {
 			esp_flags_clear(dev, EDF_STA_CONNECTED);
 			wifi_mgmt_raise_disconnect_result_event(dev->net_iface,
@@ -961,6 +969,7 @@ static void esp_mgmt_connect_work(struct k_work *work)
 	} else if (!esp_flags_are_set(dev, EDF_STA_CONNECTED)) {
 		esp_flags_set(dev, EDF_STA_CONNECTED);
 		wifi_mgmt_raise_connect_result_event(dev->net_iface, 0);
+		net_if_dormant_off(dev->net_iface);
 	}
 
 	esp_mode_flags_clear(dev, EDF_STA_LOCK);
@@ -975,7 +984,8 @@ static int esp_mgmt_connect(const struct device *dev,
 	struct esp_data *data = dev->data;
 	int len;
 
-	if (!net_if_is_up(data->net_iface)) {
+	if (!net_if_is_carrier_ok(data->net_iface) ||
+	    !net_if_is_admin_up(data->net_iface)) {
 		return -EIO;
 	}
 
@@ -1165,12 +1175,16 @@ static void esp_init_work(struct k_work *work)
 
 	LOG_INF("ESP Wi-Fi ready");
 
+	/* L1 network layer (physical layer) is up */
 	net_if_carrier_on(dev->net_iface);
+
+	k_sem_give(&dev->sem_if_up);
 }
 
 static int esp_reset(const struct device *dev)
 {
 	struct esp_data *data = dev->data;
+	int ret = -EAGAIN;
 
 	if (net_if_is_carrier_ok(data->net_iface)) {
 		net_if_carrier_off(data->net_iface);
@@ -1189,10 +1203,14 @@ static int esp_reset(const struct device *dev)
 	k_sleep(K_MSEC(100));
 	gpio_pin_set_dt(&config->reset, 0);
 #else
-	int ret;
+#if DT_INST_NODE_HAS_PROP(0, external_reset)
+	/* Wait to see if the interface comes up by itself */
+	ret = k_sem_take(&data->sem_if_ready, K_MSEC(CONFIG_WIFI_ESP_AT_RESET_TIMEOUT));
+#endif
 	int retries = 3;
 
-	while (retries--) {
+	/* Don't need to run this if the interface came up by itself */
+	while ((ret != 0) && retries--) {
 		ret = modem_cmd_send(&data->mctx.iface, &data->mctx.cmd_handler,
 				     NULL, 0, "AT+RST", &data->sem_if_ready,
 				     K_MSEC(CONFIG_WIFI_ESP_AT_RESET_TIMEOUT));
@@ -1206,23 +1224,42 @@ static int esp_reset(const struct device *dev)
 		return -EAGAIN;
 	}
 #endif
-	return 0;
+	LOG_INF("Waiting for interface to come up");
+
+	ret = k_sem_take(&data->sem_if_up, ESP_INIT_TIMEOUT);
+	if (ret == -EAGAIN) {
+		LOG_ERR("Timeout waiting for interface");
+	}
+
+	return ret;
 }
 
 static void esp_iface_init(struct net_if *iface)
 {
-	net_if_carrier_off(iface);
 	esp_offload_init(iface);
+
+	/* Not currently connected to a network */
+	net_if_dormant_on(iface);
 }
+
+static enum offloaded_net_if_types esp_offload_get_type(void)
+{
+	return L2_OFFLOADED_NET_IF_TYPE_WIFI;
+}
+
+static const struct wifi_mgmt_ops esp_mgmt_ops = {
+	.scan		   = esp_mgmt_scan,
+	.connect	   = esp_mgmt_connect,
+	.disconnect	   = esp_mgmt_disconnect,
+	.ap_enable	   = esp_mgmt_ap_enable,
+	.ap_disable	   = esp_mgmt_ap_disable,
+	.iface_status	   = esp_mgmt_iface_status,
+};
 
 static const struct net_wifi_mgmt_offload esp_api = {
 	.wifi_iface.iface_api.init = esp_iface_init,
-	.scan			   = esp_mgmt_scan,
-	.connect		   = esp_mgmt_connect,
-	.disconnect		   = esp_mgmt_disconnect,
-	.ap_enable		   = esp_mgmt_ap_enable,
-	.ap_disable		   = esp_mgmt_ap_disable,
-	.iface_status		   = esp_mgmt_iface_status,
+	.wifi_iface.get_type = esp_offload_get_type,
+	.wifi_mgmt_api = &esp_mgmt_ops,
 };
 
 static int esp_init(const struct device *dev);
@@ -1247,6 +1284,7 @@ static int esp_init(const struct device *dev)
 	k_sem_init(&data->sem_tx_ready, 0, 1);
 	k_sem_init(&data->sem_response, 0, 1);
 	k_sem_init(&data->sem_if_ready, 0, 1);
+	k_sem_init(&data->sem_if_up, 0, 1);
 
 	k_work_init(&data->init_work, esp_init_work);
 	k_work_init_delayable(&data->ip_addr_work, esp_ip_addr_work);

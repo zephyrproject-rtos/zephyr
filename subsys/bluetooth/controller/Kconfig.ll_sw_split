@@ -74,6 +74,16 @@ config BT_LLL_VENDOR_OPENISA
 	help
 	  Use OpenISA Lower Link Layer implementation.
 
+# BT_CTLR_DF_SUPPORT is a wrapper for all DF features. Here we select features that are supported by
+# Zephyr's BLE Controller.
+config BT_CTLR_DF_SUPPORT
+	depends on BT_LL_SW_SPLIT && !BT_CTLR_TIFS_HW
+	select BT_CTLR_DF_CTE_TX_SUPPORT
+	select BT_CTLR_DF_ANT_SWITCH_2US_SUPPORT
+	select BT_CTLR_DF_ANT_SWITCH_1US_SUPPORT
+	select BT_CTLR_DF_CTE_RX_SUPPORT
+	select BT_CTLR_DF_CTE_RX_SAMPLE_1US_SUPPORT
+
 config BT_CTLR_XTAL_ADVANCED_SUPPORT
 	bool
 
@@ -345,14 +355,6 @@ config BT_CTLR_SCAN_AUX_SET
 	help
 	  Maximum supported auxiliary channel scan sets.
 
-config BT_CTLR_SCAN_SYNC_ISO_SET
-	int "LE ISO Broadcast Isochronous Groups Sync Sets"
-	depends on BT_CTLR_SYNC_ISO
-	range 1 64
-	default 1
-	help
-	  Maximum supported broadcast isochronous groups (BIGs) sync sets.
-
 config BT_CTLR_ADV_ENABLE_STRICT
 	bool "Enforce Strict Advertising Enable/Disable"
 	depends on BT_BROADCASTER
@@ -366,6 +368,26 @@ config BT_CTLR_SCAN_ENABLE_STRICT
 	help
 	  Enforce returning HCI Error Command Disallowed on enabling/disabling
 	  already enabled/disabled scanning.
+
+config BT_CTLR_ISOAL_SN_STRICT
+	bool "Enforce Strict Tx ISO Data Sequence Number use"
+	depends on BT_CTLR_ADV_ISO || BT_CTLR_CONN_ISO
+	default y
+	help
+	  Enforce strict sequencing of released payloads based on the TX SDU's
+	  packet sequence number. This will be effective when fragmenting an
+	  SDU into unframed PDUs.
+
+	  When enabled, this could result in an SDU being fragmented into
+	  payload numbers that are expired (will be dropped), if the TX SDU
+	  packet sequence numbers do not increment according to the SDU interval
+	  and delivery of SDUs to the ISO-AL do not strictly follow the SDU
+	  interval.
+
+	  When disabled, TX SDUs could be shifted from their stream aligned
+	  position and fragmented into payloads that are less likely to be
+	  dropped. This will result in better delivery of data to the receiver
+	  but at the cost of creating skews in the received stream of SDUs.
 
 config BT_CTLR_ZLI
 	bool "Use Zero Latency IRQs"
@@ -435,6 +457,19 @@ config BT_CTLR_SCHED_ADVANCED
 
 	  Disabling this feature will lead to overlapping role in timespace
 	  leading to skipped events amongst active roles.
+
+config BT_CTLR_ASSERT_OVERHEAD_START
+	bool "Assert on Prepare Latency"
+	default y
+	help
+	  Assert on increased Radio Event Prepare callback latencies due to
+	  CPU usage overheads in the Controller implementation.
+
+	  Disabling this option permits the Controller to gracefully skip radio
+	  events that are delayed due to CPU usage latencies; as long as the
+	  radio event skips are not for every consecutive radio event interval,
+	  otherwise leading to remote supervision timeout and possible missing
+	  local disconnect events.
 
 config BT_CTLR_CENTRAL_SPACING
 	int "Central Connection Spacing"

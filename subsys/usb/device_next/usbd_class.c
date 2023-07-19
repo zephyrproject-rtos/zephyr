@@ -257,6 +257,28 @@ static int usbd_class_remove(struct usbd_contex *const uds_ctx,
 	return 0;
 }
 
+int usbd_class_remove_all(struct usbd_contex *const uds_ctx,
+			  const uint8_t cfg)
+{
+	struct usbd_config_node *cfg_nd;
+	struct usbd_class_node *c_nd;
+	sys_snode_t *node;
+
+	cfg_nd = usbd_config_get(uds_ctx, cfg);
+	if (cfg_nd == NULL) {
+		return -ENODATA;
+	}
+
+	while ((node = sys_slist_get(&cfg_nd->class_list))) {
+		c_nd = CONTAINER_OF(node, struct usbd_class_node, node);
+		atomic_clear_bit(&c_nd->data->state, USBD_CCTX_REGISTERED);
+		usbd_class_shutdown(c_nd);
+		LOG_DBG("Remove class node %p from configuration %u", c_nd, cfg);
+	}
+
+	return 0;
+}
+
 /*
  * All the functions below are part of public USB device support API.
  */
@@ -340,6 +362,7 @@ int usbd_unregister_class(struct usbd_contex *const uds_ctx,
 	ret = usbd_class_remove(uds_ctx, c_nd, cfg);
 	if (ret == 0) {
 		atomic_clear_bit(&data->state, USBD_CCTX_REGISTERED);
+		usbd_class_shutdown(c_nd);
 		data->uds_ctx = NULL;
 	}
 
