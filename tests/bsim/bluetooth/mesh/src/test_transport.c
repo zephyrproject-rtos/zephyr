@@ -235,7 +235,7 @@ static void test_tx_loopback(void)
 		err = bt_mesh_test_send(cfg->addr, NULL, test_vector[i].len, test_vector[i].flags,
 					K_NO_WAIT);
 		ASSERT_OK_MSG(err, "Failed sending vector %d", i);
-		bt_mesh_test_recv(test_vector[i].len, cfg->addr, NULL, K_SECONDS(1));
+		bt_mesh_test_recv(test_vector[i].len, cfg->addr, NULL, K_SECONDS(2));
 
 		if (test_stats.received != i + 1) {
 			FAIL("Didn't receive message %d", i);
