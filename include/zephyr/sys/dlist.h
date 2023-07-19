@@ -45,7 +45,13 @@ struct _dnode {
 	};
 };
 
+/**
+ * @brief Doubly-linked list structure.
+ */
 typedef struct _dnode sys_dlist_t;
+/**
+ * @brief Doubly-linked list node structure.
+ */
 typedef struct _dnode sys_dnode_t;
 
 
@@ -116,7 +122,7 @@ typedef struct _dnode sys_dnode_t;
 	     __dn != NULL; __dn = __dns,				\
 		     __dns = sys_dlist_peek_next(__dl, __dn))
 
-/*
+/**
  * @brief Provide the primitive to resolve the container of a list node
  * Note: it is safe to use with NULL pointer nodes
  *
@@ -126,7 +132,7 @@ typedef struct _dnode sys_dnode_t;
  */
 #define SYS_DLIST_CONTAINER(__dn, __cn, __n) \
 	((__dn != NULL) ? CONTAINER_OF(__dn, __typeof__(*__cn), __n) : NULL)
-/*
+/**
  * @brief Provide the primitive to peek container of the list head
  *
  * @param __dl A pointer on a sys_dlist_t to peek
@@ -136,7 +142,7 @@ typedef struct _dnode sys_dnode_t;
 #define SYS_DLIST_PEEK_HEAD_CONTAINER(__dl, __cn, __n) \
 	SYS_DLIST_CONTAINER(sys_dlist_peek_head(__dl), __cn, __n)
 
-/*
+/**
  * @brief Provide the primitive to peek the next container
  *
  * @param __dl A pointer on a sys_dlist_t to peek
@@ -200,6 +206,9 @@ static inline void sys_dlist_init(sys_dlist_t *list)
 	list->tail = (sys_dnode_t *)list;
 }
 
+/**
+ * @brief Static initializer for a doubly-linked list
+ */
 #define SYS_DLIST_STATIC_INIT(ptr_to_list) { {(ptr_to_list)}, {(ptr_to_list)} }
 
 /**

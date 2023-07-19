@@ -15,6 +15,7 @@
 extern "C" {
 #endif
 
+/** @cond INTERNAL_HIDDEN */
 /* The limit is used by algorithm for distinguishing between empty and full
  * state.
  */
@@ -22,11 +23,13 @@ extern "C" {
 
 #define RING_BUFFER_SIZE_ASSERT_MSG \
 	"Size too big"
+/** @endcond */
 
 /**
  * @brief A structure to represent a ring buffer
  */
 struct ring_buf {
+	/** @cond INTERNAL_HIDDEN */
 	uint8_t *buffer;
 	int32_t put_head;
 	int32_t put_tail;
@@ -35,6 +38,7 @@ struct ring_buf {
 	int32_t get_tail;
 	int32_t get_base;
 	uint32_t size;
+	/** @endcond */
 };
 
 /**
