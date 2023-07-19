@@ -860,7 +860,7 @@ static int eth_rx(struct eth_context *context)
 			ptpTimeData.second--;
 		}
 
-		pkt->timestamp.nanosecond = ptpTimeData.nanosecond;
+		pkt->timestamp.nanosecond = ts;
 		pkt->timestamp.second = ptpTimeData.second;
 	} else {
 		/* Invalid value. */
