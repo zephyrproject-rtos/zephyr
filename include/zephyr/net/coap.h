@@ -607,6 +607,19 @@ int coap_block_transfer_init(struct coap_block_context *ctx,
 int coap_append_descriptive_block_option(struct coap_packet *cpkt, struct coap_block_context *ctx);
 
 /**
+ * @brief Check if a descriptive block option is set in the packet.
+ *
+ * If the CoAP packet is a request then an available BLOCK1 option
+ * would be checked otherwise a BLOCK2 option would be checked.
+ *
+ * @param cpkt Packet to be checked.
+ *
+ * @return true if the corresponding block option is set,
+ *        false otherwise.
+ */
+bool coap_has_descriptive_block_option(struct coap_packet *cpkt);
+
+/**
  * @brief Remove BLOCK1 or BLOCK2 option from the packet.
  *
  * If the CoAP packet is a request then BLOCK1 is removed
