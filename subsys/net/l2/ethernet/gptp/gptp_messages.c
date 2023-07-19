@@ -238,8 +238,10 @@ struct net_pkt *gptp_prepare_sync(int port)
 struct net_pkt *gptp_prepare_follow_up(int port, struct net_pkt *sync)
 {
 	struct gptp_hdr *hdr, *sync_hdr;
+	struct gptp_follow_up *fup;
 	struct net_if *iface;
 	struct net_pkt *pkt;
+	struct net_ptp_time *sync_ts;
 
 	NET_ASSERT(sync);
 	NET_ASSERT((port >= GPTP_PORT_START) && (port <= GPTP_PORT_END));
@@ -255,7 +257,9 @@ struct net_pkt *gptp_prepare_follow_up(int port, struct net_pkt *sync)
 	net_pkt_set_priority(pkt, NET_PRIORITY_IC);
 
 	hdr = GPTP_HDR(pkt);
+	fup = GPTP_FOLLOW_UP(pkt);
 	sync_hdr = GPTP_HDR(sync);
+	sync_ts = net_pkt_timestamp(sync);
 
 	/*
 	 * Header configuration.
@@ -279,6 +283,14 @@ struct net_pkt *gptp_prepare_follow_up(int port, struct net_pkt *sync)
 	hdr->reserved0 = 0U;
 	hdr->reserved1 = 0U;
 	hdr->reserved2 = 0U;
+
+	/*
+	 * Get preciseOriginTimestamp from previous sync message
+	 * according to IEEE802.1AS 11.4.4.2.1 syncEventEgressTimestamp
+	 */
+	fup->prec_orig_ts_secs_high = htons(sync_ts->_sec.high);
+	fup->prec_orig_ts_secs_low = htonl(sync_ts->_sec.low);
+	fup->prec_orig_ts_nsecs = htonl(sync_ts->nanosecond);
 
 	/* PTP configuration will be set by the MDSyncSend state machine. */
 
