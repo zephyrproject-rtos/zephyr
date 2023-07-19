@@ -271,8 +271,11 @@ struct net_pkt *gptp_prepare_follow_up(int port, struct net_pkt *sync)
 	hdr->ptp_version = GPTP_VERSION;
 	hdr->sequence_id = sync_hdr->sequence_id;
 	hdr->domain_number = 0U;
-	/* Store timestamp value in correction field. */
-	hdr->correction_field = gptp_timestamp_to_nsec(&sync->timestamp);
+	/*
+	 * Grand master clock should keep correction_field at zero,
+	 * according to IEEE802.1AS Table 11-6 and 10.6.2.2.9
+	 */
+	hdr->correction_field = 0LL;
 	hdr->flags.octets[0] = 0U;
 	hdr->flags.octets[1] = GPTP_FLAG_PTP_TIMESCALE;
 	hdr->message_length = htons(sizeof(struct gptp_hdr) +
