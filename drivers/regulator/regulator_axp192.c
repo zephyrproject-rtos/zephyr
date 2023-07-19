@@ -16,6 +16,7 @@
 #include <zephyr/dt-bindings/regulator/axp192.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/logging/log_instance.h>
+#include <zephyr/drivers/mfd/axp192.h>
 
 LOG_MODULE_REGISTER(regulator_axp192, CONFIG_REGULATOR_LOG_LEVEL);
 
@@ -28,6 +29,8 @@ LOG_MODULE_REGISTER(regulator_axp192, CONFIG_REGULATOR_LOG_LEVEL);
 #define AXP192_REG_DCDC3_VOLTAGE         0x27U
 #define AXP192_REG_LDO23_VOLTAGE         0x28U
 #define AXP192_REG_DCDC123_WORKMODE      0x80U
+#define AXP192_REG_GPIO0_CONTROL         0x90U
+#define AXP192_REG_LDOIO0_VOLTAGE        0x91U
 
 struct regulator_axp192_desc {
 	const uint8_t enable_reg;
@@ -114,6 +117,24 @@ static const struct regulator_axp192_desc dcdc3_desc = {
 	.num_ranges = ARRAY_SIZE(dcdc3_ranges),
 };
 
+static const struct linear_range ldoio0_ranges[] = {
+	LINEAR_RANGE_INIT(1800000u, 100000u, 0x00u, 0x0Fu),
+};
+
+static const struct regulator_axp192_desc ldoio0_desc = {
+	.enable_reg = AXP192_REG_GPIO0_CONTROL,
+	.enable_mask = 0x07u,
+	.enable_val = 0x03u,
+	.vsel_reg = AXP192_REG_LDOIO0_VOLTAGE,
+	.vsel_mask = 0xF0u,
+	.vsel_bitpos = 4u,
+	.max_ua = 50000u,
+	.workmode_reg = 0u,
+	.workmode_mask = 0u,
+	.ranges = ldoio0_ranges,
+	.num_ranges = ARRAY_SIZE(ldoio0_ranges),
+};
+
 static const struct linear_range ldo2_ranges[] = {
 	LINEAR_RANGE_INIT(1800000U, 100000U, 0x00U, 0x0FU),
 };
@@ -159,8 +180,14 @@ static int axp192_enable(const struct device *dev)
 	LOG_INST_DBG(config->log, "[0x%02x]=0x%02x mask=0x%02x", config->desc->enable_reg,
 		     config->desc->enable_val, config->desc->enable_mask);
 
-	ret = i2c_reg_update_byte_dt(&config->i2c, config->desc->enable_reg,
-				     config->desc->enable_mask, config->desc->enable_val);
+	/* special case for LDOIO0, which is multiplexed with GPIO0 */
+	if (config->desc->enable_reg == AXP192_REG_GPIO0_CONTROL) {
+		ret = mfd_axp192_gpio_func_ctrl(config->mfd, dev, 0, AXP192_GPIO_FUNC_LDO);
+	} else {
+		ret = i2c_reg_update_byte_dt(&config->i2c, config->desc->enable_reg,
+					     config->desc->enable_mask, config->desc->enable_val);
+	}
+
 	if (ret != 0) {
 		LOG_INST_ERR(config->log, "Failed to enable regulator");
 	}
@@ -177,8 +204,13 @@ static int axp192_disable(const struct device *dev)
 	LOG_INST_DBG(config->log, "[0x%02x]=0 mask=0x%x", config->desc->enable_reg,
 		     config->desc->enable_mask);
 
-	ret = i2c_reg_update_byte_dt(&config->i2c, config->desc->enable_reg,
-				     config->desc->enable_mask, 0u);
+	/* special case for LDOIO0, which is multiplexed with GPIO0 */
+	if (config->desc->enable_reg == AXP192_REG_GPIO0_CONTROL) {
+		ret = mfd_axp192_gpio_func_ctrl(config->mfd, dev, 0, AXP192_GPIO_FUNC_OUTPUT_LOW);
+	} else {
+		ret = i2c_reg_update_byte_dt(&config->i2c, config->desc->enable_reg,
+					     config->desc->enable_mask, 0u);
+	}
 	if (ret != 0) {
 		LOG_INST_ERR(config->log, "Failed to disable regulator");
 	}
@@ -354,6 +386,7 @@ static int regulator_axp192_init(const struct device *dev)
 	REGULATOR_AXP192_DEFINE_COND(inst, dcdc1)                                                  \
 	REGULATOR_AXP192_DEFINE_COND(inst, dcdc2)                                                  \
 	REGULATOR_AXP192_DEFINE_COND(inst, dcdc3)                                                  \
+	REGULATOR_AXP192_DEFINE_COND(inst, ldoio0)                                                 \
 	REGULATOR_AXP192_DEFINE_COND(inst, ldo2)                                                   \
 	REGULATOR_AXP192_DEFINE_COND(inst, ldo3)
 
