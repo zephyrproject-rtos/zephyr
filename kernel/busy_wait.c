@@ -19,7 +19,7 @@ void z_impl_k_busy_wait(uint32_t usec_to_wait)
 
 #if defined(CONFIG_ARCH_HAS_CUSTOM_BUSY_WAIT)
 	arch_busy_wait(usec_to_wait);
-#else
+#elif defined(CONFIG_SYS_CLOCK_EXISTS)
 	uint32_t start_cycles = k_cycle_get_32();
 
 	/* use 64-bit math to prevent overflow when multiplying */
@@ -36,6 +36,17 @@ void z_impl_k_busy_wait(uint32_t usec_to_wait)
 		if ((current_cycles - start_cycles) >= cycles_to_wait) {
 			break;
 		}
+	}
+#else
+	/*
+	 * Crude busy loop for the purpose of being able to configure out
+	 * system timer support.
+	 */
+	unsigned int loops_per_usec = CONFIG_BUSYWAIT_CPU_LOOPS_PER_USEC;
+	unsigned int loops = loops_per_usec * usec_to_wait;
+
+	while (loops-- > 0) {
+		arch_nop();
 	}
 #endif
 
