@@ -171,7 +171,7 @@ static void print_stats(char *name, struct iso_recv_stats *stats)
 
 	LOG_INF("%s: Received %u/%u (%.2f%%) - Total packets lost %u",
 		name, stats->iso_recv_count, total_packets,
-		(float)stats->iso_recv_count * 100 / total_packets,
+		(double)((float)stats->iso_recv_count * 100 / total_packets),
 		stats->iso_lost_count);
 
 }
