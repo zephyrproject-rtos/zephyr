@@ -195,6 +195,9 @@ struct wifi_scan_params {
 	/** Active scan dwell time (in ms) on a channel.
 	 */
 	uint16_t dwell_time_active;
+	/** Passive scan dwell time (in ms) on a channel.
+	 */
+	uint16_t dwell_time_passive;
 };
 
 /** Wi-Fi scan result, each result is provided to the net_mgmt_event_callback
