@@ -55,7 +55,7 @@
 		};
 	};
 
-	leds {
+	leds: leds {
 		compatible = "gpio-leds";
 		green_led: led_1 {
 			gpios = <&gpio0 14 0>;
