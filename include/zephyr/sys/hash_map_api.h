@@ -29,6 +29,11 @@ extern "C" {
 /**
  * @defgroup hashmap_apis Hashmap
  * @ingroup datastructure_apis
+ *
+ * @defgroup hashmap_implementations Hashmap Implementations
+ * @ingroup hashmap_apis
+ *
+ * @addtogroup hashmap_apis
  * @{
  */
 
