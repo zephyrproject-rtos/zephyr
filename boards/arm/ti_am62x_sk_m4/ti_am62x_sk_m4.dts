@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include <ti/am62x_sk_m4.dtsi>
+#include <ti/am62x_m4.dtsi>
 
 / {
 	model = "TI AM62X SK EVALUATION BOARD";
