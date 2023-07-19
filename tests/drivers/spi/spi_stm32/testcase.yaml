@@ -1,0 +1,11 @@
+# Copyright (c) 2023 Graphcore Ltd.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - spi
+    - spi_stm32
+tests:
+  drivers.spi.spi_stm32.test:
+    type: unit
