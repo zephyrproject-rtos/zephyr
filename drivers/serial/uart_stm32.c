@@ -1701,7 +1701,7 @@ static int uart_stm32_init(const struct device *dev)
 	}
 
 	/* Reset UART to default state using RCC */
-	reset_line_toggle_dt(&data->reset);
+	(void)reset_line_toggle_dt(&data->reset);
 
 	/* TX/RX direction */
 	LL_USART_SetTransferDirection(config->usart,
