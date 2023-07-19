@@ -76,20 +76,23 @@ class Priority:
     def __init__(self, name):
         for idx, level in enumerate(_DEVICE_INIT_LEVELS):
             if level in name:
-                _, priority = name.strip("_").split(level)
+                _, priority_str = name.strip("_").split(level)
+                priority, sub_priority = priority_str.split("_")
                 self._level = idx
                 self._priority = int(priority)
-                self._level_priority = self._level * 100 + self._priority
+                self._sub_priority = int(sub_priority)
+                # Tuples compare elementwise in order
+                self._level_priority = (self._level, self._priority, self._sub_priority)
                 return
 
         raise ValueError("Unknown level in %s" % name)
 
     def __repr__(self):
-        return "<%s %s %d>" % (self.__class__.__name__,
-                               _DEVICE_INIT_LEVELS[self._level], self._priority)
+        return "<%s %s %d %d>" % (self.__class__.__name__,
+                               _DEVICE_INIT_LEVELS[self._level], self._priority, self._sub_priority)
 
     def __str__(self):
-        return "%s %d" % (_DEVICE_INIT_LEVELS[self._level], self._priority)
+        return "%s %d %d" % (_DEVICE_INIT_LEVELS[self._level], self._priority, self._sub_priority)
 
     def __lt__(self, other):
         return self._level_priority < other._level_priority
