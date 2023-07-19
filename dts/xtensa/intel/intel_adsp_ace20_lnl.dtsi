@@ -49,23 +49,22 @@
 			cpu-power-states = <&d0i3 &d3>;
 		};
 
-	};
-
-	power-states {
-		d0i3: idle {
-			compatible = "zephyr,power-state";
-			power-state-name = "runtime-idle";
-			min-residency-us = <200>;
-			exit-latency-us = <100>;
-		};
-		/* PM_STATE_SOFT_OFF can be entered only by calling pm_state_force.
-		 * The procedure is triggered by IPC from the HOST (SET_DX).
-		 */
-		d3: off {
-			compatible = "zephyr,power-state";
-			power-state-name = "soft-off";
-			min-residency-us = <2147483647>;
-			exit-latency-us = <0>;
+		power-states {
+			d0i3: idle {
+				compatible = "zephyr,power-state";
+				power-state-name = "runtime-idle";
+				min-residency-us = <200>;
+				exit-latency-us = <100>;
+			};
+			/* PM_STATE_SOFT_OFF can be entered only by calling pm_state_force.
+			 * The procedure is triggered by IPC from the HOST (SET_DX).
+			 */
+			d3: off {
+				compatible = "zephyr,power-state";
+				power-state-name = "soft-off";
+				min-residency-us = <2147483647>;
+				exit-latency-us = <0>;
+			};
 		};
 	};
 

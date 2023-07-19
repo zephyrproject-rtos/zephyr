@@ -33,18 +33,18 @@
 				arm,num-mpu-regions = <8>;
 			};
 		};
-	};
 
-	power-states {
-		idle: idle {
-			compatible = "zephyr,power-state";
-			power-state-name = "runtime-idle";
-			min-residency-us = <10>;
-		};
-		suspend: suspend {
-			compatible = "zephyr,power-state";
-			power-state-name = "suspend-to-idle";
-			min-residency-us = <1000>;
+		power-states {
+			idle: idle {
+				compatible = "zephyr,power-state";
+				power-state-name = "runtime-idle";
+				min-residency-us = <10>;
+			};
+			suspend: suspend {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-idle";
+				min-residency-us = <1000>;
+			};
 		};
 	};
 };

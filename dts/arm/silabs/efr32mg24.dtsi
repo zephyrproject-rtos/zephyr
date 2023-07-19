@@ -27,14 +27,14 @@
 			reg = <0>;
 			cpu-power-states = <&state0>;
 		};
-	};
 
-	power-states {
-		state0: state0 {
-			compatible = "zephyr,power-state";
-			power-state-name = "standby";
-			min-residency-us = <50000>;
-			exit-latency-us = <0>;
+		power-states {
+			state0: state0 {
+				compatible = "zephyr,power-state";
+				power-state-name = "standby";
+				min-residency-us = <50000>;
+				exit-latency-us = <0>;
+			};
 		};
 	};
 

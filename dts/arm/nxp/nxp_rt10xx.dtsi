@@ -42,20 +42,20 @@
 				swo-ref-frequency = <132000000>;
 			};
 		};
-	};
 
-	power-states {
-		idle: idle {
-			compatible = "zephyr,power-state";
-			power-state-name = "runtime-idle";
-			exit-latency-us = <4000>;
-			min-residency-us = <5000>;
-		};
-		suspend: suspend {
-			compatible = "zephyr,power-state";
-			power-state-name = "suspend-to-idle";
-			exit-latency-us = <5000>;
-			min-residency-us = <10000>;
+		power-states {
+			idle: idle {
+				compatible = "zephyr,power-state";
+				power-state-name = "runtime-idle";
+				exit-latency-us = <4000>;
+				min-residency-us = <5000>;
+			};
+			suspend: suspend {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-idle";
+				exit-latency-us = <5000>;
+				min-residency-us = <10000>;
+			};
 		};
 	};
 
