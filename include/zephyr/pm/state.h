@@ -122,14 +122,14 @@ struct pm_state_info {
 	 * @code{.dts}
 	 *	idle-states {
 	 *		state0: state0 {
-	 *			compatible = "zephyr,power-state";
+	 *			compatible = "zephyr,idle-state";
 	 *			idle-state-name = "suspend-to-idle";
 	 *			zephyr,substate-id = <1>;
 	 *			min-residency-us = <10000>;
 	 *			exit-latency-us = <100>;
 	 *		};
 	 *		state1: state1 {
-	 *			compatible = "zephyr,power-state";
+	 *			compatible = "zephyr,idle-state";
 	 *			idle-state-name = "suspend-to-idle";
 	 *			zephyr,substate-id = <2>;
 	 *			min-residency-us = <20000>;
@@ -163,7 +163,7 @@ struct pm_state_info {
  * when using UTIL_LISTIFY in PM_STATE_INFO_LIST_FROM_DT_CPU.
  *
  * @param i UTIL_LISTIFY entry index.
- * @param node_id A node identifier with compatible zephyr,power-state
+ * @param node_id A node identifier with compatible zephyr,idle-state
  */
 #define Z_PM_STATE_INFO_FROM_DT_CPU(i, node_id) \
 	PM_STATE_INFO_DT_INIT(DT_PHANDLE_BY_IDX(node_id, cpu_idle_states, i))
@@ -173,7 +173,7 @@ struct pm_state_info {
  * using UTIL_LISTIFY in PM_STATE_LIST_FROM_DT_CPU.
  *
  * @param i UTIL_LISTIFY entry index.
- * @param node_id A node identifier with compatible zephyr,power-state
+ * @param node_id A node identifier with compatible zephyr,idle-state
  */
 #define Z_PM_STATE_FROM_DT_CPU(i, node_id) \
 	PM_STATE_DT_INIT(DT_PHANDLE_BY_IDX(node_id, cpu_idle_states, i))
@@ -182,9 +182,9 @@ struct pm_state_info {
 
 /**
  * @brief Initializer for struct pm_state_info given a DT node identifier with
- * zephyr,power-state compatible.
+ * zephyr,idle-state compatible.
  *
- * @param node_id A node identifier with compatible zephyr,power-state
+ * @param node_id A node identifier with compatible zephyr,idle-state
  */
 #define PM_STATE_INFO_DT_INIT(node_id)					       \
 	{								       \
@@ -196,9 +196,9 @@ struct pm_state_info {
 
 /**
  * @brief Initializer for enum pm_state given a DT node identifier with
- * zephyr,power-state compatible.
+ * zephyr,idle-state compatible.
  *
- * @param node_id A node identifier with compatible zephyr,power-state
+ * @param node_id A node identifier with compatible zephyr,idle-state
  */
 #define PM_STATE_DT_INIT(node_id) \
 	DT_ENUM_IDX(node_id, idle_state_name)
@@ -230,14 +230,14 @@ struct pm_state_info {
  *
  *		idle-states {
  *			state0: state0 {
- *				compatible = "zephyr,power-state";
+ *				compatible = "zephyr,idle-state";
  *				idle-state-name = "suspend-to-idle";
  *				min-residency-us = <10000>;
  *				exit-latency-us = <100>;
  *			};
  *
  *			state1: state1 {
- *				compatible = "zephyr,power-state";
+ *				compatible = "zephyr,idle-state";
  *				idle-state-name = "suspend-to-ram";
  *				min-residency-us = <50000>;
  *				exit-latency-us = <500>;
@@ -279,14 +279,14 @@ struct pm_state_info {
  *
  *		idle-states {
  *			state0: state0 {
- *				compatible = "zephyr,power-state";
+ *				compatible = "zephyr,idle-state";
  *				idle-state-name = "suspend-to-idle";
  *				min-residency-us = <10000>;
  *				exit-latency-us = <100>;
  *			};
  *
  *			state1: state1 {
- *				compatible = "zephyr,power-state";
+ *				compatible = "zephyr,idle-state";
  *				idle-state-name = "suspend-to-ram";
  *				min-residency-us = <50000>;
  *				exit-latency-us = <500>;

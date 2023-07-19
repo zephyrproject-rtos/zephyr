@@ -3,7 +3,7 @@
 
 description: Properties for power management state
 
-compatible: "zephyr,power-state"
+compatible: "zephyr,idle-state"
 
 properties:
   idle-state-name:

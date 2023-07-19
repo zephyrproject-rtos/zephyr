@@ -45,7 +45,7 @@
 			 * enabled.
 			 */
 			pstate_em1: em1 {
-				compatible = "zephyr,power-state";
+				compatible = "zephyr,idle-state";
 				idle-state-name = "runtime-idle";
 				min-residency-us = <4>;
 				/* HFXO remains active */
@@ -57,7 +57,7 @@
 			 * scaled down, etc.
 			 */
 			pstate_em2: em2 {
-				compatible = "zephyr,power-state";
+				compatible = "zephyr,idle-state";
 				idle-state-name = "suspend-to-idle";
 				min-residency-us = <260>;
 				exit-latency-us = <250>;
@@ -70,7 +70,7 @@
 			 * wake up.
 			 */
 			pstate_em3: em3 {
-				compatible = "zephyr,power-state";
+				compatible = "zephyr,idle-state";
 				idle-state-name = "standby";
 				min-residency-us = <20000>;
 				exit-latency-us = <2000>;
@@ -83,7 +83,7 @@
 			 * by the application in BURTC registers.
 			 */
 			pstate_em4: em4 {
-				compatible = "zephyr,power-state";
+				compatible = "zephyr,idle-state";
 				idle-state-name = "soft-off";
 				min-residency-us = <100000>;
 				exit-latency-us = <80000>;

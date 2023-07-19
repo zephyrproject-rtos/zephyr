@@ -16,6 +16,6 @@ tests:
         - "Wakeup source enabled"
     integration_platforms:
       - nucleo_wb55rg
-    filter: dt_compat_enabled("zephyr,power-state")
+    filter: dt_compat_enabled("zephyr,idle-state")
     extra_args: "CONFIG_DEBUG=y"
     platform_allow: nucleo_wb55rg

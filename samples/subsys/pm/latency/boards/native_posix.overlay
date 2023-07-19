@@ -6,19 +6,19 @@
 / {
 	idle-states {
 		runtime_idle: runtime-idle {
-			compatible = "zephyr,power-state";
+			compatible = "zephyr,idle-state";
 			idle-state-name = "runtime-idle";
 			min-residency-us = <1000000>;
 			exit-latency-us = <10000>;
 		};
 		suspend_to_idle: suspend-to-idle {
-			compatible = "zephyr,power-state";
+			compatible = "zephyr,idle-state";
 			idle-state-name = "suspend-to-idle";
 			min-residency-us = <1100000>;
 			exit-latency-us = <20000>;
 		};
 		standby: standby {
-			compatible = "zephyr,power-state";
+			compatible = "zephyr,idle-state";
 			idle-state-name = "standby";
 			min-residency-us = <1200000>;
 			exit-latency-us = <30000>;

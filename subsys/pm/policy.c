@@ -15,7 +15,7 @@
 #include <zephyr/sys/atomic.h>
 #include <zephyr/toolchain.h>
 
-#if DT_HAS_COMPAT_STATUS_OKAY(zephyr_power_state)
+#if DT_HAS_COMPAT_STATUS_OKAY(zephyr_idle_state)
 
 #define DT_SUB_LOCK_INIT(node_id)					\
 	{ .state = PM_STATE_DT_INIT(node_id),				\
@@ -39,7 +39,7 @@ static struct {
 	uint8_t substate_id;
 	atomic_t lock;
 } substate_lock_t[] = {
-	DT_FOREACH_STATUS_OKAY(zephyr_power_state, DT_SUB_LOCK_INIT)
+	DT_FOREACH_STATUS_OKAY(zephyr_idle_state, DT_SUB_LOCK_INIT)
 };
 
 #endif
@@ -193,7 +193,7 @@ const struct pm_state_info *pm_policy_next_state(uint8_t cpu, int32_t ticks)
 
 void pm_policy_state_lock_get(enum pm_state state, uint8_t substate_id)
 {
-#if DT_HAS_COMPAT_STATUS_OKAY(zephyr_power_state)
+#if DT_HAS_COMPAT_STATUS_OKAY(zephyr_idle_state)
 	for (size_t i = 0; i < ARRAY_SIZE(substate_lock_t); i++) {
 		if (substate_lock_t[i].state == state &&
 		   (substate_lock_t[i].substate_id == substate_id ||
@@ -206,7 +206,7 @@ void pm_policy_state_lock_get(enum pm_state state, uint8_t substate_id)
 
 void pm_policy_state_lock_put(enum pm_state state, uint8_t substate_id)
 {
-#if DT_HAS_COMPAT_STATUS_OKAY(zephyr_power_state)
+#if DT_HAS_COMPAT_STATUS_OKAY(zephyr_idle_state)
 	for (size_t i = 0; i < ARRAY_SIZE(substate_lock_t); i++) {
 		if (substate_lock_t[i].state == state &&
 		   (substate_lock_t[i].substate_id == substate_id ||
@@ -223,7 +223,7 @@ void pm_policy_state_lock_put(enum pm_state state, uint8_t substate_id)
 
 bool pm_policy_state_lock_is_active(enum pm_state state, uint8_t substate_id)
 {
-#if DT_HAS_COMPAT_STATUS_OKAY(zephyr_power_state)
+#if DT_HAS_COMPAT_STATUS_OKAY(zephyr_idle_state)
 	for (size_t i = 0; i < ARRAY_SIZE(substate_lock_t); i++) {
 		if (substate_lock_t[i].state == state &&
 		   (substate_lock_t[i].substate_id == substate_id ||

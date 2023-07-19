@@ -28,13 +28,13 @@
 
 		idle-states {
 			idle: idle {
-				compatible = "zephyr,power-state";
+				compatible = "zephyr,idle-state";
 				idle-state-name = "suspend-to-idle";
 				min-residency-us = <1000>;
 			};
 
 			standby: standby {
-				compatible = "zephyr,power-state";
+				compatible = "zephyr,idle-state";
 				idle-state-name = "standby";
 				min-residency-us = <5000>;
 				exit-latency-us = <240>;

@@ -30,7 +30,7 @@
 
 		idle-states {
 			state0: state0 {
-				compatible = "zephyr,power-state";
+				compatible = "zephyr,idle-state";
 				idle-state-name = "standby";
 				min-residency-us = <50000>;
 				exit-latency-us = <0>;

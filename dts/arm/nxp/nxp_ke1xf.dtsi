@@ -32,24 +32,24 @@
 
 		idle-states {
 			idle: idle {
-				compatible = "zephyr,power-state";
+				compatible = "zephyr,idle-state";
 				idle-state-name = "runtime-idle";
 			};
 
 			stop: stop {
-				compatible = "zephyr,power-state";
+				compatible = "zephyr,idle-state";
 				idle-state-name = "suspend-to-idle";
 				zephyr,substate-id = <0>;
 			};
 
 			pstop1: pstop1 {
-				compatible = "zephyr,power-state";
+				compatible = "zephyr,idle-state";
 				idle-state-name = "suspend-to-idle";
 				zephyr,substate-id = <1>;
 			};
 
 			pstop2: pstop2 {
-				compatible = "zephyr,power-state";
+				compatible = "zephyr,idle-state";
 				idle-state-name = "suspend-to-idle";
 				zephyr,substate-id = <2>;
 			};

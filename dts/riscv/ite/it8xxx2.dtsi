@@ -36,7 +36,7 @@
 
 		idle-states {
 			standby: standby {
-				compatible = "zephyr,power-state";
+				compatible = "zephyr,idle-state";
 				idle-state-name = "standby";
 				min-residency-us = <500>;
 			};

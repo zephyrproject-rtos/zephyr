@@ -66,7 +66,7 @@
 			 */
 			idle: set_point_1_wait {
 				/* idle corresponds to set point 1 (wait) for RT1170 */
-				compatible = "zephyr,power-state";
+				compatible = "zephyr,idle-state";
 				idle-state-name="runtime-idle";
 				zephyr,substate-id = <IMX_SPC_SET_POINT_1_WAIT>;
 				min-residency-us = <100>;
@@ -74,7 +74,7 @@
 
 			suspend: set_point_10_suspend {
 				/*  suspend corresponds to set point 10 for RT1170 */
-				compatible = "zephyr,power-state";
+				compatible = "zephyr,idle-state";
 				idle-state-name="suspend-to-idle";
 				zephyr,substate-id = <IMX_SPC_SET_POINT_10_SUSPEND>;
 				min-residency-us = <5000>;

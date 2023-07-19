@@ -5,7 +5,7 @@ description: Properties for NXP power management through the PDCFG register
 
 compatible: "nxp,pdcfg-power"
 
-include: zephyr,power-state.yaml
+include: zephyr,idle-state.yaml
 
 properties:
   deep-sleep-config:
