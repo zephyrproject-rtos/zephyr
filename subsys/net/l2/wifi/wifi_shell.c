@@ -470,11 +470,12 @@ static int wifi_scan_args_to_params(const struct shell *sh,
 	static struct option long_options[] = {{"type", required_argument, 0, 't'},
 					       {"bands", required_argument, 0, 'b'},
 					       {"dwell_time_active", required_argument, 0, 'a'},
+					       {"dwell_time_passive", required_argument, 0, 'p'},
 					       {0, 0, 0, 0}};
 	int opt_index = 0;
 	int val;
 
-	while ((opt = getopt_long(argc, argv, "t:b:a:", long_options, &opt_index)) != -1) {
+	while ((opt = getopt_long(argc, argv, "t:b:a:p:", long_options, &opt_index)) != -1) {
 		state = getopt_state_get();
 		switch (opt) {
 		case 't':
@@ -502,6 +503,16 @@ static int wifi_scan_args_to_params(const struct shell *sh,
 			}
 
 			params->dwell_time_active = val;
+			break;
+		case 'p':
+			val = atoi(optarg);
+
+			if ((val < 10) || (val > 1000)) {
+				shell_fprintf(sh, SHELL_ERROR, "Invalid dwell_time_passive val\n");
+				return -ENOEXEC;
+			}
+
+			params->dwell_time_passive = val;
 			break;
 		case '?':
 			shell_fprintf(sh, SHELL_ERROR, "Invalid option or option usage: %s\n",
@@ -1237,7 +1248,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_commands,
 		    "OPTIONS:\n"
 		    "[-t, --type <active/passive>] : Preferred mode of scan. The actual mode of scan can depend on factors such as the Wi-Fi chip implementation, regulatory domain restrictions. Default type is active.\n"
 		    "[-b, --bands <Comma separated list of band values (2/5/6)>] : Bands to be scanned where 2: 2.4 GHz, 5: 5 GHz, 6: 6 GHz.\n"
-		    "[-a, --dwell_time_active <val_in_ms>] : Active scan dwell time (in ms) on a channel. Range 5 ms to 1000 ms.",
+		    "[-a, --dwell_time_active <val_in_ms>] : Active scan dwell time (in ms) on a channel. Range 5 ms to 1000 ms.\n"
+		    "[-p, --dwell_time_passive <val_in_ms>] : Passive scan dwell time (in ms) on a channel. Range 10 ms to 1000 ms.",
 		  cmd_wifi_scan),
 	SHELL_CMD(statistics, NULL, "Wi-Fi interface statistics", cmd_wifi_stats),
 	SHELL_CMD(status, NULL, "Status of the Wi-Fi interface", cmd_wifi_status),

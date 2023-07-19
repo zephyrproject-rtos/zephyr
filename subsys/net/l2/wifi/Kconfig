@@ -66,6 +66,13 @@ config WIFI_MGMT_SCAN_DWELL_TIME_ACTIVE
 	help
 	  Active scan dwell time (in ms) per channel.
 
+config WIFI_MGMT_SCAN_DWELL_TIME_PASSIVE
+	int "Passive scan dwell time"
+	default 130
+	range 10 1000
+	help
+	  Passive scan dwell time (in ms) per channel.
+
 config WIFI_NM
 	bool "Wi-Fi Network manager support"
 	help
