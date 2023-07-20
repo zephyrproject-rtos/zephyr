@@ -109,3 +109,4 @@ zephyr_library_include_directories_ifdef(
 zephyr_library_sources_ifdef(CONFIG_FLASH_SHELL flash_shell.c)
 zephyr_library_sources_ifdef(CONFIG_FLASH_JESD216 jesd216.c)
 zephyr_library_sources_ifdef(CONFIG_FLASH_INFINEON_CAT1 flash_ifx_cat1.c)
+zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_NUMAKER soc_flash_numaker.c)
