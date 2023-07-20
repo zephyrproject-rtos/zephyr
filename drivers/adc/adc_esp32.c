@@ -152,6 +152,18 @@ static int adc_esp32_read(const struct device *dev, const struct adc_sequence *s
 		return -ENOTSUP;
 	}
 
+	if (seq->options) {
+		if (seq->options->extra_samplings) {
+			LOG_ERR("Extra samplings not supported");
+			return -ENOTSUP;
+		}
+
+		if (seq->options->interval_us) {
+			LOG_ERR("Interval between samplings not supported");
+			return -ENOTSUP;
+		}
+	}
+
 	if (INVALID_RESOLUTION(seq->resolution)) {
 		LOG_ERR("unsupported resolution (%d)", seq->resolution);
 		return -ENOTSUP;
