@@ -5,4 +5,8 @@
 
 config BOARD_ESP32S2_FRANZININHO
 	bool "ESP32S2 Franzininho Board"
-	depends on SOC_ESP32S2
+	depends on SOC_SERIES_ESP32S2
+
+choice SOC_PART_NUMBER
+	default SOC_ESP32S2_WROOM
+endchoice

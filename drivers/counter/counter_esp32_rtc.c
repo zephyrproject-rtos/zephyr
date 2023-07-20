@@ -18,7 +18,7 @@
 #include <zephyr/spinlock.h>
 #include <zephyr/kernel.h>
 
-#if defined(CONFIG_SOC_ESP32C3)
+#if defined(CONFIG_SOC_SERIES_ESP32C3)
 #include <zephyr/drivers/interrupt_controller/intc_esp32c3.h>
 #else
 #include <zephyr/drivers/interrupt_controller/intc_esp32.h>
@@ -27,7 +27,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(esp32_counter_rtc, CONFIG_COUNTER_LOG_LEVEL);
 
-#if defined(CONFIG_SOC_ESP32C3)
+#if defined(CONFIG_SOC_SERIES_ESP32C3)
 #define ESP32_COUNTER_RTC_ISR_HANDLER isr_handler_t
 #else
 #define ESP32_COUNTER_RTC_ISR_HANDLER intr_handler_t
@@ -88,7 +88,7 @@ static int counter_esp32_get_value(const struct device *dev, uint32_t *ticks)
 	ARG_UNUSED(dev);
 
 	SET_PERI_REG_MASK(RTC_CNTL_TIME_UPDATE_REG, RTC_CNTL_TIME_UPDATE);
-#if defined(CONFIG_SOC_ESP32)
+#if defined(CONFIG_SOC_SERIES_ESP32)
 	while (GET_PERI_REG_MASK(RTC_CNTL_TIME_UPDATE_REG, RTC_CNTL_TIME_VALID) == 0) {
 		/* might take 1 RTC slowclk period, don't flood RTC bus */
 		k_sleep(K_USEC(1));

@@ -30,20 +30,20 @@
 #include <zephyr/drivers/flash.h>
 #include <soc.h>
 
-#if defined(CONFIG_SOC_ESP32)
+#if defined(CONFIG_SOC_SERIES_ESP32)
 #include "soc/dport_reg.h"
 #include "esp32/rom/cache.h"
 #include "esp32/rom/spi_flash.h"
 #include "esp32/spiram.h"
-#elif defined(CONFIG_SOC_ESP32S2)
+#elif defined(CONFIG_SOC_SERIES_ESP32S2)
 #include "soc/spi_mem_reg.h"
 #include "esp32s2/rom/cache.h"
 #include "esp32s2/rom/spi_flash.h"
-#elif defined(CONFIG_SOC_ESP32S3)
+#elif defined(CONFIG_SOC_SERIES_ESP32S3)
 #include "soc/spi_mem_reg.h"
 #include "esp32s3/rom/cache.h"
 #include "esp32s3/rom/spi_flash.h"
-#elif defined(CONFIG_SOC_ESP32C3)
+#elif defined(CONFIG_SOC_SERIES_ESP32C3)
 #include "soc/spi_periph.h"
 #include "soc/spi_mem_reg.h"
 #include "soc/dport_access.h"

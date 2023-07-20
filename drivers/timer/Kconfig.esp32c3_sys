@@ -5,7 +5,7 @@
 
 config ESP32C3_SYS_TIMER
 	bool "ESP32C3 sys-timer support"
-	depends on SOC_ESP32C3
+	depends on SOC_SERIES_ESP32C3
 	default y
 	select TICKLESS_CAPABLE
 	select TIMER_HAS_64BIT_CYCLE_COUNTER

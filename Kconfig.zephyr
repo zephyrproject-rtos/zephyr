@@ -594,7 +594,7 @@ if BUILD_OUTPUT_UF2
 
 config BUILD_OUTPUT_UF2_FAMILY_ID
 	string "UF2 device family ID"
-	default "0x1c5f21b0" if SOC_ESP32
+	default "0x1c5f21b0" if SOC_SERIES_ESP32
 	default "0x621e937a" if SOC_NRF52833_QIAA
 	default "0xada52840" if SOC_NRF52840_QIAA
 	default "0x4fb2d5bd" if SOC_SERIES_IMX_RT

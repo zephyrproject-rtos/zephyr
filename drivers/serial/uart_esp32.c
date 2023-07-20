@@ -9,19 +9,19 @@
 
 /* Include esp-idf headers first to avoid redefining BIT() macro */
 /* TODO: include w/o prefix */
-#ifdef CONFIG_SOC_ESP32
+#ifdef CONFIG_SOC_SERIES_ESP32
 #include <esp32/rom/ets_sys.h>
 #include <esp32/rom/gpio.h>
 #include <soc/dport_reg.h>
-#elif defined(CONFIG_SOC_ESP32S2)
+#elif defined(CONFIG_SOC_SERIES_ESP32S2)
 #include <esp32s2/rom/ets_sys.h>
 #include <esp32s2/rom/gpio.h>
 #include <soc/dport_reg.h>
-#elif defined(CONFIG_SOC_ESP32S3)
+#elif defined(CONFIG_SOC_SERIES_ESP32S3)
 #include <esp32s3/rom/ets_sys.h>
 #include <esp32s3/rom/gpio.h>
 #include <zephyr/dt-bindings/clock/esp32s3_clock.h>
-#elif defined(CONFIG_SOC_ESP32C3)
+#elif defined(CONFIG_SOC_SERIES_ESP32C3)
 #include <esp32c3/rom/ets_sys.h>
 #include <esp32c3/rom/gpio.h>
 #include <zephyr/dt-bindings/clock/esp32c3_clock.h>
@@ -43,7 +43,7 @@
 #include <soc.h>
 #include <zephyr/drivers/uart.h>
 
-#ifndef CONFIG_SOC_ESP32C3
+#ifndef CONFIG_SOC_SERIES_ESP32C3
 #include <zephyr/drivers/interrupt_controller/intc_esp32.h>
 #else
 #include <zephyr/drivers/interrupt_controller/intc_esp32c3.h>
@@ -55,7 +55,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(uart_esp32, CONFIG_UART_LOG_LEVEL);
 
-#ifdef CONFIG_SOC_ESP32C3
+#ifdef CONFIG_SOC_SERIES_ESP32C3
 #define ISR_HANDLER isr_handler_t
 #else
 #define ISR_HANDLER intr_handler_t
