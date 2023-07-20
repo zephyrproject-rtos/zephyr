@@ -111,8 +111,15 @@ Here is an example for the :ref:`blinky-sample` application.
 OpenOCD Installation
 ====================
 
-You must download `Infineon OpenOCD`_ from Github to flash and debug.
-Extract the files and note the path.
+To get the OpenOCD package, it is required that you
+
+1. Download the software ModusToolbox 3.1. https://softwaretools.infineon.com/tools/com.ifx.tb.tool.modustoolbox
+2. Once downloaded add the path to access the Scripts folder provided by ModusToolbox
+   export PATH=$PATH:/path/to/ModusToolbox/tools_3.1/openocd/scripts
+3. Add the OpenOCD executable file's path to west flash/debug.
+4. Flash using: west flash --openocd path/to/infineon/openocd/bin/openocd
+5. Debug using: west debug --openocd path/to/infineon/openocd/bin/openocd
+
 
 Programming and Debugging
 *************************
