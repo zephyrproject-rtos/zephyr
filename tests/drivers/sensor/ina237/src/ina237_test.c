@@ -197,6 +197,51 @@ static void test_temperature(struct ina237_fixture *fixture)
 	}
 }
 
+static void test_vshunt(struct ina237_fixture *fixture)
+{
+	zassert_not_null(fixture->mock);
+
+	/* 16-bit signed value for voltage register (but always positive) 3.125 mV/bit */
+	const int16_t vshunt_reg_vectors[] = {
+		32767,	/* maximum shunt voltage of 163.84 mV or 40.96 mV */
+		27200,
+		1000,
+		100,
+		1,
+		0,
+		-1,
+		-100,
+		-1000,
+		-32768,	/* minimum shunt voltage of -163.84 mV or -40.96 mV */
+	};
+
+	for (int idx = 0; idx < ARRAY_SIZE(vshunt_reg_vectors); idx++) {
+		struct sensor_value sensor_val;
+
+		ina237_mock_set_register(fixture->mock->data, INA237_REG_SHUNT_VOLT,
+			vshunt_reg_vectors[idx]);
+
+		/* Verify sensor value is correct */
+		zassert_ok(sensor_sample_fetch_chan(fixture->dev, SENSOR_CHAN_VSHUNT));
+		zassert_ok(sensor_channel_get(fixture->dev, SENSOR_CHAN_VSHUNT, &sensor_val));
+
+		double vshunt_actual_mV = sensor_value_to_double(&sensor_val);
+		double vshunt_expected_mV = vshunt_reg_vectors[idx];
+
+		if (fixture->config & INA237_CFG_HIGH_PRECISION) {
+			/* High precision mode - 1.25 uV/bit = 1250 nV/bit*/
+			vshunt_expected_mV *= 1000 * 1.250e-6;
+		} else {
+			/* Standard precision mode - 5 uV/bit = 5000 nV/bit */
+			vshunt_expected_mV *= 1000 * 5e-6;
+		}
+
+		zexpect_within(vshunt_expected_mV, vshunt_actual_mV, 1e-9,
+			"For %d, Expected %.6f mV, got %.6f mV", vshunt_reg_vectors[idx],
+			vshunt_expected_mV, vshunt_actual_mV);
+	}
+}
+
 /* Create a test fixture for each enabled ina237 device node */
 #define DT_DRV_COMPAT ti_ina237
 #define INA237_FIXTURE_ENTRY(inst) \
@@ -219,6 +264,7 @@ static struct ina237_fixture fixtures[] = {
 	ZTEST(ina237_##inst, test_bus_voltage) { test_bus_voltage(&fixtures[inst]); } \
 	ZTEST(ina237_##inst, test_power) { test_power(&fixtures[inst]); } \
 	ZTEST(ina237_##inst, test_temperature) { test_temperature(&fixtures[inst]); } \
+	ZTEST(ina237_##inst, test_vshunt) { test_vshunt(&fixtures[inst]); } \
 	ZTEST_SUITE(ina237_##inst, NULL, NULL, NULL, NULL, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(INA237_TESTS)
