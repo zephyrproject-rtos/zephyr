@@ -351,18 +351,18 @@ static int pwm_nrfx_pm_action(const struct device *dev,
 			 POST_KERNEL, CONFIG_PWM_INIT_PRIORITY,		      \
 			 &pwm_nrfx_drv_api_funcs)
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(pwm0), okay)
+#ifdef CONFIG_HAS_HW_NRF_PWM0
 PWM_NRFX_DEVICE(0);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(pwm1), okay)
+#ifdef CONFIG_HAS_HW_NRF_PWM1
 PWM_NRFX_DEVICE(1);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(pwm2), okay)
+#ifdef CONFIG_HAS_HW_NRF_PWM2
 PWM_NRFX_DEVICE(2);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(pwm3), okay)
+#ifdef CONFIG_HAS_HW_NRF_PWM3
 PWM_NRFX_DEVICE(3);
 #endif
