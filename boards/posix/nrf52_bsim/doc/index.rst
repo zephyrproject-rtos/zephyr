@@ -19,16 +19,18 @@ This board models some of the NRF52 SOC peripherals:
 
 * Radio
 * Timers
-* Real time counter
-* Random number generator
+* RTC (Real Time Counter)
+* RNG (Random Number Generator)
 * AES CCM & AES ECB encryption HW
-* Accelerated address resolver
-* Clock control
+* AAR (Accelerated Address Resolver)
+* CLOCK (Clock control)
 * PPI (Programmable Peripheral Interconnect)
 * EGU (Event Generator Unit)
+* GPIO & GPIOTE
 * TEMP (Temperature sensor)
-* UICR (User information configuration registers)
-* NVMC (Non-volatile memory controller)
+* UICR (User Information Configuration Registers)
+* FICR (Factory Information Configuration Registers)
+* NVMC (Non-Volatile Memory Controller)
 
 The nrf52_bsim board definition uses the POSIX architecture to
 run applications natively on the development system, this has the benefit of
