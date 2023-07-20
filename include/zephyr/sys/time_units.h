@@ -14,6 +14,15 @@
 extern "C" {
 #endif
 
+/**
+ * @file
+ * @defgroup timeutil_unit_apis Time Units Helpers
+ * @ingroup timeutil_apis
+ *
+ * @brief Various helper APIs for converting between time units.
+ * @{
+ */
+
 /** @brief System-wide macro to denote "forever" in milliseconds
  *
  *  Usage of this macro is limited to APIs that want to expose a timeout value
@@ -56,6 +65,10 @@ static inline int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
   #define TIME_CONSTEXPR
 #endif
 
+/**
+ * @brief Get the system timer frequency.
+ * @return system timer frequency in Hz
+ */
 static TIME_CONSTEXPR inline int sys_clock_hw_cycles_per_sec(void)
 {
 #if defined(CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME)
@@ -1419,6 +1432,10 @@ static TIME_CONSTEXPR inline uint64_t k_ticks_to_cyc_ceil64(uint64_t t)
 #endif
 
 #undef TIME_CONSTEXPR
+
+/**
+ * @}
+ */
 
 #ifdef __cplusplus
 } /* extern "C" */
