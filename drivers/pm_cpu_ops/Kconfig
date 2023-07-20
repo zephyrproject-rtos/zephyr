@@ -22,6 +22,7 @@ config PM_CPU_OPS_PSCI
 	default y
 	depends on DT_HAS_ARM_PSCI_0_2_ENABLED || DT_HAS_ARM_PSCI_1_1_ENABLED
 	select PM_CPU_OPS_HAS_DRIVER
+	select HAS_POWEROFF
 	help
 	  Say Y here if you want Zephyr to communicate with system firmware
 	  implementing the PSCI specification for CPU-centric power
