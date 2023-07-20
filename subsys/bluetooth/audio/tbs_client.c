@@ -1578,19 +1578,21 @@ static void discover_next_instance(struct bt_conn *conn, uint8_t index)
 	struct bt_tbs_server_inst *srv_inst = &srv_insts[conn_index];
 
 	srv_inst->current_inst = tbs_inst_by_index(conn, index);
-	__ASSERT(srv_inst->current_inst != NULL,
-		 "srv_inst->current_inst was NULL for conn %p and index %u", conn, index);
+	if (srv_inst->current_inst != NULL) {
+		(void)memset(&srv_inst->discover_params, 0, sizeof(srv_inst->discover_params));
+		srv_inst->discover_params.uuid = NULL;
+		srv_inst->discover_params.start_handle = srv_inst->current_inst->start_handle;
+		srv_inst->discover_params.end_handle = srv_inst->current_inst->end_handle;
+		srv_inst->discover_params.type = BT_GATT_DISCOVER_CHARACTERISTIC;
+		srv_inst->discover_params.func = discover_func;
 
-	(void)memset(&srv_inst->discover_params, 0, sizeof(srv_inst->discover_params));
-	srv_inst->discover_params.uuid = NULL;
-	srv_inst->discover_params.start_handle = srv_inst->current_inst->start_handle;
-	srv_inst->discover_params.end_handle = srv_inst->current_inst->end_handle;
-	srv_inst->discover_params.type = BT_GATT_DISCOVER_CHARACTERISTIC;
-	srv_inst->discover_params.func = discover_func;
-
-	err = bt_gatt_discover(conn, &srv_inst->discover_params);
-	if (err != 0) {
-		tbs_client_discover_complete(conn, err);
+		err = bt_gatt_discover(conn, &srv_inst->discover_params);
+		if (err != 0) {
+			tbs_client_discover_complete(conn, err);
+		}
+	} else {
+		__ASSERT_PRINT("srv_inst->current_inst was NULL for conn %p and index %u", conn,
+			       index);
 	}
 }
 
