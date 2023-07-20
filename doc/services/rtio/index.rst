@@ -122,6 +122,14 @@ does this work is up to the author of the iodev, perhaps the entire queue of
 operations can be converted to a set of DMA transfer descriptors, meaning the
 hardware does almost all of the real work.
 
+Cancellation
+************
+
+Canceling an already queued operation is possible but not guaranteed. If the
+SQE has not yet started, it's likely that a call to :c:func:`rtio_sqe_cancel`
+will remove the SQE and never run it. If, however, the SQE already started
+running, the cancel request will be ignored.
+
 Memory pools
 ************
 
