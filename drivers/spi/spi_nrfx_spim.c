@@ -23,6 +23,12 @@ LOG_MODULE_REGISTER(spi_nrfx_spim, CONFIG_SPI_LOG_LEVEL);
 
 #include "spi_context.h"
 
+#if defined(CONFIG_SOC_NRF52832) && !defined(CONFIG_SOC_NRF52832_ALLOW_SPIM_DESPITE_PAN_58)
+#error  This driver is not available by default for nRF52832 because of Product Anomaly 58 \
+	(SPIM: An additional byte is clocked out when RXD.MAXCNT == 1 and TXD.MAXCNT <= 1). \
+	Use CONFIG_SOC_NRF52832_ALLOW_SPIM_DESPITE_PAN_58=y to override this limitation.
+#endif
+
 #if (CONFIG_SPI_NRFX_RAM_BUFFER_SIZE > 0)
 #define SPI_BUFFER_IN_RAM 1
 #endif
@@ -613,22 +619,22 @@ static int spi_nrfx_init(const struct device *dev)
 			DT_PHANDLE(SPIM(idx), memory_regions)))))),	       \
 		())
 
-#ifdef CONFIG_SPI_0_NRF_SPIM
+#ifdef CONFIG_HAS_HW_NRF_SPIM0
 SPI_NRFX_SPIM_DEFINE(0);
 #endif
 
-#ifdef CONFIG_SPI_1_NRF_SPIM
+#ifdef CONFIG_HAS_HW_NRF_SPIM1
 SPI_NRFX_SPIM_DEFINE(1);
 #endif
 
-#ifdef CONFIG_SPI_2_NRF_SPIM
+#ifdef CONFIG_HAS_HW_NRF_SPIM2
 SPI_NRFX_SPIM_DEFINE(2);
 #endif
 
-#ifdef CONFIG_SPI_3_NRF_SPIM
+#ifdef CONFIG_HAS_HW_NRF_SPIM3
 SPI_NRFX_SPIM_DEFINE(3);
 #endif
 
-#ifdef CONFIG_SPI_4_NRF_SPIM
+#ifdef CONFIG_HAS_HW_NRF_SPIM4
 SPI_NRFX_SPIM_DEFINE(4);
 #endif
