@@ -82,7 +82,7 @@ static int imx_gpio_configure(const struct device *port, gpio_pin_t pin,
 
 	/* Init pin configuration struct, and use pinctrl api to apply settings */
 	__ASSERT_NO_MSG(pin < config->mux_count);
-	memcpy(&pin_cfg.pinmux, &config->pin_muxes[pin], sizeof(pin_cfg));
+	memcpy(&pin_cfg.pinmux, &config->pin_muxes[pin], sizeof(pin_cfg.pinmux));
 	/* cfg register will be set by pinctrl_configure_pins */
 	pin_cfg.pin_ctrl_flags = reg;
 	pinctrl_configure_pins(&pin_cfg, 1, PINCTRL_REG_NONE);
