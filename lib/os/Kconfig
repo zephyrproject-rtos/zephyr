@@ -166,6 +166,17 @@ config REBOOT
 	  needed to perform a "safe" reboot (e.g. to stop the system clock before
 	  issuing a reset).
 
+config HAS_POWEROFF
+	bool
+	help
+	  Option to signal that power off functionality is implemented.
+
+config POWEROFF
+	bool "Power off functionality"
+	depends on HAS_POWEROFF
+	help
+	  Enable support for system power off.
+
 config UTF8
 	bool "UTF-8 string operation supported"
 	help
