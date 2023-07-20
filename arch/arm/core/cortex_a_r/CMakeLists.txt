@@ -17,6 +17,7 @@ zephyr_library_sources(
   irq_manage.c
   prep_c.c
   thread.c
+  cpu_idle.S
   )
 
 zephyr_library_sources_ifdef(CONFIG_GEN_SW_ISR_TABLE isr_wrapper.S)

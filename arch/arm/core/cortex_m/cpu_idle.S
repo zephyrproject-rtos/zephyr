@@ -6,7 +6,7 @@
 
 /**
  * @file
- * @brief ARM Cortex-A, Cortex-M and Cortex-R power management
+ * @brief ARM Cortex-M power management
  *
  */
 
@@ -23,34 +23,12 @@ GTEXT(z_arm_cpu_idle_init)
 GTEXT(arch_cpu_idle)
 GTEXT(arch_cpu_atomic_idle)
 
-#if defined(CONFIG_CPU_CORTEX_M)
 #define _SCB_SCR		0xE000ED10
 
 #define _SCB_SCR_SEVONPEND	(1 << 4)
 #define _SCB_SCR_SLEEPDEEP	(1 << 2)
 #define _SCB_SCR_SLEEPONEXIT	(1 << 1)
 #define _SCR_INIT_BITS		_SCB_SCR_SEVONPEND
-#endif
-
-/**
- *
- * @brief Initialization of CPU idle
- *
- * Only called by arch_kernel_init(). Sets SEVONPEND bit once for the system's
- * duration.
- *
- * C function prototype:
- *
- * void z_arm_cpu_idle_init(void);
- */
-
-SECTION_FUNC(TEXT, z_arm_cpu_idle_init)
-#if defined(CONFIG_CPU_CORTEX_M)
-	ldr	r1, =_SCB_SCR
-	movs.n	r2, #_SCR_INIT_BITS
-	str	r2, [r1]
-#endif
-	bx	lr
 
 .macro _sleep_if_allowed wait_instruction
 #if defined(CONFIG_ARM_ON_ENTER_CPU_IDLE_HOOK)
@@ -83,6 +61,24 @@ _skip_\@:
 #endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
 #endif /* CONFIG_ARM_ON_ENTER_CPU_IDLE_HOOK */
 .endm
+
+/**
+ *
+ * @brief Initialization of CPU idle
+ *
+ * Only called by arch_kernel_init(). Sets SEVONPEND bit once for the system's
+ * duration.
+ *
+ * C function prototype:
+ *
+ * void z_arm_cpu_idle_init(void);
+ */
+
+SECTION_FUNC(TEXT, z_arm_cpu_idle_init)
+	ldr	r1, =_SCB_SCR
+	movs.n	r2, #_SCR_INIT_BITS
+	str	r2, [r1]
+	bx	lr
 
 SECTION_FUNC(TEXT, arch_cpu_idle)
 #ifdef CONFIG_TRACING
@@ -162,10 +158,7 @@ SECTION_FUNC(TEXT, arch_cpu_atomic_idle)
 
 	/* r0: interrupt mask from caller */
 
-#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE) \
-	|| defined(CONFIG_ARMV7_R) \
-	|| defined(CONFIG_AARCH32_ARMV8_R) \
-	|| defined(CONFIG_ARMV7_A)
+#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
 	/* No BASEPRI, call wfe directly
 	 * (SEVONPEND is set in z_arm_cpu_idle_init())
 	 */
