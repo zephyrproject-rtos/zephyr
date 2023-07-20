@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-
+#include <version.h>
 #include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
@@ -60,7 +60,11 @@ bool board_daplink_is_fitted(void)
 	return !NVIC_GetPendingIRQ(DT_IRQN(DAPLINK_QSPI_MUX_NODE));
 }
 
+#if ZEPHYR_VERSION_CODE < ZEPHYR_VERSION(3, 4 , 0)
+static int board_init(const struct device *arg)
+#else
 static int board_init(void)
+#endif
 {
 
 	/*
