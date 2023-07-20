@@ -771,3 +771,9 @@ ZTEST(posix_apis, test_barrier)
 	ret = pthread_barrierattr_destroy(&attr);
 	zassert_equal(ret, 0, "pthread_barrierattr_destroy failed");
 }
+
+ZTEST(posix_apis, test_pthread_equal)
+{
+	zassert_true(pthread_equal(pthread_self(), pthread_self()));
+	zassert_false(pthread_equal(pthread_self(), (pthread_t)4242));
+}
