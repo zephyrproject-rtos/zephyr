@@ -299,10 +299,10 @@ static int qdec_nrfx_init(const struct device *dev)
 				CONFIG_SENSOR_INIT_PRIORITY,				     \
 				&qdec_nrfx_driver_api)
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(qdec0), okay)
+#ifdef CONFIG_HAS_HW_NRF_QDEC0
 SENSOR_NRFX_QDEC_DEVICE(0);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(qdec1), okay)
+#ifdef CONFIG_HAS_HW_NRF_QDEC1
 SENSOR_NRFX_QDEC_DEVICE(1);
 #endif
