@@ -25,6 +25,9 @@ extern "C" {
  */
 struct fs_file_system_t;
 
+/**
+ * @brief Enumeration for directory entry types
+ */
 enum fs_dir_entry_type {
 	/** Identifier for file entry */
 	FS_DIR_ENTRY_FILE = 0,
@@ -79,43 +82,41 @@ enum {
 
 /**
  * @brief File system mount info structure
- *
- * @param node Entry for the fs_mount_list list
- * @param type File system type
- * @param mnt_point Mount point directory name (ex: "/fatfs")
- * @param fs_data Pointer to file system specific data
- * @param storage_dev Pointer to backend storage device
- * @param mountp_len Length of Mount point string
- * @param fs Pointer to File system interface of the mount point
- * @param flags Mount flags
  */
 struct fs_mount_t {
+	/** Entry for the fs_mount_list list */
 	sys_dnode_t node;
+	/** File system type */
 	int type;
+	/** Mount point directory name (ex: "/fatfs") */
 	const char *mnt_point;
+	/** Pointer to file system specific data */
 	void *fs_data;
+	/** Pointer to backend storage device */
 	void *storage_dev;
-	/* fields filled by file system core */
+	/* The following fields are filled by file system core */
+	/** Length of Mount point string */
 	size_t mountp_len;
+	/** Pointer to File system interface of the mount point */
 	const struct fs_file_system_t *fs;
+	/** Mount flags */
 	uint8_t flags;
 };
 
 /**
  * @brief Structure to receive file or directory information
  *
- * Used in functions that reads the directory entries to get
+ * Used in functions that read the directory entries to get
  * file or directory information.
- *
- * @param dir_entry_type Whether file or directory
- * - FS_DIR_ENTRY_FILE
- * - FS_DIR_ENTRY_DIR
- * @param name Name of directory or file
- * @param size Size of file. 0 if directory
  */
 struct fs_dirent {
+	/**
+	 * File/directory type (FS_DIR_ENTRY_FILE or FS_DIR_ENTRY_DIR)
+	 */
 	enum fs_dir_entry_type type;
+	/** Name of file or directory */
 	char name[MAX_FILE_NAME + 1];
+	/** Size of file (0 if directory). */
 	size_t size;
 };
 
@@ -124,16 +125,15 @@ struct fs_dirent {
  *
  * Used to retrieve information about total and available space
  * in the volume.
- *
- * @param f_bsize Optimal transfer block size
- * @param f_frsize Allocation unit size
- * @param f_blocks Size of FS in f_frsize units
- * @param f_bfree Number of free blocks
  */
 struct fs_statvfs {
+	/** Optimal transfer block size */
 	unsigned long f_bsize;
+	/** Allocation unit size */
 	unsigned long f_frsize;
+	/** Size of FS in f_frsize units */
 	unsigned long f_blocks;
+	/** Number of free blocks */
 	unsigned long f_bfree;
 };
 
@@ -184,7 +184,7 @@ struct fs_statvfs {
  * @}
  */
 
-/*
+/**
  * @brief Get the common mount flags for an fstab entry.
 
  * @param node_id the node identifier for a child entry in a
@@ -201,6 +201,8 @@ struct fs_statvfs {
 /**
  * @brief The name under which a zephyr,fstab entry mount structure is
  * defined.
+ *
+ * @param node_id the node identifier for a child entry in a zephyr,fstab node.
  */
 #define FS_FSTAB_ENTRY(node_id) _CONCAT(z_fsmp_, node_id)
 
@@ -209,6 +211,8 @@ struct fs_statvfs {
  * entry.
  *
  * This will evaluate to the name of a struct fs_mount_t object.
+ *
+ * @param node_id the node identifier for a child entry in a zephyr,fstab node.
  */
 #define FS_FSTAB_DECLARE_ENTRY(node_id)		\
 	extern struct fs_mount_t FS_FSTAB_ENTRY(node_id)
