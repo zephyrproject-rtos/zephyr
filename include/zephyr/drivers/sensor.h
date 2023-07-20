@@ -124,6 +124,10 @@ enum sensor_channel {
 
 	/** Voltage, in volts **/
 	SENSOR_CHAN_VOLTAGE,
+
+	/** Current Shunt Voltage in milli-volts **/
+	SENSOR_CHAN_VSHUNT,
+
 	/** Current, in amps **/
 	SENSOR_CHAN_CURRENT,
 	/** Power in watts **/
