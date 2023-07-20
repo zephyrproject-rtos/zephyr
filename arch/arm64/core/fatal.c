@@ -17,6 +17,7 @@
 #include <zephyr/exc_handle.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/sys/poweroff.h>
 
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
@@ -350,7 +351,10 @@ FUNC_NORETURN void arch_system_halt(unsigned int reason)
 	ARG_UNUSED(reason);
 
 	(void)arch_irq_lock();
-	(void)pm_system_off();
+
+#ifdef CONFIG_POWEROFF
+	sys_poweroff();
+#endif /* CONFIG_POWEROFF */
 
 	for (;;) {
 		/* Spin endlessly as fallback */
