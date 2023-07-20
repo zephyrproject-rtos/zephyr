@@ -65,12 +65,12 @@
 			gpio-controller;
 		};
 
-        i2c0: i2c@04004A000 {
-            compatible = "eos_s3_i2c0";
-            reg = <0x4004A000 0x170>;
-            #address-cells = <1>;
-            #size-cells = <1>;
-        };
+		i2c0: i2c@4004a000 {
+			compatible = "quicklogic,eos-s3-i2c";
+			reg = <0x4004a000 0x170>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
 	};
 };
 

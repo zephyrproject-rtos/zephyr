@@ -1,0 +1,12 @@
+# Copyright (c) 2023 Szymon Duchniewicz
+# SPDX-License-Identifier: Apache-2.0
+
+description: Quicklogic EOS S3 I2C interface
+
+compatible: "quicklogic,eos-s3-i2c"
+
+include: i2c-controller.yaml
+
+properties:
+  reg:
+    required: true
