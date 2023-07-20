@@ -120,18 +120,25 @@ static void stm32_i2c_slave_event(const struct device *dev)
 	I2C_TypeDef *i2c = cfg->i2c;
 	const struct i2c_target_callbacks *slave_cb;
 	struct i2c_target_config *slave_cfg;
-	uint8_t slave_address;
 
-	/* Choose the right slave from the address match code */
-	slave_address = LL_I2C_GetAddressMatchCode(i2c) >> 1;
-	if (data->slave_cfg != NULL && slave_address == data->slave_cfg->address) {
-		slave_cfg = data->slave_cfg;
-	} else if (data->slave2_cfg != NULL && slave_address == data->slave2_cfg->address) {
-		slave_cfg = data->slave2_cfg;
-	} else {
-		__ASSERT_NO_MSG(0);
-		return;
+	if (data->slave_cfg->flags != I2C_TARGET_FLAGS_ADDR_10_BITS) {
+		uint8_t slave_address;
+
+		/* Choose the right slave from the address match code */
+		slave_address = LL_I2C_GetAddressMatchCode(i2c) >> 1;
+		if (data->slave_cfg != NULL &&
+				slave_address == data->slave_cfg->address) {
+			slave_cfg = data->slave_cfg;
+		} else if (data->slave2_cfg != NULL &&
+				slave_address == data->slave2_cfg->address) {
+			slave_cfg = data->slave2_cfg;
+		} else {
+			__ASSERT_NO_MSG(0);
+			return;
+		}
 	}
+
+	slave_cfg = data->slave_cfg;
 	slave_cb = slave_cfg->callbacks;
 
 	if (LL_I2C_IsActiveFlag_TXIS(i2c)) {
