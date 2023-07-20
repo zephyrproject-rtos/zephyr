@@ -286,6 +286,8 @@ endif()
 
 # @Intent: Set compiler specific macro inclusion of AUTOCONF_H
 zephyr_compile_options("SHELL: $<TARGET_PROPERTY:compiler,imacros> ${AUTOCONF_H}")
+# @Intent: Set compiler specific macro inclusion of VERSION_H
+zephyr_compile_options("SHELL: $<TARGET_PROPERTY:compiler,imacros> ${VERSION_H}")
 
 if(CONFIG_COMPILER_FREESTANDING)
   # @Intent: Set compiler specific flag for bare metal freestanding option
@@ -552,16 +554,16 @@ if(ZEPHYR_GIT_INDEX)
 endif()
 
 add_custom_command(
-  OUTPUT ${PROJECT_BINARY_DIR}/include/generated/version.h
+  OUTPUT ${VERSION_H}
   COMMAND ${CMAKE_COMMAND} -DZEPHYR_BASE=${ZEPHYR_BASE}
-    -DOUT_FILE=${PROJECT_BINARY_DIR}/include/generated/version.h
+    -DOUT_FILE=${VERSION_H}
     -DVERSION_TYPE=KERNEL
     -DVERSION_FILE=${ZEPHYR_BASE}/VERSION
     ${build_version_argument}
     -P ${ZEPHYR_BASE}/cmake/gen_version_h.cmake
   DEPENDS ${ZEPHYR_BASE}/VERSION ${git_dependency}
 )
-add_custom_target(version_h DEPENDS ${PROJECT_BINARY_DIR}/include/generated/version.h)
+add_custom_target(version_h DEPENDS ${VERSION_H})
 
 if(EXISTS ${APPLICATION_SOURCE_DIR}/VERSION)
   add_custom_command(
@@ -1875,7 +1877,7 @@ if(log_dict_db_output)
     ${ZEPHYR_BASE}/scripts/logging/dictionary/database_gen.py
     ${KERNEL_ELF_NAME}
     ${log_dict_db_output}
-    --build-header ${PROJECT_BINARY_DIR}/include/generated/version.h
+    --build-header ${VERSION_H}
     )
   list(APPEND
     post_build_byproducts

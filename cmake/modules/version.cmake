@@ -119,3 +119,5 @@ foreach(type file IN ZIP_LISTS VERSION_TYPE VERSION_FILE)
   unset(PATCH)
   unset(${type}_VERSION_WITHOUT_TWEAK)
 endforeach()
+
+set(VERSION_H ${PROJECT_BINARY_DIR}/include/generated/version.h)
