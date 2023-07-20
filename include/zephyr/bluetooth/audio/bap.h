@@ -1576,32 +1576,6 @@ int bt_bap_broadcast_source_get_base(struct bt_bap_broadcast_source *source,
 
 /** Broadcast Audio Sink callback structure */
 struct bt_bap_broadcast_sink_cb {
-	/** @brief Scan receive callback
-	 *
-	 *  Scan receive callback is called whenever a broadcast source has been found.
-	 *
-	 *  @param info          Advertiser packet information.
-	 *  @param ad            Buffer containing advertiser data.
-	 *  @param broadcast_id  24-bit broadcast ID
-	 *
-	 *  @return true to sync to the broadcaster, else false.
-	 *          Syncing to the broadcaster will stop the current scan.
-	 */
-	bool (*scan_recv)(const struct bt_le_scan_recv_info *info, struct net_buf_simple *ad,
-			  uint32_t broadcast_id);
-
-	/** @brief Periodic advertising sync callback
-	 *
-	 *  Called when synchronized to a periodic advertising. When synchronized a
-	 *  bt_bap_broadcast_sink structure is allocated for future use.
-	 *
-	 *  @param sink          Pointer to the allocated sink structure.
-	 *  @param sync          Pointer to the periodic advertising sync.
-	 *  @param broadcast_id  24-bit broadcast ID previously reported by scan_recv.
-	 */
-	void (*pa_synced)(struct bt_bap_broadcast_sink *sink, struct bt_le_per_adv_sync *sync,
-			  uint32_t broadcast_id);
-
 	/** @brief Broadcast Audio Source Endpoint (BASE) received
 	 *
 	 *  Callback for when we receive a BASE from a broadcaster after
@@ -1625,30 +1599,6 @@ struct bt_bap_broadcast_sink_cb {
 	 */
 	void (*syncable)(struct bt_bap_broadcast_sink *sink, bool encrypted);
 
-	/** @brief Scan terminated callback
-	 *
-	 *  Scan terminated callback is called whenever a scan started by
-	 *  bt_bap_broadcast_sink_scan_start() is terminated before
-	 *  bt_bap_broadcast_sink_scan_stop().
-	 *
-	 *  Typical reasons for this are that the periodic advertising has synchronized
-	 *  (success criteria) or the scan timed out.  It may also be called if the periodic
-	 *  advertising failed to synchronize.
-	 *
-	 *  @param err 0 in case of success or negative value in case of error.
-	 */
-	void (*scan_term)(int err);
-
-	/** @brief Periodic advertising synchronization lost callback
-	 *
-	 *  The periodic advertising synchronization lost callback is called if the periodic
-	 *  advertising sync is lost. If this happens, the sink object is deleted. To synchronize to
-	 *  the broadcaster again, bt_bap_broadcast_sink_scan_start() must be called.
-	 *
-	 *  @param sink          Pointer to the sink structure.
-	 */
-	void (*pa_sync_lost)(struct bt_bap_broadcast_sink *sink);
-
 	/* Internally used list node */
 	sys_snode_t _node;
 };
@@ -1658,29 +1608,6 @@ struct bt_bap_broadcast_sink_cb {
  *  @param cb  Broadcast sink callback structure.
  */
 int bt_bap_broadcast_sink_register_cb(struct bt_bap_broadcast_sink_cb *cb);
-
-/** @brief Start scan for broadcast sources.
- *
- *  Starts a scan for broadcast sources. Scan results will be received by
- *  the scan_recv callback.
- *  Only reports from devices advertising broadcast audio support will be sent.
- *  Note that a broadcast source may advertise broadcast audio capabilities,
- *  but may not be streaming.
- *
- *  @param param Scan parameters.
- *
- *  @return Zero on success or (negative) error code otherwise.
- */
-int bt_bap_broadcast_sink_scan_start(const struct bt_le_scan_param *param);
-
-/**
- * @brief Stop scan for broadcast sources.
- *
- *  Stops ongoing scanning for broadcast sources.
- *
- *  @return Zero on success or (negative) error code otherwise.
- */
-int bt_bap_broadcast_sink_scan_stop(void);
 
 /** @brief Create a Broadcast Sink from a periodic advertising sync
  *
@@ -1694,12 +1621,14 @@ int bt_bap_broadcast_sink_scan_stop(void);
  *  bt_bap_broadcast_sink_cb.pa_synced() will be called with the Broadcast
  *  Sink object created if this is successful.
  *
- *  @param  pa_sync       Pointer to the periodic advertising sync object.
- *  @param  broadcast_id  24-bit broadcast ID.
+ *  @param      pa_sync       Pointer to the periodic advertising sync object.
+ *  @param      broadcast_id  24-bit broadcast ID.
+ *  @param[out] sink          Pointer to the Broadcast Sink created.
  *
  *  @return 0 in case of success or errno value in case of error.
  */
-int bt_bap_broadcast_sink_create(struct bt_le_per_adv_sync *pa_sync, uint32_t broadcast_id);
+int bt_bap_broadcast_sink_create(struct bt_le_per_adv_sync *pa_sync, uint32_t broadcast_id,
+				 struct bt_bap_broadcast_sink **sink);
 
 /** @brief Sync to a broadcaster's audio
  *
