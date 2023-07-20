@@ -6,8 +6,8 @@ source "Kconfig.zephyr"
 
 config TEST_NUM_CPUS
 	int "Number of CPUs to use in parallel"
-	range 1 MP_NUM_CPUS
-	default MP_NUM_CPUS
+	range 1 MP_MAX_NUM_CPUS
+	default MP_MAX_NUM_CPUS
 	help
 	  The number of parallel threads to run during the test.
 

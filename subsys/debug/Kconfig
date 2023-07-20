@@ -257,7 +257,7 @@ config ASSERT_LEVEL
 config SPIN_VALIDATE
 	bool "Spinlock validation"
 	depends on MULTITHREADING
-	depends on MP_NUM_CPUS <= 4
+	depends on MP_MAX_NUM_CPUS <= 4
 	default y if !FLASH || FLASH_SIZE > 32
 	help
 	  There's a spinlock validation framework available when asserts are

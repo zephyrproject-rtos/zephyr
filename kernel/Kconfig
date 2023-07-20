@@ -1173,12 +1173,12 @@ config TRACE_SCHED_IPI
 	  to check if schedule IPI has called or not, for testing
 	  purpose.
 	depends on SCHED_IPI_SUPPORTED
-	depends on MP_NUM_CPUS>1
+	depends on MP_MAX_NUM_CPUS>1
 
 config KERNEL_COHERENCE
 	bool "Place all shared data into coherent memory"
 	depends on ARCH_HAS_COHERENCE
-	default y if SMP && MP_NUM_CPUS > 1
+	default y if SMP && MP_MAX_NUM_CPUS > 1
 	select THREAD_STACK_INFO
 	help
 	  When available and selected, the kernel will build in a mode
