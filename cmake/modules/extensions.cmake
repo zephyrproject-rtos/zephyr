@@ -1154,6 +1154,7 @@ endfunction(zephyr_check_compiler_flag_hardcoded)
 #    DATA_SECTIONS Inside the RAMABLE_REGION GROUP, initialized.
 #    RAMFUNC_SECTION Inside the RAMFUNC RAMABLE_REGION GROUP, not initialized.
 #    NOCACHE_SECTION Inside the NOCACHE section
+#    PM_SECTIONS   For PM related symbols
 #    SECTIONS      Near the end of the file. Don't use this when linking into
 #                  RAMABLE_REGION, use RAM_SECTIONS instead.
 #    PINNED_RODATA Similar to RODATA but pinned in memory.
@@ -1204,6 +1205,7 @@ function(zephyr_linker_sources location)
   set(rodata_path        "${snippet_base}/snippets-rodata.ld")
   set(ramfunc_path       "${snippet_base}/snippets-ramfunc-section.ld")
   set(nocache_path       "${snippet_base}/snippets-nocache-section.ld")
+  set(pm_sections_path   "${snippet_base}/snippets-pm-sections.ld")
 
   set(pinned_ram_sections_path  "${snippet_base}/snippets-pinned-ram-sections.ld")
   set(pinned_data_sections_path "${snippet_base}/snippets-pinned-data-sections.ld")
@@ -1221,6 +1223,7 @@ function(zephyr_linker_sources location)
     file(WRITE ${rodata_path} "")
     file(WRITE ${ramfunc_path} "")
     file(WRITE ${nocache_path} "")
+    file(WRITE ${pm_sections_path} "")
     file(WRITE ${pinned_ram_sections_path} "")
     file(WRITE ${pinned_data_sections_path} "")
     file(WRITE ${pinned_rodata_path} "")
@@ -1246,6 +1249,8 @@ function(zephyr_linker_sources location)
     set(snippet_path "${ramfunc_path}")
   elseif("${location}" STREQUAL "NOCACHE_SECTION")
     set(snippet_path "${nocache_path}")
+  elseif("${location}" STREQUAL "PM_SECTIONS")
+    set(snippet_path "${pm_sections_path}")
   elseif("${location}" STREQUAL "PINNED_RAM_SECTIONS")
     set(snippet_path "${pinned_ram_sections_path}")
   elseif("${location}" STREQUAL "PINNED_DATA_SECTIONS")
