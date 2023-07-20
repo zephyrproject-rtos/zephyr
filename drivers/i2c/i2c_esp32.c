@@ -255,7 +255,7 @@ static void IRAM_ATTR i2c_esp32_configure_timeout(const struct device *dev)
 		 * at least for ESP32-C3 (tested with communication to bq76952 chip). So we set the
 		 * timeout to maximum supported value instead.
 		 */
-#if defined(CONFIG_SOC_ESP32C3) || defined(CONFIG_SOC_ESP32)
+#if defined(CONFIG_SOC_SERIES_ESP32C3) || defined(CONFIG_SOC_SERIES_ESP32)
 		i2c_hal_set_tout(&data->hal, I2C_LL_MAX_TIMEOUT);
 #else
 		i2c_hal_set_tout_en(&data->hal, 0);

@@ -16,7 +16,7 @@ LOG_MODULE_REGISTER(esp32_spi, CONFIG_SPI_LOG_LEVEL);
 #include <soc.h>
 #include <soc/soc_memory_types.h>
 #include <zephyr/drivers/spi.h>
-#ifndef CONFIG_SOC_ESP32C3
+#ifndef CONFIG_SOC_SERIES_ESP32C3
 #include <zephyr/drivers/interrupt_controller/intc_esp32.h>
 #else
 #include <zephyr/drivers/interrupt_controller/intc_esp32c3.h>
@@ -29,7 +29,7 @@ LOG_MODULE_REGISTER(esp32_spi, CONFIG_SPI_LOG_LEVEL);
 #include "spi_context.h"
 #include "spi_esp32_spim.h"
 
-#ifdef CONFIG_SOC_ESP32C3
+#ifdef CONFIG_SOC_SERIES_ESP32C3
 #define ISR_HANDLER isr_handler_t
 #else
 #define ISR_HANDLER intr_handler_t
@@ -180,11 +180,11 @@ static int spi_esp32_init_dma(const struct device *dev)
 #else
 	channel_offset = 1;
 #endif /* SOC_GDMA_SUPPORTED */
-#ifdef CONFIG_SOC_ESP32
+#ifdef CONFIG_SOC_SERIES_ESP32
 	/*Connect SPI and DMA*/
 	DPORT_SET_PERI_REG_BITS(DPORT_SPI_DMA_CHAN_SEL_REG, 3, cfg->dma_host + 1,
 				((cfg->dma_host + 1) * 2));
-#endif /* CONFIG_SOC_ESP32 */
+#endif /* CONFIG_SOC_SERIES_ESP32 */
 
 	data->hal_config.dma_in = (spi_dma_dev_t *)cfg->spi;
 	data->hal_config.dma_out = (spi_dma_dev_t *)cfg->spi;
@@ -351,7 +351,7 @@ static int IRAM_ATTR spi_esp32_configure(const struct device *dev,
 	 * Workaround for ESP32S3 and ESP32C3 SoC. This dummy transaction is needed to sync CLK and
 	 * software controlled CS when SPI is in mode 3
 	 */
-#if defined(CONFIG_SOC_ESP32S3) || defined(CONFIG_SOC_ESP32C3)
+#if defined(CONFIG_SOC_SERIES_ESP32S3) || defined(CONFIG_SOC_SERIES_ESP32C3)
 	if (ctx->num_cs_gpios && (hal_dev->mode & (SPI_MODE_CPOL | SPI_MODE_CPHA))) {
 		spi_esp32_transfer(dev);
 	}
@@ -463,7 +463,7 @@ static const struct spi_driver_api spi_api = {
 	.release = spi_esp32_release
 };
 
-#ifdef CONFIG_SOC_ESP32
+#ifdef CONFIG_SOC_SERIES_ESP32
 #define GET_AS_CS(idx) .as_cs = DT_INST_PROP(idx, clk_as_cs),
 #else
 #define GET_AS_CS(idx)
