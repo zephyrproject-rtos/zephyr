@@ -21,13 +21,13 @@ LOG_MODULE_REGISTER(dma_esp32_gdma, CONFIG_DMA_LOG_LEVEL);
 #include <zephyr/drivers/dma.h>
 #include <zephyr/drivers/dma/dma_esp32.h>
 #include <zephyr/drivers/clock_control.h>
-#ifndef CONFIG_SOC_ESP32C3
+#ifndef CONFIG_SOC_SERIES_ESP32C3
 #include <zephyr/drivers/interrupt_controller/intc_esp32.h>
 #else
 #include <zephyr/drivers/interrupt_controller/intc_esp32c3.h>
 #endif
 
-#ifdef CONFIG_SOC_ESP32C3
+#ifdef CONFIG_SOC_SERIES_ESP32C3
 #define ISR_HANDLER isr_handler_t
 #else
 #define ISR_HANDLER intr_handler_t
@@ -53,7 +53,7 @@ struct dma_esp32_channel {
 	dma_callback_t cb;
 	void *user_data;
 	dma_descriptor_t desc;
-#if defined(CONFIG_SOC_ESP32S3)
+#if defined(CONFIG_SOC_SERIES_ESP32S3)
 	struct intr_handle_data_t *intr_handle;
 #endif
 };
@@ -120,7 +120,7 @@ static void IRAM_ATTR dma_esp32_isr_handle(const struct device *dev, uint8_t rx_
 	}
 }
 
-#if defined(CONFIG_SOC_ESP32C3)
+#if defined(CONFIG_SOC_SERIES_ESP32C3)
 static int dma_esp32_enable_interrupt(const struct device *dev,
 				      struct dma_esp32_channel *dma_channel)
 {
@@ -467,7 +467,7 @@ static int dma_esp32_reload(const struct device *dev, uint32_t channel, uint32_t
 	return 0;
 }
 
-#if defined(CONFIG_SOC_ESP32C3)
+#if defined(CONFIG_SOC_SERIES_ESP32C3)
 static int dma_esp32_configure_irq(const struct device *dev)
 {
 	struct dma_esp32_config *config = (struct dma_esp32_config *)dev->config;

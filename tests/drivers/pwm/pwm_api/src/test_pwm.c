@@ -55,8 +55,8 @@
 #endif
 
 #if defined(CONFIG_BOARD_COLIBRI_IMX7D_M4) || defined(CONFIG_SOC_MK64F12) ||                       \
-	defined(CONFIG_SOC_MKW41Z4) || defined(CONFIG_SOC_ESP32S2) ||                              \
-	defined(CONFIG_SOC_ESP32S3) || defined(CONFIG_SOC_ESP32C3)
+	defined(CONFIG_SOC_MKW41Z4) || defined(CONFIG_SOC_SERIES_ESP32S2) ||                       \
+	defined(CONFIG_SOC_ESP32S3) || defined(CONFIG_SOC_SERIES_ESP32C3)
 #define DEFAULT_PERIOD_CYCLE 1024
 #define DEFAULT_PULSE_CYCLE 512
 #define DEFAULT_PERIOD_NSEC 2000000

@@ -3,4 +3,8 @@
 
 config BOARD_ESP32_DEVKITC_WROVER
 	bool "ESP32-DEVKITC-WROVER-E Development board"
-	depends on SOC_ESP32
+	depends on SOC_SERIES_ESP32
+
+choice SOC_PART_NUMBER
+	default SOC_ESP32_WROVER_E_N4R8
+endchoice

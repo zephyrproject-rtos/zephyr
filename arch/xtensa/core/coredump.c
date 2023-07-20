@@ -109,13 +109,13 @@ void arch_coredump_info_dump(const z_arch_esf_t *esf)
 
 	#if CONFIG_SOC_XTENSA_SAMPLE_CONTROLLER
 		arch_blk.soc = XTENSA_SOC_SAMPLE_CONTROLLER;
-	#elif CONFIG_SOC_ESP32
-		arch_blk.soc = XTENSA_SOC_ESP32;
 	#elif CONFIG_SOC_FAMILY_INTEL_ADSP
 		arch_blk.soc = XTENSA_SOC_INTEL_ADSP;
-	#elif CONFIG_SOC_ESP32S2
+	#elif CONFIG_SOC_SERIES_ESP32
+		arch_blk.soc = XTENSA_SOC_ESP32;
+	#elif CONFIG_SOC_SERIES_ESP32S2
 		arch_blk.soc = XTENSA_SOC_ESP32S2;
-	#elif CONFIG_SOC_ESP32S3
+	#elif CONFIG_SOC_SERIES_ESP32S3
 		arch_blk.soc = XTENSA_SOC_ESP32S3;
 	#else
 		arch_blk.soc = XTENSA_SOC_UNKNOWN;
