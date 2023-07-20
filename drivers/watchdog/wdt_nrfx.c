@@ -189,10 +189,10 @@ static void wdt_event_handler(const struct device *dev, uint32_t requests)
 			    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,  \
 			    &wdt_nrfx_driver_api)
 
-#ifdef CONFIG_NRFX_WDT0
+#ifdef CONFIG_HAS_HW_NRF_WDT0
 WDT_NRFX_WDT_DEVICE(0);
 #endif
 
-#ifdef CONFIG_NRFX_WDT1
+#ifdef CONFIG_HAS_HW_NRF_WDT1
 WDT_NRFX_WDT_DEVICE(1);
 #endif
