@@ -3,7 +3,6 @@
 zephyr_library()
 
 zephyr_library_sources(
-  cpu_idle.S
   fatal.c
   nmi.c
   nmi_on_reset.S
