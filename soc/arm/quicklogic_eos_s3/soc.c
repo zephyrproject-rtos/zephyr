@@ -46,10 +46,9 @@ static void eos_s3_cru_init(void)
 	}
 
 	/* Enable all clocks for every domain */
-	CRU->CLK_DIVIDER_CLK_GATING = (CLK_DIVIDER_A_CG | CLK_DIVIDER_B_CG
-		| CLK_DIVIDER_C_CG | CLK_DIVIDER_D_CG | CLK_DIVIDER_F_CG
-		| CLK_DIVIDER_G_CG | CLK_DIVIDER_H_CG | CLK_DIVIDER_I_CG
-		| CLK_DIVIDER_J_CG);
+	CRU->CLK_DIVIDER_CLK_GATING = (CLK_DIVIDER_A_CG | CLK_DIVIDER_B_CG | CLK_DIVIDER_C_CG |
+				       CLK_DIVIDER_D_CG | CLK_DIVIDER_F_CG | CLK_DIVIDER_G_CG |
+				       CLK_DIVIDER_H_CG | CLK_DIVIDER_I_CG | CLK_DIVIDER_J_CG);
 
 	/* Turn off divisor for A0 domain */
 	CRU->CLK_CTRL_A_0 = 0;
@@ -58,11 +57,34 @@ static void eos_s3_cru_init(void)
 	CRU->C11_CLK_GATE = C11_CLK_GATE_PATH_0_ON;
 
 	/* Set divider for domain C11 to ~ 5.12MHz */
-	CRU->CLK_CTRL_D_0 = (CLK_CTRL_CLK_DIVIDER_ENABLE |
-		CLK_CTRL_CLK_DIVIDER_RATIO_12);
+	CRU->CLK_CTRL_D_0 = (CLK_CTRL_CLK_DIVIDER_ENABLE | CLK_CTRL_CLK_DIVIDER_RATIO_12);
+
+	/* Enable FFE power * clock domain */
+	PMU->FFE_PWR_MODE_CFG = 0x0;
+	PMU->FFE_PD_SRC_MASK_N = 0x0;
+	PMU->FFE_WU_SRC_MASK_N = 0x0;
+	/* Wake up FFE */
+	PMU->FFE_FB_PF_SW_WU = 0x1;
+	/* Wait until FFE is in Active mode */
+	while (!(PMU->FFE_STATUS & 0x1))
+		;
+
+    /* The below is based on EOS S3 Technical Reference Manual, Chapter 36.1 Setup FFE clocks */
+	/* Setup the Clock Source as OSC */
+	CRU->CLK_CTRL_A_1 &= 0xFFFFFFFC;
+	CRU->CLK_SWITCH_FOR_C &= 0xFFFFFFFE;
+
+	/* Setup the Divider */
+	CRU->CLK_CTRL_A_0 = (CLK_CTRL_CLK_DIVIDER_ENABLE | CLK_CTRL_CLK_DIVIDER_RATIO_6);
+    /* CLK_Control_A_0 impacts C10 frequency. And C01 is a divided down clock from C10 */
+	/* CRU->C01_CLK_DIV = (0x5 | CLK_CTRL_CLK_DIVIDER_RATIO_6); */
+	CRU->CLK_CTRL_C_0 = (CLK_CTRL_CLK_DIVIDER_ENABLE | CLK_CTRL_CLK_DIVIDER_RATIO_6);
+
+	/* Enable FFE clocks for I2C peripherals */
+	CRU->C01_CLK_GATE = C01_CLK_GATE_PATH_3_ON;
+	CRU->C08_X1_CLK_GATE = C08_X1_CLK_GATE_PATH_0_ON;
+	/* CRU->C08_X4_CLK_GATE = C08_X4_CLK_GATE_PATH_0_ON; */
 }
-
-
 
 static int eos_s3_init(void)
 {
