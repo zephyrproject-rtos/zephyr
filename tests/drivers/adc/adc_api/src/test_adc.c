@@ -125,6 +125,9 @@ static int test_task_multiple_channels(void)
 	}
 
 	ret = adc_read(adc_channels[0].dev, &sequence);
+	if (ret == -ENOTSUP) {
+		ztest_test_skip();
+	}
 	zassert_equal(ret, 0, "adc_read() failed with code %d", ret);
 
 	check_samples(adc_channels_count);
@@ -228,6 +231,9 @@ static int test_task_with_interval(void)
 	(void)adc_sequence_init_dt(&adc_channels[0], &sequence);
 
 	ret = adc_read(adc_channels[0].dev, &sequence);
+	if (ret == -ENOTSUP) {
+		ztest_test_skip();
+	}
 	zassert_equal(ret, 0, "adc_read() failed with code %d", ret);
 
 	zassert_equal(user_data, sequence.options->user_data,
@@ -305,6 +311,9 @@ static int test_task_repeated_samplings(void)
 	}
 
 	ret = adc_read(adc_channels[0].dev, &sequence);
+	if (ret == -ENOTSUP) {
+		ztest_test_skip();
+	}
 	zassert_equal(ret, 0, "adc_read() failed with code %d", ret);
 
 	return TC_PASS;
