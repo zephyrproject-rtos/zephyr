@@ -4,7 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "version.h"
 #include <string.h>
 #include <zephyr/kernel.h>
 #include <zephyr/net/hostname.h>

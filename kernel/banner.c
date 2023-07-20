@@ -7,7 +7,6 @@
 #include <zephyr/kernel.h>
 #include <zephyr/init.h>
 #include <zephyr/device.h>
-#include <version.h>
 
 #if defined(CONFIG_BOOT_DELAY) && (CONFIG_BOOT_DELAY > 0)
 #define DELAY_STR STRINGIFY(CONFIG_BOOT_DELAY)

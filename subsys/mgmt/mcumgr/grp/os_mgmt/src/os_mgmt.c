@@ -32,7 +32,6 @@
 
 #ifdef CONFIG_MCUMGR_GRP_OS_INFO
 #include <stdio.h>
-#include <version.h>
 #include <os_mgmt_processor.h>
 #include <mgmt/mcumgr/util/zcbor_bulk.h>
 #if defined(CONFIG_NET_HOSTNAME_ENABLE)
