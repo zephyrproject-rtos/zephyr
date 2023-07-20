@@ -34,8 +34,7 @@ struct i2c_nrfx_twim_data {
 struct i2c_nrfx_twim_config {
 	nrfx_twim_t twim;
 	nrfx_twim_config_t twim_config;
-	uint16_t concat_buf_size;
-	uint16_t flash_buf_max_size;
+	uint16_t msg_buf_size;
 	void (*irq_connect)(void);
 	const struct pinctrl_dev_config *pcfg;
 };
@@ -51,7 +50,7 @@ static int i2c_nrfx_twim_transfer(const struct device *dev,
 	int ret = 0;
 	uint8_t *msg_buf = dev_data->msg_buf;
 	uint16_t msg_buf_used = 0;
-	uint16_t concat_buf_size = dev_config->concat_buf_size;
+	uint16_t msg_buf_size = dev_config->msg_buf_size;
 	nrfx_twim_xfer_desc_t cur_xfer = {
 		.address = addr
 	};
@@ -86,14 +85,14 @@ static int i2c_nrfx_twim_transfer(const struct device *dev,
 		 * the buffer after verifying there's room.
 		 */
 		if (concat_next || (msg_buf_used != 0)) {
-			if ((msg_buf_used + msgs[i].len) > concat_buf_size) {
+			if ((msg_buf_used + msgs[i].len) > buf_size) {
 				LOG_ERR("Need to use concatenation buffer and "
 					"provided size is insufficient "
 					"(%u + %u > %u). "
 					"Adjust the zephyr,concat-buf-size "
 					"property in the \"%s\" node.",
 					msg_buf_used, msgs[i].len,
-					concat_buf_size, dev->name);
+					buf_size, dev->name);
 				ret = -ENOSPC;
 				break;
 			}
@@ -421,8 +420,7 @@ static int i2c_nrfx_twim_init(const struct device *dev)
 			.skip_psel_cfg = true,				       \
 			.frequency = I2C_FREQUENCY(idx),		       \
 		},							       \
-		.concat_buf_size = CONCAT_BUF_SIZE(idx),		       \
-		.flash_buf_max_size = FLASH_BUF_MAX_SIZE(idx),		       \
+		.msg_buf_size = MSG_BUF_SIZE(idx),			       \
 		.irq_connect = irq_connect##idx,			       \
 		.pcfg = PINCTRL_DT_DEV_CONFIG_GET(I2C(idx)),		       \
 	};								       \
