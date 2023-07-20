@@ -1,0 +1,16 @@
+# Copyright (c) 2023 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_ESP32S3
+	bool "ESP32-S3 Series"
+	select XTENSA
+	select SOC_FAMILY_ESP32
+	select DYNAMIC_INTERRUPTS
+	select ARCH_SUPPORTS_COREDUMP
+	select CLOCK_CONTROL
+	select PINCTRL
+	select XIP if !MCUBOOT
+	select HAS_ESPRESSIF_HAL
+	select CPU_HAS_FPU
+	help
+	  Enable support for Espressif ESP32-S3

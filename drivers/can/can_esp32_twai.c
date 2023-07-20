@@ -26,7 +26,7 @@ LOG_MODULE_REGISTER(can_esp32_twai, CONFIG_CAN_LOG_LEVEL);
  * The names with TWAI_ prefixes from Espressif reference manuals are used for these incompatible
  * registers.
  */
-#ifndef CONFIG_SOC_ESP32
+#ifndef CONFIG_SOC_SERIES_ESP32
 
 /* TWAI_BUS_TIMING_0_REG is incompatible with CAN_SJA1000_BTR0 */
 #define TWAI_BUS_TIMING_0_REG           (6U)
@@ -63,7 +63,7 @@ LOG_MODULE_REGISTER(can_esp32_twai, CONFIG_CAN_LOG_LEVEL);
 #define TWAI_CD_MASK			GENMASK(2, 0)
 #define TWAI_CLOCK_OFF			BIT(3)
 
-#endif /* !CONFIG_SOC_ESP32 */
+#endif /* !CONFIG_SOC_SERIES_ESP32 */
 
 struct can_esp32_twai_config {
 	mm_reg_t base;
@@ -71,10 +71,10 @@ struct can_esp32_twai_config {
 	const struct device *clock_dev;
 	const clock_control_subsys_t clock_subsys;
 	int irq_source;
-#ifndef CONFIG_SOC_ESP32
+#ifndef CONFIG_SOC_SERIES_ESP32
 	/* 32-bit variant of output clock divider register required for non-ESP32 MCUs */
 	uint32_t cdr32;
-#endif /* !CONFIG_SOC_ESP32 */
+#endif /* !CONFIG_SOC_SERIES_ESP32 */
 };
 
 static uint8_t can_esp32_twai_read_reg(const struct device *dev, uint8_t reg)
@@ -95,7 +95,7 @@ static void can_esp32_twai_write_reg(const struct device *dev, uint8_t reg, uint
 	sys_write32(val & 0xFF, addr);
 }
 
-#ifndef CONFIG_SOC_ESP32
+#ifndef CONFIG_SOC_SERIES_ESP32
 
 /*
  * Required for newer ESP32-series MCUs which violate the original SJA1000 8-bit register size.
@@ -157,7 +157,7 @@ static int can_esp32_twai_set_timing(const struct device *dev, const struct can_
 	return 0;
 }
 
-#endif /* !CONFIG_SOC_ESP32 */
+#endif /* !CONFIG_SOC_SERIES_ESP32 */
 
 static int can_esp32_twai_get_core_clock(const struct device *dev, uint32_t *rate)
 {
@@ -205,7 +205,7 @@ static int can_esp32_twai_init(const struct device *dev)
 		return err;
 	}
 
-#ifndef CONFIG_SOC_ESP32
+#ifndef CONFIG_SOC_SERIES_ESP32
 	/*
 	 * TWAI_CLOCK_DIVIDER_REG is incompatible with CAN_SJA1000_CDR for non-ESP32 MCUs
 	 *   - TWAI_CD has length of 8 bits instead of 3 bits
@@ -215,7 +215,7 @@ static int can_esp32_twai_init(const struct device *dev)
 	 * Overwrite with 32-bit register variant configured via devicetree.
 	 */
 	can_esp32_twai_write_reg32(dev, TWAI_CLOCK_DIVIDER_REG, twai_config->cdr32);
-#endif /* !CONFIG_SOC_ESP32 */
+#endif /* !CONFIG_SOC_SERIES_ESP32 */
 
 	esp_intr_alloc(twai_config->irq_source, 0, can_esp32_twai_isr, (void *)dev, NULL);
 
@@ -227,11 +227,11 @@ const struct can_driver_api can_esp32_twai_driver_api = {
 	.start = can_sja1000_start,
 	.stop = can_sja1000_stop,
 	.set_mode = can_sja1000_set_mode,
-#ifdef CONFIG_SOC_ESP32
+#ifdef CONFIG_SOC_SERIES_ESP32
 	.set_timing = can_sja1000_set_timing,
 #else
 	.set_timing = can_esp32_twai_set_timing,
-#endif /* CONFIG_SOC_ESP32 */
+#endif /* CONFIG_SOC_SERIES_ESP32 */
 	.send = can_sja1000_send,
 	.add_rx_filter = can_sja1000_add_rx_filter,
 	.remove_rx_filter = can_sja1000_remove_rx_filter,
@@ -244,7 +244,7 @@ const struct can_driver_api can_esp32_twai_driver_api = {
 	.recover = can_sja1000_recover,
 #endif /* !CONFIG_CAN_AUTO_BUS_OFF_RECOVERY */
 	.timing_min = CAN_SJA1000_TIMING_MIN_INITIALIZER,
-#ifdef CONFIG_SOC_ESP32
+#ifdef CONFIG_SOC_SERIES_ESP32
 	.timing_max = CAN_SJA1000_TIMING_MAX_INITIALIZER,
 #else
 	/* larger prescaler allowed for newer ESP32-series MCUs */
@@ -255,16 +255,16 @@ const struct can_driver_api can_esp32_twai_driver_api = {
 		.phase_seg2 = 0x8,
 		.prescaler = 0x2000,
 	}
-#endif /* CONFIG_SOC_ESP32 */
+#endif /* CONFIG_SOC_SERIES_ESP32 */
 };
 
-#ifdef CONFIG_SOC_ESP32
+#ifdef CONFIG_SOC_SERIES_ESP32
 #define TWAI_CLKOUT_DIVIDER_MAX (14)
 #define TWAI_CDR32_INIT(inst)
 #else
 #define TWAI_CLKOUT_DIVIDER_MAX (490)
 #define TWAI_CDR32_INIT(inst) .cdr32 = CAN_ESP32_TWAI_DT_CDR_INST_GET(inst)
-#endif /* CONFIG_SOC_ESP32 */
+#endif /* CONFIG_SOC_SERIES_ESP32 */
 
 #define CAN_ESP32_TWAI_ASSERT_CLKOUT_DIVIDER(inst)                                                 \
 	BUILD_ASSERT(COND_CODE_0(DT_INST_NODE_HAS_PROP(inst, clkout_divider), (1),                 \
@@ -295,7 +295,7 @@ const struct can_driver_api can_esp32_twai_driver_api = {
 		CAN_SJA1000_DT_CONFIG_INST_GET(inst, &can_esp32_twai_config_##inst,                \
 					       can_esp32_twai_read_reg, can_esp32_twai_write_reg,  \
 					       CAN_SJA1000_OCR_OCMODE_BIPHASE,                     \
-					       COND_CODE_0(IS_ENABLED(CONFIG_SOC_ESP32), (0),      \
+					       COND_CODE_0(IS_ENABLED(CONFIG_SOC_SERIES_ESP32), (0),      \
 							(CAN_ESP32_TWAI_DT_CDR_INST_GET(inst))));  \
                                                                                                    \
 	static struct can_sja1000_data can_sja1000_data_##inst =                                   \

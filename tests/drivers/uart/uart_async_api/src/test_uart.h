@@ -21,6 +21,8 @@
 
 #if DT_NODE_EXISTS(DT_NODELABEL(dut))
 #define UART_NODE DT_NODELABEL(dut)
+#elif defined(CONFIG_SOC_SERIES_ESP32C3)
+#define UART_NODE DT_NODELABEL(uart1)
 #else
 #define UART_NODE DT_CHOSEN(zephyr_console)
 #endif
