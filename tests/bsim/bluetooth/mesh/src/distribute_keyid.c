@@ -70,13 +70,3 @@ void bt_mesh_user_keyid_assign(psa_key_id_t key_id)
 		LOG_WRN("key id %d is out of the reserved id range", key_id);
 	}
 }
-
-void stored_keys_clear(void)
-{
-	struct bt_mesh_key key;
-
-	for (int i = 0; i < BT_MESH_KEY_ID_RANGE_SIZE; i++) {
-		key.key = BT_MESH_TEST_PSA_KEY_ID_USER_MIN + i;
-		bt_mesh_key_destroy(&key);
-	}
-}

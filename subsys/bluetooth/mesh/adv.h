@@ -14,7 +14,7 @@
 
 #define BT_MESH_ADV_SCAN_UNIT(_ms) ((_ms) * 8 / 5)
 
-#if defined(CONFIG_BT_EXT_ADV)
+#if defined(CONFIG_BT_EXT_ADV) && !defined(CONFIG_BT_LL_SW_SPLIT)
 #define BT_MESH_SCAN_INTERVAL_MS 3000
 #define BT_MESH_SCAN_WINDOW_MS   3000
 #else

@@ -59,3 +59,32 @@ conf=prj_mesh1d1_conf
 overlay=overlay_pst_conf
 RunTest mesh_pst_access_data_check_1d1 persistence_access_data_load --\
 	-argstest access-cfg=not-configured
+
+conf=prj_mesh1d1_conf
+overlay="overlay_pst_conf_overlay_psa_conf"
+RunTest mesh_pst_access_data_check_psa persistence_access_data_save
+
+conf=prj_mesh1d1_conf
+overlay="overlay_pst_conf_overlay_psa_conf"
+RunTest mesh_pst_access_data_check_psa persistence_access_data_load --\
+	-argstest access-cfg=configured
+
+conf=prj_mesh1d1_conf
+overlay="overlay_pst_conf_overlay_psa_conf"
+RunTest mesh_pst_access_data_check_psa persistence_access_sub_overwrite --\
+	-argstest access-cfg=configured
+
+conf=prj_mesh1d1_conf
+overlay="overlay_pst_conf_overlay_psa_conf"
+RunTest mesh_pst_access_data_check_psa persistence_access_data_load --\
+	-argstest access-cfg=new-subs
+
+conf=prj_mesh1d1_conf
+overlay="overlay_pst_conf_overlay_psa_conf"
+RunTest mesh_pst_access_data_check_psa persistence_access_data_remove --\
+	-argstest access-cfg=new-subs
+
+conf=prj_mesh1d1_conf
+overlay="overlay_pst_conf_overlay_psa_conf"
+RunTest mesh_pst_access_data_check_psa persistence_access_data_load --\
+	-argstest access-cfg=not-configured

@@ -8,3 +8,7 @@ RunTest transport_loopback transport_tx_loopback transport_rx_none
 
 conf=prj_mesh1d1_conf
 RunTest transport_loopback_1d1 transport_tx_loopback transport_rx_none
+
+conf=prj_mesh1d1_conf
+overlay=overlay_psa_conf
+RunTest transport_loopback_psa transport_tx_loopback transport_rx_none

@@ -23,3 +23,11 @@ RunTest mesh_pst_prov_data_check_1d1 persistence_provisioning_data_save
 conf=prj_mesh1d1_conf
 overlay=overlay_pst_conf
 RunTest mesh_pst_prov_data_check_1d1 persistence_provisioning_data_load
+
+conf=prj_mesh1d1_conf
+overlay="overlay_pst_conf_overlay_psa_conf"
+RunTest mesh_pst_prov_data_check_psa persistence_provisioning_data_save
+
+conf=prj_mesh1d1_conf
+overlay="overlay_pst_conf_overlay_psa_conf"
+RunTest mesh_pst_prov_data_check_psa persistence_provisioning_data_load

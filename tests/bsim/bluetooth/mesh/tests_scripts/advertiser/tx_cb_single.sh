@@ -9,3 +9,7 @@ RunTest mesh_adv_tx_cb_single adv_tx_cb_single adv_rx_xmit
 
 conf=prj_mesh1d1_conf
 RunTest mesh_adv_tx_cb_single_1d1 adv_tx_cb_single adv_rx_xmit
+
+conf=prj_mesh1d1_conf
+overlay=overlay_psa_conf
+RunTest mesh_adv_tx_cb_single_psa adv_tx_cb_single adv_rx_xmit

@@ -8,3 +8,7 @@ RunTest mesh_access_extended_model_subs_cap access_sub_capacity_ext_model
 
 conf=prj_mesh1d1_conf
 RunTest mesh_access_extended_model_subs_cap_1d1 access_sub_capacity_ext_model
+
+conf=prj_mesh1d1_conf
+overlay=overlay_psa_conf
+RunTest mesh_access_extended_model_subs_cap_psa access_sub_capacity_ext_model
