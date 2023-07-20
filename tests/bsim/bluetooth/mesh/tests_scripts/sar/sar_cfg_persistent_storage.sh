@@ -12,3 +12,8 @@ conf=prj_mesh1d1_conf
 overlay=overlay_pst_conf
 RunTest sar_persistence sar_srv_cfg_store
 RunTest sar_persistence sar_srv_cfg_restore
+
+conf=prj_mesh1d1_conf
+overlay="overlay_pst_conf_overlay_psa_conf"
+RunTest sar_persistence_psa sar_srv_cfg_store
+RunTest sar_persistence_psa sar_srv_cfg_restore

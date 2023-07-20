@@ -22,7 +22,8 @@ function _compile(){
   local cc_flags="${cc_flags:-"-Werror"}"
 
   if [ "${conf_overlay}" ]; then
-    local exe_basename="${exe_name:-bs_${BOARD}_${app}_${conf_file}_${conf_overlay}}"
+    overlays="${conf_overlay//;/_}"
+    local exe_basename="${exe_name:-bs_${BOARD}_${app}_${conf_file}_${overlays}}"
   else
     local exe_basename="${exe_name:-bs_${BOARD}_${app}_${conf_file}}"
   fi
@@ -43,7 +44,7 @@ function _compile(){
   if [ $conf_file != "prj.conf" ]; then
     local cmake_cmd+=( -DCONF_FILE=${conf_file})
   fi
-  local cmake_cmd+=( -DOVERLAY_CONFIG=${conf_overlay} \
+  local cmake_cmd+=( -DOVERLAY_CONFIG="${conf_overlay}" \
             ${modules_arg} \
             ${cmake_args} -DCMAKE_C_FLAGS=\"${cc_flags}\" ${app_root}/${app})
 

@@ -11,3 +11,8 @@ RunTest mesh_prov_pb_adv_oob_auth \
 conf=prj_mesh1d1_conf
 RunTest mesh_prov_pb_adv_oob_auth_1d1 \
 	prov_device_pb_adv_oob_auth prov_provisioner_pb_adv_oob_auth
+
+conf=prj_mesh1d1_conf
+overlay=overlay_psa_conf
+RunTest mesh_prov_pb_adv_oob_auth_psa \
+	prov_device_pb_adv_oob_auth prov_provisioner_pb_adv_oob_auth

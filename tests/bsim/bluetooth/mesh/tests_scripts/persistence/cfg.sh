@@ -35,3 +35,19 @@ RunTest mesh_pst_cfg_check_1d1 persistence_cfg_save -- -argstest stack-cfg=1
 conf=prj_mesh1d1_conf
 overlay=overlay_pst_conf
 RunTest mesh_pst_cfg_check_1d1 persistence_cfg_load -- -argstest stack-cfg=1
+
+conf=prj_mesh1d1_conf
+overlay="overlay_pst_conf_overlay_psa_conf"
+RunTest mesh_pst_cfg_check_psa persistence_cfg_save -- -argstest stack-cfg=0
+
+conf=prj_mesh1d1_conf
+overlay="overlay_pst_conf_overlay_psa_conf"
+RunTest mesh_pst_cfg_check_psa persistence_cfg_load -- -argstest stack-cfg=0
+
+conf=prj_mesh1d1_conf
+overlay="overlay_pst_conf_overlay_psa_conf"
+RunTest mesh_pst_cfg_check_psa persistence_cfg_save -- -argstest stack-cfg=1
+
+conf=prj_mesh1d1_conf
+overlay="overlay_pst_conf_overlay_psa_conf"
+RunTest mesh_pst_cfg_check_psa persistence_cfg_load -- -argstest stack-cfg=1

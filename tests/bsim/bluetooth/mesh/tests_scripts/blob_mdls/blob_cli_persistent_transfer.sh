@@ -12,3 +12,12 @@ RunTest blob_fail \
 	blob_srv_fail_on_block_get \
 	blob_srv_fail_on_xfer_get \
 	blob_srv_fail_on_nothing
+
+conf=prj_mesh1d1_conf
+overlay=overlay_psa_conf
+RunTest blob_fail_psa \
+	blob_cli_fail_on_persistency \
+	blob_srv_fail_on_block_start\
+	blob_srv_fail_on_block_get \
+	blob_srv_fail_on_xfer_get \
+	blob_srv_fail_on_nothing

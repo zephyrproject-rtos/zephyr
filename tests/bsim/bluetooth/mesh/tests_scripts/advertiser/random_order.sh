@@ -9,3 +9,7 @@ RunTest mesh_adv_random_order adv_tx_random_order adv_rx_random_order
 
 conf=prj_mesh1d1_conf
 RunTest mesh_adv_random_order_1d1 adv_tx_random_order adv_rx_random_order
+
+conf=prj_mesh1d1_conf
+overlay=overlay_psa_conf
+RunTest mesh_adv_random_order_psa adv_tx_random_order adv_rx_random_order
