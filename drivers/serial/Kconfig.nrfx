@@ -17,10 +17,18 @@ menuconfig UART_NRFX
 
 if UART_NRFX
 
+config UART_NRFX_UART
+	def_bool y
+	depends on DT_HAS_NORDIC_NRF_UART_ENABLED
+
+config UART_NRFX_UARTE
+	def_bool y
+	depends on DT_HAS_NORDIC_NRF_UARTE_ENABLED
+
 config UART_ASYNC_TX_CACHE_SIZE
 	int "TX cache buffer size"
 	depends on UART_ASYNC_API
-	depends on NRF_UARTE_PERIPHERAL
+	depends on UART_NRFX_UARTE
 	default 8
 	help
 	  For UARTE, TX cache buffer is used when provided TX buffer is not located
@@ -28,26 +36,12 @@ config UART_ASYNC_TX_CACHE_SIZE
 	  from RAM.
 
 # ----------------- port 0 -----------------
-config UART_0_NRF_UART
-	def_bool HAS_HW_NRF_UART0
-	depends on DT_HAS_NORDIC_NRF_UART_ENABLED
-	select NRF_UART_PERIPHERAL
-	help
-	  Enable nRF UART without EasyDMA on port 0.
-
-config UART_0_NRF_UARTE
-	def_bool HAS_HW_NRF_UARTE0
-	depends on DT_HAS_NORDIC_NRF_UARTE_ENABLED
-	select NRF_UARTE_PERIPHERAL
-	help
-	  Enable nRF UART with EasyDMA on port 0.
-
-if UART_0_NRF_UART || UART_0_NRF_UARTE
+if HAS_HW_NRF_UART0 || HAS_HW_NRF_UARTE0
 
 config UART_0_ENHANCED_POLL_OUT
 	bool "Efficient poll out on port 0"
 	default y
-	depends on UART_0_NRF_UARTE
+	depends on HAS_HW_NRF_UARTE0
 	help
 	  When enabled, polling out does not trigger interrupt which stops TX.
 	  Feature uses a PPI channel.
@@ -73,7 +67,7 @@ config UART_0_NRF_PARITY_BIT
 
 config UART_0_NRF_TX_BUFFER_SIZE
 	int "Size of RAM buffer"
-	depends on UART_0_NRF_UARTE
+	depends on HAS_HW_NRF_UARTE0
 	range 1 65535
 	default 32
 	help
@@ -83,7 +77,7 @@ config UART_0_NRF_TX_BUFFER_SIZE
 
 config UART_0_NRF_HW_ASYNC
 	bool "Use hardware RX byte counting"
-	depends on UART_0_NRF_UARTE
+	depends on HAS_HW_NRF_UARTE0
 	depends on UART_ASYNC_API
 	help
 	  If default driver uses interrupts to count incoming bytes, it is possible
@@ -93,7 +87,7 @@ config UART_0_NRF_HW_ASYNC
 
 config UART_0_NRF_ASYNC_LOW_POWER
 	bool "Low power mode"
-	depends on UART_0_NRF_UARTE
+	depends on HAS_HW_NRF_UARTE0
 	depends on UART_ASYNC_API
 	help
 	  When enabled, UARTE is enabled before each TX or RX usage and disabled
@@ -113,17 +107,10 @@ config UART_0_GPIO_MANAGEMENT
 	  their default configuration when device is powered down. The GPIOs
 	  will be configured back to correct state when UART is powered up.
 
-endif # UART_0_NRF_UART || UART_0_NRF_UARTE
+endif # HAS_HW_NRF_UART0 || HAS_HW_NRF_UARTE0
 
 # ----------------- port 1 -----------------
-config UART_1_NRF_UARTE
-	def_bool HAS_HW_NRF_UARTE1
-	depends on DT_HAS_NORDIC_NRF_UARTE_ENABLED
-	select NRF_UARTE_PERIPHERAL
-	help
-	  Enable nRF UART with EasyDMA on port 1.
-
-if UART_1_NRF_UARTE
+if HAS_HW_NRF_UARTE1
 
 config UART_1_INTERRUPT_DRIVEN
 	bool "Interrupt support on port 1"
@@ -191,17 +178,10 @@ config UART_1_GPIO_MANAGEMENT
 	  their default configuration when device is powered down. The GPIOs
 	  will be configured back to correct state when UART is powered up.
 
-endif # UART_1_NRF_UARTE
+endif # HAS_HW_NRF_UARTE1
 
 # ----------------- port 2 -----------------
-config UART_2_NRF_UARTE
-	def_bool HAS_HW_NRF_UARTE2
-	depends on DT_HAS_NORDIC_NRF_UARTE_ENABLED
-	select NRF_UARTE_PERIPHERAL
-	help
-	  Enable nRF UART with EasyDMA on port 2.
-
-if UART_2_NRF_UARTE
+if HAS_HW_NRF_UARTE2
 
 config UART_2_INTERRUPT_DRIVEN
 	bool "Interrupt support on port 2"
@@ -268,17 +248,10 @@ config UART_2_GPIO_MANAGEMENT
 	  their default configuration when device is powered down. The GPIOs
 	  will be configured back to correct state when UART is powered up.
 
-endif # UART_2_NRF_UARTE
+endif # HAS_HW_NRF_UARTE2
 
 # ----------------- port 3 -----------------
-config UART_3_NRF_UARTE
-	def_bool HAS_HW_NRF_UARTE3
-	depends on DT_HAS_NORDIC_NRF_UARTE_ENABLED
-	select NRF_UARTE_PERIPHERAL
-	help
-	  Enable nRF UART with EasyDMA on port 3.
-
-if UART_3_NRF_UARTE
+if HAS_HW_NRF_UARTE3
 
 config UART_3_INTERRUPT_DRIVEN
 	bool "Interrupt support on port 3"
@@ -345,7 +318,7 @@ config UART_3_GPIO_MANAGEMENT
 	  their default configuration when device is powered down. The GPIOs
 	  will be configured back to correct state when UART is powered up.
 
-endif # UART_3_NRF_UARTE
+endif # HAS_HW_NRF_UARTE3
 
 
 config NRFX_TIMER0
@@ -401,11 +374,5 @@ config UART_ENHANCED_POLL_OUT
 		|| UART_3_ENHANCED_POLL_OUT
 	select NRFX_PPI if HAS_HW_NRF_PPI
 	select NRFX_DPPI if HAS_HW_NRF_DPPIC
-
-config NRF_UART_PERIPHERAL
-	bool
-
-config NRF_UARTE_PERIPHERAL
-	bool
 
 endif # UART_NRFX
