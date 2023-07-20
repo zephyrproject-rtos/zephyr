@@ -174,7 +174,7 @@ static void link_status_send(struct bt_mesh_msg_ctx *ctx,
 	bt_mesh_model_send(srv.mod, ctx, &buf, NULL, NULL);
 }
 
-static void link_report_send(void)
+static void link_report_send(const struct bt_mesh_send_cb *cb)
 {
 	struct bt_mesh_msg_ctx ctx = LINK_CTX(&srv.link.cli, true);
 
@@ -189,7 +189,7 @@ static void link_report_send(void)
 
 	LOG_DBG("%u %u", srv.link.status, srv.link.state);
 
-	bt_mesh_model_send(srv.mod, &ctx, &buf, NULL, NULL);
+	bt_mesh_model_send(srv.mod, &ctx, &buf, cb, NULL);
 }
 
 static void scan_report_schedule(void)
@@ -347,9 +347,32 @@ static void scan_timeout(struct k_work *work)
 	}
 }
 
+static void link_report_end(int err, void *cb_data)
+{
+	if (err) {
+		LOG_ERR("Unable to deliver Link Report message (err %d)", err);
+		srv.link.close_reason = PROV_BEARER_LINK_STATUS_FAIL;
+	}
+
+	srv.refresh.cb->link_closed(&pb_remote_srv, srv.refresh.cb_data,
+				    srv.link.close_reason);
+	cli_link_clear();
+}
+
+static void link_report_start(uint16_t duration, int err, void *cb_data)
+{
+	if (err) {
+		link_report_end(err, cb_data);
+	}
+}
+
 static void link_close(enum bt_mesh_rpr_status status,
 		       enum prov_bearer_link_status reason)
 {
+	static const struct bt_mesh_send_cb link_report_cb = {
+		.start = link_report_start,
+		.end = link_report_end,
+	};
 	srv.link.status = status;
 	srv.link.close_reason = reason;
 	srv.link.state = BT_MESH_RPR_LINK_CLOSING;
@@ -357,13 +380,8 @@ static void link_close(enum bt_mesh_rpr_status status,
 	LOG_DBG("status: %u reason: %u", status, reason);
 
 	if (atomic_test_and_clear_bit(srv.flags, NODE_REFRESH)) {
-		/* Link closing is an atomic operation: */
 		srv.link.state = BT_MESH_RPR_LINK_IDLE;
-		link_report_send();
-		srv.refresh.cb->link_closed(&pb_remote_srv, srv.refresh.cb_data,
-					    srv.link.close_reason);
-
-		cli_link_clear();
+		link_report_send(&link_report_cb);
 	} else {
 		bt_mesh_pb_adv.link_close(reason);
 	}
@@ -443,12 +461,12 @@ static void pb_link_opened(const struct prov_bearer *bearer, void *cb_data)
 
 	srv.link.state = BT_MESH_RPR_LINK_ACTIVE;
 	srv.link.status = BT_MESH_RPR_SUCCESS;
-	link_report_send();
+	link_report_send(NULL);
 }
 
 static void link_report_send_and_clear(struct k_work *work)
 {
-	link_report_send();
+	link_report_send(NULL);
 	cli_link_clear();
 }
 
@@ -497,7 +515,7 @@ static void pb_error(const struct prov_bearer *bearer, void *cb_data,
 	srv.link.close_reason = err;
 	srv.link.state = BT_MESH_RPR_LINK_IDLE;
 	srv.link.status = BT_MESH_RPR_ERR_LINK_CLOSED_AS_CANNOT_RECEIVE_PDU;
-	link_report_send();
+	link_report_send(NULL);
 	cli_link_clear();
 }
 
@@ -890,7 +908,7 @@ static int handle_link_open(struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *c
 		srv.link.status = BT_MESH_RPR_SUCCESS;
 		srv.refresh.cb->link_opened(&pb_remote_srv, &srv);
 		status = BT_MESH_RPR_SUCCESS;
-		link_report_send();
+		link_report_send(NULL);
 		goto rsp;
 	}
 
