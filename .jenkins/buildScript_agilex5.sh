@@ -32,26 +32,21 @@ west init -m $ZEPHYR_REPOSITORY --mr $ZEPHYR_BRANCH zephyrproject
 cd zephyrproject
 west update
 
-# Starting Build a55 as bootcore
+# Starting zephyr build
 rm -rf $ZEPHYR_FOLDER
 cp -rf $WORKSPACE $WORK_DIR/zephyrproject/$ZEPHYR_FOLDER
 cd $WORK_DIR/zephyrproject/$ZEPHYR_FOLDER
-west build -b $BOARD $EXAMPLE -d build_a55
-(($? != 0)) && { printf '%s\n' "Command exited with non-zero"; exit -1; }
-
-# Starting Build a76 as bootcore
-git apply .jenkins/patch/a76.patch
-west build -b $BOARD $EXAMPLE -d build_a76
+west build -b $BOARD $EXAMPLE -d zephyr_build
 (($? != 0)) && { printf '%s\n' "Command exited with non-zero"; exit -1; }
 
 # Pass The $ZEPHYR_OUTPUT_DIR to the next Job
-mkdir -p $PWD/zephyr_a5/a55/cli
-cp build_a55/zephyr/zephyr.bin build_a55/zephyr/zephyr.elf zephyr_a5/a55/cli
-mkdir -p $PWD/zephyr_a5/a76/cli
-cp build_a76/zephyr/zephyr.bin build_a76/zephyr/zephyr.elf zephyr_a5/a76/cli
-tar cf zephyr_a5.tar zephyr_a5
+mkdir -p $PWD/zephyr/cli
+cp zephyr_build/zephyr/zephyr.bin zephyr_build/zephyr/zephyr.elf zephyr/cli
+
+tar cf zephyr.tar zephyr
+
 #add ssh and pass this tar files
 rmt_dir="/nfs/site/disks/swbld_regofficiala_pg12/users/sys_gsrd/zephyr-ci/$BRANCH_NAME/$JENKINS_JOB"
 ssh ppglswbld001.png.intel.com -- mkdir -p $rmt_dir
-scp -r zephyr_a5.tar  ppglswbld001.png.intel.com:$rmt_dir
-ssh ppglswbld001.png.intel.com -- "cd $rmt_dir && tar xf zephyr_a5.tar && rm -rf zephyr_a5.tar"
+scp -r zephyr.tar  ppglswbld001.png.intel.com:$rmt_dir
+ssh ppglswbld001.png.intel.com -- "cd $rmt_dir && tar xf zephyr.tar && rm -rf zephyr.tar"
