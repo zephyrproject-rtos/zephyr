@@ -11,6 +11,30 @@ menuconfig SPI_NRFX
 
 if SPI_NRFX
 
+config SPI_NRFX_SPI
+	def_bool y
+	depends on DT_HAS_NORDIC_NRF_SPI_ENABLED
+	select NRFX_SPI0 if HAS_HW_NRF_SPI0
+	select NRFX_SPI1 if HAS_HW_NRF_SPI1
+	select NRFX_SPI2 if HAS_HW_NRF_SPI2
+
+config SPI_NRFX_SPIM
+	def_bool y
+	depends on DT_HAS_NORDIC_NRF_SPIM_ENABLED
+	select NRFX_SPIM0 if HAS_HW_NRF_SPIM0
+	select NRFX_SPIM1 if HAS_HW_NRF_SPIM1
+	select NRFX_SPIM2 if HAS_HW_NRF_SPIM2
+	select NRFX_SPIM3 if HAS_HW_NRF_SPIM3
+	select NRFX_SPIM4 if HAS_HW_NRF_SPIM4
+
+config SPI_NRFX_SPIS
+	def_bool y
+	depends on DT_HAS_NORDIC_NRF_SPIS_ENABLED
+	select NRFX_SPIS0 if HAS_HW_NRF_SPIS0
+	select NRFX_SPIS1 if HAS_HW_NRF_SPIS1
+	select NRFX_SPIS2 if HAS_HW_NRF_SPIS2
+	select NRFX_SPIS3 if HAS_HW_NRF_SPIS3
+
 config SOC_NRF52832_ALLOW_SPIM_DESPITE_PAN_58
 	depends on SOC_NRF52832
 	bool "Allow enabling the SPIM driver despite PAN 58"
@@ -28,106 +52,10 @@ config SOC_NRF52832_ALLOW_SPIM_DESPITE_PAN_58
 	  then nRF52832 PPI and GPIOTE resources can be saved by not
 	  enabling 'anomaly-58-workaround' via the Devicetree.
 
-config SPI_0_NRF_SPI
-	def_bool HAS_HW_NRF_SPI0
-	select NRFX_SPI0
-	help
-	  Enable nRF SPI Master without EasyDMA on port 0.
-
-config SPI_0_NRF_SPIM
-	def_bool HAS_HW_NRF_SPIM0
-	# This driver is not available for nRF52832 because of Product Anomaly 58
-	# (SPIM: An additional byte is clocked out when RXD.MAXCNT == 1 and TXD.MAXCNT <= 1)
-	# Allow the 'EasyDMA' driver only if this automatic safety-disable is overridden
-	depends on (!SOC_NRF52832 || SOC_NRF52832_ALLOW_SPIM_DESPITE_PAN_58)
-	select NRFX_SPIM0
-	help
-	  Enable nRF SPI Master with EasyDMA on port 0.
-
-config SPI_0_NRF_SPIS
-	def_bool  HAS_HW_NRF_SPIS0
-	depends on SPI_SLAVE
-	select NRFX_SPIS0
-	help
-	  Enable nRF SPI Slave with EasyDMA on port 0.
-	  Due to hardware limitations the implementation supports only simple
-	  buffers (consisting of one part) located in RAM.
-
-config SPI_1_NRF_SPI
-	def_bool  HAS_HW_NRF_SPI1
-	select NRFX_SPI1
-	help
-	  Enable nRF SPI Master without EasyDMA on port 1.
-
-config SPI_1_NRF_SPIM
-	def_bool HAS_HW_NRF_SPIM1
-	# This driver is not available for nRF52832 because of Product Anomaly 58
-	# (SPIM: An additional byte is clocked out when RXD.MAXCNT == 1 and TXD.MAXCNT <= 1)
-	# Allow the 'EasyDMA' driver only if this automatic safety-disable is overridden
-	depends on (!SOC_NRF52832 || SOC_NRF52832_ALLOW_SPIM_DESPITE_PAN_58)
-	select NRFX_SPIM1
-	help
-	  Enable nRF SPI Master with EasyDMA on port 1.
-
-config SPI_1_NRF_SPIS
-	def_bool HAS_HW_NRF_SPIS1
-	depends on SPI_SLAVE
-	select NRFX_SPIS1
-	help
-	  Enable nRF SPI Slave with EasyDMA on port 1.
-	  Due to hardware limitations the implementation supports only simple
-	  buffers (consisting of one part) located in RAM.
-
-config SPI_2_NRF_SPI
-	def_bool HAS_HW_NRF_SPI2
-	select NRFX_SPI2
-	help
-	  Enable nRF SPI Master without EasyDMA on port 2.
-
-config SPI_2_NRF_SPIM
-	def_bool HAS_HW_NRF_SPIM2
-	# This driver is not available for nRF52832 because of Product Anomaly 58
-	# (SPIM: An additional byte is clocked out when RXD.MAXCNT == 1 and TXD.MAXCNT <= 1)
-	# Allow the 'EasyDMA' driver only if this automatic safety-disable is overridden
-	depends on (!SOC_NRF52832 || SOC_NRF52832_ALLOW_SPIM_DESPITE_PAN_58)
-	select NRFX_SPIM2
-	help
-	  Enable nRF SPI Master with EasyDMA on port 2.
-
-config SPI_2_NRF_SPIS
-	def_bool HAS_HW_NRF_SPIS2
-	depends on SPI_SLAVE
-	select NRFX_SPIS2
-	help
-	  Enable nRF SPI Slave with EasyDMA on port 2.
-	  Due to hardware limitations the implementation supports only simple
-	  buffers (consisting of one part) located in RAM.
-
-config SPI_3_NRF_SPIM
-	def_bool HAS_HW_NRF_SPIM3
-	select NRFX_SPIM3
-	help
-	  Enable nRF SPI Master with EasyDMA on port 3.
-
-config SPI_3_NRF_SPIS
-	def_bool HAS_HW_NRF_SPIS3
-	depends on SPI_SLAVE
-	select NRFX_SPIS3
-	help
-	  Enable nRF SPI Slave with EasyDMA on port 3.
-	  Due to hardware limitations the implementation supports only simple
-	  buffers (consisting of one part) located in RAM.
-
-config SPI_4_NRF_SPIM
-	def_bool HAS_HW_NRF_SPIM4
-	select NRFX_SPIM4
-	help
-	  Enable nRF SPI Master with EasyDMA on port 4.
-
 config SPI_NRFX_RAM_BUFFER_SIZE
 	int "Size of RAM buffers for SPIM peripherals"
 	default 8
-	depends on NRFX_SPIM
+	depends on SPI_NRFX_SPIM
 	help
 	  SPIM peripherals cannot transmit data directly from flash. Therefore,
 	  a buffer in RAM needs to be provided for each instance of SPI driver

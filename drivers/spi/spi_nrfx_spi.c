@@ -423,14 +423,14 @@ static int spi_nrfx_init(const struct device *dev)
 		      POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,		       \
 		      &spi_nrfx_driver_api)
 
-#ifdef CONFIG_SPI_0_NRF_SPI
+#ifdef CONFIG_HAS_HW_NRF_SPI0
 SPI_NRFX_SPI_DEFINE(0);
 #endif
 
-#ifdef CONFIG_SPI_1_NRF_SPI
+#ifdef CONFIG_HAS_HW_NRF_SPI1
 SPI_NRFX_SPI_DEFINE(1);
 #endif
 
-#ifdef CONFIG_SPI_2_NRF_SPI
+#ifdef CONFIG_HAS_HW_NRF_SPI2
 SPI_NRFX_SPI_DEFINE(2);
 #endif
