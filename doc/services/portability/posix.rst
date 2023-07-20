@@ -157,7 +157,7 @@ multiple processes.
     pthread_condattr_init(),yes
     pthread_create(),yes
     pthread_detach(),yes
-    pthread_equal(),
+    pthread_equal(),yes
     pthread_exit(),yes
     pthread_getspecific(),yes
     pthread_join(),yes
