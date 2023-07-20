@@ -65,6 +65,18 @@ static int ina237_channel_get(const struct device *dev, enum sensor_channel chan
 			INA237_POWER_TO_uW((uint64_t)data->power * config->current_lsb));
 		break;
 
+#ifdef CONFIG_INA237_VSHUNT
+	case SENSOR_CHAN_VSHUNT:
+		if (config->config & INA237_CFG_HIGH_PRECISION) {
+			/* high-resolution mode - 1.25 uV/bit, sensor value is in mV */
+			micro_s32_to_sensor_value(val, data->shunt_voltage * 1250);
+		} else {
+			/* standard-resolution - 5 uV/bit -> nano-volts */
+			micro_s32_to_sensor_value(val, data->shunt_voltage * 5000);
+		}
+		break;
+#endif /* CONFIG_INA237_VSHUNT */
+
 	case SENSOR_CHAN_DIE_TEMP:
 		micro_s32_to_sensor_value(val, INA237_DIETEMP_TO_uDegC(data->die_temp));
 		break;
@@ -165,6 +177,16 @@ static int ina237_read_data(const struct device *dev)
 		}
 	}
 
+#ifdef CONFIG_INA237_VSHUNT
+	if ((data->chan == SENSOR_CHAN_ALL) || (data->chan == SENSOR_CHAN_VSHUNT)) {
+		ret = ina23x_reg_read_16(&config->bus, INA237_REG_SHUNT_VOLT, &data->shunt_voltage);
+		if (ret < 0) {
+			LOG_ERR("Failed to read shunt voltage");
+			return ret;
+		}
+	}
+#endif /* CONFIG_INA237_VSHUNT */
+
 	return 0;
 }
 
@@ -179,7 +201,11 @@ static int ina237_sample_fetch(const struct device *dev, enum sensor_channel cha
 	struct ina237_data *data = dev->data;
 
 	if (chan != SENSOR_CHAN_ALL && chan != SENSOR_CHAN_VOLTAGE && chan != SENSOR_CHAN_CURRENT &&
-	    chan != SENSOR_CHAN_POWER && chan != SENSOR_CHAN_DIE_TEMP) {
+		chan != SENSOR_CHAN_POWER &&
+#ifdef CONFIG_INA237_VSHUNT
+		chan != SENSOR_CHAN_VSHUNT &&
+#endif /* CONFIG_INA237_VSHUNT */
+		chan != SENSOR_CHAN_DIE_TEMP) {
 		return -ENOTSUP;
 	}
 

@@ -43,6 +43,9 @@ struct ina237_data {
 	uint16_t bus_voltage;
 	uint32_t power;
 	int16_t die_temp;
+#ifdef CONFIG_INA237_VSHUNT
+	int16_t shunt_voltage;
+#endif
 	enum sensor_channel chan;
 	struct ina23x_trigger trigger;
 };
