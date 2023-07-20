@@ -125,7 +125,7 @@ Configure Zephyr CPUs
 Now you need to configure the CPU environment ACRN presents to the
 guest.  By default Zephyr builds in SMP mode, but ACRN's default
 configuration gives it only one CPU.  Find the value of
-``CONFIG_MP_NUM_CPUS`` in the Zephyr .config file give the guest that
+``CONFIG_MP_MAX_NUM_CPUS`` in the Zephyr .config file give the guest that
 many CPUs in the ``<cpu_affinity>`` tag.  For example:
 
     .. code-block:: xml
