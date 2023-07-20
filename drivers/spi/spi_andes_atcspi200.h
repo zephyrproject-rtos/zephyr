@@ -11,34 +11,27 @@ LOG_MODULE_REGISTER(spi_atcspi200);
 #include <zephyr/device.h>
 #include <zephyr/drivers/spi.h>
 
-#define REG_IDR         0x00
-#define REG_TFMAT       0x10
-#define REG_DIRIO       0x14
-#define REG_TCTRL       0x20
-#define REG_CMD         0x24
-#define REG_ADDR        0x28
-#define REG_DATA        0x2c
-#define REG_CTRL        0x30
-#define REG_STAT        0x34
-#define REG_INTEN       0x38
-#define REG_INTST       0x3c
-#define REG_TIMIN       0x40
-#define REG_MCTRL       0x50
-#define REG_SLVST       0x60
-#define REG_SDCNT       0x64
-#define REG_CONFIG      0x7c
+#define REG_TFMAT		0x10
+#define REG_TCTRL		0x20
+#define REG_CMD			0x24
+#define REG_DATA		0x2c
+#define REG_CTRL		0x30
+#define REG_STAT		0x34
+#define REG_INTEN		0x38
+#define REG_INTST		0x3c
+#define REG_TIMIN		0x40
+#define REG_CONFIG		0x7c
 
-#define SPI_BASE	(((const struct spi_atcspi200_cfg *)(dev)->config)->base)
-#define SPI_TFMAT(dev)	(SPI_BASE + REG_TFMAT)
-#define SPI_TCTRL(dev)	(SPI_BASE + REG_TCTRL)
-#define SPI_CMD(dev)	(SPI_BASE + REG_CMD)
-#define SPI_DATA(dev)	(SPI_BASE + REG_DATA)
-#define SPI_CTRL(dev)	(SPI_BASE + REG_CTRL)
-#define SPI_STAT(dev)	(SPI_BASE + REG_STAT)
-#define SPI_INTEN(dev)	(SPI_BASE + REG_INTEN)
-#define SPI_INTST(dev)	(SPI_BASE + REG_INTST)
-#define SPI_TIMIN(dev)	(SPI_BASE + REG_TIMIN)
-#define SPI_CONFIG(dev)	(SPI_BASE + REG_CONFIG)
+#define SPI_TFMAT(base)		(base + 0x10)
+#define SPI_TCTRL(base)		(base + 0x20)
+#define SPI_CMD(base)		(base + 0x24)
+#define SPI_DATA(base)		(base + 0x2c)
+#define SPI_CTRL(base)		(base + 0x30)
+#define SPI_STAT(base)		(base + 0x34)
+#define SPI_INTEN(base)		(base + 0x38)
+#define SPI_INTST(base)		(base + 0x3c)
+#define SPI_TIMIN(base)		(base + 0x40)
+#define SPI_CONFIG(base)	(base + 0x7c)
 
 /* Field mask of SPI transfer format register */
 #define TFMAT_DATA_LEN_OFFSET		(8)
@@ -75,8 +68,8 @@ LOG_MODULE_REGISTER(spi_atcspi200);
 #define INTST_END_INT_MSK		BIT(4)
 
 /* Field mask of SPI config register */
-#define CFG_RX_FIFO_SIZE_MSK		GENMASK(1, 0)
-#define CFG_TX_FIFO_SIZE_MSK		GENMASK(5, 4)
+#define CFG_RX_FIFO_SIZE_MSK		GENMASK(3, 0)
+#define CFG_TX_FIFO_SIZE_MSK		GENMASK(7, 4)
 
 /* Field mask of SPI status register */
 #define STAT_RX_NUM_MSK			GENMASK(12, 8)
@@ -90,30 +83,30 @@ LOG_MODULE_REGISTER(spi_atcspi200);
 
 #define CTRL_RX_FIFO_RST_MSK		BIT(1)
 #define CTRL_TX_FIFO_RST_MSK		BIT(2)
+#define CTRL_RX_DMA_EN_MSK		BIT(3)
+#define CTRL_TX_DMA_EN_MSK		BIT(4)
 #define CTRL_RX_THRES_MSK		GENMASK(12, 8)
 #define CTRL_TX_THRES_MSK		GENMASK(20, 16)
 
 /* Field mask of SPI status register */
 #define TIMIN_SCLK_DIV_MSK		GENMASK(7, 0)
 
-#define SET_MASK(x, msk)		sys_write32(sys_read32(x) | msk, x)
-#define CLR_MASK(x, msk)		sys_write32(sys_read32(x) & ~msk, x)
-
 #define TX_FIFO_THRESHOLD		(1)
 #define RX_FIFO_THRESHOLD		(1)
 #define MAX_TRANSFER_CNT		(512)
+#define	MAX_CHAIN_SIZE			(8)
 
-#define TX_FIFO_SIZE_SETTING(dev) \
-	(sys_read32(SPI_CONFIG(dev)) & CFG_TX_FIFO_SIZE_MSK)
-#define TX_FIFO_SIZE(dev) \
-	(2 << (TX_FIFO_SIZE_SETTING(dev) >> 4))
+#define TX_FIFO_SIZE_SETTING(base)	\
+	(sys_read32(SPI_CONFIG(base)) & CFG_TX_FIFO_SIZE_MSK)
+#define TX_FIFO_SIZE(base)		\
+	(2 << (TX_FIFO_SIZE_SETTING(base) >> 4))
 
-#define RX_FIFO_SIZE_SETTING(dev) \
-	(sys_read32(SPI_CONFIG(dev)) & CFG_RX_FIFO_SIZE_MSK)
-#define RX_FIFO_SIZE(dev) \
-	(2 << (RX_FIFO_SIZE_SETTING(dev) >> 0))
+#define RX_FIFO_SIZE_SETTING(base)	\
+	(sys_read32(SPI_CONFIG(base)) & CFG_RX_FIFO_SIZE_MSK)
+#define RX_FIFO_SIZE(base)		\
+	(2 << (RX_FIFO_SIZE_SETTING(base) >> 0))
 
-#define TX_NUM_STAT(dev)	(sys_read32(SPI_STAT(dev)) & STAT_TX_NUM_MSK)
-#define RX_NUM_STAT(dev)	(sys_read32(SPI_STAT(dev)) & STAT_RX_NUM_MSK)
-#define GET_TX_NUM(dev)		(TX_NUM_STAT(dev) >> 16)
-#define GET_RX_NUM(dev)		(RX_NUM_STAT(dev) >> 8)
+#define TX_NUM_STAT(base)	(sys_read32(SPI_STAT(base)) & STAT_TX_NUM_MSK)
+#define RX_NUM_STAT(base)	(sys_read32(SPI_STAT(base)) & STAT_RX_NUM_MSK)
+#define GET_TX_NUM(base)	(TX_NUM_STAT(base) >> 16)
+#define GET_RX_NUM(base)	(RX_NUM_STAT(base) >> 8)
