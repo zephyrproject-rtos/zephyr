@@ -10,6 +10,7 @@ common:
       - "thread_b: Hello World from (.*)!"
 tests:
   sample.tracing.user:
+    filter: not (CONFIG_X86_EFI_CONSOLE and CONFIG_UART_CONSOLE)
     extra_args: CONF_FILE="prj_user.conf"
     integration_platforms:
       - qemu_x86
