@@ -4,7 +4,7 @@
 menuconfig ETH_ADIN2111
 	bool "ADIN2111 2-port 10BASE-T1L Controller"
 	default y
-	depends on DT_HAS_ADI_ADIN2111_ENABLED
+	depends on DT_HAS_ADI_ADIN2111_ENABLED || DT_HAS_ADI_ADIN1110_ENABLED
 	select SPI
 	select MDIO
 	help
