@@ -21,6 +21,11 @@ LOG_MODULE_REGISTER(psci);
 #include <zephyr/drivers/pm_cpu_ops.h>
 #include "pm_cpu_ops_psci.h"
 
+#ifdef CONFIG_POWEROFF
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/poweroff.h>
+#endif /* CONFIG_POWEROFF */
+
 /* PSCI data object. */
 static struct psci_data_t psci_data;
 
@@ -69,19 +74,23 @@ int pm_cpu_on(unsigned long cpuid,
 	return psci_to_dev_err(ret);
 }
 
-int pm_system_off(void)
+#ifdef CONFIG_POWEROFF
+void z_sys_poweroff(void)
 {
 	int ret;
 
-	if (psci_data.conduit == SMCCC_CONDUIT_NONE) {
-		return -EINVAL;
+	__ASSERT_NO_MSG(psci_data.conduit != SMCCC_CONDUIT_NONE);
+
+	ret = psci_data.invoke_psci_fn(PSCI_0_2_FN_SYSTEM_OFF, 0, 0, 0);
+	if (ret < 0) {
+		printk("System power off failed (%d) - halting\n", ret);
 	}
 
-	/* A compliant PSCI implementation will never return from this call */
-	ret = psci_data.invoke_psci_fn(PSCI_0_2_FN_SYSTEM_OFF, 0, 0, 0);
-
-	return psci_to_dev_err(ret);
+	for (;;) {
+		/* wait for power off */
+	}
 }
+#endif /* CONFIG_POWEROFF */
 
 /**
  * This function checks whether the given ID is supported or not, using
