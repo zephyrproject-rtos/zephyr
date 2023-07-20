@@ -17,7 +17,6 @@ struct spi_atcspi200_data {
 	uint32_t tx_fifo_size;
 	uint32_t rx_fifo_size;
 	int tx_cnt;
-	uint32_t is_cmdaddr_mode;
 	size_t chunk_len;
 	bool busy;
 };
@@ -39,61 +38,66 @@ static int spi_config(const struct device *dev,
 
 	/* Set the divisor for SPI interface sclk */
 	sclk_div = (cfg->f_sys / (config->frequency << 1)) - 1;
-	CLR_MASK(SPI_TIMIN(dev), TIMIN_SCLK_DIV_MSK);
-	SET_MASK(SPI_TIMIN(dev), sclk_div);
+	sys_clear_bits(SPI_TIMIN(cfg->base), TIMIN_SCLK_DIV_MSK);
+	sys_set_bits(SPI_TIMIN(cfg->base), sclk_div);
 
 	/* Set Master mode */
-	CLR_MASK(SPI_TFMAT(dev), TFMAT_SLVMODE_MSK);
+	sys_clear_bits(SPI_TFMAT(cfg->base), TFMAT_SLVMODE_MSK);
 
 	/* Disable data merge mode */
-	CLR_MASK(SPI_TFMAT(dev), TFMAT_DATA_MERGE_MSK);
+	sys_clear_bits(SPI_TFMAT(cfg->base), TFMAT_DATA_MERGE_MSK);
 
 	/* Set data length */
 	data_len = SPI_WORD_SIZE_GET(config->operation) - 1;
-	CLR_MASK(SPI_TFMAT(dev), TFMAT_DATA_LEN_MSK);
-	SET_MASK(SPI_TFMAT(dev), (data_len << TFMAT_DATA_LEN_OFFSET));
+	sys_clear_bits(SPI_TFMAT(cfg->base), TFMAT_DATA_LEN_MSK);
+	sys_set_bits(SPI_TFMAT(cfg->base), (data_len << TFMAT_DATA_LEN_OFFSET));
 
 	/* Set SPI frame format */
 	if (config->operation & SPI_MODE_CPHA) {
-		SET_MASK(SPI_TFMAT(dev), TFMAT_CPHA_MSK);
+		sys_set_bits(SPI_TFMAT(cfg->base), TFMAT_CPHA_MSK);
 	} else {
-		CLR_MASK(SPI_TFMAT(dev), TFMAT_CPHA_MSK);
+		sys_clear_bits(SPI_TFMAT(cfg->base), TFMAT_CPHA_MSK);
 	}
 
 	if (config->operation & SPI_MODE_CPOL) {
-		SET_MASK(SPI_TFMAT(dev), TFMAT_CPOL_MSK);
+		sys_set_bits(SPI_TFMAT(cfg->base), TFMAT_CPOL_MSK);
 	} else {
-		CLR_MASK(SPI_TFMAT(dev), TFMAT_CPOL_MSK);
+		sys_clear_bits(SPI_TFMAT(cfg->base), TFMAT_CPOL_MSK);
 	}
 
 	/* Set SPI bit order */
 	if (config->operation & SPI_TRANSFER_LSB) {
-		SET_MASK(SPI_TFMAT(dev), TFMAT_LSB_MSK);
+		sys_set_bits(SPI_TFMAT(cfg->base), TFMAT_LSB_MSK);
 	} else {
-		CLR_MASK(SPI_TFMAT(dev), TFMAT_LSB_MSK);
+		sys_clear_bits(SPI_TFMAT(cfg->base), TFMAT_LSB_MSK);
 	}
 
 	/* Set TX/RX FIFO threshold */
-	CLR_MASK(SPI_CTRL(dev), CTRL_TX_THRES_MSK);
-	CLR_MASK(SPI_CTRL(dev), CTRL_RX_THRES_MSK);
+	sys_clear_bits(SPI_CTRL(cfg->base), CTRL_TX_THRES_MSK);
+	sys_clear_bits(SPI_CTRL(cfg->base), CTRL_RX_THRES_MSK);
 
-	SET_MASK(SPI_CTRL(dev), TX_FIFO_THRESHOLD << CTRL_TX_THRES_OFFSET);
-	SET_MASK(SPI_CTRL(dev), RX_FIFO_THRESHOLD << CTRL_RX_THRES_OFFSET);
+	sys_set_bits(SPI_CTRL(cfg->base), TX_FIFO_THRESHOLD << CTRL_TX_THRES_OFFSET);
+	sys_set_bits(SPI_CTRL(cfg->base), RX_FIFO_THRESHOLD << CTRL_RX_THRES_OFFSET);
 
 	return 0;
 }
 
-static int spi_transfer(const struct device *dev, uint32_t len)
+static int spi_transfer(const struct device *dev)
 {
 	struct spi_atcspi200_data * const data = dev->data;
 	struct spi_context *ctx = &data->ctx;
 	uint32_t data_len, tctrl, int_msk;
 
+	if (data->chunk_len != 0) {
+		data_len = data->chunk_len - 1;
+	} else {
+		data_len = 0;
+	}
+
 	if (len > MAX_TRANSFER_CNT) {
 		return -EINVAL;
 	}
 
-	data_len = len - 1;
 	data->tx_cnt = 0;
 
 	if (!spi_context_rx_on(ctx)) {
@@ -113,15 +117,13 @@ static int spi_transfer(const struct device *dev, uint32_t len)
 			  IEN_END_MSK;
 	}
 
-	sys_write32(tctrl, SPI_TCTRL(dev));
+	sys_write32(tctrl, SPI_TCTRL(cfg->base));
 
 	/* Enable TX/RX FIFO interrupts */
-	sys_write32(int_msk, SPI_INTEN(dev));
+	sys_write32(int_msk, SPI_INTEN(cfg->base));
 
-	if (!data->is_cmdaddr_mode) {
-		/* Start transferring */
-		sys_write32(0, SPI_CMD(dev));
-	}
+	/* Start transferring */
+	sys_write32(0, SPI_CMD(cfg->base));
 
 	return 0;
 }
@@ -162,31 +164,6 @@ static int configure(const struct device *dev,
 	return 0;
 }
 
-static void transfer_next_chunk(const struct device *dev)
-{
-	struct spi_atcspi200_data * const data = dev->data;
-	struct spi_context *ctx = &data->ctx;
-	int error = 0;
-
-	size_t chunk_len = spi_context_max_continuous_chunk(ctx);
-
-	if (chunk_len > 0) {
-		data->chunk_len = chunk_len;
-		error = spi_transfer(dev, chunk_len);
-		if (error == 0) {
-			return;
-		}
-	}
-
-	spi_context_cs_control(ctx, false);
-	/* Reset TX/RX FIFO */
-	SET_MASK(SPI_CTRL(dev), CTRL_TX_FIFO_RST_MSK);
-	SET_MASK(SPI_CTRL(dev), CTRL_RX_FIFO_RST_MSK);
-
-	spi_context_complete(ctx, dev, error);
-	data->busy = false;
-}
-
 static int transceive(const struct device *dev,
 			  const struct spi_config *config,
 			  const struct spi_buf_set *tx_bufs,
@@ -195,12 +172,13 @@ static int transceive(const struct device *dev,
 			  spi_callback_t cb,
 			  void *userdata)
 {
+	const struct spi_atcspi200_cfg * const cfg = dev->config;
 	struct spi_atcspi200_data * const data = dev->data;
 	struct spi_context *ctx = &data->ctx;
 	int error, dfs;
+	size_t chunk_len;
 
 	spi_context_lock(ctx, asynchronous, cb, userdata, config);
-
 	error = configure(dev, config);
 	if (error == 0) {
 		data->busy = true;
@@ -210,8 +188,29 @@ static int transceive(const struct device *dev,
 		spi_context_cs_control(ctx, true);
 
 		transfer_next_chunk(dev);
+		sys_set_bits(SPI_CTRL(cfg->base), CTRL_TX_FIFO_RST_MSK);
+		sys_set_bits(SPI_CTRL(cfg->base), CTRL_RX_FIFO_RST_MSK);
+
+		if (!spi_context_rx_on(ctx)) {
+			chunk_len = spi_context_total_tx_len(ctx);
+		} else if (!spi_context_tx_on(ctx)) {
+			chunk_len = spi_context_total_rx_len(ctx);
+		} else {
+			size_t rx_len = spi_context_total_rx_len(ctx);
+			size_t tx_len = spi_context_total_tx_len(ctx);
+
+			chunk_len = MIN(rx_len, tx_len);
+		}
+
+		data->chunk_len = chunk_len;
+
+		error = spi_transfer(dev);
+		if (error != 0) {
+			return error;
+		}
 
 		error = spi_context_wait_for_completion(ctx);
+		spi_context_cs_control(ctx, false);
 	}
 
 	spi_context_release(ctx, error);
@@ -268,8 +267,8 @@ int spi_atcspi200_init(const struct device *dev)
 	spi_context_unlock_unconditionally(&data->ctx);
 
 	/* Get the TX/RX FIFO size of this device */
-	data->tx_fifo_size = TX_FIFO_SIZE(dev);
-	data->rx_fifo_size = RX_FIFO_SIZE(dev);
+	data->tx_fifo_size = TX_FIFO_SIZE(cfg->base);
+	data->rx_fifo_size = RX_FIFO_SIZE(cfg->base);
 
 	cfg->cfg_func();
 
@@ -294,20 +293,22 @@ static const struct spi_driver_api spi_atcspi200_api = {
 static void spi_atcspi200_irq_handler(void *arg)
 {
 	const struct device * const dev = (const struct device *) arg;
+	const struct spi_atcspi200_cfg * const cfg = dev->config;
 	struct spi_atcspi200_data * const data = dev->data;
 	struct spi_context *ctx = &data->ctx;
 	uint32_t rx_data, cur_tx_fifo_num, cur_rx_fifo_num;
 	uint32_t i, dfs, intr_status, spi_status;
 	uint32_t tx_num = 0, tx_data = 0;
+	int error = 0;
 
-	intr_status = sys_read32(SPI_INTST(dev));
+	intr_status = sys_read32(SPI_INTST(cfg->base));
 	dfs = SPI_WORD_SIZE_GET(ctx->config->operation) >> 3;
 
 	if ((intr_status & INTST_TX_FIFO_INT_MSK) &&
 	    !(intr_status & INTST_END_INT_MSK)) {
 
-		spi_status = sys_read32(SPI_STAT(dev));
-		cur_tx_fifo_num = GET_TX_NUM(dev);
+		spi_status = sys_read32(SPI_STAT(cfg->base));
+		cur_tx_fifo_num = GET_TX_NUM(cfg->base);
 
 		tx_num = data->tx_fifo_size - cur_tx_fifo_num;
 
@@ -317,7 +318,7 @@ static void spi_atcspi200_irq_handler(void *arg)
 				/* Have already sent a chunk of data, so stop
 				 * sending data!
 				 */
-				CLR_MASK(SPI_INTEN(dev), IEN_TX_FIFO_MSK);
+				sys_clear_bits(SPI_INTEN(cfg->base), IEN_TX_FIFO_MSK);
 				break;
 			}
 
@@ -335,26 +336,26 @@ static void spi_atcspi200_irq_handler(void *arg)
 			} else if (spi_context_tx_on(ctx)) {
 				tx_data = 0;
 			} else {
-				CLR_MASK(SPI_INTEN(dev), IEN_TX_FIFO_MSK);
+				sys_clear_bits(SPI_INTEN(cfg->base), IEN_TX_FIFO_MSK);
 				break;
 			}
 
-			sys_write32(tx_data, SPI_DATA(dev));
+			sys_write32(tx_data, SPI_DATA(cfg->base));
 
 			spi_context_update_tx(ctx, dfs, 1);
 
 			data->tx_cnt++;
 		}
-		sys_write32(INTST_TX_FIFO_INT_MSK, SPI_INTST(dev));
+		sys_write32(INTST_TX_FIFO_INT_MSK, SPI_INTST(cfg->base));
 
 	}
 
 	if (intr_status & INTST_RX_FIFO_INT_MSK) {
-		cur_rx_fifo_num = GET_RX_NUM(dev);
+		cur_rx_fifo_num = GET_RX_NUM(cfg->base);
 
 		for (i = cur_rx_fifo_num; i > 0; i--) {
 
-			rx_data = sys_read32(SPI_DATA(dev));
+			rx_data = sys_read32(SPI_DATA(cfg->base));
 
 			if (spi_context_rx_buf_on(ctx)) {
 
@@ -368,28 +369,30 @@ static void spi_atcspi200_irq_handler(void *arg)
 				}
 
 			} else if (!spi_context_rx_on(ctx)) {
-				CLR_MASK(SPI_INTEN(dev), IEN_RX_FIFO_MSK);
+				sys_clear_bits(SPI_INTEN(cfg->base), IEN_RX_FIFO_MSK);
 			}
 
 			spi_context_update_rx(ctx, dfs, 1);
 		}
-		sys_write32(INTST_RX_FIFO_INT_MSK, SPI_INTST(dev));
+		sys_write32(INTST_RX_FIFO_INT_MSK, SPI_INTST(cfg->base));
 	}
 
 	if (intr_status & INTST_END_INT_MSK) {
 
 		/* Clear end interrupt */
-		sys_write32(INTST_END_INT_MSK, SPI_INTST(dev));
+		sys_write32(INTST_END_INT_MSK, SPI_INTST(cfg->base));
 
 		/* Disable all SPI interrupts */
-		sys_write32(0, SPI_INTEN(dev));
+		sys_write32(0, SPI_INTEN(cfg->base));
 
-		transfer_next_chunk(dev);
+		data->busy = false;
+
+		spi_context_complete(ctx, dev, error);
+
 	}
 }
 
 #define SPI_DMA_CHANNEL(id, dir, DIR, src, dest)
-#define SPI_IF_NO_CMD(num) .is_cmdaddr_mode = 0,
 #define SPI_BUSY_INIT .busy = false,
 
 #if (CONFIG_XIP)
@@ -398,43 +401,41 @@ static void spi_atcspi200_irq_handler(void *arg)
 #define SPI_ROM_CFG_XIP(node_id) false
 #endif
 
-#define SPI_INIT(n)								\
-	static struct spi_atcspi200_data spi_atcspi200_dev_data_##n = {		\
-		SPI_CONTEXT_INIT_LOCK(spi_atcspi200_dev_data_##n, ctx),		\
-		SPI_CONTEXT_INIT_SYNC(spi_atcspi200_dev_data_##n, ctx),		\
-		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(n), ctx)		\
-		SPI_IF_NO_CMD(n)						\
-		SPI_BUSY_INIT							\
-		SPI_DMA_CHANNEL(n, rx, RX, PERIPHERAL, MEMORY)			\
-		SPI_DMA_CHANNEL(n, tx, TX, MEMORY, PERIPHERAL)			\
-	};									\
-	static void spi_atcspi200_cfg_##n(void);				\
-	static const struct spi_atcspi200_cfg spi_atcspi200_dev_cfg_##n = {	\
-		.cfg_func = spi_atcspi200_cfg_##n,				\
-		.base = DT_INST_REG_ADDR(n),					\
-		.irq_num = DT_INST_IRQN(n),					\
-		.f_sys = DT_INST_PROP(n, clock_frequency),			\
-		.xip = SPI_ROM_CFG_XIP(DT_DRV_INST(n)),				\
-	};									\
-										\
-	DEVICE_DT_INST_DEFINE(n,						\
-		spi_atcspi200_init,						\
-		NULL,								\
-		&spi_atcspi200_dev_data_##n,					\
-		&spi_atcspi200_dev_cfg_##n,					\
-		POST_KERNEL,							\
-		CONFIG_SPI_INIT_PRIORITY,					\
-		&spi_atcspi200_api);						\
-										\
-	static void spi_atcspi200_cfg_##n(void)					\
-	{									\
-										\
-		IRQ_CONNECT(DT_INST_IRQN(n),					\
-			    DT_INST_IRQ(n, priority),				\
-			    spi_atcspi200_irq_handler,				\
-			    DEVICE_DT_INST_GET(n),				\
-			    0);							\
-										\
-	}
+#define SPI_INIT(n)							\
+	static struct spi_atcspi200_data spi_atcspi200_dev_data_##n = {\
+		.self_dev = DEVICE_DT_INST_GET(n),			\
+		SPI_CONTEXT_INIT_LOCK(spi_atcspi200_dev_data_##n, ctx),	\
+		SPI_CONTEXT_INIT_SYNC(spi_atcspi200_dev_data_##n, ctx),	\
+		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(n), ctx)	\
+		SPI_BUSY_INIT						\
+		SPI_DMA_CHANNEL(n, rx, RX, PERIPHERAL, MEMORY)		\
+		SPI_DMA_CHANNEL(n, tx, TX, MEMORY, PERIPHERAL)		\
+	};								\
+	static void spi_atcspi200_cfg_##n(void);			\
+	static struct spi_atcspi200_cfg spi_atcspi200_dev_cfg_##n = {	\
+		.cfg_func = spi_atcspi200_cfg_##n,			\
+		.base = DT_INST_REG_ADDR(n),				\
+		.irq_num = DT_INST_IRQN(n),				\
+		.f_sys = DT_INST_PROP(n, clock_frequency),		\
+		.xip = SPI_ROM_CFG_XIP(DT_DRV_INST(n)),			\
+	};								\
+									\
+	DEVICE_DT_INST_DEFINE(n,					\
+		spi_atcspi200_init,					\
+		NULL,							\
+		&spi_atcspi200_dev_data_##n,				\
+		&spi_atcspi200_dev_cfg_##n,				\
+		POST_KERNEL,						\
+		CONFIG_SPI_INIT_PRIORITY,				\
+		&spi_atcspi200_api);					\
+									\
+	static void spi_atcspi200_cfg_##n(void)				\
+	{								\
+		IRQ_CONNECT(DT_INST_IRQN(n),				\
+				DT_INST_IRQ(n, priority),		\
+				spi_atcspi200_irq_handler,		\
+				DEVICE_DT_INST_GET(n),			\
+				0);					\
+	};
 
 DT_INST_FOREACH_STATUS_OKAY(SPI_INIT)
