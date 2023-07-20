@@ -397,6 +397,23 @@ struct ieee802154_config {
 	};
 };
 
+/** IEEE 802.15.4 attributes. */
+enum ieee802154_attr {
+	/** Number of attributes defined in ieee802154_attr. */
+	IEEE802154_ATTR_COMMON_COUNT,
+
+	/** This and higher values are specific to the protocol- or driver-specific extensions. */
+	IEEE802154_ATTR_PRIV_START = IEEE802154_ATTR_COMMON_COUNT,
+};
+
+/** IEEE 802.15.4 attribute value data. */
+struct ieee802154_attr_value {
+	union {
+		/* TODO: Please remove when first attribute is added. */
+		uint8_t dummy;
+	};
+};
+
 /**
  * @brief IEEE 802.15.4 radio interface API.
  *
@@ -476,6 +493,15 @@ struct ieee802154_radio_api {
 	 *  Requires IEEE802154_HW_TXTIME and/or IEEE802154_HW_RXTIME capabilities.
 	 */
 	uint8_t (*get_sch_acc)(const struct device *dev);
+
+	/** Get the value of an attribute.
+	 *  If the requested attribute is supported by implementation, this function returns 0
+	 *  and fills appropriate version of union in `value`.
+	 *  If requested attribute is not supported, this function returns -ENOENT.
+	 */
+	int (*attr_get)(const struct device *dev,
+			enum ieee802154_attr attr,
+			struct ieee802154_attr_value *value);
 };
 
 /* Make sure that the network interface API is properly setup inside
