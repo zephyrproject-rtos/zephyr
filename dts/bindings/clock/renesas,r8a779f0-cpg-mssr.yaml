@@ -1,0 +1,8 @@
+# Copyright (c) 2023 EPAM Systems
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas R8A779F0 SoC Clock Pulse Generator / Module Standby and Software Reset
+
+compatible: "renesas,r8a779f0-cpg-mssr"
+
+include: renesas,rcar-cpg-mssr.yaml
