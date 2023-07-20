@@ -738,3 +738,9 @@ test_i2c_bmi08x_gyro: bmi08x@6e {
 	gyro-hz = "1000_116";
 	gyro-fs = <1000>;
 };
+
+test_i2c_ist8310@6f {
+	compatible = "isentek,ist8310";
+	reg = <0x6f>;
+	status = "okay";
+};

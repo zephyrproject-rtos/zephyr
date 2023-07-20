@@ -292,6 +292,7 @@ invensense	InvenSense Inc.
 inversepath	Inverse Path
 iom	Iomega Corporation
 isee	ISEE 2007 S.L.
+isentek	Isentek Inc.
 isil	Intersil
 issi	Integrated Silicon Solutions Inc.
 ite	ITE Tech. Inc.
