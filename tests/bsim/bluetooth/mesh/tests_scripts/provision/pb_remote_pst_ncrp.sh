@@ -51,3 +51,28 @@ RunTest mesh_prov_pst_pb_remote_ncrp \
 	prov_provisioner_pb_remote_client_ncrp_second_time \
 	prov_device_pb_remote_server_proved \
 	prov_device_pb_remote_server_ncrp_second_time
+
+# The same test but with PSA crypto
+# Step 1
+conf=prj_mesh1d1_conf
+overlay="overlay_pst_conf_overlay_psa_conf"
+RunTest mesh_prov_pst_pb_remote_ncrp_psa \
+	prov_provisioner_pb_remote_client_ncrp_provision \
+	prov_device_pb_remote_server_unproved \
+	prov_device_pb_remote_server_ncrp_prepare
+
+# Step 2
+conf=prj_mesh1d1_conf
+overlay="overlay_pst_conf_overlay_psa_conf"
+RunTest mesh_prov_pst_pb_remote_ncrp_psa \
+	prov_provisioner_pb_remote_client_ncrp \
+	prov_device_pb_remote_server_proved \
+	prov_device_pb_remote_server_ncrp
+
+# Step 3
+conf=prj_mesh1d1_conf
+overlay="overlay_pst_conf_overlay_psa_conf"
+RunTest mesh_prov_pst_pb_remote_ncrp_psa \
+	prov_provisioner_pb_remote_client_ncrp_second_time \
+	prov_device_pb_remote_server_proved \
+	prov_device_pb_remote_server_ncrp_second_time

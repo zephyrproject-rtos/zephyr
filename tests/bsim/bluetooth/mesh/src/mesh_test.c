@@ -7,7 +7,6 @@
 #include "argparse.h"
 #include <bs_pc_backchannel.h>
 #include "settings_test_backend.h"
-#include "distribute_keyid.h"
 #include "mesh/crypto.h"
 
 #define LOG_MODULE_NAME mesh_test
@@ -557,7 +556,6 @@ void bt_mesh_test_host_files_remove(void)
 #if defined(CONFIG_SETTINGS)
 	/* crypto library initialization to be able to remove stored keys. */
 	bt_mesh_crypto_init();
-	stored_keys_clear();
 	settings_test_backend_clear();
 #endif
 }

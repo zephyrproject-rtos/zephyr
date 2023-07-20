@@ -50,3 +50,42 @@ conf=prj_mesh1d1_conf
 overlay=overlay_pst_conf
 RunTest dfu_dist_recover_phase dfu_cli_stop dfu_target_dfu_stop -- -argstest \
    recover=1 expected-phase=6
+
+# The same test but with PSA crypto
+conf=prj_mesh1d1_conf
+overlay="overlay_pst_conf_overlay_psa_conf"
+RunTest dfu_dist_recover_phase_psa dfu_cli_stop dfu_target_dfu_stop -- -argstest \
+   recover=0 expected-phase=2
+
+conf=prj_mesh1d1_conf
+overlay="overlay_pst_conf_overlay_psa_conf"
+RunTest dfu_dist_recover_phase_psa dfu_cli_stop dfu_target_dfu_stop  -- -argstest \
+  recover=1 expected-phase=3
+
+conf=prj_mesh1d1_conf
+overlay="overlay_pst_conf_overlay_psa_conf"
+RunTest dfu_dist_recover_phase_psa dfu_cli_stop dfu_target_dfu_stop -- -argstest \
+  recover=1 expected-phase=4
+
+conf=prj_mesh1d1_conf
+overlay="overlay_pst_conf_overlay_psa_conf"
+RunTest dfu_dist_recover_phase_psa dfu_cli_stop dfu_target_dfu_stop -- -argstest \
+  recover=1 expected-phase=6
+
+# Use phase `BT_MESH_DFU_PHASE_APPLY_SUCCESS` as marker to bring whole procedure to an end
+conf=prj_mesh1d1_conf
+overlay="overlay_pst_conf_overlay_psa_conf"
+RunTest dfu_dist_recover_phase_psa dfu_cli_stop dfu_target_dfu_stop -- -argstest \
+  recover=1 expected-phase=8
+
+# To test recovery from Verify Fail begin new distribution that will end there,
+# reboot devices and continue to Applying.
+conf=prj_mesh1d1_conf
+overlay="overlay_pst_conf_overlay_psa_conf"
+RunTest dfu_dist_recover_phase_psa dfu_cli_stop dfu_target_dfu_stop -- -argstest \
+   recover=0 expected-phase=5
+
+conf=prj_mesh1d1_conf
+overlay="overlay_pst_conf_overlay_psa_conf"
+RunTest dfu_dist_recover_phase_psa dfu_cli_stop dfu_target_dfu_stop -- -argstest \
+   recover=1 expected-phase=6

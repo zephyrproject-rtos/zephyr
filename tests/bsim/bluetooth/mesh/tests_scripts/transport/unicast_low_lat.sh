@@ -10,3 +10,7 @@ RunTest mesh_transport_unicast_low_lat transport_tx_unicast transport_rx_unicast
 conf=prj_mesh1d1_conf
 overlay=overlay_low_lat_conf
 RunTest mesh_transport_unicast_low_lat_1d1 transport_tx_unicast transport_rx_unicast
+
+conf=prj_mesh1d1_conf
+overlay="overlay_low_lat_conf_overlay_psa_conf"
+RunTest mesh_transport_unicast_low_lat_psa transport_tx_unicast transport_rx_unicast
