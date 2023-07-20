@@ -17,8 +17,8 @@ extern "C" {
 #endif
 
 /**
- * @brief Non-volatile Storage
- * @defgroup nvs Non-volatile Storage
+ * @brief Non-volatile Storage (NVS)
+ * @defgroup nvs Non-volatile Storage (NVS)
  * @ingroup file_system_storage
  * @{
  * @}
@@ -74,9 +74,7 @@ struct nvs_fs {
  */
 
 /**
- * @brief nvs_mount
- *
- * Mount a NVS file system onto the flash device specified in @p fs.
+ * @brief Mount an NVS file system onto the flash device specified in @p fs.
  *
  * @param fs Pointer to file system
  * @retval 0 Success
@@ -85,9 +83,8 @@ struct nvs_fs {
 int nvs_mount(struct nvs_fs *fs);
 
 /**
- * @brief nvs_clear
+ * @brief Clear the NVS file system from flash.
  *
- * Clears the NVS file system from flash.
  * @param fs Pointer to file system
  * @retval 0 Success
  * @retval -ERRNO errno code if error
@@ -95,9 +92,7 @@ int nvs_mount(struct nvs_fs *fs);
 int nvs_clear(struct nvs_fs *fs);
 
 /**
- * @brief nvs_write
- *
- * Write an entry to the file system.
+ * @brief Write an entry to the file system.
  *
  * @param fs Pointer to file system
  * @param id Id of the entry to be written
@@ -111,9 +106,7 @@ int nvs_clear(struct nvs_fs *fs);
 ssize_t nvs_write(struct nvs_fs *fs, uint16_t id, const void *data, size_t len);
 
 /**
- * @brief nvs_delete
- *
- * Delete an entry from the file system
+ * @brief Delete an entry from the file system
  *
  * @param fs Pointer to file system
  * @param id Id of the entry to be deleted
@@ -123,9 +116,7 @@ ssize_t nvs_write(struct nvs_fs *fs, uint16_t id, const void *data, size_t len);
 int nvs_delete(struct nvs_fs *fs, uint16_t id);
 
 /**
- * @brief nvs_read
- *
- * Read an entry from the file system.
+ * @brief Read an entry from the file system.
  *
  * @param fs Pointer to file system
  * @param id Id of the entry to be read
@@ -140,9 +131,7 @@ int nvs_delete(struct nvs_fs *fs, uint16_t id);
 ssize_t nvs_read(struct nvs_fs *fs, uint16_t id, void *data, size_t len);
 
 /**
- * @brief nvs_read_hist
- *
- * Read a history entry from the file system.
+ * @brief Read a history entry from the file system.
  *
  * @param fs Pointer to file system
  * @param id Id of the entry to be read
@@ -158,9 +147,7 @@ ssize_t nvs_read(struct nvs_fs *fs, uint16_t id, void *data, size_t len);
 ssize_t nvs_read_hist(struct nvs_fs *fs, uint16_t id, void *data, size_t len, uint16_t cnt);
 
 /**
- * @brief nvs_calc_free_space
- *
- * Calculate the available free space in the file system.
+ * @brief Calculate the available free space in the file system.
  *
  * @param fs Pointer to file system
  *
