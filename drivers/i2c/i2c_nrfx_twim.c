@@ -436,18 +436,18 @@ static int i2c_nrfx_twim_init(const struct device *dev)
 		      CONFIG_I2C_INIT_PRIORITY,				       \
 		      &i2c_nrfx_twim_driver_api)
 
-#ifdef CONFIG_I2C_0_NRF_TWIM
+#ifdef CONFIG_HAS_HW_NRF_TWIM0
 I2C_NRFX_TWIM_DEVICE(0);
 #endif
 
-#ifdef CONFIG_I2C_1_NRF_TWIM
+#ifdef CONFIG_HAS_HW_NRF_TWIM1
 I2C_NRFX_TWIM_DEVICE(1);
 #endif
 
-#ifdef CONFIG_I2C_2_NRF_TWIM
+#ifdef CONFIG_HAS_HW_NRF_TWIM2
 I2C_NRFX_TWIM_DEVICE(2);
 #endif
 
-#ifdef CONFIG_I2C_3_NRF_TWIM
+#ifdef CONFIG_HAS_HW_NRF_TWIM3
 I2C_NRFX_TWIM_DEVICE(3);
 #endif
