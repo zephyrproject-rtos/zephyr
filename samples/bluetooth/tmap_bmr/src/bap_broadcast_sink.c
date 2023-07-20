@@ -22,7 +22,6 @@ static bool tmap_bms_found;
 
 static K_SEM_DEFINE(sem_pa_synced, 0U, 1U);
 static K_SEM_DEFINE(sem_base_received, 0U, 1U);
-static K_SEM_DEFINE(sem_sink_created, 0U, 1U);
 static K_SEM_DEFINE(sem_syncable, 0U, 1U);
 static K_SEM_DEFINE(sem_pa_sync_lost, 0U, 1U);
 
@@ -35,6 +34,8 @@ static void broadcast_pa_synced(struct bt_le_per_adv_sync *sync,
 static void broadcast_pa_recv(struct bt_le_per_adv_sync *sync,
 			      const struct bt_le_per_adv_sync_recv_info *info,
 			      struct net_buf_simple *buf);
+static void broadcast_pa_terminated(struct bt_le_per_adv_sync *sync,
+				    const struct bt_le_per_adv_sync_term_info *info);
 
 static struct bt_le_scan_cb broadcast_scan_cb = {
 	.recv = broadcast_scan_recv,
@@ -44,6 +45,7 @@ static struct bt_le_scan_cb broadcast_scan_cb = {
 static struct bt_le_per_adv_sync_cb broadcast_sync_cb = {
 	.synced = broadcast_pa_synced,
 	.recv = broadcast_pa_recv,
+	.term = broadcast_pa_terminated,
 };
 
 static struct bt_bap_broadcast_sink *broadcast_sink;
@@ -250,29 +252,6 @@ static void broadcast_pa_recv(struct bt_le_per_adv_sync *sync,
 	bt_data_parse(buf, pa_decode_base, NULL);
 }
 
-static void broadcast_pa_synced(struct bt_le_per_adv_sync *sync,
-				struct bt_le_per_adv_sync_synced_info *info)
-{
-	k_sem_give(&sem_pa_synced);
-}
-
-static void pa_synced_cb(struct bt_bap_broadcast_sink *sink,
-			 struct bt_le_per_adv_sync *sync,
-			 uint32_t broadcast_id)
-{
-	if (broadcast_sink != NULL) {
-		printk("Unexpected PA sync\n");
-		return;
-	}
-
-	printk("PA synced for broadcast sink %p with broadcast ID 0x%06X\n",
-	       sink, broadcast_id);
-
-	broadcast_sink = sink;
-
-	k_sem_give(&sem_sink_created);
-}
-
 static void syncable_cb(struct bt_bap_broadcast_sink *sink, bool encrypted)
 {
 	k_sem_give(&sem_syncable);
@@ -283,24 +262,32 @@ static void base_recv_cb(struct bt_bap_broadcast_sink *sink, const struct bt_bap
 	k_sem_give(&sem_base_received);
 }
 
-static void pa_sync_lost_cb(struct bt_bap_broadcast_sink *sink)
-{
-	if (broadcast_sink == NULL) {
-		printk("Unexpected PA sync lost\n");
-		return;
-	}
-
-	printk("Sink %p disconnected\n", sink);
-	broadcast_sink = NULL;
-	k_sem_give(&sem_pa_sync_lost);
-}
-
 static struct bt_bap_broadcast_sink_cb broadcast_sink_cbs = {
-	.pa_synced = pa_synced_cb,
 	.syncable = syncable_cb,
 	.base_recv = base_recv_cb,
-	.pa_sync_lost = pa_sync_lost_cb
 };
+
+static void broadcast_pa_synced(struct bt_le_per_adv_sync *sync,
+				struct bt_le_per_adv_sync_synced_info *info)
+{
+	if (sync == bcast_pa_sync) {
+		printk("PA sync %p synced for broadcast sink with broadcast ID 0x%06X\n", sync,
+		       bcast_id);
+
+		k_sem_give(&sem_pa_synced);
+	}
+}
+
+static void broadcast_pa_terminated(struct bt_le_per_adv_sync *sync,
+				    const struct bt_le_per_adv_sync_term_info *info)
+{
+	if (sync == bcast_pa_sync) {
+		printk("PA sync %p lost with reason %u\n", sync, info->reason);
+		bcast_pa_sync = NULL;
+
+		k_sem_give(&sem_pa_sync_lost);
+	}
+}
 
 static int reset(void)
 {
@@ -318,7 +305,6 @@ static int reset(void)
 
 	k_sem_reset(&sem_pa_synced);
 	k_sem_reset(&sem_base_received);
-	k_sem_reset(&sem_sink_created);
 	k_sem_reset(&sem_syncable);
 	k_sem_reset(&sem_pa_sync_lost);
 
@@ -384,10 +370,9 @@ int bap_broadcast_sink_run(void)
 
 		/* Create broadcast sink */
 		printk("BASE received, creating broadcast sink\n");
-		err = bt_bap_broadcast_sink_create(bcast_pa_sync, bcast_id);
-		err = k_sem_take(&sem_sink_created, SEM_TIMEOUT);
+		err = bt_bap_broadcast_sink_create(bcast_pa_sync, bcast_id, &broadcast_sink);
 		if (err != 0) {
-			printk("sem_sink_created timed out\n");
+			printk("bt_bap_broadcast_sink_create failed: %d\n", err);
 			return err;
 		}
 
