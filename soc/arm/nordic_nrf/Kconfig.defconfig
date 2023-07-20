@@ -28,9 +28,6 @@ config SYS_CLOCK_TICKS_PER_SEC
 config ARCH_HAS_CUSTOM_BUSY_WAIT
 	default y if !QEMU_TARGET
 
-config PM
-	default y if SYS_CLOCK_EXISTS && MULTITHREADING && HAS_PM
-
 config BUILD_OUTPUT_HEX
 	default y
 
