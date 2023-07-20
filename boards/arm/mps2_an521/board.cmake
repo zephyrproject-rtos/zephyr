@@ -12,6 +12,9 @@ set(QEMU_FLAGS_${ARCH}
   )
 board_set_debugger_ifnset(qemu)
 
+board_runner_args(pyocd "--target=mps2_an521")
+
+include(${ZEPHYR_BASE}/boards/common/pyocd.board.cmake)
  # To enable a host tty switch between serial and pty
  #  -chardev serial,path=/dev/ttyS0,id=hostS0
 list(APPEND QEMU_EXTRA_FLAGS -chardev pty,id=hostS0 -serial chardev:hostS0)
