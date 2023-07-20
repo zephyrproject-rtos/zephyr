@@ -22,6 +22,7 @@ OS Services
    notify.rst
    pm/index.rst
    portability/index.rst
+   poweroff.rst
    shell/index.rst
    settings/index.rst
    smf/index.rst
