@@ -106,6 +106,20 @@ static inline int ieee802154_radio_stop(struct net_if *iface)
 	return radio->stop(net_if_get_device(iface));
 }
 
+static inline int ieee802154_radio_attr_get(struct net_if *iface,
+					    enum ieee802154_attr attr,
+					    struct ieee802154_attr_value *value)
+{
+	const struct ieee802154_radio_api *radio =
+		net_if_get_device(iface)->api;
+
+	if (!radio || !radio->attr_get) {
+		return -ENOENT;
+	}
+
+	return radio->attr_get(net_if_get_device(iface), attr, value);
+}
+
 /**
  * Sets the radio drivers extended address filter.
  *
