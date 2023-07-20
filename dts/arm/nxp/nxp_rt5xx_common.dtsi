@@ -61,12 +61,6 @@
 							<0xFFFFFFFF>,
 							<0>;
 			};
-			/*
-			 * Deep power-down mode is supported in this SoC through
-			 * 'PM_STATE_SOFT_OFF' state. There is no entry for this
-			 * in device tree, user can call pm_state_force to enter
-			 * this state.
-			 */
 		};
 	};
 };

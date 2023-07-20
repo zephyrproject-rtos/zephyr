@@ -16,8 +16,6 @@ LOG_MODULE_DECLARE(soc, CONFIG_SOC_LOG_LEVEL);
 #define EXCLUDE_FROM_DEEPSLEEP ((const uint32_t[]) \
 					DT_PROP_OR(NODE_ID, deep_sleep_config, {}))
 
-#define EXCLUDE_FROM_DEEP_POWERDOWN ((const uint32_t[]){0, 0, 0, 0})
-
 static uint32_t isp_pin[3];
 
 /* System clock frequency. */
@@ -70,10 +68,6 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 		set_deepsleep_pin_config();
 		POWER_EnterDeepSleep(EXCLUDE_FROM_DEEPSLEEP);
 		restore_deepsleep_pin_config();
-		break;
-	case PM_STATE_SOFT_OFF:
-		set_deepsleep_pin_config();
-		POWER_EnterDeepPowerDown(EXCLUDE_FROM_DEEP_POWERDOWN);
 		break;
 	default:
 		LOG_DBG("Unsupported power state %u", state);
