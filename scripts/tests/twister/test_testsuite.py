@@ -110,3 +110,42 @@ def test_get_unique(testsuite_root, suite_path, name, expected):
     '''Test to check if the unique name is given for each testsuite root and workdir'''
     suite = TestSuite(testsuite_root, suite_path, name)
     assert suite.name == expected
+
+TESTDATA_2 = [
+        (
+            ZEPHYR_BASE + '/scripts/tests/twister/test_data/testsuites',
+            ZEPHYR_BASE + '/scripts/tests/twister/test_data/testsuites/tests/test_a',
+            'test_a.check_1',
+            'test_a.check_1'
+        ),
+        (
+            ZEPHYR_BASE,
+            ZEPHYR_BASE,
+            'test_a.check_1',
+            'test_a.check_1'
+        ),
+        (
+            ZEPHYR_BASE,
+            ZEPHYR_BASE + '/scripts/tests/twister/test_data/testsuites/test_b',
+            'test_b.check_1',
+            'test_b.check_1'
+        ),
+        (
+            os.path.join(ZEPHYR_BASE, 'scripts/tests'),
+            os.path.join(ZEPHYR_BASE, 'scripts/tests'),
+            'test_b.check_1',
+            'test_b.check_1'
+        ),
+        (
+            ZEPHYR_BASE,
+            ZEPHYR_BASE,
+            'test_a.check_1.check_2',
+            'test_a.check_1.check_2'
+        ),
+]
+@pytest.mark.parametrize("testsuite_root, suite_path, name, expected", TESTDATA_2)
+def test_get_no_path_name(testsuite_root, suite_path, name, expected):
+    '''Test to check if the name without path is given for each testsuite'''
+    suite = TestSuite(testsuite_root, suite_path, name, no_path_name=True)
+    print(suite.name)
+    assert suite.name == expected
