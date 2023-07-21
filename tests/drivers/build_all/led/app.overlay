@@ -99,6 +99,11 @@
 				compatible = "ti,tlc59108";
 				reg = <0xc>;
 			};
+
+			ncp5623@d {
+				compatible = "onnn,ncp5623";
+				reg = <0xd>;
+			};
 		};
 	};
 };
