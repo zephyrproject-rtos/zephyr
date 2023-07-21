@@ -158,3 +158,22 @@ void bt_iso_chan_set_state(struct bt_iso_chan *chan, enum bt_iso_state state);
 
 /* Process incoming data for a connection */
 void bt_iso_recv(struct bt_conn *iso, struct net_buf *buf, uint8_t flags);
+
+#if defined(CONFIG_BT_ISO_UNICAST) || defined(CONFIG_BT_ISO_BROADCASTER)
+
+/* Callback for all ISO SDUs */
+void bt_iso_sent_cb(struct bt_conn *iso, void *user_data, int err);
+
+/* Pull data from the ISO layer */
+struct net_buf *iso_data_pull(struct bt_conn *conn, size_t amount);
+
+/* Returns true if the ISO layer has data to send on this conn */
+bool bt_iso_has_data(struct bt_conn *conn);
+
+#else
+
+#define bt_iso_sent_cb NULL
+#define iso_data_pull(x, y, z) NULL
+#define bt_iso_has_data(x) (void)0
+
+#endif /* defined(CONFIG_BT_ISO_UNICAST) || defined(CONFIG_BT_ISO_BROADCASTER) */

@@ -220,6 +220,12 @@ struct bt_l2cap_le_chan {
 	struct k_work_delayable		rtx_work;
 	struct k_work_sync		rtx_sync;
 #endif
+
+	/* off-limits */
+	sys_snode_t			_seg_ready;
+	atomic_t			_seg_ready_lock;
+	/* FIXME: remove this, pull from `tx_queue` on-demand */
+	struct k_fifo                   tx_vbq;
 };
 
 /**

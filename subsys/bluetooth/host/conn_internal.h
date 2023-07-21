@@ -80,8 +80,6 @@ enum {
 	BT_CONN_CTE_REQ_ENABLED,              /* CTE request procedure is enabled */
 	BT_CONN_CTE_RSP_ENABLED,              /* CTE response procedure is enabled */
 
-	BT_CONN_TX_WOULDBLOCK_FREE_TX,          /** #bt_conn_process_tx wouldblock on #free_tx */
-
 	/* Total number of flags - must be at the end of the enum */
 	BT_CONN_NUM_FLAGS,
 };
@@ -170,6 +168,9 @@ struct bt_conn_iso {
 
 	/** Stored information about the ISO stream */
 	struct bt_iso_info info;
+
+	/** Queue from which conn will pull data */
+	struct k_fifo                   txq;
 };
 
 typedef void (*bt_conn_tx_cb_t)(struct bt_conn *conn, void *user_data, int err);
@@ -179,9 +180,6 @@ struct bt_conn_tx {
 
 	bt_conn_tx_cb_t cb;
 	void *user_data;
-
-	/* Number of pending packets without a callback after this one */
-	uint32_t pending_no_cb;
 };
 
 struct acl_data {
@@ -227,21 +225,14 @@ struct bt_conn {
 	uint16_t rx_len;
 	struct net_buf		*rx;
 
-	/* Sent but not acknowledged TX packets with a callback */
+	/* Pending TX that are awaiting the NCP event. len(tx_pending) == in_ll */
 	sys_slist_t		tx_pending;
-	/* Sent but not acknowledged TX packets without a callback before
-	 * the next packet (if any) in tx_pending.
-	 */
-	uint32_t                   pending_no_cb;
 
 	/* Completed TX for which we need to call the callback */
 	sys_slist_t		tx_complete;
 #if defined(CONFIG_BT_CONN_TX)
 	struct k_work           tx_complete_work;
 #endif /* CONFIG_BT_CONN_TX */
-
-	/* Queue for outgoing ACL data */
-	struct k_fifo		tx_queue;
 
 	/* Active L2CAP channels */
 	sys_slist_t		channels;
@@ -271,11 +262,58 @@ struct bt_conn {
 		uint16_t subversion;
 	} rv;
 #endif
+
+	/* For ACL: List of data-ready L2 channels. Used by TX processor for
+	 * pulling fragments. Channels are only ever removed from this list when
+	 * a whole PDU (ie all its frags) have been sent.
+	 *
+	 * For ISO: Non-null to signal data has something to send.
+	 */
+	sys_slist_t		upper_data_ready;
+
+	/* Node for putting this connection in a data-ready mode for the bt_dev.
+	 * This will be used by the TX processor to then fetch L2 frags from it.
+	 */
+	sys_snode_t		_conn_ready;
+	atomic_t		_conn_ready_lock;
+
+	/* Holds the number of packets that have been sent to the controller but
+	 * not yet ACKd (by receiving an Number of Completed Packets). This
+	 * variable can be used for deriving a QoS or waterlevel scheme in order
+	 * to maximize throughput/latency.
+	 */
+	atomic_t		in_ll;
+
+	/* Next buffer should be an ACL/ISO fragment */
+	bool			next_is_frag;
+
 	/* Must be at the end so that everything else in the structure can be
 	 * memset to zero without affecting the ref.
 	 */
 	atomic_t		ref;
 };
+
+/* wait, this is illegal! */
+struct cons {
+	void *car;
+	void *cdr;
+} __packed;
+
+static inline void cons(void *free_real_estate, void *car, void *cdr)
+{
+	((struct cons *)free_real_estate)->car = car;
+	((struct cons *)free_real_estate)->cdr = cdr;
+}
+
+static inline void *car(void *cons)
+{
+	return ((struct cons *)cons)->car;
+}
+
+static inline void *cdr(void *cons)
+{
+	return ((struct cons *)cons)->cdr;
+}
 
 void bt_conn_reset_rx_state(struct bt_conn *conn);
 
@@ -300,11 +338,6 @@ int bt_conn_send_cb(struct bt_conn *conn, struct net_buf *buf,
  */
 int bt_conn_send_iso_cb(struct bt_conn *conn, struct net_buf *buf,
 			bt_conn_tx_cb_t cb, bool has_ts);
-
-static inline int bt_conn_send(struct bt_conn *conn, struct net_buf *buf)
-{
-	return bt_conn_send_cb(conn, buf, NULL, NULL);
-}
 
 /* Check if a connection object with the peer already exists */
 bool bt_conn_exists_le(uint8_t id, const bt_addr_le_t *peer);
@@ -479,4 +512,8 @@ struct k_sem *bt_conn_get_pkts(struct bt_conn *conn);
 
 /* k_poll related helpers for the TX thread */
 int bt_conn_prepare_events(struct k_poll_event events[]);
-void bt_conn_process_tx(struct bt_conn *conn);
+
+/* To be called by upper layers when they want to send something.
+ * Functions just like an IRQ.
+ */
+void bt_conn_data_ready(struct bt_conn *conn);

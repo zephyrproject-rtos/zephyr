@@ -318,15 +318,19 @@ void bt_l2cap_chan_set_state(struct bt_l2cap_chan *chan,
 #endif /* CONFIG_BT_L2CAP_LOG_LEVEL_DBG */
 #endif /* CONFIG_BT_L2CAP_DYNAMIC_CHANNEL */
 
+static void cancel_data_ready(struct bt_l2cap_le_chan *lechan);
 void bt_l2cap_chan_del(struct bt_l2cap_chan *chan)
 {
 	const struct bt_l2cap_chan_ops *ops = chan->ops;
+	struct bt_l2cap_le_chan *le_chan = BT_L2CAP_LE_CHAN(chan);
 
 	LOG_DBG("conn %p chan %p", chan->conn, chan);
 
 	if (!chan->conn) {
 		goto destroy;
 	}
+
+	cancel_data_ready(le_chan);
 
 	if (ops->disconnected) {
 		ops->disconnected(chan);
@@ -460,6 +464,8 @@ void bt_l2cap_connected(struct bt_conn *conn)
 		if (!l2cap_chan_add(conn, chan, fchan->destroy)) {
 			return;
 		}
+
+		k_fifo_init(&le_chan->tx_vbq);
 
 		if (chan->ops->connected) {
 			chan->ops->connected(chan);
@@ -715,18 +721,142 @@ struct net_buf *bt_l2cap_create_pdu_timeout(struct net_buf_pool *pool,
 					  timeout);
 }
 
-int bt_l2cap_send_cb(struct bt_conn *conn, uint16_t cid, struct net_buf *buf,
+void raise_data_ready(struct bt_l2cap_le_chan *lechan)
+{
+	if (!atomic_set(&lechan->_seg_ready_lock, 1)) {
+		sys_slist_append(&lechan->chan.conn->upper_data_ready,
+				 &lechan->_seg_ready);
+		LOG_INF("data ready raised");
+	} else {
+		LOG_INF("data ready already");
+	}
+
+	bt_conn_data_ready(lechan->chan.conn);
+}
+
+void lower_data_ready(struct bt_l2cap_le_chan *lechan)
+{
+	struct bt_conn *conn = lechan->chan.conn;
+	sys_snode_t *s = sys_slist_get(&conn->upper_data_ready);
+
+	__ASSERT_NO_MSG(s == &lechan->_seg_ready);
+	(void)s;
+
+	atomic_t old = atomic_set(&lechan->_seg_ready_lock, 0);
+
+	__ASSERT_NO_MSG(old);
+	(void)old;
+}
+
+static void cancel_data_ready(struct bt_l2cap_le_chan *lechan)
+{
+	struct bt_conn *conn = lechan->chan.conn;
+
+	sys_slist_find_and_remove(&conn->upper_data_ready,
+				  &lechan->_seg_ready);
+	atomic_set(&lechan->_seg_ready_lock, 0);
+}
+
+int bt_l2cap_send_cb(struct bt_conn *conn, uint16_t cid, struct net_buf *seg,
 		     bt_conn_tx_cb_t cb, void *user_data)
 {
 	struct bt_l2cap_hdr *hdr;
 
-	LOG_DBG("conn %p cid %u len %zu", conn, cid, buf->len);
+	LOG_INF("conn %p cid %u len %zu", conn, cid, seg->len);
 
-	hdr = net_buf_push(buf, sizeof(*hdr));
-	hdr->len = sys_cpu_to_le16(buf->len - sizeof(*hdr));
+	hdr = net_buf_push(seg, sizeof(*hdr));
+	hdr->len = sys_cpu_to_le16(seg->len - sizeof(*hdr));
 	hdr->cid = sys_cpu_to_le16(cid);
 
-	return bt_conn_send_cb(conn, buf, cb, user_data);
+	/* TODO: un-foreach this: ATT, SMP & L2CAP CoC _know_ the channel */
+	struct bt_l2cap_chan *ch = bt_l2cap_le_lookup_tx_cid(conn, cid);
+
+	struct bt_l2cap_le_chan *chan = CONTAINER_OF(ch, struct bt_l2cap_le_chan, chan);
+
+	if (seg->user_data_size < sizeof(struct cons)) {
+		LOG_DBG("not enough room in user_data %d < %d pool %u",
+			seg->user_data_size,
+			CONFIG_BT_CONN_TX_USER_DATA_SIZE,
+			seg->pool_id);
+		return -EINVAL;
+	}
+
+	cons(seg->user_data, cb, user_data);
+	LOG_WRN("push: cb %p userdata %p", cb, user_data);
+
+	net_buf_put(&chan->tx_vbq, seg);
+
+	raise_data_ready(chan); /* tis just a flag */
+
+	return 0;		/* look ma, no failures */
+}
+
+bool chan_has_data(struct bt_l2cap_le_chan *lechan)
+{
+	return !k_fifo_is_empty(&lechan->tx_vbq);
+}
+
+/* TODO: move fragmentation in there */
+struct net_buf *l2cap_data_pull(struct bt_conn *conn, size_t amount)
+{
+	sys_snode_t *seg_ready = sys_slist_peek_head(&conn->upper_data_ready);
+
+	if (!seg_ready) {
+		LOG_INF("nothing to send on this conn");
+		return NULL;
+	}
+
+	struct bt_l2cap_le_chan *lechan = CONTAINER_OF(seg_ready,
+						       struct bt_l2cap_le_chan,
+						       _seg_ready);
+
+	/* Leave the PDU buffer in the queue until we have sent all its
+	 * fragments.
+	 */
+	struct net_buf *seg = k_fifo_peek_head(&lechan->tx_vbq);
+
+	__ASSERT(seg, "signaled ready but no segments available");
+
+	if (bt_buf_has_view(seg)) {
+		LOG_ERR("already have view");
+		return NULL;
+	}
+
+	/* We can't interleave ACL fragments from different channels -> we have
+	 * to wait until a full L2 PDU is transferred before potentially
+	 * switching channels.
+	 */
+	bool last_frag = amount >= seg->len; /* use buf_frags_len? */
+
+	if (last_frag) {
+		LOG_INF("last, pop buf");
+		/* What happens if we aren't able to send the last buffer?
+		 * -> assert. it shouldn't be possible.
+		 */
+		struct net_buf *b = k_fifo_get(&lechan->tx_vbq, K_NO_WAIT);
+
+		__ASSERT_NO_MSG(b == seg);
+		(void)b;
+	}
+
+	/* Future work: here we could also add a user-controlled QoS function. */
+	if (last_frag) {
+		LOG_INF("last, should stop sending");
+		/* what happens if we get an unrecoverable error sending the
+		 * buffer? the channel should probably be killed and removed
+		 * from the DR list.
+		 * TODO: do that on channel destroy?
+		 */
+		lower_data_ready(lechan);
+
+		/* Append channel to list if it still has data */
+		if (chan_has_data(lechan)) {
+			LOG_INF("still has data, appending");
+			raise_data_ready(lechan);
+		}
+	}
+
+	return seg;
 }
 
 static void l2cap_send_reject(struct bt_conn *conn, uint8_t ident,
@@ -1051,6 +1181,7 @@ static void l2cap_chan_tx_init(struct bt_l2cap_le_chan *chan)
 	(void)memset(&chan->tx, 0, sizeof(chan->tx));
 	atomic_set(&chan->tx.credits, 0);
 	k_fifo_init(&chan->tx_queue);
+	k_fifo_init(&chan->tx_vbq);
 	k_work_init_delayable(&chan->tx_work, l2cap_chan_tx_process);
 }
 
@@ -1094,6 +1225,13 @@ static void l2cap_chan_destroy(struct bt_l2cap_chan *chan)
 	if (le_chan->tx_buf) {
 		l2cap_tx_buf_destroy(chan->conn, le_chan->tx_buf, -ESHUTDOWN);
 		le_chan->tx_buf = NULL;
+	}
+
+	/* Remove buffers on the VBQ */
+	/* FIXME: this doesn't get triggered even though we have buffers pending? */
+	while (chan_has_data(le_chan)) {
+		buf = net_buf_get(&le_chan->tx_vbq, K_NO_WAIT);
+		l2cap_tx_buf_destroy(chan->conn, buf, -ESHUTDOWN);
 	}
 
 	/* Remove buffers on the TX queue */
