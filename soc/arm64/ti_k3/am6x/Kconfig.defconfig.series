@@ -37,6 +37,6 @@ endchoice
 
 endif # SERIAL
 
-source "soc/arm64/ti_sitara/am6x/Kconfig.defconfig.am62*"
+source "soc/arm64/ti_k3/am6x/Kconfig.defconfig.am62*"
 
 endif # SOC_SERIES_AM6X_A53
