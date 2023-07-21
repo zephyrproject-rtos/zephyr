@@ -1130,6 +1130,8 @@ static int le_ext_adv_param_set(struct bt_le_ext_adv *adv,
 	cp = net_buf_add(buf, sizeof(*cp));
 	(void)memset(cp, 0, sizeof(*cp));
 
+	adv->options = param->options;
+
 	err = bt_id_set_adv_own_addr(adv, param->options, dir_adv,
 				     &cp->own_addr_type);
 	if (err) {
@@ -1150,8 +1152,6 @@ static int le_ext_adv_param_set(struct bt_le_ext_adv *adv,
 	cp->prim_channel_map = get_adv_channel_map(param->options);
 	cp->filter_policy = get_filter_policy(param->options);
 	cp->tx_power = BT_HCI_LE_ADV_TX_POWER_NO_PREF;
-
-	adv->options = param->options;
 
 	cp->prim_adv_phy = BT_HCI_LE_PHY_1M;
 	if ((param->options & BT_LE_ADV_OPT_EXT_ADV) &&
@@ -2206,6 +2206,9 @@ void bt_hci_le_adv_set_terminated(struct net_buf *buf)
 					bt_addr_copy(&conn->le.resp_addr.a,
 						     &adv->random_addr.a);
 				}
+			} else if (adv->options & BT_LE_ADV_OPT_USE_NRPA) {
+				bt_addr_le_copy(&conn->le.resp_addr,
+						&adv->random_addr);
 			} else {
 				bt_addr_le_copy(&conn->le.resp_addr,
 					&bt_dev.id_addr[conn->id]);
