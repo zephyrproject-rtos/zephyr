@@ -279,11 +279,20 @@ class Build(Forceable):
                 log.die(f"Test item {test_item} not found in {yf}")
 
             sysbuild = False
+            extra_dtc_overlay_files = []
+            extra_overlay_confs = []
+            extra_conf_files = []
             for section in [common, item]:
                 if not section:
                     continue
                 sysbuild = section.get('sysbuild', sysbuild)
-                for data in ['extra_args', 'extra_configs']:
+                for data in [
+                        'extra_args',
+                        'extra_configs',
+                        'extra_conf_files',
+                        'extra_overlay_confs',
+                        'extra_dtc_overlay_files'
+                        ]:
                     extra = section.get(data)
                     if not extra:
                         continue
@@ -291,16 +300,45 @@ class Build(Forceable):
                         arg_list = extra.split(" ")
                     else:
                         arg_list = extra
+
                     if data == 'extra_configs':
                         args = ["-D{}".format(arg.replace('"', '\"')) for arg in arg_list]
                     elif data == 'extra_args':
                         args = ["-D{}".format(arg.replace('"', '')) for arg in arg_list]
+                    elif data == 'extra_conf_files':
+                        extra_conf_files.extend(arg_list)
+                        continue
+                    elif data == 'extra_overlay_confs':
+                        extra_overlay_confs.extend(arg_list)
+                        continue
+                    elif data == 'extra_dtc_overlay_files':
+                        extra_dtc_overlay_files.extend(arg_list)
+                        continue
+
                     if self.args.cmake_opts:
                         self.args.cmake_opts.extend(args)
                     else:
                         self.args.cmake_opts = args
 
             self.args.sysbuild = sysbuild
+
+        args = []
+        if extra_conf_files:
+            args.append(f"CONF_FILE=\"{';'.join(extra_conf_files)}\"")
+
+        if extra_dtc_overlay_files:
+            args.append(f"DTC_OVERLAY_FILE=\"{';'.join(extra_dtc_overlay_files)}\"")
+
+        if extra_overlay_confs:
+            args.append(f"OVERLAY_CONFIG=\"{';'.join(extra_overlay_confs)}\"")
+        # Build the final argument list
+        args_expanded = ["-D{}".format(a.replace('"', '')) for a in args]
+
+        if self.args.cmake_opts:
+            self.args.cmake_opts.extend(args_expanded)
+        else:
+            self.args.cmake_opts = args_expanded
+
         return found_test_metadata
 
     def _sanity_precheck(self):
