@@ -17,6 +17,7 @@ LOG_MODULE_REGISTER(net_wifi_utils, CONFIG_NET_L2_WIFI_MGMT_LOG_LEVEL);
 #include <zephyr/kernel.h>
 #include <zephyr/net/net_core.h>
 #include <zephyr/net/wifi.h>
+#include <zephyr/net/wifi_mgmt.h>
 
 /* Ensure 'strtok_r' is available even with -std=c99. */
 char *strtok_r(char *str, const char *delim, char **saveptr);
@@ -59,6 +60,43 @@ int wifi_utils_parse_scan_bands(char *scan_bands_str, uint8_t *band_map)
 		*band_map |= (1 << band);
 
 		band_str = strtok_r(NULL, ",", &ctx);
+	}
+
+	return 0;
+}
+
+int wifi_utils_parse_scan_ssids(char *scan_ssids_str,
+				char ssids[][WIFI_SSID_MAX_LEN + 1])
+{
+	char *ssid = NULL;
+	char *ctx = NULL;
+	uint8_t i = 0;
+
+	if (!scan_ssids_str) {
+		return -EINVAL;
+	}
+
+	ssid = strtok_r(scan_ssids_str, ",", &ctx);
+
+	while (ssid) {
+		if (strlen(ssid) > WIFI_SSID_MAX_LEN) {
+			NET_ERR("SSID length (%zu) exceeds maximum value (%d) for SSID %s",
+				strlen(ssid),
+				WIFI_SSID_MAX_LEN,
+				ssid);
+			return -EINVAL;
+		}
+
+		if (i >= WIFI_MGMT_SCAN_SSID_FILT_MAX) {
+			NET_WARN("Exceeded maximum allowed (%d) SSIDs. Ignoring SSIDs %s onwards",
+				 WIFI_MGMT_SCAN_SSID_FILT_MAX,
+				 ssid);
+			break;
+		}
+
+		strcpy(&ssids[i++][0], ssid);
+
+		ssid = strtok_r(NULL, ",", &ctx);
 	}
 
 	return 0;
