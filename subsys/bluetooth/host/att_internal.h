@@ -340,8 +340,6 @@ void bt_att_increment_tx_meta_data_attr_count(struct net_buf *buf, uint16_t attr
 bool bt_att_tx_meta_data_match(const struct net_buf *buf, bt_gatt_complete_func_t func,
 			       const void *user_data, enum bt_att_chan_opt chan_opt);
 
-void bt_att_free_tx_meta_data(const struct net_buf *buf);
-
 #if defined(CONFIG_BT_EATT)
 #define BT_ATT_CHAN_OPT(_params) (_params)->chan_opt
 #else
