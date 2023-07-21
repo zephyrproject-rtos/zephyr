@@ -1236,6 +1236,9 @@ Release Notes:
   status: maintained
   maintainers:
     - carlocaione
+  collaborators:
+    - gdengi
+    - nbalabak
   files:
     - drivers/pm_cpu_ops/
     - include/zephyr/drivers/pm_cpu_ops/
@@ -2288,6 +2291,22 @@ Intel Platforms (Xtensa):
     - dts/bindings/*/intel,adsp*
   labels:
     - "platform: Intel ADSP"
+
+Intel Platforms (Agilex):
+  status: maintained
+  maintainers:
+    - gdengi
+  collaborators:
+    - nbalabak
+    - chongteikheng
+  files:
+    - boards/arm64/intel_*/
+    - soc/arm64/intel_*/
+    - dts/arm64/intel/
+    - samples/boards/intel_adsp/
+    - dts/bindings/*/intel,agilex*
+  labels:
+    - "platform: Intel SoC FPGA Agilex"
 
 NXP Platforms:
   status: maintained
