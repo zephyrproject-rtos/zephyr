@@ -54,6 +54,14 @@ _BUILD_DIR_DETECT_FILE = "CMakeCache.txt"
 # opposite of the device tree inferred dependency.
 _INVERTED_PRIORITY_COMPATIBLES = frozenset()
 
+# List of compatibles for nodes where we don't check the priority.
+_IGNORE_COMPATIBLES = frozenset([
+        # There is no direct dependency between the CDC ACM UART and the USB
+        # device controller, the logical connection is established after USB
+        # device support is enabled.
+        "zephyr,cdc-acm-uart",
+        ])
+
 class Priority:
     """Parses and holds a device initialization priority.
 
@@ -229,6 +237,12 @@ class Validator():
 
         dev_node = self._ord2node[dev_ord]
         dep_node = self._ord2node[dep_ord]
+
+        if dev_node._binding:
+            dev_compat = dev_node._binding.compatible
+            if dev_compat in _IGNORE_COMPATIBLES:
+                self.log.info(f"Ignoring priority: {dev_node._binding.compatible}")
+                return
 
         if dev_node._binding and dep_node._binding:
             dev_compat = dev_node._binding.compatible
