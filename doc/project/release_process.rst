@@ -409,26 +409,3 @@ steps:
 
         #. Send an email to the mailing lists (``announce`` and ``devel``) with a link
            to the release
-
-Listing all closed GitHub issues
-=================================
-
-The release notes for a final release contain the list of GitHub issues that
-have been closed during the development process of that release.
-
-In order to obtain the list of issues closed during the release development
-cycle you can do the following:
-
-#. Look for the last release before the current one and find the day it was
-   tagged::
-
-    $ git show -s --format=%ci v1.10.0
-    tag v1.10.0
-    Tagger: Kumar Gala <kumar.gala@linaro.org>
-
-    Zephyr 1.10.0
-    2017-12-08 13:32:22 -0600
-
-
-#. Use available release tools to list all the issues that have been closed
-   between that date and the day of the release.

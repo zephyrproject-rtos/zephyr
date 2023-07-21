@@ -313,11 +313,5 @@ Documentation
 Tests and Samples
 *****************
 
-Issue Related Items
-*******************
-
 Known Issues
-============
-
-Addressed issues
-================
+************
