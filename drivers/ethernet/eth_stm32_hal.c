@@ -1098,6 +1098,9 @@ void HAL_ETH_RxCpltCallback(ETH_HandleTypeDef *heth_handle)
 
 static void generate_mac(uint8_t *mac_addr)
 {
+	uint8_t unique_device_ID_12_bytes[12];
+	uint32_t result_mac_32_bits;
+
 #if defined(ETH_STM32_RANDOM_MAC)
 	/* Either CONFIG_ETH_STM32_HAL_RANDOM_MAC or device tree property */
 	/* "zephyr,random-mac-address" is set, generate a random mac address */
@@ -1116,7 +1119,10 @@ static void generate_mac(uint8_t *mac_addr)
 	mac_addr[5] = CONFIG_ETH_STM32_HAL_MAC5;
 #else
 	/* Nothing defined by the user, use device id */
-	hwinfo_get_device_id(&mac_addr[3], 3);
+	hwinfo_get_device_id(unique_device_ID_12_bytes, 12);
+	result_mac_32_bits = crc32_ieee((uint8_t *)unique_device_ID_12_bytes, 12);
+	memcpy(&mac_addr[3], &result_mac_32_bits, 3);
+
 #endif /* NODE_HAS_VALID_MAC_ADDR(DT_DRV_INST(0))) */
 #endif
 }
