@@ -10,6 +10,12 @@
 #include "spi_context.h"
 #include "stm32_spi_iface.h"
 
+#ifdef ZTEST_UNITTEST
+#define DT_HAS_COMPAT_STATUS_OKAY(...) 0
+#else
+#include <stm32_ll_spi.h>
+#endif /* ZTEST_UNITTEST */
+
 typedef void (*irq_config_func_t)(const struct device *port);
 
 /* This symbol takes the value 1 if one of the device instances */

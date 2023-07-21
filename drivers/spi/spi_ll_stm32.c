@@ -6,28 +6,50 @@
 
 #define DT_DRV_COMPAT st_stm32_spi
 
+#ifdef ZTEST_UNITTEST
+#include <zephyr/ztest.h>
+
+#define LOG_ERR(...)
+#define LOG_DBG(...)
+#define STATIC
+
+#define DT_HAS_COMPAT_STATUS_OKAY(...) 0
+
+#else /* ZTEST_UNITTEST */
+
+#define STATIC static
+
 #define LOG_LEVEL CONFIG_SPI_LOG_LEVEL
+
 #include <zephyr/logging/log.h>
+
 LOG_MODULE_REGISTER(spi_ll_stm32);
+
+#include <zephyr/drivers/clock_control/stm32_clock_control.h>
+#endif /* ZTEST_UNITTEST */
 
 #include <zephyr/sys/util.h>
 #include <zephyr/kernel.h>
 
-#include <soc.h>
-#include <stm32_ll_spi.h>
 #include "stm32_spi_iface.h"
 
 #include <errno.h>
 #include <zephyr/drivers/spi.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/toolchain.h>
+#include <zephyr/irq.h>
+#include <zephyr/drivers/clock_control.h>
+
 #ifdef CONFIG_SPI_STM32_DMA
 #include <zephyr/drivers/dma/dma_stm32.h>
 #include <zephyr/drivers/dma.h>
-#endif
-#include <zephyr/drivers/clock_control/stm32_clock_control.h>
-#include <zephyr/drivers/clock_control.h>
-#include <zephyr/irq.h>
+
+// DMA-related functions do not use stm32_spi_iface, so keep including these
+// headers
+#include <soc.h>
+#include <stm32_ll_spi.h>
+
+#endif /* CONFIG_SPI_STM32_DMA */
 
 #include "spi_ll_stm32.h"
 
@@ -445,7 +467,7 @@ static void spi_stm32_isr(const struct device *dev)
 static int spi_stm32_check_clock(const struct spi_stm32_config *cfg,
                                  uint32_t* clock)
 {
-#ifndef CONFIG_ZTEST
+#ifndef ZTEST_UNITTEST
     if (IS_ENABLED(STM32_SPI_DOMAIN_CLOCK_SUPPORT) && (cfg->pclk_len > 1)) {
         if (clock_control_get_rate(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
                        (clock_control_subsys_t) &cfg->pclken[1], clock) < 0) {
@@ -459,7 +481,7 @@ static int spi_stm32_check_clock(const struct spi_stm32_config *cfg,
             return -EIO;
         }
     }
-#endif /* CONFIG_ZTEST */
+#endif /* ZTEST_UNITTEST */
     return 0;
 }
 
@@ -569,7 +591,7 @@ static int spi_stm32_configure(const struct device *dev,
 	return 0;
 }
 
-static int spi_stm32_release(const struct device *dev,
+STATIC int spi_stm32_release(const struct device *dev,
 			     const struct spi_config *config)
 {
 	struct spi_stm32_data *data = dev->data;
@@ -864,7 +886,7 @@ end:
 }
 #endif /* CONFIG_SPI_STM32_DMA */
 
-static int spi_stm32_transceive(const struct device *dev,
+STATIC int spi_stm32_transceive(const struct device *dev,
 				const struct spi_config *config,
 				const struct spi_buf_set *tx_bufs,
 				const struct spi_buf_set *rx_bufs)
@@ -893,6 +915,7 @@ static int spi_stm32_transceive_async(const struct device *dev,
 }
 #endif /* CONFIG_SPI_ASYNC */
 
+#ifndef ZTEST_UNITTEST
 static const struct spi_driver_api api_funcs = {
 	.transceive = spi_stm32_transceive,
 #ifdef CONFIG_SPI_ASYNC
@@ -1085,3 +1108,4 @@ DEVICE_DT_INST_DEFINE(id, &spi_stm32_init, NULL,			\
 STM32_SPI_IRQ_HANDLER(id)
 
 DT_INST_FOREACH_STATUS_OKAY(STM32_SPI_INIT)
+#endif /* ZTEST_UNITTEST */

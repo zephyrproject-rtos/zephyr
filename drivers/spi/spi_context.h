@@ -16,6 +16,12 @@
 #include <zephyr/drivers/spi.h>
 #include <zephyr/kernel.h>
 
+#ifdef ZTEST_UNITTEST
+#define CONFIG_SPI_COMPLETION_TIMEOUT_TOLERANCE 0
+#define LOG_ERR(...)
+#define LOG_DBG(...)
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
