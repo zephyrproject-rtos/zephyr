@@ -442,24 +442,34 @@ static void spi_stm32_isr(const struct device *dev)
 }
 #endif
 
+static int spi_stm32_check_clock(const struct spi_stm32_config *cfg,
+                                 uint32_t* clock)
+{
+#ifndef CONFIG_ZTEST
+    if (IS_ENABLED(STM32_SPI_DOMAIN_CLOCK_SUPPORT) && (cfg->pclk_len > 1)) {
+        if (clock_control_get_rate(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
+                       (clock_control_subsys_t) &cfg->pclken[1], clock) < 0) {
+            LOG_ERR("Failed call clock_control_get_rate(pclk[1])");
+            return -EIO;
+        }
+    } else {
+        if (clock_control_get_rate(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
+                       (clock_control_subsys_t) &cfg->pclken[0], clock) < 0) {
+            LOG_ERR("Failed call clock_control_get_rate(pclk[0])");
+            return -EIO;
+        }
+    }
+#endif /* CONFIG_ZTEST */
+    return 0;
+}
+
 static int spi_stm32_configure(const struct device *dev,
 			       const struct spi_config *config)
 {
 	const struct spi_stm32_config *cfg = dev->config;
 	struct spi_stm32_data *data = dev->data;
-	const uint32_t scaler[] = {
-		LL_SPI_BAUDRATEPRESCALER_DIV2,
-		LL_SPI_BAUDRATEPRESCALER_DIV4,
-		LL_SPI_BAUDRATEPRESCALER_DIV8,
-		LL_SPI_BAUDRATEPRESCALER_DIV16,
-		LL_SPI_BAUDRATEPRESCALER_DIV32,
-		LL_SPI_BAUDRATEPRESCALER_DIV64,
-		LL_SPI_BAUDRATEPRESCALER_DIV128,
-		LL_SPI_BAUDRATEPRESCALER_DIV256
-	};
-	SPI_TypeDef *spi = cfg->spi;
+	spi_stm32_t *spi = cfg->spi;
 	uint32_t clock;
-	int br;
 
 	if (spi_context_configured(&data->ctx, config)) {
 		/* Nothing to do */
@@ -471,102 +481,82 @@ static int spi_stm32_configure(const struct device *dev,
 		return -ENOTSUP;
 	}
 
+	int rc = 0;
 	/* configure the frame format Motorola (default) or TI */
 	if ((config->operation & SPI_FRAME_FORMAT_TI) == SPI_FRAME_FORMAT_TI) {
-#ifdef LL_SPI_PROTOCOL_TI
-		LL_SPI_SetStandard(spi, LL_SPI_PROTOCOL_TI);
-#else
-		LOG_ERR("Frame Format TI not supported");
-		/* on stm32F1 or some stm32L1 (cat1,2) without SPI_CR2_FRF */
-		return -ENOTSUP;
-#endif
-#if defined(LL_SPI_PROTOCOL_MOTOROLA) && defined(SPI_CR2_FRF)
-	} else {
-		LL_SPI_SetStandard(spi, LL_SPI_PROTOCOL_MOTOROLA);
-#endif
-}
-
-	if (IS_ENABLED(STM32_SPI_DOMAIN_CLOCK_SUPPORT) && (cfg->pclk_len > 1)) {
-		if (clock_control_get_rate(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
-					   (clock_control_subsys_t) &cfg->pclken[1], &clock) < 0) {
-			LOG_ERR("Failed call clock_control_get_rate(pclk[1])");
-			return -EIO;
+		rc = ll_func_set_standard(spi, STM32_SPI_STANDARD_TI);
+		if (rc < 0) {
+			LOG_ERR("Frame Format TI not supported");
+			return -ENOTSUP;
 		}
 	} else {
-		if (clock_control_get_rate(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
-					   (clock_control_subsys_t) &cfg->pclken[0], &clock) < 0) {
-			LOG_ERR("Failed call clock_control_get_rate(pclk[0])");
-			return -EIO;
-		}
+		ll_func_set_standard(spi, STM32_SPI_STANDARD_MOTOROLA);
 	}
 
-	for (br = 1 ; br <= ARRAY_SIZE(scaler) ; ++br) {
-		uint32_t clk = clock >> br;
-
-		if (clk <= config->frequency) {
-			break;
-		}
+	rc = spi_stm32_check_clock(cfg, &clock);
+	if (rc < 0) {
+		return rc;
 	}
 
-	if (br > ARRAY_SIZE(scaler)) {
-		LOG_ERR("Unsupported frequency %uHz, max %uHz, min %uHz",
-			    config->frequency,
-			    clock >> 1,
-			    clock >> ARRAY_SIZE(scaler));
-		return -EINVAL;
-	}
+	ll_func_enable_spi(spi, false);
 
-	LL_SPI_Disable(spi);
-	LL_SPI_SetBaudRatePrescaler(spi, scaler[br - 1]);
+	rc = ll_func_set_baudrate_prescaler(spi, clock, config->frequency);
+	if (rc != 0) {
+		LOG_ERR("Unsupported frequency %uHz, with periph. clk. freq. %uHz",
+				config->frequency,
+				clock);
+		return rc;
+	}
 
 	if (SPI_MODE_GET(config->operation) & SPI_MODE_CPOL) {
-		LL_SPI_SetClockPolarity(spi, LL_SPI_POLARITY_HIGH);
+		ll_func_set_polarity(spi, STM32_SPI_CPOL_1);
 	} else {
-		LL_SPI_SetClockPolarity(spi, LL_SPI_POLARITY_LOW);
+		ll_func_set_polarity(spi, STM32_SPI_CPOL_0);
 	}
 
 	if (SPI_MODE_GET(config->operation) & SPI_MODE_CPHA) {
-		LL_SPI_SetClockPhase(spi, LL_SPI_PHASE_2EDGE);
+		ll_func_set_clock_phase(spi, STM32_SPI_CPHA_1);
 	} else {
-		LL_SPI_SetClockPhase(spi, LL_SPI_PHASE_1EDGE);
+		ll_func_set_clock_phase(spi, STM32_SPI_CPHA_0);
 	}
 
-	LL_SPI_SetTransferDirection(spi, LL_SPI_FULL_DUPLEX);
+	ll_func_set_transfer_direction_full_duplex(spi);
 
 	if (config->operation & SPI_TRANSFER_LSB) {
-		LL_SPI_SetTransferBitOrder(spi, LL_SPI_LSB_FIRST);
+		ll_func_set_bit_order(spi, STM32_SPI_LSB_FIRST);
 	} else {
-		LL_SPI_SetTransferBitOrder(spi, LL_SPI_MSB_FIRST);
+		ll_func_set_bit_order(spi, STM32_SPI_MSB_FIRST);
 	}
 
-	LL_SPI_DisableCRC(spi);
+	ll_func_disable_crc(spi);
 
 	if (spi_cs_is_gpio(config) || !IS_ENABLED(CONFIG_SPI_STM32_USE_HW_SS)) {
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
 		if (SPI_OP_MODE_GET(config->operation) == SPI_OP_MODE_MASTER) {
-			if (LL_SPI_GetNSSPolarity(spi) == LL_SPI_NSS_POLARITY_LOW)
-				LL_SPI_SetInternalSSLevel(spi, LL_SPI_SS_LEVEL_HIGH);
+			if (ll_func_is_nss_polarity_low(spi)) {
+				ll_func_set_internal_ss_mode_high(spi);
+			}
 		}
 #endif
-		LL_SPI_SetNSSMode(spi, LL_SPI_NSS_SOFT);
+		ll_func_set_nss_mode(spi, STM32_SPI_NSS_SOFT);
 	} else {
 		if (config->operation & SPI_OP_MODE_SLAVE) {
-			LL_SPI_SetNSSMode(spi, LL_SPI_NSS_HARD_INPUT);
+			ll_func_set_nss_mode(spi, STM32_SPI_NSS_HARD_INPUT);
 		} else {
-			LL_SPI_SetNSSMode(spi, LL_SPI_NSS_HARD_OUTPUT);
+			ll_func_set_nss_mode(spi, STM32_SPI_NSS_HARD_OUTPUT);
 		}
 	}
 
 	if (config->operation & SPI_OP_MODE_SLAVE) {
-		LL_SPI_SetMode(spi, LL_SPI_MODE_SLAVE);
+		ll_func_set_mode(spi, STM32_SPI_SLAVE);
 	} else {
-		LL_SPI_SetMode(spi, LL_SPI_MODE_MASTER);
+		ll_func_set_mode(spi, STM32_SPI_MASTER);
 	}
 
 	if (SPI_WORD_SIZE_GET(config->operation) ==  8) {
-		LL_SPI_SetDataWidth(spi, LL_SPI_DATAWIDTH_8BIT);
+		ll_func_set_data_width(spi, STM32_SPI_DATA_WIDTH_8);
 	} else {
-		LL_SPI_SetDataWidth(spi, LL_SPI_DATAWIDTH_16BIT);
+		ll_func_set_data_width(spi, STM32_SPI_DATA_WIDTH_16);
 	}
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_spi_fifo)
@@ -575,14 +565,6 @@ static int spi_stm32_configure(const struct device *dev,
 
 	/* At this point, it's mandatory to set this on the context! */
 	data->ctx.config = config;
-
-	LOG_DBG("Installed config %p: freq %uHz (div = %u),"
-		    " mode %u/%u/%u, slave %u",
-		    config, clock >> br, 1 << br,
-		    (SPI_MODE_GET(config->operation) & SPI_MODE_CPOL) ? 1 : 0,
-		    (SPI_MODE_GET(config->operation) & SPI_MODE_CPHA) ? 1 : 0,
-		    (SPI_MODE_GET(config->operation) & SPI_MODE_LOOP) ? 1 : 0,
-		    config->slave);
 
 	return 0;
 }

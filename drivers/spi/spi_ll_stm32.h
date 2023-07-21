@@ -125,27 +125,4 @@ static inline void ll_func_enable_int_errors(SPI_TypeDef *spi)
 #endif /* st_stm32h7_spi */
 }
 
-/* Header is compiled first, this switch avoid the compiler to lookup for
- * non-existing LL FIFO functions for SoC without SPI FIFO
- */
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_spi_fifo)
-static inline void ll_func_set_fifo_threshold_8bit(SPI_TypeDef *spi)
-{
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
-	LL_SPI_SetFIFOThreshold(spi, LL_SPI_FIFO_TH_01DATA);
-#else
-	LL_SPI_SetRxFIFOThreshold(spi, LL_SPI_RX_FIFO_TH_QUARTER);
-#endif /* st_stm32h7_spi */
-}
-
-static inline void ll_func_set_fifo_threshold_16bit(SPI_TypeDef *spi)
-{
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
-	LL_SPI_SetFIFOThreshold(spi, LL_SPI_FIFO_TH_02DATA);
-#else
-	LL_SPI_SetRxFIFOThreshold(spi, LL_SPI_RX_FIFO_TH_HALF);
-#endif /* st_stm32h7_spi */
-}
-#endif /* st_stm32_spi_fifo */
-
 #endif	/* ZEPHYR_DRIVERS_SPI_SPI_LL_STM32_H_ */
