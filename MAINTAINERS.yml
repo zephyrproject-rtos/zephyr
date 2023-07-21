@@ -2516,7 +2516,7 @@ TI SimpleLink Platforms:
   labels:
     - "platform: TI SimpleLink"
 
-TI Sitara Platforms:
+TI K3 Platforms:
   status: maintained
   maintainers:
     - vaishnavachath
@@ -2525,9 +2525,9 @@ TI Sitara Platforms:
   files:
     - boards/arm64/phycore*/
     - dts/arm64/ti/
-    - soc/arm64/ti_sitara/
+    - soc/arm64/ti_k3/
   labels:
-    - "platform: TI Sitara"
+    - "platform: TI K3"
 
 Xilinx Platforms:
   status: odd fixes
