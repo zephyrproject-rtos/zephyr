@@ -630,7 +630,9 @@ char *z_setup_new_thread(struct k_thread *new_thread,
 	 * still cached!
 	 */
 	__ASSERT_NO_MSG(arch_mem_coherent(new_thread));
+#ifndef CONFIG_DYNAMIC_THREAD
 	__ASSERT_NO_MSG(!arch_mem_coherent(stack));
+#endif
 #endif
 
 	arch_new_thread(new_thread, stack, stack_ptr, entry, p1, p2, p3);
