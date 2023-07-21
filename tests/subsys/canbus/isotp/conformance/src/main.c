@@ -15,6 +15,7 @@
 #define DATA_SIZE_CF      7
 #define DATA_SIZE_SF_EXT  6
 #define DATA_SIZE_FF      6
+#define DATA_SIZE_FC      3
 #define CAN_DL            8
 #define DATA_SEND_LENGTH  272
 #define SF_PCI_TYPE       0
@@ -37,13 +38,6 @@
 #define STMIN_VAL_1        5
 #define STMIN_VAL_2        50
 #define STMIN_UPPER_TOLERANCE 5
-
-#if defined(CONFIG_ISOTP_ENABLE_TX_PADDING) || \
-				defined(CONFIG_ISOTP_ENABLE_TX_PADDING)
-#define DATA_SIZE_FC       CAN_DL
-#else
-#define DATA_SIZE_FC       3
-#endif
 
 #define BS_TIMEOUT_UPPER_MS   1100
 #define BS_TIMEOUT_LOWER_MS   1000
@@ -258,17 +252,12 @@ static void check_frame_series(struct frame_desired *frames, size_t length,
 		zassert_equal(ret, 0, "Timeout waiting for msg nr %d. ret: %d",
 			      i, ret);
 
-#if !defined(CONFIG_ISOTP_REQUIRE_RX_PADDING) && \
-					!defined(CONFIG_ISOTP_ENABLE_TX_PADDING)
 		zassert_equal(frame.dlc, desired->length,
 			      "DLC of frame nr %d differ. Desired: %d, Got: %d",
 			      i, desired->length, frame.dlc);
-#endif
 
-#if !defined(CONFIG_ISOTP_ENABLE_TX_PADDING)
 		ret = check_data(frame.data, desired->data, desired->length);
 		zassert_equal(ret, 0, "Data differ");
-#endif
 
 		desired++;
 	}
@@ -294,7 +283,7 @@ static int add_rx_msgq(uint32_t id, uint32_t mask)
 }
 
 static void prepare_cf_frames(struct frame_desired *frames, size_t frames_cnt,
-			      const uint8_t *data, size_t data_len)
+			      const uint8_t *data, size_t data_len, bool tx)
 {
 	int i;
 	const uint8_t *data_ptr = data;
@@ -306,9 +295,13 @@ static void prepare_cf_frames(struct frame_desired *frames, size_t frames_cnt,
 		memcpy(&des_frames[i].data[1], data_ptr, DATA_SIZE_CF);
 
 		if (remaining_length < DATA_SIZE_CF) {
-#ifndef CONFIG_ISOTP_ENABLE_TX_PADDING
-			frames[i].length = remaining_length + 1;
-#endif
+			if ((IS_ENABLED(CONFIG_ISOTP_ENABLE_TX_PADDING) && tx) ||
+			    (IS_ENABLED(CONFIG_ISOTP_REQUIRE_RX_PADDING) && !tx)) {
+				memset(&des_frames[i].data[remaining_length + 1], 0xCC,
+				       CAN_DL - remaining_length - 1);
+			} else {
+				frames[i].length = remaining_length + 1;
+			}
 			remaining_length = 0;
 		}
 
@@ -497,10 +490,15 @@ ZTEST(isotp_conformance, test_send_data)
 	fc_frame.data[0] = FC_PCI_BYTE_1(FC_PCI_CTS);
 	fc_frame.data[1] = FC_PCI_BYTE_2(0);
 	fc_frame.data[2] = FC_PCI_BYTE_3(0);
+#ifdef CONFIG_ISOTP_REQUIRE_RX_PADDING
+	memset(&fc_frame.data[3], 0xCC, CAN_DL - 3);
+	fc_frame.length = CAN_DL;
+#else
 	fc_frame.length = DATA_SIZE_FC;
+#endif
 
 	prepare_cf_frames(des_frames, ARRAY_SIZE(des_frames), data_ptr,
-			  remaining_length);
+			  remaining_length, true);
 
 	filter_id = add_rx_msgq(rx_addr.std_id, CAN_STD_ID_MASK);
 	zassert_true((filter_id >= 0), "Negative filter number [%d]",
@@ -536,10 +534,15 @@ ZTEST(isotp_conformance, test_send_data_blocks)
 	fc_frame.data[0] = FC_PCI_BYTE_1(FC_PCI_CTS);
 	fc_frame.data[1] = FC_PCI_BYTE_2(fc_opts.bs);
 	fc_frame.data[2] = FC_PCI_BYTE_3(0);
+#ifdef CONFIG_ISOTP_REQUIRE_RX_PADDING
+	memset(&fc_frame.data[3], 0xCC, CAN_DL - 3);
+	fc_frame.length = CAN_DL;
+#else
 	fc_frame.length = DATA_SIZE_FC;
+#endif
 
 	prepare_cf_frames(des_frames, ARRAY_SIZE(des_frames), data_ptr,
-			  remaining_length);
+			  remaining_length, true);
 
 	remaining_length = DATA_SEND_LENGTH;
 
@@ -600,10 +603,15 @@ ZTEST(isotp_conformance, test_receive_data)
 	fc_frame.data[0] = FC_PCI_BYTE_1(FC_PCI_CTS);
 	fc_frame.data[1] = FC_PCI_BYTE_2(fc_opts_single.bs);
 	fc_frame.data[2] = FC_PCI_BYTE_3(fc_opts_single.stmin);
+#ifdef CONFIG_ISOTP_ENABLE_TX_PADDING
+	memset(&fc_frame.data[3], 0xCC, CAN_DL - 3);
+	fc_frame.length = CAN_DL;
+#else
 	fc_frame.length = DATA_SIZE_FC;
+#endif
 
 	prepare_cf_frames(des_frames, ARRAY_SIZE(des_frames), data_ptr,
-			  remaining_length);
+			  remaining_length, false);
 
 	filter_id = add_rx_msgq(tx_addr.std_id, CAN_STD_ID_MASK);
 
@@ -644,10 +652,15 @@ ZTEST(isotp_conformance, test_receive_data_blocks)
 	fc_frame.data[0] = FC_PCI_BYTE_1(FC_PCI_CTS);
 	fc_frame.data[1] = FC_PCI_BYTE_2(fc_opts.bs);
 	fc_frame.data[2] = FC_PCI_BYTE_3(fc_opts.stmin);
+#ifdef CONFIG_ISOTP_ENABLE_TX_PADDING
+	memset(&fc_frame.data[3], 0xCC, CAN_DL - 3);
+	fc_frame.length = CAN_DL;
+#else
 	fc_frame.length = DATA_SIZE_FC;
+#endif
 
 	prepare_cf_frames(des_frames, ARRAY_SIZE(des_frames), data_ptr,
-			  remaining_length);
+			  remaining_length, false);
 
 	remaining_frames = DIV_ROUND_UP(remaining_length, DATA_SIZE_CF);
 
@@ -695,7 +708,12 @@ ZTEST(isotp_conformance, test_send_timeouts)
 	fc_cts_frame.data[0] = FC_PCI_BYTE_1(FC_PCI_CTS);
 	fc_cts_frame.data[1] = FC_PCI_BYTE_2(fc_opts.bs);
 	fc_cts_frame.data[2] = FC_PCI_BYTE_3(0);
+#ifdef CONFIG_ISOTP_REQUIRE_RX_PADDING
+	memset(&fc_cts_frame.data[3], 0xCC, CAN_DL - 3);
+	fc_cts_frame.length = CAN_DL;
+#else
 	fc_cts_frame.length = DATA_SIZE_FC;
+#endif
 
 	/* Test timeout for first FC*/
 	start_time = k_uptime_get_32();
@@ -801,7 +819,12 @@ ZTEST(isotp_conformance, test_stmin)
 	fc_frame.data[0] = FC_PCI_BYTE_1(FC_PCI_CTS);
 	fc_frame.data[1] = FC_PCI_BYTE_2(2);
 	fc_frame.data[2] = FC_PCI_BYTE_3(STMIN_VAL_1);
+#ifdef CONFIG_ISOTP_REQUIRE_RX_PADDING
+	memset(&fc_frame.data[3], 0xCC, CAN_DL - 3);
+	fc_frame.length = CAN_DL;
+#else
 	fc_frame.length = DATA_SIZE_FC;
+#endif
 
 	filter_id = add_rx_msgq(rx_addr.std_id, CAN_STD_ID_MASK);
 	zassert_true((filter_id >= 0), "Negative filter number [%d]",
@@ -856,7 +879,12 @@ ZTEST(isotp_conformance, test_receiver_fc_errors)
 	fc_frame.data[0] = FC_PCI_BYTE_1(FC_PCI_CTS);
 	fc_frame.data[1] = FC_PCI_BYTE_2(fc_opts.bs);
 	fc_frame.data[2] = FC_PCI_BYTE_3(fc_opts.stmin);
+#ifdef CONFIG_ISOTP_ENABLE_TX_PADDING
+	memset(&fc_frame.data[3], 0xCC, CAN_DL - 3);
+	fc_frame.length = CAN_DL;
+#else
 	fc_frame.length = DATA_SIZE_FC;
+#endif
 
 	filter_id = add_rx_msgq(tx_addr.std_id, CAN_STD_ID_MASK);
 	zassert_true((filter_id >= 0), "Negative filter number [%d]",
@@ -871,7 +899,7 @@ ZTEST(isotp_conformance, test_receiver_fc_errors)
 	check_frame_series(&fc_frame, 1, &frame_msgq);
 	prepare_cf_frames(des_frames, ARRAY_SIZE(des_frames),
 			  random_data + DATA_SIZE_FF,
-			  sizeof(random_data) - DATA_SIZE_FF);
+			  sizeof(random_data) - DATA_SIZE_FF, false);
 	/* SN should be 2 but is set to 3 for this test */
 	des_frames[1].data[0] = CF_PCI_BYTE_1 | (3 & 0x0F);
 	send_frame_series(des_frames, fc_opts.bs, rx_addr.std_id);
@@ -882,6 +910,22 @@ ZTEST(isotp_conformance, test_receiver_fc_errors)
 	ret = isotp_recv(&recv_ctx, data_buf, sizeof(data_buf), K_MSEC(200));
 	zassert_equal(ret, ISOTP_N_WRONG_SN,
 		      "Expected wrong SN but got %d", ret);
+
+	/* buffer overflow */
+	ff_frame.data[0] = FF_PCI_BYTE_1(0xFFF);
+	ff_frame.data[1] = FF_PCI_BYTE_2(0xFFF);
+
+	fc_frame.data[0] = FC_PCI_BYTE_1(FC_PCI_OVFLW);
+	fc_frame.data[1] = FC_PCI_BYTE_2(0);
+	fc_frame.data[2] = FC_PCI_BYTE_3(0);
+
+	isotp_unbind(&recv_ctx);
+	ret = isotp_bind(&recv_ctx, can_dev, &rx_addr, &tx_addr,
+			 &fc_opts_single, K_NO_WAIT);
+	zassert_equal(ret, ISOTP_N_OK, "Binding failed [%d]", ret);
+
+	send_frame_series(&ff_frame, 1, rx_addr.std_id);
+	check_frame_series(&fc_frame, 1, &frame_msgq);
 
 	can_remove_rx_filter(can_dev, filter_id);
 	k_msgq_cleanup(&frame_msgq);
@@ -904,7 +948,12 @@ ZTEST(isotp_conformance, test_sender_fc_errors)
 	fc_frame.data[0] = FC_PCI_BYTE_1(3);
 	fc_frame.data[1] = FC_PCI_BYTE_2(fc_opts.bs);
 	fc_frame.data[2] = FC_PCI_BYTE_3(fc_opts.stmin);
+#ifdef CONFIG_ISOTP_REQUIRE_RX_PADDING
+	memset(&fc_frame.data[3], 0xCC, CAN_DL - 3);
+	fc_frame.length = CAN_DL;
+#else
 	fc_frame.length = DATA_SIZE_FC;
+#endif
 
 	k_sem_reset(&send_compl_sem);
 	ret = isotp_send(&send_ctx, can_dev, random_data, DATA_SEND_LENGTH,
@@ -918,18 +967,6 @@ ZTEST(isotp_conformance, test_sender_fc_errors)
 	zassert_equal(ret, 0, "Send complete callback not called");
 
 	/* buffer overflow */
-	can_remove_rx_filter(can_dev, filter_id);
-	ret = isotp_bind(&recv_ctx, can_dev, &tx_addr, &rx_addr,
-			 &fc_opts_single, K_NO_WAIT);
-	zassert_equal(ret, ISOTP_N_OK, "Binding failed [%d]", ret);
-
-	ret = isotp_send(&send_ctx, can_dev, random_data, 5*1024,
-			 &tx_addr, &rx_addr, NULL, NULL);
-	zassert_equal(ret, ISOTP_N_BUFFER_OVERFLW,
-		      "Expected overflow but got %d", ret);
-	isotp_unbind(&recv_ctx);
-	filter_id = add_rx_msgq(tx_addr.std_id, CAN_STD_ID_MASK);
-
 	k_sem_reset(&send_compl_sem);
 	ret = isotp_send(&send_ctx, can_dev, random_data, DATA_SEND_LENGTH,
 			 &tx_addr, &rx_addr, send_complete_cb,
