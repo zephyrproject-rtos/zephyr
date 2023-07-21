@@ -13,6 +13,7 @@ LOG_MODULE_REGISTER(net_wifi_mgmt, CONFIG_NET_L2_WIFI_MGMT_LOG_LEVEL);
 #include <zephyr/net/net_core.h>
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/wifi_mgmt.h>
+#include <zephyr/net/wifi_utils.h>
 #ifdef CONFIG_WIFI_NM
 #include <zephyr/net/wifi_nm.h>
 #endif /* CONFIG_WIFI_NM */
@@ -128,6 +129,15 @@ static int wifi_scan(uint32_t mgmt_request, struct net_if *iface,
 
 		if (!params->dwell_time_passive) {
 			params->dwell_time_passive = CONFIG_WIFI_MGMT_SCAN_DWELL_TIME_PASSIVE;
+		}
+
+		if (!strlen(params->ssids[0])) {
+			if (wifi_utils_parse_scan_ssids(CONFIG_WIFI_MGMT_SCAN_SSID_FILT,
+							params->ssids)) {
+				NET_ERR("Incorrect value(s) in CONFIG_WIFI_MGMT_SCAN_SSID_FILT: %s",
+						CONFIG_WIFI_MGMT_SCAN_SSID_FILT);
+				return -EINVAL;
+			}
 		}
 	}
 
