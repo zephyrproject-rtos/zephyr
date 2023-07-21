@@ -20,10 +20,16 @@ LOG_MODULE_REGISTER(INA237, CONFIG_SENSOR_LOG_LEVEL);
 #define INA237_CAL_SCALING 8192ULL
 
 /** @brief The LSB value for the bus voltage register, in microvolts/LSB. */
-#define INA237_BUS_VOLTAGE_UV_LSB 3125
+#define INA237_BUS_VOLTAGE_TO_uV(x) ((x) * 3125U)
 
 /** @brief Power scaling (scaled by 10) */
 #define INA237_POWER_SCALING 2
+
+/**
+ * @brief Scale die temperture from 0.125 degC/bit to micro-degrees C
+ *  Note that the bottom 4 bits are reserved and are always zero.
+ */
+#define INA237_DIETEMP_TO_uDegC(x) (((x) >> 4) * 125000)
 
 static int ina237_channel_get(const struct device *dev, enum sensor_channel chan,
 			      struct sensor_value *val)
@@ -31,11 +37,12 @@ static int ina237_channel_get(const struct device *dev, enum sensor_channel chan
 	struct ina237_data *data = dev->data;
 	const struct ina237_config *config = dev->config;
 	uint32_t bus_uv, current_ua, power_uw;
-	int32_t sign;
+	int32_t temp_uDegC;
+	int32_t sign = 1;
 
 	switch (chan) {
 	case SENSOR_CHAN_VOLTAGE:
-		bus_uv = data->bus_voltage * INA237_BUS_VOLTAGE_UV_LSB;
+		bus_uv = INA237_BUS_VOLTAGE_TO_uV(data->bus_voltage);
 
 		val->val1 = bus_uv / 1000000U;
 		val->val2 = bus_uv % 1000000U;
@@ -65,6 +72,17 @@ static int ina237_channel_get(const struct device *dev, enum sensor_channel chan
 		/* convert to fractional watts */
 		val->val1 = (int32_t)(power_uw / 1000000U);
 		val->val2 = (int32_t)(power_uw % 1000000U);
+		break;
+
+	case SENSOR_CHAN_DIE_TEMP:
+		temp_uDegC = INA237_DIETEMP_TO_uDegC(data->die_temp);
+
+		val->val1 = temp_uDegC / 1000000L;
+		val->val2 = abs(temp_uDegC) % 1000000L;
+
+		if (temp_uDegC < 0) {
+			val->val2 = -val->val2;
+		}
 		break;
 
 	default:
@@ -155,6 +173,14 @@ static int ina237_read_data(const struct device *dev)
 		}
 	}
 
+	if ((data->chan == SENSOR_CHAN_ALL) || (data->chan == SENSOR_CHAN_DIE_TEMP)) {
+		ret = ina23x_reg_read_16(&config->bus, INA237_REG_DIETEMP, &data->die_temp);
+		if (ret < 0) {
+			LOG_ERR("Failed to read temperature");
+			return ret;
+		}
+	}
+
 	return 0;
 }
 
@@ -169,7 +195,7 @@ static int ina237_sample_fetch(const struct device *dev, enum sensor_channel cha
 	struct ina237_data *data = dev->data;
 
 	if (chan != SENSOR_CHAN_ALL && chan != SENSOR_CHAN_VOLTAGE && chan != SENSOR_CHAN_CURRENT &&
-	    chan != SENSOR_CHAN_POWER) {
+	    chan != SENSOR_CHAN_POWER && chan != SENSOR_CHAN_DIE_TEMP) {
 		return -ENOTSUP;
 	}
 

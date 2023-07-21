@@ -1,0 +1,17 @@
+/* Copyright (c) 2023 North River Systems Ltd
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/sensor/ina237.h>
+
+&i2c0 {
+	status = "okay";
+
+	ina237_default_test: ina237@40 {
+		compatible = "ti,ina237";
+		reg = <0x40>;
+		rshunt-micro-ohms = <400>;
+		current-lsb-microamps = <123>;
+		status = "okay";
+	};
+};
