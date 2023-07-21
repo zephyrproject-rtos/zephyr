@@ -2761,11 +2761,11 @@ static uint8_t notify_cb(const struct bt_gatt_attr *attr, uint16_t handle,
 
 		bt_conn_unref(conn);
 
+		data->err = err;
+
 		if (err < 0) {
 			return BT_GATT_ITER_STOP;
 		}
-
-		data->err = 0;
 	}
 
 	return BT_GATT_ITER_CONTINUE;
