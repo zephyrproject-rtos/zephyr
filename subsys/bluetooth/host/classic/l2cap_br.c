@@ -214,6 +214,8 @@ static bool l2cap_br_chan_add(struct bt_conn *conn, struct bt_l2cap_chan *chan,
 		return false;
 	}
 
+	k_fifo_init(&ch->_pdu_tx_queue);
+
 	/* All dynamic channels have the destroy handler which makes sure that
 	 * the RTX work structure is properly released with a cancel sync.
 	 * The fixed signal channel is only removed when disconnected and the
@@ -239,18 +241,71 @@ static uint8_t l2cap_br_get_ident(void)
 	return ident;
 }
 
+static void raise_data_ready(struct bt_l2cap_br_chan *br_chan)
+{
+	if (!atomic_set(&br_chan->_pdu_ready_lock, 1)) {
+		sys_slist_append(&br_chan->chan.conn->l2cap_data_ready,
+				 &br_chan->_pdu_ready);
+		LOG_DBG("data ready raised");
+	} else {
+		LOG_DBG("data ready already");
+	}
+
+	bt_conn_data_ready(br_chan->chan.conn);
+}
+
+static void lower_data_ready(struct bt_l2cap_br_chan *br_chan)
+{
+	struct bt_conn *conn = br_chan->chan.conn;
+	sys_snode_t *s = sys_slist_get(&conn->l2cap_data_ready);
+
+	__ASSERT_NO_MSG(s == &br_chan->_pdu_ready);
+	(void)s;
+
+	atomic_t old = atomic_set(&br_chan->_pdu_ready_lock, 0);
+
+	__ASSERT_NO_MSG(old);
+	(void)old;
+}
+
+static void cancel_data_ready(struct bt_l2cap_br_chan *br_chan)
+{
+	struct bt_conn *conn = br_chan->chan.conn;
+
+	sys_slist_find_and_remove(&conn->l2cap_data_ready,
+				  &br_chan->_pdu_ready);
+
+	atomic_set(&br_chan->_pdu_ready_lock, 0);
+}
+
 int bt_l2cap_br_send_cb(struct bt_conn *conn, uint16_t cid, struct net_buf *buf,
 			bt_conn_tx_cb_t cb, void *user_data)
 {
 	struct bt_l2cap_hdr *hdr;
+	struct bt_l2cap_chan *ch = bt_l2cap_br_lookup_tx_cid(conn, cid);
+	struct bt_l2cap_br_chan *br_chan = CONTAINER_OF(ch, struct bt_l2cap_br_chan, chan);
 
-	LOG_DBG("conn %p cid %u len %zu", conn, cid, buf->len);
+	LOG_DBG("chan %p buf %p len %zu", br_chan, buf, buf->len);
 
 	hdr = net_buf_push(buf, sizeof(*hdr));
 	hdr->len = sys_cpu_to_le16(buf->len - sizeof(*hdr));
 	hdr->cid = sys_cpu_to_le16(cid);
 
-	return bt_conn_send_cb(conn, buf, cb, user_data);
+	if (buf->user_data_size < sizeof(struct closure)) {
+		LOG_DBG("not enough room in user_data %d < %d pool %u",
+			buf->user_data_size,
+			CONFIG_BT_CONN_TX_USER_DATA_SIZE,
+			buf->pool_id);
+		return -EINVAL;
+	}
+
+	LOG_DBG("push PDU: cb %p userdata %p", cb, user_data);
+
+	make_closure(buf->user_data, cb, user_data);
+	net_buf_put(&br_chan->_pdu_tx_queue, buf);
+	raise_data_ready(br_chan);
+
+	return 0;
 }
 
 /* Send the buffer and release it in case of failure.
@@ -285,6 +340,63 @@ static void l2cap_br_chan_send_req(struct bt_l2cap_br_chan *chan,
 	 * link is lost.
 	 */
 	k_work_reschedule(&chan->rtx_work, timeout);
+}
+
+/* L2CAP channel wants to send a PDU */
+static bool chan_has_data(struct bt_l2cap_br_chan *br_chan)
+{
+	return !k_fifo_is_empty(&br_chan->_pdu_tx_queue);
+}
+
+struct net_buf *l2cap_br_data_pull(struct bt_conn *conn, size_t amount)
+{
+	const sys_snode_t *pdu_ready = sys_slist_peek_head(&conn->l2cap_data_ready);
+
+	if (!pdu_ready) {
+		LOG_DBG("nothing to send on this conn");
+		return NULL;
+	}
+
+	struct bt_l2cap_br_chan *br_chan = CONTAINER_OF(pdu_ready,
+							struct bt_l2cap_br_chan,
+							_pdu_ready);
+
+	/* Leave the PDU buffer in the queue until we have sent all its
+	 * fragments.
+	 */
+	struct net_buf *pdu = k_fifo_peek_head(&br_chan->_pdu_tx_queue);
+
+	__ASSERT(pdu, "signaled ready but no PDUs in the TX queue");
+
+	if (bt_buf_has_view(pdu)) {
+		LOG_ERR("already have view on %p", pdu);
+		return NULL;
+	}
+
+	/* We can't interleave ACL fragments from different channels for the
+	 * same ACL conn -> we have to wait until a full L2 PDU is transferred
+	 * before switching channels.
+	 */
+	bool last_frag = amount >= pdu->len;
+
+	if (last_frag) {
+		LOG_DBG("last frag, removing %p", pdu);
+		struct net_buf *b = k_fifo_get(&br_chan->_pdu_tx_queue, K_NO_WAIT);
+
+		__ASSERT_NO_MSG(b == pdu);
+		(void)b;
+
+		LOG_DBG("chan %p done", br_chan);
+		lower_data_ready(br_chan);
+
+		/* Append channel to list if it still has data */
+		if (chan_has_data(br_chan)) {
+			LOG_DBG("chan %p ready", br_chan);
+			raise_data_ready(br_chan);
+		}
+	}
+
+	return pdu;
 }
 
 static void l2cap_br_get_info(struct bt_l2cap_br *l2cap, uint16_t info_type)
@@ -775,11 +887,21 @@ void bt_l2cap_br_chan_set_state(struct bt_l2cap_chan *chan,
 void bt_l2cap_br_chan_del(struct bt_l2cap_chan *chan)
 {
 	const struct bt_l2cap_chan_ops *ops = chan->ops;
+	struct bt_l2cap_br_chan *br_chan = CONTAINER_OF(chan, struct bt_l2cap_br_chan, chan);
 
 	LOG_DBG("conn %p chan %p", chan->conn, chan);
 
 	if (!chan->conn) {
 		goto destroy;
+	}
+
+	cancel_data_ready(br_chan);
+
+	/* Remove buffers on the PDU TX queue. */
+	while (chan_has_data(br_chan)) {
+		struct net_buf *buf = net_buf_get(&br_chan->_pdu_tx_queue, K_NO_WAIT);
+
+		net_buf_unref(buf);
 	}
 
 	if (ops->disconnected) {
