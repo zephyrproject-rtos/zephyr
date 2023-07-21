@@ -13,6 +13,12 @@ tests:
     extra_args: CONF_FILE="prj_user.conf"
     integration_platforms:
       - qemu_x86
+    harness_config:
+      type: multi_line
+      regex:
+        - "thread_a: Hello World from (.*)!"
+        - "thread_b: Hello World from (.*)!"
+        - "sys_trace_.*_user.*"
   sample.tracing.format.sysview:
     platform_allow:
       - nrf52840dk_nrf52840
