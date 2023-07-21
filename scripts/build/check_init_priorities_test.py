@@ -266,6 +266,8 @@ class testValidator(unittest.TestCase):
         validator.warnings = 0
         validator.errors = 0
 
+        save_inverted_priorities = check_init_priorities._INVERTED_PRIORITY_COMPATIBLES
+
         check_init_priorities._INVERTED_PRIORITY_COMPATIBLES = set([("compat-3", "compat-1")])
 
         validator._ord2node = {1: mock.Mock(), 3: mock.Mock()}
@@ -282,6 +284,39 @@ class testValidator(unittest.TestCase):
             mock.call("Swapped priority: compat-3, compat-1"),
             mock.call("/3 20 > /1 10"),
         ])
+        self.assertEqual(validator.warnings, 0)
+        self.assertEqual(validator.errors, 0)
+
+        check_init_priorities._INVERTED_PRIORITY_COMPATIBLES = save_inverted_priorities
+
+    @mock.patch("check_init_priorities.Validator.__init__", return_value=None)
+    def test_check_ignored(self, mock_vinit):
+        validator = check_init_priorities.Validator("", "", None)
+        validator.log = mock.Mock()
+        validator.warnings = 0
+        validator.errors = 0
+
+        save_ignore_compatibles = check_init_priorities._IGNORE_COMPATIBLES
+
+        check_init_priorities._IGNORE_COMPATIBLES = set(["compat-3"])
+
+        validator._ord2node = {1: mock.Mock(), 3: mock.Mock()}
+        validator._ord2node[1]._binding.compatible = "compat-1"
+        validator._ord2node[1].path = "/1"
+        validator._ord2node[3]._binding.compatible = "compat-3"
+        validator._ord2node[3].path = "/3"
+
+        validator._dev_priorities = {1: 20, 3: 10}
+
+        validator._check_dep(3, 1)
+
+        self.assertListEqual(validator.log.info.call_args_list, [
+            mock.call("Ignoring priority: compat-3"),
+        ])
+        self.assertEqual(validator.warnings, 0)
+        self.assertEqual(validator.errors, 0)
+
+        check_init_priorities._IGNORE_COMPATIBLES = save_ignore_compatibles
 
     @mock.patch("check_init_priorities.Validator._check_dep")
     @mock.patch("check_init_priorities.Validator.__init__", return_value=None)
