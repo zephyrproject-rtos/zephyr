@@ -147,6 +147,12 @@ int lll_csrand_get_custom_fake(void *buf, size_t len)
 	return lll_csrand_get_fake.return_val;
 }
 
+/* struct ll_conn_iso_stream *
+ * ll_conn_iso_stream_get_by_acl(struct ll_conn *conn, uint16_t *cis_iter);
+ */
+FAKE_VALUE_FUNC(struct ll_conn_iso_stream *, ll_conn_iso_stream_get_by_acl,
+		struct ll_conn *, uint16_t *);
+
 static void enc_setup(void *data)
 {
 	test_setup(&conn);
@@ -164,6 +170,9 @@ static void enc_setup(void *data)
 	RESET_FAKE(lll_csrand_get);
 	memset(&lll_csrand_get_custom_fake_context, 0, sizeof(lll_csrand_get_custom_fake_context));
 	lll_csrand_get_fake.custom_fake = lll_csrand_get_custom_fake;
+
+	/* Reset ll_conn_iso_stream_get_by_acl fake */
+	RESET_FAKE(ll_conn_iso_stream_get_by_acl);
 }
 
 /* BLUETOOTH CORE SPECIFICATION Version 5.2 | Vol 6, Part C
@@ -2176,6 +2185,103 @@ ZTEST(encryption_pause, test_encryption_pause_periph_rem)
 	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
 				  "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
+
+/* +-----+                     +-------+              +-----+
+ * | UT  |                     | LL_A  |              | LT  |
+ * +-----+                     +-------+              +-----+
+ *    |                            |                     |
+ *  /------------------------------------------------------\
+ *  |              Encrypted & CIS Established             |
+ *  \------------------------------------------------------/
+ *    |                            |                     |
+ *    | Initiate                   |                     |
+ *    | Encryption Pause Proc.     |                     |
+ *    |--------------------------->|                     |
+ *    |                            |                     |
+ *    |         Command Disallowed |                     |
+ *    |<---------------------------|                     |
+ *    |                            |                     |
+ *    |                            |    LL_PAUSE_ENC_REQ |
+ *    |                            |<--------------------|
+ *    |                            |                     |
+ *    |                            | LL_REJECT_EXT_IND   |
+ *    |                            |-------------------->|
+ *    |                            |                     |
+ */
+ZTEST(encryption_pause, test_encryption_pause_periph_rem_invalid)
+{
+	uint8_t err;
+
+	struct node_tx *tx;
+	struct node_rx_pdu *ntf;
+	struct ll_conn_iso_stream cis = { 0 };
+
+	const uint8_t rand[] = { RAND };
+	const uint8_t ediv[] = { EDIV };
+	const uint8_t ltk[] = { LTK };
+
+	struct pdu_data_llctrl_reject_ext_ind reject_ext_ind = {
+		.reject_opcode = PDU_DATA_LLCTRL_TYPE_PAUSE_ENC_REQ,
+		.error_code = BT_HCI_ERR_LMP_PDU_NOT_ALLOWED
+	};
+
+	/* Prepare mocked call to ll_conn_iso_stream_get_by_acl() */
+	ll_conn_iso_stream_get_by_acl_fake.return_val = &cis;
+
+	/* Role */
+	test_set_role(&conn, BT_HCI_ROLE_PERIPHERAL);
+
+	/* Connect */
+	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
+
+	/* Fake that encryption is already active */
+	conn.lll.enc_rx = 1U;
+	conn.lll.enc_tx = 1U;
+
+	/**** ENCRYPTED ****/
+
+	/* Initiate an Encryption Pause Procedure */
+	err = ull_cp_encryption_pause(&conn, rand, ediv, ltk);
+	zassert_equal(err, BT_HCI_ERR_CMD_DISALLOWED);
+
+	/* Check state */
+	CHECK_RX_PE_STATE(conn, RESUMED, ENCRYPTED); /* Rx enc. */
+	CHECK_TX_PE_STATE(conn, RESUMED, ENCRYPTED); /* Tx enc. */
+
+	/**** *****/
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Rx */
+	lt_tx(LL_PAUSE_ENC_REQ, &conn, NULL);
+
+	/* Done */
+	event_done(&conn);
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Tx Queue should have one LL Control PDU */
+	lt_rx(LL_REJECT_EXT_IND, &conn, &tx, &reject_ext_ind);
+	lt_rx_q_is_empty(&conn);
+
+	/* Done */
+	event_done(&conn);
+
+	/* Check state */
+	CHECK_RX_PE_STATE(conn, RESUMED, ENCRYPTED); /* Rx enc. */
+	CHECK_TX_PE_STATE(conn, RESUMED, ENCRYPTED); /* Tx enc. */
+
+	/* Release Tx */
+	ull_cp_release_tx(&conn, tx);
+
+	/**** *****/
+
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
+}
+
 
 ZTEST_SUITE(encryption_start, NULL, NULL, enc_setup, NULL, NULL);
 ZTEST_SUITE(encryption_pause, NULL, NULL, enc_setup, NULL, NULL);
