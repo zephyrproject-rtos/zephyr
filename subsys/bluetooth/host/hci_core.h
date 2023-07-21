@@ -300,6 +300,10 @@ struct bt_dev_le {
 	 */
 	uint8_t                    rl_entries;
 #endif /* CONFIG_BT_SMP */
+	/* List of `struct bt_conn` that have either pending data to send, or
+	 * something to process (e.g. a disconnection event).
+	 */
+	sys_slist_t		conn_ready;
 };
 
 #if defined(CONFIG_BT_CLASSIC)

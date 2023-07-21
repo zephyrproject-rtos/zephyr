@@ -528,37 +528,29 @@ static void hci_num_completed_packets(struct net_buf *buf)
 		}
 
 		while (count--) {
-			struct bt_conn_tx *tx;
 			sys_snode_t *node;
-			unsigned int key;
 
-			key = irq_lock();
+			k_sem_give(bt_conn_get_pkts(conn));
 
-			if (conn->pending_no_cb) {
-				conn->pending_no_cb--;
-				irq_unlock(key);
-				k_sem_give(bt_conn_get_pkts(conn));
-				continue;
-			}
-
+			/* move the next TX context from the `pending` list to
+			 * the `complete` list.
+			 */
 			node = sys_slist_get(&conn->tx_pending);
-			irq_unlock(key);
 
 			if (!node) {
 				LOG_ERR("packets count mismatch");
+				__ASSERT_NO_MSG(0);
 				break;
 			}
 
-			tx = CONTAINER_OF(node, struct bt_conn_tx, node);
+			sys_slist_append(&conn->tx_complete, node);
 
-			key = irq_lock();
-			conn->pending_no_cb = tx->pending_no_cb;
-			tx->pending_no_cb = 0U;
-			sys_slist_append(&conn->tx_complete, &tx->node);
-			irq_unlock(key);
+			/* align the `pending` value */
+			__ASSERT_NO_MSG(atomic_get(&conn->in_ll));
+			atomic_dec(&conn->in_ll);
 
+			/* TX context free + callback happens in there */
 			k_work_submit(&conn->tx_complete_work);
-			k_sem_give(bt_conn_get_pkts(conn));
 		}
 
 		bt_conn_unref(conn);
@@ -2961,34 +2953,14 @@ static void process_events(struct k_poll_event *ev, int count)
 		LOG_DBG("ev->state %u", ev->state);
 
 		switch (ev->state) {
-		case K_POLL_STATE_SIGNALED:
-			break;
-		case K_POLL_STATE_SEM_AVAILABLE:
-			/* After this fn is exec'd, `bt_conn_prepare_events()`
-			 * will be called once again, and this time buffers will
-			 * be available, so the FIFO will be added to the poll
-			 * list instead of the ctlr buffers semaphore.
-			 */
-			break;
 		case K_POLL_STATE_FIFO_DATA_AVAILABLE:
 			if (ev->tag == BT_EVENT_CMD_TX) {
 				send_cmd();
-			} else if (IS_ENABLED(CONFIG_BT_CONN) ||
-				   IS_ENABLED(CONFIG_BT_ISO)) {
-				struct bt_conn *conn;
-
-				if (ev->tag == BT_EVENT_CONN_TX_QUEUE) {
-					conn = CONTAINER_OF(ev->fifo,
-							    struct bt_conn,
-							    tx_queue);
-					bt_conn_process_tx(conn);
-				}
 			}
-			break;
-		case K_POLL_STATE_NOT_READY:
 			break;
 		default:
 			LOG_WRN("Unexpected k_poll event state %u", ev->state);
+			__ASSERT_NO_MSG(0);
 			break;
 		}
 	}
@@ -3028,11 +3000,6 @@ static void hci_tx_thread(void *p1, void *p2, void *p3)
 
 		events[0].state = K_POLL_STATE_NOT_READY;
 		ev_count = 1;
-
-		/* This adds the FIFO per-connection */
-		if (IS_ENABLED(CONFIG_BT_CONN) || IS_ENABLED(CONFIG_BT_ISO)) {
-			ev_count += bt_conn_prepare_events(&events[1]);
-		}
 
 		LOG_DBG("Calling k_poll with %d events", ev_count);
 

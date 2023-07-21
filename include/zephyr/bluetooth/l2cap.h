@@ -191,7 +191,7 @@ struct bt_l2cap_le_chan {
 	 */
 	struct bt_l2cap_le_endpoint	tx;
 #if defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)
-	/** Channel Transmission queue */
+	/** Channel Transmission queue (for SDUs) */
 	struct k_fifo                   tx_queue;
 	/** Channel Pending Transmission buffer  */
 	struct net_buf                  *tx_buf;
@@ -218,6 +218,13 @@ struct bt_l2cap_le_chan {
 	struct k_work_delayable		rtx_work;
 	struct k_work_sync		rtx_sync;
 #endif
+
+	/** @internal To be used with @ref bt_conn.upper_data_ready */
+	sys_snode_t			_pdu_ready;
+	/** @internal To be used with @ref bt_conn.upper_data_ready */
+	atomic_t			_pdu_ready_lock;
+	/** @internal Queue of net bufs not yet sent to lower layer */
+	struct k_fifo			_pdu_tx_queue;
 };
 
 /**
@@ -260,6 +267,13 @@ struct bt_l2cap_br_chan {
 	/* Response Timeout eXpired (RTX) timer */
 	struct k_work_delayable		rtx_work;
 	struct k_work_sync		rtx_sync;
+
+	/** @internal To be used with @ref bt_conn.upper_data_ready */
+	sys_snode_t			_pdu_ready;
+	/** @internal To be used with @ref bt_conn.upper_data_ready */
+	atomic_t			_pdu_ready_lock;
+	/** @internal Queue of net bufs not yet sent to lower layer */
+	struct k_fifo			_pdu_tx_queue;
 };
 
 /** @brief L2CAP Channel operations structure. */
