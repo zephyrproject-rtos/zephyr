@@ -21,7 +21,7 @@
 #define INA237_REG_CALIB      0x02
 #define INA237_REG_SHUNT_VOLT 0x04
 #define INA237_REG_BUS_VOLT   0x05
-#define INA237_REG_MASK       0x06
+#define INA237_REG_DIETEMP    0x06
 #define INA237_REG_CURRENT    0x07
 #define INA237_REG_POWER      0x08
 #define INA237_REG_ALERT      0x0B
@@ -40,6 +40,7 @@ struct ina237_data {
 	uint16_t current;
 	uint16_t bus_voltage;
 	uint32_t power;
+	int16_t die_temp;
 	enum sensor_channel chan;
 	struct ina23x_trigger trigger;
 };
