@@ -442,6 +442,21 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
         help="Re-use the outdir before building. Will result in "
              "faster compilation since builds will be incremental.")
 
+    parser.add_argument(
+        '--detailed-test-id', action='store_true',
+        help="Include paths to tests' locations in tests' names. Names will follow "
+             "PATH_TO_TEST/SCENARIO_NAME schema "
+             "e.g. samples/hello_world/sample.basic.helloworld")
+
+    parser.add_argument(
+        "--no-detailed-test-id", dest='detailed_test_id', action="store_false",
+        help="Don't put paths into tests' names. "
+             "With this arg a test name will be a scenario name "
+             "e.g. sample.basic.helloworld.")
+
+    # Include paths in names by default.
+    parser.set_defaults(detailed_test_id=True)
+
     # To be removed in favor of --detailed-skipped-report
     parser.add_argument(
         "--no-skipped-report", action="store_true",
