@@ -5,5 +5,8 @@ common:
     - eventfd
   integration_platforms:
     - qemu_x86
+  # See issue #60678
+  platform_exclude:
+    - qemu_cortex_a53_smp
 tests:
   portability.posix.eventfd: {}
