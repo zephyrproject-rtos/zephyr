@@ -101,3 +101,17 @@ or:
 	:compact:
 
 After the application has run for a while, check the trace output file.
+
+Usage for USER Tracing Backend
+*******************************
+
+Build a USER-tracing image with:
+
+.. zephyr-app-commands::
+	:zephyr-app: samples/subsys/tracing
+	:board: qemu_x86
+	:conf: "prj_user.conf"
+	:goals: build
+	:compact:
+
+After the application has run for a while, check the trace output file.
