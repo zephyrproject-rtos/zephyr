@@ -73,6 +73,21 @@ config WIFI_MGMT_SCAN_DWELL_TIME_PASSIVE
 	help
 	  Passive scan dwell time (in ms) per channel.
 
+config WIFI_MGMT_SCAN_SSID_FILT_MAX
+	int "Maximum number of SSIDs that can be specified for SSID filtering"
+	default 1
+	help
+	  Maximum number of SSIDs that can be specified for SSID filtering.
+	  This can be set based on the underlying chipsets limitations.
+
+config WIFI_MGMT_SCAN_SSID_FILT
+	string "Scan for specific SSIDs"
+	default ""
+	help
+	  String of comma separated SSID values to scan for. The number of SSID’s
+	  that can be specified depends on WIFI_MGMT_SCAN_MAX_SSIDS.
+	  Use "" to disable SSID filtering.
+
 config WIFI_NM
 	bool "Wi-Fi Network manager support"
 	help

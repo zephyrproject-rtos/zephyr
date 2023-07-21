@@ -19,8 +19,10 @@
 
 #include <zephyr/net/net_event.h>
 
+#ifdef CONFIG_NET_L2_WIFI_MGMT
 /* For struct wifi_scan_result */
 #include <zephyr/net/wifi_mgmt.h>
+#endif /* CONFIG_NET_L2_WIFI_MGMT */
 
 #define DEFAULT_NET_EVENT_INFO_SIZE 32
 /* NOTE: Update this union with all *big* event info structs */

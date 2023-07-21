@@ -35,6 +35,12 @@ extern "C" {
 			 NET_MGMT_LAYER_CODE(_NET_WIFI_CODE))
 #define _NET_WIFI_EVENT	(_NET_WIFI_BASE | NET_MGMT_EVENT_BIT)
 
+#ifdef CONFIG_WIFI_MGMT_SCAN_SSID_FILT_MAX
+#define WIFI_MGMT_SCAN_SSID_FILT_MAX CONFIG_WIFI_MGMT_SCAN_SSID_FILT_MAX
+#else
+#define WIFI_MGMT_SCAN_SSID_FILT_MAX 0
+#endif /* CONFIG_WIFI_MGMT_SCAN_SSID_FILT_MAX */
+
 /** Wi-Fi management commands */
 enum net_request_wifi_cmd {
 	/** Scan for Wi-Fi networks */
@@ -198,6 +204,9 @@ struct wifi_scan_params {
 	/** Passive scan dwell time (in ms) on a channel.
 	 */
 	uint16_t dwell_time_passive;
+	/** Array of SSID strings to scan.
+	 */
+	char ssids[WIFI_MGMT_SCAN_SSID_FILT_MAX][WIFI_SSID_MAX_LEN + 1];
 };
 
 /** Wi-Fi scan result, each result is provided to the net_mgmt_event_callback
