@@ -9,6 +9,7 @@ zephyr_library_sources_ifdef(CONFIG_INPUT_FT5336 input_ft5336.c)
 zephyr_library_sources_ifdef(CONFIG_INPUT_GPIO_KEYS input_gpio_keys.c)
 zephyr_library_sources_ifdef(CONFIG_INPUT_GPIO_QDEC input_gpio_qdec.c)
 zephyr_library_sources_ifdef(CONFIG_INPUT_GT911 input_gt911.c)
+zephyr_library_sources_ifdef(CONFIG_INPUT_MCUX_GPT_PPM input_mcux_gpt_ppm.c)
 zephyr_library_sources_ifdef(CONFIG_INPUT_NPCX_KBD input_npcx_kbd.c)
 zephyr_library_sources_ifdef(CONFIG_INPUT_XPT2046 input_xpt2046.c)
 

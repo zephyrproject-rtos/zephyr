@@ -1,0 +1,30 @@
+# NPCX Keyboard scan driver configuration options
+
+# Copyright (c) 2023 NXP Semiconductors
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig INPUT_MCUX_GPT_PPM
+	bool "MCUX GPT PPM input driver"
+	default y
+	depends on DT_HAS_NXP_GPT_PPM_INPUT_ENABLED
+	select MULTITHREADING
+	help
+	  This option enables the keyboard scan driver for NPCX family of
+	  processors.
+
+if INPUT_MCUX_GPT_PPM
+
+config INPUT_MCUX_GPT_PPM_THREAD_STACK_SIZE
+	int "Stack size for the ppm thread"
+	default 1024
+	help
+	  Size of the stack used for the ppm thread.
+
+config INPUT_MCUX_GPT_INPUT_REPORT_FILTER
+	int "Minimal change in signal to report"
+	default 1
+	help
+	  PPM tends to be a bit noisy you can increase the threshold to
+	  to lower the amounts of input events. Set to 0 for no filtering
+
+endif # INPUT_MCUX_GPT_PPM
