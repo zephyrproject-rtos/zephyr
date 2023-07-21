@@ -4,14 +4,19 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/kernel.h>
-#include <zephyr/net/http/server.h>
-#include <zephyr/posix/netinet/in.h>
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <strings.h>
-#include <unistd.h>
+
+#include <zephyr/net/http/server.h>
+
+#if defined(__ZEPHYR__) || defined(CONFIG_POSIX_API)
+
+#include <zephyr/kernel.h>
+
+#elif defined(__linux__)
+
+#include <netinet/in.h>
+
+#endif
 
 int main(void)
 {

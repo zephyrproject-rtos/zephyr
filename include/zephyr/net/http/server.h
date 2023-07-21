@@ -4,10 +4,19 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef HTTP2_SERVER_H
-#define HTTP2_SERVER_H
+#ifndef ZEPHYR_INCLUDE_NET_HTTP_SERVER_H_
+#define ZEPHYR_INCLUDE_NET_HTTP_SERVER_H_
+
+#if !defined(__ZEPHYR__) || defined(CONFIG_POSIX_API)
+
+#define CONFIG_NET_HTTP2_MAX_CLIENTS 10
+#include <poll.h>
+
+#else
 
 #include <zephyr/posix/poll.h>
+
+#endif
 
 #define MAX_CLIENTS CONFIG_NET_HTTP2_MAX_CLIENTS
 
@@ -16,9 +25,17 @@ struct http2_server_config {
 	int address_family;
 };
 
+enum http2_server_state {
+	AWAITING_PREFACE,
+	READING_SETTINGS,
+	STREAMING,
+	CLOSING
+};
+
 struct http2_client_ctx {
-	struct pollfd pollfds[1];
-	enum { AWAITING_PREFACE, READING_SETTINGS, STREAMING, CLOSING} state;
+	int client_fd;
+	enum http2_server_state state;
+	int stream_id;
 };
 
 

@@ -2,6 +2,7 @@
 #define SERVER_FUNCTIONS_H
 
 #include <zephyr/net/http/parser.h>
+#include <zephyr/net/http/server.h>
 
 struct http2_frame {
 	uint32_t length;
@@ -13,15 +14,15 @@ struct http2_frame {
 
 int on_url(struct http_parser *parser, const char *at, size_t length);
 ssize_t sendall(int sock, const void *buf, size_t len);
-void close_client_connection(struct http2_server_ctx *ctx, int clientIndex);
+void close_client_connection(struct http2_server_ctx *ctx, int client_index);
 int accept_new_client(int server_fd);
 void handle_http1_request(struct http2_server_ctx *ctx, int i, int *valread);
 void handle_http2_request(struct http2_server_ctx *ctx, int i, int *valread);
 int on_header_field(struct http_parser *parser, const char *at, size_t length);
 void generate_response_headers_frame(
 	unsigned char *response_headers_frame, int new_stream_id);
-void sendData(int socket_fd, const char *payload, size_t length, uint8_t type,
-	uint8_t flags, uint32_t streamId);
+void send_data(int socket_fd, const char *payload, size_t length, uint8_t type,
+	uint8_t flags, uint32_t stream_id);
 void print_http2_frames(struct http2_frame *frames, unsigned int frame_count);
 unsigned int parse_http2_frames(unsigned char *buffer, unsigned long buffer_len,
 	struct http2_frame *frames);
