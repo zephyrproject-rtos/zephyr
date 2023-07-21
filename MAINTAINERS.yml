@@ -620,8 +620,8 @@ Documentation Infrastructure:
 Release Notes:
   status: maintained
   maintainers:
-    - nashif
-    - jgl-meta
+    - jhedberg
+    - fabiobaltieri
   files:
     - doc/releases/release-notes-*
   labels:
