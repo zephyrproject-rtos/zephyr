@@ -28,6 +28,13 @@ config SOC_GECKO_SERIES2
 	  This is equivalent of _SILICON_LABS_32B_SERIES_2 definition in HAL
 	  code.
 
+config SOC_GECKO_SERIES1
+	bool
+	help
+	  Set if we're building for Gecko Series 1 SoC.
+	  This is equivalent of _SILICON_LABS_32B_SERIES_1 definition in HAL
+	  code.
+
 config SOC_GECKO_BURTC
 	bool
 	help
