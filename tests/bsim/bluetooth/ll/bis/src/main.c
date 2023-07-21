@@ -153,7 +153,8 @@ bool ll_data_path_sink_create(uint16_t handle, struct ll_iso_datapath *datapath,
 
 #define BUF_ALLOC_TIMEOUT_MS (30) /* milliseconds */
 NET_BUF_POOL_FIXED_DEFINE(tx_pool, CONFIG_BT_ISO_TX_BUF_COUNT,
-			  BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU), 8, NULL);
+			  BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU),
+			  CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
 
 static struct k_work_delayable iso_send_work;
 
