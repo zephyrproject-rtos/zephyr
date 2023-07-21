@@ -16,6 +16,7 @@
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/iso.h>
 
+#include "host/buf_view.h"
 #include "host/hci_core.h"
 #include "host/conn_internal.h"
 #include "iso_internal.h"
@@ -75,9 +76,9 @@ struct bt_iso_big bigs[CONFIG_BT_ISO_MAX_BIG];
 static struct bt_iso_big *lookup_big_by_handle(uint8_t big_handle);
 #endif /* CONFIG_BT_ISO_BROADCAST */
 
-#if defined(CONFIG_BT_ISO_TX)
-static void bt_iso_send_cb(struct bt_conn *iso, void *user_data, int err)
+static void bt_iso_sent_cb(struct bt_conn *iso, void *user_data, int err)
 {
+#if defined(CONFIG_BT_ISO_TX)
 	struct bt_iso_chan *chan = iso->iso.chan;
 	struct bt_iso_chan_ops *ops;
 
@@ -88,8 +89,8 @@ static void bt_iso_send_cb(struct bt_conn *iso, void *user_data, int err)
 	if (!err && ops != NULL && ops->sent != NULL) {
 		ops->sent(chan);
 	}
-}
 #endif /* CONFIG_BT_ISO_TX */
+}
 
 void hci_iso(struct net_buf *buf)
 {
@@ -136,12 +137,33 @@ void hci_iso(struct net_buf *buf)
 	bt_conn_unref(iso);
 }
 
+/* Pull data from the ISO layer */
+static struct net_buf *iso_data_pull(struct bt_conn *conn, size_t amount);
+
+/* Returns true if the ISO layer has data to send on this conn */
+static bool iso_has_data(struct bt_conn *conn);
+
+static void iso_get_and_clear_cb(struct bt_conn *conn, struct net_buf *buf,
+				 bt_conn_tx_cb_t *cb, void **ud)
+{
+	if (IS_ENABLED(CONFIG_BT_ISO_TX)) {
+		*cb = bt_iso_sent_cb;
+	} else {
+		*cb = NULL;
+	}
+
+	*ud = NULL;
+}
+
 static struct bt_conn *iso_new(void)
 {
 	struct bt_conn *iso = bt_conn_new(iso_conns, ARRAY_SIZE(iso_conns));
 
 	if (iso) {
 		iso->type = BT_CONN_TYPE_ISO;
+		iso->tx_data_pull = iso_data_pull;
+		iso->get_and_clear_cb = iso_get_and_clear_cb;
+		iso->has_data = iso_has_data;
 	} else {
 		LOG_DBG("Could not create new ISO");
 	}
@@ -230,6 +252,7 @@ static void bt_iso_chan_add(struct bt_conn *iso, struct bt_iso_chan *chan)
 	/* Attach ISO channel to the connection */
 	chan->iso = iso;
 	iso->iso.chan = chan;
+	k_fifo_init(&iso->iso.txq);
 
 	LOG_DBG("iso %p chan %p", iso, chan);
 }
@@ -702,6 +725,61 @@ void bt_iso_recv(struct bt_conn *iso, struct net_buf *buf, uint8_t flags)
 }
 #endif /* CONFIG_BT_ISO_RX */
 
+static bool iso_has_data(struct bt_conn *conn)
+{
+#if defined(CONFIG_BT_ISO_TX)
+	return !k_fifo_is_empty(&conn->iso.txq);
+#else
+	return false;
+#endif
+}
+
+static struct net_buf *iso_data_pull(struct bt_conn *conn, size_t amount)
+{
+#if defined(CONFIG_BT_ISO_TX)
+	LOG_DBG("conn %p amount %d", conn, amount);
+
+	/* Leave the PDU buffer in the queue until we have sent all its
+	 * fragments.
+	 */
+	struct net_buf *frag = k_fifo_peek_head(&conn->iso.txq);
+
+	if (!frag) {
+		LOG_DBG("signaled ready but no frag available");
+		return NULL;
+	}
+
+	if (conn->iso.chan->state != BT_ISO_STATE_CONNECTED) {
+		LOG_DBG("channel has been disconnected");
+		struct net_buf *b = k_fifo_get(&conn->iso.txq, K_NO_WAIT);
+		(void)b;
+		__ASSERT_NO_MSG(b == frag);
+		return NULL;
+	}
+
+	if (bt_buf_has_view(frag)) {
+		/* This should not happen. conn.c should wait until the view is
+		 * destroyed before requesting more data.
+		 */
+		LOG_DBG("already have view");
+		return NULL;
+	}
+
+	bool last_frag = amount >= frag->len;
+
+	if (last_frag) {
+		LOG_DBG("last frag, pop buf");
+		struct net_buf *b = k_fifo_get(&conn->iso.txq, K_NO_WAIT);
+		(void)b;
+		__ASSERT_NO_MSG(b == frag);
+	}
+
+	return frag;
+#else
+	return NULL;
+#endif
+}
+
 #if defined(CONFIG_BT_ISO_TX)
 static uint16_t iso_chan_max_data_len(const struct bt_iso_chan *chan)
 {
@@ -721,6 +799,30 @@ static uint16_t iso_chan_max_data_len(const struct bt_iso_chan *chan)
 	max_data_len = MIN(max_data_len, max_controller_data_len);
 
 	return max_data_len;
+}
+
+int conn_iso_send(struct bt_conn *conn, struct net_buf *buf, enum bt_iso_timestamp has_ts)
+{
+	if (buf->user_data_size < CONFIG_BT_CONN_TX_USER_DATA_SIZE) {
+		LOG_ERR("not enough room in user_data %d < %d pool %u",
+			buf->user_data_size,
+			CONFIG_BT_CONN_TX_USER_DATA_SIZE,
+			buf->pool_id);
+		return -EINVAL;
+	}
+
+	/* push the TS flag on the buffer itself.
+	 * It will be popped and read back by conn before adding the ISO HCI header.
+	 */
+	net_buf_push_u8(buf, has_ts);
+
+	net_buf_put(&conn->iso.txq, buf);
+	LOG_DBG("%p put on list", buf);
+
+	/* only one ISO channel per conn-object */
+	bt_conn_data_ready(conn);
+
+	return 0;
 }
 
 static int validate_send(const struct bt_iso_chan *chan, const struct net_buf *buf,
@@ -783,7 +885,8 @@ int bt_iso_chan_send(struct bt_iso_chan *chan, struct net_buf *buf, uint16_t seq
 
 	iso_conn = chan->iso;
 
-	return bt_conn_send_iso_cb(iso_conn, buf, bt_iso_send_cb, false);
+	LOG_DBG("send-iso (no ts)");
+	return conn_iso_send(iso_conn, buf, BT_ISO_TS_ABSENT);
 }
 
 int bt_iso_chan_send_ts(struct bt_iso_chan *chan, struct net_buf *buf, uint16_t seq_num,
@@ -808,7 +911,8 @@ int bt_iso_chan_send_ts(struct bt_iso_chan *chan, struct net_buf *buf, uint16_t 
 
 	iso_conn = chan->iso;
 
-	return bt_conn_send_iso_cb(iso_conn, buf, bt_iso_send_cb, true);
+	LOG_DBG("send-iso (ts)");
+	return conn_iso_send(iso_conn, buf, BT_ISO_TS_PRESENT);
 }
 
 #if defined(CONFIG_BT_ISO_CENTRAL) || defined(CONFIG_BT_ISO_BROADCASTER)
