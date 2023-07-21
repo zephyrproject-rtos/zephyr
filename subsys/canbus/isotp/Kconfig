@@ -60,6 +60,7 @@ config ISOTP_REQUIRE_RX_PADDING
 
 config ISOTP_ENABLE_TX_PADDING
 	bool "Padding for transmitted messages"
+	default y if ISOTP_REQUIRE_RX_PADDING
 	help
 	  Add padding bytes 0xCC (as recommended by Bosch) if the PDU payload
 	  does not fit exactly into the CAN frame.
