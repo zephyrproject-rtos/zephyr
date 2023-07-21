@@ -619,11 +619,11 @@ static int transceive(const struct device *dev,
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_spi_fifo)
 	/* Flush RX buffer */
 	while (ll_func_rx_is_not_empty(spi)) {
-		(void) LL_SPI_ReceiveData8(spi);
+		(void) ll_func_receive_data_8(spi);
 	}
 #endif
 
-	LL_SPI_Enable(spi);
+	ll_func_enable_spi(spi, true);
 
 #if CONFIG_SOC_SERIES_STM32H7X
 	/*

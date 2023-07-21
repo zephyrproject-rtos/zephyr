@@ -94,35 +94,4 @@ static inline uint32_t ll_func_spi_dma_busy(SPI_TypeDef *spi)
 }
 #endif /* CONFIG_SPI_STM32_DMA */
 
-static inline void ll_func_enable_int_tx_empty(SPI_TypeDef *spi)
-{
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
-	LL_SPI_EnableIT_TXP(spi);
-#else
-	LL_SPI_EnableIT_TXE(spi);
-#endif /* st_stm32h7_spi */
-}
-
-static inline void ll_func_enable_int_rx_not_empty(SPI_TypeDef *spi)
-{
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
-	LL_SPI_EnableIT_RXP(spi);
-#else
-	LL_SPI_EnableIT_RXNE(spi);
-#endif /* st_stm32h7_spi */
-}
-
-static inline void ll_func_enable_int_errors(SPI_TypeDef *spi)
-{
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
-	LL_SPI_EnableIT_UDR(spi);
-	LL_SPI_EnableIT_OVR(spi);
-	LL_SPI_EnableIT_CRCERR(spi);
-	LL_SPI_EnableIT_FRE(spi);
-	LL_SPI_EnableIT_MODF(spi);
-#else
-	LL_SPI_EnableIT_ERR(spi);
-#endif /* st_stm32h7_spi */
-}
-
 #endif	/* ZEPHYR_DRIVERS_SPI_SPI_LL_STM32_H_ */

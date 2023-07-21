@@ -420,3 +420,34 @@ void ll_func_set_fifo_threshold_8bit(spi_stm32_t *spi)
 }
 
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32_spi_fifo) */
+
+void ll_func_enable_int_tx_empty(spi_stm32_t *spi)
+{
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
+	LL_SPI_EnableIT_TXP(spi);
+#else
+	LL_SPI_EnableIT_TXE(spi);
+#endif /* st_stm32h7_spi */
+}
+
+void ll_func_enable_int_rx_not_empty(spi_stm32_t *spi)
+{
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
+	LL_SPI_EnableIT_RXP(spi);
+#else
+	LL_SPI_EnableIT_RXNE(spi);
+#endif /* st_stm32h7_spi */
+}
+
+void ll_func_enable_int_errors(spi_stm32_t *spi)
+{
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
+	LL_SPI_EnableIT_UDR(spi);
+	LL_SPI_EnableIT_OVR(spi);
+	LL_SPI_EnableIT_CRCERR(spi);
+	LL_SPI_EnableIT_FRE(spi);
+	LL_SPI_EnableIT_MODF(spi);
+#else
+	LL_SPI_EnableIT_ERR(spi);
+#endif /* st_stm32h7_spi */
+}

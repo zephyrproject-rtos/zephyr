@@ -130,10 +130,18 @@ void ll_func_set_mode(spi_stm32_t* spi, stm32_spi_mode_t mode);
 void ll_func_set_data_width(
     spi_stm32_t* spi, stm32_spi_data_width_t data_width);
 
+
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_spi_fifo)
 
 void ll_func_set_fifo_threshold_8bit(spi_stm32_t *spi);
 
 #endif /* #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_spi_fifo) */
+
+
+void ll_func_enable_int_tx_empty(spi_stm32_t *spi);
+
+void ll_func_enable_int_rx_not_empty(spi_stm32_t *spi);
+
+void ll_func_enable_int_errors(spi_stm32_t *spi);
 
 #endif /* STM32_SPI_IFACE_H */
