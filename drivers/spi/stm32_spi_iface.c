@@ -134,3 +134,81 @@ void ll_func_disable_int_tx_empty(spi_stm32_t *spi)
 	LL_SPI_DisableIT_TXE(spi);
 #endif /* st_stm32h7_spi */
 }
+
+void ll_func_clear_modf_flag(spi_stm32_t* spi)
+{
+    SPI_TypeDef* ll_spi = (SPI_TypeDef*)spi;
+    LL_SPI_ClearFlag_MODF(ll_spi);
+}
+
+bool ll_func_is_modf_flag_set(spi_stm32_t* spi)
+{
+    SPI_TypeDef* ll_spi = (SPI_TypeDef*)spi;
+    return LL_SPI_IsActiveFlag_MODF(ll_spi) != 0;
+}
+
+static void disable_spi(SPI_TypeDef *spi)
+{
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
+	if (LL_SPI_IsActiveMasterTransfer(spi)) {
+		LL_SPI_SuspendMasterTransfer(spi);
+		while (LL_SPI_IsActiveMasterTransfer(spi)) {
+			/* NOP */
+		}
+	}
+
+	LL_SPI_Disable(spi);
+	while (LL_SPI_IsEnabled(spi)) {
+		/* NOP */
+	}
+
+	/* Flush RX buffer */
+	while (LL_SPI_IsActiveFlag_RXP(spi)) {
+		(void)LL_SPI_ReceiveData8(spi);
+	}
+	LL_SPI_ClearFlag_SUSP(spi);
+#else
+	LL_SPI_Disable(spi);
+#endif /* st_stm32h7_spi */
+}
+
+void ll_func_enable_spi(spi_stm32_t* spi, bool enable)
+{
+    SPI_TypeDef* ll_spi = (SPI_TypeDef*)spi;
+    if (enable) {
+        LL_SPI_Enable(ll_spi);
+    } else {
+        disable_spi(ll_spi);
+    }
+}
+
+void ll_func_disable_int_rx_not_empty(spi_stm32_t *spi)
+{
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
+	LL_SPI_DisableIT_RXP(spi);
+#else
+	LL_SPI_DisableIT_RXNE(spi);
+#endif /* st_stm32h7_spi */
+}
+
+void ll_func_disable_int_errors(spi_stm32_t *spi)
+{
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
+	LL_SPI_DisableIT_UDR(spi);
+	LL_SPI_DisableIT_OVR(spi);
+	LL_SPI_DisableIT_CRCERR(spi);
+	LL_SPI_DisableIT_FRE(spi);
+	LL_SPI_DisableIT_MODF(spi);
+#else
+	LL_SPI_DisableIT_ERR(spi);
+#endif /* st_stm32h7_spi */
+}
+
+uint32_t ll_func_spi_is_busy(spi_stm32_t *spi)
+{
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
+	return LL_SPI_IsActiveFlag_EOT(spi);
+#else
+	return LL_SPI_IsActiveFlag_BSY(spi);
+#endif /* st_stm32h7_spi */
+}

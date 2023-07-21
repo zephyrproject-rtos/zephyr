@@ -397,21 +397,21 @@ static void spi_stm32_complete(const struct device *dev, int status)
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_spi_fifo)
 	/* Flush RX buffer */
 	while (ll_func_rx_is_not_empty(spi)) {
-		(void) LL_SPI_ReceiveData8(spi);
+		(void) ll_func_receive_data_8(spi);
 	}
 #endif
 
-	if (LL_SPI_GetMode(spi) == LL_SPI_MODE_MASTER) {
+	if (ll_func_get_mode(spi) == STM32_SPI_MASTER) {
 		while (ll_func_spi_is_busy(spi)) {
 			/* NOP */
 		}
 	}
 	/* BSY flag is cleared when MODF flag is raised */
-	if (LL_SPI_IsActiveFlag_MODF(spi)) {
-		LL_SPI_ClearFlag_MODF(spi);
+	if (ll_func_is_modf_flag_set(spi)) {
+		ll_func_clear_modf_flag(spi);
 	}
 
-	ll_func_disable_spi(spi);
+	ll_func_enable_spi(spi, false);
 
 #ifdef CONFIG_SPI_STM32_INTERRUPT
 	spi_context_complete(&data->ctx, dev, status);

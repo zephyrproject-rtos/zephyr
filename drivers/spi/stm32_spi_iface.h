@@ -58,4 +58,16 @@ uint32_t ll_func_rx_is_not_empty(spi_stm32_t *spi);
 
 void ll_func_disable_int_tx_empty(spi_stm32_t *spi);
 
+void ll_func_clear_modf_flag(spi_stm32_t* spi);
+
+bool ll_func_is_modf_flag_set(spi_stm32_t* spi);
+
+void ll_func_enable_spi(spi_stm32_t* spi, bool enable);
+
+void ll_func_disable_int_rx_not_empty(spi_stm32_t *spi);
+
+void ll_func_disable_int_errors(spi_stm32_t *spi);
+
+uint32_t ll_func_spi_is_busy(spi_stm32_t *spi);
+
 #endif /* STM32_SPI_IFACE_H */
