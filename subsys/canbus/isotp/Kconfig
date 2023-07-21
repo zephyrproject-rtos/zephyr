@@ -51,7 +51,7 @@ config ISOTP_CR_TIMEOUT
 config ISOTP_REQUIRE_RX_PADDING
 	bool "Require padding for received messages"
 	help
-	  If enabled, SFs and the last CF must always have a DLC of 8 bytes
+	  If enabled, SFs, FCs and the last CF must always have a DLC of 8 bytes
 	  (for classic CAN) and unused bytes must be padded by the sending
 	  device. This setting allows to be compliant to AUTOSAR Specification
 	  of CAN Transport Layer.
