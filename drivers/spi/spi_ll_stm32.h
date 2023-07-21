@@ -8,6 +8,7 @@
 #define ZEPHYR_DRIVERS_SPI_SPI_LL_STM32_H_
 
 #include "spi_context.h"
+#include "stm32_spi_iface.h"
 
 typedef void (*irq_config_func_t)(const struct device *port);
 
@@ -20,7 +21,7 @@ typedef void (*irq_config_func_t)(const struct device *port);
 #endif
 
 struct spi_stm32_config {
-	SPI_TypeDef *spi;
+	spi_stm32_t *spi;
 	const struct pinctrl_dev_config *pcfg;
 #ifdef CONFIG_SPI_STM32_INTERRUPT
 	irq_config_func_t irq_config;

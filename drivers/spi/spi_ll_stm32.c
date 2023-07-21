@@ -245,7 +245,7 @@ static bool spi_stm32_transfer_ongoing(struct spi_stm32_data *data)
 }
 
 /* Shift a SPI frame as master. */
-static void spi_stm32_shift_m(SPI_TypeDef *spi, struct spi_stm32_data *data)
+static void spi_stm32_shift_m(spi_stm32_t *spi, struct spi_stm32_data *data)
 {
 	uint16_t tx_frame = SPI_STM32_TX_NOP;
 	uint16_t rx_frame;
@@ -304,7 +304,7 @@ static void spi_stm32_shift_m(SPI_TypeDef *spi, struct spi_stm32_data *data)
 }
 
 /* Shift a SPI frame as slave. */
-static void spi_stm32_shift_s(SPI_TypeDef *spi, struct spi_stm32_data *data)
+static void spi_stm32_shift_s(spi_stm32_t *spi, struct spi_stm32_data *data)
 {
 	if (ll_func_tx_is_empty(spi) && spi_context_tx_on(&data->ctx)) {
 		uint16_t tx_frame;
@@ -344,7 +344,7 @@ static void spi_stm32_shift_s(SPI_TypeDef *spi, struct spi_stm32_data *data)
  *
  * TODO: support 16-bit data frames.
  */
-static int spi_stm32_shift_frames(SPI_TypeDef *spi, struct spi_stm32_data *data)
+static int spi_stm32_shift_frames(spi_stm32_t *spi, struct spi_stm32_data *data)
 {
 	uint16_t operation = data->ctx.config->operation;
 
@@ -383,7 +383,7 @@ static void spi_stm32_cs_control(const struct device *dev, bool on)
 static void spi_stm32_complete(const struct device *dev, int status)
 {
 	const struct spi_stm32_config *cfg = dev->config;
-	SPI_TypeDef *spi = cfg->spi;
+	spi_stm32_t *spi = cfg->spi;
 #ifdef CONFIG_SPI_STM32_INTERRUPT
 	struct spi_stm32_data *data = dev->data;
 
@@ -423,7 +423,7 @@ static void spi_stm32_isr(const struct device *dev)
 {
 	const struct spi_stm32_config *cfg = dev->config;
 	struct spi_stm32_data *data = dev->data;
-	SPI_TypeDef *spi = cfg->spi;
+	spi_stm32_t *spi = cfg->spi;
 	int err;
 
 	err = ll_func_get_err(spi);
@@ -589,7 +589,7 @@ static int transceive(const struct device *dev,
 {
 	const struct spi_stm32_config *cfg = dev->config;
 	struct spi_stm32_data *data = dev->data;
-	SPI_TypeDef *spi = cfg->spi;
+	spi_stm32_t *spi = cfg->spi;
 	int ret;
 
 	if (!tx_bufs && !rx_bufs) {
@@ -741,7 +741,7 @@ static int transceive_dma(const struct device *dev,
 {
 	const struct spi_stm32_config *cfg = dev->config;
 	struct spi_stm32_data *data = dev->data;
-	SPI_TypeDef *spi = cfg->spi;
+	spi_stm32_t *spi = cfg->spi;
 	int ret;
 
 	if (!tx_bufs && !rx_bufs) {
@@ -1060,7 +1060,7 @@ static const struct stm32_pclken pclken_##id[] =			\
 					       STM32_DT_INST_CLOCKS(id);\
 									\
 static const struct spi_stm32_config spi_stm32_cfg_##id = {		\
-	.spi = (SPI_TypeDef *) DT_INST_REG_ADDR(id),			\
+	.spi = (spi_stm32_t *) DT_INST_REG_ADDR(id),			\
 	.pclken = pclken_##id,						\
 	.pclk_len = DT_INST_NUM_CLOCKS(id),				\
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(id),			\
