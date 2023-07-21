@@ -7,6 +7,10 @@
 #include <zephyr/types.h>
 #include <zephyr/ztest.h>
 
+#include <zephyr/fff.h>
+
+DEFINE_FFF_GLOBALS;
+
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/slist.h>
@@ -44,9 +48,14 @@
 
 static struct ll_conn conn;
 
+/* struct ll_conn_iso_stream *ll_conn_iso_stream_get(uint16_t handle); */
+FAKE_VALUE_FUNC(struct ll_conn_iso_stream *, ll_conn_iso_stream_get, uint16_t);
+
 static void cis_create_setup(void *data)
 {
 	test_setup(&conn);
+
+	RESET_FAKE(ll_conn_iso_stream_get);
 }
 
 static bool is_instant_reached(struct ll_conn *conn, uint16_t instant)
@@ -132,6 +141,10 @@ ZTEST(cis_create, test_cc_create_periph_rem_host_accept)
 		.cis_handle = 0x00,
 		.status = 0x00
 	};
+	struct ll_conn_iso_stream cis = { 0 };
+
+	/* Prepare mocked call to ll_conn_iso_stream_get() */
+	ll_conn_iso_stream_get_fake.return_val = &cis;
 
 	/* Role */
 	test_set_role(&conn, BT_HCI_ROLE_PERIPHERAL);
@@ -222,6 +235,9 @@ ZTEST(cis_create, test_cc_create_periph_rem_host_accept)
 
 	/* Done */
 	event_done(&conn);
+
+	/* NODE_CIS_ESTABLISHED carry extra information in header rx footer param field */
+	zassert_equal_ptr(ntf->hdr.rx_ftr.param, &cis);
 
 	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
 		      "Free CTX buffers %d", llcp_ctx_buffers_free());
