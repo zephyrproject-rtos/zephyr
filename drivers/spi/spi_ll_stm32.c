@@ -33,26 +33,6 @@ LOG_MODULE_REGISTER(spi_ll_stm32);
 
 #define WAIT_1US	1U
 
-/*
- * Check for SPI_SR_FRE to determine support for TI mode frame format
- * error flag, because STM32F1 SoCs do not support it and  STM32CUBE
- * for F1 family defines an unused LL_SPI_SR_FRE.
- */
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
-#define SPI_STM32_ERR_MSK (LL_SPI_SR_UDR | LL_SPI_SR_CRCE | LL_SPI_SR_MODF | \
-			   LL_SPI_SR_OVR | LL_SPI_SR_TIFRE)
-#else
-#if defined(LL_SPI_SR_UDR)
-#define SPI_STM32_ERR_MSK (LL_SPI_SR_UDR | LL_SPI_SR_CRCERR | LL_SPI_SR_MODF | \
-			   LL_SPI_SR_OVR | LL_SPI_SR_FRE)
-#elif defined(SPI_SR_FRE)
-#define SPI_STM32_ERR_MSK (LL_SPI_SR_CRCERR | LL_SPI_SR_MODF | \
-			   LL_SPI_SR_OVR | LL_SPI_SR_FRE)
-#else
-#define SPI_STM32_ERR_MSK (LL_SPI_SR_CRCERR | LL_SPI_SR_MODF | LL_SPI_SR_OVR)
-#endif
-#endif /* CONFIG_SOC_SERIES_STM32MP1X */
-
 #ifdef CONFIG_SPI_STM32_DMA
 
 #ifdef CONFIG_SOC_SERIES_STM32H7X
@@ -264,25 +244,6 @@ static bool spi_stm32_transfer_ongoing(struct spi_stm32_data *data)
 	return spi_context_tx_on(&data->ctx) || spi_context_rx_on(&data->ctx);
 }
 
-static int spi_stm32_get_err(SPI_TypeDef *spi)
-{
-	uint32_t sr = LL_SPI_ReadReg(spi, SR);
-
-	if (sr & SPI_STM32_ERR_MSK) {
-		LOG_ERR("%s: err=%d", __func__,
-			    sr & (uint32_t)SPI_STM32_ERR_MSK);
-
-		/* OVR error must be explicitly cleared */
-		if (LL_SPI_IsActiveFlag_OVR(spi)) {
-			LL_SPI_ClearFlag_OVR(spi);
-		}
-
-		return -EIO;
-	}
-
-	return 0;
-}
-
 /* Shift a SPI frame as master. */
 static void spi_stm32_shift_m(SPI_TypeDef *spi, struct spi_stm32_data *data)
 {
@@ -350,11 +311,11 @@ static void spi_stm32_shift_s(SPI_TypeDef *spi, struct spi_stm32_data *data)
 
 		if (SPI_WORD_SIZE_GET(data->ctx.config->operation) == 8) {
 			tx_frame = UNALIGNED_GET((uint8_t *)(data->ctx.tx_buf));
-			LL_SPI_TransmitData8(spi, tx_frame);
+			ll_func_transmit_data_8(spi, tx_frame);
 			spi_context_update_tx(&data->ctx, 1, 1);
 		} else {
 			tx_frame = UNALIGNED_GET((uint16_t *)(data->ctx.tx_buf));
-			LL_SPI_TransmitData16(spi, tx_frame);
+			ll_func_transmit_data_16(spi, tx_frame);
 			spi_context_update_tx(&data->ctx, 2, 1);
 		}
 	} else {
@@ -366,11 +327,11 @@ static void spi_stm32_shift_s(SPI_TypeDef *spi, struct spi_stm32_data *data)
 		uint16_t rx_frame;
 
 		if (SPI_WORD_SIZE_GET(data->ctx.config->operation) == 8) {
-			rx_frame = LL_SPI_ReceiveData8(spi);
+			rx_frame = ll_func_receive_data_8(spi);
 			UNALIGNED_PUT(rx_frame, (uint8_t *)data->ctx.rx_buf);
 			spi_context_update_rx(&data->ctx, 1, 1);
 		} else {
-			rx_frame = LL_SPI_ReceiveData16(spi);
+			rx_frame = ll_func_receive_data_16(spi);
 			UNALIGNED_PUT(rx_frame, (uint16_t *)data->ctx.rx_buf);
 			spi_context_update_rx(&data->ctx, 2, 1);
 		}
@@ -393,7 +354,11 @@ static int spi_stm32_shift_frames(SPI_TypeDef *spi, struct spi_stm32_data *data)
 		spi_stm32_shift_s(spi, data);
 	}
 
-	return spi_stm32_get_err(spi);
+	int err = ll_func_get_err(spi);
+	if (err != 0) {
+		LOG_ERR("%s: err=%d", __func__, err);
+	}
+	return err;
 }
 
 static void spi_stm32_cs_control(const struct device *dev, bool on)
@@ -461,7 +426,7 @@ static void spi_stm32_isr(const struct device *dev)
 	SPI_TypeDef *spi = cfg->spi;
 	int err;
 
-	err = spi_stm32_get_err(spi);
+	err = ll_func_get_err(spi);
 	if (err) {
 		spi_stm32_complete(dev, err);
 		return;

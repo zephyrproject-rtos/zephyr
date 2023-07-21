@@ -30,12 +30,17 @@ typedef enum {
 
 typedef void spi_stm32_t;
 
+int ll_func_get_err(spi_stm32_t* spi);
+
+
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
+
 bool ll_func_is_active_master_transfer(spi_stm32_t* spi);
 
 void ll_func_start_master_transfer(spi_stm32_t* spi);
 
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi) */
+
 
 stm32_spi_mode_t ll_func_get_mode(spi_stm32_t* spi);
 
@@ -50,5 +55,7 @@ uint32_t ll_func_receive_data_16(spi_stm32_t* spi);
 uint32_t ll_func_tx_is_empty(spi_stm32_t *spi);
 
 uint32_t ll_func_rx_is_not_empty(spi_stm32_t *spi);
+
+void ll_func_disable_int_tx_empty(spi_stm32_t *spi);
 
 #endif /* STM32_SPI_IFACE_H */

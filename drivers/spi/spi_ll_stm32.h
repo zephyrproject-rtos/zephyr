@@ -125,15 +125,6 @@ static inline void ll_func_enable_int_errors(SPI_TypeDef *spi)
 #endif /* st_stm32h7_spi */
 }
 
-static inline void ll_func_disable_int_tx_empty(SPI_TypeDef *spi)
-{
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
-	LL_SPI_DisableIT_TXP(spi);
-#else
-	LL_SPI_DisableIT_TXE(spi);
-#endif /* st_stm32h7_spi */
-}
-
 static inline void ll_func_disable_int_rx_not_empty(SPI_TypeDef *spi)
 {
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)

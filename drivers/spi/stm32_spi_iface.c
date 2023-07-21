@@ -20,8 +20,37 @@
  * error flag, because STM32F1 SoCs do not support it and  STM32CUBE
  * for F1 family defines an unused LL_SPI_SR_FRE.
  */
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
 #define SPI_STM32_ERR_MSK (LL_SPI_SR_UDR | LL_SPI_SR_CRCE | LL_SPI_SR_MODF | \
-            LL_SPI_SR_OVR | LL_SPI_SR_TIFRE)
+			   LL_SPI_SR_OVR | LL_SPI_SR_TIFRE)
+#else
+#if defined(LL_SPI_SR_UDR)
+#define SPI_STM32_ERR_MSK (LL_SPI_SR_UDR | LL_SPI_SR_CRCERR | LL_SPI_SR_MODF | \
+			   LL_SPI_SR_OVR | LL_SPI_SR_FRE)
+#elif defined(SPI_SR_FRE)
+#define SPI_STM32_ERR_MSK (LL_SPI_SR_CRCERR | LL_SPI_SR_MODF | \
+			   LL_SPI_SR_OVR | LL_SPI_SR_FRE)
+#else
+#define SPI_STM32_ERR_MSK (LL_SPI_SR_CRCERR | LL_SPI_SR_MODF | LL_SPI_SR_OVR)
+#endif
+#endif /* CONFIG_SOC_SERIES_STM32MP1X */
+
+int ll_func_get_err(spi_stm32_t* spi)
+{
+    SPI_TypeDef* ll_spi = (SPI_TypeDef*)spi;
+    uint32_t sr = LL_SPI_ReadReg(ll_spi, SR);
+
+    if (sr & SPI_STM32_ERR_MSK) {
+        /* OVR error must be explicitly cleared */
+        if (LL_SPI_IsActiveFlag_OVR(ll_spi)) {
+            LL_SPI_ClearFlag_OVR(ll_spi);
+        }
+
+        return (sr & SPI_STM32_ERR_MSK);
+    }
+
+    return 0;
+}
 
 void ll_func_transmit_data_8(spi_stm32_t* spi, uint32_t val)
 {
@@ -94,5 +123,14 @@ uint32_t ll_func_rx_is_not_empty(spi_stm32_t *spi)
 	return LL_SPI_IsActiveFlag_RXP(spi);
 #else
 	return LL_SPI_IsActiveFlag_RXNE(spi);
+#endif /* st_stm32h7_spi */
+}
+
+void ll_func_disable_int_tx_empty(spi_stm32_t *spi)
+{
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
+	LL_SPI_DisableIT_TXP(spi);
+#else
+	LL_SPI_DisableIT_TXE(spi);
 #endif /* st_stm32h7_spi */
 }
