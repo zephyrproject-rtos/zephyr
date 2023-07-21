@@ -2523,9 +2523,12 @@ TI K3 Platforms:
   collaborators:
     - gramsay0
   files:
-    - boards/arm64/phycore*/
-    - dts/arm64/ti/
-    - soc/arm64/ti_k3/
+    - boards/*/*phycore_am6*/
+    - boards/*/*ti_am6*/
+    - drivers/*/*ti_k3*/
+    - dts/*/ti/*ti_am6*/
+    - dts/bindings/*/ti,k3*
+    - soc/*/ti_k3/
   labels:
     - "platform: TI K3"
 
