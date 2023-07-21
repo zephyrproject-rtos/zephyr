@@ -24,6 +24,7 @@ config EMUL_ICM42688
 config ICM42688_DECODER
 	bool "ICM42688 decoder logic"
 	default y if ICM42688
+	select SENSOR_ASYNC_API
 	help
 	  Compile the ICM42688 decoder API which allows decoding raw data returned
 	  from the sensor.
