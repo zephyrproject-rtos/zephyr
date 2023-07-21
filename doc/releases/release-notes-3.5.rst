@@ -160,6 +160,10 @@ Drivers and Sensors
 
 * Flash
 
+  * Introduce npcx flash driver that supports two or more spi nor flashes via a
+    single Flash Interface Unit (FIU) module and Direct Read Access (DRA) mode
+    for better performance.
+
 * FPGA
 
 * Fuel Gauge
@@ -211,6 +215,8 @@ Drivers and Sensors
 * Serial
 
 * SPI
+
+  * Remove npcx spi driver implemented by Flash Interface Unit (FIU) module.
 
 * Timer
 
