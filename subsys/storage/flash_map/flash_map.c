@@ -18,6 +18,7 @@
 #include "flash_map_priv.h"
 #include <zephyr/drivers/flash.h>
 #include <zephyr/init.h>
+#include <zephyr/pm/device_runtime.h>
 
 void flash_area_foreach(flash_area_cb_t user_cb, void *user_data)
 {
@@ -29,6 +30,7 @@ void flash_area_foreach(flash_area_cb_t user_cb, void *user_data)
 int flash_area_open(uint8_t id, const struct flash_area **fap)
 {
 	const struct flash_area *area;
+	int rc = 0;
 
 	if (flash_map == NULL) {
 		return -EACCES;
@@ -43,14 +45,18 @@ int flash_area_open(uint8_t id, const struct flash_area **fap)
 		return -ENODEV;
 	}
 
+	/* Request the backing device to be active */
+	rc = pm_device_runtime_get(area->fa_dev);
+
 	*fap = area;
 
-	return 0;
+	return rc;
 }
 
 void flash_area_close(const struct flash_area *fa)
 {
-	/* nothing to do for now */
+	/* Release dependency on backing device */
+	pm_device_runtime_put(fa->fa_dev);
 }
 
 int flash_area_read(const struct flash_area *fa, off_t off, void *dst,

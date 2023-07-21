@@ -104,6 +104,15 @@ using :c:func:`flash_area_open` and DTS node label:
    	flash_area_read(my_area, ...);
    }
 
+Power Management
+****************
+
+If :ref:`pm-device-runtime` is enabled on the device the flash area is on,
+opening the flash area with :c:func:`flash_map_open` will automatically
+request the device to be in active mode via :c:func:`pm_device_runtime_get`.
+The request is released when the flash area is closed with
+:c:func:`flash_map_close`.
+
 API Reference
 *************
 
