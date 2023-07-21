@@ -1202,6 +1202,7 @@ static int send(struct isotp_send_ctx *ctx, const struct device *can_dev,
 		ret = attach_fc_filter(ctx);
 		if (ret) {
 			LOG_ERR("Can't attach fc filter: %d", ret);
+			free_send_ctx(&ctx);
 			return ret;
 		}
 
@@ -1214,6 +1215,7 @@ static int send(struct isotp_send_ctx *ctx, const struct device *can_dev,
 		ret = send_sf(ctx);
 		ctx->state = ISOTP_TX_WAIT_FIN;
 		if (ret) {
+			free_send_ctx(&ctx);
 			return ret == CAN_TIMEOUT ?
 			       ISOTP_N_TIMEOUT_A : ISOTP_N_ERROR;
 		}
