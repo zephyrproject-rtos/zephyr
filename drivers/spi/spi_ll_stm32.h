@@ -94,24 +94,6 @@ static inline uint32_t ll_func_spi_dma_busy(SPI_TypeDef *spi)
 }
 #endif /* CONFIG_SPI_STM32_DMA */
 
-static inline uint32_t ll_func_tx_is_empty(SPI_TypeDef *spi)
-{
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
-	return LL_SPI_IsActiveFlag_TXP(spi);
-#else
-	return LL_SPI_IsActiveFlag_TXE(spi);
-#endif /* st_stm32h7_spi */
-}
-
-static inline uint32_t ll_func_rx_is_not_empty(SPI_TypeDef *spi)
-{
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
-	return LL_SPI_IsActiveFlag_RXP(spi);
-#else
-	return LL_SPI_IsActiveFlag_RXNE(spi);
-#endif /* st_stm32h7_spi */
-}
-
 static inline void ll_func_enable_int_tx_empty(SPI_TypeDef *spi)
 {
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)

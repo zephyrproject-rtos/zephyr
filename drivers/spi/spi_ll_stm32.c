@@ -12,8 +12,11 @@ LOG_MODULE_REGISTER(spi_ll_stm32);
 
 #include <zephyr/sys/util.h>
 #include <zephyr/kernel.h>
+
 #include <soc.h>
 #include <stm32_ll_spi.h>
+#include "stm32_spi_iface.h"
+
 #include <errno.h>
 #include <zephyr/drivers/spi.h>
 #include <zephyr/drivers/pinctrl.h>
@@ -296,9 +299,9 @@ static void spi_stm32_shift_m(SPI_TypeDef *spi, struct spi_stm32_data *data)
 	 * we need to enable the start of the transfer with
 	 * LL_SPI_StartMasterTransfer(spi)
 	 */
-	if (LL_SPI_GetMode(spi) == LL_SPI_MODE_MASTER) {
-		LL_SPI_StartMasterTransfer(spi);
-		while (!LL_SPI_IsActiveMasterTransfer(spi)) {
+	if (ll_func_get_mode(spi) == STM32_SPI_MASTER) {
+		ll_func_start_master_transfer(spi);
+		while (!ll_func_is_active_master_transfer(spi)) {
 			/* NOP */
 		}
 	}
@@ -308,14 +311,14 @@ static void spi_stm32_shift_m(SPI_TypeDef *spi, struct spi_stm32_data *data)
 		if (spi_context_tx_buf_on(&data->ctx)) {
 			tx_frame = UNALIGNED_GET((uint8_t *)(data->ctx.tx_buf));
 		}
-		LL_SPI_TransmitData8(spi, tx_frame);
+		ll_func_transmit_data_8(spi, tx_frame);
 		/* The update is ignored if TX is off. */
 		spi_context_update_tx(&data->ctx, 1, 1);
 	} else {
 		if (spi_context_tx_buf_on(&data->ctx)) {
 			tx_frame = UNALIGNED_GET((uint16_t *)(data->ctx.tx_buf));
 		}
-		LL_SPI_TransmitData16(spi, tx_frame);
+		ll_func_transmit_data_16(spi, tx_frame);
 		/* The update is ignored if TX is off. */
 		spi_context_update_tx(&data->ctx, 2, 1);
 	}
@@ -325,13 +328,13 @@ static void spi_stm32_shift_m(SPI_TypeDef *spi, struct spi_stm32_data *data)
 	}
 
 	if (SPI_WORD_SIZE_GET(data->ctx.config->operation) == 8) {
-		rx_frame = LL_SPI_ReceiveData8(spi);
+		rx_frame = ll_func_receive_data_8(spi);
 		if (spi_context_rx_buf_on(&data->ctx)) {
 			UNALIGNED_PUT(rx_frame, (uint8_t *)data->ctx.rx_buf);
 		}
 		spi_context_update_rx(&data->ctx, 1, 1);
 	} else {
-		rx_frame = LL_SPI_ReceiveData16(spi);
+		rx_frame = ll_func_receive_data_16(spi);
 		if (spi_context_rx_buf_on(&data->ctx)) {
 			UNALIGNED_PUT(rx_frame, (uint16_t *)data->ctx.rx_buf);
 		}
