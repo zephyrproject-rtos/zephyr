@@ -638,8 +638,7 @@ static bt_conn_tx_cb_t att_cb(const struct net_buf *buf)
 	return att_unknown;
 }
 
-struct net_buf *bt_att_chan_create_pdu(struct bt_att_chan *chan, uint8_t op,
-				       size_t len)
+static struct net_buf *bt_att_chan_create_pdu(struct bt_att_chan *chan, uint8_t op, size_t len)
 {
 	struct bt_att_hdr *hdr;
 	struct net_buf *buf;
