@@ -18,6 +18,7 @@ include_directories(
 target_sources(testbinary
   PRIVATE
     src/main.c
+    src/spi_setup.c
     mocks/src/stm32_spi_iface_mocks.c
     mocks/src/pinctrl_mocks.c
     mocks/src/k_mutex_mocks.c
