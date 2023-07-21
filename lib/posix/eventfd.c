@@ -435,9 +435,8 @@ int eventfd(unsigned int initval, int flags)
 	if (initval != 0) {
 		k_poll_signal_raise(&efd->read_sig, 0);
 	}
-	if (initval < UINT64_MAX - 1) {
-		k_poll_signal_raise(&efd->write_sig, 0);
-	}
+
+	k_poll_signal_raise(&efd->write_sig, 0);
 
 	z_finalize_fd(fd, efd, &eventfd_fd_vtable);
 
