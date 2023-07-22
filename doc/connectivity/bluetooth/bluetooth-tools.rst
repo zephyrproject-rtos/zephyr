@@ -178,6 +178,69 @@ In order to see those logs, you can use the built-in ``btmon`` tool from BlueZ:
 
    $ btmon
 
+.. _bluetooth_virtual_posix:
+
+Running on a Virtual Controller and Native POSIX
+*************************************************
+
+An alternative to a Bluetooth physical controller is the use of a virtual
+controller. This controller can be connected over an HCI TCP server.
+This TCP server must support the HCI H4 protocol. In comparison to the physical controller
+variant, the virtual controller allows to test a Zephyr application running on the native
+boards without a physical Bluetooth controller.
+
+The main use case for a virtual controller is to do Bluetooth connectivity tests without
+the need of Bluetooth hardware. This allows to automate Bluetooth integration tests with
+external applications such as a Bluetooth gateway or a mobile application.
+
+To demonstrate this functionality an example is given to interact with a virtual controller.
+For this purpose, the experimental python module `Bumble`_ from Google is used as it allows to create
+a TCP Bluetooth virtual controller and connect with the Zephyr Bluetooth host. To install
+bumble follow the `Bumble Getting Started Guide`_.
+
+.. note::
+   If your Zephyr application requires the use of the HCI LE Set extended commands, install
+   the branch ``controller-extended-advertising`` from Bumble.
+
+Android Emulator
+=================
+
+You can test the virtual controller by connecting a Bluetooth Zephyr application
+to the `Android Emulator`_.
+
+To connect your application to the Android Emulator follow the next steps:
+
+    #. Build your Zephyr application and disable the HCI ACL flow
+       control (i.e. ``CONFIG_BT_HCI_ACL_FLOW_CONTROL=n``) as the
+       the virtual controller from android does not support it at the moment.
+
+    #. Install Android Emulator version >= 33.1.4.0. The easiest way to do this is by installing
+       the latest `Android Studio Preview`_ version.
+
+    #. Create a new Android Virtual Device (AVD) with the `Android Device Manager`_. The AVD should use at least SDK API 34.
+
+    #. Run the Android Emulator via terminal as follows:
+
+       ``emulator avd YOUR_AVD -packet-streamer-endpoint default``
+
+    #. Create a Bluetooth bridge between the Zephyr application and
+       the virtual controller from Android Emulator with the `Bumble`_ utility ``hci-bridge``.
+
+       ``bumble-hci-bridge tcp-server:_:1234 android-netsim``
+
+       This command will create a TCP server bridge on the local host IP address ``127.0.0.1``
+       and port number ``1234``.
+
+    #. Run the Zephyr application and connect to the TCP server created in the last step.
+
+       ``./zephyr.exe --bt-dev=127.0.0.1:1234``
+
+After following these steps the Zephyr application will be available to the Android Emulator
+over the virtual Bluetooth controller that was bridged with Bumble. You can verify that the
+Zephyr application can communicate over Bluetooth by opening the Bluetooth settings in your
+AVD and scanning for your Zephyr application device. To test this you can build the Bluetooth
+peripheral samples such as :ref:`Peripheral HR <peripheral_hr>` or :ref:`Peripheral DIS <peripheral_dis>`
+
 .. _bluetooth_ctlr_bluez:
 
 Using Zephyr-based Controllers with BlueZ
@@ -205,3 +268,8 @@ Additional information about :file:`btmgmt` can be found in its manual pages.
 .. _LightBlue for iOS: https://itunes.apple.com/us/app/lightblue-explorer/id557428110
 .. _nRF Mesh for Android: https://play.google.com/store/apps/details?id=no.nordicsemi.android.nrfmeshprovisioner&hl=en
 .. _nRF Mesh for iOS: https://itunes.apple.com/us/app/nrf-mesh/id1380726771
+.. _Bumble: https://github.com/google/bumble
+.. _Bumble Getting Started Guide: https://google.github.io/bumble/getting_started.html
+.. _Android Emulator: https://developer.android.com/studio/run/emulator
+.. _Android Device Manager: https://developer.android.com/studio/run/managing-avds
+.. _Android Studio Preview: https://developer.android.com/studio/preview
