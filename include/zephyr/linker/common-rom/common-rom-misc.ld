@@ -34,6 +34,11 @@
 	ITERABLE_SECTION_ROM(emul, 4)
 #endif /* CONFIG_EMUL */
 
+#if defined(CONFIG_ZBUS)
+	ITERABLE_SECTION_ROM(zbus_channel, 4)
+	ITERABLE_SECTION_ROM(zbus_channel_observation, 4)
+#endif /* CONFIG_ZBUS */
+
 	SECTION_DATA_PROLOGUE(symbol_to_keep,,)
 	{
 		__symbol_to_keep_start = .;

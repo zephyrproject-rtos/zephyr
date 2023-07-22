@@ -124,6 +124,11 @@
 	ITERABLE_SECTION_RAM(sensing_sensor, 4)
 #endif /* CONFIG_SENSING */
 
+#if defined(CONFIG_ZBUS)
+	ITERABLE_SECTION_RAM(zbus_observer, 4)
+	ITERABLE_SECTION_RAM(zbus_channel_observation_mask, 1)
+#endif /* CONFIG_ZBUS */
+
 #ifdef CONFIG_USERSPACE
 	_static_kernel_objects_end = .;
 #endif
