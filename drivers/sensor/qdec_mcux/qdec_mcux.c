@@ -111,9 +111,8 @@ static int qdec_mcux_ch_get(const struct device *dev, enum sensor_channel ch,
 
 	switch (ch) {
 	case SENSOR_CHAN_ROTATION:
-		val->val1 = ((int64_t)data->position * 360) /
-			    data->counts_per_revolution;
-		val->val2 = 0;
+		sensor_value_from_float(val, (data->position * 360.0f)
+					/ data->counts_per_revolution);
 		break;
 	default:
 		return -ENOTSUP;
