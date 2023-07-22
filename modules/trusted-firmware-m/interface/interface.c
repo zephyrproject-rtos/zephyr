@@ -74,7 +74,7 @@ int32_t tfm_ns_interface_dispatch(veneer_fn fn,
 	return result;
 }
 
-uint32_t tfm_ns_interface_init(void)
+enum tfm_status_e tfm_ns_interface_init(void)
 {
 	/*
 	 * The static K_MUTEX_DEFINE handles mutex initialization,
