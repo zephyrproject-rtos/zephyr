@@ -345,6 +345,15 @@ The following peripherals are currently provided with this board:
   must be powered down and support Bluetooth Low Energy (i.e. support the
   Bluetooth specification version 4.0 or greater).
 
+  Another possibility is to use a HCI TCP server which acts as a
+  :ref:`virtual Bluetooth controller<bluetooth_virtual_posix>` over TCP.
+  To connect to a HCI TCP server its IP address and port number must
+  be specified. For example, to connect to a HCI TCP server with IP
+  address 127.0.0.0 and port number 1020 use ``zephyr.exe --bt-dev=127.0.0.1:1020``.
+  This alternative option is mainly aimed for testing Bluetooth connectivity over
+  a virtual Bluetooth controller that does not depend on the Linux Bluetooth
+  stack and its HCI interface.
+
 **USB controller**:
   It's possible to use the Virtual USB controller working over USB/IP
   protocol. More information can be found in
