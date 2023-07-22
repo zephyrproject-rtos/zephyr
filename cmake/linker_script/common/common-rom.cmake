@@ -213,3 +213,8 @@ endif()
 if(CONFIG_USBD_MSC_CLASS)
   zephyr_iterable_section(NAME usbd_msc_lun KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN 4)
 endif()
+
+if(CONFIG_ZBUS)
+  zephyr_iterable_section(NAME zbus_channel KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN 4)
+  zephyr_iterable_section(NAME zbus_channel_observation KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN 4)
+endif()
