@@ -400,11 +400,19 @@ static void tcp_derive_rto(struct tcp *conn)
 
 /* Implementation according to RFC6582 */
 
+static void tcp_new_reno_log(struct tcp *conn, char *step)
+{
+	NET_DBG("conn: %p, ca %s, cwnd=%d, ssthres=%d, fast_pend=%i",
+		conn, step, conn->ca.cwnd, conn->ca.ssthresh,
+		conn->ca.pending_fast_retransmit_bytes);
+}
+
 static void tcp_new_reno_init(struct tcp *conn)
 {
 	conn->ca.cwnd = conn_mss(conn) * TCP_CONGESTION_INITIAL_WIN;
 	conn->ca.ssthresh = conn_mss(conn) * TCP_CONGESTION_INITIAL_SSTHRESH;
 	conn->ca.pending_fast_retransmit_bytes = 0;
+	tcp_new_reno_log(conn, "init");
 }
 
 static void tcp_new_reno_fast_retransmit(struct tcp *conn)
@@ -414,6 +422,7 @@ static void tcp_new_reno_fast_retransmit(struct tcp *conn)
 		/* Account for the lost segments */
 		conn->ca.cwnd = conn_mss(conn) * 3 + conn->ca.ssthresh;
 		conn->ca.pending_fast_retransmit_bytes = conn->unacked_len;
+		tcp_new_reno_log(conn, "fast_retransmit");
 	}
 }
 
@@ -421,6 +430,7 @@ static void tcp_new_reno_timeout(struct tcp *conn)
 {
 	conn->ca.ssthresh = MAX(conn_mss(conn) * 2, conn->unacked_len / 2);
 	conn->ca.cwnd = conn_mss(conn);
+	tcp_new_reno_log(conn, "timeout");
 }
 
 /* For every duplicate ack increment the cwnd by mss */
@@ -430,6 +440,7 @@ static void tcp_new_reno_dup_ack(struct tcp *conn)
 
 	new_win += conn_mss(conn);
 	conn->ca.cwnd = MIN(new_win, UINT16_MAX);
+	tcp_new_reno_log(conn, "dup_ack");
 }
 
 static void tcp_new_reno_pkts_acked(struct tcp *conn, uint32_t acked_len)
@@ -455,6 +466,7 @@ static void tcp_new_reno_pkts_acked(struct tcp *conn, uint32_t acked_len)
 			conn->ca.cwnd -= acked_len;
 		}
 	}
+	tcp_new_reno_log(conn, "pkts_acked");
 }
 
 static void tcp_ca_init(struct tcp *conn)
