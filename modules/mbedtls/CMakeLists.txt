@@ -52,6 +52,7 @@ zephyr_interface_library_named(mbedTLS)
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/cipher.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/cipher_wrap.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/cmac.c
+      ${ZEPHYR_CURRENT_MODULE_DIR}/library/code_share.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/ctr_drbg.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/debug.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/des.c
@@ -76,7 +77,6 @@ zephyr_interface_library_named(mbedTLS)
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/mps_reader.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/mps_trace.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/poly1305.c
-      ${ZEPHYR_CURRENT_MODULE_DIR}/library/psa_util.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/ripemd160.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/rsa_alt_helpers.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/rsa.c
