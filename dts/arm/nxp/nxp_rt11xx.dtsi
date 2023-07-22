@@ -1062,6 +1062,25 @@
 			status = "okay";
 		};
 
+		xbar1: xbar1@4003c000 {
+			compatible = "nxp,mcux-xbar";
+			reg = <0x4003c000 0x4000>;
+			interrupts = <143 0>, <144 0>;
+			status = "disabled";
+		};
+
+		xbar2: xbar2@40040000 {
+			compatible = "nxp,mcux-xbar";
+			reg = <0x40040000 0x4000>;
+			status = "disabled";
+		};
+
+		xbar3: xbar3@40044000 {
+			compatible = "nxp,mcux-xbar";
+			reg = <0x40044000 0x4000>;
+			status = "disabled";
+		};
+
 	};
 };
 
