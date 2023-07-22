@@ -1062,6 +1062,35 @@
 			status = "okay";
 		};
 
+
+		qdec1: qdec@40174000 {
+			compatible = "nxp,mcux-qdec";
+			reg = <0x40174000 0x4000>;
+			interrupts = <165 0>;
+			status = "disabled";
+		};
+
+		qdec2: qdec@40178000 {
+			compatible = "nxp,mcux-qdec";
+			reg = <0x40178000 0x4000>;
+			interrupts = <166 0>;
+			status = "disabled";
+		};
+
+		qdec3: qdec@4017c000 {
+			compatible = "nxp,mcux-qdec";
+			reg = <0x4017c000 0x4000>;
+			interrupts = <167 0>;
+			status = "disabled";
+		};
+
+		qdec4: qdec@40180000 {
+			compatible = "nxp,mcux-qdec";
+			reg = <0x40180000 0x4000>;
+			interrupts = <168 0>;
+			status = "disabled";
+		};
+
 		xbar1: xbar1@4003c000 {
 			compatible = "nxp,mcux-xbar";
 			reg = <0x4003c000 0x4000>;
