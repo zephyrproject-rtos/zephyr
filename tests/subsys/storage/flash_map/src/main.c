@@ -9,6 +9,8 @@
 #include <zephyr/ztest.h>
 #include <zephyr/drivers/flash.h>
 #include <zephyr/storage/flash_map.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/device_runtime.h>
 
 #define SLOT1_PARTITION		slot1_partition
 #define SLOT1_PARTITION_ID	FIXED_PARTITION_ID(SLOT1_PARTITION)
@@ -188,6 +190,51 @@ ZTEST(flash_map, test_flash_area_erased_val)
 		      "value different than the flash erase value");
 
 	flash_area_close(fa);
+}
+
+static int dummy_device_pm_action(const struct device *dev,
+				  enum pm_device_action action)
+{
+	return 0;
+}
+
+/* Define a driver with power management enabled */
+PM_DEVICE_DEFINE(pm_flash_driver, dummy_device_pm_action);
+DEVICE_DT_DEFINE(DT_NODELABEL(pm_flash), NULL,
+	      PM_DEVICE_GET(pm_flash_driver), NULL, NULL, APPLICATION,
+	      CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, NULL);
+
+ZTEST(flash_map, test_flash_area_open_pm)
+{
+#ifdef CONFIG_PM_DEVICE_RUNTIME
+	const struct device *pm_flash = DEVICE_DT_GET(DT_NODELABEL(pm_flash));
+	const struct flash_area *fa;
+	enum pm_device_state state;
+	int rc;
+
+	/* Setup device for test */
+	zassert_equal(pm_device_runtime_enable(pm_flash), 0, "Failed to enabled PM");
+	zassert_equal(pm_device_state_get(pm_flash, &state), 0, "Failed to get state");
+	zassert_equal(state, PM_DEVICE_STATE_SUSPENDED, "Unexpected state");
+
+	/* Open the flash area on the PM device */
+	rc = flash_area_open(FIXED_PARTITION_ID(pm_partition), &fa);
+	zassert_equal(rc, 0, "Failed to open");
+
+	/* Flash device should now be in active state */
+	zassert_equal(pm_device_state_get(pm_flash, &state), 0, "Failed to get state");
+	zassert_equal(state, PM_DEVICE_STATE_ACTIVE, "Unexpected state");
+
+	/* Close the flash area again */
+	flash_area_close(fa);
+
+	/* Flash device should now be back is suspend */
+	zassert_equal(pm_device_state_get(pm_flash, &state), 0, "Failed to get state");
+	zassert_equal(state, PM_DEVICE_STATE_SUSPENDED, "Unexpected state");
+#else
+	/* Stop compilation warning */
+	(void)dummy_device_pm_action;
+#endif /* CONFIG_PM_DEVICE_RUNTIME */
 }
 
 ZTEST_SUITE(flash_map, NULL, NULL, NULL, NULL, NULL);

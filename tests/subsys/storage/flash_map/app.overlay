@@ -28,4 +28,20 @@
 			};
 		};
 	};
+
+	pm_flash: pm_flash {
+		compatible = "vnd,flash";
+		status = "okay";
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			pm_partition: partition@0 {
+				label = "pm_partition";
+				reg = <0x00000000 0x00001000>;
+			};
+		};
+	};
 };

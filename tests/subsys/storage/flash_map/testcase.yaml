@@ -8,6 +8,18 @@ tests:
     tags: flash_map
     integration_platforms:
       - native_posix
+  storage.flash_map.pm:
+    platform_allow:
+      - nrf51dk_nrf51422
+      - qemu_x86
+      - native_posix
+      - native_posix_64
+    extra_configs:
+      - CONFIG_PM_DEVICE=y
+      - CONFIG_PM_DEVICE_RUNTIME=y
+    tags: flash_map pm
+    integration_platforms:
+      - native_posix
   storage.flash_map.mpu:
     extra_args: OVERLAY_CONFIG=overlay-mpu.conf
     platform_allow:
