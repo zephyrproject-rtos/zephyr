@@ -7,16 +7,6 @@
 include: [sensor-device.yaml, i2c-device.yaml]
 
 properties:
-  config:
-    type: int
-    required: true
-    description: |
-      Value of the configuration register
-      e.g shunt voltage and bus voltage ADC conversion
-      times and averaging, operating mode for INA230 or
-      delay for initial ADC conversion, shunt full scale range
-      for INA237.
-
   current-lsb-microamps:
     type: int
     required: true

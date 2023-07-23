@@ -16,6 +16,16 @@ compatible: "ti,ina230"
 include: ti,ina23x-common.yaml
 
 properties:
+  config:
+    type: int
+    required: true
+    description: |
+      Value of the configuration register
+      e.g shunt voltage and bus voltage ADC conversion
+      times and averaging, operating mode for INA230 or
+      delay for initial ADC conversion, shunt full scale range
+      for INA237.
+
   mask:
     type: int
     default: 0

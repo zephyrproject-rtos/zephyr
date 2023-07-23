@@ -365,7 +365,12 @@ static const struct sensor_driver_api ina237_driver_api = {
 	static const struct ina237_config ina237_config_##inst = {                                 \
 		.bus = I2C_DT_SPEC_INST_GET(inst),                                                 \
 		.config = DT_INST_PROP(inst, config),                                              \
-		.adc_config = DT_INST_PROP(inst, adc_config),                                      \
+		.adc_config = DT_INST_PROP(inst, adc_config) |                                     \
+			(DT_INST_ENUM_IDX(inst, adc_mode) << 12) |                             \
+			(DT_INST_ENUM_IDX(inst, vbus_conversion_time_us) << 9) |                 \
+			(DT_INST_ENUM_IDX(inst, vshunt_conversion_time_us) << 6) |               \
+			(DT_INST_ENUM_IDX(inst, temp_conversion_time_us) << 3) |                 \
+			DT_INST_ENUM_IDX(inst, avg_count),                                        \
 		.current_lsb = DT_INST_PROP(inst, current_lsb_microamps),                          \
 		.cal = INA237_CAL_SCALING * DT_INST_PROP(inst, current_lsb_microamps) *            \
 		       DT_INST_PROP(inst, rshunt_micro_ohms) / 10000000000ULL,                     \
