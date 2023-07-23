@@ -17,6 +17,8 @@
 #include <zephyr/drivers/sensor.h>
 
 #define INA237_REG_CONFIG     0x00
+#define INA237_CFG_HIGH_PRECISION	BIT(4)
+
 #define INA237_REG_ADC_CONFIG 0x01
 #define INA237_REG_CALIB      0x02
 #define INA237_REG_SHUNT_VOLT 0x04
