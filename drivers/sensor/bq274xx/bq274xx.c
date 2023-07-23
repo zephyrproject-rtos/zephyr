@@ -86,11 +86,10 @@ static int bq274xx_ctrl_reg_write(const struct device *dev, uint16_t subcommand)
 	const struct bq274xx_config *config = dev->config;
 	int ret;
 
-	uint8_t tx_buf[3] = {
-		BQ274XX_CMD_CONTROL_LOW,
-		subcommand & 0xff,
-		subcommand >> 8,
-	};
+	uint8_t tx_buf[3];
+
+	tx_buf[0] = BQ274XX_CMD_CONTROL_LOW;
+	sys_put_le16(subcommand, &tx_buf[1]);
 
 	ret = i2c_write_dt(&config->i2c, tx_buf, sizeof(tx_buf));
 	if (ret < 0) {
