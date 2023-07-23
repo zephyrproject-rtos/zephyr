@@ -250,6 +250,15 @@ config MBEDTLS_AES_ROM_TABLES
 	bool "Use precomputed AES tables stored in ROM."
 	default y
 
+config MBEDTLS_AES_FEWER_TABLES
+	depends on MBEDTLS_CIPHER_AES_ENABLED
+	bool "Reduce the size of precomputed AES tables by ~6kB"
+	help
+	  Reduce the size of the AES tables at a tradeoff of more
+	  arithmetic operations at runtime. Specifically 4 table
+	  lookups are converted to 1 table lookup, 3 additions
+	  and 6 bit shifts.
+
 config MBEDTLS_CIPHER_CAMELLIA_ENABLED
 	bool "Camellia block cipher"
 
