@@ -22,66 +22,66 @@ static bool hard_msg_validator(const void *msg, size_t msg_size)
 	       (ref->pointer != NULL);
 }
 
-ZBUS_CHAN_DEFINE(version_chan,	     /* Name */
+ZBUS_CHAN_DEFINE(version_chan,       /* Name */
 		 struct version_msg, /* Message type */
 
-		 NULL,		       /* Validator */
-		 NULL,		       /* User data */
+		 NULL,                 /* Validator */
+		 NULL,                 /* User data */
 		 ZBUS_OBSERVERS_EMPTY, /* observers */
 		 ZBUS_MSG_INIT(.major = 0, .minor = 1,
 			       .build = 1023) /* Initial value major 0, minor 1, build 1023 */
 );
 
-ZBUS_CHAN_DEFINE(aux1_chan,	/* Name */
+ZBUS_CHAN_DEFINE(aux1_chan,     /* Name */
 		 struct s1_msg, /* Message type */
 
-		 NULL,			   /* Validator */
-		 NULL,			   /* User data */
+		 NULL,                     /* Validator */
+		 NULL,                     /* User data */
 		 ZBUS_OBSERVERS(fast_lis), /* observers */
-		 ZBUS_MSG_INIT(0)	   /* Initial value major 0, minor 1, build 1023 */
+		 ZBUS_MSG_INIT(0)          /* Initial value major 0, minor 1, build 1023 */
 );
 
-ZBUS_CHAN_DEFINE(aux2_chan,	    /* Name */
+ZBUS_CHAN_DEFINE(aux2_chan,         /* Name */
 		 struct action_msg, /* Message type */
 
-		 NULL,			   /* Validator */
-		 NULL,			   /* User data */
+		 NULL,                     /* Validator */
+		 NULL,                     /* User data */
 		 ZBUS_OBSERVERS(fast_lis), /* observers */
-		 ZBUS_MSG_INIT(0)	   /* Initial value major 0, minor 1, build 1023 */
+		 ZBUS_MSG_INIT(0)          /* Initial value major 0, minor 1, build 1023 */
 );
 
 ZBUS_CHAN_DEFINE(aux3_on_change_chan, /* Name */
 		 struct action_msg,   /* Message type */
 
-		 NULL,			   /* Validator */
-		 NULL,			   /* User data */
+		 NULL,                     /* Validator */
+		 NULL,                     /* User data */
 		 ZBUS_OBSERVERS(fast_lis), /* observers */
-		 ZBUS_MSG_INIT(0)	   /* Initial value major 0, minor 1, build 1023 */
+		 ZBUS_MSG_INIT(0)          /* Initial value major 0, minor 1, build 1023 */
 );
 
-ZBUS_CHAN_DEFINE(go_busy_chan,	    /* Name */
+ZBUS_CHAN_DEFINE(go_busy_chan,      /* Name */
 		 struct action_msg, /* Message type */
 
-		 NULL,			   /* Validator */
-		 NULL,			   /* User data */
+		 NULL,                     /* Validator */
+		 NULL,                     /* User data */
 		 ZBUS_OBSERVERS(busy_lis), /* observers */
-		 ZBUS_MSG_INIT(0)	   /* Initial value major 0, minor 1, build 1023 */
+		 ZBUS_MSG_INIT(0)          /* Initial value major 0, minor 1, build 1023 */
 );
 
-ZBUS_CHAN_DEFINE(hard_chan,	  /* Name */
+ZBUS_CHAN_DEFINE(hard_chan,       /* Name */
 		 struct hard_msg, /* Message type */
 
 		 hard_msg_validator,   /* Validator */
-		 NULL,		       /* User data */
+		 NULL,                 /* User data */
 		 ZBUS_OBSERVERS_EMPTY, /* observers */
 		 ZBUS_MSG_INIT(0)      /* Initial value major 0, minor 1, build 1023 */
 );
 
-ZBUS_CHAN_DEFINE(stuck_chan,	  /* Name */
+ZBUS_CHAN_DEFINE(stuck_chan,      /* Name */
 		 struct hard_msg, /* Message type */
 
 		 hard_msg_validator,   /* Validator */
-		 NULL,		       /* User data */
+		 NULL,                 /* User data */
 		 ZBUS_OBSERVERS_EMPTY, /* observers */
 		 ZBUS_MSG_INIT(0)      /* Initial value major 0, minor 1, build 1023 */
 );
@@ -288,8 +288,9 @@ ZTEST(basic, test_specification_based__zbus_chan)
 
 	zassert_equal(0, zbus_chan_notify(&stuck_chan, K_MSEC(200)), "It must finish correctly");
 
-	zassert_equal(-EFAULT, zbus_chan_notify(&stuck_chan, K_MSEC(200)),
-		      "It must finish correctly");
+	zassert_equal(-EAGAIN, zbus_chan_notify(&stuck_chan, K_MSEC(200)),
+		      "It must get stuck on the stuck_chan since it only has 1 occupied spot at "
+		      "the msgq");
 
 	/* Trying to call the zbus functions in a ISR context. None must work */
 	ISR_OP(PUB_ISR, -EFAULT);
@@ -308,7 +309,6 @@ ZTEST(basic, test_specification_based__zbus_chan)
 	ISR_OP(RM_OBS_ISR_INVAL, -EFAULT);
 }
 
-#if defined(CONFIG_ZBUS_STRUCTS_ITERABLE_ACCESS)
 static bool always_true_chan_iterator(const struct zbus_channel *chan)
 {
 	return true;
@@ -329,13 +329,13 @@ static bool always_false_obs_iterator(const struct zbus_observer *obs)
 	return false;
 }
 
-static bool check_chan_iterator(const struct zbus_channel *chan)
+static bool check_chan_iterator(const struct zbus_channel *chan, void *user_data)
 {
-	static int chan_idx;
+	int *chan_idx = user_data;
 
-	LOG_DBG("Idx %d - Channel %s", chan_idx, chan->name);
+	LOG_DBG("Idx %d - Channel %s", *chan_idx, chan->name);
 
-	switch (chan_idx) {
+	switch (*chan_idx) {
 	case 0:
 		zassert_mem_equal__(zbus_chan_name(chan), "aux1_chan", 9, "Must be equal");
 		break;
@@ -361,18 +361,18 @@ static bool check_chan_iterator(const struct zbus_channel *chan)
 	default:
 		zassert_unreachable(NULL);
 	}
-	++chan_idx;
+	++(*chan_idx);
 
 	return true;
 }
 
-static bool check_obs_iterator(const struct zbus_observer *obs)
+static bool check_obs_iterator(const struct zbus_observer *obs, void *user_data)
 {
-	static int obs_idx;
+	int *obs_idx = user_data;
 
-	LOG_DBG("Idx %d - Observer %s", obs_idx, obs->name);
+	LOG_DBG("Idx %d - Observer %s", *obs_idx, obs->name);
 
-	switch (obs_idx) {
+	switch (*obs_idx) {
 	case 0:
 		zassert_mem_equal__(zbus_obs_name(obs), "busy_lis", 8, "Must be equal");
 		break;
@@ -391,34 +391,38 @@ static bool check_obs_iterator(const struct zbus_observer *obs)
 	default:
 		zassert_unreachable(NULL);
 	}
-	++obs_idx;
+	++(*obs_idx);
 
 	return true;
 }
 
 static int oracle;
-static int idx = -1;
 
-static bool count_false_chan_iterator(const struct zbus_channel *chan)
+static bool count_false_chan_iterator(const struct zbus_channel *chan, void *user_data)
 {
-	++idx;
+	int *idx = user_data;
 
-	LOG_DBG("chan_idx %d, oracle %d", idx, oracle);
+	++(*idx);
 
-	return (bool)(idx != oracle);
+	LOG_DBG("chan_idx %d, oracle %d", *idx, oracle);
+
+	return (bool)(*idx != oracle);
 }
 
-static bool count_false_obs_iterator(const struct zbus_observer *obs)
+static bool count_false_obs_iterator(const struct zbus_observer *obs, void *user_data)
 {
-	++idx;
+	int *idx = user_data;
 
-	LOG_DBG("obs_idx %d, oracle %d", idx, oracle);
+	++(*idx);
 
-	return (bool)(idx != oracle);
+	LOG_DBG("obs_idx %d, oracle %d", *idx, oracle);
+
+	return (bool)(*idx != oracle);
 }
 
 ZTEST(basic, test_iterators)
 {
+
 	zassert_equal(true, zbus_iterate_over_channels(always_true_chan_iterator), "Must be true");
 
 	zassert_equal(true, zbus_iterate_over_observers(always_true_obs_iterator), "Must be true");
@@ -429,9 +433,17 @@ ZTEST(basic, test_iterators)
 	zassert_equal(false, zbus_iterate_over_observers(always_false_obs_iterator),
 		      "Must be false");
 
-	zassert_equal(true, zbus_iterate_over_channels(check_chan_iterator), "Must be true");
+	int chan_idx = 0;
 
-	zassert_equal(true, zbus_iterate_over_observers(check_obs_iterator), "Must be true");
+	zassert_equal(true,
+		      zbus_iterate_over_channels_with_user_data(check_chan_iterator, &chan_idx),
+		      "Must be true");
+
+	int obs_idx = 0;
+
+	zassert_equal(true,
+		      zbus_iterate_over_observers_with_user_data(check_obs_iterator, &obs_idx),
+		      "Must be true");
 
 	int chan_count = 0;
 
@@ -439,11 +451,15 @@ ZTEST(basic, test_iterators)
 
 	chan_count -= 1;
 
+	int idx = -1;
+
 	for (int i = 0; i < chan_count; ++i) {
 		oracle = i;
 
-		zassert_equal(false, zbus_iterate_over_channels(count_false_chan_iterator),
-			      "Must be false");
+		zassert_equal(
+			false,
+			zbus_iterate_over_channels_with_user_data(count_false_chan_iterator, &idx),
+			"Must be false");
 
 		k_msleep(100);
 
@@ -455,23 +471,20 @@ ZTEST(basic, test_iterators)
 
 	obs_count -= 1;
 
+	idx = -1;
 	LOG_DBG("Counts obs %d, chan %d", obs_count, chan_count);
 
 	for (int i = 0; i < obs_count; ++i) {
 		oracle = i;
 
-		zassert_equal(false, zbus_iterate_over_observers(count_false_obs_iterator),
-			      "Must be false");
+		zassert_equal(
+			false,
+			zbus_iterate_over_observers_with_user_data(count_false_obs_iterator, &idx),
+			"Must be false");
 
 		idx = -1;
 	}
 }
-#else
-ZTEST(basic, test_iterators)
-{
-	ztest_test_skip();
-}
-#endif
 
 ZTEST(basic, test_hard_channel)
 {
@@ -503,17 +516,31 @@ ZTEST(basic, test_hard_channel)
 
 ZTEST(basic, test_specification_based__zbus_obs_set_enable)
 {
+	bool enable;
+
 	count_fast = 0;
 
 	zassert_equal(-EFAULT, zbus_obs_set_enable(NULL, false), NULL);
 
+	zassert_equal(-EFAULT, zbus_obs_is_enabled(NULL, NULL));
+
+	zassert_equal(-EFAULT, zbus_obs_is_enabled(NULL, &enable));
+
+	zassert_equal(-EFAULT, zbus_obs_is_enabled(&rt_fast_lis, NULL));
+
 	zassert_equal(0, zbus_obs_set_enable(&rt_fast_lis, false),
 		      "Must be zero. The observer must be disabled");
+
+	zbus_obs_is_enabled(&rt_fast_lis, &enable);
+	zassert_equal(false, enable);
 
 	zassert_equal(0, zbus_chan_add_obs(&aux1_chan, &rt_fast_lis, K_MSEC(200)), NULL);
 
 	zassert_equal(0, zbus_obs_set_enable(&fast_lis, false),
 		      "Must be zero. The observer must be disabled");
+
+	zbus_obs_is_enabled(&fast_lis, &enable);
+	zassert_equal(false, enable);
 
 	zbus_chan_notify(&aux1_chan, K_NO_WAIT);
 
@@ -524,16 +551,59 @@ ZTEST(basic, test_specification_based__zbus_obs_set_enable)
 	zassert_equal(0, zbus_obs_set_enable(&fast_lis, true),
 		      "Must be zero. The observer must be enabled");
 
+	zbus_obs_is_enabled(&fast_lis, &enable);
+	zassert_equal(true, enable);
+
 	zassert_equal(0, zbus_obs_set_enable(&rt_fast_lis, true),
 		      "Must be zero. The observer must be enabled");
+
+	zbus_obs_is_enabled(&rt_fast_lis, &enable);
+	zassert_equal(true, enable);
 
 	zbus_chan_notify(&aux1_chan, K_NO_WAIT);
 
 	k_msleep(300);
 
-	zassert_equal(count_fast, 2, "Must be 2. Callback must be called once");
+	zassert_equal(count_fast, 2, "Must be 2. Callback must be called once it is %d",
+		      count_fast);
 
 	zassert_equal(0, zbus_chan_rm_obs(&aux1_chan, &rt_fast_lis, K_MSEC(200)), NULL);
+}
+
+ZTEST(basic, test_specification_based__zbus_obs_set_chan_notification_mask)
+{
+	bool enabled = false;
+
+	count_fast = 0;
+
+	zassert_equal(-EFAULT, zbus_obs_set_chan_notification_mask(NULL, NULL, false), NULL);
+
+	zassert_equal(-EFAULT, zbus_obs_set_chan_notification_mask(NULL, NULL, true), NULL);
+
+	zassert_equal(-EFAULT, zbus_obs_set_chan_notification_mask(&fast_lis, NULL, true), NULL);
+
+	zassert_equal(-EFAULT, zbus_obs_set_chan_notification_mask(NULL, &aux1_chan, true), NULL);
+
+	zbus_obs_set_chan_notification_mask(&fast_lis, &aux1_chan, true);
+
+	zbus_obs_is_chan_notification_masked(&fast_lis, &aux1_chan, &enabled);
+	zassert_equal(true, enabled);
+
+	zbus_chan_notify(&aux1_chan, K_NO_WAIT);
+
+	zassert_equal(count_fast, 0, "Count must 0, since the channel notification is masked");
+
+	zbus_obs_set_chan_notification_mask(&fast_lis, &aux1_chan, false);
+
+	zbus_obs_is_chan_notification_masked(&fast_lis, &aux1_chan, &enabled);
+	zassert_equal(false, enabled);
+
+	zbus_chan_notify(&aux1_chan, K_NO_WAIT);
+	zbus_chan_notify(&aux1_chan, K_NO_WAIT);
+	zbus_chan_notify(&aux1_chan, K_NO_WAIT);
+
+	zassert_equal(count_fast, 3, "Must be 3. The channel notification was masked %d",
+		      count_fast);
 }
 
 ZBUS_SUBSCRIBER_DEFINE(foo_sub, 1);
