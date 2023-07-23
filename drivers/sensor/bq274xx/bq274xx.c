@@ -52,8 +52,13 @@ LOG_MODULE_REGISTER(bq274xx, CONFIG_SENSOR_LOG_LEVEL);
 /* Config update mode flag */
 #define BQ27XXX_FLAG_CFGUP BIT(4)
 
+/* BQ27427 CC Gain */
+#define BQ27427_CC_GAIN BQ274XX_EXT_BLKDAT(5)
+#define BQ27427_CC_GAIN_SIGN_BIT BIT(7)
+
 /* Subclasses */
 #define BQ274XX_SUBCLASS_82 82
+#define BQ274XX_SUBCLASS_105 105
 
 static const struct bq274xx_regs bq27421_regs = {
 	.dm_design_capacity = 10,
@@ -248,6 +253,72 @@ static int bq274xx_mode_cfgupdate(const struct device *dev, bool enabled)
 	return 0;
 }
 
+/*
+ * BQ27427 needs the CC Gain polarity swapped from the ROM value.
+ * The details are currently only documented in the TI E2E support forum:
+ * https://e2e.ti.com/support/power-management-group/power-management/f/power-management-forum/1215460/bq27427evm-misbehaving-stateofcharge
+ */
+static int bq27427_ccgain_quirk(const struct device *dev)
+{
+	const struct bq274xx_config *const config = dev->config;
+	int ret;
+	uint8_t val, checksum;
+
+	ret = i2c_reg_write_byte_dt(&config->i2c, BQ274XX_EXT_DATA_CLASS,
+				    BQ274XX_SUBCLASS_105);
+	if (ret < 0) {
+		LOG_ERR("Failed to update state subclass");
+		return -EIO;
+	}
+
+	ret = i2c_reg_write_byte_dt(&config->i2c, BQ274XX_EXT_DATA_BLOCK, 0x00);
+	if (ret < 0) {
+		LOG_ERR("Failed to update block offset");
+		return -EIO;
+	}
+
+	k_sleep(BQ274XX_SUBCLASS_DELAY);
+
+	ret = i2c_reg_read_byte_dt(&config->i2c, BQ27427_CC_GAIN, &val);
+	if (ret < 0) {
+		LOG_ERR("Failed to read ccgain");
+		return -EIO;
+	}
+
+	if (!(val & BQ27427_CC_GAIN_SIGN_BIT)) {
+		LOG_DBG("bq27427 quirk already applied");
+		return 0;
+	}
+
+	ret = i2c_reg_read_byte_dt(&config->i2c, BQ274XX_EXT_CHECKSUM, &checksum);
+	if (ret < 0) {
+		LOG_ERR("Failed to read block checksum");
+		return -EIO;
+	}
+
+	/* Flip the sign bit on both value and checksum. */
+	val ^= BQ27427_CC_GAIN_SIGN_BIT;
+	checksum ^= BQ27427_CC_GAIN_SIGN_BIT;
+
+	LOG_DBG("bq27427: val=%02x checksum=%02x", val, checksum);
+
+	ret = i2c_reg_write_byte_dt(&config->i2c, BQ27427_CC_GAIN, val);
+	if (ret < 0) {
+		LOG_ERR("Failed to update ccgain");
+		return -EIO;
+	}
+
+	ret = i2c_reg_write_byte_dt(&config->i2c, BQ274XX_EXT_CHECKSUM, checksum);
+	if (ret < 0) {
+		LOG_ERR("Failed to update block checksum");
+		return -EIO;
+	}
+
+	k_sleep(BQ274XX_SUBCLASS_DELAY);
+
+	return 0;
+}
+
 static int bq274xx_gauge_configure(const struct device *dev)
 {
 	const struct bq274xx_config *const config = dev->config;
@@ -308,6 +379,13 @@ static int bq274xx_gauge_configure(const struct device *dev)
 		ret = bq274xx_write_block(dev, block, sizeof(block));
 		if (ret < 0) {
 			return ret;
+		}
+
+		if (data->regs == &bq27427_regs) {
+			ret = bq27427_ccgain_quirk(dev);
+			if (ret < 0) {
+				return ret;
+			}
 		}
 
 		ret = bq274xx_mode_cfgupdate(dev, false);
