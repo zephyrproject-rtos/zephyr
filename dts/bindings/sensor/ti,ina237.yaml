@@ -97,3 +97,8 @@ properties:
       Default is the power-on reset value.
     default: 1
     enum: [1, 4, 16, 64, 128, 256, 512, 1024]
+
+  high-precision:
+    type: boolean
+    description: |
+      Enable high precision mode (4x the resolution).

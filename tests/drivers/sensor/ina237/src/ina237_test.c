@@ -8,6 +8,7 @@
 #include <zephyr/drivers/emul.h>
 #include <zephyr/drivers/i2c_emul.h>
 #include <zephyr/drivers/sensor.h>
+#include <zephyr/dt-bindings/sensor/ina237.h>
 #include <zephyr/ztest.h>
 
 #include <ina237_emul.h>
@@ -44,6 +45,26 @@ ZTEST(ina237_0, test_default_config)
  *
  * @param fixture
  */
+
+static void test_shunt_cal(struct ina237_fixture *fixture)
+{
+	/* Confirm SHUNT_CAL register which is 819.2e6 * Current_LSB * Rshunt */
+	double shunt_cal = 819.2e6 * fixture->current_lsb_uA * 1e-6 * fixture->rshunt_uOhms * 1e-6;
+
+	if (fixture->config & INA237_CFG_HIGH_PRECISION) {
+		/* High precision mode */
+		shunt_cal *= 4;
+	}
+
+	uint32_t shunt_register_actual;
+	uint16_t shunt_register_expected = (uint16_t)shunt_cal;
+
+	zassert_ok(ina237_mock_get_register(fixture->mock->data, INA237_REG_CALIB,
+		&shunt_register_actual));
+	zexpect_within(shunt_register_expected, shunt_register_actual, 1,
+		"Expected %d, got %d", shunt_register_expected, shunt_register_actual);
+}
+
 static void test_current(struct ina237_fixture *fixture)
 {
 	/* 16-bit signed value for current register */
@@ -109,6 +130,38 @@ static void test_bus_voltage(struct ina237_fixture *fixture)
 	}
 }
 
+static void test_power(struct ina237_fixture *fixture)
+{
+	/* 24-bit unsigned value for power register */
+	const uint32_t power_reg_vectors[] = {
+		16777215,
+		65535,
+		32767,
+		1000,
+		100,
+		1,
+		0,
+	};
+
+	for (int idx = 0; idx < ARRAY_SIZE(power_reg_vectors); idx++) {
+		struct sensor_value sensor_val;
+		uint32_t power_register = power_reg_vectors[idx];
+
+		/* power is 0.2 * current_lsb * register */
+		double power_expected_W = 0.2 * fixture->current_lsb_uA * 1e-6 * power_register;
+
+		/* set current reading */
+		ina237_mock_set_register(fixture->mock->data, INA237_REG_POWER, power_register);
+
+		/* Verify sensor value is correct */
+		zassert_ok(sensor_sample_fetch(fixture->dev));
+		zassert_ok(sensor_channel_get(fixture->dev, SENSOR_CHAN_POWER, &sensor_val));
+		double power_actual_W = sensor_value_to_double(&sensor_val);
+
+		zexpect_within(power_expected_W, power_actual_W, 1e-6,
+			"Expected %.6f C, got %.6f C", power_expected_W, power_actual_W);
+	}
+}
 
 static void test_temperature(struct ina237_fixture *fixture)
 {
@@ -161,8 +214,10 @@ static struct ina237_fixture fixtures[] = {
 
 /* Create a test suite for each enabled ina237 device node */
 #define INA237_TESTS(inst) \
+	ZTEST(ina237_##inst, test_shunt_cal) { test_shunt_cal(&fixtures[inst]); } \
 	ZTEST(ina237_##inst, test_current) { test_current(&fixtures[inst]); } \
 	ZTEST(ina237_##inst, test_bus_voltage) { test_bus_voltage(&fixtures[inst]); } \
+	ZTEST(ina237_##inst, test_power) { test_power(&fixtures[inst]); } \
 	ZTEST(ina237_##inst, test_temperature) { test_temperature(&fixtures[inst]); } \
 	ZTEST_SUITE(ina237_##inst, NULL, NULL, NULL, NULL, NULL);
 
