@@ -22,8 +22,8 @@ LOG_MODULE_REGISTER(INA237, CONFIG_SENSOR_LOG_LEVEL);
 /** @brief The LSB value for the bus voltage register, in microvolts/LSB. */
 #define INA237_BUS_VOLTAGE_TO_uV(x) ((x) * 3125U)
 
-/** @brief Power scaling (scaled by 10) */
-#define INA237_POWER_SCALING 2
+/** @brief Power scaling (need factor of 0.2) */
+#define INA237_POWER_TO_uW(x) ((x) / 5ULL)
 
 /**
  * @brief Scale die temperture from 0.125 degC/bit to micro-degrees C
@@ -35,6 +35,12 @@ static void micro_s32_to_sensor_value(struct sensor_value *val, int32_t value_mi
 {
 	val->val1 = value_microX / 1000000L;
 	val->val2 = value_microX % 1000000L;
+}
+
+static void micro_u64_to_sensor_value(struct sensor_value *val, uint64_t value_microX)
+{
+	val->val1 = value_microX / 1000000U;
+	val->val2 = value_microX % 1000000U;
 }
 
 static int ina237_channel_get(const struct device *dev, enum sensor_channel chan,
@@ -54,9 +60,9 @@ static int ina237_channel_get(const struct device *dev, enum sensor_channel chan
 		break;
 
 	case SENSOR_CHAN_POWER:
-		/* see datasheet "Current and Power calculations" section */
-		micro_s32_to_sensor_value(val,
-			(data->power * INA237_POWER_SCALING * config->current_lsb) / 10000U);
+		/* power in uW is power_reg * current_lsb * 0.2 */
+		micro_u64_to_sensor_value(val,
+			INA237_POWER_TO_uW((uint64_t)data->power * config->current_lsb));
 		break;
 
 	case SENSOR_CHAN_DIE_TEMP:
@@ -364,6 +370,10 @@ static const struct sensor_driver_api ina237_driver_api = {
 	.channel_get = ina237_channel_get,
 };
 
+/* Shunt calibration must be muliplied by 4 if high-prevision mode is selected */
+#define CAL_PRECISION_MULTIPLIER(config) \
+	(((config & INA237_CFG_HIGH_PRECISION) >> 4) * 3 + 1)
+
 #define INA237_DRIVER_INIT(inst)                                                                   \
 	static struct ina237_data ina237_data_##inst;                                              \
 	static const struct ina237_config ina237_config_##inst = {                                 \
@@ -376,8 +386,9 @@ static const struct sensor_driver_api ina237_driver_api = {
 			(DT_INST_ENUM_IDX(inst, temp_conversion_time_us) << 3) |                 \
 			DT_INST_ENUM_IDX(inst, avg_count),                                        \
 		.current_lsb = DT_INST_PROP(inst, current_lsb_microamps),                          \
-		.cal = INA237_CAL_SCALING * DT_INST_PROP(inst, current_lsb_microamps) *            \
-		       DT_INST_PROP(inst, rshunt_micro_ohms) / 10000000000ULL,                     \
+		.cal = CAL_PRECISION_MULTIPLIER(DT_INST_PROP(inst, config)) *                      \
+			INA237_CAL_SCALING * DT_INST_PROP(inst, current_lsb_microamps) *       \
+			DT_INST_PROP(inst, rshunt_micro_ohms) / 10000000ULL,                   \
 		.alert_config = DT_INST_PROP_OR(inst, alert_config, 0x01),                         \
 		.alert_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, alert_gpios, {0}),                    \
 	};                                                                                         \
