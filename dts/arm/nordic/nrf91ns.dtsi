@@ -46,6 +46,24 @@
 			#include "nrf91_peripherals.dtsi"
 		};
 
+		/* Cryptocell is a secure-only peripheral, but the availability
+		 * of this peripheral and the cryptocell variant is still useful
+		 * information for the non-secure application as it can access
+		 * crypto features through secure-services.
+		 */
+		cryptocell: crypto@50840000 {
+			compatible = "nordic,nrf-cc310";
+			reg = <0x50840000 0x1000>;
+			status = "okay";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			cryptocell310: crypto@50841000 {
+				compatible = "arm,cryptocell-310";
+				reg = <0x50841000 0x1000>;
+				interrupts = <64 NRF_DEFAULT_IRQ_PRIORITY>;
+			};
+		};
+
 		/* Additional Non-Secure peripherals */
 		gpiote: gpiote@40031000 {
 			compatible = "nordic,nrf-gpiote";

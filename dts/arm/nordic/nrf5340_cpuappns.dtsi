@@ -48,6 +48,24 @@
 			 */
 			#include "nrf5340_cpuapp_peripherals.dtsi"
 		};
+
+		/* Cryptocell is a secure-only peripheral, but the availability
+		 * of this peripheral and the cryptocell variant is still useful
+		 * information for the non-secure application as it can access
+		 * crypto features through secure-services.
+		 */
+		cryptocell: crypto@50844000 {
+			compatible = "nordic,nrf-cc312";
+			reg = <0x50844000 0x1000>;
+			status = "okay";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			cryptocell312: crypto@50845000 {
+				compatible = "arm,cryptocell-312";
+				reg = <0x50845000 0x1000>;
+				interrupts = <68 NRF_DEFAULT_IRQ_PRIORITY>;
+			};
+		};
 	};
 
 	/* Default IPC description */
