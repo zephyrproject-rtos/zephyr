@@ -86,7 +86,7 @@ class Tag:
         return "<Tag {}>".format(self.name)
 
 class Filters:
-    def __init__(self, modified_files, pull_request=False, platforms=[]):
+    def __init__(self, modified_files, pull_request=False, platforms=[], no_path_name = False):
         self.modified_files = modified_files
         self.twister_options = []
         self.full_twister = False
@@ -95,6 +95,7 @@ class Filters:
         self.pull_request = pull_request
         self.platforms = platforms
         self.default_run = False
+        self.no_path_name = no_path_name
 
     def process(self):
         self.find_modules()
@@ -112,6 +113,8 @@ class Filters:
     def get_plan(self, options, integration=False):
         fname = "_test_plan_partial.json"
         cmd = ["scripts/twister", "-c"] + options + ["--save-tests", fname ]
+        if self.no_path_name:
+            cmd += ["--no-path-name"]
         if integration:
             cmd.append("--integration")
 
@@ -349,6 +352,8 @@ def parse_args():
             help="Number of tests per builder")
     parser.add_argument('-n', '--default-matrix', default=10, type=int,
             help="Number of tests per builder")
+    parser.add_argument('--no-path-name', action="store_true",
+            help="Don't put paths into test suites' names ")
 
     return parser.parse_args()
 
@@ -371,8 +376,7 @@ if __name__ == "__main__":
         print("\n".join(files))
         print("=========")
 
-
-    f = Filters(files, args.pull_request, args.platform)
+    f = Filters(files, args.pull_request, args.platform, args.no_path_name)
     f.process()
 
     # remove dupes and filtered cases
