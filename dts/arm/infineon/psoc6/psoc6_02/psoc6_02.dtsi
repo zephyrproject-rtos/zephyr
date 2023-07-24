@@ -317,5 +317,229 @@
 			interrupts = <22 6>;
 			status = "disabled";
 		};
+		counter0_0: counter@40380100 {
+			compatible = "infineon,cat1-counter";
+			reg = <0x40380100 0x40>;
+			interrupts = <123 6>;
+			resolution = <32>;
+			status = "disabled";
+		};
+		counter0_1: counter@40380140 {
+			compatible = "infineon,cat1-counter";
+			reg = <0x40380140 0x40>;
+			interrupts = <124 6>;
+			resolution = <32>;
+			status = "disabled";
+		};
+		counter0_2: counter@40380180 {
+			compatible = "infineon,cat1-counter";
+			reg = <0x40380180 0x40>;
+			interrupts = <125 6>;
+			resolution = <32>;
+			status = "disabled";
+		};
+		counter0_3: counter@403801c0 {
+			compatible = "infineon,cat1-counter";
+			reg = <0x403801c0 0x40>;
+			interrupts = <126 6>;
+			resolution = <32>;
+			status = "disabled";
+		};
+		counter0_4: counter@40380200 {
+			compatible = "infineon,cat1-counter";
+			reg = <0x40380200 0x40>;
+			interrupts = <127 6>;
+			resolution = <32>;
+			status = "disabled";
+		};
+		counter0_5: counter@40380240 {
+			compatible = "infineon,cat1-counter";
+			reg = <0x40380240 0x40>;
+			interrupts = <128 6>;
+			resolution = <32>;
+			status = "disabled";
+		};
+		counter0_6: counter@40380280 {
+			compatible = "infineon,cat1-counter";
+			reg = <0x40380280 0x40>;
+			interrupts = <129 6>;
+			resolution = <32>;
+			status = "disabled";
+		};
+		counter0_7: counter@403802c0 {
+			compatible = "infineon,cat1-counter";
+			reg = <0x403802c0 0x40>;
+			interrupts = <130 6>;
+			resolution = <32>;
+			status = "disabled";
+		};
+		counter1_0: counter@40390100 {
+			compatible = "infineon,cat1-counter";
+			reg = <0x40390100 0x40>;
+			interrupts = <131 6>;
+			resolution = <16>;
+			status = "disabled";
+		};
+		counter1_1: counter@40390140 {
+			compatible = "infineon,cat1-counter";
+			reg = <0x40390140 0x40>;
+			interrupts = <132 6>;
+			resolution = <16>;
+			status = "disabled";
+		};
+		counter1_2: counter@40390180 {
+			compatible = "infineon,cat1-counter";
+			reg = <0x40390180 0x40>;
+			interrupts = <133 6>;
+			resolution = <16>;
+			status = "disabled";
+		};
+		counter1_3: counter@403901c0 {
+			compatible = "infineon,cat1-counter";
+			reg = <0x403901c0 0x40>;
+			interrupts = <134 6>;
+			resolution = <16>;
+			status = "disabled";
+		};
+		counter1_4: counter@40390200 {
+			compatible = "infineon,cat1-counter";
+			reg = <0x40390200 0x40>;
+			interrupts = <135 6>;
+			resolution = <16>;
+			status = "disabled";
+		};
+		counter1_5: counter@40390240 {
+			compatible = "infineon,cat1-counter";
+			reg = <0x40390240 0x40>;
+			interrupts = <136 6>;
+			resolution = <16>;
+			status = "disabled";
+		};
+		counter1_6: counter@40390280 {
+			compatible = "infineon,cat1-counter";
+			reg = <0x40390280 0x40>;
+			interrupts = <137 6>;
+			resolution = <16>;
+			status = "disabled";
+		};
+		counter1_7: counter@403902c0 {
+			compatible = "infineon,cat1-counter";
+			reg = <0x403902c0 0x40>;
+			interrupts = <138 6>;
+			resolution = <16>;
+			status = "disabled";
+		};
+		counter1_8: counter@40390300 {
+			compatible = "infineon,cat1-counter";
+			reg = <0x40390300 0x40>;
+			interrupts = <139 6>;
+			resolution = <16>;
+			status = "disabled";
+		};
+		counter1_9: counter@40390340 {
+			compatible = "infineon,cat1-counter";
+			reg = <0x40390340 0x40>;
+			interrupts = <140 6>;
+			resolution = <16>;
+			status = "disabled";
+		};
+		counter1_10: counter@40390380 {
+			compatible = "infineon,cat1-counter";
+			reg = <0x40390380 0x40>;
+			interrupts = <141 6>;
+			resolution = <16>;
+			status = "disabled";
+		};
+		counter1_11: counter@403903c0 {
+			compatible = "infineon,cat1-counter";
+			reg = <0x403903c0 0x40>;
+			interrupts = <142 6>;
+			resolution = <16>;
+			status = "disabled";
+		};
+		counter1_12: counter@40390400 {
+			compatible = "infineon,cat1-counter";
+			reg = <0x40390400 0x40>;
+			interrupts = <143 6>;
+			resolution = <16>;
+			status = "disabled";
+		};
+		counter1_13: counter@40390440 {
+			compatible = "infineon,cat1-counter";
+			reg = <0x40390440 0x40>;
+			interrupts = <144 6>;
+			resolution = <16>;
+			status = "disabled";
+		};
+		counter1_14: counter@40390480 {
+			compatible = "infineon,cat1-counter";
+			reg = <0x40390480 0x40>;
+			interrupts = <145 6>;
+			resolution = <16>;
+			status = "disabled";
+		};
+		counter1_15: counter@403904c0 {
+			compatible = "infineon,cat1-counter";
+			reg = <0x403904c0 0x40>;
+			interrupts = <146 6>;
+			resolution = <16>;
+			status = "disabled";
+		};
+		counter1_16: counter@40390500 {
+			compatible = "infineon,cat1-counter";
+			reg = <0x40390500 0x40>;
+			interrupts = <147 6>;
+			resolution = <16>;
+			status = "disabled";
+		};
+		counter1_17: counter@40390540 {
+			compatible = "infineon,cat1-counter";
+			reg = <0x40390540 0x40>;
+			interrupts = <148 6>;
+			resolution = <16>;
+			status = "disabled";
+		};
+		counter1_18: counter@40390580 {
+			compatible = "infineon,cat1-counter";
+			reg = <0x40390580 0x40>;
+			interrupts = <149 6>;
+			resolution = <16>;
+			status = "disabled";
+		};
+		counter1_19: counter@403905c0 {
+			compatible = "infineon,cat1-counter";
+			reg = <0x403905c0 0x40>;
+			interrupts = <150 6>;
+			resolution = <16>;
+			status = "disabled";
+		};
+		counter1_20: counter@40390600 {
+			compatible = "infineon,cat1-counter";
+			reg = <0x40390600 0x40>;
+			interrupts = <151 6>;
+			resolution = <16>;
+			status = "disabled";
+		};
+		counter1_21: counter@40390640 {
+			compatible = "infineon,cat1-counter";
+			reg = <0x40390640 0x40>;
+			interrupts = <152 6>;
+			resolution = <16>;
+			status = "disabled";
+		};
+		counter1_22: counter@40390680 {
+			compatible = "infineon,cat1-counter";
+			reg = <0x40390680 0x40>;
+			interrupts = <153 6>;
+			resolution = <16>;
+			status = "disabled";
+		};
+		counter1_23: counter@403906c0 {
+			compatible = "infineon,cat1-counter";
+			reg = <0x403906c0 0x40>;
+			interrupts = <154 6>;
+			resolution = <16>;
+			status = "disabled";
+		};
 	};
 };

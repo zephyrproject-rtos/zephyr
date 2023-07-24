@@ -28,6 +28,10 @@
 	};
 };
 
+&counter0_0 {
+	status = "okay";
+};
+
 uart5: &scb5 {
 	compatible = "infineon,cat1-uart";
 	status = "okay";
