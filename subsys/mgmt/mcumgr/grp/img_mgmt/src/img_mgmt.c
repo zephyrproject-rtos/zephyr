@@ -21,7 +21,6 @@
 #include <zephyr/mgmt/mcumgr/smp/smp.h>
 #include <zephyr/mgmt/mcumgr/mgmt/handlers.h>
 #include <zephyr/mgmt/mcumgr/grp/img_mgmt/img_mgmt.h>
-#include <zephyr/mgmt/mcumgr/grp/img_mgmt/image.h>
 
 #include <mgmt/mcumgr/util/zcbor_bulk.h>
 #include <mgmt/mcumgr/grp/img_mgmt/img_mgmt_priv.h>
@@ -75,6 +74,9 @@
 #ifndef NUMBER_OF_ACTIVE_IMAGE
 #error "Unsupported code parition is set as active application partition"
 #endif
+
+_Static_assert(sizeof(struct image_header) == IMAGE_HEADER_SIZE,
+		"struct image_header not required size");
 
 LOG_MODULE_REGISTER(mcumgr_img_grp, CONFIG_MCUMGR_GRP_IMG_LOG_LEVEL);
 
