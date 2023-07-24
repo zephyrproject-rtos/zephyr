@@ -14,5 +14,6 @@ supported:
   - netif:serial-net
   - eeprom
   - can
+  - rtc
 testing:
   default: true
