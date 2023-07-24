@@ -314,6 +314,12 @@ static inline bool is_aborting(struct k_thread *thread)
 
 static ALWAYS_INLINE struct k_thread *next_up(void)
 {
+#ifdef CONFIG_SMP
+	if (is_aborting(_current)) {
+		end_thread(_current);
+	}
+#endif
+
 	struct k_thread *thread = runq_best();
 
 #if (CONFIG_NUM_METAIRQ_PRIORITIES > 0) && (CONFIG_NUM_COOP_PRIORITIES > 0)
@@ -1081,10 +1087,6 @@ void *z_get_next_switch_handle(void *interrupted)
 
 	K_SPINLOCK(&sched_spinlock) {
 		struct k_thread *old_thread = _current, *new_thread;
-
-		if (is_aborting(_current)) {
-			end_thread(_current);
-		}
 
 		if (IS_ENABLED(CONFIG_SMP)) {
 			old_thread->switch_handle = NULL;
