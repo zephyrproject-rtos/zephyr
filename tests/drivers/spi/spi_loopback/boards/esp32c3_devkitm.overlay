@@ -36,5 +36,5 @@
 
 &spi2 {
 	dma-enabled;
-	pinctrl-0 = <&spim2_default>;
+	pinctrl-0 = <&spim2_loopback>;
 };
