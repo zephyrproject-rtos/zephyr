@@ -815,6 +815,31 @@ static int stm32_i2c_msg_read(const struct device *dev, struct i2c_msg *msg,
 
 #ifdef CONFIG_I2C_STM32_V2_TIMING
 /*
+ * Macro used to fix the compliance check warning :
+ * "DEEP_INDENTATION: Too many leading tabs - consider code refactoring
+ * in the i2c_compute_scll_sclh() function below
+ */
+#define I2C_LOOP_SCLH();						\
+	if ((tscl >= clk_min) &&					\
+		(tscl <= clk_max) &&					\
+		(tscl_h >= stm32_i2c_charac[i2c_speed].hscl_min) &&	\
+		(ti2cclk < tscl_h)) {					\
+									\
+		int32_t error = (int32_t)tscl - (int32_t)ti2cspeed;	\
+									\
+		if (error < 0) {					\
+			error = -error;					\
+		}							\
+									\
+		if ((uint32_t)error < prev_error) {			\
+			prev_error = (uint32_t)error;			\
+			i2c_valid_timing[count].scll = scll;		\
+			i2c_valid_timing[count].sclh = sclh;		\
+			ret = count;					\
+		}							\
+	}
+
+/*
  * @brief  Calculate SCLL and SCLH and find best configuration.
  * @param  clock_src_freq I2C source clock in Hz.
  * @param  i2c_speed I2C frequency (index).
@@ -875,24 +900,8 @@ uint32_t i2c_compute_scll_sclh(uint32_t clock_src_freq, uint32_t i2c_speed)
 						tscl_h + stm32_i2c_charac[i2c_speed].trise +
 					stm32_i2c_charac[i2c_speed].tfall;
 
-					if ((tscl >= clk_min) &&
-						(tscl <= clk_max) &&
-						(tscl_h >= stm32_i2c_charac[i2c_speed].hscl_min) &&
-						(ti2cclk < tscl_h)) {
-						int32_t error = (int32_t)tscl - (int32_t)ti2cspeed;
-
-						if (error < 0) {
-							error = -error;
-						}
-
-						/* get timings with the lowest clock error */
-						if ((uint32_t)error < prev_error) {
-							prev_error = (uint32_t)error;
-							i2c_valid_timing[count].scll = scll;
-							i2c_valid_timing[count].sclh = sclh;
-							ret = count;
-						}
-					}
+					/* get timings with the lowest clock error */
+					I2C_LOOP_SCLH();
 				}
 			}
 		}
@@ -900,6 +909,28 @@ uint32_t i2c_compute_scll_sclh(uint32_t clock_src_freq, uint32_t i2c_speed)
 
 	return ret;
 }
+
+/*
+ * Macro used to fix the compliance check warning :
+ * "DEEP_INDENTATION: Too many leading tabs - consider code refactoring
+ * in the i2c_compute_presc_scldel_sdadel() function below
+ */
+#define I2C_LOOP_SDADEL();								\
+											\
+	if ((tsdadel >= (uint32_t)tsdadel_min) &&					\
+		(tsdadel <= (uint32_t)tsdadel_max)) {					\
+		if (presc != prev_presc) {						\
+			i2c_valid_timing[i2c_valid_timing_nbr].presc = presc;		\
+			i2c_valid_timing[i2c_valid_timing_nbr].tscldel = scldel;	\
+			i2c_valid_timing[i2c_valid_timing_nbr].tsdadel = sdadel;	\
+			prev_presc = presc;						\
+			i2c_valid_timing_nbr++;						\
+											\
+			if (i2c_valid_timing_nbr >= STM32_I2C_VALID_TIMING_NBR) {	\
+				break;							\
+			}								\
+		}									\
+	}
 
 /*
  * @brief  Compute PRESC, SCLDEL and SDADEL.
@@ -962,19 +993,11 @@ void i2c_compute_presc_scldel_sdadel(uint32_t clock_src_freq, uint32_t i2c_speed
 					/* TSDADEL = SDADEL * (PRESC+1) * TI2CCLK */
 					uint32_t tsdadel = (sdadel * (presc + 1U)) * ti2cclk;
 
-					if ((tsdadel >= (uint32_t)tsdadel_min) &&
-						(tsdadel <= (uint32_t)tsdadel_max)) {
-						if (presc != prev_presc) {
-							i2c_valid_timing[i2c_valid_timing_nbr].presc = presc;
-							i2c_valid_timing[i2c_valid_timing_nbr].tscldel = scldel;
-							i2c_valid_timing[i2c_valid_timing_nbr].tsdadel = sdadel;
-							prev_presc = presc;
-							i2c_valid_timing_nbr++;
-							if (i2c_valid_timing_nbr >= STM32_I2C_VALID_TIMING_NBR) {
-								return;
-							}
-						}
-					}
+					I2C_LOOP_SDADEL();
+				}
+
+				if (i2c_valid_timing_nbr >= STM32_I2C_VALID_TIMING_NBR) {
+					return;
 				}
 			}
 		}
