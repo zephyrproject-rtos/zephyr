@@ -86,7 +86,7 @@ class Tag:
         return "<Tag {}>".format(self.name)
 
 class Filters:
-    def __init__(self, modified_files, pull_request=False, platforms=[]):
+    def __init__(self, modified_files, pull_request=False, platforms=[], detailed_test_id=True):
         self.modified_files = modified_files
         self.twister_options = []
         self.full_twister = False
@@ -95,6 +95,7 @@ class Filters:
         self.pull_request = pull_request
         self.platforms = platforms
         self.default_run = False
+        self.detailed_test_id = detailed_test_id
 
     def process(self):
         self.find_modules()
@@ -112,6 +113,8 @@ class Filters:
     def get_plan(self, options, integration=False):
         fname = "_test_plan_partial.json"
         cmd = ["scripts/twister", "-c"] + options + ["--save-tests", fname ]
+        if not self.detailed_test_id:
+            cmd += ["--no-detailed-test-id"]
         if integration:
             cmd.append("--integration")
 
@@ -353,6 +356,13 @@ def parse_args():
             help="Number of tests per builder")
     parser.add_argument('-n', '--default-matrix', default=10, type=int,
             help="Number of tests per builder")
+    parser.add_argument('--detailed-test-id', action='store_true',
+            help="Include paths to tests' locations in tests' names.")
+    parser.add_argument("--no-detailed-test-id", dest='detailed_test_id', action="store_false",
+            help="Don't put paths into tests' names.")
+
+    # Include paths in names by default.
+    parser.set_defaults(detailed_test_id=True)
 
     return parser.parse_args()
 
@@ -375,8 +385,7 @@ if __name__ == "__main__":
         print("\n".join(files))
         print("=========")
 
-
-    f = Filters(files, args.pull_request, args.platform)
+    f = Filters(files, args.pull_request, args.platform, args.detailed_test_id)
     f.process()
 
     # remove dupes and filtered cases
