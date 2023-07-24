@@ -1,0 +1,27 @@
+# Copyright (c) 2022 Cypress Semiconductor Corporation (an Infineon company) or
+# an affiliate of Cypress Semiconductor Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: Infineon counters
+
+compatible: "infineon,cat1-counter"
+
+include: base.yaml
+
+properties:
+  resolution:
+    type: int
+    description: |
+      Counter resolution
+    required: true
+
+  clock-frequency:
+    type: int
+    description: |
+      Frequency that the counter runs
+
+  external-trigger-gpios:
+    type: phandle-array
+    description: |
+      External trigger that runs counter

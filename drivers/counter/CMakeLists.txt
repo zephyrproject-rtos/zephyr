@@ -39,6 +39,7 @@ zephyr_library_sources_ifdef(CONFIG_COUNTER_RTC_ESP32           counter_esp32_rt
 zephyr_library_sources_ifdef(CONFIG_COUNTER_SMARTBOND_TIMER     counter_smartbond_timer.c)
 zephyr_library_sources_ifdef(CONFIG_COUNTER_MICROCHIP_MCP7940N  rtc_mcp7940n.c)
 zephyr_library_sources_ifdef(CONFIG_COUNTER_ANDES_ATCPIT100     counter_andes_atcpit100.c)
+zephyr_library_sources_ifdef(CONFIG_COUNTER_INFINEON_CAT1       counter_ifx_cat1.c)
 zephyr_library_sources_ifdef(CONFIG_ACE_V1X_ART_COUNTER         counter_ace_v1x_art.c)
 zephyr_library_sources_ifdef(CONFIG_ACE_V1X_RTC_COUNTER         counter_ace_v1x_rtc.c)
 zephyr_library_sources_ifdef(CONFIG_COUNTER_NXP_S32_SYS_TIMER   counter_nxp_s32_sys_timer.c)
