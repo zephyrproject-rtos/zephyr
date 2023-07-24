@@ -88,6 +88,13 @@ config WIFI_MGMT_SCAN_SSID_FILT
 	  that can be specified depends on WIFI_MGMT_SCAN_MAX_SSIDS.
 	  Use "" to disable SSID filtering.
 
+config WIFI_MGMT_SCAN_MAX_BSS_CNT
+	int "Maximum number of scan results to return."
+	default 0
+	range 0 65535
+	help
+	  Maximum number of scan results to return. 0 represents unlimited number of BSSes.
+
 config WIFI_NM
 	bool "Wi-Fi Network manager support"
 	help
