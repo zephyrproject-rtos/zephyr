@@ -2011,7 +2011,6 @@ int bt_tbs_set_signal_strength(uint8_t bearer_index,
 {
 	struct service_inst *inst = inst_lookup_index(bearer_index);
 	uint32_t timer_status;
-	uint8_t interval;
 
 	if (new_signal_strength > BT_TBS_SIGNAL_STRENGTH_MAX &&
 	    new_signal_strength != BT_TBS_SIGNAL_STRENGTH_UNKNOWN) {
@@ -2025,21 +2024,14 @@ int bt_tbs_set_signal_strength(uint8_t bearer_index,
 	}
 
 	inst->signal_strength = new_signal_strength;
+	inst->pending_signal_strength_notification = true;
+
 	timer_status = k_work_delayable_remaining_get(&inst->reporting_interval_work);
-	interval = inst->signal_strength_interval;
-
 	if (timer_status == 0) {
-		const k_timeout_t delay = K_SECONDS(interval);
-
-		bt_gatt_notify_uuid(NULL, BT_UUID_TBS_SIGNAL_STRENGTH, inst->attrs,
-				    &inst->signal_strength, sizeof(inst->signal_strength));
-		if (interval) {
-			k_work_reschedule(&inst->reporting_interval_work, delay);
-		}
-	} else {
-		LOG_DBG("Index %u: Reporting signal strength in %d ms", bearer_index, timer_status);
-		inst->pending_signal_strength_notification = true;
+		k_work_reschedule(&inst->reporting_interval_work, K_NO_WAIT);
 	}
+
+	LOG_DBG("Index %u: Reporting signal strength in %d ms", bearer_index, timer_status);
 
 	return 0;
 }
