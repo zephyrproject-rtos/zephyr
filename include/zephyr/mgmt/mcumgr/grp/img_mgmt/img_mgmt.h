@@ -11,7 +11,7 @@
 #include <inttypes.h>
 #include <zephyr/mgmt/mcumgr/mgmt/mgmt.h>
 #include <zephyr/mgmt/mcumgr/smp/smp.h>
-#include <zephyr/mgmt/mcumgr/grp/img_mgmt/image.h>
+#include <bootutil/image.h>
 #include <zcbor_common.h>
 
 /**
@@ -25,8 +25,6 @@
 extern "C" {
 #endif
 
-#define IMG_MGMT_HASH_STR	48
-#define IMG_MGMT_HASH_LEN	32
 #define IMG_MGMT_DATA_SHA_LEN	32 /* SHA256 */
 
 /**
