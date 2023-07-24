@@ -1,7 +1,7 @@
 /*
  * SPDX-License-Identifier: Apache-2.0
  *
- * Copyright (C) 2021, Intel Corporation
+ * Copyright (C) 2021-2023, Intel Corporation
  *
  */
 
@@ -12,5 +12,6 @@
 #define INTEL_SOCFPGA_CLOCK_WDT        1
 #define INTEL_SOCFPGA_CLOCK_UART       2
 #define INTEL_SOCFPGA_CLOCK_MMC        3
+#define INTEL_SOCFPGA_CLOCK_TIMER      4
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_INTEL_SOCFPGA_CLOCK_H_ */
