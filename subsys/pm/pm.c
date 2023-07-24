@@ -17,7 +17,7 @@
 #include <zephyr/pm/state.h>
 #include <zephyr/pm/policy.h>
 #include <zephyr/tracing/tracing.h>
-
+#include <zephyr/sys/atomic.h>
 #include "pm_stats.h"
 
 #include <zephyr/logging/log.h>
@@ -28,6 +28,10 @@ LOG_MODULE_REGISTER(pm, CONFIG_PM_LOG_LEVEL);
 
 static ATOMIC_DEFINE(z_post_ops_required, CONFIG_MP_MAX_NUM_CPUS);
 static sys_slist_t pm_notifiers = SYS_SLIST_STATIC_INIT(&pm_notifiers);
+
+#if defined(CONFIG_PM_DEVICE) && !defined(CONFIG_PM_DEVICE_RUNTIME_EXCLUSIVE)
+static atomic_t _cpus_active = ATOMIC_INIT(CONFIG_MP_NUM_CPUS);
+#endif
 
 /*
  * Properly initialize cpu power states. Do not make assumptions that

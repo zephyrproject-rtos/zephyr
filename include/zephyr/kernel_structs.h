@@ -193,8 +193,6 @@ typedef struct z_kernel _kernel_t;
 
 extern struct z_kernel _kernel;
 
-extern atomic_t _cpus_active;
-
 #ifdef CONFIG_SMP
 
 /* True if the current context can be preempted and migrated to
