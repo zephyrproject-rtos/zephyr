@@ -36,6 +36,6 @@
 
 &spi3 {
 	dma-enabled;
-	pinctrl-0 = <&spim3_default>;
+	pinctrl-0 = <&spim3_loopback>;
 
 };
