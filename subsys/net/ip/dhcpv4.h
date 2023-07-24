@@ -81,9 +81,7 @@ struct dhcp_msg {
 
 
 /* TODO:
- * 1) Support for UNICAST flag (some dhcpv4 servers will not reply if
- *    DISCOVER message contains BROADCAST FLAG).
- * 2) Support T2(Rebind) timer.
+ * 1) Support T2(Rebind) timer.
  */
 
 /* Maximum number of REQUEST or RENEWAL retransmits before reverting
@@ -114,5 +112,34 @@ int net_dhcpv4_init(void);
 #define net_dhcpv4_init() 0
 
 #endif /* CONFIG_NET_DHCPV4 */
+
+#if defined(CONFIG_NET_DHCPV4) && defined(CONFIG_NET_DHCPV4_ACCEPT_UNICAST)
+
+/**
+ * @brief Verify if the incoming packet should be accepted for the DHCPv4
+ *        module to process.
+ *
+ * In case server responds with an unicast IP packet, the IP stack needs to
+ * pass it through for the DHCPv4 module to process, before the actual
+ * destination IP address is configured on an interface.
+ * This function allows to determine whether there is an active DHCPv4 query on
+ * the interface and the packet is destined for the DHCPv4 module to process.
+ *
+ * @param pkt A packet to analyze
+ *
+ * @return true if the packet shall be accepted, false otherwise
+ */
+bool net_dhcpv4_accept_unicast(struct net_pkt *pkt);
+
+#else
+
+static inline bool net_dhcpv4_accept_unicast(struct net_pkt *pkt)
+{
+	ARG_UNUSED(pkt);
+
+	return false;
+}
+
+#endif /* CONFIG_NET_DHCPV4 && CONFIG_NET_DHCPV4_ACCEPT_UNICAST */
 
 #endif /* __INTERNAL_DHCPV4_H */
