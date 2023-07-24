@@ -207,6 +207,14 @@ struct wifi_scan_params {
 	/** Array of SSID strings to scan.
 	 */
 	char ssids[WIFI_MGMT_SCAN_SSID_FILT_MAX][WIFI_SSID_MAX_LEN + 1];
+	/** Specifies the maximum number of scan results to return. These results would be the
+	 * BSSIDS with the best RSSI values, in all the scanned channels. This should only be
+	 * used to limit the number of returned scan results, and cannot be counted upon to limit
+	 * the scan time, since the underlying Wi-Fi chip might have to scan all the channels to
+	 * find the max_bss_cnt number of APs with the best signal strengths. A value of 0
+	 * signifies that there is no restriction on the number of scan results to be returned.
+	 */
+	uint16_t max_bss_cnt;
 };
 
 /** Wi-Fi scan result, each result is provided to the net_mgmt_event_callback
