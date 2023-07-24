@@ -405,7 +405,7 @@ static int uart_nrfx_callback_set(const struct device *dev,
 	uart0_cb.callback = callback;
 	uart0_cb.user_data = user_data;
 
-#if defined(CONFIG_UART_EXCLUSIVE_API_CALLBACKS)
+#if defined(CONFIG_UART_EXCLUSIVE_API_CALLBACKS) && defined(CONFIG_UART_0_INTERRUPT_DRIVEN)
 	irq_callback = NULL;
 	irq_cb_data = NULL;
 #endif
@@ -929,7 +929,7 @@ static void uart_nrfx_irq_callback_set(const struct device *dev,
 	irq_callback = cb;
 	irq_cb_data = cb_data;
 
-#if defined(CONFIG_UART_EXCLUSIVE_API_CALLBACKS)
+#if defined(CONFIG_UART_0_ASYNC) && defined(CONFIG_UART_EXCLUSIVE_API_CALLBACKS)
 	uart0_cb.callback = NULL;
 	uart0_cb.user_data = NULL;
 #endif
