@@ -65,8 +65,7 @@ The VDED execution always happens in the publishing's (thread) context. So it ca
 
 * The channel mutex is acquired;
 * The channel receives the new message via direct copy (by a raw :c:func:`memcpy`);
-* The event dispatcher logic executes the listeners in the same sequence they appear on the channel observers' list. The listeners can perform non-copy quick access to the constant message reference directly (via the :c:func:`zbus_chan_const_msg` function) since the channel is still locked;
-* The event dispatcher logic pushes the channel's reference to the subscribers' notification message queue. The pushing sequence is the same as the subscribers appear in the channel observers' list;
+* The event dispatcher logic executes the listeners and pushes the channel's reference to the subscribers' notification message queue in the same sequence they appear on the channel observers' list. The listeners can perform non-copy quick access to the constant message reference directly (via the :c:func:`zbus_chan_const_msg` function) since the channel is still locked;
 * At last, the publishing function unlocks the channel.
 
 
@@ -155,7 +154,7 @@ Zbus always delivers the messages to the listeners. However, there are no messag
 Message delivery sequence
 -------------------------
 
-The listeners (synchronous observers) will follow the channel definition sequence as the notification and message consumption sequence. However, the subscribers, as they have an asynchronous nature, all will receive the notification as the channel definition sequence but only will consume the data when they execute again, so the delivery respects the order, but the priority assigned to the subscribers will define the reaction sequence. All the listeners (static or dynamic) will receive the message before subscribers receive the notification. The sequence of delivery is: (i) static listeners; (ii) runtime listeners; (iii) static subscribers; at last (iv) runtime subscribers.
+The listeners (synchronous observers) will follow the channel definition sequence as the notification and message consumption sequence. However, the subscribers, as they have an asynchronous nature, will all receive the notification as the channel definition sequence but only will consume the data when they execute again. Hence, the delivery respects the order, but the priority assigned to the subscribers will define the reaction sequence. The delivery sequence is first the static observers and then the runtime ones.
 
 Usage
 *****
@@ -192,6 +191,10 @@ The following code defines and initializes a regular channel and its dependencie
 
     ZBUS_LISTENER_DEFINE(my_listener, listener_callback_example);
 
+    ZBUS_LISTENER_DEFINE(my_listener2, listener_callback_example);
+
+    ZBUS_CHAN_ADD_OBS(acc_chan, my_listener2, 3);
+
     ZBUS_SUBSCRIBER_DEFINE(my_subscriber, 4);
     void subscriber_task(void)
     {
@@ -209,6 +212,7 @@ The following code defines and initializes a regular channel and its dependencie
     }
     K_THREAD_DEFINE(subscriber_task_id, 512, subscriber_task, NULL, NULL, NULL, 3, 0, 0);
 
+It is possible to add static observers to a channel using the :c:macro:`ZBUS_CHAN_ADD_OBS`. We call that a post-definition static observer. The command enables us to indicate an initialization priority that affects the observers' initialization order. The priority param only affects the post-definition static observers. There is no possibility to overwrite the execution sequence of the static observers.
 
 .. note::
     It is unnecessary to claim/lock a channel before accessing the message inside the listener since the event dispatcher calls listeners with the notifying channel already locked. Subscribers, however, must claim/lock that or use regular read operations to access the message after being notified.
@@ -301,40 +305,66 @@ For accessing channels or observers from files other than its defining files, it
 Iterating over channels and observers
 =====================================
 
-Zbus subsystem also implements :ref:`Iterable Sections <iterable_sections_api>` for channels and observers, for which there are supporting APIs like :c:func:`zbus_iterate_over_channels` and :c:func:`zbus_iterate_over_observers`. This feature enables developers to call a procedure over all declared channels, where the procedure parameter is a :c:struct:`zbus_channel`. The execution sequence is in the alphabetical name order of the channels (see :ref:`Iterable Sections <iterable_sections_api>` documentation for details). Zbus also implements this feature for :c:struct:`zbus_observer`.
+Zbus subsystem also implements :ref:`Iterable Sections <iterable_sections_api>` for channels and observers, for which there are supporting APIs like :c:func:`zbus_iterate_over_channels`, :c:func:`zbus_iterate_over_channels_with_user_data`, :c:func:`zbus_iterate_over_observers` and :c:func:`zbus_iterate_over_observers_with_user_data`. This feature enables developers to call a procedure over all declared channels, where the procedure parameter is a :c:struct:`zbus_channel`. The execution sequence is in the alphabetical name order of the channels (see :ref:`Iterable Sections <iterable_sections_api>` documentation for details). Zbus also implements this feature for :c:struct:`zbus_observer`.
 
 .. code-block:: c
 
-    int count;
+   static bool print_channel_data_iterator(const struct zbus_channel *chan, void *user_data)
+   {
+         int *count = user_data;
 
-    bool print_channel_data_iterator(const struct zbus_channel *chan)
-    {
-            LOG_DBG("%d - Channel %s:", count, zbus_chan_name(chan));
-            LOG_DBG("      Message size: %d", zbus_chan_msg_size(chan));
-            ++count;
-            LOG_DBG("      Observers:");
-            for (struct zbus_observer **obs = chan->observers; *obs != NULL; ++obs) {
-                LOG_DBG("      - %s", zbus_obs_name(*obs));
-            }
-            return true;
-    }
+         LOG_INF("%d - Channel %s:", *count, zbus_chan_name(chan));
+         LOG_INF("      Message size: %d", zbus_chan_msg_size(chan));
+         LOG_INF("      Observers:");
 
-    bool print_observer_data_iterator(const struct zbus_observer *obs)
-    {
-            LOG_DBG("%d - %s %s", count, ((obs->queue != NULL) ? "Subscriber" : "Listener"), zbus_obs_name(obs));
-            ++count;
-            return true;
-    }
-    int main(void)
-    {
-            LOG_DBG("Channel list:");
-            count = 0;
-            zbus_iterate_over_channels(print_channel_data_iterator);
+         ++(*count);
 
-            LOG_DBG("Observers list:");
-            count = 0;
-            zbus_iterate_over_observers(print_observer_data_iterator);
-    }
+         struct zbus_channel_observation *observation;
+
+         for (int16_t i = *chan->observers_start_idx, limit = *chan->observers_end_idx; i < limit;
+               ++i) {
+               STRUCT_SECTION_GET(zbus_channel_observation, i, &observation);
+
+               LOG_INF("      - %s", observation->obs->name);
+         }
+
+         struct zbus_observer_node *obs_nd, *tmp;
+
+         SYS_SLIST_FOR_EACH_CONTAINER_SAFE(chan->observers, obs_nd, tmp, node) {
+               LOG_INF("      - %s", obs_nd->obs->name);
+         }
+
+         return true;
+   }
+
+   static bool print_observer_data_iterator(const struct zbus_observer *obs, void *user_data)
+   {
+         int *count = user_data;
+
+         LOG_INF("%d - %s %s", *count, obs->queue ? "Subscriber" : "Listener", zbus_obs_name(obs));
+
+         ++(*count);
+
+         return true;
+   }
+
+   int main(void)
+   {
+         int count = 0;
+
+         LOG_INF("Channel list:");
+
+         zbus_iterate_over_channels_with_user_data(print_channel_data_iterator, &count);
+
+         count = 0;
+
+         LOG_INF("Observers list:");
+
+         zbus_iterate_over_observers_with_user_data(print_observer_data_iterator, &count);
+
+         return 0;
+   }
+
 
 The code will log the following output:
 
@@ -433,7 +463,9 @@ The following code has the exact behavior of the code in :ref:`reading from a ch
 Runtime observer registration
 -----------------------------
 
-It is possible to add observers to channels in runtime. This feature uses the object pool pattern technique in which the dynamic nodes are pre-allocated and can be used and recycled. Therefore, it is necessary to set the pool size by changing the feature :kconfig:option:`CONFIG_ZBUS_RUNTIME_OBSERVERS_POOL_SIZE` to enable this feature. Furthermore, it uses memory slabs. When necessary, turn on the :kconfig:option:`CONFIG_MEM_SLAB_TRACE_MAX_UTILIZATION` configuration to track the maximum usage of the pool. The following example illustrates the runtime registration usage.
+It is possible to add observers to channels in runtime. This feature uses the heap to allocate the nodes dynamically. The heap size limits the number of dynamic observers Zbus can create. Therefore, set the :kconfig:option:`CONFIG_ZBUS_RUNTIME_OBSERVERS` to enable the feature. It is possible to adjust the heap size by changing the configuration :kconfig:option:`CONFIG_HEAP_MEM_POOL_SIZE`. The following example illustrates the runtime registration usage.
+
+
 
 .. code-block:: c
 
@@ -446,18 +478,6 @@ It is possible to add observers to channels in runtime. This feature uses the ob
             /* Removing the observer from channel chan1 */
             zbus_chan_rm_obs(&chan1, &my_listener);
 
-
-Zbus can only use a limited number of dynamic observers. The configuration option :kconfig:option:`CONFIG_ZBUS_RUNTIME_OBSERVERS_POOL_SIZE` represents the size of the runtime observers pool (memory slab). Change that to fit the solution needs. Use the :c:func:`k_mem_slab_num_used_get` to verify how many runtime observers slots are available. The function :c:func:`k_mem_slab_max_used_get` will provide information regarding the maximum number of used slots count reached during the execution. Use that to set the appropriate pool size avoiding waste. The following code illustrates how to use that.
-
-.. code-block:: c
-
-    extern struct k_mem_slab _zbus_runtime_obs_pool;
-    uint32_t slots_available = k_mem_slab_num_free_get(&_zbus_runtime_obs_pool);
-    uint32_t max_usage = k_mem_slab_max_used_get(&_zbus_runtime_obs_pool);
-
-
-.. warning::
-    Do not use ``_zbus_runtime_obs_pool`` memory slab directly. It may lead to inconsistencies.
 
 Samples
 *******
@@ -489,8 +509,8 @@ Related configuration options:
 
 * :kconfig:option:`CONFIG_ZBUS_CHANNEL_NAME` enables the name of channels to be available inside the channels metadata. The log uses this information to show the channels' names;
 * :kconfig:option:`CONFIG_ZBUS_OBSERVER_NAME` enables the name of observers to be available inside the channels metadata;
-* :kconfig:option:`CONFIG_ZBUS_STRUCTS_ITERABLE_ACCESS` enables :ref:`Iterable Sections <iterable_sections_api>` to on zbus channels and observers;
-* :kconfig:option:`CONFIG_ZBUS_RUNTIME_OBSERVERS_POOL_SIZE` enables the runtime observer registration. It is necessary to set a value to be greater than zero.
+* :kconfig:option:`CONFIG_ZBUS_RUNTIME_OBSERVERS` enables the runtime observer registration.
+* :kconfig:option:`CONFIG_ZBUS_CHANNELS_SYS_INIT_PRIORITY` determine the :c:macro:`SYS_INIT` priority used by Zbus to organize the channels observations by channel.
 
 API Reference
 *************
