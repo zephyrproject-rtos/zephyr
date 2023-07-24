@@ -2072,8 +2072,6 @@ Twister:
 
 Settings:
   status: odd fixes
-  collaborators:
-    - de-nordic
   files:
     - include/zephyr/settings/
     - subsys/settings/
