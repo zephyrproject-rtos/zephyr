@@ -10,6 +10,7 @@ supported:
   - can
   - smp
   - smbus
+  - rtc
 testing:
   default: true
   ignore_tags:
