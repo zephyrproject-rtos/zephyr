@@ -472,11 +472,12 @@ static int wifi_scan_args_to_params(const struct shell *sh,
 					       {"dwell_time_active", required_argument, 0, 'a'},
 					       {"dwell_time_passive", required_argument, 0, 'p'},
 					       {"ssids", required_argument, 0, 's'},
+					       {"max_bss", required_argument, 0, 'm'},
 					       {0, 0, 0, 0}};
 	int opt_index = 0;
 	int val;
 
-	while ((opt = getopt_long(argc, argv, "t:b:a:p:s:", long_options, &opt_index)) != -1) {
+	while ((opt = getopt_long(argc, argv, "t:b:a:p:s:m:", long_options, &opt_index)) != -1) {
 		state = getopt_state_get();
 		switch (opt) {
 		case 't':
@@ -520,6 +521,16 @@ static int wifi_scan_args_to_params(const struct shell *sh,
 				shell_fprintf(sh, SHELL_ERROR, "Invalid SSID(s)\n");
 				return -ENOEXEC;
 			}
+			break;
+		case 'm':
+			val = atoi(optarg);
+
+			if ((val < 0) || (val > 65535)) {
+				shell_fprintf(sh, SHELL_ERROR, "Invalid max_bss val\n");
+				return -ENOEXEC;
+			}
+
+			params->max_bss_cnt = val;
 			break;
 		case '?':
 			shell_fprintf(sh, SHELL_ERROR, "Invalid option or option usage: %s\n",
@@ -1257,7 +1268,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_commands,
 		    "[-b, --bands <Comma separated list of band values (2/5/6)>] : Bands to be scanned where 2: 2.4 GHz, 5: 5 GHz, 6: 6 GHz.\n"
 		    "[-a, --dwell_time_active <val_in_ms>] : Active scan dwell time (in ms) on a channel. Range 5 ms to 1000 ms.\n"
 		    "[-p, --dwell_time_passive <val_in_ms>] : Passive scan dwell time (in ms) on a channel. Range 10 ms to 1000 ms.\n"
-		    "[-s, --ssids <Comma separate list of SSIDs>] : SSID list to scan for.",
+		    "[-s, --ssids <Comma separate list of SSIDs>] : SSID list to scan for.\n"
+		    "[-m, --max_bss <val>] : Maximum BSSes to scan for. Range 1 - 65535.",
 		  cmd_wifi_scan),
 	SHELL_CMD(statistics, NULL, "Wi-Fi interface statistics", cmd_wifi_stats),
 	SHELL_CMD(status, NULL, "Status of the Wi-Fi interface", cmd_wifi_status),

@@ -139,6 +139,11 @@ static int wifi_scan(uint32_t mgmt_request, struct net_if *iface,
 				return -EINVAL;
 			}
 		}
+
+		if (!params->max_bss_cnt) {
+			params->max_bss_cnt = CONFIG_WIFI_MGMT_SCAN_MAX_BSS_CNT;
+		}
+
 	}
 
 	return wifi_mgmt_api->scan(dev, params, scan_result_cb);
