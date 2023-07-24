@@ -8,3 +8,4 @@ tests:
       - rtc
       - api
       - helpers
+    depends_on: rtc
