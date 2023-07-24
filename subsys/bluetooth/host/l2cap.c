@@ -1840,6 +1840,11 @@ static struct net_buf *l2cap_chan_create_seg(struct bt_l2cap_le_chan *ch,
 			net_buf_push_le16(buf, net_buf_frags_len(buf));
 		}
 		return net_buf_ref(buf);
+	} else {
+		/* Unnecessary fragmentation. Ensure the source buffer has
+		 * BT_L2CAP_SDU_BUF_SIZE(0) headroom.
+		 */
+		LOG_DBG("not enough headroom on %p", buf);
 	}
 
 segment:
