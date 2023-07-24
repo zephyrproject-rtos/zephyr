@@ -19,8 +19,8 @@ config I2C_IT8XXX2_FIFO_MODE
 	  This is an option to enable FIFO mode which can reduce
 	  the time between each byte to improve the I2C bus clock
 	  stretching during I2C transaction.
-	  The I2C controller supports two 32-bytes FIFOs, FIFO2
-	  only supports one channel of B or C.
+	  The I2C controller supports two 32-bytes FIFOs,
+	  FIFO1 supports channel A. FIFO2 supports channel B.
 	  I2C FIFO mode of it8xxx2 can support I2C APIs including:
 	  i2c_write(), i2c_read(), i2c_burst_read.
 

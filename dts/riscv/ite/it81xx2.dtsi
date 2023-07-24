@@ -362,7 +362,7 @@
 			scl-gpios = <&gpioc 1 0>;
 			sda-gpios = <&gpioc 2 0>;
 			clock-gate-offset = <CGC_OFFSET_SMBB>;
-			/delete-property/ fifo-enable;   /* FIFO2 */
+			fifo-enable;   /* FIFO2 */
 		};
 
 		i2c2: i2c@f01cc0 {
@@ -378,7 +378,7 @@
 			scl-gpios = <&gpiof 6 0>;
 			sda-gpios = <&gpiof 7 0>;
 			clock-gate-offset = <CGC_OFFSET_SMBC>;
-			fifo-enable;   /* FIFO2 */
+			/delete-property/ fifo-enable;   /* FIFO2 */
 		};
 
 		i2c3: i2c@f03680 {
