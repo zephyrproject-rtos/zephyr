@@ -16,11 +16,7 @@
 #include <zephyr/ztest.h>
 #include <zephyr/ztest_assert.h>
 
-struct sbs_gauge_new_api_fixture {
-	const struct device *dev;
-	const struct emul *sbs_fuel_gauge;
-	const struct fuel_gauge_driver_api *api;
-};
+#include "test_sbs_gauge.h"
 
 static void *sbs_gauge_new_api_setup(void)
 {
