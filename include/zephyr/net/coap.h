@@ -442,9 +442,8 @@ int coap_find_options(const struct coap_packet *cpkt, uint16_t code,
 /**
  * @brief Appends an option to the packet.
  *
- * Note: options must be added in numeric order of their codes. Otherwise
- * error will be returned.
- * TODO: Add support for placing options according to its delta value.
+ * Note: options can be added out of numeric order of their codes. But
+ * it's more efficient to add them in order.
  *
  * @param cpkt Packet to be updated
  * @param code Option code to add to the packet, see #coap_option_num
