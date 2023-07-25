@@ -5,6 +5,9 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-config BOARD_TI_AM62X_SK_M4
-	bool "TI_AM62X_SK_M4"
-	depends on SOC_SERIES_AM62X_M4
+if BOARD_AM62X_M4_SK
+
+config BOARD
+	default "am62x_m4_sk"
+
+endif # BOARD_AM62X_M4_SK

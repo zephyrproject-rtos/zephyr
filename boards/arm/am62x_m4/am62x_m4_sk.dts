@@ -9,8 +9,8 @@
 #include <ti/am62x_m4.dtsi>
 
 / {
-	model = "TI AM62X SK EVALUATION BOARD";
-	compatible = "ti,ti_am62x_sk_m4";
+	model = "TI AM62X STARTER KIT (SK) EVALUATION MODULE (EVM)";
+	compatible = "ti,am62x_m4_sk";
 
 	chosen {
 		zephyr,sram = &sram0;
