@@ -17,6 +17,7 @@ LOG_MODULE_REGISTER(spi_nrfx_spis, CONFIG_SPI_LOG_LEVEL);
 
 struct spi_nrfx_data {
 	struct spi_context ctx;
+	const struct device *dev;
 };
 
 struct spi_nrfx_config {
@@ -219,10 +220,10 @@ static const struct spi_driver_api spi_nrfx_driver_api = {
 static void event_handler(const nrfx_spis_evt_t *p_event, void *p_context)
 {
 	struct spi_nrfx_data *dev_data = p_context;
-	struct device *dev = CONTAINER_OF(dev_data, struct device, data);
 
 	if (p_event->evt_type == NRFX_SPIS_XFER_DONE) {
-		spi_context_complete(&dev_data->ctx, dev, p_event->rx_amount);
+		spi_context_complete(&dev_data->ctx, dev_data->dev,
+				     p_event->rx_amount);
 	}
 }
 
@@ -273,6 +274,7 @@ static int spi_nrfx_init(const struct device *dev)
 	static struct spi_nrfx_data spi_##idx##_data = {		       \
 		SPI_CONTEXT_INIT_LOCK(spi_##idx##_data, ctx),		       \
 		SPI_CONTEXT_INIT_SYNC(spi_##idx##_data, ctx),		       \
+		.dev  = DEVICE_DT_GET(SPIS(idx)),			       \
 	};								       \
 	PINCTRL_DT_DEFINE(SPIS(idx));					       \
 	static const struct spi_nrfx_config spi_##idx##z_config = {	       \
