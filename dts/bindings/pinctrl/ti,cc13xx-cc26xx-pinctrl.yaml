@@ -26,6 +26,7 @@ description: |
     - bias-pull-up: Enable pull-up resistor.
     - drive-open-drain: Output driver is open-drain.
     - drive-open-drain: Output driver is open-source.
+    - drive-strength: Minimum current that can be sourced from the pin.
     - input-enable: enable input.
     - input-schmitt-enable: enable input schmitt circuit.
 
@@ -57,6 +58,16 @@ description: |
         };
       };
 
+    To configure an output pin (e.g. for PWM output):
+
+      &pinctrl {
+        gpt0_pwm: gpt0_pwm {
+          pinmux = <16 IOC_PORT_MCU_PORT_EVENT1>;
+          bias-disable;
+          drive-strength = <8>; /* in mA */
+        };
+      };
+
 compatible: "ti,cc13xx-cc26xx-pinctrl"
 
 include: base.yaml
@@ -78,6 +89,7 @@ child-binding:
         - bias-pull-up
         - drive-open-drain
         - drive-open-source
+        - drive-strength
         - input-enable
         - input-schmitt-enable
 
@@ -87,3 +99,16 @@ child-binding:
       type: array
       description: |
         CC13XX/CC26XX pin's configuration (IO pin, IO function).
+
+    drive-strength:
+      enum:
+        - 2
+        - 4
+        - 8
+      default: 2
+      description: |
+        The drive strength controls the minimum output driver strength of an I/O pin
+        configured as an output.
+          2: min 2 mA (SoC default)
+          4: min 4 mA
+          8: min 8 mA for for double drive strength IOs, min 4 mA for normal IOs
