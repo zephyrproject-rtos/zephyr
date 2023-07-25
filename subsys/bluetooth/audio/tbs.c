@@ -7,8 +7,8 @@
  */
 
 #include <zephyr/kernel.h>
+#include <zephyr/sys/__assert.h>
 #include <zephyr/types.h>
-
 #include <zephyr/init.h>
 #include <stdlib.h>
 
@@ -331,6 +331,42 @@ static uint8_t next_free_call_index(void)
 	LOG_DBG("No more free call spots");
 
 	return BT_TBS_FREE_CALL_INDEX;
+}
+
+static struct bt_tbs_call *call_alloc(struct tbs_service_inst *inst, uint8_t state, const char *uri,
+				      uint16_t uri_len)
+{
+	struct bt_tbs_call *free_call = NULL;
+
+	for (size_t i = 0; i < ARRAY_SIZE(inst->calls); i++) {
+		if (inst->calls[i].index == BT_TBS_FREE_CALL_INDEX) {
+			free_call = &inst->calls[i];
+			break;
+		}
+	}
+
+	if (free_call == NULL) {
+		return NULL;
+	}
+
+	__ASSERT_NO_MSG(uri_len < sizeof(free_call->remote_uri));
+
+	memset(free_call, 0, sizeof(*free_call));
+
+	/* Get the next free call_index */
+	free_call->index = next_free_call_index();
+	__ASSERT_NO_MSG(free_call->index != BT_TBS_FREE_CALL_INDEX);
+
+	free_call->state = state;
+	(void)memcpy(free_call->remote_uri, uri, uri_len);
+	free_call->remote_uri[uri_len] = '\0';
+
+	return free_call;
+}
+
+static void call_free(struct bt_tbs_call *call)
+{
+	call->index = BT_TBS_FREE_CALL_INDEX;
 }
 
 static void net_buf_put_call_states_by_inst(const struct tbs_service_inst *inst,
@@ -845,7 +881,7 @@ static uint8_t terminate_call(struct tbs_service_inst *inst,
 		return BT_TBS_RESULT_CODE_INVALID_CALL_INDEX;
 	}
 
-	call->index = BT_TBS_FREE_CALL_INDEX;
+	call_free(call);
 	tbs_set_terminate_reason(inst, ccp->call_index, reason);
 
 	return BT_TBS_RESULT_CODE_SUCCESS;
@@ -907,15 +943,7 @@ static int originate_call(struct tbs_service_inst *inst,
 			  const struct bt_tbs_call_cp_originate *ccp,
 			  uint16_t uri_len, uint8_t *call_index)
 {
-	struct bt_tbs_call *call = NULL;
-
-	/* New call - Look for unused call item */
-	for (int i = 0; i < CONFIG_BT_TBS_MAX_CALLS; i++) {
-		if (inst->calls[i].index == BT_TBS_FREE_CALL_INDEX) {
-			call = &inst->calls[i];
-			break;
-		}
-	}
+	struct bt_tbs_call *call;
 
 	/* Only allow one active outgoing call */
 	for (int i = 0; i < CONFIG_BT_TBS_MAX_CALLS; i++) {
@@ -924,37 +952,15 @@ static int originate_call(struct tbs_service_inst *inst,
 		}
 	}
 
+	if (!bt_tbs_valid_uri(ccp->uri, uri_len)) {
+		return BT_TBS_RESULT_CODE_INVALID_URI;
+	}
+
+	call = call_alloc(inst, BT_TBS_CALL_STATE_DIALING, ccp->uri, uri_len);
 	if (call == NULL) {
 		return BT_TBS_RESULT_CODE_OUT_OF_RESOURCES;
 	}
 
-	call->index = next_free_call_index();
-
-	if (call->index == BT_TBS_FREE_CALL_INDEX) {
-		return BT_TBS_RESULT_CODE_OUT_OF_RESOURCES;
-	}
-
-	if (uri_len == 0 || uri_len > CONFIG_BT_TBS_MAX_URI_LENGTH) {
-		call->index = BT_TBS_FREE_CALL_INDEX;
-		return BT_TBS_RESULT_CODE_INVALID_URI;
-	}
-
-	(void)memcpy(call->remote_uri, ccp->uri, uri_len);
-	call->remote_uri[uri_len] = '\0';
-	if (!bt_tbs_valid_uri(call->remote_uri)) {
-		LOG_DBG("Invalid URI: %s", call->remote_uri);
-		call->index = BT_TBS_FREE_CALL_INDEX;
-
-		return BT_TBS_RESULT_CODE_INVALID_URI;
-	}
-
-	/* We need to notify dialing state for test,
-	 * even though we don't have an internal dialing state.
-	 */
-	call->state = BT_TBS_CALL_STATE_DIALING;
-	if (call->index != BT_TBS_FREE_CALL_INDEX) {
-		*call_index = call->index;
-	}
 	BT_TBS_CALL_FLAG_SET_OUTGOING(call->flags);
 
 	hold_other_calls(inst, 1, &call->index);
@@ -965,6 +971,7 @@ static int originate_call(struct tbs_service_inst *inst,
 
 	LOG_DBG("New call with call index %u", call->index);
 
+	*call_index = call->index;
 	return BT_TBS_RESULT_CODE_SUCCESS;
 }
 
@@ -1719,7 +1726,7 @@ int bt_tbs_originate(uint8_t bearer_index, char *remote_uri,
 
 	if (tbs == NULL || inst_is_gtbs(tbs)) {
 		return -EINVAL;
-	} else if (!bt_tbs_valid_uri(remote_uri)) {
+	} else if (!bt_tbs_valid_uri(remote_uri, strlen(remote_uri))) {
 		LOG_DBG("Invalid URI %s", remote_uri);
 		return -EINVAL;
 	}
@@ -1915,38 +1922,22 @@ int bt_tbs_remote_incoming(uint8_t bearer_index, const char *to,
 
 	if (inst == NULL || inst_is_gtbs(inst)) {
 		return -EINVAL;
-	} else if (!bt_tbs_valid_uri(to)) {
+	} else if (!bt_tbs_valid_uri(to, strlen(to))) {
 		LOG_DBG("Invalid \"to\" URI: %s", to);
 		return -EINVAL;
-	} else if (!bt_tbs_valid_uri(from)) {
+	} else if (!bt_tbs_valid_uri(from, strlen(from))) {
 		LOG_DBG("Invalid \"from\" URI: %s", from);
 		return -EINVAL;
 	}
 
 	service_inst = CONTAINER_OF(inst, struct tbs_service_inst, inst);
 
-	/* New call - Look for unused call item */
-	for (int i = 0; i < CONFIG_BT_TBS_MAX_CALLS; i++) {
-		if (service_inst->calls[i].index == BT_TBS_FREE_CALL_INDEX) {
-			call = &service_inst->calls[i];
-			break;
-		}
-	}
-
+	call = call_alloc(service_inst, BT_TBS_CALL_STATE_INCOMING, from, strlen(from));
 	if (call == NULL) {
-		return -BT_TBS_RESULT_CODE_OUT_OF_RESOURCES;
-	}
-
-	call->index = next_free_call_index();
-
-	if (call->index == BT_TBS_FREE_CALL_INDEX) {
-		return -BT_TBS_RESULT_CODE_OUT_OF_RESOURCES;
+		return -ENOMEM;
 	}
 
 	BT_TBS_CALL_FLAG_SET_INCOMING(call->flags);
-
-	(void)strcpy(call->remote_uri, from);
-	call->state = BT_TBS_CALL_STATE_INCOMING;
 
 	tbs_inst_remote_incoming(inst, to, from, friendly_name, call);
 
