@@ -12,7 +12,7 @@
 /**
  * @brief Get common USB descriptor
  *
- * Get descriptor from internal descrptor list.
+ * Get descriptor from internal descriptor list.
  *
  * @param[in] ctx    Pointer to USB device support context
  * @param[in] type   Descriptor type (bDescriptorType)
