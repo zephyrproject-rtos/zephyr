@@ -9,7 +9,7 @@
 
 #include "../riscv-privileged/common/soc_common.h"
 #include <zephyr/devicetree.h>
-#include <zephyr/arch/common/sys_io.h>
+#include <zephyr/arch/riscv/sys_io.h>
 
 #ifndef _ASMLANGUAGE
 /* CSR access helpers */
