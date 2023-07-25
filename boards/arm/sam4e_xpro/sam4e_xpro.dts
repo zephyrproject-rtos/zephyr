@@ -187,12 +187,7 @@
 
 	zephyr,random-mac-address;
 
-	phy: phy {
-		compatible = "ethernet-phy";
-		status = "okay";
-		address = <0>;
-		mdio = <&mdio>;
-	};
+	phy-handle = <&phy>;
 };
 
 &mdio {
@@ -200,6 +195,13 @@
 
 	pinctrl-0 = <&mdio_default>;
 	pinctrl-names = "default";
+
+	phy: phy {
+		compatible = "ethernet-phy";
+		status = "okay";
+		address = <0>;
+		mdio = <&mdio>;
+	};
 };
 
 &pwm0 {
