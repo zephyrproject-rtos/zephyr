@@ -55,6 +55,18 @@ void arm_smccc_smc(unsigned long a0, unsigned long a1, unsigned long a2, unsigne
 		   unsigned long a4, unsigned long a5, unsigned long a6, unsigned long a7,
 		   struct arm_smccc_res *res)
 {
+	if (a0 == OPTEE_SMC_CALLS_UID) {
+		res->a0 = OPTEE_MSG_UID_0;
+		res->a1 = OPTEE_MSG_UID_1;
+		res->a2 = OPTEE_MSG_UID_2;
+		res->a3 = OPTEE_MSG_UID_3;
+		return;
+	}
+
+	if (a0 == OPTEE_SMC_EXCHANGE_CAPABILITIES) {
+		res->a1 = OPTEE_SMC_SEC_CAP_DYNAMIC_SHM;
+		return;
+	}
 	if (t_call.pending && t_call.smc_cb) {
 		t_call.smc_cb(a0, a1, a2, a3, a4, a5, a6, a7, res);
 	}
