@@ -402,6 +402,43 @@ typedef int (*json_append_bytes_t)(const char *bytes, size_t len,
 	}
 
 /**
+ * @brief Variant of JSON_OBJ_DESCR_ARRAY_ARRAY that can be used when the
+ *        structure and JSON field names differ.
+ *
+ * This is useful when the JSON field is not a valid C identifier.
+ *
+ * @param struct_ Struct packing the values
+ * @param json_field_name_ String, field name in JSON strings
+ * @param struct_field_name_ Field name in the struct containing the array
+ * @param max_len_ Maximum number of elements in the array
+ * @param len_field_ Field name in the struct for the number of elements
+ * in the array
+ * @param elem_descr_ Element descriptor, pointer to a descriptor array
+ * @param elem_descr_len_ Number of elements in elem_descr_
+ *
+ * @see JSON_OBJ_DESCR_ARRAY_ARRAY
+ */
+#define JSON_OBJ_DESCR_ARRAY_ARRAY_NAMED(struct_, json_field_name_, struct_field_name_, \
+					 max_len_, len_field_, elem_descr_, elem_descr_len_) \
+	{ \
+		.field_name = (#json_field_name_), \
+		.align_shift = Z_ALIGN_SHIFT(struct_), \
+		.field_name_len = sizeof(#json_field_name_) - 1, \
+		.type = JSON_TOK_ARRAY_START, \
+		.offset = offsetof(struct_, struct_field_name_), \
+		{ \
+			.array = { \
+				.element_descr = Z_JSON_ELEMENT_DESCR( \
+					struct_, len_field_, JSON_TOK_ARRAY_START, \
+					Z_JSON_DESCR_ARRAY( \
+						elem_descr_, \
+						1 + ZERO_OR_COMPILE_ERROR(elem_descr_len_ == 1))), \
+				.n_elements = (max_len_), \
+			}, \
+		}, \
+	}
+
+/**
  * @brief Variant of JSON_OBJ_DESCR_PRIM that can be used when the
  *        structure and JSON field names differ.
  *
