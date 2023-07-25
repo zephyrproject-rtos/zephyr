@@ -1073,8 +1073,8 @@ class MaintainersFormat(ComplianceTest):
     def run(self):
         MAINTAINERS_FILES = ["MAINTAINERS.yml", "MAINTAINERS.yaml"]
 
-        for file in get_files(filter="d"):
-            if file not in MAINTAINERS_FILES:
+        for file in MAINTAINERS_FILES:
+            if not os.path.exists(file):
                 continue
 
             try:
