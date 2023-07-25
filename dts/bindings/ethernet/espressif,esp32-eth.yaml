@@ -19,3 +19,5 @@ properties:
       Phy connection type define the physical interface connection between
       PHY and MAC.  The default value uses Reduced Media-Independent
       Interface (RMII) mode.
+  phy-handle:
+    required: true
