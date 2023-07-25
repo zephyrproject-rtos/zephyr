@@ -5,9 +5,6 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-if BOARD_TI_AM62X_SK_M4
-
-config BOARD
-	default "ti_am62x_sk_m4"
-
-endif # BOARD_TI_AM62X_SK_M4
+config BOARD_AM62X_M4_SK
+	bool "TI AM62x M4 Starter Kit (SK) Evaluation Module (EVM)"
+	depends on SOC_SERIES_AM62X_M4
