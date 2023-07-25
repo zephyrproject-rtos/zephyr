@@ -675,10 +675,6 @@ static int z_ztest_run_test_suite_ptr(struct ztest_suite_node *suite)
 	int fail = 0;
 	int tc_result = TC_PASS;
 
-	if (test_status < 0) {
-		return test_status;
-	}
-
 	if (suite == NULL) {
 		test_status = ZTEST_STATUS_CRITICAL_ERROR;
 		return -1;
