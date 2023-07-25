@@ -846,6 +846,12 @@ legacy-debug-sym = BT_DEBUG_VOCS_CLIENT
 module-str = "Volume Offset Control Service client"
 source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
 
+# PBP
+
+module = BT_PBP
+module-str = "Public Broadcast Profile"
+source "${ZEPHYR_BASE}/subsys/logging/Kconfig.template.log_config"
+
 endmenu # Audio
 
 menu "Others"
