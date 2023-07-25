@@ -68,7 +68,7 @@ static void usbd_ascii7_to_utf16le(struct usbd_desc_node *const dn)
 /**
  * @brief Get common USB descriptor
  *
- * Get descriptor from internal descrptor list.
+ * Get descriptor from internal descriptor list.
  *
  * @param[in] dn     Pointer to descriptor node
  *

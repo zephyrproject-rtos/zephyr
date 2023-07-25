@@ -510,7 +510,7 @@ static int cmd_bus_reset(const struct shell *sh,
 	if (err) {
 		shell_error(sh, "host: Failed to perform bus reset %d", err);
 	} else {
-		shell_print(sh, "host: USB bus reseted");
+		shell_print(sh, "host: USB bus reset");
 	}
 
 	err = uhc_sof_enable(uhs_ctx.dev);
