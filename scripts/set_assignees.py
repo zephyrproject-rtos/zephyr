@@ -74,8 +74,7 @@ def process_pr(gh, maintainer_file, number):
             for a in areas:
                 area_counter[a.name] += 1
                 labels.update(a.labels)
-                for p in a.maintainers:
-                    maint[p] += 1
+                maint[tuple(a.maintainers)] += 1
 
     ac = dict(sorted(area_counter.items(), key=lambda item: item[1], reverse=True))
     log(f"Area matches: {ac}")
@@ -118,19 +117,6 @@ def process_pr(gh, maintainer_file, number):
                             if a.maintainers:
                                 maintainer = a.maintainers[0]
                                 break
-
-
-        # if the submitter is the same as the maintainer, check if we have
-        # multiple maintainers
-        if pr.user.login == maintainer:
-            log("Submitter is same as Assignee, trying to find another assignee...")
-            aff = list(ac.keys())[0]
-            for a in all_areas:
-                if a.name == aff:
-                    if len(a.maintainers) > 1:
-                        maintainer = a.maintainers[1]
-                    else:
-                        log(f"This area has only one maintainer, keeping assignee as {maintainer}")
 
         prop = (maint[maintainer] / num_files) * 100
         if prop < 20:
@@ -190,11 +176,12 @@ def process_pr(gh, maintainer_file, number):
     ms = []
     # assignees
     if maintainer != 'None' and not pr.assignee:
-        try:
-            u = gh.get_user(maintainer)
-            ms.append(u)
-        except GithubException:
-            log(f"Error: Unknown user")
+        for m in maintainer:
+            try:
+                u = gh.get_user(m)
+                ms.append(u)
+            except GithubException:
+                log(f"Error: Unknown user")
 
         for mm in ms:
             log(f"Adding assignee {mm}...")
