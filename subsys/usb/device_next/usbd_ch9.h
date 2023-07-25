@@ -131,7 +131,7 @@ usbd_get_setup_pkt(struct usbd_contex *const uds_ctx)
  *
  * @param[in] uds_ctx Pointer to a device context
  * @param[in] buf     Pointer to UDC request buffer
- * @param[in] err     Trasnfer status
+ * @param[in] err     Transfer status
  *
  * @return 0 on success, other values on fail.
  */

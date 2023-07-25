@@ -313,7 +313,7 @@ int usbd_register_class(struct usbd_contex *const uds_ctx,
 
 	/* TODO: does it still need to be atomic ? */
 	if (atomic_test_bit(&data->state, USBD_CCTX_REGISTERED)) {
-		LOG_WRN("Class instance allready registered");
+		LOG_WRN("Class instance already registered");
 		ret = -EBUSY;
 		goto register_class_error;
 	}
