@@ -422,6 +422,7 @@ config MBEDTLS_SERVER_NAME_INDICATION
 
 config MBEDTLS_PK_WRITE_C
 	bool "The generic public (asymmetric) key writer"
+	default y if MBEDTLS_PSA_CRYPTO_C
 	help
 	  Enable generic public key write functions.
 
