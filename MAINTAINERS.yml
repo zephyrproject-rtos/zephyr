@@ -2154,7 +2154,6 @@ GD32 Platforms:
     - boards/arm/gd32*/
     - boards/riscv/gd32*/
     - boards/riscv/longan_nano/
-    - drivers/*/*gd32*/
     - drivers/*/*gd32*
     - dts/*/gigadevice/
     - dts/bindings/*/*gd32*
@@ -2524,10 +2523,10 @@ TI SimpleLink Platforms:
     - boards/arm/cc26*/
     - boards/arm/cc32*/
     - boards/*/msp*/
-    - drivers/*/*cc13*/
-    - drivers/*/*cc25*/
-    - drivers/*/*cc26*/
-    - drivers/*/*cc32*/
+    - drivers/*/*cc13*
+    - drivers/*/*cc25*
+    - drivers/*/*cc26*
+    - drivers/*/*cc32*
     - dts/arm/ti/
     - dts/bindings/*/ti,*
     - soc/arm/ti*/
@@ -2544,8 +2543,7 @@ TI K3 Platforms:
   files:
     - boards/*/*phycore_am6*/
     - boards/*/*ti_am6*/
-    - drivers/*/*ti_k3*/
-    - dts/*/ti/*ti_am6*/
+    - drivers/*/*ti_k3*
     - dts/bindings/*/ti,k3*
     - soc/*/ti_k3/
   labels:
@@ -2576,8 +2574,6 @@ Infineon Platforms:
     - boards/arm/cy8ckit_*/
     - boards/arm/cy8cproto_*/
     - boards/arm/xmc*_relax*/
-    - drivers/*/*ifx_cat1*/
-    - drivers/*/*ifx_cat1*.c
     - drivers/*/*ifx_cat1*
     - drivers/*/*xmc*/
     - drivers/*/*xmc*.c
