@@ -8,8 +8,6 @@
 
 #include <zephyr/drivers/pinctrl.h>
 
-#include <driverlib/ioc.h>
-
 static int pinctrl_c13xx_cc26xx_set(uint32_t pin, uint32_t func, uint32_t mode)
 {
 	if (pin >= NUM_IO_MAX || func >= NUM_IO_PORTS) {
