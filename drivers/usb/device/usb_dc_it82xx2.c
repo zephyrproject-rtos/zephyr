@@ -301,7 +301,7 @@ static void it8xxx2_usb_dc_wuc_init(const struct device *dev)
 	/* Enabling the WUI */
 	it8xxx2_wuc_enable(cfg->wuc_list[0].wucs, cfg->wuc_list[0].mask);
 
-	/* Connect WU90 (USB D+) interrupt but make it disabled initally */
+	/* Connect WU90 (USB D+) interrupt but make it disabled initially */
 	IRQ_CONNECT(IT8XXX2_WU90_IRQ, 0, it82xx2_wu90_isr, 0, 0);
 }
 
@@ -1157,7 +1157,7 @@ int usb_dc_ep_enable(const uint8_t ep)
 	if (ep_idx < EP4) {
 		LOG_DBG("ep_idx < 4");
 		ep_regs[ep_idx].ep_ctrl |= ENDPOINT_EN;
-		LOG_DBG("EP%d Enbabled %02x", ep_idx, ep_regs[ep_idx].ep_ctrl);
+		LOG_DBG("EP%d Enabled %02x", ep_idx, ep_regs[ep_idx].ep_ctrl);
 	} else {
 		LOG_DBG("ep_idx >= 4");
 		it82xx2_usb_extend_ep_ctrl(ep_idx, EXT_EP_ENABLE);

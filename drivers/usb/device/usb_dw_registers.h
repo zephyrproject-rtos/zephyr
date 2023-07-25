@@ -198,7 +198,7 @@ BUILD_ASSERT(sizeof(struct usb_dw_reg) <= 0x0D00);
  * IN endpoint offsets 0x0900 + (0x20 * n), n = 0 .. x,
  * offset 0x0900 and 0x0B00 are hardcoded to control type.
  *
- * REVISE: Better own defenitions for DIEPTCTL0, DOEPTCTL0...
+ * REVISE: Better own definitions for DIEPTCTL0, DOEPTCTL0...
  */
 #define USB_DW_DEPCTL_EP_ENA			BIT(31)
 #define USB_DW_DEPCTL_EP_DIS			BIT(30)
@@ -242,7 +242,7 @@ BUILD_ASSERT(sizeof(struct usb_dw_reg) <= 0x0D00);
  * IN at offsets 0x0910 + (0x20 * n), n = 0 .. x,
  * OUT at offsets 0x0B10 + (0x20 * n), n = 0 .. x
  *
- * REVISE: Better own defenitions for DIEPTSIZ0, DOEPTSIZ0...
+ * REVISE: Better own definitions for DIEPTSIZ0, DOEPTSIZ0...
  */
 #define USB_DW_DEPTSIZ_PKT_CNT_OFFSET		19
 #define USB_DW_DIEPTSIZ0_PKT_CNT_MASK		(0x3 << 19)

@@ -478,7 +478,7 @@ static inline int udc_host_wakeup(const struct device *dev)
  * of the endpoint. All properties of the descriptor,
  * such as direction, and transfer type, should be set correctly.
  * If wMaxPacketSize value is zero, it will be
- * updated to maximum buffer size of the enpoint.
+ * updated to maximum buffer size of the endpoint.
  *
  * @param[in] dev        Pointer to device struct of the driver instance
  * @param[in] ep         Endpoint address (same as bEndpointAddress)
