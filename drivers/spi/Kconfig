@@ -127,4 +127,6 @@ source "drivers/spi/Kconfig.smartbond"
 
 source "drivers/spi/Kconfig.opentitan"
 
+source "drivers/spi/Kconfig.numaker"
+
 endif # SPI
