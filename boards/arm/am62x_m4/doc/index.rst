@@ -1,4 +1,4 @@
-.. _ti_am62x_sk_m4:
+.. _am62x_m4_sk:
 
 AM62x-SK M4F Core
 #################
@@ -42,7 +42,7 @@ the M4F core and the following listed hardware specifications are used:
 Supported Features
 ==================
 
-The ti_am62x_sk_m4 configuration supports the following hardware features:
+The am62x_m4_sk configuration supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |
@@ -88,7 +88,7 @@ The default configuration can be found in the defconfig file:
 
 .. code-block:: console
 
-   boards/arm/ti_am62x_sk_m4/ti_am62x_sk_m4_defconfig
+   boards/arm/am62x_m4/am62x_m4_sk/am62x_m4_sk_defconfig
 
 Flashing
 ********
@@ -102,7 +102,7 @@ To test the M4F core, we build the `hello_world` sample with the following comma
 .. code-block:: console
 
    # From the root of the Zephyr repository
-   west build -p -b ti_am62x_sk_m4 samples/hello_world
+   west build -p -b am62x_m4_sk samples/hello_world
 
 This builds the program and the binary is present in the `build/zephyr` directory as `zephyr.elf`.
 
