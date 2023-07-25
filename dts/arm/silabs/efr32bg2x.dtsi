@@ -75,19 +75,6 @@
 				min-residency-us = <20000>;
 				exit-latency-us = <2000>;
 			};
-
-			/*
-			 * EM4 does not preserve CPU or RAM state, so system runs
-			 * through a cold boot upon wake up. BURTC can wake up the
-			 * system from EM4 but that has to be manually configured
-			 * by the application in BURTC registers.
-			 */
-			pstate_em4: em4 {
-				compatible = "zephyr,power-state";
-				power-state-name = "soft-off";
-				min-residency-us = <100000>;
-				exit-latency-us = <80000>;
-			};
 		};
 	};
 
