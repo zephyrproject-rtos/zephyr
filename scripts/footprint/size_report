@@ -533,15 +533,15 @@ class TreeNode(NodeMixin):
 
     def __init__(self, name, identifier, size=0, parent=None, children=None):
         super().__init__()
-        self.name = name
-        self.size = size
+        self._name = name
+        self._size = size
         self.parent = parent
-        self.identifier = identifier
+        self._identifier = identifier
         if children:
             self.children = children
 
     def __repr__(self):
-        return self.name
+        return self._name
 
 
 def sum_node_children_size(node):
@@ -551,7 +551,7 @@ def sum_node_children_size(node):
     size = 0
 
     for child in node.children:
-        size += child.size
+        size += child._size
 
     return size
 
@@ -592,10 +592,10 @@ def generate_any_tree(symbol_dict, total_size, path_prefix):
             else:
                 cur = str(Path(cur, part))
 
-            results = findall_by_attr(root, cur, name="identifier")
+            results = findall_by_attr(root, cur, name="_identifier")
             if results:
                 item = results[0]
-                item.size += size
+                item._size += size
                 parent = item
             else:
                 if node:
@@ -639,8 +639,8 @@ def generate_any_tree(symbol_dict, total_size, path_prefix):
     if node_zephyr_base is not root:
         # ZEPHYR_BASE and OUTPUT_DIR nodes don't have sum of symbol size
         # so calculate them here.
-        node_zephyr_base.size = sum_node_children_size(node_zephyr_base)
-        node_output_dir.size = sum_node_children_size(node_output_dir)
+        node_zephyr_base._size = sum_node_children_size(node_zephyr_base)
+        node_output_dir._size = sum_node_children_size(node_output_dir)
 
         # Find out which nodes need to be in the tree.
         # "(no path)", ZEPHYR_BASE nodes are essential.
@@ -653,18 +653,18 @@ def generate_any_tree(symbol_dict, total_size, path_prefix):
             children.append(node_others)
 
         if args.workspace:
-            node_workspace.size = sum_node_children_size(node_workspace)
+            node_workspace._size = sum_node_children_size(node_workspace)
             if node_workspace.height != 0:
                 children.append(node_workspace)
 
         root.children = children
 
-    root.size = total_size
+    root._size = total_size
 
     # Need to account for code and data where there are not emitted
     # symbols associated with them.
     node_hidden_syms = TreeNode('(hidden)', "(hidden)", parent=root)
-    node_hidden_syms.size = root.size - sum_node_children_size(root)
+    node_hidden_syms._size = root._size - sum_node_children_size(root)
 
     return root
 
@@ -673,7 +673,7 @@ def node_sort(items):
     """
     Node sorting used with RenderTree.
     """
-    return sorted(items, key=lambda item: item.name)
+    return sorted(items, key=lambda item: item._name)
 
 
 def print_any_tree(root, total_size, depth):
@@ -684,20 +684,20 @@ def print_any_tree(root, total_size, depth):
         Fore.YELLOW + "Path", "Size", "%" + Fore.RESET))
     print('=' * 110)
     for row in RenderTree(root, childiter=node_sort, maxlevel=depth):
-        f = len(row.pre) + len(row.node.name)
-        s = str(row.node.size).rjust(100-f)
-        percent = 100 * float(row.node.size) / float(total_size)
+        f = len(row.pre) + len(row.node._name)
+        s = str(row.node._size).rjust(100-f)
+        percent = 100 * float(row.node._size) / float(total_size)
 
         cc = cr = ""
         if not row.node.children:
-            if row.node.name != "(hidden)":
+            if row.node._name != "(hidden)":
                 cc = Fore.CYAN
                 cr = Fore.RESET
-        elif row.node.name.endswith(SRC_FILE_EXT):
+        elif row.node._name.endswith(SRC_FILE_EXT):
             cc = Fore.GREEN
             cr = Fore.RESET
 
-        print(f"{row.pre}{cc}{row.node.name} {s} {cr}{Fore.BLUE}{percent:6.2f}%{Fore.RESET}")
+        print(f"{row.pre}{cc}{row.node._name} {s} {cr}{Fore.BLUE}{percent:6.2f}%{Fore.RESET}")
     print('=' * 110)
     print(f'{total_size:>101}')
 
@@ -794,7 +794,7 @@ def main():
             if not args.quiet:
                 print_any_tree(root, symsize, args.depth)
 
-            exporter = DictExporter()
+            exporter = DictExporter(attriter=lambda attrs: [(k.lstrip('_'), v) for k, v in attrs])
             data = dict()
             data["symbols"] = exporter.export(root)
             data["total_size"] = symsize
