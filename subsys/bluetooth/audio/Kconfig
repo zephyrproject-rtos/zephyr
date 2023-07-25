@@ -61,6 +61,7 @@ rsource "Kconfig.mctl"
 rsource "Kconfig.cap"
 rsource "Kconfig.tmap"
 rsource "Kconfig.gmap"
+rsource "Kconfig.pbp"
 
 module = BT_AUDIO
 module-str = "Bluetooth Audio"

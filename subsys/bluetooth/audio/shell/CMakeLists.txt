@@ -89,3 +89,7 @@ zephyr_library_sources_ifdef(
   CONFIG_BT_BAP_BROADCAST_ASSISTANT
   bap_broadcast_assistant.c
   )
+zephyr_library_sources_ifdef(
+  CONFIG_BT_PBP
+  pbp.c
+  )
