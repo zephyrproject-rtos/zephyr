@@ -24,6 +24,7 @@ typedef struct pinctrl_soc_pin {
 	DT_PROP(node_id, bias_disable) * IOC_NO_IOPULL |  \
 	DT_PROP(node_id, drive_open_drain) * IOC_IOMODE_OPEN_DRAIN_NORMAL | \
 	DT_PROP(node_id, drive_open_source) * IOC_IOMODE_OPEN_SRC_NORMAL | \
+	(DT_PROP(node_id, drive_strength) >> 2) << IOC_IOCFG0_IOCURR_S | \
 	DT_PROP(node_id, input_enable) * IOC_INPUT_ENABLE | \
 	DT_PROP(node_id, input_schmitt_enable) * IOC_HYST_ENABLE)
 
