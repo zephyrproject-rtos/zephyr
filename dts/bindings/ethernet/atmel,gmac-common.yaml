@@ -10,6 +10,9 @@ properties:
   reg:
     required: true
 
+  phy-handle:
+    required: true
+
   num-queues:
     type: int
     required: true

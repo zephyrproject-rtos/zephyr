@@ -2222,11 +2222,7 @@ static const struct eth_sam_dev_cfg eth0_config = {
 	.clock_cfg = SAM_DT_INST_CLOCK_PMC_CFG(0),
 #endif
 	.config_func = eth0_irq_config,
-#if DT_NODE_EXISTS(DT_INST_CHILD(0, phy))
-	.phy_dev = DEVICE_DT_GET(DT_INST_CHILD(0, phy))
-#else
-#error "No PHY driver specified"
-#endif
+	.phy_dev = DEVICE_DT_GET(DT_INST_PHANDLE(0, phy_handle))
 };
 
 static struct eth_sam_dev_data eth0_data = {
