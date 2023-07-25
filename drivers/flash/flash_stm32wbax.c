@@ -105,18 +105,6 @@ static int icache_wait_for_invalidate_complete(void)
 	return status;
 }
 
-/*
- * offset and len must be aligned on 16 for write,
- * positive and not beyond end of flash
- */
-bool flash_stm32_valid_range(const struct device *dev, off_t offset,
-			     uint32_t len,
-			     bool write)
-{
-	return (!write || (offset % 16 == 0 && len % 16 == 0U)) &&
-		flash_stm32_range_exists(dev, offset, len);
-}
-
 static int write_qword(const struct device *dev, off_t offset, const uint32_t *buff)
 {
 	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
