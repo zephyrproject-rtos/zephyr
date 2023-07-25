@@ -67,3 +67,13 @@ config COMMON_LIBC_STRNLEN
 	bool
 	help
 	  common implementation of strnlen().
+
+config COMMON_LIBC_THRD
+	bool "C11 <threads.h> API support"
+	depends on DYNAMIC_THREAD
+	# Note: the POSIX_API dependency is only necessary until common elements
+	# of C11 threads and POSIX API can be abstracted out to a common library.
+	depends on POSIX_API
+	default y
+	help
+	  Common implementation of C11 <threads.h> API.
