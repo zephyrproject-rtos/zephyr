@@ -4,6 +4,9 @@ common:
     - drivers
     - pwm
 tests:
+  drivers.pwm.cc13xx_cc26xx_timer.build:
+    platform_allow: cc1352p1_launchxl
+    tags: pwm_cc13xx_cc26xx_timer
   drivers.pwm.gecko.build:
     platform_allow: efr32_radio_brd4250b
     tags: pwm_gecko

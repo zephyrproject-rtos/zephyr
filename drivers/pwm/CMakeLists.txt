@@ -5,6 +5,7 @@ zephyr_syscall_header(${ZEPHYR_BASE}/include/zephyr/drivers/pwm.h)
 zephyr_library()
 
 zephyr_library_sources_ifdef(CONFIG_PWM_TELINK_B91	pwm_b91.c)
+zephyr_library_sources_ifdef(CONFIG_PWM_CC13XX_CC26XX_TIMER pwm_cc13xx_cc26xx_timer.c)
 zephyr_library_sources_ifdef(CONFIG_PWM_STM32		pwm_stm32.c)
 zephyr_library_sources_ifdef(CONFIG_PWM_SIFIVE		pwm_sifive.c)
 zephyr_library_sources_ifdef(CONFIG_PWM_NRF5_SW		pwm_nrf5_sw.c)
