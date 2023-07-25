@@ -951,6 +951,16 @@ static int spair_ioctl(void *obj, unsigned int request, va_list args)
 			goto out;
 		}
 
+		case ZFD_IOCTL_FIONREAD: {
+			int *nbytes;
+
+			nbytes = va_arg(args, int *);
+			*nbytes = spair_read_avail(spair);
+
+			res = 0;
+			goto out;
+		}
+
 		case ZFD_IOCTL_POLL_PREPARE: {
 			pfd = va_arg(args, struct zsock_pollfd *);
 			pev = va_arg(args, struct k_poll_event **);
