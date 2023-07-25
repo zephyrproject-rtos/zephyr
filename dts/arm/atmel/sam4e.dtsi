@@ -166,11 +166,12 @@
 			num-queues = <1>;
 			phy-connection-type = "mii";
 			status = "disabled";
+		};
 
-			mdio: mdio {
-				compatible = "atmel,sam-mdio";
-				status = "disabled";
-			};
+		mdio: mdio@40034000 {
+			compatible = "atmel,sam-mdio";
+			reg = <0x40034000 0x4000>;
+			status = "disabled";
 		};
 
 		pinctrl: pinctrl@400e0e00 {

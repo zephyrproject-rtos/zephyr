@@ -16,11 +16,12 @@
 			num-queues = <1>;
 			local-mac-address = [00 00 00 00 00 00];
 			status = "disabled";
+		};
 
-			mdio: mdio {
-				compatible = "atmel,sam-mdio";
-				status = "disabled";
-			};
+		mdio: mdio@42000800 {
+			compatible = "atmel,sam-mdio";
+			reg = <0x42000800 0x400>;
+			status = "disabled";
 		};
 	};
 };
