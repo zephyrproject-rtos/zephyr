@@ -45,6 +45,15 @@ static const struct flash_parameters flash_stm32_parameters = {
 
 static int flash_stm32_write_protection(const struct device *dev, bool enable);
 
+bool __weak flash_stm32_valid_range(const struct device *dev, off_t offset,
+				    uint32_t len, bool write)
+{
+	if (write && !flash_stm32_valid_write(offset, len)) {
+		return false;
+	}
+	return flash_stm32_range_exists(dev, offset, len);
+}
+
 int __weak flash_stm32_check_configuration(void)
 {
 	return 0;
