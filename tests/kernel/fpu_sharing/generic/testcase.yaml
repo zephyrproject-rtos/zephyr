@@ -1,0 +1,109 @@
+tests:
+  kernel.fpu_sharing.generic.arc:
+    extra_args: PI_NUM_ITERATIONS=500
+    arch_allow: arc
+    filter: CONFIG_ISA_ARCV2 and CONFIG_CPU_HAS_FPU
+    slow: true
+    tags:
+      - fpu
+      - kernel
+    timeout: 600
+    min_ram: 16
+  kernel.fpu_sharing.generic.arm:
+    extra_args: PI_NUM_ITERATIONS=70000
+    filter: CONFIG_ARMV7_M_ARMV8_M_FP or CONFIG_ARMV7_R_FP or CONFIG_CPU_HAS_VFP
+    slow: true
+    arch_allow: arm
+    tags:
+      - fpu
+      - kernel
+    timeout: 600
+    min_ram: 16
+  kernel.fpu_sharing.generic.arm64:
+    extra_args: PI_NUM_ITERATIONS=70000
+    arch_allow: arm64
+    filter: CONFIG_CPU_CORTEX_A
+    slow: true
+    tags:
+      - fpu
+      - kernel
+    timeout: 600
+  kernel.fpu_sharing.generic.riscv32:
+    extra_args: PI_NUM_ITERATIONS=500
+    filter: CONFIG_CPU_HAS_FPU
+    arch_allow: riscv32
+    tags:
+      - fpu
+      - kernel
+    timeout: 600
+    min_ram: 16
+  kernel.fpu_sharing.generic.riscv64:
+    extra_args: PI_NUM_ITERATIONS=500
+    extra_configs:
+      - CONFIG_MAIN_STACK_SIZE=2048
+    filter: CONFIG_CPU_HAS_FPU
+    arch_allow: riscv64
+    tags:
+      - fpu
+      - kernel
+    timeout: 600
+    min_ram: 16
+  kernel.fpu_sharing.generic.sparc:
+    extra_args: PI_NUM_ITERATIONS=70000
+    filter: CONFIG_CPU_HAS_FPU
+    arch_allow: sparc
+    tags:
+      - fpu
+      - kernel
+    timeout: 600
+  kernel.fpu_sharing.generic.x86.fpu:
+    extra_args: CONF_FILE=prj_x86.conf
+    extra_configs:
+      - CONFIG_X86_SSE_FP_MATH=n
+      - CONFIG_X86_SSE=n
+    platform_allow:
+      - qemu_x86
+      - qemu_x86_lakemont
+    integration_platforms:
+      - qemu_x86
+    slow: true
+    tags:
+      - fpu
+      - kernel
+    timeout: 600
+  kernel.fpu_sharing.generic.x86.fpu.sse:
+    extra_args: CONF_FILE=prj_x86.conf
+    extra_configs:
+      - CONFIG_X86_SSE_FP_MATH=n
+    platform_allow:
+      - qemu_x86
+      - qemu_x86_lakemont
+    integration_platforms:
+      - qemu_x86
+    slow: true
+    tags:
+      - fpu
+      - kernel
+    timeout: 600
+    toolchain_exclude:
+      - llvm
+      - oneApi
+  kernel.fpu_sharing.generic.x86.sse:
+    extra_args: CONF_FILE=prj_x86.conf
+    extra_configs:
+      - CONFIG_X86_SSE_FP_MATH=y
+    platform_allow:
+      - qemu_x86
+      - qemu_x86_lakemont
+    slow: true
+    tags:
+      - fpu
+      - kernel
+    timeout: 600
+  kernel.fpu_sharing.generic.xtensa:
+    filter: CONFIG_CPU_HAS_FPU
+    arch_allow: xtensa
+    tags:
+      - fpu
+      - kernel
+    timeout: 600

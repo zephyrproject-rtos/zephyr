@@ -1,0 +1,11 @@
+# STM3210C-EVAL board configuration
+
+# Copyright (c) 2016 RnDity Sp. z o.o.
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_STM3210C_EVAL
+
+config BOARD
+	default "stm3210c_eval"
+
+endif # BOARD_STM3210C_EVAL

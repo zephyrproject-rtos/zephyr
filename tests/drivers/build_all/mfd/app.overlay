@@ -1,0 +1,44 @@
+/*
+ * Copyright (c) 2023, Basalte bv
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Application overlay for testing driver builds
+ *
+ * Names in this file should be chosen in a way that won't conflict
+ * with real-world devicetree nodes, to allow these tests to run on
+ * (and be extended to test) real hardware.
+ */
+
+/ {
+	test {
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		test_uart: uart@55556666 {
+			compatible = "vnd,serial";
+			reg = <0x55556666 0x1000>;
+			status = "okay";
+
+			test_sc18im704: sc18im704 {
+				compatible = "nxp,sc18im704";
+				status = "okay";
+
+				test_i2c_ext: sc18im704_i2c {
+					compatible = "nxp,sc18im704-i2c";
+					status = "okay";
+					#address-cells = <1>;
+					#size-cells = <0>;
+				};
+
+				test_gpio_ext: sc18im704_gpio {
+					compatible = "nxp,sc18im704-gpio";
+					status = "okay";
+					gpio-controller;
+					#gpio-cells = <2>;
+					ngpios = <8>;
+				};
+			};
+		};
+	};
+};

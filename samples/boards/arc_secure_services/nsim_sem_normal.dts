@@ -1,0 +1,28 @@
+/*
+ * Copyright (c) 2018, Synopsys, Inc. All rights reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <mem.h>
+
+/* must be before include of nsim_em.dtsi */
+#define ICCM_ADDR 40000
+#define ICCM_SIZE DT_SIZE_K(256)
+#define DCCM_ADDR 80040000
+#define DCCM_SIZE DT_SIZE_K(256)
+
+#include "nsim_em.dtsi"
+
+/ {
+
+	model = "nsim_sem_normal";
+	compatible = "snps,nsim_sem_normal";
+
+	chosen {
+		zephyr,sram = &dccm0;
+	};
+
+};

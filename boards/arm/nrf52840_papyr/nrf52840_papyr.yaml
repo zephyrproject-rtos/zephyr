@@ -1,0 +1,14 @@
+identifier: nrf52840_papyr
+name: Electronut Labs Papyr
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - adc
+  - usb_device
+  - ble
+  - pwm
+  - watchdog

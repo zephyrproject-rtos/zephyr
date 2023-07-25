@@ -1,0 +1,17 @@
+tests:
+  drivers.regulator.fixed:
+    tags:
+      - drivers
+      - regulator
+    harness: ztest
+    harness_config:
+      fixture: gpio_loopback
+    depends_on: gpio
+    platform_allow:
+      - nrf52840dk_nrf52840
+      - nrf5340dk_nrf5340_cpuapp
+      - nrf9160dk_nrf9160
+    integration_platforms:
+      - nrf52840dk_nrf52840
+      - nrf5340dk_nrf5340_cpuapp
+      - nrf9160dk_nrf9160

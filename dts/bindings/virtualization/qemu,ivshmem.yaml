@@ -1,0 +1,17 @@
+# Copyright (c) 2021 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: ivShMem device properties
+
+compatible: "qemu,ivshmem"
+
+include: [base.yaml, pcie-device.yaml]
+
+properties:
+
+  ivshmem-v2:
+    type: boolean
+    description: |
+      Use ivshmem-v2.
+      Primarily used for IPC in the Jailhouse hypervisor.
+      ivshmem-v2 is not compatible with v1.

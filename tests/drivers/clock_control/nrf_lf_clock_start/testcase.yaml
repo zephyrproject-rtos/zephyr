@@ -1,0 +1,126 @@
+common:
+  tags:
+    - drivers
+    - clock
+  integration_platforms:
+    - nrf51dk_nrf51422
+tests:
+  drivers.clock.nrf_lf_clock_start_xtal_stable:
+    platform_allow:
+      - nrf51dk_nrf51422
+      - nrf52dk_nrf52832
+      - nrf52840dk_nrf52840
+      - nrf9160dk_nrf9160
+      - nrf5340dk_nrf5340_cpuapp
+      - nrf5340dk_nrf5340_cpunet
+    extra_configs:
+      - CONFIG_SYSTEM_CLOCK_WAIT_FOR_STABILITY=y
+      - CONFIG_CLOCK_CONTROL_NRF_K32SRC_XTAL=y
+    integration_platforms:
+      - nrf51dk_nrf51422
+
+  drivers.clock.nrf_lf_clock_start_xtal_available:
+    platform_allow:
+      - nrf51dk_nrf51422
+      - nrf52dk_nrf52832
+      - nrf52840dk_nrf52840
+      - nrf9160dk_nrf9160
+      - nrf5340dk_nrf5340_cpuapp
+      - nrf5340dk_nrf5340_cpunet
+    extra_configs:
+      - CONFIG_SYSTEM_CLOCK_WAIT_FOR_AVAILABILITY=y
+      - CONFIG_CLOCK_CONTROL_NRF_K32SRC_XTAL=y
+    integration_platforms:
+      - nrf51dk_nrf51422
+
+  drivers.clock.nrf_lf_clock_start_xtal_no_wait:
+    platform_allow:
+      - nrf51dk_nrf51422
+      - nrf52dk_nrf52832
+      - nrf52840dk_nrf52840
+      - nrf9160dk_nrf9160
+      - nrf5340dk_nrf5340_cpuapp
+      - nrf5340dk_nrf5340_cpunet
+    integration_platforms:
+      - nrf51dk_nrf51422
+    extra_configs:
+      - CONFIG_SYSTEM_CLOCK_NO_WAIT=y
+      - CONFIG_CLOCK_CONTROL_NRF_K32SRC_XTAL=y
+
+  drivers.clock.nrf_lf_clock_start_rc_stable:
+    platform_allow:
+      - nrf51dk_nrf51422
+      - nrf52dk_nrf52832
+      - nrf52840dk_nrf52840
+      - nrf5340dk_nrf5340_cpuapp
+      - nrf5340dk_nrf5340_cpunet
+    integration_platforms:
+      - nrf51dk_nrf51422
+    extra_configs:
+      - CONFIG_SYSTEM_CLOCK_WAIT_FOR_STABILITY=y
+      - CONFIG_CLOCK_CONTROL_NRF_K32SRC_RC=y
+
+  drivers.clock.nrf_lf_clock_start_rc_available:
+    platform_allow:
+      - nrf51dk_nrf51422
+      - nrf52dk_nrf52832
+      - nrf52840dk_nrf52840
+      - nrf5340dk_nrf5340_cpuapp
+      - nrf5340dk_nrf5340_cpunet
+    integration_platforms:
+      - nrf51dk_nrf51422
+    extra_configs:
+      - CONFIG_SYSTEM_CLOCK_WAIT_FOR_AVAILABILITY=y
+      - CONFIG_CLOCK_CONTROL_NRF_K32SRC_RC=y
+
+  drivers.clock.nrf_lf_clock_start_rc_no_wait:
+    platform_allow:
+      - nrf51dk_nrf51422
+      - nrf52dk_nrf52832
+      - nrf52840dk_nrf52840
+      - nrf5340dk_nrf5340_cpuapp
+      - nrf5340dk_nrf5340_cpunet
+    integration_platforms:
+      - nrf51dk_nrf51422
+    extra_configs:
+      - CONFIG_SYSTEM_CLOCK_NO_WAIT=y
+      - CONFIG_CLOCK_CONTROL_NRF_K32SRC_RC=y
+
+  drivers.clock.nrf_lf_clock_start_synth_stable:
+    platform_allow:
+      - nrf51dk_nrf51422
+      - nrf52dk_nrf52832
+      - nrf52840dk_nrf52840
+      - nrf5340dk_nrf5340_cpuapp
+      - nrf5340dk_nrf5340_cpunet
+    integration_platforms:
+      - nrf51dk_nrf51422
+    extra_configs:
+      - CONFIG_SYSTEM_CLOCK_WAIT_FOR_STABILITY=y
+      - CONFIG_CLOCK_CONTROL_NRF_K32SRC_SYNTH=y
+
+  drivers.clock.nrf_lf_clock_start_synth_available:
+    platform_allow:
+      - nrf51dk_nrf51422
+      - nrf52dk_nrf52832
+      - nrf52840dk_nrf52840
+      - nrf5340dk_nrf5340_cpuapp
+      - nrf5340dk_nrf5340_cpunet
+    integration_platforms:
+      - nrf51dk_nrf51422
+    extra_configs:
+      - CONFIG_SYSTEM_CLOCK_WAIT_FOR_AVAILABILITY=y
+      - CONFIG_CLOCK_CONTROL_NRF_K32SRC_SYNTH=y
+
+  drivers.clock.nrf_lf_clock_start_synth_no_wait:
+    platform_allow:
+      - nrf51dk_nrf51422
+      - nrf52dk_nrf52832
+      - nrf52840dk_nrf52840
+      - nrf5340dk_nrf5340_cpuapp
+      - nrf5340dk_nrf5340_cpunet
+    integration_platforms:
+      - nrf51dk_nrf51422
+    extra_configs:
+      - CONFIG_SYSTEM_CLOCK_NO_WAIT=y
+      - CONFIG_CLOCK_CONTROL_NRF_K32SRC_SYNTH=y

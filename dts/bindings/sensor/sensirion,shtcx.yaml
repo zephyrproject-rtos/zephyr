@@ -1,0 +1,36 @@
+# Copyright (c) 2021, Thomas Stranger
+# SPDX-License-Identifier: Apache-2.0
+
+description: Sensirion SHTCx humidity and temperature sensor
+
+compatible: "sensirion,shtcx"
+
+include: [sensor-device.yaml, i2c-device.yaml]
+
+properties:
+  chip:
+    type: string
+    required: true
+    description: |
+      Specifies which chip exactly is used. This is necessary to get exact
+      timing information and supported command set.
+      SHTC3 has an additional sleep mode that is entered between measurements.
+    enum:
+      - "shtc1"
+      - "shtc3"
+
+  measure-mode:
+    type: string
+    required: true
+    description: |
+      Specifies which measurement mode is used.
+      SHTC1 sensor only supports the normal measuremnt mode.
+    enum:
+      - "normal"
+      - "low-power"
+
+  clock-stretching:
+    type: boolean
+    description: |
+      Specifies that the driver should clock stretching i2c communication to
+      read the sensor values.

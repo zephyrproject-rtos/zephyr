@@ -1,0 +1,20 @@
+# Copyright (c) 2018-2019 Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_MPS2_AN521_CPU0
+	bool "ARM Cortex-M33 SMM on V2M-MPS2 (AN521) (CPU0)"
+	depends on SOC_MPS2_AN521_CPU0
+	select QEMU_TARGET
+	select HAS_COVERAGE_SUPPORT
+
+config BOARD_MPS2_AN521_CPU0_NS
+	bool "ARM Cortex-M33 SMM on V2M-MPS2 (AN521) (CPU0 Non-Secure)"
+	depends on SOC_MPS2_AN521_CPU0
+	select QEMU_TARGET
+	select HAS_COVERAGE_SUPPORT
+
+config BOARD_MPS2_AN521_CPU1
+	bool "ARM Cortex-M33 SMM on V2M-MPS2 (AN521) CPU1"
+	depends on SOC_MPS2_AN521_CPU1
+	select QEMU_TARGET
+	select HAS_COVERAGE_SUPPORT

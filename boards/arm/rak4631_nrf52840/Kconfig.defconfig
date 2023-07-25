@@ -1,0 +1,14 @@
+# RAKWIRELESS RAK4631 Board configuration
+
+# Copyright (c) 2021 Guillaume Paquet <guillaume.paquet@smile.fr>
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_RAK4631_NRF52840
+
+config BOARD
+	default "rak4631_nrf52840"
+
+config BT_CTLR
+	default BT
+
+endif # BOARD_RAK4631_NRF52840

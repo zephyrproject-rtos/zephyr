@@ -1,0 +1,61 @@
+# Private config options for echo-client sample app
+
+# Copyright (c) 2018 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "Networking echo-client sample application"
+
+config NET_SAMPLE_IFACE2_MY_IPV6_ADDR
+	string "My IPv6 address for second interface"
+	help
+	  The value depends on your network setup.
+
+config NET_SAMPLE_IFACE2_MY_IPV4_ADDR
+	string "My IPv4 address for second interface"
+	help
+	  The value depends on your network setup.
+
+config NET_SAMPLE_IFACE2_VLAN_TAG
+	int "VLAN tag for second interface"
+	default 100
+	range 0 4094
+	depends on NET_VLAN
+	help
+	  Set VLAN (virtual LAN) tag (id) that is used in the sample
+	  application.
+
+config NET_SAMPLE_IFACE3_MY_IPV6_ADDR
+	string "My IPv6 address for third interface"
+	help
+	  The value depends on your network setup.
+
+config NET_SAMPLE_IFACE3_MY_IPV4_ADDR
+	string "My IPv4 address for third interface"
+	help
+	  The value depends on your network setup.
+
+config NET_SAMPLE_IFACE3_VLAN_TAG
+	int "VLAN tag for third interface"
+	default 200
+	range 0 4094
+	depends on NET_VLAN
+	help
+	  Set VLAN (virtual LAN) tag (id) that is used in the sample
+	  application.
+
+config NET_SAMPLE_PSK_HEADER_FILE
+	string "Header file containing PSK"
+	default "dummy_psk.h"
+	depends on MBEDTLS_KEY_EXCHANGE_PSK_ENABLED
+	help
+	  Name of a header file containing a
+	  pre-shared key.
+
+config NET_SAMPLE_SEND_ITERATIONS
+	int "Send sample data this many times"
+	default 0
+	help
+	  Send sample data this many times before exiting. A value of
+	  zero means that the sample application is run forever.
+
+source "Kconfig.zephyr"

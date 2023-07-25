@@ -1,0 +1,14 @@
+# Copyright (c) 2021, Teslabs Engineering S.L.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_GD32F4XX
+	bool "GigaDevice GD32F4XX series Cortex-M4F MCU"
+	select ARM
+	select CPU_HAS_ARM_MPU
+	select CPU_HAS_FPU
+	select CPU_CORTEX_M4
+	select SOC_FAMILY_GD32_ARM
+	select GD32_HAS_AF_PINMUX
+	select GD32_HAS_IRC_32K
+	help
+	  Enable support for GigaDevice GD32F4XX MCU series

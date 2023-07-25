@@ -1,0 +1,57 @@
+/*
+ * Copyright (c) 2022 Prevas A/S
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Application overlay for creating quadrature decoder device instance
+ */
+
+/ {
+	aliases {
+		qdec0 = &qdec1;
+		qenca = &phase_a;
+		qencb = &phase_b;
+		/delete-property/ magn0;
+		/delete-property/ accel0;
+	};
+
+	/* Wire J22 3 <-> 5 and J22 4 <-> 6 */
+	encoder-emulate {
+		compatible = "gpio-leds";
+		phase_a: phase_a {
+			gpios = <&gpio1 11 GPIO_ACTIVE_HIGH>;
+		};
+		phase_b: phase_b {
+			gpios = <&gpio1 24 GPIO_ACTIVE_HIGH>;
+		};
+	};
+};
+
+/* disable to avoid encoder phase input conflict */
+&enet {
+	status = "disabled";
+};
+
+/* disable to avoid encoder emulater conflict */
+&fxos8700 {
+	status = "disabled";
+};
+
+/* disable to avoid encoder emulater conflict */
+&touch_controller {
+	status = "disabled";
+};
+
+&qdec1 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_qdec1>;
+	pinctrl-names = "default";
+	counts-per-revolution = < 120 >;
+	xbar = < &xbar1 >;
+};
+
+&xbar1 {
+	status = "okay";
+	xbar-maps = < (21|0x100) (66|0x100) >, /* kXBARA1_InputIomuxXbarIn21 <-> kXBARA1_OutputEnc1PhaseAInput */
+		    < (22|0x100) (67|0x100) >; /* kXBARA1_InputIomuxXbarIn22 <-> kXBARA1_OutputEnc1PhaseBInput */
+};

@@ -1,0 +1,17 @@
+# Generic PC platform configuration options
+
+# Copyright (c) 2014-2015 Wind River Systems, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_IA32
+
+config SOC
+	default "ia32"
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 25000000  if HPET_TIMER
+
+config UART_NS16550_ACCESS_IOPORT
+	default y if UART_NS16550
+
+endif

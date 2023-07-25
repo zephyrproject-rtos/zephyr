@@ -1,0 +1,13 @@
+common:
+  depends_on: netif
+  # FIXME: This test fails very frequently on mps2_an385 due to the system
+  #        timer stability issues, so keep it disabled until the root cause
+  #        is fixed (GitHub issue zephyrproject-rtos/zephyr#48608).
+  platform_exclude: mps2_an385
+tests:
+  net.socket.poll:
+    min_ram: 21
+    tags:
+      - net
+      - socket
+      - poll

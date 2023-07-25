@@ -1,0 +1,11 @@
+# Infineon XMC4xxx DMA configuration options
+
+# Copyright (c) 2022 Andriy Gelman
+# SPDX-License-Identifier: Apache-2.0
+
+config DMA_XMC4XXX
+	bool "Infineon xmc4xxx series DMA driver"
+	default y
+	depends on DT_HAS_INFINEON_XMC4XXX_DMA_ENABLED
+	help
+	  DMA driver for Infineon xmc4xxx series MCUs.

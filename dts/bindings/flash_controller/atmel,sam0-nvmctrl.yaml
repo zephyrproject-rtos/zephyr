@@ -1,0 +1,11 @@
+description: Atmel SAM0 NVMC (Non-Volatile Memory Controller)
+
+compatible: "atmel,sam0-nvmctrl"
+
+include: flash-controller.yaml
+
+properties:
+  lock-regions:
+    type: int
+    required: true
+    description: Number of lock regions

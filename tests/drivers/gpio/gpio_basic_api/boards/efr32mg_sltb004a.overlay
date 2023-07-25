@@ -1,0 +1,13 @@
+/*
+ * Copyright (c) 2019 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	resources {
+		compatible = "test-gpio-basic-api";
+		out-gpios = <&gpiof 6 0>; /* Arduino D0 */
+		in-gpios = <&gpiof 5 0>;  /* Arduino D1 */
+	};
+};

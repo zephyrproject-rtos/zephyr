@@ -1,0 +1,20 @@
+/*
+ * Copyright (c) 2022 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&clk_lse {
+	status = "okay";
+};
+
+/* LPUART1 clock source on LSE : set console at 9600 */
+&lpuart1 {
+	/delete-property/ clocks;
+	clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x00000001>,
+		<&rcc STM32_SRC_LSE LPUART1_SEL(3)>;
+
+	current-speed = <9600>;
+	wakeup-source;
+	wakeup-line = <28>;
+};

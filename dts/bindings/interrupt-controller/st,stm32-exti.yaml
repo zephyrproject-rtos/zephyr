@@ -1,0 +1,36 @@
+description: STMicroelectronics STM32 family External Interrupt Controller
+
+compatible: "st,stm32-exti"
+
+include: [base.yaml, interrupt-controller.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  interrupt-names:
+    required: true
+
+  num-lines:
+    type: int
+    required: true
+    description: Number of lines supported by the interrupt controller.
+
+  line-ranges:
+    type: array
+    required: true
+    description: |
+      Description of the the input lines range for each interrupt line supported
+      by the external interrupt controller. For each line a couple of integers is
+      provided: the number of the first line of the range start and the length
+      of the range.
+      As example:
+             line-ranges = <0 1>, <1 1>, <2 1>, <3 1>,
+                           <4 1>, <5 5>, <10 6>;
+      Above property provides event-range for 7 lines.
+      5 first lines contain one element
+      6th line starts with input line 5 and contains 5 elements (5 to 9)
+      7th line starts with inupt line 10 and contains 6 elements (10 to 15)

@@ -1,0 +1,5 @@
+tests:
+  libraries.os.fdtable:
+    tags: fdtable
+    integration_platforms:
+      - qemu_x86

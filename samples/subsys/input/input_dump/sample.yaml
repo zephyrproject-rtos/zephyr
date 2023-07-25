@@ -1,0 +1,8 @@
+sample:
+  name: Input Dump
+tests:
+  sample.input.input_dump:
+    tags: input
+    build_only: true
+    integration_platforms:
+      - native_posix

@@ -1,0 +1,21 @@
+# iMX7 M4 core series
+
+# Copyright (c) 2017, NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_IMX7_M4
+
+config SOC_SERIES
+	default "mcimx7_m4"
+
+config NUM_IRQS
+	# must be >= the highest interrupt number used
+	default 127
+
+config PINCTRL_IMX
+	default y if HAS_IMX_IOMUXC
+	depends on PINCTRL
+
+source "soc/arm/nxp_imx/mcimx7_m4/Kconfig.defconfig.mcimx7_m4"
+
+endif # SOC_SERIES_IMX7_M4

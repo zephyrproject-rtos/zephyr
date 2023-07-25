@@ -1,0 +1,32 @@
+# Copyright (c) 2020 Teslabs Engineering S.L.
+# SPDX-License-Identifier: Apache-2.0
+
+config MEMC_STM32
+	bool "STM32 Flexible Memory Controller (FMC)"
+	default y
+	depends on DT_HAS_ST_STM32_FMC_ENABLED
+	help
+	  Enable STM32 Flexible Memory Controller.
+
+if MEMC_STM32
+
+config MEMC_STM32_SDRAM
+	bool "STM32 FMC SDRAM controller"
+	default y
+	depends on DT_HAS_ST_STM32_FMC_SDRAM_ENABLED
+	select USE_STM32_LL_FMC
+	select USE_STM32_HAL_SDRAM
+	help
+	  Enable STM32 FMC SDRAM controller.
+
+config MEMC_STM32_NOR_PSRAM
+	bool "STM32 FMC NOR/PSRAM controller"
+	default y
+	depends on DT_HAS_ST_STM32_FMC_NOR_PSRAM_ENABLED
+	select USE_STM32_LL_FMC
+	select USE_STM32_HAL_NOR
+	select USE_STM32_HAL_SRAM
+	help
+	  Enable STM32 FMC NOR/PSRAM controller.
+
+endif

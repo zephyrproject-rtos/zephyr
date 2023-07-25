@@ -1,0 +1,2 @@
+/* Keep default IRQ priority low for peripherals to reduce Radio ISR latency */
+#define NRF_DEFAULT_IRQ_PRIORITY 5

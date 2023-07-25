@@ -1,0 +1,34 @@
+# Copyright (c) 2021 BrainCo Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: GigaDevice GD32 series DAC module
+
+compatible: "gd,gd32-dac"
+
+include: [dac-controller.yaml, reset-device.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  resets:
+    required: true
+
+  clocks:
+    required: true
+
+  num-channels:
+    type: int
+    description: Number of DAC output channels
+    required: true
+
+  reset-val:
+    type: int
+    default: 0
+    description: Reset value of DAC output. Defaults to 0, the SoC default.
+
+  "#io-channel-cells":
+    const: 1
+
+io-channel-cells:
+  - output

@@ -1,0 +1,156 @@
+/*
+ * Copyright (c) 2018, Synopsys, Inc. All rights reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "skeleton.dtsi"
+
+//#include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+#define DT_APB_CLK_HZ	100000000
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "snps,arcem";
+			reg = <0>;
+		};
+	};
+
+	intc: arcv2-intc {
+		compatible = "snps,arcv2-intc";
+		interrupt-controller;
+		#interrupt-cells = <2>;
+	};
+
+	timer0: timer0 {
+		compatible = "snps,arc-timer";
+		interrupts = <16 1>;
+		interrupt-parent = <&intc>;
+	};
+
+	iccm0: iccm@60000000 {
+		compatible = "arc,iccm";
+		reg = <0x60000000 0x20000>;
+	};
+
+	dccm0: dccm@80000000 {
+		compatible = "arc,dccm";
+		reg = <0x80000000 0x20000>;
+	};
+
+	/* this is (Pseudo SRAM), so treat it like mmio-sram */
+	sram0: memory@10000000 {
+		compatible = "mmio-sram";
+		reg = <0x10000000 0x1000000>;
+	};
+
+	spiclk: spi-clock {
+		compatible = "fixed-clock";
+		clock-frequency = <1000000>;
+		#clock-cells = <0>;
+	};
+
+	soc {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "simple-bus";
+		ranges;
+
+
+		uart0: uart@f0004000 {
+			compatible = "ns16550";
+			clock-frequency = <DT_APB_CLK_HZ>;
+			reg = <0xf0004000 0x1000>;
+			interrupt-parent = <&intc>;
+			reg-shift = <2>;
+		};
+
+		gpio0: gpio@f0002000 {
+			compatible = "snps,designware-gpio";
+			reg = <0xf0002000 0xc>;
+			ngpios = <4>;
+			interrupt-parent = <&intc>;
+			gpio-controller;
+			#gpio-cells = <2>;
+		};
+
+		gpio1: gpio@f000200c {
+			compatible = "snps,designware-gpio";
+			reg = <0xf000200c 0xc>;
+			ngpios = <8>;
+			gpio-controller;
+			#gpio-cells = <2>;
+		};
+
+		/* wifi rs9113 */
+		spi0: spi@f0008000 {
+			compatible = "snps,designware-spi";
+			reg = <0xf0008000 0x1000>;
+			clocks = <&spiclk>;
+			fifo-depth = <32>;
+			interrupt-parent = <&intc>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		pinctrl: pinctrl@f0001000 {
+			compatible = "snps,emsdp-pinctrl";
+			reg = <0xf0001000 0x100>;
+		};
+
+		/* SPI-flash for user data */
+		spi1: spi@f1000000 {
+			compatible = "snps,designware-spi";
+			reg = <0xf1000000 0x1000>;
+			clocks = <&spiclk>;
+			fifo-depth = <32>;
+			interrupt-parent = <&intc>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			s25fl256s: s25fl256s@0 {
+				compatible = "spansion,s25fl256s", "jedec,spi-nor";
+				reg = <0>;
+				size = <0x10000000>;
+				spi-max-frequency = <100000>;
+				status = "okay";
+				jedec-id = [01 02 19];
+			};
+		};
+
+		/* DFSS-SPI0 */
+		spi2: spi@80010000 {
+			compatible = "snps,designware-spi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x80010000 0x100>;
+			clocks = <&spiclk>;
+			interrupts = <63 2>, <64 2>, <65 2>;
+			interrupt-names = "err_int", "rx_avail", "tx_req";
+			interrupt-parent = <&intc>;
+			aux_reg;
+			fifo-depth = <16>;
+		};
+
+		/* DFSS-SPI1 */
+		spi3: spi@80010100 {
+			compatible = "snps,designware-spi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x80010100 0x100>;
+			clocks = <&spiclk>;
+			interrupts = <67 2>, <68 2>, <69 2>;
+			interrupt-names = "err_int", "rx_avail", "tx_req";
+			interrupt-parent = <&intc>;
+			aux_reg;
+			fifo-depth = <16>;
+		};
+	};
+};

@@ -1,0 +1,254 @@
+/*
+ * Copyright (c) 2017 Justin Watson
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/armv7-m.dtsi>
+#include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/clock/atmel_sam_pmc.h>
+
+/ {
+	aliases {
+		watchdog0 = &wdt;
+	};
+
+	chosen {
+		zephyr,flash-controller = &eefc;
+	};
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m3";
+			reg = <0>;
+		};
+	};
+
+	soc {
+		pmc: pmc@400e0600 {
+			compatible = "atmel,sam-pmc";
+			reg = <0x400e0600 0x200>;
+			interrupts = <5 0>;
+			#clock-cells = <2>;
+			status = "okay";
+		};
+
+		sram0: memory@20070000 {
+			compatible = "mmio-sram";
+			reg = <0x20070000 0x18000>;
+		};
+
+		/* Only used for HWINFO device ID */
+		eefc: flash-controller@400e0a00 {
+			compatible = "atmel,sam-flash-controller";
+			reg = <0x400e0a00 0x200>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 6>;
+
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			flash0: flash@80000 {
+				compatible = "soc-nv-flash";
+				reg = <0x00080000 0x80000>;
+
+				write-block-size = <16>;
+				erase-block-size = <512>;
+			};
+
+			/*
+			 * SAM3X doesn't support erase pages command and must
+			 * be keeped disabled.
+			 */
+			status = "disabled";
+		};
+
+		wdt: watchdog@400e1a50 {
+			compatible = "atmel,sam-watchdog";
+			reg = <0x400e1a50 0xc>;
+			interrupts = <4 0>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 4>;
+			status = "disabled";
+		};
+
+		twi0: i2c@4008c000 {
+			compatible = "atmel,sam-i2c-twi";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			reg = <0x4008c000 0x128>;
+			interrupts = <22 0>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 22>;
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
+		twi1: i2c@40090000 {
+			compatible = "atmel,sam-i2c-twi";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			reg = <0x40090000 0x128>;
+			interrupts = <23 0>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 23>;
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
+		uart: uart@400e0800 {
+			compatible = "atmel,sam-uart";
+			reg = <0x400e0800 0x124>;
+			interrupts = <8 1>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 8>;
+			status = "disabled";
+		};
+
+		usart0: usart@40098000 {
+			compatible = "atmel,sam-usart";
+			reg = <0x40098000 0x130>;
+			interrupts = <17 0>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 17>;
+			status = "disabled";
+		};
+
+		usart1: usart@4009c000 {
+			compatible = "atmel,sam-usart";
+			reg = <0x4009c000 0x130>;
+			interrupts = <18 0>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 18>;
+			status = "disabled";
+		};
+
+		usart2: usart@400a0000 {
+			compatible = "atmel,sam-usart";
+			reg = <0x400a0000 0x130>;
+			interrupts = <19 0>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 19>;
+			status = "disabled";
+		};
+
+		usart3: usart@400a4000 {
+			compatible = "atmel,sam-usart";
+			reg = <0x400a4000 0x130>;
+			interrupts = <20 0>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 20>;
+			status = "disabled";
+		};
+
+		pinctrl: pinctrl@400e0e00 {
+			compatible = "atmel,sam-pinctrl";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x400e0e00 0x400e0e00 0xc00>;
+
+			pioa: pio@400e0e00 {
+				compatible = "atmel,sam-gpio";
+				reg = <0x400e0e00 0x190>;
+				interrupts = <11 1>;
+				clocks = <&pmc PMC_TYPE_PERIPHERAL 11>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				#atmel,pin-cells = <2>;
+			};
+
+			piob: pio@400e1000 {
+				compatible = "atmel,sam-gpio";
+				reg = <0x400e1000 0x190>;
+				interrupts = <12 1>;
+				clocks = <&pmc PMC_TYPE_PERIPHERAL 12>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				#atmel,pin-cells = <2>;
+			};
+
+			pioc: pio@400e1200 {
+				compatible = "atmel,sam-gpio";
+				reg = <0x400e1200 0x190>;
+				interrupts = <13 1>;
+				clocks = <&pmc PMC_TYPE_PERIPHERAL 13>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				#atmel,pin-cells = <2>;
+			};
+
+			piod: pio@400e1400 {
+				compatible = "atmel,sam-gpio";
+				reg = <0x400e1400 0x190>;
+				interrupts = <14 1>;
+				clocks = <&pmc PMC_TYPE_PERIPHERAL 14>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				#atmel,pin-cells = <2>;
+			};
+
+			pioe: pio@400e1600 {
+				compatible = "atmel,sam-gpio";
+				reg = <0x400e1600 0x190>;
+				interrupts = <15 1>;
+				clocks = <&pmc PMC_TYPE_PERIPHERAL 15>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				#atmel,pin-cells = <2>;
+			};
+		};
+
+		tc0: tc@40080000 {
+			compatible = "atmel,sam-tc";
+			reg = <0x40080000 0x100>;
+			interrupts = <27 0
+				      28 0
+				      29 0>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 27>,
+				 <&pmc PMC_TYPE_PERIPHERAL 28>,
+				 <&pmc PMC_TYPE_PERIPHERAL 29>;
+			status = "disabled";
+		};
+
+		tc1: tc@40084000 {
+			compatible = "atmel,sam-tc";
+			reg = <0x40084000 0x100>;
+			interrupts = <30 0
+				      31 0
+				      32 0>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 30>,
+				 <&pmc PMC_TYPE_PERIPHERAL 31>,
+				 <&pmc PMC_TYPE_PERIPHERAL 32>;
+			status = "disabled";
+		};
+
+		tc2: tc@40088000 {
+			compatible = "atmel,sam-tc";
+			reg = <0x40088000 0x100>;
+			interrupts = <33 0
+				      34 0
+				      35 0>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 33>,
+				 <&pmc PMC_TYPE_PERIPHERAL 34>,
+				 <&pmc PMC_TYPE_PERIPHERAL 35>;
+			status = "disabled";
+		};
+
+		pwm0: pwm@40094000 {
+			compatible = "atmel,sam-pwm";
+			reg = <0x40094000 0x4000>;
+			interrupts = <36 1>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 36>;
+			prescaler = <10>;
+			divider = <1>;
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
+
+		rstc: rstc@400e1a00 {
+			compatible = "atmel,sam-rstc";
+			reg = <0x400e1a00 0x10>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 1>;
+			user-nrst;
+		};
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <4>;
+};

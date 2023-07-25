@@ -1,0 +1,19 @@
+sample:
+  name: nrfx Peripheral Resource Sharing example
+tests:
+  sample.boards.nrf.nrfx_prs:
+    platform_allow:
+      - nrf5340dk_nrf5340_cpuapp
+      - nrf9160dk_nrf9160
+    integration_platforms:
+      - nrf5340dk_nrf5340_cpuapp
+      - nrf9160dk_nrf9160
+    tags: nrfx
+    harness: console
+    harness_config:
+      type: multi_line
+      ordered: true
+      regex:
+        - "nrfx PRS example on .*"
+        - "-> press \".*\" to trigger a transfer"
+        - "-> press \".*\" to switch the type of peripheral"

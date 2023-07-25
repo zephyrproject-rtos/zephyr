@@ -1,0 +1,11 @@
+# Arduino Due Board configuration
+
+# Copyright (c) 2017 Justin Watson
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_ARDUINO_DUE
+
+config BOARD
+	default "arduino_due"
+
+endif # BOARD_ARDUINO_DUE

@@ -1,0 +1,13 @@
+# Kconfig Andes ATCSPI200 SPI configuration options
+#
+# Copyright (c) 2022 Andes Technology Corporation.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config SPI_ANDES_ATCSPI200
+	bool "Andes ATCSPI200 SPI driver"
+	default y
+	depends on DT_HAS_ANDESTECH_ATCSPI200_ENABLED
+	help
+	  Enable driver for Andes ATCSPI200 SPI controller

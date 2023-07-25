@@ -1,0 +1,20 @@
+identifier: 96b_argonkey
+name: 96Boards Argonkey
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 256
+flash: 1024
+supported:
+  - gpio
+  - i2c
+  - i2s
+  - hts221
+  - lps22hb
+  - lsm6dsl
+  - counter
+  - spi
+  - vl53l0x

@@ -1,0 +1,20 @@
+/*
+ * Copyright (c) 2019 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&zephyr_udc0 {
+	hp_0 {
+		compatible = "usb-audio-hp";
+		feature-mute;
+		channel-l;
+		channel-r;
+	};
+	mic_0 {
+		compatible = "usb-audio-mic";
+		feature-mute;
+		channel-l;
+		channel-r;
+	};
+};

@@ -1,0 +1,14 @@
+tests:
+  bluetooth.hci_prop_evt:
+    platform_allow:
+      - qemu_x86
+      - qemu_cortex_m3
+      - native_posix
+      - native_posix_64
+    integration_platforms:
+      - native_posix
+    tags:
+      - bluetooth
+      - hci
+      - prop
+      - event

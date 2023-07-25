@@ -1,0 +1,210 @@
+# USB device configuration options
+
+# Copyright (c) 2016 Wind River Systems, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig USB_DEVICE_DRIVER
+	bool "USB device controller drivers"
+	help
+	  Enable USB device controller drivers.
+
+if USB_DEVICE_DRIVER
+
+config USB_DC_HAS_HS_SUPPORT
+	bool "USB device controller supports high speed"
+	help
+	  USB device controller supports high speed.
+
+config USB_DEVICE_REMOTE_WAKEUP
+	bool "Remote wakeup support"
+	help
+	  USB device controller supports remote wakeup feature.
+
+config USB_DW
+	bool "Designware USB Device Controller Driver"
+	default y
+	depends on DT_HAS_SNPS_DWC2_ENABLED
+	help
+	  Designware USB Device Controller Driver.
+
+config USB_DW_USB_2_0
+	bool "DesignWare Controller and PHY support for USB specification 2.0"
+	depends on USB_DW
+	help
+	  Indicates whether or not USB specification version 2.0 is supported
+
+config USB_DC_RPI_PICO
+	bool "USB device controller driver for Raspberry Pi Pico devices"
+	default y
+	depends on DT_HAS_RASPBERRYPI_PICO_USBD_ENABLED
+	help
+	  Enable USB support on the RP2 family of processors.
+
+DT_STM32_USBHS := $(dt_nodelabel_path,usbotg_hs)
+DT_STM32_USBHS_SPEED := $(dt_node_str_prop_equals,$(DT_STM32_USBHS),maximum-speed,high-speed)
+
+config USB_DC_STM32
+	bool "USB device controller driver for STM32 devices"
+	default y
+	depends on DT_HAS_ST_STM32_OTGFS_ENABLED \
+		|| DT_HAS_ST_STM32_OTGHS_ENABLED \
+		|| DT_HAS_ST_STM32_USB_ENABLED
+	select USE_STM32_LL_USB
+	select USE_STM32_HAL_PCD
+	select USE_STM32_HAL_PCD_EX
+	select USB_DC_HAS_HS_SUPPORT if "$(DT_STM32_USBHS_SPEED)"
+	imply USB_DEVICE_REMOTE_WAKEUP
+	help
+	  Enable STM32 family USB device controller shim driver.
+
+config USB_DC_STM32_CLOCK_CHECK
+	bool "Runtime USB 48MHz clock check"
+	depends on USB_DC_STM32
+	default y if !(SOC_SERIES_STM32F1X || SOC_SERIES_STM32F3X)
+	help
+	  Enable USB clock 48MHz configuration runtime check.
+	  In specific cases, this check might provide wrong verdict and should
+	  be disabled.
+
+config USB_DC_SAM0
+	bool "SAM0 series USB Device Controller driver"
+	default y
+	depends on DT_HAS_ATMEL_SAM0_USB_ENABLED
+	help
+	  SAM0 family USB device controller Driver.
+
+config USB_DC_SMARTBOND
+	bool "SmartBond series USB Device Controller driver"
+	default y
+	select CLOCK_CONTROL_SMARTBOND
+	select CLOCK_CONTROL
+	depends on DT_HAS_RENESAS_SMARTBOND_USBD_ENABLED
+	help
+	  SmartBond family USB device controller Driver.
+
+config USB_DC_SAM_USBC
+	bool "SAM4L USBC Device Controller driver"
+	default y
+	depends on DT_HAS_ATMEL_SAM_USBC_ENABLED
+	help
+	  SAM4L family USBC device controller Driver.
+
+DT_SAM_USBHS := $(dt_nodelabel_path,usbhs)
+DT_SAM_USBHS_SPEED := $(dt_node_str_prop_equals,$(DT_SAM_USBHS),maximum-speed,high-speed)
+
+config USB_DC_SAM_USBHS
+	bool "SAM series USB HS Device Controller driver"
+	default y
+	depends on DT_HAS_ATMEL_SAM_USBHS_ENABLED
+	imply USB_DC_HAS_HS_SUPPORT if "$(DT_SAM_USBHS_SPEED)"
+	help
+	  SAM family USB HS device controller Driver.
+
+config USB_NRFX
+	bool "Nordic Semiconductor USB Device Controller Driver"
+	default y
+	depends on DT_HAS_NORDIC_NRF_USBD_ENABLED
+	select NRFX_USBD
+	select NRFX_POWER
+	imply USB_DEVICE_REMOTE_WAKEUP
+	help
+	  nRF USB Device Controller Driver
+
+config USB_NRFX_EVT_QUEUE_SIZE
+	int "USBD event queue size"
+	range 4 64
+	default 32
+	depends on USB_NRFX
+	help
+	  Size of the driver's internal event queue.
+	  Required size will depend on number of endpoints (class instances) in use.
+
+config USB_NRFX_WORK_QUEUE_STACK_SIZE
+	int "USBD work queue stack size"
+	default 1024
+	depends on USB_NRFX
+	help
+	  Size of the stack for the work queue thread that is used in the driver
+	  for handling the events from the USBD ISR, i.e. executing endpoint
+	  callbacks and providing proper notifications to the USB device stack.
+
+config USB_NRFX_ATTACHED_EVENT_DELAY
+	int "USBD attached event delay"
+	range 0 1000
+	default 0
+	depends on USB_NRFX
+	help
+	  Configurable attached event delay in milliseconds. Delay can be used
+	  to give USB Charging Controller time for initialization.
+
+config USB_KINETIS
+	bool "Kinetis USB Device Controller Driver"
+	default y
+	depends on DT_HAS_NXP_KINETIS_USBD_ENABLED
+	help
+	  Kinetis USB Device Controller Driver.
+
+config USB_MCUX
+	bool "NXP MCUX USB Device Controller Driver"
+	default y
+	depends on DT_HAS_NXP_MCUX_USBD_ENABLED
+	help
+	  NXP MCUX USB Device Controller Driver for MXRT and LPC SoC's.
+
+if USB_MCUX
+
+choice USB_MCUX_CONTROLLER_TYPE
+	prompt "USB Controller type"
+	help
+	  Select the type of controller available in the SoC.
+
+config USB_DC_NXP_EHCI
+	bool "MXRT EHCI USB Device Controller"
+	select NOCACHE_MEMORY if ARCH_HAS_NOCACHE_MEMORY_SUPPORT
+	select USB_DC_HAS_HS_SUPPORT
+	help
+	  Kinetis and RT EHCI USB Device Controller Driver.
+
+config USB_DC_NXP_LPCIP3511
+	bool "LPC USB Device Controller"
+	select USB_DC_HAS_HS_SUPPORT if "$(dt_nodelabel_enabled,usbhs)"
+	select PINCTRL
+	help
+	  LPC USB Device Controller Driver.
+
+endchoice
+
+config USB_DC_MSG_QUEUE_LEN
+	int
+	default 10
+	help
+	  Maximum number of messages USB device controller interrupt can queue
+	  for callback thread
+
+config USB_MCUX_THREAD_STACK_SIZE
+	int "Stack size for the USB driver"
+	default 2048 if USB_DEVICE_LOG_LEVEL_DBG
+	default 1024
+	help
+	  Size of the stack used for the internal USB thread.
+
+endif # USB_MCUX
+
+config USB_DC_IT82XX2
+	bool "ITE IT82XX2 USB Device Controller Driver"
+	default y
+	depends on DT_HAS_ITE_IT82XX2_USB_ENABLED
+	help
+	  ITE IT82XX2 USB Device Controller Driver
+
+config USB_NATIVE_POSIX
+	bool "Native Posix USB Device Controller Driver"
+	depends on ARCH_POSIX && EXTERNAL_LIBC
+	help
+	  Native Posix USB Device Controller Driver.
+
+module = USB_DRIVER
+module-str = usb driver
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # USB_DEVICE_DRIVER

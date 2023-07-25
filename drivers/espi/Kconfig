@@ -1,0 +1,194 @@
+# eSPI configuration options
+
+# Copyright (c) 2019 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig ESPI
+	bool "Enhanced Serial Peripheral Interface (eSPI) bus drivers"
+	help
+	  Enable ESPI Driver.
+
+if ESPI
+
+source "drivers/espi/Kconfig.xec"
+
+source "drivers/espi/Kconfig.npcx"
+
+source "drivers/espi/Kconfig.espi_emul"
+
+source "drivers/espi/Kconfig.it8xxx2"
+
+module = ESPI
+module-str = espi
+source "subsys/logging/Kconfig.template.log_config"
+
+config ESPI_SLAVE
+	bool "ESPI slave driver"
+	default y
+	help
+	  Enables eSPI driver in slave mode.
+
+config ESPI_INIT_PRIORITY
+	int "ESPI Controller driver initialization priority"
+	default 3
+	help
+	  Driver initialization priority for eSPI driver.
+
+config ESPI_PERIPHERAL_CHANNEL
+	bool "eSPI peripheral channel"
+	default y
+	help
+	  eSPI Controller supports peripheral channel.
+
+config ESPI_VWIRE_CHANNEL
+	bool "eSPI virtual wire channel"
+	default y
+	help
+	  eSPI Controller supports virtual wires channel.
+
+config ESPI_AUTOMATIC_WARNING_ACKNOWLEDGE
+	bool "Automatic acknowledge for eSPI HOST warnings"
+	default y
+	depends on ESPI_VWIRE_CHANNEL
+	depends on ESPI_SLAVE
+	help
+	  Enable automatic acknowledgment from eSPI slave towards eSPI host
+	  whenever it receives suspend or reset warning.
+	  If this is disabled, it means the app wants to be give the opportunity
+	  to prepare for either HOST suspend or reset.
+
+config ESPI_AUTOMATIC_BOOT_DONE_ACKNOWLEDGE
+	bool "Automatic acknowledge slave boot status"
+	default y
+	depends on ESPI_VWIRE_CHANNEL
+	depends on ESPI_SLAVE
+	help
+	  Enable automatic acknowledgment from slave basic configuration been
+	  completed by sending a virtual wire message to the eSPI master.
+	  This depends on SPI boot configuration. It could be either very
+	  early in the flow after the VW channel is configured. Or it could be
+	  until flash channel is configured.
+
+config ESPI_OOB_CHANNEL
+	bool "eSPI Out-of-band channel"
+	help
+	  eSPI Controller supports OOB channel.
+
+config ESPI_FLASH_CHANNEL
+	bool "ESPI flash channel"
+	help
+	  eSPI Controller supports flash channel.
+
+if ESPI_PERIPHERAL_CHANNEL
+
+config ESPI_PERIPHERAL_UART
+	bool "UART peripheral"
+	help
+	  Enables UART over eSPI peripheral channel.
+
+config ESPI_PERIPHERAL_8042_KBC
+	bool "8042 kbc peripheral"
+	help
+	  Enables 8042 keyboard controller over eSPI peripheral channel.
+
+config ESPI_PERIPHERAL_HOST_IO
+	bool "Host I/O peripheral"
+	help
+	  Enables ACPI Host I/O over eSPI peripheral channel.
+
+config ESPI_PERIPHERAL_HOST_IO_PVT
+	bool "Host I/O peripheral Private Channel"
+	help
+	  Enables ACPI Host I/O over eSPI peripheral channel for private channel.
+
+config ESPI_PERIPHERAL_HOST_IO_PVT_PORT_NUM
+	hex "Host I/O peripheral Private Channel"
+	depends on ESPI_PERIPHERAL_HOST_IO_PVT
+	default 0x06A00000
+	help
+	  This is the port number used by the Host and EC to communicate over
+	  the private channel. Please ensure the Host code is configured to use
+	  the same port. Also, ensure the port number selected doesn't clash
+	  with the existing ports (like 80, 92, 62 etc).
+
+config ESPI_PERIPHERAL_DEBUG_PORT_80
+	bool "Debug Port 80 peripheral"
+	help
+	  Enables debug Port 80 over eSPI peripheral channel.
+
+config ESPI_PERIPHERAL_EC_HOST_CMD
+	bool "Host peripheral device support EC host command subsystem"
+	help
+	  Enables Embedded Controller (EC) host command subsystem via eSPI
+	  peripheral channel.
+
+config ESPI_PERIPHERAL_ACPI_SHM_REGION
+	bool "Host peripheral device support shared memory region"
+	help
+	  Enables shared memory region over eSPI peripheral channel to access
+	  the ACPI response data.
+
+config ESPI_PERIPHERAL_ACPI_SHM_REGION_PORT_NUM
+	hex "Host I/O peripheral port number for shared memory region"
+	depends on ESPI_PERIPHERAL_ACPI_SHM_REGION
+	default 0x0900
+	help
+	  This is the port number used by the Host and EC to communicate over
+	  the shared memory region to access the ACPI response data. Please
+	  ensure the Host code is configured to use for accessing ACPI response
+	  data. Also, ensure the port number selected doesn't clash with the
+	  existing ports.
+
+config ESPI_PERIPHERAL_CUSTOM_OPCODE
+	bool "Host peripheral device support customized opcode"
+	help
+	  Enables opcode is customized for certain platforms such as Chromebook
+	  and so on over eSPI peripheral channel.
+
+config ESPI_PERIPHERAL_HOST_CMD_DATA_PORT_NUM
+	hex "Host I/O peripheral port number for ec host command data"
+	depends on ESPI_PERIPHERAL_EC_HOST_CMD
+	default 0x0200
+	help
+	  This is the port number used by the Host and EC to communicate over
+	  the eSPI peripheral channel to send EC host command data and its
+	  result. Please ensure the Host code is configured to use for accessing
+	  host command data and result. Also, ensure the port number selected
+	  doesn't clash with the existing ports.
+
+config ESPI_PERIPHERAL_HOST_CMD_PARAM_PORT_NUM
+	hex "Host I/O peripheral port number for ec host command parameters"
+	depends on ESPI_PERIPHERAL_EC_HOST_CMD
+	default 0x0800
+	help
+	  This is the port number used by the Host and EC to communicate over
+	  the eSPI peripheral channel to access the host command request and
+	  response data. Please ensure the Host code is configured to use for
+	  accessing these package data. Also, ensure the port number selected
+	  doesn't clash with the existing ports.
+
+endif # ESPI_PERIPHERAL_CHANNEL
+
+config ESPI_OOB_CHANNEL_RX_ASYNC
+	bool "OOB host-initiated traffic handling"
+	depends on ESPI_OOB_CHANNEL
+	help
+	  Enables asynchronous handling for host-initiated OOB traffic.
+	  Otherwise OOB traffic is assumed to be always client-initiated.
+
+config ESPI_SAF
+	bool "ESPI SAF driver"
+	depends on ESPI_FLASH_CHANNEL
+	help
+	  Enable Slave Attached Flash eSPI driver. SAF depends upon ESPI driver
+	  and flash channel.
+
+config ESPI_SAF_INIT_PRIORITY
+	int "ESPI SAF driver initialization priority"
+	depends on ESPI_SAF
+	default 4
+	help
+	  Driver initialization priority for eSPI SAF driver. SAF driver must
+	  initialize after the ESPI driver.
+
+endif # ESPI

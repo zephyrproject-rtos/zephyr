@@ -1,0 +1,15 @@
+# LPCXpresso55S16 board
+
+# Copyright (c) 2020 Henrik Brix Andersen <henrik@brixandersen.dk>
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_LPCXPRESSO55S16
+
+config BOARD
+	default "lpcxpresso55S16"
+
+config FXOS8700_DRDY_INT1
+	default y
+	depends on FXOS8700_TRIGGER
+
+endif # BOARD_LPCXPRESSO55S16

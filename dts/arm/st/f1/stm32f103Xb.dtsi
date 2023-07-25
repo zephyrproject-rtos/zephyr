@@ -1,0 +1,27 @@
+/*
+ * Copyright (c) 2017 I-SENSE group of ICCS
+ *
+ * SoC device tree include for STM32F103xB SoCs
+ * where 'x' is replaced for specific SoCs like {C,R,T,V}
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <st/f1/stm32f103X8.dtsi>
+
+/ {
+	soc {
+		flash-controller@40022000 {
+			flash0: flash@8000000 {
+				reg = <0x08000000 DT_SIZE_K(128)>;
+				erase-block-size = <DT_SIZE_K(1)>;
+			};
+		};
+
+		/* spi2 is present on all STM32F103xB SoCs except
+		 * STM32F103TB. Delete node in stm32f103tb.dtsi.
+		 */
+	};
+
+};

@@ -1,0 +1,14 @@
+sample:
+  description: POSIX API gettimeofday() example (with SNTP)
+  name: gettimeofday
+common:
+  filter: ( TOOLCHAIN_HAS_NEWLIB == 1 and not CONFIG_SOC_FAMILY_INTEL_ADSP )
+  harness: net
+  min_ram: 32
+  min_flash: 96
+  tags:
+    - posix
+    - net
+tests:
+  sample.posix.gettimeofday:
+    harness: net

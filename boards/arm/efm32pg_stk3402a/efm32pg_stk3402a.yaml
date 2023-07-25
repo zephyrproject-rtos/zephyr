@@ -1,0 +1,19 @@
+identifier: efm32pg_stk3402a
+name: EFM32PG-STK3402A
+type: mcu
+arch: arm
+ram: 256
+flash: 1024
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - i2c
+  - gpio
+  - nvs
+  - watchdog
+testing:
+  ignore_tags:
+    - net
+    - bluetooth

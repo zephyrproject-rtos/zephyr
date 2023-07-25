@@ -1,0 +1,20 @@
+identifier: nucleo_f302r8
+name: ST Nucleo F302R8
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 16
+flash: 64
+supported:
+  - arduino_gpio
+  - arduino_i2c
+  - arduino_spi
+  - i2c
+  - spi
+  - gpio
+  - pwm
+  - counter
+  - adc

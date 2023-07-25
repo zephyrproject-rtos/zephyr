@@ -1,0 +1,9 @@
+/ {
+	chosen {
+		zephyr,ieee802154 = &ieee802154;
+	};
+
+	ieee802154: ieee802154 {
+		compatible = "vnd,ieee802154";
+	};
+};

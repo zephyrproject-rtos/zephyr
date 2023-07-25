@@ -1,0 +1,39 @@
+# Copyright (c) 2020 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig SPI_FLASH_AT45
+	bool "AT45 family flash driver"
+	default y
+	depends on DT_HAS_ATMEL_AT45_ENABLED
+	select FLASH_HAS_DRIVER_ENABLED
+	select FLASH_HAS_PAGE_LAYOUT
+	select SPI
+	help
+	  This driver can handle several instances of AT45 family chips that
+	  are enabled by specifying devicetree nodes with the "compatible"
+	  property set to "atmel,at45" and other required properties like
+	  JEDEC ID, chip capacity, block and page size etc. configured
+	  accordingly.
+
+	  The driver is only capable of using "power of 2" binary page sizes
+	  in those chips and at initialization configures them to work in
+	  that mode (unless it is already done).
+
+if SPI_FLASH_AT45
+
+config SPI_FLASH_AT45_USE_READ_MODIFY_WRITE
+	bool "Use Read-Modify-Write command in flash_write()"
+	default y
+	help
+	  Use the Read-Modify-Write command (opcode 0x58) instead of the default
+	  Main Memory Program without Built-In Erase (opcode 0x02). This allows
+	  writing of data without prior erasing of corresponding pages.
+
+config SPI_FLASH_AT45_INIT_PRIORITY
+	int "Driver initialization priority"
+	default 80
+	help
+	  Device driver initialization priority.
+	  SPI driver needs to be initialized before this one.
+
+endif # SPI_FLASH_AT45

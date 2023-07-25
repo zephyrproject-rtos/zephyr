@@ -1,0 +1,286 @@
+# Copyright (c) 2021 ATL-Electronics
+# SPDX-License-Identifier: Apache-2.0
+
+config ZEPHYR_HAL_GIGADEVICE_MODULE
+	bool
+
+config GD32_HAS_AF_PINMUX
+	bool
+	help
+	  This option should be selected if the series use an AF pinmux model.
+
+config GD32_HAS_AFIO_PINMUX
+	bool
+	help
+	  This option should be selected if the series use an AFIO pinmux model.
+
+config HAS_GD32_HAL
+	bool
+	select HAS_CMSIS_CORE if SOC_FAMILY_GD32_ARM
+
+if HAS_GD32_HAL
+
+choice GD32_HXTAL_FREQUENCY
+	prompt "High speed external oscillator clock frequency"
+	default GD32_HXTAL_FIRMWARE_DEFINED if \
+		SOC_SERIES_GD32F403 || SOC_SERIES_GD32F4XX || SOC_SERIES_GD32F3X0
+	default GD32_HXTAL_25MHZ if SOC_SERIES_GD32VF103 || SOC_SERIES_GD32E50X
+	default GD32_HXTAL_8MHZ if SOC_SERIES_GD32E10X
+	help
+	  Define value of high speed crystal oscillator (HXTAL) in Hz
+	  This value sets the frequency of the oscillator.
+
+config GD32_HXTAL_FIRMWARE_DEFINED
+	bool "Firmware defined"
+	depends on !SOC_SERIES_GD32VF103
+	depends on !SOC_SERIES_GD32E10X
+	help
+	  Use default frequency defined in firmware for HXTAL
+	  This is using for SoCs (e.g. gd32f4xx, gd32f3x0, etc ...)
+	  that have default HXTAL definitions in firmware.
+
+config GD32_HXTAL_8MHZ
+	bool "8MHz"
+	depends on SOC_SERIES_GD32VF103 || SOC_SERIES_GD32E10X
+	help
+	  Use 8MHz oscillator for HXTAL
+
+config GD32_HXTAL_25MHZ
+	bool "25MHz"
+	depends on SOC_SERIES_GD32VF103 || SOC_SERIES_GD32E10X
+	help
+	  Use 25MHz oscillator for HXTAL
+
+endchoice
+
+config GD32_HAS_IRC_32K
+	bool
+	help
+	  Use 32KHz oscillator for low speed internal RC Oscillator
+
+config GD32_HAS_IRC_40K
+	bool
+	help
+	  Use 40KHz oscillator for low speed internal RC Oscillator
+
+config GD32_LOW_SPEED_IRC_FREQUENCY
+	int
+	default 32000 if GD32_HAS_IRC_32K
+	default 40000 if GD32_HAS_IRC_40K
+	help
+	  Define value of low speed internal RC oscillator (IRC) in Hz
+
+config GD32_DBG_SUPPORT
+	bool "Use GD32 Debug features"
+	select USE_GD32_DBG
+	default y
+	help
+	  Enable GD32 Debug features.
+	  This option makes allows using functions that access to
+	  DBG_CTL register such as dbg_periph_enable().
+
+config USE_GD32_ADC
+	bool
+	help
+	  Enable GD32 Analog-to-Digital Converter (ADC) HAL module driver
+
+config USE_GD32_BKP
+	bool
+	help
+	  Enable GD32 Backup Registers (BKP) HAL module driver
+
+config USE_GD32_CAN
+	bool
+	help
+	  Enable GD32 Controller Area Network (CAN) HAL module driver
+
+config USE_GD32_CEC
+	bool
+	help
+	  Enable GD32 Consumer Electronics Control (CEC) HAL module driver
+
+config USE_GD32_CMP
+	bool
+	help
+	  Enable GD32 Comparator (CMP) HAL module driver
+
+config USE_GD32_CRC
+	bool
+	help
+	  Enable GD32 Cyclic redundancy check calculation unit (CRC) HAL
+	  module driver
+
+config USE_GD32_CTC
+	bool
+	help
+	  Enable GD32 Clock Trim Controller (CTC) HAL module driver
+
+config USE_GD32_DAC
+	bool
+	help
+	  Enable GD32 Digital-to-Analog Converter (DAC) HAL module driver
+
+config USE_GD32_DBG
+	bool
+	help
+	  Enable GD32 Debug (DBG) HAL module driver
+
+config USE_GD32_DCI
+	bool
+	help
+		Enable GD32 Digital Camera Interface (DCI) HAL module driver
+
+config USE_GD32_DMA
+	bool
+	help
+	  Enable GD32 Direct Memory Access controller (DMA) HAL module driver
+
+config USE_GD32_ENET
+	bool
+	help
+	  Enable GD32 Ethernet (ENET) HAL module driver
+
+config USE_GD32_EXMC
+	bool
+	help
+	  Enable GD32 External Memory Controller (EXMC) HAL module driver
+
+config USE_GD32_EXTI
+	bool
+	help
+	  Enable GD32 Interrupt/Event controller (EXTI) HAL module driver
+
+config USE_GD32_FMC
+	bool
+	help
+	  Enable GD32 Flash Memory Controller (FMC) HAL module driver
+
+config USE_GD32_FWDGT
+	bool
+	help
+	  Enable GD32 Free Watchdog Timer (FWDGT) HAL module driver
+
+config USE_GD32_GPIO
+	bool
+	default y
+	help
+	  Enable GD32 General-purpose and Alternate-Function I/Os
+	  (GPIO and AFIO) HAL module driver
+
+config USE_GD32_I2C
+	bool
+	help
+	  Enable GD32 Inter-Integrated Circuit Interface (I2C) HAL module driver
+
+config USE_GD32_IPA
+	bool
+	help
+	  Enable GD32 Image Processing Accelerator (IPA) HAL module driver
+
+config USE_GD32_IREF
+	bool
+	help
+	  Enable GD32 Programmable Current Reference (IREF) HAL module driver
+
+config USE_GD32_MISC
+	bool
+	help
+	  Enable GD32 System Utilities (MISC) HAL module driver
+
+config USE_GD32_PMU
+	bool
+	help
+	  Enable GD32 Power Management Unit (PMU) HAL module driver
+
+config USE_GD32_RCU
+	bool
+	default y
+	help
+	  Enable GD32 Reset and Clock Unit (RCU) HAL module driver
+
+config USE_GD32_RTC
+	bool
+	help
+	  Enable GD32 Real-Time Clock (RTC) HAL module driver
+
+config USE_GD32_SDIO
+	bool
+	help
+	  Enable GD32 Secure Digital Input/Output interface (SDIO) HAL module
+	  driver
+
+config USE_GD32_SPI
+	bool
+	help
+	  Enable GD32 Serial Peripheral Interface(SPI) HAL module driver
+
+config USE_GD32_SQPI
+	bool
+	help
+	  Enable GD32 Serial/Quad Parallel Interface (SQPI) HAL module driver
+
+config USE_GD32_SHRTIMER
+	bool
+	help
+	  Enable GD32 Super High-Resolution Timer (SHRTIMER) HAL module driver
+
+config USE_GD32_SYSCFG
+	bool
+	help
+	  Enable GD32 System Configuration (SYSCFG) HAL module driver
+
+config USE_GD32_TIMER
+	bool
+	help
+	  Enable GD32 Timer (TIMER) HAL module driver
+
+config USE_GD32_TLI
+	bool
+	help
+	  Enable GD32 TFT-LCD Interface (TLI) HAL module driver
+
+config USE_GD32_TMU
+	bool
+	help
+	  Enable GD32 Trigonometric Math Unit (TMU) HAL module driver
+
+config USE_GD32_TRNG
+	bool
+	help
+	  Enable GD32 True Random Number Generator (TRNG) HAL module driver
+
+config USE_GD32_TSI
+	bool
+	help
+	  Enable GD32 Touch Sensing Interface (TSI) HAL module driver
+
+config USE_GD32_USART
+	bool
+	help
+	  Enable GD32 Universal Synchronous/Asynchronous Receiver/Transmitter
+	  (USART) HAL module driver
+
+config USE_GD32_USBD
+	bool
+	help
+	  Enable GD32 Universal Serial Bus full-speed Device interface (USBD)
+	  HAL module driver
+
+config USE_GD32_USBFS
+	bool
+	help
+	  Enable GD32 Universal Serial Bus on-the-go Full-Speed (USBFS) HAL
+	  module driver
+
+config USE_GD32_USBHS
+	bool
+	help
+	  Enable GD32 Universal Serial Bus High-Speed interface (USBHS) HAL
+	  module driver
+
+config USE_GD32_WWDGT
+	bool
+	help
+	  Enable GD32 Window Watchdog Timer (WWDGT) HAL module driver
+
+endif # HAS_GD32_HAL

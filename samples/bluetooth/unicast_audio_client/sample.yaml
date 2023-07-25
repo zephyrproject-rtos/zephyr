@@ -1,0 +1,23 @@
+sample:
+  description: Bluetooth Low Energy Audio Unicast Client sample
+  name: Bluetooth Low Energy Audio Unicast Client sample
+tests:
+  sample.bluetooth.audio_unicast_client:
+    harness: bluetooth
+    platform_allow:
+      - qemu_cortex_m3
+      - qemu_x86
+    tags: bluetooth
+    integration_platforms:
+      - qemu_cortex_m3
+  sample.bluetooth.audio_unicast_client.bt_ll_sw_split:
+    harness: bluetooth
+    platform_allow:
+      - qemu_cortex_m3
+      - qemu_x86
+      - nrf52_bsim
+      - nrf52dk_nrf52832
+    integration_platforms:
+      - nrf52dk_nrf52832
+    extra_args: OVERLAY_CONFIG=overlay-bt_ll_sw_split.conf
+    tags: bluetooth

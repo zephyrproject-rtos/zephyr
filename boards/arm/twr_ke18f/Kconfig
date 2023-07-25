@@ -1,0 +1,13 @@
+# TWR-KE18F board configuration
+
+# Copyright (c) 2019 Vestas Wind Systems A/S
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_TWR_KE18F
+
+config BOARD_TWR_KE18F_FLEXIO_CLKOUT
+	bool "CLKOUT signal on FlexIO header"
+	help
+	  Enable the CLKOUT signal on FlexIO header pin 7 (PTE10).
+
+endif # BOARD_TWR_KE18F

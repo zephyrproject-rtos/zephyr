@@ -1,0 +1,56 @@
+# Copyright (c) 2023 Synopsys, Inc. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_ARC_HSDK4XD
+
+config SOC
+	default "snps_arc_hsdk4xd"
+
+config CPU_HS4X
+	default y
+
+config NUM_IRQ_PRIO_LEVELS
+	# This processor supports 2 priority levels:
+	# 0 for Fast Interrupts (FIRQs) and 1 for Regular Interrupts (IRQs).
+	default 2
+
+config NUM_IRQS
+	# must be > the highest interrupt number used
+	default 88
+
+config RGF_NUM_BANKS
+	# Actually cpu has 4 banks but zephys currently supports up to 2
+	default 2
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 500000000
+
+config ARC_FIRQ
+	default y
+
+config CODE_DENSITY
+	default y
+
+config ARCV2_TIMER_IRQ_PRIORITY
+	default 1
+
+config ARC_CONNECT
+	default y
+
+config MP_MAX_NUM_CPUS
+	default 4
+
+config UART_NS16550_ACCESS_WORD_ONLY
+	default y
+	depends on UART_NS16550
+
+config ARC_HAS_ACCL_REGS
+	default y
+
+config ARC_EARLY_SOC_INIT
+	default y
+
+config ARC_HAS_STACK_CHECKING
+	default n
+
+endif # SOC_ARC_HS4XD

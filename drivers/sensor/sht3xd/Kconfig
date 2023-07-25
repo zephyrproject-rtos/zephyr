@@ -1,0 +1,109 @@
+# SHT3xD temperature and humidity sensor configuration options
+
+# Copyright (c) 2016 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig SHT3XD
+	bool "SHT3xD Temperature and Humidity Sensor"
+	default y
+	depends on DT_HAS_SENSIRION_SHT3XD_ENABLED
+	select I2C
+	select CRC
+	help
+	  Enable driver for SHT3xD temperature and humidity sensors.
+
+if SHT3XD
+
+choice SHT3XD_TRIGGER_MODE
+	prompt "Trigger mode"
+	default SHT3XD_TRIGGER_NONE
+	help
+	  Specify the type of triggering to be used by the driver.
+
+config SHT3XD_TRIGGER_NONE
+	bool "No trigger"
+
+config SHT3XD_TRIGGER_GLOBAL_THREAD
+	bool "Use global thread"
+	depends on GPIO
+	select SHT3XD_TRIGGER
+
+config SHT3XD_TRIGGER_OWN_THREAD
+	bool "Use own thread"
+	depends on GPIO
+	select SHT3XD_TRIGGER
+
+endchoice
+
+config SHT3XD_TRIGGER
+	bool
+
+config SHT3XD_THREAD_PRIORITY
+	int "Thread priority"
+	depends on SHT3XD_TRIGGER_OWN_THREAD
+	default 10
+	help
+	  Priority of thread used by the driver to handle interrupts.
+
+config SHT3XD_THREAD_STACK_SIZE
+	int "Thread stack size"
+	depends on SHT3XD_TRIGGER_OWN_THREAD
+	default 1024
+	help
+	  Stack size of thread used by the driver to handle interrupts.
+
+choice SHT3XD_REPEATABILITY
+	prompt "Measurement repeatability"
+	default SHT3XD_REPEATABILITY_HIGH
+	help
+	  Repeatability modes differ with respect to measurement duration,
+	  noise level and energy consumption.
+
+config SHT3XD_REPEATABILITY_LOW
+	bool "low"
+
+config SHT3XD_REPEATABILITY_MEDIUM
+	bool "medium"
+
+config SHT3XD_REPEATABILITY_HIGH
+	bool "high"
+
+endchoice
+
+choice SHT3XD_MEASUREMENT_MODE
+	prompt "Measurement mode"
+	default SHT3XD_PERIODIC_MODE
+
+config SHT3XD_SINGLE_SHOT_MODE
+	bool "single shot"
+
+config SHT3XD_PERIODIC_MODE
+	bool "periodic data acquisition"
+
+endchoice
+
+choice SHT3XD_MPS
+	prompt "Measurements per second"
+	default SHT3XD_MPS_1
+	depends on SHT3XD_PERIODIC_MODE
+	help
+	  Number of measurements per second.
+
+config SHT3XD_MPS_05
+	bool "0.5"
+
+config SHT3XD_MPS_1
+	bool "1"
+
+config SHT3XD_MPS_2
+	bool "2"
+
+config SHT3XD_MPS_4
+	bool "4"
+
+config SHT3XD_MPS_10
+	bool "10"
+
+endchoice
+
+endif # SHT3XD

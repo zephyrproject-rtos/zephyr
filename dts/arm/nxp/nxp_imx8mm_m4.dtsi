@@ -1,0 +1,7 @@
+/*
+ * Copyright (c) 2019, Manivannan Sadhasivam
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <nxp/nxp_imx8m_m4.dtsi>

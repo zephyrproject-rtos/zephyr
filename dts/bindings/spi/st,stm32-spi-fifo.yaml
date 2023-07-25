@@ -1,0 +1,8 @@
+# Copyright (c) 2018, I-SENSE group of ICCS
+# SPDX-License-Identifier: Apache-2.0
+
+description: STM32 SPI controller with embedded Rx and Tx FIFOs
+
+compatible: "st,stm32-spi-fifo"
+
+include: st,stm32-spi-common.yaml

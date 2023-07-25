@@ -1,0 +1,19 @@
+identifier: ubx_evkninab4_nrf52833
+name: EVK-NINA-B4-NRF52833
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - adc
+  - arduino_gpio
+  - arduino_i2c
+  - arduino_spi
+  - usb_device
+  - ble
+  - gpio
+  - pwm
+  - watchdog
+  - counter

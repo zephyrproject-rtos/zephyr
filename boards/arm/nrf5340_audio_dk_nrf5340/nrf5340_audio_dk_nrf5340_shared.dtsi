@@ -1,0 +1,85 @@
+/ {
+	leds:	leds {
+		compatible = "gpio-leds";
+		rgb1_red: led_0 {
+			gpios = <&gpio0 7 GPIO_ACTIVE_HIGH>;
+			label = "0 LED_RGB_RED";
+		};
+		rgb1_green: led_1 {
+			gpios = <&gpio0 25 GPIO_ACTIVE_HIGH>;
+			label = "0 LED_RGB_GREEN";
+		};
+		rgb1_blue: led_2 {
+			gpios = <&gpio0 26 GPIO_ACTIVE_HIGH>;
+			label = "0 LED_RGB_BLUE";
+		};
+		rgb2_red: led_3 {
+			gpios = <&gpio0 28 GPIO_ACTIVE_HIGH>;
+			label = "1 LED_RGB_RED";
+		};
+		rgb2_green: led_4 {
+			gpios = <&gpio0 29 GPIO_ACTIVE_HIGH>;
+			label = "1 LED_RGB_GREEN";
+		};
+		rgb2_blue: led_5 {
+			gpios = <&gpio0 30 GPIO_ACTIVE_HIGH>;
+			label = "1 LED_RGB_BLUE";
+		};
+		led1_blue: led_6 {
+			gpios = <&gpio0 31 GPIO_ACTIVE_HIGH>;
+			label = "2 LED_MONO_BLUE";
+		};
+		led2_green: led_7 {
+			gpios = <&gpio1 0 GPIO_ACTIVE_HIGH>;
+			label = "3 LED_MONO_GREEN";
+		};
+		led3_green: led_8 {
+			gpios = <&gpio1 1 GPIO_ACTIVE_HIGH>;
+			label = "4 LED_MONO_GREEN";
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+		button_1_vol_dn: button_1_vol_dn {
+			gpios = <&gpio0 2 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "Push button 1";
+		};
+		button_2_vol_up: button_2_vol_up {
+			gpios = <&gpio0 3 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "Push button 2";
+		};
+		button3: button_3 {
+			gpios = <&gpio0 4 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "Push button 3";
+		};
+		button4: button_4 {
+			gpios = <&gpio0 6 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "Push button 4";
+		};
+		button5: button_5 {
+			gpios = <&gpio0 5 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "Push button 5";
+		};
+	};
+
+	aliases {
+		led0 = &rgb1_red;
+		led1 = &rgb1_green;
+		led2 = &rgb1_blue;
+		led3 = &rgb2_red;
+		led4 = &rgb2_green;
+		led5 = &rgb2_blue;
+		led6 = &led1_blue;
+		led7 = &led2_green;
+		led8 = &led3_green;
+		sw0 = &button_1_vol_dn;
+		sw1 = &button_2_vol_up;
+		sw2 = &button3;
+		sw3 = &button4;
+		sw4 = &button5;
+		mcuboot-led0 = &led1_blue;
+		mcuboot-button0 = &button3;
+		watchdog0 = &wdt0;
+	};
+};

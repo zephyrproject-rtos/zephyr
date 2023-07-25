@@ -1,0 +1,13 @@
+/*
+ * Copyright (c) 2019 Linaro Limited
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	resources {
+		compatible = "test-gpio-basic-api";
+		out-gpios = <&arduino_header 20 0>; /* Arduino D14 */
+		in-gpios = <&arduino_header 21 0>;  /* Arduino D15 */
+	};
+};

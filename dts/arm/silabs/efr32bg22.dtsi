@@ -1,0 +1,49 @@
+/*
+ * Copyright (c) 2021 Sateesh Kotapati
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "efr32bg2x.dtsi"
+#include <mem.h>
+
+&msc {
+	flash0: flash@0 {
+		compatible = "soc-nv-flash";
+		write-block-size = <4>;
+		erase-block-size = <8192>;
+		reg = <0x0 DT_SIZE_K(512)>;
+	};
+};
+
+&sram0 {
+	reg = <0x20000000 DT_SIZE_K(32)>;
+};
+
+&gpio {
+	interrupts = <10 2 18 2>;
+};
+
+&i2c0 {
+	interrupts = <27 0>;
+};
+
+&i2c1 {
+	interrupts = <28 0>;
+};
+
+&usart0 {
+	interrupts = <13 0>, <14 0>;
+};
+
+&usart1 {
+	interrupts = <15 0>, <16 0>;
+};
+
+&burtc0 {
+	interrupts = <18 0>;
+};
+
+&stimer0 {
+	interrupts = <12 0>;
+};

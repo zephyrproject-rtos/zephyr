@@ -1,0 +1,56 @@
+# Copyright (c) 2022 ITE Corporation. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Common fields for ITE it8xxx2 I2C
+
+include: [i2c-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  port-num:
+    type: int
+    required: true
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
+      - 4
+      - 5
+    description: Ordinal identifying the port
+      0 = SMB_CHANNEL_A,
+      1 = SMB_CHANNEL_B,
+      2 = SMB_CHANNEL_C,
+      3 = I2C_CHANNEL_D,
+      4 = I2C_CHANNEL_E,
+      5 = I2C_CHANNEL_F,
+
+  scl-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      The SCL pin for the selected port.
+
+  sda-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      The SDA pin for the selected port.
+
+  clock-gate-offset:
+    type: int
+    required: true
+    description: |
+      The clock gate offsets combine the register offset from
+      ECPM_BASE and the mask within that register into one value.
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true

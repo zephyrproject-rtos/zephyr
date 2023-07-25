@@ -1,0 +1,80 @@
+# Copyright (c) 2020 Linaro Limited.
+# SPDX-License-Identifier: Apache-2.0
+
+name: Zephyr West Command Tests
+
+on:
+  push:
+    branches:
+    - main
+    - v*-branch
+    paths:
+    - 'scripts/west-commands.yml'
+    - 'scripts/west_commands/**'
+    - '.github/workflows/west_cmds.yml'
+  pull_request:
+    branches:
+    - main
+    - v*-branch
+    paths:
+    - 'scripts/west-commands.yml'
+    - 'scripts/west_commands/**'
+    - '.github/workflows/west_cmds.yml'
+
+jobs:
+  west-commnads:
+    name: West Command Tests
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python-version: [3.8, 3.9, '3.10']
+        os: [ubuntu-22.04, macos-11, windows-2022]
+        exclude:
+        - os: macos-11
+          python-version: 3.6
+        - os: windows-2022
+          python-version: 3.6
+    steps:
+    - name: checkout
+      uses: actions/checkout@v3
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: cache-pip-linux
+      if: startsWith(runner.os, 'Linux')
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ matrix.python-version }}
+        restore-keys: |
+          ${{ runner.os }}-pip-${{ matrix.python-version }}
+    - name: cache-pip-mac
+      if: startsWith(runner.os, 'macOS')
+      uses: actions/cache@v3
+      with:
+        path: ~/Library/Caches/pip
+        # Trailing '-' was just to get a different cache name
+        key: ${{ runner.os }}-pip-${{ matrix.python-version }}-
+        restore-keys: |
+          ${{ runner.os }}-pip-${{ matrix.python-version }}-
+    - name: cache-pip-win
+      if: startsWith(runner.os, 'Windows')
+      uses: actions/cache@v3
+      with:
+        path: ~\AppData\Local\pip\Cache
+        key: ${{ runner.os }}-pip-${{ matrix.python-version }}
+        restore-keys: |
+          ${{ runner.os }}-pip-${{ matrix.python-version }}
+    - name: install pytest
+      run: |
+        pip3 install wheel
+        pip3 install pytest west pyelftools canopen natsort progress mypy intelhex psutil ply pyserial
+    - name: run pytest-win
+      if: runner.os == 'Windows'
+      run: |
+        python ./scripts/west_commands/run_tests.py
+    - name: run pytest-mac-linux
+      if: runner.os != 'Windows'
+      run: |
+        ./scripts/west_commands/run_tests.py

@@ -1,0 +1,14 @@
+# ST STM32F469XI MCU configuration options
+
+# Copyright (c) 2016 Linaro Limited.
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_STM32F469XX
+
+config SOC
+	default "stm32f469xx"
+
+config NUM_IRQS
+	default 93
+
+endif # SOC_STM32F469XX

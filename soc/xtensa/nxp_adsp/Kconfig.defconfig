@@ -1,0 +1,9 @@
+# NXP i.MX8 SoC family default configuration options
+#
+# Copyright (c) 2021 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+source "soc/xtensa/nxp_adsp/*/Kconfig.defconfig.series"
+
+config CACHE_MANAGEMENT
+	def_bool y

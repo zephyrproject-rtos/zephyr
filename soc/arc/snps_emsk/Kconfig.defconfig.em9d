@@ -1,0 +1,29 @@
+# Copyright (c) 2014 Wind River Systems, Inc.
+# Copyright (c) 2018 Synopsys, Inc. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_EMSK_EM9D
+
+config CPU_EM4_FPUS
+	default y
+
+config NUM_IRQ_PRIO_LEVELS
+	# This processor supports 4 priority levels:
+	# 0 for Fast Interrupts (FIRQs) and 1-3 for Regular Interrupts (IRQs).
+	default 4
+
+config NUM_IRQS
+	# must be > the highest interrupt number used
+	default 38 if BOARD_EM_STARTERKIT_R23
+	default 36 if BOARD_EM_STARTERKIT_R22
+
+config RGF_NUM_BANKS
+	default 2
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 20000000
+
+config HARVARD
+	default y
+
+endif # SOC_EMSK_EM9D

@@ -1,0 +1,22 @@
+# Copyright 2023 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_ARDUINO_GIGA_R1_M7 || BOARD_ARDUINO_GIGA_R1_M4
+
+config BOARD
+	default "arduino_giga_r1_m7" if BOARD_ARDUINO_GIGA_R1_M7
+	default "arduino_giga_r1_m4" if BOARD_ARDUINO_GIGA_R1_M4
+
+if BT
+
+choice CYW43XXX_PART
+	default CYW4343W
+endchoice
+
+choice CYW4343W_MODULE
+	default CYW4343W_MURATA_1DX
+endchoice
+
+endif # BT
+
+endif # BOARD_ARDUINO_GIGA_R1_M7 || BOARD_ARDUINO_GIGA_R1_M4

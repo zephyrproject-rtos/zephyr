@@ -1,0 +1,8 @@
+# Seeedunio XIAO board configuration
+
+# Copyright (c) 2020 Google LLC.
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD
+	default "seeeduino_xiao"
+	depends on BOARD_SEEEDUINO_XIAO

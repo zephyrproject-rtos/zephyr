@@ -1,0 +1,9 @@
+# Copyright (c) 2022, Rtone.
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_GD32F470I_EVAL
+
+config BOARD
+	default "gd32f470i_eval"
+
+endif # BOARD_GD32F470I_EVAL

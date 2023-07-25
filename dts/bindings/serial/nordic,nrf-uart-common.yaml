@@ -1,0 +1,41 @@
+include: [uart-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  disable-rx:
+    type: boolean
+    description: |
+      Disable UART reception capabilities (only required to disable reception
+      if CONFIG_PINCTRL is enabled).
+
+  current-speed:
+    description: |
+      Initial baud rate setting for UART. Only a fixed set of baud
+      rates are selectable on these devices.
+    enum:
+      - 1200
+      - 2400
+      - 4800
+      - 9600
+      - 14400
+      - 19200
+      - 28800
+      - 31250
+      - 38400
+      - 56000
+      - 57600
+      - 76800
+      - 115200
+      - 230400
+      - 250000
+      - 460800
+      - 921600
+      - 1000000

@@ -1,0 +1,62 @@
+/*
+ * Copyright (c) 2020 Piotr Mienkowski
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <silabs/efr32bg13p632f512gm48.dtsi>
+#include "efr32_radio.dtsi"
+
+/ {
+	model = "Silicon Labs BRD4104A (Blue Gecko Radio Board)";
+	compatible = "silabs,efr32_radio_brd4104a", "silabs,efr32bg13p";
+
+	aliases {
+		spi-flash0 = &mx25r80;
+	};
+};
+
+&cpu0 {
+	clock-frequency = <38400000>;
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* Reserve 32 kB for the bootloader */
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x0 0x00008000>;
+			read-only;
+		};
+
+		/* Reserve 220 kB for the application in slot 0 */
+		slot0_partition: partition@8000 {
+			label = "image-0";
+			reg = <0x00008000 0x00037000>;
+		};
+
+		/* Reserve 220 kB for the application in slot 1 */
+		slot1_partition: partition@3f000 {
+			label = "image-1";
+			reg = <0x0003f000 0x00037000>;
+		};
+
+		/* Reserve 32 kB for the scratch partition */
+		scratch_partition: partition@76000 {
+			label = "image-scratch";
+			reg = <0x00076000 0x00008000>;
+		};
+
+		/* Set 8Kb of storage at the end of the 512KB of flash */
+		storage_partition: partition@7e000 {
+			label = "storage";
+			reg = <0x0007e000 0x00002000>;
+		};
+
+	};
+};

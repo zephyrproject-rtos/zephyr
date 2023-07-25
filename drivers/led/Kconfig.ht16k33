@@ -1,0 +1,58 @@
+# Copyright (c) 2019 Henrik Brix Andersen <henrik@brixandersen.dk>
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig HT16K33
+	bool "HT16K33 LED driver"
+	default y
+	depends on DT_HAS_HOLTEK_HT16K33_ENABLED
+	select I2C
+	help
+	  Enable LED driver for HT16K33.
+
+	  The HT16K33 is a memory mapping, multifunction LED
+	  controller driver. The controller supports up to 128 LEDs
+	  (up to 16 rows and 8 commons).
+
+config HT16K33_KEYSCAN
+	bool "Keyscan support"
+	depends on (HT16K33 && KSCAN)
+	select KSCAN_HT16K33
+	help
+	  Enable keyscan child device support in the HT16K33 LED
+	  driver.
+
+	  The keyscan functionality itself is handled by the
+	  HT16K33 keyscan driver.
+
+if HT16K33_KEYSCAN
+
+config HT16K33_KEYSCAN_IRQ_THREAD_STACK_SIZE
+	int "Stack size for keyscan interrupt request handler thread"
+	default 400
+	help
+	  Size of the stack used for internal thread for keyscan
+	  interrupt processing.
+
+config HT16K33_KEYSCAN_IRQ_THREAD_PRIO
+	int "Priority for keyscan interrupt request handler thread"
+	default 2
+	help
+	  Priority level for internal thread for keyscan interrupt
+	  processing.
+
+config HT16K33_KEYSCAN_DEBOUNCE_MSEC
+	int "Keyscan debounce interval in milliseconds"
+	default 50
+	range 20 1000
+	help
+	  Keyscan debounce interval in milliseconds.
+
+config HT16K33_KEYSCAN_POLL_MSEC
+	int "Keyscan poll interval in milliseconds"
+	default 200
+	range 20 10000
+	help
+	  Keyscan poll interval in milliseconds. Polling is only used
+	  if no interrupt line is present.
+
+endif # HT16K33_KEYSCAN

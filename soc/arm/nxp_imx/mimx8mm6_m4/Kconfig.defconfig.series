@@ -1,0 +1,22 @@
+# i.MX8MM M4 SoC series defconfig
+
+# Copyright (c) 2020, Manivannan Sadhasivam <mani@kernel.org>
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_IMX8MM_M4
+
+config SOC_SERIES
+	default "mimx8mm6_m4"
+
+config NUM_IRQS
+	int
+	# must be >= the highest interrupt number used
+	default 127
+
+config PINCTRL_IMX
+	default y if HAS_MCUX_IOMUXC
+	depends on PINCTRL
+
+source "soc/arm/nxp_imx/mimx8mm6_m4/Kconfig.defconfig.mimx8mm6_m4"
+
+endif # SOC_SERIES_IMX8MM_M4

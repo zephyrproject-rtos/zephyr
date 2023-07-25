@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2019 Nordic Semicondutor ASA
+
+mainmenu "Timer Starvation Test"
+
+source "Kconfig.zephyr"
+
+config APP_STOP_S
+	int "The number of seconds to run without error before pass"
+	default 3600

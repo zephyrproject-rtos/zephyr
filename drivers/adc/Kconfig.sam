@@ -1,0 +1,10 @@
+# Copyright (c) 2022, Basalte bv
+# SPDX-License-Identifier: Apache-2.0
+
+config ADC_SAM
+	bool "Atmel SAM series ADC Driver"
+	default y
+	depends on DT_HAS_ATMEL_SAM_ADC_ENABLED
+	select ADC_CONFIGURABLE_INPUTS
+	help
+	  Enable Atmel SAM MCU Family Analog-to-Digital Converter (ADC) driver.

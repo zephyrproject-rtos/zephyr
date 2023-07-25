@@ -1,0 +1,11 @@
+# Atmel SAM0 WDT configuration
+
+# Copyright (c) 2017 Google LLC.
+# SPDX-License-Identifier: Apache-2.0
+
+config WDT_SAM0
+	bool "Atmel SAM0 series Watchdog (WDT) Driver"
+	default y
+	depends on DT_HAS_ATMEL_SAM0_WATCHDOG_ENABLED
+	help
+	  Enable WDT driver for Atmel SAM0 MCUs.

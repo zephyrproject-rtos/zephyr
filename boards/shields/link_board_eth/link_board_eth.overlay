@@ -1,0 +1,18 @@
+/*
+ * Copyright (c) 2019 Phytec Messtechnik GmbH
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&arduino_spi {
+	status = "okay";
+	cs-gpios = <&arduino_header 16 GPIO_ACTIVE_LOW>;	/* D10 */
+
+	enc424j600_link_board_eth: enc424j600@0 {
+		compatible = "microchip,enc424j600";
+		spi-max-frequency = <14000000>;
+		int-gpios = <&arduino_header 15 GPIO_ACTIVE_LOW>;	/* D9 */
+		status = "okay";
+		reg = <0>;
+	};
+};

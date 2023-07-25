@@ -1,0 +1,50 @@
+# Raspberry Pi RP2XXX MCU line
+
+# Copyright (c) 2021 Nordic Semiconductor ASA
+# Copyright (c) 2021 Yonatan Schachter
+# SPDX-License-Identifier: Apache-2.0
+
+choice
+	prompt "RP2xxx MCU Selection"
+	depends on SOC_SERIES_RP2XXX
+
+config SOC_RP2040
+	bool "Raspberry Pi RP2040"
+
+endchoice
+
+config RP2_REQUIRES_SECOND_STAGE_BOOT
+	bool
+	default y if FLASH_LOAD_OFFSET = 0x100
+
+# Flash type used by the SoC. The board should select the one used.
+
+config RP2_FLASH_W25Q080
+	bool
+	help
+	  Configure RP2 to use a W25Q080 flash chip, or similar. Should be selected
+	  by the board definition, not the user.
+
+config RP2_FLASH_GENERIC_03H
+	bool
+	help
+	  Configure RP2 to use a flash chip supporting the standard 03h command.
+	  Should be selected by the board definition, not the user.
+
+config RP2_FLASH_IS25LP080
+	bool
+	help
+	  Configure RP2 to use a IS25LP080 flash chip, or similar. Should be selected
+	  by the board definition, not the user.
+
+config RP2_FLASH_W25X10CL
+	bool
+	help
+	  Configure RP2 to use a W25X10CL flash chip, or similar. Should be selected
+	  by the board definition, not the user.
+
+config RP2_FLASH_AT25SF128A
+	bool
+	help
+	  Configure RP2 to use a AT25SF128A flash chip, or similar. Should be selected
+	  by the board definition, not the user.

@@ -1,0 +1,29 @@
+common:
+  build_only: true
+  tags:
+    - drivers
+    - dac
+tests:
+  drivers.dac.build:
+    # will cover I2C, SPI based drivers
+    platform_allow: native_posix
+    tags:
+      - dac_dacx0508
+      - dac_dacx3608
+      - dac_mcp4725
+      - dac_mcp4728
+      - dac_ltc1660
+      - dac_ltc1665
+    extra_args: "CONFIG_GPIO=y"
+  drivers.dac.mcux.build:
+    platform_allow: frdm_k22f
+    tags: dac_mcux
+  drivers.dac.mcux32.build:
+    platform_allow: twr_ke18f
+    tags: dac_mcux32
+  drivers.dac.sam0.build:
+    platform_allow: atsamd21_xpro
+    tags: dac_sam0
+  drivers.dac.stm32.build:
+    platform_allow: nucleo_f091rc
+    tags: dac_stm32

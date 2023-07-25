@@ -1,0 +1,62 @@
+# Copyright (c) 2020 Facebook, Inc. and its affiliates
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig BMP388
+	bool "Bosch BMP388 pressure sensor"
+	default y
+	depends on DT_HAS_BOSCH_BMP388_ENABLED
+	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_BOSCH_BMP388),i2c)
+	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_BOSCH_BMP388),spi)
+	help
+	  Enable driver for the Bosch BMP388 pressure sensor
+
+if BMP388
+
+choice BMP388_TRIGGER_MODE
+	prompt "Trigger mode"
+	default BMP388_TRIGGER_GLOBAL_THREAD
+	help
+	  Specify the type of triggering to be used by the driver.
+
+config BMP388_TRIGGER_NONE
+	bool "No trigger"
+
+config BMP388_TRIGGER_GLOBAL_THREAD
+	bool "Use global thread"
+	select BMP388_TRIGGER
+
+config BMP388_TRIGGER_OWN_THREAD
+	bool "Use own thread"
+	select BMP388_TRIGGER
+
+config BMP388_TRIGGER_DIRECT
+	bool "Use IRQ handler"
+	select BMP388_TRIGGER
+endchoice
+
+config BMP388_TRIGGER
+	bool
+
+config BMP388_THREAD_PRIORITY
+	int "Own thread priority"
+	depends on BMP388_TRIGGER_OWN_THREAD
+	default 10
+	help
+	  Priority of the thread used by the driver to handle interrupts.
+
+config BMP388_THREAD_STACK_SIZE
+	int "Own thread stack size"
+	depends on BMP388_TRIGGER_OWN_THREAD
+	default 1024
+	help
+	  Stack size of thread used by the driver to handle interrupts.
+
+config BMP388_ODR_RUNTIME
+	bool "Change ODR at runtime."
+	default y
+
+config BMP388_OSR_RUNTIME
+	bool "Change OSR at runtime."
+	default y
+
+endif # BMP388

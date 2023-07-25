@@ -1,0 +1,22 @@
+# MCUXpresso SDK SPI
+
+# Copyright (c) 2018, NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config SPI_MCUX_LPSPI
+	bool "MCUX SPI driver"
+	default y
+	depends on DT_HAS_NXP_IMX_LPSPI_ENABLED
+	depends on CLOCK_CONTROL
+	select PINCTRL
+	help
+	  Enable support for mcux spi driver.
+
+if SPI_MCUX_LPSPI
+config SPI_MCUX_LPSPI_DMA
+	bool "MCUX LPSPI SPI DMA Support"
+	select DMA
+	help
+	  Enable the SPI DMA mode for SPI instances
+	  that enable dma channels in their device tree node.
+endif # SPI_MCUX_LPSPI

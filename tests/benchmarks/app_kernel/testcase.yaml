@@ -1,0 +1,52 @@
+common:
+  tags:
+    - benchmark
+    - kernel
+  timeout: 420
+tests:
+  benchmark.kernel.application:
+    min_flash: 34
+    integration_platforms:
+      - mps2_an385
+      - qemu_x86
+  benchmark.kernel.application.fp:
+    extra_args: CONF_FILE=prj_fp.conf
+    extra_configs:
+      - arch:x86:CONFIG_X86_SSE=y
+      - arch:x86:CONFIG_X86_SSE_FP_MATH=n
+    arch_allow:
+      - x86
+      - arm
+    filter: CONFIG_CPU_HAS_FPU or CONFIG_ARMV7_M_ARMV8_M_FP
+    min_flash: 34
+    min_ram: 32
+    slow: true
+    toolchain_exclude:
+      - llvm
+      - oneApi
+    integration_platforms:
+      - qemu_x86
+  benchmark.kernel.application.fp.x86.no_sse:
+    extra_args: CONF_FILE=prj_fp.conf
+    extra_configs:
+      - CONFIG_X86_SSE=n
+      - CONFIG_X86_SSE_FP_MATH=n
+    arch_allow: x86
+    filter: CONFIG_CPU_HAS_FPU
+    min_flash: 34
+    min_ram: 32
+    slow: true
+    integration_platforms:
+      - qemu_x86
+  benchmark.kernel.application.fp.x86.sse:
+    extra_args: CONF_FILE=prj_fp.conf
+    extra_configs:
+      - CONFIG_X86_SSE=y
+      - CONFIG_X86_SSE_FP_MATH=y
+    arch_allow: x86
+    filter: CONFIG_CPU_HAS_FPU
+    min_flash: 34
+    min_ram: 32
+    slow: true
+    integration_platforms:
+      - qemu_x86

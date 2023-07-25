@@ -1,0 +1,24 @@
+sample:
+  name: Bluetooth Synchronized Receiver
+tests:
+  sample.bluetooth.iso_receive:
+    harness: bluetooth
+    platform_allow:
+      - qemu_cortex_m3
+      - qemu_x86
+      - nrf52_bsim
+      - nrf52dk_nrf52832
+    integration_platforms:
+      - qemu_cortex_m3
+    tags: bluetooth
+  sample.bluetooth.iso_receive.bt_ll_sw_split:
+    harness: bluetooth
+    platform_allow:
+      - qemu_cortex_m3
+      - qemu_x86
+      - nrf52_bsim
+      - nrf52dk_nrf52832
+    integration_platforms:
+      - nrf52dk_nrf52832
+    extra_args: OVERLAY_CONFIG=overlay-bt_ll_sw_split.conf
+    tags: bluetooth

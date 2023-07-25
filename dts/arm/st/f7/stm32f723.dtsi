@@ -1,0 +1,60 @@
+/*
+ * Copyright (c) 2018 Aurelien Jarno
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <st/f7/stm32f7.dtsi>
+
+/ {
+	/* 64KB DTCM @ 0x20000000, 176KB SRAM1 @ 0x20010000, 16KB SRAM2 @ 0x2003C00 */
+
+	sram0: memory@20010000 {
+		compatible = "mmio-sram";
+		reg = <0x20010000 DT_SIZE_K(192)>;
+	};
+
+	dtcm: memory@20000000 {
+		compatible = "zephyr,memory-region", "arm,dtcm";
+		reg = <0x20000000 DT_SIZE_K(64)>;
+		zephyr,memory-region = "DTCM";
+	};
+
+	itcm: memory@0 {
+		compatible = "zephyr,memory-region", "arm,itcm";
+		reg = <0x00000000 DT_SIZE_K(16)>;
+		zephyr,memory-region = "ITCM";
+	};
+
+	soc {
+		compatible = "st,stm32f723", "st,stm32f7", "simple-bus";
+
+		usbphyc: usbphyc@40017c00 {
+			compatible = "st,stm32-usbphyc";
+			reg = <0x40017c00 0x400>;
+			#phy-cells = <0>;
+		};
+
+		usbotg_hs: usb@40040000 {
+			phys = <&usbphyc>;
+			maximum-speed = "high-speed";
+		};
+
+		sdmmc2: sdmmc@40011c00 {
+			compatible = "st,stm32-sdmmc";
+			reg = <0x40011c00 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00000080>,
+				 <&rcc STM32_SRC_PLL_Q SDMMC2_SEL(0)>;
+			resets = <&rctl STM32_RESET(APB2, 7U)>;
+			interrupts = <103 0>;
+			status = "disabled";
+		};
+	};
+
+	die_temp: dietemp {
+		ts-cal1-addr = <0x1FF07A2C>;
+		ts-cal2-addr = <0x1FF07A2E>;
+	};
+};
+
+/delete-node/ &otghs_fs_phy;

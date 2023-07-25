@@ -1,0 +1,12 @@
+# Copyright 2022 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: CSSv2 (Crypto Subsystem)
+
+compatible: "nxp,css-v2"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true

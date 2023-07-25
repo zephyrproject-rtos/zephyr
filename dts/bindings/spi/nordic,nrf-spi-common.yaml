@@ -1,0 +1,38 @@
+# Copyright (c) 2018 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+# Common fields for Nordic nRF family SPI peripherals
+
+include: [spi-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  max-frequency:
+    type: int
+    required: true
+    description: |
+      Maximum data rate the SPI peripheral can be driven at, in Hz. This
+      property must be set at SoC level DTS files.
+
+  overrun-character:
+    type: int
+    default: 0xff
+    description: |
+      The overrun character (ORC) is used when all bytes from the TX buffer
+      are sent, but the transfer continues due to RX. Defaults to 0xff
+      (line high), the most common value used in SPI transfers.
+
+  easydma-maxcnt-bits:
+    type: int
+    required: true
+    description: |
+      Maximum number of bits available in the EasyDMA MAXCNT register. This
+      property must be set at SoC level DTS files.

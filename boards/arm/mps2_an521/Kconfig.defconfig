@@ -1,0 +1,32 @@
+# Copyright (c) 2018-2019 Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_MPS2_AN521_CPU0 || BOARD_MPS2_AN521_CPU0_NS || BOARD_MPS2_AN521_CPU1
+
+# MPU-based null-pointer dereferencing detection cannot
+# be applied as the (0x0 - 0x400) is unmapped but QEMU
+# will still permit bus access.
+choice NULL_POINTER_EXCEPTION_DETECTION
+	bool
+	default NULL_POINTER_EXCEPTION_DETECTION_NONE if QEMU_TARGET
+endchoice
+
+config BOARD
+	default "mps2_an521_ns" if TRUSTED_EXECUTION_NONSECURE
+	default "mps2_an521_remote" if BOARD_MPS2_AN521_CPU1
+	default "mps2_an521"
+
+# By default, if we build for a Non-Secure version of the board,
+# force building with TF-M as the Secure Execution Environment.
+config BUILD_WITH_TFM
+	default y if TRUSTED_EXECUTION_NONSECURE
+
+
+if SERIAL
+
+config UART_INTERRUPT_DRIVEN
+	default y
+
+endif # SERIAL
+
+endif

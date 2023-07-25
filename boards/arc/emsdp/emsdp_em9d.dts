@@ -1,0 +1,63 @@
+/*
+ * Copyright (c) 2019, Synopsys, Inc. All rights reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <synopsys/emsdp.dtsi>
+#include <mem.h>
+#include "board.dtsi"
+
+/ {
+	model = "emsdp";
+	compatible = "snps,emsdp", "snps,emsdp";
+
+	aliases {
+		uart-0 = &uart0;
+		spi-flash0 = &s25fl256s;
+	};
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+	};
+
+	xccm@c0000000 {
+		compatible = "arc,xccm";
+		reg = <0xc0000000 DT_SIZE_K(16)>;
+	};
+
+	yccm@e0000000 {
+		compatible = "arc,yccm";
+		reg = <0xe0000000 DT_SIZE_K(16)>;
+	};
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <115200>;
+};
+
+/ {
+	soc {
+
+		uart@f0004000 {
+			interrupts = <107 1>;
+		};
+
+		gpio@f0002000 {
+			interrupts = <85 1>;
+		};
+
+		spi@f0008000 {
+			interrupts = <83 1>;
+		};
+
+		spi@f1000000 {
+			interrupts = <84 1>;
+		};
+	};
+};

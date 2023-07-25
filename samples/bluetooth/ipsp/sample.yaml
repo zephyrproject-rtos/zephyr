@@ -1,0 +1,25 @@
+sample:
+  name: Bluetooth IPSP Sample
+  description: IPSP (Internet Protocol Support Profile) Node role sample
+tests:
+  sample.bluetooth.ipsp:
+    harness: bluetooth
+    platform_allow:
+      - qemu_x86
+      - qemu_cortex_m3
+    tags:
+      - bluetooth
+      - net
+    integration_platforms:
+      - qemu_x86
+  sample.bluetooth.ipsp.zep1656:
+    harness: bluetooth
+    extra_args: CONF_FILE="prj_zep1656.conf"
+    platform_allow:
+      - qemu_x86
+      - qemu_cortex_m3
+    tags:
+      - bluetooth
+      - net
+    integration_platforms:
+      - qemu_x86

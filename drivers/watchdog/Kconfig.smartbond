@@ -1,0 +1,26 @@
+# Smartbond watchdog driver config
+
+# Copyright (c) 2022 Renesas Electronics Corporation and/or its affiliates
+# SPDX-License-Identifier: Apache-2.0
+
+config WDT_SMARTBOND
+	bool "Watchdog Driver for Smartbond family of MCUs"
+	default y
+	depends on DT_HAS_RENESAS_SMARTBOND_WATCHDOG_ENABLED
+	help
+	  Enable watchdog driver for Smartbond line of MCUs
+
+config WDT_SMARTBOND_NMI
+	bool "NMI pre-reset interrupt enable"
+	default n
+	depends on WDT_SMARTBOND
+	select RUNTIME_NMI
+	help
+	  Watchdog timer generates NMI at value 0, and WDOG (SYS)
+	  reset at <= -16. Timer can be frozen/resumed using
+	  SET_FREEZE_REG[FRZ_WDOG]/RESET_FREEZE_REG[FRZ_WDOG].
+	  When not set:
+	  Watchdog timer generates a WDOG (SYS)
+	  reset at value 0 and can not be frozen by Software.
+	  Note that this bit can only be set to 1 by SW and
+	  only be reset with a WDOG (SYS) reset or SW reset.

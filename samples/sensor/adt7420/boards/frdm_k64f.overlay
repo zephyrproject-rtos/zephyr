@@ -1,0 +1,15 @@
+/*
+ * Copyright (c) 2019 Linaro Limited
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&i2c0 {
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	adt7420@48 {
+		compatible = "adi,adt7420";
+		reg = <0x48>;
+		int-gpios = <&gpioc 16 GPIO_ACTIVE_LOW>;
+	};
+};

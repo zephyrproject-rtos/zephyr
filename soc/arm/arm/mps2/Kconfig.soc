@@ -1,0 +1,29 @@
+# Copyright (c) 2017-2019 Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_MPS2_AN521
+	bool
+	select CPU_CORTEX_M33
+	select CPU_HAS_ARM_MPU
+
+choice
+	prompt "ARM MPS2 SoCs"
+	depends on SOC_SERIES_MPS2
+
+config SOC_MPS2_AN385
+	bool "ARM Cortex-M3 SMM on V2M-MPS2 (Application Note AN385)"
+	select CPU_CORTEX_M3
+	select CPU_HAS_ARM_MPU
+
+config SOC_MPS2_AN521_CPU0
+	bool "ARM Cortex-M33 SMM-SSE-200 on V2M-MPS2+ (AN521) CPU0"
+	select SOC_MPS2_AN521
+	select CPU_HAS_ARM_SAU
+
+config SOC_MPS2_AN521_CPU1
+	bool "ARM Cortex-M33 SMM-SSE-200 on V2M-MPS2+ (AN521) CPU1"
+	select SOC_MPS2_AN521
+	select CPU_HAS_FPU
+	select ARMV8_M_DSP
+
+endchoice

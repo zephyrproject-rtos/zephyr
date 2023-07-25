@@ -1,0 +1,17 @@
+# Blue Clover PLT Demo V2 Configuration
+
+# Copyright (c) 2021 Blue Clover
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_BLUECLOVER_PLT_DEMO_V2_NRF52832
+
+config BOARD
+	default "blueclover_plt_demo_v2_nrf52832"
+
+config BT_CTLR
+	default BT
+
+config I2C
+	default SENSOR
+
+endif # BOARD_BLUECLOVER_PLT_DEMO_V2_NRF52832

@@ -1,0 +1,11 @@
+/*
+ * Copyright (c) 2020 Jan Van Winkel <jan.van_winkel@dxplore.eu>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&flash0 {
+	erase-block-size = <1024>;
+	write-block-size = <4>;
+	reg = <0x00000000 DT_SIZE_K(1024)>;
+};

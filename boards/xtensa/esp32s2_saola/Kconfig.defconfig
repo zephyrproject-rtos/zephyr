@@ -1,0 +1,15 @@
+# ESP32S2 Saola board configuration
+
+# Copyright (c) 2021 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD
+	default "esp32s2_saola"
+	depends on BOARD_ESP32S2_SAOLA
+
+config ENTROPY_GENERATOR
+	default y
+
+config HEAP_MEM_POOL_SIZE
+	default 32768 if WIFI
+	default 4096

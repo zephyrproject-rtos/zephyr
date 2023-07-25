@@ -1,0 +1,14 @@
+# NXP LPC55S06 platform configuration options
+
+# Copyright (c) 2022 metraTec
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_LPC55S06
+
+config SOC
+	default "lpc55S06"
+
+config LPC55XXX_USB_RAM
+	default n
+
+endif # SOC_LPC55S06

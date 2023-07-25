@@ -1,0 +1,14 @@
+tests:
+  drivers.dma.scatter_gather:
+    depends_on: dma
+    tags:
+      - drivers
+      - dma
+    platform_allow:
+      - intel_adsp_cavs25
+      - frdm_k64f
+      - mimxrt1060_evk
+      - lpcxpresso55s36
+    filter: dt_alias_exists("dma0")
+    integration_platforms:
+      - intel_adsp_cavs25

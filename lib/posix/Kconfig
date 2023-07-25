@@ -1,0 +1,55 @@
+# Copyright (c) 2018 Intel Corporation
+# Copyright (c) 2023 Meta
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config POSIX_MAX_FDS
+	int "Maximum number of open file descriptors"
+	default 16 if POSIX_API
+	default 4
+	help
+	  Maximum number of open file descriptors, this includes
+	  files, sockets, special devices, etc.
+
+config POSIX_API
+	depends on !NATIVE_APPLICATION
+	bool "POSIX APIs"
+	help
+	  Enable mostly-standards-compliant implementations of
+	  various POSIX (IEEE 1003.1) APIs.
+
+# The name of this option is mandated by zephyr_interface_library_named
+# cmake directive.
+config APP_LINK_WITH_POSIX_SUBSYS
+	bool "Make POSIX headers available to application"
+	default y
+	depends on POSIX_API
+	help
+	  Add POSIX subsystem header files to the 'app' include path.
+
+config PTHREAD_IPC
+	bool "POSIX pthread IPC API"
+	default y if POSIX_API
+	depends on POSIX_CLOCK
+	help
+	  This enables a mostly-standards-compliant implementation of
+	  the pthread mutex, condition variable and barrier IPC
+	  mechanisms.
+
+source "lib/posix/Kconfig.barrier"
+source "lib/posix/Kconfig.clock"
+source "lib/posix/Kconfig.cond"
+source "lib/posix/Kconfig.eventfd"
+source "lib/posix/Kconfig.fnmatch"
+source "lib/posix/Kconfig.fs"
+source "lib/posix/Kconfig.getopt"
+source "lib/posix/Kconfig.key"
+source "lib/posix/Kconfig.limits"
+source "lib/posix/Kconfig.mqueue"
+source "lib/posix/Kconfig.mutex"
+source "lib/posix/Kconfig.pthread"
+source "lib/posix/Kconfig.semaphore"
+source "lib/posix/Kconfig.signal"
+source "lib/posix/Kconfig.spinlock"
+source "lib/posix/Kconfig.timer"
+source "lib/posix/Kconfig.uname"

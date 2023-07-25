@@ -1,0 +1,31 @@
+# Copyright (c) 2019 Vestas Wind Systems A/S
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP MCUA 12B1MSPS SAR ADC
+
+compatible: "nxp,mcux-12b1msps-sar"
+
+include: [adc-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clk-divider:
+    type: int
+    required: true
+    description: clock divider for the converter
+
+  sample-period-mode:
+    type: int
+    required: true
+    description: sample period mode
+
+  "#io-channel-cells":
+    const: 1
+
+io-channel-cells:
+  - input

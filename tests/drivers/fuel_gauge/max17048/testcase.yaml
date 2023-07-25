@@ -1,0 +1,5 @@
+tests:
+  # section.subsection
+  drivers.max17048:
+    filter: dt_compat_enabled("maxim,max17048")
+    platform_allow: native_posix

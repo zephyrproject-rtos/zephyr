@@ -1,0 +1,14 @@
+# Gecko SDK LEUART
+
+# Copyright (c) 2018, Diego Sueiro
+# SPDX-License-Identifier: Apache-2.0
+
+config LEUART_GECKO
+	bool "Gecko leuart driver"
+	default y
+	depends on DT_HAS_SILABS_GECKO_LEUART_ENABLED
+	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
+	select SOC_GECKO_LEUART
+	help
+	  Enable the Gecko leuart driver.

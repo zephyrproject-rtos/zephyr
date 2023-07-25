@@ -1,0 +1,88 @@
+# Copyright (c) 2023 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: Texas Instruments INA3221 Triple-Channel Current/Power Monitor
+
+compatible: "ti,ina3221"
+
+include: [sensor-device.yaml, i2c-device.yaml]
+
+properties:
+  conv-time-shunt:
+    type: int
+    default: 4
+    description: |
+      Shunt-voltage conversion time.
+      The default of 1.1 ms is the power-on reset value of the device.
+      0 = 140 μs
+      1 = 204 μs
+      2 = 332 μs
+      3 = 588 μs
+      4 = 1.1 ms (default)
+      5 = 2.116 ms
+      6 = 4.156 ms
+      7 = 8.244 ms
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
+      - 4
+      - 5
+      - 6
+      - 7
+  conv-time-bus:
+    type: int
+    default: 4
+    description: |
+      Bus-voltage conversion time.
+      The default of 1.1 ms is the power-on reset value of the device.
+      0 = 140 μs
+      1 = 204 μs
+      2 = 332 μs
+      3 = 588 μs
+      4 = 1.1 ms (default)
+      5 = 2.116 ms
+      6 = 4.156 ms
+      7 = 8.244 ms
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
+      - 4
+      - 5
+      - 6
+      - 7
+  avg-mode:
+    type: int
+    default: 0
+    description: |
+      Averaging mode (number of samples that are collected and averaged together).
+      The default of one sample (no averaging) is the power-on reset value of the device.
+      0 = 1 (default)
+      1 = 4
+      2 = 16
+      3 = 64
+      4 = 128
+      5 = 256
+      6 = 512
+      7 = 1024
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
+      - 4
+      - 5
+      - 6
+      - 7
+  enable-channel:
+    type: array
+    default: [1, 1, 1]
+    description: |
+      List of flags to enable or disable each of the three channels.
+  shunt-resistors:
+    type: array
+    description: |
+      List of shunt resistor values for all three channels in mOhms.

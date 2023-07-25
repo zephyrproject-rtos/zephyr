@@ -1,0 +1,40 @@
+common:
+  tags:
+    - clib
+  filter: not CONFIG_NATIVE_APPLICATION
+  integration_platforms:
+    - mps2_an385
+tests:
+  libraries.libc:
+    ignore_faults: true
+    filter: not (CONFIG_ARCH_POSIX and CONFIG_EXTERNAL_LIBC)
+  libraries.libc.picolibc:
+    filter: CONFIG_PICOLIBC_SUPPORTED
+    tags: picolibc
+    ignore_faults: true
+    extra_configs:
+      - CONFIG_PICOLIBC=y
+  libraries.libc.newlib:
+    filter: CONFIG_NEWLIB_LIBC_SUPPORTED
+    min_ram: 32
+    tags: newlib
+    ignore_faults: true
+    extra_configs:
+      - CONFIG_NEWLIB_LIBC=y
+  libraries.libc.newlib_nano:
+    filter: CONFIG_NEWLIB_LIBC_SUPPORTED and CONFIG_HAS_NEWLIB_LIBC_NANO
+    tags: newlib
+    ignore_faults: true
+    extra_configs:
+      - CONFIG_NEWLIB_LIBC=y
+      - CONFIG_NEWLIB_LIBC_NANO=y
+  libraries.libc.minimal.strerror_table:
+    tags: minimal_libc
+    extra_configs:
+      - CONFIG_MINIMAL_LIBC=y
+      - CONFIG_MINIMAL_LIBC_STRING_ERROR_TABLE=y
+  libraries.libc.minimal.no_strerror_table:
+    tags: minimal_libc
+    extra_configs:
+      - CONFIG_MINIMAL_LIBC=y
+      - CONFIG_MINIMAL_LIBC_STRING_ERROR_TABLE=n

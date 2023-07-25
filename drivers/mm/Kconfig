@@ -1,0 +1,66 @@
+# Copyright (c) 2021 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig MM_DRV
+	bool "Memory Management drivers [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	select KERNEL_VM_SUPPORT
+	help
+	  Include Memory Management drivers in system config
+
+if MM_DRV
+
+config MM_DRV_PAGE_SIZE
+	hex "Memory Page Size"
+	default 0x1000
+	help
+	  Size of memory pages.
+
+config MM_DRV_INTEL_ADSP_TLB_REMAP_UNUSED_RAM
+	bool "Power off unused RAM"
+	help
+	  Allows TLB driver to remap unused RAM - unused
+	  being defined as memory ranging from linker script
+	  defined "unused_l2_sram_start_marke" to end of RAM.
+	  Note that unused memory will be powered off by
+	  default. Disable this option if dynamically
+	  managing memory, such as by usinga heap allocator.
+
+config MM_DRV_INTEL_ADSP_MTL_TLB
+	bool "Intel Audio DSP TLB Driver for Meteor Lake"
+	default y
+	depends on DT_HAS_INTEL_ADSP_MTL_TLB_ENABLED
+	imply SYS_MEM_BLOCKS
+	help
+	  Driver for the translation lookup buffer on
+	  Intel Audio DSP hardware (Meteor Lake).
+
+config MM_DRV_INTEL_ADSP_TLB
+	bool "Intel Audio DSP TLB Driver"
+	default y
+	depends on DT_HAS_INTEL_ADSP_TLB_ENABLED
+	help
+	  Driver for the translation lookup buffer on
+	  Intel Audio DSP hardware.
+
+config EXTERNAL_ADDRESS_TRANSLATION
+	bool "Support for external address translation modules"
+	depends on !MMU
+	help
+	  This config is intended to support an external address
+	  translation module if required for an SoC. Uses the
+	  sys_mm_drv_page_phys_get() function from the system_mm API.
+
+if EXTERNAL_ADDRESS_TRANSLATION
+
+config MM_TI_RAT
+	bool "Texas Instruments RAT module"
+	depends on EXTERNAL_ADDRESS_TRANSLATION
+	help
+	  Enables Region based address translation support
+	  functions specific to TI SoCs.
+
+endif # EXTERNAL_ADDRESS_TRANSLATION
+
+endif # MM_DRV

@@ -1,0 +1,43 @@
+# SSD1306 display controller configuration options
+
+# Copyright (c) 2018 Phytec Messtechnik GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig SSD1306
+	bool "SSD1306 display driver"
+	default y
+	depends on DT_HAS_SOLOMON_SSD1306FB_ENABLED
+	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_SOLOMON_SSD1306FB),i2c)
+	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_SOLOMON_SSD1306FB),spi)
+	help
+	  Enable driver for SSD1306 display driver.
+
+if SSD1306
+
+config SSD1306_DEFAULT_CONTRAST
+	int "SSD1306 default contrast"
+	default 128
+	range 0 255
+	help
+	  SSD1306 default contrast.
+
+choice SSD1306_CONTROLLER_TYPE
+	prompt "Display controller type"
+	default SSD1306_DEFAULT
+	help
+	  Specify the type of the controller.
+
+config SSD1306_DEFAULT
+	bool "Default SSD1306 controller"
+
+config SSD1306_SH1106_COMPATIBLE
+	bool "SH1106 compatible mode"
+
+endchoice
+
+config SSD1306_REVERSE_MODE
+	bool "SSD1306 reverse mode"
+	help
+	  SSD1306 reverse video mode.
+
+endif # SSD1306

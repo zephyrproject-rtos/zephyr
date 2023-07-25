@@ -1,0 +1,9 @@
+# Copyright (c) 2023 Arm Limited (or its affiliates). All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+config ETH_SMSC91X
+	bool "SMSC91x Ethernet driver"
+	default y
+	depends on DT_HAS_SMSC_LAN91C111_ENABLED
+	help
+	  Enable driver for SMSC/LAN91x family of chips.

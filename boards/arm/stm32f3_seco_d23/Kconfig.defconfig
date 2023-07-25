@@ -1,0 +1,11 @@
+# SECO SBC-D23 board configuration
+
+# Copyright (c) 2022, SECO Spa
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_STM32F3_SECO_D23
+
+config BOARD
+	default "stm32f3_seco_d23"
+
+endif # BOARD_STM32F3_SECO_D23

@@ -1,0 +1,8 @@
+# Electronut Labs Papyr board configuration
+
+# Copyright (c) 2018 Electronut Labs
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_NRF52840_PAPYR
+	bool "NRF52840 PAPYR"
+	depends on SOC_NRF52840_QIAA

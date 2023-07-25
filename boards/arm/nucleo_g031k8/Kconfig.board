@@ -1,0 +1,8 @@
+# STM32 Nucleo-32 development board with STM32G031K8 MCU configuration
+
+# Copyright (c) 2022 Joylab AG <team@joylab.ch>
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_NUCLEO_G031K8
+	bool "NUCLEO-32 G031K8 Development Board"
+	depends on SOC_STM32G031XX

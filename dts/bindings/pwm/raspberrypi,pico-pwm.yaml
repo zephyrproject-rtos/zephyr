@@ -1,0 +1,113 @@
+# Copyright (c) 2022, Joep Buruma
+# SPDX-License-Identifier: Apache-2.0
+
+description: Raspberry Pi Pico PWM
+
+compatible: "raspberrypi,pico-pwm"
+
+include: [pwm-controller.yaml, pinctrl-device.yaml, reset-device.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  divider-int-0:
+    type: int
+    default: 1
+    description: |
+      The integral part of the divider for pwm slice 0.
+      This number should be in the range 1 - 255. Defaults
+      to 1, the same as the RESET value.
+
+  divider-frac-0:
+    type: int
+    default: 0
+    description: |
+      The fractional part of the divider for pwm slice 0.
+      This number should be in the range 0 - 15. Defaults
+      to 0, the same as the RESET value.
+
+  divider-int-1:
+    type: int
+    default: 1
+    description: See divider-int-0 for help
+
+  divider-frac-1:
+    type: int
+    default: 0
+    description: See divider-frac-0 for help
+
+  divider-int-2:
+    type: int
+    default: 1
+    description: See divider-int-0 for help
+
+  divider-frac-2:
+    type: int
+    default: 0
+    description: See divider-frac-0 for help
+
+  divider-int-3:
+    type: int
+    default: 1
+    description: See divider-int-0 for help
+
+  divider-frac-3:
+    type: int
+    default: 0
+    description: See divider-frac-0 for help
+
+  divider-int-4:
+    type: int
+    default: 1
+    description: See divider-int-0 for help
+
+  divider-frac-4:
+    type: int
+    default: 0
+    description: See divider-frac-0 for help
+
+  divider-int-5:
+    type: int
+    default: 1
+    description: See divider-int-0 for help
+
+  divider-frac-5:
+    type: int
+    default: 0
+    description: See divider-frac-0 for help
+
+  divider-int-6:
+    type: int
+    default: 1
+    description: See divider-int-0 for help
+
+  divider-frac-6:
+    type: int
+    default: 0
+    description: See divider-frac-0 for help
+
+  divider-int-7:
+    type: int
+    default: 1
+    description: See divider-int-0 for help
+
+  divider-frac-7:
+    type: int
+    default: 0
+    description: See divider-frac-0 for help
+
+  "#pwm-cells":
+    const: 3
+
+pwm-cells:
+  # The rpi pico pwm peripheral is divided in 8 slices with an individual
+  # clock setting and two output channels. The pwm channels are mapped the
+  # following way PWM_CH0_A is addressed as <&pwm 0 PWM_FLAGS>, PWM_CH0B
+  # is <&pwm 1 PMW_FLAGS>, PWM_CH1_A si <&pwm 2 PWM_FLAGS> and so on.
+  - channel
+  - period
+  - flags

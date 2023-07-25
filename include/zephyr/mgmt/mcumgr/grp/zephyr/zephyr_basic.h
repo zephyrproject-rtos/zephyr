@@ -1,0 +1,42 @@
+/*
+ * Copyright (c) 2021-2023 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+#ifndef ZEPHYR_INCLUDE_ZEPHYR_MCUMGR_GRP_ZBASIC_H_
+#define ZEPHYR_INCLUDE_ZEPHYR_MCUMGR_GRP_ZBASIC_H_
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/**
+ * Command IDs for zephyr basic management group.
+ */
+#define ZEPHYR_MGMT_GRP_BASIC_CMD_ERASE_STORAGE	0	/* Command to erase storage partition */
+
+/**
+ * Command result codes for statistics management group.
+ */
+enum zephyr_basic_group_ret_code_t {
+	/** No error, this is implied if there is no ret value in the response */
+	ZEPHYR_MGMT_GRP_CMD_RC_OK = 0,
+
+	/** Unknown error occurred. */
+	ZEPHYR_MGMT_RET_RC_UNKNOWN,
+
+	/** Opening of the flash area has failed. */
+	ZEPHYR_MGMT_GRP_CMD_RC_FLASH_OPEN_FAILED,
+
+	/** Querying the flash area parameters has failed. */
+	ZEPHYR_MGMT_GRP_CMD_RC_FLASH_CONFIG_QUERY_FAIL,
+
+	/** Erasing the flash area has failed. */
+	ZEPHYR_MGMT_GRP_CMD_RC_FLASH_ERASE_FAILED,
+};
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* ZEPHYR_INCLUDE_ZEPHYR_MCUMGR_GRP_ZBASIC_H_ */

@@ -1,0 +1,12 @@
+# Copyright (c) 2023, STMicroelectronics
+
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+        STM32 controller
+        This compatible stands for all interrupt-controller blocks with two
+        dedicated Rising and Falling interrupt pending registers.
+
+compatible: "st,stm32g0-exti"
+
+include: st,stm32-exti.yaml

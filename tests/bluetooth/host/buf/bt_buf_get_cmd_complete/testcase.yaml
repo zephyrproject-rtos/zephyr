@@ -1,0 +1,21 @@
+common:
+  tags:
+    - bluetooth
+    - host
+tests:
+  bluetooth.host.bt_buf_get_cmd_complete.default:
+    type: unit
+  bluetooth.host.bt_buf_get_cmd_complete.hci_acl_flow_control:
+    type: unit
+    extra_configs:
+      - CONFIG_BT_CENTRAL=y
+      - CONFIG_BT_HCI_ACL_FLOW_CONTROL=y
+  bluetooth.host.bt_buf_get_cmd_complete.iso_unicast:
+    type: unit
+    # enable CONFIG_BT_ISO_UNICAST
+    extra_configs:
+      - CONFIG_BT_ISO_CENTRAL=y
+  bluetooth.host.bt_buf_get_cmd_complete.iso_sync_receiver:
+    type: unit
+    extra_configs:
+      - CONFIG_BT_ISO_SYNC_RECEIVER=y

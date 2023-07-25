@@ -1,0 +1,11 @@
+# SAM R21 Xplained Pro board configuration
+
+# Copyright (c) 2019 Benjamin Valentin
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_ATSAMR21_XPRO
+
+config BOARD
+	default "atsamr21_xpro"
+
+endif # BOARD_ATSAMR21_XPRO

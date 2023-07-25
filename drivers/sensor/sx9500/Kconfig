@@ -1,0 +1,55 @@
+# SX9500 SAR proximity sensor configuration options
+
+# Copyright (c) 2016 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig SX9500
+	bool "SX9500 I2C SAR Proximity Chip"
+	default y
+	depends on DT_HAS_SEMTECH_SX9500_ENABLED
+	select I2C
+	help
+	  Enable driver for SX9500 I2C-based SAR proximity sensor.
+
+if SX9500
+
+config SX9500_PROX_CHANNEL
+	int "Proximity channel to use"
+	default 3
+	help
+	  The SX9500 offers 4 separate proximity channels.  Choose which one
+	  you are using.  Valid numbers are 0 to 3.
+
+choice
+	prompt "SX9500 trigger mode"
+	default SX9500_TRIGGER_GLOBAL_THREAD
+
+config SX9500_TRIGGER_NONE
+	bool "No trigger"
+
+config SX9500_TRIGGER_GLOBAL_THREAD
+	depends on GPIO
+	select SX9500_TRIGGER
+	bool "Use global thread"
+
+config SX9500_TRIGGER_OWN_THREAD
+	depends on GPIO
+	select SX9500_TRIGGER
+	bool "Use own thread"
+
+endchoice
+
+config SX9500_TRIGGER
+	bool
+
+config SX9500_THREAD_STACK_SIZE
+	int "Sensor delayed work thread stack size"
+	depends on SX9500_TRIGGER_OWN_THREAD
+	default 1024
+
+config SX9500_THREAD_PRIORITY
+	int "Thread priority"
+	depends on SX9500_TRIGGER_OWN_THREAD
+	default 10
+
+endif # SX9500

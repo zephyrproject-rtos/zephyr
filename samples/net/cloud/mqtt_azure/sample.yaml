@@ -1,0 +1,18 @@
+common:
+  filter: TOOLCHAIN_HAS_NEWLIB == 1
+sample:
+  description: MQTT sample app to Azure cloud
+  name: mqtt-azure
+tests:
+  sample.net.cloud.mqtt_azure:
+    harness: net
+    platform_allow:
+      - sam_e70_xplained
+      - frdm_k64f
+      - qemu_x86
+    integration_platforms:
+      - qemu_x86
+    tags:
+      - net
+      - mqtt
+      - cloud

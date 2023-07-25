@@ -1,0 +1,5 @@
+tests:
+  buildsystem.include_file:
+    integration_platforms:
+      - native_posix
+    tags: gen_inc_file

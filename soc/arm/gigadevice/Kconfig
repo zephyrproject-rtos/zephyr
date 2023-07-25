@@ -1,0 +1,23 @@
+# Copyright (c) 2021, ATL Electronics
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_FAMILY_GD32
+	bool
+	select HAS_GD32_HAL
+	select BUILD_OUTPUT_HEX
+	select HAS_SEGGER_RTT if ZEPHYR_SEGGER_MODULE
+
+config SOC_FAMILY
+	string
+	default "gigadevice"
+	depends on SOC_FAMILY_GD32
+
+config SOC_FAMILY_GD32_ARM
+	bool
+	select SOC_FAMILY_GD32
+
+if SOC_FAMILY_GD32_ARM
+
+source "soc/arm/gigadevice/*/Kconfig.soc"
+
+endif # SOC_FAMILY_GD32_ARM

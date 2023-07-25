@@ -1,0 +1,7 @@
+# TI SimpleLink CC3220SF LaunchXL Board
+
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_CC3220SF_LAUNCHXL
+	bool "TI CC3220SF LAUNCHXL"
+	depends on SOC_CC3220SF

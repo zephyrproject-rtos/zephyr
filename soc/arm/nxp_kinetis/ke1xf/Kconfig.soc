@@ -1,0 +1,103 @@
+# Kinetis KE1xF MCU line
+
+# Copyright (c) 2019 Vestas Wind Systems A/S
+# SPDX-License-Identifier: Apache-2.0
+
+choice
+	prompt "Kinetis KE1xF MCU Selection"
+	depends on SOC_SERIES_KINETIS_KE1XF
+
+config SOC_MKE14F16
+	bool "MKE14F16"
+
+config SOC_MKE16F16
+	bool "MKE16F16"
+	select HAS_MCUX_FLEXCAN
+
+config SOC_MKE18F16
+	bool "MKE18F16"
+	select HAS_MCUX_FLEXCAN
+
+endchoice
+
+if SOC_SERIES_KINETIS_KE1XF
+
+config SOC_PART_NUMBER_MKE14F256VLH16
+	bool
+
+config SOC_PART_NUMBER_MKE14F256VLL16
+	bool
+
+config SOC_PART_NUMBER_MKE14F512VLH16
+	bool
+
+config SOC_PART_NUMBER_MKE14F512VLL16
+	bool
+
+config SOC_PART_NUMBER_MKE16F256VLH16
+	bool
+
+config SOC_PART_NUMBER_MKE16F256VLL16
+	bool
+
+config SOC_PART_NUMBER_MKE16F512VLH16
+	bool
+
+config SOC_PART_NUMBER_MKE16F512VLL16
+	bool
+
+config SOC_PART_NUMBER_MKE18F256VLH16
+	bool
+
+config SOC_PART_NUMBER_MKE18F256VLL16
+	bool
+
+config SOC_PART_NUMBER_MKE18F512VLH16
+	bool
+
+config SOC_PART_NUMBER_MKE18F512VLL16
+	bool
+
+config SOC_PART_NUMBER_KINETIS_KE1XF
+	string
+	default "MKE14F256VLH16" if SOC_PART_NUMBER_MKE14F256VLH16
+	default "MKE14F256VLL16" if SOC_PART_NUMBER_MKE14F256VLL16
+	default "MKE14F512VLH16" if SOC_PART_NUMBER_MKE14F512VLH16
+	default "MKE14F512VLL16" if SOC_PART_NUMBER_MKE14F512VLL16
+	default "MKE16F256VLH16" if SOC_PART_NUMBER_MKE16F256VLH16
+	default "MKE16F256VLL16" if SOC_PART_NUMBER_MKE16F256VLL16
+	default "MKE16F512VLH16" if SOC_PART_NUMBER_MKE16F512VLH16
+	default "MKE16F512VLL16" if SOC_PART_NUMBER_MKE16F512VLL16
+	default "MKE18F256VLH16" if SOC_PART_NUMBER_MKE18F256VLH16
+	default "MKE18F256VLL16" if SOC_PART_NUMBER_MKE18F256VLL16
+	default "MKE18F512VLH16" if SOC_PART_NUMBER_MKE18F512VLH16
+	default "MKE18F512VLL16" if SOC_PART_NUMBER_MKE18F512VLL16
+	help
+	  This string holds the full part number of the SoC. It is a
+	  hidden option that you should not set directly. The part
+	  number selection choice defines the default value for this
+	  string.
+
+config WDOG_ENABLE_AT_BOOT
+	bool "Keep watchdog timer enabled at boot"
+	help
+	  Keep the watchdog timer enabled at boot with the internal
+	  128kHz LPO clock (and a prescaler of 256) as clock
+	  source. The application can take over control of the
+	  watchdog timer after boot and install a different timeout,
+	  if needed.
+
+config WDOG_INITIAL_TIMEOUT
+	int "Initial timeout for the watchdog timer in milliseconds"
+	depends on WDOG_ENABLE_AT_BOOT && WDOG_INIT
+	range 2 131070
+	default 2048
+	help
+	  Initial timeout value for the watchdog timer in
+	  milliseconds.
+
+config KINETIS_KE1XF_ENABLE_CODE_CACHE
+	bool "Code cache"
+	default y
+
+endif # SOC_SERIES_KINETIS_KE1XF

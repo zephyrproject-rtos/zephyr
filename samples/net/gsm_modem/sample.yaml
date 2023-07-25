@@ -1,0 +1,22 @@
+common:
+  harness: net
+  depends_on: serial-net
+  tags:
+    - net
+    - ppp
+    - modem
+    - gsm
+  platform_allow: frdm_k64f
+  extra_args: DTC_OVERLAY_FILE="boards/frdm_uart2_dts.overlay"
+sample:
+  description: Sample for generic GSM modem
+  name: Generic GSM modem using PPP
+tests:
+  sample.net.ppp.gsm.modem:
+    extra_configs:
+      - CONFIG_TEST_RANDOM_GENERATOR=y
+  sample.net.ppp.gsm.modem.mux:
+    extra_configs:
+      - CONFIG_TEST_RANDOM_GENERATOR=y
+      - CONFIG_GSM_MUX=y
+      - CONFIG_UART_MUX=y

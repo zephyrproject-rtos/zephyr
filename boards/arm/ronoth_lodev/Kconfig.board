@@ -1,0 +1,7 @@
+# Ronoth LoDev board configuration
+# Copyright (c) 2020/2021 Dean Weiten <dmw@weiten.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_RONOTH_LODEV
+	bool "Ronoth LoDev"
+	depends on SOC_STM32L073XX

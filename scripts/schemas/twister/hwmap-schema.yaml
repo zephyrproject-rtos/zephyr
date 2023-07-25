@@ -1,0 +1,63 @@
+type: seq
+sequence:
+  - type: map
+    required: false
+    mapping:
+      "available":
+        type: bool
+        required: false
+      "connected":
+        type: bool
+        required: true
+      "id":
+        type: str
+        required: true
+      "notes":
+        type: str
+        required: false
+      "platform":
+        type: str
+        required: true
+      "probe_id":
+        type: str
+        required: false
+      "product":
+        type: str
+        required: true
+      "runner":
+        type: str
+        required: true
+      "runner_params":
+        type: seq
+        required: false
+        sequence:
+          - type: str
+      "serial_pty":
+        type: str
+        required: false
+      "serial":
+        type: str
+        required: false
+      "baud":
+        type: int
+        required: false
+      "post_script":
+        type: str
+        required: false
+      "post_flash_script":
+        type: str
+        required: false
+      "pre_script":
+        type: str
+        required: false
+      "fixtures":
+        type: seq
+        required: false
+        sequence:
+          - type: str
+      "flash_timeout":
+        type: int
+        required: false
+      "flash_with_test":
+        type: bool
+        required: false

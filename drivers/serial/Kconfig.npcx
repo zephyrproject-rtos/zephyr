@@ -1,0 +1,15 @@
+# NPCX UART driver configuration options
+
+# Copyright (c) 2020 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+config UART_NPCX
+	bool "Nuvoton NPCX embedded controller (EC) serial driver"
+	default y
+	depends on DT_HAS_NUVOTON_NPCX_UART_ENABLED
+	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
+	help
+	  This option enables the UART driver for NPCX family of
+	  processors.
+	  Say y if you wish to use serial port on NPCX MCU.

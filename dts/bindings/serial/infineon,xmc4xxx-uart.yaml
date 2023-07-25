@@ -1,0 +1,118 @@
+description: INFINEON XMC4XXX UART
+
+compatible: "infineon,xmc4xxx-uart"
+
+include: [uart-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  input-src:
+    description: |
+      Connects the UART receive line (USIC DX0 input) to a specific GPIO pin.
+      The USIC DX0 input is a multiplexer which connects to different GPIO pins.
+      Refer to the XMC4XXX reference manual for the GPIO pin/mux mappings. DX0G
+      is the loopback input line.
+    type: string
+    required: true
+    enum:
+      - "DX0A"
+      - "DX0B"
+      - "DX0C"
+      - "DX0D"
+      - "DX0E"
+      - "DX0F"
+      - "DX0G"
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  fifo-start-offset:
+    description: |
+      Each USIC0..2 has a fifo that is shared between two channels. For example,
+      usic0ch0 and usic0ch1 will share the same fifo. This parameter defines an offset
+      where the tx and rx fifos will start. When sharing the fifo, the user must properly
+      define the offset based on the configuration of the other channel. The fifo has a
+      capacity of 64 entries. The tx/rx fifos are created on fifo-xx-size aligned
+      boundaries.
+
+    required: true
+    type: int
+
+  fifo-tx-size:
+    description: |
+      Fifo size used for buffering transmit bytes. A value of 0 implies that
+      the fifo is not used while transmitting. transmitting. If the UART is used in async mode
+      then fifo-tx-size should be set to 0.
+    required: true
+    type: int
+    enum:
+      - 0
+      - 2
+      - 4
+      - 8
+      - 16
+      - 32
+      - 64
+
+  fifo-rx-size:
+    description: |
+      Fifo size used for buffering received bytes. A value of 0 implies that
+      the fifo is not used while receiving. If the UART is used in async mode
+      then fifo-rx-size should be set to 0.
+    required: true
+    type: int
+    enum:
+      - 0
+      - 2
+      - 4
+      - 8
+      - 16
+      - 32
+      - 64
+
+  interrupts:
+    description: |
+      IRQ number and priority to use for interrupt driven UART.
+      USIC0..2 have their own interrupt range as follows:
+      USIC0 = [84, 89]
+      USIC1 = [90, 95]
+      USIC2 = [96, 101]
+
+  dmas:
+    description: |
+      Optional TX & RX dma specifiers used by async UART.
+
+      The dmas are referenced in the UART node using the following syntax:
+      dmas = <&dma1 1 0 XMC4XXX_SET_CONFIG(10,6)>, <&dma1 2 0 XMC4XXX_SET_CONFIG(11,6)>;
+      where the first entry is for the TX, and the second for RX.
+
+      The parameters in the dma entry are: dma device phandle, dma channel, dma priority (0 is
+      lowest and 7 is highest), and an opaque entry for the dma line routing parameters set
+      by the macro XMC4XXX_SET_CONFIG(line, request_source). Use the following steps to properly
+      select parameters line, request_source:
+      1. Select a dma device and a free dma channel.
+      1. Select a free dma line. dma0 device can only connect to lines [0, 7] and
+         dma1 can connect to lines [8, 11].
+      2. For a given interrupt, calculate the service request (SR) number. Note the following
+         simple mapping: in USIC0 interrupt 84->SR0, interrupt 85->SR1, ... etc.
+         In USIC1, intterupt 90->SR0, 91->SR1, etc.
+      3. Select request_source from Table "DMA Request Source Selection" in XMC4XXX reference
+         manual.
+
+      For example, say we select interrupt 85 on USIC0, dma0, channel 3, priority 4, and line 7.
+      The interrupt would map to SR1. From Table "DMA Request Source Selection", request_source
+      would need to be set to 10 and the dts entry would be:
+      dma = <&dma0 3 4 XMC4XXX_SET_CONFIG(7,10) ... >;
+
+  dma-names:
+    description: |
+      Required if the dmas property exists. Should be set to "tx" and "rx"
+      to match the dmas property.
+
+      For example
+         dma-names = "tx", "rx";

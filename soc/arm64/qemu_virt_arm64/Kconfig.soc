@@ -1,0 +1,8 @@
+# Copyright (c) 2022 Huawei France Technologies SAS
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_QEMU_VIRT_ARM64
+	bool "QEMU virt platform (AArch64 for KVM)"
+	select ARM64
+	select CPU_CORTEX_A
+	select ARMV8_A

@@ -1,0 +1,19 @@
+common:
+  harness: net
+  depends_on: netif
+  min_flash: 210
+  tags:
+    - net
+    - socket
+    - mgmt
+sample:
+  description: Test network management socket sample
+  name: net_mgmt socket
+tests:
+  sample.net.sockets.net_mgmt.kernelmode:
+    extra_configs:
+      - CONFIG_USERSPACE=n
+  sample.net.sockets.net_mgmt.usermode:
+    tags: userspace
+    extra_configs:
+      - CONFIG_USERSPACE=y

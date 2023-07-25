@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_FLASH_NIOS2_QSPI
+	bool "Nios-II QSPI flash driver"
+	default y
+	depends on HAS_ALTERA_HAL
+	depends on DT_HAS_ALTR_NIOS2_QSPI_NOR_ENABLED
+	select FLASH_HAS_DRIVER_ENABLED
+	help
+	  Enables the Nios-II QSPI flash driver.

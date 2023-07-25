@@ -1,0 +1,13 @@
+# TI SimpleLink MSP432P4XX
+
+# Copyright (c) 2017, Linaro Ltd
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_MSP432P4XX
+
+source "soc/arm/ti_simplelink/msp432p4xx/Kconfig.defconfig.msp432p4*"
+
+config SOC_SERIES
+	default "msp432p4xx"
+
+endif # SOC_SERIES_MSP432P4XX

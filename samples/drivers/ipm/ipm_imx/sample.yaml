@@ -1,0 +1,17 @@
+sample:
+  description: the sample reads the received data from the Messaging Unit using the
+    IPM and transmits it back unchanged
+  name: i.MX IPM sample
+tests:
+  sample.ipm.ipm_imx:
+    build_only: true
+    filter: CONFIG_SOC_FAMILY_IMX
+    platform_allow:
+      - udoo_neo_full_m4
+      - colibri_imx7d_m4
+      - warp7_m4
+    integration_platforms:
+      - udoo_neo_full_m4
+    tags:
+      - samples
+      - ipm

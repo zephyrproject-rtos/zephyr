@@ -1,0 +1,31 @@
+name: Backport
+on:
+  pull_request_target:
+    types:
+      - closed
+      - labeled
+    branches:
+      - main
+
+jobs:
+  backport:
+    name: Backport
+    runs-on: ubuntu-22.04
+    # Only react to merged PRs for security reasons.
+    # See https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#pull_request_target.
+    if: >
+      github.event.pull_request.merged &&
+      (
+        github.event.action == 'closed' ||
+        (
+          github.event.action == 'labeled' &&
+          contains(github.event.label.name, 'backport')
+        )
+      )
+    steps:
+      - name: Backport
+        uses: zephyrproject-rtos/action-backport@v2.0.3-3
+        with:
+          github_token: ${{ secrets.ZB_GITHUB_TOKEN }}
+          issue_labels: Backport
+          labels_template: '["Backport"]'

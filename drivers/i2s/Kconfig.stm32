@@ -1,0 +1,25 @@
+# STM32 I2S driver configuration options
+
+# Copyright (c) 2018 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig I2S_STM32
+	bool "STM32 MCU I2S controller driver"
+	default y
+	depends on DT_HAS_ST_STM32_I2S_ENABLED
+	select DMA
+	help
+	  Enable I2S support on the STM32 family of processors.
+	  (Tested on the STM32F4 series)
+
+if I2S_STM32
+
+config I2S_STM32_RX_BLOCK_COUNT
+	int "RX queue length"
+	default 4
+
+config I2S_STM32_TX_BLOCK_COUNT
+	int "TX queue length"
+	default 4
+
+endif # I2S_STM32

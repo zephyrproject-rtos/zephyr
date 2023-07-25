@@ -1,0 +1,31 @@
+sample:
+  name: SPI Flash Sample
+tests:
+  sample.drivers.spi.flash:
+    tags:
+      - spi
+      - flash
+    filter: dt_compat_enabled("jedec,spi-nor") or dt_compat_enabled("st,stm32-qspi-nor")
+      or dt_compat_enabled("st,stm32-ospi-nor")
+    platform_exclude: hifive_unmatched
+    harness: console
+    harness_config:
+      type: multi_line
+      ordered: true
+      regex:
+        - "Test 1: Flash erase"
+        - "Flash erase succeeded!"
+        - "Test 2: Flash write"
+        - "Attempting to write 4 bytes"
+        - "Data read matches data written. Good!!"
+    depends_on: spi
+  sample.drivers.spi.flash_dpd:
+    tags:
+      - spi
+      - flash
+    filter: dt_compat_enabled("jedec,spi-nor")
+    platform_exclude: hifive_unmatched
+    build_only: true
+    extra_configs:
+      - CONFIG_SPI_NOR_IDLE_IN_DPD=y
+    depends_on: spi

@@ -1,0 +1,17 @@
+identifier: black_f407zg_pro
+name: Black STM32 F407ZG Pro Development Board
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 192
+flash: 1024
+supported:
+  - can
+  - pwm
+  - counter
+  - usb
+  - spi
+  - gpio

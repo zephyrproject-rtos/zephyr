@@ -1,0 +1,14 @@
+# ST Microelectronics STM32F070XB MCU
+
+# Copyright (c) 2018 qianfan Zhao
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_STM32F070XB
+
+config SOC
+	default "stm32f070xb"
+
+config NUM_IRQS
+	default 32
+
+endif # SOC_STM32F070XB

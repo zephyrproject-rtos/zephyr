@@ -1,0 +1,15 @@
+# black_f407ve board configuration
+
+# Copyright (c) 2020 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_BLACK_F407VE
+
+config BOARD
+	default "black_f407ve"
+
+config SPI_STM32_INTERRUPT
+	default y
+	depends on SPI
+
+endif # BOARD_BLACK_F407VE

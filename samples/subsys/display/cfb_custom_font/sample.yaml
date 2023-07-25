@@ -1,0 +1,9 @@
+common:
+  harness: display
+  tags: display
+sample:
+  description: Custom character framebuffer font example
+  name: cfb custom font sample
+tests:
+  sample.display.cfb_custom_font.ssd16xx:
+    platform_allow: reel_board

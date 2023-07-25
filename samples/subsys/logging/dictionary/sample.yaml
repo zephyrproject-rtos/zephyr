@@ -1,0 +1,58 @@
+sample:
+  description: Dictionary-based Logging Sample Application
+  name: logging_dictionary
+tests:
+  sample.logger.basic.dictionary:
+    build_only: true
+    tags: logging
+    integration_platforms:
+      - qemu_x86
+      - qemu_x86_64
+  sample.logger.basic.dictionary.fpu:
+    build_only: true
+    tags: logging
+    filter: CONFIG_CPU_HAS_FPU
+    extra_configs:
+      - CONFIG_FPU=y
+    integration_platforms:
+      - qemu_x86
+      - qemu_x86_64
+  sample.logger.basic.dictionary.fpu.long_double:
+    build_only: true
+    tags: logging
+    filter: CONFIG_CPU_HAS_FPU
+    extra_configs:
+      - CONFIG_FPU=y
+      - CONFIG_CBPRINTF_PACKAGE_LONGDOUBLE=y
+    integration_platforms:
+      - qemu_x86
+      - qemu_x86_64
+  sample.logger.basic.dictionary.uart_async_frontend:
+    build_only: true
+    tags: logging
+    platform_allow: nrf52840dk_nrf52840
+    integration_platforms:
+      - nrf52840dk_nrf52840
+    extra_configs:
+      - CONFIG_LOG_BACKEND_UART=n
+      - CONFIG_LOG_BACKEND_RTT=n
+      - CONFIG_UART_ASYNC_API=y
+      - CONFIG_UART_INTERRUPT_DRIVEN=n
+      - CONFIG_LOG_FRONTEND=y
+      - CONFIG_LOG_FRONTEND_ONLY=y
+      - CONFIG_LOG_FRONTEND_DICT_UART=y
+  sample.logger.basic.dictionary.uart_int_frontend:
+    build_only: true
+    tags: logging
+    filter: CONFIG_SERIAL_SUPPORT_INTERRUPT and CONFIG_UART_CONSOLE
+    integration_platforms:
+      - qemu_x86
+      - qemu_x86_64
+    extra_configs:
+      - CONFIG_LOG_BACKEND_UART=n
+      - CONFIG_LOG_BACKEND_RTT=n
+      - CONFIG_UART_INTERRUPT_DRIVEN=y
+      - CONFIG_UART_ASYNC_API=n
+      - CONFIG_LOG_FRONTEND=y
+      - CONFIG_LOG_FRONTEND_ONLY=y
+      - CONFIG_LOG_FRONTEND_DICT_UART=y

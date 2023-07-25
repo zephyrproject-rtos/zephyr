@@ -1,0 +1,63 @@
+# Copyright (c) 2022 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Nuvoton NPCX keyboard scan controller
+
+compatible: "nuvoton,npcx-kbd"
+
+include: [base.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  wui-maps:
+    type: phandles
+    required: true
+    description: |
+        Mapping table between Wake-Up Input (WUI) and KSIs.
+
+        For example the WUI mapping on 8 KSI pads would be
+           wui-maps = <&wui_io30 &wui_io31 &wui_io27 &wui_io26
+                       &wui_io25 &wui_io24 &wui_io23 &wui_io22>;
+
+  row-size:
+    type: int
+    default: 8
+    required: true
+    description: |
+        The row size is used in the keyboard matrix.
+        valid range: 1 - 8
+
+  col-size:
+    type: int
+    default: 18
+    required: true
+    description: |
+        The column size is used in the keyboard matrix.
+        valid range: 1 - 18
+
+  debounce-down-ms:
+    type: int
+    default: 10
+    description: Determines the time in msecs for debouncing a key press.
+
+  debounce-up-ms:
+    type: int
+    default: 20
+    description: Determines the time in msecs for debouncing a key release.
+
+  no-ghostkey-check:
+    type: boolean
+    description: |
+        Ignore the ghost key checking in the driver if the diodes are used
+        in the matrix hardware.

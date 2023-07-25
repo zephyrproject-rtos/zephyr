@@ -1,0 +1,21 @@
+/*
+ * Copyright (c) 2022 Georgij Cernysiov <geo.cgv@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <st/h7/stm32h725.dtsi>
+
+/ {
+	soc {
+		compatible = "st,stm32h730", "st,stm32h7", "simple-bus";
+
+		cryp: cryp@48021000 {
+			compatible = "st,stm32-cryp";
+			reg = <0x48021000 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00000010>;
+			interrupts = <79 0>;
+			status = "disabled";
+		};
+	};
+};

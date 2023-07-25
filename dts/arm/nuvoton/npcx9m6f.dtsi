@@ -1,0 +1,44 @@
+/*
+ * Copyright (c) 2021 Nuvoton Technology Corporation.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include "npcx/npcx9.dtsi"
+
+/ {
+	flash0: flash@10090000 {
+		reg = <0x10090000 DT_SIZE_K(192)>;
+	};
+
+	flash1: flash@64000000 {
+		reg = <0x64000000 DT_SIZE_K(512)>;
+	};
+
+	sram0: memory@200c0000 {
+		compatible = "mmio-sram";
+		reg = <0x200C0000 DT_SIZE_K(64)>;
+	};
+
+	soc-id {
+		device-id = <0x21>;
+	};
+};
+
+&qspi_fiu0 {
+	status = "okay";
+
+	int_flash: w25q40@0 {
+		compatible ="nuvoton,npcx-fiu-nor";
+		size = <DT_SIZE_K(512 * 8)>;
+		reg = <0>;
+		status = "okay";
+
+		/* quad spi bus configuration of nor flash device */
+		qspi-flags = <NPCX_QSPI_SW_CS1>;
+		mapped-addr = <0x64000000>;
+		pinctrl-0 = <&int_flash_sl>;
+		pinctrl-names = "default";
+	};
+};

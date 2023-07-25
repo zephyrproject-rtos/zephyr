@@ -1,0 +1,14 @@
+# ST Microelectronics STM32L011XX MCU
+#
+# Copyright (c) 2019-2020 Grinn
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_STM32L011XX
+
+config SOC
+	default "stm32l011xx"
+
+config NUM_IRQS
+	default 32
+
+endif # SOC_STM32L011XX

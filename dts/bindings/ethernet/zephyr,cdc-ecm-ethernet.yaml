@@ -1,0 +1,16 @@
+# Copyright (c) 2023 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: USB CDC ECM virtual Ethernet controller
+
+compatible: "zephyr,cdc-ecm-ethernet"
+
+include: ethernet.yaml
+
+properties:
+  remote-mac-address:
+    type: string
+    required: true
+    description: |
+      Remote MAC address of the virtual Ethernet connection.
+      Should not be the same as local-mac-address property.

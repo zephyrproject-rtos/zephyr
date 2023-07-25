@@ -1,0 +1,87 @@
+# Bluetooth ATT/GATT configuration options
+
+# Copyright (c) 2019 Intel Corporation
+# Copyright (c) 2023 Nordic Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+menu "L2CAP Options"
+
+config BT_L2CAP_TX_BUF_COUNT
+	int "Number of L2CAP TX buffers"
+	default NET_BUF_TX_COUNT if NET_L2_BT
+	default BT_BUF_ACL_TX_COUNT
+	range 2 255
+	help
+	  Number of buffers available for outgoing L2CAP packets.
+
+config BT_L2CAP_TX_FRAG_COUNT
+	int "Number of L2CAP TX fragment buffers"
+	default NET_BUF_TX_COUNT if NET_L2_BT
+	default 2
+	range 0 255
+	help
+	  Number of buffers available for fragments of TX buffers. Warning:
+	  setting this to 0 means that the application must ensure that
+	  queued TX buffers never need to be fragmented, i.e. that the
+	  controller's buffer size is large enough. If this is not ensured,
+	  and there are no dedicated fragment buffers, a deadlock may occur.
+	  In most cases the default value of 2 is a safe bet.
+
+config BT_L2CAP_TX_MTU
+	int "Maximum supported L2CAP MTU for L2CAP TX buffers"
+	default 253 if BT_BREDR
+	default 66 if BT_EATT
+	default 65 if BT_SMP
+	default 64 if BT_BAP_UNICAST_SERVER || \
+		      BT_BAP_UNICAST_CLIENT || \
+		      BT_BAP_BROADCAST_SINK || \
+		      BT_BAP_SCAN_DELEGATOR || \
+		      BT_BAP_BROADCAST_ASSISTANT
+	default 49 if BT_HAS || BT_HAS_CLIENT
+	default 33 if BT_MESH_GATT
+	default 23
+	range 66 2000 if BT_EATT
+	range 65 2000 if BT_SMP
+	range 23 2000
+	help
+	  Maximum L2CAP MTU for L2CAP TX buffers.
+
+config BT_L2CAP_RESCHED_MS
+	int
+	default 1000
+	help
+	  Delay between retries for sending L2CAP segment. Necessary because the
+	  stack might not be able to allocate enough conn contexts and might not
+	  have enough credits, leading to a state where an SDU is stuck
+	  mid-transfer and never resumes.
+
+	  Note that this should seldom happen, this is just to work around a few
+	  edge cases.
+
+config BT_L2CAP_DYNAMIC_CHANNEL
+	bool "L2CAP Dynamic Channel support"
+	depends on BT_SMP
+	help
+	  This option enables support for LE Connection oriented Channels,
+	  allowing the creation of dynamic L2CAP Channels.
+
+config BT_L2CAP_ECRED
+	bool "L2CAP Enhanced Credit Based Flow Control support"
+	depends on BT_L2CAP_DYNAMIC_CHANNEL
+	help
+	  This option enables support for LE Connection oriented Channels with
+	  Enhanced Credit Based Flow Control support on dynamic L2CAP Channels.
+
+config BT_L2CAP_SEG_RECV
+	bool "L2CAP Receive segment direct API [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+
+	  Enable API for direct receiving of L2CAP SDU segments, bypassing the
+	  Host's fixed-function SDU re-assembler, RX SDU buffer management and
+	  credit issuer.
+
+	  This API enforces conformance with L2CAP TS, but is otherwise as
+	  flexible and semantically simple as possible.
+
+endmenu

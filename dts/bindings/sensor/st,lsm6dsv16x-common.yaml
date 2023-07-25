@@ -1,0 +1,147 @@
+# Copyright (c) 2023 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+include: sensor-device.yaml
+
+properties:
+  irq-gpios:
+    type: phandle-array
+    description: |
+      DRDY pin
+
+      This pin defaults to active high when produced by the sensor.
+      The property value should ensure the flags properly describe
+      the signal that is presented to the driver.
+
+  drdy-pin:
+    type: int
+    default: 1
+    enum:
+      - 1 # drdy is generated from INT1
+      - 2 # drdy is generated from INT2
+    description: |
+      Select DRDY pin number (1 or 2).
+
+      This number represents which of the two interrupt pins
+      (INT1 or INT2) the drdy line is attached to. This property is not
+      mandatory and if not present it defaults to 1 which is the
+      configuration at power-up.
+
+  accel-range:
+    type: int
+    default: 0
+    description: |
+      Range in g. Default is power-up configuration.
+    enum:
+      - 0 # 2g  (0.061 mg/LSB)
+      - 1 # 4g  (0.122 mg/LSB)
+      - 2 # 8g  (0.244 mg/LSB)
+      - 3 # 16g (0.488 mg/LSB)
+
+  accel-odr:
+    type: int
+    default: 0x0
+    description: |
+      Specify the default accelerometer output data rate expressed in samples per second (Hz).
+      The values are taken in accordance to lsm6dsv16x_data_rate_t enumerative in hal/st
+      module. Please note that this values will not change the operating mode, which will remain
+      High Performance (device default)
+      Default is power-up configuration.
+    enum:
+      - 0x00  # Power-Down
+      - 0x01  # 1Hz875
+      - 0x02  # 7Hz5
+      - 0x03  # 15Hz
+      - 0x04  # 30Hz
+      - 0x05  # 60Hz
+      - 0x06  # 120Hz
+      - 0x07  # 240Hz
+      - 0x08  # 480Hz
+      - 0x09  # 960Hz
+      - 0x0a  # 1920Hz
+      - 0x0b  # 3840Hz
+      - 0x0c  # 7680Hz
+      - 0x13  # 15Hz625 (High Accuracy 1)
+      - 0x14  # 31Hz25  (High Accuracy 1)
+      - 0x15  # 62Hz5   (High Accuracy 1)
+      - 0x16  # 125Hz   (High Accuracy 1)
+      - 0x17  # 250Hz   (High Accuracy 1)
+      - 0x18  # 500Hz   (High Accuracy 1)
+      - 0x19  # 1000Hz  (High Accuracy 1)
+      - 0x1a  # 2000Hz  (High Accuracy 1)
+      - 0x1b  # 4000Hz  (High Accuracy 1)
+      - 0x1c  # 8000Hz  (High Accuracy 1)
+      - 0x23  # 12Hz5   (High Accuracy 2)
+      - 0x24  # 25Hz    (High Accuracy 2)
+      - 0x25  # 50Hz    (High Accuracy 2)
+      - 0x26  # 100Hz   (High Accuracy 2)
+      - 0x27  # 200Hz   (High Accuracy 2)
+      - 0x28  # 400Hz   (High Accuracy 2)
+      - 0x29  # 800Hz   (High Accuracy 2)
+      - 0x2a  # 1600Hz  (High Accuracy 2)
+      - 0x2b  # 3200Hz  (High Accuracy 2)
+      - 0x2c  # 6400Hz  (High Accuracy 2)
+
+  gyro-range:
+    type: int
+    default: 0
+    description: |
+      Range in dps. Default is power-up configuration.
+    enum:
+      - 0 # 125 dps  (4.375 mdps/LSB)
+      - 1 # 250 dps  (8.75 mdps/LSB)
+      - 2 # 500 dps  (17.50 mdps/LSB)
+      - 3 # 1000 dps (35 mdps/LSB)
+      - 4 # 2000 dps (70 mdps/LSB)
+      - 5 # 4000 dps (140 mdps/LSB)
+
+  gyro-odr:
+    type: int
+    default: 0x0
+    description: |
+      Specify the default gyro output data rate expressed in samples per second (Hz).
+      The values are taken in accordance to lsm6dsv16x_data_rate_t enumerative in hal/st
+      module. Please note that this values will not change the operating mode, which will remain
+      High Performance (device default). Moreover, the values here which will be selected in the
+      DT are the only way to specifiy the odr accuracy even at runtime with
+      SENSOR_ATTR_SAMPLING_FREQUENCY.
+      Default is power-up configuration.
+    enum:
+      - 0x00  # Power-Down
+      - 0x02  # 7Hz5
+      - 0x03  # 15Hz
+      - 0x04  # 30Hz
+      - 0x05  # 60Hz
+      - 0x06  # 120Hz
+      - 0x07  # 240Hz
+      - 0x08  # 480Hz
+      - 0x09  # 960Hz
+      - 0x0a  # 1920Hz
+      - 0x0b  # 3840Hz
+      - 0x0c  # 7680Hz
+      - 0x13  # 15Hz625 (High Accuracy 1)
+      - 0x14  # 31Hz25  (High Accuracy 1)
+      - 0x15  # 62Hz5   (High Accuracy 1)
+      - 0x16  # 125Hz   (High Accuracy 1)
+      - 0x17  # 250Hz   (High Accuracy 1)
+      - 0x18  # 500Hz   (High Accuracy 1)
+      - 0x19  # 1000Hz  (High Accuracy 1)
+      - 0x1a  # 2000Hz  (High Accuracy 1)
+      - 0x1b  # 4000Hz  (High Accuracy 1)
+      - 0x1c  # 8000Hz  (High Accuracy 1)
+      - 0x23  # 12Hz5   (High Accuracy 2)
+      - 0x24  # 25Hz    (High Accuracy 2)
+      - 0x25  # 50Hz    (High Accuracy 2)
+      - 0x26  # 100Hz   (High Accuracy 2)
+      - 0x27  # 200Hz   (High Accuracy 2)
+      - 0x28  # 400Hz   (High Accuracy 2)
+      - 0x29  # 800Hz   (High Accuracy 2)
+      - 0x2a  # 1600Hz  (High Accuracy 2)
+      - 0x2b  # 3200Hz  (High Accuracy 2)
+      - 0x2c  # 6400Hz  (High Accuracy 2)
+
+  drdy-pulsed:
+    type: boolean
+    description: |
+      Selects the pulsed mode for data-ready interrupt when enabled,
+      and the latched mode when disabled.

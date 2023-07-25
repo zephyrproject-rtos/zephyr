@@ -1,0 +1,11 @@
+# Copyright (c) 2022, Valerio Setti <vsetti@baylibre.com>
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config QDEC_STM32
+	bool "STM32 QDEC driver"
+	default y
+	depends on DT_HAS_ST_STM32_QDEC_ENABLED
+	select USE_STM32_LL_TIM
+	help
+	  STM32 family Quadrature Decoder driver.

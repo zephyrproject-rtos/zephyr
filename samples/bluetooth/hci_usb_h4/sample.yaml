@@ -1,0 +1,13 @@
+sample:
+  name: Bluetooth over USB sample
+tests:
+  sample.bluetooth.hci_usb_h4:
+    harness: bluetooth
+    depends_on:
+      - usb_device
+      - ble
+    tags:
+      - usb
+      - bluetooth
+    # FIXME: exclude due to build error
+    platform_exclude: 96b_carbon

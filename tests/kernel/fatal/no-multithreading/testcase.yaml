@@ -1,0 +1,35 @@
+common:
+  platform_allow:
+    - qemu_cortex_m3
+    - qemu_arc_em
+    - qemu_arc_hs
+    - qemu_arc_hs6x
+    - qemu_riscv32
+    - qemu_riscv32e
+    - qemu_riscv64
+    - nsim_em
+    - nsim_em7d_v22
+    - nsim_hs
+    - nsim_hs_mpuv6
+    - nsim_hs5x
+    - nsim_hs6x
+  integration_platforms:
+    - qemu_cortex_m3
+    - nsim_em
+  tags:
+    - kernel
+    - scheduler
+  ignore_faults: true
+tests:
+  kernel.no-mt.cpu_exception:
+    extra_args: EXTRA_CPPFLAGS=-DVIA_TWISTER=0
+  kernel.no-mt.oops:
+    extra_args: EXTRA_CPPFLAGS=-DVIA_TWISTER=1
+  kernel.no-mt.panic:
+    extra_args: EXTRA_CPPFLAGS=-DVIA_TWISTER=2
+  kernel.no-mt.zephyr_assert:
+    extra_args: EXTRA_CPPFLAGS=-DVIA_TWISTER=3
+  kernel.no-mt.arbitrary_reason:
+    extra_args: EXTRA_CPPFLAGS=-DVIA_TWISTER=4
+  kernel.no-mt.arbitrary_reason_negative:
+    extra_args: EXTRA_CPPFLAGS=-DVIA_TWISTER=5

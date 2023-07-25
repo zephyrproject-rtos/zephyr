@@ -1,0 +1,13 @@
+# Atmel SAM0 MCU family default configuration options
+
+# Copyright (c) 2017 Google LLC.
+# SPDX-License-Identifier: Apache-2.0
+
+source "soc/arm/atmel_sam0/*/Kconfig.defconfig.series"
+
+if SOC_FAMILY_SAM0
+
+config PINCTRL
+	default y
+
+endif # SOC_FAMILY_SAM0

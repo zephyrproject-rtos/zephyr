@@ -1,0 +1,18 @@
+# FSL SEGGER K66F platform configuration options
+
+# Copyright (c) 2020 DENX Software Engineering GmbH, 2021 Electromaticus LLC, 2021 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_MK66F18
+
+config SOC
+	default "mk66f18"
+
+config NUM_IRQS
+	# must be >= the highest interrupt number used
+	default 100
+
+config GPIO
+	default y
+
+endif # SOC_MK66F18

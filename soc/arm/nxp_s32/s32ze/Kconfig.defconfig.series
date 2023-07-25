@@ -1,0 +1,53 @@
+# NXP S32Z/E MCUs family default configuration
+
+# Copyright 2022 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_S32ZE_R52
+
+config SOC_SERIES
+	default "s32ze"
+
+config NUM_IRQS
+	# must be >= the highest interrupt number used
+	default 991
+
+config FPU
+	default y
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 2000000
+
+config MAIN_STACK_SIZE
+	default 1024
+
+if !XIP
+config FLASH_SIZE
+	default 0
+
+config FLASH_BASE_ADDRESS
+	default 0
+endif # !XIP
+
+# Ethernet driver must init first because it initializes the
+# NETC which is needed for EMDIO functionality
+if NET_L2_ETHERNET
+
+config MDIO_INIT_PRIORITY
+	default 70
+
+config PHY_INIT_PRIORITY
+	default 80
+
+# NETC drops TCP/UDP packets with invalid checksum
+config NET_TCP_CHECKSUM
+	default n
+
+config NET_UDP_CHECKSUM
+	default n
+
+endif # NET_L2_ETHERNET
+
+source "soc/arm/nxp_s32/s32ze/Kconfig.defconfig.s32*"
+
+endif # SOC_SERIES_S32ZE_R52

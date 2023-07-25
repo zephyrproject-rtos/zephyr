@@ -1,0 +1,9 @@
+# Copyright (c) 2021 Telink Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+config SPI_TELINK_B91
+	bool "Telink Semiconductor B91 SPI driver"
+	default y
+	depends on DT_HAS_TELINK_B91_SPI_ENABLED
+	help
+	  Enables Telink B91 SPI driver.

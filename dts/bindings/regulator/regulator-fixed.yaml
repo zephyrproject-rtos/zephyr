@@ -1,0 +1,39 @@
+# Copyright 2019-2020 Peter Bigot Consulting, LLC
+# SPDX-License-Identifier: Apache-2.0
+
+description: GPIO-controlled regulators
+
+include:
+  - name: base.yaml
+  - name: regulator.yaml
+    property-allowlist:
+      - regulator-name
+      - regulator-boot-on
+      - regulator-always-on
+
+compatible: "regulator-fixed"
+
+properties:
+  regulator-name:
+    required: true
+
+  enable-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      GPIO to use to enable/disable the regulator.
+
+      Unlike the gpio property in the Linux bindings this array must
+      provide the GPIO polarity and open-drain status in the phandle
+      selector.  The Linux enable-active-high and gpio-open-drain
+      properties are not valid for Zephyr devicetree files.
+
+  startup-delay-us:
+    type: int
+    default: 0
+    description: Startup time, in microseconds
+
+  off-on-delay-us:
+    type: int
+    default: 0
+    description: Off delay time, in microseconds

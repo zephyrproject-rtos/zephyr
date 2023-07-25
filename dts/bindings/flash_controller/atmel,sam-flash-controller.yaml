@@ -1,0 +1,12 @@
+# Copyright (c) 2018, Aurelien Jarno
+# SPDX-License-Identifier: Apache-2.0
+
+description: Atmel SAM Enhanced Embedded Flash Controller (EEFC)
+
+compatible: "atmel,sam-flash-controller"
+
+include: flash-controller.yaml
+
+properties:
+  clocks:
+    required: true

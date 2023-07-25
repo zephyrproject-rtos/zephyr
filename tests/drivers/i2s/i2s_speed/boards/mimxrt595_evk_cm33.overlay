@@ -1,0 +1,20 @@
+/* i2s_speed with CONFIG_I2S_TEST_SEPARATE_DEVICES=y uses two I2S peripherals:
+ * i2s-node0 is the receiver
+ * i2s-node1 is the transmitter
+ */
+
+/ {
+	aliases {
+		i2s-node0 = &i2s0;
+		i2s-node1 = &i2s1;
+	};
+
+};
+
+&i2s0 {
+    status = "okay";
+};
+
+&i2s1 {
+    status = "okay";
+};

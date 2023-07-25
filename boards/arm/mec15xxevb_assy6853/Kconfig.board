@@ -1,0 +1,6 @@
+# Copyright (c) 2019, Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_MEC15XXEVB_ASSY6853
+	bool "Microchip MEC15XX EVB ASSY 6853 Development board"
+	depends on SOC_MEC1501_HSZ

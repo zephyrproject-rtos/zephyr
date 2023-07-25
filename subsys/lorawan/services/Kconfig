@@ -1,0 +1,57 @@
+# LoRaWAN Services configuration
+#
+# Copyright (c) 2022 Martin Jäger <martin@libre.solar>
+# Copyright (c) 2022 tado GmbH
+#
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig LORAWAN_SERVICES
+	bool "LoRaWAN Services backend"
+	depends on LORAWAN
+	select ENTROPY_GENERATOR
+	help
+	  Enables the LoRaWAN background services, e.g. used for
+	  firmware-upgrade over the air (FUOTA).
+
+	  The services use a dedicated thread and a work queue.
+
+if LORAWAN_SERVICES
+
+module = LORAWAN_SERVICES
+module-str = lorawan_services
+source "subsys/logging/Kconfig.template.log_config"
+
+config LORAWAN_SERVICES_THREAD_STACK_SIZE
+	int "Services thread stack size"
+	default 2048
+	help
+	  Stack size of thread running LoRaWAN background services.
+
+config LORAWAN_SERVICES_THREAD_PRIORITY
+	int "Services thread priority"
+	default 2
+	help
+	  Priority of the thread running LoRaWAN background services.
+
+config LORAWAN_APP_CLOCK_SYNC
+	bool "Application Layer Clock Synchronization"
+	help
+	  Enables the LoRaWAN Application Layer Clock Synchronization service
+	  according to LoRa Alliance TS003-2.0.0.
+
+	  The service uses the default port 202.
+
+config LORAWAN_APP_CLOCK_SYNC_PERIODICITY
+	int "Application Layer Clock Synchronization periodicity"
+	depends on LORAWAN_APP_CLOCK_SYNC
+	range 128 4194304
+	default 86400
+	help
+	  Initial setting for clock synchronization periodicity in seconds.
+
+	  The value can be updated remotely by the application server within a
+	  range from 128 (0x80) to 4194304 (0x400000).
+
+	  Default setting: 24h.
+
+endif # LORAWAN_SERVICES

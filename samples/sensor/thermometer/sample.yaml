@@ -1,0 +1,9 @@
+sample:
+  name: Temperature Sensor
+tests:
+  sample.sensor.thermometer:
+    tags: sensors
+    harness: sensor
+    integration_platforms:
+      - nrf52840dk_nrf52840
+    platform_allow: nrf52840dk_nrf52840 frdm_k22f

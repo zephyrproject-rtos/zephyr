@@ -1,0 +1,75 @@
+# Copyright (c) 2018, Endre Karlson
+# Copyright (c) 2018, Song Qiang <songqiang1304521@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: ST STM32 family ADC
+
+compatible: "st,stm32-adc"
+
+include: [adc-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true
+
+  interrupts:
+    required: true
+
+  "#io-channel-cells":
+    const: 1
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  vref-mv:
+    type: int
+    default: 3300
+    description: Indicates the reference voltage of the ADC in mV (on the target board).
+
+  temp-channel:
+    type: int
+    description: Indicates the ADC channel of the internal temperature sensor.
+
+  vref-channel:
+    type: int
+    description: Indicates the ADC channel of the internal voltage reference.
+
+  vbat-channel:
+    type: int
+    description: Indicates the ADC channel of the internal vbat monitoring.
+
+  resolutions:
+    type: array
+    required: true
+    description: |
+      List of the resolutions supported by the ADC instance. They should be
+      values created with STM32_ADC_RES macro or similar. Their order is not
+      important. For example for STM32F4:
+        <STM32_ADC_RES(12, 0x00) STM32_ADC_RES(10, 0x01)
+         STM32_ADC_RES(8, 0x02)  STM32_ADC_RES(6, 0x03)>
+      The two parameters are the resolution (for example 10 bits) and the
+      corresponding register value (0x01 for a 10-bit resolution).
+      By design, these macros also contains all register information (address,
+      field offset and field mask) necessary to properly set the resolution.
+
+  sampling-times:
+    type: array
+    required: true
+    description: |
+      List all the sampling times supported by the ADC instance.
+      Rounded up if needed. Order is important: their index matches their binary
+      value in the register.
+
+  num-sampling-time-common-channels:
+    type: int
+    description: |
+      Number of sampling time common channels for this ADC instance, if any.
+
+io-channel-cells:
+  - input

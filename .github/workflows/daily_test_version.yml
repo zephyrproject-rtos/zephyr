@@ -1,0 +1,38 @@
+# Copyright (c) 2020 Intel Corp.
+# SPDX-License-Identifier: Apache-2.0
+
+name: Publish commit for daily testing
+
+on:
+  schedule:
+  - cron: '50 22 * * *'
+  push:
+    branches:
+    - refs/tags/*
+
+jobs:
+  get_version:
+    runs-on: ubuntu-22.04
+    if: github.repository == 'zephyrproject-rtos/zephyr'
+
+    steps:
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v2
+      with:
+        aws-access-key-id: ${{ vars.AWS_TESTING_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_TESTING_SECRET_ACCESS_KEY }}
+        aws-region: us-east-1
+
+    - name: install-pip
+      run: |
+        pip3 install gitpython
+
+    - name: checkout
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+
+    - name: Upload to AWS S3
+      run: |
+        python3 scripts/ci/version_mgr.py --update .
+        aws s3 cp versions.json s3://testing.zephyrproject.org/daily_tests/versions.json

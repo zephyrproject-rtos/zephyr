@@ -1,0 +1,28 @@
+common:
+  tags:
+    - benchmark
+    - kernel
+tests:
+  benchmark.kernel.footprints.default:
+    build_only: true
+    integration_platforms:
+      - mps2_an385
+  benchmark.kernel.footprints.pm:
+    tags:
+      - pm
+    build_only: true
+    extra_args: CONF_FILE=prj_pm.conf
+    integration_platforms:
+      - mps2_an385
+  benchmark.kernel.footprints.userspace:
+    filter: CONFIG_ARCH_HAS_USERSPACE
+    extra_args: CONF_FILE=prj_userspace.conf
+    arch_allow:
+      - x86
+      - arm
+      - arc
+    tags:
+      - userspace
+    build_only: true
+    integration_platforms:
+      - mps2_an385

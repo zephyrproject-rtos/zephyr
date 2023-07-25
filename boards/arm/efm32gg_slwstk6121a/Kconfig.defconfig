@@ -1,0 +1,33 @@
+# EFM32GG SLWSTK6121A default board configuration
+# Copyright (c) 2019 Interay Solutions B.V.
+# Copyright (c) 2019 Oane Kingma
+# Copyright (c) 2020 Thorvald Natvig
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_EFM32GG_SLWSTK6121A
+
+config BOARD
+	string
+	default "efm32gg_slwstk6121a"
+
+config CMU_HFXO_FREQ
+	default 50000000
+
+config CMU_HFRCO_FREQ
+	default 72000000
+
+config CMU_LFXO_FREQ
+	default 32768
+
+config LOG_BACKEND_SWO_FREQ_HZ
+	default 875000
+	depends on LOG_BACKEND_SWO
+
+if NETWORKING
+
+config NET_L2_ETHERNET
+	default y
+
+endif # NETWORKING
+
+endif # BOARD_EFM32GG_SLWSTK6121A

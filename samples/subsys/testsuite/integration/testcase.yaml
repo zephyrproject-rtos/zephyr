@@ -1,0 +1,8 @@
+tests:
+  # section.subsection
+  sample.testing.ztest:
+    build_only: true
+    platform_allow: native_posix
+    integration_platforms:
+      - native_posix
+    tags: test_framework

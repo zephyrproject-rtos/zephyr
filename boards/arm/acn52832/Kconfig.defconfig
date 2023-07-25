@@ -1,0 +1,14 @@
+# aconno acn52832 board configuration
+
+# Copyright (c) 2023 Sven Herrmann <sven.herrmann@posteo.de>
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_ACN52832
+
+config BOARD
+	default "acn52832"
+
+config BT_CTLR
+	default BT
+
+endif # BOARD_ACN52832

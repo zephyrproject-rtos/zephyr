@@ -1,0 +1,8 @@
+# Copyright (c) 2019, Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+description: MT9M114 CMOS video sensor
+
+compatible: "aptina,mt9m114"
+
+include: i2c-device.yaml

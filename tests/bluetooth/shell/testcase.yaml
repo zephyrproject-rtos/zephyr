@@ -1,0 +1,326 @@
+tests:
+  bluetooth.shell.main:
+    extra_configs:
+      - CONFIG_NATIVE_UART_0_ON_STDINOUT=y
+    platform_allow:
+      - qemu_x86
+      - native_posix
+      - native_posix_64
+      - nrf52840dk_nrf52840
+    integration_platforms:
+      - qemu_x86
+    platform_exclude: nrf52dk_nrf52810
+    tags: bluetooth
+    harness: keyboard
+    min_flash: 145
+  bluetooth.shell.cdc_acm:
+    extra_args:
+      - OVERLAY_CONFIG=cdc_acm.conf
+      - DTC_OVERLAY_FILE="usb.overlay"
+    depends_on: usb_device
+    platform_allow:
+      - native_posix
+      - native_posix_64
+      - nrf52840dk_nrf52840
+    integration_platforms:
+      - native_posix
+    platform_exclude: nrf52dk_nrf52810
+    tags: bluetooth
+    harness: keyboard
+    min_flash: 350
+  bluetooth.shell.shell_br:
+    extra_configs:
+      - CONFIG_NATIVE_UART_0_ON_STDINOUT=y
+    extra_args: CONF_FILE="prj_br.conf"
+    platform_allow:
+      - qemu_cortex_m3
+      - qemu_x86
+      - native_posix
+      - native_posix_64
+    integration_platforms:
+      - native_posix
+    platform_exclude: nrf52dk_nrf52810
+    tags: bluetooth
+    harness: keyboard
+  bluetooth.shell.no_privacy:
+    build_only: true
+    extra_args: CONFIG_BT_PRIVACY=n
+    platform_allow: native_posix
+    tags: bluetooth
+  bluetooth.shell.log_defaults:
+    build_only: true
+    platform_allow: native_posix
+    extra_args: CONF_FILE="log.conf"
+    tags: bluetooth
+
+  # Bluetooth Audio Compile validation tests
+  bluetooth.shell.audio:
+    extra_args: CONF_FILE="audio.conf"
+    build_only: true
+    platform_allow: native_posix
+    tags: bluetooth
+  bluetooth.shell.audio.no_vcs:
+    extra_args: CONF_FILE="audio.conf"
+    build_only: true
+    platform_allow: native_posix
+    extra_configs:
+      - CONFIG_BT_VCP_VOL_REND=n
+    tags: bluetooth
+  bluetooth.shell.audio.no_vocs:
+    extra_args: CONF_FILE="audio.conf"
+    build_only: true
+    platform_allow: native_posix
+    extra_configs:
+      - CONFIG_BT_VOCS_MAX_INSTANCE_COUNT=0
+      - CONFIG_BT_VCP_VOL_REND_VOCS_INSTANCE_COUNT=0
+    tags: bluetooth
+  bluetooth.shell.audio.no_aics:
+    extra_args: CONF_FILE="audio.conf"
+    build_only: true
+    platform_allow: native_posix
+    extra_configs:
+      - CONFIG_BT_AICS_MAX_INSTANCE_COUNT=0
+      - CONFIG_BT_VCP_VOL_REND_AICS_INSTANCE_COUNT=0
+      - CONFIG_BT_MICP_MIC_DEV_AICS_INSTANCE_COUNT=0
+    tags: bluetooth
+  bluetooth.shell.audio.no_aics_vocs:
+    extra_args: CONF_FILE="audio.conf"
+    build_only: true
+    platform_allow: native_posix
+    extra_configs:
+      - CONFIG_BT_VOCS_MAX_INSTANCE_COUNT=0
+      - CONFIG_BT_VCP_VOL_REND_VOCS_INSTANCE_COUNT=0
+      - CONFIG_BT_AICS_MAX_INSTANCE_COUNT=0
+      - CONFIG_BT_VCP_VOL_REND_AICS_INSTANCE_COUNT=0
+      - CONFIG_BT_MICP_MIC_DEV_AICS_INSTANCE_COUNT=0
+    tags: bluetooth
+  bluetooth.shell.audio.no_vcp_vol_ctlr:
+    extra_args: CONF_FILE="audio.conf"
+    build_only: true
+    platform_allow: native_posix
+    extra_configs:
+      - CONFIG_BT_VCP_VOL_CTLR=n
+    tags: bluetooth
+  bluetooth.shell.audio.no_vcs_vcp_vol_ctlr:
+    extra_args: CONF_FILE="audio.conf"
+    build_only: true
+    platform_allow: native_posix
+    extra_configs:
+      - CONFIG_BT_VCP_VOL_REND=n
+      - CONFIG_BT_VCP_VOL_CTLR=n
+    tags: bluetooth
+  bluetooth.shell.audio.vcp_vol_ctlr_no_aics_client:
+    extra_args: CONF_FILE="audio.conf"
+    build_only: true
+    platform_allow: native_posix
+    extra_configs:
+      - CONFIG_BT_VCP_VOL_CTLR_MAX_AICS_INST=0
+    tags: bluetooth
+  bluetooth.shell.audio.vcp_vol_ctlr_no_vocs_client:
+    extra_args: CONF_FILE="audio.conf"
+    build_only: true
+    platform_allow: native_posix
+    extra_configs:
+      - CONFIG_BT_VCP_VOL_CTLR_MAX_VOCS_INST=0
+    tags: bluetooth
+  bluetooth.shell.audio.no_micp_mic_dev:
+    extra_args: CONF_FILE="audio.conf"
+    build_only: true
+    platform_allow: native_posix
+    extra_configs:
+      - CONFIG_BT_MICP_MIC_DEV=n
+    tags: bluetooth
+  bluetooth.shell.audio.no_micp_mic_ctlr:
+    extra_args: CONF_FILE="audio.conf"
+    build_only: true
+    platform_allow: native_posix
+    extra_configs:
+      - CONFIG_BT_MICP_MIC_CTLR=n
+    tags: bluetooth
+  bluetooth.shell.audio.no_micp_mic_dev_micp_mic_ctlr:
+    extra_args: CONF_FILE="audio.conf"
+    build_only: true
+    platform_allow: native_posix
+    extra_configs:
+      - CONFIG_BT_MICP_MIC_DEV=n
+      - CONFIG_BT_MICP_MIC_CTLR=n
+    tags: bluetooth
+  bluetooth.shell.audio.micp_mic_ctlr_no_aics_client:
+    extra_args: CONF_FILE="audio.conf"
+    build_only: true
+    platform_allow: native_posix
+    extra_configs:
+      - CONFIG_BT_MICP_MIC_CTLR_MAX_AICS_INST=0
+    tags: bluetooth
+  bluetooth.shell.audio.no_mcs:
+    extra_args: CONF_FILE="audio.conf"
+    build_only: true
+    platform_allow: native_posix
+    extra_configs:
+      - CONFIG_BT_MCS=n
+    tags: bluetooth
+  bluetooth.shell.audio.no_mcc:
+    extra_args: CONF_FILE="audio.conf"
+    build_only: true
+    platform_allow: native_posix
+    extra_configs:
+      - CONFIG_BT_MCC=n
+    tags: bluetooth
+  bluetooth.shell.audio.no_ots:
+    extra_args: CONF_FILE="audio.conf"
+    build_only: true
+    platform_allow: native_posix
+    extra_configs:
+      - CONFIG_BT_OTS=n
+    tags: bluetooth
+  bluetooth.shell.audio.no_mcc_ots:
+    extra_args: CONF_FILE="audio.conf"
+    build_only: true
+    platform_allow: native_posix
+    extra_configs:
+      - CONFIG_BT_MCC_OTS=n
+    tags: bluetooth
+  bluetooth.shell.audio.no_otsc:
+    extra_args: CONF_FILE="audio.conf"
+    build_only: true
+    platform_allow: native_posix
+    extra_configs:
+      - CONFIG_BT_OTS=n
+      - CONFIG_BT_MCC_OTS=n
+    tags: bluetooth
+  bluetooth.audio_shell.no_pac_snk:
+    extra_args: CONF_FILE="audio.conf"
+    build_only: true
+    platform_allow: native_posix
+    extra_configs:
+      - CONFIG_BT_PAC_SNK=n
+  bluetooth.audio_shell.no_pac_src:
+    extra_args: CONF_FILE="audio.conf"
+    build_only: true
+    platform_allow: native_posix
+    extra_configs:
+      - CONFIG_BT_PAC_SRC=n
+  bluetooth.audio_shell.no_unicast_client:
+    extra_args: CONF_FILE="audio.conf"
+    build_only: true
+    platform_allow: native_posix
+    extra_configs:
+      - CONFIG_BT_BAP_UNICAST_CLIENT=n
+  bluetooth.audio_shell.no_unicast_server:
+    extra_args: CONF_FILE="audio.conf"
+    build_only: true
+    platform_allow: native_posix
+    extra_configs:
+      - CONFIG_BT_BAP_UNICAST_SERVER=n
+      - CONFIG_BT_HAS=n
+  bluetooth.audio_shell.no_server_ase_snk:
+    extra_args: CONF_FILE="audio.conf"
+    build_only: true
+    platform_allow: native_posix
+    extra_configs:
+      - CONFIG_BT_ASCS_ASE_SNK_COUNT=0
+  bluetooth.audio_shell.no_server_ase_src:
+    extra_args: CONF_FILE="audio.conf"
+    build_only: true
+    platform_allow: native_posix
+    extra_configs:
+      - CONFIG_BT_ASCS_ASE_SRC_COUNT=0
+  bluetooth.audio_shell.no_client_ase_snk:
+    extra_args: CONF_FILE="audio.conf"
+    build_only: true
+    platform_allow: native_posix
+    extra_configs:
+      - CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT=0
+  bluetooth.audio_shell.no_client_ase_src:
+    extra_args: CONF_FILE="audio.conf"
+    build_only: true
+    platform_allow: native_posix
+    extra_configs:
+      - CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT=0
+  bluetooth.audio_shell.no_broadcast_source:
+    extra_args: CONF_FILE="audio.conf"
+    build_only: true
+    platform_allow: native_posix
+    extra_configs:
+      - CONFIG_BT_BAP_BROADCAST_SOURCE=n
+  bluetooth.audio_shell.no_broadcast_sink:
+    extra_args: CONF_FILE="audio.conf"
+    build_only: true
+    platform_allow: native_posix
+    extra_configs:
+      - CONFIG_BT_BAP_BROADCAST_SINK=n
+  bluetooth.audio_shell.no_audio_tx:
+    extra_args: CONF_FILE="audio.conf"
+    build_only: true
+    platform_allow: native_posix
+    extra_configs:
+      - CONFIG_BT_BAP_BROADCAST_SOURCE=n
+      - CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT=0
+      - CONFIG_BT_ASCS_ASE_SRC_COUNT=0
+  bluetooth.audio_shell.no_audio_rx:
+    extra_args: CONF_FILE="audio.conf"
+    build_only: true
+    platform_allow: native_posix
+    extra_configs:
+      - CONFIG_BT_BAP_BROADCAST_SINK=n
+      - CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT=0
+      - CONFIG_BT_ASCS_ASE_SNK_COUNT=0
+  bluetooth.audio_shell.no_has:
+    extra_args: CONF_FILE="audio.conf"
+    build_only: true
+    platform_allow: native_posix
+    extra_configs:
+      - CONFIG_BT_HAS=n
+  bluetooth.audio_shell.no_has_client:
+    extra_args: CONF_FILE="audio.conf"
+    build_only: true
+    platform_allow: native_posix
+    extra_configs:
+      - CONFIG_BT_HAS_CLIENT=n
+  bluetooth.shell.audio.no_tbs:
+    extra_args: CONF_FILE="audio.conf"
+    build_only: true
+    platform_allow: native_posix
+    extra_configs:
+      - CONFIG_BT_TBS=n
+    tags: bluetooth
+  bluetooth.shell.audio.no_tbs_client:
+    extra_args: CONF_FILE="audio.conf"
+    build_only: true
+    platform_allow: native_posix
+    extra_configs:
+      - CONFIG_BT_TBS_CLIENT_TBS=n
+      - CONFIG_BT_TBS_CLIENT_GTBS=n
+    tags: bluetooth
+  bluetooth.shell.audio.tbs_only_client:
+    extra_args: CONF_FILE="audio.conf"
+    build_only: true
+    platform_allow: native_posix
+    extra_configs:
+      - CONFIG_BT_TBS_CLIENT_GTBS=n
+    tags: bluetooth
+  bluetooth.shell.audio.gtbs_only_client:
+    extra_args: CONF_FILE="audio.conf"
+    build_only: true
+    platform_allow: native_posix
+    extra_configs:
+      - CONFIG_BT_TBS_CLIENT_TBS=n
+    tags: bluetooth
+  bluetooth.audio_shell.no_cap_acceptor:
+    extra_args: CONF_FILE="audio.conf"
+    build_only: true
+    platform_allow: native_posix
+    extra_configs:
+      - CONFIG_BT_CAP_ACCEPTOR=n
+  bluetooth.audio_shell.no_cap_acceptor_set_member:
+    extra_args: CONF_FILE="audio.conf"
+    build_only: true
+    platform_allow: native_posix
+    extra_configs:
+      - CONFIG_BT_CAP_ACCEPTOR_SET_MEMBER=n
+  bluetooth.audio_shell.no_cap_initiator:
+    extra_args: CONF_FILE="audio.conf"
+    build_only: true
+    platform_allow: native_posix
+    extra_configs:
+      - CONFIG_BT_CAP_INITIATOR=n

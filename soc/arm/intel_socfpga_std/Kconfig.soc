@@ -1,0 +1,6 @@
+# Copyright (c) 2021 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+# Description:
+# Adding support for Cyclone V SoC FPGA
+
+source "soc/arm/intel_socfpga_std/*/Kconfig.series"

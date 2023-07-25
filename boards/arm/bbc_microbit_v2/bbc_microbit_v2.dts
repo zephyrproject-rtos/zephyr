@@ -1,0 +1,180 @@
+/*
+ * Copyright (c) 2020 Lingao Meng
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <nordic/nrf52833_qiaa.dtsi>
+#include "bbc_microbit_v2-pinctrl.dtsi"
+
+/ {
+	model = "BBC Micro:bit V2";
+	compatible = "bbc,microbit-v2";
+
+	/* These aliases are provided for compatibility with samples */
+	aliases {
+		sw0 = &buttonA;
+		sw1 = &buttonB;
+		magn0 = &lsm303agr_magn;
+		accel0 = &lsm303agr_accel;
+		watchdog0 = &wdt0;
+	};
+
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,bt-mon-uart = &uart0;
+		zephyr,bt-c2h-uart = &uart0;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,display = &led_matrix;
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		buttonA: button_0 {
+			label = "BTN_A";
+			gpios = <&gpio0 14 GPIO_ACTIVE_LOW>;
+		};
+
+		buttonB: button_1 {
+			label = "BTN_B";
+			gpios = <&gpio0 23 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	led_matrix: led_matrix {
+		compatible = "nordic,nrf-led-matrix";
+		status = "okay";
+		width = <5>;
+		height = <5>;
+		pixel-mapping = [00 01 02 03 04
+				 10 11 12 13 14
+				 20 21 22 23 24
+				 30 31 32 33 34
+				 40 41 42 43 44];
+		row-gpios = <&gpio0 21 GPIO_ACTIVE_HIGH>,
+			    <&gpio0 22 GPIO_ACTIVE_HIGH>,
+			    <&gpio0 15 GPIO_ACTIVE_HIGH>,
+			    <&gpio0 24 GPIO_ACTIVE_HIGH>,
+			    <&gpio0 19 GPIO_ACTIVE_HIGH>;
+		col-gpios = <&gpio0 28 GPIO_ACTIVE_LOW>,
+			    <&gpio0 11 GPIO_ACTIVE_LOW>,
+			    <&gpio0 31 GPIO_ACTIVE_LOW>,
+			    <&gpio1  5 GPIO_ACTIVE_LOW>,
+			    <&gpio0 30 GPIO_ACTIVE_LOW>;
+		refresh-frequency = <50>;
+		timer = <&timer4>;
+		pwm = <&pwm0>;
+		pixel-group-size = <4>;
+	};
+
+	edge_connector: connector {
+		compatible = "microbit,edge-connector";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0 0 &gpio0 2 0>,	/* P0 */
+			   <1 0 &gpio0 3 0>,	/* P1 */
+			   <2 0 &gpio0 4 0>,	/* P2 */
+			   <3 0 &gpio0 31 0>,	/* P3 */
+			   <4 0 &gpio0 28 0>,	/* P4 */
+			   <5 0 &gpio0 14 0>,	/* P5 */
+			   <6 0 &gpio1 5 0>,	/* P6 */
+			   <7 0 &gpio0 11 0>,	/* P7 */
+			   <8 0 &gpio0 10 0>,	/* P8 */
+			   <9 0 &gpio0 9 0>,	/* P9 */
+			   <10 0 &gpio0 30 0>,	/* P10 */
+			   <11 0 &gpio0 23 0>,	/* P11 */
+			   <12 0 &gpio0 12 0>,	/* P12 */
+			   <13 0 &gpio0 17 0>,	/* P13 */
+			   <14 0 &gpio0 1 0>,	/* P14 */
+			   <15 0 &gpio0 13 0>,	/* P15 */
+			   <16 0 &gpio1 2 0>,	/* P16 */
+			   <19 0 &gpio0 26 0>,	/* P19 */
+			   <20 0 &gpio1 0 0>;	/* P20 */
+	};
+};
+
+&gpiote {
+	status = "okay";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&uart0 {
+	compatible = "nordic,nrf-uart";
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-1 = <&uart0_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&i2c0 {
+	compatible = "nordic,nrf-twim";
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+
+	/* See https://tech.microbit.org/hardware/i2c/ for board variants */
+
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-1 = <&i2c0_sleep>;
+	pinctrl-names = "default", "sleep";
+	lsm303agr_magn: lsm303agr-magn@1e {
+		compatible = "st,lis2mdl", "st,lsm303agr-magn";
+		status = "okay";
+		reg = <0x1e>;
+		irq-gpios = <&gpio0 25 GPIO_ACTIVE_HIGH>;	/* A3 */
+	};
+
+	lsm303agr_accel: lsm303agr-accel@19 {
+		compatible = "st,lis2dh", "st,lsm303agr-accel";
+		status = "okay";
+		reg = <0x19>;
+		irq-gpios = <&gpio0 25 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&flash0 {
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 0xC000>;
+		};
+		slot0_partition: partition@c000 {
+			label = "image-0";
+			reg = <0x0000C000 0x32000>;
+		};
+		slot1_partition: partition@3e000 {
+			label = "image-1";
+			reg = <0x0003E000 0x32000>;
+		};
+		scratch_partition: partition@70000 {
+			label = "image-scratch";
+			reg = <0x00070000 0xA000>;
+		};
+		storage_partition: partition@7a000 {
+			label = "storage";
+			reg = <0x0007A000 0x00006000>;
+		};
+	};
+};
+
+zephyr_udc0: &usbd {
+	compatible = "nordic,nrf-usbd";
+	status = "okay";
+};

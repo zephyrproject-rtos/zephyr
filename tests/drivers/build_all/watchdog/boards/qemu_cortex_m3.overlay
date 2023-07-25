@@ -1,0 +1,15 @@
+/*
+ * Copyright © 2023 Calian Ltd.  All rights reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+ / {
+    watchdog: watchdog@88888888 {
+	compatible = "xlnx,xps-timebase-wdt-1.00.a";
+	reg = <0x88888888 0x10000>;
+	clocks = <&sysclk>;
+	xlnx,wdt-interval = <31>;
+	xlnx,wdt-enable-once = <1>;
+    };
+};

@@ -1,0 +1,14 @@
+sample:
+  name: CAN bus babbling node
+tests:
+  sample.drivers.can.babbling:
+    tags: can
+    depends_on: can
+    filter: dt_chosen_enabled("zephyr,canbus")
+    integration_platforms:
+      - native_posix
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "babbling on .*"

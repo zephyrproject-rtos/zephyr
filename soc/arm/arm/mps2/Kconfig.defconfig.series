@@ -1,0 +1,14 @@
+# Copyright (c) 2017 Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_MPS2
+
+config SOC_SERIES
+	default "mps2"
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 25000000
+
+source "soc/arm/arm/mps2/Kconfig.defconfig.mps2*"
+
+endif # SOC_SERIES_MPS2

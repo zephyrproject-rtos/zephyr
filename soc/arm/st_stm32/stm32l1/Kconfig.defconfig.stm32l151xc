@@ -1,0 +1,15 @@
+# ST Microelectronics STM32L151XC MCU
+
+# Copyright (c) 2020 Abel Sensors
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_STM32L151XC
+
+config SOC
+	default "stm32l151xc"
+
+# Based on stm32cube number of interrupts+1, not datasheet
+config NUM_IRQS
+	default 57
+
+endif # SOC_STM32L151XC

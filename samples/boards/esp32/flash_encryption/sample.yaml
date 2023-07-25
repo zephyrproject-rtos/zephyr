@@ -1,0 +1,7 @@
+sample:
+  description: Sample application to test ESP32 flash encryption
+  name: flash_encryption
+tests:
+  sample.board.esp32:
+    platform_allow: esp32
+    tags: esp32

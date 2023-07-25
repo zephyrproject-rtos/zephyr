@@ -1,0 +1,14 @@
+identifier: nucleo_g031k8
+name: ST Nucleo G031K8
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - gpio
+  - i2c
+  - spi
+ram: 8
+flash: 64

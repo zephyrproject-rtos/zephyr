@@ -1,0 +1,117 @@
+# Copyright (c) 2017 Intel Corporation
+# Copyright (c) 2018 Phytec Messtechnik GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig APDS9960
+	bool "APDS9960 Sensor"
+	default y
+	depends on DT_HAS_AVAGO_APDS9960_ENABLED
+	select I2C
+	help
+	  Enable driver for APDS9960 sensors.
+
+if APDS9960
+
+choice
+	prompt "Trigger mode"
+	default APDS9960_TRIGGER_NONE
+	help
+	  Specify the type of triggering used by the driver.
+
+config APDS9960_TRIGGER_NONE
+	bool "No trigger"
+
+config APDS9960_TRIGGER_GLOBAL_THREAD
+	bool "Use global thread"
+	depends on GPIO
+	select APDS9960_TRIGGER
+
+endchoice
+
+config APDS9960_TRIGGER
+	bool
+
+config APDS9960_ENABLE_ALS
+	bool "Ambient Light Sense"
+	default y
+	help
+	  Enable Ambient Light Sense (ALS).
+
+choice
+	prompt "Proximity Gain"
+	default APDS9960_PGAIN_4X
+
+config APDS9960_PGAIN_1X
+	bool "1x"
+
+config APDS9960_PGAIN_2X
+	bool "2x"
+
+config APDS9960_PGAIN_4X
+	bool "4x"
+
+config APDS9960_PGAIN_8X
+	bool "8x"
+
+endchoice
+
+choice
+	prompt "ALS and Color Gain"
+	default APDS9960_AGAIN_4X
+
+config APDS9960_AGAIN_1X
+	bool "1x"
+
+config APDS9960_AGAIN_4X
+	bool "4x"
+
+config APDS9960_AGAIN_16X
+	bool "16x"
+
+config APDS9960_AGAIN_64X
+	bool "64x"
+
+endchoice
+
+choice
+	prompt "Proximity Pulse Length"
+	default APDS9960_PPULSE_LENGTH_8US
+
+config APDS9960_PPULSE_LENGTH_4US
+	bool "4us"
+
+config APDS9960_PPULSE_LENGTH_8US
+	bool "8us"
+
+config APDS9960_PPULSE_LENGTH_16US
+	bool "16us"
+
+config APDS9960_PPULSE_LENGTH_32US
+	bool "32us"
+
+endchoice
+
+choice
+	prompt "Proximity LED boost current"
+	default APDS9960_PLED_BOOST_100PCT
+
+config APDS9960_PLED_BOOST_300PCT
+	bool "300%"
+
+config APDS9960_PLED_BOOST_200PCT
+	bool "200%"
+
+config APDS9960_PLED_BOOST_150PCT
+	bool "150%"
+
+config APDS9960_PLED_BOOST_100PCT
+	bool "100%"
+
+endchoice
+
+config APDS9960_PPULSE_COUNT
+	int "Proximity Pulse Count"
+	range 1 64
+	default 8
+
+endif # APDS9960

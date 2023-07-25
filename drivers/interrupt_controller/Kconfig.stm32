@@ -1,0 +1,15 @@
+# STM32 EXTI configuration
+
+# Copyright (c) 2016 Open-RnD Sp. z o.o.
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_FAMILY_STM32
+
+config EXTI_STM32
+	bool "External Interrupt/Event Controller (EXTI) Driver for STM32 family of MCUs"
+	default y
+	depends on DT_HAS_ST_STM32_EXTI_ENABLED
+	help
+	  Enable EXTI driver for STM32 line of MCUs
+
+endif # SOC_FAMILY_STM32

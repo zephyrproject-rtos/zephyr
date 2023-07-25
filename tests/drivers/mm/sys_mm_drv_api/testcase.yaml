@@ -1,0 +1,8 @@
+tests:
+  drivers.mm.sys_mm_drv_api:
+    tags:
+      - drivers
+      - mm
+    filter: dt_compat_enabled("intel,adsp-mtl-tlb") or dt_compat_enabled("intel,adsp-tlb")
+    integration_platforms:
+      - intel_adsp_ace15_mtpm

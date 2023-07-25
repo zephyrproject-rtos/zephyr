@@ -1,0 +1,14 @@
+# Atmel SAM UART configuration options
+
+# Copyright (c) 2017 Piotr Mienkowski
+# Copyright (c) 2018 Justin Watson
+# SPDX-License-Identifier: Apache-2.0
+
+config UART_SAM
+	bool "Atmel SAM MCU family UART driver"
+	default y
+	depends on DT_HAS_ATMEL_SAM_UART_ENABLED
+	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
+	help
+	  This option enables the UARTx driver for Atmel SAM MCUs.

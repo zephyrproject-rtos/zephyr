@@ -1,0 +1,11 @@
+# Board configuration
+
+# Copyright (c) 2019 eTactica ehf
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_STM32L1_DISCO
+
+config BOARD
+	default "stm32l1_disco"
+
+endif # BOARD_STM32L1_DISCO

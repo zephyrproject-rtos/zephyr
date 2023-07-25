@@ -1,0 +1,11 @@
+# NXP LPC54114 platform configuration options
+
+# Copyright (c) 2017, NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_LPC54114_M4
+
+config SOC
+	default "lpc54114"
+
+endif # SOC_LPC54114_M4

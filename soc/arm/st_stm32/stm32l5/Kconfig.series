@@ -1,0 +1,20 @@
+# ST Microelectronics STM32L5 MCU series
+
+# Copyright (c) 2020 Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_STM32L5X
+	bool "STM32L5x Series MCU"
+	select ARM
+	select CPU_CORTEX_M33
+	select SOC_FAMILY_STM32
+	select ARM_TRUSTZONE_M
+	select CPU_HAS_ARM_SAU
+	select CPU_HAS_ARM_MPU
+	select CPU_HAS_FPU
+	select ARMV8_M_DSP
+	select CPU_CORTEX_M_HAS_DWT
+	select HAS_STM32CUBE
+	select HAS_PM
+	help
+	  Enable support for STM32L5 MCU series

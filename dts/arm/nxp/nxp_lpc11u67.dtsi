@@ -1,0 +1,20 @@
+/*
+ * Copyright (c) 2020, Seagate
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <nxp/nxp_lpc11u6x.dtsi>
+
+/ {
+	sram0: memory@10000000 {
+		reg = <0x10000000 DT_SIZE_K(16)>;
+	};
+
+	soc {
+		flash0: flash@0 {
+			reg = <0 DT_SIZE_K(128)>;
+		};
+	};
+};

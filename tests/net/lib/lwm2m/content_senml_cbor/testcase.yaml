@@ -1,0 +1,9 @@
+tests:
+  net.lwm2m.content_senml_cbor:
+    platform_key:
+      - simulation
+    tags:
+      - lwm2m
+      - net
+    integration_platforms:
+      - native_posix

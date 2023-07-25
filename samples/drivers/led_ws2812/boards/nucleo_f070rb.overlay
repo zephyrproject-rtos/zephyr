@@ -1,0 +1,45 @@
+/*
+ * Copyright (c) 2021 Seagate Technology LLC
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/led/led.h>
+
+#include "../f070rb-bindings.h"
+
+&spi1 { /* MOSI on PA7 */
+	dmas = <&dma1 3 (STM32_DMA_PERIPH_TX | STM32_DMA_PRIORITY_HIGH)>,
+		<&dma1 2 (STM32_DMA_PERIPH_RX | STM32_DMA_PRIORITY_HIGH)>;
+	dma-names = "tx", "rx";
+
+	led_strip: b1414@0 {
+		compatible = "everlight,b1414", "worldsemi,ws2812-spi";
+
+		/* SPI */
+		reg = <0>; /* ignored, but necessary for SPI bindings */
+		spi-max-frequency = <B1414_SPI_FREQ>;
+		frame-format = <32768>; /* SPI_FRAME_FORMAT_TI */
+
+		/* B1414 */
+		chain-length = <18>; /* arbitrary; change at will */
+		spi-one-frame = <B1414_ONE_FRAME>;
+		spi-zero-frame = <B1414_ZERO_FRAME>;
+		color-mapping = <LED_COLOR_ID_BLUE
+				 LED_COLOR_ID_GREEN
+				 LED_COLOR_ID_RED>;
+
+		reset-delay = <250>;
+		status = "okay";
+	};
+};
+
+&dma1 {
+	status = "okay";
+};
+
+/ {
+	aliases {
+		led-strip = &led_strip;
+	};
+};

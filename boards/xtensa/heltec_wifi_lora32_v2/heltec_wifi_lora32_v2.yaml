@@ -1,0 +1,16 @@
+identifier: heltec_wifi_lora32_v2
+name: HELTEC WiFi LoRa 32 (V2) Board
+type: mcu
+arch: xtensa
+toolchain:
+  - zephyr
+supported:
+  - gpio
+  - i2c
+  - watchdog
+  - uart
+  - nvs
+testing:
+  ignore_tags:
+    - net
+    - bluetooth

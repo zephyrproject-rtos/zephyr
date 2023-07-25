@@ -1,0 +1,17 @@
+# Copyright (c) 2019 Derek Hageman <hageman@inthat.cloud>
+# SPDX-License-Identifier: Apache-2.0
+
+description: Generic fixed-rate clock provider
+
+compatible: "fixed-clock"
+
+include: clock-controller.yaml
+
+properties:
+  clock-frequency:
+    type: int
+    description: output clock frequency (Hz)
+    required: true
+
+  "#clock-cells":
+    const: 0

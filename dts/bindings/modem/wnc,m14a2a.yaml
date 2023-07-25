@@ -1,0 +1,33 @@
+# Copyright (c) 2018, Foundries.io
+# SPDX-License-Identifier: Apache-2.0
+
+description: WNC-M14A2A LTE-M modem
+
+compatible: "wnc,m14a2a"
+
+include: uart-device.yaml
+
+properties:
+  mdm-boot-mode-sel-gpios:
+    type: phandle-array
+    required: true
+
+  mdm-power-gpios:
+    type: phandle-array
+    required: true
+
+  mdm-keep-awake-gpios:
+    type: phandle-array
+    required: true
+
+  mdm-reset-gpios:
+    type: phandle-array
+    required: true
+
+  mdm-shld-trans-ena-gpios:
+    type: phandle-array
+    required: true
+
+  mdm-send-ok-gpios:
+    type: phandle-array
+    description: UART RTS pin if no HW flow control (set to always enabled)

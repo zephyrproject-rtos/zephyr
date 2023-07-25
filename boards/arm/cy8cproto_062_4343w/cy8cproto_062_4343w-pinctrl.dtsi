@@ -1,0 +1,30 @@
+/*
+ * Copyright (c) 2022, Rtone.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Configure pin control bias mode for uart2 pins */
+&p3_1_scb2_uart_tx {
+	drive-push-pull;
+};
+
+&p3_0_scb2_uart_rx {
+	input-enable;
+};
+
+&p3_2_scb2_uart_rts {
+	drive-push-pull;
+};
+
+&p3_3_scb2_uart_cts {
+	input-enable;
+};
+
+/* Configure pin control bias mode for uart5 pins */
+&p5_1_scb5_uart_tx {
+	drive-push-pull;
+};
+
+&p5_0_scb5_uart_rx {
+	input-enable;
+};

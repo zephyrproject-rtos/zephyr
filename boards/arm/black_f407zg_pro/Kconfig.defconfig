@@ -1,0 +1,15 @@
+# black_f407zg board configuration
+
+# Copyright (c) 2020 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_BLACK_F407ZG_PRO
+
+config BOARD
+	default "black_f407zg_pro"
+
+config SPI_STM32_INTERRUPT
+	default y
+	depends on SPI
+
+endif # BOARD_BLACK_F407ZG_PRO

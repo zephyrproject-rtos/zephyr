@@ -1,0 +1,9 @@
+common:
+  tags:
+    - adc
+    - drivers
+    - userspace
+tests:
+  drivers.adc:
+    depends_on: adc
+    min_flash: 40

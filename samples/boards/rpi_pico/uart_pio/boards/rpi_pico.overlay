@@ -1,0 +1,45 @@
+&pinctrl {
+	pio1_uart0_default: pio1_uart0_default {
+		rx_pins {
+			pinmux = <PIO1_P1>;
+			input-enable;
+			bias-pull-up;
+		};
+		tx_pins {
+			pinmux = <PIO1_P0>;
+		};
+	};
+
+	pio1_uart1_default: pio1_uart1_default {
+		rx_pins {
+			pinmux = <PIO1_P2>;
+			input-enable;
+			bias-pull-up;
+		};
+		tx_pins {
+			pinmux = <PIO1_P3>;
+		};
+	};
+};
+
+&pio1 {
+ 	status = "okay";
+
+	pio1_uart0: uart0 {
+		pinctrl-0 = <&pio1_uart0_default>;
+		pinctrl-names = "default";
+
+		compatible = "raspberrypi,pico-uart-pio";
+		current-speed = <115200>;
+		status = "okay";
+	};
+
+	pio1_uart1: uart1 {
+		pinctrl-0 = <&pio1_uart1_default>;
+		pinctrl-names = "default";
+
+		compatible = "raspberrypi,pico-uart-pio";
+		current-speed = <115200>;
+		status = "okay";
+	};
+};

@@ -1,0 +1,195 @@
+# IA32-specific X86 subarchitecture options
+
+# Copyright (c) 2019 Intel Corp.
+# SPDX-License-Identifier: Apache-2.0
+
+if !X86_64
+
+config NESTED_INTERRUPTS
+	bool "Nested interrupts"
+	default y
+	help
+	  This option enables support for nested interrupts.
+
+menu "Memory Layout Options"
+
+config IDT_NUM_VECTORS
+	int "Number of IDT vectors"
+	default 256
+	range 32 256
+	help
+	  This option specifies the number of interrupt vector entries in the
+	  Interrupt Descriptor Table (IDT). By default all 256 vectors are
+	  supported in an IDT requiring 2048 bytes of memory.
+
+config SET_GDT
+	bool "Setup GDT as part of boot process"
+	default y
+	help
+	  This option sets up the GDT as part of the boot process. However,
+	  this may conflict with some security scenarios where the GDT is
+	  already appropriately set by an earlier bootloader stage, in which
+	  case this should be disabled. If disabled, the global _gdt pointer
+	  will not be available.
+
+config GDT_DYNAMIC
+	bool "Store GDT in RAM so that it can be modified"
+	depends on SET_GDT
+	help
+	  This option stores the GDT in RAM instead of ROM, so that it may
+	  be modified at runtime at the expense of some memory.
+
+config GDT_RESERVED_NUM_ENTRIES
+	int "Number of reserved GDT entry place holders"
+	depends on GDT_DYNAMIC
+	default 0
+	help
+	  This option defines the number of GDT entry place holders revserved
+	  that can be filled at runtime.
+
+endmenu
+
+menu "Processor Capabilities"
+
+config X86_ENABLE_TSS
+	bool
+	help
+	  This hidden option enables defining a Task State Segment (TSS) for
+	  kernel execution. This is needed to handle double-faults or
+	  do privilege elevation. It also defines a special TSS and handler
+	  for correctly handling double-fault exceptions, instead of just
+	  letting the system triple-fault and reset.
+
+config X86_STACK_PROTECTION
+	bool
+	default y if HW_STACK_PROTECTION
+	select THREAD_STACK_INFO
+	select SET_GDT
+	select GDT_DYNAMIC
+	select X86_ENABLE_TSS
+	help
+	  This option leverages the MMU to cause a system fatal error if the
+	  bounds of the current process stack are overflowed. This is done
+	  by preceding all stack areas with a 4K guard page.
+
+config X86_USERSPACE
+	bool
+	default y if USERSPACE
+	select THREAD_STACK_INFO
+	select SET_GDT
+	select GDT_DYNAMIC
+	select X86_ENABLE_TSS
+	help
+	  This option enables APIs to drop a thread's privileges down to ring 3,
+	  supporting user-level threads that are protected from each other and
+	  from crashing the kernel.
+
+config X86_PAE
+	bool "Use PAE page tables"
+	default y
+	depends on X86_MMU
+	help
+	  If enabled, use PAE-style page tables instead of 32-bit page tables.
+	  The advantage is support for the Execute Disable bit, at a cost of
+	  more memory for paging structures.
+
+menu "Architecture Floating Point Options"
+
+if CPU_HAS_FPU
+
+config SSE
+	bool "SSE registers"
+	depends on FPU
+	select X86_SSE
+	help
+	  This option is deprecated. Please use CONFIG_X86_SSE instead.
+
+config SSE_FP_MATH
+	bool "Compiler-generated SSEx instructions"
+	depends on X86_SSE
+	select X86_SSE_FP_MATH
+	help
+	  This option is deprecated. Please use CONFIG_X86_SSE_FP_MATH instead.
+
+config EAGER_FPU_SHARING
+	bool
+	depends on FPU
+	depends on USERSPACE
+	default y if !X86_NO_LAZY_FP
+	help
+	  This hidden option unconditionally saves/restores the FPU/SIMD
+	  register state on every context switch.
+
+	  Mitigates CVE-2018-3665, but incurs a performance hit.
+
+	  For vulnerable systems that process sensitive information in the
+	  FPU register set, should be used any time CONFIG_FPU is
+	  enabled, regardless if the FPU is used by one thread or multiple.
+
+config LAZY_FPU_SHARING
+	bool
+	depends on FPU
+	depends on !EAGER_FPU_SHARING
+	depends on FPU_SHARING
+	default y if X86_NO_LAZY_FP || !USERSPACE
+	help
+	  This hidden option allows multiple threads to use the floating point
+	  registers, using logic to lazily save/restore the floating point
+	  register state on context switch.
+
+	  On Intel Core processors, may be vulnerable to exploits which allows
+	  malware to read the contents of all floating point registers, see
+	  CVE-2018-3665.
+
+endif # CPU_HAS_FPU
+
+config X86_FP_USE_SOFT_FLOAT
+	bool
+	default y if !FPU
+	help
+	  Enable using software floating point operations.
+
+endmenu
+
+config X86_DYNAMIC_IRQ_STUBS
+	int "Number of dynamic interrupt stubs"
+	depends on DYNAMIC_INTERRUPTS
+	default 4
+	help
+	  Installing interrupt handlers with irq_connect_dynamic() requires
+	  some stub code to be generated at build time, one stub per dynamic
+	  interrupt.
+
+endmenu
+
+config X86_EXCEPTION_STACK_TRACE
+	bool
+	default y
+	depends on EXCEPTION_STACK_TRACE
+	help
+	  Internal config to enable runtime stack traces on fatal exceptions.
+
+config X86_USE_THREAD_LOCAL_STORAGE
+	bool
+	default y if THREAD_LOCAL_STORAGE
+	select SET_GDT
+	select GDT_DYNAMIC
+	help
+	  Internal config to enable thread local storage.
+
+config X86_MFENCE_INSTRUCTION_SUPPORTED
+	bool "X86 MFENCE instruction supported"
+	default y
+	depends on CACHE_MANAGEMENT
+	help
+	  Set n to disable the use of MFENCE instruction in arch_dcache_flush()
+	  for X86 CPUs have CLFLUSH instruction but no MFENCE
+
+config X86_RUNTIME_IRQ_STATS
+	bool
+	help
+	  Add irq runtime statistics to allow runtime profiling irq performance
+	  data with Host tools, enable this and implement platform dependent API
+	  runtime_irq_stats().
+
+endif # !X86_64

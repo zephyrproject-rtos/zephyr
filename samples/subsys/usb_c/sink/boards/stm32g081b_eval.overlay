@@ -1,0 +1,38 @@
+/*
+ * Copyright (c) 2022 The Chromium OS Authors.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ */
+
+#include <dt-bindings/usb-c/pd.h>
+
+/ {
+	vbus1: vbus {
+		compatible = "zephyr,usb-c-vbus-adc";
+		io-channels = <&adc1 9>;
+		output-ohms = <49900>;
+		full-ohms = <(330000 + 49900)>;
+
+		/* Pin B13 is used to control VBUS Discharge for Port1 */
+		discharge-gpios = <&gpiob 13 GPIO_ACTIVE_HIGH>;
+	};
+
+	ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		port1: usbc-port@1 {
+			compatible = "usb-c-connector";
+			reg = <1>;
+			tcpc = <&ucpd1>;
+			vbus = <&vbus1>;
+			power-role = "sink";
+			sink-pdos = <PDO_FIXED(5000, 100, 0)>;
+		};
+	};
+};
+
+&ucpd1 {
+	dead-battery;
+};

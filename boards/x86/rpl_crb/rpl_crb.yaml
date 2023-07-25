@@ -1,0 +1,17 @@
+identifier: rpl_crb
+name: Raptor Lake CRB
+type: mcu
+arch: x86
+toolchain:
+  - zephyr
+ram: 2048
+supported:
+  - smp
+  - smbus
+  - watchdog
+  - rtc
+  - pwm
+testing:
+  ignore_tags:
+    - net
+    - bluetooth

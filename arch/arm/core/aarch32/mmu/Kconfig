@@ -1,0 +1,35 @@
+#
+# ARMv7 Memory Management Unit (MMU) configuration options
+#
+# Copyright (c) 2021 Weidmueller Interface GmbH & Co. KG
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if CPU_HAS_MMU
+
+config ARM_AARCH32_MMU
+	bool "ARMv7 Cortex-A MMU Support"
+	default y if CPU_AARCH32_CORTEX_A
+	select MMU
+	select SRAM_REGION_PERMISSIONS
+	select THREAD_STACK_INFO
+	select ARCH_HAS_EXECUTABLE_PAGE_BIT
+	help
+	  The current CPU has an ARMv7 Memory Management Unit.
+
+config ARM_MMU_NUM_L2_TABLES
+	depends on ARM_AARCH32_MMU
+	int "Number of L2 translation tables available to the MMU"
+	default 64
+	help
+	  Number of level 2 translation tables. Each level 2 table
+	  covers 1 MB of address space.
+
+config ARM_MMU_REGION_MIN_ALIGN_AND_SIZE
+	int
+	default 4096
+	help
+	  Minimum size (and alignment) of an ARM MMU page.
+	  This value should not be modified.
+
+endif # CPU_HAS_MMU

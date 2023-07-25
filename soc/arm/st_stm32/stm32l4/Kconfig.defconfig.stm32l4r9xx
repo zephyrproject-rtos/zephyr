@@ -1,0 +1,14 @@
+# ST Microelectronics STM32L4R9xx MCU
+
+# Copyright (c) 2019 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_STM32L4R9XX
+
+config SOC
+	default "stm32l4r9xx"
+
+config NUM_IRQS
+	default 95
+
+endif # SOC_STM32L4R9XX

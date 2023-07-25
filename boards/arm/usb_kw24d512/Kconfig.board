@@ -1,0 +1,9 @@
+# USB-KW24D512 board
+
+# Copyright (c) 2017, Phytec Messtechnik GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_USB_KW24D512
+	bool "NXP USB-KW24D512"
+	depends on SOC_SERIES_KINETIS_KWX
+	select SOC_PART_NUMBER_MKW24D512VHA5

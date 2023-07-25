@@ -1,0 +1,27 @@
+#
+# Copyright (c) 2022 Nordic Semiconductor
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig UVB
+	bool
+	prompt "USB virtual bus"
+	help
+	  USB virtual bus service intended for use by virtual UDC
+	  and UHC controllers.
+
+if UVB
+
+config UVB_MAX_MESSAGES
+	int "Maximum number of messages allocatable"
+	range 4 256
+	default 16
+	help
+	  Maximum number of messages allocatable.
+
+module = UVB
+module-str = USB virtual bus service
+source "${ZEPHYR_BASE}/subsys/logging/Kconfig.template.log_config"
+
+endif # UVB

@@ -1,0 +1,8 @@
+# Copyright (c) 2018, Jan Van Winkel <jan.van_winkel@dxplore.eu>
+# SPDX-License-Identifier: Apache-2.0
+
+description: TE Connectivity MS5837 digital pressure sensor
+
+compatible: "meas,ms5837"
+
+include: [sensor-device.yaml, i2c-device.yaml]

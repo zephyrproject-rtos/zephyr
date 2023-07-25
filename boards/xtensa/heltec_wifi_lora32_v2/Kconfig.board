@@ -1,0 +1,8 @@
+# HELTEC ESP32 board configuration
+
+# Copyright (c) 2021 Instituto de Pesquisas Eldorado (eldorado.org.br)
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_HELTEC_WIFI_LORA32
+	bool "HELTEC WiFi LoRa 32 (V2) Board"
+	depends on SOC_ESP32

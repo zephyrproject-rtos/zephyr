@@ -1,0 +1,50 @@
+#
+# Copyright 2022 Pete Dietl <petedietl@gmail.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: |
+  Maxim MAX31875 Low-Power I2C Temperature Sensor.
+  Find the datasheet here:
+  https://datasheets.maximintegrated.com/en/ds/MAX31875.pdf
+
+compatible: "maxim,max31875"
+
+include: [sensor-device.yaml, i2c-device.yaml]
+
+properties:
+  conversions-per-second:
+    description: |
+      Number of temperature readings performed by the MAX31875 per second.
+      0.25 converions per second is the power-on reset configuration.
+    type: string
+    default: "0.25"
+    # Note: the driver relies on the ordering of this enum,
+    # so change it with care.
+    enum:
+      - "0.25"
+      - "1"
+      - "4"
+      - "8"
+  extended-mode:
+    description: |
+      When true, use 13-bit data format to allow for measuring
+      temperatures > 128°C
+    type: boolean
+  resolution:
+    description: |
+      The number of bits used for each temperature sample.
+      A resolution of 10 bits takes 35ms to convert.
+      Each 1-bit increase doubles the conversion time.
+      Similarly, each 1-bit decrease halves the conversion time.
+      10 bits of resolution is the power-on reset configuration.
+    type: int
+    default: 10
+    # Note: the driver relies on the ordering of this enum,
+    # so change it with care.
+    enum:   # Conversion time (ms)
+      - 8   # 8.75
+      - 9   # 17.5
+      - 10  # 35
+      - 12  # 140

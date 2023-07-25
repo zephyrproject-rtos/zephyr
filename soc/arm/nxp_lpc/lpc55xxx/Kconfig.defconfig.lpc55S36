@@ -1,0 +1,18 @@
+# NXP LPC55S36 platform configuration options
+
+# Copyright 2022 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_LPC55S36
+
+config SOC
+	default "lpc55S36"
+
+choice USB_MCUX_CONTROLLER_TYPE
+	default USB_DC_NXP_LPCIP3511
+endchoice
+
+config LPC55XXX_USB_RAM
+	default n
+
+endif # SOC_LPC55S36

@@ -1,0 +1,12 @@
+tests:
+  bluetooth.addr:
+    platform_allow:
+      - native_posix
+      - native_posix_64
+      - qemu_x86
+      - qemu_cortex_m3
+    tags:
+      - bluetooth
+      - addr
+    integration_platforms:
+      - native_posix

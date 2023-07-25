@@ -1,0 +1,11 @@
+# Copyright (c) 2021, Teslabs Engineering S.L.
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_GD32F4XX
+
+source "soc/arm/gigadevice/gd32f4xx/Kconfig.defconfig.gd32*"
+
+config SOC_SERIES
+	default "gd32f4xx"
+
+endif # SOC_SERIES_GD32F4XX

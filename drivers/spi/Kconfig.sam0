@@ -1,0 +1,12 @@
+# Atmel SAM0 SERCOM SPI
+
+# Copyright (c) 2017 Google LLC.
+# SPDX-License-Identifier: Apache-2.0
+
+config SPI_SAM0
+	bool "Atmel SAM0 series SERCOM SPI driver"
+	default y
+	depends on DT_HAS_ATMEL_SAM0_SPI_ENABLED
+	select DMA if SPI_ASYNC
+	help
+	  Enable support for the SAM0 SERCOM SPI driver.

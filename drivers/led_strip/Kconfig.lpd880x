@@ -1,0 +1,16 @@
+# Copyright (c) 2017 Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+config LPD880X_STRIP
+	bool "LPD880x SPI LED strip driver"
+	depends on SPI
+	help
+	  Enable LED strip driver for daisy chains of LPD880x
+	  (LPD8803, LPD8806, or compatible) devices.
+
+	  Each LPD880x LED driver chip has some output channels
+	  (3 channels for LPD8803, 6 for LPD8806), whose PWM
+	  duty cycle can be set at 7 bit resolution via a
+	  reduced SPI interface (MOSI and CLK lines only).
+	  Each chip also includes data and clock out pins for
+	  daisy chaining LED strips.

@@ -1,0 +1,12 @@
+/*
+ * Copyright (c) 2020, Sven Herrmann
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&twi0 {
+    mpr@18 {
+        compatible = "honeywell,mpr";
+        reg = <0x18>;
+    };
+};

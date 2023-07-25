@@ -1,0 +1,10 @@
+# Xtensa board configuration
+
+# Copyright (c) 2021 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_NXP_ADSP_IMX8M
+	bool "NXP i.MX8M Plus EVK Audio DSP"
+	depends on SOC_SERIES_NXP_IMX8M
+	select SOC_PART_NUMBER_MIMX8ML8DVNLZ
+	select SOC_PART_NUMBER_MIMX8ML8CVNKZ

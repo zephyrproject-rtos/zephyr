@@ -1,0 +1,12 @@
+sample:
+  description: This app provides an example of how to integrate OpenAMP with Zephyr.
+  name: OpenAMP example integration (remote)
+tests:
+  sample.ipc.openamp.remote:
+    platform_allow:
+      - lpcxpresso54114_m0
+      - lpcxpresso55s69_cpu1
+    integration_platforms:
+      - lpcxpresso54114_m0
+    tags: ipm
+    harness: remote

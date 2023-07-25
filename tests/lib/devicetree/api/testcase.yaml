@@ -1,0 +1,12 @@
+tests:
+  libraries.devicetree.api:
+    tags: devicetree
+    # We only need this to run on one platform so use native_posix as it
+    # will mostly likely be the fastest.
+    platform_allow:
+      - native_posix
+      - qemu_x86
+      - qemu_x86_64
+      - qemu_cortex_m3
+    integration_platforms:
+      - native_posix

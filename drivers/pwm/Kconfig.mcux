@@ -1,0 +1,11 @@
+# STM32 PWM configuration options
+
+# Copyright (c) 2019 Linaro Limited.
+# SPDX-License-Identifier: Apache-2.0
+
+config PWM_MCUX
+	bool "MCUX PWM driver"
+	default y
+	depends on DT_HAS_NXP_IMX_PWM_ENABLED
+	help
+	  Enable mcux pwm driver.

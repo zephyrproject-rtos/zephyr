@@ -1,0 +1,13 @@
+# Copyright (C) 2021 metraTec GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+description: Simcom Sim7080 modem
+
+compatible: "simcom,sim7080"
+
+include: uart-device.yaml
+
+properties:
+  mdm-power-gpios:
+    type: phandle-array
+    required: true

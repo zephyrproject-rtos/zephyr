@@ -1,0 +1,93 @@
+/*
+ * Copyright (c) 2021 Nuvoton Technology Corporation.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Common pin-mux configurations in npcx family */
+#include <nuvoton/npcx/npcx-alts-map.dtsi>
+
+/* Specific pin-mux configurations in npcx9 series */
+/ {
+	npcx-alts-map {
+		compatible = "nuvoton,npcx-pinctrl-conf";
+
+		/* SCFG DEVALT 0 */
+		alt0_f_spi_cs1: alt04 {
+			alts = <&scfg 0x00 0x4 0>;
+		};
+		alt0_f_spi_quad: alt06 {
+			alts = <&scfg 0x00 0x6 0>;
+		};
+
+		/* SCFG DEVALT 5 */
+		alt5_jen_lk: alt51 {
+			alts = <&scfg 0x05 0x1 0>;
+		};
+
+		/* SCFG DEVALT E */
+		alte_cr_sin4_sl: alte6 {
+			alts = <&scfg 0x0E 0x6 0>;
+		};
+		alte_cr_sout4_sl: alte7 {
+			alts = <&scfg 0x0E 0x7 0>;
+		};
+
+		/* SCFG DEVALT F */
+		altf_adc10_sl: altf5 {
+			alts = <&scfg 0x0F 0x5 0>;
+		};
+		altf_adc11_sl: altf6 {
+			alts = <&scfg 0x0F 0x6 0>;
+		};
+
+		/* SCFG DEVALT G */
+		altg_vcc1_rst_pud: altg4 {
+			alts = <&scfg 0x10 0x4 0>;
+		};
+		altg_vcc1_rst_pud_lk: altg5 {
+			alts = <&scfg 0x10 0x5 0>;
+		};
+		altg_psl_out_sl: altg6 {
+			alts = <&scfg 0x10 0x6 0>;
+		};
+		altg_psl_gpo_sl: altg7 {
+			alts = <&scfg 0x10 0x7 0>;
+		};
+
+		/* SCFG DEVALT H */
+		alth_i3c_sl: alth1 {
+			alts = <&scfg 0x11 0x1 0>;
+		};
+
+		/*
+		 * Note: DEVALT I is skipped in the datasheet, the offset of
+		 * DEVALT J is 0x12 not 0x13.
+		 */
+		/* SCFG DEVALT J */
+		altj_cr_sin1_sl1: altj0 {
+			alts = <&scfg 0x12 0x0 0>;
+		};
+		altj_cr_sout1_sl1: altj1 {
+			alts = <&scfg 0x12 0x1 0>;
+		};
+		altj_cr_sin1_sl2:  altj2 {
+			alts = <&scfg 0x12 0x2 0>;
+		};
+		altj_cr_sout1_sl2: altj3 {
+			alts = <&scfg 0x12 0x3 0>;
+		};
+		altj_cr_sin2_sl: altj4 {
+			alts = <&scfg 0x12 0x4 0>;
+		};
+		altj_cr_sout2_sl: altj5 {
+			alts = <&scfg 0x12 0x5 0>;
+		};
+		altj_cr_sin3_sl: altj6 {
+			alts = <&scfg 0x12 0x6 0>;
+		};
+		altj_cr_sout3_sl: altj7 {
+			alts = <&scfg 0x12 0x7 0>;
+		};
+	};
+};

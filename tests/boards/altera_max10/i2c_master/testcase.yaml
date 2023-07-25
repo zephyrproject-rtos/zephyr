@@ -1,0 +1,4 @@
+tests:
+  boards.altera_max10.i2c_master:
+    platform_allow: altera_max10
+    tags: i2c

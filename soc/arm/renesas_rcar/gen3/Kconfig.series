@@ -1,0 +1,13 @@
+# Copyright (c) 2021 IoT.bzh
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_RCAR_GEN3
+	bool "Renesas RCAR Gen3 Cortex R7"
+	select ARM
+	select CPU_CORTEX_R7
+	select PLATFORM_SPECIFIC_INIT
+	select CPU_HAS_DCLS
+	select SOC_FAMILY_RCAR
+	select CLOCK_CONTROL_RCAR_CPG_MSSR if CLOCK_CONTROL
+	help
+	  Enable support for Renesas RCar Gen3 SoC series

@@ -1,0 +1,12 @@
+# Copyright (c) 2018, Workaround GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+description: STM32 RTC
+
+compatible: "st,stm32-rtc"
+
+include: rtc.yaml
+
+properties:
+  reg:
+    required: true

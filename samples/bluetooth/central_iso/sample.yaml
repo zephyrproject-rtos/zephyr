@@ -1,0 +1,10 @@
+sample:
+  description: Bluetooth ISO central (client) sample
+  name: Bluetooth ISO central (client) sample
+tests:
+  sample.bluetooth.central_iso:
+    harness: bluetooth
+    platform_allow: qemu_x86
+    integration_platforms:
+      - qemu_x86
+    tags: bluetooth

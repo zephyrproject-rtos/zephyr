@@ -1,0 +1,24 @@
+/*
+ * Copyright 2023 Daniel DeGrasse <daniel@degrasse.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		ambient-temp0 = &temp_sensor;
+	};
+};
+
+/*
+ * Note- TCN75A is not present on the FRDM-K22F eval board, and must be
+ * wired to i2c0 and PTC2 externally
+ */
+&i2c0 {
+	temp_sensor: tcn75a@48 {
+		reg = <0x48>;
+		compatible = "microchip,tcn75a";
+		alert-gpios = <&gpioc 2 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+		resolution = "10-bit";
+	};
+};

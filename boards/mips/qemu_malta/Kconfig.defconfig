@@ -1,0 +1,16 @@
+#
+# Copyright (c) 2020 Antony Pavlov <antonynpavlov@gmail.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if BOARD_QEMU_MALTA || BOARD_QEMU_MALTA_BE
+
+config BUILD_OUTPUT_BIN
+	default n
+
+config BOARD
+	default "qemu_malta" if BOARD_QEMU_MALTA
+	default "qemu_malta_be" if BOARD_QEMU_MALTA_BE
+
+endif # BOARD_QEMU_MALTA || BOARD_QEMU_MALTA_BE

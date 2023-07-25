@@ -1,0 +1,11 @@
+# Waveshare Open103Z board configuration
+
+# Copyright (c) 2020 Stefano Manni
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_WAVESHARE_OPEN103Z
+
+config BOARD
+	default "waveshare_open103z"
+
+endif # BOARD_WAVESHARE_OPEN103Z

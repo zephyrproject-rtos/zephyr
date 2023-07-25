@@ -1,0 +1,133 @@
+sample:
+  description: Sample application for displays
+  name: display_sample
+tests:
+  sample.display.shield.adafruit_2_8_tft_touch_v2:
+    depends_on:
+      - arduino_gpio
+      - arduino_i2c
+      - arduino_spi
+    platform_exclude:
+      - reel_board
+      - reel_board_v2
+      - ubx_evkannab1_nrf52832
+      - stm32f769i_disco
+      - pan1781_evb
+      - pan1782_evb
+      - mimxrt1010_evk
+    extra_args: SHIELD=adafruit_2_8_tft_touch_v2
+    tags:
+      - display
+      - shield
+    harness: console
+    harness_config:
+      fixture: fixture_display
+  sample.display.shield.ssd1306_128x32:
+    platform_allow: nrf52840dk_nrf52840
+    extra_args: SHIELD=ssd1306_128x32
+    tags:
+      - display
+      - shield
+    harness: console
+    harness_config:
+      fixture: fixture_display
+  sample.display.shield.ssd1306_128x64:
+    platform_allow: nrf52840dk_nrf52840
+    extra_args: SHIELD=ssd1306_128x64
+    tags:
+      - display
+      - shield
+    harness: console
+    harness_config:
+      fixture: fixture_display
+  sample.display.shield.waveshare_epaper_gdeh0213b1:
+    platform_allow: nrf52840dk_nrf52840
+    extra_args: SHIELD=waveshare_epaper_gdeh0213b1
+    harness: console
+    harness_config:
+      fixture: fixture_display
+  sample.display.shield.waveshare_epaper_gdew042t2:
+    platform_allow: nrf52840dk_nrf52840
+    extra_args: SHIELD=waveshare_epaper_gdew042t2
+    harness: console
+    harness_config:
+      fixture: fixture_display
+  sample.display.st7789v_tl019fqv01:
+    platform_allow: nrf52dk_nrf52832
+    extra_args: SHIELD=st7789v_tl019fqv01
+    tags:
+      - display
+      - shield
+    harness: console
+    harness_config:
+      fixture: fixture_display
+  sample.display.st7789v_waveshare_240x240:
+    platform_allow: nrf52dk_nrf52832
+    extra_args: SHIELD=st7789v_waveshare_240x240
+    tags:
+      - display
+      - shield
+    harness: console
+    harness_config:
+      fixture: fixture_display
+  sample.display.ls013b7dh03:
+    platform_allow: nrf52dk_nrf52832
+    extra_args: SHIELD=ls013b7dh03
+    tags:
+      - display
+      - shield
+    harness: console
+    harness_config:
+      fixture: fixture_display
+  sample.display.st7735r_ada_160x128:
+    platform_allow: nrf52dk_nrf52832
+    extra_args: SHIELD=st7735r_ada_160x128
+    tags:
+      - display
+      - shield
+    harness: console
+    harness_config:
+      fixture: fixture_display
+  sample.display.mcux_elcdif:
+    platform_allow: mimxrt1050_evk
+    tags: display
+    harness: console
+    harness_config:
+      fixture: fixture_display
+  sample.display.mcux_dcnano_lcdif:
+    platform_allow: mimxrt595_evk_cm33
+    tags: display
+    harness: console
+    extra_args: SHIELD=rk055hdmipi4m
+    harness_config:
+      fixture: fixture_display
+  sample.display.sdl:
+    build_only: true
+    platform_allow: native_posix_64
+    tags: display
+  sample.display.dummy:
+    platform_allow: native_posix
+    extra_args: DTC_OVERLAY_FILE="dummy_dc.overlay"
+    extra_configs:
+      - CONFIG_DUMMY_DISPLAY=y
+      - CONFIG_SDL_DISPLAY=n
+      - CONFIG_TEST=y
+    tags: display
+  sample.display.max7219:
+    platform_allow: nrf52840dk_nrf52840
+    extra_args: SHIELD=max7219_8x8
+    tags:
+      - display
+      - shield
+    harness: console
+    harness_config:
+      fixture: fixture_display
+  sample.display.st_b_lcd40_dsi1_mb1166:
+    platform_allow: stm32h747i_disco_m7
+    extra_args: SHIELD=st_b_lcd40_dsi1_mb1166
+    tags:
+      - display
+      - shield
+    harness: console
+    harness_config:
+      fixture: fixture_display

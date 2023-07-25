@@ -1,0 +1,22 @@
+# Microchip MEC1501HSZ MCU
+
+# Copyright (c) 2018 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_MEC1501_HSZ
+
+config SOC
+	default "mec1501hsz"
+
+config GPIO
+	default y
+
+config ESPI_XEC
+	default y
+	depends on ESPI
+
+config PS2_XEC
+	default y
+	depends on PS2
+
+endif # SOC_MEC1501_HSZ

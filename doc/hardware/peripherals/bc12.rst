@@ -1,0 +1,94 @@
+.. _usb_bc12_api:
+
+BC1.2 Devices (Experimental)
+#######################################
+
+The Battery Charging specification, currently at revision 1.2, is commonly
+referred to as just BC1.2. BC1.2 defines limits and detection mechanisms for USB
+devices to draw current exceeding the USB 2.0 specification limit of 0.5A, 2.5W.
+
+The BC1.2 specification uses the term Charging Port for the device that supplies
+VBUS on the USB connection and the term Portable Device for the device that
+sinks current from the USB connection.
+
+Note that the `BC1.2 Specification`_ uses the acronym PD for Portable Device. This
+should not be confused with the USB-C Power Delivery, which also uses the
+acronym PD.
+
+On many devices, BC1.2 is the fallback mechanism to determine the connected
+charger capability on USB type C ports when the attached type-C partner does not
+support Power Delivery.
+
+Key parameters from the `BC1.2 Specification`_ include:
+
+============================================================  ========  ===========
+Parameter                                                     Symbol    Range
+============================================================  ========  ===========
+Allowed PD (portable device) Current Draw from Charging Port  IDEV_CHG  1.5 A
+Charging Downstream Port Rated Current                        ICDP      1.5 - 5.0 A
+Maximum Configured Current when connected to a SDP            ICFG_MAX  500 mA
+Dedicated Charging Port Rated Current                         IDCP      1.5 - 5.0 A
+Suspend current                                               ISUSP     2.5 mA
+Unit load current                                             IUNIT     100 mA
+============================================================  ========  ===========
+
+While the ICDP and IDCP rated currents go up to 5.0 A, the BC1.2 current is
+limited by the IDEV_CHG parameter. So the BC1.2 support is capped at 1.5 A in
+the Zephyr implementation when using portable-device mode.
+
+.. _BC1.2 Specification: https://www.usb.org/document-library/battery-charging-v12-spec-and-adopters-agreement
+
+Basic Operation
+***************
+
+The BC1.2 device driver provides only two APIs, ``bc12_set_role()`` and
+``bc12_set_result_cb()``.
+
+The application calls ``bc12_set_role()`` to transition the BC1.2 device to
+either a disconnected, portable-device, or charging port mode.
+
+For the disconnected state, the BC1.2 driver powers down the detection chip.
+The power down operation is vendor specific.
+
+The application calls ``bc12_set_role()`` with the type set to
+BC12_PORTABLE_DEVICE when both the following conditions are true:
+
+* The application configured the port as an upstream facing port, i.e. a USB
+  device port.
+* The application detects VBUS on the USB connection.
+
+For portable-device mode, the BC1.2 driver powers up the detection chip and
+starts charger detection. At completion of the charger detection, the BC1.2
+driver notifies the callback registered with ``bc12_set_result_cb()``. By
+default, the BC1.2 driver clamps the current to 1.5A to comply with the BC1.2
+specification.
+
+To comply with the USB 2.0 specification, when the driver detects a SDP
+(Standard Downstream Port) charging partner or if BC1.2 detection fails, the
+driver reports the available current as ISUSP (2.5 mA). The application may
+increase the current draw to IUNIT (100 mA) when the connected USB host resumes
+the USB bus and may increase the current draw to ICFG_MAX (500 mA) when the USB
+host configures the USB device.
+
+Charging port mode is used by the application when the USB port is configured as
+a downstream facing port, i.e. a USB host port. For charging port mode, the
+BC1.2 driver powers up the detection chip and configures the charger type
+specified by a devicetree property. If the driver supports detection of plug and
+and unplug events, the BC1.2 driver notifies the callback registered with
+``bc12_set_result_cb()`` to indicate the current connection state of the
+portable device partner.
+
+Configuration Options
+*********************
+
+Related configuration options:
+
+* :kconfig:option:`CONFIG_USB_BC12`
+
+.. _bc12_api_reference:
+
+API Reference
+*************
+
+.. doxygengroup:: b12_interface
+.. doxygengroup:: b12_emulator_backend

@@ -1,0 +1,16 @@
+common:
+  filter: (CONFIG_ARMV6_M_ARMV8_M_BASELINE or CONFIG_ARMV7_M_ARMV8_M_MAINLINE) and
+    not CONFIG_SOC_FAMILY_NRF
+  tags:
+    - arm
+    - interrupt
+  arch_allow: arm
+tests:
+  arch.arm.irq_zero_latency_levels:
+    filter: not CONFIG_TRUSTED_EXECUTION_NONSECURE
+    integration_platforms:
+      - mps2_an521_remote
+  arch.arm.irq_zero_latency_levels.secure_fw:
+    filter: CONFIG_TRUSTED_EXECUTION_SECURE
+    integration_platforms:
+      - mps2_an521

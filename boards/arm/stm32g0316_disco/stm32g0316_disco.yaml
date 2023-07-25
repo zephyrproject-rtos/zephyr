@@ -1,0 +1,15 @@
+identifier: stm32g0316_disco
+name: ST STM32G0316 Discovery
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 8
+flash: 32
+supported:
+  - gpio
+  - uart
+  - watchdog
+  - dma

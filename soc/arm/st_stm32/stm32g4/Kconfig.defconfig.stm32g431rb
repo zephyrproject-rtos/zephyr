@@ -1,0 +1,14 @@
+# STMicroelectronics STM32G431RB MCU
+
+# Copyright (c) 2019 Richard Osterloh <richard.osterloh@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_STM32G431XX
+
+config SOC
+	default "stm32g431xx"
+
+config NUM_IRQS
+	default 102
+
+endif # SOC_STM32G431XX

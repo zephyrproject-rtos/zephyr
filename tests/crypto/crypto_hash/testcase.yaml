@@ -1,0 +1,4 @@
+tests:
+  crypto.hash:
+    platform_allow: native_posix
+    tags: crypto

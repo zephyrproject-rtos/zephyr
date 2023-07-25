@@ -1,0 +1,124 @@
+# Bluetooth Audio - Media control configuration options
+
+#
+# Copyright (c) 2020-2022 Nordic Semiconductor
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+#### Media Control Service ################################
+
+config BT_MCS
+	bool "Media Control Service Support"
+	depends on MCTL_LOCAL_PLAYER_REMOTE_CONTROL
+	depends on UTF8
+	select BT_CCID
+	select EXPERIMENTAL
+	select BT_GATT_DYNAMIC_DB
+	help
+	  This option enables support for the Media Control Service.
+
+#### Media Control Client ################################
+
+config BT_MCC
+	bool "Media Control Client Support"
+	select BT_GATT_CLIENT
+	select BT_GATT_AUTO_DISCOVER_CCC
+	select EXPERIMENTAL
+	help
+	  This option enables support for the Media Control Client.
+
+if BT_MCC
+
+config BT_MCC_MEDIA_PLAYER_NAME_MAX
+	int "Max length of media player name"
+	default 20
+	range 1 255
+	help
+	  Sets the maximum number of bytes (including the null termination) of
+	  the name of the media player. If the name is longer, the media
+	  control client will truncate the name when reading it.
+
+config BT_MCC_ICON_URL_MAX
+	int "Max length of media player icon URL"
+	default 40
+	range 1 255
+	help
+	  Sets the maximum number of bytes (including the null termination) of
+	  the media player icon URL. If the URL is longer, the media control
+	  client will truncate the name when reading it.
+
+config BT_MCC_TRACK_TITLE_MAX
+	int "Max length of the title of a track"
+	default 40
+	range 1 255
+	help
+	  Sets the maximum number of bytes (including the null termination) of
+	  the title of any track in the media player. If the title is longer,
+	  the media control client will truncate the title when reading it.
+
+config BT_MCC_SEGMENT_NAME_MAX
+	int "Max length of the name of a track segment"
+	default 25
+	range 1 255
+	help
+	  Sets the the maximum number of bytes (including the null termination)
+	  of the name of any track segment in the media player. If the name is
+	  longer, the media control client will truncate the name when reading
+	  it.
+
+config BT_MCC_OTS
+	bool "Media Control Client support for Object Transfer Service"
+	depends on BT_OTS_CLIENT
+	help
+	  Use this option to configure support in the Media Control Client for
+	  an included Object Transfer Service in the Media Control Service.
+
+if BT_MCC_OTS
+
+config BT_MCC_OTC_OBJ_BUF_SIZE
+	int "The size of the buffer used for OTC object in MCC"
+	default 512
+	range 1 65536
+	help
+	  Sets the size (in octets) of the buffer used for receiving the content
+	  of objects.
+	  Should be set large enough to fit any expected object.
+
+config BT_MCC_TOTAL_OBJ_CONTENT_MEM
+	int "Total memory size to use for storing the content of objects"
+	default 1
+	range 0 65536
+	help
+	  Sets the total memory size (in octets) to use for storing the content
+	  of objects.
+	  This is used for the total memory pool buffer size from which memory
+	  is allocated when reading object content.
+
+config BT_MCC_TRACK_SEGS_MAX_CNT
+	int "Maximum number of tracks segments in a track segment object"
+	default 25
+	range 0 500
+	help
+	  Sets the maximum number of tracks segments in a track segment object.
+	  If the received object is bigger, the remaining data in the object
+	  will be ignored.
+
+config BT_MCC_GROUP_RECORDS_MAX
+	int "Maximum number of records in a group object"
+	default 25
+	range 0 500
+	help
+	  Sets the maximum number of records in a group object. If the received
+	  group object has more records than this, the remaining records in the
+	  object will be ignored.
+
+endif # BT_MCC_OTS
+
+config BT_MCC_SHELL
+	bool "Media Control Client Shell Support"
+	default y if BT_SHELL
+	help
+	  This option enables shell support for the Media Control Client.
+
+endif # BT_MCC

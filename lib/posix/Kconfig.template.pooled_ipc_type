@@ -1,0 +1,23 @@
+# Copyright (c) 2023 Meta
+#
+# SPDX-License-Identifier: Apache-2.0
+
+source "lib/posix/Kconfig.template.with_url"
+
+# Not user configurable (i.e. private for now)
+config $(TYPE)
+	bool
+	default y
+	depends on PTHREAD_IPC
+	help
+	  Support for $(TYPE)
+	  For more info, see
+	  $(posix-url-base)/$(type-function).html
+
+# eventually, this size should be defaulted to 0
+config MAX_$(TYPE)_COUNT
+	int "Maximum simultaneously active $(type) in POSIX application"
+	default 5
+	depends on $(TYPE)
+	help
+	  Maximum simultaneously active $(type) in a POSIX application.

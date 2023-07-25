@@ -1,0 +1,11 @@
+# STM32F411E-DISCO board configuration
+
+# Copyright (c) 2017 Fenix Engineering Solutions
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_STM32F411E_DISCO
+
+config BOARD
+	default "stm32f411e_disco"
+
+endif # BOARD_STM32F411E_DISCO

@@ -1,0 +1,13 @@
+&arduino_i2c {
+	status = "okay";
+
+	w1_0: w1@40 {
+		compatible = "maxim,ds2485";
+		reg = <0x40>;
+		switching-threshold = "medium";
+		active-pull-threshold = "low";
+		weak-pullup = "1000";
+	};
+};
+
+#include "w1_devices.dtsi"

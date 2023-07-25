@@ -1,0 +1,22 @@
+# Copyright Meta Platforms, Inc. and its affiliates.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig COREDUMP_DEVICE
+	bool "Coredump pseudo-device drivers"
+	help
+	  Enable support for a pseudo-device to help capturing
+	  desired data into core dumps.
+
+if COREDUMP_DEVICE
+
+config COREDUMP_DEVICE_INIT_PRIORITY
+	int "Coredump device init priority"
+	default KERNEL_INIT_PRIORITY_DEVICE
+	help
+	  Coredump pseudo-device driver initialization priority.
+
+module = COREDUMP_DEVICE
+module-str = coredump device
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # COREDUMP_DEVICE

@@ -1,0 +1,13 @@
+# Atmel SAM USART configuration options
+
+# Copyright (c) 2016 Piotr Mienkowski
+# SPDX-License-Identifier: Apache-2.0
+
+config USART_SAM
+	bool "Atmel SAM MCU family USART driver"
+	default y
+	depends on DT_HAS_ATMEL_SAM_USART_ENABLED
+	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
+	help
+	  This option enables the USARTx driver for Atmel SAM MCUs.

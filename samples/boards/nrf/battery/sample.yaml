@@ -1,0 +1,11 @@
+sample:
+  name: Measure battery voltage
+tests:
+  sample.boards.nrf.battery:
+    build_only: true
+    platform_allow:
+      - particle_xenon
+      - thingy52_nrf52832
+    tags: battery
+    integration_platforms:
+      - particle_xenon

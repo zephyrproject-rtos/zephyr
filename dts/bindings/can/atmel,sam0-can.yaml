@@ -1,0 +1,25 @@
+description: Specialization of Bosch m_can CAN-FD controller for Atmel SAM0
+
+compatible: "atmel,sam0-can"
+
+include:
+  - name: bosch,m_can-base.yaml
+  - name: pinctrl-device.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clocks:
+    required: true
+
+  clock-names:
+    required: true
+
+  divider:
+    type: int
+    required: true
+    description: Clock divider of GLCK7 used by CAN as clock source

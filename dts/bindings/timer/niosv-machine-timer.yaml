@@ -1,0 +1,19 @@
+# Copyright (C) 2023, Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  NIOSV Machine Timer
+
+  The NIOSV machine timer provides RISC-V privileged mtime and mtimecmp
+  registers.
+
+compatible: "niosv-machine-timer"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true

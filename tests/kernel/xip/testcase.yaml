@@ -1,0 +1,9 @@
+tests:
+  arch.common.xip:
+    filter: CONFIG_XIP
+    tags:
+      - kernel
+      - xip
+    integration_platforms:
+      - qemu_arc_em
+      - qemu_x86_xip

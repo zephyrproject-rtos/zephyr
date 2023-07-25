@@ -1,0 +1,10 @@
+sample:
+  description: Demonstration of the Microchip XEC clock control driver
+  name: XEC clock control sample
+tests:
+  sample.drivers.clock_control_xec:
+    tags: clock_control
+    platform_allow:
+      - mec172xevb_assy6906
+      - mec15xxevb_assy6853
+      - mec1501modular_assy6885

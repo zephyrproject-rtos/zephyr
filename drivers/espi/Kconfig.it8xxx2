@@ -1,0 +1,128 @@
+# Copyright (c) 2021 ITE Corporation. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+config ESPI_IT8XXX2
+	bool "ITE IT8XXX2 embedded controller ESPI driver"
+	depends on SOC_IT8XXX2
+	help
+	  Enable ITE IT8XXX2 ESPI driver.
+
+if ESPI_IT8XXX2
+
+config ESPI_OOB_CHANNEL
+	default y
+
+config ESPI_PERIPHERAL_8042_KBC
+	default y
+
+config ESPI_PERIPHERAL_HOST_IO
+	default y
+
+config ESPI_PERIPHERAL_DEBUG_PORT_80
+	default y
+
+config ESPI_PERIPHERAL_EC_HOST_CMD
+	default y
+
+choice IT8XXX2_H2RAM_HC_SIZE_CHOICE
+	prompt "H2RAM space for ec host command"
+	default IT8XXX2_H2RAM_HC_SIZE_256
+	depends on ESPI_PERIPHERAL_EC_HOST_CMD
+
+config IT8XXX2_H2RAM_HC_SIZE_16
+	bool "16"
+
+config IT8XXX2_H2RAM_HC_SIZE_32
+	bool "32"
+
+config IT8XXX2_H2RAM_HC_SIZE_64
+	bool "64"
+
+config IT8XXX2_H2RAM_HC_SIZE_128
+	bool "128"
+
+config IT8XXX2_H2RAM_HC_SIZE_256
+	bool "256"
+
+config IT8XXX2_H2RAM_HC_SIZE_512
+	bool "512"
+
+config IT8XXX2_H2RAM_HC_SIZE_1024
+	bool "1024"
+
+config IT8XXX2_H2RAM_HC_SIZE_2048
+	bool "2048"
+
+endchoice
+
+config ESPI_IT8XXX2_HC_H2RAM_SIZE
+	int
+	depends on ESPI_PERIPHERAL_EC_HOST_CMD
+	default 16 if IT8XXX2_H2RAM_HC_SIZE_16
+	default 32 if IT8XXX2_H2RAM_HC_SIZE_32
+	default 64 if IT8XXX2_H2RAM_HC_SIZE_64
+	default 128 if IT8XXX2_H2RAM_HC_SIZE_128
+	default 256 if IT8XXX2_H2RAM_HC_SIZE_256
+	default 512 if IT8XXX2_H2RAM_HC_SIZE_512
+	default 1024 if IT8XXX2_H2RAM_HC_SIZE_1024
+	default 2048 if IT8XXX2_H2RAM_HC_SIZE_2048
+
+config ESPI_PERIPHERAL_ACPI_SHM_REGION
+	default y
+
+choice IT8XXX2_H2RAM_ACPI_SHM_SIZE_CHOICE
+	prompt "H2RAM space for ACPI shared memory region"
+	default IT8XXX2_H2RAM_ACPI_SHM_SIZE_256
+	depends on ESPI_PERIPHERAL_ACPI_SHM_REGION
+
+config IT8XXX2_H2RAM_ACPI_SHM_SIZE_16
+	bool "16"
+
+config IT8XXX2_H2RAM_ACPI_SHM_SIZE_32
+	bool "32"
+
+config IT8XXX2_H2RAM_ACPI_SHM_SIZE_64
+	bool "64"
+
+config IT8XXX2_H2RAM_ACPI_SHM_SIZE_128
+	bool "128"
+
+config IT8XXX2_H2RAM_ACPI_SHM_SIZE_256
+	bool "256"
+
+config IT8XXX2_H2RAM_ACPI_SHM_SIZE_512
+	bool "512"
+
+config IT8XXX2_H2RAM_ACPI_SHM_SIZE_1024
+	bool "1024"
+
+config IT8XXX2_H2RAM_ACPI_SHM_SIZE_2048
+	bool "2048"
+
+endchoice
+
+config ESPI_IT8XXX2_ACPI_SHM_H2RAM_SIZE
+	int
+	depends on ESPI_PERIPHERAL_ACPI_SHM_REGION
+	default 16 if IT8XXX2_H2RAM_ACPI_SHM_SIZE_16
+	default 32 if IT8XXX2_H2RAM_ACPI_SHM_SIZE_32
+	default 64 if IT8XXX2_H2RAM_ACPI_SHM_SIZE_64
+	default 128 if IT8XXX2_H2RAM_ACPI_SHM_SIZE_128
+	default 256 if IT8XXX2_H2RAM_ACPI_SHM_SIZE_256
+	default 512 if IT8XXX2_H2RAM_ACPI_SHM_SIZE_512
+	default 1024 if IT8XXX2_H2RAM_ACPI_SHM_SIZE_1024
+	default 2048 if IT8XXX2_H2RAM_ACPI_SHM_SIZE_2048
+
+config ESPI_PERIPHERAL_CUSTOM_OPCODE
+	default y
+
+config ESPI_FLASH_CHANNEL
+	default y
+
+config ESPI_IT8XXX2_PNPCFG_DEVICE_KBC_MOUSE
+	bool "ITE IT8XXX2 KBC mouse device"
+	help
+	  With this option enabled, EC will send IRQ12 signal to host when the
+	  KBC mouse output buffer is full.
+
+endif #ESPI_IT8XXX2

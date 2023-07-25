@@ -1,0 +1,115 @@
+# Copyright (c) 2020 Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    STM32F1 Pin controller Node
+    Based on pincfg-node.yaml binding.
+
+    Note: `bias-disable` and `drive-push-pull` are default pin configurations.
+           They will be applied in case no `bias-foo` or `driver-bar` properties
+           are set.
+
+compatible: "st,stm32f1-pinctrl"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  swj-cfg:
+    type: string
+    default: "full" # reset state
+    enum:
+      - "full"
+      - "no-njtrst"
+      - "jtag-disable"
+      - "disable"
+    description: |
+      Configures number of pins assigned to the SWJ debug port.
+
+      * full         - Full SWJ (JTAG-DP + SW-DP).
+      * no-njtrst    - Full SWJ (JTAG-DP + SW-DP) but without NJTRST.
+                       Releases: PB4.
+      * jtag-disable - JTAG-DP Disabled and SW-DP Enabled.
+                       Releases: PA15 PB3 PB4.
+      * disable      - JTAG-DP Disabled and SW-DP Disabled.
+                       Releases: PA13 PA14 PA15 PB3 PB4.
+
+      If absent, then Full SWJ (JTAG-DP + SW-DP) is used (reset state).
+
+child-binding:
+  description: |
+      This binding gives a base representation of the STM32F1 pins
+      configration
+
+  include:
+    - name: pincfg-node.yaml
+      property-allowlist:
+        - bias-disable
+        - bias-pull-down
+        - bias-pull-up
+        - drive-push-pull
+        - drive-open-drain
+        - output-low
+        - output-high
+
+  properties:
+    pinmux:
+      required: true
+      type: int
+      description: |
+        Adapted from
+        https://github.com/torvalds/linux/blob/master/Documentation/devicetree/bindings/pinctrl/st,stm32-pinctrl.yaml
+        Integer array, represents gpio pin number and mux setting.
+        These defines are calculated as: ((port * 16 + line) << 8) | (function << 6) | remap)
+        With:
+        - port: The gpio port index (PA = 0, PB = 1, ..., PK = 11)
+        - line: The line offset within the port (PA0 = 0, PA1 = 1, ..., PA15 = 15)
+        - function: The configuration mode, can be:
+        * 0 : Alternate function output
+        * 1 : Input
+        * 2 : Analog
+        * 3 : GPIO output
+        In case selected pin function is GPIO output, pin is statically configured as
+        a plain output GPIO, which configuration can be set by adding 'ouptut-low' or
+        'output-high' properties to the pinctrl configuration. Default is output-low.
+        - remap: The pin remapping configuration. It allows to assign the pin
+        function to a different peripheral. Remain configuration can be:
+        * 0 : No remap
+        * 1 : Partial remap 1
+        * 2 : Partial remap 2
+        * 3 : Partial remap 3
+        * 4 : Full remap
+        To simplify the usage, macro is available to generate "pinmux" field.
+        This macro is available here:
+          -include/zephyr/dt-bindings/pinctrl/stm32f1-pinctrl.h
+        Some examples of macro usage:
+           GPIO A9 set as alernate with no remap
+        ... {
+                 pinmux = <STM32F1_PINMUX('A', 9, ALTERNATE, REMAP_NO)>;
+        };
+           GPIO A9 set as alernate with full remap
+        ... {
+                 pinmux = <STM32F1_PINMUX('A', 9, ALTERNATE, REMAP_FULL)>;
+        };
+           GPIO A9 set as input
+        ... {
+                 pinmux = <STM32F1_PINMUX('A', 9, GPIO_IN, REMAP_NO)>;
+        };
+           GPIO A9 set as output-high
+        ... {
+                 pinmux = <STM32F1_PINMUX('A', 9, GPIO_OUT, REMAP_NO)>;
+                 output-high;
+        };
+
+    slew-rate:
+      type: string
+      default: "max-speed-10mhz"
+      enum:
+        - "max-speed-10mhz"       # Default
+        - "max-speed-2mhz"
+        - "max-speed-50mhz"
+      description: |
+        Pin output mode, maximum achievable speed. Only applies to
+        output mode (alternate).

@@ -1,0 +1,38 @@
+sample:
+  name: APDS9960 sample
+tests:
+  sample.sensor.apds9960:
+    harness: console
+    platform_allow: reel_board
+    integration_platforms:
+      - reel_board
+    tags: sensors
+    depends_on:
+      - i2c
+      - gpio
+    harness_config:
+      type: multi_line
+      ordered: true
+      regex:
+        - "APDS9960 sample application"
+        - "ambient light intensity (.*), proximity (.*)"
+      fixture: fixture_i2c_apds9960
+  sample.sensor.apds9960.trigger:
+    harness: console
+    platform_allow: reel_board
+    integration_platforms:
+      - reel_board
+    tags: sensors
+    depends_on:
+      - i2c
+      - gpio
+    extra_configs:
+      - CONFIG_APDS9960_TRIGGER_GLOBAL_THREAD=y
+    harness_config:
+      type: multi_line
+      ordered: true
+      regex:
+        - "APDS9960 sample application"
+        - "Waiting for a threshold event"
+        - "ambient light intensity (.*), proximity (.*)"
+      fixture: fixture_i2c_apds9960

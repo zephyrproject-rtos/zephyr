@@ -1,0 +1,16 @@
+# ST Microelectronics STM32L4 MCU line
+
+# Copyright (c) 2016 Open-RnD Sp. z o.o.
+# Copyright (c) 2016 BayLibre, SAS
+# SPDX-License-Identifier: Apache-2.0
+
+# Kconfig symbols common to STM32L4 series
+
+if SOC_SERIES_STM32L4X
+
+source "soc/arm/st_stm32/stm32l4/Kconfig.defconfig.stm32l4*"
+
+config SOC_SERIES
+	default "stm32l4"
+
+endif # SOC_SERIES_STM32L4X

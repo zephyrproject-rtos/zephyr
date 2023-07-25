@@ -1,0 +1,21 @@
+sample:
+  name: Bluetooth Peripheral HR
+  description: Demonstrates the HR (Heart Rate) GATT Service
+tests:
+  sample.bluetooth.peripheral_hr:
+    harness: bluetooth
+    platform_allow:
+      - qemu_cortex_m3
+      - qemu_x86
+    integration_platforms:
+      - qemu_cortex_m3
+    tags: bluetooth
+  sample.bluetooth.peripheral_hr_rv32m1_vega_ri5cy:
+    platform_allow: rv32m1_vega_ri5cy
+    tags: bluetooth
+    build_only: true
+  sample.bluetooth.peripheral_hr.frdm_kw41z_shield:
+    harness: bluetooth
+    depends_on: arduino_serial
+    tags: bluetooth
+    extra_args: SHIELD=frdm_kw41z

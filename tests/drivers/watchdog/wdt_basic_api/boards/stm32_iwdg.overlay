@@ -1,0 +1,13 @@
+/*
+ * Copyright (c) 2022 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&wwdg {
+	status = "disabled";
+};
+
+&iwdg {
+	status = "okay";
+};

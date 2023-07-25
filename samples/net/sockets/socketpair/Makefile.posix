@@ -1,0 +1,7 @@
+#
+# Copyright (c) 2020 Friedt Professional Engineering Services, Inc
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+socketpair_example: src/main.c
+	$(CC) $^ -o $@ -lpthread

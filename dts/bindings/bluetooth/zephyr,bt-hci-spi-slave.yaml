@@ -1,0 +1,34 @@
+# Copyright (c) 2019 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    Configures SPI slave settings for a Bluetooth controller that uses
+    Zephyr's Bluetooth Host Controller Interface SPI (HCI SPI) driver.
+
+    A node defined via devicetree overlay should look like this:
+
+       &myspi {
+            bt-hci@0 {
+                    compatible = "zephyr,bt-hci-spi-slave";
+                    reg = <0>;
+                    irq-gpios = <&gpio1 2 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
+            };
+       };
+
+    The bt-hci@0 node configures an HCI SPI slave on SPI slave
+    interface myspi.
+
+    The host interrupt GPIO is set to gpio1 pin 2 via irq-gpios. The
+    GPIO flags are just for example and may be different depending on
+    hardware.
+
+compatible: "zephyr,bt-hci-spi-slave"
+
+include: base.yaml
+
+on-bus: spi
+
+properties:
+  irq-gpios:
+    type: phandle-array
+    required: true

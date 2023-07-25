@@ -1,0 +1,18 @@
+common:
+  platform_allow:
+    - native_posix
+    - native_posix_64
+  integration_platforms:
+    - native_posix
+  tags:
+    - net
+    - ieee802154
+    - l2
+  min_ram: 16
+tests:
+  net.ieee802154.l2:
+    extra_configs:
+      - CONFIG_NET_SOCKETS=n
+  net.ieee802154.l2.sockets:
+    extra_configs:
+      - CONFIG_NET_SOCKETS=y

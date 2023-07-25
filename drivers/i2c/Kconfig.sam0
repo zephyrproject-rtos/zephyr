@@ -1,0 +1,19 @@
+# Copyright (c) 2019 Derek Hageman <hageman@inthat.cloud>
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig I2C_SAM0
+	bool "SAM0 series I2C SERCOM driver"
+	default y
+	depends on DT_HAS_ATMEL_SAM0_I2C_ENABLED
+	help
+	  Enable the SAM0 series SERCOM I2C driver.
+
+config I2C_SAM0_DMA_DRIVEN
+	bool "DMA support for SAM0 I2C devices"
+	depends on I2C_SAM0
+	select DMA
+	help
+	  This enables DMA driven transactions for the I2C peripheral.
+	  DMA driven mode requires fewer interrupts to handle the
+	  transaction and ensures that high speed modes are not delayed
+	  by data reloading.

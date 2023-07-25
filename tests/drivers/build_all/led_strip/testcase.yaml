@@ -1,0 +1,10 @@
+tests:
+  drivers.led_strip.build:
+    build_only: true
+    min_ram: 32
+    tags:
+      - drivers
+      - led_strip
+    depends_on:
+      - gpio
+      - spi

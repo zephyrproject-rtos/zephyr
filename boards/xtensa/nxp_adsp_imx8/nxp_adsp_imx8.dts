@@ -1,0 +1,18 @@
+/*
+ * Copyright (c) 2021 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nxp/nxp_imx8.dtsi>
+
+/ {
+	model = "nxp_adsp_imx8";
+	compatible = "nxp";
+
+	chosen {
+		zephyr,sram = &sram0;
+	};
+};

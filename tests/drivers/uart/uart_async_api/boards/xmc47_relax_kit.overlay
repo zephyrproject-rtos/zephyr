@@ -1,0 +1,34 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
+#include <zephyr/dt-bindings/dma/infineon-xmc4xxx-dma.h>
+
+dut: &usic1ch1 {
+	compatible = "infineon,xmc4xxx-uart";
+	current-speed = <921600>;
+	interrupts = <90 1 91 1>;
+	interrupt-names = "tx", "rx";
+	dmas = <&dma0 2 0 XMC4XXX_SET_CONFIG(1,11)>, <&dma0 3 0 XMC4XXX_SET_CONFIG(3,12)>;
+	dma-names = "tx", "rx";
+	pinctrl-0 = <&uart_tx_p3_15_u1c1 &uart_rx_p3_14_u1c1>;
+	pinctrl-names = "default";
+	input-src = "DX0G"; //loopback
+	fifo-start-offset = <0>;
+	fifo-tx-size = <0>;
+	fifo-rx-size = <0>;
+	status = "okay";
+};
+
+&uart_tx_p3_15_u1c1 {
+	drive-strength = "strong-soft-edge";
+	drive-push-pull;
+	hwctrl = "disabled";
+};
+
+&uart_rx_p3_14_u1c1 {
+	drive-strength = "strong-soft-edge";
+	hwctrl = "disabled";
+};
+
+&dma0 {
+	status = "okay";
+};

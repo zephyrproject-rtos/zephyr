@@ -1,0 +1,66 @@
+# Copyright (c) 2022, Byte-Lab d.o.o. <dev@byte-lab.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: STM32 LCD-TFT display controller
+
+compatible: "st,stm32-ltdc"
+
+include: [lcd-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  disp-on-gpios:
+    type: phandle-array
+    description: |
+      Display on/off GPIO pin.
+      Configure the GPIO polarity (active high/active low) according to LCD datasheet.
+
+  bl-ctrl-gpios:
+    type: phandle-array
+    description: |
+      Backlight on/off GPIO pin.
+      Configure the GPIO polarity (active high/active low) according to LCD datasheet.
+
+  ext-sdram:
+    type: phandle
+    description: |
+      External SDRAM in which frame buffer will be stored.
+      If not defined, internal RAM will be used.
+
+  clocks:
+    required: true
+
+  interrupts:
+    required: true
+
+  pinctrl-0:
+    description: |
+      Provide a pin configuration for using parallel pixel output. In combination with DSI HOST
+      the pin configuration is not necessary due to dedicated (MIPI D-PHY) pins.
+
+  def-back-color-red:
+    type: int
+    description: Default display background color - red
+
+  def-back-color-green:
+    type: int
+    description: Default display background color - green
+
+  def-back-color-blue:
+    type: int
+    description: Default display background color - blue
+
+  window0-x0:
+    type: int
+    description: First pixel in x direction on layer 0. Defaults to 0.
+
+  window0-x1:
+    type: int
+    description: Last pixel in x direction on layer 0. Defaults to width.
+
+  window0-y0:
+    type: int
+    description: First pixel in y direction on layer 0. Defaults to 0.
+
+  window0-y1:
+    type: int
+    description: Last pixel in y direction on layer 0. Defaults to height.

@@ -1,0 +1,7 @@
+tests:
+  drivers.i2c.api:
+    depends_on: i2c
+    tags:
+      - drivers
+      - i2c
+    filter: dt_alias_exists("gy271")

@@ -1,0 +1,41 @@
+# Copyright (c) 2019 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    Properties defining the interface for the Nordic QSPI peripheral.
+
+    The reg property describes two register blocks: one for the memory
+    corresponding to the QSPI peripheral registers, and another for
+    the memory mapped XIP area:
+
+        qspi: qspi@2b000 {
+                compatible = "nordic,nrf-qspi";
+                reg = <0x2b000 0x1000>, <0x10000000 0x10000000>;
+                reg-names = "qspi", "qspi_mm";
+                ...
+        };
+
+    Above, the register block with base address 0x2b000 and name
+    "qspi" are the QSPI peripheral registers. The register block with
+    base address 0x10000000 and name "qspi_mm" is the XIP area.
+
+compatible: "nordic,nrf-qspi"
+
+include: [flash-controller.yaml, pinctrl-device.yaml]
+
+bus: qspi
+
+properties:
+  "#address-cells":
+    required: true
+    const: 1
+
+  "#size-cells":
+    required: true
+    const: 0
+
+  interrupts:
+    required: true
+
+  pinctrl-0:
+    required: true

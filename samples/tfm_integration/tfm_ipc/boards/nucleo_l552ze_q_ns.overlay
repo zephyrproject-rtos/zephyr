@@ -1,0 +1,54 @@
+/*
+ * Copyright (c) 2020 Linaro Limited.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+
+ /* This partition table should be used along with TFM configuration:
+  * - TEST_S=OFF (NO REGRESSION)
+  * - TFM_PSA_API=ON (IPC)
+  *
+  * In this configuration, TFM binary does not include tests.
+  * The partition sizes are compatible with the TF-M platform
+  * flash_layout.h.
+  */
+
+/ {
+	chosen {
+		zephyr,code-partition = &slot1_partition;
+	};
+};
+
+&flash0 {
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 DT_SIZE_K(80)>;
+			read-only;
+		};
+		/* Secure image primary slot */
+		slot0_partition: partition@14000 {
+			label = "image-0";
+			reg = <0x00014000 DT_SIZE_K(180)>;
+		};
+		/* Non-secure image primary slot */
+		slot1_partition: partition@41000 {
+			label = "image-1";
+			reg = <0x00041000 DT_SIZE_K(36)>;
+		};
+		/*
+		 * The flash starting at 0x7F000 and ending at
+		 * 0x80000 is reserved for the application.
+		 */
+		storage_partition: partition@7f000 {
+			label = "storage";
+			reg = <0x0007F000 DT_SIZE_K(4)>;
+		};
+	};
+};

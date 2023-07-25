@@ -1,0 +1,15 @@
+identifier: 96b_neonkey
+name: 96Boards Neonkey
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 128
+flash: 512
+supported:
+  - gpio
+  - i2c
+  - spi
+  - counter

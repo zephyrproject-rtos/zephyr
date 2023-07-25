@@ -1,0 +1,7 @@
+tests:
+  portability.cmsis_rtos_v1:
+    tags: cmsis_rtos
+    min_ram: 32
+    min_flash: 34
+    integration_platforms:
+      - native_posix

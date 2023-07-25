@@ -1,0 +1,12 @@
+# Copyright (c) 2018 Intel Corporation Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_APOLLO_LAKE
+	bool "Intel Apollo Lake Soc"
+	select X86
+	select CPU_APOLLO_LAKE
+	select PCIE
+	select PCIE_MSI
+	select DYNAMIC_INTERRUPTS
+	select X86_MMU
+	select ARCH_HAS_RESERVED_PAGE_FRAMES

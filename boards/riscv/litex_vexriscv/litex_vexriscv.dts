@@ -1,0 +1,85 @@
+/*
+ * Copyright (c) 2018 - 2019 Antmicro <www.antmicro.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <riscv32-litex-vexriscv.dtsi>
+
+/ {
+	model = "LiteX VexRiscV";
+	compatible = "litex,vexriscv";
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,sram = &ram0;
+	};
+
+	ram0: memory@40000000 {
+		device_type = "memory";
+		reg = <0x40000000 0x10000000>;
+	};
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <115200>;
+};
+
+&timer0 {
+	status = "okay";
+};
+
+&eth0 {
+	status = "okay";
+};
+
+&dna0 {
+	status = "okay";
+};
+
+&spi0 {
+	status = "okay";
+};
+
+&prbs0 {
+	status = "okay";
+};
+
+&i2c0 {
+	status = "okay";
+};
+
+&pwm0 {
+	status = "okay";
+};
+
+&gpio_out {
+	status = "okay";
+};
+
+&gpio_in {
+	status = "okay";
+};
+
+&i2s_rx {
+	status = "okay";
+};
+
+&i2s_tx {
+	status = "okay";
+};
+
+&clk0 {
+	status = "okay";
+};
+
+&clk1 {
+	status = "okay";
+};
+
+&clock0 {
+	status = "okay";
+};

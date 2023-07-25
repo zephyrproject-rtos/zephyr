@@ -1,0 +1,11 @@
+# Fake CAN configuration options
+
+# Copyright (c) 2022 Vestas Wind Systems A/S
+# SPDX-License-Identifier: Apache-2.0
+
+config CAN_FAKE
+	bool "Fake CAN driver"
+	default y
+	depends on DT_HAS_ZEPHYR_FAKE_CAN_ENABLED
+	help
+	  Enable support for the FFF-based fake CAN driver.

@@ -1,0 +1,54 @@
+# Copyright (c) 2022, Prevas A/S
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP MCUX QDEC
+
+compatible: "nxp,mcux-qdec"
+
+include: [pinctrl-device.yaml, sensor-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  counts-per-revolution:
+    type: int
+    required: true
+    description: |
+      This is a number that is used to determine how many revolutions
+      were done based on the current counter's value.
+
+  single-phase-mode:
+    type: boolean
+    description: |
+      Bypass the quadrature decoder. A positive transition of the PHASEA input
+      generates a count signal. The PHASEB input and the REV bit control the
+      counter direction.
+
+  filter-count:
+    type: int
+    enum: [0, 1, 2, 3, 4, 5, 6, 7]
+    description: |
+      The number of consecutive samples that must agree prior to the input
+      filter accepting an input transition. A value of 0 represents 3
+      samples. A value of 7 represents 10 samples.
+
+  filter-sample-period:
+    type: int
+    description: |
+      The sampling period (in IPBus clock cycles) of the decoder input signals.
+      Each input is sampled multiple times at the rate specified by the Filter
+      Sample Period. If FILT_PER is 0 (default), then the input filter is
+      bypassed. Bypassing the digital filter enables the position/position
+      difference counters to operate with count rates up to the IPBus
+      frequency. Turning on the input filter introduces a latency of:
+      ((FILT_CNT + 3) * FILT_PER) FILT clock cycles + 2 IPBus clock periods.
+
+  xbar:
+    type: phandle
+    required: true
+    description: |
+      The xbar phandle.

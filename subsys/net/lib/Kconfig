@@ -1,0 +1,44 @@
+# Copyright (c) 2016 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+menu "Network Protocols"
+
+source "subsys/net/lib/coap/Kconfig"
+
+source "subsys/net/lib/dns/Kconfig"
+
+source "subsys/net/lib/mqtt/Kconfig"
+
+source "subsys/net/lib/mqtt_sn/Kconfig"
+
+source "subsys/net/lib/tftp/Kconfig"
+
+source "subsys/net/lib/http/Kconfig"
+
+source "subsys/net/lib/websocket/Kconfig"
+
+source "subsys/net/lib/lwm2m/Kconfig"
+
+source "subsys/net/lib/socks/Kconfig"
+
+source "subsys/net/lib/sntp/Kconfig"
+
+endmenu
+
+menu "Network Libraries"
+
+source "subsys/net/lib/config/Kconfig"
+
+source "subsys/net/lib/sockets/Kconfig"
+
+source "subsys/net/lib/tls_credentials/Kconfig"
+
+endmenu
+
+menu "Network additional services"
+
+source "subsys/net/lib/capture/Kconfig"
+
+source "subsys/net/lib/zperf/Kconfig"
+
+endmenu

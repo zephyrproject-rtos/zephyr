@@ -1,0 +1,37 @@
+/*
+ * Copyright (c) 2020 Alexander Kozhinov <AlexanderKozhinov@yandex.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/h7/stm32h745Xi_m4.dtsi>
+#include "nucleo_h745zi_q.dtsi"
+
+/ {
+	model = "STMicroelectronics STM32H745ZI-Q-NUCLEO board";
+	compatible = "st,stm32h745zi-q-nucleo";
+
+	/* HW resources belonging to CM4 */
+	chosen {
+		zephyr,console = &uart8;
+		zephyr,shell-uart = &uart8;
+		zephyr,sram = &sram1;
+		zephyr,flash = &flash1;
+	};
+
+	aliases {
+		led0 = &yellow_led;
+	};
+};
+
+&uart8 {
+	pinctrl-0 = <&uart8_tx_pe1 &uart8_rx_pe0>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&rcc {
+	clock-frequency = <DT_FREQ_M(240)>;
+};

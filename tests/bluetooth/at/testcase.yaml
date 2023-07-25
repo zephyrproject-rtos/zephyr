@@ -1,0 +1,10 @@
+tests:
+  bluetooth.at:
+    build_only: true
+    min_ram: 16
+    platform_allow:
+      - qemu_x86
+      - qemu_cortex_m3
+    tags: bluetooth
+    integration_platforms:
+      - qemu_x86

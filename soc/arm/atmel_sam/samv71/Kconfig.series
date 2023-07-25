@@ -1,0 +1,23 @@
+# Atmel SAM V71 MCU series
+
+# Copyright (c) 2019 Gerson Fernando Budke
+# Copyright (c) 2016 Piotr Mienkowski
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_SAMV71
+	bool "Atmel SAMV71 MCU"
+	select ARM
+	select CPU_CORTEX_M7
+	select SOC_FAMILY_SAM
+	select CPU_HAS_FPU_DOUBLE_PRECISION
+	select CPU_CORTEX_M_HAS_DWT
+	select ASF
+	select XIP
+	select CPU_HAS_ARM_MPU
+	select HAS_SWO
+	help
+	  Enable support for Atmel SAM V71 ARM Cortex-M7 Microcontrollers.
+	  Part No.: SAMV71J19, SAMV71J20, SAMV71J21, SAMV71N19, SAMV71N20,
+	  SAMV71N21, SAMV71Q19, SAMV71Q20, SAMV71Q21, SAMV71J19B, SAMV71J20B,
+	  SAMV71J21B, SAMV71N19B, SAMV71N20B, SAMV71N21B, SAMV71Q19B,
+	  SAMV71Q20B, SAMV71Q21B

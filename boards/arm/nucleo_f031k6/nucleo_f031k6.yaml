@@ -1,0 +1,19 @@
+identifier: nucleo_f031k6
+name: ST Nucleo F031K6
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 4
+flash: 32
+supported:
+  - adc
+  - i2c
+  - spi
+  - gpio
+testing:
+  ignore_tags:
+    - net
+    - bluetooth

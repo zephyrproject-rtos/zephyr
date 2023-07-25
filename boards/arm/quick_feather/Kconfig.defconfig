@@ -1,0 +1,11 @@
+# QuickLogic Quick Feather board
+
+# Copyright (c) 2020 Antmicro <www.antmicro.com>
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_QUICK_FEATHER
+
+config BOARD
+	default "quick_feather"
+
+endif # BOARD_QUICK_FEATHER

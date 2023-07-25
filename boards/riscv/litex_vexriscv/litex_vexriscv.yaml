@@ -1,0 +1,20 @@
+#
+# Copyright (c) 2018 - 2019 Antmicro <www.antmicro.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+identifier: litex_vexriscv
+name: LiteX SoC with VexRiscV softcore CPU
+type: mcu
+arch: riscv32
+toolchain:
+  - zephyr
+ram: 262144
+supported:
+  - spi
+  - i2s
+testing:
+  ignore_tags:
+    - bluetooth
+    - xip

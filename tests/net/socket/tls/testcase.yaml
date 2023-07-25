@@ -1,0 +1,19 @@
+common:
+  depends_on: netif
+  min_ram: 32
+  min_flash: 260
+  tags:
+    - net
+    - socket
+    - tls
+  filter: TOOLCHAIN_HAS_NEWLIB == 1
+  integration_platforms:
+    - qemu_x86
+tests:
+  net.socket.tls:
+    extra_configs:
+      - CONFIG_NET_TC_THREAD_COOPERATIVE=y
+  net.socket.tls.preempt:
+    extra_configs:
+      - CONFIG_NET_TC_THREAD_PREEMPTIVE=y
+    platform_exclude: mps2_an385

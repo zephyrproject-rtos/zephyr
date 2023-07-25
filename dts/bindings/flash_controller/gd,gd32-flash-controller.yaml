@@ -1,0 +1,19 @@
+# Copyright (c) 2022 Teslabs Engineering S.L.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  There are three types GD32 FMC.
+
+  GD32 FMC v1: its flash memory has 1 bank, page size is equal in the bank,
+  flash size is smaller than 512KB.
+
+  GD32 FMC v2: its flash memory has 2 banks. Page size equal within the same bank but
+  different between banks. Flash size can be up to 3072KB. FMC v2 has two
+  registers to control bank0 and bank1 separately.
+
+  GD32 FMC v3: its flash memory has 2 banks, use sector size as the minimum operating
+  unit, the sector size is not equal.
+
+compatible: "gd,gd32-flash-controller"
+
+include: flash-controller.yaml

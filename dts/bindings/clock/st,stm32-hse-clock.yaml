@@ -1,0 +1,15 @@
+# Copyright (c) 2021, Linaro ltd
+# SPDX-License-Identifier: Apache-2.0
+
+description: STM32 HSE Clock
+
+compatible: "st,stm32-hse-clock"
+
+include: [fixed-clock.yaml]
+
+properties:
+  hse-bypass:
+    type: boolean
+    description: |
+      HSE crystal oscillator bypass
+      Set to the property to by-pass the oscillator with an external clock.

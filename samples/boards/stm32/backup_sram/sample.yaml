@@ -1,0 +1,8 @@
+sample:
+  description: Usage of backup SRAM on STM32
+  name: stm32_backup_sram
+tests:
+  sample.boards.stm32.backup_sram:
+    depends_on: backup_sram
+    build_only: true
+    filter: dt_compat_enabled("st,stm32-backup-sram")

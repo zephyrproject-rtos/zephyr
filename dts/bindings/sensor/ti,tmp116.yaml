@@ -1,0 +1,10 @@
+# Copyright (c) 2019 Centaur Analytics, Inc
+# SPDX-License-Identifier: Apache-2.0
+
+description: Texas Instruments TMP116 temperature sensor
+
+compatible: "ti,tmp116"
+
+bus: tmp116
+
+include: [sensor-device.yaml, i2c-device.yaml]

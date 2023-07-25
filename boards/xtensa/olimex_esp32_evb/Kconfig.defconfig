@@ -1,0 +1,23 @@
+# Olimex ESP32-EVB board configuration
+
+# Copyright (c) 2022 Henrik Brix Andersen <henrik@brixandersen.dk>
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_OLIMEX_ESP32_EVB
+
+config BOARD
+	default "olimex_esp32_evb"
+
+config ENTROPY_GENERATOR
+	default y
+
+config HEAP_MEM_POOL_SIZE
+	default 98304 if WIFI
+	default 40960 if BT
+	default 4096
+
+choice BT_HCI_BUS_TYPE
+	default BT_ESP32 if BT
+endchoice
+
+endif # BOARD_OLIMEX_ESP32_EVB

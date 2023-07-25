@@ -1,0 +1,28 @@
+# Copyright (c) 2018 Synopsys, Inc. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Synopsys DesignWare SPI node
+
+compatible: "snps,designware-spi"
+
+include: [spi-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  aux_reg:
+    description: |
+      This value is used for auxiliary register access. For
+      other platform, this value should be default 0.
+    type: boolean
+
+  fifo-depth:
+    type: int
+    description: |
+      RX/TX FIFO depth. Corresponds to the SSI_TX_FIFO_DEPTH
+      and SSI_RX_FIFO_DEPTH of the DesignWare Synchronous
+      Serial Interface. Depth ranges from 2-256.

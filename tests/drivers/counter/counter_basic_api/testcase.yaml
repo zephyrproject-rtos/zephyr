@@ -1,0 +1,20 @@
+tests:
+  drivers.counter.basic_api:
+    tags:
+      - drivers
+      - counter
+    depends_on: counter
+    min_ram: 16
+    platform_exclude: nucleo_f302r8
+    timeout: 600
+  drivers.counter.basic_api.nrf_zli:
+    tags:
+      - drivers
+      - counter
+    depends_on: counter
+    platform_allow: nrf52840dk_nrf52840
+    timeout: 400
+    extra_configs:
+      - CONFIG_ZERO_LATENCY_IRQS=y
+    extra_args:
+      DTC_OVERLAY_FILE="boards/nrf52840dk_nrf52840.overlay;boards/nrf52840dk_nrf52840_zli.overlay"

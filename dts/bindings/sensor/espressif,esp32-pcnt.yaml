@@ -1,0 +1,160 @@
+# Copyright (c) 2022 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+
+  Espressif's Pulse Counter Mode (PCNT) controller Node
+
+  The pulse counter module is designed to count the number of
+  rising and/or falling edges of an input signal.
+
+  The ESP32's PCNT module has 8 independent counting “units” numbered from 0 to 7.
+  ESP32S2 and ESP32S3 have 4 independent counting “units” numbered from 0 to 3.
+
+  Each pulse counter unit has a 16-bit signed counter register.
+
+  Each unit has two independent channel: ch0 and ch1 that can be configured
+  to either increment or decrement the counter.
+
+  Each channel has two inputs: a signal input that accepts signal edges
+  to be detected, as well as a control input that can be used to enable
+  or disable the signal input.
+
+  Each pulse counter unit also features a filter on each of the four inputs,
+  adding the option to ignore short glitches in the signals.
+
+  By combining the usage of both signal and control inputs, a PCNT unit can
+  act as a quadrature decoder.
+
+  Example: Use PCNT to read a rotary-enconder
+
+  The mapping between signal and control input and the pin is done through pinctrl:
+
+    &pinctrl {
+        pcnt_default: pcnt_default {
+            group1 {
+                pinmux = <PCNT0_CH0SIG_GPIO14>,
+                        <PCNT0_CH0CTRL_GPIO15>;
+                bias-pull-up;
+            };
+        };
+    };
+
+  Note: Check espressif,esp32-pinctrl.yaml for complete documentation regarding pinctrl.
+
+  Use the PCNT node to configure the module:
+
+    &pcnt {
+      pinctrl-0 = <&pcnt_default>;
+      pinctrl-names = "default";
+      status = "okay";
+      #address-cells = <1>;
+      #size-cells = <0>;
+      unit0@0 {
+        reg = <0>;
+        #address-cells = <1>;
+        #size-cells = <0>;
+        filter = <100>;
+        channelA@0 {
+            reg = <0>;
+            sig-pos-mode = <2>;
+            sig-neg-mode = <1>;
+            ctrl-h-mode = <0>;
+            ctrl-l-mode = <1>;
+        };
+      };
+    };
+
+compatible: "espressif,esp32-pcnt"
+
+include: [sensor-device.yaml, pinctrl-device.yaml]
+
+child-binding:
+  description: PCNT Unit configuration.
+
+  properties:
+    reg:
+      type: int
+      required: true
+      enum:
+      - 0
+      - 1
+      - 2
+      - 3
+      - 4
+      - 5
+      - 6
+      - 7
+
+      description: |
+        The PCNT unit index.
+        The ESP32 has 8 PCNT units. ESP32S2/S3 have 4 PCNT units.
+
+    filter:
+      type: int
+      description: Pulse length (ns) to be ignored
+
+  child-binding:
+    description: PCNT Channel configuration.
+
+    properties:
+      reg:
+        type: int
+        required: true
+        enum:
+        - 0
+        - 1
+
+        description: The PCNT channel index.
+
+      sig-pos-mode:
+        type: int
+        enum:
+        - 0
+        - 1
+        - 2
+
+        description: |
+          Define what to do on the positive edge of pulse input.
+          0 (Default) - Inhibit counter (counter value will not change in this condition).
+          1 - Increase counter value.
+          2 - Decrease counter value.
+
+      sig-neg-mode:
+        type: int
+        enum:
+        - 0
+        - 1
+        - 2
+
+        description: |
+          Define what to do on the negative edge of pulse input.
+          0 (Default) - Inhibit counter (counter value will not change in this condition).
+          1 - Increase counter value.
+          2 - Decrease counter value.
+
+      ctrl-h-mode:
+        type: int
+        enum:
+        - 0
+        - 1
+        - 2
+
+        description: |
+          Define what to do when the control input is high.
+          0 (Default) - Don't change counter mode.
+          1 - Invert counter mode(increase -> decrease, decrease -> increase).
+          2 - Control mode: Inhibit counter (counter value will not change in this condition).
+
+      ctrl-l-mode:
+        type: int
+        enum:
+        - 0
+        - 1
+        - 2
+
+        description: |
+          Define what to do when the control input is low.
+          0 (Default) - Don't change counter mode.
+          1 - Invert counter mode(increase -> decrease, decrease -> increase).
+          2 - Control mode: Inhibit counter (counter value will not change in this condition).

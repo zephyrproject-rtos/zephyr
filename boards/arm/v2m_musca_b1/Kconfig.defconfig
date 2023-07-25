@@ -1,0 +1,17 @@
+# Copyright (c) 2019 Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_MUSCA_B1
+
+config BOARD
+	default "musca_b1" if TRUSTED_EXECUTION_SECURE || !TRUSTED_EXECUTION_NONSECURE
+	default "musca_b1_ns"
+
+if SERIAL
+
+config UART_INTERRUPT_DRIVEN
+	default y
+
+endif # SERIAL
+
+endif

@@ -1,0 +1,17 @@
+common:
+  harness: net
+  tags:
+    - net
+    - ipv4_autoconf
+  platform_allow:
+    - qemu_x86
+    - native_posix
+    - native_posix_64
+  integration_platforms:
+    - native_posix
+sample:
+  description: Test IPv4 autoconf functionality
+  name: IPv4 autoconf sample app
+tests:
+  sample.net.ipv4_autoconf:
+    depends_on: netif

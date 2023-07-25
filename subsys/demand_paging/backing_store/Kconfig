@@ -1,0 +1,42 @@
+# Copyright (c) 2020 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+choice BACKING_STORE_CHOICE
+	prompt "Backing store algorithms"
+	default BACKING_STORE_CUSTOM
+
+config BACKING_STORE_CUSTOM
+	bool "Custom backing store implementation"
+	help
+	  This option is chosen when the backing store will be implemented in
+	  the application. This will be typical as these tend to be very
+	  hardware-dependent.
+
+config BACKING_STORE_RAM
+	bool "RAM-based test backing store"
+	help
+	  This implements a backing store using physical RAM pages that the
+	  Zephyr kernel is otherwise unaware of. It is intended for
+	  demonstration and testing of the demand paging feature.
+
+config BACKING_STORE_QEMU_X86_TINY_FLASH
+	bool "Flash-based backing store on qemu_x86_tiny"
+	depends on BOARD_QEMU_X86_TINY
+	help
+	  This uses the "flash" memory area (in DTS) as the backing store
+	  for demand paging. The qemu_x86_tiny.ld linker script puts
+	  the symbols outside of boot and pinned sections into the flash
+	  area, allowing testing of the demand paging mechanism on
+	  code and data.
+endchoice
+
+if BACKING_STORE_RAM
+config BACKING_STORE_RAM_PAGES
+	int "Number of pages for RAM backing store"
+	default 16
+	help
+	  Number of pages of backing store memory to reserve in RAM. All test
+	  cases for demand paging assume that there are at least 16 pages of
+	  backing store storage available.
+
+endif # BACKING_STORE_RAM

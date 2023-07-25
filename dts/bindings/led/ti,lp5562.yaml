@@ -1,0 +1,5 @@
+description: TI LP5562 LED
+
+compatible: "ti,lp5562"
+
+include: i2c-device.yaml

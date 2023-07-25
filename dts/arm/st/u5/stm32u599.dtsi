@@ -1,0 +1,7 @@
+/*
+ * Copyright (c) 2023 PSICONTROL nv
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <st/u5/stm32u595.dtsi>

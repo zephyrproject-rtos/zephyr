@@ -1,0 +1,11 @@
+# STM32373C-EVAL evaluation board configuration
+
+# Copyright (c) 2016 Open-RnD Sp. z o.o.
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_STM32373C_EVAL
+
+config BOARD
+	default "stm32373c_eval"
+
+endif # BOARD_STM32373C_EVAL

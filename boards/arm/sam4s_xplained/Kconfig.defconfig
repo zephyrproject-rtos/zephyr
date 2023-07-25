@@ -1,0 +1,11 @@
+# Atmel SAM4S Xplained Board configuration
+
+# Copyright (c) 2017 Justin Watson
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_SAM4S_XPLAINED
+
+config BOARD
+	default "sam4s_xplained"
+
+endif # BOARD_SAM4S_XPLAINED

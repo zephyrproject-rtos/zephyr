@@ -1,0 +1,96 @@
+/*
+ * Copyright (c) 2020 Seagate Technology LLC
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/led/led.h>
+
+&i2c0 {
+	/* TI LP5030 LED controller connected to I2C0. */
+	lp5030@30 {
+		compatible = "ti,lp5030", "ti,lp503x";
+		reg = <0x30>;
+
+		led_0 {
+			label = "LED LP5030 0";
+			index = <0>;
+			color-mapping =
+				<LED_COLOR_ID_RED>,
+				<LED_COLOR_ID_GREEN>,
+				<LED_COLOR_ID_BLUE>;
+		};
+		led_1 {
+			label = "LED LP5030 1";
+			index = <1>;
+			color-mapping =
+				<LED_COLOR_ID_RED>,
+				<LED_COLOR_ID_GREEN>,
+				<LED_COLOR_ID_BLUE>;
+		};
+		led_2 {
+			label = "LED LP5030 2";
+			index = <2>;
+			color-mapping =
+				<LED_COLOR_ID_RED>,
+				<LED_COLOR_ID_GREEN>,
+				<LED_COLOR_ID_BLUE>;
+		};
+		led_3 {
+			label = "LED LP5030 3";
+			index = <3>;
+			color-mapping =
+				<LED_COLOR_ID_RED>,
+				<LED_COLOR_ID_GREEN>,
+				<LED_COLOR_ID_BLUE>;
+		};
+		led_4 {
+			label = "LED LP5030 4";
+			index = <4>;
+			color-mapping =
+				<LED_COLOR_ID_RED>,
+				<LED_COLOR_ID_GREEN>,
+				<LED_COLOR_ID_BLUE>;
+		};
+		led_5 {
+			label = "LED LP5030 5";
+			index = <5>;
+			color-mapping =
+				<LED_COLOR_ID_RED>,
+				<LED_COLOR_ID_GREEN>,
+				<LED_COLOR_ID_BLUE>;
+		};
+		led_6 {
+			label = "LED LP5030 6";
+			index = <6>;
+			color-mapping =
+				<LED_COLOR_ID_RED>,
+				<LED_COLOR_ID_GREEN>,
+				<LED_COLOR_ID_BLUE>;
+		};
+		led_7 {
+			label = "LED LP5030 7";
+			index = <7>;
+			color-mapping =
+				<LED_COLOR_ID_RED>,
+				<LED_COLOR_ID_GREEN>,
+				<LED_COLOR_ID_BLUE>;
+		};
+		led_8 {
+			label = "LED LP5030 8";
+			index = <8>;
+			color-mapping =
+				<LED_COLOR_ID_RED>,
+				<LED_COLOR_ID_GREEN>,
+				<LED_COLOR_ID_BLUE>;
+		};
+		led_9 {
+			label = "LED LP5030 9";
+			index = <9>;
+			color-mapping =
+				<LED_COLOR_ID_RED>,
+				<LED_COLOR_ID_GREEN>,
+				<LED_COLOR_ID_BLUE>;
+		};
+	};
+};

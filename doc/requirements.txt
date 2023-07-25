@@ -1,0 +1,14 @@
+# DOC: used to generate docs
+
+docleaf==0.8.1
+sphinx~=6.2
+sphinx_rtd_theme~=1.2
+sphinx-tabs
+sphinxcontrib-svg2pdfconverter
+pygments>=2.9
+sphinx-notfound-page
+sphinx-copybutton
+
+# YAML validation. Used by zephyr_module.
+PyYAML>=5.1
+pykwalify

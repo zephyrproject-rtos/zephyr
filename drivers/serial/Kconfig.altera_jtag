@@ -1,0 +1,27 @@
+# Copyright (c) 2017-2023 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config UART_ALTERA_JTAG
+	bool "Nios II/NiosV JTAG UART driver"
+	default y
+	depends on DT_HAS_ALTR_JTAG_UART_ENABLED
+	select SERIAL_HAS_DRIVER
+	help
+	  Enable the Altera JTAG UART driver, built in to many Nios II/NiosV CPU
+	  designs.
+
+config UART_ALTERA_JTAG_HAL
+	bool "JTAG UART driver using Altera HAL API"
+	depends on UART_ALTERA_JTAG && NIOS2
+	help
+	  This is not available for NiosV CPU, as only the HAL for Nios II CPU is ported.
+	  Enabling this will disable poll_in and interrupt driven api.
+
+config UART_ALTERA_JTAG_SUPPORT_INTERRUPT
+	bool
+	depends on UART_ALTERA_JTAG
+	default y if !UART_ALTERA_JTAG_HAL
+	select SERIAL_SUPPORT_INTERRUPT
+	help
+	  This is a helper config. Altera JTAG UART driver will support interrupt,
+	  if UART_ALTERA_JTAG_HAL is disabled.

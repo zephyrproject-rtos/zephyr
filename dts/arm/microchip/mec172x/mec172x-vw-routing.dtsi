@@ -1,0 +1,231 @@
+/*
+ * Copyright (c) 2021 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#define MSVW 1
+#define SMVW 0
+
+/ {
+	mchp-xec-espi-vw-routing {
+		compatible = "microchip,xec-espi-vw-routing";
+
+		/* eSPI Virtual Vire (VW) routing */
+		vw_slp_s3_n: vw_slp_s3_n {
+			/* Host-index MSVW/SMVW MSVW/SMVW-index source */
+			vw-reg = <0x02 MSVW 0 0>;
+			vw-girq = <24 0>;
+			status = "okay";
+		};
+		vw_slp_s4_n: vw_slp_s4_n {
+			vw-reg = <0x02 MSVW 0 1>;
+			vw-girq = <24 1>;
+			status = "okay";
+		};
+		vw_slp_s5_n: vw_slp_s5_n {
+			vw-reg = <0x02 MSVW 0 2>;
+			vw-girq = <24 2>;
+			status = "okay";
+		};
+		vw_sus_stat_n: vw_sus_stat_n {
+			vw-reg = <0x03 MSVW 1 0>;
+			vw-girq = <24 4>;
+			status = "okay";
+		};
+		vw_pltrst_n: vw_pltrst_n {
+			vw-reg = <0x03 MSVW 1 1>;
+			vw-girq = <24 5>;
+			status = "okay";
+		};
+		vw_oob_rst_warn: vw_oob_rst_warn {
+			vw-reg = <0x03 MSVW 1 2>;
+			vw-girq = <24 6>;
+			status = "okay";
+		};
+		vw_host_rst_warn: vw_host_rst_warn {
+			vw-reg = <0x07 MSVW 2 0>;
+			vw-girq = <24 8>;
+			status = "okay";
+		};
+		vw_smiout_n: vw_smiout_n {
+			vw-reg = <0x07 MSVW 2 1>;
+			vw-girq = <24 9>;
+			status = "disabled";
+		};
+		vw_nmiout_n: vw_nmiout_n {
+			vw-reg = <0x07 MSVW 2 2>;
+			vw-girq = <24 10>;
+			status = "disabled";
+		};
+		vw_sus_warn_n: vw_sus_warn_n {
+			vw-reg = <0x41 MSVW 3 0>;
+			vw-girq = <24 12>;
+			status = "okay";
+		};
+		vw_sus_pwrdn_ack: vw_sus_pwrdn_ack {
+			vw-reg = <0x41 MSVW 3 1>;
+			vw-girq = <24 13>;
+			status = "okay";
+		};
+		vw_slp_a_n: vw_slp_a_n {
+			vw-reg = <0x41 MSVW 3 3>;
+			vw-girq = <24 15>;
+			status = "okay";
+		};
+		vw_slp_lan_n: vw_slp_lan_n {
+			vw-reg = <0x42 MSVW 4 0>;
+			vw-girq = <24 16>;
+			status = "okay";
+		};
+		vw_slp_wlan_n: vw_slp_wlan_n {
+			vw-reg = <0x42 MSVW 4 1>;
+			vw-girq = <24 17>;
+			status = "okay";
+		};
+		vw_host_c10: vw_host_c10 {
+			vw-reg = <0x47 MSVW 7 0>;
+			vw-girq = <25 0>;
+			status = "okay";
+		};
+		vw_dnx_warn: vw_dnx_warn {
+			vw-reg = <0x4a MSVW 8 1>;
+			vw-girq = <25 5>;
+			status = "okay";
+		};
+
+		/* Device to Host (SMVW) do not have SoC interrupts */
+		vw_oob_rst_ack: vw_oob_rst_ack {
+			vw-reg = <0x04 SMVW 0 0>;
+			status = "okay";
+		};
+		vw_wake_n: vw_wake_n {
+			vw-reg = <0x04 SMVW 0 2>;
+			status = "okay";
+		};
+		vw_pme_n: vw_pme_n {
+			vw-reg = <0x04 SMVW 0 3>;
+			status = "okay";
+		};
+		vw_slave_boot_done: vw_slave_boot_done {
+			vw-reg = <0x05 SMVW 1 0>;
+			status = "okay";
+		};
+		vw_error_fatal: vw_error_fatal {
+			vw-reg = <0x05 SMVW 1 1>;
+			status = "okay";
+		};
+		vw_error_non_fatal: vw_error_non_fatal {
+			vw-reg = <0x05 SMVW 1 2>;
+			status = "okay";
+		};
+		vw_slave_boot_status: vw_slave_boot_status {
+			vw-reg = <0x05 SMVW 1 3>;
+			status = "okay";
+		};
+		vw_sci_n: vw_sci_n {
+			vw-reg = <0x06 SMVW 2 0>;
+			status = "okay";
+		};
+		vw_smi_n: vw_smi_n {
+			vw-reg = <0x06 SMVW 2 1>;
+			status = "okay";
+		};
+		vw_rcin_n: vw_rcin_n {
+			vw-reg = <0x06 SMVW 2 2>;
+			status = "okay";
+		};
+		vw_host_rst_ack: vw_host_rst_ack {
+			vw-reg = <0x06 SMVW 2 3>;
+			status = "okay";
+		};
+		vw_sus_ack_n: vw_sus_ack_n {
+			vw-reg = <0x40 SMVW 3 0>;
+			status = "okay";
+		};
+		vw_dnx_ack: vw_dnx_ack {
+			vw-reg = <0x40 SMVW 3 1>;
+			status = "okay";
+		};
+		vw_t2c_gpio_0: vw_t2c_gpio_0 {
+			vw-reg = <0x50 SMVW 6 0>;
+			status = "disabled";
+		};
+		vw_t2c_gpio_1: vw_t2c_gpio_1 {
+			vw-reg = <0x50 SMVW 6 1>;
+			status = "disabled";
+		};
+		vw_t2c_gpio_2: vw_t2c_gpio_2 {
+			vw-reg = <0x50 SMVW 6 2>;
+			status = "disabled";
+		};
+		vw_t2c_gpio_3: vw_t2c_gpio_3 {
+			vw-reg = <0x50 SMVW 6 3>;
+			status = "disabled";
+		};
+		vw_t2c_gpio_4: vw_t2c_gpio_4 {
+			vw-reg = <0x51 SMVW 7 0>;
+			status = "disabled";
+		};
+		vw_t2c_gpio_5: vw_t2c_gpio_5 {
+			vw-reg = <0x51 SMVW 7 1>;
+			status = "disabled";
+		};
+		vw_t2c_gpio_6: vw_t2c_gpio_6 {
+			vw-reg = <0x51 SMVW 7 2>;
+			status = "disabled";
+		};
+		vw_t2c_gpio_7: vw_t2c_gpio_7 {
+			vw-reg = <0x51 SMVW 7 3>;
+			status = "disabled";
+		};
+		vw_t2c_gpio_8: vw_t2c_gpio_8 {
+			vw-reg = <0x52 SMVW 8 0>;
+			status = "disabled";
+		};
+		vw_t2c_gpio_9: vw_t2c_gpio_9 {
+			vw-reg = <0x52 SMVW 8 1>;
+			status = "disabled";
+		};
+		vw_t2c_gpio_10: vw_t2c_gpio_10 {
+			vw-reg = <0x52 SMVW 8 2>;
+			status = "disabled";
+		};
+		vw_t2c_gpio_11: vw_t2c_gpio_11 {
+			vw-reg = <0x52 SMVW 8 3>;
+			status = "disabled";
+		};
+		vw_t2c_gpio_12: vw_t2c_gpio_12 {
+			vw-reg = <0x53 SMVW 9 0>;
+			status = "disabled";
+		};
+		vw_t2c_gpio_13: vw_t2c_gpio_13 {
+			vw-reg = <0x53 SMVW 9 1>;
+			status = "disabled";
+		};
+		vw_t2c_gpio_14: vw_t2c_gpio_14 {
+			vw-reg = <0x53 SMVW 9 2>;
+			status = "disabled";
+		};
+		vw_t2c_gpio_15: vw_t2c_gpio_15 {
+			vw-reg = <0x53 SMVW 9 3>;
+			status = "disabled";
+		};
+		vw_t2c_gpio_16: vw_t2c_gpio_16 {
+			vw-reg = <0x54 SMVW 10 0>;
+			status = "disabled";
+		};
+		vw_t2c_gpio_17: vw_t2c_gpio_17 {
+			vw-reg = <0x54 SMVW 10 1>;
+			status = "disabled";
+		};
+		vw_t2c_gpio_18: vw_t2c_gpio_18 {
+			vw-reg = <0x54 SMVW 10 2>;
+			status = "disabled";
+		};
+		vw_t2c_gpio_19: vw_t2c_gpio_19 {
+			vw-reg = <0x54 SMVW 10 3>;
+			status = "disabled";
+		};
+	};
+};

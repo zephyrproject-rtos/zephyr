@@ -1,0 +1,13 @@
+# LM75 temperature sensor config
+
+# Copyright (c) 2021 Leica Geosystems AG
+# SPDX-License-Identifier: Apache-2.0
+
+config LM75
+	bool "LM75 Temperature Sensor"
+	default y
+	depends on DT_HAS_LM75_ENABLED
+	select I2C
+	help
+	  Enable the driver for the LM75 digital temperature Sensor with 2-wire
+	  interface. Thermal Watchdog is not implemented

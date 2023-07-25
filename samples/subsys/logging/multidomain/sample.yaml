@@ -1,0 +1,9 @@
+sample:
+  name: Logging in multi-domain environment
+tests:
+  sample.logging.multidomain.ipc_static_vrings:
+    platform_allow: nrf5340dk_nrf5340_cpuapp
+    integration_platforms:
+      - nrf5340dk_nrf5340_cpuapp
+    tags: ipc
+    build_only: true

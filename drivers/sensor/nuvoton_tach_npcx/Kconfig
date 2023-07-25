@@ -1,0 +1,12 @@
+# NPCX tachometer sensor configuration options
+
+# Copyright (c) 2021 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+config TACH_NPCX
+	bool "Nuvoton NPCX Tachometer sensor"
+	default y
+	depends on DT_HAS_NUVOTON_NPCX_TACH_ENABLED
+	depends on SOC_FAMILY_NPCX
+	help
+	  Enable the "Nuvoton NPCX tachometer sensor.

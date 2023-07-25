@@ -1,0 +1,10 @@
+# Copyright (c) 2018 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config SEM_VALUE_MAX
+	int "Maximum semaphore limit"
+	default 32767
+	range 1 32767
+	help
+	  Maximum semaphore count in POSIX compliant Application.

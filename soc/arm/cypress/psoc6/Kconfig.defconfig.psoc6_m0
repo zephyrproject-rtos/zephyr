@@ -1,0 +1,14 @@
+# Cypress PSoC6 CM0 platform configuration options
+
+# Copyright (c) 2018, Cypress
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_PSOC6_M0
+
+config SOC
+	default "psoc6_m0"
+
+config NUM_IRQS
+	default 32
+
+endif # SOC_PSOC6_M0

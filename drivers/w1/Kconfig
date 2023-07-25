@@ -1,0 +1,69 @@
+# 1-Wire configuration options
+
+# Copyright (c) 2022 Thomas Stranger
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig W1
+	bool
+	prompt "1-Wire bus drivers"
+	select CRC
+	help
+	  Enable 1-Wire Drivers
+
+if W1
+
+module = W1
+module-str = W1
+source "subsys/logging/Kconfig.template.log_config"
+
+config W1_INIT_PRIORITY
+	int
+	default 65
+	prompt "Init priority"
+	help
+	  1-Wire device driver initialization priority.
+
+config W1_SHELL
+	bool "1-Wire Shell"
+	depends on SHELL
+	default y if !SHELL_MINIMAL
+	help
+	  Enable 1-Wire Shell for testing.
+
+config W1_SHELL_BUFFER_SIZE
+	int
+	default 16
+	depends on W1_SHELL
+	prompt "1-Wire Shell buffer size"
+	help
+	  Size of the send and receive buffer in bytes.
+	  To be able to write more than 8 bytes make
+	  sure to also increase SHELL_ARGC_MAX accordingly.
+
+rsource "Kconfig.ds2482-800"
+rsource "Kconfig.ds2484"
+rsource "Kconfig.ds2477_85"
+rsource "Kconfig.ds2485"
+rsource "Kconfig.test"
+rsource "Kconfig.zephyr_serial"
+
+config W1_NET
+	bool "1-Wire network layer"
+	default y
+	help
+	  Enable 1-wire network layer
+
+config W1_NET_FORCE_MULTIDROP_ADDRESSING
+	bool "Force 1-Wire multidrop addressing"
+	depends on W1_NET
+	help
+	  This option will ignore the number of 1-Wire
+	  slave devices defined in the DTS. Specifically,
+	  this option avoids the SKIP ROM command,
+	  which is otherwise used in case of a single
+	  1-Wire slave on the bus. In most cases, enabling
+	  this option is not needed, yet it is essential
+	  if multiple 1-Wire devices unspecified in the
+	  DTS are interfaced.
+
+endif # W1

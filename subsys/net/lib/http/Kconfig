@@ -1,0 +1,44 @@
+# Copyright (c) 2016 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config HTTP_PARSER
+	bool "HTTP Parser support"
+	select HTTP_PARSER_URL
+	help
+	  This option enables the http_parser library from nodejs.
+	  This parser requires some string-related routines commonly
+	  provided by a libc implementation.
+
+config HTTP_PARSER_URL
+	bool "HTTP Parser for URL support"
+	help
+	  This option enables the URI parser library based on source from nodejs.
+	  This parser requires some string-related routines commonly
+	  provided by a libc implementation.
+
+config HTTP_PARSER_STRICT
+	bool "HTTP strict parsing"
+	depends on (HTTP_PARSER || HTTP_PARSER_URL)
+	help
+	  This option enables the strict parsing option
+
+config HTTP_CLIENT
+	bool "HTTP client API [EXPERIMENTAL]"
+	select HTTP_PARSER
+	select HTTP_PARSER_URL
+	select EXPERIMENTAL
+	help
+	  HTTP client API
+
+config HTTP_SERVER
+	bool "HTTP Server [EXPERIMENTAL]"
+	select WARN_EXPERIMENTAL
+	help
+	  HTTP server support.
+	  Note: this is a work-in-progress
+
+module = NET_HTTP
+module-dep = NET_LOG
+module-str = Log level for HTTP client library
+module-help = Enables HTTP client code to output debug messages.
+source "subsys/net/Kconfig.template.log_config.net"

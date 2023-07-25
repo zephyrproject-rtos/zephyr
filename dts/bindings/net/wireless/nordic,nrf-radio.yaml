@@ -1,0 +1,229 @@
+# Copyright (c) 2020 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    Nordic nRF family RADIO peripheral.
+
+    This controls the 2.4 GHz radio transceiver on nRF5x
+    SoCs, which is available for use with Bluetooth, 802.15.4,
+    and proprietary wireless protocols (not all of these
+    protocols are available on all SoCs; consult the product
+    specifications for details).
+
+    This binding is not relevant to the nRF91x baseband radio.
+
+    Front-End Module (FEM) support
+    ------------------------------
+
+    External front-end modules are range extenders used for boosting
+    the link robustness and link budget of wireless SoCs. If your
+    system includes an external FEM, set it up in the devicetree using
+    this binding's 'fem' property, like this example:
+
+      &radio {
+              fem = <&nrf_radio_fem>;
+      };
+
+      nrf_radio_fem: my-fem {
+              compatible = "...";
+              ....
+      };
+
+    Currently supported "compatible" properties for the FEM node are:
+
+      - generic-fem-two-ctrl-pins
+      - nordic,nrf21540-fem
+
+    Refer to the bindings for these compatibles for more information
+    about how to configure the FEM.
+
+    Direction Finding Extension
+    ---------------------------
+
+    Some radios support the Bluetooth Direction Finding Extension (DFE).
+    The 'dfe-supported' property will be set when it is available.
+    In this case, the 'dfegpio[n]-gpios' properties configure GPIO pins
+    to use to drive antenna switching.
+
+    Each dfegpio[n]-gpios property which is set is used to initialize the
+    corresponding PSEL.DFEGPIO[n] register.
+
+    None of the dfegpio[n]-gpios properties are marked 'required',
+    since which PSEL.DFEGPIO[n] registers will be used to drive
+    antenna switches depends on the use case. Nevertheless, at least two
+    antennas must be available to use DFE.
+
+    That in turn means that at least one dfegpio[n]-gpios
+    property must be provided if DFE is used, to give the radio the
+    possibility to switch between two antennas. To use 12 antennas,
+    4 GPIOs must be provided (since 4 GPIO pins support switching up to
+    16 antennas).
+
+    GPIOs are used in order, following the indices of the dfegpio[n]-gpios
+    properties. The order is important because it affects the mapping of
+    antenna switch patterns to GPIOs.
+
+    Antenna switching patterns
+    --------------------------
+
+    An antenna switching pattern is a binary number where each bit is
+    applied to a particular antenna GPIO pin. For example, the pattern
+    0x3 means that antenna GPIOs at indexes 0 and 1 will be set, while
+    the following are left unset.
+
+    The number of GPIOs specified with dfegpio[n]-gpios properties
+    affects the allowed pattern values. For example, when using four
+    GPIOs, the pattern count cannot be greater than 16, and the
+    maximum allowed value is 15.
+
+    Antenna switch patterns are stored in DFE internal memory by
+    writes to the SWITCHPATTERN register. DFE handling code applies
+    antenna switch patterns during Constant Tone Extension (CTE)
+    receive (Angle of Arrival mode) or transmission (Angle of
+    Departure mode) procedure.
+
+    DFE States
+    ----------
+
+    There are four states of DFE operation:
+
+    * Idle: in this state, PDU transmission happens.
+      DFE uses SWITCHPATTERN[0] to select the antenna in this state.
+      (The 'dfe-pdu-antenna' property value described below is stored
+      in SWITCHPATTERN[0] by the radio controller code.)
+
+    * Guard: in this state, DFE prepares for reception or transmission
+      of CTE. For this state, DFE selects the antenna by applying
+      SWITCHPATTERN[1].
+
+    * Reference: in this state, DFE starts to receive or transmit CTE.
+      In AoA mode, DFE collects reference IQ samples. The selected
+      antenna is the same as in the guard state.
+
+    * Switch-sample: in this state, actual antenna switching happens.
+      DFE selects antennas by applying SWITCHPATTERN[2..N]. If the
+      number of switch-sample periods is greater than the number of
+      stored switching patterns, DFE loops back to SWITCHPATTERN[2].
+
+
+compatible: "nordic,nrf-radio"
+
+include: [base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  fem:
+    type: phandle
+    description: |
+      Phandle linking the RADIO node to its external front-end module.
+
+  coex:
+    type: phandle
+    description: |
+      Phandle linking the RADIO node to the external radio coexistence arbitrator.
+
+  dfe-supported:
+    type: boolean
+    description: |
+      If set, the radio hardware supports the Direction Finding Extension.
+      This property should be treated as read-only and should not be overridden;
+      the correct value is provided for your target's SoC already.
+
+  dfe-antenna-num:
+    type: int
+    description: |
+      Number of available antennas for the Direction Finding Extension.
+
+      This should only be set if dfe-supported is true. If you set this
+      property, the value must be at least two.
+
+  dfe-pdu-antenna:
+    type: int
+    description: |
+      Antenna switch pattern to be used for transmission of PDU before start
+      of transmission of Constant Tone Extension.
+
+      This should only be set if dfe-supported is true.
+
+      This pattern is stored in SWITCHPATTERN[0] before actual antenna
+      switching patterns. This pattern will also be used to drive GPIOs
+      when the radio releases control of GPIOs used to switch antennas.
+
+  dfegpio0-gpios:
+    type: phandle-array
+    description: |
+      Pin select for DFE pin 0. This should only be set if dfe-supported
+      is true.
+
+      For example, to use P0.2 on an nRF5x SoC:
+
+        dfegpio1-gpios = <&gpio0 2 0>;
+
+      To use P1.4:
+
+        dfegpio1-gpios = <&gpio1 4 0>;
+
+      Note the last 'flags' cell in the property is not used,
+      and should be set to 0 as shown.
+
+  dfegpio1-gpios:
+    type: phandle-array
+    description: |
+      Pin select for DFE pin 1. See description for dfegpio0-gpios.
+
+  dfegpio2-gpios:
+    type: phandle-array
+    description: |
+      Pin select for DFE pin 2. See description for dfegpio0-gpios.
+
+  dfegpio3-gpios:
+    type: phandle-array
+    description: |
+      Pin select for DFE pin 3. See description for dfegpio0-gpios.
+
+  dfegpio4-gpios:
+    type: phandle-array
+    description: |
+      Pin select for DFE pin 4. See description for dfegpio0-gpios.
+
+  dfegpio5-gpios:
+    type: phandle-array
+    description: |
+      Pin select for DFE pin 5. See description for dfegpio0-gpios.
+
+  dfegpio6-gpios:
+    type: phandle-array
+    description: |
+      Pin select for DFE pin 6. See description for dfegpio0-gpios.
+
+  dfegpio7-gpios:
+    type: phandle-array
+    description: |
+      Pin select for DFE pin 7. See description for dfegpio0-gpios.
+
+  ieee802154-supported:
+    type: boolean
+    description: |
+      If set, indicates that the radio hardware supports the IEEE 802.15.4
+      mode.
+
+  ble-2mbps-supported:
+    type: boolean
+    description: |
+      If set, indicates that the radio hardware supports the 2 Mbps BLE mode.
+
+  ble-coded-phy-supported:
+    type: boolean
+    description: |
+      If set, indicates that the radio hardware supports coded BLE PHY.
+
+  tx-high-power-supported:
+    type: boolean
+    description: |
+      If set, indicates that the radio hardware supports high TX power
+      settings.

@@ -1,0 +1,137 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
+/dts-v1/;
+
+#include <nxp/nxp_kl25z.dtsi>
+#include "frdm_kl25z-pinctrl.dtsi"
+
+/ {
+	model = "NXP Freedom KL25Z board";
+	compatible = "nxp,frdm-kl25z", "nxp,kl25z", "nxp,mkl25z4";
+
+	aliases {
+		led0 = &green_led;
+		led1 = &blue_led;
+		led2 = &red_led;
+		sw0 = &user_button_0;
+		sw1 = &user_button_1;
+		accel0 = &mma8451q;
+	};
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		red_led: led_0 {
+			gpios = <&gpiob 18 GPIO_ACTIVE_LOW>;
+			label = "User LD1";
+		};
+		green_led: led_1 {
+			gpios = <&gpiob 19 GPIO_ACTIVE_LOW>;
+			label = "User LD2";
+		};
+		blue_led: led_2 {
+			gpios = <&gpiod 1 GPIO_ACTIVE_LOW>;
+			label = "User LD3";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		user_button_0: button_0 {
+			label = "User SW0";
+			gpios = <&gpioa 16 GPIO_ACTIVE_LOW>;
+		};
+		user_button_1: button_1 {
+			label = "User SW1";
+			gpios = <&gpioa 17 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	arduino_header: connector {
+		compatible = "arduino-header-r3";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0 0 &gpiob 0 0>,	/* A0 */
+			   <1 0 &gpiob 1 0>,	/* A1 */
+			   <2 0 &gpiob 2 0>,	/* A2 */
+			   <3 0 &gpiob 3 0>,	/* A3 */
+			   <4 0 &gpioc 2 0>,	/* A4 */
+			   <5 0 &gpioc 1 0>,	/* A5 */
+			   <6 0 &gpioa 1 0>,	/* D0 */
+			   <7 0 &gpioa 2 0>,	/* D1 */
+			   <8 0 &gpiod 4 0>,	/* D2 */
+			   <9 0 &gpioa 12 0>,	/* D3 */
+			   <10 0 &gpioa 4 0>,	/* D4 */
+			   <11 0 &gpioa 5 0>,	/* D5 */
+			   <12 0 &gpioc 8 0>,	/* D6 */
+			   <13 0 &gpioc 9 0>,	/* D7 */
+			   <14 0 &gpioa 13 0>,	/* D8 */
+			   <15 0 &gpiod 5 0>,	/* D9 */
+			   <16 0 &gpiod 0 0>,	/* D10 */
+			   <17 0 &gpiod 2 0>,	/* D11 */
+			   <18 0 &gpiod 3 0>,	/* D12 */
+			   <19 0 &gpiod 1 0>,	/* D13 */
+			   <20 0 &gpioe 0 0>,	/* D14 */
+			   <21 0 &gpioe 1 0>;	/* D15 */
+	};
+};
+
+&sim {
+	pllfll-select = <KINETIS_SIM_PLLFLLSEL_MCGPLLCLK>;
+	er32k-select = <KINETIS_SIM_ER32KSEL_LPO1KHZ>;
+};
+
+&cpu0 {
+	clock-frequency = <48000000>;
+};
+
+&adc0 {
+	status = "okay";
+	pinctrl-0 = <&adc0_default>;
+	pinctrl-names = "default";
+};
+
+&i2c0 {
+	status = "okay";
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-names = "default";
+
+	mma8451q: mma8451q@1d {
+		compatible = "nxp,fxos8700","nxp,mma8451q";
+		reg = <0x1d>;
+		int1-gpios = <&gpioa 14 GPIO_ACTIVE_LOW>;
+		int2-gpios = <&gpioa 15 GPIO_ACTIVE_LOW>;
+	};
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-names = "default";
+};
+
+&gpioa {
+	status = "okay";
+};
+
+&gpiob {
+	status = "okay";
+};
+
+&gpiod {
+	status = "okay";
+};
+
+zephyr_udc0: &usbotg {
+	compatible = "nxp,kinetis-usbd";
+	status = "okay";
+	num-bidir-endpoints = <8>;
+};

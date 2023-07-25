@@ -1,0 +1,26 @@
+# Copyright (c) 2020 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Nuvoton, NPCX-UART node
+
+compatible: "nuvoton,npcx-uart"
+
+include: [uart-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+  clocks:
+    required: true
+  pinctrl-0:
+    required: true
+  pinctrl-names:
+    required: true
+  uart-rx:
+    type: phandle
+    required: true
+    description: |
+        Mapping table between Wake-Up Input (WUI) and uart rx START signal.
+
+        For example the WUI mapping on NPCX7 UART1 would be
+           uart-rx = <&wui_cr_sin1>;

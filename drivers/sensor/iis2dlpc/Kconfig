@@ -1,0 +1,70 @@
+# ST Microelectronics IIS2DLPC 3-axis accelerometer driver
+
+# Copyright (c) 2020 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig IIS2DLPC
+	bool "IIS2DLPC I2C/SPI accelerometer sensor driver"
+	default y
+	depends on DT_HAS_ST_IIS2DLPC_ENABLED
+	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_ST_IIS2DLPC),i2c)
+	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_ST_IIS2DLPC),spi)
+	select HAS_STMEMSC
+	select USE_STDC_IIS2DLPC
+	help
+	  Enable driver for IIS2DLPC accelerometer sensor driver
+
+if IIS2DLPC
+
+choice IIS2DLPC_TRIGGER_MODE
+	prompt "Trigger mode"
+	help
+	  Specify the type of triggering to be used by the driver.
+
+config IIS2DLPC_TRIGGER_NONE
+	bool "No trigger"
+
+config IIS2DLPC_TRIGGER_GLOBAL_THREAD
+	bool "Use global thread"
+	depends on GPIO
+	select IIS2DLPC_TRIGGER
+
+config IIS2DLPC_TRIGGER_OWN_THREAD
+	bool "Use own thread"
+	depends on GPIO
+	select IIS2DLPC_TRIGGER
+
+endchoice
+
+config IIS2DLPC_TRIGGER
+	bool
+
+if IIS2DLPC_TRIGGER
+
+config IIS2DLPC_THREAD_PRIORITY
+	int "Thread priority"
+	depends on IIS2DLPC_TRIGGER_OWN_THREAD
+	default 10
+	help
+	  Priority of thread used by the driver to handle interrupts.
+
+config IIS2DLPC_THREAD_STACK_SIZE
+	int "Thread stack size"
+	depends on IIS2DLPC_TRIGGER_OWN_THREAD
+	default 1024
+	help
+	  Stack size of thread used by the driver to handle interrupts.
+
+config IIS2DLPC_TAP
+	bool "Tap and Tap-Tap detection"
+	help
+	  Enable tap (single/double) detection
+
+config IIS2DLPC_ACTIVITY
+	bool "Activity detection"
+	help
+	  Enable activity/inactivity detection
+
+endif # IIS2DLPC_TRIGGER
+
+endif # IIS2DLPC

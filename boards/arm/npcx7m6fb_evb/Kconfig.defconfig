@@ -1,0 +1,15 @@
+# Copyright (c) 2020 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_NPCX7M6FB_EVB
+
+config BOARD
+	default "npcx7m6fb_evb"
+
+endif # BOARD_NPCX7M6FB_EVB
+
+config SYS_CLOCK_TICKS_PER_SEC
+	default 1000
+
+config INPUT
+	default y if KSCAN

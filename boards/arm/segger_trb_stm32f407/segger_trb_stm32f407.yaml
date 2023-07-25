@@ -1,0 +1,19 @@
+identifier: segger_trb_stm32f407
+name: Cortex-M Trace Reference Board V1.2
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 192
+flash: 512
+supported:
+  - counter
+  - gpio
+  - watchdog
+testing:
+  ignore_tags:
+    - net
+    - shell
+    - console

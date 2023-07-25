@@ -1,0 +1,8 @@
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_NSIM
+
+config BOARD
+	default "nsim"
+
+endif # BOARD_NSIM

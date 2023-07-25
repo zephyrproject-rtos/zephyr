@@ -1,0 +1,19 @@
+/*
+ * Copyright (c) 2022, NXP
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ */
+
+#include <nxp/nxp_imx/mimx9352cvuxk-pinctrl.dtsi>
+
+&pinctrl {
+	uart2_default: uart2_default {
+		group0 {
+			pinmux = <&iomuxc_uart2_rxd_uart_rx_uart2_rx>,
+				<&iomuxc_uart2_txd_uart_tx_uart2_tx>;
+			bias-pull-up;
+			slew-rate = "slightly_fast";
+			drive-strength = "x5";
+		};
+	};
+};

@@ -1,0 +1,20 @@
+# Copyright (c) 2020 Jiri Kerestes
+# SPDX-License-Identifier: Apache-2.0
+
+description: LPC Windowed Watchdog Timer
+
+compatible: "nxp,lpc-wwdt"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clk-divider:
+    type: int
+    description: Watchdog clock divider
+    required: true

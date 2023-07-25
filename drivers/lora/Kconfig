@@ -1,0 +1,37 @@
+#
+# Copyright (c) 2019 Manivannan Sadhasivam
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+# Top-level configuration file for LORA drivers.
+
+menuconfig LORA
+	bool "LoRa drivers [EXPERIMENTAL]"
+	select POLL
+	select EXPERIMENTAL
+	help
+	  Include LoRa drivers in the system configuration.
+
+if LORA
+
+module = LORA
+module-str = lora
+source "subsys/logging/Kconfig.template.log_config"
+
+config LORA_SHELL
+	bool "LoRa Shell"
+	default y
+	depends on SHELL
+	help
+	  Enable LoRa Shell for testing.
+
+config LORA_INIT_PRIORITY
+	int "LoRa initialization priority"
+	default 90
+	help
+	  System initialization priority for LoRa drivers.
+
+source "drivers/lora/Kconfig.sx12xx"
+
+endif # LORA

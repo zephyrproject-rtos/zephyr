@@ -1,0 +1,22 @@
+/*
+ * Copyright (c) 2020 Aurelien Jarno
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <st/l4/stm32l412.dtsi>
+
+/ {
+	soc {
+		compatible = "st,stm32l422", "st,stm32l4", "simple-bus";
+
+		aes: aes@50060000 {
+			compatible = "st,stm32-aes";
+			reg = <0x50060000 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00010000>;
+			interrupts = <79 0>;
+			interrupt-names = "aes";
+			status = "disabled";
+		};
+	};
+};

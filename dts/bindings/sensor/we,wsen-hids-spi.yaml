@@ -1,0 +1,9 @@
+# Copyright (c) 2022 Würth Elektronik eiSos GmbH & Co. KG
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    Würth Elektronik WSEN-HIDS humidity sensor with integrated temperature sensor (SPI bus)
+
+compatible: "we,wsen-hids"
+
+include: ["spi-device.yaml", "we,wsen-hids-common.yaml"]

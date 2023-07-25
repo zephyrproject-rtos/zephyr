@@ -1,0 +1,25 @@
+# Xilinx watchdog configuration
+
+# Copyright (c) 2023, Calian
+# SPDX-License-Identifier: Apache-2.0
+
+config WDT_XILINX_AXI
+	bool "Xilinx AXI Timebase WDT driver"
+	default y
+	depends on DT_HAS_XLNX_XPS_TIMEBASE_WDT_1_00_A_ENABLED
+	help
+	  Enable the Xilinx AXI Timebase WDT driver.
+
+if WDT_XILINX_AXI
+
+config WDT_XILINX_AXI_HWINFO_API
+	bool "Expose HWINFO API in Xilinx AXI Timebase WDT driver"
+	default y
+	select HWINFO
+	help
+	  Controls whether the Xilinx AXI Timebase WDT driver exposes a HWINFO
+	  API which allows determining whether the WDT initiated the last
+	  system reset. This may need to be disabled if using a device or SoC
+	  which already implements this API.
+
+endif # WDT_XILINX_AXI

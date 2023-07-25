@@ -1,0 +1,229 @@
+# Bosch BMI160 inertial measurement configuration options
+
+# Copyright (c) 2016 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig BMI160
+	bool "Bosch BMI160 inertial measurement unit"
+	default y
+	depends on DT_HAS_BOSCH_BMI160_ENABLED
+	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_BOSCH_BMI160),i2c)
+	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_BOSCH_BMI160),spi)
+	help
+	  Enable Bosch BMI160 inertial measurement unit that provides acceleration
+	  and angular rate measurements.
+
+if BMI160
+
+choice
+	prompt "Trigger mode"
+	default BMI160_TRIGGER_GLOBAL_THREAD
+	help
+	  Specify the type of triggering to be used by the driver.
+
+config BMI160_TRIGGER_NONE
+	bool "No trigger"
+
+config BMI160_TRIGGER_GLOBAL_THREAD
+	bool "Use global thread"
+	select BMI160_TRIGGER
+
+config BMI160_TRIGGER_OWN_THREAD
+	bool "Use own thread"
+	select BMI160_TRIGGER
+endchoice
+
+config BMI160_TRIGGER
+	bool
+
+config BMI160_THREAD_PRIORITY
+	int "Own thread priority"
+	depends on BMI160_TRIGGER_OWN_THREAD
+	default 10
+	help
+	  The priority of the thread used for handling interrupts.
+
+config BMI160_THREAD_STACK_SIZE
+	int "Own thread stack size"
+	depends on BMI160_TRIGGER_OWN_THREAD
+	default 1024
+	help
+	  The thread stack size.
+
+choice
+	prompt "Accelerometer power mode"
+	default BMI160_ACCEL_PMU_RUNTIME
+
+config BMI160_ACCEL_PMU_RUNTIME
+	bool "Set at runtime."
+
+config BMI160_ACCEL_PMU_SUSPEND
+	bool "suspended/not used"
+
+config BMI160_ACCEL_PMU_NORMAL
+	bool "normal"
+
+config BMI160_ACCEL_PMU_LOW_POWER
+	bool "low power"
+endchoice
+
+choice
+	prompt "Accelerometer range setting"
+	depends on BMI160_ACCEL_PMU_RUNTIME || BMI160_ACCEL_PMU_NORMAL || BMI160_ACCEL_PMU_LOW_POWER
+	default BMI160_ACCEL_RANGE_RUNTIME
+
+config BMI160_ACCEL_RANGE_RUNTIME
+	bool "Set at runtime."
+
+config BMI160_ACCEL_RANGE_2G
+	bool "2G"
+
+config BMI160_ACCEL_RANGE_4G
+	bool "4G"
+
+config BMI160_ACCEL_RANGE_8G
+	bool "8G"
+
+config BMI160_ACCEL_RANGE_16G
+	bool "16G"
+endchoice
+
+choice
+	prompt "Accelerometer sampling frequency."
+	depends on BMI160_ACCEL_PMU_RUNTIME || BMI160_ACCEL_PMU_NORMAL || BMI160_ACCEL_PMU_LOW_POWER
+	default BMI160_ACCEL_ODR_RUNTIME
+
+config BMI160_ACCEL_ODR_RUNTIME
+	bool "Set at runtime."
+
+config BMI160_ACCEL_ODR_25_32
+	depends on BMI160_ACCEL_PMU_LOW_POWER
+	bool "0.78 Hz"
+
+config BMI160_ACCEL_ODR_25_16
+	depends on BMI160_ACCEL_PMU_LOW_POWER
+	bool "1.56 Hz"
+
+config BMI160_ACCEL_ODR_25_8
+	depends on BMI160_ACCEL_PMU_LOW_POWER
+	bool "3.125 Hz"
+
+config BMI160_ACCEL_ODR_25_4
+	depends on BMI160_ACCEL_PMU_LOW_POWER
+	bool "6.25 Hz"
+
+config BMI160_ACCEL_ODR_25_2
+	bool "12.5 Hz"
+
+config BMI160_ACCEL_ODR_25
+	bool "25 Hz"
+
+config BMI160_ACCEL_ODR_50
+	bool "50 Hz"
+
+config BMI160_ACCEL_ODR_100
+	bool "100 Hz"
+
+config BMI160_ACCEL_ODR_200
+	bool "200 Hz"
+
+config BMI160_ACCEL_ODR_400
+	bool "400 Hz"
+
+config BMI160_ACCEL_ODR_800
+	bool "800 Hz"
+
+config BMI160_ACCEL_ODR_1600
+	bool "1600 Hz"
+endchoice
+
+choice
+	prompt "Gyroscope power mode"
+	default BMI160_GYRO_PMU_RUNTIME
+
+config BMI160_GYRO_PMU_RUNTIME
+	bool "Set at runtime."
+
+config BMI160_GYRO_PMU_SUSPEND
+	bool "suspended/not used"
+
+config BMI160_GYRO_PMU_NORMAL
+	bool "normal"
+
+config BMI160_GYRO_PMU_FAST_STARTUP
+	bool "fast start-up"
+endchoice
+
+choice
+	prompt "Gyroscope range setting."
+	depends on BMI160_GYRO_PMU_RUNTIME || BMI160_GYRO_PMU_NORMAL || BMI160_GYRO_PMU_FAST_STARTUP
+	default BMI160_GYRO_RANGE_RUNTIME
+
+config BMI160_GYRO_RANGE_RUNTIME
+	bool "Set at runtime."
+
+config BMI160_GYRO_RANGE_2000DPS
+	bool "2000 DPS"
+
+config BMI160_GYRO_RANGE_1000DPS
+	bool "1000 DPS"
+
+config BMI160_GYRO_RANGE_500DPS
+	bool "500 DPS"
+
+config BMI160_GYRO_RANGE_250DPS
+	bool "250 DPS"
+
+config BMI160_GYRO_RANGE_125DPS
+	bool "125 DPS"
+endchoice
+
+choice
+	prompt "Gyroscope sampling frequency."
+	depends on BMI160_GYRO_PMU_RUNTIME || BMI160_GYRO_PMU_NORMAL || BMI160_GYRO_PMU_FAST_STARTUP
+	default BMI160_GYRO_ODR_RUNTIME
+
+config BMI160_GYRO_ODR_RUNTIME
+	bool "Set at runtime."
+
+config BMI160_GYRO_ODR_25
+	bool "25 Hz"
+
+config BMI160_GYRO_ODR_50
+	bool "50 Hz"
+
+config BMI160_GYRO_ODR_100
+	bool "100 Hz"
+
+config BMI160_GYRO_ODR_200
+	bool "200 Hz"
+
+config BMI160_GYRO_ODR_400
+	bool "400 Hz"
+
+config BMI160_GYRO_ODR_800
+	bool "800 Hz"
+
+config BMI160_GYRO_ODR_1600
+	bool "1600 Hz"
+
+config BMI160_GYRO_ODR_3200
+	bool "3200 Hz"
+endchoice
+
+
+config EMUL_BMI160
+	bool "Emulate a Bosch BMI160 accelerometer"
+	default y
+	depends on EMUL
+	depends on BMI160
+	help
+	  This is an emulator for the Bosch BMI160 accelerometer.
+
+	  It provides readings which follow a simple sequence, thus allowing
+	  test code to check that things are working as expected.
+
+	  It supports both I2C and SPI which is why it is not in one of the
+	  i2c/ or spi/ directories.
+
+endif # BMI160

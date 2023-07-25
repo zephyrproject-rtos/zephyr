@@ -1,0 +1,9 @@
+# WaRP7 iMX7S M4 board
+
+# Copyright (c) 2018, Diego Sueiro
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_WARP7_M4
+	bool "WaRP7 iMX7 Solo"
+	depends on SOC_SERIES_IMX7_M4
+	select SOC_PART_NUMBER_MCIMX7S3DVK08SA

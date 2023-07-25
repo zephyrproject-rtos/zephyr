@@ -1,0 +1,30 @@
+# Native Linux SocketCAN configuration options
+
+# Copyright (c) 2022 Martin Jäger <martin@libre.solar>
+# SPDX-License-Identifier: Apache-2.0
+
+config CAN_NATIVE_POSIX_LINUX
+	bool "Native Linux SocketCAN Driver"
+	default y
+	depends on DT_HAS_ZEPHYR_NATIVE_POSIX_LINUX_CAN_ENABLED
+	help
+	  Enable native Linux SocketCAN Driver
+
+if CAN_NATIVE_POSIX_LINUX
+
+config CAN_NATIVE_POSIX_LINUX_RX_THREAD_PRIORITY
+	int "Priority for internal RX thread"
+	default 2
+	help
+	  Priority level of the internal thread which is run for
+	  handling of incoming packets.
+
+config CAN_MAX_FILTER
+	int "Maximum number of concurrent active filters"
+	default 5
+	range 1 32
+	help
+	  Defines the array size of the callback/msgq pointers.
+	  Must be at least the size of concurrent reads.
+
+endif # CAN_NATIVE_POSIX_LINUX

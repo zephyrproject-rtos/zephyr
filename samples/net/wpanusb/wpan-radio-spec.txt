@@ -1,0 +1,107 @@
+ieee802154 wpan radio protocol over USB
+
+Overview
+========
+
+The document describes protocol between 802.15.4 physical radio and Linux
+kernel driver over USB. Protocol is based on atusb Linux driver protocol
+found inside Linux kernel: drivers/net/ieee802154/atusb.h
+
+Packet structure
+================
+
+Command opcodes are inside bRequest field. bRequest and wIndex are one octet
+long.
+
+Commands from Host to Device
+============================
+
+USB Control endpoint, Vendor commands
+
+	Opcode 0x00 - Reset		bRequest
+
+		Reset the Radio
+
+	Opcode 0x01 - Transmit		bRequest
+
+		Sequence number		wIndex
+		Data length		wLength
+
+		Transmit data from Host to Device
+
+	Opcode 0x02 - Transmit Async	bRequest
+
+		TBD
+
+	Opcode 0x03 - ED		bRequest
+
+		TBD
+
+	Opcode 0x04 - Set Channel	bRequest
+
+		Set ieee802154 channel
+
+		Page		1 octet
+		Channel		1 octet
+
+	Opcode 0x05 - Start		bRequest
+
+		Start ieee802154 device
+
+	Opcode 0x06 - Stop		bRequest
+
+		Stop ieee802154 device
+
+	Opcode 0x07 - Set Short address	bRequest
+
+		Set ieee802154 Short address
+
+		Short address	2 octets
+
+	Opcode 0x08 - Set PAN ID	bRequest
+
+		Set ieee802154 PAN ID
+
+		PAN ID		2 octets
+
+	Opcode 0x09 - Set address	bRequest
+
+		Set ieee802154 address
+
+		address		8 octets
+
+	Opcode 0x0A - Set TX Power	bRequest
+
+		TBD
+
+	Opcode 0x0B - Set CCA Mode	bRequest
+
+		TBD
+
+	Opcode 0x0C - Set CCA ED level	bRequest
+
+		TBD
+
+	Opcode 0x0D - Set CSMA Params	bRequest
+
+		TBD
+
+	Opcode 0x0E - Set Promisc mode	bRequest
+
+		TBD
+
+Data from Device to Host
+========================
+
+USB BULK IN endpoint
+
+	Transmit ACK
+
+		Length		1 octet
+		Data		Sequence number
+
+	Data
+
+		Length		1 octet
+		Data		Data
+		LQI		1 octet

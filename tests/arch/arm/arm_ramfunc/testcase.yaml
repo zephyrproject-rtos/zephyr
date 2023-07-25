@@ -1,0 +1,9 @@
+tests:
+  arch.arm.ramfunc:
+    filter: CONFIG_ARCH_HAS_RAMFUNC_SUPPORT
+    tags:
+      - arm
+      - userspace
+    arch_allow: arm
+    extra_configs:
+      - CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE=0

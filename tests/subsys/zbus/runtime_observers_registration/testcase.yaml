@@ -1,0 +1,5 @@
+tests:
+  message_bus.zbus.runtime_obs_reg.add_and_remove_observers:
+    tags: zbus
+    integration_platforms:
+      - native_posix

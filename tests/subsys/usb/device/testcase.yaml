@@ -1,0 +1,4 @@
+tests:
+  usb.device:
+    depends_on: usb_device
+    tags: usb

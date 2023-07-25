@@ -1,0 +1,30 @@
+# Copyright (c) 2022 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+menu "Frontends"
+
+config LOG_FRONTEND_DICT_UART
+	bool "UART dictionary frontend"
+	select LOG_DICTIONARY_DB
+	select MPSC_PBUF
+	depends on UART_ASYNC_API || UART_INTERRUPT_DRIVEN
+	help
+	  Frontend sends data in binary dictionary mode.
+
+if LOG_FRONTEND_DICT_UART
+
+config LOG_FRONTEND_DICT_UART_BUFFER_SIZE
+	int "Buffer size"
+	default 1024
+	help
+	  Number of bytes dedicated for buffering data
+
+config LOG_FRONTEND_DICT_UART_DROPPED_NOTIFY_PERIOD
+	int "Dropped notification period"
+	default 500
+	help
+	  Determines how often a report about dropped messages is printed. Given
+	  in milliseconds.
+
+endif
+endmenu

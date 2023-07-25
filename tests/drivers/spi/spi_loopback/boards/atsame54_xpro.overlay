@@ -1,0 +1,26 @@
+/*
+ * Copyright (c) 2020 Stephanos Ioannidis <root@stephanos.io>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&sercom4 {
+	/* Internally connect MOSI to MISO for loop-back operation */
+	dipo = <3>;
+	dopo = <2>;
+	/* Assign a CS pin */
+	cs-gpios = <&portb 28 GPIO_ACTIVE_LOW>;
+	/* Configure DMA */
+	dmas = <&dmac 0 12>, <&dmac 1 13>;
+	dma-names = "rx", "tx";
+	slow@0 {
+		compatible = "test-spi-loopback-slow";
+		reg = <0>;
+		spi-max-frequency = <500000>;
+	};
+	fast@0 {
+		compatible = "test-spi-loopback-fast";
+		reg = <0>;
+		spi-max-frequency = <16000000>;
+	};
+};

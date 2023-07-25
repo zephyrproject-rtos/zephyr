@@ -1,0 +1,52 @@
+#
+# Copyright (c) 2018 Peter Bigot Consulting, LLC
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+mainmenu "CCS811 sample application"
+
+choice
+	prompt "CCS811 Trigger On"
+	default APP_TRIGGER_ON_DATAREADY
+	depends on CCS811_TRIGGER
+	help
+	  Select the type of trigger to use
+
+config APP_TRIGGER_ON_DATAREADY
+	bool "Trigger on data ready"
+
+config APP_TRIGGER_ON_THRESHOLD
+	bool "Trigger on eCO2 threshold crossing"
+
+endchoice
+
+config APP_CO2_MEDIUM_PPM
+	int "Threshold of eCO2 between low and medium"
+	default 1500
+	depends on APP_TRIGGER_ON_THRESHOLD
+
+config APP_CO2_HIGH_PPM
+	int "Threshold of eCO2 between medium and high"
+	default 2500
+	depends on APP_TRIGGER_ON_THRESHOLD
+
+config APP_MONITOR_BASELINE
+	bool "Display BASELINE register value for each sample"
+	default y
+
+config APP_USE_ENVDATA
+	bool "Program CCS811 with fixed environmental parameters"
+	default n
+
+config APP_ENV_TEMPERATURE
+	int "Environment temperature for CCS811, Cel"
+	default 25
+	depends on APP_USE_ENVDATA
+
+config APP_ENV_HUMIDITY
+	int "Environment humidity for CCS811, %RH"
+	default 50
+	depends on APP_USE_ENVDATA
+
+source "Kconfig.zephyr"

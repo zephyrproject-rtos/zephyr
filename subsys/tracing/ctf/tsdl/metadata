@@ -1,0 +1,312 @@
+/* CTF 1.8 */
+typealias integer { size = 8; align = 8; signed = true; } := int8_t;
+typealias integer { size = 8; align = 8; signed = false; } := uint8_t;
+typealias integer { size = 16; align = 8; signed = false; } := uint16_t;
+typealias integer { size = 32; align = 8; signed = false; } := uint32_t;
+typealias integer { size = 32; align = 8; signed = true; } := int32_t;
+typealias integer { size = 64; align = 8; signed = false; } := uint64_t;
+typealias integer { size = 8; align = 8; signed = false; encoding = ASCII; } := ctf_bounded_string_t;
+
+struct event_header {
+	uint32_t timestamp;
+	uint8_t id;
+};
+
+trace {
+	major = 1;
+	minor = 8;
+	byte_order = le;
+};
+
+stream {
+	event.header := struct event_header;
+};
+
+event {
+	name = thread_switched_out;
+	id = 0x10;
+	fields := struct {
+		uint32_t thread_id;
+		ctf_bounded_string_t name[20];
+	};
+};
+
+event {
+	name = thread_switched_in;
+	id = 0x11;
+	fields := struct {
+		uint32_t thread_id;
+		ctf_bounded_string_t name[20];
+	};
+};
+
+event {
+	name = thread_priority_set;
+	id = 0x12;
+	fields := struct {
+		uint32_t thread_id;
+		ctf_bounded_string_t name[20];
+		int8_t prio;
+	};
+
+};
+
+event {
+	name = thread_create;
+	id = 0x13;
+	fields := struct {
+		uint32_t thread_id;
+		ctf_bounded_string_t name[20];
+	};
+};
+
+event {
+	name = thread_abort;
+	id = 0x14;
+	fields := struct {
+		uint32_t thread_id;
+		ctf_bounded_string_t name[20];
+	};
+};
+
+event {
+	name = thread_suspend;
+	id = 0x15;
+	fields := struct {
+		uint32_t thread_id;
+		ctf_bounded_string_t name[20];
+	};
+};
+
+event {
+	name = thread_resume;
+	id = 0x16;
+	fields := struct {
+		uint32_t thread_id;
+		ctf_bounded_string_t name[20];
+	};
+};
+event {
+        name = thread_ready;
+        id = 0x17;
+        fields := struct {
+                uint32_t thread_id;
+				ctf_bounded_string_t name[20];
+        };
+};
+
+event {
+	name = thread_pending;
+	id = 0x18;
+	fields := struct {
+		uint32_t thread_id;
+		ctf_bounded_string_t name[20];
+	};
+};
+
+event {
+	name = thread_info;
+	id = 0x19;
+	fields := struct {
+		uint32_t thread_id;
+		ctf_bounded_string_t name[20];
+		uint32_t stack_base;
+		uint32_t stack_size;
+	};
+};
+
+event {
+	name = thread_name_set;
+	id = 0x1a;
+	fields := struct {
+		uint32_t thread_id;
+		ctf_bounded_string_t name[20];
+	};
+};
+
+event {
+	name = isr_enter;
+	id = 0x1B;
+};
+
+event {
+	name = isr_exit;
+	id = 0x1C;
+};
+
+event {
+	name = isr_exit_to_scheduler;
+	id = 0x1D;
+};
+
+event {
+	name = idle;
+	id = 0x1E;
+};
+
+event {
+	name = semaphore_init;
+	id = 0x21;
+	fields := struct {
+		uint32_t id;
+		int32_t ret;
+	};
+};
+
+event {
+	name = semaphore_give_enter;
+	id = 0x22;
+	fields := struct {
+		uint32_t id;
+	};
+};
+
+event {
+	name = semaphore_give_exit;
+	id = 0x23;
+	fields := struct {
+		uint32_t id;
+	};
+};
+
+event {
+	name = semaphore_take_enter;
+	id = 0x24;
+	fields := struct {
+		uint32_t id;
+		uint32_t timeout;
+	};
+};
+
+event {
+	name = semaphore_take_exit;
+	id = 0x26;
+	fields := struct {
+		uint32_t id;
+		uint32_t timeout;
+		int32_t ret;
+	};
+};
+
+
+event {
+	name = semaphore_take_blocking;
+	id = 0x25;
+	fields := struct {
+		uint32_t id;
+		uint32_t timeout;
+	};
+};
+
+
+event {
+	name = semaphore_reset;
+	id = 0x27;
+	fields := struct {
+		uint32_t id;
+	};
+};
+
+event {
+	name = mutex_init;
+	id = 0x28;
+	fields := struct {
+		uint32_t id;
+		int32_t ret;
+	};
+};
+
+event {
+	name = mutex_lock_enter;
+	id = 0x29;
+	fields := struct {
+		uint32_t id;
+		uint32_t timeout;
+	};
+};
+
+event {
+	name = mutex_lock_blocking;
+	id = 0x2A;
+	fields := struct {
+		uint32_t id;
+		uint32_t timeout;
+	};
+};
+
+event {
+	name = mutex_lock_exit;
+	id = 0x2B;
+	fields := struct {
+		uint32_t id;
+		uint32_t timeout;
+		int32_t ret;
+	};
+};
+
+event {
+	name = mutex_unlock_enter;
+	id = 0x2C;
+	fields := struct {
+		uint32_t id;
+	};
+};
+
+event {
+	name = mutex_unlock_exit;
+	id = 0x2D;
+	fields := struct {
+		uint32_t id;
+	};
+};
+
+event {
+	name = timer_init;
+	id = 0x2E;
+	fields := struct {
+		uint32_t id;
+	};
+};
+
+event {
+	name = timer_start;
+	id = 0x2F;
+	fields := struct {
+		uint32_t id;
+		uint32_t duration;
+		uint32_t period;
+	};
+};
+
+event {
+	name = timer_stop;
+	id = 0x30;
+	fields := struct {
+		uint32_t id;
+	};
+};
+
+event {
+	name = timer_status_sync_enter;
+	id = 0x31;
+	fields := struct {
+		uint32_t id;
+	};
+};
+
+event {
+	name = timer_status_sync_blocking;
+	id = 0x32;
+	fields := struct {
+		uint32_t id;
+	};
+};
+
+event {
+	name = timer_status_sync_exit;
+	id = 0x33;
+	fields := struct {
+		uint32_t id;
+		uint32_t result;
+	};
+};

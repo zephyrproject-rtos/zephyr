@@ -1,0 +1,5 @@
+tests:
+  kernel.common.sleep:
+    tags:
+      - kernel
+      - sleep

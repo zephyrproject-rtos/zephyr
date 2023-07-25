@@ -1,0 +1,7 @@
+sample:
+  name: Utilize APA102C LED
+tests:
+  sample.drivers.led.apa102c_bitbang:
+    tags: LED
+    filter: dt_alias_exists("gpio-0")
+    depends_on: gpio

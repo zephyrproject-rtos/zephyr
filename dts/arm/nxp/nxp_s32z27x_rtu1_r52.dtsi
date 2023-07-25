@@ -1,0 +1,82 @@
+/*
+ * Copyright 2022 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/nxp/nxp_s32z27x_r52.dtsi>
+
+/ {
+
+	cpus {
+		/delete-node/ cpu@0;
+		/delete-node/ cpu@1;
+		/delete-node/ cpu@2;
+		/delete-node/ cpu@3;
+	};
+
+	soc {
+		stm0: stm@76a00000 {
+			compatible = "nxp,s32-sys-timer";
+			reg = <0x76a00000 0x10000>;
+			interrupts = <GIC_SPI 13 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			status = "disabled";
+		};
+
+		stm1: stm@76a10000 {
+			compatible = "nxp,s32-sys-timer";
+			reg = <0x76a10000 0x10000>;
+			interrupts = <GIC_SPI 14 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			status = "disabled";
+		};
+
+		stm2: stm@76820000 {
+			compatible = "nxp,s32-sys-timer";
+			reg = <0x76820000 0x10000>;
+			interrupts = <GIC_SPI 15 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			status = "disabled";
+		};
+
+		stm3: stm@76830000 {
+			compatible = "nxp,s32-sys-timer";
+			reg = <0x76830000 0x10000>;
+			interrupts = <GIC_SPI 16 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			status = "disabled";
+		};
+
+		swt0: watchdog@76800000 {
+			compatible = "nxp,s32-swt";
+			reg = <0x76800000 0x10000>;
+			interrupts = <GIC_SPI 8 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			status = "disabled";
+		};
+
+		swt1: watchdog@76810000 {
+			compatible = "nxp,s32-swt";
+			reg = <0x76810000 0x10000>;
+			interrupts = <GIC_SPI 9 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			status = "disabled";
+		};
+
+		swt2: watchdog@76a20000 {
+			compatible = "nxp,s32-swt";
+			reg = <0x76a20000 0x10000>;
+			interrupts = <GIC_SPI 10 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			status = "disabled";
+		};
+
+		swt3: watchdog@76a30000 {
+			compatible = "nxp,s32-swt";
+			reg = <0x76a30000 0x10000>;
+			interrupts = <GIC_SPI 11 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			status = "disabled";
+		};
+
+		swt4: watchdog@76940000 {
+			compatible = "nxp,s32-swt";
+			reg = <0x76940000 0x10000>;
+			interrupts = <GIC_SPI 12 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			status = "disabled";
+		};
+	};
+};

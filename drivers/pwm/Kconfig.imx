@@ -1,0 +1,18 @@
+# i.MX PWM Config
+
+# Copyright (c) 2018, Diego Sueiro
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig PWM_IMX
+	bool "i.MX PWM Driver"
+	default y
+	depends on DT_HAS_FSL_IMX27_PWM_ENABLED
+	help
+	  Enable support for i.MX pwm driver.
+
+config PWM_PWMSWR_LOOP
+	int "Loop count for PWM Software Reset"
+	default 5
+	depends on PWM_IMX
+	help
+	  Loop count for PWM Software Reset when disabling PWM channel.

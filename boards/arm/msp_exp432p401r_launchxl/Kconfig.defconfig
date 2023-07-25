@@ -1,0 +1,7 @@
+# TI MSP-EXP432P401R LaunchXL development board configuration
+
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD
+	default "msp_exp432p401r_launchxl"
+	depends on BOARD_MSP_EXP432P401R_LAUNCHXL

@@ -1,0 +1,103 @@
+# Copyright 2022 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+# SD stack configuration options
+
+menu "SD"
+
+config MMC_STACK
+	bool "MMC protocol support"
+	help
+	  Enable MMC protocol support. Required for eMMC cards to function.
+
+config SDMMC_STACK
+	bool "SDMMC protocol support"
+	help
+	  Enable SDMMC protocol support. Required for SD memory cards to
+	  function.
+
+config SDIO_STACK
+	bool "SDIO protocol support"
+	help
+	  Enable SDIO protocol support. Required for SD I/O cards to function.
+
+config SD_STACK
+	bool
+	default y if MMC_STACK || SDMMC_STACK || SDIO_STACK
+	select SDHC
+	help
+	  Enable SD card support.
+
+if SD_STACK
+
+module = SD
+module-str = SD stack
+source "subsys/logging/Kconfig.template.log_config"
+
+config SD_INIT_TIMEOUT
+	int "Timeout while initializing SD card"
+	default 1500
+	help
+	  Maximum time to wait, in milliseconds, for the SD card to initialize.
+
+config SD_RETRY_COUNT
+	int "Number of times to retry initialization commands"
+	default 10
+	help
+	  Number of times to retry initialization commands in case of failure
+
+config SD_OCR_RETRY_COUNT
+	int "Number of times to retry SD OCR read"
+	default 1000
+	help
+	  Number of times to retry SD OCR read command. OCR reads typically
+	  require more retries than general SD commands
+
+config SD_CMD_TIMEOUT
+	int "Timeout for SD commands (in ms)"
+	default 200
+	help
+	  Default timeout in milliseconds for SD commands
+
+config SD_DATA_TIMEOUT
+	int "Timeout for SD data transfer (in ms)"
+	default 10000
+	help
+	  Default timeout in milliseconds for SD data transfer commands
+
+config SD_BUFFER_SIZE
+	int
+	# If SDHC required buffer alignment, we need a full block size in
+	# internal buffer
+	default 512 if SDHC_BUFFER_ALIGNMENT != 1
+	# If MMC is being used, need 512 bytes to read EXT_CSD
+	default 512 if MMC_STACK
+	# Otherwise, we only need 64 bytes to read SD switch function
+	default 64
+	help
+	  Size in bytes of internal buffer SD card uses for unaligned reads and
+	  internal data reads during initialization
+
+config SD_DATA_RETRIES
+	int "Number of times to retry sending data to card"
+	default 3
+	help
+	  Number of times to retry sending data to SD card in case of failure
+
+
+config SD_UHS_PROTOCOL
+	bool "Ultra high speed SD card protocol support"
+	default y if SDHC_SUPPORTS_UHS
+	help
+	  Enable support for ultra high speed SD cards. This can be disabled to
+	  reduce code size, at the cost of data transfer speeds.
+
+config MMC_RCA
+	hex "MMC Relative card address"
+	default 2
+	help
+	  Relative card address to publish to MMC card.
+
+endif # SD_STACK
+
+endmenu

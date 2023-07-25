@@ -1,0 +1,24 @@
+sample:
+  description: Sample demonstrating dispatch of hardware events from a
+    MetaIRQ thread
+  name: MetaIRQ Dispatch
+common:
+  tags:
+    - kernel
+  integration_platforms:
+    - mps2_an385
+    - qemu_x86
+  harness: console
+  harness_config:
+    type: one_line
+    regex:
+      - "MetaIRQ Test Complete"
+
+# Note that native_posix architectures are filtered, they require
+# instrumentation (e.g. a k_busy_wait()) inside the worker threads
+# "busy" loops in order for the interrupts to fire on time, and the
+# sample is designed to demonstrate completely arbitrary CPU work.
+tests:
+  sample.kernel.metairq_dispatch:
+    arch_exclude:
+      - posix

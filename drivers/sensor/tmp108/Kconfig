@@ -1,0 +1,25 @@
+# TMP108 temperature sensor configuration options
+
+# Copyright (c) 2021 Jimmy Johnson <catch22@fastmail.net>
+# Copyright (c) 2022 T-Mobile USA, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig TMP108
+	bool "TMP108 Temperature Sensor"
+	default y
+	depends on DT_HAS_TI_TMP108_ENABLED || DT_HAS_AMS_AS6212_ENABLED
+	select I2C
+
+	help
+	  Enable driver for the TMP108 temperature sensor and/or it's variant
+	  the AMS AS621.
+
+if TMP108
+
+config TMP108_ALERT_INTERRUPTS
+	bool "Allow interrupts to service over and under temp alerts"
+	help
+	  This will set up interrupts to service under and over temp alerts
+	  see TMP108 spec sheet for more information on how these work.
+
+endif # TMP108

@@ -1,0 +1,24 @@
+# SPDX-License-Identifier: Apache-2.0
+
+CONFIG_SOC_SERIES_RP2XXX=y
+CONFIG_SOC_RP2040=y
+CONFIG_BOARD_ADAFRUIT_KB2040=y
+
+CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC=125000000
+
+# enable uart driver
+CONFIG_SERIAL=y
+CONFIG_UART_INTERRUPT_DRIVEN=y
+
+# enable console
+CONFIG_CONSOLE=y
+CONFIG_UART_CONSOLE=y
+
+# Enable reset by default
+CONFIG_RESET=y
+
+# Code partition needed to target the correct flash range
+CONFIG_USE_DT_CODE_PARTITION=y
+
+# Output UF2 by default, native bootloader supports it.
+CONFIG_BUILD_OUTPUT_UF2=y

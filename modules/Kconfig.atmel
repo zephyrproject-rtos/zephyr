@@ -1,0 +1,12 @@
+# Atmel SDK
+
+# Copyright (c) 2016 Piotr Mienkowski
+# SPDX-License-Identifier: Apache-2.0
+
+config ASF
+	bool
+	select HAS_CMSIS_CORE
+	depends on SOC_FAMILY_SAM || SOC_FAMILY_SAM0
+
+config ATMEL_WINC1500
+	bool

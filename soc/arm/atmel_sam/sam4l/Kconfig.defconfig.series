@@ -1,0 +1,44 @@
+# Copyright (c) 2020 Gerson Fernando Budke <nandojve@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_SAM4L
+
+config SOC_SERIES
+	default "sam4l"
+
+config SOC_PART_NUMBER
+	default "sam4ls8c" if SOC_PART_NUMBER_SAM4LS8C
+	default "sam4ls8b" if SOC_PART_NUMBER_SAM4LS8B
+	default "sam4ls8a" if SOC_PART_NUMBER_SAM4LS8A
+	default "sam4ls4c" if SOC_PART_NUMBER_SAM4LS4C
+	default "sam4ls4b" if SOC_PART_NUMBER_SAM4LS4B
+	default "sam4ls4a" if SOC_PART_NUMBER_SAM4LS4A
+	default "sam4ls2c" if SOC_PART_NUMBER_SAM4LS2C
+	default "sam4ls2b" if SOC_PART_NUMBER_SAM4LS2B
+	default "sam4ls2a" if SOC_PART_NUMBER_SAM4LS2A
+	default "sam4lc8c" if SOC_PART_NUMBER_SAM4LC8C
+	default "sam4lc8b" if SOC_PART_NUMBER_SAM4LC8B
+	default "sam4lc8a" if SOC_PART_NUMBER_SAM4LC8A
+	default "sam4lc4c" if SOC_PART_NUMBER_SAM4LC4C
+	default "sam4lc4b" if SOC_PART_NUMBER_SAM4LC4B
+	default "sam4lc4a" if SOC_PART_NUMBER_SAM4LC4A
+	default "sam4lc2c" if SOC_PART_NUMBER_SAM4LC2C
+	default "sam4lc2b" if SOC_PART_NUMBER_SAM4LC2B
+	default "sam4lc2a" if SOC_PART_NUMBER_SAM4LC2A
+
+#
+# SAM4L family has total 43 peripherals capable of
+# generating interrupts.
+#
+config NUM_IRQS
+	default 80
+
+# Configure default device drivers. If a feature is supported by more than one
+# device driver the default configuration will be placed in the board defconfig
+# file.
+
+config USART_SAM
+	default y
+	depends on SERIAL
+
+endif # SOC_SERIES_SAM4L

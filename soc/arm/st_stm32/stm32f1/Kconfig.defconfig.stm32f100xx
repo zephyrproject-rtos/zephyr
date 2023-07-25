@@ -1,0 +1,24 @@
+# ST Microelectronics STM32F100XX MCU
+
+# Copyright (c) 2020, Jonas Eriksson, Up to Code AB
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_STM32F100XB
+
+config SOC
+	default "stm32f100xb"
+
+config NUM_IRQS
+	default 56
+
+endif # SOC_STM32F100XB
+
+if SOC_STM32F100XE
+
+config SOC
+	default "stm32f100xe"
+
+config NUM_IRQS
+	default 61
+
+endif # SOC_STM32F100XE

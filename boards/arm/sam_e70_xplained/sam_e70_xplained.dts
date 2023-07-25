@@ -1,0 +1,25 @@
+/*
+ * Copyright (c) 2017 Piotr Mienkowski
+ * Copyright (c) 2017 Justin Watson
+ * Copyright (c) 2020-2023 Gerson Fernando Budke <nandojve@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <atmel/same70q21.dtsi>
+#include "sam_e70_xplained-common.dtsi"
+
+/ {
+	model = "Atmel SAM E70 Xplained board";
+	compatible = "atmel,sam_e70_xplained", "atmel,same70q21", "atmel,same70";
+};
+
+&tc0 {
+	status = "okay";
+	compatible = "atmel,sam-tc-qdec";
+
+	pinctrl-0 = <&tc0_qdec_default>;
+	pinctrl-names = "default";
+};

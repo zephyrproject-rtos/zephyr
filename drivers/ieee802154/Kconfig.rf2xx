@@ -1,0 +1,33 @@
+# ATMEL AT86RF23x/212x configuration options
+
+# Copyright (c) 2019 Gerson Fernando Budke
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig IEEE802154_RF2XX
+	bool "ATMEL RF2XX Driver support"
+	default y
+	depends on DT_HAS_ATMEL_RF2XX_ENABLED
+	select SPI
+	select GPIO
+	select NET_L2_IEEE802154_SUB_GHZ if NET_L2_IEEE802154
+
+if IEEE802154_RF2XX
+
+config IEEE802154_RF2XX_RX_STACK_SIZE
+	int "Driver's internal RX thread stack size"
+	default 800
+	help
+	  This option sets the driver's stack size for its internal RX thread.
+	  The default value should be sufficient, but in case it proves to be
+	  a too little one, this option makes it easy to play with the size.
+
+config IEEE802154_RF2XX_INIT_PRIO
+	int "RF2X initialization priority"
+	default 80
+	help
+	  Set the initialization priority number. Do not mess with it unless
+	  you know what you are doing. Beware rf2xx requires gpio and spi to
+	  be ready first (and sometime gpio should be the very first as spi
+	  might need it too). And of course it has to start before the net stack.
+
+endif

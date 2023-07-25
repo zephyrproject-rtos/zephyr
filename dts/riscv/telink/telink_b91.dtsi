@@ -1,0 +1,223 @@
+/*
+ * Copyright (c) 2021 Telink Semiconductor
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <zephyr/dt-bindings/adc/adc.h>
+#include <zephyr/dt-bindings/adc/b91-adc.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
+
+/ {
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		cpu0: cpu@0 {
+			reg = <0>;
+			clock-frequency = <24000000>;
+			compatible ="telink,b91", "riscv";
+		};
+	};
+
+	soc {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "telink,telink_b91-soc";
+		ranges;
+
+		ram_ilm: memory@0 {
+			compatible = "mmio-sram";
+		};
+
+		ram_dlm: memory@80000 {
+			compatible = "mmio-sram";
+		};
+
+		mtimer: timer@e6000000 {
+			compatible = "telink,machine-timer";
+			reg = <0xe6000000 0x10000>;
+			interrupts = <7 0>;
+			interrupt-parent = <&plic0>;
+		};
+
+		flash_mspi: flash-controller@80140100 {
+			compatible = "telink,b91-flash-controller";
+			reg = <0x80140100 0x40>;
+
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			flash: flash@20000000 {
+				compatible = "soc-nv-flash";
+				write-block-size = <1>;
+			};
+		};
+
+		power: power@80140180 {
+			compatible = "telink,b91-power";
+			reg = <0x80140180 0x40>;
+			power-mode = "LDO_1P4_LDO_1P8";
+			vbat-type = "VBAT_MAX_VALUE_GREATER_THAN_3V6";
+			status = "okay";
+		};
+
+		gpioa: gpio@80140300 {
+			compatible = "telink,b91-gpio";
+			gpio-controller;
+			interrupt-parent = <&plic0>;
+			interrupts = <25 1>, <26 1>, <27 1>;
+			reg = <0x80140300 0x08>;
+			status = "disabled";
+			#gpio-cells = <2>;
+		};
+
+		gpiob: gpio@80140308 {
+			compatible = "telink,b91-gpio";
+			gpio-controller;
+			interrupt-parent = <&plic0>;
+			interrupts = <25 1>, <26 1>, <27 1>;
+			reg = <0x80140308 0x08>;
+			status = "disabled";
+			#gpio-cells = <2>;
+		};
+
+		gpioc: gpio@80140310 {
+			compatible = "telink,b91-gpio";
+			gpio-controller;
+			interrupt-parent = <&plic0>;
+			interrupts = <25 1>, <26 1>, <27 1>;
+			reg = <0x80140310 0x08>;
+			status = "disabled";
+			#gpio-cells = <2>;
+		};
+
+		gpiod: gpio@80140318 {
+			compatible = "telink,b91-gpio";
+			gpio-controller;
+			interrupt-parent = <&plic0>;
+			interrupts = <25 1>, <26 1>, <27 1>;
+			reg = <0x80140318 0x08>;
+			status = "disabled";
+			#gpio-cells = <2>;
+		};
+
+		gpioe: gpio@80140320 {
+			compatible = "telink,b91-gpio";
+			gpio-controller;
+			interrupt-parent = <&plic0>;
+			interrupts = <25 1>, <26 1>, <27 1>;
+			reg = <0x80140320 0x08>;
+			status = "disabled";
+			#gpio-cells = <2>;
+		};
+
+		plic0: interrupt-controller@e4000000 {
+			compatible = "sifive,plic-1.0.0";
+			#address-cells = <0>;
+			#interrupt-cells = <2>;
+			interrupt-controller;
+			reg = < 0xe4000000 0x00001000
+					0xe4002000 0x00000800
+					0xe4200000 0x00010000 >;
+			reg-names = "prio", "irq_en", "reg";
+			riscv,max-priority = <3>;
+			riscv,ndev = <63>;
+		};
+
+		uart0: serial@80140080 {
+			compatible = "telink,b91-uart";
+			reg = <0x80140080 0x40>;
+			interrupts = <19 1>;
+			interrupt-parent = <&plic0>;
+			status = "disabled";
+		};
+
+		uart1: serial@801400C0 {
+			compatible = "telink,b91-uart";
+			reg = <0x801400C0 0x40>;
+			interrupts = <18 1>;
+			interrupt-parent = <&plic0>;
+			status = "disabled";
+		};
+
+		ieee802154: ieee802154@80140800 {
+			compatible = "telink,b91-zb";
+			reg = <0x80140800 0x800>;
+			interrupt-parent = <&plic0>;
+			interrupts = <15 2>;
+			status = "disabled";
+		};
+
+		trng0: trng@80101800 {
+			compatible = "telink,b91-trng";
+			reg = <0x80101800 0x20>;
+			status = "disabled";
+		};
+
+		pwm0: pwm@80140400 {
+			compatible = "telink,b91-pwm";
+			reg = <0x80140400 0x80>;
+			channels = <6>;
+			status = "disabled";
+			#pwm-cells = <3>;
+		};
+
+		hspi: spi@81FFFFC0 {
+			compatible = "telink,b91-spi";
+			reg = <0x81FFFFC0 0x40>;
+			peripheral-id = "HSPI_MODULE";
+			cs0-pin = "0";
+			cs1-pin = "0";
+			cs2-pin = "0";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		pspi: spi@80140040 {
+			compatible = "telink,b91-spi";
+			reg = <0x80140040 0x40>;
+			peripheral-id = "PSPI_MODULE";
+			cs0-pin = "0";
+			cs1-pin = "0";
+			cs2-pin = "0";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		i2c: i2c@80140280 {
+			compatible = "telink,b91-i2c";
+			reg = <0x80140280 0x40>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+		};
+
+		adc: adc@ea {
+			compatible = "telink,b91-adc";
+			reg = <0xea 0x18>;
+			status = "disabled";
+			#io-channel-cells = <1>;
+		};
+
+		pinctrl: pinctrl@80140330 {
+			compatible = "telink,b91-pinctrl";
+			reg = <0x80140330 0x28
+				   0x80140306 0x28
+				   0x0000000e 0x0C>;
+			reg-names = "pin_mux",
+						"gpio_en",
+						"pull_up_en";
+			status = "okay";
+		};
+	};
+};

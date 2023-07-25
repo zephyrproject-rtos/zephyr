@@ -1,0 +1,93 @@
+# Intel64-specific X86 subarchitecture options
+
+# Copyright (c) 2019 Intel Corp.
+# SPDX-License-Identifier: Apache-2.0
+
+if X86_64
+
+config MAIN_STACK_SIZE
+	default 8192
+
+config IDLE_STACK_SIZE
+	default 4096
+
+config ISR_STACK_SIZE
+	default 16384
+
+config TEST_EXTRA_STACK_SIZE
+	default 4096
+
+config SYSTEM_WORKQUEUE_STACK_SIZE
+	default 8192
+
+config X86_EXCEPTION_STACK_SIZE
+	int "Size of the exception stack(s)"
+	default 4096
+	help
+	  The exception stack(s) (one per CPU) are used both for exception
+	  processing and early kernel/CPU initialization. They need only
+	  support limited call-tree depth and must fit into the low core,
+	  so they are typically smaller than the ISR stacks.
+
+config X86_EXCEPTION_STACK_TRACE
+	bool
+	default y
+	depends on EXCEPTION_STACK_TRACE
+	depends on NO_OPTIMIZATIONS
+	help
+	  Internal config to enable runtime stack traces on fatal exceptions.
+
+config SCHED_IPI_VECTOR
+	int "IDT vector to use for scheduler IPI"
+	default 34
+	range 33 255
+	depends on SMP
+
+config TLB_IPI_VECTOR
+	int "IDT vector to use for TLB shootdown IPI"
+	default 35
+	range 33 255
+	depends on SMP
+
+# We should really only have to provide one of the following two values,
+# but a bug in the Zephyr SDK for x86 precludes the use of division in
+# the assembler. For now, we require that these values be specified manually,
+# and we check to be sure they're a valid combination in arch.h. yes, ugh.
+
+config ISR_DEPTH
+	int "Maximum IRQ nesting depth"
+	default 4
+	help
+	  The more nesting allowed, the more room is required for IRQ stacks.
+
+config ISR_SUBSTACK_SIZE
+	int "Size of ISR substacks"
+	default 4096
+	help
+	  Number of bytes from the ISR stack to reserve for each nested IRQ
+	  level. Must be a multiple of 16 to main stack alignment. Note that
+	  CONFIG_ISR_SUBSTACK_SIZE * CONFIG_ISR_DEPTH must be equal to
+	  CONFIG_ISR_STACK_SIZE.
+
+config X86_STACK_PROTECTION
+	bool
+	default y if HW_STACK_PROTECTION
+	select THREAD_STACK_INFO
+	help
+	  This option leverages the MMU to cause a system fatal error if the
+	  bounds of the current process stack are overflowed. This is done
+	  by preceding all stack areas with a 4K guard page.
+
+config X86_USERSPACE
+	bool
+	default y if USERSPACE
+	select THREAD_STACK_INFO
+	help
+	 This option enables APIs to drop a thread's privileges down to ring 3,
+	 supporting user-level threads that are protected from each other and
+	 from crashing the kernel.
+
+config MP_MAX_NUM_CPUS
+	range 1 4
+
+endif # X86_64

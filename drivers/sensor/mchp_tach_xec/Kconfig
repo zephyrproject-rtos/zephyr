@@ -1,0 +1,47 @@
+# Microchip mec15xx tachometer sensor configuration options
+
+# Copyright (c) 2020 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config TACH_XEC
+	bool "XEC Tachometer sensor"
+	default y
+	depends on DT_HAS_MICROCHIP_XEC_TACH_ENABLED
+	depends on SOC_FAMILY_MEC
+	select PINCTRL
+	help
+	  Enable the Microchip XEC tachometer sensor.
+
+if TACH_XEC
+
+choice
+	prompt "Number of tach edges"
+	default TACH_XEC_5_TACH_EDGES
+	help
+	 This value represents the number of Tach edges that
+	 will be used to determine the interval for which the number of
+	 100KHz pulses will be counted.
+
+config TACH_XEC_9_TACH_EDGES
+	bool "Configure 9 tach edges or 4 tach periods"
+
+config TACH_XEC_5_TACH_EDGES
+	bool "Configure 5 tach edges or 2 tach periods"
+
+config TACH_XEC_3_TACH_EDGES
+	bool "Configure 3 tach edges or 1 tach period"
+
+config TACH_XEC_2_TACH_EDGES
+	bool "Configure 2 tach edges or 1/2 tach period"
+
+endchoice
+
+config TACH_XEC_EDGES
+	int
+	range 0 3
+	default 0 if TACH_XEC_2_TACH_EDGES
+	default 1 if TACH_XEC_3_TACH_EDGES
+	default 2 if TACH_XEC_5_TACH_EDGES
+	default 3 if TACH_XEC_9_TACH_EDGES
+
+endif #TACH_XEC

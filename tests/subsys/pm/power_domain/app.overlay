@@ -1,0 +1,35 @@
+/*
+ * Copyright (c) 2021 Intel Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	test_domain: test_domain {
+		compatible = "power-domain";
+		status = "okay";
+	};
+
+	test_dev_a: test_dev_a {
+		compatible = "test-device-pm";
+		status = "okay";
+		power-domain = <&test_domain>;
+	};
+
+	test_dev_b: test_dev_b {
+		compatible = "test-device-pm";
+		status = "okay";
+		power-domain = <&test_domain>;
+	};
+
+	test_domain_balanced: test_domain_balanced {
+		compatible = "power-domain";
+		status = "okay";
+	};
+
+	test_dev_balanced: test_dev_balanced {
+		compatible = "test-device-pm";
+		status = "okay";
+		power-domain = <&test_domain_balanced>;
+	};
+};

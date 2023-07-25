@@ -1,0 +1,8 @@
+common:
+  depends_on: netif
+tests:
+  net.socket.websocket:
+    min_ram: 21
+    tags:
+      - net
+      - websocket

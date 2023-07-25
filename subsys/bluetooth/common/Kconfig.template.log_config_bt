@@ -1,0 +1,22 @@
+# Copyright (c) 2022 Nordic Semicoductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+# Usage:
+# This template provides backwards compatibility for legacy kconfig symbols.
+# Do not add new uses of it.
+#
+# The following arguments are mandatory:
+# 	- module:
+#		Name of the new log level kconfig.
+#		Example: "BT_HCI_CORE"
+# 	- legacy-debug-sym:
+#		An existing "legacy" kconfig bool. If that bool is selected,
+#		the new kconfig is forced to max verbosity.
+#		Example: "BT_DEBUG_HCI_CORE"
+
+config $(module)_LOG_LEVEL
+	default 4 if $(legacy-debug-sym)
+
+module := $(module)
+parent-module := BT
+source "subsys/logging/Kconfig.template.log_config_inherit"

@@ -1,0 +1,85 @@
+name: Footprint Tracking
+
+# Run every 12 hours and on tags
+on:
+  schedule:
+    - cron: '50 1/12 * * *'
+  push:
+    paths:
+      - 'VERSION'
+      - '.github/workflows/footprint-tracking.yml'
+    branches:
+      - main
+      - v*-branch
+    tags:
+      # only publish v* tags, do not care about zephyr-v* which point to the
+      # same commit
+      - 'v*'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  footprint-tracking:
+    runs-on: ubuntu-22.04
+    if: github.repository_owner == 'zephyrproject-rtos'
+    container:
+      image: ghcr.io/zephyrproject-rtos/ci:v0.26.4
+      options: '--entrypoint /bin/bash'
+    strategy:
+      fail-fast: false
+    env:
+      ZEPHYR_SDK_INSTALL_DIR: /opt/toolchains/zephyr-sdk-0.16.1
+      ZEPHYR_TOOLCHAIN_VARIANT: zephyr
+    steps:
+      - name: Apply container owner mismatch workaround
+        run: |
+          # FIXME: The owner UID of the GITHUB_WORKSPACE directory may not
+          #        match the container user UID because of the way GitHub
+          #        Actions runner is implemented. Remove this workaround when
+          #        GitHub comes up with a fundamental fix for this problem.
+          git config --global --add safe.directory ${GITHUB_WORKSPACE}
+
+      - name: Update PATH for west
+        run: |
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Install packages
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y python3-venv
+          sudo pip3 install -U setuptools wheel pip gitpython
+
+      - name: checkout
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - name: west setup
+        run: |
+          west init -l . || true
+          west config --global update.narrow true
+          west update 2>&1 1> west.update.log || west update 2>&1 1> west.update2.log
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ vars.AWS_TESTING_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_TESTING_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Record Footprint
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          export ZEPHYR_BASE=${PWD}
+          ./scripts/footprint/track.py  -p scripts/footprint/plan.txt
+
+      - name: Upload footprint data
+        run: |
+          python3 -m venv .venv
+          . .venv/bin/activate
+          pip3 install awscli
+          aws s3 sync  --quiet footprint_data/ s3://testing.zephyrproject.org/footprint_data/

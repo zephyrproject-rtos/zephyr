@@ -1,0 +1,46 @@
+# Copyright (c) 2022 Intel Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+config FLASH_CAD_QSPI_NOR
+	bool "Cadence Quad SPI Flash driver"
+	default y
+	depends on DT_HAS_CDNS_QSPI_NOR_ENABLED
+	select FLASH_HAS_PAGE_LAYOUT
+	select FLASH_HAS_DRIVER_ENABLED
+	help
+	  Enable Cadence QSPI-NOR support.
+
+if FLASH_CAD_QSPI_NOR
+
+config CAD_QSPI_MICRON_N25Q_SUPPORT
+	bool "Cadence Quad SPI Micron N25Q Support"
+	default y
+	help
+	  Enable Micron N25Q Support.
+
+config CAD_QSPI_NOR_SUBSECTOR_SIZE
+	hex "Cadence Quad SPI subsector size"
+	default 0x1000
+	help
+	  Set the Cadence Quad SPI subsector size.
+
+config QSPI_ADDR_BYTES
+	int "Access QSPI address memory size in bytes"
+	default 2
+	help
+	  Set the address memory size in bytes when
+	  accessing QSPI.
+
+config QSPI_BYTES_PER_DEV
+	int "Set QSPI to read / write how many bytes per device"
+	default 256
+	help
+	  Set the size for a QSPI to read / write per device.
+
+config QSPI_BYTES_PER_BLOCK
+	int "Set QSPI to read / write how many bytes per block"
+	default 16
+	help
+	  Set the size for a QSPI to read / write per block.
+
+endif # FLASH_CAD_QSPI_NOR

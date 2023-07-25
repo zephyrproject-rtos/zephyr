@@ -1,0 +1,47 @@
+/*
+ * Copyright (c) 2022 Lukasz Majewski, DENX Software Engineering GmbH
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/delete-node/ &storage_partition;
+
+&sdmmc1 {
+	status = "okay";
+	pinctrl-0 = <&sdmmc1_d0_pc8
+		     &sdmmc1_ck_pc12
+		     &sdmmc1_cmd_pd2>;
+
+	pinctrl-names = "default";
+};
+
+&quadspi {
+	pinctrl-0 = <&quadspi_clk_pf10 &quadspi_bk2_ncs_pc11
+		     &quadspi_bk2_io0_pe7 &quadspi_bk2_io1_pe8
+		     &quadspi_bk2_io2_pe9 &quadspi_bk2_io3_pe10>;
+	pinctrl-names = "default";
+
+	flash-id = <2>;
+	status = "okay";
+
+	mx25l25645g: qspi-nor-flash@0 {
+		compatible = "st,stm32-qspi-nor";
+		reg = <0>;
+		qspi-max-frequency = <50000000>;
+		size = <DT_SIZE_M(32*8)>;
+		reset-gpios = <&gpiod 3 GPIO_ACTIVE_LOW>;
+		reset-gpios-duration = <1>;
+		spi-bus-width = <4>;
+		status = "okay";
+
+		partitions {
+			   compatible = "fixed-partitions";
+			   #address-cells = <1>;
+			   #size-cells = <1>;
+
+			   storage_partition: partition@0 {
+			       label = "storage";
+			       reg = <0 DT_SIZE_M(8)>;
+			   };
+		};
+	};
+};

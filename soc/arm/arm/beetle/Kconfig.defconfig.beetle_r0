@@ -1,0 +1,8 @@
+# ARM LTD Beetle SoC configuration options
+
+# Copyright (c) 2016 Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC
+	default "beetle_r0"
+	depends on SOC_BEETLE_R0

@@ -1,0 +1,33 @@
+# Dai driver configuration options
+
+# Copyright (c) 2022 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+#
+# DAI Drivers
+#
+menuconfig DAI
+	bool "Digital Audio Interface (DAI) drivers"
+	help
+		Enable support for the DAI interface drivers.
+
+if DAI
+
+config DAI_INIT_PRIORITY
+	int "Init priority"
+	default 70
+	help
+		Device driver initialization priority.
+
+module = DAI
+module-str = dai
+source "subsys/logging/Kconfig.template.log_config"
+
+comment "Device Drivers"
+
+source "drivers/dai/intel/ssp/Kconfig.ssp"
+source "drivers/dai/intel/alh/Kconfig.alh"
+source "drivers/dai/intel/dmic/Kconfig.dmic"
+source "drivers/dai/intel/hda/Kconfig.hda"
+
+endif # DAI

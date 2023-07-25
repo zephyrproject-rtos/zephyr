@@ -1,0 +1,19 @@
+# Microchip XEC QMSPI
+
+# Copyright (c) 2019 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config SPI_XEC_QMSPI
+	bool "Microchip MEC15xx XEC QMSPI driver"
+	default y
+	depends on DT_HAS_MICROCHIP_XEC_QMSPI_ENABLED
+	select DMA if SPI_ASYNC
+	help
+	  Enable support for Microchip MEC15xx XEC QMSPI driver.
+
+config SPI_XEC_QMSPI_LDMA
+	bool "Microchip XEC MEC17xx QMSPI LDMA driver"
+	default y
+	depends on DT_HAS_MICROCHIP_XEC_QMSPI_LDMA_ENABLED
+	help
+	  Enable support for Microchip MEC17xx QMSPI with local DMA driver.

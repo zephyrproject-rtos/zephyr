@@ -1,0 +1,20 @@
+# Cypress PSOC6 MCU line
+
+# Copyright (c) 2018, Cypress
+# Copyright (c) 2020, ATL Electronics
+# SPDX-License-Identifier: Apache-2.0
+
+choice
+	prompt "Cypress PSoC6 MCU Selection"
+	depends on SOC_SERIES_PSOC62 || \
+		   SOC_SERIES_PSOC63
+
+config SOC_PART_NUMBER_CY8C6247BZI_D54
+	bool "CY8C6247BZI_D54"
+	depends on SOC_SERIES_PSOC62
+
+config SOC_PART_NUMBER_CY8C6347BZI_BLD53
+	bool "CY8C6347BZI_BLD53"
+	depends on SOC_SERIES_PSOC63
+
+endchoice

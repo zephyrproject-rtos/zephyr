@@ -1,0 +1,19 @@
+# Atmel SAMR MCU series
+
+# Copyright (c) 2021 Argentum Systems Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+choice
+	prompt "Atmel SAMR34 MCU Selection"
+	depends on SOC_SERIES_SAMR34
+
+config SOC_PART_NUMBER_SAMR34J16B
+	bool "SAMR34J16B"
+
+config SOC_PART_NUMBER_SAMR34J17B
+	bool "SAMR34J17B"
+
+config SOC_PART_NUMBER_SAMR34J18B
+	bool "SAMR34J18B"
+
+endchoice

@@ -1,0 +1,20 @@
+identifier: stm32f072b_disco
+name: ST STM32F072B Discovery
+type: mcu
+arch: arm
+ram: 16
+flash: 128
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - gpio
+  - i2c
+  - spi
+  - can
+  - watchdog
+testing:
+  ignore_tags:
+    - net
+    - bluetooth

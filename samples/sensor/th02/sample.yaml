@@ -1,0 +1,8 @@
+sample:
+  name: TH02 Temperature and Humidity Monitor
+tests:
+  sample.sensor.th02:
+    harness: sensor
+    tags: sensors
+    depends_on: i2c
+    filter: dt_compat_enabled("hoperf,th02") and dt_compat_enabled("seeed,grove-lcd-rgb")

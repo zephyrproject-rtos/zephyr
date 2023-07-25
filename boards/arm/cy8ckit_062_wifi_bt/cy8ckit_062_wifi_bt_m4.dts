@@ -1,0 +1,32 @@
+/*
+ * Copyright (c) 2018, Cypress
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <cypress/psoc6_cm4.dtsi>
+
+/ {
+	model = "cy8ckit_062_wifi_bt_m4 with a Cypress PSoC6 SoC";
+	compatible = "cy8ckit_062_wifi_bt_m4", "PSoC6";
+
+	aliases {
+		uart-5 = &uart5;
+	};
+
+	chosen {
+		zephyr,sram = &sram2;
+		zephyr,flash = &flash1;
+		zephyr,console = &uart5;
+		zephyr,shell-uart = &uart5;
+	};
+};
+
+&uart5 {
+	status = "okay";
+	current-speed = <115200>;
+
+	pinctrl-0 = <&p5_0_uart5_rx &p5_1_uart5_tx>;
+};

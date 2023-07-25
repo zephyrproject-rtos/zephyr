@@ -1,0 +1,19 @@
+# STM32L552ZE Q Nucleo board configuration
+
+# Copyright (c) 2020 Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_NUCLEO_L552ZE_Q
+
+config BOARD
+	default "nucleo_l552ze_q"
+
+if TRUSTED_EXECUTION_NONSECURE
+
+# Get flash configuration for NS image from dts flash partition
+config USE_DT_CODE_PARTITION
+	default y
+
+endif # TRUSTED_EXECUTION_NONSECURE
+
+endif # BOARD_NUCLEO_L552ZE_Q

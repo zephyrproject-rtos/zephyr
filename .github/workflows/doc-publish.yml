@@ -1,0 +1,55 @@
+# Copyright (c) 2020 Linaro Limited.
+# Copyright (c) 2021 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+name: Documentation Publish
+
+on:
+  workflow_run:
+    workflows: ["Documentation Build"]
+    branches:
+    - main
+    - v*
+    types:
+    - completed
+
+jobs:
+  doc-publish:
+    name: Publish Documentation
+    runs-on: ubuntu-22.04
+    if: |
+      github.event.workflow_run.event != 'pull_request' &&
+      github.event.workflow_run.conclusion == 'success' &&
+      github.repository == 'zephyrproject-rtos/zephyr'
+
+    steps:
+    - name: Download artifacts
+      uses: dawidd6/action-download-artifact@v2
+      with:
+        workflow: doc-build.yml
+        run_id: ${{ github.event.workflow_run.id }}
+
+    - name: Uncompress HTML docs
+      run: |
+        tar xf html-output/html-output.tar.xz -C html-output
+
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v2
+      with:
+        aws-access-key-id: ${{ vars.AWS_DOCS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_DOCS_SECRET_ACCESS_KEY }}
+        aws-region: us-east-1
+
+    - name: Upload to AWS S3
+      env:
+        HEAD_BRANCH: ${{ github.event.workflow_run.head_branch }}
+      run: |
+        if [ "${HEAD_BRANCH:0:1}" == "v" ]; then
+          VERSION=${HEAD_BRANCH:1}
+        else
+          VERSION="latest"
+        fi
+
+        aws s3 sync --quiet html-output/html s3://docs.zephyrproject.org/${VERSION} --delete
+        aws s3 sync --quiet html-output/html/doxygen/html s3://docs.zephyrproject.org/apidoc/${VERSION} --delete
+        aws s3 cp --quiet pdf-output/zephyr.pdf s3://docs.zephyrproject.org/${VERSION}/zephyr.pdf

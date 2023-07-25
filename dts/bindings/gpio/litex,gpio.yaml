@@ -1,0 +1,29 @@
+#
+# Copyright (c) 2019 Antmicro <www.antmicro.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: Litex GPIO
+
+compatible: "litex,gpio"
+
+include: [gpio-controller.yaml, base.yaml]
+
+properties:
+  port-is-output:
+    type: boolean
+    description: Indicates if the port is an output port
+
+  reg:
+    required: true
+
+  ngpios:
+    required: true
+
+  "#gpio-cells":
+    const: 2
+
+gpio-cells:
+  - pin
+  - flags

@@ -1,0 +1,25 @@
+# STM32 Minimum Development Board Configuration
+#
+# Copyright (c) 2019, embedjournal.com
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+CONFIG_SOC_SERIES_STM32F1X=y
+CONFIG_SOC_STM32F103X8=y
+
+# enable uart driver
+CONFIG_SERIAL=y
+
+# enable console
+CONFIG_CONSOLE=y
+CONFIG_UART_CONSOLE=y
+
+# enable GPIO
+CONFIG_GPIO=y
+
+# enable clock control
+CONFIG_CLOCK_CONTROL=y
+
+# enable pin controller
+CONFIG_PINCTRL=y

@@ -1,0 +1,32 @@
+sample:
+  description: BSD Sockets API HTTP GET example
+  name: socket_http_get
+common:
+  filter: TOOLCHAIN_HAS_NEWLIB == 1
+  harness: net
+  min_ram: 32
+  min_flash: 80
+  tags:
+    - net
+    - socket
+tests:
+  sample.net.sockets.http_get:
+    extra_configs:
+      - CONFIG_NET_SOCKETS_POSIX_NAMES=y
+      # Forcibly defines CONFIG_POSIX_API, which is incompatible with
+      # CONFIG_NET_SOCKETS_POSIX_NAMES.
+  sample.net.sockets.http_get.posix:
+    filter: not CONFIG_NET_SOCKETS_OFFLOAD
+    platform_exclude:
+      - cc3220sf_launchxl
+      - cc3235sf_launchxl
+    extra_configs:
+      - CONFIG_NET_SOCKETS_POSIX_NAMES=n
+      - CONFIG_POSIX_API=y
+  sample.net.sockets.http_get.offload.simplelink:
+    platform_allow: cc3220sf_launchxl
+    tags:
+      - net
+      - socket
+      - offload
+      - simplelink

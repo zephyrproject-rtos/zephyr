@@ -1,0 +1,240 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
+#include <freq.h>
+
+/ {
+	#address-cells = <1>;
+	#size-cells = <1>;
+	compatible = "sifive,FE310G-0002-Z0-dev", "fe310-dev", "sifive-dev";
+	model = "SiFive,FE310G-0002-Z0";
+	clocks {
+		coreclk: core-clk {
+			#clock-cells = <0>;
+			compatible = "fixed-clock";
+			clock-frequency = <DT_FREQ_M(16)>;
+		};
+
+		tlclk: tl-clk {
+			#clock-cells = <0>;
+			compatible = "fixed-factor-clock";
+			clocks = <&coreclk>;
+			clock-div = <1>;
+		};
+	};
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		cpu: cpu@0 {
+			compatible = "sifive,e31";
+			device_type = "cpu";
+			reg = <0>;
+			riscv,isa = "rv32imac";
+			status = "okay";
+			hlic: interrupt-controller {
+				compatible = "riscv,cpu-intc";
+				#address-cells = <0>;
+				#interrupt-cells = <1>;
+				interrupt-controller;
+			};
+		};
+	};
+	soc {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "sifive,FE310G-0002-Z0-soc", "fe310-soc",
+			"sifive-soc", "simple-bus";
+		ranges;
+		wdog0: wdog@10000000 {
+			compatible = "sifive,wdt";
+			interrupt-parent = <&plic>;
+			interrupts = <1 1>;
+			reg = <0x10000000 0x40>;
+			reg-names = "control";
+		};
+		aon: aon@10000040 {
+			compatible = "sifive,aon0";
+			interrupt-parent = <&plic>;
+			interrupts = <2 1>;
+			reg = <0x10000040 0x9c0>;
+			reg-names = "control";
+		};
+		clint: clint@2000000 {
+			compatible = "sifive,clint0";
+			interrupts-extended = <&hlic 3 &hlic 7>;
+			reg = <0x2000000 0x10000>;
+		};
+		debug: debug-controller@0 {
+			compatible = "sifive,debug-013", "riscv,debug-013";
+			interrupts-extended = <&hlic 65535>;
+			reg = <0x0 0x1000>;
+			reg-names = "control";
+		};
+		dtim: dtim@80000000 {
+			compatible = "sifive,dtim0";
+			reg = <0x80000000 0x4000>;
+			reg-names = "mem";
+		};
+		error-device@3000 {
+			compatible = "sifive,error0";
+			reg = <0x3000 0x1000>;
+			reg-names = "mem";
+		};
+		gpio0: gpio@10012000 {
+			compatible = "sifive,gpio0";
+			gpio-controller;
+			interrupt-parent = <&plic>;
+			interrupts = <8 1>, <9 1>, <10 1>, <11 1>,
+				<12 1>, <13 1>, <14 1>, <15 1>,
+				<16 1>, <17 1>, <18 1>, <19 1>,
+				<20 1>, <21 1>, <22 1>, <23 1>,
+				<24 1>, <25 1>, <26 1>, <27 1>,
+				<28 1>, <29 1>, <30 1>, <31 1>,
+				<32 1>, <33 1>, <34 1>, <35 1>,
+				<36 1>, <37 1>, <38 1>, <39 1>;
+			reg = <0x10012000 0x1000>;
+			reg-names = "control";
+			status = "disabled";
+			#gpio-cells = <2>;
+
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges;
+
+			pinctrl: pinctrl@10012038 {
+				compatible = "sifive,pinctrl";
+				reg = <0x10012038 0x8>;
+			};
+		};
+		i2c0: i2c@10016000 {
+			compatible = "sifive,i2c0";
+			interrupt-parent = <&plic>;
+			interrupts = <52 1>;
+			reg = <0x10016000 0x1000>;
+			reg-names = "control";
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+		plic: interrupt-controller@c000000 {
+			compatible = "sifive,plic-1.0.0";
+			#address-cells = <0>;
+			#interrupt-cells = <2>;
+			interrupt-controller;
+			interrupts-extended = <&hlic 11>;
+			reg = <0x0c000000 0x00002000
+			       0x0c002000 0x001fe000
+			       0x0c200000 0x03e00000>;
+			reg-names = "prio", "irq_en", "reg";
+			riscv,max-priority = <7>;
+			riscv,ndev = <52>;
+		};
+		itim: itim@8000000 {
+			compatible = "sifive,itim0";
+			reg = <0x8000000 0x2000>;
+			reg-names = "mem";
+		};
+		otp: otp@10010000 {
+			compatible = "sifive,otp0";
+			reg = <0x10010000 0x1000 0x20000 0x2000>;
+			reg-names = "control", "mem";
+		};
+		prci: prci@10008000 {
+			compatible = "sifive,freedome300prci0";
+			reg = <0x10008000 0x1000>;
+			reg-names = "control";
+		};
+		pwm0: pwm@10015000 {
+			compatible = "sifive,pwm0";
+			interrupt-parent = <&plic>;
+			interrupts = <40 1>, <41 1>, <42 1>, <43 1>;
+			reg = <0x10015000 0x1000>;
+			reg-names = "control";
+			status = "disabled";
+			sifive,compare-width = <8>;
+			#pwm-cells = <2>;
+		};
+		pwm1: pwm@10025000 {
+			compatible = "sifive,pwm0";
+			interrupt-parent = <&plic>;
+			interrupts = <44 1>, <45 1>, <46 1>, <47 1>;
+			reg = <0x10025000 0x1000>;
+			reg-names = "control";
+			status = "disabled";
+			sifive,compare-width = <16>;
+			#pwm-cells = <2>;
+		};
+		pwm2: pwm@10035000 {
+			compatible = "sifive,pwm0";
+			interrupt-parent = <&plic>;
+			interrupts = <48 1>, <49 1>, <50 1>, <51 1>;
+			reg = <0x10035000 0x1000>;
+			reg-names = "control";
+			status = "disabled";
+			sifive,compare-width = <16>;
+			#pwm-cells = <2>;
+		};
+		modeselect: rom@1000 {
+			compatible = "sifive,modeselect0";
+			reg = <0x1000 0x1000>;
+			reg-names = "mem";
+		};
+		maskrom: rom@10000 {
+			compatible = "sifive,maskrom0";
+			reg = <0x10000 0x2000>;
+			reg-names = "mem";
+		};
+		uart0: serial@10013000 {
+			compatible = "sifive,uart0";
+			interrupt-parent = <&plic>;
+			interrupts = <3 1>;
+			reg = <0x10013000 0x1000>;
+			reg-names = "control";
+			status = "disabled";
+		};
+		uart1: serial@10023000 {
+			compatible = "sifive,uart0";
+			interrupt-parent = <&plic>;
+			interrupts = <4 1>;
+			reg = <0x10023000 0x1000>;
+			reg-names = "control";
+			status = "disabled";
+		};
+		spi0: spi@10014000 {
+			compatible = "sifive,spi0";
+			interrupt-parent = <&plic>;
+			interrupts = <5 1>;
+			reg = <0x10014000 0x1000 0x20000000 0x20000000>;
+			reg-names = "control", "mem";
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+		spi1: spi@10024000 {
+			compatible = "sifive,spi0";
+			interrupt-parent = <&plic>;
+			interrupts = <6 1>;
+			reg = <0x10024000 0x1000>;
+			reg-names = "control";
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+		spi2: spi@10034000 {
+			compatible = "sifive,spi0";
+			interrupt-parent = <&plic>;
+			interrupts = <7 1>;
+			reg = <0x10034000 0x1000>;
+			reg-names = "control";
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+		teststatus: teststatus@4000 {
+			compatible = "sifive,test0";
+			reg = <0x4000 0x1000>;
+			reg-names = "control";
+		};
+	};
+};

@@ -1,0 +1,8 @@
+# BMD-340-EVAL board configuration
+
+# Copyright (c) 2021 u-blox AG
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_UBX_BMD340EVAL_NRF52840
+	bool "u-blox BMD-340-EVAL"
+	depends on SOC_NRF52840_QIAA

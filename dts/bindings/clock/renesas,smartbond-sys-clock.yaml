@@ -1,0 +1,18 @@
+# Copyright (c) 2022 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Smartbond system clock
+
+compatible: "renesas,smartbond-sys-clk"
+
+include:
+  - name: base.yaml
+    property-allowlist:
+      - status
+      - compatible
+
+properties:
+  clock-src:
+    type: phandle
+    description: |
+      System clock source.

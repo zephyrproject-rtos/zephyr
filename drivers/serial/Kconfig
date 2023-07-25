@@ -1,0 +1,242 @@
+# Serial driver configuration options
+
+# Copyright (c) 2014-2015 Wind River Systems, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig SERIAL
+	bool "Serial drivers"
+	help
+	  Enable options for serial drivers.
+
+if SERIAL
+
+comment "Capabilities"
+
+config SERIAL_HAS_DRIVER
+	bool
+	help
+	  This is an option to be enabled by individual serial driver
+	  to signal that there is a serial driver. This is being used
+	  by other drivers which are dependent on serial.
+
+config SERIAL_SUPPORT_ASYNC
+	bool
+	help
+	  This is an option to be enabled by individual serial driver
+	  to signal that the driver and hardware supports async operation.
+
+config SERIAL_SUPPORT_INTERRUPT
+	bool
+	help
+	  This is an option to be enabled by individual serial driver
+	  to signal that the driver and hardware supports interrupts.
+
+config SERIAL_INIT_PRIORITY
+	int "Serial init priority"
+	default KERNEL_INIT_PRIORITY_DEVICE
+	help
+	  Serial driver device initialization priority.
+
+module = UART
+module-str = uart
+source "subsys/logging/Kconfig.template.log_config"
+
+config SERIAL_SUPPORT_WIDE_DATA
+	bool
+	help
+	  This is an option to be enabled by individual serial driver
+	  to signal that the driver and hardware support data longer
+	  than 8-bit.
+
+config UART_USE_RUNTIME_CONFIGURE
+	bool "Runtime configuration for UART controllers"
+	default y
+	help
+	  Enable runtime configuration of UART controllers.
+	  This allows applications to call uart_configure() to
+	  configure the UART controllers at runtime, and calling
+	  uart_config_get() to retrieve configuration. If this is
+	  disabled, UART controllers rely on UART driver's
+	  initialization function to properly configure
+	  the controller.
+
+	  Say y if unsure. Disable this to reduce footprint for
+	  applications that do not require runtime UART configuration.
+
+config UART_ASYNC_API
+	bool "Asynchronous UART API"
+	depends on SERIAL_SUPPORT_ASYNC
+	help
+	  This option enables asynchronous UART API.
+
+config UART_INTERRUPT_DRIVEN
+	bool "UART Interrupt support"
+	depends on SERIAL_SUPPORT_INTERRUPT
+	help
+	  This option enables interrupt support for UART allowing console
+	  input and other UART based drivers.
+
+config UART_EXCLUSIVE_API_CALLBACKS
+	bool "Use exclusive callbacks for multiple APIs"
+	depends on UART_ASYNC_API && UART_INTERRUPT_DRIVEN
+	default y
+	help
+	  When multiple set of APIs support callbacks, enabling this
+	  option will result in only the callbacks of one set of API
+	  being active at a time. Setting a new callback to one set of
+	  API will remove callbacks to other set of APIs. For example,
+	  calling uart_callback_set() would disable the callback
+	  previously set via uart_irq_callback_set().
+
+	  Says yes unless you are absolutely sure you know what you are
+	  doing and promise not to file bug when things do not work out.
+
+config UART_LINE_CTRL
+	bool "Serial Line Control API"
+	help
+	  This enables the API for apps to control the serial line,
+	  such as baud rate, CTS and RTS.
+
+	  Implementation is up to individual driver.
+
+	  Says no if not sure.
+
+config UART_DRV_CMD
+	bool "Driver commands API"
+	help
+	  This enables the API to send extra commands to drivers.
+	  This allows drivers to expose hardware specific functions.
+
+	  Says no if not sure.
+
+config UART_WIDE_DATA
+	bool "API to support data longer than 8-bit"
+	help
+	  This enables the API to process data longer than 8-bit.
+	  This is up to the driver to implement the necessary functions
+	  to properly support this.
+
+config UART_PIPE
+	bool "Pipe UART driver"
+	select UART_INTERRUPT_DRIVEN
+	help
+	  Enable pipe UART driver. This driver allows application to communicate
+	  over UART with custom defined protocol. Driver doesn't inspect received
+	  data (as contrary to console UART driver) and all aspects of received
+	  protocol data are handled by application provided callback.
+
+comment "Serial Drivers"
+
+source "drivers/serial/Kconfig.b91"
+
+source "drivers/serial/Kconfig.ns16550"
+
+source "drivers/serial/Kconfig.mcux"
+
+source "drivers/serial/Kconfig.mcux_flexcomm"
+
+source "drivers/serial/Kconfig.mcux_iuart"
+
+source "drivers/serial/Kconfig.mcux_lpsci"
+
+source "drivers/serial/Kconfig.mcux_lpuart"
+
+source "drivers/serial/Kconfig.miv"
+
+source "drivers/serial/Kconfig.imx"
+
+source "drivers/serial/Kconfig.it8xxx2"
+
+source "drivers/serial/Kconfig.stellaris"
+
+source "drivers/serial/Kconfig.native_posix"
+
+source "drivers/serial/Kconfig.usart_sam"
+
+source "drivers/serial/Kconfig.uart_sam"
+
+source "drivers/serial/Kconfig.stm32"
+
+source "drivers/serial/Kconfig.nrfx"
+
+source "drivers/serial/Kconfig.altera_jtag"
+
+source "drivers/serial/Kconfig.cc13xx_cc26xx"
+
+source "drivers/serial/Kconfig.cc32xx"
+
+source "drivers/serial/Kconfig.cmsdk_apb"
+
+source "drivers/serial/Kconfig.sifive"
+
+source "drivers/serial/Kconfig.esp32"
+
+source "drivers/serial/Kconfig.gecko"
+
+source "drivers/serial/Kconfig.leuart_gecko"
+
+source "drivers/serial/Kconfig.msp432p4xx"
+
+source "drivers/serial/Kconfig.numicro"
+
+source "drivers/serial/Kconfig.sam0"
+
+source "drivers/serial/Kconfig.psoc6"
+
+source "drivers/serial/Kconfig.pl011"
+
+source "drivers/serial/Kconfig.ql_usbserialport_s3b"
+
+source "drivers/serial/Kconfig.rv32m1_lpuart"
+
+source "drivers/serial/Kconfig.rpi_pico"
+
+source "drivers/serial/Kconfig.litex"
+
+source "drivers/serial/Kconfig.rtt"
+
+source "drivers/serial/Kconfig.xlnx"
+
+source "drivers/serial/Kconfig.xmc4xxx"
+
+source "drivers/serial/Kconfig.lpc11u6x"
+
+source "drivers/serial/Kconfig.npcx"
+
+source "drivers/serial/Kconfig.apbuart"
+
+source "drivers/serial/Kconfig.rcar"
+
+source "drivers/serial/Kconfig.xec"
+
+source "drivers/serial/Kconfig.gd32"
+
+source "drivers/serial/Kconfig.test"
+
+source "drivers/serial/Kconfig.neorv32"
+
+source "drivers/serial/Kconfig.xen"
+
+source "drivers/serial/Kconfig.ifx_cat1"
+
+source "drivers/serial/Kconfig.smartbond"
+
+source "drivers/serial/Kconfig.nxp_s32"
+
+source "drivers/serial/Kconfig.cdns"
+
+source "drivers/serial/Kconfig.opentitan"
+
+source "drivers/serial/Kconfig.altera"
+
+source "drivers/serial/Kconfig.hostlink"
+
+source "drivers/serial/Kconfig.emul"
+
+source "drivers/serial/Kconfig.native_tty"
+
+source "drivers/serial/Kconfig.numaker"
+
+source "drivers/serial/Kconfig.efinix_sapphire"
+
+endif # SERIAL

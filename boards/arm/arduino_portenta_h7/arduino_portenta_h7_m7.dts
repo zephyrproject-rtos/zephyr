@@ -1,0 +1,96 @@
+/*
+ * Copyright (c) 2022 Benjamin Björnsson <benjamin.bjornsson@gmail.com>.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/h7/stm32h747Xi_m7.dtsi>
+#include <st/h7/stm32h747xihx-pinctrl.dtsi>
+#include "arduino_portenta_h7-common.dtsi"
+
+/ {
+	model = "Arduino Portenta H7 board";
+	compatible = "arduino,portenta-h7";
+
+	/* HW resources are split between CM7 and CM4 */
+	chosen {
+		zephyr,console = &usart1;
+		zephyr,shell-uart = &usart1;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &code_partition;
+	};
+
+	oscen: oscen {
+		compatible = "regulator-fixed";
+		regulator-name = "oscen";
+		enable-gpios = <&gpioh 1 GPIO_ACTIVE_HIGH>;
+		regulator-boot-on;
+	};
+};
+
+&clk_hsi {
+	hsi-div = <8>;
+	status = "okay";
+};
+
+&pll {
+	div-m = <1>;
+	mul-n = <24>;
+	div-p = <2>;
+	div-q = <4>;
+	div-r = <2>;
+	clocks = <&clk_hsi>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+	clock-frequency = <DT_FREQ_M(96)>;
+};
+
+
+&usart1 {
+	status = "okay";
+};
+
+&i2c1 {
+	status = "okay";
+};
+
+&usbotg_fs {
+	status = "okay";
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "bootloader";
+			reg = <0x0 0x00040000>;
+			read-only;
+		};
+
+		code_partition: partition@40000 {
+			label = "code";
+			reg = <0x40000 0x000c0000>;
+			read-only;
+		};
+
+		/*
+		 * The flash starting at 0x000f8000 and ending at
+		 * 0x000fffff is reserved for use by the application.
+		 *
+		 * Storage partition will be used by FCB/LittleFS/NVS
+		 * if enabled.
+		 */
+		storage_partition: partition@f8000 {
+			label = "storage";
+			reg = <0x000f8000 0x00008000>;
+		};
+	};
+};

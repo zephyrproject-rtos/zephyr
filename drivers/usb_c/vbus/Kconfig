@@ -1,0 +1,19 @@
+# USB-C VBUS Measurement configuration options
+
+# Copyright 2022 The Chromium OS Authors
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig USBC_VBUS_DRIVER
+	bool "USB-C VBUS drivers"
+	help
+	  Enable USB-C drivers
+
+if USBC_VBUS_DRIVER
+
+source "drivers/usb_c/vbus/Kconfig.usbc_vbus_adc"
+
+endif # USBC_VBUS_DRIVER
+
+module = USBC
+module-str = usbc
+source "subsys/logging/Kconfig.template.log_config"

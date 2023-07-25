@@ -1,0 +1,12 @@
+#
+# Copyright (c) 2021 metraTec GmbH
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: |
+    This is a representation of the Microchip MCP230xx I2C Gpio Expander.
+
+compatible: "microchip,mcp230xx"
+
+include: ["microchip,mcp23xxx.yaml", i2c-device.yaml]

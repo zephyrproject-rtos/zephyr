@@ -1,0 +1,9 @@
+# XTENSA board configuration
+
+# Copyright (c) 2017 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_QEMU_XTENSA
+	bool "Xtensa emulation using QEMU"
+	depends on SOC_XTENSA_SAMPLE_CONTROLLER
+	select QEMU_TARGET

@@ -1,0 +1,27 @@
+# Copyright 2023 The ChromiumOS Authors
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  When an io-channel measures the voltage over a current sense shunt,
+  the interesting measurement is almost always the current through the
+  shunt, not the voltage over it. This binding describes such a current
+  sense circuit.
+
+  This is based on Linux, documentation:
+    https://www.kernel.org/doc/Documentation/devicetree/bindings/iio/afe/current-sense-shunt.yaml
+
+compatible: "current-sense-shunt"
+
+include: base.yaml
+
+properties:
+  io-channels:
+    required: true
+    description: |
+      Channels available with this divider configuration.
+
+  shunt-resistor-micro-ohms:
+    type: int
+    required: true
+    description: |
+      Resistance of the shunt resistor in micro-ohms

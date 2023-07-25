@@ -1,0 +1,5 @@
+description: TI LP3943 LED
+
+compatible: "ti,lp3943"
+
+include: i2c-device.yaml

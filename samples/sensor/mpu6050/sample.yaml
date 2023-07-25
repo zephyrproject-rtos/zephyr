@@ -1,0 +1,15 @@
+#
+# Copyright (c) 2019 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+sample:
+  name: MPU6050 Sensor Sample
+tests:
+  sample.sensor.mpu6050:
+    build_only: true
+    platform_allow: nrf52dk_nrf52832
+    tags: sensors
+    integration_platforms:
+      - nrf52dk_nrf52832

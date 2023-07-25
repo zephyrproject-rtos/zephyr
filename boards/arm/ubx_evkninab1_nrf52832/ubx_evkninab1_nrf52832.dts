@@ -1,0 +1,222 @@
+/*
+ * Copyright (c) 2021 u-blox AG
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <nordic/nrf52832_qfaa.dtsi>
+#include "ubx_evkninab1_nrf52832-pinctrl.dtsi"
+
+/ {
+	model = "u-blox EVK-NINA-B1 NRF52832";
+	compatible = "u-blox,ubx_evkninab1_nrf52832";
+
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,uart-mcumgr = &uart0;
+		zephyr,bt-mon-uart = &uart0;
+		zephyr,bt-c2h-uart = &uart0;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led0: led_0 {
+			/* NINA-B1 GPIO_1 */
+			gpios = <&gpio0 8 GPIO_ACTIVE_LOW>;
+			label = "Red LED";
+		};
+		led1: led_1 {
+			/* NINA-B1 GPIO_7 */
+			gpios = <&gpio0 16 GPIO_ACTIVE_LOW>;
+			label = "Green LED";
+		};
+		led2: led_2 {
+			/*NINA-B1 GPIO_8 */
+			gpios = <&gpio0 18 GPIO_ACTIVE_LOW>;
+			label = "Blue LED";
+		};
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+		red_pwm_led: red_pwm_led {
+			pwms = <&pwm0 1 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
+		};
+		green_pwm_led: green_pwm_led {
+			pwms = <&pwm0 0 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
+		};
+		blue_pwm_led: blue_pwm_led {
+			pwms = <&pwm0 2 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+		button0: button_0 {
+			/* EVK-NINA-B1 SW1 button */
+			gpios = <&gpio0 16 (GPIO_PULL_UP | \
+				GPIO_ACTIVE_LOW)>;
+			label = "Push button switch SW1";
+		};
+		button1: button_1 {
+			/* EVK-NINA-B1 SW2 button */
+			gpios = <&gpio0 30 (GPIO_PULL_UP | \
+				GPIO_ACTIVE_LOW)>;
+			label = "Push button switch SW2";
+		};
+	};
+
+	arduino_header: connector {
+		compatible = "arduino-header-r3";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0 0 &gpio0 3 0>,	/* A0 */
+			   <1 0 &gpio0 2 0>,	/* A1 */
+			   <2 0 &gpio0 4 0>,	/* A2 */
+			   <3 0 &gpio0 30 0>,	/* A3 */
+			   <4 0 &gpio0 29 0>,	/* A4 */
+			   <5 0 &gpio0 28 0>,	/* A5 */
+			   <6 0 &gpio0 5 0>,	/* D0 */
+			   <7 0 &gpio0 6 0>,	/* D1 */
+			   <8 0 &gpio0 7 0>,	/* D2 */
+			   <9 0 &gpio0 31 0>,	/* D3 */
+			   <10 0 &gpio0 18 0>,	/* D4 */
+			   /* 11 SWDIO */		/* D5 */
+			   <12 0 &gpio0 9 0>,	/* D6 */
+			   <13 0 &gpio0 10 0>,	/* D7 */
+			   /* 14 SWDCLK */		/* D8 */
+			   <15 0 &gpio0 8 0>,	/* D9 */
+			   <16 0 &gpio0 11 0>,	/* D10 */
+			   <17 0 &gpio0 13 0>,	/* D11 */
+			   <18 0 &gpio0 12 0>,	/* D12 */
+			   <19 0 &gpio0 14 0>,	/* D13 */
+			   <20 0 &gpio0 2 0>,	/* D14 */
+			   <21 0 &gpio0 3 0>;	/* D15 */
+	};
+
+	arduino_adc: analog-connector {
+		compatible = "arduino,uno-adc";
+		#io-channel-cells = <1>;
+		io-channel-map = <0 &adc 1>,	/* A0 = P0.3 = AIN1 */
+				 <1 &adc 2>,	/* A1 = P0.2 = AIN2 */
+				 <2 &adc 4>,	/* A2 = P0.4 = AIN4 */
+				 <3 &adc 5>,	/* A3 = P0.30 = AIN5 */
+				 <4 &adc 6>,	/* A4 = P0.29 = AIN6 */
+				 <5 &adc 7>;	/* A5 = P0.28 = AIN7 */
+	};
+
+	/* These aliases are provided for compatibility with samples */
+	aliases {
+		led0 = &led0;
+		led1 = &led1;
+		led2 = &led2;
+		pwm-led0 = &red_pwm_led;
+		pwm-led1 = &green_pwm_led;
+		pwm-led2 = &blue_pwm_led;
+		red-pwm-led = &red_pwm_led;
+		green-pwm-led = &green_pwm_led;
+		blue-pwm-led = &blue_pwm_led;
+		sw0 = &button0;
+		sw1 = &button1;
+		watchdog0 = &wdt0;
+	};
+};
+
+&adc {
+	status = "okay";
+};
+
+&gpiote {
+	status = "okay";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+
+&uart0 {
+	compatible = "nordic,nrf-uarte";
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-1 = <&uart0_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+arduino_i2c: &i2c0 {
+	compatible = "nordic,nrf-twi";
+	status = "okay";
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-1 = <&i2c0_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&i2c1 {
+	compatible = "nordic,nrf-twi";
+	/* Cannot be used together with spi1. */
+	/* status = "okay"; */
+	pinctrl-0 = <&i2c1_default>;
+	pinctrl-1 = <&i2c1_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&pwm0 {
+	status = "okay";
+	pinctrl-0 = <&pwm0_default>;
+	pinctrl-1 = <&pwm0_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+arduino_spi: &spi0 {
+	compatible = "nordic,nrf-spi";
+	/* Cannot be use simultaneously with i2c0 */
+	/* status = "okay"; */
+	cs-gpios = <&arduino_header 16 GPIO_ACTIVE_LOW>; /* D10 */
+	pinctrl-0 = <&spi0_default>;
+	pinctrl-1 = <&spi0_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&spi1 {
+	compatible = "nordic,nrf-spi";
+	status = "okay";
+	pinctrl-0 = <&spi1_default>;
+	pinctrl-1 = <&spi1_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 0xc000>;
+		};
+		slot0_partition: partition@c000 {
+			label = "image-0";
+			reg = <0x0000C000 0x32000>;
+		};
+		slot1_partition: partition@3e000 {
+			label = "image-1";
+			reg = <0x0003E000 0x32000>;
+		};
+		scratch_partition: partition@70000 {
+			label = "image-scratch";
+			reg = <0x00070000 0xa000>;
+		};
+		storage_partition: partition@7a000 {
+			label = "storage";
+			reg = <0x0007a000 0x00006000>;
+		};
+	};
+};

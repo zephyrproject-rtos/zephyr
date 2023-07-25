@@ -1,0 +1,16 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright 2020 Broadcom.
+#
+
+config SOC_FAMILY_BCMVK
+	bool
+
+if SOC_FAMILY_BCMVK
+config SOC_FAMILY
+	string
+	default "bcm_vk"
+
+source "soc/arm/bcm_vk/*/Kconfig.soc"
+
+endif

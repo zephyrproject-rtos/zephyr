@@ -1,0 +1,9 @@
+description: Nordic FICR (Factory Information Configuration Registers)
+
+compatible: "nordic,nrf-ficr"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true

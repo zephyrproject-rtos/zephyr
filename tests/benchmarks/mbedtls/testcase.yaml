@@ -1,0 +1,8 @@
+common:
+  harness: crypto
+  tags: crypto
+tests:
+  benchmark.crypto.mbedtls:
+    filter: CONFIG_TEST_RANDOM_GENERATOR
+    integration_platforms:
+      - qemu_x86

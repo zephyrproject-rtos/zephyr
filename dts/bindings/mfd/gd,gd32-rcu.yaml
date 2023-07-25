@@ -1,0 +1,15 @@
+# Copyright (c) 2022, Teslabs Engineering S.L.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Gigadevice Reset and Clock Unit (RCU) if a multi-function peripheral in
+  charge of reset control (RCTL) and clock control (CCTL) for all SoC
+  peripherals. Child nodes are used to represent each functional block.
+
+compatible: "gd,gd32-rcu"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true

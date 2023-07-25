@@ -1,0 +1,42 @@
+sample:
+  name: CDC ACM USB
+tests:
+  sample.usb.cdc-acm:
+    depends_on: usb_device
+    tags: usb
+    arch_exclude: posix
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "Wait for DTR"
+  sample.usb_device_next.cdc-acm:
+    depends_on: usb_device
+    tags: usb
+    extra_args: CONF_FILE="usbd_next_prj.conf"
+    platform_allow:
+      - nrf52840dk_nrf52840
+      - frdm_k64f
+      - 96b_carbon
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "Wait for DTR"
+  sample.usb.cdc-acm.comp:
+    depends_on: usb_device
+    tags: usb
+    arch_exclude: posix
+    extra_args: OVERLAY_CONFIG=overlay-composite-cdc-msc.conf
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "Wait for DTR"
+  sample.usb.cdc-acm.buildonly:
+    depends_on: usb_device
+    tags: usb
+    arch_allow: posix
+    build_only: true
+    integration_platforms:
+      - native_posix

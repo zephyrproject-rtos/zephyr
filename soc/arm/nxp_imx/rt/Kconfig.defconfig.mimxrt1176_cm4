@@ -1,0 +1,20 @@
+# i.MX RT1170 CM4
+
+# Copyright (c) 2021, NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_MIMXRT1176_CM4
+
+config SOC
+	default "mimxrt1176_cm4"
+
+config NUM_IRQS
+	default 218
+
+config GPIO
+	default y
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 400000000 if CORTEX_M_SYSTICK
+
+endif # SOC_MIMXRT1170_CM4

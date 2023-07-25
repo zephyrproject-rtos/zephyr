@@ -1,0 +1,422 @@
+# ARC options
+
+# Copyright (c) 2014, 2019 Wind River Systems, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+menu "ARC Options"
+	depends on ARC
+
+config ARCH
+	default "arc"
+
+
+config CPU_ARCEM
+	bool
+	select ATOMIC_OPERATIONS_C
+	help
+	  This option signifies the use of an ARC EM CPU
+
+config CPU_ARCHS
+	bool
+	select ATOMIC_OPERATIONS_BUILTIN
+	help
+	  This option signifies the use of an ARC HS CPU
+
+
+choice
+	prompt "ARC Instruction Set"
+	default ISA_ARCV2
+
+config ISA_ARCV2
+	bool "ARC ISA v2"
+	select ARCH_HAS_STACK_PROTECTION if ARC_HAS_STACK_CHECKING || (ARC_MPU && ARC_MPU_VER !=2)
+	select ARCH_HAS_USERSPACE if ARC_MPU
+	select ARCH_HAS_SINGLE_THREAD_SUPPORT if !SMP
+	select USE_SWITCH
+	select USE_SWITCH_SUPPORTED
+	help
+	  v2 ISA for the ARC-HS & ARC-EM cores
+
+config ISA_ARCV3
+	bool "ARC ISA v3"
+	select ARCH_HAS_SINGLE_THREAD_SUPPORT if !SMP
+	select USE_SWITCH
+	select USE_SWITCH_SUPPORTED
+
+endchoice
+
+if ISA_ARCV2
+
+config CPU_EM4
+	bool
+	select CPU_ARCEM
+	help
+	  If y, the SoC uses an ARC EM4 CPU
+
+config CPU_EM4_DMIPS
+	bool
+	select CPU_ARCEM
+	help
+	  If y, the SoC uses an ARC EM4 DMIPS CPU
+
+config CPU_EM4_FPUS
+	bool
+	select CPU_ARCEM
+	help
+	  If y, the SoC uses an ARC EM4 DMIPS CPU with the single-precision
+	  floating-point extension
+
+config CPU_EM4_FPUDA
+	bool
+	select CPU_ARCEM
+	help
+	  If y, the SoC uses an ARC EM4 DMIPS CPU with single-precision
+	  floating-point and double assist instructions
+
+config CPU_EM6
+	bool
+	select CPU_ARCEM
+	select CPU_HAS_DCACHE
+	select CPU_HAS_ICACHE
+	help
+	  If y, the SoC uses an ARC EM6 CPU
+
+config CPU_HS3X
+	bool
+	select CPU_ARCHS
+	select CPU_HAS_DCACHE
+	select CPU_HAS_ICACHE
+	help
+	  If y, the SoC uses an ARC HS3x CPU
+
+config CPU_HS4X
+	bool
+	select CPU_ARCHS
+	select CPU_HAS_DCACHE
+	select CPU_HAS_ICACHE
+	help
+	  If y, the SoC uses an HS4X CPU
+
+endif #ISA_ARCV2
+
+if ISA_ARCV3
+
+config CPU_HS5X
+	bool
+	select CPU_ARCHS
+	select CPU_HAS_DCACHE
+	select CPU_HAS_ICACHE
+	help
+	  If y, the SoC uses an ARC HS6x CPU
+
+config CPU_HS6X
+	bool
+	select CPU_ARCHS
+	select 64BIT
+	select CPU_HAS_DCACHE
+	select CPU_HAS_ICACHE
+	help
+	  If y, the SoC uses an ARC HS6x CPU
+
+endif #ISA_ARCV3
+
+config FP_FPU_DA
+	bool
+
+menu "ARC CPU Options"
+
+config ARC_HAS_ZOL
+	bool
+	depends on ISA_ARCV2
+	default y
+	help
+	  ARCv2 CPUs have ZOL hardware loop mechanism which the ARCv3 ISA drops.
+	  Architecturally ZOL provides
+	  - LPcc instruction
+	  - LP_COUNT core reg
+	  - LP_START, LP_END aux regs
+	  Disabling this option removes usage of ZOL regs from code
+
+config NUM_IRQ_PRIO_LEVELS
+	int "Number of supported interrupt priority levels"
+	range 1 16
+	help
+	  Interrupt priorities available will be 0 to NUM_IRQ_PRIO_LEVELS-1.
+	  The minimum value is 1.
+
+	  The BSP must provide a valid default for proper operation.
+
+config NUM_IRQS
+	int "Upper limit of interrupt numbers/IDs used"
+	range 17 256
+	help
+	  Interrupts available will be 0 to NUM_IRQS-1.
+	  The minimum value is 17 as the first 16 entries in the vector
+	  table are for CPU exceptions.
+
+	  The BSP must provide a valid default. This drives the size of the
+	  vector table.
+
+config RGF_NUM_BANKS
+	int "Number of General Purpose Register Banks"
+	depends on ARC_FIRQ
+	depends on NUM_IRQ_PRIO_LEVELS > 1
+	range 1 2
+	default 2
+	help
+	  The ARC CPU can be configured to have more than one register
+	  bank. If fast interrupts are supported (FIRQ), the 2nd
+	  register bank, in the set, will be used by FIRQ interrupts.
+	  If fast interrupts are supported but there is only 1
+	  register bank, the fast interrupt handler must save
+	  and restore general purpose registers.
+	  NOTE: it's required to have more than one interrupt priority level
+	  to use second register bank - otherwise all interrupts will use
+	  same register bank. Such configuration isn't supported in software
+	  and it is not beneficial from the performance point of view.
+
+config ARC_FIRQ
+	bool "FIRQ enable"
+	depends on ISA_ARCV2
+	depends on NUM_IRQ_PRIO_LEVELS > 1
+	depends on !ARC_HAS_SECURE
+	default y
+	help
+	  Fast interrupts are supported (FIRQ). If FIRQ enabled, for interrupts
+	  with highest priority, status32 and pc will be saved in aux regs,
+	  other regs will be saved according to the number of register bank;
+	  If FIRQ is disabled, the handle of interrupts with highest priority
+	  will be same with other interrupts.
+	  NOTE: we don't allow the configuration with FIRQ enabled and only one
+	  interrupt priority level (so all interrupts are FIRQ). Such
+	  configuration isn't supported in software and it is not beneficial
+	  from the performance point of view.
+
+config ARC_FIRQ_STACK
+	bool "Separate firq stack"
+	depends on ARC_FIRQ && RGF_NUM_BANKS > 1
+	help
+	  Use separate stack for FIRQ handing. When the fast irq is also a direct
+	  irq, this will get the minimal interrupt latency.
+
+config ARC_FIRQ_STACK_SIZE
+	int "FIRQ stack size"
+	depends on ARC_FIRQ_STACK
+	default 1024
+	help
+	  The size of firq stack.
+
+config ARC_HAS_STACK_CHECKING
+	bool "ARC has STACK_CHECKING"
+	depends on ISA_ARCV2
+	default y
+	help
+	  ARC is configured with STACK_CHECKING which is a mechanism for
+	  checking stack accesses and raising an exception when a stack
+	  overflow or underflow is detected.
+
+config ARC_CONNECT
+	bool "ARC has ARC connect"
+	select SCHED_IPI_SUPPORTED
+	help
+	  ARC is configured with ARC CONNECT which is a hardware for connecting
+	  multi cores.
+
+config ARC_STACK_CHECKING
+	bool
+	select NO_UNUSED_STACK_INSPECTION
+	help
+	  Use ARC STACK_CHECKING to do stack protection
+
+config ARC_STACK_PROTECTION
+	bool
+	default y if HW_STACK_PROTECTION
+	select ARC_STACK_CHECKING if ARC_HAS_STACK_CHECKING
+	select MPU_STACK_GUARD if (!ARC_STACK_CHECKING && ARC_MPU && ARC_MPU_VER !=2)
+	select THREAD_STACK_INFO
+	help
+	  This option enables either:
+	  - The ARC stack checking, or
+	  - the MPU-based stack guard
+	  to cause a system fatal error
+	  if the bounds of the current process stack are overflowed.
+	  The two stack guard options are mutually exclusive. The
+	  selection of the ARC stack checking is
+	  prioritized over the MPU-based stack guard.
+
+config ARC_USE_UNALIGNED_MEM_ACCESS
+	bool "Unaligned access in HW"
+	default y if CPU_ARCHS
+	depends on (CPU_ARCEM && !ARC_HAS_SECURE) || CPU_ARCHS
+	help
+	  ARC EM cores w/o secure shield 2+2 mode support might be configured
+	  to support unaligned memory access which is then disabled by default.
+	  Enable unaligned access in hardware and make software to use it.
+
+config FAULT_DUMP
+	int "Fault dump level"
+	default 2
+	range 0 2
+	help
+	  Different levels for display information when a fault occurs.
+
+	  2: The default. Display specific and verbose information. Consumes
+		the most memory (long strings).
+
+	  1: Display general and short information. Consumes less memory
+		(short strings).
+
+	  0: Off.
+
+config GEN_ISR_TABLES
+	default y
+
+config GEN_IRQ_START_VECTOR
+	default 16
+
+config HARVARD
+	bool "Harvard Architecture"
+	help
+	  The ARC CPU can be configured to have two busses;
+	  one for instruction fetching and another that serves as a data bus.
+
+config CODE_DENSITY
+	bool "Code Density Option"
+	help
+	  Enable code density option to get better code density
+
+config ARC_HAS_ACCL_REGS
+	bool "Reg Pair ACCL:ACCH (FPU and/or MPY > 6 and/or DSP)"
+	default y if CPU_HS3X || CPU_HS4X || CPU_HS5X || CPU_HS6X
+	help
+	  Depending on the configuration, CPU can contain accumulator reg-pair
+	  (also referred to as r58:r59). These can also be used by gcc as GPR so
+	  kernel needs to save/restore per process
+
+config ARC_HAS_SECURE
+	bool "ARC has SecureShield"
+	depends on ISA_ARCV2
+	select CPU_HAS_TEE
+	select ARCH_HAS_TRUSTED_EXECUTION
+	help
+	  This option is enabled when ARC core supports secure mode
+
+config SJLI_TABLE_SIZE
+	int "SJLI table size"
+	depends on ARC_SECURE_FIRMWARE
+	default 8
+	help
+	  The size of sjli (Secure Jump and Link Indexed) table. The
+	  code in normal mode call secure services in secure mode through
+	  sjli instruction.
+
+config ARC_SECURE_FIRMWARE
+	bool "Generate Secure Firmware"
+	depends on ARC_HAS_SECURE
+	default y if TRUSTED_EXECUTION_SECURE
+	help
+	  This option indicates that we are building a Zephyr image that
+	  is intended to execute in secure mode. The option is only
+	  applicable to ARC processors that implement the SecureShield.
+
+	  This option enables Zephyr to include code that executes in
+	  secure mode, as well as to exclude code that is designed to
+	  execute only in normal mode.
+
+	  Code executing in secure mode has access to both the secure
+	  and normal resources of the ARC processors.
+
+config ARC_NORMAL_FIRMWARE
+	bool "Generate Normal Firmware"
+	depends on !ARC_SECURE_FIRMWARE
+	depends on ARC_HAS_SECURE
+	default y if TRUSTED_EXECUTION_NONSECURE
+	help
+	  This option indicates that we are building a Zephyr image that
+	  is intended to execute in normal mode. Execution of this
+	  image is triggered by secure firmware that executes in secure
+	  mode. The option is only applicable to ARC processors that
+	  implement the SecureShield.
+
+	  This option enables Zephyr to include code that executes in
+	  normal mode only, as well as to exclude code that is
+	  designed to execute only in secure mode.
+
+	  Code executing in normal mode has no access to secure
+	  resources of the ARC processors, and, therefore, it shall avoid
+	  accessing them.
+
+source "arch/arc/core/dsp/Kconfig"
+
+menu "ARC MPU Options"
+depends on CPU_HAS_MPU
+
+config ARC_MPU_ENABLE
+	bool "Memory Protection Unit (MPU)"
+	select ARC_MPU
+	help
+	  Enable MPU
+
+source "arch/arc/core/mpu/Kconfig"
+
+endmenu
+
+config DCACHE_LINE_SIZE
+	default 32
+
+config ARC_EXCEPTION_STACK_SIZE
+	int "ARC exception handling stack size"
+	default 768 if !64BIT
+	default 2048 if 64BIT
+	help
+	  Size in bytes of exception handling stack which is at the top of
+	  interrupt stack to get smaller memory footprint because exception
+	  is not frequent. To reduce the impact on interrupt handling,
+	  especially nested interrupt, it cannot be too large.
+
+endmenu
+
+config ARC_EXCEPTION_DEBUG
+	bool "Unhandled exception debugging information"
+	default n
+	depends on PRINTK || LOG
+	help
+	  Print human-readable information about exception vectors, cause codes,
+	  and parameters, at a cost of code/data size for the human-readable
+	  strings.
+
+config ARC_EARLY_SOC_INIT
+	bool "Make early stage SoC-specific initialization"
+	help
+	  Call SoC per-core setup code on early stage initialization
+	  (before C runtime initialization). Setup code is called in form of
+	  soc_early_asm_init_percpu assembler macro.
+
+endmenu
+
+config MAIN_STACK_SIZE
+	default 4096 if 64BIT
+
+config ISR_STACK_SIZE
+	default 4096 if 64BIT
+
+config SYSTEM_WORKQUEUE_STACK_SIZE
+	default 4096 if 64BIT
+
+config IDLE_STACK_SIZE
+	default 1024 if 64BIT
+
+config IPM_CONSOLE_STACK_SIZE
+	default 2048 if 64BIT
+
+config TEST_EXTRA_STACK_SIZE
+	default 2048 if 64BIT
+
+config CMSIS_THREAD_MAX_STACK_SIZE
+	default 2048 if 64BIT
+
+config CMSIS_V2_THREAD_MAX_STACK_SIZE
+	default 2048 if 64BIT
+
+config CMSIS_V2_THREAD_DYNAMIC_STACK_SIZE
+	default 2048 if 64BIT

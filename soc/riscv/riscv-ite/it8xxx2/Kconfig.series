@@ -1,0 +1,13 @@
+# Copyright (c) 2020 ITE Corporation. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_RISCV32_IT8XXX2
+	bool "ITE IT8XXX2 implementation"
+	#depends on RISCV
+	# RV32IAFC is an uncommon configuration which is not supported by
+	# default in most toolchains, causing link-time errors.
+	select CPU_HAS_FPU if "$(ZEPHYR_TOOLCHAIN_VARIANT)" != "zephyr" || RISCV_ISA_EXT_M
+	select SOC_FAMILY_RISCV_ITE
+	select HAS_PM
+	help
+	    Enable support for ITE IT8XXX2

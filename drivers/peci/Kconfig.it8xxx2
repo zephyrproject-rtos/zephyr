@@ -1,0 +1,12 @@
+# ITE IT8XXX2 PECI configuration options
+
+# Copyright (c) 2022 ITE Tech. Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config PECI_ITE_IT8XXX2
+	bool "ITE IT8XXX2 PECI driver"
+	default y
+	depends on DT_HAS_ITE_IT8XXX2_PECI_ENABLED
+	select PECI_INTERRUPT_DRIVEN
+	help
+	  Enable the ITE IT8XXX2 PECI IO driver.

@@ -1,0 +1,37 @@
+# Copyright (c) 2018, I-SENSE group of ICCS
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    Bluetooth module that uses Zephyr's Bluetooth Host Controller Interface SPI
+    driver (e.g. nRF51822)
+
+compatible: "zephyr,bt-hci-spi"
+
+include: spi-device.yaml
+
+properties:
+  irq-gpios:
+    type: phandle-array
+    required: true
+
+  reset-gpios:
+    type: phandle-array
+    required: true
+
+  reset-assert-duration-ms:
+    type: int
+    description:
+      Minimum duration to hold the reset-gpios pin low for.
+      If not specified no delay beyond the code path execution time is guaranteed.
+
+  controller-data-delay-us:
+    type: int
+    default: 20
+    description:
+      Duration to delay between reading a valid header and reading the data associated
+      with that header. This delay gives the controller time to configure the SPI data
+      transaction after finishing the header transaction. Without this delay the host
+      can attempt to read before the controller is ready, resulting in empty data that
+      then needs to be read a second time. The default of 20uS was chosen as the lowest
+      delay that reliably eliminated double transmits between a nRF9160 host and a
+      nRF52832 controller.

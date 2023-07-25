@@ -1,0 +1,14 @@
+#
+# Copyright (c) 2019 Vestas Wind Systems A/S
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config CANOPEN_NODE_ID
+	int "CANopen node ID"
+	default 10
+	range 1 127
+	help
+	  7-bit CANopen Node ID
+
+source "Kconfig.zephyr"

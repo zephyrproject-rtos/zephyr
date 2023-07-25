@@ -1,0 +1,9 @@
+# LPCXpresso55S28 board
+
+# Copyright (c) 2020 Lemonbeat GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_LPCXPRESSO55S28
+	bool "NXP LPCXPRESSO-55S28"
+	depends on SOC_SERIES_LPC55XXX
+	select SOC_PART_NUMBER_LPC55S28JBD100

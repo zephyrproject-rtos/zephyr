@@ -1,0 +1,51 @@
+/*
+ * Copyright (c) 2021 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	board-control {
+		nrf_interface_pin_9_routing: switch-nrf-if9-ctrl {
+			compatible = "nordic,nrf9160dk-optional-routing";
+			control-gpios = <&gpio0 16 GPIO_ACTIVE_HIGH>;
+			status = "disabled";
+		};
+
+		io_expander_pins_routing: switch-io-exp-en {
+			compatible = "nordic,nrf9160dk-optional-routing";
+			control-gpios = <&gpio0 14 GPIO_ACTIVE_HIGH>;
+			status = "disabled";
+		};
+
+		external_flash_pins_routing: switch-ext-mem-ctrl {
+			compatible = "nordic,nrf9160dk-optional-routing";
+			control-gpios = <&gpio0 19 GPIO_ACTIVE_HIGH>;
+			status = "okay";
+		};
+	};
+};
+
+&interface_to_nrf9160 {
+	gpio-map = <0 0 &gpio0 17 0>,
+		   <1 0 &gpio0 20 0>,
+		   <2 0 &gpio0 15 0>,
+		   <3 0 &gpio0 22 0>,
+		   <4 0 &gpio1  4 0>,
+		   <5 0 &gpio1  2 0>,
+		   <6 0 &gpio1 13 0>,
+		   <7 0 &gpio1 11 0>,
+		   <8 0 &gpio1 15 0>,
+		   /* New signal added in this revision (0.14.0). */
+		   <9 0 &gpio0 18 0>; /* nReset */
+};
+
+&vcom2_pins_routing {
+	/* No need to drive P0.12 together with P1.12 in this board revision. */
+	control-gpios = <&gpio1 12 GPIO_ACTIVE_HIGH>;
+};
+
+&reset_input {
+	/* By default use the dedicated connection to the nRESET (P0.18) pin. */
+	gpios = <&interface_to_nrf9160 9 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+};

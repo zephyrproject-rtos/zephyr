@@ -1,0 +1,15 @@
+# Private config options for http-client sample app
+
+# Copyright (c) 2020 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "Networking http-client sample application"
+
+config NET_SAMPLE_SEND_ITERATIONS
+	int "Send a sample HTTP query this many times"
+	default 0
+	help
+	  Send a sample HTTP query this many times before exiting. A value of
+	  zero means that the sample application in default way.
+
+source "Kconfig.zephyr"

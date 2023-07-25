@@ -1,0 +1,6 @@
+# Copyright (c) 2018 Synopsys, Inc. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_NSIM
+	bool "Synopsys nSIM simulator for ARC cores"
+	select ARC

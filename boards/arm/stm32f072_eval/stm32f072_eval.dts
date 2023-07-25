@@ -1,0 +1,108 @@
+/*
+ * Copyright (c) 2017 BayLibre, SAS
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/f0/stm32f072Xb.dtsi>
+#include <st/f0/stm32f072v(8-b)tx-pinctrl.dtsi>
+
+/ {
+	model = "STMicroelectronics STM32F072-EVAL board";
+	compatible = "st,stm32f072-eval";
+
+	chosen {
+		zephyr,console = &usart2;
+		zephyr,shell-uart = &usart2;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		green_led_1: led_1 {
+			gpios = <&gpiod 8 GPIO_ACTIVE_HIGH>;
+			label = "User LD1";
+		};
+		orange_led_2: led_2 {
+			gpios = <&gpiod 9 GPIO_ACTIVE_HIGH>;
+			label = "User LD2";
+		};
+		red_led_3: led_3 {
+			gpios = <&gpiod 10 GPIO_ACTIVE_HIGH>;
+			label = "User LD3";
+		};
+		blue_led_4: led_4 {
+			gpios = <&gpiod 11 GPIO_ACTIVE_HIGH>;
+			label = "User LD4";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		tamper: tamper_button {
+			label = "tamper button";
+			gpios = <&gpioc 13 GPIO_ACTIVE_LOW>;
+		};
+		joy_sel: joystick_selection {
+			label = "joystick selection";
+			gpios = <&gpioa 0 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
+		};
+		joy_down: joystick_down {
+			label = "joystick down";
+			gpios = <&gpiof 10 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
+		};
+		joy_up: joystick_up {
+			label = "joystick up";
+			gpios = <&gpiof 9 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
+		};
+		joy_left: joystick_left {
+			label = "joystick left";
+			gpios = <&gpiof 2 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
+		};
+		joy_right: joystick_right {
+			label = "joystick right";
+			gpios = <&gpioe 3 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
+		};
+	};
+
+	aliases {
+		led0 = &green_led_1;
+		led1 = &orange_led_2;
+		led2 = &red_led_3;
+		led3 = &blue_led_4;
+		sw0 = &joy_sel;
+		watchdog0 = &iwdg;
+	};
+};
+
+&clk_hse {
+	clock-frequency = <DT_FREQ_M(8)>;
+	status = "okay";
+};
+
+&pll {
+	prediv = <1>;
+	mul = <6>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+	clock-frequency = <DT_FREQ_M(48)>;
+	ahb-prescaler = <1>;
+	apb1-prescaler = <1>;
+};
+
+&usart2 {
+	pinctrl-0 = <&usart2_tx_pd5 &usart2_rx_pd6>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&iwdg {
+	status = "okay";
+};

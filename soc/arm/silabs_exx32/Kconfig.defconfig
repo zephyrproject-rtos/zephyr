@@ -1,0 +1,21 @@
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_FAMILY_EXX32
+
+source "soc/arm/silabs_exx32/*/Kconfig.defconfig.series"
+
+config SOC_GECKO_EMU
+	default y
+	select SOC_GECKO_CORE
+	depends on PM
+
+config CORTEX_M_SYSTICK
+	default n if GECKO_BURTC_TIMER
+
+# With sl_power_manager, pm_state_set()'s stack footrpting is noticeably
+# large, especially with logs enabled. Since it is called from IDLE task,
+# its stack size has to be increased
+config IDLE_STACK_SIZE
+	default 512 if SOC_GECKO_PM_BACKEND_PMGR
+
+endif

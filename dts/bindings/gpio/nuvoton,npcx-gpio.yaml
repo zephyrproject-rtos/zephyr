@@ -1,0 +1,47 @@
+# Copyright (c) 2020 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Nuvoton, NPCX-GPIO node
+
+compatible: "nuvoton,npcx-gpio"
+
+include: [gpio-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  index:
+    type: int
+    required: true
+    description: index of gpio device
+
+  wui-maps:
+    type: phandles
+    required: true
+    description: |
+        Mapping table between Wake-Up Input (WUI) and 8 IOs belong to this device.
+        Please notice not all IOs connect to WUIs.
+        In this case, it will be presented by wui_none.
+
+        For example the WUI mapping on NPCX7 GPIO8 would be
+           wui-maps = <&wui_io80 &wui_io81 &wui_io82 &wui_io83
+                       &wui_none &wui_none &wui_io86 &wui_io87>;
+
+  lvol-maps:
+    type: phandles
+    description: |
+        Mapping table between Low-Voltage controllers and 8 IOs belong to
+        this device. Please notice not all IOs support Low-Voltage detection.
+        In this case, it will be presented by lvol_none.
+
+        For example the LVOL mapping on NPCX7 GPIOC would be
+           lvol-maps = <&lvol_none &lvol_ioc1 &lvol_ioc2 &lvol_none
+                        &lvol_none &lvol_ioc5 &lvol_ioc6 &lvol_ioc7>;
+
+  "#gpio-cells":
+    const: 2
+
+gpio-cells:
+  - pin
+  - flags

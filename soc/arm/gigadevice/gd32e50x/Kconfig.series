@@ -1,0 +1,14 @@
+# Copyright (c) 2022, Teslabs Engineering S.L.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_GD32E50X
+	bool "GigaDevice GD32E50X series Cortex-M33 MCU"
+	select ARM
+	select CPU_HAS_ARM_MPU
+	select CPU_HAS_FPU
+	select CPU_CORTEX_M33
+	select SOC_FAMILY_GD32_ARM
+	select GD32_HAS_AFIO_PINMUX
+	select GD32_HAS_IRC_40K
+	help
+	  Enable support for GigaDevice GD32E50X MCU series

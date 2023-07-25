@@ -1,0 +1,13 @@
+common:
+  depends_on: sdhc
+  tags:
+    - drivers
+    - sdhc
+tests:
+  sd.mmc:
+    harness: ztest
+    filter: dt_compat_enabled("zephyr,mmc-disk")
+    tags: sdhc
+    min_ram: 32
+    integration_platforms:
+      - mimxrt595_evk_cm33

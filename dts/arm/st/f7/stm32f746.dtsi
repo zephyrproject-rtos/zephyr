@@ -1,0 +1,23 @@
+/*
+ * Copyright (c) 2018 Yurii Hamann
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <st/f7/stm32f745.dtsi>
+#include <zephyr/dt-bindings/display/panel.h>
+
+/ {
+	soc {
+		compatible = "st,stm32f746", "st,stm32f7", "simple-bus";
+
+		ltdc: display-controller@40016800 {
+			compatible = "st,stm32-ltdc";
+			reg = <0x40016800 0x200>;
+			interrupts = <88 0>, <89 0>;
+			interrupt-names = "ltdc", "ltdc_err";
+			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x04000000>;
+			status = "disabled";
+		};
+	};
+};

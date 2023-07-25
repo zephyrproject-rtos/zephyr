@@ -1,0 +1,8 @@
+# STM32 Flight Controller Unit board configuration
+
+# Copyright (c) 2019 Linumiz
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_STEVAL_FCU001V1
+	bool "STM32 Flight Controller Unit"
+	depends on SOC_STM32F401XC

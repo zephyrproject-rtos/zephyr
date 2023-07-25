@@ -1,0 +1,148 @@
+# Copyright (c) 2022 Carlo Caione <ccaione@baylibre.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config RISCV_ISA_RV32I
+	bool
+	help
+	  RV32I Base Integer Instruction Set - 32bit
+
+config RISCV_ISA_RV32E
+	bool
+	help
+	  RV32E Base Integer Instruction Set (Embedded) - 32bit
+
+config RISCV_ISA_RV64I
+	bool
+	default y if 64BIT
+	help
+	  RV64I Base Integer Instruction Set - 64bit
+
+config RISCV_ISA_RV128I
+	bool
+	help
+	  RV128I Base Integer Instruction Set - 128bit
+
+config RISCV_ISA_EXT_M
+	bool
+	help
+	  (M) - Standard Extension for Integer Multiplication and Division
+
+	  Standard integer multiplication and division instruction extension,
+	  which is named "M" and contains instructions that multiply or divide
+	  values held in two integer registers.
+
+config RISCV_ISA_EXT_A
+	bool
+	help
+	  (A) - Standard Extension for Atomic Instructions
+
+	  The standard atomic instruction extension is denoted by instruction
+	  subset name "A", and contains instructions that atomically
+	  read-modify-write memory to support synchronization between multiple
+	  RISC-V threads running in the same memory space.
+
+config RISCV_ISA_EXT_F
+	bool
+	help
+	  (F) - Standard Extension for Single-Precision Floating-Point
+
+	  Standard instruction-set extension for single-precision
+	  floating-point, which is named "F" and adds single-precision
+	  floating-point computational instructions compliant with the IEEE
+	  754-2008 arithmetic standard.
+
+config RISCV_ISA_EXT_D
+	bool
+	depends on RISCV_ISA_EXT_F
+	help
+	  (D) - Standard Extension for Double-Precision Floating-Point
+
+	  Standard double-precision floating-point instruction-set extension,
+	  which is named "D" and adds double-precision floating-point
+	  computational instructions compliant with the IEEE 754-2008
+	  arithmetic standard.
+
+config RISCV_ISA_EXT_G
+	bool
+	select RISCV_ISA_EXT_M
+	select RISCV_ISA_EXT_A
+	select RISCV_ISA_EXT_F
+	select RISCV_ISA_EXT_D
+	select RISCV_ISA_EXT_ZICSR
+	select RISCV_ISA_EXT_ZIFENCEI
+	help
+	  (IMAFDZicsr_Zifencei) IMAFDZicsr_Zifencei extensions
+
+config RISCV_ISA_EXT_Q
+	bool
+	depends on RISCV_ISA_RV64I
+	depends on RISCV_ISA_EXT_F
+	depends on RISCV_ISA_EXT_D
+	help
+	  (Q) - Standard Extension for Quad-Precision Floating-Point
+
+	  Standard extension for 128-bit binary floating-point instructions
+	  compliant with the IEEE 754-2008 arithmetic standard. The 128-bit or
+	  quad-precision binary floatingpoint instruction subset is named "Q".
+
+config RISCV_ISA_EXT_C
+	bool
+	help
+	  (C) - Standard Extension for Compressed Instructions
+
+	  RISC-V standard compressed instruction set extension, named "C",
+	  which reduces static and dynamic code size by adding short 16-bit
+	  instruction encodings for common operations.
+
+config RISCV_ISA_EXT_ZICSR
+	bool
+	help
+	  (Zicsr) - Standard Extension for Control and Status Register (CSR) Instructions
+
+	  The "Zicsr" extension introduces support for the full set of CSR
+	  instructions that operate on CSRs registers.
+
+config RISCV_ISA_EXT_ZIFENCEI
+	bool
+	help
+	  (Zifencei) - Standard Extension for Instruction-Fetch Fence
+
+	  The "Zifencei" extension includes the FENCE.I instruction that
+	  provides explicit synchronization between writes to instruction
+	  memory and instruction fetches on the same hart.
+
+config RISCV_ISA_EXT_ZBA
+	bool
+	help
+	  (Zba) - Zba BitManip Extension
+
+	  The Zba instructions can be used to accelerate the generation of
+	  addresses that index into arrays of basic types (halfword, word,
+	  doubleword) using both unsigned word-sized and XLEN-sized indices: a
+	  shifted index is added to a base address.
+
+config RISCV_ISA_EXT_ZBB
+	bool
+	help
+	  (Zbb) - Zbb BitManip Extension (Basic bit-manipulation)
+
+	  The Zbb instructions can be used for basic bit-manipulation (logical
+	  with negate, count leading / trailing zero bits, count population,
+	  etc...).
+
+config RISCV_ISA_EXT_ZBC
+	bool
+	help
+	  (Zbc) - Zbc BitManip Extension (Carry-less multiplication)
+
+	  The Zbc instructions can be used for carry-less multiplication that
+	  is the multiplication in the polynomial ring over GF(2).
+
+config RISCV_ISA_EXT_ZBS
+	bool
+	help
+	  (Zbs) - Zbs BitManip Extension (Single-bit instructions)
+
+	  The Zbs instructions can be used for single-bit instructions that
+	  provide a mechanism to set, clear, invert, or extract a single bit in
+	  a register.

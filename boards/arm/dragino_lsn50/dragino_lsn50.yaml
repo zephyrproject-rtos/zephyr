@@ -1,0 +1,13 @@
+identifier: dragino_lsn50
+name: Dragino LSN50 LoRA Sensor Node
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 20
+flash: 192
+testing:
+  ignore_tags:
+    - net

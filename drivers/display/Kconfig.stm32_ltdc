@@ -1,0 +1,39 @@
+# STM32 LTDC display driver configuration options
+
+# Copyright (c) 2022 Byte-Lab d.o.o. <dev@byte-lab.com>
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig STM32_LTDC
+	bool "STM32 LCD-TFT display controller driver"
+	default y
+	depends on DT_HAS_ST_STM32_LTDC_ENABLED
+	select USE_STM32_HAL_LTDC
+	help
+	  Enable driver for STM32 LCT-TFT display controller periheral.
+
+choice STM32_LTDC_PIXEL_FORMAT
+	prompt "Color pixel format"
+	default STM32_LTDC_RGB565
+	depends on STM32_LTDC
+	help
+	  Specify the color pixel format for the STM32 LCD-TFT display controller.
+
+config STM32_LTDC_ARGB8888
+	bool "ARGB8888"
+	help
+	  One pixel consists of 8-bit alpha, 8-bit red, 8-bit green and 8-bit blue value
+	  (4 bytes per pixel)
+
+config STM32_LTDC_RGB888
+	bool "RGB888"
+	help
+	  One pixel consists of 8-bit red, 8-bit green and 8-bit blue value
+	  (3 bytes per pixel)
+
+config STM32_LTDC_RGB565
+	bool "RGB565"
+	help
+	  One pixel consists of 5-bit red, 6-bit green and 5-bit blue value
+	  (2 bytes per pixel)
+
+endchoice

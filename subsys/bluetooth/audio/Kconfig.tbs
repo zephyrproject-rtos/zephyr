@@ -1,0 +1,333 @@
+# Bluetooth Audio - Call control configuration options
+#
+# Copyright (c) 2020 Bose Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if BT_AUDIO
+
+#####################  Telephone Bearer Service #####################
+
+config BT_TBS
+	bool "Telephone Bearer Service Support"
+	select BT_CCID
+	select BT_GATT_DYNAMIC_DB
+	help
+	  This option enables support for Telephone Bearer Service.
+
+if BT_TBS
+
+# TODO: BT_GTBS is mandatory if you support the call control server role.
+# Need to enforce this.
+config BT_GTBS
+	bool "Generic Telephone Bearer Service Support"
+	default y
+	help
+	  This option enables support for Generic Telephone Bearer Service.
+
+config BT_TBS_PROVIDER_NAME
+	string "Telephone Bearer Service Provider Name"
+	default "Unknown"
+	help
+	  Sets the name of the service provider for the bearer.
+
+config BT_TBS_UCI
+	string "Telephone Bearer Service Uniform Caller Identifier (UCI)"
+	default "un000"
+	help
+	  Sets the UCI of the bearer. See
+		https://www.bluetooth.com/specifications/assigned-numbers/uniform-caller-identifiers/
+		for a table of valid UCIs.
+
+config BT_TBS_TECHNOLOGY
+	int "Telephone Bearer Service Technology"
+	range 1 10
+	help
+	  Sets the technology used for the bearer, e.g. GSM, LTE and 5G.
+	  1 : 3G
+	  2 : 4G
+	  3 : LTE
+	  4 : Wi-Fi
+	  5 : 5G
+	  6 : GSM
+	  7 : CDMA
+	  8 : 2G
+	  9 : WCDMA
+	  10: IP
+
+config BT_TBS_URI_SCHEMES_LIST
+	string "Telephone Bearer Service URI schemes Supported List"
+	default "tel,skype"
+	help
+	  Sets a list of URI schemes that are supported by the bearer,
+	  e.g. "tel" or "skype".
+	  Multiple values shall be comma (,) separated, e.g. "tel,skype".
+
+config BT_TBS_SIGNAL_STRENGTH_INTERVAL
+	int "Telephone Bearer Service Signal Strength Reporting Interval"
+	default 0
+	range 0 255
+	help
+	  Sets the interval of reporting the signal strength in seconds.
+		If the value is 0, the signal will not be reported.
+
+config BT_TBS_STATUS_FLAGS
+	int "Telephone Bearer Service Features and Status value"
+	default 0
+	range 0 3
+	help
+	  Bitfield to set feature and status flags.
+	  	Bit 0: In-band ringtone
+		Bit 1: Silent mode
+		Bits 2-15: Reserved for future use
+
+config BT_TBS_SUPPORTED_FEATURES
+	int "Telephone Bearer Service Supported Features"
+	default 1
+	range 0 3
+	help
+	  Bitfield to set supported features of the bearer.
+		Bit 0: Local Hold and Retrieve
+		Bit 1: Join calls within Telephone Bearer Service
+
+config BT_TBS_MAX_CALLS
+	int "Telephone Bearer Service Maximum Number Of Calls Supported"
+	default 3
+	range 1 16
+	help
+	  Sets the maximum number of calls the service supports per bearer.
+
+config BT_TBS_BEARER_COUNT
+	int "How many bearer instances the device instantiates"
+	default 1
+	range 1 255
+	help
+	  Sets the number of TBS instances that are instantiated
+
+config BT_TBS_SERVICE_COUNT
+	int "Number of instantiated bearer service instances"
+	default BT_TBS_BEARER_COUNT
+	range 0 BT_TBS_BEARER_COUNT if BT_GTBS
+	range BT_TBS_BEARER_COUNT BT_TBS_BEARER_COUNT
+	help
+	  Sets the number of TBS service instances that are instantiated
+
+config BT_TBS_MAX_SCHEME_LIST_LENGTH
+	int "The maximum length of the URI scheme list"
+	default 30
+	range 0 512
+	help
+	  Sets the maximum length of the URI scheme list. If BT_GTBS is enabled,
+	  then the maximum length should be maximum 512 / BT_TBS_BEARER_COUNT.
+
+config BT_TBS_AUTHORIZATION
+	bool "TBS authorization requirement"
+	help
+	  If set to true, then any writable characteristics will require
+	  authorization per connection.
+
+endif # BT_TBS
+
+
+##################### Call Control Client #####################
+
+config BT_TBS_CLIENT_GTBS
+	bool "Generic Telephone Bearer Service client support"
+	help
+	  This option enables support for the GTBS-oriented Call Control client.
+
+config BT_TBS_CLIENT_TBS
+	bool "Telephone Bearer Service client support"
+	help
+	  This option enables support for the TBS-oriented Call Control client.
+
+config BT_TBS_CLIENT
+	def_bool BT_TBS_CLIENT_GTBS || BT_TBS_CLIENT_TBS
+	select BT_GATT_CLIENT
+	select BT_GATT_AUTO_DISCOVER_CCC
+
+if BT_TBS_CLIENT
+
+config BT_TBS_CLIENT_MAX_CALLS
+	int "Maximum Number Of Calls Supported"
+	default 1
+	help
+	  Sets the maximum number of calls the client supports per TBS instance.
+
+config BT_TBS_CLIENT_MAX_TBS_INSTANCES
+	int "Maximum number of TBS instances to setup"
+	depends on BT_TBS_CLIENT_TBS
+	default 1
+	range 1 3
+	help
+	  Sets the maximum number of Telephone Bearer Service (TBS)
+	  instances to setup and use.
+
+config BT_TBS_CLIENT_MINIMAL
+	bool "Minimal TBS Client without optional procedures"
+	default n
+	help
+	  This option disables all optional procedures in the TBS Client.
+
+config BT_TBS_CLIENT_BEARER_PROVIDER_NAME
+	bool "Support reading Bearer Provider Name"
+	default !BT_TBS_CLIENT_MINIMAL
+	help
+	  This option enables support for reading Bearer Provider Name.
+
+config BT_TBS_CLIENT_BEARER_UCI
+	bool "Support reading Bearer UCI"
+	default !BT_TBS_CLIENT_MINIMAL
+	help
+	  This option enables support for reading Bearer UCI.
+
+config BT_TBS_CLIENT_BEARER_TECHNOLOGY
+	bool "Support reading Bearer Technology"
+	default !BT_TBS_CLIENT_MINIMAL
+	help
+	  This option enables support for reading Bearer Technology.
+
+config BT_TBS_CLIENT_BEARER_URI_SCHEMES_SUPPORTED_LIST
+	bool "Support reading Bearer URI Schemes Supported List"
+	default !BT_TBS_CLIENT_MINIMAL
+	help
+	  This option enables support for reading Bearer URI Schemes Supported
+	  List.
+
+config BT_TBS_CLIENT_BEARER_SIGNAL_STRENGTH
+	bool "Support reading Bearer Signal Strength"
+	default !BT_TBS_CLIENT_MINIMAL
+	help
+	  This option enables support for reading Bearer Signal Strength.
+
+config BT_TBS_CLIENT_READ_BEARER_SIGNAL_INTERVAL
+	bool "Support reading Bearer Signal Strength Reporting Interval"
+	default !BT_TBS_CLIENT_MINIMAL
+	help
+	  This option enables support for reading Bearer Signal Strength
+	  Reporting Interval.
+
+config BT_TBS_CLIENT_SET_BEARER_SIGNAL_INTERVAL
+	bool "Support setting Bearer Signal Strength Reporting Interval"
+	default !BT_TBS_CLIENT_MINIMAL
+	help
+	  This option enables support for setting Bearer Signal Strength
+	  Reporting Interval.
+
+config BT_TBS_CLIENT_BEARER_LIST_CURRENT_CALLS
+	bool "Support reading Bearer List Current Calls"
+	default !BT_TBS_CLIENT_MINIMAL
+	help
+	  This option enables support for reading Bearer List Current Calls.
+
+config BT_TBS_CLIENT_CCID
+	bool "Support reading Content Control ID"
+	default !BT_TBS_CLIENT_MINIMAL
+	help
+	  This option enables support for reading Content Control ID.
+
+config BT_TBS_CLIENT_INCOMING_URI
+	bool "Support reading Incoming Call Target Bearer URI"
+	default !BT_TBS_CLIENT_MINIMAL
+	help
+	  This option enables support for reading Incoming Call Target Bearer
+	  URI.
+
+config BT_TBS_CLIENT_STATUS_FLAGS
+	bool "Support reading Status Flags"
+	default !BT_TBS_CLIENT_MINIMAL
+	help
+	  This option enables support for reading Status Flags.
+
+config BT_TBS_CLIENT_CP_PROCEDURES
+	def_bool y
+	depends on (BT_TBS_CLIENT_ACCEPT_CALL || \
+		    BT_TBS_CLIENT_TERMINATE_CALL || \
+		    BT_TBS_CLIENT_HOLD_CALL || \
+		    BT_TBS_CLIENT_RETRIEVE_CALL || \
+		    BT_TBS_CLIENT_ORIGINATE_CALL || \
+		    BT_TBS_CLIENT_JOIN_CALLS)
+	help
+	  This hidden option indicates that there are at least one control
+	  point procedure available.
+	  When this option is disabled it indicates that the control point can
+	  be optimized away.
+
+config BT_TBS_CLIENT_ACCEPT_CALL
+	bool "Support Accept Call"
+	default !BT_TBS_CLIENT_MINIMAL
+	help
+	  This option enables support for answering an incoming call.
+
+config BT_TBS_CLIENT_TERMINATE_CALL
+	bool "Support Terminate Call"
+	default !BT_TBS_CLIENT_MINIMAL
+	help
+	  This option enables support for terminating a call.
+
+config BT_TBS_CLIENT_HOLD_CALL
+	bool "Support Hold Call"
+	default !BT_TBS_CLIENT_MINIMAL
+	help
+	  This option enables support for putting a call on hold.
+
+config BT_TBS_CLIENT_RETRIEVE_CALL
+	bool "Support Retrieve Call"
+	default !BT_TBS_CLIENT_MINIMAL
+	help
+	  This option enables support for retrieving a call on hold.
+
+config BT_TBS_CLIENT_ORIGINATE_CALL
+	bool "Support Originate Call"
+	default !BT_TBS_CLIENT_MINIMAL
+	help
+	  This option enables support for originating a call.
+
+config BT_TBS_CLIENT_JOIN_CALLS
+	bool "Support Join Calls"
+	depends on BT_TBS_CLIENT_MAX_CALLS > 1
+	default !BT_TBS_CLIENT_MINIMAL
+	help
+	  This option enables support for joining calls.
+
+config BT_TBS_CLIENT_OPTIONAL_OPCODES
+	bool "Support reading Optional Opcodes"
+	default !BT_TBS_CLIENT_MINIMAL
+	help
+	  This option enables support for reading Optional Opcodes.
+
+config BT_TBS_CLIENT_INCOMING_CALL
+	bool "Support reading Incoming Call"
+	default !BT_TBS_CLIENT_MINIMAL
+	help
+	  This option enables support for reading Incoming Call.
+
+config BT_TBS_CLIENT_CALL_FRIENDLY_NAME
+	bool "Support reading Call Friendly Name"
+	default !BT_TBS_CLIENT_MINIMAL
+	help
+	  This option enables support for reading Call Friendly Name.
+
+endif # BT_TBS_CLIENT
+
+if BT_TBS || BT_TBS_CLIENT
+
+config BT_TBS_MAX_URI_LENGTH
+	int "The maximum length of the call URI supported"
+	default 30
+	range 4 253
+	help
+	  Sets the maximum length of the call URI supported. Note that if this
+	  value is lower than a call URI, the call request will be rejected.
+
+config BT_TBS_MAX_PROVIDER_NAME_LENGTH
+	int "The maximum length of the bearer provider name"
+	default 30
+	range 0 512
+	help
+	  Sets the maximum length of the bearer provider name.
+
+endif # BT_TBS || BT_TBS_CLIENT
+
+endif # BT_AUDIO

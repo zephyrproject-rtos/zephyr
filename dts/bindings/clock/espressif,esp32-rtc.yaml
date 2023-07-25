@@ -1,0 +1,27 @@
+# Copyright (c) 2020, Mohamed ElShahawi
+# SPDX-License-Identifier: Apache-2.0
+
+description: ESP32 RTC (Power & Clock Controller Module) Module
+
+compatible: "espressif,esp32-rtc"
+
+include: [clock-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  xtal-freq:
+    type: int
+    required: true
+    description: Value of the external XTAL connected to ESP32.
+
+  xtal-div:
+    type: int
+    description: Divisor value for XTAL Clock, CPU_CLK = XTAL_FREQ / xtal-div
+
+  "#clock-cells":
+    const: 1
+
+clock-cells:
+  - offset  # Index of the peripheral in esp32 modules list (Check esp32_clock.h)

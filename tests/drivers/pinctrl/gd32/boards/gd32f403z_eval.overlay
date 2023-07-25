@@ -1,0 +1,67 @@
+/*
+ * Copyright (c) 2021 Teslabs Engineering S.L.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#define GD32_TEST_DEVICE_RMP GD32_REMAP(0, 0, 0x1U, 1)
+
+/ {
+	test_device: test_device {
+		compatible = "vnd,pinctrl-device";
+		pinctrl-0 = <&test_device_default>;
+		pinctrl-names = "default";
+	};
+};
+
+&pinctrl {
+	test_device_default: test_device_default {
+		/* Note: the groups are just meant for testing if properties and
+		   pins are parsed correctly, but do not necessarily represent a
+		   feasible combination */
+		group1 {
+			pinmux = <GD32_PINMUX_AFIO('A', 0, ANALOG, NORMP)>,
+				 <GD32_PINMUX_AFIO('B', 1, ALTERNATE, NORMP)>,
+				 <GD32_PINMUX_AFIO('C', 2, GPIO_IN, NORMP)>;
+		};
+		group2 {
+			pinmux = <GD32_PINMUX_AFIO('A', 3, GPIO_IN, TEST_DEVICE_RMP)>,
+				 <GD32_PINMUX_AFIO('B', 4, ALTERNATE, TEST_DEVICE_RMP)>;
+		};
+		group3 {
+			pinmux = <GD32_PINMUX_AFIO('C', 5, GPIO_IN, NORMP)>;
+			drive-push-pull;
+		};
+		group4 {
+			pinmux = <GD32_PINMUX_AFIO('A', 6, GPIO_IN, NORMP)>;
+			drive-open-drain;
+		};
+		group5 {
+			pinmux = <GD32_PINMUX_AFIO('B', 7, GPIO_IN, NORMP)>;
+			bias-disable;
+		};
+		group6 {
+			pinmux = <GD32_PINMUX_AFIO('C', 8, GPIO_IN, NORMP)>;
+			bias-pull-up;
+		};
+		group7 {
+			pinmux = <GD32_PINMUX_AFIO('A', 9, GPIO_IN, NORMP)>;
+			bias-pull-down;
+		};
+		group8 {
+			pinmux = <GD32_PINMUX_AFIO('B', 10, ALTERNATE, NORMP)>;
+			slew-rate = "max-speed-2mhz";
+		};
+		group9 {
+			pinmux = <GD32_PINMUX_AFIO('C', 11, ALTERNATE, NORMP)>;
+			slew-rate = "max-speed-10mhz";
+		};
+		group10 {
+			pinmux = <GD32_PINMUX_AFIO('A', 12, ALTERNATE, NORMP)>;
+			slew-rate = "max-speed-50mhz";
+		};
+		group11 {
+			pinmux = <GD32_PINMUX_AFIO('B', 13, ALTERNATE, NORMP)>;
+			slew-rate = "max-speed-highest";
+		};
+	};
+};

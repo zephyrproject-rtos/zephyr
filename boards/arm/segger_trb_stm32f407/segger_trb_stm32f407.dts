@@ -1,0 +1,82 @@
+/*
+ * Copyright (c) 2020, Erwin Rol <erwin@erwinrol.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/f4/stm32f407Xe.dtsi>
+
+/ {
+	model = "SEGGER STM32F407 Trace Reference Board";
+	compatible = "segger,trb-stm32f407";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,ccm = &ccm0;
+	};
+
+	aliases {
+		led0 = &led_0_green;
+		led1 = &led_1_green;
+		led2 = &led_2_green;
+		watchdog0 = &iwdg;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led_0_green: led_0_green {
+			gpios = <&gpioa 8 GPIO_ACTIVE_HIGH>;
+			label = "LED0";
+		};
+		led_1_green: led_1_green {
+			gpios = <&gpioa 9 GPIO_ACTIVE_HIGH>;
+			label = "LED1";
+		};
+		led_2_green: led_2_green {
+			gpios = <&gpioa 10 GPIO_ACTIVE_HIGH>;
+			label = "LED2";
+		};
+	};
+};
+
+&clk_lsi {
+	status = "okay";
+};
+
+&clk_hse {
+	clock-frequency = <DT_FREQ_M(12)>;
+	status = "okay";
+};
+
+&pll {
+	div-m = <6>;
+	mul-n = <168>;
+	div-p = <2>;
+	div-q = <7>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+	clock-frequency = <DT_FREQ_M(168)>;
+	ahb-prescaler = <1>;
+	apb1-prescaler = <4>;
+	apb2-prescaler = <2>;
+};
+
+&rtc {
+	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x10000000>,
+		 <&rcc STM32_SRC_LSI RTC_SEL(2)>;
+	status = "okay";
+};
+
+&rng {
+	status = "okay";
+};
+
+&iwdg {
+	status = "okay";
+};

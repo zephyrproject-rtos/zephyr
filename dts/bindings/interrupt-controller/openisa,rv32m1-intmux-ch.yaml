@@ -1,0 +1,18 @@
+# Copyright (c) 2019, Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+description: RV32M1 INTMUX channel
+
+compatible: "openisa,rv32m1-intmux-ch"
+
+include: [interrupt-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+interrupt-cells:
+  - irq

@@ -1,0 +1,32 @@
+description: Intel ADSP Watchdog
+
+compatible: "intel,adsp-watchdog"
+
+include: base.yaml
+
+properties:
+  # This properties is also supported:
+  # interrupts:
+  # clocks:
+
+  reg:
+    required: true
+
+  clock-frequency:
+    type: int
+    description: |
+      Clock frequency used by counter in Hz. You can specify a frequency here or specify a clock
+      using the clocks propertie.
+
+  reset-pulse-length:
+    type: int
+    enum:
+      - 2
+      - 4
+      - 8
+      - 16
+      - 32
+      - 64
+      - 128
+      - 256
+    description: Duration of the reset pulse in clock cycles

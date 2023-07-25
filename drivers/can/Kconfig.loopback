@@ -1,0 +1,48 @@
+# CAN loopback device configuration options
+
+# Copyright (c) 2019 Alexander Wachter
+# SPDX-License-Identifier: Apache-2.0
+
+config CAN_LOOPBACK
+	bool "Emulated CAN loopback driver"
+	default y
+	depends on DT_HAS_ZEPHYR_CAN_LOOPBACK_ENABLED
+	help
+	  This is an emulated driver that can only loopback messages.
+
+if CAN_LOOPBACK
+
+config CAN_MAX_FILTER
+	int "Maximum number of concurrent active filters"
+	default 16
+	range 1 1024
+	help
+	  Defines the array size of the filters.
+	  Must be at least the size of concurrent reads.
+
+config CAN_LOOPBACK_TX_THREAD_STACK_SIZE
+	int "TX thread stack size"
+	default 256
+	help
+	  Stack size of the TX thread.
+	  The TX thread calls the callbacks of the receiver
+	  if the filter matches.
+
+config CAN_LOOPBACK_TX_THREAD_PRIORITY
+	int "TX thread priority"
+	default 2
+	help
+	  Priority of the TX thread.
+	  The TX thread calls the callbacks of the receiver
+	  if the filter matches.
+
+config CAN_LOOPBACK_TX_MSGQ_SIZE
+	int "TX message queue size"
+	default 16
+	help
+	  Number of TX frames that can be buffered.
+	  The send functions puts frame int this queue and TX thread takes the
+	  messages from this msgq and calls the respective receiver if the
+	  filter matches.
+
+endif # CAN_LOOPBACK

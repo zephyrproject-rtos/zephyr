@@ -1,0 +1,136 @@
+# Copyright (c) 2022 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+
+  Espressif's LEDC controller Node
+
+  The LEDC controller is primarily designed to control the intensity of LEDs, although it can be
+  used to generate PWM signals for other purposes as well.
+
+  The mapping between the channel and GPIO is done through pinctrl
+
+    &ledc0 {
+      pinctrl-0 = <&ledc0_default>;
+      pinctrl-names = "default";
+    }
+
+  The 'ledc0_default' node state is defined in <board>-pinctrl.dtsi.
+
+    ledc0_default: ledc0_default {
+            group1 {
+                    pinmux = <LEDC_CH0_GPIO0>,
+                             <LEDC_CH1_GPIO2>,
+                             <LEDC_CH2_GPIO4>;
+                    output-enable;
+            };
+    };
+
+  If another GPIO mapping is desired, check if <board>-pinctrl.dtsi already have it defined,
+  otherwise, define the required mapping at your own application folder into a custom
+  <board>.overlay file.
+  The 'pinmux' property uses a macro defined in
+  https://github.com/zephyrproject-rtos/hal_espressif/tree/zephyr/include/dt-bindings/pinctrl
+  Before including a new node, check if the desired mapping is available according to the SoC.
+
+  As an example, the 'ledc0_custom' state below illustrates an alternate mapping using another set
+  of channels and pins in a custom overlay file.
+
+    &pinctrl {
+
+            ledc0_custom:  ledc0_custom {
+                    group1 {
+                            pinmux = <LEDC_CH0_GPIO0>,
+                                     <LEDC_CH9_GPIO2>,
+                                     <LEDC_CH10_GPIO4>;
+                            output-enable;
+                    };
+             };
+
+    };
+
+  Use the child bindings to configure the desired channel:
+
+    &ledc0 {
+      pinctrl-0 = <&ledc0_custom>;
+      pinctrl-names = "default";
+      status = "okay";
+      #address-cells = <1>;
+      #size-cells = <0>;
+      channel0@0 {
+        reg = <0x0>;
+        timer = <0>;
+      };
+      channel9@9 {
+        reg = <0x9>;
+        timer = <0>;
+      };
+      channel10@a {
+        reg = <0xa>;
+        timer = <1>;
+      };
+    };
+
+    Note: The channel's 'reg' property defines the ID of the channel. It must match the channel used
+      in the 'pinmux'.
+
+
+compatible: "espressif,esp32-ledc"
+
+include: [pwm-controller.yaml, pinctrl-device.yaml, base.yaml]
+
+properties:
+  "#pwm-cells":
+    const: 3
+
+child-binding:
+  description: Channel configuration.
+
+  properties:
+    reg:
+      type: int
+      required: true
+      enum:
+      - 0
+      - 1
+      - 2
+      - 3
+      - 4
+      - 5
+      - 6
+      - 7
+      - 8
+      - 9
+      - 10
+      - 11
+      - 12
+      - 13
+      - 14
+      - 15
+
+      description: |
+        The ESP32 has 8 low speed channel and 8 high speed channels.
+        The low speed channel are mapped from channel 0 to 7, and the high speed are mapped from
+        channel 8 to 15.
+
+        High speed channels are only available in the ESP32 SoC. ESP32S2 and ESP32S3 have 8
+        available channels, and ESP32C3 has 6. In these SoCs there is no differentiation between
+        low or high speed.
+
+    timer:
+      type: int
+      required: true
+      enum:
+      - 0
+      - 1
+      - 2
+      - 3
+      description: |
+        Timer selection.
+        For maximum flexibility, the high-speed as well as the low-speed channels can be driven from
+        one of four high-speed/low-speed timers.
+
+pwm-cells:
+- channel
+- period
+- flags

@@ -1,0 +1,12 @@
+sample:
+  name: Bluetooth Peripheral DIS
+  description: Demonstrates the DIS (Device Information) GATT Service
+tests:
+  sample.bluetooth.peripheral_dis:
+    harness: bluetooth
+    platform_allow:
+      - qemu_cortex_m3
+      - qemu_x86
+    tags: bluetooth
+    integration_platforms:
+      - qemu_cortex_m3

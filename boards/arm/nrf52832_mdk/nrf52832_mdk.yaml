@@ -1,0 +1,12 @@
+identifier: nrf52832_mdk
+name: nRF52832-MDK
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 64
+flash: 512
+supported:
+  - pwm

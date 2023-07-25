@@ -1,0 +1,9 @@
+# Copyright (c) 2023 Enphase Energy
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_AM6234_A53
+
+config SOC
+	default "am6234"
+
+endif # SOC_AM6234_A53

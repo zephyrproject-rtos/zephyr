@@ -1,0 +1,21 @@
+# Thingy53 NRF5340 board configuration
+
+# Copyright (c) 2021 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_NRF5340_CPUAPP_QKAA
+
+config BOARD_THINGY53_NRF5340_CPUAPP
+	bool "Thingy53 nRF5340 Application MCU"
+
+config BOARD_THINGY53_NRF5340_CPUAPP_NS
+	bool "Thingy53 nRF5340 Application MCU non-secure"
+
+endif # SOC_NRF5340_CPUAPP_QKAA
+
+if SOC_NRF5340_CPUNET_QKAA
+
+config BOARD_THINGY53_NRF5340_CPUNET
+	bool "Thingy53 nRF5340 Network MCU"
+
+endif # SOC_NRF5340_CPUNET_QKAA

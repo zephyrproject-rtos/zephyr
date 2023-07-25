@@ -1,0 +1,10 @@
+#
+# Copyright 2022 Google LLC
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+include: base.yaml
+
+description: |
+   Battery fuel-gauge parameters and info

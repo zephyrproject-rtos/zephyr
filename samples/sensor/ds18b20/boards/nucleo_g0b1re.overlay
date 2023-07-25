@@ -1,0 +1,21 @@
+/*
+ * Copyright (c) 2022, Thomas Stranger
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Example configuration of a DS18B20 device on an Arduino serial bus.
+ * Open drain configuration allows communication by simply connecting the bus
+ * line to:
+ * a) the UART RX pin as well as the TX pin.
+ * b) the UART TX pin only, while the single wire half-duplex mode is enabled.
+ * An external pull-up should be added anyways.
+ */
+
+#include "serial_overlay.dtsi"
+
+&usart1_tx_pc4 {
+	drive-open-drain;
+	bias-pull-up;
+};

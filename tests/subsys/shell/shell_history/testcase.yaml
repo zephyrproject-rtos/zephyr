@@ -1,0 +1,8 @@
+tests:
+  shell.history:
+    integration_platforms:
+      - native_posix
+    min_flash: 64
+    min_ram: 32
+    filter: ( CONFIG_SHELL )
+    tags: shell

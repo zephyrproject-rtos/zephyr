@@ -1,0 +1,28 @@
+# Copyright (c) 2020 Qingsong Gou <gouqs@hotmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig INPUT_CST816S
+	bool "CST816S capacitive touch panel driver"
+	default y
+	depends on DT_HAS_HYNITRON_CST816S_ENABLED
+	select I2C
+	help
+	  Enable driver for hynitron cst816s touch panel.
+
+if INPUT_CST816S
+
+config INPUT_CST816S_PERIOD
+	int "Sample period"
+	depends on !INPUT_CST816S_INTERRUPT
+	default 20
+	help
+	  Sample period in milliseconds when in polling mode.
+
+config INPUT_CST816S_INTERRUPT
+	bool "Interrupt support"
+	default y
+	depends on GPIO
+	help
+	  Enable interrupt support (requires GPIO).
+
+endif # INPUT_CST816S

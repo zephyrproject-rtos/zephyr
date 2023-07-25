@@ -1,0 +1,12 @@
+# DAC configuration options
+
+# Copyright (c) 2020 Libre Solar Technologies GmbH
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config DAC_STM32
+	bool "STM32 DAC driver"
+	default y
+	depends on DT_HAS_ST_STM32_DAC_ENABLED
+	help
+	  Enable the driver implementation for the stm32xx DAC

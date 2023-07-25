@@ -1,0 +1,10 @@
+# Copyright (c) 2020, Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config APP_ENABLE_HFXO
+	bool "Use HFXO as HFCLK source"
+	help
+	  Turn on the high-frequency clock, which means switching to the
+	  crystal as a source rather than the internal oscillator.
+
+source "Kconfig.zephyr"

@@ -1,0 +1,24 @@
+# Silicon Labs EFR32BG22 (Blue Gecko) MCU configuration options
+
+# Copyright (c) 2021 Sateesh Kotapati
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_EFR32BG22
+
+config SOC_SERIES
+	default "efr32bg22"
+
+config SOC_PART_NUMBER
+	default "EFR32BG22C224F512IM40" if SOC_PART_NUMBER_EFR32BG22C224F512IM40
+
+config NUM_IRQS
+	# must be >= the highest interrupt number used
+	default 60
+
+config PM
+	select COUNTER
+	select UART_INTERRUPT_DRIVEN
+
+source "soc/arm/silabs_exx32/efr32bg22/Kconfig.defconfig.efr32bg22"
+
+endif # SOC_SERIES_EFR32BG22

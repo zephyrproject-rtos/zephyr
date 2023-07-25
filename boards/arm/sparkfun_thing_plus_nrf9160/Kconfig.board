@@ -1,0 +1,23 @@
+# Sparkfun nRF9160 Thing Plus configuration
+
+# Copyright (c) 2018-2020 Nordic Semiconductor ASA
+# Copyright (c) 2020 Circuit Dojo LLC
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_NRF9160_SICA
+
+config BOARD_SPARKFUN_THING_PLUS_NRF9160
+	bool "Sparkfun nRF9160 Thing Plus"
+	# The GPIO driver is required by this board's initialization code
+	# (board.c), so it is forced here to be enabled always, not only
+	# enabled by default (in defconfig).
+	select GPIO
+
+config BOARD_SPARKFUN_THING_PLUS_NRF9160_NS
+	bool "Sparkfun nRF9160 Thing Plus non-secure"
+	# The GPIO driver is required by this board's initialization code
+	# (board.c), so it is forced here to be enabled always, not only
+	# enabled by default (in defconfig).
+	select GPIO
+
+endif # SOC_NRF9160_SICA

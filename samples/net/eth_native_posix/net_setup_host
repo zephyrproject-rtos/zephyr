@@ -1,0 +1,81 @@
+#!/bin/sh
+#
+# Copyright (c) 2018 Intel Corporation
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# This script is called by native-posix board when TAP network interface
+# is taken up by Zephyr. The script should setup the host system so that
+# connectivity will work with Zephyr.
+
+while [ $# -gt 0 ]; do
+    case "$1" in
+	-f|--file)
+	    CONF_FILE="$2"
+	    shift
+	    shift;;
+	-i|--interface)
+	    # Only first -i option is taken into account. This way
+	    # the driver added -i option is ignored if user has specified
+	    # the -i option to host setup script command.
+	    if [ -z "$IFACE" ]; then
+		IFACE="$2"
+	    fi
+	    shift
+	    shift;;
+	*)
+	    shift;;
+    esac
+done
+
+if [ `id -u` != 0 ]; then
+    echo "Warning: This script will need admin rights to setup \
+network interface!"
+fi
+
+if [ -z "$IFACE" ]; then
+    IFACE="zeth"
+fi
+
+if [ -z "$CONF_FILE" ]; then
+    DIR=`dirname $0`
+    CONF_FILE="$DIR/net_setup_host.conf"
+fi
+
+if [ -f "$CONF_FILE" ]; then
+    . $CONF_FILE
+else
+    echo "Warning: config file $CONF_FILE does not exist!"
+fi
+
+ip link set dev $IFACE up
+
+if [ ! -z "$HWADDR" ]; then
+    ip link set dev $IFACE address $HWADDR
+fi
+
+if [ ! -z "$IPV6_ADDR_1" ]; then
+    ip -6 address add $IPV6_ADDR_1 dev $IFACE
+fi
+
+if [ ! -z "$IPV6_ROUTE_1" ]; then
+    ip -6 route add $IPV6_ROUTE_1 dev $IFACE
+fi
+
+if [ ! -z "$IPV4_ADDR_1" ]; then
+    ip address add $IPV4_ADDR_1 dev $IFACE
+fi
+
+if [ ! -z "$IPV4_ROUTE_1" ]; then
+    ip route add $IPV4_ROUTE_1 dev $IFACE
+fi

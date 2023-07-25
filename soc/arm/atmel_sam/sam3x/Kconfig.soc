@@ -1,0 +1,89 @@
+# Atmel SAM3X MCU series
+
+# Copyright (c) 2017 Justin Watson
+# Copyright (c) 2016 Intel Corporation.
+# Copyright (c) 2014-2015 Wind River Systems, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+choice
+	prompt "Atmel SAM3X MCU Selection"
+	depends on SOC_SERIES_SAM3X
+
+	config SOC_PART_NUMBER_SAM3X4C
+		bool "SAM3X4C"
+	config SOC_PART_NUMBER_SAM3X4E
+		bool "SAM3X4E"
+	config SOC_PART_NUMBER_SAM3X8C
+		bool "SAM3X8C"
+	config SOC_PART_NUMBER_SAM3X8E
+		bool "SAM3X8E"
+	config SOC_PART_NUMBER_SAM3X8H
+		bool "SAM3X8H"
+endchoice
+
+if SOC_SERIES_SAM3X
+
+config SOC_ATMEL_SAM3X_EXT_SLCK
+	bool "Atmel SAM3 to use external crystal oscillator for slow clock"
+	help
+	  Says y if you want to use external 32 kHz crystal
+	  oscillator to drive the slow clock. Note that this
+	  adds a few seconds to boot time, as the crystal
+	  needs to stabilize after power-up.
+
+	  Says n if you do not need accurate and precise timers.
+	  The slow clock will be driven by the internal fast
+	  RC oscillator running at 32 kHz.
+
+config SOC_ATMEL_SAM3X_EXT_MAINCK
+	bool "Atmel SAM3 to use external crystal oscillator for main clock"
+	help
+	  The main clock is being used to drive the PLL, and
+	  thus driving the processor clock.
+
+	  Says y if you want to use external crystal oscillator
+	  to drive the main clock. Note that this adds about
+	  a second to boot time, as the crystal needs to
+	  stabilize after power-up.
+
+	  The crystal used here can be from 3 to 20 MHz.
+
+	  Says n here will use the internal fast RC oscillator
+	  running at 12 MHz.
+
+config SOC_ATMEL_SAM3X_PLLA_MULA
+	hex
+	default 0x06
+	help
+	  This is the multiplier (MULA) used by the PLL.
+	  The processor clock is (MAINCK * (MULA + 1) / DIVA).
+
+	  Board config file can override this settings
+	  for a particular board.
+
+	  With default of MULA == 6, and DIVA == 1,
+	  PLL is running at 7 times of main clock.
+
+config SOC_ATMEL_SAM3X_PLLA_DIVA
+	hex
+	default 0x01
+	help
+	  This is the divider (DIVA) used by the PLL.
+	  The processor clock is (MAINCK * (MULA + 1) / DIVA).
+
+	  Board config file can override this settings
+	  for a particular board.
+
+	  With default of MULA == 6, and DIVA == 1,
+	  PLL is running at 7 times of main clock.
+
+config SOC_ATMEL_SAM3X_WAIT_MODE
+	bool "Atmel SAM3 goes to Wait mode instead of Sleep mode"
+	depends on SOC_ATMEL_SAM3X_EXT_MAINCK
+	default y if DEBUG
+	help
+	  For JTAG debugging CPU clock (HCLK) should not stop. In order
+	  to achieve this, make CPU go to Wait mode instead of Sleep
+	  mode while using external crystal oscillator for main clock.
+
+endif # SOC_SERIES_SAM3X

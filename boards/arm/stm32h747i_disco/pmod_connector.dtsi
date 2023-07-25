@@ -1,0 +1,22 @@
+/*
+ * Copyright (c) 2023 Elektronikutvecklingsbyrån EUB AB
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	pmod0: pmod-connector {
+		compatible = "digilent,pmod";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0 0 &gpioa 11 0>,	/* IO1 */
+			   <1 0 &gpioc 3 0>,	/* IO2 */
+			   <2 0 &gpioc 2 0>,	/* IO3 */
+			   <3 0 &gpioa 12 0>,	/* IO4 */
+			   <4 0 &gpioc 6 0>,	/* IO5 */
+			   <5 0 &gpioj 13 0>;	/* IO6 */
+						/* IO7 - not connected */
+						/* IO8 - not connected */
+	};
+};

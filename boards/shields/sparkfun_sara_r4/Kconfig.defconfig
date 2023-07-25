@@ -1,0 +1,40 @@
+# Copyright (c) 2019 Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+if SHIELD_SPARKFUN_SARA_R4
+
+if NETWORKING
+
+config MODEM
+	default y
+
+config MODEM_SHELL
+	default y
+
+config MODEM_UBLOX_SARA
+	default y
+
+choice MODEM_UBLOX_SARA_VARIANT
+	default MODEM_UBLOX_SARA_R4
+endchoice
+
+config MODEM_UBLOX_SARA_R4_NET_STATUS
+	default y
+
+config UART_INTERRUPT_DRIVEN
+	default y
+
+# extend retry timing to 20 seconds for LTE/LTE-M
+config COAP_INIT_ACK_TIMEOUT_MS
+	default 20000
+
+# Hack: disable IPv6 for now
+config NET_IPV6
+	default n
+
+config NET_CONFIG_NEED_IPV6
+	default n
+
+endif # NETWORKING
+
+endif # SHIELD_SPARKFUN_SARA_R4

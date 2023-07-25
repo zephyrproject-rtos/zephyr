@@ -1,0 +1,98 @@
+# Copyright (c) 2023 Jeroen van Dooren <jeroen.van.dooren@nobleo.nl>
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  STM32 BDMA controller
+
+  The STM32 BDMA is a general-purpose direct memory access controller
+  capable of supporting 5 or 6 or 7 or 8 independent BDMA channels.
+  Each channel can have up to 8 requests.
+  BDMA clients connected to the STM32 BDMA controller must use the format
+  described in the dma.txt file, using a four-cell specifier for each
+  channel: a phandle to the BDMA controller plus the following four integer cells:
+    1. channel: the bdma stream from 0 to <bdma-requests>
+    2. slot: bdma request
+    3. channel-config: A 32bit mask specifying the BDMA channel configuration
+    which is device dependent:
+        -bit 6-7 : Direction  (see dma.h)
+               0x0: MEM to MEM
+               0x1: MEM to PERIPH
+               0x2: PERIPH to MEM
+               0x3: reserved for PERIPH to PERIPH
+        -bit 9 : Peripheral Increment Address
+               0x0: no address increment between transfers
+               0x1: increment address between transfers
+        -bit 10 : Memory Increment Address
+               0x0: no address increment between transfers
+               0x1: increment address between transfers
+        -bit 11-12 : Peripheral data size
+               0x0: Byte (8 bits)
+               0x1: Half-word (16 bits)
+               0x2: Word (32 bits)
+               0x3: reserved
+        -bit 13-14 : Memory data size
+               0x0: Byte (8 bits)
+               0x1: Half-word (16 bits)
+               0x2: Word (32 bits)
+               0x3: reserved
+        -bit 15: Peripheral Increment Offset Size
+               0x0: offset size is linked to the peripheral bus width
+               0x1: offset size is fixed to 4 (32-bit alignment)
+        -bit 16-17 : Priority level
+               0x0: low
+               0x1: medium
+               0x2: high
+               0x3: very high
+
+    examples for stm32h7
+     bdma1: dma-controller@58025400 {
+         compatible = "st,stm32-bdma";
+         ...
+         st,mem2mem;
+         dma-requests = <7>;
+         status = "disabled";
+        };
+
+  For the client part, example for STM32H743 on BDMA1 instance
+  using dmamux2
+
+    &adc3 {
+       dmas = < &dmamux2 0 17 0x2C80 >;
+       dma-names = "dmamux";
+    };
+
+compatible: "st,stm32-bdma"
+
+include: dma-controller.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  st,mem2mem:
+    type: boolean
+    description: If the BDMA controller supports memory to memory transfer
+
+  dma-offset:
+    type: int
+    description: >
+      offset in the table of channels when mapping to a DMAMUX
+      for 1st dma instance, offset is 0,
+      for 2nd dma instance, offset is the nb of dma channels of the 1st dma,
+      for 3rd dma instance, offset is the nb of dma channels of the 2nd dma
+      plus the nb of dma channels of the 1st dma instance, etc.
+
+  "#dma-cells":
+    const: 4
+
+# Parameter syntax of stm32 follows the dma client dts syntax
+# in the Linux kernel declared in
+# https://git.kernel.org/pub/scm/linux/kernel/git/devicetree/devicetree-rebasing.git/plain/Bindings/dma/st,stm32-dma.yaml
+
+dma-cells:
+  - channel
+  - slot
+  - channel-config

@@ -1,0 +1,43 @@
+common:
+  harness: net
+  tags:
+    - net
+    - wifi
+sample:
+  description: Test wifi driver and APIs functionality
+  name: WiFi sample app
+tests:
+  sample.net.wifi:
+    platform_allow:
+      - cc3220sf_launchxl
+      - disco_l475_iot1
+      - reel_board
+    integration_platforms:
+      - cc3220sf_launchxl
+  sample.net.wifi.mikroe_wifi_bt_click:
+    extra_args: SHIELD=mikroe_wifi_bt_click_mikrobus
+    platform_allow: lpcxpresso55s69_cpu0
+  sample.net.wifi.esp_8266:
+    extra_args: SHIELD=esp_8266
+    platform_allow: sam4e_xpro
+  sample.net.wifi.esp_8266_arduino:
+    extra_args: SHIELD=esp_8266_arduino
+    platform_allow:
+      - frdm_k64f
+      - disco_l475_iot1
+    integration_platforms:
+      - frdm_k64f
+  sample.net.wifi.inventek_eswifi_arduino_uart:
+    extra_args: SHIELD=inventek_eswifi_arduino_uart
+    platform_allow:
+      - frdm_k64f
+      - nucleo_f767zi
+    integration_platforms:
+      - frdm_k64f
+  sample.net.wifi.inventek_eswifi_arduino_spi:
+    extra_args: SHIELD=inventek_eswifi_arduino_spi
+    platform_allow:
+      - frdm_k64f
+      - nucleo_f767zi
+    integration_platforms:
+      - frdm_k64f

@@ -1,0 +1,54 @@
+# Copyright (c) 2021, Linaro ltd
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  STM32WL Reset and Clock controller node.
+  For more description confere st,stm32-rcc.yaml
+
+compatible: "st,stm32wl-rcc"
+
+include:
+  - name: st,stm32wb-rcc.yaml
+    property-blocklist:
+      - ahb4-prescaler
+      - cpu2-prescaler
+
+properties:
+  cpu2-prescaler:
+    type: int
+    enum:
+      - 1
+      - 2
+      - 4
+      - 8
+      - 16
+      - 32
+      - 64
+      - 128
+      - 256
+      - 512
+    description: |
+        CPU2 prescaler. Sets HCLK2 frequency which clocks CPU2.
+        (A.K.A C2HPRE)
+
+  ahb3-prescaler:
+    type: int
+    required: true
+    enum:
+      - 1
+      - 2
+      - 4
+      - 8
+      - 16
+      - 32
+      - 64
+      - 128
+      - 256
+      - 512
+    description: |
+        HCLK3 shared prescaler (AHB3, Flash memory, SRAM1 and SRAM2).
+        (A.K.A SHDHPRE)
+
+clock-cells:
+  - bus
+  - bits

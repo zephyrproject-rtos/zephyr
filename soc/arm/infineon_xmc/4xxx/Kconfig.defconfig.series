@@ -1,0 +1,17 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# XMC 4xxx series configuration options
+# Copyright (c) 2020 Linumiz
+# Author: Parthiban Nallathambi <parthiban@linumiz.com>
+
+if SOC_SERIES_XMC_4XXX
+
+config SOC_SERIES
+	default "4xxx"
+
+config NUM_IRQS
+	default 112
+
+source "soc/arm/infineon_xmc/4xxx/Kconfig.defconfig.xmc*"
+
+endif # SOC_SERIES_XMC_4XXX

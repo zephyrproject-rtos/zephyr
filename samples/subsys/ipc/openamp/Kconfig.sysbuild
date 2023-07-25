@@ -1,0 +1,15 @@
+# Copyright 2022-2023 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+
+source "share/sysbuild/Kconfig"
+
+config OPENAMP_REMOTE_BOARD
+string
+	default "lpcxpresso54114_m0" if $(BOARD) = "lpcxpresso54114_m4"
+	default "lpcxpresso55s69_cpu1" if $(BOARD) = "lpcxpresso55s69_cpu0"
+	default "mps2_an521_remote" if $(BOARD) = "mps2_an521"
+	default "v2m_musca_b1_ns" if $(BOARD) = "v2m_musca_b1"
+	default "mimxrt1170_evk_cm4" if $(BOARD) = "mimxrt1170_evk_cm7"
+	default "mimxrt1160_evk_cm4" if $(BOARD) = "mimxrt1160_evk_cm7"
+	default "mimxrt1170_evkb_cm4" if $(BOARD) = "mimxrt1170_evkb_cm7"

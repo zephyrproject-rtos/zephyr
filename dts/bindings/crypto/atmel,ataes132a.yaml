@@ -1,0 +1,9 @@
+# Copyright (c) 2022, Kumar Gala <galak@kernel.org>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: Atmel ATAES132A 32K AES Serial EEPROM
+
+compatible: "atmel,ataes132a"
+
+include: [i2c-device.yaml]

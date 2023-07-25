@@ -1,0 +1,17 @@
+# Copyright (c) 2014-2015 Wind River Systems, Inc.
+# Copyright (c) 2016 Cadence Design Systems, Inc.
+# Copyright (c) 2019 Intel Corp.
+# SPDX-License-Identifier: Apache-2.0
+
+config HPET_TIMER
+	bool "HPET timer"
+	default y
+	depends on DT_HAS_INTEL_HPET_ENABLED
+	select IOAPIC if X86
+	select LOAPIC if X86
+	imply TIMER_READS_ITS_FREQUENCY_AT_RUNTIME
+	select TICKLESS_CAPABLE
+	select TIMER_HAS_64BIT_CYCLE_COUNTER
+	help
+	  This option selects High Precision Event Timer (HPET) as a
+	  system timer.

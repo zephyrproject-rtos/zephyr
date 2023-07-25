@@ -1,0 +1,62 @@
+common:
+  tags:
+    - drivers
+    - uart
+  harness: ztest
+  platform_allow: nrf52840dk_nrf52840
+  harness_config:
+    fixture: gpio_loopback
+  depends_on: gpio
+tests:
+  drivers.uart.pm:
+    extra_configs:
+      - CONFIG_UART_INTERRUPT_DRIVEN=n
+      - CONFIG_UART_ASYNC_API=n
+      - CONFIG_UART_0_ENHANCED_POLL_OUT=n
+
+  drivers.uart.pm.no_rxpin:
+    extra_configs:
+      - CONFIG_UART_INTERRUPT_DRIVEN=n
+      - CONFIG_UART_ASYNC_API=n
+      - CONFIG_UART_0_ENHANCED_POLL_OUT=n
+    extra_args: DTC_OVERLAY_FILE="boards/nrf52840dk_nrf52840.overlay;nrf_rx_disable.overlay"
+
+  drivers.uart.pm.enhanced_poll:
+    extra_configs:
+      - CONFIG_UART_INTERRUPT_DRIVEN=n
+      - CONFIG_UART_ASYNC_API=n
+      - CONFIG_UART_0_ENHANCED_POLL_OUT=y
+
+  drivers.uart.pm.int_driven:
+    extra_configs:
+      - CONFIG_UART_INTERRUPT_DRIVEN=y
+      - CONFIG_UART_0_INTERRUPT_DRIVEN=y
+      - CONFIG_UART_ASYNC_API=n
+      - CONFIG_UART_0_ENHANCED_POLL_OUT=n
+
+  drivers.uart.pm.int_driven.enhanced_poll:
+    extra_configs:
+      - CONFIG_UART_INTERRUPT_DRIVEN=y
+      - CONFIG_UART_0_INTERRUPT_DRIVEN=y
+      - CONFIG_UART_ASYNC_API=n
+      - CONFIG_UART_0_ENHANCED_POLL_OUT=y
+
+  drivers.uart.pm.async:
+    extra_configs:
+      - CONFIG_UART_INTERRUPT_DRIVEN=n
+      - CONFIG_UART_ASYNC_API=y
+      - CONFIG_UART_0_ASYNC=y
+      - CONFIG_UART_0_NRF_HW_ASYNC=y
+      - CONFIG_UART_0_NRF_HW_ASYNC_TIMER=2
+      - CONFIG_NRFX_TIMER2=y
+      - CONFIG_UART_0_ENHANCED_POLL_OUT=n
+
+  drivers.uart.pm.async.enhanced_poll:
+    extra_configs:
+      - CONFIG_UART_INTERRUPT_DRIVEN=n
+      - CONFIG_UART_ASYNC_API=y
+      - CONFIG_UART_0_ASYNC=y
+      - CONFIG_UART_0_NRF_HW_ASYNC=y
+      - CONFIG_UART_0_NRF_HW_ASYNC_TIMER=2
+      - CONFIG_NRFX_TIMER2=y
+      - CONFIG_UART_0_ENHANCED_POLL_OUT=y

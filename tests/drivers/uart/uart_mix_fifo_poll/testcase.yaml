@@ -1,0 +1,92 @@
+common:
+  tags:
+    - drivers
+    - uart
+  depends_on: gpio
+  harness: ztest
+  platform_allow:
+    - nrf52840dk_nrf52840
+    - nrf9160dk_nrf9160
+    - nrf5340dk_nrf5340_cpuapp
+  integration_platforms:
+    - nrf52840dk_nrf52840
+  harness_config:
+    fixture: gpio_loopback
+tests:
+  drivers.uart.uart_mix_poll:
+    extra_configs:
+      - CONFIG_UART_INTERRUPT_DRIVEN=n
+      - CONFIG_UART_ASYNC_API=n
+      - CONFIG_UART_0_ENHANCED_POLL_OUT=n
+
+  drivers.uart.uart_mix_poll_fifo:
+    extra_configs:
+      - CONFIG_UART_INTERRUPT_DRIVEN=y
+      - CONFIG_UART_0_INTERRUPT_DRIVEN=y
+      - CONFIG_UART_0_ENHANCED_POLL_OUT=n
+
+  drivers.uart.uart_mix_poll_async_api:
+    extra_configs:
+      - CONFIG_UART_ASYNC_API=y
+      - CONFIG_UART_0_INTERRUPT_DRIVEN=n
+      - CONFIG_UART_0_ASYNC=y
+      - CONFIG_UART_0_NRF_HW_ASYNC=y
+      - CONFIG_UART_0_NRF_HW_ASYNC_TIMER=2
+      - CONFIG_NRFX_TIMER2=y
+      - CONFIG_UART_0_ENHANCED_POLL_OUT=n
+
+  drivers.uart.uart_mix_poll_async_api_const:
+    extra_args: TEST_CONST_BUFFER=1
+    extra_configs:
+      - CONFIG_UART_ASYNC_API=y
+      - CONFIG_UART_0_INTERRUPT_DRIVEN=n
+      - CONFIG_UART_0_ASYNC=y
+      - CONFIG_UART_0_NRF_HW_ASYNC=y
+      - CONFIG_UART_0_NRF_HW_ASYNC_TIMER=2
+      - CONFIG_NRFX_TIMER2=y
+      - CONFIG_UART_0_ENHANCED_POLL_OUT=n
+      - CONFIG_UART_ASYNC_TX_CACHE_SIZE=2
+
+  drivers.uart.uart_mix_poll_async_api_low_power:
+    extra_configs:
+      - CONFIG_UART_ASYNC_API=y
+      - CONFIG_UART_0_INTERRUPT_DRIVEN=n
+      - CONFIG_UART_0_ASYNC=y
+      - CONFIG_UART_0_NRF_HW_ASYNC=y
+      - CONFIG_UART_0_NRF_ASYNC_LOW_POWER=y
+      - CONFIG_UART_0_NRF_HW_ASYNC_TIMER=2
+      - CONFIG_NRFX_TIMER2=y
+      - CONFIG_UART_0_ENHANCED_POLL_OUT=n
+
+  drivers.uart.uart_mix_poll_with_ppi:
+    extra_configs:
+      - CONFIG_UART_INTERRUPT_DRIVEN=n
+      - CONFIG_UART_ASYNC_API=n
+      - CONFIG_UART_0_ENHANCED_POLL_OUT=y
+
+  drivers.uart.uart_mix_poll_fifo_with_ppi:
+    extra_configs:
+      - CONFIG_UART_INTERRUPT_DRIVEN=y
+      - CONFIG_UART_0_INTERRUPT_DRIVEN=y
+      - CONFIG_UART_0_ENHANCED_POLL_OUT=y
+
+  drivers.uart.uart_mix_poll_async_api_with_ppi:
+    extra_configs:
+      - CONFIG_UART_ASYNC_API=y
+      - CONFIG_UART_0_INTERRUPT_DRIVEN=n
+      - CONFIG_UART_0_ASYNC=y
+      - CONFIG_UART_0_NRF_HW_ASYNC=y
+      - CONFIG_UART_0_NRF_HW_ASYNC_TIMER=2
+      - CONFIG_NRFX_TIMER2=y
+      - CONFIG_UART_0_ENHANCED_POLL_OUT=y
+
+  drivers.uart.uart_mix_poll_async_api_with_ppi_low_power:
+    extra_configs:
+      - CONFIG_UART_ASYNC_API=y
+      - CONFIG_UART_0_INTERRUPT_DRIVEN=n
+      - CONFIG_UART_0_ASYNC=y
+      - CONFIG_UART_0_NRF_HW_ASYNC=y
+      - CONFIG_UART_0_NRF_ASYNC_LOW_POWER=y
+      - CONFIG_UART_0_NRF_HW_ASYNC_TIMER=2
+      - CONFIG_NRFX_TIMER2=y
+      - CONFIG_UART_0_ENHANCED_POLL_OUT=y

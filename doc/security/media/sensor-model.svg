@@ -1,0 +1,203 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:xl="http://www.w3.org/1999/xlink" version="1.1" xmlns="http://www.w3.org/2000/svg" viewBox="102.5 208.496 959 475.26754" width="959" height="475.26754">
+  <defs>
+    <font-face font-family="Helvetica" font-size="16" units-per-em="1000" underline-position="-75.68359" underline-thickness="49.316406" slope="0" x-height="522.9492" cap-height="717.28516" ascent="770.0195" descent="-229.98047" font-weight="400">
+      <font-face-src>
+        <font-face-name name="Helvetica"/>
+      </font-face-src>
+    </font-face>
+    <marker orient="auto" overflow="visible" markerUnits="strokeWidth" id="FilledArrow_Marker" stroke-linejoin="miter" stroke-miterlimit="10" viewBox="-1 -4 10 8" markerWidth="10" markerHeight="8" color="black">
+      <g>
+        <path d="M 8 0 L 0 -3 L 0 3 Z" fill="currentColor" stroke="currentColor" stroke-width="1"/>
+      </g>
+    </marker>
+    <marker orient="auto" overflow="visible" markerUnits="strokeWidth" id="FilledArrow_Marker_2" stroke-linejoin="miter" stroke-miterlimit="10" viewBox="-9 -4 10 8" markerWidth="10" markerHeight="8" color="black">
+      <g>
+        <path d="M -8 0 L 0 3 L 0 -3 Z" fill="currentColor" stroke="currentColor" stroke-width="1"/>
+      </g>
+    </marker>
+  </defs>
+  <metadata> Produced by OmniGraffle 7.7.1
+    <dc:date>2018-03-06 22:20:46 +0000</dc:date>
+  </metadata>
+  <g id="Canvas_1" fill-opacity="1" stroke-dasharray="none" stroke="none" stroke-opacity="1" fill="none">
+    <title>sensor</title>
+    <rect fill="white" x="102.5" y="208.496" width="959" height="464.504"/>
+    <g id="Canvas_1: sensor-drawing">
+      <title>sensor-drawing</title>
+      <g id="Graphic_40">
+        <rect x="307.5" y="208.996" width="146.5" height="63" fill="#c0c0ff"/>
+        <path d="M 307.5 208.996 L 454 208.996 M 454 271.996 L 307.5 271.996" stroke="gray" stroke-linecap="round" stroke-linejoin="round" stroke-width="1"/>
+        <text transform="translate(312.5 230.996)" fill="black">
+          <tspan font-family="Helvetica" font-size="16" font-weight="400" fill="black" x="50.015625" y="15">Apps</tspan>
+        </text>
+      </g>
+      <g id="Graphic_39">
+        <rect x="556" y="501" width="153" height="63" fill="#ffffc0"/>
+        <rect x="556" y="501" width="153" height="63" stroke="gray" stroke-linecap="round" stroke-linejoin="round" stroke-width="1"/>
+        <text transform="translate(561 523)" fill="black">
+          <tspan font-family="Helvetica" font-size="16" font-weight="400" fill="black" x="30.132812" y="15">Sensor App</tspan>
+        </text>
+      </g>
+      <g id="Graphic_38">
+        <path d="M 938.6 501 L 1061 501 L 1030.4 564 L 908 564 Z" fill="#c0ffc0"/>
+        <path d="M 938.6 501 L 1061 501 L 1030.4 564 L 908 564 Z" stroke="gray" stroke-linecap="round" stroke-linejoin="round" stroke-width="1"/>
+        <text transform="translate(943.6 523)" fill="black">
+          <tspan font-family="Helvetica" font-size="16" font-weight="400" fill="black" x="15.552344" y="15">Sensor</tspan>
+        </text>
+      </g>
+      <g id="Graphic_37">
+        <path d="M 881.9466 289.88373 C 857.2188 286.5 867.0796 258.01455 906.5261 262.875 C 910.1858 253.40043 956.0568 254.93826 955.7569 262.875 C 984.5193 252.7238 1021.276 272.96508 996.6216 283.11627 C 1026.2057 288.03783 996.2483 314.55453 971.9688 310.125 C 970.0256 317.50797 926.6211 320.0916 922.8114 310.125 C 898.2335 320.76885 846.9846 304.40334 881.9466 289.88373 Z" fill="#ffc0c0"/>
+        <path d="M 881.9466 289.88373 C 857.2188 286.5 867.0796 258.01455 906.5261 262.875 C 910.1858 253.40043 956.0568 254.93826 955.7569 262.875 C 984.5193 252.7238 1021.276 272.96508 996.6216 283.11627 C 1026.2057 288.03783 996.2483 314.55453 971.9688 310.125 C 970.0256 317.50797 926.6211 320.0916 922.8114 310.125 C 898.2335 320.76885 846.9846 304.40334 881.9466 289.88373 Z" stroke="gray" stroke-linecap="round" stroke-linejoin="round" stroke-width="1"/>
+        <text transform="translate(889.95 267.5)" fill="black">
+          <tspan font-family="Helvetica" font-size="16" font-weight="400" fill="black" x="27.647656" y="15">Cloud </tspan>
+          <tspan font-family="Helvetica" font-size="16" font-weight="400" fill="black" x="21.87422" y="34">Service</tspan>
+        </text>
+      </g>
+      <g id="Graphic_36">
+        <rect x="266.5" y="452.5" width="153" height="63" fill="#ffffc0"/>
+        <rect x="266.5" y="452.5" width="153" height="63" stroke="gray" stroke-linecap="round" stroke-linejoin="round" stroke-width="1"/>
+        <text transform="translate(271.5 474.5)" fill="black">
+          <tspan font-family="Helvetica" font-size="16" font-weight="400" fill="black" x="32.804688" y="15">Bootloader</tspan>
+        </text>
+      </g>
+      <g id="Graphic_35">
+        <rect x="549.5" y="319.5" width="153" height="63" fill="#ffffc0"/>
+        <rect x="549.5" y="319.5" width="153" height="63" stroke="gray" stroke-linecap="round" stroke-linejoin="round" stroke-width="1"/>
+        <text transform="translate(554.5 332)" fill="black">
+          <tspan font-family="Helvetica" font-size="16" font-weight="400" fill="black" x="11.910156" y="15">Software Update </tspan>
+          <tspan font-family="Helvetica" font-size="16" font-weight="400" fill="black" x="57.265625" y="34">App</tspan>
+        </text>
+      </g>
+      <g id="Line_34">
+        <line x1="379.0145" y1="281.74268" x2="350.3445" y2="442.7533" marker-end="url(#FilledArrow_Marker)" marker-start="url(#FilledArrow_Marker_2)" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="1"/>
+      </g>
+      <g id="Line_33">
+        <line x1="419.5" y1="496.81606" x2="546.2361" y2="518.0482" marker-end="url(#FilledArrow_Marker)" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="1"/>
+      </g>
+      <g id="Line_32">
+        <line x1="558.9737" y1="382.5" x2="418.98617" y2="448.2892" marker-end="url(#FilledArrow_Marker)" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="1"/>
+      </g>
+      <g id="Line_31">
+        <line x1="712.1956" y1="333.20922" x2="860.4261" y2="302.61445" marker-end="url(#FilledArrow_Marker)" marker-start="url(#FilledArrow_Marker_2)" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="1"/>
+      </g>
+      <g id="Line_30">
+        <line x1="679.39875" y1="494.7971" x2="897.1693" y2="319.72666" marker-end="url(#FilledArrow_Marker)" marker-start="url(#FilledArrow_Marker_2)" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="1"/>
+      </g>
+      <g id="Line_29">
+        <line x1="923.3" y1="532.5" x2="718.9" y2="532.5" marker-end="url(#FilledArrow_Marker)" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="1"/>
+      </g>
+      <g id="Line_28">
+        <line x1="549.5" y1="326.43168" x2="389.42584" y2="275.02314" marker-end="url(#FilledArrow_Marker)" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="1"/>
+      </g>
+      <g id="Graphic_27">
+        <rect x="310.3145" y="327.98968" width="109" height="67" fill="white"/>
+        <text transform="translate(315.3145 332.98968)" fill="black">
+          <tspan font-family="Helvetica" font-size="16" font-weight="400" fill="black" x=".1328125" y="15">Code execute</tspan>
+          <tspan font-family="Helvetica" font-size="16" font-weight="400" fill="black" x="4.589844" y="34">Verify app(s)</tspan>
+          <tspan font-family="Helvetica" font-size="16" font-weight="400" fill="black" x="23.703125" y="53">Update</tspan>
+        </text>
+      </g>
+      <g id="Graphic_26">
+        <rect x="422.9439" y="285.90015" width="91" height="29" fill="white"/>
+        <text transform="translate(427.9439 290.90015)" fill="black">
+          <tspan font-family="Helvetica" font-size="16" font-weight="400" fill="black" x=".48046875" y="15">Install slot2</tspan>
+        </text>
+      </g>
+      <g id="Graphic_25">
+        <rect x="427.22845" y="401.71773" width="120" height="29" fill="white"/>
+        <text transform="translate(432.22845 406.71773)" fill="black">
+          <tspan font-family="Helvetica" font-size="16" font-weight="400" fill="black" x=".2890625" y="15">Indicate update</tspan>
+        </text>
+      </g>
+      <g id="Graphic_24">
+        <rect x="453.76947" y="493.75326" width="68" height="29" fill="white"/>
+        <text transform="translate(458.76947 498.75326)" fill="black">
+          <tspan font-family="Helvetica" font-size="16" font-weight="400" fill="black" x=".09375" y="15">Execute</tspan>
+        </text>
+      </g>
+      <g id="Graphic_23">
+        <rect x="755.1544" y="383.21904" width="90" height="29" fill="white"/>
+        <text transform="translate(760.1544 388.21904)" fill="black">
+          <tspan font-family="Helvetica" font-size="16" font-weight="400" fill="black" x=".4453125" y="15">MQTT/TLS</tspan>
+        </text>
+      </g>
+      <g id="Graphic_22">
+        <rect x="761.8205" y="302.06824" width="62" height="29" fill="white"/>
+        <text transform="translate(766.8205 307.06824)" fill="black">
+          <tspan font-family="Helvetica" font-size="16" font-weight="400" fill="black" x=".203125" y="15">Update</tspan>
+        </text>
+      </g>
+      <g id="Graphic_21">
+        <rect x="777.45855" y="518" width="75" height="29" fill="white"/>
+        <text transform="translate(782.45855 523)" fill="black">
+          <tspan font-family="Helvetica" font-size="16" font-weight="400" fill="black" x=".484375" y="15">SPI Data</tspan>
+        </text>
+      </g>
+      <g id="Graphic_20">
+        <rect x="103" y="274.612" width="146.5" height="63" fill="#c0c0ff"/>
+        <path d="M 103 274.612 L 249.5 274.612 M 249.5 337.612 L 103 337.612" stroke="gray" stroke-linecap="round" stroke-linejoin="round" stroke-width="1"/>
+        <text transform="translate(108 296.612)" fill="black">
+          <tspan font-family="Helvetica" font-size="16" font-weight="400" fill="black" x="29.554688" y="15">Bootloader</tspan>
+        </text>
+      </g>
+      <g id="Graphic_19">
+        <rect x="556" y="608.5135" width="146.5" height="63" fill="#c0c0ff"/>
+        <path d="M 556 608.5135 L 702.5 608.5135 M 702.5 671.5135 L 556 671.5135" stroke="gray" stroke-linecap="round" stroke-linejoin="round" stroke-width="1"/>
+        <text transform="translate(561 621.0135)" fill="black">
+          <tspan font-family="Helvetica" font-size="16" font-weight="400" fill="black" x="2.4609375" y="15">MQTT/TLS private </tspan>
+          <tspan font-family="Helvetica" font-size="16" font-weight="400" fill="black" x="51.80078" y="34">keys</tspan>
+        </text>
+      </g>
+      <g id="Line_18">
+        <line x1="176.25" y1="337.612" x2="299.67862" y2="445.96864" marker-end="url(#FilledArrow_Marker)" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="1"/>
+      </g>
+      <g id="Line_17">
+        <line x1="630.5013" y1="598.61805" x2="631.2487" y2="573.8955" marker-end="url(#FilledArrow_Marker)" marker-start="url(#FilledArrow_Marker_2)" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="1"/>
+      </g>
+      <g id="Graphic_16">
+        <rect x="187.4919" y="381.704" width="111" height="29" fill="white"/>
+        <text transform="translate(192.4919 386.704)" fill="black">
+          <tspan font-family="Helvetica" font-size="16" font-weight="400" fill="black" x=".24609375" y="15">Code Execute</tspan>
+        </text>
+      </g>
+      <g id="Graphic_15">
+        <rect x="131.5" y="557" width="33.5" height="17" fill="#c0c0ff"/>
+        <path d="M 131.5 557 L 165 557 M 165 574 L 131.5 574" stroke="gray" stroke-linecap="round" stroke-linejoin="round" stroke-width="1"/>
+      </g>
+      <g id="Graphic_14">
+        <text transform="translate(178.5 556)" fill="black">
+          <tspan font-family="Helvetica" font-size="16" font-weight="400" fill="black" x="0" y="15">Flash Data</tspan>
+        </text>
+      </g>
+      <g id="Graphic_13">
+        <rect x="131.5" y="586" width="33.5" height="17" fill="#ffffc0"/>
+        <rect x="131.5" y="586" width="33.5" height="17" stroke="gray" stroke-linecap="round" stroke-linejoin="round" stroke-width="1"/>
+      </g>
+      <g id="Graphic_12">
+        <text transform="translate(178.5 585)" fill="black">
+          <tspan font-family="Helvetica" font-size="16" font-weight="400" fill="black" x="0" y="15">Software Component</tspan>
+        </text>
+      </g>
+      <g id="Graphic_11">
+        <path d="M 138.2 615 L 165 615 L 158.3 632 L 131.5 632 Z" fill="#c0ffc0"/>
+        <path d="M 138.2 615 L 165 615 L 158.3 632 L 131.5 632 Z" stroke="gray" stroke-linecap="round" stroke-linejoin="round" stroke-width="1"/>
+      </g>
+      <g id="Graphic_10">
+        <text transform="translate(178.5 614)" fill="black">
+          <tspan font-family="Helvetica" font-size="16" font-weight="400" fill="black" x="0" y="15">Hardware</tspan>
+        </text>
+      </g>
+      <g id="Graphic_9">
+        <path d="M 135.8674 653.4131 C 130.45312 652.5 132.6122 644.81345 141.24917 646.125 C 142.05049 643.5684 152.09412 643.98334 152.02847 646.125 C 158.32613 643.3858 166.37417 648.8477 160.97598 651.5869 C 167.45354 652.915 160.89424 660.0703 155.57812 658.875 C 155.15267 660.8672 145.64906 661.5644 144.81491 658.875 C 139.43347 661.74715 128.21231 657.33106 135.8674 653.4131 Z" fill="#ffc0c0"/>
+        <path d="M 135.8674 653.4131 C 130.45312 652.5 132.6122 644.81345 141.24917 646.125 C 142.05049 643.5684 152.09412 643.98334 152.02847 646.125 C 158.32613 643.3858 166.37417 648.8477 160.97598 651.5869 C 167.45354 652.915 160.89424 660.0703 155.57812 658.875 C 155.15267 660.8672 145.64906 661.5644 144.81491 658.875 C 139.43347 661.74715 128.21231 657.33106 135.8674 653.4131 Z" stroke="gray" stroke-linecap="round" stroke-linejoin="round" stroke-width="1"/>
+      </g>
+      <g id="Graphic_8">
+        <text transform="translate(178.5 643)" fill="black">
+          <tspan font-family="Helvetica" font-size="16" font-weight="400" fill="black" x="0" y="15">The Cloud</tspan>
+        </text>
+      </g>
+    </g>
+  </g>
+</svg>

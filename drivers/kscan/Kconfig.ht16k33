@@ -1,0 +1,13 @@
+# Copyright (c) 2019 - 2021 Henrik Brix Andersen <henrik@brixandersen.dk>
+# SPDX-License-Identifier: Apache-2.0
+
+config KSCAN_HT16K33
+	bool "HT16K33 keyscan driver"
+	default y
+	depends on DT_HAS_HOLTEK_HT16K33_KEYSCAN_ENABLED
+	help
+	  Enable keyscan driver for HT16K33.
+
+	  The HT16K33 is a memory mapping, multifunction LED
+	  controller driver. The controller supports matrix key scan
+	  circuit of up to 13x3 keys.

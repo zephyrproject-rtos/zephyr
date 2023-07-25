@@ -1,0 +1,12 @@
+# FT8xx Embedded Video Engine configuration options
+
+# Copyright (c) 2020-2021 Hubert Miś <hubert.mis@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config FT800
+	bool "FT800 Embedded Video Engine driver"
+	default y
+	depends on DT_HAS_FTDI_FT800_ENABLED
+	select SPI
+	help
+	  Enable driver for FT800 controller.

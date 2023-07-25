@@ -1,0 +1,14 @@
+# STM32WL55JC Nucleo board configuration
+
+# Copyright (c) 2020 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_NUCLEO_WL55JC
+
+config BOARD
+	default "nucleo_wl55jc"
+
+config SYS_CLOCK_TICKS_PER_SEC
+	default 4000 if STM32_LPTIM_TIMER
+
+endif # BOARD_NUCLEO_WL55JC

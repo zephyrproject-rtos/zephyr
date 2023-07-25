@@ -1,0 +1,11 @@
+common:
+  tags: bluetooth
+  harness: keyboard
+tests:
+  bluetooth.mesh.mesh_shell:
+    platform_allow:
+      - qemu_x86
+      - nrf52840dk_nrf52840
+    integration_platforms:
+      - qemu_x86
+    platform_exclude: nrf52dk_nrf52810

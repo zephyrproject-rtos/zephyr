@@ -1,0 +1,60 @@
+# Copyright (c) 2016 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+menu "Logging"
+
+config LOG
+	bool "Logging"
+	select PRINTK if USERSPACE
+	help
+	  Global switch for the logger, when turned off log calls will not be
+	  compiled in.
+
+if LOG
+
+config LOG_CORE_INIT_PRIORITY
+	int "Log Core Initialization Priority"
+	range 0 99
+	default 0
+
+rsource "Kconfig.mode"
+
+rsource "Kconfig.filtering"
+
+rsource "Kconfig.processing"
+
+if !LOG_MODE_MINIMAL
+
+rsource "Kconfig.formatting"
+
+if !LOG_FRONTEND_ONLY
+
+rsource "backends/Kconfig"
+
+endif # !LOG_FRONTEND_ONLY
+
+endif # !LOG_MODE_MINIMAL
+
+if LOG_FRONTEND
+
+rsource "Kconfig.frontends"
+
+endif #LOG_FRONTEND
+
+if LOG_MULTIDOMAIN
+
+rsource "Kconfig.links"
+
+endif
+
+rsource "Kconfig.misc"
+
+endif # LOG
+
+config LOG_OUTPUT
+	bool "Formatter helper"
+	help
+	  Module which provides formatting of log messages to a human-readable
+	  strings.
+
+endmenu

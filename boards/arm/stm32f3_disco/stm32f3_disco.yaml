@@ -1,0 +1,23 @@
+identifier: stm32f3_disco
+name: ST STM32F3 Discovery
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 40
+supported:
+  - gpio
+  - i2c
+  - counter
+  - spi
+  - watchdog
+  - usb_device
+  - lsm303dlhc
+  - nvs
+  - can
+  - pwm
+  - adc
+  - dac
+  - dma

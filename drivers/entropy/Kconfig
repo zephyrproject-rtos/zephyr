@@ -1,0 +1,45 @@
+# Entropy generator driver configuration options
+
+# Copyright (c) 2014-2015 Wind River Systems, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig ENTROPY_GENERATOR
+	bool "Entropy drivers"
+	help
+	  Include entropy drivers in system config.
+
+if ENTROPY_GENERATOR
+
+module = ENTROPY
+module-str = entropy
+source "subsys/logging/Kconfig.template.log_config"
+
+config ENTROPY_INIT_PRIORITY
+	int "Entropy driver init priority"
+	default KERNEL_INIT_PRIORITY_DEVICE
+	help
+	  Entropy driver device initialization priority.
+
+source "drivers/entropy/Kconfig.b91"
+source "drivers/entropy/Kconfig.cc13xx_cc26xx"
+source "drivers/entropy/Kconfig.mcux"
+source "drivers/entropy/Kconfig.stm32"
+source "drivers/entropy/Kconfig.esp32"
+source "drivers/entropy/Kconfig.nrf5"
+source "drivers/entropy/Kconfig.sam"
+source "drivers/entropy/Kconfig.smartbond"
+source "drivers/entropy/Kconfig.native_posix"
+source "drivers/entropy/Kconfig.rv32m1"
+source "drivers/entropy/Kconfig.litex"
+source "drivers/entropy/Kconfig.gecko"
+source "drivers/entropy/Kconfig.neorv32"
+source "drivers/entropy/Kconfig.bt_hci"
+source "drivers/entropy/Kconfig.psa_crypto"
+
+config ENTROPY_HAS_DRIVER
+	bool
+	help
+	  This is an option to be enabled by individual entropy driver
+	  to signal that there is a true entropy driver.
+
+endif

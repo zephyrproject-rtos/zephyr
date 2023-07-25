@@ -1,0 +1,9 @@
+# Copyright 2022 NXP
+# SPDX-License-Identifier: Apache-2.0
+source "Kconfig.zephyr"
+# Workaround for not being able to have commas in macro arguments
+DT_CHOSEN_Z_CODE_PARTITION := zephyr,code-partition
+
+config BUILD_OUTPUT_ADJUST_LMA
+	default "$(dt_node_reg_addr_hex,$(dt_nodelabel_path,slot1_partition))-\
+		$(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_CODE_PARTITION))"

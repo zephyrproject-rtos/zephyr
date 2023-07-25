@@ -1,0 +1,47 @@
+#
+# Copyright 2020 Matija Tudan
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: Maxim MAX17262 Fuel Gauge
+
+compatible: "maxim,max17262"
+
+include: [sensor-device.yaml, i2c-device.yaml]
+
+properties:
+  design-voltage:
+    type: int
+    required: true
+    description: Battery Design Voltage in mV (3300 to 4400)
+
+  desired-voltage:
+    type: int
+    required: true
+    description: Battery Desired Voltage in mV (3300 to 4400)
+
+  desired-charging-current:
+    type: int
+    required: true
+    description: Battery Design Charging Current in mA (e.g. 2000)
+
+  design-cap:
+    type: int
+    required: true
+    description: Battery Capacity in mAh (default 3000)
+
+  empty-voltage:
+    type: int
+    required: true
+    description: Empty voltage target during load in mV (default 3300)
+
+  recovery-voltage:
+    type: int
+    required: true
+    description: The voltage level for clearing empty detection in mV (default 3880)
+
+  charge-voltage:
+    type: int
+    required: true
+    description: Charge voltage in mV

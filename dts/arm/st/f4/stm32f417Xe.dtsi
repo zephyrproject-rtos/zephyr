@@ -1,0 +1,28 @@
+/*
+ * Copyright (c) 2018 Linaro Limited
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <st/f4/stm32f417.dtsi>
+
+/ {
+	ccm0: memory@10000000 {
+		compatible = "zephyr,memory-region", "st,stm32-ccm";
+		reg = <0x10000000 DT_SIZE_K(64)>;
+		zephyr,memory-region = "CCM";
+	};
+
+	sram0: memory@20000000 {
+		reg = <0x20000000 DT_SIZE_K(128)>;
+	};
+
+	soc {
+		flash-controller@40023c00 {
+			flash0: flash@8000000 {
+				reg = <0x08000000 DT_SIZE_K(512)>;
+			};
+		};
+	};
+};

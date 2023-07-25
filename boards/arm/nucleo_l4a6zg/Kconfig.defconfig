@@ -1,0 +1,15 @@
+# STM32L4A6ZG Nucleo board configuration
+
+# Copyright (c) 2022 Tomislav Milkovic
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_NUCLEO_L4A6ZG
+
+config BOARD
+	default "nucleo_l4a6zg"
+
+config SPI_STM32_INTERRUPT
+	default y
+	depends on SPI
+
+endif # BOARD_NUCLEO_L4A6ZG

@@ -1,0 +1,11 @@
+# IPC subsystem configuration options
+
+# Copyright (c) 2021 Nordic Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+menu "Inter Processor Communication"
+
+source "subsys/ipc/rpmsg_service/Kconfig"
+source "subsys/ipc/ipc_service/Kconfig"
+
+endmenu

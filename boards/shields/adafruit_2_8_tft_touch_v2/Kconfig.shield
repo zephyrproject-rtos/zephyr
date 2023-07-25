@@ -1,0 +1,8 @@
+# Copyright (c) 2019 Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+config SHIELD_ADAFRUIT_2_8_TFT_TOUCH_V2
+	def_bool $(shields_list_contains,adafruit_2_8_tft_touch_v2)
+
+config SHIELD_ADAFRUIT_2_8_TFT_TOUCH_V2_NANO
+	def_bool $(shields_list_contains,adafruit_2_8_tft_touch_v2_nano)

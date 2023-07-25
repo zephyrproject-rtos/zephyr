@@ -1,0 +1,110 @@
+# Copyright (c) 2023 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    The TI CC32XX pin controller is a singleton node responsible for controlling
+    pin function selection and pin properties. For example, you can
+    use this node to route UART0 RX to pin 55 and enable the pull-up resistor
+    on the pin.
+
+    The node has the 'pinctrl' node label set in your SoC's devicetree,
+    so you can modify it like this:
+
+      &pinctrl {
+              /* your modifications go here */
+      };
+
+    All device pin configurations should be placed in child nodes of the
+    'pinctrl' node, as shown in this example:
+
+      /* You can put this in places like a board-pinctrl.dtsi file in
+       * your board directory, or a devicetree overlay in your application.
+       */
+
+      /* include pre-defined combinations for the SoC variant used by the board */
+      #include <dt-bindings/pinctrl/gd32f450i(g-i-k)xx-pinctrl.h>
+
+      &pinctrl {
+        /* configuration for the uart0 "default" state */
+        uart0_default: uart0_default {
+          /* group 1 */
+          group1 {
+            /* configure pin 55 as UART0 TX and pin 61 as UART0 CTS */
+            pinmux = <UART0_TX_P55>, <UART0_CTS_P61>;
+          };
+          /* group 2 */
+          group2 {
+            /* configure pin 57 as UART0 RX and pin 62 as UART0 RTS  */
+            pinmux = <UART0_RX_P57>, <UART0_RTS_P62>;
+            /* both pin 57 and 62 have pull-up enabled */
+            bias-pull-up;
+          };
+        };
+
+    The 'uart0_default' child node encodes the pin configurations for a
+    particular state of a device; in this case, the default (that is, active)
+    state.
+
+    As shown, pin configurations are organized in groups within each child node.
+    Each group can specify a list of pin function selections in the 'pinmux'
+    property.
+
+    A group can also specify shared pin properties common to all the specified
+    pins, such as the 'bias-pull-up' property in group 2. Here is a list of
+    supported standard pin properties:
+
+    - drive-push-pull: Push-pull drive mode (default, not required).
+    - drive-open-drain: Open-drain drive mode.
+    - bias-disable: Disable pull-up/down (default, not required).
+    - bias-pull-up: Enable pull-up resistor.
+    - bias-pull-down: Enable pull-down resistor.
+    - drive-strength: Configure drive strength in mA (defaults to 6mA, IC default).
+
+    Note that drive and bias options are mutually exclusive.
+
+    To link pin configurations with a device, use a pinctrl-N property for some
+    number N, like this example you could place in your board's DTS file:
+
+       #include "board-pinctrl.dtsi"
+
+       &uart0 {
+             pinctrl-0 = <&uart0_default>
+             pinctrl-names = "default";
+       };
+
+compatible: "ti,cc32xx-pinctrl"
+
+include: base.yaml
+
+child-binding:
+  child-binding:
+    include:
+      - name: pincfg-node.yaml
+        property-allowlist:
+          - drive-push-pull
+          - drive-open-drain
+          - bias-disable
+          - bias-pull-down
+          - bias-pull-up
+          - drive-strength
+
+    properties:
+      pinmux:
+        required: true
+        type: array
+        description: |
+          An array of pins sharing the same group properties. The pins should
+          be defined using pre-defined macros or, alternatively, using the
+          TI_CC32XX_PINMUX helper macro.
+
+      drive-strength:
+        default: 6
+        enum:
+          - 0
+          - 2
+          - 4
+          - 6
+          - 8
+          - 10
+          - 12
+          - 14

@@ -1,0 +1,79 @@
+# SMBus configuration options
+
+# Copyright (c) 2022 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig SMBUS
+	bool "System Management Bus (SMBus) drivers"
+	help
+	  Enable SMBus Driver Configuration
+
+if SMBUS
+
+config SMBUS_SHELL
+	bool "SMBus Shell"
+	default y
+	depends on SHELL
+	help
+	  Enable SMBus Shell.
+
+config SMBUS_STATS
+	bool "SMBus device Stats"
+	depends on STATS
+	help
+	  Enable SMBus Stats.
+
+config SMBUS_INIT_PRIORITY
+	int "Init priority"
+	default KERNEL_INIT_PRIORITY_DEFAULT
+	help
+	  SMBus device driver initialization priority.
+
+
+module = SMBUS
+module-str = smbus
+source "subsys/logging/Kconfig.template.log_config"
+
+config SMBUS_INTEL_PCH
+	bool "SMBus Intel PCH driver"
+	default y
+	depends on DT_HAS_INTEL_PCH_SMBUS_ENABLED
+	help
+	  Enable Intel Platform Controller Hub (PCH) SMBus driver.
+
+if SMBUS_INTEL_PCH
+
+choice SMBUS_INTEL_PCH_ACCESS
+	bool "SMBus register access mode"
+	default SMBUS_INTEL_PCH_ACCESS_IO
+	help
+	  Default PCH register access mode. Set default access IO so
+	  that both Qemu Q35 and Intel hardware are supported.
+
+config SMBUS_INTEL_PCH_ACCESS_IO
+	bool "I/O PCH SMBus Register Access Mode"
+	help
+	  Access PCH SMBus registers through I/O space.
+
+config SMBUS_INTEL_PCH_ACCESS_MMIO
+	bool "MMIO PCH SMBus Register Access Mode"
+	help
+	  Access PCH SMBus registers though MMIO space.
+
+endchoice
+
+config SMBUS_INTEL_PCH_HOST_NOTIFY
+	bool "SMBus Intel PCH Host Notify support"
+	default y
+	help
+	  Support Host Notify from peripheral devices.
+
+config SMBUS_INTEL_PCH_SMBALERT
+	bool "SMBus Intel PCH SMBALERT signal support"
+	default y
+	help
+	  Support SMBALERT signal from peripheral devices.
+
+endif # SMBUS_INTEL_PCH
+
+endif # SMBUS

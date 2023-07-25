@@ -1,0 +1,30 @@
+# Copyright (c) 2022, CSIRO
+# SPDX-License-Identifier: Apache-2.0
+
+description: Simple GPIO controlled power domain
+
+compatible: "power-domain-gpio"
+
+include: power-domain.yaml
+
+properties:
+  enable-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      GPIO to use to enable/disable the regulator.
+
+      Unlike the gpio property in the Linux bindings this array must
+      provide the GPIO polarity and open-drain status in the phandle
+      selector.  The Linux enable-active-high and gpio-open-drain
+      properties are not valid for Zephyr devicetree files.
+
+  startup-delay-us:
+    type: int
+    default: 0
+    description: Startup time, in microseconds
+
+  off-on-delay-us:
+    type: int
+    default: 0
+    description: Off delay time, in microseconds

@@ -1,0 +1,31 @@
+# STM32 CAN configuration options
+
+# Copyright (c) 2020 Alexander Wachter
+# SPDX-License-Identifier: Apache-2.0
+
+config CAN_STM32FD
+	bool "STM32 FDCAN driver"
+	default y
+	depends on DT_HAS_ST_STM32_FDCAN_ENABLED
+	select CAN_MCAN
+	select USE_STM32_LL_RCC
+
+if CAN_STM32FD
+
+config CAN_MAX_STD_ID_FILTER
+	int "Maximum number of std ID filters"
+	default 28
+	range 0 28
+	help
+	  Defines the maximum number of filters with standard ID (11-bit)
+	  that can be attached.
+
+config CAN_MAX_EXT_ID_FILTER
+	int "Maximum number of ext ID filters"
+	default 8
+	range 0 8
+	help
+	  Defines the maximum number of filters with extended ID (29-bit)
+	  that can be attached.
+
+endif # CAN_STM32FD

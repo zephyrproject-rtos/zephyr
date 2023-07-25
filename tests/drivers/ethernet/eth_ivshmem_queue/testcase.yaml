@@ -1,0 +1,3 @@
+tests:
+  net.eth_ivshmem_queue:
+    platform_allow: qemu_cortex_a53

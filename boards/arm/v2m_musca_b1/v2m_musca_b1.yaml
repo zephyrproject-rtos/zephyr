@@ -1,0 +1,10 @@
+identifier: v2m_musca_b1
+name: ARM V2M MUSCA B1
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - gpio

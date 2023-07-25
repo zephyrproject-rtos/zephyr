@@ -1,0 +1,80 @@
+# Copyright (c) 2023 Phytec Messtechnik GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+description: OSRAM ams TMD2620 Proximity Sensor
+
+compatible: "ams,tmd2620"
+
+include: [sensor-device.yaml, i2c-device.yaml]
+
+properties:
+  int-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      The interrupt pin of TMD2620 is open-drain, active low.
+      If connected directly the MCU, the pin should be configured
+      as pull-up, active low.
+
+  proximity-gain:
+    type: int
+    required: true
+    description: Proximity detection gain of the sensor
+    enum:
+      - 1
+      - 2
+      - 4
+      - 8
+
+  proximity-pulse-length:
+    type: int
+    required: true
+    description: IR led pulse length in ms
+    enum:
+      - 4
+      - 8
+      - 16
+      - 32
+
+  proximity-pulse-count:
+    type: int
+    required: true
+    description: count of IR led pulses (min. 1; max. 64)
+
+  proximity-high-threshold:
+    type: int
+    description: high threshold for interrupt. (min. 0; max. 255)
+
+  proximity-low-threshold:
+    type: int
+    description: low threshold for interrupt. (min. 0; max. 255)
+
+  proximity-led-drive-strength:
+    type: int
+    required: true
+    description: |
+      LED drive strength in multiples of 6mA (min. 0; max. 31)
+
+  proximity-interrupt-filter:
+    type: int
+    description: |
+      filters proximity interrupt. (min. 0; max. 15)
+
+      0-> every cycle fires an interrupt
+      1-> 1 consecutive proximity value out of threshold range fires an interrupt
+      2-> 2 consecutive proximity values out of threshold range fires an interrupt
+      ...
+
+  enable-wait-mode:
+    type: boolean
+    description: Enables wait mode
+
+  wait-time-factor:
+    type: int
+    description: |
+      time the sensor waits between proximity cycles. (min. 0; max 255).
+      given in multiples of 2.81 starting at 0 for 2.81ms wait time.
+
+  wait-long:
+    type: boolean
+    description: increases the wait time by a factor of x12

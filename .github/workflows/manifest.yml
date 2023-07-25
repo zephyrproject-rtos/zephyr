@@ -1,0 +1,27 @@
+name: Manifest
+on:
+  pull_request_target:
+
+jobs:
+  contribs:
+    runs-on: ubuntu-22.04
+    name: Manifest
+    steps:
+      - name: Checkout the code
+        uses: actions/checkout@v3
+        with:
+          path: zephyrproject/zephyr
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Manifest
+        uses: zephyrproject-rtos/action-manifest@a6d0c6e52bbbb7d6df23ceb42842edcb4582b8dc
+        with:
+          github-token: ${{ secrets.ZB_GITHUB_TOKEN }}
+          manifest-path: 'west.yml'
+          checkout-path: 'zephyrproject/zephyr'
+          label-prefix: 'manifest-'
+          verbosity-level: '1'
+          labels: 'manifest'
+          dnm-labels: 'DNM'

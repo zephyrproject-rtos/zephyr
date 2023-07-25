@@ -1,0 +1,20 @@
+common:
+  tags:
+    - kernel
+    - workqueue
+tests:
+  kernel.workqueue.critical:
+    platform_exclude: nsim_sem_mpu_stack_guard
+    filter: not CONFIG_WDT_SAM
+    integration_platforms:
+      - qemu_x86
+  kernel.workqueue.critical.sam:
+    filter: CONFIG_WDT_SAM
+    extra_configs:
+      - CONFIG_WDT_DISABLE_AT_BOOT=y
+    integration_platforms:
+      - sam_e70_xplained
+  kernel.workqueue.critical.nsim:
+    platform_allow: nsim_sem_mpu_stack_guard
+    extra_configs:
+      - CONFIG_TEST_HW_STACK_PROTECTION=n

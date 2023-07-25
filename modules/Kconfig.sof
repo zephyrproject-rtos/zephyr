@@ -1,0 +1,7 @@
+# Copyright (c) 2020 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config SOF
+	bool "Sound Open Firmware (SOF)"
+	help
+	  Build Sound Open Firmware (SOF) support.

@@ -1,0 +1,34 @@
+# SOF SSP configuration options
+
+# Copyright (c) 2022 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config DAI_INTEL_SSP
+	bool "Intel I2S (SSP) Bus Driver for Dai interface"
+	default y
+	depends on DT_HAS_INTEL_SSP_DAI_ENABLED
+	select DMA
+	depends on PM_DEVICE_RUNTIME
+	help
+	  Enable Inter Sound (I2S) bus driver based on
+	  Synchronous Serial Port (SSP) module.
+
+config DAI_SSP_HAS_POWER_CONTROL
+	bool "DAI ssp pm_runtime en/dis ssp power"
+	default y if SOC_SERIES_INTEL_ACE
+	depends on DAI_INTEL_SSP
+
+if DAI_INTEL_SSP
+
+config DAI_SSP_CLK_FORCE_DYNAMIC_CLOCK_GATING
+	bool
+
+config DAI_INTEL_SSP_NUM_BASE
+	int
+	default 6
+
+config DAI_INTEL_SSP_NUM_EXT
+	int
+	default 0
+
+endif

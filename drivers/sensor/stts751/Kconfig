@@ -1,0 +1,92 @@
+# ST Microelectronics STTS751 temperature sensor
+
+# Copyright (c) 2019 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig STTS751
+	bool "STTS751 temperature sensor"
+	default y
+	depends on DT_HAS_ST_STTS751_ENABLED
+	select I2C
+	select HAS_STMEMSC
+	select USE_STDC_STTS751
+	help
+	  Enable driver for STTS751 I2C-based temperature sensor.
+
+if STTS751
+
+choice STTS751_TRIGGER_MODE
+	prompt "Trigger mode"
+	default STTS751_TRIGGER_GLOBAL_THREAD
+	help
+	  Specify the type of triggering to be used by the driver.
+
+config STTS751_TRIGGER_NONE
+	bool "No trigger"
+
+config STTS751_TRIGGER_GLOBAL_THREAD
+	bool "Use global thread"
+	depends on GPIO
+	select STTS751_TRIGGER
+
+config STTS751_TRIGGER_OWN_THREAD
+	bool "Use own thread"
+	depends on GPIO
+	select STTS751_TRIGGER
+
+endchoice # STTS751_TRIGGER_MODE
+
+config STTS751_TRIGGER
+	bool
+
+config STTS751_THREAD_PRIORITY
+	int "Thread priority"
+	depends on STTS751_TRIGGER_OWN_THREAD
+	default 10
+	help
+	  Priority of thread used by the driver to handle interrupts.
+
+config STTS751_THREAD_STACK_SIZE
+	int "Thread stack size"
+	depends on STTS751_TRIGGER_OWN_THREAD
+	default 1024
+	help
+	  Stack size of thread used by the driver to handle interrupts.
+
+menu "Attributes"
+
+config STTS751_TEMP_HI_THRESHOLD
+	depends on STTS751_TRIGGER
+	int "High temperature threshold alarm"
+	default 50
+	help
+	  HIGH temperature threshold to trigger an alarm
+
+config STTS751_TEMP_LO_THRESHOLD
+	depends on STTS751_TRIGGER
+	int "Low temperature threshold alarm"
+	default 10
+	help
+	  LOW temperature threshold to trigger an alarm
+
+config STTS751_SAMPLING_RATE
+	int "Output data rate"
+	range 0 9
+	default 4
+	help
+	  Sensor output data rate expressed in conversions per second.
+	  Data rates supported by the chip are:
+	  0:  1 conv  every 16 sec
+	  1:  1 conv  every 8 sec
+	  2:  1 conv  every 4 sec
+	  3:  1 conv  every 2 sec
+	  4:  1 conv  every sec
+	  5:  2 convs every sec
+	  6:  4 convs every sec
+	  7:  8 convs every sec
+	  8: 16 convs every sec
+	  9: 32 convs every sec
+
+endmenu
+
+endif # STTS751

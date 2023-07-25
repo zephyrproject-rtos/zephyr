@@ -1,0 +1,10 @@
+tests:
+  drivers.pwm:
+    tags:
+      - drivers
+      - pwm
+      - userspace
+    filter: dt_alias_exists("pwm-0") or dt_alias_exists("pwm-1") or dt_alias_exists("pwm-2")
+      or dt_alias_exists("pwm-3") or dt_compat_enabled("st,stm32-pwm")
+      or dt_compat_enabled("intel,blinky-pwm")
+    depends_on: pwm

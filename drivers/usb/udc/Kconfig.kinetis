@@ -1,0 +1,18 @@
+# Copyright (c) 2022 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config UDC_KINETIS
+	bool "Kinetis USB device controller driver"
+	imply UDC_WORKQUEUE
+	default y
+	depends on DT_HAS_NXP_KINETIS_USBD_ENABLED
+	help
+	  Kinetis USB device controller criver.
+
+config UDC_KINETIS_EVENT_COUNT
+	int "Number or blocks in event slab"
+	depends on UDC_KINETIS
+	range 4 16
+	default 4
+	help
+	  Number of blocks in slab for internal endpoint events.

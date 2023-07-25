@@ -1,0 +1,8 @@
+tests:
+  kernel.workqueue.user:
+    min_flash: 34
+    filter: CONFIG_ARCH_HAS_USERSPACE
+    tags:
+      - kernel
+      - userspace
+      - workqueue

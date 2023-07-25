@@ -1,0 +1,10 @@
+# Copyright (c) 2018, Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  STMicroelectronics LSM6DSL 6-axis accelerometer and gyrometer accessed through
+  SPI bus
+
+compatible: "st,lsm6dsl"
+
+include: ["spi-device.yaml", "st,lsm6dsl-common.yaml"]

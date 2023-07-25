@@ -1,0 +1,20 @@
+# Copyright (c) 2021 Yonatan Schachter
+# SPDX-License-Identifier: Apache-2.0
+
+config UART_RPI_PICO
+	bool "Raspberry Pi UART driver"
+	default y
+	depends on DT_HAS_RASPBERRYPI_PICO_UART_ENABLED
+	select SERIAL_HAS_DRIVER
+	select PICOSDK_USE_UART
+	select SERIAL_SUPPORT_INTERRUPT
+	depends on RESET
+
+config UART_RPI_PICO_PIO
+	bool "Raspberry Pi PIO UART driver"
+	default y
+	depends on DT_HAS_RASPBERRYPI_PICO_UART_PIO_ENABLED
+	select SERIAL_HAS_DRIVER
+	select PICOSDK_USE_PIO
+	select PICOSDK_USE_CLAIM
+	depends on RESET

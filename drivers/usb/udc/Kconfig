@@ -1,0 +1,56 @@
+# Copyright (c) 2021-2022 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+
+menuconfig UDC_DRIVER
+	bool "USB device controller drivers [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	select NET_BUF
+	help
+	  USB device controller driver.
+
+if UDC_DRIVER
+
+config UDC_BUF_COUNT
+	int "Number of buffers in the pool"
+	range 16 256
+	default 16
+	help
+	  Number of UDC request buffers in the pool.
+
+config UDC_BUF_POOL_SIZE
+	int "Memory available for requests"
+	range 64 32768
+	default 1024
+	help
+	  Total amount of memory available for UDC requests.
+
+config UDC_WORKQUEUE
+	bool "Use a dedicate work queue for UDC drivers"
+	help
+	  This option provides a dedicated work queue for UDC drivers.
+
+config UDC_WORKQUEUE_STACK_SIZE
+	int "UDC workqueue stack size"
+	depends on UDC_WORKQUEUE
+	default 512
+
+config UDC_WORKQUEUE_PRIORITY
+	int "UDC workqueue priority"
+	depends on UDC_WORKQUEUE
+	default SYSTEM_WORKQUEUE_PRIORITY
+	help
+	  By default, UDC work queue priority is the same as
+	  System workqueue priority.
+
+module = UDC_DRIVER
+module-str = usb drv
+source "subsys/logging/Kconfig.template.log_config"
+
+source "drivers/usb/udc/Kconfig.nrf"
+source "drivers/usb/udc/Kconfig.kinetis"
+source "drivers/usb/udc/Kconfig.skeleton"
+source "drivers/usb/udc/Kconfig.virtual"
+source "drivers/usb/udc/Kconfig.stm32"
+
+endif # UDC_DRIVER

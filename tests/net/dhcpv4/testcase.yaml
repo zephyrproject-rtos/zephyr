@@ -1,0 +1,15 @@
+common:
+  depends_on: netif
+  tags:
+    - net
+    - dhcpv4
+tests:
+  net.dhcp:
+    extra_configs:
+      - CONFIG_NET_TC_THREAD_COOPERATIVE=y
+  net.dhcp.preempt:
+    extra_configs:
+      - CONFIG_NET_TC_THREAD_PREEMPTIVE=y
+  net.dhcp.optioncbs:
+    extra_configs:
+      - CONFIG_NET_DHCPV4_OPTION_CALLBACKS=y

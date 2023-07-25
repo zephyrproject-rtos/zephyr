@@ -1,0 +1,11 @@
+# Google Kukui EC
+
+# Copyright 2019 The Chromium OS Authors
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_GOOGLE_KUKUI
+
+config BOARD
+	default "google_kukui"
+
+endif # BOARD_GOOGLE_KUKUI

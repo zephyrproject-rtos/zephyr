@@ -1,0 +1,20 @@
+# Copyright (c) 2018, NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: i.MX Messaging Unit
+
+compatible: "nxp,imx-mu"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  rdc:
+    type: int
+    required: true
+    description: Set the RDC permission for this peripheral

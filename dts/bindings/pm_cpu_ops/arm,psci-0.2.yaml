@@ -1,0 +1,17 @@
+# Copyright (c) 2020 Carlo Caione <ccaione@baylibre.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: PSCI
+
+compatible: "arm,psci-0.2"
+
+include: base.yaml
+
+properties:
+  method:
+    type: string
+    required: true
+    description: The method of calling the PSCI firmware.
+    enum:
+      - smc
+      - hvc

@@ -1,0 +1,19 @@
+#
+# Copyright (c) 2018 Linaro Ltd.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+sample:
+  description: Demonstration of the CCS811 Digital Gas Sensor driver
+  name: CCS811 sample
+tests:
+  sample.sensor.ccs811:
+    harness: sensor
+    tags: sensors
+    platform_allow:
+      - thingy52_nrf52832
+      - efr32mg_sltb004a
+    integration_platforms:
+      - efr32mg_sltb004a
+    depends_on: i2c

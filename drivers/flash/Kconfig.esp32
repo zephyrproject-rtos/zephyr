@@ -1,0 +1,16 @@
+# Copyright (c) 2020 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_FLASH_ESP32
+	bool "Espressif ESP32 flash driver"
+	default y
+	depends on DT_HAS_ESPRESSIF_ESP32_FLASH_CONTROLLER_ENABLED
+	select FLASH_HAS_DRIVER_ENABLED
+	select FLASH_HAS_PAGE_LAYOUT
+	help
+	  Enable ESP32 internal flash driver.
+
+config MPU_ALLOW_FLASH_WRITE
+	bool "Add MPU access to write to flash"
+	help
+	  Enable this to allow MPU RWX access to flash memory

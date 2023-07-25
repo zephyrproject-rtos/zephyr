@@ -1,0 +1,41 @@
+# Hostname config
+
+# Copyright (c) 2017 Intel Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+config NET_HOSTNAME_ENABLE
+	bool "Add hostname to the device"
+	help
+	  This is used for example in mDNS to respond to <hostname>.local
+	  mDNS queries.
+
+if NET_HOSTNAME_ENABLE
+
+config NET_HOSTNAME
+	string "The hostname of this device"
+	default "zephyr"
+	help
+	  The string should be a valid hostname.
+
+config NET_HOSTNAME_UNIQUE
+	bool "Make hostname unique"
+	help
+	  This will append link address to hostname to create a unique
+	  hostname. For example, zephyr00005e005357 could be the hostname
+	  if this setting is enabled.
+
+config NET_HOSTNAME_UNIQUE_UPDATE
+	bool "Update unique hostname"
+	depends on NET_HOSTNAME_UNIQUE
+	help
+	  This will update the unique hostname on link address changes. By
+	  default, this option is disabled, which means the unique hostname
+	  is set once at start-up and is not updated afterwards.
+
+module = NET_HOSTNAME
+module-dep = NET_LOG
+module-str = Log level for hostname configuration
+module-help = Enables hostname configuration code to output debug messages.
+source "subsys/net/Kconfig.template.log_config.net"
+
+endif

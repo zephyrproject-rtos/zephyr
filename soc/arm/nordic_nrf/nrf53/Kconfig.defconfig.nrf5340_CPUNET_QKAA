@@ -1,0 +1,24 @@
+# Nordic Semiconductor nRF5340 Network MCU
+
+# Copyright (c) 2019 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_NRF5340_CPUNET_QKAA
+
+config SOC
+	default "nRF5340_CPUNET_QKAA"
+
+config NUM_IRQS
+	default 30
+
+config IEEE802154_NRF5
+	default y
+	depends on IEEE802154
+
+config HEAP_MEM_POOL_SIZE
+	default 4096 if NRF_802154_SER_RADIO
+
+config LOG_DOMAIN_NAME
+	default "net"
+
+endif # SOC_NRF5340_CPUNET_QKAA

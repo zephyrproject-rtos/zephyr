@@ -1,0 +1,51 @@
+/*
+ * Copyright (c) 2020 Jefferson Lee
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/dts-v1/;
+#include <nordic/nrf52840_qiaa.dtsi>
+#include "arduino_nano_33_ble-common.dtsi"
+#include "arduino_nano_33_ble-pinctrl.dtsi"
+#include "arduino_nano_r3_connector.dtsi"
+
+/ {
+	model = "Arduino Nano 33 BLE Sense";
+	compatible = "arduino,arduino_nano_33_ble_sense";
+
+	mic_pwr: mic_pwr {
+		compatible = "regulator-fixed";
+		regulator-name = "mic_pwr";
+		enable-gpios = <&gpio0 17 GPIO_ACTIVE_HIGH>;
+		regulator-boot-on;
+	};
+};
+
+&i2c1 {
+	hts221: hts221@5f {
+		compatible = "st,hts221";
+		status = "okay";
+		reg = <0x5f>;
+	};
+
+	lps22hb: lps22hb-press@5c {
+		compatible = "st,lps22hb-press";
+		status = "okay";
+		reg = <0x5c>;
+	};
+
+	apds9960: apds9960@39 {
+		compatible = "avago,apds9960";
+		status = "okay";
+		reg = <0x39>;
+		int-gpios = <&gpio0 19 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+	};
+};
+
+dmic_dev: &pdm0 {
+	status = "okay";
+	pinctrl-0 = <&pdm0_default>;
+	pinctrl-1 = <&pdm0_sleep>;
+	pinctrl-names = "default", "sleep";
+	clock-source = "PCLK32M_HFXO";
+};

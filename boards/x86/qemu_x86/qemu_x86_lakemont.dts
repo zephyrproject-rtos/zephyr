@@ -1,0 +1,60 @@
+/*
+ * Copyright (c) 2021 Intel Corporation.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <mem.h>
+
+#ifndef DT_DRAM_BASE
+#define DT_DRAM_BASE		0
+#endif
+#ifndef DT_DRAM_SIZE
+#define DT_DRAM_SIZE		DT_SIZE_K(4096)
+#endif
+
+#include <intel/lakemont.dtsi>
+
+/ {
+	model = "QEMU X86 (Lakemont) emulator";
+	compatible = "qemu,x86_lakemont_emulator";
+
+	aliases {
+		uart-0 = &uart0;
+	};
+
+	chosen {
+		zephyr,sram = &dram0;
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+	};
+
+	dram0: memory@0 {
+		device_type = "memory";
+		reg = <DT_DRAM_BASE DT_DRAM_SIZE>;
+	};
+
+	soc {
+		uart0: uart@3f8 {
+			compatible = "ns16550";
+			reg = <0x000003f8 0x100>;
+			clock-frequency = <1843200>;
+			interrupts = <4 IRQ_TYPE_LOWEST_EDGE_RISING 3>;
+			interrupt-parent = <&intc>;
+			current-speed = <115200>;
+			reg-shift = <2>;
+			status = "okay";
+		};
+
+		hpet: hpet@fed00000 {
+			compatible = "intel,hpet";
+			reg = <0xfed00000 0x400>;
+			interrupts = <2 IRQ_TYPE_FIXED_EDGE_RISING 4>;
+			interrupt-parent = <&intc>;
+
+			status = "okay";
+		};
+	};
+};

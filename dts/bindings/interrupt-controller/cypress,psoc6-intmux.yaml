@@ -1,0 +1,76 @@
+# Copyright (c) 2018 Foundries.io
+# Copyright (c) 2020 ATL Electronics
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Cypress Interrupt Multiplex
+
+  The PSoC-6 Cortex-M0+ NVIC can handle up to 32 interrupts. This means that
+  user can select up to 32 interrupts sources from the 240 possible vectors
+  to be processed in the Cortex-M0+ CPU.
+
+  At CPU Sub System (CPUSS) there are 8 special registers (intmux[0~7]) to
+  configure the 32 NVIC lines for Cortex-M0+ CPU. Each register handles up to
+  4 interrupt sources by grouping intmux channels. These means that each byte
+  from intmux[0~7] store a 'vector number' which selects the peripheral
+  interrupt source in the multiplexer. The multiplexer is placed before
+  Cortex-M0+ NVIC controller. Note that Cortex-M4 have all interrupt sources
+  directly connected to NVIC and doesn't require any special configuration.
+
+  On a general view, the below represents the Interrupt Multiplexer
+  configuration and how the Cortex-M0+ NVIC sources are organized. Each
+  channel chX represents a Cortex-M0+ NVIC line and it stores a vector number.
+  The vector number selects the PSoC-6 peripheral interrupt source for the
+  Cortex-M0+ NVIC controller line.
+
+  intmux[0] = {ch03, ch02, ch01, ch00}
+  intmux[1] = {ch07, ch06, ch05, ch04}
+  ...
+  intmux[7] = {ch31, ch30, ch29, ch28}
+
+  In pratical terms, the Cortex-M0+ requires user to define all NVIC interrupt
+  sources and the proper NVIC interrupt order. With that, the system configures
+  the Cortex-M0+ Interrupt Multiplexer and interrupts can be processed.
+  More information about it at PSoC-6 Architecture Technical Reference Manual,
+  section CPU Sub System (CPUSS) Registers.
+
+
+  The below fragment configure the GPIO Port 0 to generate an interrupt at
+  Cortex-M0+ NVIC:
+
+  At psoc6.dtsi file the gpio_prt0 peripheral had the interrupt source 2:
+
+  gpio_prt0: gpio@40320100 {
+    interrupts = <2 1>;
+  };
+
+  In order to enable gpio_prt0 interrupt at Cortex-M0+ an interrupt parent
+  must be defined at gpio_prt0 node selecting the Interrupt Multiplex Channel.
+  This can be defined at <board>_m0.dts file:
+
+  &gpio_prt0 {
+    interrupt-parent = <&intmux_ch20>;
+  };
+
+  The translation of these two definitions is:
+         CH   REGS  INT NUM    CH   CH/REG
+  intmux[20 mod 8] |= 0x02 << (20 mod 4);
+
+  These results in Cortex-M0+ NVIC line 20 handling PSoC-6 interrupt source 2.
+  The interrupt can be enabled/disable at NVIC at line 20 as usual.
+
+  Notes:
+  1) Multiple definitions will generate multiple interrutps
+  2) The interrupt sources are shared between Cortex-M0+/M4. These means, can
+     trigger action in parallel in both processors.
+  3) User can change priority at Cortex-M0+ NVIC by changing interrupt channels
+     at interrupt-parent properties.
+  4) Only the peripherals used by Cortex-M0+ should be configured.
+
+compatible: "cypress,psoc6-intmux"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true

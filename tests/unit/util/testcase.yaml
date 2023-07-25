@@ -1,0 +1,6 @@
+tests:
+  utilities.dec:
+    tags:
+      - lib
+      - utilities
+    type: unit

@@ -1,0 +1,7 @@
+tests:
+  drivers.counter.nrf_rtc:
+    tags:
+      - drivers
+      - counter
+    depends_on: counter
+    platform_allow: nrf52840dk_nrf52840

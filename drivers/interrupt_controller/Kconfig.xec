@@ -1,0 +1,11 @@
+# Microchip XEC ECIA configuration
+
+# Copyright (c) 2021 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config MCHP_ECIA_XEC
+	bool "External EC Interrupt Aggregator (ECIA) Driver for MCHP MEC family of MCUs"
+	default y
+	depends on DT_HAS_MICROCHIP_XEC_ECIA_ENABLED
+	help
+	  Enable XEC ECIA driver for Microchip MEC line of MCUs

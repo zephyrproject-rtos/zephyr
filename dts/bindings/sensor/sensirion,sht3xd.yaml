@@ -1,0 +1,18 @@
+# Copyright (c) 2018, Peter Bigot Consulting, LLC
+# SPDX-License-Identifier: Apache-2.0
+
+description: Sensirion Humidity SHT3x-DIS humidity and temperature sensor
+
+compatible: "sensirion,sht3xd"
+
+include: [sensor-device.yaml, i2c-device.yaml]
+
+properties:
+  alert-gpios:
+    type: phandle-array
+    description: |
+      ALERT pin.
+
+      This pin signals active high when produced by the sensor.  The
+      property value should ensure the flags properly describe the
+      signal that is presented to the driver.

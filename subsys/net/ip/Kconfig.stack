@@ -1,0 +1,27 @@
+# Stack usage related options
+
+# Copyright (c) 2016 Intel Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+menu "Stack usage"
+
+config NET_TX_STACK_SIZE
+	int "TX thread stack size"
+	default 1200
+	help
+	  Set the TX thread stack size in bytes. The TX thread is waiting
+	  data from application. Each network interface will start one
+	  TX thread for sending network packets destined to it.
+	  This value is a baseline and the actual TX stack size might
+	  be bigger depending on what features are enabled.
+
+config NET_RX_STACK_SIZE
+	int "RX thread stack size"
+	default 1500
+	help
+	  Set the RX thread stack size in bytes. The RX thread is waiting
+	  data from network. There is one RX thread in the system.
+	  This value is a baseline and the actual RX stack size might
+	  be bigger depending on what features are enabled.
+
+endmenu

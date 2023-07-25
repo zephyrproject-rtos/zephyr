@@ -1,0 +1,26 @@
+description: Bosch M_CAN CAN-FD controller base
+
+include: [can-fd-controller.yaml]
+
+properties:
+  bosch,mram-cfg:
+    type: array
+    required: true
+    description: |
+      Bosch M_CAN message RAM configuration. The cells in the array have the following format:
+
+      <offset std-filter-elements ext-filter-elements rx-fifo0-elements rx-fifo1-elements
+      rx-buffer-elements tx-event-fifo-elements tx-buffer-elements>
+
+      The 'offset' is an address offset of the message RAM where the following elements start
+      from. This is normally set to 0x0 when using a non-shared message RAM. The remaining cells
+      specify how many elements are allocated for each filter type/FIFO/buffer.
+
+      The Bosch M_CAN IP supports the following elements:
+      11-bit Filter	 0-128 elements / 0-128 words
+      29-bit Filter	  0-64 elements / 0-128 words
+      Rx FIFO 0		    0-64 elements / 0-1152 words
+      Rx FIFO 1		    0-64 elements / 0-1152 words
+      Rx Buffers	    0-64 elements / 0-1152 words
+      Tx Event FIFO	  0-32 elements / 0-64 words
+      Tx Buffers	    0-32 elements / 0-576 words

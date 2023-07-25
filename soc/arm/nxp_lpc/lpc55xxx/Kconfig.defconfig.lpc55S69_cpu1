@@ -1,0 +1,17 @@
+# NXP LPC55S69 CPU1 platform configuration options
+
+# Copyright (c) 2019, NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_LPC55S69_CPU1
+
+config SOC
+	default "lpc55S69_cpu1"
+
+config GPIO
+	default y
+
+config SERIAL
+	default n
+
+endif # SOC_LPC55S69_CPU1

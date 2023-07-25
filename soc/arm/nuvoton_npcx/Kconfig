@@ -1,0 +1,192 @@
+# Nuvoton Cortex-M4 Embedded Controller
+
+# Copyright (c) 2020 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_FAMILY_NPCX
+	bool
+
+if SOC_FAMILY_NPCX
+config SOC_FAMILY
+	string
+	default "nuvoton_npcx"
+
+menuconfig NPCX_HEADER
+	bool "The output binary with NPCX binary header"
+	help
+	  On NPCX series chip, the NPCX ROM code loads firmware image from flash
+	  to RAM by the firmware binary header setting. Enable this to invoke
+	  the 'ecst' which generates the NPCX firmware header.
+
+if NPCX_HEADER
+
+config NPCX_IMAGE_OUTPUT_BIN
+	bool "Build npcx binary in BIN format"
+	default y
+	help
+	  Build a "raw" binary zephyr/zephyr.npcx.bin in the build directory.
+	  The name of this file can be customized with CONFIG_KERNEL_BIN_NAME.
+
+config NPCX_IMAGE_OUTPUT_HEX
+	bool "Build npcx binary in HEX format"
+	depends on NPCX_IMAGE_OUTPUT_BIN
+	help
+	  Build an HEX binary zephyr/zephyr.npcx.hex in the build directory.
+	  This is generated from the npcx BIN image.
+	  The name of this file can be customized with CONFIG_KERNEL_BIN_NAME.
+
+config NPCX_HEADER_CHIP
+	string
+	default "npcx7m6" if SOC_NPCX7M6FB || SOC_NPCX7M6FC
+	default "npcx7m7" if SOC_NPCX7M7FC
+	default "npcx9m3" if SOC_NPCX9M3F
+	default "npcx9m6" if SOC_NPCX9M6F
+	default "npcx9m7" if SOC_NPCX9M7F
+
+choice NPCX_HEADER_SPI_MAX_CLOCK_CHOICE
+	prompt "Clock rate to use for SPI flash"
+	default NPCX_HEADER_SPI_MAX_CLOCK_20
+	help
+	  This selects the max clock rate that will be used for loading firmware
+	  binary from flash to RAM.
+
+config NPCX_HEADER_SPI_MAX_CLOCK_20
+	bool "SPI flash max clock rate of 20 MHz"
+
+config NPCX_HEADER_SPI_MAX_CLOCK_25
+	bool "SPI flash max clock rate of 25 MHz"
+
+config NPCX_HEADER_SPI_MAX_CLOCK_33
+	bool "SPI flash max clock rate of 33 MHz"
+	depends on !SOC_SERIES_NPCX9
+
+config NPCX_HEADER_SPI_MAX_CLOCK_40
+	bool "SPI flash max clock rate of 40 MHz"
+
+config NPCX_HEADER_SPI_MAX_CLOCK_50
+	bool "SPI flash max clock rate of 50 MHz"
+endchoice
+
+config NPCX_HEADER_SPI_MAX_CLOCK
+	int
+	default 20 if NPCX_HEADER_SPI_MAX_CLOCK_20
+	default 25 if NPCX_HEADER_SPI_MAX_CLOCK_25
+	default 33 if NPCX_HEADER_SPI_MAX_CLOCK_33
+	default 40 if NPCX_HEADER_SPI_MAX_CLOCK_40
+	default 50 if NPCX_HEADER_SPI_MAX_CLOCK_50
+
+choice NPCX_HEADER_SPI_READ_MODE_CHOICE
+	prompt "Reading mode used by the SPI flash"
+	default NPCX_HEADER_SPI_READ_MODE_NORMAL
+	help
+	  This sets the reading mode that can be used by the SPI flash.
+	  Reading modes supported are normal, fast, dual, and quad.
+
+config NPCX_HEADER_SPI_READ_MODE_NORMAL
+	bool "SPI flash operates with normal reading mode"
+
+config NPCX_HEADER_SPI_READ_MODE_FAST
+	bool "SPI flash operates with fast reading mode"
+
+config NPCX_HEADER_SPI_READ_MODE_DUAL
+	bool "SPI flash operates with dual reading mode"
+
+config NPCX_HEADER_SPI_READ_MODE_QUAD
+	bool "SPI flash operates with quad reading mode"
+endchoice
+
+config NPCX_HEADER_SPI_READ_MODE
+	string
+	default "normal" if NPCX_HEADER_SPI_READ_MODE_NORMAL
+	default "fast" if NPCX_HEADER_SPI_READ_MODE_FAST
+	default "dual" if NPCX_HEADER_SPI_READ_MODE_DUAL
+	default "quad" if NPCX_HEADER_SPI_READ_MODE_QUAD
+
+choice NPCX_HEADER_CORE_CLOCK_SPI_CLOCK_RATIO_CHOICE
+	prompt "Core clock to SPI flash clock ratio"
+	default NPCX_HEADER_CORE_CLOCK_SPI_CLOCK_RATIO_1
+	help
+	  This sets the clock ratio (core clock / SPI clock)
+
+config NPCX_HEADER_CORE_CLOCK_SPI_CLOCK_RATIO_1
+	bool "NPCX SPI clock ratio 1"
+	help
+	  The SPI flash clock has the same frequency as the core clock.
+
+config NPCX_HEADER_CORE_CLOCK_SPI_CLOCK_RATIO_2
+	bool "NPCX SPI clock ratio 2"
+	help
+	  The core clock frequency is twice the flash clock frequency.
+endchoice
+
+config NPCX_HEADER_CORE_CLOCK_SPI_CLOCK_RATIO
+	int
+	default 1 if NPCX_HEADER_CORE_CLOCK_SPI_CLOCK_RATIO_1
+	default 2 if NPCX_HEADER_CORE_CLOCK_SPI_CLOCK_RATIO_2
+
+config NPCX_HEADER_ENABLE_HEADER_CRC
+	bool "Header crc check"
+	help
+	  When enabled, the header will be verified at boot using a crc
+	  checksum.
+
+config NPCX_HEADER_ENABLE_FIRMWARE_CRC
+	bool "Firmware image crc check"
+	help
+	  When enabled, the firmware image will be verified at boot using a
+	  crc checksum.
+
+choice NPCX_HEADER_FLASH_SIZE_CHOICE
+	prompt "Flash size"
+	default NPCX_HEADER_FLASH_SIZE_0P5M_1M if SOC_SERIES_NPCX7 || \
+						  SOC_SERIES_NPCX9
+	default NPCX_HEADER_FLASH_SIZE_16M
+	help
+	  This sets the SPI flash size.
+
+config NPCX_HEADER_FLASH_SIZE_0P5M_1M
+	bool "SPI flash size 0.5M or 1M Bytes"
+	help
+	  The SPI flash size is 0.5M or 1M Bytes.
+
+config NPCX_HEADER_FLASH_SIZE_2M
+	bool "SPI flash size 2M Bytes"
+	help
+	  The SPI flash size is 2M Bytes.
+
+config NPCX_HEADER_FLASH_SIZE_4M
+	bool "SPI flash size 4M Bytes"
+	help
+	  The SPI flash size is 4M Bytes.
+
+config NPCX_HEADER_FLASH_SIZE_8M
+	bool "SPI flash size 8M Bytes"
+	help
+	  The SPI flash size is 8M Bytes.
+
+config NPCX_HEADER_FLASH_SIZE_16M
+	bool "SPI flash size 16M Bytes"
+	help
+	  The SPI flash size is 16M Bytes.
+endchoice
+
+config NPCX_HEADER_FLASH_SIZE
+	int
+	default 1 if NPCX_HEADER_FLASH_SIZE_0P5M_1M
+	default 2 if NPCX_HEADER_FLASH_SIZE_2M
+	default 4 if NPCX_HEADER_FLASH_SIZE_4M
+	default 8 if NPCX_HEADER_FLASH_SIZE_8M
+	default 16 if NPCX_HEADER_FLASH_SIZE_16M
+
+endif # NPCX_HEADER
+
+# Select SoC Part No. and configuration options
+source "soc/arm/nuvoton_npcx/*/Kconfig.soc"
+
+config NPCX_PM_TRACE
+	bool "Trace System Power Management in NPCX family"
+	depends on PM
+	help
+	  Internal config to enable runtime power management traces.
+
+endif # SOC_FAMILY_NPCX

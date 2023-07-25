@@ -1,0 +1,13 @@
+# Texas Instruments Sitara AM62x-SK-M4 EVM
+#
+# Copyright (c) 2023 Texas Instruments Incorporated
+# Copyright (c) 2023 L Lakshmanan
+#
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_AM62x_M4
+
+config SOC
+	default "am62x_m4"
+
+endif

@@ -1,0 +1,19 @@
+# Copyright (c) 2018 Antmicro Ltd
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig SOCKS
+	bool "SOCKS5 proxy"
+	select NET_SOCKETS
+	select NET_SOCKETS_POSIX_NAMES
+	help
+	  Enable SOCKS5 proxy support
+
+if SOCKS
+
+module = SOCKS
+module-dep = NET_LOG
+module-str = Log level for SOCKS proxy
+module-help = Enable debug messages for SOCKS5 protocol
+source "subsys/net/Kconfig.template.log_config.net"
+
+endif # SOCKS

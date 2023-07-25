@@ -1,0 +1,23 @@
+/*
+ * Copyright (c) 2022 Schlumberger
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_GPIO_INFINEON_XMC4XXX_GPIO_H_
+#define ZEPHYR_INCLUDE_DT_BINDINGS_GPIO_INFINEON_XMC4XXX_GPIO_H_
+
+#define XMC4XXX_GPIO_DS_POS                   9
+#define XMC4XXX_GPIO_DS_MASK                  0xf
+
+/* GPIO driver will use XMC_GPIO_OUTPUT_STRENGTH_STRONG_MEDIUM_EDGE if DS is unset */
+#define XMC4XXX_GPIO_DS_STRONG_SHARP_EDGE    (0x1 << XMC4XXX_GPIO_DS_POS)
+#define XMC4XXX_GPIO_DS_STRONG_MEDIUM_EDGE   (0x2 << XMC4XXX_GPIO_DS_POS)
+#define XMC4XXX_GPIO_DS_STRONG_SOFT_EDGE     (0x3 << XMC4XXX_GPIO_DS_POS)
+#define XMC4XXX_GPIO_DS_STRONG_SLOW_EDGE     (0x4 << XMC4XXX_GPIO_DS_POS)
+#define XMC4XXX_GPIO_DS_MEDIUM               (0x5 << XMC4XXX_GPIO_DS_POS)
+/* values 5, 6 not set in xmc4_gpio.h */
+#define XMC4XXX_GPIO_DS_WEAK                 (0x8 << XMC4XXX_GPIO_DS_POS)
+
+#define XMC4XXX_GPIO_GET_DS(flags)           ((flags >> XMC4XXX_GPIO_DS_POS) & XMC4XXX_GPIO_DS_MASK)
+
+#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_GPIO_INFINEON_XMC4XXX_GPIO_H_ */

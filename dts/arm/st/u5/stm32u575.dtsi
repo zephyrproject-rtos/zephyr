@@ -1,0 +1,33 @@
+/*
+ * Copyright (c) 2021 Linaro Limited
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <st/u5/stm32u5.dtsi>
+
+
+/ {
+	soc {
+		compatible = "st,stm32u575", "st,stm32u5", "simple-bus";
+
+		usbotg_fs: otgfs@42040000 {
+			compatible = "st,stm32-otgfs";
+			reg = <0x42040000 0x80000>;
+			interrupts = <73 0>;
+			interrupt-names = "otgfs";
+			num-bidir-endpoints = <6>;
+			ram-size = <1280>;
+			maximum-speed = "full-speed";
+			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00004000>,
+				 <&rcc STM32_SRC_HSI48 ICKLK_SEL(0)>;
+			phys = <&otgfs_phy>;
+			status = "disabled";
+		};
+	};
+
+	otgfs_phy: otgfs_phy {
+		compatible = "usb-nop-xceiv";
+		#phy-cells = <0>;
+	};
+};

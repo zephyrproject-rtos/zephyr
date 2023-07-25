@@ -1,0 +1,70 @@
+# ST Microelectronics STM32F4 MCU line
+
+# Copyright (c) 2016 Linaro Limited.
+# SPDX-License-Identifier: Apache-2.0
+
+choice
+	prompt "STM32F4x MCU Selection"
+	depends on SOC_SERIES_STM32F4X
+
+config SOC_STM32F401XC
+	bool "STM32F401XC"
+
+config SOC_STM32F401XE
+	bool "STM32F401XE"
+
+config SOC_STM32F405XG
+	bool "STM32F405XG"
+
+config SOC_STM32F407XE
+	bool "STM32F407XE"
+
+config SOC_STM32F407XG
+	bool "STM32F407XG"
+
+config SOC_STM32F410RX
+	bool "STM32F410RX"
+
+config SOC_STM32F411XE
+	bool "STM32F411XE"
+
+config SOC_STM32F412CX
+	bool "STM32F412CX"
+
+config SOC_STM32F412RX
+	bool "STM32F412RX"
+
+config SOC_STM32F412VX
+	bool "STM32F412VX"
+
+config SOC_STM32F412ZX
+	bool "STM32F412ZX"
+
+config SOC_STM32F413XX
+	bool "STM32F413XX"
+
+config SOC_STM32F415XX
+	bool "STM32F415XX"
+
+config SOC_STM32F417XX
+	bool "STM32F417XX"
+
+config SOC_STM32F423XX
+	bool "STM32F423XX"
+
+config SOC_STM32F427XX
+	bool "STM32F427XI"
+
+config SOC_STM32F429XX
+	bool "STM32F429XI"
+
+config SOC_STM32F437XX
+	bool "STM32F437XX"
+
+config SOC_STM32F446XX
+	bool "STM32F446XX"
+
+config SOC_STM32F469XX
+	bool "STM32F469XX"
+
+endchoice

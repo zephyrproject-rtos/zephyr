@@ -1,0 +1,22 @@
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_EM_STARTERKIT
+
+config BOARD
+	default "em_starterkit"
+
+if GPIO
+
+config GPIO_INIT_PRIORITY
+	default 70
+
+endif # GPIO
+
+if I2C_DW
+
+config I2C_DW_CLOCK_SPEED
+	default 100
+
+endif # I2C_DW
+
+endif # BOARD_EM_STARTERKIT

@@ -1,0 +1,9 @@
+tests:
+  libraries.libc.newlib.heap_listener:
+    tags:
+      - clib
+      - newlib
+    filter: TOOLCHAIN_HAS_NEWLIB == 1
+    integration_platforms:
+      - mps2_an385
+      - qemu_x86

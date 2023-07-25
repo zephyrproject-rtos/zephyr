@@ -1,0 +1,14 @@
+HTTP Parser Support in Zephyr
+-----------------------------
+
+The http-parser library* from the nodejs project is a downstream of an
+externally maintained open source project. The original upstream code
+can be found at:
+
+https://github.com/nodejs/http-parser/releases/tag/v2.7.1
+https://github.com/nodejs/http-parser/archive/v2.7.1.tar.gz
+
+NOTE: The portions which relate to URL parsing have been split out into
+http_parser_url.c (originally located in http_parser.c).
+
+* "http-parser" is the project's name, "http_parser" is used in filenames.

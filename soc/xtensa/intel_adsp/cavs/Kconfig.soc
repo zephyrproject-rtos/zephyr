@@ -1,0 +1,13 @@
+# Copyright (c) 2020 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+choice
+	prompt "Intel CAVS SoC Selection"
+	depends on SOC_SERIES_INTEL_ADSP_CAVS
+
+config SOC_INTEL_CAVS_V25
+	bool "Intel Tiger Lake"
+	select XTENSA_WAITI_BUG
+	select SCHED_IPI_SUPPORTED
+
+endchoice

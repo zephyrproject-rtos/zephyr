@@ -1,0 +1,7 @@
+# Copyright 2021-2022 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_MIMX8MM_EVK_A53
+	bool "NXP i.MX8M Mini EVK A53"
+	depends on SOC_SERIES_MIMX8M_A53
+	select SOC_PART_NUMBER_MIMX8MM6DVTLZ

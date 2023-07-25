@@ -1,0 +1,20 @@
+# Copyright (c) 2016, Freescale Semiconductor, Inc.
+# Copyright (c) 2017-2020, NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config SPI_MCUX_FLEXCOMM
+	bool "MCUX FLEXCOMM SPI driver"
+	default y
+	depends on DT_HAS_NXP_LPC_SPI_ENABLED
+	select PINCTRL
+	help
+	  Enable support for mcux flexcomm spi driver.
+
+if SPI_MCUX_FLEXCOMM
+config SPI_MCUX_FLEXCOMM_DMA
+	bool "MCUX FLEXCOMM SPI DMA Support"
+	select DMA
+	help
+	  Enable the SPI DMA mode for SPI instances
+	  that enable dma channels in their device tree node.
+endif # SPI_MCUX_FLEXCOMM

@@ -1,0 +1,8 @@
+# Copyright (c) 2021 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config FAIL_TEST
+	bool "Fail the test"
+	default y
+
+source "Kconfig.zephyr"

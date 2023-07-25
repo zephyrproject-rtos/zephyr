@@ -1,0 +1,97 @@
+description: |
+  This binding is used to describe fixed partitions of a flash (or
+  other nonvolatile storage) memory.
+
+  Here is an example:
+
+    &flash0 {
+            partitions {
+                    compatible = "fixed-partitions";
+                    #address-cells = <1>;
+                    #size-cells = <1>;
+
+                    boot_partition: partition@0 {
+                            label = "mcuboot";
+                            reg = <0x00000000 0x0000C000>;
+                    };
+                    slot0_partition: partition@c000 {
+                            label = "image-0";
+                            reg = <0x0000C000 0x00076000>;
+                    };
+                    slot1_partition: partition@82000 {
+                            label = "image-1";
+                            reg = <0x00082000 0x00076000>;
+                    };
+
+                    /*
+                     * The flash starting at 0x000f8000 and ending at
+                     * 0x000fffff is reserved for use by the application.
+                     */
+
+                    /*
+                     * Storage partition will be used by FCB/LittleFS/NVS
+                     * if enabled.
+                     */
+                    storage_partition: partition@f8000 {
+                            label = "storage";
+                            reg = <0x000f8000 0x00008000>;
+                    };
+            };
+    };
+
+  Note that the usual name for this node is 'partitions'.
+  The fixed-partitions node should be a child of the flash
+  memory node. Note also that the flash memory node is usually
+  different from the node representing the flash controller
+  IP block.
+
+  Above, slot0_partition's register address 0xc000 means that
+  the partition begins at that offset from the parent flash
+  memory flash0's base address. That is, partition addresses
+  are relative; physical addresses must be calculated by adding
+  the start address of flash0 in memory to each partition's
+  reg address.
+
+compatible: "fixed-partitions"
+
+properties:
+  "#address-cells":
+    type: int
+    description: |
+      Number of cells required to represent a child node's
+      reg property address. This must be large enough to
+      represent the start offset of each partition.
+
+  "#size-cells":
+    type: int
+    description: |
+      Number of cells required to represent a child node's
+      reg property address. This must be large enough to
+      represent the size of each partition in bytes.
+
+child-binding:
+  description: |
+    Each child node of the fixed-partitions node represents
+    an individual flash partition. These should usually
+    look like this:
+
+      partition_nodelabel: partition@START_OFFSET {
+              label = "human-readable-name";
+              reg = <0xSTART_OFFSET 0xSIZE>;
+      };
+  properties:
+    label:
+      type: string
+      description: |
+        Human readable string describing the flash partition.
+    read-only:
+      type: boolean
+      description: set this property if the partition is read-only
+    reg:
+      type: array
+      description: |
+        This should be in the format <OFFSET SIZE>, where OFFSET
+        is the offset of the flash partition relative to the base
+        address of the parent memory, and SIZE is the size of
+        the partition in bytes.
+      required: true

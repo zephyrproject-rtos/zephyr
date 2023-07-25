@@ -1,0 +1,10 @@
+sample:
+  name: USB loopback sample
+tests:
+  sample.usb.loopback:
+    depends_on: usb_device
+    tags: usb
+    platform_exclude:
+      - native_posix
+      - native_posix_64
+    harness: button

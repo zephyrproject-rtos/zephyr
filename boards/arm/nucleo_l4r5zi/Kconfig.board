@@ -1,0 +1,8 @@
+# STM32L4R5ZI Nucleo board configuration
+
+# Copyright (c) 2018 Pushpal Sidhu
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_NUCLEO_L4R5ZI
+	bool "Nucleo L4R5ZI Development Board"
+	depends on SOC_STM32L4R5XX

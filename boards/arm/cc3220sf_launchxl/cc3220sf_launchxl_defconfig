@@ -1,0 +1,17 @@
+# SPDX-License-Identifier: Apache-2.0
+
+CONFIG_BOARD_CC3220SF_LAUNCHXL=y
+CONFIG_SOC_SERIES_CC32XX=y
+CONFIG_SOC_CC3220SF=y
+CONFIG_BUILD_OUTPUT_HEX=y
+
+
+#enable GPIO driver
+CONFIG_GPIO=y
+
+# enable uart driver
+CONFIG_SERIAL=y
+
+# enable console
+CONFIG_CONSOLE=y
+CONFIG_UART_CONSOLE=y

@@ -1,0 +1,20 @@
+identifier: nucleo_f412zg
+name: ST Nucleo F412ZG
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 256
+flash: 1024
+supported:
+  - arduino_i2c
+  - arduino_gpio
+  - arduino_spi
+  - pwm
+  - i2c
+  - spi
+  - gpio
+  - usb_device
+  - counter

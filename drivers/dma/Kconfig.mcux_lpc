@@ -1,0 +1,34 @@
+# Copyright (c) 2020-2023, NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config DMA_MCUX_LPC
+	bool "MCUX LPC DMAC driver"
+	default y
+	depends on DT_HAS_NXP_LPC_DMA_ENABLED
+	help
+	  DMA driver for MCUX LPC MCUs.
+
+if DMA_MCUX_LPC
+
+config DMA_MCUX_LPC_NUMBER_OF_DESCRIPTORS
+	int "Number of DMA descriptors to use"
+	default 16
+	help
+	  Each DMA descriptor can be used to transfer (1024*width) bytes of data.
+	  Increase or decrease this value depending on the max number of data
+	  transferred by the application.
+
+config DMA_MCUX_LPC_NUMBER_OF_CHANNELS_ALLOCATED
+	int "Number of DMA channels to allocate memory for in driver"
+	default 0
+	help
+	  The MCUX LPC DMA driver can save memory by not allocating static data
+	  depending on this value. So, the application can save some data memory
+	  space by setting this value to suit its needs. The meaning of the value
+	  is "total number of unique DMA channels ever expected to be used, maximum
+	  out of all DMA controllers". A value of 0 (default) means to allocate
+	  as many channel data structures as the maximum number of DMA channels
+	  in any DMA controller hardware. About 1 KB per 3-4 channels unused can
+	  be saved by fine tuning this Kconfig.
+
+endif # DMA_MCUX_LPC

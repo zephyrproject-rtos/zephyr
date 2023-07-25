@@ -1,0 +1,12 @@
+tests:
+  net.ieee802154.custom_l2:
+    platform_allow:
+      - native_posix
+      - native_posix_64
+    integration_platforms:
+      - native_posix
+    tags:
+      - net
+      - ieee802154
+      - l2
+    min_ram: 16

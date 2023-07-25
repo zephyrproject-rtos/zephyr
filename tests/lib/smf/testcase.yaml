@@ -1,0 +1,10 @@
+common:
+  integration_platforms:
+    - native_posix
+  tags:
+    - smf
+tests:
+  libraries.smf.flat: {}
+  libraries.smf.hierarchical:
+    extra_configs:
+      - CONFIG_SMF_ANCESTOR_SUPPORT=y

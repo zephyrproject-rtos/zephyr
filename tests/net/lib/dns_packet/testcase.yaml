@@ -1,0 +1,8 @@
+tests:
+  net.dns:
+    min_ram: 16
+    tags:
+      - dns
+      - net
+    timeout: 200
+    depends_on: netif

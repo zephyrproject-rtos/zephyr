@@ -1,0 +1,13 @@
+sample:
+  name: Bluetooth Central HT
+tests:
+  sample.bluetooth.central_ht:
+    harness: bluetooth
+    platform_allow:
+      - qemu_cortex_m3
+      - qemu_x86
+      - nrf51dk_nrf51422
+      - nrf52dk_nrf52832
+    tags: bluetooth
+    integration_platforms:
+      - qemu_cortex_m3

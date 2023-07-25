@@ -1,0 +1,10 @@
+sample:
+  description: TBD
+  name: TBD
+tests:
+  sample.sensor.ms5837:
+    build_only: true
+    platform_allow: nrf52840dk_nrf52840
+    integration_platforms:
+      - nrf52840dk_nrf52840
+    tags: sensors

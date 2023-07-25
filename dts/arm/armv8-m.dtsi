@@ -1,0 +1,27 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
+#include "skeleton.dtsi"
+
+/ {
+	soc {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "simple-bus";
+		interrupt-parent = <&nvic>;
+		ranges;
+
+		nvic: interrupt-controller@e000e100  {
+			#address-cells = <1>;
+			compatible = "arm,v8m-nvic";
+			reg = <0xe000e100 0xc00>;
+			interrupt-controller;
+			#interrupt-cells = <2>;
+		};
+
+		systick: timer@e000e010 {
+			compatible = "arm,armv8m-systick";
+			reg = <0xe000e010 0x10>;
+		};
+	};
+};
+

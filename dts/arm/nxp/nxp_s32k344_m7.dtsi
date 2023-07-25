@@ -1,0 +1,423 @@
+/*
+ * Copyright 2023 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/armv7-m.dtsi>
+#include <mem.h>
+#include <zephyr/dt-bindings/clock/nxp_s32k344_clock.h>
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m7";
+			reg = <0>;
+		};
+
+		cpu@1 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m7";
+			reg = <1>;
+		};
+
+		mpu: mpu@e000ed90 {
+			compatible = "arm,armv7m-mpu";
+			reg = <0xe000ed90 0x40>;
+			arm,num-mpu-regions = <16>;
+		};
+	};
+
+	/* Dummy pinctrl node, filled with pin mux options at board level */
+	pinctrl: pinctrl {
+		compatible = "nxp,s32k3-pinctrl";
+		status = "okay";
+	};
+
+	soc {
+		interrupt-parent = <&nvic>;
+
+		itcm: memory@0 {
+			compatible = "zephyr,memory-region", "arm,itcm";
+			reg = <0x00000000 DT_SIZE_K(64)>;
+			zephyr,memory-region = "ITCM";
+		};
+
+		dtcm: memory@20000000 {
+			compatible = "zephyr,memory-region", "arm,dtcm";
+			reg = <0x20000000 DT_SIZE_K(128)>;
+			zephyr,memory-region = "DTCM";
+		};
+
+		sram0_1: sram0_1@20400000 {
+			compatible = "mmio-sram";
+			reg = <0x20400000 DT_SIZE_K(320)>;
+		};
+
+		/*
+		 * Last 48Kb is reserved by Secure BAF, application core cannot access it.
+		 *
+		 * Do not assign the compatible for this now, when Flash API is implemented,
+		 * need to check if "soc-nv-flash" can be used or a new binding need to be
+		 * created, based on it.
+		 */
+		flash0: flash@400000 {
+			reg = <0x00400000 DT_SIZE_K(4048)>;
+			status = "disabled";
+		};
+
+		clock: clock-controller@402c8000 {
+			compatible = "nxp,s32-clock";
+			reg = <0x402c8000 0x4000>,
+				<0x402cc000 0x4000>,
+				<0x402d0000 0x4000>,
+				<0x402d4000 0x4000>,
+				<0x402d8000 0x4000>,
+				<0x402e0000 0x4000>;
+			#clock-cells = <1>;
+			status = "okay";
+		};
+
+		siul2: siul2@40290000 {
+			reg = <0x40290000 0x10000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			eirq0: eirq@40290010 {
+				compatible = "nxp,s32-siul2-eirq";
+				reg = <0x40290010 0x04>, <0x40290018 0x04>;
+				reg-names = "disr0", "direr0";
+				interrupts = <53 0>, <54 0>, <55 0>, <56 0>;
+				interrupt-names = "0_7", "8_15", "16_23", "24_31";
+				interrupt-controller;
+				#interrupt-cells = <2>;
+				status = "disabled";
+			};
+
+			gpioa_l: gpio@40291702 {
+				compatible = "nxp,s32-gpio";
+				reg = <0x40291702 0x02>, <0x40290240 0x40>;
+				reg-names = "pgpdo", "mscr";
+				interrupt-parent = <&eirq0>;
+				interrupts = <0 0>, <1 1>, <2 2>, <3 3>, <4 4>,
+					<5 5>, <6 6>, <7 7>, <8 16>, <9 17>,
+					<10 18>, <11 19>, <12 20>, <13 21>,
+					<14 22>, <15 23>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <16>;
+				status = "disabled";
+			};
+
+			gpioa_h: gpio@40291700 {
+				compatible = "nxp,s32-gpio";
+				reg = <0x40291700 0x02>, <0x40290280 0x40>;
+				reg-names = "pgpdo", "mscr";
+				interrupt-parent = <&eirq0>;
+				interrupts = <0 4>, <2 0>, <3 1>, <4 2>,
+					<5 3>, <9 5>, <12 6>, <14 7>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <16>;
+				status = "disabled";
+			};
+
+			gpiob_l: gpio@40291706 {
+				compatible = "nxp,s32-gpio";
+				reg = <0x40291706 0x02>, <0x402902c0 0x40>;
+				reg-names = "pgpdo", "mscr";
+				interrupt-parent = <&eirq0>;
+				interrupts = <0 8>, <1 9>, <2 10>, <3 11>, <4 12>,
+					<5 13>, <8 14>, <9 15>, <10 24>, <11 25>,
+					<12 26>, <13 27>, <14 28>, <15 29>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <16>;
+				gpio-reserved-ranges = <6 2>;
+				status = "disabled";
+			};
+
+			gpiob_h: gpio@40291704 {
+				compatible = "nxp,s32-gpio";
+				reg = <0x40291704 0x02>, <0x40290300 0x40>;
+				reg-names = "pgpdo", "mscr";
+				interrupt-parent = <&eirq0>;
+				interrupts = <0 30>, <1 31>, <5 8>, <6 9>, <7 10>,
+					<8 11>, <9 12>, <10 13>, <12 14>, <15 15>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <16>;
+				status = "disabled";
+			};
+
+			gpioc_l: gpio@4029170a {
+				compatible = "nxp,s32-gpio";
+				reg = <0x4029170a 0x02>, <0x40290340 0x40>;
+				reg-names = "pgpdo", "mscr";
+				interrupt-parent = <&eirq0>;
+				interrupts = <0 1>, <1 1>, <2 2>, <3 3>, <4 4>,
+					<5 5>, <6 6>, <7 7>, <8 16>, <9 17>,
+					<10 18>, <11 19>, <12 20>, <13 21>,
+					<14 22>, <15 23>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <16>;
+				status = "disabled";
+			};
+
+			gpioc_h: gpio@40291708 {
+				compatible = "nxp,s32-gpio";
+				reg = <0x40291708 0x02>, <0x40290380 0x40>;
+				reg-names = "pgpdo", "mscr";
+				interrupt-parent = <&eirq0>;
+				interrupts = <4 16>, <5 17>, <7 18>, <8 19>,
+					<9 20>, <10 21>, <11 22>, <13 23>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <16>;
+				status = "disabled";
+			};
+
+			gpiod_l: gpio@4029170e {
+				compatible = "nxp,s32-gpio";
+				reg = <0x4029170e 0x02>, <0x402903c0 0x40>;
+				reg-names = "pgpdo", "mscr";
+				interrupt-parent = <&eirq0>;
+				interrupts = <0 8>, <1 9>, <2 10>, <3 11>, <4 12>,
+					<5 13>, <6 14>, <7 15>, <8 24>,
+					<9 25>, <10 26>, <11 27>, <12 28>,
+					<13 29>, <14 30>, <15 31>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <16>;
+				status = "disabled";
+			};
+
+			gpiod_h: gpio@4029170c {
+				compatible = "nxp,s32-gpio";
+				reg = <0x4029170c 0x02>, <0x40290400 0x40>;
+				reg-names = "pgpdo", "mscr";
+				interrupt-parent = <&eirq0>;
+				interrupts = <1 24>, <4 25>, <5 26>, <6 27>,
+					<7 28>, <8 29>, <11 30>, <12 31>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <16>;
+				status = "disabled";
+			};
+
+			gpioe_l: gpio@40291712 {
+				compatible = "nxp,s32-gpio";
+				reg = <0x40291712 0x02>, <0x40290440 0x40>;
+				reg-names = "pgpdo", "mscr";
+				interrupt-parent = <&eirq0>;
+				interrupts = <0 0>, <1 1>, <2 2>, <3 3>,
+					<4 4>, <5 5>, <6 6>, <8 7>,
+					<9 8>, <10 9>, <11 10>, <12 11>,
+					<13 12>, <14 13>, <15 14>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <16>;
+				status = "disabled";
+			};
+
+			gpioe_h: gpio@40291710 {
+				compatible = "nxp,s32-gpio";
+				reg = <0x40291710 0x02>, <0x40290480 0x40>;
+				reg-names = "pgpdo", "mscr";
+				interrupt-parent = <&eirq0>;
+				interrupts = <0 15>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <16>;
+				status = "disabled";
+			};
+
+			gpiof_l: gpio@40291716 {
+				compatible = "nxp,s32-gpio";
+				reg = <0x40291716 0x02>, <0x402904c0 0x40>;
+				reg-names = "pgpdo", "mscr";
+				interrupt-parent = <&eirq0>;
+				interrupts = <0 0>, <1 1>, <2 2>, <3 3>,
+					<4 4>, <5 5>, <6 6>, <7 7>,
+					<8 16>, <9 17>, <10 18>, <11 19>,
+					<12 20>, <13 21>, <14 22>, <15 23>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <16>;
+				status = "disabled";
+			};
+
+			gpiof_h: gpio@40291714 {
+				compatible = "nxp,s32-gpio";
+				reg = <0x40291714 0x02>, <0x40290500 0x40>;
+				reg-names = "pgpdo", "mscr";
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <16>;
+				status = "disabled";
+			};
+
+			gpiog_l: gpio@4029171a {
+				compatible = "nxp,s32-gpio";
+				reg = <0x4029171a 0x02>, <0x40290540 0x40>;
+				reg-names = "pgpdo", "mscr";
+				interrupt-parent = <&eirq0>;
+				interrupts = <0 8>, <1 9>, <2 10>, <3 11>,
+					<4 12>, <5 13>, <6 14>, <7 15>,
+					<8 24>, <9 25>, <10 26>, <11 27>,
+					<12 28>, <13 29>, <14 30>, <15 31>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <16>;
+				status = "disabled";
+			};
+
+			gpiog_h: gpio@40291718 {
+				compatible = "nxp,s32-gpio";
+				reg = <0x40291718 0x02>, <0x40290580 0x40>;
+				reg-names = "pgpdo", "mscr";
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <16>;
+				status = "disabled";
+			};
+		};
+
+		lpuart0: uart@40328000 {
+			compatible = "nxp,kinetis-lpuart";
+			reg = <0x40328000 0x4000>;
+			interrupts = <141 0>;
+			clocks = <&clock NXP_S32_LPUART0_CLK>;
+			status = "disabled";
+		};
+
+		lpuart1: uart@4032c000 {
+			compatible = "nxp,kinetis-lpuart";
+			reg = <0x4032c000 0x4000>;
+			interrupts = <142 0>;
+			clocks = <&clock NXP_S32_LPUART1_CLK>;
+			status = "disabled";
+		};
+
+		lpuart2: uart@40330000 {
+			compatible = "nxp,kinetis-lpuart";
+			reg = <0x40330000 0x4000>;
+			interrupts = <143 0>;
+			clocks = <&clock NXP_S32_LPUART2_CLK>;
+			status = "disabled";
+		};
+
+		lpuart3: uart@40334000 {
+			compatible = "nxp,kinetis-lpuart";
+			reg = <0x40334000 0x4000>;
+			interrupts = <144 0>;
+			clocks = <&clock NXP_S32_LPUART3_CLK>;
+			status = "disabled";
+		};
+
+		lpuart4: uart@40338000 {
+			compatible = "nxp,kinetis-lpuart";
+			reg = <0x40338000 0x4000>;
+			interrupts = <145 0>;
+			clocks = <&clock NXP_S32_LPUART4_CLK>;
+			status = "disabled";
+		};
+
+		lpuart5: uart@4033c000 {
+			compatible = "nxp,kinetis-lpuart";
+			reg = <0x4033c000 0x4000>;
+			interrupts = <146 0>;
+			clocks = <&clock NXP_S32_LPUART5_CLK>;
+			status = "disabled";
+		};
+
+		lpuart6: uart@40340000 {
+			compatible = "nxp,kinetis-lpuart";
+			reg = <0x40340000 0x4000>;
+			interrupts = <147 0>;
+			clocks = <&clock NXP_S32_LPUART6_CLK>;
+			status = "disabled";
+		};
+
+		lpuart7: uart@40344000 {
+			compatible = "nxp,kinetis-lpuart";
+			reg = <0x40344000 0x4000>;
+			interrupts = <148 0>;
+			clocks = <&clock NXP_S32_LPUART7_CLK>;
+			status = "disabled";
+		};
+
+		lpuart8: uart@4048c000 {
+			compatible = "nxp,kinetis-lpuart";
+			reg = <0x4048c000 0x4000>;
+			interrupts = <149 0>;
+			clocks = <&clock NXP_S32_LPUART8_CLK>;
+			status = "disabled";
+		};
+
+		lpuart9: uart@40490000 {
+			compatible = "nxp,kinetis-lpuart";
+			reg = <0x40490000 0x4000>;
+			interrupts = <150 0>;
+			clocks = <&clock NXP_S32_LPUART9_CLK>;
+			status = "disabled";
+		};
+
+		lpuart10: uart@40494000 {
+			compatible = "nxp,kinetis-lpuart";
+			reg = <0x40494000 0x4000>;
+			interrupts = <151 0>;
+			clocks = <&clock NXP_S32_LPUART10_CLK>;
+			status = "disabled";
+		};
+
+		lpuart11: uart@40498000 {
+			compatible = "nxp,kinetis-lpuart";
+			reg = <0x40498000 0x4000>;
+			interrupts = <152 0>;
+			clocks = <&clock NXP_S32_LPUART11_CLK>;
+			status = "disabled";
+		};
+
+		lpuart12: uart@4049c000 {
+			compatible = "nxp,kinetis-lpuart";
+			reg = <0x4049c000 0x4000>;
+			interrupts = <153 0>;
+			clocks = <&clock NXP_S32_LPUART12_CLK>;
+			status = "disabled";
+		};
+
+		lpuart13: uart@404a0000 {
+			compatible = "nxp,kinetis-lpuart";
+			reg = <0x404a0000 0x4000>;
+			interrupts = <154 0>;
+			clocks = <&clock NXP_S32_LPUART13_CLK>;
+			status = "disabled";
+		};
+
+		lpuart14: uart@404a4000 {
+			compatible = "nxp,kinetis-lpuart";
+			reg = <0x404a4000 0x4000>;
+			interrupts = <155 0>;
+			clocks = <&clock NXP_S32_LPUART14_CLK>;
+			status = "disabled";
+		};
+
+		lpuart15: uart@404a8000 {
+			compatible = "nxp,kinetis-lpuart";
+			reg = <0x404a8000 0x4000>;
+			interrupts = <156 0>;
+			clocks = <&clock NXP_S32_LPUART15_CLK>;
+			status = "disabled";
+		};
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <4>;
+};

@@ -1,0 +1,54 @@
+/*
+ * Copyright (c) 2020 Nordic Semiconductor ASA
+ * Copyright (c) 2022 Intel Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ */
+
+/ {
+	test {
+		#address-cells = <0x1>;
+		#size-cells = <0x1>;
+
+		test_gpio: gpio@deadbeef {
+			compatible = "vnd,gpio";
+			gpio-controller;
+			reg = <0xdeadbeef 0x1000>;
+			#gpio-cells = <0x2>;
+			status = "okay";
+		};
+
+		test_spi_cs: spi@33334444 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "vnd,spi";
+			reg = <0x33334444 0x1000>;
+			status = "okay";
+			clock-frequency = <2000000>;
+
+			cs-gpios = <&test_gpio 0x10 0x20>;
+
+			test_spi_dev_cs: test-spi-dev@0 {
+				compatible = "vnd,spi-device";
+				reg = <0>;
+				spi-max-frequency = <2000000>;
+			};
+		};
+
+		test_spi_no_cs: spi@55556666 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "vnd,spi";
+			reg = <0x55556666 0x1000>;
+			status = "okay";
+			clock-frequency = <2000000>;
+
+			test_spi_dev_no_cs: test-spi-dev@0 {
+				compatible = "vnd,spi-device";
+				reg = <0>;
+				spi-max-frequency = <2000000>;
+			};
+		};
+	};
+};

@@ -1,0 +1,23 @@
+# NXP LPC55XXX CPU0 platform configuration options
+
+# Copyright (c) 2019, NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_LPC55S69_CPU0
+
+config SOC
+	default "lpc55S69_cpu0"
+
+config SOC_FLASH_MCUX
+	default y
+	depends on FLASH
+	depends on !TRUSTED_EXECUTION_NONSECURE
+
+choice USB_MCUX_CONTROLLER_TYPE
+	default USB_DC_NXP_LPCIP3511
+endchoice
+
+config I2S_MCUX_FLEXCOMM
+	select INIT_PLL0
+
+endif # SOC_LPC55S69_CPU0

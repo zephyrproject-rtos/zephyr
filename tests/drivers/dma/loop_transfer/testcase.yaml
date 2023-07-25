@@ -1,0 +1,7 @@
+tests:
+  drivers.dma.loop_transfer:
+    depends_on: dma
+    tags:
+      - drivers
+      - dma
+    filter: dt_nodelabel_enabled("test_dma0")

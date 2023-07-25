@@ -1,0 +1,37 @@
+# Copyright (c) 2022, Nick Ward <nix.ward@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP PCA9685 16-channel, 12-bit PWM Fm+ I2C-bus LED controller
+
+compatible: "nxp,pca9685-pwm"
+
+include: [pwm-controller.yaml, i2c-device.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  open-drain:
+    type: boolean
+    description:
+      The 16 LEDn outputs are configured with an open-drain structure.
+      Otherwise they are configured with a totem pole structure.
+
+  och-on-ack:
+    type: boolean
+    description:
+      Outputs change on ACK.  Otherwise the outputs change on STOP
+      command.
+
+  invert:
+    type: boolean
+    description:
+      Output logic state inverted. Value to use when no external driver
+      used.
+
+  "#pwm-cells":
+    const: 2
+
+pwm-cells:
+  - channel
+  - period

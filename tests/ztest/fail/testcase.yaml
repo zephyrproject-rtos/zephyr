@@ -1,0 +1,52 @@
+# Copyright (c) 2022 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - test_framework
+  # test has dependencies on host libc
+  platform_allow: native_posix
+tests:
+  testing.fail.unit.assert_after:
+    extra_configs:
+      - CONFIG_ZTEST_FAIL_TEST_ASSERT_AFTER=y
+  testing.fail.unit.assert_teardown:
+    extra_configs:
+      - CONFIG_ZTEST_FAIL_TEST_ASSERT_TEARDOWN=y
+  testing.fail.unit.assume_after:
+    extra_configs:
+      - CONFIG_ZTEST_FAIL_TEST_ASSUME_AFTER=y
+  testing.fail.unit.assume_teardown:
+    extra_configs:
+      - CONFIG_ZTEST_FAIL_TEST_ASSUME_TEARDOWN=y
+  testing.fail.unit.pass_after:
+    extra_configs:
+      - CONFIG_ZTEST_FAIL_TEST_PASS_AFTER=y
+  testing.fail.unit.pass_teardown:
+    extra_configs:
+      - CONFIG_ZTEST_FAIL_TEST_PASS_TEARDOWN=y
+  testing.fail.zephyr.assert_after:
+    extra_configs:
+      - CONFIG_ZTEST_FAIL_TEST_ASSERT_AFTER=y
+  testing.fail.zephyr.assert_teardown:
+    extra_configs:
+      - CONFIG_ZTEST_FAIL_TEST_ASSERT_TEARDOWN=y
+  testing.fail.zephyr.assume_after:
+    extra_configs:
+      - CONFIG_ZTEST_FAIL_TEST_ASSUME_AFTER=y
+  testing.fail.zephyr.assume_teardown:
+    extra_configs:
+      - CONFIG_ZTEST_FAIL_TEST_ASSUME_TEARDOWN=y
+  testing.fail.zephyr.pass_after:
+    extra_configs:
+      - CONFIG_ZTEST_FAIL_TEST_PASS_AFTER=y
+  testing.fail.zephyr.pass_teardown:
+    extra_configs:
+      - CONFIG_ZTEST_FAIL_TEST_PASS_TEARDOWN=y
+  testing.fail.unit.fail_on_bad_assumption:
+    type: unit
+    extra_configs:
+      - CONFIG_ZTEST_FAIL_TEST_UNEXPECTED_ASSUME=y
+  testing.fail.zephyr.fail_on_bad_assumption:
+    extra_configs:
+      - CONFIG_ZTEST_FAIL_TEST_UNEXPECTED_ASSUME=y

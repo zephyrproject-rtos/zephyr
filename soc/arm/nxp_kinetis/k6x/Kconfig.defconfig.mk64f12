@@ -1,0 +1,21 @@
+# FSL FRDM K64F platform configuration options
+
+# Copyright (c) 2014-2016 Wind River Systems, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_MK64F12
+
+config SOC
+	default "mk64f12"
+
+config NUM_IRQS
+	# must be >= the highest interrupt number used
+	default 86
+
+config GPIO
+	default y
+
+config SPI
+	default n
+
+endif # SOC_MK64F12

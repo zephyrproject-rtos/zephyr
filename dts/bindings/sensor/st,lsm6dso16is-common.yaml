@@ -1,0 +1,120 @@
+# Copyright (c) 2023 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+include: sensor-device.yaml
+
+properties:
+  irq-gpios:
+    type: phandle-array
+    description: |
+      DRDY pin
+
+      This pin defaults to active high when produced by the sensor.
+      The property value should ensure the flags properly describe
+      the signal that is presented to the driver.
+
+  drdy-pin:
+    type: int
+    default: 1
+    enum:
+      - 1 # drdy is generated from INT1
+      - 2 # drdy is generated from INT2
+    description: |
+      Select DRDY pin number (1 or 2).
+
+      This number represents which of the two interrupt pins
+      (INT1 or INT2) the drdy line is attached to. This property is not
+      mandatory and if not present it defaults to 1 which is the
+      configuration at power-up.
+
+  accel-range:
+    type: int
+    default: 0
+    description: |
+      Range in g. Default is power-up configuration.
+    enum:
+      - 0 # 2g  (0.061 mg/LSB)
+      - 1 # 16g (0.488 mg/LSB)
+      - 2 # 4g  (0.122 mg/LSB)
+      - 3 # 8g  (0.244 mg/LSB)
+
+  accel-odr:
+    type: int
+    default: 0x0
+    description: |
+      Specify the default accelerometer output data rate expressed in samples per second (Hz).
+      The values are taken in accordance to lsm6dso16is_xl_data_rate_t enumerative in hal/st
+      module.
+      Default is power-up configuration.
+    enum:
+      - 0x00  # Power-Down
+      - 0x01  # 12.5Hz High Performance
+      - 0x02  # 26Hz High Performance
+      - 0x03  # 52Hz High Performance
+      - 0x04  # 104Hz High Performance
+      - 0x05  # 208Hz High Performance
+      - 0x06  # 417Hz High Performance
+      - 0x07  # 833Hz High Performance
+      - 0x08  # 1667Hz High Performance
+      - 0x09  # 3333Hz High Performance
+      - 0x0a  # 6667Hz High Performance
+      - 0x11  # 12.5Hz Low Power
+      - 0x12  # 26Hz Low Power
+      - 0x13  # 52Hz Low Power
+      - 0x14  # 104Hz Low Power
+      - 0x15  # 208Hz Low Power
+      - 0x16  # 417Hz Low Power
+      - 0x17  # 833Hz Low Power
+      - 0x18  # 1667Hz Low Power
+      - 0x19  # 3333Hz Low Power
+      - 0x1a  # 6667Hz Low Power
+      - 0x1b  # 1Hz6 Low Power
+
+  gyro-range:
+    type: int
+    default: 0
+    description: |
+      Range in dps. Default is power-up configuration.
+    enum:
+      - 0 # 250 dps  (8.75 mdps/LSB)
+      - 1 # 125 dps  (4.375 mdps/LSB)
+      - 2 # 500 dps  (17.50 mdps/LSB)
+      - 4 # 1000 dps (35 mdps/LSB)
+      - 6 # 2000 dps (70 mdps/LSB)
+
+  gyro-odr:
+    type: int
+    default: 0x0
+    description: |
+      Specify the default gyro output data rate expressed in samples per second (Hz).
+      The values are taken in accordance to lsm6dso16is_gy_data_rate_t enumerative in hal/st
+      module.
+      Default is power-up configuration.
+    enum:
+      - 0x00  # Power-Down
+      - 0x01  # 12.5Hz High Performance
+      - 0x02  # 26Hz High Performance
+      - 0x03  # 52Hz High Performance
+      - 0x04  # 104Hz High Performance
+      - 0x05  # 208Hz High Performance
+      - 0x06  # 417Hz High Performance
+      - 0x07  # 833Hz High Performance
+      - 0x08  # 1667Hz High Performance
+      - 0x09  # 3333Hz High Performance
+      - 0x0a  # 6667Hz High Performance
+      - 0x11  # 12.5Hz Low Power
+      - 0x12  # 26Hz Low Power
+      - 0x13  # 52Hz Low Power
+      - 0x14  # 104Hz Low Power
+      - 0x15  # 208Hz Low Power
+      - 0x16  # 417Hz Low Power
+      - 0x17  # 833Hz Low Power
+      - 0x18  # 1667Hz Low Power
+      - 0x19  # 3333Hz Low Power
+      - 0x1a  # 6667Hz Low Power
+
+  drdy-pulsed:
+    type: boolean
+    description: |
+      Selects the pulsed mode for data-ready interrupt when enabled,
+      and the latched mode when disabled.

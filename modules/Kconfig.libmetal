@@ -1,0 +1,14 @@
+# Copyright (c) 2018 Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig LIBMETAL
+	bool "libmetal Support"
+	help
+	  This option enables the libmetal HAL abstraction layer
+
+config LIBMETAL_SRC_PATH
+	string "libmetal library source path"
+	default "libmetal"
+	depends on LIBMETAL
+	help
+	  This option specifies the path to the source for the libmetal library

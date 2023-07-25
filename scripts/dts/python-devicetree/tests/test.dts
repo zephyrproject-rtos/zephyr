@@ -1,0 +1,542 @@
+/*
+ * Copyright (c) 2019, Nordic Semiconductor
+ *
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
+
+// Used by testedtlib.py
+
+/dts-v1/;
+
+/ {
+	//
+	// Interrupts
+	//
+
+	interrupt-parent-test {
+		controller {
+			compatible = "interrupt-three-cell";
+			#interrupt-cells = <3>;
+			interrupt-controller;
+		};
+		node {
+			interrupts = <1 2 3 4 5 6>;
+			interrupt-names = "foo", "bar";
+			interrupt-parent = <&{/interrupt-parent-test/controller}>;
+		};
+	};
+	interrupts-extended-test {
+		controller-0 {
+			compatible = "interrupt-one-cell";
+			#interrupt-cells = <1>;
+			interrupt-controller;
+		};
+		controller-1 {
+			compatible = "interrupt-two-cell";
+			#interrupt-cells = <2>;
+			interrupt-controller;
+		};
+		controller-2 {
+			compatible = "interrupt-three-cell";
+			#interrupt-cells = <3>;
+			interrupt-controller;
+		};
+		node {
+			interrupts-extended = <
+				&{/interrupts-extended-test/controller-0} 1
+				&{/interrupts-extended-test/controller-1} 2 3
+				&{/interrupts-extended-test/controller-2} 4 5 6>;
+		};
+	};
+	interrupt-map-test {
+		#address-cells = <2>;
+		#size-cells = <0>;
+
+		controller-0 {
+			compatible = "interrupt-one-cell";
+			#address-cells = <1>;
+			#interrupt-cells = <1>;
+			interrupt-controller;
+		};
+		controller-1 {
+			compatible = "interrupt-two-cell";
+			#address-cells = <2>;
+			#interrupt-cells = <2>;
+			interrupt-controller;
+		};
+		controller-2 {
+			compatible = "interrupt-three-cell";
+			#address-cells = <3>;
+			#interrupt-cells = <3>;
+			interrupt-controller;
+		};
+		nexus {
+			#interrupt-cells = <2>;
+			interrupt-map = <
+				0 0  0 0  &{/interrupt-map-test/controller-0}  0      0
+				0 0  0 1  &{/interrupt-map-test/controller-1}  0 0    0 1
+				0 0  0 2  &{/interrupt-map-test/controller-2}  0 0 0  0 0 2
+				0 1  0 0  &{/interrupt-map-test/controller-0}  0      3
+				0 1  0 1  &{/interrupt-map-test/controller-1}  0 0    0 4
+				0 1  0 2  &{/interrupt-map-test/controller-2}  0 0 0  0 0 5>;
+		};
+		node@0 {
+			reg = <0 0>;
+			interrupts = <0 0 0 1 0 2>;
+			interrupt-parent = <&{/interrupt-map-test/nexus}>;
+		};
+		node@1 {
+			reg = <0 1>;
+			interrupts-extended = <
+			    &{/interrupt-map-test/nexus} 0 0
+			    &{/interrupt-map-test/nexus} 0 1
+			    &{/interrupt-map-test/nexus} 0 2>;
+		};
+	};
+	interrupt-map-bitops-test {
+		#address-cells = <2>;
+		#size-cells = <0>;
+
+		controller {
+			compatible = "interrupt-two-cell";
+			#address-cells = <0>;
+			#interrupt-cells = <2>;
+			interrupt-controller;
+		};
+		nexus {
+			#interrupt-cells = <2>;
+			interrupt-map = <
+			    6 6  6 6  &{/interrupt-map-bitops-test/controller}  2 1
+			>;
+			interrupt-map-mask = <0xE 0x7 0xE 0x7>;
+			// Not specified in the DT spec., but shows up due to
+			// common code with GPIO. Might as well test it here.
+			interrupt-map-pass-thru = <1 2 3 3>;
+		};
+		// Child unit specifier: 00000007 0000000E 00000007 0000000E
+		// Mask:                 0000000E 00000007 0000000E 00000007
+		// Pass-thru:            00000001 00000002 00000003 00000003
+		node@70000000E {
+			reg = <0x7 0xE>;
+			interrupt-parent = <&{/interrupt-map-bitops-test/nexus}>;
+			interrupts = <0x7 0xE>;
+		};
+	};
+
+	//
+	// 'ranges'
+	//
+
+	ranges-zero-cells {
+		#address-cells = <0>;
+
+		node {
+			#address-cells = <0>;
+			#size-cells = <0>;
+
+			ranges;
+		};
+	};
+
+	ranges-zero-parent-cells {
+		#address-cells = <0>;
+
+		node {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			ranges = <0xA>,
+				 <0x1A>,
+				 <0x2A>;
+		};
+	};
+
+	ranges-one-address-cells {
+		#address-cells = <0>;
+
+		node {
+			reg = <1>;
+			#address-cells = <1>;
+
+			ranges = <0xA 0xB>,
+				 <0x1A 0x1B>,
+				 <0x2A 0x2B>;
+		};
+	};
+
+	ranges-one-address-two-size-cells {
+		#address-cells = <0>;
+
+		node {
+			reg = <1>;
+			#address-cells = <1>;
+			#size-cells = <2>;
+
+			ranges = <0xA 0xB 0xC>,
+				 <0x1A 0x1B 0x1C>,
+				 <0x2A 0x2B 0x2C>;
+		};
+	};
+
+	ranges-two-address-cells {
+		#address-cells = <1>;
+
+		node@1 {
+			reg = <1 2>;
+
+			ranges = <0xA 0xB 0xC 0xD>,
+				 <0x1A 0x1B 0x1C 0x1D>,
+				 <0x2A 0x2B 0x2C 0x2D>;
+		};
+	};
+
+	ranges-two-address-two-size-cells {
+		#address-cells = <1>;
+
+		node@1 {
+			reg = <1 2>;
+			#size-cells = <2>;
+
+			ranges = <0xA 0xB 0xC 0xD 0xE>,
+				 <0x1A 0x1B 0x1C 0x1D 0x1E>,
+				 <0x2A 0x2B 0x2C 0x2D 0x1D>;
+		};
+	};
+
+	ranges-three-address-cells {
+		node@1 {
+			reg = <0 1 2>;
+			#address-cells = <3>;
+
+			ranges = <0xA 0xB 0xC 0xD 0xE 0xF>,
+				 <0x1A 0x1B 0x1C 0x1D 0x1E 0x1F>,
+				 <0x2A 0x2B 0x2C 0x2D 0x2E 0x2F>;
+		};
+	};
+
+	ranges-three-address-two-size-cells {
+		node@1 {
+			reg = <0 1 2>;
+			#address-cells = <3>;
+			#size-cells = <2>;
+
+			ranges = <0xA 0xB 0xC 0xD 0xE 0xF 0x10>,
+				 <0x1A 0x1B 0x1C 0x1D 0x1E 0x1F 0x110>,
+				 <0x2A 0x2B 0x2C 0x2D 0x2E 0x2F 0x210>;
+		};
+	};
+
+
+	//
+	// 'reg'
+	//
+
+	reg-zero-address-cells {
+		#address-cells = <0>;
+		#size-cells = <1>;
+
+		node {
+			reg = <1 2>;
+			reg-names = "foo", "bar";
+		};
+	};
+	reg-zero-size-cells {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		node {
+			reg = <1 2>;
+		};
+	};
+	// Use implied #size-cells = <1>
+	reg-ranges {
+		#address-cells = <2>;
+
+		parent {
+			#address-cells = <1>;
+			ranges = <1  0xA 0xB  1 /* 1    -> 0xA 0xB */
+				  2  0xC 0xD  2 /* 2..3 -> 0xC 0xD */
+				  4  0xE 0xF  1 /* 4    -> 0xE 0xF */
+				 >;
+
+			node {
+				reg = <5 1 /* Matches no range */
+				       4 1 /* Matches third range */
+				       3 1 /* Matches second range */
+				       2 1 /* Matches second range */
+				       1 1 /* Matches first range */
+				       0 1 /* Matches no range */
+				       >;
+			};
+		};
+	};
+	// Build up <3 2 1> address with nested 'ranges'
+	reg-nested-ranges {
+		#address-cells = <3>;
+
+		grandparent {
+			#address-cells = <2>;
+			#size-cells = <2>;
+			ranges = <0 0  3 0 0  2 2>;
+
+			parent {
+				#address-cells = <1>;
+				ranges = <0  2 0  2>;
+
+				node {
+					reg = <1 1>;
+				};
+			};
+		};
+	};
+
+	//
+	// 'pinctrl-<index>'
+	//
+
+	pinctrl {
+		dev {
+			pinctrl-0 = <>;
+			pinctrl-1 = <&{/pinctrl/pincontroller/state-1}>;
+			pinctrl-2 = <&{/pinctrl/pincontroller/state-1}
+				     &{/pinctrl/pincontroller/state-2}>;
+			pinctrl-names = "zero", "one", "two";
+		};
+		pincontroller {
+			state-1 {
+			};
+			state-2 {
+			};
+		};
+	};
+
+	//
+	// For testing hierarchy.
+	//
+
+	parent {
+		child-1 {
+		};
+		child-2 {
+			grandchild {
+			};
+		};
+	};
+
+	//
+	// For testing 'include:'
+	//
+
+	binding-include {
+		compatible = "binding-include-test";
+		foo = <0>;
+		bar = <1>;
+		baz = <2>;
+		qaz = <3>;
+
+		child {
+			foo = <0>;
+			bar = <1>;
+			baz = <2>;
+			qaz = <3>;
+		};
+	};
+
+	//
+	// For testing Node.props (derived from 'properties:' in the binding)
+	//
+
+	props {
+		compatible = "props";
+		existent-boolean;
+		int = <1>;
+		array = <1 2 3>;
+		uint8-array = [ 12 34 ];
+		string = "foo";
+		string-array = "foo", "bar", "baz";
+		phandle-ref = < &{/ctrl-1} >;
+		phandle-refs = < &{/ctrl-1} &{/ctrl-2} >;
+		phandle-array-foos = < &{/ctrl-1} 1 &{/ctrl-2} 2 3 >;
+		foo-gpios = < &{/ctrl-1} 1 >;
+		path = &{/ctrl-1};
+	};
+
+	ctrl-1 {
+		compatible = "phandle-array-controller-1";
+		#phandle-array-foo-cells = <1>;
+		#gpio-cells = <1>;
+	};
+
+	ctrl-2 {
+		compatible = "phandle-array-controller-2";
+		#phandle-array-foo-cells = <2>;
+	};
+
+	props-2 {
+		compatible = "props";
+		phandle-array-foos = < &{/ctrl-0-1} 0 &{/ctrl-0-2} >;
+		phandle-array-foo-names = "a", "missing", "b";
+	};
+
+	ctrl-0-1 {
+		compatible = "phandle-array-controller-0";
+		#phandle-array-foo-cells = <0>;
+	};
+
+	ctrl-0-2 {
+		compatible = "phandle-array-controller-0";
+		#phandle-array-foo-cells = <0>;
+	};
+
+	//
+	// Test <prefix>-map, via gpio-map
+	//
+
+	gpio-map {
+		source {
+			compatible = "gpio-src";
+			foo-gpios = <&{/gpio-map/connector} 3 4
+				     &{/gpio-map/connector} 1 2>;
+		};
+		connector {
+			#gpio-cells = <2>;
+			// Use different data lengths for source and
+			// destination to make it a bit trickier
+			gpio-map = <1 2 &{/gpio-map/destination} 5
+				    3 4 &{/gpio-map/destination} 6>;
+		};
+		destination {
+			compatible = "gpio-dst";
+			gpio-controller;
+			#gpio-cells = <1>;
+		};
+	};
+
+	//
+	// For testing Node.props with 'default:' values in binding
+	//
+
+	defaults {
+		compatible = "defaults";
+		// Should override the 'default:' in the binding
+		default-not-used = <234>;
+	};
+
+	//
+	// For testing 'enum:'
+	//
+
+	enums {
+		compatible = "enums";
+		int-enum = <1>;
+		string-enum = "foo_bar";
+		tokenizable-enum = "123 is ok";
+		tokenizable-lower-enum = "bar";
+		no-enum = "baz";
+	};
+
+	//
+	// For testing 'bus:' and 'on-bus:'
+	//
+
+	buses {
+		// The 'node' nodes below will map to different bindings since
+		// they appear on different buses
+		foo-bus {
+			compatible = "foo-bus";
+			node1 {
+				compatible = "on-bus", "on-any-bus";
+				nested {
+					compatible = "on-bus";
+				};
+			};
+			node2 {
+				compatible = "on-any-bus", "on-bus";
+			};
+		};
+		bar-bus {
+			compatible = "bar-bus";
+			node {
+				compatible = "on-bus";
+			};
+		};
+		no-bus-node {
+			compatible = "on-any-bus";
+		};
+	};
+
+	//
+	// Node with 'child-binding:' in binding (along with a recursive
+	// 'child-binding:')
+	//
+
+	child-binding {
+		compatible = "top-binding";
+		child-1 {
+			child-prop = <1>;
+			grandchild {
+				grandchild-prop = <2>;
+			};
+		};
+		child-2 {
+			child-prop = <3>;
+		};
+	};
+
+	//
+	// zephyr,user binding inference
+	//
+
+	zephyr,user {
+		boolean;
+		bytes = [81 82 83];
+		number = <23>;
+		numbers = <1>, <2>, <3>;
+		string = "text";
+		strings = "a", "b", "c";
+		handle = <&{/ctrl-1}>;
+		phandles = <&{/ctrl-1}>, <&{/ctrl-2}>;
+		phandle-array-foos = <&{/ctrl-2} 1 2>;
+	};
+
+	//
+	// For testing that neither 'include: [foo.yaml, bar.yaml]' nor
+	// 'include: [bar.yaml, foo.yaml]' causes errors when one of the files
+	// has 'required: true' and the other 'required: false'
+	//
+
+	include-order {
+		node-1 {
+			compatible = "order-1";
+			foo = <1>;
+		};
+		node-2 {
+			compatible = "order-2";
+			foo = <2>;
+		};
+	};
+
+	//
+	// For testing deprecated property
+	//
+	test-deprecated {
+		compatible = "test-deprecated";
+		oldprop = <4>;	/* deprecated property */
+		curprop = <5>;
+	};
+
+
+	//
+	// For testing deprecated features
+	//
+
+	deprecated {
+		compatible = "deprecated";
+		required = <1>;
+		required-2 = <2>;
+		#foo-cells = <2>;
+		sub-node {
+			foos = <&{/deprecated} 1 2>;
+		};
+	};
+};

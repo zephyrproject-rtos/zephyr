@@ -1,0 +1,36 @@
+# STM32 IWDG configuration
+
+# Copyright (c) 2016 Open-RnD Sp. z o.o.
+# Copyright (c) 2017 RnDity Sp. z o.o.
+# Copyright (c) 2019 Centaur Analytics, Inc
+# SPDX-License-Identifier: Apache-2.0
+
+config IWDG_STM32
+	bool "Independent Watchdog (IWDG) Driver for STM32 family of MCUs"
+	default y
+	depends on DT_HAS_ST_STM32_WATCHDOG_ENABLED
+	help
+	  Enable IWDG driver for STM32 line of MCUs
+
+config IWDG_STM32_INITIAL_TIMEOUT
+	int "Value for IWDG timeout in ms"
+	depends on IWDG_STM32
+	default 100
+	range 1 26214
+	help
+	  Set initial timeout value for IWDG in ms if enabled at boot.
+
+	  The min timeout supported is 1 ms. The max timeout depends on the
+	  MCU's LSI clock frequency and can be calculated with:
+
+	    max. prescaler value (256) * max. reload ticks (4096) / LSI freq.
+
+	  Limiting maximum timeout to a safe value of 26214 ms here, which was
+	  calculated for highest LSI frequency among STM32 MCUs of 40 kHz.
+
+config WWDG_STM32
+	bool "System Window Watchdog (WWDG) Driver for STM32 family of MCUs"
+	default y
+	depends on DT_HAS_ST_STM32_WINDOW_WATCHDOG_ENABLED
+	help
+	  Enable WWDG driver for STM32 line of MCUs

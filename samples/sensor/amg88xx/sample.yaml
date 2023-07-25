@@ -1,0 +1,27 @@
+common:
+  tags: sensors
+sample:
+  description: AMG88XX sensor sample
+  name: AMG88XX sample
+tests:
+  sample.sensor.amg88xx.amg88xx_grid_eye_eval_shield:
+    build_only: true
+    depends_on: arduino_i2c arduino_gpio
+    platform_allow: pan1780_evb pan1770_evb pan1781_evb pan1782_evb
+    integration_platforms:
+      - pan1780_evb
+    extra_args: SHIELD=amg88xx_grid_eye_eval_shield
+    extra_configs:
+      - CONFIG_AMG88XX_TRIGGER_GLOBAL_THREAD=y
+  sample.sensor.amg88xx.amg88xx_eval_kit:
+    build_only: true
+    depends_on:
+      - arduino_i2c
+      - arduino_gpio
+    platform_exclude:
+      - pan1781_evb
+      - pan1782_evb
+    tags: sensors
+    extra_args: SHIELD=amg88xx_eval_kit
+    extra_configs:
+      - CONFIG_AMG88XX_TRIGGER_GLOBAL_THREAD=y

@@ -1,0 +1,52 @@
+/*
+ * Copyright (c) 2022 Schlumberger
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/dma/infineon-xmc4xxx-dma.h>
+
+&spi_mosi_p1_5_u0c0 {
+	drive-strength = "strong-soft-edge";
+	hwctrl = "disabled";
+};
+
+&spi_miso_p1_4_u0c0 {
+	drive-strength = "strong-soft-edge";
+	hwctrl = "disabled";
+};
+
+&spi_sclk_p0_8_u0c0 {
+	drive-strength = "strong-soft-edge";
+	hwctrl = "disabled";
+};
+
+&usic0ch0 {
+	compatible = "infineon,xmc4xxx-spi";
+	pinctrl-0 = <&spi_mosi_p1_5_u0c0 &spi_miso_p1_4_u0c0 &spi_sclk_p0_8_u0c0>;
+	pinctrl-names = "default";
+	miso-src = "DX0B";
+	interrupts = <84 1 85 1>;
+	interrupt-names = "tx", "rx";
+	dmas = <&dma0 1 0 XMC4XXX_SET_CONFIG(0,10)>, <&dma0 2 0 XMC4XXX_SET_CONFIG(2,11)>;
+	dma-names = "tx", "rx";
+
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
+
+	slow@0 {
+		compatible = "test-spi-loopback-slow";
+		reg = <0>;
+		spi-max-frequency = <500000>;
+	};
+	fast@0 {
+		compatible = "test-spi-loopback-fast";
+		reg = <0>;
+		spi-max-frequency = <16000000>;
+	};
+};
+
+&dma0 {
+	status = "okay";
+};

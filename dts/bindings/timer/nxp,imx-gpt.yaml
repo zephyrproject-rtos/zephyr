@@ -1,0 +1,20 @@
+# Copyright (c) 2018 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP MCUX General-Purpose Timer (GPT)
+
+compatible: "nxp,imx-gpt"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  gptfreq:
+    type: int
+    required: true
+    description: gpt frequences

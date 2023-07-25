@@ -1,0 +1,48 @@
+# STMicroelectronics STM32G0 MCU line
+
+# Copyright (c) 2019 Philippe Retornaz <philippe@shapescale.com>
+# Copyright (c) 2019 STMicroelectronics
+# Copyright (c) 2020 Thomas Stranger
+# SPDX-License-Identifier: Apache-2.0
+
+choice
+	prompt "STM32G0x MCU Selection"
+	depends on SOC_SERIES_STM32G0X
+
+config SOC_STM32G030XX
+	bool "STM32G030XX"
+
+config SOC_STM32G031XX
+	bool "STM32G031XX"
+
+config SOC_STM32G041XX
+	bool "STM32G041XX"
+
+config SOC_STM32G050XX
+	bool "STM32G050XX"
+
+config SOC_STM32G051XX
+	bool "STM32G051XX"
+
+config SOC_STM32G061XX
+	bool "STM32G061XX"
+
+config SOC_STM32G070XX
+	bool "STM32G070XX"
+
+config SOC_STM32G071XX
+	bool "STM32G071XX"
+
+config SOC_STM32G081XX
+	bool "STM32G081XX"
+
+config SOC_STM32G0B0XX
+	bool "STM32G0B0XX"
+
+config SOC_STM32G0B1XX
+	bool "STM32G0B1XX"
+
+config SOC_STM32G0C1XX
+	bool "STM32G0C1XX"
+
+endchoice

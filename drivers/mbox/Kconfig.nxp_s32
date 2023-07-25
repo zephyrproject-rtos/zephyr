@@ -1,0 +1,10 @@
+# Copyright 2022 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config MBOX_NXP_S32_MRU
+	bool "NXP S32 Message Receive Unit (MRU) driver"
+	default y
+	depends on DT_HAS_NXP_S32_MRU_ENABLED
+	select NOCACHE_MEMORY
+	help
+	  Driver for NXP S32 Message Receive Unit (MRU).

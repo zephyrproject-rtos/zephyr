@@ -1,0 +1,7 @@
+tests:
+  libraries.mem_blocks:
+    tags:
+      - heap
+      - mem_blocks
+    integration_platforms:
+      - native_posix

@@ -1,0 +1,29 @@
+sample:
+  name: DS18B20 Temperature Sensor sample
+common:
+  harness: console
+  tags: sensors
+tests:
+  sample.sensor.ds18b20.w1_serial:
+    platform_allow:
+      - nucleo_g0b1re
+      - nrf52840dk_nrf52840
+    integration_platforms:
+      - nucleo_g0b1re
+      - nrf52840dk_nrf52840
+    harness_config:
+      type: one_line
+      regex:
+        - "Temp: (.*)"
+      fixture: fixture_w1_serial_ds18b20
+  sample.sensor.ds18b20.w1_arduino_serial:
+    platform_allow: nucleo_g071rb
+    depends_on: arduino_serial
+    integration_platforms:
+      - nucleo_g071rb
+    extra_args: "DTC_OVERLAY_FILE=arduino_serial.overlay"
+    harness_config:
+      type: one_line
+      regex:
+        - "Temp: (.*)"
+      fixture: fixture_w1_arduino_serial_ds18b20

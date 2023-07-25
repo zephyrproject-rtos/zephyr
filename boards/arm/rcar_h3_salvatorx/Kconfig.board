@@ -1,0 +1,6 @@
+# Copyright (c) 2022 BayLibre, SAS
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_RCAR_H3_SALVATORX_CR7
+	bool "Cortex-R7 for Renesas H3 Salvator-X"
+	depends on SOC_R8A77951

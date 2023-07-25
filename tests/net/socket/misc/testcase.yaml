@@ -1,0 +1,15 @@
+common:
+  depends_on: netif
+  filter: TOOLCHAIN_HAS_NEWLIB == 1
+  min_ram: 21
+  tags:
+    - net
+    - socket
+    - userspace
+tests:
+  net.socket.misc:
+    extra_configs:
+      - CONFIG_TEST_USERSPACE=n
+  net.socket.misc.userspace:
+    extra_configs:
+      - CONFIG_TEST_USERSPACE=y

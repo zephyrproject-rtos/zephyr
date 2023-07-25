@@ -1,0 +1,8 @@
+# STM32 Nucleo-64 development board with STM32F091RC MCU configuration
+
+# Copyright (c) 2017 Bobby Noelte
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_NUCLEO_F091RC
+	bool "NUCLEO-64 F091RC Development Board"
+	depends on SOC_STM32F091XC

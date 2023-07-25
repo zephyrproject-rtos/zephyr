@@ -1,0 +1,33 @@
+# Atmel SAM4E MCU series configuration options
+
+# Copyright (c) 2017 Justin Watson
+# Copyright (c) 2018 Vincent van der Locht
+# Copyright (c) 2019 Gerson Fernando Budke
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_SAM4E
+
+config SOC_SERIES
+	default "sam4e"
+
+config SOC_PART_NUMBER
+	default "sam4e16e" if SOC_PART_NUMBER_SAM4E16E
+	default "sam4e16c" if SOC_PART_NUMBER_SAM4E16C
+	default "sam4e8e" if SOC_PART_NUMBER_SAM4E8E
+	default "sam4e8c" if SOC_PART_NUMBER_SAM4E8C
+
+#
+# SAM4E family has total 47 peripherals capable of
+# generating interrupts.
+#
+config NUM_IRQS
+	default 47
+
+if NETWORKING
+
+config NET_L2_ETHERNET
+	default y
+
+endif # NETWORKING
+
+endif # SOC_SERIES_SAM4E

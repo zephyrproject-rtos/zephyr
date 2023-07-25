@@ -1,0 +1,11 @@
+# Atmel SAM0 TCC as PWM configuration
+
+# Copyright (c) 2020 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+config PWM_SAM0_TCC
+	bool "Atmel SAM0 MCU Family TCC PWM Driver"
+	default y
+	depends on DT_HAS_ATMEL_SAM0_TCC_PWM_ENABLED
+	help
+	  Enable PWM driver for Atmel SAM0 MCUs using the TCC timer/counter.

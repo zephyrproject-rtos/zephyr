@@ -1,0 +1,8 @@
+# B-G474E-DPOW1 Discovery board configuration
+
+# Copyright 2022 The Chromium OS Authors
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_B_G474E_DPOW1
+	bool "B-G474E-DPOW1 Discovery Board"
+	depends on SOC_STM32G474XX

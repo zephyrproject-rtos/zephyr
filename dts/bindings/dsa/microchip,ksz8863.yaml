@@ -1,0 +1,9 @@
+# Copyright (c) 2021 IP-Logix Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    KSZ8863 ethernet switch
+
+compatible: "microchip,ksz8863"
+
+include: [microchip_dsa.yaml]

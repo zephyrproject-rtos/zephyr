@@ -1,0 +1,255 @@
+# Copyright (c) 2016 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config DNS_RESOLVER
+	bool "DNS resolver"
+	depends on NET_NATIVE
+	select CRC
+	help
+	  This option enables the DNS client side support for Zephyr
+
+if DNS_RESOLVER
+
+config MDNS_RESOLVER
+	bool "MDNS support"
+	help
+	  This option enables multicast DNS client side support.
+	  See RFC 6762 for details.
+
+config LLMNR_RESOLVER
+	bool "LLMNR support"
+	help
+	  This option enables link local multicast name resolution client side
+	  support. See RFC 4795 for details. LLMNR is typically used by Windows
+	  hosts. If you enable this option, then the DNS requests are ONLY sent
+	  to LLMNR well known multicast address 224.0.0.252:5355 or
+	  [ff02::1:3]:5355 and other DNS server addresses are ignored.
+
+
+config DNS_RESOLVER_ADDITIONAL_BUF_CTR
+	int "Additional DNS buffers"
+	default 0
+	help
+	  Number of additional buffers available for the DNS resolver.
+	  The DNS resolver requires at least one buffer. This option
+	  enables additional buffers required for multiple concurrent
+	  DNS connections.
+
+config DNS_RESOLVER_ADDITIONAL_QUERIES
+	int "Additional DNS queries"
+	range 0 2
+	default 1
+	help
+	  Number of additional DNS queries that the DNS resolver may
+	  generate when the RR ANSWER only contains CNAME(s).
+	  The maximum value of this variable is constrained to avoid
+	  'alias loops'.
+
+config DNS_RESOLVER_AI_MAX_ENTRIES
+	int "Maximum number of IP addresses for DNS name"
+	default 2
+	help
+	  Defines the max number of IP addresses per domain name
+	  resolution the DNS resolver can handle.
+
+
+config DNS_RESOLVER_MAX_SERVERS
+	int "Number of DNS server addresses"
+	range 1 NET_MAX_CONTEXTS
+	default 1
+	help
+	  Max number of DNS servers that we can connect to. Normally one
+	  DNS server is enough. Each connection to DNS server will use one
+	  network context.
+
+menuconfig DNS_SERVER_IP_ADDRESSES
+	bool "Set DNS server IP addresses"
+	help
+	  Allow DNS IP addresses to be set in config file for
+	  networking applications.
+
+if DNS_SERVER_IP_ADDRESSES
+
+config DNS_SERVER1
+	string "DNS server 1"
+	help
+	  DNS server IP address 1. The address can be either IPv4 or IPv6
+	  address. An optional port number can be given.
+	  Following syntax is supported:
+	  192.0.2.1
+	  192.0.2.1:5353
+	  2001:db8::1
+	  [2001:db8::1]:5353
+	  It is not mandatory to use this Kconfig option at all.
+	  The one calling dns_resolve_init() can use this option or not
+	  to populate the server list. If the DNS server addresses are
+	  set here, then we automatically create default DNS context
+	  for the user.
+
+config DNS_SERVER2
+	string "DNS server 2"
+	help
+	  See help in "DNS server 1" option.
+
+config DNS_SERVER3
+	string "DNS server 3"
+	help
+	  See help in "DNS server 1" option.
+
+config DNS_SERVER4
+	string "DNS server 4"
+	help
+	  See help in "DNS server 1" option.
+
+config DNS_SERVER5
+	string "DNS server 5"
+	help
+	  See help in "DNS server 1" option.
+
+endif # DNS_SERVER_IP_ADDRESSES
+
+config DNS_NUM_CONCUR_QUERIES
+	int "Number of simultaneous DNS queries per one DNS context"
+	default 1
+	help
+	  This defines how many concurrent DNS queries can be generated using
+	  same DNS context. Normally 1 is a good default value.
+
+module = DNS_RESOLVER
+module-dep = NET_LOG
+module-str = Log level for DNS resolver
+module-help = Enables DNS resolver code to output debug messages.
+source "subsys/net/Kconfig.template.log_config.net"
+
+endif # DNS_RESOLVER
+
+config MDNS_RESPONDER
+	bool "mDNS responder"
+	select NET_IPV4_IGMP if NET_IPV4
+	select NET_IPV6_MLD if NET_IPV6
+	select NET_MGMT
+	select NET_MGMT_EVENT
+	depends on NET_HOSTNAME_ENABLE
+	help
+	  This option enables the mDNS responder support for Zephyr.
+	  It will listen well-known address ff02::fb and 224.0.0.251.
+	  Currently this only returns IP address information.
+	  You must set CONFIG_NET_HOSTNAME to some meaningful value and
+	  then mDNS will start to respond to <hostname>.local mDNS queries.
+	  See RFC 6762 for more details about mDNS.
+
+if MDNS_RESPONDER
+
+config MDNS_RESPONDER_TTL
+	int "Time-to-Live of returned DNS name"
+	default 600
+	help
+	  DNS answers will use the TTL (in seconds).
+
+config MDNS_RESPONDER_INIT_PRIO
+	int "Startup priority for the mDNS responder init"
+	default 96
+	help
+	  Note that if NET_CONFIG_AUTO_INIT is enabled, then this value
+	  should be bigger than its value.
+
+config MDNS_RESPONDER_DNS_SD
+	bool "DNS Service Discovery via mDNS"
+	default y
+	depends on DNS_SD
+	help
+	  Selecting this option ensures that the MDNS Responder
+	  processes PTR, SRV, and TXT records according to RFC 6763.
+	  By doing so, Zephyr network services are discoverable
+	  using e.g. 'avahi-browse -t -r _greybus._tcp'.
+
+if MDNS_RESPONDER_DNS_SD
+config MDNS_RESPONDER_DNS_SD_SERVICE_TYPE_ENUMERATION
+	bool "DNS SD Service Type Enumeration"
+	default y
+	help
+	  Selecting this option ensures that the MDNS Responder
+	  performs DNS-SD Service Type Enumeration according to RFC 6763,
+	  Chapter 9. By doing so, Zephyr network services are discoverable
+	  using e.g. 'avahi-browse -t -r _services._dns-sd._udp.local'.
+endif # MDNS_RESPONDER_DNS_SD
+
+module = MDNS_RESPONDER
+module-dep = NET_LOG
+module-str = Log level for mDNS responder
+module-help = Enables mDNS responder code to output debug messages.
+source "subsys/net/Kconfig.template.log_config.net"
+
+config MDNS_RESOLVER_ADDITIONAL_BUF_CTR
+	int "Additional DNS buffers"
+	default 0
+	help
+	  Number of additional buffers available for the mDNS responder.
+
+endif # MDNS_RESPONDER
+
+config LLMNR_RESPONDER
+	bool "LLMNR responder"
+	select NET_IPV4_IGMP if NET_IPV4
+	select NET_IPV6_MLD if NET_IPV6
+	select NET_MGMT
+	select NET_MGMT_EVENT
+	depends on NET_HOSTNAME_ENABLE
+	help
+	  This option enables the LLMNR responder support for Zephyr.
+	  It will listen well-known address ff02::1:3 and 224.0.0.252.
+	  Currently this only returns IP address information.
+	  You must set CONFIG_NET_HOSTNAME to some meaningful value and
+	  then LLMNR will start to respond to <hostname> LLMNR queries.
+	  Note that LLMNR queries should only contain single-label names
+	  so there should be NO dot (".") in the name (RFC 4795 ch 3).
+	  Current implementation does not support TCP.
+	  See RFC 4795 for more details about LLMNR.
+
+if LLMNR_RESPONDER
+
+config LLMNR_RESPONDER_TTL
+	int "Time-to-Live of returned DNS name"
+	default 30
+	help
+	  DNS answers will use the TTL (in seconds). A default value is 30
+	  seconds as recommended by RFC 4795 chapter 2.8
+
+config LLMNR_RESPONDER_INIT_PRIO
+	int "Startup priority for the LLMNR responder init"
+	default 96
+	help
+	  Note that if NET_CONFIG_AUTO_INIT is enabled, then this value
+	  should be bigger than its value.
+
+module = LLMNR_RESPONDER
+module-dep = NET_LOG
+module-str = Log level for LLMNR responder
+module-help = Enables LLMNR responder code to output debug messages.
+source "subsys/net/Kconfig.template.log_config.net"
+
+config LLMNR_RESOLVER_ADDITIONAL_BUF_CTR
+	int "Additional DNS buffers"
+	default 0
+	help
+	  Number of additional buffers available for the LLMNR responder.
+
+endif # LLMNR_RESPONDER
+
+config DNS_SD
+	bool "DNS Service Discovery"
+	help
+	  This option enables DNS Service Discovery for Zephyr. It can
+	  be enabled for virtually any network service with only a few
+	  lines of code and works for both Unicast and Multicast DNS.
+	  See RFC 6763 for more details about DNS-SD.
+
+if DNS_SD
+
+module = DNS_SD
+module-dep = NET_LOG
+module-str = Log level for DNS-SD
+module-help = Enables DNS Service Discovery code to output debug messages.
+source "subsys/net/Kconfig.template.log_config.net"
+
+endif # DNS_SD

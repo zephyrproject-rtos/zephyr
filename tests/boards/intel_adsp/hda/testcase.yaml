@@ -1,0 +1,15 @@
+common:
+  platform_allow: intel_adsp_cavs25
+  integration_platforms:
+    - intel_adsp_cavs25
+tests:
+  boards.intel_adsp.hda:
+    tags:
+      - hda
+      - dma
+  boards.intel_adsp.hda.1cpu:
+    tags:
+      - hda
+      - dma
+    extra_configs:
+      - CONFIG_MP_MAX_NUM_CPUS=1

@@ -1,0 +1,31 @@
+# Copyright (c) 2019 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig WEBSOCKET_CLIENT
+	bool "Websocket client support [EXPERIMENTAL]"
+	select NET_SOCKETS
+	select HTTP_PARSER
+	select HTTP_PARSER_URL
+	select HTTP_CLIENT
+	select MBEDTLS
+	select BASE64
+	select MBEDTLS_MAC_SHA1_ENABLED if MBEDTLS_BUILTIN
+	select EXPERIMENTAL
+	help
+	  Enable Websocket client library.
+
+if WEBSOCKET_CLIENT
+
+config WEBSOCKET_MAX_CONTEXTS
+	int "Max number of websockets to allocate"
+	default 1
+	help
+	  How many Websockets can be created in the system.
+
+module = NET_WEBSOCKET
+module-dep = NET_LOG
+module-str = Log level for Websocket
+module-help = Enable debug message of Websocket client library.
+source "subsys/net/Kconfig.template.log_config.net"
+
+endif

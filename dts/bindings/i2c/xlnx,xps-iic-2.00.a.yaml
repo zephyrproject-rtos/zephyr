@@ -1,0 +1,15 @@
+# Copyright (c) 2023, Calian
+# SPDX-License-Identifier: Apache-2.0
+
+description: Xilinx AXI IIC Bus Interface
+
+compatible: "xlnx,xps-iic-2.00.a"
+
+include: [i2c-controller.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true

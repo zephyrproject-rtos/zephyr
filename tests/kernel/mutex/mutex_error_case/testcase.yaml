@@ -1,0 +1,8 @@
+tests:
+  kernel.mutex.error:
+    filter: CONFIG_ARCH_HAS_USERSPACE
+    tags:
+      - kernel
+      - userspace
+      - mutex
+    ignore_faults: true

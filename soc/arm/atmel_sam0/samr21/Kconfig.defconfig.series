@@ -1,0 +1,26 @@
+# Atmel SAMR21 MCU series configuration options
+
+# Copyright (c) 2019 Benjamin Valentin
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_SAMR21
+
+config SOC_SERIES
+	default "samr21"
+
+config SOC_PART_NUMBER
+	default "samr21e16a" if SOC_PART_NUMBER_SAMR21E16A
+	default "samr21e17a" if SOC_PART_NUMBER_SAMR21E17A
+	default "samr21e18a" if SOC_PART_NUMBER_SAMR21E18A
+	default "samr21e19a" if SOC_PART_NUMBER_SAMR21E19A
+	default "samr21g16a" if SOC_PART_NUMBER_SAMR21G16A
+	default "samr21g17a" if SOC_PART_NUMBER_SAMR21G17A
+	default "samr21g18a" if SOC_PART_NUMBER_SAMR21G18A
+
+config NUM_IRQS
+	default 28
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 48000000
+
+endif # SOC_SERIES_SAMR21

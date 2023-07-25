@@ -1,0 +1,14 @@
+# Actinius Icarus SoM DK board configuration
+
+# Copyright (c) 2022 Actinius
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_NRF9160_SICA
+
+config BOARD_ACTINIUS_ICARUS_SOM_DK
+	bool "Actinius Icarus SoM DK"
+
+config BOARD_ACTINIUS_ICARUS_SOM_DK_NS
+	bool "Actinius Icarus SoM DK Non-Secure"
+
+endif # SOC_NRF9160_SICA

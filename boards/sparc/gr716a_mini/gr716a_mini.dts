@@ -1,0 +1,23 @@
+/*
+ * Copyright (c) 2019-2020 Cobham Gaisler AB
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <gaisler/gr716a.dtsi>
+
+/ {
+	model = "GR716-MINI Development Board";
+	compatible = "gaisler,gr716a-mini";
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,sram = &dram;
+	};
+};
+
+&uart0 {
+	status = "okay";
+};

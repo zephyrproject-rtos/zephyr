@@ -1,0 +1,57 @@
+# Copyright Runtime.io 2018. All rights reserved.
+# Copyright Nordic Semiconductor ASA 2020-2022. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+# The Kconfig file is dedicated to Shell management group of
+# of MCUmgr subsystem and provides Kconfig options to configure
+# group commands behaviour and other aspects.
+#
+# Options defined in this file should be prefixed:
+#  MCUMGR_GRP_SHELL_ -- general group options;
+#
+# When adding Kconfig options, that control the same feature,
+# try to group them together by the same stem after prefix.
+
+menuconfig MCUMGR_GRP_SHELL
+	bool "Mcumgr handlers for shell management"
+	depends on SHELL
+	depends on SHELL_BACKEND_DUMMY
+	select MCUMGR_SMP_CBOR_MIN_DECODING_LEVEL_2
+	help
+	  Enables MCUmgr handlers for shell management. The handler will utilize
+	  the dummy backend to execute shell commands and capture the output to
+	  an internal memory buffer. This way, there is no interaction with
+	  physical interfaces outside of the scope of the user.
+	  It is possible to use additional shell backends in coordination
+	  with this handler and they will not interfere.
+	  The MCUMGR_GRP_SHELL_BACKEND_DUMMY_BUF_SIZE will affect how many characters
+	  will be returned from command output, if your output gets cut, then
+	  increase the value. Remember to set MCUMGR_TRANSPORT_NETBUF_SIZE accordingly.
+	  Note that maximum length of shell command accepted is regulated by
+	  the CONFIG_SHELL_CMD_BUFF_SIZE, and a buffer for a command is allocated
+	  on a stack, by the MCUmgr, so enabling MCUMGR_GRP_SHELL and
+	  changes to the CONFIG_SHELL_CMD_BUFF_SIZE may increase stack size
+	  requirements.
+
+if MCUMGR_GRP_SHELL
+
+# Show dummy shell buffer size here, will show help text of original prompt so
+# nothing extra is needed here, nor a default value.
+config SHELL_BACKEND_DUMMY_BUF_SIZE
+	int "Shell output buffer size (Size of dummy buffer size)"
+
+config MCUMGR_GRP_SHELL_LEGACY_RC_RETURN_CODE
+	bool "Legacy behaviour: Use rc field for shell function return code"
+	help
+	  Enabling this options brings back legacy behaviour where the shell
+	  return code is returned, incorrectly, in the rc field that was
+	  originally designated for returning SMP processing errors. When
+	  disabled, there will be an additional ret field which contains the
+	  shell command exit code, and rc will be used for SMP processing
+	  error codes.
+
+module = MCUMGR_GRP_SHELL
+module-str = mcumgr_grp_shell
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # MCUMGR_GRP_SHELL

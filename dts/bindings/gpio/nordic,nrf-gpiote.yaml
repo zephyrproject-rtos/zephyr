@@ -1,0 +1,15 @@
+# Copyright (c) 2018, marc-cpdesign
+# SPDX-License-Identifier: Apache-2.0
+
+description: NRF5 GPIOTE node
+
+compatible: "nordic,nrf-gpiote"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true

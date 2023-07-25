@@ -1,0 +1,80 @@
+# Copyright 2018-2023, NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP FlexSPI controller
+
+compatible: "nxp,imx-flexspi"
+
+include: [spi-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  ahb-bufferable:
+    type: boolean
+    description: |
+      Enable AHB bufferable write access by setting register field
+      AHBCR[BUFFERABLEEN].
+
+  ahb-cacheable:
+    type: boolean
+    description: |
+      Enable AHB cacheable read access by setting register field
+      AHBCR[CACHEABLEEN].
+
+  ahb-prefetch:
+    type: boolean
+    description: |
+      Enable AHB read prefetch by setting register field AHBCR[PREFETCHEN].
+
+  ahb-read-addr-opt:
+    type: boolean
+    description: |
+      Remove burst start address alignment limitation by setting register
+      field AHBCR[READADDROPT].
+
+  combination-mode:
+    type: boolean
+    description: |
+      Combine port A and port B data pins to support octal mode access by
+      setting register field MCR0[COMBINATIONEN].
+
+  sck-differential-clock:
+    type: boolean
+    description: |
+      Enable/disable SCKB pad use as SCKA differential clock output,
+      when enabled, Port B flash access is not available.
+
+  rx-clock-source:
+    type: int
+    default: 0
+    enum:
+      - 0 # Loopback internally
+      - 1 # Loopback from DQS pad
+      - 2 # Loopback from SCK pad
+      - 3 # External input from DQS pad
+    description: |
+      Source clock for flash read. See the RXCLKSRC field in register MCR0.
+      The default corresponds to the reset value of the register field.
+
+  rx-buffer-config:
+    type: array
+    description: |
+      Array of tuples to configure AHB RX buffers. Format is the following:
+      <prefetch priority master_id buf_size>. Pass multiple tuples to configure
+      multiple RX buffers (up to maximum supported by SOC).
+      The tuple fields correspond to the following register bitfields:
+      prefetch: AHBRXBUFxCRx[PREFETCH]
+      priority: AHBRXBUFxCRx[PRIORITY]
+      master_id: AHBRXBUFxCRx[MSTRID]
+      buf_size: AHBRXBUFxCRx[BUFSZ]
+
+
+child-binding:
+  description: NXP FlexSPI port
+
+  include: nxp,imx-flexspi-device.yaml

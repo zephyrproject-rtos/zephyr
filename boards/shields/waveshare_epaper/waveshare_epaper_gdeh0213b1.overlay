@@ -1,0 +1,56 @@
+/*
+ * Copyright (c) 2019, PHYTEC Messtechnik GmbH
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "waveshare_epaper_common.dtsi"
+
+/ {
+	chosen {
+		zephyr,display = &ssd16xx_waveshare_epaper_gdeh0213b1;
+	};
+};
+
+&arduino_spi {
+	ssd16xx_waveshare_epaper_gdeh0213b1: ssd16xxfb@0 {
+		compatible = "gooddisplay,gdeh0213b1", "solomon,ssd1673";
+		spi-max-frequency = <4000000>;
+		reg = <0>;
+		width = <250>;
+		height = <120>;
+		dc-gpios = <&arduino_header 15 GPIO_ACTIVE_LOW>;	/* D9 */
+		reset-gpios = <&arduino_header 14 GPIO_ACTIVE_LOW>;	/* D8 */
+		busy-gpios = <&arduino_header 13 GPIO_ACTIVE_HIGH>;	/* D7 */
+
+		full {
+			gdv = [10 0a];
+			sdv = [19];
+			vcom = <0xa8>;
+			border-waveform = <0x71>;
+			dummy-line = <0x1a>;
+			gate-line-width = <0x08>;
+			lut = [
+				22 55 AA 55 AA 55 AA 11
+				00 00 00 00 00 00 00 00
+				1E 1E 1E 1E 1E 1E 1E 1E
+				01 00 00 00 00
+			];
+		};
+
+		partial {
+			gdv = [10 0a];
+			sdv = [19];
+			vcom = <0xa8>;
+			border-waveform = <0x71>;
+			dummy-line = <0x1a>;
+			gate-line-width = <0x08>;
+			lut = [
+				18 00 00 00 00 00 00 00
+				00 00 00 00 00 00 00 00
+				0F 01 00 00 00 00 00 00
+				00 00 00 00 00
+			];
+		};
+	};
+};

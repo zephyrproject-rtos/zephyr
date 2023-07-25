@@ -1,0 +1,36 @@
+# SPDX-License-Identifier: Apache-2.0
+
+choice "$(module)_LOG_LEVEL_CHOICE"
+	prompt "Max compiled-in log level for $(module-str)"
+	default $(module)_LOG_LEVEL_DEFAULT
+	depends on LOG
+
+config $(module)_LOG_LEVEL_OFF
+	bool "Off"
+
+config $(module)_LOG_LEVEL_ERR
+	bool "Error"
+
+config $(module)_LOG_LEVEL_WRN
+	bool "Warning"
+
+config $(module)_LOG_LEVEL_INF
+	bool "Info"
+
+config $(module)_LOG_LEVEL_DBG
+	bool "Debug"
+
+config $(module)_LOG_LEVEL_DEFAULT
+	bool "Default"
+
+endchoice
+
+config $(module)_LOG_LEVEL
+	int
+	depends on LOG
+	default 0 if $(module)_LOG_LEVEL_OFF
+	default 1 if $(module)_LOG_LEVEL_ERR
+	default 2 if $(module)_LOG_LEVEL_WRN
+	default 3 if $(module)_LOG_LEVEL_INF
+	default 4 if $(module)_LOG_LEVEL_DBG
+	default LOG_DEFAULT_LEVEL if $(module)_LOG_LEVEL_DEFAULT

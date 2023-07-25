@@ -1,0 +1,34 @@
+# Non-volatile Storage NVS
+
+# Copyright (c) 2018 Laczen
+# SPDX-License-Identifier: Apache-2.0
+
+config NVS
+	bool "Non-volatile Storage"
+	select CRC
+	help
+	  Enable support of Non-volatile Storage.
+
+if NVS
+
+config NVS_LOOKUP_CACHE
+	bool "Non-volatile Storage lookup cache"
+	help
+	  Enable Non-volatile Storage cache, used to reduce the NVS data lookup
+	  time. Each cache entry holds an address of the most recent allocation
+	  table entry (ATE) for all NVS IDs that fall into that cache position.
+
+config NVS_LOOKUP_CACHE_SIZE
+	int "Non-volatile Storage lookup cache size"
+	default 128
+	range 1 65536
+	depends on NVS_LOOKUP_CACHE
+	help
+	  Number of entries in Non-volatile Storage lookup cache.
+	  It is recommended that it be a power of 2.
+
+module = NVS
+module-str = nvs
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # NVS

@@ -1,0 +1,20 @@
+# Copyright (c) 2019 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Microchip XEC RTOS timer
+
+compatible: "microchip,xec-rtos-timer"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  girqs:
+    type: array
+    required: true
+    description: Array of GIRQ numbers [8:26] and bit positions [0:31].

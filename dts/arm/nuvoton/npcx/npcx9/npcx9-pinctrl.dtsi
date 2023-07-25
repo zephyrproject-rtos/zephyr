@@ -1,0 +1,465 @@
+/*
+ * Copyright (c) 2022 Nuvoton Technology Corporation.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&pinctrl {
+
+	/* Prebuild nodes for peripheral device's characteristics (Optional) */
+	/omit-if-no-ref/ vhif_lpc_sl: devctl-vhif-3p3v-lpc {
+		dev-ctl = <0x0 2 2 0x01>;
+	};
+
+	/omit-if-no-ref/ vhif_espi_shi_sl: devctl-vhif-1p8v-espi-shi {
+		dev-ctl = <0x0 2 2 0x02>;
+	};
+
+	/omit-if-no-ref/ ext_flash_tris_off: devctl-fiu-ext-tris-off {
+		dev-ctl = <0x0 6 1 0x00>;
+	};
+
+	/omit-if-no-ref/ ext_flash_tris_on: devctl-fiu-ext-tris-on {
+		dev-ctl = <0x0 6 1 0x01>;
+	};
+
+	/* Prebuild nodes for peripheral device's pin-muxing and pad properties */
+	/* Flash Interface Unit (FIU) */
+	/omit-if-no-ref/ fiu_ext_io0_io1_clk_cs_gpa4_96_a2_a0: periph-fiu-ext {
+		dev-ctl = <0x6 1 1 0x00>; /* Select to external flash */
+		pinmux = <&alt0_gpio_no_fpip>;
+	};
+
+	/omit-if-no-ref/ ext_flash_cs1_gpa6: periph-ext-spi-flash-cs1 {
+		pinmux = <&alt0_f_spi_cs1>;
+	};
+
+	/omit-if-no-ref/ int_flash_sl: periph-fiu-int {
+		dev-ctl = <0x6 1 1 0x01>; /* Select to internal flash */
+		/* No need for pin-muxing */
+	};
+
+	/omit-if-no-ref/ fiu_ext_quad_io2_io3_gp93_a7: periph-fiu-ext-quad {
+		pinmux = <&alt0_f_spi_quad>;
+	};
+
+	/* Host peripheral interfaces */
+	/omit-if-no-ref/ espi_lpc_gp46_47_51_52_53_54_55_57: periph-lpc-espi {
+		pinmux = <&alt1_no_lpc_espi>;
+	};
+
+	/* I2C peripheral interfaces */
+	/omit-if-no-ref/ i2c0_0_sda_scl_gpb4_b5: periph-i2c0-0 {
+		pinmux = <&alt2_i2c0_0_sl>;
+		periph-pupd = <0x00 0>;
+	};
+
+	/omit-if-no-ref/ i2c1_0_sda_scl_gp87_90: periph-i2c1-0 {
+		pinmux = <&alt2_i2c1_0_sl>;
+		periph-pupd = <0x00 2>;
+	};
+
+	/omit-if-no-ref/ i2c2_0_sda_scl_gp91_92: periph-i2c2-0 {
+		pinmux = <&alt2_i2c2_0_sl>;
+		periph-pupd = <0x00 4>;
+	};
+
+	/omit-if-no-ref/ i2c3_0_sda_scl_gpd0_d1: periph-i2c3-0 {
+		pinmux = <&alt2_i2c3_0_sl>;
+		periph-pupd = <0x00 6>;
+	};
+
+	/omit-if-no-ref/ i2c4_1_sda_scl_gpf2_f3: periph-i2c4-1 {
+		pinmux = <&alt6_i2c4_1_sl>;
+		periph-pupd = <0x01 2>;
+	};
+
+	/omit-if-no-ref/ i2c5_0_sda_scl_gp33_36: periph-i2c5-0 {
+		pinmux = <&alt2_i2c5_0_sl>;
+		periph-pupd = <0x00 5>;
+	};
+
+	/omit-if-no-ref/ i2c5_1_sda_scl_gpf4_f5: periph-i2c5-1 {
+		pinmux = <&alt6_i2c5_1_sl>;
+		periph-pupd = <0x01 1>;
+	};
+
+	/omit-if-no-ref/ i2c6_0_sda_scl_gpc1_c2: periph-i2c6-0 {
+		pinmux = <&alt2_i2c6_0_sl>;
+		periph-pupd = <0x00 3>;
+	};
+
+	/omit-if-no-ref/ i2c6_1_sda_scl_gpe3_e4: periph-i2c6-1 {
+		pinmux = <&alt6_i2c6_1_sl>;
+		periph-pupd = <0x01 0>;
+	};
+
+	/omit-if-no-ref/ i2c7_0_sda_scl_gpb2_b3: periph-i2c7-0 {
+		pinmux = <&alt2_i2c7_0_sl>;
+		periph-pupd = <0x00 1>;
+	};
+
+	/* PS2 peripheral interfaces */
+	/omit-if-no-ref/ ps2_0_dat_clk_gp67_70: periph-ps2-0 {
+		pinmux = <&alt3_ps2_0_sl>;
+	};
+
+	/omit-if-no-ref/ ps2_1_dat_clk_gp62_63: periph-ps2-1 {
+		pinmux = <&alt3_ps2_1_sl>;
+	};
+
+	/omit-if-no-ref/ ps2_2_dat_clk_gp34_37: periph-ps2-2 {
+		pinmux = <&alt3_ps2_2_sl>;
+	};
+
+	/omit-if-no-ref/ ps2_3_2_dat_clk_gpa6_a7: periph-ps2-3-2 {
+		pinmux = <&altc_ps2_3_sl2>;
+	};
+
+	/* Tachometer peripheral interfaces */
+	/omit-if-no-ref/ ta1_1_in_gp40: periph-ta1-1 {
+		pinmux = <&alt3_ta1_sl1>;
+	};
+
+	/omit-if-no-ref/ ta1_2_in_gp93: periph-ta1-2 {
+		pinmux = <&altc_ta1_sl2>;
+	};
+
+	/omit-if-no-ref/ ta2_1_in_gp73: periph-ta2-1 {
+		pinmux = <&alt3_ta2_sl1>;
+	};
+
+	/omit-if-no-ref/ ta2_2_in_gpa6: periph-ta2-2 {
+		pinmux = <&altc_ta2_sl2>;
+	};
+
+	/omit-if-no-ref/ tb1_1_in_gpa4: periph-tb1-1 {
+		pinmux = <&alt3_tb1_sl1>;
+	};
+
+	/omit-if-no-ref/ tb1_2_in_gpd3: periph-tb1-2 {
+		pinmux = <&altc_tb1_sl2>;
+	};
+
+	/omit-if-no-ref/ tb2_2_in_gpa7: periph-tb2-2 {
+		pinmux = <&altc_tb2_sl2>;
+	};
+
+	/* PWM peripheral interfaces */
+	/omit-if-no-ref/ pwm0_gpc3: periph-pwm0 {
+		pinmux = <&alt4_pwm0_sl>;
+	};
+
+	/omit-if-no-ref/ pwm1_gpc2: periph-pwm1 {
+		pinmux = <&alt4_pwm1_sl>;
+	};
+
+	/omit-if-no-ref/ pwm2_gpc4: periph-pwm2 {
+		pinmux = <&alt4_pwm2_sl>;
+	};
+
+	/omit-if-no-ref/ pwm3_gp80: periph-pwm3 {
+		pinmux = <&alt4_pwm3_sl>;
+	};
+
+	/omit-if-no-ref/ pwm4_gpb6: periph-pwm4 {
+		pinmux = <&alt4_pwm4_sl>;
+	};
+
+	/omit-if-no-ref/ pwm5_gpb7: periph-pwm5 {
+		pinmux = <&alt4_pwm5_sl>;
+	};
+
+	/omit-if-no-ref/ pwm6_gpc0: periph-pwm6 {
+		pinmux = <&alt4_pwm6_sl>;
+	};
+
+	/omit-if-no-ref/ pwm7_gp60: periph-pwm7 {
+		pinmux = <&alt4_pwm7_sl>;
+	};
+
+	/* Keyboard peripheral interfaces. */
+	/omit-if-no-ref/ ksi0_gp31: periph-kbscan-ksi0 {
+		pinmux = <&alt7_no_ksi0_sl>;
+	};
+
+	/omit-if-no-ref/ ksi1_gp30: periph-kbscan-ksi1 {
+		pinmux = <&alt7_no_ksi1_sl>;
+	};
+
+	/omit-if-no-ref/ ksi2_gp27: periph-kbscan-ksi2 {
+		pinmux = <&alt7_no_ksi2_sl>;
+	};
+
+	/omit-if-no-ref/ ksi3_gp26: periph-kbscan-ksi3 {
+		pinmux = <&alt7_no_ksi3_sl>;
+	};
+
+	/omit-if-no-ref/ ksi4_gp25: periph-kbscan-ksi4 {
+		pinmux = <&alt7_no_ksi4_sl>;
+	};
+
+	/omit-if-no-ref/ ksi5_gp24: periph-kbscan-ksi5 {
+		pinmux = <&alt7_no_ksi5_sl>;
+	};
+
+	/omit-if-no-ref/ ksi6_gp23: periph-kbscan-ksi6 {
+		pinmux = <&alt7_no_ksi6_sl>;
+	};
+
+	/omit-if-no-ref/ ksi7_gp22: periph-kbscan-ksi7 {
+		pinmux = <&alt7_no_ksi7_sl>;
+	};
+
+	/omit-if-no-ref/ kso00_gp21: periph-kbscan-kso00 {
+		pinmux = <&alt8_no_kso00_sl>;
+	};
+
+	/omit-if-no-ref/ kso01_gp20: periph-kbscan-kso01 {
+		pinmux = <&alt8_no_kso01_sl>;
+	};
+
+	/omit-if-no-ref/ kso02_gp17: periph-kbscan-kso02 {
+		pinmux = <&alt8_no_kso02_sl>;
+	};
+
+	/omit-if-no-ref/ kso03_gp16: periph-kbscan-kso03 {
+		pinmux = <&alt8_no_kso03_sl>;
+	};
+
+	/omit-if-no-ref/ kso04_gp15: periph-kbscan-kso04 {
+		pinmux = <&alt8_no_kso04_sl>;
+	};
+
+	/omit-if-no-ref/ kso05_gp14: periph-kbscan-kso05 {
+		pinmux = <&alt8_no_kso05_sl>;
+	};
+
+	/omit-if-no-ref/ kso06_gp13: periph-kbscan-kso06 {
+		pinmux = <&alt8_no_kso06_sl>;
+	};
+
+	/omit-if-no-ref/ kso07_gp12: periph-kbscan-kso07 {
+		pinmux = <&alt8_no_kso07_sl>;
+	};
+
+	/omit-if-no-ref/ kso08_gp11: periph-kbscan-kso08 {
+		pinmux = <&alt9_no_kso08_sl>;
+	};
+
+	/omit-if-no-ref/ kso09_gp10: periph-kbscan-kso09 {
+		pinmux = <&alt9_no_kso09_sl>;
+	};
+
+	/omit-if-no-ref/ kso10_gp07: periph-kbscan-kso10 {
+		pinmux = <&alt9_no_kso10_sl>;
+	};
+
+	/omit-if-no-ref/ kso11_gp06: periph-kbscan-kso11 {
+		pinmux = <&alt9_no_kso11_sl>;
+	};
+
+	/omit-if-no-ref/ kso12_gp05: periph-kbscan-kso12 {
+		pinmux = <&alt9_no_kso12_sl>;
+	};
+
+	/omit-if-no-ref/ kso13_gp04: periph-kbscan-kso13 {
+		pinmux = <&alt9_no_kso13_sl>;
+	};
+
+	/omit-if-no-ref/ kso14_gp82: periph-kbscan-kso14 {
+		pinmux = <&alt9_no_kso14_sl>;
+	};
+
+	/omit-if-no-ref/ kso15_gp83: periph-kbscan-kso15 {
+		pinmux = <&alt9_no_kso15_sl>;
+	};
+
+	/omit-if-no-ref/ kso16_gp03: periph-kbscan-kso16 {
+		pinmux = <&alta_no_kso16_sl>;
+	};
+
+	/omit-if-no-ref/ kso17_gpb1: periph-kbscan-kso17 {
+		pinmux = <&alta_no_kso17_sl>;
+	};
+
+	/* Miscellaneous peripheral interfaces */
+	/omit-if-no-ref/ clk_32k_out_gp75: periph-clk-32k-out {
+		pinmux = <&alta_32k_out_sl>;
+	};
+
+	/omit-if-no-ref/ vcc1_rst_gp77: periph-vcc1-rst {
+		pinmux = <&alta_no_vcc1_rst>;
+	};
+
+	/omit-if-no-ref/ peci_dat_gp81: periph-peci-dat {
+		pinmux = <&alta_no_peci_en>;
+	};
+
+	/* Host UART peripheral interfaces */
+	/omit-if-no-ref/ huart_rxd_gp75: periph-host-uart-rxd {
+		pinmux = <&altb_rxd_sl>;
+	};
+
+	/omit-if-no-ref/ huart_txd_gp86: periph-host-uart-txd {
+		pinmux = <&altb_txd_sl>;
+	};
+
+	/omit-if-no-ref/ huart_rts_gp36: periph-host-uart-rts {
+		pinmux = <&altb_rts_sl>;
+	};
+
+	/omit-if-no-ref/ huart_cts_gp33: periph-host-uart-cts {
+		pinmux = <&altb_cts_sl>;
+	};
+
+	/omit-if-no-ref/ huart_ri_gp42: periph-host-uart-ri {
+		pinmux = <&altb_ri_sl>;
+	};
+
+	/omit-if-no-ref/ huart_dtr_bout_gpc7: periph-host-uart-dtr_bout {
+		pinmux = <&altb_dtr_bout_sl>;
+	};
+
+	/omit-if-no-ref/ huart_dcd_gpb3: periph-host-uart-dcd {
+		pinmux = <&altb_dcd_sl>;
+	};
+
+	/omit-if-no-ref/ huart_dsr_gpb2: periph-host-uart-dsr {
+		pinmux = <&altb_dsr_sl>;
+	};
+
+	/* SHI peripheral interfaces */
+	/omit-if-no-ref/ shi_gp46_47_53_55: periph-shi {
+		pinmux = <&altc_shi_sl>;
+		periph-pupd = <0x01 4>;
+	};
+
+	/* ADC peripheral interfaces. */
+	/omit-if-no-ref/ adc0_chan0_gp45: periph-adc0-0 {
+		pinmux = <&alt6_adc0_sl>;
+	};
+
+	/omit-if-no-ref/ adc0_chan1_gp44: periph-adc0-1 {
+		pinmux = <&alt6_adc1_sl>;
+	};
+
+	/omit-if-no-ref/ adc0_chan2_gp43: periph-adc0-2 {
+		pinmux = <&alt6_adc2_sl>;
+	};
+
+	/omit-if-no-ref/ adc0_chan3_gp42: periph-adc0-3 {
+		pinmux = <&alt6_adc3_sl>;
+	};
+
+	/omit-if-no-ref/ adc0_chan4_gp41: periph-adc0-4 {
+		pinmux = <&alt6_adc4_sl>;
+	};
+
+	/omit-if-no-ref/ adc0_chan5_gp37: periph-adc0-5 {
+		pinmux = <&altf_adc5_sl>;
+	};
+
+	/omit-if-no-ref/ adc0_chan6_gp34: periph-adc0-6 {
+		pinmux = <&altf_adc6_sl>;
+	};
+
+	/omit-if-no-ref/ adc0_chan7_gpe1: periph-adc0-7 {
+		pinmux = <&altf_adc7_sl>;
+	};
+
+	/omit-if-no-ref/ adc0_chan8_gpf1: periph-adc0-8 {
+		pinmux = <&altf_adc8_sl>;
+	};
+
+	/omit-if-no-ref/ adc0_chan9_gpf0: periph-adc0-9 {
+		pinmux = <&altf_adc9_sl>;
+	};
+
+	/omit-if-no-ref/ adc0_chan10_gpe0: periph-adc0-10 {
+		pinmux = <&altf_adc10_sl>;
+	};
+
+	/omit-if-no-ref/ adc0_chan11_gpc7: periph-adc0-11 {
+		pinmux = <&altf_adc11_sl>;
+	};
+
+	/* PSL peripheral interfaces */
+	/omit-if-no-ref/ psl_in1_gpd2: periph-psl-in1 {
+		pinmux = <&altd_npsl_in1_sl>;
+		psl-offset = <0>;
+		psl-polarity = <&altd_psl_in1_ahi>;
+	};
+
+	/omit-if-no-ref/ psl_in2_gp00: periph-psl-in2 {
+		pinmux = <&altd_npsl_in2_sl>;
+		psl-offset = <1>;
+		psl-polarity = <&altd_psl_in2_ahi>;
+	};
+
+	/omit-if-no-ref/ psl_in3_gp01: periph-psl-in3 {
+		pinmux = <&altd_psl_in3_sl>;
+		psl-offset = <2>;
+		psl-polarity = <&altd_psl_in3_ahi>;
+	};
+
+	/omit-if-no-ref/ psl_in4_gp02: periph-psl-in4 {
+		pinmux = <&altd_psl_in4_sl>;
+		psl-offset = <3>;
+		psl-polarity = <&altd_psl_in4_ahi>;
+	};
+
+	/omit-if-no-ref/ psl_gpo_gpd7: periph-psl-gpo {
+		pinmux = <&altg_psl_gpo_sl>;
+	};
+
+	/omit-if-no-ref/ psl_out_gp85: periph-psl-out {
+		pinmux = <&altg_psl_out_sl>;
+	};
+
+	/* I3C peripheral interfaces */
+	/omit-if-no-ref/ i3c_sda_scl_gpe3_e4: periph-i3c {
+		pinmux = <&alth_i3c_sl>;
+	};
+
+	/* UART peripheral interfaces */
+	/omit-if-no-ref/ uart1_1_sin_gp10: periph-uart1-1-sin {
+		pinmux = <&altj_cr_sin1_sl1>;
+	};
+
+	/omit-if-no-ref/ uart1_1_sout_gp11: periph-uart1-1-sout {
+		pinmux = <&altj_cr_sout1_sl1>;
+	};
+
+	/omit-if-no-ref/ uart1_2_sin_gp64: periph-uart1-2-sin {
+		pinmux = <&altj_cr_sin1_sl2>;
+	};
+
+	/omit-if-no-ref/ uart1_2_sout_gp65: periph-uart1-2-sout {
+		pinmux = <&altj_cr_sout1_sl2>;
+	};
+
+	/omit-if-no-ref/ uart2_sin_gp75: periph-uart2-sin {
+		pinmux = <&altj_cr_sin2_sl>;
+	};
+
+	/omit-if-no-ref/ uart2_sout_gp86: periph-uart2-sout {
+		pinmux = <&altj_cr_sout2_sl>;
+	};
+
+	/omit-if-no-ref/ uart3_sin_gpd4: periph-uart3-sin {
+		pinmux = <&altj_cr_sin3_sl>;
+	};
+
+	/omit-if-no-ref/ uart3_sout_gpd6: periph-uart3-sout {
+		pinmux = <&altj_cr_sout3_sl>;
+	};
+
+	/omit-if-no-ref/ uart4_sin_gpb1: periph-uart4-sin {
+		pinmux = <&alte_cr_sin4_sl>;
+	};
+
+	/omit-if-no-ref/ uart4_sout_gp35: periph-uart4-sout {
+		pinmux = <&alte_cr_sout4_sl>;
+	};
+};

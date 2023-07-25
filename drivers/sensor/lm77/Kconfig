@@ -1,0 +1,41 @@
+# LM77 temperature sensor configuration
+#
+# Copyright (c) 2021 Vestas Wind Systems A/S
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig LM77
+	bool "LM77 Temperature Sensor"
+	default y
+	depends on DT_HAS_LM77_ENABLED
+	default $(dt_compat_enabled,lm77)
+	select I2C
+	help
+	  Enable driver for the LM77 digital temperature sensor with 2-wire
+	  interface.
+
+config LM77_TRIGGER
+	bool "Trigger support"
+	depends on LM77
+	default y
+	help
+	  Enable trigger support for the LM77 digital temperature sensor.
+
+	  Trigger events are based on the LM77 INT signal (configured for event
+	  interrupt mode). After a trigger event the LM77 temperature must be
+	  read in order to reset and rearm the trigger.
+
+if LM77_TRIGGER
+
+config LM77_TRIGGER_THREAD_STACK_SIZE
+	int "Stack size for the trigger workqueue thread"
+	default 512
+	help
+	  Size of the stack used for the internal trigger workqueue thread.
+
+config LM77_TRIGGER_THREAD_PRIO
+	int "Priority for the trigger workqueue thread"
+	default 0
+	help
+	  Priority level for the internal trigger workqueue thread.
+
+endif # LM77_TRIGGER

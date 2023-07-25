@@ -1,0 +1,14 @@
+# Nordic Semiconductor nRF9160 MCU
+
+# Copyright (c) 2018 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_NRF9160_SICA
+
+config SOC
+	default "nRF9160_SICA"
+
+config NUM_IRQS
+	default 65
+
+endif # SOC_NRF9160_SICA

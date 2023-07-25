@@ -1,0 +1,19 @@
+# Nuvoton NPCX7 EC series
+
+# Copyright (c) 2020 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+choice
+	prompt "NPCX7 Selection"
+	depends on SOC_SERIES_NPCX7
+
+config SOC_NPCX7M6FB
+	bool "NPCX7M6FB"
+
+config SOC_NPCX7M6FC
+	bool "NPCX7M6FC"
+
+config SOC_NPCX7M7FC
+	bool "NPCX7M7FC"
+
+endchoice

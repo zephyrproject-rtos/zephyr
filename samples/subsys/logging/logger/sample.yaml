@@ -1,0 +1,39 @@
+sample:
+  description: A simple application that demonstrate use of logging feature.
+  name: logger sample
+tests:
+  sample.logger.basic:
+    integration_platforms:
+      - native_posix
+    tags: logging
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - Instance level logging showcase
+        - Changing filter to warning
+        - Disabling logging
+        - Severity levels showcase
+        - Logging performance showcase
+        - Logs from external logging system showcase
+
+  sample.logger.rtt:
+    integration_platforms:
+      - frdm_k64f
+    tags: logging
+    filter: CONFIG_HAS_SEGGER_RTT
+    harness: keyboard
+    extra_configs:
+      - CONFIG_LOG_BACKEND_RTT=y
+      - CONFIG_USE_SEGGER_RTT=y
+
+  sample.logger.usermode:
+    integration_platforms:
+      - mps2_an385
+    tags:
+      - logging
+      - usermode
+    filter: CONFIG_ARCH_HAS_USERSPACE
+    harness: keyboard
+    extra_configs:
+      - CONFIG_USERSPACE=y

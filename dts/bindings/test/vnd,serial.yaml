@@ -1,0 +1,16 @@
+description: Test serial port
+
+compatible: "vnd,serial"
+
+include: uart-controller.yaml
+
+properties:
+  reg:
+    required: true
+
+  baud-rate:
+    type: int
+
+  buffer-size:
+    type: int
+    description: "Size of buffer to capture output data or to queue input data."

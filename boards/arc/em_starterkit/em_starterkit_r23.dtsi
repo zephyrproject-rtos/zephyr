@@ -1,0 +1,69 @@
+/*
+ * Copyright (c) 2018 Linaro Limited
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	soc {
+		i2c@f0004000 {
+			interrupts = <25 1>;
+		};
+
+		i2c@f0005000 {
+			interrupts = <26 1>;
+		};
+
+		uart@f0008000 {
+			interrupts = <29 1>;
+		};
+
+		uart@f0009000 {
+			interrupts = <30 1>;
+		};
+
+		uart@f000a000 {
+			interrupts = <31 1>;
+		};
+
+		gpio@f0002000 {
+			interrupts = <24 1>;
+		};
+
+		creg_gpio: creg_gpio@f0000014 {
+			compatible = "snps,creg-gpio";
+			reg = <0xf0000014 0x4>;
+			ngpios = <6>;
+			bit_per_gpio = <1>;
+			off_val = <0>;
+			on_val = <1>;
+
+			gpio-controller;
+			#gpio-cells = <2>;
+
+			status = "okay";
+		};
+
+		spi@f0006000 {
+			interrupts = <27 1>;
+			cs-gpios = <&creg_gpio 0 GPIO_ACTIVE_HIGH>,
+					   <&creg_gpio 1 GPIO_ACTIVE_HIGH>,
+					   <&creg_gpio 2 GPIO_ACTIVE_HIGH>,
+					   <&creg_gpio 3 GPIO_ACTIVE_HIGH>,
+					   <&creg_gpio 4 GPIO_ACTIVE_HIGH>,
+					   <&creg_gpio 5 GPIO_ACTIVE_HIGH>;
+			w25q128bv: w25q128bv@0 {
+				compatible ="jedec,spi-nor";
+				size = <0x8000000>;
+				reg = <0>;
+				spi-max-frequency = <20000000>;
+				status = "okay";
+				jedec-id = [ef 40 18];
+			};
+		};
+
+		spi@f0007000 {
+			interrupts = <28 1>;
+		};
+	};
+};

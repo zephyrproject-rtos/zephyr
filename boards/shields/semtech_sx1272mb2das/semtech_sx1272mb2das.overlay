@@ -1,0 +1,32 @@
+/*
+ * Copyright (c) 2020 Lemonbeat GmbH
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		lora0 = &lora_semtech_sx1272mb2das;
+	};
+};
+
+&arduino_spi {
+	status = "okay";
+
+	cs-gpios = <&arduino_header 16 GPIO_ACTIVE_LOW>;	/* D10 */
+
+	lora_semtech_sx1272mb2das: lora@0 {
+		compatible = "semtech,sx1272";
+		reg = <0x0>;
+		spi-max-frequency = <3000000>;
+
+		reset-gpios = <&arduino_header 0 GPIO_ACTIVE_HIGH>;   /* A0 */
+
+		dio-gpios = <&arduino_header 8 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>,	   /* DIO0 is D2 */
+		            <&arduino_header 9 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>,	   /* DIO1 is D3 */
+			    <&arduino_header 10 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>,	   /* DIO2 is D4 */
+			    <&arduino_header 11 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>;	   /* DIO3 is D5 */
+
+		power-amplifier-output = "rfo";
+	};
+};

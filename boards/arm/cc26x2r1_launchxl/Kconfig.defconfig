@@ -1,0 +1,11 @@
+# TI CC26x2R1 LaunchXL board
+
+# Copyright (c) 2019 Brett Witherspoon
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_CC26X2R1_LAUNCHXL
+
+config BOARD
+	default "cc26x2r1_launchxl"
+
+endif # BOARD_CC26X2R1_LAUNCHXL

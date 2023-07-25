@@ -1,0 +1,78 @@
+# Copyright (C) 2020 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    Description of pre-defined file systems.
+
+compatible: "zephyr,fstab,littlefs"
+
+include: "zephyr,fstab-common.yaml"
+
+properties:
+  # num-files and num-dirs are not filesystem-specific.
+
+  read-size:
+    type: int
+    required: true
+    description: |
+      The size of file system read operations, in bytes.
+
+      All read operations will be a multiple of this value.  A
+      reasonable default is 16.
+
+      This corresponds to CONFIG_FS_LITTLEFS_READ_SIZE.
+
+  prog-size:
+    type: int
+    required: true
+    description: |
+      The size of file system program (write) operations, in bytes.
+
+      All program operations will be a multiple of this value.  A
+      reasonable default is 16.
+
+      This corresponds to CONFIG_FS_LITTLEFS_PROG_SIZE.
+
+  cache-size:
+    type: int
+    required: true
+    description: |
+      The size of block caches, in bytes.
+
+      Each cache buffers a portion of a block in RAM.  The littlefs
+      needs a read cache, a program cache, and one additional cache per
+      file. Larger caches can improve performance by storing more data
+      and reducing the number of disk accesses. Must be a multiple of
+      the read and program sizes of the underlying flash device, and a
+      factor of the block size.
+
+      A reasonable default is 64.
+
+      This corresponds to CONFIG_FS_LITTLEFS_CACHE_SIZE.
+
+  lookahead-size:
+    type: int
+    required: true
+    description: |
+      The size of the lookahead buffer, in bytes.
+
+      A larger lookahead buffer increases the number of blocks found
+      during an allocation pass. The lookahead buffer is stored as a
+      compact bitmap, so each byte of RAM can track 8 blocks. Must be a
+      multiple of 8.
+
+      A reasonable default is 32.
+
+      This corresponds to CONFIG_FS_LITTLEFS_LOOKAHEAD_SIZE.
+
+  block-cycles:
+    type: int
+    required: true
+    description: |
+      The number of erase cycles before moving data to another block.
+
+      For dynamic wear leveling, the number of erase cycles before data
+      is moved to another block.  Set to a non-positive value to disable
+      leveling.
+
+      This corresponds to CONFIG_FS_LITTLEFS_LOOKAHEAD_SIZE.

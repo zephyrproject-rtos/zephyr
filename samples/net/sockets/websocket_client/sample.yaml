@@ -1,0 +1,16 @@
+common:
+  tags:
+    - net
+    - http
+    - http_client
+    - websocket_client
+    - websocket
+  min_ram: 35
+  depends_on: netif
+sample:
+  description: Websocket client sample
+  name: websocket_client
+tests:
+  sample.net.sockets.websocket_client:
+    platform_exclude: intel_adsp_cavs25
+    harness: net

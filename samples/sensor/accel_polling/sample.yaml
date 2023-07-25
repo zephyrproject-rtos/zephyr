@@ -1,0 +1,27 @@
+sample:
+  name: Accelerometer polling sample
+tests:
+  sample.sensor.accel_polling:
+    harness: console
+    tags: sensors
+    filter: dt_alias_exists("accel0")
+    harness_config:
+      type: one_line
+      regex:
+        - "^\\s*[0-9A-Za-z_,+-.]*@[0-9A-Fa-f]* \\[m\/s\\^2\\]:    \
+           \\(\\s*-?[0-9\\.]*,\\s*-?[0-9\\.]*,\\s*-?[0-9\\.]*\\)$"
+    integration_platforms:
+      - cc1352r_sensortag               # adxl362
+      - blueclover_plt_demo_v2_nrf52832 # bmi270
+      - frdm_kl25z                      # mma8451q
+      - lpcxpresso55s28                 # mma8652fc
+      - bbc_microbit                    # mmc8653fc
+      - frdm_k64f                       # fxos8700
+      - sparkfun_thing_plus_nrf9160     # lis2dh
+      - thingy52_nrf52832               # lis2dh12
+      - stm32f411e_disco                # lsm303agr_accel
+      - stm32f3_disco                   # lsm303dlhc_accel
+      - bl5340_dvk_cpuapp               # lis3dh
+      - b_l4s5i_iot01a                  # lsm6dsl
+      - sensortile_box                  # lis2dw12, lsm6dso, iisdhhc
+      - thingy53_nrf5340_cpuapp         # adxl362, bmi270

@@ -1,0 +1,17 @@
+identifier: ip_k66f
+name: SEGGER IP-K66F
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - counter
+  - gpio
+  - nvs
+  - watchdog
+  - i2c
+  - netif:eth
+ram: 256
+flash: 2048

@@ -1,0 +1,14 @@
+common:
+  build_only: true
+  tags:
+    - drivers
+    - video
+tests:
+  drivers.video.build:
+    platform_allow: native_posix
+    min_ram: 32
+    depends_on:
+      - gpio
+      - i2c
+  drivers.video.mcux_csi.build:
+    platform_allow: mimxrt1064_evk

@@ -1,0 +1,9 @@
+// A very simple protocol definition, consisting of only
+// one message.
+
+syntax = "proto3";
+
+message SimpleMessage {
+    int32 lucky_number = 1;
+    bytes buffer = 2;
+}

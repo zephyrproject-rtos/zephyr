@@ -1,0 +1,24 @@
+identifier: 96b_avenger96
+name: 96Boards Avenger96
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - gpio
+  - shell
+testing:
+  ignore_tags:
+    - cmsis_rtos_v2
+    - net
+    - mpu
+    - tinycrypt
+    - crypto
+    - aes
+    - cmm
+    - LED
+    - nfc
+ram: 256
+flash: 64

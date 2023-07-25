@@ -1,0 +1,8 @@
+# NUCLEO-64 F103RB board configuration
+
+# Copyright (c) 2016 Open-RnD Sp. z o.o.
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_NUCLEO_F103RB
+	bool "NUCLEO-64 F103RB Development Board"
+	depends on SOC_STM32F103XB

@@ -1,0 +1,8 @@
+# ESP32-ETHERNET-KIT board configuration
+
+# Copyright (c) 2022 Grant Ramsay <grant.ramsay@hotmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_ESP32_ETHERNET_KIT
+	bool "ESP32-ETHERNET-KIT Development Board"
+	depends on SOC_ESP32

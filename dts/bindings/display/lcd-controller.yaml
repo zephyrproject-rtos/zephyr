@@ -1,0 +1,14 @@
+# Copyright 2023 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+# Common fields for LCD controllers driving a panel.
+
+include: display-controller.yaml
+
+properties:
+  pixel-format:
+    type: int
+    required: true
+    description: |
+      Initial Pixel format for panel attached to this controller.
+      See dt-bindings/display/panel.h for a list

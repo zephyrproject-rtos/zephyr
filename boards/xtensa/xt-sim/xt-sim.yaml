@@ -1,0 +1,8 @@
+identifier: xt-sim
+name: XT Simulator
+type: sim
+arch: xtensa
+toolchain:
+  - xcc
+testing:
+  default: true

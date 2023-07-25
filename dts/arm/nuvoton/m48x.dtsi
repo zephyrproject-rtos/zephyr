@@ -1,0 +1,181 @@
+/*
+ * Copyright (c) 2020 Linumiz
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/armv7-m.dtsi>
+#include <mem.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m4f";
+			reg = <0>;
+		};
+	};
+
+	sram0: memory@20000000 {
+		compatible = "mmio-sram";
+	};
+
+	flash0: flash@0 {
+		compatible = "serial-flash";
+		erase-block-size = <4096>;
+		write-block-size = <1>;
+	};
+
+	sysclk: system-clock {
+		compatible = "fixed-clock";
+		clock-frequency = <192000000>;
+		#clock-cells = <0>;
+	};
+
+	soc {
+		pinctrl: pinctrl@40000030 {
+			compatible = "nuvoton,numicro-pinctrl";
+			reg = <0x40000030 0x40
+			       0x40000080 0x20>;
+			reg-names = "mfp", "mfos";
+			status = "okay";
+		};
+
+		gpioa: gpio@40004000 {
+			compatible = "nuvoton,numicro-gpio";
+			reg = <0x40004000 0x40>;
+			status = "disabled";
+			interrupts = <16 2>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <16>;
+		};
+
+		gpiob: gpio@40004040 {
+			compatible = "nuvoton,numicro-gpio";
+			reg = <0x40004040 0x40>;
+			status = "disabled";
+			interrupts = <17 2>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <16>;
+		};
+
+		gpioc: gpio@40004080 {
+			compatible = "nuvoton,numicro-gpio";
+			reg = <0x40004080 0x40>;
+			status = "disabled";
+			interrupts = <18 2>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <15>;
+		};
+
+		gpiod: gpio@400040c0 {
+			compatible = "nuvoton,numicro-gpio";
+			reg = <0x400040c0 0x40>;
+			status = "disabled";
+			interrupts = <19 2>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <15>;
+		};
+
+		gpioe: gpio@40004100 {
+			compatible = "nuvoton,numicro-gpio";
+			reg = <0x40004100 0x40>;
+			status = "disabled";
+			interrupts = <20 2>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <16>;
+		};
+
+		gpiof: gpio@40004140 {
+			compatible = "nuvoton,numicro-gpio";
+			reg = <0x40004140 0x40>;
+			status = "disabled";
+			interrupts = <21 2>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <12>;
+		};
+
+		gpiog: gpio@40004180 {
+			compatible = "nuvoton,numicro-gpio";
+			reg = <0x40004180 0x40>;
+			status = "disabled";
+			interrupts = <72 2>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <16>;
+		};
+
+		gpioh: gpio@400041c0 {
+			compatible = "nuvoton,numicro-gpio";
+			reg = <0x400041c0 0x40>;
+			status = "disabled";
+			interrupts = <88 2>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <12>;
+		};
+
+		uart0: serial@40070000 {
+			compatible = "nuvoton,numicro-uart";
+			reg = <0x40070000 0x1000>;
+			status = "disabled";
+		};
+
+		uart1: serial@40071000 {
+			compatible = "nuvoton,numicro-uart";
+			reg = <0x40071000 0x1000>;
+			status = "disabled";
+		};
+
+		uart2: serial@40072000 {
+			compatible = "nuvoton,numicro-uart";
+			reg = <0x40072000 0x1000>;
+			status = "disabled";
+		};
+
+		uart3: serial@40073000 {
+			compatible = "nuvoton,numicro-uart";
+			reg = <0x40073000 0x1000>;
+			status = "disabled";
+		};
+
+		uart4: serial@40074000 {
+			compatible = "nuvoton,numicro-uart";
+			reg = <0x40074000 0x1000>;
+			status = "disabled";
+		};
+
+		uart5: serial@40075000 {
+			compatible = "nuvoton,numicro-uart";
+			reg = <0x40075000 0x1000>;
+			status = "disabled";
+		};
+
+		uart6: serial@40076000 {
+			compatible = "nuvoton,numicro-uart";
+			reg = <0x40076000 0x1000>;
+			status = "disabled";
+		};
+
+		uart7: serial@40077000 {
+			compatible = "nuvoton,numicro-uart";
+			reg = <0x40077000 0x1000>;
+			status = "disabled";
+		};
+
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <4>;
+};

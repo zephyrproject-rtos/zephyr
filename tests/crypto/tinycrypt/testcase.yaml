@@ -1,0 +1,15 @@
+tests:
+  crypto.tinycrypt:
+    tags:
+      - tinycrypt
+      - crypto
+      - aes
+      - ccm
+    platform_exclude:
+      - qemu_arc_em
+      - qemu_arc_hs
+      - m2gl025_miv
+    timeout: 500
+    integration_platforms:
+      - native_posix
+    toolchain_exclude: xcc

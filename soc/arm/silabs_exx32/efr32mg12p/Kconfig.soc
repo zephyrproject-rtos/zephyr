@@ -1,0 +1,8 @@
+# EFR32MG12P (Mighty Gecko) MCU line
+
+# Copyright (c) 2018 Diego Sueiro
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_PART_NUMBER_EFR32MG12P332F1024GL125
+	bool
+	depends on SOC_SERIES_EFR32MG12P

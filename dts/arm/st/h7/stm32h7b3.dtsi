@@ -1,0 +1,27 @@
+/*
+ * Copyright (c) 2022 Byte-Lab d.o.o <dev@byte-lab.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <st/h7/stm32h7a3.dtsi>
+
+/*
+ * STM32H7B3 line contains the same peripherals as STM32H7A3,
+ * with addition of CRYPTO/HASH and OTFDEC peripherals
+ */
+/ {
+	soc {
+		compatible = "st,stm32h7b3", "st,stm32h7", "simple-bus";
+
+		cryp: cryp@48021000 {
+			compatible = "st,stm32-cryp";
+			reg = <0x48021000 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00000010>;
+			interrupts = <79 0>;
+			interrupt-names = "cryp";
+			status = "disabled";
+		};
+	};
+};

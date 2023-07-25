@@ -1,0 +1,19 @@
+/*
+ * Copyright (c) 2019, embedjournal.com
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include "stm32_min_dev.dtsi"
+
+/ {
+	model = "STM32 Minimum Development Board (Black)";
+	compatible = "st,stm32_min_dev_black", "st,stm32f103c8";
+
+	leds {
+		led: led {
+			gpios = <&gpiob 12 GPIO_ACTIVE_LOW>;
+		};
+	};
+};

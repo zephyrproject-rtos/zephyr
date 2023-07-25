@@ -1,0 +1,28 @@
+# Copyright (c) 2020 Linumiz
+#
+# Author: Parthiban Nallathambi <parthiban@linumiz.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config UART_XMC4XXX
+	bool "XMC4XX UART driver"
+	default y
+	depends on DT_HAS_INFINEON_XMC4XXX_UART_ENABLED
+	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
+	select SERIAL_SUPPORT_ASYNC if DT_HAS_INFINEON_XMC4XXX_DMA_ENABLED
+	select DMA if UART_ASYNC_API
+	help
+	  This option enables the XMC4XX UART driver.
+
+if UART_XMC4XXX
+
+config UART_XMC4XXX_RX_FIFO_INT_TRIGGER
+	bool "Continue to trigger fifo rx interrupt"
+	default n
+	help
+	  When this option is enabled, an interrupt will continue to trigger
+	  if there is data in the receive fifo. Otherwise, an interrupt will
+	  trigger only once on the first received byte. The receive fifo will
+	  need to be fully flushed so that the interrupt will trigger again.
+
+endif

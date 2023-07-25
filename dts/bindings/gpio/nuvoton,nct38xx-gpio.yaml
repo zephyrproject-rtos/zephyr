@@ -1,0 +1,72 @@
+# Copyright (c) 2021 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    Nuvoton NCT38XX series I2C-based GPIO expander
+
+    Example:
+      &i2c0_0 {
+        nct3807@70 {
+          #address-cells = <1>;
+          #size-cells = <0>;
+          compatible = "nuvoton,nct38xx-gpio";
+          reg = <0x70>;
+
+          gpio@0 {
+            compatible = "nuvoton,nct38xx-gpio-port";
+            reg = <0x0>;
+            gpio-controller;
+            #gpio-cells = <2>;
+            ngpios = <8>;
+            pin_mask = <0xff>;
+            pinmux_mask = <0xf7>;
+          };
+
+          gpio@1 {
+            compatible = "nuvoton,nct38xx-gpio-port";
+            reg = <0x1>;
+            gpio-controller;
+            #gpio-cells = <2>;
+            ngpios = <8>;
+            pin_mask = <0xff>;
+          };
+        };
+
+        nct3808_0_P1@71 {
+          #address-cells = <1>;
+          #size-cells = <0>;
+          compatible = "nuvoton,nct38xx-gpio";
+          reg = <0x71>;
+
+          gpio@0 {
+            compatible = "nuvoton,nct38xx-gpio-port";
+            reg = <0x0>;
+            gpio-controller;
+            #gpio-cells = <2>;
+            ngpios = <8>;
+            pin_mask = <0xdc>;
+            pinmux_mask = <0xff>;
+          };
+        };
+
+        nct3808_0_P2@75 {
+          #address-cells = <1>;
+          #size-cells = <0>;
+          compatible = "nuvoton,nct38xx-gpio";
+          reg = <0x75>;
+
+          gpio@0 {
+            compatible = "nuvoton,nct38xx-gpio-port";
+            reg = <0x0>;
+            gpio-controller;
+            #gpio-cells = <2>;
+            ngpios = <8>;
+            pin_mask = <0xdc>;
+            pinmux_mask = <0xff>;
+          };
+        };
+      };
+
+compatible: "nuvoton,nct38xx-gpio"
+
+include: [i2c-device.yaml]

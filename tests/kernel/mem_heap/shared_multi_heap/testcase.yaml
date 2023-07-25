@@ -1,0 +1,14 @@
+# Copyright 2021 Carlo Caione <ccaione@baylibre.com>
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  kernel.shared_multi_heap:
+    platform_allow:
+      - qemu_cortex_a53
+      - mps2_an521
+    integration_platforms:
+      - qemu_cortex_a53
+    tags:
+      - kernel
+      - multi_heap
+    harness: ztest

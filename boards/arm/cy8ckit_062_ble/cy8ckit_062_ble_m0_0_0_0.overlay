@@ -1,0 +1,27 @@
+/*
+ * Copyright (c) 2021, ATL Electronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		uart-5 = &uart5;
+	};
+
+	chosen {
+		zephyr,console = &uart5;
+		zephyr,shell-uart = &uart5;
+	};
+};
+
+&uart5 {
+	status = "okay";
+	current-speed = <115200>;
+
+	interrupt-parent = <&intmux_ch21>;
+
+	pinctrl-0 = <&p5_0_uart5_rx &p5_1_uart5_tx>;
+};
+
+arduino_serial: &uart5 {};

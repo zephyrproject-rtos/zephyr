@@ -1,0 +1,4 @@
+tests:
+  kernel.scheduler.preempt:
+    tags: kernel
+    platform_exclude: nrf52dk_nrf52810

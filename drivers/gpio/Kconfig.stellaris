@@ -1,0 +1,11 @@
+# Stellaris
+
+# Copyright (c) 2018 Zilogic Systems
+# SPDX-License-Identifier: Apache-2.0
+
+config GPIO_STELLARIS
+	bool "TI Stellaris GPIO Driver"
+	default y
+	depends on DT_HAS_TI_STELLARIS_GPIO_ENABLED
+	help
+	  Enable support for the Stellaris GPIO controllers.

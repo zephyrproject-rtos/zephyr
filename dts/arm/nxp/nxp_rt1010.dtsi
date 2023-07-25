@@ -1,0 +1,375 @@
+/*
+ * Copyright (c) 2019, Linaro
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <nxp/nxp_rt10xx.dtsi>
+
+&sysclk {
+	clock-frequency = <500000000>;
+};
+
+&itcm {
+	reg = <0x00000000 DT_SIZE_K(32)>;
+};
+
+&dtcm {
+	reg = <0x20000000 DT_SIZE_K(32)>;
+};
+
+&ocram {
+	reg = <0x20200000 DT_SIZE_K(64)>;
+};
+
+&ccm {
+	/delete-node/ arm-podf;
+
+	ipg-podf {
+		clock-div = <4>;
+	};
+};
+
+&gpio1 {
+	interrupts = <70 0>, <71 0>;
+};
+
+&gpio5 {
+	interrupts = <73 0>;
+};
+
+&gpt_hw_timer {
+	interrupts = <30 0>;
+};
+
+&gpt2 {
+	interrupts = <31 0>;
+	gptfreq = <12500000>;
+};
+
+&edma0 {
+	dma-channels = <16>;
+};
+
+/ {
+	soc {
+		/* Remove GPIO3-GPIO9, they don't exist on RT1010 */
+		/delete-node/ gpio@401c0000;
+		/delete-node/ gpio@401c4000;
+		/delete-node/ gpio@42000000;
+		/delete-node/ gpio@42004000;
+		/delete-node/ gpio@42008000;
+		/delete-node/ gpio@4200c000;
+
+		/* Fixup GPIO2 its a different location on RT1010 */
+		/delete-node/ gpio@401bc000;
+
+		gpio2: gpio@42000000 {
+			compatible = "nxp,imx-gpio";
+			reg = <0x42000000 0x4000>;
+			interrupts = <72 0>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			pinmux = <&iomuxc_gpio_sd_00_gpio2_io00>,
+				<&iomuxc_gpio_sd_01_gpio2_io01>,
+				<&iomuxc_gpio_sd_02_gpio2_io02>,
+				<&iomuxc_gpio_sd_03_gpio2_io03>,
+				<&iomuxc_gpio_sd_04_gpio2_io04>,
+				<&iomuxc_gpio_sd_05_gpio2_io05>,
+				<&iomuxc_gpio_sd_06_gpio2_io06>,
+				<&iomuxc_gpio_sd_07_gpio2_io07>,
+				<&iomuxc_gpio_sd_08_gpio2_io08>,
+				<&iomuxc_gpio_sd_09_gpio2_io09>,
+				<&iomuxc_gpio_sd_10_gpio2_io10>,
+				<&iomuxc_gpio_sd_11_gpio2_io11>,
+				<&iomuxc_gpio_sd_12_gpio2_io12>,
+				<&iomuxc_gpio_sd_13_gpio2_io13>;
+		};
+
+		/* Remove Quad TImers, they don't exist on RT1010 */
+		/delete-node/ qtmr@401dc000;
+		/delete-node/ qtmr@401e0000;
+		/delete-node/ qtmr@401e4000;
+		/delete-node/ qtmr@401e8000;
+
+		/* Fixup FlexSPI its a different location on RT1010 */
+		/delete-node/ spi@402a8000;
+		flexspi: spi@400a0000 {
+			compatible = "nxp,imx-flexspi";
+			reg = <0x400a0000 0x4000>;
+			interrupts = <26 0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			ahb-bufferable;
+			ahb-cacheable;
+			status = "disabled";
+		};
+
+		/* Remove SEMC, it does'nt exist on RT1010 */
+		/delete-node/ semc0@402f0000;
+
+		/* Fixup LPI2C1 and LPI2C2, they have different base addr on RT1010 */
+		/delete-node/ i2c@403f0000;
+		/delete-node/ i2c@403f4000;
+
+		lpi2c1: i2c@401a4000 {
+			compatible = "nxp,imx-lpi2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x401a4000 0x4000>;
+			interrupts = <28 0>;
+			clocks = <&ccm IMX_CCM_LPI2C_CLK 0x70 6>;
+			status = "disabled";
+		};
+
+		lpi2c2: i2c@401a8000 {
+			compatible = "nxp,imx-lpi2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x401a8000 0x4000>;
+			interrupts = <29 0>;
+			clocks = <&ccm IMX_CCM_LPI2C_CLK 0x70 8>;
+			status = "disabled";
+		};
+
+		/* Remove LPI2C3 & LPI2C4, they don't exist on RT1010 */
+		/delete-node/ i2c@403f8000;
+		/delete-node/ i2c@403fc000;
+
+		/* Remove LCDIF, it doesn't exist on RT1010 */
+		/delete-node/ display-controller@402b8000;
+
+		/* Fixup LPSPI1 and LPSPI2, they have different base addr on RT1010 */
+		/delete-node/ spi@40394000;
+		/delete-node/ spi@40398000;
+		lpspi1: spi@40194000 {
+			compatible = "nxp,imx-lpspi";
+			reg = <0x40194000 0x4000>;
+			interrupts = <32 3>;
+			status = "disabled";
+			clocks = <&ccm IMX_CCM_LPSPI_CLK 0x6c 0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
+		lpspi2: spi@40198000 {
+			compatible = "nxp,imx-lpspi";
+			reg = <0x40198000 0x4000>;
+			interrupts = <33 3>;
+			status = "disabled";
+			clocks = <&ccm IMX_CCM_LPSPI_CLK 0x6c 2>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
+		/* Remove LPUART5-8, they don't exist on RT1010 */
+		/delete-node/ uart@40194000;
+		/delete-node/ uart@40198000;
+		/delete-node/ uart@4019c000;
+		/delete-node/ uart@401a0000;
+
+		/* Remove ADC2, it doesn't exist on RT1010 */
+		/delete-node/ adc@400C8000;
+
+		/* RT1010 has only one flexSPI controller */
+		/delete-node/ spi@402a4000;
+
+		/* Fixup FlexPWM1 it has different base addr and interrupt numbers on RT1010 */
+		/delete-node/ flexpwm@403dc000;
+		flexpwm1: flexpwm@401cc000 {
+			compatible = "nxp,flexpwm";
+			reg = <0x401cc000 0x4000>;
+			interrupts = <38 0>;
+
+			flexpwm1_pwm0: pwm0 {
+				compatible = "nxp,imx-pwm";
+				index = <0>;
+				interrupts = <34 0>;
+				#pwm-cells = <3>;
+				clocks = <&ccm IMX_CCM_PWM_CLK 0 0>;
+				nxp,prescaler = <128>;
+				status = "disabled";
+			};
+
+			flexpwm1_pwm1: pwm1 {
+				compatible = "nxp,imx-pwm";
+				index = <1>;
+				interrupts = <35 0>;
+				#pwm-cells = <3>;
+				clocks = <&ccm IMX_CCM_PWM_CLK 0 0>;
+				nxp,prescaler = <128>;
+				status = "disabled";
+			};
+
+			flexpwm1_pwm2: pwm2 {
+				compatible = "nxp,imx-pwm";
+				index = <2>;
+				interrupts = <36 0>;
+				#pwm-cells = <3>;
+				clocks = <&ccm IMX_CCM_PWM_CLK 0 0>;
+				nxp,prescaler = <128>;
+				status = "disabled";
+			};
+
+			flexpwm1_pwm3: pwm3 {
+				compatible = "nxp,imx-pwm";
+				index = <3>;
+				interrupts = <37 0>;
+				#pwm-cells = <3>;
+				clocks = <&ccm IMX_CCM_PWM_CLK 0 0>;
+				nxp,prescaler = <128>;
+				status = "disabled";
+			};
+		};
+		/* Remove FlexPWM2-4, they don't exist on RT1010 */
+		/delete-node/ flexpwm@403e0000;
+		/delete-node/ flexpwm@403e4000;
+		/delete-node/ flexpwm@403e8000;
+
+		/* Remove Ethernet, it does'nt exist on RT1010 */
+		/delete-node/ ethernet@402d8000;
+
+		/* Fixup USB it has different base addr and interrupt numbers on RT1010 */
+		/delete-node/ usbd@402e0000;
+		usb1: usbd@400e4000 {
+			compatible = "nxp,mcux-usbd";
+			reg = <0x400e4000 0x200>;
+			interrupts = <25 1>;
+			interrupt-names = "usb_otg";
+			clocks = <&usbclk>;
+			num-bidir-endpoints = <8>;
+			usb-controller-index = "Ehci0";
+			status = "disabled";
+		};
+
+		/* Remove USB2, it does'nt exist on RT1010 */
+		/delete-node/ usbd@402e0200;
+
+		/* Remove USDHC, they don't exist on RT1010 */
+		/delete-node/ usdhc@402c0000;
+		/delete-node/ usdhc@402c4000;
+
+		/* Remove CSI, it does'nt exist on RT1010 */
+		/delete-node/ csi@402bc000;
+
+		/* Remove FLEXCAN, they don't exist on RT1010 */
+		/delete-node/ can@401d0000;
+		/delete-node/ can@401d4000;
+		/delete-node/ can@401d8000;
+
+		/* Remove WDOG2, it does'nt exist on RT1010 */
+		/delete-node/ wdog@400d0000;
+
+		/* Fix SAI1, 3, it has different base addr on RT1010 */
+		/delete-node/ sai@40384000;
+		/delete-node/ sai@4038c000;
+		sai1: sai@401e0000 {
+			compatible = "nxp,mcux-i2s";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			#pinmux-cells = <2>;
+			reg = <0x401e0000 0x4000>;
+			clocks = <&ccm IMX_CCM_SAI1_CLK 0x7C 18>;
+			/* Audio PLL Output Frequency is determined by:
+			 * (Fref * (DIV_SELECT + NUM/DENOM)) / POST_DIV
+			 * = (24MHz * (32 + 77 / 100)) / 1 = 786.48 MHz
+			 */
+		       pll-clocks = <&anatop 0x70 0xC000 0>,
+				      <&anatop 0x70 0x7F 32>,
+				      <&anatop 0x70 0x180000 1>,
+				      <&anatop 0x80 0x3FFFFFFF 77>,
+				      <&anatop 0x90 0x3FFFFFFF 100>;
+			pll-clock-names = "src", "lp", "pd", "num", "den";
+			/* The maximum input frequency into the SAI mclk input is 300MHz
+			 * Based on this requirement, pre-div must be at least 3
+			 * The pre-div and post-div are one less than the actual divide-by amount.
+			 * A pre-div value of 0x1 results in a pre-divider of
+			 * (1+1) = 2
+			 */
+			pre-div = <0x3>;
+			podf = <0x0F>;
+			pinmuxes = <&iomuxcgpr 0x4 0x80000>;
+			interrupts = <56 0>;
+			dmas = <&edma0 0 19>, <&edma0 0 20>;
+			dma-names = "rx", "tx";
+			/* This translates to SAIChannelMask (fsl_sai.c) and
+			 * cannot be 0
+			 */
+			nxp,tx-channel = <1>;
+			nxp,tx-dma-channel = <0>;
+			nxp,rx-dma-channel = <1>;
+			status = "disabled";
+		};
+
+		sai3: sai@401e8000 {
+			compatible = "nxp,mcux-i2s";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			#pinmux-cells = <2>;
+			reg = <0x401e8000 0x4000>;
+			clocks = <&ccm IMX_CCM_SAI3_CLK 0x7C 22>;
+			pre-div = <0>;
+			podf = <63>;
+			pll-clocks = <&anatop 0x70 0xC000 0>,
+				   <&anatop 0x70 0x7F 32>,
+				   <&anatop 0x70 0x180000 1>,
+				   <&anatop 0x80 0x3FFFFFFF 77>,
+				   <&anatop 0x90 0x3FFFFFFF 100>;
+			pll-clock-names = "src", "lp", "pd", "num", "den";
+			pinmuxes = <&iomuxcgpr 0x4 0x200000>;
+			interrupts = <58 0>, <59 0>;
+			dmas = <&edma0 0 83>, <&edma0 0 84>;
+			dma-names = "rx", "tx";
+			nxp,tx-channel = <0>;
+			nxp,tx-dma-channel = <5>;
+			nxp,rx-dma-channel = <6>;
+			status = "disabled";
+		};
+
+		/* Remove SAI2, it does'nt exist on RT1010 */
+		/delete-node/ sai@40388000;
+	};
+};
+
+/* RT1015 only has two LPSPI blocks */
+/delete-node/ &lpspi3;
+/delete-node/ &lpspi4;
+
+
+&gpio1{
+	pinmux = <&iomuxc_gpio_00_gpiomux_io00>,
+		<&iomuxc_gpio_01_gpiomux_io01>,
+		<&iomuxc_gpio_02_gpiomux_io02>,
+		<&iomuxc_gpio_03_gpiomux_io03>,
+		<&iomuxc_gpio_04_gpiomux_io04>,
+		<&iomuxc_gpio_05_gpiomux_io05>,
+		<&iomuxc_gpio_06_gpiomux_io06>,
+		<&iomuxc_gpio_07_gpiomux_io07>,
+		<&iomuxc_gpio_08_gpiomux_io08>,
+		<&iomuxc_gpio_09_gpiomux_io09>,
+		<&iomuxc_gpio_10_gpiomux_io10>,
+		<&iomuxc_gpio_11_gpiomux_io11>,
+		<&iomuxc_gpio_12_gpiomux_io12>,
+		<&iomuxc_gpio_13_gpiomux_io13>,
+		<&iomuxc_gpio_ad_00_gpiomux_io14>,
+		<&iomuxc_gpio_ad_01_gpiomux_io15>,
+		<&iomuxc_gpio_ad_02_gpiomux_io16>,
+		<&iomuxc_gpio_ad_03_gpiomux_io17>,
+		<&iomuxc_gpio_ad_04_gpiomux_io18>,
+		<&iomuxc_gpio_ad_05_gpiomux_io19>,
+		<&iomuxc_gpio_ad_06_gpiomux_io20>,
+		<&iomuxc_gpio_ad_07_gpiomux_io21>,
+		<&iomuxc_gpio_ad_08_gpiomux_io22>,
+		<&iomuxc_gpio_ad_09_gpiomux_io23>,
+		<&iomuxc_gpio_ad_10_gpiomux_io24>,
+		<&iomuxc_gpio_ad_11_gpiomux_io25>,
+		<&iomuxc_gpio_ad_12_gpiomux_io26>,
+		<&iomuxc_gpio_ad_13_gpiomux_io27>,
+		<&iomuxc_gpio_ad_14_gpiomux_io28>;
+};
+
+&gpio5{
+	pinmux = <&iomuxc_snvs_pmic_on_req_gpio5_io00>;
+};

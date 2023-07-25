@@ -1,0 +1,30 @@
+sample:
+  description: Bluetooth HAP Hearing Aid sample
+  name: Bluetooth HAP Hearing Aid sample
+tests:
+  sample.bluetooth.hap_ha.monaural:
+    harness: bluetooth
+    platform_allow: native_posix
+    tags: bluetooth
+    build_only: true
+  sample.bluetooth.hap_ha.monaural_no_presets:
+    harness: bluetooth
+    platform_allow: native_posix
+    tags: bluetooth
+    build_only: true
+    extra_configs:
+      - CONFIG_BT_HAS_PRESET_COUNT=0
+  sample.bluetooth.hap_ha.banded:
+    harness: bluetooth
+    platform_allow: native_posix
+    tags: bluetooth
+    extra_args: OVERLAY_CONFIG="banded.conf"
+    build_only: true
+  sample.bluetooth.hap_ha.binaural:
+    harness: bluetooth
+    platform_allow: native_posix
+    tags: bluetooth
+    extra_args: OVERLAY_CONFIG="binaural.conf"
+    build_only: true
+    extra_configs:
+      - CONFIG_HAP_HA_SET_RANK=2

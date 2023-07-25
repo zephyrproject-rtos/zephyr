@@ -1,0 +1,4 @@
+tests:
+  boards.frdm_k64f.i2c:
+    platform_allow: frdm_k64f
+    tags: i2c

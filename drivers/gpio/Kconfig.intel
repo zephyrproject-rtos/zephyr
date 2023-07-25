@@ -1,0 +1,23 @@
+# Intel SoC GPIO configuration options
+
+# Copyright (c) 2018 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config GPIO_INTEL
+	bool "Intel Soc GPIO"
+	default y
+	depends on DT_HAS_INTEL_GPIO_ENABLED
+	help
+	  Enable driver for Intel SoC GPIO
+
+config GPIO_INTEL_CHECK_PERMS
+	bool "Check permissions before manipulating GPIO"
+	default y
+	depends on GPIO_INTEL
+	help
+	  This option enables the checks to make sure the GPIO
+	  pin can be manipulated. Only if the pin is owned by
+	  the host software and its functioning as GPIO, then
+	  the driver allows manipulating the pin.
+
+	  Say y if unsure.

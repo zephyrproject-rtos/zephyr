@@ -1,0 +1,4 @@
+tests:
+  testing.ztest.summary.shared_unit_test:
+    tags:
+      - test_framework

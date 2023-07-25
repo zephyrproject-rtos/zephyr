@@ -1,0 +1,141 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
+#include <arm/armv7-m.dtsi>
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m3";
+			reg = <0>;
+		};
+	};
+
+	sram0: memory@20000000 {
+		compatible = "mmio-sram";
+		reg = <0x20000000 (64*1024)>;
+	};
+
+	sysclk: system-clock {
+		compatible = "fixed-clock";
+		clock-frequency = <12000000>;
+		#clock-cells = <0>;
+	};
+
+	soc {
+
+		flash-controller@400fd000 {
+			compatible = "ti,stellaris-flash-controller";
+			reg = <0x400fd000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			flash0: flash@0 {
+				compatible = "soc-nv-flash";
+				reg = <0x00000000 (256*1024)>;
+			};
+		};
+
+		uart0: uart@4000c000 {
+			compatible = "ti,stellaris-uart";
+			reg = <0x4000c000 0x4c>;
+			clocks = <&sysclk>;
+			interrupts = <5 3>;
+			status = "disabled";
+		};
+
+		uart1: uart@4000d000 {
+			compatible = "ti,stellaris-uart";
+			reg = <0x4000d000 0x4c>;
+			clocks = <&sysclk>;
+			interrupts = <6 3>;
+			status = "disabled";
+		};
+
+		uart2: uart@4000e000 {
+			compatible = "ti,stellaris-uart";
+			reg = <0x4000e000 0x4c>;
+			clocks = <&sysclk>;
+			interrupts = <33 3>;
+			status = "disabled";
+		};
+
+		eth: ethernet@40048000 {
+			compatible = "ti,stellaris-ethernet";
+			reg = <0x40048000 0x3c>;
+			interrupts = <42 0>;
+			status = "disabled";
+			local-mac-address = [00 00 94 00 83 00];
+		};
+
+		gpio0: gpio@40004000 {
+			compatible = "ti,stellaris-gpio";
+			reg = <0x40004000 0x1000>;
+			interrupts = <0 3>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <8>;
+		};
+
+		gpio1: gpio@40005000 {
+			compatible = "ti,stellaris-gpio";
+			reg = <0x40005000 0x1000>;
+			interrupts = <1 3>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <8>;
+		};
+
+		gpio2: gpio@40006000 {
+			compatible = "ti,stellaris-gpio";
+			reg = <0x40006000 0x1000>;
+			interrupts = <2 3>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <8>;
+		};
+
+		gpio3: gpio@40007000 {
+			compatible = "ti,stellaris-gpio";
+			reg = <0x40007000 0x1000>;
+			interrupts = <3 3>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <8>;
+		};
+
+		gpio4: gpio@40024000 {
+			compatible = "ti,stellaris-gpio";
+			reg = <0x40024000 0x1000>;
+			interrupts = <4 3>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <4>;
+		};
+
+		gpio5: gpio@40025000 {
+			compatible = "ti,stellaris-gpio";
+			reg = <0x40025000 0x1000>;
+			interrupts = <30 3>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <4>;
+		};
+
+		gpio6: gpio@40026000 {
+			compatible = "ti,stellaris-gpio";
+			reg = <0x40026000 0x1000>;
+			interrupts = <31 3>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <2>;
+		};
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <3>;
+};

@@ -1,0 +1,34 @@
+# SAM E54 Xplained Pro board configuration
+#
+# Copyright (c) 2019 Benjamin Valentin
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_ATSAME54_XPRO
+
+config BOARD
+	default "atsame54_xpro"
+
+if ETH_SAM_GMAC
+
+# Read MAC address from AT24MAC402 EEPROM
+
+config ETH_SAM_GMAC_MAC_I2C_INT_ADDRESS
+	default 0x9A
+
+config ETH_SAM_GMAC_MAC_I2C_INT_ADDRESS_SIZE
+	default 1
+
+config ETH_SAM_GMAC_MAC_I2C_EEPROM
+	default y
+	select I2C
+
+endif # ETH_SAM_GMAC
+
+if NETWORKING
+
+config NET_L2_ETHERNET
+	default y
+
+endif # NETWORKING
+
+endif # BOARD_ATSAME54_XPRO

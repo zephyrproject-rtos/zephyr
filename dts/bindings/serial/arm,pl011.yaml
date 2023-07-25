@@ -1,0 +1,12 @@
+description: ARM PL011 UART
+
+compatible: "arm,pl011"
+
+include: [uart-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true

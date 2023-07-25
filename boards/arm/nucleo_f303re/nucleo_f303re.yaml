@@ -1,0 +1,17 @@
+identifier: nucleo_f303re
+name: ST Nucleo F303RE
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 80
+flash: 512
+supported:
+  - arduino_gpio
+  - gpio
+  - counter
+  - can
+  - i2c
+  - spi

@@ -1,0 +1,12 @@
+# XEC counter configuration options
+
+# Copyright (c) 2019 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config COUNTER_XEC
+	bool "Microchip XEC series counter driver"
+	default y
+	depends on DT_HAS_MICROCHIP_XEC_TIMER_ENABLED
+	help
+	  Enable counter driver for Microchip XEC MCU series. Such driver
+	  will expose the basic timer devices present on the MCU.

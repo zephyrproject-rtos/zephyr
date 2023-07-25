@@ -1,0 +1,24 @@
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_NATIVE_POSIX_32BIT
+	bool "Native POSIX for 32-bit host"
+	depends on SOC_POSIX
+	select BOARD_NATIVE_POSIX
+	help
+	  Will produce a console Linux process which can be executed natively
+	  as a 32-bit executable.
+	  It provides some minimal needed models:
+	  An interrupt controller, timer (system tick), and redirects kernel prints to
+	  stdout.
+
+config BOARD_NATIVE_POSIX_64BIT
+	bool "Native POSIX for 64-bit host"
+	depends on SOC_POSIX
+	select BOARD_NATIVE_POSIX
+	select 64BIT
+	help
+	  Will produce a console Linux process which can be executed natively
+	  as a 64-bit executable.
+	  It provides some minimal needed models:
+	  An interrupt controller, timer (system tick), and redirects kernel prints to
+	  stdout.

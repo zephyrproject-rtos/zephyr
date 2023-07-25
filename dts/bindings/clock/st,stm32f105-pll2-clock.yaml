@@ -1,0 +1,36 @@
+# Copyright (c) 2021, Linaro ltd
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  PLL2 node binding for Connectivity line devices (STM32F105/STM32F107)
+
+  Takes clk_hse as input clock, using prediv as prescaler.
+
+  Each PLL as its own output clock.
+
+    f(PLL2CLK) = f(PLL2IN) / PREDIV * PLLMUL --> PLL (System Clock)
+
+
+compatible: "st,stm32f105-pll2-clock"
+
+include:
+  - name: st,stm32f105-pll-clock.yaml
+    property-blocklist:
+      - mul
+
+properties:
+  mul:
+    type: int
+    required: true
+    description: |
+        PLL multiplication factor for output clock
+    enum:
+      - 8
+      - 9
+      - 10
+      - 11
+      - 12
+      - 13
+      - 14
+      - 16
+      - 20

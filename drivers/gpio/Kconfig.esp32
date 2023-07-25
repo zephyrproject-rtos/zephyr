@@ -1,0 +1,11 @@
+# ESP32 GPIO configuration options
+
+# Copyright (c) 2017 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config GPIO_ESP32
+	bool "ESP32 GPIO"
+	default y
+	depends on DT_HAS_ESPRESSIF_ESP32_GPIO_ENABLED
+	help
+	  Enables the ESP32 GPIO driver

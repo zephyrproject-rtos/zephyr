@@ -1,0 +1,17 @@
+identifier: bbc_microbit
+name: BBC Micro:Bit
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 16
+testing:
+  ignore_tags:
+    - net
+supported:
+  - ble
+  - i2c
+  - gpio
+  - pwm

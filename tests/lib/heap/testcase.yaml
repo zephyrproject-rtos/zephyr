@@ -1,0 +1,20 @@
+# Excludes m2gl025_miv, which is based on the renode simulator.  This
+# is very slow for CPU-bound tests like this, taking upwards of 10
+# minutes (vs. ~20 seconds for qemu) to complete in CI.  There's
+# little value there, this is a unit test of library code and we have
+# coverage of the RISC-V architectures via qemu platforms already.
+# Excludes qemu_xtensa due to pathological runtimes which cannot be
+# reproduced on real hardware.
+tests:
+  libraries.heap:
+    tags: heap
+    platform_exclude:
+      - m2gl025_miv
+      - qemu_xtensa
+      - esp32s2_saola
+      - esp32s3_devkitm
+    filter: not CONFIG_SOC_NSIM
+    timeout: 480
+    integration_platforms:
+      - native_posix
+      - qemu_x86

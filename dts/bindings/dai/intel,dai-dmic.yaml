@@ -1,0 +1,20 @@
+# Copyright (c) 2022 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Intel Digital PDM Microphone (DMIC) node
+
+compatible: "intel,dai-dmic"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  shim:
+    type: int
+    required: true
+
+  fifo:
+    type: int
+    required: true

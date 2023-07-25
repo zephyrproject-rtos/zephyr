@@ -1,0 +1,37 @@
+# Atmel SAM SPI
+
+# Copyright (c) 2019 Gerson Fernando Budke
+# Copyright (c) 2018 qianfan Zhao
+# SPDX-License-Identifier: Apache-2.0
+
+config SPI_SAM
+	bool "Atmel SAM series SPI driver"
+	default y
+	depends on DT_HAS_ATMEL_SAM_SPI_ENABLED
+	select GPIO
+	help
+	  Enable support for the SAM SPI driver.
+
+if SPI_SAM
+config SPI_SAM_DMA
+	bool "SPI SAM DMA Support"
+	select DMA
+	help
+	  Enable using DMA with SPI for SPI instances that enable dma channels in
+	  their device tree node.
+
+if SPI_RTIO
+config SPI_SAM_RTIO_SQ_SIZE
+	int "Number of avialable submission queue entries"
+	default 8 # Sensible default that covers most common spi transactions
+	help
+	  When RTIO is use with SPI each driver holds a context with which blocking
+	  API calls use to perform SPI transactions. This queue needs to be as deep
+	  as the longest set of spi_buf_sets used, where normal SPI operations are
+	  used (equal length buffers). It may need to be slightly deeper where the
+	  spi buffer sets for transmit/receive are not always matched equally in
+	  length as these are transformed into normal transceives.
+
+endif # SPI_RTIO
+
+endif # SPI_SAM

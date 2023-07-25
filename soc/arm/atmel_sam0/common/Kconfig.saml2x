@@ -1,0 +1,86 @@
+# Copyright (c) 2021 Argentum Systems Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_SAML21 || SOC_SERIES_SAMR34 || SOC_SERIES_SAMR35
+
+config SOC_ATMEL_SAML_DEBUG_PAUSE
+	bool "Insert a pause at boot, to allow a debugger to attach"
+	default y
+	help
+	  Issues have been observed while attempting to attach a debugger.
+	  These can be mitigated by inserting a small delay during the early boot
+	  sequence, before the system clock is configured.
+
+	  If you ever intend to attach a debugger, say y.
+	  If you are confident that you will never attach a debugger to the
+	  resulting binary, or require the best possible boot time, say n.
+
+config SOC_ATMEL_SAML_OSC32K
+	bool "Internal 32.768 kHz RC oscillator"
+	help
+	  Eable the internal 32.768 kHz RC oscillator at startup.
+	  This can then be selected as the main clock reference for the SOC.
+
+config SOC_ATMEL_SAML_XOSC32K
+	bool "External 32.768 kHz clock source"
+	help
+	  Enable the external 32.768 kHz cloud source at startup.
+	  This can then be selected as the main clock reference for the SOC.
+
+config SOC_ATMEL_SAML_XOSC32K_CRYSTAL
+	bool "External 32.768 kHz clock is a crystal oscillator"
+	depends on SOC_ATMEL_SAML_XOSC32K
+	default y
+	help
+	  Enable the crystal oscillator (if disabled, expect a clock signal on
+	  XIN32).
+
+config SOC_ATMEL_SAML_OSC16M
+	bool "Internal 16 MHz RC oscillator"
+	help
+	  Enable the internal 16 MHz RC oscillator at startup.
+	  This can then be selected as the main clock reference for the SOC.
+
+# NOTE: XOSC is not currently supported
+
+
+choice
+	prompt "Main clock reference"
+	default SOC_ATMEL_SAML_OPENLOOP_AS_MAIN
+	help
+	  Selects the clock that will be used for the DFLL48M's reference.
+	  Main clocks, such as the CPU and AHB clocks will be derived from
+	  DFLL48M configured for 48 MHz.
+
+config SOC_ATMEL_SAML_OPENLOOP_AS_MAIN
+	bool "OPENLOOP"
+	help
+	  Note, this mode can only be used with an LDO regulator.
+
+config SOC_ATMEL_SAML_OSC32K_AS_MAIN
+	bool "OSC32K"
+	depends on SOC_ATMEL_SAML_OSC32K
+
+config SOC_ATMEL_SAML_XOSC32K_AS_MAIN
+	bool "XOSC32K"
+	depends on SOC_ATMEL_SAML_XOSC32K
+
+config SOC_ATMEL_SAML_OSC16M_AS_MAIN
+	bool "OSC16M"
+	depends on SOC_ATMEL_SAML_OSC16M
+
+endchoice
+
+endif # SOC_SERIES_SAML21 || SOC_SERIES_SAMR34 || SOC_SERIES_SAMR35
+
+config SOC_ATMEL_SAMR3X_RADIO_OFF_SETUP
+	bool "Configure LoRa radio pins if not in use"
+	default y if !LORA
+	depends on SOC_SERIES_SAMR34 || SOC_SERIES_SAMR35
+	help
+	  As detailed in DS70005356C, LoRa radio SPI pins do not have pull-ups,
+	  so when the radio is not in use, it's important that CS is kept high,
+	  to avoid unexpected behavior and increased current consumption. To
+	  further reduce power consumption, radio can be kept in reset state by
+	  keeping nRST pin low. When enabling this option, both CS and nRST will
+	  be configured high and low, respectively.

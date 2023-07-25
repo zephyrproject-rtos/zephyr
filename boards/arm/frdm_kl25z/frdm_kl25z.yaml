@@ -1,0 +1,20 @@
+identifier: frdm_kl25z
+name: NXP FRDM-KL25Z
+type: mcu
+arch: arm
+ram: 16
+flash: 128
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+supported:
+  - adc
+  - arduino_gpio
+  - gpio
+  - i2c
+  - usb_device

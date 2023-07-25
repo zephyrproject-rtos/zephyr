@@ -1,0 +1,13 @@
+# NPCX ADC driver configuration options
+
+# Copyright (c) 2020 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+config ADC_NPCX
+	bool "Nuvoton NPCX embedded controller (EC) ADC driver"
+	default y
+	depends on DT_HAS_NUVOTON_NPCX_ADC_ENABLED
+	help
+	  This option enables the ADC driver for NPCX family of
+	  processors.
+	  Say y if you wish to use ADC channels on NPCX MCU.

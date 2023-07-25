@@ -1,0 +1,95 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ * Copyright (C) 2021, Intel Corporation
+ * Description:
+ * Main Device Tree source of the Cyclone V SoC DevKit
+ * this file is based on the GSRD DTS for Linux
+ */
+
+#include "intel_socfpga_std/socfpga_cyclone5.dtsi"
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/ {
+	model = "Altera SOCFPGA Cyclone V SoC Development Kit";
+	compatible = "altr,socfpga-cyclone5-socdk", "altr,socfpga-cyclone5", "altr,socfpga";
+
+	ddr0: memory@0 {
+		name = "memory";
+		device_type = "memory";
+		reg = <0x0 0x40000000>; /* 1GB */
+	};
+
+	aliases {
+	/* Giving different names to the LEDs connected to the HPS side of the chip */
+		led0 = &hps0;
+		led1 = &hps1;
+		led2 = &hps2;
+		led3 = &hps3;
+		eeprom-0 = &eeprom;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		hps3: hps_led_3 {
+			gpios = <&gpio1 12 GPIO_ACTIVE_LOW>;
+		};
+		hps2: hps_led_2 {
+			gpios = <&gpio1 13 GPIO_ACTIVE_LOW>;
+		};
+		hps1: hps_led_1 {
+			gpios = <&gpio1 14 GPIO_ACTIVE_LOW>;
+		};
+		hps0: hps_led_0 {
+			gpios = <&gpio1 15 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	soc {
+		gmac1: ethernet@ff702000  {
+			status = "okay";
+			local-mac-address = [e6 88 2d 82 1f d4];
+		};
+		gpio0: gpio@ff708000 {
+			status = "okay";
+		};
+		gpio1: gpio@ff709000 {
+			status = "okay";
+		};
+		gpio2: gpio@ff70a000 {
+			status = "okay";
+		};
+
+		i2c0: i2c@ffc04000 {
+			status = "okay";
+
+			eeprom: eeprom@51 {
+				compatible = "atmel,at24";
+				status = "okay";
+				reg = <0x51>;
+				size = <4096>;
+				address-width = <8>;
+				timeout = <25>;
+				pagesize = <32>;
+			};
+
+			ds3231: rtc@68 {
+				compatible = "maxim,ds3231";
+				reg = <0x68>;
+			};
+		};
+	};
+
+	/* Configuring Zephyr mandatory devices */
+	chosen {
+		zephyr,sram	   = &ddr0;
+		/*zephyr,flash	= &flash0;*/
+		zephyr,console	= &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,ocm		= &ocram;
+	};
+};
+
+zephyr_udc0: &usb1 {
+	compatible = "snps,dwc2";
+	status = "okay";
+};

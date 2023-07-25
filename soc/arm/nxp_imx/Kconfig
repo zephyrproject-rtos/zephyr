@@ -1,0 +1,45 @@
+# Copyright (c) 2017-2021, NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_FAMILY_IMX
+	bool
+	select HAS_SEGGER_RTT if ZEPHYR_SEGGER_MODULE
+
+if SOC_FAMILY_IMX
+
+config SOC_FAMILY
+	string
+	default "nxp_imx"
+
+
+# Used for default value in FLASH_MCUX_FLEXSPI_XIP
+DT_CHOSEN_Z_FLASH := zephyr,flash
+DT_COMPAT_FLEXSPI := nxp,imx-flexspi
+# Macros to shorten Kconfig definitions
+DT_CHOSEN_FLASH_NODE := $(dt_chosen_path,$(DT_CHOSEN_Z_FLASH))
+DT_CHOSEN_FLASH_PARENT := $(dt_node_parent,$(DT_CHOSEN_FLASH_NODE))
+
+
+source "soc/arm/nxp_imx/*/Kconfig.soc"
+
+config SOC_PART_NUMBER
+	default SOC_PART_NUMBER_IMX_RT5XX if SOC_SERIES_IMX_RT5XX
+	default SOC_PART_NUMBER_IMX_RT6XX if SOC_SERIES_IMX_RT6XX
+	default SOC_PART_NUMBER_IMX_RT if SOC_SERIES_IMX_RT
+	default SOC_PART_NUMBER_IMX_6X_M4 if SOC_SERIES_IMX_6X_M4
+	default SOC_PART_NUMBER_IMX7_M4 if SOC_SERIES_IMX7_M4
+	default SOC_PART_NUMBER_IMX8MM_M4 if SOC_SERIES_IMX8MM_M4
+	default SOC_PART_NUMBER_IMX8ML_M7 if SOC_SERIES_IMX8ML_M7
+	default SOC_PART_NUMBER_IMX8MQ_M4 if SOC_SERIES_IMX8MQ_M4
+
+config FLASH_MCUX_FLEXSPI_XIP
+	bool "MCUX FlexSPI flash access with xip"
+	default $(dt_node_has_compat,$(DT_CHOSEN_FLASH_PARENT),$(DT_COMPAT_FLEXSPI))
+	depends on (CODE_FLEXSPI || CODE_FLEXSPI2 || SOC_SERIES_IMX_RT6XX || SOC_SERIES_IMX_RT5XX)
+	select XIP
+	help
+	  Allows for the soc to safely initialize the clocks for the
+	  FlexSpi when planning to execute code in FlexSpi Memory.
+
+
+endif # SOC_FAMILY_IMX

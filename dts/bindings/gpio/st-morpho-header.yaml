@@ -1,0 +1,13 @@
+# Copyright (c) 2023 Teslabs Engineering S.L.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  GPIO pins exposed on ST Morpho connector.
+
+  The ST morpho connector consists in male pin headers (CN7 and CN10) accessible
+  on both sides of any Nucleo board. They can be used to connect shields. All
+  signals and power pins of the STM32 are available on the ST morpho connector.
+
+compatible: "st-morpho-header"
+
+include: [gpio-nexus.yaml, base.yaml]

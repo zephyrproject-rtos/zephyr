@@ -1,0 +1,18 @@
+identifier: stm32f723e_disco
+name: ST STM32F723E Discovery
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 192
+flash: 512
+supported:
+  - arduino_i2c
+  - gpio
+  - arduino_gpio
+  - i2c
+  - spi
+  - arduino_spi
+  - usb_device

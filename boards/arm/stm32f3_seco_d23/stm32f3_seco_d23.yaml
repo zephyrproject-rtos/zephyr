@@ -1,0 +1,18 @@
+identifier: stm32f3_seco_d23
+name: SECO JUNO SBC-D23 (STM32F302)
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 40
+supported:
+  - gpio
+  - i2c
+  - counter
+  - spi
+  - watchdog
+  - nvs
+  - can
+  - pwm

@@ -1,0 +1,38 @@
+/*
+ * Copyright (c) 2018 Peter Bigot Consulting, LLC
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&pinctrl {
+	i2c0_default_alt: i2c0_default_alt {
+		group1 {
+			psels = <NRF_PSEL(TWIM_SDA, 0, 0)>,
+				<NRF_PSEL(TWIM_SCL, 0, 1)>;
+		};
+	};
+
+	i2c0_sleep_alt: i2c0_sleep_alt {
+		group1 {
+			psels = <NRF_PSEL(TWIM_SDA, 0, 0)>,
+				<NRF_PSEL(TWIM_SCL, 0, 1)>;
+			low-power-enable;
+		};
+	};
+};
+
+&i2c0 {
+	status = "okay";
+	pinctrl-0 = <&i2c0_default_alt>;
+	pinctrl-1 = <&i2c0_sleep_alt>;
+	pinctrl-names = "default", "sleep";
+
+	/* Sparkfun Environment Combo uses second I2C address */
+	ccs811: ccs811@5b {
+		compatible = "ams,ccs811";
+		reg = <0x5b>;
+		irq-gpios = <&gpio0 2 GPIO_ACTIVE_LOW>;
+		wake-gpios = <&gpio0 5 GPIO_ACTIVE_LOW>;
+		reset-gpios = <&gpio0 6 GPIO_ACTIVE_LOW>;
+	};
+};

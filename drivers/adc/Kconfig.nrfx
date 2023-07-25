@@ -1,0 +1,31 @@
+# ADC configuration options
+
+# Copyright (c) 2018, Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config ADC_NRFX_ADC
+	bool "nRF ADC nrfx driver"
+	default y
+	depends on DT_HAS_NORDIC_NRF_ADC_ENABLED
+	select NRFX_ADC
+	select ADC_CONFIGURABLE_INPUTS
+	help
+	  Enable support for nrfx ADC driver for nRF51 MCU series.
+
+config ADC_NRFX_ADC_CHANNEL_COUNT
+	int "Number of ADC channels"
+	depends on ADC_NRFX_ADC
+	range 1 8
+	default 1
+	help
+	  Number of ADC channels to be supported by the driver. Each channel
+	  needs a dedicated structure in RAM that stores the ADC settings
+	  to be used when sampling this channel.
+
+config ADC_NRFX_SAADC
+	bool "nRF SAADC nrfx driver"
+	default y
+	depends on DT_HAS_NORDIC_NRF_SAADC_ENABLED
+	select ADC_CONFIGURABLE_INPUTS
+	help
+	  Enable support for nrfx SAADC driver.

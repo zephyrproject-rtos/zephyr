@@ -1,0 +1,231 @@
+# Misc network drivers configuration options
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig NET_DRIVERS
+	bool "Network drivers"
+
+if NET_DRIVERS
+
+#
+# PPP options
+#
+menuconfig NET_PPP
+	bool "Point-to-point (PPP) UART based driver"
+	depends on NET_L2_PPP
+	depends on NET_NATIVE
+	select RING_BUFFER
+	select CRC
+	select UART_MUX if GSM_MUX
+
+if NET_PPP
+
+config NET_PPP_ASYNC_UART
+	bool "Asynchronous UART API is used"
+	depends on UART_ASYNC_API
+	depends on !GSM_MUX
+
+config NET_PPP_DRV_NAME
+	string "PPP Driver name"
+	default "ppp"
+	help
+	  This option sets the driver name
+
+config NET_PPP_MTU_MRU
+	int "PPP MTU and MRU"
+	default 1500
+	help
+	  This options sets MTU and MRU for PPP link.
+
+config NET_PPP_UART_BUF_LEN
+	int "Buffer length when reading from UART"
+	default 8
+	help
+	  This options sets the size of the UART buffer where data
+	  is being read to.
+
+config NET_PPP_RINGBUF_SIZE
+	int "PPP ring buffer size"
+	default 256
+	help
+	  PPP ring buffer size when passing data from RX ISR to worker
+	  thread that will pass the data to IP stack.
+
+config NET_PPP_RX_STACK_SIZE
+	int "Size of the stack allocated for receiving data from modem"
+	default 768
+	help
+	  Sets the stack size which will be used by the PPP RX workqueue.
+
+config NET_PPP_RX_PRIORITY
+	int "RX workqueue thread priority"
+	default 7
+	help
+	  Sets the priority of the RX workqueue thread.
+
+config NET_PPP_VERIFY_FCS
+	bool "Verify that received FCS is valid"
+	default y
+	help
+	  If you have a reliable link, then it might make sense
+	  to disable this as it takes some time to verify the received
+	  packet.
+
+config PPP_MAC_ADDR
+	string "MAC address for the interface"
+	help
+	  Specify a MAC address for the PPP interface in the form of
+	  six hex 8-bit chars separated by colons (e.g.:
+	  aa:33:cc:22:e2:c0).  The default is an empty string, which
+	  means the code will make 00:00:5E:00:53:XX, where XX will be
+	  random.
+
+config PPP_CLIENT_CLIENTSERVER
+	bool "Reply to the request CLIENT with CLIENTSERVER"
+	help
+	  This is only necessary if a ppp connection should be
+	  established with a Microsoft Windows PC.
+
+config PPP_NET_IF_NO_AUTO_START
+	bool "Disable PPP interface auto-start"
+	help
+	  This option allows user to disable autostarting of the PPP interface
+	  immediately after initialization.
+
+if NET_PPP_ASYNC_UART
+
+config NET_PPP_ASYNC_UART_TX_BUF_LEN
+	int "Buffer length from where the write to async UART is done"
+	default 2048
+	help
+	  This options sets the size of the UART TX buffer where data
+	  is being written from to UART.
+
+config NET_PPP_ASYNC_UART_RX_RECOVERY_TIMEOUT
+	int "UART RX recovery timeout in milliseconds"
+	default 200
+	help
+	  The time that UART RX is in disabled state in case
+	  when we cannot receive more data from UART.
+
+config NET_PPP_ASYNC_UART_RX_ENABLE_TIMEOUT
+	int "A timeout for uart_rx_enable() in milliseconds"
+	default 100
+
+config NET_PPP_ASYNC_UART_TX_TIMEOUT
+	int "A timeout for uart_tx() in milliseconds"
+	default 100
+
+endif # NET_PPP_ASYNC_UART
+
+module = NET_PPP
+module-dep = LOG
+module-str = Log level for ppp driver
+module-help = Sets log level for ppp driver.
+source "subsys/net/Kconfig.template.log_config.net"
+
+endif # NET_PPP
+
+#
+# SLIP options
+#
+menuconfig SLIP
+	bool "SLIP driver" if !QEMU_TARGET
+	depends on NET_NATIVE
+	select UART_PIPE
+	select UART_INTERRUPT_DRIVEN
+
+if SLIP
+
+config SLIP_DRV_NAME
+	string "SLIP Driver name"
+	default "slip"
+	help
+	  This option sets the driver name
+
+module = SLIP
+module-dep = LOG
+module-str = Log level for slip driver
+module-help = Sets log level for slip driver.
+source "subsys/net/Kconfig.template.log_config.net"
+
+config SLIP_STATISTICS
+	bool "SLIP network connection statistics"
+	help
+	  This option enables statistics support for SLIP driver.
+
+config SLIP_TAP
+	bool "Use TAP interface to host"
+	default y
+	select NET_L2_ETHERNET
+	help
+	  In TAP the Ethernet frames are transferred over SLIP.
+
+config SLIP_MAC_ADDR
+	string "MAC address for the interface"
+	help
+	  Specify a MAC address for the SLIP interface in the form of
+	  six hex 8-bit chars separated by colons (e.g.:
+	  aa:33:cc:22:e2:c0).  The default is an empty string, which
+	  means the code will make 00:00:5E:00:53:XX, where XX will be
+	  random.
+
+endif
+
+#
+# Net loopback options
+#
+menuconfig NET_LOOPBACK
+	bool "Net loopback driver"
+	select NET_L2_DUMMY
+
+if NET_LOOPBACK
+
+config NET_LOOPBACK_SIMULATE_PACKET_DROP
+	bool "Controlable packet drop"
+	help
+	  Enable interface to have a controlable packet drop rate, only for
+	  testing, should not be enabled for normal applications
+
+config NET_LOOPBACK_MTU
+	int "MTU for loopback interface"
+	default 576
+	help
+	  This option sets the MTU for loopback interface.
+
+module = NET_LOOPBACK
+module-dep = LOG
+module-str = Log level for network loopback driver
+module-help = Sets log level for network loopback driver.
+source "subsys/net/Kconfig.template.log_config.net"
+
+endif
+
+#
+# CAN bus network driver options
+#
+menuconfig NET_CANBUS
+	bool "Controller Area Network (CAN) bus network driver"
+	help
+	  Enable the CAN bus network driver. This driver provides a network interface on top of the
+	  CAN controller driver API.
+
+if NET_CANBUS
+
+module = NET_CANBUS
+module-dep = LOG
+module-str = Log level for CAN bus network driver
+module-help = Sets log level CAN bus network driver.
+source "subsys/net/Kconfig.template.log_config.net"
+
+config NET_CANBUS_INIT_PRIORITY
+	int "CAN bus network device init priority"
+	default 81
+	help
+	  CAN bus network device initialization priority.
+
+	  The priority needs to be lower than the network stack and higher than the CAN controller
+	  driver.
+
+endif # NET_CAN
+
+endif # NET_DRIVERS

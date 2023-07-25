@@ -1,0 +1,20 @@
+# Renesas R-Car CAN configuration options
+
+# Copyright (c) 2021 IoT.bzh
+# SPDX-License-Identifier: Apache-2.0
+
+config CAN_RCAR
+	bool "Renesas R-Car CAN Driver"
+	default y
+	depends on DT_HAS_RENESAS_RCAR_CAN_ENABLED
+	help
+	  Enable Renesas R-Car CAN Driver.
+
+config CAN_RCAR_MAX_FILTER
+	int "Maximum number of concurrent active filters"
+	depends on CAN_RCAR
+	default 5
+	range 1 32
+	help
+	  Defines the array size of the callback/msgq pointers.
+	  Must be at least the size of concurrent reads.

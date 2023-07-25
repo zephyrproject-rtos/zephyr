@@ -1,0 +1,202 @@
+/*
+ * PAN1782 EVB configuration
+ *
+ * Copyright (c) 2022 Panasonic Industrial Devices Europe GmbH
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <nordic/nrf52833_qiaa.dtsi>
+#include "pan1782_evb-pinctrl.dtsi"
+
+/ {
+	model = "pan1782-evb";
+	compatible = "panasonic-industrial-devices-europe-gmbh,pan1782-evb";
+
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,uart-mcumgr = &uart0;
+		zephyr,bt-mon-uart = &uart0;
+		zephyr,bt-c2h-uart = &uart0;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,ieee802154 = &ieee802154;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		evb_led1: evb_led_1 {
+			gpios = <&gpio0 15 GPIO_ACTIVE_LOW>;
+			label = "LED1 on EVB";
+		};
+		evb_led2: evb_led_2 {
+			gpios = <&gpio0 17 GPIO_ACTIVE_LOW>;
+			label = "LED2 on EVB";
+		};
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+		pwm_evb_led1: pwm_evb_led_1 {
+			pwms = <&pwm0 0 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+		evb_sw1: evb_sw1 {
+			gpios = <&gpio0 4 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "SW1 on EVB";
+		};
+		evb_sw2: evb_sw2 {
+			gpios = <&gpio0 5 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "SW2 on EVB";
+		};
+	};
+
+	arduino_header: connector {
+		compatible = "panasonic,reduced-arduino-header";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0 0 &gpio0 31 0>,	/* A0 */
+			   <1 0 &gpio0 30 0>,	/* A1 */
+			   <2 0 &gpio0 4 0>,	/* A2 */
+			   <3 0 &gpio0 5 0>,	/* A3 */
+			   <6 0 &gpio1 9 0>,	/* D0 */
+			   <7 0 &gpio1 3 0>,	/* D1 */
+			   <8 0 &gpio1 15 0>,	/* D2 */
+			   <9 0 &gpio1 17 0>,	/* D3 */
+			   <10 0 &gpio1 4 0>,	/* D4 */
+			   <11 0 &gpio1 5 0>,	/* D5 */
+			   <16 0 &gpio0 30 0>,	/* D10 */
+			   <17 0 &gpio0 20 0>,	/* D11 */
+			   <18 0 &gpio0 2 0>,	/* D12 */
+			   <19 0 &gpio0 29 0>,	/* D13 */
+			   <20 0 &gpio0 11 0>,	/* D14 */
+			   <21 0 &gpio0 28 0>;	/* D15 */
+	};
+
+	/* These aliases are provided for compatibility with samples */
+	aliases {
+		led0 = &evb_led1;
+		led1 = &evb_led2;
+		pwm-led0 = &pwm_evb_led1;
+		sw0 = &evb_sw1;
+		sw1 = &evb_sw2;
+		bootloader-led0 = &evb_led1;
+		watchdog0 = &wdt0;
+	};
+};
+
+&adc {
+	status = "okay";
+};
+
+&gpiote {
+	status = "okay";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+arduino_serial: &uart0 {
+	compatible = "nordic,nrf-uarte";
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-1 = <&uart0_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+arduino_i2c: &i2c0 {
+	compatible = "nordic,nrf-twi";
+	status = "okay";
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-1 = <&i2c0_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&i2c1 {
+	compatible = "nordic,nrf-twi";
+	/* Cannot be used together with spi1, so disabled by default. */
+	pinctrl-0 = <&i2c1_default>;
+	pinctrl-1 = <&i2c1_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&pwm0 {
+	status = "okay";
+	pinctrl-0 = <&pwm0_default>;
+	pinctrl-1 = <&pwm0_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&spi0 {
+	compatible = "nordic,nrf-spi";
+	/* Cannot be used together with i2c0, so disabled by default. */
+	pinctrl-0 = <&spi0_default>;
+	pinctrl-1 = <&spi0_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&spi1 {
+	compatible = "nordic,nrf-spi";
+	status = "okay";
+	pinctrl-0 = <&spi1_default>;
+	pinctrl-1 = <&spi1_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+arduino_spi: &spi3 {
+	status = "okay";
+	cs-gpios = <&gpio0 30 GPIO_ACTIVE_LOW>; /* D10 */
+	pinctrl-0 = <&spi3_default>;
+	pinctrl-1 = <&spi3_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&ieee802154 {
+	status = "okay";
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x000000000 0xC000>;
+		};
+		slot0_partition: partition@c000 {
+			label = "image-0";
+			reg = <0x0000C000 0x32000>;
+		};
+		slot1_partition: partition@3e000 {
+			label = "image-1";
+			reg = <0x0003E000 0x32000>;
+		};
+		scratch_partition: partition@70000 {
+			label = "image-scratch";
+			reg = <0x00070000 0xA000>;
+		};
+		storage_partition: partition@7a000 {
+			label = "storage";
+			reg = <0x0007A000 0x00006000>;
+		};
+	};
+};
+
+zephyr_udc0: &usbd {
+	compatible = "nordic,nrf-usbd";
+	status = "okay";
+};

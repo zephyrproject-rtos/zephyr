@@ -1,0 +1,14 @@
+# ST STM32F429XX MCU configuration options
+
+# Copyright (c) 2016 Linaro Limited.
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_STM32F429XX
+
+config SOC
+	default "stm32f429xx"
+
+config NUM_IRQS
+	default 91
+
+endif # SOC_STM32F429XX

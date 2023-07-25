@@ -1,0 +1,10 @@
+sample:
+  name: USB HID accelerometer mouse sample
+tests:
+  sample.sensor.usb.fxos8700-hid:
+    depends_on: usb_device
+    platform_allow: frdm_k64f
+    harness: usb
+    tags:
+      - usb
+      - sensors

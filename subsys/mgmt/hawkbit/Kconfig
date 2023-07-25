@@ -1,0 +1,87 @@
+# Copyright (c) 2020 Linumiz
+# SPDX -License-Identifier: Apache-2.0
+
+menuconfig HAWKBIT
+	bool "Hawkbit Firmware Over-the-Air support"
+	depends on NVS
+	depends on FLASH
+	depends on REBOOT
+	depends on HWINFO
+	depends on NET_TCP
+	depends on NET_SOCKETS
+	depends on IMG_MANAGER
+	depends on NETWORKING
+	depends on HTTP_CLIENT
+	depends on DNS_RESOLVER
+	depends on JSON_LIBRARY
+	depends on BOOTLOADER_MCUBOOT
+	select MPU_ALLOW_FLASH_WRITE
+	select IMG_ENABLE_IMAGE_CHECK
+	select IMG_ERASE_PROGRESSIVELY
+	help
+	  Hawkbit is a domain independent back-end framework for polling out
+	  software updates to constrained edge devices as well as more powerful
+	  controllers and gateways connected to IP based networking infrastructure.
+
+if HAWKBIT
+config HAWKBIT_POLL_INTERVAL
+	int "Time to poll interval (in minutes)"
+	default 5
+	range 1 43200
+	help
+	  Set the interval that the hawkbit update server will be polled.
+	  This time interval is zero and 43200 minutes(30 days).
+
+config HAWKBIT_SHELL
+	bool "Hawkbit shell utilities"
+	depends on SHELL
+	help
+	  Activate shell module that provides Hawkbit commands.
+
+config HAWKBIT_SERVER
+	string "User address for the hawkbit server"
+	default ""
+	help
+	  Configure the hawkbit server address.
+
+config HAWKBIT_PORT
+	string "Port address for the hawkbit server"
+	default "8080"
+	help
+	  Configure the hawkbit port number.
+
+choice HAWKBIT_DDI_SECURITY
+	prompt "Hawkbit DDI API authentication modes"
+	default HAWKBIT_DDI_NO_SECURITY
+
+config HAWKBIT_DDI_NO_SECURITY
+	bool "No authentication security"
+	help
+	  No authentication security for the Hawkbit DDI API.
+
+config HAWKBIT_DDI_TARGET_SECURITY
+	bool "Use target security token authentication"
+	help
+	  Use target security token authentication for the Hawkbit DDI API.
+
+config HAWKBIT_DDI_GATEWAY_SECURITY
+	bool "Use gateway security token authentication"
+	help
+	  Use gateway security token authentication for the Hawkbit DDI API.
+
+endchoice
+
+config HAWKBIT_DDI_SECURITY_TOKEN
+	string "Authentication security token"
+	depends on HAWKBIT_DDI_TARGET_SECURITY || HAWKBIT_DDI_GATEWAY_SECURITY
+	default ""
+	help
+	  Authentication security token for the configured Hawkbit DDI
+	  authentication mode.
+
+module = HAWKBIT
+module-str = Log Level for hawkbit
+module-help = Enables logging for Hawkbit code.
+source "subsys/logging/Kconfig.template.log_config"
+
+endif

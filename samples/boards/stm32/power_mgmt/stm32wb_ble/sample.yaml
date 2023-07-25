@@ -1,0 +1,9 @@
+sample:
+  name: Bluetooth shutdown
+tests:
+  sample.boards.stm32.pm.stm32wb_ble_pm:
+    harness: bluetooth
+    platform_allow: nucleo_wb55rg
+    tags:
+      - bluetooth
+      - pm

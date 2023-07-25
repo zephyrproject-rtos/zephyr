@@ -1,0 +1,40 @@
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig UART_STELLARIS
+	bool "Stellaris serial driver"
+	default y
+	depends on DT_HAS_TI_STELLARIS_UART_ENABLED
+	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
+	help
+	  This option enables the Stellaris serial driver.
+	  This specific driver can be used for the serial hardware
+	  available at the Texas Instrument LM3S6965 board.
+
+if UART_STELLARIS
+
+# ---------- Port 0 ----------
+
+config UART_STELLARIS_PORT_0
+	bool "Stellaris UART Port 0"
+	help
+	  This tells the driver to configure the UART port at boot, depending on
+	  the additional configure options below.
+
+# ---------- Port 1 ----------
+
+config UART_STELLARIS_PORT_1
+	bool "Stellaris UART Port 1"
+	help
+	  This tells the driver to configure the UART port at boot, depending on
+	  the additional configure options below.
+
+# ---------- Port 2 ----------
+
+config UART_STELLARIS_PORT_2
+	bool "Stellaris UART Port 2"
+	help
+	  This tells the driver to configure the UART port at boot, depending on
+	  the additional configure options below.
+
+endif # UART_STELLARIS

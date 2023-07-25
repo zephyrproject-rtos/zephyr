@@ -1,0 +1,43 @@
+# MIMX8ML8 SoC defconfig
+
+# Copyright (c) 2021, Laird Connectivity
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_MIMX8ML8
+
+config SOC
+	string
+	default "mimx8ml8"
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	int
+	default 800000000
+
+config GPIO
+	default y
+
+config IPM_IMX_REV2
+	default y
+	depends on IPM
+
+if CODE_ITCM
+
+config FLASH_SIZE
+	default $(dt_node_reg_size_int,/soc/itcm@0,0,K)
+
+config FLASH_BASE_ADDRESS
+	default $(dt_node_reg_addr_hex,/soc/itcm@0)
+
+endif # CODE_ITCM
+
+if CODE_DDR
+
+config FLASH_SIZE
+	default $(dt_node_reg_size_int,/soc/code@80000000,0,K)
+
+config FLASH_BASE_ADDRESS
+	default $(dt_node_reg_addr_hex,/soc/code@80000000)
+
+endif # CODE_DDR
+
+endif # SOC_MIMX8ML8

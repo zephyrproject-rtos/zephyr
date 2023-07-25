@@ -1,0 +1,80 @@
+#
+# Kconfig - Cortex-A9 (Zynq-7000) QEMU Emulation
+#
+# Copyright (c) 2021, Weidmueller Interface GmbH & Co. KG
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if BOARD_QEMU_CORTEX_A9
+
+config BUILD_OUTPUT_BIN
+	default n
+
+config BOARD
+	default "qemu_cortex_a9"
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	int
+	default 111111111
+
+config SYS_CLOCK_TICKS_PER_SEC
+	default 1000
+
+if LOG
+
+	if LOG_PROCESS_THREAD
+
+		config LOG_PROCESS_THREAD_STACK_SIZE
+		default 8192
+
+	endif # LOG_PROCESS_THREAD
+
+endif # LOG
+
+if NETWORKING
+
+	config NET_L2_ETHERNET
+	default y
+
+	config NET_TX_STACK_SIZE
+	default 8192
+
+	config NET_RX_STACK_SIZE
+	default 8192
+
+	if NET_TCP
+
+		config NET_TCP_WORKQ_STACK_SIZE
+		default 8192
+
+	endif # NET_TCP
+
+	if NET_MGMT_EVENT
+
+		config NET_MGMT_EVENT_STACK_SIZE
+		default 8192
+
+	endif # NET_MGMT_EVENT
+
+	config TEST_RANDOM_GENERATOR
+	default y
+
+endif # NETWORKING
+
+if QEMU_ICOUNT
+
+	config QEMU_ICOUNT_SHIFT
+	default 3
+	config QEMU_ICOUNT_SLEEP
+	default y
+
+endif # QEMU_ICOUNT
+
+if SHELL
+
+	config SHELL_STACK_SIZE
+	default 8192
+
+endif # SHELL
+
+endif # BOARD_QEMU_CORTEX_A9

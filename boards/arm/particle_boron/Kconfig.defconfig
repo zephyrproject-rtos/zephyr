@@ -1,0 +1,28 @@
+# Particle Boron board configuration
+
+# Copyright (c) 2018 Peter Bigot Consulting, LLC
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_PARTICLE_BORON
+
+config BOARD
+	default "particle_boron"
+
+config BT_CTLR
+	default BT
+
+if MODEM
+
+config MODEM_UBLOX_SARA
+	default y
+
+choice MODEM_UBLOX_SARA_VARIANT
+	default MODEM_UBLOX_SARA_R4
+endchoice
+
+config UART_INTERRUPT_DRIVEN
+	default y
+
+endif # MODEM
+
+endif # BOARD_PARTICLE_BORON

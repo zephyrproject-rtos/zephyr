@@ -1,0 +1,38 @@
+# Copyright (c) 2020 PHYTEC Messtechnik GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig IEEE802154_DW1000
+	bool "Decawave DW1000 Driver support"
+	default y
+	depends on DT_HAS_DECAWAVE_DW1000_ENABLED
+	select SPI
+
+if IEEE802154_DW1000
+
+config IEEE802154_DW1000_SNIFF_ONT
+	int "SNIFF on time"
+	default 0
+	range 0 15
+	help
+	  SNIFF on time in unit of PAC. The minimum on time is the duration
+	  of two PACs. The SNIFF counter always adds 1 PAC unit to the on-time
+	  count. The SNIFF_ONT value should be in range of 1-15.
+	  Zero value disables SNIFF mode.
+
+config IEEE802154_DW1000_SNIFF_OFFT
+	int "SNIFF off time"
+	default 16
+	range 1 255
+	help
+	  SNIFF off time in unit of approximate 1 microsecond.
+
+config IEEE802154_DW1000_INIT_PRIO
+	int "DW1000 initialization priority"
+	default 80
+	help
+	  Set the initialization priority number. Do not mess with it unless
+	  you know what you are doing. Beware DW1000 requires gpio and spi to
+	  be ready first (and sometime gpio should be the very first as spi
+	  might need it too). And of course it has to start before the net stack.
+
+endif

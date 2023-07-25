@@ -1,0 +1,134 @@
+/*
+ * Copyright 2023 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <arm/nxp/nxp_s32k344_m7.dtsi>
+#include <dt-bindings/gpio/gpio.h>
+#include "mr_canhubk3-pinctrl.dtsi"
+
+/ {
+	model = "NXP MR-CANHUBK3";
+	compatible = "nxp,mr_canhubk3";
+
+	chosen {
+		zephyr,sram = &sram0_1;
+		zephyr,flash = &flash0;
+		zephyr,itcm = &itcm;
+		zephyr,dtcm = &dtcm;
+		zephyr,code-partition = &code_partition;
+		zephyr,console = &lpuart2;
+		zephyr,shell-uart = &lpuart2;
+	};
+
+	aliases {
+		led0 = &user_led1_red;
+		led1 = &user_led1_green;
+		led2 = &user_led1_blue;
+		sw0 = &user_button_1;
+		sw1 = &user_button_2;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		user_led1_green: user_led1_green {
+			gpios = <&gpioa_h 11 GPIO_ACTIVE_LOW>;
+			label = "User RGB LED1 GREEN";
+		};
+		user_led1_blue: user_led1_blue {
+			gpios = <&gpioe_l 12 GPIO_ACTIVE_LOW>;
+			label = "User RGB LED1 BLUE";
+		};
+		user_led1_red: user_led1_red {
+			gpios = <&gpioe_l 14 GPIO_ACTIVE_LOW>;
+			label = "User RGB LED1 RED";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		user_button_1: button_0 {
+			label = "User SW1";
+			gpios = <&gpiod_l 15 GPIO_ACTIVE_HIGH>;
+		};
+		user_button_2: button_1 {
+			label = "User SW2";
+			gpios = <&gpioa_h 9 GPIO_ACTIVE_HIGH>;
+		};
+	};
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		ivt_header: partition@0 {
+			label = "ivt-header";
+			reg = <0x00000000 0x100>;
+		};
+
+		code_partition: partition@100 {
+			label = "code-partition";
+			reg = <0x00000100 (DT_SIZE_K(4048) - 0x100)>;
+		};
+	};
+};
+
+&gpioa_h {
+	status = "okay";
+};
+
+&gpioe_l {
+	status = "okay";
+};
+
+&gpiod_l {
+	status = "okay";
+};
+
+&eirq0 {
+	pinctrl-0 = <&eirq0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&lpuart0 {
+	pinctrl-0 = <&lpuart0_default>;
+	pinctrl-names = "default";
+};
+
+&lpuart1 {
+	pinctrl-0 = <&lpuart1_default>;
+	pinctrl-names = "default";
+};
+
+&lpuart2 {
+	pinctrl-0 = <&lpuart2_default>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&lpuart9 {
+	pinctrl-0 = <&lpuart9_default>;
+	pinctrl-names = "default";
+};
+
+&lpuart10 {
+	pinctrl-0 = <&lpuart10_default>;
+	pinctrl-names = "default";
+};
+
+&lpuart13 {
+	pinctrl-0 = <&lpuart13_default>;
+	pinctrl-names = "default";
+};
+
+&lpuart14 {
+	pinctrl-0 = <&lpuart14_default>;
+	pinctrl-names = "default";
+};

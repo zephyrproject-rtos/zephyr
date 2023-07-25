@@ -1,0 +1,12 @@
+sample:
+  name: Button Sample
+tests:
+  sample.basic.button:
+    tags:
+      - button
+      - gpio
+    filter: dt_enabled_alias_with_parent_compat("sw0", "gpio-keys")
+    integration_platforms:
+      - nrf52833dk_nrf52820
+    depends_on: gpio
+    harness: button

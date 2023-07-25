@@ -1,0 +1,12 @@
+common:
+  filter: TOOLCHAIN_HAS_NEWLIB == 1
+sample:
+  description: TBD
+  name: TBD
+tests:
+  sample.net.sockets.coap_server:
+    harness: net
+    tags:
+      - net
+      - socket
+    platform_allow: qemu_x86

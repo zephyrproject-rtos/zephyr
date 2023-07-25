@@ -1,0 +1,23 @@
+# SPDX-License-Identifier: Apache-2.0
+
+# Zephyr Kernel Configuration
+CONFIG_SOC_SERIES_STM32F3X=y
+
+# Platform Configuration
+CONFIG_SOC_STM32F334X8=y
+
+# Serial Drivers
+CONFIG_SERIAL=y
+CONFIG_UART_INTERRUPT_DRIVEN=y
+# enable console
+CONFIG_CONSOLE=y
+CONFIG_UART_CONSOLE=y
+
+# GPIO Controller
+CONFIG_GPIO=y
+
+# Enable clock
+CONFIG_CLOCK_CONTROL=y
+
+# enable pin controller
+CONFIG_PINCTRL=y

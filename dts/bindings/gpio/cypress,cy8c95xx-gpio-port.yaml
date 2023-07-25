@@ -1,0 +1,23 @@
+# Copyright (c) 2021 Synopsys
+# SPDX-License-Identifier: Apache-2.0
+
+description: Cypress cy8c95xx GPIO port node
+
+compatible: "cypress,cy8c95xx-gpio-port"
+
+include: [gpio-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  "#gpio-cells":
+    const: 2
+
+  ngpios:
+    required: true
+    const: 8
+
+gpio-cells:
+  - pin
+  - flags

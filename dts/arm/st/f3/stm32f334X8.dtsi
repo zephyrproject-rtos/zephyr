@@ -1,0 +1,36 @@
+/*
+ * Copyright (c) 2018 Linaro Limited
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <st/f3/stm32f334.dtsi>
+
+/ {
+	ccm0: memory@10000000 {
+		compatible = "zephyr,memory-region", "st,stm32-ccm";
+		reg = <0x10000000 DT_SIZE_K(4)>;
+		zephyr,memory-region = "CCM";
+	};
+
+	sram0: memory@20000000 {
+		reg = <0x20000000 DT_SIZE_K(12)>;
+	};
+
+	soc {
+		flash-controller@40022000 {
+			flash0: flash@8000000 {
+				reg = <0x08000000 DT_SIZE_K(64)>;
+			};
+		};
+
+		dac2: dac@40009800 {
+			compatible = "st,stm32-dac";
+			reg = <0x40009800 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x04000000>;
+			status = "disabled";
+			#io-channel-cells = <1>;
+		};
+	};
+};

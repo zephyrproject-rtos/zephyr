@@ -1,0 +1,36 @@
+# Copyright (c) 2020 Intel Corp.
+# SPDX-License-Identifier: Apache-2.0
+#
+# EDAC configuration options
+
+menuconfig EDAC
+	bool "Error Detection and Correction (EDAC) drivers"
+	help
+	  Enable Error Detection and Correction (EDAC) driver.
+
+if EDAC
+
+config EDAC_ERROR_INJECT
+	bool "EDAC Error Injection mechanism"
+	help
+	  Enable Error injection capability for test error checking
+	  and reporting. Should not be enabled in production system.
+
+config EDAC_SHELL
+	bool "EDAC Shell"
+	depends on SHELL
+	default y if SHELL
+	help
+	  Enable EDAC shell for debugging EDAC.
+
+config EDAC_IBECC
+	bool "In-Band ECC (IBECC)"
+	depends on X86 && PCIE
+	help
+	  This option selects In-Band ECC (IBECC) IP support.
+
+module = EDAC
+module-str = edac
+source "subsys/logging/Kconfig.template.log_config"
+
+endif #EDAC

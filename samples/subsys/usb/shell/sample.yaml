@@ -1,0 +1,27 @@
+sample:
+  name: USB support shell sample
+tests:
+  sample.usbd.shell:
+    platform_allow:
+      - nrf52840dk_nrf52840
+      - frdm_k64f
+    depends_on: usb_device
+    harness: keyboard
+    tags: usb
+  sample.usbh.shell:
+    depends_on: usb_device
+    tags:
+      - usb
+      - shield
+    extra_args:
+      - CONF_FILE="device_and_host_prj.conf"
+      - SHIELD="sparkfun_max3421e"
+    platform_allow:
+      - nrf52840dk_nrf52840
+      - frdm_k64f
+    build_only: true
+  sample.usbh.shell.virtual:
+    tags: usb
+    extra_args: CONF_FILE="device_and_host_prj.conf"
+    platform_allow: qemu_cortex_m3
+    build_only: true

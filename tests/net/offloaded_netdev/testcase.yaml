@@ -1,0 +1,9 @@
+common:
+  min_ram: 16
+  depends_on: netif
+tests:
+  net.offloaded_netdev:
+    tags:
+      - net
+      - iface
+      - userspace

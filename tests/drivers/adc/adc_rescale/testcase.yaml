@@ -1,0 +1,6 @@
+common:
+  tags: adc drivers userspace
+tests:
+  drivers.adc.rescale:
+    depends_on: adc
+    platform_allow: native_posix

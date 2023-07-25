@@ -1,0 +1,31 @@
+# Copyright (c) 2021, Eug Krashtan
+# SPDX-License-Identifier: Apache-2.0
+
+description: STM32 family TEMP node
+
+compatible: "st,stm32-temp"
+
+include: [base.yaml, "st,stm32-temp-common.yaml"]
+
+properties:
+  avgslope:
+    type: int
+    default: 25
+    description: |
+      Average slope of T-V chart (in mV/C x10) according to
+      datasheet "Electrical characteristics/Operating conditions"
+      STM32F1 Table 5.3.19 (min 4 mV/C, max 4.6, default 4.3)
+      STM32F4 Table 6.3.21 default 2.5
+
+  v25:
+    type: int
+    default: 760
+    description: |
+      Voltage of temperature sensor at 25C in mV according to
+      datasheet "Electrical characteristics/Operating conditions"
+      STM32F1 Table 5.3.19 (min 1340, max 1520, default 1430)
+      STM32F4 Table 6.3.21 default 760
+
+  ntc:
+    type: boolean
+    description: Negative Temperature Coefficient. True if STM32F1

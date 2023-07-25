@@ -1,0 +1,8 @@
+# Texas Instruments SimpleLink CC2652R
+
+# Copyright (c) 2022 Vaishnav Achath
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC
+	default "cc2652r7"
+	depends on SOC_CC2652R7

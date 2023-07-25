@@ -1,0 +1,20 @@
+# Nordic Semiconductor nRF5x s/w PWM configuration options
+
+# Copyright (c) 2017 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config PWM_NRF5_SW
+	bool "Nordic Semiconductor nRF5x series S/W PWM"
+	default y if !PWM_NRFX
+	depends on DT_HAS_NORDIC_NRF_SW_PWM_ENABLED
+	depends on DT_HAS_NORDIC_NRF_PPI_ENABLED
+	select NRFX_GPIOTE
+	select NRFX_PPI
+	help
+	  Enable driver to utilize PWM on the Nordic Semiconductor nRF5x series.
+
+	  When used with HF timer it provides up to 3 pins, utilizing two PPI
+	  channels per pin and one GPIOTE config per pin.
+
+	  When used with RTC it provides up to 3 pins, utilizing three PPI
+	  channels per pin and one GPIOTE config per pin.

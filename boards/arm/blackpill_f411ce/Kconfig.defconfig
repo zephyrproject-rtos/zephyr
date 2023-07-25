@@ -1,0 +1,15 @@
+# Copyright (c) 2020 Brian Bradley
+# SPDX-License-Identifier: Apache-2.0
+
+# F411CE based Black Pill V2.0+ board board configuration
+
+if BOARD_BLACKPILL_F411CE
+
+config BOARD
+	default "blackpill_f411ce"
+
+config SPI_STM32_INTERRUPT
+	default y
+	depends on SPI
+
+endif # BOARD_BLACKPILL_F411CE

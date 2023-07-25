@@ -1,0 +1,99 @@
+/*
+ * Copyright (c) 2018-2019 PHYTEC Messtechnik GmbH
+ * Copyright (c) 2017 Linaro Limited
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <nordic/nrf52840_qiaa.dtsi>
+#include "reel_board.dtsi"
+#include "reel_board-pinctrl.dtsi"
+
+/ {
+	model = "reel board";
+	compatible = "phytec,reel_board";
+
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,uart-mcumgr = &uart0;
+		zephyr,bt-mon-uart = &uart0;
+		zephyr,bt-c2h-uart = &uart0;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,display = &ssd16xx;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		back_led: led_3 {
+			gpios = <&gpio0 13 GPIO_ACTIVE_LOW>;
+			label = "User D13 green";
+		};
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+		back_pwm_led: pwm_led_3 {
+			pwms = <&pwm0 0 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
+		};
+	};
+
+	aliases {
+		led3 = &back_led;
+		pwm-led3 = &back_pwm_led;
+		watchdog0 = &wdt0;
+	};
+};
+
+&spi1 {
+	compatible = "nordic,nrf-spi";
+	status = "okay";
+	cs-gpios = <&gpio0 17 GPIO_ACTIVE_LOW>;
+
+	pinctrl-0 = <&spi1_default>;
+	pinctrl-1 = <&spi1_sleep>;
+	pinctrl-names = "default", "sleep";
+	ssd16xx: ssd16xxfb@0 {
+		compatible = "gooddisplay,gdeh0213b1", "solomon,ssd1673";
+		spi-max-frequency = <4000000>;
+		reg = <0>;
+		width = <250>;
+		height = <122>;
+		reset-gpios = <&gpio0 15 GPIO_ACTIVE_LOW>;
+		dc-gpios = <&gpio0 16 GPIO_ACTIVE_LOW>;
+		busy-gpios = <&gpio0 14 GPIO_ACTIVE_HIGH>;
+
+		full {
+			gdv = [10 0a];
+			sdv = [19];
+			vcom = <0xa8>;
+			border-waveform = <0x71>;
+			dummy-line = <0x1a>;
+			gate-line-width = <0x08>;
+			lut = [
+				22 55 AA 55 AA 55 AA 11
+				00 00 00 00 00 00 00 00
+				1E 1E 1E 1E 1E 1E 1E 1E
+				01 00 00 00 00
+			];
+		};
+
+		partial {
+			gdv = [10 0a];
+			sdv = [19];
+			vcom = <0xa8>;
+			border-waveform = <0x71>;
+			dummy-line = <0x1a>;
+			gate-line-width = <0x08>;
+			lut = [
+				18 00 00 00 00 00 00 00
+				00 00 00 00 00 00 00 00
+				0F 01 00 00 00 00 00 00
+				00 00 00 00 00
+			];
+		};
+	};
+};

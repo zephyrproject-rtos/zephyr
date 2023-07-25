@@ -1,0 +1,32 @@
+# Copyright (c) 2022, NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP i.MX eLCDIF (Enhanced LCD Interface) controller
+
+compatible: "nxp,imx-elcdif"
+
+include: [lcd-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  data-bus-width:
+    type: string
+    default: "16-bit"
+    enum:
+      - "16-bit"
+      - "8-bit"
+      - "18-bit"
+      - "24-bit"
+    description:
+      LCD data bus width. The default is set to the reset value of 16-bit
+
+  backlight-gpios:
+    type: phandle-array
+    required: true
+    description:
+      LCB backlight control gpio. Driver will initialize this GPIO to active high

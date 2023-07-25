@@ -1,0 +1,67 @@
+# RV32M1 INTMUX config
+
+# Copyright (c) 2018 Foundries.io
+# SPDX-License-Identifier: Apache-2.0
+
+config RV32M1_INTMUX
+	bool "OpenISA RV32M1 INTMUX interrupt controller support"
+	default y
+	depends on DT_HAS_OPENISA_RV32M1_INTMUX_ENABLED
+	depends on MULTI_LEVEL_INTERRUPTS
+	help
+	  Select this option to enable support for the RV32M1 INTMUX
+	  driver. This provides a level 2 interrupt controller for the SoC.
+	  The INTMUX peripheral combines level 2 interrupts into
+	  eight channels; each channel has its own level 1 interrupt to
+	  the core.
+
+if RV32M1_INTMUX
+
+config RV32M1_INTMUX_INIT_PRIORITY
+	int "INTMUX driver initialization priority"
+	default 40
+	help
+	  Boot time initialization priority for INTMUX driver.
+	  Don't change the default unless you know what you are doing.
+
+config RV32M1_INTMUX_CHANNEL_0
+	bool "INTMUX channel 0"
+	help
+	  Enable support for INTMUX channel 0.
+
+config RV32M1_INTMUX_CHANNEL_1
+	bool "INTMUX channel 1"
+	help
+	  Enable support for INTMUX channel 1.
+if !BT
+config RV32M1_INTMUX_CHANNEL_2
+	bool "INTMUX channel 2"
+	help
+	  Enable support for INTMUX channel 2.
+
+config RV32M1_INTMUX_CHANNEL_3
+	bool "INTMUX channel 3"
+	help
+	  Enable support for INTMUX channel 3.
+endif # BT
+config RV32M1_INTMUX_CHANNEL_4
+	bool "INTMUX channel 4"
+	help
+	  Enable support for INTMUX channel 4.
+
+config RV32M1_INTMUX_CHANNEL_5
+	bool "INTMUX channel 5"
+	help
+	  Enable support for INTMUX channel 5.
+
+config RV32M1_INTMUX_CHANNEL_6
+	bool "INTMUX channel 6"
+	help
+	  Enable support for INTMUX channel 6.
+
+config RV32M1_INTMUX_CHANNEL_7
+	bool "INTMUX channel 7"
+	help
+	  Enable support for INTMUX channel 7.
+
+endif # RV32M1_INTMUX

@@ -1,0 +1,12 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* file is auto-generated, do not modify ! */
+
+#include <zephyr/toolchain.h>
+
+GEN_ABS_SYM_BEGIN (_ConfigAbsSyms)
+
+@GEN_ABS_SYM_LIST@
+GEN_ABS_SYM_END

@@ -1,0 +1,37 @@
+# sam twihs I2C support
+
+# Copyright (c) 2023 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig I2C_SAM_TWIHS
+	bool "Atmel SAM (TWIHS) I2C driver"
+	default y
+	depends on DT_HAS_ATMEL_SAM_I2C_TWIHS_ENABLED
+	help
+	  Enable Atmel SAM MCU Family (TWIHS) I2C bus driver.
+
+if I2C_SAM_TWIHS
+if I2C_RTIO
+
+config I2C_SAM_TWIHS_SQ_SIZE
+	int "Submission queue size for blocking calls"
+	default 4
+	help
+	  Blocking i2c calls when I2C_RTIO is enabled are copied into a per driver
+	  submission queue. The queue depth determines the number of possible i2c_msg
+	  structs that may be in the array given to i2c_transfer. A sensible default
+	  is going to be 4 given the device address, register address, and a value
+	  to be read or written.
+
+config I2C_SAM_TWIHS_CQ_SIZE
+	int "Completion queue size for blocking calls"
+	default 4
+	help
+	  Blocking i2c calls when I2C_RTIO is enabled are copied into a per driver
+	  submission queue. The queue depth determines the number of possible i2c_msg
+	  structs that may be in the array given to i2c_transfer. A sensible default
+	  is going to be 4 given the device address, register address, and a value
+	  to be read or written.
+
+endif # I2C_RTIO
+endif # I2C_SAM_TWIHS

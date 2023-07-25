@@ -1,0 +1,19 @@
+identifier: olimex_lora_stm32wl_devkit
+name: Olimex LoRa STM32WL DevKit
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 64
+flash: 256
+supported:
+  - counter
+  - gpio
+  - i2c
+  - nvs
+  - spi
+  - uart
+  - watchdog
+  - lora

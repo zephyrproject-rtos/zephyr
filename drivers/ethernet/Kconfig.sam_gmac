@@ -1,0 +1,106 @@
+# Atmel SAM Ethernet (GMAC) driver configuration options
+
+# Copyright (c) 2016 Piotr Mienkowski
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig ETH_SAM_GMAC
+	bool "Atmel SAM Ethernet driver"
+	default y
+	depends on NET_BUF_FIXED_DATA_SIZE
+	depends on DT_HAS_ATMEL_SAM_GMAC_ENABLED || \
+		   DT_HAS_ATMEL_SAM0_GMAC_ENABLED
+	select NOCACHE_MEMORY if ARCH_HAS_NOCACHE_MEMORY_SUPPORT
+	select MDIO
+	help
+	  Enable Atmel SAM MCU Family Ethernet driver.
+
+if ETH_SAM_GMAC
+
+# Workaround for not being able to have commas in macro arguments
+DT_ETH_SAM_GMAC_PATH := $(dt_nodelabel_path,gmac)
+
+# Just for readability, to keep the following lines shorter.
+DT_ETH_SAM_GMAC_NQ := $(dt_node_int_prop_int,$(DT_ETH_SAM_GMAC_PATH),num-queues)
+
+config ETH_SAM_GMAC_QUEUES
+	int "Number of active hardware TX and RX queues"
+	default 1
+	range 1 $(DT_ETH_SAM_GMAC_NQ) if SOC_SERIES_SAME70 || \
+						SOC_SERIES_SAMV71 || \
+						SOC_SERIES_SAM4E || \
+						SOC_SERIES_SAME54
+	help
+	  Select the number of hardware queues used by the driver. Packets will be
+	  routed to appropriate queues based on their priority.
+
+config ETH_SAM_GMAC_FORCE_QUEUE
+	bool "Force all traffic to be routed through a specific queue"
+	depends on ETH_SAM_GMAC_QUEUES > 1
+	depends on NET_TC_RX_COUNT < 5
+	help
+	  This option is meant to be used only for debugging. Use it to force all
+	  traffic to be routed through a specific hardware queue. With this enabled
+	  it is easier to verify whether the chosen hardware queue actually works.
+	  This works only if there are four or fewer RX traffic classes enabled, as
+	  the SAM GMAC hardware supports screening up to four traffic classes.
+
+config ETH_SAM_GMAC_FORCED_QUEUE
+	int "Queue to force the packets to"
+	depends on ETH_SAM_GMAC_FORCE_QUEUE
+	default 0
+	range 0 1 if ETH_SAM_GMAC_QUEUES = 2
+	range 0 2 if ETH_SAM_GMAC_QUEUES = 3
+	range 0 3 if ETH_SAM_GMAC_QUEUES = 4
+	range 0 4 if ETH_SAM_GMAC_QUEUES = 5
+	range 0 5 if ETH_SAM_GMAC_QUEUES = 6
+	help
+	  Which queue to force the routing to. This affects both the TX and RX queues
+	  setup.
+
+config ETH_SAM_GMAC_BUF_RX_COUNT
+	int "Network RX buffers preallocated by the SAM ETH driver"
+	default 12
+	help
+	  Number of network buffers that will be permanently allocated by the
+	  Ethernet driver. These buffers are used in receive path. They are
+	  preallocated by the driver and made available to the GMAC module to be
+	  filled in with incoming data. Their number has to be large enough to fit
+	  at least one complete Ethernet frame. SAM ETH driver will always allocate
+	  that amount of buffers for itself thus reducing the NET_BUF_RX_COUNT
+	  which is a total amount of RX data buffers used by the whole networking
+	  stack. One has to ensure that NET_PKT_RX_COUNT is large enough to
+	  fit at least two Ethernet frames: one being received by the GMAC module
+	  and the other being processed by the higher layer networking stack.
+
+config ETH_SAM_GMAC_MAC_I2C_EEPROM
+	bool "Read from an I2C EEPROM"
+	help
+	  Read MAC address from an I2C EEPROM.
+
+if ETH_SAM_GMAC_MAC_I2C_EEPROM
+
+config ETH_SAM_GMAC_MAC_I2C_INT_ADDRESS
+	hex "I2C EEPROM internal address"
+	range 0 0xffffffff
+	help
+	  Internal address of the EEPROM chip where the MAC address is stored.
+	  Chips with 1 to 4 byte internal address size are supported. Address
+	  size has to be configured in a separate Kconfig option.
+
+config ETH_SAM_GMAC_MAC_I2C_INT_ADDRESS_SIZE
+	int "I2C EEPROM internal address size"
+	default 1
+	range 1 4
+	help
+	  Size (in bytes) of the internal EEPROM address.
+
+endif # ETH_SAM_GMAC_MAC_I2C_EEPROM
+
+config PTP_CLOCK_SAM_GMAC
+	bool "SAM GMAC PTP clock driver support"
+	default y
+	depends on PTP_CLOCK
+	help
+	  Enable SAM GMAC PTP Clock support.
+
+endif # ETH_SAM_GMAC

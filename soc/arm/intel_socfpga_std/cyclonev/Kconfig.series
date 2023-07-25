@@ -1,0 +1,15 @@
+# Copyright (c) 2022 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+# Description
+# Adding configuration options for Cyclone V SoC FPGA
+
+config SOC_SERIES_CYCLONE5
+	bool "Intel SoC FPGA Cyclone5 Series"
+	select ARM
+	select CPU_CORTEX_A9
+	select SOC_FAMILY_INTEL_SOCFPGA_STD
+	select ARM_ARCH_TIMER_ERRATUM_740657 if ARM_ARCH_TIMER
+	select HAS_SPI_DW if SPI
+	select ARCH_HAS_RESERVED_PAGE_FRAMES
+	help
+		Support for Intel SoC FPGA Series

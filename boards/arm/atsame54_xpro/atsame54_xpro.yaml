@@ -1,0 +1,20 @@
+# Copyright (c) 2019 Benjamin Valentin
+# SPDX-License-Identifier: Apache-2.0
+identifier: atsame54_xpro
+name: SAM E54 Xplained Pro
+type: mcu
+arch: arm
+ram: 256
+flash: 1024
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - adc
+  - gpio
+  - pwm
+  - spi
+  - i2c
+  - usb_device
+  - netif:eth

@@ -1,0 +1,8 @@
+# Seeeduino XIAO board configuration
+
+# Copyright (c) 2020 Google LLC.
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_SEEEDUINO_XIAO
+	bool "Seeeduino XIAO"
+	depends on SOC_PART_NUMBER_SAMD21G18A

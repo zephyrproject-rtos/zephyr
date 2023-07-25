@@ -1,0 +1,48 @@
+#
+# Copyright (c) 2020 Linumiz
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: Texas Instruments BQ274xx Fuel Gauge
+
+compatible: "ti,bq274xx"
+
+include: [sensor-device.yaml, i2c-device.yaml]
+
+properties:
+  design-voltage:
+    type: int
+    required: true
+    description: Battery Design Voltage in mV (3300 - 4400)
+
+  design-capacity:
+    type: int
+    required: true
+    description: Battery Design Capacity in mAh
+
+  taper-current:
+    type: int
+    required: true
+    description: Battery Taper current in mAh
+
+  terminate-voltage:
+    type: int
+    required: true
+    description: Battery Terminate Voltage in mV
+
+  int-gpios:
+    type: phandle-array
+    description: |
+      The INT signal defaults to active low open drain, so requires a
+      pull-up on the board. By default it acts as an output and signals
+      specific events happening (e.g. change in State of Charge).
+      Note this pin is required for this sensor's power management APIs: in
+      shutdown mode it acts as an input and toggling it will make the sensor
+      exit the mode.
+
+  zephyr,lazy-load:
+    type: boolean
+    description: |
+      Configuring the sensor can take a long time, using lazy loading we can delay
+      until the first sample request and keep the boot time as short as possible.

@@ -1,0 +1,68 @@
+# DPS310 temperature and pressure sensor configuration options
+
+# Copyright (c) 2019 Infineon Technologies AG
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig DPS310
+	bool "DPS310 sensor"
+	default y
+	depends on DT_HAS_INFINEON_DPS310_ENABLED
+	select I2C
+	help
+	  Enable driver for DPS310 I2C-based temperature and pressure sensor.
+
+if DPS310
+
+menu "Attributes"
+
+choice
+	prompt "DPS310 temperature oversampling"
+	default DPS310_TEMP_OSR_8X
+	help
+	  Select temperature oversampling for the DPS310 sensor.  Higher values
+	  lead to more accurate readings, but higher power consumption.
+config DPS310_TEMP_OSR_1X
+	bool "x1"
+config DPS310_TEMP_OSR_2X
+	bool "x2"
+config DPS310_TEMP_OSR_4X
+	bool "x4"
+config DPS310_TEMP_OSR_8X
+	bool "x8"
+config DPS310_TEMP_OSR_16X
+	bool "x16"
+config DPS310_TEMP_OSR_32X
+	bool "x32"
+config DPS310_TEMP_OSR_64X
+	bool "x64"
+config DPS310_TEMP_OSR_128X
+	bool "x128"
+endchoice
+
+choice
+	prompt "DPS310 pressure oversampling"
+	default DPS310_PRESS_OSR_8X
+	help
+	  Select pressure oversampling for the DPS310 sensor.  Higher values
+	  lead to more accurate readings, but higher power consumption.
+config DPS310_PRESS_OSR_1X
+	bool "x1"
+config DPS310_PRESS_OSR_2X
+	bool "x2"
+config DPS310_PRESS_OSR_4X
+	bool "x4"
+config DPS310_PRESS_OSR_8X
+	bool "x8"
+config DPS310_PRESS_OSR_16X
+	bool "x16"
+config DPS310_PRESS_OSR_32X
+	bool "x32"
+config DPS310_PRESS_OSR_64X
+	bool "x64"
+config DPS310_PRESS_OSR_128X
+	bool "x128"
+endchoice
+
+endmenu
+
+endif # DPS310

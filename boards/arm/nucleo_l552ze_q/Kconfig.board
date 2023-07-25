@@ -1,0 +1,8 @@
+# STM32L552ZE Q Nucleo board configuration
+
+# Copyright (c) 2020 Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_NUCLEO_L552ZE_Q
+	bool "Nucleo L552ZE Q Development Board"
+	depends on SOC_STM32L552XX

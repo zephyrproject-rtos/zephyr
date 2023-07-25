@@ -1,0 +1,13 @@
+#
+# Copyright (c) 2018 Google LLC.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config APA102_STRIP
+	bool "APA102 SPI LED strip driver"
+	depends on SPI
+	select LED_STRIP_RGB_SCRATCH
+	help
+	  Enable the LED strip driver for a chain of APA102 RGB LEDs.
+	  These are sold as DotStar by Adafruit and Superled by others.

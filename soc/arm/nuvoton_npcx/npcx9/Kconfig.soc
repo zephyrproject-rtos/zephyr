@@ -1,0 +1,19 @@
+# Nuvoton NPCX9 EC series
+
+# Copyright (c) 2021 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+choice
+	prompt "NPCX9 Selection"
+	depends on SOC_SERIES_NPCX9
+
+config SOC_NPCX9M3F
+	bool "NPCX9M3F"
+
+config SOC_NPCX9M6F
+	bool "NPCX9M6F"
+
+config SOC_NPCX9M7F
+	bool "NPCX9M7F"
+
+endchoice

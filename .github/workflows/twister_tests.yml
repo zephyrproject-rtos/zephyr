@@ -1,0 +1,66 @@
+# Copyright (c) 2020 Intel Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+name: Twister TestSuite
+
+on:
+  push:
+    branches:
+    - main
+    - v*-branch
+    paths:
+    - 'scripts/pylib/twister/**'
+    - 'scripts/twister'
+    - 'scripts/tests/twister/**'
+    - '.github/workflows/twister_tests.yml'
+  pull_request:
+    branches:
+    - main
+    - v*-branch
+    paths:
+    - 'scripts/pylib/twister/**'
+    - 'scripts/twister'
+    - 'scripts/tests/twister/**'
+    - '.github/workflows/twister_tests.yml'
+
+jobs:
+  twister-tests:
+    name: Twister Unit Tests
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python-version: [3.8, 3.9, '3.10']
+        os: [ubuntu-22.04]
+    steps:
+    - name: checkout
+      uses: actions/checkout@v3
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: cache-pip-linux
+      if: startsWith(runner.os, 'Linux')
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ matrix.python-version }}
+        restore-keys: |
+          ${{ runner.os }}-pip-${{ matrix.python-version }}
+    - name: install-packages
+      run: |
+        pip3 install -r scripts/requirements-base.txt -r scripts/requirements-build-test.txt
+    - name: Run pytest for twisterlib
+      env:
+        ZEPHYR_BASE: ./
+        ZEPHYR_TOOLCHAIN_VARIANT: zephyr
+      run: |
+        echo "Run twister tests"
+        PYTHONPATH=./scripts/tests pytest ./scripts/tests/twister
+    - name: Run pytest for pytest-twister-harness
+      env:
+        ZEPHYR_BASE: ./
+        ZEPHYR_TOOLCHAIN_VARIANT: zephyr
+        PYTHONPATH: ./scripts/pylib/pytest-twister-harness/src:${PYTHONPATH}
+      run: |
+        echo "Run twister tests"
+        pytest ./scripts/pylib/pytest-twister-harness/tests

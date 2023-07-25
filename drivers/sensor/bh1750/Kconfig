@@ -1,0 +1,12 @@
+# BH1750 ambient light sensor configuration options
+
+# Copyright (c) 2022 Michal Morsisko
+# SPDX-License-Identifier: Apache-2.0
+
+config BH1750
+	bool "BH1750 ambient light sensor"
+	default y
+	depends on DT_HAS_ROHM_BH1750_ENABLED
+	select I2C
+	help
+	  Enable driver for BH1750 ambient light sensor.

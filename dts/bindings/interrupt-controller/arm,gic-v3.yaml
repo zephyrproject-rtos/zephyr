@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: Apache-2.0
+
+description: ARM Generic Interrupt Controller v3
+
+compatible: arm,gic-v3
+
+include: arm,gic.yaml

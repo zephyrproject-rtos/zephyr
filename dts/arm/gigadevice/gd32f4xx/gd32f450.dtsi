@@ -1,0 +1,49 @@
+/*
+ * Copyright (c) 2021 BrainCo Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <freq.h>
+#include <gigadevice/gd32f4xx/gd32f4xx.dtsi>
+
+/ {
+	soc {
+		spi3: spi@40013400 {
+			compatible = "gd,gd32-spi";
+			reg = <0x40013400 0x400>;
+			interrupts = <84 0>;
+			clocks = <&cctl GD32_CLOCK_SPI3>;
+			resets = <&rctl GD32_RESET_SPI3>;
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
+		spi4: spi@40015000 {
+			compatible = "gd,gd32-spi";
+			reg = <0x40015000 0x400>;
+			interrupts = <85 0>;
+			clocks = <&cctl GD32_CLOCK_SPI4>;
+			resets = <&rctl GD32_RESET_SPI4>;
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
+		spi5: spi@40015400 {
+			compatible = "gd,gd32-spi";
+			reg = <0x40015400 0x400>;
+			interrupts = <86 0>;
+			clocks = <&cctl GD32_CLOCK_SPI5>;
+			resets = <&rctl GD32_RESET_SPI5>;
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+	};
+};
+
+&cpu0 {
+	clock-frequency = <DT_FREQ_M(200)>;
+};

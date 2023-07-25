@@ -1,0 +1,4 @@
+tests:
+  emul.emul:
+    tags: emul
+    platform_allow: native_posix

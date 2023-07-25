@@ -1,0 +1,35 @@
+# Private config options for VLAN sample app
+
+# Copyright (c) 2018 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "Networking VLAN sample application"
+
+config SAMPLE_VLAN_TAG
+	int "Virtual lan tag used in VLAN sample app"
+	default 100
+	range 0 4094
+	depends on NET_VLAN
+	help
+	  Set virtual lan tag (id) that is used in VLAN sample application.
+
+config SAMPLE_VLAN_TAG_2
+	int "Second VLAN tag used in VLAN sample app"
+	default 200
+	range 0 4094
+	depends on NET_VLAN
+	help
+	  Set virtual lan tag (id) that is used in VLAN sample application.
+
+config SAMPLE_IPV6_ADDR_2
+	string "My IPv6 address for second interface"
+	help
+	  The value depends on your network setup.
+
+config SAMPLE_IPV4_ADDR_2
+	string "My IPv4 address for second interface"
+	help
+	  The value depends on your network setup.
+
+
+source "Kconfig.zephyr"

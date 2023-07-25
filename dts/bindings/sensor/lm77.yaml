@@ -1,0 +1,34 @@
+# Copyright (c) 2021 Vestas Wind Systems A/S
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  LM77 digital temperature sensor
+
+compatible: "lm77"
+
+include: [sensor-device.yaml, i2c-device.yaml]
+
+properties:
+  int-gpios:
+    type: phandle-array
+    description: |
+      Identifies the INT signal, which is active-low open drain by default
+      when produced by the sensor.
+
+  int-inverted:
+    type: boolean
+    description: |
+      When present, the polarity on the INT signal is inverted (active-high).
+
+  tcrita-inverted:
+    type: boolean
+    description: |
+      When present, the polarity on the T_CRIT_A signal is inverted
+      (active-high).
+
+  enable-fault-queue:
+    type: boolean
+    description: |
+      When present, the fault queue is enabled. The fault queue allows up to 4
+      faults to prevent false INT/T_CRIT_A tripping when the LM77 is used in
+      noisy environments.

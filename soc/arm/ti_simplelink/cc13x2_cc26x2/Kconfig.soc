@@ -1,0 +1,68 @@
+# Texas Instruments SimpleLink CC13x2 / CC26x2
+
+# Copyright (c) 2019 Brett Witherspoon
+# SPDX-License-Identifier: Apache-2.0
+
+choice
+	prompt "TI SimpleLink MCU Selection"
+	depends on SOC_SERIES_CC13X2_CC26X2
+
+config SOC_CC2652R
+	bool "CC2652R"
+
+config SOC_CC2652P
+	bool "CC2652P"
+
+config SOC_CC1352R
+	bool "CC1352R"
+
+config SOC_CC1352P
+	bool "CC1352P"
+
+endchoice
+
+menu "Customer Configuration (CCFG)"
+depends on SOC_SERIES_CC13X2_CC26X2
+
+config CC13X2_CC26X2_BOOST_MODE
+	bool "Radio boost mode (VDDR_HH)"
+	help
+	  Enable the radio boost mode +14dBm (sets CCFG_FORCE_VDDR_HH to 1).
+
+config CC13X2_CC26X2_HAS_CUSTOM_RF_HWATTRS
+	bool "Board defines custom RFCC26XX hwAttrs structure"
+	help
+	  The board defines its own RFCC26XX_hwAttrs structure (e.g., for
+	  custom antenna switching callback).
+
+config CC13X2_CC26X2_BOOTLOADER_ENABLE
+	bool "ROM bootloader"
+	help
+	  Enable the serial bootloader which resides in ROM on CC13xx / CC26xx
+	  devices.
+
+config CC13X2_CC26X2_BOOTLOADER_BACKDOOR_ENABLE
+	bool "ROM bootloader backdoor"
+	depends on CC13X2_CC26X2_BOOTLOADER_ENABLE
+	help
+	  Enable the ROM bootloader backdoor which starts the bootloader if the
+	  associated pin is at the correct logic level on reset.
+
+config CC13X2_CC26X2_BOOTLOADER_BACKDOOR_PIN
+	int "ROM bootloader backdoor pin"
+	depends on CC13X2_CC26X2_BOOTLOADER_BACKDOOR_ENABLE
+	range 0 255
+	default 255
+	help
+	  Set the pin that is level checked if the bootloader backdoor is
+	  enabled.
+
+config CC13X2_CC26X2_BOOTLOADER_BACKDOOR_LEVEL
+	int "ROM bootloader backdoor level"
+	depends on CC13X2_CC26X2_BOOTLOADER_BACKDOOR_ENABLE
+	range 0 1
+	default 0
+	help
+	  Set the active level of the pin selected for the bootloader backdoor.
+
+endmenu

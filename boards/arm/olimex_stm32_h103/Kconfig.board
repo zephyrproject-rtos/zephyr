@@ -1,0 +1,8 @@
+# OLIMEX-STM32-H103 board configuration
+
+# Copyright (c) 2020, Josep Puigdemont
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_OLIMEX_STM32_H103
+	bool "OLIMEX-STM32-H103 Development Board"
+	depends on SOC_STM32F103XB

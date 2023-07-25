@@ -1,0 +1,25 @@
+# Kinetis KV5x series MCU
+
+# Copyright (c) 2019 SEAL AG
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_KINETIS_KV5X
+	bool "Kinetis KV5x Series MCU"
+	select ARM
+	select CPU_CORTEX_M7
+	select CPU_CORTEX_M_HAS_DWT
+	select SOC_FAMILY_KINETIS
+	select CPU_HAS_ARM_MPU
+	select CPU_HAS_FPU
+	select CLOCK_CONTROL
+	select HAS_MCUX
+	select HAS_MCUX_ADC16
+	select HAS_MCUX_FTFX
+	select HAS_MCUX_FTM
+	select HAS_MCUX_SIM
+	select HAS_OSC
+	select HAS_MCG
+	select HAS_MCUX_RCM
+	select PLATFORM_SPECIFIC_INIT
+	help
+	  Enable support for Kinetis KV5x MCU series

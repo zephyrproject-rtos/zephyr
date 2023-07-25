@@ -1,0 +1,51 @@
+# BMM150 Geomagnetic sensor configuration options
+
+# Copyright (c) 2017 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig BMM150
+	bool "BMM150 I2C Geomagnetic Chip"
+	default y
+	depends on DT_HAS_BOSCH_BMM150_ENABLED
+	select I2C
+	help
+	  Enable driver for BMM150 I2C-based Geomagnetic sensor.
+if BMM150
+
+choice
+	prompt "Default preset"
+	default BMM150_PRESET_REGULAR
+	help
+	  Specify the default preset (x/y oversampling, z oversampling, sampling
+	  frequency).
+
+config BMM150_PRESET_LOW_POWER
+	bool "Low power (3, 3, 10)"
+
+config BMM150_PRESET_REGULAR
+	bool "Regular (9, 15, 10)"
+
+config BMM150_PRESET_ENHANCED_REGULAR
+	bool "Enhanced regular (15, 27, 10)"
+
+config BMM150_PRESET_HIGH_ACCURACY
+	bool "High accuracy (47, 83, 20)"
+
+endchoice
+
+config BMM150_SAMPLING_RATE_RUNTIME
+	bool "Dynamic sampling rate"
+	help
+	  Enable alteration of sampling rate attribute at runtime.
+
+config BMM150_SAMPLING_REP_XY
+	bool "Dynamic XY oversampling"
+	help
+	  Enable alteration of XY oversampling at runtime.
+
+config BMM150_SAMPLING_REP_Z
+	bool "Dynamic Z oversampling"
+	help
+	  Enable alteration of Z oversampling at runtime.
+
+endif # BMM150

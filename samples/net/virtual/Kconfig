@@ -1,0 +1,42 @@
+# Private config options for virtual network interface sample app
+
+# Copyright (c) 2021 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "Networking virtual network interface sample application"
+
+config NET_SAMPLE_IFACE2_MY_IPV6_ADDR
+	string "My IPv6 address for second interface"
+	help
+	  The value depends on your network setup.
+
+config NET_SAMPLE_IFACE2_MY_IPV4_ADDR
+	string "My IPv4 address for second interface"
+	help
+	  The value depends on your network setup.
+
+config NET_SAMPLE_IFACE2_MY_IPV4_NETMASK
+	string "My IPv4 netmask for second interface"
+	default "255.255.255.0"
+	help
+	  Static netmask to use if not overridden by DHCP. Use empty value to
+	  skip setting static value.
+
+config NET_SAMPLE_IFACE3_MY_IPV6_ADDR
+	string "My IPv6 address for third interface"
+	help
+	  The value depends on your network setup.
+
+config NET_SAMPLE_IFACE3_MY_IPV4_ADDR
+	string "My IPv4 address for third interface"
+	help
+	  The value depends on your network setup.
+
+config NET_SAMPLE_IFACE3_MY_IPV4_NETMASK
+	string "My IPv4 netmask for third interface"
+	default "255.255.255.0"
+	help
+	  Static netmask to use if not overridden by DHCP. Use empty value to
+	  skip setting static value.
+
+source "Kconfig.zephyr"
