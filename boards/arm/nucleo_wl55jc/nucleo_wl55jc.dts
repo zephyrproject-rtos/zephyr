@@ -66,10 +66,6 @@
 	};
 };
 
-&cpu0 {
-	cpu-power-states = <&stop0 &stop1 &stop2>;
-};
-
 &clk_lsi {
 	status = "okay";
 };
