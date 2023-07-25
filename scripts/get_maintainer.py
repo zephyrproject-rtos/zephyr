@@ -519,6 +519,7 @@ def _check_maintainers(maints_path, yaml):
                     # e.g. to only check non-globbing filenames. The tuple() is
                     # needed due to pathlib's glob() returning a generator.
                     paths = tuple(root.glob(glob_pattern))
+                    print(glob_pattern, paths)
                     if not paths:
                         ferr("glob pattern '{}' in '{}' in area '{}' does not "
                              "match any files".format(glob_pattern, files_key,

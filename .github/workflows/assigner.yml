@@ -16,6 +16,9 @@ jobs:
     name: Pull Request Assignment
     if: github.event.pull_request.draft == false
     runs-on: ubuntu-22.04
+    env:
+      COMMIT_RANGE: ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}
+      BASE_REF: ${{ github.base_ref }}
 
     steps:
     - name: Install Python dependencies
@@ -30,6 +33,8 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.ZB_GITHUB_TOKEN }}
       run: |
+        echo ${COMMIT_RANGE}
+        echo ${BASE_REF}
         python3 scripts/set_assignees.py \
           -v \
           -o ${{ github.event.repository.owner.login }} \
