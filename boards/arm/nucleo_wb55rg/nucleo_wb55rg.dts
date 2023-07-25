@@ -103,10 +103,6 @@
 	apb2-prescaler = <1>;
 };
 
-&cpu0 {
-	cpu-power-states = <&stop0 &stop1 &stop2>;
-};
-
 &usart1 {
 	pinctrl-0 = <&usart1_tx_pb6 &usart1_rx_pb7>;
 	pinctrl-names = "default";
