@@ -1785,7 +1785,7 @@ int bt_tbs_client_originate_call(struct bt_conn *conn, uint8_t inst_index,
 
 	if (conn == NULL) {
 		return -ENOTCONN;
-	} else if (!bt_tbs_valid_uri(uri)) {
+	} else if (!bt_tbs_valid_uri(uri, strlen(uri))) {
 		LOG_DBG("Invalid URI: %s", uri);
 		return -EINVAL;
 	}
