@@ -1,0 +1,72 @@
+# Copyright (c) 2023, Zephyr Project
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  TI SimpleLink CC13xx/CC26xx GPT timer PWM Controller Node
+
+  To configure a PWM node, you first need to define a board overlay with a
+  pinctrl configuration for the pin on which the PWM signal should be present:
+
+    &pinctrl {
+      gpt0_pwm: gpt0_pwm {
+        pinmux = <25 IOC_PORT_MCU_PORT_EVENT1>;
+        bias-disable;
+        drive-strength = <8>; /* in mA, can be 2, 4 or 8 */
+      };
+    };
+
+  Please be aware that the port event depends on the GPT instance chosen. The
+  following port events must be used for PWM:
+    - GPT0: IOC_PORT_MCU_PORT_EVENT1
+    - GPT1: IOC_PORT_MCU_PORT_EVENT3
+    - GPT2: IOC_PORT_MCU_PORT_EVENT5
+    - GPT3: IOC_PORT_MCU_PORT_EVENT7
+
+  Be careful not to choose a pin that is already in use on your board, this
+  might irreversible damage to your board as the given pin will be configured as
+  output and actively driven by the PWM driver.
+
+  Then enable the corresponding timer and PWM nodes and add a reference to the
+  pinctrl entry:
+
+    &gpt0 {
+      status = "okay";
+    };
+
+    &pwm0 {
+      status = "okay";
+      pinctrl-0 = <&gpt0_pwm>;
+      pinctrl-names = "default";
+    };
+
+  Now you can programmatically enable the PWM signal in your code:
+
+    static const struct device *pwm = DEVICE_DT_GET(DT_NODELABEL(pwm0));
+
+    int init_pwm(void)
+    {
+      uint32_t pwm_period_ns, pwm_pulse_ns;
+      uint32_t pwm_duty_percent = 50U;
+      uint32_t pwm_frequency = 1000U; /* 1kHz */
+
+      if (!device_is_ready(pwm)) {
+        LOG_ERR("Error: PWM device %s is not ready\n", pwm->name);
+        return -ENODEV;
+      }
+
+      pwm_period_ns = NSEC_PER_SEC / pwm_frequency;
+      pwm_pulse_ns = (pwm_duty_percent * pwm_period_ns) / 100;
+
+      return pwm_set(pwm, 0, pwm_period_ns, pwm_pulse_ns, 0);
+    }
+
+compatible: "ti,cc13xx-cc26xx-timer-pwm"
+
+include: [base.yaml, pwm-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  pinctrl-0:
+    required: true
+
+pwm-cells:
+- period
