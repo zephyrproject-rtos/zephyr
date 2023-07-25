@@ -29,6 +29,7 @@ zephyr_library_sources(
   source/math/sqrtf.c
   source/math/sqrt.c
   ${STRERROR_TABLE_H}
+  source/thrd/thrd.c
 )
 
 if(CONFIG_MINIMAL_LIBC_TIME)
