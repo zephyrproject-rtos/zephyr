@@ -81,12 +81,16 @@ int pm_device_runtime_disable(const struct device *dev);
  * pm_device_runtime_put_async(), this function will wait for the operation to
  * finish to then resume the device.
  *
+ * @note It is safe to use this function in contexts where blocking is not
+ * allowed, e.g. ISR, provided the device PM implementation does not block.
+ *
  * @funcprops \pre_kernel_ok
  *
  * @param dev Device instance.
  *
  * @retval 0 If it succeeds. In case device runtime PM is not enabled or not
  * available this function will be a no-op and will also return 0.
+ * @retval -EWOUDBLOCK If call would block but it is not allowed (e.g. in ISR).
  * @retval -errno Other negative errno, result of the PM action callback.
  */
 int pm_device_runtime_get(const struct device *dev);
