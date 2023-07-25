@@ -710,7 +710,7 @@ int usb_dc_ep_flush(uint8_t ep)
 	/* Reset the endpoint */
 	usb_dc_ep_reset(ep_idx);
 
-	/* Reenable interrupts */
+	/* Re-enable interrupts */
 	usb_dc_ep_enable_interrupts(ep_idx);
 
 	LOG_DBG("ep 0x%x", ep);
