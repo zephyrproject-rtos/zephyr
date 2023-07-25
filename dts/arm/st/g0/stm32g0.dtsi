@@ -33,6 +33,7 @@
 			device_type = "cpu";
 			compatible = "arm,cortex-m0+";
 			reg = <0>;
+			cpu-power-states = <&stop0 &stop1>;
 		};
 
 		power-states {
