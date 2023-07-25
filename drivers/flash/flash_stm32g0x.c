@@ -40,20 +40,6 @@ LOG_MODULE_REGISTER(LOG_DOMAIN);
 #define STM32G0_PAGES_PER_BANK		\
 	((STM32G0_FLASH_SIZE / STM32G0_FLASH_PAGE_SIZE) / STM32G0_BANK_COUNT)
 
-/*
- * offset and len must be aligned on 8 for write,
- * positive and not beyond end of flash
- * On dual-bank SoCs memory accesses starting on the first bank and continuing
- * beyond the first bank into the second bank are allowed.
- */
-bool flash_stm32_valid_range(const struct device *dev, off_t offset,
-			     uint32_t len,
-			     bool write)
-{
-	return (!write || (offset % 8 == 0 && len % 8 == 0)) &&
-		flash_stm32_range_exists(dev, offset, len);
-}
-
 static inline void flush_cache(FLASH_TypeDef *regs)
 {
 	if (regs->ACR & FLASH_ACR_ICEN) {
