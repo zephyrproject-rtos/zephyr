@@ -21,7 +21,17 @@
 K_THREAD_STACK_ARRAY_DEFINE(stacks, N_THR, STACKSZ);
 
 char queue[16] = "server";
+
 char send_data[MESSAGE_SIZE] = "timed data send";
+
+/*
+ * For platforms that select CONFIG_KERNEL_COHERENCE, the receive buffer can
+ * not be on the stack as the k_msgq that underlies the mq_timedsend() will
+ * copy directly to the receiver's buffer when there is already a waiting
+ * receiver.
+ */
+
+char rec_data[MESSAGE_SIZE];
 
 void *sender_thread(void *p1)
 {
@@ -44,7 +54,6 @@ void *sender_thread(void *p1)
 void *receiver_thread(void *p1)
 {
 	mqd_t mqd;
-	char rec_data[MESSAGE_SIZE];
 	struct timespec curtime;
 
 	mqd = mq_open(queue, O_RDONLY);
