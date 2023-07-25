@@ -39,3 +39,4 @@ Bluetooth APIs
    shell/iso.rst
    shell/mcp.rst
    shell/tmap.rst
+   shell/pbp.rst

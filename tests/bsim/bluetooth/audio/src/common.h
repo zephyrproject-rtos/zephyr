@@ -87,6 +87,8 @@ static const uint8_t mock_iso_data[] = {
 #define SYNC_RETRY_COUNT     6 /* similar to retries for connections */
 #define PA_SYNC_SKIP         5
 
+#define PBP_STREAMS_TO_SEND  2
+
 extern struct bt_le_scan_cb common_scan_cb;
 extern const struct bt_data ad[AD_SIZE];
 extern struct bt_conn *default_conn;
