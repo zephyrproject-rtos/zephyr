@@ -35,8 +35,8 @@ config NEWLIB_LIBC_SUPPORTED
 config PICOLIBC_SUPPORTED
 	bool
 	depends on !NATIVE_APPLICATION
-	depends on ("$(ZEPHYR_TOOLCHAIN_VARIANT)" = "zephyr") || (NATIVE_LIBRARY)
-	depends on !(CPP && "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "zephyr")
+	depends on ("$(TOOLCHAIN_HAS_PICOLIBC)" = "y") || (NATIVE_LIBRARY)
+	depends on !(CPP && ("$(TOOLCHAIN_HAS_PICOLIBC)" = "y"))
 	default y
 	select FULL_LIBC_SUPPORTED
 	help
