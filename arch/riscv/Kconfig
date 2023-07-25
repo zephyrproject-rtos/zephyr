@@ -90,6 +90,16 @@ config RISCV_SOC_HAS_CUSTOM_IRQ_LOCK_OPS
 	  the RISC-V SoC needs to do something different and more than reading and
 	  writing the mstatus register to lock and unlock the IRQs.
 
+config RISCV_SOC_HAS_CUSTOM_SYS_IO
+	bool
+	help
+	  Hidden option to allow SoC to overwrite sys_read*(), sys_write*() functions with
+	  platform-specific versions named z_soc_sys_read*() and z_soc_sys_write*().
+
+	  Enable this hidden option and specialize the z_soc_* functions when
+	  the RISC-V SoC needs to do something different and more than reading and
+	  writing the registers.
+
 config RISCV_SOC_CONTEXT_SAVE
 	bool "SOC-based context saving in IRQ handlers"
 	select RISCV_SOC_OFFSETS

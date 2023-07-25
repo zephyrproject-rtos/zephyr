@@ -8,7 +8,7 @@
 #define __RISCV32_EFINIX_SAPPHIRE_SOC_H_
 
 #include "soc_common.h"
-#include <zephyr/arch/common/sys_io.h>
+#include <zephyr/arch/riscv/sys_io.h>
 #include <zephyr/devicetree.h>
 
 #ifndef _ASMLANGUAGE
