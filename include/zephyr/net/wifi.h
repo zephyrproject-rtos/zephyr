@@ -536,6 +536,58 @@ static inline const char *get_ps_config_err_code_str(int16_t err_no)
 	return "<unknown>";
 }
 
+/** Promiscuous mode operational settings */
+enum wifi_promiscuous_mode {
+	/** Disable promiscuous mode setting */
+	WIFI_PROMISC_DISABLE = 0,
+	/** Monitor sniffer mode setting enable */
+	WIFI_PROMISC_MONITOR_MODE,
+	/** STA sniffer mode setting enable */
+	WIFI_PROMISC_STA_MODE,
+	/** AP sniffer mode setting enable */
+	WIFI_PROMISC_AP_MODE,
+	/** STA-AP sniffer mode setting enable */
+	WIFI_PROMISC_STA_AP_MODE,
+};
+
+/** Promiscuous mode filter settings */
+enum wifi_promiscuous_filter {
+	/** Support mgmt, data and ctrl packet sniffing */
+	WIFI_PROMISC_ALL = BIT(0),
+	/** Support only sniffing of mgmt packets */
+	WIFI_PROMISC_MGMT = BIT(1),
+	/** Support only sniffing of data packets */
+	WIFI_PROMISC_DATA = BIT(2),
+	/** Support only sniffing of ctrl packets */
+	WIFI_PROMISC_CTRL = BIT(3),
+};
+
+/** Promiscuous mode/filter command operation */
+enum wifi_promiscuous_op {
+	/** Set promiscuous mode */
+	WIFI_PROMISC_MODE = 1,
+	/** Set filter for promiscuous mode */
+	WIFI_PROMISC_FILTER,
+};
+
+static const char * const promiscuous_mode_code_tbl[] = {
+	[WIFI_PROMISC_DISABLE] = "Disabled",
+	[WIFI_PROMISC_MONITOR_MODE] = "Monitor mode",
+	[WIFI_PROMISC_STA_MODE] = "Station Mode",
+	[WIFI_PROMISC_AP_MODE] = "AP mode",
+	[WIFI_PROMISC_STA_AP_MODE] = "AP-STA mode",
+};
+
+/** Helper function to get user-friendly promiscuous mode code name */
+static inline const char *get_promiscuous_mode_str(uint8_t mode)
+{
+	if ((mode) < ARRAY_SIZE(promiscuous_mode_code_tbl)) {
+		return promiscuous_mode_code_tbl[mode];
+	}
+
+	return "<unknown>";
+}
+
 /**
  * @}
  */

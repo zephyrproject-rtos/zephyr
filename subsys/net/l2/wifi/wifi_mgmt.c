@@ -388,6 +388,26 @@ static int wifi_reg_domain(uint32_t mgmt_request, struct net_if *iface,
 
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_REG_DOMAIN, wifi_reg_domain);
 
+static int wifi_set_promisc_setup(uint32_t mgmt_request, struct net_if *iface,
+				void *data, size_t len)
+{
+	const struct device *dev = net_if_get_device(iface);
+	const struct wifi_mgmt_ops *const wifi_mgmt_api = get_wifi_api(iface);
+	struct wifi_promisc_setup *promisc_params = data;
+
+	if (dev == NULL) {
+		return -ENODEV;
+	}
+
+	if (wifi_mgmt_api == NULL || wifi_mgmt_api->promisc_setup == NULL) {
+		return -ENOTSUP;
+	}
+
+	return wifi_mgmt_api->promisc_setup(dev, promisc_params);
+}
+
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_PROMISC_SETUP, wifi_set_promisc_setup);
+
 void wifi_mgmt_raise_twt_sleep_state(struct net_if *iface,
 				     int twt_sleep_state)
 {

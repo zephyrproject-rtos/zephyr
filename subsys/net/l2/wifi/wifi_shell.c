@@ -1127,6 +1127,100 @@ static int cmd_wifi_ps_wakeup_mode(const struct shell *sh, size_t argc, char *ar
 	return 0;
 }
 
+static int cmd_wifi_promisc_mode(const struct shell *sh, size_t argc, char *argv[])
+{
+	struct net_if *iface = net_if_get_default();
+	struct wifi_promisc_setup promisc_mode = {0};
+	int ret;
+	long mode;
+
+	if (argc == 1) {
+		promisc_mode.oper = WIFI_MGMT_GET;
+	} else if (argc == 2) {
+		promisc_mode.oper = WIFI_MGMT_SET;
+		if (!parse_number(sh, &mode, argv[1], WIFI_PROMISC_DISABLE,
+				WIFI_PROMISC_STA_AP_MODE)) {
+			return -EINVAL;
+		}
+		promisc_mode.mode = mode;
+	} else {
+		return -EINVAL;
+	}
+
+	promisc_mode.op = WIFI_PROMISC_MODE;
+	ret = net_mgmt(NET_REQUEST_WIFI_PROMISC_SETUP, iface,
+			&promisc_mode, sizeof(promisc_mode));
+	if (ret) {
+		shell_fprintf(sh, SHELL_ERROR,
+				"Promiscuous mode %s operation failed with reason %d\n",
+				promisc_mode.oper == WIFI_MGMT_GET ? "get" : "set", ret);
+		return -ENOEXEC;
+	}
+
+	if (promisc_mode.oper == WIFI_MGMT_GET) {
+		shell_fprintf(sh, SHELL_NORMAL, "Wi-Fi current promiscuous mode is %s\n",
+				get_promiscuous_mode_str(promisc_mode.mode));
+	} else {
+		shell_fprintf(sh, SHELL_NORMAL, "Wi-Fi promiscuous mode set to %s\n",
+				get_promiscuous_mode_str(promisc_mode.mode));
+	}
+
+	return 0;
+}
+
+static int cmd_wifi_promisc_filter(const struct shell *sh, size_t argc, char *argv[])
+{
+	struct net_if *iface = net_if_get_default();
+	struct  wifi_promisc_setup promisc_filter = {0};
+	int ret;
+	long filter;
+
+	if (argc == 1) {
+		promisc_filter.oper = WIFI_MGMT_GET;
+	} else if (argc == 2) {
+		promisc_filter.oper = WIFI_MGMT_SET;
+		if (!parse_number(sh, &filter, argv[1], WIFI_PROMISC_ALL,
+				WIFI_PROMISC_CTRL)) {
+			return -EINVAL;
+		}
+		promisc_filter.filter = (uint8_t)filter;
+	}
+
+	promisc_filter.op = WIFI_PROMISC_FILTER;
+	ret = net_mgmt(NET_REQUEST_WIFI_PROMISC_SETUP, iface,
+			&promisc_filter, sizeof(promisc_filter));
+
+	if (ret) {
+		shell_fprintf(sh, SHELL_ERROR,
+				"Promiscuous filter %s operation failed with reason %d\n",
+				promisc_filter.oper == WIFI_MGMT_GET ? "get" : "set", ret);
+		return -ENOEXEC;
+	}
+
+	if (promisc_filter.oper == WIFI_MGMT_GET) {
+		shell_fprintf(sh, SHELL_NORMAL, "Wi-Fi current promiscuous filter is set to %d\n",
+				promisc_filter.filter);
+	} else {
+		shell_fprintf(sh, SHELL_NORMAL, "Wi-Fi promiscuous filter set to %d\n",
+				promisc_filter.filter);
+	}
+
+	return 0;
+}
+
+
+SHELL_STATIC_SUBCMD_SET_CREATE(wifi_promisc_ops,
+	SHELL_CMD(mode, NULL, "promiscuous mode operational setting\n"
+		"<mode set value: value between 0 - 4 to set different modes>\n"
+		"<get mode: no parameter value is passed>\n",
+		cmd_wifi_promisc_mode),
+	SHELL_CMD(filter, NULL, "promiscuous mode filter setting\n"
+		"<filter set value: bit-field value 1,2,4,8 to set different filter settings>\n"
+		"<get mode: no parameter value is passed>\n",
+		cmd_wifi_promisc_filter),
+	SHELL_SUBCMD_SET_END
+);
+
 SHELL_STATIC_SUBCMD_SET_CREATE(wifi_cmd_ap,
 	SHELL_CMD(disable, NULL,
 		  "Disable Access Point mode",
@@ -1193,6 +1287,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_commands,
 		"-f: Force to use this regulatory hint over any other regulatory hints\n"
 		"Note: This may cause regulatory compliance issues, use it at your own risk.",
 		cmd_wifi_reg_domain),
+	SHELL_CMD(promisc_setup, &wifi_promisc_ops, "promiscuous mode commands", NULL),
 	SHELL_CMD_ARG(ps_timeout,
 		      NULL,
 		      "<val> - PS inactivity timer(in ms)",

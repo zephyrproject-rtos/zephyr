@@ -61,6 +61,8 @@ enum net_request_wifi_cmd {
 	NET_REQUEST_WIFI_CMD_REG_DOMAIN,
 	/** Set power save timeout */
 	NET_REQUEST_WIFI_CMD_PS_TIMEOUT,
+	/** Set or get promiscuous mode/filter settings */
+	NET_REQUEST_WIFI_CMD_PROMISC_SETUP,
 	NET_REQUEST_WIFI_CMD_MAX
 };
 
@@ -122,6 +124,11 @@ NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_REG_DOMAIN);
 	(_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_PS_TIMEOUT)
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_PS_TIMEOUT);
+
+#define NET_REQUEST_WIFI_PROMISC_SETUP			\
+	(_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_PROMISC_SETUP)
+
+NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_PROMISC_SETUP);
 
 /** Wi-Fi management events */
 enum net_event_wifi_cmd {
@@ -415,6 +422,21 @@ struct wifi_raw_scan_result {
 	uint8_t data[CONFIG_WIFI_MGMT_RAW_SCAN_RESULT_LENGTH];
 };
 #endif /* CONFIG_WIFI_MGMT_RAW_SCAN_RESULTS */
+
+/** Wi-Fi promiscuous mode setup */
+struct wifi_promisc_setup {
+	union {
+		/** Promiscuous mode settings */
+		enum wifi_promiscuous_mode mode;
+		/** Filter setting for a specific promiscuous mode */
+		uint8_t filter;
+	};
+	/** Promiscuous mode/filter operation */
+	enum wifi_promiscuous_op op;
+	/** Get or set operation */
+	enum wifi_mgmt_op oper;
+};
+
 #include <zephyr/net/net_if.h>
 
 /** Scan result callback
@@ -535,6 +557,14 @@ struct wifi_mgmt_ops {
 	 * @return 0 if ok, < 0 if error
 	 */
 	int (*reg_domain)(const struct device *dev, struct wifi_reg_domain *reg_domain);
+	/** Set or get promiscuous mode/filter setting
+	 *
+	 * @param dev Pointer to the device structure for the driver instance.
+	 * @param promisc_setup promiscuous setup data
+	 *
+	 * @return 0 if ok, < 0 if error
+	 */
+	int (*promisc_setup)(const struct device *dev, struct wifi_promisc_setup *promisc_setup);
 };
 
 /** Wi-Fi management offload API */
