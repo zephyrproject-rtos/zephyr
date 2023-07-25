@@ -21,7 +21,6 @@ ZTEST(oscore_tests, oscore_client_test1)
 	enum err r;
 	struct context c_client;
 	struct oscore_init_params params = {
-		.dev_type = CLIENT,
 		.master_secret.ptr = (uint8_t *)T1__MASTER_SECRET,
 		.master_secret.len = T1__MASTER_SECRET_LEN,
 		.sender_id.ptr = (uint8_t *)T1__SENDER_ID,
@@ -34,6 +33,7 @@ ZTEST(oscore_tests, oscore_client_test1)
 		.id_context.len = T1__ID_CONTEXT_LEN,
 		.aead_alg = OSCORE_AES_CCM_16_64_128,
 		.hkdf = OSCORE_SHA_256,
+		.fresh_master_secret_salt = true,
 	};
 
 	r = oscore_context_init(&params, &c_client);
@@ -45,7 +45,7 @@ ZTEST(oscore_tests, oscore_client_test1)
 	 * during normal operation the sender sequence number is
 	 * increased automatically after every sending
 	 */
-	c_client.sc.sender_seq_num = 20;
+	c_client.sc.ssn = 20;
 
 	uint8_t buf_oscore[256];
 	uint32_t buf_oscore_len = sizeof(buf_oscore);
@@ -80,7 +80,6 @@ ZTEST(oscore_tests, oscore_client_test3)
 	enum err r;
 	struct context c_client;
 	struct oscore_init_params params = {
-		.dev_type = CLIENT,
 		.master_secret.ptr = (uint8_t *)T3__MASTER_SECRET,
 		.master_secret.len = T3__MASTER_SECRET_LEN,
 		.sender_id.ptr = (uint8_t *)T3__SENDER_ID,
@@ -93,6 +92,7 @@ ZTEST(oscore_tests, oscore_client_test3)
 		.id_context.len = T3__ID_CONTEXT_LEN,
 		.aead_alg = OSCORE_AES_CCM_16_64_128,
 		.hkdf = OSCORE_SHA_256,
+		.fresh_master_secret_salt = true,
 	};
 
 	r = oscore_context_init(&params, &c_client);
@@ -104,7 +104,7 @@ ZTEST(oscore_tests, oscore_client_test3)
 	 * during normal operation the sender sequence number is
 	 * increased automatically after every sending
 	 */
-	c_client.sc.sender_seq_num = 20;
+	c_client.sc.ssn = 20;
 
 	uint8_t buf_oscore[256];
 	uint32_t buf_oscore_len = sizeof(buf_oscore);
@@ -128,7 +128,6 @@ ZTEST(oscore_tests, oscore_client_test5)
 	enum err r;
 	struct context c_client;
 	struct oscore_init_params params = {
-		.dev_type = CLIENT,
 		.master_secret.ptr = (uint8_t *)T5__MASTER_SECRET,
 		.master_secret.len = T5__MASTER_SECRET_LEN,
 		.sender_id.ptr = (uint8_t *)T5__SENDER_ID,
@@ -141,6 +140,7 @@ ZTEST(oscore_tests, oscore_client_test5)
 		.id_context.len = T5__ID_CONTEXT_LEN,
 		.aead_alg = OSCORE_AES_CCM_16_64_128,
 		.hkdf = OSCORE_SHA_256,
+		.fresh_master_secret_salt = true,
 	};
 
 	r = oscore_context_init(&params, &c_client);
@@ -152,7 +152,7 @@ ZTEST(oscore_tests, oscore_client_test5)
 	 * during normal operation the sender sequence number is
 	 * increased automatically after every sending
 	 */
-	c_client.sc.sender_seq_num = 20;
+	c_client.sc.ssn = 20;
 
 	uint8_t buf_oscore[256];
 	uint32_t buf_oscore_len = sizeof(buf_oscore);
@@ -176,7 +176,6 @@ ZTEST(oscore_tests, oscore_server_test2)
 	enum err r;
 	struct context c_server;
 	struct oscore_init_params params_server = {
-		.dev_type = SERVER,
 		.master_secret.ptr = (uint8_t *)T2__MASTER_SECRET,
 		.master_secret.len = T2__MASTER_SECRET_LEN,
 		.sender_id.ptr = (uint8_t *)T2__SENDER_ID,
@@ -189,6 +188,7 @@ ZTEST(oscore_tests, oscore_server_test2)
 		.id_context.len = T2__ID_CONTEXT_LEN,
 		.aead_alg = OSCORE_AES_CCM_16_64_128,
 		.hkdf = OSCORE_SHA_256,
+		.fresh_master_secret_salt = true,
 	};
 
 	r = oscore_context_init(&params_server, &c_server);
@@ -198,13 +198,11 @@ ZTEST(oscore_tests, oscore_server_test2)
 	/* Test decrypting of an incoming request */
 	uint8_t buf_coap[256];
 	uint32_t buf_coap_len = sizeof(buf_coap);
-	bool oscore_present_flag = false;
 
 	r = oscore2coap((uint8_t *)T2__OSCORE_REQ, T2__OSCORE_REQ_LEN, buf_coap,
-			&buf_coap_len, &oscore_present_flag, &c_server);
+			&buf_coap_len, &c_server);
 
 	zassert_equal(r, ok, "Error in oscore2coap!");
-	zassert_true(oscore_present_flag, "The packet is not OSCORE packet");
 	zassert_mem_equal__(&buf_coap, T2__COAP_REQ, buf_coap_len,
 			    "oscore2coap failed");
 
@@ -226,7 +224,6 @@ ZTEST(oscore_tests, oscore_server_test4)
 	enum err r;
 	struct context c_server;
 	struct oscore_init_params params_server = {
-		.dev_type = SERVER,
 		.master_secret.ptr = (uint8_t *)T4__MASTER_SECRET,
 		.master_secret.len = T4__MASTER_SECRET_LEN,
 		.sender_id.ptr = (uint8_t *)T4__SENDER_ID,
@@ -239,6 +236,7 @@ ZTEST(oscore_tests, oscore_server_test4)
 		.id_context.len = T4__ID_CONTEXT_LEN,
 		.aead_alg = OSCORE_AES_CCM_16_64_128,
 		.hkdf = OSCORE_SHA_256,
+		.fresh_master_secret_salt = true,
 	};
 
 	r = oscore_context_init(&params_server, &c_server);
@@ -267,7 +265,6 @@ ZTEST(oscore_tests, oscore_server_test6)
 	enum err r;
 	struct context c_server;
 	struct oscore_init_params params_server = {
-		.dev_type = SERVER,
 		.master_secret.ptr = (uint8_t *)T6__MASTER_SECRET,
 		.master_secret.len = T6__MASTER_SECRET_LEN,
 		.sender_id.ptr = (uint8_t *)T6__SENDER_ID,
@@ -280,6 +277,7 @@ ZTEST(oscore_tests, oscore_server_test6)
 		.id_context.len = T6__ID_CONTEXT_LEN,
 		.aead_alg = OSCORE_AES_CCM_16_64_128,
 		.hkdf = OSCORE_SHA_256,
+		.fresh_master_secret_salt = true,
 	};
 
 	r = oscore_context_init(&params_server, &c_server);
@@ -309,7 +307,6 @@ ZTEST(oscore_tests, oscore_misc_test8)
 	enum err r;
 	struct context c;
 	struct oscore_init_params params = {
-		.dev_type = SERVER,
 		.master_secret.ptr = (uint8_t *)T7__MASTER_SECRET,
 		.master_secret.len = T7__MASTER_SECRET_LEN,
 		.sender_id.ptr = (uint8_t *)T7__SENDER_ID,
@@ -322,6 +319,7 @@ ZTEST(oscore_tests, oscore_misc_test8)
 		.id_context.len = T7__ID_CONTEXT_LEN,
 		.aead_alg = OSCORE_AES_CCM_16_64_128,
 		.hkdf = OSCORE_SHA_256,
+		.fresh_master_secret_salt = true,
 	};
 
 	r = oscore_context_init(&params, &c);
