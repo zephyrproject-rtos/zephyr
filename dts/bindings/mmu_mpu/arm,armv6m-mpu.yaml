@@ -12,7 +12,6 @@ properties:
     required: true
 
   arm,num-mpu-regions:
-    required: true
     type: int
     const: 8
     description: number of MPU regions supported by hardware

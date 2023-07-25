@@ -9,6 +9,5 @@ properties:
     required: true
 
   arm,num-mpu-regions:
-    required: true
     type: int
     description: number of MPU regions supported by hardware
