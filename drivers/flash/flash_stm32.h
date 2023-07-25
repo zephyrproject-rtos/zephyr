@@ -257,6 +257,12 @@ static inline bool flash_stm32_range_exists(const struct device *dev,
 }
 #endif	/* CONFIG_FLASH_PAGE_LAYOUT */
 
+static inline bool flash_stm32_valid_write(off_t offset, uint32_t len)
+{
+	return ((offset % FLASH_STM32_WRITE_BLOCK_SIZE == 0) &&
+		(len % FLASH_STM32_WRITE_BLOCK_SIZE == 0U));
+}
+
 bool flash_stm32_valid_range(const struct device *dev, off_t offset,
 			     uint32_t len, bool write);
 
