@@ -1,0 +1,6 @@
+tests:
+  libraries.uoscore:
+    min_flash: 240
+    tags: net crypto uoscore
+    integration_platforms:
+      - qemu_x86
