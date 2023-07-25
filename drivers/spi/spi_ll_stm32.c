@@ -51,6 +51,36 @@ LOG_MODULE_REGISTER(spi_ll_stm32);
 #endif /* CONFIG_SOC_SERIES_STM32MP1X */
 
 #ifdef CONFIG_SPI_STM32_DMA
+
+#ifdef CONFIG_SOC_SERIES_STM32H7X
+
+#define IS_NOCACHE_MEM_REGION(node_id)                                          \
+	COND_CODE_1(DT_ENUM_HAS_VALUE(node_id, zephyr_memory_attr, RAM_NOCACHE),    \
+			(1),                                                                \
+			(0))
+
+#define GET_MEM_REGION(node_id)                                                 \
+	{                                                                           \
+		.start = DT_REG_ADDR(node_id),                                          \
+		.end = (DT_REG_ADDR(node_id) + DT_REG_SIZE(node_id)) - 1,               \
+	},
+
+#define GET_MEM_REGION_IF_NOCACHE(node_id)                                      \
+	COND_CODE_1(IS_NOCACHE_MEM_REGION(node_id),                                 \
+	(                                                                           \
+		GET_MEM_REGION(node_id)                                                 \
+	), ())
+
+struct mem_region {
+	uintptr_t start;
+	uintptr_t end;
+};
+
+static const struct mem_region nocache_mem_regions[] = {
+	DT_MEMORY_ATTR_FOREACH_NODE(GET_MEM_REGION_IF_NOCACHE)
+};
+#endif /* CONFIG_SOC_SERIES_STM32H7X */
+
 /* dummy value used for transferring NOP when tx buf is null
  * and use as dummy sink for when rx buf is null
  */
@@ -723,6 +753,34 @@ static int wait_dma_rx_tx_done(const struct device *dev)
 	return res;
 }
 
+#ifdef CONFIG_SOC_SERIES_STM32H7X
+static bool buf_in_nocache(uintptr_t buf, size_t len_bytes)
+{
+	for (size_t i = 0; i < ARRAY_SIZE(nocache_mem_regions); i++) {
+		const struct mem_region *mem_reg = &nocache_mem_regions[i];
+
+		const bool buf_within_bounds =
+			(buf >= mem_reg->start) && ((buf + len_bytes - 1) <= mem_reg->end);
+		if (buf_within_bounds) {
+			return true;
+		}
+	}
+	return false;
+}
+
+static bool spi_buf_set_in_nocache(const struct spi_buf_set *bufs)
+{
+	for (size_t i = 0; i < bufs->count; i++) {
+		const struct spi_buf *buf = &bufs->buffers[i];
+
+		if (!buf_in_nocache((uintptr_t)buf->buf, buf->len)) {
+			return false;
+		}
+	}
+	return true;
+}
+#endif /* CONFIG_SOC_SERIES_STM32H7X */
+
 static int transceive_dma(const struct device *dev,
 		      const struct spi_config *config,
 		      const struct spi_buf_set *tx_bufs,
@@ -743,6 +801,13 @@ static int transceive_dma(const struct device *dev,
 	if (asynchronous) {
 		return -ENOTSUP;
 	}
+
+#ifdef CONFIG_SOC_SERIES_STM32H7X
+	if ((tx_bufs != NULL && !spi_buf_set_in_nocache(tx_bufs)) ||
+		(rx_bufs != NULL && !spi_buf_set_in_nocache(rx_bufs))) {
+		return -EFAULT;
+	}
+#endif /* CONFIG_SOC_SERIES_STM32H7X */
 
 	spi_context_lock(&data->ctx, asynchronous, cb, userdata, config);
 
