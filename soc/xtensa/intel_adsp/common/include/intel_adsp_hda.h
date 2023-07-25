@@ -207,9 +207,14 @@ static inline uint32_t intel_adsp_hda_get_buffer_size(uint32_t base,
  * @param regblock_size Register block size
  * @param sid Stream ID
  */
-static inline void intel_adsp_hda_enable(uint32_t base, uint32_t regblock_size, uint32_t sid)
+static inline void intel_adsp_hda_enable(uint32_t base, uint32_t regblock_size,
+					 uint32_t sid, bool set_fifordy)
 {
-	*DGCS(base, regblock_size, sid) |= DGCS_GEN | DGCS_FIFORDY;
+	*DGCS(base, regblock_size, sid) |= DGCS_GEN;
+
+	if (set_fifordy) {
+		*DGCS(base, regblock_size, sid) |= DGCS_FIFORDY;
+	}
 }
 
 /**
@@ -224,7 +229,6 @@ static inline void intel_adsp_hda_disable(uint32_t base, uint32_t regblock_size,
 	*DGCS(base, regblock_size, sid) &= ~(DGCS_GEN | DGCS_FIFORDY);
 }
 
-
 /**
  * @brief Check if stream is enabled
  *
@@ -236,7 +240,6 @@ static inline bool intel_adsp_hda_is_enabled(uint32_t base, uint32_t regblock_si
 {
 	return *DGCS(base, regblock_size, sid) & (DGCS_GEN | DGCS_FIFORDY);
 }
-
 
 /**
  * @brief Determine the number of unused bytes in the buffer
