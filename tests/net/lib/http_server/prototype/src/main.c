@@ -252,7 +252,7 @@ static void server_thread_stp_fn(void *arg0, void *arg1, void *arg2)
 	k_sleep(K_SECONDS(2));
 
 	ctx->infinite = 0;
-	int program_status = http2_server_start(ctx);
+	int program_status = http2_server_start(ctx, 1000);
 
 	zassert_equal(program_status, 0,
 		      "The server didn't shut down successfully");
