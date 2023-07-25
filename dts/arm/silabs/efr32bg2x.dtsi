@@ -36,7 +36,7 @@
 			 * has implications on system performance. Read
 			 * KConfig documentation entry before enabling it.
 			 */
-			cpu-power-states = <&pstate_em1>;
+			cpu-power-states = <&pstate_em1 &pstate_em2 &pstate_em3>;
 		};
 
 		power-states {
