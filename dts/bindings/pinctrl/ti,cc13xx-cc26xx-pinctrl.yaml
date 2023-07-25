@@ -29,6 +29,7 @@ description: |
     - drive-strength: Minimum current that can be sourced from the pin.
     - input-enable: enable input.
     - input-schmitt-enable: enable input schmitt circuit.
+    - ti,input-edge-detect: enable and configure edge detection interrupts
 
     An example for CC13XX family, include the chip level pinctrl
     DTSI file in the board level DTS:
@@ -55,6 +56,17 @@ description: |
           bias-pull-up;
           drive-open-drain;
           input-enable;
+        };
+      };
+
+    To configure an input pin with edge detection (e.g. to count pulses):
+
+      &pinctrl {
+        gpt0_edge_counter: gpt0_edge_counter {
+          pinmux = <15 IOC_PORT_MCU_PORT_EVENT0>;
+          input-enable;
+          bias-pull-up;
+          ti,input-edge-detect = <IOC_RISING_EDGE>;
         };
       };
 
@@ -112,3 +124,13 @@ child-binding:
           2: min 2 mA (SoC default)
           4: min 4 mA
           8: min 8 mA for for double drive strength IOs, min 4 mA for normal IOs
+
+    ti,input-edge-detect:
+      type: int
+      default: 0 # no edge detection
+      description: |
+        Enables or disables the edge detection interrupt and configures it:
+          IOC_NO_EDGE: No edge detection (SoC default)
+          IOC_FALLING_EDGE: Edge detection on falling edge
+          IOC_RISING_EDGE: Edge detection on rising edge
+          IOC_BOTH_EDGES: Edge detection on both edges
