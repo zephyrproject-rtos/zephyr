@@ -310,6 +310,14 @@ static void intel_adsp_hda_channels_init(const struct device *dev)
 
 	for (uint32_t i = 0; i < cfg->dma_channels; i++) {
 		intel_adsp_hda_init(cfg->base, cfg->regblock_size, i);
+
+		if (intel_adsp_hda_is_enabled(cfg->base, cfg->regblock_size, i)) {
+			uint32_t size;
+
+			size = intel_adsp_hda_get_buffer_size(cfg->base, cfg->regblock_size, i);
+			intel_adsp_hda_disable(cfg->base, cfg->regblock_size, i);
+			intel_adsp_hda_link_commit(cfg->base, cfg->regblock_size, i, size);
+		}
 	}
 }
 
