@@ -126,7 +126,7 @@ enum usbd_ch9_state {
 struct usbd_ch9_data {
 	/** Setup packet, up-to-date for the respective control request */
 	struct usb_setup_packet setup;
-	/** Control type, internaly used for stage verification */
+	/** Control type, internally used for stage verification */
 	int ctrl_type;
 	/** Protocol state of the USB device stack */
 	enum usbd_ch9_state state;
@@ -183,7 +183,7 @@ struct usbd_contex {
  * @brief Vendor Requests Table
  */
 struct usbd_cctx_vendor_req {
-	/** Array of vendor requests supportd by the class */
+	/** Array of vendor requests supported by the class */
 	const uint8_t *reqs;
 	/** Length of the array */
 	uint8_t len;

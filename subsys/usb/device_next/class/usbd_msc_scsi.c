@@ -459,7 +459,7 @@ static int fill_inquiry(struct scsi_ctx *ctx,
 
 	memset(&r, 0, sizeof(struct scsi_inquiry_response));
 
-	/* Accesible; Direct access block device (SBC) */
+	/* Accessible; Direct access block device (SBC) */
 	r.peripheral = 0x00;
 	/* Removable; not a part of conglomerate. Note that when device is
 	 * accessible via USB Mass Storage, it should always be marked as
@@ -526,7 +526,7 @@ static int fill_vpd_page(struct scsi_ctx *ctx, enum vpd_page_code page,
 		return -ENOTSUP;
 	}
 
-	/* Accesible; Direct access block device (SBC) */
+	/* Accessible; Direct access block device (SBC) */
 	buf[0] = 0x00;
 	buf[1] = page;
 	sys_put_be16(offset, &buf[2]);

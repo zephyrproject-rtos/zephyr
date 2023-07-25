@@ -14,7 +14,7 @@
  *
  * @param[in] uds_ctx Pointer to device context
  * @param[in] buf     Pointer to UDC request buffer
- * @param[in] err     Trasnfer status
+ * @param[in] err     Transfer status
  *
  * @return usbd_class_request() return value
  */
