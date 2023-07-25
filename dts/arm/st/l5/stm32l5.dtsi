@@ -35,6 +35,7 @@
 			reg = <0>;
 			#address-cells = <1>;
 			#size-cells = <1>;
+			cpu-power-states = <&stop0 &stop1 &stop2>;
 
 			mpu: mpu@e000ed90 {
 				compatible = "arm,armv8m-mpu";
