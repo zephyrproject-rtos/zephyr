@@ -145,6 +145,8 @@ enum net_event_wifi_cmd {
 	NET_EVENT_WIFI_CMD_RAW_SCAN_RESULT,
 	/** Disconnect complete */
 	NET_EVENT_WIFI_CMD_DISCONNECT_COMPLETE,
+	/** Wi-Fi NM events, payload depends on NM **/
+	NET_EVENT_WIFI_CMD_NM_EVENT,
 };
 
 #define NET_EVENT_WIFI_SCAN_RESULT				\
@@ -173,6 +175,9 @@ enum net_event_wifi_cmd {
 
 #define NET_EVENT_WIFI_DISCONNECT_COMPLETE			\
 	(_NET_WIFI_EVENT | NET_EVENT_WIFI_CMD_DISCONNECT_COMPLETE)
+
+#define NET_EVENT_WIFI_NM_EVENT			\
+	(_NET_WIFI_EVENT | NET_EVENT_WIFI_CMD_NM_EVENT)
 
 /** Wi-Fi scan parameters */
 struct wifi_scan_params {
