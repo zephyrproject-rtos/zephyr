@@ -89,7 +89,7 @@ struct bt_csip_set_coordinator_inst {
 	struct bt_conn *conn;
 };
 
-static struct bt_uuid_16 uuid = BT_UUID_INIT_16(0);
+static const struct bt_uuid *uuid_csis = BT_UUID_CSIS;
 
 static sys_slist_t csip_set_coordinator_cbs = SYS_SLIST_STATIC_INIT(&csip_set_coordinator_cbs);
 static struct bt_csip_set_coordinator_inst client_insts[CONFIG_BT_MAX_CONN];
@@ -1436,9 +1436,8 @@ int bt_csip_set_coordinator_discover(struct bt_conn *conn)
 
 	/* Discover CSIS on peer, setup handles and notify */
 	(void)memset(&discover_params, 0, sizeof(discover_params));
-	(void)memcpy(&uuid, BT_UUID_CSIS, sizeof(uuid));
 	discover_params.func = primary_discover_func;
-	discover_params.uuid = &uuid.uuid;
+	discover_params.uuid = uuid_csis;
 	discover_params.type = BT_GATT_DISCOVER_PRIMARY;
 	discover_params.start_handle = BT_ATT_FIRST_ATTRIBUTE_HANDLE;
 	discover_params.end_handle = BT_ATT_LAST_ATTRIBUTE_HANDLE;
