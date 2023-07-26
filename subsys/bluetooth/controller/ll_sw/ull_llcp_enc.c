@@ -99,6 +99,7 @@ enum {
 	RP_ENC_STATE_WAIT_RX_ENC_REQ,
 	RP_ENC_STATE_WAIT_TX_ENC_RSP,
 	RP_ENC_STATE_WAIT_LTK_REPLY,
+	RP_ENC_STATE_WAIT_LTK_REPLY_CONTINUE,
 	RP_ENC_STATE_WAIT_TX_START_ENC_REQ,
 	RP_ENC_STATE_WAIT_TX_REJECT_IND,
 	RP_ENC_STATE_WAIT_RX_START_ENC_RSP,
@@ -981,13 +982,28 @@ static void rp_enc_state_wait_ltk_reply(struct ll_conn *conn, struct proc_ctx *c
 {
 	switch (evt) {
 	case RP_ENC_EVT_LTK_REQ_REPLY:
-		rp_enc_send_start_enc_req(conn, ctx, evt, param);
+		/* Continue procedure in next prepare run */
+		ctx->state = RP_ENC_STATE_WAIT_LTK_REPLY_CONTINUE;
 		break;
 	case RP_ENC_EVT_LTK_REQ_NEG_REPLY:
 		ctx->data.enc.error = BT_HCI_ERR_PIN_OR_KEY_MISSING;
 		ctx->reject_ext_ind.reject_opcode = PDU_DATA_LLCTRL_TYPE_ENC_REQ;
 		ctx->reject_ext_ind.error_code = BT_HCI_ERR_PIN_OR_KEY_MISSING;
-		rp_enc_send_reject_ind(conn, ctx, evt, param);
+		/* Send reject in next prepare run */
+		ctx->state = RP_ENC_STATE_WAIT_TX_REJECT_IND;
+		break;
+	default:
+		/* Ignore other evts */
+		break;
+	}
+}
+
+static void rp_enc_state_wait_ltk_reply_continue(struct ll_conn *conn, struct proc_ctx *ctx,
+						 uint8_t evt, void *param)
+{
+	switch (evt) {
+	case RP_ENC_EVT_RUN:
+		rp_enc_send_start_enc_req(conn, ctx, evt, param);
 		break;
 	default:
 		/* Ignore other evts */
@@ -1147,6 +1163,9 @@ static void rp_enc_execute_fsm(struct ll_conn *conn, struct proc_ctx *ctx, uint8
 		break;
 	case RP_ENC_STATE_WAIT_LTK_REPLY:
 		rp_enc_state_wait_ltk_reply(conn, ctx, evt, param);
+		break;
+	case RP_ENC_STATE_WAIT_LTK_REPLY_CONTINUE:
+		rp_enc_state_wait_ltk_reply_continue(conn, ctx, evt, param);
 		break;
 	case RP_ENC_STATE_WAIT_TX_START_ENC_REQ:
 		rp_enc_state_wait_tx_start_enc_req(conn, ctx, evt, param);

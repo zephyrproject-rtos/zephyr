@@ -1224,7 +1224,7 @@ ZTEST(encryption_start, test_encryption_start_periph_rem)
 	ull_cp_ltk_req_reply(&conn, ltk);
 
 	/* Check state */
-	CHECK_RX_PE_STATE(conn, PAUSED, ENCRYPTED); /* Rx paused & enc. */
+	CHECK_RX_PE_STATE(conn, PAUSED, UNENCRYPTED); /* Rx paused & unenc. */
 	CHECK_TX_PE_STATE(conn, PAUSED, UNENCRYPTED); /* Tx paused & unenc. */
 
 	/* Prepare */
@@ -1684,9 +1684,8 @@ ZTEST(encryption_start, test_encryption_start_periph_rem_no_ltk)
 	ull_cp_ltk_req_neq_reply(&conn);
 
 	/* Check state */
-	/* TODO(thoh): THIS IS WRONG! */
-	CHECK_RX_PE_STATE(conn, RESUMED, UNENCRYPTED); /* Rx unenc. */
-	CHECK_TX_PE_STATE(conn, RESUMED, UNENCRYPTED); /* Tx unenc. */
+	CHECK_RX_PE_STATE(conn, PAUSED, UNENCRYPTED); /* Rx paused & unenc. */
+	CHECK_TX_PE_STATE(conn, PAUSED, UNENCRYPTED); /* Tx paused & unenc. */
 
 	/* Prepare */
 	event_prepare(&conn);
@@ -2124,6 +2123,10 @@ ZTEST(encryption_pause, test_encryption_pause_periph_rem)
 
 	/* LTK request reply */
 	ull_cp_ltk_req_reply(&conn, ltk);
+
+	/* Check state */
+	CHECK_RX_PE_STATE(conn, PAUSED, UNENCRYPTED); /* Rx paused & unenc. */
+	CHECK_TX_PE_STATE(conn, PAUSED, UNENCRYPTED); /* Tx paused & unenc. */
 
 	/* Prepare */
 	event_prepare(&conn);
