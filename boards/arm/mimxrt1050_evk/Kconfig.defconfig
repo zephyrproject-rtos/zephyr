@@ -13,6 +13,9 @@ choice CODE_LOCATION
 	default CODE_FLEXSPI
 endchoice
 
+config DEVICE_CONFIGURATION_DATA
+	default y
+
 if FLASH
 
 config FLASH_MCUX_FLEXSPI_HYPERFLASH
