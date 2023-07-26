@@ -14,7 +14,10 @@
 static struct sys_multi_heap shared_multi_heap;
 static struct sys_heap heap_pool[MAX_SHARED_MULTI_HEAP_ATTR][MAX_MULTI_HEAPS];
 
-static unsigned int attr_cnt[MAX_SHARED_MULTI_HEAP_ATTR];
+/*
+ * Number of heaps filled for a given attribute
+ */
+static unsigned int heap_cnt[MAX_SHARED_MULTI_HEAP_ATTR];
 
 static void *smh_choice(struct sys_multi_heap *mheap, void *cfg, size_t align, size_t size)
 {
@@ -31,7 +34,7 @@ static void *smh_choice(struct sys_multi_heap *mheap, void *cfg, size_t align, s
 	/* Set in case the user requested a non-existing attr */
 	block = NULL;
 
-	for (size_t hdx = 0; hdx < attr_cnt[attr]; hdx++) {
+	for (size_t hdx = 0; hdx < heap_cnt[attr]; hdx++) {
 		h = &heap_pool[attr][hdx];
 
 		if (h->heap == NULL) {
@@ -49,26 +52,28 @@ static void *smh_choice(struct sys_multi_heap *mheap, void *cfg, size_t align, s
 
 int shared_multi_heap_add(struct shared_multi_heap_region *region, void *user_data)
 {
-	static int n_heaps;
+	enum shared_multi_heap_attr attr;
 	struct sys_heap *h;
 	unsigned int slot;
 
-	if (region->attr >= MAX_SHARED_MULTI_HEAP_ATTR) {
+	attr = region->attr;
+
+	if (attr >= MAX_SHARED_MULTI_HEAP_ATTR) {
 		return -EINVAL;
 	}
 
 	/* No more heaps available */
-	if (n_heaps++ >= MAX_MULTI_HEAPS) {
+	if (heap_cnt[attr] >= MAX_MULTI_HEAPS) {
 		return -ENOMEM;
 	}
 
-	slot = attr_cnt[region->attr];
+	slot = heap_cnt[attr];
 	h = &heap_pool[region->attr][slot];
 
 	sys_heap_init(h, (void *) region->addr, region->size);
 	sys_multi_heap_add_heap(&shared_multi_heap, h, user_data);
 
-	attr_cnt[region->attr]++;
+	heap_cnt[attr]++;
 
 	return 0;
 }
