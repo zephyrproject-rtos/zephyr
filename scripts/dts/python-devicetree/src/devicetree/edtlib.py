@@ -2212,7 +2212,8 @@ class EDT:
             # This warning matches the simple_bus_reg warning in dtc
             for node in self.nodes:
                 if node.regs and node.regs[0].addr != node.unit_addr:
-                    _LOG.warning("unit address and first address in 'reg' "
+                    _LOG.warning("unit address in 'unit' "
+                                 f"(0x{node.unit_addr:x}) and first address in 'reg' "
                                  f"(0x{node.regs[0].addr:x}) don't match for "
                                  f"{node.path}")
 
