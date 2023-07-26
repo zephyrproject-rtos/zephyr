@@ -27,6 +27,12 @@ if (CONFIG_UOSCORE OR CONFIG_UEDHOC)
 
   zephyr_library_link_libraries(mbedTLS)
 
+  if (CONFIG_BUILD_WITH_TFM)
+    zephyr_library_include_directories(
+      $<TARGET_PROPERTY:tfm,TFM_BINARY_DIR>/install/interface/include
+    )
+  endif()
+
 # UOSCORE
 
   if (CONFIG_UOSCORE)
