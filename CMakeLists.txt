@@ -1239,20 +1239,13 @@ if(CONFIG_GEN_ISR_TABLES)
   # isr_tables.c is generated from ${ZEPHYR_LINK_STAGE_EXECUTABLE} by
   # gen_isr_tables.py
   add_custom_command(
-    OUTPUT isr_tables.c isrList.bin
-    COMMAND $<TARGET_PROPERTY:bintools,elfconvert_command>
-            $<TARGET_PROPERTY:bintools,elfconvert_flag>
-            $<TARGET_PROPERTY:bintools,elfconvert_flag_intarget>${OUTPUT_FORMAT}
-            $<TARGET_PROPERTY:bintools,elfconvert_flag_outtarget>binary
-            $<TARGET_PROPERTY:bintools,elfconvert_flag_section_only>.intList
-            $<TARGET_PROPERTY:bintools,elfconvert_flag_infile>$<TARGET_FILE:${ZEPHYR_LINK_STAGE_EXECUTABLE}>
-            $<TARGET_PROPERTY:bintools,elfconvert_flag_outfile>isrList.bin
-            $<TARGET_PROPERTY:bintools,elfconvert_flag_final>
+    OUTPUT isr_tables.c
     COMMAND ${PYTHON_EXECUTABLE}
     ${ZEPHYR_BASE}/scripts/build/gen_isr_tables.py
     --output-source isr_tables.c
     --kernel $<TARGET_FILE:${ZEPHYR_LINK_STAGE_EXECUTABLE}>
-    --intlist isrList.bin
+    --intlist-section .intList
+    --intlist-section intList
     $<$<BOOL:${CONFIG_BIG_ENDIAN}>:--big-endian>
     $<$<BOOL:${CMAKE_VERBOSE_MAKEFILE}>:--debug>
     ${GEN_ISR_TABLE_EXTRA_ARG}
