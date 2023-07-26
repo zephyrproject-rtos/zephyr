@@ -18,7 +18,7 @@
 #include <zephyr/drivers/uart.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <cyhal_uart.h>
-#include <cyhal_utils_psoc.h>
+#include <cyhal_utils_impl.h>
 #include <cyhal_scb_common.h>
 
 /* Data structure */
