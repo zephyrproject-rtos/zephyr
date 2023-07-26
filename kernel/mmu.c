@@ -238,10 +238,14 @@ static void virt_region_free(void *vaddr, size_t size)
 	}
 
 #ifndef CONFIG_KERNEL_DIRECT_MAP
+	/* Without the need to support K_DIRECT_MAP, the region must be
+	 * able to be represented in the bitmap. So this case is
+	 * simple.
+	 */
+
 	__ASSERT((vaddr_u8 >= Z_VIRT_REGION_START_ADDR)
 		 && ((vaddr_u8 + size - 1) < Z_VIRT_REGION_END_ADDR),
 		 "invalid virtual address region %p (%zu)", vaddr_u8, size);
-#endif
 	if (!((vaddr_u8 >= Z_VIRT_REGION_START_ADDR)
 	      && ((vaddr_u8 + size - 1) < Z_VIRT_REGION_END_ADDR))) {
 		return;
@@ -250,6 +254,26 @@ static void virt_region_free(void *vaddr, size_t size)
 	offset = virt_to_bitmap_offset(vaddr, size);
 	num_bits = size / CONFIG_MMU_PAGE_SIZE;
 	(void)sys_bitarray_free(&virt_region_bitmap, num_bits, offset);
+#else /* !CONFIG_KERNEL_DIRECT_MAP */
+	/* With K_DIRECT_MAP, the region can be outside of the virtual
+	 * memory space, wholly within it, or overlap partially.
+	 * So additional processing is needed to make sure we only
+	 * mark the pages within the bitmap.
+	 */
+	if (((vaddr_u8 >= Z_VIRT_REGION_START_ADDR) &&
+	     (vaddr_u8 < Z_VIRT_REGION_END_ADDR)) ||
+	    (((vaddr_u8 + size - 1) >= Z_VIRT_REGION_START_ADDR) &&
+	     ((vaddr_u8 + size - 1) < Z_VIRT_REGION_END_ADDR))) {
+		uint8_t *adjusted_start = MAX(vaddr_u8, Z_VIRT_REGION_START_ADDR);
+		uint8_t *adjusted_end = MIN(vaddr_u8 + size,
+					    Z_VIRT_REGION_END_ADDR);
+		size_t adjusted_sz = adjusted_end - adjusted_start;
+
+		offset = virt_to_bitmap_offset(adjusted_start, adjusted_sz);
+		num_bits = adjusted_sz / CONFIG_MMU_PAGE_SIZE;
+		(void)sys_bitarray_free(&virt_region_bitmap, num_bits, offset);
+	}
+#endif /* !CONFIG_KERNEL_DIRECT_MAP */
 }
 
 static void *virt_region_alloc(size_t size, size_t align)
@@ -740,13 +764,28 @@ void z_phys_map(uint8_t **virt_ptr, uintptr_t phys, size_t size, uint32_t flags)
 	align_boundary = arch_virt_region_align(aligned_phys, aligned_size);
 
 	key = k_spin_lock(&z_mm_lock);
-	if (flags & K_MEM_DIRECT_MAP) {
+
+	if (IS_ENABLED(CONFIG_KERNEL_DIRECT_MAP) &&
+	    (flags & K_MEM_DIRECT_MAP)) {
 		dest_addr = (uint8_t *)aligned_phys;
-		/* Reserve from the virtual memory space */
-		if (!(dest_addr + aligned_size < Z_VIRT_RAM_START ||
-		    dest_addr > Z_VIRT_RAM_END)) {
-			num_bits = aligned_size / CONFIG_MMU_PAGE_SIZE;
-			offset = virt_to_bitmap_offset(dest_addr, aligned_size);
+
+		/* Mark the region of virtual memory bitmap as used
+		 * if the region overlaps the virtual memory space.
+		 *
+		 * Basically if either end of region is within
+		 * virtual memory space, we need to mark the bits.
+		 */
+		if (((dest_addr >= Z_VIRT_RAM_START) &&
+		     (dest_addr < Z_VIRT_RAM_END)) ||
+		    (((dest_addr + aligned_size) >= Z_VIRT_RAM_START) &&
+		     ((dest_addr + aligned_size) < Z_VIRT_RAM_END))) {
+			uint8_t *adjusted_start = MAX(dest_addr, Z_VIRT_RAM_START);
+			uint8_t *adjusted_end = MIN(dest_addr + aligned_size,
+						    Z_VIRT_RAM_END);
+			size_t adjusted_sz = adjusted_end - adjusted_start;
+
+			num_bits = adjusted_sz / CONFIG_MMU_PAGE_SIZE;
+			offset = virt_to_bitmap_offset(adjusted_start, adjusted_sz);
 			if (sys_bitarray_test_and_set_region(
 			    &virt_region_bitmap, num_bits, offset, true))
 				goto fail;
