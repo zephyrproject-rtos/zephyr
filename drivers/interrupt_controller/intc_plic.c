@@ -29,12 +29,37 @@
 #define PLIC_IRQS        (CONFIG_NUM_IRQS - CONFIG_2ND_LVL_ISR_TBL_OFFSET)
 #define PLIC_EN_SIZE     ((PLIC_IRQS >> 5) + 1)
 
+#define PLIC_EDGE_TRIG_TYPE   (PLIC_MAX_PRIO + DT_INST_PROP(0, riscv_trigger_reg_offset))
+#define PLIC_EDGE_TRIG_SHIFT  5
+
 struct plic_regs_t {
 	uint32_t threshold_prio;
 	uint32_t claim_complete;
 };
 
 static int save_irq;
+
+/**
+ * @brief return edge irq value or zero
+ *
+ * In the event edge irq is enable this will return the trigger
+ * value of the irq. In the event edge irq is not supported this
+ * routine will return 0
+ *
+ * @param irq IRQ number to add to the trigger
+ *
+ * @return irq value when enabled 0 otherwise
+ */
+static int riscv_plic_is_edge_irq(uint32_t irq)
+{
+	if (IS_ENABLED(CONFIG_PLIC_SUPPORTS_EDGE_IRQ)) {
+		volatile uint32_t *trig = (volatile uint32_t *)PLIC_EDGE_TRIG_TYPE;
+
+		trig += (irq >> PLIC_EDGE_TRIG_SHIFT);
+		return *trig & BIT(irq);
+	}
+	return 0;
+}
 
 /**
  * @brief Enable a riscv PLIC-specific interrupt line
@@ -135,6 +160,7 @@ static void plic_irq_handler(const void *arg)
 
 	uint32_t irq;
 	struct _isr_table_entry *ite;
+	int edge_irq;
 
 	/* Get the IRQ number generating the interrupt */
 	irq = regs->claim_complete;
@@ -154,6 +180,16 @@ static void plic_irq_handler(const void *arg)
 	if (irq == 0U || irq >= PLIC_IRQS)
 		z_irq_spurious(NULL);
 
+	edge_irq = riscv_plic_is_edge_irq(irq);
+
+	/*
+	 * For edge triggered interrupts, write to the claim_complete register
+	 * to indicate to the PLIC controller that the IRQ has been handled
+	 * for edge triggered interrupts.
+	 */
+	if (edge_irq)
+		regs->claim_complete = save_irq;
+
 	irq += CONFIG_2ND_LVL_ISR_TBL_OFFSET;
 
 	/* Call the corresponding IRQ handler in _sw_isr_table */
@@ -162,9 +198,11 @@ static void plic_irq_handler(const void *arg)
 
 	/*
 	 * Write to claim_complete register to indicate to
-	 * PLIC controller that the IRQ has been handled.
+	 * PLIC controller that the IRQ has been handled
+	 * for level triggered interrupts.
 	 */
-	regs->claim_complete = save_irq;
+	if (!edge_irq)
+		regs->claim_complete = save_irq;
 }
 
 /**

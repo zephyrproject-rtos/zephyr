@@ -10,3 +10,9 @@ config PLIC
 	help
 	  Platform Level Interrupt Controller provides support
 	  for external interrupt lines defined by the RISC-V SoC.
+
+config PLIC_SUPPORTS_EDGE_IRQ
+	bool "The given interrupt controller supports edge interrupts"
+	help
+	  The given interrupt controller supports edge triggered
+	  interrupts.
