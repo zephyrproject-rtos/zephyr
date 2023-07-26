@@ -1351,6 +1351,13 @@ static size_t zsock_recv_stream_immediate(struct net_context *ctx, uint8_t **buf
 	return recv_len;
 }
 
+static int zsock_fionread_ctx(struct net_context *ctx)
+{
+	size_t ret = zsock_recv_stream_immediate(ctx, NULL, NULL, 0);
+
+	return MIN(ret, INT_MAX);
+}
+
 static ssize_t zsock_recv_stream_timed(struct net_context *ctx, uint8_t *buf, size_t max_len,
 				       int flags, k_timeout_t timeout)
 {
@@ -1525,6 +1532,57 @@ static inline int z_vrfy_zsock_fcntl(int sock, int cmd, int flags)
 	return z_impl_zsock_fcntl(sock, cmd, flags);
 }
 #include <syscalls/zsock_fcntl_mrsh.c>
+#endif
+
+int z_impl_zsock_ioctl(int sock, unsigned long request, va_list args)
+{
+	const struct socket_op_vtable *vtable;
+	struct k_mutex *lock;
+	void *ctx;
+	int ret;
+
+	ctx = get_sock_vtable(sock, &vtable, &lock);
+	if (ctx == NULL) {
+		errno = EBADF;
+		return -1;
+	}
+
+	(void)k_mutex_lock(lock, K_FOREVER);
+
+	NET_DBG("ioctl: ctx=%p, fd=%d, request=%lu", ctx, sock, request);
+
+	ret = vtable->fd_vtable.ioctl(ctx, request, args);
+
+	k_mutex_unlock(lock);
+
+	return ret;
+
+}
+
+#ifdef CONFIG_USERSPACE
+static inline int z_vrfy_zsock_ioctl(int sock, unsigned long request, va_list args)
+{
+	switch (request) {
+	case ZFD_IOCTL_FIONBIO:
+		break;
+
+	case ZFD_IOCTL_FIONREAD: {
+		int *avail;
+
+		avail = va_arg(args, int *);
+		Z_OOPS(Z_SYSCALL_MEMORY_WRITE(avail, sizeof(*avail)));
+
+		break;
+	}
+
+	default:
+		errno = EOPNOTSUPP;
+		return -1;
+	}
+
+	return z_impl_zsock_ioctl(sock, request, args);
+}
+#include <syscalls/zsock_ioctl_mrsh.c>
 #endif
 
 static int zsock_poll_prepare_ctx(struct net_context *ctx,
@@ -2560,6 +2618,17 @@ static int sock_ioctl_vmeth(void *obj, unsigned int request, va_list args)
 		lock = va_arg(args, struct k_mutex *);
 
 		zsock_ctx_set_lock(obj, lock);
+		return 0;
+	}
+
+	case ZFD_IOCTL_FIONBIO:
+		sock_set_flag(obj, SOCK_NONBLOCK, SOCK_NONBLOCK);
+		return 0;
+
+	case ZFD_IOCTL_FIONREAD: {
+		int *avail = va_arg(args, int *);
+
+		*avail = zsock_fionread_ctx(obj);
 		return 0;
 	}
 
