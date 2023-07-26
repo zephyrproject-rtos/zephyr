@@ -82,6 +82,19 @@ these references:
 - `MIMXRT1064-EVK Schematics`_
 - `MIMXRT1064-EVK Debug Firmware`_
 
+External Memory
+===============
+
+This platform has the following external memories:
+
++--------------------+------------+-------------------------------------+
+| Device             | Controller | Status                              |
++====================+============+=====================================+
+| MT48LC16M16A2      | SEMC       | Enabled via device configuration    |
+|                    |            | data block, which sets up SEMC at   |
+|                    |            | boot time                           |
++--------------------+------------+-------------------------------------+
+
 Supported Features
 ==================
 

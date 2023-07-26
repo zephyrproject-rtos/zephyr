@@ -51,6 +51,19 @@ these references:
 - `MIMXRT1010-EVK User Guide`_
 - `MIMXRT1010-EVK Design Files`_
 
+External Memory
+===============
+
+This platform has the following external memories:
+
++--------------------+------------+-------------------------------------+
+| Device             | Controller | Status                              |
++====================+============+=====================================+
+| AT25SF128A         | FLEXSPI    | Enabled via flash configurationn    |
+|                    |            | block, which sets up FLEXSPI at     |
+|                    |            | boot time.                          |
++--------------------+------------+-------------------------------------+
+
 Supported Features
 ==================
 
