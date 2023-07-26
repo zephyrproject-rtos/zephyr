@@ -18,6 +18,10 @@ choice CODE_LOCATION
 	default CODE_SRAM0 if CPU_CORTEX_M4
 endchoice
 
+# Only use DCD when booting primary core (M7)
+config DEVICE_CONFIGURATION_DATA
+	default y if CPU_CORTEX_M7
+
 if SECOND_CORE_MCUX && CPU_CORTEX_M4
 
 config BUILD_OUTPUT_INFO_HEADER
