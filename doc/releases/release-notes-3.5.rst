@@ -124,6 +124,10 @@ Build system and infrastructure
 
   * Added support for shared interrupts
 
+* Added support for setting MCUboot encryption key in sysbuild which is then
+  propagated to the bootloader and target images to automatically create
+  encrypted updates.
+
 Drivers and Sensors
 *******************
 
