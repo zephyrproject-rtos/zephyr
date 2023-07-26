@@ -123,7 +123,6 @@
 		compatible = "ethernet-phy";
 		status = "disabled";
 		address = <1>;
-		mdio = <&mdio>;
 	};
 };
 

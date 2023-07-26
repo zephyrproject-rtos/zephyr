@@ -99,7 +99,6 @@
 	phy0: ethernet-phy {
 		compatible = "ethernet-phy";
 		address = <0x7>;
-		mdio = <&emdio>;
 		status = "okay";
 	};
 };
