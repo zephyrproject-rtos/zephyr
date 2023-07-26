@@ -12,12 +12,11 @@
 #include <zephyr/multi_heap/shared_multi_heap.h>
 
 static struct sys_multi_heap shared_multi_heap;
-static struct sys_heap heap_pool[MAX_SHARED_MULTI_HEAP_ATTR][MAX_MULTI_HEAPS];
 
-/*
- * Number of heaps filled for a given attribute
- */
-static unsigned int heap_cnt[MAX_SHARED_MULTI_HEAP_ATTR];
+static struct {
+	struct sys_heap heap_pool[MAX_MULTI_HEAPS];
+	unsigned int heap_cnt;
+} smh_data[MAX_SHARED_MULTI_HEAP_ATTR];
 
 static void *smh_choice(struct sys_multi_heap *mheap, void *cfg, size_t align, size_t size)
 {
@@ -34,8 +33,8 @@ static void *smh_choice(struct sys_multi_heap *mheap, void *cfg, size_t align, s
 	/* Set in case the user requested a non-existing attr */
 	block = NULL;
 
-	for (size_t hdx = 0; hdx < heap_cnt[attr]; hdx++) {
-		h = &heap_pool[attr][hdx];
+	for (size_t hdx = 0; hdx < smh_data[attr].heap_cnt; hdx++) {
+		h = &smh_data[attr].heap_pool[hdx];
 
 		if (h->heap == NULL) {
 			return NULL;
@@ -63,17 +62,17 @@ int shared_multi_heap_add(struct shared_multi_heap_region *region, void *user_da
 	}
 
 	/* No more heaps available */
-	if (heap_cnt[attr] >= MAX_MULTI_HEAPS) {
+	if (smh_data[attr].heap_cnt >= MAX_MULTI_HEAPS) {
 		return -ENOMEM;
 	}
 
-	slot = heap_cnt[attr];
-	h = &heap_pool[region->attr][slot];
+	slot = smh_data[attr].heap_cnt;
+	h = &smh_data[attr].heap_pool[slot];
 
 	sys_heap_init(h, (void *) region->addr, region->size);
 	sys_multi_heap_add_heap(&shared_multi_heap, h, user_data);
 
-	heap_cnt[attr]++;
+	smh_data[attr].heap_cnt++;
 
 	return 0;
 }
