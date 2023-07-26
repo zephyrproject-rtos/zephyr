@@ -151,7 +151,6 @@
 					compatible = "ethernet-phy";
 					status = "disabled";
 					address = <0>;
-					mdio = <&mdio>;
 				};
 			};
 		};
