@@ -117,7 +117,6 @@ zephyr_interface_library_named(mbedTLS)
         ${ZEPHYR_CURRENT_MODULE_DIR}/library/psa_crypto_mac.c
         ${ZEPHYR_CURRENT_MODULE_DIR}/library/psa_crypto_rsa.c
         ${ZEPHYR_CURRENT_MODULE_DIR}/library/psa_crypto_se.c
-        ${ZEPHYR_CURRENT_MODULE_DIR}/library/psa_crypto_slot_management.c
         ${ZEPHYR_CURRENT_MODULE_DIR}/library/psa_crypto_storage.c
         ${ZEPHYR_CURRENT_MODULE_DIR}/library/psa_its_file.c
       )
@@ -127,6 +126,7 @@ zephyr_interface_library_named(mbedTLS)
       list(APPEND crypto_source
         ${ZEPHYR_CURRENT_MODULE_DIR}/library/psa_crypto.c
         ${ZEPHYR_CURRENT_MODULE_DIR}/library/psa_crypto_client.c
+        ${ZEPHYR_CURRENT_MODULE_DIR}/library/psa_crypto_slot_management.c
       )
     endif()
 
