@@ -1,0 +1,6 @@
+menuconfig SPI_EOS_S3
+	bool "QuickLogic EOS S3 SPI driver"
+	default y
+	depends on DT_HAS_QUICKLOGIC_EOS_S3_SPI_ENABLED
+	help
+	  Enable support for the EOS S3 SPI driver.

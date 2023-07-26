@@ -70,6 +70,36 @@
 	};
 };
 
+&pinctrl {
+	spi_sck_default: spi_sck_default {
+		pinmux = <SPI_CLK_PAD34>;
+		bias-high-impedance;
+		output-enable;
+		slew-rate = "fast";
+	};
+
+	spi_miso_default: spi_miso_default {
+		pinmux = <SPI_MISO_PAD36>;
+		bias-pull-up;
+		input-enable;
+		slew-rate = "fast";
+	};
+
+	spi_mosi_default: spi_mosi_default {
+		pinmux = <SPI_MOSI_PAD38>;
+		bias-high-impedance;
+		output-enable;
+		slew-rate = "fast";
+	};
+
+	spi_ss1_default: spi_ss1_default {
+		pinmux = <SPI_SS1_PAD39>;
+		bias-high-impedance;
+		output-enable;
+		slew-rate = "fast";
+	};
+};
+
 &cpu0 {
 	clock-frequency = <61440000>;
 };
@@ -83,4 +113,18 @@
 	current-speed = <115200>;
 	pinctrl-0 = <&uart_rx_default &uart_tx_default>;
 	pinctrl-names = "default";
+};
+
+&spi {
+	status = "okay";
+	pinctrl-0 = <&spi_sck_default &spi_miso_default &spi_mosi_default &spi_ss1_default>;
+	pinctrl-names = "default";
+
+	spiflash: gd25q16c@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		size = <16777216>;
+		spi-max-frequency = <1000000>;
+		jedec-id = [c8 40 15];
+	};
 };
