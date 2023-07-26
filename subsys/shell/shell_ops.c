@@ -161,15 +161,15 @@ void z_shell_op_cursor_word_move(const struct shell *sh, int16_t val)
 
 void z_shell_op_word_remove(const struct shell *sh)
 {
-	char *str = &sh->ctx->cmd_buff[sh->ctx->cmd_buff_pos - 1];
-	char *str_start = &sh->ctx->cmd_buff[0];
-	uint16_t chars_to_delete;
-
 	/* Line must not be empty and cursor must not be at 0 to continue. */
 	if ((sh->ctx->cmd_buff_len == 0) ||
 	    (sh->ctx->cmd_buff_pos == 0)) {
 		return;
 	}
+
+	char *str = &sh->ctx->cmd_buff[sh->ctx->cmd_buff_pos - 1];
+	char *str_start = &sh->ctx->cmd_buff[0];
+	uint16_t chars_to_delete;
 
 	/* Start at the current position. */
 	chars_to_delete = 0U;
