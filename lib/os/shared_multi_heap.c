@@ -19,10 +19,10 @@ static unsigned int attr_cnt[MAX_SHARED_MULTI_HEAP_ATTR];
 static void *smh_choice(struct sys_multi_heap *mheap, void *cfg, size_t align, size_t size)
 {
 	struct sys_heap *h;
-	unsigned int attr;
+	enum shared_multi_heap_attr attr;
 	void *block;
 
-	attr = (unsigned int)(long) cfg;
+	attr = (enum shared_multi_heap_attr)(long) cfg;
 
 	if (attr >= MAX_SHARED_MULTI_HEAP_ATTR || size == 0) {
 		return NULL;
@@ -78,7 +78,7 @@ void shared_multi_heap_free(void *block)
 	sys_multi_heap_free(&shared_multi_heap, block);
 }
 
-void *shared_multi_heap_alloc(unsigned int attr, size_t bytes)
+void *shared_multi_heap_alloc(enum shared_multi_heap_attr attr, size_t bytes)
 {
 	if (attr >= MAX_SHARED_MULTI_HEAP_ATTR) {
 		return NULL;
@@ -87,7 +87,8 @@ void *shared_multi_heap_alloc(unsigned int attr, size_t bytes)
 	return sys_multi_heap_alloc(&shared_multi_heap, (void *)(long) attr, bytes);
 }
 
-void *shared_multi_heap_aligned_alloc(unsigned int attr, size_t align, size_t bytes)
+void *shared_multi_heap_aligned_alloc(enum shared_multi_heap_attr attr,
+				      size_t align, size_t bytes)
 {
 	if (attr >= MAX_SHARED_MULTI_HEAP_ATTR) {
 		return NULL;
