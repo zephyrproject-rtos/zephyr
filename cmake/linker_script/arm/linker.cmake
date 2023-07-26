@@ -32,7 +32,6 @@ zephyr_linker(ENTRY ${CONFIG_KERNEL_ENTRY})
 
 zephyr_linker_memory(NAME FLASH    FLAGS rx START ${FLASH_ADDR} SIZE ${FLASH_SIZE})
 zephyr_linker_memory(NAME RAM      FLAGS wx START ${RAM_ADDR}   SIZE ${RAM_SIZE})
-zephyr_linker_memory(NAME IDT_LIST FLAGS wx START ${IDT_ADDR}   SIZE 2K)
 
 # Only use 'rw' as FLAGS. It's not used anyway.
 dt_comp_path(paths COMPATIBLE "zephyr,memory-region")

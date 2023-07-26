@@ -94,17 +94,6 @@ MEMORY
 #ifdef CONFIG_X86_64
     /* Special low-memory area for bootstrapping other CPUs from real mode */
     LOCORE (wx)     : ORIGIN = LOCORE_BASE, LENGTH = LOCORE_SIZE
-#else
-    /*
-     * On 32-bit x86, fake memory area for build-time IDT generation data.
-     * 64-bit doesn't use this, interrupts are all managed at runtime.
-     *
-     * It doesn't matter where this region goes as it is stripped from the
-     * final ELF image. The address doesn't even have to be valid on the
-     * target. However, it shouldn't overlap any other regions.
-     */
-
-    IDT_LIST        : ORIGIN = 0xFFFF1000, LENGTH = 2K
 #endif /* !CONFIG_X86_64 */
     }
 #endif /* ARCH_X86_MEMORY_LD */

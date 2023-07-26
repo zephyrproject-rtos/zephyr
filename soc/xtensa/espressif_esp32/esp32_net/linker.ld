@@ -32,9 +32,6 @@ MEMORY
   dram0_shm0_seg(RW): org = 0x3FFE5230, len = 16K /* shared RAM reserved for IPM */
   dram0_sem0_seg(RW): org = 0x3FFED238, len = 8 /*shared data reserved for IPM data header */
   dram0_1_seg(RW): org = 0x3FFE9238 + CONFIG_ESP32_BT_RESERVE_DRAM, len = 0x17CB0 - 0xEE0 - CONFIG_ESP32_BT_RESERVE_DRAM
-#ifdef CONFIG_GEN_ISR_TABLES
-  IDT_LIST(RW): org = 0x3ebfe010, len = 0x2000
-#endif
 }
 
 /*  Default entry point:  */

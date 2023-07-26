@@ -90,10 +90,6 @@ MEMORY
   /* RTC slow memory (data accessible). Persists over deep sleep.
    */
   rtc_slow_seg(RW): org = 0x50000000, len = 0x2000
-
-#ifdef CONFIG_GEN_ISR_TABLES
-  IDT_LIST(RW): org = 0x3ebfe010, len = 0x2000
-#endif
 }
 
 /*  Default entry point:  */

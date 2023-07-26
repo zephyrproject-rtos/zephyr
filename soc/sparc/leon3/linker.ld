@@ -17,8 +17,6 @@ MEMORY
 {
   rom      (rx)  : ORIGIN = 0x00000000, LENGTH = 512M
   RAM      (rwx) : ORIGIN = CONFIG_SRAM_BASE_ADDRESS, LENGTH = KB(CONFIG_SRAM_SIZE)
-  /* refer to include/linker/inlist.ld */
-  IDT_LIST (wx)  : ORIGIN = 0xFFFFF7FF, LENGTH = 2K
 }
 
 REGION_ALIAS("REGION_TEXT", RAM);

@@ -61,10 +61,6 @@ MEMORY
   dram0_0_seg(RW): org = SRAM_DRAM_ORG, len = I_D_SRAM_SIZE
 
   rtc_iram_seg(RWX): org = 0x50000000, len = 0x2000
-
-#ifdef CONFIG_GEN_ISR_TABLES
-  IDT_LIST(RW): org = 0x3ebfe010, len = 0x2000
-#endif
 }
 
 

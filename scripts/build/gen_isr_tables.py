@@ -42,7 +42,7 @@ def endian_prefix():
     else:
         return "<"
 
-def read_intlist(intlist_path, syms):
+def read_intlist(elfobj, syms):
     """read a binary file containing the contents of the kernel's .intList
     section. This is an instance of a header created by
     include/zephyr/linker/intlist.ld:
@@ -77,8 +77,11 @@ def read_intlist(intlist_path, syms):
     else:
         intlist_entry_fmt = prefix + "iiII"
 
-    with open(intlist_path, "rb") as fp:
-        intdata = fp.read()
+    intList_sect = elfobj.get_section_by_name(".intList")
+    if intList_sect is None:
+        error("Empty \".intList\" section!")
+
+    intdata = intList_sect.data()
 
     header_sz = struct.calcsize(intlist_header_fmt)
     header = struct.unpack_from(intlist_header_fmt, intdata, 0)
@@ -122,8 +125,6 @@ def parse_args():
             help="Generate SW ISR table")
     parser.add_argument("-V", "--vector-table", action="store_true",
             help="Generate vector table")
-    parser.add_argument("-i", "--intlist", required=True,
-            help="Zephyr intlist binary for intList extraction")
 
     args = parser.parse_args()
 
@@ -256,6 +257,7 @@ def main():
     with open(args.kernel, "rb") as fp:
         kernel = ELFFile(fp)
         syms = get_symbols(kernel)
+        intlist = read_intlist(kernel, syms)
 
     if "CONFIG_MULTI_LEVEL_INTERRUPTS" in syms:
         max_irq_per = syms["CONFIG_MAX_IRQ_PER_AGGREGATOR"]
@@ -283,7 +285,6 @@ def main():
 
                 debug('3rd level offsets: {}'.format(list_3rd_lvl_offsets))
 
-    intlist = read_intlist(args.intlist, syms)
     nvec = intlist["num_vectors"]
     offset = intlist["offset"]
 

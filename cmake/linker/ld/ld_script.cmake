@@ -191,6 +191,7 @@ function(section_to_string)
 
   set(SECTION_TYPE_NOLOAD NOLOAD)
   set(SECTION_TYPE_BSS    NOLOAD)
+  set(SECTION_TYPE_INFO   INFO)
   if(DEFINED type)
     set(type " (${SECTION_TYPE_${type}})")
   endif()

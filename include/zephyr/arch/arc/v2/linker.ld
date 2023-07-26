@@ -73,8 +73,6 @@ MEMORY {
 #ifdef YCCM_START
 	YCCM  (rw)  : ORIGIN = YCCM_START,  LENGTH = YCCM_SIZE
 #endif
-	/* Used by and documented in include/linker/intlist.ld */
-	IDT_LIST  (wx)      : ORIGIN = 0xFFFFF7FF, LENGTH = 2K
 }
 
 SECTIONS {

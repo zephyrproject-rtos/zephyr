@@ -46,9 +46,6 @@ MEMORY
   srom0_seg :                         	org = 0x50000000, len = 0x300
   srom1_seg :                         	org = 0x50000300, len = 0xFFFD00
   RAM :                         	org = 0x60000000, len = 0x4000000
-#ifdef CONFIG_GEN_ISR_TABLES
-  IDT_LIST : org = 0x3ffbe000, len = 0x2000
-#endif
 }
 
 PHDRS

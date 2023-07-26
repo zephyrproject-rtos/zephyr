@@ -80,9 +80,6 @@ MEMORY
     RAM (rwx) : ORIGIN = RAM_BASE, LENGTH = RAM_SIZE
 
     LINKER_DT_REGIONS()
-
-    /* Used by and documented in include/linker/intlist.ld */
-    IDT_LIST  (wx)      : ORIGIN = 0xFFFFF7FF, LENGTH = 2K
 }
 
 ENTRY(CONFIG_KERNEL_ENTRY)

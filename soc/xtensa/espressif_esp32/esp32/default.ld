@@ -93,9 +93,6 @@ MEMORY
 #if defined(CONFIG_ESP_SPIRAM)
   ext_ram_seg(RW): org = 0x3F800000, len = CONFIG_ESP_SPIRAM_SIZE
 #endif
-#ifdef CONFIG_GEN_ISR_TABLES
-  IDT_LIST(RW): org = 0x3ebfe010, len = 0x2000
-#endif
 }
 
 /*  Default entry point:  */

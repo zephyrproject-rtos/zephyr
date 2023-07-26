@@ -26,8 +26,6 @@ MEMORY
   RAM      (rw)  : ORIGIN = 0x30000000, LENGTH = 64K
   SRAM     (x)   : ORIGIN = 0x31000000, LENGTH = 128K
   extram   (rwx) : ORIGIN = 0x40000000, LENGTH = 256M
-  /* refer to include/linker/inlist.ld */
-  IDT_LIST (wx)  : ORIGIN = 0xFFFFF7FF, LENGTH = 2K
 }
 
 REGION_ALIAS("REGION_TEXT", SRAM);

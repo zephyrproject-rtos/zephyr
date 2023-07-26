@@ -39,10 +39,6 @@ MEMORY
   iram_loader_seg (RWX) : org = 0x40078000, len = 0x4000
   iram_seg        (RWX) : org = 0x4009C000, len = 0x8000
   dram_seg        (RW)  : org = 0x3FFF0000, len = 0x6000
-
-#ifdef CONFIG_GEN_ISR_TABLES
-  IDT_LIST(RW): org = 0x3ebfe010, len = 0x2000
-#endif
 }
 
 ENTRY(CONFIG_KERNEL_ENTRY)

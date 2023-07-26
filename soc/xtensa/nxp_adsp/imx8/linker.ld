@@ -89,11 +89,6 @@ MEMORY
   sdram1 :
 	org = SDRAM1_BASE + SOF_MAILBOX_SIZE,
         len = SDRAM1_SIZE - SOF_MAILBOX_SIZE
-#ifdef CONFIG_GEN_ISR_TABLES
-  IDT_LIST :
-	org = IDT_BASE,
-        len = IDT_SIZE
-#endif
 
   static_uuid_entries_seg (!ari) :
         org = UUID_ENTRY_ELF_BASE,

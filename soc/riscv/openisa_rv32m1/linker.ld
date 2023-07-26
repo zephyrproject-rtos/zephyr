@@ -73,11 +73,6 @@ MEMORY
     VECTORS (rx)  : ORIGIN = VECTOR_BASE, LENGTH = VECTOR_SIZE
 #endif
     RAM (rwx)     : ORIGIN = RAM_BASE,    LENGTH = RAM_SIZE
-    /*
-     * Special section, not included in the final binary, used
-     * to generate interrupt tables. See include/linker/intlist.ld.
-     */
-    IDT_LIST (wx) : ORIGIN = 0xFFFFF7FF, LENGTH = 2K
     }
 
 ENTRY(CONFIG_KERNEL_ENTRY)

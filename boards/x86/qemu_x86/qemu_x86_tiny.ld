@@ -63,16 +63,6 @@ MEMORY
 #if defined(CONFIG_DEMAND_PAGING) && !defined(CONFIG_LINKER_GENERIC_SECTIONS_PRESENT_AT_BOOT)
     FLASH (rw)      : ORIGIN = FLASH_ROM_ADDR, LENGTH = FLASH_ROM_SIZE
 #endif
-
-    /*
-     * On 32-bit x86, fake memory area for build-time IDT generation data.
-     *
-     * It doesn't matter where this region goes as it is stripped from the
-     * final ELF image. The address doesn't even have to be valid on the
-     * target. However, it shouldn't overlap any other regions.
-     */
-
-    IDT_LIST        : ORIGIN = 0xFFFF1000, LENGTH = 2K
     }
 
 #if defined(Z_VM_KERNEL)
@@ -792,26 +782,14 @@ SECTIONS
 
 	z_mapped_size = z_mapped_end - z_mapped_start;
 
-#ifndef LINKER_ZEPHYR_FINAL
 	/* static interrupts */
-	SECTION_PROLOGUE(intList,,)
-	{
-	KEEP(*(.spurIsr))
-	KEEP(*(.spurNoErrIsr))
-	KEEP(*(.intList))
-	KEEP(*(.gnu.linkonce.intList.*))
-	} > IDT_LIST
-#else
-	/DISCARD/ :
+	SECTION_PROLOGUE(intList, 0 (INFO),)
 	{
 	KEEP(*(.spurIsr))
 	KEEP(*(.spurNoErrIsr))
 	KEEP(*(.intList))
 	KEEP(*(.gnu.linkonce.intList.*))
 	}
-#endif
-
-
 
 /* Located in generated directory. This file is populated by the
  * zephyr_linker_sources() Cmake function.

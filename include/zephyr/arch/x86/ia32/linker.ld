@@ -514,13 +514,13 @@ SECTIONS
 
 #ifndef LINKER_ZEPHYR_FINAL
 	/* static interrupts */
-	SECTION_PROLOGUE(intList,,)
+	SECTION_PROLOGUE(intList, 0 (INFO),)
 	{
 	KEEP(*(.spurIsr))
 	KEEP(*(.spurNoErrIsr))
 	KEEP(*(.intList))
 	KEEP(*(.gnu.linkonce.intList.*))
-	} > IDT_LIST
+	}
 #else
 	/DISCARD/ :
 	{

@@ -45,10 +45,6 @@ ENTRY(rom_entry);
 #define ucram RAM
 #endif
 
-/* intlist.ld needs an IDT_LIST memory region */
-#define IDT_BASE 0xe0000000
-#define IDT_SIZE 0x2000
-
 /* rimage module sections are C struct data, and thus flagged ALLOC.
  * The xcc linker demands they be in a declared memory region even if
  * the enclosing output section is (NOLOAD).  Put them here.
@@ -124,11 +120,6 @@ MEMORY {
   ucram :
 	org = RPO_SET(RAM_BASE, CONFIG_XTENSA_UNCACHED_REGION),
 	len = RAM_SIZE
-#endif
-#ifdef CONFIG_GEN_ISR_TABLES
-  IDT_LIST :
-	org = IDT_BASE,
-	len = IDT_SIZE
 #endif
   lpram :
 	org = LP_SRAM_BASE,
