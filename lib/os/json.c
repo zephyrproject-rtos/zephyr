@@ -489,6 +489,16 @@ static int64_t decode_value(struct json_obj *obj,
 				 descr->object.sub_descr_len,
 				 field);
 	case JSON_TOK_ARRAY_START:
+		/* For nested arrays, update value to current field,
+		 * so it matches descriptor's offset to length field
+		 */
+		if (val == NULL) {
+			val = field;
+
+			if (descr->array.element_descr->type == JSON_TOK_OBJECT_START) {
+				field = (char *)field + descr->offset;
+			}
+		}
 		return arr_parse(obj, descr->array.element_descr,
 				 descr->array.n_elements, field, val);
 	case JSON_TOK_OBJ_ARRAY: {
@@ -584,11 +594,11 @@ static int arr_parse(struct json_obj *obj,
 			return -ENOSPC;
 		}
 
-		/* For nested arrays, update value to current field,
-		 * so it matches descriptor's offset to length field
+		/* Set value to NULL to make decode_value know that
+		 * array is nested.
 		 */
 		if (elem_descr->type == JSON_TOK_ARRAY_START) {
-			value = field;
+			value = NULL;
 		}
 
 		if (decode_value(obj, elem_descr, &tok, field, value) < 0) {
@@ -885,6 +895,7 @@ static int arr_encode(const struct json_obj_descr *elem_descr,
 	/* For nested arrays, skip parent descriptor to get elements */
 	if (elem_descr->type == JSON_TOK_ARRAY_START) {
 		elem_descr = elem_descr->array.element_descr;
+		field = (char *)field + elem_descr->offset;
 	}
 
 	elem_size = get_elem_size(elem_descr);
