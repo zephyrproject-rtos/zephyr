@@ -740,6 +740,12 @@ legacy-debug-sym = BT_DEBUG_HAS_CLIENT
 module-str = "Hearing Access Service Client"
 source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
 
+# HAP HARC
+
+module = BT_HAP_HARC
+module-str = "Hearing Access Profile Hearing Aid Remote Controller"
+source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
+
 # MCS
 
 module = BT_MCS

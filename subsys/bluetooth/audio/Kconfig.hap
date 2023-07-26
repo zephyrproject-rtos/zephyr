@@ -1,0 +1,33 @@
+# Bluetooth Audio - Hearing Access Profile options
+#
+# Copyright (c) 2023 Codecoup
+#
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig BT_HAP_HARC
+	bool "Hearing Aid Remote Controller support [EXPERIMENTAL]"
+#	depends on BT_CAP_COMMANDER
+	depends on BT_VCP_VOL_CTLR
+	depends on BT_CSIP_SET_COORDINATOR
+	depends on BT_HAS_CLIENT
+	help
+	  This option enables support for Hearing Aid Remote Controller role.
+
+if BT_HAP_HARC
+
+config BT_HAP_HARC_MAX
+	int "Maximum number of Hearing Aid Remote Controller instances"
+	range 0 255
+	help
+	  Sets the maximum number of Hearing Aid Remote Controller instances used to control
+	  Hearing Aid devices.
+
+config BT_HAP_HARC_PRESET_CACHE_SIZE
+	int "Maximum number of Hearing Aid Sets to support"
+	default 1
+	range 1 2
+	help
+	  Sets the maximum number of Hearing Aid Sets to support as
+	  Hearing Aid Remote Controller.
+
+endif # BT_HAP_HARC
