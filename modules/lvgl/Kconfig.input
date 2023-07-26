@@ -4,6 +4,10 @@
 
 menu "Input device settings"
 
+config LV_Z_INPUT_INIT_PRIORITY
+	int
+	default 91
+
 config LV_Z_POINTER_KSCAN
 	bool "Keyboard scan pointer input"
 	depends on KSCAN
@@ -37,5 +41,18 @@ config LV_Z_POINTER_KSCAN_INVERT_Y
 	  scan coordinates with the display.
 
 endif # LV_Z_POINTER_KSCAN
+
+config LV_Z_POINTER_INPUT
+	bool "Input lvgl pointer"
+	default y
+	depends on INPUT
+	depends on DT_HAS_ZEPHYR_LVGL_POINTER_INPUT_ENABLED
+
+config LV_Z_POINTER_INPUT_MSGQ_COUNT
+	int "Input pointer queue message count"
+	default 10
+	depends on LV_Z_POINTER_INPUT
+	help
+	  Size of the pointer message queue buffering input events.
 
 endmenu
