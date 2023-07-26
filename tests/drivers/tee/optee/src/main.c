@@ -246,11 +246,11 @@ void normal_call(unsigned long a0, unsigned long a1, unsigned long a2, unsigned 
 	switch (t_call.num) {
 	case 0:
 		res->a0 = OPTEE_SMC_RETURN_RPC_PREFIX | OPTEE_SMC_RPC_FUNC_ALLOC;
-		res->a1 = a1;
-		res->a2 = a2;
+		res->a1 = a4;
+		res->a2 = a5;
 		res->a3 = a3;
-		res->a4 = a4;
-		res->a5 = a5;
+		res->a4 = 0;
+		res->a5 = 0;
 		break;
 	case 1:
 		zassert_equal(a0, 0x32000003, "%s failed with ret %lx", __func__, a0);
