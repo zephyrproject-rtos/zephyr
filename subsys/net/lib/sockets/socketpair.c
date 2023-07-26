@@ -951,6 +951,12 @@ static int spair_ioctl(void *obj, unsigned int request, va_list args)
 			goto out;
 		}
 
+		case ZFD_IOCTL_FIONBIO: {
+			spair->flags |= SPAIR_FLAG_NONBLOCK;
+			res = 0;
+			goto out;
+		}
+
 		case ZFD_IOCTL_FIONREAD: {
 			int *nbytes;
 
