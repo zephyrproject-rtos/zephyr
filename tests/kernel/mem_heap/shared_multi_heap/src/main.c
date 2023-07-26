@@ -66,7 +66,7 @@ static struct region_map *get_region_map(void *v_addr)
 	return NULL;
 }
 
-static inline enum smh_reg_attr mpu_to_reg_attr(int mpu_attr)
+static inline enum shared_multi_heap_attr mpu_to_reg_attr(int mpu_attr)
 {
 	/*
 	 * All the memory regions defined in the DT with the MPU property `RAM`
