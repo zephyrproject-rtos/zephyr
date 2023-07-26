@@ -94,6 +94,9 @@ Boards & SoC Support
 
 * Made these changes in other SoC series:
 
+  * i.MX RT SOCs no longer enable CONFIG_DEVICE_CONFIGURATION_DATA by default.
+    boards using external SDRAM should set CONFIG_DEVICE_CONFIGURATION_DATA
+
 * Added support for these ARC boards:
 
 * Added support for these ARM boards:
