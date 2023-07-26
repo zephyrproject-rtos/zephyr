@@ -69,6 +69,23 @@ these references:
 - `MIMXRT1040-EVK User Guide`_
 - `MIMXRT1040-EVK Design Files`_
 
+External Memory
+===============
+
+This platform has the following external memories:
+
++----------------+------------+-------------------------------------+
+| Device         | Controller | Status                              |
++================+============+=====================================+
+| W9825G6KH      | SEMC       | Enabled via device configuration    |
+|                |            | data block, which sets up SEMC at   |
+|                |            | boot time                           |
++----------------+------------+-------------------------------------+
+| W25Q64JVSSIQ   | FLEXSPI    | Enabled via flash configurationn    |
+|                |            | block, which sets up FLEXSPI at     |
+|                |            | boot time. Supported for XIP only.  |
++----------------+------------+-------------------------------------+
+
 Supported Features
 ==================
 
