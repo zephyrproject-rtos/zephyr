@@ -59,6 +59,23 @@ these references:
 - `MIMXRT1020-EVK User Guide`_
 - `MIMXRT1020-EVK Design Files`_
 
+External Memory
+===============
+
+This platform has the following external memories:
+
++----------------+------------+-------------------------------------+
+| Device         | Controller | Status                              |
++================+============+=====================================+
+| MT48LC16M16A2P | SEMC       | Enabled via device configuration    |
+|                |            | data block, which sets up SEMC at   |
+|                |            | boot time                           |
++----------------+------------+-------------------------------------+
+| IS25LP064A     | FLEXSPI    | Enabled via flash configurationn    |
+|                |            | block, which sets up FLEXSPI at     |
+|                |            | boot time                           |
++----------------+------------+-------------------------------------+
+
 Supported Features
 ==================
 
