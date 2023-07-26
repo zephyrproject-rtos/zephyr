@@ -613,30 +613,6 @@ static int cdns_i3c_read_rx_fifo(const struct cdns_i3c_config *config, void *buf
 	return 0;
 }
 
-static int cdns_i3c_read_ibi_fifo(const struct cdns_i3c_config *config, void *buf, uint32_t len)
-{
-	uint32_t *ptr = buf;
-	uint32_t remain, val;
-
-	for (remain = len; remain >= 4; remain -= 4) {
-		if (cdns_i3c_ibi_fifo_empty(config)) {
-			return -EIO;
-		}
-		val = sys_le32_to_cpu(sys_read32(config->base + IBI_DATA_FIFO));
-		*ptr++ = val;
-	}
-
-	if (remain > 0) {
-		if (cdns_i3c_ibi_fifo_empty(config)) {
-			return -EIO;
-		}
-		val = sys_le32_to_cpu(sys_read32(config->base + IBI_DATA_FIFO));
-		memcpy(ptr, &val, remain);
-	}
-
-	return 0;
-}
-
 static void cdns_i3c_set_prescalers(const struct device *dev)
 {
 	struct cdns_i3c_data *data = dev->data;
@@ -876,8 +852,9 @@ static void cdns_i3c_cancel_transfer(const struct device *dev)
 	sys_write32(MST_INT_CMDD_EMP, config->base + MST_IDR);
 
 	/* Ignore if no pending transfer */
-	if (data->xfer.num_cmds == 0)
+	if (data->xfer.num_cmds == 0) {
 		return;
+	}
 
 	data->xfer.num_cmds = 0;
 
@@ -1467,8 +1444,9 @@ static int cdns_i3c_master_get_rr_slot(const struct device *dev, uint8_t dyn_add
 	const struct cdns_i3c_config *config = dev->config;
 
 	if (dyn_addr == 0) {
-		if (!data->free_rr_slots)
+		if (!data->free_rr_slots) {
 			return -ENOSPC;
+		}
 
 		return find_lsb_set(data->free_rr_slots) - 1;
 	}
@@ -1772,6 +1750,31 @@ error:
 	return ret;
 }
 
+#ifdef CONFIG_I3C_USE_IBI
+static int cdns_i3c_read_ibi_fifo(const struct cdns_i3c_config *config, void *buf, uint32_t len)
+{
+	uint32_t *ptr = buf;
+	uint32_t remain, val;
+
+	for (remain = len; remain >= 4; remain -= 4) {
+		if (cdns_i3c_ibi_fifo_empty(config)) {
+			return -EIO;
+		}
+		val = sys_le32_to_cpu(sys_read32(config->base + IBI_DATA_FIFO));
+		*ptr++ = val;
+	}
+
+	if (remain > 0) {
+		if (cdns_i3c_ibi_fifo_empty(config)) {
+			return -EIO;
+		}
+		val = sys_le32_to_cpu(sys_read32(config->base + IBI_DATA_FIFO));
+		memcpy(ptr, &val, remain);
+	}
+
+	return 0;
+}
+
 static void cdns_i3c_handle_ibi(const struct device *dev, uint32_t ibir)
 {
 	const struct cdns_i3c_config *config = dev->config;
@@ -1866,6 +1869,7 @@ static void cdns_i3c_target_ibi_hj_complete(const struct device *dev)
 
 	k_sem_give(&data->ibi_hj_complete);
 }
+#endif
 
 static void cdns_i3c_irq_handler(const struct device *dev)
 {
@@ -1904,7 +1908,12 @@ static void cdns_i3c_irq_handler(const struct device *dev)
 		/* In-band interrupt */
 		if (int_st & MST_INT_IBIR_THR) {
 			sys_write32(MST_INT_IBIR_THR, config->base + MST_ICR);
+#ifdef CONFIG_I3C_USE_IBI
 			cnds_i3c_master_demux_ibis(dev);
+#else
+			LOG_ERR("%s: IBI received - Kconfig for using IBIs is not enabled",
+				dev->name);
+#endif
 		}
 
 		/* In-band interrupt data */
@@ -1999,7 +2008,9 @@ static void cdns_i3c_irq_handler(const struct device *dev)
 			/* HJ could send a DISEC which would trigger the SLV_INT_EVENT_UP bit,
 			 * but it's still expected to eventually send a DAA
 			 */
+#ifdef CONFIG_I3C_USE_IBI
 			cdns_i3c_target_ibi_hj_complete(dev);
+#endif
 		}
 
 		/* HJ complete and DA has been assigned */
@@ -2457,8 +2468,10 @@ static int cdns_i3c_bus_init(const struct device *dev)
 	if (!ctrl_config->is_secondary) {
 		/* Perform bus initialization */
 		ret = i3c_bus_init(dev, &config->common.dev_list);
+#ifdef CONFIG_I3C_USE_IBI
 		/* Bus Initialization Complete, allow HJ ACKs */
 		sys_write32(CTRL_HJ_ACK | sys_read32(config->base + CTRL), config->base + CTRL);
+#endif
 	}
 
 	return 0;
