@@ -749,10 +749,11 @@ config IMAGE_VECTOR_TABLE_OFFSET
 
 config DEVICE_CONFIGURATION_DATA
 	bool "Device configuration data"
-	default y if HAS_MCUX_SEMC
 	help
 	  Device configuration data (DCD) provides a sequence of commands to
-	  the boot ROM to initialize components such as an SDRAM.
+	  the boot ROM to initialize components such as an SDRAM. This is
+	  useful if your application expects components like SDRAM to be
+	  initialized at boot time.
 
 endif # NXP_IMX_RT_BOOT_HEADER
 

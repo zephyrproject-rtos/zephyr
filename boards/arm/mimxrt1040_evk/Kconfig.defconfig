@@ -10,4 +10,7 @@ choice CODE_LOCATION
 	default CODE_FLEXSPI
 endchoice
 
+config DEVICE_CONFIGURATION_DATA
+	default y
+
 endif # BOARD_MIMXRT1040_EVK
