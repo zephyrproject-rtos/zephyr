@@ -35,7 +35,7 @@
 			label = "User LD3";
 		};
 		blue_led_4: led_4 {
-			gpios = <&gpioe 4 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpioe 3 GPIO_ACTIVE_HIGH>;
 			label = "User LD4";
 		};
 	};
