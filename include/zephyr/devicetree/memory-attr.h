@@ -49,6 +49,39 @@
 /** @endcond */
 
 /**
+ * @brief Does the `zephyr,memory-attr` property have the @p attr value?
+ *
+ * If this returns 1, then the `zephyr,memory-attr` property has the value
+ * @p attr, otherwise 0 is returned.
+ *
+ * Example devicetree fragment:
+ *
+ * @code{.dts}
+ *     / {
+ *             soc {
+ *                     res0: memory@20000000 {
+ *                         reg = <0x20000000 0x4000>;
+ *                         zephyr,memory-attr = "RAM_NOCACHE";
+ *                     };
+ *             };
+ *     };
+ * @endcode
+ *
+ * Example usage:
+ *
+ * @code{.c}
+ *     DT_MEMORY_ATTR_HAS_ATTR(DT_NODELABEL(res0), RAM)         // 0
+ *     DT_MEMORY_ATTR_HAS_ATTR(DT_NODELABEL(res0), RAM_NOCACHE) // 1
+ * @endcode
+ *
+ * @param node_id node identifier
+ * @param attr memory attribute
+ * @return 1 if the `zephyr,memory-attr` property has the value @p attr, 0 otherwise.
+ */
+#define DT_MEMORY_ATTR_HAS_ATTR(node_id, attr) \
+	IS_ENABLED(DT_CAT6(node_id, _P_, zephyr_memory_attr, _ENUM_VAL_, attr, _EXISTS))
+
+/**
  * @brief Invokes @p fn for every node in the tree with property
  *        `zephyr,memory-attr`
  *
@@ -117,7 +150,6 @@
  *                         reg = <0x30000000 0x2000>;
  *                         zephyr,memory-attr = "RAM";
  *                     };
-
  *             };
  *     };
  * @endcode

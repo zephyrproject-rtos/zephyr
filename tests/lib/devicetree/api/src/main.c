@@ -90,6 +90,9 @@
 #define TEST_RANGES_PCIE  DT_NODELABEL(test_ranges_pcie)
 #define TEST_RANGES_OTHER DT_NODELABEL(test_ranges_other)
 
+#define TEST_MEM_ATTR_RAM DT_NODELABEL(test_mem_ram)
+#define TEST_MEM_ATTR_RAM_NOCACHE DT_NODELABEL(test_mem_ram_nocache)
+
 #define ZEPHYR_USER DT_PATH(zephyr_user)
 
 #define TA_HAS_COMPAT(compat) DT_NODE_HAS_COMPAT(TEST_ARRAYS, compat)
@@ -2693,6 +2696,12 @@ ZTEST(devicetree_api, test_mbox)
 
 ZTEST(devicetree_api, test_memory_attr)
 {
+	zassert_true(DT_MEMORY_ATTR_HAS_ATTR(TEST_MEM_ATTR_RAM, RAM), "");
+	zassert_false(DT_MEMORY_ATTR_HAS_ATTR(TEST_MEM_ATTR_RAM, RAM_NOCACHE), "");
+
+	zassert_false(DT_MEMORY_ATTR_HAS_ATTR(TEST_MEM_ATTR_RAM_NOCACHE, RAM), "");
+	zassert_true(DT_MEMORY_ATTR_HAS_ATTR(TEST_MEM_ATTR_RAM_NOCACHE, RAM_NOCACHE), "");
+
 	#define REGION_RAM_ATTR		(0xDEDE)
 	#define REGION_RAM_NOCACHE_ATTR	(0xCACA)
 
