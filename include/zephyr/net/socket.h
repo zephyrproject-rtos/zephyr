@@ -28,6 +28,7 @@
 #include <zephyr/net/dns_resolve.h>
 #include <zephyr/net/socket_select.h>
 #include <zephyr/sys/iterable_sections.h>
+#include <zephyr/sys/fdtable.h>
 #include <stdlib.h>
 
 #ifdef __cplusplus
@@ -453,6 +454,25 @@ static inline ssize_t zsock_recv(int sock, void *buf, size_t max_len,
 __syscall int zsock_fcntl(int sock, int cmd, int flags);
 
 /**
+ * @brief Control underlying socket parameters
+ *
+ * @details
+ * @rst
+ * See `POSIX.1-2017 article
+ * <https://pubs.opengroup.org/onlinepubs/9699919799/functions/ioctl.html>`__
+ * for normative description.
+ * This function enables querying or manipulating underlying socket parameters.
+ * Currently supported @p request values include ``ZFD_IOCTL_FIONBIO``, and
+ * ``ZFD_IOCTL_FIONREAD``, to set non-blocking mode, and query the number of
+ * bytes available to read, respectively.
+ * This function is also exposed as ``ioctl()``
+ * if :kconfig:option:`CONFIG_NET_SOCKETS_POSIX_NAMES` is defined (in which case
+ * it may conflict with generic POSIX ``ioctl()`` function).
+ * @endrst
+ */
+__syscall int zsock_ioctl(int sock, unsigned long request, va_list ap);
+
+/**
  * @brief Efficiently poll multiple sockets for events
  *
  * @details
@@ -762,6 +782,18 @@ static inline int zsock_fcntl_wrapper(int sock, int cmd, ...)
 }
 
 #define fcntl zsock_fcntl_wrapper
+
+static inline int ioctl(int sock, unsigned long request, ...)
+{
+	int ret;
+	va_list args;
+
+	va_start(args, request);
+	ret = zsock_ioctl(sock, request, args);
+	va_end(args);
+
+	return ret;
+}
 
 /** POSIX wrapper for @ref zsock_sendto */
 static inline ssize_t sendto(int sock, const void *buf, size_t len, int flags,
