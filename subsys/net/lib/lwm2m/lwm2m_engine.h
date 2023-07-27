@@ -306,4 +306,13 @@ int lwm2m_push_queued_buffers(struct lwm2m_ctx *client_ctx);
 /* Resources */
 struct lwm2m_ctx **lwm2m_sock_ctx(void);
 int lwm2m_sock_nfds(void);
+
+/**
+ * @brief Trigger the LwM2M engine to run.
+ *
+ * This function wakes up ongoing poll() from the socket-loop.
+ * It should be called when new transmissions are scheduled or service schedules are modified.
+ */
+void lwm2m_engine_wake_up(void);
+
 #endif /* LWM2M_ENGINE_H */
