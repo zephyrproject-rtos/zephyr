@@ -16,3 +16,8 @@
 &npm1300_ek_buck1 {
         regulator-init-microvolt = <2000000>;
 };
+
+&npm1300_ek_pmic {
+	host-int-gpios = <&gpio0 22 0>;
+	pmic-int-pin = <3>;
+};
