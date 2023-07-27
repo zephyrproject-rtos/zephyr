@@ -109,7 +109,7 @@
 	pinctrl-0 = <&eth0_default>;
 	pinctrl-names = "default";
 	clock-frequency = <300000000>;
-	phy-dev = <&phy0>;
+	phy-handle = <&phy0>;
 	status = "okay";
 };
 
