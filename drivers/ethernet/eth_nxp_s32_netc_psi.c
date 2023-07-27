@@ -27,7 +27,7 @@ LOG_MODULE_REGISTER(nxp_s32_eth_psi);
 #include "eth_nxp_s32_netc_priv.h"
 
 #define PSI_NODE	DT_COMPAT_GET_ANY_STATUS_OKAY(nxp_s32_netc_psi)
-#define PHY_NODE	DT_PHANDLE(PSI_NODE, phy_dev)
+#define PHY_NODE	DT_PHANDLE(PSI_NODE, phy_handle)
 #define INIT_VSIS	DT_NODE_HAS_PROP(PSI_NODE, vsis)
 #define TX_RING_IDX	1
 #define RX_RING_IDX	0
