@@ -8,6 +8,7 @@
 #include <st/h5/stm32h563Xi.dtsi>
 #include <st/h5/stm32h563zitx-pinctrl.dtsi>
 #include "arduino_r3_connector.dtsi"
+#include "st_morpho_connector.dtsi"
 
 / {
 	leds {
