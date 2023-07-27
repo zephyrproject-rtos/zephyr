@@ -19,6 +19,12 @@
 			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
+
+	lvgl_pointer_input {
+		status = "okay";
+		compatible = "zephyr,lvgl-pointer-input";
+		input = <&input_sdl_touch>;
+	};
 };
 
 &gpio0 {
