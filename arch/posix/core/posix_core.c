@@ -48,6 +48,7 @@
 #define ERPREFIX   PREFIX"error on "
 #define NO_MEM_ERR PREFIX"Can't allocate memory\n"
 
+#define PC_ENABLE_CANCEL 0 /* See Note.c1 */
 #define PC_ALLOC_CHUNK_SIZE 64
 #define PC_REUSE_ABORTED_ENTRIES 0
 /* tests/kernel/threads/scheduling/schedule_api fails when setting
@@ -363,6 +364,10 @@ int posix_new_thread(void *ptr)
 	threads_table[t_slot].thead_cnt = thread_create_count++;
 	threads_table[t_slot].t_status = ptr;
 
+	/*
+	 * Note: If you are here due to a valgrind reported memory leak in
+	 * pthread_create() please use the provided valgrind.supp suppression file.
+	 */
 	PC_SAFE_CALL(pthread_create(&threads_table[t_slot].thread,
 				  NULL,
 				  posix_thread_starter,
@@ -422,6 +427,7 @@ void posix_arch_clean_up(void)
 
 	terminate = true;
 
+#if (PC_ENABLE_CANCEL)
 	for (int i = 0; i < threads_table_size; i++) {
 		if (threads_table[i].state != USED) {
 			continue;
@@ -435,6 +441,7 @@ void posix_arch_clean_up(void)
 		}
 		/* LCOV_EXCL_STOP */
 	}
+#endif
 
 	free(threads_table);
 	threads_table = NULL;
@@ -516,4 +523,17 @@ int posix_arch_get_unique_thread_id(int thread_idx)
  * Some other code will never or only very rarely trigger and is therefore
  * excluded with LCOV_EXCL_LINE
  *
+ *
+ * Notes about (memory) cleanup:
+ *
+ * Note.c1:
+ *
+ * In some very rare cases in very loaded machines, a race in the glibc pthread_cancel()
+ * seems to be triggered.
+ * In this, the cancelled thread cleanup overtakes the pthread_cancel() code, and frees the
+ * pthread structure before pthread_cancel() has finished, resulting in a dereference into already
+ * free'd memory, and therefore a segfault.
+ * Calling pthread_cancel() during cleanup is not required beyond preventing a valgrind
+ * memory leak report (all threads will be canceled immediately on exit).
+ * Therefore we do not do this, to avoid this very rare crashes.
  */
