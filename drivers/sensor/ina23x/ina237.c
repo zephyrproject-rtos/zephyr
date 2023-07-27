@@ -31,58 +31,36 @@ LOG_MODULE_REGISTER(INA237, CONFIG_SENSOR_LOG_LEVEL);
  */
 #define INA237_DIETEMP_TO_uDegC(x) (((x) >> 4) * 125000)
 
+static void micro_s32_to_sensor_value(struct sensor_value *val, int32_t value_microX)
+{
+	val->val1 = value_microX / 1000000L;
+	val->val2 = value_microX % 1000000L;
+}
+
 static int ina237_channel_get(const struct device *dev, enum sensor_channel chan,
 			      struct sensor_value *val)
 {
-	struct ina237_data *data = dev->data;
+	const struct ina237_data *data = dev->data;
 	const struct ina237_config *config = dev->config;
-	uint32_t bus_uv, current_ua, power_uw;
-	int32_t temp_uDegC;
-	int32_t sign = 1;
 
 	switch (chan) {
 	case SENSOR_CHAN_VOLTAGE:
-		bus_uv = INA237_BUS_VOLTAGE_TO_uV(data->bus_voltage);
-
-		val->val1 = bus_uv / 1000000U;
-		val->val2 = bus_uv % 1000000U;
+		micro_s32_to_sensor_value(val, INA237_BUS_VOLTAGE_TO_uV(data->bus_voltage));
 		break;
 
 	case SENSOR_CHAN_CURRENT:
-		if (data->current & INA23X_CURRENT_SIGN_BIT) {
-			current_ua = ~data->current + 1U;
-			sign = -1;
-		} else {
-			current_ua = data->current;
-			sign = 1;
-		}
-
 		/* see datasheet "Current and Power calculations" section */
-		current_ua = current_ua * config->current_lsb;
-
-		/* convert to fractional amperes */
-		val->val1 = sign * (int32_t)(current_ua / 1000000U);
-		val->val2 = sign * (int32_t)(current_ua % 1000000U);
+		micro_s32_to_sensor_value(val, data->current * config->current_lsb);
 		break;
 
 	case SENSOR_CHAN_POWER:
 		/* see datasheet "Current and Power calculations" section */
-		power_uw = (data->power * INA237_POWER_SCALING * config->current_lsb) / 10000U;
-
-		/* convert to fractional watts */
-		val->val1 = (int32_t)(power_uw / 1000000U);
-		val->val2 = (int32_t)(power_uw % 1000000U);
+		micro_s32_to_sensor_value(val,
+			(data->power * INA237_POWER_SCALING * config->current_lsb) / 10000U);
 		break;
 
 	case SENSOR_CHAN_DIE_TEMP:
-		temp_uDegC = INA237_DIETEMP_TO_uDegC(data->die_temp);
-
-		val->val1 = temp_uDegC / 1000000L;
-		val->val2 = abs(temp_uDegC) % 1000000L;
-
-		if (temp_uDegC < 0) {
-			val->val2 = -val->val2;
-		}
+		micro_s32_to_sensor_value(val, INA237_DIETEMP_TO_uDegC(data->die_temp));
 		break;
 
 	default:

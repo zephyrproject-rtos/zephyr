@@ -37,7 +37,7 @@
 
 struct ina237_data {
 	const struct device *dev;
-	uint16_t current;
+	int16_t current;
 	uint16_t bus_voltage;
 	uint32_t power;
 	int16_t die_temp;
