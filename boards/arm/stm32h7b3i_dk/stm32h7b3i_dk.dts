@@ -131,7 +131,7 @@
 	clock-frequency = <I2C_BITRATE_FAST>;
 	status = "okay";
 
-	ft5336@38 {
+	ft5336: ft5336@38 {
 		compatible = "focaltech,ft5336";
 		reg = <0x38>;
 		int-gpios = <&gpioh 2 0>;
