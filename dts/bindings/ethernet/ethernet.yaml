@@ -9,6 +9,7 @@ properties:
   local-mac-address:
     type: uint8-array
     description: Specifies the MAC address that was assigned to the network device
+
   zephyr,random-mac-address:
     type: boolean
     description: |
@@ -21,3 +22,8 @@ properties:
       It is driver specific how the OUI octets are handled.
 
       If set we ignore any setting of the local-mac-address property.
+
+  phy-handle:
+    type: phandle
+    description: |
+      Specifies a reference to a node representing a PHY device.
