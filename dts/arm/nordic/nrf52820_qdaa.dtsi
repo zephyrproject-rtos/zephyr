@@ -17,6 +17,7 @@
 
 / {
 	soc {
-		compatible = "nordic,nRF52820-QDAA", "nordic,nRF52820", "nordic,nRF52", "simple-bus";
+		compatible = "nordic,nrf52820-qdaa", "nordic,nrf52820",
+			     "nordic,nrf52", "simple-bus";
 	};
 };

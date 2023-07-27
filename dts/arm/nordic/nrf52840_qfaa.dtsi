@@ -17,8 +17,8 @@
 
 / {
 	soc {
-		compatible = "nordic,nRF52840-QFAA", "nordic,nRF52840",
-			     "nordic,nRF52", "simple-bus";
+		compatible = "nordic,nrf52840-qfaa", "nordic,nrf52840",
+			     "nordic,nrf52", "simple-bus";
 	};
 
 	/delete-node/ &usbd;
