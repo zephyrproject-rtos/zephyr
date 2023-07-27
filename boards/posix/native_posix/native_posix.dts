@@ -179,7 +179,7 @@
 		width = <320>;
 	};
 
-	input-sdl-touch {
+	input_sdl_touch: input-sdl-touch {
 		compatible = "zephyr,input-sdl-touch";
 		kscan_input: kscan-input {
 			compatible = "zephyr,kscan-input";
