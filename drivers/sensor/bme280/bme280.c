@@ -254,7 +254,7 @@ static int bme280_channel_get(const struct device *dev,
 		val->val2 = (((data->comp_humidity & 0x3ff) * 1000U * 1000U) >> 10);
 		break;
 	default:
-		return -EINVAL;
+		return -ENOTSUP;
 	}
 
 	return 0;
