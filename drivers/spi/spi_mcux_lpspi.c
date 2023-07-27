@@ -900,6 +900,19 @@ static const struct spi_driver_api spi_mcux_driver_api = {
 #define SPI_DMA_CHANNELS(n)
 #endif /* CONFIG_SPI_MCUX_LPSPI_DMA */
 
+#define SPI_MCUX_LPSPI_MODULE_IRQ_CONNECT(n)				\
+	do {								\
+		IRQ_CONNECT(DT_INST_IRQN(n),				\
+			DT_INST_IRQ(n, priority),			\
+			spi_mcux_isr,					\
+			DEVICE_DT_INST_GET(n), 0);			\
+		irq_enable(DT_INST_IRQN(n));				\
+	} while (false)
+
+#define SPI_MCUX_LPSPI_MODULE_IRQ(n)					\
+	IF_ENABLED(DT_INST_IRQ_HAS_IDX(n, 0),				\
+		(SPI_MCUX_LPSPI_MODULE_IRQ_CONNECT(n)))
+
 #define SPI_MCUX_LPSPI_INIT(n)						\
 	PINCTRL_DT_INST_DEFINE(n);					\
 	COND_CODE_1(CONFIG_SPI_RTIO, (SPI_MCUX_RTIO_DEFINE(n)), ());	\
@@ -943,10 +956,7 @@ static const struct spi_driver_api spi_mcux_driver_api = {
 									\
 	static void spi_mcux_config_func_##n(const struct device *dev)	\
 	{								\
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority),	\
-				spi_mcux_isr, DEVICE_DT_INST_GET(n), 0);	\
-									\
-		irq_enable(DT_INST_IRQN(n));				\
+		SPI_MCUX_LPSPI_MODULE_IRQ(n);				\
 	}
 
 DT_INST_FOREACH_STATUS_OKAY(SPI_MCUX_LPSPI_INIT)
