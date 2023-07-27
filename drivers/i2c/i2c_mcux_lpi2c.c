@@ -556,6 +556,19 @@ static const struct i2c_driver_api mcux_lpi2c_driver_api = {
 #define I2C_MCUX_LPI2C_SDA_INIT(n)
 #endif /* CONFIG_I2C_MCUX_LPI2C_BUS_RECOVERY */
 
+#define I2C_MCUX_LPI2C_MODULE_IRQ_CONNECT(n)				\
+	do {								\
+		IRQ_CONNECT(DT_INST_IRQN(n),				\
+			DT_INST_IRQ(n, priority),			\
+			mcux_lpi2c_isr, 				\
+			DEVICE_DT_INST_GET(n), 0);			\
+		irq_enable(DT_INST_IRQN(n));				\
+	} while (false)
+
+#define I2C_MCUX_LPI2C_MODULE_IRQ(n)					\
+	IF_ENABLED(DT_INST_IRQ_HAS_IDX(n, 0),				\
+		(I2C_MCUX_LPI2C_MODULE_IRQ_CONNECT(n)))
+
 #define I2C_MCUX_LPI2C_INIT(n)						\
 	PINCTRL_DT_INST_DEFINE(n);					\
 									\
@@ -586,12 +599,7 @@ static const struct i2c_driver_api mcux_lpi2c_driver_api = {
 									\
 	static void mcux_lpi2c_config_func_##n(const struct device *dev) \
 	{								\
-		IRQ_CONNECT(DT_INST_IRQN(n),				\
-				DT_INST_IRQ(n, priority),			\
-				mcux_lpi2c_isr,				\
-				DEVICE_DT_INST_GET(n), 0);			\
-									\
-		irq_enable(DT_INST_IRQN(n));				\
+		I2C_MCUX_LPI2C_MODULE_IRQ(n);				\
 	}
 
 DT_INST_FOREACH_STATUS_OKAY(I2C_MCUX_LPI2C_INIT)
