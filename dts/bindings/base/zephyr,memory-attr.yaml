@@ -3,6 +3,9 @@
 
 include: [base.yaml]
 
+# XXX: This list MUST be kept in sync with
+#      include/zephyr/dt-bindings/memory-attr/memory-attr.h
+
 properties:
   zephyr,memory-attr:
     type: string
