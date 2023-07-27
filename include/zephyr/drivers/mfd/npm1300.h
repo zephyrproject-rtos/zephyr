@@ -20,6 +20,19 @@ extern "C" {
 #include <stdint.h>
 
 #include <zephyr/device.h>
+#include <zephyr/drivers/gpio.h>
+
+enum mfd_npm1300_event_t {
+	NPM1300_EVENT_CHG_COMPLETED,
+	NPM1300_EVENT_CHG_ERROR,
+	NPM1300_EVENT_BATTERY_DETECTED,
+	NPM1300_EVENT_BATTERY_REMOVED,
+	NPM1300_EVENT_SHIPHOLD_PRESS,
+	NPM1300_EVENT_WATCHDOG_WARN,
+	NPM1300_EVENT_VBUS_DETECTED,
+	NPM1300_EVENT_VBUS_REMOVED,
+	NPM1300_EVENT_MAX
+};
 
 /**
  * @brief Read multiple registers from npm1300
@@ -119,6 +132,24 @@ int mfd_npm1300_reset(const struct device *dev);
  * @retval -errno In case of any bus error (see i2c_write_dt())
  */
 int mfd_npm1300_hibernate(const struct device *dev, uint32_t time_ms);
+
+/**
+ * @brief Add npm1300 event callback
+ *
+ * @param dev npm1300 mfd device
+ * @param callback callback
+ * @return 0 on success, -errno on failure
+ */
+int mfd_npm1300_add_callback(const struct device *dev, struct gpio_callback *callback);
+
+/**
+ * @brief Remove npm1300 event callback
+ *
+ * @param dev npm1300 mfd device
+ * @param callback callback
+ * @return 0 on success, -errno on failure
+ */
+int mfd_npm1300_remove_callback(const struct device *dev, struct gpio_callback *callback);
 
 /** @} */
 
