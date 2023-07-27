@@ -87,7 +87,7 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 		soc_cpus_active[cpu] = false;
 		sys_cache_data_flush_and_invd_all();
 		if (cpu == 0) {
-			uint32_t hpsram_mask[HPSRAM_SEGMENTS];
+			uint32_t hpsram_mask[HPSRAM_SEGMENTS] = {0};
 
 			struct imr_header hdr = {
 				.adsp_imr_magic = ADSP_IMR_MAGIC_VALUE,
@@ -97,9 +97,11 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 			  arch_xtensa_uncached_ptr((struct imr_layout *)L3_MEM_BASE_ADDR);
 			imr_layout->imr_state.header = hdr;
 
+#ifdef CONFIG_ADSP_POWER_DOWN_HPSRAM
 			/* turn off all HPSRAM banks - get a full bitmap */
 			for (int i = 0; i < HPSRAM_SEGMENTS; i++)
 				hpsram_mask[i] = HPSRAM_MEMMASK(i);
+#endif /* CONFIG_ADSP_POWER_DOWN_HPSRAM */
 			/* do power down - this function won't return */
 			power_down_cavs(true, uncache_to_cache(&hpsram_mask[0]));
 		} else {
