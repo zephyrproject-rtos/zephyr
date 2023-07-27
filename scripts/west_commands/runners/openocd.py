@@ -356,6 +356,11 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
             pre_init_cmd.append("-c")
             pre_init_cmd.append(i)
 
+        if self.thread_info_enabled and self.supports_thread_info():
+            pre_init_cmd.append("-c")
+            rtos_command = '${} configure -rtos Zephyr'.format(self.target_handle)
+            pre_init_cmd.append(rtos_command)
+
         cmd = (self.openocd_cmd + self.cfg_cmd +
                ['-c', 'tcl_port {}'.format(self.tcl_port),
                 '-c', 'telnet_port {}'.format(self.telnet_port),
