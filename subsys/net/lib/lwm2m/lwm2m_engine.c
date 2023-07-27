@@ -90,8 +90,8 @@ static bool active_engine_thread;
 struct service_node {
 	sys_snode_t node;
 	k_work_handler_t service_work;
-	uint32_t min_call_period; /* ms */
-	int64_t last_timestamp;  /* ms */
+	uint32_t call_period; /* ms */
+	int64_t next_timestamp;  /* ms */
 };
 
 static struct service_node service_node_data[MAX_PERIODIC_SERVICE];
@@ -406,20 +406,18 @@ static int64_t retransmit_request(struct lwm2m_ctx *client_ctx, const int64_t ti
 static int64_t engine_next_service_timestamp(void)
 {
 	struct service_node *srv;
-	int64_t event, next = INT64_MAX;
+	int64_t next = INT64_MAX;
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&engine_service_list, srv, node) {
-		event = srv->last_timestamp + srv->min_call_period;
-
-		if (event < next) {
-			next = event;
+		if (srv->next_timestamp < next) {
+			next = srv->next_timestamp;
 		}
 	}
 
 	return next;
 }
 
-int lwm2m_engine_add_service(k_work_handler_t service, uint32_t period_ms)
+static int engine_add_srv(k_work_handler_t service, uint32_t period_ms, int64_t next)
 {
 	int i;
 
@@ -444,8 +442,8 @@ int lwm2m_engine_add_service(k_work_handler_t service, uint32_t period_ms)
 	}
 
 	service_node_data[i].service_work = service;
-	service_node_data[i].min_call_period = period_ms;
-	service_node_data[i].last_timestamp = 0U;
+	service_node_data[i].call_period = period_ms;
+	service_node_data[i].next_timestamp = next;
 
 	sys_slist_append(&engine_service_list, &service_node_data[i].node);
 
@@ -454,15 +452,36 @@ int lwm2m_engine_add_service(k_work_handler_t service, uint32_t period_ms)
 	return 0;
 }
 
+int lwm2m_engine_add_service(k_work_handler_t service, uint32_t period_ms)
+{
+	return engine_add_srv(service, period_ms, k_uptime_get() + period_ms);
+}
+
+int lwm2m_engine_call_at(k_work_handler_t service, int64_t timestamp)
+{
+	return engine_add_srv(service, 0, timestamp);
+}
+
+int lwm2m_engine_call_now(k_work_handler_t service)
+{
+	return engine_add_srv(service, 0, k_uptime_get());
+}
+
 int lwm2m_engine_update_service_period(k_work_handler_t service, uint32_t period_ms)
 {
 	int i = 0;
 
 	for (i = 0; i < MAX_PERIODIC_SERVICE; i++) {
 		if (service_node_data[i].service_work == service) {
-			service_node_data[i].min_call_period = period_ms;
-			lwm2m_engine_wake_up();
-			return 0;
+			if (period_ms) {
+				service_node_data[i].call_period = period_ms;
+				service_node_data[i].next_timestamp = k_uptime_get() + period_ms;
+				lwm2m_engine_wake_up();
+				return 0;
+			}
+			sys_slist_find_and_remove(&engine_service_list, &service_node_data[i].node);
+			service_node_data[i].service_work = NULL;
+			return 1;
 		}
 	}
 
@@ -471,17 +490,31 @@ int lwm2m_engine_update_service_period(k_work_handler_t service, uint32_t period
 
 static int64_t lwm2m_engine_service(const int64_t timestamp)
 {
-	struct service_node *srv;
-	int64_t service_due_timestamp;
+	struct service_node *srv, *tmp;
+	bool restart;
 
-	SYS_SLIST_FOR_EACH_CONTAINER(&engine_service_list, srv, node) {
-		service_due_timestamp = srv->last_timestamp + srv->min_call_period;
-		/* service is due */
-		if (timestamp >= service_due_timestamp) {
-			srv->last_timestamp = k_uptime_get();
-			srv->service_work(NULL);
+	do {
+		restart = false;
+		SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&engine_service_list, srv, tmp, node) {
+			/* service is due */
+			if (timestamp >= srv->next_timestamp) {
+				k_work_handler_t work = srv->service_work;
+
+				if (srv->call_period) {
+					srv->next_timestamp = k_uptime_get() + srv->call_period;
+				} else {
+					sys_slist_find_and_remove(&engine_service_list, &srv->node);
+					srv->service_work = NULL;
+				}
+				if (work) {
+					work(NULL);
+				}
+				/* List might have been modified by the callback */
+				restart = true;
+				break;
+			}
 		}
-	}
+	} while (restart);
 
 	/* calculate how long to sleep till the next service */
 	return engine_next_service_timestamp();
