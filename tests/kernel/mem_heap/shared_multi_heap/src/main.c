@@ -8,6 +8,7 @@
 #include <zephyr/ztest.h>
 #include <zephyr/linker/linker-defs.h>
 #include <zephyr/sys/mem_manage.h>
+#include <zephyr/dt-bindings/memory-attr/memory-attr.h>
 
 #include <zephyr/multi_heap/shared_multi_heap.h>
 
@@ -28,7 +29,7 @@ struct region_map {
 			.addr = (uintptr_t) DT_INST_REG_ADDR(n),			\
 			.size = DT_INST_REG_SIZE(n),					\
 			.attr = DT_INST_ENUM_IDX_OR(n, zephyr_memory_attr,		\
-						    SMH_REG_ATTR_NUM),			\
+						    DT_MEMORY_ATTR_UNKNOWN),		\
 		},									\
 	},
 
@@ -66,7 +67,7 @@ static struct region_map *get_region_map(void *v_addr)
 	return NULL;
 }
 
-static inline enum shared_multi_heap_attr mpu_to_reg_attr(int mpu_attr)
+static inline enum shared_multi_heap_attr mpu_to_reg_attr(enum dt_memory_attr dt_attr)
 {
 	/*
 	 * All the memory regions defined in the DT with the MPU property `RAM`
@@ -82,10 +83,10 @@ static inline enum shared_multi_heap_attr mpu_to_reg_attr(int mpu_attr)
 	 * RAM          -> SMH_REG_ATTR_CACHEABLE
 	 * RAM_NOCACHE  -> SMH_REG_ATTR_NON_CACHEABLE
 	 */
-	switch (mpu_attr) {
-	case 0: /* RAM */
+	switch (dt_attr) {
+	case DT_MEMORY_ATTR_RAM:
 		return SMH_REG_ATTR_CACHEABLE;
-	case 1: /* RAM_NOCACHE */
+	case DT_MEMORY_ATTR_RAM_NOCACHE:
 		return SMH_REG_ATTR_NON_CACHEABLE;
 	default:
 		/* How ? */
@@ -104,7 +105,7 @@ static void fill_multi_heap(void)
 		reg_map = &map[idx];
 
 		/* zephyr,memory-attr property not found. Skip it. */
-		if (reg_map->region.attr == SMH_REG_ATTR_NUM) {
+		if (reg_map->region.attr == DT_MEMORY_ATTR_UNKNOWN) {
 			continue;
 		}
 
