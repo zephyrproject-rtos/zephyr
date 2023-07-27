@@ -1,0 +1,14 @@
+# SPDX-License-Identifier: Apache-2.0
+
+config TEST_USE_CAN_FD_MODE
+	bool "Use CAN-FD"
+	select CAN_FD_MODE
+
+config TEST_ISOTP_TX_DL
+	int "TX_DL to be used"
+	default 8
+	help
+	  ISO-TP TX_DL value.
+	  Valid values are 8, 12, 16, 20, 24, 32, 48 and 64.
+
+source "Kconfig.zephyr"

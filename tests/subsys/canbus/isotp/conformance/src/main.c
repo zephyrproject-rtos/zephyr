@@ -10,18 +10,35 @@
 #include <strings.h>
 #include "random_data.h"
 
-#define PCI_TYPE_POS      4
+#if !defined(CONFIG_TEST_USE_CAN_FD_MODE) || CONFIG_TEST_ISOTP_TX_DL == 8
 #define DATA_SIZE_SF      7
 #define DATA_SIZE_CF      7
 #define DATA_SIZE_SF_EXT  6
 #define DATA_SIZE_FF      6
-#define DATA_SIZE_FC      3
-#define CAN_DL            8
+#define TX_DL             8
 #define DATA_SEND_LENGTH  272
-#define SF_PCI_TYPE       0
 #define SF_PCI_BYTE_1     ((SF_PCI_TYPE << PCI_TYPE_POS) | DATA_SIZE_SF)
 #define SF_PCI_BYTE_2_EXT ((SF_PCI_TYPE << PCI_TYPE_POS) | DATA_SIZE_SF_EXT)
 #define SF_PCI_BYTE_LEN_8 ((SF_PCI_TYPE << PCI_TYPE_POS) | (DATA_SIZE_SF + 1))
+#else
+#define DATA_SIZE_SF      (TX_DL - 2)
+#define DATA_SIZE_CF      (TX_DL - 1)
+#define DATA_SIZE_SF_EXT  (TX_DL - 3)
+#define DATA_SIZE_FF      (TX_DL - 2)
+#define TX_DL             CONFIG_TEST_ISOTP_TX_DL
+/* Send length must be larger than FF + (8 * CF).
+ * But not so big that the remainder cannot fit into the buffers.
+ */
+#define DATA_SEND_LENGTH  (100 + DATA_SIZE_FF + (8 * DATA_SIZE_CF))
+#define SF_PCI_BYTE_1     (SF_PCI_TYPE << PCI_TYPE_POS)
+#define SF_PCI_BYTE_2     DATA_SIZE_SF
+#define SF_PCI_BYTE_2_EXT (SF_PCI_TYPE << PCI_TYPE_POS)
+#define SF_PCI_BYTE_3_EXT DATA_SIZE_SF_EXT
+#endif
+
+#define DATA_SIZE_FC      3
+#define PCI_TYPE_POS      4
+#define SF_PCI_TYPE       0
 #define EXT_ADDR           5
 #define FF_PCI_TYPE        1
 #define FF_PCI_BYTE_1(dl)      ((FF_PCI_TYPE << PCI_TYPE_POS) | ((dl) >> 8))
@@ -56,7 +73,7 @@
  */
 
 struct frame_desired {
-	uint8_t data[8];
+	uint8_t data[CAN_MAX_DLEN];
 	uint8_t length;
 };
 
@@ -75,39 +92,67 @@ const struct isotp_fc_opts fc_opts_single = {
 
 const struct isotp_msg_id rx_addr = {
 	.std_id = 0x10,
+#ifdef CONFIG_TEST_USE_CAN_FD_MODE
+	.dl = CONFIG_TEST_ISOTP_TX_DL,
+	.flags = ISOTP_MSG_FDF | ISOTP_MSG_BRS,
+#endif
 };
 const struct isotp_msg_id tx_addr = {
 	.std_id = 0x11,
+#ifdef CONFIG_TEST_USE_CAN_FD_MODE
+	.dl = CONFIG_TEST_ISOTP_TX_DL,
+	.flags = ISOTP_MSG_FDF | ISOTP_MSG_BRS,
+#endif
 };
 
 const struct isotp_msg_id rx_addr_ext = {
 	.std_id = 0x10,
 	.ext_addr = EXT_ADDR,
+#ifdef CONFIG_TEST_USE_CAN_FD_MODE
+	.dl = CONFIG_TEST_ISOTP_TX_DL,
+	.flags = ISOTP_MSG_EXT_ADDR | ISOTP_MSG_FDF | ISOTP_MSG_BRS,
+#else
 	.flags = ISOTP_MSG_EXT_ADDR,
+#endif
 };
 
 const struct isotp_msg_id tx_addr_ext = {
 	.std_id = 0x11,
 	.ext_addr = EXT_ADDR,
+#ifdef CONFIG_TEST_USE_CAN_FD_MODE
+	.dl = CONFIG_TEST_ISOTP_TX_DL,
+	.flags = ISOTP_MSG_EXT_ADDR | ISOTP_MSG_FDF | ISOTP_MSG_BRS,
+#else
 	.flags = ISOTP_MSG_EXT_ADDR,
+#endif
 };
 
 const struct isotp_msg_id rx_addr_fixed = {
 	.ext_id = 0x18DA0201,
+#ifdef CONFIG_TEST_USE_CAN_FD_MODE
+	.dl = CONFIG_TEST_ISOTP_TX_DL,
+	.flags = ISOTP_MSG_FIXED_ADDR | ISOTP_MSG_IDE | ISOTP_MSG_FDF | ISOTP_MSG_BRS,
+#else
 	.flags = ISOTP_MSG_FIXED_ADDR | ISOTP_MSG_IDE,
+#endif
 };
 
 const struct isotp_msg_id tx_addr_fixed = {
 	.ext_id = 0x18DA0102,
+#ifdef CONFIG_TEST_USE_CAN_FD_MODE
+	.dl = CONFIG_TEST_ISOTP_TX_DL,
+	.flags = ISOTP_MSG_FIXED_ADDR | ISOTP_MSG_IDE | ISOTP_MSG_FDF | ISOTP_MSG_BRS,
+#else
 	.flags = ISOTP_MSG_FIXED_ADDR | ISOTP_MSG_IDE,
+#endif
 };
 
-const struct device *const can_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus));
-struct isotp_recv_ctx recv_ctx;
-struct isotp_send_ctx send_ctx;
-uint8_t data_buf[128];
+static const struct device *const can_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus));
+static struct isotp_recv_ctx recv_ctx;
+static struct isotp_send_ctx send_ctx;
+static uint8_t data_buf[128];
 CAN_MSGQ_DEFINE(frame_msgq, 10);
-struct k_sem send_compl_sem;
+static struct k_sem send_compl_sem;
 
 void send_complete_cb(int error_nr, void *arg)
 {
@@ -216,13 +261,15 @@ static void send_frame_series(struct frame_desired *frames, size_t length,
 {
 	int i, ret;
 	struct can_frame frame = {
-		.flags = (id > 0x7FF) ? CAN_FRAME_IDE :	0,
+		.flags = ((id > 0x7FF) ? CAN_FRAME_IDE : 0) |
+			 (IS_ENABLED(CONFIG_TEST_USE_CAN_FD_MODE) ?
+			  CAN_FRAME_FDF | CAN_FRAME_BRS : 0),
 		.id = id
 	};
 	struct frame_desired *desired = frames;
 
 	for (i = 0; i < length; i++) {
-		frame.dlc = desired->length;
+		frame.dlc = can_bytes_to_dlc(desired->length);
 		memcpy(frame.data, desired->data, desired->length);
 		ret = can_send(can_dev, &frame, K_MSEC(500), NULL, NULL);
 		zassert_equal(ret, 0, "Sending msg %d failed.", i);
@@ -242,9 +289,9 @@ static void check_frame_series(struct frame_desired *frames, size_t length,
 		zassert_equal(ret, 0, "Timeout waiting for msg nr %d. ret: %d",
 			      i, ret);
 
-		zassert_equal(frame.dlc, desired->length,
+		zassert_equal(frame.dlc, can_bytes_to_dlc(desired->length),
 			      "DLC of frame nr %d differ. Desired: %d, Got: %d",
-			      i, desired->length, frame.dlc);
+			      i, can_bytes_to_dlc(desired->length), frame.dlc);
 
 		ret = check_data(frame.data, desired->data, desired->length);
 		zassert_equal(ret, 0, "Data differ");
@@ -259,7 +306,8 @@ static int add_rx_msgq(uint32_t id, uint32_t mask)
 {
 	int filter_id;
 	struct can_filter filter = {
-		.flags = CAN_FILTER_DATA | ((id > 0x7FF) ? CAN_FILTER_IDE : 0),
+		.flags = CAN_FILTER_DATA | ((id > 0x7FF) ? CAN_FILTER_IDE : 0) |
+			 (IS_ENABLED(CONFIG_TEST_USE_CAN_FD_MODE) ? CAN_FILTER_FDF : 0),
 		.id = id,
 		.mask = mask
 	};
@@ -280,11 +328,38 @@ static void prepare_fc_frame(struct frame_desired *frame, uint8_t st,
 	frame->data[2] = FC_PCI_BYTE_3(opts->stmin);
 	if ((IS_ENABLED(CONFIG_ISOTP_ENABLE_TX_PADDING) && tx) ||
 	    (IS_ENABLED(CONFIG_ISOTP_REQUIRE_RX_PADDING) && !tx)) {
-		memset(&frame->data[DATA_SIZE_FC], 0xCC, CAN_DL - DATA_SIZE_FC);
-		frame->length = CAN_DL;
+		memset(&frame->data[DATA_SIZE_FC], 0xCC, 8 - DATA_SIZE_FC);
+		frame->length = 8;
 	} else {
 		frame->length = DATA_SIZE_FC;
 	}
+}
+
+static void prepare_sf_frame(struct frame_desired *frame, const uint8_t *data)
+{
+	frame->data[0] = SF_PCI_BYTE_1;
+#ifdef SF_PCI_BYTE_2
+	frame->data[1] = SF_PCI_BYTE_2;
+	memcpy(&frame->data[2], data, DATA_SIZE_SF);
+	frame->length = DATA_SIZE_SF + 2;
+#else
+	memcpy(&frame->data[1], data, DATA_SIZE_SF);
+	frame->length = DATA_SIZE_SF + 1;
+#endif
+}
+
+static void prepare_sf_ext_frame(struct frame_desired *frame, const uint8_t *data)
+{
+	frame->data[0] = rx_addr_ext.ext_addr;
+	frame->data[1] = SF_PCI_BYTE_2_EXT;
+#ifdef SF_PCI_BYTE_3_EXT
+	frame->data[2] = SF_PCI_BYTE_3_EXT;
+	memcpy(&frame->data[3], data, DATA_SIZE_SF_EXT);
+	frame->length = DATA_SIZE_SF_EXT + 3;
+#else
+	memcpy(&frame->data[2], data, DATA_SIZE_SF_EXT);
+	frame->length = DATA_SIZE_SF_EXT + 2;
+#endif
 }
 
 static void prepare_cf_frames(struct frame_desired *frames, size_t frames_cnt,
@@ -296,14 +371,18 @@ static void prepare_cf_frames(struct frame_desired *frames, size_t frames_cnt,
 
 	for (i = 0; i < frames_cnt && remaining_length; i++) {
 		frames[i].data[0] = CF_PCI_BYTE_1 | ((i+1) & 0x0F);
-		frames[i].length = CAN_DL;
+		frames[i].length = TX_DL;
 		memcpy(&des_frames[i].data[1], data_ptr, DATA_SIZE_CF);
 
 		if (remaining_length < DATA_SIZE_CF) {
 			if ((IS_ENABLED(CONFIG_ISOTP_ENABLE_TX_PADDING) && tx) ||
 			    (IS_ENABLED(CONFIG_ISOTP_REQUIRE_RX_PADDING) && !tx)) {
+				uint8_t padded_dlc = can_bytes_to_dlc(MAX(8, remaining_length + 1));
+				uint8_t padded_len = can_dlc_to_bytes(padded_dlc);
+
 				memset(&des_frames[i].data[remaining_length + 1], 0xCC,
-				       CAN_DL - remaining_length - 1);
+				       padded_len - remaining_length - 1);
+				frames[i].length = padded_len;
 			} else {
 				frames[i].length = remaining_length + 1;
 			}
@@ -320,9 +399,7 @@ ZTEST(isotp_conformance, test_send_sf)
 	int filter_id;
 	struct frame_desired des_frame;
 
-	des_frame.data[0] = SF_PCI_BYTE_1;
-	memcpy(&des_frame.data[1], random_data, DATA_SIZE_SF);
-	des_frame.length = DATA_SIZE_SF + 1;
+	prepare_sf_frame(&des_frame, random_data);
 
 	filter_id = add_rx_msgq(rx_addr.std_id, CAN_STD_ID_MASK);
 	zassert_true((filter_id >= 0), "Negative filter number [%d]",
@@ -340,9 +417,7 @@ ZTEST(isotp_conformance, test_receive_sf)
 	int ret;
 	struct frame_desired single_frame;
 
-	single_frame.data[0] = SF_PCI_BYTE_1;
-	memcpy(&single_frame.data[1], random_data, DATA_SIZE_SF);
-	single_frame.length  = DATA_SIZE_SF + 1;
+	prepare_sf_frame(&single_frame, random_data);
 
 	ret = isotp_bind(&recv_ctx, can_dev, &rx_addr, &tx_addr,
 			 &fc_opts_single, K_NO_WAIT);
@@ -352,8 +427,14 @@ ZTEST(isotp_conformance, test_receive_sf)
 
 	get_sf(DATA_SIZE_SF);
 
+	/* Frame size too big should be ignored/dropped */
+	#ifdef SF_PCI_BYTE_2
+	single_frame.data[1]++;
+	#else
 	single_frame.data[0] = SF_PCI_BYTE_LEN_8;
+	#endif
 	send_frame_series(&single_frame, 1, rx_addr.std_id);
+	get_sf_ignore();
 
 #ifdef CONFIG_ISOTP_REQUIRE_RX_PADDING
 	single_frame.data[0] = SF_PCI_BYTE_1;
@@ -371,10 +452,7 @@ ZTEST(isotp_conformance, test_send_sf_ext)
 	int filter_id, ret;
 	struct frame_desired des_frame;
 
-	des_frame.data[0] = rx_addr_ext.ext_addr;
-	des_frame.data[1] = SF_PCI_BYTE_2_EXT;
-	memcpy(&des_frame.data[2], random_data, DATA_SIZE_SF_EXT);
-	des_frame.length = DATA_SIZE_SF_EXT + 2;
+	prepare_sf_ext_frame(&des_frame, random_data);
 
 	filter_id = add_rx_msgq(rx_addr_ext.std_id, CAN_STD_ID_MASK);
 	zassert_true((filter_id >= 0), "Negative filter number [%d]",
@@ -395,10 +473,7 @@ ZTEST(isotp_conformance, test_receive_sf_ext)
 	int ret;
 	struct frame_desired single_frame;
 
-	single_frame.data[0] = EXT_ADDR;
-	single_frame.data[1] = SF_PCI_BYTE_2_EXT;
-	memcpy(&single_frame.data[2], random_data, DATA_SIZE_SF_EXT);
-	single_frame.length  = DATA_SIZE_SF_EXT + 2;
+	prepare_sf_ext_frame(&single_frame, random_data);
 
 	ret = isotp_bind(&recv_ctx, can_dev, &rx_addr_ext, &tx_addr,
 			 &fc_opts_single, K_NO_WAIT);
@@ -408,8 +483,14 @@ ZTEST(isotp_conformance, test_receive_sf_ext)
 
 	get_sf(DATA_SIZE_SF_EXT);
 
+	/* Frame size too big should be ignored/dropped */
+	#ifdef SF_PCI_BYTE_2
+	single_frame.data[2]++;
+	#else
 	single_frame.data[1] = SF_PCI_BYTE_1;
+	#endif
 	send_frame_series(&single_frame, 1, rx_addr.std_id);
+	get_sf_ignore();
 
 #ifdef CONFIG_ISOTP_REQUIRE_RX_PADDING
 	single_frame.data[1] = SF_PCI_BYTE_2_EXT;
@@ -427,9 +508,7 @@ ZTEST(isotp_conformance, test_send_sf_fixed)
 	int filter_id, ret;
 	struct frame_desired des_frame;
 
-	des_frame.data[0] = SF_PCI_BYTE_1;
-	memcpy(&des_frame.data[1], random_data, DATA_SIZE_SF);
-	des_frame.length = DATA_SIZE_SF + 1;
+	prepare_sf_frame(&des_frame, random_data);
 
 	/* mask to allow any priority and source address (SA) */
 	filter_id = add_rx_msgq(rx_addr_fixed.ext_id, 0x03FFFF00);
@@ -451,9 +530,7 @@ ZTEST(isotp_conformance, test_receive_sf_fixed)
 	int ret;
 	struct frame_desired single_frame;
 
-	single_frame.data[0] = SF_PCI_BYTE_1;
-	memcpy(&single_frame.data[1], random_data, DATA_SIZE_SF);
-	single_frame.length  = DATA_SIZE_SF + 1;
+	prepare_sf_frame(&single_frame, random_data);
 
 	ret = isotp_bind(&recv_ctx, can_dev, &rx_addr_fixed, &tx_addr_fixed,
 			 &fc_opts_single, K_NO_WAIT);
@@ -488,7 +565,7 @@ ZTEST(isotp_conformance, test_send_data)
 	ff_frame.data[0] = FF_PCI_BYTE_1(DATA_SEND_LENGTH);
 	ff_frame.data[1] = FF_PCI_BYTE_2(DATA_SEND_LENGTH);
 	memcpy(&ff_frame.data[2], data_ptr, DATA_SIZE_FF);
-	ff_frame.length = CAN_DL;
+	ff_frame.length = TX_DL;
 	data_ptr += DATA_SIZE_FF;
 	remaining_length -= DATA_SIZE_FF;
 
@@ -585,7 +662,7 @@ ZTEST(isotp_conformance, test_receive_data)
 	ff_frame.data[0] = FF_PCI_BYTE_1(DATA_SEND_LENGTH);
 	ff_frame.data[1] = FF_PCI_BYTE_2(DATA_SEND_LENGTH);
 	memcpy(&ff_frame.data[2], data_ptr, DATA_SIZE_FF);
-	ff_frame.length = CAN_DL;
+	ff_frame.length = TX_DL;
 	data_ptr += DATA_SIZE_FF;
 	remaining_length -= DATA_SIZE_FF;
 
@@ -940,8 +1017,114 @@ ZTEST(isotp_conformance, test_sender_fc_errors)
 	can_remove_rx_filter(can_dev, filter_id);
 }
 
+ZTEST(isotp_conformance, test_canfd_mandatory_padding)
+{
+	/* Mandatory padding of CAN-FD frames (TX_DL > 8).
+	 * Must be padded with 0xCC up to the nearest DLC.
+	 */
+#if TX_DL < 12
+	ztest_test_skip();
+#else
+	/* Input a single frame packet of 10 bytes */
+	uint8_t data_size_sf = 10 - 2;
+	int filter_id, ret;
+	struct can_frame frame = {};
+	const uint8_t expected_padding[] = { 0xCC, 0xCC };
 
-void *isotp_conformance_setup(void)
+	filter_id = add_rx_msgq(rx_addr.std_id, CAN_STD_ID_MASK);
+
+	ret = isotp_send(&send_ctx, can_dev, random_data, data_size_sf,
+			 &rx_addr, &tx_addr, send_complete_cb, INT_TO_POINTER(ISOTP_N_OK));
+	zassert_equal(ret, 0, "Send returned %d", ret);
+
+	ret = k_msgq_get(&frame_msgq, &frame, K_MSEC(500));
+	zassert_equal(ret, 0, "Timeout waiting for msg. ret: %d", ret);
+
+	/* The output frame should be 12 bytes, with the last two bytes being 0xCC */
+	zassert_equal(can_dlc_to_bytes(frame.dlc), 12, "Incorrect DLC");
+	zassert_mem_equal(&frame.data[10], expected_padding, sizeof(expected_padding));
+
+	can_remove_rx_filter(can_dev, filter_id);
+#endif
+}
+
+ZTEST(isotp_conformance, test_canfd_rx_dl_validation)
+{
+	/* First frame defines the RX data length, consecutive frames
+	 * must have the same length (except the last frame)
+	 */
+#if TX_DL < 16
+	ztest_test_skip();
+#else
+
+	uint8_t data_size_ff = 16 - 2;
+	uint8_t data_size_cf = 12 - 1;
+	uint8_t data_send_length = data_size_ff + 2 * data_size_cf;
+	const uint8_t *data_ptr = random_data;
+	int filter_id, ret;
+	struct frame_desired fc_frame, ff_frame;
+
+	/* FF uses a TX_DL of 16 */
+	ff_frame.data[0] = FF_PCI_BYTE_1(data_send_length);
+	ff_frame.data[1] = FF_PCI_BYTE_2(data_send_length);
+	memcpy(&ff_frame.data[2], data_ptr, data_size_ff);
+	ff_frame.length = data_size_ff + 2;
+	data_ptr += data_size_ff;
+
+	prepare_fc_frame(&fc_frame, FC_PCI_CTS, &fc_opts_single, true);
+
+	/* Two CF frames using a TX_DL of 12 */
+	des_frames[0].data[0] = CF_PCI_BYTE_1 | (1 & 0x0F);
+	des_frames[0].length = data_size_cf + 1;
+	memcpy(&des_frames[0].data[1], data_ptr, data_size_cf);
+	data_ptr += data_size_cf;
+
+	des_frames[1].data[0] = CF_PCI_BYTE_1 | (2 & 0x0F);
+	des_frames[1].length = data_size_cf + 1;
+	memcpy(&des_frames[1].data[1], data_ptr, data_size_cf);
+	data_ptr += data_size_cf;
+
+	filter_id = add_rx_msgq(tx_addr.std_id, CAN_STD_ID_MASK);
+
+	ret = isotp_bind(&recv_ctx, can_dev, &rx_addr, &tx_addr,
+			 &fc_opts_single, K_NO_WAIT);
+	zassert_equal(ret, ISOTP_N_OK, "Binding failed [%d]", ret);
+
+	send_frame_series(&ff_frame, 1, rx_addr.std_id);
+
+	check_frame_series(&fc_frame, 1, &frame_msgq);
+
+	send_frame_series(des_frames, 2, rx_addr.std_id);
+
+	/* Assert that the packet was dropped and an error returned */
+	ret = isotp_recv(&recv_ctx, data_buf, sizeof(data_buf), K_MSEC(200));
+	zassert_equal(ret, ISOTP_N_ERROR, "recv returned %d", ret);
+
+	can_remove_rx_filter(can_dev, filter_id);
+	isotp_unbind(&recv_ctx);
+#endif
+}
+
+static bool canfd_predicate(const void *state)
+{
+	ARG_UNUSED(state);
+
+#ifdef CONFIG_TEST_USE_CAN_FD_MODE
+	can_mode_t cap;
+	int err;
+
+	err = can_get_capabilities(can_dev, &cap);
+	zassert_equal(err, 0, "failed to get CAN controller capabilities (err %d)", err);
+
+	if ((cap & CAN_MODE_FD) == 0) {
+		return false;
+	}
+#endif
+
+	return true;
+}
+
+static void *isotp_conformance_setup(void)
 {
 	int ret;
 
@@ -950,8 +1133,11 @@ void *isotp_conformance_setup(void)
 
 	zassert_true(device_is_ready(can_dev), "CAN device not ready");
 
-	ret = can_set_mode(can_dev, CAN_MODE_LOOPBACK);
-	zassert_equal(ret, 0, "Failed to set loopback mode [%d]", ret);
+	(void)can_stop(can_dev);
+
+	ret = can_set_mode(can_dev, CAN_MODE_LOOPBACK |
+			   (IS_ENABLED(CONFIG_TEST_USE_CAN_FD_MODE) ? CAN_MODE_FD : 0));
+	zassert_equal(ret, 0, "Failed to set mode [%d]", ret);
 
 	ret = can_start(can_dev);
 	zassert_equal(ret, 0, "Failed to start CAN controller [%d]", ret);
@@ -961,4 +1147,4 @@ void *isotp_conformance_setup(void)
 	return NULL;
 }
 
-ZTEST_SUITE(isotp_conformance, NULL, isotp_conformance_setup, NULL, NULL, NULL);
+ZTEST_SUITE(isotp_conformance, canfd_predicate, isotp_conformance_setup, NULL, NULL, NULL);
