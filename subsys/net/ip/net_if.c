@@ -16,6 +16,7 @@ LOG_MODULE_REGISTER(net_if, CONFIG_NET_IF_LOG_LEVEL);
 #include <string.h>
 #include <zephyr/net/igmp.h>
 #include <zephyr/net/net_core.h>
+#include <zephyr/net/net_event.h>
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/net_mgmt.h>
@@ -2220,9 +2221,20 @@ static void prefix_lifetime_expired(struct net_if_ipv6_prefix *ifprefix)
 	remove_prefix_addresses(ifprefix->iface, ipv6, &ifprefix->prefix,
 				ifprefix->len);
 
-	net_mgmt_event_notify_with_info(
-		NET_EVENT_IPV6_PREFIX_DEL, ifprefix->iface,
-		&ifprefix->prefix, sizeof(struct in6_addr));
+	if (IS_ENABLED(CONFIG_NET_MGMT_EVENT_INFO)) {
+		struct net_event_ipv6_prefix info;
+
+		net_ipaddr_copy(&info.addr, &ifprefix->prefix);
+		info.len = ifprefix->len;
+		info.lifetime = 0;
+
+		net_mgmt_event_notify_with_info(NET_EVENT_IPV6_PREFIX_DEL,
+						ifprefix->iface,
+						(const void *) &info,
+						sizeof(struct net_event_ipv6_prefix));
+	} else {
+		net_mgmt_event_notify(NET_EVENT_IPV6_PREFIX_DEL, ifprefix->iface);
+	}
 
 	net_if_unlock(ifprefix->iface);
 }
@@ -2384,9 +2396,19 @@ struct net_if_ipv6_prefix *net_if_ipv6_prefix_add(struct net_if *iface,
 		NET_DBG("[%d] interface %p prefix %s/%d added", i, iface,
 			net_sprint_ipv6_addr(prefix), len);
 
-		net_mgmt_event_notify_with_info(
-			NET_EVENT_IPV6_PREFIX_ADD, iface,
-			&ipv6->prefix[i].prefix, sizeof(struct in6_addr));
+		if (IS_ENABLED(CONFIG_NET_MGMT_EVENT_INFO)) {
+			struct net_event_ipv6_prefix info;
+
+			net_ipaddr_copy(&info.addr, prefix);
+			info.len = len;
+			info.lifetime = lifetime;
+
+			net_mgmt_event_notify_with_info(NET_EVENT_IPV6_PREFIX_ADD,
+							iface, (const void *) &info,
+							sizeof(struct net_event_ipv6_prefix));
+		} else {
+			net_mgmt_event_notify(NET_EVENT_IPV6_PREFIX_ADD, iface);
+		}
 
 		ifprefix = &ipv6->prefix[i];
 		goto out;
@@ -2431,9 +2453,19 @@ bool net_if_ipv6_prefix_rm(struct net_if *iface, struct in6_addr *addr,
 		 */
 		remove_prefix_addresses(iface, ipv6, addr, len);
 
-		net_mgmt_event_notify_with_info(
-			NET_EVENT_IPV6_PREFIX_DEL, iface,
-			&ipv6->prefix[i].prefix, sizeof(struct in6_addr));
+		if (IS_ENABLED(CONFIG_NET_MGMT_EVENT_INFO)) {
+			struct net_event_ipv6_prefix info;
+
+			net_ipaddr_copy(&info.addr, addr);
+			info.len = len;
+			info.lifetime = 0;
+
+			net_mgmt_event_notify_with_info(NET_EVENT_IPV6_PREFIX_DEL,
+							iface, (const void *) &info,
+							sizeof(struct net_event_ipv6_prefix));
+		} else {
+			net_mgmt_event_notify(NET_EVENT_IPV6_PREFIX_DEL, iface);
+		}
 
 		ret = true;
 		goto out;
