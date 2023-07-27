@@ -10,3 +10,11 @@ include: i2c-device.yaml
 properties:
   reg:
     required: true
+
+  host-int-gpios:
+    type: phandle-array
+    description: Host pin for interrupt input
+
+  pmic-int-pin:
+    type: int
+    description: Pmic pin number for interrupt output
