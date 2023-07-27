@@ -214,7 +214,6 @@ enum net_event_l4_cmd {
 
 /** @endcond */
 
-#ifdef CONFIG_NET_MGMT_EVENT_INFO
 /**
  * @brief Network Management event information structure
  * Used to pass information on network events like
@@ -236,7 +235,7 @@ struct net_event_ipv6_addr {
  *   NET_EVENT_IPV6_NBR_DEL
  * when CONFIG_NET_MGMT_EVENT_INFO enabled and event generator pass the
  * information.
- * @Note: idx will be '-1' in case of NET_EVENT_IPV6_NBR_DEL event.
+ * @note: idx will be '-1' in case of NET_EVENT_IPV6_NBR_DEL event.
  */
 struct net_event_ipv6_nbr {
 	struct in6_addr addr;
@@ -257,7 +256,19 @@ struct net_event_ipv6_route {
 	uint8_t prefix_len;
 };
 
-#endif /* CONFIG_NET_MGMT_EVENT_INFO */
+/**
+ * @brief Network Management event information structure
+ * Used to pass information on network events like
+ *   NET_EVENT_IPV6_PREFIX_ADD and
+ *   NET_EVENT_IPV6_PREFIX_DEL
+ * when CONFIG_NET_MGMT_EVENT_INFO is enabled and event generator pass the
+ * information.
+ */
+struct net_event_ipv6_prefix {
+	struct in6_addr addr; /* prefix */
+	uint8_t len;
+	uint32_t lifetime;
+};
 
 #ifdef __cplusplus
 }
