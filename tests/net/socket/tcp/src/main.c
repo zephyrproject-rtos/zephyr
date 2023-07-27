@@ -1961,4 +1961,109 @@ ZTEST(net_socket_tcp, test_close_while_accept)
 	test_context_cleanup();
 }
 
+#undef read
+#define read(fd, buf, len) zsock_recv(fd, buf, len, 0)
+
+#undef write
+#define write(fd, buf, len) zsock_send(fd, buf, len, 0)
+
+enum test_ioctl_fionread_sockid {
+	CLIENT, SERVER, ACCEPT,
+};
+
+static void test_ioctl_fionread_setup(int af, int fd[3])
+{
+	socklen_t addrlen;
+	socklen_t addrlen2;
+	struct sockaddr_in6 addr;
+	struct sockaddr_in6 c_saddr;
+	struct sockaddr_in6 s_saddr;
+
+	fd[0] = -1;
+	fd[1] = -1;
+	fd[2] = -1;
+
+	switch (af) {
+	case AF_INET: {
+		prepare_sock_tcp_v4(MY_IPV4_ADDR, ANY_PORT, &fd[CLIENT],
+				    (struct sockaddr_in *)&c_saddr);
+		prepare_sock_tcp_v4(MY_IPV4_ADDR, SERVER_PORT, &fd[ACCEPT],
+				    (struct sockaddr_in *)&s_saddr);
+		addrlen = sizeof(struct sockaddr_in);
+	} break;
+
+	case AF_INET6: {
+		prepare_sock_tcp_v6(MY_IPV6_ADDR, ANY_PORT, &fd[CLIENT], &c_saddr);
+		prepare_sock_tcp_v6(MY_IPV6_ADDR, SERVER_PORT, &fd[ACCEPT], &s_saddr);
+		addrlen = sizeof(struct sockaddr_in6);
+	} break;
+
+	default:
+		zassert_true(false);
+		return;
+	}
+
+	addrlen2 = addrlen;
+
+	test_bind(fd[ACCEPT], (struct sockaddr *)&s_saddr, addrlen);
+	test_listen(fd[ACCEPT]);
+
+	test_connect(fd[CLIENT], (struct sockaddr *)&s_saddr, addrlen);
+	test_accept(fd[ACCEPT], &fd[SERVER], (struct sockaddr *)&addr, &addrlen2);
+}
+
+/* note: this is duplicated from tests/net/socket/socketpair/src/fionread.c */
+static void test_ioctl_fionread_common(int af)
+{
+	int avail;
+	uint8_t bytes[2];
+	/* server fd := 0, client fd := 1, accept fd := 2 */
+	enum fde {
+		SERVER,
+		CLIENT,
+		ACCEPT,
+	};
+	int fd[] = {-1, -1, -1};
+
+	test_ioctl_fionread_setup(af, fd);
+
+	/* both ends should have zero bytes available after being newly created */
+	for (enum fde i = SERVER; i <= CLIENT; ++i) {
+		avail = 42;
+		zassert_ok(ioctl(fd[i], ZFD_IOCTL_FIONREAD, &avail));
+		zassert_equal(0, avail, "exp: %d: act: %d", 0, avail);
+	}
+
+	/* write something to one end, check availability from the other end */
+	for (enum fde i = SERVER; i <= CLIENT; ++i) {
+		enum fde j = (i + 1) % (CLIENT + 1);
+
+		zassert_equal(1, write(fd[i], "\x42", 1));
+		zassert_equal(1, write(fd[i], "\x73", 1));
+		k_msleep(100);
+		zassert_ok(ioctl(fd[j], ZFD_IOCTL_FIONREAD, &avail));
+		zassert_equal(ARRAY_SIZE(bytes), avail, "exp: %d: act: %d", ARRAY_SIZE(bytes),
+			      avail);
+	}
+
+	/* read the other end, ensure availability is zero again */
+	for (enum fde i = SERVER; i <= CLIENT; ++i) {
+		int ex = ARRAY_SIZE(bytes);
+		int act = read(fd[i], bytes, ARRAY_SIZE(bytes));
+
+		zassert_equal(ex, act, "read() failed: errno: %d exp: %d act: %d", errno, ex, act);
+		zassert_ok(ioctl(fd[i], ZFD_IOCTL_FIONREAD, &avail));
+		zassert_equal(0, avail, "exp: %d: act: %d", 0, avail);
+	}
+}
+
+ZTEST(net_socket_tcp, test_ioctl_fionread_v4)
+{
+	test_ioctl_fionread_common(AF_INET);
+}
+ZTEST(net_socket_tcp, test_ioctl_fionread_v6)
+{
+	test_ioctl_fionread_common(AF_INET6);
+}
+
 ZTEST_SUITE(net_socket_tcp, NULL, setup, NULL, NULL, NULL);
