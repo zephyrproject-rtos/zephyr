@@ -11,6 +11,7 @@ target_sources(app PRIVATE
   src/main_collision.c
   src/main_autoconnect.c
   src/main_reconfigure.c
+  src/main_lowres.c
   src/main.c
 )
 
