@@ -11,11 +11,17 @@
 int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintptr_t reg)
 {
 	USART_TypeDef *base = (USART_TypeDef *)reg;
-	LEUART_TypeDef *lebase = (LEUART_TypeDef *)reg;
 	uint8_t loc;
-#ifndef CONFIG_SOC_GECKO_SERIES1
+#ifdef CONFIG_SOC_GECKO_SERIES1
+	LEUART_TypeDef *lebase = (LEUART_TypeDef *)reg;
+#else
 	int usart_num = USART_NUM(base);
 #endif
+
+#ifdef CONFIG_UART_GECKO
+	struct soc_gpio_pin rxpin = {0, 0, 0, 0};
+	struct soc_gpio_pin txpin = {0, 0, 0, 0};
+#endif /* CONFIG_UART_GECKO */
 
 	struct soc_gpio_pin pin_config = {0, 0, 0, 0};
 
@@ -27,17 +33,21 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintp
 		switch (GECKO_GET_FUN(pins[i])) {
 #ifdef CONFIG_UART_GECKO
 		case GECKO_FUN_UART_RX:
-			pin_config.mode = gpioModeInput;
-			pin_config.out = 1;
-			GPIO_PinModeSet(pin_config.port, pin_config.pin, pin_config.mode,
-					pin_config.out);
+			rxpin.port = GECKO_GET_PORT(pins[i]);
+			rxpin.pin = GECKO_GET_PIN(pins[i]);
+			rxpin.mode = gpioModeInput;
+			rxpin.out = 1;
+			GPIO_PinModeSet(rxpin.port, rxpin.pin, rxpin.mode,
+					rxpin.out);
 			break;
 
 		case GECKO_FUN_UART_TX:
-			pin_config.mode = gpioModePushPull;
-			pin_config.out = 1;
-			GPIO_PinModeSet(pin_config.port, pin_config.pin, pin_config.mode,
-					pin_config.out);
+			txpin.port = GECKO_GET_PORT(pins[i]);
+			txpin.pin = GECKO_GET_PIN(pins[i]);
+			txpin.mode = gpioModePushPull;
+			txpin.out = 1;
+			GPIO_PinModeSet(txpin.port, txpin.pin, txpin.mode,
+					txpin.out);
 			break;
 
 #ifdef CONFIG_SOC_GECKO_SERIES1
@@ -105,11 +115,11 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintp
 			GPIO->USARTROUTE[usart_num].ROUTEEN =
 				GPIO_USART_ROUTEEN_TXPEN | GPIO_USART_ROUTEEN_RXPEN;
 			GPIO->USARTROUTE[usart_num].TXROUTE =
-				(pin_config.pin << _GPIO_USART_TXROUTE_PIN_SHIFT) |
-				(pin_config.port << _GPIO_USART_TXROUTE_PORT_SHIFT);
+				(txpin.pin << _GPIO_USART_TXROUTE_PIN_SHIFT) |
+				(txpin.port << _GPIO_USART_TXROUTE_PORT_SHIFT);
 			GPIO->USARTROUTE[usart_num].RXROUTE =
-				(pin_config.pin << _GPIO_USART_RXROUTE_PIN_SHIFT) |
-				(pin_config.port << _GPIO_USART_RXROUTE_PORT_SHIFT);
+				(rxpin.pin << _GPIO_USART_RXROUTE_PIN_SHIFT) |
+				(rxpin.port << _GPIO_USART_RXROUTE_PORT_SHIFT);
 #endif /* CONFIG_SOC_GECKO_HAS_INDIVIDUAL_PIN_LOCATION */
 
 #ifdef UART_GECKO_HW_FLOW_CONTROL
