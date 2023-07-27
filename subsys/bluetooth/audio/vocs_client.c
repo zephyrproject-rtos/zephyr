@@ -716,6 +716,11 @@ int bt_vocs_discover(struct bt_conn *conn, struct bt_vocs *inst,
 		return -EINVAL;
 	}
 
+	CHECKIF(!inst->client_instance) {
+		LOG_DBG("vocs pointer shall be client instance");
+		return -EINVAL;
+	}
+
 	CHECKIF(param->end_handle < param->start_handle) {
 		LOG_DBG("start_handle (%u) shall be less than end_handle (%u)", param->start_handle,
 			param->end_handle);
@@ -754,6 +759,11 @@ void bt_vocs_client_cb_register(struct bt_vocs *inst, struct bt_vocs_cb *cb)
 {
 	CHECKIF(!inst) {
 		LOG_DBG("inst cannot be NULL");
+		return;
+	}
+
+	CHECKIF(!inst->client_instance) {
+		LOG_DBG("vocs pointer shall be client instance");
 		return;
 	}
 

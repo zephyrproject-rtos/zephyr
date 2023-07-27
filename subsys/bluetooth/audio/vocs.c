@@ -287,6 +287,11 @@ void *bt_vocs_svc_decl_get(struct bt_vocs *vocs)
 		return NULL;
 	}
 
+	CHECKIF(vocs->client_instance) {
+		LOG_DBG("vocs pointer shall be server instance");
+		return NULL;
+	}
+
 	return vocs->srv.service_p->attrs;
 }
 
@@ -307,6 +312,11 @@ int bt_vocs_register(struct bt_vocs *vocs,
 
 	CHECKIF(!vocs) {
 		LOG_DBG("Null VOCS pointer");
+		return -EINVAL;
+	}
+
+	CHECKIF(vocs->client_instance) {
+		LOG_DBG("vocs pointer shall be server instance");
 		return -EINVAL;
 	}
 
