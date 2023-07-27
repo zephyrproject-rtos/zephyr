@@ -589,6 +589,14 @@
 			#size-cells = <0>;
 			status = "disabled";
 		};
+
+		emac0: ethernet@40480000 {
+			reg = <0x40480000 0x4000>;
+			compatible = "nxp,s32-gmac";
+			interrupts = <105 0>, <106 0>, <107 0>, <108 0>;
+			interrupt-names = "common", "tx", "rx", "safety";
+			status = "disabled";
+		};
 	};
 };
 

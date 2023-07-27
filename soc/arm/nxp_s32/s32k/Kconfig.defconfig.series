@@ -22,6 +22,16 @@ config FLASH_BASE_ADDRESS
 	default 0
 endif
 
+if NET_L2_ETHERNET
+
+config NET_TCP_CHECKSUM
+	default n
+
+config NET_UDP_CHECKSUM
+	default n
+
+endif # NET_L2_ETHERNET
+
 source "soc/arm/nxp_s32/s32k/Kconfig.defconfig.s32k*"
 
 endif # SOC_SERIES_S32K_M7
