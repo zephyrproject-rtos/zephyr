@@ -158,6 +158,45 @@
 		reg = <0x10D00100 0x100>;
 		clock-frequency = <100000000>;
 		resets = <&reset RSTMGR_L4SYSTIMER1_RSTLINE>;
+	};
+
+	watchdog0: watchdog@10d00200 {
+		compatible = "snps,designware-watchdog";
+		reg = <0x10d00200 0x100>;
+		clock-frequency = <100000000>;
+		resets = <&reset RSTMGR_WATCHDOG0_RSTLINE>;
+		status = "disabled";
+	};
+
+	watchdog1: watchdog@10d00300 {
+		compatible = "snps,designware-watchdog";
+		reg = <0x10d00300 0x100>;
+		clock-frequency = <100000000>;
+		resets = <&reset RSTMGR_WATCHDOG1_RSTLINE>;
+		status = "disabled";
+	};
+
+	watchdog2: watchdog@10d00400 {
+		compatible = "snps,designware-watchdog";
+		reg = <0x10d00400 0x100>;
+		clock-frequency = <100000000>;
+		resets = <&reset RSTMGR_WATCHDOG2_RSTLINE>;
+		status = "disabled";
+	};
+
+	watchdog3: watchdog@10d00500 {
+		compatible = "snps,designware-watchdog";
+		reg = <0x10d00500 0x100>;
+		clock-frequency = <100000000>;
+		resets = <&reset RSTMGR_WATCHDOG3_RSTLINE>;
+		status = "disabled";
+	};
+
+	watchdog4: watchdog@10d00600 {
+		compatible = "snps,designware-watchdog";
+		reg = <0x10d00600 0x100>;
+		clock-frequency = <100000000>;
+		resets = <&reset RSTMGR_WATCHDOG4_RSTLINE>;
 		status = "disabled";
 	};
 
