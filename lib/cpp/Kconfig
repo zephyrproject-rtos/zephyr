@@ -12,7 +12,7 @@ config CPP
 
 if CPP
 
-choice
+choice STD_CPP
 	prompt "C++ Standard"
 	default STD_CPP11
 	help
