@@ -303,6 +303,10 @@ Libraries / Subsystems
     :c:struct:`mgmt_group` when registering a transport. See
     :c:type:`smp_translate_error_fn` for function details.
 
+* File systems
+
+  * Added support for ext2 file system.
+
 HALs
 ****
 
@@ -332,6 +336,9 @@ Documentation
 
 Tests and Samples
 *****************
+
+* Created common sample for file systems (`fs_sample`). It originates from sample for FAT
+  (`fat_fs`) and supports both FAT and ext2 file systems.
 
 Known Issues
 ************
