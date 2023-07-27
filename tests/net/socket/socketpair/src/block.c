@@ -56,23 +56,18 @@ static void work_handler(struct k_work *w)
 	}
 }
 
-ZTEST(net_socketpair, test_write_block)
+ZTEST_F(net_socketpair, test_write_block)
 {
 	int res;
-	int sv[2] = {-1, -1};
-
-	LOG_DBG("creating socketpair..");
-	res = socketpair(AF_UNIX, SOCK_STREAM, 0, sv);
-	zassert_equal(res, 0, "socketpair() failed: %d", errno);
 
 	for (size_t i = 0; i < 2; ++i) {
 
-		LOG_DBG("data direction %d -> %d", sv[i], sv[(!i) & 1]);
+		LOG_DBG("data direction %d -> %d", fixture->sv[i], fixture->sv[(!i) & 1]);
 
 		LOG_DBG("setting up context");
 		memset(&ctx, 0, sizeof(ctx));
 		ctx.write = true;
-		ctx.fd = sv[(!i) & 1];
+		ctx.fd = fixture->sv[(!i) & 1];
 
 		LOG_DBG("queueing work");
 		k_work_init(&work, work_handler);
@@ -82,7 +77,7 @@ ZTEST(net_socketpair, test_write_block)
 		for (ctx.m = 0; atomic_get(&ctx.m)
 			< CONFIG_NET_SOCKETPAIR_BUFFER_SIZE;) {
 
-			res = send(sv[i], "x", 1, 0);
+			res = send(fixture->sv[i], "x", 1, 0);
 			zassert_not_equal(res, -1, "send() failed: %d", errno);
 			zassert_equal(res, 1, "wrote %d bytes instead of 1",
 				res);
@@ -92,51 +87,40 @@ ZTEST(net_socketpair, test_write_block)
 		}
 
 		/* try to write one more byte */
-		LOG_DBG("writing to fd %d", sv[i]);
-		res = send(sv[i], "x", 1, 0);
+		LOG_DBG("writing to fd %d", fixture->sv[i]);
+		res = send(fixture->sv[i], "x", 1, 0);
 		zassert_not_equal(res, -1, "send() failed: %d", errno);
 		zassert_equal(res, 1, "wrote %d bytes instead of 1", res);
 
 		LOG_DBG("success!");
 	}
-
-	close(sv[0]);
-	close(sv[1]);
 }
 
-ZTEST(net_socketpair, test_read_block)
+ZTEST_F(net_socketpair, test_read_block)
 {
 	int res;
 	char x;
-	int sv[2] = {-1, -1};
-
-	LOG_DBG("creating socketpair..");
-	res = socketpair(AF_UNIX, SOCK_STREAM, 0, sv);
-	zassert_equal(res, 0, "socketpair() failed: %d", errno);
 
 	for (size_t i = 0; i < 2; ++i) {
 
-		LOG_DBG("data direction %d <- %d", sv[i], sv[(!i) & 1]);
+		LOG_DBG("data direction %d <- %d", fixture->sv[i], fixture->sv[(!i) & 1]);
 
 		LOG_DBG("setting up context");
 		memset(&ctx, 0, sizeof(ctx));
 		ctx.write = false;
-		ctx.fd = sv[(!i) & 1];
+		ctx.fd = fixture->sv[(!i) & 1];
 
 		LOG_DBG("queueing work");
 		k_work_init(&work, work_handler);
 		k_work_submit(&work);
 
 		/* try to read one byte */
-		LOG_DBG("reading from fd %d", sv[i]);
+		LOG_DBG("reading from fd %d", fixture->sv[i]);
 		x = '\0';
-		res = recv(sv[i], &x, 1, 0);
+		res = recv(fixture->sv[i], &x, 1, 0);
 		zassert_not_equal(res, -1, "recv() failed: %d", errno);
 		zassert_equal(res, 1, "read %d bytes instead of 1", res);
 
 		LOG_DBG("success!");
 	}
-
-	close(sv[0]);
-	close(sv[1]);
 }
