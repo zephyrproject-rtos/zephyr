@@ -24,6 +24,14 @@ Changes in this release
   ``16``). Bootloaders that use a part of the SRAM should set this value to an
   appropriate size. :github:`60371`
 
+* Time and timestamps in the network subsystem, PTP and IEEE 802.15.4
+  were more precisely specified and all in-tree call sites updated accordingly.
+  Fields for timed TX and TX/RX timestamps have been consolidated. See
+  :c:type:`net_time_t`, :c:struct:`net_ptp_time`, :c:struct:`ieee802154_config`,
+  :c:struct:`ieee802154_radio_api` and :c:struct:`net_pkt` for extensive
+  documentation. As this is largely an internal API, existing applications will
+  most probably continue to work unchanged.
+
 Removed APIs in this release
 ============================
 
