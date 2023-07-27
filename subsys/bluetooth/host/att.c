@@ -3289,7 +3289,8 @@ size_t bt_eatt_count(struct bt_conn *conn)
 	}
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&att->chans, chan, node) {
-		if (bt_att_is_enhanced(chan)) {
+		if (bt_att_is_enhanced(chan) &&
+		    atomic_test_bit(chan->flags, ATT_CONNECTED)) {
 			eatt_count++;
 		}
 	}
