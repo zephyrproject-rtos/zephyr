@@ -52,6 +52,9 @@ samples/net/lwm2m_client directory:
 - :file:`overlay-queue.conf`
   This overlay config can be added to enable LWM2M Queue Mode support.
 
+- :file:`overlay-tickless.conf`
+   This overlay config can be used to stop LwM2M engine for periodically interrupting socket polls. It can have significant effect on power usage on certain devices.
+
 Build the lwm2m-client sample application like this:
 
 .. zephyr-app-commands::
