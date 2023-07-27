@@ -680,7 +680,8 @@ class ProjectBuilder(FilterBuilder):
         yaml_testsuite_name = self.instance.testsuite.id
         logger.debug(f"Determine test cases for test suite: {yaml_testsuite_name}")
 
-        elf = ELFFile(open(self.instance.get_elf_file(), "rb"))
+        elf_file = self.instance.get_elf_file()
+        elf = ELFFile(open(elf_file, "rb"))
 
         logger.debug(f"Test instance {self.instance.name} already has {len(self.instance.testcases)} cases.")
         new_ztest_unit_test_regex = re.compile(r"z_ztest_unit_test__([^\s]*)__([^\s]*)")
@@ -702,6 +703,7 @@ class ProjectBuilder(FilterBuilder):
                             detected_cases.append(testcase_id)
 
         if detected_cases:
+            logger.debug(f"{', '.join(detected_cases)} in {elf_file}")
             self.instance.testcases.clear()
             self.instance.testsuite.testcases.clear()
 
