@@ -25,6 +25,7 @@ from colorama import Fore
 from domains import Domains
 from twisterlib.cmakecache import CMakeCache
 from twisterlib.environment import canonical_zephyr_base
+from twisterlib.error import BuildError
 
 import elftools
 from elftools.elf.elffile import ELFFile
@@ -618,8 +619,14 @@ class ProjectBuilder(FilterBuilder):
                     pipeline.put({"op": "report", "test": self.instance})
                 else:
                     logger.debug(f"Determine test cases for test instance: {self.instance.name}")
-                    self.determine_testcases(results)
-                    pipeline.put({"op": "gather_metrics", "test": self.instance})
+                    try:
+                        self.determine_testcases(results)
+                        pipeline.put({"op": "gather_metrics", "test": self.instance})
+                    except BuildError as e:
+                        logger.error(str(e))
+                        self.instance.status = "error"
+                        self.instance.reason = str(e)
+                        pipeline.put({"op": "report", "test": self.instance})
 
         elif op == "gather_metrics":
             self.gather_metrics(self.instance)
