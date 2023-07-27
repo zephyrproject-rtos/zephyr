@@ -78,11 +78,24 @@ int z_impl_zsock_close(int sock)
 	return 0;
 }
 
+#define PAIR_IN 10
+#define PAIR_OUT 11
+
+int z_impl_zsock_socketpair(int family, int type, int proto, int *sv)
+{
+	sv[0] = PAIR_IN;
+	sv[1] = PAIR_OUT;
+	return 0;
+}
+
 DEFINE_FAKE_VALUE_FUNC(int, z_impl_zsock_connect, int, const struct sockaddr *, socklen_t);
 
 ssize_t z_impl_zsock_sendto(int sock, const void *buf, size_t len, int flags,
 			    const struct sockaddr *dest_addr, socklen_t addrlen)
 {
+	if (sock == PAIR_OUT) {
+		return 1;
+	}
 	k_sleep(K_MSEC(1));
 	if (my_events & ZSOCK_POLLOUT) {
 		my_events = 0;
@@ -93,6 +106,10 @@ ssize_t z_impl_zsock_sendto(int sock, const void *buf, size_t len, int flags,
 ssize_t z_impl_zsock_recvfrom(int sock, void *buf, size_t max_len, int flags,
 			      struct sockaddr *src_addr, socklen_t *addrlen)
 {
+	if (sock == PAIR_IN) {
+		return 1;
+	}
+
 	k_sleep(K_MSEC(1));
 	if (my_events & ZSOCK_POLLIN) {
 		my_events = 0;
@@ -104,7 +121,7 @@ ssize_t z_impl_zsock_recvfrom(int sock, void *buf, size_t max_len, int flags,
 
 int z_impl_zsock_poll(struct zsock_pollfd *fds, int nfds, int poll_timeout)
 {
-	k_sleep(K_MSEC(poll_timeout));
+	k_sleep(K_MSEC(1));
 	fds->revents = my_events;
 	return 0;
 }

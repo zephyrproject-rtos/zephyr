@@ -373,6 +373,7 @@ int lwm2m_notify_observer_path(const struct lwm2m_obj_path *path)
 				LOG_DBG("NOTIFY EVENT %u/%u/%u", path->obj_id, path->obj_inst_id,
 					path->res_id);
 				ret++;
+				lwm2m_engine_wake_up();
 			}
 		}
 	}
