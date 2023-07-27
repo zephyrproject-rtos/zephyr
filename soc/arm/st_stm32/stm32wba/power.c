@@ -82,8 +82,6 @@ void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 	case PM_STATE_SOFT_OFF:
 		/* We should not get there */
 		__fallthrough;
-	case PM_STATE_ACTIVE:
-		__fallthrough;
 	case PM_STATE_SUSPEND_TO_RAM:
 		__fallthrough;
 	case PM_STATE_SUSPEND_TO_DISK:
