@@ -1320,7 +1320,7 @@ callback:
 	if (ecred_cb && ecred_cb->ecred_conn_req) {
 		ecred_cb->ecred_conn_req(conn, result, psm);
 	}
-	if (rsp_queued && result == BT_L2CAP_LE_SUCCESS) {
+	if (rsp_queued) {
 		for (i = 0; i < req_cid_count; i++) {
 			/* Raise connected callback for established channels */
 			if ((dcid[i] != 0x00) && (chan[i]->ops->connected != NULL)) {
