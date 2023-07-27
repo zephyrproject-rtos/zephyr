@@ -49,6 +49,21 @@
 /** @endcond */
 
 /**
+ * @brief Invokes @p fn for every status `okay` node in the tree with property
+ *	  `zephyr,memory-attr`
+ *
+ * The macro @p fn must take one parameter, which will be a node identifier
+ * with the `zephyr,memory-attr` property. The macro is expanded once for each
+ * node in the tree with status `okay`. The order that nodes are visited in is
+ * not specified.
+ *
+ * @param fn macro to invoke
+ */
+#define DT_MEMORY_ATTR_FOREACH_STATUS_OKAY_NODE(fn) \
+	DT_FOREACH_STATUS_OKAY_NODE_VARGS(_FILTER, fn)
+
+
+/**
  * @brief Invokes @p fn for every node in the tree with property
  *        `zephyr,memory-attr`
  *
@@ -59,14 +74,15 @@
  * @param fn macro to invoke
  */
 #define DT_MEMORY_ATTR_FOREACH_NODE(fn) \
-	DT_FOREACH_STATUS_OKAY_NODE_VARGS(_FILTER, fn)
+	DT_FOREACH_NODE_VARGS(_FILTER, fn)
 
 /**
  * @brief Invokes @p fn for MPU/MMU regions generation from the device tree
  *	  nodes with `zephyr,memory-attr` property.
  *
  * Helper macro to invoke a @p fn macro on all the memory regions declared
- * using the `zephyr,memory-attr` property
+ * using the `zephyr,memory-attr` property. The macro is expanded once for each
+ * node in the tree with status `okay`.
  *
  * The macro @p fn must take the form:
  *

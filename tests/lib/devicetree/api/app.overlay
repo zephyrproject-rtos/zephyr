@@ -649,6 +649,13 @@
 			zephyr,memory-attr = "RAM_NOCACHE";
 		};
 
+		test_mem_disabled: memory@11223344 {
+			compatible = "vnd,memory-attr";
+			reg = < 0x11223344 0x1000 >;
+			zephyr,memory-attr = "FLASH";
+			status = "disabled";
+		};
+
 	};
 
 	test_64 {

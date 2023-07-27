@@ -2753,6 +2753,16 @@ ZTEST(devicetree_api, test_memory_attr)
 	zassert_equal(val_filt[0], 0x44332211, "");
 
 	#undef TEST_FUNC
+
+	#define TEST_FUNC(node_id) DT_REG_SIZE(node_id),
+
+	size_t val_status_ok[] = {
+		DT_MEMORY_ATTR_FOREACH_STATUS_OKAY_NODE(TEST_FUNC)
+	};
+
+	zassert_equal(ARRAY_SIZE(val_status_ok), 2, "");
+
+	#undef TEST_FUNC
 }
 
 ZTEST(devicetree_api, test_string_token)
