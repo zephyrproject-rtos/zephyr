@@ -1,0 +1,26 @@
+/*
+ * Copyright (c) 2023 Carlo Caione <ccaione@baylibre.com>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	mem_ram: memory@10000000 {
+		compatible = "vnd,memory-attr";
+		reg = <0x10000000 0x1000>;
+		zephyr,memory-attr = "RAM";
+	};
+
+	mem_ram_nocache: memory@20000000 {
+		compatible = "vnd,memory-attr";
+		reg = <0x20000000 0x2000>;
+		zephyr,memory-attr = "RAM_NOCACHE";
+	};
+
+	mem_ram_disabled: memory@30000000 {
+		compatible = "vnd,memory-attr";
+		reg = <0x30000000 0x3000>;
+		zephyr,memory-attr = "FLASH";
+		status = "disabled";
+	};
+
+};
