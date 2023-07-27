@@ -79,6 +79,7 @@
 #define ERPREFIX   PREFIX"error on "
 #define NO_MEM_ERR PREFIX"Can't allocate memory\n"
 
+#define NCT_ENABLE_CANCEL 0 /* See Note.c1 */
 #define NCT_ALLOC_CHUNK_SIZE 64 /* In how big chunks we grow the thread table */
 #define NCT_REUSE_ABORTED_ENTRIES 0
 /* For the Zephyr OS, tests/kernel/threads/scheduling/schedule_api fails when setting
@@ -552,7 +553,6 @@ void *nct_init(void (*fptr)(void *))
 void nct_clean_up(void *this_arg)
 {
 	struct te_status_t *this = (struct te_status_t *)this_arg;
-	struct threads_table_el *tt_el;
 
 	if (!this || !this->threads_table) { /* LCOV_EXCL_BR_LINE */
 		return; /* LCOV_EXCL_LINE */
@@ -560,7 +560,8 @@ void nct_clean_up(void *this_arg)
 
 	this->terminate = true;
 
-	tt_el = this->threads_table;
+#if (NCT_ENABLE_CANCEL)
+	struct threads_table_el *tt_el = this->threads_table;
 
 	for (int i = 0; i < this->threads_table_size; i++, tt_el = tt_el->next) {
 		if (tt_el->state != USED) {
@@ -575,7 +576,7 @@ void nct_clean_up(void *this_arg)
 		}
 		/* LCOV_EXCL_STOP */
 	}
-
+#endif
 	/*
 	 * This is the cleanup we do not do:
 	 *
@@ -687,4 +688,17 @@ int nct_get_unique_thread_id(void *this_arg, int thread_idx)
  * Some other code will never or only very rarely trigger and is therefore
  * excluded with LCOV_EXCL_LINE
  *
+ *
+ * Notes about (memory) cleanup:
+ *
+ * Note.c1:
+ *
+ * In some very rare cases in very loaded machines, a race in the glibc pthread_cancel()
+ * seems to be triggered.
+ * In this, the cancelled thread cleanup overtakes the pthread_cancel() code, and frees the
+ * pthread structure before pthread_cancel() has finished, resulting in a dereference into already
+ * free'd memory, and therefore a segfault.
+ * Calling pthread_cancel() during cleanup is not required beyond preventing a valgrind
+ * memory leak report (all threads will be canceled immediately on exit).
+ * Therefore we do not do this, to avoid this very rare crashes.
  */
