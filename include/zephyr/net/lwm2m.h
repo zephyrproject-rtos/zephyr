@@ -1912,21 +1912,6 @@ int lwm2m_engine_delete_res_inst(const char *pathstr);
 int lwm2m_delete_res_inst(const struct lwm2m_obj_path *path);
 
 /**
- * @brief Update the period of a given service.
- *
- * Allow the period modification on an existing service created with
- * lwm2m_engine_add_service().
- * Example to frequency at which a periodic_service changes it's values :
- * lwm2m_engine_update_service(device_periodic_service,5*MSEC_PER_SEC);
- *
- * @param[in] service Handler of the periodic_service
- * @param[in] period_ms New period for the periodic_service (in milliseconds)
- *
- * @return 0 for success or negative in case of error.
- */
-int lwm2m_engine_update_service_period(k_work_handler_t service, uint32_t period_ms);
-
-/**
  * @brief Update the period of the device service.
  *
  * Change the duration of the periodic device service that notifies the
