@@ -10,8 +10,6 @@
 #include <zephyr/sys/reboot.h>
 #include <zephyr/toolchain.h>
 
-extern void sys_arch_reboot(enum sys_reboot_mode mode);
-
 void sys_reboot(enum sys_reboot_mode mode)
 {
 	(void)irq_lock();
@@ -25,6 +23,4 @@ void sys_reboot(enum sys_reboot_mode mode)
 	}
 
 	sys_arch_reboot(mode);
-
-	CODE_UNREACHABLE;
 }

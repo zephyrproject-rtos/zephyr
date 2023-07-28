@@ -40,6 +40,22 @@ enum sys_reboot_mode {
 	SYS_REBOOT_WARM,
 };
 
+/** @cond INTERNAL_HIDDEN */
+
+/**
+ * @brief System reboot implementation hook.
+ *
+ * This function is internally called by sys_reboot(). It needs to be
+ * implemented by architecture/SoC specific code. As required by sys_reboot(),
+ * this function must perform a reboot and never return. On systems supporting
+ * multiple reboot modes, @p mode indicates which one to perform.
+ *
+ * @param mode Reboot mode.
+ */
+FUNC_NORETURN void sys_arch_reboot(enum sys_reboot_mode mode);
+
+/** @endcond */
+
 /**
  * @brief Reboot the system.
  *
