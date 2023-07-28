@@ -31,13 +31,6 @@
 static uint32_t z_renesas_cache_configured;
 #endif
 
-void sys_arch_reboot(int type)
-{
-	ARG_UNUSED(type);
-
-	NVIC_SystemReset();
-}
-
 #if defined(CONFIG_BOOTLOADER_MCUBOOT)
 static void z_renesas_configure_cache(void)
 {
