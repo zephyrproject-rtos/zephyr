@@ -775,7 +775,7 @@ static int spi_nor_erase(const struct device *dev, off_t addr, size_t size)
 
 				if ((etp->exp != 0)
 				    && SPI_NOR_IS_ALIGNED(addr, etp->exp)
-				    && SPI_NOR_IS_ALIGNED(size, etp->exp)
+				    && (size >= BIT(etp->exp))
 				    && ((bet == NULL)
 					|| (etp->exp > bet->exp))) {
 					bet = etp;
