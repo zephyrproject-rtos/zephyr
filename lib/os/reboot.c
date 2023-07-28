@@ -6,8 +6,8 @@
 
 #include <zephyr/cache.h>
 #include <zephyr/drivers/timer/system_timer.h>
+#include <zephyr/irq.h>
 #include <zephyr/sys/reboot.h>
-#include <zephyr/kernel.h>
 #include <zephyr/toolchain.h>
 
 extern void sys_arch_reboot(int type);
