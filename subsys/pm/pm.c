@@ -42,7 +42,14 @@ static struct pm_state_info z_cpus_pm_forced_state[] = {
 static struct k_spinlock pm_forced_state_lock;
 static struct k_spinlock pm_notifier_lock;
 
-#ifdef CONFIG_PM_DEVICE
+#define DT_PM_DEVICE_ENABLED(node_id)					\
+	COND_CODE_1(DT_PROP_OR(node_id, zephyr_pm_device_disabled, 0),	\
+		(), (1 +))
+
+#define DT_PM_DEVICE_NEEDED			\
+	(DT_FOREACH_STATUS_OKAY(zephyr_power_state, DT_PM_DEVICE_ENABLED) 0)
+
+#if defined(CONFIG_PM_DEVICE) && DT_PM_DEVICE_NEEDED
 TYPE_SECTION_START_EXTERN(const struct device *, pm_device_slots);
 
 #if !defined(CONFIG_PM_DEVICE_RUNTIME_EXCLUSIVE)
@@ -99,8 +106,7 @@ static void pm_resume_devices(void)
 
 	num_susp = 0;
 }
-#endif  /* !CONFIG_PM_DEVICE_RUNTIME_EXCLUSIVE */
-#endif	/* CONFIG_PM_DEVICE */
+#endif	/* defined(CONFIG_PM_DEVICE) && DT_PM_DEVICE_NEEDED */
 
 /*
  * Function called to notify when the system is entering / exiting a
@@ -144,7 +150,7 @@ void pm_system_resume(void)
 	 * and it may schedule another thread.
 	 */
 	if (atomic_test_and_clear_bit(z_post_ops_required, id)) {
-#if defined(CONFIG_PM_DEVICE) && !defined(CONFIG_PM_DEVICE_RUNTIME_EXCLUSIVE)
+#if defined(CONFIG_PM_DEVICE) && DT_PM_DEVICE_NEEDED
 		if (atomic_add(&_cpus_active, 1) == 0) {
 			pm_resume_devices();
 		}
@@ -203,7 +209,7 @@ bool pm_system_suspend(int32_t ticks)
 		return false;
 	}
 
-#if defined(CONFIG_PM_DEVICE) && !defined(CONFIG_PM_DEVICE_RUNTIME_EXCLUSIVE)
+#if defined(CONFIG_PM_DEVICE) && DT_PM_DEVICE_NEEDED
 	if (atomic_sub(&_cpus_active, 1) == 1) {
 		if ((z_cpus_pm_state[id].state != PM_STATE_RUNTIME_IDLE) &&
 		    !z_cpus_pm_state[id].pm_device_disabled) {
