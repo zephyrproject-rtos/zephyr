@@ -71,7 +71,7 @@
 /soc/arm64/arm/fvp_aemv8a/                @carlocaione
 /soc/arm64/intel_socfpga/*                @siclim
 /soc/Kconfig                              @tejlmand @galak @nashif @nordicjm
-/submanifests/*                           @mbolivar-nordic
+/submanifests/*                           @mbolivar-ampere
 /arch/x86/                                @jhedberg @nashif
 /arch/nios2/                              @nashif
 /arch/posix/                              @aescolar @daor-oti
@@ -167,7 +167,7 @@
 /boards/arm/rcar_h3ulcb/                  @aaillet @pmarzin
 /boards/arm/ubx_bmd345eval_nrf52840/      @Navin-Sankar @brec-u-blox
 /boards/arm/nrf5340_audio_dk_nrf5340      @koffes @alexsven @erikrobstad @rick1082 @gWacey
-/boards/common/                           @mbolivar-nordic
+/boards/common/                           @mbolivar-ampere
 /boards/deprecated.cmake                  @tejlmand
 /boards/mips/                             @frantony
 /boards/nios2/                            @nashif
@@ -216,7 +216,7 @@
 /doc/CMakeLists.txt                       @carlescufi
 /doc/_scripts/                            @carlescufi
 /doc/connectivity/bluetooth/                    @alwa-nordic @jhedberg @Vudentz
-/doc/build/dts/                          @galak @mbolivar-nordic
+/doc/build/dts/                          @galak @mbolivar-ampere
 /doc/build/sysbuild/                      @tejlmand @nordicjm
 /doc/hardware/peripherals/canbus/                    @alexanderwachter @henrikbrixandersen
 /doc/security/                            @ceolin @d3zd3z
@@ -322,8 +322,8 @@
 /drivers/i2c/Kconfig.i2c_emul             @sjg20
 /drivers/i2c/Kconfig.it8xxx2              @GTLin08
 /drivers/i2c/target/*eeprom*              @henrikbrixandersen
-/drivers/i2c/Kconfig.test                 @mbolivar-nordic
-/drivers/i2c/i2c_test.c                   @mbolivar-nordic
+/drivers/i2c/Kconfig.test                 @mbolivar-ampere
+/drivers/i2c/i2c_test.c                   @mbolivar-ampere
 /drivers/i2c/*rcar*                       @aaillet
 /drivers/i2s/*litex*                      @mateusz-holenko @kgugala @pgielda
 /drivers/i2s/i2s_ll_stm32*                @avisconti
@@ -354,7 +354,7 @@
 /drivers/kscan/*ft5336*                   @MaureenHelm
 /drivers/kscan/*ht16k33*                  @henrikbrixandersen
 /drivers/led/                             @Mani-Sadhasivam
-/drivers/led_strip/                       @mbolivar-nordic
+/drivers/led_strip/                       @mbolivar-ampere
 /drivers/lora/                            @Mani-Sadhasivam
 /drivers/mbox/                            @carlocaione
 /drivers/misc/                            @tejlmand
@@ -612,7 +612,7 @@
 /include/zephyr/drivers/pcie/                    @dcpleung
 /include/zephyr/drivers/hwinfo.h                 @alexanderwachter
 /include/zephyr/drivers/led.h                    @Mani-Sadhasivam
-/include/zephyr/drivers/led_strip.h              @mbolivar-nordic
+/include/zephyr/drivers/led_strip.h              @mbolivar-ampere
 /include/zephyr/drivers/sensor.h                 @MaureenHelm
 /include/zephyr/drivers/smbus.h                  @finikorg
 /include/zephyr/drivers/spi.h                    @tbursztyka
@@ -770,7 +770,7 @@
 /scripts/build/gen_app_partitions.py            @dcpleung @nashif
 scripts/build/gen_image_info.py           @tejlmand
 /scripts/get_maintainer.py                @nashif
-/scripts/dts/                             @mbolivar-nordic @galak
+/scripts/dts/                             @mbolivar-ampere @galak
 /scripts/release/                         @nashif
 /scripts/ci/                              @nashif
 /scripts/ci/check_compliance.py           @nashif @carlescufi
@@ -779,11 +779,11 @@ scripts/build/gen_image_info.py           @tejlmand
 /scripts/build/gen_kobject_list.py        @dcpleung @nashif
 /scripts/build/gen_kobject_placeholders.py      @dcpleung
 /scripts/build/gen_syscalls.py            @dcpleung @nashif
-/scripts/list_boards.py                   @mbolivar-nordic
+/scripts/list_boards.py                   @mbolivar-ampere
 /scripts/build/process_gperf.py           @dcpleung @nashif
 /scripts/build/gen_relocate_app.py        @dcpleung
 /scripts/generate_usb_vif/                @madhurimaparuchuri
-/scripts/requirements*.txt                @mbolivar-nordic @galak @nashif
+/scripts/requirements*.txt                @mbolivar-ampere @galak @nashif
 /scripts/tests/build/test_subfolder_list.py @rmstoi
 /scripts/tracing/                         @nashif
 /scripts/pylib/twister/                   @nashif
@@ -791,12 +791,12 @@ scripts/build/gen_image_info.py           @tejlmand
 /scripts/series-push-hook.sh              @erwango
 /scripts/utils/pinctrl_nrf_migrate.py     @gmarull
 /scripts/utils/migrate_mcumgr_kconfigs.py @de-nordic
-/scripts/west_commands/                   @mbolivar-nordic
+/scripts/west_commands/                   @mbolivar-ampere
 /scripts/west_commands/blobs.py           @carlescufi
 /scripts/west_commands/fetchers/          @carlescufi
-/scripts/west_commands/runners/gd32isp.py @mbolivar-nordic @nandojve
-/scripts/west_commands/tests/test_gd32isp.py @mbolivar-nordic @nandojve
-/scripts/west-commands.yml                @mbolivar-nordic
+/scripts/west_commands/runners/gd32isp.py @mbolivar-ampere @nandojve
+/scripts/west_commands/tests/test_gd32isp.py @mbolivar-ampere @nandojve
+/scripts/west-commands.yml                @mbolivar-ampere
 /scripts/zephyr_module.py                 @tejlmand
 /scripts/build/uf2conv.py                 @petejohanson
 /scripts/build/user_wordsize.py           @cfriedt

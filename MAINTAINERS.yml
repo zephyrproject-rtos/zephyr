@@ -518,7 +518,7 @@ DFU:
 Devicetree:
   status: maintained
   maintainers:
-    - mbolivar-nordic
+    - mbolivar-ampere
     - galak
   files:
     - scripts/dts/
@@ -1088,7 +1088,7 @@ Release Notes:
 "Drivers: LED Strip":
   status: maintained
   maintainers:
-    - mbolivar-nordic
+    - mbolivar-ampere
     - simonguinot
   files:
     - drivers/led_strip/
@@ -2755,7 +2755,7 @@ VFS:
 West:
   status: maintained
   maintainers:
-    - mbolivar-nordic
+    - mbolivar-ampere
   collaborators:
     - carlescufi
     - swinslow
