@@ -12,7 +12,7 @@
 
 extern void sys_arch_reboot(enum sys_reboot_mode mode);
 
-FUNC_NORETURN void sys_reboot(enum sys_reboot_mode mode)
+void sys_reboot(enum sys_reboot_mode mode)
 {
 	(void)irq_lock();
 
