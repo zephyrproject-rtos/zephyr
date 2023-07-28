@@ -457,7 +457,7 @@ static int usbd_cdc_ecm_init(struct usbd_class_data *const c_data)
 	if (usbd_add_descriptor(uds_ctx, data->mac_desc_data)) {
 		LOG_ERR("Failed to add iMACAddress string descriptor");
 	} else {
-		desc->if0_ecm.iMACAddress = data->mac_desc_data->idx;
+		desc->if0_ecm.iMACAddress = usbd_str_desc_get_idx(data->mac_desc_data);
 	}
 
 	return 0;
