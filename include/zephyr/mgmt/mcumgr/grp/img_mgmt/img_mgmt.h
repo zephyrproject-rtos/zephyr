@@ -150,6 +150,9 @@ enum img_mgmt_ret_code_t {
 
 	/** The image vector table is invalid. */
 	IMG_MGMT_RET_RC_INVALID_IMAGE_VECTOR_TABLE,
+
+	/** The image it too large to fit. */
+	IMG_MGMT_RET_RC_INVALID_IMAGE_TOO_LARGE,
 };
 
 /**
@@ -352,6 +355,7 @@ extern const char *img_mgmt_err_str_flash_erase_failed;
 extern const char *img_mgmt_err_str_flash_write_failed;
 extern const char *img_mgmt_err_str_downgrade;
 extern const char *img_mgmt_err_str_image_bad_flash_addr;
+extern const char *img_mgmt_err_str_image_too_large;
 #else
 #define IMG_MGMT_UPLOAD_ACTION_SET_RC_RSN(action, rsn)
 #define IMG_MGMT_UPLOAD_ACTION_RC_RSN(action) NULL

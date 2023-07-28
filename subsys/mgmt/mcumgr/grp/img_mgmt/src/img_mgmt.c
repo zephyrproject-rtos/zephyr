@@ -96,6 +96,7 @@ const char *img_mgmt_err_str_flash_erase_failed = "fa erase fail";
 const char *img_mgmt_err_str_flash_write_failed = "fa write fail";
 const char *img_mgmt_err_str_downgrade = "downgrade";
 const char *img_mgmt_err_str_image_bad_flash_addr = "img addr mismatch";
+const char *img_mgmt_err_str_image_too_large = "img too large";
 #endif
 
 void img_mgmt_take_lock(void)
@@ -811,6 +812,7 @@ static int img_mgmt_translate_error_code(uint16_t ret)
 	case IMG_MGMT_RET_RC_FLASH_AREA_DEVICE_NULL:
 	case IMG_MGMT_RET_RC_INVALID_IMAGE_HEADER_MAGIC:
 	case IMG_MGMT_RET_RC_INVALID_IMAGE_VECTOR_TABLE:
+	case IMG_MGMT_RET_RC_INVALID_IMAGE_TOO_LARGE:
 	case IMG_MGMT_RET_RC_UNKNOWN:
 	default:
 	rc = MGMT_ERR_EUNKNOWN;
