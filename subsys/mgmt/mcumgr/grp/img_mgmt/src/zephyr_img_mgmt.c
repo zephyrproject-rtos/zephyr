@@ -682,6 +682,14 @@ int img_mgmt_upload_inspect(const struct img_mgmt_upload_req *req,
 			 */
 			return IMG_MGMT_RET_RC_OK;
 		}
+
+		if ((req->off + req->img_data.len) > action->size) {
+			/* Data overrun, the amount of data written would be more than the size
+			 * of the image that the client originally sent
+			 */
+			IMG_MGMT_UPLOAD_ACTION_SET_RC_RSN(action, img_mgmt_err_str_data_overrun);
+			return IMG_MGMT_RET_RC_INVALID_IMAGE_DATA_OVERRUN;
+		}
 	}
 
 	action->write_bytes = req->img_data.len;
