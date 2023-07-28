@@ -24,11 +24,9 @@
  * \pre The implementation requires the TFM_PARTITION_PLATFORM be defined.
  */
 
-#if defined(CONFIG_TFM_PARTITION_PLATFORM)
 void sys_arch_reboot(int type)
 {
 	ARG_UNUSED(type);
 
 	(void)tfm_platform_system_reset();
 }
-#endif /* CONFIG_TFM_PARTITION_PLATFORM */
