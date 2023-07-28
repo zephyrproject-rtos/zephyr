@@ -61,7 +61,7 @@ static void counter_alarm_callback(const struct device *dev,
 
 	if (IS_ENABLED(CONFIG_REBOOT) && (data->flags[chan_id] & WDT_FLAG_RESET_SOC)) {
 		LOG_PANIC();
-		sys_reboot(SYS_REBOOT_WARM);
+		sys_reboot(SYS_REBOOT_DEFAULT);
 	}
 }
 

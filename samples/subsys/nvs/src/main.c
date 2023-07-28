@@ -233,7 +233,7 @@ int main(void)
 				if (reboot_counter == MAX_REBOOT) {
 					printk("Doing last reboot...\n");
 				}
-				sys_reboot(0);
+				sys_reboot(SYS_REBOOT_DEFAULT);
 			}
 		} else {
 			printk("Reboot counter reached max value.\n");

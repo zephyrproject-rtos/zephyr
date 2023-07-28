@@ -55,7 +55,7 @@ static void task_wdt_callback(int channel_id, void *user_data)
 
 	printk("Resetting device...\n");
 
-	sys_reboot(SYS_REBOOT_COLD);
+	sys_reboot(SYS_REBOOT_DEFAULT);
 }
 
 int main(void)

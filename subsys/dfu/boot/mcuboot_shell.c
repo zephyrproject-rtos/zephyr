@@ -151,7 +151,7 @@ static int cmd_mcuboot_serial_recovery(const struct shell *sh, size_t argc,
 	}
 
 #ifdef CONFIG_REBOOT
-	sys_reboot(SYS_REBOOT_COLD);
+	sys_reboot(SYS_REBOOT_DEFAULT);
 #else
 	shell_error(sh, "mcuboot serial recovery mode set, please reboot your device");
 #endif

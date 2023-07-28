@@ -25,7 +25,7 @@ static void cmd_run(const struct shell *sh, size_t argc, char **argv)
 			sh, SHELL_ERROR,
 			"Image is unconfirmed."
 			"Rebooting to revert back to previous confirmed image\n");
-		sys_reboot(SYS_REBOOT_WARM);
+		sys_reboot(SYS_REBOOT_DEFAULT);
 		break;
 
 	case HAWKBIT_CANCEL_UPDATE:

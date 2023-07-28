@@ -750,7 +750,7 @@ int z_impl_updatehub_confirm(void)
 
 int z_impl_updatehub_reboot(void)
 {
-	sys_reboot(SYS_REBOOT_WARM);
+	sys_reboot(SYS_REBOOT_DEFAULT);
 
 	return 0;
 }

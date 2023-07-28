@@ -302,7 +302,7 @@ static int os_mgmt_taskstat_read(struct smp_streamer *ctxt)
  */
 static void os_mgmt_reset_work_handler(struct k_work *work)
 {
-	sys_reboot(SYS_REBOOT_WARM);
+	sys_reboot(SYS_REBOOT_DEFAULT);
 }
 
 static void os_mgmt_reset_cb(struct k_timer *timer)

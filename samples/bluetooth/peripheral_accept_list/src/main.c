@@ -144,7 +144,7 @@ void pairing_complete(struct bt_conn *conn, bool bonded)
 	printk("Pairing completed. Rebooting in 5 seconds...\n");
 
 	k_sleep(K_SECONDS(5));
-	sys_reboot(SYS_REBOOT_WARM);
+	sys_reboot(SYS_REBOOT_DEFAULT);
 }
 
 static struct bt_conn_auth_info_cb bt_conn_auth_info = {

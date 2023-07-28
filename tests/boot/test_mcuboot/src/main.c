@@ -15,6 +15,6 @@ int main(void)
 	/* Perform a permanent swap of MCUBoot application */
 	boot_request_upgrade(1);
 	printk("Secondary application ready for swap, rebooting\n");
-	sys_reboot(SYS_REBOOT_COLD);
+	sys_reboot(SYS_REBOOT_DEFAULT);
 	return 0;
 }

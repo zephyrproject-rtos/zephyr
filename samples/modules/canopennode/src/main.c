@@ -301,5 +301,5 @@ int main(void)
 	LOG_INF("Resetting device");
 
 	CO_delete(&can);
-	sys_reboot(SYS_REBOOT_COLD);
+	sys_reboot(SYS_REBOOT_DEFAULT);
 }

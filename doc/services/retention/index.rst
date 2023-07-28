@@ -182,7 +182,7 @@ which will allow rebooting directly into the serial recovery mode by using:
 	#include <zephyr/sys/reboot.h>
 
 	bootmode_set(BOOT_MODE_TYPE_BOOTLOADER);
-	sys_reboot(0);
+	sys_reboot(SYS_REBOOT_DEFAULT);
 
 API Reference
 *************

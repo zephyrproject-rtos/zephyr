@@ -443,7 +443,7 @@ static void reboot_work_handler(struct k_work *item)
 {
 	ARG_UNUSED(item);
 
-	sys_reboot(SYS_REBOOT_WARM);
+	sys_reboot(SYS_REBOOT_DEFAULT);
 }
 
 static void reboot_schedule(void)

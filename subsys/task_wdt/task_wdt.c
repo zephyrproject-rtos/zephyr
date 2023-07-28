@@ -118,7 +118,7 @@ static void task_wdt_trigger(struct k_timer *timer_id)
 		channels[channel_id].callback(channel_id,
 			channels[channel_id].user_data);
 	} else {
-		sys_reboot(SYS_REBOOT_COLD);
+		sys_reboot(SYS_REBOOT_DEFAULT);
 	}
 }
 

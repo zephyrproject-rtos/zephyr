@@ -18,7 +18,7 @@ int main(void)
 	int rc = bootmode_set(BOOT_MODE_TYPE_BOOTLOADER);
 
 	if (rc == 0) {
-		sys_reboot(SYS_REBOOT_WARM);
+		sys_reboot(SYS_REBOOT_DEFAULT);
 	} else {
 		printf("Error, failed to set boot mode: %d\n", rc);
 	}

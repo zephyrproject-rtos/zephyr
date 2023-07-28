@@ -55,7 +55,7 @@ int main(void)
 		LOG_ERR("If this image is flashed using a hardware tool");
 		LOG_ERR("Make sure that it is a confirmed image");
 		k_sleep(K_SECONDS(1));
-		sys_reboot(SYS_REBOOT_WARM);
+		sys_reboot(SYS_REBOOT_DEFAULT);
 		break;
 
 	case HAWKBIT_NO_UPDATE:

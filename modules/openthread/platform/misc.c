@@ -16,7 +16,7 @@ void otPlatReset(otInstance *aInstance)
 	ARG_UNUSED(aInstance);
 
 #ifdef CONFIG_REBOOT
-	sys_reboot(SYS_REBOOT_WARM);
+	sys_reboot(SYS_REBOOT_DEFAULT);
 #endif
 }
 

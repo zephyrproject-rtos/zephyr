@@ -264,7 +264,7 @@ Create callback functions for LwM2M resource executions:
 	{
 		LOG_INF("Device rebooting.");
 		LOG_PANIC();
-		sys_reboot(0);
+		sys_reboot(SYS_REBOOT_DEFAULT);
 		return 0; /* won't reach this */
 	}
 

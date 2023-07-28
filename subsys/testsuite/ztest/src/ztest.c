@@ -574,7 +574,7 @@ int main(void)
 			PRINT("Reset board #%u to test again\n",
 				state.boots);
 			k_msleep(10);
-			sys_reboot(SYS_REBOOT_COLD);
+			sys_reboot(SYS_REBOOT_DEFAULT);
 		} else {
 			PRINT("Failed after %u attempts\n", state.boots);
 			state.boots = 0;

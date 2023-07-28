@@ -165,7 +165,7 @@ static void wdog_cmsdk_apb_isr(void)
 	 */
 	if (IS_ENABLED(CONFIG_REBOOT) && !wdog_cmsdk_apb_has_fired()) {
 		printk("NMI received! Rebooting...\n");
-		sys_reboot(0);
+		sys_reboot(SYS_REBOOT_DEFAULT);
 	} else {
 		if (user_cb != NULL) {
 			user_cb(wdog_r, 0);

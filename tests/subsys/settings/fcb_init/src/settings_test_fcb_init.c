@@ -150,7 +150,7 @@ void *test_init_setup(void)
 		err = settings_save();
 		zassert_true(err == 0, "can't save settings");
 		k_sleep(K_MSEC(250));
-		sys_reboot(SYS_REBOOT_COLD);
+		sys_reboot(SYS_REBOOT_DEFAULT);
 	}
 	return NULL;
 }
